@@ -24,7 +24,7 @@ flow is an invertible system: Mathlib's `MeasurableEquiv.vadd t` has inverse
 Conversely, an action in which every element acts as the identity is not ergodic as soon as some
 null-measurable set and its complement both have positive measure
 (`not_ergodicSMul_of_forall_smul_eq`), while an invariant point mass is always ergodic
-(`ergodicSMul_dirac`).
+(`TauCeti.ergodicSMul_dirac`).
 
 ## Main results
 
@@ -32,7 +32,7 @@ null-measurable set and its complement both have positive measure
   element of the acting monoid acts ergodically is ergodic for the action.
 * `not_ergodicSMul_of_forall_smul_eq`, `not_ergodicVAdd_of_forall_vadd_eq`: the trivial action on a
   space that is not almost a point is not ergodic.
-* `ergodicSMul_dirac`, `ergodicVAdd_dirac`: an invariant point mass is ergodic.
+* `TauCeti.ergodicSMul_dirac`, `TauCeti.ergodicVAdd_dirac`: an invariant point mass is ergodic.
 -/
 
 public section
@@ -67,6 +67,8 @@ theorem not_ergodicSMul_of_forall_smul_eq (h : ∀ (m : M) (x : X), m • x = x)
   · exact hs₀ (ae_eq_empty.mp h₀)
   · exact hsc (ae_eq_univ.mp h₁)
 
+namespace TauCeti
+
 /-- **Invariant point masses are ergodic.** Under the point mass `δ_x`, every measurable set has
 measure `0` or `1`, so it is almost empty or almost everything. -/
 @[to_additive /-- **Invariant point masses are ergodic.** Under the point mass `δ_x`, every
@@ -76,3 +78,5 @@ theorem ergodicSMul_dirac (x : X) [SMulInvariantMeasure M X (Measure.dirac x)] :
   aeconst_of_forall_preimage_smul_ae_eq {s} hs _ := by
     refine Filter.eventuallyConst_iff_exists_eventuallyEq.2 ⟨x ∈ s, (ae_dirac_iff ?_).2 rfl⟩
     by_cases h : x ∈ s <;> simp [h, hs, ← compl_ofPred]
+
+end TauCeti

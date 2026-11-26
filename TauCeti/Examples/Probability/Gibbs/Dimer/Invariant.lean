@@ -19,7 +19,8 @@ and the odd edges, and `2ℤ` fixes both (`smul_eq_self_dimerSubshiftInt`).
   completion set is a singleton), so `𝒢_inv` is the set of all probability measures, and
   `δ_even`, `δ_odd` and their midpoint lie in `𝒢_inv` (`dirac_evenPt_mem_gibbsInvariant`,
   `dirac_oddPt_mem_gibbsInvariant`, `diracMidpoint_mem_gibbsInvariant`).
-* `δ_even` and `δ_odd` are ergodic (`ergodicSMul_dirac`), while the midpoint is not
+* `δ_even` and `δ_odd` are ergodic (`TauCeti.ergodicSMul_dirac`, which applies since every
+  measure on `𝔛(ℤ)` is invariant), while the midpoint is not
   (`not_ergodicSMul_diracMidpoint`): the event "the edge `{0, 1}` is present", the point `evenPt`,
   is `2ℤ`-invariant of measure `1/2`.
 -/
@@ -82,11 +83,6 @@ theorem diracMidpoint_mem_gibbsInvariant {w : (nnGraph ℤ).edgeSet → ℝ} (hw
     diracMidpoint ∈ ((nnGraph ℤ).dimerSpecification (Multiplicative ℤ)
       (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo)) hw).gibbsInvariant :=
   mem_gibbsInvariant_of_isProbabilityMeasure hw _
-
-/-- The point masses of `𝔛(ℤ)` are ergodic. -/
-theorem ergodicSMul_dirac (ω : dimerSubshiftInt) :
-    ErgodicSMul (Multiplicative ℤ) dimerSubshiftInt (Measure.dirac ω) :=
-  _root_.ergodicSMul_dirac ω
 
 /-- **The midpoint is not ergodic**: the point `evenPt` (the event "the edge `{0, 1}` is
 present") is `2ℤ`-invariant and has measure `1/2`. -/

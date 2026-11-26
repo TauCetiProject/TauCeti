@@ -64,10 +64,6 @@ def oneBar : X₀ := ⟨fun _ => true, (mem_X₀_iff _).2 fun _ _ => rfl⟩
 theorem zeroBar_ne_oneBar : zeroBar ≠ oneBar := fun h => by
   simpa [zeroBar, oneBar] using congrFun (congrArg Subtype.val h) 1
 
-/-- The Dirac masses on `X₀` are ergodic. -/
-theorem ergodicSMul_dirac (ω : X₀) : ErgodicSMul (Multiplicative ℤ) X₀ (Measure.dirac ω) :=
-  _root_.ergodicSMul_dirac ω
-
 /-- The Dirac masses at `zeroBar` and `oneBar` are extreme invariant Gibbs measures for the
 identity specification. -/
 theorem dirac_mem_extremePoints_gibbsInvariant (ω : X₀) :

@@ -231,6 +231,11 @@ def shiftTwo : nnGraph ℤ ≃g nnGraph ℤ where
 theorem shiftTwo_apply (a : ℤ) : shiftTwo a = a + 2 :=
   (rfl)
 
+/-- The inverse of `shiftTwo` is translation by `-2`. -/
+@[simp]
+theorem shiftTwo_inv_apply (a : ℤ) : shiftTwo⁻¹ a = a - 2 :=
+  (rfl)
+
 /-- The group `2ℤ`, written multiplicatively as `Multiplicative ℤ` with `ofAdd 1` acting as
 translation by `2`, acting on the edges of the line. -/
 instance instMulActionMultiplicativeIntEdgeSetNNGraph :
@@ -246,10 +251,8 @@ theorem zpow_shiftTwo_apply (n a : ℤ) : (shiftTwo ^ n) a = a + 2 * n := by
     rw [zpow_add_one, RelIso.mul_apply, ih, shiftTwo_apply]
     ring
   | pred n ih =>
-    rw [zpow_sub_one, RelIso.mul_apply, ih]
-    have h := RelIso.apply_inv_self shiftTwo a
-    rw [shiftTwo_apply] at h
-    linarith
+    rw [zpow_sub_one, RelIso.mul_apply, ih, shiftTwo_inv_apply]
+    ring
 
 /-- `g : Multiplicative ℤ` moves an edge of the line by the automorphism `shiftTwo ^ toAdd g`. -/
 @[simp]
@@ -261,9 +264,7 @@ theorem coe_smul_edgeSet (g : Multiplicative ℤ) (e : (nnGraph ℤ).edgeSet) :
 @[simp]
 theorem ofAdd_smul_edge (n a : ℤ) :
     (Multiplicative.ofAdd n : Multiplicative ℤ) • edge a = edge (a + 2 * n) :=
-  Subtype.ext <| by
-    rw [coe_smul_edgeSet, toAdd_ofAdd, coe_edge, coe_edge, Sym2.map_mk,
-      zpow_shiftTwo_apply, zpow_shiftTwo_apply, add_right_comm]
+  Subtype.ext <| by simp [coe_edge, add_right_comm]
 
 /-- The subshift of dimer configurations of the line, for `2ℤ` acting by translations. -/
 abbrev dimerSubshiftInt : Subshift (Multiplicative ℤ) (nnGraph ℤ).edgeSet Bool :=
@@ -282,6 +283,16 @@ def evenPt : dimerSubshiftInt := ⟨evenConfig, mem_dimerSubshift.2 isDimerConfi
 
 /-- The odd edges as a point of `dimerSubshiftInt`. -/
 def oddPt : dimerSubshiftInt := ⟨oddConfig, mem_dimerSubshift.2 isDimerConfiguration_oddConfig⟩
+
+/-- The configuration of `evenPt` is `evenConfig`. -/
+@[simp]
+theorem coe_evenPt : (evenPt : (nnGraph ℤ).edgeSet → Bool) = evenConfig :=
+  (rfl)
+
+/-- The configuration of `oddPt` is `oddConfig`. -/
+@[simp]
+theorem coe_oddPt : (oddPt : (nnGraph ℤ).edgeSet → Bool) = oddConfig :=
+  (rfl)
 
 /-- The two points of `dimerSubshiftInt` differ. -/
 theorem evenPt_ne_oddPt : evenPt ≠ oddPt := fun h =>
