@@ -26,17 +26,20 @@ if no two critical points of `f` have indices differing by one, this holds in ev
 (`TauCeti.IsMorse.nonempty_singularHomology_iso_sigma_of_forall_ne_add_one` and
 `TauCeti.IsMorse.nonempty_singularHomology_iso_sigma_of_isProperMap_of_forall_ne_add_one`), and the
 homology of `M` with integral coefficients is free abelian, with one generator for each critical
-point. On a compact manifold this gives `Hₙ(M; ℤ) ≃ₗ[ℤ] (Cₙ →₀ ℤ)` for the set `Cₙ` of critical
-points of index `n`
-(`TauCeti.IsMorse.nonempty_singularHomology_int_linearEquiv_finsupp_of_forall_ne_add_one`), so
-`Hₙ(M; ℤ)` is free, finitely generated and of rank `|Cₙ|`
-(`TauCeti.IsMorse.free_singularHomology_int_of_forall_ne_add_one`,
-`TauCeti.IsMorse.finite_singularHomology_int_of_forall_ne_add_one`,
+point: `Hₙ(M; ℤ) ≃ₗ[ℤ] (Cₙ →₀ ℤ)` for the set `Cₙ` of critical points of index `n`
+(`IsMorse.nonempty_singularHomology_int_linearEquiv_finsupp_of_isProperMap_of_forall_ne_add_one`
+and `TauCeti.IsMorse.free_singularHomology_int_of_isProperMap_of_forall_ne_add_one`, with compact
+versions `TauCeti.IsMorse.nonempty_singularHomology_int_linearEquiv_finsupp_of_forall_ne_add_one`
+and `TauCeti.IsMorse.free_singularHomology_int_of_forall_ne_add_one`). On a compact manifold
+`Hₙ(M; ℤ)` is moreover finitely generated, of rank `|Cₙ|`
+(`TauCeti.IsMorse.finite_singularHomology_int_of_forall_ne_add_one`,
 `TauCeti.IsMorse.finrank_singularHomology_int_of_forall_ne_add_one`). This applies when all indices
 are even (`TauCeti.forall_manifoldMorseIndex_ne_add_one_of_even`), and then the homology vanishes in
-odd degrees (`TauCeti.IsMorse.isZero_singularHomology_of_odd`); on a compact manifold, `Hₙ(M; R)`
+odd degrees (`TauCeti.IsMorse.isZero_singularHomology_of_odd`,
+`TauCeti.IsMorse.isZero_singularHomology_of_isProperMap_of_odd`); more generally `Hₙ(M; R)`
 vanishes whenever no critical point has index `n`
-(`TauCeti.IsMorse.isZero_singularHomology_of_criticalCount_eq_zero`).
+(`TauCeti.IsMorse.isZero_singularHomology_of_criticalCount_eq_zero`,
+`TauCeti.IsMorse.isZero_singularHomology_of_isProperMap_of_criticalCount_eq_zero`).
 
 Over a division ring this recovers the equality of Betti numbers and critical counts in the
 lacunary case on a compact manifold
@@ -115,6 +118,21 @@ theorem forall_manifoldMorseIndex_ne_add_one_of_even
       manifoldMorseIndex I f x ≠ manifoldMorseIndex I f y + 1 := fun x hx y hy h ↦
   Nat.even_add_one.1 (h ▸ heven x hx) (heven y hy)
 
+/-- With no critical point of index `n`, the coproduct over the critical points of index `n` is
+zero. -/
+private theorem isZero_sigma_of_criticalCount_eq_zero {n : ℕ} (hn : criticalCount I f n = 0)
+    {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A) :
+    IsZero (∐ fun _ : ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = n} ↦ R) := by
+  have : IsEmpty ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = n} :=
+    ⟨fun ⟨x, hx, hxn⟩ ↦ (criticalCount_eq_zero_iff n).1 hn x hx hxn⟩
+  exact (IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)
+
+/-- If every critical point has even index, then no critical point has odd index `n`. -/
+private theorem criticalCount_eq_zero_of_odd
+    (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x)) {n : ℕ} (hn : Odd n) :
+    criticalCount I f n = 0 :=
+  (criticalCount_eq_zero_iff n).2 fun x hx hxn ↦ Nat.not_even_iff_odd.2 hn (hxn ▸ heven x hx)
+
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
 
 /-- **The lacunary principle for the homology of a compact manifold.** Let `f` be a Morse function
@@ -186,6 +204,78 @@ theorem IsMorse.nonempty_singularHomology_iso_sigma_of_isProperMap_of_forall_ne_
     (criticalCount_eq_zero_or_criticalCount_add_one_eq_zero hind n)
     (fun m hm ↦ hm ▸ criticalCount_eq_zero_or_criticalCount_add_one_eq_zero hind m) R
 
+/-! ### Proper Morse functions bounded below -/
+
+/-- **The lacunary principle for even indices, for a proper Morse function.** If every critical
+point of a proper Morse function `f` bounded below on a boundaryless manifold has even index, then
+in every degree `n` the homology `Hₙ(M; R)` is the coproduct of one copy of `R` for each critical
+point of index `n`, for coefficients `R` in any abelian category with exact coproducts. -/
+theorem IsMorse.nonempty_singularHomology_iso_sigma_of_isProperMap_of_even (hf : IsMorse I f)
+    (hp : IsProperMap f) (hbdd : BddBelow (range f))
+    (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x))
+    {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] [AB4OfSize.{u} A] (R : A)
+    (n : ℕ) :
+    Nonempty (((singularHomologyFunctor A n).obj R).obj (TopCat.of M) ≅
+      ∐ fun _ : ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = n} ↦ R) :=
+  hf.nonempty_singularHomology_iso_sigma_of_isProperMap_of_forall_ne_add_one hp hbdd
+    (forall_manifoldMorseIndex_ne_add_one_of_even heven) R n
+
+/-- **Homology vanishes in a degree with no critical points, for a proper Morse function.** If a
+proper Morse function bounded below on a boundaryless manifold has no critical point of index `n`,
+then `Hₙ(M; R) = 0`, for coefficients in any abelian category with exact coproducts. -/
+theorem IsMorse.isZero_singularHomology_of_isProperMap_of_criticalCount_eq_zero (hf : IsMorse I f)
+    (hp : IsProperMap f) (hbdd : BddBelow (range f)) {n : ℕ} (hn : criticalCount I f n = 0)
+    {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] [AB4OfSize.{u} A] (R : A) :
+    IsZero (((singularHomologyFunctor A n).obj R).obj (TopCat.of M)) := by
+  obtain ⟨e⟩ := hf.nonempty_singularHomology_iso_sigma_of_isProperMap hp hbdd (Or.inl hn)
+    (fun _ _ ↦ Or.inr hn) R
+  exact (isZero_sigma_of_criticalCount_eq_zero hn R).of_iso e
+
+/-- **Odd homology vanishes for a proper Morse function with only even indices.** On a boundaryless
+manifold carrying a proper Morse function bounded below all of whose critical points have even
+index, the homology vanishes in odd degrees, for coefficients in any abelian category with exact
+coproducts. -/
+theorem IsMorse.isZero_singularHomology_of_isProperMap_of_odd (hf : IsMorse I f)
+    (hp : IsProperMap f) (hbdd : BddBelow (range f))
+    (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x))
+    {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] [AB4OfSize.{u} A] (R : A)
+    {n : ℕ} (hn : Odd n) : IsZero (((singularHomologyFunctor A n).obj R).obj (TopCat.of M)) :=
+  hf.isZero_singularHomology_of_isProperMap_of_criticalCount_eq_zero hp hbdd
+    (criticalCount_eq_zero_of_odd heven hn) R
+
+/-- **Integral homology is free on the critical points, for a proper Morse function.** If no two
+critical points of a proper Morse function `f` bounded below on a boundaryless manifold have indices
+differing by one, then the integral homology `Hₙ(M; ℤ)` is the free abelian group on the critical
+points of index `n`. -/
+theorem
+    IsMorse.nonempty_singularHomology_int_linearEquiv_finsupp_of_isProperMap_of_forall_ne_add_one
+    (hf : IsMorse I f) (hp : IsProperMap f) (hbdd : BddBelow (range f))
+    (hind : ∀ x ∈ criticalPoints I f, ∀ y ∈ criticalPoints I f,
+      manifoldMorseIndex I f x ≠ manifoldMorseIndex I f y + 1) (n : ℕ) :
+    Nonempty (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
+        (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M) ≃ₗ[ℤ]
+      (↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = n} →₀ ℤ)) := by
+  obtain ⟨e⟩ := hf.nonempty_singularHomology_iso_sigma_of_isProperMap_of_forall_ne_add_one hp hbdd
+    hind (ModuleCat.of ℤ (ULift.{u} ℤ)) n
+  exact ⟨e.toLinearEquiv ≪≫ₗ ModuleCat.coprodLinearEquivFinsupp _ _ ≪≫ₗ
+    Finsupp.mapRange.linearEquiv ULift.moduleEquiv⟩
+
+/-- **Integral homology is free, for a proper Morse function.** If no two critical points of a
+proper Morse function bounded below on a boundaryless manifold have indices differing by one, then
+the integral homology of the manifold is a free abelian group in every degree. -/
+theorem IsMorse.free_singularHomology_int_of_isProperMap_of_forall_ne_add_one (hf : IsMorse I f)
+    (hp : IsProperMap f) (hbdd : BddBelow (range f))
+    (hind : ∀ x ∈ criticalPoints I f, ∀ y ∈ criticalPoints I f,
+      manifoldMorseIndex I f x ≠ manifoldMorseIndex I f y + 1) (n : ℕ) :
+    Module.Free ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
+      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M)) := by
+  obtain ⟨e⟩ :=
+    hf.nonempty_singularHomology_int_linearEquiv_finsupp_of_isProperMap_of_forall_ne_add_one hp
+      hbdd hind n
+  exact Module.Free.of_equiv e.symm
+
+/-! ### Compact manifolds -/
+
 section Compact
 
 variable [CompactSpace M]
@@ -210,10 +300,7 @@ theorem IsMorse.isZero_singularHomology_of_criticalCount_eq_zero (hf : IsMorse I
     {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A) :
     IsZero (((singularHomologyFunctor A n).obj R).obj (TopCat.of M)) := by
   obtain ⟨e⟩ := hf.nonempty_singularHomology_iso_sigma (Or.inl hn) (fun _ _ ↦ Or.inr hn) R
-  -- No critical point has index `n`, so the coproduct is empty.
-  have : IsEmpty ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = n} :=
-    ⟨fun ⟨x, hx, hxn⟩ ↦ (criticalCount_eq_zero_iff n).1 hn x hx hxn⟩
-  exact (IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim) |>.of_iso e
+  exact (isZero_sigma_of_criticalCount_eq_zero hn R).of_iso e
 
 /-- **Odd homology vanishes for a Morse function with only even indices.** On a compact
 boundaryless manifold carrying a Morse function all of whose critical points have even index, the
@@ -222,8 +309,7 @@ theorem IsMorse.isZero_singularHomology_of_odd (hf : IsMorse I f)
     (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x))
     {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A) {n : ℕ}
     (hn : Odd n) : IsZero (((singularHomologyFunctor A n).obj R).obj (TopCat.of M)) :=
-  hf.isZero_singularHomology_of_criticalCount_eq_zero
-    ((criticalCount_eq_zero_iff n).2 fun x hx hxn ↦ Nat.not_even_iff_odd.2 hn (hxn ▸ heven x hx)) R
+  hf.isZero_singularHomology_of_criticalCount_eq_zero (criticalCount_eq_zero_of_odd heven hn) R
 
 /-- **Integral homology is free on the critical points.** If no two critical points of a Morse
 function `f` on a compact boundaryless manifold have indices differing by one, then the integral
@@ -234,11 +320,10 @@ theorem IsMorse.nonempty_singularHomology_int_linearEquiv_finsupp_of_forall_ne_a
       manifoldMorseIndex I f x ≠ manifoldMorseIndex I f y + 1) (n : ℕ) :
     Nonempty (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M) ≃ₗ[ℤ]
-      (↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = n} →₀ ℤ)) := by
-  obtain ⟨e⟩ := hf.nonempty_singularHomology_iso_sigma_of_forall_ne_add_one hind
-    (ModuleCat.of ℤ (ULift.{u} ℤ)) n
-  exact ⟨e.toLinearEquiv ≪≫ₗ ModuleCat.coprodLinearEquivFinsupp _ _ ≪≫ₗ
-    Finsupp.mapRange.linearEquiv ULift.moduleEquiv⟩
+      (↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = n} →₀ ℤ)) :=
+  -- A continuous function on a compact space is proper and bounded below.
+  hf.nonempty_singularHomology_int_linearEquiv_finsupp_of_isProperMap_of_forall_ne_add_one
+    hf.contMDiff.continuous.isProperMap (isCompact_range hf.contMDiff.continuous).bddBelow hind n
 
 /-- **Integral homology is free.** If no two critical points of a Morse function on a compact
 boundaryless manifold have indices differing by one, then the integral homology of the manifold is
@@ -247,9 +332,9 @@ theorem IsMorse.free_singularHomology_int_of_forall_ne_add_one (hf : IsMorse I f
     (hind : ∀ x ∈ criticalPoints I f, ∀ y ∈ criticalPoints I f,
       manifoldMorseIndex I f x ≠ manifoldMorseIndex I f y + 1) (n : ℕ) :
     Module.Free ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
-      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M)) := by
-  obtain ⟨e⟩ := hf.nonempty_singularHomology_int_linearEquiv_finsupp_of_forall_ne_add_one hind n
-  exact Module.Free.of_equiv e.symm
+      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M)) :=
+  hf.free_singularHomology_int_of_isProperMap_of_forall_ne_add_one
+    hf.contMDiff.continuous.isProperMap (isCompact_range hf.contMDiff.continuous).bddBelow hind n
 
 /-- **Integral homology is finitely generated.** If no two critical points of a Morse function on a
 compact boundaryless manifold have indices differing by one, then the integral homology of the
