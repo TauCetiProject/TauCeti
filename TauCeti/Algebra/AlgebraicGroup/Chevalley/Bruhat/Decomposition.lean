@@ -391,7 +391,6 @@ theorem positivePoints_inf_map_negativePoints_conj_eq_inversionPoints (n : D.wey
       (D.inversionPoints_le_map_negativePoints_conj K n)
 
 /-- An inversion point is positive and becomes negative under conjugation by `n⁻¹`. -/
-@[simp]
 theorem mem_inversionPoints_iff (n : D.weylSubgroup K) {x : D.points K} :
     x ∈ D.inversionPoints K (D.weylProjection K n) ↔
       x ∈ D.positivePoints K ∧ (MulAut.conj (n : D.points K)).symm x ∈ D.negativePoints K := by
