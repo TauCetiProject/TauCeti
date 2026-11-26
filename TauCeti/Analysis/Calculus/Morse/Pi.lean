@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Calculus.FDeriv.DiagonalQuadratic
 public import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 public import TauCeti.Analysis.Calculus.Morse.Index
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # Nondegenerate critical points of separated sums of functions of one variable
@@ -319,7 +319,7 @@ theorem exists_pos_forall_le_sum_fderiv_apply_single_sq_and_le {f : (ι → ℝ)
       absurd ((hx.2 x (hcrit x h₀ hxP)).trans_eq (dist_self x)) (not_le.2 hρ')
     refine (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _).lt_of_ne fun h₀ ↦ hx₀ ?_
     have hi := (Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦ sq_nonneg _).1 h₀.symm
-    exact ContinuousLinearMap.pi_ext_one fun i ↦ by simpa using hi i (Finset.mem_univ i)
+    exact ContinuousLinearMap.pi_ext_single_one fun i ↦ by simpa using hi i (Finset.mem_univ i)
   obtain ⟨H, hHS⟩ := hS.bddAbove_image hH.continuousOn
   refine ⟨min c₀ c₂, lt_min hc₀ hc₂, max h H, fun x hx ↦ ?_⟩
   by_cases hxρ : ∀ p ∈ P, ρ < dist x p

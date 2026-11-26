@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.WittenLaplacian.Gap
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.Morse.Pi
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # The gap of the Witten Laplacian at nondegenerate critical points
@@ -305,7 +305,7 @@ theorem exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul
       rw [(hfe p hp x hx).fderiv_eq, fderiv_const_add,
         fderiv_diagonalQuadratic_comp_sub_apply_single]
   have hP : ∀ p ∈ P, fderiv ℝ f p = 0 := fun p hp ↦
-    ContinuousLinearMap.pi_ext_one fun i ↦ by simp [hd p hp p (mem_ball_self hr) i]
+    ContinuousLinearMap.pi_ext_single_one fun i ↦ by simp [hd p hp p (mem_ball_self hr) i]
   have ha : ∀ p ∈ P, ∀ v w, fderiv ℝ (fderiv ℝ f) p v w = ∑ i, a p i * v i * w i :=
     fun p hp v w ↦ by
       have hmod : fderiv ℝ (fun y ↦ f p + diagonalQuadratic (a p) (y - p)) =
