@@ -65,9 +65,14 @@ is the local description of a pseudodifferential operator between bundles in Tay
 
 * `TauCeti.sectionClassicalPseudodifferentialOperators_le`: an operator of order `m - k`, `k ∈ ℕ`,
   has order `m`.
-* `TauCeti.mem_sectionClassicalPseudodifferentialOperators_zero_of_map_smul`: an operator which is
-  linear over the complex-valued smooth functions, that is, a smooth bundle map, has order `0`; in
-  particular the identity has order `0`.
+* `TauCeti.mem_sectionClassicalPseudodifferentialOperators_of_mem_differentialOperators`: a
+  differential operator of order at most `m` between the bundles, in Grothendieck's sense for
+  commutators with complex-valued smooth functions, is a classical pseudodifferential operator of
+  order `m`, since its matrix entries are differential operators of order at most `m`
+  (`TauCeti.sectionEntry_mem_differentialOperators`).
+* `TauCeti.mem_sectionClassicalPseudodifferentialOperators_zero_of_map_smul`: in particular an
+  operator which is linear over the complex-valued smooth functions, that is, a smooth bundle map,
+  has order `0`; so does the identity.
 * `TauCeti.smul_mem_sectionClassicalPseudodifferentialOperators` and
   `TauCeti.comp_smul_mem_sectionClassicalPseudodifferentialOperators`: multiplying an operator of
   order `m` by a smooth function on either side gives an operator of order `m`.
@@ -259,6 +264,32 @@ theorem IsSectionProperlySupported.sectionEntry
   · rw [sectionEntry_apply, hP₂ _ (hf.mono fun y hy ↦ by simp [hy]) x hx]
     simp
 
+/-- **The entries of a differential operator are differential operators.** If `P : Γ(E) → Γ(F)` is
+a differential operator of order at most `m` in Grothendieck's sense, for commutators with
+multiplication by complex-valued smooth functions, then so is each of its matrix entries
+`f ↦ χ · ℓ(t' (P (f · ψ t⁻¹ v)))` on the complex-valued smooth functions. -/
+theorem sectionEntry_mem_differentialOperators {m : ℕ}
+    {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
+    (hP : P ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ m) :
+    TauCeti.sectionEntry t ψ hψ v t' χ hχ ℓ P ∈
+      differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+        C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+        C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ m := by
+  have hentry : TauCeti.sectionEntry t ψ hψ v t' χ hχ ℓ P = t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+      (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ := by
+    ext f x
+    simp
+  rw [hentry]
+  -- The maps `f ↦ f · ψ t⁻¹ v` and `h ↦ χ · ℓ(t' h)` are linear over the complex-valued functions.
+  refine comp_comp_mem_differentialOperators (fun b ↦ ⟨b, fun f ↦ by simp [mul_smul], fun h ↦ ?_⟩)
+    hP
+  ext x
+  simp only [Bundle.Trivialization.cutoffFrameCoeff_apply,
+    ContMDiffSection.smul_apply_of_normedAlgebra, map_smul, smul_eq_mul, ContMDiffMap.coe_mul,
+    Pi.mul_apply, Complex.real_smul]
+  ring
+
 end Entry
 
 /-! ### Classical pseudodifferential operators between bundles -/
@@ -318,21 +349,31 @@ theorem sectionClassicalPseudodifferentialOperators_le {m' : ℝ} (k : ℕ) (hk 
   fun _ hP ↦ ⟨hP.1, fun t _ ψ hψ v t' _ χ hχ ℓ ↦
     classicalPseudodifferentialOperators_le k hk (hP.2 t ψ hψ v t' χ hχ ℓ)⟩
 
+/-- **Differential operators between bundles are classical pseudodifferential operators.** A
+complex-linear operator `P : Γ(E) → Γ(F)` which is a differential operator of order at most `m` in
+Grothendieck's sense, for commutators with multiplication by complex-valued smooth functions, is a
+classical pseudodifferential operator of order `m` between the bundles. This is the bundle form
+of `TauCeti.mem_classicalPseudodifferentialOperators_of_mem_differentialOperators`. -/
+theorem mem_sectionClassicalPseudodifferentialOperators_of_mem_differentialOperators
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {k : ℕ}
+    (hP : P ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ k) :
+    P ∈ sectionClassicalPseudodifferentialOperators k :=
+  -- `P` is local, hence properly supported, and its entries are complex differential operators.
+  ⟨.of_local fun _ _ hs ↦ apply_eq_zero_of_mem_differentialOperators hP hs,
+    fun t _ ψ hψ v t' _ χ hχ ℓ ↦
+      mem_classicalPseudodifferentialOperators_of_mem_differentialOperators
+        (sectionEntry_mem_differentialOperators t ψ hψ v t' χ hχ ℓ hP)⟩
+
 /-- **Operators linear over smooth functions have order `0`.** An operator `P : Γ(E) → Γ(F)` with
 `P (f s) = f P s` for all complex-valued smooth functions `f`, that is, a smooth bundle map from
-`E` to `F`, is a classical pseudodifferential operator of order `0`. Each of its entries is the
-multiplication by the smooth function `χ ℓ(t' (P (ψ t⁻¹ v)))`. -/
+`E` to `F`, is a classical pseudodifferential operator of order `0`. -/
 theorem mem_sectionClassicalPseudodifferentialOperators_zero_of_map_smul
     [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
     (hP : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s) :
     P ∈ sectionClassicalPseudodifferentialOperators 0 := by
-  refine ⟨.of_map_smul hP, fun t _ ψ hψ v t' _ χ hχ ℓ ↦ ?_⟩
-  have hentry : sectionEntry t ψ hψ v t' χ hχ ℓ P =
-      LinearMap.mulLeft ℂ (sectionEntry t ψ hψ v t' χ hχ ℓ P 1) := by
-    ext f x
-    simp [hP, mul_comm, mul_left_comm]
-  rw [hentry]
-  exact mulLeft_mem_classicalPseudodifferentialOperators _
+  simpa using mem_sectionClassicalPseudodifferentialOperators_of_mem_differentialOperators
+    (k := 0) (mem_differentialOperators_zero_iff.2 hP)
 
 /-- **The identity has order `0`.** -/
 theorem id_mem_sectionClassicalPseudodifferentialOperators

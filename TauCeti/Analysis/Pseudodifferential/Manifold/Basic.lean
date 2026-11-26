@@ -86,6 +86,10 @@ values on compactly supported functions, and hence by its chart compressions.
   Grothendieck's sense, is a classical pseudodifferential operator of order `m`. Its symbol in a
   chart is the polynomial symbol of the compression, with no smoothing remainder
   (`ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexChartCompression`).
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_mem_differentialOperators`: more generally,
+  a complex-linear differential operator of order at most `m` on the complex-valued smooth
+  functions, for commutators with complex-valued functions, is a classical pseudodifferential
+  operator of order `m`, being `A + i B` for complexifications `A` and `B` of real ones.
 
 ## References
 
@@ -680,5 +684,43 @@ theorem complexifyLinearMap_mem_classicalPseudodifferentialOperators
       fun e he φ ψ ↦ ⟨_,
       ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexChartCompression he φ
         ψ ⟨D, hD⟩⟩⟩
+
+/-- **Complex differential operators are classical pseudodifferential operators.** A
+complex-linear operator `Q` on the complex-valued smooth functions on `M` which is a differential
+operator of order at most `m` in Grothendieck's sense, for commutators with multiplication by
+complex-valued smooth functions, is a classical pseudodifferential operator of order `m`. This
+extends `TauCeti.complexifyLinearMap_mem_classicalPseudodifferentialOperators` from
+complexifications of real differential operators to all complex ones. -/
+theorem mem_classicalPseudodifferentialOperators_of_mem_differentialOperators
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℕ}
+    {Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hQ : Q ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      m) :
+    Q ∈ classicalPseudodifferentialOperators (n := n) (M := M) m := by
+  -- `Q = A + i B` for the complexifications of `A u = Re (Q u)` and `B u = Im (Q u)`. Reading `Q`
+  -- on real-valued functions and taking real or imaginary parts gives a real differential
+  -- operator: the inclusion of real functions and the real and imaginary parts intertwine
+  -- multiplication by a real function `b` with multiplication by `b` as a complex function.
+  have hreal {σ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℝ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯}
+      (hσ : ∀ (b : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) y,
+        σ (ContMDiffMap.ofReal b * y) = b * σ y) :
+      σ ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈ differentialOperators ℝ
+        C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
+        C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ m :=
+    comp_comp_mem_differentialOperators
+      (fun b ↦ ⟨ContMDiffMap.ofReal b, fun x ↦ map_mul ContMDiffMap.ofReal b x, hσ b⟩)
+      (restrictScalars_mem_differentialOperators hQ)
+  have hre := hreal (σ := ContMDiffMap.re) fun b y ↦ by
+    ext x
+    simp [ContMDiffMap.re_apply]
+  have him := hreal (σ := ContMDiffMap.im) fun b y ↦ by
+    ext x
+    simp [ContMDiffMap.im_apply]
+  rw [← ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp Q]
+  exact add_mem (complexifyLinearMap_mem_classicalPseudodifferentialOperators hre)
+    (Submodule.smul_mem _ _ (complexifyLinearMap_mem_classicalPseudodifferentialOperators him))
 
 end TauCeti
