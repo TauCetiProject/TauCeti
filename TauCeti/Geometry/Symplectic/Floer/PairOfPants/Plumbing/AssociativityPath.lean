@@ -667,33 +667,66 @@ variable {α : Type*}
 
 /-- The end data of the inserted pair of pants of `(x₁ x₂) x₃`: the data `A 0` and `A 1` of the
 first two inputs on its inputs, and the neck datum `G` on its output. -/
-@[expose] def associativityLeftInserted (A : Fin 3 → α) (G : α) : Puncture → α
+def associativityLeftInserted (A : Fin 3 → α) (G : α) : Puncture → α
   | zero => A 0
   | one => A 1
   | inf => G
 
 /-- The end data of the receiving pair of pants of `(x₁ x₂) x₃`: the neck datum `G` on its input
 `0`, the datum `A 2` of the third input on its input `1`, and the output datum `Aout`. -/
-@[expose] def associativityLeftReceiving (A : Fin 3 → α) (Aout G : α) : Puncture → α
+def associativityLeftReceiving (A : Fin 3 → α) (Aout G : α) : Puncture → α
   | zero => G
   | one => A 2
   | inf => Aout
 
 /-- The end data of the inserted pair of pants of `x₁ (x₂ x₃)`: the data `A 1` and `A 2` of the
 last two inputs on its inputs, and the neck datum `G'` on its output. -/
-@[expose] def associativityRightInserted (A : Fin 3 → α) (G' : α) : Puncture → α
+def associativityRightInserted (A : Fin 3 → α) (G' : α) : Puncture → α
   | zero => A 1
   | one => A 2
   | inf => G'
 
 /-- The end data of the receiving pair of pants of `x₁ (x₂ x₃)`: the datum `A 0` of the first
 input on its input `0`, the neck datum `G'` on its input `1`, and the output datum `Aout`. -/
-@[expose] def associativityRightReceiving (A : Fin 3 → α) (Aout G' : α) : Puncture → α
+def associativityRightReceiving (A : Fin 3 → α) (Aout G' : α) : Puncture → α
   | zero => A 0
   | one => G'
   | inf => Aout
 
-variable {S : Set α} {A : Fin 3 → α} {Aout G : α}
+variable (A : Fin 3 → α) (Aout G : α)
+
+@[simp] theorem associativityLeftInserted_zero : associativityLeftInserted A G zero = A 0 := (rfl)
+
+@[simp] theorem associativityLeftInserted_one : associativityLeftInserted A G one = A 1 := (rfl)
+
+@[simp] theorem associativityLeftInserted_inf : associativityLeftInserted A G inf = G := (rfl)
+
+@[simp] theorem associativityLeftReceiving_zero : associativityLeftReceiving A Aout G zero = G :=
+  (rfl)
+
+@[simp] theorem associativityLeftReceiving_one :
+    associativityLeftReceiving A Aout G one = A 2 := (rfl)
+
+@[simp] theorem associativityLeftReceiving_inf :
+    associativityLeftReceiving A Aout G inf = Aout := (rfl)
+
+@[simp] theorem associativityRightInserted_zero : associativityRightInserted A G zero = A 1 :=
+  (rfl)
+
+@[simp] theorem associativityRightInserted_one : associativityRightInserted A G one = A 2 := (rfl)
+
+@[simp] theorem associativityRightInserted_inf : associativityRightInserted A G inf = G := (rfl)
+
+@[simp] theorem associativityRightReceiving_zero :
+    associativityRightReceiving A Aout G zero = A 0 := (rfl)
+
+@[simp] theorem associativityRightReceiving_one :
+    associativityRightReceiving A Aout G one = G := (rfl)
+
+@[simp] theorem associativityRightReceiving_inf :
+    associativityRightReceiving A Aout G inf = Aout := (rfl)
+
+variable {S : Set α} {A Aout G}
 
 /-- The end data of the inserted pair of pants of `(x₁ x₂) x₃` lie in any set containing the
 input data and the neck datum. -/

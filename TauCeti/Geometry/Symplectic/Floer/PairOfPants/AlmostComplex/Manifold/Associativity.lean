@@ -28,10 +28,14 @@ hG' L τ w` is
 
 * for `τ ≤ 0`, the Cayley segment (`TauCeti.SmoothTwoForm.Compatible.cayleySegment`) at time `-τ`
   from the structure of the moving input ends to the plumbed structure of `(x₁ x₂) x₃`, which
-  carries `G` on its neck (`TauCeti.SmoothTwoForm.Compatible.associativityAlmostComplex_of_nonpos`);
+  carries `G` on its neck (`TauCeti.SmoothTwoForm.Compatible.associativityAlmostComplex_of_lt_one`,
+  and `TauCeti.SmoothTwoForm.Compatible.associativityAlmostComplex_of_nonpos` when the inputs are
+  read off from the two pairs of pants);
 * for `τ ≥ 1`, the Cayley segment at time `τ - 1` from the structure of the moving input ends to
   the plumbed structure of `x₁ (x₂ x₃)`, which carries `G'` on its neck
-  (`TauCeti.SmoothTwoForm.Compatible.associativityAlmostComplex_of_one_le`);
+  (`TauCeti.SmoothTwoForm.Compatible.associativityAlmostComplex_of_pos`, and
+  `TauCeti.SmoothTwoForm.Compatible.associativityAlmostComplex_of_one_le` when the inputs are read
+  off from the two pairs of pants);
 * for `τ ∈ [0, 1]`, the structure of the moving input ends along the associativity path
   (`TauCeti.SmoothTwoForm.Compatible.associativityAlmostComplex_of_mem_Icc`).
 
@@ -188,7 +192,7 @@ def associativityAlmostComplex (L τ : ℝ) (w : ℂ) : SmoothAlmostComplexStruc
 variable {L τ : ℝ} {w : ℂ}
 
 /-- Before the right switch, the family is the segment towards the left composition. -/
-private theorem associativityAlmostComplex_of_lt_one (hL : 0 ≤ L) (hτ : τ < 1)
+private theorem associativityAlmostComplex_eq_cayleySegment_leftPlumbed (hL : 0 ≤ L) (hτ : τ < 1)
     (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1) :
     h₀.associativityAlmostComplex J hJ Jout hJout G hG G' hG' L τ w =
       h₀.cayleySegment (tames_movingEnds h₀ J hJ Jout hJout hL τ w)
@@ -200,7 +204,7 @@ private theorem associativityAlmostComplex_of_lt_one (hL : 0 ≤ L) (hτ : τ < 
       cayleySegment_of_nonpos h₀ _ _ (by linarith)]
 
 /-- After the left switch, the family is the segment towards the right composition. -/
-private theorem associativityAlmostComplex_of_pos (hL : 0 ≤ L) (hτ : 0 < τ)
+private theorem associativityAlmostComplex_eq_cayleySegment_rightPlumbed (hL : 0 ≤ L) (hτ : 0 < τ)
     (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ one.plumbingMap L 1) :
     h₀.associativityAlmostComplex J hJ Jout hJout G hG G' hG' L τ w =
       h₀.cayleySegment (tames_movingEnds h₀ J hJ Jout hJout hL τ w)
@@ -210,6 +214,54 @@ private theorem associativityAlmostComplex_of_pos (hL : 0 ≤ L) (hτ : 0 < τ)
   by_cases hτ₁ : 1 ≤ τ
   · rw [dite_eq_left ⟨hτ₁, hw⟩]
   · rw [dite_eq_right (fun h => hτ₁ h.1), cayleySegment_of_nonpos h₀ _ _ (by linarith)]
+
+/-- **Before the right switch, the family is the segment towards `(x₁ x₂) x₃`.** For `L ≥ 0`,
+`τ < 1` and a domain point `w` of the plumbed sphere of `(x₁ x₂) x₃`, the family is the Cayley
+segment at time `-τ` from the structure of the moving input ends to the plumbed structure of
+`(x₁ x₂) x₃`, whose end structures are `TauCeti.Floer.associativityLeftInserted J G` and
+`TauCeti.Floer.associativityLeftReceiving J Jout G`. For `τ > 0` the time is negative, so this is
+the structure of the moving input ends. -/
+theorem associativityAlmostComplex_of_lt_one (hL : 0 ≤ L) (hτ : τ < 1)
+    (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1) :
+    h₀.associativityAlmostComplex J hJ Jout hJout G hG G' hG' L τ w =
+      h₀.cayleySegment
+        (tames_puncturedSphereAlmostComplex h₀ J hJ Jout hJout
+          (Floer.pairwise_mul_exp_add_le_norm_associativityCenter_sub_of_nonneg hL τ)
+          (Floer.norm_associativityCenter_add_mul_exp_le_of_nonneg hL τ) w)
+        (tames_plumbedAlmostComplex h₀ h₀ (associativityLeftInserted J G)
+          (associativityLeftReceiving J Jout G)
+          (associativityLeftInserted_mem
+            (S := {K : ℝ → SmoothAlmostComplexStructure I M | ∀ t, σ.Tames (K t)}) hJ hG)
+          (associativityLeftReceiving_mem
+            (S := {K : ℝ → SmoothAlmostComplexStructure I M | ∀ t, σ.Tames (K t)}) hJ hJout hG)
+          w hw)
+        (-τ) :=
+  -- `movingEnds` and `leftPlumbed` abbreviate the two endpoints of the segment.
+  associativityAlmostComplex_eq_cayleySegment_leftPlumbed h₀ J hJ Jout hJout G hG G' hG' hL hτ hw
+
+/-- **After the left switch, the family is the segment towards `x₁ (x₂ x₃)`.** For `L ≥ 0`,
+`τ > 0` and a domain point `w` of the plumbed sphere of `x₁ (x₂ x₃)`, the family is the Cayley
+segment at time `τ - 1` from the structure of the moving input ends to the plumbed structure of
+`x₁ (x₂ x₃)`, whose end structures are `TauCeti.Floer.associativityRightInserted J G'` and
+`TauCeti.Floer.associativityRightReceiving J Jout G'`. For `τ < 1` the time is negative, so this
+is the structure of the moving input ends. -/
+theorem associativityAlmostComplex_of_pos (hL : 0 ≤ L) (hτ : 0 < τ)
+    (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ one.plumbingMap L 1) :
+    h₀.associativityAlmostComplex J hJ Jout hJout G hG G' hG' L τ w =
+      h₀.cayleySegment
+        (tames_puncturedSphereAlmostComplex h₀ J hJ Jout hJout
+          (Floer.pairwise_mul_exp_add_le_norm_associativityCenter_sub_of_nonneg hL τ)
+          (Floer.norm_associativityCenter_add_mul_exp_le_of_nonneg hL τ) w)
+        (tames_plumbedAlmostComplex h₀ h₀ (associativityRightInserted J G')
+          (associativityRightReceiving J Jout G')
+          (associativityRightInserted_mem
+            (S := {K : ℝ → SmoothAlmostComplexStructure I M | ∀ t, σ.Tames (K t)}) hJ hG')
+          (associativityRightReceiving_mem
+            (S := {K : ℝ → SmoothAlmostComplexStructure I M | ∀ t, σ.Tames (K t)}) hJ hJout hG')
+          w hw)
+        (τ - 1) :=
+  -- `movingEnds` and `rightPlumbed` abbreviate the two endpoints of the segment.
+  associativityAlmostComplex_eq_cayleySegment_rightPlumbed h₀ J hJ Jout hJout G hG G' hG' hL hτ hw
 
 /-- On `[0, 1]` the family is the structure of the moving input ends. -/
 private theorem associativityAlmostComplex_eq_movingEnds (hL : 0 ≤ L) (hτ : τ ∈ Icc 0 1) :
@@ -284,14 +336,14 @@ theorem associativityAlmostComplex_of_nonpos
           (Floer.pairwise_mul_exp_add_le_norm_associativityCenter_sub_of_nonneg hL τ)
           (Floer.norm_associativityCenter_add_mul_exp_le_of_nonneg hL τ) w)
         (tames_plumbedAlmostComplex h₀ h₀ Ja Jb hJa hJb w hw) (-τ) := by
-  rw [associativityAlmostComplex_of_lt_one _ _ _ _ _ _ _ _ _ hL (by linarith) hw]
+  rw [associativityAlmostComplex_of_lt_one h₀ ![Ja zero, Ja one, Jb one] _ (Jb inf) (hJb inf)
+    (Ja inf) (hJa inf) G' hG' hL (by linarith) hw]
   refine cayleySegment_congr h₀ _ _ _ _ rfl ?_ _
   refine plumbedAlmostComplex_congr h₀ h₀ _ _ _ _ _ _ ?_ ?_ _ hw
   · funext p
-    cases p <;> rfl
+    cases p <;> simp
   · funext p
-    cases p
-    exacts [hab.symm, rfl, rfl]
+    cases p <;> simp [hab]
 
 /-- **For `τ ≥ 1` the family switches on the neck of `x₁ (x₂ x₃)`.** Inserting a pair of pants
 with end structures `Ja` into the input `1` of one with end structures `Jb`, along a neck carrying
@@ -313,14 +365,14 @@ theorem associativityAlmostComplex_of_one_le
           (Floer.pairwise_mul_exp_add_le_norm_associativityCenter_sub_of_nonneg hL τ)
           (Floer.norm_associativityCenter_add_mul_exp_le_of_nonneg hL τ) w)
         (tames_plumbedAlmostComplex h₀ h₀ Ja Jb hJa hJb w hw) (τ - 1) := by
-  rw [associativityAlmostComplex_of_pos _ _ _ _ _ _ _ _ _ hL (by linarith) hw]
+  rw [associativityAlmostComplex_of_pos h₀ ![Jb zero, Ja zero, Ja one] _ (Jb inf) (hJb inf) G hG
+    (Ja inf) (hJa inf) hL (by linarith) hw]
   refine cayleySegment_congr h₀ _ _ _ _ rfl ?_ _
   refine plumbedAlmostComplex_congr h₀ h₀ _ _ _ _ _ _ ?_ ?_ _ hw
   · funext p
-    cases p <;> rfl
+    cases p <;> simp
   · funext p
-    cases p
-    exacts [rfl, hab.symm, rfl]
+    cases p <;> simp [hab]
 
 /-- **For `τ ≤ -1` the family is the plumbed structure of `(x₁ x₂) x₃`.** Inserting a pair of
 pants with end structures `Ja` into the input `0` of one with end structures `Jb`, along a neck
@@ -388,31 +440,27 @@ private theorem leftPlumbed_cylindricalEndLift (i : Fin 3) (hJp : Periodic (J i)
   · obtain rfl : w' = zero.plumbingMap L (zero.cylindricalEndLift z) := by
       rw [← hP]
       simp [plumbingMap_apply, plumbingFactor_zero]
-    exact fun hw => plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
+    exact fun hw => (plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
       (associativityLeftInserted J G) (associativityLeftReceiving J Jout G) _ _
-      (q := zero) (r := zero) (by simp) rfl hL (by simp) hJp hz hw
+      (q := zero) (r := zero) (by simp) (by simp) hL (by simp) (by simpa using hJp) hz
+      hw).trans (by simp)
   · obtain rfl : w' = zero.plumbingMap L (one.cylindricalEndLift z) := by
       rw [← hP]
-      simp only [plumbingMap_apply, plumbingFactor_zero, cylindricalEndLift_zero,
-        cylindricalEndLift_one, Nat.succ_eq_add_one, Nat.reduceAdd, Complex.ofReal_div,
-        Complex.ofReal_exp, Complex.ofReal_neg, Complex.ofReal_mul, Complex.ofReal_ofNat,
-        Fin.mk_one, Fin.isValue, Matrix.cons_val_one, Matrix.cons_val_zero, neg_mul,
-        endCenter_zero, zero_add]
+      simp [plumbingMap_apply, plumbingFactor_zero, cylindricalEndLift_zero,
+        cylindricalEndLift_one]
       ring
-    exact fun hw => plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
+    exact fun hw => (plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
       (associativityLeftInserted J G) (associativityLeftReceiving J Jout G) _ _
-      (q := zero) (r := one) (by simp) rfl hL (by simp) hJp hz hw
+      (q := zero) (r := one) (by simp) (by simp) hL (by simp) (by simpa using hJp) hz
+      hw).trans (by simp)
   · obtain rfl : w' = one.cylindricalEndLift z := by
       rw [← hP]
-      simp only [cylindricalEndLift_zero, cylindricalEndLift_one, Nat.succ_eq_add_one,
-        Nat.reduceAdd, Complex.ofReal_div, Complex.ofReal_exp, Complex.ofReal_neg,
-        Complex.ofReal_mul, Complex.ofReal_ofNat, Fin.reduceFinMk, Matrix.cons_val, neg_mul,
-        one_mul]
+      simp [cylindricalEndLift_zero, cylindricalEndLift_one]
       ring
-    exact fun hw => plumbedAlmostComplex_cylindricalEndLift h₀ h₀
+    exact fun hw => (plumbedAlmostComplex_cylindricalEndLift h₀ h₀
       (associativityLeftInserted J G) (associativityLeftReceiving J Jout G) _ _
-      (q := zero) (r := one) (by simp) rfl hL
-      (by simp) hJp (by simpa using hz) hw
+      (q := zero) (r := one) (by simp) (by simp) hL
+      (by simp) (by simpa using hJp) (by simpa using hz) hw).trans (by simp)
 
 /-- For `τ ≥ 1`, the plumbed structure of `x₁ (x₂ x₃)` is `J i t` far out on the input end `i`
 of the configuration at `τ`, which is an input end of that plumbed sphere. -/
@@ -431,26 +479,26 @@ private theorem rightPlumbed_cylindricalEndLift (i : Fin 3) (hJp : Periodic (J i
   · obtain rfl : w' = zero.cylindricalEndLift z := by
       rw [← hP]
       simp
-    exact fun hw => plumbedAlmostComplex_cylindricalEndLift h₀ h₀
+    exact fun hw => (plumbedAlmostComplex_cylindricalEndLift h₀ h₀
       (associativityRightInserted J G') (associativityRightReceiving J Jout G') _ _
-      (q := one) (r := zero) (by simp) rfl hL
-      (by simp) hJp (by simpa using hz) hw
+      (q := one) (r := zero) (by simp) (by simp) hL
+      (by simp) (by simpa using hJp) (by simpa using hz) hw).trans (by simp)
   · obtain rfl : w' = one.plumbingMap L (zero.cylindricalEndLift z) := by
       rw [← hP]
       simp [plumbingMap_apply, plumbingFactor_one, plumbingFactor_zero]
-    exact fun hw => plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
+    exact fun hw => (plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
       (associativityRightInserted J G') (associativityRightReceiving J Jout G') _ _
-      (q := one) (r := zero) (by simp) rfl hL (by simp) hJp hz hw
+      (q := one) (r := zero) (by simp) (by simp) hL (by simp) (by simpa using hJp) hz
+      hw).trans (by simp)
   · obtain rfl : w' = one.plumbingMap L (one.cylindricalEndLift z) := by
       rw [← hP]
-      simp only [plumbingMap_apply, plumbingFactor_one, plumbingFactor_zero,
-        cylindricalEndLift_zero, cylindricalEndLift_one, Nat.succ_eq_add_one, Nat.reduceAdd,
-        Complex.ofReal_div, Complex.ofReal_exp, Complex.ofReal_neg, Complex.ofReal_mul,
-        Complex.ofReal_ofNat, Fin.reduceFinMk, Matrix.cons_val, neg_mul, endCenter_one]
+      simp [plumbingMap_apply, plumbingFactor_one, plumbingFactor_zero,
+        cylindricalEndLift_zero, cylindricalEndLift_one]
       ring
-    exact fun hw => plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
+    exact fun hw => (plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
       (associativityRightInserted J G') (associativityRightReceiving J Jout G') _ _
-      (q := one) (r := one) (by simp) rfl hL (by simp) hJp hz hw
+      (q := one) (r := one) (by simp) (by simp) hL (by simp) (by simpa using hJp) hz
+      hw).trans (by simp)
 
 /-- **The family is `J i t` far out on each input end.** If `J i` has period one in `t` and
 `L ≥ 2`, then for every `τ`, on the part `s ≥ 2` of the input end `i` of the configuration at
@@ -481,12 +529,12 @@ theorem associativityAlmostComplex_cylindricalEndLift_inf (hJoutp : Periodic Jou
   refine associativityAlmostComplex_eq_of h₀ J hJ Jout hJout G hG G' hG' (by linarith) ?_
     (fun _ hw => ?_) (fun _ hw => ?_)
   · exact puncturedSphereAlmostComplex_cylindricalEndLift_inf h₀ J hJ Jout hJout _ _ hJoutp hz
-  · exact plumbedAlmostComplex_cylindricalEndLift h₀ h₀ (associativityLeftInserted J G)
-      (associativityLeftReceiving J Jout G) _ _ (q := zero) (r := inf) (by simp) rfl hL (by simp)
-      hJoutp hz' hw
-  · exact plumbedAlmostComplex_cylindricalEndLift h₀ h₀ (associativityRightInserted J G')
-      (associativityRightReceiving J Jout G') _ _ (q := one) (r := inf) (by simp) rfl hL (by simp)
-      hJoutp hz' hw
+  · exact (plumbedAlmostComplex_cylindricalEndLift h₀ h₀ (associativityLeftInserted J G)
+      (associativityLeftReceiving J Jout G) _ _ (q := zero) (r := inf) (by simp) (by simp) hL
+      (by simp) (by simpa using hJoutp) hz' hw).trans (by simp)
+  · exact (plumbedAlmostComplex_cylindricalEndLift h₀ h₀ (associativityRightInserted J G')
+      (associativityRightReceiving J Jout G') _ _ (q := one) (r := inf) (by simp) (by simp) hL
+      (by simp) (by simpa using hJoutp) hz' hw).trans (by simp)
 
 /-! ### Smoothness -/
 
@@ -517,6 +565,17 @@ private theorem mem_paramOpens {T : Set ℝ} {hT : IsOpen T} {W : ℝ → Set �
   Iff.rfl
 
 variable {n : ℕ∞ω} [ENat.LEInfty n]
+
+variable (n) in
+/-- The families of structures indexed by `t ∈ ℝ` which are jointly `C^n` on `ℝ × M`, as sections
+of the tangent endomorphism bundle. -/
+private def smoothFamilies : Set (ℝ → SmoothAlmostComplexStructure I M) :=
+  {K | ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+    (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
+      p.2 ((K p.1).toEndomorphism p.2))}
+
+variable
   (hJp : ∀ i, Periodic (J i) 1)
   (hJs : ∀ i, ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
     (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
@@ -580,10 +639,10 @@ private theorem contMDiff_leftPlumbed_opens {T : Set ℝ} {hT : IsOpen T} {W : �
     (U := paramOpens (M := M) T hT W hW)
   exact contMDiff_plumbedAlmostComplex h₀ h₀ (associativityLeftInserted J G)
     (associativityLeftReceiving J Jout G) _ _
-    (fun r => by cases r; exacts [hJp 0, hJp 1, hGp])
-    (fun r => by cases r; exacts [hJs 0, hJs 1, hGs])
-    (fun r => by cases r; exacts [hGp, hJp 2, hJoutp])
-    (fun r => by cases r; exacts [hGs, hJs 2, hJouts]) (by simp) rfl
+    (associativityLeftInserted_mem (S := {K | Periodic K 1}) hJp hGp)
+    (associativityLeftInserted_mem (S := smoothFamilies n) hJs hGs)
+    (associativityLeftReceiving_mem (S := {K | Periodic K 1}) hJp hJoutp hGp)
+    (associativityLeftReceiving_mem (S := smoothFamilies n) hJs hJouts hGs) (by simp) (by simp)
     (contMDiff_fst.comp hval) (contMDiff_fst.comp (contMDiff_snd.comp (contMDiff_snd.comp hval)))
     (contMDiff_snd.comp (contMDiff_snd.comp (contMDiff_snd.comp hval))) (fun v => v.property.1)
     (fun v => hWl _ _ v.property.2.2.1)
@@ -603,10 +662,10 @@ private theorem contMDiff_rightPlumbed_opens {T : Set ℝ} {hT : IsOpen T} {W : 
     (U := paramOpens (M := M) T hT W hW)
   exact contMDiff_plumbedAlmostComplex h₀ h₀ (associativityRightInserted J G')
     (associativityRightReceiving J Jout G') _ _
-    (fun r => by cases r; exacts [hJp 1, hJp 2, hG'p])
-    (fun r => by cases r; exacts [hJs 1, hJs 2, hG's])
-    (fun r => by cases r; exacts [hJp 0, hG'p, hJoutp])
-    (fun r => by cases r; exacts [hJs 0, hG's, hJouts]) (by simp) rfl
+    (associativityRightInserted_mem (S := {K | Periodic K 1}) hJp hG'p)
+    (associativityRightInserted_mem (S := smoothFamilies n) hJs hG's)
+    (associativityRightReceiving_mem (S := {K | Periodic K 1}) hJp hJoutp hG'p)
+    (associativityRightReceiving_mem (S := smoothFamilies n) hJs hJouts hG's) (by simp) (by simp)
     (contMDiff_fst.comp hval) (contMDiff_fst.comp (contMDiff_snd.comp (contMDiff_snd.comp hval)))
     (contMDiff_snd.comp (contMDiff_snd.comp (contMDiff_snd.comp hval))) (fun v => v.property.1)
     (fun v => hWr _ _ v.property.2.2.1)
@@ -642,7 +701,8 @@ private theorem contMDiffAt_associativityAlmostComplex_prod_of_nonpos
       (fun _ _ h => h) _)).congr_of_eventuallyEq (Filter.Eventually.of_forall fun v => ?_)
   obtain ⟨hv₁, hv₂, hv₃, -⟩ := mem_paramOpens.1 v.property
   dsimp only [Function.comp_apply]
-  rw [associativityAlmostComplex_of_lt_one h₀ J hJ Jout hJout G hG G' hG' (by linarith) hv₂ hv₃]
+  rw [associativityAlmostComplex_eq_cayleySegment_leftPlumbed h₀ J hJ Jout hJout G hG G' hG'
+    (by linarith) hv₂ hv₃]
 
 include hJp hJs hJoutp hJouts in
 /-- Near a parameter `τ ∈ (0, 1)` the family is the structure of the moving input ends. -/
@@ -700,7 +760,8 @@ private theorem contMDiffAt_associativityAlmostComplex_prod_of_one_le
       (fun _ _ h => h) _)).congr_of_eventuallyEq (Filter.Eventually.of_forall fun v => ?_)
   obtain ⟨hv₁, hv₂, hv₃, -⟩ := mem_paramOpens.1 v.property
   dsimp only [Function.comp_apply]
-  rw [associativityAlmostComplex_of_pos h₀ J hJ Jout hJout G hG G' hG' (by linarith) hv₂ hv₃]
+  rw [associativityAlmostComplex_eq_cayleySegment_rightPlumbed h₀ J hJ Jout hJout G hG G' hG'
+    (by linarith) hv₂ hv₃]
 
 include hJp hJs hJoutp hJouts hGp hGs hG'p hG's in
 /-- The family is smooth on the product `ℝ × ℝ × ℂ × M` of neck lengths, parameters, domain points
