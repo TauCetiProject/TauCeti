@@ -7,8 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.NumberTheory.LSeries.Dirichlet
-import TauCeti.Analysis.Calculus.LogDeriv
-import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
+import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 
 /-!
 # A reference bound for restricted von Mangoldt series
@@ -78,32 +77,26 @@ theorem tendsto_sub_tsum_norm_term_vonMangoldt_one_add_inv :
     Tendsto (fun U : ℝ ↦ U - ∑' n : ℕ,
       ‖_root_.LSeries.term (fun k ↦ (Λ k : ℂ)) (1 + (U⁻¹ : ℝ)) n‖)
       atTop (𝓝 Real.eulerMascheroniConstant) := by
-  let F := DirichletCharacter.LFunctionTrivChar₁ 1
-  have hF : AnalyticAt ℂ F 1 :=
-    (DirichletCharacter.differentiable_LFunctionTrivChar₁ 1).analyticAt 1
-  have hcont : ContinuousAt (fun s : ℂ ↦ (logDeriv F s).re) 1 :=
-    continuous_re.continuousAt.comp
-      (hF.logDeriv (DirichletCharacter.LFunctionTrivChar₁_apply_one_ne_zero 1)).continuousAt
-  have hlim : Tendsto (fun U : ℝ ↦ (1 : ℂ) + (U⁻¹ : ℝ)) atTop (𝓝 1) := by
-    simpa using (continuous_ofReal.continuousAt.tendsto.comp tendsto_inv_atTop_zero).const_add
-      (1 : ℂ)
-  have h := hcont.tendsto.comp hlim
-  rw [DirichletCharacter.logDeriv_LFunctionTrivChar₁_one_one, ofReal_re] at h
+  have hlim : Tendsto (fun U : ℝ ↦ (1 : ℂ) + (U⁻¹ : ℝ)) atTop (𝓝[≠] 1) := by
+    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
+    · simpa using (continuous_ofReal.continuousAt.tendsto.comp tendsto_inv_atTop_zero).const_add
+        (1 : ℂ)
+    · filter_upwards [eventually_gt_atTop (0 : ℝ)] with U hU
+      simpa using (inv_ne_zero hU.ne')
+  have hzero := log_deriv_riemannZeta_add_inv_sub_sub_isLittleO.tendsto_zero_of_tendsto
+    (tendsto_const_nhds (x := (1 : ℂ)))
+  have hreg : Tendsto (fun s : ℂ ↦ logDeriv riemannZeta s + (s - 1)⁻¹) (𝓝[≠] 1)
+      (𝓝 (Real.eulerMascheroniConstant : ℂ)) := by
+    simpa only [← logDeriv_apply, sub_add_cancel, zero_add] using
+      hzero.add_const (Real.eulerMascheroniConstant : ℂ)
+  have h := continuous_re.continuousAt.tendsto.comp (hreg.comp hlim)
+  rw [ofReal_re] at h
   refine h.congr' ?_
   filter_upwards [eventually_gt_atTop (0 : ℝ)] with U hU
   have hσ : 1 < (1 + U⁻¹ : ℝ) := lt_add_of_pos_right _ (inv_pos.mpr hU)
-  have hs : 1 < ((1 : ℂ) + (U⁻¹ : ℝ)).re := by simpa using hσ
-  have h1 : (1 : ℂ) + (U⁻¹ : ℝ) ≠ 1 := by
-    intro he
-    simp only [he, one_re, lt_irrefl] at hs
-  have hres := TauCeti.logDeriv_riemannZeta_add_inv_sub_one h1
-    (riemannZeta_ne_zero_of_one_le_re hs.le)
-  have hreal := congrArg Complex.re hres
-  simp only [add_sub_cancel_left, ← ofReal_inv, inv_inv, add_re, ofReal_re] at hreal
-  rw [← ofReal_one, ← ofReal_add] at hreal
-  simp only [Function.comp_apply, ← ofReal_one, ← ofReal_add]
-  rw [(hasSum_norm_term_vonMangoldt hσ).tsum_eq]
-  linarith only [hreal]
+  simp only [Function.comp_apply, add_sub_cancel_left, ← ofReal_inv, inv_inv, add_re, ofReal_re]
+  rw [← ofReal_one, ← ofReal_add, (hasSum_norm_term_vonMangoldt hσ).tsum_eq, sub_neg_eq_add,
+    add_comm U]
 
 /-- For all sufficiently large `U`, the absolute Dirichlet sum at `1 + 1/U` is at most `U`
 for all sets of indices and all coefficient sequences dominated on those indices by `Λ`.
