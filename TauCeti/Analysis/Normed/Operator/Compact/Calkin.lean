@@ -120,8 +120,9 @@ theorem mk_apply (T : E →L[𝕜] E) :
     mk 𝕜 E T = TwoSidedIdeal.Quotient.mk (compactOperatorIdeal 𝕜 E) T :=
   (rfl)
 
-theorem mk_surjective : Function.Surjective (mk 𝕜 E) :=
-  TwoSidedIdeal.Quotient.mk_surjective (compactOperatorIdeal 𝕜 E)
+theorem mk_surjective : Function.Surjective (mk 𝕜 E) := fun x ↦
+  (TwoSidedIdeal.Quotient.mk_surjective (compactOperatorIdeal 𝕜 E) x).imp fun T hT ↦
+    (mk_apply T).trans hT
 
 /-- An operator vanishes in the Calkin algebra exactly when it is compact. -/
 @[simp]
@@ -191,8 +192,9 @@ end Lift
 /-! ### The essential norm -/
 
 /-- The quotient map to the Calkin algebra does not increase norms. -/
-theorem norm_mk_le (T : E →L[𝕜] E) : ‖mk 𝕜 E T‖ ≤ ‖T‖ :=
-  TwoSidedIdeal.Quotient.norm_mk_le _ T
+theorem norm_mk_le (T : E →L[𝕜] E) : ‖mk 𝕜 E T‖ ≤ ‖T‖ := by
+  rw [mk_apply]
+  exact TwoSidedIdeal.Quotient.norm_mk_le _ T
 
 /-- The quotient map to the Calkin algebra is continuous. -/
 @[fun_prop]
@@ -217,6 +219,7 @@ theorem norm_mk_eq (T : E →L[𝕜] E) :
 theorem exists_norm_add_lt (T : E →L[𝕜] E) {ε : ℝ} (hε : 0 < ε) :
     ∃ K : E →L[𝕜] E, IsCompactOperator K ∧ ‖T + K‖ < ‖mk 𝕜 E T‖ + ε := by
   obtain ⟨S, hS, hlt⟩ := TwoSidedIdeal.Quotient.exists_norm_mk_lt (mk 𝕜 E T) hε
+  rw [← mk_apply] at hS
   refine ⟨S - T, mk_eq_mk_iff.mp hS, ?_⟩
   rwa [add_sub_cancel]
 
