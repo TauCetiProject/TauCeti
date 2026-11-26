@@ -99,8 +99,6 @@ lemma twistedCubicalChainFiltrationι_def (q : ℤ) :
 
 /-- The cubical chains of `X q` form a subcomplex of those of `Y`, also after reindexing. -/
 instance (q : ℤ) : Mono (twistedCubicalChainFiltrationι L X q) := by
-  have := mono_normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥(X q))
-    (f := ContinuousMap.subtypeVal (X q)) Subtype.val_injective L
   rw [twistedCubicalChainFiltrationι]
   exact mono_extendMap _ _
 
@@ -182,10 +180,8 @@ lemma twistedCubicalChainFiltration_eq_top {b : ℤ} (hb : X b = Set.univ) :
     exact congrArg (fun φ ↦ φ.hom
       (NormalizedTwistedCubicalChain.ofCube (X := TopCat.of ↥(X b)) _ c x)) hgh
   have (n : ℕ) : IsIso ((normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥(X b))
-      (ContinuousMap.subtypeVal (X b)) L).f n) := by
-    have := mono_normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥(X b))
-      (f := ContinuousMap.subtypeVal (X b)) Subtype.val_injective L
-    exact isIso_of_mono_of_epi _
+      (ContinuousMap.subtypeVal (X b)) L).f n) :=
+    isIso_of_mono_of_epi _
   have := HomologicalComplex.Hom.isIso_of_components
     (normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥(X b))
       (ContinuousMap.subtypeVal (X b)) L)

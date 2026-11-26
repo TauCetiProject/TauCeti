@@ -207,6 +207,13 @@ section Subspace
 
 variable (L : LocalCoefficientSystem.{u, v, w} R X) {A B : Set X}
 
+/-- The inclusion of a subset induces a monomorphism of normalized cubical chain complexes with
+local coefficients. -/
+instance mono_normalizedTwistedCubicalChainComplexMap_subtypeVal (A : Set X) :
+    Mono (normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥A)
+      (ContinuousMap.subtypeVal A) L) :=
+  mono_normalizedTwistedCubicalChainComplexMap Subtype.val_injective L
+
 /-- The map of normalized cubical chains induced by an inclusion `A ⊆ B` of subsets of `X`, with
 `L` restricted to `A` and to `B`. -/
 -- The source of the coefficient comparison is the pullback along
@@ -254,8 +261,6 @@ lemma subsetNormalizedTwistedCubicalChainComplexMap_normalizedTwistedCubicalChai
 /-- The map of normalized cubical chains induced by an inclusion of subsets is a monomorphism. -/
 instance mono_subsetNormalizedTwistedCubicalChainComplexMap (h : A ⊆ B) :
     Mono (subsetNormalizedTwistedCubicalChainComplexMap L h) :=
-  have := mono_normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥A)
-    (f := ContinuousMap.subtypeVal A) Subtype.val_injective L
   mono_of_mono_fac
     (subsetNormalizedTwistedCubicalChainComplexMap_normalizedTwistedCubicalChainComplexMap L h)
 
@@ -264,8 +269,6 @@ identity. -/
 @[simp]
 lemma subsetNormalizedTwistedCubicalChainComplexMap_self (A : Set X) :
     subsetNormalizedTwistedCubicalChainComplexMap L (subset_refl A) = 𝟙 _ := by
-  have := mono_normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥A)
-    (f := ContinuousMap.subtypeVal A) Subtype.val_injective L
   rw [← cancel_mono (normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥A)
       (ContinuousMap.subtypeVal A) L),
     subsetNormalizedTwistedCubicalChainComplexMap_normalizedTwistedCubicalChainComplexMap,
@@ -280,8 +283,6 @@ lemma
     subsetNormalizedTwistedCubicalChainComplexMap L hAB ≫
         subsetNormalizedTwistedCubicalChainComplexMap L hBC =
       subsetNormalizedTwistedCubicalChainComplexMap L (hAB.trans hBC) := by
-  have := mono_normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥C)
-    (f := ContinuousMap.subtypeVal C) Subtype.val_injective L
   rw [← cancel_mono (normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥C)
     (ContinuousMap.subtypeVal C) L)]
   simp only [Category.assoc,
