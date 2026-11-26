@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 public import TauCeti.Algebra.Homology.LinearHomComplex.ExactPairing
 public import TauCeti.Algebra.Homology.LinearHomComplex.Functional
 public import TauCeti.Algebra.Homology.Monoidal.Braiding
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Sewing
 
 /-!
 # Right evaluation, the identity functional and sewing of functionals
@@ -49,9 +50,13 @@ spanned by `e` in degree `p` it is
 and `G` on `B ⊗ C∨` (`TauCeti.linearHomComplexSewing`) inserts this coevaluation between `A` and
 `C∨`,
 
-`A ⊗ C∨ ⟶ A ⊗ (B∨ ⊗ B) ⊗ C∨ ≅ (A ⊗ B∨) ⊗ (B ⊗ C∨) ⟶ R[0]`,
+`A ⊗ C∨ ⟶ A ⊗ (B∨ ⊗ B) ⊗ C∨ ≅ (A ⊗ B∨) ⊗ (B ⊗ C∨) ⟶ R[0]`.
 
-and its operator is the composite of the operators of `F` and `G`
+This is the sewing `TauCeti.ExactPairing.sewing` along the braided pairing `(B∨, B)`, so it is
+associative with the right evaluations as units, by the snake identities and the interchange law
+alone. Sewing the functional of a chain map `T : A ⟶ B` with `G` is `T` followed by `G`
+(`TauCeti.linearHomComplexSewing_whiskerRight_comp_linearHomComplexRightEvaluation`), so the
+operator of a sewing is the composite of the operators of `F` and `G`
 (`TauCeti.linearHomComplexTensorDualHomEquiv_linearHomComplexSewing`). This is how counts of
 moduli spaces are composed when broken configurations are glued along an intermediate end: the
 functional of the composite operation is the sewing of the functionals of its pieces.
@@ -70,6 +75,8 @@ functional of the composite operation is the sewing of the functionals of its pi
   a chain map.
 * `TauCeti.linearHomComplexTensorDualHomEquiv_linearHomComplexRightEvaluation`: the identity
   functional is the right evaluation.
+* `TauCeti.linearHomComplexSewing_whiskerRight_comp_linearHomComplexRightEvaluation`: sewing the
+  functional of a chain map composes with it.
 * `TauCeti.linearHomComplexTensorDualHomEquiv_linearHomComplexSewing`: the operator of a sewing is
   the composite of the operators.
 * `TauCeti.linearHomComplexSewing_assoc`,
@@ -98,23 +105,6 @@ universe v
 variable {R : Type v} [CommRing R]
 
 section RightEvaluation
-
-/-- **The value of the evaluation.** On `φ ⊗ a`, for `a` in `Aᵖ` and a form `φ` on `Aᵖ`, of
-degree `-p`, the evaluation `A∨ ⊗ A ⟶ R[0]` is `φ(a)`, with no sign. -/
-@[simp]
-theorem singleObjXSelf_hom_linearHomComplexEvaluation_f_apply
-    (A : CochainComplex (ModuleCat.{v} R) ℤ) {p : ℤ} (φ : (linearDual R A).X (-p)) (a : A.X p) :
-    (dsimp% only [linearHomComplex_X]
-      (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).hom.hom
-        (((linearHomComplexEvaluation R A).f 0).hom
-          ((HomologicalComplex.ιTensorObj (linearDual R A) A (-p) p 0 (neg_add_cancel p)).hom
-            (φ ⊗ₜ a)))) = linearDualXEquiv A (add_neg_cancel p) φ a :=
-  -- The dual complex `linearDual R A` is `Hom(A, R[0])` with the tensor unit presented as
-  -- `ModuleCat.of R R`, so the evaluation lemma applies only up to this presentation.
-  (congrArg (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).hom.hom
-    (linearHomComplexEvaluation_ιTensorObj_tmul A (neg_add_cancel p) φ a)).trans (by
-      rw [cochainToTensorUnitLinearEquiv_apply, linearDualXEquiv_apply]
-      exact Iso.inv_hom_id_apply _ _)
 
 variable (R) in
 /-- The **right evaluation** `A ⊗ A∨ ⟶ R[0]` of a cochain complex of `R`-modules and its dual
@@ -214,13 +204,13 @@ variable {A B C : CochainComplex (ModuleCat.{v} R) ℤ} [IsIso (linearHomComplex
 /-- The **sewing** of a functional `F` on `A ⊗ B∨` and a functional `G` on `B ⊗ C∨`: the functional
 on `A ⊗ C∨` that inserts the coevaluation `R[0] ⟶ B∨ ⊗ B` of the braided pairing `(B∨, B)`, the
 coevaluation of `B` followed by the interchange, between `A` and `C∨`, and applies `F ⊗ G`:
-`A ⊗ C∨ ⟶ A ⊗ (B∨ ⊗ B) ⊗ C∨ ≅ (A ⊗ B∨) ⊗ (B ⊗ C∨) ⟶ R[0]`. Its operator is the composite of the
-operators of `F` and `G` (`TauCeti.linearHomComplexTensorDualHomEquiv_linearHomComplexSewing`). -/
+`A ⊗ C∨ ⟶ A ⊗ (B∨ ⊗ B) ⊗ C∨ ≅ (A ⊗ B∨) ⊗ (B ⊗ C∨) ⟶ R[0]`. This is `TauCeti.ExactPairing.sewing`
+along that pairing. Its operator is the composite of the operators of `F` and `G`
+(`TauCeti.linearHomComplexTensorDualHomEquiv_linearHomComplexSewing`). -/
 noncomputable def linearHomComplexSewing (F : A ⊗ linearDual R B ⟶ 𝟙_ _)
     (G : B ⊗ linearDual R C ⟶ 𝟙_ _) : A ⊗ linearDual R C ⟶ 𝟙_ _ :=
-  (ρ_ A).inv ▷ linearDual R C ⊗≫
-    (A ◁ (linearHomComplexCoevaluation R B ≫ (β_ (linearDual R B) B).inv)) ▷ linearDual R C ⊗≫
-      (F ⊗ₘ G) ≫ (λ_ _).hom
+  @ExactPairing.sewing _ _ _ A (linearDual R B) B (linearDual R C)
+    (@exactPairing_swap _ _ _ _ B (linearDual R B) (exactPairingLinearHomComplex B)) F G
 
 /-- The evaluation of the braided exact pairing `(B∨, B)`, obtained from `(B, B∨)` by
 `CategoryTheory.BraidedCategory.exactPairing_swap`, is the right evaluation of `B`. -/
@@ -239,14 +229,26 @@ lemma exactPairing_swap_coevaluation_eq_linearHomComplexCoevaluation_comp :
       linearHomComplexCoevaluation R B ≫ (β_ (linearDual R B) B).inv :=
   (rfl)
 
-/-- The sewing inserts the braided coevaluation of `B` and applies `F ⊗ G`. -/
+/-- The sewing of functionals on `A ⊗ B∨` and `B ⊗ C∨` is the sewing along the braided exact
+pairing `(B∨, B)`. -/
 lemma linearHomComplexSewing_def (F : A ⊗ linearDual R B ⟶ 𝟙_ _)
     (G : B ⊗ linearDual R C ⟶ 𝟙_ _) :
     linearHomComplexSewing F G =
-      (ρ_ A).inv ▷ linearDual R C ⊗≫
-        (A ◁ (linearHomComplexCoevaluation R B ≫ (β_ (linearDual R B) B).inv)) ▷
-          linearDual R C ⊗≫ (F ⊗ₘ G) ≫ (λ_ _).hom :=
+      @ExactPairing.sewing _ _ _ A (linearDual R B) B (linearDual R C)
+        (@exactPairing_swap _ _ _ _ B (linearDual R B) (exactPairingLinearHomComplex B)) F G :=
   (rfl)
+
+/-- **Sewing with the functional of an operator on the left.** Sewing the functional
+`T ▷ B∨ ≫ ε'` of a chain map `T : A ⟶ B`, for the right evaluation `ε'` of `B`, with a functional
+`G` on `B ⊗ C∨` is `T ▷ C∨ ≫ G`. -/
+@[simp]
+theorem linearHomComplexSewing_whiskerRight_comp_linearHomComplexRightEvaluation (T : A ⟶ B)
+    (G : B ⊗ linearDual R C ⟶ 𝟙_ _) :
+    linearHomComplexSewing (T ▷ linearDual R B ≫ linearHomComplexRightEvaluation R B) G =
+      T ▷ linearDual R C ≫ G := by
+  let := @exactPairing_swap _ _ _ _ B (linearDual R B) (exactPairingLinearHomComplex B)
+  rw [linearHomComplexSewing_def, ← exactPairing_swap_evaluation_eq_linearHomComplexRightEvaluation,
+    ExactPairing.sewing_whiskerRight_comp_evaluation]
 
 /-- **The operator of a sewing is the composite of the operators.** Sewing a functional on
 `A ⊗ B∨` with a functional on `B ⊗ C∨` along the braided coevaluation of `B` gives the functional
@@ -260,68 +262,43 @@ theorem linearHomComplexTensorDualHomEquiv_linearHomComplexSewing
   obtain ⟨T, rfl⟩ := (linearHomComplexTensorDualHomEquiv R A B).symm.surjective F
   obtain ⟨S, rfl⟩ := (linearHomComplexTensorDualHomEquiv R B C).symm.surjective G
   rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply,
-    ← linearHomComplexTensorDualHomEquiv_whiskerRight_comp (T ≫ S)]
-  congr 1
-  rw [linearHomComplexTensorDualHomEquiv_symm_apply_eq_whiskerRight_comp,
-    linearHomComplexTensorDualHomEquiv_symm_apply_eq_whiskerRight_comp,
-    linearHomComplexSewing_def]
-  -- The coevaluation followed by the interchange and the right evaluation of `B` are the
-  -- coevaluation and the evaluation of the braided exact pairing `(B∨, B)`.
-  rw [← exactPairing_swap_coevaluation_eq_linearHomComplexCoevaluation_comp,
-    ← exactPairing_swap_evaluation_eq_linearHomComplexRightEvaluation]
-  let : ExactPairing B (linearDual R B) := exactPairingLinearHomComplex B
-  let := exactPairing_swap B (linearDual R B)
-  set G' := S ▷ linearDual R C ≫ linearHomComplexRightEvaluation R C
-  -- Pull `T` below the coevaluation; the remaining zigzag of `(B∨, B)` is the identity of `B`.
-  calc
-    _ = 𝟙 _ ⊗≫ (A ◁ η_ (linearDual R B) B ≫ T ▷ (linearDual R B ⊗ B)) ▷ linearDual R C ⊗≫
-          ε_ (linearDual R B) B ▷ B ▷ linearDual R C ⊗≫ G' := by
-      rw [tensorHom_def]
-      monoidal
-    _ = 𝟙 _ ⊗≫ (T ▷ 𝟙_ _ ≫ B ◁ η_ (linearDual R B) B) ▷ linearDual R C ⊗≫
-          ε_ (linearDual R B) B ▷ B ▷ linearDual R C ⊗≫ G' := by
-      rw [whisker_exchange]
-    _ = T ▷ linearDual R C ⊗≫
-          (B ◁ η_ (linearDual R B) B ⊗≫ ε_ (linearDual R B) B ▷ B) ▷ linearDual R C ⊗≫ G' := by
-      monoidal
-    _ = (T ≫ S) ▷ linearDual R C ≫ linearHomComplexRightEvaluation R C := by
-      rw [ExactPairing.coevaluation_evaluation'']
-      simp only [G', comp_whiskerRight, Category.assoc]
-      monoidal
+    linearHomComplexTensorDualHomEquiv_symm_apply_eq_whiskerRight_comp T,
+    linearHomComplexSewing_whiskerRight_comp_linearHomComplexRightEvaluation,
+    linearHomComplexTensorDualHomEquiv_symm_apply_eq_whiskerRight_comp, ← Category.assoc,
+    ← comp_whiskerRight, linearHomComplexTensorDualHomEquiv_whiskerRight_comp]
 
 /-- **Sewing with the identity functional on the left.** Sewing the right evaluation of `B`, the
 identity functional on `B ⊗ B∨`, with a functional `G` on `B ⊗ C∨` gives `G`. -/
 @[simp]
 theorem linearHomComplexSewing_linearHomComplexRightEvaluation_left
-    [∀ p, Module.IsReflexive R (B.X p)] [∀ p, Module.IsReflexive R (C.X p)]
     (G : B ⊗ linearDual R C ⟶ 𝟙_ _) :
-    linearHomComplexSewing (linearHomComplexRightEvaluation R B) G = G :=
-  (linearHomComplexTensorDualHomEquiv R B C).injective (by
-    rw [linearHomComplexTensorDualHomEquiv_linearHomComplexSewing,
-      linearHomComplexTensorDualHomEquiv_linearHomComplexRightEvaluation, Category.id_comp])
+    linearHomComplexSewing (linearHomComplexRightEvaluation R B) G = G := by
+  let := @exactPairing_swap _ _ _ _ B (linearDual R B) (exactPairingLinearHomComplex B)
+  rw [linearHomComplexSewing_def, ← exactPairing_swap_evaluation_eq_linearHomComplexRightEvaluation,
+    ExactPairing.sewing_evaluation_left]
 
 /-- **Sewing with the identity functional on the right.** Sewing a functional `F` on `A ⊗ B∨` with
 the right evaluation of `B`, the identity functional on `B ⊗ B∨`, gives `F`. -/
 @[simp]
 theorem linearHomComplexSewing_linearHomComplexRightEvaluation_right
-    [∀ p, Module.IsReflexive R (B.X p)] (F : A ⊗ linearDual R B ⟶ 𝟙_ _) :
-    linearHomComplexSewing F (linearHomComplexRightEvaluation R B) = F :=
-  (linearHomComplexTensorDualHomEquiv R A B).injective (by
-    rw [linearHomComplexTensorDualHomEquiv_linearHomComplexSewing,
-      linearHomComplexTensorDualHomEquiv_linearHomComplexRightEvaluation, Category.comp_id])
+    (F : A ⊗ linearDual R B ⟶ 𝟙_ _) :
+    linearHomComplexSewing F (linearHomComplexRightEvaluation R B) = F := by
+  let := @exactPairing_swap _ _ _ _ B (linearDual R B) (exactPairingLinearHomComplex B)
+  rw [linearHomComplexSewing_def, ← exactPairing_swap_evaluation_eq_linearHomComplexRightEvaluation,
+    ExactPairing.sewing_evaluation_right]
 
 /-- **Sewing is associative.** For functionals on `A ⊗ B∨`, `B ⊗ C∨` and `C ⊗ D∨`, sewing along
 `B` and then along `C` gives the same functional on `A ⊗ D∨` as sewing along `C` and then along
 `B`. -/
 theorem linearHomComplexSewing_assoc {D : CochainComplex (ModuleCat.{v} R) ℤ}
-    [IsIso (linearHomComplexDualTensor R C C)] [∀ p, Module.IsReflexive R (B.X p)]
-    [∀ p, Module.IsReflexive R (C.X p)] [∀ p, Module.IsReflexive R (D.X p)]
+    [IsIso (linearHomComplexDualTensor R C C)]
     (F : A ⊗ linearDual R B ⟶ 𝟙_ _) (G : B ⊗ linearDual R C ⟶ 𝟙_ _)
     (H : C ⊗ linearDual R D ⟶ 𝟙_ _) :
     linearHomComplexSewing (linearHomComplexSewing F G) H =
       linearHomComplexSewing F (linearHomComplexSewing G H) :=
-  (linearHomComplexTensorDualHomEquiv R A D).injective (by
-    simp only [linearHomComplexTensorDualHomEquiv_linearHomComplexSewing, Category.assoc])
+  let := @exactPairing_swap _ _ _ _ B (linearDual R B) (exactPairingLinearHomComplex B)
+  let := @exactPairing_swap _ _ _ _ C (linearDual R C) (exactPairingLinearHomComplex C)
+  ExactPairing.sewing_assoc F G H
 
 end Sewing
 
