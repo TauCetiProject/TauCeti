@@ -156,6 +156,12 @@ theorem isSymmetric_diagramSchurPoly (N : ℕ) (R : Type*) [CommSemiring R] (μ 
     | mul x y _ _ hx hy =>
       rw [Equiv.Perm.coe_mul, ← rename_rename, hy, hx]
 
+/-- **Schur polynomials are symmetric**, read as membership in
+`MvPolynomial.symmetricSubalgebra`. -/
+theorem diagramSchurPoly_mem_symmetricSubalgebra (N : ℕ) (R : Type*) [CommSemiring R]
+    (μ : YoungDiagram) : diagramSchurPoly N R μ ∈ symmetricSubalgebra (Fin N) R :=
+  (mem_symmetricSubalgebra _).mpr (isSymmetric_diagramSchurPoly N R μ)
+
 /-- Renaming a diagram Schur polynomial along a bijection of finite alphabets preserves it. -/
 @[simp]
 theorem rename_diagramSchurPoly {M N : ℕ} (μ : YoungDiagram) (e : Fin M ≃ Fin N) :

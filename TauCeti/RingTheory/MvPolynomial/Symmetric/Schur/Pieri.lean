@@ -9,6 +9,8 @@ public import TauCeti.Combinatorics.Young.Interlacing
 public import TauCeti.Combinatorics.Young.Partitions
 public import TauCeti.Combinatorics.Young.VerticalStrip
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Bialternant
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Symmetric
+import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 import TauCeti.Data.Fin.StrictAnti
 import TauCeti.GroupTheory.Perm.SignedDomination
 
@@ -74,6 +76,9 @@ coefficients, which is why they descend to `ℕ` and from there to an arbitrary 
   diagram.
 * `TauCeti.esymm_mul_schurPoly`: the dual Pieri rule for the Schur polynomial of a partition in a
   finite alphabet.
+* `TauCeti.span_diagramSchurPoly_eq_top`: the Schur polynomials span the symmetric polynomials
+  over a commutative ring, since the dual Pieri rule expands every product of elementary
+  symmetric polynomials in them.
 
 ## References
 
@@ -468,5 +473,57 @@ theorem esymm_mul_schurPoly {σ : Type*} [Fintype σ] {n : ℕ} (ν : n.Partitio
   exact sum_congr rfl fun μ _ => (schurPoly_eq_rename μ).symm
 
 end SchurPolynomials
+
+/-! ### The Schur polynomials span the symmetric polynomials -/
+
+section Span
+
+variable {R : Type*} [CommRing R]
+
+/-- **The Schur polynomials span the symmetric polynomials**: every symmetric polynomial in `N`
+variables is an `R`-linear combination of Schur polynomials. Products of elementary symmetric
+polynomials are such combinations by the Pieri rule `TauCeti.esymm_mul_diagramSchurPoly`, and they
+generate the symmetric polynomials by the fundamental theorem. -/
+theorem span_diagramSchurPoly_eq_top {N : ℕ} :
+    Submodule.span R (Set.range fun μ : YoungDiagram =>
+      (⟨diagramSchurPoly N R μ, diagramSchurPoly_mem_symmetricSubalgebra N R μ⟩ :
+        symmetricSubalgebra (Fin N) R)) = ⊤ := by
+  classical
+  set S := Submodule.span R (Set.range fun μ : YoungDiagram =>
+    (⟨diagramSchurPoly N R μ, diagramSchurPoly_mem_symmetricSubalgebra N R μ⟩ :
+      symmetricSubalgebra (Fin N) R))
+  -- Multiplication by an elementary symmetric polynomial preserves `S`, by the Pieri rule.
+  have hesymm (k : ℕ) {y : symmetricSubalgebra (Fin N) R} (hy : y ∈ S) :
+      ⟨esymm (Fin N) R k, esymm_isSymmetric _ _ k⟩ * y ∈ S := by
+    induction hy using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨ν, rfl⟩ := hy
+      have h : (⟨esymm (Fin N) R k, esymm_isSymmetric _ _ k⟩ * ⟨diagramSchurPoly N R ν,
+            diagramSchurPoly_mem_symmetricSubalgebra N R ν⟩ : symmetricSubalgebra (Fin N) R) =
+          ∑ μ : (ν.card + k).Partition with (YoungDiagram.ofPartition μ).IsVerticalStrip ν,
+            ⟨diagramSchurPoly N R (YoungDiagram.ofPartition μ),
+              diagramSchurPoly_mem_symmetricSubalgebra N R _⟩ :=
+        Subtype.ext (by simp [esymm_mul_diagramSchurPoly])
+      rw [h]
+      exact sum_mem fun μ _ => Submodule.subset_span ⟨_, rfl⟩
+    | zero => simp
+    | add y z _ _ hy hz => simpa [mul_add] using add_mem hy hz
+    | smul r y _ hy => simpa [mul_smul_comm] using S.smul_mem r hy
+  -- Hence so does multiplication by every polynomial in the elementary symmetric polynomials.
+  have hmul (q : MvPolynomial (Fin N) R) {y : symmetricSubalgebra (Fin N) R} (hy : y ∈ S) :
+      esymmAlgHom (Fin N) R N q * y ∈ S := by
+    induction q using MvPolynomial.induction_on generalizing y with
+    | C r => simpa [Algebra.algebraMap_eq_smul_one, smul_mul_assoc] using S.smul_mem r hy
+    | add p q hp hq => simpa [add_mul] using add_mem (hp hy) (hq hy)
+    | mul_X p i hp =>
+      rw [map_mul, mul_assoc]
+      exact hp (by simpa [esymmAlgHom] using hesymm _ hy)
+  refine eq_top_iff.mpr fun x _ => ?_
+  obtain ⟨q, rfl⟩ := esymmAlgHom_surjective (σ := Fin N) R (n := N) (by simp) x
+  have h1 : (1 : symmetricSubalgebra (Fin N) R) ∈ S :=
+    Submodule.subset_span ⟨⊥, Subtype.ext diagramSchurPoly_bot⟩
+  simpa using hmul q h1
+
+end Span
 
 end TauCeti

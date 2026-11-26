@@ -78,6 +78,8 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
 * `TauCeti.finrank_symmetricHomogeneousSubmodule`: the dimension in degree `n` is the number of
   partitions of `n` with at most `Fintype.card σ` parts; it is the number of all partitions of `n`
   in at least `n` letters and smaller in fewer.
+* `TauCeti.linearIndependent_diagramSchurPoly`: in `N` variables, the Schur polynomials of all the
+  Young diagrams with at most `N` rows, of every degree, are linearly independent.
 
 ## References
 
@@ -380,6 +382,54 @@ theorem linearIndependent_schurPoly (h : n ≤ Fintype.card σ) :
   simpa only [Function.comp_def, Submodule.subtype_apply, coe_schurPolyBasis, f] using
     ((schurPolyBasis σ R n).linearIndependent.comp f hf).map'
       (symmetricHomogeneousSubmodule σ R n).subtype (Submodule.ker_subtype _)
+
+/-- The Schur polynomial of a diagram, read as the Schur polynomial of the partition of its size
+given by its row lengths. -/
+private theorem schurPoly_toPartition {N : ℕ} {μ : YoungDiagram} {d : ℕ} (h : μ.card = d) :
+    schurPoly (Fin N) R (μ.toPartition h) = diagramSchurPoly N R μ := by
+  rw [schurPoly_eq_rename, YoungDiagram.ofPartition_toPartition, rename_diagramSchurPoly]
+
+/-- The Schur polynomials of a fixed degree `d` and at most `n` rows are linearly independent,
+being the Schur basis `TauCeti.schurPolyBasis` of the symmetric polynomials of degree `d`. -/
+private theorem linearIndependent_diagramSchurPoly_card (N d : ℕ) :
+    LinearIndependent R fun μ : {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = d} =>
+      diagramSchurPoly N R μ.val.val := by
+  have hli := (schurPolyBasis (Fin N) R d).linearIndependent.map' _ (Submodule.ker_subtype _)
+  let e : {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = d} ≃
+      {ν : d.Partition // ν.parts.card ≤ Fintype.card (Fin N)} :=
+    { toFun μ := ⟨μ.val.val.toPartition μ.property, by
+        rw [Fintype.card_fin, ← YoungDiagram.colLen_zero_ofPartition,
+          YoungDiagram.ofPartition_toPartition]
+        exact μ.val.property⟩
+      invFun ν := ⟨⟨YoungDiagram.ofPartition ν.val, by
+        rw [YoungDiagram.colLen_zero_ofPartition]; simpa using ν.property⟩,
+        YoungDiagram.card_ofPartition ν.val⟩
+      left_inv μ := by simp [YoungDiagram.ofPartition_toPartition]
+      right_inv ν := by simp [YoungDiagram.toPartition_ofPartition] }
+  convert hli.comp e e.injective with μ
+  simp [e, coe_schurPolyBasis, schurPoly_toPartition]
+
+/-- **The Schur polynomials are linearly independent**: in `N` variables, the Schur polynomials of
+the Young diagrams with at most `N` rows are linearly independent over every commutative ring.
+The diagrams with more rows have Schur polynomial zero
+(`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`). -/
+theorem linearIndependent_diagramSchurPoly {N : ℕ} :
+    LinearIndependent R fun μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} => diagramSchurPoly N R μ := by
+  rw [linearIndependent_iff']
+  intro s g hg μ hμ
+  -- Keep the terms of degree `|μ|`, which are independent by the Schur basis in that degree.
+  have hc (ν : {μ : YoungDiagram // μ.colLen 0 ≤ N}) :
+      homogeneousComponent μ.val.card (diagramSchurPoly N R ν) =
+        if ν.val.card = μ.val.card then diagramSchurPoly N R ν else 0 := by
+    rw [homogeneousComponent_of_mem
+      ((mem_homogeneousSubmodule _ _).mpr isHomogeneous_diagramSchurPoly)]
+    exact if_congr eq_comm rfl rfl
+  have h := congrArg (homogeneousComponent μ.val.card) hg
+  simp only [map_sum, map_smul, map_zero, hc, smul_ite, smul_zero] at h
+  rw [← sum_filter, ← sum_subtype_eq_sum_filter] at h
+  exact linearIndependent_iff'.mp (linearIndependent_diagramSchurPoly_card N μ.val.card)
+    (s.subtype fun ν => ν.val.card = μ.val.card) (fun ν => g ν.val) h ⟨μ, rfl⟩
+    (by simpa using hμ)
 
 end CommRing
 
