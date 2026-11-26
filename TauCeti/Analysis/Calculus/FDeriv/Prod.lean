@@ -76,6 +76,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   derivative of the function read on the second component, with no differentiability assumption.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
   derivative along the first factor.
+* `TauCeti.norm_fderiv_comp_snd_le`: the derivative of a function of the second variable alone
+  has norm at most that of the derivative of the function.
 * `TauCeti.fderiv_comp_fst`, `TauCeti.norm_fderiv_comp_fst_le`: the derivative of a function of
   the first variable alone, and the bound of its norm by that of the derivative of the function.
 * `TauCeti.fderiv_const_prodMk`: a map with a constant first coordinate has the derivative of its
@@ -213,6 +215,14 @@ differentiability is needed: otherwise the derivative is zero. -/
 theorem fderiv_comp_snd_apply_mk_zero (f : F → G) (z : E × F) (v : E) :
     fderiv 𝕜 (fun w : E × F ↦ f w.2) z (v, 0) = 0 := by
   simp [← Function.comp_def f Prod.snd, fderiv_comp_snd]
+
+/-- The derivative of a function of the second variable alone has norm at most that of the
+derivative of the function: `‖fderiv 𝕜 (fun w ↦ f w.2) z‖ ≤ ‖fderiv 𝕜 f z.2‖`. -/
+theorem norm_fderiv_comp_snd_le (f : F → G) (z : E × F) :
+    ‖fderiv 𝕜 (fun w : E × F ↦ f w.2) z‖ ≤ ‖fderiv 𝕜 f z.2‖ := by
+  rw [← Function.comp_def f Prod.snd, fderiv_comp_snd]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_snd_le 𝕜 E F))
 
 /-- A function of the first variable alone has derivative `Df ∘ fst`. No differentiability is
 needed: otherwise both sides are zero. -/

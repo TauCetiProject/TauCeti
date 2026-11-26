@@ -459,23 +459,6 @@ section Operator
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 
-/-- Multiplication by a continuous family `Φ_t` of maps depending on `t` alone, followed by
-multiplication by a continuous family `Ψ_t` with `Ψ_t Φ_t = id`, is the identity of `Lᵖ` of the
-strip. -/
-theorem operatorMultiplication_comp_operatorMultiplication_comp_snd_eq_id {p : ℝ≥0∞}
-    [Fact (1 ≤ p)] {Φ : ℝ → V →L[ℝ] W} {Ψ : ℝ → W →L[ℝ] V} (hΦ : Continuous Φ)
-    (hΨ : Continuous Ψ) (h : ∀ t, Ψ t ∘L Φ t = .id ℝ V) :
-    Lp.operatorMultiplication p ((memLp_top_comp_snd hΨ).toLp _) ∘L
-        Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _) =
-      .id ℝ (Lp V p stripMeasure) := by
-  refine ContinuousLinearMap.ext fun f ↦ Lp.ext ?_
-  filter_upwards [Lp.operatorMultiplication_ae ((memLp_top_comp_snd hΨ).toLp _)
-      (Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _) f),
-    Lp.operatorMultiplication_ae ((memLp_top_comp_snd hΦ).toLp _) f,
-    (memLp_top_comp_snd hΦ).coeFn_toLp, (memLp_top_comp_snd hΨ).coeFn_toLp] with z h₁ h₂ h₃ h₄
-  rw [ContinuousLinearMap.comp_apply, h₁, h₂, h₃, h₄, ← ContinuousLinearMap.comp_apply, h z.2,
-    ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
-
 /-- Multiplication by a continuous family `Φ_t` of invertible maps depending on `t` alone, the
 operator `f ↦ (z ↦ Φ_{z.2} (f z))`, is invertible on `Lᵖ` of the strip: multiplication by the
 inverses `Φ_t⁻¹` inverts it. -/
@@ -483,11 +466,9 @@ theorem isInvertible_operatorMultiplication_comp_snd [CompleteSpace V] {p : ℝ�
     {Φ : ℝ → V →L[ℝ] W} (hΦ : Continuous Φ) (hΦi : ∀ t, (Φ t).IsInvertible) :
     (Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _)).IsInvertible := by
   have hΦinv := ((contDiff_zero (𝕜 := ℝ).2 hΦ).clm_inverse hΦi).continuous
-  exact .of_inverse
-    (operatorMultiplication_comp_operatorMultiplication_comp_snd_eq_id hΦinv hΦ
-      fun t ↦ (hΦi t).self_comp_inverse)
-    (operatorMultiplication_comp_operatorMultiplication_comp_snd_eq_id hΦ hΦinv
-      fun t ↦ (hΦi t).inverse_comp_self)
+  exact Lp.isInvertible_operatorMultiplication_of_comp_eq_id _ (memLp_top_comp_snd hΦinv)
+    (ae_of_all _ fun z ↦ (hΦi z.2).inverse_comp_self)
+    (ae_of_all _ fun z ↦ (hΦi z.2).self_comp_inverse)
 
 /-- Multiplication by a continuous family `Φ_t` of invertible maps depending on `t` alone, the
 operator `f ↦ (z ↦ Φ_{z.2} (f z))`, maps `Lᵖ` of the strip onto `Lᵖ`. -/

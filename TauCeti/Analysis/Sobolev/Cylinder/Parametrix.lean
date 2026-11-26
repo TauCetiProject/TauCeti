@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Cylinder
+import TauCeti.Analysis.Sobolev.Cylinder.Frame
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Fredholm.CompactPerturbation
@@ -97,36 +98,19 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 section Cutoff
 
-/-- Multiplying a test section by a `C²` function of `s` gives a test section. -/
-theorem smul_fst_mem_testSection {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {ξ : ℝ × ℝ → V}
-    (hξ : ξ ∈ testSection V) : (fun z ↦ β z.1 • ξ z) ∈ testSection V := by
-  obtain ⟨hξ2, hξp, R, hR⟩ := mem_testSection_iff.1 hξ
-  exact mem_testSection_iff.2 ⟨(hβ.comp contDiff_fst).smul hξ2, fun s t ↦ by simp [hξp],
-    R, fun s t hs ↦ by simp [hR s t hs]⟩
-
 /-- **Multiplication by a function of `s` preserves `W^{1,2}`.** For a `C²` function `β` with `β`
 and `β'` bounded, the operator of the coefficient field `cutoffCoeff V β`, which multiplies a
 section by `β(s)`, maps `H1 V` into itself. -/
 theorem jetOperator_cutoffCoeff_mem_H1 {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : ℝ}
     (hβB : ∀ s, |β s| ≤ B) (hβ'B : ∀ s, |deriv β s| ≤ B) {f : Lp (V × V × V) 2 stripMeasure}
     (hf : f ∈ H1 V) : jetOperator stripMeasure (cutoffCoeff V β) f ∈ H1 V := by
+  -- Multiplication by `β(s)` is the change of frame by `β(s) • id`.
+  have hcoeff : cutoffCoeff V β = frameJetCoeff fun w ↦ β w.1 • ContinuousLinearMap.id ℝ V :=
+    funext fun z ↦ cutoffCoeff_eq_frameJetCoeff ((hβ.differentiable (by norm_num)) z.1)
   have hN := memLp_cutoffCoeff (V := V) (hβ.of_le one_le_two) hβB hβ'B
-  refine jetClosure_subset_of_isClosed
-    (s := jetOperator stripMeasure (cutoffCoeff V β) ⁻¹'
-      (H1 V : Set (Lp (V × V × V) 2 stripMeasure)))
-    ((isClosed_jetClosure _).preimage (jetOperator stripMeasure _).continuous) ?_ hf
-  rintro _ ⟨ξ, rfl⟩
-  have hmem := smul_fst_mem_testSection hβ ξ.property
-  have hξd : Differentiable ℝ (ξ : ℝ × ℝ → V) :=
-    (mem_testSection_iff.1 ξ.property).1.differentiable (by norm_num)
-  have heq : jetOperator stripMeasure (cutoffCoeff V β) (jetLp (testSection V) ξ) =
-      jetLp (testSection V) ⟨_, hmem⟩ := by
-    refine Lp.ext ?_
-    filter_upwards [jetOperator_jetLp_ae_eq hN ξ,
-      coeFn_jetLp (S := testSection V) ⟨_, hmem⟩] with z h₁ h₂
-    rw [h₁, h₂, jet_smul_fst_eq_cutoffCoeff ((hβ.differentiable (by norm_num)) _) (hξd z)]
-  simp only [Set.mem_preimage, SetLike.mem_coe, heq]
-  exact jetLp_mem_jetClosure _
+  rw [hcoeff] at hN ⊢
+  exact jetOperator_frameJetCoeff_mem_H1 ((hβ.comp contDiff_fst).smul contDiff_const)
+    (fun _ _ ↦ rfl) hN hf
 
 /-- Multiplication by a `C²` function `β(s)` with `β` and `β'` bounded, as an operator on
 `H1 V`: the operator of the coefficient field `cutoffCoeff V β`, restricted to `H1 V`
