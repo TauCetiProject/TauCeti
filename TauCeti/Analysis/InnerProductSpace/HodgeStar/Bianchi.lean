@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.VectorValued
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
+import TauCeti.Data.Fintype.BigOperators
 
 /-!
 # The divergence of a Bianchi family of two-forms in dimension four
@@ -34,7 +35,7 @@ the pointwise form of `d^* ⋆F = ± ⋆ d F = 0`. In coordinates,
 `(⋆T eᵢ) (a ∧ eᵢ) = ½ ∑ₖ ∑ₗ vol(a, eᵢ, eₖ, eₗ) T eᵢ (eₖ ∧ eₗ)`, and the coefficient
 `vol(a, eᵢ, eₖ, eₗ)` is invariant under cyclic permutations of `(i, k, l)`, so summing over all
 `(i, k, l)` only sees the cyclic sums of `T`, which vanish
-(`Fintype.sum_sum_sum_smul_eq_zero_of_cyclic`).
+(`Fintype.sum_sum_sum_smul_eq_zero_of_cyclic`, in `TauCeti.Data.Fintype.BigOperators`).
 
 Consequently the divergence of a Bianchi family is carried equally by its self-dual and
 anti-self-dual parts `T⁺ = (T + ⋆T) / 2` and `T⁻ = (T - ⋆T) / 2`
@@ -43,18 +44,18 @@ anti-self-dual parts `T⁺ = (T + ⋆T) / 2` and `T⁻ = (T - ⋆T) / 2`
 `∑ᵢ T eᵢ (a ∧ eᵢ) = 2 ∑ᵢ T⁺ eᵢ (a ∧ eᵢ) = 2 ∑ᵢ T⁻ eᵢ (a ∧ eᵢ)`
 
 (`Orientation.sum_apply_ιMulti_eq_two_smul_sum_vectorFormSelfDualPart`,
-`Orientation.sum_apply_ιMulti_eq_two_smul_sum_vectorFormAntiSelfDualPart`). For the curvature of a
-connection this is the identity `d_∇^* F = 2 d_∇^* F⁺ = 2 d_∇^* F⁻` of four-dimensional gauge
-theory: an equation prescribing the self-dual part of the curvature, such as the curvature
-equation of the Seiberg–Witten equations, controls the divergence of the whole curvature, although
-it says nothing about its anti-self-dual part. The manifold form, for the covariant derivative of
-the curvature of a connection, is
+`Orientation.sum_apply_ιMulti_eq_two_smul_sum_vectorFormAntiSelfDualPart`). For `T v = ∇_v F`
+this reads `∑ᵢ (∇_{eᵢ} F)(a, eᵢ) = 2 ∑ᵢ (∇_{eᵢ} F)⁺(a ∧ eᵢ) = 2 ∑ᵢ (∇_{eᵢ} F)⁻(a ∧ eᵢ)`, where
+`(∇_v F)⁺` is the self-dual part of `∇_v F`. When `∇_v` commutes with `⋆`, as it does for the
+Levi-Civita connection, `(∇_v F)⁺ = ∇_v (F⁺)` and this becomes the identity
+`d_∇^* F = 2 d_∇^* F⁺ = 2 d_∇^* F⁻` of four-dimensional gauge theory, by which an equation
+prescribing the self-dual part of the curvature bounds the divergence of the whole curvature;
+that commutation is not proved here. The manifold form, for the covariant derivative of the
+curvature of a connection, is
 `CovariantDerivative.sum_derivCurvatureTensor_eq_two_smul_sum_vectorFormSelfDualPart`.
 
 ## Main results
 
-* `Fintype.sum_sum_sum_smul_eq_zero_of_cyclic`: a triple sum of a cyclically invariant coefficient
-  against a family with vanishing cyclic sums is zero.
 * `Orientation.sum_vectorFormHodgeStar_apply_ιMulti_eq_zero`: the divergence of the Hodge dual of a
   Bianchi family vanishes.
 * `Orientation.sum_apply_ιMulti_eq_two_smul_sum_vectorFormSelfDualPart`,
@@ -75,38 +76,6 @@ noncomputable section
 
 open Module exteriorPower
 open scoped RealInnerProductSpace
-
-namespace Fintype
-
-/-- **Cyclic sums.** If the coefficient `c` is invariant under the cyclic permutation of its three
-indices and the family `x` has vanishing cyclic sums, `x i k l + x k l i + x l i k = 0`, then
-`∑ i, ∑ k, ∑ l, c i k l • x i k l = 0`. -/
-theorem sum_sum_sum_smul_eq_zero_of_cyclic {ι W : Type*} [Fintype ι] [AddCommGroup W]
-    [Module ℝ W] (c : ι → ι → ι → ℝ) (x : ι → ι → ι → W) (hc : ∀ i k l, c k l i = c i k l)
-    (hx : ∀ i k l, x i k l + x k l i + x l i k = 0) :
-    ∑ i, ∑ k, ∑ l, c i k l • x i k l = 0 := by
-  -- Reindexing the sum cyclically moves each cyclic shift of `x` onto `x` itself.
-  have h₁ : ∑ i, ∑ k, ∑ l, c i k l • x k l i = ∑ i, ∑ k, ∑ l, c i k l • x i k l := by
-    calc ∑ i, ∑ k, ∑ l, c i k l • x k l i = ∑ i, ∑ k, ∑ l, c k l i • x k l i :=
-          Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k _ ↦
-            Finset.sum_congr rfl fun l _ ↦ by rw [hc i k l]
-      _ = ∑ k, ∑ i, ∑ l, c k l i • x k l i := Finset.sum_comm
-      _ = ∑ k, ∑ l, ∑ i, c k l i • x k l i := Finset.sum_congr rfl fun k _ ↦ Finset.sum_comm
-  have h₂ : ∑ i, ∑ k, ∑ l, c i k l • x l i k = ∑ i, ∑ k, ∑ l, c i k l • x i k l := by
-    calc ∑ i, ∑ k, ∑ l, c i k l • x l i k = ∑ i, ∑ k, ∑ l, c l i k • x l i k :=
-          Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k _ ↦
-            Finset.sum_congr rfl fun l _ ↦ by rw [hc l i k]
-      _ = ∑ i, ∑ l, ∑ k, c l i k • x l i k := Finset.sum_congr rfl fun i _ ↦ Finset.sum_comm
-      _ = ∑ l, ∑ i, ∑ k, c l i k • x l i k := Finset.sum_comm
-  -- So three times the sum is the sum against the cyclic sums of `x`, which vanish.
-  have h : ∑ i, ∑ k, ∑ l, c i k l • (x i k l + x k l i + x l i k) = 0 := by simp [hx]
-  simp only [smul_add, Finset.sum_add_distrib, h₁, h₂] at h
-  have h₃ : (3 : ℝ) • ∑ i, ∑ k, ∑ l, c i k l • x i k l = 0 := by
-    rw [← h]
-    module
-  exact (smul_eq_zero.1 h₃).resolve_left three_ne_zero
-
-end Fintype
 
 namespace Orientation
 
@@ -154,8 +123,8 @@ theorem sum_vectorFormHodgeStar_apply_ιMulti_eq_zero (b : OrthonormalBasis ι �
     (fun i k l ↦ hT _ _ _), smul_zero]
 
 /-- **The divergence of a Bianchi family is twice that of its self-dual part.** Under the Bianchi
-identity, `∑ᵢ T eᵢ (a ∧ eᵢ) = 2 ∑ᵢ T⁺ eᵢ (a ∧ eᵢ)` with `T⁺ = (T + ⋆T) / 2`: for the curvature of
-a connection, `d_∇^* F = 2 d_∇^* F⁺`. -/
+identity, `∑ᵢ T eᵢ (a ∧ eᵢ) = 2 ∑ᵢ T⁺ eᵢ (a ∧ eᵢ)` with `T⁺ = (T + ⋆T) / 2`. For `T v = ∇_v F`
+the right side involves `(∇_v F)⁺`; it is `2 d_∇^* F⁺` once `∇_v` commutes with `⋆`. -/
 theorem sum_apply_ιMulti_eq_two_smul_sum_vectorFormSelfDualPart (b : OrthonormalBasis ι ℝ E)
     (T : E →ₗ[ℝ] ⋀[ℝ]^2 E →ₗ[ℝ] W)
     (hT : ∀ u v w, T u (ιMulti ℝ 2 ![v, w]) + T v (ιMulti ℝ 2 ![w, u]) +
@@ -168,8 +137,9 @@ theorem sum_apply_ιMulti_eq_two_smul_sum_vectorFormSelfDualPart (b : Orthonorma
   norm_num
 
 /-- **The divergence of a Bianchi family is twice that of its anti-self-dual part.** Under the
-Bianchi identity, `∑ᵢ T eᵢ (a ∧ eᵢ) = 2 ∑ᵢ T⁻ eᵢ (a ∧ eᵢ)` with `T⁻ = (T - ⋆T) / 2`: for the
-curvature of a connection, `d_∇^* F = 2 d_∇^* F⁻`. -/
+Bianchi identity, `∑ᵢ T eᵢ (a ∧ eᵢ) = 2 ∑ᵢ T⁻ eᵢ (a ∧ eᵢ)` with `T⁻ = (T - ⋆T) / 2`. For
+`T v = ∇_v F` the right side involves `(∇_v F)⁻`; it is `2 d_∇^* F⁻` once `∇_v` commutes
+with `⋆`. -/
 theorem sum_apply_ιMulti_eq_two_smul_sum_vectorFormAntiSelfDualPart (b : OrthonormalBasis ι ℝ E)
     (T : E →ₗ[ℝ] ⋀[ℝ]^2 E →ₗ[ℝ] W)
     (hT : ∀ u v w, T u (ιMulti ℝ 2 ![v, w]) + T v (ιMulti ℝ 2 ![w, u]) +

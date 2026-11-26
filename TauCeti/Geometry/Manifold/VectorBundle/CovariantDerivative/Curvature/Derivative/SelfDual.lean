@@ -38,11 +38,15 @@ of that file give:
   (`CovariantDerivative.sum_derivCurvatureTensor_eq_two_smul_sum_vectorFormSelfDualPart`,
   `CovariantDerivative.sum_derivCurvatureTensor_eq_two_smul_sum_vectorFormAntiSelfDualPart`).
 
-This is the identity `d_∇^* F = 2 d_∇^* F⁺` of four-dimensional gauge theory. For the
-large-parameter Seiberg–Witten equations, whose curvature equation prescribes the self-dual part of
-the curvature but not its anti-self-dual part, it is how the curvature equation controls the
-divergence `∑ᵢ (∇_{eᵢ} R)(·, eᵢ)` that enters the differentiated Weitzenböck inequalities behind
-Taubes's gradient bound
+Here `(∇_v R)⁺` is the self-dual part of the two-form `∇_v R`, not the covariant derivative of the
+self-dual part `R⁺` of the curvature. The two agree once `∇_v` commutes with `⋆`, which needs a
+metric-compatible `∇ᵀ` such as the Levi-Civita connection; that step is not proved here and `∇ᵀ`
+is only assumed torsion-free. With it, the identity above becomes `d_∇^* F = 2 d_∇^* F⁺` of
+four-dimensional gauge theory. For the large-parameter Seiberg–Witten equations, whose curvature
+equation prescribes the self-dual part of the curvature but not its anti-self-dual part, this
+is the route by which the curvature equation is expected to control the divergence
+`∑ᵢ (∇_{eᵢ} R)(·, eᵢ)` that enters the differentiated Weitzenböck inequalities behind Taubes's
+gradient bound
 (`TauCeti.SeibergWitten.innerCovariantDerivative_self_add_mul_innerCovariantDerivative_self_le`),
 although `∇R` itself is not bounded.
 
@@ -144,7 +148,8 @@ theorem sum_vectorFormHodgeStar_derivCurvatureForm_apply_ιMulti_eq_zero :
 
 /-- **The divergence of the curvature is twice that of the self-dual part of `∇R`** in dimension
 four: for a smooth torsion-free `∇ᵀ`, an orientation of `T_x M` and an orthonormal basis `(eᵢ)`,
-`∑ᵢ (∇_{eᵢ} R)(a, eᵢ) = 2 ∑ᵢ (∇_{eᵢ} R)⁺(a ∧ eᵢ)`, that is, `d_∇^* F = 2 d_∇^* F⁺`. -/
+`∑ᵢ (∇_{eᵢ} R)(a, eᵢ) = 2 ∑ᵢ (∇_{eᵢ} R)⁺(a ∧ eᵢ)`. This is `d_∇^* F = 2 d_∇^* F⁺` once `∇_v`
+commutes with `⋆`, as it does for a metric-compatible `∇ᵀ`. -/
 theorem sum_derivCurvatureTensor_eq_two_smul_sum_vectorFormSelfDualPart :
     ∑ i, cov.derivCurvatureTensor covT x (b i) a (b i) =
       (2 : ℝ) • ∑ i, o.vectorFormSelfDualPart hkl (cov.derivCurvatureForm covT x (b i))
@@ -153,8 +158,8 @@ theorem sum_derivCurvatureTensor_eq_two_smul_sum_vectorFormSelfDualPart :
     (cov.derivCurvatureForm_cyclic_eq_zero covT ht x) a
 
 /-- **The divergence of the curvature is twice that of the anti-self-dual part of `∇R`** in
-dimension four: `∑ᵢ (∇_{eᵢ} R)(a, eᵢ) = 2 ∑ᵢ (∇_{eᵢ} R)⁻(a ∧ eᵢ)`, that is,
-`d_∇^* F = 2 d_∇^* F⁻`. -/
+dimension four: `∑ᵢ (∇_{eᵢ} R)(a, eᵢ) = 2 ∑ᵢ (∇_{eᵢ} R)⁻(a ∧ eᵢ)`. This is
+`d_∇^* F = 2 d_∇^* F⁻` once `∇_v` commutes with `⋆`, as it does for a metric-compatible `∇ᵀ`. -/
 theorem sum_derivCurvatureTensor_eq_two_smul_sum_vectorFormAntiSelfDualPart :
     ∑ i, cov.derivCurvatureTensor covT x (b i) a (b i) =
       (2 : ℝ) • ∑ i, o.vectorFormAntiSelfDualPart hkl (cov.derivCurvatureForm covT x (b i))
