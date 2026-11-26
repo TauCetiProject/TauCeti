@@ -137,6 +137,18 @@ theorem even_shiftedEntry_add_sub_one {ι : Type*} [Fintype ι] {γ : ℤ} {m d 
     (hparity : ∀ i, Even (l i + card ι - 1)) (hd : card ι = m + d) (i : ι) :
     Even (shiftedEntry γ m l i + d - 1) := by grind [shiftedEntry_def, hparity i]
 
+/-- If `univ.image b = univ.image a ∪ doubledBlock d` with `b` injective and
+`card R = card C + d`, then the union is disjoint and `a` is injective. -/
+private theorem disjoint_and_injective_of_image_eq_union {C R : Type*} [Fintype C] [Fintype R]
+    {a : C → ℤ} {b : R → ℤ} {d : ℕ} (hcard : card R = card C + d) (hb : b.Injective)
+    (hentries : univ.image b = univ.image a ∪ doubledBlock d) :
+    Disjoint (univ.image a) (doubledBlock d) ∧ a.Injective := by
+  have hunion := card_union_add_card_inter (univ.image a) (doubledBlock d)
+  rw [← hentries, card_image_of_injective _ hb, card_univ, hcard, card_doubledBlock] at hunion
+  have ha : (univ.image a).card ≤ card C := card_image_le.trans_eq card_univ
+  refine ⟨disjoint_iff_inter_eq_empty.2 (card_eq_zero.1 (by omega)), fun c₁ c₂ hc ↦
+    card_image_iff.1 (by rw [card_univ]; omega) (mem_univ c₁) (mem_univ c₂) hc⟩
+
 /-- From the block rule to signed matching for integer vectors `a : C → ℤ` and `b : R → ℤ` with
 `b` injective and `card R = card C + d`. -/
 theorem exists_matched_of_entries_eq {C R : Type*} [Fintype C] [Fintype R] {s : C → ℤˣ}
@@ -147,11 +159,7 @@ theorem exists_matched_of_entries_eq {C R : Type*} [Fintype C] [Fintype R] {s : 
     (hneg : ∀ (c : C) (r : R), a c = b r → a c < 0 → s c = -t r) :
     (∀ r : R, (∃ c : C, b r = a c ∧ (d : ℤ) < (t r * s c : ℤˣ) * b r) ∨ |b r| < d) ∧
       ∀ c : C, ∃ r : R, b r = a c ∧ (d : ℤ) < (t r * s c : ℤˣ) * b r := by
-  have hdisjoint : Disjoint (univ.image a) (doubledBlock d) := by
-    rw [← card_union_eq_card_add_card]
-    refine (card_union_le _ _).antisymm ?_
-    rw [← hentries, card_image_of_injective _ hb, card_univ, hcard, card_doubledBlock]
-    exact Nat.add_le_add_right card_image_le d
+  have hdisjoint := (disjoint_and_injective_of_image_eq_union hcard hb hentries).1
   have hmatched (c : C) (r : R) (heq : a c = b r) :
       b r = a c ∧ (d : ℤ) < (t r * s c : ℤˣ) * b r := by
     have hnot : b r ∉ doubledBlock d :=
@@ -181,22 +189,13 @@ theorem entries_eq_of_exists_matched {C R : Type*} [Fintype C] [Fintype R] {s : 
       ∀ (c : C) (r : R), a c = b r → a c < 0 → s c = -t r := by
   have hsub : univ.image b ⊆ univ.image a ∪ doubledBlock d := fun x hx ↦ by
     obtain ⟨r, -, rfl⟩ := Finset.mem_image.1 hx; grind [mem_doubledBlock, hparity r, hrows r]
-  have hcard_b : (univ.image b).card = card C + d := by
-    rw [card_image_of_injective _ hb, card_univ, hcard]
   have hcount : (univ.image a ∪ doubledBlock d).card ≤ (univ.image b).card :=
     (card_union_le _ _).trans <| by
-      rw [hcard_b, card_doubledBlock]; exact Nat.add_le_add_right card_image_le d
+      rw [card_image_of_injective _ hb, card_univ, hcard, card_doubledBlock]
+      exact Nat.add_le_add_right card_image_le d
   have hentries : univ.image b = univ.image a ∪ doubledBlock d :=
     Finset.eq_of_subset_of_card_le hsub hcount
-  have ha : a.Injective := by
-    have hle : card C ≤ (univ.image a).card := by
-      have := card_union_le (univ.image a) (doubledBlock d)
-      rw [← hentries, hcard_b, card_doubledBlock] at this; omega
-    have hcard_a : (univ.image a).card = univ.card := le_antisymm card_image_le hle
-    exact fun c₁ c₂ hc ↦ Finset.card_image_iff.1 hcard_a (mem_univ c₁) (mem_univ c₂) hc
-  have hdisj : Disjoint (univ.image a) (doubledBlock d) := by
-    rw [← card_union_eq_card_add_card, ← hentries, hcard_b, card_image_of_injective _ ha,
-      card_univ, card_doubledBlock]
+  obtain ⟨hdisj, ha⟩ := disjoint_and_injective_of_image_eq_union hcard hb hentries
   have hsign (c : C) (r : R) (heq : a c = b r) :
       (0 < b r → s c = t r) ∧ (b r < 0 → s c = -t r) := by
     have hnot : ¬ |b r| < d := fun hlt ↦
