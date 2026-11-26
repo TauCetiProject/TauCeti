@@ -55,10 +55,16 @@ example {c d : RelationalConfiguration Language.graph ℕ} (hc : IsSimpleGraph c
 /-! ### A loop is seen at length one -/
 
 /-- The constant-true code: every pair of vertices is related, including each vertex to itself. -/
-@[expose] noncomputable def full : RelationalConfiguration Language.graph ℕ := mk fun _ ↦ true
+noncomputable def full : RelationalConfiguration Language.graph ℕ := mk fun _ ↦ true
+
+/-- The defining equation of `full`. -/
+theorem full_def : full = mk fun _ ↦ true := (rfl)
 
 /-- The empty graph. -/
-@[expose] noncomputable def empty : RelationalConfiguration Language.graph ℕ := mk fun _ ↦ false
+noncomputable def empty : RelationalConfiguration Language.graph ℕ := mk fun _ ↦ false
+
+/-- The defining equation of `empty`. -/
+theorem empty_def : empty = mk fun _ ↦ false := (rfl)
 
 -- The colour of `[1]` for the constant-true code occurs at no node for the empty graph.
 private theorem unravelColor_empty_ne (y : List ℚ) :

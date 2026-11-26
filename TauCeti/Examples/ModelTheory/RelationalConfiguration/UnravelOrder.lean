@@ -58,37 +58,35 @@ theorem not_isNear_of_ne (χ : List ℚ → ℕ) {x y : List ℚ} (hxy : x ≠ y
 
 /-! ### The empty and the complete graph -/
 
-/-- The complete graph on `ℕ`. -/
-noncomputable def completeCode : RelationalConfiguration Language.graph ℕ :=
-  adjArrayEquiv.symm fun p => decide (p.1 ≠ p.2)
-
 /-- The colour of the node `[1, 1/2]` for the empty graph, two distinct vertices `(0, 1)` that are
 not adjacent, occurs at no node for the complete graph. -/
-theorem unravelColor_completeCode_ne (y : List ℚ) :
-    unravelColor completeCode y ≠ unravelColor UnravellingChecks.empty [1, 1 / 2] := by
+theorem unravelColor_top_ne (y : List ℚ) :
+    unravelColor (⊤ : SimpleGraph ℕ).toRelationalConfiguration y ≠
+      unravelColor UnravellingChecks.empty [1, 1 / 2] := by
   intro h
   obtain ⟨hl, hb⟩ := unravelColor_eq_iff.1 h
   have h01 := hb 0 (by simp [hl]) 1 (by simp [hl])
-  simp [Prod.ext_iff, completeCode, UnravellingChecks.empty, unravelVertex_def] at h01
+  simp [Prod.ext_iff, UnravellingChecks.empty_def, unravelVertex_def] at h01
 
 /-- **The images of the empty and of the complete graph are not isomorphic.** -/
-theorem not_isoSetoid_unravelOrderCode_empty_completeCode :
+theorem not_isoSetoid_unravelOrderCode_empty_top :
     ¬ isoSetoid Language.order ℕ (unravelOrderCode UnravellingChecks.empty)
-      (unravelOrderCode completeCode) := by
+      (unravelOrderCode (⊤ : SimpleGraph ℕ).toRelationalConfiguration) := by
   rw [isoSetoid_unravelOrderCode_iff]
   intro h
   obtain ⟨Φ, hΦ⟩ := isoSetoid_iff_exists_orderIso_unravelColor.1 h
-  exact unravelColor_completeCode_ne (Φ [1, 1 / 2]) (congrFun hΦ [1, 1 / 2])
+  exact unravelColor_top_ne (Φ [1, 1 / 2]) (congrFun hΦ [1, 1 / 2])
 
 /-- Distinct rationals do not suffice to tell the colourings apart: at `[1, 2]` both entries have
 colour `0`, both colourings record equal, non-adjacent vertices, and the colours agree. -/
-theorem unravelColor_empty_eq_unravelColor_completeCode :
-    unravelColor UnravellingChecks.empty [1, 2] = unravelColor completeCode [1, 2] := by
+theorem unravelColor_empty_eq_unravelColor_top :
+    unravelColor UnravellingChecks.empty [1, 2] =
+      unravelColor (⊤ : SimpleGraph ℕ).toRelationalConfiguration [1, 2] := by
   refine unravelColor_eq_iff.2 ⟨rfl, fun i hi j hj => ?_⟩
   have hv (k : ℕ) (hk : k < 2) : unravelVertex [1, 2] k = 0 := by
     interval_cases k <;> simp [unravelVertex_def]
   simp only [List.length_cons, List.length_nil] at hi hj
-  refine Prod.ext ?_ ?_ <;> simp [hv i hi, hv j hj, UnravellingChecks.empty, completeCode]
+  refine Prod.ext ?_ ?_ <;> simp [hv i hi, hv j hj, UnravellingChecks.empty_def]
 
 /-! ### The block of the root -/
 
@@ -120,7 +118,8 @@ theorem ncard_setOf_isNear_ne {c : RelationalConfiguration Language.graph ℕ}
       {p' | IsNear (unravelOrderRel (unravelColor UnravellingChecks.full)) ([q], 0) p'}.ncard := by
   rw [ncard_setOf_isNear_unravelOrderRel (p := ([q], 0)) (by simp)]
   by_cases hp : {p' | IsNear (unravelOrderRel (unravelColor c)) p p'}.Finite
-  · rw [ncard_setOf_isNear_unravelOrderRel (finite_setOf_isNear_unravelOrderRel_iff.1 hp)]
+  · rw [ncard_setOf_isNear_unravelOrderRel (finite_setOf_isNear_unravelOrderRel_iff.1 hp),
+      UnravellingChecks.full_def]
     exact fun h => UnravelTree.unravelColor_mk_true_ne hc q p.1 (Nat.add_right_cancel h).symm
   · rw [Set.Infinite.ncard hp]
     omega
@@ -130,7 +129,7 @@ theorem not_isoSetoid_unravelOrderCode_full {c : RelationalConfiguration Languag
     (hc : c ∈ graphClass) :
     ¬ isoSetoid Language.order ℕ (unravelOrderCode UnravellingChecks.full)
       (unravelOrderCode c) := by
-  rw [isoSetoid_unravelOrderCode_iff]
+  rw [isoSetoid_unravelOrderCode_iff, UnravellingChecks.full_def]
   intro h
   obtain ⟨Φ, hΦ⟩ := isoSetoid_iff_exists_orderIso_unravelColor.1 h
   exact UnravelTree.unravelColor_mk_true_ne hc 1 (Φ [1]) (congrFun hΦ [1]).symm
