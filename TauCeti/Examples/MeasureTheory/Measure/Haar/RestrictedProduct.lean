@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Measure.Count.Topology
 public import Mathlib.Topology.Instances.ZMod
 
 import TauCeti.Algebra.BigOperators.Finprod
+import TauCeti.Examples.MeasureTheory.Measure.Haar.ConvergentHaarProduct
 
 /-!
 # Checks for normalized restricted Haar products
@@ -132,24 +133,10 @@ end Real
 
 section CyclicFour
 
-/-- Inversion `x ↦ -x` on `C₄ = ZMod 4`, as an isomorphism of topological additive groups. -/
-def zmodFourNeg : ZMod 4 ≃ₜ+ ZMod 4 where
-  toAddEquiv := AddEquiv.neg (ZMod 4)
-  continuous_toFun := continuous_of_discreteTopology
-  continuous_invFun := continuous_of_discreteTopology
-
 /-- The reference subgroup `{0, 2}` of `ZMod 4` is open. -/
 local instance : Fact (∀ _ : Unit, IsOpen
     ((AddSubgroup.zmultiples (2 : ZMod 4) : AddSubgroup (ZMod 4)) : Set (ZMod 4))) :=
   ⟨fun _ ↦ isOpen_discrete _⟩
-
-/-- `{0, 2}` has counting measure `2` in `ZMod 4`. -/
-theorem count_zmultiples_two_zmodFour :
-    count (AddSubgroup.zmultiples (2 : ZMod 4) : Set (ZMod 4)) = 2 := by
-  have h : addOrderOf (2 : ZMod 4) = 2 := by
-    simpa using ZMod.addOrderOf_coe (n := 4) 2 four_ne_zero
-  rw [count_apply .of_discrete, ← ENat.card_coe_set_eq]
-  simp [← Nat.card_eq_fintype_card, h]
 
 /-- On one copy of `C₄ = ZMod 4` with counting measure and reference subgroup `{0, 2}`, inversion
 sends the restricted Haar product to one under which the box `{0, 2}` still has mass `2`. -/
@@ -157,18 +144,17 @@ theorem map_addRestrictedProductCongrRight_neg_box :
     (restrictedAddHaar (fun _ : Unit ↦ AddSubgroup.zmultiples (2 : ZMod 4)) (fun _ ↦ count)
         (by simp [Filter.cofinite_eq_bot])).map
       (addRestrictedProductCongrRight (fun _ : Unit ↦ AddSubgroup.zmultiples (2 : ZMod 4))
-        (fun _ ↦ AddSubgroup.zmultiples (2 : ZMod 4)) (fun _ ↦ zmodFourNeg.toAddEquiv)
+        (fun _ ↦ AddSubgroup.zmultiples (2 : ZMod 4)) (fun _ ↦
+          (ContinuousLinearEquiv.neg ℤ : ZMod 4 ≃L[ℤ] ZMod 4).toContinuousAddEquiv.toAddEquiv)
         (by simp [Filter.cofinite_eq_bot]))
       (box fun _ ↦ (AddSubgroup.zmultiples (2 : ZMod 4) : Set (ZMod 4))) = 2 := by
-  rw [map_addRestrictedProductCongrRight_restrictedAddHaar _ _ (fun _ ↦ zmodFourNeg),
-    restrictedAddHaar_box_eq_finprod _ _ _ (by simp [Filter.cofinite_eq_bot]), finprod_unique,
-    map_apply (map_continuous zmodFourNeg).measurable (.of_discrete)]
-  have hpre : (zmodFourNeg : ZMod 4 → ZMod 4) ⁻¹'
-      (AddSubgroup.zmultiples (2 : ZMod 4) : Set (ZMod 4)) =
-      (AddSubgroup.zmultiples (2 : ZMod 4) : Set (ZMod 4)) := by
+  set e : ZMod 4 ≃ₜ+ ZMod 4 := (ContinuousLinearEquiv.neg ℤ).toContinuousAddEquiv
+  have he : ⇑e = Neg.neg := by
     ext x
-    exact (AddSubgroup.zmultiples (2 : ZMod 4)).neg_mem_iff
-  rw [hpre, count_zmultiples_two_zmodFour]
+    simp [e]
+  rw [map_addRestrictedProductCongrRight_restrictedAddHaar _ _ (fun _ ↦ e),
+    restrictedAddHaar_box_eq_finprod _ _ _ (by simp [Filter.cofinite_eq_bot]), finprod_unique, he,
+    Measure.map_neg_eq_self, ConvergentHaarProductExamples.count_zmultiples_two]
 
 end CyclicFour
 
