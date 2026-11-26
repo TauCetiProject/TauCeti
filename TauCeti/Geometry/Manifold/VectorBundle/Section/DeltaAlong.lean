@@ -240,10 +240,10 @@ variable {E M N E' : Type*} [TopologicalSpace E] [TopologicalSpace M] [Topologic
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] {ι : N → M}
 
 /-- **A cutoff and a neighbourhood seeing only the chart.** Let `ι` be an embedding with
-`ι (φ.source) ⊆ c.source`, and let `O ⊆ φ.source` be an open neighbourhood of `y₀`. There are a
+`ι y₀` in the source of `c`, and let `O ⊆ φ.source` be an open neighbourhood of `y₀`. There are a
 smooth cutoff `χ` equal to `1` at `φ y₀` and supported in `φ '' O`, and an open neighbourhood `B`
-of `c (ι y₀)` in the target of `c` such that every `y` with `c (ι y) ∈ B` lies in `O` and has
-`χ (φ y) = 1`. -/
+of `c (ι y₀)` in the target of `c` such that every `y` with `ι y` in the source of `c` and
+`c (ι y) ∈ B` lies in `O` and has `χ (φ y) = 1`. -/
 private theorem exists_cutoff_and_nhds (hι : Topology.IsEmbedding ι) {c : OpenPartialHomeomorph M E}
     {φ : OpenPartialHomeomorph N E'} {y₀ : N} (hy₀c : ι y₀ ∈ c.source) {O : Set N}
     (hO : IsOpen O) (hy₀O : y₀ ∈ O) (hOφ : O ⊆ φ.source) :
