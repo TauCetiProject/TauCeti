@@ -189,6 +189,39 @@ theorem smulTopMap_comp [LinearMap.CompatibleSMul N P S R] [LinearMap.Compatible
 
 end Map
 
+section Equiv
+
+variable {M N R : Type*} [Semiring R]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+
+/-- An `R`-linear equivalence restricts to an `S`-linear equivalence on the pieces cut out by a
+scalar `e`. -/
+def _root_.LinearEquiv.smulTopCongr (f : M ≃ₗ[R] N) (S : Type*) [Semiring S]
+    [Module S M] [Module S N] [SMulCommClass R S M] [SMulCommClass R S N]
+    [LinearMap.CompatibleSMul M N S R] [LinearMap.CompatibleSMul N M S R] (e : R) :
+    ↥(e • (⊤ : Submodule S M)) ≃ₗ[S] ↥(e • (⊤ : Submodule S N)) :=
+  LinearEquiv.ofLinearMap (smulTopMap S e f.toLinearMap) (smulTopMap S e f.symm.toLinearMap)
+    (by ext x; simp) (by ext x; simp)
+
+variable {S : Type*} [Semiring S] [Module S M] [Module S N]
+  [SMulCommClass R S M] [SMulCommClass R S N]
+  [LinearMap.CompatibleSMul M N S R] [LinearMap.CompatibleSMul N M S R]
+
+/-- On the underlying modules, the restricted equivalence acts by the original equivalence. -/
+@[simp]
+theorem _root_.LinearEquiv.coe_smulTopCongr_apply (f : M ≃ₗ[R] N) (e : R)
+    (x : ↥(e • (⊤ : Submodule S M))) :
+    (f.smulTopCongr S e x : N) = f (x : M) :=
+  coe_smulTopMap_apply e f.toLinearMap x
+
+/-- The inverse of a restricted equivalence is the restriction of the inverse equivalence. -/
+@[simp]
+theorem _root_.LinearEquiv.smulTopCongr_symm (f : M ≃ₗ[R] N) (e : R) :
+    (f.smulTopCongr S e).symm = f.symm.smulTopCongr S e :=
+  (rfl)
+
+end Equiv
+
 section Orthogonal
 
 variable {S M R ι : Type*} [Semiring S] [Semiring R]
@@ -535,5 +568,46 @@ theorem isCompl_smul_top_one_sub_smul_top (he : IsIdempotentElem e) :
     (by ext i; fin_cases i <;> simp)
 
 end IsCompl
+
+section ProdEquiv
+
+variable {S M A : Type*} [Semiring S] [Ring A] [AddCommMonoid M] [Module S M] [Module A M]
+  [SMulCommClass A S M] {e : A}
+
+/-- An idempotent `e` and its complement `f` give product coordinates on `M` by projection onto
+the two summands `e • M` and `f • M`. -/
+def smulTopProdEquiv (he : IsIdempotentElem e) {f : A} (hsum : e + f = 1) :
+    M ≃ₗ[S] ↥(e • (⊤ : Submodule S M)) × ↥(f • (⊤ : Submodule S M)) := by
+  have hcompl : f = 1 - e := eq_sub_of_add_eq' hsum
+  have hf : IsIdempotentElem f := hcompl.symm ▸ he.one_sub
+  refine LinearEquiv.ofLinearMap ((TauCeti.smulTopRetraction e).prod (TauCeti.smulTopRetraction f))
+    ((e • (⊤ : Submodule S M)).subtype.coprod (f • (⊤ : Submodule S M)).subtype)
+    (LinearMap.ext ?_) (LinearMap.ext ?_)
+  · rintro ⟨x, y⟩
+    have hx : f • (x : M) = 0 := TauCeti.smul_eq_zero_of_mul_eq_zero_of_mem_smul_top
+      (hcompl.symm ▸ he.one_sub_mul_self) x.property
+    have hy : e • (y : M) = 0 := TauCeti.smul_eq_zero_of_mul_eq_zero_of_mem_smul_top
+      (hcompl.symm ▸ he.mul_one_sub_self) y.property
+    refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_) <;>
+      simp [he.smul_eq_self_of_mem_smul_top x.property, hf.smul_eq_self_of_mem_smul_top y.property,
+        hx, hy]
+  · intro x
+    simp [← add_smul, hsum]
+
+/-- The product coordinates are obtained by multiplication by the two complementary scalars. -/
+@[simp]
+theorem smulTopProdEquiv_apply (he : IsIdempotentElem e) {f : A} (hsum : e + f = 1) (x : M) :
+    he.smulTopProdEquiv (S := S) hsum x =
+      (TauCeti.smulTopRetraction e x, TauCeti.smulTopRetraction f x) :=
+  (rfl)
+
+/-- The inverse of the product coordinates adds the two summand vectors. -/
+@[simp]
+theorem smulTopProdEquiv_symm_apply (he : IsIdempotentElem e) {f : A} (hsum : e + f = 1)
+    (x : ↥(e • (⊤ : Submodule S M)) × ↥(f • (⊤ : Submodule S M))) :
+    (he.smulTopProdEquiv (S := S) hsum).symm x = (x.1 : M) + (x.2 : M) :=
+  (rfl)
+
+end ProdEquiv
 
 end IsIdempotentElem

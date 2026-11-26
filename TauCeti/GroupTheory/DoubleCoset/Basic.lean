@@ -26,6 +26,8 @@ This file also records how membership in a double coset `HaK` interacts with mul
   multiplication by `H`.
 * `DoubleCoset.mul_mul_mem_doubleCoset`: membership in `HaK` is closed under left multiplication
   by `H` and right multiplication by `K`, for arbitrary subsemigroups `H` and `K`.
+* `DoubleCoset.mul_mem_doubleCoset_of_mem_right`: membership in `HaK` is closed under right
+  multiplication by `K`, for an arbitrary set `H` and subsemigroup `K`.
 * `DoubleCoset.mem_doubleCoset_of_quotient_eq`: recognising `HxK` from an equation in `G ⧸ K`.
 * `DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset`: the double coset `H (r w) K` of a product
   lies in the product `(H r L) (L w K)` of double cosets, for arbitrary sets `H`, `K` and any set
@@ -81,6 +83,14 @@ theorem mul_mul_mem_doubleCoset {M S₁ S₂ : Type*} [Semigroup M] [SetLike S�
   obtain ⟨d₁, hd₁, d₂, hd₂, rfl⟩ := mem_doubleCoset.mp hz
   exact mem_doubleCoset.mpr
     ⟨b₁ * d₁, mul_mem hb₁ hd₁, d₂ * b₂, mul_mem hd₂ hb₂, by simp only [mul_assoc]⟩
+
+/-- **Membership in a double coset is closed under right multiplication** by the right
+subsemigroup: if `z ∈ HaK` and `b ∈ K`, then `z * b ∈ HaK`. -/
+theorem mul_mem_doubleCoset_of_mem_right {M S : Type*} [Semigroup M] [SetLike S M]
+    [MulMemClass S M] {H : Set M} {K : S} {a z b : M} (hz : z ∈ doubleCoset a H (K : Set M))
+    (hb : b ∈ K) : z * b ∈ doubleCoset a H (K : Set M) := by
+  obtain ⟨x, hx, y, hy, rfl⟩ := mem_doubleCoset.mp hz
+  exact mem_doubleCoset.mpr ⟨x, hx, y * b, mul_mem hy hb, by simp only [mul_assoc]⟩
 
 /-- **Translating an inverse along a left coset.** If `w` and `x` lie in the same left coset of
 `H`, then `x⁻¹ d` belongs to the double coset `H g K` if and only if `w⁻¹ d` does. -/

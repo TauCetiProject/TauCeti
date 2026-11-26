@@ -26,6 +26,11 @@ distinct roots gives the number of roots counted with multiplicity
 `k ≤ f.rootMultiplicity a` for every `a` in a finite set `s`, then `k * #s ≤ f.natDegree`
 (`Polynomial.mul_card_le_natDegree_of_le_rootMultiplicity`).
 
+Over an arbitrary commutative ring, distinct points are not enough (in `ZMod 4`, `2 * X` has the
+simple roots `0` and `2` but degree `1`), but points whose pairwise differences are units are: the
+powers `(X - a) ^ f.rootMultiplicity a` at such points are pairwise coprime, so their product
+divides `f` (`Polynomial.sum_rootMultiplicity_le_natDegree_of_pairwise_isUnit_sub`).
+
 Finally, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a`
 occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`).
 -/
@@ -103,6 +108,29 @@ theorem mul_card_le_natDegree_of_le_rootMultiplicity {f : R[X]} {s : Finset R} {
     (h : ∀ a ∈ s, k ≤ f.rootMultiplicity a) : k * s.card ≤ f.natDegree := by
   rw [mul_comm, ← smul_eq_mul]
   exact (Finset.card_nsmul_le_sum s _ k h).trans (sum_rootMultiplicity_le_natDegree f s)
+
+omit [IsDomain R] in
+/-- **Counting roots at points with unit differences.** Over any commutative ring, if the pairwise
+differences of the points `a i`, `i ∈ s`, are units, then the root multiplicities of `f` at these
+points add up to at most `f.natDegree` (also when `f = 0`, where every multiplicity vanishes). -/
+theorem sum_rootMultiplicity_le_natDegree_of_pairwise_isUnit_sub {ι : Type*} {s : Finset ι}
+    {a : ι → R} (ha : (s : Set ι).Pairwise fun i j ↦ IsUnit (a i - a j)) (f : R[X]) :
+    ∑ i ∈ s, f.rootMultiplicity (a i) ≤ f.natDegree := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  have : Nontrivial R := nontrivial_iff.mp (nontrivial_of_ne f 0 hf)
+  have hmonic : ∀ i ∈ s, ((X - C (a i)) ^ f.rootMultiplicity (a i)).Monic :=
+    fun i _ ↦ (monic_X_sub_C (a i)).pow _
+  -- the powers `(X - a i) ^ mᵢ` are pairwise coprime divisors of `f`, so their product divides it
+  have hdvd : ∏ i ∈ s, (X - C (a i)) ^ f.rootMultiplicity (a i) ∣ f :=
+    Finset.prod_dvd_of_coprime
+      (fun _ hi _ hj hij ↦ (isCoprime_X_sub_C_of_isUnit_sub (ha hi hj hij)).pow)
+      fun i _ ↦ pow_rootMultiplicity_dvd f (a i)
+  calc ∑ i ∈ s, f.rootMultiplicity (a i)
+      = (∏ i ∈ s, (X - C (a i)) ^ f.rootMultiplicity (a i)).natDegree := by
+        rw [natDegree_prod_of_monic _ _ hmonic]
+        simp only [(monic_X_sub_C _).natDegree_pow, natDegree_X_sub_C, mul_one]
+    _ ≤ f.natDegree := (monic_prod_of_monic _ _ hmonic).natDegree_le_of_dvd hf hdvd
 
 /-- A nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a` occurs
 at least `k` times in `E`. -/
