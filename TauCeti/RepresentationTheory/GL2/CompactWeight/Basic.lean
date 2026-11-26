@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
-public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Character
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.GL2Coefficient
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Decomposition
 public import TauCeti.RepresentationTheory.GL2.CompactCayley
 import Mathlib.Analysis.SpecialFunctions.Exponential
+import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic
 
 /-!
