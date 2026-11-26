@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.Block
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.BlockTriangular
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Triangular
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 
 /-!

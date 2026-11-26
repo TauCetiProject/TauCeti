@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.BlockSucc
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Succ
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.Basic
 
 /-!
