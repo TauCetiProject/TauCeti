@@ -316,27 +316,48 @@ private theorem sub_natCast_sub_two_mul_add_two_neg (j : ℕ) : m - j - 2 * σ +
   have := Nat.cast_nonneg (α := ℝ) j
   linarith
 
-/-- The Balakrishnan integral of a term of a quasi-homogeneous expansion, as a classical symbol
-with a single homogeneous term. -/
+/-- The Balakrishnan integral of a term `bⱼ`, quasi-homogeneous of degree `m - j` above `R`, is
+homogeneous of degree `m - 2 σ + 2 - j` above `R` as a symbol of that order. -/
+private theorem isHomogeneousAbove_inclusion_balakrishnanIntegral {j : ℕ}
+    {b : ParameterSymbol n Λ V W (m - j)} (hR : b.IsQuasiHomogeneousAbove (m - j) R) :
+    (Symbol.inclusion (le_of_eq (by ring))
+        (b.balakrishnanIntegral hΛ hσ (sub_natCast_sub_two_mul_add_two_neg hm j)) :
+      Symbol n V W (m - 2 * σ + 2 - j)).IsHomogeneousAbove (m - 2 * σ + 2 - j) R := by
+  refine Symbol.isHomogeneousAbove_iff.2 fun x ξ hξ t ht ↦ ?_
+  rw [Symbol.coefficient_inclusion, show m - 2 * σ + 2 - j = m - j - 2 * σ + 2 by ring]
+  exact Symbol.isHomogeneousAbove_iff.1 (hR.isHomogeneousAbove_balakrishnanIntegral hΛ hσ _) x ξ
+    hξ t ht
+
+/-- The Balakrishnan integral of a term `bⱼ` of a quasi-homogeneous expansion, of order
+`m - 2 σ + 2 - j`, as a classical symbol with a single homogeneous term. -/
 private def termClassical {j : ℕ} (b : ParameterSymbol n Λ V W (m - j))
     (hb : ∃ R, b.IsQuasiHomogeneousAbove (m - j) R) :
-    ClassicalSymbol n V W (m - j - 2 * σ + 2) :=
-  ClassicalSymbol.ofIsHomogeneousAbove
-    (b.balakrishnanIntegral hΛ hσ (sub_natCast_sub_two_mul_add_two_neg hm j))
-    (hb.imp fun _ hR ↦ hR.isHomogeneousAbove_balakrishnanIntegral hΛ hσ _)
+    ClassicalSymbol n V W (m - 2 * σ + 2 - j) :=
+  ClassicalSymbol.ofIsHomogeneousAbove _
+    (hb.imp fun _ hR ↦ isHomogeneousAbove_inclusion_balakrishnanIntegral hΛ hσ hm hR)
 
-/-- The remainders of the expansion of the Balakrishnan integral of `b ∼ ∑ⱼ bⱼ` into the cut-off
-integrals of the `bⱼ` at large frequencies. -/
-private theorem exists_remainder_balakrishnanIntegral (b : ParameterSymbol n Λ V W m)
+/-- The principal symbol of the Balakrishnan integral of a term `bⱼ` agrees with that integral at
+every nonzero frequency of norm at least a radius above which `bⱼ` is quasi-homogeneous. -/
+private theorem coefficient_principal_termClassical {j : ℕ} {b : ParameterSymbol n Λ V W (m - j)}
+    (hb : ∃ R, b.IsQuasiHomogeneousAbove (m - j) R) (hR : b.IsQuasiHomogeneousAbove (m - j) R)
+    {x ξ : CoordinateSpace n} (hξ : R ≤ ‖ξ‖) (hξ0 : ξ ≠ 0) :
+    (termClassical hΛ hσ hm b hb).principal.coefficient (x, ξ) =
+      (b.balakrishnanIntegral hΛ hσ (sub_natCast_sub_two_mul_add_two_neg hm j)).coefficient
+        (x, ξ) := by
+  rw [termClassical, ClassicalSymbol.coefficient_principal_of_isHomogeneousAbove _
+      (by rw [ClassicalSymbol.toSymbol_ofIsHomogeneousAbove]
+          exact isHomogeneousAbove_inclusion_balakrishnanIntegral hΛ hσ hm hR) hξ hξ0,
+    ClassicalSymbol.toSymbol_ofIsHomogeneousAbove, Symbol.coefficient_inclusion]
+
+/-- The Balakrishnan integral of `b ∼ ∑ⱼ bⱼ` is an asymptotic sum of the integrals of the `bⱼ`. -/
+private theorem isAsymptoticSum_balakrishnanIntegral (b : ParameterSymbol n Λ V W m)
     (bs : ∀ j : ℕ, ParameterSymbol n Λ V W (m - j))
     (hbs : ∀ j, ∃ R, (bs j).IsQuasiHomogeneousAbove (m - j) R)
     (hb : IsAsymptoticSum (m := fun j : ℕ ↦ m - j) (inclusion (by simp) b) bs) :
-    ∃ χ : FrequencyCutoff (CoordinateSpace n), ∀ N : ℕ,
-      ∃ r : Symbol n V W (m - 2 * σ + 2 - N), ∀ p, r.coefficient p =
-        (b.balakrishnanIntegral hΛ hσ hm).coefficient p - ∑ j ∈ Finset.range N, χ p.2 •
-          ((termClassical hΛ hσ hm (bs j) (hbs j)).principal.castDegree
-            (by ring : m - j - 2 * σ + 2 = m - 2 * σ + 2 - j)).coefficient p := by
-  refine ⟨default, fun N ↦ ?_⟩
+    (Symbol.inclusion (by simp) (b.balakrishnanIntegral hΛ hσ hm) :
+      Symbol n V W (m - 2 * σ + 2 - ((0 : ℕ) : ℝ))).IsAsymptoticSum
+        fun j ↦ (termClassical hΛ hσ hm (bs j) (hbs j)).toSymbol := by
+  refine Symbol.isAsymptoticSum_iff.2 fun N ↦ ?_
   have hm' := sub_natCast_sub_two_mul_add_two_neg hm (σ := σ)
   obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hb N
   -- Integrate the decomposition `b = r + ∑_{j < N} bⱼ` term by term.
@@ -345,45 +366,23 @@ private theorem exists_remainder_balakrishnanIntegral (b : ParameterSymbol n Λ 
     coefficient_injective (by
       simp only [coefficient_add, coefficient_sum, coefficient_inclusion, ← hr]
       abel)
-  have hB : ∀ p, (b.balakrishnanIntegral hΛ hσ hm).coefficient p =
-      (r.balakrishnanIntegral hΛ hσ (hm' N)).coefficient p +
-        ∑ j ∈ Finset.range N, ((bs j).balakrishnanIntegral hΛ hσ (hm' j)).coefficient p := by
-    intro p
-    rw [hdecomp]
-    simp only [balakrishnanIntegral_add, balakrishnanIntegral_sum, Symbol.coefficient_add,
-      Symbol.coefficient_sum, Pi.add_apply, Finset.sum_apply, coefficient_balakrishnanIntegral,
-      coefficient_inclusion]
-  -- Each integral `∫ bⱼ` differs from its cut-off homogeneous term by a smoothing symbol.
-  have hS : ∀ j, (Symbol.inclusion (le_of_eq (by ring))
-      ((bs j).balakrishnanIntegral hΛ hσ (hm' j)) - HomogeneousSymbol.cutoffSymbol default
-        ((termClassical hΛ hσ hm (bs j) (hbs j)).principal.castDegree
-          (by ring : m - j - 2 * σ + 2 = m - 2 * σ + 2 - j))).IsSmoothing := by
-    intro j
-    obtain ⟨R, hR⟩ := hbs j
-    refine Symbol.isSmoothing_of_coefficient_eq_zero (max R 2) fun x ξ hξ ↦ ?_
-    have hξ2 : 2 ≤ ‖ξ‖ := le_of_max_le_right hξ
-    rw [Symbol.coefficient_sub, Pi.sub_apply, Symbol.coefficient_inclusion,
-      HomogeneousSymbol.coefficient_cutoffSymbol_of_two_le_norm _ _ hξ2,
-      HomogeneousSymbol.coefficient_castDegree, termClassical,
-      ClassicalSymbol.coefficient_principal_of_isHomogeneousAbove _
-        (by simpa using hR.isHomogeneousAbove_balakrishnanIntegral hΛ hσ _)
-        (le_of_max_le_left hξ) (norm_pos_iff.1 (by linarith)),
-      ClassicalSymbol.toSymbol_ofIsHomogeneousAbove, sub_self]
-  choose s hs using fun j ↦ Symbol.isSmoothing_iff.1 (hS j) (m - 2 * σ + 2 - N)
-  refine ⟨Symbol.inclusion (le_of_eq (by ring)) (r.balakrishnanIntegral hΛ hσ (hm' N)) +
-    ∑ j ∈ Finset.range N, s j, fun p ↦ ?_⟩
-  simp only [Symbol.coefficient_add, Symbol.coefficient_sum, Pi.add_apply, Finset.sum_apply, hs,
-    Symbol.coefficient_sub, Pi.sub_apply, Symbol.coefficient_inclusion,
-    HomogeneousSymbol.coefficient_cutoffSymbol, hB, Finset.sum_sub_distrib]
-  abel
+  refine ⟨Symbol.inclusion (le_of_eq (by ring)) (r.balakrishnanIntegral hΛ hσ (hm' N)), ?_⟩
+  rw [sub_eq_iff_eq_add, hdecomp]
+  ext p
+  simp only [termClassical, ClassicalSymbol.toSymbol_ofIsHomogeneousAbove,
+    balakrishnanIntegral_add, balakrishnanIntegral_sum, Symbol.coefficient_add,
+    Symbol.coefficient_sum, Symbol.coefficient_inclusion, Pi.add_apply, Finset.sum_apply,
+    coefficient_balakrishnanIntegral, coefficient_inclusion]
 
 /-- **The Balakrishnan integral of a quasi-homogeneous expansion is classical.** Let `b` be a
 parameter-dependent symbol of order `m` with an asymptotic expansion `b ∼ ∑ⱼ bⱼ`
 (`TauCeti.ParameterSymbol.IsAsymptoticSum`) into symbols `bⱼ` of orders `m - j`, each
 quasi-homogeneous of degree `m - j` above some radius, as are the terms of Seeley's resolvent
 parametrix once they are cut off near `(ξ, z) = (0, 0)`. Then the Balakrishnan integral of `b`, of
-order `m - 2 σ + 2`, is a classical symbol. Its homogeneous term of degree `m - 2 σ + 2 - j` is the
-Balakrishnan integral of `bⱼ` at large frequencies
+order `m - 2 σ + 2`, is a classical symbol: it is the asymptotic sum
+(`TauCeti.ClassicalSymbol.ofIsAsymptoticSum`) of the integrals of the `bⱼ`, each classical with a
+single homogeneous term (`TauCeti.ClassicalSymbol.ofIsHomogeneousAbove`). Its homogeneous term of
+degree `m - 2 σ + 2 - j` is the Balakrishnan integral of `bⱼ` at large frequencies
 (`TauCeti.ParameterSymbol.coefficient_term_classicalBalakrishnanIntegral`); in particular its
 principal symbol is the Balakrishnan integral of `b₀` there
 (`TauCeti.ParameterSymbol.coefficient_principal_classicalBalakrishnanIntegral`). -/
@@ -391,10 +390,9 @@ def classicalBalakrishnanIntegral (b : ParameterSymbol n Λ V W m)
     (bs : ∀ j : ℕ, ParameterSymbol n Λ V W (m - j))
     (hbs : ∀ j, ∃ R, (bs j).IsQuasiHomogeneousAbove (m - j) R)
     (hb : IsAsymptoticSum (m := fun j : ℕ ↦ m - j) (inclusion (by simp) b) bs) :
-    ClassicalSymbol n V W (m - 2 * σ + 2) where
-  toSymbol := b.balakrishnanIntegral hΛ hσ hm
-  term j := (termClassical hΛ hσ hm (bs j) (hbs j)).principal.castDegree (by ring)
-  exists_remainder' := exists_remainder_balakrishnanIntegral hΛ hσ hm b bs hbs hb
+    ClassicalSymbol n V W (m - 2 * σ + 2) :=
+  ClassicalSymbol.ofIsAsymptoticSum (fun j ↦ termClassical hΛ hσ hm (bs j) (hbs j))
+    (isAsymptoticSum_balakrishnanIntegral hΛ hσ hm b bs hbs hb)
 
 variable (b : ParameterSymbol n Λ V W m) (bs : ∀ j : ℕ, ParameterSymbol n Λ V W (m - j))
   (hbs : ∀ j, ∃ R, (bs j).IsQuasiHomogeneousAbove (m - j) R)
@@ -404,12 +402,7 @@ variable (b : ParameterSymbol n Λ V W m) (bs : ∀ j : ℕ, ParameterSymbol n �
 theorem toSymbol_classicalBalakrishnanIntegral :
     (classicalBalakrishnanIntegral hΛ hσ hm b bs hbs hb).toSymbol =
       b.balakrishnanIntegral hΛ hσ hm :=
-  (rfl)
-
-private theorem term_classicalBalakrishnanIntegral (j : ℕ) :
-    (classicalBalakrishnanIntegral hΛ hσ hm b bs hbs hb).term j =
-      (termClassical hΛ hσ hm (bs j) (hbs j)).principal.castDegree (by ring) :=
-  (rfl)
+  ClassicalSymbol.toSymbol_ofIsAsymptoticSum _ _
 
 /-- The homogeneous term of degree `m - 2 σ + 2 - j` of the Balakrishnan integral of an expansion
 `b ∼ ∑ⱼ bⱼ` is the Balakrishnan integral of `bⱼ` at every nonzero frequency of norm at least a
@@ -420,10 +413,15 @@ theorem coefficient_term_classicalBalakrishnanIntegral (j : ℕ)
     ((classicalBalakrishnanIntegral hΛ hσ hm b bs hbs hb).term j).coefficient (x, ξ) =
       ((bs j).balakrishnanIntegral hΛ hσ
         (by linarith [Nat.cast_nonneg (α := ℝ) j])).coefficient (x, ξ) := by
-  rw [term_classicalBalakrishnanIntegral, HomogeneousSymbol.coefficient_castDegree, termClassical,
-    ClassicalSymbol.coefficient_principal_of_isHomogeneousAbove _
-      (by simpa using hR.isHomogeneousAbove_balakrishnanIntegral hΛ hσ _) hξ hξ0,
-    ClassicalSymbol.toSymbol_ofIsHomogeneousAbove]
+  -- Only the integral of `bⱼ` contributes: the integrals of the `bₖ`, `k < j`, have a single
+  -- homogeneous term.
+  rw [classicalBalakrishnanIntegral, ClassicalSymbol.coefficient_term_ofIsAsymptoticSum,
+    Finset.sum_range_succ, Finset.sum_eq_zero fun k hk ↦ ?_, zero_add, Nat.sub_self,
+    ← ClassicalSymbol.coefficient_principal]
+  · exact coefficient_principal_termClassical hΛ hσ hm (hbs j) hR hξ hξ0
+  rw [show j - k = j - k - 1 + 1 by have := Finset.mem_range.1 hk; omega, termClassical,
+    ClassicalSymbol.term_ofIsHomogeneousAbove_succ, HomogeneousSymbol.coefficient_zero,
+    Pi.zero_apply]
 
 /-- The principal symbol of the Balakrishnan integral of an expansion `b ∼ ∑ⱼ bⱼ` is the
 Balakrishnan integral of the leading term `b₀` at every nonzero frequency of norm at least a radius

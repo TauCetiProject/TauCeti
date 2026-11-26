@@ -28,9 +28,10 @@ behaviour under the operations of the symbol calculus.
   and a frequency derivative lowers it by one
   (`TauCeti.ParameterSymbol.IsQuasiHomogeneous.frequencyDeriv`).
 * `TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove a μ R`: the same relation for `t ≥ 1` at
-  frequencies of norm at least `R` only. A smooth symbol of negative degree cannot be
-  quasi-homogeneous near `(ξ, z) = (0, 0)`, so this is the form taken by the terms of Seeley's
-  resolvent parametrix once they are cut off near the origin. It is implied by quasi-homogeneity
+  frequencies of norm at least `R` only. A smooth nonzero symbol of negative degree whose spectral
+  parameters contain `0` cannot be quasi-homogeneous near `(ξ, z) = (0, 0)`, so this is the form
+  taken by the terms of Seeley's resolvent parametrix once they are cut off near the origin. It is
+  implied by quasi-homogeneity
   (`TauCeti.ParameterSymbol.IsQuasiHomogeneous.isQuasiHomogeneousAbove`) and preserved by the
   linear operations, the inclusions and pointwise composition.
 * Examples: the quasi-homogeneous symbols `TauCeti.ParameterSymbol.ofQuasiHomogeneous`
@@ -223,10 +224,10 @@ theorem isQuasiHomogeneous_shiftedLaplacian_zero :
 `a((x, t ξ), t² z) = t ^ μ a((x, ξ), z)` for every `t ≥ 1` and every frequency `ξ` of norm at least
 `R` such that both `z` and `t² z` lie in `Λ`
 (`TauCeti.ParameterSymbol.isQuasiHomogeneousAbove_iff`).
-A quasi-homogeneous symbol of negative degree is singular at `(ξ, z) = (0, 0)`, so a smooth symbol
-whose set of spectral parameters contains `0` can only be quasi-homogeneous away from it; the terms
-of Seeley's resolvent parametrix are cut off near the origin in this way. Integrated along the
-spectral parameter, such symbols become homogeneous symbols at large frequencies
+A nonzero quasi-homogeneous symbol of negative degree is singular at `(ξ, z) = (0, 0)`, so a smooth
+symbol whose set of spectral parameters contains `0` can only be quasi-homogeneous away from it;
+the terms of Seeley's resolvent parametrix are cut off near the origin in this way. Integrated along
+the spectral parameter, such symbols become homogeneous symbols at large frequencies
 (`TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove.isHomogeneousAbove_balakrishnanIntegral`). -/
 def IsQuasiHomogeneousAbove (a : ParameterSymbol n Λ V W m) (μ R : ℝ) : Prop :=
   ∀ x ξ, R ≤ ‖ξ‖ → ∀ z ∈ Λ, ∀ t : ℝ, 1 ≤ t → (t ^ 2 : ℝ) • z ∈ Λ →
