@@ -228,6 +228,16 @@ theorem continuationCocycle_ν (T : S.Homotopy S')
         cubicalChainSumMap R (q x y) (T.chain x y) :=
   (rfl)
 
+variable (S) in
+/-- The continuation cocycle of the zero homotopy is the Kronecker cocycle. -/
+@[simp]
+theorem continuationCocycle_refl
+    (hq : ∀ x z y (u : M x z) (v : M z y), q x y (ι x z y (u, v)) = q x z u * q z y v) :
+    (refl S).continuationCocycle q hq =
+      .refl (cubicalChain_isDGAlgebra G R).map_one_eq_zero _ := by
+  ext x y
+  simp
+
 /-- **The continuation cocycle of a homotopy is invertible** when the chains of the homotopy
 vanish on the pairs of equal index, for instance when the spaces `M x y` with `ind x = ind y` are
 empty: the matrix `1 + q_* h` is then unitriangular for the ranking by `ind`. Through
