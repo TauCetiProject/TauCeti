@@ -40,6 +40,8 @@ are shown to converge.
 * `TauCeti.UnitAddTorus.norm_fourierMultiplier`: `‖T_m‖ = ‖m‖`.
 * `TauCeti.UnitAddTorus.fourierMultiplier_injective`: the symbol is determined by the operator.
 * `TauCeti.UnitAddTorus.hasSum_fourierMultiplier`: the Fourier series of `T_m f`.
+* `TauCeti.UnitAddTorus.isSelfAdjoint_fourierMultiplier`: a multiplier with a real symbol is
+  self-adjoint.
 * `TauCeti.UnitAddTorus.hasSum_norm_sq_mFourierCoeff`: Parseval's identity
   `‖f‖² = ∑ₙ ‖f̂(n)‖²` in `L²(𝕋ᵈ)`.
 * `TauCeti.UnitAddTorus.tendsto_fourierMultiplier_apply`: strong continuity in the symbol.
@@ -111,6 +113,12 @@ theorem fourierMultiplier_mFourierLp (m : ℓ^∞(d → ℤ, ℂ)) (n : d → �
 theorem hasSum_fourierMultiplier (m : ℓ^∞(d → ℤ, ℂ)) (f : L²(UnitAddTorus d)) :
     HasSum (fun n ↦ (m n * mFourierCoeff f n) • mFourierLp 2 n) (fourierMultiplier m f) := by
   simpa using hasSum_mFourier_series_L2 (fourierMultiplier m f)
+
+/-- A Fourier multiplier with a self-adjoint, that is real, symbol is self-adjoint:
+`⟪T_m a, b⟫ = ⟪a, T_m b⟫`. -/
+theorem isSelfAdjoint_fourierMultiplier {m : ℓ^∞(d → ℤ, ℂ)} (hm : IsSelfAdjoint m) :
+    IsSelfAdjoint (fourierMultiplier m) :=
+  mFourierBasis.isSelfAdjoint_diagonal hm
 
 /-- The operator norm of a Fourier multiplier is the supremum norm of its symbol. -/
 @[simp]

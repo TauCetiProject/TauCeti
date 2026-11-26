@@ -70,15 +70,16 @@ the others have the homology of their bases shifted by the rank, so
 `Hₙ({f ≤ b}, {f ≤ a}; K) ≅ ∐_{r j ≤ n} H_{n - r j}(S j; K)`
 
 (`TauCeti.SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_of_isThomClass`), and
-the same holds across a critical level of a Morse–Bott function on a compact manifold, the
+the same holds across a critical level of a Morse–Bott function inside a compact band, the
 coproduct running over the pieces on that level
 (`TauCeti.IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_of_isThomClass`).
 This is the form of Bott's computation that produces the first page of the critical-band spectral
 sequence (`TauCeti.Geometry.Manifold.Morse.Bott.SpectralSequence`).
 
 The Thom isomorphism needs the model fibre `Fin r → ℝ` of `ν⁻` in the universe of its base, so in
-all statements below the base `S`, the model space `E` of `M` and the coefficient ring `K` live in
-`Type`, and in the band statements so does `M`.
+the Thom class statements below the base `S`, the model space `E` of `M` and the coefficient ring
+`K` live in `Type`, and in the band statements so does `M`. The type of orientations of `ν⁻` and
+its nonemptiness over a simply connected base take every universe.
 
 ## Main results
 
@@ -239,7 +240,9 @@ end IsCriticalSubmanifold
 
 namespace IsNondegenerateCriticalSubmanifold
 
-variable {E : Type} {H M E' H' P : Type*} {S : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+section Orientation
+
+variable {E H M E' H' P S : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [NormedAddCommGroup E']
   [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
@@ -265,6 +268,38 @@ abbrev NegativeNormalBundleOrientation :=
   haveI := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
   VectorBundleOrientation (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
     (Fin r)
+
+/-- **The negative normal bundle of a simply connected critical submanifold is orientable.** A
+real vector bundle over a simply connected manifold is orientable
+(`TauCeti.VectorBundleOrientation.nonempty_of_simplyConnectedSpace`), so when `S` is simply
+connected, for instance a point, the negative normal bundle `ν⁻` relative to any smooth fibre
+metric has an orientation. -/
+theorem nonempty_negativeNormalBundleOrientation [SimplyConnectedSpace S] :
+    Nonempty (h.NegativeNormalBundleOrientation hn hfs hdim g hr) := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
+  have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
+  have := J.locallyPathConnectedSpace_of_chartedSpace S
+  exact VectorBundleOrientation.nonempty_of_simplyConnectedSpace (by simp)
+
+end Orientation
+
+section ThomClass
+
+variable {E : Type} {H M E' H' P : Type*} {S : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [NormedAddCommGroup E']
+  [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S] [NormedAddCommGroup P]
+  [NormedSpace ℝ P] [FiniteDimensional ℝ P] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M}
+  (hn : (∞ : ℕ∞ω) ≠ 0) (h : i.IsNondegenerateCriticalSubmanifold f)
+  (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+  (g : letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
+  (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
 
 /-- **The negative normal bundle has a Thom class.** Let `i` be a nondegenerate critical
 submanifold of a smooth function `f`, with Morse index `r` at every point, and let `g` be a smooth
@@ -318,21 +353,6 @@ theorem hasNegativeNormalThomClass_of_two_eq_zero (K : Type) [CommRing K] (h2 : 
   have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
   exact exists_isThomClass_of_two_eq_zero K h2
 
-/-- **The negative normal bundle of a simply connected critical submanifold is orientable.** A
-real vector bundle over a simply connected manifold is orientable
-(`TauCeti.VectorBundleOrientation.nonempty_of_simplyConnectedSpace`), so when `S` is simply
-connected, for instance a point, the negative normal bundle `ν⁻` relative to any smooth fibre
-metric has an orientation. -/
-theorem nonempty_negativeNormalBundleOrientation [SimplyConnectedSpace S] :
-    Nonempty (h.NegativeNormalBundleOrientation hn hfs hdim g hr) := by
-  let := i.normalSpaceFiberBundle hn hdim
-  let := i.normalSpaceVectorBundle hn hdim
-  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-  let := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
-  have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
-  have := J.locallyPathConnectedSpace_of_chartedSpace S
-  exact VectorBundleOrientation.nonempty_of_simplyConnectedSpace (by simp)
-
 /-- **The negative normal bundle of a simply connected critical submanifold has a Thom class**
 with coefficients in every commutative ring `K`, since it is orientable
 (`nonempty_negativeNormalBundleOrientation`). -/
@@ -340,6 +360,8 @@ theorem hasNegativeNormalThomClass_of_simplyConnectedSpace [SimplyConnectedSpace
     [CommRing K] : h.HasNegativeNormalThomClass hn hfs hdim g hr K :=
   h.hasNegativeNormalThomClass_of_orientation hn hfs hdim g hr
     (h.nonempty_negativeNormalBundleOrientation hn hfs hdim g hr).some K
+
+end ThomClass
 
 end IsNondegenerateCriticalSubmanifold
 
@@ -546,18 +568,18 @@ theorem
 
 /-- **Thom classes of the negative normal bundles compute the homology across a critical level of a
 Morse–Bott function.** Let the family `i j : S j → M` exhibit `f` as a Morse–Bott function
-(`TauCeti.IsMorseBottFamily`) on a compact Hausdorff second-countable boundaryless manifold, with
-pieces modelled on boundaryless models, and let `K` be a commutative ring. Suppose that for each
-piece `S j` the negative normal bundle, relative to some smooth fibre metric on the normal bundle,
-has rank `r j` and a Thom class with coefficients in `K`, as it does over every `K` when it is
-oriented (`TauCeti.VectorBundleOrientation.exists_isThomClass`). Let `a < c < b` be such that `c`
-is the only critical value of `f` in `[a, b]`.
+(`TauCeti.IsMorseBottFamily`) on a Hausdorff second-countable boundaryless manifold, not
+necessarily compact, with pieces modelled on boundaryless models, and let `K` be a commutative ring.
+Suppose that for each piece `S j` the negative normal bundle, relative to some smooth fibre metric
+on the normal bundle, has rank `r j` and a Thom class with coefficients in `K`, as it does over
+every `K` when it is oriented (`TauCeti.VectorBundleOrientation.exists_isThomClass`). Let
+`a < c < b` be such that the band `f⁻¹[a, b]` is compact and `c` is its only critical value.
 
 Then `Hₙ({f ≤ b}, {f ≤ a}; K) ≅ ∐ H_{n - r j}(S j; K)`, the coproduct running over the pieces on
 the level `f = c` with `r j ≤ n`, in every degree `n`. -/
 theorem
     IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_of_isThomClass
-    [T2Space M] [SecondCountableTopology M] [CompactSpace M] [∀ j, (J j).Boundaryless]
+    [T2Space M] [SecondCountableTopology M] [∀ j, (J j).Boundaryless]
     (h : IsMorseBottFamily i f)
     (hdim : ∀ j, finrank ℝ (P j) = finrank ℝ E - finrank ℝ (E' j)) {r : ι → ℕ}
     {K : Type} [CommRing K]
@@ -572,18 +594,22 @@ theorem
         ∃ u, IsThomClass (R := ModuleCat.of K K) (k := K) (M := ModuleCat.of K K) (Fin (r j) → ℝ)
           (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
             g.toRiemannianMetric s) u)
-    {a b c : ℝ} (hac : a < c) (hcb : c < b)
+    {a b c : ℝ} (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c) (n : ℕ) :
-    -- The pieces are finitely many, so the coproduct exists.
-    haveI := h.finite
+    -- The pieces on the level `c` are finitely many, so the coproduct exists.
+    haveI : Finite {j // (∀ s, f (i j s) = c) ∧ r j ≤ n} :=
+      h.finite_subtype_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ fun _ ↦ And.left
     Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology (ModuleCat.of K K) n ≅
       ∐ fun j : {j // (∀ s, f (i j s) = c) ∧ r j ≤ n} ↦
         ((singularHomologyFunctor (ModuleCat.{0} K) (n - r j)).obj (ModuleCat.of K K)).obj
           (TopCat.of (S j))) := by
-  have := h.finite
+  -- The pieces on the level `c` lie in the compact band, so they are finitely many and compact.
+  have := h.finite_subtype_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ fun _ ↦ id
+  have : Finite {j // (∀ s, f (i j s) = c) ∧ r j ≤ n} :=
+    h.finite_subtype_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ fun _ ↦ And.left
   have (j : ι) : Nonempty (S j) := h.nonempty j
-  have (j : ι) : CompactSpace (S j) :=
-    (Topology.IsClosedEmbedding.mk (i j).isEmbedding (h.isClosed_range j)).compactSpace
+  have (j : {j // ∀ s, f (i j s) = c}) : CompactSpace (S j) :=
+    h.compactSpace_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ j.property
   let _ (j : ι) := (i j).normalSpaceFiberBundle hn (hdim j)
   let _ (j : ι) := (i j).normalSpaceVectorBundle hn (hdim j)
   choose g hV u hu using hK
@@ -592,7 +618,7 @@ theorem
       (ι := {j // ∀ s, f (i j s) = c}) (S := fun j ↦ S j) (P := fun j ↦ P j) (J := fun j ↦ J j)
       (i := fun j ↦ i j) hn (fun j ↦ h.isNondegenerateCriticalSubmanifold j) h.contMDiff
       (fun j ↦ j.property) (fun j k hjk ↦ h.pairwise_disjoint_range fun he ↦ hjk (Subtype.ext he))
-      hac hcb (isClosed_Icc.preimage h.contMDiff.continuous).isCompact
+      hac hcb hcompact
       (fun x ⟨hx, hfx⟩ ↦ h.mem_iUnion_range_of_apply_eq hn hx (hcrit _ hx hfx)) (fun j ↦ hdim j)
       (fun j ↦ g j) (fun j ↦ hV j) (fun j ↦ u j) (fun j ↦ hu j) n
   -- Reindex the pieces of rank at most `n` among those on the level `c`.

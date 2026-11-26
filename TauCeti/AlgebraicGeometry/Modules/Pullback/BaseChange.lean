@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Sections
 public import Mathlib.Topology.QuasiSeparated
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
-import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.RingTheory.Flat.IsBaseChange
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
@@ -625,20 +625,6 @@ lemma pullbackSectionsLEBaseLinear_apply (g' : X' ⟶ X) (M : X.Modules) (w : Co
       pullbackSectionsLEBaseLinear g' M w h eX eY eY' s = g'.pullbackSectionsLE M UX UY eY s := by
   intro _ _ _ _ _ _ s
   rfl
-
-/-- The structure map `Γ(B, V) ⟶ Γ(U, T)` of an open subscheme `U` of `Z` over the affine open `V`
-of `B`, for the algebra structure through `baseRingToStructurePresheaf`, is `k.appLE` followed by
-restriction to `T`. -/
-private lemma algebraMap_baseRingToStructurePresheaf_eq_appLE {Z B : Scheme.{u}} (k : Z ⟶ B)
-    {V : B.Opens} (hV : IsAffineOpen V) (U : Z.Opens) (e : U ≤ k ⁻¹ᵁ V) (T : U.toScheme.Opens)
-    (r : Γ(B, V)) :
-    letI : U.toScheme.Over (Spec (.of Γ(B, V))) := ⟨k.resLE V U e ≫ hV.isoSpec.hom⟩
-    letI : Algebra Γ(B, V) Γ(U.toScheme, T) :=
-      ((U.toScheme.baseRingToStructurePresheaf Γ(B, V)).app (op T)).hom.toAlgebra
-    algebraMap Γ(B, V) Γ(U.toScheme, T) r =
-      (U.ι.appLE U T (by simp)).hom ((k.appLE V U e).hom r) := by
-  rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
-  exact congrArg (fun φ ↦ φ.hom r) (Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE k hV U e T)
 
 /-- Pulling sections back along the inclusion of the open subscheme `UX` identifies the sections
 of `M` over `UX` with the global sections of the pullback to `UX`, linearly over `Γ(S, W)`. -/

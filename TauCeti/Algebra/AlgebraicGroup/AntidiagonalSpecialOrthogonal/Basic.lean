@@ -50,6 +50,9 @@ The diagonal torus `diag(t₁, …, tₙ, (1), tₙ⁻¹, …, t₁⁻¹)` is in
   `pointsSubgroup l A`, naturally in `A` (`pointsMulEquiv_mapValue`).
 * `TauCeti.AntidiagonalSpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso`: the coordinate
   Hopf algebra commutes with base change along every `R → K`.
+* `TauCeti.AntidiagonalSpecialOrthogonal.groupSchemeBaseChangeIso`: so does the group scheme,
+  compatibly with the inclusions into `GL_l`
+  (`map_inclusion_comp_groupSchemeBaseChangeIso_hom`).
 
 ## References
 
@@ -467,6 +470,16 @@ theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom 
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K l)
     (map_baseChangeHopfIdeal_definingHopfIdeal R l K)
 
+/-- The inverse base-change isomorphism of `SO_l^J` is compatible with the quotient coordinate
+morphisms. -/
+@[reassoc]
+theorem coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv :
+    coordinateMap K l ≫ (coordinateHopfAlgebraBaseChangeIso R l K).inv =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K l).inv ≫
+        CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R l) := by
+  rw [coordinateMap_def, coordinateMap_def, coordinateHopfAlgebraBaseChangeIso]
+  exact CommHopfAlgCat.mkQuotient_comp_quotientBaseChangeIsoOfMapEq_inv _ _ _ _
+
 /-- The finite-type coordinate Hopf algebra of `SO_l^J` commutes with base change. -/
 noncomputable def finiteTypeCoordinateHopfAlgebraBaseChangeIso :
     FiniteTypeCommHopfAlgCat.baseChange (K := K) (finiteTypeCoordinateHopfAlgebra R l) ≅
@@ -477,5 +490,45 @@ noncomputable def finiteTypeCoordinateHopfAlgebraBaseChangeIso :
     (coordinateHopfAlgebraBaseChangeIso R l K)
 
 end BaseChange
+
+/-! ### Base change of the group scheme -/
+
+section GroupSchemeBaseChange
+
+open _root_.AlgebraicGeometry
+
+variable (K : Type u) [CommRing K] [Algebra R K]
+
+/-- **Base change of the group scheme `SO_l^J`**: its base change to `K` is the group scheme
+`SO_l^J` over `K`, the Hopf-ideal base-change comparison of `GL_l` at the defining Hopf ideals. -/
+noncomputable def groupSchemeBaseChangeIso :
+    (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.obj
+        (groupScheme R l) ≅ groupScheme K l :=
+  GeneralLinear.hopfIdealBaseChangeIso R K l (definingHopfIdeal R l) (definingHopfIdeal K l)
+    (coordinateHopfAlgebraBaseChangeIso R l K).symm
+
+/-- The base-change isomorphism of `SO_l^J` is the Hopf-ideal base-change comparison of `GL_l`
+for the inverse base-change isomorphism of coordinate Hopf algebras. -/
+theorem groupSchemeBaseChangeIso_def :
+    groupSchemeBaseChangeIso R l K =
+      GeneralLinear.hopfIdealBaseChangeIso R K l (definingHopfIdeal R l)
+        (definingHopfIdeal K l) (coordinateHopfAlgebraBaseChangeIso R l K).symm :=
+  (rfl)
+
+/-- **Base change of `SO_l^J` is compatible with the inclusions.** Along the base-change
+isomorphisms, the base change of the inclusion of `SO_l^J` into `GL_l` over `R` is the inclusion
+over `K`. -/
+@[reassoc]
+theorem map_inclusion_comp_groupSchemeBaseChangeIso_hom :
+    (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.map
+          (inclusion R l) ≫ (GeneralLinear.groupSchemeBaseChangeIso R K l).hom =
+      (groupSchemeBaseChangeIso R l K).hom ≫ inclusion K l := by
+  have he := coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv R l K
+  rw [coordinateMap_def, coordinateMap_def] at he
+  rw [inclusion_def, inclusion_def, groupSchemeBaseChangeIso_def]
+  exact GeneralLinear.map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso R K l _ _
+    (coordinateHopfAlgebraBaseChangeIso R l K).symm he
+
+end GroupSchemeBaseChange
 
 end TauCeti.AntidiagonalSpecialOrthogonal

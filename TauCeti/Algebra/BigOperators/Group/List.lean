@@ -25,13 +25,20 @@ of the `f i` times the product of the `g i`, in a commutative monoid. The same s
 any monoid as soon as the second factors are central, since each `g i` can then be moved past the
 remaining first factors. Erasing an entry whose image is `1` does not change the product of the
 images, in any monoid. Two orderings of a list have the same product of images when every pair of
-entries whose relative order differs has commuting images.
+entries whose relative order differs has commuting images. When the images pairwise commute, the
+product of their `n`-th powers is the `n`-th power of their product. The components of a product
+along a list of pairs are the products of the components.
 
 In a commutative monoid (and additively in an `AddCommMonoid`), products indexed by the positions
 `i : Fin l.length` of a list split across concatenation (`List.prod_get_append`), reduce on a
 replicated list to a `Finset.range` product (`List.prod_get_replicate`), and decompose a `flatMap`
 of replicated blocks along `List.range n` by block offsets
 (`List.prod_get_flatMap_replicate_range`).
+
+In a commutative group, the quotients of consecutive entries of a list `a :: l` closed up by an
+end point `b` telescope: their product is `b / a` (`List.prod_zipWith_div_append_singleton_cons`).
+Additively, the differences of consecutive entries sum to `b - a`
+(`List.sum_zipWith_sub_append_singleton_cons`).
 
 The ordered product `b₀ ⋯ bₙ₋₁` of a tuple (`List.prod (List.ofFn b)`) is the product of the
 ordered products of its first `k` and its last `n - k` entries, and is unchanged when two adjacent
@@ -46,13 +53,22 @@ entries are multiplied together first (`Fin.contractNth`), by associativity.
 * `List.prod_map_erase_of_eq_one`: `∏_{i ∈ l.erase a} f i = ∏_{i ∈ l} f i` when `f a = 1`.
 * `List.prod_map_eq_of_perm`: two orderings of the same entries have the same product of images if
   the images of every inverted pair commute.
+* `List.prod_map_pow_of_pairwise_commute`: `∏ f i ^ n = (∏ f i) ^ n` along a list whose images
+  pairwise commute.
+* `Prod.fst_list_prod`, `Prod.snd_list_prod` (and their additive counterparts): the components of
+  a product along a list of pairs.
 * `List.prod_get_append`, `List.prod_get_replicate`, `List.prod_get_flatMap_replicate_range` (and
   their additive counterparts): position-indexed products over appended, replicated, and
   block-replicated lists.
+* `List.prod_zipWith_div_append_singleton_cons`, `List.sum_zipWith_sub_append_singleton_cons`:
+  the quotients (differences) of consecutive entries of `a :: l`, closed up by `b`, have product
+  `b / a` (sum `b - a`).
 * `List.prod_ofFn_mul_prod_ofFn`: the ordered product of a tuple splits after its first `k`
   entries.
 * `List.prod_ofFn_contractNth`: contracting two adjacent entries of a tuple by multiplication does
   not change its ordered product.
+* `List.sum_comp_prod_ofFn`: summing `f (g₀ ⋯ gₘ)` over all tuples in a finite group gives
+  `|G| ^ m` times the sum of `f` over the group.
 -/
 
 public section
@@ -129,6 +145,18 @@ theorem prod_map_eq_of_perm (f : ι → M) {l l' : List ι} (hp : l.Perm l')
       ih hp' fun x y hxy hyx => h x y (hxy.trans (sublist_cons_self a t))
         (hyx.trans ((sublist_cons_self a v).append_left u))]
 
+/-- Along a list whose images under `f` pairwise commute, the product of the `n`-th powers of the
+images is the `n`-th power of the product of the images. -/
+theorem prod_map_pow_of_pairwise_commute {l : List ι} {f : ι → M}
+    (hl : l.Pairwise fun i j ↦ Commute (f i) (f j)) (n : ℕ) :
+    (l.map fun i ↦ f i ^ n).prod = (l.map f).prod ^ n := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [pairwise_cons] at hl
+    rw [map_cons, prod_cons, map_cons, prod_cons, ih hl.2,
+      (Commute.list_prod_right _ _ (forall_mem_map.2 hl.1)).mul_pow]
+
 section Indexed
 
 variable {α N : Type*} [CommMonoid N]
@@ -185,6 +213,23 @@ theorem prod_get_flatMap_replicate_range (n : ℕ) (d : ℕ → ℕ) (val : ℕ 
 
 end Indexed
 
+section Telescope
+
+variable {G : Type*} [CommGroup G]
+
+/-- The quotients of consecutive entries of the list `a :: l` closed up by an end point `b`
+telescope: their product is `b / a`. -/
+@[to_additive /-- The differences of consecutive entries of the list `a :: l` closed up by an end
+point `b` telescope: they sum to `b - a`. -/]
+theorem prod_zipWith_div_append_singleton_cons (a b : G) (l : List G) :
+    (zipWith (· / ·) (l ++ [b]) (a :: l)).prod = b / a := by
+  induction l generalizing a with
+  | nil => simp
+  | cons c l ih =>
+    rw [cons_append, zipWith_cons_cons, prod_cons, ih c, mul_comm, div_mul_div_cancel]
+
+end Telescope
+
 section OfFn
 
 variable {M : Type*} [Monoid M]
@@ -206,6 +251,39 @@ theorem prod_ofFn_contractNth {n : ℕ} (b : Fin (n + 1) → M) (l : Fin n) :
   rw [← Fin.partialProd_last_eq_prod_ofFn, ← Fin.partialProd_last_eq_prod_ofFn,
     Fin.partialProd_contractNth_castSucc]
 
+/-- **The ordered product of a tuple takes every value equally often** in a finite group: the sum
+of `f (g₀ ⋯ gₘ)` over all tuples `g : Fin (m + 1) → G` is `|G| ^ m` times the sum of `f`, as
+`g₁, …, gₘ` can be chosen freely and then `g₀` is determined by the product. -/
+theorem sum_comp_prod_ofFn {G A : Type*} [Group G] [Fintype G] [AddCommMonoid A] {m : ℕ}
+    (f : G → A) :
+    ∑ g : Fin (m + 1) → G, f (ofFn g).prod = Fintype.card G ^ m • ∑ g, f g := by
+  classical
+  let e : G × (Fin m → G) ≃ (Fin (m + 1) → G) :=
+    (Equiv.prodCongrLeft fun g ↦ Equiv.mulRight (ofFn g).prod⁻¹).trans
+      (Fin.consEquiv fun _ ↦ G)
+  rw [← e.sum_comp]
+  simp [e, Fintype.sum_prod_type_right]
+
 end OfFn
 
 end List
+
+namespace Prod
+
+variable {M N : Type*} [Monoid M] [Monoid N]
+
+/-- The first component of a product along a list of pairs is the product of the first
+components. -/
+@[to_additive (attr := simp) /-- The first component of a sum along a list of pairs is the sum of
+the first components. -/]
+theorem fst_list_prod (l : List (M × N)) : l.prod.1 = (l.map Prod.fst).prod :=
+  map_list_prod (MonoidHom.fst M N) l
+
+/-- The second component of a product along a list of pairs is the product of the second
+components. -/
+@[to_additive (attr := simp) /-- The second component of a sum along a list of pairs is the sum of
+the second components. -/]
+theorem snd_list_prod (l : List (M × N)) : l.prod.2 = (l.map Prod.snd).prod :=
+  map_list_prod (MonoidHom.snd M N) l
+
+end Prod

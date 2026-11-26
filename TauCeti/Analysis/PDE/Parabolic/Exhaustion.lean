@@ -223,20 +223,6 @@ open scoped InnerProductSpace
 
 variable [DecidableEq ι]
 
-/-- The energy form of `-Δ + 1` is that of `-Δ` plus the `L²` pairing. -/
-private theorem energyFormH1_one_zero_one {Omega : Opens (EuclideanSpace ℝ ι)}
-    (u v : W1p volume Omega 2) :
-    energyFormH1 (fun _ => (1 : Matrix ι ι ℝ)) 0 (fun _ => 1) u v =
-      energyFormH1 (fun _ => (1 : Matrix ι ι ℝ)) 0 0 u v + ⟪W1p.value u, W1p.value v⟫_ℝ := by
-  have h := energyFormH1_mass_sub_const
-    (memLp_energyIntegrand_const_zero_zero (mu := volume) (Omega := Omega) 1) (-1) u v
-  have hc : (fun x : EuclideanSpace ℝ ι => (0 : EuclideanSpace ℝ ι → ℝ) x - -1) = fun _ => 1 := by
-    funext x
-    simp
-  rw [hc] at h
-  rw [h]
-  ring
-
 /-- **The resolvent of the Dirichlet semigroup of `-Δ` at `1`.** On an open set `U` where the
 energy form of `-Δ` is coercive, `R(1) z` is the value of the weak solution `w ∈ H¹₀(U)` of
 `-Δw + w = z`. -/
@@ -264,8 +250,8 @@ private theorem exists_value_eq_resolvent_dirichletSemigroup {U : Opens (Euclide
   obtain ⟨w, hw, hsol⟩ := (mem_graph_dirichletOperator_iff _ hcoercive).1
     (hLy ▸ L.mem_graph ⟨y, hy⟩)
   refine ⟨w, hw, (isWeakSolutionDirichlet_iff_inner _ _).2 fun v => ?_⟩
-  rw [energyFormH1_one_zero_one, (isWeakSolutionDirichlet_iff_inner _ _).1 hsol v, hw,
-    inner_sub_left, sub_add_cancel]
+  rw [energyFormH1_one_zero_const, one_mul, (isWeakSolutionDirichlet_iff_inner _ _).1 hsol v,
+    hw, inner_sub_left, sub_add_cancel]
 
 /-- **The resolvent of the heat semigroup at `1`.** For `x ∈ L²(ℝⁿ)`, `R(1) x` is the weak
 solution `u ∈ H¹(ℝⁿ)` of `-Δu + u = x`; here `f` and `y` are `x` and the value of `u`, read in
@@ -286,7 +272,7 @@ private theorem resolvent_heatSemigroup_eq (x : Lp ℝ 2 (volume : Measure (Eucl
       (f - W1p.value (u : W1p volume ⊤ 2)) u := by
     refine (isWeakSolutionDirichlet_iff_inner _ _).2 fun v => ?_
     have h := (isWeakSolutionDirichlet_iff_inner _ _).1 hu v
-    rw [energyFormH1_one_zero_one] at h
+    rw [energyFormH1_one_zero_const, one_mul] at h
     rw [inner_sub_left, ← h, add_sub_cancel_right]
   have hdist := (isWeakSolutionDirichlet_one_zero_zero_iff_forall_neg_setIntegral_laplacian_mul_eq
     _ u).1 h0

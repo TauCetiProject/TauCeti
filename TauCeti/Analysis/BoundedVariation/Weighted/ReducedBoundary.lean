@@ -22,8 +22,10 @@ Hausdorff measure of its reduced boundary, and of the part of its essential boun
 
 (`TauCeti.weightedPerimeter_eq_lintegral_reducedBoundary`,
 `TauCeti.weightedPerimeter_eq_lintegral_essentialBoundary_inter`). A null-measurable set of
-finite weighted perimeter in `Ω` has locally finite perimeter there, so the reduced-boundary
-formula holds for it (`TauCeti.weightedPerimeter_eq_lintegral_reducedBoundary_of_ne_top`).
+finite weighted perimeter in `Ω` has locally finite perimeter there
+(`TauCeti.exists_totalVariationOn_indicator_ne_top_of_weightedPerimeter_ne_top`), so the
+reduced-boundary formula holds for it
+(`TauCeti.weightedPerimeter_eq_lintegral_reducedBoundary_of_ne_top`).
 
 The proof combines `V_μ(u; Ω) = ∫_Ω e^{−W} d|Du|`
 (`TauCeti.weightedVariation_eq_lintegral_variationMeasure`) with De Giorgi's theorem
@@ -80,6 +82,18 @@ theorem weightedPerimeter_eq_lintegral_essentialBoundary_inter (hW : ContDiff �
   rw [weightedPerimeter_eq_lintegral_reducedBoundary hW hn hu hfin,
     setLIntegral_congr (essentialBoundary_inter_ae_eq_reducedBoundary hn hu hfin)]
 
+/-- **Finite weighted perimeter gives locally finite perimeter.** For a `C¹` weight `W`, a
+null-measurable set `s` of finite weighted perimeter in `Ω` has locally finite perimeter there:
+every compact subset of `Ω` has an open neighbourhood on which the indicator of `s` has finite
+Euclidean variation. -/
+theorem exists_totalVariationOn_indicator_ne_top_of_weightedPerimeter_ne_top
+    (hW : ContDiff ℝ 1 W) (hs : NullMeasurableSet s (volume.restrict Ω))
+    (h : weightedPerimeter W Ω s ≠ ∞) :
+    ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞ :=
+  exists_totalVariationOn_ne_top_of_weightedVariation_ne_top hW
+    (locallyIntegrableOn_indicator_const hs 1) (weightedPerimeter_def (W := W) ▸ h)
+
 /-- For a `C¹` weight `W`, in dimension `n ≥ 2`, a null-measurable set `s` of finite weighted
 perimeter in `Ω` has `P_μ(s; Ω) = ∫_{∂*s} e^{−W} dHⁿ⁻¹`. -/
 theorem weightedPerimeter_eq_lintegral_reducedBoundary_of_ne_top (hW : ContDiff ℝ 1 W)
@@ -88,9 +102,7 @@ theorem weightedPerimeter_eq_lintegral_reducedBoundary_of_ne_top (hW : ContDiff 
     weightedPerimeter W Ω s =
       ∫⁻ x in reducedBoundary volume Ω s, ENNReal.ofReal (Real.exp (-W x))
         ∂μHE[finrank ℝ E - 1] :=
-  have hu := locallyIntegrableOn_indicator_const hs (1 : ℝ)
-  weightedPerimeter_eq_lintegral_reducedBoundary hW hn hu
-    (exists_totalVariationOn_ne_top_of_weightedVariation_ne_top hW hu
-      (weightedPerimeter_def (W := W) ▸ h))
+  weightedPerimeter_eq_lintegral_reducedBoundary hW hn (locallyIntegrableOn_indicator_const hs 1)
+    (exists_totalVariationOn_indicator_ne_top_of_weightedPerimeter_ne_top hW hs h)
 
 end TauCeti

@@ -9,8 +9,10 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -19,9 +21,10 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 # Sections of trivial vector bundles
 
 A `C^n` section of `Bundle.Trivial M F` with normed fibre `F` is a `C^n` map `M → F`
-(`ContMDiffSection.trivialEquiv`), with constant sections (`ContMDiffSection.trivialConst`) and
-basis coordinate expansions (`ContMDiffSection.trivialCoord`,
-`ContMDiffSection.eq_sum_trivialCoord_smul_trivialConst`).
+(`ContMDiffSection.trivialEquiv`), with constant sections (`ContMDiffSection.trivialConst`),
+pullbacks along `C^n` maps (`ContMDiffSection.trivialPullback`, supported in the preimage of the
+support, `ContMDiffSection.tsupport_trivialPullback_subset`) and basis coordinate expansions
+(`ContMDiffSection.trivialCoord`, `ContMDiffSection.eq_sum_trivialCoord_smul_trivialConst`).
 
 In differential geometry—for instance for trivial Lie algebra bundles and transformation Lie
 algebroids—the fibre `W` is often a finite-dimensional Hausdorff topological module over a
@@ -92,6 +95,47 @@ def trivialConst : F →ₗ[𝕜] Cₛ^n⟮I; F, Bundle.Trivial M F⟯ :=
 theorem trivialConst_injective [Nonempty M] :
     Function.Injective (trivialConst I M n (F := F)) := fun _ _ h ↦ by
   obtain ⟨x₀⟩ := ‹Nonempty M›; simpa using congr($h x₀)
+
+section TrivialPullback
+variable {E' H' N E'' H'' P : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [TopologicalSpace H'']
+  {K : ModelWithCorners 𝕜 E'' H''} [TopologicalSpace P] [ChartedSpace H'' P]
+
+/-- Pullback of `C^n` sections of `Bundle.Trivial N F` along a `C^n` map `φ : M → N`: the section
+`x ↦ s (φ x)`. -/
+def trivialPullback (φ : C^n⟮I, M; J, N⟯) :
+    Cₛ^n⟮J; F, Bundle.Trivial N F⟯ →ₗ[𝕜] Cₛ^n⟮I; F, Bundle.Trivial M F⟯ :=
+  ⟨⟨fun s ↦ trivialEquiv.symm ((trivialEquiv (𝕜 := 𝕜) s).comp φ), fun _ _ ↦ by ext x; simp⟩,
+    fun _ _ ↦ by ext x; simp⟩
+
+@[simp] theorem trivialPullback_apply (φ : C^n⟮I, M; J, N⟯) (s : Cₛ^n⟮J; F, Bundle.Trivial N F⟯)
+    (x : M) : trivialPullback φ s x = s (φ x) := (rfl)
+
+@[simp] theorem trivialPullback_smul_function (φ : C^n⟮I, M; J, N⟯) (f : C^n⟮J, N; 𝕜⟯)
+    (s : Cₛ^n⟮J; F, Bundle.Trivial N F⟯) :
+    trivialPullback φ (f • s) = f.comp φ • trivialPullback φ s := by ext x; simp
+
+@[simp] theorem trivialPullback_id :
+    trivialPullback (ContMDiffMap.id : C^n⟮I, M; I, M⟯) =
+      LinearMap.id (R := 𝕜) (M := Cₛ^n⟮I; F, Bundle.Trivial M F⟯) := by
+  ext s x; simp
+
+theorem trivialPullback_comp (φ : C^n⟮J, N; K, P⟯) (ψ : C^n⟮I, M; J, N⟯) :
+    trivialPullback (F := F) (φ.comp ψ) = (trivialPullback ψ).comp (trivialPullback φ) := by
+  ext s x; simp
+
+/-- The pullback `x ↦ s (φ x)` of a section of a trivial bundle along a `C^n` map `φ` is
+supported in the preimage under `φ` of the support of `s`. -/
+theorem tsupport_trivialPullback_subset (φ : C^n⟮I, M; J, N⟯)
+    (s : Cₛ^n⟮J; F, Bundle.Trivial N F⟯) :
+    (trivialPullback φ s).tsupport ⊆ φ ⁻¹' s.tsupport := by
+  rw [tsupport_def]
+  refine closure_minimal (fun x hx ↦ ?_) ((isClosed_tsupport s).preimage φ.contMDiff.continuous)
+  rw [mem_preimage, tsupport_def]
+  exact subset_closure (by simpa using hx)
+
+end TrivialPullback
 
 section Basis
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] {ι : Type*} (b : Module.Basis ι 𝕜 F)
@@ -209,7 +253,7 @@ def modelMap (L : W →ₗ[𝕜] W') :
   have hL := TrivialModel.contMDiff_mk_iff (f := fun p : TotalSpace (TrivialModel 𝕜 W)
       (Bundle.Trivial M W) ↦ L p.snd).2
     ⟨hid.1, (L_mod.contMDiff.comp hid.2).congr fun _ ↦ by simp [L_mod]⟩
-  ⟨(mapLinearMap (fun _ ↦ L) hL).toAddHom, mapLinearMap_smul_function (fun _ ↦ L) hL⟩
+  mapFunctionLinearMap (fun _ ↦ L) hL
 
 @[simp] theorem modelMap_apply (L : W →ₗ[𝕜] W')
     (s : Cₛ^n⟮I; TrivialModel 𝕜 W, Bundle.Trivial M W⟯) (x : M) :

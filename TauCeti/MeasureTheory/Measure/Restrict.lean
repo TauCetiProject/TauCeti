@@ -36,6 +36,14 @@ mass of `Eᶜ` under the restriction to `s`, with no measurability assumption
 (`MeasureTheory.Measure.restrict_apply_le_restrict_inter_add_compl`); this is the counting step of
 the comparison between conditioning on `s` and on `s ∩ E`.
 
+Restricting `μ.restrict (s ∩ u)` further to a measurable set `t`, or evaluating it on `t`, folds `t`
+into the first factor as `(s ∩ t) ∩ u` (`MeasureTheory.Measure.restrict_inter_restrict`,
+`MeasureTheory.Measure.restrict_inter_apply`).
+
+Summing the measures of the cells `S ∩ a ⁻¹' {i}` of a set `S` cut out by a measurable label
+`a` into a countable type gives the measure of `S`
+(`MeasureTheory.tsum_measure_inter_preimage_singleton`).
+
 For a map `f` into a Lindelöf space, a measure is determined by its restrictions to the preimages
 of the sets of an open cover (`MeasureTheory.Measure.ext_of_restrict_preimage`).
 -/
@@ -65,6 +73,19 @@ the top open set. -/
 theorem ae_le_ae_restrict_coe_opens_top {α : Type*} {_ : MeasurableSpace α} [TopologicalSpace α]
     {μ : Measure α} : ae μ ≤ ae (μ.restrict ((⊤ : TopologicalSpace.Opens α) : Set α)) :=
   (ae_restrict_coe_opens_top μ).ge
+
+/-- Restricting `μ.restrict (s ∩ u)` further to a measurable set `t` restricts `μ` to
+`(s ∩ t) ∩ u`. -/
+theorem restrict_inter_restrict {α : Type*} {_ : MeasurableSpace α} (μ : Measure α) (s u : Set α)
+    {t : Set α} (ht : MeasurableSet t) :
+    (μ.restrict (s ∩ u)).restrict t = μ.restrict ((s ∩ t) ∩ u) := by
+  rw [restrict_restrict ht, ← inter_assoc, inter_comm t s]
+
+/-- Evaluating `μ.restrict (s ∩ u)` on a measurable set `t` gives `μ ((s ∩ t) ∩ u)`. -/
+theorem restrict_inter_apply {α : Type*} {_ : MeasurableSpace α} (μ : Measure α) (s u : Set α)
+    {t : Set α} (ht : MeasurableSet t) :
+    (μ.restrict (s ∩ u)) t = μ ((s ∩ t) ∩ u) := by
+  rw [← restrict_apply_univ, restrict_inter_restrict μ s u ht, restrict_apply_univ]
 
 /-- Restricting `μ` to `s` gives an event `A` at most the mass that the restriction to `s ∩ E`
 gives `A`, plus the mass that the restriction to `s` gives `Eᶜ`. No set needs to be measurable. -/
@@ -121,6 +142,17 @@ theorem ae_eq_restrict_iff_indicator_ae_eq₀ {α β : Type*} [MeasurableSpace �
     · simp [hxs]
   · intro hxs
     simpa [hxs] using hx
+
+/-- Summing the measures of the cells `S ∩ a ⁻¹' {i}` of a set `S` over a measurable label `a`
+into a countable type gives the measure of `S`. This is
+`MeasureTheory.tsum_measure_preimage_singleton` for the restriction of the measure to `S`. -/
+theorem tsum_measure_inter_preimage_singleton {α ι : Type*} [MeasurableSpace α]
+    [MeasurableSpace ι] [MeasurableSingletonClass ι] [Countable ι] {μ : Measure α} {a : α → ι}
+    (ha : Measurable a) (S : Set α) : ∑' i, μ (S ∩ a ⁻¹' {i}) = μ S := by
+  have := tsum_measure_preimage_singleton (μ := μ.restrict S) Set.countable_univ
+    fun i _ ↦ ha (measurableSet_singleton i)
+  rw [tsum_univ (f := fun i ↦ μ.restrict S (a ⁻¹' {i}))] at this
+  simpa [Measure.restrict_apply (ha (measurableSet_singleton _)), Set.inter_comm] using this
 
 end MeasureTheory
 

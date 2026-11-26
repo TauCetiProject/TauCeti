@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Topology.FiberBundle.Separation
+import TauCeti.Topology.Homotopy.AddCircle
 
 /-!
 # Hamiltonian vector fields in action–angle coordinates
@@ -30,7 +32,11 @@ field (for the convention `ι_{X_H} ω = dH`)
 angles with the constant frequencies `∂h / ∂I_j` and fixes the actions. Its integral curves are the
 linear motions `t ↦ κ(θ + t ∇h(I), I)` on the invariant tori of constant action
 (`TauCeti.CotangentBundle.isMIntegralCurve_actionAngleCover_add_smul`); in particular the flow of
-`X_H` is complete. Only differentiability of `h` at the actions in question is needed.
+`X_H` is complete. Only differentiability of `h` at the actions in question is needed. Over a
+period `T` of such a motion each angle `θ_j` turns `T ∂h/∂I_j / p` times around its circle, so for
+`h` of class `C²` a periodic orbit that is contractible in `T*Tⁿ` has zero frequencies and is
+constant
+(`TauCeti.CotangentBundle.eq_of_isMIntegralCurve_hamiltonianVectorField_comp_torusActions`).
 
 The same formula holds in every action–angle chart. If a map `Φ` from a manifold with a
 nondegenerate two-form `σ` to `T*Tⁿ` is a local diffeomorphism at `y`, preserves the symplectic
@@ -147,6 +153,67 @@ theorem exists_isMIntegralCurve_hamiltonianVectorField_comp_torusActions {h : (�
   obtain ⟨⟨θ, I⟩, rfl⟩ := surjective_actionAngleCover (ι := ι) p z
   rw [torusActions_actionAngleCover] at hh
   exact ⟨_, by simp, isMIntegralCurve_actionAngleCover_add_smul p θ I hh⟩
+
+/-- **Contractible periodic orbits of a function of the actions are constant.** For `H = h(I)` with
+`h` of class `C²`, a `T`-periodic orbit of the Hamiltonian vector field, `T > 0`, whose loop
+`ℝ / Tℤ → T*Tⁿ` is null-homotopic is constant. Indeed the orbit through `κ(θ, I)` is the linear
+motion `t ↦ κ(θ + t ∇h(I), I)`, and over one period each angle `θ_j` turns `T ∂h/∂I_j / p` times
+around its circle, which is the winding number of a loop on that circle and so vanishes for a
+null-homotopic loop. -/
+theorem eq_of_isMIntegralCurve_hamiltonianVectorField_comp_torusActions {h : (ι → ℝ) → ℝ}
+    (hh : ContDiff ℝ 2 h)
+    {γ : ℝ → CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)}
+    (hγ : IsMIntegralCurve γ ((symplecticForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      (ι → AddCircle p)).hamiltonianVectorField (h ∘ torusActions p)))
+    {T : ℝ} (hT : 0 < T) (hper : Periodic γ T)
+    (hnull : ∃ g : C(AddCircle T,
+        CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)),
+      g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t) (t : ℝ) :
+    γ t = γ 0 := by
+  have hω := (isSymplectic_symplecticForm (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+    (M := ι → AddCircle p)).isNondegenerate
+  obtain ⟨⟨θ, I⟩, hz⟩ := surjective_actionAngleCover (ι := ι) p (γ 0)
+  -- The orbit through `κ(θ, I)` turns the angles with the frequencies `a = ∇h(I)`.
+  obtain ⟨a, ha⟩ : ∃ a : ι → ℝ, a = fun j ↦ fderiv ℝ h I (Pi.single j 1) := ⟨_, rfl⟩
+  have hc := isMIntegralCurve_actionAngleCover_add_smul p θ I
+    ((hh.differentiable (by norm_num)) I)
+  rw [← ha] at hc
+  have hF : ContMDiff ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) 𝓘(ℝ)
+      (1 + 1) (h ∘ torusActions p) :=
+    hh.contMDiff.comp ((contMDiff_torusActions p).of_le (by simp))
+  have hv := hω.contMDiff_hamiltonianVectorField (n := 1) (by norm_num) hF
+  have hγc := isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (t₀ := 0) hv hγ hc
+    (by simpa using hz.symm)
+  -- Over one period the angles advance by `T a ∈ p ℤ^ι`.
+  have hcT : actionAngleCover p (θ, I) = actionAngleCover p (θ + T • a, I) := by
+    have := hper 0
+    rw [zero_add, hγc] at this
+    simpa using this.symm
+  obtain ⟨-, m, hm⟩ := (actionAngleCover_eq_actionAngleCover_iff p).1 hcT
+  have hTa (j : ι) : T * a j = m j * p := by
+    simpa using congrFun hm j
+  -- The `j`-th angle of `γ` is a loop of winding number `m j` in `AddCircle p`, which is
+  -- null-homotopic, so `m j = 0`.
+  obtain ⟨g, hg, hgγ⟩ := hnull
+  have : Fact (0 < T) := ⟨hT⟩
+  have hm0 (j : ι) : m j = 0 := by
+    let gj : C(AddCircle T, AddCircle p) :=
+      (⟨fun z ↦ z.proj j, (continuous_apply j).comp (FiberBundle.continuous_proj _ _)⟩ :
+        C(CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p),
+          AddCircle p)).comp g
+    have hloop := (gj.nullhomotopic_iff_homotopic_refl (AddCircle.zsmulLoop p (θ j) (m j))
+      fun t ↦ ?_).1 (hg.comp_right _)
+    · exact (AddCircle.zsmulLoop_homotopic_refl_iff (θ j) (m j)).1 hloop
+    · simp only [gj, ContinuousMap.comp_apply, ContinuousMap.coe_mk, AddCircle.ofUnitInterval_apply,
+        hgγ, hγc, proj_actionAngleCover, AddCircle.zsmulLoop_apply, Pi.add_apply, Pi.smul_apply,
+        smul_eq_mul]
+      rw [← AddCircle.coe_zsmul, ← AddCircle.coe_add]
+      congr 1
+      rw [zsmul_eq_mul, mul_assoc (t : ℝ) T, hTa]
+      ring
+  have ha0 : a = 0 := funext fun j ↦ by
+    simpa [hm0 j, hT.ne'] using hTa j
+  simp [hγc, ha0]
 
 /-! ### Action–angle charts -/
 

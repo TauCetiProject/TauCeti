@@ -11,9 +11,11 @@ import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior
 import TauCeti.Analysis.Complex.Wirtinger.RealBoundary.Reflection
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Analysis.Sobolev.Local.Reflection.Odd
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Analysis.Sobolev.Local.Reflection
 
 /-!
 # Order-zero reflection for rough Cauchy–Riemann equations with a totally real boundary condition
@@ -75,8 +77,14 @@ a continuous `J` with weak derivative up to the boundary it holds when `J(s)` an
   axis under these hypotheses on the half-plane coefficients.
 * `TauCeti.IsWeakCRSolutionHalf.memWkpLoc_one_of_I`: the case `V = ℂ`, `J = i`, `S = 0`, real
   boundary values.
-* `TauCeti.MemLpLoc.twistedReflection`, `TauCeti.MemLpLoc.of_twistedReflection`: local `Lᵖ`
-  bounds pass to and from twisted reflections.
+* `TauCeti.MemLpLoc.of_twistedReflection`: local `Lᵖ` bounds pass back from twisted reflections;
+  the forward direction is `TauCeti.MemLpLoc.twistedReflection`.
+* `TauCeti.eLpNorm_twistedReflection_le`: on a conjugation-invariant set, the twisted reflection
+  by a map `L` with `‖L v‖ ≤ ‖v‖` at most doubles the `Lᵖ` norm up to the axis, for `1 ≤ p`;
+  the measurability is `MeasureTheory.AEStronglyMeasurable.twistedReflection`.
+* `TauCeti.eLpNorm_crReflectionCoeff_le`, `TauCeti.eLpNorm_crReflectionDeriv_le`,
+  `TauCeti.eLpNorm_crReflectionZeroth_le`: for an isometry `R`, the reflected coefficients have at
+  most twice the `Lᵖ` norms of the coefficients up to the axis.
 
 ## References
 
@@ -202,6 +210,12 @@ theorem crReflectionDeriv_zero : crReflectionDeriv R (0 : ℂ → ℂ →L[ℝ] 
 theorem crReflectionZeroth_zero : crReflectionZeroth R (0 : ℂ → W →L[ℝ] W) = 0 :=
   twistedReflection_zero_right _
 
+/-- The reflection of a sum of zeroth-order coefficients is the sum of their reflections. -/
+theorem crReflectionZeroth_add (R : W ≃L[ℝ] W) (S M : ℂ → W →L[ℝ] W) :
+    crReflectionZeroth R (S + M) = crReflectionZeroth R S + crReflectionZeroth R M := by
+  simp only [crReflectionZeroth_def]
+  exact twistedReflection_add _ S M
+
 end Coefficients
 
 /-! ### Local `Lᵖ` bounds on the doubled domain -/
@@ -210,17 +224,6 @@ section Integrability
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} {f : ℂ → F}
 
-/-- The twisted reflection of a map locally `Lᵖ` up to the real axis is locally `Lᵖ` on the
-conjugation-invariant set `U`. -/
-theorem MemLpLoc.twistedReflection {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ) U U)
-    (L : F →L[ℝ] F) (hf : MemLpLoc p (U ∩ {z | 0 ≤ z.im}) f) :
-    MemLpLoc p U (TauCeti.twistedReflection L f) := by
-  refine (hf.ite_conj hU L).congr_ae (ae_restrict_of_ae ?_)
-  filter_upwards [Complex.ae_im_ne_zero] with z hz
-  rcases lt_or_gt_of_ne hz with hz | hz
-  · simp [hz, not_le.2 hz]
-  · simp [hz, hz.le]
-
 /-- A map whose twisted reflection is locally `Lᵖ` on `U` is locally `Lᵖ` up to the real axis on
 `U`: the two agree off the null real axis. -/
 theorem MemLpLoc.of_twistedReflection {U : Set ℂ} {L : F →L[ℝ] F}
@@ -228,6 +231,31 @@ theorem MemLpLoc.of_twistedReflection {U : Set ℂ} {L : F →L[ℝ] F}
     MemLpLoc p (U ∩ {z | 0 ≤ z.im}) f :=
   (hf.mono_set inter_subset_left).congr_ae
     (ae_restrict_of_ae_restrict_of_subset inter_subset_right (twistedReflection_ae_eq_restrict L f))
+
+/-- **The `Lᵖ` bound for twisted reflections.** On a conjugation-invariant set `U`, the twisted
+reflection by a map `L` with `‖L v‖ ≤ ‖v‖` at most doubles the `Lᵖ` norm up to the real axis, for
+`1 ≤ p`. -/
+theorem eLpNorm_twistedReflection_le {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ) U U)
+    {L : F →L[ℝ] F} (hL : ∀ v, ‖L v‖ ≤ ‖v‖) (hp : 1 ≤ p) (f : ℂ → F) :
+    eLpNorm (TauCeti.twistedReflection L f) p (volume.restrict U) ≤
+      2 * eLpNorm f p (volume.restrict (U ∩ {z | 0 ≤ z.im})) := by
+  -- The order-one reflection weight is `1` and its node is `-1`, so the bound is `1 + 1`.
+  have hb : higherReflectionBound 1 p = 2 := by
+    norm_num [higherReflectionBound_eq, higherReflectionCoeff_one, higherReflectionNode_eq]
+  by_cases hf : AEStronglyMeasurable f (volume.restrict (U ∩ {z | 0 ≤ z.im}))
+  swap
+  · simp [eLpNorm_of_not_aestronglyMeasurable hf]
+  have h := eLpNorm_planarReflection_le hp
+    (imDilation_higherReflectionNode_fin_one_mem fun z hz _ => hU hz)
+    (higherReflectionCoeff 1) f
+  rw [planarReflectionBound_higherReflectionCoeff, hb] at h
+  -- Off the null axis the twisted reflection is pointwise dominated by the order-one reflection.
+  refine (eLpNorm_mono_ae (hf.twistedReflection (fun z hz => hU hz) L) ?_).trans h
+  filter_upwards [ae_restrict_of_ae Complex.ae_im_ne_zero] with z hz
+  rcases lt_or_gt_of_ne hz with hz | hz
+  · simpa [hz, imDilation_higherReflectionNode_fin_one, higherReflectionCoeff_one] using
+      hL (f (conj z))
+  · simp [hz, hz.le]
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {R : W ≃L[ℝ] W}
   {J S : ℂ → W →L[ℝ] W} {DJ : ℂ → ℂ →L[ℝ] W →L[ℝ] W} {U : Set ℂ}
@@ -286,6 +314,47 @@ theorem isSobolevCRCoefficients_crReflection (hΩ : MapsTo (starRingEnd ℂ) Ω 
   rwa [map_neg, ContinuousLinearMap.neg_comp] at h
 
 end SobolevCoefficients
+
+/-! ### Norm bounds for the reflected coefficients -/
+
+section NormBounds
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {R : W ≃ₗᵢ[ℝ] W}
+  {U : Set ℂ} {p : ℝ≥0∞}
+
+/-- **The `Lᵖ` bound for the reflected zeroth-order coefficient.** On a conjugation-invariant set
+`U`, for `1 ≤ p` and an isometry `R`, the reflection of `S` has at most twice the `Lᵖ` norm of `S`
+up to the real axis. -/
+theorem eLpNorm_crReflectionZeroth_le (hU : MapsTo (starRingEnd ℂ) U U) (hp : 1 ≤ p)
+    (S : ℂ → W →L[ℝ] W) :
+    eLpNorm (crReflectionZeroth R.toContinuousLinearEquiv S) p (volume.restrict U) ≤
+      2 * eLpNorm S p (volume.restrict (U ∩ {z | 0 ≤ z.im})) := by
+  rw [crReflectionZeroth_def]
+  exact eLpNorm_twistedReflection_le hU (fun M => by simp) hp S
+
+/-- **The `Lᵖ` bound for the reflected leading coefficient.** On a conjugation-invariant set `U`,
+for `1 ≤ p` and an isometry `R`, the reflection of `J` has at most twice the `Lᵖ` norm of `J` up
+to the real axis. -/
+theorem eLpNorm_crReflectionCoeff_le (hU : MapsTo (starRingEnd ℂ) U U) (hp : 1 ≤ p)
+    (J : ℂ → W →L[ℝ] W) :
+    eLpNorm (crReflectionCoeff R.toContinuousLinearEquiv J) p (volume.restrict U) ≤
+      2 * eLpNorm J p (volume.restrict (U ∩ {z | 0 ≤ z.im})) := by
+  rw [crReflectionCoeff_def]
+  exact eLpNorm_twistedReflection_le hU (fun M => by simp) hp J
+
+/-- **The `Lᵖ` bound for the reflected derivative.** On a conjugation-invariant set `U`, for
+`1 ≤ p` and an isometry `R`, the reflection of `DJ` has at most twice the `Lᵖ` norm of `DJ` up to
+the real axis. -/
+theorem eLpNorm_crReflectionDeriv_le (hU : MapsTo (starRingEnd ℂ) U U) (hp : 1 ≤ p)
+    (DJ : ℂ → ℂ →L[ℝ] W →L[ℝ] W) :
+    eLpNorm (crReflectionDeriv R.toContinuousLinearEquiv DJ) p (volume.restrict U) ≤
+      2 * eLpNorm DJ p (volume.restrict (U ∩ {z | 0 ≤ z.im})) := by
+  rw [crReflectionDeriv_def]
+  refine eLpNorm_twistedReflection_le hU (fun D => ?_) hp DJ
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg D) fun h => ?_
+  simpa using D.le_opNorm (conj h)
+
+end NormBounds
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {Ω : Opens ℂ} {Λ : Submodule ℝ V} {p q r : ℝ≥0∞} {R : V ≃ₗᵢ[ℝ] V}

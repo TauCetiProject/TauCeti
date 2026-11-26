@@ -49,6 +49,9 @@ smooth vectors.
   preserves smooth vectors.
 * `ContRepresentation.IsLieSmoothVector.lieDerivative_lie`: the derived action of a bracket is
   the commutator of the derived actions.
+* `ContRepresentation.lieSmoothVectors_trivial`,
+  `ContRepresentation.lieSmoothVectorsDerivative_trivial`: every vector of the trivial
+  representation is smooth, and its derived action is zero.
 
 ## References
 
@@ -89,6 +92,11 @@ theorem IsLieSmoothVector.apply [ContMDiffMul I ∞ G] {v : V} (hv : IsLieSmooth
   rw [isLieSmoothVector_iff, hfun]
   exact hv.comp (contMDiff_mul_right (I := I) (n := ∞))
 
+/-- Every vector of the trivial representation is smooth: its orbit map is constant. -/
+theorem isLieSmoothVector_trivial (v : V) : IsLieSmoothVector I (trivial R G V) v := by
+  rw [isLieSmoothVector_iff]
+  simpa only [trivial_apply] using (contMDiff_const : ContMDiff I 𝓘(ℝ, V) ∞ fun _ : G ↦ v)
+
 section Submodule
 
 variable [SMulCommClass ℝ R V] [ContinuousConstSMul R V]
@@ -115,6 +123,11 @@ def lieSmoothVectors : Submodule R V where
 @[simp]
 theorem mem_lieSmoothVectors {v : V} : v ∈ lieSmoothVectors I π ↔ IsLieSmoothVector I π v :=
   Iff.rfl
+
+/-- **Every vector of the trivial representation is smooth.** -/
+@[simp]
+theorem lieSmoothVectors_trivial : lieSmoothVectors I (trivial R G V) = ⊤ :=
+  eq_top_iff.mpr fun v _ ↦ (mem_lieSmoothVectors I _).mpr (isLieSmoothVector_trivial I v)
 
 variable [ContMDiffMul I ∞ G]
 
@@ -150,6 +163,13 @@ variable {I} in
 theorem lieDerivative_def (X : LeftInvariantDerivation I G) (v : V) :
     lieDerivative π X v = deriv (fun t : ℝ ↦ π (lieExp (t • X)) v) 0 := by
   rw [lieDerivative]
+
+variable {I} in
+/-- The derived action of the trivial representation vanishes. -/
+@[simp]
+theorem lieDerivative_trivial (X : LeftInvariantDerivation I G) (v : V) :
+    lieDerivative (trivial R G V) X v = 0 := by
+  simp only [lieDerivative_def, trivial_apply, deriv_const]
 
 variable {I π}
 
@@ -327,6 +347,12 @@ theorem lieSmoothVectorsDerivative_sum {ι : Type*} (s : Finset ι)
       ∑ i ∈ s, lieSmoothVectorsDerivative I π (X i) :=
   map_sum (AddMonoidHom.mk' (lieSmoothVectorsDerivative I π) lieSmoothVectorsDerivative_add) X s
 
+/-- **The derived action of the trivial representation on its smooth vectors is zero.** -/
+@[simp]
+theorem lieSmoothVectorsDerivative_trivial (X : LeftInvariantDerivation I G) :
+    lieSmoothVectorsDerivative I (trivial R G V) X = 0 :=
+  LinearMap.ext fun w ↦ Subtype.ext (by simp)
+
 end Endomorphism
 
 section LieHom
@@ -359,6 +385,21 @@ theorem lieSmoothVectorsDerivative_smul (c : ℝ) (X : LeftInvariantDerivation I
   simp only [← lieSmoothVectorsDerivedAction_apply, map_smul]
 
 end LieHom
+
+section CommRing
+
+variable {S : Type*} [CommRing S] [Module S V] [Algebra ℝ S] [IsScalarTower ℝ S V]
+  [ContinuousConstSMul S V] {ρ : ContRepresentation S G V}
+
+/-- The derived endomorphism of a real combination `∑ i, c i • X i` is the `S`-combination
+`∑ i, c i • dρ(X_i)` of the derived endomorphisms. -/
+theorem lieSmoothVectorsDerivative_sum_smul {ι : Type*} [Fintype ι]
+    (X : ι → LeftInvariantDerivation I G) (c : ι → ℝ) :
+    lieSmoothVectorsDerivative I ρ (∑ i, c i • X i) =
+      ∑ i, algebraMap ℝ S (c i) • lieSmoothVectorsDerivative I ρ (X i) := by
+  simp [lieSmoothVectorsDerivative_sum, lieSmoothVectorsDerivative_smul, algebraMap_smul]
+
+end CommRing
 
 end Derivative
 

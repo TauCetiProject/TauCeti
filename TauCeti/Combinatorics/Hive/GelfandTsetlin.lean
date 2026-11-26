@@ -211,6 +211,15 @@ theorem rowWeight_toGTPattern_of_productBoundary {lam μ γ : DominantWeight n} 
   have hb2 : h.boundaryWeight 2 = γ.dual := Subtype.ext (by simp [coe_boundaryWeight, hb])
   rw [h.rowWeight_toGTPattern, hb2, DominantWeight.dual_dual, hb, productBoundary_zero]
 
+/-- If an integer hive has boundary `(λ, μ, γ*)`, then every entry of `γ - λ` lies between the last
+entry `μₙ` and the first entry `μ₁` of `μ`. -/
+theorem sub_mem_Icc_of_productBoundary {lam μ γ : DominantWeight n} {h : IntegerHive n}
+    (hb : h.boundary = productBoundary lam μ γ) (k : Fin n) :
+    γ.val k - lam.val k ∈
+      Set.Icc (μ.val ⟨n - 1, by have := k.isLt; omega⟩) (μ.val ⟨0, by have := k.isLt; omega⟩) := by
+  have hk := h.toGTPattern.rowWeight_mem_Icc k
+  rwa [topRow_toGTPattern_of_productBoundary hb, rowWeight_toGTPattern_of_productBoundary hb] at hk
+
 /-- Inverse chart formula `TauCeti.prefixSum j lam.1 + ∑ k ∈ Finset.range i, P k j` reconstructing
 the hive value at `(i, j)` (`0 ≤ i ≤ j ≤ n`) from the side-`0` dominant weight `lam` and a
 Gelfand–Tsetlin pattern `P`. -/

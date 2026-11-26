@@ -85,8 +85,7 @@ theorem IsMorse.exists_admissible_morseCharts [T2Space M] (hf : IsMorse I f) {c 
           closedBall 0 √(2 * ε) ⊆ (ψ p).target ∧ ∀ y ∈ (ψ p).source,
             f y = c + ∑ i, (if i.val < manifoldMorseIndex I f p then -1 else 1) * ψ p y i ^ 2 := by
   set S := criticalPoints I f ∩ f ⁻¹' {c}
-  have hS : S.Finite := (hf.finite_criticalPoints_inter hcompact).subset
-    (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))
+  have hS : S.Finite := hf.finite_criticalPoints_inter_level hδ.le hcompact
   have : Finite S := hS.to_subtype
   obtain ⟨ε₁, hε₁, hε₁δ, hband⟩ := hf.exists_criticalPoints_inter_preimage_Icc_subset hδ hcompact
   obtain ⟨ψ, hdisj, hψ⟩ := exists_pairwise_disjoint_normalized_morseCharts hS

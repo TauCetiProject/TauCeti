@@ -44,8 +44,6 @@ invariants `τ` of a knot grid and of this stabilization.
 * `TauCeti.OddComponentGridDiagram.stabilizeXCoefficientFormula_mem_bigradedChainMinusPiece`:
   the stabilization coefficient formula preserves the bigrading of `GC⁻` over every
   commutative ring.
-* `TauCeti.OddComponentGridDiagram.stabilizeXMap_mem_alexanderChainMinusPiece`: the chain map
-  `stabilizeXMap` preserves the Alexander grading of `GC⁻` in characteristic two.
 
 ## References
 
@@ -57,7 +55,7 @@ Section 3.2.
 
 public section
 
-open CategoryTheory MvPolynomial
+open MvPolynomial
 
 namespace TauCeti
 
@@ -66,9 +64,6 @@ namespace OddComponentGridDiagram
 variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n)
 
 variable (R : Type*) [CommRing R]
-
-local notation "A" => MvPolynomial (Fin n) R
-local notation "S" => MvPolynomial (Fin (n + 1)) R
 
 /-- Every monomial `V^e · x` of the image of a chain `c` under the stabilization map has the
 bidegree of some monomial `V^d · y` of `c`. -/
@@ -123,25 +118,6 @@ theorem stabilizeXCoefficientFormula_mem_bigradedChainMinusPiece
   intro x e he
   obtain ⟨y, d, hd, h⟩ := G.exists_monomialBidegree_eq_of_mem_support s R he
   rw [h, hc y d hd]
-
-variable [CharP R 2]
-
-/-- **The stabilization chain map preserves the Alexander grading.** The chain map
-`GC⁻(G') ⟶ GC⁻(G)` of the stabilization splitting the `X`-marking of column `s` sends a chain of
-`GC⁻(G')` of Alexander degree `a` to a chain of `GC⁻(G)` of the same Alexander degree. -/
-theorem stabilizeXMap_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMinus R (n + 1)}
-    (hc : c ∈ (G.stabilizeX s).alexanderChainMinusPiece R a) :
-    ((ModuleCat.restrictScalars
-        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
-          (eqToHom
-            ((G.val.stabilizeX s.castSucc (G.val.X s).castSucc s).unblockedComplex_X R ()).symm) ≫
-        (G.val.stabilizeXMap s R).f () ≫ eqToHom (G.val.unblockedComplex_X R ())).hom c ∈
-      G.alexanderChainMinusPiece R a := by
-  rw [mem_alexanderChainMinusPiece] at hc ⊢
-  intro x e he
-  rw [GridDiagram.stabilizeXMap_f_apply] at he
-  obtain ⟨y, d, hd, h⟩ := G.exists_monomialBidegree_eq_of_mem_support s R he
-  rw [← monomialBidegree_snd, h, monomialBidegree_snd, hc y d hd]
 
 end OddComponentGridDiagram
 

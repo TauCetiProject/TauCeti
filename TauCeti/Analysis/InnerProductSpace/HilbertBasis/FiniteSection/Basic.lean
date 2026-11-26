@@ -214,7 +214,7 @@ theorem finiteSection_coordinateCutoff (T : H →L[𝕜] H) (b : HilbertBasis �
 /-- The finite-section matrix entry is the corresponding Hilbert inner product. -/
 theorem finiteSection_single_apply (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
     (i j : Fin (n + 1)) :
-    T.finiteSection b n (PiLp.single 2 j (1 : 𝕜)) i = ⟪b i, T (b j)⟫_𝕜 := by
+    T.finiteSection b n (EuclideanSpace.single j (1 : 𝕜)) i = ⟪b i, T (b j)⟫_𝕜 := by
   simp [HilbertBasis.repr_apply_apply]
 
 /-- Compression preserves the zero operator. -/

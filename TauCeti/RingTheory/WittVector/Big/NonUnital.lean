@@ -182,7 +182,9 @@ theorem coordinates_apply (x : NonUnitalBigWittVector S R) (n : ℕ) :
   · simp [hn, coordinates, coeff]
   · simp [hn, coordinates, BigWittVector.coeff_eq_zero_of_notMem _ n hn]
 
-private theorem coordinates_toBigWitt (x : NonUnitalBigWittVector S R) :
+/-- The coordinates of the kernel inclusion are the coordinates extended by zero, included in the
+unitization. -/
+theorem coordinates_toBigWitt (x : NonUnitalBigWittVector S R) :
     (toBigWitt x).coeff =
       (Unitization.inrNonUnitalAlgHom ℤ R) ∘ coordinates x := by
   funext n

@@ -9,6 +9,11 @@ public import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 public import Mathlib.RingTheory.Valuation.ValuationRing
 public import TauCeti.RingTheory.Perfectoid.Untilt
 public import TauCeti.RingTheory.Valuation.ValuationRing
+public import Mathlib.Topology.Algebra.Valued.NormedValued
+public import Mathlib.Topology.Algebra.Valued.ValuedField
+
+import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.Topology.Algebra.Valued.LocallyCompact
 
 /-!
 # The tilt of a `p`-adically complete valuation ring
@@ -26,6 +31,9 @@ perfectoid hypothesis is made.
   `x♯ ∣ y♯` with `x ≠ 0`, then `xₙ ^ p ^ n ∣ yₙ ^ p ^ n`, hence `xₙ ∣ yₙ`, and the quotients
   `yₙ / xₙ` form a compatible system of roots, that is, an element `z ∈ V♭` with `x z = y`.
 * If `V` is a valuation ring, so is `V♭`: any two sharps are comparable for divisibility.
+* For the valuation ring `O_C` of a nontrivially normed ultrametric field `C`, the tilt is
+  separated: if every power of a nonunit `c` divides `a`, then `a = 0`, because untilting gives
+  `‖a♯‖ ≤ ‖c♯‖ ^ n` with `‖c♯‖ < 1`.
 * For a valuation ring `V`, the sharp map induces an injective order-preserving homomorphism of
   value groups `Frac(V♭)ˣ / (V♭)ˣ → Frac(V)ˣ / Vˣ`, which need not be surjective: for `V = ℤ_p` the
   tilt is `𝔽_p`, with trivial value group.
@@ -46,6 +54,8 @@ valuation; here `V` is any `p`-adically complete domain.
   `x ∣ y`.
 * `PreTilt.instValuationRing`: the tilt of a `p`-adically complete valuation ring is a valuation
   ring.
+* `PreTilt.eq_zero_of_forall_pow_dvd`: in the tilt of `O_C`, an element divisible by every power
+  of a nonunit is zero.
 * `PreTilt.valueGroupMap_le_valueGroupMap_iff`, `PreTilt.valueGroupMap_injective`,
   `PreTilt.valueGroupMap_inj`: the sharp map on value groups is an order embedding.
 
@@ -186,5 +196,35 @@ theorem valueGroupMap_inj {a b : ValuationRing.ValueGroup (PreTilt V p) K} :
   (valueGroupMap_injective K L).eq_iff
 
 end ValueGroup
+
+section RankOne
+
+open scoped NormedField Valued
+
+variable {p : ℕ} [Fact p.Prime] {C : Type*} [NontriviallyNormedField C] [IsUltrametricDist C]
+  [Fact ¬IsUnit (p : 𝒪[C])] [IsAdicComplete (Ideal.span {(p : 𝒪[C])}) (𝒪[C])]
+
+/-- **Separatedness of the tilt of `O_C`.** If every power of a nonunit `c` of `O_C♭` divides `a`,
+then `a = 0`. -/
+theorem eq_zero_of_forall_pow_dvd (c : PreTilt (𝒪[C]) p) {a : PreTilt (𝒪[C]) p}
+    (hc : ¬IsUnit c) (h : ∀ n, c ^ n ∣ a) : a = 0 := by
+  -- untilting, `‖a♯‖ ≤ ‖c♯‖ ^ n` for every `n` while `‖c♯‖ < 1`
+  by_contra ha
+  have hc' : ‖(c.untilt : C)‖ < 1 := by
+    refine lt_of_le_of_ne (Valued.integer.mem_iff.mp c.untilt.property) fun h1 ↦ hc ?_
+    have hu : IsUnit c.untilt := Valued.integer.isUnit_iff_norm_eq_one.mpr h1
+    rw [isUnit_iff_dvd_one, ← untilt_dvd_untilt_iff, map_one]
+    exact hu.dvd
+  have ha' : 0 < ‖(a.untilt : C)‖ := by
+    rw [norm_pos_iff, ne_eq, ZeroMemClass.coe_eq_zero]
+    exact untilt_ne_zero_iff.mpr ha
+  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one ha' hc'
+  obtain ⟨t, ht⟩ := map_dvd untilt (h n)
+  have hle : ‖(a.untilt : C)‖ ≤ ‖(c.untilt : C)‖ ^ n := by
+    rw [ht, map_pow, MulMemClass.coe_mul, SubmonoidClass.coe_pow, norm_mul, norm_pow]
+    exact mul_le_of_le_one_right (by positivity) (Valued.integer.mem_iff.mp t.property)
+  exact absurd hn hle.not_gt
+
+end RankOne
 
 end PreTilt
