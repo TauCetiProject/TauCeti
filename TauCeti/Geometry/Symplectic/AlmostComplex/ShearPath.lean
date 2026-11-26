@@ -113,8 +113,8 @@ theorem shearDirection_notMem_compatibleTangentSpace :
 
 /-- The family `J_ε` of complex structures on `ℝ² × ℝ²`: the tangent path
 `exp(ε B) J₀ exp(-ε B)`, `B = ½ J₀ Y`, of the standard structure `J₀ = j ⊕ j` in the direction
-`Y = TauCeti.shearDirection`. It is the straight line `J₀ + ε Y`
-(`TauCeti.SymplecticForm.TameNotCompatibleExample.shearComplexStructure_apply`). -/
+`Y = TauCeti.SymplecticForm.TameNotCompatibleExample.shearDirection`. It is the straight line
+`J₀ + ε Y` (`TauCeti.SymplecticForm.TameNotCompatibleExample.shearComplexStructure_apply`). -/
 noncomputable def shearComplexStructure (ε : ℝ) :
     AlmostComplexStructure ((ℝ × ℝ) × (ℝ × ℝ)) :=
   ((AlmostComplexStructure.product ℝ).prod (AlmostComplexStructure.product ℝ)).tangentPath
