@@ -43,9 +43,9 @@ theorem apply_one_eq_apply_zero_of_injOn_fiber {E B : Type*} [TopologicalSpace E
     Γ 1 = Γ 0 := by
   let S := p ⁻¹' {p (Γ 0)}
   let γ : C(I, B) := ⟨p ∘ Γ, hp.continuous.comp Γ.continuous⟩
-  have hlift (y : S) : ∃ L : C(I, E), p ∘ L = γ ∧ L 0 = y :=
-    hp.exists_path_lifts γ y (mem_singleton_iff.mp y.property).symm
-  choose L hLp hL0 using hlift
+  let L (y : S) := hp.liftPath γ y (mem_singleton_iff.mp y.property).symm
+  have hLp (y : S) : p ∘ L y = γ := hp.liftPath_lifts ..
+  have hL0 (y : S) : L y 0 = y := hp.liftPath_zero ..
   have hpL (y : S) (t : I) : p (L y t) = p (Γ t) := congrFun (hLp y) t
   let τ (y : S) : S := ⟨L y 1, (hpL y 1).trans hΓ⟩
   let : Finite S := hfin.to_subtype
@@ -65,7 +65,8 @@ theorem apply_one_eq_apply_zero_of_injOn_fiber {E B : Type*} [TopologicalSpace E
       ((hLp x).trans (hLp y).symm) t heq
     exact hxy.ne (by rw [← hL0 x, ← hL0 y, hl])
   let y₀ : S := ⟨Γ 0, rfl⟩
-  have hΓL := hp.eq_of_comp_eq Γ.continuous (L y₀).continuous (hLp y₀).symm 0 (hL0 y₀).symm
-  exact (congrFun hΓL 1).trans (congrArg Subtype.val (hmono.apply_eq (x := y₀)))
+  have hΓL : Γ = L y₀ := (hp.eq_liftPath_iff' _).mpr ⟨rfl, rfl⟩
+  exact (congrArg (fun f : C(I, E) ↦ f 1) hΓL).trans
+    (congrArg Subtype.val (hmono.apply_eq (x := y₀)))
 
 end IsCoveringMap
