@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Coordinates
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
@@ -49,6 +50,9 @@ the rank-one parabolic factorization `U(K) = X_{αᵢ}(K) * U^{αᵢ}(K)` and th
   any one of their points.
 * `TauCeti.DynkinType.ChevalleyDatum.positivePoints_inf_map_negativePoints_conj_eq_inversionPoints`:
   `D.positivePoints K ⊓ (D.negativePoints K).map (MulAut.conj n) = D.inversionPoints K w`.
+* `TauCeti.DynkinType.ChevalleyDatum.inversionPoints_mul_bijective`: every positive point is
+  uniquely a product of an inversion point and a point in `U(K) ∩ n U(K) n⁻¹`.
+  Existence uses `mem_positivePoints_iff_exists_prod`, ordering inversions of `w⁻¹` first.
 * `TauCeti.DynkinType.ChevalleyDatum.map_negativePoints_conj_eq_positivePoints` and
   `TauCeti.DynkinType.ChevalleyDatum.map_positivePoints_conj_eq_negativePoints`: a Weyl lift whose
   projection inverts every positive root exchanges `U⁻(K)` and `U(K)` by conjugation.
@@ -118,6 +122,25 @@ theorem inversionPoints_eq_closure (w : (t.simplyConnectedRootDatum ht).weylGrou
 @[simp]
 theorem inversionPoints_one : D.inversionPoints A 1 = ⊥ := by
   simp [inversionPoints, inversions_one]
+
+/-- At a simple reflection the inversion subgroup is the corresponding root subgroup. -/
+@[simp]
+theorem inversionPoints_ofIdx {γ : Fin t.numRoots}
+    (hγ : γ ∈ (t.simplyConnectedBase ht).support) :
+    D.inversionPoints A (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ) =
+      (D.rootSubgroupPoints γ A).range := by
+  let := t.isReduced_simplyConnectedRootDatum ht
+  simp only [inversionPoints, RootPairing.weylGroup.ofIdx_inv_eq, inversions_ofIdx _ _ hγ,
+    Set.mem_singleton_iff, iSup_iSup_eq_left]
+
+/-- Ring maps preserve the inversion subgroup at each Weyl element. -/
+theorem map_inversionPoints_le {A B : Type*} [CommRing A] [CommRing B]
+    (f : A →+* B) (w : (t.simplyConnectedRootDatum ht).weylGroup) :
+    (D.inversionPoints A w).map ((D.pointsPresentation A).map (D.pointsPresentation B) f) ≤
+      D.inversionPoints B w := by
+  simpa only [inversionPoints, ← D.subsystemPoints_eq_iSup] using
+    D.map_subsystemPoints_le (S := inversions (t.simplyConnectedRootDatum ht)
+      (t.simplyConnectedBase ht) w⁻¹) f
 
 /-- Every inversion subgroup is contained in `D.positivePoints A`. -/
 theorem inversionPoints_le_positivePoints (w : (t.simplyConnectedRootDatum ht).weylGroup) :
@@ -366,6 +389,95 @@ theorem positivePoints_inf_map_negativePoints_conj_eq_inversionPoints (n : D.wey
     exact hu₂
   · exact le_inf (D.inversionPoints_le_positivePoints K _)
       (D.inversionPoints_le_map_negativePoints_conj K n)
+
+/-- An inversion point is positive and becomes negative under conjugation by `n⁻¹`. -/
+@[simp]
+theorem mem_inversionPoints_iff (n : D.weylSubgroup K) {x : D.points K} :
+    x ∈ D.inversionPoints K (D.weylProjection K n) ↔
+      x ∈ D.positivePoints K ∧ (MulAut.conj (n : D.points K)).symm x ∈ D.negativePoints K := by
+  rw [← D.positivePoints_inf_map_negativePoints_conj_eq_inversionPoints K n,
+    Subgroup.map_equiv_eq_comap_symm', Subgroup.mem_inf, Subgroup.mem_comap,
+    MulEquiv.coe_toMonoidHom]
+
+/-- The inversion subgroup is disjoint from the conjugate of the Borel by the lift `n`. -/
+theorem disjoint_inversionPoints_map_borelSubgroup_conj (n : D.weylSubgroup K) :
+    Disjoint (D.inversionPoints K (D.weylProjection K n))
+      ((D.borelSubgroup K).map (MulAut.conj (n : D.points K)).toMonoidHom) :=
+  (Subgroup.disjoint_map (MulAut.conj (n : D.points K)).injective
+    (disjoint_iff.mpr (D.negativePoints_inf_borelSubgroup_eq_bot K))).mono_left
+    (D.inversionPoints_le_map_negativePoints_conj K n)
+
+/-- A positive point factors as an inversion point times a point of `U(K) ∩ n U(K) n⁻¹`. -/
+theorem exists_inversionPoints_mul_eq_of_mem_positivePoints
+    (n : D.weylSubgroup K) {x : D.points K} (hx : x ∈ D.positivePoints K) :
+    ∃ a ∈ D.inversionPoints K (D.weylProjection K n),
+      ∃ b ∈ D.positivePoints K ⊓
+        (D.positivePoints K).map (MulAut.conj (n : D.points K)).toMonoidHom, a * b = x := by
+  classical
+  let P := t.rationalRootSystem ht
+  let base := t.rationalBase ht
+  let w := (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K n)⁻¹
+  let l : List {γ // γ ∈ posRoots P base} := Finset.univ.toList
+  -- Order the inverted roots first in the collection theorem.
+  let inv := inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
+    (D.weylProjection K n)⁻¹
+  let left := l.filter fun γ => γ.val ∈ inv
+  let right := l.filter fun γ => γ.val ∉ inv
+  have hperm : List.Perm (left ++ right) l := by
+    simpa only [left, right, decide_not] using
+      List.filter_append_perm (fun γ => decide (γ.val ∈ inv)) l
+  have hl : (left ++ right).Nodup := hperm.nodup_iff.mpr (Finset.nodup_toList _)
+  have hcover : ∀ γ, γ ∈ left ++ right := fun γ =>
+    hperm.mem_iff.mpr (Finset.mem_toList.mpr (Finset.mem_univ γ))
+  obtain ⟨u, hprod⟩ := (D.mem_positivePoints_iff_exists_prod K hl hcover x).mp hx
+  let X := fun γ => D.rootSubgroupPoints γ.val K (Multiplicative.ofAdd (u γ))
+  refine ⟨(left.map X).prod, ?_, (right.map X).prod, ⟨?_, ?_⟩, ?_⟩
+  · apply Subgroup.list_prod_mem
+    intro z hz
+    obtain ⟨γ, hγ, rfl⟩ := List.mem_map.mp hz
+    exact D.rootSubgroupPoints_mem_inversionPoints K
+      (of_decide_eq_true (List.mem_filter.mp hγ).2) _
+  · apply Subgroup.list_prod_mem
+    intro z hz
+    obtain ⟨γ, -, rfl⟩ := List.mem_map.mp hz
+    exact D.rootSubgroupPoints_mem_positivePoints K γ.property _
+  · apply Subgroup.list_prod_mem
+    intro z hz
+    obtain ⟨γ, hγ, rfl⟩ := List.mem_map.mp hz
+    have hkeep : w γ.val ∈ posRoots P base := by
+      have hpos := (Set.ext_iff.mp (t.posRoots_rationalRootSystem ht) γ.val).mp γ.property
+      apply (Set.ext_iff.mp (t.posRoots_rationalRootSystem ht) (w γ.val)).mpr
+      exact (mem_posRoots _ _ _).mpr
+        ((mem_posRoots_sdiff_inversions _ _ _ γ.val).mp
+          ⟨hpos, of_decide_eq_true (List.mem_filter.mp hγ).2⟩).2
+    obtain ⟨c, hc⟩ := D.exists_unit_conj_rootSubgroupPoints K n⁻¹ γ.val
+    have hconj := hc (u γ)
+    rw [Subgroup.coe_inv, MulAut.conj_apply, inv_inv, map_inv] at hconj
+    dsimp only [X]
+    rw [Subgroup.map_equiv_eq_comap_symm', Subgroup.mem_comap, MulEquiv.coe_toMonoidHom,
+      MulAut.conj_symm_apply, hconj]
+    exact D.rootSubgroupPoints_mem_positivePoints K hkeep _
+  · simpa only [List.map_append, List.prod_append] using hprod
+
+/-- Multiplication gives a bijection from the inversion and complementary positive factors
+onto the positive subgroup. This is a bijection of types, not a group isomorphism. -/
+theorem inversionPoints_mul_bijective (n : D.weylSubgroup K) :
+    Function.Bijective (fun ab : D.inversionPoints K (D.weylProjection K n) ×
+        ↥(D.positivePoints K ⊓
+          (D.positivePoints K).map (MulAut.conj (n : D.points K)).toMonoidHom) =>
+      (⟨ab.1 * ab.2, (D.positivePoints K).mul_mem
+        (D.inversionPoints_le_positivePoints K _ ab.1.property) ab.2.property.1⟩ :
+          D.positivePoints K)) := by
+  constructor
+  · intro a b hab
+    apply Subgroup.mul_injective_of_disjoint
+      ((D.disjoint_inversionPoints_map_borelSubgroup_conj K n).mono_right
+        (inf_le_right.trans (Subgroup.map_mono (D.positivePoints_le_borelSubgroup K))))
+    exact congrArg Subtype.val hab
+  · intro x
+    obtain ⟨a, ha, b, hb, hab⟩ :=
+      D.exists_inversionPoints_mul_eq_of_mem_positivePoints K n x.property
+    exact ⟨(⟨a, ha⟩, ⟨b, hb⟩), Subtype.ext hab⟩
 
 /-- **Steinberg's sharp Bruhat normal form on a cell:** for every Weyl lift `n ∈ D.weylSubgroup K`
 and every `g ∈ D.bruhatCell K (D.weylProjection K n)`, there exist unique
