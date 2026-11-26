@@ -139,6 +139,13 @@ theorem diracScatteringA_zero (q : ℝ → ℂ) (z : ℂ) : diracScatteringA q 0
 theorem diracScatteringB_zero (q : ℝ → ℂ) (z : ℂ) : diracScatteringB q 0 z = 0 := by
   simp [diracScatteringB_def]
 
+/-- The bottom row of a product with the scattering coefficient:
+`(P(s) M)₁ⱼ = q(s) e^{2isz} M₀ⱼ`. -/
+theorem diracScatteringCoeff_mul_apply_one (q : ℝ → ℂ) (z : ℂ) (s : ℝ)
+    (M : Matrix (Fin 2) (Fin 2) ℂ) (j : Fin 2) :
+    (diracScatteringCoeff q z s * M) 1 j = q s * exp (2 * I * (s * z)) * M 0 j := by
+  simp [diracScatteringCoeff_def, Matrix.mul_apply, Fin.sum_univ_two, mul_comm (q s)]
+
 /-- The scattering coefficient is trace-free. -/
 @[simp]
 theorem trace_diracScatteringCoeff (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
@@ -500,10 +507,7 @@ theorem diracScatteringB_eq_integral (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤
   refine intervalIntegral.integral_congr fun s hs ↦ ?_
   rw [uIcc_of_le ht] at hs
   have hqs : IntegrableOn q (Icc 0 s) := hq.mono_set (Icc_subset_Icc_right hs.2)
-  simp only [Matrix.mul_apply, Fin.sum_univ_two, ← diracScatteringMatrix_apply_zero_zero hqs hs.1]
-  simp only [diracScatteringCoeff_def, of_apply, cons_val', cons_val_zero, cons_val_one,
-    empty_val', cons_val_fin_one, zero_mul, add_zero]
-  ring
+  rw [diracScatteringCoeff_mul_apply_one, diracScatteringMatrix_apply_zero_zero hqs hs.1]
 
 /-- **The Volterra form of `a`.** For `q` integrable on `[0, t]` with `t ≥ 0`,
 `a(t, z) = 1 + ∫₀ᵗ q(s) e^{2isz} b#(s, z) ds`, where `b#(s, z) = conj b(s, conj z)`. -/
@@ -518,10 +522,7 @@ theorem diracScatteringA_eq_one_add_integral (hq : IntegrableOn q (Icc 0 t)) (ht
   refine intervalIntegral.integral_congr fun s hs ↦ ?_
   rw [uIcc_of_le ht] at hs
   have hqs : IntegrableOn q (Icc 0 s) := hq.mono_set (Icc_subset_Icc_right hs.2)
-  simp only [Matrix.mul_apply, Fin.sum_univ_two, ← diracScatteringMatrix_apply_zero_one hqs hs.1]
-  simp only [diracScatteringCoeff_def, of_apply, cons_val', cons_val_zero, cons_val_one,
-    empty_val', cons_val_fin_one, zero_mul, add_zero]
-  ring
+  rw [diracScatteringCoeff_mul_apply_one, diracScatteringMatrix_apply_zero_one hqs hs.1]
 
 /-- **Locality after the support.** If `q` is integrable on `[0, t]` and vanishes almost
 everywhere on `(T, t]` for some `T ∈ [0, t]`, then `G_q(t, z) = G_q(T, z)`. -/
