@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 public import TauCeti.Geometry.Symplectic.Liouville.ClosedCharacteristic
 public import TauCeti.Geometry.Symplectic.Liouville.Graph.Level
 public import TauCeti.Geometry.Symplectic.Liouville.Graph.Region
@@ -29,7 +29,8 @@ This file constructs such a function. Fix levels `a < b < 0` with `e^{-a} < f`. 
 
 `G = a + τ((log F - a) / (b - a)) (log F - a)`,
 
-for the smooth transition `τ` from `0` to `1` (`Real.smoothTransition`). Since `log F < a` on a
+for the smooth transition `τ` from `0` to `1` (`Real.smoothTransition`), that is, the smooth lower
+truncation `TauCeti.smoothLowerTruncation a b` applied to `log F`. Since `log F < a` on a
 neighbourhood of `W`, where `G` is the constant `a`, and `log F` is smooth outside `W`, the function
 `G` is smooth on all of `M`
 (`TauCeti.IsLiouvilleCompletion.contMDiff_smoothLogLiouvilleGraphFunction`). It agrees with `log F`
@@ -108,23 +109,29 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 variable (Z W ι f) in
 /-- **A smooth defining function of the Liouville graph** of `f` over `ι`, on a completion of the
 Liouville domain `W`: the logarithm of the defining function `F` of the graph
-(`TauCeti.liouvilleGraphFunction`), cut off below at the level `a` by the smooth transition `τ`
-from `0` to `1`, `a + τ((log F - a) / (b - a)) (log F - a)`. It is `log F` where `log F ≥ b`, the
-constant `a` where `log F ≤ a`, and below `b` where `log F < b`. For levels `a < b < 0` with
+(`TauCeti.liouvilleGraphFunction`), cut off below at the level `a` by the smooth lower truncation
+`TauCeti.smoothLowerTruncation a b`, `a + τ((log F - a) / (b - a)) (log F - a)` for the smooth
+transition `τ` from `0` to `1`. It is `log F` where `log F ≥ b`, the constant `a` where
+`log F ≤ a`, and below `b` where `log F < b`. For levels `a < b < 0` with
 `e^{-a} < f`, it is smooth with compact sublevel sets
 (`TauCeti.IsLiouvilleCompletion.contMDiff_smoothLogLiouvilleGraphFunction`,
 `TauCeti.IsLiouvilleCompletion.isCompact_setOf_smoothLogLiouvilleGraphFunction_le`), and its
 regular level `0` is the Liouville graph
 (`TauCeti.IsLiouvilleCompletion.setOf_smoothLogLiouvilleGraphFunction_eq_zero`). -/
 noncomputable def smoothLogLiouvilleGraphFunction [Nonempty S] (a b : ℝ) (x : M) : ℝ :=
-  a + Real.smoothTransition ((Real.log (liouvilleGraphFunction Z W ι f x) - a) / (b - a)) *
-    (Real.log (liouvilleGraphFunction Z W ι f x) - a)
+  smoothLowerTruncation a b (Real.log (liouvilleGraphFunction Z W ι f x))
 
 theorem smoothLogLiouvilleGraphFunction_def [Nonempty S] (a b : ℝ) (x : M) :
     smoothLogLiouvilleGraphFunction Z W ι f a b x =
-      a + Real.smoothTransition ((Real.log (liouvilleGraphFunction Z W ι f x) - a) / (b - a)) *
-        (Real.log (liouvilleGraphFunction Z W ι f x) - a) :=
+      smoothLowerTruncation a b (Real.log (liouvilleGraphFunction Z W ι f x)) :=
   (rfl)
+
+private theorem pos_of_exp_neg_lt (ha : ∀ s, Real.exp (-a) < f s) (s : S) : 0 < f s :=
+  (Real.exp_pos _).trans (ha s)
+
+private theorem one_lt_of_exp_neg_lt (ha : ∀ s, Real.exp (-a) < f s) (ha₀ : a < 0) (s : S) :
+    1 < f s :=
+  (Real.one_lt_exp_iff.2 (neg_pos.2 ha₀)).trans (ha s)
 
 variable [Nonempty S]
 
@@ -133,31 +140,22 @@ is `log F`. -/
 theorem smoothLogLiouvilleGraphFunction_eq_of_le (hab : a < b)
     (hx : b ≤ Real.log (liouvilleGraphFunction Z W ι f x)) :
     smoothLogLiouvilleGraphFunction Z W ι f a b x =
-      Real.log (liouvilleGraphFunction Z W ι f x) := by
-  rw [smoothLogLiouvilleGraphFunction_def, Real.smoothTransition.one_of_one_le
-    ((one_le_div (sub_pos.2 hab)).2 (by linarith)), one_mul, add_sub_cancel]
+      Real.log (liouvilleGraphFunction Z W ι f x) :=
+  smoothLowerTruncation_of_right_le hab hx
 
 /-- Where `log F ≤ a`, the smoothed logarithm of the defining function `F` of the Liouville graph is
 the constant `a`. -/
 theorem smoothLogLiouvilleGraphFunction_eq_of_le_left (hab : a ≤ b)
     (hx : Real.log (liouvilleGraphFunction Z W ι f x) ≤ a) :
-    smoothLogLiouvilleGraphFunction Z W ι f a b x = a := by
-  rw [smoothLogLiouvilleGraphFunction_def, Real.smoothTransition.zero_of_nonpos
-    (div_nonpos_iff.2 (Or.inr ⟨by linarith, by linarith⟩)), zero_mul, add_zero]
+    smoothLogLiouvilleGraphFunction Z W ι f a b x = a :=
+  smoothLowerTruncation_of_le_left hab hx
 
 /-- Where `log F < b`, the smoothed logarithm of the defining function `F` of the Liouville graph is
 below `b`. -/
 theorem smoothLogLiouvilleGraphFunction_lt_of_lt (hab : a < b)
     (hx : Real.log (liouvilleGraphFunction Z W ι f x) < b) :
-    smoothLogLiouvilleGraphFunction Z W ι f a b x < b := by
-  rcases le_or_gt (Real.log (liouvilleGraphFunction Z W ι f x)) a with hxa | hxa
-  · rw [smoothLogLiouvilleGraphFunction_eq_of_le_left hab.le hxa]
-    exact hab
-  · -- Between `a` and `b`, the cut-off lies between `a` and `log F`.
-    have := mul_le_of_le_one_left (sub_nonneg.2 hxa.le) (Real.smoothTransition.le_one
-      ((Real.log (liouvilleGraphFunction Z W ι f x) - a) / (b - a)))
-    rw [smoothLogLiouvilleGraphFunction_def]
-    linarith
+    smoothLogLiouvilleGraphFunction Z W ι f a b x < b :=
+  smoothLowerTruncation_lt_of_lt hab hx
 
 /-- Where the smoothed logarithm of the defining function `F` of the Liouville graph exceeds `b`,
 it is `log F`. -/
@@ -171,23 +169,15 @@ theorem smoothLogLiouvilleGraphFunction_eq_of_lt (hab : a < b)
 Liouville graph are those of `log F`. -/
 theorem smoothLogLiouvilleGraphFunction_lt_iff (hab : a < b) (hc : b ≤ c) :
     smoothLogLiouvilleGraphFunction Z W ι f a b x < c ↔
-      Real.log (liouvilleGraphFunction Z W ι f x) < c := by
-  by_cases hx : b ≤ Real.log (liouvilleGraphFunction Z W ι f x)
-  · rw [smoothLogLiouvilleGraphFunction_eq_of_le hab hx]
-  · rw [not_le] at hx
-    exact ⟨fun _ ↦ hx.trans_le hc,
-      fun _ ↦ (smoothLogLiouvilleGraphFunction_lt_of_lt hab hx).trans_le hc⟩
+      Real.log (liouvilleGraphFunction Z W ι f x) < c :=
+  smoothLowerTruncation_lt_iff hab hc
 
 /-- Above `b`, the levels of the smoothed logarithm of the defining function `F` of the Liouville
 graph are those of `log F`. -/
 theorem smoothLogLiouvilleGraphFunction_eq_iff (hab : a < b) (hc : b ≤ c) :
     smoothLogLiouvilleGraphFunction Z W ι f a b x = c ↔
-      Real.log (liouvilleGraphFunction Z W ι f x) = c := by
-  by_cases hx : b ≤ Real.log (liouvilleGraphFunction Z W ι f x)
-  · rw [smoothLogLiouvilleGraphFunction_eq_of_le hab hx]
-  · rw [not_le] at hx
-    exact ⟨fun h ↦ absurd h ((smoothLogLiouvilleGraphFunction_lt_of_lt hab hx).trans_le hc).ne,
-      fun h ↦ absurd h (hx.trans_le hc).ne⟩
+      Real.log (liouvilleGraphFunction Z W ι f x) = c :=
+  smoothLowerTruncation_eq_iff hab hc
 
 namespace IsLiouvilleCompletion
 
@@ -205,11 +195,9 @@ graph is the constant `a`**, when `e^{-a} < f`. -/
 theorem smoothLogLiouvilleGraphFunction_of_mem (hab : a ≤ b) (hx : x ∈ W) :
     smoothLogLiouvilleGraphFunction Z W ι f a b x = a := by
   refine smoothLogLiouvilleGraphFunction_eq_of_le_left hab ?_
-  have hf₀ : ∀ s, 0 < f s := fun s ↦ (Real.exp_pos _).trans (ha s)
-  rw [liouvilleGraphFunction_def, (h.liouvilleRadialCoordinate_eq_one_iff hZ).2 hx, one_div,
-    Real.log_inv]
-  linarith [(Real.lt_log_iff_exp_lt (hf₀ (invFunOn (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2))
-    (Ioi 0 ×ˢ univ) x).2)).2 (ha _)]
+  obtain ⟨s, hs⟩ := exists_liouvilleGraphFunction_eq_div Z W ι f x
+  rw [hs, (h.liouvilleRadialCoordinate_eq_one_iff hZ).2 hx, one_div, Real.log_inv]
+  linarith [(Real.lt_log_iff_exp_lt (pos_of_exp_neg_lt ha s)).2 (ha s)]
 
 variable (hinj : Injective ι) (hιW : range ι = frontier W)
 include hinj hιW
@@ -222,7 +210,7 @@ theorem smoothLogLiouvilleGraphFunction_flowOf (hab : a < b) {t : ℝ}
     (hxt : b < smoothLogLiouvilleGraphFunction Z W ι f a b x + t) :
     smoothLogLiouvilleGraphFunction Z W ι f a b (flowOf Z t x) =
       smoothLogLiouvilleGraphFunction Z W ι f a b x + t := by
-  have hf₀ : ∀ s, 0 < f s := fun s ↦ (Real.exp_pos _).trans (ha s)
+  have hf₀ := pos_of_exp_neg_lt ha
   have hιW' : ∀ s, ι s ∈ frontier W := range_subset_iff.1 hιW.le
   -- The point lies outside `W`, where the function is the constant `a < b`.
   have hxW : x ∈ Wᶜ := fun hxW ↦ by
@@ -248,8 +236,8 @@ theorem smoothLogLiouvilleGraphFunction_flowOf (hab : a < b) {t : ℝ}
 for levels `a < b ≤ 0` with `e^{-a} < f`. -/
 theorem setOf_smoothLogLiouvilleGraphFunction_eq_zero (hab : a < b) (hb : b ≤ 0) :
     {x | smoothLogLiouvilleGraphFunction Z W ι f a b x = 0} = range (liouvilleGraph Z ι f) := by
-  have hf₀ : ∀ s, 0 < f s := fun s ↦ (Real.exp_pos _).trans (ha s)
-  have hf1 : ∀ s, 1 < f s := fun s ↦ (Real.one_lt_exp_iff.2 (by linarith)).trans (ha s)
+  have hf₀ := pos_of_exp_neg_lt ha
+  have hf1 := one_lt_of_exp_neg_lt ha (hab.trans_le hb)
   ext x
   rw [mem_ofPred_eq, smoothLogLiouvilleGraphFunction_eq_iff hab hb,
     ← h.liouvilleGraphFunction_eq_one_iff hZ hinj hιW hf1]
@@ -261,8 +249,8 @@ bounded by the Liouville graph**, `W ∪ {ψ_t(ι s) | t < log f(s)}`, for level
 `e^{-a} < f`. -/
 theorem setOf_smoothLogLiouvilleGraphFunction_lt_zero (hab : a < b) (hb : b ≤ 0) :
     {x | smoothLogLiouvilleGraphFunction Z W ι f a b x < 0} = liouvilleGraphRegion Z W ι f := by
-  have hf₀ : ∀ s, 0 < f s := fun s ↦ (Real.exp_pos _).trans (ha s)
-  have hf1 : ∀ s, 1 < f s := fun s ↦ (Real.one_lt_exp_iff.2 (by linarith)).trans (ha s)
+  have hf₀ := pos_of_exp_neg_lt ha
+  have hf1 := one_lt_of_exp_neg_lt ha (hab.trans_le hb)
   have hιW' : ∀ s, ι s ∈ frontier W := range_subset_iff.1 hιW.le
   ext x
   rw [mem_ofPred_eq, smoothLogLiouvilleGraphFunction_lt_iff hab hb,
@@ -277,12 +265,9 @@ theorem setOf_smoothLogLiouvilleGraphFunction_lt_zero (hab : a < b) (hb : b ≤ 
   rw [h.liouvilleGraphFunction_flowOf hZ hιW' hinj ht₀, div_lt_one (hf₀ s)]
   refine ⟨fun hlt ↦ ⟨t₀, s, (Real.lt_log_iff_exp_lt (hf₀ s)).2 hlt, rfl⟩, ?_⟩
   rintro ⟨t, s', hts', heq⟩
-  -- The flow-out map is injective on `(0, ∞) × S`, so `(t, s') = (t₀, s)`.
-  have ht : 0 < t := not_le.1 fun hle ↦
-    hxW (heq ▸ (h.flowOf_mem_iff_of_mem_frontier hZ (hιW' s')).2 hle)
-  obtain ⟨rfl, rfl⟩ := Prod.mk.inj ((h.bijOn_flowOf_comp hZ hinj hιW).injOn
-    (show (t, s') ∈ Ioi 0 ×ˢ (univ : Set S) from ⟨ht, mem_univ s'⟩)
-    (show (t₀, s) ∈ Ioi 0 ×ˢ (univ : Set S) from ⟨ht₀, mem_univ s⟩) heq)
+  -- The flow-out map is injective, so `(t, s') = (t₀, s)`.
+  obtain ⟨rfl, rfl⟩ := Prod.mk.inj
+    (h.injective_flowOf_comp hZ (h.isCompleteVectorField hZ) hinj hιW' heq)
   exact (Real.lt_log_iff_exp_lt (hf₀ _)).1 hts'
 
 end Domain
@@ -304,7 +289,7 @@ the Liouville domain, `f` smooth and `e^{-a} < f`. Then the logarithm of the def
 of the Liouville graph of `f`, cut off below at `a`, is smooth on `M`. -/
 theorem contMDiff_smoothLogLiouvilleGraphFunction (hab : a ≤ b) :
     ContMDiff I 𝓘(ℝ) (⊤ : ℕ∞) (smoothLogLiouvilleGraphFunction Z W ι f a b) := by
-  have hf₀ : ∀ s, 0 < f s := fun s ↦ (Real.exp_pos _).trans (ha s)
+  have hf₀ := pos_of_exp_neg_lt ha
   -- A uniform bound `e^{-a} < m ≤ f` on the compact `S`.
   obtain ⟨m, hm, hmf⟩ := isCompact_univ.exists_forall_le' hf.continuous.continuousOn
     fun s (_ : s ∈ univ) ↦ ha s
@@ -320,18 +305,14 @@ theorem contMDiff_smoothLogLiouvilleGraphFunction (hab : a ≤ b) :
         continuous_const).mem_nhds hx] with y (hy : _ < _)
       refine smoothLogLiouvilleGraphFunction_eq_of_le_left hab
         ((Real.log_le_iff_le_exp (liouvilleGraphFunction_pos hf₀ _)).2 ?_)
-      rw [liouvilleGraphFunction_def, div_le_iff₀ (hf₀ _)]
-      have := hmf (invFunOn (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) (Ioi 0 ×ˢ univ) y).2
-        (mem_univ _)
+      obtain ⟨s, hs⟩ := exists_liouvilleGraphFunction_eq_div Z W ι f y
+      rw [hs, div_le_iff₀ (hf₀ s)]
+      have := hmf s (mem_univ _)
       nlinarith [Real.exp_pos a]
     exact contMDiffAt_const.congr_of_eventuallyEq hev
   · -- Outside `W`, `F` is smooth and positive.
     have hxW : x ∉ W := (h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (hma.trans_le (not_lt.1 hx))
-    have hcut : ContDiff ℝ (⊤ : ℕ∞)
-        fun s : ℝ ↦ a + Real.smoothTransition ((s - a) / (b - a)) * (s - a) :=
-      contDiff_const.add ((Real.smoothTransition.contDiff.comp
-        ((contDiff_id.sub contDiff_const).div_const _)).mul (contDiff_id.sub contDiff_const))
-    exact hcut.contDiffAt.comp_contMDiffAt
+    exact (contDiff_smoothLowerTruncation a b).contDiffAt.comp_contMDiffAt
       ((h.contMDiffAt_liouvilleGraphFunction hZ hι hιs hinj hιW hdim hf (fun s ↦ (hf₀ s).ne')
         hxW).log (liouvilleGraphFunction_pos hf₀ _).ne')
 
@@ -339,7 +320,7 @@ theorem contMDiff_smoothLogLiouvilleGraphFunction (hab : a ≤ b) :
 are compact**, for levels `a < b` with `e^{-a} < f`. -/
 theorem isCompact_setOf_smoothLogLiouvilleGraphFunction_le (hab : a < b) (c : ℝ) :
     IsCompact {x | smoothLogLiouvilleGraphFunction Z W ι f a b x ≤ c} := by
-  have hf₀ : ∀ s, 0 < f s := fun s ↦ (Real.exp_pos _).trans (ha s)
+  have hf₀ := pos_of_exp_neg_lt ha
   obtain ⟨B, hB⟩ := (isCompact_range hf.continuous).bddAbove
   have hG := h.contMDiff_smoothLogLiouvilleGraphFunction hZ hι hιs hinj hιW hdim hf ha hab.le
   refine (h.isCompact_setOf_liouvilleRadialCoordinate_le hZ
@@ -351,7 +332,8 @@ theorem isCompact_setOf_smoothLogLiouvilleGraphFunction_le (hab : a < b) (c : �
     rw [smoothLogLiouvilleGraphFunction_eq_of_le hab ((le_max_right c b).trans hlt.le)] at hx
     exact ((le_max_left c b).trans_lt hlt).not_ge hx
   have hFx := (Real.log_le_iff_le_exp (liouvilleGraphFunction_pos hf₀ _)).1 hL
-  rw [liouvilleGraphFunction_def, div_le_iff₀ (hf₀ _)] at hFx
+  obtain ⟨s, hs⟩ := exists_liouvilleGraphFunction_eq_div Z W ι f x
+  rw [hs, div_le_iff₀ (hf₀ s)] at hFx
   exact hFx.trans (mul_le_mul_of_nonneg_left (hB (mem_range_self _)) (Real.exp_pos _).le)
 
 /-- **The values above `b` of the smoothed logarithm of the defining function of the Liouville graph
@@ -367,24 +349,6 @@ theorem isRegularValue_smoothLogLiouvilleGraphFunction (hab : a < b) (hc : b < c
   rw [← flowOf_eq_globalFlow hZ1 hcomp]
   exact h.smoothLogLiouvilleGraphFunction_flowOf hZ ha hinj hιW hab hx.1 hxt.1
 
-/-- **Almost existence gives existence on a Liouville graph.** For levels `a < b < 0` with
-`e^{-a} < f`, if the level `0` of the smoothed logarithm `G` of the defining function of the
-Liouville graph of `f`, which is the graph, has the contractible almost existence property in `U`,
-then it carries a closed characteristic contractible in `ψ_t(U)` for some time `t`. -/
-theorem exists_hasContractibleClosedCharacteristic_smoothLogLiouvilleGraphFunction (hab : a < b)
-    (hb : b < 0) {U : Set M}
-    (hae : ω.HasContractibleAlmostExistence U (smoothLogLiouvilleGraphFunction Z W ι f a b) 0) :
-    ∃ t, ω.HasContractibleClosedCharacteristic (flowOf Z t '' U)
-      (smoothLogLiouvilleGraphFunction Z W ι f a b) 0 := by
-  have hG := h.contMDiff_smoothLogLiouvilleGraphFunction hZ hι hιs hinj hιW hdim hf ha hab.le
-  obtain ⟨t, -, ht⟩ :=
-    (h.isLiouvilleVectorField hZ).exists_hasContractibleClosedCharacteristic_image_flowOf
-    h.isNondegenerate (h.isCompleteVectorField hZ) (h.contMDiff_of_interior_eq hZ) (neg_pos.2 hb)
-    (fun x _ ↦ (hG x).mdifferentiableAt (by simp))
-    (fun x t hx hxt ↦ h.smoothLogLiouvilleGraphFunction_flowOf hZ ha hinj hιW hab
-      (by linarith [hx.1]) (by linarith [hxt.1])) hae
-  exact ⟨t, ht⟩
-
 /-- **Almost existence gives existence on a Liouville graph**, for contractibility in the
 completion: for levels `a < b < 0` with `e^{-a} < f`, if the level `0` of the smoothed logarithm of
 the defining function of the Liouville graph has the contractible almost existence property in
@@ -393,10 +357,12 @@ theorem hasContractibleClosedCharacteristic_univ_smoothLogLiouvilleGraphFunction
     (hb : b < 0)
     (hae : ω.HasContractibleAlmostExistence univ (smoothLogLiouvilleGraphFunction Z W ι f a b) 0) :
     ω.HasContractibleClosedCharacteristic univ (smoothLogLiouvilleGraphFunction Z W ι f a b) 0 := by
-  obtain ⟨t, ht⟩ := h.exists_hasContractibleClosedCharacteristic_smoothLogLiouvilleGraphFunction
-    hZ hι hιs hinj hιW hdim hf ha hab hb hae
-  rwa [image_univ_of_surjective (flowOf_surjective ((h.contMDiff_of_interior_eq hZ).of_le
-    (by simp)) (h.isCompleteVectorField hZ) t)] at ht
+  have hG := h.contMDiff_smoothLogLiouvilleGraphFunction hZ hι hιs hinj hιW hdim hf ha hab.le
+  exact (h.isLiouvilleVectorField hZ).hasContractibleClosedCharacteristic_univ h.isNondegenerate
+    (h.isCompleteVectorField hZ) (h.contMDiff_of_interior_eq hZ) (neg_pos.2 hb)
+    (fun x _ ↦ (hG x).mdifferentiableAt (by simp))
+    (fun x t hx hxt ↦ h.smoothLogLiouvilleGraphFunction_flowOf hZ ha hinj hιW hab
+      (by linarith [hx.1]) (by linarith [hxt.1])) hae
 
 /-- **Almost existence on a Liouville graph gives a contractible closed Reeb orbit**, the step
 from almost existence to closed Reeb orbits in Corollary E of Barraud–Damian–Humilière–Oancea.
@@ -417,7 +383,7 @@ theorem exists_isMIntegralCurve_reebVectorField_of_hasContractibleAlmostExistenc
         ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = ι (γ (ψ t)) :=
   IsLiouvilleDomain.exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacteristic
     h.toIsLiouvilleDomain hZ (h.isCompleteVectorField hZ) hι hinj hιs (range_subset_iff.1 hιW.le) hf
-    (fun s ↦ (Real.exp_pos _).trans (ha s)) hdim
+    (pos_of_exp_neg_lt ha) hdim
     ((h.contMDiff_smoothLogLiouvilleGraphFunction hZ hι hιs hinj hιW hdim hf ha hab.le).of_le
       (by simp))
     (h.isRegularValue_smoothLogLiouvilleGraphFunction hZ hι hιs hinj hιW hdim hf ha hab hb)

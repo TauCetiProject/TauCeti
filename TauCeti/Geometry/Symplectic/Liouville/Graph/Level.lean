@@ -116,6 +116,13 @@ theorem liouvilleGraphFunction_def [Nonempty S] (x : M) :
       f (invFunOn (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) (Ioi 0 ×ˢ univ) x).2 :=
   (rfl)
 
+variable (Z W ι f) in
+/-- The defining function of the Liouville graph is the radial coordinate divided by a value of
+`f`. -/
+theorem exists_liouvilleGraphFunction_eq_div [Nonempty S] (x : M) :
+    ∃ s, liouvilleGraphFunction Z W ι f x = liouvilleRadialCoordinate Z W x / f s :=
+  ⟨_, liouvilleGraphFunction_def x⟩
+
 /-- The defining function of the Liouville graph of a positive function is positive. -/
 theorem liouvilleGraphFunction_pos [Nonempty S] (hf : ∀ s, 0 < f s) (x : M) :
     0 < liouvilleGraphFunction Z W ι f x := by

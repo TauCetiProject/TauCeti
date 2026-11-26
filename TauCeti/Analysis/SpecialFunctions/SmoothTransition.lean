@@ -133,6 +133,8 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
   constant and supported in `[-(R + 1), R + 1]`.
 * `TauCeti.smoothLowerClamp`: a smooth function at least `δ` everywhere and equal to `t` for
   `t ≥ 2 δ`.
+* `TauCeti.smoothLowerTruncation`: a smooth substitute for the truncation `s ↦ max s a`, equal to
+  `a` on `(-∞, a]`, to `s` on `[b, ∞)`, and below `b` on `(-∞, b)`.
 -/
 
 public section
@@ -1072,5 +1074,64 @@ theorem smoothLowerClamp_of_two_mul_le {δ t : ℝ} (hδ : 0 < δ) (ht : 2 * δ 
     smoothLowerClamp δ t = t := by
   rw [smoothLowerClamp, Real.smoothTransition.one_of_one_le ((le_div_iff₀ hδ).2 (by linarith))]
   ring
+
+/-- The **smooth lower truncation** `a + τ((s - a) / (b - a)) (s - a)` between the levels `a` and
+`b`, for the smooth transition `τ` from `0` to `1`: a smooth substitute for the truncation
+`s ↦ max s a`. For `a < b` it is the constant `a` on `(-∞, a]`
+(`TauCeti.smoothLowerTruncation_of_le_left`), the identity on `[b, ∞)`
+(`TauCeti.smoothLowerTruncation_of_right_le`) and below `b` on `(-∞, b)`
+(`TauCeti.smoothLowerTruncation_lt_of_lt`). -/
+def smoothLowerTruncation (a b s : ℝ) : ℝ :=
+  a + Real.smoothTransition ((s - a) / (b - a)) * (s - a)
+
+/-- Unfolding lemma for `TauCeti.smoothLowerTruncation`. -/
+theorem smoothLowerTruncation_def (a b s : ℝ) :
+    smoothLowerTruncation a b s = a + Real.smoothTransition ((s - a) / (b - a)) * (s - a) :=
+  (rfl)
+
+/-- The smooth lower truncation is smooth. -/
+theorem contDiff_smoothLowerTruncation (a b : ℝ) {n : ℕ∞} :
+    ContDiff ℝ n (smoothLowerTruncation a b) :=
+  contDiff_const.add ((Real.smoothTransition.contDiff.comp
+    ((contDiff_id.sub contDiff_const).div_const _)).mul (contDiff_id.sub contDiff_const))
+
+/-- The smooth lower truncation is the constant `a` on `(-∞, a]`. -/
+theorem smoothLowerTruncation_of_le_left {a b s : ℝ} (hab : a ≤ b) (hs : s ≤ a) :
+    smoothLowerTruncation a b s = a := by
+  rw [smoothLowerTruncation_def, Real.smoothTransition.zero_of_nonpos
+    (div_nonpos_iff.2 (Or.inr ⟨by linarith, by linarith⟩)), zero_mul, add_zero]
+
+/-- The smooth lower truncation is the identity on `[b, ∞)`. -/
+theorem smoothLowerTruncation_of_right_le {a b s : ℝ} (hab : a < b) (hs : b ≤ s) :
+    smoothLowerTruncation a b s = s := by
+  rw [smoothLowerTruncation_def, Real.smoothTransition.one_of_one_le
+    ((one_le_div (sub_pos.2 hab)).2 (by linarith)), one_mul, add_sub_cancel]
+
+/-- The smooth lower truncation is below `b` on `(-∞, b)`. -/
+theorem smoothLowerTruncation_lt_of_lt {a b s : ℝ} (hab : a < b) (hs : s < b) :
+    smoothLowerTruncation a b s < b := by
+  rcases le_or_gt s a with hsa | hsa
+  · rw [smoothLowerTruncation_of_le_left hab.le hsa]
+    exact hab
+  · -- Between `a` and `b`, the truncation lies between `a` and `s`.
+    have := mul_le_of_le_one_left (sub_nonneg.2 hsa.le)
+      (Real.smoothTransition.le_one ((s - a) / (b - a)))
+    rw [smoothLowerTruncation_def]
+    linarith
+
+/-- Above `b`, the sublevel sets of the smooth lower truncation are those of the identity. -/
+theorem smoothLowerTruncation_lt_iff {a b c s : ℝ} (hab : a < b) (hc : b ≤ c) :
+    smoothLowerTruncation a b s < c ↔ s < c := by
+  rcases le_or_gt b s with hs | hs
+  · rw [smoothLowerTruncation_of_right_le hab hs]
+  · exact ⟨fun _ ↦ hs.trans_le hc, fun _ ↦ (smoothLowerTruncation_lt_of_lt hab hs).trans_le hc⟩
+
+/-- Above `b`, the levels of the smooth lower truncation are those of the identity. -/
+theorem smoothLowerTruncation_eq_iff {a b c s : ℝ} (hab : a < b) (hc : b ≤ c) :
+    smoothLowerTruncation a b s = c ↔ s = c := by
+  rcases le_or_gt b s with hs | hs
+  · rw [smoothLowerTruncation_of_right_le hab hs]
+  · exact ⟨fun h ↦ absurd h ((smoothLowerTruncation_lt_of_lt hab hs).trans_le hc).ne,
+      fun h ↦ absurd h (hs.trans_le hc).ne⟩
 
 end TauCeti
