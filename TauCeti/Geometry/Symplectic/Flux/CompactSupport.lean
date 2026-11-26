@@ -457,12 +457,13 @@ theorem exists_compactFlux_eq (σ : closedForms J M 2)
     isCompleteVectorField_of_isCompact_of_eq_zero_off (X.contMDiff.of_le (by simp)) hK hXK
   have hσc : SmoothForm.IsClosed σ.val :=
     (SmoothForm.isClosed_def _).2 ((mem_closedForms J σ.val).1 σ.property)
-  refine ⟨globalFlowDiffeotopy le_top X.contMDiff hc 1, K, hK,
-    fun t x hx ↦ globalFlowDiffeotopy_apply_of_eq_zero le_top X.contMDiff hc 1 (hXK x hx) t,
-    timeSlice_globalFlowDiffeotopy_mem_diffeomorphStabilizer hσc hX hc 1, ?_⟩
+  have hΦ := compactlySupportedFlowDiffeotopy_eq_globalFlowDiffeotopy le_top X.contMDiff hK hXK hc 1
+  refine ⟨compactlySupportedFlowDiffeotopy le_top X.contMDiff hK hXK 1, K, hK,
+    compactlySupportedFlowDiffeotopy_eqOn_compl le_top X.contMDiff hK hXK 1,
+    hΦ ▸ timeSlice_globalFlowDiffeotopy_mem_diffeomorphStabilizer hσc hX hc 1, ?_⟩
   rw [compactFlux_def]
   congr 1
-  exact Subtype.ext ((fluxForm_globalFlowDiffeotopy hX hc 1).trans
+  exact Subtype.ext ((hΦ ▸ fluxForm_globalFlowDiffeotopy hX hc 1).trans
     ((one_smul ℝ _).trans (hσ.interiorₗ_interiorEquiv_symm α.val)))
 
 end Flow
