@@ -105,7 +105,10 @@ private theorem integrable_and_integralTopForm_eq_integral {φ : RoughForm 𝓘(
   rw [← hl]
   simp only [Measure.restrict_univ, Complex.addHaar_basisOneI, integrableOn_univ,
     Complex.coe_basisOneI] at h
-  -- The identity of `ℂ` carries the basis `(1, i)` to the tangent vectors `![1, i]`.
+  -- The identity of `ℂ` carries the basis `(1, i)` to the tangent vectors `![1, i]`. Here
+  -- `ContinuousLinearEquiv.refl ℝ ℂ` is applied as a map into `TangentSpace 𝓘(ℝ, ℂ) z`, which is
+  -- `ℂ` only by definition, so `simp` cannot use `ContinuousLinearEquiv.refl_apply` on it; `h` is
+  -- the claim after that rewrite, which holds definitionally.
   exact h
 
 /-- **Integrals over the Riemann sphere in the affine coordinate.** The coefficient

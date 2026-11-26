@@ -213,7 +213,7 @@ private theorem integrable_areaDensity_and_integralTopForm_eq (hu : ContMDiff �
       SmoothBundleForm.eval₂_apply, ← mfderiv_apply_I_eq hhol z]
     congr 1
     funext i
-    fin_cases i <;> rfl
+    fin_cases i <;> simp
   have hi : IntegrableTopForm (SmoothForm.mpullback u hu σ).val :=
     (SmoothForm.mpullback u hu σ).isSmoothForm.integrableTopForm
       (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _)) Complex.basisOneI
@@ -335,14 +335,9 @@ theorem pi_mul_sq_le_integralTopForm_mpullback [FiniteDimensional ℂ E] [T2Spac
   -- Some point `y` is mapped outside `φ(B(c, r))`; rotate the sphere so that `∞` goes to `y`.
   obtain ⟨y, hy⟩ := exists_apply_notMem_image hball hJ hu hhol
     (by obtain ⟨y, hy⟩ := hnc; exact ⟨y, z₀, hz₀ ▸ hy⟩)
-  obtain ⟨g, hg⟩ : ∃ g : GL (Fin 2) ℂ, g • (OnePoint.infty : OnePoint ℂ) = y := by
-    induction y using OnePoint.rec with
-    | infty => exact ⟨1, one_smul _ _⟩
-    | coe b =>
-      refine ⟨Matrix.GeneralLinearGroup.mkOfDetNeZero !![b, 1; 1, 0]
-        (by simp [Matrix.det_fin_two]), ?_⟩
-      rw [OnePoint.smul_infty_eq_ite]
-      simp [Matrix.GeneralLinearGroup.mkOfDetNeZero]
+  have : MulAction.IsPretransitive (GL (Fin 2) ℂ) (OnePoint ℂ) :=
+    MulAction.isPretransitive_of_is_two_pretransitive
+  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq (GL (Fin 2) ℂ) (OnePoint.infty : OnePoint ℂ) y
   have hgs : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ (fun z : OnePoint ℂ ↦ g • z) := by
     -- The Möbius action is holomorphic, hence smooth for the underlying real structure.
     have := ContMDiffConstSMul.restrictScalars ℝ
