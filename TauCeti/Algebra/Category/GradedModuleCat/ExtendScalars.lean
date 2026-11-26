@@ -65,6 +65,11 @@ of degree two to `1`, is not graded and is not covered here.
 
 ## Implementation notes
 
+The adjunction follows Mathlib's `ModuleCat.extendRestrictScalarsAdj` in
+`Mathlib/Algebra/Category/ModuleCat/ChangeOfRings.lean` (Jujian Zhang): the hom-equivalence sends
+`g` to `m ↦ g (1 ⊗ₜ m)` and `h` to `b ⊗ₜ m ↦ b • h m`, and the unit, counit and hom-equivalence
+lemmas mirror Mathlib's.
+
 The strong monoidal structure follows Mathlib's monoidal instance on `ModuleCat.extendScalars` in
 `Mathlib/Algebra/Category/ModuleCat/Monoidal/Adjunction.lean` (Joël Riou): it is built with
 `Functor.CoreMonoidal.mk'` from `distribBaseChange` and `AlgebraTensorModule.rid`, and the
