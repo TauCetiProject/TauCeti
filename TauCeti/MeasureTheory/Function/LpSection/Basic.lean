@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Measure.SeparableMeasure
 public import TauCeti.MeasureTheory.Function.LpSection.Measurable
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The spaces `Lᵖ` of sections of a vector bundle
@@ -328,9 +329,7 @@ most `μ(univ) ^ (1 / p) * C`. -/
 theorem norm_le_of_ae_bound [IsFiniteMeasure μ] {C : ℝ} (hC : 0 ≤ C)
     (hfC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) : ‖f‖ ≤ measureUnivNNReal μ ^ p.toReal⁻¹ * C := by
   rw [norm_eq_norm_toLp]
-  refine Lp.norm_le_of_ae_bound hC ?_
-  filter_upwards [f.memLp_norm.coeFn_toLp, hfC] with x hx hfx
-  rwa [hx, norm_norm]
+  exact f.memLp_norm.norm_toLp_le_of_ae_bound hC (by simpa using hfC)
 
 variable [hp : Fact (1 ≤ p)]
 
