@@ -26,7 +26,7 @@ on `U`.
   modules applies; in particular the smooth part `M^s = ⋃_U 1_U·M` is `TauCeti.smoothPart`.
   Equivalently, `M^s = C_c(T, Λ) • M` for the ideal `C_c(T, Λ)` of compactly supported functions
   (`TauCeti.smoothPart_compactOpenIdeal_eq_smul_top`), and the multiplication map
-  `C_c(T, Λ) ⊗ M → M` is injective (`TauCeti.compactlySupported_lid_comp_rTensor_injective`)
+  `C_c(T, Λ) ⊗ M → M` is injective (`TauCeti.compactlySupportedIdeal_lid_comp_rTensor_injective`)
   with image `M^s` (`TauCeti.compactlySupportedTensorEquivSmoothPart`). So `M` is smooth exactly
   when `C_c(T, Λ) ⊗ M → M` is bijective (`TauCeti.smoothModules_compactOpenIdeal_iff_bijective`).
 * `M` is *complete* (`TauCeti.completeModules`) when the canonical map `M → M^c` is bijective,
@@ -198,7 +198,7 @@ omit [T2Space T] in
 variable (T Λ M) in
 /-- The multiplication map `C_c(T, Λ) ⊗ M → M`, `f ⊗ m ↦ f • m`, is injective for every
 `C(T, Λ)`-module `M`, since the ideal `C_c(T, Λ)` is pure. -/
-theorem compactlySupported_lid_comp_rTensor_injective : Function.Injective
+theorem compactlySupportedIdeal_lid_comp_rTensor_injective : Function.Injective
     ((TensorProduct.lid _ M).toLinearMap ∘ₗ (compactlySupportedIdeal T Λ).subtype.rTensor M) :=
   (TensorProduct.lid _ M).injective.comp (Ideal.subtype_rTensor_injective_of_pure _ M)
 
@@ -212,7 +212,7 @@ noncomputable def compactlySupportedTensorEquivSmoothPart :
       smoothPart (compactOpenIdeal T Λ) M :=
   (LinearEquiv.ofInjective
     ((TensorProduct.lid _ M).toLinearMap ∘ₗ (compactlySupportedIdeal T Λ).subtype.rTensor M)
-    (compactlySupported_lid_comp_rTensor_injective T Λ M)).trans
+    (compactlySupportedIdeal_lid_comp_rTensor_injective T Λ M)).trans
     (LinearEquiv.ofEq _ _ (by
       rw [Ideal.subtype_rTensor_range, smoothPart_compactOpenIdeal_eq_smul_top]))
 
@@ -230,7 +230,7 @@ theorem smoothModules_compactOpenIdeal_iff_bijective {M : ModuleCat.{v} (Locally
       ((TensorProduct.lid _ M).toLinearMap ∘ₗ (compactlySupportedIdeal T Λ).subtype.rTensor M) := by
   rw [Function.Bijective, ← LinearMap.range_eq_top, Ideal.subtype_rTensor_range,
     ← smoothPart_compactOpenIdeal_eq_smul_top, smoothPart_eq_top_iff directed_compactOpenIdeal]
-  exact (and_iff_right (compactlySupported_lid_comp_rTensor_injective T Λ M)).symm
+  exact (and_iff_right (compactlySupportedIdeal_lid_comp_rTensor_injective T Λ M)).symm
 
 end CompactlySupported
 
