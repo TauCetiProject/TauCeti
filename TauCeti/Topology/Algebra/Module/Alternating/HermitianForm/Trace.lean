@@ -88,8 +88,11 @@ theorem nsmul_pairedWedge_wedgePow_eq_sum_smul {m : ℕ} (hm : finrank ℂ E = m
   have hcard : Fintype.card (Fin (2 * (m + 1))) = finrank ℝ E := by
     rw [Fintype.card_fin, finrank_real_of_complex, hm]
   let B : Basis (Fin (2 * (m + 1))) ℝ E := basisOfLinearIndependentOfCardEqFinrank hli hcard
-  have hB : (B : Fin (2 * (m + 1)) → E) = f ∘ e :=
-    coe_basisOfLinearIndependentOfCardEqFinrank _ _
+  -- `B` in the form of the evaluation lemmas below.
+  have hB : (B : Fin (2 * (m + 1)) → E) =
+      fun r ↦ f (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r)) := by
+    ext r
+    simp [B, e, finCongr_apply]
   -- On the frame, `ω` is in standard symplectic form.
   have h₀₀ (i j : Fin (m + 1)) : ω ![f (i, 0), f (j, 0)] = 0 := by
     have := congrArg Complex.im (hb i j)
@@ -102,11 +105,10 @@ theorem nsmul_pairedWedge_wedgePow_eq_sum_smul {m : ℕ} (hm : finrank ℂ E = m
     simpa [f, hω] using h₀₀ i j
   have e₁ : pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
       (ω.wedgePow m) α B = m.factorial * ∑ i, α ![b i, I • b i] := by
-    rw [hB]
-    exact pairedWedge_wedgePow_apply_finProdFinEquiv ω α f h₀₀ h₀₁ h₁₁
+    rw [hB, pairedWedge_wedgePow_apply_finProdFinEquiv ω α f h₀₀ h₀₁ h₁₁]
+    simp [f]
   have e₂ : ω.wedgePow (m + 1) B = (m + 1).factorial := by
-    rw [hB]
-    exact wedgePow_apply_finProdFinEquiv ω f h₀₀ h₀₁
+    rw [hB, wedgePow_apply_finProdFinEquiv ω f h₀₀ h₀₁]
   ext v
   rw [ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply,
     apply_eq_det_mul _ B v, apply_eq_det_mul (ω.wedgePow (m + 1)) B v, e₁, e₂, smul_eq_mul,
