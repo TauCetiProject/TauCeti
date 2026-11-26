@@ -32,6 +32,10 @@ the conjugation orbit of `E` is the first half and the orbit of `-E` is the seco
   `SL(2, ℝ)` is the half of the punctured nilpotent cone with `Y₀₁ ≥ 0 ≥ Y₁₀`.
 * `Matrix.SpecialLinearGroup.range_coe_mul_neg_single_mul_coe_inv`: the conjugation orbit of `-E`
   is the half with `Y₀₁ ≤ 0 ≤ Y₁₀`.
+* `Matrix.mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two`: `Y₀₁ Y₁₀ = -Y₀₀²` for a `2 × 2`
+  matrix of trace zero and determinant zero.
+* `Matrix.eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two`: such a matrix with vanishing
+  off-diagonal entries is zero.
 * `Matrix.setOf_trace_eq_zero_det_eq_zero_ne_zero_eq_union`: the punctured nilpotent cone is the
   union of its two halves.
 * `Matrix.disjoint_setOf_nilpotent_halves`: the two halves are disjoint.
@@ -50,7 +54,7 @@ namespace Matrix
 
 /-- The off-diagonal entries of a `2 × 2` matrix of trace zero and determinant zero satisfy
 `Y₀₁ Y₁₀ = -Y₀₀²`. -/
-private theorem mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero {R : Type*} [CommRing R]
+theorem mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two {R : Type*} [CommRing R]
     {Y : Matrix (Fin 2) (Fin 2) R} (htr : Y.trace = 0) (hdet : Y.det = 0) :
     Y 0 1 * Y 1 0 = -Y 0 0 ^ 2 := by
   rw [trace_fin_two] at htr
@@ -59,11 +63,11 @@ private theorem mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero {R : Type*} [CommR
 
 /-- A `2 × 2` matrix of trace zero and determinant zero whose off-diagonal entries vanish is
 zero. -/
-private theorem eq_zero_of_trace_eq_zero_of_det_eq_zero {R : Type*} [CommRing R]
+theorem eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two {R : Type*} [CommRing R]
     [NoZeroDivisors R] {Y : Matrix (Fin 2) (Fin 2) R} (htr : Y.trace = 0) (hdet : Y.det = 0)
     (h01 : Y 0 1 = 0) (h10 : Y 1 0 = 0) : Y = 0 := by
   have h00 : Y 0 0 = 0 := by
-    have h := mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero htr hdet
+    have h := mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet
     rw [h01, zero_mul, eq_comm, neg_eq_zero] at h
     exact pow_eq_zero_iff two_ne_zero |>.mp h
   have h11 : Y 1 1 = 0 := by
@@ -83,7 +87,7 @@ theorem setOf_trace_eq_zero_det_eq_zero_ne_zero_eq_union :
   · rintro ⟨htr, hdet, hne⟩
     -- The off-diagonal entries have product `-Y₀₀² ≤ 0`, so they have opposite signs.
     have hle : Y 0 1 * Y 1 0 ≤ 0 := by
-      rw [mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero htr hdet]
+      rw [mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet]
       exact neg_nonpos.mpr (sq_nonneg _)
     rcases mul_nonpos_iff.mp hle with ⟨h, h'⟩ | ⟨h, h'⟩
     · exact .inl ⟨htr, hdet, hne, h, h'⟩
@@ -97,7 +101,7 @@ theorem disjoint_setOf_nilpotent_halves :
       {Y | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ Y 0 1 ≤ 0 ∧ 0 ≤ Y 1 0} := by
   rw [Set.disjoint_left]
   rintro Y ⟨htr, hdet, hne, hy, hz⟩ ⟨-, -, -, hy', hz'⟩
-  exact hne (eq_zero_of_trace_eq_zero_of_det_eq_zero htr hdet (le_antisymm hy' hy)
+  exact hne (eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet (le_antisymm hy' hy)
     (le_antisymm hz hz'))
 
 namespace SpecialLinearGroup
@@ -120,10 +124,11 @@ private theorem exists_eq_of_trace_eq_zero_of_det_eq_zero {Y : Matrix (Fin 2) (F
     rw [trace_fin_two] at htr
     linear_combination htr
   have hx : Y 0 0 ^ 2 = Y 0 1 * -Y 1 0 := by
-    linear_combination mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero htr hdet
+    linear_combination mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet
   have hpos : 0 < Y 0 1 - Y 1 0 := by
     by_contra! hle
-    exact hne (eq_zero_of_trace_eq_zero_of_det_eq_zero htr hdet (by linarith) (by linarith))
+    exact hne
+      (eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet (by linarith) (by linarith))
   -- Solve `a² = Y₀₁`, `c² = -Y₁₀`, `a c = -Y₀₀`, then complete `(a, c)` to an element of
   -- `SL(2, ℝ)`.
   have habs : √(Y 0 1) * √(-Y 1 0) = |Y 0 0| := by
