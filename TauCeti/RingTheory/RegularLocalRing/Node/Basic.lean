@@ -77,7 +77,7 @@ public section
 
 namespace TauCeti
 
-open _root_.IsLocalRing Ideal MvPolynomial
+open _root_.IsLocalRing _root_.Ideal MvPolynomial
 
 section IsRegularRing
 
