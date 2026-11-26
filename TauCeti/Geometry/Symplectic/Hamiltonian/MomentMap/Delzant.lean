@@ -204,13 +204,6 @@ private theorem apply_le_apply_of_forall_nonneg
     μ x ξ ≤ μ p ξ := by
   have : IsMulCommutative G := ⟨⟨mul_comm⟩⟩
   have : ConnectedSpace M := { toNonempty := ⟨p⟩ }
-  have hσG (a : G) (x : M) (u v : TangentSpace I' x) :
-      σ.eval₂ (a • x) (mfderiv I' I' (a • ·) x u) (mfderiv I' I' (a • ·) x v) =
-        σ.eval₂ x u v := by
-    rw [← SmoothForm.eval₂_mpullback _ (ContMDiffSMul.contMDiff_const_smul (I := I) a), hG a]
-  have hiso (q : M) (hq : q ∈ MulAction.fixedPoints G M) :
-      ∀ᶠ y in 𝓝 q, y ∈ MulAction.fixedPoints G M → y = q :=
-    h.eventually_mem_fixedPoints_imp_eq hσ hG hdim hq
   -- On the chart, `μ^ξ' = μ^ξ'(p) - ½ Σₖ αₖ(ξ') |zₖ|²`, so `p` is a local maximum of `μ^ξ'` for
   -- every `ξ'` in the open cone `V` of elements on which every weight is positive.
   set V : Set (GroupLieAlgebra I G) := {ξ' | ∀ k, 0 < α k ξ'}
@@ -226,7 +219,7 @@ private theorem apply_le_apply_of_forall_nonneg
   have hVS : V ⊆ S := by
     refine (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).open_subset_closure_inter hV
       |>.trans (closure_minimal (fun ξ' ⟨hξ'V, hξ'⟩ ↦ ?_) hS)
-    have hM := h.isMorse_of_eq_top hσ.isNondegenerate hξ' hiso
+    have hM := h.isMorse_of_eq_top_of_faithfulSMul hσ hG hdim hξ'
     have hmax : IsLocalMax (fun y ↦ μ y ξ') p :=
       Filter.mem_of_superset (chart.open_source.mem_nhds hpchart) fun y hy ↦ by
         dsimp only [mem_ofPred_eq]
@@ -234,19 +227,20 @@ private theorem apply_le_apply_of_forall_nonneg
           weightMomentMap_apply α (chart y) ξ']
         refine mul_nonpos_of_nonpos_of_nonneg (by norm_num) (Finset.sum_nonneg fun k _ ↦ ?_)
         exact mul_nonneg (hξ'V k).le (by positivity)
-    exact h.isMaxOn_of_isLocalMax hσ.isNondegenerate hσG hM hmax (mem_univ x)
+    exact h.isMaxOn_of_isLocalMax hσ.isNondegenerate
+      (eval₂_mfderiv_smul_of_mpullback_smul_eq (I := I) hG) hM hmax (mem_univ x)
   -- The weights are the coordinates of an isomorphism `𝔤 ≃ ℝⁿ`, so some `ξ₁` has all weights `1`,
   -- and `ξ + t ξ₁ ∈ V` for `t > 0` tends to `ξ`.
   set A : GroupLieAlgebra I G →ₗ[ℝ] Fin n → ℝ := LinearMap.pi fun k ↦ (α k).toLinearMap
-  have hA (ξ' : GroupLieAlgebra I G) (k : Fin n) : A ξ' k = α k ξ' := rfl
+  have hA (ξ' : GroupLieAlgebra I G) (k : Fin n) : A ξ' k = α k ξ' := LinearMap.pi_apply _ _ _
   obtain ⟨ξ₁, hξ₁⟩ : ∃ ξ₁, A ξ₁ = fun _ ↦ (1 : ℝ) :=
     (bijective_pi_of_mfderiv_eq hgen hpchart hdim).2 _
   refine hS.mem_of_tendsto (f := fun t : ℝ ↦ ξ + t • ξ₁) (b := 𝓝[>] 0)
     ((Continuous.tendsto' (by fun_prop) 0 _ (by simp)).mono_left nhdsWithin_le_nhds) ?_
   filter_upwards [self_mem_nhdsWithin] with t ht
   refine hVS fun k ↦ ?_
-  rw [← hA, map_add, map_smul, hξ₁, Pi.add_apply, Pi.smul_apply, hA, smul_eq_mul, mul_one]
-  exact add_pos_of_nonneg_of_pos (hξ k) ht
+  rw [← hA, map_add, map_smul, hξ₁]
+  simpa [hA] using add_pos_of_nonneg_of_pos (hξ k) ht
 
 end WeightChart
 
@@ -284,7 +278,7 @@ theorem exists_eventually_mem_convexHull_range_iff_of_mem_fixedPoints
     · rintro _ ⟨x, rfl⟩ k
       refine apply_le_apply_of_forall_nonneg h hσ hG hdim hpchart hgen hμchart (fun j ↦ ?_) x
       rw [hα, Module.Basis.coord_apply, Module.Basis.repr_self]
-      exact Int.cast_nonneg (by simp [Finsupp.single_apply]; split_ifs <;> norm_num)
+      exact Int.cast_nonneg (by rw [Finsupp.single_apply]; split_ifs <;> norm_num)
     · simp only [ofPred_forall]
       exact convex_iInter fun k ↦ convex_halfSpace_le
         ((ContinuousLinearMap.apply ℝ ℝ (i (b k))).isLinear) _
@@ -334,13 +328,12 @@ theorem existsUnique_isDelzant_facetPolyhedron_eq_convexHull_range [Nonempty M]
     (LinearMap.toContinuousLinearMap : (E →ₗ[ℝ] ℝ) ≃ₗ[ℝ] StrongDual ℝ E).toLinearMap
   -- The polytope is the convex hull of the images of the finitely many fixed points.
   have hfin := h.finite_fixedPoints_of_faithfulSMul hσ hG hdim
+  -- Here `f = L ∘ μ` by definition, so `conv f(M) = L (conv μ(M)) = L (conv μ(M^G))`.
   have hconv : convexHull ℝ (range f) = convexHull ℝ (f '' MulAction.fixedPoints G M) := by
-    refine (convexHull_min ?_ (convex_convexHull ℝ _)).antisymm
-      (convexHull_mono (image_subset_range f _))
-    rintro _ ⟨x, rfl⟩
-    have hx := mem_image_of_mem L
-      (h.range_subset_convexHull_image_fixedPoints hσ.isNondegenerate (mem_range_self x))
-    rwa [LinearMap.image_convexHull, image_image] at hx
+    rw [show range f = L '' range μ from range_comp L μ, ← LinearMap.image_convexHull,
+      h.convexHull_range_eq_convexHull_image_fixedPoints hσ.isNondegenerate,
+      LinearMap.image_convexHull, image_image]
+    rfl
   refine Toric.existsUnique_isDelzant_facetPolyhedron_eq hi
     ⟨f (Classical.arbitrary M), subset_convexHull ℝ _ (mem_range_self _)⟩
     ?_ (convex_convexHull ℝ _) ?_ fun v hv ↦ ?_

@@ -65,13 +65,19 @@ effective circle action on `ℂ²` with weights `1` and `-1`
 
 ## Main results
 
-Apart from `TauCeti.bijective_pi_of_mfderiv_eq`, all declarations are in the namespace
-`TauCeti.SmoothTwoForm.IsMomentMap`.
+Apart from `TauCeti.bijective_pi_of_mfderiv_eq` and
+`TauCeti.SmoothTwoForm.eval₂_mfderiv_smul_of_mpullback_smul_eq`, all declarations are in the
+namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
 
 * `TauCeti.bijective_pi_of_mfderiv_eq`: in a weight chart of a symplectic toric manifold, the
   weights are the coordinates of a linear isomorphism `𝔤 ≃ ℝⁿ`, so they form a basis of `𝔤*`.
+* `TauCeti.SmoothTwoForm.eval₂_mfderiv_smul_of_mpullback_smul_eq`: a `G`-invariant two-form is
+  preserved by the differentials of the action, the form of invariance the Morse theory of moment
+  map components takes as hypothesis.
 * `eventually_mem_fixedPoints_imp_eq`, `finite_fixedPoints_of_faithfulSMul`: the fixed points of
   a symplectic toric manifold are isolated, hence finite in number.
+* `isMorse_of_eq_top_of_faithfulSMul`: a component `μ^ξ` whose one-parameter subgroup is dense in
+  `G` is a Morse function.
 * `exists_forall_lt_of_mem_fixedPoints`: every fixed point is the unique maximum of some component
   `μ^ξ` of the moment map.
 * `preimage_singleton_eq_of_mem_fixedPoints`: the fibre of `μ` through a fixed point is that
@@ -156,7 +162,21 @@ theorem bijective_pi_of_mfderiv_eq {n : ℕ} {α : Fin n → StrongDual ℝ E}
   refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
   rwa [Module.finrank_fin_fun]
 
-namespace SmoothTwoForm.IsMomentMap
+namespace SmoothTwoForm
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [LieGroup I ∞ G] [T2Space G]
+  [IsTopologicalGroup G] [CompactSpace G] [PreconnectedSpace G] [FiniteDimensional ℝ E']
+  [I'.Boundaryless] [T2Space M] [CompactSpace M] [PreconnectedSpace M] [FaithfulSMul G M] in
+/-- **A `G`-invariant two-form is preserved by the differentials of the action.** If
+`(g • ·)^* σ = σ` for every `g`, then `σ_{a • x}(d(a • ·) u, d(a • ·) v) = σ_x(u, v)`. -/
+theorem eval₂_mfderiv_smul_of_mpullback_smul_eq
+    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
+    (a : G) (x : M) (u v : TangentSpace I' x) :
+    σ.eval₂ (a • x) (mfderiv I' I' (a • ·) x u) (mfderiv I' I' (a • ·) x v) = σ.eval₂ x u v := by
+  rw [← SmoothForm.eval₂_mpullback _ (ContMDiffSMul.contMDiff_const_smul (I := I) a), hG a]
+
+namespace IsMomentMap
 
 omit [PreconnectedSpace G] [CompactSpace M] in
 /-- **The local picture at a fixed point of a symplectic toric manifold.** Near a fixed point `p`,
@@ -227,6 +247,22 @@ theorem finite_fixedPoints_of_faithfulSMul
   exact h.finite_fixedPoints hσ.isNondegenerate fun _ hp ↦
     h.eventually_mem_fixedPoints_imp_eq hσ hG hdim hp
 
+omit [PreconnectedSpace G] in
+/-- **Generic components on a symplectic toric manifold are Morse.** Let a torus `G` act smoothly
+and effectively on a compact connected symplectic manifold `(M, σ)` without boundary, preserving
+`σ`, with moment map `μ`, and with `dim M = 2 dim G`. Then `μ^ξ` is a Morse function whenever the
+closure of `{exp (t ξ) | t ∈ ℝ}` is the whole group. -/
+theorem isMorse_of_eq_top_of_faithfulSMul
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsSymplectic)
+    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
+    (hdim : finrank ℝ E' = 2 * finrank ℝ E) {ξ : GroupLieAlgebra I G}
+    (hξ : Lie.closedOneParameterSubgroup ξ = ⊤) :
+    IsMorse I' fun y ↦ μ y ξ := by
+  have : IsMulCommutative G := ⟨⟨mul_comm⟩⟩
+  exact h.isMorse_of_eq_top hσ.isNondegenerate hξ fun _ hq ↦
+    h.eventually_mem_fixedPoints_imp_eq hσ hG hdim hq
+
 /-- **A fixed point is the unique maximum of a moment map component.** Let a torus `G` act
 smoothly and effectively on a compact connected symplectic manifold `(M, σ)` without boundary,
 preserving `σ`, with moment map `μ`, and with `dim M = 2 dim G`. For every fixed point `p` there is
@@ -239,18 +275,12 @@ theorem exists_forall_lt_of_mem_fixedPoints
     ∃ ξ : GroupLieAlgebra I G, ∀ y, y ≠ p → μ y ξ < μ p ξ := by
   have : IsMulCommutative G := ⟨⟨mul_comm⟩⟩
   have : ConnectedSpace M := { toNonempty := ⟨p⟩ }
-  have hσG (a : G) (x : M) (u v : TangentSpace I' x) :
-      σ.eval₂ (a • x) (mfderiv I' I' (a • ·) x u) (mfderiv I' I' (a • ·) x v) =
-        σ.eval₂ x u v := by
-    rw [← SmoothForm.eval₂_mpullback _ (ContMDiffSMul.contMDiff_const_smul (I := I) a), hG a]
-  have hiso (q : M) (hq : q ∈ MulAction.fixedPoints G M) :
-      ∀ᶠ y in 𝓝 q, y ∈ MulAction.fixedPoints G M → y = q :=
-    h.eventually_mem_fixedPoints_imp_eq hσ hG hdim hq
+  have hσG := eval₂_mfderiv_smul_of_mpullback_smul_eq (I := I) hG
   obtain ⟨U, hU, -, V, hVo, hVne, hV⟩ := h.exists_nhds_of_mem_fixedPoints hσ hG hdim hp
   -- Choose `ξ` in the open cone `V` with dense one-parameter subgroup; then `μ^ξ` is Morse.
   obtain ⟨ξ, hξV, hξ⟩ :=
     (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).inter_open_nonempty V hVo hVne
-  have hM := h.isMorse_of_eq_top hσ.isNondegenerate hξ hiso
+  have hM := h.isMorse_of_eq_top_of_faithfulSMul hσ hG hdim hξ
   have hmax : IsLocalMax (fun y ↦ μ y ξ) p := Filter.mem_of_superset hU fun x hx ↦ hV ξ hξV x hx
   have hglob := h.isMaxOn_of_isLocalMax hσ.isNondegenerate hσG hM hmax
   refine ⟨ξ, fun y hyp ↦ (hglob (mem_univ y)).lt_of_ne fun hy ↦ hyp ?_⟩
@@ -317,6 +347,8 @@ theorem notMem_interior_convexHull_range_of_mem_fixedPoints [Nontrivial E]
     exact hξ y fun hyp ↦ hy (congrArg f hyp)
   exact fun hint ↦ disjoint_left.1 (disjoint_interior_extremePoints _) hint hext
 
-end SmoothTwoForm.IsMomentMap
+end IsMomentMap
+
+end SmoothTwoForm
 
 end TauCeti
