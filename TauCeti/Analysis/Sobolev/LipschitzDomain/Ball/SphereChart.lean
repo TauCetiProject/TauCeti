@@ -12,7 +12,6 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Smooth boundary charts of balls
