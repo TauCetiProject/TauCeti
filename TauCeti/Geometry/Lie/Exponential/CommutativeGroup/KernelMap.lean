@@ -19,7 +19,11 @@ identifications `𝔤 / Λ ≃ G` of preconnected groups.
 
 Conversely, for preconnected `G` every real-linear map `φ : 𝔤 → 𝔤'` with `φ(Λ) ⊆ Λ'` is the Lie
 map of a unique continuous homomorphism, so continuous homomorphisms `G → G'` correspond exactly
-to linear maps carrying `Λ` into `Λ'` (`ContinuousMonoidHom.lieMapKerEquiv`).
+to linear maps carrying `Λ` into `Λ'` (`ContinuousMonoidHom.lieMapKerEquiv`). When `G` is
+moreover compact, `Λ` is a full lattice, so every additive map `Λ → Λ'` extends uniquely to a
+real-linear map, and the continuous homomorphisms `G → G'` are exactly the additive maps `Λ → Λ'`
+(`TauCeti.existsUnique_continuousMonoidHom_lieMap_ker`). This is the full faithfulness of
+`T ↦ ker(exp_T)` on compact connected commutative Lie groups.
 
 The converse direction uses that the Lie map is characterized by the identity
 `f ∘ exp = exp ∘ φ` (`ContinuousMonoidHom.lieMap_apply_eq_of_lieExp`). As examples, the Lie map
@@ -42,6 +46,10 @@ the exponential it acts as `λ ↦ n λ`.
 * `ContinuousMonoidHom.lieExpQuotientKerContinuousAddEquiv_lieMapQuotient`: the induced map of
   quotients is `f` under the exponential identifications.
 * `ContinuousMonoidHom.lieMap_ofLieLinearMap`: the Lie map of `ofLieLinearMap φ hφ` is `φ`.
+* `TauCeti.existsUnique_continuousMonoidHom_lieMap_ker`: for compact connected `G`, every
+  additive map `ker(exp) → ker(exp')` is the restriction of the Lie map of exactly one continuous
+  homomorphism `G → G'`; the real-linear extension along a `ℤ`-basis of the lattice `ker(exp)`
+  carries `ker(exp)` into `ker(exp')`.
 * `ContinuousMonoidHom.lieMap_id_pow`, `ContinuousMonoidHom.lieMapKer_id_pow`: the `n`-th power
   map `ContinuousMonoidHom.id G ^ n` differentiates to multiplication by `n`, on `𝔤` and on `Λ`.
 
@@ -236,6 +244,74 @@ theorem lieMapKerEquiv_symm_apply
 
 end ContinuousMonoidHom
 
+namespace TauCeti
+
+open ContinuousMonoidHom
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G']
+  [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [LieGroup I ∞ G] [LieGroup I' ∞ G']
+  [T2Space G] [BoundarylessManifold I G] [T2Space G'] [BoundarylessManifold I' G']
+  [IsMulCommutative G] [IsMulCommutative G'] [CompactSpace G]
+
+/-- The real-linear extension of an additive map of exponential kernels, along a `ℤ`-basis of the
+exponential lattice of the compact group `G`, which is also a real basis of its Lie algebra. -/
+private def kerLinearExtension
+    (g : (lieExpAddMonoidHom (I := I) (G := G)).ker →+
+      (lieExpAddMonoidHom (I := I') (G := G')).ker) :
+    LeftInvariantDerivation I G →ₗ[ℝ] LeftInvariantDerivation I' G' :=
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  let b := Module.Free.chooseBasis ℤ (lieExpLattice (I := I) (G := G))
+  (b.ofZLatticeBasis ℝ (lieExpLattice (I := I) (G := G))).constr ℝ fun i ↦ (g (b i) : _)
+
+private theorem kerLinearExtension_apply
+    (g : (lieExpAddMonoidHom (I := I) (G := G)).ker →+
+      (lieExpAddMonoidHom (I := I') (G := G')).ker)
+    (X : (lieExpAddMonoidHom (I := I) (G := G)).ker) :
+    kerLinearExtension g X = g X := by
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  let b := Module.Free.chooseBasis ℤ (lieExpLattice (I := I) (G := G))
+  -- Both sides are `ℤ`-linear in `X ∈ Λ` and agree on the basis `b`.
+  have h := b.ext (f₁ := ((kerLinearExtension g).restrictScalars ℤ).comp
+      (lieExpLattice (I := I) (G := G)).subtype)
+    (f₂ := ((lieExpAddMonoidHom (I := I') (G := G')).ker.subtype.comp g).toIntLinearMap)
+    fun i ↦ by
+      change kerLinearExtension g (b i) = (g (b i) : _)
+      rw [kerLinearExtension, ← Module.Basis.ofZLatticeBasis_apply ℝ, Module.Basis.constr_basis]
+  exact LinearMap.congr_fun h X
+
+variable [PreconnectedSpace G]
+
+/-- **Tori and their exponential lattices** (full faithfulness): for a compact connected
+commutative Lie group `G` and a commutative Lie group `G'`, every additive map between the kernels
+of their exponentials is the restriction of the Lie map of exactly one continuous homomorphism
+`G →ₜ* G'`. For `Circle` the kernel is `2πℤ`, and `z ↦ z²` restricts to multiplication by `2`. -/
+theorem existsUnique_continuousMonoidHom_lieMap_ker
+    (g : (lieExpAddMonoidHom (I := I) (G := G)).ker →+
+      (lieExpAddMonoidHom (I := I') (G := G')).ker) :
+    ∃! f : G →ₜ* G', ∀ X : (lieExpAddMonoidHom (I := I) (G := G)).ker,
+      lieMap (I := I) (I' := I') f X = g X := by
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  have hL (X) (hX : X ∈ (lieExpAddMonoidHom (I := I) (G := G)).ker) :
+      kerLinearExtension g X ∈ (lieExpAddMonoidHom (I := I') (G := G')).ker := by
+    rw [kerLinearExtension_apply g ⟨X, hX⟩]
+    exact (g ⟨X, hX⟩).property
+  refine ⟨ofLieLinearMap _ hL, fun X ↦ ?_, fun f hf ↦ ?_⟩
+  · rw [lieMap_ofLieLinearMap, kerLinearExtension_apply]
+  · refine (lieMapKerEquiv (I := I) (I' := I')).injective (Subtype.ext ?_)
+    -- Both Lie maps agree with the extension on the kernel, which spans the Lie algebra.
+    refine LinearMap.ext_on (span_ker_lieExpAddMonoidHom_eq_top (I := I) (G := G)) ?_
+    intro X hX
+    change lieMap (I := I) (I' := I') f X =
+      lieMap (I := I) (I' := I') (ofLieLinearMap (kerLinearExtension g) hL) X
+    rw [lieMap_ofLieLinearMap, kerLinearExtension_apply g ⟨X, hX⟩]
+    exact hf ⟨X, hX⟩
+
+end TauCeti
 /-! ### Multiplication by `n` -/
 
 namespace ContinuousMonoidHom
