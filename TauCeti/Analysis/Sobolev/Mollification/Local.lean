@@ -26,7 +26,7 @@ measure `μ`, and let `u : E → F` have weak Fréchet derivative `Du` on `Ω`, 
 Banach space `F`. Extending `u` by zero outside an open subset `V` with compact closure in `Ω` and
 convolving with a normalized smooth bump `φ.normed μ` produces a globally smooth function whose
 Fréchet derivative agrees with `φ.normed μ ⋆ V.indicator Du` at every point whose `φ.rOut`-closed
-ball lies in `V`, and whose `Lᵖ` seminorm on any measurable subset of such points is at most
+ball lies in `V`, and whose `Lᵖ` seminorm on any null-measurable subset of such points is at most
 `‖Du‖_{Lᵖ(V)}` for every `1 ≤ p ≤ ∞`.
 
 As the outer radii of the bumps shrink to zero, these mollifications converge to `u` in `L^q(U)`
@@ -67,11 +67,11 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   {Ω : Opens E} {u : E → F} {Du : E → E →L[ℝ] F}
 
 /-- **`Lᵖ` gradient bound for interior mollifications.** If `V` has compact closure in `Ω`,
-`1 ≤ p ≤ ∞`, and every point of a measurable set `s` has `closedBall x φ.rOut ⊆ V`, then
+`1 ≤ p ≤ ∞`, and every point of a null-measurable set `s` has `closedBall x φ.rOut ⊆ V`, then
 `‖D(φ.normed μ ⋆ V.indicator u)‖_{Lᵖ(s)} ≤ ‖Du‖_{Lᵖ(V)}`. -/
 theorem HasWeakFDerivOn.eLpNorm_fderiv_normed_convolution_indicator_le
     (hu : HasWeakFDerivOn μ Ω u Du) {V : Opens E} (hVc : IsCompact (closure (V : Set E)))
-    (hVΩ : closure (V : Set E) ⊆ Ω) {s : Set E} (hs : MeasurableSet s)
+    (hVΩ : closure (V : Set E) ⊆ Ω) {s : Set E} (hs : NullMeasurableSet s μ)
     (φ : ContDiffBump (0 : E)) (hball : ∀ x ∈ s, closedBall x φ.rOut ⊆ V) {p : ℝ≥0∞}
     (hp1 : 1 ≤ p) :
     eLpNorm (fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u)) p (μ.restrict s) ≤
@@ -84,7 +84,7 @@ theorem HasWeakFDerivOn.eLpNorm_fderiv_normed_convolution_indicator_le
     (aestronglyMeasurable_indicator_iff V.isOpen.measurableSet).2 hDm_V
   have heq : fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u) =ᵐ[μ.restrict s]
       φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du :=
-    (ae_restrict_mem hs).mono fun x hx =>
+    (ae_restrict_mem₀ hs).mono fun x hx =>
       hu.fderiv_normed_convolution_indicator hVc hVΩ φ (hball x hx)
   calc eLpNorm (fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u)) p (μ.restrict s)
       = eLpNorm (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du) p (μ.restrict s) :=
@@ -155,8 +155,8 @@ private theorem exists_interior_mollification (hu : HasWeakFDerivOn μ Ω u Du)
   refine ⟨fun n => (φ n).normed μ ⋆[lsmul ℝ ℝ, μ] (W : Set E).indicator u,
     fun n => hu.locallyIntegrableOn.contDiff_normed_convolution_indicator
       W.isOpen.measurableSet.nullMeasurableSet hWc hWΩ (φ n),
-    fun n => (hu.eLpNorm_fderiv_normed_convolution_indicator_le hWc hWΩ U.isOpen.measurableSet
-      (φ n) (hball n) hp1).trans
+    fun n => (hu.eLpNorm_fderiv_normed_convolution_indicator_le hWc hWΩ
+      U.isOpen.measurableSet.nullMeasurableSet (φ n) (hball n) hp1).trans
       (eLpNorm_mono_measure _ (Measure.restrict_mono (subset_closure.trans hclW) le_rfl)),
     fun huc => ContDiffBump.tendstoUniformlyOn_normed_convolution_indicator
       W.isOpen.measurableSet.nullMeasurableSet hWc (huc.mono hclW) hδ subset_rfl hφ,

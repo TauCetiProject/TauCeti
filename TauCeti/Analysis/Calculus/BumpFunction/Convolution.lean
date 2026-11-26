@@ -361,8 +361,8 @@ theorem normed_convolution_indicator_eq_of_ball_subset (φ : ContDiffBump (0 : G
     hs (by simpa [mem_ball, dist_eq_norm] using φ.support_normed_eq.subset ht)
 
 /-- **Uniform convergence of zero-extended interior mollifications.** If `V` is a null-measurable
-set with compact closure on which `g` is continuous, and `thickening δ s ⊆ V` with `0 < δ`, then
-the mollifications `φᵢ.normed μ ⋆ V.indicator g` converge uniformly to `g` on `s` as
+set with compact closure, such that `g` is continuous on `closure V`, and `thickening δ s ⊆ V` with
+`0 < δ`, then the mollifications `φᵢ.normed μ ⋆ V.indicator g` converge uniformly to `g` on `s` as
 `(φᵢ).rOut → 0`. -/
 theorem tendstoUniformlyOn_normed_convolution_indicator {V : Set G} (hV : NullMeasurableSet V μ)
     (hVc : IsCompact (closure V)) (hgc : ContinuousOn g (closure V))

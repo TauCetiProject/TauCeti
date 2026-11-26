@@ -10,11 +10,11 @@ public import Mathlib.MeasureTheory.Integral.Average
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 
-import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Sobolev.Mollification.Local
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.LocallyAEConst
 import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
@@ -126,26 +126,12 @@ private theorem eLpNorm_sub_setAverage_le_of_isCompact_closure (hu : HasWeakFDer
           ((hv_cd n).continuous.continuousOn.integrableOn_compact hUcomp).mono_set
             (hSU.trans subset_closure))
         hv_S).const_smul (μ.real S)⁻¹
-  have hum : AEStronglyMeasurable u (μ.restrict U) :=
-    hu.locallyIntegrableOn.aestronglyMeasurable.mono_measure
-      (Measure.restrict_mono (subset_closure.trans hUΩ) le_rfl)
-  obtain ⟨ns, hns, hae⟩ :=
-    (tendstoInMeasure_of_tendsto_eLpNorm one_ne_zero hv_L1).exists_seq_tendsto_ae
-  calc eLpNorm (fun x => u x - ⨍ y in S, u y ∂μ) p (μ.restrict U)
-      ≤ atTop.liminf fun k =>
-          eLpNorm (fun x => v (ns k) x - ⨍ y in S, v (ns k) y ∂μ) p (μ.restrict U) :=
-        Lp.eLpNorm_lim_le_liminf_eLpNorm
-          (fun k => (hv_cd (ns k)).continuous.aestronglyMeasurable.sub aestronglyMeasurable_const)
-          _ (hum.sub aestronglyMeasurable_const)
-          (hae.mono fun x hx => hx.sub (havg.comp hns.tendsto_atTop))
-    _ ≤ atTop.liminf fun _ =>
-          ENNReal.ofReal (μ.real (ball 0 1) * diam (U : Set E) ^ (finrank ℝ E + 1) / μ.real S) *
-            eLpNorm Du p (μ.restrict Ω) :=
-        liminf_le_liminf (.of_forall fun k =>
-          (eLpNorm_sub_setAverage_le_of_convex hUc hUb
-            ((hv_cd (ns k)).of_le (by simp)).contDiffOn hSU hS0 hp1 hp).trans
-            (mul_le_mul_right (hv_deriv (ns k)) _))
-    _ = _ := liminf_const _
+  exact eLpNorm_le_of_tendstoInMeasure
+    (.of_forall fun n =>
+      (eLpNorm_sub_setAverage_le_of_convex hUc hUb ((hv_cd n).of_le (by simp)).contDiffOn
+        hSU hS0 hp1 hp).trans (mul_le_mul_right (hv_deriv n) _))
+    ((tendstoInMeasure_of_tendsto_eLpNorm one_ne_zero hv_L1).sub havg.tendstoInMeasure_const)
+    fun n => (hv_cd n).continuous.aestronglyMeasurable.sub aestronglyMeasurable_const
 
 /-- The Poincaré–Wirtinger inequality on a bounded convex open set `Ω`, assuming `u` is integrable
 on `S` and `Du ∈ Lᵖ(Ω)`. The averaging set `S` need not be measurable: it is replaced by its
