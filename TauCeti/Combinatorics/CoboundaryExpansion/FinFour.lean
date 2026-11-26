@@ -186,6 +186,8 @@ private theorem eq_one_or_eq_rotThree_or_eq_inv :
 
 private theorem card_support_rotThree : #(rotThree : Perm (Fin 3)).support = 3 := by decide
 
+private theorem rotThree_inv_mul_inv : rotThree⁻¹ * rotThree⁻¹ = rotThree := by decide
+
 /-- Every `A₃`-valued cochain on `complete (Fin 4)` has a gauge costing at most two thirds of its
 defect, for the restricted moved-point norm. -/
 private theorem Cochain.exists_three_mul_cost_le_two_mul_defect_alternatingGroup
@@ -235,10 +237,10 @@ private theorem rotWitness_apply {u v : Fin 4} (h : u < v) : rotWitness u v = ro
 private theorem defect_rotWitness :
     rotWitness.defect ((movedNorm (Fin 3)).comp (alternatingGroup (Fin 3)).subtype_injective) =
       9 := by
-  simp only [Cochain.defect_complete_fin_four, rotWitness, Cochain.holonomy_ofLt_complete,
-    Fin.reduceLT, GroupNorm.comp_apply, Subgroup.coe_subtype, movedNorm_apply]
-  -- the sum of the four support cardinalities is a closed natural number, evaluated by `norm_cast`
-  norm_cast
+  -- the four holonomies are `1`, `rotThree`, `rotThree⁻¹` and `rotThree⁻¹ * rotThree⁻¹ = rotThree`,
+  -- and each `3`-cycle moves all three points
+  norm_num [Cochain.defect_complete_fin_four, rotWitness, Cochain.holonomy_ofLt_complete,
+    rotWitnessFn, movedNorm_apply, rotThree_inv_mul_inv, card_support_rotThree]
 
 private theorem six_le_cost_rotWitness (β : Fin 4 → alternatingGroup (Fin 3)) :
     6 ≤ rotWitness.cost ((movedNorm (Fin 3)).comp (alternatingGroup (Fin 3)).subtype_injective)
