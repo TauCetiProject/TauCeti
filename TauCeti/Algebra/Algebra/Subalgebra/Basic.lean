@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Module.Equiv.Defs
+public import TauCeti.Algebra.Module.Equiv.Basic
 
 /-!
 # Subalgebras over different base rings, and division by natural numbers
@@ -46,17 +47,11 @@ section Transport
 variable {R D E : Type*} [CommSemiring R] [Semiring D] [Semiring E]
   [Algebra R D] [Algebra R E]
 
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm
+
 /-- Transport the ambient algebra semilinearly over the induced equivalence of subalgebras. -/
 def equivMapSemilinear (O : Subalgebra R D) (f : D ≃ₐ[R] E) :
-    let r := (f.subalgebraMap O).toRingEquiv
-    letI := RingHomInvPair.of_ringEquiv r
-    letI := RingHomInvPair.symm (r : O →+* O.map f.toAlgHom)
-      (r.symm : O.map f.toAlgHom →+* O)
-    D ≃ₛₗ[(r : O →+* O.map f.toAlgHom)] E :=
-  let r := (f.subalgebraMap O).toRingEquiv
-  letI := RingHomInvPair.of_ringEquiv r
-  letI := RingHomInvPair.symm (r : O →+* O.map f.toAlgHom)
-    (r.symm : O.map f.toAlgHom →+* O)
+    D ≃ₛₗ[((f.subalgebraMap O).toRingEquiv : O →+* O.map f.toAlgHom)] E :=
   { f.toEquiv with
     map_add' := f.map_add
     map_smul' := fun b x => by
@@ -74,6 +69,25 @@ theorem equivMapSemilinear_apply (O : Subalgebra R D) (f : D ≃ₐ[R] E) (x : D
 @[simp↓]
 theorem equivMapSemilinear_symm_apply (O : Subalgebra R D) (f : D ≃ₐ[R] E) (y : E) :
     (O.equivMapSemilinear f).symm y = f.symm y := by rfl
+
+/-- Pointwise ambient transport over the induced equivalence of a subalgebra with its image. -/
+def equivMapPiSemilinear (O : Subalgebra R D) (f : D ≃ₐ[R] E) (ι : Type*) :=
+  LinearEquiv.piCongrRightₛₗ (fun _ : ι => O.equivMapSemilinear f)
+
+/-- Pointwise ambient transport applies the algebra equivalence at each coordinate. -/
+@[simp↓]
+theorem equivMapPiSemilinear_apply (O : Subalgebra R D) (f : D ≃ₐ[R] E)
+    {ι : Type*} (x : ι → D) (i : ι) : O.equivMapPiSemilinear f ι x i = f (x i) := by
+  simp only [equivMapPiSemilinear, LinearEquiv.piCongrRightₛₗ_apply, equivMapSemilinear_apply]
+
+/-- Inverse pointwise ambient transport applies the inverse algebra equivalence. -/
+@[simp↓]
+theorem equivMapPiSemilinear_symm_apply (O : Subalgebra R D) (f : D ≃ₐ[R] E)
+    {ι : Type*} (x : ι → E) (i : ι) :
+    (O.equivMapPiSemilinear f ι).symm x i = f.symm (x i) := by
+  apply f.injective
+  simpa only [equivMapPiSemilinear_apply, AlgEquiv.apply_symm_apply] using
+    congrFun ((O.equivMapPiSemilinear f ι).apply_symm_apply x) i
 
 end Transport
 

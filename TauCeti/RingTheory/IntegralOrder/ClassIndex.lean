@@ -197,11 +197,9 @@ theorem IsOrder.exists_injective_index_ne_zero (hO : IsOrder ℚ O)
       rw [hf_apply, hg_apply]
       exact hxy
   refine ⟨f, hf, ?_⟩
-  rw [hgroup, AddSubgroup.index_comap]
-  have hM : M.subtype.toAddMonoidHom.range = (M.restrictScalars ℤ).toAddSubgroup :=
-    M.toAddSubgroup.range_subtype
-  rw [hM]
-  exact Submodule.IsFullLattice.relIndex_ne_zero
+  rw [hgroup, AddSubgroup.index_comap, ← LinearMap.range_toAddSubgroup, Submodule.range_subtype]
+  simpa only [← Submodule.toIntSubmodule_toAddSubgroup M, AddSubgroup.toIntSubmodule_toAddSubgroup]
+    using (Submodule.IsFullLattice.relIndex_ne_zero (N := P) (M := M.restrictScalars ℤ))
 
 /-- The least free index of a full stable lattice is attained by an injective map of positive
 finite additive index. -/
