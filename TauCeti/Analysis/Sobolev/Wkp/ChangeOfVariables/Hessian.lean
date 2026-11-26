@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.Calculus.Rademacher
+import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.Wkp.ClosedGraph
 import TauCeti.MeasureTheory.Function.Jacobian
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # The weak Hessian under a change of variables with Lipschitz derivative
@@ -225,12 +227,8 @@ theorem inner_iteratedGradient_compL_ae (h : IsChangeOfVariables 2 U V Φ L c) (
         ⟪iteratedGradient 1 u (Φ x) (fderiv ℝ Φ x f), fderiv ℝ Φ x g⟫_ℝ +
           ⟪iteratedGradient 0 (lowerOrder 1 u) (Φ x), fderiv ℝ (fderiv ℝ Φ) x f g⟫_ℝ := by
   -- `DΦ` is `C¹` on the open set `U`, hence locally Lipschitz there.
-  have hΦ : LocallyLipschitzOn (U : Set E) (fderiv ℝ Φ) := fun x hx => by
-    obtain ⟨K, t, ht, hK⟩ := ((h.contDiffOn_fderiv x hx).contDiffAt
-      (U.isOpen.mem_nhds hx)).exists_lipschitzOnWith
-    exact ⟨K, t, nhdsWithin_le_nhds ht, hK⟩
-  exact inner_iteratedGradient_ae_of_firstOrder_eq_w1pCompL (h.mono one_le_two) hΦ hp u
-    (firstOrder_compL h hp u)
+  exact inner_iteratedGradient_ae_of_firstOrder_eq_w1pCompL (h.mono one_le_two)
+    (h.contDiffOn_fderiv.locallyLipschitzOn_of_isOpen U.isOpen) hp u (firstOrder_compL h hp u)
 
 /-! ### Changes of variables of class `C^{1,1}` -/
 
@@ -295,8 +293,7 @@ private theorem exists_firstOrder_eq_w1pCompL (h : IsChangeOfVariables 1 U V Φ 
     (hM : LipschitzOnWith M (fderiv ℝ Φ) U) (hp : p ≠ ⊤) (u : Wkp mu V p 2) :
     ∃ w : Wkp mu U p 2, firstOrder 1 w = h.w1pCompL hp (firstOrder 1 u) := by
   have hmem := memLp_inner_iteratedGradient_comp_add_inner h hM u
-  have hΦ : LocallyLipschitzOn (U : Set E) (fderiv ℝ Φ) := fun x _ =>
-    ⟨M, U, self_mem_nhdsWithin, hM⟩
+  have hΦ : LocallyLipschitzOn (U : Set E) (fderiv ℝ Φ) := hM.locallyLipschitzOn
   obtain ⟨w, hw⟩ := W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn
     (h.w1pCompL hp (firstOrder 1 u)) (stdOrthonormalBasis ℝ E) fun i j =>
       ⟨(hmem _ _).toLp _, (hasWeakLineDerivOn_inner_gradient_w1pCompL h hΦ hp u _ _).congr_ae_deriv
@@ -423,8 +420,8 @@ theorem inner_iteratedGradient_compOfLipschitzFDerivL_ae (h : IsChangeOfVariable
       ⟪iteratedGradient 1 (compOfLipschitzFDerivL h hM hp u) x f, g⟫_ℝ =
         ⟪iteratedGradient 1 u (Φ x) (fderiv ℝ Φ x f), fderiv ℝ Φ x g⟫_ℝ +
           ⟪iteratedGradient 0 (lowerOrder 1 u) (Φ x), fderiv ℝ (fderiv ℝ Φ) x f g⟫_ℝ :=
-  inner_iteratedGradient_ae_of_firstOrder_eq_w1pCompL h (fun _ _ => ⟨M, U, self_mem_nhdsWithin, hM⟩)
-    hp u (firstOrder_compOfLipschitzFDerivL h hM hp u)
+  inner_iteratedGradient_ae_of_firstOrder_eq_w1pCompL h hM.locallyLipschitzOn hp u
+    (firstOrder_compOfLipschitzFDerivL h hM hp u)
 
 end LipschitzFDeriv
 
