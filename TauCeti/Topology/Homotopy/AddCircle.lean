@@ -71,11 +71,9 @@ coordinate avoids a point of its circle has nullhomotopic inclusion.
   unchanged by a monotone change of time.
 * `ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`: a null-homotopic loop run at constant
   nonzero speed is null-homotopic.
-* `IsPathConnected.exists_nullhomotopic_addCircle_of_periodic` and
-  `IsPreconnected.exists_nullhomotopic_addCircle_iff_of_periodic`: in a continuous family of
-  `T`-periodic curves, circle null-homotopy propagates along path-connected parameter sets and, for
-  locally path-connected, semilocally simply connected targets (`0 < T`), is constant along
-  preconnected parameter sets.
+* `IsPathConnected.exists_nullhomotopic_addCircle_of_periodic`: in a continuous family of
+  `T`-periodic curves indexed by a path-connected set, if one curve is contractible as a map from
+  `AddCircle T`, then every curve in the family is.
 * `Function.Periodic.eventually_exists_nullhomotopic_addCircle_iff_of_tendstoUniformly`,
   `Function.Periodic.exists_nullhomotopic_addCircle_of_tendstoUniformly`, and
   `Function.Periodic.exists_nullhomotopic_addCircle_of_tendstoUniformly_Ioi`: uniform convergence
@@ -313,39 +311,6 @@ theorem IsPathConnected.exists_nullhomotopic_addCircle_of_periodic {Y X : Type*}
       exact ((hper (γ 1) (hγU 1)).lift_coe t).trans (by rw [γ.target, ← hg₀ t]) }⟩
   refine ⟨g, ⟨c, hgg₀.trans hc⟩, fun t ↦ ?_⟩
   exact ((hper (γ 0) (hγU 0)).lift_coe t).trans (by rw [γ.source])
-
-/-- **Null-homotopy of periodic slices is constant along preconnected parameter sets.** Let `X` be a
-locally path-connected, semilocally simply connected space, `U` a preconnected subset of `Y`, and
-`u : Y × ℝ → X` continuous on `U × ℝ` with `T`-periodic slices (`0 < T`). Then `u (y₁, ·)` descends
-to a null-homotopic map `AddCircle T → X` if and only if `u (y₂, ·)` does, for any `y₁, y₂ ∈ U`. -/
-theorem IsPreconnected.exists_nullhomotopic_addCircle_iff_of_periodic {Y X : Type*}
-    [TopologicalSpace Y] [TopologicalSpace X] [LocallyPathConnectedSpace X]
-    [TauCeti.SemilocallySimplyConnectedSpace X] {U : Set Y} (hU : IsPreconnected U)
-    {u : Y × ℝ → X} (hu : ContinuousOn u (U ×ˢ univ)) {T : ℝ} (hT : 0 < T)
-    (hper : ∀ y ∈ U, Function.Periodic (fun t ↦ u (y, t)) T) {y₁ y₂ : Y} (hy₁ : y₁ ∈ U)
-    (hy₂ : y₂ ∈ U) :
-    (∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (y₁, t)) ↔
-      ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (y₂, t) := by
-  have : Fact (0 < T) := ⟨hT⟩
-  let _ : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.1 hU
-  have hslice (p : U) : Continuous fun t ↦ u (p.val, t) :=
-    hu.comp_continuous (continuous_const.prodMk continuous_id) fun t ↦ ⟨p.property, mem_univ t⟩
-  let γ (p : U) : Path (u (p.val, 0)) (u (p.val, 0)) := (hper p.val p.property).loop (hslice p) 0
-  have hγ_eq : ↿γ = fun q : U × I ↦ u (q.1.val, (0 : ℝ) + (q.2 : ℝ) * T) :=
-    funext fun q ↦ (hper q.1.val q.1.property).loop_apply (hslice q.1) 0 q.2
-  have hγ : Continuous ↿γ := by
-    rw [hγ_eq]
-    exact hu.comp_continuous ((continuous_subtypeVal.comp continuous_fst).prodMk
-      (continuous_const.add ((continuous_subtypeVal.comp continuous_snd).mul continuous_const)))
-      fun q ↦ ⟨q.1.property, mem_univ _⟩
-  rw [(hper y₁ hy₁).exists_nullhomotopic_iff_loop_homotopic_refl (hslice ⟨y₁, hy₁⟩) 0,
-    (hper y₂ hy₂).exists_nullhomotopic_iff_loop_homotopic_refl (hslice ⟨y₂, hy₂⟩) 0]
-  let S : Set U := {p : U | (γ p).Homotopic (Path.refl (u (p.val, 0)))}
-  have hmem (p : Y) (hp : p ∈ U) :
-      ((hper p hp).loop (hslice ⟨p, hp⟩) 0).Homotopic (Path.refl (u (p, 0))) ↔
-        (⟨p, hp⟩ : U) ∈ S := Iff.rfl
-  rw [hmem y₁ hy₁, hmem y₂ hy₂]
-  rcases isClopen_iff.1 (TauCeti.isClopen_setOf_homotopic_refl γ hγ) with h | h <;> simp [S, h]
 
 namespace Function.Periodic
 

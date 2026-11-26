@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Loop
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
-import Mathlib.Analysis.Convex.PathConnected
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
 import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
@@ -47,11 +47,10 @@ over `(a, ∞) × [0, 1]` with `a ≥ max T₀ 0` is at most the energy of `u` o
 (`TauCeti.SmoothTwoForm.mem_periodicSolutions_comp_endSign_mul`,
 `TauCeti.SmoothTwoForm.mem_periodicSolutions_positiveEndHamiltonian_iff`,
 `TauCeti.SmoothTwoForm.mem_contractiblePeriodicSolutions_comp_endSign_mul`, and
-`TauCeti.SmoothTwoForm.mem_contractiblePeriodicSolutions_positiveEndHamiltonian_iff`), while a
-null-homotopic end loop `t ↦ u(φ_q(±s₀, t))` propagates along the positive end
-(`TauCeti.Floer.exists_nullhomotopic_comp_endSign_mul`,
-`TauCeti.Floer.exists_nullhomotopic_positiveEndChart_of_subset`, and
-`TauCeti.Floer.exists_nullhomotopic_positiveEndChart`).
+`TauCeti.SmoothTwoForm.mem_contractiblePeriodicSolutions_positiveEndHamiltonian_iff`), while by
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Loop` a null-homotopic end loop
+`t ↦ u(φ_q(±s₀, t))` propagates along the positive end
+(`TauCeti.Floer.exists_nullhomotopic_positiveEndChart`).
 
 **Orbits and convergence at the ends.** Applying the manifold half-cylinder theorems of
 `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold` to `u ∘ φ'_q` gives, at a fixed end `q`:
@@ -124,51 +123,6 @@ open Set Filter Topology MeasureTheory Function TauCeti.ThricePuncturedSphere
 open scoped Manifold ENNReal
 
 namespace TauCeti
-
-namespace Floer
-
-/-- Reading a `1`-periodic loop with the time `±t` of an end preserves null-homotopy on
-`AddCircle 1`. -/
-theorem exists_nullhomotopic_comp_endSign_mul {X : Type*} [TopologicalSpace X] (q : Puncture)
-    {x : ℝ → X} (hx : ∃ g : C(AddCircle (1 : ℝ), X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = x t) :
-    ∃ g : C(AddCircle (1 : ℝ), X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = x (q.endSign * t) := by
-  obtain ⟨g, hg, hgx⟩ := hx
-  have h := hg.exists_addCircle_comp_mul one_ne_zero q.endSign_ne_zero
-  rw [abs_endSign, div_one] at h
-  obtain ⟨g', hg', hg'x⟩ := h
-  exact ⟨g', hg', fun t ↦ by rw [hg'x t, hgx, mul_comm]⟩
-
-/-- If `u` is continuous on a domain `U ⊆ ℝ × ℝ` containing the positive end `s > a` of `q`, then a
-null-homotopic end loop `t ↦ u(φ_q(±s₀, t))` (`s₀ > a`) yields a null-homotopic positive-end loop
-`t ↦ u(φ'_q(s, t))` at every `s > a`. -/
-theorem exists_nullhomotopic_positiveEndChart_of_subset {X : Type*} [TopologicalSpace X]
-    {U : Set (ℝ × ℝ)} {u : ℝ × ℝ → X} (hu : ContinuousOn u U) {q : Puncture} {a : ℝ}
-    (haU : ∀ ζ : ℝ × ℝ, a < ζ.1 → positiveEndChart q ζ ∈ U) {s₀ s : ℝ} (hs₀ : a < s₀)
-    (hs : a < s)
-    (hnull : ∃ g : C(AddCircle (1 : ℝ), X), g.Nullhomotopic ∧
-      ∀ t : ℝ, g t = u (endChart q (q.endSign * s₀, t))) :
-    ∃ g : C(AddCircle (1 : ℝ), X), g.Nullhomotopic ∧
-      ∀ t : ℝ, g t = u (positiveEndChart q (s, t)) := by
-  have h₀ : ∃ g : C(AddCircle (1 : ℝ), X), g.Nullhomotopic ∧
-      ∀ t : ℝ, g t = (u ∘ positiveEndChart q) (s₀, t) := by
-    simpa only [comp_apply, positiveEndChart_mk] using exists_nullhomotopic_comp_endSign_mul q hnull
-  exact ((convex_Ioi a).isPathConnected ⟨s₀, hs₀⟩).exists_nullhomotopic_addCircle_of_periodic
-    (hu.comp (contDiff_positiveEndChart q 0).continuous.continuousOn fun _ hz ↦ haU _ hz.1)
-    (fun _ _ _ ↦ by simp only [comp_apply, positiveEndChart_add_one]) hs₀ h₀ hs
-
-/-- A null-homotopic end loop `t ↦ u(φ_q(±s₀, t))` (`s₀ > 0`) of a map `u` continuous on `S` yields
-a null-homotopic positive-end loop `t ↦ u(φ'_q(s, t))` at every `s > 0`. -/
-theorem exists_nullhomotopic_positiveEndChart {X : Type*} [TopologicalSpace X] {u : ℝ × ℝ → X}
-    (hu : ContinuousOn u thricePuncturedSphereReal) {q : Puncture} {s₀ s : ℝ} (hs₀ : 0 < s₀)
-    (hs : 0 < s)
-    (hnull : ∃ g : C(AddCircle (1 : ℝ), X), g.Nullhomotopic ∧
-      ∀ t : ℝ, g t = u (endChart q (q.endSign * s₀, t))) :
-    ∃ g : C(AddCircle (1 : ℝ), X), g.Nullhomotopic ∧
-      ∀ t : ℝ, g t = u (positiveEndChart q (s, t)) :=
-  exists_nullhomotopic_positiveEndChart_of_subset hu
-    (fun _ hζ ↦ positiveEndChart_mem_thricePuncturedSphereReal hζ) hs₀ hs hnull
-
-end Floer
 
 namespace SmoothTwoForm
 

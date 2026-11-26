@@ -121,11 +121,6 @@ apply to all three ends.
   `TauCeti.Floer.det_fderiv_positiveEndChart_pos`, `TauCeti.Floer.injOn_positiveEndChart`,
   `TauCeti.Floer.positiveEndChart_add_one`: the positive end chart is holomorphic, orientation
   preserving, injective on every band `ℝ × [t₀, t₀ + 1)` and `1`-periodic in `t`.
-* `TauCeti.Floer.tendstoUniformly_comp_positiveEndChart`,
-  `TauCeti.Floer.tendstoUniformly_endChart_of_positiveEndChart`,
-  `TauCeti.Floer.tendsto_endChart_of_positiveEndChart`,
-  `TauCeti.Floer.eventually_forall_eq_of_comp_endSign_mul`: uniform and pointwise loop convergence
-  and `t = 0` orbit isolation transfer between `endChart` and `positiveEndChart` via `t ↦ ±t`.
 * `TauCeti.Floer.positiveEndChart_endSign_mul_endCoord`,
   `TauCeti.Floer.exists_endCoord_positiveEndChart`: the signed end coordinates
   `(±Re ζ_q, ±Im ζ_q)` invert the positive end chart, up to an integer shift of the angular
@@ -176,9 +171,8 @@ apply to all three ends.
 
 public section
 
-open Set Filter Real Function MeasureTheory Manifold TauCeti.ThricePuncturedSphere
+open Set Real Function MeasureTheory Manifold TauCeti.ThricePuncturedSphere
   TauCeti.ThricePuncturedSphere.Puncture
-open scoped Topology
 
 namespace TauCeti
 
@@ -933,40 +927,6 @@ theorem tendstoUniformly_comp_positiveEndChart {α : Type*} [UniformSpace α] {u
     simp only [comp_apply, endSign_mul_endSign_mul]
   rw [funext hloop]
   exact h.comp _
-
-/-- Transfer uniform convergence of positive-end loops `u(φ'_q(σ i, ·)) → x` into uniform
-convergence of the end loops `u(φ_q(±σ i, ·)) → (t ↦ x(±t))`. -/
-theorem tendstoUniformly_endChart_of_positiveEndChart {ι α : Type*} [UniformSpace α]
-    {u : ℝ × ℝ → α} {q : Puncture} {σ : ι → ℝ} {x : ℝ → α} {l : Filter ι}
-    (h : TendstoUniformly (fun i t ↦ u (positiveEndChart q (σ i, t))) x l) :
-    TendstoUniformly (fun i t ↦ u (endChart q (q.endSign * σ i, t)))
-      (fun t ↦ x (q.endSign * t)) l := by
-  rw [funext fun i ↦ comp_endChart_eq_comp_positiveEndChart u q (σ i)]
-  exact h.comp _
-
-/-- Transfer pointwise convergence of positive-end loops `u(φ'_q(σ i, t)) → x(t)` into pointwise
-convergence of the end loops `u(φ_q(±σ i, t)) → x(±t)`. -/
-theorem tendsto_endChart_of_positiveEndChart {ι X : Type*} [TopologicalSpace X]
-    {l : Filter ι} {σ : ι → ℝ} {u : ℝ × ℝ → X} {q : Puncture} {x : ℝ → X}
-    (h : ∀ t, Tendsto (fun i ↦ u (positiveEndChart q (σ i, t))) l (𝓝 (x t))) (t : ℝ) :
-    Tendsto (fun i ↦ u (endChart q (q.endSign * σ i, t))) l (𝓝 (x (q.endSign * t))) := by
-  simpa only [endChart_eq_positiveEndChart] using h (q.endSign * t)
-
-/-- Since `q.endSign * 0 = 0` and `(q.endSign)² = 1`, isolation at `t = 0` in `B` transfers from a
-family `S` of curves to any family `S'` mapped into `S` by `t ↦ q.endSign * t`. -/
-theorem eventually_forall_eq_of_comp_endSign_mul {X : Type*} [TopologicalSpace X]
-    {q : Puncture} {S' S : Set (ℝ → X)} {B : Set X}
-    (hS : ∀ ⦃x⦄, x ∈ S' → (fun t ↦ x (q.endSign * t)) ∈ S)
-    (hiso : ∀ y ∈ S, (∀ t, y t ∈ B) → ∀ᶠ p in 𝓝 (y 0),
-      ∀ y' ∈ S, (∀ t, y' t ∈ B) → y' 0 = p → y' = y) :
-    ∀ x ∈ S', (∀ t, x t ∈ B) →
-      ∀ᶠ p in 𝓝 (x 0), ∀ x' ∈ S', (∀ t, x' t ∈ B) → x' 0 = p → x' = x := fun x hx hxB ↦ by
-  have h0 := hiso (fun t ↦ x (q.endSign * t)) (hS hx) (fun _ ↦ hxB _)
-  rw [mul_zero] at h0
-  refine h0.mono fun p hp x' hx' hx'B hx'0 ↦ funext fun t ↦ ?_
-  have heq := congrFun (hp (fun r ↦ x' (q.endSign * r)) (hS hx') (fun _ ↦ hx'B _)
-    (by simpa only [mul_zero] using hx'0)) (q.endSign * t)
-  simpa only [← mul_assoc, endSign_mul_self, one_mul] using heq
 
 /-- The positive end chart is `1`-periodic in the angular coordinate. -/
 theorem positiveEndChart_add_one (q : Puncture) (s t : ℝ) :
