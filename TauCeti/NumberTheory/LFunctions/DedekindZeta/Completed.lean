@@ -339,12 +339,18 @@ section Continued
 
 /-- The reciprocal `|d_K| ^ (-s / 2) Γ_ℝ(s)⁻¹ ^ r₁ Γ_ℂ(s)⁻¹ ^ r₂` of the archimedean factor of
 `Λ_K`. -/
-private def invArchFactor (s : ℂ) : ℂ :=
+def invArchFactor (s : ℂ) : ℂ :=
   ((|discr K| : ℤ) : ℂ) ^ (-s / 2) * (Gammaℝ s)⁻¹ ^ nrRealPlaces K *
     (Gammaℂ s)⁻¹ ^ nrComplexPlaces K
 
+/-- The reciprocal archimedean factor in terms of the discriminant and the two gamma factors. -/
+theorem invArchFactor_def (s : ℂ) :
+    invArchFactor K s = ((|discr K| : ℤ) : ℂ) ^ (-s / 2) * (Gammaℝ s)⁻¹ ^ nrRealPlaces K *
+      (Gammaℂ s)⁻¹ ^ nrComplexPlaces K := (rfl)
+
 /-- The reciprocal of the archimedean factor is entire. -/
-private theorem analyticAt_invArchFactor (s : ℂ) : AnalyticAt ℂ (invArchFactor K) s := by
+@[fun_prop]
+theorem analyticAt_invArchFactor (s : ℂ) : AnalyticAt ℂ (invArchFactor K) s := by
   have hd : ((|discr K| : ℤ) : ℂ) ∈ slitPlane := by
     rw [← ofReal_intCast]
     exact ofReal_mem_slitPlane.mpr (by exact_mod_cast abs_pos.mpr (discr_ne_zero K))
@@ -353,7 +359,7 @@ private theorem analyticAt_invArchFactor (s : ℂ) : AnalyticAt ℂ (invArchFact
     ((differentiable_Gammaℂ_inv.analyticAt s).pow _)
 
 /-- On `Re s > 0` the archimedean factor has no zeros, so it cancels against its reciprocal. -/
-private theorem invArchFactor_mul {s : ℂ} (hs : 0 < s.re) :
+theorem invArchFactor_mul {s : ℂ} (hs : 0 < s.re) :
     invArchFactor K s * (((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ nrRealPlaces K *
       Gammaℂ s ^ nrComplexPlaces K) = 1 := by
   have hd : ((|discr K| : ℤ) : ℂ) ^ (s / 2) ≠ 0 :=
