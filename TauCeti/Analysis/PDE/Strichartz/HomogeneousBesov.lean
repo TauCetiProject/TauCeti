@@ -21,22 +21,22 @@ Strichartz estimates are first proved for frequency-localized data,
 
 `‖T(·) Pₖ x‖_{L^q_b L^r_x} ≤ C 2^{kσ} ‖x‖₂` for every `k ∈ ℤ` and `x ∈ L²`.
 
-This file extends `T(·)` from `L²` to data in the homogeneous Besov space
-`\dot B^σ_{2,1}` (`TauCeti.HomogeneousBesovSpace`), a space of tempered distributions modulo those
-with spectrum at the origin, on which `T(b)` has no meaning a priori. The blocks `Pⱼ u` of such a
-datum `u` are `L²` functions, and the evolution of `u` is the dyadic series
+This file treats data in the homogeneous Besov space `\dot B^σ_{2,1}`
+(`TauCeti.HomogeneousBesovSpace`), a space of tempered distributions modulo those with spectrum at
+the origin, on which `T(b)` has no meaning a priori. The blocks `Pⱼ u` of such a datum `u` are `L²`
+functions, so each term of the dyadic series
 
-`U(b) = ∑ⱼ T(b) Pⱼ u`.
+`∑ⱼ T(b) Pⱼ u`
 
-The series converges (`ContDiffBump.exists_tendsto_eLpNorm_eLpNorm_sub_sum_apply_block`): there is
-`U : β → L^r` such that the partial sums converge to `U(b)` in `L^r` for almost every `b`, and to
-`U` in the mixed norm `L^q_b L^r_x`, with the Strichartz estimate
+is defined. The file builds no evolution operator on `\dot B^σ_{2,1}`; it shows that this series
+converges (`ContDiffBump.exists_tendsto_eLpNorm_eLpNorm_sub_sum_apply_block`): there is some
+`U : β → L^r`, determined for almost every `b`, such that the partial sums converge to `U(b)` in
+`L^r` for almost every `b`, and to `U` in the mixed norm `L^q_b L^r_x`, with the Strichartz estimate
 
 `‖U‖_{L^q_b L^r_x} ≤ C ‖u‖_{\dot B^σ_{2,1}}`.
 
-When the datum is an `L²` function `f`, the series is the evolution `T(·) f` of `L²`
-(`ContDiffBump.ae_ae_eq_apply_of_tendsto_eLpNorm_sub_sum_apply_block`), so the construction
-extends the evolution of `L²` data.
+When the datum is an `L²` function `f`, any such limit `U` agrees with `T(b) f` for almost every
+`b` (`ContDiffBump.ae_ae_eq_apply_of_tendsto_eLpNorm_sub_sum_apply_block`).
 
 On `L²` functions the blocks `Pⱼ` of tempered distributions are the `L²` Fourier multipliers with
 symbols `ψⱼ` (`TemperedDistribution.homogeneousLittlewoodPaleyBlock_toTemperedDistribution`), which

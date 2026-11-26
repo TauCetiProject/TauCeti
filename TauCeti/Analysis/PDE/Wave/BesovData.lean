@@ -24,15 +24,17 @@ Strichartz estimate with the norms of the data in the homogeneous Besov spaces `
 
 This file treats data in these Besov spaces themselves (`TauCeti.HomogeneousBesovSpace`), which
 are spaces of tempered distributions modulo those with spectrum at the origin, not of `L²`
-functions, so `cos(tD)` and `D⁻¹ sin(tD)` have no a priori meaning on them. It defines the
-evolutions of `f ∈ \dot B^γ_{2,1}` and `g ∈ \dot B^{γ - 1}_{2,1}` as the dyadic series
+functions, so `cos(tD)` and `D⁻¹ sin(tD)` have no a priori meaning on them. For
+`f ∈ \dot B^γ_{2,1}` and `g ∈ \dot B^{γ - 1}_{2,1}` the file considers the dyadic series
 
 `∑ⱼ cos(tD) Pⱼ f` and `∑ⱼ D⁻¹ sin(tD) Pⱼ g`,
 
 whose pieces are the evolutions of the `L²` blocks of the data, and shows that these series
-converge, with the Strichartz bound. It does not show that the limits satisfy `∂ₜ²u = Δu` or
-attain the data. For each series there is `U : ℝ → L^r` such that the partial sums converge to
-`U(t)` in `L^r` for almost every time `t` and to `U` in `L^q_t L^r_x`, with
+converge to some limit `U`, determined for almost every `t`, which serves as the evolution, with
+the Strichartz bound. It builds no evolution operator on these Besov spaces and does not show that
+the limits satisfy `∂ₜ²u = Δu` or attain the data. For each series there is `U : ℝ → L^r` such
+that the partial sums converge to `U(t)` in `L^r` for almost every time `t` and to `U` in
+`L^q_t L^r_x`, with
 
 `‖U‖_{L^q_t L^r_x} ≤ C ‖f‖_{\dot B^γ_{2,1}}`, respectively
 `‖U‖_{L^q_t L^r_x} ≤ C ‖g‖_{\dot B^{γ - 1}_{2,1}}`,
@@ -45,10 +47,10 @@ and `C` independent of the data. This holds at the wave-admissible pairs with `2
 `D⁻¹ sin(tD)` counterpart), and in dimension `n ≥ 4` at the pairs `(2, r)` from the endpoint on,
 with `γ = n / 2 - n / r - 1 / 2`
 (`ContDiffBump.exists_tendsto_eLpNorm_eLpNorm_sub_sum_waveCosPropagator_block_of_le_endpoint` and
-its `D⁻¹ sin(tD)` counterpart). When the data are `L²` functions, the sums are
+its `D⁻¹ sin(tD)` counterpart). When the data are `L²` functions, any such limits agree with
 `cos(tD) f` and `D⁻¹ sin(tD) g` for almost every `t`
-(`ContDiffBump.ae_ae_eq_apply_of_tendsto_eLpNorm_sub_sum_apply_block`), so these evolutions extend
-the `L²` solution of the free wave equation.
+(`ContDiffBump.ae_ae_eq_apply_of_tendsto_eLpNorm_sub_sum_apply_block`), so they are consistent
+with the `L²` solution of the free wave equation.
 
 Each piece obeys the frequency-localized Strichartz estimate
 `‖cos(tD) Pⱼ x‖_{L^q_t L^r_x} ≤ C 2^{jγ} ‖x‖₂`, and its `D⁻¹ sin(tD)` counterpart with
