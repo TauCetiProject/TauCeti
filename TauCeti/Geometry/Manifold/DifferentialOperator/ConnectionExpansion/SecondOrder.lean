@@ -146,6 +146,16 @@ private theorem sum_sum_sectionCommutatorSymbol_smul (hx : I.IsInteriorPoint x)
 
 /-! ### The leading coefficient at a point -/
 
+/-- The linear map `B ↦ ½ ∑ⱼₖ [[P, cⱼ], cₖ](B(eⱼ, eₖ))` attached to a family of covectors `cⱼ` and
+vectors `eⱼ`. -/
+private def sectionSecondOrderContraction (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2)
+    {ι : Type*} [Fintype ι] (c : ι → TangentSpace I x →L[ℝ] ℝ) (e : ι → TangentSpace I x) :
+    (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] V x) →ₗ[ℝ] W x where
+  toFun B := (2 : ℝ)⁻¹ • ∑ j, ∑ k, sectionCommutatorSymbol I hx P ![c j, c k] (B (e j) (e k))
+  map_add' B B' := by simp [Finset.sum_add_distrib, smul_add]
+  map_smul' a B := by simp [Finset.smul_sum, smul_comm _ a]
+
 variable (I) in
 /-- **The leading coefficient of a second-order operator** at an interior point `x`: the linear
 map `A_x : Hom(T_xM, Hom(T_xM, V_x)) → W_x`, `A_x(B) = ½ ∑ₖₗ [[P, eᵏ], eˡ](B(eₖ, eₗ))`,
@@ -157,24 +167,9 @@ the tangent bundle over a boundaryless manifold, `P σ = A(∇²σ) + A₁(∇σ
 (`CovariantDerivative.apply_eq_sectionSecondOrderCoefficient_add`). -/
 def sectionSecondOrderCoefficient (hx : I.IsInteriorPoint x)
     (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2) :
-    (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] V x) →ₗ[ℝ] W x where
-  toFun B :=
-    let b := Module.finBasis ℝ (TangentSpace I x)
-    (2 : ℝ)⁻¹ • ∑ k, ∑ l, sectionCommutatorSymbol I hx P
-      ![LinearMap.toContinuousLinearMap (b.coord k), LinearMap.toContinuousLinearMap (b.coord l)]
-      (B (b k) (b l))
-  map_add' B B' := by simp [Finset.sum_add_distrib, smul_add]
-  map_smul' a B := by simp [Finset.smul_sum, smul_comm _ a]
-
-/-- The linear map `B ↦ ½ ∑ⱼₖ [[P, cⱼ], cₖ](B(eⱼ, eₖ))` attached to a family of covectors `cⱼ` and
-vectors `eⱼ`. -/
-private def sectionSecondOrderContraction (hx : I.IsInteriorPoint x)
-    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2)
-    {ι : Type*} [Fintype ι] (c : ι → TangentSpace I x →L[ℝ] ℝ) (e : ι → TangentSpace I x) :
-    (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] V x) →ₗ[ℝ] W x where
-  toFun B := (2 : ℝ)⁻¹ • ∑ j, ∑ k, sectionCommutatorSymbol I hx P ![c j, c k] (B (e j) (e k))
-  map_add' B B' := by simp [Finset.sum_add_distrib, smul_add]
-  map_smul' a B := by simp [Finset.smul_sum, smul_comm _ a]
+    (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] V x) →ₗ[ℝ] W x :=
+  let b := Module.finBasis ℝ (TangentSpace I x)
+  sectionSecondOrderContraction hx P (fun k ↦ LinearMap.toContinuousLinearMap (b.coord k)) b
 
 /-- The contraction along a family with `∑ⱼ ξ(eⱼ) cⱼ = ξ` sends `ξ ⊗ η ⊗ v` to
 `½ [[P, ξ], η] v`. -/
