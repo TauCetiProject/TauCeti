@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Nontangential.Fatou
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Nontangential.Fatou.Basic
 import Mathlib.MeasureTheory.Covering.Besicovitch
 
 /-!
@@ -26,16 +26,18 @@ everywhere. At such a point split `ν_s` into its parts on the closed ball `B(x,
 * Near part. The superlevel sets of the Poisson kernel at a pole `x + iy` are balls centred at
   `x`, so the layer cake formula bounds its Poisson integral by any `M` with
   `μ(B(x, r)) ≤ M |B(x, r)|` for all `r > 0`
-  (`TauCeti.upperHalfPlanePoissonLIntegral_le_of_measure_closedBall_le`). On the cone the kernel
-  is at most `max 2 (1 + 2 α ^ 2)` times the kernel at the vertical pole of the same height.
+  (`TauCeti.upperHalfPlanePoissonLIntegral_le_of_measure_ball_le`). On the cone the Poisson
+  integral is at most `max 2 (1 + 2 α ^ 2)` times that at the vertical pole of the same height
+  (`TauCeti.upperHalfPlanePoissonLIntegral_le_mul_of_mem_nontangentialCone`).
 * Far part. For `|Re z - x| ≤ δ / 2` and `|s - x| > δ`, `P(z, s) ≤ K Im z / (1 + s ^ 2)`
   (`TauCeti.upperHalfPlanePoissonKernel_le_of_lt_abs_sub`), so the far part is at most
   `K Im z ∫ dν / (1 + s ^ 2)`, which tends to `0`.
 
 ## Main results
 
-* `TauCeti.upperHalfPlanePoissonLIntegral_le_of_measure_closedBall_le`: the Poisson integral of a
-  measure at `z` is at most any `M` bounding its ball averages around `Re z`.
+* `TauCeti.upperHalfPlanePoissonLIntegral_restrict_closedBall_le`: the Poisson integral at a
+  vertical pole over `x` of the restriction of `ν` to `B(x, δ)` is at most any `M` bounding the
+  ball averages of `ν` around `x` up to radius `δ`.
 * `TauCeti.tendsto_nontangentialFilter_upperHalfPlanePoissonIntegral_zero_of_tendsto`: if
   `ν(B(x, r)) / |B(x, r)| → 0`, then `P[ν] → 0` nontangentially at `x`.
 * `TauCeti.ae_tendsto_nontangentialFilter_upperHalfPlanePoissonIntegral_of_mutuallySingular`,
@@ -62,66 +64,26 @@ open Complex MeasureTheory Filter Metric Set Topology
 
 open scoped ENNReal NNReal Real
 
-/-- **The Poisson integral of a measure is dominated by its ball averages.** If
-`μ(B(Re z, r)) ≤ M |B(Re z, r)|` for every `r > 0`, then the extended Poisson integral of `μ` at
-`z` is at most `M`. -/
-theorem upperHalfPlanePoissonLIntegral_le_of_measure_closedBall_le {μ : Measure ℝ} {z : ℂ}
-    {M : ℝ≥0∞} (hM : ∀ r > 0, μ (closedBall z.re r) ≤ M * volume (closedBall z.re r)) :
-    upperHalfPlanePoissonLIntegral μ z ≤ M := by
-  rcases le_or_gt z.im 0 with hz | hz
-  · simp [upperHalfPlanePoissonLIntegral_def, ENNReal.ofReal_of_nonpos,
-      upperHalfPlanePoissonKernel_nonpos hz]
-  have hnn := upperHalfPlanePoissonKernel_nonneg hz.le
-  have hmeas := measurable_upperHalfPlanePoissonKernel z
-  have hball : ∀ ρ : ℝ, μ (ball z.re ρ) ≤ volume (ball z.re ρ) * M := fun ρ => by
-    rcases le_or_gt ρ 0 with hρ | hρ
-    · simp [ball_eq_empty.2 hρ]
-    calc μ (ball z.re ρ) ≤ μ (closedBall z.re ρ) := measure_mono ball_subset_closedBall
-      _ ≤ M * volume (closedBall z.re ρ) := hM ρ hρ
-      _ = volume (ball z.re ρ) * M := by rw [Real.volume_closedBall, Real.volume_ball, mul_comm]
-  rw [upperHalfPlanePoissonLIntegral_def,
-    lintegral_eq_lintegral_meas_lt _ (.of_forall hnn) hmeas.aemeasurable]
-  calc ∫⁻ t in Ioi 0, μ {s | t < upperHalfPlanePoissonKernel z s}
-      ≤ ∫⁻ t in Ioi 0, volume {s | t < upperHalfPlanePoissonKernel z s} * M := by
-        refine setLIntegral_mono' measurableSet_Ioi fun t ht => ?_
-        rw [setOf_lt_upperHalfPlanePoissonKernel z ht]
-        exact hball _
-    _ = M := by
-        have hanti : Antitone fun t : ℝ => volume {s | t < upperHalfPlanePoissonKernel z s} :=
-          fun _ _ hab => measure_mono fun _ hs => lt_of_le_of_lt hab hs
-        rw [lintegral_mul_const _ hanti.measurable,
-          ← lintegral_eq_lintegral_meas_lt _ (.of_forall hnn) hmeas.aemeasurable,
-          ← upperHalfPlanePoissonLIntegral_def, upperHalfPlanePoissonLIntegral_volume hz, one_mul]
-
-/-- **The cone comparison for the Poisson integral of a measure.** For `z` in the cone `Γ^α_h(x)`,
-the extended Poisson integral of `μ` at `z` is at most `max 2 (1 + 2 α ^ 2)` times that at the
-vertical pole `x + i Im z`. -/
-theorem upperHalfPlanePoissonLIntegral_le_mul_of_mem_nontangentialCone (μ : Measure ℝ) {α : ℝ}
-    {h : ℝ≥0∞} {x : ℝ} {z : ℂ} (hz : z ∈ nontangentialCone α h x) :
-    upperHalfPlanePoissonLIntegral μ z ≤
-      ENNReal.ofReal (max 2 (1 + 2 * α ^ 2)) *
-        upperHalfPlanePoissonLIntegral μ ((x : ℂ) + z.im * I) := by
-  rw [upperHalfPlanePoissonLIntegral_def, upperHalfPlanePoissonLIntegral_def,
-    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  refine lintegral_mono fun s => ?_
-  rw [← ENNReal.ofReal_mul (by positivity)]
-  exact ENNReal.ofReal_le_ofReal (upperHalfPlanePoissonKernel_le_mul_of_mem_nontangentialCone hz s)
-
 /-- **The near part.** If `ν(B(x, r)) ≤ M |B(x, r)|` for `0 < r ≤ δ`, then the extended Poisson
 integral of the restriction of `ν` to `B(x, δ)` is at most `M` at every vertical pole `x + iy`. -/
 theorem upperHalfPlanePoissonLIntegral_restrict_closedBall_le {ν : Measure ℝ} {x δ : ℝ}
     {M : ℝ≥0∞} (hδ : 0 < δ)
     (hM : ∀ r ∈ Ioc 0 δ, ν (closedBall x r) ≤ M * volume (closedBall x r)) (y : ℝ) :
     upperHalfPlanePoissonLIntegral (ν.restrict (closedBall x δ)) ((x : ℂ) + y * I) ≤ M := by
-  refine upperHalfPlanePoissonLIntegral_le_of_measure_closedBall_le fun r hr => ?_
+  refine upperHalfPlanePoissonLIntegral_le_of_measure_ball_le fun r hr => ?_
   have hre : ((x : ℂ) + y * I).re = x := by simp
-  rw [hre, Measure.restrict_apply measurableSet_closedBall]
+  rw [hre, Measure.restrict_apply measurableSet_ball]
   rcases le_or_gt r δ with hrδ | hrδ
-  · exact (measure_mono inter_subset_left).trans (hM r ⟨hr, hrδ⟩)
-  · calc ν (closedBall x r ∩ closedBall x δ) ≤ ν (closedBall x δ) :=
+  · calc ν (ball x r ∩ closedBall x δ) ≤ ν (closedBall x r) :=
+          measure_mono (inter_subset_left.trans ball_subset_closedBall)
+      _ ≤ M * volume (closedBall x r) := hM r ⟨hr, hrδ⟩
+      _ = M * volume (ball x r) := by rw [Real.volume_closedBall, Real.volume_ball]
+  · calc ν (ball x r ∩ closedBall x δ) ≤ ν (closedBall x δ) :=
           measure_mono inter_subset_right
       _ ≤ M * volume (closedBall x δ) := hM δ ⟨hδ, le_rfl⟩
-      _ ≤ M * volume (closedBall x r) := by gcongr
+      _ ≤ M * volume (ball x r) := by
+          rw [Real.volume_closedBall, Real.volume_ball]
+          gcongr
 
 /-- **The far part.** If `|Re z - x| ≤ δ / 2`, the integral of the Poisson kernel `P(z, ·)` against
 `ν` off `B(x, δ)` is at most `Im z · K ∫ dν / (1 + s ^ 2)`, with the constant
@@ -164,8 +126,13 @@ theorem tendsto_nontangentialFilter_upperHalfPlanePoissonLIntegral_zero_of_tends
   have hball : ∀ r ∈ Ioc 0 δ, ν (closedBall x r) ≤ ε / 2 / C * volume (closedBall x r) :=
     fun r hr => (ENNReal.div_le_iff (by simp [Real.volume_closedBall, hr.1])
       measure_closedBall_lt_top.ne).1 (hδc r hr)
-  filter_upwards [(tendsto_nontangentialFilter_ofReal_im_mul_mul α x _
-      ((isPoissonFinite_iff_lintegral_lt_top ν).1 hν).ne).eventually (ge_mem_nhds hε2),
+  have hfar : Tendsto (fun z : ℂ =>
+      ENNReal.ofReal (z.im * (4 * (2 + (1 + 2 * x ^ 2) / δ ^ 2) / π)) *
+        ∫⁻ s, ENNReal.ofReal (1 + s ^ 2)⁻¹ ∂ν) (nontangentialFilter α x) (𝓝 0) := by
+    simpa using ENNReal.Tendsto.mul_const (ENNReal.tendsto_ofReal
+      ((tendsto_im_nontangentialFilter α x).mul_const _))
+      (Or.inr ((isPoissonFinite_iff_lintegral_lt_top ν).1 hν).ne)
+  filter_upwards [hfar.eventually (ge_mem_nhds hε2),
     eventually_nontangentialFilter_abs_re_sub_le α x hδ,
     nontangentialCone_mem_nontangentialFilter α x (h := ⊤) (by simp)] with z hzfar ⟨_, hzx⟩ hz'
   rw [upperHalfPlanePoissonLIntegral_def, ← lintegral_add_compl _ measurableSet_closedBall]
@@ -256,15 +223,11 @@ theorem ae_tendsto_nontangentialFilter_upperHalfPlanePoissonIntegral
     have hnorm : (fun x => ‖h x‖ₑ) = fun x => (w x : ℝ≥0∞) := funext fun x => by
       simp [h, eNorm_eq_nnNorm, Complex.nnNorm_real]
     rw [hnorm]
-    calc upperHalfPlanePoissonLIntegral (volume.withDensity fun x => (w x : ℝ≥0∞)) I
-        ≤ upperHalfPlanePoissonLIntegral ν I := by
-          simp only [upperHalfPlanePoissonLIntegral_def]
-          exact lintegral_mono' hle le_rfl
-      _ < ∞ := lt_top_iff_ne_top.2 fun h0 =>
-          ((upperHalfPlanePoissonLIntegral_eq_top_iff (by simp)).1 h0) hν
-  have hνs : IsPoissonFinite (ν.singularPart volume) :=
-    (isPoissonFinite_iff _).2
-      (((isPoissonFinite_iff ν).1 hν).mono_measure (ν.singularPart_le volume))
+    exact lt_top_iff_ne_top.2 fun h0 =>
+      ((upperHalfPlanePoissonLIntegral_eq_top_iff (by simp)).1 h0) (hν.mono hle)
+  have hνs : IsPoissonFinite (ν.singularPart volume) := hν.mono (ν.singularPart_le volume)
+  have hac : IsPoissonFinite (volume.withDensity (ν.rnDeriv volume)) :=
+    hν.mono (Measure.withDensity_rnDeriv_le ν volume)
   filter_upwards [ae_tendsto_nontangentialFilter_upperHalfPlanePoissonIntegral_singularPart ν,
     ae_tendsto_nontangentialFilter_upperHalfPlanePoissonIntegralFun hh] with x hxs hxa α
   have hre := (Complex.continuous_re.tendsto _).comp (hxa α)
@@ -273,9 +236,6 @@ theorem ae_tendsto_nontangentialFilter_upperHalfPlanePoissonIntegral
     simp [h, w, ENNReal.coe_toNNReal_eq_toReal]
   rw [hlim] at hsum
   refine hsum.congr fun z => ?_
-  have hac : IsPoissonFinite (volume.withDensity (ν.rnDeriv volume)) :=
-    (isPoissonFinite_iff _).2
-      (((isPoissonFinite_iff ν).1 hν).mono_measure (Measure.withDensity_rnDeriv_le ν volume))
   rw [Function.comp_apply,
     upperHalfPlanePoissonIntegralFun_eq_upperHalfPlanePoissonIntegral_withDensity hwm, ofReal_re,
     hwd]
