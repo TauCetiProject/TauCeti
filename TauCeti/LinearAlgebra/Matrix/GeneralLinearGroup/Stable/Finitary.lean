@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
+public import TauCeti.LinearAlgebra.Finsupp.CoordinateInclusion
 public import TauCeti.LinearAlgebra.Finsupp.Supported
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 public import TauCeti.LinearAlgebra.Matrix.ToLin
@@ -171,29 +172,6 @@ section Coordinates
 
 variable {A}
 
-/-- The embedding of `Fin n → A` into `ℕ →₀ A` as the first `n` coordinates. -/
-private def finEmbed (n : ℕ) : (Fin n → A) →ₗ[Aᵐᵒᵖ] (ℕ →₀ A) :=
-  lmapDomain A Aᵐᵒᵖ Fin.val ∘ₗ (linearEquivFunOnFinite Aᵐᵒᵖ A (Fin n)).symm.toLinearMap
-
-/-- The restriction of `ℕ →₀ A` to its first `n` coordinates. -/
-private def finRestrict (n : ℕ) : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (Fin n → A) :=
-  (linearEquivFunOnFinite Aᵐᵒᵖ A (Fin n)).toLinearMap ∘ₗ lcomapDomain Fin.val Fin.val_injective
-
-private theorem finEmbed_apply (n : ℕ) (w : Fin n → A) :
-    finEmbed n w = ∑ i : Fin n, single (i : ℕ) (w i) := by
-  simp [finEmbed, mapDomain, sum_fintype]
-
-private theorem finRestrict_apply (n : ℕ) (x : ℕ →₀ A) (i : Fin n) : finRestrict n x i = x i := by
-  simp [finRestrict]
-
-/-- The coordinates of a sum of basis vectors indexed by `Fin n`. -/
-private theorem sum_single_apply (n : ℕ) (w : Fin n → A) (j : ℕ) :
-    (∑ i : Fin n, single (i : ℕ) (w i)) j = if h : j < n then w ⟨j, h⟩ else 0 := by
-  rw [← finEmbed_apply]
-  split_ifs with h
-  · exact mapDomain_apply_of_injective Fin.val_injective _ (⟨j, h⟩ : Fin n)
-  · exact mapDomain_of_notMem_range _ _ (by simpa [Fin.range_val] using h)
-
 /-- A sum `∑ j, w j * x j` over `Fin n` against a single basis vector. -/
 private theorem sum_mul_single_apply (n : ℕ) (w : Fin n → A) (k : ℕ) (a : A) :
     ∑ j : Fin n, w j * single k a (j : ℕ) = if h : k < n then w ⟨k, h⟩ * a else 0 := by
@@ -204,25 +182,16 @@ private theorem sum_mul_single_apply (n : ℕ) (w : Fin n → A) (k : ℕ) (a : 
   · exact Finset.sum_eq_zero fun j _ ↦ by
       rw [single_eq_of_ne fun hjk ↦ h (by have := j.isLt; omega), mul_zero]
 
-private theorem finRestrict_comp_finEmbed (n : ℕ) :
-    finRestrict (A := A) n ∘ₗ finEmbed n = LinearMap.id :=
-  LinearMap.ext fun w ↦ by simp [finRestrict, finEmbed, comapDomain_mapDomain _ Fin.val_injective]
-
-/-- A vector supported on the first `n` coordinates is recovered from them. -/
-private theorem finEmbed_finRestrict {n : ℕ} {x : ℕ →₀ A}
-    (hx : x ∈ supported A Aᵐᵒᵖ (Finset.range n : Set ℕ)) : finEmbed n (finRestrict n x) = x := by
-  simpa [finEmbed, finRestrict] using mapDomain_comapDomain _ Fin.val_injective x
-    (hx.trans (by simp [Fin.range_val]))
-
 /-- On a vector supported on the first `n` coordinates, a right-linear map is the matrix of its
 values on the basis vectors `e₀, …, e_{n-1}`. -/
 private theorem map_apply_eq_sum_of_mem_supported (f : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (ℕ →₀ A)) {n : ℕ}
     {x : ℕ →₀ A} (hx : x ∈ supported A Aᵐᵒᵖ (Finset.range n : Set ℕ)) (i : ℕ) :
     f x i = ∑ k : Fin n, f (single k 1) i * x k := by
-  conv_lhs => rw [← finEmbed_finRestrict hx, finEmbed_apply, map_sum]
+  conv_lhs =>
+    rw [← coordinateInclusion_coordinateRestriction hx, coordinateInclusion_eq_sum, map_sum]
   rw [finsetSum_apply]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [map_single_eq_op_smul, Finsupp.smul_apply, op_smul_eq_mul, finRestrict_apply]
+  rw [map_single_eq_op_smul, Finsupp.smul_apply, op_smul_eq_mul, coordinateRestriction_apply]
 
 /-- The matrix of the values of a right-linear map on the basis vectors `e₀, …, e_{n-1}`,
 truncated to the first `n` coordinates. -/
@@ -260,17 +229,19 @@ variable {A}
 coordinates and `ι` embeds them back: `M` acts on the first `n` coordinates of a column vector and
 the identity on the others. -/
 private def cornerEnd (n : ℕ) : Matrix (Fin n) (Fin n) A →* Module.End Aᵐᵒᵖ (ℕ →₀ A) where
-  toFun M := 1 + finEmbed n ∘ₗ mulVecBilin A Aᵐᵒᵖ (M - 1) ∘ₗ finRestrict n
+  toFun M := 1 + coordinateInclusion n ∘ₗ mulVecBilin A Aᵐᵒᵖ (M - 1) ∘ₗ coordinateRestriction n
   map_one' := by simp
   map_mul' M N := by
     -- `X ↦ ι X π` is multiplicative because `π ι = 1`.
     set e : Module.End Aᵐᵒᵖ (Fin n → A) → Module.End Aᵐᵒᵖ (ℕ →₀ A) :=
-      fun X ↦ finEmbed n ∘ₗ X ∘ₗ finRestrict n with he
+      fun X ↦ coordinateInclusion n ∘ₗ X ∘ₗ coordinateRestriction n with he
     have hadd (X Y) : e (X + Y) = e X + e Y := by
       simp [he, LinearMap.comp_add, LinearMap.add_comp]
     have hmul (X Y) : e X * e Y = e (X * Y) := by
-      have hπι (Z : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (Fin n → A)) : finRestrict n ∘ₗ finEmbed n ∘ₗ Z = Z := by
-        rw [← LinearMap.comp_assoc, finRestrict_comp_finEmbed, LinearMap.id_comp]
+      have hπι (Z : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (Fin n → A)) :
+          coordinateRestriction n ∘ₗ coordinateInclusion n ∘ₗ Z = Z := by
+        rw [← LinearMap.comp_assoc, coordinateRestriction_comp_coordinateInclusion,
+          LinearMap.id_comp]
       simp only [he, Module.End.mul_eq_comp, LinearMap.comp_assoc, hπι]
     set φ := mulVecBilin A Aᵐᵒᵖ (m := Fin n) (n := Fin n) (A := A)
     have hφ1 : φ 1 = 1 := LinearMap.ext fun v ↦ one_mulVec v
@@ -289,10 +260,10 @@ private theorem cornerEnd_apply_apply (n : ℕ) (M : Matrix (Fin n) (Fin n) A) (
     (i : ℕ) :
     cornerEnd n M v i = if h : i < n then ∑ j : Fin n, M ⟨i, h⟩ j * v j else v i := by
   simp only [cornerEnd, MonoidHom.coe_mk, OneHom.coe_mk, LinearMap.add_apply, one_apply_eq_self,
-    LinearMap.comp_apply, mulVecBilin_apply, finEmbed_apply, Finsupp.add_apply, sum_single_apply]
+    LinearMap.comp_apply, mulVecBilin_apply, Finsupp.add_apply, coordinateInclusion_apply]
   split_ifs with h
-  · rw [sub_mulVec, one_mulVec, Pi.sub_apply, finRestrict_apply]
-    simp only [mulVec, dotProduct, finRestrict_apply]
+  · rw [sub_mulVec, one_mulVec, Pi.sub_apply, coordinateRestriction_apply]
+    simp only [mulVec, dotProduct, coordinateRestriction_apply]
     abel
   · rw [add_zero]
 
@@ -360,9 +331,11 @@ theorem toFreeModuleAut_of_apply_single {n : ℕ} (u : GL (Fin n) A) (k : ℕ) (
   ext i
   rw [toFreeModuleAut_of_apply_apply]
   split_ifs with hi hk hk
-  · rw [sum_mul_single_apply, dite_eq_left hk, sum_single_apply, dite_eq_left hi]
+  · rw [sum_mul_single_apply, dite_eq_left hk, ← coordinateInclusion_eq_sum (R := Aᵐᵒᵖ),
+      coordinateInclusion_apply, dite_eq_left hi]
   · rw [sum_mul_single_apply, dite_eq_right hk, single_eq_of_ne (by omega)]
-  · rw [sum_single_apply, dite_eq_right hi, single_eq_of_ne (by omega)]
+  · rw [← coordinateInclusion_eq_sum (R := Aᵐᵒᵖ), coordinateInclusion_apply, dite_eq_right hi,
+      single_eq_of_ne (by omega)]
   · rfl
 
 /-- The elementary matrix `e_{ij}(a)` sends `eⱼ b` to `eⱼ b + eᵢ (a b)` and fixes every other
@@ -407,10 +380,11 @@ private theorem exists_toFreeModuleAut_of_eq {g : (ℕ →₀ A) ≃ₗ[Aᵐᵒ�
   · have hgk : g (single k a) ∈ supported A Aᵐᵒᵖ (Finset.range n : Set ℕ) := by
       rw [← LinearEquiv.coe_coe, map_single_eq_op_smul]
       exact Submodule.smul_mem _ _ (hg.2 k (hmem hk))
-    rw [LinearEquiv.coe_coe, ← finEmbed_finRestrict hgk, finEmbed_apply]
+    rw [LinearEquiv.coe_coe, ← coordinateInclusion_coordinateRestriction hgk,
+      coordinateInclusion_eq_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [finRestrict_apply, ← LinearEquiv.coe_coe, map_single_eq_op_smul, Finsupp.smul_apply,
-      op_smul_eq_mul, coordMatrix, Matrix.of_apply]
+    rw [coordinateRestriction_apply, ← LinearEquiv.coe_coe, map_single_eq_op_smul,
+      Finsupp.smul_apply, op_smul_eq_mul, coordMatrix, Matrix.of_apply]
   · rw [map_single_eq_op_smul, hg.1 k (by simpa using hk), op_smul_single_one]
 
 /-- The image of `GL_∞(A)` in the automorphisms of `ℕ →₀ A` is the subgroup of finitary
