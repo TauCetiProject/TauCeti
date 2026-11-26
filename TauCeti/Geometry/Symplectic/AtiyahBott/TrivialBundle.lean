@@ -66,8 +66,10 @@ compact Lie algebra and an `Ad`-invariant inner product satisfy all of them. Wed
   (`TauCeti.atiyahBottMomentWith_eq_zero_iff`): the zero level is the space of flat connections.
 
 Everything is stated in directional form on the affine space `Ω¹(M; 𝔨)`, with no manifold
-structure on the space of connections; the gauge group itself, the action of its elements and
-nontrivial principal bundles are not treated here.
+structure on the space of connections. The action of the elements of the gauge group, for a
+structure group of units of a normed algebra, is in
+`TauCeti.Geometry.Symplectic.AtiyahBott.GaugeGroup`; nontrivial principal bundles are not treated
+here.
 
 ## Main definitions
 
