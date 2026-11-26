@@ -115,7 +115,7 @@ theorem tripleTensorEquiv_symm_tprod (x : Fin 3 → Fin 2 → R) :
   rw [LinearEquiv.symm_apply_eq, tripleTensorEquiv_vecMulVec_tmul]
 
 /-- Linear maps out of `M₂(R) ⊗[R] R²` agreeing on the tensors `x₀ x₂ᵀ ⊗ x₁` are equal. -/
-theorem linearMap_ext {N : Type*} [AddCommMonoid N] [Module R N]
+theorem linearMap_ext_vecMulVec_tmul {N : Type*} [AddCommMonoid N] [Module R N]
     {f g : Matrix (Fin 2) (Fin 2) R ⊗[R] (Fin 2 → R) →ₗ[R] N}
     (h : ∀ x : Fin 3 → Fin 2 → R, f (vecMulVec (x 0) (x 2) ⊗ₜ x 1) =
       g (vecMulVec (x 0) (x 2) ⊗ₜ x 1)) : f = g := by
@@ -174,7 +174,7 @@ theorem representation_inl_tmul (g : Fin 3 → GL (Fin 2) R) (m : Matrix (Fin 2)
       (LinearMap.mulLeft R (g 0 : Matrix (Fin 2) (Fin 2) R) ∘ₗ
         LinearMap.mulRight R (g 2 : Matrix (Fin 2) (Fin 2) R)ᵀ)
       (Matrix.toLin' (g 1 : Matrix (Fin 2) (Fin 2) R)) :=
-    linearMap_ext fun x ↦ by
+    linearMap_ext_vecMulVec_tmul fun x ↦ by
       simp [representation_vecMulVec_tmul, mul_vecMulVec, vecMulVec_mul,
         vecMul_transpose]
   simp [h, Matrix.mul_assoc]
@@ -187,7 +187,7 @@ theorem representation_inr_swap_tmul (m : Matrix (Fin 2) (Fin 2) R) (v : Fin 2 �
   have h : representation R (SemidirectProduct.inr (Equiv.swap 0 2)) =
       TensorProduct.map (Matrix.transposeLinearEquiv (Fin 2) (Fin 2) R R).toLinearMap
         LinearMap.id :=
-    linearMap_ext fun x ↦ by
+    linearMap_ext_vecMulVec_tmul fun x ↦ by
       simp [representation_vecMulVec_tmul, transpose_vecMulVec, Equiv.swap_apply_of_ne_of_ne]
   simp [h]
 
