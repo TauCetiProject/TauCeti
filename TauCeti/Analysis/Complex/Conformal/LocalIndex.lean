@@ -155,7 +155,7 @@ private theorem localIndex_eq_analyticOrderNatAt_sub_of_closedBall {f : C(ℂ, �
   obtain ⟨-, hncard, -⟩ := hcard w hwne hw₁
   -- The local index counts the solutions of `f z = w` in the disc, at each of which `f` has nonzero
   -- derivative.
-  rw [o.localIndex_eq_ncard_of_hasFDerivAt finrank_real_complex hr hδ₂ hδ₂le
+  rw [o.localIndex_eq_ncard_of_hasFDerivAt finrank_real_complex hr.le hδ₂le
     (fun z hz hfz ↦ by_contra fun hne ↦ hisolr z (ball_subset_closedBall hz) hne hfz) hw₂
     (f' := fun z ↦ (1 : ℂ →L[ℂ] ℂ).smulRight (deriv f z))
     (fun z hz _ ↦ (hfr z (ball_subset_closedBall hz)).differentiableAt.hasDerivAt.hasFDerivAt)

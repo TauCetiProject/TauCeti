@@ -238,11 +238,11 @@ theorem sliceAverageLp_jetOperator {V W : Type*} [NormedAddCommGroup V] [NormedS
     [NormedAddCommGroup W] [NormedSpace ℝ W] [CompleteSpace V] [CompleteSpace W]
     {M : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM : ∀ s t, M (s, t) = M (s, 0)) (x : Lp (V × V × V) 2 stripMeasure) :
-    sliceAverageLp (jetOperator stripMeasure M x) =
-      jetOperator stripMeasure M (sliceAverageLp x) := by
+    sliceAverageLp (jetOperator 2 stripMeasure M x) =
+      jetOperator 2 stripMeasure M (sliceAverageLp x) := by
   by_cases hMb : MemLp M ∞ stripMeasure
   · refine Lp.ext ?_
-    filter_upwards [coeFn_sliceAverageLp (jetOperator stripMeasure M x),
+    filter_upwards [coeFn_sliceAverageLp (jetOperator 2 stripMeasure M x),
       sliceAverage_congr_ae (coeFn_jetOperator hMb x), coeFn_jetOperator hMb (sliceAverageLp x),
       coeFn_sliceAverageLp x,
       ae_stripMeasure_of_ae_fst (ae_intervalIntegrable_slice (Lp.memLp x))]

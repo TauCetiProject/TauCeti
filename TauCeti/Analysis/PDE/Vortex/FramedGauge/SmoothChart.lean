@@ -91,7 +91,7 @@ map applied to `p - u₀`, where `u₀` are the real coordinates of `x₀`. Its 
 the real coordinates, is smooth at every point of its target whose image lies in a fixed open
 neighbourhood of `u₀`: the neighbourhood on which the implicit function theorem keeps an
 invertible derivative. -/
-private theorem exists_coulombSliceChart_apply_eq_and_contDiffAt_symm :
+theorem exists_coulombSliceChart_apply_eq_and_contDiffAt_symm :
     (∃ Ψ : (Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) →L[ℝ] (Fin (2 * m) → ℝ),
       ∀ p, coulombSliceChart hk x₀ hmem hsol p = Ψ ((p : Fin 4 → _) - x₀.realSubRef _)) ∧
     ∃ A : Set (Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le), IsOpen A ∧
@@ -353,9 +353,9 @@ theorem exists_isSmoothVortexModuliChart (hk : 2 ≤ k) (x₀ : SobolevFieldSpac
   set κ := ContinuousLinearEquiv.piCongrRight fun _ : Fin 4 ↦ realSubmoduleCongr ℂ
     (Nat.cast_succ k) (Nat.cast_nonneg (k + 1)) (k.cast_add_one_pos (α := ℝ)).le
   have hφ := sliceCoords_apply (f := f) (m := m) hk
-  have hφκ (y) : φ y = κ (ρ y) := (hφ y).trans (funext fun j ↦ realSubRef_congrOrder _ _ _ y j)
-  have hρφ (u) : (φ.symm u).realSubRef (Nat.cast_nonneg (k + 1)) = κ.symm u := funext fun j ↦ by
-    simp [φ, κ, realSubRef_congrOrder _ (k.cast_add_one_pos (α := ℝ)).le]
+  have hφκ (y) : φ y = κ (ρ y) := sliceCoords_eq_piCongrRight_realSubRef hk y
+  have hρφ (u) : (φ.symm u).realSubRef (Nat.cast_nonneg (k + 1)) = κ.symm u :=
+    realSubRef_sliceCoords_symm hk u
   obtain ⟨W, hWB, hW, e, hx₀e, he0, hsrc, heq⟩ :=
     exists_vortexModuliChart_forall_mem (hs := hs) hk x₀ hmem hsol (B := φ ⁻¹' A ∩ ρ ⁻¹' U)
       ((hA.preimage φ.continuous).inter (hU.preimage (continuous_realSubRef _)))

@@ -45,11 +45,15 @@ theorem cohomologyOnPullback_resolutionClass {n : ℕ} (U : X.Opens)
     g.cohomologyOnPullback M n U
         (CategoryTheory.Sheaf.H'.resolutionClass
           (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ((toSheaf X).map (P.ι.f 0))
-          (P.map_ι_f_zero_comp_d _) (P.exact₀_map _) (P.exactAt_succ_map _) U s hs) =
+          (CochainComplex.map_augmentation_comp_d _ P.ι_f_zero_comp_complex_d)
+          (CochainComplex.map_augmentation_exact _ P.exact₀)
+          (CochainComplex.map_exactAt_succ _ P.cocomplex_exactAt_succ) U s hs) =
       CategoryTheory.Sheaf.H'.resolutionClass
         (K := ((Scheme.Modules.pullback g ⋙ toSheaf Y).mapHomologicalComplex _).obj P.cocomplex)
         ((Scheme.Modules.pullback g ⋙ toSheaf Y).map (P.ι.f 0))
-        (P.map_ι_f_zero_comp_d _) (P.exact₀_map _) (P.exactAt_succ_map _) (g ⁻¹ᵁ U)
+        (CochainComplex.map_augmentation_comp_d _ P.ι_f_zero_comp_complex_d)
+        (CochainComplex.map_augmentation_exact _ P.exact₀)
+        (CochainComplex.map_exactAt_succ _ P.cocomplex_exactAt_succ) (g ⁻¹ᵁ U)
         (g.pullbackSections (P.cocomplex.X n) U s) (by
           refine (g.pullbackSections_naturality (M := P.cocomplex.X n) (U := U)
             (P.cocomplex.d n (n + 1)) s).trans ?_
@@ -64,9 +68,12 @@ theorem cohomologyOnPullback_resolutionClass {n : ℕ} (U : X.Opens)
   -- target; these agree only up to unfolding, hence the `by exact` wrappers and `erw [key]`.
   have key := CategoryTheory.Sheaf.H'.pullback_sheafPullback_resolutionClass (Opens.map g.base)
     (R := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex)
-    ((toSheaf X).map (P.ι.f 0)) (P.map_ι_f_zero_comp_d _) (P.exact₀_map _) (P.exactAt_succ_map _)
-    (by exact P.map_ι_f_zero_comp_d (toSheaf X ⋙ pb)) (by exact P.exact₀_map (toSheaf X ⋙ pb))
-    (by exact P.exactAt_succ_map (toSheaf X ⋙ pb)) (𝟙 _) s hs
+    ((toSheaf X).map (P.ι.f 0)) (CochainComplex.map_augmentation_comp_d _ P.ι_f_zero_comp_complex_d)
+    (CochainComplex.map_augmentation_exact _ P.exact₀)
+    (CochainComplex.map_exactAt_succ _ P.cocomplex_exactAt_succ)
+    (by exact CochainComplex.map_augmentation_comp_d (toSheaf X ⋙ pb) P.ι_f_zero_comp_complex_d)
+    (by exact CochainComplex.map_augmentation_exact (toSheaf X ⋙ pb) P.exact₀)
+    (by exact CochainComplex.map_exactAt_succ (toSheaf X ⋙ pb) P.cocomplex_exactAt_succ) (𝟙 _) s hs
   erw [key]
   let ψ : (pb.mapHomologicalComplex _).obj (((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ⟶
       ((Scheme.Modules.pullback g ⋙ toSheaf Y).mapHomologicalComplex _).obj P.cocomplex :=
@@ -77,10 +84,14 @@ theorem cohomologyOnPullback_resolutionClass {n : ℕ} (U : X.Opens)
   have h2 := CategoryTheory.Sheaf.H'.cohomologyPresheafFunctor_map_app_resolutionClass
     (K := (pb.mapHomologicalComplex _).obj (((toSheaf X).mapHomologicalComplex _).obj P.cocomplex))
     (K' := ((Scheme.Modules.pullback g ⋙ toSheaf Y).mapHomologicalComplex _).obj P.cocomplex)
-    (pb.map ((toSheaf X).map (P.ι.f 0))) (by exact P.map_ι_f_zero_comp_d (toSheaf X ⋙ pb))
-    (by exact P.exact₀_map (toSheaf X ⋙ pb)) (by exact P.exactAt_succ_map (toSheaf X ⋙ pb))
-    (g ⁻¹ᵁ U) ((Scheme.Modules.pullback g ⋙ toSheaf Y).map (P.ι.f 0)) (P.map_ι_f_zero_comp_d _)
-    (P.exact₀_map _) (P.exactAt_succ_map _) (ψ := ψ) hψ
+    (pb.map ((toSheaf X).map (P.ι.f 0)))
+    (by exact CochainComplex.map_augmentation_comp_d (toSheaf X ⋙ pb) P.ι_f_zero_comp_complex_d)
+    (by exact CochainComplex.map_augmentation_exact (toSheaf X ⋙ pb) P.exact₀)
+    (by exact CochainComplex.map_exactAt_succ (toSheaf X ⋙ pb) P.cocomplex_exactAt_succ)
+    (g ⁻¹ᵁ U) ((Scheme.Modules.pullback g ⋙ toSheaf Y).map (P.ι.f 0))
+    (CochainComplex.map_augmentation_comp_d _ P.ι_f_zero_comp_complex_d)
+    (CochainComplex.map_augmentation_exact _ P.exact₀)
+    (CochainComplex.map_exactAt_succ _ P.cocomplex_exactAt_succ) (ψ := ψ) hψ
     ((pb.obj ((toSheaf X).obj (P.cocomplex.X n))).obj.map (𝟙 (g ⁻¹ᵁ U)).op
       ((((Opens.map g.base).sheafAdjunctionContinuous AddCommGrpCat.{u} _ _).unit.app
         ((toSheaf X).obj (P.cocomplex.X n))).hom.app (op U) s)) (by

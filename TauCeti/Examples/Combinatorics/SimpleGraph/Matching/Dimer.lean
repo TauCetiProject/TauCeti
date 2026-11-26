@@ -61,6 +61,17 @@ def nnGraph : SimpleGraph R :=
 theorem nnGraph_adj {a b : R} : (nnGraph R).Adj a b ↔ a ≠ b ∧ (b = a + 1 ∨ a = b + 1) :=
   fromRel_adj _ a b
 
+/-- The nearest-neighbour graph of a ring is locally finite: the neighbours of `v` lie in
+`{v - 1, v + 1}`. -/
+instance : (nnGraph R).LocallyFinite := fun v =>
+  ((toFinite {v - 1, v + 1}).subset fun w hw => by
+    rcases (nnGraph_adj.1 hw).2 with rfl | rfl <;> simp).fintype
+
+/-- Adjacency in the nearest-neighbour graph of a ring with decidable equality is decidable, so
+Mathlib's `SimpleGraph.fintypeEdgeSet` makes the edges of a finite ring a `Fintype`. -/
+instance [DecidableEq R] : DecidableRel (nnGraph R).Adj :=
+  inferInstanceAs (DecidableRel (SimpleGraph.fromRel fun a b : R => b = a + 1).Adj)
+
 variable [Nontrivial R]
 
 theorem nnGraph_adj_add_one (a : R) : (nnGraph R).Adj a (a + 1) := by
@@ -110,6 +121,22 @@ theorem edge_injective (h2 : (2 : R) ≠ 0) : Injective (edge (R := R)) := by
   rcases this with ⟨h, -⟩ | ⟨rfl, h⟩
   · exact h
   · exact absurd (by simpa [add_assoc, one_add_one_eq_two] using congrArg (· - b) h) h2
+
+/-- When `2 ≠ 0`, `a ↦ {a, a + 1}` is a bijection onto the edges. -/
+theorem edge_bijective (h2 : (2 : R) ≠ 0) : Bijective (edge (R := R)) :=
+  ⟨edge_injective h2, exists_edge_eq⟩
+
+/-- When `2 ≠ 0`, a product over the edges of a finite ring is the product over `a` of the value
+at the edge `{a, a + 1}`. -/
+theorem prod_edgeSet [Fintype R] [Fintype (nnGraph R).edgeSet] (h2 : (2 : R) ≠ 0)
+    {M : Type*} [CommMonoid M] (f : (nnGraph R).edgeSet → M) :
+    ∏ e, f e = ∏ a, f (edge a) :=
+  (Fintype.prod_bijective _ (edge_bijective h2) _ _ fun _ => rfl).symm
+
+/-- The nearest-neighbour graph of an infinite ring has infinitely many edges. -/
+instance [Infinite R] : Infinite (nnGraph R).edgeSet :=
+  (infinite_edgeSet_iff_infinite_support.2 <| ((nnGraph R).support.eq_univ_of_forall fun a =>
+    ((nnGraph R).mem_support).2 ⟨_, nnGraph_adj_add_one a⟩) ▸ infinite_univ).to_subtype
 
 /-- When `2 ≠ 0`, the point chosen for the edge `{a, a + 1}` is `a`. -/
 theorem choose_exists_edge_eq (h2 : (2 : R) ≠ 0) (a : R) :
@@ -189,10 +216,6 @@ theorem setOf_isDimerConfiguration_int :
   · refine Or.inl (funext fun e => ?_)
     obtain ⟨a, rfl⟩ := exists_edge_eq e
     simp [key a, h0, ← Int.not_odd_iff_even]
-
-instance : (nnGraph ℤ).LocallyFinite := fun v =>
-  ((toFinite {v - 1, v + 1}).subset fun w hw => by
-    rcases (nnGraph_adj.1 hw).2 with rfl | rfl <;> simp).fintype
 
 /-- Translation by `2` as an automorphism of the line. -/
 def shiftTwo : nnGraph ℤ ≃g nnGraph ℤ where
@@ -389,5 +412,10 @@ theorem setOf_isDimerConfiguration_zmod_six :
   · have hpar : ∀ a : ZMod 6, decide ((a + 1).val % 2 = 1) = !decide (a.val % 2 = 1) := by
       decide
     rintro (rfl | rfl) a <;> simp only [hexConfig_edge, hpar] <;> simp
+
+/-- Both matchings of the hexagon are dimer configurations. -/
+theorem isDimerConfiguration_hexConfig (b : Bool) :
+    (nnGraph (ZMod 6)).IsDimerConfiguration (hexConfig b) :=
+  (Set.ext_iff.1 setOf_isDimerConfiguration_zmod_six _).2 (by cases b <;> simp)
 
 end TauCeti.Examples.DimerConfiguration

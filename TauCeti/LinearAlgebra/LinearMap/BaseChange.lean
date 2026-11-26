@@ -20,7 +20,8 @@ This comparison allows a scalar-extended Hom representation to act on scalar-ext
 
 When the coefficient algebra is faithfully flat, extension of scalars is injective on linear
 maps (`LinearMap.baseChange_injective`). Faithful flatness therefore permits checking equality of
-linear maps after extension of scalars.
+linear maps after extension of scalars; in particular only the identity extends to the identity
+(`LinearEquiv.baseChange_eq_one_iff`).
 
 For a finitely generated projective `R`-module `V` and a finitely generated projective `A`-module
 `E`, an `R`-linear map `c : V → End_A E` extends `A`-linearly to `A ⊗[R] V`, and the finite
@@ -153,6 +154,21 @@ theorem baseChange_injective :
   exact _root_.sub_self (g.lTensor A)
 
 end LinearMap
+
+namespace LinearEquiv
+
+variable {R : Type*} {A : Type*} {M : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Module.FaithfullyFlat R A]
+
+/-- A faithfully flat extension of scalars, for instance a field extension, sends only the
+identity to the identity. -/
+@[simp]
+theorem baseChange_eq_one_iff {e : M ≃ₗ[R] M} : e.baseChange R A M M = 1 ↔ e = 1 := by
+  rw [← baseChange_one R A M, ← toLinearMap_inj, ← toLinearMap_inj, coe_baseChange,
+    coe_baseChange]
+  exact LinearMap.baseChange_injective.eq_iff
+
+end LinearEquiv
 
 public section
 

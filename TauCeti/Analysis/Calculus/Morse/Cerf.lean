@@ -131,9 +131,9 @@ private theorem fderiv_sub_eq_of_contDiffAt {s : ℝ} {y : E}
 theorem fderiv_fderiv_apply (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) (p : ℝ × E) :
     fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x) p =
       p.1 • deriv (fun s ↦ fderiv ℝ (f s) x) t + fderiv ℝ (fderiv ℝ (f t)) x p.2 := by
-  have hG : DifferentiableAt ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x) :=
+  have hG : DifferentiableAt ℝ (uncurry fun s ↦ fderiv ℝ (f s)) (t, x) :=
     (hf.fderiv_slice (m := 1) le_rfl).differentiableAt one_ne_zero
-  rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right hG, fderiv_eq_smul_deriv]
+  exact fderiv_uncurry_apply hG p
 
 /-- The Hessian of `f t` at `x` is symmetric when the family is jointly `C²` at `(t, x)`. -/
 theorem fderiv_fderiv_apply_comm_of_uncurry (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))

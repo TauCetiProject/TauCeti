@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.NormalForm
+import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
 import TauCeti.Analysis.Contour.Argument.Principle
+import TauCeti.Analysis.Meromorphic.Conj
 
 /-!
 # Finite part of a logarithmic derivative
@@ -19,7 +21,7 @@ pole. `TauCeti.logDerivFinitePart` extracts the value of the regular part, after
 
 public section
 
-open Filter Topology
+open ComplexConjugate Filter Topology
 
 namespace TauCeti
 
@@ -27,6 +29,14 @@ namespace TauCeti
 principal part and taking the value of the meromorphic normal form at `a`. -/
 noncomputable def logDerivFinitePart (f : ℂ → ℂ) (a : ℂ) : ℂ :=
   toMeromorphicNFAt (fun z ↦ logDeriv f z - (meromorphicOrderAt f a).untop₀ / (z - a)) a a
+
+/-- The finite part of a logarithmic derivative depends only on the punctured germ. -/
+theorem logDerivFinitePart_congr_nhdsNE {f g : ℂ → ℂ} {a : ℂ}
+    (h : f =ᶠ[𝓝[≠] a] g) : logDerivFinitePart f a = logDerivFinitePart g a := by
+  unfold logDerivFinitePart
+  apply Filter.EventuallyEq.eq_of_nhds (toMeromorphicNFAt_eventuallyEq_nhds_congr ?_)
+  filter_upwards [logDeriv_congr_nhdsNE h] with z hz
+  rw [meromorphicOrderAt_congr h, hz]
 
 /-- The finite part can be read from any analytic representative of the regular part. -/
 theorem _root_.AnalyticAt.logDerivFinitePart_eq {f g : ℂ → ℂ} {a : ℂ} (hg : AnalyticAt ℂ g a)
@@ -57,5 +67,14 @@ theorem _root_.AnalyticAt.logDerivFinitePart_eq_logDeriv {f : ℂ → ℂ} {a : 
     (hf : AnalyticAt ℂ f a) (ha : f a ≠ 0) : logDerivFinitePart f a = logDeriv f a :=
   (hf.logDeriv ha).logDerivFinitePart_eq
     (by simp [hf.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr ha])
+
+/-- The finite part of the logarithmic derivative of a reflected function at `a` is the
+conjugate of the original finite part at `conj a`. -/
+@[simp] theorem logDerivFinitePart_conj_conj (f : ℂ → ℂ) (a : ℂ) :
+    logDerivFinitePart (conj ∘ f ∘ conj) a = conj (logDerivFinitePart f (conj a)) := by
+  have h := congrFun (toMeromorphicNFAt_conj_conj
+    (fun z ↦ logDeriv f z - (meromorphicOrderAt f (conj a)).untop₀ / (z - conj a)) a) a
+  simp only [logDerivFinitePart, meromorphicOrderAt_conj_conj, logDeriv_conj_conj]
+  simpa only [Function.comp_def, map_sub, map_div₀, map_intCast, Complex.conj_conj] using h
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GL2.CompactCartan
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
@@ -26,6 +27,7 @@ it over `ℂ` but not over `ℝ`.
 
 * `TauCeti.compactCayley`: the matrix `C`, with `det C = -2i` (`TauCeti.det_compactCayley`) and
   `C⁻¹ = (1 / 2) [[1, -i], [1, i]]` (`TauCeti.compactCayley_inv`).
+* `TauCeti.gl2Cayley`: the matrix `C` as an element of `GL₂(ℂ)`.
 * `TauCeti.compactCayley_mul_compactCartanReflection`,
   `TauCeti.compactCayley_mul_single_zero_one`, `TauCeti.compactCayley_mul_single_one_zero`: the
   intertwining relations `C M = M_c C`.
@@ -110,5 +112,15 @@ theorem compactCayley_conj_single_zero_one :
 theorem compactCayley_conj_single_one_zero :
     compactCayley * single 1 0 1 * compactCayley⁻¹ = compactCartanY :=
   conj_of_mul_eq compactCayley_mul_single_one_zero
+
+/-- The Cayley matrix `C = [[1, 1], [i, -i]]` (`TauCeti.compactCayley`) as an element of
+`GL₂(ℂ)`. -/
+def gl2Cayley : GL (Fin 2) ℂ :=
+  GeneralLinearGroup.mkOfDetNeZero compactCayley (by simp [I_ne_zero])
+
+/-- The matrix of `gl2Cayley`. -/
+@[simp]
+theorem coe_gl2Cayley : (gl2Cayley : Matrix (Fin 2) (Fin 2) ℂ) = compactCayley := by
+  simp [gl2Cayley, GeneralLinearGroup.mkOfDetNeZero]
 
 end TauCeti

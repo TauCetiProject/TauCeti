@@ -8,7 +8,9 @@ module
 public import TauCeti.Probability.Distributions.MarchenkoPastur.Stability
 public import TauCeti.Probability.RandomMatrix.QuadraticForm
 public import TauCeti.Probability.RandomMatrix.SampleCovariance.ZeroMass
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Matrix.SampleCovariance.SelfConsistency
+import TauCeti.Analysis.Matrix.SpectralMeasure.Scaling
 import TauCeti.Probability.RandomMatrix.SampleCovariance.Approximation
 import TauCeti.Probability.RandomMatrix.SampleCovariance.ExpectedSpectralMeasure
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -24,11 +26,11 @@ dimension and position. For varying sample spaces, bounded continuous spectral s
 converge in mean absolute error and in probability. The proof uses uniform leave-one-column-out
 concentration, the rank-one resolvent estimate and stability of the Marchenko–Pastur equation.
 
-For the corners of one infinite array of i.i.d. complex entries with mean zero and unit second
-absolute moment, `marchenkoPastur_ae` removes the sub-Gaussian assumption.
+For the corners of one infinite array of i.i.d. real or complex entries with mean zero and
+unit second absolute moment, `marchenkoPastur_ae` removes the sub-Gaussian assumption.
 `ae_tendsto_spectralMeasure_sampleCovariance_of_bounded` gives the bounded case, and
 the bounded-entry reduction `ae_tendsto_spectralMeasure_sampleCovariance_of_bounded_entries`
-transfers it to finite variance. Real entries are the case of an entry law supported on `ℝ`.
+transfers it to finite variance.
 
 ## References
 
@@ -178,12 +180,8 @@ theorem ae_tendsto_spectralMeasure_sampleCovariance_of_bounded_real
   simpa only [hL] using
     ae_tendsto_spectralMeasure_sampleCovariance_of_bounded hindY hmY hbY hmeanY hunitY hy hy₀
 
-/-- **Marchenko–Pastur law, almost surely.** Let `x` be an array, indexed by `ℕ × ℕ`, of independent
-complex entries with common law `ν` of mean zero and unit second absolute moment, let `p(n) ≥ 1`
-with `p(n) / n → y > 0`, and let `Xₙ` be the top-left `p(n) × n` corner of the array. Then almost
-surely the empirical spectral measures of the sample covariances `Xₙ Xₙᴴ / n` converge weakly to
-the Marchenko–Pastur law `MP_y`. -/
-theorem marchenkoPastur_ae {x : ℕ × ℕ → Ω → ℂ} {ν : Measure ℂ}
+/-- Almost-sure Marchenko–Pastur convergence for complex corners of an infinite i.i.d. array. -/
+private theorem marchenkoPastur_ae_complex {x : ℕ × ℕ → Ω → ℂ} {ν : Measure ℂ}
     (hx : ∀ ij, HasLaw (x ij) ν P) (hindep : iIndepFun x P)
     (hmean : ∫ z, z ∂ν = 0) (hvar : ∫ z, ‖z‖ ^ 2 ∂ν = 1) (hy : 0 < y)
     (hp : Tendsto (fun n ↦ (p n : ℝ) / n) atTop (𝓝 y)) :
@@ -218,6 +216,100 @@ theorem marchenkoPastur_ae {x : ℕ × ℕ → Ω → ℂ} {ν : Measure ℂ}
   exact ((hYlaw m i j).ae_iff (p := fun x ↦ ‖x‖ ≤ B.toNNReal)
     (measurableSet_setOfPred.1 (measurableSet_le measurable_norm measurable_const))).2
     (hB.mono fun _ h ↦ h.trans (Real.le_coe_toNNReal B))
+
+/-- **Marchenko–Pastur law, almost surely.** Let `x` be an array, indexed by `ℕ × ℕ`, of independent
+real or complex entries with common law `ν` of mean zero and unit second absolute moment, let
+`p(n) ≥ 1` with `p(n) / n → y > 0`, and let `Xₙ` be the top-left `p(n) × n` corner of the array.
+Then almost surely the empirical spectral measures of `Xₙ Xₙᴴ / n` converge weakly to the
+Marchenko–Pastur law `MP_y`. -/
+theorem marchenkoPastur_ae {𝕜 : Type*} [RCLike 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜]
+    {x : ℕ × ℕ → Ω → 𝕜} {ν : Measure 𝕜}
+    (hx : ∀ ij, HasLaw (x ij) ν P) (hindep : iIndepFun x P)
+    (hmean : ∫ z, z ∂ν = 0) (hvar : ∫ z, ‖z‖ ^ 2 ∂ν = 1) (hy : 0 < y)
+    (hp : Tendsto (fun n ↦ (p n : ℝ) / n) atTop (𝓝 y)) :
+    ∀ᵐ ω ∂P, Tendsto (fun n ↦
+      (sampleCovariance (Matrix.of fun (i : Fin (p n)) (j : Fin n) ↦ x (i, j) ω)).spectralMeasure
+        (isHermitian_sampleCovariance _)) atTop (𝓝 (marchenkoPastur y).toProbabilityMeasure) := by
+  let f := toComplexStarAlgHom 𝕜
+  have hiso : Isometry f := isometry_toComplexStarAlgHom 𝕜
+  have hf : Measurable f := hiso.continuous.measurable
+  let e := f.toAlgHom.toLinearMap.toLinearIsometry hiso
+  have he (z : 𝕜) : e z = f z := rfl
+  have hmean' : ∫ z, z ∂ν.map f = 0 := by
+    rw [integral_map hf.aemeasurable (f := fun z : ℂ ↦ z) aestronglyMeasurable_id]
+    simp_rw [← he]
+    rw [e.integral_comp_comm (fun z ↦ z), hmean, map_zero]
+  have hvar' : ∫ z, ‖z‖ ^ 2 ∂ν.map f = 1 := by
+    rw [integral_map hf.aemeasurable (by fun_prop)]
+    simpa only [← he, e.norm_map] using hvar
+  have h := marchenkoPastur_ae_complex (fun ij ↦ (hasLaw_map hf.aemeasurable).fun_comp (hx ij))
+    (hindep.comp (fun _ ↦ f) (fun _ ↦ hf)) hmean' hvar' hy hp
+  filter_upwards [h] with ω hω
+  let X (n : ℕ) : Matrix (Fin (p n)) (Fin n) 𝕜 := Matrix.of fun i j ↦ x (i, j) ω
+  have hs (n : ℕ) :
+      (sampleCovariance ((X n).map f)).spectralMeasure (isHermitian_sampleCovariance _) =
+        (sampleCovariance (X n)).spectralMeasure (isHermitian_sampleCovariance _) := by
+    simp only [sampleCovariance_map, spectralMeasure_map]
+  -- The complex corner is the entrywise image of the original corner.
+  exact Tendsto.congr hs hω
+
+/-- For i.i.d. complex entries with positive finite variance `v` and arbitrary mean, the
+empirical spectral measures of the entrywise centered sample covariances converge weakly
+almost surely to the Marchenko–Pastur law at the limiting positive aspect ratio `y`, scaled
+by `v`. -/
+theorem ae_tendsto_spectralMeasure_centered_sampleCovariance_of_pos_variance
+    {x : ℕ × ℕ → Ω → ℂ} {ν : Measure ℂ}
+    (hx : ∀ ij, HasLaw (x ij) ν P) (hindep : iIndepFun x P) (hy : 0 < y)
+    (hp : Tendsto (fun n ↦ (p n : ℝ) / n) atTop (𝓝 y))
+    (hv : 0 < ∫ z, ‖z - ∫ w, w ∂ν‖ ^ 2 ∂ν) :
+    let b := ∫ z, z ∂ν
+    let v := ∫ z, ‖z - b‖ ^ 2 ∂ν
+    ∀ᵐ ω ∂P, Tendsto (fun n ↦ (sampleCovariance (Matrix.of
+      fun (i : Fin (p n)) (j : Fin n) ↦ x (i, j) ω - b)).spectralMeasure
+        (isHermitian_sampleCovariance _)) atTop
+      (𝓝 ((marchenkoPastur y).toProbabilityMeasure.map (v * ·))) := by
+  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  have : IsProbabilityMeasure ν := (hx (0, 0)).isProbabilityMeasure_iff.1 ‹_›
+  let b := ∫ z, z ∂ν
+  let v := ∫ z, ‖z - b‖ ^ 2 ∂ν
+  have hv' : 0 < v := hv
+  let Z (z : ℂ) := (√v)⁻¹ • (z - b)
+  have hZ : Measurable Z := by fun_prop
+  have hmean : ∫ z, z ∂(ν.map Z) = 0 := by
+    have hsq : Integrable (fun z ↦ ‖z - b‖ ^ 2) ν := by
+      by_contra h
+      exact hv'.ne' (integral_undef h)
+    have hLp : MemLp (fun z ↦ z - b) 2 ν :=
+      (memLp_two_iff_integrable_sq_norm
+        (measurable_id.sub measurable_const).aestronglyMeasurable).mpr hsq
+    have hid : Integrable (fun z : ℂ ↦ z) ν := by
+      simpa only [sub_eq_add_neg, integrable_add_const_iff] using hLp.integrable one_le_two
+    rw [integral_map hZ.aemeasurable (by fun_prop)]
+    simp only [Z, integral_smul]
+    rw [integral_sub hid (integrable_const b)]
+    simp [b]
+  have hvar : ∫ z, ‖z‖ ^ 2 ∂(ν.map Z) = 1 := by
+    rw [integral_map hZ.aemeasurable (by fun_prop)]
+    simp only [Z, norm_smul, Real.norm_eq_abs, abs_of_nonneg (by positivity : 0 ≤ (√v)⁻¹),
+      mul_pow, integral_const_mul, inv_pow, Real.sq_sqrt hv'.le]
+    exact inv_mul_cancel₀ hv'.ne'
+  filter_upwards [marchenkoPastur_ae (fun ij ↦ (hasLaw_map hZ.aemeasurable).fun_comp (hx ij))
+    (hindep.comp (fun _ ↦ Z) (fun _ ↦ hZ)) hmean hvar hy hp]
+    with ω hMP
+  let A (n : ℕ) := Matrix.of fun (i : Fin (p n)) (j : Fin n) ↦ x (i, j) ω - b
+  let B (n : ℕ) := Matrix.of fun (i : Fin (p n)) (j : Fin n) ↦ Z (x (i, j) ω)
+  have hA (n : ℕ) : A n = √v • B n := by
+    ext i j
+    simp only [A, B, Matrix.smul_apply, Matrix.of_apply, Z, smul_smul,
+      mul_inv_cancel₀ (Real.sqrt_pos.2 hv').ne', one_smul]
+  have hmap (n : ℕ) : ((sampleCovariance (B n)).spectralMeasure
+      (isHermitian_sampleCovariance _)).map (v * ·) =
+        (sampleCovariance (A n)).spectralMeasure (isHermitian_sampleCovariance _) := by
+    rw [map_spectralMeasure_mul]
+    apply spectralMeasure_eq_of_charpoly_eq
+    rw [hA n, sampleCovariance_real_smul, Real.sq_sqrt hv'.le]
+  exact ((ProbabilityMeasure.continuous_map (continuous_const.mul continuous_id)).tendsto _
+    |>.comp hMP).congr hmap
 
 section VaryingSpaces
 

@@ -41,6 +41,8 @@ Baire, space on which the group acts transitively.
 
 ## Main definitions
 
+* `OnePoint.distinctTriples`: the ordered triples of distinct points, as an open subset of
+  `Fin 3 → OnePoint 𝕜`.
 * `OnePoint.pslHomeomorphDistinctTriples`: for an ordered triple `b` of distinct points, the
   homeomorphism `g ↦ (g • b 0, g • b 1, g • b 2)` from `PSL(2, 𝕜)` onto the ordered triples of
   distinct points.
@@ -51,6 +53,8 @@ Baire, space on which the group acts transitively.
 * `OnePoint.pslHomeomorphDistinctTriples_symm_smul` and
   `OnePoint.pslHomeomorphDistinctTriples_symm_eq_iff`: its inverse sends a triple `p` to the unique
   element of `PSL(2, 𝕜)` carrying `b` to `p`.
+* `OnePoint.pslHomeomorphDistinctTriples_symm_eq_mul_inv`: changing the base triple multiplies
+  the inverse on the right by a fixed element.
 
 ## References
 
@@ -62,14 +66,31 @@ Baire, space on which the group acts transitively.
 
 public section
 
-open Function Topology
+open Function Topology TopologicalSpace
 open scoped MatrixGroups
 
 namespace OnePoint
 
 open Matrix
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
+
+variable (𝕜) in
+/-- The ordered triples of distinct points of the projective line `OnePoint 𝕜`, the injective maps
+`Fin 3 → OnePoint 𝕜`, as an open subset of `Fin 3 → OnePoint 𝕜`. -/
+def distinctTriples : Opens (Fin 3 → OnePoint 𝕜) :=
+  ⟨{p | Injective p}, TauCeti.isOpen_setOf_injective⟩
+
+/-- A triple lies in `OnePoint.distinctTriples 𝕜` exactly when its points are distinct. -/
+@[simp]
+theorem mem_distinctTriples {p : Fin 3 → OnePoint 𝕜} : p ∈ distinctTriples 𝕜 ↔ Injective p :=
+  Iff.rfl
+
+/-- The underlying set of `OnePoint.distinctTriples 𝕜` is the set of injective triples. -/
+@[simp]
+theorem coe_distinctTriples :
+    (distinctTriples 𝕜 : Set (Fin 3 → OnePoint 𝕜)) = {p | Injective p} :=
+  (rfl)
 
 variable [DecidableEq 𝕜]
 
@@ -77,23 +98,22 @@ variable [DecidableEq 𝕜]
 action whose orbit map is `OnePoint.pslHomeomorphDistinctTriples`. -/
 @[instance_reducible]
 private noncomputable def distinctTriplesMulAction :
-    MulAction PSL(2, 𝕜) {p : Fin 3 → OnePoint 𝕜 // Injective p} where
-  smul g p := ⟨g • (p : Fin 3 → OnePoint 𝕜), (MulAction.injective g).comp p.property⟩
+    MulAction PSL(2, 𝕜) (distinctTriples 𝕜) where
+  smul g p :=
+    ⟨g • (p : Fin 3 → OnePoint 𝕜), (MulAction.injective g).comp (mem_distinctTriples.1 p.property)⟩
   one_smul _ := Subtype.ext (one_smul _ _)
   mul_smul _ _ _ := Subtype.ext (mul_smul _ _ _)
 
 attribute [local instance] distinctTriplesMulAction
 
-private theorem coe_smul_distinctTriple (g : PSL(2, 𝕜))
-    (p : {p : Fin 3 → OnePoint 𝕜 // Injective p}) :
-    ((g • p : {p : Fin 3 → OnePoint 𝕜 // Injective p}) : Fin 3 → OnePoint 𝕜) =
-      g • (p : Fin 3 → OnePoint 𝕜) :=
+private theorem coe_smul_distinctTriple (g : PSL(2, 𝕜)) (p : distinctTriples 𝕜) :
+    ((g • p : distinctTriples 𝕜) : Fin 3 → OnePoint 𝕜) = g • (p : Fin 3 → OnePoint 𝕜) :=
   (rfl)
 
 variable [IsAlgClosed 𝕜]
 
 /-- The orbit map of an ordered triple of distinct points is bijective. -/
-private theorem bijective_smul_distinctTriple (b : {p : Fin 3 → OnePoint 𝕜 // Injective p}) :
+private theorem bijective_smul_distinctTriple (b : distinctTriples 𝕜) :
     Bijective fun g : PSL(2, 𝕜) ↦ g • b := by
   refine ⟨fun g h hgh ↦ ?_, fun p ↦ ?_⟩
   · -- Both `g` and `h` carry `b` to the same triple.
@@ -103,50 +123,56 @@ private theorem bijective_smul_distinctTriple (b : {p : Fin 3 → OnePoint 𝕜 
   · obtain ⟨g, hg, -⟩ := existsUnique_psl_smul_eq_of_injective b.property p.property
     exact ⟨g, Subtype.ext hg⟩
 
-variable [ProperSpace 𝕜]
-
 /-- **`PSL(2, 𝕜)` is homeomorphic to the space of ordered triples of distinct points of the
 projective line**, over a proper algebraically closed normed field such as `ℂ`. For an ordered
 triple `b` of distinct points, the homeomorphism sends `g` to `(g • b 0, g • b 1, g • b 2)`; the
 inverse sends a triple `p` to the unique element of `PSL(2, 𝕜)` carrying `b` to `p`, which
 therefore depends continuously on `p`. For `b = (0, 1, ∞)` this identifies the automorphism group
 of the Riemann sphere with its ordered triples of distinct points. -/
-noncomputable def pslHomeomorphDistinctTriples (b : {p : Fin 3 → OnePoint 𝕜 // Injective p}) :
-    PSL(2, 𝕜) ≃ₜ {p : Fin 3 → OnePoint 𝕜 // Injective p} :=
-  haveI : ContinuousSMul PSL(2, 𝕜) {p : Fin 3 → OnePoint 𝕜 // Injective p} :=
+noncomputable def pslHomeomorphDistinctTriples (b : distinctTriples 𝕜) :
+    PSL(2, 𝕜) ≃ₜ distinctTriples 𝕜 :=
+  haveI : ContinuousSMul PSL(2, 𝕜) (distinctTriples 𝕜) :=
     IsEmbedding.subtypeVal.isInducing.continuousSMul continuous_id
       fun {g p} ↦ coe_smul_distinctTriple g p
-  haveI : MulAction.IsPretransitive PSL(2, 𝕜) {p : Fin 3 → OnePoint 𝕜 // Injective p} :=
+  haveI : MulAction.IsPretransitive PSL(2, 𝕜) (distinctTriples 𝕜) :=
     ⟨fun p q ↦ ⟨_, ((bijective_smul_distinctTriple p).2 q).choose_spec⟩⟩
   -- The triples form an open subset of a compact Hausdorff space, so a Baire space.
-  haveI : LocallyCompactSpace {p : Fin 3 → OnePoint 𝕜 // Injective p} :=
-    (TauCeti.isOpen_setOf_injective (X := OnePoint 𝕜) (κ := Fin 3)).locallyCompactSpace
+  haveI : LocallyCompactSpace (distinctTriples 𝕜) :=
+    (distinctTriples 𝕜).isOpen.locallyCompactSpace
   (Equiv.ofBijective _ (bijective_smul_distinctTriple b)).toHomeomorphOfContinuousOpen
     (continuous_id.smul continuous_const) (isOpenMap_smul_of_sigmaCompact b)
 
 /-- The homeomorphism `OnePoint.pslHomeomorphDistinctTriples b` moves each point of `b`. -/
 @[simp]
-theorem pslHomeomorphDistinctTriples_apply_coe (b : {p : Fin 3 → OnePoint 𝕜 // Injective p})
-    (g : PSL(2, 𝕜)) (i : Fin 3) :
+theorem pslHomeomorphDistinctTriples_apply_coe (b : distinctTriples 𝕜) (g : PSL(2, 𝕜))
+    (i : Fin 3) :
     (pslHomeomorphDistinctTriples b g : Fin 3 → OnePoint 𝕜) i = g • (b : Fin 3 → OnePoint 𝕜) i :=
   (rfl)
 
 /-- The inverse of `OnePoint.pslHomeomorphDistinctTriples b` sends a triple `p` to an element of
 `PSL(2, 𝕜)` carrying each point of `b` to the corresponding point of `p`. -/
 @[simp]
-theorem pslHomeomorphDistinctTriples_symm_smul (b p : {p : Fin 3 → OnePoint 𝕜 // Injective p})
-    (i : Fin 3) :
+theorem pslHomeomorphDistinctTriples_symm_smul (b p : distinctTriples 𝕜) (i : Fin 3) :
     (pslHomeomorphDistinctTriples b).symm p • (b : Fin 3 → OnePoint 𝕜) i =
       (p : Fin 3 → OnePoint 𝕜) i := by
   rw [← pslHomeomorphDistinctTriples_apply_coe, Homeomorph.apply_symm_apply]
 
 /-- The inverse of `OnePoint.pslHomeomorphDistinctTriples b` sends a triple `p` to the unique
 element of `PSL(2, 𝕜)` carrying `b` to `p`. -/
-theorem pslHomeomorphDistinctTriples_symm_eq_iff
-    (b p : {p : Fin 3 → OnePoint 𝕜 // Injective p}) (g : PSL(2, 𝕜)) :
+theorem pslHomeomorphDistinctTriples_symm_eq_iff (b p : distinctTriples 𝕜) (g : PSL(2, 𝕜)) :
     (pslHomeomorphDistinctTriples b).symm p = g ↔
       ∀ i, g • (b : Fin 3 → OnePoint 𝕜) i = (p : Fin 3 → OnePoint 𝕜) i := by
   rw [Homeomorph.symm_apply_eq, Subtype.ext_iff, funext_iff]
   simp only [pslHomeomorphDistinctTriples_apply_coe, eq_comm]
+
+/-- **Change of the base triple.** The element carrying `b` to `p` is the element carrying another
+base triple `b'` to `p`, composed with the inverse of the one carrying `b'` to `b`. -/
+theorem pslHomeomorphDistinctTriples_symm_eq_mul_inv (b b' p : distinctTriples 𝕜) :
+    (pslHomeomorphDistinctTriples b).symm p =
+      (pslHomeomorphDistinctTriples b').symm p * ((pslHomeomorphDistinctTriples b').symm b)⁻¹ := by
+  rw [pslHomeomorphDistinctTriples_symm_eq_iff]
+  intro i
+  rw [mul_smul, inv_smul_eq_iff.mpr (pslHomeomorphDistinctTriples_symm_smul b' b i).symm,
+    pslHomeomorphDistinctTriples_symm_smul]
 
 end OnePoint

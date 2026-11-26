@@ -27,6 +27,12 @@ fppf topology, Stacks, Lemma 39.20.3 (03C5)).
   `U/R ≅ h_M`.
 * `TauCeti.CategoryTheory.quotientSheaf.isIso_desc_kernelPair`: for `q` whose singleton sieve
   covers `M`, the quotient sheaf of the kernel pair `U ×_M U ⇉ U` is `h_M`.
+* `TauCeti.CategoryTheory.quotientSheaf.isIso_desc_of_epi`: if `p : h_U ⟶ F` is an epimorphism to
+  a `J`-sheaf and `π : h_U ⟶ U/R` coequalises the kernel pair of `p`, then
+  `quotientSheaf.desc p : U/R ⟶ F` is an isomorphism.
+* `TauCeti.CategoryTheory.quotientSheaf.isIso_desc_of_isKernelPair`: if `p : h_U ⟶ F` is an
+  epimorphism to a `J`-sheaf with kernel pair `h_R ⇉ h_U`, then the factorisation `U/R ⟶ F` of `p`
+  through the quotient sheaf is an isomorphism.
 
 ## Implementation notes
 
@@ -83,6 +89,32 @@ theorem quotientSheaf.toKernelPair_snd (hq : t ≫ q = s ≫ q) :
 
 variable [HasSheafify J (Type (max v w))]
 
+/-- If `p : h_U ⟶ F` is an epimorphism to a `J`-sheaf and the projection `π : h_U ⟶ U/R`
+coequalises the kernel pair `h_U ×_F h_U ⇉ h_U` of `p`, then the factorisation `U/R ⟶ F` of `p`
+through the quotient sheaf is an isomorphism. -/
+theorem quotientSheaf.isIso_desc_of_epi {F : Sheaf J (Type (max v w))}
+    (p : J.uliftYoneda.{w}.obj U ⟶ F) [Epi p]
+    (hp : J.uliftYoneda.{w}.map t ≫ p = J.uliftYoneda.{w}.map s ≫ p)
+    (hπ : pullback.fst p p ≫ quotientSheaf.π J s t = pullback.snd p p ≫ quotientSheaf.π J s t) :
+    IsIso (quotientSheaf.desc p hp) := by
+  have := IsRegularEpiCategory.regularEpiOfEpi p
+  have hc := isColimitCoforkOfEffectiveEpi p _ (pullback.isLimit _ _)
+  let ψ := Cofork.IsColimit.desc hc (quotientSheaf.π J s t) hπ
+  have hψ : p ≫ ψ = quotientSheaf.π J s t := Cofork.IsColimit.π_desc hc
+  refine ⟨ψ, quotientSheaf.hom_ext ?_, ?_⟩
+  · rw [quotientSheaf.π_desc_assoc, hψ, Category.comp_id]
+  · rw [← cancel_epi p, reassoc_of% hψ, quotientSheaf.π_desc, Category.comp_id]
+
+/-- If `p : h_U ⟶ F` is an epimorphism to a `J`-sheaf whose kernel pair is `h_R ⇉ h_U`, then the
+factorisation `U/R ⟶ F` of `p` through the quotient sheaf is an isomorphism. -/
+theorem quotientSheaf.isIso_desc_of_isKernelPair {F : Sheaf J (Type (max v w))}
+    (p : J.uliftYoneda.{w}.obj U ⟶ F) [Epi p]
+    (hk : IsKernelPair p (J.uliftYoneda.{w}.map t) (J.uliftYoneda.{w}.map s)) :
+    IsIso (quotientSheaf.desc p hk.w) := by
+  refine quotientSheaf.isIso_desc_of_epi p hk.w ?_
+  rw [← hk.isoPullback_inv_fst, ← hk.isoPullback_inv_snd, Category.assoc, Category.assoc,
+    quotientSheaf.condition]
+
 /-- **Stacks, Lemma 39.20.3 (03C5).** Let `q : U ⟶ M` be invariant for the pre-relation `(t, s)`.
 If `h_U ⟶ h_M` and `h_R ⟶ h_U ×_{h_M} h_U` are `J`-locally surjective, then the factorisation
 `U/R ⟶ h_M` of `q` through the quotient sheaf is an isomorphism. -/
@@ -91,20 +123,9 @@ theorem quotientSheaf.isIso_desc_of_isLocallySurjective (hq : t ≫ q = s ≫ q)
     (hR : Sheaf.IsLocallySurjective (quotientSheaf.toKernelPair.{w} J hq)) :
     IsIso (quotientSheaf.desc (J.uliftYoneda.{w}.map q)
       (quotientSheaf.uliftYoneda_map_condition hq)) := by
-  have := IsRegularEpiCategory.regularEpiOfEpi (J.uliftYoneda.{w}.map q)
-  have key : pullback.fst (J.uliftYoneda.{w}.map q) (J.uliftYoneda.{w}.map q) ≫
-      quotientSheaf.π J s t =
-        pullback.snd (J.uliftYoneda.{w}.map q) (J.uliftYoneda.{w}.map q) ≫
-          quotientSheaf.π J s t := by
-    rw [← cancel_epi (quotientSheaf.toKernelPair.{w} J hq), quotientSheaf.toKernelPair_fst_assoc,
-      quotientSheaf.toKernelPair_snd_assoc, quotientSheaf.condition]
-  have hc := isColimitCoforkOfEffectiveEpi (J.uliftYoneda.{w}.map q) _ (pullback.isLimit _ _)
-  let ψ := Cofork.IsColimit.desc hc (quotientSheaf.π J s t) key
-  have hψ : J.uliftYoneda.{w}.map q ≫ ψ = quotientSheaf.π J s t := Cofork.IsColimit.π_desc hc
-  refine ⟨ψ, quotientSheaf.hom_ext ?_, ?_⟩
-  · rw [quotientSheaf.π_desc_assoc, hψ, Category.comp_id]
-  · rw [← cancel_epi (J.uliftYoneda.{w}.map q), reassoc_of% hψ, quotientSheaf.π_desc,
-      Category.comp_id]
+  refine quotientSheaf.isIso_desc_of_epi _ _ ?_
+  rw [← cancel_epi (quotientSheaf.toKernelPair.{w} J hq), quotientSheaf.toKernelPair_fst_assoc,
+    quotientSheaf.toKernelPair_snd_assoc, quotientSheaf.condition]
 
 /-- **Stacks, Lemma 39.20.3 (03C5).** For an invariant map `q : U ⟶ M` such that `h_U ⟶ h_M` and
 `h_R ⟶ h_U ×_{h_M} h_U` are `J`-locally surjective, the quotient sheaf `U/R` is the representable

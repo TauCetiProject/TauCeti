@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.Topology.Covering.Basic
 public import TauCeti.Analysis.Polynomial.SimpleRoots.Basic
+import TauCeti.Topology.Covering.Graph
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Analytic.Inverse
 
@@ -207,41 +208,7 @@ theorem isEvenlyCovered_fst_isRoot (hF : ∀ i ≤ d, Continuous fun b => (F b).
     (hdeg : ∀ b, (F b).natDegree = d) {b₀ : B} (hsep : (F b₀).Separable) :
     IsEvenlyCovered (fun q : {q : B × 𝕜 // (F q.1).IsRoot q.2} => q.val.1) b₀ (Fin d) := by
   obtain ⟨U, hU, hb₀, σ, hσc, hσ⟩ := exists_continuousOn_isRoot_iff hF hdeg hsep
-  set f := fun q : {q : B × 𝕜 // (F q.1).IsRoot q.2} => q.val.1
-  -- the label of a point of the root space over `U`: the sheet it lies on
-  choose idx hidx using fun q : f ⁻¹' U => ((hσ _ q.property).2 q.val.val.2).1 q.val.property
-  have hidx_iff : ∀ q i, idx q = i ↔ σ i q.val.val.1 = q.val.val.2 := fun q i =>
-    ⟨fun h => h ▸ hidx q, fun h => (hσ _ q.property).1 ((hidx q).trans h.symm)⟩
-  have hσq : ∀ i, Continuous fun q : f ⁻¹' U => σ i q.val.val.1 := fun i =>
-    (hσc i).comp_continuous (by fun_prop) fun q => q.property
-  -- the label is locally constant, since the sheets are pairwise disjoint and continuous
-  have hidx_cont : Continuous idx := by
-    refine continuous_discrete_rng.2 fun i => ?_
-    have h : idx ⁻¹' {i} = ⋂ j, {q | j ≠ i → σ j q.val.val.1 ≠ q.val.val.2} := by
-      ext q
-      simp only [mem_preimage, mem_singleton_iff, mem_iInter, mem_ofPred_eq]
-      constructor
-      · rintro rfl j hj h
-        exact hj ((hσ _ q.property).1 (h.trans (hidx q).symm))
-      · intro h
-        by_contra hne
-        exact h _ hne (hidx q)
-    rw [h]
-    refine isOpen_iInter_of_finite fun j => ?_
-    by_cases hj : j = i
-    · simp [hj]
-    · simpa [hj] using isOpen_ne_fun (hσq j) (by fun_prop)
-  refine ⟨inferInstance, U, hb₀, hU, hU.preimage (by fun_prop),
-    { toFun q := (⟨q.val.val.1, q.property⟩, idx q)
-      invFun p := ⟨⟨(p.1.val, σ p.2 p.1.val), ((hσ _ p.1.property).2 _).2 ⟨p.2, rfl⟩⟩, p.1.property⟩
-      left_inv q := Subtype.ext (Subtype.ext (Prod.ext rfl (hidx q)))
-      right_inv p := Prod.ext rfl ((hidx_iff _ _).2 rfl)
-      continuous_toFun := by fun_prop
-      continuous_invFun := by
-        refine Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _
-        refine (continuous_subtypeVal.comp continuous_fst).prodMk ?_
-        exact continuous_prod_of_discrete_right.2 fun i =>
-          (hσc i).comp_continuous continuous_subtypeVal fun x => x.property }, fun _ => rfl⟩
+  exact IsEvenlyCovered.subtype_fst_of_continuousOn (P := fun b z => (F b).IsRoot z) hU hb₀ hσc hσ
 
 /-- **The root space is a covering space over the separable members.** For a family of polynomials
 of constant degree with continuous coefficients, the projection `(b, z) ↦ b` from the space of

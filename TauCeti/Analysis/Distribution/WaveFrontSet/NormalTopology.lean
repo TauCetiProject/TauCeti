@@ -60,6 +60,8 @@ differentiation and restriction to an open subset are continuous linear maps of 
   `TauCeti.WaveFrontSpace.continuous_iff`, `TauCeti.WaveFrontSpace.continuous_of_le`,
   `TauCeti.WaveFrontSpace.continuous_linearMap_iff`: convergence and continuity of maps into
   `𝓓'_Γ(Ω)`.
+* `TauCeti.WaveFrontSpace.exists_continuous_seminorm_norm_complexPairing_le`: on a compact set of
+  test functions, the values of the members of `𝓓'_Γ(Ω)` are bounded by a continuous seminorm.
 * `TauCeti.WaveFrontSpace.inclusionCLM`, `TauCeti.WaveFrontSpace.smulLeftCLM`,
   `TauCeti.WaveFrontSpace.lineDerivCLM`, `TauCeti.WaveFrontSpace.restrictCLM`: the
   inclusion for a larger cone, multiplication by a smooth real-valued function, differentiation
@@ -536,6 +538,46 @@ theorem continuous_linearMap_iff {F : Type*} [AddCommGroup F] [Module ℂ F] [To
     Continuous A ↔ Continuous (toDistribution ∘ₗ A) ∧
       ∀ i, Continuous ((WaveFrontSpace.seminorm i).comp A) :=
   continuous_iff
+
+/-- **Distributions on a compact set of test functions.** For a compact set `Q` of complex test
+functions, `‖T φ‖` is bounded, uniformly for `φ ∈ Q`, by a continuous seminorm of `T` in
+`𝓓'_Γ(Ω)`: the normal topology is finer than the topology of `𝓓'(Ω)`, the topology of uniform
+convergence on compact sets of test functions. -/
+theorem exists_continuous_seminorm_norm_complexPairing_le {Q : Set 𝓓(Ω, ℂ)} (hQ : IsCompact Q) :
+    ∃ q : Seminorm ℂ (WaveFrontSpace Ω Γ), Continuous q ∧
+      ∀ u : WaveFrontSpace Ω Γ, ∀ φ ∈ Q, ‖u.toDistribution.complexPairing φ‖ ≤ q u := by
+  let P : Q → WaveFrontSpace Ω Γ →ₗ[ℂ] ℂ := fun φ ↦
+    { toFun := fun u ↦ u.toDistribution.complexPairing φ
+      map_add' := fun u v ↦ by simp
+      map_smul' := fun c u ↦ by simp }
+  have hP (u : WaveFrontSpace Ω Γ) : ∃ C, ∀ φ : Q, ‖P φ u‖ ≤ C * 1 := by
+    obtain ⟨C, hC⟩ :=
+      hQ.exists_bound_of_continuousOn (u.toDistribution.complexPairing.continuous.continuousOn)
+    exact ⟨C, fun φ ↦ by simpa [P] using hC φ φ.property⟩
+  refine ⟨Seminorm.weightedSup P (fun _ ↦ 1) (fun _ ↦ one_pos), ?_, fun u φ hφ ↦ by
+    simpa [P] using Seminorm.norm_le_weightedSup P _ _ hP u ⟨φ, hφ⟩⟩
+  refine Seminorm.continuous_of_forall fun r hr ↦ ?_
+  -- The real and imaginary parts of the members of `Q` form a compact set of real test functions.
+  set Q' : Set 𝓓(Ω, ℝ) :=
+    TestFunction.postcompCLM (𝕜 := ℝ) Complex.reCLM '' Q ∪
+      TestFunction.postcompCLM (𝕜 := ℝ) Complex.imCLM '' Q
+  have hQ' : IsCompact Q' :=
+    (hQ.image (TestFunction.postcompCLM _).continuous).union
+      (hQ.image (TestFunction.postcompCLM _).continuous)
+  have hnhds : {S : 𝓓'(Ω, ℂ) | ∀ g ∈ Q', S g ∈ ball (0 : ℂ) (r / 4)} ∈ 𝓝 (0 : 𝓓'(Ω, ℂ)) :=
+    CompactConvergenceCLM.hasBasis_nhds_zero.mem_of_mem (i := (Q', ball (0 : ℂ) (r / 4)))
+      ⟨hQ', ball_mem_nhds _ (by positivity)⟩
+  filter_upwards [(continuous_toDistribution.tendsto' 0 0 (map_zero _)) hnhds] with u hu
+  rw [Seminorm.mem_ball_zero]
+  refine (Seminorm.weightedSup_le P _ _ (by positivity : (0 : ℝ) ≤ r / 2) fun φ ↦ ?_).trans_lt
+    (half_lt_self hr)
+  have h1 := mem_ball_zero_iff.1 (hu _ (Or.inl ⟨φ, φ.property, rfl⟩))
+  have h2 := mem_ball_zero_iff.1 (hu _ (Or.inr ⟨φ, φ.property, rfl⟩))
+  calc ‖P φ u‖ = ‖u.toDistribution (TestFunction.postcompCLM (𝕜 := ℝ) Complex.reCLM φ) +
+        Complex.I * u.toDistribution (TestFunction.postcompCLM (𝕜 := ℝ) Complex.imCLM φ)‖ := by
+        simp [P, complexPairing_apply]
+    _ ≤ r / 4 + r / 4 := (norm_add_le _ _).trans (add_le_add h1.le (by simpa using h2.le))
+    _ = r / 2 * 1 := by ring
 
 end Topology
 
