@@ -373,6 +373,14 @@ variable [Algebra (RatFunc ℂ) (MeromorphicFunction X)]
     ((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).toRingHom)
 include h
 
+omit [CompactSpace X] [T2Space X] in
+/-- For the `ℂ(t)`-algebra structure on `M(X)` given by pullback along `β`, the constants act
+through `ℂ(t)`. -/
+theorem isScalarTower_ratFunc : IsScalarTower ℂ (RatFunc ℂ) (MeromorphicFunction X) :=
+  .of_algebraMap_eq fun c ↦ by
+    rw [h]
+    exact (((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).commutes c).symm
+
 /-- The polynomial equation of `f`, transported to `ℂ(t)` along `ratFuncEquiv`. -/
 private theorem exists_monic_natDegree_eq_degree_aeval_eq_zero :
     ∃ q : (RatFunc ℂ)[X], q.Monic ∧ q.natDegree = degree β ∧ aeval f q = 0 := by

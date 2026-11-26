@@ -23,9 +23,11 @@ compatibility with scalar multiplication, bundling both as the linear map
 linear map, so closed subspaces of `Lᵖ` can be tested on indicator classes of a dense set of
 constants.
 
-For finite exponents, cutting a fixed `Lᵖ` function off to varying sets is continuous when
-the measures of their symmetric differences tend to zero
-(`MeasureTheory.MemLp.tendsto_toLp_indicator`). The ambient measure need not be finite.
+For finite exponents, the `Lᵖ` seminorm of a fixed `Lᵖ` function on sets whose measure tends to
+zero tends to zero (`MeasureTheory.MemLp.tendsto_eLpNorm_restrict_of_tendsto_measure`), so cutting
+the function off to varying sets is continuous when the measures of their symmetric differences
+tend to zero (`MeasureTheory.MemLp.tendsto_toLp_indicator`). The ambient measure need not be
+finite.
 
 Indicator classes of pairwise disjoint sets of finite measure span a weighted finite `ℓ¹` space
 inside `L¹`: the norm of `∑ i, indicatorConstLp 1 (hs i) (hμs i) (c i)` is
@@ -233,6 +235,18 @@ namespace MeasureTheory.MemLp
 open Filter Set
 open scoped Topology ENNReal symmDiff
 
+/-- The `Lᵖ` seminorm of a fixed `Lᵖ` function on sets whose measure tends to zero tends to zero,
+for `1 ≤ p < ∞`. -/
+theorem tendsto_eLpNorm_restrict_of_tendsto_measure {α E ι : Type*} {_ : MeasurableSpace α}
+    [NormedAddCommGroup E] {μ : Measure α} {p : ℝ≥0∞} {f : α → E} (hf : MemLp f p μ)
+    (hp_one : 1 ≤ p) (hp_top : p ≠ ∞) {l : Filter ι} {s : ι → Set α}
+    (h : Tendsto (fun i ↦ μ (s i)) l (𝓝 0)) :
+    Tendsto (fun i ↦ eLpNorm f p (μ.restrict (s i))) l (𝓝 0) :=
+  tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    ((hf.tendsto_eLpNorm_restrict_zero hp_one hp_top).comp h)
+    (Eventually.of_forall fun _ ↦ bot_le)
+    (Eventually.of_forall fun i ↦ le_iSup_of_le (s i) (le_iSup_of_le le_rfl le_rfl))
+
 /-- Cutting a fixed `Lᵖ` function off to sets converging in symmetric-difference measure
 converges in `Lᵖ`, for `1 ≤ p < ∞`. Neither the ambient measure nor the sets need have
 finite measure. -/
@@ -247,10 +261,7 @@ theorem tendsto_toLp_indicator {α E ι : Type*} {_ : MeasurableSpace α}
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'']
   simp_rw [eLpNorm_indicator_sub_indicator f (hs _) ht,
     eLpNorm_indicator_eq_eLpNorm_restrict ((hs _).symmDiff ht)]
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    ((hf.tendsto_eLpNorm_restrict_zero Fact.out hp).comp h)
-    (Eventually.of_forall fun _ ↦ bot_le) ?_
-  exact Eventually.of_forall fun i ↦ le_iSup_of_le (s i ∆ t) (le_iSup_of_le le_rfl le_rfl)
+  exact hf.tendsto_eLpNorm_restrict_of_tendsto_measure Fact.out hp h
 
 end MeasureTheory.MemLp
 

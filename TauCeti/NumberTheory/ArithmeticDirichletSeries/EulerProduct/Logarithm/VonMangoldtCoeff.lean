@@ -41,6 +41,8 @@ absolute convergence.
 
 * `TauCeti.IdealArithmeticFunction.summable_idealTerm_vonMangoldtTransform`: the von Mangoldt
   weighted ideal terms are summable on the half-plane, for any ideal arithmetic function.
+* `TauCeti.UnitaryIdealWeight.LSeriesSummable_normCoeff_vonMangoldtTransform`: for a unitary
+  weight, the norm-regrouped von Mangoldt coefficients converge absolutely on `Re s > 1`.
 * `TauCeti.MultiplicativeIdealWeight.logDeriv_LSeries_eq_neg_tsum_vonMangoldtTransform`: the
   coefficient identity for a completely multiplicative weight.
 * `TauCeti.EulerProductData.vonMangoldt_ofMultiplicativeIdealWeight`: `Λ_D` of a completely
@@ -106,6 +108,20 @@ theorem summable_idealTerm_vonMangoldtTransform {f : IdealArithmeticFunction K} 
     (IdealArithmeticFunction.norm_vonMangoldt_le_log A) (norm_nonneg _)
 
 end IdealArithmeticFunction
+
+namespace UnitaryIdealWeight
+
+/-- **The von Mangoldt coefficients of a unitary weight converge absolutely on `Re s > 1`.** The
+norm-regrouped coefficients `n ↦ ∑_{N(A) = n} χ(A) Λ(A)` have an absolutely convergent Dirichlet
+series there, the weight being bounded by one. -/
+theorem LSeriesSummable_normCoeff_vonMangoldtTransform {K : Type*} [Field K] [NumberField K]
+    (χ : UnitaryIdealWeight K) {s : ℂ} (hs : 1 < s.re) :
+    LSeriesSummable (normCoeff K χ.toIdealArithmeticFunction.vonMangoldtTransform) s :=
+  LSeriesSummable_normCoeff K <| IdealArithmeticFunction.summable_idealTerm_vonMangoldtTransform <|
+    idealAbscissaOfAbsConv_lt_re_of_bounded (C := 1)
+      (fun I ↦ by simpa using χ.norm_le_one (I : Ideal (𝓞 K))) hs
+
+end UnitaryIdealWeight
 
 namespace MultiplicativeIdealWeight
 
