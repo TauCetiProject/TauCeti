@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.ODE.ExistUnique
+import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import Mathlib.Topology.Connected.Clopen
 
 /-!
@@ -29,6 +30,11 @@ point agree, which is what is needed to glue local flows of an inward-pointing v
 
 This extends the open-interval uniqueness API to closed and half-open intervals. In
 particular it applies to velocity lifts of geodesic segments.
+
+Run backwards from a common end point (`IsMIntegralCurveOn.apply_sub_min_eq_of_apply_eq`),
+uniqueness also separates forward integral curves that start on the boundary and enter the
+interior at once: two such curves meet only at equal times, and then they start at the same
+point (`IsMIntegralCurveOn.eq_and_apply_zero_eq_of_apply_eq`).
 
 ## References
 
@@ -157,5 +163,46 @@ theorem eqOn_of_isPreconnected [T2Space M]
     ⟨isClosed_eq hcγ hcδ, hopen⟩ ⟨⟨t₀, ht⟩, heq⟩
   intro t ht'
   exact Set.eq_univ_iff_forall.mp hall ⟨t, ht'⟩
+
+/-- Integral curves on `[0, a]` and `[0, b]` with a common end point `γ a = δ b` agree after
+running back for the same time `min a b`. The vector field is C¹ along the first curve. -/
+theorem apply_sub_min_eq_of_apply_eq [T2Space M]
+    (hγ : IsMIntegralCurveOn γ v (Icc 0 a)) (hδ : IsMIntegralCurveOn δ v (Icc 0 b))
+    (ha : 0 ≤ a) (hb : 0 ≤ b)
+    (hv : ∀ t ∈ Icc 0 a, CMDiffAt 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) (γ t))
+    (h : γ a = δ b) : γ (a - min a b) = δ (b - min a b) := by
+  -- Shift both curves so that they are defined on `[0, min a b]` and meet at its right end.
+  have hm : 0 ≤ min a b := le_min ha hb
+  have hγ' : IsMIntegralCurveOn (γ ∘ (· + (a - min a b))) v (Icc 0 (min a b)) :=
+    (hγ.comp_add _).mono fun t ht ↦ ⟨by linarith [ht.1, min_le_left a b], by linarith [ht.2]⟩
+  have hδ' : IsMIntegralCurveOn (δ ∘ (· + (b - min a b))) v (Icc 0 (min a b)) :=
+    (hδ.comp_add _).mono fun t ht ↦ ⟨by linarith [ht.1, min_le_right a b], by linarith [ht.2]⟩
+  have heq := hγ'.eqOn_of_isPreconnected hδ' isPreconnected_Icc (right_mem_Icc.2 hm)
+    (fun t ht ↦ hv _ ⟨by linarith [ht.1, min_le_left a b], by linarith [ht.2]⟩)
+    (by simpa only [comp_apply, add_sub_cancel] using h) (left_mem_Icc.2 hm)
+  simpa only [comp_apply, zero_add] using heq
+
+/-- **Forward integral curves from the boundary meet only at equal times and from the same
+start.** Let `γ` and `δ` be integral curves of `v` on `[0, a]` and `[0, b]`, with `a, b ≥ 0`,
+starting on the boundary of `M` and lying in its interior at every positive time. If `γ a = δ b`,
+then `a = b` and the two curves start at the same point. The vector field is C¹ along the first
+curve. -/
+theorem eq_and_apply_zero_eq_of_apply_eq [T2Space M]
+    (hγ : IsMIntegralCurveOn γ v (Icc 0 a)) (hδ : IsMIntegralCurveOn δ v (Icc 0 b))
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (hγ0 : γ 0 ∈ I.boundary M) (hδ0 : δ 0 ∈ I.boundary M)
+    (hγi : ∀ t ∈ Ioc 0 a, γ t ∈ I.interior M) (hδi : ∀ t ∈ Ioc 0 b, δ t ∈ I.interior M)
+    (hv : ∀ t ∈ Icc 0 a, CMDiffAt 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) (γ t))
+    (h : γ a = δ b) : a = b ∧ γ 0 = δ 0 := by
+  -- Running back for the time `min a b` reaches the starting point of the shorter curve, on the
+  -- boundary, and a point of the longer curve, in the interior unless the times agree.
+  have key := apply_sub_min_eq_of_apply_eq hγ hδ ha hb hv h
+  rcases lt_trichotomy a b with hab | rfl | hba
+  · rw [min_eq_left hab.le, sub_self] at key
+    exact absurd key (I.disjoint_interior_boundary.ne_of_mem
+      (hδi _ ⟨sub_pos.2 hab, sub_le_self _ ha⟩) hγ0).symm
+  · simpa using key
+  · rw [min_eq_right hba.le, sub_self] at key
+    exact absurd key (I.disjoint_interior_boundary.ne_of_mem
+      (hγi _ ⟨sub_pos.2 hba, sub_le_self _ hb⟩) hδ0)
 
 end IsMIntegralCurveOn
