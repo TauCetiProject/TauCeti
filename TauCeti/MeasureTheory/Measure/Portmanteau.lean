@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Measure.Support
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.BumpFunction.DerivativeApproximation
 import TauCeti.MeasureTheory.Integral.LayerCake
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Basic
 import TauCeti.MeasureTheory.Measure.SmallPartition
 
 /-!
@@ -356,18 +357,6 @@ end MeasureTheory.ProbabilityMeasure
 
 namespace MeasureTheory.ProbabilityMeasure
 
-/-- Unpack a `liminf` lower bound for `ProbabilityMeasure` into an eventual real-valued bound. -/
-private theorem eventually_measureReal_sub_lt_of_le_liminf
-    {X ι : Type*} [MeasurableSpace X]
-    {L : Filter ι} {μs : ι → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
-    {U : Set X} (hU : μ U ≤ L.liminf (fun i ↦ μs i U)) {δ : ℝ} (hδ : 0 < δ) :
-    ∀ᶠ i in L, (μ : Measure X).real U - δ < (μs i : Measure X).real U := by
-  have hU' : (μ U : ℝ) ≤ L.liminf (fun i ↦ (μs i U : ℝ)) := by
-    rw [NNReal.toReal_liminf]
-    exact NNReal.coe_le_coe.2 hU
-  simpa only [measureReal_eq_coe_coeFn] using Filter.eventually_lt_of_lt_liminf
-    ((sub_lt_self _ hδ).trans_le hU') (isBoundedUnder_of ⟨0, fun _ ↦ NNReal.coe_nonneg _⟩)
-
 /-- **Portmanteau `(O) ⇒ (T)` for an arbitrary filter.** If `μ U ≤ liminf (μs · U)` along an
 arbitrary filter `L` for every open set `U`, then `μs` converges weakly to `μ`. Unlike Mathlib's
 `MeasureTheory.tendsto_of_forall_isOpen_le_liminf`, no countable-generation assumption on `L` is
@@ -407,7 +396,8 @@ theorem tendsto_of_forall_isOpen_le_liminf_of_filter
       (μ : Measure X).real {x | (j : ℝ) * a < f x} - ε / (2 * M) <
         (μs i : Measure X).real {x | (j : ℝ) * a < f x} :=
     (Filter.eventually_all_finset (Finset.range k)).2 fun j _ ↦
-      eventually_measureReal_sub_lt_of_le_liminf
+      FiniteMeasure.eventually_measureReal_sub_lt_of_le_liminf
+        (μ := μ.toFiniteMeasure) (μs := fun i ↦ (μs i).toFiniteMeasure)
         (hopen _ (isOpen_lt continuous_const f.continuous)) (by positivity)
   have hev_int : ∀ᶠ i in L, ∫ x, f x ∂(μ : Measure X) - ε ≤ ∫ x, f x ∂(μs i : Measure X) := by
     filter_upwards [hev] with i hi

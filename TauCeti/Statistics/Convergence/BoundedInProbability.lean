@@ -226,11 +226,6 @@ theorem isBoundedInProbability_of_tendstoInMeasure {μ : Measure Ω} [IsFiniteMe
     (isBoundedInProbability_of_tendstoInMeasure_const hsub)
   simpa only [add_neg_cancel_left] using hbd
 
-private theorem map_apply_norm_gt [MeasurableSpace E] [OpensMeasurableSpace E]
-    {μ : Measure Ω} {X : Ω → E} (hX : AEMeasurable X μ) (r : ℝ) :
-    μ.map X {x | r < ‖x‖} = μ {ω | r < ‖X ω‖} :=
-  Measure.map_apply_of_aemeasurable hX (isOpen_lt continuous_const continuous_norm).measurableSet
-
 /-- A sequence converging in distribution in any seminormed group with opens-measurable structure
 is bounded in probability. Neither properness nor second countability is required. -/
 theorem isBoundedInProbability_of_tendstoInDistribution {Ω' : Type*} [MeasurableSpace Ω']
@@ -251,7 +246,8 @@ theorem isBoundedInProbability_of_tendstoInDistribution {Ω' : Type*} [Measurabl
     exact_mod_cast hnorm
   calc μ {ω | (R : ℝ) + 1 < ‖X n ω‖}
       = (μ.map (X n)) {y : E | (R : ℝ) + 1 < ‖y‖} :=
-          (map_apply_norm_gt (h.forall_aemeasurable n) ((R : ℝ) + 1)).symm
+          (Measure.map_apply_of_aemeasurable (h.forall_aemeasurable n)
+            (isOpen_lt continuous_const continuous_norm).measurableSet).symm
     _ ≤ (μ.map (X n)) {y : E | R ≤ nndist (0 : E) y} := measure_mono hsub
     _ ≤ ENNReal.ofReal ε := hn
 
@@ -273,7 +269,8 @@ theorem isBoundedInProbability_of_isTightMeasureSet_range [OpensMeasurableSpace 
   refine ⟨max r 1, by positivity, Eventually.of_forall fun n ↦ ?_⟩
   calc μ {ω | max r 1 < ‖X n ω‖}
       = (μ.map (X n)) {x : E | max r 1 < ‖x‖} :=
-          (map_apply_norm_gt (hX n) (max r 1)).symm
+          (Measure.map_apply_of_aemeasurable (hX n)
+            (isOpen_lt continuous_const continuous_norm).measurableSet).symm
     _ ≤ ⨆ ν ∈ Set.range (fun k ↦ μ.map (X k)), ν {x : E | max r 1 < ‖x‖} :=
           le_biSup (fun ν : Measure E ↦ ν {x : E | max r 1 < ‖x‖}) ⟨n, rfl⟩
     _ ≤ ENNReal.ofReal ε := (hr (max r 1) (le_max_left r 1)).le
@@ -294,7 +291,9 @@ theorem isTightMeasureSet_range_of_isBoundedInProbability [ProperSpace E] [Borel
   refine ⟨C, fun r hr ↦ limsup_le_of_le (by isBoundedDefault) ?_⟩
   filter_upwards [hC] with n hn
   calc (μ.map (X n)) {x : E | r < ‖x‖}
-      = μ {ω | r < ‖X n ω‖} := map_apply_norm_gt (hX n) r
+      = μ {ω | r < ‖X n ω‖} :=
+          Measure.map_apply_of_aemeasurable (hX n)
+            (isOpen_lt continuous_const continuous_norm).measurableSet
     _ ≤ μ {ω | C < ‖X n ω‖} := measure_mono fun ω (hω : r < ‖X n ω‖) ↦ hr.trans_lt hω
     _ = ENNReal.ofReal (μ.real {ω | C < ‖X n ω‖}) :=
           (ENNReal.ofReal_toReal (measure_ne_top _ _)).symm

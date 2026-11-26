@@ -18,7 +18,7 @@ packaging pointwise almost-everywhere measurability together with weak convergen
 `TendstoInDistribution` (precomposition along a `Filter.Tendsto` map of indices, monotonicity in
 the index filter, congruence under eventual equality of pushforward laws allowing different sample
 spaces, eventual almost-everywhere congruence along the filter, and sequential characterization for
-countably generated index filters), law-invariance and identity-limit adapters, and Slutsky's
+countably generated index filters), identity-limit characterization, and Slutsky's
 convergence-in-distribution replacement lemma without second countability or Borel-space
 assumptions.
 
@@ -34,9 +34,6 @@ assumptions.
 * `MeasureTheory.tendstoInDistribution_iff_forall_seq_tendsto` — along a countably generated filter,
   convergence in distribution is equivalent to convergence in distribution along every sequence
   tending to the filter.
-* `MeasureTheory.TendstoInDistribution.of_map_eq` and
-  `MeasureTheory.tendstoInDistribution_congr_map` — convergence in distribution depends on the limit
-  random variable only through its law.
 * `MeasureTheory.tendstoInDistribution_id_iff` — convergence in distribution to the identity on
   `(E, ν)` is pointwise almost-everywhere measurability plus weak convergence of the pushforward
   laws to `ν`.
@@ -143,30 +140,6 @@ theorem tendstoInDistribution_iff_forall_seq_tendsto {l : Filter ι} [l.IsCounta
     { forall_aemeasurable := hX
       aemeasurable_limit := hZ
       tendsto := tendsto_iff_seq_tendsto.2 fun u hu ↦ (h u hu).tendsto }
-
-/-- Convergence in distribution depends on the limit random variable only through its law. -/
-protected theorem TendstoInDistribution.of_map_eq {Ω'' : Type*} [MeasurableSpace Ω'']
-    {μ'' : Measure Ω''} [IsProbabilityMeasure μ''] {l : Filter ι}
-    {X : (i : ι) → Ω i → E} {Z : Ω' → E} {W : Ω'' → E}
-    (h : TendstoInDistribution X l Z μ μ') (hW : AEMeasurable W μ'')
-    (heq : μ'.map Z = μ''.map W) :
-    TendstoInDistribution X l W μ μ'' where
-  forall_aemeasurable := h.forall_aemeasurable
-  aemeasurable_limit := hW
-  tendsto := by
-    have hlim : (⟨μ'.map Z, inferInstance⟩ : ProbabilityMeasure E) =
-        ⟨μ''.map W, inferInstance⟩ := Subtype.ext heq
-    rw [← hlim]
-    exact h.tendsto
-
-/-- Two almost-everywhere measurable limit random variables with the same law determine the same
-convergence-in-distribution predicate. -/
-theorem tendstoInDistribution_congr_map {Ω'' : Type*} [MeasurableSpace Ω'']
-    {μ'' : Measure Ω''} [IsProbabilityMeasure μ''] {l : Filter ι}
-    {X : (i : ι) → Ω i → E} {Z : Ω' → E} {W : Ω'' → E}
-    (hZ : AEMeasurable Z μ') (hW : AEMeasurable W μ'') (heq : μ'.map Z = μ''.map W) :
-    TendstoInDistribution X l Z μ μ' ↔ TendstoInDistribution X l W μ μ'' :=
-  ⟨fun h ↦ h.of_map_eq hW heq, fun h ↦ h.of_map_eq hZ heq.symm⟩
 
 /-- Convergence in distribution to the identity on `(E, ν)` is equivalent to pointwise
 almost-everywhere measurability together with weak convergence of the pushforward laws to `ν` in

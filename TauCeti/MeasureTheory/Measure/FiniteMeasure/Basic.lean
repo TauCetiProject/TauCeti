@@ -30,6 +30,8 @@ continuous curve of finite measures when `u` is bounded continuous and uniformly
 * `MeasureTheory.ProbabilityMeasure.instMeasurableSingletonClass`
 * `MeasureTheory.Measure.sum_singleton_eq_one`
 * `MeasureTheory.Measure.measureReal_finset_eq_zero`
+* `MeasureTheory.FiniteMeasure.eventually_measureReal_sub_lt_of_le_liminf`: unpack a `liminf` lower
+  bound for finite measures into an eventual real-valued bound.
 * `MeasureTheory.FiniteMeasure.tendsto_integral_of_tendstoUniformly`: narrow convergence against
   uniformly convergent `RCLike`-valued integrands.
 * `MeasureTheory.FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall`: the same for
@@ -122,6 +124,18 @@ theorem Measure.measureReal_finset_eq_zero (μ : Measure α) [IsFiniteMeasure μ
     μ.real s = 0 := by
   rw [← sum_measureReal_singleton]
   exact Finset.sum_eq_zero hzero
+
+/-- Unpack a `liminf` lower bound for `FiniteMeasure` into an eventual real-valued bound. -/
+theorem FiniteMeasure.eventually_measureReal_sub_lt_of_le_liminf
+    {X ι : Type*} [MeasurableSpace X]
+    {L : Filter ι} {μs : ι → FiniteMeasure X} {μ : FiniteMeasure X}
+    {U : Set X} (hU : μ U ≤ L.liminf (fun i ↦ μs i U)) {δ : ℝ} (hδ : 0 < δ) :
+    ∀ᶠ i in L, (μ : Measure X).real U - δ < (μs i : Measure X).real U := by
+  have hU' : (μ U : ℝ) ≤ L.liminf (fun i ↦ (μs i U : ℝ)) := by
+    rw [NNReal.toReal_liminf]
+    exact NNReal.coe_le_coe.2 hU
+  simpa only [FiniteMeasure.measureReal_eq_coe_coeFn] using Filter.eventually_lt_of_lt_liminf
+    ((sub_lt_self _ hδ).trans_le hU') (Filter.isBoundedUnder_of ⟨0, fun _ ↦ NNReal.coe_nonneg _⟩)
 
 section NarrowConvergence
 
