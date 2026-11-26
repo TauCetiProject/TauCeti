@@ -562,6 +562,7 @@ private theorem measure_untruncatedFourPointZeroSet_ne_zero [IsFiniteMeasure μ]
   set r : X × Y → ℝ := fun z ↦ (R.rnDeriv P z).toReal
   set Z : X × Y → ℝ := fun z ↦ (γ.rnDeriv R z).toReal
   set S := posDensitySet μ ν R γ
+  -- Almost every row and column meets `S = posDensitySet`, and `r = dR/dP > 0` `P`-a.e.
   obtain ⟨hS_row, hS_col⟩ := hγ.ae_section_pos_of_ac hRμν hμνR hγR
   have hr_pos : ∀ᵐ z ∂P, 0 < r z := by
     filter_upwards [Measure.rnDeriv_pos' hμνR, Measure.rnDeriv_lt_top R P]
@@ -570,6 +571,7 @@ private theorem measure_untruncatedFourPointZeroSet_ne_zero [IsFiniteMeasure μ]
   have hZ_meas : Measurable Z := by fun_prop
   have hS_meas : MeasurableSet S :=
     (measurableSet_lt measurable_const hr_meas).inter (measurableSet_lt measurable_const hZ_meas)
+  -- By Tonelli on `P ⊗ P`, `(P ⊗ P) U = 0` means `P`-a.e. `z₁`-slice of `U` is `P`-null.
   set U : Set ((X × Y) × (X × Y)) :=
     {q | (0 < r q.1 ∧ Z q.1 = 0) ∧ 0 < r q.2 ∧
       (prodProdSndComm q).1 ∈ S ∧ (prodProdSndComm q).2 ∈ S}
@@ -581,6 +583,8 @@ private theorem measure_untruncatedFourPointZeroSet_ne_zero [IsFiniteMeasure μ]
           ((measurable_snd.comp prodProdSndComm.measurable) hS_meas)
   rw [Measure.prod_apply hU_meas, lintegral_eq_zero_iff (measurable_measure_prodMk_left hU_meas)]
     at hQU
+  -- For `z₁` with `0 < r z₁` and `Z z₁ = 0`, the cross-section rectangle in `S` is covered by
+  -- the null `z₁`-slice of `U` together with `{r ≤ 0}`, contradicting `hS_row` and `hS_col`.
   have hae : ∀ᵐ z₁ ∂P, z₁ ∉ {z | 0 < r z ∧ Z z = 0} := by
     filter_upwards [hQU, ae_of_ae_fst hS_row, ae_of_ae_snd hS_col] with z₁ hz₁ hrow hcol hmem
     have hrect : P ({x₂ | (x₂, z₁.2) ∈ S} ×ˢ (Prod.mk z₁.1 ⁻¹' S)) = 0 := by
@@ -590,6 +594,7 @@ private theorem measure_untruncatedFourPointZeroSet_ne_zero [IsFiniteMeasure μ]
       exact if hrz₂ : 0 < r z₂ then
         .inl ⟨hmem, hrz₂, by simpa using hz₂.2, by simpa using hz₂.1⟩ else .inr hrz₂
     rw [Measure.prod_prod, mul_eq_zero] at hrect; exact hrect.elim hcol hrow
+  -- Combining `hae` with `P {r ≤ 0} = 0` forces `P {Z = 0} = 0`, contradicting `hN`.
   exact hN <| measure_mono_null (fun z hz ↦ if hrz : 0 < r z then Or.inl ⟨hrz, hz⟩ else Or.inr hrz)
     (measure_union_null (measure_eq_zero_iff_ae_notMem.2 hae) (ae_iff.1 hr_pos))
 

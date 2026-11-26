@@ -44,9 +44,10 @@ separately as a subtype of `MeasureTheory.ProbabilityMeasure (X × Y)`.
 * `TauCeti.IsCoupling.measurePreserving_fst`, `TauCeti.IsCoupling.measurePreserving_snd`,
   `TauCeti.IsCoupling.integral_comp_fst`, and `TauCeti.IsCoupling.integral_comp_snd` — projection
   and integral-transfer forms of the marginal conditions;
-* `TauCeti.IsCoupling.integrable_and_integrable_of_ae_add_nonneg` and
+* `TauCeti.IsCoupling.integrable_and_integrable_of_ae_le_add`,
+  `TauCeti.IsCoupling.integrable_and_integrable_of_ae_add_nonneg`, and
   `TauCeti.IsCoupling.integrable_and_integrable_of_integrable_add_of_integrable_max` — deducing
-  marginal integrability of `f` and `g` from integrability of their split sum `f x + g y` or its
+  marginal integrability of `f` and `g` from bounds on their split sum `f x + g y` or its
   positive part;
 * `TauCeti.IsCoupling.smul`, `TauCeti.IsCoupling.add`, `TauCeti.IsCoupling.smul_add_smul`,
   `TauCeti.IsCoupling.smul_add_smul_left`, `TauCeti.IsCoupling.smul_add_smul_right`,
@@ -317,6 +318,34 @@ theorem lintegral_comp_snd (hπ : IsCoupling π μ ν) {f : Y → ℝ≥0∞}
   rw [← hπ.measurePreserving_snd.map_eq] at hf ⊢
   exact (lintegral_map' hf measurable_snd.aemeasurable).symm
 
+/-- **Integrability from upper bounds and an integrable lower bound on the split sum.** Let `f`
+and `g` be bounded above almost everywhere by integrable functions of the two marginals. If
+`W z ≤ f z.1 + g z.2` for `π`-almost every `z` and a `π`-integrable function `W`, then `f` and
+`g` are both integrable. -/
+theorem integrable_and_integrable_of_ae_le_add (hπ : IsCoupling π μ ν) {f : X → ℝ}
+    {g : Y → ℝ} (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g ν) {U : X → ℝ}
+    {V : Y → ℝ} {W : X × Y → ℝ} (hU : Integrable U μ) (hV : Integrable V ν)
+    (hW : Integrable W π) (hfU : ∀ᵐ x ∂μ, f x ≤ U x) (hgV : ∀ᵐ y ∂ν, g y ≤ V y)
+    (hWfg : ∀ᵐ z ∂π, W z ≤ f z.1 + g z.2) :
+    Integrable f μ ∧ Integrable g ν := by
+  have habs {a b u v w : ℝ} (ha : a ≤ u) (hb : b ≤ v) (hw : w ≤ a + b) :
+      |a| ≤ |u| + |v| + |w| :=
+    abs_le.2 ⟨by linarith [le_abs_self v, neg_abs_le w, abs_nonneg u],
+      by linarith [le_abs_self u, abs_nonneg v, abs_nonneg w]⟩
+  have hG := (hπ.integrable_add_split hU.abs hV.abs).add hW.abs
+  have hbound : ∀ᵐ z ∂π,
+      |f z.1| ≤ |U z.1| + |V z.2| + |W z| ∧ |g z.2| ≤ |U z.1| + |V z.2| + |W z| := by
+    filter_upwards [hπ.measurePreserving_fst.quasiMeasurePreserving.ae hfU,
+      hπ.measurePreserving_snd.quasiMeasurePreserving.ae hgV, hWfg] with z hzU hzV hzW
+    exact ⟨habs hzU hzV hzW,
+      (habs hzV hzU (add_comm (f z.1) (g z.2) ▸ hzW)).trans_eq (by ring)⟩
+  exact ⟨(hπ.measurePreserving_fst.integrable_comp hf).1 <|
+      hG.mono' (hf.comp_measurePreserving hπ.measurePreserving_fst) <|
+        hbound.mono fun _ hz ↦ by simpa [Real.norm_eq_abs] using hz.1,
+    (hπ.measurePreserving_snd.integrable_comp hg).1 <|
+      hG.mono' (hg.comp_measurePreserving hπ.measurePreserving_snd) <|
+        hbound.mono fun _ hz ↦ by simpa [Real.norm_eq_abs] using hz.2⟩
+
 /-- **Integrability from upper bounds and a nonnegative split sum.** Let `f` and `g` be bounded
 above almost everywhere by integrable functions of the two marginals. If `f x + g y ≥ 0` for
 `π`-almost every `(x, y)`, then `f` and `g` are both integrable. -/
@@ -324,22 +353,8 @@ theorem integrable_and_integrable_of_ae_add_nonneg (hπ : IsCoupling π μ ν) {
     {g : Y → ℝ} (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g ν) {U : X → ℝ}
     {V : Y → ℝ} (hU : Integrable U μ) (hV : Integrable V ν) (hfU : ∀ᵐ x ∂μ, f x ≤ U x)
     (hgV : ∀ᵐ y ∂ν, g y ≤ V y) (hfg : ∀ᵐ z ∂π, 0 ≤ f z.1 + g z.2) :
-    Integrable f μ ∧ Integrable g ν := by
-  have hG := hπ.integrable_add_split hU.abs hV.abs
-  have hbound : ∀ᵐ z ∂π, |f z.1| ≤ |U z.1| + |V z.2| ∧ |g z.2| ≤ |U z.1| + |V z.2| := by
-    filter_upwards [hπ.measurePreserving_fst.quasiMeasurePreserving.ae hfU,
-      hπ.measurePreserving_snd.quasiMeasurePreserving.ae hgV, hfg] with z hzU hzV hz
-    have := le_abs_self (U z.1)
-    have := le_abs_self (V z.2)
-    have := abs_nonneg (U z.1)
-    have := abs_nonneg (V z.2)
-    exact ⟨abs_le.2 ⟨by linarith, by linarith⟩, abs_le.2 ⟨by linarith, by linarith⟩⟩
-  exact ⟨(hπ.measurePreserving_fst.integrable_comp hf).1 <|
-      hG.mono' (hf.comp_measurePreserving hπ.measurePreserving_fst) <|
-        hbound.mono fun _ hz ↦ by simpa [Real.norm_eq_abs] using hz.1,
-    (hπ.measurePreserving_snd.integrable_comp hg).1 <|
-      hG.mono' (hg.comp_measurePreserving hπ.measurePreserving_snd) <|
-        hbound.mono fun _ hz ↦ by simpa [Real.norm_eq_abs] using hz.2⟩
+    Integrable f μ ∧ Integrable g ν :=
+  hπ.integrable_and_integrable_of_ae_le_add hf hg hU hV (integrable_zero _ _ _) hfU hgV hfg
 
 /-- **Integrability from a coupling-integrable split sum and product-integrable positive part.**
 Let `μ` be a finite measure and `π` a coupling of `μ` and `ν`. If `f` and `g` are a.e. strongly
@@ -356,30 +371,15 @@ theorem integrable_and_integrable_of_integrable_add_of_integrable_max [IsFiniteM
     subst hμ
     exact ⟨integrable_zero_measure, integrable_zero_measure⟩
   have := hπ.isFiniteMeasure_right
-  have hν : ν ≠ 0 := hπ.left_eq_zero_iff.not.1 hμ
   have : (ae μ).NeBot := ae_neBot.2 hμ
-  have : (ae ν).NeBot := ae_neBot.2 hν
+  have : (ae ν).NeBot := ae_neBot.2 (hπ.left_eq_zero_iff.not.1 hμ)
   obtain ⟨y₀, hy₀⟩ := hpos.prod_left_ae.exists
   obtain ⟨x₀, hx₀⟩ := hpos.prod_right_ae.exists
-  set U : X → ℝ := fun x ↦ max (f x + g y₀) 0 - g y₀
-  set V : Y → ℝ := fun y ↦ max (f x₀ + g y) 0 - f x₀
-  have hfU (x : X) : f x ≤ U x := by simp only [U]; linarith [le_max_left (f x + g y₀) 0]
-  have hgV (y : Y) : g y ≤ V y := by simp only [V]; linarith [le_max_left (f x₀ + g y) 0]
-  have hdom : Integrable (fun z : X × Y ↦ |U z.1| + |V z.2| + |f z.1 + g z.2|) π :=
-    (hπ.integrable_add_split (hy₀.sub (integrable_const _)).abs
-      (hx₀.sub (integrable_const _)).abs).add hsum.abs
-  refine ⟨(hπ.measurePreserving_fst.integrable_comp hf).1 <|
-      hdom.mono' (hf.comp_measurePreserving hπ.measurePreserving_fst) <| ae_of_all _ fun z ↦ ?_,
-    (hπ.measurePreserving_snd.integrable_comp hg).1 <|
-      hdom.mono' (hg.comp_measurePreserving hπ.measurePreserving_snd) <| ae_of_all _ fun z ↦ ?_⟩
-  · simp only [Function.comp_apply, Real.norm_eq_abs, abs_le]
-    exact ⟨by linarith [hgV z.2, le_abs_self (V z.2), abs_nonneg (U z.1),
-        neg_abs_le (f z.1 + g z.2)],
-      by linarith [hfU z.1, le_abs_self (U z.1), abs_nonneg (V z.2), abs_nonneg (f z.1 + g z.2)]⟩
-  · simp only [Function.comp_apply, Real.norm_eq_abs, abs_le]
-    exact ⟨by linarith [hfU z.1, le_abs_self (U z.1), abs_nonneg (V z.2),
-        neg_abs_le (f z.1 + g z.2)],
-      by linarith [hgV z.2, le_abs_self (V z.2), abs_nonneg (U z.1), abs_nonneg (f z.1 + g z.2)]⟩
+  exact hπ.integrable_and_integrable_of_ae_le_add hf hg
+    (hy₀.sub (integrable_const (g y₀))) (hx₀.sub (integrable_const (f x₀))) hsum
+    (ae_of_all _ fun x ↦ le_sub_iff_add_le.2 (le_max_left (f x + g y₀) 0))
+    (ae_of_all _ fun y ↦ le_sub_iff_add_le'.2 (le_max_left (f x₀ + g y) 0))
+    (ae_of_all _ fun _ ↦ le_rfl)
 
 end Integral
 
