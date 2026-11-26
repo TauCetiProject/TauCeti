@@ -72,8 +72,11 @@ this form the transversality condition for continuations is the transversality o
 * `TauCeti.IsContinuationField.eventually_atBot_continuationSpaceField_eq`,
   `TauCeti.IsContinuationField.eventually_atTop_continuationSpaceField_eq`: the space component
   along the base trajectory is `X₀` at very negative times and `X₁` at very positive times.
-* `TauCeti.IsContinuationField.eventually_morseContinuationSlice_eq_preimage`: the slices of the
-  continuation map are preimages of unstable and stable manifolds under the transition maps.
+* `TauCeti.IsContinuationField.morseContinuationSlice_eq_preimage`,
+  `TauCeti.IsContinuationField.eventually_morseContinuationSlice_eq_preimage`: the slices of the
+  continuation map are preimages of unstable and stable manifolds under the transition maps, for
+  times `a` and `b` beyond given windows on which the space component is `X₀` and `X₁`, and so
+  for all sufficiently negative `a` and sufficiently positive `b`.
 * `TauCeti.IsContinuationField.eventually_morseContinuationCoeff_eq_ncard_inter_preimage`: the
   continuation coefficients count the points of `W^u(p) ∩ φ_{a, b}⁻¹ (W^s(q))` modulo two.
 * `TauCeti.continuationTransition`: the transition map `φ_{a, b}` of a smooth field on `M × ℝ`,
@@ -299,25 +302,21 @@ theorem eventually_atTop_continuationSpaceField_eq :
   exact funext fun x ↦ hs x
 
 include hV hX₀ hX₁ hC hVs in
-/-- **The slices of the continuation map through the transition maps of the slab.** Let `V` be a
-`C¹` continuation field from `X₀` to `X₁` at rate `C > 0`, let `φ` be the time-dependent flow of
+/-- **The slices of the continuation map through given transition maps of the slab.** Let `V` be
+a `C¹` continuation field from `X₀` to `X₁` at rate `C > 0`, let `φ` be the time-dependent flow of
 its space component `continuationSpaceField C V` along the base trajectory `β`, and let `σ` be
-the time at which `β σ = 1 / 2`. Then for every sufficiently negative time `a` and every
-sufficiently positive time `b`, the points on the middle level of the trajectories from `(p, 0)`
-to `(q, 1)` are the points `x` with `φ_{σ, a} x` in the unstable manifold of `p` for `X₀` and
-`φ_{σ, b} x` in the stable manifold of `q` for `X₁`, for all `p` and `q` at once. -/
-theorem eventually_morseContinuationSlice_eq_preimage {σ : ℝ}
-    (hσ : intervalBaseOrbit C σ = 1 / 2) :
-    ∀ᶠ a in atBot, ∀ᶠ b in atTop, ∀ p q : M, morseContinuationSlice V p q =
+the time at which `β σ = 1 / 2`. If the space component is `X₀` at all times before `a₀` and `X₁`
+at all times after `b₀`, then for `a < a₀` and `b₀ < b` the points on the middle level of the
+trajectories from `(p, 0)` to `(q, 1)` are the points `x` with `φ_{σ, a} x` in the unstable
+manifold of `p` for `X₀` and `φ_{σ, b} x` in the stable manifold of `q` for `X₁`. -/
+theorem morseContinuationSlice_eq_preimage {σ : ℝ} (hσ : intervalBaseOrbit C σ = 1 / 2)
+    {a₀ b₀ a b : ℝ} (ha₀ : ∀ s < a₀, continuationSpaceField C V s = X₀)
+    (hb₀ : ∀ s > b₀, continuationSpaceField C V s = X₁) (ha : a < a₀) (hb : b₀ < b) (p q : M) :
+    morseContinuationSlice V p q =
       timeDependentFlowOf (continuationSpaceField C V) σ a ⁻¹' hX₀.flow.unstableSet p ∩
         timeDependentFlowOf (continuationSpaceField C V) σ b ⁻¹' hX₁.flow.stableSet q := by
   have hY := contMDiff_continuationSpaceField (C := C) hVs
   have hsnd := hV.snd_eq
-  obtain ⟨a₀, ha₀⟩ := eventually_atBot.1 (hV.eventually_atBot_continuationSpaceField_eq hC)
-  obtain ⟨b₀, hb₀⟩ := eventually_atTop.1 (hV.eventually_atTop_continuationSpaceField_eq hC)
-  filter_upwards [eventually_lt_atBot a₀] with a ha
-  filter_upwards [eventually_gt_atTop b₀] with b hb
-  intro p q
   -- The trajectory through `(x, 1 / 2)` at time `0`, in the time of the base trajectory.
   set Γ : M → ℝ → M × ℝ := fun x s ↦
     (timeDependentFlowOf (continuationSpaceField C V) σ (s + σ) x, intervalBaseOrbit C (s + σ))
@@ -330,7 +329,7 @@ theorem eventually_morseContinuationSlice_eq_preimage {σ : ℝ}
     have hβ : Tendsto (fun s ↦ (Γ x s).2) atBot (𝓝 0) :=
       (tendsto_intervalBaseOrbit_atBot hC).comp (tendsto_atBot_add_const_right _ σ tendsto_id)
     rw [nhds_prod_eq, tendsto_prod_iff', and_iff_left hβ,
-      ← hX₀.tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet hY (fun u hu ↦ ha₀ u hu.le) ha]
+      ← hX₀.tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet hY ha₀ ha]
     exact ⟨fun h ↦ (h.comp (tendsto_atBot_add_const_right _ (-σ) tendsto_id)).congr
       fun u ↦ by simp [Γ], fun h ↦ h.comp (tendsto_atBot_add_const_right _ σ tendsto_id)⟩
   have htop (x : M) : Tendsto (Γ x) atTop (𝓝 (q, 1)) ↔
@@ -338,7 +337,7 @@ theorem eventually_morseContinuationSlice_eq_preimage {σ : ℝ}
     have hβ : Tendsto (fun s ↦ (Γ x s).2) atTop (𝓝 1) :=
       (tendsto_intervalBaseOrbit_atTop hC).comp (tendsto_atTop_add_const_right _ σ tendsto_id)
     rw [nhds_prod_eq, tendsto_prod_iff', and_iff_left hβ,
-      ← hX₁.tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet hY (fun u hu ↦ hb₀ u hu.le) hb]
+      ← hX₁.tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet hY hb₀ hb]
     exact ⟨fun h ↦ (h.comp (tendsto_atTop_add_const_right _ (-σ) tendsto_id)).congr
       fun u ↦ by simp [Γ], fun h ↦ h.comp (tendsto_atTop_add_const_right _ σ tendsto_id)⟩
   ext x
@@ -355,6 +354,26 @@ theorem eventually_morseContinuationSlice_eq_preimage {σ : ℝ}
   have hγΓ : γ = Γ x := funext fun s ↦ by rw [hτ s, hγ0, hτσ]
   rw [hγΓ] at hp hq
   exact ⟨(hbot x).1 hp, (htop x).1 hq⟩
+
+include hV hX₀ hX₁ hC hVs in
+/-- **The slices of the continuation map through the transition maps of the slab.** Let `V` be a
+`C¹` continuation field from `X₀` to `X₁` at rate `C > 0`, let `φ` be the time-dependent flow of
+its space component `continuationSpaceField C V` along the base trajectory `β`, and let `σ` be
+the time at which `β σ = 1 / 2`. Then for every sufficiently negative time `a` and every
+sufficiently positive time `b`, the points on the middle level of the trajectories from `(p, 0)`
+to `(q, 1)` are the points `x` with `φ_{σ, a} x` in the unstable manifold of `p` for `X₀` and
+`φ_{σ, b} x` in the stable manifold of `q` for `X₁`, for all `p` and `q` at once. -/
+theorem eventually_morseContinuationSlice_eq_preimage {σ : ℝ}
+    (hσ : intervalBaseOrbit C σ = 1 / 2) :
+    ∀ᶠ a in atBot, ∀ᶠ b in atTop, ∀ p q : M, morseContinuationSlice V p q =
+      timeDependentFlowOf (continuationSpaceField C V) σ a ⁻¹' hX₀.flow.unstableSet p ∩
+        timeDependentFlowOf (continuationSpaceField C V) σ b ⁻¹' hX₁.flow.stableSet q := by
+  obtain ⟨a₀, ha₀⟩ := eventually_atBot.1 (hV.eventually_atBot_continuationSpaceField_eq hC)
+  obtain ⟨b₀, hb₀⟩ := eventually_atTop.1 (hV.eventually_atTop_continuationSpaceField_eq hC)
+  filter_upwards [eventually_lt_atBot a₀] with a ha
+  filter_upwards [eventually_gt_atTop b₀] with b hb
+  exact hV.morseContinuationSlice_eq_preimage hX₀ hX₁ hC hVs hσ (fun s hs ↦ ha₀ s hs.le)
+    (fun s hs ↦ hb₀ s hs.le) ha hb
 
 include hV hX₀ hX₁ hC hVs in
 /-- **The continuation coefficients are intersection counts.** Let `V` be a `C¹` continuation
