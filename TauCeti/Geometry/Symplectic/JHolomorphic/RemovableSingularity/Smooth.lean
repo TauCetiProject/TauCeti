@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Basic
-import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Puncture
+import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
+import TauCeti.Geometry.Symplectic.Floer.RemovableSingularity.Smooth
 import TauCeti.LinearAlgebra.Complex.LinearPart
 import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Complex.Conformal.Area
@@ -26,13 +27,12 @@ on the whole disc and solves the Cauchy–Riemann equation there, the puncture i
 singularities theorem of McDuff–Salamon, Theorem 4.1.2, for a structure of finite regularity;
 the filling is smooth when `J` is.
 
-The filling is a continuous weak solution of the equation `∂ₛu + J(u) ∂ₜu = 0` with weak
-derivative in `Lᵖ` for some `p > 2` near the puncture
-(`SymplecticForm.exists_isWeakCauchyRiemannOn_update_of_finite_energy`), and a classical solution
-away from it. Interior elliptic bootstrapping for the nonlinear Cauchy–Riemann equation then makes
-it `C^ℓ` on the whole disc, and the classical equation at `z₀` follows by continuity of both of its
-sides (`TauCeti.contDiffOn_ball_of_isWeakCauchyRiemannOn`,
-`TauCeti.fderiv_apply_one_add_eq_of_forall_ne`).
+The equation `∂ₜu = J(u) ∂ₛu` is the Floer equation
+`∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)` with `X = 0` and the structure `(z, x) ↦ J x`, so
+the result is the corresponding case of removal of finite-energy punctures of Floer solutions
+(`TauCeti.Floer.exists_contDiffOn_update_of_finite_energy`): the filling is a continuous weak
+solution with weak derivative in `Lᵖ` for some `p > 2` near the puncture, interior elliptic
+bootstrapping makes it `C^ℓ` on the whole disc, and the equation at `z₀` follows by continuity.
 
 The same holds at the end of a plane. For a finite-energy solution on the exterior `‖z‖ > R` of a
 disc, the inverted map `w ↦ u w⁻¹`, filled at `0` with the limit of `u` at infinity, is of class
@@ -41,8 +41,10 @@ disc, the inverted map `w ↦ u w⁻¹`, filled at `0` with the limit of `u` at 
 finite-energy pseudoholomorphic plane extends to a `C^ℓ` map on the Riemann sphere `OnePoint ℂ`,
 regarded as a real surface through its two holomorphic charts
 (`TauCeti.SymplecticForm.exists_contMDiff_onePoint_elim_of_finite_energy`): read in the inverted
-chart at `∞` the extension is the filled inverted map. This identifies the bubbles of Gromov
-compactness, finite-energy planes, with pseudoholomorphic spheres.
+chart at `∞` the extension is the filled inverted map. Thus the bubbles of Gromov compactness,
+finite-energy planes, extend to `C^ℓ` maps of the sphere; that the extension also solves the
+Cauchy–Riemann equation in the chart at `∞` is the statement of
+`TauCeti.SymplecticForm.exists_contDiffOn_update_comp_inv_of_finite_energy`.
 
 ## Main results
 
@@ -77,9 +79,10 @@ open Classical in
 /-- **Removal of singularities** (McDuff–Salamon, Theorem 4.1.2). Let `J` be `C^ℓ`, `2 ≤ ℓ ≤ ∞`,
 near a compact set `K` on which `J² = -1`, and let `u` be a `C³` solution of `∂ₜu = J(u) ∂ₛu` on
 the punctured disc `B(z₀, R) \ {z₀}`, with image in `K`, tamed by `ω` with a uniform constant, and
-of finite energy. Then `u` has a limit `q ∈ K` at `z₀`, and the filling `Function.update u z₀ q`
-is of class `C^ℓ` on `B(z₀, R)`, with image in `K`, and solves the Cauchy–Riemann equation at every
-point of `B(z₀, R)`, the puncture included. -/
+of finite energy. The fixed structure `J₀` identifies the given inner product with a symplectic
+metric. Then `u` has a limit `q ∈ K` at `z₀`, and the filling `Function.update u z₀ q` is of class
+`C^ℓ` on `B(z₀, R)`, with image in `K`, and solves the Cauchy–Riemann equation at every point of
+`B(z₀, R)`, the puncture included. -/
 theorem exists_contDiffOn_update_of_finite_energy (hℓ : 2 ≤ ℓ)
     (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c) (hR : 0 < R)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ ℓ J W) (hK : IsCompact K) (hKW : K ⊆ W)
@@ -93,41 +96,23 @@ theorem exists_contDiffOn_update_of_finite_energy (hℓ : 2 ≤ ℓ)
       ContDiffOn ℝ ℓ (Function.update u z₀ q) (ball z₀ R) ∧
       ∀ z ∈ ball z₀ R, fderiv ℝ (Function.update u z₀ q) z I =
         J (Function.update u z₀ q z) (fderiv ℝ (Function.update u z₀ q) z 1) := by
-  have h2 : (2 : WithTop ℕ∞) ≤ ℓ := WithTop.coe_le_coe.2 hℓ
-  obtain ⟨q, hq, hlim, hmaps, ε, hε, hεR, p, hp, hweak⟩ :=
-    ω.exists_isWeakCauchyRiemannOn_update_of_finite_energy hg hc hR hW (hJ.of_le h2) hK hKW hJsq
-      hu hCR huK htame henergy
-  set v := Function.update u z₀ q
-  have hB : IsOpen (ball z₀ R \ {z₀}) := isOpen_ball.sdiff isClosed_singleton
-  have hvu : EqOn v u (ball z₀ R \ {z₀}) := fun z hz ↦ Function.update_of_ne hz.2 _ _
-  have hJv (z : ℂ) (hz : z ∈ ball z₀ R) (w : V) : J (v z) (J (v z) w) = -w := hJsq _ (hmaps hz) w
-  -- Off the puncture `v` is `u`, a classical solution of `∂ₛv + J(v) ∂ₜv = 0`.
-  have hCRv (z : ℂ) (hz : z ∈ ball z₀ R \ {z₀}) :
-      fderiv ℝ v z 1 + J (v z) (fderiv ℝ v z I) = 0 := by
-    rw [Filter.EventuallyEq.fderiv_eq (Filter.eventually_of_mem (hB.mem_nhds hz) hvu), hvu hz,
-      add_apply_eq_zero_iff_eq_apply (hJsq _ (huK hz))]
-    exact hCR z hz
-  have hv : ContDiffOn ℝ ℓ v (ball z₀ R) :=
-    contDiffOn_ball_of_isWeakCauchyRiemannOn (J := fun _ ↦ J) (η := fun _ _ ↦ 0)
-      (by simpa using (ENNReal.ofReal_lt_ofReal_iff (by linarith)).2 hp) hε hεR.le
-      (isOpen_univ.prod hW) (hJ.comp contDiff_snd.contDiffOn fun _ hx ↦ (mem_prod.1 hx).2)
-      contDiffOn_const (fun z hz ↦ ⟨mem_univ _, hKW (hmaps hz)⟩)
-      (fun z hz ↦ ContinuousLinearMap.ext fun w ↦ by simp [hJv z hz])
-      ((hu.of_le (by norm_num)).congr hvu) hCRv hweak
-  refine ⟨q, hq, hlim, hmaps, hv, fun z hz ↦
-    (add_apply_eq_zero_iff_eq_apply (hJv z hz) _ _).1 ?_⟩
-  -- Both sides of the equation are continuous on the disc and agree off the puncture.
-  exact fderiv_apply_one_add_eq_of_forall_ne (J := fun _ ↦ J) (η := fun _ _ ↦ 0) isOpen_ball
-    (hv.of_le (le_trans (by norm_num) h2))
-    (hJ.continuousOn.comp hv.continuousOn (hmaps.mono_right hKW)) continuousOn_const hCRv z hz
+  -- This is the case `X = 0` of the Floer equation, for the structure `(z, x) ↦ J x`.
+  obtain ⟨q, hq, hlim, hmaps, hv, hF⟩ :=
+    Floer.exists_contDiffOn_update_of_finite_energy (J := fun x ↦ J x.2) (X := 0)
+      (W := univ ×ˢ W) hℓ hg hc hR (isOpen_univ.prod hW)
+      (hJ.comp contDiff_snd.contDiffOn fun _ hx ↦ (mem_prod.1 hx).2) contDiffOn_const hK
+      (prod_mono (subset_univ _) hKW) (fun x hx ↦ hJsq x.2 hx.2) hu
+      (fun z hz ↦ by simpa using hCR z hz) huK htame henergy
+  exact ⟨q, hq, hlim, hmaps, hv, fun z hz ↦ by simpa using hF z hz⟩
 
 open Classical in
 /-- **Removal of the singularity at the end of a plane.** Let `J` be `C^ℓ`, `2 ≤ ℓ ≤ ∞`, near a
 compact set `K` on which `J² = -1`, and let `u` be a `C³` solution of `∂ₜu = J(u) ∂ₛu` on the
 exterior `‖z‖ > R` of a disc, with image in `K`, tamed by `ω` with a uniform constant, and of finite
-energy. Then `u` has a limit `q ∈ K` at infinity, and the inverted map `w ↦ u w⁻¹`, filled with `q`
-at `0`, is of class `C^ℓ` on `B(0, R⁻¹)`, with image in `K`, and solves the Cauchy–Riemann equation
-at every point of `B(0, R⁻¹)`, `0` included. For `R ≤ 0` the disc is empty. -/
+energy. The fixed structure `J₀` identifies the given inner product with a symplectic metric.
+Then `u` has a limit `q ∈ K` at infinity, and the inverted map `w ↦ u w⁻¹`, filled with `q` at
+`0`, is of class `C^ℓ` on `B(0, R⁻¹)`, with image in `K`, and solves the Cauchy–Riemann equation at
+every point of `B(0, R⁻¹)`, `0` included. For `R ≤ 0` the disc is empty. -/
 theorem exists_contDiffOn_update_comp_inv_of_finite_energy (hℓ : 2 ≤ ℓ)
     (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ ℓ J W) (hK : IsCompact K) (hKW : K ⊆ W)
@@ -167,8 +152,9 @@ theorem exists_contDiffOn_update_comp_inv_of_finite_energy (hℓ : 2 ≤ ℓ)
 
 /-- **A finite-energy plane extends to a sphere.** Let `J` be `C^ℓ`, `2 ≤ ℓ ≤ ∞`, near a compact set
 `K` on which `J² = -1`, and let `u` be a `C³` solution of `∂ₜu = J(u) ∂ₛu` on the whole plane, with
-image in `K`, tamed by `ω` with a uniform constant, and of finite energy. Then `u` has a limit
-`q ∈ K` at infinity, and sending the point at infinity to `q` extends `u` to a `C^ℓ` map on the
+image in `K`, tamed by `ω` with a uniform constant, and of finite energy. The fixed structure `J₀`
+identifies the given inner product with a symplectic metric. Then `u` has a limit `q ∈ K` at
+infinity, and sending the point at infinity to `q` extends `u` to a `C^ℓ` map on the
 Riemann sphere `OnePoint ℂ`, regarded as a real surface. -/
 theorem exists_contMDiff_onePoint_elim_of_finite_energy (hℓ : 2 ≤ ℓ)
     (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
@@ -186,7 +172,7 @@ theorem exists_contMDiff_onePoint_elim_of_finite_energy (hℓ : 2 ≤ ℓ)
     contDiffOn_of_cauchyRiemann (Ω := ⊤) (J := fun _ ↦ J) (η := fun _ _ ↦ 0)
       (isOpen_univ.prod hW) (hJ.comp contDiff_snd.contDiffOn fun _ hx ↦ (mem_prod.1 hx).2)
       contDiffOn_const (fun z _ ↦ ⟨mem_univ _, hKW (huK z)⟩)
-      (fun z _ ↦ ContinuousLinearMap.ext fun w ↦ by simp [hJsq _ (huK z)])
+      (fun z _ ↦ hJsq _ (huK z))
       (hu.of_le (by norm_num)).contDiffOn
       fun z _ ↦ (add_apply_eq_zero_iff_eq_apply (hJsq _ (huK z)) _ _).2 (hCR z)
   refine ⟨q, hq, fun x ↦ ?_⟩

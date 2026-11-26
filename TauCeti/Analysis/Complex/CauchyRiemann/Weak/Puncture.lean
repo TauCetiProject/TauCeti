@@ -22,7 +22,8 @@ of class `C^ℓ` on the whole disc (`TauCeti.contDiffOn_ball_of_isWeakCauchyRiem
 by interior bootstrapping (`TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`) and off `z₀` because
 classical solutions are regular (`TauCeti.contDiffOn_of_cauchyRiemann`). For `ℓ ≥ 1` the classical
 equation then holds at `z₀` as well, since both of its sides are continuous and agree off `z₀`
-(`TauCeti.fderiv_apply_one_add_eq_of_forall_ne`).
+(`TauCeti.fderiv_apply_one_add_eq_of_forall_ne`); the two conclusions together are
+`TauCeti.contDiffOn_ball_and_fderiv_apply_one_add_eq_of_isWeakCauchyRiemannOn`.
 
 This is the analytic step of removal of singularities: the filling of a finite-energy puncture of
 a pseudoholomorphic curve, or of a Floer solution, is a continuous weak solution across the
@@ -53,7 +54,7 @@ theorem contDiffOn_ball_of_isWeakCauchyRiemannOn [FiniteDimensional ℝ V] {ℓ 
     (hp : 2 < p) (hε : 0 < ε) (hεR : ε ≤ R) (hW : IsOpen W)
     (hJ : ContDiffOn ℝ ℓ (fun x : ℂ × V => J x.1 x.2) W)
     (hη : ContDiffOn ℝ ℓ (fun x : ℂ × V => η x.1 x.2) W) (huW : ∀ z ∈ ball z₀ R, (z, u z) ∈ W)
-    (hJ2 : ∀ z ∈ ball z₀ R, J z (u z) * J z (u z) = -1)
+    (hJ2 : ∀ z ∈ ball z₀ R, ∀ v, J z (u z) (J z (u z) v) = -v)
     (hu : ContDiffOn ℝ 1 u (ball z₀ R \ {z₀}))
     (h : ∀ z ∈ ball z₀ R \ {z₀}, fderiv ℝ u z 1 + J z (u z) (fderiv ℝ u z I) = η z (u z))
     (hweak : IsWeakCauchyRiemannOn p (ball z₀ ε) J η u) :
@@ -64,7 +65,8 @@ theorem contDiffOn_ball_of_isWeakCauchyRiemannOn [FiniteDimensional ℝ V] {ℓ 
     contDiffOn_of_isWeakCauchyRiemannOn (Ω := ⟨ball z₀ ε, isOpen_ball⟩) hp hW hJ hη
       (fun z hz ↦ huW z (hεR' hz))
       ((MeasureTheory.ae_restrict_iff' measurableSet_ball).2
-        (.of_forall fun z hz ↦ hJ2 z (hεR' hz))) hweak
+        (.of_forall fun z hz ↦ ContinuousLinearMap.ext fun v ↦ by simp [hJ2 z (hεR' hz) v]))
+      hweak
   -- Off `z₀`, regularity of the classical solution.
   have hoff : ContDiffOn ℝ ℓ u (ball z₀ R \ {z₀}) :=
     contDiffOn_of_cauchyRiemann (Ω := ⟨ball z₀ R \ {z₀}, isOpen_ball.sdiff isClosed_singleton⟩)
@@ -89,5 +91,25 @@ theorem fderiv_apply_one_add_eq_of_forall_ne {Ω : Set ℂ} (hΩ : IsOpen Ω)
     sdiff_subset ?_
   rw [Set.sdiff_eq]
   exact (dense_compl_singleton z₀).open_subset_closure_inter hΩ
+
+/-- **Removal of a point for the nonlinear Cauchy–Riemann equation.** Under the hypotheses of
+`TauCeti.contDiffOn_ball_of_isWeakCauchyRiemannOn`, with `1 ≤ ℓ`, the map `u` is of class `C^ℓ` on
+`B(z₀, R)` and solves `∂ₛu + J(z, u) ∂ₜu = η(z, u)` at every point of `B(z₀, R)`, `z₀`
+included. -/
+theorem contDiffOn_ball_and_fderiv_apply_one_add_eq_of_isWeakCauchyRiemannOn
+    [FiniteDimensional ℝ V] {ℓ : ℕ∞} {p : ENNReal} (hℓ : 1 ≤ ℓ) (hp : 2 < p) (hε : 0 < ε)
+    (hεR : ε ≤ R) (hW : IsOpen W) (hJ : ContDiffOn ℝ ℓ (fun x : ℂ × V => J x.1 x.2) W)
+    (hη : ContDiffOn ℝ ℓ (fun x : ℂ × V => η x.1 x.2) W) (huW : ∀ z ∈ ball z₀ R, (z, u z) ∈ W)
+    (hJ2 : ∀ z ∈ ball z₀ R, ∀ v, J z (u z) (J z (u z) v) = -v)
+    (hu : ContDiffOn ℝ 1 u (ball z₀ R \ {z₀}))
+    (h : ∀ z ∈ ball z₀ R \ {z₀}, fderiv ℝ u z 1 + J z (u z) (fderiv ℝ u z I) = η z (u z))
+    (hweak : IsWeakCauchyRiemannOn p (ball z₀ ε) J η u) :
+    ContDiffOn ℝ ℓ u (ball z₀ R) ∧
+      ∀ z ∈ ball z₀ R, fderiv ℝ u z 1 + J z (u z) (fderiv ℝ u z I) = η z (u z) := by
+  have hu' := contDiffOn_ball_of_isWeakCauchyRiemannOn hp hε hεR hW hJ hη huW hJ2 hu h hweak
+  have hgraph : ContinuousOn (fun z ↦ (z, u z)) (ball z₀ R) :=
+    continuousOn_id.prodMk hu'.continuousOn
+  exact ⟨hu', fderiv_apply_one_add_eq_of_forall_ne isOpen_ball (hu'.of_le (mod_cast hℓ))
+    (hJ.continuousOn.comp hgraph huW) (hη.continuousOn.comp hgraph huW) h⟩
 
 end TauCeti

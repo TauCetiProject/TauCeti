@@ -16,9 +16,9 @@ complex structure on `V` that is of class `C^ℓ` as a map into `V →L[ℝ] V` 
 map `u : ℝ × ℝ → V` of class `C¹` on an open set `U`, with values in `W`, that solves the
 Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu` on `U`, is of class `C^ℓ` on `U`
 (`TauCeti.contDiffOn_of_isComplexLinearMap_fderiv`). In the complex coordinate
-`Complex.equivRealProdCLM` the equation is `∂ₛu + J(u) ∂ₜu = 0`, so the classical solution is a
-weak one (`TauCeti.isWeakCauchyRiemannOn_of_contDiffOn`), and interior elliptic bootstrapping
-(`TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`) gives the regularity.
+`Complex.equivRealProdCLM` the equation is `∂ₛu + J(u) ∂ₜu = 0`, and regularity of classical
+solutions of the nonlinear Cauchy–Riemann equation (`TauCeti.contDiffOn_of_cauchyRiemann`) gives
+the regularity.
 
 Limits of rescaled solutions of the Floer equation, the bubbles of Gromov–Floer compactness, are
 `C¹` solutions of this equation for the structure frozen at the bubbling point, and their area is
@@ -68,14 +68,10 @@ theorem contDiffOn_of_isComplexLinearMap_fderiv {J : V → AlmostComplexStructur
     simp only [ContinuousLinearMap.coe_coe] at h
     rw [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I, h]
     simp [Jc]
-  have hweak := isWeakCauchyRiemannOn_of_contDiffOn (p := ⊤) (J := fun _ ↦ Jc)
-    (η := fun _ _ ↦ 0) hu' hCR'
   have hc : ContDiffOn ℝ ℓ (u ∘ equivRealProdCLM) Ω :=
-    contDiffOn_of_isWeakCauchyRiemannOn (by simp) (isOpen_univ.prod hW)
+    contDiffOn_of_cauchyRiemann (J := fun _ ↦ Jc) (η := fun _ _ ↦ 0) (isOpen_univ.prod hW)
       (hJ.comp contDiff_snd.contDiffOn fun q hq ↦ (mem_prod.1 hq).2) contDiffOn_const
-      (fun y hy ↦ ⟨mem_univ _, huW (heΩ hy)⟩)
-      (Filter.Eventually.of_forall fun y ↦ ContinuousLinearMap.ext fun a ↦ by simp [Jc])
-      hweak
+      (fun y hy ↦ ⟨mem_univ _, huW (heΩ hy)⟩) (fun y _ a ↦ by simp [Jc]) hu' hCR'
   have hsymm : MapsTo equivRealProdCLM.symm U Ω := fun z hz ↦ by simpa [Ω] using hz
   simpa [Function.comp_def] using hc.comp equivRealProdCLM.symm.contDiff.contDiffOn hsymm
 

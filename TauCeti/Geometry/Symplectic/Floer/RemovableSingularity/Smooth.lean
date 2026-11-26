@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.RemovableSingularity
+import TauCeti.Analysis.Calculus.FDeriv.Puncture
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Puncture
 import TauCeti.LinearAlgebra.Complex.LinearPart
 
@@ -35,9 +36,9 @@ weak derivative is the classical derivative of `u`
 (`TauCeti.Floer.exists_hasWeakFDerivOn_update_of_finite_energy`), which lies in `Lᵖ` for some
 `p > 2` near the puncture
 (`TauCeti.Floer.exists_continuousOn_update_memLp_fderiv_of_finite_energy`). Interior regularity of
-the nonlinear Cauchy–Riemann equation across a point
-(`TauCeti.contDiffOn_ball_of_isWeakCauchyRiemannOn`) then gives the regularity, and the classical
-equation at the puncture follows by continuity (`TauCeti.fderiv_apply_one_add_eq_of_forall_ne`).
+the nonlinear Cauchy–Riemann equation across a point then gives the regularity, and the classical
+equation at the puncture follows by continuity
+(`TauCeti.contDiffOn_ball_and_fderiv_apply_one_add_eq_of_isWeakCauchyRiemannOn`).
 
 ## Main results
 
@@ -111,9 +112,7 @@ theorem exists_isWeakCauchyRiemannOn_update_of_finite_energy
   refine ⟨hcont.mono hεR', (hcont.mono hεR').memLpLoc, fderiv ℝ u,
     hweak.mono (SetLike.coe_subset_coe.1 hεR'), (hmem.ae_eq ?_).memLpLoc, ?_⟩
   · filter_upwards [hae] with z hz
-    exact Filter.EventuallyEq.fderiv_eq
-      (Filter.eventually_of_mem (isOpen_compl_singleton.mem_nhds hz.2) fun w hw ↦
-        Function.update_of_ne hw _ _)
+    exact fderiv_update_of_ne hz.2 _
   · filter_upwards [hae] with z hz
     rw [Function.update_of_ne hz.2,
       add_apply_eq_add_apply_iff_sub_eq_apply_sub (hJsq _ ⟨hz.1, huK hz⟩)]
@@ -124,9 +123,10 @@ open Classical in
 one-form `X(z, x)` be `C^ℓ`, `2 ≤ ℓ ≤ ∞`, on an open set `W` containing `B(z₀, R) × K` for a
 compact `K ⊆ V`, with `J² = -1` on `B(z₀, R) × K`, and let `u` be a `C³` solution of
 `∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)` on `B(z₀, R) \ {z₀}`, with image in `K`, tamed by `ω`
-with a uniform constant, and of finite energy. Then `u` has a limit `q ∈ K` at `z₀`, and the
-filling `Function.update u z₀ q` is of class `C^ℓ` on `B(z₀, R)`, with image in `K`, and solves
-the equation at every point of `B(z₀, R)`, the puncture included. -/
+with a uniform constant, and of finite energy. The fixed structure `J₀` identifies the given inner
+product with a symplectic metric. Then `u` has a limit `q ∈ K` at `z₀`, and the filling
+`Function.update u z₀ q` is of class `C^ℓ` on `B(z₀, R)`, with image in `K`, and solves the
+equation at every point of `B(z₀, R)`, the puncture included. -/
 theorem exists_contDiffOn_update_of_finite_energy (hℓ : 2 ≤ ℓ)
     (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c) (hR : 0 < R)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ ℓ J W) (hX : ContDiffOn ℝ ℓ X W) (hK : IsCompact K)
@@ -148,34 +148,23 @@ theorem exists_contDiffOn_update_of_finite_energy (hℓ : 2 ≤ ℓ)
     exists_isWeakCauchyRiemannOn_update_of_finite_energy hg hc hR hW (hJ.of_le h2) (hX.of_le h2)
       hK hKW hJsq hu hF huK htame henergy
   set v := Function.update u z₀ q
-  have hB : IsOpen (ball z₀ R \ {z₀}) := isOpen_ball.sdiff isClosed_singleton
   have hvu : EqOn v u (ball z₀ R \ {z₀}) := fun z hz ↦ Function.update_of_ne hz.2 _ _
   have hvK (z : ℂ) (hz : z ∈ ball z₀ R) : (z, v z) ∈ ball z₀ R ×ˢ K := ⟨hz, hmaps hz⟩
   -- Off the puncture `v` is `u`, a classical solution of `∂ₛv + J(z, v) ∂ₜv = η(z, v)`.
   set η : ℂ → V → V := fun z x ↦ X (z, x) 1 + J (z, x) (X (z, x) I)
   have hCRv (z : ℂ) (hz : z ∈ ball z₀ R \ {z₀}) :
       fderiv ℝ v z 1 + J (z, v z) (fderiv ℝ v z I) = η z (v z) := by
-    rw [Filter.EventuallyEq.fderiv_eq (Filter.eventually_of_mem (hB.mem_nhds hz) hvu), hvu hz,
+    rw [fderiv_update_of_ne hz.2, hvu hz,
       add_apply_eq_add_apply_iff_sub_eq_apply_sub (hJsq _ (hvu hz ▸ hvK z hz.1))]
     exact hF z hz
-  have hv : ContDiffOn ℝ ℓ v (ball z₀ R) :=
-    contDiffOn_ball_of_isWeakCauchyRiemannOn (J := fun z x ↦ J (z, x)) (η := η)
+  obtain ⟨hv, hCR⟩ :=
+    contDiffOn_ball_and_fderiv_apply_one_add_eq_of_isWeakCauchyRiemannOn
+      (J := fun z x ↦ J (z, x)) (η := η) (le_trans (by norm_num) hℓ)
       (by simpa using (ENNReal.ofReal_lt_ofReal_iff (by linarith)).2 hp) hε hεR.le hW hJ
       ((hX.clm_apply contDiffOn_const).add (hJ.clm_apply (hX.clm_apply contDiffOn_const)))
-      (fun z hz ↦ hKW (hvK z hz))
-      (fun z hz ↦ ContinuousLinearMap.ext fun w ↦ by simp [hJsq _ (hvK z hz)])
+      (fun z hz ↦ hKW (hvK z hz)) (fun z hz ↦ hJsq _ (hvK z hz))
       ((hu.of_le (by norm_num)).congr hvu) hCRv hweak
-  refine ⟨q, hq, hlim, hmaps, hv, fun z hz ↦
-    (add_apply_eq_add_apply_iff_sub_eq_apply_sub (hJsq _ (hvK z hz)) _ _ _ _).1 ?_⟩
-  -- Both sides of the equation are continuous on the disc and agree off the puncture.
-  have hgraph : ContinuousOn (fun z ↦ (z, v z)) (ball z₀ R) :=
-    continuousOn_id.prodMk hv.continuousOn
-  have hmapsW : MapsTo (fun z ↦ (z, v z)) (ball z₀ R) W := fun z hz ↦ hKW (hvK z hz)
-  have hJc : ContinuousOn (fun z ↦ J (z, v z)) (ball z₀ R) := hJ.continuousOn.comp hgraph hmapsW
-  have hXc : ContinuousOn (fun z ↦ X (z, v z)) (ball z₀ R) := hX.continuousOn.comp hgraph hmapsW
-  exact fderiv_apply_one_add_eq_of_forall_ne (J := fun z x ↦ J (z, x)) (η := η) isOpen_ball
-    (hv.of_le (le_trans (by norm_num) h2)) hJc
-    ((hXc.clm_apply continuousOn_const).add (hJc.clm_apply (hXc.clm_apply continuousOn_const)))
-    hCRv z hz
+  exact ⟨q, hq, hlim, hmaps, hv, fun z hz ↦
+    (add_apply_eq_add_apply_iff_sub_eq_apply_sub (hJsq _ (hvK z hz)) _ _ _ _).1 (hCR z hz)⟩
 
 end TauCeti.Floer
