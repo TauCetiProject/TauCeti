@@ -384,9 +384,14 @@ theorem extendScalarsFinsuppIso_hom_naturality {α β : Type v} (φ : (α →₀
   -- an extension of scalars, whose carrier is a tensor product only up to unfolding.
   ExtendScalars.hom_ext fun c ↦ calc
     _ = (extendScalarsFinsuppIso β).hom ((1 : S) ⊗ₜ[R, algebraMap R S] φ c) := rfl
-    _ = ψ ((extendScalarsFinsuppIso α).hom ((1 : S) ⊗ₜ[R, algebraMap R S] c)) := by
-      rw [extendScalarsFinsuppIso_hom_tmul, one_smul, h]
-      exact congrArg ψ ((one_smul S _).symm.trans (extendScalarsFinsuppIso_hom_tmul α 1 c).symm)
+    _ = Finsupp.mapRange (algebraMap R S) (map_zero _) (φ c) := by
+      rw [extendScalarsFinsuppIso_hom_tmul, one_smul]
+    _ = ψ (Finsupp.mapRange (algebraMap R S) (map_zero _) c) := h c
+    -- `rw` fails here: inside `ψ`, the tensor `1 ⊗ c` elaborates with a module instance that
+    -- does not match `extendScalarsFinsuppIso_hom_tmul` syntactically, so the step applies
+    -- `extendScalarsFinsuppIso_hom_tmul` and `one_smul` as in the second step.
+    _ = ψ ((extendScalarsFinsuppIso α).hom ((1 : S) ⊗ₜ[R, algebraMap R S] c)) :=
+      congrArg ψ ((extendScalarsFinsuppIso_hom_tmul α 1 c).trans (one_smul S _)).symm
     _ = _ := rfl
 
 end Finsupp

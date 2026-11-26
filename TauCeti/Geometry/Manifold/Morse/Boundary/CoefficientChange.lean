@@ -43,7 +43,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `signedMorseComplexBaseChangeIso`: the extension of scalars of the Morse complex.
 * `signedMorseComplexBaseChangeIso_hom_f_tmul`, `signedMorseComplexBaseChangeIso_inv_f_single`:
   its values on `s ⊗ c` and, for its inverse, on `s • p`.
-* `IsMorseSmale.signedMorseComplexBaseChangeIsoMorseComplex`: the reduction modulo two.
+* `IsMorseSmale.signedMorseComplexBaseChangeIsoMorseComplex`: the reduction modulo two, with
+  values `IsMorseSmale.signedMorseComplexBaseChangeIsoMorseComplex_hom_f_tmul` and
+  `IsMorseSmale.signedMorseComplexBaseChangeIsoMorseComplex_inv_f_single`.
 
 ## References
 
@@ -83,11 +85,13 @@ theorem signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_ringHom {R S : T
     (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0) :
     hX.signedMorseBoundary 𝔬 hf S ∘ₗ hX.signedMorseBoundary 𝔬 hf S = 0 := by
   refine Finsupp.lhom_ext fun p a ↦ ?_
-  have hp : Finsupp.single p a = a • Finsupp.mapRange g (map_zero g) (Finsupp.single p 1) := by
-    rw [Finsupp.mapRange_single, map_one, Finsupp.smul_single_one]
-  rw [LinearMap.comp_apply, hp, map_smul, map_smul, ← mapRange_signedMorseBoundary,
-    ← mapRange_signedMorseBoundary, ← LinearMap.comp_apply, hsq, LinearMap.zero_apply,
-    Finsupp.mapRange_zero, smul_zero, LinearMap.zero_apply]
+  -- `mapRange g` intertwines `∂ ∘ ∂` with coefficients in `R` and in `S`, and `single p a` is
+  -- `a` times the image of `single p 1`.
+  have := congrArg (Finsupp.mapRange g (map_zero g)) (LinearMap.congr_fun hsq (Finsupp.single p 1))
+  simp only [LinearMap.comp_apply, LinearMap.zero_apply, Finsupp.mapRange_zero,
+    mapRange_signedMorseBoundary, Finsupp.mapRange_single, map_one] at this
+  rw [LinearMap.comp_apply, ← Finsupp.smul_single_one, map_smul, map_smul, this, smul_zero,
+    LinearMap.zero_apply]
 
 section BaseChange
 
@@ -151,6 +155,36 @@ noncomputable def signedMorseComplexBaseChangeIsoMorseComplex
         (ComplexShape.down ℕ)).obj (hX.signedMorseComplex 𝔬 hf ℤ hsq) ≅ h.morseComplex hf :=
   hX.signedMorseComplexBaseChangeIso 𝔬 hf (ZMod 2) hsq ≪≫
     eqToIso (h.signedMorseComplex_zmod_two _)
+
+/-- The reduction modulo two `signedMorseComplexBaseChangeIsoMorseComplex` sends `s ⊗ c` to `s`
+times the chain `c` reduced modulo two. -/
+-- Not `@[simp]`, for the same reason as `signedMorseComplexBaseChangeIso_hom_f_tmul`. The
+-- right-hand side is stated in `_ →₀ ZMod 2`: with the module structure of the term of the
+-- mod-two complex, checking the proof would compare the two complexes, differentials included.
+theorem signedMorseComplexBaseChangeIsoMorseComplex_hom_f_tmul
+    (hsq : hX.signedMorseBoundary 𝔬 hf ℤ ∘ₗ hX.signedMorseBoundary 𝔬 hf ℤ = 0) (n : ℕ)
+    (s : ZMod 2)
+    (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ ℤ) :
+    (h.signedMorseComplexBaseChangeIsoMorseComplex 𝔬 hf hsq).hom.f n
+        (s ⊗ₜ[ℤ, algebraMap ℤ (ZMod 2)] c) =
+      (s • Finsupp.mapRange (algebraMap ℤ (ZMod 2)) (map_zero _) c :
+        {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ ZMod 2) := by
+  simp only [signedMorseComplexBaseChangeIsoMorseComplex, Iso.trans_hom, eqToIso.hom,
+    HomologicalComplex.comp_f, HomologicalComplex.eqToHom_f, ModuleCat.hom_comp]
+  exact signedMorseComplexBaseChangeIso_hom_f_tmul (hsq := hsq) n s c
+
+/-- The inverse of the reduction modulo two `signedMorseComplexBaseChangeIsoMorseComplex` sends the
+chain `s • p` with coefficients in `ZMod 2` to `s ⊗ p`. -/
+-- Not `@[simp]`, for the same reason as `signedMorseComplexBaseChangeIso_hom_f_tmul`.
+theorem signedMorseComplexBaseChangeIsoMorseComplex_inv_f_single
+    (hsq : hX.signedMorseBoundary 𝔬 hf ℤ ∘ₗ hX.signedMorseBoundary 𝔬 hf ℤ = 0) (n : ℕ)
+    (p : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n}) (s : ZMod 2) :
+    (h.signedMorseComplexBaseChangeIsoMorseComplex 𝔬 hf hsq).inv.f n (Finsupp.single p s) =
+      s ⊗ₜ[ℤ, algebraMap ℤ (ZMod 2)]
+        (Finsupp.single p 1 : (hX.signedMorseComplex 𝔬 hf ℤ hsq).X n) := by
+  simp only [signedMorseComplexBaseChangeIsoMorseComplex, Iso.trans_inv, eqToIso.inv,
+    HomologicalComplex.comp_f, HomologicalComplex.eqToHom_f, ModuleCat.hom_comp]
+  exact signedMorseComplexBaseChangeIso_inv_f_single (hsq := hsq) n p s
 
 end IsMorseSmale
 
