@@ -63,7 +63,7 @@ because the frames `p` of `s` and `[p, 1]` of `s.chargeConj` give the same frame
 
 **Involutivity on bundles.** The equivalence `s.chargeConj.chargeConj ≃ s` identifies the
 associated bundles of the two structures
-(`TauCeti.PrincipalBundle.Equiv.associatedLinearIsometryEquiv`).
+(`TauCeti.PrincipalBundle.Equiv.associatedContinuousLinearEquiv`).
 Read through it, conjugating determinant lines twice is the identity
 (`TauCeti.SpinCStructure.determinantLineChargeConjEquiv_determinantLineChargeConjEquiv`), and
 charge conjugating spinors by `j` and then by `j'` is `[p, ψ] ↦ [p, j' (j ψ)]`
@@ -327,7 +327,7 @@ induced by the equivalence `s.chargeConj.chargeConj ≃ s`
 theorem determinantLineChargeConjEquiv_determinantLineChargeConjEquiv (s : SpinCStructure F V n)
     (x : X) (z : s.chargeConj.chargeConj.determinantLine x) :
     s.determinantLineChargeConjEquiv x (s.chargeConj.determinantLineChargeConjEquiv x z) =
-      s.chargeConjChargeConjEquiv.associatedLinearIsometryEquiv ℂ (DeterminantModel n) x z := by
+      s.chargeConjChargeConjEquiv.associatedContinuousLinearEquiv ℂ (DeterminantModel n) x z := by
   -- Read `z` in the frame `[[p₀, 1], 1]`.
   set p₀ := Classical.arbitrary (s.P x)
   obtain ⟨w, rfl⟩ := (AssociatedBundle.mk_bijective (G := SpinC) (F := DeterminantModel n)
@@ -337,7 +337,7 @@ theorem determinantLineChargeConjEquiv_determinantLineChargeConjEquiv (s : SpinC
   refine ((congrArg (s.determinantLineChargeConjEquiv x)
     (s.chargeConj.determinantLineChargeConjEquiv_inl (Extend.inl χ hχ p₀) w)).trans
       ((s.determinantLineChargeConjEquiv_inl p₀ _).trans ?_)).trans
-    (PrincipalBundle.Equiv.associatedLinearIsometryEquiv_mk _ _ w).symm
+    (PrincipalBundle.Equiv.associatedContinuousLinearEquiv_mk _ _ w).symm
   rw [chargeConjChargeConjEquiv_toEquiv_inl_inl, LinearIsometryEquiv.apply_symm_apply,
     Complex.conj_conj, LinearIsometryEquiv.symm_apply_apply]
 
@@ -518,7 +518,7 @@ conjugation by `j'`, `W^ε(s) ≃ W'^ε'(s.chargeConj) ≃ W''^ε''(s.chargeConj
 (`TauCeti.SpinCStructure.chargeConjChargeConjEquiv`), is `[p, ψ] ↦ [p, j' (j ψ)]`. -/
 theorem chargeConjChargeConjEquiv_halfSpinorBundleChargeConjEquiv_mk (s : SpinCStructure F E 4)
     {x : X} (p : s.P x) (ψ : o.HalfSpinModel hQV b ρ hρ ε) :
-    s.chargeConjChargeConjEquiv.associatedLinearIsometryEquiv ℂ
+    s.chargeConjChargeConjEquiv.associatedContinuousLinearEquiv ℂ
         (o.HalfSpinModel hQV b ρ'' hρ'' ε'') x
         (s.chargeConj.halfSpinorBundleChargeConjEquiv o hQV b hρ' hρ'' j' hj' hε' x
           (s.halfSpinorBundleChargeConjEquiv o hQV b hρ hρ' j hj hε x
@@ -528,7 +528,7 @@ theorem chargeConjChargeConjEquiv_halfSpinorBundleChargeConjEquiv_mk (s : SpinCS
   rw [halfSpinorBundleChargeConjEquiv_mk,
     s.chargeConj.halfSpinorBundleChargeConjEquiv_mk o hQV b hρ' hρ'' j' hj' hε'
       (Extend.inl χ₄ hχ₄ p)]
-  exact (PrincipalBundle.Equiv.associatedLinearIsometryEquiv_mk _ _ _).trans
+  exact (PrincipalBundle.Equiv.associatedContinuousLinearEquiv_mk _ _ _).trans
     (congrArg (AssociatedBundle.mk SpinC₄ · _) (s.chargeConjChargeConjEquiv_toEquiv_inl_inl x p))
 
 /-- **Charge conjugation of spinors is involutive modulo the central gauge group.** If
@@ -541,16 +541,13 @@ theorem chargeConjChargeConjEquiv_halfSpinorBundleChargeConjEquiv_eq_neg
     (s : SpinCStructure F E 4) (j' : W' ≃ₗᵢ⋆[ℂ] W)
     (hj' : ∀ v w, j' (ρ' (ι Q v) w) = ρ (ι Q v) (j' w)) (hε' : starRingEnd ℂ ε' = ε)
     (hjj : ∀ w, j' (j w) = -w) {x : X} (ψ : s.halfSpinorBundle o hQV b ρ hρ ε x) :
-    s.chargeConjChargeConjEquiv.associatedLinearIsometryEquiv ℂ (o.HalfSpinModel hQV b ρ hρ ε) x
+    s.chargeConjChargeConjEquiv.associatedContinuousLinearEquiv ℂ (o.HalfSpinModel hQV b ρ hρ ε) x
         (s.chargeConj.halfSpinorBundleChargeConjEquiv o hQV b hρ' hρ j' hj' hε' x
           (s.halfSpinorBundleChargeConjEquiv o hQV b hρ hρ' j hj hε x ψ)) = -ψ := by
   obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
-  rw [chargeConjChargeConjEquiv_halfSpinorBundleChargeConjEquiv_mk, ← AssociatedBundle.mk_neg]
-  congr 1
-  apply Orientation.HalfSpinModel.toEigenspace.injective
-  apply Subtype.ext
-  rw [Orientation.HalfSpinModel.coe_toEigenspace_conjEquiv,
-    Orientation.HalfSpinModel.coe_toEigenspace_conjEquiv, hjj, map_neg, Submodule.coe_neg]
+  rw [chargeConjChargeConjEquiv_halfSpinorBundleChargeConjEquiv_mk,
+    Orientation.HalfSpinModel.conjEquiv_conjEquiv hρ hρ' j hj hε j' hj' hε' hjj,
+    AssociatedBundle.mk_neg]
 
 end Involution
 
