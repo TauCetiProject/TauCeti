@@ -96,9 +96,8 @@ theorem convex_hessianCone (n k : ℕ) : Convex ℝ (hessianCone n k) := by
     refine Set.eq_empty_of_forall_notMem fun μ hμ ↦ ?_
     have h := mem_hessianCone.1 hμ (n + 1) (mem_Icc.2 ⟨by omega, hkn⟩)
     have hzero : esymm (Fin n) ℝ (n + 1) = 0 := by
-      rw [esymm_eq_sum_subtype]
-      exact Finset.sum_eq_zero fun t _ ↦ absurd
-        (t.property ▸ Finset.card_le_univ (t : Finset (Fin n))) (by simp)
+      rw [esymm_eq_multiset_esymm]
+      exact Multiset.esymm_of_card_lt (by simp)
     simp [hzero] at h
 
 end TauCeti

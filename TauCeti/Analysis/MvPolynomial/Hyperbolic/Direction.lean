@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Polynomial
-public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Analysis.Convex.PathConnected
 public import TauCeti.Analysis.Complex.Conformal.Hurwitz
+public import TauCeti.Analysis.MvPolynomial.Complexification
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic
+public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Hyperbolicity in every direction of the Gårding cone
@@ -60,36 +61,6 @@ namespace MvPolynomial
 
 variable {σ : Type*} {p : MvPolynomial σ ℝ} {m : ℕ} {a b : σ → ℝ}
 
-/-- Evaluating the complexification of a real polynomial at a real point gives the real value. -/
-private theorem eval_map_ofReal (p : MvPolynomial σ ℝ) (x : σ → ℝ) :
-    eval (fun j ↦ (x j : ℂ)) (p.map ofRealHom) = (eval x p : ℂ) := by
-  rw [eval_map, ← coe_eval₂Hom, eval, coe_eval₂Hom]
-  exact (eval₂_comp_left ofRealHom (RingHom.id ℝ) x p).symm
-
-/-- The complexified restriction of a real polynomial to the line through `y` in the direction
-`v`, evaluated at `t : ℂ`, is the complexified polynomial at `y + t • v`. -/
-private theorem eval_map_aeval_C_add_C_mul_X (p : MvPolynomial σ ℝ) (y v : σ → ℝ) (t : ℂ) :
-    ((aeval (fun i ↦ Polynomial.C (y i) + Polynomial.C (v i) * Polynomial.X) p).map
-      ofRealHom).eval t = eval ((fun j ↦ (y j : ℂ)) + t • fun j ↦ (v j : ℂ)) (p.map ofRealHom) := by
-  induction p using MvPolynomial.induction_on with
-  | C c => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp =>
-    simp only [map_mul, aeval_X, Polynomial.map_mul, Polynomial.eval_mul, hp, map_X, eval_X,
-      Polynomial.map_add, Polynomial.map_C, Polynomial.map_X, Polynomial.eval_add,
-      Polynomial.eval_C, Polynomial.eval_mul, Polynomial.eval_X, Pi.add_apply, Pi.smul_apply,
-      smul_eq_mul, ofRealHom_eq_coe]
-    ring
-
-/-- The complexification of a real polynomial commutes with complex conjugation. -/
-private theorem eval_map_ofReal_conj (p : MvPolynomial σ ℝ) (v : σ → ℂ) :
-    eval (fun j ↦ (starRingEnd ℂ) (v j)) (p.map ofRealHom) =
-      (starRingEnd ℂ) (eval v (p.map ofRealHom)) := by
-  rw [eval_map, eval_map, eval₂_comp_left]
-  congr 1
-  ext r
-  simp
-
 /-- **No complex roots off the real axis.** If `p` is hyperbolic in the direction `a`, then for a
 real point `y` and a non-real `t`, the complexification of `p` does not vanish at `y + t • a`. -/
 theorem IsHyperbolic.eval_map_ofReal_add_smul_ne_zero (hp : IsHyperbolic p m a) (y : σ → ℝ)
@@ -101,34 +72,19 @@ theorem IsHyperbolic.eval_map_ofReal_add_smul_ne_zero (hp : IsHyperbolic p m a) 
       rw [← coeff_aeval_C_add_C_mul_X_of_isHomogeneous hp.isHomogeneous y a, h0,
         Polynomial.coeff_zero]
   obtain ⟨r, hr⟩ := (hp.splits y).mem_range_of_isRoot hq0 (i := ofRealHom) (x := t) <| by
-    rw [Polynomial.IsRoot.def, eval_map_aeval_C_add_C_mul_X, h]
+    rw [Polynomial.IsRoot.def, eval_map_aeval_C_add_C_mul_X]
+    simpa only [ofRealHom_eq_coe] using h
   exact ht (by rw [← hr]; simp)
 
-
-/-- A continuous two-variable family `F λ z` converges locally uniformly on every open set as the
-parameter `λ` tends to `λ₀`, along any set of parameters. -/
-private theorem tendstoLocallyUniformlyOn_of_continuous_uncurry {α : Type*} [TopologicalSpace α]
-    {F : α → ℂ → ℂ} (hF : Continuous (Function.uncurry F)) (l₀ : α) (s : Set α) {Ω : Set ℂ}
-    (hΩ : IsOpen Ω) :
-    TendstoLocallyUniformlyOn F (F l₀) (𝓝[s] l₀) Ω := by
-  rw [tendstoLocallyUniformlyOn_iff_forall_isCompact hΩ]
-  intro K _ hK u hu
-  obtain ⟨v, hv, hvu⟩ := hK.mem_uniformity_of_prod (s := univ) hF.continuousOn (mem_univ l₀)
-    (symm_le_uniformity hu)
-  rw [nhdsWithin_univ] at hv
-  exact Filter.mem_of_superset (nhdsWithin_le_nhds hv) fun l hl x hx ↦ hvu l hl x hx
-
-/-- The open upper half-plane is open and preconnected. -/
-private theorem isOpen_and_isPreconnected_upperHalfPlane :
-    IsOpen {z : ℂ | 0 < z.im} ∧ IsPreconnected {z : ℂ | 0 < z.im} :=
-  ⟨isOpen_lt continuous_const continuous_im,
-    (convex_halfSpace_gt (f := im) ⟨fun _ _ ↦ add_im _ _, fun _ _ ↦ by simp⟩ 0).isPreconnected⟩
-
-/-- A nonzero complex polynomial does not vanish identically on the open upper half-plane. -/
-private theorem exists_im_pos_eval_ne_zero {q : Polynomial ℂ} (hq : q ≠ 0) :
-    ¬ ∀ z ∈ {z : ℂ | 0 < z.im}, q.eval z = 0 := fun h ↦ hq <| by
-  refine Polynomial.eq_zero_of_infinite_isRoot q (Set.infinite_of_injective_forall_mem
-    (f := fun n : ℕ ↦ ((n : ℂ) + 1) * I) (fun n k hnk ↦ ?_) fun n ↦ h _ ?_)
+/-- A nonzero polynomial function is holomorphic and does not vanish identically on the open upper
+half-plane. -/
+private theorem differentiable_and_not_forall_eq_zero {f : ℂ → ℂ}
+    (hf : ∃ q : Polynomial ℂ, q ≠ 0 ∧ f = fun z ↦ q.eval z) :
+    Differentiable ℂ f ∧ ¬ ∀ z ∈ {z : ℂ | 0 < z.im}, f z = 0 := by
+  obtain ⟨q, hq, rfl⟩ := hf
+  refine ⟨q.differentiable, fun h ↦ hq <| Polynomial.eq_zero_of_infinite_isRoot q
+    (Set.infinite_of_injective_forall_mem (f := fun n : ℕ ↦ ((n : ℂ) + 1) * I)
+      (fun n k hnk ↦ ?_) fun n ↦ h _ ?_)⟩
   · simpa using hnk
   · simp only [mem_ofPred_eq, mul_im, I_re, mul_zero, I_im, mul_one, add_re, natCast_re, one_re]
     positivity
@@ -169,26 +125,28 @@ private theorem isOpen_setOf_forall_im_nonneg_ne_zero {m : ℕ} {f g : ℝ → �
     · rw [mem_closedBall_zero_iff, norm_inv]
       exact inv_le_one_of_one_le₀ (not_le.1 hz1).le
 
-/-- For a continuous family `f l` of functions holomorphic on the open upper half-plane, none of
-them identically zero there and none with a zero on the real axis, the set of parameters `l` for
-which `f l` has no zero in the closed upper half-plane is closed, by Hurwitz's theorem. -/
+/-- For a continuous family `f l` of nonzero polynomial functions, none with a zero on the real
+axis, the set of parameters `l` for which `f l` has no zero in the closed upper half-plane is
+closed, by Hurwitz's theorem. -/
 private theorem isClosed_setOf_forall_im_nonneg_ne_zero {f : ℝ → ℂ → ℂ}
     (hf : Continuous (Function.uncurry f)) (hreal : ∀ l {z : ℂ}, z.im = 0 → f l z ≠ 0)
-    (hdiff : ∀ l, DifferentiableOn ℂ (f l) {z : ℂ | 0 < z.im})
-    (hnc : ∀ l, ¬ ∀ z ∈ {z : ℂ | 0 < z.im}, f l z = 0) :
+    (hpoly : ∀ l, ∃ q : Polynomial ℂ, q ≠ 0 ∧ f l = fun z ↦ q.eval z) :
     IsClosed {l | ∀ z : ℂ, 0 ≤ z.im → f l z ≠ 0} := by
   set S := {l | ∀ z : ℂ, 0 ≤ z.im → f l z ≠ 0}
   refine closure_subset_iff_isClosed.1 fun l hl z hz ↦ ?_
   rcases hz.eq_or_lt with hz0 | hzpos
   · exact hreal l hz0.symm
   have := mem_closure_iff_nhdsWithin_neBot.1 hl
-  exact TauCeti.hurwitz_forall_ne isOpen_and_isPreconnected_upperHalfPlane.1
-    isOpen_and_isPreconnected_upperHalfPlane.2 (Eventually.of_forall hdiff)
-    (tendstoLocallyUniformlyOn_of_continuous_uncurry hf l S
-      isOpen_and_isPreconnected_upperHalfPlane.1)
+  have hΩ : IsOpen {z : ℂ | 0 < z.im} := isOpen_lt continuous_const continuous_im
+  exact TauCeti.hurwitz_forall_ne hΩ (convex_halfSpace_im_gt 0).isPreconnected
+    (Eventually.of_forall fun l ↦
+      (differentiable_and_not_forall_eq_zero (hpoly l)).1.differentiableOn)
+    ((TauCeti.tendstoLocallyUniformly_of_forall_continuousAt (Φ := fun z l ↦ f l z)
+      (fun _ ↦ (hf.comp continuous_swap).continuousAt) (p := id)
+      (tendsto_id.mono_left nhdsWithin_le_nhds)).tendstoLocallyUniformlyOn)
     ((eventually_mem_nhdsWithin (s := S) (a := l)).mono fun l' (hl' : l' ∈ S) z hz ↦
       hl' z (le_of_lt hz)).frequently
-    (hnc l) z hzpos
+    (differentiable_and_not_forall_eq_zero (hpoly l)).2 z hzpos
 
 /-- **Zeros persist (Hurwitz).** For a continuous family `G w` of polynomial functions, none of
 them zero, a zero `z₀` of `G y` with `y` in the closure of `s` is approached by zeros: every
@@ -201,27 +159,26 @@ private theorem exists_mem_ball_eq_zero_of_mem_closure {α : Type*} [Topological
   have := mem_closure_iff_nhdsWithin_neBot.1 hy
   have hev := TauCeti.hurwitz_eventually_exists_eq_zero (Ω := univ) isOpen_univ
     isPreconnected_univ (F := G) (g := G y) (l := 𝓝[s] y)
-    (Eventually.of_forall fun w ↦ by
-      obtain ⟨q, -, hq⟩ := hpoly w
-      rw [hq]
-      exact Polynomial.differentiable _ |>.differentiableOn)
-    (tendstoLocallyUniformlyOn_of_continuous_uncurry hG y _ isOpen_univ) (mem_univ z₀) hz₀
-    (fun h ↦ by
-      obtain ⟨q, hq0, hq⟩ := hpoly y
-      rw [hq] at h
-      exact exists_im_pos_eval_ne_zero hq0 fun z _ ↦ h z (mem_univ z)) hε
+    (Eventually.of_forall fun w ↦
+      (differentiable_and_not_forall_eq_zero (hpoly w)).1.differentiableOn)
+    ((TauCeti.tendstoLocallyUniformly_of_forall_continuousAt (Φ := fun z l ↦ G l z)
+      (fun _ ↦ (hG.comp continuous_swap).continuousAt) (p := id)
+      (tendsto_id.mono_left nhdsWithin_le_nhds)).tendstoLocallyUniformlyOn) (mem_univ z₀) hz₀
+    (fun h ↦ (differentiable_and_not_forall_eq_zero (hpoly y)).2 fun z _ ↦ h z (mem_univ z))
+    hε
   obtain ⟨w, ⟨z, ⟨-, hz⟩, hGz⟩, hw⟩ := (hev.and self_mem_nhdsWithin).exists
   exact ⟨w, hw, z, hz, hGz⟩
 
 variable (hp : IsHyperbolic p m a) (hb : b ∈ gardingCone p a)
 include hp hb
 
-/-- The restriction of the complexified polynomial to a line in a direction `b` of the Gårding
-cone is a nonzero polynomial, with coefficient `p(b)` in degree `m`. -/
-private theorem aeval_map_ne_zero (w : σ → ℂ) :
-    aeval (fun i ↦ Polynomial.C (w i) + Polynomial.C (b i : ℂ) * Polynomial.X)
-      (p.map ofRealHom) ≠ 0 := by
-  intro h0
+/-- On a complex line in a direction `b` of the Gårding cone, the complexified polynomial is a
+nonzero polynomial function of the parameter, with coefficient `p(b)` in degree `m`. -/
+private theorem exists_eval_map_add_smul_eq (w : σ → ℂ) :
+    ∃ q : Polynomial ℂ, q ≠ 0 ∧
+      (fun z ↦ eval (w + z • fun j ↦ (b j : ℂ)) (p.map ofRealHom)) = fun z ↦ q.eval z := by
+  refine ⟨aeval (fun i ↦ Polynomial.C (w i) + Polynomial.C (b i : ℂ) * Polynomial.X)
+    (p.map ofRealHom), fun h0 ↦ ?_, _root_.funext fun z ↦ (eval_aeval_C_add_C_mul_X _ _ _ z).symm⟩
   have h := coeff_aeval_C_add_C_mul_X_of_isHomogeneous (hp.isHomogeneous.map ofRealHom) w
     (fun j ↦ (b j : ℂ))
   rw [h0, Polynomial.coeff_zero, eval_map_ofReal] at h
@@ -244,11 +201,7 @@ private theorem eval_map_I_smul_add_smul_ne_zero {z : ℂ} (hz : 0 ≤ z.im) :
   · have hre : 0 ≤ (I / z).re := by
       rw [div_re, I_re, I_im, zero_mul, one_mul, zero_div, zero_add]
       exact div_nonneg hz (normSq_nonneg z)
-    have hpt : (fun j ↦ (b j : ℂ)) + (I / z) • (fun j ↦ (a j : ℂ)) =
-        fun j ↦ ((b + (I / z).re • a) j : ℂ) := by
-      funext j
-      simp [Complex.ext_iff, ht]
-    rw [hpt, eval_map_ofReal]
+    rw [eval_map_ofReal_add_smul_of_im_eq_zero _ _ _ ht]
     exact_mod_cast (mem_gardingCone.1 hb) _ hre
   · exact hp.eval_map_ofReal_add_smul_ne_zero b ht
 
@@ -261,47 +214,34 @@ inverting large `z` through homogeneity) and closed (by Hurwitz's theorem). -/
 private theorem eval_map_add_I_smul_add_smul_ne_zero (x : σ → ℝ) {z : ℂ} (hz : 0 ≤ z.im) :
     eval ((fun j ↦ (x j : ℂ)) + I • (fun j ↦ (a j : ℂ)) + z • fun j ↦ (b j : ℂ))
       (p.map ofRealHom) ≠ 0 := by
-  have hP := hp.isHomogeneous.map ofRealHom
-  set X : σ → ℂ := fun j ↦ (x j : ℂ)
-  set A : σ → ℂ := fun j ↦ (a j : ℂ)
-  set B : σ → ℂ := fun j ↦ (b j : ℂ)
-  set P := p.map ofRealHom
-  let f : ℝ → ℂ → ℂ := fun l z ↦ eval ((l : ℂ) • X + I • A + z • B) P
-  let g : ℝ → ℂ → ℂ := fun l u ↦ eval (u • ((l : ℂ) • X + I • A) + B) P
-  have hf : Continuous (Function.uncurry f) :=
-    (continuous_eval P).comp (by fun_prop)
-  have hg : Continuous (Function.uncurry g) :=
-    (continuous_eval P).comp (by fun_prop)
+  let f : ℝ → ℂ → ℂ := fun l z ↦ eval ((l : ℂ) • (fun j ↦ (x j : ℂ)) +
+    I • (fun j ↦ (a j : ℂ)) + z • fun j ↦ (b j : ℂ)) (p.map ofRealHom)
+  let g : ℝ → ℂ → ℂ := fun l u ↦ eval (u • ((l : ℂ) • (fun j ↦ (x j : ℂ)) +
+    I • fun j ↦ (a j : ℂ)) + fun j ↦ (b j : ℂ)) (p.map ofRealHom)
+  have hf : Continuous (Function.uncurry f) := (continuous_eval _).comp (by fun_prop)
+  have hg : Continuous (Function.uncurry g) := (continuous_eval _).comp (by fun_prop)
   have hfg (l : ℝ) {z : ℂ} (hz0 : z ≠ 0) : f l z = z ^ m * g l z⁻¹ := by
     simp only [f, g]
-    rw [← hP.eval_smul, smul_add, smul_smul, mul_inv_cancel₀ hz0, one_smul]
+    rw [← (hp.isHomogeneous.map ofRealHom).eval_smul, smul_add, smul_smul, mul_inv_cancel₀ hz0,
+      one_smul]
   have hreal (l : ℝ) {z : ℂ} (hz : z.im = 0) : f l z ≠ 0 := by
-    have hpt : (l : ℂ) • X + I • A + z • B = (fun j ↦ ((l • x + z.re • b) j : ℂ)) + I • A := by
+    have hpt : (l : ℂ) • (fun j ↦ (x j : ℂ)) + I • (fun j ↦ (a j : ℂ)) +
+        z • (fun j ↦ (b j : ℂ)) = (fun j ↦ ((l • x + z.re • b) j : ℂ)) + I • fun j ↦ (a j : ℂ) := by
       funext j
-      simp [X, A, B, Complex.ext_iff, hz]
+      simp [Complex.ext_iff, hz]
     simp only [f]
     rw [hpt]
     exact hp.eval_map_ofReal_add_smul_ne_zero _ (by simp)
-  have hpoly (l : ℝ) : f l = fun z ↦ (aeval (fun i ↦ Polynomial.C (((l : ℂ) • X + I • A) i) +
-      Polynomial.C (b i : ℂ) * Polynomial.X) P).eval z := by
-    funext z
-    simp only [f, eval_aeval_C_add_C_mul_X]
-    rfl
-  have hdiff (l : ℝ) : DifferentiableOn ℂ (f l) {z : ℂ | 0 < z.im} := by
-    rw [hpoly l]
-    exact Polynomial.differentiable _ |>.differentiableOn
-  have hnc (l : ℝ) : ¬ ∀ z ∈ {z : ℂ | 0 < z.im}, f l z = 0 := by
-    rw [hpoly l]
-    exact exists_im_pos_eval_ne_zero (aeval_map_ne_zero hp hb _)
   let S : Set ℝ := {l | ∀ z : ℂ, 0 ≤ z.im → f l z ≠ 0}
   have h0 : (0 : ℝ) ∈ S := fun z hz ↦ by
     simp only [f, ofReal_zero, zero_smul, zero_add]
     exact eval_map_I_smul_add_smul_ne_zero hp hb hz
   have hopen : IsOpen S := isOpen_setOf_forall_im_nonneg_ne_zero hf hg hfg fun l ↦ by
-    change eval ((0 : ℂ) • ((l : ℂ) • X + I • A) + B) P ≠ 0
+    simp only [g]
     rw [zero_smul, zero_add, eval_map_ofReal, ne_eq, ofReal_eq_zero]
     exact (eval_pos_of_mem_gardingCone hp.isHomogeneous hp.eval_pos hb).ne'
-  have hclosed : IsClosed S := isClosed_setOf_forall_im_nonneg_ne_zero hf hreal hdiff hnc
+  have hclosed : IsClosed S := isClosed_setOf_forall_im_nonneg_ne_zero hf hreal
+    fun l ↦ exists_eval_map_add_smul_eq hp hb _
   have hS : S = univ := IsClopen.eq_univ ⟨hclosed, hopen⟩ ⟨0, h0⟩
   have h1 : (1 : ℝ) ∈ S := hS ▸ mem_univ _
   simpa [f] using h1 z hz
@@ -311,41 +251,34 @@ open upper half-plane. Scaling the deformation step gives no zero at `x + (α * 
 for every `α > 0`, and Hurwitz's theorem passes to the limit `α → 0`. -/
 private theorem eval_map_ofReal_add_smul_ne_zero_of_im_pos (x : σ → ℝ) {z : ℂ} (hz : 0 < z.im) :
     eval ((fun j ↦ (x j : ℂ)) + z • fun j ↦ (b j : ℂ)) (p.map ofRealHom) ≠ 0 := by
-  have hP := hp.isHomogeneous.map ofRealHom
-  set X : σ → ℂ := fun j ↦ (x j : ℂ)
-  set A : σ → ℂ := fun j ↦ (a j : ℂ)
-  set B : σ → ℂ := fun j ↦ (b j : ℂ)
-  set P := p.map ofRealHom
-  let F : ℝ → ℂ → ℂ := fun α z ↦ eval (X + ((α : ℂ) * I) • A + z • B) P
-  have hF : Continuous (Function.uncurry F) := (continuous_eval P).comp (by fun_prop)
+  let F : ℝ → ℂ → ℂ := fun α z ↦ eval ((fun j ↦ (x j : ℂ)) + ((α : ℂ) * I) •
+    (fun j ↦ (a j : ℂ)) + z • fun j ↦ (b j : ℂ)) (p.map ofRealHom)
+  have hF : Continuous (Function.uncurry F) := (continuous_eval _).comp (by fun_prop)
   have hpos (α : ℝ) (hα : 0 < α) : ∀ z ∈ {z : ℂ | 0 < z.im}, F α z ≠ 0 := fun z hz ↦ by
     have hα' : (α : ℂ) ≠ 0 := ofReal_ne_zero.2 hα.ne'
-    have hpt : X + ((α : ℂ) * I) • A + z • B = (α : ℂ) •
-        ((fun j ↦ ((α⁻¹ • x) j : ℂ)) + I • A + (z / α) • B) := by
+    have hpt : (fun j ↦ (x j : ℂ)) + ((α : ℂ) * I) • (fun j ↦ (a j : ℂ)) +
+        z • (fun j ↦ (b j : ℂ)) = (α : ℂ) • ((fun j ↦ ((α⁻¹ • x) j : ℂ)) +
+          I • (fun j ↦ (a j : ℂ)) + (z / α) • fun j ↦ (b j : ℂ)) := by
       funext j
-      simp only [X, A, B, Pi.add_apply, Pi.smul_apply, smul_eq_mul, ofReal_mul, ofReal_inv]
+      simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, ofReal_mul, ofReal_inv]
       field_simp
     simp only [F]
-    rw [hpt, hP.eval_smul]
+    rw [hpt, (hp.isHomogeneous.map ofRealHom).eval_smul]
     refine mul_ne_zero (pow_ne_zero _ hα') ?_
     refine eval_map_add_I_smul_add_smul_ne_zero hp hb _ ?_
     rw [div_ofReal_im]
     exact (div_pos hz hα).le
-  have hpoly (α : ℝ) : F α = fun z ↦ (aeval (fun i ↦ Polynomial.C ((X + ((α : ℂ) * I) • A) i) +
-      Polynomial.C (b i : ℂ) * Polynomial.X) P).eval z := by
-    funext z
-    simp only [F, eval_aeval_C_add_C_mul_X]
-    rfl
-  have h := TauCeti.hurwitz_forall_ne isOpen_and_isPreconnected_upperHalfPlane.1
-    isOpen_and_isPreconnected_upperHalfPlane.2 (F := F) (g := F 0) (l := 𝓝[>] (0 : ℝ))
-    (Eventually.of_forall fun α ↦ by
-      rw [hpoly α]
-      exact Polynomial.differentiable _ |>.differentiableOn)
-    (tendstoLocallyUniformlyOn_of_continuous_uncurry hF 0 _
-      isOpen_and_isPreconnected_upperHalfPlane.1)
+  have hΩ : IsOpen {z : ℂ | 0 < z.im} := isOpen_lt continuous_const continuous_im
+  have h := TauCeti.hurwitz_forall_ne hΩ (convex_halfSpace_im_gt 0).isPreconnected (F := F)
+    (g := F 0) (l := 𝓝[>] (0 : ℝ))
+    (Eventually.of_forall fun α ↦ (differentiable_and_not_forall_eq_zero
+      (exists_eval_map_add_smul_eq hp hb _)).1.differentiableOn)
+    ((TauCeti.tendstoLocallyUniformly_of_forall_continuousAt (Φ := fun z l ↦ F l z)
+      (fun _ ↦ (hF.comp continuous_swap).continuousAt) (p := id)
+      (tendsto_id.mono_left nhdsWithin_le_nhds)).tendstoLocallyUniformlyOn)
     (v := 0)
     ((eventually_mem_nhdsWithin (s := Ioi 0) (a := 0)).mono fun α hα ↦ hpos α hα).frequently
-    (by rw [hpoly 0]; exact exists_im_pos_eval_ne_zero (aeval_map_ne_zero hp hb _)) z hz
+    (differentiable_and_not_forall_eq_zero (exists_eval_map_add_smul_eq hp hb _)).2 z hz
   simpa [F] using h
 
 /-- **Hyperbolicity in every direction of the Gårding cone.** If `p` is hyperbolic of degree `m`
@@ -360,6 +293,7 @@ theorem IsHyperbolic.of_mem_gardingCone : IsHyperbolic p m b where
     · exact ⟨t.re, by simp [Complex.ext_iff, him]⟩
     have hroot := (Polynomial.mem_roots'.1 ht).2
     rw [Polynomial.IsRoot.def, eval_map_aeval_C_add_C_mul_X] at hroot
+    simp only [ofRealHom_eq_coe] at hroot
     exfalso
     rcases lt_or_gt_of_ne him with hneg | hpos
     · refine eval_map_ofReal_add_smul_ne_zero_of_im_pos hp hb x (z := (starRingEnd ℂ) t)
@@ -393,18 +327,11 @@ private theorem gardingCone_subset_of_mem : gardingCone p a ⊆ gardingCone p b 
   let G : (σ → ℝ) → ℂ → ℂ := fun w z ↦
     eval ((fun j ↦ (w j : ℂ)) + z • fun j ↦ (b j : ℂ)) (p.map ofRealHom)
   have hG : Continuous (Function.uncurry G) := (continuous_eval _).comp (by fun_prop)
-  have hpoly (w : σ → ℝ) : G w = fun z ↦ (aeval (fun i ↦ Polynomial.C (w i : ℂ) +
-      Polynomial.C (b i : ℂ) * Polynomial.X) (p.map ofRealHom)).eval z := by
-    funext z
-    simp only [G, eval_aeval_C_add_C_mul_X]
   obtain ⟨w, hw, z, hz, hGz⟩ := exists_mem_ball_eq_zero_of_mem_closure hG
-    (fun w ↦ ⟨_, aeval_map_ne_zero hp hb _, hpoly w⟩) hyc (z₀ := t₀) (by
-      have hpt : (fun j ↦ (y j : ℂ)) + (t₀ : ℂ) • (fun j ↦ (b j : ℂ)) =
-          fun j ↦ ((y + t₀ • b) j : ℂ) := by
-        funext j
-        simp
+    (fun w ↦ exists_eval_map_add_smul_eq hp hb _) hyc (z₀ := t₀) (by
       simp only [G]
-      rw [hpt, eval_map_ofReal, hroot, ofReal_zero]) (half_pos ht₀pos)
+      rw [eval_map_ofReal_add_smul_of_im_eq_zero _ _ _ (ofReal_im t₀), ofReal_re, hroot,
+        ofReal_zero]) (half_pos ht₀pos)
   have him : z.im = 0 := by
     by_contra h
     exact hpb.eval_map_ofReal_add_smul_ne_zero w h hGz
@@ -414,11 +341,8 @@ private theorem gardingCone_subset_of_mem : gardingCone p a ⊆ gardingCone p b 
     have := (abs_le.1 (h.trans (Metric.mem_ball.1 hz).le)).1
     linarith
   refine (mem_gardingCone.1 hw) z.re hzre.le ?_
-  have hpt : (fun j ↦ (w j : ℂ)) + z • (fun j ↦ (b j : ℂ)) = fun j ↦ ((w + z.re • b) j : ℂ) := by
-    funext j
-    simp [Complex.ext_iff, him]
   simp only [G] at hGz
-  rw [hpt, eval_map_ofReal] at hGz
+  rw [eval_map_ofReal_add_smul_of_im_eq_zero _ _ _ him] at hGz
   exact_mod_cast hGz
 
 /-- **Independence of the direction (Gårding).** If `p` is hyperbolic in the direction `a` and
