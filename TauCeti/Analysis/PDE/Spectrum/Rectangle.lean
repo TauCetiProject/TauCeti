@@ -119,7 +119,11 @@ private theorem setIntegral_Icc_mul_fderiv_add_eq {g₀ g₀' g₁ g₁' : ℝ �
   have hEi : IntegrableOn E (Icc a b) := hint (by fun_prop)
   have hdiv := integral_divergence_prod_Icc_of_hasFDerivAt_of_le f g _ _ a b hab
     (by fun_prop) (by fun_prop) (fun p _ => hf p) (fun p _ => hg p)
-    (hEi.congr_fun (fun p _ => by simp [hE]; ring) measurableSet_Icc)
+    (hEi.congr_fun (fun p _ => by
+      simp only [hE, Function.comp_apply, Pi.mul_apply, add_apply,
+        smul_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
+        ContinuousLinearMap.coe_snd', ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul]
+      ring) measurableSet_Icc)
   -- Every side contributes nothing.
   have hside : ∫ y in a.2..b.2, f (a.1, y) = 0 := by
     refine (intervalIntegral.integral_congr fun y hy => ?_).trans intervalIntegral.integral_zero
@@ -130,7 +134,11 @@ private theorem setIntegral_Icc_mul_fderiv_add_eq {g₀ g₀' g₁ g₁' : ℝ �
   -- So the divergence `E` integrates to zero.
   have hE0 : ∫ p in Icc a b, E p = 0 := by
     rwa [hside, sub_zero, setIntegral_congr_fun measurableSet_Icc (g := E)
-      fun p _ => by simp [hE]; ring] at hdiv
+      fun p _ => by
+        simp only [hE, Function.comp_apply, Pi.mul_apply, add_apply,
+          smul_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
+          ContinuousLinearMap.coe_snd', ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul]
+        ring] at hdiv
   rw [integral_sub (hint (by fun_prop)) (hint (by fun_prop)), integral_const_mul] at hE0
   linarith
 
@@ -189,7 +197,10 @@ private theorem inner_gradient_euclideanPlaneEquivProdL_symm {g₀ g₀' g₁ g�
     euclideanPlaneEquivProdL_symm_zero_one]
   rw [EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Fin.sum_univ_two]
   simp only [gradient_apply_eq_fderiv_apply_single, hG.fderiv, star_trivial]
-  simp [z]
+  simp only [z, euclideanPlaneEquivProdL_symm_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, add_apply, smul_apply,
+    PiLp.proj_apply, PiLp.single_eq_same, ne_eq, one_ne_zero,
+    zero_ne_one, not_false_eq_true, PiLp.single_eq_of_ne, smul_eq_mul]
   ring
 
 /-- The points `(a 0, y)`, `y ∈ [a 1, b 1]`, lie in the closure of the left side
@@ -571,8 +582,11 @@ theorem isLeast_exists_ne_zero_forall_inner_gradient_eq_boxDomain_zero_one_left 
   have hsin (k : ℕ) : (π / 2) ^ 2 ≤ ((2 * k + 1) * π / 2) ^ 2 :=
     pow_le_pow_left₀ (by positivity)
       (by nlinarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]) 2
-  refine ⟨⟨(hiff _).2 ⟨0, 0, by simp; ring⟩, fun kappa hkappa => ?_⟩,
-    ⟨⟨(hiff _).2 ⟨0, 1, by simp; ring⟩, h5⟩, fun kappa hk => ?_⟩⟩
+  refine ⟨⟨(hiff _).2 ⟨0, 0, by
+      simp only [Pi.zero_apply, Pi.one_apply, sub_zero, div_one, Nat.cast_zero]; ring⟩,
+    fun kappa hkappa => ?_⟩, ⟨⟨(hiff _).2 ⟨0, 1, by
+      simp only [Pi.zero_apply, Pi.one_apply, sub_zero, div_one, Nat.cast_zero, Nat.cast_one]
+      ring⟩, h5⟩, fun kappa hk => ?_⟩⟩
   · obtain ⟨k, l, rfl⟩ := (hiff kappa).1 hkappa
     simp only [Pi.zero_apply, Pi.one_apply, sub_zero, mul_one, div_one]
     nlinarith [hsin k, sq_nonneg (l * π)]
@@ -581,7 +595,7 @@ theorem isLeast_exists_ne_zero_forall_inner_gradient_eq_boxDomain_zero_one_left 
   simp only [Pi.zero_apply, Pi.one_apply, sub_zero, mul_one, div_one] at hlt ⊢
   rcases Nat.eq_zero_or_pos l with rfl | hl
   · rcases Nat.eq_zero_or_pos k with rfl | hk
-    · norm_num at hlt
+    · simp only [Nat.cast_zero] at hlt
       nlinarith
     · have hk3 : (3 * π / 2) ^ 2 ≤ ((2 * k + 1) * π / 2) ^ 2 := by
         have hk1 : (1 : ℝ) ≤ k := by exact_mod_cast hk
