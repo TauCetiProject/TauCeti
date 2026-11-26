@@ -276,6 +276,14 @@ theorem sectionEntry_apply_eq_cutoffFrameCoeff
       t'.cutoffFrameCoeff χ hχ ℓ (P (f • t.cutoffFrameSection ψ hψ v)) :=
   (rfl)
 
+/-- The matrix entry of `P` as the composition of `P` with the maps `f ↦ f · ψ t⁻¹ v` and
+`h ↦ χ · ℓ(t' h)`. -/
+theorem sectionEntry_eq_comp
+    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
+    sectionEntry t ψ hψ v t' χ hχ ℓ P = t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+      (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ :=
+  (rfl)
+
 /-- The entries of a properly supported operator are properly supported. -/
 theorem IsSectionProperlySupported.sectionEntry
     {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
@@ -292,14 +300,6 @@ theorem IsSectionProperlySupported.sectionEntry
     exact fun h ↦ hy (by rw [h, map_zero, map_zero, smul_zero])
   · rw [sectionEntry_apply, hP₂ _ (hf.mono fun y hy ↦ by simp [hy]) x hx]
     simp
-
-/-- The matrix entry of `P` as the composition of `P` with the maps `f ↦ f · ψ t⁻¹ v` and
-`h ↦ χ · ℓ(t' h)`. -/
-private theorem sectionEntry_eq_comp
-    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
-    TauCeti.sectionEntry t ψ hψ v t' χ hχ ℓ P = t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
-      (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ :=
-  LinearMap.ext fun f ↦ sectionEntry_apply_eq_cutoffFrameCoeff t ψ hψ v t' χ hχ ℓ P f
 
 /-- **The entries of a differential operator are differential operators.** If `P : Γ(E) → Γ(F)` is
 a differential operator of order at most `m` in Grothendieck's sense, for commutators with
