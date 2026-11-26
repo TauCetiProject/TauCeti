@@ -25,6 +25,8 @@ eigenspace `{u | ∀ t, U_t u = exp(2πiat) u}`.
 * `tendsto_twistedAverage_fourierLp_of_ne`: at `a ≠ n`, `A_T^a e_n → 0`.
 * `starProjection_fourierLp_self` and `starProjection_fourierLp_of_ne`: `P_n e_n = e_n`, and
   `P_a e_n = 0` for `a ≠ n`.
+* `twistedAverage_fourierLp_natCast_eq_zero`: for integers `m ≠ n`, `A_N^m e_n = 0` at every
+  natural `N`.
 * `inner_koopmanGroup_fourierLp_eq_charFun`: the spectral measure of `e_n` is `δ_{2πn}`.
 
 For the unit mode `e₁`: `U₁ e₁ = e₁`, so the discrete time-one averages of `e₁` are `e₁`, but
@@ -131,8 +133,21 @@ theorem starProjection_fourierLp_of_ne {n : ℤ} {a : ℝ} (ha : a ≠ n) :
   rw [← ofReal_inv, ← Complex.coe_smul]
   congr 2
   funext t
-  push_cast
-  rfl
+  rw [ofReal_mul, ofReal_mul, ofReal_ofNat]
+
+/-- At natural times the twisted averages of a mode at another integer frequency vanish: for
+integers `m ≠ n`, `A_N^m e_n = 0` at every natural `N`, since `∫₀ᴺ exp(2πi(n − m)t) dt = 0`. -/
+theorem twistedAverage_fourierLp_natCast_eq_zero {n m : ℤ} (h : m ≠ n) (N : ℕ) :
+    ((N : ℝ) : ℂ)⁻¹ •
+        ∫ t in (0 : ℝ)..N, exp (-(2 * π * (m : ℝ) * t * I)) • circleFlow t (mode n) = 0 := by
+  have hc : 2 * π * ((n - m : ℤ) : ℂ) * I ≠ 0 := by
+    simp [Real.pi_ne_zero, sub_eq_zero, Ne.symm h]
+  rw [twistedAverage_fourierLp]
+  simp_rw [show ∀ t : ℝ, (↑(t * (2 * π * ((n : ℝ) - m))) : ℂ) * I =
+    2 * π * ((n - m : ℤ) : ℂ) * I * t from fun t => by push_cast; ring]
+  rw [integral_exp_mul_complex hc, show 2 * π * ((n - m : ℤ) : ℂ) * I * ((N : ℝ) : ℂ) =
+    ((n - m) * N : ℤ) * (2 * π * I) by push_cast; ring, exp_int_mul_two_pi_mul_I]
+  simp
 
 /-- **The spectral measure of a mode** is `δ_{2πn}`:
 `⟪e_n, U_t e_n⟫ = exp(2πint) = charFun δ_{2πn} t`. -/
@@ -153,13 +168,7 @@ example : circleFlow 1 (mode 1) = mode 1 :=
 example (N : ℕ) :
     (((N : ℝ) : ℂ)⁻¹) •
         ∫ t in (0 : ℝ)..N, exp (-(2 * π * (0 : ℝ) * t * I)) • circleFlow t (mode 1) = 0 := by
-  have hc : (2 * π * (((1 : ℤ) : ℝ) - 0) : ℂ) * I ≠ 0 := by simp [Real.pi_ne_zero]
-  rw [twistedAverage_fourierLp]
-  simp_rw [show ∀ t : ℝ, (↑(t * (2 * π * (((1 : ℤ) : ℝ) - 0))) : ℂ) * I =
-    (2 * π * (((1 : ℤ) : ℝ) - 0) : ℂ) * I * t from fun t => by push_cast; ring]
-  rw [integral_exp_mul_complex hc, show (2 * π * (((1 : ℤ) : ℝ) - 0) : ℂ) * I * ((N : ℝ) : ℂ) =
-    (N : ℤ) * (2 * π * I) by push_cast; ring, exp_int_mul_two_pi_mul_I]
-  simp
+  exact_mod_cast twistedAverage_fourierLp_natCast_eq_zero (n := 1) (m := 0) zero_ne_one N
 
 /-- The projection onto the fixed vectors kills `e₁`: `P₀ e₁ = 0`. -/
 example :
@@ -200,8 +209,8 @@ example :
 example : ⟪mode 1, circleFlow (1 / 4) (mode 1)⟫_ℂ = I := by
   rw [circleFlow_mode, inner_smul_right, inner_self_eq_norm_sq_to_K,
     (orthonormal_fourier (T := 1)).1 1]
-  rw [show 2 * π * I * ((1 : ℤ) : ℂ) * ((1 / 4 : ℝ) : ℂ) = (π / 2 : ℝ) * I by push_cast; ring,
-    exp_mul_I, ← ofReal_cos, ← ofReal_sin, Real.cos_pi_div_two, Real.sin_pi_div_two]
+  rw [show 2 * π * I * ((1 : ℤ) : ℂ) * ((1 / 4 : ℝ) : ℂ) = π / 2 * I by push_cast; ring,
+    exp_pi_div_two_mul_I]
   simp
 
 /-- The opposite twist `a = −1` has limit `0`: `A_T^{−1} e₁ → 0`. -/
