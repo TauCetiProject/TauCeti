@@ -36,18 +36,28 @@ variable {k V G Q S : Type*} [CommSemiring k] [AddCommMonoid V] [Module k V]
 
 variable (ρ : Representation k G V) (red : G →* Q) {H : Subgroup Q} (χ : H →* k)
 
+/-- Membership in the pulled-back weight space means every lift of an element of the
+subgroup acts by the character of its reduction. -/
+theorem mem_weightSpace_comp_subgroupComap_iff {v : V} :
+    v ∈ weightSpace (ρ.comp (H.comap red).subtype) (χ.comp (red.subgroupComap H)) ↔
+      ∀ (b : G) (h : H), red b = h → ρ b v = χ h • v := by
+  rw [mem_weightSpace]
+  constructor
+  · intro hv b h hb
+    let b' : H.comap red := ⟨b, Subgroup.mem_comap.mpr (hb ▸ h.property)⟩
+    have hb' : red.subgroupComap H b' = h := by
+      apply Subtype.ext
+      exact (MonoidHom.subgroupComap_apply_coe red H b').trans hb
+    simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype, hb'] using hv b'
+  · intro hv b
+    simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype] using
+      hv b (red.subgroupComap H b) (MonoidHom.subgroupComap_apply_coe red H b).symm
+
 /-- On the pulled-back weight space, a lift acts by the character of its reduction. -/
-private theorem apply_eq_smul_of_mem_weightSpace_of_map_eq {v : V}
+theorem apply_eq_smul_of_mem_weightSpace_of_map_eq {v : V}
     (hv : v ∈ weightSpace (ρ.comp (H.comap red).subtype) (χ.comp (red.subgroupComap H)))
-    {b : G} {h : H} (hb : red b = h) : ρ b v = χ h • v := by
-  let b' : H.comap red := ⟨b, Subgroup.mem_comap.mpr (hb ▸ h.property)⟩
-  have hb' : red.subgroupComap H b' = h := by
-    apply Subtype.ext
-    calc
-      ↑(red.subgroupComap H b') = red b := MonoidHom.subgroupComap_apply_coe red H b'
-      _ = h := hb
-  simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype, hb'] using
-    (mem_weightSpace.mp hv) b'
+    {b : G} {h : H} (hb : red b = h) : ρ b v = χ h • v :=
+  (ρ.mem_weightSpace_comp_subgroupComap_iff red χ).mp hv b h hb
 
 /-- Two elements with the same reduction have the same action on the pulled-back weight space. -/
 theorem apply_eq_apply_of_mem_weightSpace_of_map_eq {v : V}
