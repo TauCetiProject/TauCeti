@@ -30,8 +30,10 @@ has
 `‖u''‖²_{L²(0, 1)} = 1/2 + 1/8 = 5/8`.
 
 The datum `1` has norm `1` in `L²(0, 1)`, so the estimate `‖u''‖ ≤ C ‖f‖` holds for it with
-`C = √(5/8)`, below the constant `1/λ = 1` of the one-dimensional estimate
-`TauCeti.PDE.norm_le_of_neg_mul_iteratedGradient_eq_of_Ioo`. In dimension at least two a
+`C = √(5/8)`, below the constant `1/λ = 1` given by the pointwise bound
+`|u''| = |f| / σ ≤ |f| / λ` that the equation implies. (The one-dimensional estimate
+`TauCeti.PDE.norm_le_of_neg_mul_iteratedGradient_eq_of_Ioo` bounds the full `W^{2,2}` norm,
+with constant `(1 + 2 (b - a) + 2 (b - a)²) / λ = 5` here.) In dimension at least two a
 coefficient without vanishing mean oscillation can destroy `W^{2,p}` regularity
 (`TauCeti.PDE.not_memVMO_radialCoefficient_apply_self` and the counterexample beside it); on an
 interval it cannot.
@@ -42,7 +44,8 @@ In the namespace `TauCeti.Examples.StepCoefficientInterval`:
 
 * `stepCoefficient`: the coefficient `σ = 1 + 1_{(1/2, ∞)}`.
 * `not_memVMO_stepCoefficient`: `σ` does not have vanishing mean oscillation.
-* `existsUnique_neg_stepCoefficient_mul_iteratedGradient_eq_one`: the Dirichlet problem
+* `existsUnique_firstOrder_mem_w1p0Submodule_and_neg_stepCoefficient_mul_iteratedGradient_eq_one`:
+  the Dirichlet problem
   `-σ u'' = 1` has exactly one strong solution in `W^{2,2}(0, 1) ∩ W^{1,2}_0(0, 1)`.
 * `norm_iteratedGradient_eq_of_neg_stepCoefficient_mul_eq_one`: every strong solution of
   `-σ u'' = 1` on `(0, 1)` has `‖u''‖_{L²(0, 1)} = √(5/8)`.
@@ -112,9 +115,9 @@ private theorem setIntegral_Ioc_comp_stepCoefficient (F : ℝ → ℝ) {a b : �
       measurableSet_Ioc
       (IntegrableOn.congr_fun (integrableOn_const measure_Ioc_lt_top.ne) h1.symm measurableSet_Ioc)
       (IntegrableOn.congr_fun (integrableOn_const measure_Ioc_lt_top.ne) h2.symm measurableSet_Ioc),
-    setIntegral_congr_fun measurableSet_Ioc h1, setIntegral_congr_fun measurableSet_Ioc h2,
-    setIntegral_const, setIntegral_const, Real.volume_real_Ioc, Real.volume_real_Ioc,
-    max_eq_left (by linarith), max_eq_left (by linarith), smul_eq_mul, smul_eq_mul]
+    setIntegral_congr_fun measurableSet_Ioc h1, setIntegral_congr_fun measurableSet_Ioc h2]
+  simp only [setIntegral_const, Real.volume_real_Ioc, smul_eq_mul, max_eq_left (sub_nonneg.2 ha),
+    max_eq_left (sub_nonneg.2 hb)]
 
 /-- On the interval `(1/2 - r, 1/2 + r)` centred at the jump, the step coefficient has
 average `3/2`. -/
@@ -125,7 +128,6 @@ private theorem setAverage_ball_stepCoefficient {r : ℝ} (hr : 0 < r) :
   rw [Real.ball_eq_Ioo, setAverage_eq, setIntegral_congr_set Ioo_ae_eq_Ioc, h, Real.volume_real_Ioo,
     max_eq_left (by linarith), smul_eq_mul]
   field_simp
-  norm_num
   ring
 
 /-- The mean oscillation of the step coefficient on the interval `(1/2 - r, 1/2 + r)` centred at
@@ -135,10 +137,10 @@ theorem setLAverage_enorm_sub_setAverage_ball_stepCoefficient {r : ℝ} (hr : 0 
         ‖stepCoefficient y - ⨍ z in ball (1 / 2 : ℝ) r, stepCoefficient z‖ₑ = 2⁻¹ := by
   rw [setAverage_ball_stepCoefficient hr]
   have h (y : ℝ) : ‖stepCoefficient y - 3 / 2‖ₑ = 2⁻¹ := by
-    rcases stepCoefficient_eq_one_or_eq_two y with h | h <;>
-    · rw [h, ← ofReal_norm, Real.norm_eq_abs]
-      norm_num
-      rw [one_div, ENNReal.ofReal_inv_of_pos two_pos, ENNReal.ofReal_ofNat]
+    have habs : |stepCoefficient y - 3 / 2| = 2⁻¹ := by
+      rcases stepCoefficient_eq_one_or_eq_two y with h | h <;> norm_num [h]
+    rw [← ofReal_norm, Real.norm_eq_abs, habs, ENNReal.ofReal_inv_of_pos two_pos,
+      ENNReal.ofReal_ofNat]
   simp_rw [h]
   refine setLAverage_const ?_ ?_ _
   · rw [Real.volume_ball]
@@ -162,7 +164,8 @@ theorem not_memVMO_stepCoefficient : ¬ MemVMO stepCoefficient volume := by
 /-- **The Dirichlet problem for the step coefficient.** There is exactly one `u ∈ W^{2,2}(0, 1)`
 with first-order part in `W^{1,2}_0(0, 1)` solving `-σ u'' = 1` almost everywhere on `(0, 1)`,
 although `σ` does not have vanishing mean oscillation. -/
-theorem existsUnique_neg_stepCoefficient_mul_iteratedGradient_eq_one :
+theorem
+    existsUnique_firstOrder_mem_w1p0Submodule_and_neg_stepCoefficient_mul_iteratedGradient_eq_one :
     ∃! u : Wkp volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ 2 2,
       Wkp.firstOrder 1 u ∈ w1p0Submodule volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ 2 ∧
         ∀ᵐ x ∂volume.restrict (Ioo (0 : ℝ) 1),
@@ -185,8 +188,9 @@ theorem existsUnique_neg_stepCoefficient_mul_iteratedGradient_eq_one :
 /-- **The second derivative for the step coefficient.** Every `u ∈ W^{2,2}(0, 1)` solving
 `-σ u'' = 1` almost everywhere on `(0, 1)` has `‖u''‖_{L²(0, 1)} = √(5/8)`: the equation forces
 `u'' = -1` on `(0, 1/2)` and `u'' = -1/2` on `(1/2, 1)`. Since the datum `1` has norm `1` in
-`L²(0, 1)`, this is below the bound `‖u''‖ ≤ ‖f‖ / λ = 1` of the one-dimensional theory. No
-boundary condition is needed. -/
+`L²(0, 1)`, this is below the constant `1/λ = 1` of the bound `‖u''‖ ≤ ‖f‖ / λ`, which follows
+from the pointwise bound `|u''| = |f| / σ ≤ |f| / λ` implied by the equation. No boundary condition
+is needed. -/
 theorem norm_iteratedGradient_eq_of_neg_stepCoefficient_mul_eq_one
     {u : Wkp volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ 2 2}
     (hu : ∀ᵐ x ∂volume.restrict (Ioo (0 : ℝ) 1),
@@ -211,14 +215,14 @@ theorem norm_iteratedGradient_eq_of_neg_stepCoefficient_mul_eq_one
     rw [Real.norm_of_nonneg (inv_nonneg.2 (zero_le_one.trans (one_le_stepCoefficient x)))]
     exact inv_le_one_of_one_le₀ (one_le_stepCoefficient x)
   -- `∫ (1 / σ)² = 1/2 + 1/8` over `(0, 1/2] ∪ (1/2, 1)`.
-  have hint : ∫ x, ‖g x‖ ^ (2 : ℝ) ∂μ = 5 / 8 := by
+  have hint : ∫ x, g x ^ 2 ∂μ = 5 / 8 := by
     rw [setIntegral_congr_set Ioo_ae_eq_Ioc,
-      setIntegral_Ioc_comp_stepCoefficient (fun s => ‖s⁻¹‖ ^ (2 : ℝ)) (by norm_num) (by norm_num)]
+      setIntegral_Ioc_comp_stepCoefficient (fun s => s⁻¹ ^ 2) (by norm_num) (by norm_num)]
     norm_num
   have hE : eLpNorm (Wkp.iteratedGradient 1 u) 2 μ = ENNReal.ofReal √(5 / 8) := by
     rw [eLpNorm_congr_norm_ae (μ := μ) (Lp.aestronglyMeasurable _) hg.aestronglyMeasurable hD,
-      hg.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top, ENNReal.toReal_ofNat, hint,
-      Real.sqrt_eq_rpow, one_div]
+      hg.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top]
+    simp [hint, Real.sqrt_eq_rpow]
   rw [Lp.norm_def]
   exact (congrArg ENNReal.toReal hE).trans (ENNReal.toReal_ofReal (Real.sqrt_nonneg _))
 
