@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Meromorphic.ZeroFree
 public import TauCeti.Analysis.SpecialFunctions.Pow.Windows
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.FiniteFamily.RieszMellin
-public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz
 import TauCeti.Analysis.LaplaceTransform.Mellin
 import TauCeti.Analysis.MellinTransform.WindowedLandau
 
@@ -17,8 +16,7 @@ import TauCeti.Analysis.MellinTransform.WindowedLandau
 
 One-sided power bounds on arbitrarily distant scale windows exclude zeros of every
 positive-weight member of a family. The bounds may hold pointwise or on weighted integrals
-of the positive part of the real Riesz remainder. Inverse-pair averaging gives the Mellin
-transform of the real remainder without requiring the support to be closed under inversion.
+of the positive part of the real Riesz remainder.
 
 The criteria are those of Levent Alpöge's `Deduction.lemmaL` and
 `Deduction.zeroFree_of_rpow_window` in the formalization of the Riemann hypothesis for
@@ -32,60 +30,6 @@ open scoped Interval
 
 namespace TauCeti
 
-/-- The real-weighted sum of real remainders, in logarithmic coordinates, has the
-inverse-averaged Laplace transform even for signed weights. -/
-theorem hasLaplace_dirichletFamilyRieszRemainder_comp_exp
-    (w : PrimitiveDirichletCharacter →₀ ℝ) {s : ℂ} (hs : 1 < s.re) :
-    HasLaplace (fun u ↦ ((w.sum fun χ c ↦ c * (χ.rieszRemainder (Real.exp u)).re : ℝ) : ℂ)) s
-      (dirichletFamilyRieszRemainderMellin w s) := by
-  have h := hasLaplace_sum (u := w.support) fun χ _ ↦
-    ((χ.hasLaplace_rieszRemainder_comp_exp hs).add
-      (χ⁻¹.hasLaplace_rieszRemainder_comp_exp hs)).const_smul ((w χ : ℂ) / 2)
-  rw [dirichletFamilyRieszRemainderMellin_apply]
-  simpa only [Finsupp.sum, ofReal_sum, ofReal_mul, Complex.re_eq_add_conj,
-    ← PrimitiveDirichletCharacter.rieszRemainder_inv, Pi.smul_apply, smul_eq_mul,
-    Pi.add_apply, Function.comp_apply, mul_div_assoc, div_mul_eq_mul_div] using h
-
-private theorem exists_re_rieszRemainder_le_rpow_two (χ : PrimitiveDirichletCharacter) :
-    ∃ D : ℝ, 0 ≤ D ∧ ∀ y ≥ 1, (χ.rieszRemainder y).re ≤ D * y ^ (2 : ℝ) := by
-  let a (n : ℕ) := χ.character n * (ArithmeticFunction.vonMangoldt n : ℂ)
-  let M := ∑' n : ℕ, ‖LSeries.term a ((2 : ℝ) : ℂ) n‖
-  have hM : 0 ≤ M := tsum_nonneg fun _ ↦ norm_nonneg _
-  have hs : LSeriesSummable a ((2 : ℝ) : ℂ) := by
-    have ha : a = (fun n : ℕ ↦ χ.character n) *
-        (fun n ↦ (ArithmeticFunction.vonMangoldt n : ℂ)) := by
-      funext n
-      rw [Pi.mul_apply]
-    rw [ha]
-    have hs₂ : 1 < (((2 : ℝ) : ℂ)).re := by norm_num
-    exact χ.character.LSeriesSummable_twist_vonMangoldt hs₂
-  have hsum (y : ℝ) (hy : 1 ≤ y) : (rieszSum a y).re ≤ M * y ^ (2 : ℝ) := by
-    rw [mul_comm M]
-    exact (re_le_norm _).trans (norm_rieszSum_le (σ := 2) (by norm_num) (zero_le_one.trans hy) hs)
-  have hy₂ {y : ℝ} (hy : 1 ≤ y) : y ≤ y ^ (2 : ℝ) :=
-    Real.self_le_rpow_of_one_le hy (by norm_num)
-  by_cases hχ : χ = 1
-  · let D : ℝ := 1 + Real.eulerMascheroniConstant
-    refine ⟨M + |D|, add_nonneg hM (abs_nonneg _), fun y hy ↦ ?_⟩
-    have ha : rieszSum a y = rieszSum (fun n ↦ (ArithmeticFunction.vonMangoldt n : ℂ)) y := by
-      subst χ
-      simp only [a, PrimitiveDirichletCharacter.character_one_apply, one_mul]
-    have hlin : y * D ≤ |D| * y ^ (2 : ℝ) := calc
-      y * D ≤ y * |D| := mul_le_mul_of_nonneg_left (le_abs_self _) (zero_le_one.trans hy)
-      _ ≤ |D| * y ^ (2 : ℝ) := by
-        rw [mul_comm y]
-        exact mul_le_mul_of_nonneg_left (hy₂ hy) (abs_nonneg _)
-    rw [hχ, PrimitiveDirichletCharacter.rieszRemainder_one, ← ha]
-    simp only [add_re, sub_re, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero, one_re, add_mul]
-    have hlog : 0 ≤ y * Real.log y := mul_nonneg (zero_le_one.trans hy) (Real.log_nonneg hy)
-    exact add_le_add (hsum y hy) ((sub_le_self _ hlog).trans hlin)
-  · let d := logDeriv χ.character.LFunction 1
-    refine ⟨M + ‖d‖, add_nonneg hM (norm_nonneg _), fun y hy ↦ ?_⟩
-    rw [PrimitiveDirichletCharacter.rieszRemainder_of_ne_one hχ, add_re, add_mul]
-    refine add_le_add (hsum y hy) ((re_le_norm ((y : ℂ) * d)).trans ?_)
-    rw [norm_mul, norm_real, Real.norm_eq_abs, abs_of_nonneg (zero_le_one.trans hy), mul_comm y]
-    exact mul_le_mul_of_nonneg_left (hy₂ hy) (norm_nonneg _)
-
 /-- **Windowed Landau for a positively weighted Dirichlet family.** If, for every `η > 0`,
 there are arbitrarily far-out power windows on which the positive-part Mellin integral is
 at most `Y ^ η`, no positive-weight member has a zero to the right of `θ`. -/
@@ -97,7 +41,7 @@ theorem zeroFreeRightOf_of_dirichletFamilyRiesz_meanWindows
         y ^ (-(θ + 1))) ≤ Y ^ η) :
     ∀ χ ∈ w.support, ZeroFreeRightOf θ χ.character.LFunction := by
   -- Bound the positive part by summing the individual upper bounds.
-  choose D hD hbound using exists_re_rieszRemainder_le_rpow_two
+  choose D hD hbound using PrimitiveDirichletCharacter.exists_re_rieszRemainder_le_rpow_two
   have hw' (χ : PrimitiveDirichletCharacter) : 0 ≤ w χ := by
     simpa using Finsupp.le_def.mp hw χ
   let B := ∑ χ ∈ w.support, w χ * D χ
