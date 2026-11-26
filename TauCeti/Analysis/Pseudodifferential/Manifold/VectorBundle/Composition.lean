@@ -43,8 +43,8 @@ an operator which agrees on every compact set with one of order `m' + m` has tha
 
 ## References
 
-* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1 (operators
-  between sections of vector bundles, and Theorem 18.1.8 for their composition).
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1
+  (pseudodifferential operators between sections of vector bundles and their composition).
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §8.
 -/
 
