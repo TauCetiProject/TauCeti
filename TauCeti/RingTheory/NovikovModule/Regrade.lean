@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovModule.Readout
-import TauCeti.Algebra.BigOperators.Finprod
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -96,6 +95,8 @@ the oriented one-dimensional moduli spaces, which are not constructed here.
 
 ## Main definitions
 
+* `TauCeti.NovikovModule.signTwist`: the twist of a functional by the signs `(-1)^(e(q, p₀))`;
+  both regradings below are sign twists.
 * `TauCeti.NovikovModule.regradeProductFunctional`: the regrading of a functional on
   `C₁ ⊗ C₂ ⊗ C₀^∨` from the raw to the cochain grading.
 * `TauCeti.NovikovModule.regradeTripleFunctional`: the regrading of a functional on
@@ -170,6 +171,72 @@ theorem kernelReadout_cochain (n : ℤ) (μ₀ : S₀ → ℤ) (φ : S → S₀ 
 
 end Unary
 
+section SignTwist
+
+variable (e : S → S₀ → ℤ)
+
+/-- The **sign twist** of a functional `ψ` on `X ⊗ C₀^∨` by exponents `e`: the functional
+`(-1)^(e(q, p₀)) ψ(q, p₀)`. The regradings of functionals from the raw to the cochain grading
+(`TauCeti.NovikovModule.regradeProductFunctional`,
+`TauCeti.NovikovModule.regradeTripleFunctional`) are sign twists. -/
+def signTwist (ψ : S → S₀ → R) (q : S) (p₀ : S₀) : R :=
+  negOnePowCast R (e q p₀) * ψ q p₀
+
+/-- A value of a sign twist. -/
+theorem signTwist_apply (ψ : S → S₀ → R) (q : S) (p₀ : S₀) :
+    signTwist e ψ q p₀ = negOnePowCast R (e q p₀) * ψ q p₀ :=
+  (rfl)
+
+/-- A sign twist is an involution. -/
+@[simp]
+theorem signTwist_signTwist (ψ : S → S₀ → R) : signTwist e (signTwist e ψ) = ψ := by
+  funext q p₀
+  rw [signTwist_apply, signTwist_apply, ← mul_assoc, negOnePowCast_mul_self, one_mul]
+
+/-- A sign twist is injective. -/
+theorem signTwist_injective : Injective (signTwist (R := R) e) :=
+  LeftInverse.injective (g := signTwist e) (signTwist_signTwist e)
+
+/-- Two functionals have equal sign twists exactly when they are equal. -/
+@[simp]
+theorem signTwist_inj {ψ ψ' : S → S₀ → R} : signTwist e ψ = signTwist e ψ' ↔ ψ = ψ' :=
+  (signTwist_injective e).eq_iff
+
+/-- The sign twist of the zero functional is zero. -/
+@[simp]
+theorem signTwist_zero : signTwist (R := R) e 0 = 0 := by
+  funext q p₀
+  simp [signTwist_apply]
+
+/-- A sign twist is additive. -/
+@[simp]
+theorem signTwist_add (ψ ψ' : S → S₀ → R) :
+    signTwist e (ψ + ψ') = signTwist e ψ + signTwist e ψ' := by
+  funext q p₀
+  simp [signTwist_apply, mul_add]
+
+/-- A sign twist commutes with negation. -/
+@[simp]
+theorem signTwist_neg (ψ : S → S₀ → R) : signTwist e (-ψ) = -signTwist e ψ := by
+  funext q p₀
+  simp [signTwist_apply]
+
+/-- A sign twist commutes with subtraction. -/
+@[simp]
+theorem signTwist_sub (ψ ψ' : S → S₀ → R) :
+    signTwist e (ψ - ψ') = signTwist e ψ - signTwist e ψ' := by
+  funext q p₀
+  simp [signTwist_apply, mul_sub]
+
+/-- A sign twist commutes with scalar multiplication. -/
+@[simp]
+theorem signTwist_smul (c : R) (ψ : S → S₀ → R) : signTwist e (c • ψ) = c • signTwist e ψ := by
+  funext q p₀
+  simp only [signTwist_apply, Pi.smul_apply, smul_eq_mul]
+  ring
+
+end SignTwist
+
 section Regrade
 
 variable (n : ℤ) (μ₂ : S₂ → ℤ) (μ₀ : S₀ → ℤ)
@@ -177,72 +244,16 @@ variable (n : ℤ) (μ₂ : S₂ → ℤ) (μ₀ : S₀ → ℤ)
 /-- The **regrading of a product functional** `ψ` on `C₁ ⊗ C₂ ⊗ C₀^∨` from the raw degrees `μ₁`,
 `μ₂`, `μ₀` to the cochain degrees `n - μ₁`, `n - μ₂`, `n - μ₀`: the functional
 `(-1)^(n (μ₂ p₂ + μ₀ p₀)) ψ((p₁, p₂), p₀)`. It intertwines the total boundaries of the two gradings
-(`TauCeti.NovikovModule.functionalBoundary_regradeProductFunctional`). -/
-def regradeProductFunctional (ψ : S₁ × S₂ → S₀ → R) (q : S₁ × S₂) (p₀ : S₀) : R :=
-  negOnePowCast R (n * (μ₂ q.2 + μ₀ p₀)) * ψ q p₀
+(`TauCeti.NovikovModule.functionalBoundary_regradeProductFunctional`). It is the sign twist by
+`n (μ₂ p₂ + μ₀ p₀)`, so the API of `TauCeti.NovikovModule.signTwist` (involution, injectivity,
+linearity) applies to it. -/
+abbrev regradeProductFunctional (ψ : S₁ × S₂ → S₀ → R) : S₁ × S₂ → S₀ → R :=
+  signTwist (fun q p₀ => n * (μ₂ q.2 + μ₀ p₀)) ψ
 
 /-- A value of the regrading of a product functional. -/
 theorem regradeProductFunctional_apply (ψ : S₁ × S₂ → S₀ → R) (q : S₁ × S₂) (p₀ : S₀) :
     regradeProductFunctional n μ₂ μ₀ ψ q p₀ = negOnePowCast R (n * (μ₂ q.2 + μ₀ p₀)) * ψ q p₀ :=
   (rfl)
-
-/-- Regrading is an involution. -/
-@[simp]
-theorem regradeProductFunctional_regradeProductFunctional (ψ : S₁ × S₂ → S₀ → R) :
-    regradeProductFunctional n μ₂ μ₀ (regradeProductFunctional n μ₂ μ₀ ψ) = ψ := by
-  funext q p₀
-  rw [regradeProductFunctional_apply, regradeProductFunctional_apply, ← mul_assoc,
-    negOnePowCast_mul_self, one_mul]
-
-/-- Regrading is injective. -/
-theorem regradeProductFunctional_injective :
-    Injective (regradeProductFunctional (R := R) (S₁ := S₁) n μ₂ μ₀) :=
-  LeftInverse.injective (g := regradeProductFunctional n μ₂ μ₀)
-    (regradeProductFunctional_regradeProductFunctional n μ₂ μ₀)
-
-/-- Two functionals have equal regradings exactly when they are equal. -/
-@[simp]
-theorem regradeProductFunctional_inj {ψ ψ' : S₁ × S₂ → S₀ → R} :
-    regradeProductFunctional n μ₂ μ₀ ψ = regradeProductFunctional n μ₂ μ₀ ψ' ↔ ψ = ψ' :=
-  (regradeProductFunctional_injective n μ₂ μ₀).eq_iff
-
-/-- The regrading of the zero functional is zero. -/
-@[simp]
-theorem regradeProductFunctional_zero :
-    regradeProductFunctional (R := R) (S₁ := S₁) n μ₂ μ₀ 0 = 0 := by
-  funext q p₀
-  simp [regradeProductFunctional_apply]
-
-/-- Regrading is additive. -/
-@[simp]
-theorem regradeProductFunctional_add (ψ ψ' : S₁ × S₂ → S₀ → R) :
-    regradeProductFunctional n μ₂ μ₀ (ψ + ψ') =
-      regradeProductFunctional n μ₂ μ₀ ψ + regradeProductFunctional n μ₂ μ₀ ψ' := by
-  funext q p₀
-  simp [regradeProductFunctional_apply, mul_add]
-
-/-- Regrading commutes with negation. -/
-@[simp]
-theorem regradeProductFunctional_neg (ψ : S₁ × S₂ → S₀ → R) :
-    regradeProductFunctional n μ₂ μ₀ (-ψ) = -regradeProductFunctional n μ₂ μ₀ ψ := by
-  funext q p₀
-  simp [regradeProductFunctional_apply]
-
-/-- Regrading commutes with subtraction. -/
-@[simp]
-theorem regradeProductFunctional_sub (ψ ψ' : S₁ × S₂ → S₀ → R) :
-    regradeProductFunctional n μ₂ μ₀ (ψ - ψ') =
-      regradeProductFunctional n μ₂ μ₀ ψ - regradeProductFunctional n μ₂ μ₀ ψ' := by
-  funext q p₀
-  simp [regradeProductFunctional_apply, mul_sub]
-
-/-- Regrading commutes with scalar multiplication. -/
-@[simp]
-theorem regradeProductFunctional_smul (c : R) (ψ : S₁ × S₂ → S₀ → R) :
-    regradeProductFunctional n μ₂ μ₀ (c • ψ) = c • regradeProductFunctional n μ₂ μ₀ ψ := by
-  funext q p₀
-  simp only [regradeProductFunctional_apply, Pi.smul_apply, smul_eq_mul]
-  ring
 
 end Regrade
 
@@ -358,8 +369,7 @@ theorem functionalBoundary_regradeProductFunctional
   have h₁ : kernelComp (tensorDifferential (fun p => n - μ₁ p) δ₁ δ₂)
       (regradeProductFunctional n μ₂ μ₀ ψ) x q =
       negOnePowCast R (n * (μ₂ x.2 + μ₀ q)) * kernelComp (tensorDifferential μ₁ δ₁ δ₂) ψ x q := by
-    rw [kernelComp_apply, kernelComp_apply,
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * (μ₂ x.2 + μ₀ q)))).mul_finsum]
+    rw [kernelComp_apply, kernelComp_apply, negOnePowCast_mul_finsum (n * (μ₂ x.2 + μ₀ q))]
     refine finsum_congr fun x' => ?_
     rw [tensorDifferential_cochain hδ₂, regradeProductFunctional_apply,
       ← negOnePowCast_eq_of_even_sub (a := n * (μ₂ x.2 + μ₂ x'.2) + n * (μ₂ x'.2 + μ₀ q))
@@ -368,8 +378,7 @@ theorem functionalBoundary_regradeProductFunctional
   -- At the output breakings the output sign changes by `(-1)^n`.
   have h₂ : kernelComp (regradeProductFunctional n μ₂ μ₀ ψ) δ₀ x q =
       negOnePowCast R (n + n * (μ₂ x.2 + μ₀ q)) * kernelComp ψ δ₀ x q := by
-    rw [kernelComp_apply, kernelComp_apply,
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n + n * (μ₂ x.2 + μ₀ q)))).mul_finsum]
+    rw [kernelComp_apply, kernelComp_apply, negOnePowCast_mul_finsum (n + n * (μ₂ x.2 + μ₀ q))]
     refine finsum_congr fun p => ?_
     by_cases hp : δ₀ p q = 0
     · simp [hp]
@@ -487,73 +496,16 @@ tensor differentials alone: unlike for `C₁ ⊗ C₂ ⊗ C₀^∨`
 (`TauCeti.NovikovModule.regradeProductFunctional`), the Koszul sign `(-1)^(d + d₀)` of the total
 differential is the same in both gradings, since the cochain degrees sum to `4 n` minus the raw
 ones. It intertwines the total boundaries of the two gradings
-(`TauCeti.NovikovModule.functionalBoundary_regradeTripleFunctional`). -/
-def regradeTripleFunctional (ψ : (S₁ × S₂) × S₃ → S₀ → R) (q : (S₁ × S₂) × S₃) (p₀ : S₀) : R :=
-  negOnePowCast R (n * μ₂ q.1.2) * ψ q p₀
+(`TauCeti.NovikovModule.functionalBoundary_regradeTripleFunctional`). It is the sign twist by
+`n μ₂ p₂`, so the API of `TauCeti.NovikovModule.signTwist` (involution, injectivity, linearity)
+applies to it. -/
+abbrev regradeTripleFunctional (ψ : (S₁ × S₂) × S₃ → S₀ → R) : (S₁ × S₂) × S₃ → S₀ → R :=
+  signTwist (fun q _ => n * μ₂ q.1.2) ψ
 
 /-- A value of the regrading of a functional on a triple tensor product. -/
 theorem regradeTripleFunctional_apply (ψ : (S₁ × S₂) × S₃ → S₀ → R) (q : (S₁ × S₂) × S₃)
     (p₀ : S₀) : regradeTripleFunctional n μ₂ ψ q p₀ = negOnePowCast R (n * μ₂ q.1.2) * ψ q p₀ :=
   (rfl)
-
-/-- Regrading a functional on a triple tensor product is an involution. -/
-@[simp]
-theorem regradeTripleFunctional_regradeTripleFunctional (ψ : (S₁ × S₂) × S₃ → S₀ → R) :
-    regradeTripleFunctional n μ₂ (regradeTripleFunctional n μ₂ ψ) = ψ := by
-  funext q p₀
-  rw [regradeTripleFunctional_apply, regradeTripleFunctional_apply, ← mul_assoc,
-    negOnePowCast_mul_self, one_mul]
-
-/-- Regrading a functional on a triple tensor product is injective. -/
-theorem regradeTripleFunctional_injective :
-    Injective (regradeTripleFunctional (R := R) (S₁ := S₁) (S₃ := S₃) (S₀ := S₀) n μ₂) :=
-  LeftInverse.injective (g := regradeTripleFunctional n μ₂)
-    (regradeTripleFunctional_regradeTripleFunctional n μ₂)
-
-/-- Two functionals on a triple tensor product have equal regradings exactly when they are
-equal. -/
-@[simp]
-theorem regradeTripleFunctional_inj {ψ ψ' : (S₁ × S₂) × S₃ → S₀ → R} :
-    regradeTripleFunctional n μ₂ ψ = regradeTripleFunctional n μ₂ ψ' ↔ ψ = ψ' :=
-  (regradeTripleFunctional_injective n μ₂).eq_iff
-
-/-- The regrading of the zero functional on a triple tensor product is zero. -/
-@[simp]
-theorem regradeTripleFunctional_zero :
-    regradeTripleFunctional (R := R) (S₁ := S₁) (S₃ := S₃) (S₀ := S₀) n μ₂ 0 = 0 := by
-  funext q p₀
-  simp [regradeTripleFunctional_apply]
-
-/-- Regrading a functional on a triple tensor product is additive. -/
-@[simp]
-theorem regradeTripleFunctional_add (ψ ψ' : (S₁ × S₂) × S₃ → S₀ → R) :
-    regradeTripleFunctional n μ₂ (ψ + ψ') =
-      regradeTripleFunctional n μ₂ ψ + regradeTripleFunctional n μ₂ ψ' := by
-  funext q p₀
-  simp [regradeTripleFunctional_apply, mul_add]
-
-/-- Regrading a functional on a triple tensor product commutes with negation. -/
-@[simp]
-theorem regradeTripleFunctional_neg (ψ : (S₁ × S₂) × S₃ → S₀ → R) :
-    regradeTripleFunctional n μ₂ (-ψ) = -regradeTripleFunctional n μ₂ ψ := by
-  funext q p₀
-  simp [regradeTripleFunctional_apply]
-
-/-- Regrading a functional on a triple tensor product commutes with subtraction. -/
-@[simp]
-theorem regradeTripleFunctional_sub (ψ ψ' : (S₁ × S₂) × S₃ → S₀ → R) :
-    regradeTripleFunctional n μ₂ (ψ - ψ') =
-      regradeTripleFunctional n μ₂ ψ - regradeTripleFunctional n μ₂ ψ' := by
-  funext q p₀
-  simp [regradeTripleFunctional_apply, mul_sub]
-
-/-- Regrading a functional on a triple tensor product commutes with scalar multiplication. -/
-@[simp]
-theorem regradeTripleFunctional_smul (c : R) (ψ : (S₁ × S₂) × S₃ → S₀ → R) :
-    regradeTripleFunctional n μ₂ (c • ψ) = c • regradeTripleFunctional n μ₂ ψ := by
-  funext q p₀
-  simp only [regradeTripleFunctional_apply, Pi.smul_apply, smul_eq_mul]
-  ring
 
 variable {n μ₂} {μ₁ : S₁ → ℤ} {μ₃ : S₃ → ℤ} {μ₀ : S₀ → ℤ}
 
@@ -584,7 +536,7 @@ theorem finsum_mul_eq_negOnePowCast_mul_finsum_left {μ₁₂ : S₁₂ → ℤ}
     (p₀ : S₀) :
     ∑ᶠ x, l p₁ p₂ x * l' x p₃ p₀ =
       negOnePowCast R (n * (μ₂ p₂ + 1)) * ∑ᶠ x, t (p₁, p₂) x * t' (x, p₃) p₀ := by
-  rw [(isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * (μ₂ p₂ + 1)))).mul_finsum]
+  rw [negOnePowCast_mul_finsum (n * (μ₂ p₂ + 1))]
   refine finsum_congr fun x => ?_
   rw [hlt, hlt']
   by_cases hx : t (p₁, p₂) x = 0
@@ -610,7 +562,7 @@ theorem finsum_mul_eq_negOnePowCast_mul_finsum_right {m : S₂ → S₃ → S₂
     (p₂ : S₂) (p₃ : S₃) (p₀ : S₀) :
     ∑ᶠ y, m p₂ p₃ y * m' p₁ y p₀ =
       negOnePowCast R (n * (μ₁ p₁ + μ₂ p₂)) * ∑ᶠ y, v (p₂, p₃) y * v' (p₁, y) p₀ := by
-  rw [(isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * (μ₁ p₁ + μ₂ p₂)))).mul_finsum]
+  rw [negOnePowCast_mul_finsum (n * (μ₁ p₁ + μ₂ p₂))]
   refine finsum_congr fun y => ?_
   rw [hmv, hmv', mul_add, negOnePowCast_add]
   ring
@@ -667,8 +619,7 @@ theorem functionalBoundary_regradeTripleFunctional (hδ₂ : ∀ p q, δ₂ p q 
       negOnePowCast R (n * μ₂ x.1.2) *
         kernelComp (tensorDifferential (fun q : S₁ × S₂ => μ₁ q.1 + μ₂ q.2)
           (tensorDifferential μ₁ δ₁ δ₂) δ₃) ψ x q := by
-    rw [kernelComp_apply, kernelComp_apply,
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * μ₂ x.1.2))).mul_finsum]
+    rw [kernelComp_apply, kernelComp_apply, negOnePowCast_mul_finsum (n * μ₂ x.1.2)]
     refine finsum_congr fun x' => ?_
     rw [tensorDifferential_tensorDifferential_cochain hδ₂, regradeTripleFunctional_apply,
       ← negOnePowCast_eq_of_even_sub (a := n * (μ₂ x.1.2 + μ₂ x'.1.2) + n * μ₂ x'.1.2)
@@ -677,8 +628,7 @@ theorem functionalBoundary_regradeTripleFunctional (hδ₂ : ∀ p q, δ₂ p q 
   -- At the output breakings the sign only depends on the fixed inputs.
   have h₂ : kernelComp (regradeTripleFunctional n μ₂ ψ) δ₀ x q =
       negOnePowCast R (n * μ₂ x.1.2) * kernelComp ψ δ₀ x q := by
-    rw [kernelComp_apply, kernelComp_apply,
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * μ₂ x.1.2))).mul_finsum]
+    rw [kernelComp_apply, kernelComp_apply, negOnePowCast_mul_finsum (n * μ₂ x.1.2)]
     exact finsum_congr fun p => by rw [regradeTripleFunctional_apply, mul_assoc]
   -- The Koszul sign of the output breakings is the same in both gradings.
   have hsign : negOnePowCast R (n - μ₁ x.1.1 + (n - μ₂ x.1.2) + (n - μ₃ x.2) + (n - μ₀ q)) =
