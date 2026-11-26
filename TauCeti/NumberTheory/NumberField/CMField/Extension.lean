@@ -30,7 +30,8 @@ complex conjugations of an algebraic closure of `ℚ` fixes it pointwise
 * `TauCeti.NumberField.isTotallyReal_or_isCMField_of_algebra`: a field embedded in a totally real
   or CM field is totally real or CM.
 * `NumberField.IsCMField.of_algebra`: a totally complex field embedded in a CM field is CM.
-* `IntermediateField.isCMField`: an intermediate field of an extension of CM fields is CM.
+* `IntermediateField.isCMField`: an intermediate field of a CM field over a totally complex base,
+  for instance an intermediate field of an extension of CM fields, is CM.
 * `TauCeti.NumberField.isTotallyReal_or_isCMField_of_isCyclotomicExtension`: a cyclotomic
   extension of a totally real or CM field is totally real or CM.
 * `NumberField.IsCMField.of_isCyclotomicExtension`: a cyclotomic extension of a CM field is CM.
@@ -115,11 +116,12 @@ end NumberField.IsCMField
 
 namespace IntermediateField
 
-variable {K L : Type*} [Field K] [CharZero K] [IsCMField K] [Field L] [CharZero L]
+variable {K L : Type*} [Field K] [IsTotallyComplex K] [Field L] [CharZero L]
   [Algebra.IsIntegral ℚ L] [IsCMField L] [Algebra K L]
 
-/-- **An intermediate field of an extension of CM fields is CM.** It is totally complex, as an
-extension of the CM field `K`, and it embeds in the CM field `L`. -/
+/-- **An intermediate field of a CM field over a totally complex base is CM.** It is totally
+complex, as an extension of the totally complex field `K`, and it embeds in the CM field `L`. In
+particular every intermediate field of an extension of CM fields is CM. -/
 instance isCMField (K' : IntermediateField K L) : IsCMField K' :=
   have : IsTotallyComplex K' := isTotallyComplex_of_algebra K K'
   IsCMField.of_algebra K' L
