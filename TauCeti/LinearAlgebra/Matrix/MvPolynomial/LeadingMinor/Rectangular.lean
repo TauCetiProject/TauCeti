@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.LeadingMinor.Basic
 import TauCeti.LinearAlgebra.Matrix.Block
+import TauCeti.Order.Fin.Basic
 
 /-!
 # Leading-minor weight vectors on rectangular matrices
@@ -37,12 +38,6 @@ open Finset Matrix MvPolynomial
 namespace TauCeti
 
 variable {m n : ℕ} {R S : Type*} [CommRing R]
-
-/-- The image of `Fin.castLE` is an initial segment. -/
-private theorem isLowerSet_range_castLE {k l : ℕ} (h : k ≤ l) :
-    IsLowerSet (Set.range (Fin.castLE h)) := by
-  rw [Fin.range_castLE]
-  exact fun _ _ hab hb ↦ lt_of_le_of_lt (Fin.le_iff_val_le_val.mp hab) hb
 
 /-- The product of leading minors of a generic `m × n` matrix. For `a : Fin (min m n)`,
 `e a` is the exponent of the minor on the first `a + 1` rows and columns. -/
@@ -117,8 +112,8 @@ theorem aeval_rectangularLeadingMinorProd_mul_mul [CommRing S] [Algebra R S]
   let c := Fin.castLEEmb (min_le_right m n)
   have hblock := submatrix_mul_mul_of_isLowerTriangular_of_isUpperTriangular X
     (hL.map (algebraMap R S)) (hU.map (algebraMap R S)) r c
-    (by simpa [r] using isLowerSet_range_castLE (min_le_left m n))
-    (by simpa [c] using isLowerSet_range_castLE (min_le_right m n))
+    (by simpa [r] using Fin.isLowerSet_range_castLE (min_le_left m n))
+    (by simpa [c] using Fin.isLowerSet_range_castLE (min_le_right m n))
   -- Renaming the variables along the leading block evaluates on the submatrix of that block.
   have hsub (M : Matrix (Fin m) (Fin n) S) :
       (fun ij : Fin m × Fin n ↦ M ij.1 ij.2) ∘
