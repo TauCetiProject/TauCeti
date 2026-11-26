@@ -10,6 +10,8 @@ public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.QuadraticOrder.ComplexEmbedding
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Data.Nat.GCD
+import TauCeti.NumberTheory.LegendreSymbol.NegOne
 
 /-!
 # The numbers attached to a prime in `ℚ(√-d)`
@@ -180,28 +182,13 @@ theorem rhoPrime_def : rhoPrime d p = piPrimeValuation d p / ((primeNorm d p : �
 theorem gammaPrime_def : gammaPrime d p = 1 / ((p : ℝ) - 1) - rhoPrime d p := by
   rw [gammaPrime]
 
-theorem mem_partnerExponents_iff {e : ℕ} :
+@[simp] theorem mem_partnerExponents_iff {e : ℕ} :
     e ∈ partnerExponents d p ↔ p = d ∨ legendreSym d p = -1 ∧ Odd e := by
   rw [partnerExponents, Set.mem_ofPred_eq]
 
-theorem mem_positivePartnerExponents_iff {e : ℕ} :
+@[simp] theorem mem_positivePartnerExponents_iff {e : ℕ} :
     e ∈ positivePartnerExponents d p ↔ e ∈ partnerExponents d p ∧ 0 < e := by
   rw [positivePartnerExponents, Set.mem_ofPred_eq]
-
-/-- A `p` with `(p / d) = -1` is not `d`, since `(d / d) = 0`. -/
-private theorem ne_of_legendreSym_eq_neg_one (h : legendreSym d p = -1) : p ≠ d := by
-  rintro rfl
-  rw [(legendreSym.eq_zero_iff p p).mpr (by simp)] at h
-  exact absurd h (by decide)
-
-/-- A `p` with `(p / d) = -1` satisfies `2 ≤ p`, since `(0 / d) = 0` and `(1 / d) = 1`. -/
-private theorem two_le_of_legendreSym_eq_neg_one (h : legendreSym d p = -1) : (2 : ℝ) ≤ p := by
-  have : 2 ≤ p := by
-    by_contra! hlt
-    interval_cases p
-    · rw [Nat.cast_zero, legendreSym.at_zero] at h; exact absurd h (by decide)
-    · rw [Nat.cast_one, legendreSym.at_one] at h; exact absurd h (by decide)
-  exact_mod_cast this
 
 theorem primeNorm_of_legendreSym_eq_neg_one (h : legendreSym d p = -1) : primeNorm d p = p ^ 2 := by
   simp [primeNorm, h]
@@ -212,12 +199,14 @@ theorem primeNorm_of_legendreSym_ne_neg_one (h : legendreSym d p ≠ -1) : prime
 @[simp] theorem primeNorm_self : primeNorm d d = d :=
   primeNorm_of_legendreSym_ne_neg_one fun h ↦ ne_of_legendreSym_eq_neg_one h rfl
 
-/-- `ρ_p = 1 / (p - 1)` when `p ≠ d` and `(p / d) ≠ -1`, in particular when `p` splits. -/
+/-- `ρ_p = 1 / (p - 1)` when `p ≠ d` and `(p / d) ≠ -1`; for `d ≡ 3 (mod 4)` and a prime `p`,
+this is the case of `p` split in `ℚ(√-d)`. -/
 theorem rhoPrime_of_ne_of_legendreSym_ne_neg_one (h₁ : p ≠ d) (h₂ : legendreSym d p ≠ -1) :
     rhoPrime d p = 1 / ((p : ℝ) - 1) := by
   rw [rhoPrime, piPrimeValuation_of_ne h₁, primeNorm_of_legendreSym_ne_neg_one h₂]
 
-/-- `ρ_p = 1 / (p² - 1)` when `p` is inert. -/
+/-- `ρ_p = 1 / (p² - 1)` when `(p / d) = -1`; for `d ≡ 3 (mod 4)` and a prime `p`, this is the
+case of `p` inert in `ℚ(√-d)`. -/
 theorem rhoPrime_of_legendreSym_eq_neg_one (h : legendreSym d p = -1) :
     rhoPrime d p = 1 / ((p : ℝ) ^ 2 - 1) := by
   rw [rhoPrime, piPrimeValuation_of_ne (ne_of_legendreSym_eq_neg_one h),
@@ -226,15 +215,17 @@ theorem rhoPrime_of_legendreSym_eq_neg_one (h : legendreSym d p = -1) :
 theorem rhoPrime_self : rhoPrime d d = 1 / (2 * (d : ℝ) - 2) := by
   rw [rhoPrime, piPrimeValuation_self, primeNorm_self, div_div, mul_sub, mul_one]
 
-/-- `γ_p = 0` when `p ≠ d` and `(p / d) ≠ -1`, in particular when `p` splits. -/
+/-- `γ_p = 0` when `p ≠ d` and `(p / d) ≠ -1`; for `d ≡ 3 (mod 4)` and a prime `p`, this is the
+case of `p` split in `ℚ(√-d)`. -/
 theorem gammaPrime_of_ne_of_legendreSym_ne_neg_one (h₁ : p ≠ d) (h₂ : legendreSym d p ≠ -1) :
     gammaPrime d p = 0 := by
   rw [gammaPrime, rhoPrime_of_ne_of_legendreSym_ne_neg_one h₁ h₂, sub_self]
 
-/-- `γ_p = p / (p² - 1)` when `p` is inert. -/
+/-- `γ_p = p / (p² - 1)` when `(p / d) = -1`; for `d ≡ 3 (mod 4)` and a prime `p`, this is the
+case of `p` inert in `ℚ(√-d)`. -/
 theorem gammaPrime_of_legendreSym_eq_neg_one (h : legendreSym d p = -1) :
     gammaPrime d p = p / ((p : ℝ) ^ 2 - 1) := by
-  have hp := two_le_of_legendreSym_eq_neg_one h
+  have hp : (2 : ℝ) ≤ p := by exact_mod_cast two_le_of_legendreSym_eq_neg_one h
   have h1 : (p : ℝ) - 1 ≠ 0 := by linarith
   have h2 : (p : ℝ) ^ 2 - 1 ≠ 0 := by nlinarith
   rw [gammaPrime, rhoPrime_of_legendreSym_eq_neg_one h]
@@ -264,7 +255,7 @@ theorem rhoPrime_le_one_div : rhoPrime d p ≤ 1 / ((p : ℝ) - 1) := by
     rw [rhoPrime_self]
     exact one_div_le_one_div_of_le (by linarith) (by linarith)
   by_cases h₂ : legendreSym d p = -1
-  · have hp := two_le_of_legendreSym_eq_neg_one h₂
+  · have hp : (2 : ℝ) ≤ p := by exact_mod_cast two_le_of_legendreSym_eq_neg_one h₂
     rw [rhoPrime_of_legendreSym_eq_neg_one h₂]
     exact one_div_le_one_div_of_le (by linarith) (by nlinarith)
   · rw [rhoPrime_of_ne_of_legendreSym_ne_neg_one h₁ h₂]
@@ -305,11 +296,7 @@ theorem one_lt_primeNorm (hp : 1 < p) : 1 < primeNorm d p := by
 /-- `p` is prime to `q_p - 1`. -/
 theorem coprime_primeNorm_sub_one (hp : p ≠ 0) : p.Coprime (primeNorm d p - 1) := by
   obtain ⟨k, hk, hq⟩ := exists_primeNorm_eq_pow (d := d) (p := p)
-  have h1 : 1 ≤ p ^ k := Nat.one_le_pow _ _ (Nat.pos_of_ne_zero hp)
-  rw [hq]
-  have : (p ^ k - 1).Coprime (p ^ k) :=
-    (Nat.coprime_self_sub_left h1).mpr (Nat.coprime_one_left _)
-  exact (this.coprime_dvd_right (dvd_pow_self p hk.ne')).symm
+  simpa only [hq] using Nat.coprime_pow_sub_one hp hk.ne'
 
 /-- `v(π_p) = (q_p - 1) · ρ_p`. -/
 theorem piPrimeValuation_eq_mul_rhoPrime (hp : 1 < p) :
@@ -317,8 +304,8 @@ theorem piPrimeValuation_eq_mul_rhoPrime (hp : 1 < p) :
   have : (1 : ℝ) < primeNorm d p := by exact_mod_cast one_lt_primeNorm hp
   rw [rhoPrime, mul_div_cancel₀ _ (by linarith)]
 
-/-- If the prime `p` does not split in `ℚ(√-d)`, that is `(p / d) ≠ 1`, then
-`π_p · conj π_p = q_p`. -/
+/-- If `(p / d) ≠ 1` for a prime `p`, then `π_p · conj π_p = q_p`. For `d ≡ 3 (mod 4)`, the
+condition `(p / d) ≠ 1` says that `p` does not split in `ℚ(√-d)`. -/
 theorem piPrime_mul_conj (hp : p.Prime) (h : legendreSym d p ≠ 1) :
     piPrime d p * (starRingEnd ℂ) (piPrime d p) = primeNorm d p := by
   by_cases h₁ : p = d
@@ -352,7 +339,8 @@ theorem partnerExponents_of_legendreSym_eq_neg_one (h : legendreSym d p = -1) :
   ext e
   simp [mem_partnerExponents_iff, ne_of_legendreSym_eq_neg_one h, h]
 
-/-- When `p` is inert, `I_p` is the set of odd exponents `2k + 1`. -/
+/-- When `(p / d) = -1`, `I_p` is the set of odd exponents `2k + 1`; for `d ≡ 3 (mod 4)` and a
+prime `p`, this is the case of `p` inert in `ℚ(√-d)`. -/
 theorem positivePartnerExponents_of_legendreSym_eq_neg_one (h : legendreSym d p = -1) :
     positivePartnerExponents d p = Set.range (fun k : ℕ ↦ 2 * k + 1) := by
   ext e
@@ -393,7 +381,7 @@ theorem hasSum_div_pow_positivePartnerExponents (c : ℝ) :
       field_simp
   by_cases h₂ : legendreSym d p = -1
   · -- `p` inert: `∑_{e odd} c p⁻ᵉ = c p / (p² - 1)`
-    have hp := two_le_of_legendreSym_eq_neg_one h₂
+    have hp : (2 : ℝ) ≤ p := by exact_mod_cast two_le_of_legendreSym_eq_neg_one h₂
     have hinj : Function.Injective (fun k : ℕ ↦ 2 * k + 1) := fun a b hab ↦ by
       simp only at hab; omega
     rw [positivePartnerExponents_of_legendreSym_eq_neg_one h₂,
