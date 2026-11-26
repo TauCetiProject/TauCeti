@@ -21,7 +21,10 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
 
 For a twice differentiable function on a finite-dimensional Euclidean space, the divergence of
 its normalized gradient is a positive multiple of the nondivergence minimal graph operator.
-This file establishes the equivalence pointwise. No minimality assertion is used here.
+This file establishes the equivalence pointwise. Equal gradients and proportional second
+derivatives give proportional nondivergence operator values
+(`TauCeti.MinimalGraph.nondivergenceOperator_eq_mul_of_gradient_of_iteratedFDeriv_two`).
+No minimality assertion is used here.
 
 ## References
 
@@ -250,5 +253,24 @@ theorem nondivergenceOperator_eq (u : E → ℝ) (x : E) :
   congr 1
   rw [TauCeti.fderiv_gradient, real_inner_comm]
   exact TauCeti.inner_hessianOperator_left u x (∇ u x) (∇ u x)
+
+/-- Equal gradients and proportional second derivatives give proportional values of the
+nondivergence minimal graph operator at the corresponding points. -/
+theorem nondivergenceOperator_eq_mul_of_gradient_of_iteratedFDeriv_two
+    {u v : E → ℝ} {x y : E} {a : ℝ} (hgrad : ∇ v x = ∇ u y)
+    (hsecond : iteratedFDeriv ℝ 2 v x = a • iteratedFDeriv ℝ 2 u y) :
+    nondivergenceOperator v x = a * nondivergenceOperator u y := by
+  have hlap : Δ v x = a * Δ u y := by
+    rw [InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis v
+      (stdOrthonormalBasis ℝ E),
+      InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis u
+        (stdOrthonormalBasis ℝ E)]
+    simp_rw [hsecond, smul_apply, smul_eq_mul]
+    rw [Finset.mul_sum]
+  have hH := congrArg (fun A : E [×2]→L[ℝ] ℝ ↦ A ![∇ u y, ∇ u y]) hsecond
+  simp only [smul_apply, smul_eq_mul, iteratedFDeriv_two_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one] at hH
+  rw [nondivergenceOperator_eq, nondivergenceOperator_eq, hgrad, hlap, hH]
+  ring
 
 end TauCeti.MinimalGraph

@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Monoid.Prod
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.Tactic.FinCases
+import TauCeti.Algebra.Order.Ring.Cast
 import TauCeti.Combinatorics.Network.Acyclic
 import TauCeti.Combinatorics.Network.Coefficients
 import TauCeti.Combinatorics.Network.CycleAdjustment
@@ -681,11 +682,7 @@ end LexicographicAugmentationExample
 example :
     let lo : Assignment (fun _ _ : Bool ↦ Unit) ℤ := fun _ _ _ ↦ -2
     let hi : Assignment (fun _ _ : Bool ↦ Unit) ℤ := fun _ _ _ ↦ 1
-    let φ : ℤ →+o ℝ :=
-      { toFun := Int.cast
-        map_zero' := Int.cast_zero
-        map_add' := Int.cast_add
-        monotone' := Int.cast_mono }
+    let φ : ℤ →+o ℝ := Int.castOrderAddMonoidHom ℝ
     ∃ f : BoundedFlow lo hi false true, f.val = -1 ∧ (f.map φ).val = -1 ∧
       (f.map φ).toFun (x := false) (y := true) () = -1 := by
   intro lo hi φ
@@ -727,14 +724,14 @@ example :
   let F : Flow f 0 3 :=
     { toFun := f
       mem_Icc := ⟨hf₀, le_rfl⟩
-      conserve v hv₀ hv₃ := by simp [f, excessAt_add, hv₀, hv₃]
-      excessAt_sink_nonneg := by simp [f, excessAt_add] }
+      conserve v hv₀ hv₃ := by simp [f, excessAt_add_apply, hv₀, hv₃]
+      excessAt_sink_nonneg := by simp [f, excessAt_add_apply] }
   let G : Flow f 0 3 :=
     { toFun := g
       mem_Icc := ⟨add_nonneg (walkAssignment_nonneg _ zero_le_one)
         (walkAssignment_nonneg _ zero_le_one), hgf⟩
-      conserve v hv₀ hv₃ := by simp [g, excessAt_add, hv₀, hv₃]
-      excessAt_sink_nonneg := by simp [g, excessAt_add] }
+      conserve v hv₀ hv₃ := by simp [g, excessAt_add_apply, hv₀, hv₃]
+      excessAt_sink_nonneg := by simp [g, excessAt_add_apply] }
   let D : PathCycleDecomposition f :=
     { paths := [⟨0, 3, p₁, 1⟩, ⟨0, 3, p₂, 1⟩]
       cycles := []
@@ -742,12 +739,12 @@ example :
       isCycle_walk := by simp
       weight_pos_of_mem_paths := by simp
       weight_pos_of_mem_cycles := by simp
-      excessAt_source_neg := by simp [f, excessAt_add]
-      excessAt_target_pos := by simp [f, excessAt_add]
+      excessAt_source_neg := by simp [f, excessAt_add_apply]
+      excessAt_target_pos := by simp [f, excessAt_add_apply]
       sum_paths_add_sum_cycles := by simp [f, WeightedWalk.assignment_def] }
   refine ⟨F, G, D, rfl, rfl, ?_, ?_, rfl, ?_, ?_⟩
-  · simp [F, BoundedFlow.val_def, f, excessAt_add]
-  · simp [G, BoundedFlow.val_def, g, excessAt_add]
+  · simp [F, BoundedFlow.val_def, f, excessAt_add_apply]
+  · simp [G, BoundedFlow.val_def, g, excessAt_add_apply]
   · -- The arrows `a → b` and `b → a` both carry one unit.
     rw [Assignment.isAcyclic_iff_forall_not_transGen]
     push Not

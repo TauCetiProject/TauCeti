@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.Measure.BaseChange.Basic
-public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra
+public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.BaseChange
 import Mathlib.Topology.Algebra.Module.Compact
 import TauCeti.Topology.Algebra.Ring.Basic

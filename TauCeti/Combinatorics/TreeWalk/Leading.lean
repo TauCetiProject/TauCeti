@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.TreeWalk.Basic
 public import TauCeti.Combinatorics.TreeWalk.Canonical
 public import TauCeti.Combinatorics.TreeWalk.Relabeling
 public import TauCeti.Combinatorics.TraceWord.Counting
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Leading trace words as canonical tree walks
@@ -73,8 +74,7 @@ theorem cyclicPath_apply {k : ℕ} [NeZero k] (w : Fin k → α) (i : Fin (k + 1
 
 @[simp] theorem cyclicPath_succ {k : ℕ} [NeZero k] (w : Fin k → α) (i : Fin k) :
     cyclicPath w i.succ = w (finRotate k i) := by
-  apply congrArg w
-  simp [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
+  rw [cyclicPath_apply, Fin.val_succ, ← Fin.finRotate_ofNat, Fin.ofNat_val_eq_self]
 
 @[simp] theorem cyclicPath_zero {k : ℕ} [NeZero k] (w : Fin k → α) :
     cyclicPath w 0 = w 0 := by
@@ -135,7 +135,8 @@ theorem card_edge_fiber_cyclicPath [NeZero m] (w : Fin (2 * m) → α)
       s(cyclicPath w j.castSucc, cyclicPath w j.succ) =
         s(cyclicPath w i.castSucc, cyclicPath w i.succ)} = 2 := by
   simpa only [cyclicPath_castSucc, cyclicPath_succ] using
-    (ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq w h hv).2 i
+    (ne_and_card_edge_fiber_eq_two_of_no_singleton_nonloop_edge_of_card_image_eq w
+      (fun i _ ↦ h i) hv).2 i
 
 /-- Every closed tree walk is already in first-visit canonical form. -/
 @[simp]
@@ -331,7 +332,8 @@ theorem prodMk_finRotate_injective_of_no_singleton_edge_of_card_image_eq {w : Fi
   by_contra hne
   have he : s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t)) := by rw [h1, h2]
   have hopp := (eq_and_eq_of_no_singleton_edge_of_card_image_eq_of_ne_of_sym2_eq h hv hne he).1
-  exact (ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq w h hv).1 s
+  exact (ne_and_card_edge_fiber_eq_two_of_no_singleton_nonloop_edge_of_card_image_eq w
+    (fun i _ ↦ h i) hv).1 s
     (hopp.trans h2.symm)
 
 end TauCeti.TreeWalk

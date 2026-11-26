@@ -8,6 +8,7 @@ module
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.GroupTheory.PGroup
 
 /-!
@@ -17,8 +18,8 @@ Mathlib's `IsPGroup.to_quotient` says that every quotient of a `p`-group is agai
 This file records the complementary behaviour, in which the group is fixed and the normal
 subgroup varies: how the property `IsPGroup p (G ⧸ N)` of *the quotient* behaves under
 intersection of normal subgroups and under preimage along a group homomorphism. It also records
-closure of `p`-groups under binary and finite products and under extensions, and their
-disjointness from subgroups of order prime to `p`.
+closure of `p`-groups under binary and finite products, under extensions and under directed
+suprema of subgroups, and their disjointness from subgroups of order prime to `p`.
 
 The two quotient statements are group-theoretic, with no topology. They are what makes the family of
 normal subgroups with `p`-group quotient usable: `IsPGroup.quotient_inf` says the family is
@@ -37,6 +38,11 @@ that a homomorphism into a pro-`p` group kills their intersection.
 * `IsPGroup.pi`, `IsAddPGroup.pi`: a finite product of (additive) `p`-groups is a `p`-group.
 * `IsPGroup.of_subgroup_of_quotient`: an extension of a `p`-group by a `p`-group is a
   `p`-group.
+* `IsPGroup.sSup_of_directedOn`: the supremum of a directed family of `p`-subgroups is a
+  `p`-subgroup.
+* `IsPGroup.dvd_index_subgroupOf`, `IsPGroup.natCast_index_subgroupOf_eq_zero`: the index
+  `|P : Q ∩ P|` for a `p`-subgroup `P` not contained in `Q` is divisible by `p`, so vanishes in
+  characteristic `p`.
 * `TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup`: a `p`-group meets a subgroup of order prime
   to `p` trivially.
 * `IsPGroup.subsingleton_of_coprime`, `IsPGroup.subsingleton_of_ne`: a group that is a `p`-group
@@ -104,6 +110,38 @@ theorem _root_.IsPGroup.of_subgroup_of_quotient {N : Subgroup G} [N.Normal]
     (by rwa [QuotientGroup.ker_mk'])
   rw [Subgroup.comap_top] at this
   exact this.of_equiv Subgroup.topEquiv
+
+/-- The supremum of a directed family of `p`-subgroups, for instance of a chain, is a
+`p`-subgroup. -/
+theorem _root_.IsPGroup.sSup_of_directedOn {K : Set (Subgroup G)} (hK : DirectedOn (· ≤ ·) K)
+    (h : ∀ H ∈ K, IsPGroup p H) : IsPGroup p (sSup K : Subgroup G) := by
+  rcases K.eq_empty_or_nonempty with rfl | hne
+  · rw [sSup_empty]
+    exact IsPGroup.of_bot
+  intro g
+  obtain ⟨H, hH, hg⟩ := (Subgroup.mem_sSup_of_directedOn hne hK).1 g.property
+  obtain ⟨k, hk⟩ := h H hH ⟨g, hg⟩
+  exact ⟨k, Subtype.ext (by simpa using congrArg Subtype.val hk)⟩
+
+/-- For a `p`-subgroup `P` not contained in `Q`, the index `|P : Q ∩ P|` is divisible by `p`, being
+a positive power of `p`. -/
+theorem _root_.IsPGroup.dvd_index_subgroupOf [Fact p.Prime] {Q P : Subgroup G}
+    [(Q.subgroupOf P).FiniteIndex] (hP : IsPGroup p P) (hPQ : ¬ P ≤ Q) :
+    p ∣ (Q.subgroupOf P).index := by
+  obtain ⟨n, hn⟩ := hP.index (Q.subgroupOf P)
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    rw [pow_zero, Subgroup.index_eq_one, Subgroup.subgroupOf_eq_top] at hn
+    exact hPQ hn
+  rw [hn]
+  exact dvd_pow_self p hn0
+
+/-- In characteristic `p`, the index `|P : Q ∩ P|` vanishes for a `p`-subgroup `P` not contained
+in `Q`. -/
+theorem _root_.IsPGroup.natCast_index_subgroupOf_eq_zero [Fact p.Prime] {R : Type*}
+    [AddMonoidWithOne R] [CharP R p] {Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex]
+    (hP : IsPGroup p P) (hPQ : ¬ P ≤ Q) : ((Q.subgroupOf P).index : R) = 0 :=
+  (CharP.cast_eq_zero_iff R p _).2 (hP.dvd_index_subgroupOf hPQ)
 
 /-- A `p`-group meets a subgroup of order prime to `p` trivially. -/
 theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G}

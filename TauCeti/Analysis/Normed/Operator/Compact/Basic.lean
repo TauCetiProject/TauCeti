@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.Analysis.Normed.Group.Quotient
+public import Mathlib.Topology.MetricSpace.Cover
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -42,6 +43,9 @@ the compact perturbations of Fredholm modules.
   submodule of its kernel is compact.
 * `IsCompactOperator.totallyBounded_image_closedBall`: a compact operator maps closed balls to
   totally bounded sets.
+* `ContinuousLinearMap.norm_mkQL_span_comp_le_of_isCover`: quotienting the target by the span of
+  the centres of an `ε`-cover of the image of the unit ball leaves an operator of norm at most
+  `‖c‖ ε`, for any scalar `c` with `1 < ‖c‖`.
 * `ContinuousLinearMap.exists_finiteDimensional_quotient_norm_le`: a compact operator becomes
   arbitrarily small after quotienting its target by a finite-dimensional subspace.
 * `isCompactOperator_iff_totallyBounded_image_closedBall`: a linear map into a complete space is
@@ -195,6 +199,26 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+open scoped NNReal in
+/-- If `N` is an `ε`-cover of the image of the closed unit ball under `T`, then quotienting the
+target by the span of `N` leaves an operator of norm at most `‖c‖ ε`, for every scalar `c` with
+`1 < ‖c‖`. -/
+theorem norm_mkQL_span_comp_le_of_isCover (T : E →L[𝕜] F) {ε : ℝ≥0} {N : Set F}
+    (hN : IsCover ε ((T : E → F) '' closedBall 0 1) N) {c : 𝕜} (hc : 1 < ‖c‖) :
+    ‖(Submodule.span 𝕜 N).mkQL ∘L T‖ ≤ ‖c‖ * ε := by
+  -- Compare norms on the shell `1 / ‖c‖ ≤ ‖x‖ < 1`.
+  refine opNorm_le_of_shell one_pos (by positivity) hc fun x hx₁ hx₂ ↦ ?_
+  obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 <| hN.subset_iUnion_closedBall <|
+    mem_image_of_mem T (mem_closedBall_zero_iff.2 hx₂.le)
+  have hqy : (Submodule.span 𝕜 N).mkQL y = 0 :=
+    (Submodule.Quotient.mk_eq_zero _).2 (Submodule.subset_span hy)
+  calc ‖((Submodule.span 𝕜 N).mkQL ∘L T) x‖ = ‖(Submodule.span 𝕜 N).mkQL (T x - y)‖ := by
+        rw [map_sub, hqy, sub_zero, comp_apply]
+    _ ≤ ‖T x - y‖ := Submodule.Quotient.norm_mk_le _ _
+    _ ≤ ε := by rw [← dist_eq_norm]; exact mem_closedBall.1 hxy
+    _ = ‖c‖ * ε * (1 / ‖c‖) := by field_simp
+    _ ≤ ‖c‖ * ε * ‖x‖ := by gcongr
+
 /-- A compact operator becomes arbitrarily small after quotienting its target by a
 finite-dimensional subspace. No finite-rank approximation hypothesis is required. -/
 theorem exists_finiteDimensional_quotient_norm_le (K : E →L[𝕜] F)
@@ -202,23 +226,15 @@ theorem exists_finiteDimensional_quotient_norm_le (K : E →L[𝕜] F)
     ∃ W : Submodule 𝕜 F, FiniteDimensional 𝕜 W ∧ ‖W.mkQL.comp K‖ ≤ ε := by
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
   have hc₀ : 0 < ‖c‖ := one_pos.trans hc
-  -- Cover a compact set containing the image of the unit ball by finitely many balls of
-  -- radius `ε / ‖c‖`; their centres span `W`.
-  obtain ⟨C, hC, hKC⟩ := hK.image_closedBall_subset_compact 1
-  obtain ⟨s, -, hs, hcover⟩ := hC.finite_cover_balls (div_pos hε hc₀)
-  refine ⟨Submodule.span 𝕜 s, FiniteDimensional.span_of_finite 𝕜 hs, ?_⟩
-  refine opNorm_le_of_shell one_pos hε.le hc fun x hx₁ hx₂ ↦ ?_
-  obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 <| hcover <| hKC <|
-    mem_image_of_mem K (mem_closedBall_zero_iff.2 hx₂.le)
-  have hqy : (Submodule.Quotient.mk y : F ⧸ Submodule.span 𝕜 s) = 0 := by
-    simpa using Submodule.subset_span hy
-  calc
-    ‖(Submodule.span 𝕜 s).mkQL.comp K x‖ = ‖(Submodule.span 𝕜 s).mkQL (K x - y)‖ := by
-      simp [hqy]
-    _ ≤ ‖K x - y‖ := Submodule.Quotient.norm_mk_le _ _
-    _ ≤ ε / ‖c‖ := (mem_ball_iff_norm.1 hxy).le
-    _ = ε * (1 / ‖c‖) := by ring
-    _ ≤ ε * ‖x‖ := by gcongr
+  -- Cover the image of the unit ball by finitely many balls of radius `ε / ‖c‖`; their centres
+  -- span `W`.
+  obtain ⟨N, -, hNfin, hN⟩ := exists_finite_isCover_of_totallyBounded
+    (Real.toNNReal_pos.2 (div_pos hε hc₀)).ne'
+    (hK.totallyBounded_image_closedBall (f := K.toLinearMap) 1)
+  refine ⟨Submodule.span 𝕜 N, FiniteDimensional.span_of_finite 𝕜 hNfin, ?_⟩
+  refine (K.norm_mkQL_span_comp_le_of_isCover hN hc).trans_eq ?_
+  rw [Real.coe_toNNReal _ (div_pos hε hc₀).le]
+  field_simp
 
 end ContinuousLinearMap
 

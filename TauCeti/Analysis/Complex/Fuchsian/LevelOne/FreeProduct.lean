@@ -12,7 +12,7 @@ public import Mathlib.GroupTheory.Index
 public import TauCeti.GroupTheory.CoprodI.Basic
 public import TauCeti.NumberTheory.Modular.Generators
 import TauCeti.Algebra.Group.Submonoid.Torsion
-import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
+import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Triangle.Group
 import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.GroupTheory.Index.Torsion
 import TauCeti.GroupTheory.OrderOfElement.Basic

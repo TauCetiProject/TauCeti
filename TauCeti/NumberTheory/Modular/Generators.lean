@@ -117,6 +117,22 @@ theorem R_mul_U_inv : R * U⁻¹ = S * T ^ 2 * S⁻¹ := by
 theorem T_mul_S_mul_U : T * S * U = (-1 : SL(2, ℤ)) := by
   decide
 
+/-- The negative `-U = [[0, 1], [-1, 1]]` of `U` has order six: its cube is `-1`. -/
+@[simp]
+theorem neg_U_pow_three : (-U) ^ 3 = (-1 : SL(2, ℤ)) := by
+  rw [Odd.neg_pow (by decide), U_pow_three]
+
+/-- Recovering the translation from `-U` and `S`. -/
+theorem neg_U_inv_mul_S_inv : (-U)⁻¹ * S⁻¹ = T := by
+  decide
+
+/-- `-U` is the product `T (S T S⁻¹)` of the unipotent generators `[[1, 1], [0, 1]]` and
+`[[1, 0], [-1, 1]]`. -/
+theorem T_mul_S_mul_T_mul_S_inv : T * (S * T * S⁻¹) = -U := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Matrix.SpecialLinearGroup.coe_inv, Matrix.adjugate_fin_two,
+    Matrix.mul_apply, Fin.sum_univ_two]
+
 /-- The projective class of `R` has cube one. -/
 @[simp]
 theorem coe_R_pow_three : (R : PSL(2, ℤ)) ^ 3 = 1 := by
