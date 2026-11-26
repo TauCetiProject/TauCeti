@@ -263,6 +263,17 @@ theorem isSymplectic_fubiniStudyForm : (fubiniStudyForm n).IsSymplectic :=
       fun x ↦ (ker_bilinFormAt_mpullback_coe_sphere x).trans (ker_mfderiv_mk x).symm⟩).smul _
     (inv_ne_zero Real.pi_ne_zero)
 
+variable (n) in
+/-- The Fubini–Study form is `C¹`, the regularity at which forms are integrated over spheres. -/
+theorem isSmoothForm_fubiniStudyForm :
+    IsSmoothForm 𝓘(ℝ, Fin n → ℂ) 1 (fubiniStudyForm n).val :=
+  (fubiniStudyForm n).isSmoothForm.of_le (by simp)
+
+variable (n) in
+/-- The Fubini–Study form is closed: its manifold exterior derivative vanishes. -/
+theorem mextDeriv_fubiniStudyForm : mextDeriv (fubiniStudyForm n).val = 0 :=
+  (SmoothForm.isClosed_def _).1 isSymplectic_fubiniStudyForm.isClosed
+
 /-! ### The Fubini–Study form and the Fubini–Study Hermitian form -/
 
 /-- **The Fubini–Study form is the imaginary part of the Fubini–Study Hermitian form.** At the
