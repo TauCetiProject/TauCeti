@@ -30,8 +30,8 @@ simple-pole factor `1 / (σ + i t - 1)` for `σ > 1`.
 
 * `TauCeti.tendsto_fourierCoeff_cofinite`, `TauCeti.tendsto_fourierCoeffOn_cofinite`: the Fourier
   coefficients of any function on the circle, or on an interval, tend to `0` as `n → ±∞`.
-* `TauCeti.tendsto_integral_exp_int_mul_add_int_mul_I_smul_cofinite`: the Fourier integrals
-  `∫ e^{i(d₁x₁ + d₂x₂)} f(x) dx` of any function on `ℝ²` tend to `0` as `d → ∞` in `ℤ²`.
+* `TauCeti.tendsto_integral_exp_sum_int_mul_I_smul_cofinite`: the Fourier integrals
+  `∫ e^{i ∑ᵢ dᵢxᵢ} f(x) dx` of any function on `ℝ^ι` tend to `0` as `d → ∞` in `ℤ^ι`.
 * `MeasureTheory.Integrable.tendsto_integral_sin_smul_atTop`: sine-modulated integrals
   tend to zero as the real frequency tends to positive infinity.
 
@@ -137,55 +137,48 @@ theorem integrable_inv_sub_one_mul_mul_cpow {psi : ℝ → ℂ} {x sigma : ℝ} 
       (continuous_cpow_mul_I hx)).aestronglyMeasurable (.of_forall hpolebound)).congr
     (.of_forall fun t ↦ by ring)
 
-/-- The linear map `x ↦ -(2π)⁻¹ (x₁ ⬝ + x₂ ⬝)` from `ℝ²` to its dual, sending `x` to the
-frequency of the character `e^{i(x₁y₁ + x₂y₂)}` in the normalization of `Real.fourierChar`. -/
-private noncomputable def charFreq : (ℝ × ℝ) →ₗ[ℝ] StrongDual ℝ (ℝ × ℝ) where
-  toFun x :=
-    -(2 * π)⁻¹ • (x.1 • ContinuousLinearMap.fst ℝ ℝ ℝ + x.2 • ContinuousLinearMap.snd ℝ ℝ ℝ)
-  map_add' x y := by
-    simp only [Prod.fst_add, Prod.snd_add, add_smul, ← smul_add]; congr 1; abel
-  map_smul' c x := by
-    simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_smul, RingHom.id_apply, smul_add]
-    rw [smul_comm _ c, smul_comm _ c]
+/-- The linear map `x ↦ -(2π)⁻¹ ∑ᵢ xᵢ ⬝ᵢ` from `ℝ^ι` to its dual, sending `x` to the frequency
+of the character `e^{i ∑ᵢ xᵢyᵢ}` in the normalization of `Real.fourierChar`. -/
+private noncomputable def charFreq (ι : Type*) [Fintype ι] :
+    (ι → ℝ) →ₗ[ℝ] StrongDual ℝ (ι → ℝ) :=
+  -(2 * π)⁻¹ • ∑ i, (LinearMap.toSpanSingleton ℝ _ (ContinuousLinearMap.proj i)).comp
+    (LinearMap.proj i)
 
-private theorem charFreq_injective : Function.Injective charFreq := by
-  refine (injective_iff_map_eq_zero charFreq).2 fun x hx ↦ ?_
-  have h1 := congrArg (fun φ : StrongDual ℝ (ℝ × ℝ) ↦ φ (1, 0)) hx
-  have h2 := congrArg (fun φ : StrongDual ℝ (ℝ × ℝ) ↦ φ (0, 1)) hx
-  simp only [charFreq, mul_inv_rev, smul_add, neg_smul, LinearMap.coe_mk, AddHom.coe_mk,
-    add_apply, neg_apply, smul_apply,
-    ContinuousLinearMap.coe_fst', smul_eq_mul, mul_one, ContinuousLinearMap.coe_snd', mul_zero,
-    neg_zero, add_zero, zero_apply, neg_eq_zero, mul_eq_zero, inv_eq_zero,
-    Real.pi_ne_zero, OfNat.ofNat_ne_zero, or_self, false_or, zero_add] at h1 h2
-  exact Prod.ext h1 h2
+private theorem charFreq_apply {ι : Type*} [Fintype ι] (x y : ι → ℝ) :
+    charFreq ι x y = -(2 * π)⁻¹ * ∑ i, x i * y i := by
+  simp [charFreq, Finset.sum_apply]
 
-/-- The frequencies of the characters `e^{i(d₁x₁ + d₂x₂)}` leave every compact set of the dual
-as `d → ∞` in `ℤ²`. -/
-private theorem tendsto_charFreq_cofinite :
-    Tendsto (fun d : ℤ × ℤ ↦ charFreq ((d.1 : ℝ), (d.2 : ℝ))) cofinite
-      (cocompact (StrongDual ℝ (ℝ × ℝ))) := by
-  have hint : Tendsto (fun d : ℤ × ℤ ↦ ((d.1 : ℝ), (d.2 : ℝ))) cofinite (cocompact (ℝ × ℝ)) := by
+private theorem charFreq_injective (ι : Type*) [Fintype ι] :
+    Function.Injective (charFreq ι) := by
+  classical
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ funext fun i ↦ ?_
+  have h := congrArg (fun φ : StrongDual ℝ (ι → ℝ) ↦ φ (Pi.single i 1)) hx
+  simpa [charFreq_apply, Pi.single_apply, Real.pi_ne_zero] using h
+
+/-- The frequencies of the characters `e^{i ∑ᵢ dᵢxᵢ}` leave every compact set of the dual as
+`d → ∞` in `ℤ^ι`. -/
+private theorem tendsto_charFreq_cofinite (ι : Type*) [Fintype ι] :
+    Tendsto (fun d : ι → ℤ ↦ charFreq ι fun i ↦ (d i : ℝ)) cofinite
+      (cocompact (StrongDual ℝ (ι → ℝ))) := by
+  have hint : Tendsto (fun d : ι → ℤ ↦ fun i ↦ (d i : ℝ)) cofinite (cocompact (ι → ℝ)) := by
     rw [← cocompact_eq_cofinite]
-    exact (Int.isClosedEmbedding_coe_real.prodMap Int.isClosedEmbedding_coe_real).tendsto_cocompact
-  exact (charFreq.isClosedEmbedding_of_injective
-    (LinearMap.ker_eq_bot.2 charFreq_injective)).tendsto_cocompact.comp hint
+    exact (Topology.IsClosedEmbedding.piMap fun _ ↦
+      Int.isClosedEmbedding_coe_real).tendsto_cocompact
+  exact ((charFreq ι).isClosedEmbedding_of_injective
+    (LinearMap.ker_eq_bot.2 (charFreq_injective ι))).tendsto_cocompact.comp hint
 
-/-- **Riemann--Lebesgue on the plane along `ℤ²`**: the Fourier integrals
-`∫ e^{i(d₁x₁ + d₂x₂)} f(x) dx` of any function `f` on `ℝ²` tend to `0` as `d → ∞` in `ℤ²`. If `f`
-is not integrable, every integral is `0`. -/
-theorem tendsto_integral_exp_int_mul_add_int_mul_I_smul_cofinite (f : ℝ × ℝ → E) :
-    Tendsto (fun d : ℤ × ℤ ↦ ∫ x, exp ((d.1 * x.1 + d.2 * x.2 : ℝ) * I) • f x) cofinite
-      (𝓝 0) := by
-  have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
+/-- **Riemann--Lebesgue on `ℝ^ι` along `ℤ^ι`**: the Fourier integrals `∫ e^{i ∑ᵢ dᵢxᵢ} f(x) dx`
+of any function `f` on `ℝ^ι`, for a finite index type `ι`, tend to `0` as `d → ∞` in `ℤ^ι`. If
+`f` is not integrable, every integral is `0`. -/
+theorem tendsto_integral_exp_sum_int_mul_I_smul_cofinite {ι : Type*} [Fintype ι]
+    (f : (ι → ℝ) → E) :
+    Tendsto (fun d : ι → ℤ ↦ ∫ x, exp ((∑ i, d i * x i : ℝ) * I) • f x) cofinite (𝓝 0) := by
   refine ((tendsto_integral_exp_smul_cocompact f volume).comp
-    tendsto_charFreq_cofinite).congr fun d ↦ ?_
-  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+    (tendsto_charFreq_cofinite ι)).congr fun d ↦ integral_congr_ae (.of_forall fun x ↦ ?_)
   dsimp only
-  rw [Circle.smul_def, Real.fourierChar_apply]
+  rw [Circle.smul_def, Real.fourierChar_apply, charFreq_apply]
   congr 3
-  simp [charFreq]
   field_simp
-  ring
 
 end TauCeti
 
