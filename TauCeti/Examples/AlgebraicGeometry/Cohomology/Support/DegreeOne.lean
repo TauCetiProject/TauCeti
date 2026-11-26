@@ -84,6 +84,11 @@ lemma cohomologyWithSupportOneAddEquiv_symm_mk (y : Localization.Away (X : R[X])
     (cohomologyWithSupportOneAddEquiv R).symm (QuotientAddGroup.mk y) =
       (Scheme.Modules.cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv _ (coordinate R)).symm
         (Submodule.Quotient.mk ((localizationRingEquiv R).symm y)) :=
+  -- `rfl` rather than `rw [AddEquiv.symm_trans_apply, QuotientAddGroup.congr_symm,
+  -- QuotientAddGroup.congr_mk]`: the definition composes an equivalence of `Submodule` quotients
+  -- with one of `AddSubgroup` quotients, and the two quotient types (and `Submodule.Quotient.mk`
+  -- and `QuotientAddGroup.mk`) agree only definitionally, so after unfolding the definition the
+  -- goal is not type-correct at the transparency `rw` uses. Every step is an `rfl` lemma.
   (rfl)
 
 end TauCeti.AlgebraicGeometry.SupportDegreeOneExample

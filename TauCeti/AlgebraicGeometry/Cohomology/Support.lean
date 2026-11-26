@@ -316,6 +316,7 @@ lemma cohomologyWithSupportSuccLinearEquiv_symm_cohomologyWithSupportδ {q₀ q�
     (h : 1 + q₀ = q₁) [Subsingleton (cohomologyOn M q₁ W)] (x : cohomologyOn M q₀ (W ⊓ Z.compl)) :
     (M.cohomologyWithSupportSuccLinearEquiv Z W h).symm (M.cohomologyWithSupportδ Z W h x) =
       Submodule.Quotient.mk x :=
-  (LinearEquiv.symm_apply_eq _).mpr (M.cohomologyWithSupportSuccLinearEquiv_mk Z W h x).symm
+  (exact_cohomologyOnResLinear_cohomologyWithSupportδ M Z W h).linearEquivOfSurjective_symm_apply
+    (cohomologyWithSupportδ_surjective M Z W h) x
 
 end AlgebraicGeometry.Scheme.Modules
