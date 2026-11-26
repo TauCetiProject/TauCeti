@@ -72,6 +72,20 @@ determinant line induced by `1 - Ψ(T)` and the one given by bijectivity differ 
 For the orbit traversed `n` times, `T = n d` and `Ψ(T) = P ^ n`
 (`TauCeti.dysonSeriesLeft_coverPullback`).
 
+**The determinant signs.** Since the operator on a skew cover is `(J₀ L_S) ⊕ D'` with `D'`
+invertible and depending continuously on `S`, the determinant signs of
+`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.PeriodicOrientation` carry over
+(`TauCeti.sign_detLineEquivOfBijective_prodMap_loopOperator_eq_sign_det`). Transport the complex
+orientation of the operator of a complex-linear loop along a path of infinitesimally symplectic
+loops to a bijective operator: read against the orientation given by bijectivity, it has the sign
+of `det (1 - Ψ(T))` (`TauCeti.sign_detLineEquivOfBijective_skewTorusOperator_eq_sign_det`), and of
+`det (1 + Ψ(T))` for the operator twisted by the sign character of the cover that is `-1` on
+`(σ, T)`. On the cover with lattice spanned by `(ℓ, 0)` and `(σ, n d)` these signs are
+`sgn det (1 - P ^ n)` and `sgn det (1 + P ^ n)`
+(`TauCeti.sign_detLineEquivOfBijective_skewTorusOperator_coverPullback_eq_sign_det`), the signs
+found on the covers along the orbit in `TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Cover`.
+As for the Fredholm alternative, only the number `n` of turns along `γ` enters.
+
 ## Main definitions
 
 * `TauCeti.skewTorusModeSobolev F ℓ σ θ`, `TauCeti.skewTorusModeL2 F ℓ σ θ`: the maps periodic of
@@ -94,6 +108,12 @@ For the orbit traversed `n` times, `T = n d` and `Ψ(T) = P ^ n`
   alternative, and on the covers of an orbit torus in terms of `P ^ n`.
 * `TauCeti.sign_detLineEndEquiv_detLineSkewTorusOperatorEquiv`: the comparison of the two
   orientations of a bijective operator by the sign of `det (1 - Ψ(T))`.
+* `TauCeti.sign_detLineEquivOfBijective_skewTorusOperator_eq_sign_det`,
+  `TauCeti.sign_detLineEquivOfBijective_skewTorusOperator_antiperiodicGaugeLoop_eq_sign_det`: the
+  transported complex orientation has determinant sign `sgn det (1 ∓ Ψ(T))`.
+* `TauCeti.sign_detLineEquivOfBijective_skewTorusOperator_coverPullback_eq_sign_det`,
+  `sign_detLineEquivOfBijective_skewTorusOperator_antiperiodicGaugeLoop_coverPullback_eq_sign_det`:
+  on every finite cover of an orbit torus, the determinant signs `sgn det (1 ∓ P ^ n)`.
 
 ## References
 
@@ -102,6 +122,9 @@ For the orbit traversed `n` times, `T = n d` and `Ψ(T) = P ^ n`
   unbranched covers).
 * D. Salamon, *Lectures on Floer homology*, in Symplectic Geometry and Topology,
   IAS/Park City Math. Ser. 7 (1999), Lecture 2 (the operator `J₀ ∂t + S` and the return map).
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
+  Colloquium Publications **52**, 2012, Appendix A.2 (orientations of determinant lines by
+  transport from complex-linear operators).
 -/
 
 public section
@@ -702,5 +725,214 @@ theorem sign_detLineEndEquiv_detLineSkewTorusOperatorEquiv (hℓ : ℓ ≠ 0)
   sign_detLineEndEquiv_detLineProdMapLoopOperatorEquiv T S _ hD x
 
 end Comparison
+
+/-! ### The determinant signs on the skew covers -/
+
+section Orientation
+
+variable (T : ℝ) [hT : Fact (0 < T)] {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+  [FiniteDimensional ℂ F] (q : ℕ) [NeZero q] {ℓ : ℝ} (σ : ℝ)
+
+/-- A finite-dimensional complex space is complete, as the Sobolev spaces below need. -/
+local instance instCompleteSpaceSkewCoverOrientation : CompleteSpace F :=
+  FiniteDimensional.completeSpace ℂ F
+
+/-- The operator on the modes of nonzero frequency of a skew cover depends continuously on the
+loop. -/
+private theorem continuousOn_skewTorusModeOperator_coverPullback {X : Type*} [TopologicalSpace X]
+    {M : X → C(AddCircle T, F →L[ℝ] F)} {s : Set X} (hM : ContinuousOn M s) :
+    ContinuousOn (fun x ↦ skewTorusModeOperator ((q : ℝ) * T) ℓ σ
+      ((T : ℝ) : AddCircle ((q : ℝ) * T)) (AddCircle.coverPullback q (M x))
+      (AddCircle.coverPullback_add_coe_period q (M x))) s :=
+  ((continuous_skewTorusModeOperator _ ℓ σ _).comp
+    (f := fun S : C(AddCircle T, F →L[ℝ] F) ↦
+      (⟨AddCircle.coverPullback q S, AddCircle.coverPullback_add_coe_period q S⟩ :
+        {S' : C(AddCircle ((q : ℝ) * T), F →L[ℝ] F) // ∀ t, S' (t + (T : ℝ)) = S' t}))
+    ((AddCircle.continuous_coverPullback q).subtype_mk _)).comp_continuousOn hM
+
+open Set (uIcc left_mem_uIcc right_mem_uIcc)
+
+variable {M : ℝ → C(AddCircle T, F →L[ℝ] F)} {a b : ℝ}
+
+/-- **The orbit-torus operator on a skew cover has determinant sign `sgn det (1 - Ψ(T))`.** Let
+`M` be a path of infinitesimally symplectic loops of period `T`, continuous on `[a, b]`, whose loop
+`M a` consists of complex-linear maps, so that the operator `∂s + J₀ (∂t - M a)` on the skew cover
+(`TauCeti.skewTorusOperator`) is the real map underlying a complex-linear map `f`. If the operator
+`∂s + J₀ (∂t - M b)` on the skew cover is bijective, equivalently `det (1 - Ψ_b(T)) ≠ 0`, every
+element `x` of its determinant line in the orientation transported from the complex orientation
+at `a` reads, in the trivialization given by bijectivity (`LinearMap.detLineEquivOfBijective`),
+with the sign of `det (1 - Ψ_b(T))`, where `Ψ_b(T)` is the return map of `ζ' = M b ζ`. As for the
+Fredholm alternative, the shear `σ` and the integer `q` play no role. -/
+theorem sign_detLineEquivOfBijective_skewTorusOperator_eq_sign_det (hℓ : ℓ ≠ 0)
+    (hM : ContinuousOn M (uIcc a b))
+    (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
+    (hMa : ∀ t v, M a t (I • v) = I • M a t v)
+    {f : CircleSobolev 1 F × skewTorusModeSobolev F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T)) →ₗ[ℂ]
+      CircleSobolev 0 F × skewTorusModeL2 F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T))}
+    (hf : f.restrictScalars ℝ = skewTorusOperator T q ℓ σ (M a))
+    {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z)
+    (hb : Function.Bijective (skewTorusOperator T q ℓ σ (M b)))
+    {x : (skewTorusOperator T q ℓ σ (M b)).toLinearMap.detLine} (hx : x ≠ 0)
+    (hxz : rayOfNeZero ℝ x hx =
+      detLineOrientationTransport (T := fun τ ↦ skewTorusOperator T q ℓ σ (M τ)) a b
+        ((continuous_skewTorusOperator T q ℓ σ).comp_continuousOn hM)
+        (fun τ hτ ↦ isFredholm_skewTorusOperator T q σ hℓ (M τ) (hMs τ hτ))
+        (rayOfNeZero ℝ (LinearMap.detLineCongrOfEq hf z)
+          (hz.detLineCongrOfEq_ne_zero_of_isFredholm hf
+            (isFredholm_skewTorusOperator T q σ hℓ (M a) (hMs a left_mem_uIcc))))) :
+    SignType.sign ((skewTorusOperator T q ℓ σ (M b)).toLinearMap.detLineEquivOfBijective hb x) =
+      SignType.sign
+        (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : F →ₗ[ℝ] F))) :=
+  sign_detLineEquivOfBijective_prodMap_loopOperator_eq_sign_det T
+    (D := fun τ ↦ skewTorusOperator T q ℓ σ (M τ))
+    (B := fun τ ↦ skewTorusModeOperator ((q : ℝ) * T) ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T))
+      (AddCircle.coverPullback q (M τ)) (AddCircle.coverPullback_add_coe_period q (M τ)))
+    (fun _ ↦ rfl) hM (continuousOn_skewTorusModeOperator_coverPullback T q σ hM)
+    (fun τ hτ ↦ isInvertible_skewTorusModeOperator_coverPullback T q σ hℓ (M τ) (hMs τ hτ))
+    hMa hf hz hb hx hxz
+
+/-- **The orbit-torus operator on a skew cover twisted along `(σ, T)` has determinant sign
+`sgn det (1 + Ψ(T))`.** In the situation of
+`TauCeti.sign_detLineEquivOfBijective_skewTorusOperator_eq_sign_det`, consider the operators on
+the skew cover of the loops `(M τ)ₐ = TauCeti.CircleSobolev.antiperiodicGaugeLoop T (M τ)`, whose
+return map is `-Ψ_τ(T)`. In the periodic gauge they are the operators on maps `u` with
+`u (s + ℓ, t) = u (s, t)` and `u (s + σ, t + T) = -u (s, t)`, twisted by the real sign character
+of the cover that is `-1` on `(σ, T)`. If the one at `b` is bijective, every element `x` of its
+determinant line in the orientation transported from the complex orientation at `a` reads, in the
+trivialization given by bijectivity, with the sign of `det (1 + Ψ_b(T))`. -/
+theorem sign_detLineEquivOfBijective_skewTorusOperator_antiperiodicGaugeLoop_eq_sign_det
+    (hℓ : ℓ ≠ 0) (hM : ContinuousOn M (uIcc a b))
+    (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
+    (hMa : ∀ t v, M a t (I • v) = I • M a t v)
+    {f : CircleSobolev 1 F × skewTorusModeSobolev F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T)) →ₗ[ℂ]
+      CircleSobolev 0 F × skewTorusModeL2 F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T))}
+    (hf : f.restrictScalars ℝ = skewTorusOperator T q ℓ σ (antiperiodicGaugeLoop T (M a)))
+    {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z)
+    (hb : Function.Bijective (skewTorusOperator T q ℓ σ (antiperiodicGaugeLoop T (M b))))
+    {x : (skewTorusOperator T q ℓ σ (antiperiodicGaugeLoop T (M b))).toLinearMap.detLine}
+    (hx : x ≠ 0)
+    (hxz : rayOfNeZero ℝ x hx =
+      detLineOrientationTransport
+        (T := fun τ ↦ skewTorusOperator T q ℓ σ (antiperiodicGaugeLoop T (M τ))) a b
+        ((continuous_skewTorusOperator T q ℓ σ).comp_continuousOn
+          ((continuous_antiperiodicGaugeLoop T).comp_continuousOn hM))
+        (fun τ hτ ↦ isFredholm_skewTorusOperator T q σ hℓ _
+          (im_inner_antiperiodicGaugeLoop_add_eq_zero T (hMs τ hτ)))
+        (rayOfNeZero ℝ (LinearMap.detLineCongrOfEq hf z)
+          (hz.detLineCongrOfEq_ne_zero_of_isFredholm hf
+            (isFredholm_skewTorusOperator T q σ hℓ _
+              (im_inner_antiperiodicGaugeLoop_add_eq_zero T (hMs a left_mem_uIcc)))))) :
+    SignType.sign ((skewTorusOperator T q ℓ σ
+        (antiperiodicGaugeLoop T (M b))).toLinearMap.detLineEquivOfBijective hb x) =
+      SignType.sign
+        (LinearMap.det (1 + (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : F →ₗ[ℝ] F))) := by
+  rw [← one_sub_dysonSeriesLeft_antiperiodicGaugeLoop_period]
+  exact sign_detLineEquivOfBijective_skewTorusOperator_eq_sign_det T q σ
+    (M := fun τ ↦ antiperiodicGaugeLoop T (M τ)) hℓ
+    ((continuous_antiperiodicGaugeLoop T).comp_continuousOn hM)
+    (fun τ hτ ↦ im_inner_antiperiodicGaugeLoop_add_eq_zero T (hMs τ hτ))
+    (antiperiodicGaugeLoop_apply_I_smul T hMa) hf hz hb hx hxz
+
+variable (n : ℕ) [NeZero n]
+
+/-- **The orbit-torus operator on every finite cover has determinant sign `sgn det (1 - P ^ n)`.**
+Let `M` be a path of infinitesimally symplectic loops of period `T`, continuous on `[a, b]`, whose
+loop `M a` consists of complex-linear maps, and read the loops with period `n T`. The operator
+`∂s + J₀ (∂t - M a)` on the skew cover with lattice spanned by `(ℓ, 0)` and `(σ, n T)` is the real
+map underlying a complex-linear map `f`. If the operator `∂s + J₀ (∂t - M b)` on that cover is
+bijective, every element `x` of its determinant line in the orientation transported from the
+complex orientation at `a` reads, in the trivialization given by bijectivity, with the sign of
+`det (1 - P ^ n)`, where `P = Ψ_b(T)` is the return map of `ζ' = M b ζ` over one period. Every
+finite cover of an orbit torus has such a lattice (with `q = k` for `ℓ = k ℓ₀`), so this gives the
+determinant sign on all of them, the covers along the orbit (`σ = 0`) included. -/
+theorem sign_detLineEquivOfBijective_skewTorusOperator_coverPullback_eq_sign_det (hℓ : ℓ ≠ 0)
+    (hM : ContinuousOn M (uIcc a b))
+    (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
+    (hMa : ∀ t v, M a t (I • v) = I • M a t v)
+    {f : CircleSobolev 1 F × skewTorusModeSobolev F ℓ σ
+        (((n : ℝ) * T : ℝ) : AddCircle ((q : ℝ) * ((n : ℝ) * T))) →ₗ[ℂ]
+      CircleSobolev 0 F × skewTorusModeL2 F ℓ σ
+        (((n : ℝ) * T : ℝ) : AddCircle ((q : ℝ) * ((n : ℝ) * T)))}
+    (hf : f.restrictScalars ℝ =
+      skewTorusOperator ((n : ℝ) * T) q ℓ σ (AddCircle.coverPullback n (M a)))
+    {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z)
+    (hb : Function.Bijective
+      (skewTorusOperator ((n : ℝ) * T) q ℓ σ (AddCircle.coverPullback n (M b))))
+    {x : (skewTorusOperator ((n : ℝ) * T) q ℓ σ
+      (AddCircle.coverPullback n (M b))).toLinearMap.detLine} (hx : x ≠ 0)
+    (hxz : rayOfNeZero ℝ x hx =
+      detLineOrientationTransport
+        (T := fun τ ↦ skewTorusOperator ((n : ℝ) * T) q ℓ σ (AddCircle.coverPullback n (M τ))) a b
+        ((continuous_skewTorusOperator _ q ℓ σ).comp_continuousOn
+          ((AddCircle.continuous_coverPullback n).comp_continuousOn hM))
+        (fun τ hτ ↦ isFredholm_skewTorusOperator _ q σ hℓ _
+          (im_inner_coverPullback_add_eq_zero n (hMs τ hτ)))
+        (rayOfNeZero ℝ (LinearMap.detLineCongrOfEq hf z)
+          (hz.detLineCongrOfEq_ne_zero_of_isFredholm hf
+            (isFredholm_skewTorusOperator _ q σ hℓ _
+              (im_inner_coverPullback_add_eq_zero n (hMs a left_mem_uIcc)))))) :
+    SignType.sign ((skewTorusOperator ((n : ℝ) * T) q ℓ σ
+        (AddCircle.coverPullback n (M b))).toLinearMap.detLineEquivOfBijective hb x) =
+      SignType.sign
+        (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : F →ₗ[ℝ] F) ^ n)) := by
+  rw [← ContinuousLinearMap.toLinearMap_pow, ← dysonSeriesLeft_coverPullback]
+  exact sign_detLineEquivOfBijective_skewTorusOperator_eq_sign_det _ q σ
+    (M := fun τ ↦ AddCircle.coverPullback n (M τ)) hℓ
+    ((AddCircle.continuous_coverPullback n).comp_continuousOn hM)
+    (fun τ hτ ↦ im_inner_coverPullback_add_eq_zero n (hMs τ hτ))
+    (coverPullback_apply_I_smul n hMa) hf hz hb hx hxz
+
+/-- **The operator on every finite cover twisted along `(σ, n T)` has determinant sign
+`sgn det (1 + P ^ n)`.** In the situation of
+`TauCeti.sign_detLineEquivOfBijective_skewTorusOperator_coverPullback_eq_sign_det`, consider the
+operators on the cover with lattice spanned by `(ℓ, 0)` and `(σ, n T)` twisted by the real sign
+character of the cover that is `-1` on `(σ, n T)`, realized in the periodic gauge by the loops
+`TauCeti.CircleSobolev.antiperiodicGaugeLoop (n T)` of the pulled-back loops. If the one at `b` is
+bijective, every element `x` of its determinant line in the orientation transported from the
+complex orientation at `a` reads, in the trivialization given by bijectivity, with the sign of
+`det (1 + P ^ n)`, where `P = Ψ_b(T)`. -/
+theorem
+sign_detLineEquivOfBijective_skewTorusOperator_antiperiodicGaugeLoop_coverPullback_eq_sign_det
+    (hℓ : ℓ ≠ 0) (hM : ContinuousOn M (uIcc a b))
+    (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
+    (hMa : ∀ t v, M a t (I • v) = I • M a t v)
+    {f : CircleSobolev 1 F × skewTorusModeSobolev F ℓ σ
+        (((n : ℝ) * T : ℝ) : AddCircle ((q : ℝ) * ((n : ℝ) * T))) →ₗ[ℂ]
+      CircleSobolev 0 F × skewTorusModeL2 F ℓ σ
+        (((n : ℝ) * T : ℝ) : AddCircle ((q : ℝ) * ((n : ℝ) * T)))}
+    (hf : f.restrictScalars ℝ = skewTorusOperator ((n : ℝ) * T) q ℓ σ
+      (antiperiodicGaugeLoop ((n : ℝ) * T) (AddCircle.coverPullback n (M a))))
+    {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z)
+    (hb : Function.Bijective (skewTorusOperator ((n : ℝ) * T) q ℓ σ
+      (antiperiodicGaugeLoop ((n : ℝ) * T) (AddCircle.coverPullback n (M b)))))
+    {x : (skewTorusOperator ((n : ℝ) * T) q ℓ σ (antiperiodicGaugeLoop ((n : ℝ) * T)
+      (AddCircle.coverPullback n (M b)))).toLinearMap.detLine} (hx : x ≠ 0)
+    (hxz : rayOfNeZero ℝ x hx =
+      detLineOrientationTransport
+        (T := fun τ ↦ skewTorusOperator ((n : ℝ) * T) q ℓ σ
+          (antiperiodicGaugeLoop ((n : ℝ) * T) (AddCircle.coverPullback n (M τ)))) a b
+        ((continuous_skewTorusOperator _ q ℓ σ).comp_continuousOn
+          ((continuous_antiperiodicGaugeLoop _).comp_continuousOn
+            ((AddCircle.continuous_coverPullback n).comp_continuousOn hM)))
+        (fun τ hτ ↦ isFredholm_skewTorusOperator _ q σ hℓ _
+          (im_inner_antiperiodicGaugeLoop_add_eq_zero _
+            (im_inner_coverPullback_add_eq_zero n (hMs τ hτ))))
+        (rayOfNeZero ℝ (LinearMap.detLineCongrOfEq hf z)
+          (hz.detLineCongrOfEq_ne_zero_of_isFredholm hf
+            (isFredholm_skewTorusOperator _ q σ hℓ _
+              (im_inner_antiperiodicGaugeLoop_add_eq_zero _
+                (im_inner_coverPullback_add_eq_zero n (hMs a left_mem_uIcc))))))) :
+    SignType.sign ((skewTorusOperator ((n : ℝ) * T) q ℓ σ (antiperiodicGaugeLoop ((n : ℝ) * T)
+        (AddCircle.coverPullback n (M b)))).toLinearMap.detLineEquivOfBijective hb x) =
+      SignType.sign
+        (LinearMap.det (1 + (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : F →ₗ[ℝ] F) ^ n)) := by
+  rw [← ContinuousLinearMap.toLinearMap_pow, ← dysonSeriesLeft_coverPullback]
+  exact sign_detLineEquivOfBijective_skewTorusOperator_antiperiodicGaugeLoop_eq_sign_det _ q σ
+    (M := fun τ ↦ AddCircle.coverPullback n (M τ)) hℓ
+    ((AddCircle.continuous_coverPullback n).comp_continuousOn hM)
+    (fun τ hτ ↦ im_inner_coverPullback_add_eq_zero n (hMs τ hτ))
+    (coverPullback_apply_I_smul n hMa) hf hz hb hx hxz
+
+end Orientation
 
 end TauCeti

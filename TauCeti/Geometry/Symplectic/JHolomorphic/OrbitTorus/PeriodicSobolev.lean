@@ -349,6 +349,7 @@ operator `A ζ = J₀ (ζ' - S ζ)` of a loop `S`. A map periodic in `s` is a pa
 `s`-independent mode `a₀ ∈ H¹(F)` and its modes of frequencies `2(k + 1)π/ℓ`
 (`TauCeti.torusModeSobolev`); the operator is `A` on the first and `TauCeti.torusModeOperator` on
 the second. -/
+@[expose]
 def periodicTorusOperator (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F)) :
     CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →L[ℝ]
       CircleSobolev 0 F × 𝕐[F] :=
@@ -454,6 +455,7 @@ infinitesimally symplectic loop `S`, the isomorphisms of kernels and cokernels w
 `TauCeti.CircleSobolev.quotientRangeLoopOperatorEquiv`), identify the determinant line of `∂s + A`
 on maps periodic in `s` with the determinant line of `1 - Ψ(T)`, where
 `Ψ = TauCeti.dysonSeriesLeft S`. -/
+@[expose]
 def detLinePeriodicTorusOperatorEquiv (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     (periodicTorusOperator T ℓ S).toLinearMap.detLine ≃ₗ[ℝ]
