@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Uniform
+public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.Analysis.Normed.Module.DoubleDual
+import Mathlib.Analysis.InnerProductSpace.Convex
 import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Module.Dual.Basic
 
@@ -32,6 +34,8 @@ applies to every closed subspace of a uniformly convex Banach space.
 * `TauCeti.denseRange_inclusionInDoubleDual_of_uniformConvexSpace`: the canonical image of a
   uniformly convex space is norm dense in its bidual.
 * `TauCeti.surjective_inclusionInDoubleDual_of_uniformConvexSpace`: the Milman–Pettis theorem.
+* `TauCeti.surjective_inclusionInDoubleDual_of_innerProductSpace`: every Hilbert space is
+  reflexive.
 * `Submodule.uniformConvexSpace`: a subspace of a uniformly convex space is uniformly convex.
 
 ## Implementation notes
@@ -150,5 +154,15 @@ theorem surjective_inclusionInDoubleDual_of_uniformConvexSpace [CompleteSpace E]
     (inclusionInDoubleDualLi 𝕜 (E := E)).isometry.isUniformInducing.isComplete_range.isClosed
   rw [← range_eq_univ, ← hclosed.closure_eq]
   exact denseRange_inclusionInDoubleDual_of_uniformConvexSpace.closure_range
+
+/-- Every Hilbert space (complete real or complex inner product space) is reflexive: its canonical
+map into the continuous bidual is surjective. -/
+theorem surjective_inclusionInDoubleDual_of_innerProductSpace
+    {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] :
+    Surjective (inclusionInDoubleDual 𝕜 E) :=
+  have : UniformConvexSpace E :=
+    let _ : InnerProductSpace ℝ E := InnerProductSpace.rclikeToReal 𝕜 E
+    inferInstance
+  surjective_inclusionInDoubleDual_of_uniformConvexSpace
 
 end TauCeti

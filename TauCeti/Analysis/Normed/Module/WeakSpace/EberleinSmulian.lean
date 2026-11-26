@@ -174,4 +174,18 @@ theorem isCompact_toWeakSpace_iff_isSeqCompact {K : Set E} :
     exact hxz ▸ mem_image_of_mem (toWeakSpace 𝕜 E) hx
   simpa only [hclosed.closure_eq] using isCompact_closure_toWeakSpace_iff.mpr hrelative
 
+/-- A relatively weakly compact, sequentially weakly closed subset of a real or complex normed
+space is weakly compact. -/
+theorem isCompact_toWeakSpace_of_isCompact_closure_of_seqClosed {K : Set E}
+    (hK : IsCompact (closure (toWeakSpace 𝕜 E '' K)))
+    (hclosed : ∀ ⦃u : ℕ → E⦄ ⦃x : E⦄, (∀ n, u n ∈ K) →
+      Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)) → x ∈ K) :
+    IsCompact (toWeakSpace 𝕜 E '' K) := by
+  rw [isCompact_toWeakSpace_iff_isSeqCompact]
+  intro w hw
+  choose u hu hwu using hw
+  obtain ⟨x, φ, hφ, hlim⟩ := tendsto_subseq_toWeakSpace_of_isCompact_closure hK hu
+  refine ⟨toWeakSpace 𝕜 E x, mem_image_of_mem _ (hclosed (fun n ↦ hu (φ n)) hlim), φ, hφ, ?_⟩
+  simpa only [Function.comp_def, hwu] using hlim
+
 end TauCeti

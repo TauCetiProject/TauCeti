@@ -128,9 +128,10 @@ theorem energy_neg (P : CompactFormPair 𝕜 E H) (u : E) : P.energy (-u) = P.en
 theorem energy_smul (P : CompactFormPair 𝕜 E H) (c : 𝕜) (u : E) :
     P.energy (c • u) = ‖c‖ ^ 2 * P.energy u := by
   have h : P.form (c • u) (c • u) = (starRingEnd 𝕜 c * c) * P.form u u := by
-    rw [map_smul, map_smulₛₗ, smul_apply, smul_eq_mul, smul_eq_mul]
+    simp only [map_smul, map_smulₛₗ, smul_apply, smul_eq_mul]
     ring
-  rw [energy_def, h, RCLike.conj_mul, ← RCLike.ofReal_pow, RCLike.re_ofReal_mul, ← energy_def]
+  rw [energy_def, h, RCLike.conj_mul]
+  simp [energy_def]
 
 /-- Expansion of the quadratic energy on a sum `u + v`. -/
 theorem energy_add (P : CompactFormPair 𝕜 E H) (u v : E) :
@@ -287,10 +288,7 @@ def mapLinearIsometryEquiv (P : CompactFormPair 𝕜 E H) (U : H ≃ₗᵢ[𝕜]
   hermitian := P.hermitian
   exists_shifted_lower_bound := by
     obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
-    refine ⟨c, ω, hc, fun u => ?_⟩
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_toContinuousLinearEquiv, U.norm_map]
-    exact hbound u
+    exact ⟨c, ω, hc, fun u => by simpa using hbound u⟩
 
 @[simp]
 theorem mapLinearIsometryEquiv_inclusion_apply (P : CompactFormPair 𝕜 E H) (U : H ≃ₗᵢ[𝕜] H')
@@ -409,11 +407,8 @@ def restrict (P : CompactFormPair 𝕜 E H) (V₁ : Submodule 𝕜 E) :
         P.hermitian u.1 v.1]
     exists_shifted_lower_bound := by
       obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
-      refine ⟨c, ω, hc, fun u => ?_⟩
-      rw [ContinuousLinearMap.bilinearComp_apply, Submodule.subtypeL_apply,
-        ← Submodule.norm_coe u, ← Submodule.norm_coe ((P.inclusion.restrict hmem) u),
-        ContinuousLinearMap.coe_restrict_apply]
-      exact hbound u.1 }
+      exact ⟨c, ω, hc, fun u => by
+        simpa [ContinuousLinearMap.coe_restrict_apply] using hbound u.1⟩ }
 
 @[simp]
 theorem restrict_inclusion_coe (P : CompactFormPair 𝕜 E H) (V₁ : Submodule 𝕜 E) (u : V₁) :

@@ -10,14 +10,13 @@ public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair.Basic
 public import TauCeti.Analysis.InnerProductSpace.Variational.Rayleigh
 public import TauCeti.Analysis.Variational.BoundedSublevels
-import Mathlib.Analysis.InnerProductSpace.Convex
 import Mathlib.Analysis.Normed.Module.RCLike.Extend
 import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
-import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
+import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 import TauCeti.Analysis.Normed.Operator.DunfordPettis.Basic
 import TauCeti.Analysis.Variational.DirectMethod
 import TauCeti.Order.Filter.Extr
@@ -266,6 +265,14 @@ variable {𝕜 E H : Type*} [RCLike 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup H] [NormedSpace 𝕜 H]
 
+/-- The compact inclusion `P.inclusion` maps weakly convergent sequences to norm-convergent
+sequences. -/
+theorem tendsto_inclusion_of_tendsto_toWeakSpace (P : CompactFormPair 𝕜 E H)
+    {u : ℕ → E} {x : E}
+    (hlim : Tendsto (fun n => toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x))) :
+    Tendsto (fun n => P.inclusion (u n)) atTop (𝓝 (P.inclusion x)) :=
+  ContinuousLinearMap.isDunfordPettis_def.mp P.compact.isDunfordPettis hlim
+
 /-- For a norm-closed submodule `W ≤ H`, the constrained sphere `P.unitConstraint W` is
 sequentially weakly closed in `E`. -/
 theorem mem_unitConstraint_of_tendsto_toWeakSpace (P : CompactFormPair 𝕜 E H)
@@ -273,7 +280,7 @@ theorem mem_unitConstraint_of_tendsto_toWeakSpace (P : CompactFormPair 𝕜 E H)
     (hu : ∀ n, u n ∈ P.unitConstraint W)
     (hlim : Tendsto (fun n => toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x))) :
     x ∈ P.unitConstraint W := by
-  have hj := ContinuousLinearMap.isDunfordPettis_def.mp P.compact.isDunfordPettis hlim
+  have hj := P.tendsto_inclusion_of_tendsto_toWeakSpace hlim
   refine ⟨hW.mem_of_tendsto hj (Eventually.of_forall fun n => (hu n).1), ?_⟩
   have hnorm : Tendsto (fun n => ‖P.inclusion (u n)‖) atTop (𝓝 (1 : ℝ)) := by
     simpa only [fun n => (hu n).2] using tendsto_const_nhds
@@ -294,8 +301,7 @@ private theorem tendsto_energy_sub_lower (P : CompactFormPair 𝕜 E H)
   have hj : Tendsto (fun n => ‖P.inclusion (u n - x)‖ ^ 2) atTop (𝓝 0) := by
     have hjsub : Tendsto (fun n => P.inclusion (u n - x)) atTop (𝓝 0) := by
       simpa only [map_sub, sub_self] using
-        (ContinuousLinearMap.isDunfordPettis_def.mp P.compact.isDunfordPettis hlim).sub_const
-          (P.inclusion x)
+        (P.tendsto_inclusion_of_tendsto_toWeakSpace hlim).sub_const (P.inclusion x)
     simpa using hjsub.norm.pow 2
   simpa using (hform.const_mul 2).sub (hj.const_mul ω)
 
@@ -381,30 +387,13 @@ variable {𝕜 E H : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup H] [NormedSpace 𝕜 H]
 
-private theorem isCompact_toWeakSpace_of_isBounded_of_seqClosed {𝕜 E : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    (hE : Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 E))
-    {S : Set E} (hS : IsBounded S)
-    (hclosed : ∀ ⦃u : ℕ → E⦄ ⦃x : E⦄, (∀ n, u n ∈ S) →
-      Tendsto (fun n => toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)) → x ∈ S) :
-    IsCompact (toWeakSpace 𝕜 E '' S) := by
-  rw [TauCeti.isCompact_toWeakSpace_iff_isSeqCompact]
-  intro w hw
-  choose u hu hwu using hw
-  have hcomp : IsCompact (closure (toWeakSpace 𝕜 E '' S)) :=
-    TauCeti.isCompact_closure_toWeakSpace_of_isBounded hE hS
-  obtain ⟨x, φ, hφ, hlim⟩ :=
-    TauCeti.tendsto_subseq_toWeakSpace_of_isCompact_closure hcomp hu
-  refine ⟨toWeakSpace 𝕜 E x, mem_image_of_mem _ (hclosed (fun n => hu (φ n)) hlim), φ, hφ, ?_⟩
-  simpa only [Function.comp_def, hwu] using hlim
-
 /-- Weak compactness of bounded parts of the constrained sphere in a reflexive space: for closed
 `W ≤ H` and every radius `R`, `P.unitConstraint W ∩ closedBall 0 R` is weakly compact. -/
 theorem isCompact_toWeakSpace_unitConstraint_inter_closedBall (P : CompactFormPair 𝕜 E H)
     (hE : Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 E))
     (W : Submodule 𝕜 H) (hW : IsClosed (W : Set H)) (R : ℝ) :
     IsCompact (toWeakSpace 𝕜 E '' (P.unitConstraint W ∩ closedBall 0 R)) := by
-  refine isCompact_toWeakSpace_of_isBounded_of_seqClosed hE
+  refine TauCeti.isCompact_toWeakSpace_of_isBounded_of_seqClosed hE
     (isBounded_closedBall.subset inter_subset_right) fun u x hu hlim => ⟨?_, ?_⟩
   · exact P.mem_unitConstraint_of_tendsto_toWeakSpace hW (fun n => (hu n).1) hlim
   · have hclosed := (TauCeti.isCompact_toWeakSpace_closedBall hE 0 R).isClosed
@@ -416,7 +405,7 @@ theorem isCompact_toWeakSpace_sublevel_unitConstraint (P : CompactFormPair 𝕜 
     (hE : Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 E))
     (W : Submodule 𝕜 H) (hW : IsClosed (W : Set H)) (b : ℝ) :
     IsCompact (toWeakSpace 𝕜 E '' {u ∈ P.unitConstraint W | P.energy u ≤ b}) := by
-  refine isCompact_toWeakSpace_of_isBounded_of_seqClosed hE
+  refine TauCeti.isCompact_toWeakSpace_of_isBounded_of_seqClosed hE
     ((P.hasBoundedSublevelsOn_energy_unitConstraint W).isBounded_sublevel b)
     fun u x hu hlim => ⟨?_, ?_⟩
   · exact P.mem_unitConstraint_of_tendsto_toWeakSpace hW (fun n => (hu n).1) hlim
@@ -467,8 +456,9 @@ theorem exists_minimum_on_unitConstraint_of_surjective (P : CompactFormPair 𝕜
     rw [← Set.image_inter_preimage, ← Set.image_inter (toWeakSpace 𝕜 E).injective]
     congr 1
     ext v
-    simp [S₀]
-    tauto
+    simp only [S₀, mem_inter_iff, mem_preimage, mem_Iic, LinearEquiv.symm_apply_apply,
+      mem_ofPred_eq]
+    exact ⟨fun ⟨⟨hvW, hvu₀⟩, hvb⟩ => ⟨⟨hvW, hvu₀⟩, hvW, hvb⟩, fun ⟨h1, _, hvb⟩ => ⟨h1, hvb⟩⟩
   exact TauCeti.exists_isMinOn_of_isCompact_toWeakSpace_sublevel ⟨u₀, hu₀, le_rfl⟩ hcomp hlsc
 
 end WeakCompactness
@@ -479,14 +469,6 @@ variable {𝕜 E H : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup H] [NormedSpace 𝕜 H]
 
-omit [NormedAddCommGroup H] [NormedSpace 𝕜 H] in
-private theorem surjective_inclusionInDoubleDual_hilbert :
-    Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 E) :=
-  have : UniformConvexSpace E :=
-    let _ : InnerProductSpace ℝ E := InnerProductSpace.rclikeToReal 𝕜 E
-    inferInstance
-  TauCeti.surjective_inclusionInDoubleDual_of_uniformConvexSpace (𝕜 := 𝕜) (E := E)
-
 /-- **Constrained Rayleigh minimum** on a Hilbert form domain: for a complete inner-product space
 `E` and a norm-closed submodule `W ≤ H` containing a nonzero image of `P.inclusion`, `P.energy`
 attains its minimum on `P.unitConstraint W`. -/
@@ -495,7 +477,7 @@ theorem exists_minimum_on_unitConstraint (P : CompactFormPair 𝕜 E H)
     (hne : ∃ u : E, P.inclusion u ∈ W ∧ P.inclusion u ≠ 0) :
     ∃ u ∈ P.unitConstraint W, IsMinOn P.energy (P.unitConstraint W) u :=
   P.exists_minimum_on_unitConstraint_of_surjective
-    (surjective_inclusionInDoubleDual_hilbert (𝕜 := 𝕜) (E := E)) W hW hne
+    (TauCeti.surjective_inclusionInDoubleDual_of_innerProductSpace (𝕜 := 𝕜) (E := E)) W hW hne
 
 /-- On a Hilbert form domain, the set of constrained minimizers on `P.unitConstraint W` is
 norm-compact whenever `W` is norm-closed. -/
@@ -503,7 +485,7 @@ theorem isCompact_minimizers_unitConstraint (P : CompactFormPair 𝕜 E H)
     (W : Submodule 𝕜 H) (hW : IsClosed (W : Set H)) :
     IsCompact {u ∈ P.unitConstraint W | IsMinOn P.energy (P.unitConstraint W) u} :=
   P.isCompact_minimizers_unitConstraint_of_surjective
-    (surjective_inclusionInDoubleDual_hilbert (𝕜 := 𝕜) (E := E)) W hW
+    (TauCeti.surjective_inclusionInDoubleDual_of_innerProductSpace (𝕜 := 𝕜) (E := E)) W hW
 
 end Hilbert
 
@@ -576,9 +558,7 @@ private theorem re_shift_form_eq_zero_of_isMinOn (P : CompactFormPair 𝕜 E H)
   have hB_apply : ∀ x y : V₀, B x y = P'.form x.1 y.1 := fun _ _ => by
     rw [LinearMap.domRestrict₁₂_apply, ContinuousLinearMap.toBilinForm_apply]
   have hB_diag : ∀ x : V₀, B x x = P.energy x.1 - P.energy u * ‖P.inclusion x.1‖ ^ 2 := fun x => by
-    rw [hB_apply, ← RCLike.re_to_real (x := P'.form x.1 x.1), ← energy_def,
-      restrictScalars_energy, shift_energy]
-    ring
+    simp [hB_apply, P', energy_def, sub_eq_add_neg]
   have hs : ∀ x : V₀, 0 ≤ B x x := fun x => by
     rw [hB_diag]
     linarith [hquad x.1 x.2]

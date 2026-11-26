@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.Analysis.LocallyConvex.WeakSpace
 import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Module.DoubleDual
+import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
 
 /-!
 # Reflexivity and weak compactness
@@ -34,7 +35,7 @@ the reverse direction uses Goldstine's theorem.
 
 public section
 
-open Bornology Function Metric Set Topology
+open Bornology Filter Function Metric Set Topology
 open NormedSpace
 
 namespace TauCeti
@@ -91,5 +92,21 @@ theorem surjective_inclusionInDoubleDual_iff_isCompact_toWeakSpace_closedBall :
       IsCompact (toWeakSpace 𝕜 E '' closedBall 0 1) :=
   ⟨fun hE ↦ isCompact_toWeakSpace_closedBall hE 0 1,
     surjective_inclusionInDoubleDual_of_isCompact_toWeakSpace_closedBall⟩
+
+section Normed
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- A norm-bounded, sequentially weakly closed subset of a reflexive normed space is weakly
+compact. -/
+theorem isCompact_toWeakSpace_of_isBounded_of_seqClosed
+    (hE : Surjective (inclusionInDoubleDual 𝕜 E)) {s : Set E} (hbound : IsBounded s)
+    (hclosed : ∀ ⦃u : ℕ → E⦄ ⦃x : E⦄, (∀ n, u n ∈ s) →
+      Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)) → x ∈ s) :
+    IsCompact (toWeakSpace 𝕜 E '' s) :=
+  isCompact_toWeakSpace_of_isCompact_closure_of_seqClosed
+    (isCompact_closure_toWeakSpace_of_isBounded hE hbound) hclosed
+
+end Normed
 
 end TauCeti
