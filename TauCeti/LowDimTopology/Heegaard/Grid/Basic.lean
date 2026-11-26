@@ -66,7 +66,8 @@ it, and the Euler measure of every domain is `0`
 
 The converse, that every nonnegative domain of Maslov index one is the domain of an empty
 rectangle, is `TauCeti.GridDiagram.exists_gridRectangleBetween_isEmpty_domain_eq` in
-`TauCeti.LowDimTopology.Heegaard.Grid.HatDifferential`.
+`TauCeti.LowDimTopology.Heegaard.Grid.HatDifferential`. The grading formulas hold for every
+domain, not only for rectangles, by `TauCeti.LowDimTopology.Heegaard.Grid.Grading`.
 
 ## References
 
