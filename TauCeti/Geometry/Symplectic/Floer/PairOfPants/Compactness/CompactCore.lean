@@ -224,6 +224,30 @@ theorem contDiffOn_pairOfPantsPerturbation_add_comp_symm {n : ℕ∞} {m : WithT
     (s := univ ×ˢ (thricePuncturedSphereReal ×ˢ φ.target)) contDiff_snd.contDiffOn
     fun _ hq ↦ hq.2).add (contMDiffOn_iff_contDiffOn.1 (hδ.comp_contMDiffOn hg))
 
+/-- **The core-perturbed datum is smooth jointly in the parameter.** For period-one Hamiltonians
+which are `C^n` on `ℝ × M` and a family of functions `δ_p(z, x)` which is `C^n` jointly in the
+parameter `p`, the real coordinates `z` of `S = ℂ ∖ {0, 1}` and the target point `x`, each
+component `(p, z, x) ↦ K(z, x)(w) + δ_p(z, x)` of the pair-of-pants perturbation plus `δ_p` is `C^n`
+at every point with `z ∈ S`, as a function on `(P × ℝ²) × M`. -/
+theorem contMDiffAt_uncurry_pairOfPantsPerturbation_add {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q)))
+    {δ : P → ℝ × ℝ → M → ℝ} (hδ : ContMDiff ((𝓘(ℝ, P).prod 𝓘(ℝ, ℝ × ℝ)).prod I) 𝓘(ℝ) n
+      (fun q : (P × (ℝ × ℝ)) × M ↦ δ q.1.1 q.1.2 q.2))
+    {p : P} {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) (x : M) (w : ℂ) :
+    ContMDiffAt (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 𝓘(ℝ) n
+      (uncurry fun (r : P × (ℝ × ℝ)) y ↦
+        pairOfPantsPerturbation H (equivRealProdCLM.symm r.2) y w + δ r.1 r.2 y) ((p, z), x) := by
+  -- The canonical datum only sees `(z, x)`, and `δ` sees `((p, z), x)` in the product model.
+  have hz' : ContMDiff (𝓘(ℝ, P × (ℝ × ℝ)).prod I) (𝓘(ℝ, ℝ × ℝ).prod I) n
+      (fun q : (P × (ℝ × ℝ)) × M ↦ (q.1.2, q.2)) :=
+    (contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd
+  have hι : ContMDiff (𝓘(ℝ, P × (ℝ × ℝ)).prod I) ((𝓘(ℝ, P).prod 𝓘(ℝ, ℝ × ℝ)).prod I) n
+      (fun q : (P × (ℝ × ℝ)) × M ↦ ((q.1.1, q.1.2), q.2)) :=
+    ((contDiff_fst.contMDiff.comp contMDiff_fst).prodMk
+      (contDiff_snd.contMDiff.comp contMDiff_fst)).prodMk contMDiff_snd
+  exact ((contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x w).comp ((p, z), x)
+    hz'.contMDiffAt).add (hδ.comp hι).contMDiffAt
+
 end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm.IsNondegenerate
