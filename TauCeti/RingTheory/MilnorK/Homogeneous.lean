@@ -108,6 +108,14 @@ private theorem ofMul_append {m n : ℕ} (g : Fin m → Rˣ) (f : Fin n → Rˣ)
   funext k
   refine Fin.addCases (fun k ↦ ?_) (fun k ↦ ?_) k <;> simp
 
+/-- The condition `a + b = 1` on two neighbouring entries transports along equalities of the
+entries. It reads the entries of a concatenation off with `Fin.append_left` and
+`Fin.append_right`. -/
+private theorem coe_add_coe_eq_one {a b c d : Rˣ} (hac : a = c) (hbd : b = d)
+    (h : (c : R) + d = 1) : (a : R) + b = 1 := by
+  rw [hac, hbd]
+  exact h
+
 /-- The multiplication `⨂^i ⊗ ⨂^j → ⨂^(i + j)` of tensor powers, as a bilinear map. -/
 private abbrev gMulBilin (i j : ℕ) :
     ⨂[ℤ]^i (Additive Rˣ) →ₗ[ℤ] ⨂[ℤ]^j (Additive Rˣ) →ₗ[ℤ] ⨂[ℤ]^(i + j) (Additive Rˣ) :=
@@ -133,9 +141,8 @@ theorem gMul_mem_steinbergRelations_left {i j : ℕ} (a : ⨂[ℤ]^i (Additive R
   rintro _ ⟨_, ⟨g, rfl⟩, _, ⟨f, l, hl, h, rfl⟩, rfl⟩
   simp only [SetLike.mem_coe, gMulBilin_apply]
   rw [ofMul_toMul_comp g, TensorPower.tprod_mul_tprod, ofMul_append]
-  exact tprod_mem_steinbergRelations _ (i + l) (by omega) (by
-    simpa [Fin.append, Fin.addCases, show ¬ i + l < i by omega, show ¬ i + l + 1 < i by omega,
-      Nat.add_assoc] using h)
+  exact tprod_mem_steinbergRelations _ (i + l) (by omega) <| coe_add_coe_eq_one
+    (Fin.append_right g f ⟨l, Nat.lt_of_succ_lt hl⟩) (Fin.append_right g f ⟨l + 1, hl⟩) h
 
 /-- Right multiplication by a tensor of degree `j` maps `R_i` into `R_{i + j}`. -/
 theorem gMul_mem_steinbergRelations_right {i j : ℕ} {x : ⨂[ℤ]^i (Additive Rˣ)}
@@ -149,8 +156,8 @@ theorem gMul_mem_steinbergRelations_right {i j : ℕ} {x : ⨂[ℤ]^i (Additive 
   rintro _ ⟨_, ⟨f, l, hl, h, rfl⟩, _, ⟨g, rfl⟩, rfl⟩
   simp only [SetLike.mem_coe, gMulBilin_apply]
   rw [ofMul_toMul_comp g, TensorPower.tprod_mul_tprod, ofMul_append]
-  exact tprod_mem_steinbergRelations _ l (by omega) (by
-    simpa [Fin.append, Fin.addCases, hl, Nat.lt_of_succ_lt hl] using h)
+  exact tprod_mem_steinbergRelations _ l (by omega) <| coe_add_coe_eq_one
+    (Fin.append_left f g ⟨l, Nat.lt_of_succ_lt hl⟩) (Fin.append_left f g ⟨l + 1, hl⟩) h
 
 /-- There are no Steinberg relations in degrees zero and one. -/
 theorem steinbergRelations_eq_bot {n : ℕ} (hn : n < 2) : steinbergRelations R n = ⊥ := by
@@ -281,7 +288,7 @@ theorem mk_eq_zero_iff {t : TensorAlgebra ℤ (Additive Rˣ)} :
         refine of_mem_relSum ?_
         rw [TensorPower.tprod_mul_tprod]
         exact tprod_mem_steinbergRelations (fun k ↦ Fin.append (fun _ ↦ a) (fun _ ↦ b) k) 0
-          (by norm_num) (by simpa [Fin.append, Fin.addCases] using h)
+          (by norm_num) (coe_add_coe_eq_one (Fin.append_left _ _ 0) (Fin.append_right _ _ 0) h)
     have := hle (mk_eq_mk_iff.1 (ht.trans (map_zero mk).symm))
     rwa [TwoSidedIdeal.rel_iff, sub_zero, mem_relIdeal] at this
   · intro ht
@@ -346,6 +353,7 @@ theorem coe_degreeEquiv_mk {n : ℕ} (x : ⨂[ℤ]^n (Additive Rˣ)) :
   simp [degreeEquiv, Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivRange_apply_mk]
 
 /-- The inverse of `degreeEquiv` sends a symbol `{a₁, …, aₙ}` to the class of `a₁ ⊗ ⋯ ⊗ aₙ`. -/
+@[simp]
 theorem degreeEquiv_symm_symbol {n : ℕ} (f : Fin n → Rˣ) :
     (degreeEquiv R n).symm ⟨symbol (List.ofFn f), by simpa using symbol_mem_degree (List.ofFn f)⟩ =
       Submodule.Quotient.mk (PiTensorProduct.tprod ℤ fun k ↦ Additive.ofMul (f k)) := by
@@ -405,12 +413,10 @@ instance instGradedRingDegree : GradedRing (degree R) where
 @[simp]
 theorem coe_decompose_mk (t : TensorAlgebra ℤ (Additive Rˣ)) (n : ℕ) :
     (decompose (degree R) (mk t) n : MilnorK R) = ofTensorPower R n (toDirectSum t n) := by
-  -- `coeLinearMap` is inverse to the decomposition.
-  have h (y : ⨁ n, degree R n) : decompose (degree R) (coeLinearMap (degree R) y) = y := by
-    induction y using DirectSum.induction_on with
-    | zero => simp
-    | of i x => rw [coeLinearMap_of, decompose_coe]
-    | add y y' hy hy' => rw [map_add, decompose_add, hy, hy']
+  -- `coeLinearMap` is inverse to the decomposition: `Decomposition.right_inv` is stated for
+  -- `coeAddMonoidHom`, the additive map underlying `coeLinearMap`.
+  have h (y : ⨁ n, degree R n) : decompose (degree R) (coeLinearMap (degree R) y) = y :=
+    Decomposition.right_inv y
   rw [← coeLinearMap_toDegrees t, h]
   simp [toDegrees]
 

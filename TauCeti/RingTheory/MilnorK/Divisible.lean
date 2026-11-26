@@ -137,21 +137,12 @@ theorem steinbergRelations_le_smul {m : ℕ} (hm : m ≠ 0)
     MultilinearMap.toLinearMap₂_apply]
   rintro _ ⟨x, hx, rfl⟩
   have e : update (update (fun k ↦ Additive.ofMul (f k)) j' (Additive.ofMul x.2)) i'
-      (Additive.ofMul x.1) = fun k ↦ Additive.ofMul (update (update f j' x.2) i' x.1 k) := by
-    ext k
-    simp only [update_apply]
-    split_ifs <;> rfl
+      (Additive.ofMul x.1) = fun k ↦ Additive.ofMul (update (update f j' x.2) i' x.1 k) :=
+    (congrArg (update · i' _) (comp_update Additive.ofMul f j' x.2).symm).trans
+      (comp_update Additive.ofMul _ i' x.1).symm
   rw [e]
   exact tprod_mem_steinbergRelations (update (update f j' x.2) i' x.1) i hi (by
     simpa [i', j', update_apply, Fin.ext_iff] using (hs x hx).1)
-
-/-- If `Xᵐ - a` splits for every unit `a` and `m ≠ 0`, every unit has an `m`-th root. -/
-private theorem surjective_zsmul_of_splits {m : ℕ} (hm : m ≠ 0)
-    (hsplit : ∀ a : Rˣ, (X ^ m - C (a : R)).Splits) :
-    Function.Surjective fun u : Additive Rˣ ↦ (m : ℤ) • u := by
-  intro u
-  obtain ⟨v, hv⟩ := Units.exists_pow_eq_of_splits hm (hsplit u.toMul)
-  exact ⟨Additive.ofMul v, by dsimp only; rw [natCast_zsmul, ← ofMul_pow, hv, ofMul_toMul]⟩
 
 /-- **Unique divisibility of Milnor K-groups.** If every polynomial `Xᵐ - a`, `a` a unit, splits,
 then multiplication by `m ≠ 0` is bijective on the Milnor K-group `K_nᴹ(R)` of every degree
@@ -159,7 +150,9 @@ then multiplication by `m ≠ 0` is bijective on the Milnor K-group `K_nᴹ(R)` 
 theorem bijective_nsmul_degree {m : ℕ} (hm : m ≠ 0)
     (hsplit : ∀ a : Rˣ, (X ^ m - C (a : R)).Splits) {n : ℕ} (hn : 2 ≤ n) :
     Function.Bijective fun x : degree R n ↦ m • x := by
-  have hU := surjective_zsmul_of_splits hm hsplit
+  have hU : Function.Surjective fun u : Additive Rˣ ↦ (m : ℤ) • u := fun u ↦ by
+    obtain ⟨v, hv : v ^ m = u.toMul⟩ := Units.surjective_pow_of_splits hm hsplit u.toMul
+    exact ⟨Additive.ofMul v, by dsimp only; rw [natCast_zsmul, ← ofMul_pow, hv, ofMul_toMul]⟩
   -- Multiplication by `m` is bijective on `T_n` and `R_n` is `m`-divisible, so it is bijective on
   -- the quotient `T_n / R_n`.
   have hQ : Function.Bijective
