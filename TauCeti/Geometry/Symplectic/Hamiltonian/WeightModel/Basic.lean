@@ -90,13 +90,16 @@ torus.
 * `TauCeti.weightModelCoords`: the real coordinates `(q_i)_i ⊔ (p_i)_i` of `ℂ^ι`, indexed by
   `ι ⊕ ι`.
 * `TauCeti.weightInfinitesimalAction α z`: the infinitesimal action `ξ ↦ ξ_M(z)` at `z`.
+* `TauCeti.weightOrbitSetoid α c`: the orbit relation of the action of `𝔱` on the level
+  `μ⁻¹(c)`.
 
 ## Main results
 
 * `TauCeti.stdSymplecticForm_weightRotation`: rotations are symplectic.
 * `TauCeti.weightRotation_add`, `TauCeti.weightRotation_zero`: rotations form an action of the
   additive group `ι → ℝ`; in particular `weightRotation θ ^ n` is the rotation by `n • θ`
-  (`TauCeti.weightRotation_nsmul`).
+  (`TauCeti.weightRotation_nsmul`). For weights `α`, `ξ ↦ weightRotation (α · ξ)` is an action of
+  `𝔱` (`TauCeti.weightRotation_map_add_apply`, `TauCeti.weightRotation_map_zero_apply`).
 * `TauCeti.weightRotation_product_apply`: rotations commute with the complex structure
   `J(q, p) = (-p, q)`.
 * `TauCeti.complexEuclideanEquivRealProd_symm_weightRotation_apply`: in the complex coordinates
@@ -374,6 +377,43 @@ theorem weightMomentMap_weightRotation (α : ι → StrongDual ℝ 𝔱) (θ : �
   congr 2
   simp only [weightRotation_apply_fst, weightRotation_apply_snd]
   linear_combination (x.1 i ^ 2 + x.2 i ^ 2) * sin_sq_add_cos_sq (θ i)
+
+/-- The action of `𝔱` with weights `α` is additive: the rotation by `ξ + η` is the rotation by `η`
+followed by the rotation by `ξ`. -/
+theorem weightRotation_map_add_apply (α : ι → StrongDual ℝ 𝔱) (ξ η : 𝔱)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightRotation (fun j ↦ α j (ξ + η)) x =
+      weightRotation (fun j ↦ α j ξ) (weightRotation (fun j ↦ α j η) x) := by
+  rw [← ContinuousLinearMap.comp_apply, ← weightRotation_add]
+  congr 2
+  funext j
+  simp
+
+/-- The element `0 ∈ 𝔱` acts as the identity. -/
+theorem weightRotation_map_zero_apply (α : ι → StrongDual ℝ 𝔱)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightRotation (fun j ↦ α j 0) x = x := by
+  simp [← Pi.zero_def]
+
+/-- The orbit relation of the action of `𝔱` with weights `α` on the level `μ⁻¹(c)` of its moment
+map: two points are related when a rotation carries one to the other. The rotations preserve the
+level (`TauCeti.weightMomentMap_weightRotation`), so its classes are the orbits in the level. -/
+def weightOrbitSetoid (α : ι → StrongDual ℝ 𝔱) (c : StrongDual ℝ 𝔱) :
+    Setoid {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι // weightMomentMap α x = c} where
+  r x y := ∃ ξ : 𝔱, weightRotation (fun j ↦ α j ξ) x.val = y.val
+  iseqv :=
+    ⟨fun x ↦ ⟨0, weightRotation_map_zero_apply α x.val⟩,
+      fun ⟨ξ, h⟩ ↦ ⟨-ξ, by rw [← h, ← weightRotation_map_add_apply, neg_add_cancel,
+        weightRotation_map_zero_apply]⟩,
+      fun ⟨ξ, h⟩ ⟨η, h'⟩ ↦ ⟨η + ξ, by rw [weightRotation_map_add_apply, h, h']⟩⟩
+
+/-- Two points of a level are related by the orbit setoid exactly when a rotation carries one to
+the other. -/
+@[simp]
+theorem weightOrbitSetoid_apply {α : ι → StrongDual ℝ 𝔱} {c : StrongDual ℝ 𝔱}
+    {x y : {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι // weightMomentMap α x = c}} :
+    weightOrbitSetoid α c x y ↔ ∃ ξ : 𝔱, weightRotation (fun j ↦ α j ξ) x.val = y.val :=
+  Iff.rfl
 
 /-- The derivative of the moment map at `(q, p)`:
 `(δq, δp) ↦ -Σ_i (q_i δq_i + p_i δp_i) α_i`. -/

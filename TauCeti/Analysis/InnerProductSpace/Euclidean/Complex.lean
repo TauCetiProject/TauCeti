@@ -213,12 +213,6 @@ theorem complexEuclideanEquivRealProd_symm_apply
     (complexEuclideanEquivRealProd ι).symm p i = p.1 i + p.2 i * Complex.I :=
   (rfl)
 
-/-- The squared modulus of the coordinate `z_i = x_i + i y_i` is `x_i² + y_i²`. -/
-theorem normSq_complexEuclideanEquivRealProd_symm_apply
-    (p : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
-    Complex.normSq ((complexEuclideanEquivRealProd ι).symm p i) = p.1 i ^ 2 + p.2 i ^ 2 := by
-  simp [complexEuclideanEquivRealProd_symm_apply, Complex.normSq_apply, sq]
-
 /-- The identification `(x, y) ↦ x + i y` carries the sum of the real inner products of the two
 factors to the real inner product `Re ⟪·, ·⟫_ℂ`. -/
 theorem real_inner_complexEuclideanEquivRealProd_symm

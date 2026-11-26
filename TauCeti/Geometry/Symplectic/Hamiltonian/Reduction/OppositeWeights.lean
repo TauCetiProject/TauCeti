@@ -186,14 +186,23 @@ private theorem eq_iff_symm_apply_eq {x y : EuclideanSpace ℝ (Fin 2) × Euclid
   fin_cases j
   exacts [h0, h1]
 
+/-- On the zero level, the two complex coordinates have the same squared modulus
+`|z₀|² = |z₁|²`. -/
+private theorem normSq_symm_zero_eq_normSq_symm_one
+    {x : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)}
+    (hx : weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] x = 0) :
+    Complex.normSq ((complexEuclideanEquivRealProd (Fin 2)).symm x 0) =
+      Complex.normSq ((complexEuclideanEquivRealProd (Fin 2)).symm x 1) := by
+  simp only [complexEuclideanEquivRealProd_symm_apply, Complex.normSq_add_mul_I]
+  exact weightMomentMap_id_neg_id_eq_zero_iff.1 hx
+
 /-- On the zero level, the modulus of the invariant `z₀ z₁` is `|z₀|² = |z₁|²`. -/
 theorem norm_oppositeWeightInvariant {x : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)}
     (hx : weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] x = 0) :
     ‖oppositeWeightInvariant x‖ = x.1 0 ^ 2 + x.2 0 ^ 2 := by
-  rw [weightMomentMap_id_neg_id_eq_zero_iff] at hx
   rw [oppositeWeightInvariant, Complex.norm_mul, Complex.norm_def, Complex.norm_def,
-    normSq_complexEuclideanEquivRealProd_symm_apply,
-    normSq_complexEuclideanEquivRealProd_symm_apply, ← hx, Real.mul_self_sqrt (by positivity)]
+    ← normSq_symm_zero_eq_normSq_symm_one hx, Real.mul_self_sqrt (Complex.normSq_nonneg _),
+    complexEuclideanEquivRealProd_symm_apply, Complex.normSq_add_mul_I]
 
 /-- On the zero level, the invariant vanishes only at the origin. -/
 theorem oppositeWeightInvariant_eq_zero_iff
@@ -207,27 +216,13 @@ theorem oppositeWeightInvariant_eq_zero_iff
   refine ⟨?_, ?_, ?_, ?_⟩ <;> nlinarith [sq_nonneg (x.1 0), sq_nonneg (x.2 0),
     sq_nonneg (x.1 1), sq_nonneg (x.2 1)]
 
+/-- Away from the origin, the invariant of a point of the zero level is nonzero. -/
+theorem oppositeWeightInvariant_ne_zero {x : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)}
+    (hx : weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] x = 0)
+    (hx0 : x ≠ 0) : oppositeWeightInvariant x ≠ 0 :=
+  mt (oppositeWeightInvariant_eq_zero_iff hx).1 hx0
+
 /-! ### Orbits on the zero level -/
-
-/-- The rotation by `ξ + η` is the rotation by `η` followed by the rotation by `ξ`. -/
-private theorem weightRotation_id_neg_id_add_apply (ξ η : ℝ)
-    (x : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)) :
-    weightRotation
-        (fun j ↦ ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] j (ξ + η)) x =
-      weightRotation (fun j ↦ ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] j ξ)
-        (weightRotation (fun j ↦ ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] j η)
-          x) := by
-  rw [← ContinuousLinearMap.comp_apply, ← weightRotation_add]
-  congr 2
-  funext j
-  simp
-
-/-- The rotation by `0` is the identity. -/
-private theorem weightRotation_id_neg_id_zero_apply
-    (x : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)) :
-    weightRotation (fun j ↦ ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] j 0) x =
-      x := by
-  simp [← Pi.zero_def]
 
 /-- The complex arithmetic behind the orbits of the zero level: if `a b = a' b' ≠ 0` with
 `|a| = |b|` and `|a'| = |b'|`, then `a' = e^{iξ} a` and `b' = e^{-iξ} b` for the argument `ξ` of
@@ -247,11 +242,9 @@ private theorem exists_rotation_of_mul_eq {a b a' b' : ℂ} (hab : a * b = a' * 
   obtain ⟨u, hu_def⟩ : ∃ u, u = a' / a := ⟨_, rfl⟩
   have hu : Complex.normSq u = 1 := by
     rw [hu_def, map_div₀, hnorm, div_self (Complex.normSq_pos.2 ha).ne']
-  have hu0 : u ≠ 0 := hu_def ▸ div_ne_zero ha' ha
   have hnu : ‖u‖ = 1 := by rw [Complex.norm_def, hu, Real.sqrt_one]
   have hcos : (cos (Complex.arg u) : ℂ) + sin (Complex.arg u) * Complex.I = u := by
-    rw [Complex.cos_arg hu0, Complex.sin_arg, hnu, div_one, div_one]
-    exact Complex.re_add_im u
+    simpa [hnu] using Complex.norm_mul_cos_add_sin_mul_I u
   have hinv : u⁻¹ = conj u := by
     rw [Complex.inv_def, hu, inv_one, Complex.ofReal_one, mul_one]
   have hcos' : (cos (Complex.arg u) : ℂ) - sin (Complex.arg u) * Complex.I = u⁻¹ := by
@@ -278,15 +271,9 @@ theorem exists_weightRotation_id_neg_id_apply_eq_iff
   · -- Over `0` the fibre is the fixed point.
     have hy0 : y = 0 := (oppositeWeightInvariant_eq_zero_iff hy).1
       (h ▸ (oppositeWeightInvariant_eq_zero_iff hx).2 hx0)
-    exact ⟨0, by rw [weightRotation_id_neg_id_zero_apply, hx0, hy0]⟩
-  obtain ⟨ξ, h0, h1⟩ := exists_rotation_of_mul_eq h
-    (by rw [normSq_complexEuclideanEquivRealProd_symm_apply,
-      normSq_complexEuclideanEquivRealProd_symm_apply,
-      ← weightMomentMap_id_neg_id_eq_zero_iff.1 hx])
-    (by rw [normSq_complexEuclideanEquivRealProd_symm_apply,
-      normSq_complexEuclideanEquivRealProd_symm_apply,
-      ← weightMomentMap_id_neg_id_eq_zero_iff.1 hy])
-    fun h0 ↦ hx0 ((oppositeWeightInvariant_eq_zero_iff hx).1 h0)
+    exact ⟨0, by rw [weightRotation_map_zero_apply, hx0, hy0]⟩
+  obtain ⟨ξ, h0, h1⟩ := exists_rotation_of_mul_eq h (normSq_symm_zero_eq_normSq_symm_one hx)
+    (normSq_symm_zero_eq_normSq_symm_one hy) (oppositeWeightInvariant_ne_zero hx hx0)
   exact ⟨ξ, eq_iff_symm_apply_eq.2 ⟨by rw [symm_weightRotation_id_neg_id_apply_zero, h0],
     by rw [symm_weightRotation_id_neg_id_apply_one, h1]⟩⟩
 
@@ -343,11 +330,15 @@ theorem hasFDerivAt_oppositeWeightInvariant
             (complexEuclideanEquivRealProd (Fin 2)).symm.toContinuousLinearMap +
         (complexEuclideanEquivRealProd (Fin 2)).symm x 1 •
           (PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin 2 ↦ ℂ) 0).comp
-            (complexEuclideanEquivRealProd (Fin 2)).symm.toContinuousLinearMap) x :=
-  ((PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin 2 ↦ ℂ) 0).comp
+            (complexEuclideanEquivRealProd (Fin 2)).symm.toContinuousLinearMap) x := by
+  -- `Φ` is the product of the two coordinate projections `x ↦ z₀` and `x ↦ z₁`.
+  convert ((PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin 2 ↦ ℂ) 0).comp
       (complexEuclideanEquivRealProd (Fin 2)).symm.toContinuousLinearMap).hasFDerivAt.fun_mul
     ((PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin 2 ↦ ℂ) 1).comp
-      (complexEuclideanEquivRealProd (Fin 2)).symm.toContinuousLinearMap).hasFDerivAt
+      (complexEuclideanEquivRealProd (Fin 2)).symm.toContinuousLinearMap).hasFDerivAt using 1
+  · funext y
+    simp [oppositeWeightInvariant]
+  · simp
 
 /-- The invariant `z₀ z₁` is differentiable. -/
 @[fun_prop]
@@ -385,27 +376,12 @@ theorem fderiv_oppositeWeightInvariant_weightGenerator (ξ : ℝ)
 /-! ### The reduced space -/
 
 /-- The orbit relation of the circle action with the weights `1` and `-1` on the zero level of its
-moment map: two points are related when a rotation carries one to the other. -/
-def oppositeWeightOrbitSetoid :
+moment map: two points are related when a rotation carries one to the other
+(`TauCeti.weightOrbitSetoid_apply`). -/
+abbrev oppositeWeightOrbitSetoid :
     Setoid {x : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) //
-      weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] x = 0} where
-  r x y := ∃ ξ : ℝ, weightRotation
-    (fun j ↦ ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] j ξ) x.val = y.val
-  iseqv :=
-    ⟨fun x ↦ ⟨0, weightRotation_id_neg_id_zero_apply x.val⟩,
-      fun ⟨ξ, h⟩ ↦ ⟨-ξ, by rw [← h, ← weightRotation_id_neg_id_add_apply, neg_add_cancel,
-        weightRotation_id_neg_id_zero_apply]⟩,
-      fun ⟨ξ, h⟩ ⟨η, h'⟩ ↦ ⟨η + ξ, by rw [weightRotation_id_neg_id_add_apply, h, h']⟩⟩
-
-/-- Two points of the zero level are related by the orbit setoid exactly when a rotation carries
-one to the other. -/
-@[simp]
-theorem oppositeWeightOrbitSetoid_apply
-    {x y : {x : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) //
-      weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] x = 0}} :
-    oppositeWeightOrbitSetoid x y ↔ ∃ ξ : ℝ, weightRotation
-      (fun j ↦ ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] j ξ) x.val = y.val :=
-  Iff.rfl
+      weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] x = 0} :=
+  weightOrbitSetoid ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] 0
 
 /-- Two points of the zero level are in one orbit exactly when they have the same invariant
 `z₀ z₁`. -/
@@ -413,7 +389,7 @@ theorem oppositeWeightOrbitSetoid_rel_iff
     {x y : {x : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) //
       weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] x = 0}} :
     oppositeWeightOrbitSetoid x y ↔ oppositeWeightInvariant x.val = oppositeWeightInvariant y.val :=
-  exists_weightRotation_id_neg_id_apply_eq_iff x.property y.property
+  weightOrbitSetoid_apply.trans (exists_weightRotation_id_neg_id_apply_eq_iff x.property y.property)
 
 /-- **The invariant is a quotient map on the zero level.** The restriction of `z₀ z₁` to the cone
 `|z₀| = |z₁|` is onto `ℂ`, and proper since `|z₀ z₁| = |z₀|² = |z₁|²` there, hence closed. So `ℂ`
@@ -443,16 +419,12 @@ theorem isQuotientMap_oppositeWeightInvariant_comp_val :
       have hRx := hR _ hx
       rw [norm_oppositeWeightInvariant x.property] at hRx
       have hlevel := weightMomentMap_id_neg_id_eq_zero_iff.1 x.property
-      have h1 : ‖x.val.1‖ ^ 2 ≤ 2 * R := by
-        rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs,
-          sq_abs]
-        nlinarith [sq_nonneg (x.val.2 0), sq_nonneg (x.val.2 1)]
-      have h2 : ‖x.val.2‖ ^ 2 ≤ 2 * R := by
-        rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs,
-          sq_abs]
-        nlinarith [sq_nonneg (x.val.1 0), sq_nonneg (x.val.1 1)]
+      have hn (y : EuclideanSpace ℝ (Fin 2)) : ‖y‖ ^ 2 = y 0 ^ 2 + y 1 ^ 2 := by
+        simp [EuclideanSpace.norm_sq_eq, Fin.sum_univ_two]
       rw [Prod.norm_def, max_le_iff]
-      exact ⟨Real.le_sqrt_of_sq_le h1, Real.le_sqrt_of_sq_le h2⟩
+      constructor <;> refine Real.le_sqrt_of_sq_le ?_ <;> rw [hn] <;>
+        nlinarith [sq_nonneg (x.val.1 0), sq_nonneg (x.val.1 1), sq_nonneg (x.val.2 0),
+          sq_nonneg (x.val.2 1)]
   · obtain ⟨x, hx, rfl⟩ :=
       exists_weightMomentMap_id_neg_id_eq_zero_and_oppositeWeightInvariant_eq w
     exact ⟨⟨x, hx⟩, rfl⟩
@@ -509,8 +481,7 @@ theorem stdSymplecticForm_eq_div_of_fderiv_weightMomentMap_id_neg_id_eq_zero
     stdSymplecticForm v w =
       (conj (fderiv ℝ oppositeWeightInvariant x v) * fderiv ℝ oppositeWeightInvariant x w).im /
         (2 * ‖oppositeWeightInvariant x‖) := by
-  have hΦ : oppositeWeightInvariant x ≠ 0 :=
-    fun h ↦ hx0 ((oppositeWeightInvariant_eq_zero_iff hx).1 h)
+  have hΦ := oppositeWeightInvariant_ne_zero hx hx0
   rw [eq_div_iff (by positivity), norm_oppositeWeightInvariant hx,
     fderiv_oppositeWeightInvariant_apply, fderiv_oppositeWeightInvariant_apply]
   rw [fderiv_weightMomentMap_id_neg_id_apply_eq_zero_iff] at hv hw
@@ -535,8 +506,7 @@ theorem exists_fderiv_weightMomentMap_id_neg_id_eq_zero_and_fderiv_eq
     (hx0 : x ≠ 0) (c : ℂ) :
     ∃ v, fderiv ℝ (weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ])
         x v = 0 ∧ fderiv ℝ oppositeWeightInvariant x v = c := by
-  have hΦ : oppositeWeightInvariant x ≠ 0 :=
-    fun h ↦ hx0 ((oppositeWeightInvariant_eq_zero_iff hx).1 h)
+  have hΦ := oppositeWeightInvariant_ne_zero hx hx0
   obtain ⟨a, ha⟩ : ∃ a, (complexEuclideanEquivRealProd (Fin 2)).symm x 0 = a := ⟨_, rfl⟩
   obtain ⟨b, hb⟩ : ∃ b, (complexEuclideanEquivRealProd (Fin 2)).symm x 1 = b := ⟨_, rfl⟩
   have hab : a * b ≠ 0 := by rw [← ha, ← hb]; exact hΦ
