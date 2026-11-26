@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.EllipticRegularity
-public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Realization
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Distribution.TestFunction.Inner

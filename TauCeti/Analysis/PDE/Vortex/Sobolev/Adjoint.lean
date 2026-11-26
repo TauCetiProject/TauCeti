@@ -22,13 +22,16 @@ At a field `x`, the formal adjoint `L_x*` of the gauge-fixed vortex operator `L_
 (`TauCeti.Vortex.gaugeFixedAdjoint`) has the same shape as `L_x`: a constant-coefficient
 first-order part plus a zeroth-order part linear in `x`
 (`TauCeti.Vortex.gaugeFixedAdjoint_eq_gaugeFixedAdjointFirstOrder_add`). This file realizes it, as
-`TauCeti.Analysis.PDE.Vortex.SobolevRealization` realizes `L_x`, as a bounded operator
+`TauCeti.Analysis.PDE.Vortex.Sobolev.Realization` realizes `L_x`, as a bounded operator
 
 `TauCeti.Vortex.sobolevGaugeFixedAdjoint a : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)`,
 
 whose leading part acts on the weak gradients of the four coordinates and whose coefficient enters
 through its `L∞` class `a`. On test fields with a `C¹` representative it is the classical
-operator (`TauCeti.Vortex.sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint`). This is the paired
+operator (`TauCeti.Vortex.sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint`). It is affine and
+smooth in `a` (`TauCeti.Vortex.sobolevGaugeFixedAdjoint_eq_add`,
+`TauCeti.Vortex.contDiff_sobolevGaugeFixedAdjoint`), and changing `a` changes only the
+zeroth-order part (`TauCeti.Vortex.sobolevGaugeFixedAdjoint_sub_apply_ae`). This is the paired
 adjoint block of the gauge-fixed normal model of a plane vortex; the realization of `L_x` is the
 other block.
 
@@ -54,7 +57,8 @@ other block.
   (`TauCeti.Vortex.exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`).
 * **Fredholm and index.** When that kernel is finite dimensional, the realization of `L_x*` is
   Fredholm (`TauCeti.Vortex.isFredholm_sobolevGaugeFixedAdjoint`) with index minus its dimension
-  (`TauCeti.Vortex.index_sobolevGaugeFixedAdjoint`): its cokernel is the kernel of `L_x`. At a
+  (`TauCeti.Vortex.index_sobolevGaugeFixedAdjoint`), since it is injective and, by the description
+  of its range, its cokernel has the dimension of that kernel. At a
   continuous plane vortex lying in `A_m^k` for every `k` the index is `-2m`
   (`TauCeti.Vortex.index_sobolevGaugeFixedAdjoint_eq_neg_two_mul`), the negative of the index `2m`
   of `L_x` (`TauCeti.Vortex.index_sobolevGaugeFixedOperator_eq_two_mul`).
@@ -138,32 +142,53 @@ theorem sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint
   rw [h₁, gaugeFixedAdjoint_eq_gaugeFixedAdjointFirstOrder_add, h₂]
   simp_rw [h₃, h₄]
 
+/-! ### Dependence on the coefficient -/
+
+/-- Changing the coefficient changes the realization only in its zeroth-order part: almost
+everywhere, the difference of the realizations at `a` and `b` is the zeroth-order term with
+coefficient `a - b`. -/
+theorem sobolevGaugeFixedAdjoint_sub_apply_ae (a b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤)
+    (η : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    (sobolevGaugeFixedAdjoint a - sobolevGaugeFixedAdjoint b) η =ᵐ[μ⊤] fun z ↦
+      gaugeFixedAdjointZerothOrder (a z - b z) (WithLp.toLp 2 fun j ↦ W1p.value (η j) z) := by
+  filter_upwards [Lp.coeFn_sub (sobolevGaugeFixedAdjoint a η) (sobolevGaugeFixedAdjoint b η),
+    sobolevGaugeFixedAdjoint_apply_ae a η, sobolevGaugeFixedAdjoint_apply_ae b η]
+    with z h h₁ h₂
+  rw [sub_apply, h, Pi.sub_apply, h₁, h₂, map_sub, sub_apply]
+  abel
+
+/-- The realization is affine in the `L∞` class of the coefficient: it is the realization at `0`
+plus the zeroth-order part with coefficient `a`. -/
+theorem sobolevGaugeFixedAdjoint_eq_add (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
+    sobolevGaugeFixedAdjoint a = sobolevGaugeFixedAdjoint 0 +
+      (gaugeFixedAdjointZerothOrder.holderL μ⊤ ∞ 2 2 a).comp sobolevFieldValues := by
+  simp only [sobolevGaugeFixedAdjoint, map_zero, ContinuousLinearMap.zero_comp, add_zero]
+
+/-- The realization is a smooth function of the `L∞` class of the coefficient: it is affine in
+it, the realization at `0` plus the zeroth-order part with coefficient `a`. -/
+theorem contDiff_sobolevGaugeFixedAdjoint {n : WithTop ℕ∞} :
+    ContDiff ℝ n sobolevGaugeFixedAdjoint := by
+  rw [funext sobolevGaugeFixedAdjoint_eq_add]
+  exact contDiff_const.add
+    ((gaugeFixedAdjointZerothOrder.holderL μ⊤ ∞ 2 2).contDiff.clm_comp contDiff_const)
+
+/-- The realization depends continuously, in operator norm, on the `L∞` class of the
+coefficient. -/
+theorem continuous_sobolevGaugeFixedAdjoint : Continuous sobolevGaugeFixedAdjoint :=
+  contDiff_sobolevGaugeFixedAdjoint.continuous (n := 0)
+
 /-! ### Test fields -/
 
 section TestField
 
 variable (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ))
 
-/-- The field `z ↦ (φ₀ z, φ₁ z, φ₂ z, φ₃ z)` of a quadruple of test functions. -/
-private abbrev testField : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ WithLp.toLp 2 fun j ↦ φ j z
-
-private theorem contDiff_testField : ContDiff ℝ ∞ (testField φ) :=
-  (contDiff_piLp 2).2 fun j ↦ (φ j).contDiff
-
-private theorem hasCompactSupport_testField : HasCompactSupport (testField φ) :=
-  (hasCompactSupport_pi_iff.2 fun j ↦ (φ j).hasCompactSupport).comp_left (g := WithLp.toLp 2)
-    (WithLp.toLp_zero 2)
-
-private theorem value_ofTestFunctionₗ_ae (j : Fin 4) :
-    W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) =ᵐ[μ⊤] fun z ↦ testField φ z j :=
-  W1p.value_ofTestFunctionₗ_ae (φ j)
-
 /-- The values of the element of `H¹(ℂ)⁴` given by a quadruple of test functions are the field of
 those test functions. -/
 private theorem sobolevFieldValues_ofTestFunctionₗ_ae :
     sobolevFieldValues (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) =ᵐ[μ⊤] testField φ := by
   filter_upwards [sobolevFieldValues_ae_eq (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)),
-    ae_all_iff.2 (value_ofTestFunctionₗ_ae φ)] with z h₁ h₂
+    ae_all_iff.2 fun j ↦ W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := 2) (φ j)] with z h₁ h₂
   rw [h₁]
   ext j
   simp [h₂ j]
@@ -171,6 +196,18 @@ private theorem sobolevFieldValues_ofTestFunctionₗ_ae :
 end TestField
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
+
+/-- On a field of test functions, the squared `L²` norm of the realization is the integral of the
+squared classical formal adjoint. -/
+private theorem norm_sobolevGaugeFixedAdjoint_ofTestFunctionₗ_sq (hax : a =ᵐ[μ⊤] x)
+    (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
+    ‖sobolevGaugeFixedAdjoint a (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))‖ ^ 2 =
+      ∫ z, ‖gaugeFixedAdjoint x (testField φ) z‖ ^ 2 := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  have h := sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint hax
+    ((contDiff_testField φ).of_le (by simp)) fun j ↦ W1p.value_ofTestFunctionₗ_ae (φ j)
+  simp only [Opens.coe_top, Measure.restrict_univ] at h ⊢
+  exact integral_congr_ae (h.mono fun z hz ↦ by simp only [hz])
 
 /-! ### Duality with the realization of `L_x` -/
 
@@ -190,7 +227,7 @@ theorem inner_sobolevGaugeFixedOperator_sobolevFieldValues (hx : Continuous x)
       (continuous_const.inner (sobolevGaugeFixedAdjoint a).continuous)
   · have hV := sobolevFieldValues_ofTestFunctionₗ_ae φ
     have hA := sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint hax
-      ((contDiff_testField φ).of_le (by simp)) (value_ofTestFunctionₗ_ae φ)
+      ((contDiff_testField φ).of_le (by simp)) fun j ↦ W1p.value_ofTestFunctionₗ_ae (φ j)
     have hy := sobolevFieldValues_ae_eq y
     have h := integral_inner_sobolevGaugeFixedOperator hx hax y
       ((contDiff_testField φ).of_le (by simp)) (hasCompactSupport_testField φ)
@@ -253,14 +290,6 @@ private theorem norm_sq_le_of_testFunction (hx : Continuous x) {M : ℝ} (hM : �
     (continuous_gaugeFixedAdjoint continuous_const
       (hY.of_le one_le_two)).integrable_norm_sq_of_hasCompactSupport
       (hasCompactSupport_gaugeFixedAdjoint hYc)
-  -- The `L²` norm of the realization on the test field is that of the classical operator.
-  have hnorm : ‖sobolevGaugeFixedAdjoint a (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))‖ ^ 2 =
-      ∫ z, ‖gaugeFixedAdjoint x Y z‖ ^ 2 := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq]
-    have h := sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint hax (hY.of_le one_le_two)
-      (value_ofTestFunctionₗ_ae φ)
-    simp only [Opens.coe_top, Measure.restrict_univ] at h ⊢
-    exact integral_congr_ae (h.mono fun z hz ↦ by simp only [hz])
   -- The gradient is controlled by `L₀*`, and `L₀*` by `L_x*` and the zeroth-order part.
   have hgrad : ∫ z, ∑ j : Fin 4, ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2 ≤
       2 * (∫ z, ‖gaugeFixedAdjoint x Y z‖ ^ 2) + 2 * K ^ 2 * ∫ z, ‖Y z‖ ^ 2 := by
@@ -276,14 +305,15 @@ private theorem norm_sq_le_of_testFunction (hx : Continuous x) {M : ℝ} (hM : �
     integrable_finsetSum _ fun j _ ↦
       (continuous_gradient_testFunction (φ j)).integrable_norm_sq_of_hasCompactSupport
         (φ j).hasCompactSupport.gradient
-  have hH := norm_sq_le_integral_testField φ
+  have hH := W1p.norm_sq_ofTestFunctionₗ_top_le (mu := volume) φ
+  simp only [← norm_testField_sq] at hH
   rw [integral_add hYi hgradi] at hH
   have hgap' := hgap Y hY hYc
   -- The spectral gap bounds `∫ |Y|²` by `c⁻¹ ∫ |L_x* Y|²`.
   have hYle : ∫ z, ‖Y z‖ ^ 2 ≤ c⁻¹ * ∫ z, ‖gaugeFixedAdjoint x Y z‖ ^ 2 := by
     rw [le_inv_mul_iff₀ hc]
     exact hgap'
-  rw [hnorm]
+  rw [norm_sobolevGaugeFixedAdjoint_ofTestFunctionₗ_sq hax]
   nlinarith [mul_le_mul_of_nonneg_left hYle (by positivity : (0 : ℝ) ≤ 1 + 2 * K ^ 2)]
 
 /-- **The coercive estimate for `L_x*` on `H¹`.** At a `C¹` vortex `x` with `|α| → 1` at infinity
@@ -410,7 +440,9 @@ private def quotientRangeEquiv (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x
 
 /-- **The realization of `L_x*` on `H¹` is Fredholm** at a `C¹` vortex `x` with `|α| → 1` at
 infinity and with `L∞` class `a`, when the kernel of the realization of `L_x` is finite
-dimensional. It is injective, and its cokernel is isomorphic to that kernel. -/
+dimensional. Its kernel is trivial (`isClosedEmbedding_sobolevGaugeFixedAdjoint`), and its
+cokernel is finite dimensional because its range is the orthogonal complement of the values of
+that kernel (`range_sobolevGaugeFixedAdjoint`). -/
 theorem isFredholm_sobolevGaugeFixedAdjoint (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hax : a =ᵐ[μ⊤] x) [FiniteDimensional ℝ (sobolevGaugeFixedOperator a).ker] :
@@ -431,8 +463,8 @@ theorem index_sobolevGaugeFixedAdjoint (hx : ContDiff ℝ 1 x) (hsol : ∀ z, eq
 
 /-- **The realization of `L_x*` at a plane vortex has index `-2m`.** Let `x` be a continuous plane
 vortex lying in the affine field space `A_m^k` for every `k`, with `L∞` class `a`. Then the
-realization `L_x* : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` is injective with index `-2m`: its cokernel is the
-kernel of `L_x`, of real dimension `2m`. -/
+realization `L_x* : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` has index `-2m`: minus the real dimension `2m` of the
+kernel of `L_x` (`index_sobolevGaugeFixedAdjoint`). -/
 theorem index_sobolevGaugeFixedAdjoint_eq_neg_two_mul {f : ContDiffBump (0 : ℝ)} {m : ℕ}
     (hx : Continuous x) (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k)
     (hsol : ∀ z, equation x z = 0) (hax : a =ᵐ[μ⊤] x) :
@@ -443,7 +475,6 @@ theorem index_sobolevGaugeFixedAdjoint_eq_neg_two_mul {f : ContDiffBump (0 : ℝ
   rw [index_sobolevGaugeFixedAdjoint ((contDiff_of_forall_mem_framedFieldSpace hx hmem).of_le
       (by simp)) hsol (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem) hax,
     finrank_ker_sobolevGaugeFixedOperator_eq_two_mul hx hmem hhol hax]
-  push_cast
-  rfl
+  omega
 
 end TauCeti.Vortex

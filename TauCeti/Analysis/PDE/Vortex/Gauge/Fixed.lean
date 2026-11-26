@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
@@ -375,38 +376,30 @@ def gaugeFixedAdjointFirstOrder : (Fin 4 → ℂ) →L[ℝ] EuclideanSpace ℝ (
   (rfl)
 
 /-- The zeroth-order part of the formal adjoint `L_x*`, as a bilinear map of the value `w` of the
-field and the value `v` of the test field: the transpose of `gaugeFixedZerothOrderMatrix w`
-applied to `v` (`inner_gaugeFixedAdjointZerothOrder`). -/
+field and the value `v` of the test field: the adjoint of the zeroth-order part
+`gaugeFixedZerothOrder w` of `L_x` (`inner_gaugeFixedAdjointZerothOrder`), whose matrix is the
+transpose of `gaugeFixedZerothOrderMatrix w` (`gaugeFixedAdjointZerothOrder_apply`). -/
 def gaugeFixedAdjointZerothOrder :
     EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
-  LinearMap.toContinuousLinearMap <|
-    (LinearMap.toContinuousLinearMap :
-        (EuclideanSpace ℝ (Fin 4) →ₗ[ℝ] EuclideanSpace ℝ (Fin 4)) ≃ₗ[ℝ]
-          (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))).toLinearMap ∘ₗ
-      LinearMap.mk₂ ℝ (fun w v : EuclideanSpace ℝ (Fin 4) ↦
-        WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w j i * v j)
-        (fun _ _ _ ↦ by
-          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
-        (fun _ _ _ ↦ by
-          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
-        (fun _ _ _ ↦ by
-          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
-        (fun _ _ _ ↦ by
-          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
-
-/-- The defining formula of `gaugeFixedAdjointZerothOrder`. -/
-@[simp] theorem gaugeFixedAdjointZerothOrder_apply (w v : EuclideanSpace ℝ (Fin 4)) :
-    gaugeFixedAdjointZerothOrder w v =
-      WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w j i * v j :=
-  (rfl)
+  LinearMap.toContinuousLinearMap
+    { toFun := fun w ↦ ContinuousLinearMap.adjoint (gaugeFixedZerothOrder w)
+      map_add' := fun _ _ ↦ by simp
+      map_smul' := fun _ _ ↦ by simp }
 
 /-- The zeroth-order part of `L_x*` is the transpose of the zeroth-order part of `L_x`. -/
 theorem inner_gaugeFixedAdjointZerothOrder (w u v : EuclideanSpace ℝ (Fin 4)) :
-    ⟪gaugeFixedAdjointZerothOrder w u, v⟫ = ⟪u, gaugeFixedZerothOrder w v⟫ := by
-  simp only [gaugeFixedAdjointZerothOrder_apply, gaugeFixedZerothOrder_apply, PiLp.inner_apply,
-    RCLike.inner_apply, conj_trivial, Fin.sum_univ_four, gaugeFixedZerothOrderMatrix]
-  simp
-  ring
+    ⟪gaugeFixedAdjointZerothOrder w u, v⟫ = ⟪u, gaugeFixedZerothOrder w v⟫ :=
+  ContinuousLinearMap.adjoint_inner_left (gaugeFixedZerothOrder w) v u
+
+/-- The zeroth-order part of `L_x*` is multiplication by the transpose of
+`gaugeFixedZerothOrderMatrix w`. -/
+@[simp] theorem gaugeFixedAdjointZerothOrder_apply (w v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointZerothOrder w v =
+      WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w j i * v j := by
+  ext i
+  have h := inner_gaugeFixedAdjointZerothOrder w v (EuclideanSpace.single i 1)
+  simp only [EuclideanSpace.inner_single_right, one_mul, conj_trivial] at h
+  simp [h, PiLp.inner_apply, mul_comm]
 
 /-- The formal adjoint is the sum of its first-order part, applied to the gradients of the
 coordinates of the test field, and its zeroth-order part. -/

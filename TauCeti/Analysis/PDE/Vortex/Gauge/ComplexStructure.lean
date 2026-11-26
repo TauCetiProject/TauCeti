@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.PrincipalPart
-public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Realization
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Lp
 
 /-!

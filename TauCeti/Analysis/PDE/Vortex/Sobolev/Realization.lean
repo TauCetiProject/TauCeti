@@ -371,32 +371,28 @@ private theorem norm_discValues_apply_sq (R : ℝ) (y : Fin 4 → W1p (volume : 
     ContinuousLinearMap.proj_apply, W1p.valueL_apply, Real.norm_eq_abs, sq_abs]
   exact congrArg (· ^ 2) hz
 
-/-- The squared `H¹(ℂ)⁴` norm of a field of test functions is at most the integral of its
-squared values plus the squared gradients of its coordinates. -/
-theorem norm_sq_le_integral_testField (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
-    ‖fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)‖ ^ 2 ≤
-      ∫ z, (‖(WithLp.toLp 2 fun j ↦ φ j z : EuclideanSpace ℝ (Fin 4))‖ ^ 2 +
-        ∑ j : Fin 4, ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2) := by
-  set y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2 := fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)
-  have hφi (j : Fin 4) : Integrable (fun z ↦ φ j z ^ 2) := by
-    simpa using (φ j).continuous.integrable_norm_sq_of_hasCompactSupport (μ := volume)
-      (φ j).hasCompactSupport
-  have hgi (j : Fin 4) : Integrable (fun z ↦ ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2) :=
-    (continuous_gradient_testFunction (φ j)).integrable_norm_sq_of_hasCompactSupport
-      (φ j).hasCompactSupport.gradient
-  have hnorm (j : Fin 4) :
-      ‖y j‖ ^ 2 = (∫ z, φ j z ^ 2) + ∫ z, ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2 := by
-    simp only [y, W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq,
-      W1p.norm_value_ofTestFunctionₗ_top_sq, W1p.norm_gradient_ofTestFunctionₗ_top_sq,
-      norm_gradient_eq_norm_fderiv]
-  refine (Pi.norm_pow_le_sum_norm_pow y two_ne_zero).trans (le_of_eq ?_)
-  simp_rw [hnorm, Finset.sum_add_distrib]
-  rw [← integral_finsetSum _ fun j _ ↦ hφi j, ← integral_finsetSum _ fun j _ ↦ hgi j,
-    ← integral_add (integrable_finsetSum _ fun j _ ↦ hφi j)
-      (integrable_finsetSum _ fun j _ ↦ hgi j)]
-  congr 1
-  ext z
+section TestField
+
+variable (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ))
+
+/-- The field `z ↦ (φ₀ z, φ₁ z, φ₂ z, φ₃ z)` of a quadruple of test functions. -/
+abbrev testField : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ WithLp.toLp 2 fun j ↦ φ j z
+
+/-- A field of test functions is smooth. -/
+theorem contDiff_testField : ContDiff ℝ (⊤ : ℕ∞) (testField φ) :=
+  (contDiff_piLp 2).2 fun j ↦ (φ j).contDiff
+
+/-- A field of test functions has compact support. -/
+theorem hasCompactSupport_testField : HasCompactSupport (testField φ) :=
+  (hasCompactSupport_pi_iff.2 fun j ↦ (φ j).hasCompactSupport).comp_left (g := WithLp.toLp 2)
+    (WithLp.toLp_zero 2)
+
+/-- The squared norm of a field of test functions is the sum of the squares of its
+coordinates. -/
+theorem norm_testField_sq (z : ℂ) : ‖testField φ z‖ ^ 2 = ∑ j, φ j z ^ 2 := by
   simp [EuclideanSpace.real_norm_sq_eq]
+
+end TestField
 
 /-- On a field of test functions, the squared `L²` norm of the realization is the integral of the
 squared classical operator. -/
@@ -404,12 +400,10 @@ private theorem norm_sobolevGaugeFixedOperator_ofTestFunctionₗ_sq
     {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hax : a =ᵐ[μ⊤] x) (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
     ‖sobolevGaugeFixedOperator a (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))‖ ^ 2 =
-      ∫ z, ‖gaugeFixedOperator x (fun z ↦ WithLp.toLp 2 fun j ↦ φ j z) z‖ ^ 2 := by
+      ∫ z, ‖gaugeFixedOperator x (testField φ) z‖ ^ 2 := by
   rw [← Lp.integral_norm_sq_eq_norm_sq]
   have h := sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator hax
-    (y := fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))
-    (Y := fun z ↦ WithLp.toLp 2 fun j ↦ φ j z)
-    (((contDiff_piLp 2).2 fun j ↦ (φ j).contDiff).of_le (by simp))
+    (y := fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) ((contDiff_testField φ).of_le (by simp))
     fun j ↦ W1p.value_ofTestFunctionₗ_ae (φ j)
   simp only [Opens.coe_top, Measure.restrict_univ] at h ⊢
   exact integral_congr_ae (h.mono fun z hz ↦ by simp only [hz])
@@ -457,11 +451,9 @@ private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 
           max K 0 * ∑ j, ∫ z in ball (0 : ℂ) (R + 1),
             W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) z ^ 2) := by
   set y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2 := fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)
-  set Y : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ WithLp.toLp 2 fun j ↦ φ j z
-  have hY : ContDiff ℝ 2 Y := ((contDiff_piLp 2).2 fun j ↦ (φ j).contDiff).of_le (by simp)
-  have hYc : HasCompactSupport Y :=
-    (hasCompactSupport_pi_iff.2 fun j ↦ (φ j).hasCompactSupport).comp_left (g := WithLp.toLp 2)
-      (WithLp.toLp_zero 2)
+  set Y := testField φ
+  have hY : ContDiff ℝ 2 Y := (contDiff_testField φ).of_le (by simp)
+  have hYc : HasCompactSupport Y := hasCompactSupport_testField φ
   have hYi : Integrable (fun z ↦ ‖Y z‖ ^ 2) :=
     hY.continuous.integrable_norm_sq_of_hasCompactSupport hYc
   have hGi : Integrable (gaugeFixedGradientDensity x Y) :=
@@ -469,11 +461,13 @@ private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 
   -- The flat gradient is controlled by the covariant gradient density.
   have hle : ‖y‖ ^ 2 ≤
       (1 + 2 * M ^ 2) * (∫ z, ‖Y z‖ ^ 2) + 2 * ∫ z, gaugeFixedGradientDensity x Y z := by
-    refine (norm_sq_le_integral_testField φ).trans ?_
+    refine (W1p.norm_sq_ofTestFunctionₗ_top_le φ).trans ?_
     rw [← integral_const_mul, ← integral_const_mul, ← integral_add (hYi.const_mul _)
       (hGi.const_mul _)]
     refine integral_mono_of_nonneg (ae_of_all _ fun z ↦ by positivity)
       ((hYi.const_mul _).add (hGi.const_mul _)) (ae_of_all _ fun z ↦ ?_)
+    beta_reduce
+    rw [← norm_testField_sq φ z]
     have h₁ := sum_norm_gradient_sq_le x Y z
     have h₂ : x z 0 ^ 2 + x z 1 ^ 2 ≤ M ^ 2 := by
       have := pow_le_pow_left₀ (norm_nonneg _) (hM z) 2
