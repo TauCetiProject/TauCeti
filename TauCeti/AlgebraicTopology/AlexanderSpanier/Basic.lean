@@ -236,6 +236,13 @@ lemma cochainClass_eq_cochainClass_iff {n : ℕ} {φ ψ : (Fin (n + 1) → X) �
     cochainClass R X M n φ = cochainClass R X M n ψ ↔ IsLocallyZero (φ - ψ) :=
   Submodule.Quotient.eq _
 
+/-- On one-element tuples, two functions have the same class exactly when they are equal. -/
+lemma cochainClass_zero_inj {φ ψ : (Fin 1 → X) → M} :
+    cochainClass R X M 0 φ = cochainClass R X M 0 ψ ↔ φ = ψ := by
+  -- Instance search does not reduce `0 + 1` to `1`.
+  have : Unique (Fin (0 + 1)) := inferInstanceAs (Unique (Fin 1))
+  rw [cochainClass_eq_cochainClass_iff, isLocallyZero_iff_eq_zero, sub_eq_zero]
+
 /-- Two linear maps out of the Alexander–Spanier `n`-cochains agree once they agree on the
 classes of all functions. -/
 lemma cochainComplex_linearMap_ext {n : ℕ} {N : Type*} [AddCommGroup N] [Module R N]
@@ -391,11 +398,11 @@ lemma cochainComplex_d_zero_cochainClass (ψ : X → M) :
 /-- Distinct locally constant functions give distinct `0`-cochains. -/
 lemma locallyConstantToCochains_injective :
     Function.Injective (locallyConstantToCochains R X M) := by
-  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-  intro ψ hψ
-  rw [locallyConstantToCochains_apply, cochainClass_eq_zero_iff] at hψ
+  intro ψ ψ' h
+  rw [locallyConstantToCochains_apply, locallyConstantToCochains_apply,
+    cochainClass_zero_inj] at h
   ext x
-  exact hψ.apply_const x
+  exact congrFun h fun _ ↦ x
 
 /-- The `0`-cochains with zero coboundary are exactly those of locally constant functions. -/
 lemma exact_locallyConstantToCochains :
@@ -409,10 +416,7 @@ lemma exact_locallyConstantToCochains :
     isLocallyZero_sub_iff_isLocallyConstant]
   refine ⟨fun h ↦ ⟨⟨ψ, h⟩, rfl⟩, ?_⟩
   rintro ⟨ψ', hψ'⟩
-  -- Instance search does not reduce `0 + 1` to `1`.
-  have : Unique (Fin (0 + 1)) := inferInstanceAs (Unique (Fin 1))
-  rw [locallyConstantToCochains_apply, cochainClass_eq_cochainClass_iff,
-    isLocallyZero_iff_eq_zero, sub_eq_zero] at hψ'
+  rw [locallyConstantToCochains_apply, cochainClass_zero_inj] at hψ'
   have : ψ = ψ' := funext fun x ↦ (congrFun hψ' fun _ ↦ x).symm
   exact this ▸ ψ'.isLocallyConstant
 
@@ -467,13 +471,10 @@ lemma cyclesZeroIso_hom_apply {z : (cochainComplex R X M).cycles 0} {φ : (Fin 1
     (hz : ((cochainComplex R X M).iCycles 0).hom z = cochainClass R X M 0 φ) (x : X) :
     (cyclesZeroIso R X M).hom.hom z x = φ fun _ ↦ x := by
   set ψ := (cyclesZeroIso R X M).hom.hom z
-  -- Instance search does not reduce `0 + 1` to `1`.
-  have : Unique (Fin (0 + 1)) := inferInstanceAs (Unique (Fin 1))
   have hz' : (cyclesZeroIso R X M).inv.hom ψ = z := Iso.hom_inv_id_apply (cyclesZeroIso R X M) z
   rw [← hz', ← LinearMap.comp_apply, ← ModuleCat.hom_comp, cyclesZeroIso_inv_iCycles,
     ModuleCat.hom_ofHom,
-    locallyConstantToCochains_apply, cochainClass_eq_cochainClass_iff, isLocallyZero_iff_eq_zero,
-    sub_eq_zero] at hz
+    locallyConstantToCochains_apply, cochainClass_zero_inj] at hz
   exact congrFun hz fun _ ↦ x
 
 variable {R X M} in
