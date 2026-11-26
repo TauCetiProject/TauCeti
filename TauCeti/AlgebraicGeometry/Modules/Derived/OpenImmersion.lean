@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction
+public import TauCeti.Algebra.Homology.HomotopyCategory.Functor
 public import TauCeti.Algebra.Homology.HomotopyCategory.KInjective
 public import TauCeti.AlgebraicGeometry.Modules.Derived.Restrict
 public import TauCeti.AlgebraicGeometry.Modules.Derived.TotalDirectImage
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Pushforward
 
 /-!
 # Total direct images along open immersions
@@ -24,7 +26,8 @@ For an open immersion `j : U ⟶ X`, this file compares the total direct image
   by the counit isomorphism `(j_* M)|_U ≅ M` of module sheaves.
 * `Scheme.Hom.totalDirectImageRestrict`: for open immersions `i : W ⟶ U` and `j : U ⟶ X` with
   composite `k`, the restriction map `Rj_* K ⟶ Rk_* (K|_W)`, induced by the restriction map
-  `j_* M ⟶ k_* (M|_W)` of module sheaves (`Scheme.Modules.pushforwardRestriction`).
+  `j_* M ⟶ k_* (M|_W)` of module sheaves (`Scheme.Modules.pushforwardRestriction`, constructed
+  with its termwise properties in `TauCeti.AlgebraicGeometry.Modules.Restriction.Pushforward`).
 * `Scheme.Hom.derivedRestrict_map_totalDirectImageRestrict_app`: restricted to `W`, the
   restriction map followed by the derived counit of `k` is the restriction of the derived counit
   of `j`.
@@ -87,79 +90,6 @@ theorem isKInjective_restrictFunctor_mapHomologicalComplex_obj {X Y : Scheme.{u}
     ((Functor.mapHomologicalComplexCompIso i (.up ℤ)).app I)).1
       (CochainComplex.isKInjective_map_of_adjunction adj _)
 
-section Restriction
-
-variable {W U X : Scheme.{u}} (i : W ⟶ U) (j : U ⟶ X) (k : W ⟶ X) (w : i ≫ j = k)
-  [IsOpenImmersion i]
-
-/-- For open immersions `i : W ⟶ U` and `j : U ⟶ X` with composite `k`, the restriction map
-`j_* M ⟶ k_* (M|_W)` of module sheaves on `X`: the pushforward along `j` of the unit
-`M ⟶ i_* (M|_W)` of the adjunction between restriction and pushforward along `i`, followed by
-the identification `j_* i_* = k_*`. On sections over an open `T` of `X` it restricts sections of
-`M` over `j⁻¹ T` to the image under `i` of `k⁻¹ T`. -/
-def pushforwardRestriction : pushforward j ⟶ restrictFunctor i ⋙ pushforward k :=
-  whiskerRight (restrictAdjunction i).unit (pushforward j) ≫
-    whiskerLeft (restrictFunctor i) ((pushforwardComp i j).hom ≫ (pushforwardCongr w).hom)
-
-@[simp]
-lemma pushforwardRestriction_app_app (M : U.Modules) (T : X.Opens) :
-    ((pushforwardRestriction i j k w).app M).app T =
-      M.presheaf.map (homOfLE (show i ''ᵁ (k ⁻¹ᵁ T) ≤ j ⁻¹ᵁ T by
-        subst w; exact i.image_preimage_le (j ⁻¹ᵁ T))).op := by
-  subst w
-  simp only [pushforwardRestriction, NatTrans.comp_app, whiskerRight_app, whiskerLeft_app,
-    Hom.comp_app, pushforward_map_app, restrictAdjunction_unit_app_app, pushforwardComp_hom_app_app,
-    pushforwardCongr_hom_app_app]
-  -- Both sides restrict sections of `M`; the sections of `k_* (M|_W)` are sections of `M`, and
-  -- morphisms of opens are unique.
-  erw [← Functor.map_comp]
-  rfl
-
-/-- Restricted to `W` along `k`, the restriction map `j_* M ⟶ k_* (M|_W)` followed by the counit of
-`k` is the restriction to `W` of the counit `(j_* M)|_U ⟶ M` of `j`, up to the comparison
-`((j_* M)|_U)|_W ≅ (j_* M)|_W`. -/
-lemma restrictFunctorComp_inv_app_comp_restrictFunctor_map_pushforwardRestriction_app
-    [IsOpenImmersion j] [IsOpenImmersion k] (M : U.Modules) :
-    ((restrictFunctorComp i j).inv.app _ ≫ (restrictFunctorCongr w).hom.app _) ≫
-      (restrictFunctor k).map ((pushforwardRestriction i j k w).app M) ≫
-        (restrictAdjunction k).counit.app ((restrictFunctor i).obj M) =
-      (restrictFunctor i).map ((restrictAdjunction j).counit.app M) := by
-  refine hom_ext _ _ fun T ↦ ?_
-  -- On sections, restriction acts on a morphism as the morphism over the image.
-  have h₁ : ((restrictFunctor k).map ((pushforwardRestriction i j k w).app M)).app T =
-      ((pushforwardRestriction i j k w).app M).app (k ''ᵁ T) := rfl
-  have h₂ : ((restrictFunctor i).map ((restrictAdjunction j).counit.app M)).app T =
-      ((restrictAdjunction j).counit.app M).app (i ''ᵁ T) := rfl
-  simp only [Hom.comp_app, h₁, h₂, restrictFunctorComp_inv_app_app,
-    restrictFunctorCongr_hom_app_app, restrictAdjunction_counit_app_app,
-    pushforwardRestriction_app_app, restrict_map, eqToHom_map]
-  -- The sections of `j_* M` and of `M|_W` are sections of `M`, and the restriction maps are
-  -- those of `M`; the composite restriction maps agree since morphisms of opens are unique.
-  repeat erw [← Functor.map_comp]
-  simp only [← op_comp]
-  erw [pushforward_obj_presheaf_map, ← Functor.map_comp]
-  exact congrArg M.presheaf.map (Subsingleton.elim _ _)
-
-/-- For opens `W ≤ V` and `U` of `X` with `U ⊓ V ≤ W`, the restriction map
-`(V.ι)_* M ⟶ (W.ι)_* (M|_W)` becomes an isomorphism after restriction to `U`: over an open
-contained in `U`, both sides are the sections of `M` over its intersection with `V`. -/
-lemma isIso_restrictFunctor_map_pushforwardRestriction_app {X : Scheme.{u}} {U V W : X.Opens}
-    (hWV : W ≤ V) (hUVW : U ⊓ V ≤ W) (M : V.toScheme.Modules) :
-    IsIso ((restrictFunctor U.ι).map
-      ((pushforwardRestriction (X.homOfLE hWV) V.ι W.ι (X.homOfLE_ι hWV)).app M)) := by
-  refine isIso_restrictFunctor_map_of_isIso_app _ U fun T hT ↦ ?_
-  rw [pushforwardRestriction_app_app]
-  have e : (X.homOfLE hWV) ''ᵁ (W.ι ⁻¹ᵁ T) = V.ι ⁻¹ᵁ T := by
-    rw [← X.homOfLE_ι hWV, Scheme.Hom.comp_preimage, Scheme.Hom.image_preimage_eq_opensRange_inf,
-      Scheme.opensRange_homOfLE, inf_eq_right]
-    intro x hx
-    exact hUVW ⟨hT hx, x.property⟩
-  -- Morphisms of opens are unique, so the restriction is along the equality `e`.
-  rw [show homOfLE _ = eqToHom e from rfl]
-  exact (M.presheaf.mapIso (eqToIso e).op).isIso_hom
-
-end Restriction
-
 end AlgebraicGeometry.Scheme.Modules
 
 namespace AlgebraicGeometry.Scheme.Hom
@@ -187,10 +117,9 @@ private def totalDirectImageCompDerivedRestrictAux :
         have h := (Modules.restrictFunctor j).mapDerivedCategoryFactorsh.hom.naturality
           ((HomotopyCategory.quotient _ _).map (((pushforward j).mapHomologicalComplex _).map f))
         dsimp at h ⊢
-        -- `HomotopyCategory.quotient` is the quotient functor of the homotopy relation.
-        erw [Functor.mapHomotopyCategory_map]
-        rw [reassoc_of% h, ← Qh.map_comp, Category.assoc, ← Qh.map_comp]
-        erw [← Functor.map_comp, ← Functor.map_comp]
+        simp only [HomotopyCategory.quotient_functor_map, Functor.mapHomotopyCategory_map]
+        rw [reassoc_of% h, ← Qh.map_comp, Category.assoc, ← Qh.map_comp, ← Functor.map_comp,
+          ← Functor.map_comp]
         congr 3
         exact (NatTrans.mapHomologicalComplex (restrictAdjunction j).counit _).naturality f }
 
@@ -288,19 +217,20 @@ private def totalDirectImageRestrictAux :
             (((Modules.restrictFunctor i).mapHomologicalComplex _).map f))
         have h₂ := (Modules.restrictFunctor i).mapDerivedCategoryFactorsh.inv.naturality
           ((HomotopyCategory.quotient _ _).map f)
-        have h₃ :=
-          (NatTrans.mapHomologicalComplex (pushforwardRestriction i j k w) (.up ℤ)).naturality f
-        dsimp at h₁ h₂ h₃ ⊢
-        -- `HomotopyCategory.quotient` is the quotient functor of the homotopy relation.
-        erw [Functor.mapHomotopyCategory_map]
-        rw [← Qh.map_comp_assoc, ← Functor.map_comp, h₃, Functor.map_comp, Qh.map_comp_assoc]
-        erw [reassoc_of% h₁]
-        simp only [Category.assoc, ← Functor.map_comp]
-        erw [h₂]
-        simp only [Functor.map_comp]
         -- `(restrictFunctor i ⋙ pushforward k).mapHomologicalComplex` is the composite of the
         -- functors on complexes by definition.
-        rfl }
+        have h₃ : ((pushforward j).mapHomologicalComplex _).map f ≫
+            (NatTrans.mapHomologicalComplex (pushforwardRestriction i j k w) _).app L =
+            (NatTrans.mapHomologicalComplex (pushforwardRestriction i j k w) _).app K ≫
+              ((pushforward k).mapHomologicalComplex _).map
+                (((Modules.restrictFunctor i).mapHomologicalComplex _).map f) :=
+          (NatTrans.mapHomologicalComplex (pushforwardRestriction i j k w) (.up ℤ)).naturality f
+        dsimp at h₁ h₂ ⊢
+        simp only [HomotopyCategory.quotient_functor_map, Functor.mapHomotopyCategory_map]
+        rw [← Qh.map_comp_assoc, ← Functor.map_comp, h₃, Functor.map_comp, Qh.map_comp_assoc,
+          reassoc_of% h₁]
+        simp only [Category.assoc, ← Functor.map_comp]
+        rw [h₂] }
 
 private lemma totalDirectImageRestrictAux_app (K : CochainComplex U.Modules ℤ) :
     (totalDirectImageRestrictAux i j k w).app ((HomotopyCategory.quotient _ _).obj K) =
@@ -384,9 +314,10 @@ private lemma derivedRestrict_map_totalDirectImageRestrict_app_aux
             (Qh.obj ((HomotopyCategory.quotient _ _).obj K))) := by
   -- Both sides are computed on the complex `K` by the factorization lemmas of the restriction map
   -- and of the derived counits, and reduce to the identity of complexes
-  -- `mapHomologicalComplex_restrictFunctorComp_inv_comp_pushforwardRestriction`. The objects of
-  -- the homotopy category `Functor.mapHomotopyCategory` produces agree with those of
-  -- `HomotopyCategory.quotient` only up to unfolding, hence the uses of `erw`.
+  -- `mapHomologicalComplex_restrictFunctorComp_inv_comp_pushforwardRestriction`. The source of
+  -- `pushforwardRestriction` is `restrictFunctor i ⋙ pushforward k`, whose functor on complexes
+  -- agrees with the composite of the functors on complexes only by definition; the two `erw`
+  -- steps and the final `rfl` match these objects.
   have e₁ := (totalDirectImageCompDerivedRestrictIso k).hom.naturality
     ((Modules.restrictFunctor i).mapDerivedCategoryFactorsh.inv.app
       ((HomotopyCategory.quotient _ _).obj K))
@@ -398,17 +329,19 @@ private lemma derivedRestrict_map_totalDirectImageRestrict_app_aux
   have e₄ := (Modules.restrictFunctor i).mapDerivedCategoryFactorsh.hom.naturality
     ((HomotopyCategory.quotient _ _).map
       ((NatTrans.mapHomologicalComplex (restrictAdjunction j).counit _).app K))
-  dsimp only [Functor.comp_obj, Functor.comp_map, Functor.id_obj, Functor.id_map] at e₁ e₂ e₃ e₄
-  erw [Functor.mapHomotopyCategory_map] at e₃ e₄
+  dsimp only [Functor.comp_obj, Functor.comp_map, Functor.id_obj, Functor.id_map,
+    Functor.mapHomotopyCategory_obj_quotient_obj] at e₁ e₂ ⊢
+  simp only [Functor.comp_obj, Functor.comp_map, Functor.mapHomotopyCategory_map] at e₃ e₄
   rw [← Functor.map_comp_assoc, totalDirectImageRestrict_app_fac]
   simp only [Functor.map_comp, Category.assoc]
-  erw [e₁, totalDirectImageCompDerivedRestrictIso_hom_app_fac_assoc
-    k (((Modules.restrictFunctor i).mapHomologicalComplex _).obj K)]
-  rw [reassoc_of% e₂, ← Functor.map_comp, totalDirectImageCompDerivedRestrictIso_hom_app_fac,
+  rw [e₁, totalDirectImageCompDerivedRestrictIso_hom_app_fac_assoc
+      k (((Modules.restrictFunctor i).mapHomologicalComplex _).obj K),
+    reassoc_of% e₂, ← Functor.map_comp, totalDirectImageCompDerivedRestrictIso_hom_app_fac,
     ← cancel_epi ((derivedRestrictComp i j k w).hom.app (Qh.obj
-      ((HomotopyCategory.quotient _ _).obj (((pushforward j).mapHomologicalComplex _).obj K))))]
-  erw [Iso.hom_inv_id_app_assoc, reassoc_of% e₃, derivedRestrictComp_hom_app_Qh_obj_assoc]
-  rw [Functor.map_comp, ← cancel_mono
+      ((HomotopyCategory.quotient _ _).obj (((pushforward j).mapHomologicalComplex _).obj K)))),
+    Iso.hom_inv_id_app_assoc]
+  erw [reassoc_of% e₃]
+  rw [derivedRestrictComp_hom_app_Qh_obj_assoc, Functor.map_comp, ← cancel_mono
     ((Modules.restrictFunctor i).mapDerivedCategoryFactorsh.hom.app
       ((HomotopyCategory.quotient _ _).obj K))]
   simp only [Category.assoc, Iso.inv_hom_id_app]
@@ -420,6 +353,7 @@ private lemma derivedRestrict_map_totalDirectImageRestrict_app_aux
 `Rj_* K ⟶ Rk_* (K|_W)` followed by the derived counit `(Rk_* L)|_W ≅ L` of `k` is the restriction
 to `W` of the derived counit `(Rj_* K)|_U ≅ K` of `j`, up to the comparison
 `((Rj_* K)|_U)|_W ≅ (Rj_* K)|_W` of `Scheme.Hom.derivedRestrictComp`. -/
+@[reassoc]
 theorem derivedRestrict_map_totalDirectImageRestrict_app (A : DerivedCategory U.Modules) :
     k.derivedRestrict.map ((totalDirectImageRestrict i j k w).app A) ≫
         (totalDirectImageCompDerivedRestrictIso k).hom.app (i.derivedRestrict.obj A) =
@@ -490,8 +424,7 @@ theorem isIso_derivedRestrict_map_totalDirectImageRestrict_app (hWV : W ≤ V) (
     exact HomologicalComplex.Hom.isIso_of_components _
   have hτ := (Scheme.Modules.restrictFunctor U.ι).mapDerivedCategoryFactorsh.hom.naturality
     ((HomotopyCategory.quotient _ _).map τ)
-  dsimp only [Functor.comp_map] at hτ
-  erw [Functor.mapHomotopyCategory_map] at hτ
+  simp only [Functor.comp_map, Functor.mapHomotopyCategory_map] at hτ
   have : IsIso (U.ι.derivedRestrict.map (Qh.map ((HomotopyCategory.quotient _ _).map τ))) := by
     have : IsIso (U.ι.derivedRestrict.map (Qh.map ((HomotopyCategory.quotient _ _).map τ)) ≫
         (Scheme.Modules.restrictFunctor U.ι).mapDerivedCategoryFactorsh.hom.app _) := by
