@@ -69,14 +69,6 @@ theorem frobenius_le_frobenius_of_norm_le {A : E →ₗ[𝕜] F} {B : E →ₗ[�
 
 variable [FiniteDimensional 𝕜 F]
 
-/-- **The Hilbert–Schmidt inner product as a trace.** In an orthonormal basis `(bᵢ)` of the
-source, `tr (A† B) = ∑ᵢ ⟪A bᵢ, B bᵢ⟫`. -/
-theorem _root_.LinearMap.trace_adjoint_comp_eq_sum_inner {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι 𝕜 E) (A B : E →ₗ[𝕜] F) :
-    trace 𝕜 E (A.adjoint ∘ₗ B) = ∑ i, ⟪A (b i), B (b i)⟫_𝕜 := by
-  rw [trace_eq_sum_inner _ b]
-  exact Finset.sum_congr rfl fun i _ ↦ adjoint_inner_right A _ _
-
 /-- **The Frobenius seminorm through the trace**: `‖A‖_F² = tr (A† A)`. -/
 theorem sq_frobenius_eq_trace (A : E →ₗ[𝕜] F) :
     ((frobenius 𝕜 E F A ^ 2 : ℝ) : 𝕜) = trace 𝕜 E (A.adjoint ∘ₗ A) := by
@@ -104,6 +96,7 @@ theorem re_trace_adjoint_comp_le (A B : E →ₗ[𝕜] F) :
 
 /-- **Adjoint invariance of the Frobenius seminorm**: `‖A†‖_F = ‖A‖_F`, since `A` and `A†` have
 the same singular values. -/
+@[simp]
 theorem frobenius_adjoint (A : E →ₗ[𝕜] F) : frobenius 𝕜 F E A.adjoint = frobenius 𝕜 E F A := by
   simp only [frobenius_apply_eq_sqrt_sum_sq_singularValues, LinearMap.singularValues_adjoint]
 
