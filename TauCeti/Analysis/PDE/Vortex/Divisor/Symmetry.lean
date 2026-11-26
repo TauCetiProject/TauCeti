@@ -9,11 +9,12 @@ public import TauCeti.Analysis.PDE.Vortex.Divisor.Normalized
 public import TauCeti.Analysis.PDE.Vortex.Equivariance
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Regularity
 public import TauCeti.Analysis.PDE.Vortex.Isometry
+public import TauCeti.Analysis.PDE.Vortex.RigidMotion
 import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
-# Translation, rotation and line-frame laws of the plane vortex family
+# Translation, rotation and line-frame laws of the plane vortex family and its splitting
 
 Taubes's plane vortex with zero divisor the roots of a polynomial `P` is the field
 `x_P = TauCeti.Vortex.polynomialVortex P`, reconstructed from the amplitude `u₀ + w_P` and the
@@ -64,6 +65,30 @@ is rotation-equivariant up to the constant line-frame gauge `u⁻ᵐ`, like the 
   (`TauCeti.Vortex.normalizingTranslationGauge_mul_inv_translationGauge_mem_sobolevGaugeGroup`):
   in `A_m^k`, `y_(c + a)` lies in the `G_(k+1)`-orbit of `τ · T_a y_c`.
 
+**The kernel projections and right inverses.** The realization
+`L_P : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` of the gauge-fixed operator at the `L∞` class of the vortex of `P`
+(`TauCeti.Vortex.polynomialVortexLp`) splits along the `L²` pairing into the projection `π_P`
+onto its kernel and the right inverse `Q_P` with values orthogonal to the kernel. The class of the
+vortex moves with `P`: moving it by `z ↦ u z + a` gives the class for `P(u · + a)`
+(`TauCeti.Vortex.polynomialVortexLp_comp_C_mul_X_add_C`), and changing its line frame by a unit
+constant `c` gives the class for `c P` (`TauCeti.Vortex.polynomialVortexLp_C_mul`). In the
+symmetric coordinates `c ∈ ℂᵐ` of the divisor, where `P_c = monicOfCoeff c`, the class for the
+translated coefficients is the translated class, and the class for the rotated coefficients is
+the rotated class in the line frame changed by `u⁻ᵐ`
+(`TauCeti.Vortex.polynomialVortexLp_monicOfCoeff_translateCoeff`,
+`TauCeti.Vortex.polynomialVortexLp_monicOfCoeff_rotateCoeff`). With the rigid-motion and
+line-frame laws of the realization (`TauCeti.Analysis.PDE.Vortex.RigidMotion`), these give the
+translation and rotation laws of the splitting along the vortex family:
+
+* `π_(P_(c + a)) = T_a ∘ π_(P_c) ∘ T_a⁻¹` and `Q_(P_(c + a)) = T_a ∘ Q_(P_c) ∘ T_a⁻¹`, with the
+  translation acting on variations and on targets;
+* `π_(P_(c^u)) = (u⁻ᵐ R_u) ∘ π_(P_c) ∘ (u⁻ᵐ R_u)⁻¹` and likewise for `Q`, with the rotation
+  `R_u` followed by the change of line frame by `u⁻ᵐ`.
+
+Permutations of the zeros act trivially, since `c` consists of symmetric functions of the zeros.
+These conjugations carry the kernel projections and right inverses at a divisor, and their
+estimates, to every translate and rotation of that divisor.
+
 ## Main definitions
 
 * `TauCeti.Vortex.normalizingTranslationGauge`: the framed gauge relating `T_a y_c` to
@@ -80,6 +105,12 @@ is rotation-equivariant up to the constant line-frame gauge `u⁻ᵐ`, like the 
   the rotation and translation laws of the normalized vortices.
 * `TauCeti.Vortex.normalizingTranslationGauge_mul_inv_translationGauge_mem_sobolevGaugeGroup`:
   the translation law is compatible with the Sobolev gauge orbits of `A_m^k`.
+* the translation and rotation laws of the kernel projections and right inverses along the vortex
+  family, in the namespace `TauCeti.Vortex`:
+  `orthogonalKerProjection_sobolevGaugeFixedOperator_polynomialVortexLp_translateCoeff`,
+  `orthogonalRightInverse_sobolevGaugeFixedOperator_polynomialVortexLp_translateCoeff`,
+  `orthogonalKerProjection_sobolevGaugeFixedOperator_polynomialVortexLp_rotateCoeff` and
+  `orthogonalRightInverse_sobolevGaugeFixedOperator_polynomialVortexLp_rotateCoeff`.
 
 ## References
 
@@ -361,5 +392,128 @@ theorem normalizingTranslationGauge_mul_inv_translationGauge_mem_sobolevGaugeGro
   exact normalizedVortex_mem_framedFieldSpace hm f _ k
 
 end Normalized
+
+/-! ### The kernel projections and right inverses along the vortex family -/
+
+section Splitting
+
+open TopologicalSpace
+open scoped ENNReal
+
+local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens ℂ) : Set ℂ)
+
+/-- **The rigid-motion law of the `L∞` classes of the plane vortices.** Moving the class of the
+vortex of `P` by `z ↦ u z + a` gives the class of the vortex of `P(u · + a)`. -/
+theorem polynomialVortexLp_comp_C_mul_X_add_C (P : Polynomial ℂ) (u : Circle) (a : ℂ) :
+    polynomialVortexLp (P.comp (C (u : ℂ) * X + C a)) =
+      coefficientMotion u a (polynomialVortexLp P) := by
+  refine Lp.ext ?_
+  filter_upwards [polynomialVortexLp_ae_eq (P.comp (C (u : ℂ) * X + C a)),
+    coeFn_coefficientMotion_of_ae_eq (polynomialVortexLp_ae_eq P) u a] with z h₁ h₂
+  rw [h₁, h₂, translateField_polynomialVortex, rotateField_polynomialVortex, comp_assoc]
+  simp
+
+/-- **The line-frame law of the `L∞` classes of the plane vortices.** For `c` on the unit circle,
+the class of the vortex of `c P` is the class of the vortex of `P` in the line frame changed by
+`c`. -/
+theorem polynomialVortexLp_C_mul (P : Polynomial ℂ) (c : Circle) :
+    polynomialVortexLp (C (c : ℂ) * P) =
+      (gaugeFrame c).compLpₗᵢ ∞ μ⊤ (polynomialVortexLp P) := by
+  refine Lp.ext ?_
+  filter_upwards [polynomialVortexLp_ae_eq (C (c : ℂ) * P),
+    (gaugeFrame c).coeFn_compLpₗᵢ (polynomialVortexLp P), polynomialVortexLp_ae_eq P]
+    with z h₁ h₂ h₃
+  rw [h₁, h₂, h₃, polynomialVortex_C_mul, gaugeTransform_const_apply]
+
+variable {m : ℕ}
+
+/-- **The translation law of the vortex family in symmetric coordinates.** The class of the vortex
+with translated coefficients is the class of the vortex of `P_c` translated by `a`. -/
+theorem polynomialVortexLp_monicOfCoeff_translateCoeff (a : ℂ) (c : Fin m → ℂ) :
+    polynomialVortexLp (monicOfCoeff (translateCoeff a c)) =
+      coefficientMotion 1 a (polynomialVortexLp (monicOfCoeff c)) := by
+  rw [← polynomialVortexLp_comp_C_mul_X_add_C, monicOfCoeff_translateCoeff, taylor_apply]
+  simp
+
+/-- **The rotation law of the vortex family in symmetric coordinates.** The class of the vortex
+with rotated coefficients is the class of the vortex of `P_c` rotated by `u`, in the line frame
+changed by `u⁻ᵐ`. -/
+theorem polynomialVortexLp_monicOfCoeff_rotateCoeff (u : Circle) (c : Fin m → ℂ) :
+    polynomialVortexLp (monicOfCoeff (rotateCoeff u c)) =
+      (gaugeFrame (u⁻¹ ^ m)).compLpₗᵢ ∞ μ⊤
+        (coefficientMotion u 0 (polynomialVortexLp (monicOfCoeff c))) := by
+  rw [monicOfCoeff_rotateCoeff_eq_C_mul_comp, polynomialVortexLp_C_mul,
+    ← polynomialVortexLp_comp_C_mul_X_add_C, map_zero, add_zero]
+
+/-- **The translation law of the kernel projections along the vortex family.** The projection of
+`H¹(ℂ)⁴` onto the kernel of the realization at the vortex with translated coefficients, along the
+`L²`-orthogonal complement of the kernel, is the projection at the vortex of `P_c` conjugated by
+the translation of variations. -/
+theorem orthogonalKerProjection_sobolevGaugeFixedOperator_polynomialVortexLp_translateCoeff
+    (a : ℂ) (c : Fin m → ℂ) :
+    ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+        (sobolevGaugeFixedOperator (polynomialVortexLp (monicOfCoeff (translateCoeff a c)))) =
+      (variationMotion 1 a : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) ∘L
+        ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+          (sobolevGaugeFixedOperator (polynomialVortexLp (monicOfCoeff c))) ∘L
+        ((variationMotion 1 a).symm : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) := by
+  rw [polynomialVortexLp_monicOfCoeff_translateCoeff,
+    orthogonalKerProjection_sobolevGaugeFixedOperator_coefficientMotion]
+
+/-- **The translation law of the right inverses along the vortex family.** The right inverse of
+the realization at the vortex with translated coefficients, with values `L²`-orthogonal to its
+kernel, is the right inverse at the vortex of `P_c` conjugated by the translations of targets and
+variations. -/
+theorem orthogonalRightInverse_sobolevGaugeFixedOperator_polynomialVortexLp_translateCoeff
+    (a : ℂ) (c : Fin m → ℂ) :
+    ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+        (sobolevGaugeFixedOperator (polynomialVortexLp (monicOfCoeff (translateCoeff a c)))) =
+      (variationMotion 1 a : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) ∘L
+        ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+          (sobolevGaugeFixedOperator (polynomialVortexLp (monicOfCoeff c))) ∘L
+        ((targetMotion 1 a).symm.toContinuousLinearEquiv :
+          Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] _) := by
+  rw [polynomialVortexLp_monicOfCoeff_translateCoeff,
+    orthogonalRightInverse_sobolevGaugeFixedOperator_coefficientMotion]
+
+/-- **The rotation law of the kernel projections along the vortex family.** The projection of
+`H¹(ℂ)⁴` onto the kernel of the realization at the vortex with rotated coefficients, along the
+`L²`-orthogonal complement of the kernel, is the projection at the vortex of `P_c` conjugated by
+the rotation of variations followed by the change of line frame by `u⁻ᵐ`. -/
+theorem orthogonalKerProjection_sobolevGaugeFixedOperator_polynomialVortexLp_rotateCoeff
+    (u : Circle) (c : Fin m → ℂ) :
+    ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+        (sobolevGaugeFixedOperator (polynomialVortexLp (monicOfCoeff (rotateCoeff u c)))) =
+      (variationFrame (u⁻¹ ^ m) : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) ∘L
+        ((variationMotion u 0 : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) ∘L
+          ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+            (sobolevGaugeFixedOperator (polynomialVortexLp (monicOfCoeff c))) ∘L
+          ((variationMotion u 0).symm : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _)) ∘L
+        ((variationFrame (u⁻¹ ^ m)).symm : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) := by
+  rw [polynomialVortexLp_monicOfCoeff_rotateCoeff,
+    orthogonalKerProjection_sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame,
+    orthogonalKerProjection_sobolevGaugeFixedOperator_coefficientMotion]
+
+/-- **The rotation law of the right inverses along the vortex family.** The right inverse of the
+realization at the vortex with rotated coefficients, with values `L²`-orthogonal to its kernel, is
+the right inverse at the vortex of `P_c` conjugated by the rotations of targets and variations
+followed by the changes of line frame by `u⁻ᵐ`. -/
+theorem orthogonalRightInverse_sobolevGaugeFixedOperator_polynomialVortexLp_rotateCoeff
+    (u : Circle) (c : Fin m → ℂ) :
+    ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+        (sobolevGaugeFixedOperator (polynomialVortexLp (monicOfCoeff (rotateCoeff u c)))) =
+      (variationFrame (u⁻¹ ^ m) : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) ∘L
+        ((variationMotion u 0 : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) ∘L
+          ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+            (sobolevGaugeFixedOperator (polynomialVortexLp (monicOfCoeff c))) ∘L
+          ((targetMotion u 0).symm.toContinuousLinearEquiv :
+            Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] _)) ∘L
+        (((gaugeFrame (u⁻¹ ^ m)⁻¹).compLpₗᵢ 2 μ⊤).toContinuousLinearEquiv :
+          Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] _) := by
+  rw [polynomialVortexLp_monicOfCoeff_rotateCoeff,
+    orthogonalRightInverse_sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame,
+    orthogonalRightInverse_sobolevGaugeFixedOperator_coefficientMotion]
+
+end Splitting
 
 end TauCeti.Vortex
