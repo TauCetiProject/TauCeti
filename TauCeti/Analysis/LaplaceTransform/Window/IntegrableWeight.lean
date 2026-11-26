@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.LaplaceTransform.Basic
 import TauCeti.Analysis.LaplaceTransform.GammaKernel
-import TauCeti.Analysis.LaplaceTransform.WindowCoefficients
+import TauCeti.Analysis.LaplaceTransform.Window.Coefficients
 import Mathlib.Analysis.Real.Sqrt
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 
