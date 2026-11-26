@@ -220,15 +220,19 @@ namespace TauCeti.ArithmeticalHierarchy
 
 variable {Z : Set ℕ} {α : Type*} [Primcodable α] {S : Set α}
 
+private theorem exists_eval_indicator_dom {A : Set ℕ} (hA : IsSigma Z 1 (· ∈ A)) :
+    ∃ c : Code, (Code.eval ↑(Z.indicator 1 : ℕ → ℕ) c).Dom = A := by
+  obtain ⟨c, hc⟩ := isSigma_one_iff_exists_code.1 hA
+  refine ⟨c, ?_⟩
+  ext x
+  simpa only [PFun.Dom, Set.mem_ofPred_eq, encode_nat, Set.oracle_eq_indicator Z] using (hc x).symm
+
 private theorem exists_computableIn_range_nat {A : Set ℕ} (hA : IsSigma Z 1 (· ∈ A))
     (hne : A.Nonempty) : ∃ f : ℕ → ℕ, ComputableIn {Z.oracle} f ∧ Set.range f = A := by
-  obtain ⟨c, hc⟩ := isSigma_one_iff_exists_code.1 hA
+  obtain ⟨c, hdom⟩ := exists_eval_indicator_dom hA
   obtain ⟨a, ha⟩ := hne
   let O : ℕ → ℕ := Z.indicator 1
   have hO : Z.oracle = (O : ℕ →. ℕ) := Set.oracle_eq_indicator Z
-  have hdom : (Code.eval (O : ℕ →. ℕ) c).Dom = A := by
-    ext x
-    simpa only [PFun.Dom, Set.mem_ofPred_eq, encode_nat, hO] using (hc x).symm
   let f (n : ℕ) :=
     if n.unpair.1 ∈ c.domStage (fun z => some (O z)) n.unpair.2 then n.unpair.1 else a
   have heval (n : ℕ) : Code.eval (O : ℕ →. ℕ) (c.rangeCode a) n = Part.some (f n) :=
@@ -244,12 +248,9 @@ private theorem exists_computableIn_range_nat {A : Set ℕ} (hA : IsSigma Z 1 (�
 private theorem exists_injective_computableIn_range_nat {A : Set ℕ}
     (hA : IsSigma Z 1 (· ∈ A)) (hinf : A.Infinite) :
     ∃ f : ℕ → ℕ, ComputableIn {Z.oracle} f ∧ Set.range f = A ∧ Function.Injective f := by
-  obtain ⟨c, hc⟩ := isSigma_one_iff_exists_code.1 hA
+  obtain ⟨c, hdom⟩ := exists_eval_indicator_dom hA
   let O : ℕ → ℕ := Z.indicator 1
   have hO : Z.oracle = (O : ℕ →. ℕ) := Set.oracle_eq_indicator Z
-  have hdom : (Code.eval (O : ℕ →. ℕ) c).Dom = A := by
-    ext x
-    simpa only [PFun.Dom, Set.mem_ofPred_eq, encode_nat, hO] using (hc x).symm
   let p := Code.eval (O : ℕ →. ℕ) c.entryCode
   have hp (n : ℕ) : (p n).Dom :=
     (c.forall_dom_eval_entryCode_iff O).2 (hdom.symm ▸ hinf) n
@@ -267,31 +268,13 @@ private theorem exists_injective_computableIn_range_nat {A : Set ℕ}
   have huniq := (c.existsUnique_mem_eval_entryCode_iff O (f m)).2 hx
   exact huniq.unique (by rw [heval m]; exact Part.mem_some _) (by rwa [heval n, Part.mem_some_iff])
 
-private theorem exists_decoded_range (a : α) {f : ℕ → ℕ}
-    (hf : ComputableIn {Z.oracle} f) (hr : Set.range f = encode '' S) :
-    ∃ g : ℕ → α, ComputableIn {Z.oracle} g ∧ Set.range g = S ∧
-      (Function.Injective f → Function.Injective g) := by
-  let d (n : ℕ) := (decode n).getD a
-  have hd : Computable d := Computable.decode.option_getD (Computable.const a)
-  have hinv : Function.LeftInverse d (encode (α := α)) := fun x => by simp [d]
-  refine ⟨d ∘ f, hd.computableIn.comp hf, ?_, ?_⟩
-  · rw [Set.range_comp, hr, Set.image_image]
-    exact (Set.image_congr fun x _ => hinv x).trans (Set.image_id' S)
-  · intro h m n he
-    obtain ⟨x, _, hx⟩ := hr ▸ Set.mem_range_self m
-    obtain ⟨y, _, hy⟩ := hr ▸ Set.mem_range_self n
-    apply h
-    rw [← hx, ← hy]
-    apply congrArg encode
-    simpa only [Function.comp_apply, ← hx, ← hy, hinv x, hinv y] using he
-
 /-- Every nonempty set c.e. in the oracle has a total range presentation computable in it. -/
 theorem IsSigma.exists_computableIn_range (hS : IsSigma Z 1 (· ∈ S)) (hne : S.Nonempty) :
     ∃ f : ℕ → α, ComputableIn {Z.oracle} f ∧ Set.range f = S := by
   have hencoded := Computable.encode.computableIn.isSigma_one_mem_image hS
   obtain ⟨a, ha⟩ := hne
   obtain ⟨f, hf, hr⟩ := exists_computableIn_range_nat hencoded ⟨encode a, ⟨a, ha, rfl⟩⟩
-  obtain ⟨g, hg, hgr, _⟩ := exists_decoded_range a hf hr
+  obtain ⟨g, hg, hgr, _⟩ := hf.exists_decoded_range a hr
   exact ⟨g, hg, hgr⟩
 
 /-- Every infinite set c.e. in the oracle has an injective total enumeration computable in it. -/
@@ -302,7 +285,7 @@ theorem IsSigma.exists_injective_computableIn_range (hS : IsSigma Z 1 (· ∈ S)
   obtain ⟨f, hf, hr, hi⟩ :=
     exists_injective_computableIn_range_nat hencoded (hinf.image encode_injective.injOn)
   obtain ⟨a, _⟩ := hinf.nonempty
-  obtain ⟨g, hg, hgr, hgi⟩ := exists_decoded_range a hf hr
+  obtain ⟨g, hg, hgr, hgi⟩ := hf.exists_decoded_range a hr
   exact ⟨g, hg, hgi hi, hgr⟩
 
 /-- A set has a total range presentation computable in the oracle exactly when it is
