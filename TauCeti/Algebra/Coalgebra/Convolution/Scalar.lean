@@ -65,43 +65,35 @@ theorem mulTensor_one_one :
 def tensorCounitRight (R C M N : Type*) [CommSemiring R] [CommSemiring C] [Algebra R C]
     [AddCommMonoid M] [Module R M] [Coalgebra R M]
     [AddCommMonoid N] [Module R N] [Coalgebra R N] :
-    WithConv (M →ₗ[R] C) →ₐ[C] WithConv (M ⊗[R] N →ₗ[R] C) where
-  toFun f := mulTensor f 1
-  map_one' := mulTensor_one_one
-  map_mul' f g := by simp
-  map_zero' := by simp
-  map_add' f g := by simp
-  commutes' c := by
-    apply ofConv_injective
-    apply TensorProduct.ext
-    ext m n
-    simp [mul_assoc, mul_comm]
+    WithConv (M →ₗ[R] C) →ₐ[C] WithConv (M ⊗[R] N →ₗ[R] C) :=
+  CoalgHom.convPrecompCoefficients ((Coalgebra.TensorProduct.rid R R M).toCoalgHom.comp
+    (Coalgebra.TensorProduct.map (CoalgHom.id R M) (Coalgebra.counitCoalgHom R N)))
 
 /-- Tensoring a convolution-algebra element with the counit on the left. -/
 def tensorCounitLeft (R C M N : Type*) [CommSemiring R] [CommSemiring C] [Algebra R C]
     [AddCommMonoid M] [Module R M] [Coalgebra R M]
     [AddCommMonoid N] [Module R N] [Coalgebra R N] :
-    WithConv (N →ₗ[R] C) →ₐ[C] WithConv (M ⊗[R] N →ₗ[R] C) where
-  toFun f := mulTensor 1 f
-  map_one' := mulTensor_one_one
-  map_mul' f g := by simp
-  map_zero' := by simp
-  map_add' f g := by simp
-  commutes' c := by
-    apply ofConv_injective
-    apply TensorProduct.ext
-    ext m n
-    simp [mul_comm, mul_left_comm]
+    WithConv (N →ₗ[R] C) →ₐ[C] WithConv (M ⊗[R] N →ₗ[R] C) :=
+  CoalgHom.convPrecompCoefficients ((Coalgebra.TensorProduct.lid R N).toCoalgHom.comp
+    (Coalgebra.TensorProduct.map (Coalgebra.counitCoalgHom R M) (CoalgHom.id R N)))
 
 /-- The right-counit map is the exterior product with the convolution unit. -/
 @[simp]
 theorem tensorCounitRight_apply (f : WithConv (M →ₗ[R] C)) :
-    tensorCounitRight R C M N f = mulTensor f 1 := (rfl)
+    tensorCounitRight R C M N f = mulTensor f 1 := by
+  apply ofConv_injective
+  apply TensorProduct.ext
+  ext m n
+  simp [tensorCounitRight, Algebra.smul_def, mul_comm]
 
 /-- The left-counit map is the exterior product with the convolution unit. -/
 @[simp]
 theorem tensorCounitLeft_apply (f : WithConv (N →ₗ[R] C)) :
-    tensorCounitLeft R C M N f = mulTensor 1 f := (rfl)
+    tensorCounitLeft R C M N f = mulTensor 1 f := by
+  apply ofConv_injective
+  apply TensorProduct.ext
+  ext m n
+  simp [tensorCounitLeft, Algebra.smul_def]
 
 /-- Multiplying the right- and left-counit images recovers the exterior product. -/
 theorem tensorCounitRight_mul_tensorCounitLeft (f : WithConv (M →ₗ[R] C))
@@ -120,6 +112,10 @@ variable (R C A : Type*) [CommSemiring R] [CommSemiring C] [Algebra R C]
 /-- Transposing multiplication is a homomorphism of convolution algebras over the coefficients. -/
 def convolutionDelta : WithConv (A →ₗ[R] C) →ₐ[C] WithConv (A ⊗[R] A →ₗ[R] C) :=
   (_root_.Bialgebra.mulCoalgHom R A).convPrecompCoefficients
+
+/-- Transposed multiplication is precomposition by the multiplication coalgebra map. -/
+theorem convolutionDelta_def :
+    convolutionDelta R C A = (_root_.Bialgebra.mulCoalgHom R A).convPrecompCoefficients := (rfl)
 
 /-- The transposed multiplication evaluates at the product on a pure tensor. -/
 @[simp]

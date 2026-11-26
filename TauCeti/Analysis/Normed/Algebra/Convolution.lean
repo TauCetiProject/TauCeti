@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.FiniteDual
+public import TauCeti.Analysis.Normed.Module.Finite.Dual
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Ultra
 public import TauCeti.Algebra.Coalgebra.Convolution.Scalar
 
@@ -37,6 +37,21 @@ public section
 open TensorProduct WithConv
 
 
+namespace CoalgHom
+
+variable {R C M N : Type*} [CommSemiring R] [NormedField C] [Algebra R C]
+  [AddCommMonoid M] [Module R M] [Coalgebra R M] [Module.Finite R M]
+  [AddCommMonoid N] [Module R N] [Coalgebra R N]
+
+/-- Precomposition by a coalgebra homomorphism does not increase the sup norm. -/
+theorem supNorm_convPrecompCoefficients_le (h : N →ₗc[R] M)
+    (f : WithConv (M →ₗ[R] C)) (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) :
+    (h.convPrecompCoefficients f).ofConv.supNorm ≤ f.ofConv.supNorm := by
+  rw [convPrecompCoefficients_apply]
+  exact f.ofConv.supNorm_comp_le h.toLinearMap hR
+
+end CoalgHom
+
 namespace WithConv
 
 variable {R C M N : Type*} [CommSemiring R] [NormedField C] [Algebra R C]
@@ -47,9 +62,7 @@ variable {R C M N : Type*} [CommSemiring R] [NormedField C] [Algebra R C]
 theorem supNorm_mulTensor (f : WithConv (M →ₗ[R] C)) (g : WithConv (N →ₗ[R] C))
     (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) :
     (mulTensor f g).ofConv.supNorm = f.ofConv.supNorm * g.ofConv.supNorm := by
-  have : IsUltrametricDist C :=
-    IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one fun n ↦ by
-      simpa using hR (n : R)
+  have := TauCeti.isUltrametricDist_of_norm_algebraMap_le_one hR
   apply le_antisymm
   · apply ((mulTensor f g).ofConv.supNorm_le_iff hR).mpr
     apply LinearMap.norm_apply_le_of_tmul
@@ -66,9 +79,7 @@ theorem supNorm_mulTensor (f : WithConv (M →ₗ[R] C)) (g : WithConv (N →ₗ
 theorem supNorm_convMul_le [CoalgebraStruct R M] (f g : WithConv (M →ₗ[R] C))
     (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) :
     (f * g).ofConv.supNorm ≤ f.ofConv.supNorm * g.ofConv.supNorm := by
-  have : IsUltrametricDist C :=
-    IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one fun n ↦ by
-      simpa using hR (n : R)
+  have := TauCeti.isUltrametricDist_of_norm_algebraMap_le_one hR
   apply ((f * g).ofConv.supNorm_le_iff hR).mpr
   intro m
   rw [(Coalgebra.Repr.arbitrary R m).convMul_apply]
@@ -80,14 +91,15 @@ theorem supNorm_convMul_le [CoalgebraStruct R M] (f g : WithConv (M →ₗ[R] C)
     (g.ofConv.norm_apply_le_supNorm hR _) (norm_nonneg _) (f.ofConv.supNorm_nonneg)
 
 omit [Module.Finite R M] in
-/-- The convolution unit has sup norm at most one, since its values come from the base ring. -/
+/-- The counit-induced element has sup norm at most one, since its values come from the
+base ring. It is a convolution unit when the coalgebra laws hold. -/
 theorem supNorm_convOne_le [CoalgebraStruct R M]
     (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) :
     (1 : WithConv (M →ₗ[R] C)).ofConv.supNorm ≤ 1 := by
   rw [LinearMap.supNorm_def]
   exact ciSup_le fun m ↦ hR (Coalgebra.counit m)
 
-/-- The product of the two counit embeddings has exactly the product sup norm. -/
+/-- The product of the two counit maps has exactly the product sup norm. -/
 theorem supNorm_tensorCounitRight_mul_tensorCounitLeft [Coalgebra R M] [Coalgebra R N]
     (f : WithConv (M →ₗ[R] C)) (g : WithConv (N →ₗ[R] C))
     (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) :
@@ -106,14 +118,8 @@ variable {R C A : Type*} [CommSemiring R] [NormedField C] [Algebra R C]
 theorem supNorm_convolutionDelta_le (f : WithConv (A →ₗ[R] C))
     (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) :
     (TauCeti.Bialgebra.convolutionDelta R C A f).ofConv.supNorm ≤ f.ofConv.supNorm := by
-  have : IsUltrametricDist C :=
-    IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one fun n ↦ by
-      simpa using hR (n : R)
-  apply (LinearMap.supNorm_le_iff _ hR).mpr
-  apply LinearMap.norm_apply_le_of_tmul
-  intro a b
-  simpa only [TauCeti.Bialgebra.convolutionDelta_apply_tmul] using
-    f.ofConv.norm_apply_le_supNorm hR (a * b)
+  rw [TauCeti.Bialgebra.convolutionDelta_def]
+  exact (Bialgebra.mulCoalgHom R A).supNorm_convPrecompCoefficients_le f hR
 
 omit [Module.Finite R A] in
 /-- On the convolution algebra of a bialgebra the counit has sup norm exactly one. -/
