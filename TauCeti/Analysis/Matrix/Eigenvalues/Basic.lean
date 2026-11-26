@@ -364,6 +364,14 @@ theorem IsHermitian.rank_eq_card_non_zero_eigenvalues₀ (hA : A.IsHermitian) :
     ((Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))).symm.subtypeEquiv
       (fun _ ↦ by rw [hA.eigenvalues₀_equivOfCardEq_symm]))
 
+open Finset in
+/-- For a Hermitian matrix, the multiplicity of the eigenvalue `0` plus the rank is the size of
+the matrix. -/
+theorem IsHermitian.card_eigenvalues₀_eq_zero_add_rank (hA : A.IsHermitian) :
+    #{i | hA.eigenvalues₀ i = 0} + A.rank = Fintype.card ι := by
+  rw [hA.rank_eq_card_non_zero_eigenvalues₀, Fintype.card_subtype,
+    card_filter_add_card_filter_not, card_univ, Fintype.card_fin]
+
 /-- Every entry of the sorted eigenvalue list of a positive-semidefinite matrix is nonnegative. -/
 theorem PosSemidef.eigenvalues₀_nonneg
     (hA : A.PosSemidef) (i : Fin (Fintype.card ι)) :
@@ -371,20 +379,26 @@ theorem PosSemidef.eigenvalues₀_nonneg
   simpa only [hA.isHermitian.eigenvalues_apply_equivOfCardEq] using
     hA.eigenvalues_nonneg (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i)
 
+/-- A sorted eigenvalue of a positive-semidefinite matrix is positive exactly at the indices
+below the rank. -/
+theorem PosSemidef.eigenvalues₀_pos_iff (hA : A.PosSemidef) (i : Fin (Fintype.card ι)) :
+    0 < hA.isHermitian.eigenvalues₀ i ↔ (i : ℕ) < A.rank := by
+  classical
+  rw [hA.isHermitian.rank_eq_card_non_zero_eigenvalues₀, Fintype.card_subtype,
+    Finset.filter_congr fun j _ ↦ (hA.eigenvalues₀_nonneg j).lt_iff_ne'.symm,
+    Tuple.lt_card_gt_iff_apply_gt_of_antitone hA.isHermitian.eigenvalues₀_antitone]
+
+/-- A sorted eigenvalue of a positive-semidefinite matrix vanishes exactly from the rank
+onward. -/
+theorem PosSemidef.eigenvalues₀_eq_zero_iff (hA : A.PosSemidef) (i : Fin (Fintype.card ι)) :
+    hA.isHermitian.eigenvalues₀ i = 0 ↔ A.rank ≤ i := by
+  rw [← not_lt, ← hA.eigenvalues₀_pos_iff, (hA.eigenvalues₀_nonneg i).lt_iff_ne', not_not]
+
 /-- A sorted eigenvalue of a positive-semidefinite matrix vanishes from the rank onward. -/
 theorem PosSemidef.eigenvalues₀_eq_zero_of_rank_le
     (hA : A.PosSemidef) {d : ℕ} (hrank : A.rank ≤ d)
-    (i : Fin (Fintype.card ι)) (hi : d ≤ (i : ℕ)) : hA.isHermitian.eigenvalues₀ i = 0 := by
-  classical
-  by_contra hne
-  have hpos : 0 < hA.isHermitian.eigenvalues₀ i :=
-    lt_of_le_of_ne (hA.eigenvalues₀_nonneg i) (Ne.symm hne)
-  have hcard : i.val < A.rank := by
-    rw [hA.isHermitian.rank_eq_card_non_zero_eigenvalues₀, Fintype.card_subtype]
-    simpa only [fun j ↦ (hA.eigenvalues₀_nonneg j).lt_iff_ne, ne_comm] using
-      (Tuple.lt_card_gt_iff_apply_gt_of_antitone
-        hA.isHermitian.eigenvalues₀_antitone).mpr hpos
-  omega
+    (i : Fin (Fintype.card ι)) (hi : d ≤ (i : ℕ)) : hA.isHermitian.eigenvalues₀ i = 0 :=
+  (hA.eigenvalues₀_eq_zero_iff i).mpr (hrank.trans hi)
 
 /-- A positive-semidefinite matrix has rank at most `d` exactly when its sorted eigenvalues
 vanish at all indices at least `d`. The criterion also applies when `d` exceeds the size. -/

@@ -10,6 +10,7 @@ public import TauCeti.Topology.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Topology.Algebra.Module.Trace
 import TauCeti.Topology.VectorBundle.Coordinates
 import TauCeti.Topology.VectorBundle.Trivialization
 import TauCeti.Data.Bundle
@@ -58,7 +59,10 @@ Fibrewise composition preserves joint `Cⁿ` regularity along any common base ma
 `ContMDiffSection.clmComp`; it requires no finite rank or completeness assumption.
 
 Negation of a hom-bundle section along any base map preserves its regularity
-(`ContMDiff.clm_bundle_neg`).
+(`ContMDiff.clm_bundle_neg`). Taking the ordinary trace of an endomorphism family along a
+base map preserves its regularity, including within sets
+(`ContMDiffWithinAt.trace_clm_bundle` and `MDifferentiableWithinAt.trace_clm_bundle`), without any
+differentiability assumption on the bundle transition maps.
 
 Finally, a family of fibrewise linear maps with finite-dimensional model source is a `C^n`
 section of the hom bundle exactly when the map of total spaces it induces is `C^n`
@@ -915,3 +919,91 @@ theorem contMDiff_bundleMap_of_constant_coordinates
 end ConstantCoordinates
 
 end TauCeti
+
+section Trace
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {E H M EB HB B : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul 𝕜 (V x)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {n : ℕ∞ω} {s : Set M} {x : M} {b : M → B}
+  {A : ∀ y, V (b y) →L[𝕜] V (b y)}
+
+/-- Taking the ordinary trace preserves the regularity of an endomorphism family within a
+set, along a base map. No differentiability of the bundle transition maps is needed. -/
+theorem ContMDiffWithinAt.trace_clm_bundle
+    (hA : ContMDiffWithinAt I (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F) (E := fun z ↦ V z →L[𝕜] V z)
+        (b y) (A y)) s x) :
+    ContMDiffWithinAt I 𝓘(𝕜) n (fun y ↦ LinearMap.trace 𝕜 (V (b y)) (A y).toLinearMap) s x := by
+  obtain ⟨hb, hcoord⟩ := (contMDiffWithinAt_hom_bundle _).mp hA
+  let e := trivializationAt F V (b x)
+  have htrace {y : M} (hy : b y ∈ e.baseSet) :
+      TauCeti.traceCLM 𝕜 F
+        (ContinuousLinearMap.inCoordinates F V F V (b x) (b y) (b x) (b y) (A y)) =
+        LinearMap.trace 𝕜 (V (b y)) (A y).toLinearMap := by
+    rw [ContinuousLinearMap.inCoordinates_eq_conjContinuousAlgEquiv hy, TauCeti.traceCLM_apply]
+    exact LinearMap.trace_conj' (A y).toLinearMap
+      (e.continuousLinearEquivAt 𝕜 (b y) hy).toLinearEquiv
+  have ht := (contMDiffWithinAt_const (c := TauCeti.traceCLM 𝕜 F)).clm_apply hcoord
+  refine ht.congr_of_eventuallyEq ?_ ?_
+  · filter_upwards [hb.continuousWithinAt.preimage_mem_nhdsWithin
+      (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V (b x)))] with y hy
+    exact (htrace hy).symm
+  · exact (htrace (mem_baseSet_trivializationAt F V (b x))).symm
+
+/-- Taking the ordinary trace preserves regularity at a point along a base map. -/
+theorem ContMDiffAt.trace_clm_bundle
+    (hA : ContMDiffAt I (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F) (E := fun z ↦ V z →L[𝕜] V z) (b y) (A y)) x) :
+    ContMDiffAt I 𝓘(𝕜) n (fun y ↦ LinearMap.trace 𝕜 (V (b y)) (A y).toLinearMap) x := by
+  rw [← contMDiffWithinAt_univ] at hA ⊢
+  exact hA.trace_clm_bundle
+
+/-- Taking the ordinary trace preserves regularity on a set along a base map. -/
+theorem ContMDiffOn.trace_clm_bundle
+    (hA : ContMDiffOn I (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F) (E := fun z ↦ V z →L[𝕜] V z) (b y) (A y)) s) :
+    ContMDiffOn I 𝓘(𝕜) n (fun y ↦ LinearMap.trace 𝕜 (V (b y)) (A y).toLinearMap) s :=
+  fun x hx ↦ (hA x hx).trace_clm_bundle
+
+/-- Taking the ordinary trace preserves regularity along a base map. -/
+theorem ContMDiff.trace_clm_bundle
+    (hA : ContMDiff I (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F) (E := fun z ↦ V z →L[𝕜] V z) (b y) (A y))) :
+    ContMDiff I 𝓘(𝕜) n (fun y ↦ LinearMap.trace 𝕜 (V (b y)) (A y).toLinearMap) :=
+  fun x ↦ (hA x).trace_clm_bundle
+
+/-- Taking the ordinary trace preserves differentiability of an endomorphism family along
+a base map within a set. -/
+theorem MDifferentiableWithinAt.trace_clm_bundle
+    (hA : MDifferentiableWithinAt I (IB.prod 𝓘(𝕜, F →L[𝕜] F))
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F)
+        (E := fun z ↦ V z →L[𝕜] V z) (b y) (A y)) s x) :
+    MDifferentiableWithinAt I 𝓘(𝕜)
+      (fun y ↦ LinearMap.trace 𝕜 (V (b y)) (A y).toLinearMap) s x := by
+  have ht : ContMDiff (IB.prod 𝓘(𝕜, F →L[𝕜] F)) 𝓘(𝕜) 1
+      (fun p : TotalSpace (F →L[𝕜] F) (fun z ↦ V z →L[𝕜] V z) ↦
+        LinearMap.trace 𝕜 (V p.proj) p.snd.toLinearMap) :=
+    (contMDiff_id (I := IB.prod 𝓘(𝕜, F →L[𝕜] F))).trace_clm_bundle
+  exact (ht.mdifferentiableAt one_ne_zero).comp_mdifferentiableWithinAt x hA
+
+/-- Taking the ordinary trace preserves differentiability of an endomorphism family along
+a base map at a point. -/
+theorem MDifferentiableAt.trace_clm_bundle
+    (hA : MDifferentiableAt I (IB.prod 𝓘(𝕜, F →L[𝕜] F))
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F)
+        (E := fun z ↦ V z →L[𝕜] V z) (b y) (A y)) x) :
+    MDifferentiableAt I 𝓘(𝕜)
+      (fun y ↦ LinearMap.trace 𝕜 (V (b y)) (A y).toLinearMap) x := by
+  rw [← mdifferentiableWithinAt_univ] at hA ⊢
+  exact hA.trace_clm_bundle
+
+end Trace
