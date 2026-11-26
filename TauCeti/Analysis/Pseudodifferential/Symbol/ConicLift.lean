@@ -42,13 +42,16 @@ The full symbols of the external product of two elliptic operators on the factor
 have entries of the form `p(P x, P ξ)`, singular along an axis; their lifts are symbols of order
 `m` (in `S^m_{1,0}`) on the product, close to the original entries in the sense above. The
 homogeneous counterpart of the construction, for principal symbols, is
-`TauCeti.HomogeneousSymbol.conicCutoffFst`.
+`TauCeti.HomogeneousSymbol.conicCutoffFst`. The lift of a classical symbol is classical
+(`TauCeti.ClassicalSymbol.conicLift`, in
+`TauCeti.Analysis.Pseudodifferential.Symbol.Classical.ConicLift`).
 
 ## Main declarations
 
 * `TauCeti.conicLiftCutoff`: the cutoff `c`, with `TauCeti.contDiff_conicLiftCutoff`, its values
   `TauCeti.conicLiftCutoff_eq_one_of_norm_le`, `TauCeti.conicLiftCutoff_eq_one_of_le`,
-  `TauCeti.conicLiftCutoff_eventuallyEq_zero`, the range `TauCeti.conicLiftCutoff_nonneg`,
+  `TauCeti.conicLiftCutoff_eventuallyEq_zero`, its angular form at large frequencies
+  `TauCeti.conicLiftCutoff_eq_of_two_mul_le_norm`, the range `TauCeti.conicLiftCutoff_nonneg`,
   `TauCeti.conicLiftCutoff_le_one`, and the order-zero estimates
   `TauCeti.exists_norm_iteratedFDeriv_conicLiftCutoff_le`.
 * `TauCeti.Symbol.conicLift`: the lifted symbol `c(ξ) p(P x, P ξ)` of order `m` on `ℝᴺ`, equal
@@ -122,6 +125,12 @@ theorem conicLiftCutoff_eq_one_of_le (hε : ε ≠ 0) {ξ : CoordinateSpace N}
   have hpos : 0 < ε ^ 2 * ‖ξ‖ ^ 2 := by positivity
   rw [conicLiftCutoff_def, χ.apply_eq_one_of_one_div_two_le (by rw [le_div_iff₀ hpos]; linarith),
     sub_self, mul_zero, sub_zero]
+
+/-- At frequencies `‖ξ‖ ≥ 2 R` the cutoff is the angular factor `χ(‖P ξ‖² / (ε² ‖ξ‖²))`, which is
+positively homogeneous of degree `0`. -/
+theorem conicLiftCutoff_eq_of_two_mul_le_norm (hR : 0 < R) {ξ : CoordinateSpace N}
+    (hξ : 2 * R ≤ ‖ξ‖) : conicLiftCutoff P χ φ ε R ξ = χ (‖P ξ‖ ^ 2 / (ε ^ 2 * ‖ξ‖ ^ 2)) := by
+  rw [conicLiftCutoff_def, φ.apply_inv_smul_eq_one hR hξ, one_mul, sub_sub_cancel]
 
 /-- The cutoff vanishes near every frequency with `‖ξ‖ > 2 R` and `‖P ξ‖² < ε² ‖ξ‖² / 4`. -/
 theorem conicLiftCutoff_eventuallyEq_zero (hε : ε ≠ 0) (hR : 0 < R) {ξ : CoordinateSpace N}
