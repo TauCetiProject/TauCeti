@@ -7,12 +7,10 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.BesselPotentialSpace
 public import TauCeti.Analysis.Pseudodifferential.CalderonVaillancourt
-public import TauCeti.Analysis.Pseudodifferential.Frequency.BesselConjugation
-public import TauCeti.Analysis.Pseudodifferential.L2
-public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
-public import TauCeti.Analysis.Pseudodifferential.Symbol.UniformlySmoothing
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
+import TauCeti.Analysis.Pseudodifferential.Frequency.BesselConjugation
+import TauCeti.Analysis.Pseudodifferential.L2
 
 /-!
 # Sobolev mapping of uniform symbols
@@ -46,19 +44,13 @@ and the outer factors are the isometries `H^s → L²` and `L² → H^{s - m}`.
 
 * `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM_zero`: the Calderón–Vaillancourt
   theorem in the form `SchwartzMap.HasSobolevExtension` of an operator `L² → L²`.
-* `TauCeti.Symbol.IsUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le` and
-  `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM`: the Schwartz estimate and Sobolev mapping
-  `H^s → H^{s - m}` for uniform symbols and every real `s`, for complex Hilbert fibres.
-* `TauCeti.Symbol.IsUniformlySmoothing.hasSobolevExtension_quantizeUniformCLM`,
-  `IsUniformlySmoothing.exists_toDistr_quantizeUniformBesselPotentialSpace_eq`, and
-  `IsUniformlySmoothing.memSobolev_toDistr_quantizeUniformBesselPotentialSpace`:
-  uniformly smoothing symbols gain every number of derivatives.
+* `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM` and
+  `TauCeti.Symbol.IsUniform.hasBesselPotentialSpaceExtension_two`: Sobolev mapping
+  `H^s → H^{s - m}` (`p = 2`) for uniform symbols and every real `s`, for complex Hilbert fibres.
+* `TauCeti.Symbol.IsUniformlySmoothing.hasSobolevExtension_quantizeUniformCLM`: uniformly smoothing
+  symbols gain every number of derivatives.
 * `TauCeti.Symbol.exists_quantizeUniformSobolevHilbert`: Sobolev mapping for complex Hilbert fibres
   acting on tempered distributions.
-* `TauCeti.Symbol.HasBesselPotentialSpaceExtension.uniformSharp`,
-  `HasBesselPotentialSpaceExtension.quantizeUniformBesselPotentialSpace_uniformSharp`,
-  `HasBesselPotentialSpaceExtension.toDistr_quantizeUniformBesselPotentialSpace_uniformSharp`:
-  operator composition for `uniformSharp` on `H^{s,p}`.
 * `IsUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le_of_finiteDimensional`,
   `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM_of_finiteDimensional`,
   `TauCeti.Symbol.IsUniform.hasBesselPotentialSpaceExtension_two_of_finiteDimensional`,
@@ -86,7 +78,7 @@ namespace TauCeti
 
 namespace Symbol
 
-variable {n : ℕ} {m m' : ℝ}
+variable {n : ℕ} {m : ℝ}
 
 /-! ### Bessel-conjugate norm transport -/
 
@@ -113,125 +105,12 @@ private theorem norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le_of_besselCo
 
 end BesselNorm
 
-/-! ### Composition and smoothing on `H^{s,p}` -/
-
-section NormedOperator
-
-variable {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
-  [NormedAddCommGroup U] [NormedSpace ℂ U] [CompleteSpace U]
-  {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- If `a` and `b` have the `H^{s,p}` extension property (`p < ∞`), so does their explicit
-composition `a.uniformSharp b hb`. -/
-theorem HasBesselPotentialSpaceExtension.uniformSharp {a : Symbol n W U m'} {b : Symbol n V W m}
-    {ha : a.IsUniform} {hb : b.IsUniform} (ha' : a.HasBesselPotentialSpaceExtension ha p)
-    (hb' : b.HasBesselPotentialSpaceExtension hb p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    (a.uniformSharp b hb).HasBesselPotentialSpaceExtension (ha.uniformSharp hb) p :=
-  hasBesselPotentialSpaceExtension_iff.2 fun s u ↦ by
-    let T : H^{s, p}(CoordinateSpace n, V) →L[ℂ] H^{s - (m' + m), p}(CoordinateSpace n, U) :=
-      BesselPotentialSpace.inclusion (le_of_eq (by ring) : s - (m' + m) ≤ s - m - m') ∘L
-        a.quantizeUniformBesselPotentialSpace ha (s - m) p ∘L
-          b.quantizeUniformBesselPotentialSpace hb s p
-    have hT (v : 𝓢(CoordinateSpace n, V)) :
-        T (SchwartzMap.toBesselPotentialSpaceCLM s p v) =
-          SchwartzMap.toBesselPotentialSpaceCLM (s - (m' + m)) p
-            (quantizeUniformCLM (a.uniformSharp b hb) (ha.uniformSharp hb) v) := by
-      simp [T, hb'.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM s v,
-        ha'.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM (s - m)
-          (quantizeUniformCLM b hb v),
-        BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
-        quantizeUniformCLM_uniformSharp ha hb]
-    exact quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM_of_norm_le
-      (ha.uniformSharp hb) hp_top (C := ‖T‖) (fun v ↦ hT v ▸ T.le_opNorm _) u
-
-/-- **Composition of uniform quantizations on `H^{s,p}`**: `Op(a # b) = Op(a) ∘ Op(b)` up to the
-order-associativity inclusion `s - (m' + m) = s - m - m'`. -/
-theorem HasBesselPotentialSpaceExtension.quantizeUniformBesselPotentialSpace_uniformSharp
-    {a : Symbol n W U m'} {b : Symbol n V W m} {ha : a.IsUniform} {hb : b.IsUniform}
-    (ha' : a.HasBesselPotentialSpaceExtension ha p) (hb' : b.HasBesselPotentialSpaceExtension hb p)
-    (s : ℝ) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    (a.uniformSharp b hb).quantizeUniformBesselPotentialSpace (ha.uniformSharp hb) s p =
-      BesselPotentialSpace.inclusion (le_of_eq (by ring) : s - (m' + m) ≤ s - m - m') ∘L
-        (a.quantizeUniformBesselPotentialSpace ha (s - m) p ∘L
-          b.quantizeUniformBesselPotentialSpace hb s p) :=
-  BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ by
-    have hab' := ha'.uniformSharp hb' hp_top
-    simp [hab'.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM s u,
-      hb'.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM s u,
-      ha'.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM (s - m)
-        (quantizeUniformCLM b hb u),
-      BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
-      quantizeUniformCLM_uniformSharp ha hb]
-
-/-- **Composition of uniform quantizations on `H^{s,p}`**, as tempered distributions. -/
-theorem HasBesselPotentialSpaceExtension.toDistr_quantizeUniformBesselPotentialSpace_uniformSharp
-    {a : Symbol n W U m'} {b : Symbol n V W m} {ha : a.IsUniform} {hb : b.IsUniform}
-    (ha' : a.HasBesselPotentialSpaceExtension ha p) (hb' : b.HasBesselPotentialSpaceExtension hb p)
-    (s : ℝ) (hp_top : p ≠ (∞ : ℝ≥0∞)) (u : H^{s, p}(CoordinateSpace n, V)) :
-    ((a.uniformSharp b hb).quantizeUniformBesselPotentialSpace (ha.uniformSharp hb) s p u).toDistr =
-      (a.quantizeUniformBesselPotentialSpace ha (s - m) p
-        (b.quantizeUniformBesselPotentialSpace hb s p u)).toDistr :=
-  toDistr_quantizeUniformBesselPotentialSpace_comp ha' hb' (ha'.uniformSharp hb' hp_top)
-    (quantizeUniformCLM_uniformSharp ha hb).symm s hp_top u
-
-/-- **Uniformly smoothing operators gain every number of derivatives.** Assuming uniform order-zero
-symbols extend on `H^0 = L²`, a uniformly smoothing `a` quantizes to `T : H^r →L[ℂ] H^s` agreeing
-with `Op(a)` on tempered distributions across all orders `t`. -/
-theorem IsUniformlySmoothing.exists_toDistr_quantizeUniformBesselPotentialSpace_eq
-    {a : Symbol n V W m} (ha : a.IsUniformlySmoothing) (r s : ℝ)
-    (hL2 : ∀ (c : Symbol n V W 0) (hc : c.IsUniform),
-      SchwartzMap.HasSobolevExtension (quantizeUniformCLM c hc) 0 0) :
-    ∃ T : H^{r}(CoordinateSpace n, V) →L[ℂ] H^{s}(CoordinateSpace n, W),
-      ∀ {t : ℝ} {v : H^{t}(CoordinateSpace n, V)} {u : H^{r}(CoordinateSpace n, V)},
-        v.toDistr = u.toDistr →
-          (a.quantizeUniformBesselPotentialSpace ha.isUniform t 2 v).toDistr = (T u).toDistr := by
-  have hext {μ : ℝ} (d : Symbol n V W μ) (hd : d.IsUniform) :
-      d.HasBesselPotentialSpaceExtension hd 2 :=
-    hasBesselPotentialSpaceExtension_iff.2 fun q w ↦ by
-      obtain ⟨C, -, hC⟩ := SchwartzMap.hasSobolevExtension_iff_exists_norm_le.mp
-        ((hasSobolevExtension_quantizeUniformCLM_iff_besselConjugate hd q).mpr (hL2 _ _))
-      exact quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM_of_norm_le hd
-        ENNReal.ofNat_ne_top hC w
-  obtain ⟨b, hb, hba⟩ := isUniformlySmoothing_iff.mp ha (r - s)
-  refine ⟨BesselPotentialSpace.inclusion (by rw [sub_sub_cancel]) ∘L
-    b.quantizeUniformBesselPotentialSpace hb r 2, fun {t _ _} huv ↦ ?_⟩
-  rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion]
-  exact (hext a ha.isUniform).toDistr_quantizeUniformBesselPotentialSpace_congr (hext b hb)
-    hba.symm ENNReal.ofNat_ne_top huv
-
-/-- **Uniformly smoothing operators gain every order of regularity.** Assuming uniform order-zero
-symbols extend on `H^0 = L²`, `(a.quantizeUniformBesselPotentialSpace ha.isUniform s 2 u).toDistr`
-belongs to `H^t` (`TemperedDistribution.MemSobolev t 2`). -/
-theorem IsUniformlySmoothing.memSobolev_toDistr_quantizeUniformBesselPotentialSpace
-    {a : Symbol n V W m} (ha : a.IsUniformlySmoothing) (s t : ℝ)
-    (hL2 : ∀ (c : Symbol n V W 0) (hc : c.IsUniform),
-      SchwartzMap.HasSobolevExtension (quantizeUniformCLM c hc) 0 0)
-    (u : H^{s}(CoordinateSpace n, V)) :
-    TemperedDistribution.MemSobolev t 2
-      (a.quantizeUniformBesselPotentialSpace ha.isUniform s 2 u).toDistr := by
-  obtain ⟨T, hT⟩ := ha.exists_toDistr_quantizeUniformBesselPotentialSpace_eq s t hL2
-  rw [hT (u := u) rfl]
-  exact (T u).memSobolev_toDistr
-
-end NormedOperator
-
 /-! ### Extension to Bessel-potential spaces -/
 
 section Extension
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {s r : ℝ}
-
-/-- **Sobolev estimate on Schwartz functions** for complex Hilbert fibres:
-`‖Op(a) u‖_{H^{s - m}} ≤ C ‖u‖_{H^s}`. -/
-theorem IsUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le
-    {a : Symbol n V W m} (ha : a.IsUniform) (s : ℝ) :
-    ∃ C, 0 ≤ C ∧ ∀ u : 𝓢(CoordinateSpace n, V),
-      ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2 (quantizeUniformCLM a ha u)‖ ≤
-        C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 u‖ :=
-  let ⟨C, hC0, hC⟩ := (ha.besselConjugate s).exists_eLpNorm_quantizeSchwartzValue_le
-  ⟨C, hC0, norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le_of_besselConjugate ha s hC0 hC⟩
 
 /-- **Calderón–Vaillancourt.** The quantization of a uniform symbol of order at most `0` extends
 to a bounded operator on `H⁰ = L²`. -/
@@ -252,15 +131,27 @@ theorem hasSobolevExtension_quantizeUniformCLM_zero {b : Symbol n V W m}
   filter_upwards [(quantizeUniformCLM b hb u).coeFn_toLp 2] with x hx
   rw [hx, coefficient_inclusion, quantizeUniformCLM_apply]
 
-/-- **Sobolev mapping of uniform symbols**, in composable form. Uniform symbols of order `m`
-quantize to bounded operators `H^s → H^{s - m}` for every real `s`. -/
+/-- **Sobolev mapping of uniform symbols**, in composable form, for complex Hilbert fibres. Uniform
+symbols of order `m` quantize to bounded operators `H^s → H^{s - m}` for every real `s`. -/
 theorem hasSobolevExtension_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform) (s : ℝ) :
     SchwartzMap.HasSobolevExtension (quantizeUniformCLM a ha) s (s - m) :=
+  let ⟨C, hC0, hC⟩ := (ha.besselConjugate s).exists_eLpNorm_quantizeSchwartzValue_le
   SchwartzMap.hasSobolevExtension_iff_exists_norm_le.mpr
-    (ha.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s)
+    ⟨C, hC0, norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le_of_besselConjugate ha s hC0 hC⟩
 
-/-- **Uniformly smoothing symbols gain every number of derivatives.** The quantization of a
-uniformly smoothing symbol extends to a bounded operator `H^t → H^s` for all real `t` and `s`. -/
+/-- Every uniform symbol between complex Hilbert spaces has the `H^s` (`p = 2`) extension property
+`HasBesselPotentialSpaceExtension`, without needing compact spatial support. -/
+theorem IsUniform.hasBesselPotentialSpaceExtension_two {a : Symbol n V W m} (ha : a.IsUniform) :
+    a.HasBesselPotentialSpaceExtension ha 2 :=
+  hasBesselPotentialSpaceExtension_iff.2 fun s u ↦ by
+    obtain ⟨C, -, hC⟩ := SchwartzMap.hasSobolevExtension_iff_exists_norm_le.mp
+      (hasSobolevExtension_quantizeUniformCLM a ha s)
+    exact quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM_of_norm_le ha
+      ENNReal.ofNat_ne_top hC u
+
+/-- **Uniformly smoothing symbols gain every number of derivatives.** For complex Hilbert fibres,
+the quantization of a uniformly smoothing symbol extends to a bounded operator `H^t → H^s` for all
+real `t` and `s`. -/
 theorem IsUniformlySmoothing.hasSobolevExtension_quantizeUniformCLM {r : Symbol n V W m}
     (hr : r.IsUniformlySmoothing) (t s : ℝ) :
     SchwartzMap.HasSobolevExtension (quantizeUniformCLM r hr.isUniform) t s := by

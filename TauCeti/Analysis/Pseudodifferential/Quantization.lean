@@ -9,8 +9,7 @@ public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
-public import TauCeti.Analysis.Pseudodifferential.Symbol.FrequencyLaplacian
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency.Laplacian
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts

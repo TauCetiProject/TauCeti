@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-public import TauCeti.Analysis.Pseudodifferential.Symbol.FrequencyLaplacian
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency.Laplacian
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Calculus.CoordinateDeriv.ParametricIntegral

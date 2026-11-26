@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.MulLeft
-public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
-public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
+public import TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Sharp
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
@@ -15,9 +14,7 @@ import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.FourierCharDeriv
 import TauCeti.Analysis.Fourier.MihlinHormander
-import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
 import TauCeti.Analysis.Pseudodifferential.Sobolev
-import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
@@ -88,10 +85,13 @@ All in the namespace `TauCeti.Symbol`:
   For `p = 2`, complex Hilbert spaces as fibres and compact spatial support it is
   `quantizeSobolev` (`HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_two`).
 * `HasBesselPotentialSpaceExtension`: the property that the operator extends `Op(a)` from Schwartz
-  functions for every `s`. For `p < ∞` it is closed under the linear operations on symbols and
-  under raising the order (`HasBesselPotentialSpaceExtension.add` and the lemmas after it). The
-  linearity of the operator in the symbol, its compatibility with the inclusions, with composition
-  and across exponents
+  functions for every `s`. For `p < ∞` it is closed under the linear operations on symbols, under
+  raising the order, and under `uniformSharp` (`HasBesselPotentialSpaceExtension.add`,
+  `HasBesselPotentialSpaceExtension.uniformSharp`, and the lemmas after them). The linearity of the
+  operator in the symbol, its compatibility with the inclusions, with composition
+  (`HasBesselPotentialSpaceExtension.quantizeUniformBesselPotentialSpace_uniformSharp`,
+  `HasBesselPotentialSpaceExtension.toDistr_quantizeUniformBesselPotentialSpace_uniformSharp`), and
+  across exponents
   (`HasBesselPotentialSpaceExtension.toDistr_quantizeUniformBesselPotentialSpace_congr_exponent`),
   and the multiplication operators of symbols `f(x)`
   (`HasBesselPotentialSpaceExtension.toDistr_quantizeUniformBesselPotentialSpace_ofSpatial`) are
@@ -101,6 +101,10 @@ All in the namespace `TauCeti.Symbol`:
   `HasBesselPotentialSpaceExtension.toDistr_quantizeUniformBesselPotentialSpace_eq_of_forall`, and
   specialized to symbols with compact spatial support
   (`HasCompactSpatialSupport.hasBesselPotentialSpaceExtension`).
+* `IsUniformlySmoothing.exists_toDistr_quantizeUniformBesselPotentialSpace_eq_of_forall`,
+  `IsUniformlySmoothing.memSobolev_toDistr_quantizeUniformBesselPotentialSpace_of_forall`: if
+  uniform symbols have the `H^{·,p}` extension property (`p < ∞`), uniformly smoothing symbols gain
+  every order of `H^{·,p}` regularity.
 * `hasBesselPotentialSpaceExtension_const`, `quantizeUniformBesselPotentialSpace_const`,
   `hasBesselPotentialSpaceExtension_besselPotential`,
   `quantizeUniformBesselPotentialSpace_besselPotential`,
@@ -813,6 +817,49 @@ theorem toDistr_quantizeUniformBesselPotentialSpace_comp {U : Type*} [NormedAddC
         b.quantizeUniformBesselPotentialSpace hb s p)
     (fun v ↦ by simp [ha' (s - m) (quantizeUniformCLM b hb v), hb' s v, ← habc]) u
 
+/-- If `a` and `b` have the `H^{s,p}` extension property (`p < ∞`), so does their explicit
+composition `a.uniformSharp b hb`. -/
+theorem uniformSharp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] [CompleteSpace U]
+    {a : Symbol n W U m'} {b : Symbol n V W m} {ha : a.IsUniform} {hb : b.IsUniform}
+    (ha' : a.HasBesselPotentialSpaceExtension ha p) (hb' : b.HasBesselPotentialSpaceExtension hb p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    (a.uniformSharp b hb).HasBesselPotentialSpaceExtension (ha.uniformSharp hb) p :=
+  of_forall_exists hp_top fun s ↦
+    ⟨BesselPotentialSpace.inclusion (le_of_eq (by ring) : s - (m' + m) ≤ s - m - m') ∘L
+        a.quantizeUniformBesselPotentialSpace ha (s - m) p ∘L
+          b.quantizeUniformBesselPotentialSpace hb s p, fun v ↦ by
+      simp [hb' s v, ha' (s - m) (quantizeUniformCLM b hb v),
+        BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
+        quantizeUniformCLM_uniformSharp ha hb]⟩
+
+/-- **Composition of uniform quantizations on `H^{s,p}`**: `Op(a # b) = Op(a) ∘ Op(b)` up to the
+order-associativity inclusion `s - (m' + m) = s - m - m'`. -/
+theorem quantizeUniformBesselPotentialSpace_uniformSharp {U : Type*} [NormedAddCommGroup U]
+    [NormedSpace ℂ U] [CompleteSpace U] {a : Symbol n W U m'} {b : Symbol n V W m}
+    {ha : a.IsUniform} {hb : b.IsUniform} (ha' : a.HasBesselPotentialSpaceExtension ha p)
+    (hb' : b.HasBesselPotentialSpaceExtension hb p) (s : ℝ) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    (a.uniformSharp b hb).quantizeUniformBesselPotentialSpace (ha.uniformSharp hb) s p =
+      BesselPotentialSpace.inclusion (le_of_eq (by ring) : s - (m' + m) ≤ s - m - m') ∘L
+        (a.quantizeUniformBesselPotentialSpace ha (s - m) p ∘L
+          b.quantizeUniformBesselPotentialSpace hb s p) :=
+  BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ by
+    have hab' := ha'.uniformSharp hb' hp_top
+    simp [hab' s u, hb' s u, ha' (s - m) (quantizeUniformCLM b hb u),
+      BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
+      quantizeUniformCLM_uniformSharp ha hb]
+
+/-- **Composition of uniform quantizations on `H^{s,p}`**, as tempered distributions. -/
+theorem toDistr_quantizeUniformBesselPotentialSpace_uniformSharp {U : Type*} [NormedAddCommGroup U]
+    [NormedSpace ℂ U] [CompleteSpace U] {a : Symbol n W U m'} {b : Symbol n V W m}
+    {ha : a.IsUniform} {hb : b.IsUniform} (ha' : a.HasBesselPotentialSpaceExtension ha p)
+    (hb' : b.HasBesselPotentialSpaceExtension hb p) (s : ℝ) (hp_top : p ≠ (∞ : ℝ≥0∞))
+    (u : H^{s, p}(CoordinateSpace n, V)) :
+    ((a.uniformSharp b hb).quantizeUniformBesselPotentialSpace (ha.uniformSharp hb) s p u).toDistr =
+      (a.quantizeUniformBesselPotentialSpace ha (s - m) p
+        (b.quantizeUniformBesselPotentialSpace hb s p u)).toDistr :=
+  toDistr_quantizeUniformBesselPotentialSpace_comp ha' hb' (ha'.uniformSharp hb' hp_top)
+    (quantizeUniformCLM_uniformSharp ha hb).symm s hp_top u
+
 /-- **Compatibility of the extensions for different exponents, the case `p < q`.** The Sobolev
 embedding `H^{s,p} ⊆ H^{s - δ,q}`, `δ = n (1 / p - 1 / q)`, keeps the tempered distribution and
 commutes with `Op(a)`. -/
@@ -982,6 +1029,41 @@ theorem toDistr_quantizeUniformBesselPotentialSpace_besselPotential (m s : ℝ)
   rw [quantizeUniformBesselPotentialSpace_besselPotential m s hp_top,
     ContinuousLinearMap.comp_apply]
   simpa [sub_sub_cancel] using BesselPotentialSpace.toDistr_toLpₗᵢ_symm_toLpₗᵢ (r := s - m) u
+
+/-- **Uniformly smoothing operators gain every number of derivatives.** If uniform symbols between
+`V` and `W` have the `H^{·,p}` extension property (`p < ∞`), a uniformly smoothing symbol `a`
+quantizes to a bounded operator `T : H^{r,p} →L[ℂ] H^{s,p}` agreeing with `Op(a)` on tempered
+distributions across all orders `t`. -/
+theorem IsUniformlySmoothing.exists_toDistr_quantizeUniformBesselPotentialSpace_eq_of_forall
+    (ha : a.IsUniformlySmoothing) (r s : ℝ) (hp_top : p ≠ (∞ : ℝ≥0∞))
+    (hext : ∀ ⦃μ : ℝ⦄ ⦃b : Symbol n V W μ⦄ (hb : b.IsUniform),
+      b.HasBesselPotentialSpaceExtension hb p) :
+    ∃ T : H^{r, p}(CoordinateSpace n, V) →L[ℂ] H^{s, p}(CoordinateSpace n, W),
+      ∀ {t : ℝ} {v : H^{t, p}(CoordinateSpace n, V)} {u : H^{r, p}(CoordinateSpace n, V)},
+        v.toDistr = u.toDistr →
+          (a.quantizeUniformBesselPotentialSpace ha.isUniform t p v).toDistr = (T u).toDistr := by
+  obtain ⟨b, hb, hba⟩ := isUniformlySmoothing_iff.mp ha (r - s)
+  refine ⟨BesselPotentialSpace.inclusion (by rw [sub_sub_cancel]) ∘L
+    b.quantizeUniformBesselPotentialSpace hb r p, fun {t _ _} huv ↦ ?_⟩
+  rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion]
+  exact (hext ha.isUniform).toDistr_quantizeUniformBesselPotentialSpace_congr (hext hb)
+    hba.symm hp_top huv
+
+/-- **Uniformly smoothing operators gain every order of regularity.** If uniform symbols between
+`V` and `W` have the `H^{·,p}` extension property (`p < ∞`),
+`(a.quantizeUniformBesselPotentialSpace ha.isUniform s p u).toDistr` belongs to `H^{t,p}`
+(`TemperedDistribution.MemSobolev t p`) for every real `t`. -/
+theorem IsUniformlySmoothing.memSobolev_toDistr_quantizeUniformBesselPotentialSpace_of_forall
+    (ha : a.IsUniformlySmoothing) (s t : ℝ) (hp_top : p ≠ (∞ : ℝ≥0∞))
+    (hext : ∀ ⦃μ : ℝ⦄ ⦃b : Symbol n V W μ⦄ (hb : b.IsUniform),
+      b.HasBesselPotentialSpaceExtension hb p)
+    (u : H^{s, p}(CoordinateSpace n, V)) :
+    TemperedDistribution.MemSobolev t p
+      (a.quantizeUniformBesselPotentialSpace ha.isUniform s p u).toDistr := by
+  obtain ⟨T, hT⟩ :=
+    ha.exists_toDistr_quantizeUniformBesselPotentialSpace_eq_of_forall s t hp_top hext
+  rw [hT (u := u) rfl]
+  exact (T u).memSobolev_toDistr
 
 end Extension
 
