@@ -96,11 +96,11 @@ theorem log_inverseGainFactor_insert_le (S : Finset Nat.Primes) (N : Nat.Primes)
   have hcost := S.sum_insert_prime_log_le_theta_add_log N hS
   have hgain : (∑ p ∈ S, gain p * Real.log p.val) ≤
       ∑ p ∈ insert N S, gain p * Real.log p.val := by
-    by_cases hmem : N ∈ S
-    · rw [Finset.insert_eq_of_mem hmem]
-    · rw [Finset.sum_insert hmem]
-      exact le_add_of_nonneg_left (mul_nonneg hN
-        (Real.log_nonneg (by exact_mod_cast N.property.one_le)))
+    refine Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_insert N S) ?_
+    intro p hp hpS
+    have hpN := (Finset.mem_insert.mp hp).resolve_right hpS
+    subst p
+    exact mul_nonneg hN (Real.log_natCast_nonneg N.val)
   have hround := (log_inverseGainFactor_sub_mem_Icc (insert N S) gain loss).2
   simp only [sub_mul, Finset.sum_sub_distrib] at hround
   linarith

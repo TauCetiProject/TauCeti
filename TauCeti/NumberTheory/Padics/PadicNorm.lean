@@ -24,19 +24,21 @@ theorem prod_prime_zpow (p : Nat.Primes) (S : Finset Nat.Primes) (e : Nat.Primes
     padicNorm (p : ℕ) (∏ q ∈ S, (q.val : ℚ) ^ e q) =
       if p ∈ S then (p.val : ℚ) ^ (-e p) else 1 := by
   let : Fact (p : ℕ).Prime := ⟨p.property⟩
-  let v := IsAbsoluteValue.abvHom (padicNorm (p : ℕ))
+  let v := IsAbsoluteValue.toAbsoluteValue (padicNorm (p : ℕ))
+  have hv_apply (x : ℚ) : v x = padicNorm (p : ℕ) x :=
+    IsAbsoluteValue.toAbsoluteValue_apply _ x
   calc
-    _ = v (∏ q ∈ S, (q.val : ℚ) ^ e q) := (rfl)
+    _ = v (∏ q ∈ S, (q.val : ℚ) ^ e q) := (hv_apply _).symm
     _ = ∏ q ∈ S, v (q.val : ℚ) ^ e q := by simp only [map_prod, map_zpow₀]
     _ = _ := by
       have hoff (q : Nat.Primes) (hq : q ≠ p) : v (q.val : ℚ) ^ e q = 1 := by
         let : Fact (q : ℕ).Prime := ⟨q.property⟩
         suffices v (q.val : ℚ) = 1 by rw [this, one_zpow]
+        rw [hv_apply]
         exact padicNorm_of_prime_of_ne (fun h ↦ hq ((Nat.Primes.coe_nat_inj p q).mp h).symm)
       by_cases hp : p ∈ S
       · rw [ite_eq_left hp, Finset.prod_eq_single_of_mem p hp (fun q _ hq ↦ hoff q hq)]
-        have hv : v (p.val : ℚ) = (p.val : ℚ)⁻¹ := padicNorm_p_of_prime
-        rw [hv, inv_zpow, zpow_neg]
+        rw [hv_apply, padicNorm_p_of_prime, inv_zpow, zpow_neg]
       · rw [ite_eq_right hp, Finset.prod_eq_one fun q hq ↦ hoff q (ne_of_mem_of_not_mem hq hp)]
 
 end padicNorm
