@@ -116,9 +116,7 @@ theorem unitaryConjAverage_nonneg {N : ℕ} (u : Fin N → unitary A) {z : A} (h
 def unitaryConjAveragePositive {N : ℕ} (u : Fin N → unitary A) : A →ₚ[ℂ] A where
   toLinearMap := unitaryConjAverage u
   monotone' a b h := by
-    rw [← sub_nonneg]
-    change 0 ≤ unitaryConjAverage u b - unitaryConjAverage u a
-    rw [← map_sub]
+    rw [← sub_nonneg, LinearMap.toFun_eq_coe, ← map_sub]
     exact unitaryConjAverage_nonneg u (sub_nonneg.2 h)
 
 /-- Evaluating `unitaryConjAveragePositive u` yields `unitaryConjAverage u`. -/

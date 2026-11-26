@@ -16,7 +16,8 @@ import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.Normed.Ring.Units
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.Ideal
-import TauCeti.Analysis.CStarAlgebra.UnitaryAverage
+import TauCeti.Analysis.CStarAlgebra.Unitary.Average
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.GroupTheory.FreeGroup.PowersPartition
 import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
 
@@ -35,10 +36,12 @@ of the canonical tracial state whenever `TauCeti.HasPowersProperty Γ` holds:
   the norm bound `2 * ‖x‖ / √N` (`TauCeti.norm_average_unitary_conj_le_of_powersPartition`).
 * **Simplicity and unique trace**: approximating elements of `reducedGroupCStarAlgebra Γ` by the
   dense image of `MonoidAlgebra ℂ Γ` shows that `τ(x) • 1` lies in the norm closure of the convex
-  hull of unitary conjugates of `x` (`TauCeti.canonicalTrace_smul_one_mem_closure_convexHull`).
+  hull of unitary conjugates of `x`
+  (`TauCeti.reducedGroupCStarAlgebraTrace_smul_one_mem_closure_convexHull`).
   Consequently, whenever `HasPowersProperty Γ` holds, `reducedGroupCStarAlgebra Γ` is a simple
-  ring (`TauCeti.isSimpleRing_of_hasPowersProperty`) and `canonicalTrace Γ` is the unique
-  continuous unital tracial linear functional (`TauCeti.eq_canonicalTrace_of_hasPowersProperty`).
+  ring (`TauCeti.isSimpleRing_of_hasPowersProperty`) and `reducedGroupCStarAlgebraTrace Γ` is the
+  unique continuous unital tracial linear functional
+  (`TauCeti.eq_reducedGroupCStarAlgebraTrace_of_hasPowersProperty`).
 * **Free groups**: specializing via `FreeGroup.hasPowersProperty_of_ne` gives
   `TauCeti.reducedFreeGroup_isSimpleRing` and `TauCeti.reducedFreeGroup_trace_unique`.
 
@@ -63,57 +66,27 @@ section Averaging
 
 variable {Γ : Type*} [Group Γ]
 
-private noncomputable def leftTranslationCLM (g : Γ) :
-    lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2 :=
-  (lp.leftTranslation 2 ℂ (X := Γ) (E := ℂ) g).toLinearIsometry.toContinuousLinearMap
-
-private theorem leftTranslationCLM_apply (g : Γ) (ξ : lp (fun _ : Γ ↦ ℂ) 2) (t : Γ) :
-    leftTranslationCLM g ξ t = ξ (g⁻¹ * t) := by
-  simp [leftTranslationCLM]
-
-private theorem leftTranslationCLM_mul (g h : Γ) :
-    leftTranslationCLM (g * h) = leftTranslationCLM g * leftTranslationCLM h := by
-  ext ξ t
-  simp [leftTranslationCLM_apply, mul_assoc]
-
-private theorem star_leftTranslationCLM (g : Γ) :
-    star (leftTranslationCLM g) = leftTranslationCLM g⁻¹ := by
-  rw [ContinuousLinearMap.star_eq_adjoint]
-  symm
-  refine (ContinuousLinearMap.eq_adjoint_iff _ _).2 fun ξ η ↦ ?_
-  simp only [lp.inner_eq_tsum, leftTranslationCLM_apply, inv_inv]
-  rw [← (Equiv.mulLeft g⁻¹).tsum_eq (fun h ↦ ⟪ξ (g * h), η h⟫_ℂ)]
-  simp [mul_inv_cancel_left]
-
-private theorem leftTranslationCLM_mem_unitary (g : Γ) :
-    leftTranslationCLM g ∈ unitary (lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2) := by
-  refine Unitary.mem_iff.2 ⟨?_, ?_⟩
-  · rw [star_leftTranslationCLM, ← leftTranslationCLM_mul, inv_mul_cancel]
-    ext ξ t; simp [leftTranslationCLM_apply]
-  · rw [star_leftTranslationCLM, ← leftTranslationCLM_mul, mul_inv_cancel]
-    ext ξ t; simp [leftTranslationCLM_apply]
-
 /-- **Zero compression on the complement of `γ • D`.** When `C ⊔ D = univ` is a partition of `Γ`
 with `Disjoint ((f * ·) '' C) C`, conjugating left translation by `f` with left translation by
 `g` has vanishing compression onto the complement of `(g * ·) '' D`. -/
 theorem compression_sub_indicatorCLM_leftTranslation_eq_zero {C D : Set Γ}
     (hCDU : C ∪ D = Set.univ) {f : Γ} (hfC : Disjoint ((fun x : Γ ↦ f * x) '' C) C) (g : Γ) :
     (1 - lp.indicatorCLM 2 ℂ ((fun x : Γ ↦ g * x) '' D)) *
-        ((lp.leftTranslation 2 ℂ (X := Γ) (E := ℂ) g).toLinearIsometry.toContinuousLinearMap *
-          (lp.leftTranslation 2 ℂ (X := Γ) (E := ℂ) f).toLinearIsometry.toContinuousLinearMap *
-          star (lp.leftTranslation 2 ℂ (X := Γ) (E := ℂ)
-            g).toLinearIsometry.toContinuousLinearMap) *
+        ((lp.leftTranslation 2 ℂ (X := Γ) (E := ℂ) g :
+            lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2) *
+          (lp.leftTranslation 2 ℂ (X := Γ) (E := ℂ) f :
+            lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2) *
+          star (lp.leftTranslation 2 ℂ (X := Γ) (E := ℂ) g :
+            lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2)) *
         (1 - lp.indicatorCLM 2 ℂ ((fun x : Γ ↦ g * x) '' D)) = 0 := by
-  change (1 - lp.indicatorCLM 2 ℂ ((fun x : Γ ↦ g * x) '' D)) *
-      (leftTranslationCLM g * leftTranslationCLM f * star (leftTranslationCLM g)) *
-      (1 - lp.indicatorCLM 2 ℂ ((fun x : Γ ↦ g * x) '' D)) = 0
   set S : Set Γ := (fun x : Γ ↦ g * x) '' D
-  rw [← lp.indicatorCLM_compl, star_leftTranslationCLM, ← leftTranslationCLM_mul,
-    ← leftTranslationCLM_mul]
+  rw [← lp.indicatorCLM_compl, lp.star_coe_leftTranslation, ← lp.coe_leftTranslation_mul,
+    ← lp.coe_leftTranslation_mul]
   ext ξ t
   simp only [mul_apply_eq_comp, zero_apply, lp.coeFn_zero, Pi.zero_apply, lp.indicatorCLM_apply]
   by_cases ht : t ∈ Sᶜ
-  · rw [Set.indicator_of_mem ht, leftTranslationCLM_apply]
+  · rw [Set.indicator_of_mem ht, LinearIsometryEquiv.coe_coe'', lp.leftTranslation_apply,
+      smul_eq_mul]
     have hgtD : g⁻¹ * t ∉ D := fun hmem ↦ ht ⟨g⁻¹ * t, hmem, mul_inv_cancel_left g t⟩
     have hgtC : g⁻¹ * t ∈ C := (hCDU.symm ▸ Set.mem_univ _).resolve_right hgtD
     have hfc : f⁻¹ * (g⁻¹ * t) ∉ C := fun hmem ↦
@@ -126,15 +99,6 @@ theorem compression_sub_indicatorCLM_leftTranslation_eq_zero {C D : Set Γ}
     exact Set.indicator_of_notMem (Set.notMem_compl_iff.2 harg) _
   · exact Set.indicator_of_notMem ht _
 
-omit [Group Γ] in
-private theorem opNorm_countHilbertBasis_conjStarAlgEquiv
-    [MeasurableSpace Γ] [MeasurableSingletonClass Γ]
-    (T : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) :
-    ‖(L2.countHilbertBasis ℂ Γ).repr.conjStarAlgEquiv T‖ = ‖T‖ := by
-  rw [LinearIsometryEquiv.conjStarAlgEquiv_apply,
-    ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
-    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
-
 variable [MeasurableSpace Γ] [MeasurableMul Γ]
 
 private theorem exists_monoidAlgebra_norm_sub_lt (x : reducedGroupCStarAlgebra Γ) {δ : ℝ}
@@ -146,24 +110,6 @@ private theorem exists_monoidAlgebra_norm_sub_lt (x : reducedGroupCStarAlgebra �
   rwa [dist_eq_norm] at hdist
 
 variable [MeasurableSingletonClass Γ]
-
-private theorem countHilbertBasis_conjStarAlgEquiv_leftRegular (g : Γ) :
-    (L2.countHilbertBasis ℂ Γ).repr.conjStarAlgEquiv
-        ((Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g) =
-      leftTranslationCLM g := by
-  ext ξ t
-  rw [LinearIsometryEquiv.conjStarAlgEquiv_apply, leftTranslationCLM_apply]
-  change (L2.countHilbertBasis ℂ Γ).repr
-      ((Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g
-        ((L2.countHilbertBasis ℂ Γ).repr.symm ξ)) t = ξ (g⁻¹ * t)
-  rw [L2.countHilbertBasis_repr_apply]
-  have h1 := Measure.ae_count_iff.1
-    (Measure.coeFn_leftRegular (𝕜 := ℂ) (Measure.count : Measure Γ) 2 g
-      ((L2.countHilbertBasis ℂ Γ).repr.symm ξ)) t
-  have h2 := L2.countHilbertBasis_repr_apply ((L2.countHilbertBasis ℂ Γ).repr.symm ξ) (g⁻¹ * t)
-  have h3 := congrArg (fun u : lp (fun _ : Γ ↦ ℂ) 2 ↦ u (g⁻¹ * t))
-    ((L2.countHilbertBasis ℂ Γ).repr.apply_symm_apply ξ)
-  exact h1.trans (h2.symm.trans h3)
 
 /-- **Powers's operator-norm averaging bound.** For a finite sum
 `x = ∑ f ∈ F, c f • leftRegularUnitary Γ f` with `F` disjoint from `{1}`, a Powers partition
@@ -182,20 +128,20 @@ theorem norm_average_unitary_conj_le_of_powersPartition
       2 * ‖∑ f ∈ F, c f • (leftRegularUnitary Γ f : reducedGroupCStarAlgebra Γ)‖ /
         Real.sqrt N := by
   let xlp : lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2 :=
-    ∑ f ∈ F, c f • leftTranslationCLM f
+    ∑ f ∈ F, c f • (lp.leftTranslation 2 ℂ (X := Γ) (E := ℂ) f :
+      lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2)
   let P : Fin N → (lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2) :=
     fun j ↦ lp.indicatorCLM 2 ℂ ((fun y : Γ ↦ γ j * y) '' D)
   let U : Fin N → unitary (lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2) :=
-    fun j ↦ ⟨leftTranslationCLM (γ j), leftTranslationCLM_mem_unitary (γ j)⟩
+    fun j ↦ lp.leftTranslationUnitary (γ j)
   have hzero : ∀ j ∈ (Finset.univ : Finset (Fin N)),
       (1 - P j) * ((U j : lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2) * xlp *
         star (U j : lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2)) * (1 - P j) = 0 := by
     intro j _
-    simp only [xlp, U, Finset.mul_sum, Finset.sum_mul, mul_smul_comm, smul_mul_assoc]
+    simp only [xlp, U, lp.coe_leftTranslationUnitary, Finset.mul_sum, Finset.sum_mul,
+      mul_smul_comm, smul_mul_assoc]
     exact Finset.sum_eq_zero fun f hf ↦ by
-      rw [show (1 - P j) * (leftTranslationCLM (γ j) * leftTranslationCLM f *
-            star (leftTranslationCLM (γ j))) * (1 - P j) = 0 from
-          compression_sub_indicatorCLM_leftTranslation_eq_zero hCDU (hfC f hf) (γ j)]
+      rw [compression_sub_indicatorCLM_leftTranslation_eq_zero hCDU (hfC f hf) (γ j)]
       ext; simp
   have hbound :=
     ContinuousLinearMap.norm_average_unitary_conj_le_two_mul_div_sqrt_card_of_compression_eq_zero
@@ -209,28 +155,24 @@ theorem norm_average_unitary_conj_le_of_powersPartition
           star (leftRegularUnitary Γ (γ j) : reducedGroupCStarAlgebra Γ)‖ =
       ‖((Finset.univ : Finset (Fin N)).card : ℂ)⁻¹ •
           ∑ j : Fin N, (U j : _ →L[ℂ] _) * xlp * star (U j : _ →L[ℂ] _)‖ := by
-    rw [AddSubgroupClass.coe_norm, ← opNorm_countHilbertBasis_conjStarAlgEquiv]
+    rw [AddSubgroupClass.coe_norm,
+      ← LinearIsometryEquiv.norm_conjStarAlgEquiv (L2.countHilbertBasis ℂ Γ).repr]
     congr 1
     simp [-star_coe_leftRegularUnitary, U, xlp, countHilbertBasis_conjStarAlgEquiv_leftRegular,
-      star_leftTranslationCLM]
+      LinearIsometryEquiv.inv_def]
   have hrhs : ‖∑ f ∈ F, c f • (leftRegularUnitary Γ f : reducedGroupCStarAlgebra Γ)‖ = ‖xlp‖ := by
-    rw [AddSubgroupClass.coe_norm, ← opNorm_countHilbertBasis_conjStarAlgEquiv]
+    rw [AddSubgroupClass.coe_norm,
+      ← LinearIsometryEquiv.norm_conjStarAlgEquiv (L2.countHilbertBasis ℂ Γ).repr]
     congr 1
     simp [xlp, countHilbertBasis_conjStarAlgEquiv_leftRegular]
   rw [hlhs, hrhs]
   simpa only [Finset.card_univ, Fintype.card_fin] using hbound
 
-private theorem monoidAlgebra_sub_canonicalTrace_eq [DecidableEq Γ] {F : Finset Γ}
+private theorem monoidAlgebra_sub_reducedGroupCStarAlgebraTrace_eq [DecidableEq Γ] {F : Finset Γ}
     (hF : ∀ f ∈ F, f ≠ 1) (f : MonoidAlgebra ℂ Γ) (hfF : f.coeff.support.erase 1 ⊆ F) :
     groupAlgebraToReducedGroupCStarAlgebra Γ f -
-        canonicalTrace Γ (groupAlgebraToReducedGroupCStarAlgebra Γ f) • 1 =
+        reducedGroupCStarAlgebraTrace Γ (groupAlgebraToReducedGroupCStarAlgebra Γ f) • 1 =
       ∑ g ∈ F, f.coeff g • (leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ) := by
-  have hy : groupAlgebraToReducedGroupCStarAlgebra Γ f =
-      ∑ g ∈ f.coeff.support,
-        f.coeff g • (leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ) := by
-    conv_lhs => rw [← MonoidAlgebra.sum_coeff_single f]
-    rw [Finsupp.sum, map_sum]
-    simp
   have hsum_F :
       ∑ g ∈ F, f.coeff g • (leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ) =
         ∑ g ∈ f.coeff.support.erase 1,
@@ -238,7 +180,8 @@ private theorem monoidAlgebra_sub_canonicalTrace_eq [DecidableEq Γ] {F : Finset
     refine (Finset.sum_subset hfF fun g hgF hgnot ↦ ?_).symm
     have hnot : g ∉ f.coeff.support := fun hmem ↦ hgnot (Finset.mem_erase.2 ⟨hF g hgF, hmem⟩)
     simp [Finsupp.notMem_support_iff.1 hnot]
-  rw [canonicalTrace_groupAlgebraToReducedGroupCStarAlgebra, hy, hsum_F]
+  rw [reducedGroupCStarAlgebraTrace_groupAlgebraToReducedGroupCStarAlgebra,
+    groupAlgebraToReducedGroupCStarAlgebra_eq_sum, hsum_F]
   by_cases h1 : (1 : Γ) ∈ f.coeff.support
   · rw [← Finset.add_sum_erase f.coeff.support
       (fun g ↦ f.coeff g • (leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ)) h1,
@@ -246,46 +189,53 @@ private theorem monoidAlgebra_sub_canonicalTrace_eq [DecidableEq Γ] {F : Finset
   · rw [Finsupp.notMem_support_iff.1 h1, zero_smul ℂ (1 : reducedGroupCStarAlgebra Γ), sub_zero,
       Finset.erase_eq_of_notMem h1]
 
-private theorem norm_average_sub_canonicalTrace_lt_of_approx {N : ℕ} (hN : 0 < N)
+private theorem norm_average_sub_reducedGroupCStarAlgebraTrace_lt_of_approx {N : ℕ} (hN : 0 < N)
     (γ : Fin N → Γ) {x y : reducedGroupCStarAlgebra Γ} {ε : ℝ}
     (hxy : ‖x - y‖ < ε / 3)
     (hMy : ‖unitaryConjAverage (fun j ↦ leftRegularUnitary Γ (γ j))
-        (y - canonicalTrace Γ y • 1)‖ < ε / 3) :
+        (y - reducedGroupCStarAlgebraTrace Γ y • 1)‖ < ε / 3) :
     ‖unitaryConjAverage (fun j ↦ leftRegularUnitary Γ (γ j)) x -
-        canonicalTrace Γ x • 1‖ < ε := by
+        reducedGroupCStarAlgebraTrace Γ x • 1‖ < ε := by
   let u : Fin N → unitary (reducedGroupCStarAlgebra Γ) := fun j ↦ leftRegularUnitary Γ (γ j)
-  have hdecomp : unitaryConjAverage u x - canonicalTrace Γ x • 1 =
-      unitaryConjAverage u (x - y) + unitaryConjAverage u (y - canonicalTrace Γ y • 1) +
-        (canonicalTrace Γ y - canonicalTrace Γ x) • 1 := by
+  have hdecomp : unitaryConjAverage u x - reducedGroupCStarAlgebraTrace Γ x • 1 =
+      unitaryConjAverage u (x - y) +
+        unitaryConjAverage u (y - reducedGroupCStarAlgebraTrace Γ y • 1) +
+        (reducedGroupCStarAlgebraTrace Γ y - reducedGroupCStarAlgebraTrace Γ x) • 1 := by
     rw [map_sub, map_sub, map_smul, unitaryConjAverage_one hN u, sub_smul]
     abel
   have hnorm1 : ‖unitaryConjAverage u (x - y)‖ < ε / 3 :=
     (norm_unitaryConjAverage_apply_le hN u (x - y)).trans_lt hxy
-  have hnorm3 : ‖(canonicalTrace Γ y - canonicalTrace Γ x) •
+  have hnorm3 : ‖(reducedGroupCStarAlgebraTrace Γ y - reducedGroupCStarAlgebraTrace Γ x) •
       (1 : reducedGroupCStarAlgebra Γ)‖ < ε / 3 := by
-    calc ‖(canonicalTrace Γ y - canonicalTrace Γ x) • (1 : reducedGroupCStarAlgebra Γ)‖
-        = ‖canonicalTrace Γ (y - x)‖ * ‖(1 : reducedGroupCStarAlgebra Γ)‖ := by
+    calc ‖(reducedGroupCStarAlgebraTrace Γ y - reducedGroupCStarAlgebraTrace Γ x) •
+            (1 : reducedGroupCStarAlgebra Γ)‖
+        = ‖reducedGroupCStarAlgebraTrace Γ (y - x)‖ *
+            ‖(1 : reducedGroupCStarAlgebra Γ)‖ := by
           rw [norm_smul, map_sub]
-      _ ≤ ‖canonicalTrace Γ (y - x)‖ * 1 :=
+      _ ≤ ‖reducedGroupCStarAlgebraTrace Γ (y - x)‖ * 1 :=
           mul_le_mul_of_nonneg_left CStarRing.norm_one_le (norm_nonneg _)
-      _ = ‖canonicalTrace Γ (y - x)‖ := mul_one _
-      _ ≤ ‖y - x‖ := norm_canonicalTrace_apply_le _
+      _ = ‖reducedGroupCStarAlgebraTrace Γ (y - x)‖ := mul_one _
+      _ ≤ ‖y - x‖ := norm_reducedGroupCStarAlgebraTrace_apply_le _
       _ = ‖x - y‖ := norm_sub_rev _ _
       _ < ε / 3 := hxy
   rw [hdecomp]
-  calc ‖unitaryConjAverage u (x - y) + unitaryConjAverage u (y - canonicalTrace Γ y • 1) +
-        (canonicalTrace Γ y - canonicalTrace Γ x) • 1‖
-      ≤ ‖unitaryConjAverage u (x - y) + unitaryConjAverage u (y - canonicalTrace Γ y • 1)‖ +
-          ‖(canonicalTrace Γ y - canonicalTrace Γ x) • (1 : reducedGroupCStarAlgebra Γ)‖ :=
+  calc ‖unitaryConjAverage u (x - y) +
+          unitaryConjAverage u (y - reducedGroupCStarAlgebraTrace Γ y • 1) +
+        (reducedGroupCStarAlgebraTrace Γ y - reducedGroupCStarAlgebraTrace Γ x) • 1‖
+      ≤ ‖unitaryConjAverage u (x - y) +
+            unitaryConjAverage u (y - reducedGroupCStarAlgebraTrace Γ y • 1)‖ +
+          ‖(reducedGroupCStarAlgebraTrace Γ y - reducedGroupCStarAlgebraTrace Γ x) •
+            (1 : reducedGroupCStarAlgebra Γ)‖ :=
         norm_add_le _ _
     _ ≤ (‖unitaryConjAverage u (x - y)‖ +
-            ‖unitaryConjAverage u (y - canonicalTrace Γ y • 1)‖) +
-          ‖(canonicalTrace Γ y - canonicalTrace Γ x) • (1 : reducedGroupCStarAlgebra Γ)‖ :=
+            ‖unitaryConjAverage u (y - reducedGroupCStarAlgebraTrace Γ y • 1)‖) +
+          ‖(reducedGroupCStarAlgebraTrace Γ y - reducedGroupCStarAlgebraTrace Γ x) •
+            (1 : reducedGroupCStarAlgebra Γ)‖ :=
         add_le_add (norm_add_le _ _) le_rfl
     _ < ε / 3 + ε / 3 + ε / 3 := by linarith
     _ = ε := by ring
 
-private theorem norm_average_monoidAlgebra_sub_canonicalTrace_le [DecidableEq Γ]
+private theorem norm_average_monoidAlgebra_sub_reducedGroupCStarAlgebraTrace_le [DecidableEq Γ]
     {F : Finset Γ} (hF : ∀ f ∈ F, f ≠ 1) {C D : Set Γ} {N : ℕ} {γ : Fin N → Γ}
     (hCDU : C ∪ D = Set.univ) (hfC : ∀ f ∈ F, Disjoint ((fun x : Γ ↦ f * x) '' C) C)
     (hγD : Pairwise fun i j : Fin N ↦
@@ -293,16 +243,17 @@ private theorem norm_average_monoidAlgebra_sub_canonicalTrace_le [DecidableEq Γ
     (f : MonoidAlgebra ℂ Γ) (hfF : f.coeff.support.erase 1 ⊆ F) :
     let y := groupAlgebraToReducedGroupCStarAlgebra Γ f
     ‖unitaryConjAverage (fun j ↦ leftRegularUnitary Γ (γ j))
-        (y - canonicalTrace Γ y • 1)‖ ≤
-      2 * ‖y - canonicalTrace Γ y • 1‖ / Real.sqrt N := by
+        (y - reducedGroupCStarAlgebraTrace Γ y • 1)‖ ≤
+      2 * ‖y - reducedGroupCStarAlgebraTrace Γ y • 1‖ / Real.sqrt N := by
   intro y
-  rw [monoidAlgebra_sub_canonicalTrace_eq hF f hfF, unitaryConjAverage_apply]
+  rw [monoidAlgebra_sub_reducedGroupCStarAlgebraTrace_eq hF f hfF, unitaryConjAverage_apply]
   exact norm_average_unitary_conj_le_of_powersPartition hCDU hfC hγD (fun g ↦ f.coeff g)
 
 /-- **Simultaneous Powers averaging in `reducedGroupCStarAlgebra Γ`.** Given a finite family `x`
 and `ε > 0`, when `Γ` has the Powers property there exist `N > 0` and `γ : Fin N → Γ` whose
-conjugate average brings every `x i` (`i ∈ s`) within `ε` of `canonicalTrace Γ (x i) • 1`. -/
-theorem exists_forall_norm_average_unitary_conj_sub_canonicalTrace_lt
+conjugate average brings every `x i` (`i ∈ s`) within `ε` of
+`reducedGroupCStarAlgebraTrace Γ (x i) • 1`. -/
+theorem exists_forall_norm_average_unitary_conj_sub_reducedGroupCStarAlgebraTrace_lt
     (hΓ : HasPowersProperty Γ)
     {ι : Type*} (s : Finset ι) (x : ι → reducedGroupCStarAlgebra Γ)
     {ε : ℝ} (hε : 0 < ε) :
@@ -310,7 +261,7 @@ theorem exists_forall_norm_average_unitary_conj_sub_canonicalTrace_lt
       ‖(N : ℂ)⁻¹ • ∑ j : Fin N,
           (leftRegularUnitary Γ (γ j) : reducedGroupCStarAlgebra Γ) * x i *
             star (leftRegularUnitary Γ (γ j) : reducedGroupCStarAlgebra Γ) -
-          canonicalTrace Γ (x i) • 1‖ < ε := by
+          reducedGroupCStarAlgebraTrace Γ (x i) • 1‖ < ε := by
   classical
   rcases s.eq_empty_or_nonempty with rfl | hs
   · exact ⟨1, fun _ ↦ 1, zero_lt_one, fun _ hi ↦ absurd hi (Finset.notMem_empty _)⟩
@@ -323,7 +274,7 @@ theorem exists_forall_norm_average_unitary_conj_sub_canonicalTrace_lt
   have hF : ∀ g ∈ F, g ≠ 1 := fun g hg ↦
     let ⟨_, _, hgi⟩ := Finset.mem_biUnion.1 hg
     Finset.ne_of_mem_erase hgi
-  let R : ℝ := s.sup' hs fun i ↦ ‖y i - canonicalTrace Γ (y i) • 1‖
+  let R : ℝ := s.sup' hs fun i ↦ ‖y i - reducedGroupCStarAlgebraTrace Γ (y i) • 1‖
   obtain ⟨N₀, hN₀⟩ := exists_nat_gt ((6 * R / ε) ^ 2)
   let N : ℕ := max 1 N₀
   have hN_pos : 0 < N := lt_of_lt_of_le zero_lt_one (le_max_left 1 N₀)
@@ -331,13 +282,14 @@ theorem exists_forall_norm_average_unitary_conj_sub_canonicalTrace_lt
     Real.lt_sqrt_of_sq_lt (hN₀.trans_le (Nat.cast_le.2 (le_max_right 1 N₀)))
   obtain ⟨C, D, γ, -, hCDU, hfC, hγD⟩ := hasPowersProperty_def.1 hΓ F hF N
   refine ⟨N, γ, hN_pos, fun i hi ↦ ?_⟩
-  have hR : ‖y i - canonicalTrace Γ (y i) • 1‖ ≤ R :=
-    Finset.le_sup' (fun k ↦ ‖y k - canonicalTrace Γ (y k) • 1‖) hi
+  have hR : ‖y i - reducedGroupCStarAlgebraTrace Γ (y i) • 1‖ ≤ R :=
+    Finset.le_sup' (fun k ↦ ‖y k - reducedGroupCStarAlgebraTrace Γ (y k) • 1‖) hi
   have hM_bound :
       ‖unitaryConjAverage (fun j ↦ leftRegularUnitary Γ (γ j))
-          (y i - canonicalTrace Γ (y i) • 1)‖ < ε / 3 := by
-    calc _ ≤ 2 * ‖y i - canonicalTrace Γ (y i) • 1‖ / Real.sqrt N :=
-          norm_average_monoidAlgebra_sub_canonicalTrace_le hF hCDU (fun g hg ↦ hfC g hg) hγD
+          (y i - reducedGroupCStarAlgebraTrace Γ (y i) • 1)‖ < ε / 3 := by
+    calc _ ≤ 2 * ‖y i - reducedGroupCStarAlgebraTrace Γ (y i) • 1‖ / Real.sqrt N :=
+          norm_average_monoidAlgebra_sub_reducedGroupCStarAlgebraTrace_le
+            hF hCDU (fun g hg ↦ hfC g hg) hγD
             (f i) (Finset.subset_biUnion_of_mem (u := fun i ↦ (f i).coeff.support.erase 1) hi)
       _ ≤ 2 * R / Real.sqrt N := by gcongr
       _ < ε / 3 := by
@@ -345,34 +297,36 @@ theorem exists_forall_norm_average_unitary_conj_sub_canonicalTrace_lt
         have hmul : 6 * R < ε * Real.sqrt N := (div_lt_iff₀' hε).1 hN_sqrt
         linarith
   rw [← unitaryConjAverage_apply]
-  exact norm_average_sub_canonicalTrace_lt_of_approx hN_pos γ (hf i) hM_bound
+  exact norm_average_sub_reducedGroupCStarAlgebraTrace_lt_of_approx hN_pos γ (hf i) hM_bound
 
 /-- **Powers averaging in `reducedGroupCStarAlgebra Γ`.** Every element `x` can be averaged by
-finitely many left-regular unitary conjugates arbitrarily close to `canonicalTrace Γ x • 1`. -/
-theorem exists_norm_average_unitary_conj_sub_canonicalTrace_lt
+finitely many left-regular unitary conjugates arbitrarily close to
+`reducedGroupCStarAlgebraTrace Γ x • 1`. -/
+theorem exists_norm_average_unitary_conj_sub_reducedGroupCStarAlgebraTrace_lt
     (hΓ : HasPowersProperty Γ) (x : reducedGroupCStarAlgebra Γ) {ε : ℝ} (hε : 0 < ε) :
     ∃ (N : ℕ) (γ : Fin N → Γ), 0 < N ∧
       ‖(N : ℂ)⁻¹ • ∑ j : Fin N,
           (leftRegularUnitary Γ (γ j) : reducedGroupCStarAlgebra Γ) * x *
             star (leftRegularUnitary Γ (γ j) : reducedGroupCStarAlgebra Γ) -
-          canonicalTrace Γ x • 1‖ < ε := by
+          reducedGroupCStarAlgebraTrace Γ x • 1‖ < ε := by
   obtain ⟨N, γ, hN, h⟩ :=
-    exists_forall_norm_average_unitary_conj_sub_canonicalTrace_lt hΓ ({()} : Finset Unit)
-      (fun _ ↦ x) hε
+    exists_forall_norm_average_unitary_conj_sub_reducedGroupCStarAlgebraTrace_lt
+      hΓ ({()} : Finset Unit) (fun _ ↦ x) hε
   exact ⟨N, γ, hN, h () (Finset.mem_singleton_self ())⟩
 
-/-- **Dixmier property.** When `Γ` has the Powers property, `canonicalTrace Γ x • 1` lies in the
-norm closure of the real convex hull of unitary conjugates of `x`. -/
-theorem canonicalTrace_smul_one_mem_closure_convexHull
+/-- **Dixmier property.** When `Γ` has the Powers property,
+`reducedGroupCStarAlgebraTrace Γ x • 1` lies in the norm closure of the real convex hull of unitary
+conjugates of `x`. -/
+theorem reducedGroupCStarAlgebraTrace_smul_one_mem_closure_convexHull
     (hΓ : HasPowersProperty Γ) (x : reducedGroupCStarAlgebra Γ) :
-    canonicalTrace Γ x • (1 : reducedGroupCStarAlgebra Γ) ∈
+    reducedGroupCStarAlgebraTrace Γ x • (1 : reducedGroupCStarAlgebra Γ) ∈
       closure (convexHull ℝ (Set.range fun g : Γ ↦
         (leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ) * x *
           star (leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ))) := by
   rw [Metric.mem_closure_iff]
   intro ε hε
   obtain ⟨N, γ, hN, hnorm⟩ :=
-    exists_norm_average_unitary_conj_sub_canonicalTrace_lt hΓ x hε
+    exists_norm_average_unitary_conj_sub_reducedGroupCStarAlgebraTrace_lt hΓ x hε
   have : Nonempty (Fin N) := Fin.pos_iff_nonempty.1 hN
   let z : reducedGroupCStarAlgebra Γ :=
     Finset.univ.centerMass (fun _ : Fin N ↦ (1 : ℝ)) fun j ↦
@@ -420,15 +374,15 @@ theorem isSimpleRing_of_hasPowersProperty {Γ : Type*} [Group Γ]
       exact I.zero_mem⟩
   let b : reducedGroupCStarAlgebra Γ := star a * a
   have hbI : b ∈ I := I.mul_mem_left (star a) a haI
-  have hb_tr : canonicalTrace Γ b ≠ 0 := by
-    simpa [b] using mt (canonicalTrace_star_mul_self_eq_zero_iff a).1 ha0
-  let c : reducedGroupCStarAlgebra Γ := (canonicalTrace Γ b)⁻¹ • b
-  have hcI : c ∈ I := I.smul_mem_of_isClosed (canonicalTrace Γ b)⁻¹ hbI
-  have hc_tr : canonicalTrace Γ c = 1 := by
+  have hb_tr : reducedGroupCStarAlgebraTrace Γ b ≠ 0 := by
+    simpa [b] using mt (reducedGroupCStarAlgebraTrace_star_mul_self_eq_zero_iff a).1 ha0
+  let c : reducedGroupCStarAlgebra Γ := (reducedGroupCStarAlgebraTrace Γ b)⁻¹ • b
+  have hcI : c ∈ I := I.smul_mem_of_isClosed (reducedGroupCStarAlgebraTrace Γ b)⁻¹ hbI
+  have hc_tr : reducedGroupCStarAlgebraTrace Γ c = 1 := by
     dsimp only [c]
     rw [map_smul, smul_eq_mul, inv_mul_cancel₀ hb_tr]
   obtain ⟨N, γ, _, havg⟩ :=
-    exists_norm_average_unitary_conj_sub_canonicalTrace_lt hΓ c zero_lt_one
+    exists_norm_average_unitary_conj_sub_reducedGroupCStarAlgebraTrace_lt hΓ c zero_lt_one
   let avg := unitaryConjAverage (fun j ↦ leftRegularUnitary Γ (γ j)) c
   have havgI : avg ∈ I := by
     dsimp only [avg]
@@ -447,29 +401,29 @@ theorem isSimpleRing_of_hasPowersProperty {Γ : Type*} [Group Γ]
   exact I.eq_top h1I
 
 /-- **Uniqueness of the trace under the Powers property.** Every continuous unital tracial linear
-functional on `reducedGroupCStarAlgebra Γ` agrees with `canonicalTrace Γ`. -/
-theorem eq_canonicalTrace_of_hasPowersProperty {Γ : Type*} [Group Γ]
+functional on `reducedGroupCStarAlgebra Γ` agrees with `reducedGroupCStarAlgebraTrace Γ`. -/
+theorem eq_reducedGroupCStarAlgebraTrace_of_hasPowersProperty {Γ : Type*} [Group Γ]
     [MeasurableSpace Γ] [MeasurableMul Γ] [MeasurableSingletonClass Γ]
     (hΓ : HasPowersProperty Γ) (φ : reducedGroupCStarAlgebra Γ →L[ℂ] ℂ)
     (hone : φ 1 = 1) (htrace : ∀ x y, φ (x * y) = φ (y * x))
     (x : reducedGroupCStarAlgebra Γ) :
-    φ x = canonicalTrace Γ x := by
+    φ x = reducedGroupCStarAlgebraTrace Γ x := by
   rw [← sub_eq_zero, ← norm_eq_zero]
   refine le_antisymm ?_ (norm_nonneg _)
   refine le_of_forall_pos_le_add fun δ hδ ↦ ?_
   rw [zero_add]
   have hε : 0 < δ / (‖φ‖ + 1) := div_pos hδ (add_pos_of_nonneg_of_pos (norm_nonneg φ) zero_lt_one)
   obtain ⟨N, γ, hN, havg⟩ :=
-    exists_norm_average_unitary_conj_sub_canonicalTrace_lt hΓ x hε
+    exists_norm_average_unitary_conj_sub_reducedGroupCStarAlgebraTrace_lt hΓ x hε
   rw [← unitaryConjAverage_apply] at havg
   let avg := unitaryConjAverage (fun j ↦ leftRegularUnitary Γ (γ j)) x
   have hφ_avg : φ avg = φ x :=
     map_unitaryConjAverage_eq hN _ (φ : reducedGroupCStarAlgebra Γ →ₗ[ℂ] ℂ) htrace x
-  have hφ_tr : φ (canonicalTrace Γ x • 1) = canonicalTrace Γ x := by
+  have hφ_tr : φ (reducedGroupCStarAlgebraTrace Γ x • 1) = reducedGroupCStarAlgebraTrace Γ x := by
     rw [map_smul, hone, smul_eq_mul, mul_one]
-  calc ‖φ x - canonicalTrace Γ x‖
-      = ‖φ (avg - canonicalTrace Γ x • 1)‖ := by rw [map_sub, hφ_avg, hφ_tr]
-    _ ≤ ‖φ‖ * ‖avg - canonicalTrace Γ x • 1‖ := φ.le_opNorm _
+  calc ‖φ x - reducedGroupCStarAlgebraTrace Γ x‖
+      = ‖φ (avg - reducedGroupCStarAlgebraTrace Γ x • 1)‖ := by rw [map_sub, hφ_avg, hφ_tr]
+    _ ≤ ‖φ‖ * ‖avg - reducedGroupCStarAlgebraTrace Γ x • 1‖ := φ.le_opNorm _
     _ ≤ ‖φ‖ * (δ / (‖φ‖ + 1)) := mul_le_mul_of_nonneg_left havg.le (norm_nonneg φ)
     _ ≤ δ := by
         rw [mul_div_assoc', div_le_iff₀ (by positivity)]
@@ -497,8 +451,8 @@ theorem reducedFreeGroup_trace_unique {ι : Type*}
       (x : Lp ℂ 2 (Measure.count : Measure (FreeGroup ι)) →L[ℂ]
         Lp ℂ 2 (Measure.count : Measure (FreeGroup ι)))
         (L2.countHilbertBasis ℂ (FreeGroup ι) 1)⟫_ℂ :=
-  (eq_canonicalTrace_of_hasPowersProperty (FreeGroup.hasPowersProperty_of_ne hab) φ
-    hone htrace x).trans (canonicalTrace_apply x)
+  (eq_reducedGroupCStarAlgebraTrace_of_hasPowersProperty (FreeGroup.hasPowersProperty_of_ne hab) φ
+    hone htrace x).trans (reducedGroupCStarAlgebraTrace_apply x)
 
 end SimplicityAndUniqueTrace
 

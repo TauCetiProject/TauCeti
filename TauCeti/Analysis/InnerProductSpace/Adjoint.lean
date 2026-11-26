@@ -104,7 +104,9 @@ linear map, the orthogonal complement of its kernel has the dimension of the cod
 Passing a finite-dimensional operator to continuous linear maps preserves its adjoint
 (`LinearMap.toContinuousLinearMap_star`) and its normality
 (the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
-Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`).
+Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`), and
+conjugation by a linear isometric equivalence preserves the operator norm
+(`LinearIsometryEquiv.norm_conjStarAlgEquiv`).
 
 -/
 
@@ -646,6 +648,26 @@ instance instIsIsometricSMul [CompleteSpace E] : IsIsometricSMul (unitary (E →
   isometry_smul u := (Unitary.linearIsometryEquiv u).isometry
 
 end Unitary
+
+section ConjStarAlgEquiv
+
+namespace LinearIsometryEquiv
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- Conjugation of bounded operators by a linear isometric equivalence preserves the operator
+norm. -/
+@[simp]
+theorem norm_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (T : E →L[𝕜] E) :
+    ‖e.conjStarAlgEquiv T‖ = ‖T‖ := by
+  rw [LinearIsometryEquiv.conjStarAlgEquiv_apply,
+    ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+
+end LinearIsometryEquiv
+
+end ConjStarAlgEquiv
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 

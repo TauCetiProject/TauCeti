@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import TauCeti.Algebra.MonoidAlgebra.Star
 public import TauCeti.Analysis.CStarAlgebra.Generated
+public import TauCeti.Analysis.Normed.Lp.LeftTranslation
 public import TauCeti.Analysis.VonNeumannAlgebra.Group.Basic
-import Mathlib.Analysis.Normed.Ring.Units
 import TauCeti.Analysis.CStarAlgebra.Basic
 
 /-!
@@ -27,11 +27,15 @@ automatically, without any countability assumption on `Γ`.
   translations (`TauCeti.commute_reducedGroupCStarAlgebra_rightRegular`).
 * `TauCeti.leftRegularUnitary`: the canonical group homomorphism `Γ →* unitary C*_r(Γ)`.
 * `TauCeti.groupAlgebraToReducedGroupCStarAlgebra`: the canonical ⋆-algebra homomorphism
-  `ℂ[Γ] →⋆ₐ[ℂ] C*_r(Γ)` with dense range
+  `ℂ[Γ] →⋆ₐ[ℂ] C*_r(Γ)` with support-sum expansion
+  `TauCeti.groupAlgebraToReducedGroupCStarAlgebra_eq_sum` and dense range
   (`TauCeti.denseRange_groupAlgebraToReducedGroupCStarAlgebra`).
-* When singletons are measurable (`[MeasurableSingletonClass Γ]`), restricting
-  `TauCeti.groupVonNeumannTrace Γ` yields the canonical faithful tracial state
-  `TauCeti.canonicalTrace Γ : C*_r(Γ) →L[ℂ] ℂ`, evaluating `f ∈ ℂ[Γ]` at `f.coeff 1`.
+* When singletons are measurable (`[MeasurableSingletonClass Γ]`),
+  `TauCeti.countHilbertBasis_conjStarAlgEquiv_leftRegular` identifies the left regular
+  representation under `(MeasureTheory.L2.countHilbertBasis 𝕜 Γ).repr` with
+  `lp.leftTranslation 2 𝕜`, and restricting `TauCeti.groupVonNeumannTrace Γ` yields the canonical
+  faithful tracial state `TauCeti.reducedGroupCStarAlgebraTrace Γ : C*_r(Γ) →L[ℂ] ℂ`, evaluating
+  `f ∈ ℂ[Γ]` at `f.coeff 1`.
 
 ## References
 
@@ -159,6 +163,16 @@ theorem groupAlgebraToReducedGroupCStarAlgebra_single (g : Γ) (c : ℂ) :
       c • (leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ) :=
   MonoidAlgebra.starLift_single (leftRegularUnitary Γ) g c
 
+/-- Expanding `groupAlgebraToReducedGroupCStarAlgebra Γ f` as a finite sum over
+`f.coeff.support`. -/
+theorem groupAlgebraToReducedGroupCStarAlgebra_eq_sum (f : MonoidAlgebra ℂ Γ) :
+    groupAlgebraToReducedGroupCStarAlgebra Γ f =
+      ∑ g ∈ f.coeff.support,
+        f.coeff g • (leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ) := by
+  conv_lhs => rw [← MonoidAlgebra.sum_coeff_single f]
+  rw [Finsupp.sum, map_sum]
+  simp
+
 /-- Inclusion into `groupVonNeumannAlgebra Γ` sends `groupAlgebraToReducedGroupCStarAlgebra Γ f`
 to `groupAlgebraToVonNeumannAlgebra Γ f`. -/
 theorem inclusion_groupAlgebraToReducedGroupCStarAlgebra (f : MonoidAlgebra ℂ Γ) :
@@ -198,40 +212,46 @@ theorem exists_groupAlgebraToReducedGroupCStarAlgebra_of_mem_adjoin
 `reducedGroupCStarAlgebra Γ`. -/
 theorem denseRange_groupAlgebraToReducedGroupCStarAlgebra :
     DenseRange (groupAlgebraToReducedGroupCStarAlgebra Γ) := by
-  rw [Metric.denseRange_iff]
-  intro x δ hδ
-  have hx : (x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) ∈
-      closure (StarAlgebra.adjoin ℂ
-          (Set.range ((Measure.count : Measure Γ).leftRegular ℂ ℂ 2)) :
-        Set (Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ))) := by
-    rw [← StarSubalgebra.topologicalClosure_coe, SetLike.mem_coe, ← generatedCStarAlgebra_def,
-      ← reducedGroupCStarAlgebra_def]
-    exact x.property
-  obtain ⟨a, ha, hdist⟩ := Metric.mem_closure_iff.1 hx δ hδ
+  refine (denseRange_inclusion_adjoin_generatedCStarAlgebra
+    ((Measure.count : Measure Γ).leftRegular ℂ ℂ 2)).mono ?_
+  rintro _ ⟨⟨a, ha⟩, rfl⟩
   obtain ⟨f, hf⟩ := exists_groupAlgebraToReducedGroupCStarAlgebra_of_mem_adjoin Γ ha
-  refine ⟨f, ?_⟩
-  rw [Subtype.dist_eq, hf]
-  exact hdist
+  exact ⟨f, Subtype.ext hf⟩
 
 end MeasurableMul
 
 section Trace
 
+/-- Conjugating the counting-measure left regular representation on `L²(Γ, 𝕜)` by
+`(L2.countHilbertBasis 𝕜 Γ).repr` gives `lp.leftTranslation 2 𝕜` on `ℓ²(Γ, 𝕜)`. -/
+theorem countHilbertBasis_conjStarAlgEquiv_leftRegular {Γ 𝕜 : Type*} [Group Γ]
+    [MeasurableSpace Γ] [MeasurableMul Γ] [MeasurableSingletonClass Γ] [RCLike 𝕜] (g : Γ) :
+    (L2.countHilbertBasis 𝕜 Γ).repr.conjStarAlgEquiv
+        ((Measure.count : Measure Γ).leftRegular 𝕜 𝕜 2 g) =
+      (lp.leftTranslation 2 𝕜 (X := Γ) (E := 𝕜) g :
+        lp (fun _ : Γ ↦ 𝕜) 2 →L[𝕜] lp (fun _ : Γ ↦ 𝕜) 2) := by
+  ext ξ t
+  rw [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, LinearIsometryEquiv.coe_coe'',
+    lp.leftTranslation_apply, smul_eq_mul, L2.countHilbertBasis_repr_apply,
+    Measure.ae_count_iff.1 (Measure.coeFn_leftRegular (𝕜 := 𝕜) (Measure.count : Measure Γ) 2 g
+      ((L2.countHilbertBasis 𝕜 Γ).repr.symm ξ)) t]
+  dsimp only
+  rw [← L2.countHilbertBasis_repr_apply ((L2.countHilbertBasis 𝕜 Γ).repr.symm ξ) (g⁻¹ * t),
+    (L2.countHilbertBasis 𝕜 Γ).repr.apply_symm_apply]
+
 variable (Γ : Type*) [Group Γ] [MeasurableSpace Γ] [MeasurableMul Γ] [MeasurableSingletonClass Γ]
 
 /-- **The canonical tracial state** `τ(x) = ⟪δ₁, x δ₁⟫_ℂ` on `reducedGroupCStarAlgebra Γ`, obtained
 by restricting `groupVonNeumannTrace Γ`. -/
-def canonicalTrace : reducedGroupCStarAlgebra Γ →L[ℂ] ℂ :=
+def reducedGroupCStarAlgebraTrace : reducedGroupCStarAlgebra Γ →L[ℂ] ℂ :=
   LinearMap.mkContinuous
     ((groupVonNeumannTrace Γ).comp
       (StarSubalgebra.inclusion (reducedGroupCStarAlgebra_le_groupVonNeumannAlgebra Γ)).toLinearMap)
     1 fun x ↦ by
       let δ₁ : Lp ℂ 2 (Measure.count : Measure Γ) := L2.countHilbertBasis ℂ Γ 1
       have h1 : ‖δ₁‖ = 1 := L2.norm_countHilbertBasis 1
-      change ‖groupVonNeumannTrace Γ
-          (StarSubalgebra.inclusion (reducedGroupCStarAlgebra_le_groupVonNeumannAlgebra Γ) x)‖ ≤
-        1 * ‖x‖
-      rw [groupVonNeumannTrace_apply, groupVonNeumannCoeff_def]
+      rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply, StarAlgHom.coe_toAlgHom,
+        groupVonNeumannTrace_apply, groupVonNeumannCoeff_def]
       calc ‖⟪δ₁, (x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ]
               Lp ℂ 2 (Measure.count : Measure Γ)) δ₁⟫_ℂ‖
           ≤ ‖δ₁‖ * ‖(x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ]
@@ -245,59 +265,60 @@ def canonicalTrace : reducedGroupCStarAlgebra Γ →L[ℂ] ℂ :=
 
 variable {Γ}
 
-/-- `canonicalTrace Γ` is the restriction of `groupVonNeumannTrace Γ` along the inclusion
-`reducedGroupCStarAlgebra Γ ≤ (groupVonNeumannAlgebra Γ).toStarSubalgebra`. -/
-theorem canonicalTrace_eq_groupVonNeumannTrace (x : reducedGroupCStarAlgebra Γ) :
-    canonicalTrace Γ x =
+/-- `reducedGroupCStarAlgebraTrace Γ` is the restriction of `groupVonNeumannTrace Γ` along the
+inclusion `reducedGroupCStarAlgebra Γ ≤ (groupVonNeumannAlgebra Γ).toStarSubalgebra`. -/
+theorem reducedGroupCStarAlgebraTrace_eq_groupVonNeumannTrace (x : reducedGroupCStarAlgebra Γ) :
+    reducedGroupCStarAlgebraTrace Γ x =
       groupVonNeumannTrace Γ
         (StarSubalgebra.inclusion (reducedGroupCStarAlgebra_le_groupVonNeumannAlgebra Γ) x) :=
   (rfl)
 
-/-- Evaluating `canonicalTrace Γ` at `x` yields `⟪δ₁, x δ₁⟫_ℂ`. -/
-theorem canonicalTrace_apply (x : reducedGroupCStarAlgebra Γ) :
-    canonicalTrace Γ x =
+/-- Evaluating `reducedGroupCStarAlgebraTrace Γ` at `x` yields `⟪δ₁, x δ₁⟫_ℂ`. -/
+theorem reducedGroupCStarAlgebraTrace_apply (x : reducedGroupCStarAlgebra Γ) :
+    reducedGroupCStarAlgebraTrace Γ x =
       ⟪L2.countHilbertBasis ℂ Γ 1,
         (x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ))
           (L2.countHilbertBasis ℂ Γ 1)⟫_ℂ := by
-  simp [canonicalTrace_eq_groupVonNeumannTrace, groupVonNeumannTrace_apply,
+  simp [reducedGroupCStarAlgebraTrace_eq_groupVonNeumannTrace, groupVonNeumannTrace_apply,
     groupVonNeumannCoeff_def]
 
-/-- The operator norm of `canonicalTrace Γ` is at most `1`. -/
-theorem norm_canonicalTrace_le : ‖canonicalTrace Γ‖ ≤ 1 :=
+/-- The operator norm of `reducedGroupCStarAlgebraTrace Γ` is at most `1`. -/
+theorem norm_reducedGroupCStarAlgebraTrace_le : ‖reducedGroupCStarAlgebraTrace Γ‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
-/-- The canonical trace is contractive: `‖canonicalTrace Γ x‖ ≤ ‖x‖`. -/
-theorem norm_canonicalTrace_apply_le (x : reducedGroupCStarAlgebra Γ) :
-    ‖canonicalTrace Γ x‖ ≤ ‖x‖ := by
-  simpa using (canonicalTrace Γ).le_opNorm x |>.trans
-    (mul_le_of_le_one_left (norm_nonneg _) (norm_canonicalTrace_le (Γ := Γ)))
+/-- The canonical trace is contractive: `‖reducedGroupCStarAlgebraTrace Γ x‖ ≤ ‖x‖`. -/
+theorem norm_reducedGroupCStarAlgebraTrace_apply_le (x : reducedGroupCStarAlgebra Γ) :
+    ‖reducedGroupCStarAlgebraTrace Γ x‖ ≤ ‖x‖ := by
+  simpa using (reducedGroupCStarAlgebraTrace Γ).le_opNorm x |>.trans
+    (mul_le_of_le_one_left (norm_nonneg _)
+      (norm_reducedGroupCStarAlgebraTrace_le (Γ := Γ)))
 
 /-- The canonical trace is unital. -/
 @[simp]
-theorem canonicalTrace_one : canonicalTrace Γ 1 = 1 := by
-  rw [canonicalTrace_eq_groupVonNeumannTrace, map_one, groupVonNeumannTrace_one]
+theorem reducedGroupCStarAlgebraTrace_one : reducedGroupCStarAlgebraTrace Γ 1 = 1 := by
+  rw [reducedGroupCStarAlgebraTrace_eq_groupVonNeumannTrace, map_one, groupVonNeumannTrace_one]
 
 /-- The canonical trace commutes with `star` as complex conjugation. -/
 @[simp]
-theorem canonicalTrace_star (x : reducedGroupCStarAlgebra Γ) :
-    canonicalTrace Γ (star x) = conj (canonicalTrace Γ x) := by
-  rw [canonicalTrace_eq_groupVonNeumannTrace, canonicalTrace_eq_groupVonNeumannTrace, map_star,
-    groupVonNeumannTrace_star]
+theorem reducedGroupCStarAlgebraTrace_star (x : reducedGroupCStarAlgebra Γ) :
+    reducedGroupCStarAlgebraTrace Γ (star x) = conj (reducedGroupCStarAlgebraTrace Γ x) := by
+  rw [reducedGroupCStarAlgebraTrace_eq_groupVonNeumannTrace,
+    reducedGroupCStarAlgebraTrace_eq_groupVonNeumannTrace, map_star, groupVonNeumannTrace_star]
 
-/-- Evaluating `canonicalTrace Γ` on `star x * x` gives `‖x δ₁‖ ^ 2`. -/
-theorem canonicalTrace_star_mul_self (x : reducedGroupCStarAlgebra Γ) :
-    canonicalTrace Γ (star x * x) =
+/-- Evaluating `reducedGroupCStarAlgebraTrace Γ` on `star x * x` gives `‖x δ₁‖ ^ 2`. -/
+theorem reducedGroupCStarAlgebraTrace_star_mul_self (x : reducedGroupCStarAlgebra Γ) :
+    reducedGroupCStarAlgebraTrace Γ (star x * x) =
       (‖(x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ))
         (L2.countHilbertBasis ℂ Γ 1)‖ ^ 2 : ℂ) := by
-  rw [canonicalTrace_eq_groupVonNeumannTrace, map_mul, map_star, groupVonNeumannTrace_star_mul,
-    inner_self_eq_norm_sq_to_K]
+  rw [reducedGroupCStarAlgebraTrace_eq_groupVonNeumannTrace, map_mul, map_star,
+    groupVonNeumannTrace_star_mul, inner_self_eq_norm_sq_to_K]
   simp
 
 /-- The canonical trace is nonnegative on `star x * x`. -/
 @[simp]
-theorem canonicalTrace_star_mul_self_nonneg (x : reducedGroupCStarAlgebra Γ) :
-    0 ≤ canonicalTrace Γ (star x * x) := by
-  rw [canonicalTrace_eq_groupVonNeumannTrace, map_mul, map_star]
+theorem reducedGroupCStarAlgebraTrace_star_mul_self_nonneg (x : reducedGroupCStarAlgebra Γ) :
+    0 ≤ reducedGroupCStarAlgebraTrace Γ (star x * x) := by
+  rw [reducedGroupCStarAlgebraTrace_eq_groupVonNeumannTrace, map_mul, map_star]
   exact groupVonNeumannTrace_star_mul_self_nonneg _
 
 /-- The identity point mass `δ₁` is separating for `reducedGroupCStarAlgebra Γ`. -/
@@ -311,54 +332,44 @@ theorem eq_zero_of_reducedGroupCStarAlgebra_apply_countHilbertBasis_one
 
 /-- The canonical trace is faithful: `τ (star x * x) = 0 ↔ x = 0`. -/
 @[simp]
-theorem canonicalTrace_star_mul_self_eq_zero_iff (x : reducedGroupCStarAlgebra Γ) :
-    canonicalTrace Γ (star x * x) = 0 ↔ x = 0 := by
+theorem reducedGroupCStarAlgebraTrace_star_mul_self_eq_zero_iff (x : reducedGroupCStarAlgebra Γ) :
+    reducedGroupCStarAlgebraTrace Γ (star x * x) = 0 ↔ x = 0 := by
   refine ⟨fun h ↦ Subtype.ext ?_, fun h ↦ by simp [h]⟩
-  rw [canonicalTrace_eq_groupVonNeumannTrace,
+  rw [reducedGroupCStarAlgebraTrace_eq_groupVonNeumannTrace,
     map_mul (StarSubalgebra.inclusion (reducedGroupCStarAlgebra_le_groupVonNeumannAlgebra Γ)),
     map_star (StarSubalgebra.inclusion (reducedGroupCStarAlgebra_le_groupVonNeumannAlgebra Γ)),
     groupVonNeumannTrace_star_mul_self_eq_zero_iff] at h
   simpa using congrArg Subtype.val h
 
 /-- The canonical trace on `reducedGroupCStarAlgebra Γ` satisfies `τ (x * y) = τ (y * x)`. -/
-theorem canonicalTrace_mul_comm (x y : reducedGroupCStarAlgebra Γ) :
-    canonicalTrace Γ (x * y) = canonicalTrace Γ (y * x) := by
-  rw [canonicalTrace_eq_groupVonNeumannTrace, canonicalTrace_eq_groupVonNeumannTrace,
+theorem reducedGroupCStarAlgebraTrace_mul_comm (x y : reducedGroupCStarAlgebra Γ) :
+    reducedGroupCStarAlgebraTrace Γ (x * y) = reducedGroupCStarAlgebraTrace Γ (y * x) := by
+  rw [reducedGroupCStarAlgebraTrace_eq_groupVonNeumannTrace,
+    reducedGroupCStarAlgebraTrace_eq_groupVonNeumannTrace,
     map_mul (StarSubalgebra.inclusion (reducedGroupCStarAlgebra_le_groupVonNeumannAlgebra Γ)),
     map_mul (StarSubalgebra.inclusion (reducedGroupCStarAlgebra_le_groupVonNeumannAlgebra Γ))]
   exact groupVonNeumannTrace_mul_comm _ _
 
-/-- On the image of `MonoidAlgebra ℂ Γ`, `canonicalTrace Γ` extracts the identity coefficient. -/
-@[simp]
-theorem canonicalTrace_groupAlgebraToReducedGroupCStarAlgebra (f : MonoidAlgebra ℂ Γ) :
-    canonicalTrace Γ (groupAlgebraToReducedGroupCStarAlgebra Γ f) = f.coeff 1 := by
-  rw [canonicalTrace_eq_groupVonNeumannTrace, inclusion_groupAlgebraToReducedGroupCStarAlgebra,
-    groupVonNeumannTrace_groupAlgebraToVonNeumannAlgebra]
-
-/-- The canonical trace of a finite linear combination of left regular unitaries is its identity
+/-- On the image of `MonoidAlgebra ℂ Γ`, `reducedGroupCStarAlgebraTrace Γ` extracts the identity
 coefficient. -/
-theorem canonicalTrace_finsupp_sum (c : Γ →₀ ℂ) :
-    canonicalTrace Γ
-        (∑ g ∈ c.support, c g • (leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ)) =
-      c 1 := by
-  have hsum :
-      (∑ g ∈ c.support, c g • (leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ)) =
-        groupAlgebraToReducedGroupCStarAlgebra Γ (MonoidAlgebra.ofCoeff c) := by
-    conv_rhs => rw [← MonoidAlgebra.sum_coeff_single (MonoidAlgebra.ofCoeff c)]
-    rw [Finsupp.sum, map_sum]
-    simp
-  simp [hsum]
+@[simp]
+theorem reducedGroupCStarAlgebraTrace_groupAlgebraToReducedGroupCStarAlgebra
+    (f : MonoidAlgebra ℂ Γ) :
+    reducedGroupCStarAlgebraTrace Γ (groupAlgebraToReducedGroupCStarAlgebra Γ f) = f.coeff 1 := by
+  rw [reducedGroupCStarAlgebraTrace_eq_groupVonNeumannTrace,
+    inclusion_groupAlgebraToReducedGroupCStarAlgebra,
+    groupVonNeumannTrace_groupAlgebraToVonNeumannAlgebra]
 
 /-- The canonical trace of a left regular unitary equals `1` at `g = 1` and `0` otherwise. -/
 @[simp]
-theorem canonicalTrace_leftRegularUnitary [DecidableEq Γ] (g : Γ) :
-    canonicalTrace Γ (leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ) =
+theorem reducedGroupCStarAlgebraTrace_leftRegularUnitary [DecidableEq Γ] (g : Γ) :
+    reducedGroupCStarAlgebraTrace Γ (leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ) =
       if g = 1 then 1 else 0 := by
   have h : (leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ) =
       groupAlgebraToReducedGroupCStarAlgebra Γ (MonoidAlgebra.single g (1 : ℂ)) := by
     simp
-  rw [h, canonicalTrace_groupAlgebraToReducedGroupCStarAlgebra, MonoidAlgebra.coeff_single,
-    Finsupp.single_apply, eq_comm]
+  rw [h, reducedGroupCStarAlgebraTrace_groupAlgebraToReducedGroupCStarAlgebra,
+    MonoidAlgebra.coeff_single, Finsupp.single_apply, eq_comm]
 
 end Trace
 
