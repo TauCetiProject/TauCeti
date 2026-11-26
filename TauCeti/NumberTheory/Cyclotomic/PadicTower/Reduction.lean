@@ -7,11 +7,9 @@ module
 
 public import TauCeti.NumberTheory.Cyclotomic.PadicTower.Basic
 public import Mathlib.NumberTheory.Padics.RingHoms
-public import Mathlib.RingTheory.PowerSeries.Basic
-import Mathlib.RingTheory.PowerSeries.Inverse
-import Mathlib.RingTheory.LocalRing.RingHom.Basic
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow
+import TauCeti.RingTheory.RootsOfUnity.CyclotomicUnits
 
 /-!
 # Reduction and polynomial unit lifts in the local cyclotomic tower
@@ -20,8 +18,8 @@ Reduction from the integral closure of `ℤ_p` in the chosen cyclotomic level to
 the chosen root to one. The root minus one generates both the kernel of reduction and the
 canonical maximal ideal, so it is a uniformizer of the discrete valuation ring.
 The explicit reduction identifies the residue field and detects units in polynomial coordinates.
-Every unit has a polynomial representative of degree below the cyclotomic degree whose image
-in the power series ring is a unit. These results hold for every prime, including `p = 2`.
+Every unit has a polynomial representative of degree below the cyclotomic degree with unit
+constant coefficient. These results hold for every prime, including `p = 2`.
 
 These algebraic inputs to finite-level interpolation follow J. Rodrigues Jacinto and C. Williams,
 *An introduction to p-adic L-functions*, Essential Number Theory 4 (2025), §9 and Lemma 10.1.
@@ -44,9 +42,8 @@ noncomputable local instance : Algebra ℤ_[p] (ZMod p) := PadicInt.toZMod.toAlg
 noncomputable def reduction (n : ℕ) :
     integralClosure ℤ_[p] (padicCyclotomicField p Ω n) →+* ZMod p :=
   ((integralPowerBasis p Ω n).lift 0 (by
-    rw [integralPowerBasis_gen, minpoly_integralRoot_sub_one,
-      ← coeff_zero_eq_aeval_zero', coeff_zero_cyclotomic_prime_pow_comp_X_add_one,
-      map_natCast, ZMod.natCast_self])).toRingHom
+    rw [← coeff_zero_eq_aeval_zero']
+    simp [integralPowerBasis_gen, minpoly_integralRoot_sub_one])).toRingHom
 
 /-- On included `p`-adic integers, cyclotomic reduction is the native reduction modulo `p`. -/
 @[simp]
@@ -71,8 +68,8 @@ theorem reduction_integralRoot (n : ℕ) :
 @[simp]
 theorem reduction_aeval (n : ℕ) (f : ℤ_[p][X]) :
     reduction p Ω n (aeval (integralRoot p Ω n - 1) f) = PadicInt.toZMod (f.coeff 0) := by
-  rw [reduction, ← integralPowerBasis_gen, AlgHom.toRingHom_eq_coe,
-    AlgHom.coe_toRingHom, PowerBasis.lift_aeval, ← coeff_zero_eq_aeval_zero',
+  rw [← integralPowerBasis_gen]
+  simp [reduction, -integralPowerBasis_gen, ← coeff_zero_eq_aeval_zero',
     RingHom.algebraMap_toAlgebra (PadicInt.toZMod (p := p))]
 
 /-- Scalar compatibility and the chosen root characterize cyclotomic reduction. -/
@@ -81,9 +78,15 @@ theorem reduction_unique (n : ℕ)
     (hscalar : ∀ a : ℤ_[p], f (algebraMap ℤ_[p] _ a) = PadicInt.toZMod a)
     (hroot : f (integralRoot p Ω n) = 1) : f = reduction p Ω n := by
   let g : integralClosure ℤ_[p] (padicCyclotomicField p Ω n) →ₐ[ℤ_[p]] ZMod p :=
-    { f with commutes' := hscalar }
+    { f with
+      commutes' := fun a ↦ by
+        rw [RingHom.algebraMap_toAlgebra (PadicInt.toZMod (p := p))]
+        exact hscalar a }
   let g' : integralClosure ℤ_[p] (padicCyclotomicField p Ω n) →ₐ[ℤ_[p]] ZMod p :=
-    { reduction p Ω n with commutes' := reduction_algebraMap p Ω n }
+    { reduction p Ω n with
+      commutes' := fun a ↦ by
+        rw [RingHom.algebraMap_toAlgebra (PadicInt.toZMod (p := p))]
+        exact reduction_algebraMap p Ω n a }
   have h := (integralPowerBasis p Ω n).algHom_ext (f := g) (g := g') (by
     simp [integralPowerBasis_gen, g, g', hroot])
   exact congrArg AlgHom.toRingHom h
@@ -100,7 +103,7 @@ theorem ker_reduction (n : ℕ) :
       simpa [RingHom.mem_ker.mp hx] using this
     have hap := (PadicInt.toZMod_eq_zero_iff_dvd a).mp hzero
     have hscalar : integralRoot p Ω n - 1 ∣ algebraMap ℤ_[p] _ a :=
-      (integralRoot_sub_one_dvd_p p Ω n).trans
+      (isPrimitiveRoot_integralRoot p Ω n).sub_one_dvd_natCast_of_prime_pow.trans
         (by simpa only [map_natCast] using _root_.map_dvd (algebraMap ℤ_[p] _) hap)
     exact Ideal.mem_span_singleton.mpr ((dvd_sub_left hscalar).mp ha)
   · exact Ideal.span_le.mpr (by simp)
@@ -153,6 +156,7 @@ noncomputable def residueFieldEquiv (n : ℕ) :
 theorem residueFieldEquiv_residue (n : ℕ)
     (x : integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) :
     residueFieldEquiv p Ω n (residue _ x) = reduction p Ω n x := by
+  rw [residue]
   exact (congrArg (quotientSpanEquivZMod p Ω n)
     (Ideal.quotEquivOfEq_mk (maximalIdeal_eq_span_integralRoot_sub_one p Ω n) x)).trans
       (quotientSpanEquivZMod_mk p Ω n x)
@@ -195,14 +199,5 @@ theorem exists_polynomial_lift_unit (n : ℕ)
   rw [integralPowerBasis_gen] at hf
   refine ⟨f, by simpa using hdeg, hf.symm, ?_⟩
   exact (isUnit_aeval_integralRoot_sub_one_iff p Ω n f).mp (hf ▸ u.isUnit)
-
-/-- Every integral cyclotomic unit has a bounded polynomial representative whose image as a
-formal power series is a unit. The displayed evaluation is finite polynomial evaluation. -/
-theorem exists_polynomial_lift_powerSeries_unit (n : ℕ)
-    (u : (integralClosure ℤ_[p] (padicCyclotomicField p Ω n))ˣ) :
-    ∃ f : ℤ_[p][X], f.natDegree < p ^ n * (p - 1) ∧
-      aeval (integralRoot p Ω n - 1) f = u ∧ IsUnit (f : PowerSeries ℤ_[p]) := by
-  obtain ⟨f, hdeg, hf, hunit⟩ := exists_polynomial_lift_unit p Ω n u
-  exact ⟨f, hdeg, hf, PowerSeries.isUnit_iff_constantCoeff.mpr (by simpa using hunit)⟩
 
 end TauCeti.padicCyclotomicField
