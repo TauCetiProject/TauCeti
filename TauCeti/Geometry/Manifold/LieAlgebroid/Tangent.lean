@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!

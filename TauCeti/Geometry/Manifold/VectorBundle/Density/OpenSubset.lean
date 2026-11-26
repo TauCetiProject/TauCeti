@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Density
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.TotalSpace.Basic
 

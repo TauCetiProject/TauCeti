@@ -13,7 +13,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 import TauCeti.Geometry.Manifold.Morse.Bott.Index.Basic
 import TauCeti.Geometry.Manifold.Morse.Bott.NegativeNormal
 import TauCeti.Geometry.Manifold.VectorBundle.ComplementarySubbundle
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 import TauCeti.Topology.VectorBundle.Trivialization
 

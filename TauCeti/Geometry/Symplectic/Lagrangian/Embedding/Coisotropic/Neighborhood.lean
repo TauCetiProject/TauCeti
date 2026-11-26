@@ -14,7 +14,7 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Representative
 import TauCeti.Geometry.Manifold.TubularNeighborhood.PrescribedDifferential
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
