@@ -206,31 +206,14 @@ theorem map_gradeBy_addMonoidAlgebraEquiv {M : Type*} (w : L → M) (m : M) :
     rw [AlgEquiv.toLinearMap_apply, ← ofAdd_toAdd a, addMonoidAlgebraEquiv_of]
     exact AddMonoidAlgebra.single_mem_gradeBy w (Multiplicative.toAdd a) 1
   · intro p hp
-    classical
-    refine AddMonoidAlgebra.induction (motive := fun q ↦
-      q ∈ AddMonoidAlgebra.gradeBy k w m →
-        q ∈ (gradeBy k (Multiplicative L) 1 (w ∘ Multiplicative.toAdd) m).map
-          (addMonoidAlgebraEquiv k L).toLinearMap) p ?_ ?_ hp
-    · intro _
-      exact zero_mem _
-    · intro a c q haq hc ih hmem
-      have hdisj : Disjoint (Finsupp.single a c).support q.coeff.support := by
-        simpa only [Finsupp.support_single _ hc, Finset.disjoint_singleton_left]
-      rw [AddMonoidAlgebra.mem_gradeBy_iff, AddMonoidAlgebra.coeff_add,
-        AddMonoidAlgebra.coeff_single, Finsupp.support_add_eq hdisj, Finset.coe_union,
-        Set.union_subset_iff] at hmem
-      have hwa : w a = m := by
-        have := hmem.1
-        rwa [Finsupp.support_single _ hc, Finset.coe_singleton,
-          Set.singleton_subset_iff] at this
-      refine add_mem ?_ (ih hmem.2)
-      refine ⟨c • of (Multiplicative.ofAdd a), ?_, ?_⟩
-      · refine Submodule.smul_mem _ c ?_
-        simpa [hwa] using of_mem_gradeBy (k := k)
-          (α := (1 : Multiplicative L → Multiplicative L → kˣ))
+    rw [← p.sum_coeff_single, Finsupp.sum]
+    refine Submodule.sum_mem _ fun a ha ↦ ⟨p.coeff a • of (Multiplicative.ofAdd a), ?_, ?_⟩
+    · have hwa : w a = m := (AddMonoidAlgebra.mem_gradeBy_iff k w m p).mp hp ha
+      refine Submodule.smul_mem _ (p.coeff a) ?_
+      simpa only [Function.comp_apply, toAdd_ofAdd, hwa] using
+        of_mem_gradeBy (k := k) (α := (1 : Multiplicative L → Multiplicative L → kˣ))
           (w ∘ Multiplicative.toAdd) (Multiplicative.ofAdd a)
-      · rw [AlgEquiv.toLinearMap_apply, map_smul, addMonoidAlgebraEquiv_of,
-          AddMonoidAlgebra.smul_single', mul_one]
+    · simp [addMonoidAlgebraEquiv_of]
 
 variable (α : Multiplicative L → Multiplicative L → kˣ) [IsFactorSet α]
   {M : Type*} [AddMonoid M]

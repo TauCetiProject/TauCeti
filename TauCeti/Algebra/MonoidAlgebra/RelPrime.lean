@@ -12,11 +12,11 @@ public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.Algebra.Module.Torsion.Free
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
-import Mathlib.Algebra.MonoidAlgebra.Support
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import TauCeti.Algebra.Group.UniqueProds.TorsionFree
+import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.MonoidAlgebra.ComapDomain
 import TauCeti.Algebra.MonoidAlgebra.Grading
 import TauCeti.Algebra.MonoidAlgebra.Units
@@ -150,6 +150,7 @@ theorem subsingleton_support_of_dvd_of_linearIndependent {a b : L}
     (hDP : D ∣ P) (hDQ : D ∣ Q) :
     (D.coeff.support : Set L).Subsingleton := by
   classical
+  -- Step 1: Span a finitely generated (hence free) ℤ-submodule M containing all exponents and a, b.
   obtain ⟨U, hPU⟩ := hDP
   obtain ⟨V, hQV⟩ := hDQ
   let S : Finset L := P.coeff.support ∪ Q.coeff.support ∪ D.coeff.support ∪
@@ -162,38 +163,32 @@ theorem subsingleton_support_of_dvd_of_linearIndependent {a b : L}
   have hsub (T : Finset L) (hT : T ⊆ S) : (T : Set L) ⊆ Set.range φ := by
     rw [AddSubgroup.coe_subtype, Subtype.range_val]
     exact (Finset.coe_subset.mpr hT).trans Submodule.subset_span
-  have hPM : (P.coeff.support : Set L) ⊆ Set.range φ := hsub P.coeff.support (by grind)
-  have hQM : (Q.coeff.support : Set L) ⊆ Set.range φ := hsub Q.coeff.support (by grind)
-  have hDM : (D.coeff.support : Set L) ⊆ Set.range φ := hsub D.coeff.support (by grind)
-  let P₀ : R[M] := comapDomain φ hφ P
-  let Q₀ : R[M] := comapDomain φ hφ Q
-  let D₀ : R[M] := comapDomain φ hφ D
+  have hPM := hsub P.coeff.support (by grind)
+  have hQM := hsub Q.coeff.support (by grind)
+  have hDM := hsub D.coeff.support (by grind)
+  -- Step 2: Pull P, Q, D, a, b and their support/divisibility hypotheses back along φ : M →+ L.
   let a₀ : M := ⟨a, Submodule.subset_span (by simp [S])⟩
   let b₀ : M := ⟨b, Submodule.subset_span (by simp [S])⟩
   have hab₀ : LinearIndependent ℤ ![a₀, b₀] := by
     rw [LinearIndependent.pair_iff] at hab ⊢
     exact fun s t hst ↦ hab s t (by simpa [a₀, b₀] using congrArg Subtype.val hst)
-  have hP₀ : P₀ ≠ 0 := fun h0 ↦
-    hP (by simpa [P₀, h0] using (mapDomain_comapDomain hPM hφ).symm)
-  have hQ₀ : Q₀ ≠ 0 := fun h0 ↦
-    hQ (by simpa [Q₀, h0] using (mapDomain_comapDomain hQM hφ).symm)
-  have hPa₀ : (P₀.coeff.support : Set M) ⊆ AddSubgroup.zmultiples a₀ :=
+  have hne {X : R[L]} (hX : X ≠ 0) (hXM : (X.coeff.support : Set L) ⊆ Set.range φ) :
+      comapDomain φ hφ X ≠ 0 := fun h0 ↦
+    hX (by simpa [h0] using (mapDomain_comapDomain hXM hφ).symm)
+  have hzmult {X : R[L]} {c₀ : M}
+      (hXc : (X.coeff.support : Set L) ⊆ AddSubgroup.zmultiples (φ c₀)) :
+      ((comapDomain φ hφ X).coeff.support : Set M) ⊆ AddSubgroup.zmultiples c₀ :=
     support_coeff_comapDomain_subset hφ <| by
       rwa [← AddSubgroup.coe_map, AddMonoidHom.map_zmultiples]
-  have hQb₀ : (Q₀.coeff.support : Set M) ⊆ AddSubgroup.zmultiples b₀ :=
-    support_coeff_comapDomain_subset hφ <| by
-      rwa [← AddSubgroup.coe_map, AddMonoidHom.map_zmultiples]
-  have hsub₀ := subsingleton_support_of_dvd_of_linearIndependent_free hab₀ hP₀ hQ₀ hPa₀ hQb₀
+  -- Step 3: Apply the free-module theorem on M and push subsingleton support forward along φ.
+  have hsub₀ := subsingleton_support_of_dvd_of_linearIndependent_free hab₀
+    (hne hP hPM) (hne hQ hQM) (hzmult hPa) (hzmult hQb)
     (comapDomain_dvd_comapDomain hφ hPU hDM (hsub U.coeff.support (by grind)))
     (comapDomain_dvd_comapDomain hφ hQV hDM (hsub V.coeff.support (by grind)))
-  intro x hx y hy
-  obtain ⟨x', rfl⟩ := hDM hx
-  obtain ⟨y', rfl⟩ := hDM hy
-  have hx₀ : x' ∈ (D₀.coeff.support : Set M) := by
-    simpa [D₀, Finsupp.mem_support_iff] using hx
-  have hy₀ : y' ∈ (D₀.coeff.support : Set M) := by
-    simpa [D₀, Finsupp.mem_support_iff] using hy
-  exact congrArg φ (hsub₀ hx₀ hy₀)
+  have hD_img : φ '' ((comapDomain φ hφ D).coeff.support : Set M) = (D.coeff.support : Set L) := by
+    rw [coeff_comapDomain, Finsupp.comapDomain_support, Finset.coe_preimage,
+      Set.image_preimage_eq_iff.mpr hDM]
+  exact hD_img ▸ hsub₀.image φ
 
 /-- **Relative primality along independent cyclic directions.** Let `P, Q : R[L]` be nonzero with
 supports in `ℤ ∙ a` and `ℤ ∙ b` for `LinearIndependent ℤ ![a, b]`. If `P` has a unit coefficient,
@@ -215,14 +210,9 @@ theorem isRelPrime_of_support_subset_zmultiples {a b : L}
   obtain ⟨x₀, hx₀⟩ := Finsupp.support_nonempty_iff.mpr (mt coeff_eq_zero.mp hD0)
   set r : R := D.coeff x₀
   have hD_eq : D = single x₀ r := by
-    ext y
     classical
-    rw [coeff_single, Finsupp.single_apply]
-    split_ifs with hxy
-    · subst hxy
-      rfl
-    · by_contra hy0
-      exact hxy (hsub (Finsupp.mem_support_iff.mpr hy0) hx₀).symm
+    exact coeff_inj.mp (Finsupp.support_subset_singleton.mp fun y hy ↦
+      Finset.mem_singleton.mpr (hsub hy hx₀))
   obtain ⟨m, hm⟩ := hunit
   have hcoeff : P.coeff m = r * U.coeff (-x₀ + m) := by
     rw [hPU, hD_eq]
@@ -232,54 +222,6 @@ theorem isRelPrime_of_support_subset_zmultiples {a b : L}
   rw [hD_eq]
   exact (isUnit_single_iff x₀ r).mpr ⟨AddGroup.isAddUnit x₀, huD⟩
 
-omit [NoZeroDivisors R] in
-private theorem prod_one_add_single_support_and_coeff_zero {ι : Type*} (s : Finset ι)
-    {a : L} (ha : a ≠ 0) (c : ι → R) :
-    ((∏ r ∈ s, (1 + single a (c r))).coeff.support : Set L) ⊆
-      {x : L | ∃ n : ℕ, n • a = x} ∧
-      (∏ r ∈ s, (1 + single a (c r))).coeff 0 = 1 := by
-  classical
-  induction s using Finset.induction_on with
-  | empty =>
-    refine ⟨?_, by simp [one_def]⟩
-    intro x hx
-    rw [Finset.prod_empty, one_def] at hx
-    obtain rfl : x = 0 := Finset.mem_singleton.mp (Finsupp.support_single_subset hx)
-    exact ⟨0, zero_nsmul a⟩
-  | insert r s hrs ih =>
-    obtain ⟨hsupp, h0⟩ := ih
-    set f : R[L] := 1 + single a (c r)
-    set g : R[L] := ∏ i ∈ s, (1 + single a (c i))
-    have hf_supp : (f.coeff.support : Set L) ⊆ {x : L | ∃ n : ℕ, n • a = x} := by
-      intro x hx
-      rw [coeff_add] at hx
-      rcases Finset.mem_union.mp (Finsupp.support_add hx) with hx1 | hxa
-      · rw [one_def] at hx1
-        obtain rfl : x = 0 := Finset.mem_singleton.mp (Finsupp.support_single_subset hx1)
-        exact ⟨0, zero_nsmul a⟩
-      · rw [coeff_single] at hxa
-        have hxa' : x = a := Finset.mem_singleton.mp (Finsupp.support_single_subset hxa)
-        exact ⟨1, hxa'.symm ▸ one_nsmul a⟩
-    have hf0 : f.coeff 0 = 1 := by
-      simp [f, one_def, ha.symm]
-    rw [Finset.prod_insert hrs]
-    refine ⟨?_, ?_⟩
-    · intro x hx
-      obtain ⟨y, hy, z, hz, rfl⟩ := Finset.mem_add.mp (support_coeff_mul_subset f g hx)
-      obtain ⟨m, rfl⟩ := hf_supp hy
-      obtain ⟨n, rfl⟩ := hsupp hz
-      exact ⟨m + n, add_nsmul a m n⟩
-    · have huniq : UniqueAdd f.coeff.support g.coeff.support 0 0 := by
-        intro y z hy hz hyz
-        obtain ⟨m, rfl⟩ := hf_supp hy
-        obtain ⟨n, rfl⟩ := hsupp hz
-        rw [← add_nsmul, add_zero] at hyz
-        have hmn : m + n = 0 := (smul_eq_zero_iff_left ha).mp hyz
-        obtain ⟨rfl, rfl⟩ : m = 0 ∧ n = 0 := Nat.add_eq_zero_iff.mp hmn
-        simp
-      have hmul := coeff_mul_add_of_uniqueAdd huniq
-      simpa [hf0, h0] using hmul
-
 /-- **Finite products of binomials along independent directions are relatively prime**, for
 arbitrary coefficients `c r, d t : R`. -/
 theorem isRelPrime_prod_one_add_single {ι κ : Type*} {a b : L}
@@ -288,25 +230,24 @@ theorem isRelPrime_prod_one_add_single {ι κ : Type*} {a b : L}
     IsRelPrime (∏ r ∈ s, (1 + single a (c r))) (∏ r ∈ t, (1 + single b (d r))) := by
   cases subsingleton_or_nontrivial R
   · exact fun _ _ _ ↦ isUnit_of_subsingleton _
-  have ha : a ≠ 0 := by simpa using hab.ne_zero 0
-  have hb : b ≠ 0 := by simpa using hab.ne_zero 1
-  obtain ⟨hPsupp, hP0⟩ := prod_one_add_single_support_and_coeff_zero s ha c
-  obtain ⟨hQsupp, hQ0⟩ := prod_one_add_single_support_and_coeff_zero t hb d
-  have hP : (∏ r ∈ s, (1 + single a (c r))) ≠ 0 := by
-    intro h
-    rw [h, coeff_zero] at hP0
-    exact zero_ne_one hP0
-  have hQ : (∏ r ∈ t, (1 + single b (d r))) ≠ 0 := by
-    intro h
-    rw [h, coeff_zero] at hQ0
-    exact zero_ne_one hQ0
-  refine isRelPrime_of_support_subset_zmultiples hab hP hQ ?_ ?_ ⟨0, hP0.symm ▸ isUnit_one⟩
-  · intro x hx
-    obtain ⟨n, rfl⟩ := hPsupp hx
-    exact AddSubgroup.mem_zmultiples_iff.mpr ⟨n, natCast_zsmul a n⟩
-  · intro x hx
-    obtain ⟨n, rfl⟩ := hQsupp hx
-    exact AddSubgroup.mem_zmultiples_iff.mpr ⟨n, natCast_zsmul b n⟩
+  have ha : ¬ IsOfFinAddOrder a :=
+    not_isOfFinAddOrder_of_isAddTorsionFree (by simpa using hab.ne_zero 0)
+  have hb : ¬ IsOfFinAddOrder b :=
+    not_isOfFinAddOrder_of_isAddTorsionFree (by simpa using hab.ne_zero 1)
+  have hP0 : (∏ r ∈ s, (1 + single a (c r))).coeff 0 = 1 :=
+    coeff_zero_prod_one_add_single s ha c
+  have hQ0 : (∏ r ∈ t, (1 + single b (d r))).coeff 0 = 1 :=
+    coeff_zero_prod_one_add_single t hb d
+  have hP : (∏ r ∈ s, (1 + single a (c r))) ≠ 0 := fun h ↦ by simp [h] at hP0
+  have hQ : (∏ r ∈ t, (1 + single b (d r))) ≠ 0 := fun h ↦ by simp [h] at hQ0
+  have hmul_sub (v : L) : (AddSubmonoid.multiples v : Set L) ⊆ AddSubgroup.zmultiples v := by
+    intro x hx
+    obtain ⟨n, rfl⟩ := (AddSubmonoid.mem_multiples_iff x v).mp hx
+    exact AddSubgroup.mem_zmultiples_iff.mpr ⟨n, natCast_zsmul v n⟩
+  exact isRelPrime_of_support_subset_zmultiples hab hP hQ
+    ((support_coeff_prod_one_add_single_subset s a c).trans (hmul_sub a))
+    ((support_coeff_prod_one_add_single_subset t b d).trans (hmul_sub b))
+    ⟨0, hP0.symm ▸ isUnit_one⟩
 
 /-- Binomials `1 + single a c` and `1 + single b d` along `ℤ`-linearly independent directions
 `a, b` are relatively prime. -/

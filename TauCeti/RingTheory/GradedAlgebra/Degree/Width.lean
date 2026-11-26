@@ -426,13 +426,13 @@ theorem width_neg (x : A) : width 𝒜 (-x) = width 𝒜 x := by
 
 @[simp]
 theorem leadingPart_neg (x : A) : leadingPart 𝒜 (-x) = -leadingPart 𝒜 x := by
-  rw [leadingPart_def, maxDegree_neg, ← coeff_decomposeLaurent, map_neg,
-    AddMonoidAlgebra.coeff_neg, Finsupp.neg_apply, coeff_decomposeLaurent, ← leadingPart_def]
+  rw [leadingPart_def, leadingPart_def, maxDegree_neg]
+  simp [DirectSum.apply_eq_component ℤ]
 
 @[simp]
 theorem trailingPart_neg (x : A) : trailingPart 𝒜 (-x) = -trailingPart 𝒜 x := by
-  rw [trailingPart_def, minDegree_neg, ← coeff_decomposeLaurent, map_neg,
-    AddMonoidAlgebra.coeff_neg, Finsupp.neg_apply, coeff_decomposeLaurent, ← trailingPart_def]
+  rw [trailingPart_def, trailingPart_def, minDegree_neg]
+  simp [DirectSum.apply_eq_component ℤ]
 
 end Ring
 

@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Coprime.Basic
 public import TauCeti.Algebra.MonoidAlgebra.RelPrime
 public import TauCeti.Algebra.MvPolynomial.Laurent.Polynomial
 import Mathlib.Algebra.MvPolynomial.Division
+import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 
 /-!
 # Relative primality between polynomial and Laurent rings
@@ -188,15 +189,10 @@ variable {R K : Type*}
 `LaurentRing R K` over any commutative semiring without zero divisors. -/
 theorem isRelPrime_one_add_X [CommSemiring R] [NoZeroDivisors R] {i j : K} (hij : i ≠ j) :
     IsRelPrime (1 + X (R := R) i) (1 + X j) := by
-  classical
   have hli : LinearIndependent ℤ ![Finsupp.single i (1 : ℤ), Finsupp.single j (1 : ℤ)] := by
-    rw [LinearIndependent.pair_iff]
-    intro s t hst
-    have hi : s = 0 := by
-      simpa [Finsupp.single_apply, hij, hij.symm] using congrArg (fun f : K →₀ ℤ ↦ f i) hst
-    have hj : t = 0 := by
-      simpa [Finsupp.single_apply, hij, hij.symm] using congrArg (fun f : K →₀ ℤ ↦ f j) hst
-    exact ⟨hi, hj⟩
+    convert (Finsupp.basisSingleOne (R := ℤ) (ι := K)).linearIndependent.comp ![i, j]
+      (Matrix.injective_pair_iff_ne.mpr hij) using 1
+    exact funext (Fin.forall_fin_two.mpr ⟨by simp, by simp⟩)
   simpa [X_def] using AddMonoidAlgebra.isRelPrime_one_add_single hli (1 : R) (1 : R)
 
 /-- Over any nontrivial commutative ring, `1 + X i` and `1 + X j` are not coprime in
