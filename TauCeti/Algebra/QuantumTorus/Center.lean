@@ -380,7 +380,7 @@ private theorem central_twist_trivial (hΛ : Λ.IsAlt) (hu : ¬ IsOfFinOrder (u 
 
 /-- For an alternating form, when the parameter square has infinite order and nonzero scalar
 coefficients cancel, the center is the ordinary additive group algebra on the radical. -/
-noncomputable def _root_.LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivGroupAlgebra
+noncomputable def _root_.LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivAddMonoidAlgebraKer
     [IsLeftCancelMulZero R] (hΛ : Λ.IsAlt) (hu : ¬ IsOfFinOrder (u ^ 2)) :
     Subalgebra.center R (QuantumTorus R L u Λ) ≃ₐ[R]
       AddMonoidAlgebra R (LinearMap.ker Λ).toAddSubgroup :=
@@ -389,10 +389,10 @@ noncomputable def _root_.LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivGroupA
 
 /-- The radical-algebra equivalence sends a monomial indexed by the radical to its basis term. -/
 @[simp]
-theorem _root_.LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivGroupAlgebra_monomial
+theorem _root_.LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivAddMonoidAlgebraKer_monomial
     [IsLeftCancelMulZero R] (hΛ : Λ.IsAlt) (hu : ¬ IsOfFinOrder (u ^ 2))
     (a : (LinearMap.ker Λ).toAddSubgroup) :
-    hΛ.quantumTorusCenterEquivGroupAlgebra hu
+    hΛ.quantumTorusCenterEquivAddMonoidAlgebraKer hu
       (u.quantumTorusCenterMonomial Λ (a : L)
         (hΛ.mem_quantumTorusCentralExponents_of_mem_ker a.property)) =
         AddMonoidAlgebra.single a 1 := by
@@ -402,30 +402,30 @@ theorem _root_.LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivGroupAlgebra_mon
       (e.symm a))
   have he : (e.symm a : L) = a := AddEquiv.addSubgroupCongr_symm_apply _ a
   simp only [AddMonoidAlgebra.domCongr_single, AddEquiv.apply_symm_apply] at h
-  simpa only [he, LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivGroupAlgebra,
+  simpa only [he, LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivAddMonoidAlgebraKer,
     AlgEquiv.trans_apply] using h
 
 /-- The inverse radical-algebra equivalence sends singleton coefficients to central monomials. -/
 @[simp]
-theorem _root_.LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivGroupAlgebra_symm_single
+theorem _root_.LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivAddMonoidAlgebraKer_symm_single
     [IsLeftCancelMulZero R] (hΛ : Λ.IsAlt) (hu : ¬ IsOfFinOrder (u ^ 2))
     (a : (LinearMap.ker Λ).toAddSubgroup) (r : R) :
-    (hΛ.quantumTorusCenterEquivGroupAlgebra hu).symm (AddMonoidAlgebra.single a r) =
+    (hΛ.quantumTorusCenterEquivAddMonoidAlgebraKer hu).symm (AddMonoidAlgebra.single a r) =
       r • u.quantumTorusCenterMonomial Λ (a : L)
         (hΛ.mem_quantumTorusCentralExponents_of_mem_ker a.property) := by
-  apply (hΛ.quantumTorusCenterEquivGroupAlgebra hu).symm_apply_eq.mpr
-  rw [map_smul, hΛ.quantumTorusCenterEquivGroupAlgebra_monomial hu a]
+  apply (hΛ.quantumTorusCenterEquivAddMonoidAlgebraKer hu).symm_apply_eq.mpr
+  rw [map_smul, hΛ.quantumTorusCenterEquivAddMonoidAlgebraKer_monomial hu a]
   simp
 
 /-- The radical-algebra coefficient at a radical exponent is the ambient torus coefficient. -/
 @[simp]
-theorem _root_.LinearMap.BilinForm.IsAlt.coeff_quantumTorusCenterEquivGroupAlgebra
+theorem _root_.LinearMap.BilinForm.IsAlt.coeff_quantumTorusCenterEquivAddMonoidAlgebraKer
     [IsLeftCancelMulZero R] (hΛ : Λ.IsAlt) (hu : ¬ IsOfFinOrder (u ^ 2))
     (f : Subalgebra.center R (QuantumTorus R L u Λ))
     (a : (LinearMap.ker Λ).toAddSubgroup) :
-    (hΛ.quantumTorusCenterEquivGroupAlgebra hu f).coeff a =
+    (hΛ.quantumTorusCenterEquivAddMonoidAlgebraKer hu f).coeff a =
       (basis u Λ).repr f.val (a : L) := by
-  rw [LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivGroupAlgebra,
+  rw [LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivAddMonoidAlgebraKer,
     AlgEquiv.trans_apply, AddMonoidAlgebra.coeff_domCongr,
     Units.coeff_quantumTorusCenterEquivAddMonoidAlgebra]
   exact congrArg ((basis u Λ).repr f.val) (AddEquiv.addSubgroupCongr_symm_apply _ a)

@@ -20,10 +20,9 @@ represented product of support elements, the coefficient is the product of the t
 coefficients times the factor-set unit. When the scalar semiring has no zero divisors, this
 coefficient cannot vanish.
 
-The unique-product argument adapts `MonoidAlgebra.coeff_mul_mul_of_uniqueMul` and the
-`NoZeroDivisors` and `IsCancelMulZero` instances in `Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors`
-to the table of `TwistedMonoidAlgebra.of`. No ordering or finite generation of the monoid is
-required.
+The `NoZeroDivisors` and `IsCancelMulZero` instance arguments adapt the corresponding instances
+in `Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors` to the table of `TwistedMonoidAlgebra.of`.
+No ordering or finite generation of the monoid is required.
 -/
 
 public section

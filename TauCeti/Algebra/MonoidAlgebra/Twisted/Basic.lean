@@ -45,6 +45,12 @@ a basis and the multiplication table above holds on the nose.
   `TauCeti.TwistedMonoidAlgebra.of_mul_of`, the basis `TauCeti.TwistedMonoidAlgebra.basis`, the
   dimension count `TauCeti.TwistedMonoidAlgebra.finrank_eq_natCard`, and the embedding of
   scalars `TauCeti.TwistedMonoidAlgebra.algebraMap_injective`;
+* `TauCeti.TwistedMonoidAlgebra.repr_mul_of_apply` and
+  `TauCeti.TwistedMonoidAlgebra.repr_of_mul_apply`: shifted coefficients after right or left
+  multiplication by a basis element, under the corresponding cancellation hypothesis;
+  support-local variants only require uniqueness on the actual coefficient support;
+* `TauCeti.TwistedMonoidAlgebra.domCongr`: twist-preserving monoid equivalences reindex the
+  algebra, with forward and inverse basis and coefficient laws;
 * `TauCeti.TwistedMonoidAlgebra.lift`: the universal property. A family `u : G → A` in a
   `k`-algebra `A` with `u 1 = 1` and `u g * u h = α g h • u (g * h)` -- that is, a projective
   representation with factor set `α` -- extends uniquely to an algebra map `k_α[G] →ₐ[k] A`.
@@ -73,7 +79,7 @@ two (`TauCeti.IsFactorSet.one_right`). Carrying the hypotheses in a class keeps 
 representations.
 
 Nothing in the construction uses inverses in `G`, so `IsFactorSet`, the twisted algebra, its basis,
-the universal property and the two comparison isomorphisms are all stated for a monoid `G`. A group
+the universal property and the comparison isomorphisms, including `domCongr`, use monoids. A group
 is assumed for descent to a quotient group and where an inverse appears, in
 `TauCeti.IsFactorSet.apply_inv_eq_inv_apply`, `TauCeti.TwistedMonoidAlgebra.isUnit_of` and
 `TauCeti.TwistedMonoidAlgebra.algHom_ext_of_closure_eq_top`.
@@ -422,7 +428,9 @@ theorem support_repr_mul_subset [DecidableEq G] (f g : twistedMonoidAlgebra k G 
 
 /-- If no pair in the supports of `f` and `g` other than `(a, b)` has product `a * b`, the
 coefficient of `f * g` at `a * b` is
-`(basis k G α).repr f a * (basis k G α).repr g b * α a b`. -/
+`(basis k G α).repr f a * (basis k G α).repr g b * α a b`.
+The unique-product argument adapts `MonoidAlgebra.coeff_mul_mul_of_uniqueMul` from
+`Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors`. -/
 theorem repr_mul_apply_of_uniqueMul {f g : twistedMonoidAlgebra k G α} {a b : G}
     (h : UniqueMul ((basis k G α).repr f).support ((basis k G α).repr g).support a b) :
     (basis k G α).repr (f * g) (a * b) =
