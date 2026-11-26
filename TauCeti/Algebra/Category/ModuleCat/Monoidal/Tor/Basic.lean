@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.CategoryTheory.Monoidal.Tor
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.RingHom.Flat
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Colimits
 public import TauCeti.Algebra.Category.ModuleCat.Projective.QuotientResolution
 
 import Mathlib.Algebra.Category.ModuleCat.Descent
@@ -71,9 +72,6 @@ vanishing higher `Tor` (`ModuleCat.isZero_Tor_succ_of_flat`), and `Torₙ₊₁(
 `N` is a directed union of submodules `Nᵢ` with `Torₙ₊₁(X ⧸ Nᵢ, M) = 0`
 (`ModuleCat.isZero_Tor_succ_quotient_iSup`), since an element of `N ⊗ P` already comes from a
 finitely generated submodule of `N`.
-
-Tensoring on the right with a module preserves colimits of every shape
-(`TauCeti.moduleCat_preservesColimitsOfShape_tensorRight`), as tensoring on the left does.
 
 `Tor` vanishing is invariant under flat base change: for a flat ring homomorphism `f : A →+* B`,
 a `B`-module `M` and an `A`-module `N`, `Torₙ^A(M, N)` vanishes exactly when
@@ -408,22 +406,6 @@ theorem isZero_Tor_prod {X Y : ModuleCat.{u} A} (M : ModuleCat.{u} A) {n : ℕ}
     Function.Exact.inl_snd LinearMap.inl_injective LinearMap.snd_surjective).isZero_Tor_X₂ M hX hY
 
 end ModuleCat
-
-/-! ### Tensoring preserves colimits -/
-
-namespace TauCeti
-
-open CategoryTheory Limits MonoidalCategory
-
-universe w w' u
-
-/-- Tensoring on the right with an `R`-module preserves colimits of every shape. Tensoring on the
-left already does, as the left adjoint of the internal hom. -/
-instance moduleCat_preservesColimitsOfShape_tensorRight {R : Type u} [CommRing R] (J : Type w)
-    [Category.{w'} J] (Z : ModuleCat.{u} R) : PreservesColimitsOfShape J (tensorRight Z) :=
-  preservesColimitsOfShape_of_natIso (BraidedCategory.tensorLeftIsoTensorRight Z)
-
-end TauCeti
 
 /-! ### Flat base change -/
 
