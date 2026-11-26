@@ -44,7 +44,8 @@ part of the equivalence; native tangent-frame transitions give coordinate conjug
   expression is the structure's own endomorphism field.
 * `ContMDiffAlmostComplexStructure.chartPushforward`: the structure read in the coordinates of a
   chart with values in a normed space; `chartPushforward_apply_chartPushforward_apply`,
-  `chartPushforward_mul_self`, `mfderiv_comp_toEndomorphism` and
+  `chartPushforward_mul_self`, `chartPushforward_mul_self_of_contMDiffOn`,
+  `mfderiv_comp_toEndomorphism` and
   `chartPushforward_eq_pullbackEnd_inChart`: it squares to `-1`,
   the chart derivative intertwines it with `J`, and it is a pullback of `J` read in the extended
   chart.
@@ -231,6 +232,16 @@ theorem chartPushforward_mul_self (ψ : OpenPartialHomeomorph M G) {p : G} (hp :
   ext w
   rw [mul_apply_eq_comp, J.chartPushforward_apply_chartPushforward_apply ψ hp hψ hψs w]
   simp
+
+/-- **The pushed-forward structure squares to `-1`** on the target of a chart that is `Cʳ` with
+`Cʳ` inverse, for some `r ≠ 0`. -/
+theorem chartPushforward_mul_self_of_contMDiffOn {r : ℕ∞ω} (ψ : OpenPartialHomeomorph M G)
+    (hψ : ContMDiffOn I 𝓘(ℝ, G) r ψ ψ.source) (hψs : ContMDiffOn 𝓘(ℝ, G) I r ψ.symm ψ.target)
+    (hr : r ≠ 0) {p : G} (hp : p ∈ ψ.target) :
+    J.chartPushforward ψ p * J.chartPushforward ψ p = -1 :=
+  J.chartPushforward_mul_self ψ hp
+    ((hψ.mdifferentiableOn hr).mdifferentiableAt (ψ.open_source.mem_nhds (ψ.map_target hp)))
+    ((hψs.mdifferentiableOn hr).mdifferentiableAt (ψ.open_target.mem_nhds hp))
 
 /-- The derivative of a chart intertwines `J` with the pushed-forward structure. -/
 theorem mfderiv_comp_toEndomorphism (ψ : OpenPartialHomeomorph M G) {y : M} (hy : y ∈ ψ.source)

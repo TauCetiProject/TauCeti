@@ -155,10 +155,8 @@ private theorem IsWeakPseudoholomorphicOnBordered.exists_memWkpLocMapOnBordered_
     (((J₀.contDiffOn_chartPushforward hχ'1 hχ's le_top).of_le (by exact_mod_cast hm)).comp
       contDiffOn_snd fun x (hx : x ∈ univ ×ˢ χ'.target) ↦ hx.2)
     contDiffOn_const (fun z hz ↦ ⟨trivial, hwt z hz⟩)
-    (ae_restrict_of_forall_mem hDo.measurableSet fun z hz ↦ J₀.chartPushforward_mul_self χ'
-      (hwt z hz) ((hχ'1.mdifferentiableOn (by simp)).mdifferentiableAt
-        (χ'.open_source.mem_nhds (χ'.map_target (hwt z hz))))
-      ((hχ's.mdifferentiableOn (by simp)).mdifferentiableAt (χ'.open_target.mem_nhds (hwt z hz))))
+    (ae_restrict_of_forall_mem hDo.measurableSet fun z hz ↦
+      J₀.chartPushforward_mul_self_of_contMDiffOn χ' hχ'1 hχ's (by simp) (hwt z hz))
     hw
   have htφ : t ⊆ φ.source := fun x hx ↦ hx.1.1.2
   refine memWkpLocMapOnBordered_of_memWkpLoc_chart hp hp' ht hφ htφ hχ htχ
@@ -205,11 +203,8 @@ private theorem memWkpLoc_of_isAdaptedChart {S : Set M} {ψ : OpenPartialHomeomo
         hx.1.2)
     contDiffOn_const (fun z hz ↦ ⟨trivial, hΘt z hz⟩)
     (ae_restrict_of_forall_mem (Ω.isOpen.measurableSet.inter (measurableSet_le measurable_const
-      Complex.measurable_im)) fun z hz ↦ J₀.chartPushforward_mul_self ψ (hΘt z hz)
-        ((hψ.contMDiffOn.mdifferentiableOn hℓ0).mdifferentiableAt
-          (ψ.open_source.mem_nhds (ψ.map_target (hΘt z hz))))
-        ((hψ.contMDiffOn_symm.mdifferentiableOn hℓ0).mdifferentiableAt
-          (ψ.open_target.mem_nhds (hΘt z hz))))
+      Complex.measurable_im)) fun z hz ↦ J₀.chartPushforward_mul_self_of_contMDiffOn ψ
+        hψ.contMDiffOn hψ.contMDiffOn_symm hℓ0 (hΘt z hz))
     hzero (fun s hs ↦ hψ.chartPushforward_of_snd_eq_zero _ (hΘt _ (hreal s hs)) (hzero s hs)) hw
   · -- Move back along the inverse transition, which is `C^ℓ`.
     lift p to ℝ≥0 using hp'
