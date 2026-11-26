@@ -100,10 +100,8 @@ it has compact resolvent and spectrum its mixed eigenvalues, all nonnegative.
   `TauCeti.PDE.mem_graph_mixedOperator_laplacian_iff`,
   `TauCeti.PDE.mem_domain_mixedOperator_laplacian_iff` and
   `TauCeti.PDE.value_mem_domain_mixedOperator_laplacian`: the mixed Laplacian `-Δ_Γ`.
-* `TauCeti.PDE.isCoercive_mixedForm_laplacian_of_norm_value_le` and
-  `TauCeti.PDE.isCoercive_mixedForm_laplacian_of_isLipschitzDomainWith`: a Poincaré–Friedrichs
-  inequality, for instance on a bounded connected Lipschitz domain with `Γ` of positive surface
-  measure, makes `∫_Ω ∇u · ∇v` coercive on `H¹_Γ(Ω)`.
+* `TauCeti.PDE.isCoercive_mixedForm_laplacian_of_isLipschitzDomainWith`: on a bounded connected
+  Lipschitz domain with `Γ` of positive surface measure, `∫_Ω ∇u · ∇v` is coercive on `H¹_Γ(Ω)`.
 
 ## References
 
@@ -716,18 +714,6 @@ theorem value_mem_domain_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
       (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
       (1 : Matrix ι ι ℝ)) Γ).domain :=
   (mem_domain_mixedOperator_laplacian_iff hΓ).2 ⟨u, rfl, g, hu⟩
-
-/-- **A Poincaré–Friedrichs inequality makes the mixed Laplacian coercive**: if
-`‖u‖_{L²(Ω)} ≤ P ‖∇u‖_{L²(Ω)}` on `H¹_Γ(Ω)`, then `∫_Ω ∇u · ∇v` is coercive on `H¹_Γ(Ω)`, with
-constant `1 / (P² + 1)`. -/
-theorem isCoercive_mixedForm_laplacian_of_norm_value_le {P : ℝ}
-    (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
-    IsCoercive (mixedForm (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
-      (1 : Matrix ι ι ℝ)) Γ 0) := by
-  rw [mixedForm_zero]
-  exact (uniformlyEllipticOn_const_one_one _).isCoercive_energyFormH1LVanishingOn_of_poincare
-    aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ ↦ rfl)
-    (fun _ _ ↦ (norm_zero (E := ℝ)).le) (fun _ _ ↦ le_rfl) hP _
 
 /-- **The mixed Laplacian `-Δ_Γ` is self-adjoint.** -/
 theorem isSelfAdjoint_mixedOperator_laplacian (hΓ : Disjoint Γ Omega) :

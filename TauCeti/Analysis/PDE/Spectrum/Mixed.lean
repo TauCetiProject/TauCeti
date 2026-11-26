@@ -40,7 +40,8 @@ the solution operator `S` of the mixed problem (`TauCeti.PDE.firstMixedEigenvalu
 
 For the mixed Laplacian `-Δ_Γ`, with energy form `∫_Ω ∇u · ∇v`, coercivity on `H¹_Γ(Ω)` is exactly
 a **Poincaré–Friedrichs inequality** `‖u‖_{L²} ≤ P ‖∇u‖_{L²}`
-(`TauCeti.PDE.isCoercive_mixedForm_laplacian_of_norm_value_le`), and `λ₁ = 1 / P²` for the optimal
+(`TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyFormH1LVanishingOn_of_poincare`, transported
+along `TauCeti.PDE.mixedForm_zero`), and `λ₁ = 1 / P²` for the optimal
 constant `P` (`TauCeti.PDE.isLeast_norm_value_le_mul_norm_gradient_inv_sqrt_firstMixedEigenvalue`).
 On a bounded connected Lipschitz domain the Poincaré–Friedrichs inequality holds as soon as `Γ`
 meets the boundary in a set of positive surface measure. There, then, `λ₁ > 0` is the least point
