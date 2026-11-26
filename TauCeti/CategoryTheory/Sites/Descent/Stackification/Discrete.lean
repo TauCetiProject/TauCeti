@@ -194,6 +194,7 @@ lemma elem_pullObj {V : C} (q : V ⟶ U) (A : Obj.{w} J (ofPresheaf.{w'} P) U) (
 
 /-- The element of the plus construction given by the pullback of a descent datum along
 `q : V ⟶ U` is the restriction along `q` of the element given by the descent datum. -/
+@[simp]
 lemma toPlusObj_pullObj {V : C} (q : V ⟶ U) (A : Obj.{w} J (ofPresheaf.{w'} P) U) :
     (pullObj q A).toPlusObj = (J.plusObj P).map q.op A.toPlusObj := by
   rw [toPlusObj, toPlusObj, Plus.res_mk_eq_mk_pullback, Plus.eq_mk_iff_exists]
@@ -307,10 +308,6 @@ lemma objEquiv_toPlusObjFunctor_obj (A : Obj.{w} J (ofPresheaf.{w'} P) U) :
     objEquiv (op U) ((toPlusObjFunctor.{w, w', w''} J P U).obj A) = A.toPlusObj :=
   (rfl)
 
-/-- The functor `toPlusObjFunctor` is faithful, as its source is thin. -/
-instance faithful_toPlusObjFunctor : (toPlusObjFunctor.{w, w', w''} J P U).Faithful :=
-  ⟨fun _ ↦ Subsingleton.elim _ _⟩
-
 /-- The functor `toPlusObjFunctor` is full: descent data with the same element of the plus
 construction are related by a morphism. -/
 instance full_toPlusObjFunctor : (toPlusObjFunctor.{w, w', w''} J P U).Full :=
@@ -349,8 +346,9 @@ omit [HasPullbacks C] in
 pseudofunctor is a stack. -/
 lemma isStack_ofPresheaf_plusObj (hP : Presieve.IsSeparated J P) :
     (ofPresheaf.{w'} (J.plusObj P)).IsStack J :=
-  (isStack_ofPresheaf_iff _ J).2 ((isSheaf_iff_isSheaf_of_type J _).1
-    (Plus.isSheaf_of_sep P fun _ S _ _ h ↦ (hP S S.condition).ext fun _ f hf ↦ h ⟨_, f, hf⟩))
+  isStack_ofPresheaf J
+    ⟨J.plusObj P, Plus.isSheaf_of_sep P fun _ S _ _ h ↦
+      (hP S S.condition).ext fun _ f hf ↦ h ⟨_, f, hf⟩⟩
 
 section
 
