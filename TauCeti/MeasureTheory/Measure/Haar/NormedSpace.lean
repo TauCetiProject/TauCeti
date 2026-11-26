@@ -127,6 +127,8 @@ gives a set of measure one.
   additive Haar measure to its multiple by `|r ^ n|⁻¹`.
 * `MeasureTheory.Measure.map_affine_addHaar_eq_smul`: an invertible affine map `x ↦ c + A x` pushes
   an additive Haar measure to its multiple by `|det A|⁻¹`.
+* `MeasureTheory.lintegral_comp_linearMap`: for an invertible real linear map `f : E →ₗ[ℝ] E`,
+  `∫⁻ x, g (f x) ∂μ = ENNReal.ofReal |(LinearMap.det f)⁻¹| * ∫⁻ x, g x ∂μ`.
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
   of a ball of radius `R > 0` written through that of the unit ball (for `R ≤ 0` the ball is
   empty).
@@ -982,6 +984,21 @@ theorem finiteDimensional_of_isCompact_measure_ne_zero
   .of_locallyCompactSpace 𝕜
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+/-- Change of variables for an invertible real linear map on a finite-dimensional real normed space
+with an additive Haar measure `μ`. -/
+theorem lintegral_comp_linearMap {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    {f : E →ₗ[ℝ] E} (hf : LinearMap.det f ≠ 0) (g : E → ENNReal) :
+    ∫⁻ x, g (f x) ∂μ = ENNReal.ofReal |(LinearMap.det f)⁻¹| * ∫⁻ x, g x ∂μ := by
+  have h_emb : MeasurableEmbedding f :=
+    (f.equivOfDetNeZero hf).toContinuousLinearEquiv.toHomeomorph.measurableEmbedding
+  rw [← h_emb.lintegral_map g, Measure.map_linearMap_addHaar_eq_smul_addHaar μ hf,
+    lintegral_smul_measure, smul_eq_mul]
+
+end MeasureTheory
 
 namespace TauCeti
 
