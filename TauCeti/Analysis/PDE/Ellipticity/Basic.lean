@@ -486,8 +486,7 @@ lemma abs_dotProduct_coefficientSymmetricPart_mulVec_le {A : Matrix n n ℝ} {La
 lemma matrixBilinearForm_apply_eq_sum (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A η ξ = ∑ i, ∑ j, η i * ξ j * A i j := by
   classical
-  rw [matrixBilinearForm_apply, ← Matrix.toLinearMap₂'_apply', Matrix.toLinearMap₂'_apply]
-  simp only [smul_eq_mul, mul_assoc]
+  rw [matrixBilinearForm_apply, ← toLinearMap₂'_apply', toLinearMap₂'_apply]; simp [mul_assoc]
 
 /-- If the bilinear form of `A` is bounded, `|ηᵀ A ξ| ≤ Λ ‖η‖ ‖ξ‖`, then so is its pairing with
 the coordinates of two linear functionals: `|∑ᵢⱼ Aᵢⱼ L₁(eᵢ) L₂(eⱼ)| ≤ Λ ‖L₁‖ ‖L₂‖`. This bounds
@@ -1384,8 +1383,7 @@ theorem lipschitzOnWith_apply_apply_of_matrixBilinearForm {X : Type*} [PseudoEMe
   classical
   simpa only [matrixBilinearForm_apply, PiLp.ofLp_single, mulVec_single_one, single_one_dotProduct,
     col_apply, PiLp.nnNorm_single, nnNorm_one, mul_one] using
-    lipschitzOnWith_matrixBilinearForm_apply_apply hK (EuclideanSpace.single i 1)
-      (EuclideanSpace.single j 1)
+    lipschitzOnWith_matrixBilinearForm_apply_apply hK (EuclideanSpace.single i 1) (.single j 1)
 
 /-- If `a` is uniformly elliptic on `s` with lower constant `λ` and `x ↦ a(x)` is `K`-Lipschitz on
 `s` as a bilinear form, then for `w ≠ 0` the reciprocal `x ↦ a(x)(w, w)⁻¹` is
@@ -1430,9 +1428,8 @@ theorem exists_lipschitzWith_matrixBilinearForm_eqOn {X : Type*} [PseudoMetricSp
   -- Extend the entries of `a` from `S` to Lipschitz functions on the whole space.
   choose g hgL hgS using fun i j =>
     (lipschitzOnWith_apply_apply_of_matrixBilinearForm hK i j).extend_real
-  have habar : EqOn (fun x => Matrix.of fun i j => g i j x) a S := fun x hx => by
-    ext i j
-    exact (hgS i j hx).symm
+  have habar : EqOn (fun x => Matrix.of fun i j => g i j x) a S := fun x hx =>
+    Matrix.ext fun i j => (hgS i j hx).symm
   -- The bilinear forms of `ā` are Lipschitz, with the sum of the entrywise constants.
   exact ⟨_, _, habar, lipschitzWith_matrixBilinearForm_of_forall (a := fun x => Matrix.of
     fun i j => g i j x) hgL⟩
