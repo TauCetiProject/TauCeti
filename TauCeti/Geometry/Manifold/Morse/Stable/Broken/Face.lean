@@ -36,9 +36,9 @@ systems of fundamental classes require
   composition maps (`TauCeti.IsAdaptedPseudoGradient.isEmbedding_morseBrokenTrajectorySpaceComp`).
 * The *interior* of the face at `z`, made of the concatenations of two unbroken trajectories, meets
   no face of another critical point
-  (`TauCeti.IsAdaptedPseudoGradient.disjoint_range_morseBrokenTrajectorySpaceComp_image`): on a
-  level just above `f z'`, a broken trajectory to `z'` lies in the stable manifold of `z'`. It is
-  exactly the part of the boundary outside these other faces
+  (`IsAdaptedPseudoGradient.disjoint_range_morseBrokenTrajectorySpaceComp_image_compl_prod_compl`):
+  on a level just above `f z'`, a broken trajectory to `z'` lies in the stable manifold of `z'`. It
+  is exactly the part of the boundary outside these other faces
   (`TauCeti.IsAdaptedPseudoGradient.image_morseBrokenTrajectorySpaceComp_compl_prod_compl`).
 
 Under the Morse–Smale condition and on countably many levels:
@@ -54,8 +54,9 @@ Under the Morse–Smale condition and on countably many levels:
   into the boundary
   (`IsMorseSmale.isOpenEmbedding_morseBrokenTrajectorySpaceComp_compl_prod_compl`);
 * the interiors of the faces are dense in the boundary
-  (`IsMorseSmale.dense_morseBrokenTrajectorySpaceComp_image`), since a broken trajectory is a limit
-  of unbroken ones (`IsMorseSmale.morseBrokenTrajectoryRecords_subset_closure`).
+  (`IsMorseSmale.dense_morseBrokenTrajectorySpaceComp_image_compl_prod_compl`), since a broken
+  trajectory is a limit of unbroken ones
+  (`IsMorseSmale.morseBrokenTrajectoryRecords_subset_closure`).
 
 With the unbroken trajectories as the interiors `N x y`, these are the hypotheses `hj`, `hιj`,
 `hU` and `hUι` of `TauCeti.TwistingChainSystem.exists_isRepresenting_of_subsingleton_units` for
@@ -72,13 +73,13 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `morseBrokenTrajectorySpaceBoundary_eq_iUnion`: the boundary is the union of the faces.
 * `isEmbedding_morseBrokenTrajectorySpaceConcat`, `isEmbedding_morseBrokenTrajectorySpaceComp`:
   concatenation is an embedding.
-* `disjoint_range_morseBrokenTrajectorySpaceComp_image`,
+* `disjoint_range_morseBrokenTrajectorySpaceComp_image_compl_prod_compl`,
   `image_morseBrokenTrajectorySpaceComp_compl_prod_compl`: the interior of a face.
 * `IsMorseSmale.isCompact_morseBrokenTrajectorySpace`: the trajectory spaces are compact.
 * `IsMorseSmale.isClosed_morseBrokenTrajectorySpaceBoundary`: the boundary is closed.
 * `IsMorseSmale.isOpenEmbedding_morseBrokenTrajectorySpaceComp_compl_prod_compl`: the interiors
   of the faces are open in the boundary.
-* `IsMorseSmale.dense_morseBrokenTrajectorySpaceComp_image`: they are dense in it.
+* `IsMorseSmale.dense_morseBrokenTrajectorySpaceComp_image_compl_prod_compl`: they are dense in it.
 
 ## References
 
@@ -257,7 +258,7 @@ include hc hdense in
 trajectories is a concatenation at no other critical point `z'`. On a level just above `f z'`, a
 broken trajectory to `z'` lies in the stable manifold of `z'`, while the concatenation at `z` lies
 in that of `z` or of `y`. -/
-theorem disjoint_range_morseBrokenTrajectorySpaceComp_image
+theorem disjoint_range_morseBrokenTrajectorySpaceComp_image_compl_prod_compl
     {x z z' y : criticalPoints 𝓘(ℝ, E) f} (hz : z' ≠ z) :
     Disjoint (range (hX.morseBrokenTrajectorySpaceComp hc x z' y))
       (hX.morseBrokenTrajectorySpaceComp hc x z y ''
@@ -311,7 +312,7 @@ theorem image_morseBrokenTrajectorySpaceComp_compl_prod_compl
   · rintro ⟨p, hp, rfl⟩
     exact ⟨hX.morseBrokenTrajectorySpaceComp_mem_morseBrokenTrajectorySpaceBoundary hc hdense
       x z y p, fun z' hz' hw ↦ disjoint_left.1
-        (hX.disjoint_range_morseBrokenTrajectorySpaceComp_image hc hdense hz') hw
+        (hX.disjoint_range_morseBrokenTrajectorySpaceComp_image_compl_prod_compl hc hdense hz') hw
         ⟨p, hp, rfl⟩⟩
   rintro ⟨hw, hw'⟩
   rw [hX.morseBrokenTrajectorySpaceBoundary_eq_iUnion hc hdense] at hw
@@ -435,7 +436,8 @@ include h hf hc hdense in
 concatenation of an unbroken trajectory and a broken one at its first break, and the broken
 factor is a limit of unbroken trajectories by gluing
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBrokenTrajectoryRecords_subset_closure`). -/
-theorem dense_morseBrokenTrajectorySpaceComp_image (x y : criticalPoints 𝓘(ℝ, E) f) :
+theorem dense_morseBrokenTrajectorySpaceComp_image_compl_prod_compl
+    (x y : criticalPoints 𝓘(ℝ, E) f) :
     Dense {w : hX.morseBrokenTrajectorySpaceBoundary c x y | ∃ z,
       (w : hX.morseBrokenTrajectorySpace c x y) ∈ hX.morseBrokenTrajectorySpaceComp hc x z y ''
         ((hX.morseBrokenTrajectorySpaceBoundary c x z)ᶜ ×ˢ
