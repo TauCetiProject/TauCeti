@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.DualNumber
 public import TauCeti.Algebra.DualNumber.Polynomial
 public import TauCeti.Algebra.DualNumber.Units
 public import TauCeti.Algebra.Ring.Int.Units
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Pullback
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.SpecialLinear
 import TauCeti.Algebra.Group.Subgroup.ZPowers
 
@@ -68,6 +67,8 @@ serve as the standard examples of the Mayer–Vietoris sequence.
   `K₁(𝔽₅)` is trivial in the cokernel exactly when its determinant is `±1`.
 * `TauCeti.AlgebraicK1.quotientMayerVietorisRangeEquivCusp_mk_ofUnits`: the class of a unit
   `a + b t` of `k[t] ⧸ (t²)` goes to `b / a`.
+* `TauCeti.AlgebraicK1.quotientMayerVietorisRangeEquivCusp_symm_apply`: the inverse sends `b` to
+  the class of the unit `1 + b t`.
 
 ## References
 
@@ -144,7 +145,7 @@ def quotientMayerVietorisRangeEquivZMod (n : ℕ) :
       (ZMod n)ˣ ⧸ Subgroup.zpowers (-1) :=
   (quotientMayerVietorisRangeEquiv _ _ (specialAlgebraicK1_zmod n)).trans
     (QuotientGroup.quotientMulEquivOfEq (by
-      rw [sup_idem, ← RingHom.toMonoidHom_eq_coe, Int.range_unitsMap_castRingHom]))
+      rw [sup_idem, Int.range_unitsMap_castRingHom]))
 
 /-- `TauCeti.AlgebraicK1.quotientMayerVietorisRangeEquivZMod` sends the class of `x` to the class
 of its determinant. -/
@@ -191,14 +192,6 @@ section Cusp
 
 variable (k : Type*) [Field k]
 
-/-- The units of `k[X] ⧸ (X²)` commute. Instance search does not find this through the
-commutative ring structure of the quotient unaided. -/
-private theorem isMulCommutative_units_quotientSpanXSq :
-    IsMulCommutative (k[X] ⧸ Ideal.span {(X : k[X]) ^ 2})ˣ :=
-  ⟨⟨fun a b ↦ Units.ext (by rw [Units.val_mul, Units.val_mul, mul_comm])⟩⟩
-
-attribute [local instance] isMulCommutative_units_quotientSpanXSq
-
 /-- The units of `k[X]` are the nonzero constants, so their images in `k[X] ⧸ (X²)` are among the
 images of the units of `k`. -/
 private theorem sup_range_unitsMap_cusp :
@@ -218,7 +211,7 @@ private theorem sup_range_unitsMap_cusp :
 private theorem map_range_unitsMap_algebraMap_cusp :
     (Units.map (algebraMap k (k[X] ⧸ Ideal.span {(X : k[X]) ^ 2}) :
         k →* k[X] ⧸ Ideal.span {(X : k[X]) ^ 2})).range.map
-        (Units.mapEquiv (DualNumber.quotientSpanXSqAlgEquiv k).toMulEquiv :
+        (Units.mapEquiv (dualNumberPolynomialQuotientAlgEquiv k).toMulEquiv :
           (k[X] ⧸ Ideal.span {(X : k[X]) ^ 2})ˣ →* (DualNumber k)ˣ) =
       (Units.map (algebraMap k (DualNumber k) : k →* DualNumber k)).range := by
   rw [MonoidHom.map_range]
@@ -239,7 +232,8 @@ def quotientMayerVietorisRangeEquivCusp :
   ((quotientMayerVietorisRangeEquiv _ _ (specialAlgebraicK1_eq_bot_of_hasStableRangeLE_one
       (hasStableRangeLE_one_of_isLocalRing _))).trans
     (QuotientGroup.quotientMulEquivOfEq (sup_range_unitsMap_cusp k))).trans
-    ((QuotientGroup.congr _ _ (Units.mapEquiv (DualNumber.quotientSpanXSqAlgEquiv k).toMulEquiv)
+    ((QuotientGroup.congr _ _
+      (Units.mapEquiv (dualNumberPolynomialQuotientAlgEquiv k).toMulEquiv)
       (map_range_unitsMap_algebraMap_cusp k)).trans (dualNumberUnitsQuotientEquiv k))
 
 /-- `TauCeti.AlgebraicK1.quotientMayerVietorisRangeEquivCusp` sends the class of a unit of
@@ -253,7 +247,7 @@ theorem quotientMayerVietorisRangeEquivCusp_mk_ofUnits
   simp only [quotientMayerVietorisRangeEquivCusp, MulEquiv.trans_apply,
     quotientMayerVietorisRangeEquiv_mk, det_ofUnits, QuotientGroup.quotientMulEquivOfEq_mk,
     QuotientGroup.congr_mk, dualNumberUnitsQuotientEquiv_mk]
-  set v := Units.mapEquiv (DualNumber.quotientSpanXSqAlgEquiv k).toMulEquiv u
+  set v := Units.mapEquiv (dualNumberPolynomialQuotientAlgEquiv k).toMulEquiv u
   have hv : (v : DualNumber k) = aeval DualNumber.eps p := by
     simp [v, ← hp]
   have hinv : TrivSqZeroExt.fst ((v⁻¹ : (DualNumber k)ˣ) : DualNumber k) = (p.coeff 0)⁻¹ := by
@@ -262,6 +256,19 @@ theorem quotientMayerVietorisRangeEquivCusp_mk_ofUnits
       ← TrivSqZeroExt.fst_mul, Units.mul_inv, TrivSqZeroExt.fst_one]
   rw [hinv, hv, DualNumber.snd_aeval_eps, Algebra.algebraMap_self, RingHom.id_apply,
     div_eq_mul_inv]
+
+/-- The inverse of `TauCeti.AlgebraicK1.quotientMayerVietorisRangeEquivCusp` sends `b` to the class
+of the unit `1 + bX` of `k[X] ⧸ (X²)`, the image of the unit `1 + bε` of `k[ε]`. -/
+@[simp]
+theorem quotientMayerVietorisRangeEquivCusp_symm_apply (b : Multiplicative k) :
+    (quotientMayerVietorisRangeEquivCusp k).symm b =
+      (ofUnits _ (Units.mapEquiv (dualNumberPolynomialQuotientAlgEquiv k).symm.toMulEquiv
+        (dualNumberUnit b.toAdd)) : AlgebraicK1 _ ⧸ _) := by
+  rw [MulEquiv.symm_apply_eq,
+    quotientMayerVietorisRangeEquivCusp_mk_ofUnits k _ (p := 1 + b.toAdd • X)]
+  · simp [coeff_one]
+  · rw [← Ideal.Quotient.mkₐ_eq_mk k, map_add, map_one, map_smul]
+    simp
 
 end Cusp
 

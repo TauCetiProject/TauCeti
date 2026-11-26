@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.RingTheory.DualNumber
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
+public import TauCeti.Algebra.Group.Units.Basic
 
 /-!
 # Polynomials evaluated at `ε`
@@ -25,13 +26,15 @@ the truncated polynomial ring `k[t] ⧸ (t²)` of the cusp `k[t², t³]`, thereb
 
 ## Main definitions
 
-* `DualNumber.quotientSpanXSqAlgEquiv`: the `R`-algebra isomorphism `R[X] ⧸ (X²) ≃ₐ[R] R[ε]`
-  induced by evaluation at `ε`.
+* `TauCeti.dualNumberPolynomialQuotientAlgEquiv`: the `R`-algebra isomorphism
+  `R[X] ⧸ (X²) ≃ₐ[R] R[ε]` induced by evaluation at `ε`.
 
 ## Main results
 
-* `DualNumber.isLocalRing_quotientSpanXSq`: over a field `K`, the ring `K[X] ⧸ (X²)` is local,
-  like `K[ε]`.
+* `TauCeti.isLocalRing_polynomialQuotientSpanXSq`: over a field `K`, the ring `K[X] ⧸ (X²)` is
+  local, like `K[ε]`.
+* `TauCeti.isMulCommutative_units_polynomialQuotientSpanXSq`: the units of `R[X] ⧸ (X²)` commute,
+  so every subgroup of them is normal.
 -/
 
 public section
@@ -69,6 +72,12 @@ theorem snd_aeval_eps (p : R[X]) :
 
 end Eval
 
+end DualNumber
+
+namespace TauCeti
+
+open DualNumber
+
 section Quotient
 
 variable (R : Type*) [CommRing R]
@@ -89,37 +98,47 @@ private theorem mk_X_mul_mk_X :
 /-- **The dual numbers as a polynomial quotient.** Evaluation at `ε` identifies `R[X] ⧸ (X²)` with
 the dual numbers `R[ε]`, the class of `X` going to `ε`; the inverse sends `ε` to the class of
 `X`. -/
-noncomputable def quotientSpanXSqAlgEquiv :
+noncomputable def dualNumberPolynomialQuotientAlgEquiv :
     (R[X] ⧸ Ideal.span {(X : R[X]) ^ 2}) ≃ₐ[R] DualNumber R :=
   AlgEquiv.ofAlgHom (Ideal.Quotient.liftₐ _ (aeval eps) fun _ ↦ aeval_eps_eq_zero_of_mem R)
-    (lift ⟨(Algebra.ofId R _, Ideal.Quotient.mk _ X), mk_X_mul_mk_X R, fun _ ↦ Commute.all _ _⟩)
-    (algHom_ext (by
+    (DualNumber.lift
+      ⟨(Algebra.ofId R _, Ideal.Quotient.mk _ X), mk_X_mul_mk_X R, fun _ ↦ Commute.all _ _⟩)
+    (DualNumber.algHom_ext (by
       simp only [AlgHom.comp_apply, lift_apply_eps, AlgHom.id_apply]
       rw [← Ideal.Quotient.mkₐ_eq_mk R, ← AlgHom.comp_apply, Ideal.Quotient.liftₐ_comp, aeval_X]))
     (Ideal.Quotient.algHom_ext R (Polynomial.algHom_ext (by
       rw [AlgHom.comp_assoc, Ideal.Quotient.liftₐ_comp]
       simp)))
 
-/-- `DualNumber.quotientSpanXSqAlgEquiv` sends the class of `p` to `p(ε)`. -/
-@[simp]
-theorem quotientSpanXSqAlgEquiv_mk (p : R[X]) :
-    quotientSpanXSqAlgEquiv R (Ideal.Quotient.mk _ p) = aeval eps p := by
-  have h : (quotientSpanXSqAlgEquiv R : _ →ₐ[R] DualNumber R).comp
-      (Ideal.Quotient.mkₐ R (Ideal.span {(X : R[X]) ^ 2})) = aeval eps := by
-    rw [quotientSpanXSqAlgEquiv, AlgEquiv.toAlgHom_ofAlgHom, Ideal.Quotient.liftₐ_comp]
-  rw [← Ideal.Quotient.mkₐ_eq_mk R, ← h, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
+variable {R}
 
-/-- The inverse of `DualNumber.quotientSpanXSqAlgEquiv` sends `ε` to the class of `X`. -/
+/-- `TauCeti.dualNumberPolynomialQuotientAlgEquiv` sends the class of `p` to `p(ε)`. -/
 @[simp]
-theorem quotientSpanXSqAlgEquiv_symm_eps :
-    (quotientSpanXSqAlgEquiv R).symm eps = Ideal.Quotient.mk _ X := by
-  rw [AlgEquiv.symm_apply_eq, quotientSpanXSqAlgEquiv_mk, aeval_X]
+theorem _root_.Polynomial.dualNumberPolynomialQuotientAlgEquiv_mk (p : R[X]) :
+    dualNumberPolynomialQuotientAlgEquiv R (Ideal.Quotient.mk _ p) = aeval eps p := by
+  rw [dualNumberPolynomialQuotientAlgEquiv, AlgEquiv.ofAlgHom_apply, ← Ideal.Quotient.mkₐ_eq_mk R,
+    ← AlgHom.comp_apply, Ideal.Quotient.liftₐ_comp]
+
+variable (R)
+
+/-- The inverse of `TauCeti.dualNumberPolynomialQuotientAlgEquiv` sends `ε` to the class of
+`X`. -/
+@[simp]
+theorem dualNumberPolynomialQuotientAlgEquiv_symm_eps :
+    (dualNumberPolynomialQuotientAlgEquiv R).symm eps = Ideal.Quotient.mk _ X := by
+  rw [AlgEquiv.symm_apply_eq, Polynomial.dualNumberPolynomialQuotientAlgEquiv_mk, aeval_X]
 
 /-- Over a field `K`, the ring `K[X] ⧸ (X²)` is local, like the dual numbers `K[ε]`. -/
-instance isLocalRing_quotientSpanXSq (K : Type*) [Field K] :
+instance isLocalRing_polynomialQuotientSpanXSq (K : Type*) [Field K] :
     IsLocalRing (K[X] ⧸ Ideal.span {(X : K[X]) ^ 2}) :=
-  (quotientSpanXSqAlgEquiv K).symm.toRingEquiv.isLocalRing
+  (dualNumberPolynomialQuotientAlgEquiv K).symm.toRingEquiv.isLocalRing
+
+/-- The units of `R[X] ⧸ (X²)` commute, so every subgroup of them is normal. Instance search does
+not find this through the commutative ring structure of the quotient unaided. -/
+instance isMulCommutative_units_polynomialQuotientSpanXSq :
+    IsMulCommutative (R[X] ⧸ Ideal.span {(X : R[X]) ^ 2})ˣ :=
+  Units.isMulCommutative
 
 end Quotient
 
-end DualNumber
+end TauCeti

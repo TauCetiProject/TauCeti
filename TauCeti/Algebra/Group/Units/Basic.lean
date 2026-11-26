@@ -27,6 +27,7 @@ ambient monoid. The nonnegative half is `TauCeti.mul_pow_mul_eq_pow_succ_mul_pow
 * `Units.val_inv_mul_mul_mul_eq_one`: if `(a : M) = z`, then `(l * a)⁻¹ * l * z = 1`.
 * `Units.val_inv_mul_mul_inv_mul_eq_one`: if `(a : M) = z` and `l ^ 2 * z = b`, then
   `(l * a)⁻¹ * l⁻¹ * b = 1`.
+* `Units.isMulCommutative`: the units of a commutative monoid commute.
 * `IsUnit.mul_zpow_neg_natCast_succ_mul`: negative product powers give inverse monomials.
 -/
 
@@ -64,6 +65,14 @@ theorem val_inv_mul_mul_inv_mul_eq_one {M : Type*} [Monoid M] (a l : Mˣ) {z b :
     simp [sq, mul_assoc]
   simpa only [ha, hl, Units.val_mul, Units.val_pow_eq_pow_val, Units.val_one] using
     congrArg Units.val h
+
+/-- The units of a commutative monoid commute. Instance search does not always reach this through
+the commutative group structure of `Mˣ`, for instance for the dual numbers `R[ε]` or for
+`R[X] ⧸ (X²)`; this lemma provides the instances for such unit groups, which make all their
+subgroups normal. It is not registered as a global instance, since that changes which `simp`
+lemmas apply to other unit groups. -/
+theorem isMulCommutative {M : Type*} [CommMonoid M] : IsMulCommutative Mˣ :=
+  ⟨⟨fun a b ↦ Units.ext (by rw [Units.val_mul, Units.val_mul, mul_comm])⟩⟩
 
 end Units
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import TauCeti.Algebra.DualNumber.Basic
+public import TauCeti.Algebra.Group.Units.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -51,7 +52,7 @@ find this through the commutative semiring structure of `R[ε]` unaided, so it i
 makes every subgroup of `R[ε]ˣ` normal. -/
 instance isMulCommutative_units_dualNumber {R : Type*} [CommSemiring R] :
     IsMulCommutative (DualNumber R)ˣ :=
-  ⟨⟨fun a b ↦ Units.ext (by rw [Units.val_mul, Units.val_mul, mul_comm])⟩⟩
+  Units.isMulCommutative
 
 variable (R : Type*) [CommRing R]
 
@@ -111,8 +112,10 @@ noncomputable def dualNumberUnitsQuotientEquiv :
 @[simp]
 theorem dualNumberUnitsQuotientEquiv_mk (u : (DualNumber R)ˣ) :
     dualNumberUnitsQuotientEquiv R u = Multiplicative.ofAdd
-      (snd (u : DualNumber R) * fst ((u⁻¹ : (DualNumber R)ˣ) : DualNumber R)) :=
-  (rfl)
+      (snd (u : DualNumber R) * fst ((u⁻¹ : (DualNumber R)ˣ) : DualNumber R)) := by
+  rw [dualNumberUnitsQuotientEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
+    QuotientGroup.quotientKerEquivOfRightInverse_apply, QuotientGroup.kerLift_mk,
+    unitsSndMulFstInv, MonoidHom.coe_mk, OneHom.coe_mk]
 
 /-- The inverse of `TauCeti.dualNumberUnitsQuotientEquiv` sends `b` to the class of `1 + bε`. -/
 @[simp]
