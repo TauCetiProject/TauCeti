@@ -54,7 +54,7 @@ nondegenerate on the whole source of the chart. Such forms arise as restrictions
 two-form to a slice, for example the restriction of `dα` to a hypersurface transverse to the Reeb
 field of a contact form `α`. Conversely, a two-form pulled back from a constant symplectic form by a
 chart is nondegenerate on the source of the chart, since the differential of the chart is bijective
-there (`TauCeti.SmoothTwoForm.bilinFormAt_nondegenerate_of_darbouxChart`). So for a closed
+there (`TauCeti.SmoothTwoForm.nondegenerate_bilinFormAt_of_darbouxChart`). So for a closed
 two-form, a Darboux chart centred at an interior point `x₀` exists exactly when the form is
 nondegenerate at `x₀`
 (`TauCeti.SmoothTwoForm.exists_darbouxChart_iff_nondegenerate_of_isInteriorPoint`).
@@ -63,7 +63,7 @@ nondegenerate at `x₀`
 
 * `TauCeti.SmoothTwoForm.exists_darbouxChart_of_nondegenerate_of_isInteriorPoint`: Darboux
   charts into the model space for a closed two-form nondegenerate at `x₀`.
-* `TauCeti.SmoothTwoForm.bilinFormAt_nondegenerate_of_darbouxChart`: a two-form admitting a
+* `TauCeti.SmoothTwoForm.nondegenerate_bilinFormAt_of_darbouxChart`: a two-form admitting a
   Darboux chart is nondegenerate on its source.
 * `TauCeti.SmoothTwoForm.exists_darbouxChart_iff_nondegenerate_of_isInteriorPoint`: a closed
   two-form has a Darboux chart at an interior point exactly when it is nondegenerate there.
@@ -223,7 +223,7 @@ variable {E H M : Type*}
 with `n ≠ 0`, pulls a symplectic form `form₀` on `E` back to `form` on its source, then `form` is
 nondegenerate at every point of the source. So a two-form that degenerates at `x` admits no
 Darboux chart around `x`. -/
-theorem bilinFormAt_nondegenerate_of_darbouxChart {form : SmoothTwoForm I M} {n : WithTop ℕ∞}
+theorem nondegenerate_bilinFormAt_of_darbouxChart {form : SmoothTwoForm I M} {n : WithTop ℕ∞}
     (hn : n ≠ 0) {chart : PartialDiffeomorph I 𝓘(ℝ, E) M E n} {form₀ : SymplecticForm E}
     (hchart : ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
       form.eval₂ x v w = form₀ (mvfderiv I chart x v) (mvfderiv I chart x w))
@@ -322,7 +322,7 @@ theorem exists_darbouxChart_iff_nondegenerate_of_isInteriorPoint
       ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
         form.eval₂ x v w = form₀ (mvfderiv I chart x v) (mvfderiv I chart x w)) ↔
       (form.bilinFormAt x₀).Nondegenerate :=
-  ⟨fun ⟨_, _, hx₀s, _, hchart⟩ ↦ bilinFormAt_nondegenerate_of_darbouxChart (by simp) hchart hx₀s,
+  ⟨fun ⟨_, _, hx₀s, _, hchart⟩ ↦ nondegenerate_bilinFormAt_of_darbouxChart (by simp) hchart hx₀s,
     fun hnd ↦ exists_darbouxChart_of_nondegenerate_of_isInteriorPoint hcl hnd hx₀⟩
 
 /-- **Darboux's theorem at an interior point.** Around any interior point `x₀` of a smooth manifold

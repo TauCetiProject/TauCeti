@@ -26,7 +26,10 @@ interior point `x₀` at which a closed two-form is nondegenerate.
 
 * **The area form.** On the plane `ℝ × ℝ` the area form `dx ∧ dy` is the constant form of the
   standard symplectic form `stdSymplecticForm`, `(u, w) ↦ u₁ w₂ - u₂ w₁`, and the identity is a
-  Darboux chart for it at the origin, with `dx ∧ dy` itself as the model form.
+  Darboux chart for it at the origin, with `dx ∧ dy` itself as the model form. Its standard model
+  has `m = 1`: Darboux's theorem gives a chart into
+  `EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)`
+  (`exists_standardDarbouxChart_constSmooth_stdSymplecticForm`).
 * **A Darboux chart need not be linear.** The form `eˣ dx ∧ dy` (`expAreaForm`) is closed, being
   of top degree, and the chart `(x, y) ↦ (eˣ - 1, y)` (`expChart`), a diffeomorphism of the plane
   onto the half-plane `u > -1` sending the origin to the origin, pulls `dx ∧ dy` back to it
@@ -40,13 +43,13 @@ interior point `x₀` at which a closed two-form is nondegenerate.
   the pullback of the constant form `dy₁ ∧ dy₂ + dy₃ ∧ dy₄` along
   `((x₁, x₂), (x₃, x₄)) ↦ ((x₁² / 2, x₂), (x₃, x₄))`, since `d (x₁² / 2) = x₁ dx₁`. It is
   nondegenerate exactly off the hyperplane `x₁ = 0`
-  (`bilinFormAt_degenerateForm_nondegenerate_iff`), so no Darboux chart exists around the origin
+  (`nondegenerate_bilinFormAt_degenerateForm_iff`), so no Darboux chart exists around the origin
   (`not_exists_darbouxChart_degenerateForm`): a chart pulling back a constant symplectic form
   forces nondegeneracy on its source
-  (`TauCeti.SmoothTwoForm.bilinFormAt_nondegenerate_of_darbouxChart`). Closedness alone does not
+  (`TauCeti.SmoothTwoForm.nondegenerate_bilinFormAt_of_darbouxChart`). Closedness alone does not
   suffice, and the pointwise nondegeneracy hypothesis excludes this form.
 * **Odd dimensions.** The odd-dimensional space `ℝ × ℝ × ℝ` carries no nondegenerate two-form at
-  all (`not_isNondegenerate_of_finrank_three`), since a symplectic vector space has even
+  all (`not_isNondegenerate_prod_prod`), since a symplectic vector space has even
   dimension.
 
 ## References
@@ -76,8 +79,24 @@ theorem eval₂_constSmooth_stdSymplecticForm_eq_mvfderiv_refl (x : ℝ × ℝ)
         (mvfderiv 𝓘(ℝ, ℝ × ℝ) (Diffeomorph.refl 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ) ∞).toPartialDiffeomorph x v)
         (mvfderiv 𝓘(ℝ, ℝ × ℝ)
           (Diffeomorph.refl 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ) ∞).toPartialDiffeomorph x w) := by
-  rw [Diffeomorph.coe_toPartialDiffeomorph, Diffeomorph.coe_refl, mvfderiv_eq_fderiv, fderiv_id]
-  exact SymplecticForm.fromTangentSpace_constSmooth_apply _ x v w
+  rw [Diffeomorph.coe_toPartialDiffeomorph, Diffeomorph.coe_refl, mvfderiv_eq_fderiv, fderiv_id,
+    ContinuousLinearMap.id_comp, ContinuousLinearEquiv.coe_coe,
+    SymplecticForm.fromTangentSpace_constSmooth_apply]
+
+/-- **The standard model of `dx ∧ dy` has `m = 1`.** Darboux's theorem in standard coordinates,
+applied to the area form `dx ∧ dy` on the plane, gives a chart centred at the origin into
+`EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)` pulling the standard symplectic form back to
+`dx ∧ dy`. -/
+theorem exists_standardDarbouxChart_constSmooth_stdSymplecticForm :
+    ∃ chart : PartialDiffeomorph 𝓘(ℝ, ℝ × ℝ)
+      𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)) (ℝ × ℝ)
+      (EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)) ∞,
+      (0 : ℝ × ℝ) ∈ chart.source ∧ chart 0 = 0 ∧
+      ∀ x ∈ chart.source, ∀ v w : TangentSpace 𝓘(ℝ, ℝ × ℝ) x,
+        (stdSymplecticForm (V := ℝ)).constSmooth.eval₂ x v w =
+          stdSymplecticForm (mvfderiv 𝓘(ℝ, ℝ × ℝ) chart x v) (mvfderiv 𝓘(ℝ, ℝ × ℝ) chart x w) :=
+  (SymplecticForm.isSymplectic_constSmooth _).exists_standardDarbouxChart_of_finrank_eq
+    (by simp) 0
 
 /-! ### The form `eˣ dx ∧ dy` and the chart `(x, y) ↦ (eˣ - 1, y)` -/
 
@@ -170,8 +189,8 @@ theorem eval₂_expAreaForm_eq_mvfderiv_expChart (x : ℝ × ℝ) (v w : Tangent
 `(x, y) ↦ (eˣ - 1, y)` pulls the area form back to it. -/
 theorem isSymplectic_expAreaForm : expAreaForm.IsSymplectic :=
   ⟨isClosed_expAreaForm, SmoothTwoForm.isNondegenerate_iff_separatingLeft.2 fun x v hv ↦
-    (SmoothTwoForm.bilinFormAt_nondegenerate_of_darbouxChart (by simp)
-      (fun y _ v w ↦ eval₂_expAreaForm_eq_mvfderiv_expChart y v w) (mem_univ x)).1 v fun w ↦ by
+    (SmoothTwoForm.nondegenerate_bilinFormAt_of_darbouxChart (by simp)
+      (fun y _ ↦ eval₂_expAreaForm_eq_mvfderiv_expChart y) (mem_univ x)).1 v fun w ↦ by
         simpa only [SmoothForm.bilinFormAt_apply] using hv w⟩
 
 /-- **No linear Darboux chart for `eˣ dx ∧ dy`.** No continuous linear map pulls a constant
@@ -232,7 +251,7 @@ theorem isClosed_degenerateForm : degenerateForm.IsClosed :=
   (SymplecticForm.isClosed_constSmooth _).mpullback _ _
 
 /-- The form `x₁ dx₁ ∧ dx₂ + dx₃ ∧ dx₄` is nondegenerate exactly off the hyperplane `x₁ = 0`. -/
-theorem bilinFormAt_degenerateForm_nondegenerate_iff (x : (ℝ × ℝ) × (ℝ × ℝ)) :
+theorem nondegenerate_bilinFormAt_degenerateForm_iff (x : (ℝ × ℝ) × (ℝ × ℝ)) :
     (degenerateForm.bilinFormAt x).Nondegenerate ↔ x.1.1 ≠ 0 := by
   refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
     (SmoothForm.isAlt_bilinFormAt degenerateForm x).isRefl).trans ?_
@@ -271,17 +290,18 @@ theorem not_exists_darbouxChart_degenerateForm :
           form₀ (mvfderiv 𝓘(ℝ, (ℝ × ℝ) × (ℝ × ℝ)) chart x v)
             (mvfderiv 𝓘(ℝ, (ℝ × ℝ) × (ℝ × ℝ)) chart x w) := by
   rintro ⟨chart, form₀, h0, hchart⟩
-  exact (bilinFormAt_degenerateForm_nondegenerate_iff 0).1
-    (SmoothTwoForm.bilinFormAt_nondegenerate_of_darbouxChart (by simp) hchart h0) rfl
+  exact (nondegenerate_bilinFormAt_degenerateForm_iff 0).1
+    (SmoothTwoForm.nondegenerate_bilinFormAt_of_darbouxChart (by simp) hchart h0) rfl
 
 /-! ### Odd dimensions -/
 
 /-- **`ℝ³` carries no nondegenerate two-form.** A nondegenerate two-form would make each tangent
 space a symplectic vector space, of even dimension, while `ℝ × ℝ × ℝ` has dimension three. -/
-theorem not_isNondegenerate_of_finrank_three (form : SmoothTwoForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ)) :
+theorem not_isNondegenerate_prod_prod (form : SmoothTwoForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ)) :
     ¬ form.IsNondegenerate := fun h ↦ by
   have h3 : Module.finrank ℝ (ℝ × ℝ × ℝ) = 3 := by simp
   have := (h.symplecticFormAt 0).even_finrank
+  -- `TangentSpace 𝓘(ℝ, E) x` is `E` by definition, so `h3` computes its dimension.
   rw [show Module.finrank ℝ (TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) (0 : ℝ × ℝ × ℝ)) = 3 from h3] at this
   exact Nat.not_even_iff_odd.2 (by decide) this
 
