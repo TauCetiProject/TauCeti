@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation.Basic
 public import TauCeti.Data.List.Involutive
 
 /-!

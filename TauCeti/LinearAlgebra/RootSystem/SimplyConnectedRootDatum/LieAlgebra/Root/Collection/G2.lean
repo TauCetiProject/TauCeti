@@ -54,28 +54,6 @@ variable (hnil : ∀ r, IsNilpotent
 
 attribute [local instance high] Algebra.toModule
 
--- The finite certificates repeatedly expose the same opaque root and length tables.
-local macro "g2_table" : tactic => `(tactic|
-  (try simp only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root, Set.mem_range]
-   try dsimp +instances only [numRoots, rank]
-   simp only [g2Root_apply, g2Length_apply]
-   try dsimp +instances only [numRoots, rank]
-   decide))
-
-private theorem g2_positive_root_sum_pairs : ∀ i j : Fin 6, i < j →
-    (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
-      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∈
-        Set.range (G2.simplyConnectedRootDatum ht).root →
-    (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 0 ∧ j = 3) ∨
-      (i = 1 ∧ j = 4) ∨ (i = 2 ∧ j = 3) := by
-  g2_table
-
-private theorem g2_positive_root_add_ne_zero : ∀ i j : Fin 6,
-    (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
-      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ≠ 0 := by
-  simp only [ne_eq, funext_iff, Pi.add_apply, Pi.zero_apply]
-  g2_table
-
 private theorem g2_positive_commutator_mem (A : CommAlgCat ℤ) (i j : Fin 6) (hij : i < j)
     (u v : A) :
     ⁅chevalleyRootSubgroup ρ M hM hnil (Fin.castAdd 6 i) A (Multiplicative.ofAdd u),
@@ -90,22 +68,23 @@ private theorem g2_positive_commutator_mem (A : CommAlgCat ℤ) (i j : Fin 6) (h
       (hsum : (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 k) =
         (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
           (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j))
-      (hleft : 2 • (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
-        (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∉
-          Set.range (G2.simplyConnectedRootDatum ht).root)
-      (hright : (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
-        2 • (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∉
-          Set.range (G2.simplyConnectedRootDatum ht).root) :
+      (hdouble : 2 • (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
+          (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∉
+            Set.range (G2.simplyConnectedRootDatum ht).root ∧
+        (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
+          2 • (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∉
+            Set.range (G2.simplyConnectedRootDatum ht).root) :
       ⁅X i (Multiplicative.ofAdd u), X j (Multiplicative.ofAdd v)⁆ ∈ P := by
     rw [commutatorElement_chevalleyRootSubgroup_of_root_eq_add ρ M hM hnil
-      hsum hleft hright]
+      hsum hdouble.1 hdouble.2]
     exact mem k hk _
+  obtain ⟨h2, h3, h4, h5, h5'⟩ := root_castAdd_eq_add_g2 ht
   -- Three sum pairs use the one-factor formula, (0,1) the short–long formula,
   -- (0,2) the short–short formula; all other pairs commute.
   by_cases hsum : (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
       (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∈
         Set.range (G2.simplyConnectedRootDatum ht).root
-  · rcases g2_positive_root_sum_pairs i j hij hsum with
+  · rcases index_pair_of_root_add_mem_range_root_g2 ht i j hij hsum with
       ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ |
       ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · -- State the equality through X: elaboration normalizes both the formula's coefficient/
@@ -115,7 +94,7 @@ private theorem g2_positive_commutator_mem (A : CommAlgCat ℤ) (i j : Fin 6) (h
         (α := Fin.castAdd 6 (0 : Fin 6)) (β := Fin.castAdd 6 (1 : Fin 6))
         (γ := Fin.castAdd 6 (2 : Fin 6)) (δ := Fin.castAdd 6 (3 : Fin 6))
         (ε := Fin.castAdd 6 (4 : Fin 6)) (ζ := Fin.castAdd 6 (5 : Fin 6))
-        (by g2_table) (by g2_table) (by g2_table) (by g2_table) A u v
+        h2 h3 h4 h5 A u v
       rw [h]
       exact P.mul_mem (P.mul_mem (P.mul_mem (mem 2 (by decide) _) (mem 3 (by decide) _))
         (mem 4 (by decide) _)) (mem 5 (by decide) _)
@@ -125,16 +104,22 @@ private theorem g2_positive_commutator_mem (A : CommAlgCat ℤ) (i j : Fin 6) (h
         (i := Fin.castAdd 6 (0 : Fin 6)) (j := Fin.castAdd 6 (2 : Fin 6))
         (k := Fin.castAdd 6 (3 : Fin 6)) (l := Fin.castAdd 6 (4 : Fin 6))
         (m := Fin.castAdd 6 (5 : Fin 6))
-        (by g2_table) (by g2_table) (by g2_table)
-        (by g2_table) (by g2_table) (by g2_table) A u v
+        (by rw [g2Length_apply]; rfl) (by rw [g2Length_apply]; rfl) (by rw [g2Length_apply]; rfl)
+        h3 h4 h5 A u v
       rw [h]
       exact P.mul_mem (P.mul_mem (mem 3 (by decide) _) (mem 4 (by decide) _))
         (mem 5 (by decide) _)
-    · exact one_factor 4 (by decide) (by g2_table) (by g2_table) (by g2_table)
-    · exact one_factor 5 (by decide) (by g2_table) (by g2_table) (by g2_table)
-    · exact one_factor 5 (by decide) (by g2_table) (by g2_table) (by g2_table)
-  · have hc := commute_chevalleyRootSubgroup ρ M hM hnil hsum
-      (g2_positive_root_add_ne_zero i j) A u v
+    · exact one_factor 4 (by decide) h4 (two_nsmul_add_notMem_range_root_g2 ht 0 3 (by decide))
+    · exact one_factor 5 (by decide) h5' (two_nsmul_add_notMem_range_root_g2 ht 1 4 (by decide))
+    · exact one_factor 5 (by decide) (h5.trans (add_comm _ _))
+        (two_nsmul_add_notMem_range_root_g2 ht 2 3 (by decide))
+  · -- Positive roots never cancel.
+    have hpos (k : Fin 6) : Fin.castAdd 6 k ∈
+        posRoots (G2.simplyConnectedRootDatum ht) (G2.simplyConnectedBase ht) :=
+      posRoots_rationalRootSystem G2 ht ▸ (mem_posRoots_rational_g2_iff ht _).mpr k.isLt
+    have hc := commute_chevalleyRootSubgroup ρ M hM hnil hsum
+      (root_add_ne_zero_of_mem_posRoots_of_mem_posRootCone _ _ (hpos i)
+        (root_mem_posRootCone_of_mem_posRoots _ _ (hpos j))) A u v
     rw [commutatorElement_def, hc]
     simp
 

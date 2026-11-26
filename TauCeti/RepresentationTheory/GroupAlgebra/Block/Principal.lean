@@ -15,7 +15,7 @@ import TauCeti.RepresentationTheory.GroupAlgebra.Average
 /-!
 # The principal block of a group algebra
 
-The augmentation `ε : R[G] → R` restricts to a ring homomorphism on the centre `Z(R[G])`
+The augmentation `ε : R[G] → R` restricts to an `R`-algebra homomorphism on the centre `Z(R[G])`
 (`TauCeti.centerAugmentation`). Over a domain it sends every central idempotent to `0` or `1`, and
 at most one block idempotent to `1`: two block idempotents `e ≠ f` are orthogonal, so
 `ε(e) ε(f) = ε(e f) = 0`. Over a field `k` and for a finite group `G`, the block idempotents sum
@@ -72,16 +72,17 @@ open MonoidAlgebra
 
 variable (R G : Type*) [CommRing R] [Monoid G]
 
-/-- The augmentation `ε : R[G] → R`, restricted to the centre `Z(R[G])`. -/
-def centerAugmentation : Subalgebra.center R (MonoidAlgebra R G) →+* R :=
-  (augmentation R G).comp (Subalgebra.center R (MonoidAlgebra R G)).val.toRingHom
+/-- The augmentation `ε : R[G] → R`, restricted to the centre `Z(R[G])`, as an `R`-algebra
+homomorphism. -/
+def centerAugmentation : Subalgebra.center R (MonoidAlgebra R G) →ₐ[R] R :=
+  (lift R R G 1).comp (Subalgebra.center R (MonoidAlgebra R G)).val
 
 variable {R G}
 
 @[simp]
 theorem centerAugmentation_apply (b : Subalgebra.center R (MonoidAlgebra R G)) :
-    centerAugmentation R G b = augmentation R G b :=
-  (rfl)
+    centerAugmentation R G b = augmentation R G b := by
+  simp [centerAugmentation, lift_one_apply]
 
 /-- Over a domain, the augmentation of a central idempotent is `0` or `1`. -/
 theorem centerAugmentation_eq_zero_or_one [IsDomain R]

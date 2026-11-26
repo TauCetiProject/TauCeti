@@ -20,7 +20,9 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Indicator
 This file packages the finite carrier selected by a real cutoff for a natural-valued Northcott
 function, together with generic summatory functions over that carrier. The carrier depends only
 on the integer part of the cutoff, and for a nonnegative cutoff it agrees with the one selected by
-its natural floor.
+its natural floor. It also provides the `Northcott` instance for the identity on any locally finite
+order bounded below, identifying `summatory (fun n : ℕ ↦ n)` for zero-vanishing weights with the
+partial sum over `Finset.Icc 1 ⌊x⌋₊`.
 -/
 
 public section
@@ -29,6 +31,18 @@ namespace TauCeti
 
 open Filter
 open scoped Topology
+
+/-- On a locally finite order bounded below, every initial segment `{a | a ≤ b}` is finite, so the
+identity map is Northcott. -/
+instance instNorthcottId {α : Type*} [Preorder α] [LocallyFiniteOrderBot α] :
+    Northcott (id : α → α) where
+  finite_le := Set.finite_Iic
+
+/-- Lambda-form spelling of `TauCeti.instNorthcottId`, so typeclass synthesis finds `Northcott` for
+both `id` and `fun a ↦ a` at `.instances` transparency. -/
+instance instNorthcottId' {α : Type*} [Preorder α] [LocallyFiniteOrderBot α] :
+    Northcott (fun a : α ↦ a) :=
+  instNorthcottId
 
 variable {ι : Type*} (N : ι → ℕ) [Northcott N]
 
@@ -234,6 +248,28 @@ theorem eventually_summatory_indicator_sub_eq (w : ι → ℝ) {S T : Set ι}
   by_cases hS : i ∈ S
   · rw [Set.indicator_of_mem hS, Set.indicator_of_mem (by tauto)]
   · rw [Set.indicator_of_notMem hS, Set.indicator_of_notMem (by tauto)]
+
+/-- For a nonnegative real cutoff, the carrier of the identity on `ℕ` is `Finset.Iic ⌊x⌋₊`. -/
+theorem normLE_id_eq_Iic {x : ℝ} (hx : 0 ≤ x) :
+    normLE (fun n : ℕ ↦ n) x = Finset.Iic ⌊x⌋₊ := by
+  ext n
+  rw [mem_normLE, Finset.mem_Iic, Nat.le_floor_iff hx]
+
+/-- For a weight on `ℕ` vanishing at `0`, the summatory function along the identity height is the
+partial sum over `Finset.Icc 1 ⌊x⌋₊` at every real cutoff `x` (both sides vanish when `x < 1`). -/
+theorem summatory_id_eq_sum_Icc {M : Type*} [AddCommMonoid M] {w : ℕ → M} (hw0 : w 0 = 0)
+    (x : ℝ) :
+    summatory (fun n : ℕ ↦ n) w x = ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, w n := by
+  rcases lt_or_ge x 0 with hx | hx
+  · rw [summatory_eq_zero_of_neg _ hx, Nat.floor_of_nonpos hx.le]
+    simp
+  · rw [summatory_apply, normLE_id_eq_Iic hx]
+    refine (Finset.sum_subset (fun n hn ↦ ?_) fun n hn hnot ↦ ?_).symm
+    · simp only [Finset.mem_Icc, Finset.mem_Iic] at hn ⊢
+      exact hn.2
+    · simp only [Finset.mem_Icc, Finset.mem_Iic] at hn hnot
+      obtain rfl : n = 0 := by omega
+      exact hw0
 
 end TauCeti
 
