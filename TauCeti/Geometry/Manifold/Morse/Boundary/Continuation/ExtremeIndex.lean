@@ -114,40 +114,39 @@ variable {f₀ f₁ : M → ℝ} {X₀ X₁ : (x : M) → TangentSpace 𝓘(ℝ,
   (Φ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M)
 
 open scoped Classical in
-/-- **Integral continuation coefficients between critical points of index `0`.** The unstable
+/-- **Integral continuation coefficients at a critical point of index `0`.** The unstable
 manifold of a critical point `p` of index `0` is the point `p`, so the coefficient of a critical
-point `q` of index `0` in the image of `p` under the integral continuation map along `Φ` is the
-product of the augmentation signs of `p` and `q` when `Φ` carries `p` into `W^s_{X₁}(q)`, and `0`
-otherwise. -/
+point `q` in the image of `p` under the integral continuation map along `Φ` is the product of the
+augmentation signs of `p` and `q` when `Φ` carries `p` into `W^s_{X₁}(q)`, and `0` otherwise. Both
+sides vanish unless `q` has index `0`. -/
 theorem signedContinuationCoeff_of_morseIndex_eq_zero (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
     {p : criticalPoints 𝓘(ℝ, E) f₀} {q : criticalPoints 𝓘(ℝ, E) f₁}
-    (hp : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = 0) (hq : manifoldMorseIndex 𝓘(ℝ, E) f₁ q = 0) :
+    (hp : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = 0) :
     hX₀.signedContinuationCoeff hX₁ 𝔬₀ 𝔬₁ Φ p q =
       if Φ p ∈ hX₁.flow.stableSet q then 𝔬₀.augmentationSign p * 𝔬₁.augmentationSign q
       else 0 := by
-  rw [signedContinuationCoeff_def, signedPairCoeff_of_morseIndex_eq_zero 𝔬₀ _ hf₀ hp
-    (((𝔬₁.chart q).manifoldMorseIndex_criticalPointsEquivOfComp_symm (σ := Φ) rfl).trans hq)]
+  rw [signedContinuationCoeff_def, signedPairCoeff_of_morseIndex_eq_zero 𝔬₀ _ hf₀ hp]
   rw [hX₁.stableSet_mpullback Φ]
   simp only [coe_criticalPointsEquivOfComp_symm_apply, Diffeomorph.apply_symm_apply, mem_preimage,
     MorseOrientation.augmentationSign_pullback, Equiv.apply_symm_apply]
 
 open scoped Classical in
-/-- **Integral continuation coefficients between critical points of top index.** The stable
+/-- **Integral continuation coefficients at a critical point of top index.** The stable
 manifold of a critical point `q` of index `n = dim M` is the point `q`. So if `Φ` preserves an
-orientation `oM` of `M` at `Φ⁻¹ q`, the coefficient of `q` in the image of a critical point `p` of
-index `n` under the integral continuation map along `Φ` is the product of the fundamental signs of
-`p` and `q` for `oM` when `Φ⁻¹ q` lies in `W^u_{X₀}(p)`, and `0` otherwise. -/
+orientation `oM` of `M` at `Φ⁻¹ q`, the coefficient of `q` in the image of a critical point `p`
+under the integral continuation map along `Φ` is the product of the fundamental signs of `p` and
+`q` for `oM` when `Φ⁻¹ q` lies in `W^u_{X₀}(p)`, and `0` otherwise. Both sides vanish unless `p`
+has index `n`. -/
 theorem signedContinuationCoeff_of_morseIndex_eq_finrank (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
     (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E)))
     {p : criticalPoints 𝓘(ℝ, E) f₀} {q : criticalPoints 𝓘(ℝ, E) f₁}
     (hΦ : oM.IsOrientationPreservingAt oM Φ (Φ.symm q))
-    (hp : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = finrank ℝ E)
     (hq : manifoldMorseIndex 𝓘(ℝ, E) f₁ q = finrank ℝ E) :
     hX₀.signedContinuationCoeff hX₁ 𝔬₀ 𝔬₁ Φ p q =
       if Φ.symm q ∈ hX₀.flow.unstableSet p then
         hX₀.fundamentalSign 𝔬₀ oM p * hX₁.fundamentalSign 𝔬₁ oM q
       else 0 := by
-  rw [signedContinuationCoeff_def, signedPairCoeff_of_morseIndex_eq_finrank 𝔬₀ _ hf₀ oM hp
+  rw [signedContinuationCoeff_def, signedPairCoeff_of_morseIndex_eq_finrank 𝔬₀ _ hf₀ oM
     (((𝔬₁.chart q).manifoldMorseIndex_criticalPointsEquivOfComp_symm (σ := Φ) rfl).trans hq),
     fundamentalSign_pullback rfl _ 𝔬₁ (hX' := hX₁) hf₁ oM oM hΦ]
   simp only [coe_criticalPointsEquivOfComp_symm_apply, Equiv.apply_symm_apply]
@@ -197,9 +196,10 @@ theorem eventually_signedContinuationCoeff_eq_of_finrank_eq_one
   rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hp₁ with hp | hp
   · -- Both critical points have index `0`.
     have hq : manifoldMorseIndex 𝓘(ℝ, E) f₁ q = 0 := hpq ▸ hp
-    rw [hX₀.signedContinuationCoeff_of_morseIndex_eq_zero hX₁ 𝔬₀ 𝔬₁ Φ hf₀ hp hq,
+    rw [hX₀.signedContinuationCoeff_of_morseIndex_eq_zero hX₁ 𝔬₀ 𝔬₁ Φ hf₀ hp,
       IsAdaptedPseudoGradient.fundamentalSign_of_morseIndex_ne (by omega),
-      IsAdaptedPseudoGradient.fundamentalSign_of_morseIndex_ne (by omega), add_zero, add_zero,
+      IsAdaptedPseudoGradient.fundamentalSign_of_morseIndex_ne (hq.trans_ne (by omega)), add_zero,
+      add_zero,
       hX₀.unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero hf₀
         (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property) hp]
     split_ifs with h
@@ -208,8 +208,7 @@ theorem eventually_signedContinuationCoeff_eq_of_finrank_eq_one
   · -- Both critical points have index `1 = dim M`.
     have hq : manifoldMorseIndex 𝓘(ℝ, E) f₁ q = 1 := hpq ▸ hp
     rw [hX₀.signedContinuationCoeff_of_morseIndex_eq_finrank hX₁ 𝔬₀ 𝔬₁ Φ hf₀ hf₁ oM
-        (isOrientationPreservingAt_continuationTransition hVs oM a b _) (hp.trans hE.symm)
-        (hq.trans hE.symm),
+        (isOrientationPreservingAt_continuationTransition hVs oM a b _) (hq.trans hE.symm),
       MorseOrientation.augmentationSign_of_morseIndex_ne_zero _ (by omega),
       MorseOrientation.augmentationSign_of_morseIndex_ne_zero _ (by omega), zero_add, zero_add,
       hX₁.stableSet_eq_singleton_of_manifoldMorseIndex_eq_finrank
