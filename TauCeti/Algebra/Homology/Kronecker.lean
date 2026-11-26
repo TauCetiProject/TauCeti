@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.LinearYoneda
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
-import TauCeti.Algebra.Homology.Split
 
 /-!
 # The Kronecker map from cohomology to morphisms out of homology

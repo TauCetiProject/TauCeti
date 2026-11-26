@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import TauCeti.Algebra.Category.ModuleCat.Biproducts
 
 /-!
 # Splittings and their canonical biproduct comparisons
@@ -24,6 +25,8 @@ of that of the middle term, so the outer terms are exact wherever the middle ter
 
 ## Main results
 
+* `CategoryTheory.ShortComplex.Splitting.ofExactOfSection_s`: the section of a splitting
+  constructed by `ShortComplex.Splitting.ofExactOfSection`.
 * `CategoryTheory.ShortComplex.Splitting.binaryBicone`,
   `CategoryTheory.ShortComplex.Splitting.isBilimitBinaryBicone` and
   `CategoryTheory.ShortComplex.Splitting.isLimitBinaryFan`: the middle term of a split short
@@ -41,6 +44,10 @@ of that of the middle term, so the outer terms are exact wherever the middle ter
   outer terms kills the middle term.
 * `CategoryTheory.ShortComplex.Splitting.comp_s_hom_comp_g_hom_of_comp_f_hom_eq_zero`: the first
   statement for linear maps out of a split short complex of modules into an arbitrary module.
+* `CategoryTheory.ShortComplex.Splitting.isoBinaryBiproduct_trans_biprodIsoProd_symm_apply`,
+  `CategoryTheory.ShortComplex.Splitting.isoBinaryBiproduct_trans_biprodIsoProd_apply_fst`, and
+  `CategoryTheory.ShortComplex.Splitting.isoBinaryBiproduct_trans_biprodIsoProd_apply_snd`:
+  coordinate formulas for the product equivalence of a split short complex in `ModuleCat`.
 * `CategoryTheory.ShortComplex.Splitting.acyclic_X₁` and
   `CategoryTheory.ShortComplex.Splitting.acyclic_X₃`: the outer terms of a split short complex of
   homological complexes are acyclic when the middle term is.
@@ -61,6 +68,13 @@ namespace CategoryTheory.ShortComplex.Splitting
 section Preadditive
 
 variable {C : Type*} [Category C] [Preadditive C] {S : ShortComplex C}
+
+/-- The section of `ShortComplex.Splitting.ofExactOfSection` is the given section. -/
+@[simp]
+theorem ofExactOfSection_s [Balanced C] (S : ShortComplex C) (hS : S.Exact) (s : S.X₃ ⟶ S.X₂)
+    (s_g : s ≫ S.g = 𝟙 S.X₃) (hf : Mono S.f) :
+    (Splitting.ofExactOfSection S hS s s_g hf).s = s :=
+  (rfl)
 
 /-- A morphism out of the middle term of a split short complex which vanishes on the first term
 factors through the projection via the section. -/
@@ -172,6 +186,51 @@ theorem comp_s_hom_comp_g_hom_of_comp_f_hom_eq_zero (s : S.Splitting) (ρ : S.X�
   rw [LinearMap.comp_assoc, ← ModuleCat.hom_comp, s.g_s, ModuleCat.hom_sub, ModuleCat.hom_id,
     ModuleCat.hom_comp, LinearMap.comp_sub, LinearMap.comp_id, ← LinearMap.comp_assoc, hρ,
     LinearMap.zero_comp, sub_zero]
+
+/-- Under the product equivalence `s.isoBinaryBiproduct ≪≫ ModuleCat.biprodIsoProd S.X₁ S.X₃` of
+a split short complex of modules, `(e, g)` maps to `S.f e + s.s g`. -/
+@[simp]
+theorem isoBinaryBiproduct_trans_biprodIsoProd_symm_apply (s : S.Splitting) (e : S.X₁)
+    (g : S.X₃) :
+    (s.isoBinaryBiproduct ≪≫ ModuleCat.biprodIsoProd S.X₁ S.X₃).toLinearEquiv.symm (e, g) =
+      S.f e + s.s g := by
+  have hinl : ModuleCat.ofHom (LinearMap.inl R S.X₁ S.X₃) ≫
+      (ModuleCat.biprodIsoProd S.X₁ S.X₃).inv ≫ s.isoBinaryBiproduct.inv = S.f := by
+    rw [← ModuleCat.inl_comp_biprodIsoProd_hom, Category.assoc, Iso.hom_inv_id_assoc]
+    exact Limits.biprod.inl_desc _ _
+  have hinr : ModuleCat.ofHom (LinearMap.inr R S.X₁ S.X₃) ≫
+      (ModuleCat.biprodIsoProd S.X₁ S.X₃).inv ≫ s.isoBinaryBiproduct.inv = s.s := by
+    rw [← ModuleCat.inr_comp_biprodIsoProd_hom, Category.assoc, Iso.hom_inv_id_assoc]
+    exact Limits.biprod.inr_desc _ _
+  have hprod : (e, g) = LinearMap.inl R S.X₁ S.X₃ e + LinearMap.inr R S.X₁ S.X₃ g :=
+    Prod.ext (add_zero e).symm (zero_add g).symm
+  rw [hprod, map_add, Iso.toLinearEquiv_symm, Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
+    Iso.symm_hom, Iso.trans_inv]
+  have h1 := ConcreteCategory.congr_hom hinl e
+  have h2 := ConcreteCategory.congr_hom hinr g
+  simp only [ConcreteCategory.comp_apply, ModuleCat.hom_ofHom] at h1 h2 ⊢
+  rw [h1, h2]
+
+/-- The first coordinate of `s.isoBinaryBiproduct ≪≫ ModuleCat.biprodIsoProd S.X₁ S.X₃` is the
+retraction `s.r`. -/
+@[simp]
+theorem isoBinaryBiproduct_trans_biprodIsoProd_apply_fst (s : S.Splitting) (x : S.X₂) :
+    ((s.isoBinaryBiproduct ≪≫ ModuleCat.biprodIsoProd S.X₁ S.X₃).toLinearEquiv x).1 = s.r x := by
+  rw [Iso.toLinearEquiv_apply, Iso.trans_hom, ModuleCat.comp_apply,
+    ModuleCat.biprodIsoProd_hom_apply]
+  dsimp only
+  rw [← ConcreteCategory.comp_apply]
+  simp [isoBinaryBiproduct]
+
+/-- The second coordinate of `s.isoBinaryBiproduct ≪≫ ModuleCat.biprodIsoProd S.X₁ S.X₃` is the
+projection `S.g`. -/
+@[simp]
+theorem isoBinaryBiproduct_trans_biprodIsoProd_apply_snd (s : S.Splitting) (x : S.X₂) :
+    ((s.isoBinaryBiproduct ≪≫ ModuleCat.biprodIsoProd S.X₁ S.X₃).toLinearEquiv x).2 = S.g x := by
+  rw [Iso.toLinearEquiv_apply, Iso.trans_hom, ModuleCat.comp_apply,
+    ModuleCat.biprodIsoProd_hom_apply]
+  dsimp only
+  rw [← ConcreteCategory.comp_apply, ShortComplex.Splitting.isoBinaryBiproduct_hom_snd]
 
 end ModuleCat
 

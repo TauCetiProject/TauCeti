@@ -278,8 +278,8 @@ lemma universalCoefficientEquivOfRetraction_apply_snd {i j : α} (hij : j + 1 = 
     [Projective (X.cycles j)] [IsSplitMono (X.iCycles j)] (r : X.X i ⟶ X.cycles i)
     (hr : X.iCycles i ≫ r = 𝟙 _) (x : (X.linearYonedaObj k Y).homology i) :
     (universalCoefficientEquivOfRetraction.{w} k X Y hij r hr x).2 = kronecker k X Y i x :=
-  (LinearMap.congr_fun ((exact_extToHomology_kronecker hij).splitSurjectiveEquiv
-    (extToHomology_injective hij) _).property.right x).symm
+  Function.Exact.splitSurjectiveEquiv_apply_snd (exact_extToHomology_kronecker hij)
+    (extToHomology_injective hij) _ x
 
 variable (k X Y) in
 /-- **The splitting of the universal coefficient sequence**: in degree `i = j + 1`, when the

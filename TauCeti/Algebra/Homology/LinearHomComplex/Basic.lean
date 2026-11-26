@@ -210,13 +210,6 @@ lemma linearHomComplexPrecomp_add (φ₁ φ₂ : F₁ ⟶ F₂) (G : CochainComp
   ext n (z : ModuleCat.of R (Cochain F₂ G n))
   simp [linearHomComplexPrecomp_f_apply, Cochain.ofHom_add, Cochain.add_comp]
 
-/-- Postcomposing `linearHomComplex` with the zero chain map gives the zero morphism. -/
-@[simp]
-lemma linearHomComplexPostcomp_zero (F G₁ G₂ : CochainComplex C ℤ) :
-    linearHomComplexPostcomp R F (0 : G₁ ⟶ G₂) = 0 := by
-  ext n (z : ModuleCat.of R (Cochain F G₁ n))
-  simp [linearHomComplexPostcomp_f_apply]
-
 /-- Postcomposition in `linearHomComplex` is additive in the target chain map. -/
 @[simp]
 lemma linearHomComplexPostcomp_add (F : CochainComplex C ℤ) (ψ₁ ψ₂ : G₁ ⟶ G₂) :
@@ -244,6 +237,12 @@ def linearHomComplexFunctor :
 instance (F : (CochainComplex C ℤ)ᵒᵖ) :
     ((linearHomComplexFunctor (C := C) R).obj F).Additive where
   map_add {_ _} f g := linearHomComplexPostcomp_add R F.unop f g
+
+/-- Postcomposing `linearHomComplex` with the zero chain map gives the zero morphism. -/
+@[simp]
+lemma linearHomComplexPostcomp_zero (F G₁ G₂ : CochainComplex C ℤ) :
+    linearHomComplexPostcomp R F (0 : G₁ ⟶ G₂) = 0 :=
+  ((linearHomComplexFunctor R).obj (Opposite.op F)).map_zero (X := G₁) (Y := G₂)
 
 end Functoriality
 

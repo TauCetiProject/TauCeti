@@ -314,6 +314,32 @@ lemma khovanovHomologyMirrorUniversalCoefficientShortComplex_def (i j : ℤ) :
           (D.exact_khovanovHomologyMirrorExtToHomology_khovanovHomologyMirrorKronecker hD hD' R i j
             ).apply_apply_eq_zero e) := (rfl)
 
+/-- The inclusion of `khovanovHomologyMirrorUniversalCoefficientShortComplex` is
+`khovanovHomologyMirrorExtToHomology`. -/
+lemma khovanovHomologyMirrorUniversalCoefficientShortComplex_f (i j : ℤ) :
+    (D.khovanovHomologyMirrorUniversalCoefficientShortComplex hD hD' R i j).f =
+      eqToHom (D.khovanovHomologyMirrorUniversalCoefficientShortComplex_X₁ hD hD' R i j) ≫
+        ModuleCat.ofHom (D.khovanovHomologyMirrorExtToHomology hD hD' R i j) ≫
+        eqToHom
+          (D.khovanovHomologyMirrorUniversalCoefficientShortComplex_X₂ hD hD' R i j).symm := by
+  dsimp only [khovanovHomologyMirrorUniversalCoefficientShortComplex]
+  refine (Category.id_comp _).symm.trans ?_
+  exact congrArg₂ (· ≫ ·) (eqToHom_refl _ _).symm
+    ((Category.comp_id _).symm.trans (congrArg (_ ≫ ·) (eqToHom_refl _ _).symm))
+
+/-- The projection of `khovanovHomologyMirrorUniversalCoefficientShortComplex` is
+`khovanovHomologyMirrorKronecker`. -/
+lemma khovanovHomologyMirrorUniversalCoefficientShortComplex_g (i j : ℤ) :
+    (D.khovanovHomologyMirrorUniversalCoefficientShortComplex hD hD' R i j).g =
+      eqToHom (D.khovanovHomologyMirrorUniversalCoefficientShortComplex_X₂ hD hD' R i j) ≫
+        ModuleCat.ofHom (D.khovanovHomologyMirrorKronecker hD hD' R i j) ≫
+        eqToHom
+          (D.khovanovHomologyMirrorUniversalCoefficientShortComplex_X₃ hD hD' R i j).symm := by
+  dsimp only [khovanovHomologyMirrorUniversalCoefficientShortComplex]
+  refine (Category.id_comp _).symm.trans ?_
+  exact congrArg₂ (· ≫ ·) (eqToHom_refl _ _).symm
+    ((Category.comp_id _).symm.trans (congrArg (_ ≫ ·) (eqToHom_refl _ _).symm))
+
 /-- **Splitting of `khovanovHomologyMirrorUniversalCoefficientShortComplex`** in `ModuleCat R`. -/
 def khovanovHomologyMirrorUniversalCoefficientSplitting (i j : ℤ) :
     (D.khovanovHomologyMirrorUniversalCoefficientShortComplex hD hD' R i j).Splitting :=
@@ -334,8 +360,13 @@ lemma khovanovHomologyMirrorUniversalCoefficientSplitting_s (i j : ℤ) :
         ModuleCat.ofHom (D.khovanovHomologyMirrorKroneckerSection hD hD' R i j) ≫
         eqToHom
           (D.khovanovHomologyMirrorUniversalCoefficientShortComplex_X₂ hD hD' R i j).symm := by
-  dsimp only [khovanovHomologyMirrorUniversalCoefficientSplitting,
-    ShortComplex.Splitting.ofExactOfSection]
+  have h : (D.khovanovHomologyMirrorUniversalCoefficientSplitting hD hD' R i j).s =
+      (ModuleCat.ofHom (D.khovanovHomologyMirrorKroneckerSection hD hD' R i j) :
+        (D.khovanovHomologyMirrorUniversalCoefficientShortComplex hD hD' R i j).X₃ ⟶
+        (D.khovanovHomologyMirrorUniversalCoefficientShortComplex hD hD' R i j).X₂) :=
+    ShortComplex.Splitting.ofExactOfSection_s _ _ _ _ _
+  refine h.trans ?_
+  dsimp only [khovanovHomologyMirrorUniversalCoefficientShortComplex]
   refine (Category.id_comp _).symm.trans ?_
   exact congrArg₂ (· ≫ ·) (eqToHom_refl _ _).symm
     ((Category.comp_id _).symm.trans (congrArg (_ ≫ ·) (eqToHom_refl _ _).symm))
@@ -366,25 +397,21 @@ lemma khovanovHomologyMirrorUniversalCoefficientEquiv_symm_apply (i j : ℤ)
   let s := D.khovanovHomologyMirrorUniversalCoefficientSplitting hD hD' R i j
   let e' : S.X₁ := e
   let g' : S.X₃ := g
-  have hinl : ModuleCat.ofHom (LinearMap.inl R S.X₁ S.X₃) ≫
-      (ModuleCat.biprodIsoProd S.X₁ S.X₃).inv ≫ s.isoBinaryBiproduct.inv = S.f := by
-    rw [← ModuleCat.inl_comp_biprodIsoProd_hom, Category.assoc, Iso.hom_inv_id_assoc]
-    exact Limits.biprod.inl_desc _ _
-  have hinr : ModuleCat.ofHom (LinearMap.inr R S.X₁ S.X₃) ≫
-      (ModuleCat.biprodIsoProd S.X₁ S.X₃).inv ≫ s.isoBinaryBiproduct.inv = s.s := by
-    rw [← ModuleCat.inr_comp_biprodIsoProd_hom, Category.assoc, Iso.hom_inv_id_assoc]
-    exact Limits.biprod.inr_desc _ _
-  have hprod : (e', g') = LinearMap.inl R S.X₁ S.X₃ e' + LinearMap.inr R S.X₁ S.X₃ g' :=
-    Prod.ext (add_zero e').symm (zero_add g').symm
-  have heq : (s.isoBinaryBiproduct ≪≫ ModuleCat.biprodIsoProd S.X₁ S.X₃).toLinearEquiv.symm
-      (e', g') = S.f.hom e' + s.s.hom g' := by
-    rw [hprod, map_add, Iso.toLinearEquiv_symm, Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
-      Iso.symm_hom, Iso.trans_inv]
-    have h1 := ConcreteCategory.congr_hom hinl e'
-    have h2 := ConcreteCategory.congr_hom hinr g'
-    simp only [ConcreteCategory.comp_apply, ModuleCat.hom_ofHom] at h1 h2 ⊢
-    rw [h1, h2]
-  exact heq
+  have h := s.isoBinaryBiproduct_trans_biprodIsoProd_symm_apply e' g'
+  have h1 : eqToHom (D.khovanovHomologyMirrorUniversalCoefficientShortComplex_X₁ hD hD' R i j) =
+      𝟙 _ := eqToHom_refl _ _
+  have h2 : eqToHom
+      (D.khovanovHomologyMirrorUniversalCoefficientShortComplex_X₂ hD hD' R i j).symm =
+      𝟙 _ := eqToHom_refl _ _
+  have h3 : eqToHom (D.khovanovHomologyMirrorUniversalCoefficientShortComplex_X₃ hD hD' R i j) =
+      𝟙 _ := eqToHom_refl _ _
+  have hf : S.f.hom e' = D.khovanovHomologyMirrorExtToHomology hD hD' R i j e := by
+    rw [D.khovanovHomologyMirrorUniversalCoefficientShortComplex_f, h1, h2]
+    rfl
+  have hs : s.s.hom g' = D.khovanovHomologyMirrorKroneckerSection hD hD' R i j g := by
+    rw [D.khovanovHomologyMirrorUniversalCoefficientSplitting_s, h3, h2]
+    rfl
+  exact h.trans (congrArg₂ (· + ·) hf hs)
 
 @[simp]
 lemma khovanovHomologyMirrorUniversalCoefficientEquiv_apply_snd (i j : ℤ)
@@ -394,14 +421,16 @@ lemma khovanovHomologyMirrorUniversalCoefficientEquiv_apply_snd (i j : ℤ)
   let S := D.khovanovHomologyMirrorUniversalCoefficientShortComplex hD hD' R i j
   let s := D.khovanovHomologyMirrorUniversalCoefficientSplitting hD hD' R i j
   let x' : S.X₂ := x
-  have h := congrArg Prod.snd
-    (ModuleCat.biprodIsoProd_hom_apply S.X₁ S.X₃ (s.isoBinaryBiproduct.hom x'))
-  have h' : ((s.isoBinaryBiproduct ≪≫ ModuleCat.biprodIsoProd S.X₁ S.X₃).toLinearEquiv x').2 =
-      S.g.hom x' := by
-    rw [Iso.toLinearEquiv_apply, Iso.trans_hom, ModuleCat.comp_apply, h]
-    dsimp only
-    rw [← ConcreteCategory.comp_apply, ShortComplex.Splitting.isoBinaryBiproduct_hom_snd]
-  exact h'
+  have h := s.isoBinaryBiproduct_trans_biprodIsoProd_apply_snd x'
+  have h2 : eqToHom (D.khovanovHomologyMirrorUniversalCoefficientShortComplex_X₂ hD hD' R i j) =
+      𝟙 _ := eqToHom_refl _ _
+  have h3 : eqToHom
+      (D.khovanovHomologyMirrorUniversalCoefficientShortComplex_X₃ hD hD' R i j).symm =
+      𝟙 _ := eqToHom_refl _ _
+  have hg : S.g.hom x' = D.khovanovHomologyMirrorKronecker hD hD' R i j x := by
+    rw [D.khovanovHomologyMirrorUniversalCoefficientShortComplex_g, h2, h3]
+    rfl
+  exact h.trans hg
 
 /-- Over a hereditary commutative ring, if `Kh^{1-i,-j}(D; R)` is projective,
 `khovanovHomologyMirrorKronecker` gives an equivalence with the dual. -/

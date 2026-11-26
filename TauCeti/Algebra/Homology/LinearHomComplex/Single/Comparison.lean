@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplexSingle
-public import TauCeti.Algebra.Homology.CochainComplexOpposite
+public import TauCeti.Algebra.Homology.CochainComplex.Opposite
 public import TauCeti.Algebra.Homology.LinearHomComplex.Basic
 public import TauCeti.Algebra.Homology.LinearYoneda
 import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Single
@@ -48,7 +48,9 @@ This file establishes `CochainComplex.linearHomComplexSingleIso`, its naturality
   unsigned cocycle comparison isomorphism and its underlying-morphism formulas.
 * `CochainComplex.linearHomComplexSingleHomologyIso`,
   `CochainComplex.homologyMap_precomp_linearHomComplexSingleHomologyIso_hom`,
+  `CochainComplex.homologyMap_precomp_linearHomComplexSingleHomologyIso_inv`,
   `CochainComplex.homologyMap_postcomp_linearHomComplexSingleHomologyIso_hom`,
+  `CochainComplex.homologyMap_postcomp_linearHomComplexSingleHomologyIso_inv`,
   `CochainComplex.homologyπ_linearHomComplexSingleHomologyIso_hom`,
   `CochainComplex.homologyπ_linearHomComplexSingleHomologyIso_inv`,
   `CochainComplex.linearHomComplexSingleHomologyIso_hom_homologyπ`, and
@@ -338,6 +340,25 @@ theorem homologyMap_precomp_linearHomComplexSingleHomologyIso_hom
     linearHomComplexPrecomp_linearHomComplexSingleIso_hom]
   rfl
 
+/-- The inverse of `CochainComplex.linearHomComplexSingleHomologyIso` is natural with respect to
+precomposition by a cochain map `φ : K₁ ⟶ K₂`. -/
+@[reassoc]
+theorem homologyMap_precomp_linearHomComplexSingleHomologyIso_inv
+    {K₁ K₂ : CochainComplex C ℤ} (φ : K₁ ⟶ K₂) (Y : C) (i : ℤ) :
+    (linearHomComplexSingleHomologyIso k K₂ Y i).inv ≫
+        homologyMap (linearHomComplexPrecomp k φ ((singleFunctor C 0).obj Y)) i =
+      homologyMap
+          (K := _root_.ChainComplex.linearYonedaObj
+            (K₂.restriction ComplexShape.embeddingDownIntUpInt) k Y)
+          (L := _root_.ChainComplex.linearYonedaObj
+            (K₁.restriction ComplexShape.embeddingDownIntUpInt) k Y)
+          ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map
+            (HomologicalComplex.restrictionMap φ ComplexShape.embeddingDownIntUpInt).op) i ≫
+        (linearHomComplexSingleHomologyIso k K₁ Y i).inv := by
+  rw [Iso.inv_comp_eq, ← Category.assoc,
+    ← homologyMap_precomp_linearHomComplexSingleHomologyIso_hom, Category.assoc,
+    Iso.hom_inv_id, Category.comp_id]
+
 /-- `CochainComplex.linearHomComplexSingleHomologyIso` is natural with respect to postcomposition by
 a coefficient morphism `g : Y₁ ⟶ Y₂`. -/
 @[reassoc]
@@ -352,6 +373,21 @@ theorem homologyMap_postcomp_linearHomComplexSingleHomologyIso_hom
   rw [linearHomComplexSingleHomologyIso_hom, linearHomComplexSingleHomologyIso_hom,
     Linear.comp_units_smul, Linear.units_smul_comp, ← homologyMap_comp, ← homologyMap_comp,
     linearHomComplexPostcomp_linearHomComplexSingleIso_hom]
+
+/-- The inverse of `CochainComplex.linearHomComplexSingleHomologyIso` is natural with respect to
+postcomposition by a coefficient morphism `g : Y₁ ⟶ Y₂`. -/
+@[reassoc]
+theorem homologyMap_postcomp_linearHomComplexSingleHomologyIso_inv
+    (K : CochainComplex C ℤ) {Y₁ Y₂ : C} (g : Y₁ ⟶ Y₂) (i : ℤ) :
+    (linearHomComplexSingleHomologyIso k K Y₁ i).inv ≫
+        homologyMap (linearHomComplexPostcomp k K ((singleFunctor C 0).map g)) i =
+      homologyMap
+          (_root_.ChainComplex.linearYonedaObjMap k
+            (K.restriction ComplexShape.embeddingDownIntUpInt) g) i ≫
+        (linearHomComplexSingleHomologyIso k K Y₂ i).inv := by
+  rw [Iso.inv_comp_eq, ← Category.assoc,
+    ← homologyMap_postcomp_linearHomComplexSingleHomologyIso_hom, Category.assoc,
+    Iso.hom_inv_id, Category.comp_id]
 
 /-- `CochainComplex.linearHomComplexSingleHomologyIso` intertwines `homologyπ` with
 `CochainComplex.linearHomComplexSingleCyclesIso`. -/

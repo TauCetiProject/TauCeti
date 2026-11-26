@@ -36,6 +36,8 @@ to read a complex, or the pages of a spectral sequence, in other coordinates.
   surjective embedding of complex shapes.
 * `HomologicalComplex.restrictionHomologyIsoOfSurjective`: the homology of a restriction along a
   surjective embedding of complex shapes.
+* `HomologicalComplex.restrictionICyclesRetractionOfSurjective`: transport of a retraction of the
+  cycle inclusion along a surjective embedding of complex shapes.
 -/
 
 public section
@@ -177,5 +179,39 @@ lemma isSplitMono_restriction_iCycles_of_surjective (K : HomologicalComplex C c'
       Iso.inv_hom_id, Category.comp_id, restrictionCyclesIsoOfSurjective_hom_iCycles]
   rw [hfac]
   infer_instance
+
+/-- Transport a retraction `r` of `K.iCycles j'` to a retraction of `(K.restriction e).iCycles j`
+along a surjective embedding of complex shapes reflecting relations. -/
+noncomputable def restrictionICyclesRetractionOfSurjective (K : HomologicalComplex C c') (j : ι)
+    (j' : ι') (hj : e.f j = j') [K.HasHomology j'] [(K.restriction e).HasHomology j]
+    (r : K.X j' ⟶ K.cycles j') :
+    (K.restriction e).X j ⟶ (K.restriction e).cycles j :=
+  (K.restrictionXIso e hj).hom ≫ r ≫ (K.restrictionCyclesIsoOfSurjective e he j j' hj).inv
+
+/-- The transported morphism `restrictionICyclesRetractionOfSurjective` is a retraction of
+`(K.restriction e).iCycles j` whenever `r` is a retraction of `K.iCycles j'`. -/
+@[reassoc (attr := simp)]
+lemma iCycles_restrictionICyclesRetractionOfSurjective (K : HomologicalComplex C c') (j : ι)
+    (j' : ι') (hj : e.f j = j') [K.HasHomology j'] [(K.restriction e).HasHomology j]
+    (r : K.X j' ⟶ K.cycles j') (hr : K.iCycles j' ≫ r = 𝟙 _) :
+    (K.restriction e).iCycles j ≫
+        K.restrictionICyclesRetractionOfSurjective e he j j' hj r = 𝟙 _ := by
+  rw [restrictionICyclesRetractionOfSurjective, ← Category.assoc,
+    ← K.restrictionCyclesIsoOfSurjective_hom_iCycles e he j j' hj, Category.assoc,
+    reassoc_of% hr, Iso.hom_inv_id]
+
+/-- Composing `restrictionICyclesRetractionOfSurjective` with `(K.restriction e).homologyπ j`
+transports `r ≫ K.homologyπ j'` along `restrictionXIso` and
+`restrictionHomologyIsoOfSurjective`. -/
+@[reassoc]
+lemma restrictionICyclesRetractionOfSurjective_comp_homologyπ (K : HomologicalComplex C c')
+    (j : ι) (j' : ι') (hj : e.f j = j') [K.HasHomology j'] [(K.restriction e).HasHomology j]
+    (r : K.X j' ⟶ K.cycles j') :
+    K.restrictionICyclesRetractionOfSurjective e he j j' hj r ≫
+        (K.restriction e).homologyπ j =
+      (K.restrictionXIso e hj).hom ≫ r ≫ K.homologyπ j' ≫
+        (K.restrictionHomologyIsoOfSurjective e he j j' hj).inv := by
+  rw [restrictionICyclesRetractionOfSurjective, Category.assoc, Category.assoc,
+    ← homologyπ_restrictionHomologyIsoOfSurjective_inv]
 
 end HomologicalComplex
