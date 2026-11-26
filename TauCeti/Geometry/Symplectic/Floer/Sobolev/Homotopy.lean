@@ -259,14 +259,14 @@ private theorem isFredholm_iff_and_index_eq_of_homotopy (ω : SymplecticForm V)
 
 /-- **The Fredholm property of the linearized Floer operator is invariant under homotopies of the
 end Hamiltonians.** Let `H±_μ`, `μ ∈ ℝ`, be homotopies of time-dependent Hamiltonians, jointly `C²`
-in the parameter, the time and the point, such that for every `μ ∈ [0, 1]` the loops `x₋` and
-`x₊` are nondegenerate one-periodic orbits of `H₋_μ` and `H₊_μ`. Let `(J, K_s, K_t)` and
-`(J', K'_s, K'_t)` be Floer data that are `C¹` (with `C²` Hamiltonians) on the whole cylinder,
-compatible with `ω`, and cylindrical near the ends with end Hamiltonians `H±_0` and `H±_1`
-respectively. Let `u` and `u'` be `C¹` maps whose loops converge uniformly to `x₋` at `-∞` and
-`x₊` at `+∞`, with slice defects for the end Hamiltonians of their data tending uniformly to zero
-there. Then `D_u` for the first data is Fredholm if and only if `D_{u'}` for the second data
-is. -/
+in the parameter, the time and the point, such that for every `μ ∈ [0, 1]` the suspended vector
+fields of `H₋_μ` and `H₊_μ` are globally Lipschitz and the loops `x₋` and `x₊` are nondegenerate
+one-periodic orbits of `H₋_μ` and `H₊_μ`. Let `(J, K_s, K_t)` and `(J', K'_s, K'_t)` be Floer
+data that are `C¹` (with `C²` Hamiltonians) on the whole cylinder, compatible with `ω`, and
+cylindrical near the ends with end Hamiltonians `H±_0` and `H±_1` respectively. Let `u` and `u'`
+be `C¹` maps whose loops converge uniformly to `x₋` at `-∞` and `x₊` at `+∞`, with slice defects
+for the end Hamiltonians of their data tending uniformly to zero there. Then `D_u` for the first
+data is Fredholm if and only if `D_{u'}` for the second data is. -/
 theorem isFredholm_floerSobolevOperator_iff_of_homotopy (ω : SymplecticForm V)
     {J J' : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ}
     {Hm Hp : ℝ → ℝ → V → ℝ} {Jm Jp Jm' Jp' : ℝ → V → AlmostComplexStructure V} {R R' : ℝ}

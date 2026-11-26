@@ -51,8 +51,9 @@ when the asymptotic orbits are one-periodic and nondegenerate.
   end Hamiltonians, nor on any of the almost complex structures.
 * **Along families of data.** Along a family of data `(J_μ, K_{s,μ}, K_{t,μ})`, jointly `C¹` in
   the parameter `μ` (with `C²` Hamiltonians) and cylindrical near the ends with end Hamiltonians
-  `H±_μ` that may move with `μ` while `x±` stay nondegenerate orbits of them, the Fredholm property
-  and the index of `D_u` are constant over a preconnected set of parameters
+  `H±_μ` that may move with `μ` while their suspended vector fields stay globally Lipschitz and
+  `x±` stay nondegenerate orbits of them, the Fredholm property and the index of `D_u` are
+  constant over a preconnected set of parameters
   (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_and_index_eq_of_family`). This gives the
   homotopy invariance of the index in the end Hamiltonians, in
   `TauCeti.Geometry.Symplectic.Floer.Sobolev.Homotopy`.
@@ -710,12 +711,12 @@ theorem index_floerSobolevOperator_eq_of_cylindrical (ω : SymplecticForm V)
 /-- **The Fredholm property and the index along a family of data.** Let `(J_μ, K_{s,μ}, K_{t,μ})`
 be a family of Floer data, `C¹` jointly in the parameter `μ`, the point of the cylinder and the
 target point (with `C²` Hamiltonians), compatible with `ω`, and, for `μ` in a preconnected set
-`P`, cylindrical near the ends with a common radius and end Hamiltonians `H±_μ`; the end data may
-depend on `μ`. Let `u` be a `C¹` map whose loops converge uniformly to loops `x₋` at `-∞` and `x₊`
-at `+∞` which, for every `μ ∈ P`, are nondegenerate orbits of `H±_μ`, the slice defects
-`∂t u - X_{H±_μ,t}(u)` tending uniformly to zero at the corresponding end. If the operator `D_u` of
-the data at `μ₀ ∈ P` is Fredholm, then so is the operator of the data at every `μ₁ ∈ P`, with the
-same index. -/
+`P`, cylindrical near the ends with a common radius and end Hamiltonians `H±_μ` whose suspended
+vector fields are globally Lipschitz; the end data may depend on `μ`. Let `u` be a `C¹` map whose
+loops converge uniformly to loops `x₋` at `-∞` and `x₊` at `+∞` which, for every `μ ∈ P`, are
+nondegenerate orbits of `H±_μ`, the slice defects `∂t u - X_{H±_μ,t}(u)` tending uniformly to zero
+at the corresponding end. If the operator `D_u` of the data at `μ₀ ∈ P` is Fredholm, then so is
+the operator of the data at every `μ₁ ∈ P`, with the same index. -/
 theorem isFredholm_floerSobolevOperator_and_index_eq_of_family (ω : SymplecticForm V)
     {J : ℝ × (ℝ × ℝ) → V → AlmostComplexStructure V} {Ks Kt : ℝ × (ℝ × ℝ) → V → ℝ}
     {Hm Hp : ℝ → ℝ → V → ℝ} {Jm Jp : ℝ → ℝ → V → AlmostComplexStructure V} {R : ℝ}
