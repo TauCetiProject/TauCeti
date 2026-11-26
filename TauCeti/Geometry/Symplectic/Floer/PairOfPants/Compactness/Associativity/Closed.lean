@@ -64,12 +64,14 @@ along the ends and the necks, and the long-neck end `L → ∞` are not treated 
 
 ## Main results
 
-* `exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_assocPerturbation`,
-  in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`: there is a threshold `δ > 0` such
-  that every sequence of solutions along the associativity family, for parameters in a compact
-  window `C`, with topological energy at most `A`, has a subsequence whose parameters converge in
-  `C` and which converges on an open `Ω` of a compact window `D` of the domain off a finite set
-  `Z` of bubbling points, with `#Z * δ ≤ A + (∑ i, B i + Bout + 2 (BG + BG'))`.
+* `…_off_finset_associativityPerturbation`, in the namespace
+  `TauCeti.SmoothTwoForm.IsNondegenerate`, the case of the associativity family of
+  `exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset`: there is a
+  threshold `δ > 0` such that every sequence of solutions along the associativity family, for
+  parameters in a compact window `C`, with topological energy at most `A`, has a subsequence
+  whose parameters converge in `C` and which converges on an open `Ω` of a compact window `D` of
+  the domain off a finite set `Z` of bubbling points, with
+  `#Z * δ ≤ A + (∑ i, B i + Bout + 2 (BG + BG'))`.
 
 ## References
 
@@ -146,7 +148,7 @@ about a point of `Z` eventually carries energy at least `δ`, the energy densiti
 bounded on every compact subset of `Ω \ Z`, and the solutions converge on `Ω \ Z` to a continuous
 map `v`, locally uniformly after applying `e` and pointwise in `M`. -/
 theorem
-    exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_assocPerturbation
+exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_associativityPerturbation
     (hω : ω.IsNondegenerate) (hH : ∀ i, Periodic (H i) 1)
     (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H i))) (hHout : Periodic Hout 1)
     (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry Hout)) (hG : Periodic G 1)
