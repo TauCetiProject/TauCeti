@@ -63,8 +63,12 @@ theorem injective_pi_mpullback_inclusion_iSup :
       (Opens.inclusion (le_iSup s i)) (contMDiff_inclusion _)) := by
   refine (injective_iff_map_eq_zero _).mpr fun φ hφ ↦ Subtype.ext (funext fun x ↦ ?_)
   obtain ⟨i, hi⟩ := Opens.mem_iSup.mp x.property
-  have h := congrFun (congrArg Subtype.val (congrFun hφ i)) ⟨x, hi⟩
-  rw [LinearMap.pi_apply, coe_mpullback, mpullback_inclusion_apply] at h
+  obtain ⟨y, rfl⟩ : ∃ y : s i, Opens.inclusion (le_iSup s i) y = x :=
+    ⟨⟨x, hi⟩, (Set.inclusion_mk _ _).trans (Subtype.coe_eta _ _)⟩
+  have h := congrFun (congrArg Subtype.val (congrFun hφ i)) y
+  rw [LinearMap.pi_apply, coe_mpullback, mpullback_inclusion_apply, Pi.zero_apply,
+    ZeroMemClass.coe_zero, Pi.zero_apply] at h
+  rw [ZeroMemClass.coe_zero, Pi.zero_apply]
   exact h
 
 /-- Smooth forms on pairwise disjoint open sets `s i` are the restrictions of a smooth form on
@@ -74,18 +78,21 @@ theorem surjective_pi_mpullback_inclusion_iSup (hs : Pairwise (Disjoint on s)) :
       (Opens.inclusion (le_iSup s i)) (contMDiff_inclusion _)) := by
   intro φ
   have hmem (x : (⨆ i, s i : Opens M)) : ∃ i, (x : M) ∈ s i := Opens.mem_iSup.mp x.property
-  let γ : RoughForm I (⨆ i, s i : Opens M) F k := fun x ↦
-    (φ (hmem x).choose).val ⟨x, (hmem x).choose_spec⟩
+  set γ : RoughForm I (⨆ i, s i : Opens M) F k := fun x ↦
+    (φ (hmem x).choose).val ⟨x, (hmem x).choose_spec⟩ with hγdef
   -- The point `y` of `s i` lies in no other member, so `γ` takes the value of `φ i` there.
   have hγ (i : ι) : TauCeti.mpullback I I (Opens.inclusion (le_iSup s i)) γ = (φ i).val := by
     funext y
-    rw [mpullback_inclusion_apply]
-    have key (j : ι) (hj : (y : M) ∈ s j) : (φ j).val ⟨y, hj⟩ = (φ i).val y := by
+    have key (x : (⨆ i, s i : Opens M)) (hx : (x : M) = y) (j : ι) (hj : (x : M) ∈ s j) :
+        (φ j).val ⟨x, hj⟩ = (φ i).val y := by
+      obtain ⟨y, hy⟩ := y
+      subst hx
       obtain rfl : j = i := by
         by_contra hji
-        exact Set.disjoint_left.mp (Opens.coe_disjoint.mpr (hs hji)) hj y.property
+        exact Set.disjoint_left.mp (Opens.coe_disjoint.mpr (hs hji)) hj hy
       rfl
-    exact key _ _
+    rw [mpullback_inclusion_apply, hγdef]
+    exact key _ (Set.coe_inclusion _ y) _ _
   have hγs : IsSmoothForm I ∞ γ :=
     IsSmoothForm.of_mpullback_inclusion (le_iSup s) hmem fun i ↦ hγ i ▸ (φ i).isSmoothForm
   exact ⟨⟨γ, hγs.mem_smoothBundleForms⟩,
