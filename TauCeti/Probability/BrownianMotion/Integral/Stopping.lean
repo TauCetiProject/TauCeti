@@ -151,6 +151,20 @@ noncomputable def BrownianIntegrable.dyadicCellLp
       dyadicCellEvent m τ k).indicator
       ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)))
 
+/-- Definitional unfolding of `dyadicCellLp` as a `MemLp.toLp` indicator, allowing any
+proof of null measurability of the dyadic cell. -/
+theorem BrownianIntegrable.dyadicCellLp_eq_toLp
+    (hH : BrownianIntegrable ℱ P H) (hτ : IsStoppingTime ℱ τ) (m : ℕ) (T : ℝ≥0) (k : ℕ)
+    (hs : @NullMeasurableSet (ℝ≥0 × Ω) ℱ.predictable
+      (Ioc (dyadicGridClip m T k) (dyadicGridClip m T (k + 1)) ×ˢ dyadicCellEvent m τ k)
+      (ℱ.predictableMeasure P T)) :
+    hH.dyadicCellLp hτ m T k =
+      ((Lp.memLp ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))).indicator hs).toLp
+        ((Ioc (dyadicGridClip m T k) (dyadicGridClip m T (k + 1)) ×ˢ
+          dyadicCellEvent m τ k).indicator
+          ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))) :=
+  (rfl)
+
 /-- Almost everywhere on the finite-horizon predictable measure, `dyadicCellLp` equals the
 indicator of `H` on its clipped dyadic cell. -/
 theorem BrownianIntegrable.coeFn_dyadicCellLp
@@ -159,16 +173,10 @@ theorem BrownianIntegrable.coeFn_dyadicCellLp
       (Ioc (dyadicGridClip m T k) (dyadicGridClip m T (k + 1)) ×ˢ
         dyadicCellEvent m τ k).indicator (Function.uncurry H) := by
   let fH := (hH.memLp_predictableMeasure T).toLp (Function.uncurry H)
-  filter_upwards [((Lp.memLp fH).indicator
+  exact (((Lp.memLp fH).indicator
     ((measurableSet_predictable_Ioc_dyadicCeilTime hτ m T k).nullMeasurableSet
-      (m0 := ℱ.predictable))).coeFn_toLp,
-    (hH.memLp_predictableMeasure T).coeFn_toLp] with p hp hHp
-  dsimp only [BrownianIntegrable.dyadicCellLp, fH] at hp ⊢
-  rw [hp]
-  by_cases hmem : p ∈ Ioc (dyadicGridClip m T k) (dyadicGridClip m T (k + 1)) ×ˢ
-      dyadicCellEvent m τ k
-  · rw [indicator_of_mem hmem, indicator_of_mem hmem, hHp]
-  · rw [indicator_of_notMem hmem, indicator_of_notMem hmem]
+      (m0 := ℱ.predictable))).coeFn_toLp).trans
+    ((hH.memLp_predictableMeasure T).coeFn_toLp.indicator)
 
 /-- Rounding a stopping time to the dyadic grid of mesh `2 ^ (-m)` splits the finite-horizon
 predictable `L²` class of the cutoff integrand into the finite sum of `dyadicCellLp` terms. -/

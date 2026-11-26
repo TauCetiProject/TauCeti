@@ -442,16 +442,22 @@ theorem const_mul (hI : IsItoIntegral ℱ P W H I) (c : ℝ) :
       · subst hc; simp_rw [Finance.simpleHolding_smul]; simp [hε.not_ge]
       · have hc2pos : 0 < ‖c‖ₑ ^ 2 := ENNReal.pow_pos (eNorm_pos.mpr hc) 2
         have hc2top : ‖c‖ₑ ^ 2 ≠ ∞ := ENNReal.pow_ne_top eNorm_ne_top
-        convert hE (ε / ‖c‖ₑ ^ 2) (ENNReal.div_pos hε.ne' hc2top) using 2 with k
-        congr 1; ext ω
-        have hscale : ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (c • a k) s ω - c * H s ω‖ₑ ^ 2
-            ∂timeMeasure t =
-            ‖c‖ₑ ^ 2 * ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω‖ₑ ^ 2
-              ∂timeMeasure t := by
-          simp_rw [Finance.simpleHolding_smul, ← mul_sub, eNorm_mul, mul_pow]
-          exact lintegral_const_mul' _ _ hc2top
-        simp only [mem_ofPred_eq, hscale, ENNReal.div_le_iff_le_mul (.inl hc2pos.ne') (.inl hc2top),
-          mul_comm]
+        have hset (k : ℕ) :
+            {ω | ε ≤ ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (c • a k) s ω - c * H s ω‖ₑ ^ 2
+              ∂timeMeasure t} =
+            {ω | ε / ‖c‖ₑ ^ 2 ≤ ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω‖ₑ ^ 2
+              ∂timeMeasure t} := by
+          ext ω
+          have hscale : ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (c • a k) s ω - c * H s ω‖ₑ ^ 2
+              ∂timeMeasure t =
+              ‖c‖ₑ ^ 2 * ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω‖ₑ ^ 2
+                ∂timeMeasure t := by
+            simp_rw [Finance.simpleHolding_smul, ← mul_sub, eNorm_mul, mul_pow]
+            exact lintegral_const_mul' _ _ hc2top
+          simp only [mem_ofPred_eq, hscale]
+          rw [ENNReal.div_le_iff_le_mul (.inl hc2pos.ne') (.inl hc2top), mul_comm]
+        simp_rw [hset]
+        exact hE (ε / ‖c‖ₑ ^ 2) (ENNReal.div_pos hε.ne' hc2top)
     · have hpt : (fun k ↦ Finance.simpleGains (τ k) (n k) (c • a k) W t) =
           fun k ω ↦ c * Finance.simpleGains (τ k) (n k) (a k) W t ω :=
         funext fun k ↦ funext fun ω ↦ Finance.simpleGains_smul (τ k) (n k) c (a k) W t ω

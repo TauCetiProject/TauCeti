@@ -46,10 +46,10 @@ This yields:
   `exists_isItoIntegral_of_isStronglyProgressive`: existence of a predictable, almost surely
   continuous Itô integral (and predictable representative for strongly progressive inputs) that
   is a native local martingale on the raw filtration;
-* `TauCeti.Probability.IsFilteredPreBrownianReal.locally_martingale_of_isItoIntegral` and
-  `locally_martingale_sq_sub_of_isItoIntegral`: every strongly progressive Itô integral `I` is a
-  native local martingale, and `I t ^ 2 - ∫ s, H s ^ 2 ∂timeMeasure t` is a native local
-  martingale.
+* `TauCeti.Probability.IsItoIntegral.locally_martingale` and
+  `TauCeti.Probability.IsItoIntegral.locally_martingale_sq_sub`: every strongly progressive Itô
+  integral `I` is a native local martingale, and `I t ^ 2 - ∫ s, H s ^ 2 ∂timeMeasure t` is a
+  native local martingale.
 
 No completeness or right continuity of the filtration is assumed anywhere.
 
@@ -224,27 +224,12 @@ private theorem ae_eq_stoppedProcess_dyadicCeilTime_of_brownianIntegrable
   have heach : ∀ k ∈ Finset.range N, (hW.l2Integral T (hH.dyadicCellLp hτ m T k) : Ω → ℝ) =ᵐ[P]
       (A k).indicator (fun ω ↦ I (t (k + 1)) ω - I (t k) ω) := fun k hk ↦ by
     have hk' := Finset.mem_range.mp hk
-    have hcell : hH.dyadicCellLp hτ m T k =
-        ((Lp.memLp fH).indicator
-          (measurableSet_predictable_Ioc_prod (t k) (t (k + 1))
-            (hτ.measurableSet_gt_dyadicCeilTime m hk')).nullMeasurableSet).toLp
-          ((Ioc (t k) (t (k + 1)) ×ˢ A k).indicator fH) := by
-      refine Lp.ext ?_
-      filter_upwards [hH.coeFn_dyadicCellLp hτ m T k,
-        ((Lp.memLp fH).indicator
-          (measurableSet_predictable_Ioc_prod (t k) (t (k + 1))
-            (hτ.measurableSet_gt_dyadicCeilTime m hk')).nullMeasurableSet).coeFn_toLp,
-        (hH.memLp_predictableMeasure T).coeFn_toLp] with p hp1 hp2 hp3
-      dsimp only [t, A, fH] at hp2 ⊢
-      rw [hp1, hp2]
-      by_cases hmem : p ∈ Ioc (dyadicGridClip m T k) (dyadicGridClip m T (k + 1)) ×ˢ
-          dyadicCellEvent m τ k
-      · rw [indicator_of_mem hmem, indicator_of_mem hmem, hp3]
-      · rw [indicator_of_notMem hmem, indicator_of_notMem hmem]
     have hloc := hW.coeFn_l2Integral_indicator_Ioc_prod T (t k) (t (k + 1))
       (hτ.measurableSet_gt_dyadicCeilTime m hk') fH
     have hbT : t (k + 1) ≤ T := dyadicGridClip_le m T (k + 1)
-    rw [← hcell, ℱ.indicator_Ioc_prod_eq_predictableMeasureExtendLp_sub P (𝕜 := ℝ) fH
+    rw [← hH.dyadicCellLp_eq_toLp hτ m T k
+        (measurableSet_predictable_Ioc_dyadicCeilTime hτ m T k).nullMeasurableSet,
+      ℱ.indicator_Ioc_prod_eq_predictableMeasureExtendLp_sub P (𝕜 := ℝ) fH
         (ht_mono k.le_succ) hbT,
       map_sub, hW.l2Integral_predictableMeasureExtendLp hbT,
       hW.l2Integral_predictableMeasureExtendLp ((ht_mono k.le_succ).trans hbT),
@@ -410,15 +395,6 @@ theorem exists_isItoIntegral_of_isStronglyProgressive (hW : IsFilteredPreBrownia
   obtain ⟨I, hI, hIpred, hIloc⟩ := hW.exists_isItoIntegral hcont hG_loc
   exact ⟨G, I, hGpred, hGH, hI, hIpred, hIloc⟩
 
-/-- Every strongly progressive Itô integral against an almost surely continuous filtered
-pre-Brownian motion is a native local martingale on the raw filtration. -/
-theorem locally_martingale_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hI : IsItoIntegral ℱ P W H I) (hI_prog : IsStronglyProgressive ℱ I) :
-    Locally (fun Y ↦ Martingale Y ℱ P) ℱ I P := by
-  obtain ⟨J, hJ, -, hJloc⟩ := hW.exists_isItoIntegral hcont hI.locallyBrownianIntegrable
-  exact hI_prog.locally_martingale_of_indist hJloc (isItoIntegral_unique hW hJ hI)
-
 /-- **Stopping compatibility for general Itô integrals.** For any Itô integral `I` of `H` against
 an almost surely continuous filtered pre-Brownian motion and any stopping time `τ`, the stopped
 process `stoppedProcess I τ` is an Itô integral of the cutoff integrand `1_{[0, τ]} H`. -/
@@ -479,13 +455,24 @@ theorem indist_ite_Ioc_add_stoppedProcess_sub (hW : IsFilteredPreBrownianReal �
   isItoIntegral_unique hW (hJ₁.ite_Ioc_add hστ hτρ hJ₂)
     (hW.isItoIntegral_ite_Ioc_stoppedProcess_sub hcont hI hσ hρ (hστ.trans hτρ))
 
+end IsFilteredPreBrownianReal
+
+/-- Every strongly progressive Itô integral against an almost surely continuous filtered
+pre-Brownian motion is a native local martingale on the raw filtration. -/
+theorem IsItoIntegral.locally_martingale (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
+    (hI_prog : IsStronglyProgressive ℱ I) :
+    Locally (fun Y ↦ Martingale Y ℱ P) ℱ I P := by
+  obtain ⟨J, hJ, -, hJloc⟩ := hW.exists_isItoIntegral hcont hI.locallyBrownianIntegrable
+  exact hI_prog.locally_martingale_of_indist hJloc (isItoIntegral_unique hW hJ hI)
+
 /-- **Local-martingale Itô square compensation (quadratic variation bracket).** For any strongly
 progressive Itô integral `I` of `H` against an almost surely continuous filtered pre-Brownian
 motion, the process `I t ^ 2 - ∫ s, H s ^ 2 ∂timeMeasure t` is a native local martingale on the
 raw filtration. -/
-theorem locally_martingale_sq_sub_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hI : IsItoIntegral ℱ P W H I) (hI_prog : IsStronglyProgressive ℱ I) :
+theorem IsItoIntegral.locally_martingale_sq_sub (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
+    (hI_prog : IsStronglyProgressive ℱ I) :
     Locally (fun Y ↦ Martingale Y ℱ P) ℱ
       (fun t ω ↦ I t ω ^ 2 - ∫ s, H s ω ^ 2 ∂timeMeasure t) P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
@@ -498,7 +485,7 @@ theorem locally_martingale_sq_sub_of_isItoIntegral (hW : IsFilteredPreBrownianRe
       (hH.isStronglyPredictable.isStronglyPredictable_integral_sq_timeMeasure
         |>.isStronglyProgressive t)
   refine hX_prog.locally_martingale_of_ae_stopped_eq hH.isLocalizingSequence_energyLocalizer
-    (fun n ↦ hW.martingale_sq_sub_of_isItoIntegral (hHseq n) (hUI n)
+    (fun n ↦ (hUI n).martingale_sq_sub hW (hHseq n)
       (hUpred n).isStronglyProgressive.stronglyAdapted) fun n t ↦ ?_
   let σn := nnvolume.energyLocalizer H ((n : ℝ≥0) + 1)
   rw [nnvolume.stoppedProcess_indicator_pos_energyLocalizer H _ (by positivity)]
@@ -512,7 +499,5 @@ theorem locally_martingale_sq_sub_of_isItoIntegral (hW : IsFilteredPreBrownianRe
           stoppedProcess (fun u ω' ↦ ∫ s, H s ω' ^ 2 ∂timeMeasure u) σn t ω := by
     simp only [stoppedProcess_eq_stoppedValue_apply, stoppedValue]
   rw [hstop_sub, ← hI_eq, ← hE_eq]
-
-end IsFilteredPreBrownianReal
 
 end TauCeti.Probability

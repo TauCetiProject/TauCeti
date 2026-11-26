@@ -27,19 +27,21 @@ characterization in `TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry` i
 integral `I` satisfying `TauCeti.Probability.IsItoIntegral ℱ P W H I` almost surely at each finite
 horizon `T` with the terminal `L²` integral `hW.l2Integral T`. This characterization yields:
 
-* `TauCeti.Probability.IsFilteredPreBrownianReal.integral_eq_zero_of_isItoIntegral` and
-  `integral_mul_of_isItoIntegral`: zero mean and cross-isometry.
+* `TauCeti.Probability.IsItoIntegral.integral_eq_zero` and
+  `TauCeti.Probability.IsItoIntegral.integral_mul`: zero mean and cross-isometry.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.ae_eq_mul_sub_of_isItoIntegral_indicator_Ioc` and
   `indist_mul_sub_of_isItoIntegral_indicator_Ioc`: the `ℱ s`-measurable multiplier rule on `(s, u]`.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.tendsto_eLpNorm_sub_of_isItoIntegral` and
-  `continuous_toLp_of_isItoIntegral`: `L²(P)` time continuity of the integral process.
+* `TauCeti.Probability.IsItoIntegral.tendsto_eLpNorm_sub` and
+  `TauCeti.Probability.IsItoIntegral.continuous_toLp`: `L²(P)` time continuity of the integral
+  process.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.ae_eq_wienerIntegral_of_isItoIntegral` and
   `isItoIntegral_iff_ae_eq_wienerIntegral`: identification with the deterministic Wiener integral.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.tendsto_measure_exists_le_simpleGains_sub_lt`:
   Doob uniform approximation on `[0, T]` by elementary gains.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.martingale_sq_sub_of_isItoIntegral`,
-  `setIntegral_sub_sq_of_isItoIntegral`, `condExp_sub_sq_of_isItoIntegral`,
-  `withDensity_sq_predictableMeasure_Ioc_prod`, and
+* `TauCeti.Probability.IsItoIntegral.martingale_sq_sub`,
+  `TauCeti.Probability.IsItoIntegral.setIntegral_sub_sq`,
+  `TauCeti.Probability.IsItoIntegral.condExp_sub_sq`,
+  `TauCeti.Probability.IsFilteredPreBrownianReal.withDensity_sq_predictableMeasure_Ioc_prod`, and
   `eq_withDensity_sq_predictableMeasure_of_Ioc_prod`: square compensation, conditional square
   increments on predictable rectangles, and identification of the integral's finite-horizon
   predictable measure with `(ℱ.predictableMeasure P T).withDensity (fun p ↦ ‖H p.1 p.2‖ₑ ^ 2)`.
@@ -63,7 +65,7 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Filter Set
 open scoped Topology ENNReal NNReal InnerProductSpace
 
-namespace TauCeti.Probability.IsFilteredPreBrownianReal
+namespace TauCeti.Probability
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω}
   {W H K I J : ℝ≥0 → Ω → ℝ}
@@ -71,17 +73,17 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} 
 /-! ### Moments and multiplier rule -/
 
 /-- Every Itô integral of a Brownian-integrable process has expectation zero at each horizon. -/
-theorem integral_eq_zero_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) (t : ℝ≥0) :
+theorem IsItoIntegral.integral_eq_zero (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H) (t : ℝ≥0) :
     ∫ ω, I t ω ∂P = 0 :=
   (integral_congr_ae (hW.ae_eq_l2Integral_of_isItoIntegral hH hI t)).trans
     (hW.integral_l2Integral t _)
 
 /-- **Itô cross-isometry.** The covariance of two Brownian-integrable Itô integrals at horizon `t`
 equals the time-product inner product of their integrands on `(0, t]`. -/
-theorem integral_mul_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K)
-    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) (t : ℝ≥0) :
+theorem IsItoIntegral.integral_mul (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
+    (hK : BrownianIntegrable ℱ P K) (hJ : IsItoIntegral ℱ P W K J) (t : ℝ≥0) :
     ∫ ω, I t ω * J t ω ∂P = ∫ p, H p.fst p.snd * K p.fst p.snd ∂(timeMeasure t).prod P := by
   let f := (hH.memLp_predictableMeasure t).toLp (Function.uncurry H)
   let g := (hK.memLp_predictableMeasure t).toLp (Function.uncurry K)
@@ -105,7 +107,8 @@ theorem integral_mul_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
 `ℱ s`-measurable random variable `ξ` (in particular any bounded `ℱ s`-measurable random variable),
 any Itô integral of `(Ioc s u).indicator (fun _ ↦ ξ ω)` agrees almost surely at each time `t`
 with `ξ * (W (min u t) - W (min s t))`. Path continuity of `W` is not required. -/
-theorem ae_eq_mul_sub_of_isItoIntegral_indicator_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem IsFilteredPreBrownianReal.ae_eq_mul_sub_of_isItoIntegral_indicator_Ioc
+    (hW : IsFilteredPreBrownianReal ℱ W P)
     {s u : ℝ≥0} (hsu : s ≤ u) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ)
     (hξ₂ : MemLp ξ 2 P)
     (hI : IsItoIntegral ℱ P W (fun t ω ↦ (Ioc s u).indicator (fun _ ↦ ξ ω) t) I) (t : ℝ≥0) :
@@ -125,7 +128,8 @@ theorem ae_eq_mul_sub_of_isItoIntegral_indicator_Ioc (hW : IsFilteredPreBrownian
 continuous paths, any Itô integral of an `ℱ s`-measurable random variable `ξ` held on `(s, u]` is
 indistinguishable from `t ↦ ξ * (W (min u t) - W (min s t))`. No moment condition on `ξ` is
 needed. -/
-theorem indist_mul_sub_of_isItoIntegral_indicator_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem IsFilteredPreBrownianReal.indist_mul_sub_of_isItoIntegral_indicator_Ioc
+    (hW : IsFilteredPreBrownianReal ℱ W P)
     (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) {s u : ℝ≥0} (hsu : s ≤ u) {ξ : Ω → ℝ}
     (hξ : StronglyMeasurable[ℱ s] ξ)
     (hI : IsItoIntegral ℱ P W (fun t ω ↦ (Ioc s u).indicator (fun _ ↦ ξ ω) t) I) :
@@ -161,8 +165,8 @@ private theorem tendsto_indicator_Ioc_prod_ae (P : Measure Ω) [SFinite P] (T t 
 
 /-- **L² time continuity of the Itô integral.** Against a pre-Brownian motion, every Itô integral
 of a Brownian-integrable integrand is continuous in `L²(P)` as a function of time. -/
-theorem tendsto_eLpNorm_sub_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) (t : ℝ≥0) :
+theorem IsItoIntegral.tendsto_eLpNorm_sub (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H) (t : ℝ≥0) :
     Tendsto (fun s ↦ eLpNorm (I s - I t) 2 P) (𝓝 t) (𝓝 0) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   let T : ℝ≥0 := t + 1
@@ -210,18 +214,19 @@ theorem tendsto_eLpNorm_sub_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ
 
 /-- **L² continuity in `Lp ℝ 2 P`.** The `L²` class `t ↦ I t` of an Itô integral of a
 Brownian-integrable integrand varies continuously with `t`. -/
-theorem continuous_toLp_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) :
+theorem IsItoIntegral.continuous_toLp (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H) :
     Continuous fun t ↦ (hI.memLp hW hH t).toLp (I t) := by
   refine continuous_iff_continuousAt.2 fun t ↦ ?_
   rw [ContinuousAt, Lp.tendsto_Lp_iff_tendsto_eLpNorm']
-  exact (hW.tendsto_eLpNorm_sub_of_isItoIntegral hH hI t).congr fun s ↦
+  exact (hI.tendsto_eLpNorm_sub hW hH t).congr fun s ↦
     eLpNorm_congr_ae (((hI.memLp hW hH s).coeFn_toLp.sub (hI.memLp hW hH t).coeFn_toLp).symm)
 
 /-- **Deterministic L² bridge.** For a measurable deterministic integrand `h` in `L²` on every
 finite horizon, any Itô integral agrees almost surely at each horizon `T` with the Wiener
 integral of `h`. -/
-theorem ae_eq_wienerIntegral_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem IsFilteredPreBrownianReal.ae_eq_wienerIntegral_of_isItoIntegral
+    (hW : IsFilteredPreBrownianReal ℱ W P)
     {h : ℝ≥0 → ℝ} (hm : Measurable h) (hLp : ∀ T : ℝ≥0, MemLp h 2 (timeMeasure T))
     (hI : IsItoIntegral ℱ P W (fun t _ ↦ h t) I) (T : ℝ≥0) :
     letI := (hW.hasLaw_eval 0).isProbabilityMeasure
@@ -234,7 +239,8 @@ theorem ae_eq_wienerIntegral_of_isItoIntegral (hW : IsFilteredPreBrownianReal �
 /-- **Deterministic L² characterization.** For a measurable deterministic integrand `h` in `L²` on
 every finite horizon, an almost surely continuous process `I` is an Itô integral of `h` if and
 only if `I T` agrees almost surely with the Wiener integral of `h` at every horizon `T`. -/
-theorem isItoIntegral_iff_ae_eq_wienerIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem IsFilteredPreBrownianReal.isItoIntegral_iff_ae_eq_wienerIntegral
+    (hW : IsFilteredPreBrownianReal ℱ W P)
     {h : ℝ≥0 → ℝ} (hm : Measurable h) (hLp : ∀ T : ℝ≥0, MemLp h 2 (timeMeasure T))
     (hIcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ I t ω)) :
     letI := (hW.hasLaw_eval 0).isProbabilityMeasure
@@ -250,7 +256,8 @@ theorem isItoIntegral_iff_ae_eq_wienerIntegral (hW : IsFilteredPreBrownianReal �
 left-measurable heights converge in `L²` on `(0, T] × Ω` to a Brownian-integrable integrand `H`,
 then against an almost surely continuous pre-Brownian motion their elementary gains converge
 uniformly on `[0, T]` in outer probability to any Itô integral of `H`. -/
-theorem tendsto_measure_exists_le_simpleGains_sub_lt (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem IsFilteredPreBrownianReal.tendsto_measure_exists_le_simpleGains_sub_lt
+    (hW : IsFilteredPreBrownianReal ℱ W P)
     (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω)
     (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I)
     {n : ℕ → ℕ} {τ : ℕ → ℕ → ℝ≥0} {a : ℕ → ℕ → Ω → ℝ}
@@ -350,8 +357,8 @@ private theorem exists_martingale_sq_sub_ae_eq (hW : IsFilteredPreBrownianReal �
 integrand and a strongly adapted Itô integral `I`, the process
 `I t ^ 2 - ∫ s, H s ^ 2 ∂timeMeasure t` is a true martingale on the raw filtration.
 Path continuity of `W` is not required. -/
-theorem martingale_sq_sub_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I)
+theorem IsItoIntegral.martingale_sq_sub (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
     (hI_adapt : StronglyAdapted ℱ I) :
     Martingale (fun t ω ↦ I t ω ^ 2 - ∫ s, H s ω ^ 2 ∂timeMeasure t) ℱ P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
@@ -365,8 +372,8 @@ theorem martingale_sq_sub_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W
 Brownian-integrable integrand `H`, the second moment of `I t - I s` over an `ℱ s`-measurable
 event `A` equals the integral of the elapsed square energy `∫_(s, t] H_r² dr` over `A`. Neither
 strong adaptedness of `I` nor path continuity of `W` is required. -/
-theorem setIntegral_sub_sq_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I)
+theorem IsItoIntegral.setIntegral_sub_sq (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
     {s t : ℝ≥0} (hst : s ≤ t) {A : Set Ω} (hA : MeasurableSet[ℱ s] A) :
     ∫ ω in A, (I t ω - I s ω) ^ 2 ∂P =
       ∫ ω in A, ((∫ r, H r ω ^ 2 ∂timeMeasure t) - ∫ r, H r ω ^ 2 ∂timeMeasure s) ∂P := by
@@ -388,8 +395,8 @@ theorem setIntegral_sub_sq_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ 
 
 /-- **Conditional square-increment identity.** For any Itô integral `I` of a Brownian-integrable
 integrand `H`, `E[(I t - I s)² | ℱ s] = E[∫_(s, t] H_r² dr | ℱ s]` almost surely for `s ≤ t`. -/
-theorem condExp_sub_sq_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I)
+theorem IsItoIntegral.condExp_sub_sq (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
     {s t : ℝ≥0} (hst : s ≤ t) :
     P[fun ω ↦ (I t ω - I s ω) ^ 2 | ℱ s] =ᵐ[P]
       P[fun ω ↦ (∫ r, H r ω ^ 2 ∂timeMeasure t) - ∫ r, H r ω ^ 2 ∂timeMeasure s | ℱ s] := by
@@ -405,14 +412,15 @@ theorem condExp_sub_sq_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
     (fun A hA _ ↦ ?_)
     stronglyMeasurable_condExp.aestronglyMeasurable).symm
   rw [setIntegral_condExp (ℱ.le s) hdiff_int hA]
-  exact (hW.setIntegral_sub_sq_of_isItoIntegral hH hI hst hA).symm
+  exact (hI.setIntegral_sub_sq hW hH hst hA).symm
 
 /-- **Finite-horizon predictable measure on predictable rectangles.** For any Itô integral `I`
 of a Brownian-integrable integrand `H` and any `T : ℝ≥0`, the squared-integrand measure
 `(ℱ.predictableMeasure P T).withDensity (fun p ↦ ‖H p.1 p.2‖ₑ ^ 2)` assigns to every
 predictable rectangle `Ioc s t ×ˢ A` (`s ≤ t`, `A ∈ ℱ s`) the value
 `ENNReal.ofReal (∫ ω in A, (I (min t T) ω - I (min s T) ω) ^ 2 ∂P)`. -/
-theorem withDensity_sq_predictableMeasure_Ioc_prod (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem IsFilteredPreBrownianReal.withDensity_sq_predictableMeasure_Ioc_prod
+    (hW : IsFilteredPreBrownianReal ℱ W P)
     (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I)
     (T : ℝ≥0) {s t : ℝ≥0} (hst : s ≤ t) {A : Set Ω} (hA : MeasurableSet[ℱ s] A) :
     letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
@@ -431,7 +439,7 @@ theorem withDensity_sq_predictableMeasure_Ioc_prod (hW : IsFilteredPreBrownianRe
     have ht'T : t' ≤ T := min_le_right t T
     have hIeq : ∫ ω in A, (I t' ω - I s ω) ^ 2 ∂P =
         ∫ p in Ioc s t' ×ˢ A, H p.1 p.2 ^ 2 ∂ℱ.predictableMeasure P T :=
-      (hW.setIntegral_sub_sq_of_isItoIntegral hH hI hst' hA).trans
+      (hI.setIntegral_sub_sq hW hH hst' hA).trans
         (hH.setIntegral_sq_timeMeasure_sub hst' ht'T hA)
     have hpred_nonneg : 0 ≤ᵐ[(ℱ.predictableMeasure P T).restrict (Ioc s t' ×ˢ A)]
         fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2 := Eventually.of_forall fun _ ↦ sq_nonneg _
@@ -450,7 +458,7 @@ theorem withDensity_sq_predictableMeasure_Ioc_prod (hW : IsFilteredPreBrownianRe
 vanishing on `{0} ×ˢ univ` whose value on every predictable rectangle `Ioc s t ×ˢ A` (`s ≤ t`,
 `A ∈ ℱ s`) equals `ENNReal.ofReal (∫ ω in A, (I (min t T) ω - I (min s T) ω) ^ 2 ∂P)`
 coincides with `(ℱ.predictableMeasure P T).withDensity (fun p ↦ ‖H p.1 p.2‖ₑ ^ 2)`. -/
-theorem eq_withDensity_sq_predictableMeasure_of_Ioc_prod
+theorem IsFilteredPreBrownianReal.eq_withDensity_sq_predictableMeasure_of_Ioc_prod
     (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
     (hI : IsItoIntegral ℱ P W H I) (T : ℝ≥0)
     (μ : @Measure (ℝ≥0 × Ω) ℱ.predictable)
@@ -484,4 +492,4 @@ theorem eq_withDensity_sq_predictableMeasure_of_Ioc_prod
         (hrect hst hA).symm
     · simp only [Ioc_eq_empty_of_le hts.le, empty_prod, measure_empty]
 
-end TauCeti.Probability.IsFilteredPreBrownianReal
+end TauCeti.Probability
