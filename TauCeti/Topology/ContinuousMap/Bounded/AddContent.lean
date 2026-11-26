@@ -46,7 +46,7 @@ that also applies without discreteness. The finite sums are
   `ν` takes the value `ν s` at the characteristic function of `s`.
 * `LinearMap.toAddContent_comp_compContinuousCLM` and
   `PositiveLinearMap.addContentEquiv_symm_mapNonneg` (pointwise:
-  `PositiveLinearMap.addContentEquiv_symm_map_apply`): the correspondence is natural,
+  `PositiveLinearMap.addContentEquiv_symm_mapNonneg_apply`): the correspondence is natural,
   precomposition with a map `r` of discrete spaces matching the pushforward of contents along `r`.
 * `PositiveLinearMap.forall_apply_compContinuous_smul_iff_toAddContent_smul`: for a group action,
   a positive functional is invariant under translation of functions exactly when its content is
@@ -298,21 +298,6 @@ theorem LinearMap.toAddContent_comp_compContinuousCLM (m : (X →ᵇ ℝ) →ₗ
   ext s
   simp
 
-/-- The pushforward of a nonnegative content on all subsets along `r`, as a nonnegative
-content. -/
-def AddContent.mapNonneg {α β : Type*} (r : α → β)
-    (ν : {ν : AddContent ℝ (univ : Set (Set α)) // ∀ s, 0 ≤ ν s}) :
-    {ν : AddContent ℝ (univ : Set (Set β)) // ∀ s, 0 ≤ ν s} :=
-  ⟨ν.val.map r fun _ _ => mem_univ _,
-    fun s => (ν.property (r ⁻¹' s)).trans_eq (AddContent.map_apply _ _ _ s).symm⟩
-
-@[simp]
-theorem AddContent.coe_mapNonneg {α β : Type*} (r : α → β)
-    (ν : {ν : AddContent ℝ (univ : Set (Set α)) // ∀ s, 0 ≤ ν s}) :
-    (AddContent.mapNonneg r ν : AddContent ℝ (univ : Set (Set β))) =
-      ν.val.map r fun _ _ => mem_univ _ :=
-  (rfl)
-
 namespace PositiveLinearMap
 
 /-- **Naturality of the correspondence between functionals and contents.** The functional
@@ -332,7 +317,7 @@ theorem addContentEquiv_symm_mapNonneg
 /-- The functional associated to the pushforward of a content `ν` along a map `r` of discrete
 spaces integrates `f` as the functional associated to `ν` integrates `f ∘ r`. -/
 @[simp]
-theorem addContentEquiv_symm_map_apply
+theorem addContentEquiv_symm_mapNonneg_apply
     (ν : {ν : AddContent ℝ (univ : Set (Set X)) // ∀ s, 0 ≤ ν s}) (r : X → Y) (f : Y →ᵇ ℝ) :
     (addContentEquiv Y).symm (AddContent.mapNonneg r ν) f =
       (addContentEquiv X).symm ν (f.compContinuous ⟨r, continuous_of_discreteTopology⟩) := by
@@ -359,7 +344,7 @@ theorem forall_apply_compContinuous_smul_iff_toAddContent_smul
     simpa using h γ⁻¹ f
   · -- `m` is the functional of its content, which is fixed by pushforward along `γ⁻¹ • ·`.
     have hm := (addContentEquiv X).symm_apply_apply m
-    rw [← hm, ← addContentEquiv_symm_map_apply]
+    rw [← hm, ← addContentEquiv_symm_mapNonneg_apply]
     congr 2
     refine Subtype.ext ?_
     rw [AddContent.coe_mapNonneg, coe_addContentEquiv_apply]
