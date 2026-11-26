@@ -32,9 +32,9 @@ so they vanish. This replaces the mean value theorem over nonarchimedean fields 
 where the ball of convergence is totally disconnected. Characteristic zero is needed: over a field
 of characteristic `p`, the derivative of `z ↦ z ^ p` vanishes identically, but the function is not
 constant. Consequently, if the derivative kills the kernel of a continuous projection `π` on the
-ball of convergence about `0`, the function only depends on the `π` component there
-(`HasFPowerSeriesOnBall.apply_proj_eq_of_fderiv_apply_eq_zero`), as for `ℝ` and `ℂ` in
-`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`.
+ball of convergence `Metric.eball 0 r`, the function satisfies `g (π z) = g z` whenever
+`‖π z‖ₑ + ‖z - π z‖ₑ < r` (`HasFPowerSeriesOnBall.apply_proj_eq_of_fderiv_apply_eq_zero`), as for
+`ℝ` and `ℂ` in `TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`.
 -/
 
 public section

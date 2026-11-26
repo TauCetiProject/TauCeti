@@ -75,8 +75,9 @@ In the analytic case, `T` is any linear pseudo-inverse, continuous because `F` i
 finite-dimensional, the charts come from the analytic inverse function theorem
 (`AnalyticAt.exists_openPartialHomeomorph`), and the mean value theorem, unavailable over
 nonarchimedean fields, is replaced by the power series of `g` at `0`: in characteristic zero, an
-analytic function stationary along `ker L` factors through the projection `T ∘ L` on its ball of
-convergence (`HasFPowerSeriesOnBall.apply_proj_eq_of_fderiv_apply_eq_zero`).
+analytic function stationary along `ker L` factors through the projection `T ∘ L` on a
+neighbourhood of `0`, where `‖(T ∘ L) z‖ₑ + ‖z - (T ∘ L) z‖ₑ` is below the radius of convergence
+(`HasFPowerSeriesOnBall.apply_proj_eq_of_fderiv_apply_eq_zero`).
 
 ## References
 
@@ -168,6 +169,50 @@ private theorem fderiv_comp_symm_apply_eq_zero {f : E → F}
     rw [← hLΦ, Φ.right_inv hw]
   · exact (Submodule.finrank_mono hle).trans hrank
 
+/-- The first chart of the constant rank theorem only changes `f` along `ker L`: if `T` is a
+pseudo-inverse of `L`, then `L (T w + (1 - T ∘ L) u) = L (T w)`. -/
+private theorem apply_add_sub_comp_pseudoInverse {L : E →L[𝕜] F} {T : F →L[𝕜] E}
+    (hT : L ∘L T ∘L L = L) (w : F) (u : E) :
+    L (T w + (ContinuousLinearMap.id 𝕜 E - T ∘L L) u) = L (T w) := by
+  have hT' (v : E) : L (T (L v)) = L v := by simpa using congr($hT v)
+  simp [hT']
+
+/-- **Shrinking the charts of the constant rank theorem.** Let
+`Φ x = T (f x - f a) + (1 - T ∘ L) (x - a)` and
+`Ψ w = (w - f a) - (1 - L ∘ T) (g (T (L (T (w - f a)))))`, where `g z = f (Φ⁻¹ z) - f a`, be the
+two charts, and let `U` be an open neighbourhood of `Φ a` on which `g` factors through `T ∘ L`.
+Then on an open neighbourhood `V` of `a`, `f` maps `V` to the source of `Ψ` and
+`Ψ (f x) = L (Φ x)`. -/
+private theorem exists_isOpen_apply_eq_apply {f : E → F} {L : E →L[𝕜] F} {T : F →L[𝕜] E} {a : E}
+    {s : Set E} {Φ : OpenPartialHomeomorph E E} {Ψ : OpenPartialHomeomorph F F}
+    (hT : L ∘L T ∘L L = L) (hf : ContinuousOn f s) (hΦs : Φ.source ⊆ s) (ha : a ∈ Φ.source)
+    (hfa : f a ∈ Ψ.source) (U : Set E) (hU : IsOpen U) (haU : Φ a ∈ U)
+    (hΦ : ∀ x, Φ x = T (f x - f a) + (ContinuousLinearMap.id 𝕜 E - T ∘L L) (x - a))
+    (hΨ : ∀ w, Ψ w = (w - f a) - (ContinuousLinearMap.id 𝕜 F - L ∘L T)
+      (f (Φ.symm ((T ∘L L) (T (w - f a)))) - f a))
+    (hgU : ∀ z ∈ U, f (Φ.symm ((T ∘L L) z)) - f a = f (Φ.symm z) - f a) :
+    ∃ V : Set E, IsOpen V ∧ a ∈ V ∧ MapsTo f V Ψ.source ∧ ∀ x ∈ V, Ψ (f x) = L (Φ x) := by
+  refine ⟨(Φ.source ∩ Φ ⁻¹' U) ∩ f ⁻¹' Ψ.source,
+    ((hf.mono hΦs).mono inter_subset_left).isOpen_inter_preimage (Φ.isOpen_inter_preimage hU)
+      Ψ.open_source, ⟨⟨ha, haU⟩, hfa⟩, fun x hx ↦ hx.2, fun x hx ↦ ?_⟩
+  obtain ⟨⟨hxΦ, hxU⟩, -⟩ := hx
+  /- `T (L (T (f x - f a))) = T (L (Φ x))` and `g` does not see the `ker L` component of `Φ x`,
+  so `Ψ (f x) = L (T (f x - f a)) = L (Φ x)`. -/
+  have hT' (v : E) : L (T (L v)) = L v := by simpa using congr($hT v)
+  have hcx : (T ∘L L) (T (f x - f a)) = (T ∘L L) (Φ x) := by simp [hΦ, hT']
+  rw [hΨ, hcx, hgU _ hxU, Φ.left_inv hxΦ, hΦ, apply_add_sub_comp_pseudoInverse hT]
+  simp
+
+/-- In charts `φ` and `ψ` in which `f` is the linear map `L`, the level set of `f` through `a` is
+the preimage of `ker L` under `φ`. -/
+private theorem apply_eq_iff_mem_ker_of_apply_eq_apply {f : E → F} {L : E →L[𝕜] F} {a : E}
+    {φ : OpenPartialHomeomorph E E} {ψ : OpenPartialHomeomorph F F} (ha : a ∈ φ.source)
+    (hψa : ψ (f a) = 0) (hmaps : MapsTo f φ.source ψ.source)
+    (hψf : ∀ x ∈ φ.source, ψ (f x) = L (φ x)) {x : E} (hx : x ∈ φ.source) :
+    f x = f a ↔ φ x ∈ LinearMap.ker L.toLinearMap := by
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ← hψf x hx, ← hψa]
+  exact (ψ.injOn.eq_iff (hmaps hx) (hmaps ha)).symm
+
 end Charts
 
 section RCLike
@@ -207,10 +252,7 @@ theorem ContDiffOn.exists_openPartialHomeomorph_comp_eq_fderiv_comp (hf : ContDi
   set π : E →L[𝕂] E := T ∘L L with hπ
   have hπidem : IsIdempotentElem π :=
     ContinuousLinearMap.isIdempotentElem_comp_of_comp_comp_eq_self hT
-  set Q : E →L[𝕂] E := ContinuousLinearMap.id 𝕂 E - π with hQ
-  have hππ (z : E) : π (π z) = π z := congr($hπidem z)
-  have hπQ (z : E) : π (Q z) = 0 := by simp [hQ, hππ]
-  have hLQ (z : E) : L (Q z) = 0 := by simp [hQ, hπ, hT']
+  set Q : E →L[𝕂] E := ContinuousLinearMap.id 𝕂 E - π
   /- The first chart `φ₀ x = T (f x - f a) + Q (x - a)`, whose derivative at `a` is the identity,
   so that the inverse function theorem applies. -/
   set φ₀ : E → E := fun x ↦ T (f x - f a) + Q (x - a) with hφ₀
@@ -220,7 +262,7 @@ theorem ContDiffOn.exists_openPartialHomeomorph_comp_eq_fderiv_comp (hf : ContDi
   have hφ₀a : φ₀ a = 0 := by simp [hφ₀]
   have hφ₀d : HasFDerivAt φ₀ (ContinuousLinearMap.id 𝕂 E) a :=
     (hfd a ha).add_sub_comp_pseudoInverse
-  have hLφ₀ (x : E) : L (φ₀ x) = L (T (f x - f a)) := by simp [hφ₀, hLQ]
+  have hLφ₀ (x : E) : L (φ₀ x) = L (T (f x - f a)) := apply_add_sub_comp_pseudoInverse hT _ _
   obtain ⟨Φ₀, hΦ₀, haΦ₀, hΦ₀s, hΦ₀symm⟩ := TauCeti.ContDiffOn.exists_openPartialHomeomorph hφ₀s hs
     ha hn (e := ContinuousLinearEquiv.refl 𝕂 E) (by simpa using hφ₀d.fderiv.symm)
   clear_value φ₀
@@ -245,7 +287,7 @@ theorem ContDiffOn.exists_openPartialHomeomorph_comp_eq_fderiv_comp (hf : ContDi
       (fun u hu v hv ↦ hker u (hball hu) v (by simpa [hπ, hT'] using congrArg L hv)) hz
   /- The second chart `ψ w = (w - f a) - (1 - P) (g (c w))` with `c w = π (T (w - f a))`. -/
   set c : F → E := fun w ↦ π (T (w - f a)) with hc
-  set R : F →L[𝕂] F := ContinuousLinearMap.id 𝕂 F - L ∘L T with hR
+  set R : F →L[𝕂] F := ContinuousLinearMap.id 𝕂 F - L ∘L T
   set ψ₀ : F → F := fun w ↦ (w - f a) - R (g (c w)) with hψ₀
   set W : Set F := c ⁻¹' Φ₀.target with hW
   have hc_cont : Continuous c :=
@@ -267,23 +309,13 @@ theorem ContDiffOn.exists_openPartialHomeomorph_comp_eq_fderiv_comp (hf : ContDi
   clear_value ψ₀
   subst hΨ
   /- Shrink the first chart so that `hgπ` applies on its image and `f` lands in the source of
-  the second chart. -/
-  set V : Set E := (Φ₀.source ∩ Φ₀ ⁻¹' {z | ‖π z‖ + ‖z - π z‖ < ε}) ∩ f ⁻¹' Ψ.source
-  have hVopen : IsOpen V :=
-    ((hf.continuousOn.mono hΦ₀s).mono inter_subset_left).isOpen_inter_preimage
-      (Φ₀.isOpen_inter_preimage <| isOpen_lt (by fun_prop) continuous_const) Ψ.open_source
-  have haV : a ∈ V := ⟨⟨haΦ₀, by simp [hφ₀a, hε]⟩, hfaΨ⟩
-  refine ⟨Φ₀.restrOpen V hVopen, Ψ, ⟨haΦ₀, haV⟩, fun x hx ↦ hΦ₀s hx.1, hφ₀a, hφ₀d,
+  the second chart, where `ψ₀ (f x) = P (f x - f a) = L (φ₀ x)`. -/
+  obtain ⟨V, hVopen, haV, hVΨ, hVf⟩ := exists_isOpen_apply_eq_apply hT hf.continuousOn hΦ₀s haΦ₀
+    hfaΨ {z | ‖π z‖ + ‖z - π z‖ < ε} (isOpen_lt (by fun_prop) continuous_const)
+    (by simp [hφ₀a, hε]) (congrFun hφ₀) (congrFun hψ₀) hgπ
+  exact ⟨Φ₀.restrOpen V hVopen, Ψ, ⟨haΦ₀, haV⟩, fun x hx ↦ hΦ₀s hx.1, hφ₀a, hφ₀d,
     hφ₀s.mono fun x hx ↦ hΦ₀s hx.1, hΦ₀symm.mono fun z hz ↦ hz.1, hψ₀a, hψ₀d,
-    hψ₀C.mono hΨW, hΨsymm, fun x hx ↦ hx.2.2, fun x hx ↦ ?_⟩
-  /- On the shrunken chart, `c (f x) = π (φ₀ x)` and `g` does not see the `ker L` component of
-  `φ₀ x`, so `ψ₀ (f x) = P (f x - f a) = L (φ₀ x)`. -/
-  rw [OpenPartialHomeomorph.restrOpen_source] at hx
-  obtain ⟨hxΦ₀, ⟨-, hxU⟩, -⟩ := hx
-  have hcx : c (f x) = π (Φ₀ x) := by
-    simp only [hc, hφ₀, map_add, hπQ, add_zero]
-  have hgx : g (Φ₀ x) = f x - f a := by simp [hg, Φ₀.left_inv hxΦ₀]
-  simpa [hψ₀, hcx, hgπ _ hxU, hgx, hR] using (hLφ₀ x).symm
+    hψ₀C.mono hΨW, hΨsymm, fun x hx ↦ hVΨ hx.2, fun x hx ↦ hVf x hx.2⟩
 
 /-- **Level sets of a map of constant rank.** Under the hypotheses of the constant rank theorem,
 there is a chart `φ` of `E` near `a`, inside `s`, `C^n` with `C^n` inverse, sending `a` to `0`
@@ -299,9 +331,8 @@ theorem ContDiffOn.exists_openPartialHomeomorph_apply_eq_iff_mem_ker (hf : ContD
       ∀ x ∈ φ.source, f x = f a ↔ φ x ∈ LinearMap.ker (fderiv 𝕂 f a).toLinearMap := by
   obtain ⟨φ, ψ, haφ, hφs, hφa, hφd, hφC, hφsymm, hψa, -, -, -, hmaps, hψf⟩ :=
     hf.exists_openPartialHomeomorph_comp_eq_fderiv_comp hs ha hn hrank
-  refine ⟨φ, haφ, hφs, hφa, hφd, hφC, hφsymm, fun x hx ↦ ?_⟩
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ← hψf x hx, ← hψa]
-  exact (ψ.injOn.eq_iff (hmaps hx) (hmaps haφ)).symm
+  exact ⟨φ, haφ, hφs, hφa, hφd, hφC, hφsymm,
+    fun _ ↦ apply_eq_iff_mem_ker_of_apply_eq_apply haφ hψa hmaps hψf⟩
 
 end RCLike
 
@@ -338,15 +369,14 @@ theorem AnalyticOnNhd.exists_openPartialHomeomorph_comp_eq_fderiv_comp (hf : Ana
   `Q = 1 - π` of `E`, the latter onto `ker L`. -/
   obtain ⟨T₀, hT₀⟩ := (L : E →ₗ[𝕜] F).exists_comp_comp_eq_self
   set T : F →L[𝕜] E := LinearMap.toContinuousLinearMap T₀
-  have hT : L ∘L T ∘L L = L := ContinuousLinearMap.coe_injective hT₀
+  have hT : L ∘L T ∘L L = L := by
+    ext v
+    exact LinearMap.congr_fun hT₀ v
   have hT' (v : E) : L (T (L v)) = L v := by simpa using congr($hT v)
   set π : E →L[𝕜] E := T ∘L L with hπ
   have hπidem : IsIdempotentElem π :=
     ContinuousLinearMap.isIdempotentElem_comp_of_comp_comp_eq_self hT
-  set Q : E →L[𝕜] E := ContinuousLinearMap.id 𝕜 E - π with hQ
-  have hππ (z : E) : π (π z) = π z := congr($hπidem z)
-  have hπQ (z : E) : π (Q z) = 0 := by simp [hQ, hππ]
-  have hLQ (z : E) : L (Q z) = 0 := by simp [hQ, hπ, hT']
+  set Q : E →L[𝕜] E := ContinuousLinearMap.id 𝕜 E - π
   /- The first chart `φ₀ x = T (f x - f a) + Q (x - a)`, whose derivative at `a` is the identity,
   so that the analytic inverse function theorem applies. -/
   set φ₀ : E → E := fun x ↦ T (f x - f a) + Q (x - a) with hφ₀
@@ -356,7 +386,7 @@ theorem AnalyticOnNhd.exists_openPartialHomeomorph_comp_eq_fderiv_comp (hf : Ana
   have hφ₀a : φ₀ a = 0 := by simp [hφ₀]
   have hφ₀d : HasFDerivAt φ₀ (ContinuousLinearMap.id 𝕜 E) a :=
     (hfd a ha).add_sub_comp_pseudoInverse
-  have hLφ₀ (x : E) : L (φ₀ x) = L (T (f x - f a)) := by simp [hφ₀, hLQ]
+  have hLφ₀ (x : E) : L (φ₀ x) = L (T (f x - f a)) := apply_add_sub_comp_pseudoInverse hT _ _
   obtain ⟨Φ₀, hΦ₀, haΦ₀, hΦ₀s, hΦ₀A, hΦ₀symm⟩ := (hφ₀s a ha).exists_openPartialHomeomorph
     (L := ContinuousLinearEquiv.refl 𝕜 E) (by simpa using hφ₀d.fderiv) (hs.mem_nhds ha)
   clear_value φ₀
@@ -384,7 +414,7 @@ theorem AnalyticOnNhd.exists_openPartialHomeomorph_comp_eq_fderiv_comp (hf : Ana
         (by simpa [hπ, hT'] using congrArg L hv)) hz
   /- The second chart `ψ w = (w - f a) - (1 - P) (g (c w))` with `c w = π (T (w - f a))`. -/
   set c : F → E := fun w ↦ π (T (w - f a)) with hc
-  set R : F →L[𝕜] F := ContinuousLinearMap.id 𝕜 F - L ∘L T with hR
+  set R : F →L[𝕜] F := ContinuousLinearMap.id 𝕜 F - L ∘L T
   set ψ₀ : F → F := fun w ↦ (w - f a) - R (g (c w)) with hψ₀
   set W : Set F := c ⁻¹' Φ₀.target with hW
   have hc_cont : Continuous c :=
@@ -404,23 +434,13 @@ theorem AnalyticOnNhd.exists_openPartialHomeomorph_comp_eq_fderiv_comp (hf : Ana
   clear_value ψ₀
   subst hΨ
   /- Shrink the first chart so that `hgπ` applies on its image and `f` lands in the source of
-  the second chart. -/
-  set V : Set E := (Φ₀.source ∩ Φ₀ ⁻¹' {z | ‖π z‖ₑ + ‖z - π z‖ₑ < ε}) ∩ f ⁻¹' Ψ.source
-  have hVopen : IsOpen V :=
-    ((hf.continuousOn.mono hΦ₀s).mono inter_subset_left).isOpen_inter_preimage
-      (Φ₀.isOpen_inter_preimage <| isOpen_lt (by fun_prop) continuous_const) Ψ.open_source
-  have haV : a ∈ V := ⟨⟨haΦ₀, by simp [hφ₀a, hε]⟩, hfaΨ⟩
-  refine ⟨Φ₀.restrOpen V hVopen, Ψ, ⟨haΦ₀, haV⟩, fun x hx ↦ hΦ₀s hx.1, hφ₀a, hφ₀d,
+  the second chart, where `ψ₀ (f x) = P (f x - f a) = L (φ₀ x)`. -/
+  obtain ⟨V, hVopen, haV, hVΨ, hVf⟩ := exists_isOpen_apply_eq_apply hT hf.continuousOn hΦ₀s haΦ₀
+    hfaΨ {z | ‖π z‖ₑ + ‖z - π z‖ₑ < ε} (isOpen_lt (by fun_prop) continuous_const)
+    (by simp [hφ₀a, hε]) (congrFun hφ₀) (congrFun hψ₀) hgπ
+  exact ⟨Φ₀.restrOpen V hVopen, Ψ, ⟨haΦ₀, haV⟩, fun x hx ↦ hΦ₀s hx.1, hφ₀a, hφ₀d,
     hΦ₀A.mono fun x hx ↦ hx.1, hΦ₀symm.mono fun z hz ↦ hz.1, hψ₀a, hψ₀d,
-    hΨA, hΨsymm, fun x hx ↦ hx.2.2, fun x hx ↦ ?_⟩
-  /- On the shrunken chart, `c (f x) = π (φ₀ x)` and `g` does not see the `ker L` component of
-  `φ₀ x`, so `ψ₀ (f x) = P (f x - f a) = L (φ₀ x)`. -/
-  rw [OpenPartialHomeomorph.restrOpen_source] at hx
-  obtain ⟨hxΦ₀, ⟨-, hxU⟩, -⟩ := hx
-  have hcx : c (f x) = π (Φ₀ x) := by
-    simp only [hc, hφ₀, map_add, hπQ, add_zero]
-  have hgx : g (Φ₀ x) = f x - f a := by simp [hg, Φ₀.left_inv hxΦ₀]
-  simpa [hψ₀, hcx, hgπ _ hxU, hgx, hR] using (hLφ₀ x).symm
+    hΨA, hΨsymm, fun x hx ↦ hVΨ hx.2, fun x hx ↦ hVf x hx.2⟩
 
 /-- **Level sets of an analytic map of constant rank.** Under the hypotheses of the analytic
 constant rank theorem, there is a chart `φ` of `E` near `a`, inside `s`, analytic with analytic
@@ -437,8 +457,7 @@ theorem AnalyticOnNhd.exists_openPartialHomeomorph_apply_eq_iff_mem_ker
       ∀ x ∈ φ.source, f x = f a ↔ φ x ∈ LinearMap.ker (fderiv 𝕜 f a).toLinearMap := by
   obtain ⟨φ, ψ, haφ, hφs, hφa, hφd, hφA, hφsymm, hψa, -, -, -, hmaps, hψf⟩ :=
     hf.exists_openPartialHomeomorph_comp_eq_fderiv_comp hs ha hrank
-  refine ⟨φ, haφ, hφs, hφa, hφd, hφA, hφsymm, fun x hx ↦ ?_⟩
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ← hψf x hx, ← hψa]
-  exact (ψ.injOn.eq_iff (hmaps hx) (hmaps haφ)).symm
+  exact ⟨φ, haφ, hφs, hφa, hφd, hφA, hφsymm,
+    fun _ ↦ apply_eq_iff_mem_ker_of_apply_eq_apply haφ hψa hmaps hψf⟩
 
 end Analytic
