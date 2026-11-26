@@ -252,7 +252,7 @@ theorem eisensteinPeriodPolynomial_notMem_range_evenPeriodPolynomial {k : ℤ} {
       hξ.periodAction_eisensteinPeriodPolynomial (by exact_mod_cast NeZero.ne n) hw,
       Int.natAbs_natCast]
   have hcoord := congrArg (fun h ↦ (levelOneNewformBasis k).repr h f) heig
-  rw [(levelOneNewformBasis k).repr_apply_of_apply_basis
+  rw [(levelOneNewformBasis k).repr_apply_eq_mul_of_apply_eq_smul _
     (heckeTCuspLevelOne_levelOneNewformBasis k n) g f,
     map_smul, Finsupp.smul_apply, smul_eq_mul] at hcoord
   exact mul_right_cancel₀ hf hcoord

@@ -387,9 +387,9 @@ theorem repr_spinAction_diagonalBivector (i : ι) (t : Finset ι) (x : ExteriorA
     b.ExteriorAlgebra.repr (spinAction Q P (P.diagonalBivector b i) x) t =
       spinWeight K t i * b.ExteriorAlgebra.repr x t := by
   simpa using
-    b.ExteriorAlgebra.repr_apply_of_apply_basis
-      (f := spinAction Q P (P.diagonalBivector b i))
-      (a := fun s => spinWeight K s i)
+    b.ExteriorAlgebra.repr_apply_eq_mul_of_apply_eq_smul b.ExteriorAlgebra
+      (g := spinAction Q P (P.diagonalBivector b i))
+      (w := fun s => spinWeight K s i)
       (fun s => P.spinAction_diagonalBivector_basis b i s) x t
 
 /-- **Each weight space of the spinor module is a line**, spanned by the exterior basis vector
