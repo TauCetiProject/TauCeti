@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.Fourier.FourierTransform
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Fourier.FourierCharDeriv
@@ -18,7 +20,9 @@ Fourier transform at `b` is within `2π ‖b‖ r ∫ ‖f‖` of its integral
 norms whose supports shrink to `0` converge at every frequency to the limit of their integrals
 (`Real.tendsto_fourier_of_support_subset`). In particular, the Fourier transforms of mollifiers,
 nonnegative functions of integral one, concentrating at `0` tend to one at every frequency: in the
-Fourier picture, they approximate the point mass.
+Fourier picture, they approximate the point mass. For the normalized bump functions
+`ContDiffBump.normed` this is `ContDiffBump.tendsto_fourier_normed`, and their Fourier transforms
+are bounded by one (`ContDiffBump.norm_fourier_normed_le`).
 -/
 
 public section
@@ -81,3 +85,29 @@ theorem tendsto_fourier_of_support_subset {ι : Type*} {l : Filter ι} {f : ι �
   simpa using hsub.add hv
 
 end Real
+
+namespace ContDiffBump
+
+variable {D : Type*} [NormedAddCommGroup D] [InnerProductSpace ℝ D] [FiniteDimensional ℝ D]
+  [MeasurableSpace D] [BorelSpace D]
+
+/-- The Fourier transform of a normalized bump function is bounded by one. -/
+theorem norm_fourier_normed_le (σ : ContDiffBump (0 : D)) (b : D) :
+    ‖𝓕 (fun y ↦ (σ.normed volume y : ℂ)) b‖ ≤ 1 := by
+  refine (Real.norm_fourier_le_integral_norm _ _).trans_eq ?_
+  simp [abs_of_nonneg (σ.nonneg_normed _), σ.integral_normed]
+
+/-- The Fourier transforms of normalized bump functions whose radii shrink to `0` tend to one at
+every frequency. -/
+theorem tendsto_fourier_normed {ι : Type*} {l : Filter ι} {σ : ι → ContDiffBump (0 : D)}
+    (hσ : Tendsto (fun i ↦ (σ i).rOut) l (𝓝 0)) (b : D) :
+    Tendsto (fun i ↦ 𝓕 (fun y ↦ ((σ i).normed volume y : ℂ)) b) l (𝓝 1) := by
+  refine Real.tendsto_fourier_of_support_subset (r := fun i ↦ (σ i).rOut) (M := 1)
+    (Eventually.of_forall fun i y hy ↦ ?_) hσ (Eventually.of_forall fun i ↦ ?_) ?_ b
+  · refine ball_subset_closedBall ((σ i).support_normed_eq (μ := volume) ▸ ?_)
+    exact fun h ↦ hy (by simp [h])
+  · simp [abs_of_nonneg ((σ i).nonneg_normed _), (σ i).integral_normed]
+  · simp only [integral_complex_ofReal, ContDiffBump.integral_normed, Complex.ofReal_one]
+    exact tendsto_const_nhds
+
+end ContDiffBump

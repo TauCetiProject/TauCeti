@@ -222,6 +222,24 @@ theorem integral_fourierInv_mul_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω,
     FourierTransform.fourier_fourierInv_eq]
   simp only [smul_eq_mul]
 
+/-- **Fourier inversion against a distribution.** If a cutoff `φ` is one on the support of a real
+test function `ψ`, then `T ψ = ∫ 𝓕⁻ ψ (η) T (φ e_η) dη`. -/
+theorem apply_eq_integral_fourierInv_mul_localFourier (T : 𝓓'(Ω, ℂ)) {φ : 𝓓(Ω, ℂ)}
+    {ψ : 𝓓(Ω, ℝ)} (hφ : ∀ x ∈ tsupport ψ, φ x = 1) :
+    T ψ = ∫ η, 𝓕⁻ (fun x ↦ (ψ x : ℂ)) η * T.localFourier φ η := by
+  set ψc : 𝓓(Ω, ℂ) := postcompCLM (𝕜 := ℝ) ofRealCLM ψ
+  have hf : 𝓕⁻ (toSchwartzMapCLM ℝ ψc) = 𝓕⁻ (fun x ↦ (ψ x : ℂ)) := by
+    rw [SchwartzMap.fourierInv_coe]
+    congr 1
+    ext x
+    simp [ψc]
+  rw [← hf, integral_fourierInv_mul_localFourier, cutoffTempered_apply T φ (χ := ψc),
+    complexPairing_postcompCLM_ofRealCLM]
+  intro x
+  by_cases hx : x ∈ tsupport ψ
+  · simp [ψc, hφ x hx]
+  · simp [ψc, image_eq_zero_of_notMem_tsupport hx]
+
 /-- **Fourier inversion for `φ T`, shifted.** Averaging the localized Fourier transform of `T`
 against the inverse Fourier transform of a Schwartz function `a` multiplies the cutoff by `a`:
 `∫ 𝓕⁻ a ζ T (φ e_(η + ζ)) dζ = T (a φ e_η)`. -/
