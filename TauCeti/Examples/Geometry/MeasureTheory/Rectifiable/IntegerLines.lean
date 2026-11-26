@@ -78,15 +78,12 @@ def firstCoord (x : EuclideanSpace ℝ (Fin 2)) : ℝ :=
 def weight (x : EuclideanSpace ℝ (Fin 2)) : ℝ≥0∞ :=
   (Icc (0 : ℝ) 1).indicator 1 (x 0) * ENNReal.ofReal ((2 : ℝ) ^ (-|x 1|))
 
-/-- The coordinates of `ℝ²` are continuous. -/
-theorem continuous_apply_coord (i : Fin 2) : Continuous fun x : EuclideanSpace ℝ (Fin 2) ↦ x i :=
-  (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).continuous
-
 /-- The weight is measurable. -/
 theorem measurable_weight : Measurable weight := by
   refine Measurable.mul ((measurable_const.indicator measurableSet_Icc).comp
-    (continuous_apply_coord 0).measurable) (ENNReal.measurable_ofReal.comp ?_)
-  exact measurable_const.pow (continuous_apply_coord 1).abs.neg.measurable
+    (PiLp.continuous_apply 2 (fun _ : Fin 2 ↦ ℝ) 0).measurable)
+    (ENNReal.measurable_ofReal.comp ?_)
+  exact measurable_const.pow (PiLp.continuous_apply 2 (fun _ : Fin 2 ↦ ℝ) 1).abs.neg.measurable
 
 /-- `ℝ × ℤ` is the union of the lines `t ↦ (t, m)`, `m ∈ ℤ`. -/
 theorem integerLines_eq_iUnion : integerLines = ⋃ m : ℤ, range fun t ↦ pt t m := by
@@ -106,7 +103,8 @@ theorem range_pt (s : ℝ) : (range fun t ↦ pt t s) = {x | x 1 = s} := by
 /-- Each horizontal line is measurable. -/
 theorem measurableSet_range_pt (s : ℝ) : MeasurableSet (range fun t ↦ pt t s) := by
   rw [range_pt]
-  exact measurableSet_eq_fun (continuous_apply_coord 1).measurable measurable_const
+  exact measurableSet_eq_fun (PiLp.continuous_apply 2 (fun _ : Fin 2 ↦ ℝ) 1).measurable
+    measurable_const
 
 /-- `ℝ × ℤ` is measurable. -/
 theorem measurableSet_integerLines : MeasurableSet integerLines := by
@@ -197,16 +195,13 @@ theorem tsum_two_rpow_neg_abs : ∑' m : ℤ, ENNReal.ofReal ((2 : ℝ) ^ (-|(m 
   simp only [Int.natAbs_natCast, ENNReal.tsum_geometric, ENNReal.one_sub_inv_two, inv_inv]
   norm_num
 
-/-- On `ℝ`, the `1`-dimensional Euclidean Hausdorff measure is Lebesgue measure. -/
-theorem euclideanHausdorffMeasure_real : (μHE[1] : Measure ℝ) = volume := by
-  simpa using InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ)
-
 /-- The weight integrates to `2^{-|m|}` over the line at height `m`. -/
 theorem lintegral_range_pt (m : ℤ) :
     ∫⁻ x in range (fun t ↦ pt t m), weight x ∂μHE[1] = ENNReal.ofReal ((2 : ℝ) ^ (-|(m : ℝ)|)) := by
   rw [← (isometry_pt m).map_euclideanHausdorffMeasure,
     lintegral_map measurable_weight (isometry_pt m).continuous.measurable,
-    euclideanHausdorffMeasure_real]
+    show (μHE[1] : Measure ℝ) = volume by
+      simpa using InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ)]
   simp only [weight, pt_apply_zero, pt_apply_one]
   rw [lintegral_mul_const (f := (Icc (0 : ℝ) 1).indicator 1)
       _ (measurable_const.indicator measurableSet_Icc),
@@ -250,7 +245,8 @@ theorem tsum_fibre (y : ℝ) :
 /-- **The right side is `3`.** `∫_ℝ Σ_{x ∈ M ∩ f⁻¹(y)} g(x) dy = ∫_0^1 3 dy = 3`. -/
 theorem lintegral_tsum_fibre :
     ∫⁻ y, ∑' x : ↥(integerLines ∩ firstCoord ⁻¹' {y}), weight x ∂μHE[1] = 3 := by
-  simp_rw [tsum_fibre, euclideanHausdorffMeasure_real]
+  simp_rw [tsum_fibre, show (μHE[1] : Measure ℝ) = volume by
+    simpa using InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ)]
   rw [lintegral_indicator measurableSet_Icc]
   simp [Real.volume_Icc]
 
