@@ -30,6 +30,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
 ## Main results
 
 * `Finset.sum_range_sq_sub_eq`: the telescoping-square identity for successive differences.
+* `TauCeti.map_prod_iterate_div`, `TauCeti.map_sum_iterate_sub`: telescope the product or sum
+  of the first `n` iterates of an endomorphism.
 * `Finset.prod_range_ite_even`, `Finset.sum_range_ite_even`: keeping only the even-indexed factors
   among the first `N` gives the first `(N + 1) / 2` values `g k` at the halved indices.
 * `sum_Ioo_eq_sum_range`: a sum over `Ioo 0 n` equals the sum over `range n` when the summand at
@@ -394,6 +396,16 @@ end Finset
 namespace TauCeti
 
 open Finset
+
+/-- The quotient of the image of the product of the first `n` iterates by that product
+is the quotient of the last iterate by the initial value. -/
+@[to_additive /-- Applying an additive endomorphism to the sum of the first `n` iterates
+and subtracting that sum gives the last iterate minus the initial value. -/]
+theorem map_prod_iterate_div {F M : Type*} [CommGroup M] [FunLike F M M] [MonoidHomClass F M M]
+    (f : F) (n : ℕ) (x : M) :
+    f (∏ i ∈ Finset.range n, f^[i] x) / ∏ i ∈ Finset.range n, f^[i] x = f^[n] x / x := by
+  simp only [map_prod, ← Finset.prod_div_distrib, ← Function.iterate_succ_apply']
+  exact Finset.prod_range_div (fun i ↦ f^[i] x) n
 
 /-- Replacing a summation over `Finset.Ioo 0 n` by one over `Finset.range n`, provided the
 summand at `0` vanishes. -/

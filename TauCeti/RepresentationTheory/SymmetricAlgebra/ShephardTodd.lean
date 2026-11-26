@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Pseudoreflection
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.FaithfulImage
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Flat
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.RegularLocalRing
+import TauCeti.Algebra.MvPolynomial.Eval
 import TauCeti.LinearAlgebra.SymmetricAlgebra.KrullDimension
 import TauCeti.Data.Multiset.CountLE
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Regular
@@ -158,13 +159,7 @@ theorem exists_bijective_aeval_symmetricAlgebraInvariants_dual_of_pseudoreflecti
     ρ.dual.exists_bijective_aeval_symmetricAlgebraInvariants_of_faithfullyFlat
   -- Reindex the generators by `Fin (dim V)`, using `dim V* = dim V`.
   let e := finCongr (Subspace.dual_finrank_eq (K := K) (V := V)).symm
-  refine ⟨f ∘ e, fun i ↦ hf (e i), ?_⟩
-  have : MvPolynomial.aeval (R := K) (f ∘ e) =
-      (MvPolynomial.aeval f).comp (MvPolynomial.rename e) := by
-    ext
-    simp
-  rw [this]
-  exact hbij.comp (MvPolynomial.renameEquiv K e).bijective
+  exact ⟨f ∘ e, fun i ↦ hf (e i), (MvPolynomial.bijective_aeval_comp_equiv_iff e).mpr hbij⟩
 
 end Pseudoreflection
 

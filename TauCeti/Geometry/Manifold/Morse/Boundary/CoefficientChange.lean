@@ -23,12 +23,13 @@ determined by a single integral matrix. This file makes this precise.
   `R` (`signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_ringHom`). In particular `∂² = 0`
   over `ℤ` gives `∂² = 0` with coefficients in every ring, along `Int.castRingHom`.
 * **The complex with coefficients in `S` is the extension of scalars of the complex with
-  coefficients in `R`.** For an `R`-algebra `S`, extending the scalars of the Morse complex with
-  coefficients in `R` to `S` gives the Morse complex with coefficients in `S`
-  (`signedMorseComplexBaseChangeIso`): the term of degree `n` of the first is
-  `S ⊗_R (R-chains of index n)`, and `s ⊗ c` corresponds to `s` times the chain `c` with its
-  coefficients mapped to `S`. For `R = ℤ` this says that the Morse complex with coefficients in a
-  commutative ring `S` is `S ⊗_ℤ CM_*(f; ℤ)`.
+  coefficients in `R`.** For a homomorphism `g : R →+* S` of commutative rings, extending the
+  scalars of the Morse complex with coefficients in `R` along `g` gives the Morse complex with
+  coefficients in `S` (`signedMorseComplexBaseChangeIso`): the term of degree `n` of the first is
+  `S ⊗_R (R-chains of index n)`, and `s ⊗ c` corresponds to `s` times the chain `c` with `g`
+  applied to its coefficients. The ring `S` may be in any universe above that of `R`, so for
+  `R = ℤ` this says that the Morse complex with coefficients in any commutative ring `S` is
+  `S ⊗_ℤ CM_*(f; ℤ)`.
 * **Reduction modulo two.** Under the Morse–Smale condition, extending the scalars of the integral
   Morse complex to `ZMod 2` gives the mod-two Morse complex
   `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseComplex`, whatever the orientations
@@ -41,8 +42,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_ringHom`: `∂² = 0` passes along ring
   homomorphisms.
 * `signedMorseComplexBaseChangeIso`: the extension of scalars of the Morse complex.
-* `signedMorseComplexBaseChangeIso_hom_f_tmul`, `signedMorseComplexBaseChangeIso_inv_f_single`:
-  its values on `s ⊗ c` and, for its inverse, on `s • p`.
+* `signedMorseComplexBaseChangeIso_hom_f_tmul`, `signedMorseComplexBaseChangeIso_hom_f_one_tmul`,
+  `signedMorseComplexBaseChangeIso_inv_f_single`: its values on `s ⊗ c` and `1 ⊗ c` and, for its
+  inverse, on `s • p`.
 * `IsMorseSmale.signedMorseComplexBaseChangeIsoMorseComplex`: the reduction modulo two, with
   values `IsMorseSmale.signedMorseComplexBaseChangeIsoMorseComplex_hom_f_tmul` and
   `IsMorseSmale.signedMorseComplexBaseChangeIsoMorseComplex_inv_f_single`.
@@ -61,7 +63,7 @@ public section
 open CategoryTheory
 open scoped ContDiff Manifold TensorProduct ChangeOfRings
 
-universe u
+universe u v
 
 namespace TauCeti
 
@@ -95,48 +97,56 @@ theorem signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_ringHom {R S : T
 
 section BaseChange
 
--- Mathlib's `ModuleCat.extendScalars` raises the universe of the modules to that of `S`, so the two
--- coefficient rings share a universe for the extended complex to be compared with the complex
--- with coefficients in `S`.
-variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
+variable {R : Type u} {S : Type (max u v)} [CommRing R] [CommRing S] (g : R →+* S)
   (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0)
 
-variable (hX 𝔬 hf S) in
-/-- **Change of coefficients in the Morse complex.** For an `R`-algebra `S`, extending the scalars
-of the integral Morse complex with coefficients in `R` to `S` gives the integral Morse complex with
-coefficients in `S`. In each degree it is `ModuleCat.extendScalarsFinsuppIso`, which sends `s ⊗ c`
-to `s` times the chain `c` with its coefficients mapped to `S`; these commute with the
-differentials, because both differentials are given by the same integral matrix. For `R = ℤ`, the
-Morse complex with coefficients in a commutative ring `S` is thus `S ⊗_ℤ CM_*(f; ℤ)`. -/
+variable (hX 𝔬 hf) in
+/-- **Change of coefficients in the Morse complex.** For a homomorphism `g : R →+* S` of
+commutative rings, extending the scalars of the integral Morse complex with coefficients in `R`
+along `g` gives the integral Morse complex with coefficients in `S`. In each degree it is
+`ModuleCat.extendScalarsFinsuppIso`, which sends `s ⊗ c` to `s • g(c)`, where `g(c)` applies `g`
+to the coefficients of the chain `c`; these commute with the differentials, because both
+differentials are given by the same integral matrix. The ring `S` may be in any universe above
+that of `R`, so for `R = ℤ` the Morse complex with coefficients in any commutative ring `S` is
+`S ⊗_ℤ CM_*(f; ℤ)`. -/
 noncomputable def signedMorseComplexBaseChangeIso :
-    ((ModuleCat.extendScalars (algebraMap R S)).mapHomologicalComplex
+    ((ModuleCat.extendScalars g).mapHomologicalComplex
         (ComplexShape.down ℕ)).obj (hX.signedMorseComplex 𝔬 hf R hsq) ≅
       hX.signedMorseComplex 𝔬 hf S
-        (signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_ringHom (algebraMap R S) hsq) :=
-  HomologicalComplex.Hom.isoOfComponents (fun _ ↦ ModuleCat.extendScalarsFinsuppIso _) <| by
+        (signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_ringHom g hsq) :=
+  HomologicalComplex.Hom.isoOfComponents (fun _ ↦ ModuleCat.extendScalarsFinsuppIso g _) <| by
     rintro _ n rfl
     rw [Functor.mapHomologicalComplex_obj_d, signedMorseComplex_d, signedMorseComplex_d]
-    exact (ModuleCat.extendScalarsFinsuppIso_hom_naturality _ _
-      (mapRange_signedMorseBoundaryAt hf (algebraMap R S))).symm
+    exact (ModuleCat.extendScalarsFinsuppIso_hom_naturality g
+      (mapRange_signedMorseBoundaryAt hf g)).symm
 
-/-- The change of coefficients `signedMorseComplexBaseChangeIso` sends `s ⊗ c` to `s` times the
-chain `c` with its coefficients mapped to `S`. -/
+/-- The change of coefficients `signedMorseComplexBaseChangeIso` sends `s ⊗ c` to `s • g(c)`, where
+the chain `g(c)` is obtained by applying `g` to the coefficients of `c`. -/
 -- Not `@[simp]`: `simp` rewrites the terms of the extended complex inside the type of the
 -- left-hand side (`Functor.mapHomologicalComplex_obj_X`), so it is not in simp-normal form.
 theorem signedMorseComplexBaseChangeIso_hom_f_tmul (n : ℕ) (s : S)
     (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R) :
-    (hX.signedMorseComplexBaseChangeIso 𝔬 hf S hsq).hom.f n (s ⊗ₜ[R, algebraMap R S] c) =
-      s • Finsupp.mapRange (algebraMap R S) (map_zero _) c :=
-  ModuleCat.extendScalarsFinsuppIso_hom_tmul _ s c
+    (hX.signedMorseComplexBaseChangeIso 𝔬 hf g hsq).hom.f n (s ⊗ₜ[R,g] c) =
+      s • Finsupp.mapRange g (map_zero g) c :=
+  ModuleCat.extendScalarsFinsuppIso_hom_tmul g s c
+
+/-- The change of coefficients `signedMorseComplexBaseChangeIso` sends `1 ⊗ c` to the chain `g(c)`
+obtained by applying `g` to the coefficients of `c`. -/
+-- Not `@[simp]`, for the same reason as `signedMorseComplexBaseChangeIso_hom_f_tmul`.
+theorem signedMorseComplexBaseChangeIso_hom_f_one_tmul (n : ℕ)
+    (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R) :
+    (hX.signedMorseComplexBaseChangeIso 𝔬 hf g hsq).hom.f n ((1 : S) ⊗ₜ[R,g] c) =
+      Finsupp.mapRange g (map_zero g) c :=
+  ModuleCat.extendScalarsFinsuppIso_hom_one_tmul g c
 
 /-- The inverse of the change of coefficients `signedMorseComplexBaseChangeIso` sends the chain
 `s • p` with coefficients in `S` to `s ⊗ p`. -/
 -- Not `@[simp]`, for the same reason as `signedMorseComplexBaseChangeIso_hom_f_tmul`.
 theorem signedMorseComplexBaseChangeIso_inv_f_single (n : ℕ)
     (p : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n}) (s : S) :
-    (hX.signedMorseComplexBaseChangeIso 𝔬 hf S hsq).inv.f n (Finsupp.single p s) =
-      s ⊗ₜ[R, algebraMap R S] (Finsupp.single p 1 : (hX.signedMorseComplex 𝔬 hf R hsq).X n) :=
-  ModuleCat.extendScalarsFinsuppIso_inv_single _ p s
+    (hX.signedMorseComplexBaseChangeIso 𝔬 hf g hsq).inv.f n (Finsupp.single p s) =
+      s ⊗ₜ[R,g] (Finsupp.single p 1 : (hX.signedMorseComplex 𝔬 hf R hsq).X n) :=
+  ModuleCat.extendScalarsFinsuppIso_inv_single g p s
 
 end BaseChange
 
@@ -153,7 +163,7 @@ noncomputable def signedMorseComplexBaseChangeIsoMorseComplex
     (hsq : hX.signedMorseBoundary 𝔬 hf ℤ ∘ₗ hX.signedMorseBoundary 𝔬 hf ℤ = 0) :
     ((ModuleCat.extendScalars (algebraMap ℤ (ZMod 2))).mapHomologicalComplex
         (ComplexShape.down ℕ)).obj (hX.signedMorseComplex 𝔬 hf ℤ hsq) ≅ h.morseComplex hf :=
-  hX.signedMorseComplexBaseChangeIso 𝔬 hf (ZMod 2) hsq ≪≫
+  hX.signedMorseComplexBaseChangeIso 𝔬 hf (algebraMap ℤ (ZMod 2)) hsq ≪≫
     eqToIso (h.signedMorseComplex_zmod_two _)
 
 /-- The reduction modulo two `signedMorseComplexBaseChangeIsoMorseComplex` sends `s ⊗ c` to `s`
@@ -171,7 +181,7 @@ theorem signedMorseComplexBaseChangeIsoMorseComplex_hom_f_tmul
         {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ ZMod 2) := by
   simp only [signedMorseComplexBaseChangeIsoMorseComplex, Iso.trans_hom, eqToIso.hom,
     HomologicalComplex.comp_f, HomologicalComplex.eqToHom_f, ModuleCat.hom_comp]
-  exact signedMorseComplexBaseChangeIso_hom_f_tmul (hsq := hsq) n s c
+  exact signedMorseComplexBaseChangeIso_hom_f_tmul (algebraMap ℤ (ZMod 2)) (hsq := hsq) n s c
 
 /-- The inverse of the reduction modulo two `signedMorseComplexBaseChangeIsoMorseComplex` sends the
 chain `s • p` with coefficients in `ZMod 2` to `s ⊗ p`. -/
@@ -184,7 +194,7 @@ theorem signedMorseComplexBaseChangeIsoMorseComplex_inv_f_single
         (Finsupp.single p 1 : (hX.signedMorseComplex 𝔬 hf ℤ hsq).X n) := by
   simp only [signedMorseComplexBaseChangeIsoMorseComplex, Iso.trans_inv, eqToIso.inv,
     HomologicalComplex.comp_f, HomologicalComplex.eqToHom_f, ModuleCat.hom_comp]
-  exact signedMorseComplexBaseChangeIso_inv_f_single (hsq := hsq) n p s
+  exact signedMorseComplexBaseChangeIso_inv_f_single (algebraMap ℤ (ZMod 2)) (hsq := hsq) n p s
 
 end IsMorseSmale
 

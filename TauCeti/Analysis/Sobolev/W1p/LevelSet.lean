@@ -34,6 +34,12 @@ to `Γₗ = {u > l, ∇u ≠ 0}`, and `F(Γ)` tends to zero with `|Γ|`, then `u
 The gradient of `(u - l)⁺` vanishes almost everywhere outside `Γₗ`, and it is not zero if `u > l`
 on a set of positive measure and a Sobolev inequality holds for `(u - l)⁺`.
 
+Above a level `l ≥ 0`, `u = (u - l)⁺ + l` and `∇(u - l)⁺ = ∇u`, while below it `(u - l)⁺` and its
+gradient vanish (`TauCeti.W1p.ae_posPartAbove_cases`). So a first-order term tested against
+`(u - l)⁺` only sees the truncation:
+`∫ ⟪b, ∇u⟫ (u - l)⁺ = ∫ ⟪b, ∇(u - l)⁺⟫ (u - l)⁺`
+(`TauCeti.W1p.integral_inner_gradient_mul_value_posPartAbove`).
+
 The same holds for the classical gradient of a `C¹` function, which is read off from the weak
 statement on small balls. In particular a level set of a `C¹` function on which its derivative
 does not vanish is null.
@@ -231,6 +237,37 @@ theorem W1p.ae_mem_of_gradient_posPartAbove_ne_zero (hp : p ≠ ∞) {l : ℝ} (
   · rw [indicator_of_mem (s := {y | l < W1p.value u y}) hlt] at hne
     exact ⟨hlt, hne⟩
   · exact absurd (indicator_of_notMem (s := {y | l < W1p.value u y}) hlt _) hne
+
+/-- Above a level `l ≥ 0`, `u = (u - l)⁺ + l` and `∇(u - l)⁺ = ∇u`; below it `(u - l)⁺` and its
+gradient vanish. -/
+theorem W1p.ae_posPartAbove_cases (hp : p ≠ ∞) {l : ℝ} (hl : 0 ≤ l) (u : W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      (W1p.value u x = W1p.value (W1p.posPartAbove hp hl u) x + l ∧
+        W1p.gradient (W1p.posPartAbove hp hl u) x = W1p.gradient u x) ∨
+      (W1p.value (W1p.posPartAbove hp hl u) x = 0 ∧
+        W1p.gradient (W1p.posPartAbove hp hl u) x = 0) := by
+  filter_upwards [W1p.value_posPartAbove_ae hp hl u, W1p.gradient_posPartAbove_ae hp hl u]
+    with x hv hg
+  by_cases hx : l < W1p.value u x
+  · left
+    rw [hv, hg, indicator_of_mem (s := {y | l < W1p.value u y}) hx, max_eq_left (by linarith)]
+    exact ⟨by ring, rfl⟩
+  · right
+    rw [hv, hg, indicator_of_notMem (s := {y | l < W1p.value u y}) hx,
+      max_eq_right (sub_nonpos.2 (not_lt.1 hx))]
+    exact ⟨rfl, rfl⟩
+
+/-- Above a level `l ≥ 0`, a first-order term tested against `v = (u - l)⁺` only sees `v`:
+`∫ ⟪b, ∇u⟫ v = ∫ ⟪b, ∇v⟫ v`, since `∇u = ∇v` where `v ≠ 0`. -/
+theorem W1p.integral_inner_gradient_mul_value_posPartAbove (hp : p ≠ ∞) {l : ℝ} (hl : 0 ≤ l)
+    (u : W1p mu Omega p) (b : E → E) :
+    ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (W1p.posPartAbove hp hl u) x ∂mu =
+      ∫ x in Omega, ⟪b x, W1p.gradient (W1p.posPartAbove hp hl u) x⟫_ℝ *
+        W1p.value (W1p.posPartAbove hp hl u) x ∂mu := by
+  refine integral_congr_ae ((W1p.ae_posPartAbove_cases hp hl u).mono fun x hx ↦ ?_)
+  rcases hx with ⟨-, hg⟩ | ⟨hv, -⟩
+  · simp only [hg]
+  · simp [hv]
 
 omit [FiniteDimensional ℝ E] in
 /-- If `∇v = 0` almost everywhere outside a measurable set `Γ`, then in `ℝ≥0∞` the weighted
