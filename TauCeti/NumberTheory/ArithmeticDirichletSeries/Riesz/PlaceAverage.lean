@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.GroupTheory.Index
+import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
 # Riesz sums with two cutoffs on a group of places
@@ -28,37 +29,6 @@ open Finset TauCeti
 namespace MonoidHom
 
 variable {G H : Type*} [Group G] [Group H] [Fintype G] [DecidableEq G] [DecidableEq H]
-
-private theorem sum_capped_ramp_over_kernel (π : G →* H) (B : Finset G) {c : H}
-    (hB : ∀ b ∈ B, π b = c) (g : G) (r u v : ℝ) :
-    let A := univ.filter fun t : G ↦ π t = 1
-    ∑ t ∈ A, max (r - (if g * t ∈ B then u else v)) 0 =
-      (A.card : ℝ) * max (r - v) 0 +
-        (if π g = c then (B.card : ℝ) else 0) * (max (r - u) 0 - max (r - v) 0) := by
-  dsimp only
-  let A := univ.filter fun t : G ↦ π t = 1
-  have hfiber : (A.filter fun t ↦ g * t ∈ B).card = if π g = c then B.card else 0 := by
-    split_ifs with he
-    · apply card_bij (fun t _ ↦ g * t)
-      · exact fun _ ht ↦ (mem_filter.mp ht).2
-      · exact fun _ _ _ _ h ↦ mul_left_cancel h
-      · intro b hb
-        refine ⟨g⁻¹ * b, ?_, by simp⟩
-        simp [A, he, hB b hb, hb]
-    · apply card_eq_zero.mpr
-      apply eq_empty_iff_forall_notMem.mpr
-      intro t ht
-      obtain ⟨htA, htB⟩ := mem_filter.mp ht
-      have ht1 := (mem_filter.mp htA).2
-      exact he (by simpa [ht1] using hB _ htB)
-  calc
-    _ = ∑ t ∈ A, (max (r - v) 0 +
-        if g * t ∈ B then max (r - u) 0 - max (r - v) 0 else 0) := by
-      refine sum_congr rfl fun t _ ↦ ?_
-      split_ifs <;> ring
-    _ = _ := by
-      rw [sum_add_distrib, ← sum_filter, sum_const, sum_const, hfiber]
-      split_ifs <;> simp [A, nsmul_eq_mul]
 
 /-- Sum capped ramps over the kernel of a class map. The default cutoff is `X`; the
 correction for cutoff `x` occurs `#B` times at each index whose translate has class `c`.
@@ -90,7 +60,8 @@ theorem sum_capped_riesz_two_cutoffs (π : G →* H) (B : Finset G) {c : H}
         (A.card : ℝ) * (w n * max (a / n - a / X) 0) +
           (B.card : ℝ) * ((if π (g n) = c then w n else 0) *
             (max (a / n - a / x) 0 - max (a / n - a / X) 0)) := by
-    rw [← mul_sum, sum_capped_ramp_over_kernel π B hB]
+    simp_rw [apply_ite (fun u : ℝ ↦ max (a / n - u) 0)]
+    rw [← mul_sum, π.sum_ite_mul_mem_over_ker B hB, nsmul_eq_mul, nsmul_eq_mul]
     split_ifs <;> ring
   rw [sum_congr rfl (fun n _ ↦ hs n)]
   simp only [sum_add_distrib, ← mul_sum]
