@@ -65,6 +65,20 @@ the pairing is the `L²` pairing. These are the differentiated identities throug
 on kernel projections and right inverses along a family of operators, such as the linearizations
 at a smooth family of plane vortices, pass to their parameter derivatives.
 
+For a family `C²` at `x₀`, differentiating these identities once more gives the second
+derivatives `π''` and `Q''`, the derivatives along `w` of `x ↦ π'_v(x)` and `x ↦ Q'_v(x)`. With
+`T''` the derivative along `w` of `x ↦ T'_v(x)`, their components in the `ι`-orthogonal complement
+of the kernel are `-Q (T'' (π e) + T'_v (π'_w e) + T'_w (π'_v e))` and
+`-Q (T'' (Q y) + T'_v (Q'_w y) + T'_w (Q'_v y))`, and their kernel components are determined by
+
+`⟪ι (π'' e), ι k⟫ = -⟪ι (e - π e), ι (Q (T'' k + T'_v (π'_w k) + T'_w (π'_v k)))⟫`
+`  - ⟪ι (π'_v e), ι (π'_w k)⟫ - ⟪ι (π'_w e), ι (π'_v k)⟫`,
+`⟪ι (Q'' y), ι k⟫ = ⟪ι (Q y), ι (Q (T'' k + T'_v (π'_w k) + T'_w (π'_v k)))⟫`
+`  - ⟪ι (Q'_v y), ι (π'_w k)⟫ - ⟪ι (Q'_w y), ι (π'_v k)⟫`.
+
+Second derivatives are stated as derivatives of first derivatives applied to fixed vectors, such
+as `fderiv ℝ (fun x ↦ fderiv ℝ Q x v y) x₀ w`, which take values in `E` or `F`.
+
 ## Main results
 
 * `ContinuousLinearMap.rightInverse_sub_comp` and
@@ -117,6 +131,15 @@ at a smooth family of plane vortices, pass to their parameter derivatives.
   `ContinuousLinearMap.IsFredholm.inner_fderiv_orthogonalRightInverse_apply` and
   `ContinuousLinearMap.IsFredholm.fderiv_orthogonalRightInverse_apply_eq_iff`: the same for the
   orthogonal right inverses.
+* `ContinuousLinearMap.IsFredholm.apply_fderiv_fun_fderiv_orthogonalKerProjection_apply`,
+  `IsFredholm.sub_orthogonalKerProjection_fderiv_fun_fderiv_orthogonalKerProjection_apply` and
+  `ContinuousLinearMap.IsFredholm.inner_fderiv_fun_fderiv_orthogonalKerProjection_apply`: the
+  second derivative of the orthogonal kernel projections along a real `C²` family, through
+  `T x₀ ∘ π''`, its complement component and its kernel pairings.
+* `ContinuousLinearMap.IsFredholm.apply_fderiv_fun_fderiv_orthogonalRightInverse_apply`,
+  `IsFredholm.sub_orthogonalKerProjection_fderiv_fun_fderiv_orthogonalRightInverse_apply` and
+  `ContinuousLinearMap.IsFredholm.inner_fderiv_fun_fderiv_orthogonalRightInverse_apply`: the
+  same for the orthogonal right inverses.
 
 ## References
 
@@ -942,5 +965,287 @@ theorem IsFredholm.fderiv_orthogonalRightInverse_apply_eq_iff (hι : Injective �
         h₂ k hk, sub_self]
 
 end Derivative
+
+section SecondDerivative
+
+/-! ### Second derivatives of the orthogonal kernel projections and right inverses
+
+Second derivatives are written as derivatives of first derivatives applied to fixed vectors, such as
+`fderiv ℝ (fun x ↦ fderiv ℝ Q x v y) x₀ w` for the second derivative of `Q` along `w` and `v`
+applied to `y`. These take values in `E` or `F`, and do not involve the iterated operator space
+`X →L[ℝ] F →L[ℝ] E` of `fderiv ℝ (fderiv ℝ Q) x₀`. -/
+
+variable {E F H X : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
+  [NormedAddCommGroup X] [NormedSpace ℝ X] {ι : E →L[ℝ] H} {T : X → E →L[ℝ] F} {x₀ : X}
+
+/-- For a family `S` that is `C²` at `x₀`, the derivative along `w` of `x ↦ S' x v y` is the
+second derivative of `S` applied to `w`, `v` and `y`. -/
+private theorem fderiv_fun_fderiv_apply_apply {Y G : Type*} [NormedAddCommGroup Y]
+    [NormedSpace ℝ Y] [NormedAddCommGroup G] [NormedSpace ℝ G] {S : X → Y →L[ℝ] G}
+    (hS : ContDiffAt ℝ 2 S x₀) (v w : X) (y : Y) :
+    fderiv ℝ (fun x ↦ fderiv ℝ S x v y) x₀ w = fderiv ℝ (fderiv ℝ S) x₀ w v y := by
+  have hS' := ((hS.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero).hasFDerivAt
+  rw [((hS'.clm_apply (hasFDerivAt_const v x₀)).clm_apply (hasFDerivAt_const y x₀)).fderiv]
+  simp only [comp_zero, zero_add, flip_apply]
+
+omit [CompleteSpace E] [CompleteSpace F] in
+/-- Differentiating twice an identity `T x (S x y) = c` holding near `x₀`. -/
+private theorem apply_fderiv_fun_fderiv_apply_of_eventually {Y : Type*} [NormedAddCommGroup Y]
+    [NormedSpace ℝ Y] {S : X → Y →L[ℝ] E} (hT : ContDiffAt ℝ 2 T x₀) (hS : ContDiffAt ℝ 2 S x₀)
+    (y : Y) {c : F} (h : ∀ᶠ x in 𝓝 x₀, T x (S x y) = c) (v w : X) :
+    T x₀ (fderiv ℝ (fun x ↦ fderiv ℝ S x v y) x₀ w) =
+      -(fderiv ℝ (fun x ↦ fderiv ℝ T x v (S x₀ y)) x₀ w + fderiv ℝ T x₀ v (fderiv ℝ S x₀ w y) +
+        fderiv ℝ T x₀ w (fderiv ℝ S x₀ v y)) := by
+  rw [fderiv_fun_fderiv_apply_apply hS, fderiv_fun_fderiv_apply_apply hT]
+  -- Near `x₀`, differentiating the identity gives `T x (S' v y) + T' v (S x y) = 0`.
+  have h1 : ∀ᶠ x in 𝓝 x₀, T x (fderiv ℝ S x v y) + fderiv ℝ T x v (S x y) = 0 := by
+    filter_upwards [hT.eventually (by simp), hS.eventually (by simp), h.eventually_nhds]
+      with x hTx hSx hx
+    have hd := (hTx.differentiableAt (by simp)).hasFDerivAt.clm_apply
+      ((hSx.differentiableAt (by simp)).hasFDerivAt.clm_apply (hasFDerivAt_const y x))
+    have h0 : HasFDerivAt (fun x ↦ T x (S x y)) (0 : X →L[ℝ] F) x :=
+      (hasFDerivAt_const c x).congr_of_eventuallyEq hx
+    simpa using DFunLike.congr_fun (hd.unique h0) v
+  -- Differentiating once more at `x₀` along `w`.
+  have hT' := ((hT.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero).hasFDerivAt
+  have hS' := ((hS.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero).hasFDerivAt
+  have hd := ((hT.differentiableAt (by simp)).hasFDerivAt.clm_apply
+      ((hS'.clm_apply (hasFDerivAt_const v x₀)).clm_apply (hasFDerivAt_const y x₀))).add
+    ((hT'.clm_apply (hasFDerivAt_const v x₀)).clm_apply
+      ((hS.differentiableAt (by simp)).hasFDerivAt.clm_apply (hasFDerivAt_const y x₀)))
+  have h0 : HasFDerivAt (fun x ↦ T x (fderiv ℝ S x v y) + fderiv ℝ T x v (S x y))
+      (0 : X →L[ℝ] F) x₀ := (hasFDerivAt_const 0 x₀).congr_of_eventuallyEq h1
+  have := DFunLike.congr_fun (hd.unique h0) w
+  simp only [comp_zero, zero_add, add_apply, comp_apply, flip_apply, zero_apply] at this
+  refine eq_neg_of_add_eq_zero_left ?_
+  rw [← this]
+  abel
+
+omit [CompleteSpace E] [CompleteSpace H] in
+/-- Differentiating twice an identity `⟪ι (S x y), ι (R x f)⟫ = 0` holding near `x₀`. -/
+private theorem inner_fderiv_fun_fderiv_of_eventually {Y Y' : Type*} [NormedAddCommGroup Y]
+    [NormedSpace ℝ Y] [NormedAddCommGroup Y'] [NormedSpace ℝ Y'] {S : X → Y →L[ℝ] E}
+    {R : X → Y' →L[ℝ] E} (hS : ContDiffAt ℝ 2 S x₀) (hR : ContDiffAt ℝ 2 R x₀) (y : Y) (f : Y')
+    (h : ∀ᶠ x in 𝓝 x₀, ⟪ι (S x y), ι (R x f)⟫_ℝ = 0) (v w : X) :
+    ⟪ι (fderiv ℝ (fun x ↦ fderiv ℝ S x v y) x₀ w), ι (R x₀ f)⟫_ℝ +
+        ⟪ι (fderiv ℝ S x₀ v y), ι (fderiv ℝ R x₀ w f)⟫_ℝ +
+      ⟪ι (fderiv ℝ S x₀ w y), ι (fderiv ℝ R x₀ v f)⟫_ℝ +
+        ⟪ι (S x₀ y), ι (fderiv ℝ (fun x ↦ fderiv ℝ R x v f) x₀ w)⟫_ℝ = 0 := by
+  rw [fderiv_fun_fderiv_apply_apply hS, fderiv_fun_fderiv_apply_apply hR]
+  -- Near `x₀`, differentiating the identity gives
+  -- `⟪ι (S' v y), ι (R f)⟫ + ⟪ι (S y), ι (R' v f)⟫ = 0`.
+  have h1 : ∀ᶠ x in 𝓝 x₀, ⟪ι (fderiv ℝ S x v y), ι (R x f)⟫_ℝ +
+      ⟪ι (S x y), ι (fderiv ℝ R x v f)⟫_ℝ = 0 := by
+    filter_upwards [hS.eventually (by simp), hR.eventually (by simp), h.eventually_nhds]
+      with x hSx hRx hx
+    have hd := HasFDerivAt.inner ℝ (ι.hasFDerivAt.comp x
+      ((hSx.differentiableAt (by simp)).hasFDerivAt.clm_apply (hasFDerivAt_const y x)))
+      (ι.hasFDerivAt.comp x
+        ((hRx.differentiableAt (by simp)).hasFDerivAt.clm_apply (hasFDerivAt_const f x)))
+    have h0 : HasFDerivAt (fun x ↦ ⟪ι (S x y), ι (R x f)⟫_ℝ) (0 : X →L[ℝ] ℝ) x :=
+      (hasFDerivAt_const (0 : ℝ) x).congr_of_eventuallyEq hx
+    have := DFunLike.congr_fun (hd.unique h0) v
+    simp only [Function.comp_apply, comp_zero, zero_add, comp_apply, prod_apply, flip_apply,
+      fderivInnerCLM_apply, zero_apply] at this
+    rwa [add_comm]
+  -- Differentiating once more at `x₀` along `w`.
+  have hS' := ((hS.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero).hasFDerivAt
+  have hR' := ((hR.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero).hasFDerivAt
+  have hSy := (hS.differentiableAt (by simp)).hasFDerivAt.clm_apply (hasFDerivAt_const y x₀)
+  have hRf := (hR.differentiableAt (by simp)).hasFDerivAt.clm_apply (hasFDerivAt_const f x₀)
+  have hd := (HasFDerivAt.inner ℝ (ι.hasFDerivAt.comp x₀
+      ((hS'.clm_apply (hasFDerivAt_const v x₀)).clm_apply (hasFDerivAt_const y x₀)))
+      (ι.hasFDerivAt.comp x₀ hRf)).add
+    (HasFDerivAt.inner ℝ (ι.hasFDerivAt.comp x₀ hSy) (ι.hasFDerivAt.comp x₀
+      ((hR'.clm_apply (hasFDerivAt_const v x₀)).clm_apply (hasFDerivAt_const f x₀))))
+  have h0 : HasFDerivAt (fun x ↦ ⟪ι (fderiv ℝ S x v y), ι (R x f)⟫_ℝ +
+      ⟪ι (S x y), ι (fderiv ℝ R x v f)⟫_ℝ) (0 : X →L[ℝ] ℝ) x₀ :=
+    (hasFDerivAt_const (0 : ℝ) x₀).congr_of_eventuallyEq h1
+  have := DFunLike.congr_fun (hd.unique h0) w
+  simp only [Function.comp_apply, comp_zero, zero_add, add_apply, comp_apply, prod_apply,
+    flip_apply, fderivInnerCLM_apply, zero_apply] at this
+  linarith
+
+/-- Near a parameter where a `C²` family is Fredholm and onto, its orthogonal kernel projections
+and right inverses are `C²`, and have their defining properties. -/
+private theorem IsFredholm.contDiffAt_two_and_eventually (hι : Injective ι)
+    (hT : IsFredholm (T x₀)) (hsurj : Surjective (T x₀)) (hT2 : ContDiffAt ℝ 2 T x₀) :
+    ContDiffAt ℝ 2 (fun x ↦ orthogonalKerProjection ι (T x)) x₀ ∧
+      ContDiffAt ℝ 2 (fun x ↦ orthogonalRightInverse ι (T x)) x₀ ∧
+      ∀ᶠ x in 𝓝 x₀, IsOrthogonalKerProjection ι (T x) (orthogonalKerProjection ι (T x)) ∧
+        IsOrthogonalRightInverse ι (T x) (orthogonalRightInverse ι (T x)) :=
+  ⟨(hT.contDiffAt_orthogonalKerProjection hι hsurj).comp x₀ hT2,
+    (hT.contDiffAt_orthogonalRightInverse hι hsurj).comp x₀ hT2,
+    hT2.continuousAt.eventually
+      (hT.eventually_isOrthogonalKerProjection_and_isOrthogonalRightInverse hι hsurj)⟩
+
+/-- **The second derivative of the orthogonal kernel projections, applied by the operator.** Let
+`T` be a family of real operators, `C²` at `x₀`, where `T x₀` is Fredholm and onto, and write
+`π x` for its projection onto `ker (T x)` along the `ι`-orthogonal complement. Write `T'_v`, `π'_v`
+for the derivatives at `x₀` along `v`, and `π''` for the derivative along `w` of `x ↦ π'_v(x)`,
+and `T''` for that of `x ↦ T'_v(x)`. Differentiating `T x (π x e) = 0` twice gives
+`T x₀ (π'' e) = -(T'' (π x₀ e) + T'_v (π'_w e) + T'_w (π'_v e))`. -/
+theorem IsFredholm.apply_fderiv_fun_fderiv_orthogonalKerProjection_apply (hι : Injective ι)
+    (hT : IsFredholm (T x₀)) (hsurj : Surjective (T x₀)) (hT2 : ContDiffAt ℝ 2 T x₀)
+    (v w : X) (e : E) :
+    T x₀ (fderiv ℝ (fun x ↦ fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x v e) x₀ w) =
+      -(fderiv ℝ (fun x ↦ fderiv ℝ T x v (orthogonalKerProjection ι (T x₀) e)) x₀ w +
+        fderiv ℝ T x₀ v (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ w e) +
+        fderiv ℝ T x₀ w (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ v e)) := by
+  obtain ⟨hπ, -, h⟩ := hT.contDiffAt_two_and_eventually hι hsurj hT2
+  exact apply_fderiv_fun_fderiv_apply_of_eventually hT2 hπ e
+    (h.mono fun x hx ↦ LinearMap.mem_ker.1 (hx.1.mem_ker e)) v w
+
+/-- **The second derivative of the orthogonal right inverses, applied by the operator.** Let `T`
+be a family of real operators, `C²` at `x₀`, where `T x₀` is Fredholm and onto, and write `Q x`
+for its right inverse with values `ι`-orthogonal to `ker (T x)`. Write `T'_v`, `Q'_v` for the
+derivatives at `x₀` along `v`, and `Q''`, `T''` for the derivatives along `w` of `x ↦ Q'_v(x)` and
+`x ↦ T'_v(x)`. Differentiating `T x (Q x y) = y` twice gives
+`T x₀ (Q'' y) = -(T'' (Q x₀ y) + T'_v (Q'_w y) + T'_w (Q'_v y))`. -/
+theorem IsFredholm.apply_fderiv_fun_fderiv_orthogonalRightInverse_apply (hι : Injective ι)
+    (hT : IsFredholm (T x₀)) (hsurj : Surjective (T x₀)) (hT2 : ContDiffAt ℝ 2 T x₀)
+    (v w : X) (y : F) :
+    T x₀ (fderiv ℝ (fun x ↦ fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x v y) x₀ w) =
+      -(fderiv ℝ (fun x ↦ fderiv ℝ T x v (orthogonalRightInverse ι (T x₀) y)) x₀ w +
+        fderiv ℝ T x₀ v (fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ w y) +
+        fderiv ℝ T x₀ w (fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ v y)) := by
+  obtain ⟨-, hQ, h⟩ := hT.contDiffAt_two_and_eventually hι hsurj hT2
+  exact apply_fderiv_fun_fderiv_apply_of_eventually hT2 hQ y
+    (h.mono fun x hx ↦ hx.2.rightInverse y) v w
+
+/-- **The complement component of the second derivative of the kernel projections.** In the
+setting of
+`ContinuousLinearMap.IsFredholm.apply_fderiv_fun_fderiv_orthogonalKerProjection_apply`, with `Q`
+the right inverse of `T x₀` with values `ι`-orthogonal to its kernel, the component of `π'' e` in
+the `ι`-orthogonal complement of the kernel is
+`π'' e - π (π'' e) = -Q (T'' (π e) + T'_v (π'_w e) + T'_w (π'_v e))`. -/
+theorem IsFredholm.sub_orthogonalKerProjection_fderiv_fun_fderiv_orthogonalKerProjection_apply
+    (hι : Injective ι) (hT : IsFredholm (T x₀)) (hsurj : Surjective (T x₀))
+    (hT2 : ContDiffAt ℝ 2 T x₀) (v w : X) (e : E) :
+    fderiv ℝ (fun x ↦ fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x v e) x₀ w -
+        orthogonalKerProjection ι (T x₀)
+          (fderiv ℝ (fun x ↦ fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x v e) x₀ w) =
+      -orthogonalRightInverse ι (T x₀)
+        (fderiv ℝ (fun x ↦ fderiv ℝ T x v (orthogonalKerProjection ι (T x₀) e)) x₀ w +
+          fderiv ℝ T x₀ v (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ w e) +
+          fderiv ℝ T x₀ w (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ v e)) := by
+  have := hT.finite_ker
+  have h := (isOrthogonalKerProjection_orthogonalKerProjection hι
+    (T x₀)).apply_add_apply_apply_eq_self hι
+      (hT.isOrthogonalRightInverse_orthogonalRightInverse hι hsurj)
+      (fderiv ℝ (fun x ↦ fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x v e) x₀ w)
+  rw [hT.apply_fderiv_fun_fderiv_orthogonalKerProjection_apply hι hsurj hT2, map_neg] at h
+  exact sub_eq_iff_eq_add'.2 h.symm
+
+/-- **The complement component of the second derivative of the right inverses.** In the setting
+of `ContinuousLinearMap.IsFredholm.apply_fderiv_fun_fderiv_orthogonalRightInverse_apply`, with `π`
+the projection onto the kernel of `T x₀` along its `ι`-orthogonal complement, the component of
+`Q'' y` in the `ι`-orthogonal complement of the kernel is
+`Q'' y - π (Q'' y) = -Q (T'' (Q y) + T'_v (Q'_w y) + T'_w (Q'_v y))`. -/
+theorem IsFredholm.sub_orthogonalKerProjection_fderiv_fun_fderiv_orthogonalRightInverse_apply
+    (hι : Injective ι) (hT : IsFredholm (T x₀)) (hsurj : Surjective (T x₀))
+    (hT2 : ContDiffAt ℝ 2 T x₀) (v w : X) (y : F) :
+    fderiv ℝ (fun x ↦ fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x v y) x₀ w -
+        orthogonalKerProjection ι (T x₀)
+          (fderiv ℝ (fun x ↦ fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x v y) x₀ w) =
+      -orthogonalRightInverse ι (T x₀)
+        (fderiv ℝ (fun x ↦ fderiv ℝ T x v (orthogonalRightInverse ι (T x₀) y)) x₀ w +
+          fderiv ℝ T x₀ v (fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ w y) +
+          fderiv ℝ T x₀ w (fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ v y)) := by
+  have := hT.finite_ker
+  have h := (isOrthogonalKerProjection_orthogonalKerProjection hι
+    (T x₀)).apply_add_apply_apply_eq_self hι
+      (hT.isOrthogonalRightInverse_orthogonalRightInverse hι hsurj)
+      (fderiv ℝ (fun x ↦ fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x v y) x₀ w)
+  rw [hT.apply_fderiv_fun_fderiv_orthogonalRightInverse_apply hι hsurj hT2, map_neg] at h
+  exact sub_eq_iff_eq_add'.2 h.symm
+
+/-- **The second derivative of the orthogonal right inverses, paired with the kernel.** In the
+setting of `ContinuousLinearMap.IsFredholm.apply_fderiv_fun_fderiv_orthogonalRightInverse_apply`,
+with `π` the orthogonal kernel projections, the kernel component of `Q'' y` is determined by
+
+`⟪ι (Q'' y), ι k⟫ = ⟪ι (Q y), ι (Q (T'' k + T'_v (π'_w k) + T'_w (π'_v k)))⟫`
+`  - ⟪ι (Q'_v y), ι (π'_w k)⟫ - ⟪ι (Q'_w y), ι (π'_v k)⟫`
+
+for every `k` in the kernel of `T x₀`. -/
+theorem IsFredholm.inner_fderiv_fun_fderiv_orthogonalRightInverse_apply (hι : Injective ι)
+    (hT : IsFredholm (T x₀)) (hsurj : Surjective (T x₀)) (hT2 : ContDiffAt ℝ 2 T x₀)
+    (v w : X) (y : F) {k : E} (hk : k ∈ (T x₀).ker) :
+    ⟪ι (fderiv ℝ (fun x ↦ fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x v y) x₀ w),
+        ι k⟫_ℝ =
+      ⟪ι (orthogonalRightInverse ι (T x₀) y), ι (orthogonalRightInverse ι (T x₀)
+        (fderiv ℝ (fun x ↦ fderiv ℝ T x v k) x₀ w +
+          fderiv ℝ T x₀ v (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ w k) +
+          fderiv ℝ T x₀ w (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ v k)))⟫_ℝ -
+        ⟪ι (fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ v y),
+          ι (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ w k)⟫_ℝ -
+        ⟪ι (fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ w y),
+          ι (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ v k)⟫_ℝ := by
+  have := hT.finite_ker
+  have hπ := isOrthogonalKerProjection_orthogonalKerProjection hι (T x₀)
+  have hQ := hT.isOrthogonalRightInverse_orthogonalRightInverse hι hsurj
+  obtain ⟨hπ2, hQ2, h⟩ := hT.contDiffAt_two_and_eventually hι hsurj hT2
+  -- Differentiate `⟪ι (Q x y), ι (π x k)⟫ = 0` twice; the last term pairs `Q y` with `π'' k`,
+  -- whose kernel component is orthogonal to `Q y`.
+  have h₂ := inner_fderiv_fun_fderiv_of_eventually hQ2 hπ2 y k
+    (h.mono fun x hx ↦ hx.2.inner_eq_zero y _ (hx.1.mem_ker k)) v w
+  rw [eq_add_of_sub_eq'
+      (hT.sub_orthogonalKerProjection_fderiv_fun_fderiv_orthogonalKerProjection_apply
+        hι hsurj hT2 v w k), hπ.apply_of_mem_ker hι hk,
+    map_add ι (orthogonalKerProjection ι (T x₀) _), inner_add_right,
+    hQ.inner_eq_zero y _ (hπ.mem_ker _), zero_add, map_neg, inner_neg_right] at h₂
+  linarith
+
+/-- **The second derivative of the orthogonal kernel projections, paired with the kernel.** In the
+setting of `ContinuousLinearMap.IsFredholm.apply_fderiv_fun_fderiv_orthogonalKerProjection_apply`,
+with `Q` the orthogonal right inverse of `T x₀`, the kernel component of `π'' e` is determined by
+
+`⟪ι (π'' e), ι k⟫ = -⟪ι (e - π e), ι (Q (T'' k + T'_v (π'_w k) + T'_w (π'_v k)))⟫`
+`  - ⟪ι (π'_v e), ι (π'_w k)⟫ - ⟪ι (π'_w e), ι (π'_v k)⟫`
+
+for every `k` in the kernel of `T x₀`. -/
+theorem IsFredholm.inner_fderiv_fun_fderiv_orthogonalKerProjection_apply (hι : Injective ι)
+    (hT : IsFredholm (T x₀)) (hsurj : Surjective (T x₀)) (hT2 : ContDiffAt ℝ 2 T x₀)
+    (v w : X) (e : E) {k : E} (hk : k ∈ (T x₀).ker) :
+    ⟪ι (fderiv ℝ (fun x ↦ fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x v e) x₀ w),
+        ι k⟫_ℝ =
+      -⟪ι (e - orthogonalKerProjection ι (T x₀) e), ι (orthogonalRightInverse ι (T x₀)
+        (fderiv ℝ (fun x ↦ fderiv ℝ T x v k) x₀ w +
+          fderiv ℝ T x₀ v (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ w k) +
+          fderiv ℝ T x₀ w (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ v k)))⟫_ℝ -
+        ⟪ι (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ v e),
+          ι (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ w k)⟫_ℝ -
+        ⟪ι (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ w e),
+          ι (fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x₀ v k)⟫_ℝ := by
+  have := hT.finite_ker
+  have hπ := isOrthogonalKerProjection_orthogonalKerProjection hι (T x₀)
+  obtain ⟨hπ2, -, h⟩ := hT.contDiffAt_two_and_eventually hι hsurj hT2
+  -- Differentiate `⟪ι (e - π x e), ι (π x k)⟫ = 0` twice, as the identity for `S x = 1 - π x`,
+  -- whose derivatives are those of `π` with the opposite sign.
+  have hS (x : X) : fderiv ℝ (fun x ↦ (1 : E →L[ℝ] E) - orthogonalKerProjection ι (T x)) x =
+      -fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x :=
+    fderiv_const_sub _
+  have hS' (u : X) : (fun x ↦ fderiv ℝ (fun x ↦ (1 : E →L[ℝ] E) -
+      orthogonalKerProjection ι (T x)) x u e) =
+        fun x ↦ -fderiv ℝ (fun x ↦ orthogonalKerProjection ι (T x)) x u e :=
+    funext fun x ↦ by rw [hS, neg_apply, neg_apply]
+  have h₂ := inner_fderiv_fun_fderiv_of_eventually (ι := ι)
+    (S := fun x ↦ 1 - orthogonalKerProjection ι (T x)) (contDiffAt_const.sub hπ2) hπ2 e k
+    (h.mono fun x hx ↦ by
+      simpa only [sub_apply, one_apply_eq_self] using
+        hx.1.inner_sub_eq_zero e _ (hx.1.mem_ker k)) v w
+  rw [hS', fderiv_fun_neg, hS] at h₂
+  simp only [neg_apply, sub_apply, one_apply_eq_self, map_neg, inner_neg_left] at h₂
+  rw [eq_add_of_sub_eq'
+      (hT.sub_orthogonalKerProjection_fderiv_fun_fderiv_orthogonalKerProjection_apply
+        hι hsurj hT2 v w k), hπ.apply_of_mem_ker hι hk,
+    map_add ι (orthogonalKerProjection ι (T x₀) _), inner_add_right,
+    hπ.inner_sub_eq_zero e _ (hπ.mem_ker _), zero_add, map_neg, inner_neg_right] at h₂
+  linarith
+
+end SecondDerivative
 
 end ContinuousLinearMap
