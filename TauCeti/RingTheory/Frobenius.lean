@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Frobenius
 
+import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Invariant.Basic
 
 /-!
@@ -45,6 +46,8 @@ each of them, which again carries hypotheses of its own, such as those of
   elements at `Q` are exactly one coset of the inertia subgroup.
 * `IsArithFrobAt.mem_stabilizer_of_isIntegral` — when `S` is an integral extension of `R` that is a
   domain, a Frobenius element at any ideal `Q` stabilizes `Q`.
+* `Ideal.mem_stabilizer_of_forall_smul_sub_pow_mem` — an element raising every element to the
+  `q`-th power modulo a prime ideal stabilizes it, with no integrality hypothesis.
 * `IsArithFrobAt.of_le` — a Frobenius element at `Q` is one at any larger ideal with the same
   contraction to the base.
 * `Ideal.exists_isArithFrobAt_smul` — translating a member of the fiber of `σ` by `c` gives a
@@ -181,6 +184,20 @@ theorem mem_stabilizer_of_isIntegral {G : Type*} [Group G] [MulSemiringAction G 
 end IsArithFrobAt
 
 namespace Ideal
+
+/-- An element raising every element of `S` to the `q`-th power modulo a prime `P` stabilizes
+`P`. -/
+theorem mem_stabilizer_of_forall_smul_sub_pow_mem {S G : Type*} [CommRing S] [Group G]
+    [MulSemiringAction G S] {P : Ideal S} [P.IsPrime] {g : G} {q : ℕ}
+    (hg : ∀ b : S, g • b - b ^ q ∈ P) : g ∈ MulAction.stabilizer G P := by
+  rcases q.eq_zero_or_pos with rfl | hq
+  · exact absurd (by simpa using hg 0) (P.ne_top_iff_one.mp ‹P.IsPrime›.ne_top)
+  have hcomap := comap_eq_self_of_forall_sub_pow_mem ‹P.IsPrime›.isRadical hq.ne'
+    (φ := MulSemiringAction.toRingHom G S g) hg
+  have hiff (b : S) : g • b ∈ P ↔ b ∈ P := by
+    simpa using SetLike.ext_iff.mp hcomap b
+  refine MulAction.mem_stabilizer_iff.mpr (SetLike.ext fun b ↦ ?_)
+  rw [Ideal.mem_pointwise_smul_iff_inv_smul_mem, ← hiff, smul_inv_smul]
 
 variable {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S] [Group G]
   [MulSemiringAction G S] [SMulCommClass G R S]

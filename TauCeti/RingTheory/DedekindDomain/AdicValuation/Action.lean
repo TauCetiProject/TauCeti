@@ -8,9 +8,9 @@ module
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.RingTheory.DedekindDomain.HeightOneSpectrumAction
--- Proof-only: membership in `valuationSubringAtPrime` as a quotient `a / s`, and injectivity of
--- `valuationSubringAtPrime`.
-import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
+-- Proof-only: the general localization `Ideal.valuationSubringAtPrime`, its equivariance and
+-- stabilizer, and its identification with `valuationSubringAtPrime` at a place.
+import TauCeti.RingTheory.DedekindDomain.Prufer
 
 /-!
 # Group actions on the valuation subrings at the places of a Dedekind domain
@@ -20,11 +20,12 @@ ring automorphisms, compatibly (`SMulDistribClass G R L`). Then `G` acts on the 
 `HeightOneSpectrum R` through `IsDedekindDomain.HeightOneSpectrum.pointwiseMulAction`, with
 `(σ • w).asIdeal = σ • w.asIdeal`. This file compares that action with Mathlib's pointwise action
 on valuation subrings of `L`: the localization of `R` at `σ • w`, as a valuation subring of `L`,
-is the image under `σ` of the localization at `w`. Since the localization is the valuation subring
-of the `w`-adic valuation, which determines the place (Mathlib's
-`valuationSubringAtPrime_eq_valuationSubring` and `valuationSubring_valuation_injective`), the
-stabilizer of `w` under `Gal(L/K) = L ≃ₐ[K] L` is Mathlib's decomposition subgroup
+is the image under `σ` of the localization at `w`, and the stabilizer of `w` under
+`Gal(L/K) = L ≃ₐ[K] L` is Mathlib's decomposition subgroup
 `ValuationSubring.decompositionSubgroup` of the valuation subring `valuationSubringAtPrime L w`.
+These are the Dedekind case of the general `Ideal.smul_valuationSubringAtPrime` and
+`ValuationSubring.IsCenteredAt.stabilizer_eq` (a valuation subring is determined by its centre),
+through `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_asIdeal`.
 
 For an extension of number fields `L/K` and `R = 𝓞 L`, this is the Galois action on the finite
 places of `L`, and the stabilizer of a finite place is its decomposition group.
@@ -59,33 +60,20 @@ section Group
 variable {G : Type*} [Group G] [MulSemiringAction G L] [MulSemiringAction G R]
   [SMulDistribClass G R L]
 
-/-- The image under `σ` of the localization at `w` is contained in the localization at `σ • w`. -/
-private theorem smul_valuationSubringAtPrime_le (σ : G) (w : HeightOneSpectrum R) :
-    σ • valuationSubringAtPrime L w ≤ valuationSubringAtPrime L (σ • w) := by
-  intro x hx
-  obtain ⟨y, hy, rfl⟩ := (ValuationSubring.mem_smul_pointwise_iff_exists _ _ _).1 hx
-  obtain ⟨a, s, hs, rfl⟩ := mem_valuationSubringAtPrime_iff.1 hy
-  refine mem_valuationSubringAtPrime_iff.2 ⟨σ • a, σ • s, ?_, ?_⟩
-  · simpa [Ideal.primeCompl, Ideal.smul_mem_pointwise_smul_iff] using hs
-  · simp [algebraMap.smul']
-
 /-- The localization of a Dedekind domain `R` at `σ • w`, as a valuation subring of its fraction
 field `L`, is the image under `σ` of the localization at `w`, for a group acting compatibly on `R`
 and `L` by ring automorphisms. -/
 @[simp]
 theorem smul_valuationSubringAtPrime (σ : G) (w : HeightOneSpectrum R) :
     σ • valuationSubringAtPrime L w = valuationSubringAtPrime L (σ • w) := by
-  refine le_antisymm (smul_valuationSubringAtPrime_le σ w) ?_
-  rw [ValuationSubring.subset_pointwise_smul_iff]
-  simpa using smul_valuationSubringAtPrime_le σ⁻¹ (σ • w)
+  simp [← valuationSubringAtPrime_asIdeal, Ideal.smul_valuationSubringAtPrime]
 
 /-- The stabilizer of a place `w` is the stabilizer of its valuation subring
 `valuationSubringAtPrime L w`. -/
 theorem stabilizer_valuationSubringAtPrime (w : HeightOneSpectrum R) :
     MulAction.stabilizer G (valuationSubringAtPrime L w) = MulAction.stabilizer G w := by
-  ext σ
-  rw [MulAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff, smul_valuationSubringAtPrime,
-    (valuationSubringAtPrime_injective L).eq_iff]
+  rw [stabilizer_eq_stabilizer_asIdeal, ← valuationSubringAtPrime_asIdeal (L := L)]
+  exact Ideal.isCenteredAt_valuationSubringAtPrime.stabilizer_eq
 
 end Group
 
