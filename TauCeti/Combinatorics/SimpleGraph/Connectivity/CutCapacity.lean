@@ -10,12 +10,12 @@ public import TauCeti.Combinatorics.Graph.Connectivity.CutCapacity
 import TauCeti.Combinatorics.SimpleGraph.Bipartite
 
 /-!
-# Cut capacities of simple graphs
+# Cut capacities and pairwise minimum cuts of simple graphs
 
 This file develops elementary formulas and functoriality properties for weighted and unit cut
-capacities on `SimpleGraph V`, without importing minimum-cut or Gomory--Hu cut-tree theory.
-Weighted cuts are represented on unordered vertex pairs by `G.edgeSet.indicator c`, while unit cuts
-use `G.unitCutCapacity`.
+capacities and pairwise minimum cut values on `SimpleGraph V`, without importing edge-reachability
+or Gomory--Hu cut-tree theory. Weighted cuts are represented on unordered vertex pairs by
+`G.edgeSet.indicator c`, while unit cuts use `G.unitCutCapacity`.
 
 ## Main results
 
@@ -24,14 +24,18 @@ use `G.unitCutCapacity`.
 * `SimpleGraph.pairCutCapacity_indicator_edgeSet_singleton` and
   `SimpleGraph.unitCutCapacity_singleton`: singleton cut capacity sums incident edge weights and
   equals `G.degree v` for unit weights.
-* `SimpleGraph.pairCutCapacity_indicator_edgeSet_top` and `SimpleGraph.unitCutCapacity_top`:
-  complete-graph cut capacities, with `#S * (Fintype.card V - #S)` crossing edges for unit weights.
+* `SimpleGraph.pairCutCapacity_indicator_edgeSet_top`, `SimpleGraph.unitCutCapacity_top`, and
+  `SimpleGraph.pairMinimumValue_unitCutCapacity_top`: complete-graph cut capacities and minimum unit
+  cut value `|V| - 1`.
 * `SimpleGraph.pairCutCapacity_indicator_edgeSet_deleteEdges_singleton` and
   `SimpleGraph.unitCutCapacity_deleteEdges_singleton`: effect of deleting a single edge of `G`.
-* `SimpleGraph.pairCutCapacity_indicator_edgeSet_mono` and `SimpleGraph.unitCutCapacity_mono`:
-  monotonicity with respect to subgraph inclusion `G ≤ H`.
-* `SimpleGraph.Iso.pairCutCapacity_indicator_edgeSet` and `SimpleGraph.Iso.unitCutCapacity_map`:
-  invariance under graph isomorphisms.
+* `SimpleGraph.pairCutCapacity_indicator_edgeSet_mono`, `SimpleGraph.unitCutCapacity_mono`,
+  `SimpleGraph.pairMinimumValue_indicator_edgeSet_mono`, and
+  `SimpleGraph.pairMinimumValue_unitCutCapacity_mono`: monotonicity with respect to subgraph
+  inclusion `G ≤ H`.
+* `SimpleGraph.Iso.pairCutCapacity_indicator_edgeSet`, `SimpleGraph.Iso.unitCutCapacity_map`,
+  `SimpleGraph.Iso.pairMinimumValue_indicator_edgeSet`, and
+  `SimpleGraph.Iso.pairMinimumValue_unitCutCapacity`: invariance under graph isomorphisms.
 -/
 
 public section
@@ -135,6 +139,36 @@ theorem unitCutCapacity_top [Fintype V] (S : Finset V) :
     card_edgeFinset_top_between disjoint_compl_right]
   simp only [Set.toFinset_compl, Finset.toFinset_coe, Finset.card_compl]
 
+/-- In the complete graph `⊤`, every pair of distinct vertices has minimum unit cut value
+`|V| - 1`. -/
+theorem pairMinimumValue_unitCutCapacity_top [Fintype V] {s t : V} (hst : s ≠ t) :
+    TauCeti.TerminalCut.pairMinimumValue (⊤ : SimpleGraph V).unitCutCapacity s t =
+      Fintype.card V - 1 := by
+  classical
+  have hle :
+      TauCeti.TerminalCut.pairMinimumValue (⊤ : SimpleGraph V).unitCutCapacity s t ≤
+        Fintype.card V - 1 := by
+    refine (TauCeti.TerminalCut.pairMinimumValue_le _ (mem_singleton_self s)
+      (notMem_singleton.mpr hst.symm)).trans ?_
+    rw [unitCutCapacity_top]
+    simp
+  refine le_antisymm hle ?_
+  obtain ⟨S, hS⟩ := TauCeti.TerminalCut.exists_minimum (⊤ : SimpleGraph V).unitCutCapacity
+    (disjoint_singleton.mpr hst)
+  obtain ⟨hs, ht⟩ := TauCeti.TerminalCut.isAdmissible_singleton.mp hS.admissible
+  rw [hS.pairMinimumValue_eq, unitCutCapacity_top]
+  have hpos : 1 ≤ #S := Finset.one_le_card.mpr ⟨s, hs⟩
+  have hlt : #S < Fintype.card V := Finset.card_lt_univ_of_notMem ht
+  obtain ⟨k, hk⟩ : ∃ k, #S = k + 1 := ⟨#S - 1, by omega⟩
+  obtain ⟨m, hm⟩ : ∃ m, Fintype.card V - #S = m + 1 := ⟨Fintype.card V - #S - 1, by omega⟩
+  rw [hm, hk]
+  have hcard : Fintype.card V - 1 = k + m + 1 := by omega
+  rw [hcard]
+  have hmul : (k + 1) * (m + 1) = k * m + k + m + 1 := by
+    rw [Nat.add_mul, Nat.mul_add, Nat.mul_one, Nat.one_mul]
+    omega
+  omega
+
 /-- Deleting a single edge `e` of `G` reduces the weighted cut capacity of `S` by `c e` if `e`
 crosses `S`, and leaves it unchanged otherwise. -/
 theorem pairCutCapacity_indicator_edgeSet_deleteEdges_singleton [Fintype V] [AddCommMonoid K]
@@ -197,6 +231,33 @@ theorem unitCutCapacity_mono {G H : SimpleGraph V} [Finite G.edgeSet] [Finite H.
   rw [unitCutCapacity_eq_ncard, unitCutCapacity_eq_ncard]
   exact Set.ncard_le_ncard (Set.inter_subset_inter_left _ (edgeSet_mono hGH)) (Set.toFinite _)
 
+/-- Weighted pairwise minimum cut values are monotone in the graph when weights are nonnegative on
+edges. -/
+theorem pairMinimumValue_indicator_edgeSet_mono [Fintype V] [AddCommMonoid K] [LinearOrder K]
+    [AddLeftMono K] {G H : SimpleGraph V} (hGH : G ≤ H) {c : Sym2 V → K}
+    (hc : ∀ p ∈ H.edgeSet, 0 ≤ c p) (s t : V) :
+    TauCeti.TerminalCut.pairMinimumValue
+        (TauCeti.pairCutCapacity (G.edgeSet.indicator c)) s t ≤
+      TauCeti.TerminalCut.pairMinimumValue
+        (TauCeti.pairCutCapacity (H.edgeSet.indicator c)) s t := by
+  rcases eq_or_ne s t with rfl | hst
+  · simp
+  · obtain ⟨S, hS⟩ := TauCeti.TerminalCut.exists_minimum
+      (TauCeti.pairCutCapacity (H.edgeSet.indicator c)) (disjoint_singleton.mpr hst)
+    obtain ⟨hs, ht⟩ := TauCeti.TerminalCut.isAdmissible_singleton.mp hS.admissible
+    rw [hS.pairMinimumValue_eq]
+    exact (TauCeti.TerminalCut.pairMinimumValue_le _ hs ht).trans
+      (pairCutCapacity_indicator_edgeSet_mono hGH hc S)
+
+/-- Unit pairwise minimum cut values are monotone with respect to subgraph inclusion. -/
+theorem pairMinimumValue_unitCutCapacity_mono [Finite V] {G H : SimpleGraph V} (hGH : G ≤ H)
+    (s t : V) :
+    TauCeti.TerminalCut.pairMinimumValue G.unitCutCapacity s t ≤
+      TauCeti.TerminalCut.pairMinimumValue H.unitCutCapacity s t := by
+  let _ := Fintype.ofFinite V
+  rw [G.unitCutCapacity_eq_pairCutCapacity, H.unitCutCapacity_eq_pairCutCapacity]
+  exact pairMinimumValue_indicator_edgeSet_mono hGH (fun _ _ ↦ Nat.zero_le 1) s t
+
 /-- A graph isomorphism preserves weighted simple-graph cut capacities when edge weights
 correspond. -/
 theorem Iso.pairCutCapacity_indicator_edgeSet [Fintype V] [Fintype W] [AddCommMonoid K]
@@ -224,5 +285,28 @@ theorem Iso.unitCutCapacity_map [Finite V] [Finite W] {G : SimpleGraph V} {H : S
   let _ := Fintype.ofFinite W
   rw [H.unitCutCapacity_apply_eq_pairCutCapacity, G.unitCutCapacity_apply_eq_pairCutCapacity]
   exact e.pairCutCapacity_indicator_edgeSet (fun _ ↦ 1) (fun _ ↦ 1) (fun _ _ _ ↦ rfl) S
+
+/-- A graph isomorphism preserves weighted pairwise minimum cut values when edge weights
+correspond. -/
+theorem Iso.pairMinimumValue_indicator_edgeSet [Fintype V] [Fintype W] [AddCommMonoid K]
+    [LinearOrder K] {G : SimpleGraph V} {H : SimpleGraph W} (e : G ≃g H)
+    (c : Sym2 V → K) (d : Sym2 W → K)
+    (hcd : ∀ x y, G.Adj x y → d s(e x, e y) = c s(x, y)) (s t : V) :
+    TauCeti.TerminalCut.pairMinimumValue
+        (TauCeti.pairCutCapacity (H.edgeSet.indicator d)) (e s) (e t) =
+      TauCeti.TerminalCut.pairMinimumValue
+        (TauCeti.pairCutCapacity (G.edgeSet.indicator c)) s t :=
+  TauCeti.TerminalCut.pairMinimumValue_map
+    (TauCeti.pairCutCapacity (G.edgeSet.indicator c)) e.toEquiv
+    (TauCeti.pairCutCapacity (H.edgeSet.indicator d))
+    (fun S ↦ e.pairCutCapacity_indicator_edgeSet c d hcd S) s t
+
+/-- A graph isomorphism preserves unit pairwise minimum cut values. -/
+theorem Iso.pairMinimumValue_unitCutCapacity [Finite V] [Finite W]
+    {G : SimpleGraph V} {H : SimpleGraph W} (e : G ≃g H) (s t : V) :
+    TauCeti.TerminalCut.pairMinimumValue H.unitCutCapacity (e s) (e t) =
+      TauCeti.TerminalCut.pairMinimumValue G.unitCutCapacity s t :=
+  TauCeti.TerminalCut.pairMinimumValue_map G.unitCutCapacity e.toEquiv H.unitCutCapacity
+    e.unitCutCapacity_map s t
 
 end SimpleGraph

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Data.Set.Card
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut.Basic
+public import TauCeti.Combinatorics.Graph.Simple
 public import TauCeti.Combinatorics.Network.MinimumCut.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
 
@@ -26,8 +27,6 @@ For a simple graph, the multigraph cut capacity of `Graph.ofSimpleGraph G` agree
 * `Graph.edgeCutCapacity`: the capacity of a cut in a weighted multigraph.
 * `Graph.pairCapacity`: aggregation of multigraph edge weights by their distinct ends.
 * `SimpleGraph.ofSimpleGraphCapacity`: restriction of pair capacities to actual edges.
-* `SimpleGraph.ofSimpleGraphVertexEquiv`: canonical equivalence
-  `V ≃ (Graph.ofSimpleGraph G).vertexSet`.
 
 ## Main result
 
@@ -314,25 +313,6 @@ theorem ofSimpleGraphCapacity_nonneg [Zero K] [LE K] {c : Sym2 V → K}
   intro e
   rw [Pi.zero_apply, ofSimpleGraphCapacity_apply]
   exact hc e.val (by simpa using e.property)
-
-/-- The canonical equivalence between the vertices of a simple graph and the full vertex set of
-its multigraph realization. -/
-def ofSimpleGraphVertexEquiv : V ≃ (Graph.ofSimpleGraph G).vertexSet where
-  toFun := fun x ↦ ⟨x, by rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x⟩
-  invFun := Subtype.val
-  left_inv := fun _ ↦ rfl
-  right_inv := fun _ ↦ Subtype.ext rfl
-
-@[simp]
-theorem ofSimpleGraphVertexEquiv_apply_val (x : V) :
-    (G.ofSimpleGraphVertexEquiv x).val = x :=
-  (rfl)
-
-@[simp]
-theorem ofSimpleGraphVertexEquiv_symm_apply
-    (x : (Graph.ofSimpleGraph G).vertexSet) :
-    G.ofSimpleGraphVertexEquiv.symm x = x.val :=
-  (rfl)
 
 /-- Include a finite vertex set in the full vertex set of `Graph.ofSimpleGraph G`. -/
 def toOfSimpleGraphFinset (S : Finset V) :
