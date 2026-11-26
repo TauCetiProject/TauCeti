@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.SmoothMap
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Distribution.Regularization
-import TauCeti.Analysis.Distribution.TestFunction.Convolution
 import TauCeti.Analysis.InnerProductSpace.ProdL2
 import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Topology.Algebra.Monoid
@@ -338,13 +337,7 @@ private theorem fiberIntegralCLM_tripleBump_eq_mollify {W : Opens (WithLp 2 (E �
       mollify (fiberIntegralCLM volume volume F hF hFW hsurj (tensorBump ψ ρ hW₁)) volume σ
         (closedBall_add_tsupport_fiberIntegralCLM_subset hF hFW hsurj ψ ρ σ hW₁ hW₃) := by
   ext w
-  rw [fiberIntegralCLM_tripleBump_apply hF ψ ρ σ hW₁, mollify_apply, convolution_eq_swap]
-  have hint := integral_fiberIntegralCLM_smul volume volume hF hFW hsurj (tensorBump ψ ρ hW₁)
-    (g := fun t ↦ σ.normed volume (w - t))
-    (σ.continuous_normed.comp (continuous_const.sub continuous_id)).continuousOn
-  simp only [smul_eq_mul] at hint
-  rw [← hint]
-  simp only [ContinuousLinearMap.lsmul_apply, smul_eq_mul, mul_comm]
+  rw [fiberIntegralCLM_tripleBump_apply hF ψ ρ σ hW₁, mollify_fiberIntegralCLM_apply hF hFW hsurj]
 
 /-- **The pullback along `(x, (y, z)) ↦ F (x, y) + z` of `S` paired with `ψ ⊗ ρ ⊗ σ`** is the
 integral against `ψ ⊗ ρ` of the regularization `w ↦ S (σ (· - w))` of `S` composed with `F`. -/
@@ -512,7 +505,8 @@ theorem pullbackInl_compCLMOfSubmersion {W : Opens (WithLp 2 (E × D))}
   have hR1' : Tendsto (fun n ↦ compCLMOfSubmersion volume volume F hF hFW hsurj S (Φ n)) atTop
       (𝓝 ((compCLMOfSubmersion volume volume F hF hFW hsurj S).pullbackInl hU
         (notMem_waveFrontSet_compCLMOfSubmersion_inl hF hFW hsurj hU hgF h) ψ)) :=
-    tendsto_pullbackInl_tensorBump _ hU _ ψ (ContDiffBump.tendsto_rOut_shrinking _) hW₁
+    tendsto_pullbackInl_bump _ hU _ ψ (ContDiffBump.tendsto_rOut_shrinking _)
+      (Eventually.of_forall fun _ ↦ tensorBump_apply _ _ _)
   -- (3) For fixed `k`, both sides are integrals of the regularization `S_k` of `S` by `σ_k`.
   set T : ℕ → E' → ℂ := fun k ↦ S.translatePairing (normedBumpTest (σ k))
   have htsσ (k : ℕ) : tsupport (normedBumpTest (σ k)) = closedBall (0 : E') (σ k).rOut :=
@@ -543,10 +537,9 @@ theorem pullbackInl_compCLMOfSubmersion {W : Opens (WithLp 2 (E × D))}
       · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hx (ψ.tsupport_subset h)]
     rw [hH0] at hlim
     exact hlim
-  have hR2' : Tendsto (fun k ↦ addSndPullback hg S (Ψ k)) atTop (𝓝 (S.pullback g hg hgU h ψ)) := by
-    rw [pullback_eq_pullbackInl hg hgU h rfl (notMem_waveFrontSet_addSndPullback hg h)]
-    exact tendsto_pullbackInl_tensorBump _ (mapsTo_inl_addSndDomain hg.continuousOn hgU) _ ψ
-      (ContDiffBump.tendsto_rOut_shrinking _) hW₂
+  have hR2' : Tendsto (fun k ↦ addSndPullback hg S (Ψ k)) atTop (𝓝 (S.pullback g hg hgU h ψ)) :=
+    tendsto_addSndPullback_pullback hg hgU h ψ (ContDiffBump.tendsto_rOut_shrinking _)
+      fun _ _ ↦ tensorBump_apply _ _ _ _
   -- (4) The two iterated limits agree with the joint limit.
   exact (tendsto_nhds_unique hR1' (hJ.tendsto_of_forall_tendsto hR1)).trans
     (tendsto_nhds_unique hR2' (hJ.tendsto_of_forall_tendsto' hR2)).symm

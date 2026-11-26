@@ -23,6 +23,7 @@ import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.MeasureTheory.Integral.ComapSubtype
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.Algebra.Monoid
 import TauCeti.Topology.Algebra.Support
@@ -688,16 +689,6 @@ theorem complexPairing_eq_integral_of_continuous_iteratedFDeriv (T : 𝓓'(Ω, �
     ← integral_add (hint _) ((hint _).const_mul Complex.I)]
   simp only [complexPairing_apply]
 
-/-- An integral of `Ψ • g` is the integral over the subtype `tsupport Ψ` with respect to the
-restricted measure. -/
-private theorem integral_comap_tsupport_smul {X G : Type*} [TopologicalSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] (ν : Measure X) [NormedAddCommGroup G]
-    [NormedSpace ℝ G] (Ψ : X → ℝ) (g : X → G) :
-    ∫ y : tsupport Ψ, Ψ y • g y ∂(ν.comap Subtype.val) = ∫ x, Ψ x • g x ∂ν :=
-  (integral_subtype_comap (isClosed_tsupport Ψ).measurableSet fun x ↦ Ψ x • g x).trans
-    (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by
-      rw [image_eq_zero_of_notMem_tsupport hx, zero_smul])
-
 open scoped Pointwise in
 /-- **A distribution passes under an integral of translates.** Let `Ψ` be a continuous compactly
 supported function on `X` and `Φ : X → E` continuous on its support, such that the translates
@@ -758,13 +749,16 @@ theorem apply_eq_integral_smul_translatePairing_comp (T : 𝓓'(Ω, F)) (ρ : �
       ((ρ.contDiff.continuous_iteratedFDeriv (by simp)).comp
         (continuous_snd.sub (hΦc.comp continuous_fst)))
   -- Integrals over the subtype `C` with respect to `νC` are integrals over `X` of functions
-  -- vanishing off `C` (`integral_subtype_comap`).
+  -- vanishing off `C` (`MeasureTheory.integral_eq_subtype_comap_of_ae_eq_zero`).
+  have hΨ0 (x : X) (hx : x ∈ Cᶜ) : Ψ x = 0 := image_eq_zero_of_notMem_tsupport hx
   have hint := T.apply_eq_integral_of_continuous_iteratedFDeriv hKΩ hfK hf (μ := νC) (ψ := ψ)
     fun w ↦ by
-      simpa only [hf_apply, smul_eq_mul] using
-        (hψ w).trans (integral_comap_tsupport_smul ν Ψ fun x ↦ ρ (w - Φ x)).symm
+      simpa only [hf_apply, smul_eq_mul] using (hψ w).trans
+        (integral_eq_subtype_comap_of_ae_eq_zero hCm
+          (ae_restrict_of_forall_mem hCm.compl fun x hx ↦ by simp [hΨ0 x hx]))
   refine hint.trans (Eq.trans (integral_congr_ae (ae_of_all _ fun y ↦ ?_))
-    (integral_comap_tsupport_smul ν Ψ fun x ↦ T.translatePairing ρ (Φ x)))
+    (integral_eq_subtype_comap_of_ae_eq_zero hCm
+      (ae_restrict_of_forall_mem hCm.compl fun x hx ↦ by simp [hΨ0 x hx])).symm)
   simp only [f, map_smul]
   rw [translatePairing_eq T (translateOfMapsTo_apply ρ (hΦρ y y.property))]
 
