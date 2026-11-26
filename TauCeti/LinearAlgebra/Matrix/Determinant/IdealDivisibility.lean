@@ -28,6 +28,10 @@ only stated for square matrices.
 The empty product of ideals is `⊤`, which contains the determinant `1` of a `0 × 0` matrix, so no
 statement needs the index type to be nonempty.
 
+By multilinearity of the determinant in its columns, the determinant of an `R`-linear combination
+`∑ i, s i • G i` of matrices lies in an ideal `P` whenever every matrix formed by picking each
+column `j` from some `G (f j)` has determinant in `P`.
+
 ## Main results
 
 * `Matrix.det_mem_prod_row_ideals`, `Matrix.det_mem_prod_col_ideals`: the determinant lies in the
@@ -40,6 +44,9 @@ statement needs the index type to be nonempty.
   of the determinant, and a common divisor `r` of all entries gives `r ^ card n ∣ det A`.
 * `Matrix.det_submatrix_mem_prod_row_ideals` and its companions: the membership and
   divisibility statements for every full-row minor of a rectangular matrix.
+* `Matrix.det_sum_smul_mem_of_forall_det_mem`: the determinant of `∑ i, s i • G i` lies in an
+  ideal `P` whenever every column-selection matrix `of fun r j ↦ G (f j) r j` has determinant in
+  `P`.
 
 ## References
 

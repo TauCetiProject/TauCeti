@@ -26,6 +26,11 @@ and sums over positive intervals to genuinely `N`-periodic families on `ℕ`. Wh
 product `∏ j ∈ Icc 1 N, a j` is `1` (additively, when `∑ j ∈ Icc 1 N, a j = 0`), the partial
 products `m ↦ ∏ j ∈ Icc 1 m, a j` are `N`-periodic on all of `ℕ` and depend only on `m % N`.
 
+For an endomorphism `τ` of a commutative monoid (or additive monoid), the product (or sum) over a
+full period `range p` of a `τ`-orbit `a (i + 1) = τ (a i)` with `a p = a 0` is fixed by `τ`; in
+particular, norms `∏ i ∈ range p, τ^[i] x` of periodic points and ring-endomorphism orbit products
+`∏ i ∈ range p, (σ ^ i) x` (for `σ ^ p = 1`) are fixed by the endomorphism.
+
 ## Main results
 
 * `Finset.prod_range_mul_add_of_periodic`, `Finset.sum_range_mul_add_of_periodic`: a product or
@@ -43,6 +48,11 @@ products `m ↦ ∏ j ∈ Icc 1 m, a j` are `N`-periodic on all of `ℕ` and dep
   `Finset.sum_Icc_eq_sum_Icc_mod_of_sum_eq_zero`: when the period product is `1` (or period sum is
   `0`), `m ↦ ∏ j ∈ Icc 1 m, a j` is `N`-periodic on all of `ℕ` and agrees with its value at
   `m % N`.
+* `Finset.map_prod_range_eq_self_of_periodic`, `Finset.map_sum_range_eq_self_of_periodic`,
+  `Finset.isFixedPt_prod_range_iterate_of_isPeriodicPt`,
+  `Finset.isFixedPt_sum_range_iterate_of_isPeriodicPt`, and
+  `Finset.isFixedPt_prod_range_pow_apply`: an endomorphism fixes the product or sum over `range p`
+  of any `p`-periodic orbit.
 -/
 
 public section
