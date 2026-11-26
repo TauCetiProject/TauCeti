@@ -58,8 +58,14 @@ every integrable `f` with Fourier coefficients vanishing outside the annulus `R 
 `‖f‖_p ≤ C R⁻¹ ∑ᵢ ‖∂ᵢ f‖_p`
 
 (`TauCeti.UnitAddTorus.exists_eLpNorm_le_div_mul_sum_eLpNorm_of_mFourierCoeff_eq`), where `∂ᵢ f`
-is any integrable function with Fourier coefficients `2πi nᵢ f̂(n)`. Its whole-space
-counterpart is `OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq`.
+is any integrable function with Fourier coefficients `2πi nᵢ f̂(n)`. Iterating it, the
+derivatives of every order `k` control `f` with the factor `R⁻ᵏ`,
+
+`‖f‖_p ≤ (C / R) ^ k ∑ᵢ ‖∂_{i 0} ⋯ ∂_{i (k - 1)} f‖_p`, the sum over `i : Fin k → d`
+
+(`TauCeti.UnitAddTorus.exists_eLpNorm_le_div_pow_mul_sum_eLpNorm_of_mFourierCoeff_eq`). The
+whole-space counterparts are `OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq`
+and `OrthonormalBasis.exists_norm_le_div_pow_mul_sum_norm_of_iteratedLineDerivOp_eq`.
 
 ## The argument
 
@@ -89,7 +95,9 @@ on the annulus `1 ≤ ‖ξ‖ ≤ θ` (`OrthonormalBasis.exists_sum_mul_eq_one_
 whose symbols are built from `ξ i / (2πi ‖ξ‖²)`). Hence
 `f = R⁻¹ ∑ᵢ Kᵢ ⋆ ∂ᵢ f` for the periodic kernels `Kᵢ` of the dilated symbols `σᵢ (· / R)`, and
 Young's inequality for these kernels (`SchwartzMap.eLpNorm_periodicKernel_convolution_le`) bounds
-each term by `∫ ‖𝓕⁻ σᵢ‖`, for every `R > 0`. This is the periodic counterpart of the whole-space
+each term by `∫ ‖𝓕⁻ σᵢ‖`, for every `R > 0`. Derivatives of higher order follow by applying
+this to the intermediate trigonometric polynomials carrying the derivatives of one order less,
+whose spectra lie in the same annulus. This is the periodic counterpart of the whole-space
 proof in `TauCeti/Analysis/Distribution/SchwartzSpace/Bernstein.lean`
 (`SchwartzMap.exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_support_fourier_subset`), with the same
 symbols. The reverse Bernstein inequality for `Lᵖ` functions on a Euclidean space,
@@ -104,6 +112,8 @@ distributions with different, explicitly cut off symbols.
   inequalities for derivatives of every order.
 * `TauCeti.UnitAddTorus.exists_eLpNorm_le_div_mul_sum_eLpNorm_of_mFourierCoeff_eq`: the reverse
   Bernstein inequality on an annulus.
+* `TauCeti.UnitAddTorus.exists_eLpNorm_le_div_pow_mul_sum_eLpNorm_of_mFourierCoeff_eq`: the
+  reverse Bernstein inequality for derivatives of every order.
 
 ## References
 
@@ -755,6 +765,75 @@ theorem exists_eLpNorm_le_div_mul_sum_eLpNorm_of_mFourierCoeff_eq (θ : ℝ) :
     _ = ENNReal.ofReal R⁻¹ * ENNReal.ofReal (∑ i, A i) * ∑ i, eLpNorm (g i) p volume := by
         simp only [Finset.mul_sum, mul_assoc]
     _ = _ := by rw [← ENNReal.ofReal_mul (inv_nonneg.2 hR.le), inv_mul_eq_div]
+
+/-- **The reverse Bernstein inequality on the torus for derivatives of order `k`.** For every `θ`
+there is `C`, depending only on `d` and `θ`, with the following property for every complex Banach
+space `E`, every `1 ≤ p ≤ ∞` and every order `k`. Let `f : (ℝ / ℤ)^d → E` be integrable with
+Fourier coefficients vanishing outside the annulus `R ≤ ‖n‖ ≤ θ R`, `R > 0`, for the Euclidean norm
+of `n ∈ ℤᵈ`, and for every `i : Fin k → d` let `gᵢ` be integrable with Fourier coefficients
+`(∏ l, 2πi n_{i l}) f̂(n)`, so that `gᵢ` agrees almost everywhere with the derivative
+`∂_{i 0} ⋯ ∂_{i (k - 1)}` of the trigonometric polynomial representing `f`. Then
+
+`‖f‖_p ≤ (C / R) ^ k ∑ᵢ ‖gᵢ‖_p`.
+
+The constant is that of the first-order inequality
+`TauCeti.UnitAddTorus.exists_eLpNorm_le_div_mul_sum_eLpNorm_of_mFourierCoeff_eq`, which is the case
+`k = 1` up to the indexing of the derivatives. This is the periodic counterpart of
+`OrthonormalBasis.exists_norm_le_div_pow_mul_sum_norm_of_iteratedLineDerivOp_eq`; together with
+Bernstein's inequality `TauCeti.UnitAddTorus.exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul` it
+says that on an annulus of radius `R` the derivatives of order `k` jointly have size `R ^ k` times
+the function, in both directions. -/
+theorem exists_eLpNorm_le_div_pow_mul_sum_eLpNorm_of_mFourierCoeff_eq (θ : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+      {p : ℝ≥0∞}, 1 ≤ p → ∀ (k : ℕ) {R : ℝ}, 0 < R →
+      ∀ {f : UnitAddTorus d → E} {g : (Fin k → d) → UnitAddTorus d → E}, Integrable f →
+      (∀ i, Integrable (g i)) →
+      (∀ n, (‖latticePoint n‖ < R ∨ θ * R < ‖latticePoint n‖) → mFourierCoeff f n = 0) →
+      (∀ i n, mFourierCoeff (g i) n =
+        (∏ l, 2 * Real.pi * Complex.I * n (i l)) • mFourierCoeff f n) →
+      eLpNorm f p volume ≤ ENNReal.ofReal ((C / R) ^ k) * ∑ i, eLpNorm (g i) p volume := by
+  classical
+  obtain ⟨C, hC, h₁⟩ := exists_eLpNorm_le_div_mul_sum_eLpNorm_of_mFourierCoeff_eq.{u} (d := d) θ
+  refine ⟨C, hC, ?_⟩
+  intro E _ _ _ p hp k
+  induction k with
+  | zero =>
+    intro R _ f g hf hg _ hfg
+    have hae : f =ᵐ[volume] g default := hf.ae_eq_of_forall_mFourierCoeff_eq (hg default)
+      fun n ↦ by rw [hfg, Finset.univ_eq_empty, Finset.prod_empty, one_smul]
+    rw [eLpNorm_congr_ae hae, pow_zero, ENNReal.ofReal_one, one_mul, Fintype.sum_unique]
+  | succ k ih =>
+    intro R hR f g hf hg hspec hfg
+    -- The intermediate trigonometric polynomials carrying the derivatives of order `k`.
+    set S := (finite_setOf_norm_latticePoint_le (ι := d) (θ * R)).toFinset
+    set c : (Fin k → d) → (d → ℤ) → E := fun i n ↦
+      (∏ l, 2 * Real.pi * Complex.I * n (i l)) • mFourierCoeff f n
+    set h : (Fin k → d) → UnitAddTorus d → E := fun i x ↦ ∑ n ∈ S, mFourier n x • c i n
+    have hhint (i : Fin k → d) : Integrable (h i) :=
+      (by fun_prop : Continuous (h i)).integrable_of_hasCompactSupport (.of_compactSpace _)
+    have hhc (i : Fin k → d) (n : d → ℤ) : mFourierCoeff (h i) n = c i n := by
+      rw [mFourierCoeff_sum_mFourier_smul]
+      split_ifs with hn
+      · rfl
+      · simp only [c, hspec n (Or.inr (by simpa [S] using hn)), smul_zero]
+    -- One more derivative of `hᵢ` in the direction `j` is the derivative `g (Fin.cons j i)` of `f`.
+    have hhg (i : Fin k → d) (j : d) (n : d → ℤ) : mFourierCoeff (g (Fin.cons j i)) n =
+        (2 * Real.pi * Complex.I * n j) • mFourierCoeff (h i) n := by
+      simp only [hfg, hhc, c, Fin.prod_univ_succ, Fin.cons_zero, Fin.cons_succ, mul_smul]
+    calc eLpNorm f p volume
+        ≤ ENNReal.ofReal ((C / R) ^ k) * ∑ i, eLpNorm (h i) p volume :=
+          ih hR hf hhint hspec hhc
+      _ ≤ ENNReal.ofReal ((C / R) ^ k) *
+            ∑ i, ENNReal.ofReal (C / R) * ∑ j, eLpNorm (g (Fin.cons j i)) p volume := by
+          gcongr with i
+          refine h₁ hp hR (hhint i) (fun j ↦ hg _) (fun n hn ↦ ?_) (hhg i)
+          simp only [hhc, c, hspec n hn, smul_zero]
+      _ = ENNReal.ofReal ((C / R) ^ (k + 1)) * ∑ i, eLpNorm (g i) p volume := by
+          rw [← Finset.mul_sum, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), ← pow_succ,
+            Finset.sum_comm, ← Fintype.sum_prod_type']
+          congr 1
+          exact Fintype.sum_equiv (Fin.consEquiv fun _ ↦ d) _ _ fun x ↦ by
+            rw [Fin.consEquiv_apply]
 
 end ReverseBernstein
 
