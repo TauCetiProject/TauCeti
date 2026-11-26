@@ -12,7 +12,7 @@ import Mathlib.Order.Minimal
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Orientation
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.GaussBonnet
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Height
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Polygons cut out by finitely many half-planes

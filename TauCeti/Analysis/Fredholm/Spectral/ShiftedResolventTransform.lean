@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Fredholm.Spectral.FractionalLinear
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Tactic.Module
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Analysis.Fredholm.CompactPerturbation
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
@@ -33,9 +35,13 @@ multiple of a compact perturbation of the identity when `ι` is compact, hence F
 (`ContinuousLinearMap.isFredholm_shiftedResolventTransform`), and it depends continuously on `A`
 (`ContinuousOn.shiftedResolventTransform`). An eigenvector `ι x` of the unbounded operator, with
 `A x = λ ι x`, is an eigenvector of `τ_c A` with eigenvalue `c λ / (c - λ)`
-(`ContinuousLinearMap.shiftedResolventTransform_apply_of_apply_eq_smul`); only this direction of
-the spectral correspondence is proved here. The function `λ ↦ c λ / (c - λ)` fixes `0` and has
-derivative `1` there.
+(`ContinuousLinearMap.shiftedResolventTransform_apply_of_apply_eq_smul`). The full spectral
+correspondence is proved here only for the eigenvalue `0`: at a shift `c ≠ 0` with `c ι - A`
+invertible, the kernel of `τ_c A` is the image under `ι` of the kernel of `A`
+(`ContinuousLinearMap.ker_shiftedResolventTransform`). The function `λ ↦ c λ / (c - λ)` fixes `0`
+and has derivative `1` there. Along a real path `A` with derivative `A'` at `t₀`, the transforms
+have derivative `c² ι R A' R` at `t₀`, for `R = (c ι - A t₀)⁻¹`
+(`HasDerivAt.shiftedResolventTransform`).
 
 The shift is a choice, and a single shift need not be admissible along a whole path. The transforms
 at two shifts `c` and `c'` are related by the fractional linear function `x ↦ x / (1 + k x)`, for
@@ -174,6 +180,27 @@ theorem isFredholm_shiftedResolventTransform [CompleteSpace H] (hι : IsCompactO
   rw [hτ]
   exact (TauCeti.isFredholm_one_sub hK).smul (neg_ne_zero.2 (RCLike.ofReal_ne_zero.2 hc))
 
+/-- At a shift `c ≠ 0` with `c ι - A` invertible, the kernel of the shifted resolvent transform is
+the image under `ι` of the kernel of `A`: the transform sends `c ι x - A x` to `c A x`, which
+vanishes exactly when `A x = 0`, and then `c ι x - A x = ι (c x)`. -/
+theorem ker_shiftedResolventTransform (h : ((c : 𝕜) • ι - A).IsInvertible) (hc : c ≠ 0) :
+    (ι.shiftedResolventTransform A c).ker = A.ker.map (ι : D →ₗ[𝕜] H) := by
+  have hc𝕜 : (c : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 hc
+  ext y
+  obtain ⟨x, rfl⟩ := h.surjective y
+  simp only [LinearMap.mem_ker, Submodule.mem_map, coe_coe, shiftedResolventTransform_apply_sub h,
+    smul_eq_zero, hc𝕜, false_or, sub_apply, smul_apply]
+  constructor
+  · intro hx
+    exact ⟨(c : 𝕜) • x, by simp [hx], by simp [hx]⟩
+  · rintro ⟨z, hz, hzx⟩
+    -- `c ι - A` sends both `x` and `c⁻¹ z` to `ι z`, so `x = c⁻¹ z` lies in the kernel of `A`.
+    have hxz : x = (c : 𝕜)⁻¹ • z := h.injective <| by
+      simp only [sub_apply, smul_apply, map_smul, hz, sub_zero, smul_smul,
+        inv_mul_cancel₀ hc𝕜, one_smul] at hzx ⊢
+      exact hzx.symm
+    simp [hxz, hz]
+
 /-- For shifts `c, c' ≠ 0` with `c ι - A` invertible, `1 + k τ_c A`, for `k = (c' - c) / (c c')`,
 is `(c / c') (c' ι - A) (c ι - A)⁻¹`. -/
 theorem one_add_smul_shiftedResolventTransform_eq (h : ((c : 𝕜) • ι - A).IsInvertible)
@@ -300,6 +327,38 @@ theorem ContinuousOn.shiftedResolventTransform {𝕜 D H X : Type*} [RCLike 𝕜
     (hA t ht).clm_comp hR
   simp only [ContinuousLinearMap.shiftedResolventTransform_def]
   exact hcomp.const_smul (c : 𝕜)
+
+/-- Over `ℝ` the coercion `RCLike.ofReal` is the identity, so at `𝕜 = ℝ` the shift
+`(c : 𝕜) • ι - A` of the shifted resolvent transform is the real shift `c • ι - A`. -/
+theorem ContinuousLinearMap.isInvertible_ofReal_smul_sub_iff {D H : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] [NormedAddCommGroup H] [NormedSpace ℝ H] {ι A : D →L[ℝ] H} {c : ℝ} :
+    ((RCLike.ofReal c : ℝ) • ι - A).IsInvertible ↔ (c • ι - A).IsInvertible := by
+  rw [RCLike.ofReal_real_eq_id, id]
+
+/-- **The derivative of the shifted resolvent transforms.** Let `A` be a path of operators on a
+common Banach domain `D`, embedded in a real Hilbert space `H` by `ι`, with derivative `A'` at `t₀`,
+and let `c ι - A t₀` be invertible. Then the shifted resolvent transforms at `c` have derivative
+`c² ι R A' R` at `t₀`, for `R = (c ι - A t₀)⁻¹`: near `t₀` the transform is `c² ι (c ι - A t)⁻¹ - c`
+(`ContinuousLinearMap.shiftedResolventTransform_eq_sub`). -/
+theorem HasDerivAt.shiftedResolventTransform {D H : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] [CompleteSpace D] [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+    {ι : D →L[ℝ] H} {A : ℝ → D →L[ℝ] H} {A' : D →L[ℝ] H} {t₀ c : ℝ} (hA : HasDerivAt A A' t₀)
+    (h : (c • ι - A t₀).IsInvertible) :
+    HasDerivAt (fun t ↦ ι.shiftedResolventTransform (A t) c)
+      (c ^ 2 • (ι ∘L (c • ι - A t₀).inverse ∘L A' ∘L (c • ι - A t₀).inverse)) t₀ := by
+  have hsub : HasDerivAt (fun t ↦ c • ι - A t) (-A') t₀ := by
+    have h := HasDerivAt.sub (hasDerivAt_const t₀ (c • ι)) hA
+    rwa [zero_sub] at h
+  have hR := HasDerivAt.clm_comp (hasDerivAt_const t₀ ι)
+    (HasDerivAt.clm_inverse_of_completeSpace hsub h)
+  have hinv : ∀ᶠ t in 𝓝 t₀, (c • ι - A t).IsInvertible :=
+    (HasDerivAt.continuousAt hsub).eventually h.eventually_nhds
+  refine HasDerivAt.congr_deriv (HasDerivAt.congr_of_eventuallyEq (HasDerivAt.sub_const
+    (c • (1 : H →L[ℝ] H)) (HasDerivAt.const_smul (c ^ 2) hR)) ?_) ?_
+  · filter_upwards [hinv] with t ht
+    simpa only [RCLike.ofReal_real_eq_id, id_eq, Pi.smul_apply] using
+      ι.shiftedResolventTransform_eq_sub (ContinuousLinearMap.isInvertible_ofReal_smul_sub_iff.2 ht)
+  · simp
 
 namespace TauCeti
 
