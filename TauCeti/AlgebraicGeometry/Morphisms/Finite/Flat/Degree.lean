@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.LinearAlgebra.Dimension.Localization
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 
 /-!
 # The rank of a finite flat morphism is the degree of its function-field extension
@@ -39,9 +40,6 @@ structure on `K(X)` over `K(Y)`, which would clash with `Algebra.id` for an endo
 
 * `TauCeti.AlgebraicGeometry.finrank_SpecMap_eq_finrank_fractionRing`: the affine statement, for
   any compatible fraction rings.
-* `AlgebraicGeometry.Scheme.Hom.finrank_fromSpec_eq_finrank_SpecMap_appLE`: over an affine open
-  `U` of the target, the rank of a finite flat morphism is that of the spectrum of its map of
-  coordinate rings over `U`.
 * `AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_fieldRange_functionFieldMap`: the rank of a
   finite flat dominant morphism of integral schemes is the degree `[K(X) : f^* K(Y)]` at every
   point.
@@ -82,18 +80,6 @@ namespace AlgebraicGeometry
 open CategoryTheory
 
 variable {X Y : Scheme.{u}}
-
-/-- Over an affine open `U` of `Y`, a finite flat morphism `f : X ⟶ Y` is the spectrum of the map
-of coordinate rings `Γ(Y, U) ⟶ Γ(X, f⁻¹ U)`, so the rank of `f` at the point of `U` given by a
-prime `p` of `Γ(Y, U)` is the rank of that spectrum at `p`. -/
-theorem Scheme.Hom.finrank_fromSpec_eq_finrank_SpecMap_appLE (f : X ⟶ Y) [IsFinite f] [Flat f]
-    {U : Y.Opens} (hU : IsAffineOpen U) (p : PrimeSpectrum Γ(Y, U)) :
-    f.finrank (hU.fromSpec p) = (Spec.map (f.appLE U (f ⁻¹ᵁ U) le_rfl)).finrank p := by
-  have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
-  have H : IsPullback (Spec.map (f.appLE U (f ⁻¹ᵁ U) le_rfl)) hV.fromSpec hU.fromSpec f :=
-    IsOpenImmersion.isPullback _ _ _ _ (IsAffineOpen.SpecMap_appLE_fromSpec f hU hV le_rfl).symm
-      (by rw [hU.opensRange_fromSpec, hV.opensRange_fromSpec])
-  exact (finrank_of_isPullback _ _ _ _ H.flip p).symm
 
 /-- **The rank of a finite flat morphism is its function-field degree.** For a finite flat
 dominant morphism `f : X ⟶ Y` of integral schemes, the rank of `f` at every point of `Y` is the

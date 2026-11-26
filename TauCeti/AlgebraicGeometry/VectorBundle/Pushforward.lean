@@ -17,7 +17,7 @@ import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.BaseChange
 import TauCeti.AlgebraicGeometry.Modules.Tilde.Pushforward
-import TauCeti.AlgebraicGeometry.Morphisms.Finite.Flat.Degree
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 import TauCeti.AlgebraicGeometry.Morphisms.Integral.TargetLocal
 import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Basic
 import TauCeti.AlgebraicGeometry.VectorBundle.OpenCover
