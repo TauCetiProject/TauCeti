@@ -62,6 +62,8 @@ are the momenta conjugate to `r` and `θ`: the values of the covector `p` on the
   parametrization is smooth on `r ≠ 0` and a local diffeomorphism there.
 * `TauCeti.coe_polarCanonicalDiffeomorph_symm_apply`: the inverse coordinates.
 * `TauCeti.mpullback_polarCanonicalDiffeomorph`: `ω₀ = dr ∧ dp_r + dθ ∧ dL`.
+* `TauCeti.mpullback_stdSymplecticForm_of_angularMomentum_eq`: on a level of the angular momentum,
+  `ω₀` pulls back to `dr ∧ dp_r` along the radial projection.
 * `TauCeti.inner_snd_polarCanonicalDiffeomorph_mfderiv_fst`: `⟪p, dq⟫ = p_r dr + L dθ`.
 * `TauCeti.centralForceHamiltonian_polarCanonicalDiffeomorph`: `H = p_r² / (2m) + U_L(r)`.
 * `TauCeti.fst_polarCanonicalDiffeomorph`: the coordinates cover the polar coordinates of the
@@ -371,6 +373,21 @@ theorem centralForceHamiltonian_polarCanonicalDiffeomorph (m : ℝ) (U : ℝ →
   exact centralForceHamiltonian_polarCanonical (b.norm_eq_one 0) (b.norm_eq_one 1)
     (b.inner_eq_zero (by decide)) m U (x := (rp, (θ, L))) (mem_polarCanonicalCylinder.1 hr)
 
+/-- The radial projection `(q, p) ↦ (‖q‖, ⟪q, p⟫ / ‖q‖)` is smooth on the punctured phase space
+`{(q, p) | q ≠ 0}`. -/
+theorem contMDiff_radialProjection_comp_subtypeVal :
+    ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, ℝ × ℝ) ∞
+      (radialProjection ∘ Subtype.val : puncturedPhaseSpace V → ℝ × ℝ) := by
+  intro x
+  have hq : (x : V × V).1 ≠ 0 := mem_puncturedPhaseSpace.1 x.property
+  have hn : ContDiffAt ℝ ∞ (fun y : V × V ↦ ‖y.1‖) (x : V × V) :=
+    (contDiffAt_norm ℝ hq).comp _ contDiffAt_fst
+  have hr : ContDiffAt ℝ ∞ radialProjection (x : V × V) := by
+    rw [show radialProjection = fun y : V × V ↦ (‖y.1‖, ⟪y.1, y.2⟫_ℝ / ‖y.1‖) from
+      funext fun y ↦ radialProjection_apply y.1 y.2]
+    exact hn.prodMk ((contDiffAt_fst.inner ℝ contDiffAt_snd).div hn (norm_ne_zero_iff.2 hq))
+  exact hr.contMDiffAt.comp x contMDiff_subtypeVal.contMDiffAt
+
 variable [FiniteDimensional ℝ V]
 
 /-- **Global polar canonical coordinates are symplectic.** The polar canonical diffeomorphism pulls
@@ -410,6 +427,43 @@ theorem mpullback_polarCanonicalDiffeomorph :
     Manifold.tangentSpaceOpenEquiv_apply, Manifold.tangentSpaceOpenEquiv_apply]
   simp only [stdSymplecticForm_apply, RCLike.inner_apply, conj_trivial]
   ring
+
+/-- **On a level of the angular momentum, the standard form is `dr ∧ dp_r`.** Let `b` be an
+orthonormal basis of a plane `V` and `f` a smooth map into the punctured phase space
+`{(q, p) | q ≠ 0}` along which the angular momentum `q₁ p₂ - q₂ p₁` in the basis `b` is constant.
+Then `f` pulls the standard symplectic form `ω₀ = Σ dqᵢ ∧ dpᵢ` back to the pullback of the area
+form `dr ∧ dp_r` of `ℝ × ℝ` along the radius and radial momentum `(‖q‖, ⟪q, p⟫ / ‖q‖)` of `f`. -/
+theorem mpullback_stdSymplecticForm_of_angularMomentum_eq {EZ HZ Z : Type*}
+    [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [TopologicalSpace HZ]
+    {IZ : ModelWithCorners ℝ EZ HZ} [TopologicalSpace Z] [ChartedSpace HZ Z] [IsManifold IZ ∞ Z]
+    {f : Z → puncturedPhaseSpace V} (hf : ContMDiff IZ 𝓘(ℝ, V × V) ∞ f) {ℓ : ℝ}
+    (hℓ : ∀ z, angularMomentum (b 0) (b 1) (f z : V × V) = ℓ) :
+    SmoothForm.mpullback f hf (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V)
+        contMDiff_subtypeVal (SymplecticForm.constSmooth (stdSymplecticForm (V := V)))) =
+      SmoothForm.mpullback ((radialProjection ∘ Subtype.val) ∘ f)
+        (contMDiff_radialProjection_comp_subtypeVal.comp hf)
+        (SymplecticForm.constSmooth (stdSymplecticForm (V := ℝ))) := by
+  set φ := polarCanonicalDiffeomorph b
+  have hG : ContMDiff IZ (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ).prod 𝓘(ℝ))) ∞ (Subtype.val ∘ φ.symm ∘ f) :=
+    contMDiff_subtypeVal.comp (φ.symm.contMDiff.comp hf)
+  -- In polar canonical coordinates, `ω₀ = dr ∧ dp_r + dθ ∧ dL`.
+  rw [← SmoothForm.mpullback_symm_eq_of_mpullback_eq (mpullback_polarCanonicalDiffeomorph b),
+    SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback, SmoothTwoForm.prod_def,
+    map_add, SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback]
+  rw [SmoothForm.mpullback_wedge (k := 1) (l := 1) _ (contMDiff_snd.comp hG)]
+  -- The coordinate `L` is constant along `f`, so `dL` pulls back to zero.
+  have hL : SmoothForm.mpullback _ (contMDiff_snd.comp hG)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd SmoothForm.realLineCoordForm) = 0 := by
+    rw [SmoothForm.mpullback_mpullback,
+      SmoothForm.mpullback_congr (g := fun _ ↦ ℓ) _ contMDiff_const (funext fun z ↦ by
+        simp only [comp_apply, φ, coe_polarCanonicalDiffeomorph_symm_apply, hℓ])]
+    exact Subtype.ext (by
+      rw [SmoothForm.coe_mpullback, TauCeti.mpullback_const one_ne_zero, ZeroMemClass.coe_zero])
+  rw [hL, map_zero, add_zero]
+  -- The coordinates `(r, p_r)` are the radial projection.
+  refine SmoothForm.mpullback_congr _ _ (funext fun z ↦ ?_) _
+  simp only [comp_apply, coe_polarCanonicalDiffeomorph_symm_apply]
+  exact (Prod.ext (radialProjection_fst _) (radialProjection_snd _)).symm
 
 end Basis
 

@@ -24,8 +24,8 @@ momentum and `ψ₀(ξ) = Im (ι_* ξ)` for the inclusion `ι : Circle → ℂ`
 (`TauCeti.hamiltonianTorusData_angularMomentum_puncturedPhaseSpace`). This file computes its
 Marsden–Weinstein–Meyer reduced spaces.
 
-The rotations act freely and properly on `M` (`TauCeti.stabilizer_circle_puncturedPhaseSpace`),
-so every value of `μ` is regular
+The rotations act freely and properly on `M`
+(`TauCeti.stabilizer_circle_puncturedPhaseSpace_eq_bot`), so every value of `μ` is regular
 (`TauCeti.differential_surjective_angularMomentum_puncturedPhaseSpace`), and the level of
 `ℓ ψ₀` is the level `L = ℓ` of the angular momentum
 (`TauCeti.mem_levelSubMulAction_angularMomentum_iff`). For every real `ℓ`, including `ℓ = 0`,
@@ -45,15 +45,14 @@ the reduced space `μ⁻¹(ℓ ψ₀) / S¹` of the Marsden–Weinstein–Meyer 
   (`TauCeti.centralForceHamiltonian_effectivePotential_angularMomentumReducedSpaceDiffeomorph_mk`).
 
 The diffeomorphism is obtained from the recognition of reduced spaces
-(`TauCeti.SmoothTwoForm.exists_diffeomorph_comp_eq_and_mpullback_eq`). Its two inputs are proved
-here.
+(`TauCeti.SmoothTwoForm.exists_diffeomorph_comp_eq_and_mpullback_eq`). It has two inputs.
 
 * **The fibres.** Two states with the same radius, radial momentum and angular momentum differ by
   a rotation, and conversely (`TauCeti.exists_circle_smul_eq_iff`): `conj q * p` has real part
   `⟪q, p⟫` and imaginary part `L`, so the rotation by `q / q'` carries `(q', p')` to `(q, p)`.
 * **The forms.** Along any smooth map `f` into the punctured phase space of an inner product
   plane on which the angular momentum is constant, `f^* ω₀ = (r, p_r)^* (dr ∧ dp_r)`
-  (`TauCeti.mpullback_stdSymplecticForm_of_angularMomentum_eq`). In the global polar canonical
+  (`TauCeti.mpullback_stdSymplecticForm_of_angularMomentum_eq`): in the global polar canonical
   coordinates `(r, p_r, θ, L)` of `TauCeti.polarCanonicalDiffeomorph`, the standard form is
   `dr ∧ dp_r + dθ ∧ dL`, and `dL` pulls back to zero.
 
@@ -70,8 +69,6 @@ Marsden–Weinstein–Meyer theorem builds the atlases of the level and of the r
 
 ## Main results
 
-* `TauCeti.mpullback_stdSymplecticForm_of_angularMomentum_eq`: on a level of the angular momentum,
-  the standard symplectic form is `dr ∧ dp_r`.
 * `TauCeti.exists_circle_smul_eq_iff`: the rotation orbits are the common levels of the radius,
   the radial momentum and the angular momentum.
 * `TauCeti.mpullback_angularMomentumReducedSpaceDiffeomorph`: the reduced space at angular
@@ -102,86 +99,9 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
-/-! ### The standard form on a level of the angular momentum -/
-
-section Plane
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-
-/-- The radial projection `(q, p) ↦ (‖q‖, ⟪q, p⟫ / ‖q‖)` is smooth on the punctured phase space
-`{(q, p) | q ≠ 0}`. -/
-theorem contMDiff_radialProjection_comp_subtypeVal :
-    ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, ℝ × ℝ) ∞
-      (radialProjection ∘ Subtype.val : puncturedPhaseSpace V → ℝ × ℝ) := by
-  intro x
-  have hq : (x : V × V).1 ≠ 0 := mem_puncturedPhaseSpace.1 x.property
-  have hn : ContDiffAt ℝ ∞ (fun y : V × V ↦ ‖y.1‖) (x : V × V) :=
-    (contDiffAt_norm ℝ hq).comp _ contDiffAt_fst
-  have hr : ContDiffAt ℝ ∞ radialProjection (x : V × V) := by
-    rw [show radialProjection = fun y : V × V ↦ (‖y.1‖, ⟪y.1, y.2⟫_ℝ / ‖y.1‖) from
-      funext fun y ↦ radialProjection_apply y.1 y.2]
-    exact hn.prodMk ((contDiffAt_fst.inner ℝ contDiffAt_snd).div hn (norm_ne_zero_iff.2 hq))
-  exact hr.contMDiffAt.comp x contMDiff_subtypeVal.contMDiffAt
-
-variable [FiniteDimensional ℝ V] (b : OrthonormalBasis (Fin 2) ℝ V)
-
-/-- **On a level of the angular momentum, the standard form is `dr ∧ dp_r`.** Let `b` be an
-orthonormal basis of a plane `V` and `f` a smooth map into the punctured phase space
-`{(q, p) | q ≠ 0}` along which the angular momentum `q₁ p₂ - q₂ p₁` in the basis `b` is constant.
-Then `f` pulls the standard symplectic form `ω₀ = Σ dqᵢ ∧ dpᵢ` back to the pullback of the area
-form `dr ∧ dp_r` of `ℝ × ℝ` along the radius and radial momentum `(‖q‖, ⟪q, p⟫ / ‖q‖)` of `f`. -/
-theorem mpullback_stdSymplecticForm_of_angularMomentum_eq {EZ HZ Z : Type*}
-    [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [TopologicalSpace HZ]
-    {IZ : ModelWithCorners ℝ EZ HZ} [TopologicalSpace Z] [ChartedSpace HZ Z] [IsManifold IZ ∞ Z]
-    {f : Z → puncturedPhaseSpace V} (hf : ContMDiff IZ 𝓘(ℝ, V × V) ∞ f) {ℓ : ℝ}
-    (hℓ : ∀ z, angularMomentum (b 0) (b 1) (f z : V × V) = ℓ) :
-    SmoothForm.mpullback f hf (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V)
-        contMDiff_subtypeVal (SymplecticForm.constSmooth (stdSymplecticForm (V := V)))) =
-      SmoothForm.mpullback ((radialProjection ∘ Subtype.val) ∘ f)
-        (contMDiff_radialProjection_comp_subtypeVal.comp hf)
-        (SymplecticForm.constSmooth (stdSymplecticForm (V := ℝ))) := by
-  set φ := polarCanonicalDiffeomorph b
-  have hG : ContMDiff IZ (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ).prod 𝓘(ℝ))) ∞ (Subtype.val ∘ φ.symm ∘ f) :=
-    contMDiff_subtypeVal.comp (φ.symm.contMDiff.comp hf)
-  -- In polar canonical coordinates, `ω₀ = dr ∧ dp_r + dθ ∧ dL`.
-  rw [← SmoothForm.mpullback_symm_eq_of_mpullback_eq (mpullback_polarCanonicalDiffeomorph b),
-    SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback, SmoothTwoForm.prod_def,
-    map_add, SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback]
-  rw [SmoothForm.mpullback_wedge (k := 1) (l := 1) _ (contMDiff_snd.comp hG)]
-  -- The coordinate `L` is constant along `f`, so `dL` pulls back to zero.
-  have hL : SmoothForm.mpullback _ (contMDiff_snd.comp hG)
-      (SmoothForm.mpullback Prod.snd contMDiff_snd SmoothForm.realLineCoordForm) = 0 := by
-    rw [SmoothForm.mpullback_mpullback,
-      SmoothForm.mpullback_congr (g := fun _ ↦ ℓ) _ contMDiff_const (funext fun z ↦ by
-        simp only [comp_apply, φ, coe_polarCanonicalDiffeomorph_symm_apply, hℓ])]
-    exact Subtype.ext (by
-      rw [SmoothForm.coe_mpullback, TauCeti.mpullback_const one_ne_zero, ZeroMemClass.coe_zero])
-  rw [hL, map_zero, add_zero]
-  -- The coordinates `(r, p_r)` are the radial projection.
-  refine SmoothForm.mpullback_congr _ _ (funext fun z ↦ ?_) _
-  simp only [comp_apply, coe_polarCanonicalDiffeomorph_symm_apply]
-  exact (Prod.ext (radialProjection_fst _) (radialProjection_snd _)).symm
-
-end Plane
-
 /-! ### The rotations of the punctured planar phase space -/
 
 local notation "𝕄" => puncturedPhaseSpace ℂ
-
-/-- The rotations act properly on the punctured planar phase space, as the circle is compact. -/
-instance : ProperSMul Circle 𝕄 :=
-  haveI : ContinuousSMul Circle 𝕄 :=
-    ⟨(continuous_fst.smul (continuous_subtypeVal.comp continuous_snd)).subtype_mk _⟩
-  properSMul_of_compactSpace _ _
-
-/-- The rotations act freely on the punctured planar phase space: a rotation fixing a state of
-nonzero position is the identity. -/
-theorem stabilizer_circle_puncturedPhaseSpace (x : 𝕄) : MulAction.stabilizer Circle x = ⊥ := by
-  refine (Subgroup.eq_bot_iff_forall _).2 fun z hz ↦ ?_
-  have h : (z : ℂ) * (x : ℂ × ℂ).1 = (x : ℂ × ℂ).1 :=
-    congrArg (fun y : 𝕄 ↦ (y : ℂ × ℂ).1) (MulAction.mem_stabilizer_iff.1 hz)
-  exact Circle.coe_inj.1 (mul_right_cancel₀ (mem_puncturedPhaseSpace.1 x.property)
-    (h.trans (one_mul _).symm))
 
 /-- Rotations preserve the radius and the radial momentum. -/
 @[simp]
@@ -215,21 +135,23 @@ theorem exists_circle_smul_eq_iff {x x' : 𝕄} :
   have hc : conj q * p = conj q' * p' := Complex.ext (by
     simpa [Complex.inner, mul_re, mul_comm] using hrad) hL
   have hg : ‖q / q'‖ = 1 := by rw [norm_div, hn, div_self hn₀]
-  have hgq : q / q' * q' = q := div_mul_cancel₀ q hq'
-  refine ⟨⟨q / q', by simpa [Submonoid.unitSphere, mem_sphere_zero_iff_norm] using hg⟩,
-    Subtype.ext (Prod.ext hgq ?_)⟩
-  -- The rotation by `g = q / q'` acts on momenta by multiplication by `g`.
-  change q / q' * p' = p
-  generalize q / q' = g at hg hgq
+  obtain ⟨g, hgq⟩ : ∃ g : Circle, (g : ℂ) * q' = q :=
+    ⟨⟨q / q', by simpa [Submonoid.unitSphere, mem_sphere_zero_iff_norm] using hg⟩,
+      div_mul_cancel₀ q hq'⟩
+  refine ⟨g, Subtype.ext ?_⟩
+  -- The rotation by `g = q / q'` acts on positions and momenta by multiplication by `g`.
+  simp only [coe_smul_puncturedPhaseSpace, Circle.smul_def, Prod.smul_mk, smul_eq_mul, hgq,
+    Prod.mk.injEq, true_and]
   -- `conj q * (g p') = |g|² conj q' * p' = conj q * p`, and `q ≠ 0`.
-  have hconj : conj g * g = 1 := by
-    rw [conj_mul', hg, ofReal_one, one_pow]
+  have hconj : conj (g : ℂ) * g = 1 := by
+    rw [conj_mul', Circle.norm_coe, ofReal_one, one_pow]
   refine mul_left_cancel₀ (map_ne_zero (starRingEnd ℂ) |>.2 hq) ?_
   rw [hc, ← hgq, map_mul]
   linear_combination (conj q' * p') * hconj
 
 /-- The phase space `T*(0, ∞) = (0, ∞) × ℝ` of the radial motion, with coordinates `(r, p_r)`: an
-open subset of `ℝ × ℝ`, with the area form `dr ∧ dp_r` restricted from `ℝ × ℝ`. -/
+open subset of `ℝ × ℝ`. Its area form `dr ∧ dp_r` is the pullback of
+`stdSymplecticForm (V := ℝ)` along `Subtype.val`, in the statements that use it. -/
 def radialPhaseSpace : TopologicalSpace.Opens (ℝ × ℝ) :=
   ⟨{x | 0 < x.1}, isOpen_lt continuous_const continuous_fst⟩
 
@@ -263,21 +185,21 @@ theorem differential_surjective_angularMomentum_puncturedPhaseSpace
     Surjective (h.differential x) :=
   h.toIsMomentMap.differential_surjective_of_stabilizer_eq_bot
     (isSymplectic_σL.isNondegenerate.nondegenerate_bilinFormAt x)
-    (stabilizer_circle_puncturedPhaseSpace x)
+    (stabilizer_circle_puncturedPhaseSpace_eq_bot x)
 
 /-- The rotations act freely on every level of the rotational moment map. -/
 instance (h : SmoothTwoForm.IsEquivariantMomentMap (σL) μL)
     (c : Module.Dual ℝ (GroupLieAlgebra (𝓡 1) Circle)) :
     IsCancelSMul ((Lie.coadjointRepresentation ℝ (𝓡 1) Circle).stabilizer c)
       (h.levelSubMulAction c) :=
-  h.isCancelSMul_levelSubMulAction fun x _ ↦ stabilizer_circle_puncturedPhaseSpace x
+  h.isCancelSMul_levelSubMulAction fun x _ ↦ stabilizer_circle_puncturedPhaseSpace_eq_bot x
 
-private theorem ψ₀_apply_mfderiv_circleExp : ψ₀ (mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp 0 (1 : ℝ)) = 1 := by
+private theorem ψ₀_apply_mfderiv_circleExp : ψ₀ (mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp 0 (1 : ℝ)) = 1 :=
   -- `ψ₀` is the imaginary part of the derivative of the inclusion, which sends the generator of
-  -- `t ↦ exp (t i)` to `i`.
-  change (mvfderiv (𝓡 1) (fun z : Circle ↦ (z : ℂ)) 1
-    (mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp 0 (1 : ℝ))).im = 1
-  rw [mvfderiv_coe_mfderiv_circleExp, I_im]
+  -- `t ↦ exp (t i)` to `i`. The coercion `Circle → ℂ` inside `ψ₀` only typechecks after unfolding
+  -- `Circle` to its subtype, so `rw` and `simp` cannot evaluate `ψ₀`: the term is closed by the
+  -- defining equations of `toLinearMap`, `∘L` and `imCLM`, which hold by `rfl`.
+  (congrArg im mvfderiv_coe_mfderiv_circleExp).trans I_im
 
 /-- **The levels of the rotational moment map are the levels of the angular momentum.** A state of
 the punctured planar phase space lies on the level of `ℓ ψ₀` exactly when its angular momentum is
@@ -286,20 +208,11 @@ theorem mem_levelSubMulAction_angularMomentum_iff
     {h : SmoothTwoForm.IsEquivariantMomentMap (σL) μL} {ℓ : ℝ} {x : 𝕄} :
     x ∈ h.levelSubMulAction (ℓ • ψ₀) ↔ angularMomentum 1 I (x : ℂ × ℂ) = ℓ := by
   rw [h.mem_levelSubMulAction]
-  refine ⟨fun hx ↦ ?_, fun hx ↦ by rw [hx]⟩
-  have := LinearMap.congr_fun hx (mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp 0 (1 : ℝ))
-  -- Scalar multiples of a dual vector are evaluated pointwise.
-  change angularMomentum 1 I (x : ℂ × ℂ) * ψ₀ (mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp 0 (1 : ℝ)) =
-    ℓ * ψ₀ (mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp 0 (1 : ℝ)) at this
-  rwa [ψ₀_apply_mfderiv_circleExp, mul_one, mul_one] at this
-
-/-- The circle is commutative, so it fixes every functional on its Lie algebra. -/
-private theorem finrank_lieAnnihilator_circle (c : Module.Dual ℝ (GroupLieAlgebra (𝓡 1) Circle)) :
-    finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra (𝓡 1) Circle) c) = 1 := by
-  have : lieAnnihilator ℝ (GroupLieAlgebra (𝓡 1) Circle) c = ⊤ :=
-    (lieAnnihilator_eq_top_iff ℝ _).2 fun x ↦ LinearMap.ext fun y ↦ by simp [trivial_lie_zero]
-  rw [this, LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq]
-  simp
+  refine ⟨fun hx ↦ smul_left_injective ℝ (m := ψ₀) (fun h0 ↦ ?_) hx, fun hx ↦ by rw [hx]⟩
+  -- `ψ₀ ≠ 0`, as it takes the value `1` on the generator of `t ↦ exp (t i)`.
+  have := ψ₀_apply_mfderiv_circleExp
+  rw [h0] at this
+  exact zero_ne_one ((LinearMap.zero_apply _).symm.trans this)
 
 /-! ### The reduced spaces -/
 
@@ -407,7 +320,8 @@ private theorem exists_reducedSpace_diffeomorph :
   have hdim : finrank ℝ (ProperSMul.QuotientModelSpace F (Fin n → ℝ)) = finrank ℝ (ℝ × ℝ) := by
     have := h.finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator hreg hn d
       isSymplectic_σL.isNondegenerate z₀
-    rw [finrank_lieAnnihilator_circle] at this
+    -- The circle is commutative, so it fixes every functional on its Lie algebra.
+    rw [lieAnnihilator_eq_top, LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq] at this
     simp at this ⊢
     omega
   obtain ⟨Φ, hΦp, hΦη⟩ := SmoothTwoForm.exists_diffeomorph_comp_eq_and_mpullback_eq hp

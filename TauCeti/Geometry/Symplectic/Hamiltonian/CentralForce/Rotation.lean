@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Integrable
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Linear
 public import Mathlib.Geometry.Euclidean.Angle.Oriented.Rotation
+public import TauCeti.Topology.Algebra.ProperAction.Basic
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.Inner
@@ -47,7 +48,8 @@ This action is the symmetry behind the conservation of angular momentum:
 * the rotations preserve the punctured phase space `{(q, p) | q ≠ 0}`
   (`TauCeti.puncturedPhaseSpace`), where singular central potentials are smooth, and the angular
   momentum restricts to the moment map of a Hamiltonian circle action there
-  (`TauCeti.hamiltonianTorusData_angularMomentum_puncturedPhaseSpace`).
+  (`TauCeti.hamiltonianTorusData_angularMomentum_puncturedPhaseSpace`). The rotations act freely
+  (`TauCeti.stabilizer_circle_puncturedPhaseSpace_eq_bot`) and properly on it.
 
 The conservation law `{H, L} = 0` for a central-force Hamiltonian `H` is
 `TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum`.
@@ -259,6 +261,20 @@ theorem hamiltonianTorusData_angularMomentum_puncturedPhaseSpace :
         (imCLM ∘L mvfderiv (𝓡 1) (fun z : Circle ↦ (z : ℂ)) 1).toLinearMap :=
   hamiltonianTorusData_angularMomentum.mpullback contMDiff_subtypeVal
     coe_smul_puncturedPhaseSpace
+
+/-- The rotations act properly on the punctured planar phase space, as the circle is compact. -/
+instance : ProperSMul Circle (puncturedPhaseSpace ℂ) :=
+  properSMul_of_compactSpace _ _
+
+/-- The rotations act freely on the punctured planar phase space: a rotation fixing a state of
+nonzero position is the identity. -/
+theorem stabilizer_circle_puncturedPhaseSpace_eq_bot (x : puncturedPhaseSpace ℂ) :
+    MulAction.stabilizer Circle x = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).2 fun z hz ↦ ?_
+  have h : (z : ℂ) * (x : ℂ × ℂ).1 = (x : ℂ × ℂ).1 :=
+    congrArg (fun y : puncturedPhaseSpace ℂ ↦ (y : ℂ × ℂ).1) (MulAction.mem_stabilizer_iff.1 hz)
+  exact Circle.coe_inj.1 (mul_right_cancel₀ (mem_puncturedPhaseSpace.1 x.property)
+    (h.trans (one_mul _).symm))
 
 /-! ### Rotations of an oriented plane -/
 
