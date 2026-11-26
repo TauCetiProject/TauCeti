@@ -44,10 +44,6 @@ zero is positive or negative; summing the local indices, the Euler number of `L`
 the proof of the Riemann–Roch formula for real Cauchy–Riemann operators (McDuff–Salamon,
 Theorem C.1.10), which twists `L` at these zeros.
 
-## Main definitions
-
-* `TauCeti.IsSignedTransverseZero`: the derivative estimate making a zero positive or negative.
-
 ## Main results
 
 * `TauCeti.sectionIndex_eq_one_of_norm_sub_smulRight_lt`: a positive zero has local index `1`.
@@ -74,30 +70,6 @@ open Bundle Module Set Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti
-
-/-- The derivative condition making a zero `x` of a section `σ` of a complex line bundle with fibre
-`ℂ` *transverse of sign `s`*: the real derivative `D` of the chart reading of `σ` at `x` is within
-`‖c‖` of `u ↦ u c` (`s = false`, a positive zero) or of `u ↦ conj u c` (`s = true`, a negative
-zero), for some `c`. The predicate constrains only the derivative at `x`; that `σ` vanishes at `x`
-is a separate hypothesis wherever it is needed. -/
-@[expose] def IsSignedTransverseZero {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
-    {L : X → Type*} [∀ z, TopologicalSpace (L z)] [TopologicalSpace (TotalSpace ℂ L)]
-    [FiberBundle ℂ L] (σ : ∀ z, L z) (x : X) (s : Bool) : Prop :=
-  ∃ (D : ℂ →L[ℝ] ℂ) (c : ℂ), HasFDerivAt (negPointTwistChartReading ℂ x σ) D (chartAt ℂ x x) ∧
-    ‖D - (if s then Complex.conjCLE.toContinuousLinearMap
-      else ContinuousLinearMap.id ℝ ℂ).smulRight c‖ < ‖c‖
-
-/-- The sign condition at `x` depends only on the chart reading of the section near `x`. -/
-theorem IsSignedTransverseZero.congr {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
-    {L L' : X → Type*} [∀ z, TopologicalSpace (L z)] [TopologicalSpace (TotalSpace ℂ L)]
-    [FiberBundle ℂ L] [∀ z, TopologicalSpace (L' z)] [TopologicalSpace (TotalSpace ℂ L')]
-    [FiberBundle ℂ L'] {σ : ∀ z, L z} {σ' : ∀ z, L' z} {x : X} {s : Bool}
-    (h : IsSignedTransverseZero σ x s)
-    (h' : negPointTwistChartReading ℂ x σ =ᶠ[𝓝 (chartAt ℂ x x)]
-      negPointTwistChartReading ℂ x σ') :
-    IsSignedTransverseZero σ' x s := by
-  obtain ⟨D, c, hD, hDc⟩ := h
-  exact ⟨D, c, hD.congr_of_eventuallyEq h'.symm, hDc⟩
 
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [T2Space X]
   {L : X → Type} [∀ z, AddCommGroup (L z)] [∀ z, Module ℂ (L z)] [∀ z, Module ℝ (L z)]
@@ -220,7 +192,7 @@ theorem exists_contMDiffSection_complexEulerClass_eq_sum_sign [CompactSpace X]
     · obtain ⟨c, hc⟩ := exists_norm_sub_smulRight_lt_of_det_pos h
       exact ⟨false, D, c, hD, hc⟩
   choose! ε D c hD hc using hzero
-  refine ⟨σ, hZ, ε, fun z hz ↦ ⟨D z, c z, hD z hz, hc z hz⟩, ?_⟩
+  refine ⟨σ, hZ, ε, fun z hz ↦ isSignedTransverseZero_iff.2 ⟨D z, c z, hD z hz, hc z hz⟩, ?_⟩
   rw [complexEulerClass_def,
     VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex _ _ _ hσ _ hZ]
   refine Finset.sum_congr rfl fun z hz ↦ ?_

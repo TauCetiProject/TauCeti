@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Convex.Segment
 public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Negative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.RealSmooth
-public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.TransverseZero
 
 /-!
 # Untwisting a transverse zero of a section
@@ -318,7 +317,7 @@ theorem exists_untwist_section_of_isSignedTransverseZero {x : X} {σ : ∀ z, L 
     ∃ τ : ∀ z, (signedPointTwistCore ℂ L x s).Fiber z,
       ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) ∞ (fun z ↦ TotalSpace.mk' ℂ z (τ z)) ∧
         (∀ z ∈ V, τ z ≠ 0) ∧ ∀ z ∉ V, pointTwistDiv ℂ L x z (τ z) = σ z := by
-  obtain ⟨D, c, hD, hDc⟩ := hx
+  obtain ⟨D, c, hD, hDc⟩ := isSignedTransverseZero_iff.1 hx
   refine exists_untwist_section hσ hV hVσ s (c := c) ?_
   filter_upwards [hD.eventually_norm_sub_sub_apply_lt hDc] with w hw
   cases s <;>

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Functor
 public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.TransverseZero
 public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Untwist
+public import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # A smooth line bundle is the bundle of a divisor
@@ -34,7 +35,7 @@ C.1.10, step 5:
   hence their signs, are unchanged
   (`TauCeti.negPointTwistChartReading_eventuallyEq_of_pointTwistDiv`).
 * After all zeros are removed the section vanishes nowhere, and a line bundle with a nowhere-zero
-  smooth section is isomorphic to the trivial bundle (`TauCeti.fiberEquivOfNeZero`).
+  smooth section is isomorphic to the trivial bundle (`TauCeti.contMDiff_lineCoord`).
 * Twisting back with the opposite signs, cancellation (`TauCeti.signedPointTwistCancelEquiv`) and
   functoriality (`TauCeti.signedPointTwistEquiv`) of point twists give `L ≅ 𝒪(Σ ±xᵢ)`
   (`TauCeti.exists_contMDiff_divisorCore_equiv_of_section`).
@@ -47,13 +48,12 @@ they are diffeomorphisms of total spaces with smooth inverses.
 
 * `TauCeti.divisorCore`: the coordinate core of the line bundle `𝒪(D)` of a list of signed points.
 * `TauCeti.divisorDegree`: the degree `Σ ±1` of a list of signed points.
-* `TauCeti.fiberEquivOfNeZero`: the coordinate in the basis given by a nonzero vector of a fiber.
 
 ## Main results
 
 * `TauCeti.divisorCore.isContMDiff` and `TauCeti.divisorCore.contMDiffVectorBundle_real`: `𝒪(D)`
   is a holomorphic line bundle whose underlying real bundle is smooth.
-* `TauCeti.contMDiff_fiberEquivOfNeZero`: a line bundle with a nowhere-zero smooth section is
+* `TauCeti.contMDiff_lineCoord`: a line bundle with a nowhere-zero smooth section is
   isomorphic to the trivial bundle.
 * `TauCeti.exists_untwist_section_of_finset`: untwisting one of finitely many zeros.
 * `TauCeti.exists_contMDiff_divisorCore_equiv_of_section`: a smooth section whose zeros are
@@ -99,14 +99,6 @@ def divisorCore : List (X × Bool) → VectorBundleCore ℂ X ℂ (X × Bool)
       coordChange_comp := fun _ _ _ _ _ _ ↦ rfl }
   | (x, s) :: D => signedPointTwistCore ℂ (divisorCore D).Fiber x s
 
-@[simp] theorem divisorCore_nil_localTriv_baseSet (i : X × Bool) :
-    ((divisorCore []).localTriv i).baseSet = univ :=
-  (rfl)
-
-@[simp] theorem divisorCore_nil_coordChange (i j : X × Bool) (z : X) :
-    (divisorCore []).coordChange i j z = ContinuousLinearMap.id ℂ ℂ :=
-  (rfl)
-
 theorem divisorCore_cons (x : X) (s : Bool) (D : List (X × Bool)) :
     divisorCore ((x, s) :: D) = signedPointTwistCore ℂ (divisorCore D).Fiber x s :=
   (rfl)
@@ -135,6 +127,7 @@ instance divisorCore.isContMDiff (D : List (X × Bool)) : (divisorCore D).IsCont
   | nil => exact ⟨fun _ _ ↦ contMDiffOn_const⟩
   | cons p D ih =>
     obtain ⟨x, s⟩ := p
+    rw [divisorCore_cons]
     exact signedPointTwistCore.isContMDiff (E := (divisorCore D).Fiber) x s
 
 /-- The fibres of `𝒪(D)` are real vector spaces, through the model fibre `ℂ`. -/
@@ -185,35 +178,6 @@ variable {L : X → Type} [∀ z, AddCommGroup (L z)] [∀ z, Module ℂ (L z)] 
 local instance instVectorBundleRealDivisor : VectorBundle ℝ ℂ L :=
   VectorBundle.restrictScalars ℝ ℂ ℂ L
 
-/-- The isomorphism of the fibre of a complex line bundle at `z` with `ℂ` defined by a vector
-`σ z ≠ 0`: it sends `v` to its coordinate in the basis `σ z`. Its inverse is `w ↦ w • σ z`
-(`TauCeti.fiberEquivOfNeZero_symm_apply`). -/
-def fiberEquivOfNeZero (σ : ∀ z, L z) (hσ : ∀ z, σ z ≠ 0) (z : X) : L z ≃L[ℂ] ℂ :=
-  let t := (trivializationAt ℂ L z).continuousLinearEquivAt ℂ z
-    (mem_baseSet_trivializationAt ℂ L z)
-  t.trans (ContinuousLinearEquiv.unitsEquivAut ℂ
-    (Units.mk0 (t (σ z)) ((map_ne_zero_iff t t.injective).2 (hσ z)))⁻¹)
-
-omit [ChartedSpace ℂ X] [∀ z, Module ℝ (L z)] [∀ z, IsScalarTower ℝ ℂ (L z)] in
-@[simp] theorem fiberEquivOfNeZero_symm_apply (σ : ∀ z, L z) (hσ : ∀ z, σ z ≠ 0) (z : X)
-    (w : ℂ) : (fiberEquivOfNeZero σ hσ z).symm w = w • σ z := by
-  dsimp only [fiberEquivOfNeZero]
-  rw [ContinuousLinearEquiv.symm_trans_apply,
-    ContinuousLinearEquiv.unitsEquivAut_apply_symm, inv_inv, Units.val_mk0, ← smul_eq_mul,
-    map_smul, ContinuousLinearEquiv.symm_apply_apply]
-
-omit [ChartedSpace ℂ X] [∀ z, Module ℝ (L z)] [∀ z, IsScalarTower ℝ ℂ (L z)] in
-@[simp] theorem fiberEquivOfNeZero_apply_self (σ : ∀ z, L z) (hσ : ∀ z, σ z ≠ 0) (z : X) :
-    fiberEquivOfNeZero σ hσ z (σ z) = 1 := by
-  refine ((ContinuousLinearEquiv.symm_apply_eq _).1 ?_).symm
-  rw [fiberEquivOfNeZero_symm_apply, one_smul]
-
-omit [ChartedSpace ℂ X] [∀ z, Module ℝ (L z)] [∀ z, IsScalarTower ℝ ℂ (L z)] in
-/-- The coordinate of `w • σ z` in the basis `σ z` is `w`. -/
-theorem fiberEquivOfNeZero_apply_smul (σ : ∀ z, L z) (hσ : ∀ z, σ z ≠ 0) (z : X) (w : ℂ) :
-    fiberEquivOfNeZero σ hσ z (w • σ z) = w := by
-  rw [map_smul, fiberEquivOfNeZero_apply_self, smul_eq_mul, mul_one]
-
 omit [IsManifold 𝓘(ℂ) n X] in
 /-- The fibre of `𝒪(0)` at `z` is `ℂ` by definition (`VectorBundleCore.Fiber`), and every chart of
 `𝒪(0)` is the identity on it: the coordinate changes of `divisorCore []` are the identity. -/
@@ -224,24 +188,25 @@ theorem divisorCore_nil_trivializationAt_snd (z₀ : X) (q : TotalSpace ℂ (div
 variable [ContMDiffVectorBundle n ℂ L 𝓘(ℝ, ℂ)]
 
 /-- **A line bundle with a nowhere-zero section is trivial.** If `σ` is a real-`C^n` section of a
-real-`C^n` complex line bundle `L` without zeros, the fiber isomorphisms `fiberEquivOfNeZero σ` of
-`L` with the trivial bundle `𝒪(0)` are real `C^n` on total spaces. -/
-theorem contMDiff_fiberEquivOfNeZero {σ : ∀ z, L z}
+real-`C^n` complex line bundle `L` without zeros, the coordinates `VectorBundle.lineCoord ℂ (hσ₀ z)`
+along `σ`, as fiber isomorphisms of `L` with the trivial bundle `𝒪(0)`, are real `C^n` on total
+spaces. -/
+theorem contMDiff_lineCoord {σ : ∀ z, L z}
     (hσ : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n fun z ↦ TotalSpace.mk' ℂ z (σ z))
     (hσ₀ : ∀ z, σ z ≠ 0) :
     ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n
       fun p : TotalSpace ℂ L ↦ TotalSpace.mk' ℂ (E := (divisorCore []).Fiber) p.proj
-        (fiberEquivOfNeZero σ hσ₀ p.proj p.snd) := by
+        (VectorBundle.lineCoord ℂ (hσ₀ p.proj) p.snd) := by
   have : IsManifold 𝓘(ℝ, ℂ) n X := IsManifold.restrictScalars ℝ ‹_›
   -- The inverse family `w ↦ w • σ z`, from the fibers of `𝒪(0)`, which are `ℂ` by definition.
   let e : ∀ z, (divisorCore []).Fiber z ≃L[ℝ] L z := fun z ↦
-    ((fiberEquivOfNeZero σ hσ₀ z).restrictScalars' ℝ).symm
+    ((VectorBundle.lineCoord ℂ (hσ₀ z)).restrictScalars' ℝ).symm
   have he (z : X) (w : ℂ) : e z w = w • σ z :=
     (congrFun (ContinuousLinearEquiv.coe_restrictScalars'_symm (R := ℝ)
-      (fiberEquivOfNeZero σ hσ₀ z)) w).trans (fiberEquivOfNeZero_symm_apply σ hσ₀ z w)
-  have he' (z : X) (v : L z) : (e z).symm v = fiberEquivOfNeZero σ hσ₀ z v :=
+      (VectorBundle.lineCoord ℂ (hσ₀ z))) w).trans (VectorBundle.lineCoord_symm_apply (hσ₀ z) w)
+  have he' (z : X) (v : L z) : (e z).symm v = VectorBundle.lineCoord ℂ (hσ₀ z) v :=
     congrFun (ContinuousLinearEquiv.coe_restrictScalars' (R := ℝ)
-      (fiberEquivOfNeZero σ hσ₀ z)) v
+      (VectorBundle.lineCoord ℂ (hσ₀ z))) v
   -- It is smooth: in a chart of `L` it is `w` times the reading of `σ`.
   have h : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n
       fun p : TotalSpace ℂ (divisorCore []).Fiber ↦ TotalSpace.mk' ℂ (E := L) p.proj
@@ -332,7 +297,8 @@ theorem exists_contMDiff_divisorCore_equiv_of_section (l : List (X × Bool))
   induction l generalizing L with
   | nil =>
     -- No zeros: `σ` trivializes `L`.
-    exact ⟨_, contMDiff_fiberEquivOfNeZero hσ fun z h ↦ by simpa using (hZ z).1 h⟩
+    have hσ₀ : ∀ z, σ z ≠ 0 := fun z h ↦ by simpa using (hZ z).1 h
+    exact ⟨fun z ↦ VectorBundle.lineCoord ℂ (hσ₀ z), contMDiff_lineCoord hσ hσ₀⟩
   | cons p l ih =>
     classical
     obtain ⟨x, s⟩ := p
@@ -350,7 +316,9 @@ theorem exists_contMDiff_divisorCore_equiv_of_section (l : List (X × Bool))
       (signedPointTwistEquiv ℂ ℂ x (!s) e z), ((contMDiff_signedPointTwistEquiv x (!s) he).comp
         (signedPointTwistCancelDiffeomorph ℂ L 𝓘(ℝ, ℂ) x s).symm.contMDiff).congr fun p ↦ ?_⟩
     rw [Function.comp_apply, signedPointTwistCancelDiffeomorph_symm_apply]
-    rfl
+    -- The twist of `𝒪(D')` at `x` is `𝒪((x, !s) :: D')` (`divisorCore_cons`), so the composite
+    -- fiber map is applied in two steps.
+    exact congrArg (TotalSpace.mk' ℂ p.proj) (ContinuousLinearEquiv.trans_apply _ _ _)
 
 open Classical in
 /-- **Every smooth line bundle is the bundle of a divisor.** Let `L` be a complex line bundle with
