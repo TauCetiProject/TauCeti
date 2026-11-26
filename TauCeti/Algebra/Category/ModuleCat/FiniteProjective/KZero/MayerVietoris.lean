@@ -115,20 +115,14 @@ private theorem mk_prod_mk_mem_range_of_idempotentEquivalent
   rcases h with hπ₁ | hπ₂
   · obtain ⟨f₁, h₁, hf₁⟩ := he.exists_idempotentEquivalent_map_eq hπ₁ he₁
     -- `e₂` is equivalent to its padding `(0 ⊕ e₂) ⊕ 0`, whose image is the image of `f₁`.
-    have h₀ : IsIdempotentElem (fromBlocks (0 : Matrix ι ι A₂) 0 0 e₂) :=
-      IsIdempotentElem.zero.fromBlocks_zero₁₂_zero₂₁ he₂
-    have h₂ : IdempotentEquivalent e₂ (fromBlocks (fromBlocks (0 : Matrix ι ι A₂) 0 0 e₂) 0 0 0) :=
-      (he₂.idempotentEquivalent_fromBlocks_zero_left ι).symm.trans
-        (h₀.idempotentEquivalent_fromBlocks_zero_right (ι ⊕ κ)).symm
-    exact mk_prod_mk_mem_range_of_map_eq π₁ π₂ h₁ h₂ (by simp [hf₁, fromBlocks_map])
+    exact mk_prod_mk_mem_range_of_map_eq π₁ π₂ h₁
+      (he₂.idempotentEquivalent_fromBlocks_fromBlocks_zero ι (ι ⊕ κ)).symm
+      (by simp [hf₁, fromBlocks_map])
   · obtain ⟨f₂, h₂, hf₂⟩ := he.symm.exists_idempotentEquivalent_map_eq hπ₂ he₂
     -- `e₁` is equivalent to its padding `(0 ⊕ e₁) ⊕ 0`, whose image is the image of `f₂`.
-    have h₀ : IsIdempotentElem (fromBlocks (0 : Matrix κ κ A₁) 0 0 e₁) :=
-      IsIdempotentElem.zero.fromBlocks_zero₁₂_zero₂₁ he₁
-    have h₁ : IdempotentEquivalent e₁ (fromBlocks (fromBlocks (0 : Matrix κ κ A₁) 0 0 e₁) 0 0 0) :=
-      (he₁.idempotentEquivalent_fromBlocks_zero_left κ).symm.trans
-        (h₀.idempotentEquivalent_fromBlocks_zero_right (κ ⊕ ι)).symm
-    exact mk_prod_mk_mem_range_of_map_eq π₁ π₂ h₁ h₂ (by simp [hf₂, fromBlocks_map])
+    exact mk_prod_mk_mem_range_of_map_eq π₁ π₂
+      (he₁.idempotentEquivalent_fromBlocks_fromBlocks_zero κ (κ ⊕ ι)).symm h₂
+      (by simp [hf₂, fromBlocks_map])
 
 /-- The pair `([A₁], [A₂])` of classes of the free modules of rank one is the image of `[D]`. -/
 private theorem regular_prod_regular_mem_range :
@@ -138,6 +132,31 @@ private theorem regular_prod_regular_mem_range :
   ⟨SplitK0.of.{u} (finiteProjectiveModulesRegular (π₁.pullback π₂)ᵐᵒᵖ), by
     rw [AddMonoidHom.prod_apply, map_of_finiteProjectiveModulesRegular,
       map_of_finiteProjectiveModulesRegular]⟩
+
+/-- **Removing identity blocks.** If the pair of classes of `e₁ ⊕ 1ₘ` and `e₂ ⊕ 1ₙ` comes from
+`K₀(A₁ ×_Q A₂)`, then so does every pair `(x, y)` with `x + c[A₁] = [e₁] + m[A₁]` and
+`y + c[A₂] = [e₂] + n[A₂]`: the two pairs differ by `c` copies of `([A₁], [A₂])`, which is the
+image of `c[D]`. -/
+private theorem mem_range_of_mk_fromBlocks_one_mem_range {ι κ : Type*} [Fintype ι] [Fintype κ]
+    {e₁ : Matrix ι ι A₁} {e₂ : Matrix κ κ A₂} (he₁ : IsIdempotentElem e₁)
+    (he₂ : IsIdempotentElem e₂) {m n : ℕ} (c : ℕ) {x : KZero A₁} {y : KZero A₂}
+    (hx : x + c • SplitK0.of.{u} (finiteProjectiveModulesRegular A₁ᵐᵒᵖ) =
+      kZeroEquiv A₁ (GrothendieckAddGroup.of (mk e₁ he₁)) +
+        m • SplitK0.of.{u} (finiteProjectiveModulesRegular A₁ᵐᵒᵖ))
+    (hy : y + c • SplitK0.of.{u} (finiteProjectiveModulesRegular A₂ᵐᵒᵖ) =
+      kZeroEquiv A₂ (GrothendieckAddGroup.of (mk e₂ he₂)) +
+        n • SplitK0.of.{u} (finiteProjectiveModulesRegular A₂ᵐᵒᵖ))
+    (hmem : (kZeroEquiv A₁ (GrothendieckAddGroup.of
+          (mk (fromBlocks e₁ 0 0 (1 : Matrix (Fin m) (Fin m) A₁))
+            (he₁.fromBlocks_zero₁₂_zero₂₁ .one))),
+        kZeroEquiv A₂ (GrothendieckAddGroup.of
+          (mk (fromBlocks e₂ 0 0 (1 : Matrix (Fin n) (Fin n) A₂))
+            (he₂.fromBlocks_zero₁₂_zero₂₁ .one)))) ∈
+      ((map (π₁.pullbackFst π₂)).prod (map (π₁.pullbackSnd π₂))).range) :
+    (x, y) ∈ ((map (π₁.pullbackFst π₂)).prod (map (π₁.pullbackSnd π₂))).range := by
+  rw [kZeroEquiv_of_mk_fromBlocks_one he₁, kZeroEquiv_of_mk_fromBlocks_one he₂, ← hx, ← hy,
+    ← Prod.mk_add_mk, ← Prod.smul_mk] at hmem
+  exact (add_mem_cancel_right (nsmul_mem (regular_prod_regular_mem_range π₁ π₂) c)).1 hmem
 
 /-- If idempotent matrices `e₁` over `A₁` and `e₂` over `A₂` have images with the same class in
 `K₀(Q)`, and one of `π₁` and `π₂` is surjective, then `([e₁], [e₂])` comes from `K₀(A₁ ×_Q A₂)`.
@@ -153,13 +172,9 @@ private theorem mk_prod_mk_mem_range (h : Function.Surjective π₁ ∨ Function
       ((map (π₁.pullbackFst π₂)).prod (map (π₁.pullbackSnd π₂))).range := by
   rw [kZeroEquiv_of, kZeroEquiv_of, toKZero_mk_eq_toKZero_mk_iff] at he
   obtain ⟨k, hk⟩ := he
-  have hmem := mk_prod_mk_mem_range_of_idempotentEquivalent π₁ π₂ h
-    (he₁.fromBlocks_zero₁₂_zero₂₁ (.one : IsIdempotentElem (1 : Matrix (Fin k) (Fin k) A₁)))
-    (he₂.fromBlocks_zero₁₂_zero₂₁ (.one : IsIdempotentElem (1 : Matrix (Fin k) (Fin k) A₂)))
-    (by simpa [fromBlocks_map, Matrix.map_one] using hk)
-  have hsub := sub_mem hmem (nsmul_mem (regular_prod_regular_mem_range π₁ π₂) k)
-  rwa [kZeroEquiv_of_mk_fromBlocks_one he₁, kZeroEquiv_of_mk_fromBlocks_one he₂, Prod.smul_mk,
-    Prod.mk_sub_mk, add_sub_cancel_right, add_sub_cancel_right] at hsub
+  exact mem_range_of_mk_fromBlocks_one_mem_range π₁ π₂ he₁ he₂ k rfl rfl
+    (mk_prod_mk_mem_range_of_idempotentEquivalent π₁ π₂ h _ _
+      (by simpa [fromBlocks_map, Matrix.map_one] using hk))
 
 /-- **Exactness of the Mayer–Vietoris sequence of `K₀` at `K₀(A₁) × K₀(A₂)`.** For ring
 homomorphisms `π₁ : A₁ →+* Q` and `π₂ : A₂ →+* Q`, at least one of which is surjective, a pair of
@@ -173,9 +188,8 @@ theorem mayerVietoris_exact (h : Function.Surjective π₁ ∨ Function.Surjecti
       ((map π₁).comp (AddMonoidHom.fst (KZero A₁) (KZero A₂)) -
         (map π₂).comp (AddMonoidHom.snd (KZero A₁) (KZero A₂))) := by
   rintro ⟨x, y⟩
-  rw [AddMonoidHom.sub_apply, AddMonoidHom.comp_apply, AddMonoidHom.comp_apply,
-    AddMonoidHom.coe_fst, AddMonoidHom.coe_snd, sub_eq_zero, ← AddMonoidHom.coe_range,
-    SetLike.mem_coe]
+  simp only [AddMonoidHom.sub_apply, AddMonoidHom.comp_apply, AddMonoidHom.coe_fst,
+    AddMonoidHom.coe_snd, sub_eq_zero, ← AddMonoidHom.coe_range, SetLike.mem_coe]
   refine ⟨fun hxy ↦ ?_, ?_⟩
   · -- Write `x = [e₁] - m₁[A₁]` and `y = [e₂] - m₂[A₂]`.
     obtain ⟨n₁, e₁, he₁, m₁, rfl⟩ := exists_kZeroEquiv_sub_nsmul_eq x
@@ -186,16 +200,11 @@ theorem mayerVietoris_exact (h : Function.Surjective π₁ ∨ Function.Surjecti
       ← kZeroEquiv_of_mk_fromBlocks_one] at hxy
     -- So `[π₁(e₁ ⊕ 1_{m₂})] = [π₂(e₂ ⊕ 1_{m₁})]` in `K₀(Q)`, and `(e₁ ⊕ 1_{m₂}, e₂ ⊕ 1_{m₁})`
     -- glue; subtract the class of the free module `D^{m₁ + m₂}`.
-    have hmem := mk_prod_mk_mem_range π₁ π₂ h
-      (he₁.fromBlocks_zero₁₂_zero₂₁ (.one : IsIdempotentElem (1 : Matrix (Fin m₂) (Fin m₂) A₁)))
-      (he₂.fromBlocks_zero₁₂_zero₂₁ (.one : IsIdempotentElem (1 : Matrix (Fin m₁) (Fin m₁) A₂)))
-      (by simpa [fromBlocks_map, Matrix.map_one] using hxy)
-    have hsub := sub_mem hmem (nsmul_mem (regular_prod_regular_mem_range π₁ π₂) (m₂ + m₁))
-    rw [kZeroEquiv_of_mk_fromBlocks_one he₁, kZeroEquiv_of_mk_fromBlocks_one he₂, Prod.smul_mk,
-      Prod.mk_sub_mk, add_nsmul, add_nsmul] at hsub
-    convert hsub using 2 <;> abel
+    exact mem_range_of_mk_fromBlocks_one_mem_range π₁ π₂ he₁ he₂ (m := m₂) (n := m₁) (m₁ + m₂)
+      (by rw [add_nsmul]; abel) (by rw [add_nsmul]; abel)
+      (mk_prod_mk_mem_range π₁ π₂ h _ _ (by simpa [fromBlocks_map, Matrix.map_one] using hxy))
   · rintro ⟨z, hz⟩
-    rw [← hz]
+    obtain ⟨rfl, rfl⟩ := Prod.ext_iff.1 hz
     exact DFunLike.congr_fun (map_pullback_comm_sq π₁ π₂) z
 
 end TauCeti.KZero
