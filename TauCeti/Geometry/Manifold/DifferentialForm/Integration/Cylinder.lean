@@ -77,8 +77,8 @@ Finally, a two-form vanishes on spheres (`TauCeti.VanishesOnSpheres`) or on tori
 (`TauCeti.VanishesOnTori`) when its integral over every map of the square factoring through a
 sphere, respectively a torus, vanishes. It vanishes on `f`-seamed tori
 (`TauCeti.VanishesOnSeamedTori`) when its integral vanishes over every map of the square that
-agrees on the two vertical edges and is `f`-seamed along the horizontal ones, which factors through
-the mapping torus of `f`; for `f = id` these are the tori. Such a form has the same integral over
+agrees on the two vertical edges and is `f`-seamed along the horizontal ones, so that it sweeps out
+a loop of `f`-seamed paths; for `f = id` these are the tori. Such a form has the same integral over
 any two caps of a loop (`TauCeti.VanishesOnSpheres.rectangleIntegral_eq`), respectively over any
 two seamed cylinders between the same seamed paths
 (`TauCeti.VanishesOnSeamedTori.rectangleIntegral_eq`, and
@@ -101,7 +101,7 @@ even when it vanishes on spheres: for `f = id` on a torus, the loop of seamed pa
 * `TauCeti.VanishesOnSpheres φ`, `TauCeti.VanishesOnTori φ`: the integral of `φ` vanishes over
   every map of the square factoring through a sphere, respectively a torus.
 * `TauCeti.VanishesOnSeamedTori f φ`: the integral of `φ` vanishes over every map of the square
-  factoring through the mapping torus of `f`.
+  that agrees on its vertical edges and is `f`-seamed, `u (s, 1) = f (u (s, 0))`.
 
 ## Main results
 
@@ -726,10 +726,9 @@ def VanishesOnSpheres (φ : RoughForm I M F 2) : Prop :=
 
 /-- A two-form `φ` **vanishes on `f`-seamed tori** when its integral over the unit square
 vanishes for every smooth map `u : ℝ × ℝ → M` that agrees on the two vertical edges of the square
-and maps its bottom edge to its top edge by `f`, `u (s, 1) = f (u (s, 0))`, so that it factors
-through the mapping torus of `f`. Such a map is the torus swept out by a loop `s ↦ u (s, ·)` of
-`f`-seamed paths. For `f = id` this is `TauCeti.VanishesOnTori`
-(`TauCeti.vanishesOnSeamedTori_id_iff`). -/
+and maps its bottom edge to its top edge by `f`, `u (s, 1) = f (u (s, 0))`. Such a map is the
+torus swept out by a loop `s ↦ u (s, ·)` of `f`-seamed paths. For `f = id` this is
+`TauCeti.VanishesOnTori` (`TauCeti.vanishesOnSeamedTori_id_iff`). -/
 def VanishesOnSeamedTori (f : M → M) (φ : RoughForm I M F 2) : Prop :=
   ∀ u : ℝ × ℝ → M, ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u →
     (∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = u (0, t)) →
