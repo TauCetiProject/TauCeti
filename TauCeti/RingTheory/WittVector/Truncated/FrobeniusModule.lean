@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.LinearAlgebra.Semilinear.Algebraic
 public import TauCeti.RingTheory.WittVector.Truncated.Basic
 
@@ -30,7 +31,7 @@ when the underlying module has `p`-torsion.
 
 public section
 
-open Function Set
+open Function Set TauCeti
 open scoped Pointwise
 
 namespace LinearMap
@@ -113,48 +114,22 @@ theorem isAlgebraicWittFrobenius_iff_wittFrobeniusGraded (hF : Bijective F) :
     fun h ↦ ⟨hF, isAlgebraic_iff_wittFrobeniusGraded.mpr fun i hi ↦ (h i hi).2⟩⟩
 
 /-- Witt Frobenius descends to the reduction `M / pM`. -/
-noncomputable def wittFrobeniusModP (F : M →ₛₗ[φ] M) : M ⧸ P 1 →ₛₗ[φ] M ⧸ P 1 :=
-  (P 1).mapQ (P 1) F fun _ hx ↦ F.mapsTo_smul_top_of_fixed (by simp) hx
+noncomputable def wittFrobeniusModP (F : M →ₛₗ[φ] M) :
+    (M ⧸ ((p : W) • (⊤ : Submodule W M))) →ₛₗ[φ] (M ⧸ ((p : W) • (⊤ : Submodule W M))) :=
+  ((p : W) • (⊤ : Submodule W M)).mapQ _ F fun _ hx ↦
+    F.mapsTo_smul_top_of_fixed (by simp) hx
 
 @[simp]
 theorem wittFrobeniusModP_mk (F : M →ₛₗ[φ] M) (x : M) :
     F.wittFrobeniusModP (Submodule.Quotient.mk x) = Submodule.Quotient.mk (F x) :=
   (rfl)
 
-private noncomputable def mulPowToGraded (i : ℕ) :
-    M ⧸ P 1 →ₗ[W] (P i ⧸ (P (i + 1)).comap (P i).subtype) := by
-  let f := (DistribSMul.toLinearMap W M ((p : W) ^ i)).codRestrict (P i) fun x ↦
-    Submodule.smul_mem_pointwise_smul x _ _ Submodule.mem_top
-  refine (P 1).mapQ _ f ?_
-  intro x hx
-  obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
-  have hmem : (p : W) ^ i • ((p : W) ^ 1 • y) ∈ P (i + 1) := by
-    rw [← mul_smul, ← pow_add]
-    exact Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top
-  exact hmem
-
-omit [CharP R p] in
-private theorem mulPowToGraded_mk (i : ℕ) (x : M) :
-    mulPowToGraded (p := p) (n := n) (R := R) i (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk
-        (⟨(p : W) ^ i • x, Submodule.smul_mem_pointwise_smul x _ _ Submodule.mem_top⟩ : P i) :=
-  (rfl)
-
-omit [CharP R p] in
-private theorem mulPowToGraded_surjective (i : ℕ) :
-    Surjective (mulPowToGraded (p := p) (n := n) (R := R) (M := M) i) := by
+private theorem smulPowQuotientMap_semiconj (F : M →ₛₗ[φ] M) (i : ℕ) :
+    Semiconj (smulPowQuotientMap (p : W) i) F.wittFrobeniusModP (F.wittFrobeniusGraded i) := by
   intro z
-  obtain ⟨y, rfl⟩ := ((P (i + 1)).comap (P i).subtype).mkQ_surjective z
-  obtain ⟨x, -, hx⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp y.property
-  refine ⟨Submodule.Quotient.mk x, ?_⟩
-  rw [mulPowToGraded_mk, ← Submodule.mkQ_apply]
-  exact congrArg ((P (i + 1)).comap (P i).subtype).mkQ (Subtype.ext hx)
-
-private theorem mulPowToGraded_semiconj (F : M →ₛₗ[φ] M) (i : ℕ) :
-    Semiconj (mulPowToGraded i) F.wittFrobeniusModP (F.wittFrobeniusGraded i) := by
-  intro z
-  obtain ⟨x, rfl⟩ := (P 1).mkQ_surjective z
-  simp only [Submodule.mkQ_apply, wittFrobeniusModP_mk, mulPowToGraded_mk, wittFrobeniusGraded_mk]
+  obtain ⟨x, rfl⟩ := ((p : W) • (⊤ : Submodule W M)).mkQ_surjective z
+  simp only [Submodule.mkQ_apply, wittFrobeniusModP_mk, smulPowQuotientMap_mk,
+    wittFrobeniusGraded_mk]
   congr 1
   exact Subtype.ext (by simp [map_smulₛₗ])
 
@@ -162,10 +137,13 @@ private theorem mulPowToGraded_semiconj (F : M →ₛₗ[φ] M) (i : ℕ) :
 induced Frobenius on `M / pM`. -/
 theorem isAlgebraic_iff_wittFrobeniusModP :
     F.IsAlgebraic ↔ F.wittFrobeniusModP.IsAlgebraic := by
-  refine ⟨fun h ↦ h.of_surjective (P 1).mkQ (fun _ ↦ rfl) (P 1).mkQ_surjective, ?_⟩
+  let Q : Submodule W M := (p : W) • ⊤
+  refine ⟨fun h ↦ h.of_surjective Q.mkQ (fun x ↦ (wittFrobeniusModP_mk F x).symm)
+    Q.mkQ_surjective, ?_⟩
   intro h
   exact isAlgebraic_iff_wittFrobeniusGraded.mpr fun i _ ↦
-    h.of_surjective (mulPowToGraded i) (mulPowToGraded_semiconj F i) (mulPowToGraded_surjective i)
+    h.of_surjective (smulPowQuotientMap (p : W) i) (smulPowQuotientMap_semiconj F i)
+      (smulPowQuotientMap_surjective (p : W) i)
 
 /-- The restriction of Witt Frobenius to the submodule `M[p]` annihilated by `p`. -/
 noncomputable def wittFrobeniusPTorsion (F : M →ₛₗ[φ] M) :=

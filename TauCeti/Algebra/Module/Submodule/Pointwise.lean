@@ -358,3 +358,28 @@ theorem smul_eq_zero_of_mul_eq_zero_of_mem_smul_top {r e : R} (hr : r * e = 0) {
 end Semiring
 
 end TauCeti
+
+namespace LinearMap
+
+open Function Set
+
+variable {A V : Type*} [CommSemiring A] [AddCommMonoid V] [Module A V] {τ : A →+* A}
+
+/-- The image of multiplication by a fixed scalar is stable under a semilinear endomorphism. -/
+theorem mapsTo_smul_top_of_fixed (f : V →ₛₗ[τ] V) {a : A} (ha : τ a = a) :
+    MapsTo f (a • (⊤ : Submodule A V)) (a • (⊤ : Submodule A V)) := by
+  intro x hx
+  obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
+  rw [map_smulₛₗ, ha]
+  exact Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top
+
+/-- A surjective semilinear endomorphism is surjective on the image of multiplication
+by a fixed scalar. -/
+theorem surjOn_smul_top_of_fixed (f : V →ₛₗ[τ] V) (hf : Surjective f) {a : A} (ha : τ a = a) :
+    SurjOn f (a • (⊤ : Submodule A V)) (a • (⊤ : Submodule A V)) := by
+  intro x hx
+  obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
+  obtain ⟨z, rfl⟩ := hf y
+  exact ⟨a • z, Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top, by rw [map_smulₛₗ, ha]⟩
+
+end LinearMap

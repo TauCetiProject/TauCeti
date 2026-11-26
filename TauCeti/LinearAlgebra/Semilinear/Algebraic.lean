@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Submodule.Pointwise
-public import Mathlib.LinearAlgebra.Quotient.Basic
+public import TauCeti.Algebra.Module.Submodule.Ker
+public import TauCeti.LinearAlgebra.Quotient.Basic
+import TauCeti.Algebra.Module.LinearMap.Iterate
 import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
@@ -30,8 +31,10 @@ open Function Set
 
 namespace LinearMap
 
-variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] {σ : R →+* R}
+section Semiring
+
+variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N] {σ : R →+* R}
 
 /-- A monic relation for a vector under a semilinear endomorphism expresses an iterate as a
 linear combination of the preceding iterates. -/
@@ -83,14 +86,17 @@ theorem IsAlgebraic.of_injective (hG : G.IsAlgebraic) (f : M →ₗ[R] N)
 theorem isAlgebraic_of_subsingleton [Subsingleton M] (F : M →ₛₗ[σ] M) : F.IsAlgebraic :=
   fun _ ↦ hasMonicRelation_iff_exists_sum.mpr ⟨0, Fin.elim0, Subsingleton.elim _ _⟩
 
+end Semiring
+
+section Ring
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] {σ : R →+* R}
+  {F : M →ₛₗ[σ] M}
+
 private theorem iterate_residual (x : M) {n : ℕ} (a : Fin n → R) (j : ℕ) :
     F^[j] (F^[n] x - ∑ i, a i • F^[i.val] x) =
       F^[j + n] x - ∑ i, σ^[j] (a i) • F^[j + i.val] x := by
-  induction j with
-  | zero => simp
-  | succ j ih =>
-    simp only [Function.iterate_succ_apply' _ j, ih, map_sub, map_sum, map_smulₛₗ,
-      Nat.succ_add, Function.iterate_succ_apply']
+  simp only [iterate_map_sub, F.iterate_map_sum_smulₛₗ, ← Function.iterate_add_apply]
 
 /-- A monic relation for the residual of another monic expression gives a monic relation for
 the original vector. -/
@@ -129,47 +135,12 @@ theorem isAlgebraic_iff_restrict_and_mapQ (P : Submodule R M) (hP : MapsTo F P P
     simp only [map_sub, map_sum, map_smul, (hq.iterate_right _).eq, ha, sub_self]
   exact HasMonicRelation.of_residual a ((h₁ ⟨_, hr⟩).map P.subtype hi)
 
-/-- The map induced by a semilinear endomorphism on the quotient of a stable submodule
-`P` by its intersection with another stable submodule `Q`. -/
-def subquotientMap (F : M →ₛₗ[σ] M) (P Q : Submodule R M)
-    (hP : MapsTo F P P) (hQ : MapsTo F Q Q) :
-    (P ⧸ Q.comap P.subtype) →ₛₗ[σ] (P ⧸ Q.comap P.subtype) :=
-  (Q.comap P.subtype).mapQ _ (F.restrict hP) fun x hx ↦ hQ (x := x.val) hx
-
-@[simp]
-theorem subquotientMap_mk (P Q : Submodule R M)
-    (hP : MapsTo F P P) (hQ : MapsTo F Q Q) (x : P) :
-    F.subquotientMap P Q hP hQ (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk (F.restrict hP x) :=
-  (rfl)
-
 /-- An algebraic endomorphism induces an algebraic endomorphism on each stable subquotient. -/
 theorem IsAlgebraic.subquotientMap (h : F.IsAlgebraic) (P Q : Submodule R M)
     (hP : MapsTo F P P) (hQ : MapsTo F Q Q) : (F.subquotientMap P Q hP hQ).IsAlgebraic := by
   have h₁ := ((isAlgebraic_iff_restrict_and_mapQ P hP).mp h).1
   exact h₁.of_surjective (Q.comap P.subtype).mkQ
     (fun x ↦ (subquotientMap_mk P Q hP hQ x).symm) (Q.comap P.subtype).mkQ_surjective
-
-/-- The induced map on a stable subquotient is bijective if the endomorphism is surjective
-on the numerator and reflects membership in the denominator within the numerator. -/
-theorem bijective_subquotientMap (P Q : Submodule R M)
-    (hP : MapsTo F P P) (hQ : MapsTo F Q Q)
-    (hs : SurjOn F P P) (hi : ∀ x ∈ P, F x ∈ Q → x ∈ Q) :
-    Bijective (F.subquotientMap P Q hP hQ) := by
-  refine ⟨?_, ?_⟩
-  · have he : (Q.comap P.subtype).comap (F.restrict hP) = Q.comap P.subtype := by
-      ext x
-      simpa only [Submodule.mem_comap, Submodule.subtype_apply, coe_restrict_apply] using
-        ⟨hi x x.property, fun h ↦ hQ h⟩
-    apply ker_eq_bot.mp
-    exact (Submodule.ker_mapQ _ _ _ _).trans
-      ((congrArg (Submodule.map (Q.comap P.subtype).mkQ) he).trans (Submodule.mkQ_map_self _))
-  · intro y
-    obtain ⟨x, rfl⟩ := (Q.comap P.subtype).mkQ_surjective y
-    obtain ⟨z, hz, hzF⟩ := hs x.property
-    exact ⟨(Q.comap P.subtype).mkQ ⟨z, hz⟩, by
-      rw [Submodule.mkQ_apply, subquotientMap_mk]
-      exact congrArg (Q.comap P.subtype).mkQ (Subtype.ext hzF)⟩
 
 /-- If the successive quotients of a finite descending stable filtration are algebraic,
 then the restriction to its initial submodule is algebraic. -/
@@ -186,40 +157,26 @@ theorem isAlgebraic_restrict_of_filtration (P : ℕ → Submodule R M)
   let Q := (P (i + 1)).comap (P i).subtype
   have hQ : MapsTo (Fᵢ i) Q Q := fun x hx ↦ hP (i + 1) (x := x.val) hx
   let e := Submodule.comapSubtypeEquivOfLe (hdesc (Nat.le_succ i))
+  have he : Semiconj e.toLinearMap ((Fᵢ i).restrict hQ) (Fᵢ (i + 1)) := by
+    intro x
+    apply Subtype.ext
+    calc
+      (e.toLinearMap ((Fᵢ i).restrict hQ x) : M) =
+          (((Fᵢ i).restrict hQ x : Q) : P i).val :=
+        Submodule.comapSubtypeEquivOfLe_apply_coe _ _
+      _ = (Fᵢ i (x : P i) : M) := congrArg Subtype.val (coe_restrict_apply hQ x)
+      _ = F (x : P i) := coe_restrict_apply (hP i) _
+      _ = F (e x : M) := congrArg F (Submodule.comapSubtypeEquivOfLe_apply_coe _ _).symm
+      _ = (Fᵢ (i + 1) (e x) : M) := (coe_restrict_apply (hP (i + 1)) _).symm
   exact (isAlgebraic_iff_restrict_and_mapQ Q hQ).mpr
-    ⟨ih.of_injective e.toLinearMap (fun _ ↦ rfl) e.injective, halg i hi⟩
+    ⟨ih.of_injective e.toLinearMap he e.injective,
+      by simpa only [subquotientMap_eq_mapQ] using halg i hi⟩
+
+end Ring
 
 section FixedScalar
 
-open scoped Pointwise
-
 variable {A V : Type*} [CommRing A] [AddCommGroup V] [Module A V] {τ : A →+* A}
-
-/-- The image of multiplication by a fixed scalar is stable under a semilinear endomorphism. -/
-theorem mapsTo_smul_top_of_fixed (f : V →ₛₗ[τ] V) {a : A} (ha : τ a = a) :
-    MapsTo f (a • (⊤ : Submodule A V)) (a • (⊤ : Submodule A V)) := by
-  intro x hx
-  obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
-  rw [map_smulₛₗ, ha]
-  exact Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top
-
-/-- A surjective semilinear endomorphism is surjective on the image of multiplication
-by a fixed scalar. -/
-theorem surjOn_smul_top_of_fixed (f : V →ₛₗ[τ] V) (hf : Surjective f) {a : A} (ha : τ a = a) :
-    SurjOn f (a • (⊤ : Submodule A V)) (a • (⊤ : Submodule A V)) := by
-  intro x hx
-  obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
-  obtain ⟨z, rfl⟩ := hf y
-  exact ⟨a • z, Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top, by rw [map_smulₛₗ, ha]⟩
-
-/-- The submodule annihilated by a fixed scalar is stable under a semilinear endomorphism. -/
-theorem mapsTo_ker_smul_of_fixed (f : V →ₛₗ[τ] V) {a : A} (ha : τ a = a) :
-    MapsTo f (ker (DistribSMul.toLinearMap A V a)) (ker (DistribSMul.toLinearMap A V a)) := by
-  intro x hx
-  have hz : a • x = 0 := LinearMap.mem_ker.mp hx
-  have hfz : f (a • x) = 0 := by rw [hz, map_zero]
-  apply LinearMap.mem_ker.mpr
-  simpa only [DistribSMul.toLinearMap_apply, map_smulₛₗ, ha] using hfz
 
 /-- For a fixed nilpotent scalar, algebraicity can be checked on the submodule it annihilates. -/
 theorem isAlgebraic_iff_restrict_ker_smul_of_isNilpotent (f : V →ₛₗ[τ] V)
