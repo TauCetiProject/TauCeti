@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Isometry
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 
 /-!
 # Convexity of the boundary of a Riemannian manifold
@@ -154,14 +155,14 @@ strictly convex at every point. -/
 theorem isStrictlyConvexAt_of_eq_zero (hn : n = 0) (q : (𝓡∂ (n + 1)).boundary M) :
     IsStrictlyConvexAt q := by
   subst hn
-  exact isStrictlyConvexAt_iff.2 fun u hu ↦ (hu (eq_zero_of_boundaryTangent_of_dim_one u)).elim
+  exact isStrictlyConvexAt_iff.2 fun u hu ↦ (hu (Subsingleton.elim u 0)).elim
 
 /-- In dimension one (`n = 0`) the tangent space of the boundary is zero, so the boundary is
 strictly concave at every point. -/
 theorem isStrictlyConcaveAt_of_eq_zero (hn : n = 0) (q : (𝓡∂ (n + 1)).boundary M) :
     IsStrictlyConcaveAt q := by
   subst hn
-  exact isStrictlyConcaveAt_iff.2 fun u hu ↦ (hu (eq_zero_of_boundaryTangent_of_dim_one u)).elim
+  exact isStrictlyConcaveAt_iff.2 fun u hu ↦ (hu (Subsingleton.elim u 0)).elim
 
 /-! ### Invariance under isometries -/
 

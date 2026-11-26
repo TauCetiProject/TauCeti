@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
 public import TauCeti.Geometry.Manifold.Riemannian.InwardUnitNormal
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.Geometry.Manifold.MFDeriv.Slice
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 
 /-!
 # The second fundamental form of the boundary
@@ -50,7 +51,7 @@ With this sign the closed unit ball has `II = h`, the induced metric. The bounda
   field `N` differentiable at `q` and equal to `ν_out` along `∂M` near `q`,
   `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩`.
 * `TauCeti.boundarySecondFundamentalForm_eq_zero_of_dim_one`: in dimension one the tangent space
-  of the boundary is zero (`TauCeti.eq_zero_of_boundaryTangent_of_dim_one`), so `II_q = 0`.
+  of the boundary is zero, so `II_q = 0`.
 
 ## References
 
@@ -350,7 +351,7 @@ boundary is the zero form: the tangent space of the boundary is zero. -/
 theorem boundarySecondFundamentalForm_eq_zero_of_dim_one (q : (𝓡∂ (0 + 1)).boundary M) :
     boundarySecondFundamentalForm q = 0 := by
   ext u w
-  rw [eq_zero_of_boundaryTangent_of_dim_one w]
+  rw [Subsingleton.elim w 0]
   exact map_zero (boundarySecondFundamentalForm q u)
 
 end DimOne

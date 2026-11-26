@@ -39,8 +39,6 @@ the image point.
 * `TauCeti.boundaryTangentSpace_eq_euclideanHalfSpaceBoundary`: in the preferred chart it is the
   coordinate hyperplane; `TauCeti.finrank_boundaryTangentSpace`: it has dimension `n`, the
   differential of the inclusion being injective (`TauCeti.injective_mfderiv_subtypeVal_boundary`).
-* `TauCeti.eq_zero_of_boundaryTangent_of_dim_one`: on a one-dimensional manifold, every tangent
-  vector of the boundary vanishes.
 * `TauCeti.boundaryTangentEquiv`: the differential of the inclusion, as a linear isomorphism from
   the tangent space of the boundary manifold onto `T_q∂M`.
 * `TauCeti.boundaryTangentSpace_eq_ker_of_mem_maximalAtlas`: it is the kernel of the differential
@@ -145,14 +143,6 @@ theorem finrank_boundaryTangentSpace (q : (𝓡∂ (n + 1)).boundary M) :
   rw [boundaryTangentSpace_def,
     LinearMap.finrank_range_of_inj (injective_mfderiv_subtypeVal_boundary q)]
   exact finrank_euclideanSpace_fin
-
-/-- On a one-dimensional manifold with boundary, every tangent vector of the boundary vanishes:
-the boundary manifold is modelled on `EuclideanSpace ℝ (Fin 0)`. -/
-theorem eq_zero_of_boundaryTangent_of_dim_one {N : Type*} [TopologicalSpace N]
-    [ChartedSpace (EuclideanHalfSpace (0 + 1)) N] {q : (𝓡∂ (0 + 1)).boundary N}
-    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) q) : u = 0 :=
-  -- `TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) q` is `EuclideanSpace ℝ (Fin 0)` by definition.
-  Subsingleton.elim (α := EuclideanSpace ℝ (Fin 0)) u 0
 
 /-- The differential `dι_q` of the boundary inclusion, as a linear isomorphism from the tangent
 space of the boundary manifold onto the tangent space `T_q∂M ⊆ T_qM` of the boundary. -/
