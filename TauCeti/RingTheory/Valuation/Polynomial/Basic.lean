@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.RingTheory.Valuation.LocalSubring
 public import TauCeti.RingTheory.Valuation.Sum
-import TauCeti.RingTheory.Valuation.Polynomial.Weighted
+import TauCeti.RingTheory.Polynomial.Gauss.Valuation.Basic
 
 /-!
 # Valuations of polynomial expressions
@@ -40,11 +40,6 @@ algebra over a field.
   the coefficients have value at most `1`.
 * `TauCeti.valuation_aeval_eq_one`: a polynomial with nonzero constant term has value `1` when
   evaluated at an element of the maximal ideal of a valuation subring containing the coefficients.
-* `Valuation.map_coeff_mul_mul_pow_le`, `Valuation.map_coeff_pow_mul_pow_le`,
-  `Valuation.map_coeff_comp_mul_pow_le`, `Valuation.map_eval_mul_le`: weighted bounds on the
-  terms of products, powers and composites of polynomials at a point, and the resulting bound on
-  the value. They evaluate truncated composites of power series in nonarchimedean fields, such as
-  the logarithm series after the exponential series.
 * `Valuation.exists_C_mul_coeff_eq_one`: a nonzero polynomial over a valued field has a scalar
   multiple with all coefficients of value at most `1`, a coefficient equal to `1`, and all
   coefficients of higher degree of value below `1`.
@@ -72,99 +67,17 @@ variable {R L Γ₀ : Type*} [CommSemiring R] [Ring L] [Algebra R L]
 element of the integers.** -/
 theorem aeval_le_one (v : Valuation L Γ₀) (hR : ∀ r : R, v (algebraMap R L r) ≤ 1)
     {t : L} (ht : v t ≤ 1) (p : Polynomial R) : v (Polynomial.aeval t p) ≤ 1 := by
-  rw [Polynomial.aeval_eq_sum_range]
-  refine v.map_sum_le fun i _ ↦ ?_
-  rw [Algebra.smul_def, v.map_mul, v.map_pow]
-  exact mul_le_one' (hR _) (pow_le_one' ht i)
+  rw [Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map]
+  exact (Polynomial.valuation_eval_le_gaussValuation v 1 _ ht).trans <|
+    (Polynomial.gaussValuation_le_iff v 1).mpr fun i ↦ by
+      rw [Polynomial.coeff_map, one_pow, mul_one]
+      exact hR (p.coeff i)
 
 end Valuation
 
 namespace Valuation
 
 open Polynomial
-
-/-! ### Weighted coefficient bounds for products and compositions
-
-Fix `x`, a scale `A` and a ratio `S`. Say that a polynomial `P` has *weight `a`* if
-`v (P.coeff k * x ^ k) * S ^ a ≤ A ^ a * S ^ k` for every `k`. Weights add under multiplication,
-so `Q ^ n` has weight `n` when `Q` has weight `1`. If `S ≤ 1`, a polynomial of weight `1` whose
-coefficients below degree `M` vanish has `v (P.eval x) * S ≤ A * S ^ M`. When the coefficients of
-`F` satisfy
-`v (F.coeff n) * A ^ n * S ≤ A * S ^ n`, the composite `F.comp Q` has weight `1` whenever `Q`
-does. These bounds evaluate a truncated composite of two power series, such as the logarithm
-series after the exponential series, at a point of a nonarchimedean field. -/
-
-section Monoid
-
-variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommMonoidWithZero Γ₀]
-  {v : Valuation R Γ₀} {x : R} {A S : Γ₀}
-
-/-- Weights add under multiplication of polynomials. -/
-theorem map_coeff_mul_mul_pow_le {P Q : R[X]} {a b : ℕ}
-    (hP : ∀ k, v (P.coeff k * x ^ k) * S ^ a ≤ A ^ a * S ^ k)
-    (hQ : ∀ k, v (Q.coeff k * x ^ k) * S ^ b ≤ A ^ b * S ^ k) (k : ℕ) :
-    v ((P * Q).coeff k * x ^ k) * S ^ (a + b) ≤ A ^ (a + b) * S ^ k := by
-  simpa only [map_mul, map_pow, pow_add] using
-    v.map_coeff_mul_mul_pow_le_of_le (r := v x) (s₁ := S ^ a) (s₂ := S ^ b)
-      (A₁ := A ^ a) (A₂ := A ^ b) (S := S)
-      (fun i ↦ by simpa only [map_mul, map_pow] using hP i)
-      (fun j ↦ by simpa only [map_mul, map_pow] using hQ j) k
-
-/-- The `n`-th power of a polynomial of weight `1` has weight `n`. -/
-theorem map_coeff_pow_mul_pow_le {Q : R[X]} (hQ : ∀ k, v (Q.coeff k * x ^ k) * S ≤ A * S ^ k)
-    (n k : ℕ) : v ((Q ^ n).coeff k * x ^ k) * S ^ n ≤ A ^ n * S ^ k := by
-  induction n generalizing k with
-  | zero =>
-    rcases eq_or_ne k 0 with rfl | hk
-    · simp
-    · simp [coeff_one, hk]
-  | succ n ih =>
-    rw [pow_succ]
-    exact map_coeff_mul_mul_pow_le ih (by simpa using hQ) k
-
-/-- A polynomial of weight `1` whose coefficients vanish below degree `M` has
-`v (G.eval x) * S ≤ A * S ^ M`, provided `S ≤ 1`. -/
-theorem map_eval_mul_le {G : R[X]} {M : ℕ} (hS : S ≤ 1) (hG₀ : ∀ k < M, G.coeff k = 0)
-    (hG : ∀ k, v (G.coeff k * x ^ k) * S ≤ A * S ^ k) : v (G.eval x) * S ≤ A * S ^ M := by
-  rw [eval_eq_sum, Polynomial.sum_def]
-  refine v.map_sum_mul_le fun k _ ↦ ?_
-  rcases lt_or_ge k M with hk | hk
-  · simp [hG₀ k hk]
-  · exact (hG k).trans (mul_le_mul_right (pow_le_pow_right_of_le_one' hS hk) A)
-
-end Monoid
-
-section Group
-
-variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommGroupWithZero Γ₀]
-  {v : Valuation R Γ₀} {x : R} {A S : Γ₀}
-
-/-- Composition with a polynomial `F` whose coefficients satisfy
-`v (F.coeff n) * A ^ n * S ≤ A * S ^ n` preserves weight `1`. -/
-theorem map_coeff_comp_mul_pow_le {F Q : R[X]}
-    (hF : ∀ n, v (F.coeff n) * A ^ n * S ≤ A * S ^ n)
-    (hQ : ∀ k, v (Q.coeff k * x ^ k) * S ≤ A * S ^ k) (k : ℕ) :
-    v ((F.comp Q).coeff k * x ^ k) * S ≤ A * S ^ k := by
-  rw [comp_eq_sum_left, Polynomial.sum_def, finsetSum_coeff, Finset.sum_mul]
-  refine v.map_sum_mul_le fun n _ ↦ ?_
-  have hQn := map_coeff_pow_mul_pow_le hQ n k
-  rw [coeff_C_mul, mul_assoc, map_mul, mul_assoc]
-  rcases eq_or_ne (A ^ n * S ^ n) 0 with h0 | h0
-  · -- A vanishing scale forces the `n`-th power term, or the weight `S`, to vanish.
-    rcases eq_or_ne S 0 with rfl | hS
-    · simp
-    have hA : A ^ n = 0 := (mul_eq_zero.mp h0).resolve_right (pow_ne_zero n hS)
-    have hv : v ((Q ^ n).coeff k * x ^ k) * S ^ n = 0 :=
-      le_antisymm (hQn.trans_eq (by rw [hA, zero_mul])) zero_le
-    simp [(mul_eq_zero.mp hv).resolve_right (pow_ne_zero n hS)]
-  refine le_of_mul_le_mul_right ?_ (pos_iff_ne_zero.mpr h0)
-  calc v (F.coeff n) * (v ((Q ^ n).coeff k * x ^ k) * S) * (A ^ n * S ^ n)
-      = v (F.coeff n) * A ^ n * S * (v ((Q ^ n).coeff k * x ^ k) * S ^ n) := by
-        simp only [mul_comm, mul_left_comm, mul_assoc]
-    _ ≤ A * S ^ n * (A ^ n * S ^ k) := mul_le_mul' (hF n) hQn
-    _ = A * S ^ k * (A ^ n * S ^ n) := by ac_rfl
-
-end Group
 
 section Field
 

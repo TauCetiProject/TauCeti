@@ -42,6 +42,17 @@ public section
 
 namespace Polynomial
 
+private lemma prod_map_filter_mul_prod_map_filter_not {α M : Type*} [CommMonoid M]
+    (s : Multiset α) (p : α → Prop) [DecidablePred p] (f : α → M) :
+    ((s.filter p).map f).prod * ((s.filter fun a ↦ ¬ p a).map f).prod = (s.map f).prod :=
+  Quotient.inductionOn s fun l ↦ by
+    simpa using List.prod_map_filter_mul_prod_map_filter_not p f l
+
+private lemma map_sub_eq_max_of_ne {R Γ₀ : Type*} [Ring R]
+    [LinearOrderedCommMonoidWithZero Γ₀] (v : Valuation R Γ₀) {x α : R} (h : v α ≠ v x) :
+    v (x - α) = max (v x) (v α) := by
+  rw [sub_eq_add_neg, v.map_add_of_distinct_val (by simpa [v.map_neg] using h.symm), v.map_neg]
+
 section Monoid
 
 variable {R Γ₀ : Type*} [CommRing R] [IsDomain R] [LinearOrderedCommMonoidWithZero Γ₀]
@@ -66,10 +77,6 @@ theorem gaussValuation_eq_gaussValuation_one_mul_prod_roots_le_one (v : Valuatio
       ((p.roots.filter fun α ↦ v α ≤ 1).map fun α ↦ max r (v α)).prod := by
   classical
   rw [gaussValuation_eq_mul_prod_roots v p hp r, gaussValuation_eq_mul_prod_roots v p hp 1]
-  have hsplit (t : Γ₀) : (p.roots.map fun α ↦ max t (v α)).prod =
-      ((p.roots.filter fun α ↦ v α ≤ 1).map fun α ↦ max t (v α)).prod *
-      ((p.roots.filter fun α ↦ ¬ v α ≤ 1).map fun α ↦ max t (v α)).prod := by
-    rw [← Multiset.prod_add, ← Multiset.map_add, Multiset.filter_add_not]
   have hle : ((p.roots.filter fun α ↦ v α ≤ 1).map fun α ↦ max 1 (v α)).prod = 1 :=
     Multiset.prod_eq_one fun b hb ↦ by
       obtain ⟨α, hα, rfl⟩ := Multiset.mem_map.mp hb
@@ -79,7 +86,9 @@ theorem gaussValuation_eq_gaussValuation_one_mul_prod_roots_le_one (v : Valuatio
     Multiset.map_congr rfl fun α hα ↦ by
       have h1 : 1 < v α := lt_of_not_ge (Multiset.mem_filter.mp hα).2
       rw [max_eq_right (hr.trans h1.le), max_eq_right h1.le]
-  rw [hsplit r, hsplit 1, hle, one_mul, hgt]
+  rw [← prod_map_filter_mul_prod_map_filter_not p.roots (fun α ↦ v α ≤ 1) (fun α ↦ max r (v α)),
+    ← prod_map_filter_mul_prod_map_filter_not p.roots (fun α ↦ v α ≤ 1) (fun α ↦ max 1 (v α)),
+    hle, one_mul, hgt]
   ac_rfl
 
 /-- If a split polynomial `p` satisfies `v (x - α) = v x` for every root `α` with `v α = v x`,
@@ -90,10 +99,9 @@ theorem valuation_eval_eq_gaussValuation_of_forall_roots_eq (v : Valuation R Γ�
     v (p.eval x) = p.gaussValuation v (v x) := by
   have hmap : (p.roots.map fun α ↦ v (x - α)) = p.roots.map fun α ↦ max (v x) (v α) :=
     Multiset.map_congr rfl fun α hα ↦ by
-      rcases lt_trichotomy (v α) (v x) with hlt | heq | hgt
-      · rw [v.map_sub_eq_of_lt_left hlt, max_eq_left hlt.le]
+      rcases eq_or_ne (v α) (v x) with heq | hne
       · rw [hroots α hα heq, max_eq_left heq.le]
-      · rw [v.map_sub_eq_of_lt_right hgt, max_eq_right hgt.le]
+      · exact map_sub_eq_max_of_ne v hne
   rw [hp.eval_eq_prod_roots x, gaussValuation_eq_mul_prod_roots v p hp (v x)]
   simp only [map_mul, map_multiset_prod, Multiset.map_map, Function.comp_def, hmap]
 
@@ -112,16 +120,9 @@ theorem valuation_eval_eq_gaussValuation_mul_prod_roots_eq (v : Valuation R Γ�
   classical
   rw [hp.eval_eq_prod_roots x, map_mul, map_multiset_prod, Multiset.map_map,
     gaussValuation_eq_mul_prod_roots v p hp (v x)]
-  have hsplit (f : R → Γ₀) : (p.roots.map f).prod =
-      ((p.roots.filter fun α ↦ v α = v x).map f).prod *
-      ((p.roots.filter fun α ↦ ¬ v α = v x).map f).prod := by
-    rw [← Multiset.prod_add, ← Multiset.map_add, Multiset.filter_add_not]
   have hne : ((p.roots.filter fun α ↦ ¬ v α = v x).map fun α ↦ v (x - α)) =
       (p.roots.filter fun α ↦ ¬ v α = v x).map fun α ↦ max (v x) (v α) :=
-    Multiset.map_congr rfl fun α hα ↦ by
-      rcases lt_or_gt_of_ne (Multiset.mem_filter.mp hα).2 with hlt | hgt
-      · rw [v.map_sub_eq_of_lt_left hlt, max_eq_left hlt.le]
-      · rw [v.map_sub_eq_of_lt_right hgt, max_eq_right hgt.le]
+    Multiset.map_congr rfl fun α hα ↦ map_sub_eq_max_of_ne v (Multiset.mem_filter.mp hα).2
   have heq : ((p.roots.filter fun α ↦ v α = v x).map fun α ↦ v (x - α)).prod =
       ((p.roots.filter fun α ↦ v α = v x).map fun α ↦ max (v x) (v α)).prod *
       ((p.roots.filter fun α ↦ v α = v x).map fun α ↦ v (x - α) / v x).prod := by
@@ -130,12 +131,14 @@ theorem valuation_eval_eq_gaussValuation_mul_prod_roots_eq (v : Valuation R Γ�
     refine Multiset.map_congr rfl fun α hα ↦ ?_
     have hα' : v α = v x := (Multiset.mem_filter.mp hα).2
     rcases eq_or_ne (v x) 0 with hx0 | hx0
-    · have hsub : v (x - α) = 0 := nonpos_iff_eq_zero.mp <|
-        (v.map_sub x α).trans (by simp [hx0, hα'])
-      simp [hx0, hα', hsub]
+    · rw [v.map_sub_of_left_eq_zero hx0, hα', hx0]
+      simp
     · rw [max_eq_left hα'.le, mul_div_cancel₀ _ hx0]
   simp only [Function.comp_def]
-  rw [hsplit (fun α ↦ v (x - α)), hsplit (fun α ↦ max (v x) (v α)), hne, heq]
+  rw [← prod_map_filter_mul_prod_map_filter_not p.roots (fun α ↦ v α = v x) (fun α ↦ v (x - α)),
+    ← prod_map_filter_mul_prod_map_filter_not p.roots (fun α ↦ v α = v x)
+      (fun α ↦ max (v x) (v α)),
+    hne, heq]
   ac_rfl
 
 end Group

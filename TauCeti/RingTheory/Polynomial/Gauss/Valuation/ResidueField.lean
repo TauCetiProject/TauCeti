@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.Valuation.ValuationSubring
-public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.RingTheory.Polynomial.Gauss.Valuation.Basic
 import TauCeti.RingTheory.LocalRing.ResidueField.Polynomial
 import TauCeti.RingTheory.Valuation.Polynomial.Basic
@@ -18,18 +17,21 @@ import TauCeti.RingTheory.Valuation.Polynomial.Basic
 Over a valued field `(K, v)` with value group `Γ₀`, every polynomial `p : K[X]` factors as
 `C c * q.map _` where `v c = p.gaussValuation v 1`, `q` has coefficients in `v.valuationSubring`
 with `q.natDegree = p.natDegree`, and `q` has nonzero reduction modulo the maximal ideal
-(`Polynomial.exists_eq_C_mul_map_residue_ne_zero`). When `1 + ∑ j ∈ s, (p j).natDegree` is
-strictly less than the cardinality of the residue field of `v.valuationSubring` (in particular,
-whenever the residue field is infinite), the family `p` simultaneously attains its Gauss valuations
-at a single point of prescribed valuation `v c`.
+(`Polynomial.exists_eq_C_mul_map_residue_ne_zero`). When the sum of the reduced degrees of
+primitive factorizations of `(p j).comp (C c * X)` plus `1` is strictly less than the cardinality
+of the residue field of `v.valuationSubring` (in particular, when `1 + ∑ j ∈ s, (p j).natDegree`
+is below the residue-field cardinality, or whenever the residue field is infinite), the family `p`
+simultaneously attains its Gauss valuations at a single point of prescribed valuation `v c`.
 
 ## Main results
 
 * `Polynomial.exists_eq_C_mul_map_residue_ne_zero`: primitive factorization of any polynomial over
   a valued field.
+* `Polynomial.exists_forall_valuation_eval_eq_gaussValuation_of_sum_map_residue_natDegree_lt`:
+  simultaneous attainment under a cardinality bound on the reduced degrees of primitive
+  factorizations.
 * `Polynomial.exists_forall_valuation_eval_eq_gaussValuation_of_sum_natDegree_lt`: simultaneous
-  attainment of the Gauss valuation at a point of prescribed valuation `v c` under a residue-field
-  cardinality bound.
+  attainment under a cardinality bound on the original degrees.
 * `Polynomial.exists_forall_valuation_eval_eq_gaussValuation`: the infinite-residue-field corollary.
 
 ## References
@@ -83,30 +85,31 @@ theorem exists_eq_C_mul_map_residue_ne_zero (p : K[X]) :
       simpa [map_one] using hmap.trans hD
     exact one_ne_zero (by rwa [hqD, map_one] at hcoeff)
 
-/-- Over a valued field whose residue field has cardinality strictly greater than
-`1 + ∑ j ∈ s, (p j).natDegree`, finitely many polynomials simultaneously attain their Gauss
-valuations at a point of prescribed valuation `v c`. -/
-theorem exists_forall_valuation_eval_eq_gaussValuation_of_sum_natDegree_lt {ι : Type*}
-    (s : Finset ι) (p : ι → K[X]) (c : K)
-    (hcard : ((1 + ∑ j ∈ s, (p j).natDegree : ℕ) : ENat) <
+/-- Given primitive factorizations `(p j).comp (C c * X) = C (a j) * (q j).map _` with
+`v (a j) = ((p j).comp (C c * X)).gaussValuation v 1` and nonzero reductions modulo the maximal
+ideal, if `1 + ∑ j ∈ s, ((q j).map (residue _)).natDegree` is strictly less than the cardinality
+of the residue field, then the family `p` simultaneously attains its Gauss valuations at a point of
+valuation `v c`. -/
+theorem exists_forall_valuation_eval_eq_gaussValuation_of_sum_map_residue_natDegree_lt {ι : Type*}
+    (s : Finset ι) (p : ι → K[X]) (c : K) (a : ι → K) (q : ι → v.valuationSubring[X])
+    (ha : ∀ j ∈ s, v (a j) = ((p j).comp (C c * X)).gaussValuation v 1)
+    (hfac : ∀ j ∈ s, (p j).comp (C c * X) = C (a j) * (q j).map (algebraMap v.valuationSubring K))
+    (hres : ∀ j ∈ s, (q j).map (IsLocalRing.residue v.valuationSubring) ≠ 0)
+    (hcard : ((1 + ∑ j ∈ s,
+        ((q j).map (IsLocalRing.residue v.valuationSubring)).natDegree : ℕ) : ENat) <
       ENat.card (IsLocalRing.ResidueField v.valuationSubring)) :
     ∃ x : K, v x = v c ∧ ∀ j ∈ s, v ((p j).eval x) = (p j).gaussValuation v (v c) := by
   classical
-  choose a q ha hfac hdeg hres using fun j : ι ↦
-    exists_eq_C_mul_map_residue_ne_zero v ((p j).comp (C c * X))
   have hF : ∀ o ∈ s.insertNone,
       (Option.elim' X q o).map (IsLocalRing.residue v.valuationSubring) ≠ 0 :=
-    Finset.forall_mem_insertNone.mpr ⟨by simp, fun j _ ↦ hres j⟩
+    Finset.forall_mem_insertNone.mpr ⟨by simp, fun j hj ↦ hres j hj⟩
   have hdeg_sum : (∑ o ∈ s.insertNone,
-      ((Option.elim' X q o).map (IsLocalRing.residue v.valuationSubring)).natDegree) ≤
-      1 + ∑ j ∈ s, (p j).natDegree := by
+      ((Option.elim' X q o).map (IsLocalRing.residue v.valuationSubring)).natDegree) =
+      1 + ∑ j ∈ s, ((q j).map (IsLocalRing.residue v.valuationSubring)).natDegree := by
     rw [Finset.sum_insertNone]
-    refine Nat.add_le_add (by simp) (Finset.sum_le_sum fun j _ ↦ ?_)
-    have hcX : (C c * X).natDegree ≤ 1 := (natDegree_C_mul_le c X).trans (by simp)
-    exact natDegree_map_le.trans ((hdeg j).le.trans <|
-      natDegree_comp_le.trans (by simpa using Nat.mul_le_mul_left (p j).natDegree hcX))
+    simp
   obtain ⟨u, hu⟩ := exists_forall_isUnit_eval_of_sum_natDegree_lt s.insertNone (Option.elim' X q) hF
-    ((Nat.cast_le.mpr hdeg_sum).trans_lt hcard)
+    (by rwa [hdeg_sum])
   have hu_unit : IsUnit u := by simpa using hu none Finset.none_mem_insertNone
   have hu_val : v (algebraMap v.valuationSubring K u) = 1 :=
     (Valuation.valuationSubring.integers v).one_of_isUnit hu_unit
@@ -120,9 +123,28 @@ theorem exists_forall_valuation_eval_eq_gaussValuation_of_sum_natDegree_lt {ι :
       a j * algebraMap v.valuationSubring K ((q j).eval u) := by
     have h1 : (p j).eval (c * algebraMap v.valuationSubring K u) =
         ((p j).comp (C c * X)).eval (algebraMap v.valuationSubring K u) := by simp [eval_comp]
-    rw [h1, hfac j]
+    rw [h1, hfac j hj]
     simp only [eval_C_mul, eval_map_apply]
-  simp only [heval, map_mul, hqu_val, mul_one, ha j, gaussValuation_comp_C_mul_X]
+  simp only [heval, map_mul, hqu_val, mul_one, ha j hj, gaussValuation_comp_C_mul_X]
+
+/-- Over a valued field whose residue field has cardinality strictly greater than
+`1 + ∑ j ∈ s, (p j).natDegree`, finitely many polynomials simultaneously attain their Gauss
+valuations at a point of prescribed valuation `v c`. -/
+theorem exists_forall_valuation_eval_eq_gaussValuation_of_sum_natDegree_lt {ι : Type*}
+    (s : Finset ι) (p : ι → K[X]) (c : K)
+    (hcard : ((1 + ∑ j ∈ s, (p j).natDegree : ℕ) : ENat) <
+      ENat.card (IsLocalRing.ResidueField v.valuationSubring)) :
+    ∃ x : K, v x = v c ∧ ∀ j ∈ s, v ((p j).eval x) = (p j).gaussValuation v (v c) := by
+  choose a q ha hfac hdeg hres using fun j : ι ↦
+    exists_eq_C_mul_map_residue_ne_zero v ((p j).comp (C c * X))
+  have hle : 1 + ∑ j ∈ s, ((q j).map (IsLocalRing.residue v.valuationSubring)).natDegree ≤
+      1 + ∑ j ∈ s, (p j).natDegree := by
+    refine Nat.add_le_add_left (Finset.sum_le_sum fun j _ ↦ ?_) 1
+    have hcX : (C c * X).natDegree ≤ 1 := (natDegree_C_mul_le c X).trans (by simp)
+    exact natDegree_map_le.trans ((hdeg j).le.trans <|
+      natDegree_comp_le.trans (by simpa using Nat.mul_le_mul_left (p j).natDegree hcX))
+  exact exists_forall_valuation_eval_eq_gaussValuation_of_sum_map_residue_natDegree_lt v s p c a q
+    (fun j _ ↦ ha j) (fun j _ ↦ hfac j) (fun j _ ↦ hres j) ((Nat.cast_le.mpr hle).trans_lt hcard)
 
 /-- Over a valued field with infinite residue field, finitely many polynomials simultaneously
 attain their Gauss valuations at a point of prescribed valuation `v c`. -/

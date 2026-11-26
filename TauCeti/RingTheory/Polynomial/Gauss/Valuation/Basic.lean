@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Eval.Coeff
 public import Mathlib.RingTheory.Valuation.Basic
-import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.RingTheory.Polynomial.Basic
 import TauCeti.RingTheory.Valuation.Polynomial.Weighted
 
@@ -33,11 +32,12 @@ arbitrary value monoids and groups `Γ₀`, and bundles into a valuation `Valuat
   `Polynomial.valuation_eval_le_gaussValuation`: coefficient characterization, radius monotonicity,
   support characterization, ultrametric addition bound, coefficient-map pullback, and evaluation
   bounds.
-* `Polynomial.gaussValuation_mul`, `Polynomial.gaussValuation_pow`: multiplicativity and power
-  formula.
-* `Valuation.gauss_comap_C`, `Valuation.gauss_comap_mapRingHom`, `Valuation.gauss_zero`,
-  `Valuation.supp_gauss`, `Valuation.le_gauss_iff`: restriction to constants, coefficient pullback,
-  radius-zero pullback, support ideal at nonzero radius, and pointwise maximality characterization.
+* `Polynomial.gaussValuation_mul`, `Polynomial.gaussValuation_pow`,
+  `Polynomial.gaussValuation_comp_le`: multiplicativity, power formula, and substitution bound.
+* `Valuation.gauss_comap_C`, `Valuation.gauss_comap_mapRingHom`, `Valuation.gauss_map`,
+  `Valuation.gauss_zero`, `Valuation.supp_gauss`, `Valuation.le_gauss_iff`: restriction to
+  constants, coefficient pullback, value-monoid change, radius-zero pullback, support ideal at
+  nonzero radius, and pointwise maximality characterization.
 
 ## References
 
@@ -173,9 +173,10 @@ theorem valuation_eval₂_le_gaussValuation {S : Type*} [Ring S] (f : R →+* S)
     v (p.eval₂ f x) ≤ p.gaussValuation (v.comap f) r := by
   rw [eval₂_eq_sum, sum_def]
   refine v.map_sum_le fun i _ ↦ ?_
-  rw [map_mul, map_pow]
-  simpa only [Valuation.comap_apply] using
-    (mul_le_mul_right (pow_le_pow_left' hx i) _).trans (le_gaussValuation (v.comap f) r p i)
+  calc v (f (p.coeff i) * x ^ i)
+      = (v.comap f) (p.coeff i) * v x ^ i := by rw [map_mul, map_pow, Valuation.comap_apply]
+    _ ≤ (v.comap f) (p.coeff i) * r ^ i := mul_le_mul_right (pow_le_pow_left' hx i) _
+    _ ≤ p.gaussValuation (v.comap f) r := le_gaussValuation (v.comap f) r p i
 
 /-- Evaluating `p` at `x` with `v x ≤ r` gives valuation at most `p.gaussValuation v r`. -/
 theorem valuation_eval_le_gaussValuation (p : R[X]) {x : R} (hx : v x ≤ r) :
@@ -278,6 +279,18 @@ theorem gauss_comap_mapRingHom {S : Type*} [Ring S] (f : R →+* S) (v : Valuati
   ext p
   simp
 
+/-- Changing the value monoid along an order-preserving monoid-with-zero homomorphism commutes with
+the Gauss valuation. -/
+@[simp]
+theorem gauss_map {Γ'₀ : Type*} [LinearOrderedCommMonoidWithZero Γ'₀] (v : Valuation R Γ₀) (r : Γ₀)
+    (f : Γ₀ →*₀o Γ'₀) :
+    (v.gauss r).map f = (v.map f).gauss (f r) := by
+  ext p
+  rw [Valuation.map_apply, gauss_apply, gauss_apply, Polynomial.gaussValuation_def,
+    Polynomial.gaussValuation_def,
+    Finset.apply_sup_eq_sup_comp f (OrderHomClass.monotone f).map_sup (by simp [bot_eq_zero])]
+  simp [Function.comp_def, Valuation.map_apply]
+
 /-- At radius `0`, `v.gauss 0` is the pullback of `v` along `Polynomial.constantCoeff`. -/
 @[simp]
 theorem gauss_zero (v : Valuation R Γ₀) :
@@ -326,6 +339,13 @@ theorem gaussValuation_neg (p : R[X]) : (-p).gaussValuation v r = p.gaussValuati
 theorem gaussValuation_pow (p : R[X]) (n : ℕ) :
     (p ^ n).gaussValuation v r = p.gaussValuation v r ^ n := by
   simpa only [Valuation.gauss_apply] using map_pow (v.gauss r) p n
+
+/-- Substituting a polynomial `q` with `q.gaussValuation v r ≤ s` into `p` has Gauss valuation at
+most `p.gaussValuation v s`. -/
+theorem gaussValuation_comp_le (p q : R[X]) {s : Γ₀} (hq : q.gaussValuation v r ≤ s) :
+    (p.comp q).gaussValuation v r ≤ p.gaussValuation v s := by
+  simpa [Polynomial.comp, Valuation.gauss_comap_C] using
+    valuation_eval₂_le_gaussValuation Polynomial.C (v.gauss r) s p hq
 
 end RingDerived
 
