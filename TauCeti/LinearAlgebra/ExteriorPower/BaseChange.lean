@@ -78,6 +78,15 @@ theorem subtype_baseChange_equivBaseChange (n : ℕ) (x : ⋀[A]^n (A ⊗[R] M))
   exact (LinearEquiv.ofInjective_symm_apply _ (h := baseChange_subtype_injective A n) _).trans
     (LinearEquiv.ofSubmodules_apply _ _ x)
 
+/-- In the exterior algebra, the inverse exterior-power comparison is the exterior-algebra
+comparison. -/
+@[simp]
+theorem coe_equivBaseChange_symm_tmul (n : ℕ) (a : A) (x : ⋀[R]^n M) :
+    ((equivBaseChange A n).symm (a ⊗ₜ[R] x) : ExteriorAlgebra A (A ⊗[R] M)) =
+      ExteriorAlgebra.baseChangeEquiv R M A (a ⊗ₜ[R] (x : ExteriorAlgebra R M)) := by
+  rw [← AlgEquiv.symm_apply_eq, ← subtype_baseChange_equivBaseChange,
+    LinearEquiv.apply_symm_apply, LinearMap.baseChange_tmul, Submodule.coe_subtype]
+
 /-- A wedge of pure tensors corresponds to the product of the scalars tensored with the wedge. -/
 @[simp]
 theorem equivBaseChange_ιMulti_tmul {n : ℕ} (a : Fin n → A) (m : Fin n → M) :

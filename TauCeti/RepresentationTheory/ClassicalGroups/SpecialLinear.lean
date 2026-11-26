@@ -85,22 +85,7 @@ irreducible on `SL` exactly when it is irreducible on `GL`, including in rank ze
 @[simp]
 theorem isIrreducible_comp_toGL_iff (ρ : Representation K (Matrix.GeneralLinearGroup ι K) V) :
     Representation.IsIrreducible (ρ.comp Matrix.SpecialLinearGroup.toGL) ↔ ρ.IsIrreducible := by
-  constructor
-  · intro hρ
-    have := hρ
-    have := hρ.nontrivial
-    refine ⟨fun S => ?_⟩
-    let T : Subrepresentation (ρ.comp Matrix.SpecialLinearGroup.toGL) :=
-      { toSubmodule := S.toSubmodule
-        apply_mem_toSubmodule g v hv := S.apply_mem_toSubmodule _ hv }
-    refine (eq_bot_or_eq_top T).imp (fun h => ?_) fun h => ?_
-    · apply Subrepresentation.toSubmodule_injective
-      simpa only [T, Subrepresentation.toSubmodule_bot] using
-        congrArg Subrepresentation.toSubmodule h
-    · apply Subrepresentation.toSubmodule_injective
-      simpa only [T, Subrepresentation.toSubmodule_top] using
-        congrArg Subrepresentation.toSubmodule h
-  intro hρ
+  refine ⟨fun _ => IsIrreducible.of_comp Matrix.SpecialLinearGroup.toGL, fun hρ => ?_⟩
   have := hρ
   have := hρ.nontrivial
   refine ⟨fun S => ?_⟩

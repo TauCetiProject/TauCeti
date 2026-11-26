@@ -57,6 +57,7 @@ with passing to the opposite algebra, and composes in stages:
   intertwines the action of `σ` with a `σ`-semilinear map fixing the images of the tensors `1 ⊗ a`.
 * `TauCeti.ScalarAut.toAlgAut` and `TauCeti.ScalarAut.instMulSemiringAction`: scalar
   automorphisms act on a scalar extension through its scalar factor, by algebra automorphisms.
+* `TauCeti.ScalarAut.toAlgAut_apply`: this algebra automorphism is the linear map `σ ⊗ id`.
 * `TauCeti.ScalarAut.baseChangeMap_smul`: scalar extension of an algebra map is equivariant for
   scalar automorphisms.
 * `TauCeti.Algebra.TensorProduct.baseChangeSemilinearAction`: the semilinear ring-automorphism
@@ -470,6 +471,12 @@ factor, `σ ↦ σ ⊗ id`. -/
 @[simp]
 theorem toAlgAut_tmul (σ : L ≃ₐ[K] L) (a : L) (x : A) :
     toAlgAut (A := A) σ (a ⊗ₜ[K] x) = σ a ⊗ₜ[K] x :=
+  (rfl)
+
+/-- The algebra automorphism attached to a scalar automorphism `σ` is the tensor product of the
+linear maps `σ` and `id`. -/
+theorem toAlgAut_apply (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
+    toAlgAut (A := A) σ x = TensorProduct.map σ.toLinearMap LinearMap.id x :=
   (rfl)
 
 /-- Scalar automorphisms act on a scalar extension through the scalar factor. -/

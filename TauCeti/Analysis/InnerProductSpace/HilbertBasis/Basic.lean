@@ -37,6 +37,9 @@ the images of the basis vectors (`HilbertBasis.apply_mem_of_forall_apply_mem`).
 Finally, the orthogonal complement of the span of the basis vectors indexed by a set `s` is the
 closed span of the basis vectors indexed by its complement (`HilbertBasis.orthogonal_span_image`).
 This computes the cokernels of isometries that send a Hilbert basis into another one.
+
+The coordinates `⟪default i, x⟫` of a vector `x` in the standard Hilbert basis of `ℓ²(ι, 𝕜)` are
+its entries `x i` (`HilbertBasis.inner_default_apply`).
 -/
 
 public section
@@ -163,5 +166,12 @@ theorem orthogonal_span_image (b : HilbertBasis ι 𝕜 E) (s : Set ι) :
     rw [← Submodule.isOrtho_iff_le, Submodule.isOrtho_span]
     rintro _ ⟨j, hj, rfl⟩ _ ⟨i, hi, rfl⟩
     exact b.orthonormal.inner_eq_zero fun hji ↦ hj (hji ▸ hi)
+
+open scoped lp in
+/-- The coordinates of `x` in the standard Hilbert basis of `ℓ²(ι, 𝕜)` are its entries. -/
+@[simp]
+theorem inner_default_apply (x : ℓ²(ι, 𝕜)) (i : ι) :
+    ⟪(default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)) i, x⟫_𝕜 = x i :=
+  ((default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).repr_apply_apply x i).symm
 
 end HilbertBasis

@@ -9,7 +9,9 @@ public import Mathlib.FieldTheory.Normal.Closure
 public import Mathlib.RingTheory.Unramified.Locus
 public import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
 import Mathlib.NumberTheory.RamificationInertia.Unramified
+import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.RamificationInertia.Splitting
+import TauCeti.RingTheory.Ideal.PrimesOver
 import TauCeti.RingTheory.Unramified.AlgEquiv
 
 /-!
@@ -56,6 +58,9 @@ criterion rests likewise on `e(Q ∩ E / 𝔭) = [I(Q) : I(Q) ∩ Gal(M/E)]`.
   splits completely in the normal closure of `E`.
 * `Ideal.ncard_primesOver_eq_finrank_iff_of_normalClosure_eq_top`: the same, when `M` is the
   normal closure of `E`.
+* `Ideal.ncard_primesOver_span_eq_finrank_iff_forall_stabilizer_le`: a rational prime splits
+  completely in a number field `F` embedded in a Galois extension `N / ℚ` iff every decomposition
+  group above it fixes `F`.
 * `Ideal.isUnramifiedIn_iff_forall_inertia_le`: `𝔭` is unramified in `E` iff every inertia group
   above `𝔭` lies in `Gal(M/E)`.
 * `Ideal.isUnramifiedIn_sup_iff`, `Ideal.isUnramifiedIn_iSup_iff`,
@@ -186,6 +191,32 @@ theorem ncard_primesOver_eq_finrank_iff_of_normalClosure_eq_top (p : Ideal (𝓞
     ncard_primesOver_eq_finrank_iff_forall_stabilizer_le, hE, fixingSubgroup_top,
     ncard_primesOver_eq_finrank_iff_forall_stabilizer_eq_bot]
   simp only [le_bot_iff]
+
+/-- **Complete splitting of a rational prime in a subfield of a Galois extension of `ℚ`.** Let
+`N / ℚ` be a finite Galois extension and `F` a number field with an embedding `F → N`. A rational
+prime `p` splits completely in `F` exactly when the decomposition group in `Gal(N/ℚ)` of every
+prime of `𝓞 N` above `p` fixes the image of `F` pointwise.
+
+This is `Ideal.ncard_primesOver_eq_finrank_iff_forall_stabilizer_le` for the image of `F`, an
+intermediate field of `N / ℚ`, read with base ring `ℤ` and transported back to `F`. -/
+theorem ncard_primesOver_span_eq_finrank_iff_forall_stabilizer_le {F N : Type*} [Field F]
+    [NumberField F] [Field N] [NumberField N] [Algebra F N] [IsGalois ℚ N] (p : ℕ)
+    [Fact p.Prime] :
+    ((span {(p : ℤ)}).primesOver (𝓞 F)).ncard = finrank ℚ F ↔
+      ∀ Q ∈ (span {(p : ℤ)}).primesOver (𝓞 N),
+        MulAction.stabilizer (N ≃ₐ[ℚ] N) Q ≤
+          (IsScalarTower.toAlgHom ℚ F N).fieldRange.fixingSubgroup := by
+  set f := IsScalarTower.toAlgHom ℚ F N
+  have : (span {(p : ℤ)}).IsMaximal := Int.ideal_span_isMaximal_of_prime p
+  obtain ⟨Q₀, hQ₀⟩ : ((span {(p : ℤ)}).primesOver (𝓞 N)).Nonempty :=
+    Set.nonempty_coe_sort.mp inferInstance
+  have := hQ₀.1
+  have := hQ₀.2
+  have hE := ncard_primesOver_eq_finrank_iff_forall_stabilizer_le (Q₀.under (𝓞 ℚ)) f.fieldRange
+  rw [primesOver_under_ringOfIntegers_rat_eq (p := span {(p : ℤ)}) Q₀,
+    primesOver_under_ringOfIntegers_rat_eq (p := span {(p : ℤ)}) Q₀] at hE
+  rw [f.equivFieldRange.toLinearEquiv.finrank_eq, ← ncard_primesOver_congr
+    (NumberField.RingOfIntegers.mapRingEquiv f.equivFieldRange.toRingEquiv).toIntAlgEquiv, hE]
 
 /-! ### Unramifiedness -/
 

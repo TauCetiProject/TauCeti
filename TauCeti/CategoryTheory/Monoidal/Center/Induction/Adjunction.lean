@@ -41,7 +41,9 @@ pivotal structure.
   `Center.forget C ⊣ Center.induction k C`, with unit and counit characterized by
   `CategoryTheory.Center.forgetInductionAdjunction_unit_app_f_comp_endπ`,
   `CategoryTheory.Center.forgetInductionAdjunction_unit_app_f_comp_π`, and
-  `CategoryTheory.Center.forgetInductionAdjunction_counit_app`.
+  `CategoryTheory.Center.forgetInductionAdjunction_counit_app`;
+* `CategoryTheory.Center.induction_hom_ext`: morphisms of the centre into an induced object are
+  determined by their projection onto the summand of the class of the unit.
 
 ## References
 
@@ -449,6 +451,34 @@ theorem forgetInductionAdjunction_counit_app (X : C) :
         X ◁ (rightDualUnitIso C).hom ≫
         (ρ_ X).hom :=
   (rfl)
+
+variable {C} [Simple (𝟙_ C)] in
+/-- Morphisms of the centre into an induced object agree once their underlying morphisms agree
+after the projection onto the summand of the class of the unit. This is the uniqueness half of
+the right adjunction `forgetInductionAdjunction`, whose counit factors through that projection. -/
+theorem induction_hom_ext {W : Center C} {X : C} {f g : W ⟶ (induction k C).obj X}
+    (h : f.f ≫ biproduct.π (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) =
+      g.f ≫ biproduct.π (inductionSummand X) (SimpleClasses.classOf (𝟙_ C))) : f = g := by
+  -- The end projection at the unit factors through the projection onto the unit summand.
+  obtain ⟨r, hr⟩ : ∃ r, inductionEndπ X (𝟙_ C) =
+      biproduct.π (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) ≫ r := by
+    have hd := inductionEndπ_dinatural k X (SimpleClasses.classOfReprIso (𝟙_ C)).inv
+    rw [inductionEndπ_repr k] at hd
+    have e : inductionEndπ X (𝟙_ C) = (inductionEndπ X (𝟙_ C) ≫
+        (SimpleClasses.classOfReprIso (𝟙_ C)).inv ▷ _) ≫
+          (SimpleClasses.classOfReprIso (𝟙_ C)).hom ▷ _ := by
+      rw [Category.assoc, ← comp_whiskerRight, Iso.inv_hom_id, id_whiskerRight, Category.comp_id]
+    rw [hd, Category.assoc] at e
+    exact ⟨_, e⟩
+  -- The objects of `f.f` are projections out of `Center C`, so `rw`, `simp` and `reassoc_of%`
+  -- cannot reassociate composites starting with `f.f`: the abstracted motive is not type correct.
+  -- The reassociations below are therefore explicit `Category.assoc` terms.
+  have key : f.f ≫ inductionEndπ X (𝟙_ C) = g.f ≫ inductionEndπ X (𝟙_ C) := by
+    rw [hr]
+    exact (Category.assoc _ _ _).symm.trans ((h =≫ r).trans (Category.assoc _ _ _))
+  apply ((forgetInductionAdjunction k C).homEquiv W X).symm.injective
+  simp only [Adjunction.homEquiv_counit, forgetInductionAdjunction_counit_app k, forget_map]
+  exact (Category.assoc _ _ _).symm.trans ((key =≫ _).trans (Category.assoc _ _ _))
 
 end Fusion
 

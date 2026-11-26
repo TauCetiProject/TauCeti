@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.OfAssociative
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Representation
 
 /-!
@@ -48,6 +49,10 @@ Write `open scoped CliffordAlgebra` to use them.
 * `CliffordAlgebra.kostantLieModuleIsFaithful`: the action is faithful, because the adjoint
   representation of a Killing-semisimple Lie algebra is
   (`CliffordAlgebra.adjointCliffordHom_injective`, proved alongside the lift itself).
+* `CliffordAlgebra.representation_kostant_apply`: the enveloping algebra `U(L)` acts by left
+  multiplication by its image under the algebra homomorphism `U(L) → Cl(L, κ)`.
+* `CliffordAlgebra.ker_lift_adjointCliffordHom_eq_ker_representation_kostant`: the kernel of
+  `U(L) → Cl(L, κ)` is the annihilator of Kostant's module.
 
 The carrier is a finite module over `K`, which is what makes the statement that its simple
 submodules are all isomorphic a statement about something; nothing here needs that, so the instance
@@ -150,6 +155,35 @@ theorem mem_kostantLieSubmoduleOfLeftIdeal
     {c : CliffordAlgebra (killingQuadraticForm K L)} :
     c ∈ kostantLieSubmoduleOfLeftIdeal I ↔ c ∈ I :=
   Iff.rfl
+
+open TauCeti.UniversalEnvelopingAlgebra (representation) in
+/-- **The enveloping algebra acts on Kostant's module by left multiplication** by its image in the
+Clifford algebra. -/
+@[simp]
+theorem representation_kostant_apply (u : _root_.UniversalEnvelopingAlgebra K L)
+    (c : CliffordAlgebra (killingQuadraticForm K L)) :
+    representation K L (CliffordAlgebra (killingQuadraticForm K L)) u c =
+      _root_.UniversalEnvelopingAlgebra.lift K (adjointCliffordHom K L) u * c := by
+  have h : representation K L (CliffordAlgebra (killingQuadraticForm K L)) =
+      (Algebra.lmul K _).comp
+        (_root_.UniversalEnvelopingAlgebra.lift K (adjointCliffordHom K L)) := by
+    apply _root_.UniversalEnvelopingAlgebra.hom_ext
+    ext x c
+    simp [kostant_lie_def]
+  rw [h, AlgHom.comp_apply, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
+
+open TauCeti.UniversalEnvelopingAlgebra (representation) in
+/-- **The kernel of `U(L) → Cl(L, κ)` is the annihilator of Kostant's module.** -/
+theorem ker_lift_adjointCliffordHom_eq_ker_representation_kostant :
+    RingHom.ker (_root_.UniversalEnvelopingAlgebra.lift K (adjointCliffordHom K L)) =
+      RingHom.ker (representation K L (CliffordAlgebra (killingQuadraticForm K L))) := by
+  ext u
+  simp only [RingHom.mem_ker]
+  refine ⟨fun hu ↦ LinearMap.ext fun c ↦ by rw [representation_kostant_apply, hu, zero_mul,
+    LinearMap.zero_apply], fun hu ↦ ?_⟩
+  -- Acting on `1` recovers the image of `u`.
+  rw [← mul_one (_root_.UniversalEnvelopingAlgebra.lift K (adjointCliffordHom K L) u),
+    ← representation_kostant_apply, hu, LinearMap.zero_apply]
 
 variable (K L)
 

@@ -30,6 +30,8 @@ makes the homotopy groups of a Kan complex well defined.
   (`SSet.PtSimplex.Homotopy.relStruct₀`): restricting the homotopy to the `n + 1` nondegenerate
   `(n + 1)`-simplices `SSet.prodStdSimplex₁.ι i` of the prism `Δ[n] ⊗ Δ[1]` gives a chain of
   `RelStruct`s from `q` to `p`.
+* A morphism `Δ[n + 1] ⟶ X` all of whose faces are constant at `x` is a pointed simplex
+  (`SSet.PtSimplex.ofδ`).
 * In any simplicial set and for `n = 0`, a homotopy from `p` to `q` restricts to an edge from `p`
   to `q`, that is, a `RelStruct₀ q p` (`SSet.PtSimplex.Homotopy.relStruct₀Zero`).
 * Products in the sense of `MulStruct` are well defined up to `RelStruct₀`
@@ -218,6 +220,15 @@ def postcomp {p q pq : X.PtSimplex n x} {i : Fin n} (h : MulStruct p q pq i) (f 
   δ_map_of_gt j hj := by simp [h.δ_map_of_gt_assoc j hj, hy]
 
 end MulStruct
+
+/-- A morphism `Δ[n + 1] ⟶ X` all of whose faces are constant at `x`, as a pointed simplex. -/
+def ofδ (f : Δ[n + 1] ⟶ X) (hf : ∀ j, stdSimplex.δ j ≫ f = const x) : X.PtSimplex (n + 1) x where
+  map := f
+  comm := boundary.hom_ext fun j ↦ by simp [hf]
+
+@[simp]
+lemma ofδ_map (f : Δ[n + 1] ⟶ X) (hf : ∀ j, stdSimplex.δ j ≫ f = const x) : (ofδ f hf).map = f :=
+  (rfl)
 
 /-- Given `p` and `q` in `X.PtSimplex n x`, this is the type of homotopies `Δ[n] ⊗ Δ[1] ⟶ X`
 from `p` to `q` relative to the boundary `∂Δ[n]`. -/
