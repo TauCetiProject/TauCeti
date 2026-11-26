@@ -52,7 +52,7 @@ theorem not_unipotent_specialLinear {n : ℕ} (hn : 2 ≤ n) :
   let g := (SpecialLinear.pointsMulEquiv (R := k) (A := k) n).symm t
   have hfix := basePointsRepresentation_eq_of_coact_eq_tmul_one (R := k)
     (H := SpecialLinear.coordinateHopfAlgebra k n) (Pi.single j 1 : Fin n → k)
-    (mem_fixedSubcomodule.mp (htop ▸ Subcomodule.mem_top _)) g
+    (fixedSubcomodule_eq_top_iff.mp htop _) g
   rw [SpecialLinear.basePointsRepresentation_eq_mulVec] at hfix
   simpa [g, t, Matrix.SpecialLinearGroup.transvection_coe, Matrix.add_mulVec, hij] using
     congrFun hfix i
