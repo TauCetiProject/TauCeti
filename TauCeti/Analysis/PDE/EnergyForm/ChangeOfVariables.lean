@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Ellipticity.ConormalShear
 public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
@@ -92,6 +93,11 @@ formulation transfers (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`).
 * `TauCeti.PDE.matrixBilinearForm_pullbackPrincipal_eq_bilinearComp`: the bilinear form of the
   transformed principal coefficient, written with a left inverse `T` of `DΦ`, and
   `TauCeti.PDE.pullbackPrincipal_apply_apply_of_comp_eq_id`: its entries in the same terms.
+* `TauCeti.PDE.matrixBilinearForm_pullbackPrincipal_of_fderiv_eq_transvectionL`: the same when
+  `DΦ(x)` is a transvection `y ↦ y + ⟪ν, y⟫ s` with `⟪ν, s⟫ = 0`.
+* `TauCeti.PDE.matrixBilinearForm_pullbackPrincipal_reflection_of_fderiv_eq`: a constant
+  symmetric matrix pulled back by a map whose derivative is the conormal shear
+  (`TauCeti.PDE.conormalShearVector`) is invariant under the reflection in `ν⊥`.
 * `TauCeti.PDE.holderOnWith_matrixBilinearForm_pullbackPrincipal`: Hölder principal
   coefficients stay Hölder, with the same exponent and an explicit constant; in particular
   Lipschitz ones stay Lipschitz.
@@ -290,6 +296,19 @@ theorem matrixBilinearForm_pullbackPrincipal_eq_bilinearComp
   rw [matrixBilinearForm_pullbackPrincipal a hdet]
   simp
 
+/-- **The transformed principal coefficient along a shear.** If `DΦ(x)` is the transvection
+`y ↦ y + ⟪ν, y⟫ s` with `⟪ν, s⟫ = 0`, the bilinear form of `a'(x)` is that of `a(Φ x)` read
+through `y ↦ y - ⟪s, y⟫ ν`, the adjoint of the inverse shear. -/
+theorem matrixBilinearForm_pullbackPrincipal_of_fderiv_eq_transvectionL
+    {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    {x ν s : EuclideanSpace ℝ ι} (hs : ⟪ν, s⟫_ℝ = 0) (hΦ : fderiv ℝ Φ x = transvectionL ν s) :
+    matrixBilinearForm (pullbackPrincipal Φ a x) =
+      (matrixBilinearForm (a (Φ x))).bilinearComp (transvectionL (-s) ν)
+        (transvectionL (-s) ν) := by
+  rw [matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a (T := transvectionL ν (-s))
+      (by rw [hΦ, transvectionL_neg_comp_transvectionL hs]),
+    hΦ, det_transvectionL, hs, add_zero, abs_one, one_smul, adjoint_transvectionL]
+
 /-- **Entries of the transformed principal coefficient through a left inverse of `DΦ`.** If `T`
 is a left inverse of `DΦ(x)`, the entry `(i, j)` of `a'(x)` is
 `|det DΦ(x)| ∑ₖₗ (T eₖ)ᵢ aₖₗ(Φ x) (T eₗ)ⱼ`. -/
@@ -332,6 +351,23 @@ theorem pullbackDrift_eq_smul_apply {Φ : EuclideanSpace ℝ ι → EuclideanSpa
   rw [pullbackDrift_apply]
   conv_rhs => rw [← fderiv_apply_toEuclideanCLM_inv_apply hdet (b (Φ x)),
     ← ContinuousLinearMap.comp_apply, hT, ContinuousLinearMap.id_apply]
+
+/-- **The pulled-back matrix is invariant under the reflection.** For symmetric `A` with
+`⟪ν, A ν⟫ ≠ 0` and a map `Φ` whose derivative at `x` is the shear `y ↦ y + ⟪ν, y⟫ s`, `s` the
+conormal shear vector, the form of the constant matrix `A` pulled back by `Φ` at `x`
+(`TauCeti.PDE.pullbackPrincipal`) is invariant under the reflection in `ν⊥`: in the sheared
+coordinates the conormal direction of `A` is the normal `ν`. -/
+theorem matrixBilinearForm_pullbackPrincipal_reflection_of_fderiv_eq {A : Matrix ι ι ℝ}
+    {ν : EuclideanSpace ℝ ι} (hν : ν ≠ 0) (hq : matrixBilinearForm A ν ν ≠ 0)
+    (hAs : ∀ η ξ : EuclideanSpace ℝ ι, matrixBilinearForm A η ξ = matrixBilinearForm A ξ η)
+    {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {x : EuclideanSpace ℝ ι}
+    (hΦ : fderiv ℝ Φ x = transvectionL ν (conormalShearVector A ν)) (ξ η : EuclideanSpace ℝ ι) :
+    matrixBilinearForm (pullbackPrincipal Φ (fun _ => A) x)
+        ((ℝ ∙ ν)ᗮ.reflection ξ) ((ℝ ∙ ν)ᗮ.reflection η) =
+      matrixBilinearForm (pullbackPrincipal Φ (fun _ => A) x) ξ η := by
+  rw [matrixBilinearForm_pullbackPrincipal_of_fderiv_eq_transvectionL (fun _ => A)
+      (inner_conormalShearVector_right_eq_zero hν hq) hΦ, transvectionL_neg_left]
+  exact matrixBilinearForm_transvectionL_conormalShearVector_reflection hν hq hAs ξ η
 
 end Coefficients
 
