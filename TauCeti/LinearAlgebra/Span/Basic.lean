@@ -29,9 +29,10 @@ well-founded order, where each `z j` is `x j` plus a combination of the earlier 
 the spans of initial segments and of the whole family. A ring homomorphism carries a span over
 `A` into a span over `B` as soon as it carries the generators into the target span and the
 scalars in `A` to scalars in `B`. Over a scalar extension, the image span of a semilinear map is
-spanned by its values on any spanning family of the domain. The span of any countable set admits
-a spanning sequence indexed by `ℕ` (`Set.Countable.exists_span_range_eq_top`). If `r ↦ r • x` is
-injective, then `r ↦ r • x` identifies `R` with the line `R ∙ x`
+spanned by its values on any spanning family of the domain. A property closed under `u + a • v`
+extends from a submodule `S` and a vector `x` to `S ⊔ (R ∙ x)`. The span of any countable set
+admits a spanning sequence indexed by `ℕ` (`Set.Countable.exists_span_range_eq_top`). If
+`r ↦ r • x` is injective, then `r ↦ r • x` identifies `R` with the line `R ∙ x`
 (`LinearEquiv.toSpanSingletonOfInjective`); for instance a non-zero-divisor `x` of a commutative
 ring identifies the ring with the principal ideal it generates.
 -/
@@ -63,6 +64,16 @@ theorem span_insert_erase_eq_span_of_isUnit [DecidableEq M] {s : Finset M} {i x 
 end TauCeti.Submodule
 
 namespace Submodule
+
+/-- A property `P` closed under `u + a • v` holds on `S ⊔ (R ∙ x)` when it holds on `S` and at
+`x`. -/
+theorem forall_mem_sup_span_singleton {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {S : Submodule R M} {x : M} {P : M → Prop} (hS : ∀ s ∈ S, P s) (hx : P x)
+    (hlin : ∀ u v (a : R), P u → P v → P (u + a • v)) : ∀ s ∈ S ⊔ (R ∙ x), P s := by
+  intro _ hw
+  obtain ⟨s, hs, _, ht, rfl⟩ := Submodule.mem_sup.mp hw
+  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp ht
+  exact hlin s x a (hS s hs) hx
 
 /-- A vector outside the line `R ∙ v` is not cancelled by adding any multiple of `v`. -/
 theorem add_smul_ne_zero_of_notMem_span_singleton {R M : Type*} [Ring R] [AddCommGroup M]
