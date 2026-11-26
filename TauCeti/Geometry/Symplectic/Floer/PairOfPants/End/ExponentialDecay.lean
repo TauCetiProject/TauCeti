@@ -135,7 +135,7 @@ theorem eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self {q : Pun
 /-- Read in the end chart at `(±s, t)`, the distance of the derivative of `u` from that of the
 stationary cylinder of `y` is the distance of the derivative of `u ∘ φ'_q` at `(s, ±t)` from that
 of the stationary cylinder of the orbit `t ↦ y(±t)` of `H'_q`. -/
-private theorem norm_fderiv_comp_endChart_sub_smulRight (q : Puncture) (u : ℝ × ℝ → V)
+theorem norm_fderiv_comp_endChart_sub_smulRight (q : Puncture) (u : ℝ × ℝ → V)
     (y : ℝ → V) (s t : ℝ) :
     ‖fderiv ℝ (u ∘ endChart q) (q.endSign * s, t) -
         (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H q t) (y t))‖ =

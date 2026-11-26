@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.Algebra.Algebra.Bilinear
+public import TauCeti.LinearAlgebra.FiniteDimensional.ScalarTower
 
 /-!
 # The characteristic polynomial on an invariant submodule and its quotient
@@ -31,6 +33,11 @@ in every characteristic.
 * `LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ`: the characteristic polynomial of
   `f` is the product of those of its restriction to `W` and of the endomorphism it induces on
   `V ⧸ W`.
+
+* `Submodule.charpoly_lsmul_eq_mul_quotient`: for an algebra `A` over a field `k` and an
+  `A`-submodule `P` of a finite-dimensional `A`-module `M`, the characteristic polynomial of
+  `a : A` on `M` is the product of those on `P` and on `M ⧸ P`.
+
 ## References
 
 * A. W. Knapp, *Lie Groups Beyond an Introduction*, first edition (1996), Chapter I, §5,
@@ -110,3 +117,33 @@ theorem charpoly_dvd_of_injective_of_comp_eq_comp (f : V →ₗ[K] V) (g : U →
   rw [charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W g hW, ← he, e.charpoly_conj]
 
 end LinearMap
+
+namespace Submodule
+
+variable {k A M : Type*} [Field k] [Ring A] [Algebra k A] [AddCommGroup M] [Module A M]
+  [Module k M] [IsScalarTower k A M] [FiniteDimensional k M]
+
+/-- The characteristic polynomial of `a` on `M` is the product of those on an `A`-submodule `P`
+and on `M ⧸ P`. -/
+theorem charpoly_lsmul_eq_mul_quotient (P : Submodule A M) (a : A) :
+    (Algebra.lsmul k k M a).charpoly =
+      (Algebra.lsmul k k P a).charpoly * (Algebra.lsmul k k (M ⧸ P) a).charpoly := by
+  let W := P.restrictScalars k
+  have hW : W ≤ W.comap (Algebra.lsmul k k M a) := fun x hx ↦ by
+    simpa [W] using P.smul_mem a hx
+  let eW := (P.restrictScalarsEquiv k A M).restrictScalars k
+  let eQ := Submodule.Quotient.restrictScalarsEquiv k P
+  -- `Submodule.restrictScalarsEquiv` is the identity on elements, and Mathlib's
+  -- `Submodule.restrictScalarsEquiv_apply` is stated through this same definitional equality,
+  -- so `simp` cannot use it here: both sides send `x` to `a • x`.
+  have hP : eW.conj ((Algebra.lsmul k k M a).restrict hW) = Algebra.lsmul k k P a :=
+    LinearMap.ext fun _ ↦ rfl
+  have hQ : eQ.conj (W.mapQ W _ hW) = Algebra.lsmul k k (M ⧸ P) a := by
+    refine LinearMap.ext fun x ↦ ?_
+    obtain ⟨x, rfl⟩ := P.mkQ_surjective x
+    simp [eQ, LinearEquiv.conj_apply, Submodule.Quotient.restrictScalarsEquiv_symm_mk,
+      Submodule.Quotient.restrictScalarsEquiv_mk, Submodule.mapQ_apply]
+  rw [LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W _ hW, ← hP, ← hQ,
+    LinearEquiv.charpoly_conj, LinearEquiv.charpoly_conj]
+
+end Submodule
