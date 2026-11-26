@@ -12,9 +12,9 @@ public import TauCeti.RingTheory.DominantDimension
 public import TauCeti.RingTheory.GlobalDimension
 
 import Mathlib.RingTheory.HopkinsLevitzki
+import TauCeti.Algebra.Category.FGModuleCat.End
 import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
 import TauCeti.Algebra.Category.ModuleCat.Algebra
-import TauCeti.CategoryTheory.Functor.RingEquivEnd
 import TauCeti.CategoryTheory.Preadditive.Projectivization.GlobalDimension
 import TauCeti.RingTheory.GlobalDimension.AdditiveGenerator
 import TauCeti.RingTheory.GlobalDimension.MulOpposite
@@ -123,34 +123,28 @@ theorem IsGeneratorCogenerator.isAdditiveGenerator_of_globalDimension_le_two (R 
     (hgl : globalDimension.{w} (Module.End B Q.obj) ≤ 2) : IsAdditiveGenerator Q := by
   have := IsArtinianRing.of_finite R B
   have : IsNoetherianRing B := isNoetherian_of_tower R inferInstance
-  -- `End Q` is Noetherian on both sides, being finite over `R`.
+  -- `End Q` is finite over `R`, so `(End Q)ᵐᵒᵖ` is Noetherian.
   have : Module.Finite R (End Q) := Module.Finite.equiv End.linearEquiv.symm
   have : Module.Finite R (End Q)ᵐᵒᵖ := Module.Finite.equiv (MulOpposite.opLinearEquiv R)
-  have : IsNoetherianRing (End Q) := isNoetherian_of_tower R inferInstance
   have : IsNoetherianRing (End Q)ᵐᵒᵖ := isNoetherian_of_tower R inferInstance
-  let e : End Q ≃+* Module.End B Q.obj :=
-    ((ObjectProperty.fullyFaithfulι (ModuleCat.isFG B)).ringEquivEnd Q).trans
-      (ModuleCat.endRingEquiv Q.obj)
   refine hQ.isSeparator.isAdditiveGenerator_of_globalDimension_le_two ?_ fun X ↦ ?_
-  · rwa [globalDimension_mulOpposite, e.globalDimension_eq]
+  · rwa [globalDimension_mulOpposite_of_moduleFinite R (End Q),
+      (FGModuleCat.endRingEquiv Q).globalDimension_eq]
   · obtain ⟨n, i, hi⟩ := hQ.isCoseparator.exists_mono_biproduct X
     exact ⟨_, i, additiveClosure_biproduct n, hi⟩
 
 open scoped ModuleCat.Algebra in
 /-- **The Auslander correspondence, converse.** An Auslander algebra `Γ` that is an Artin algebra
 is isomorphic, as an `R`-algebra, to the endomorphism algebra of an additive generator `M` of
-`mod B` for some Artin `R`-algebra `B`, which is then representation-finite. The base ring `R` may
-live in any universe. By the converse of the Morita-Tachikawa correspondence
-(`TauCeti.exists_algEquiv_end_of_two_le_dominantDimension`), `Γ ≅ Module.End B M` for a
-generator-cogenerator `M` of `mod B`, and `M` is an additive generator since `Module.End B M` has
-global dimension at most two
-(`TauCeti.IsGeneratorCogenerator.isAdditiveGenerator_of_globalDimension_le_two`). Dominant dimension
-alone does not suffice: `k[ε]/(ε²)` has infinite dominant dimension and infinite global
+`mod B` for some Artin `R`-algebra `B`. The base ring `R` may live in any universe. Dominant
+dimension alone does not suffice: `k[ε]/(ε²)` has infinite dominant dimension and infinite global
 dimension. -/
 theorem exists_isAdditiveGenerator_algEquiv_end (R : Type*) [CommRing R] [IsArtinianRing R]
     (Γ : Type u) [Ring Γ] [Algebra R Γ] [Module.Finite R Γ] (hΓ : IsAuslanderAlgebra Γ) :
     ∃ (B : Type u) (_ : Ring B) (_ : Algebra R B) (_ : Module.Finite R B) (M : FGModuleCat.{u} B),
       IsAdditiveGenerator M ∧ Nonempty (Γ ≃ₐ[R] Module.End B M.obj) := by
+  -- Morita-Tachikawa writes `Γ ≅ Module.End B M` for a generator-cogenerator `M`, which is an
+  -- additive generator since `Module.End B M` has global dimension at most two.
   obtain ⟨B, _, _, _, M, hM, ⟨e⟩⟩ := exists_algEquiv_end_of_two_le_dominantDimension R Γ hΓ.2
   refine ⟨B, inferInstance, inferInstance, inferInstance, M,
     hM.isAdditiveGenerator_of_globalDimension_le_two R ?_, ⟨e⟩⟩

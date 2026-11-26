@@ -61,13 +61,14 @@ namespace TauCeti
 
 /-- Let `M` be an object of an abelian category whose endomorphism ring has right global dimension
 at most two, and let `d : Q₀ ⟶ Q₁` be a morphism in `add M`. Then `Hom(M, ker d)` is a projective
-right `End M`-module. Indeed `Hom(M, -)` is left exact, so `Hom(M, ker d)` is the kernel of the map
-`Hom(M, d)` between the projective modules `Hom(M, Q₀)` and `Hom(M, Q₁)`: a second syzygy of its
-cokernel, which has projective dimension at most two. -/
+right `End M`-module. -/
 theorem projective_preadditiveCoyonedaObj_obj_kernel
     (hgl : globalDimension.{v} (End M)ᵐᵒᵖ ≤ 2) {Q₀ Q₁ : C} (h₀ : additiveClosure M Q₀)
     (h₁ : additiveClosure M Q₁) (d : Q₀ ⟶ Q₁) :
     Projective ((preadditiveCoyonedaObj M).obj (kernel d)) := by
+  -- `Hom(M, -)` is left exact, so `Hom(M, ker d)` is the kernel of `Hom(M, d)` between the
+  -- projectives `Hom(M, Q₀)` and `Hom(M, Q₁)`: a second syzygy of a module of projective dimension
+  -- at most two.
   have := (finiteProjectiveModules_iff.1 (finiteProjectiveModules_preadditiveCoyonedaObj_obj h₀)).2
   have := (finiteProjectiveModules_iff.1 (finiteProjectiveModules_preadditiveCoyonedaObj_obj h₁)).2
   have hC := (globalDimension_le_iff_hasProjectiveDimensionLE _ 2).1 hgl
@@ -84,13 +85,12 @@ open TauCeti
 
 /-- Let `M` be a separator of an abelian category whose endomorphism ring is right Noetherian of
 right global dimension at most two. Then the kernel of every morphism `d : Q₀ ⟶ Q₁` in `add M` lies
-in `add M`. By projectivization, the finitely generated projective right `End M`-module
-`Hom(M, ker d)` is `Hom(M, Q')` for some `Q'` in `add M`, and the isomorphism is composition with
-some `h : Q' ⟶ ker d`. As `M` is a separator, `Hom(M, -)` is faithful, so it reflects isomorphisms
-in the balanced category `C`, and `h` is an isomorphism. -/
+in `add M`. -/
 theorem IsSeparator.additiveClosure_kernel [IsNoetherianRing (End M)ᵐᵒᵖ] (hM : IsSeparator M)
     (hgl : globalDimension.{v} (End M)ᵐᵒᵖ ≤ 2) {Q₀ Q₁ : C} (h₀ : additiveClosure M Q₀)
     (h₁ : additiveClosure M Q₁) (d : Q₀ ⟶ Q₁) : additiveClosure M (kernel d) := by
+  -- By projectivization `Hom(M, ker d) ≅ Hom(M, Q')` with `Q' ∈ add M`, induced by some
+  -- `h : Q' ⟶ ker d`; `Hom(M, -)` is faithful and `C` is balanced, so `h` is an isomorphism.
   let F := preadditiveCoyonedaObj M
   have hP := projective_preadditiveCoyonedaObj_obj_kernel hgl h₀ h₁ d
   -- `Hom(M, ker d)` is a submodule of the finitely generated module `Hom(M, Q₀)`.
@@ -107,14 +107,13 @@ theorem IsSeparator.additiveClosure_kernel [IsNoetherianRing (End M)ᵐᵒᵖ] (
 
 /-- **Additive generators from global dimension at most two.** Let `M` be a separator of an abelian
 category whose endomorphism ring is right Noetherian of right global dimension at most two. If every
-object embeds into an object of `add M`, then `M` is an additive generator. Indeed every object `X`
-has a copresentation `0 ⟶ X ⟶ Q₀ ⟶ Q₁` with `Q₀`, `Q₁` in `add M`, so it is a kernel of a morphism
-in `add M` (`CategoryTheory.IsSeparator.additiveClosure_kernel`). -/
+object embeds into an object of `add M`, then `M` is an additive generator. -/
 theorem IsSeparator.isAdditiveGenerator_of_globalDimension_le_two
     [IsNoetherianRing (End M)ᵐᵒᵖ] (hM : IsSeparator M)
     (hgl : globalDimension.{v} (End M)ᵐᵒᵖ ≤ 2)
     (hmono : ∀ X : C, ∃ (Y : C) (i : X ⟶ Y), additiveClosure M Y ∧ Mono i) :
     IsAdditiveGenerator M := by
+  -- Every `X` has a copresentation `0 ⟶ X ⟶ Q₀ ⟶ Q₁` in `add M`, so it is a kernel in `add M`.
   refine isAdditiveGenerator_def.2 fun X ↦ ?_
   obtain ⟨Q₀, i, h₀, _⟩ := hmono X
   obtain ⟨Q₁, j, h₁, _⟩ := hmono (cokernel i)
