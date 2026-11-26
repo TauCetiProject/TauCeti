@@ -235,16 +235,10 @@ theorem shriek_apply_self (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ T) (e : R ⟶ M)
     (zY : ((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj T).obj Y)
     (hzY : Function.Bijective (Y.singularCapAddHom k u μ hY zY)) :
     shriek k u μ f hX hY zX zY hzY zY = zX := by
-  -- Capping with the constant unit cocycle is the identity.
-  have hcap : ∀ {Z : TopCat.{w}} {l : ℕ} (hZ : 0 + l = l)
-      (z : ((singularHomologyFunctor (ModuleCat.{w} R₀) l).obj T).obj Z),
-      Z.singularCapAddHom k u μ hZ z
-        ((Z.singularCochainComplex R k M).homologyπ 0 (Z.constSingularCocycle k e)) = z := by
-    intro Z l hZ z
-    rw [singularCapAddHom_apply, TauCeti.singularCap_constSingularCocycle, he]
-    simp
-  refine (congrArg (shriek k u μ f hX hY zX zY hzY) (hcap hY zY)).symm.trans ?_
-  rw [shriek_singularCapAddHom, singularCohomologyMap_homologyπ_constSingularCocycle, hcap]
+  refine (congrArg (shriek k u μ f hX hY zX zY hzY)
+    (singularCapAddHom_constSingularCocycle_of_comp_eq_id k he hY zY)).symm.trans ?_
+  rw [shriek_singularCapAddHom, singularCohomologyMap_homologyπ_constSingularCocycle,
+    singularCapAddHom_constSingularCocycle_of_comp_eq_id k he]
 
 /-- **The shriek map in degree zero**: for classes `z_X`, `z_Y` of the same degree `n` with
 `f_* z_X = d • z_Y`, the augmentation of `f_!(y)` is `d` times that of `y`, for every

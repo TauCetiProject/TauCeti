@@ -21,7 +21,7 @@ computation `TauCeti.degree_zpow_id_circle`. Its shriek map
 `f_! = D ∘ f^* ∘ D⁻¹ : H_q(S¹; L) → H_q(S¹; L)` (`TauCeti.HomologicalOrientation.shriek`)
 therefore satisfies:
 
-* `f_* ∘ f_! = k • id` on `H_q(S¹; L)` in every degree
+* `f_* ∘ f_! = k • id` on `H_q(S¹; L)` in degrees `0` and `1`
   (`TauCeti.map_shriek_zpow_circle`);
 * `f_!` sends the class `[y]` of a point to `k • [x]` for any point `x`
   (`TauCeti.shriek_zpow_circle_singularHomology₀Section`).
