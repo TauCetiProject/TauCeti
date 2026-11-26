@@ -43,6 +43,9 @@ An integral symplectic matrix `M = [[A, B], [C, D]]` acts on `H_g` by `Ω ↦ M 
   and `Ω ∈ H_g`, and its vector form `TauCeti.siegelFiberMap_mulVec_siegelPeriodMatrix_mulVec`.
 * `TauCeti.siegelFiberMap_mul_of_isUnit`: the cocycle law `R_{M N}(Ω) = R_M(N · Ω) R_N(Ω)` when
   `C_N Ω + D_N` is invertible, and `TauCeti.siegelFiberMap_mul` for symplectic `N` and `Ω ∈ H_g`.
+* `TauCeti.siegelFiberMap_mul_transpose_siegelFactor_of_isUnit` and
+  `TauCeti.transpose_siegelFactor_mul_siegelFiberMap_of_isUnit`: `R_M(Ω)` is the two-sided
+  inverse of `(C Ω + D)ᵀ` when `C Ω + D` is invertible.
 * `TauCeti.siegelLatticeMap_mul`: `ρ(M N) = ρ(M) ρ(N)`.
 * `TauCeti.siegelLatticeMap_mem_symplecticGroup`: `ρ(M)` is symplectic for symplectic `M`.
 
@@ -171,6 +174,40 @@ theorem isUnit_det_siegelFiberMap {M : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g
   rw [siegelFiberMap_def, det_transpose]
   exact isUnit_nonsing_inv_det _ (isUnit_det_siegelFactor hM hΩ)
 
+/-- When `j(M, Ω) = C Ω + D` is invertible, `R_M(Ω) = j(M, Ω)⁻ᵀ` is a left inverse of
+`j(M, Ω)ᵀ`. -/
+theorem siegelFiberMap_mul_transpose_siegelFactor_of_isUnit
+    {M : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ} {Ω : Matrix (Fin g) (Fin g) ℂ}
+    (hM : IsUnit (siegelFactor M Ω).det) : siegelFiberMap M Ω * (siegelFactor M Ω)ᵀ = 1 := by
+  rw [siegelFiberMap_def, ← transpose_mul, mul_nonsing_inv _ hM, transpose_one]
+
+/-- When `j(M, Ω) = C Ω + D` is invertible, `R_M(Ω) = j(M, Ω)⁻ᵀ` is a right inverse of
+`j(M, Ω)ᵀ`. -/
+theorem transpose_siegelFactor_mul_siegelFiberMap_of_isUnit
+    {M : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ} {Ω : Matrix (Fin g) (Fin g) ℂ}
+    (hM : IsUnit (siegelFactor M Ω).det) : (siegelFactor M Ω)ᵀ * siegelFiberMap M Ω = 1 := by
+  rw [siegelFiberMap_def, ← transpose_mul, nonsing_inv_mul _ hM, transpose_one]
+
+/-- For symplectic `M` and `Ω` in the Siegel space, `R_M(Ω) j(M, Ω)ᵀ = 1`. -/
+theorem siegelFiberMap_mul_transpose_siegelFactor {M : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ}
+    {Ω : Matrix (Fin g) (Fin g) ℂ} (hM : M ∈ symplecticGroup (Fin g) ℤ)
+    (hΩ : Ω ∈ SiegelUpperHalfSpace g) : siegelFiberMap M Ω * (siegelFactor M Ω)ᵀ = 1 :=
+  siegelFiberMap_mul_transpose_siegelFactor_of_isUnit (isUnit_det_siegelFactor hM hΩ)
+
+/-- For symplectic `M` and `Ω` in the Siegel space, `j(M, Ω)ᵀ R_M(Ω) = 1`. -/
+theorem transpose_siegelFactor_mul_siegelFiberMap {M : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ}
+    {Ω : Matrix (Fin g) (Fin g) ℂ} (hM : M ∈ symplecticGroup (Fin g) ℤ)
+    (hΩ : Ω ∈ SiegelUpperHalfSpace g) : (siegelFactor M Ω)ᵀ * siegelFiberMap M Ω = 1 :=
+  transpose_siegelFactor_mul_siegelFiberMap_of_isUnit (isUnit_det_siegelFactor hM hΩ)
+
+/-- For symplectic `M` and `Ω` in the Siegel space, the fibre map sends `(A Ω + B)ᵀ` to
+`(M · Ω)ᵀ = M · Ω`. -/
+theorem siegelFiberMap_mul_transpose_siegelNumerator
+    {M : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ} {Ω : Matrix (Fin g) (Fin g) ℂ}
+    (hM : M ∈ symplecticGroup (Fin g) ℤ) (hΩ : Ω ∈ SiegelUpperHalfSpace g) :
+    siegelFiberMap M Ω * (siegelNumerator M Ω)ᵀ = siegelAction M Ω := by
+  rw [← transpose_siegelAction hM hΩ, siegelAction_def, transpose_mul, siegelFiberMap_def]
+
 /-- **The period matrix times `Mᵀ`.** For a symmetric `Ω` and an integral block matrix
 `M = [[A, B], [C, D]]`, `[Ω 1] Mᵀ = [(A Ω + B)ᵀ (C Ω + D)ᵀ]`. -/
 theorem siegelPeriodMatrix_mul_transpose (M : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ)
@@ -189,12 +226,9 @@ theorem siegelFiberMap_mul_siegelPeriodMatrix_mul_transpose
     siegelFiberMap M Ω * siegelPeriodMatrix Ω * (M.map ((↑) : ℤ → ℂ))ᵀ =
       siegelPeriodMatrix (siegelAction M Ω) := by
   -- `R_M(Ω) = j(M, Ω)⁻ᵀ` cancels `j(M, Ω)ᵀ`, and turns `(A Ω + B)ᵀ` into `(M · Ω)ᵀ = M · Ω`.
-  have hfactor : (siegelFactor M Ω)⁻¹ᵀ * (siegelFactor M Ω)ᵀ = 1 := by
-    rw [← transpose_mul, mul_nonsing_inv _ (isUnit_det_siegelFactor hM hΩ), transpose_one]
-  have hnumerator : (siegelFactor M Ω)⁻¹ᵀ * (siegelNumerator M Ω)ᵀ = siegelAction M Ω := by
-    rw [← transpose_siegelAction hM hΩ, siegelAction_def, transpose_mul]
   rw [Matrix.mul_assoc, siegelPeriodMatrix_mul_transpose M (SiegelUpperHalfSpace.transpose_eq hΩ),
-    mul_fromCols, siegelFiberMap_def, hfactor, hnumerator, siegelPeriodMatrix_def]
+    mul_fromCols, siegelFiberMap_mul_transpose_siegelFactor hM hΩ,
+    siegelFiberMap_mul_transpose_siegelNumerator hM hΩ, siegelPeriodMatrix_def]
 
 /-- **Period equivariance**, matrix form: for symplectic `M` and `Ω` in the Siegel space,
 `R_M(Ω) Π_Ω = Π_{M · Ω} ρ(M)` with `ρ(M) = M⁻ᵀ`. -/
