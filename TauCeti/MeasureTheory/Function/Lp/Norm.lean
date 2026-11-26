@@ -36,7 +36,8 @@ bounds.
 
 * `MeasureTheory.Lp.normLp`: the pointwise norm `x ↦ ‖f x‖` bundled as an element of `Lp ℝ p μ`.
 * `MeasureTheory.Lp.norm_le_add_of_ae_norm_le`: an `Lᵖ` norm bound from pointwise domination by a
-  two-term linear combination.
+  two-term linear combination; `MeasureTheory.Lp.norm_le_add_add_of_ae_norm_le` is the three-term
+  form.
 * `MeasureTheory.Lp.ofReal_norm_add_mul_norm` and `MeasureTheory.memLp_of_eLpNorm_add_mul_ne_top`:
   the cost `‖g‖ + t ‖h‖` of a pair of `Lᵖ` functions in terms of `eLpNorm`, and a pair of
   functions of finite cost `‖f₀‖_{p₀} + t ‖f₁‖_{p₁}`, `t > 0`, lies in `L^{p₀} × L^{p₁}`.
@@ -256,6 +257,30 @@ namespace MeasureTheory
 open Filter
 open scoped ENNReal NNReal Topology
 
+/-- The norm of an `Lᵖ` function dominated pointwise by a three-term combination of three other
+`Lᵖ` functions obeys the same bound in norm. -/
+theorem Lp.norm_le_add_add_of_ae_norm_le {alpha E F G H : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedAddCommGroup H]
+    {m : Measure alpha} {q : ℝ≥0∞} [Fact (1 ≤ q)] {f : Lp E q m} {g : Lp F q m} {h : Lp G q m}
+    {k : Lp H q m} {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hc : 0 ≤ c)
+    (hle : ∀ᵐ z ∂m, ‖f z‖ ≤ a * ‖g z‖ + b * ‖h z‖ + c * ‖k z‖) :
+    ‖f‖ ≤ a * ‖g‖ + b * ‖h‖ + c * ‖k‖ := by
+  calc ‖f‖ ≤ ‖a • Lp.normLp g + b • Lp.normLp h + c • Lp.normLp k‖ := by
+        refine Lp.norm_le_norm_of_ae_le ?_
+        filter_upwards [hle, Lp.coeFn_normLp g, Lp.coeFn_normLp h, Lp.coeFn_normLp k,
+          Lp.coeFn_add (a • Lp.normLp g + b • Lp.normLp h) (c • Lp.normLp k),
+          Lp.coeFn_add (a • Lp.normLp g) (b • Lp.normLp h),
+          Lp.coeFn_smul a (Lp.normLp g), Lp.coeFn_smul b (Lp.normLp h),
+          Lp.coeFn_smul c (Lp.normLp k)]
+          with z hz hA hB hC hadd₁ hadd₂ hsA hsB hsC
+        simp only [hadd₁, Pi.add_apply, hadd₂, hsA, hsB, hsC, Pi.smul_apply, smul_eq_mul, hA, hB,
+          hC]
+        exact hz.trans (Real.le_norm_self _)
+    _ ≤ ‖a • Lp.normLp g‖ + ‖b • Lp.normLp h‖ + ‖c • Lp.normLp k‖ := norm_add₃_le
+    _ = a * ‖g‖ + b * ‖h‖ + c * ‖k‖ := by
+        simp only [norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb,
+          Real.norm_of_nonneg hc, Lp.norm_normLp]
+
 /-- The norm of an `Lᵖ` function dominated pointwise by a two-term combination of two other
 `Lᵖ` functions obeys the same bound in norm. -/
 theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alpha]
@@ -264,17 +289,8 @@ theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alph
     (ha : 0 ≤ a) (hb : 0 ≤ b)
     (hle : ∀ᵐ z ∂m, ‖f z‖ ≤ a * ‖g z‖ + b * ‖h z‖) :
     ‖f‖ ≤ a * ‖g‖ + b * ‖h‖ := by
-  calc ‖f‖ ≤ ‖a • Lp.normLp g + b • Lp.normLp h‖ := by
-        refine Lp.norm_le_norm_of_ae_le ?_
-        filter_upwards [hle, Lp.coeFn_normLp g, Lp.coeFn_normLp h,
-          Lp.coeFn_add (a • Lp.normLp g) (b • Lp.normLp h),
-          Lp.coeFn_smul a (Lp.normLp g), Lp.coeFn_smul b (Lp.normLp h)]
-          with z hz hA hB hadd hsA hsB
-        simp only [hadd, Pi.add_apply, hsA, hsB, Pi.smul_apply, smul_eq_mul, hA, hB]
-        exact hz.trans (Real.le_norm_self _)
-    _ ≤ ‖a • Lp.normLp g‖ + ‖b • Lp.normLp h‖ := norm_add_le _ _
-    _ = a * ‖g‖ + b * ‖h‖ := by
-        simp only [norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb, Lp.norm_normLp]
+  simpa using Lp.norm_le_add_add_of_ae_norm_le ha hb le_rfl (k := (0 : Lp ℝ q m))
+    (hle.mono fun z hz ↦ by simpa using hz)
 
 /-- The `Lᵖ` norm of a function depends only on its almost everywhere class. -/
 theorem lpNorm_congr_ae {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
