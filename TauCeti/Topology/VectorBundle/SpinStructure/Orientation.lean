@@ -65,6 +65,10 @@ From this equivariance three structural consequences follow:
 * `TauCeti.SpinStructure.orientation`: the bundle orientation induced by a Spin structure on a
   vector bundle.
 * `TauCeti.SpinStructure.toOrientedFrames`: the lifted frame map into positively oriented frames.
+* `TauCeti.SpinCStructure.fiberOrientation`: the fibre orientation induced by a `Spinᶜ` structure
+  and an orientation of `EuclideanSpace ℝ (Fin n)`; its frames all carry the model orientation to
+  it (`TauCeti.SpinCStructure.fiberOrientation_eq_map_frameAt`), because the rotations of
+  `Spinᶜ(n)` have determinant `1`.
 
 ## Main results
 
@@ -837,3 +841,64 @@ end ContinuousRiemannian
 end Orientation
 
 end TauCeti.SpinStructure
+
+/-! ### The fibre orientations of a `Spinᶜ` structure -/
+
+namespace TauCeti.SpinCStructure
+
+variable {X : Type*} [TopologicalSpace X] {F : Type*} {E : X → Type w}
+  [TopologicalSpace (TotalSpace F E)]
+  [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)] {n : ℕ} [NeZero n]
+
+/-- The **orientation of the fibre `E x` induced by a `Spinᶜ` structure** `s` and a model
+orientation `o` of `EuclideanSpace ℝ (Fin n)`: every frame `s.frameAt p`, `p ∈ s.P x`, transports
+`o` to this same orientation of `E x` (`TauCeti.SpinCStructure.fiberOrientation_eq_map_frameAt`). -/
+def fiberOrientation (s : SpinCStructure F E n)
+    (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (x : X) :
+    Orientation ℝ (E x) (Fin n) :=
+  Orientation.map (Fin n) (s.frameAt (Classical.arbitrary (s.P x))).toLinearEquiv o
+
+/-- The rotations of `Spinᶜ(n)` preserve orientations, so the frames `p` and `p • g` transport a
+model orientation to the same orientation of `E x`. -/
+private theorem map_frameAt_op_smul (s : SpinCStructure F E n)
+    (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) {x : X} (p : s.P x)
+    (g : spinCGroup (realCliffordForm n 0)
+      (QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm n 0))) :
+    Orientation.map (Fin n) (s.frameAt (op g • p)).toLinearEquiv o =
+      Orientation.map (Fin n) (s.frameAt p).toLinearEquiv o := by
+  -- In coordinates, the frame of `p • g` is the frame of `p` after the rotation `R` of `g`.
+  let e := WithLp.linearEquiv 2 ℝ (Fin n → ℝ)
+  let R : EuclideanSpace ℝ (Fin n) ≃ₗ[ℝ] EuclideanSpace ℝ (Fin n) :=
+    (e.trans ((spinCGroup.toSpecialOrthogonal (realCliffordForm n 0) _ g :
+      (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)))).trans e.symm
+  have hR : (s.frameAt (op g • p)).toLinearEquiv = R.trans (s.frameAt p).toLinearEquiv := by
+    ext v
+    simpa [R, e] using s.frameAt_smul p g v.ofLp
+  have hdet : LinearEquiv.det R = 1 := by
+    rw [show R = (e.symm.symm.trans _).trans e.symm from rfl, LinearEquiv.det_conj]
+    exact QuadraticMap.det_coe_specialOrthogonalGroup _
+  rw [hR, Orientation.map_trans, (o.map_eq_iff_det_pos R (by simp)).2]
+  rw [← LinearEquiv.coe_det, hdet, Units.val_one]
+  exact one_pos
+
+/-- Every frame `s.frameAt p` over `x` transports `o` to `s.fiberOrientation o x`. -/
+theorem fiberOrientation_eq_map_frameAt (s : SpinCStructure F E n)
+    (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) {x : X} (p : s.P x) :
+    s.fiberOrientation o x = Orientation.map (Fin n) (s.frameAt p).toLinearEquiv o := by
+  rw [fiberOrientation]
+  -- Compare the chosen frame `p₀` with `p = p₀ • g`.
+  generalize Classical.arbitrary (s.P x) = p₀
+  obtain ⟨g, hg⟩ : ∃ g, PrincipalBundle.division (spinCGroup (realCliffordForm n 0)
+      (QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm n 0))) p₀ p = g :=
+    ⟨_, rfl⟩
+  obtain rfl : op g • p₀ = p := hg ▸ PrincipalBundle.smul_division p₀ p
+  rw [map_frameAt_op_smul]
+
+/-- Reversing the model orientation reverses the induced orientation of every fibre. -/
+@[simp]
+theorem fiberOrientation_neg (s : SpinCStructure F E n)
+    (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (x : X) :
+    s.fiberOrientation (-o) x = -s.fiberOrientation o x := by
+  simp [fiberOrientation, Orientation.map_neg]
+
+end TauCeti.SpinCStructure
