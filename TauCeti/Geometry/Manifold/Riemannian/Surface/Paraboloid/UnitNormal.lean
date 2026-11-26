@@ -7,13 +7,15 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Surface.Paraboloid.SecondFundamentalForm
 public import TauCeti.Analysis.InnerProductSpace.Normalize
-import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # The upward unit normal of the paraboloid
 
 Normalize the Cartesian graph normal and show that the resulting field is a smooth unit
 normal at every point, including the vertex.
+
+Adapted from Yangyang Li's formalization in ColdingMinicozziTheory,
+[commit 234e55b3](https://github.com/riccardobrasca/ColdingMinicozziTheory/commit/234e55b3).
 -/
 
 public noncomputable section
