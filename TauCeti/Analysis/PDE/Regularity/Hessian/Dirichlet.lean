@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Morrey
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.RellichKondrachov
 public import TauCeti.Analysis.Sobolev.Wkp.Compactness
 public import TauCeti.Analysis.Sobolev.Wkp.Exponent
+import TauCeti.Analysis.PDE.Regularity.Hessian.CurvedBoundary.Regularity
 
 /-!
 # The `W^{2,p}` Dirichlet problem with continuous coefficients: estimate and uniqueness
@@ -36,18 +37,25 @@ a priori estimates of the Dirichlet problem `L u = f` in `Ω`, `u ∈ W^{2,p}(Ω
   (`TauCeti.eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero`). This needs neither the
   continuity of `A`, only its positive definiteness almost everywhere, nor more than a bounded
   Lipschitz domain. Some sign condition on `c` is needed: `sin x` on `(0, π)` solves `u'' + u = 0`.
-* **Gilbarg–Trudinger, Lemma 9.17.** For `b = 0`, `c ≤ 0` and `n ≤ p < ∞`, the uniqueness
+  With `A` continuous up to the boundary and elliptic there, and `c` bounded, uniqueness holds for
+  every `1 < p < ∞`
+  (`TauCeti.eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero_of_contDiff_graph`).
+* **Gilbarg–Trudinger, Lemma 9.17.** For `b = 0`, `c ≤ 0` and `1 < p < ∞`, the uniqueness
   removes the `Lᵖ` norm of `u`: `‖u‖_{W^{2,p}} ≤ C ‖L u‖`
   (`TauCeti.exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq`).
 
 ## The arguments
 
-For uniqueness, `u ∈ W^{2,p}(Ω) ⊆ W^{2,n}(Ω)` has a representative `ū` continuous on `closure Ω`,
-by Morrey's embedding on Lipschitz domains, which vanishes on `frontier Ω` since
+For uniqueness with `p ≥ n`, `u ∈ W^{2,p}(Ω) ⊆ W^{2,n}(Ω)` has a representative `ū` continuous
+on `closure Ω`, by Morrey's embedding on Lipschitz domains, which vanishes on `frontier Ω` since
 `u ∈ W^{1,p}_0(Ω)` (`TauCeti.Wkp.exists_continuousOn_closure_ae_eq_and_eqOn_frontier`). The weak
 maximum principle for strong subsolutions
 (`TauCeti.PDE.le_of_traceCLM_comp_iteratedGradient_add_mul_nonneg_le_frontier`), applied to `u`
-and `-u`, gives `ū = 0`.
+and `-u`, gives `ū = 0`. For any `1 < p < ∞` and continuous `A`, the global regularity theorem
+(`TauCeti.exists_wkp_value_ae_eq_of_traceCLM_comp_add_inner_add_mul_eq_of_contDiff_graph`, with
+right-hand side `0`) puts `u` in `W^{2,q}(Ω)` for `q = p + n`. The continuous representative of
+`u` vanishes on `frontier Ω` because `u ∈ W^{1,p}_0(Ω)`, so `u ∈ W^{1,q}_0(Ω)`
+(`TauCeti.W1p.mem_w1p0Submodule_iff_eqOn_frontier`), and the case `q ≥ n` applies.
 
 For Lemma 9.17, `u ↦ L u` is a bounded operator `W^{2,p}(Ω) → Lᵖ(Ω)`
 (`TauCeti.exists_continuousLinearMap_traceCLM_comp_add_inner_add_mul`): `A` is bounded on `Ω` by its
@@ -59,7 +67,7 @@ bounded below there (`TauCeti.Wkp.exists_pos_mul_norm_le_of_mem_w1p0Submodule`).
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Theorems 9.14 and 9.15 and Lemma 9.17.
+  Theorems 9.14 and 9.15 and Lemmas 9.16 and 9.17.
 -/
 
 public section
@@ -198,15 +206,80 @@ theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero (hp_top : p �
   filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
   exact le_antisymm (hle x hx) (neg_nonpos.1 (hge x hx))
 
-/-- **The a priori estimate for the Dirichlet problem** (Gilbarg–Trudinger, Lemma 9.17). Let
-`Ω ⊆ ℝ × E` be a bounded open set of dimension `n` with `C²` boundary, and let `n ≤ p < ∞`,
-`1 < p`. Let `A` be continuous within `Ω` and elliptic at every point of `closure Ω`, and let
-`c` be measurable, bounded and `c ≤ 0` almost everywhere. Then there is `C` such that every
-`u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` solving `tr (A ∘ D²u) + c u = f ∈ Lᵖ(Ω)` almost everywhere
-satisfies `‖u‖_{W^{2,p}(Ω)} ≤ C ‖f‖_{Lᵖ(Ω)}`. -/
-theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq (hp : 1 < p)
-    (hp_top : p ≠ ⊤) (hpn : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞) ≤ p)
+/-- **Uniqueness for the Dirichlet problem with strong solutions, for every exponent.** Let
+`Ω ⊆ ℝ × E` be a bounded open set with `C²` boundary and let `1 < p < ∞`. Let `A` be continuous
+within `Ω` and elliptic at every point of `closure Ω`, and let `c` be measurable, bounded and
+`c ≤ 0` almost everywhere. If `u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` solves `tr (A ∘ D²u) + c u = 0`
+almost everywhere on `Ω`, then `u = 0`. -/
+theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero_of_contDiff_graph (hp : 1 < p)
+    (hp_top : p ≠ ⊤)
     {Omega : Opens (WithLp 2 (ℝ × E))}
+    (hΩ : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
+    (hbdry : ∀ x ∈ frontier (Omega : Set (WithLp 2 (ℝ × E))),
+      ∃ (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (φ : E → ℝ) (h₀ r₀ : ℝ),
+        e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ φ 0 = 0 ∧ ContDiff ℝ 2 φ ∧
+          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ φ z.snd < z.fst))
+    {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    (hcont : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))), ContinuousWithinAt A Omega x)
+    (hell : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))),
+      ∃ lam : ℝ, 0 < lam ∧ ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A x ξ, ξ⟫_ℝ)
+    {c : WithLp 2 (ℝ × E) → ℝ} {γ : ℝ}
+    (hc : AEStronglyMeasurable c (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
+    (hcγ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), |c x| ≤ γ)
+    (hc0 : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), c x ≤ 0)
+    {u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2}
+    (hu0 : firstOrder 1 u ∈ w1p0Submodule volume Omega p)
+    (heq : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
+      traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) + c x * value 2 u x = 0) :
+    u = 0 := by
+  obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_of_isBounded_of_contDiff one_le_two hΩ hbdry
+  -- By the regularity theorem, `u` lies in `W^{2,q}(Ω)` for `q = p + n ≥ n`.
+  set q : ℝ≥0 := p.toNNReal + finrank ℝ (WithLp 2 (ℝ × E))
+  have hq : (q : ℝ≥0∞) = p + finrank ℝ (WithLp 2 (ℝ × E)) := by
+    simp [q, ENNReal.coe_toNNReal hp_top]
+  have hpq : p ≤ q := hq ▸ le_self_add
+  have : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨(Fact.out : 1 ≤ p).trans hpq⟩
+  obtain ⟨v, hv, hD⟩ :=
+    exists_wkp_value_ae_eq_of_traceCLM_comp_add_inner_add_mul_eq_of_contDiff_graph hp hp_top
+      (hp.trans_le hpq) ENNReal.coe_ne_top hΩ hbdry hcont hell (b := 0) (β := 0)
+      aestronglyMeasurable_const (ae_of_all _ fun _ => by simp) hc hcγ u hu0 (f := 0) MemLp.zero
+      (by
+        filter_upwards [heq] with x hx
+        simpa using hx)
+  -- `v` is continuous up to the boundary, where it vanishes since `u ∈ W^{1,p}_0(Ω)`.
+  have hnq : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0) < 2 * q := by
+    have hq0 : 0 < q := ENNReal.coe_pos.1 ((zero_lt_one.trans hp).trans_le hpq)
+    calc (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0) ≤ q := le_add_self
+      _ < 2 * q := by rw [two_mul]; exact lt_add_of_pos_left q hq0
+  obtain ⟨ū, hcontū, hvū⟩ := exists_continuousOn_closure_ae_eq_of_isLipschitzDomainWith
+    (by exact_mod_cast hnq) hL hΩ v
+  have hfr := (W1p.mem_w1p0Submodule_iff_eqOn_frontier hp_top hL hΩ hcontū
+    (by rw [value_firstOrder]; exact hv.symm.trans hvū)).1 hu0
+  have hv0 : firstOrder 1 v ∈ w1p0Submodule volume Omega q :=
+    (W1p.mem_w1p0Submodule_iff_eqOn_frontier ENNReal.coe_ne_top hL hΩ hcontū
+      (by rw [value_firstOrder]; exact hvū)).2 hfr
+  -- Uniqueness in `W^{2,q}(Ω)`, `q ≥ n`, by the Aleksandrov–Bakelman–Pucci maximum principle.
+  have hpos : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
+      ∀ ξ, ξ ≠ 0 → 0 < ⟪A x ξ, ξ⟫_ℝ := by
+    filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx ξ hξ
+    obtain ⟨lam, hlam, hlx⟩ := hell x (subset_closure hx)
+    exact (mul_pos hlam (by positivity)).trans_le (hlx ξ)
+  have hv_zero : v = 0 := eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero
+    ENNReal.coe_ne_top (hq ▸ le_add_self) hL hΩ hpos hc0 hv0 (by
+      filter_upwards [heq, hv, hD] with x hx hvx hDx
+      rw [hvx, hDx, hx])
+  refine Wkp.ext 2 (Lp.ext ?_)
+  rw [value_zero']
+  exact (hv.symm.trans (by rw [hv_zero]; exact value_zero_ae 2)).trans (Lp.coeFn_zero _ _ _).symm
+
+/-- **The a priori estimate for the Dirichlet problem** (Gilbarg–Trudinger, Lemma 9.17). Let
+`Ω ⊆ ℝ × E` be a bounded open set with `C²` boundary, and let `1 < p < ∞`. Let `A` be continuous
+within `Ω` and elliptic at every point of `closure Ω`, and let `c` be measurable, bounded and
+`c ≤ 0` almost everywhere. Then there is `C` such that every `u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)`
+solving `tr (A ∘ D²u) + c u = f ∈ Lᵖ(Ω)` almost everywhere satisfies
+`‖u‖_{W^{2,p}(Ω)} ≤ C ‖f‖_{Lᵖ(Ω)}`. -/
+theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq (hp : 1 < p)
+    (hp_top : p ≠ ⊤) {Omega : Opens (WithLp 2 (ℝ × E))}
     (hΩ : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
     (hbdry : ∀ x ∈ frontier (Omega : Set (WithLp 2 (ℝ × E))),
       ∃ (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (φ : E → ℝ) (h₀ r₀ : ℝ),
@@ -253,18 +326,13 @@ theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq (hp : 1 < p)
   obtain ⟨D₀, hD₀⟩ := exists_norm_le_of_continuousWithinAt_of_contDiff_graph hp hp_top hΩ hbdry
     hcont hell (b := 0) (β := 0) aestronglyMeasurable_const (ae_of_all _ fun _ => by simp) hc
     hcγ
-  have hpos : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
-      ∀ ξ, ξ ≠ 0 → 0 < ⟪A x ξ, ξ⟫_ℝ := by
-    filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx ξ hξ
-    obtain ⟨lam, hlam, hlx⟩ := hell x (subset_closure hx)
-    exact (mul_pos hlam (by positivity)).trans_le (hlx ξ)
   -- `T` is injective on zero boundary values by uniqueness, hence bounded below there.
   obtain ⟨κ, hκ, hκb⟩ := exists_pos_mul_norm_le_of_mem_w1p0Submodule hL hΩ T
     (fun u hu0 => hD₀ u (T u) hu0 (by
       filter_upwards [hTae u] with x hx
       exact hx.symm))
-    (fun u hu0 hTu => eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero hp_top hpn hL hΩ
-      hpos hc0 hu0 (by
+    (fun u hu0 hTu => eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero_of_contDiff_graph
+      hp hp_top hΩ hbdry hcont hell hc hcγ hc0 hu0 (by
         filter_upwards [hTae' u, Lp.coeFn_zero ℝ p
           ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega)] with x h1 h2
         rw [← h1, hTu]
