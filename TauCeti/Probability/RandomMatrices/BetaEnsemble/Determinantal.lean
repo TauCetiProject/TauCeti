@@ -81,6 +81,12 @@ at the scale `√(n / 2)`, so for `n ≠ 0` these functions are orthonormal in `
 def hermiteEnsembleFunction (n k : ℕ) (x : ℝ) : ℝ :=
   dilatedHermiteFunction √(n / 2) k x
 
+/-- The Hermite function at the scale of the size `n` ensemble is the dilated Hermite function
+at the scale `√(n / 2)`. -/
+theorem hermiteEnsembleFunction_eq_dilatedHermiteFunction (n k : ℕ) :
+    hermiteEnsembleFunction n k = dilatedHermiteFunction √(n / 2) k :=
+  (rfl)
+
 /-- Defining formula for `TauCeti.Probability.hermiteEnsembleFunction`. -/
 theorem hermiteEnsembleFunction_def (n k : ℕ) (x : ℝ) :
     hermiteEnsembleFunction n k x = √(√(n / 2)) * hermiteFunction k (√(n / 2) * x) :=
