@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.Manifold
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Degree
+import TauCeti.AlgebraicTopology.Cohomology.Cap.Unit
 
 /-!
 # Shriek maps through Poincaré duality
@@ -34,6 +35,13 @@ By the projection formula `f_*(z_X ⌢ f^*α) = f_*z_X ⌢ α` (`TopCat.singular
 general: for a degree-one map `T² → S²` collapsing the complement of a disc, `f_!` vanishes on
 `H₁(S²) = 0`, so `f_! ∘ f_*` kills `H₁(T²) = ℤ²`.
 
+If capping with the class of the constant unit cocycle is the identity, as it is for the
+coefficient morphisms of fundamental classes, then `z_Y = z_Y ⌢ 1` and `f^*1 = 1`, so `f_!` sends
+`z_Y` to `z_X` (`TopCat.shriek_apply_self`). In degree zero, for classes of the same degree with
+`f_* z_X = d • z_Y`, the augmentation `ε : H₀ → M` satisfies `ε(f_! y) = d • ε(y)`
+(`TopCat.singularHomology₀ε_shriek`): writing `y = z_Y ⌢ α`, both sides are Kronecker pairings,
+`⟨f^*α, z_X⟩ = ⟨α, f_* z_X⟩`.
+
 For closed oriented manifolds `M` and `N` of dimensions `m` and `n`, cap product with the
 fundamental class is bijective by Poincaré duality
 (`TauCeti.HomologicalOrientation.bijective_singularCapAddHom_fundamentalClass`), so every
@@ -47,6 +55,15 @@ of `f_!` is `d`-torsion (`TauCeti.HomologicalOrientation.zsmul_eq_zero_of_shriek
 (`TauCeti.HomologicalOrientation.map_shriek_eq_degree_smul`). For instance, for the double
 cover `z ↦ z²` of the circle, of degree `2`, `f_* ∘ f_!` is multiplication by `2` on `H_*(S¹)`.
 
+For every map of closed oriented manifolds, of any dimensions, `f_![N] = [M]`
+(`TauCeti.HomologicalOrientation.shriek_fundamentalClass`). In degree zero, for manifolds of the
+same dimension, the augmentation of `f_!(y)` is `deg f` times that of `y`
+(`TauCeti.HomologicalOrientation.singularHomology₀ε_shriek_eq_degree_smul`); so when `M` is
+path-connected, `f_!` sends the class of a point of `N` to `deg f` times the class of a point of
+`M` (`TauCeti.HomologicalOrientation.shriek_singularHomology₀Section_eq_degree_smul`). For an
+orientation-preserving covering with `d` sheets this is the sum of the classes of the `d`
+preimages of the point.
+
 ## Main definitions
 
 * `TopCat.shriek`: the shriek map `D_X ∘ f^* ∘ D_Y⁻¹`.
@@ -58,11 +75,18 @@ cover `z ↦ z²` of the circle, of degree `2`, `f_* ∘ f_!` is multiplication 
 * `TopCat.shriek_singularCapAddHom`: `f_!(z_Y ⌢ α) = z_X ⌢ f^*α`.
 * `TopCat.shriek_id`, `TopCat.shriek_comp`: functoriality.
 * `TopCat.map_shriek`: if `f_* z_X = d • z_Y`, then `f_*(f_! y) = d • y`.
+* `TopCat.shriek_apply_self`: `f_!(z_Y) = z_X` when capping with the unit class is the identity.
+* `TopCat.singularHomology₀ε_shriek`: if `f_* z_X = d • z_Y`, then `ε(f_! y) = d • ε(y)` in degree
+  zero.
 * `TauCeti.HomologicalOrientation.map_shriek` and
   `TauCeti.HomologicalOrientation.map_shriek_eq_degree_smul`: `f_* ∘ f_! = deg(f) • id` for a map
   of closed oriented manifolds of the same dimension.
 * `TauCeti.HomologicalOrientation.zsmul_eq_zero_of_shriek_eq_zero`: the kernel of `f_!` is
   `deg(f)`-torsion.
+* `TauCeti.HomologicalOrientation.shriek_fundamentalClass`: `f_![N] = [M]`.
+* `TauCeti.HomologicalOrientation.singularHomology₀ε_shriek_eq_degree_smul` and
+  `TauCeti.HomologicalOrientation.shriek_singularHomology₀Section_eq_degree_smul`: in degree zero
+  `f_!` multiplies augmentations, and the classes of points, by `deg(f)`.
 
 ## References
 
@@ -195,6 +219,48 @@ theorem injective_shriek_of_isUnit (f : X ⟶ Y) (hY : p + q = n)
 
 end Shriek
 
+section Unit
+
+variable {R₀ : Type w} [CommRing R₀] {k : Type*} [Ring k] [Linear k (ModuleCat.{w} R₀)]
+  [MonoidalLinear k (ModuleCat.{w} R₀)] {R S T M : ModuleCat.{w} R₀}
+
+variable {X Y : TopCat.{w}} {m n : ℕ}
+
+/-- **The shriek map sends `z_Y` to `z_X`**: if the coefficient morphisms make the class of the
+constant `0`-cocycle with value `e` a unit for the cap product, `u ≫ e ▷ S ≫ μ = 𝟙`, then
+`f_!(z_Y) = z_X`. For fundamental classes this is `f_![Y] = [X]`. -/
+theorem shriek_apply_self (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ T) (e : R ⟶ M)
+    (he : u ≫ e ▷ S ≫ μ = 𝟙 T) (f : X ⟶ Y) (hX : 0 + m = m) (hY : 0 + n = n)
+    (zX : ((singularHomologyFunctor (ModuleCat.{w} R₀) m).obj T).obj X)
+    (zY : ((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj T).obj Y)
+    (hzY : Function.Bijective (Y.singularCapAddHom k u μ hY zY)) :
+    shriek k u μ f hX hY zX zY hzY zY = zX := by
+  refine (congrArg (shriek k u μ f hX hY zX zY hzY)
+    (singularCapAddHom_constSingularCocycle_of_comp_eq_id k he hY zY)).symm.trans ?_
+  rw [shriek_singularCapAddHom, singularCohomologyMap_homologyπ_constSingularCocycle,
+    singularCapAddHom_constSingularCocycle_of_comp_eq_id k he]
+
+/-- **The shriek map in degree zero**: for classes `z_X`, `z_Y` of the same degree `n` with
+`f_* z_X = d • z_Y`, the augmentation of `f_!(y)` is `d` times that of `y`, for every
+`y ∈ H₀(Y; M)`. -/
+theorem singularHomology₀ε_shriek (f : X ⟶ Y) (hn : n + 0 = n)
+    (zX : ((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj R).obj X)
+    (zY : ((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj R).obj Y)
+    (hzY : Function.Bijective (Y.singularCapAddHom k (ρ_ R).inv (ρ_ M).hom hn zY)) {d : ℤ}
+    (hd : (((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj R).map f).hom zX = d • zY)
+    (y : ((singularHomologyFunctor (ModuleCat.{w} R₀) 0).obj M).obj Y) :
+    (X.singularHomology₀ε M).hom (shriek k (ρ_ R).inv (ρ_ M).hom f hn hn zX zY hzY y) =
+      d • (Y.singularHomology₀ε M).hom y := by
+  obtain ⟨α, rfl⟩ := hzY.2 y
+  -- Both augmentations are Kronecker pairings: `ε(z_X ⌢ f^*α) = ⟨f^*α, z_X⟩` and
+  -- `ε(z_Y ⌢ α) = ⟨α, z_Y⟩`.
+  rw [shriek_singularCapAddHom]
+  simp only [singularCapAddHom_apply, ← ModuleCat.comp_apply, singularCap_comp_singularHomology₀ε]
+  -- Then `⟨f^*α, z_X⟩ = ⟨α, f_* z_X⟩ = d • ⟨α, z_Y⟩`.
+  rw [singularKronecker_naturality, ModuleCat.comp_apply, hd, map_zsmul]
+
+end Unit
+
 end TopCat
 
 namespace TauCeti
@@ -319,6 +385,73 @@ theorem map_shriek_eq_degree_smul [PreconnectedSpace N] (f : C(M, N)) (hq : p + 
   oM.map_shriek hm oN hn L f hq (oM.mapFundamentalClass_eq_degree_smul oN hm hn f) y
 
 end Degree
+
+section Unit
+
+variable (oM : HomologicalOrientation M E m) (hm : finrank ℝ E = m)
+  (oN : HomologicalOrientation N F n) (hn : finrank ℝ F = n)
+
+/-- **The shriek map sends the fundamental class to the fundamental class**: `f_![N] = [M]` for
+every continuous map `f : M → N` of closed oriented manifolds, of any dimensions. -/
+@[simp]
+theorem shriek_fundamentalClass (f : C(M, N)) :
+    oM.shriek hm oN hn (ModuleCat.of ℤ (ULift.{0} ℤ)) f (Nat.zero_add n) (Nat.zero_add m)
+      (oN.fundamentalClass hn) = oM.fundamentalClass hm :=
+  TopCat.shriek_apply_self _ _ (𝟙 _) (by simp) _ _ _ _ _ _
+
+end Unit
+
+section DegreeZero
+
+variable (oM : HomologicalOrientation M E n) (hm : finrank ℝ E = n)
+  (oN : HomologicalOrientation N F n) (hn : finrank ℝ F = n) (L : ModuleCat.{0} ℤ)
+
+/-- **The shriek map in degree zero**: for a continuous map `f : M → N` of closed oriented
+manifolds of the same dimension with `f_*[M] = d • [N]`, the augmentation of `f_!(y)` is `d` times
+that of `y`, for every `y ∈ H₀(N; L)`. -/
+theorem singularHomology₀ε_shriek (f : C(M, N)) {d : ℤ}
+    (hd : oM.mapFundamentalClass hm f = d • oN.fundamentalClass hn)
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 0).obj L).obj (TopCat.of N)) :
+    ((TopCat.of M).singularHomology₀ε L).hom (oM.shriek hm oN hn L f (Nat.add_zero n)
+        (Nat.add_zero n) y) = d • ((TopCat.of N).singularHomology₀ε L).hom y :=
+  TopCat.singularHomology₀ε_shriek _ _ _ _ _ ((oM.mapFundamentalClass_def hm f).symm.trans hd) y
+
+/-- **The shriek map in degree zero**: for a continuous map `f : M → N` of closed oriented
+manifolds of the same dimension with `N` preconnected, the augmentation of `f_!(y)` is `deg f`
+times that of `y`, for every `y ∈ H₀(N; L)`. -/
+theorem singularHomology₀ε_shriek_eq_degree_smul [PreconnectedSpace N] (f : C(M, N))
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 0).obj L).obj (TopCat.of N)) :
+    ((TopCat.of M).singularHomology₀ε L).hom (oM.shriek hm oN hn L f (Nat.add_zero n)
+        (Nat.add_zero n) y) = oM.degree oN hm f • ((TopCat.of N).singularHomology₀ε L).hom y :=
+  oM.singularHomology₀ε_shriek hm oN hn L f (oM.mapFundamentalClass_eq_degree_smul oN hm hn f) y
+
+/-- **The shriek map of the class of a point**: for a continuous map `f : M → N` of closed oriented
+manifolds of the same dimension with `f_*[M] = d • [N]` and `M` path-connected, `f_!` sends the
+class `[y] r ∈ H₀(N; L)` of a point `y` with coefficient `r` to `d • [x] r` for any point `x` of
+`M`. -/
+theorem shriek_singularHomology₀Section [PathConnectedSpace M] (f : C(M, N)) {d : ℤ}
+    (hd : oM.mapFundamentalClass hm f = d • oN.fundamentalClass hn) (x : M) (y : N) (r : L) :
+    oM.shriek hm oN hn L f (Nat.add_zero n) (Nat.add_zero n)
+        ((singularHomology₀Section L (X := TopCat.of N) y).hom r) =
+      d • (singularHomology₀Section L (X := TopCat.of M) x).hom r := by
+  -- On a path-connected space the augmentation of zeroth homology is injective.
+  refine (ConcreteCategory.injective_of_mono_of_preservesPullback
+    ((TopCat.of M).singularHomology₀ε L)) ?_
+  rw [oM.singularHomology₀ε_shriek hm oN hn L f hd]
+  simp
+
+/-- **The shriek map of the class of a point**: for a continuous map `f : M → N` of closed oriented
+manifolds of the same dimension, `M` path-connected and `N` preconnected, `f_!` sends the class
+`[y] r ∈ H₀(N; L)` of a point `y` to `deg f • [x] r` for any point `x` of `M`. -/
+theorem shriek_singularHomology₀Section_eq_degree_smul [PathConnectedSpace M] [PreconnectedSpace N]
+    (f : C(M, N)) (x : M) (y : N) (r : L) :
+    oM.shriek hm oN hn L f (Nat.add_zero n) (Nat.add_zero n)
+        ((singularHomology₀Section L (X := TopCat.of N) y).hom r) =
+      oM.degree oN hm f • (singularHomology₀Section L (X := TopCat.of M) x).hom r :=
+  oM.shriek_singularHomology₀Section hm oN hn L f
+    (oM.mapFundamentalClass_eq_degree_smul oN hm hn f) x y r
+
+end DegreeZero
 
 end HomologicalOrientation
 

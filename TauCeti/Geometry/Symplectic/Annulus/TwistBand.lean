@@ -73,7 +73,9 @@ the line `y = 0`:
   constant;
 * `S` is invariant under `(x, y) ↦ (x + a, y)` on the strip when `F` commutes with it there
   (`TauCeti.stripGeneratingFunction_add_fst_of_mem`), so the band generating function is periodic;
-* its second derivative is `d²S'(v, w) = (X_x v₁ w₁ - v₁ w₂ - v₂ w₁ + Y_y v₂ w₂) / X_y`
+* its derivative is differentiable on the band when `F` is `C²`
+  (`TauCeti.differentiableAt_fderiv_stripBandGeneratingFunction`), and its second derivative is
+  `d²S'(v, w) = (X_x v₁ w₁ - v₁ w₂ - v₂ w₁ + Y_y v₂ w₂) / X_y`
   (`TauCeti.fderiv_fderiv_stripBandGeneratingFunction_apply`), so its mixed derivative
   `∂₁ ∂₂ S' = -1 / ∂_y X` has the sign opposite to that of the twist.
 
@@ -438,6 +440,30 @@ private theorem fderiv_stripBandGeneratingFunction_eventuallyEq (hJ : IsOpen J)
     (fun t ht ↦ hF _ (mem_preimage.2 (hseg ht))) (hY r.1)
     (fun t ht ↦ hdet _ (mem_preimage.2 (hseg (uIoo_subset_uIcc_self ht)))) (htwist r hr)
   rw [hd.fderiv, hinj.leftInvOn_invFunOn hr]
+
+/-- **The derivative of the band generating function is differentiable.** On a strip `ℝ × J`
+over an open interval `J` containing `0`, let `F` be `C²`, twist, preserve area and map the line
+`y = 0` into itself. Then the derivative of the band generating function `S'` is differentiable at
+every point of the band: near it `dS'` is `Y dX - y dx`, read through the `C²` inverse of the twist
+coordinates. -/
+theorem differentiableAt_fderiv_stripBandGeneratingFunction (hJ : IsOpen J)
+    (hJc : J.OrdConnected) (h0 : 0 ∈ J) (hF : ∀ q ∈ Prod.snd ⁻¹' J, ContDiffAt ℝ 2 F q)
+    (hY : ∀ x, (F (x, 0)).2 = 0) (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
+    (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) {q : ℝ × ℝ}
+    (hq : q ∈ Prod.snd ⁻¹' J) :
+    DifferentiableAt ℝ (fderiv ℝ (stripBandGeneratingFunction F J (stripGeneratingFunction F)))
+      (stripTwistCoord F q) := by
+  rw [Filter.EventuallyEq.differentiableAt_iff
+    (fderiv_stripBandGeneratingFunction_eventuallyEq hJ hJc h0 hF hY hdet htwist hq)]
+  have hk : DifferentiableAt ℝ (invFunOn (stripTwistCoord F) (Prod.snd ⁻¹' J))
+      (stripTwistCoord F q) :=
+    (contDiffAt_invFunOn_stripTwistCoord one_le_two hJ hJc hF htwist hq).differentiableAt
+      two_ne_zero
+  have hFk : DifferentiableAt ℝ F
+      (invFunOn (stripTwistCoord F) (Prod.snd ⁻¹' J) (stripTwistCoord F q)) := by
+    rw [(injOn_stripTwistCoord hJc htwist).leftInvOn_invFunOn hq]
+    exact (hF q hq).differentiableAt two_ne_zero
+  exact (((hFk.comp _ hk).snd).smul_const _).sub (hk.snd.smul_const _)
 
 /-- **The Hessian of the band generating function.** On a strip `ℝ × J` over an open interval `J`
 containing `0`, let `F = (X, Y)` be `C²`, twist, preserve area and map the line `y = 0` into

@@ -8,10 +8,10 @@ module
 public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.GroupTheory.PushoutI
 public import Mathlib.GroupTheory.Subgroup.Centralizer
-import Mathlib.Algebra.Group.ULift
 import Mathlib.GroupTheory.Commutator.Basic
 import Mathlib.GroupTheory.SpecificGroups.Dihedral
 import TauCeti.Algebra.Group.Subgroup.ZPowers
+import TauCeti.GroupTheory.Coprod.Factors
 
 /-!
 # Amalgamated products: non-injective maps, centralizers, and the amalgamation of groups
@@ -113,16 +113,6 @@ section Amalgamation
 
 universe u v w
 
-/-- The two factors `A` and `B` of an amalgamated product as a `Bool`-indexed family of a common
-universe: `A` at `false` and `B` at `true`. -/
-private abbrev PairFactor (A : Type u) (B : Type v) (i : Bool) : Type (max u v) :=
-  cond i (ULift.{u} B) (ULift.{v} A)
-
-private instance (A : Type u) (B : Type v) [Group A] [Group B] (i : Bool) :
-    Group (PairFactor A B i) :=
-  Bool.rec (motive := fun i => Group (PairFactor A B i))
-    (inferInstanceAs (Group (ULift.{v} A))) (inferInstanceAs (Group (ULift.{u} B))) i
-
 /-- **Amalgamation of groups.** Two injective homomorphisms `φ : C →* A` and `ψ : C →* B` of groups
 are completed to a commutative square by two injective homomorphisms `α : A →* P` and
 `β : B →* P` into a group `P`, the amalgamated product `A ∗_C B`. -/
@@ -130,9 +120,10 @@ theorem exists_injective_comp_eq_comp {A : Type u} {B : Type v} {C : Type w} [Gr
     [Group C] {φ : C →* A} {ψ : C →* B} (hφ : Function.Injective φ) (hψ : Function.Injective ψ) :
     ∃ (P : Type (max u v w)) (_ : Group P) (α : A →* P) (β : B →* P),
       Function.Injective α ∧ Function.Injective β ∧ α.comp φ = β.comp ψ := by
-  let χ (i : Bool) : C →* PairFactor A B i := Bool.rec (motive := fun i => C →* PairFactor A B i)
-    ((MulEquiv.ulift.symm : A ≃* ULift.{v} A).toMonoidHom.comp φ)
-    ((MulEquiv.ulift.symm : B ≃* ULift.{u} B).toMonoidHom.comp ψ) i
+  let χ (i : Bool) : C →* Monoid.Coprod.Factors A B i :=
+    Bool.rec (motive := fun i => C →* Monoid.Coprod.Factors A B i)
+      ((MulEquiv.ulift.symm : A ≃* ULift.{v} A).toMonoidHom.comp φ)
+      ((MulEquiv.ulift.symm : B ≃* ULift.{u} B).toMonoidHom.comp ψ) i
   have hχ (i : Bool) : Function.Injective (χ i) := by
     cases i
     · exact MulEquiv.ulift.symm.injective.comp hφ

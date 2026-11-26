@@ -294,14 +294,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComp
       perturbedFDeriv_const ω (fun _ ↦ 0) (fun _ ↦ 0)] at h
   · -- The area outside the disc of radius `T` is at most the energy, which exceeds the total area
     -- by at most `2 (B₀ + B₁ + B_∞)`.
-    have habs := ω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH hHs hB
-      (hC₀ (hRC k)) (hu k) (hint k)
     rw [setIntegral_congr_fun hSm fun z hz ↦ hdens k hz]
-    refine (setIntegral_le_integral (hint k) (Eventually.of_forall fun z ↦
-      ω.floerEnergyDensity_nonneg ?_ (hfl k z))).trans ?_
-    · rw [cappedComparisonAlmostComplex_def]
-      exact tames_cappedAlmostComplex h₀ _ _ _ _
-    · linarith [(abs_sub_le_iff.1 habs).1, harea k]
+    exact ω.setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le h₀ hJ hH hHs hB
+      (hC₀ (hRC k)) (hu k) (hfl k) (hint k) (harea k) S
 
 end TauCeti.SymplecticForm
 

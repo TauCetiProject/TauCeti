@@ -258,14 +258,14 @@ theorem exists_eval_ne_one_of_cancellationFamily_eq_empty [Finite A]
 section Examples
 
 /-- The constant equation `a = 1` has no partition table, hence an empty cancellation family: the
-word of the occurrence of `a` would have length at most `0`. -/
+occurrence of `a` would have the empty word and the word `a` at once. -/
 private theorem cancellationFamily_singleton_inr {X A : Type*} [Finite A] (a : A) :
     cancellationFamily ([[(Sum.inr a, true)]] : List (List ((X ⊕ A) × Bool))) = ∅ := by
   refine Finset.eq_empty_of_forall_notMem fun T hT => ?_
   have hT := mem_cancellationFamily.1 hT
-  have := hT.length_le ⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩
-  rw [hT.eq_of_eq_inr _ rfl] at this
-  simp at this
+  obtain ⟨o, ho, h⟩ :=
+    hT.exists_occurrence_with_word_eq_nil_of_singleton_mem (List.mem_singleton_self _)
+  simpa [h] using hT.eq_of_eq_inr o (congrArg Prod.fst ho)
 
 /-- The equation `a = 1` has no solution, by Lemma 14(1). -/
 example {X A : Type*} [Finite A] (a : A) (W : X → FreeGroup A) :

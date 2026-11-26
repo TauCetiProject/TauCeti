@@ -13,7 +13,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.Const
 import TauCeti.Analysis.Sobolev.Wkp.Exponent
 import TauCeti.Analysis.Sobolev.Wkp.Extension
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn

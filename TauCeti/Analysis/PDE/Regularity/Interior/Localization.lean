@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Extension
 import TauCeti.Analysis.Sobolev.Wkp.Leibniz
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 
 /-!
 # Higher-order localization of a weak elliptic equation

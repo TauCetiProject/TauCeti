@@ -12,7 +12,9 @@ public import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Algebra.Lie.AdjointAction.Basic
 import TauCeti.Algebra.Lie.Submodule.Atom
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.BilinearForm.SkewAdjoint
+import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
 # Cartan involutions of matrix Lie algebras
@@ -40,6 +42,9 @@ The applications to `𝔰𝔬(p, q)`, `𝔰𝔲(p, q)` and `𝔰𝔭(2n, ℝ)` a
 ## Main results
 
 * `TauCeti.reTraceForm_lie_apply`: `⟪[X, Y], Z⟫ = ⟪Y, [Xᴴ, Z]⟫`.
+* `LieSubalgebra.reTraceForm`: the restriction of `⟪X, Y⟫` to a real Lie subalgebra, a
+  positive-definite symmetric form (`LieSubalgebra.posDef_reTraceForm`) for which `ad X` has
+  adjoint `ad Xᴴ` (`LieSubalgebra.isAdjointPair_reTraceForm_ad`).
 * `LieSubalgebra.mem_fixedSubalgebra_restrictNegConjTranspose_iff`,
   `LieSubalgebra.mem_cartanP_restrictNegConjTranspose_iff`: for `θ X = -Xᴴ`, `𝔨` is the
   skew-Hermitian and `𝔭` the Hermitian elements of `𝔤₀`.
@@ -83,6 +88,32 @@ open TauCeti
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
   (L : LieSubalgebra ℝ (Matrix n n 𝕜)) (hL : ∀ X ∈ L, Xᴴ ∈ L)
 
+/-- The real inner product `⟪X, Y⟫ = Re tr(X Yᴴ)` (`TauCeti.reTraceForm`) restricted to a real
+Lie subalgebra `L` of `𝔤𝔩_n(𝕜)`. -/
+noncomputable def reTraceForm : LinearMap.BilinForm ℝ L :=
+  (TauCeti.reTraceForm 𝕜 n n).compl₁₂ L.incl.toLinearMap L.incl.toLinearMap
+
+@[simp]
+theorem reTraceForm_apply (x y : L) :
+    L.reTraceForm x y = TauCeti.reTraceForm 𝕜 n n (x : Matrix n n 𝕜) y := by
+  simp [reTraceForm]
+
+/-- `Re tr(X Yᴴ)` is symmetric on a real Lie subalgebra of `𝔤𝔩_n(𝕜)`. -/
+theorem isSymm_reTraceForm : L.reTraceForm.IsSymm :=
+  (TauCeti.isSymm_reTraceForm 𝕜 n n).compl₁₂ L.incl.toLinearMap
+
+/-- `Re tr(X Yᴴ)` is positive definite on a real Lie subalgebra of `𝔤𝔩_n(𝕜)`. -/
+theorem posDef_reTraceForm : L.reTraceForm.toQuadraticMap.PosDef :=
+  LinearMap.BilinForm.posDef_toQuadraticMap_compl₁₂ _ (TauCeti.posDef_reTraceForm 𝕜 n n)
+    L.incl.toLinearMap Subtype.val_injective
+
+/-- For `x` in `L` with `xᴴ` in `L`, the adjoint of `ad x` for `Re tr(X Yᴴ)` on `L` is `ad xᴴ`. -/
+theorem isAdjointPair_reTraceForm_ad (x : L) (hx : (x : Matrix n n 𝕜)ᴴ ∈ L) :
+    LinearMap.IsAdjointPair L.reTraceForm L.reTraceForm (ad ℝ L x) (ad ℝ L ⟨_, hx⟩) :=
+  fun y z ↦ by
+    simp only [ad_apply, reTraceForm_apply, LieSubalgebra.coe_bracket]
+    exact reTraceForm_lie_apply _ _ _
+
 /-- The fixed subalgebra `𝔨` of `θ X = -Xᴴ` consists of the skew-Hermitian elements. -/
 theorem mem_fixedSubalgebra_restrictNegConjTranspose_iff {X : L} :
     X ∈ (L.restrictNegConjTranspose hL).toLieHom.fixedSubalgebra ↔
@@ -103,33 +134,17 @@ theorem killingForm_restrictNegConjTranspose (x y : L) :
     Subtype.ext (by simp)
   rw [hθ, map_neg, killingForm_apply_apply, ← Module.End.mul_eq_comp]
 
-/-- The trace form `Re tr(X Yᴴ)` restricted to `L`. -/
-private noncomputable def reTraceFormRestrict : LinearMap.BilinForm ℝ L :=
-  (reTraceForm 𝕜 n n).restrict L.toSubmodule
-
-private theorem reTraceFormRestrict_apply (x y : L) :
-    reTraceFormRestrict L x y = reTraceForm 𝕜 n n x y :=
-  -- `L.toSubmodule` and `L` have the same elements.
-  rfl
-
 /-- For a real Lie subalgebra `L` closed under conjugate transpose, `B(X, -Xᴴ) < 0` for every
 noncentral `X` in `L`. -/
 private theorem killingForm_restrictNegConjTranspose_neg (x : L) (hx : x ∉ center ℝ L) :
     killingForm ℝ L x (L.restrictNegConjTranspose hL x) < 0 := by
-  let x' : L := ⟨(x : Matrix n n 𝕜)ᴴ, hL _ x.property⟩
-  let P := reTraceFormRestrict L
-  have hP (y z : L) : P y z = reTraceForm 𝕜 n n y z := reTraceFormRestrict_apply L y z
-  have hsymm : P.IsSymm := ⟨fun y z ↦ by rw [hP, hP]; exact (isSymm_reTraceForm 𝕜 n n).eq y z⟩
-  have hpos : P.toQuadraticMap.PosDef := fun y hy ↦ by
-    simpa only [LinearMap.BilinMap.toQuadraticMap_apply, hP] using
-      posDef_reTraceForm 𝕜 n n (y : Matrix n n 𝕜) (by simpa using hy)
-  have hadj : LinearMap.IsAdjointPair P P (ad ℝ L x) (ad ℝ L x') := fun y z ↦ by
-    simp only [ad_apply, hP, LieSubalgebra.coe_bracket]
-    exact reTraceForm_lie_apply _ _ _
   have hne : ad ℝ L x ≠ 0 := fun h ↦ hx (TauCeti.LieAlgebra.ad_eq_zero_iff.mp h)
   rw [killingForm_restrictNegConjTranspose, neg_lt_zero]
-  exact (LinearMap.BilinForm.trace_mul_nonneg_of_isAdjointPair P hsymm hpos hadj).lt_of_ne'
-    ((LinearMap.BilinForm.trace_mul_eq_zero_iff_of_isAdjointPair P hsymm hpos hadj).not.mpr hne)
+  have hadj := L.isAdjointPair_reTraceForm_ad x (hL _ x.property)
+  exact (LinearMap.BilinForm.trace_mul_nonneg_of_isAdjointPair _ L.isSymm_reTraceForm
+    L.posDef_reTraceForm hadj).lt_of_ne'
+    ((LinearMap.BilinForm.trace_mul_eq_zero_iff_of_isAdjointPair _ L.isSymm_reTraceForm
+      L.posDef_reTraceForm hadj).not.mpr hne)
 
 /-- **Knapp, Prop. 6.28.** For a real Lie subalgebra `L` of `𝔤𝔩_n(𝕜)` closed under conjugate
 transpose, `X ↦ -Xᴴ` is a Cartan involution of `L` exactly when the centre of `L` is trivial. -/
@@ -162,15 +177,15 @@ variable [HasTrivialRadical ℝ L]
 
 /-- The endomorphism `A` of `L` with `B_θ(A x, y) = Re tr(x yᴴ)`. -/
 private noncomputable def traceFormRatio : Module.End ℝ L :=
-  (reTraceFormRestrict L).symmCompOfNondegenerate
+  L.reTraceForm.symmCompOfNondegenerate
     (L.restrictNegConjTranspose hL).twistedKillingForm
     (L.isCartanInvolution_restrictNegConjTranspose hL).nondegenerate_twistedKillingForm
 
 private theorem twistedKillingForm_traceFormRatio (x y : L) :
     (L.restrictNegConjTranspose hL).twistedKillingForm (traceFormRatio L hL x) y =
-      reTraceForm 𝕜 n n x y := by
+      TauCeti.reTraceForm 𝕜 n n x y := by
   rw [traceFormRatio, LinearMap.BilinForm.comp_symmCompOfNondegenerate_apply,
-    reTraceFormRestrict_apply]
+    reTraceForm_apply]
 
 /-- `A` commutes with every `ad z`. -/
 private theorem traceFormRatio_lie (z x : L) :
@@ -191,7 +206,7 @@ private theorem isSelfAdjoint_traceFormRatio :
     rw [twistedKillingForm_traceFormRatio,
       (L.isCartanInvolution_restrictNegConjTranspose hL).isSymm_twistedKillingForm.eq x,
       twistedKillingForm_traceFormRatio,
-      (isSymm_reTraceForm 𝕜 n n).eq]
+      (TauCeti.isSymm_reTraceForm 𝕜 n n).eq]
 
 /-- `A` as a morphism of Lie modules, since it commutes with every `ad z`. -/
 private noncomputable def traceFormRatioHom : L →ₗ⁅ℝ,L⁆ L :=
@@ -207,7 +222,8 @@ nonzero ideal `I` of `L`, there is `c > 0` with
 `B_θ(X, Y) = c Re tr(X Yᴴ)` for `X ∈ I` and every `Y`, where `θ X = -Xᴴ`. -/
 theorem exists_twistedKillingForm_eq_mul_reTraceForm {I : LieIdeal ℝ L} (hI : IsAtom I) :
     ∃ c : ℝ, 0 < c ∧ ∀ x ∈ I, ∀ y : L,
-      (L.restrictNegConjTranspose hL).twistedKillingForm x y = c * reTraceForm 𝕜 n n x y := by
+      (L.restrictNegConjTranspose hL).twistedKillingForm x y =
+        c * TauCeti.reTraceForm 𝕜 n n x y := by
   have hθ := L.isCartanInvolution_restrictNegConjTranspose hL
   set A := traceFormRatio L hL
   -- `⁅L, I⁆ = I`, since `L` has trivial centre; so `A I ⊆ I`, as `A ⁅x, y⁆ = ⁅x, A y⁆`.
@@ -234,14 +250,15 @@ theorem exists_twistedKillingForm_eq_mul_reTraceForm {I : LieIdeal ℝ L} (hI : 
     have h' := congrArg LieSubmodule.toSubmodule h
     rwa [LieSubmodule.inf_toSubmodule, LieSubmodule.bot_toSubmodule, hE] at h'
   have hAx (x : L) (hx : x ∈ I) (y : L) :
-      reTraceForm 𝕜 n n x y = μ * (L.restrictNegConjTranspose hL).twistedKillingForm x y := by
+      TauCeti.reTraceForm 𝕜 n n x y =
+        μ * (L.restrictNegConjTranspose hL).twistedKillingForm x y := by
     have : A x = μ • x := Module.End.mem_eigenspace_iff.1 (hE ▸ hIμ hx)
     rw [← twistedKillingForm_traceFormRatio L hL, this, LinearMap.map_smul₂, smul_eq_mul]
   -- `μ > 0`: both forms are positive definite.
   obtain ⟨x, hx, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     (fun h ↦ hI.1 ((LieSubmodule.toSubmodule_eq_bot _).1 h))
-  have hP : 0 < reTraceForm 𝕜 n n x x :=
-    posDef_reTraceForm 𝕜 n n (x : Matrix n n 𝕜) (by simpa using hx0)
+  have hP : 0 < TauCeti.reTraceForm 𝕜 n n x x :=
+    TauCeti.posDef_reTraceForm 𝕜 n n (x : Matrix n n 𝕜) (by simpa using hx0)
   have hB : 0 < (L.restrictNegConjTranspose hL).twistedKillingForm x x :=
     hθ.posDef_twistedKillingForm x hx0
   have hμ0 : 0 < μ := pos_of_mul_pos_left (hAx x hx x ▸ hP) hB.le

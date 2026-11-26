@@ -167,6 +167,13 @@ theorem restrict_mem_map {U V : AffinoidSubdomain K A} (h : U ≤ V) {J : Ideal 
   rw [← restrict_comp_toSections h, ← Ideal.map_mapₐ]
   exact Ideal.mem_map_of_mem _ hf
 
+/-- Restriction carries the extension `I 𝒪(V)` of an ideal `I` of `𝒪(W)` into `I 𝒪(U)`. -/
+theorem restrict_mem_map_restrict {U V W : AffinoidSubdomain K A} (hUV : U ≤ V) (hVW : V ≤ W)
+    {I : Ideal W.sections} {f : V.sections} (hf : f ∈ I.map (restrict hVW)) :
+    restrict hUV f ∈ I.map (restrict (hUV.trans hVW)) := by
+  rw [← restrict_comp hUV hVW, ← Ideal.map_mapₐ]
+  exact Ideal.mem_map_of_mem _ hf
+
 /-- Restriction along an inclusion of affinoid subdomains is itself an affinoid subdomain map.
 Its classical points are the inverse image of the smaller subdomain. -/
 theorem isAffinoidSubdomainMap_restrict {U V : AffinoidSubdomain K A} (h : U ≤ V) :

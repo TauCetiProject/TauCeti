@@ -5,7 +5,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Norm
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Norm.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Scaling
 
 /-!
