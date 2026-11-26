@@ -428,7 +428,7 @@ instance isLocallySurjective_sheaf_pointsSheafFunctor_map
     {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
     [Flat f.left] [Surjective f.left] [LocallyOfFinitePresentation f.left] :
     Sheaf.IsLocallySurjective ((pointsSheafFunctor R).map f) :=
-  (Sheaf.isLocallySurjective_sheafToPresheaf_map_iff _).2
+  (Sheaf.isLocallySurjective_sheafToPresheaf_map_iff _).1
     (isLocallySurjective_pointsSheafFunctor_map f)
 
 variable {R} in

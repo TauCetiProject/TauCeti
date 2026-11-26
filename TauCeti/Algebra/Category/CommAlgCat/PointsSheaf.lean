@@ -46,7 +46,7 @@ theorem epi_whiskerLeft_of_isLocallySurjective (W : Over (Spec (CommRingCat.of R
     Epi (W ◁ p) := by
   have : Sheaf.IsLocallySurjective ((pointsSheafFunctor R).map p) :=
     (Sheaf.isLocallySurjective_sheafToPresheaf_map_iff
-      ((pointsSheafFunctor R).map p)).2 ‹_›
+      ((pointsSheafFunctor R).map p)).1 ‹_›
   have : Epi ((pointsSheafFunctor R).map p) := Sheaf.epi_of_isLocallySurjective _
   let : MonoidalClosed ((CommAlgCat.{u} R)ᵒᵖᵒᵖ ⥤ Type (u + 1)) :=
     FunctorToTypes.monoidalClosed.{0}
