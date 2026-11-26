@@ -97,6 +97,13 @@ instance instContinuousSMul : ContinuousSMul G (UnitaryModel ρ) where
 theorem finrank_eq : finrank ℂ (UnitaryModel ρ) = n :=
   coords.toLinearEquiv.finrank_eq.trans (finrank_fin_fun ℂ)
 
+/-- A real vector space of dimension four has twice the complex dimension of the model `ℂ²`, the
+dimension condition under which a continuous complex structure on a real bundle with that model
+fibre is a complex vector bundle with model `ℂ²`. -/
+instance instFactFinrank {ρ : G →ₜ* Matrix.unitaryGroup (Fin 2) ℂ} {F : Type*} [AddCommGroup F]
+    [Module ℝ F] [Fact (finrank ℝ F = 4)] : Fact (finrank ℝ F = 2 * finrank ℂ (UnitaryModel ρ)) :=
+  ⟨by rw [finrank_eq ρ, (Fact.out : finrank ℝ F = 4)]⟩
+
 end UnitaryModel
 
 end TauCeti

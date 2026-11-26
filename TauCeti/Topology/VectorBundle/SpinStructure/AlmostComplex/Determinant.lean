@@ -345,10 +345,14 @@ theorem continuous_canonicalDeterminantLineEquivDetBundle :
     DetBundle.congrHomeomorph_apply, canonicalDeterminantLineEquivDetBundle_apply]
 
 /-- **The first Chern class of the canonical `Spinᶜ` structure is that of `(E, J)`**:
-`c₁(L) = c₁(Λ²_ℂ (E, J)) = c₁(E, J)`, minus the canonical class. -/
+`c₁(L) = c₁(Λ²_ℂ (E, J)) = c₁(E, J)`, minus the canonical class. The class of `(E, J)` is taken
+with the model `ℂ² = Fin 2 → ℂ`, which does not depend on the frame `e`. -/
 theorem firstChernClass_canonicalSpinCStructure_eq_firstChernClass :
     (canonicalSpinCStructure hJ hJ₂ hJ₀ Fact.out e h₀ h₂).firstChernClass =
-      firstChernClass (unitaryFrameModel hJ₀ e h₀ h₂) (unitaryComplexStructure hJ hJ₂).Fiber := by
+      firstChernClass (Fin 2 → ℂ) (unitaryComplexStructure hJ hJ₂).Fiber := by
+  -- The model `unitaryFrameModel` of the identification with `Λ²_ℂ (E, J)` is the type synonym
+  -- `UnitaryModel` of `Fin 2 → ℂ`, with the same normed space structure, so `(E, J)` and its
+  -- determinant line are the same bundles for either model.
   rw [SpinCStructure.firstChernClass_def, firstChernClass_def, lineFirstChernClass_def,
     lineFirstChernClass_def]
   exact complexEulerClass_eq_of_fiberwise (finrank_self ℂ)

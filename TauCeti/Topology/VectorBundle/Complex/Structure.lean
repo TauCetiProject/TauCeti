@@ -28,8 +28,9 @@ then a complex vector space, `(a + b i) • v = a • v + b • J v`
 form a complex vector bundle `J.Fiber`, whose fibre over `b` is `V b` with this complex structure.
 When `F` is finite-dimensional, the model fibre is any finite-dimensional complex normed space `G`
 with `finrank ℝ F = 2 * finrank ℂ G`, supplied as an instance
-`Fact (finrank ℝ F = 2 * finrank ℂ G)`. The total space of `J.Fiber` is homeomorphic to that of
-`V` by the identity of the fibres
+`Fact (finrank ℝ F = 2 * finrank ℂ G)`; for `G = ℂ²` this instance follows from
+`Fact (finrank ℝ F = 4)` (`TauCeti.instFactFinrankFinTwo`). The total space of `J.Fiber` is
+homeomorphic to that of `V` by the identity of the fibres
 (`TauCeti.Bundle.ContinuousComplexStructure.totalSpaceHomeomorph`): the complex vector bundle is
 the real bundle `V`, with `J` as multiplication by `i`.
 
@@ -676,3 +677,14 @@ end Model
 end ContinuousComplexStructure
 
 end TauCeti.Bundle
+
+namespace TauCeti
+
+/-- A real vector space of dimension four has twice the complex dimension of `ℂ²`, so a continuous
+complex structure on a real vector bundle of rank four is a complex vector bundle with model `ℂ²`.
+-/
+instance instFactFinrankFinTwo {F : Type*} [AddCommGroup F] [Module ℝ F]
+    [Fact (finrank ℝ F = 4)] : Fact (finrank ℝ F = 2 * finrank ℂ (Fin 2 → ℂ)) :=
+  ⟨by rw [finrank_fin_fun, (Fact.out : finrank ℝ F = 4)]⟩
+
+end TauCeti

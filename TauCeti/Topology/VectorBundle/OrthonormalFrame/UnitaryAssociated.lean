@@ -72,14 +72,6 @@ open Bundle Module MulOpposite
 
 namespace TauCeti
 
-/-- A real vector space of dimension four has twice the complex dimension of the model `ℂ²`, the
-dimension condition under which a continuous complex structure on a real bundle with that model
-fibre is a complex vector bundle with model `ℂ²`. -/
-instance UnitaryModel.instFactFinrank {G : Type*} [Group G] [TopologicalSpace G]
-    {ρ : G →ₜ* Matrix.unitaryGroup (Fin 2) ℂ} {F : Type*} [AddCommGroup F] [Module ℝ F]
-    [Fact (finrank ℝ F = 4)] : Fact (finrank ℝ F = 2 * finrank ℂ (UnitaryModel ρ)) :=
-  ⟨by rw [UnitaryModel.finrank_eq ρ, (Fact.out : finrank ℝ F = 4)]⟩
-
 namespace OrthonormalFrameBundle
 
 variable {X : Type} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -117,17 +109,11 @@ theorem frame_complexCoords_symm_I_smul {x : X}
     (p : (unitaryFrameLift hJ hJ₂ hJ₀ Fact.out).P x) (z : Fin 2 → ℂ) :
     p.val.frame ((e.complexCoords 2).symm (Complex.I • z)) =
       J x (p.val.frame ((e.complexCoords 2).symm z)) := by
-  let J₀' : AlmostComplexStructure (EuclideanSpace ℝ (Fin 4)) :=
-    ⟨(J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)).toLinearMap,
-      LinearMap.ext fun v ↦ by simpa using hJ₀ v⟩
   have hI : (e.complexCoords 2).symm (Complex.I • z) =
       (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
         ((e.complexCoords 2).symm z) := by
-    have h := OrthonormalBasis.complexCoords_two_almostComplexStructure_apply (J := J₀') h₀ h₂
-      ((e.complexCoords 2).symm z)
-    rw [LinearEquiv.apply_symm_apply] at h
-    rw [LinearEquiv.symm_apply_eq]
-    exact h.symm
+    rw [LinearEquiv.symm_apply_eq, e.complexCoords_two_unitary_apply hJ₀ h₀ h₂,
+      LinearEquiv.apply_symm_apply]
   rw [hI]
   exact mk_mem_unitaryFrames_iff.1 p.property _
 
@@ -208,7 +194,9 @@ theorem unitaryFrameModelEquiv_smul {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ�
     ((e.complexCoords 2).symm (UnitaryModel.coords z))
   rw [LinearEquiv.apply_symm_apply, ← LinearEquiv.eq_symm_apply] at hg
   rw [← hg]
-  rfl
+  -- `g` acts on a unitary frame as an orthogonal transformation on the underlying frame
+  -- (`ReductionFiber.val_smul`), which precomposes with `g`.
+  exact Fiber.frame_smul_apply (op (g : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] _))) p.val _
 
 /-- The unitary frame chosen to read the fibres of the associated bundle. -/
 private def refFrame (x : X) : (unitaryFrameLift hJ hJ₂ hJ₀ Fact.out).P x :=
@@ -276,13 +264,17 @@ theorem continuous_unitaryAssociatedEquiv :
 
 /-- **The first Chern class of the unitary frames' associated bundle.** The bundle associated to
 the unitary frames of `J` by `ℂ²` and the complex vector bundle `(E, J)` have the same first Chern
-class. -/
+class. The class of `(E, J)` is taken with the model `ℂ² = Fin 2 → ℂ`, which does not depend on the
+frame `e`. -/
 theorem firstChernClass_associatedBundle_unitaryFrameModel :
     firstChernClass (unitaryFrameModel hJ₀ e h₀ h₂)
         (AssociatedBundle (Subgroup.centralizer {J₀}) (unitaryFrameLift hJ hJ₂ hJ₀ Fact.out).P
           (unitaryFrameModel hJ₀ e h₀ h₂)) =
-      firstChernClass (unitaryFrameModel hJ₀ e h₀ h₂) (unitaryComplexStructure hJ hJ₂).Fiber :=
-  firstChernClass_eq_of_fiberwise (continuous_unitaryAssociatedEquiv hJ hJ₂ hJ₀ e h₀ h₂)
+      firstChernClass (Fin 2 → ℂ) (unitaryComplexStructure hJ hJ₂).Fiber :=
+  -- `unitaryFrameModel` is the type synonym `UnitaryModel` of `Fin 2 → ℂ`, with the same normed
+  -- space structure, so `(E, J)` is the same complex vector bundle for either model.
+  (firstChernClass_eq_of_fiberwise (continuous_unitaryAssociatedEquiv hJ hJ₂ hJ₀ e h₀ h₂)).trans
+    (rfl)
 
 end OrthonormalFrameBundle
 
