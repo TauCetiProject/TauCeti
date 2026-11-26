@@ -9,8 +9,8 @@ module
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 -- `diagGL` occurs in the statements, and `diagGL_mul_mul_inv_apply` computes the conjugates.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
--- `upperUnitriangularGroup` and `superdiagonalHom` occur in the statements.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Superdiagonal
+-- `upperUnitriangularGroup` and `adjacentHom` occur in the statements.
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.AdjacentQuotient
 
 /-!
 # Conjugation by the diagonal torus on the upper-unitriangular group
@@ -20,8 +20,8 @@ matrix `t = diag(tᵢ, …)` acts on the `(i, j)` entry of a matrix by `x ↦ t�
 (`TauCeti.diagGL_mul_mul_inv_apply`). So the entries below the diagonal of an
 upper-unitriangular matrix stay zero and its diagonal entries stay one: the diagonal torus
 normalizes the upper-unitriangular group `U_ι(R)` and acts on it by conjugation,
-`TauCeti.UpperUnitriangularGroup.diagGLConj`. On the first superdiagonal
-`TauCeti.UpperUnitriangularGroup.superdiagonalHom`, conjugation by `t` sends the `i`-th entry `x`
+`TauCeti.UpperUnitriangularGroup.diagGLConj`. On the first superdiagonal, read off by
+`TauCeti.UpperUnitriangularGroup.adjacentHom`, conjugation by `t` sends the `i`-th entry `x`
 to `tᵢ x tᵢ₊₁⁻¹`. When `R` is commutative this is multiplication by the scalar `tᵢ tᵢ₊₁⁻¹`, the
 value at `t` of the simple root `εᵢ - εᵢ₊₁`.
 
@@ -31,7 +31,7 @@ value at `t` of the simple root `εᵢ - εᵢ₊₁`.
   `U_ι(R)`.
 * `TauCeti.UpperUnitriangularGroup.diagGLConj`: the conjugation action of the diagonal torus.
 * `TauCeti.UpperUnitriangularGroup.coe_diagGLConj_apply_apply`: the entries of `t u t⁻¹`.
-* `TauCeti.UpperUnitriangularGroup.superdiagonalHom_diagGLConj`: conjugation sends the `i`-th
+* `TauCeti.UpperUnitriangularGroup.adjacentHom_diagGLConj`: conjugation sends the `i`-th
   entry `x` of the first superdiagonal to `tᵢ x tᵢ₊₁⁻¹`.
 
 ## Implementation notes
@@ -98,11 +98,11 @@ theorem coe_diagGLConj_apply_apply (t : ι → Rˣ) (u : upperUnitriangularGroup
   rw [coe_diagGLConj_apply, diagGL_mul_mul_inv_apply]
 
 /-- Conjugation by `t` sends the `i`-th entry `x` of the first superdiagonal to `tᵢ x tᵢ₊₁⁻¹`. -/
-theorem superdiagonalHom_diagGLConj (t : Fin (n + 1) → Rˣ)
+theorem adjacentHom_diagGLConj (t : Fin (n + 1) → Rˣ)
     (u : upperUnitriangularGroup (Fin (n + 1)) R) (i : Fin n) :
-    superdiagonalHom (diagGLConj t u) i =
-      ((t i.castSucc : Rˣ) : R) * superdiagonalHom u i * (((t i.succ)⁻¹ : Rˣ) : R) := by
-  simp only [superdiagonalHom_apply, coe_diagGLConj_apply_apply]
+    (adjacentHom R n (diagGLConj t u)).toAdd i =
+      ((t i.castSucc : Rˣ) : R) * (adjacentHom R n u).toAdd i * (((t i.succ)⁻¹ : Rˣ) : R) := by
+  simp only [toAdd_adjacentHom_apply, coe_diagGLConj_apply_apply]
 
 end UpperUnitriangularGroup
 
