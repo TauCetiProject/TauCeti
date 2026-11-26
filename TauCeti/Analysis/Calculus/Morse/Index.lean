@@ -58,10 +58,10 @@ Morse complex.
 * `TauCeti.eventually_morseIndex_le`: the Morse index of a `C²` function is lower
   semicontinuous, also at degenerate and noncritical points.
 * `TauCeti.span_range_hessianQuadraticForm_comp_left`, `TauCeti.span_range_hessianQuadraticForm_pi`,
-  `TauCeti.range_hessianQuadraticForm_comp`: the space spanned by the Hessians of the functions
-  `ℓ ∘ φ`, for `ℓ` a continuous linear functional, computed from a spanning family of functionals,
-  from the components of `φ`, and after composing `φ` at a critical point with a map whose
-  differential is injective.
+  `TauCeti.span_range_hessianQuadraticForm_prod`, `TauCeti.range_hessianQuadraticForm_comp`: the
+  space spanned by the Hessians of the functions `ℓ ∘ φ`, for `ℓ` a continuous linear functional,
+  computed from a spanning family of functionals, from the components of `φ`, and after composing
+  `φ` at a critical point with a map whose differential is injective.
 * `TauCeti.IsNondegenerateCriticalPoint.hessianQuadraticForm_nondegenerate`: the Hessian
   quadratic form at a nondegenerate critical point is nondegenerate.
 * `TauCeti.isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate`: in finite
@@ -295,6 +295,21 @@ theorem span_range_hessianQuadraticForm_pi {ι : Type*} [Fintype ι] {φ : E →
     simp [mul_comm]
   rw [hℓ]
   exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+
+/-- For a `C²` map into `ℝ × ℝ`, the Hessians of the functions `ℓ ∘ φ` span the same space as the
+Hessians of the two components of `φ`. -/
+theorem span_range_hessianQuadraticForm_prod {φ : E → ℝ × ℝ} (hφ : ContDiffAt ℝ 2 φ x) :
+    Submodule.span ℝ (range fun ℓ : ℝ × ℝ →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x) =
+      Submodule.span ℝ (range ![hessianQuadraticForm (fun y ↦ (φ y).1) x,
+        hessianQuadraticForm (fun y ↦ (φ y).2) x]) := by
+  rw [span_range_hessianQuadraticForm_comp_left hφ
+    (L := ![ContinuousLinearMap.fst ℝ ℝ ℝ, ContinuousLinearMap.snd ℝ ℝ ℝ])
+    -- Every functional on `ℝ × ℝ` is a combination of the two coordinate projections.
+    (eq_top_iff.2 fun ℓ _ ↦ (Submodule.mem_span_range_iff_exists_fun ℝ).2
+      ⟨![ℓ (1, 0), ℓ (0, 1)], by ext <;> simp⟩)]
+  congr 2
+  funext i
+  fin_cases i <;> simp [Function.comp_def]
 
 /-- At a critical point of `φ`, the Hessians of the functions `ℓ ∘ g ∘ φ` are the Hessians of the
 functions `ℓ ∘ φ`, provided the differential of `g` at `φ x` is injective. -/
