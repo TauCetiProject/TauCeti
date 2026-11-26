@@ -38,8 +38,8 @@ codimension `2n` at each node, for a target of real dimension `2n`. Its expected
 
 (`TauCeti.Floer.sphereTreeDimension`), where `D(0, c) = 2(n - 3) + 2c` is the dimension of the
 unparametrized simple spheres of Chern number `c` (`TauCeti.unmarkedVirtualDimension`). There are
-at most two special points per node, with equality exactly when the special points of each
-component are distinct (`TauCeti.Floer.sum_card_sphereTreeSpecialPoints_le`,
+at most two special points per node, with equality when the special points of each component
+are distinct (`TauCeti.Floer.sum_card_sphereTreeSpecialPoints_le`,
 `TauCeti.Floer.sum_card_sphereTreeSpecialPoints_eq`), so the expected dimension is at most
 `I₀ + 2 ∑_w c₁(B' w) - 2 #κ` (`TauCeti.Floer.sphereTreeDimension_le`), with equality for distinct
 special points (`TauCeti.Floer.sphereTreeDimension_eq`).
@@ -61,15 +61,20 @@ and bubbling the same simple sphere several times both lower the dimension.
   expected dimension at most `ind A - 2 #κ`
   (`TauCeti.Floer.sphereTreeDimension_le_sub_two_mul_card`). This covers the spherically
   `c₁`-zero branch, where `c₁ = 0`.
-* On a positively monotone target, `ω = τ c₁` with `τ > 0`, a nonconstant pseudoholomorphic sphere
-  has positive area, hence `c₁ ≥ 1`, and the stratum has expected dimension at most
-  `ind A - 2 ∑_v m v` (`TauCeti.Floer.sphereTreeDimension_le_sub_two_mul_sum_of_area_eq_mul_chern`).
+* On a target with `ω = τ c₁` and `τ ≥ 0`, which is positively monotone because nonconstant
+  spheres exist, a nonconstant pseudoholomorphic sphere has positive area, hence `c₁ ≥ 1`, and
+  the stratum has expected dimension at most `ind A - 2 ∑_v m v`
+  (`TauCeti.Floer.sphereTreeDimension_le_sub_two_mul_sum_of_area_eq_mul_chern`).
 * In both cases a stratum with at least one nonconstant bubble has expected dimension at most
   `ind A - 2` (`TauCeti.Floer.sphereTreeDimension_le_sub_two`), so it has negative expected
   dimension in the problems with `ind A ≤ 1`
-  (`TauCeti.Floer.sphereTreeDimension_neg_of_le_one`): the rigid counts of the product, of the
-  differential and of the continuation maps, and the one-dimensional moduli spaces whose boundaries
-  give their chain-level identities.
+  (`TauCeti.Floer.sphereTreeDimension_neg_of_le_one`): the rigid counts of the product and of the
+  continuation maps, and the one-dimensional moduli spaces of pairs of pants and of continuation
+  maps whose boundaries give their chain-level identities. Here `ind A` is the dimension before
+  any quotient by translations. For problems of cylinders taken modulo the `ℝ`-translation, such
+  as the rigid differential (`ind A = 1`) and the one-dimensional spaces behind `d² = 0`
+  (`ind A = 2`), the bound `ind A - 2` must still be combined with that quotient, which this file
+  does not do.
 
 These are statements about expected dimensions. That a stratum of negative expected dimension is
 empty for generic data is the transversality of the evaluation maps of simple spheres, which is not
@@ -116,22 +121,28 @@ theorem sphereTreeSpecialPoints_none (parent : κ → Option κ) (node root : κ
 theorem sphereTreeSpecialPoints_some (parent : κ → Option κ) (node root : κ → P) (v : κ) :
     sphereTreeSpecialPoints parent node root (some v) =
       insert (root v) ((univ.filter (parent · = some v)).image node) := by
-  rw [sphereTreeSpecialPoints, Option.map_some, Option.toFinset_some, union_comm, ← insert_eq]
+  ext
+  simp [sphereTreeSpecialPoints]
+
+omit [DecidableEq P] in
+/-- Counting the nodes once from the component each sphere is attached to and once from the sphere
+itself gives two per sphere. -/
+private theorem sum_card_filter_parent_add_card_root (parent : κ → Option κ) (root : κ → P) :
+    ∑ x : Option κ, (#(univ.filter (parent · = x)) + #(x.map root).toFinset) =
+      2 * Fintype.card κ := by
+  rw [sum_add_distrib, ← card_eq_sum_card_fiberwise (by simp), Fintype.sum_option]
+  simp [two_mul]
 
 /-- Each node contributes at most two special points, one on each of the two components it
 joins. -/
 theorem sum_card_sphereTreeSpecialPoints_le (parent : κ → Option κ) (node root : κ → P) :
-    ∑ x, #(sphereTreeSpecialPoints parent node root x) ≤ 2 * Fintype.card κ := by
-  calc ∑ x, #(sphereTreeSpecialPoints parent node root x)
-      ≤ ∑ x : Option κ, (#(univ.filter (parent · = x)) + #(x.map root).toFinset) :=
-        sum_le_sum fun x _ => (card_union_le _ _).trans (by grw [card_image_le])
-    _ = 2 * Fintype.card κ := by
-        rw [sum_add_distrib, ← card_eq_sum_card_fiberwise (by simp), Fintype.sum_option]
-        simp [two_mul]
+    ∑ x, #(sphereTreeSpecialPoints parent node root x) ≤ 2 * Fintype.card κ :=
+  (sum_le_sum fun x _ => (card_union_le _ _).trans (by grw [card_image_le])).trans_eq
+    (sum_card_filter_parent_add_card_root parent root)
 
-/-- The special points of the components of a tree of spheres are distinct exactly when there are
-two special points per node: the spheres attached to one component are attached at distinct
-points, and never at the point at which that component is itself attached. -/
+/-- When the special points of each component of a tree of spheres are distinct, there are exactly
+two special points per node. Distinctness means that the spheres attached to one component are
+attached at distinct points, and never at the point at which that component is itself attached. -/
 theorem sum_card_sphereTreeSpecialPoints_eq {parent : κ → Option κ} {node root : κ → P}
     (hnode : ∀ v w, parent v = parent w → node v = node w → v = w)
     (hroot : ∀ v w, parent w = some v → node w ≠ root v) :
@@ -147,8 +158,7 @@ theorem sum_card_sphereTreeSpecialPoints_eq {parent : κ → Option κ} {node ro
       simp only [mem_image, mem_filter, mem_univ, true_and, not_exists, not_and]
       exact fun w hw => hroot v w hw
   simp_rw [hcard]
-  rw [sum_add_distrib, ← card_eq_sum_card_fiberwise (by simp), Fintype.sum_option]
-  simp [two_mul]
+  exact sum_card_filter_parent_add_card_root parent root
 
 /-- The expected dimension of a stratum of a moduli space of Floer solutions whose limits carry a
 tree of simple pseudoholomorphic spheres, in a target of real dimension `2n`. The core has expected
@@ -269,12 +279,12 @@ theorem sphereTreeDimension_le_sub_two_mul_card {n : ℤ} (c : G →+ ℤ) {ind 
   simpa using sphereTreeDimension_le_sub_of_le_chern c hind A₀ hB hm hρ hc parent node root
     (n := n)
 
-/-- On a positively monotone target, `ω = τ c₁` with `τ > 0`, the simple spheres, which have
-positive area, have first Chern number at least one, and the reduced stratum of a limit with sphere
-bubbles has expected dimension at most `ind (A₀ + ∑ v, B v) - 2 ∑ v, m v`: two less for each
-bubble, counted with its covering multiplicity. -/
+/-- On a target with `ω = τ c₁` and `τ ≥ 0`, for instance a positively monotone one, the simple
+spheres, which have positive area, have first Chern number at least one, and the reduced stratum
+of a limit with sphere bubbles has expected dimension at most `ind (A₀ + ∑ v, B v) - 2 ∑ v, m v`:
+two less for each bubble, counted with its covering multiplicity. -/
 theorem sphereTreeDimension_le_sub_two_mul_sum_of_area_eq_mul_chern {n : ℤ} {τ : ℝ}
-    (ω : G →+ ℝ) (c : G →+ ℤ) (hω : ∀ A, ω A = τ * c A) (hτ : 0 < τ) {ind : G → ℤ}
+    (ω : G → ℝ) (c : G →+ ℤ) (hω : ∀ A, ω A = τ * c A) (hτ : 0 ≤ τ) {ind : G → ℤ}
     (hind : ∀ A B, ind (A + B) = ind A + 2 * c B) (A₀ : G) {B : ι → G} {B' : κ → G}
     {m : ι → ℕ} {ρ : ι → κ} (hB : ∀ v, B v = m v • B' (ρ v)) (hm : ∀ v, 0 < m v)
     (hρ : Function.Surjective ρ) (harea : ∀ w, 0 < ω (B' w)) (parent : κ → Option κ)
@@ -284,7 +294,7 @@ theorem sphereTreeDimension_le_sub_two_mul_sum_of_area_eq_mul_chern {n : ℤ} {�
   have hc (w : κ) : 1 ≤ c (B' w) := by
     have h := harea w
     rw [hω] at h
-    have : (0 : ℤ) < c (B' w) := by exact_mod_cast pos_of_mul_pos_right h hτ.le
+    have : (0 : ℤ) < c (B' w) := by exact_mod_cast pos_of_mul_pos_right h hτ
     omega
   have := sphereTreeDimension_le_sub_of_le_chern c hind A₀ hB hm hρ hc parent node
     root (n := n)
