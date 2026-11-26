@@ -58,7 +58,9 @@ for the subspace topology, already for `n = 1`.
 
 Each characteristic coefficient is continuous over a commutative topological ring
 (`Matrix.continuous_charpoly_coeff`). The proof uses Mathlib's universal characteristic polynomial
-`Matrix.charpoly.univ`, whose coefficients are multivariate polynomials in the matrix entries.
+`Matrix.charpoly.univ`, whose coefficients are multivariate polynomials in the matrix entries;
+so is each coefficient of the reversed characteristic polynomial `det (1 - X A)`
+(`Matrix.continuous_charpolyRev_coeff`).
 Hence two continuous maps `ρ ρ' : Γ → Mₙ(A)` into a Hausdorff topological ring whose
 characteristic polynomials agree on a dense subset of `Γ` have the same characteristic polynomial
 everywhere (`Matrix.charpoly_eq_of_dense`). In size two the characteristic polynomial is
@@ -303,6 +305,16 @@ theorem continuous_charpoly_coeff (k : ℕ) :
     ext i j
     rfl
   simpa only [MvPolynomial.eval, charpoly.univ_coeff_eval₂Hom, hmatrix] using h
+
+/-- Every coefficient of the reversed characteristic polynomial `det (1 - X A)` is continuous for
+the entrywise matrix topology. -/
+@[continuity, fun_prop]
+theorem continuous_charpolyRev_coeff (k : ℕ) :
+    Continuous (fun A : Matrix n n R => A.charpolyRev.coeff k) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
+  simp_rw [← reverse_charpoly, Polynomial.coeff_reverse, charpoly_natDegree_eq_dim]
+  exact continuous_charpoly_coeff _
 
 /-- **Recognition on a dense subset.** Two continuous matrix-valued maps `ρ ρ' : Γ → Mₙ(A)` into a
 Hausdorff topological ring whose characteristic polynomials agree on a dense subset of `Γ` have
