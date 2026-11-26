@@ -53,18 +53,20 @@ periods on `u_* μ` are `±` the integrals
 is positive (`TauCeti.SmoothAlmostComplexStructure.IsCurveClass.closedFormHomologyPeriod_pos`).
 If `X` is compact, the period of any closed two-form `θ` is bounded by a constant times the area,
 `|⟨[θ], A⟩| ≤ K ⟨[σ], A⟩` with `K` independent of the curve
-(`TauCeti.SmoothAlmostComplexStructure.exists_abs_closedFormHomologyPeriod_le_mul`): indeed
+(`TauCeti.SmoothTwoForm.Tames.exists_abs_closedFormHomologyPeriod_le_mul`): indeed
 `⟨[θ], A⟩ = ∫_C u^* θ`, which `TauCeti.abs_integralTopForm_mpullback_le` bounds by `K ∫_C u^* σ`.
 
 For finitely many closed two-forms, the curve classes are therefore comass bounded in the sense of
-`TauCeti.IsComassBounded` (`TauCeti.SmoothAlmostComplexStructure.exists_isComassBounded`), with
-the symplectic area as area. When the periods of these forms have injective real extension, the
-consequences of `TauCeti.IsComassBounded` hold for the curves of `X`: only finitely many curve
-classes have area at most `R`, torsion parts included
-(`TauCeti.IsComassBounded.finite_setOf_area_le`), their areas are bounded below by a positive
-constant, and the total multiplicity of a cycle of curve classes in a given class is bounded. By
-de Rham's theorem the periods of closed two-forms whose classes span `H²(X; ℝ)` have injective
-real extension; that comparison is not available here.
+`TauCeti.IsComassBounded`
+(`TauCeti.SmoothTwoForm.Tames.exists_isComassBounded_setOf_isCurveClass`), with the symplectic
+area as area. The finiteness consequences of `TauCeti.IsComassBounded` need two further inputs:
+that `H₂(X; ℤ)` is finitely generated, and that the periods of these forms have injective real
+extension. Given both, only finitely many curve classes have area at most `R`, torsion parts
+included (`TauCeti.IsComassBounded.finite_setOf_area_le`), their areas are bounded below by a
+positive constant, and the total multiplicity of a cycle of curve classes in a given class is
+bounded. Both inputs hold for compact `X`: the integral homology of a compact manifold is finitely
+generated, and by de Rham's theorem the periods of closed two-forms whose classes span `H²(X; ℝ)`
+have injective real extension. Neither is available here.
 
 ## References
 
@@ -234,7 +236,13 @@ theorem IsCurveClass.closedFormHomologyPeriod_pos {σ : closedForms I X 2}
   · exact (hu.mdifferentiable (by simp)).apply_eq_of_mfderiv_eq_zero
       (mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero hu ho hhol hσu h.symm) c₀ c₁
 
-variable [CompactSpace X]
+end SmoothAlmostComplexStructure
+
+variable [CompactSpace X] {J : SmoothAlmostComplexStructure I X}
+
+namespace SmoothTwoForm.Tames
+
+variable (I')
 
 /-- **Periods of curve classes are bounded by their area.** On a compact manifold, let the closed
 two-form `σ` tame `J`. For every closed two-form `θ` there is a constant `K ≥ 0`, independent of
@@ -252,11 +260,11 @@ theorem exists_abs_closedFormHomologyPeriod_le_mul {σ : closedForms I X 2}
 /-- **Curve classes are comass bounded.** On a compact manifold, let the closed two-form `σ` tame
 `J`. For finitely many closed two-forms `ζ i`, the curve classes of `J` form a comass bounded set
 for the period map `A ↦ (⟨[ζ i], A⟩)ᵢ` and the area `A ↦ ⟨[σ], A⟩`. -/
-theorem exists_isComassBounded {ι : Type*} [Fintype ι] {σ : closedForms I X 2}
+theorem exists_isComassBounded_setOf_isCurveClass {ι : Type*} [Fintype ι] {σ : closedForms I X 2}
     (hσ : SmoothTwoForm.Tames σ.val J) (ζ : ι → closedForms I X 2) :
     ∃ K, IsComassBounded (AddMonoidHom.pi fun i ↦ closedFormHomologyPeriod (ζ i)).toIntLinearMap
       (closedFormHomologyPeriod σ) K {A | J.IsCurveClass I' A} := by
-  choose K hK hζ using fun i ↦ exists_abs_closedFormHomologyPeriod_le_mul (I' := I') hσ (ζ i)
+  choose K hK hζ using fun i ↦ hσ.exists_abs_closedFormHomologyPeriod_le_mul I' (ζ i)
   refine ⟨∑ i, K i, fun A hA ↦ hA.closedFormHomologyPeriod_pos hσ, fun A hA ↦ ?_⟩
   have harea := (hA.closedFormHomologyPeriod_pos hσ).le
   refine (pi_norm_le_iff_of_nonneg
@@ -265,6 +273,6 @@ theorem exists_isComassBounded {ι : Type*} [Fintype ι] {σ : closedForms I X 2
   have hKi : K i ≤ ∑ i, K i := Finset.single_le_sum (fun i _ ↦ hK i) (Finset.mem_univ i)
   exact (hζ i A hA).trans (mul_le_mul_of_nonneg_right hKi harea)
 
-end SmoothAlmostComplexStructure
+end SmoothTwoForm.Tames
 
 end TauCeti
