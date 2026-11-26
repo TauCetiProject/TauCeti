@@ -51,6 +51,8 @@ completely integrable system there (`TauCeti.isIntegrableSystem_centralForceEner
   smooth on the punctured phase space as its potential is on `r > 0`.
 * `TauCeti.coe_smul_puncturedPhaseSpace`: a group acting linearly on `V` acts on the punctured
   phase space by acting on positions and momenta alike, smoothly if it acts smoothly on `V`.
+* `TauCeti.stdSymplecticForm_poissonBracket_comp_centralForceEnergyMomentum`: the functions
+  `ℓ ∘ (H, L)` pairwise Poisson-commute.
 * `TauCeti.poissonBracket_centralForceEnergyMomentum_comp_subtypeVal`: `H` and `L` Poisson-commute
   on every open set avoiding the collision set.
 * `TauCeti.isIntegrableSystem_centralForceEnergyMomentum`: `(H, L)` is a completely integrable
@@ -411,6 +413,28 @@ theorem dense_setOf_inner_ne_zero :
   refine mem_closure_of_tendsto hg ?_
   filter_upwards [self_mem_nhdsWithin] with ε hε
   simpa [g, inner_add_right, inner_smul_right, h, hq'] using hε
+
+/-- The function `ℓ ∘ (H, L)` is the combination `ℓ(e₀) H + ℓ(e₁) L`. -/
+theorem comp_centralForceEnergyMomentum (m : ℝ) (U : ℝ → ℝ) (ℓ : (Fin 2 → ℝ) →L[ℝ] ℝ) :
+    ℓ ∘ centralForceEnergyMomentum b m U = fun y ↦ ℓ (Pi.single 0 1) *
+      centralForceHamiltonian m U y + ℓ (Pi.single 1 1) * angularMomentum (b 0) (b 1) y := by
+  funext y
+  have hv : centralForceEnergyMomentum b m U y = centralForceHamiltonian m U y • Pi.single 0 1 +
+      angularMomentum (b 0) (b 1) y • Pi.single 1 1 := by
+    ext i
+    fin_cases i <;> simp
+  rw [Function.comp_apply, hv, map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, mul_comm,
+    mul_comm (angularMomentum _ _ y)]
+
+/-- **The energy–momentum map is involutive.** For any two linear functionals `ℓ, ℓ'` on `ℝ²`,
+the functions `ℓ ∘ (H, L)` and `ℓ' ∘ (H, L)` Poisson-commute at every point, since `{H, L} = 0`. -/
+theorem stdSymplecticForm_poissonBracket_comp_centralForceEnergyMomentum
+    [FiniteDimensional ℝ V] (m : ℝ) (U : ℝ → ℝ) (ℓ ℓ' : (Fin 2 → ℝ) →L[ℝ] ℝ) (x : V × V) :
+    (stdSymplecticForm (V := V)).poissonBracket (ℓ ∘ centralForceEnergyMomentum b m U)
+      (ℓ' ∘ centralForceEnergyMomentum b m U) x = 0 := by
+  rw [comp_centralForceEnergyMomentum, comp_centralForceEnergyMomentum,
+    SymplecticForm.poissonBracket_comb,
+    stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum, mul_zero]
 
 /-- **The energy and the angular momentum Poisson-commute on open sets.** On every open set of
 `V × V`, with the restriction of the standard symplectic form, the components of the
