@@ -27,7 +27,10 @@ form is smooth, which gives `TauCeti.SmoothForm.descend`. It is the unique form 
 `α`, it commutes with the exterior derivative, and it is closed exactly when `α` is.
 
 This is how forms are put on quotients of covering spaces, such as the mapping torus of a
-diffeomorphism, whose forms are the forms on `ℝ × M` invariant under the deck group.
+diffeomorphism, whose forms are the forms on `ℝ × M` invariant under the deck group. Every
+statement has a version for an additive group acting additively, such as a lattice acting by
+translations, with orbit space `AddAction.orbitRel.Quotient G M`
+(`TauCeti.SmoothForm.addDescend`, `TauCeti.SmoothForm.eq_addDescend_iff`).
 
 ## Main definitions
 
@@ -75,12 +78,18 @@ variable (G) in
 representative, read through the inverse of the derivative of the orbit projection there. When `α`
 is invariant under `G` this does not depend on the choice of representatives, and the descent pulls
 back to `α` along the orbit projection (`TauCeti.RoughForm.mpullback_quotientMk_descend`). -/
+@[to_additive addDescend /-- The descent of a form `α` on `M` to the orbit space of an additive
+group `G`: the descent `TauCeti.RoughForm.descendedForm` along the orbit projection. When `α` is
+invariant under `G` it pulls back to `α` along the orbit projection
+(`TauCeti.RoughForm.mpullback_addQuotientMk_addDescend`). -/]
 def descend (α : RoughForm I M F k) : RoughForm I (MulAction.orbitRel.Quotient G M) F k :=
   descendedForm I I (Quotient.mk (MulAction.orbitRel G M)) α
 
 variable {n : WithTop ℕ∞} [IsManifold I n M] [ContMDiffConstSMul I n G M]
 
 /-- A form invariant under `G` is basic for the orbit projection. -/
+@[to_additive isBasic_addQuotientMk
+/-- A form invariant under an additive group `G` is basic for the orbit projection. -/]
 theorem isBasic_quotientMk (hn : n ≠ 0) {α : RoughForm I M F k}
     (hα : ∀ g : G, mpullback I I (g • ·) α = α) :
     IsBasic I (Quotient.mk (MulAction.orbitRel G M)) α :=
@@ -89,6 +98,8 @@ theorem isBasic_quotientMk (hn : n ≠ 0) {α : RoughForm I M F k}
     (fun _ _ h ↦ Or.inr (MulAction.mem_orbit_iff.mp (Quotient.exact h.symm))) hα
 
 /-- A form invariant under `G` is the pullback of its descent along the orbit projection. -/
+@[to_additive mpullback_addQuotientMk_addDescend /-- A form invariant under an additive group `G`
+is the pullback of its descent along the orbit projection. -/]
 theorem mpullback_quotientMk_descend (hn : n ≠ 0) {α : RoughForm I M F k}
     (hα : ∀ g : G, mpullback I I (g • ·) α = α) :
     mpullback I I (Quotient.mk (MulAction.orbitRel G M)) (descend G α) = α :=
@@ -97,6 +108,8 @@ theorem mpullback_quotientMk_descend (hn : n ≠ 0) {α : RoughForm I M F k}
 
 /-- The descent of a form `α` invariant under `G` evaluates on images under the derivative of the
 orbit projection `q` as `α`: `(descend G α)_(q x)(dq_x v₁, …, dq_x vₖ) = α_x(v₁, …, vₖ)`. -/
+@[to_additive addDescend_apply_mfderiv /-- The descent of a form `α` invariant under an additive
+group `G` evaluates on images under the derivative of the orbit projection `q` as `α`. -/]
 theorem descend_apply_mfderiv (hn : n ≠ 0) {α : RoughForm I M F k}
     (hα : ∀ g : G, mpullback I I (g • ·) α = α) (x : M) (v : Fin k → TangentSpace I x) :
     descend G α (Quotient.mk (MulAction.orbitRel G M) x)
@@ -114,6 +127,8 @@ variable [IsManifold I ∞ M] [ContMDiffConstSMul I ∞ G M]
 omit [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul G M] [T2Space M]
   [LocallyCompactSpace M] in
 /-- A smooth form invariant under `G` is invariant as a rough form. -/
+@[to_additive coe_addInvariant
+/-- A smooth form invariant under an additive group `G` is invariant as a rough form. -/]
 private theorem coe_invariant {α : SmoothForm I M F k}
     (hα : ∀ g : G, mpullback (g • ·) (contMDiff_const_smul g) α = α) (g : G) :
     TauCeti.mpullback (F := F) I I (g • ·) α.val = α.val := by
@@ -124,6 +139,9 @@ variable {α : SmoothForm I M F k}
 /-- The descent of a smooth form `α` invariant under `G` to the orbit space of `G`: the unique
 smooth form whose pullback along the orbit projection is `α` (`TauCeti.SmoothForm.eq_descend_iff`).
 -/
+@[to_additive addDescend /-- The descent of a smooth form `α` invariant under an additive group `G`
+to the orbit space of `G`: the unique smooth form whose pullback along the orbit projection is `α`
+(`TauCeti.SmoothForm.eq_addDescend_iff`). -/]
 def descend (α : SmoothForm I M F k)
     (hα : ∀ g : G, mpullback (g • ·) (contMDiff_const_smul g) α = α) :
     SmoothForm I (MulAction.orbitRel.Quotient G M) F k :=
@@ -136,11 +154,13 @@ def descend (α : SmoothForm I M F k)
 variable {hα : ∀ g : G, mpullback (g • ·) (contMDiff_const_smul g) α = α}
 
 /-- The underlying rough form of the descent of a smooth form is its rough descent. -/
-@[simp]
+@[to_additive (attr := simp) coe_addDescend
+/-- The underlying rough form of the additive descent of a smooth form is its rough descent. -/]
 theorem coe_descend : (descend α hα).val = RoughForm.descend G α.val := (rfl)
 
 /-- An invariant smooth form is the pullback of its descent along the orbit projection. -/
-@[simp]
+@[to_additive (attr := simp) mpullback_addQuotientMk_addDescend /-- A smooth form invariant under an
+additive group is the pullback of its descent along the orbit projection. -/]
 theorem mpullback_quotientMk_descend :
     mpullback (Quotient.mk (MulAction.orbitRel G M)) isLocalDiffeomorph_quotientMk.contMDiff
       (descend α hα) = α :=
@@ -148,6 +168,8 @@ theorem mpullback_quotientMk_descend :
     RoughForm.mpullback_quotientMk_descend (n := ∞) (by simp) (coe_invariant hα)
 
 /-- Pullback of smooth forms along the orbit projection is injective. -/
+@[to_additive mpullback_addQuotientMk_injective /-- Pullback of smooth forms along the orbit
+projection of an additive group action is injective. -/]
 theorem mpullback_quotientMk_injective :
     Function.Injective (mpullback (F := F) (k := k)
       (Quotient.mk (MulAction.orbitRel G M)) (isLocalDiffeomorph_quotientMk (I := I)).contMDiff) :=
@@ -156,6 +178,9 @@ theorem mpullback_quotientMk_injective :
 
 /-- The descent of an invariant smooth form `α` is the unique smooth form on the orbit space whose
 pullback along the orbit projection is `α`. -/
+@[to_additive eq_addDescend_iff /-- The descent of a smooth form `α` invariant under an additive
+group is the unique smooth form on the orbit space whose pullback along the orbit projection is
+`α`. -/]
 theorem eq_descend_iff {β : SmoothForm I (MulAction.orbitRel.Quotient G M) F k} :
     β = descend α hα ↔
       mpullback (Quotient.mk (MulAction.orbitRel G M)) isLocalDiffeomorph_quotientMk.contMDiff β =
@@ -165,13 +190,16 @@ theorem eq_descend_iff {β : SmoothForm I (MulAction.orbitRel.Quotient G M) F k}
 
 /-- The exterior derivative of the descent of an invariant smooth form is the descent of its
 exterior derivative. -/
+@[to_additive mextDerivₗ_addDescend /-- The exterior derivative of the descent of a smooth form
+invariant under an additive group is the descent of its exterior derivative. -/]
 theorem mextDerivₗ_descend :
     mextDerivₗ I k (descend α hα) = descend (mextDerivₗ I k α)
       (fun g ↦ by rw [← mextDerivₗ_mpullback, hα g]) := by
   rw [eq_descend_iff, ← mextDerivₗ_mpullback, mpullback_quotientMk_descend]
 
 /-- The descent of an invariant smooth form is closed exactly when the form is closed. -/
-@[simp]
+@[to_additive (attr := simp) isClosed_addDescend_iff /-- The descent of a smooth form invariant
+under an additive group is closed exactly when the form is closed. -/]
 theorem isClosed_descend_iff : (descend α hα).IsClosed ↔ α.IsClosed := by
   rw [← (isLocalDiffeomorph_quotientMk (n := ∞)).isClosed_mpullback_iff Quotient.mk_surjective]
   exact iff_of_eq (congrArg IsClosed mpullback_quotientMk_descend)
