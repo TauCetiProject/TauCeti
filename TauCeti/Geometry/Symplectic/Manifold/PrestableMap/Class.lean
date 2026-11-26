@@ -147,14 +147,9 @@ homology vanishes. -/
 @[simp]
 theorem normalizationClass_const (x : X) :
     normalizationClass (ContinuousMap.const (Σ i, C i) x) = 0 := by
-  have hconst : ContinuousMap.const (Σ i, C i) x =
-      (ContinuousMap.const PUnit x).comp (ContinuousMap.const (Σ i, C i) PUnit.unit) := rfl
-  rw [hconst, ← singularHomologyFunctor_map_normalizationClass,
-    (isZero_singularHomologyFunctor_of_totallyDisconnectedSpace (ModuleCat.{0} ℤ) 2
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) (TopCat.of PUnit) two_ne_zero).eq_zero_of_src
-      (((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
-        (TopCat.ofHom (ContinuousMap.const PUnit x)))]
-  simp
+  rw [normalizationClass_def, HomologicalOrientation.mapFundamentalClass_def,
+    singularHomologyFunctor_map_const_eq_zero _ x two_ne_zero]
+  exact LinearMap.zero_apply _
 
 /-- **Maps from curves with simply connected components have spherical classes.** If every
 component `C i` is simply connected, as a compact Riemann surface of genus zero is, then the class
