@@ -83,7 +83,9 @@ suffices, since the chart compressions only see such inputs
   differential operator of order at most `m` between the bundles, in Grothendieck's sense for
   commutators with complex-valued smooth functions, is a classical pseudodifferential operator of
   order `m`, since its matrix entries are differential operators of order at most `m`
-  (`TauCeti.sectionEntry_mem_differentialOperators`).
+  (`TauCeti.sectionEntry_mem_differentialOperators`). The entries of the iterated commutators of
+  the operator with multiplication by a function are the iterated commutators of its entries
+  (`TauCeti.sectionEntry_smulCommutator_pow`).
 * `TauCeti.mem_sectionClassicalPseudodifferentialOperators_zero_of_map_smul`: in particular an
   operator which is linear over the complex-valued smooth functions, that is, a smooth bundle map,
   has order `0`; so does the identity.
@@ -319,6 +321,28 @@ theorem IsSectionProperlySupported.sectionEntry
   · rw [sectionEntry_apply, hP₂ _ (hf.mono fun y hy ↦ by simp [hy]) x hx]
     simp
 
+/-- The matrix entry of `P` is `P` sandwiched between the cut-off frame coefficient and
+multiplication of the cut-off frame section by functions. -/
+private theorem sectionEntry_eq_comp
+    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
+    TauCeti.sectionEntry t ψ hψ v t' χ hχ ℓ P = t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+      (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ :=
+  (rfl)
+
+/-- The maps `f ↦ f · ψ t⁻¹ v` and `h ↦ χ · ℓ(t' h)` sandwiching `P` in its matrix entry are linear
+over the complex-valued smooth functions. -/
+private theorem sectionEntry_intertwine (b : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (∀ f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ (b • f) =
+        b • (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ f) ∧
+      ∀ h, t'.cutoffFrameCoeff χ hχ ℓ (b • h) = b • t'.cutoffFrameCoeff χ hχ ℓ h := by
+  refine ⟨fun f ↦ by simp [mul_smul], fun h ↦ ?_⟩
+  ext x
+  simp only [Bundle.Trivialization.cutoffFrameCoeff_apply,
+    ContMDiffSection.smul_apply_of_normedAlgebra, map_smul, smul_eq_mul, ContMDiffMap.coe_mul,
+    Pi.mul_apply, Complex.real_smul]
+  ring
+
 /-- **The entries of a differential operator are differential operators.** If `P : Γ(E) → Γ(F)` is
 a differential operator of order at most `m` in Grothendieck's sense, for commutators with
 multiplication by complex-valued smooth functions, then so is each of its matrix entries
@@ -331,19 +355,21 @@ theorem sectionEntry_mem_differentialOperators {m : ℕ}
       differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
         C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
         C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ m := by
-  have hentry : TauCeti.sectionEntry t ψ hψ v t' χ hχ ℓ P = t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
-      (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ := by
-    ext f x
-    simp
-  rw [hentry]
-  -- The maps `f ↦ f · ψ t⁻¹ v` and `h ↦ χ · ℓ(t' h)` are linear over the complex-valued functions.
-  refine comp_comp_mem_differentialOperators (fun b ↦ ⟨b, fun f ↦ by simp [mul_smul], fun h ↦ ?_⟩)
-    hP
-  ext x
-  simp only [Bundle.Trivialization.cutoffFrameCoeff_apply,
-    ContMDiffSection.smul_apply_of_normedAlgebra, map_smul, smul_eq_mul, ContMDiffMap.coe_mul,
-    Pi.mul_apply, Complex.real_smul]
-  ring
+  rw [sectionEntry_eq_comp]
+  exact comp_comp_mem_differentialOperators
+    (fun b ↦ ⟨b, sectionEntry_intertwine t ψ hψ v t' χ hχ ℓ b⟩) hP
+
+/-- **Entries of iterated commutators.** The matrix entry of the `k`-fold commutator of `P` with
+multiplication by a complex-valued smooth function `g` is the `k`-fold commutator with `g` of the
+corresponding matrix entry of `P`. -/
+theorem sectionEntry_smulCommutator_pow (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯)
+    (k : ℕ) :
+    TauCeti.sectionEntry t ψ hψ v t' χ hχ ℓ ((smulCommutator ℂ g ^ k) P) =
+      (smulCommutator ℂ g ^ k) (TauCeti.sectionEntry t ψ hψ v t' χ hχ ℓ P) := by
+  rw [sectionEntry_eq_comp, sectionEntry_eq_comp]
+  obtain ⟨hρ, hσ⟩ := sectionEntry_intertwine t ψ hψ v t' χ hχ ℓ g
+  exact (smulCommutator_pow_comp_comp hρ hσ P k).symm
 
 end Entry
 
