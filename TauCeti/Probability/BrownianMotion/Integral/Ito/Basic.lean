@@ -13,10 +13,12 @@ public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.TimeMeasure
 public import TauCeti.Probability.StochasticIntegral.Elementary
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
+import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Process.Predictable.Basic
 import TauCeti.Probability.Process.ContinuousAE
@@ -128,6 +130,7 @@ theorem IsItoIntegral.locallyBrownianIntegrable (hI : IsItoIntegral ℱ P W H I)
   refine locallyBrownianIntegrable_iff_nat.2 ⟨hI.isStronglyPredictable, fun n ↦ ?_⟩
   rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def]
   obtain ⟨m, τ, a, hτ, ha, hE, _⟩ := hI.exists_approx n
+  -- Step 1: if `H · ω ∉ L²(timeMeasure n)`, every simple approximant lies at square energy ≥ 1.
   have hsub (ω : Ω) : ¬ MemLp (fun t ↦ H t ω) 2 (timeMeasure n) →
       ∀ k, 1 ≤ ∫⁻ s, ‖Finance.simpleHolding (τ k) (m k) (a k) s ω - H s ω‖ₑ ^ 2
         ∂timeMeasure n := by
@@ -135,19 +138,9 @@ theorem IsItoIntegral.locallyBrownianIntegrable (hI : IsItoIntegral ℱ P W H I)
     by_contra! hlt
     apply hnot
     have hK_fin : ∫⁻ s, ‖Finance.simpleHolding (τ k) (m k) (a k) s ω‖ₑ ^ 2
-        ∂timeMeasure n < ∞ := by
-      let C : ℝ := ∑ j ∈ Finset.range (m k), ‖a k j ω‖
-      have hC_nn : 0 ≤ C := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
-      have hle (s : ℝ≥0) : ‖Finance.simpleHolding (τ k) (m k) (a k) s ω‖ₑ ^ 2 ≤ ‖C‖ₑ ^ 2 := by
-        gcongr
-        rw [eNorm_le_iff_norm_le]
-        have hbd := Finance.norm_simpleHolding_le (hτ k) s ω (C := C) fun j hj ↦
-          Finset.single_le_sum (f := fun j ↦ ‖a k j ω‖) (fun _ _ ↦ norm_nonneg _)
-            (Finset.mem_range.mpr hj)
-        simpa only [max_eq_left hC_nn, Real.norm_of_nonneg hC_nn] using hbd
-      refine (lintegral_mono hle).trans_lt ?_
-      rw [lintegral_const, timeMeasure_univ]
-      finiteness
+        ∂timeMeasure n < ∞ :=
+      (timeMeasure n).lintegral_enorm_sq_simpleHolding_lt_top (hτ k)
+        (fun _ _ ↦ measurableSet_Ioc) ω
     have hpred : IsStronglyPredictable ℱ
         (fun s ω ↦ H s ω - Finance.simpleHolding (τ k) (m k) (a k) s ω) :=
       hI.isStronglyPredictable.sub (Finance.isStronglyPredictable_simpleHolding (ha k))
@@ -164,6 +157,7 @@ theorem IsItoIntegral.locallyBrownianIntegrable (hI : IsItoIntegral ℱ P W H I)
         (hI.isStronglyPredictable.stronglyMeasurable_section ω).aestronglyMeasurable] at hH_fin
       exact lt_of_not_ge fun htop ↦ by simp [top_le_iff.mp htop] at hH_fin
     exact hH_eLp
+  -- Step 2: convergence of the approximation errors in probability forces the bad set to be null.
   rw [ae_iff]
   exact le_antisymm
     (le_of_tendsto_of_tendsto tendsto_const_nhds (hE 1 one_pos)
@@ -477,6 +471,27 @@ theorem _root_.TauCeti.ElementaryIntegrand.brownianIntegrable
   refine ⟨K.isStronglyPredictable, fun T ↦ MemLp.of_bound
     ((K.isStronglyPredictable.mono ℱ.predictable_le_prod).aestronglyMeasurable) C
     (Eventually.of_forall fun p ↦ by rw [Real.norm_eq_abs]; exact hC p.1 p.2)⟩
+
+/-- Convergence in `L²((timeMeasure t).prod P)` of a sequence of `ElementaryIntegrand`s to
+predictable integrands implies convergence in probability of their pathwise square errors on
+`(0, t]`. -/
+theorem _root_.TauCeti.ElementaryIntegrand.tendsto_measure_le_lintegral_of_tendsto_eLpNorm
+    {P : Measure Ω} [SFinite P] {t : ℝ≥0}
+    {K : ℕ → ElementaryIntegrand ℱ} {H : ℕ → ℝ≥0 → Ω → ℝ}
+    (hH : ∀ k, IsStronglyPredictable ℱ (H k))
+    (hK : Tendsto (fun k ↦ eLpNorm
+      (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H k p.1 p.2) 2 ((timeMeasure t).prod P))
+      atTop (𝓝 0)) :
+    ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
+      ∫⁻ s, ‖Finance.simpleHolding (K k).dates (K k).n (K k).positions s ω -
+        H k s ω‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0) := by
+  intro ε hε
+  simpa only [ElementaryIntegrand.toProcess_eq_simpleHolding] using
+    TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
+      (f := fun k p ↦ (K k).toProcess p.1 p.2 - H k p.1 p.2)
+      (fun k ↦ (((K k).isStronglyPredictable.sub (hH k)).mono
+        ℱ.predictable_le_prod).aestronglyMeasurable)
+      hK hε
 
 /-- Representative independence of the Brownian Itô integral: Itô integrals of predictable
 integrands that agree `(timeMeasure T).prod P`-almost everywhere on every finite horizon are

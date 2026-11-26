@@ -132,10 +132,8 @@ theorem ae_eq_l2Integral_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
     simpa only [ElementaryIntegrand.toProcess_eq_simpleHolding] using hKlim
   exact hI.ae_eq_of_tendstoInMeasure hW (fun k ↦ (K k).monotone_dates.monotoneOn _)
     (fun k ↦ (K k).measurable_positions)
-    (fun _ hε ↦ TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
-      (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (K k).measurable_positions).sub
-        hI.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
-      hlim_sh hε)
+    (ElementaryIntegrand.tendsto_measure_le_lintegral_of_tendsto_eLpNorm
+      (fun _ ↦ hI.isStronglyPredictable) hKlim)
     (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num)
       (hlim_sh.congr fun k ↦ (hW.eLpNorm_simpleGains_sub_l2Integral
         ((K k).monotone_dates.monotoneOn _) (K k).measurable_positions

@@ -26,9 +26,9 @@ by the sum of the original absolute heights; thus boundedness and Lᵖ control s
 without additional moment assumptions.
 `exists_simpleHolding_simpleGains_eq_sub` specializes this to the difference of two simple
 strategies on monotone grids, subtracting both their holdings and their gains.
-`simpleHolding_clip_Ioc_mul` clips a simple strategy to `(s, t]` via `Set.projIcc s t hst ∘ τ`
-and multiplies by an `ℱ s`-measurable height `ξ`, factoring `ξ` out of the `(s, t]` gain
-difference.
+`stronglyMeasurable_clip_Ioc_mul`, `simpleHolding_clip_Ioc_mul`, and `simpleGains_clip_Ioc_mul`
+clip a simple strategy to `(s, t]` via `Set.projIcc s t hst ∘ τ` and multiply by an
+`ℱ s`-measurable height `ξ`, factoring `ξ` out of the `(s, t]` gain difference.
 
 A finite family of elementary predictable holdings can also be refined simultaneously while
 preserving each holding and its gains separately, not just their sum. Tagging each strategy with
@@ -246,46 +246,51 @@ private theorem single_clip_Ioc_gain {s t l r T : ι} (hst : s ≤ t) (hlr : l �
   rw [← mul_sub, ← Set.ite_le_sub_min_coe_projIcc hst hlr f]
   by_cases hlt : l ≤ t <;> simp [hlt, mul_assoc]
 
-/-- Clipping a simple holding `(τ, n, a)` to `(s, t]` via `Set.projIcc s t hst ∘ τ` and
-multiplying by an `ℱ s`-measurable function `ξ` yields another simple holding whose holdings
-equal `1_{(s, t]} · ξ · simpleHolding τ n a` and whose gains factor `ξ` out of the `(s, t]`
-difference of gains. -/
-theorem simpleHolding_clip_Ioc_mul {mΩ : MeasurableSpace Ω} (ℱ : Filtration ι mΩ)
+/-- Clipping left-measurable heights to `(s, t]` via `Set.projIcc s t hst ∘ τ` and multiplying by
+an `ℱ s`-measurable function `ξ` preserves left-measurability at the clipped dates. -/
+theorem stronglyMeasurable_clip_Ioc_mul {mΩ : MeasurableSpace Ω} (ℱ : Filtration ι mΩ)
     {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω → ℝ}
-    (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
     {s t : ι} (hst : s ≤ t) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) :
-    let σ : ℕ → ι := fun j ↦ Set.projIcc s t hst (τ j)
-    let b (j : ℕ) (ω : Ω) : ℝ := if τ j ≤ t then ξ ω * a j ω else 0
-    MonotoneOn σ (Set.Iic n) ∧
-      (∀ j < n, StronglyMeasurable[ℱ (σ j)] (b j)) ∧
-      (∀ u ω, simpleHolding σ n b u ω =
-        (Set.Ioc s t).indicator (fun _ ↦ ξ ω * simpleHolding τ n a u ω) u) ∧
-      ∀ (X : ι → Ω → ℝ) (T : ι) (ω : Ω), simpleGains σ n b X T ω =
-        ξ ω * (simpleGains τ n a X (min T t) ω - simpleGains τ n a X (min T s) ω) := by
-  intro σ b
-  have hσ : MonotoneOn σ (Set.Iic n) := fun i hi j hj hij ↦
-    Set.monotone_projIcc hst (hτ hi hj hij)
-  refine ⟨hσ, fun j hj ↦ ?_, fun u ω ↦ ?_, fun X T ω ↦ ?_⟩
-  · dsimp only [b]
-    by_cases hjt : τ j ≤ t
-    · simp only [hjt, ite_true]
-      have hsσ : s ≤ σ j := (Set.projIcc s t hst (τ j)).property.1
-      have hτσ : τ j ≤ σ j := by
-        dsimp only [σ]
-        rw [Set.coe_projIcc]
-        exact le_max_of_le_right (le_min hjt le_rfl)
-      exact (hξ.mono (ℱ.mono hsσ)).mul ((ha j hj).mono (ℱ.mono hτσ))
-    · simp only [hjt, ite_false]
-      exact stronglyMeasurable_zero
-  · rw [simpleHolding_def, simpleHolding_def, sum_congr rfl fun j _ ↦
-      indicator_Ioc_projIcc_mul hst (ξ ω) (a j ω) u]
-    by_cases hu : u ∈ Set.Ioc s t
-    · simp only [Set.indicator_of_mem hu, mul_sum]
-    · simp [Set.indicator_of_notMem hu]
-  · rw [simpleGains_def, simpleGains_def, simpleGains_def, ← sum_sub_distrib, mul_sum]
-    refine sum_congr rfl fun j hj ↦ ?_
-    have hj' : j < n := mem_range.mp hj
-    exact single_clip_Ioc_gain hst (hτ hj'.le hj' (Nat.le_succ j)) (ξ ω) (a j ω) (X · ω)
+    ∀ j < n, StronglyMeasurable[ℱ (Set.projIcc s t hst (τ j) : ι)]
+      (fun ω ↦ if τ j ≤ t then ξ ω * a j ω else 0) := by
+  intro j hj
+  by_cases hjt : τ j ≤ t
+  · simp only [hjt, ite_true]
+    have hsσ : s ≤ (Set.projIcc s t hst (τ j) : ι) := (Set.projIcc s t hst (τ j)).property.1
+    have hτσ : τ j ≤ (Set.projIcc s t hst (τ j) : ι) := by
+      rw [Set.coe_projIcc]
+      exact le_max_of_le_right (le_min hjt le_rfl)
+    exact (hξ.mono (ℱ.mono hsσ)).mul ((ha j hj).mono (ℱ.mono hτσ))
+  · simp only [hjt, ite_false]
+    exact stronglyMeasurable_zero
+
+/-- Clipping a simple holding `(τ, n, a)` to `(s, t]` via `Set.projIcc s t hst ∘ τ` and
+multiplying by `ξ` yields `1_{(s, t]} · ξ · simpleHolding τ n a`. -/
+theorem simpleHolding_clip_Ioc_mul {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω → ℝ}
+    {s t : ι} (hst : s ≤ t) (ξ : Ω → ℝ) (u : ι) (ω : Ω) :
+    simpleHolding (fun j ↦ (Set.projIcc s t hst (τ j) : ι)) n
+        (fun j ω ↦ if τ j ≤ t then ξ ω * a j ω else 0) u ω =
+      (Set.Ioc s t).indicator (fun _ ↦ ξ ω * simpleHolding τ n a u ω) u := by
+  rw [simpleHolding_def, simpleHolding_def, sum_congr rfl fun j _ ↦
+    indicator_Ioc_projIcc_mul hst (ξ ω) (a j ω) u]
+  by_cases hu : u ∈ Set.Ioc s t
+  · simp only [Set.indicator_of_mem hu, mul_sum]
+  · simp [Set.indicator_of_notMem hu]
+
+/-- Clipping a simple holding `(τ, n, a)` on a monotone grid to `(s, t]` via
+`Set.projIcc s t hst ∘ τ` and multiplying by `ξ` factors `ξ` out of the `(s, t]` gain
+difference. -/
+theorem simpleGains_clip_Ioc_mul {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n)) {s t : ι} (hst : s ≤ t) (ξ : Ω → ℝ)
+    (X : ι → Ω → ℝ) (T : ι) (ω : Ω) :
+    simpleGains (fun j ↦ (Set.projIcc s t hst (τ j) : ι)) n
+        (fun j ω ↦ if τ j ≤ t then ξ ω * a j ω else 0) X T ω =
+      ξ ω * (simpleGains τ n a X (min T t) ω - simpleGains τ n a X (min T s) ω) := by
+  rw [simpleGains_def, simpleGains_def, simpleGains_def, ← sum_sub_distrib, mul_sum]
+  refine sum_congr rfl fun j hj ↦ ?_
+  have hj' : j < n := mem_range.mp hj
+  exact single_clip_Ioc_gain hst (hτ hj'.le hj' (Nat.le_succ j)) (ξ ω) (a j ω) (X · ω)
 
 end TauCeti.Finance
 

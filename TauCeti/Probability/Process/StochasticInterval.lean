@@ -177,6 +177,15 @@ theorem ite_Ioc_eq_add_ite_Ioc {ι Ω E : Type*} [LinearOrder ι] [AddCommMonoid
   rw [Ioc_union_Ioc_eq_Ioc (hρσ ω) (hστ ω)] at hmem
   simpa only [indicator_apply, mem_Ioc] using hmem
 
+/-- Rewriting `(u, ω) ↦ if s < u ∧ u ≤ t then ξ ω * G u ω else 0` as `G` times the `(s, t]`
+indicator of `ξ`. -/
+theorem ite_Ioc_mul_eq_mul_indicator {ι Ω E : Type*} [Preorder ι] [DecidableLT ι] [DecidableLE ι]
+    [CommMonoidWithZero E] (s t : ι) (ξ : Ω → E) (G : ι → Ω → E) :
+    (fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * G u ω else 0) =
+      G * fun u ω ↦ (Set.Ioc s t).indicator (fun _ ↦ ξ ω) u := by
+  ext u ω
+  simp only [Pi.mul_apply, Set.indicator_apply, Set.mem_Ioc, mul_ite, mul_zero, mul_comm]
+
 end TauCeti
 
 namespace TauCeti

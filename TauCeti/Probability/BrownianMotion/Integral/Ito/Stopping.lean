@@ -89,7 +89,8 @@ theorem stoppedProcess_ae_eq_l2Integral
       tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hKlim T) (fun _ ↦ zero_le)
         fun m ↦ by
           rw [hW.eLpNorm_simpleGains_sub_l2Integral (hp' m) (hζ' m)
-            (Finance.memLp_of_bound_stronglyMeasurable (hζ' m) (hC' m)) T
+            (fun j hj ↦ MemLp.of_bound ((hζ' m j hj).mono (ℱ.le _)).aestronglyMeasurable
+              (C' m) (.of_forall (hC' m j hj))) T
             (hH.ite_le hσ).isStronglyPredictable ((hH.ite_le hσ).memLp_timeMeasure T)]
           refine eLpNorm_mono_ae ((((Finance.isStronglyPredictable_simpleHolding (hζ' m)).sub
             (hH.ite_le hσ).isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)

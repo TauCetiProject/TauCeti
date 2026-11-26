@@ -100,10 +100,10 @@ private theorem eLpNorm_elementaryIntegrand_sub (hW : IsFilteredPreBrownianReal 
         (hgain W t ω).symm
   have hK : (fun p : ℝ≥0 × Ω ↦ K.toProcess p.1 p.2 - L.toProcess p.1 p.2) =
       Function.uncurry (Finance.simpleHolding ρ N c) :=
-    funext fun p ↦ by
+    funext fun ⟨t, ω⟩ ↦ by
       rw [ElementaryIntegrand.toProcess_eq_simpleHolding,
-        ElementaryIntegrand.toProcess_eq_simpleHolding, ← hhold p.1 p.2]
-      rfl
+        ElementaryIntegrand.toProcess_eq_simpleHolding, ← hhold t ω]
+      simp only [Function.uncurry_apply_pair]
   rw [hG, hK]
   exact hW.eLpNorm_simpleGains hρ.monotoneOn hc hc₂ t
 
@@ -125,10 +125,10 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_elementaryIntegrand_cau
   have hK_proc (k : ℕ) :
       (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) =
         Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k)) - Function.uncurry H :=
-    funext fun p ↦ by
-      dsimp only [K, Pi.sub_apply, Function.uncurry_apply_pair]
+    funext fun ⟨t, ω⟩ ↦ by
+      dsimp only [K]
       rw [ElementaryIntegrand.toProcess_ofSimpleHolding]
-      rfl
+      simp only [Pi.sub_apply, Function.uncurry_apply_pair]
   have hKH' (t : ℝ≥0) : Tendsto (fun k ↦ eLpNorm
       (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) 2
         ((timeMeasure t).prod P)) atTop (𝓝 0) :=
@@ -147,7 +147,10 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_elementaryIntegrand_cau
       dist ((hK k t).toLp _) ((hK l t).toLp _) := by
     rw [dist_eq_norm, dist_eq_norm, ← MemLp.toLp_sub, ← MemLp.toLp_sub, Lp.norm_toLp,
       Lp.norm_toLp, eLpNorm_elementaryIntegrand_sub hW (K k) (K l) t]
-    rfl
+    rw [show (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - (K l).toProcess p.1 p.2) =
+        (fun p ↦ (K k).toProcess p.1 p.2) - (fun p ↦ (K l).toProcess p.1 p.2) from
+      funext fun p ↦ (Pi.sub_apply (fun q : ℝ≥0 × Ω ↦ (K k).toProcess q.1 q.2)
+        (fun q : ℝ≥0 × Ω ↦ (K l).toProcess q.1 q.2) p).symm]
   have hcau := hconv.cauchySeq
   rw [Metric.cauchySeq_iff] at hcau ⊢
   intro ε hε
@@ -176,12 +179,8 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral_approx
     ⟨hH.isStronglyPredictable, hIc.mono fun ω hω ↦ hω.1, fun t ↦
       ⟨fun k ↦ (K k).n, fun k ↦ (K k).dates, fun k ↦ (K k).positions,
         fun k ↦ (K k).monotone_dates.monotoneOn _, fun k ↦ (K k).measurable_positions,
-        fun _ hε ↦ TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
-          (f := fun k p ↦
-            Finance.simpleHolding (K k).dates (K k).n (K k).positions p.1 p.2 - H p.1 p.2)
-          (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (K k).measurable_positions).sub
-            hH.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
-          (by simpa only [ElementaryIntegrand.toProcess_eq_simpleHolding] using hKH t) hε,
+        ElementaryIntegrand.tendsto_measure_le_lintegral_of_tendsto_eLpNorm
+          (fun _ ↦ hH.isStronglyPredictable) (hKH t),
         by
           simpa only [ElementaryIntegrand.integral_eq_simpleGains] using
             tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩,
@@ -232,12 +231,8 @@ theorem IsItoIntegral.martingale (hI : IsItoIntegral ℱ P W H I)
   obtain ⟨Z, hZ, hZlim⟩ := exists_martingale_of_cauchySeq_Lp hmart hmem hcau
   exact hZ.congr hIa fun t ↦ (hI.ae_eq_of_tendstoInMeasure hW
     (fun k ↦ (K k).monotone_dates.monotoneOn _) (fun k ↦ (K k).measurable_positions)
-    (fun _ hε ↦ TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
-      (f := fun k p ↦ Finance.simpleHolding (K k).dates (K k).n (K k).positions p.1 p.2 -
-        H p.1 p.2)
-      (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (K k).measurable_positions).sub
-        hH.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
-      (by simpa only [ElementaryIntegrand.toProcess_eq_simpleHolding] using hKH t) hε)
+    (ElementaryIntegrand.tendsto_measure_le_lintegral_of_tendsto_eLpNorm
+      (fun _ ↦ hH.isStronglyPredictable) (hKH t))
     (by
       simpa only [ElementaryIntegrand.integral_eq_simpleGains] using
         tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hZlim t).2)).symm
