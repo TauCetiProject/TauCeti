@@ -204,7 +204,7 @@ theorem meromorphic_completedDedekindZeta : Meromorphic (completedDedekindZeta K
 
 /-- There is a system of representatives of the ideal classes, through which
 `completedDedekindZeta_eq_sum_completedPartialZeta` applies. -/
-private theorem exists_completedDedekindZeta_eq_sum :
+theorem exists_completedDedekindZeta_eq_sum :
     ∃ rep : ClassGroup (𝓞 K) → (FractionalIdeal (𝓞 K)⁰ K)ˣ,
       (∀ c, ClassGroup.mk K (rep c) = c) ∧
         completedDedekindZeta K = ∑ c, completedPartialZeta (rep c) := by
