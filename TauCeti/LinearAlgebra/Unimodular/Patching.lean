@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import TauCeti.LinearAlgebra.Unimodular.Polynomial
 import Mathlib.RingTheory.Localization.Algebra
+import TauCeti.RingTheory.Localization.IntegerMultiple
 
 /-!
 # Quillen patching and Horrocks' theorem over an integral domain
@@ -186,18 +187,18 @@ variable {M : Submonoid R} [Algebra R S] [IsLocalization M S]
 
 attribute [local instance] Polynomial.algebra in
 /-- A finite family of polynomials in two variables over a localisation `S` of `R` becomes a
-family of polynomials over `R` after multiplication by a single element of `M`. This uses that
-`S[X][Y]` is a localisation of `R[X][Y]` (`Polynomial.isLocalization`). -/
+family of polynomials over `R` after multiplication by a single element of `M`: clear the
+denominators over the localisation `S[X]` of `R[X]` (`Polynomial.isLocalization`). -/
 private theorem exists_map_map_eq_mul {κ : Type*} [Finite κ] (q : κ → S[X][X]) :
     ∃ s ∈ M, ∀ k, ∃ q' : R[X][X],
       q'.map (mapRingHom (algebraMap R S)) = C (C (algebraMap R S s)) * q k := by
   have := Polynomial.isLocalization M S
-  have := Polynomial.isLocalization (M.map C) S[X]
-  obtain ⟨⟨_, _, ⟨s, hs, rfl⟩, rfl⟩, hb⟩ :=
-    IsLocalization.exist_integer_multiples_of_finite ((M.map C).map C) q
+  obtain ⟨⟨_, s, hs, rfl⟩, hq⟩ := IsLocalization.exists_polynomial_map_eq_smul (M.map C) q
   refine ⟨s, hs, fun k ↦ ?_⟩
-  obtain ⟨q', hq'⟩ := hb k
-  exact ⟨q', by simpa [Algebra.smul_def] using hq'⟩
+  obtain ⟨q', hq'⟩ := hq k
+  refine ⟨q', ?_⟩
+  rw [← Polynomial.algebraMap_def, hq', ← algebraMap_smul S[X] (C s), smul_eq_C_mul]
+  simp
 
 /-- If the constant terms in `Y` of the entries of a matrix over `S[X][Y]` come from `R[X]`,
 then for some `s ∈ M` and every `u` the matrix `A(X, suY)` comes from `R[X][Y]`. -/
