@@ -116,14 +116,14 @@ variable {J : GrothendieckTopology C} (G : GroupoidObject.{w} J)
 
 /-- The identity of any object followed by an arrow `f` is `f`. -/
 @[simp]
-lemma c_e_left {U : Cᵒᵖ} (x : G.X.obj.obj U) (f : G.R.obj.obj U)
+lemma e_c' {U : Cᵒᵖ} (x : G.X.obj.obj U) (f : G.R.obj.obj U)
     (h : G.t.hom.app U (G.e.hom.app U x) = G.s.hom.app U f) : G.c (G.e.hom.app U x) f h = f := by
   obtain rfl : x = G.s.hom.app U f := (G.t_e x).symm.trans h
   exact G.e_c f
 
 /-- An arrow `f` followed by the identity of any object is `f`. -/
 @[simp]
-lemma c_e_right {U : Cᵒᵖ} (f : G.R.obj.obj U) (y : G.X.obj.obj U)
+lemma c_e' {U : Cᵒᵖ} (f : G.R.obj.obj U) (y : G.X.obj.obj U)
     (h : G.t.hom.app U f = G.s.hom.app U (G.e.hom.app U y)) : G.c f (G.e.hom.app U y) h = f := by
   obtain rfl : y = G.t.hom.app U f := (G.s_e y).symm.trans h.symm
   exact G.c_e f
@@ -158,8 +158,8 @@ instance (U : Cᵒᵖ) : Groupoid (Fiber.{w'} G U) where
   id x := ⟨G.e.hom.app U x.as, G.s_e _, G.t_e _⟩
   comp φ ψ := ⟨G.c φ.arr ψ.arr (φ.t_arr.trans ψ.s_arr.symm), (G.s_c _ _ _).trans φ.s_arr,
     (G.t_c _ _ _).trans ψ.t_arr⟩
-  id_comp _ := Fiber.Hom.ext (G.c_e_left _ _ _)
-  comp_id _ := Fiber.Hom.ext (G.c_e_right _ _ _)
+  id_comp _ := Fiber.Hom.ext (G.e_c' _ _ _)
+  comp_id _ := Fiber.Hom.ext (G.c_e' _ _ _)
   assoc _ _ _ := Fiber.Hom.ext (G.c_assoc _ _ _ _ _)
   inv φ := ⟨G.i.hom.app U φ.arr, (G.s_i _).trans φ.t_arr, (G.t_i _).trans φ.s_arr⟩
   inv_comp φ := Fiber.Hom.ext ((G.i_c φ.arr).trans (congrArg _ φ.t_arr))

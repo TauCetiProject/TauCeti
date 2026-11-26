@@ -189,7 +189,7 @@ lemma pullHom_arr ⦃X₁ X₂ : C⦄ ⦃M₁ : (toPseudofunctor.{w'} G).obj (.m
     (pullHom φ g gf₁ gf₂ hgf₁ hgf₂).arr = G.R.obj.map g.op φ.arr := by
   simp only [pullHom, toPseudofunctor_comp_arr, toPseudofunctor_mapComp', eqToIso.hom,
     eqToIso.inv, Cat.eqToHom_app, toPseudofunctor_eqToHom_arr, toPseudofunctor_map_map_arr,
-    c_e_left, c_e_right]
+    e_c', c_e']
   rfl
 
 variable (G) in
