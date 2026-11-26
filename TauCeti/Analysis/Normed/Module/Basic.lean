@@ -40,6 +40,7 @@ normed spaces:
 * `TauCeti.norm_neg_one_pow_smul`: the sign `(-1) ^ n` does not change norms.
 * `TauCeti.norm_smul_sq_div_add_norm_smul_sq`: the ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when
   `u` and `v` are scaled by the same nonzero scalar.
+* `TauCeti.norm_sq_add_norm_sq_ne_zero`: a nonzero pair `p` has `‖p.1‖² + ‖p.2‖² ≠ 0`.
 * `TauCeti.norm_smul_add_smul_sq_le`: the Cauchy–Schwarz bound
   `‖a • v + b • w‖² ≤ (a² + b²) (‖v‖² + ‖w‖²)` for real scalars.
 * `TauCeti.mul_norm_le_two_mul_norm_of_norm_sub_smul_le`: a vector within `K * a ^ 2` of the real
@@ -174,6 +175,13 @@ theorem norm_smul_sq_div_add_norm_smul_sq {𝕜 E F : Type*} [NormedDivisionRing
     ‖t • u‖ ^ 2 / (‖t • u‖ ^ 2 + ‖t • v‖ ^ 2) = ‖u‖ ^ 2 / (‖u‖ ^ 2 + ‖v‖ ^ 2) := by
   simp only [norm_smul, mul_pow, ← mul_add]
   exact mul_div_mul_left _ _ (pow_ne_zero 2 (norm_ne_zero_iff.2 ht))
+
+/-- A nonzero pair has nonzero squared norm `‖p.1‖² + ‖p.2‖²`. -/
+theorem norm_sq_add_norm_sq_ne_zero {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
+    {p : E × F} (hp : p ≠ 0) : ‖p.1‖ ^ 2 + ‖p.2‖ ^ 2 ≠ 0 := by
+  rcases not_and_or.1 (mt Prod.ext_iff.2 hp) with h | h
+  · exact (add_pos_of_pos_of_nonneg (pow_pos (norm_pos_iff.2 h) 2) (sq_nonneg _)).ne'
+  · exact (add_pos_of_nonneg_of_pos (sq_nonneg _) (pow_pos (norm_pos_iff.2 h) 2)).ne'
 
 /-- **Cauchy–Schwarz for a combination of two vectors.** For real scalars `a`, `b`,
 `‖a • v + b • w‖² ≤ (a² + b²) (‖v‖² + ‖w‖²)`. -/

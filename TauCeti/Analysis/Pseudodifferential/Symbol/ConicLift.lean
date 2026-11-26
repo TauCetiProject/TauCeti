@@ -40,11 +40,12 @@ difference are controlled, and none are claimed: the difference is not a symbol 
 
 The full symbols of the external product of two elliptic operators on the factors of a product
 have entries of the form `p(P x, P ξ)`, singular along an axis; their lifts are symbols of order
-`m` (in `S^m_{1,0}`) on the product, close to the original entries in the sense above. The
-homogeneous counterpart of the construction, for principal symbols, is
-`TauCeti.HomogeneousSymbol.conicCutoffFst`. The lift of a classical symbol is classical
-(`TauCeti.ClassicalSymbol.conicLift`, in
-`TauCeti.Analysis.Pseudodifferential.Symbol.Classical.ConicLift`).
+`m` (in `S^m_{1,0}`) on the product, close to the original entries in the sense above. The lift
+of a classical symbol is classical (`TauCeti.ClassicalSymbol.conicLift`, in
+`TauCeti.Analysis.Pseudodifferential.Symbol.Classical.ConicLift`), and its homogeneous terms are
+the homogeneous counterpart of the construction, `TauCeti.HomogeneousSymbol.conicLift`, with the
+same `P`, `χ` and `ε`. The product-specific variant `TauCeti.HomogeneousSymbol.conicCutoffFst`
+uses the ratio `‖ξ‖² / (‖ξ‖² + ‖η‖²)` instead.
 
 ## Main declarations
 

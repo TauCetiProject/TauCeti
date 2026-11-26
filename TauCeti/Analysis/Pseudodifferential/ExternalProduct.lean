@@ -298,13 +298,6 @@ theorem contDiffOn_smul {Q P G V W : Type*} [NormedAddCommGroup Q] [NormedSpace 
 
 end ConicCutoff
 
-/-- A nonzero pair has positive squared norm `‖ξ‖² + ‖η‖²`. -/
-private theorem norm_sq_add_norm_sq_ne_zero {E F : Type*} [NormedAddCommGroup E]
-    [NormedAddCommGroup F] {p : E × F} (hp : p ≠ 0) : ‖p.1‖ ^ 2 + ‖p.2‖ ^ 2 ≠ 0 := by
-  rcases not_and_or.1 (mt Prod.ext_iff.2 hp) with h | h
-  · exact (add_pos_of_pos_of_nonneg (pow_pos (norm_pos_iff.2 h) 2) (sq_nonneg _)).ne'
-  · exact (add_pos_of_nonneg_of_pos (sq_nonneg _) (pow_pos (norm_pos_iff.2 h) 2)).ne'
-
 /-! ### Cutting off a homogeneous symbol near an axis -/
 
 namespace HomogeneousSymbol
