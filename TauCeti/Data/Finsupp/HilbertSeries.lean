@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.PWO
-public import TauCeti.Data.Finsupp.Weight.Basic
+public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.PowerSeries.InvOneSubPow
 import TauCeti.Order.WellFounded.Set
 

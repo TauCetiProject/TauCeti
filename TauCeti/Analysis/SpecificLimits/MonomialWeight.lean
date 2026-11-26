@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecificLimits.Basic
 public import Mathlib.Data.Finsupp.Weight
-import TauCeti.Data.Finsupp.Weight.Basic
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Monomial weights tend to zero

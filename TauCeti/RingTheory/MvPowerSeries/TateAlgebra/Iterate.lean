@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
-public import TauCeti.Data.Finsupp.Weight.Basic
+public import TauCeti.Data.Finsupp.Weight
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Basic
 
 /-!

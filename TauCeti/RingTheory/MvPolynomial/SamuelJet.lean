@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
 public import Mathlib.LinearAlgebra.Matrix.Defs
-public import TauCeti.Data.Finsupp.Weight.Basic
+public import TauCeti.Data.Finsupp.Weight
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.LinearAlgebra.Dimension.RankNullity

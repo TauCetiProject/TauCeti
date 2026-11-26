@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.ExponentialBounds
 public import TauCeti.Algebra.Order.BigOperators.Fin
-public import TauCeti.Data.Finsupp.Weight.Basic
+public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.DeterminantIndex
 public import TauCeti.NumberTheory.Height.MvPolynomial
 public import TauCeti.NumberTheory.Height.Polynomial.RootMultiplicity

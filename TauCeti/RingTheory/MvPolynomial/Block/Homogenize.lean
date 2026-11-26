@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.Algebra.MvPolynomial.Monomial
-public import TauCeti.Data.Finsupp.Weight.Basic
+public import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Block homogenization of multivariate polynomials

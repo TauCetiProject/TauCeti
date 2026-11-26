@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Algebra.Group.Conj
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import TauCeti.RingTheory.MvPolynomial.Finrank
-import TauCeti.Data.Finsupp.Weight.Basic
+import TauCeti.Data.Finsupp.Weight
 import TauCeti.LinearAlgebra.Matrix.RationalCanonicalFormFinTwo
 import Mathlib.Algebra.Group.Units.Opposite
 import Mathlib.RingTheory.Localization.FractionRing

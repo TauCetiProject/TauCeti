@@ -9,7 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.MvPolynomial.Kronecker
 public import TauCeti.RingTheory.MvPolynomial.PowerSubstitution
 
-import TauCeti.Data.Finsupp.Weight.Basic
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # The base-`B` Kronecker substitution
@@ -25,7 +25,7 @@ B ^ i` (`MvPolynomial.polynomialGraph_apply`); for `m = 2` it is the power subst
 `MvPolynomial.powerSubstitution B` (`MvPolynomial.polynomialGraph_fin_two`). The weight `i ↦ B ^ i`
 sends the exponent vector `d` to its base-`B` value `∑ i, d i * B ^ i`. By uniqueness of base-`B`
 digits this weight is injective on the box of exponent vectors with entries `< B`
-(`Finsupp.injOn_weight_pow` in `TauCeti.Data.Finsupp.Weight.Basic`). Hence a base `B` exceeding every
+(`Finsupp.injOn_weight_pow` in `TauCeti.Data.Finsupp.Weight`). Hence a base `B` exceeding every
 exponent of `h` preserves every coefficient of `h` (`MvPolynomial.coeff_polynomialGraph`), and a
 nonzero `h` stays nonzero. Since `B` may be chosen after `h`, this produces for every hypersurface
 `V(h)` of affine space a curve through the origin, defined over the base ring, that is not contained

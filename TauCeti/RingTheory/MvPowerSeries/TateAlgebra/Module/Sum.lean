@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Norm
 import TauCeti.Data.Finsupp.Sum
-import TauCeti.Data.Finsupp.Weight.Basic
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Iterating module-valued restricted series

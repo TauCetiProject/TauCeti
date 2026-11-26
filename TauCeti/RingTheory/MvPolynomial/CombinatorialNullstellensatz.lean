@@ -12,7 +12,7 @@ import Mathlib.Data.Finset.Finsupp
 import Mathlib.Data.Finsupp.PWO
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.Tactic.Linarith
-import TauCeti.Data.Finsupp.Weight.Order
+import TauCeti.Data.Finsupp.Weight
 import TauCeti.Order.WellQuasiOrder
 import TauCeti.RingTheory.MvPolynomial.Basic
 import TauCeti.RingTheory.MvPolynomial.LocalOrder

@@ -11,7 +11,7 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.RingTheory.AdicCompletion.Functoriality
 import Mathlib.RingTheory.AdicCompletion.Topology
-import TauCeti.Data.Finsupp.Weight.Basic
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Congruences, continuity and adic bounds for multivariate power-series evaluation

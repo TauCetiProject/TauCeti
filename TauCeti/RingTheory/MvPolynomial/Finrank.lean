@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.InvariantBasisNumber
 public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 import Mathlib.LinearAlgebra.Dimension.Constructions
-import TauCeti.Data.Finsupp.Weight.Basic
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Dimension of homogeneous and bounded-degree polynomials

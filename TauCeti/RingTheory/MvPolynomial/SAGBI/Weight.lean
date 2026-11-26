@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Rees
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Criterion
 public import TauCeti.RingTheory.MvPolynomial.Initial.Weight
-import TauCeti.Data.Finsupp.Weight.Basic
+import TauCeti.Data.Finsupp.Weight
 import Mathlib.Algebra.Polynomial.Eval.Subring
 
 /-!

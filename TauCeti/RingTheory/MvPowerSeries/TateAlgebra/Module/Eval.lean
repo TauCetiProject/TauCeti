@@ -11,7 +11,7 @@ import TauCeti.RingTheory.PowerSeries.Weierstrass.Strassmann
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Module.InfiniteSum
 import TauCeti.Analysis.Normed.Ring.Finsupp
-import TauCeti.Data.Finsupp.Weight.Basic
+import TauCeti.Data.Finsupp.Weight
 import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.Data.Fintype.Option
 
