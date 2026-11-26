@@ -14,6 +14,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 public import Mathlib.Algebra.Homology.ShortComplex.Preadditive
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
+public import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 
 /-!
 # Additional API for homological complexes
@@ -63,8 +64,10 @@ isomorphism in the degrees around `j` identifies exactness at `j` of its source 
 (`HomologicalComplex.exactAt_iff_of_isIso_f`).
 Homology of complexes commutes with an additive functor preserving homology
 (`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`), the complex-level form of
-Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`, and exactness of a mapped complex in
-degree `i` reduces to exactness of the mapped short complex `(K.sc i).map F`
+Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`, compatibly with the class maps
+(`CategoryTheory.Functor.homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app`), and
+exactness of a mapped complex in degree `i` reduces to exactness of the mapped short complex
+`(K.sc i).map F`
 (`CategoryTheory.Functor.mapHomologicalComplex_obj_exactAt_iff`).
 Every morphism between acyclic complexes is a quasi-isomorphism
 (`HomologicalComplex.quasiIso_of_acyclic`).
@@ -549,5 +552,30 @@ lemma mapHomologicalComplexCompHomologyFunctorIso_hom_app (K : HomologicalComple
     (F.mapHomologicalComplexCompHomologyFunctorIso c i).hom.app K =
       ((K.sc i).mapHomologyIso F).hom :=
   (rfl)
+
+/-- Under `Functor.mapHomologicalComplexCompHomologyFunctorIso`, the class map of the mapped
+complex `F K` is the image under `F` of the class map of `K`, up to the identification
+`ShortComplex.mapCyclesIso` of the cycles. -/
+@[reassoc]
+lemma homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app
+    (K : HomologicalComplex C c) :
+    ((F.mapHomologicalComplex c).obj K).homologyπ i ≫
+        (F.mapHomologicalComplexCompHomologyFunctorIso c i).hom.app K =
+      ((K.sc i).mapCyclesIso F).hom ≫ F.map (K.homologyπ i) :=
+  (K.sc i).homologyπ_comp_mapHomologyIso_hom F
+
+/-- The inverse form of
+`Functor.homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app`: the image under `F`
+of the class map of `K`, followed by the inverse comparison, is the class map of the mapped
+complex `F K` after the identification `ShortComplex.mapCyclesIso` of the cycles. -/
+@[reassoc]
+lemma map_homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_inv_app
+    (K : HomologicalComplex C c) :
+    F.map (K.homologyπ i) ≫ (F.mapHomologicalComplexCompHomologyFunctorIso c i).inv.app K =
+      ((K.sc i).mapCyclesIso F).inv ≫ ((F.mapHomologicalComplex c).obj K).homologyπ i := by
+  rw [Iso.eq_inv_comp, ← homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app_assoc,
+    Iso.hom_inv_id_app]
+  -- The identity is on the composite functor's object, the homology of the mapped complex.
+  exact Category.comp_id _
 
 end CategoryTheory.Functor

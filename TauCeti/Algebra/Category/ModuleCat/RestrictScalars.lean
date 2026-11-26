@@ -49,6 +49,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   homomorphism, as a functor between the categories of finitely generated modules.
 * `RingHom.finiteModulesRestrictScalarsCompιIso`: the underlying module of an image under
   `RingHom.finiteModulesRestrictScalars` is the restriction of scalars, naturally in the module.
+* `ModuleCat.uliftUnitToRestrictScalars`: the `R`-linear map `ULift R → S`, `x ↦ f x.down`, into
+  the restriction of scalars of `S` along `f : R →+* S`.
 * `ModuleCat.restrictScalarsAlgebraMapIso`: restricting the scalars of an `S`-module along
   `algebraMap R S` gives back its compatible `R`-module structure.
 * `ModuleCat.restrictScalarsOpOpIso`: restricting scalars along `A ≃+* Aᵐᵒᵖᵐᵒᵖ` carries the
@@ -312,6 +314,22 @@ theorem apply_restrictScalarsLinearEquivOfBijective_symm_apply (hg : Function.Bi
     ((restrictScalarsLinearEquivOfBijective f₁ f₂ g hσ hg).apply_symm_apply y)
 
 end SemilinearMap
+
+/-- The `R`-linear map `ULift R → S`, `x ↦ f x.down`, as a morphism to the restriction of scalars
+of `S` along `f : R →+* S`. -/
+noncomputable def uliftUnitToRestrictScalars {R S : Type v} [Ring R] [Ring S] (f : R →+* S) :
+    of R (ULift.{v} R) ⟶ (restrictScalars f).obj (of S S) :=
+  ofHom (Y := (restrictScalars f).obj (of S S))
+    { toFun x := (f x.down : S)
+      -- Addition and the `R`-action on the restriction of scalars are those of `S`.
+      map_add' x y := by simp; rfl
+      map_smul' r x := by simp; rfl }
+
+@[simp]
+lemma uliftUnitToRestrictScalars_apply {R S : Type v} [Ring R] [Ring S] (f : R →+* S)
+    (x : ULift.{v} R) :
+    uliftUnitToRestrictScalars f x = (f x.down : S) :=
+  (rfl)
 
 /-- Restriction of scalars preserves colimits of any shape that exist in `AddCommGrpCat.{v}`,
 with no constraint between the ring universes and the module universe `v`. -/
