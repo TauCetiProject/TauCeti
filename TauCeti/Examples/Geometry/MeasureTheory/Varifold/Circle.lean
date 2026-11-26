@@ -186,30 +186,29 @@ theorem firstVariation_circleVarifold_eq_integral (X : 𝓓^{1}((⊤ : Opens ℂ
       (continuous_id.inner X.continuous).aestronglyMeasurable,
     integral_Icc_eq_integral_Ioc]
 
-/-- The total variation measure of the circle varifold is `circleMeasure`. -/
-private theorem firstVariationMeasure_circleVarifold_eq :
-    firstVariationMeasure circleVarifold = circleMeasure := by
-  rw [firstVariationMeasure_def]
-  refine Distribution.massMeasure_eq_of_apply_eq_integral_inner
-    (η := fun x : (⊤ : Opens ℂ) => (x : ℂ)) continuous_subtypeVal.aestronglyMeasurable ?_
-    firstVariation_circleVarifold_eq_integral_circleMeasure
+/-- The field `x ↦ x` has norm one at `circleMeasure`-almost every point. -/
+private theorem ae_norm_eq_one_circleMeasure :
+    ∀ᵐ x : (⊤ : Opens ℂ) ∂circleMeasure, ‖(x : ℂ)‖ = 1 := by
   rw [circleMeasure]
   refine (ae_map_iff continuous_circlePoint.aemeasurable ?_).2
     (Filter.Eventually.of_forall fun θ => by simp)
   exact (isClosed_eq (continuous_norm.comp continuous_subtypeVal) continuous_const).measurableSet
 
-/-- The circle varifold has locally bounded first variation. -/
+/-- The total variation measure of the circle varifold is `circleMeasure`. -/
+private theorem firstVariationMeasure_circleVarifold_eq :
+    firstVariationMeasure circleVarifold = circleMeasure := by
+  rw [firstVariationMeasure_def]
+  exact Distribution.massMeasure_eq_of_apply_eq_integral_inner
+    (η := fun x : (⊤ : Opens ℂ) => (x : ℂ)) continuous_subtypeVal.aestronglyMeasurable
+    ae_norm_eq_one_circleMeasure firstVariation_circleVarifold_eq_integral_circleMeasure
+
+/-- The circle varifold has locally bounded first variation: its first variation is represented
+against the finite measure `circleMeasure` by the unit field `x ↦ x`. -/
 theorem hasLocallyBoundedFirstVariation_circleVarifold :
-    HasLocallyBoundedFirstVariation circleVarifold := by
-  by_contra h
-  have h0 := firstVariationMeasure_of_not_hasLocallyBoundedFirstVariation h
-  rw [firstVariationMeasure_circleVarifold_eq] at h0
-  have := congrArg (fun μ : Measure (⊤ : Opens ℂ) => μ univ) h0
-  simp only [circleMeasure, FunLike.coe_zero, Pi.zero_apply] at this
-  rw [Measure.map_apply continuous_circlePoint.measurable MeasurableSet.univ,
-    preimage_univ, Measure.restrict_apply_univ, Real.volume_Icc] at this
-  simp only [ENNReal.ofReal_eq_zero, sub_zero] at this
-  linarith [pi_pos]
+    HasLocallyBoundedFirstVariation circleVarifold :=
+  hasLocallyBoundedFirstVariation_iff_hasLocallyFiniteMass.2 <|
+    Distribution.hasLocallyFiniteMass_of_apply_eq_integral_inner ae_norm_eq_one_circleMeasure
+      firstVariation_circleVarifold_eq_integral_circleMeasure
 
 /-- **`‖δ[C]‖ = H¹⌞C`**: the total variation measure of the first variation of the unit circle,
 read in the plane, is the one-dimensional Hausdorff measure on the circle. -/
