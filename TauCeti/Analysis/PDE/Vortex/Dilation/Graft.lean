@@ -23,22 +23,17 @@ equations in a normal plane of the curve are the plane vortex equations with cur
 the coupling is `c = h⁻²`. The gluing measures the defect of an approximate solution in the norm
 `F_(r,s-1)` of `TauCeti.SeibergWitten.rescaledTargetNormSq s h`, after normalizing its rows as the
 Seiberg–Witten section does: the curvature row is multiplied by `λ⁻² = h²` and the rows of
-`∂bar_a α` by `λ⁻¹ = h`. This normalized defect is `TauCeti.Vortex.scaledCoupledEquation h x`.
+`∂bar_a α` by `λ⁻¹ = h`. This normalized defect is `TauCeti.Vortex.scaledCoupledEquation h x`, and
+for `h ≠ 0` the normalized defect of `dilateField h⁻¹ x` at `z` is the plane vortex defect of `x`
+at `w = h⁻¹ z` (`TauCeti.Vortex.scaledCoupledEquation_dilateField_inv`); both are in
+`TauCeti.Analysis.PDE.Vortex.Dilation.Basic`.
 
 A plane field `x` in the coordinate `w` in which vortices have unit size is moved to the coordinate
 `z = h w` by `dilateField h⁻¹ x`, the pullback by `z ↦ h⁻¹ z`, which multiplies the connection by
 `h⁻¹`. This file shows:
 
-* **The normalized defect is the plane defect.** For `h ≠ 0`,
-  `scaledCoupledEquation h x z = equation (dilateField h x) (h⁻¹ • z)`
-  (`TauCeti.Vortex.scaledCoupledEquation_eq_equation_dilateField`, the flat scaling
-  `TauCeti.Vortex.equation_dilateField_inv_sqrt` in terms of `h`), so the normalized defect of
-  `dilateField h⁻¹ x` at `z` is the plane vortex defect of `x` at `w = h⁻¹ z`
-  (`TauCeti.Vortex.scaledCoupledEquation_dilateField_inv`), and it vanishes exactly at the
-  solutions of the coupled equation of coupling `h⁻²`
-  (`TauCeti.Vortex.scaledCoupledEquation_eq_zero_iff`).
-* **The norm of a moved defect.** For `h > 0` and `x` of class `Cˢ`, the `F_(r,s-1)` norm of the
-  normalized defect of `dilateField h⁻¹ x` is `h²` times the unit-scale norm
+* **The norm of a moved defect.** For `h > 0` and `x` of class `Cˢ`, the squared `F_(r,s-1)` norm
+  of the normalized defect of `dilateField h⁻¹ x` is `h²` times the squared unit-scale norm
   `∑_{j < s} ‖Dʲ equation x‖₂²` of the plane defect
   (`TauCeti.Vortex.rescaledTargetNormSq_scaledCoupledEquation_dilateField_inv`). The factor `h²`
   is the area element of the change of coordinates `w = h⁻¹ z`.
@@ -57,7 +52,7 @@ A plane field `x` in the coordinate `w` in which vortices have unit size is move
   of fixed radius `ρ` in the coordinate `z`, that is `R = ρ / h`, this is
   `K h² exp (-2 c φ.rIn ρ / h)` for all small `h`
   (`TauCeti.Vortex.exists_rescaledTargetNormSq_scaledCoupledEquation_vortexGraft_div_le`): in terms
-  of `r`, the squared residual of the initial approximate solution is
+  of `r`, the squared residual of the flat normal-disc graft is
   `O(r⁻¹ exp (-2 c φ.rIn ρ √(2 r)))`.
 
 These are statements about the flat plane model of one normal disc; the curvature of the normal
@@ -79,72 +74,9 @@ open scoped ContDiff
 
 namespace TauCeti.Vortex
 
-/-! ### The normalized defect at coupling `h⁻²` -/
-
-/-- **The normalized defect at coupling `h⁻²`.** The defect of the field `x` for the plane vortex
-equation `*iF_a = (1 - |α|²) / (8 h²)` with coupling `h⁻²`, normalized as the Seiberg–Witten
-section of Taubes's gluing at `h = (2 r)^(-1/2)`: its curvature row is multiplied by `h²` and the
-two rows of `∂bar_a α` by `h`. -/
-def scaledCoupledEquation (h : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    EuclideanSpace ℝ (Fin 3) :=
-  !₂[h ^ 2 * coupledEquation (h ^ 2)⁻¹ x z 0, h * coupledEquation (h ^ 2)⁻¹ x z 1,
-    h * coupledEquation (h ^ 2)⁻¹ x z 2]
-
-theorem scaledCoupledEquation_def (h : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    scaledCoupledEquation h x z =
-      !₂[h ^ 2 * coupledEquation (h ^ 2)⁻¹ x z 0, h * coupledEquation (h ^ 2)⁻¹ x z 1,
-        h * coupledEquation (h ^ 2)⁻¹ x z 2] :=
-  (rfl)
-
-@[simp]
-theorem scaledCoupledEquation_apply_zero (h : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    scaledCoupledEquation h x z 0 = h ^ 2 * coupledEquation (h ^ 2)⁻¹ x z 0 :=
-  (rfl)
-
-@[simp]
-theorem scaledCoupledEquation_apply_one (h : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    scaledCoupledEquation h x z 1 = h * coupledEquation (h ^ 2)⁻¹ x z 1 :=
-  (rfl)
-
-@[simp]
-theorem scaledCoupledEquation_apply_two (h : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    scaledCoupledEquation h x z 2 = h * coupledEquation (h ^ 2)⁻¹ x z 2 :=
-  (rfl)
-
-/-- **The normalized defect is the plane defect in the unit-scale coordinate.** For `h ≠ 0`, the
-normalized defect of `x` at `z` is the plane vortex defect of the dilated field `dilateField h x`
-at `w = h⁻¹ z`. -/
-theorem scaledCoupledEquation_eq_equation_dilateField {h : ℝ} (hh : h ≠ 0)
-    (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    scaledCoupledEquation h x z = equation (dilateField h x) (h⁻¹ • z) := by
-  have h₁ := coupledEquation_dilateField (h ^ 2)⁻¹ h x (h⁻¹ • z)
-  rw [mul_inv_cancel₀ (pow_ne_zero 2 hh), coupledEquation_one, smul_inv_smul₀ hh] at h₁
-  rw [h₁, scaledCoupledEquation_def]
-
-/-- **The normalized defect of a field moved to the scale `h`.** For `h ≠ 0`, the normalized
-defect of `dilateField h⁻¹ x`, the field `x` moved from the coordinate `w` to `z = h w`, is the
-plane vortex defect of `x` at `w = h⁻¹ z`. -/
-@[simp]
-theorem scaledCoupledEquation_dilateField_inv {h : ℝ} (hh : h ≠ 0)
-    (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    scaledCoupledEquation h (dilateField h⁻¹ x) z = equation x (h⁻¹ • z) := by
-  rw [scaledCoupledEquation_eq_equation_dilateField hh, dilateField_dilateField,
-    mul_inv_cancel₀ hh, dilateField_one]
-
-/-- For `h ≠ 0`, the normalized defect vanishes exactly at the solutions of the plane vortex
-equation of coupling `h⁻²`. -/
-theorem scaledCoupledEquation_eq_zero_iff {h : ℝ} (hh : h ≠ 0)
-    (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    scaledCoupledEquation h x = 0 ↔ coupledEquation (h ^ 2)⁻¹ x = 0 := by
-  rw [← coupledEquation_dilateField_eq_zero_iff (h ^ 2)⁻¹ hh x,
-    mul_inv_cancel₀ (pow_ne_zero 2 hh), coupledEquation_one]
-  simp only [funext_iff, Pi.zero_apply, scaledCoupledEquation_eq_equation_dilateField hh]
-  refine ⟨fun H w ↦ ?_, fun H z ↦ H _⟩
-  simpa [smul_smul, hh] using H (h • w)
-
 /-- **The norm of a defect moved to the scale `h`.** For `h > 0` and a field `x` of class `Cˢ`,
-the `F_(r,s-1)` norm at the scale `h` of the normalized defect of `dilateField h⁻¹ x` is `h²` times
-the unit-scale norm of the plane vortex defect of `x`:
+the squared `F_(r,s-1)` norm at the scale `h` of the normalized defect of `dilateField h⁻¹ x` is
+`h²` times the squared unit-scale norm of the plane vortex defect of `x`:
 `‖·‖_(F_(r,s-1))² = h² ∑_{j < s} ‖Dʲ equation x‖₂²`. -/
 theorem rescaledTargetNormSq_scaledCoupledEquation_dilateField_inv {s : ℕ}
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ s x) {h : ℝ} (hh : 0 < h) :
@@ -185,19 +117,18 @@ private theorem lpNorm_iteratedFDeriv_equation_vortexGraft_sq_le (hm : 0 < m)
     rw [((equation_vortexGraft_bump_comp_inv_smul_eventuallyEq_zero hm f φ hR hrOut a
       (Or.inr (by simpa using hz'))).iteratedFDeriv ℝ j).eq_of_nhds, iteratedFDeriv_zero,
       Pi.zero_apply]
-  have hL := eLpNorm_le_of_ae_bound_of_support_subset (μ := volume) (p := 2)
+  have hμ : ((volume (closedBall (0 : ℂ) (φ.rOut * R)) ^ (2 : ENNReal).toReal⁻¹).toReal) ^ 2 =
+      Real.pi * (φ.rOut * R) ^ 2 := by
+    rw [← ENNReal.toReal_pow, ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
+    simp [Complex.volume_closedBall, hρ, mul_comm Real.pi]
+  have hmeas : AEStronglyMeasurable
+      (iteratedFDeriv ℝ j (equation (vortexGraft f (fun w ↦ φ (R⁻¹ • w)) a))) volume :=
     ((contDiff_equation hE (by push_cast; exact le_rfl)).continuous_iteratedFDeriv
-      le_rfl).aestronglyMeasurable hsupp (.of_forall hC)
-  rw [Complex.volume_closedBall, ENNReal.toReal_ofNat] at hL
-  replace hL := ENNReal.toReal_mono (by finiteness) hL
-  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal hC₀, ← ENNReal.toReal_rpow, ENNReal.toReal_mul,
-    ENNReal.toReal_pow, ENNReal.toReal_ofReal hρ, ENNReal.coe_toReal, NNReal.coe_real_pi] at hL
-  have hsq : (((φ.rOut * R) ^ 2 * Real.pi) ^ (2⁻¹ : ℝ)) ^ 2 = (φ.rOut * R) ^ 2 * Real.pi := by
-    exact_mod_cast Real.rpow_inv_natCast_pow (n := 2) (by positivity) two_ne_zero
-  rw [← toReal_eLpNorm]
-  calc _ ≤ (((φ.rOut * R) ^ 2 * Real.pi) ^ (2⁻¹ : ℝ) * C) ^ 2 :=
-        pow_le_pow_left₀ ENNReal.toReal_nonneg hL 2
-    _ = _ := by rw [mul_pow, hsq]; ring
+      le_rfl).aestronglyMeasurable
+  calc _ ≤ (_ * C) ^ 2 := pow_le_pow_left₀ lpNorm_nonneg
+        (lpNorm_le_of_ae_bound_of_support_subset hmeas measure_closedBall_lt_top.ne hsupp hC₀
+          (.of_forall hC)) 2
+    _ = _ := by rw [mul_pow, hμ, mul_comm]
 
 /-- **The defect of the initial vortex graft at unit scale.** Let `m ≥ 1`, `S` a bounded set of
 divisor coefficients, `φ` a bump function on `ℂ`, `s` an order and `c < 1 / 2` a rate. There is
@@ -226,7 +157,8 @@ theorem exists_rescaledTargetNormSq_one_equation_vortexGraft_le (hm : 0 < m)
   have hexp : Real.exp (-(c' * (φ.rIn * R))) ^ 2 =
       Real.exp (-(2 * c * (φ.rIn * R))) * Real.exp (-(2 * (c' - c) * φ.rIn) * R) := by
     rw [sq, ← Real.exp_add, ← Real.exp_add]
-    ring_nf
+    congr 1
+    ring
   calc lpNorm (iteratedFDeriv ℝ j (equation (vortexGraft f (fun w ↦ φ (R⁻¹ • w)) a))) 2
         volume ^ 2
       ≤ K j ^ 2 * (Real.pi * φ.rOut ^ 2) * Real.exp (-(2 * c * (φ.rIn * R))) *
@@ -289,6 +221,7 @@ theorem exists_rescaledTargetNormSq_scaledCoupledEquation_vortexGraft_div_le (hm
     exact pow_lt_pow_left₀ hR hs.le two_ne_zero
   refine (hK h hh (ρ / h) (div_pos hρ hh) hrOut a ha).trans_eq ?_
   rw [mul_div_assoc]
-  ring_nf
+  congr 2
+  ring
 
 end TauCeti.Vortex
