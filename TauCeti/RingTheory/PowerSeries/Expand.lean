@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.RingTheory.PowerSeries.PiTopology
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # Substitution and products of expanded power series
