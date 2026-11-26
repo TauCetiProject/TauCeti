@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import Mathlib.Topology.EMetricSpace.BoundedVariation
 public import TauCeti.Probability.Process.Predictable.Basic
 public import TauCeti.Probability.Martingale.Basic
 public import TauCeti.Order.Interval.Set.Subdivision
 import TauCeti.Algebra.Order.Group.MinMax
+import TauCeti.Topology.EMetricSpace.BoundedVariation
 
 /-!
 # Simple trading strategies and the self-financing formula
@@ -33,7 +35,8 @@ which is linear in the strategy (`TauCeti.Finance.simpleGains_add`,
 (`TauCeti.Finance.simpleGains_mul_eq_inv_four_mul_sub`), continuous along continuous price paths
 (`TauCeti.Finance.continuous_simpleGains`), monotone along monotone price paths when holdings are
 nonnegative (`TauCeti.Finance.monotone_simpleGains_of_monotoneOn`,
-`TauCeti.Finance.monotone_simpleGains`),
+`TauCeti.Finance.monotone_simpleGains`), of locally bounded variation along price paths of locally
+bounded variation (`TauCeti.Finance.locallyBoundedVariationOn_simpleGains`),
 an adapted process when `X` is adapted and each `a j` is `ℱ (τ j)`-measurable
 (`TauCeti.Finance.stronglyAdapted_simpleGains`), strongly progressive when `X` is strongly
 progressive (`TauCeti.Finance.isStronglyProgressive_simpleGains`), and a
@@ -333,6 +336,26 @@ theorem monotone_simpleGains (hτ : MonotoneOn τ (Set.Iic n)) {ω : Ω}
     (ha : ∀ j < n, 0 ≤ a j ω) (hX : Monotone (X · ω)) :
     Monotone (simpleGains τ n a X · ω) :=
   monotone_simpleGains_of_monotoneOn hτ ha (hX.monotoneOn _)
+
+/-- Elementary gains along a price path of locally bounded variation have locally bounded
+variation. -/
+theorem locallyBoundedVariationOn_simpleGains {ω : Ω}
+    (hX : LocallyBoundedVariationOn (X · ω) Set.univ) :
+    LocallyBoundedVariationOn (simpleGains τ n a X · ω) Set.univ := by
+  have hmin (c : ι) : LocallyBoundedVariationOn (fun t ↦ X (min c t) ω) Set.univ :=
+    fun x y _ _ ↦ ne_top_of_le_ne_top (hX (min c x) (min c y) trivial trivial) <|
+      eVariationOn.comp_le_of_monotoneOn (X · ω) (min c)
+        (fun _ _ _ _ h ↦ min_le_min_left c h)
+        fun _ ⟨_, hx, hy⟩ ↦ ⟨trivial, min_le_min_left c hx, min_le_min_left c hy⟩
+  have hsum : (simpleGains τ n a X · ω) =
+      ∑ j ∈ range n, fun t ↦ a j ω * (X (min (τ (j + 1)) t) ω - X (min (τ j) t) ω) := by
+    ext t; simp [simpleGains_def]
+  rw [hsum]
+  exact sum_induction _ (LocallyBoundedVariationOn · Set.univ)
+    (fun _ _ ↦ LocallyBoundedVariationOn.add)
+    (TauCeti.locallyBoundedVariationOn_const 0 Set.univ) fun j _ ↦
+    (lipschitzWith_smul (a j ω)).comp_locallyBoundedVariationOn
+      ((hmin (τ (j + 1))).sub (hmin (τ j)))
 
 /-- Applying a function fixing zero to each height applies that function to the holding
 process, because the trading intervals are disjoint. No continuity of the function is needed. -/

@@ -97,18 +97,12 @@ theorem isCovariation_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
   rw [hC]; refine IsCovariation.mk
     (Finance.isStronglyProgressive_simpleGains hτ (fun i hi ↦ (ha i hi).mul (hb i hi)) htime)
     (ae_of_all P fun _ ↦ Finance.continuous_simpleGains NNReal.continuous_coe)
-    (ae_of_all P fun ω ↦ ?_) (ae_of_all P fun _ ↦ by simp [C, Finance.simpleGains_def]) ?_
-  · have hmono (c : ℕ → Ω → ℝ) : LocallyBoundedVariationOn
-        (Finance.simpleGains τ n (c ^ 2) (fun u _ ↦ (u : ℝ)) · ω) Set.univ :=
-      ((Finance.monotone_simpleGains (a := c ^ 2) (X := fun (u : ℝ≥0) _ ↦ (u : ℝ))
-        (ω := ω) hτ (fun _ _ ↦ sq_nonneg _) NNReal.coe_mono).monotoneOn
-        Set.univ).locallyBoundedVariationOn
-    exact ((lipschitzWith_smul (4⁻¹ : ℝ)).comp_locallyBoundedVariationOn
-      ((hmono (a + b)).sub (hmono (a - b)))).congr fun t _ ↦
-      (Finance.simpleGains_mul_eq_inv_four_mul_sub τ n a b (fun u _ ↦ (u : ℝ)) t ω).symm
-  · convert Locally.of_prop (p := fun Y ↦ Martingale Y ℱ P)
-      (hW.martingale_mul_simpleGains_sub hτ ha hb ha₂ hb₂) using 1
-    ext t ω; simp [C, Finance.simpleGains_def]
+    (ae_of_all P fun _ ↦ Finance.locallyBoundedVariationOn_simpleGains
+      (NNReal.coe_mono.monotoneOn Set.univ).locallyBoundedVariationOn)
+    (ae_of_all P fun _ ↦ by simp [C, Finance.simpleGains_def]) ?_
+  convert Locally.of_prop (p := fun Y ↦ Martingale Y ℱ P)
+    (hW.martingale_mul_simpleGains_sub hτ ha hb ha₂ hb₂) using 1
+  ext t ω; simp [C, Finance.simpleGains_def]
 
 private theorem condExp_mul_sub_eq_zero (hB₁ : IsFilteredPreBrownianReal ℱ B₁ P)
     (hB₂ : IsFilteredPreBrownianReal ℱ B₂ P) {s t : ℝ≥0}

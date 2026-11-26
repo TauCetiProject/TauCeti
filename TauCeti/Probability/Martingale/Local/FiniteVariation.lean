@@ -99,6 +99,13 @@ private theorem tendsto_gridOsc {Ω : Type*} {W : ℝ≥0 → Ω → ℝ} {T : �
       (by simpa [Real.dist_eq, abs_of_nonneg (by positivity : 0 ≤ (T : ℝ) / 2 ^ k)] using
         hN k hk))).le
 
+private theorem gridOsc_le_two_mul {Ω : Type*} {W : ℝ≥0 → Ω → ℝ} {T : ℝ≥0} {k : ℕ} {C : ℝ}
+    {ω : Ω} (hC0 : 0 ≤ C) (hb : ∀ t, |W t ω| ≤ C) : (gridOsc W T k ω : ℝ) ≤ 2 * C := by
+  rw [← NNReal.coe_mk (2 * C) (by positivity)]
+  exact NNReal.coe_le_coe.2 <| Finset.sup_le fun i _ ↦ by
+    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_mk, Real.norm_eq_abs]
+    exact (abs_sub _ _).trans (by linarith [hb (dyadicPt T k (i + 1)), hb (dyadicPt T k i)])
+
 private def gridVar {Ω : Type*} (W : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (k j : ℕ) (ω : Ω) : ℝ :=
   ∑ i ∈ Finset.range j, |W (dyadicPt T k (i + 1)) ω - W (dyadicPt T k i) ω|
 
@@ -134,11 +141,9 @@ private theorem stopped_gridHit_sub_eq {Ω : Type*} {W : ℝ≥0 → Ω → ℝ}
 private theorem stopped_gridHit_sq_sum_le {Ω : Type*} {W : ℝ≥0 → Ω → ℝ} {T : ℝ≥0} {k M : ℕ}
     {C : ℝ} {ω : Ω} (hC0 : 0 ≤ C) (hb : ∀ t, |W t ω| ≤ C) :
     let Z := stoppedProcess (fun j ↦ W (dyadicPt T k j)) (gridHit W T k M)
-    ∑ i ∈ Finset.range (2 ^ k), (Z (i + 1) ω - Z i ω) ^ 2 ≤ (M + 2 * C) * (gridOsc W T k ω : ℝ) ∧
-      (M + 2 * C) * (gridOsc W T k ω : ℝ) ≤ 2 * C * (M + 2 * C) := by
+    ∑ i ∈ Finset.range (2 ^ k), (Z (i + 1) ω - Z i ω) ^ 2 ≤
+      (M + 2 * C) * (gridOsc W T k ω : ℝ) := by
   intro Z
-  have habs_le (x y : ℝ) (hx : |x| ≤ C) (hy : |y| ≤ C) : |x - y| ≤ 2 * C := by
-    rw [abs_le] at hx hy ⊢; constructor <;> linarith
   have hinc_le (i : ℕ) : |Z (i + 1) ω - Z i ω| ≤
       |W (dyadicPt T k (i + 1)) ω - W (dyadicPt T k i) ω| := by
     dsimp only [Z]; rw [stopped_gridHit_sub_eq]; split_ifs <;> simp
@@ -148,17 +153,13 @@ private theorem stopped_gridHit_sq_sum_le {Ω : Type*} {W : ℝ≥0 → Ω → �
     | succ n ih =>
       rw [Finset.sum_range_succ]; by_cases hn : gridVar W T k n ω ≤ M
       · exact add_le_add ((Finset.sum_le_sum fun i _ ↦ hinc_le i).trans hn)
-          ((hinc_le n).trans (habs_le _ _ (hb _) (hb _)))
+          ((hinc_le n).trans ((abs_sub _ _).trans
+            (by linarith [hb (dyadicPt T k (n + 1)), hb (dyadicPt T k n)])))
       · have h0 : Z (n + 1) ω - Z n ω = 0 := by
           dsimp only [Z]; rw [stopped_gridHit_sub_eq]; simp [hn]
         simpa only [h0, abs_zero, add_zero] using ih
-  have hosc : (gridOsc W T k ω : ℝ) ≤ 2 * C := by
-    rw [← NNReal.coe_mk (2 * C) (by positivity)]
-    exact NNReal.coe_le_coe.2 <| Finset.sup_le fun _ _ ↦ by
-      rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs]; exact habs_le _ _ (hb _) (hb _)
-  have : 0 ≤ (M : ℝ) + 2 * C := by positivity
-  refine ⟨(Finset.sum_le_sum (g := fun i ↦ (gridOsc W T k ω : ℝ) * |Z (i + 1) ω - Z i ω|)
-    fun i hi ↦ ?_).trans ?_, by nlinarith⟩
+  refine (Finset.sum_le_sum (g := fun i ↦ (gridOsc W T k ω : ℝ) * |Z (i + 1) ω - Z i ω|)
+    fun i hi ↦ ?_).trans ?_
   · have hi_osc : |Z (i + 1) ω - Z i ω| ≤ (gridOsc W T k ω : ℝ) := (hinc_le i).trans <| by
       simpa only [gridOsc, Real.norm_eq_abs, coe_nnNorm] using NNReal.coe_le_coe.2
         (Finset.le_sup (f := fun j ↦ ‖W (dyadicPt T k (j + 1)) ω - W (dyadicPt T k j) ω‖₊) hi)
@@ -198,8 +199,8 @@ private theorem ae_norm_mul_gridOsc_le {W : ℝ≥0 → Ω → ℝ} {C : ℝ} (h
     (hb : ∀ᵐ ω ∂P, ∀ t, |W t ω| ≤ C) (T : ℝ≥0) (k M : ℕ) :
     ∀ᵐ ω ∂P, ‖((M : ℝ) + 2 * C) * (gridOsc W T k ω : ℝ)‖ ≤ 2 * C * (M + 2 * C) :=
   hb.mono fun _ hω ↦ by
-    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-    exact (stopped_gridHit_sq_sum_le hC hω).2
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), mul_comm (2 * C)]
+    exact mul_le_mul_of_nonneg_left (gridOsc_le_two_mul hC hω) (by positivity)
 
 variable [IsFiniteMeasure P]
 
@@ -240,7 +241,7 @@ private theorem integral_stopped_gridHit_sq_le {W : ℝ≥0 → Ω → ℝ}
   simp only [id_eq, hZ0, sub_zero] at htele
   rw [← htele, ← integral_finsetSum (Finset.range (2 ^ k)) fun i _ ↦ hint i]
   exact integral_mono_ae (integrable_finsetSum (Finset.range (2 ^ k)) fun i _ ↦ hint i)
-    hg_int (hb.mono fun _ hω ↦ (stopped_gridHit_sq_sum_le hC hω).1)
+    hg_int (hb.mono fun _ hω ↦ stopped_gridHit_sq_sum_le hC hω)
 
 private theorem integral_indicator_sq_le_stopped_gridHit {W : ℝ≥0 → Ω → ℝ}
     (hW : Martingale W ℱ P) {C : ℝ} (hb : ∀ᵐ ω ∂P, ∀ t, |W t ω| ≤ C) (T : ℝ≥0) (k M : ℕ) :
