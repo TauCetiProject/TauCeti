@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
+public import TauCeti.MeasureTheory.Function.StronglyMeasurable.Basic
 
 /-!
 # Measurability of Carathéodory compositions
@@ -38,6 +39,8 @@ evaluated family preserves zero and allow an arbitrary measure.
 public section
 
 open Filter Set
+
+open scoped Topology
 
 namespace MeasureTheory
 
@@ -93,20 +96,20 @@ theorem AEStronglyMeasurable.apply_of_forall_of_continuousAt {u : α → X}
 /-- A zero-preserving Carathéodory family preserves finite strong measurability, without
 sigma-finiteness of the ambient measure. Only strong measurability of its fixed sections is
 required. -/
-theorem FinStronglyMeasurable.apply_of_forall_of_continuousAt [Zero X] [T2Space X] [Zero G]
+theorem FinStronglyMeasurable.apply_of_forall_of_continuousAt [Zero X] [Zero G]
     {u : α → X} (hu : FinStronglyMeasurable u μ) {g : α → X → G}
     (hg : ∀ x, StronglyMeasurable (fun t ↦ g t x))
     (hg_cont : ∀ t, ContinuousAt (g t) (u t)) (hg_zero : ∀ t, g t 0 = 0) :
     FinStronglyMeasurable (fun t ↦ g t (u t)) μ := by
-  obtain ⟨s, hs, hus, hμs⟩ := hu.exists_set_sigmaFinite
-  have hv := hu.stronglyMeasurable.apply_of_forall_of_continuousAt hg hg_cont
-  exact hv.finStronglyMeasurable_of_set_sigmaFinite hs
-    (fun t ht ↦ by rw [hus t ht, hg_zero t]) hμs
+  refine hu.of_tendsto_const_zero
+    (hu.stronglyMeasurable.apply_of_forall_of_continuousAt hg hg_cont) ?_
+  intro t ht
+  simpa only [Function.comp_def, hg_zero t] using (hg_cont t).tendsto.comp ht
 
 /-- The a.e. Carathéodory evaluation preserves a.e. finite strong measurability when it
 preserves zero almost everywhere. Exceptional sets for the fixed sections may depend on the
 argument. The ambient measure need not be sigma-finite. -/
-theorem AEFinStronglyMeasurable.apply_of_forall_of_continuousAt [Zero X] [T2Space X] [Zero G]
+theorem AEFinStronglyMeasurable.apply_of_forall_of_continuousAt [Zero X] [Zero G]
     {u : α → X} (hu : AEFinStronglyMeasurable u μ) {g : α → X → G}
     (hg : ∀ x, AEStronglyMeasurable (fun t ↦ g t x) μ)
     (hg_cont : ∀ᵐ t ∂μ, ContinuousAt (g t) (u t)) (hg_zero : ∀ᵐ t ∂μ, g t 0 = 0) :
@@ -115,13 +118,23 @@ theorem AEFinStronglyMeasurable.apply_of_forall_of_continuousAt [Zero X] [T2Spac
   have hu' : AEStronglyMeasurable u μ :=
     ⟨hu.mk u, hu.finStronglyMeasurable_mk.stronglyMeasurable, hu.ae_eq_mk⟩
   have hv := hu'.apply_of_forall_of_continuousAt hg hg_cont
-  obtain ⟨s, hs, hus, hμs⟩ := hu.exists_set_sigmaFinite
-  refine ⟨s.indicator (hv.mk _), hv.stronglyMeasurable_mk.indicator hs
-    |>.finStronglyMeasurable_of_set_sigmaFinite hs
-      (fun t ht ↦ Set.indicator_of_notMem ht _) hμs, ?_⟩
-  filter_upwards [hv.ae_eq_mk, (ae_restrict_iff' hs.compl).1 hus, hg_zero] with t ht hus ht0
-  by_cases hts : t ∈ s
-  · simp [hts, ht]
-  · simp [hts, hus hts, ht0]
+  have hgood : ∀ᵐ t ∂μ, u t = hu.mk u t ∧
+      g t (u t) = hv.mk _ t ∧ ContinuousAt (g t) (u t) ∧ g t 0 = 0 := by
+    filter_upwards [hu.ae_eq_mk, hv.ae_eq_mk, hg_cont, hg_zero] with t hu hv hc h0
+    exact ⟨hu, hv, hc, h0⟩
+  obtain ⟨s, hsμ, hs, hs_good⟩ := hgood.exists_measurable_mem
+  refine ⟨s.indicator (hv.mk _), ?_, ?_⟩
+  · refine hu.finStronglyMeasurable_mk.of_tendsto_const_zero
+      (hv.stronglyMeasurable_mk.indicator hs) ?_
+    intro t ht
+    by_cases hts : t ∈ s
+    · obtain ⟨hu, hv, hc, h0⟩ := hs_good t hts
+      have hlim : Tendsto (fun _ : ℕ ↦ g t 0) atTop (𝓝 (g t (u t))) :=
+        hc.tendsto.comp (hu ▸ ht)
+      simpa only [Set.indicator_of_mem hts, h0, hv] using hlim
+    · simpa only [Set.indicator_of_notMem hts] using (tendsto_const_nhds :
+        Tendsto (fun _ : ℕ ↦ (0 : G)) atTop (𝓝 0))
+  · filter_upwards [hsμ, hv.ae_eq_mk] with t ht hv
+    simpa only [Set.indicator_of_mem ht] using hv
 
 end MeasureTheory
