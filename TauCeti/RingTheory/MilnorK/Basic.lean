@@ -222,6 +222,10 @@ theorem symbol_cons (a : Rˣ) (l : List Rˣ) : symbol (a :: l) = ofUnit a * symb
 theorem symbol_singleton (a : Rˣ) : symbol [a] = ofUnit a := by
   simp
 
+/-- A Milnor symbol is the ordered product of the degree-one classes of its entries. -/
+theorem symbol_def (l : List Rˣ) : symbol l = (l.map ofUnit).prod :=
+  (rfl)
+
 /-- The product of two symbols is the symbol of the concatenated list, in that order. -/
 @[simp]
 theorem symbol_append (l₁ l₂ : List Rˣ) : symbol (l₁ ++ l₂) = symbol l₁ * symbol l₂ := by
