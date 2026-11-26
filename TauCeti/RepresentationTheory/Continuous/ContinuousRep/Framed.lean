@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Continuous.Determinant.Basic
 public import TauCeti.RepresentationTheory.OfGL
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.Topology.Algebra.Group.Matrix
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Basic
 
 /-!
 # Framed continuous representations
@@ -28,6 +29,9 @@ is `det ∘ ρ` (`TauCeti.ContinuousRep.det_ofFramed`). A continuous ring homomo
 changes the coefficients of a framed representation entrywise (`TauCeti.ContinuousRep.framedMap`),
 functorially in `f`.
 
+For a group with continuous inversion, a homomorphism `Γ →* GL_n(A)` is continuous, hence framed,
+exactly when its matrix entries are continuous (`MonoidHom.continuous_iff_continuous_matrix_elem`).
+
 ## Main definitions
 
 * `TauCeti.ContinuousRep.ofFramed ρ`: the continuous representation on `n → A` of a framed
@@ -45,9 +49,6 @@ functorially in `f`.
 * `TauCeti.ContinuousRep.nonempty_iso_ofFramed_iff`: isomorphism classes of framed
   representations are `GL_n(A)`-conjugacy classes.
 * `TauCeti.ContinuousRep.det_ofFramed`: `det (ofFramed ρ) = det ∘ ρ`.
-* `TauCeti.ContinuousRep.continuous_toGL_iff`: for a group with continuous inversion, a
-  homomorphism into `GL_n(A)` is continuous for the units topology exactly when its matrix entries
-  are continuous.
 
 ## References
 
@@ -131,26 +132,6 @@ theorem det_ofFramed (ρ : Γ →ₜ* GL n A) :
 
 end Group
 
-section Continuity
-
-variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
-
-omit [IsTopologicalRing A] in
-/-- **Continuity of a framed representation is continuity of its matrix entries.** For the units
-topology on `GL_n(A)`, a homomorphism `ρ : Γ →* GL_n(A)` from a group with continuous inversion is
-continuous exactly when every entry `g ↦ ρ(g)ᵢⱼ` is continuous: the inverse matrices
-`ρ(g)⁻¹ = ρ(g⁻¹)` are then continuous as well. -/
-theorem continuous_toGL_iff (ρ : Γ →* GL n A) :
-    Continuous ρ ↔ ∀ i j, Continuous fun g => (ρ g : Matrix n n A) i j := by
-  have hval : Continuous (fun g => (ρ g : Matrix n n A)) ↔
-      ∀ i j, Continuous fun g => (ρ g : Matrix n n A) i j :=
-    ⟨fun h i j => h.matrix_elem i j, continuous_matrix⟩
-  rw [Units.continuous_iff, ← hval]
-  refine ⟨fun h => h.1, fun h => ⟨h, ?_⟩⟩
-  simp only [← map_inv]
-  exact h.comp continuous_inv
-
-end Continuity
 
 section Frame
 
