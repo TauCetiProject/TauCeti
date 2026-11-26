@@ -31,10 +31,6 @@ The two computations behind the vanishing are the alternating `q`-binomial ident
 and the rank-one formula `Lᵢ θᵢ^(n + 1) = qᵢ^n θᵢ^(n)`, which makes the contributions of
 neighbouring summands to `Lᵢ Sᵢⱼ` cancel in pairs.
 
-## Main definitions
-
-* `TauCeti.cartanBraiding D q`: the symmetric bicharacter `χ i j = qᵢ^(aᵢⱼ)` of a Cartan datum.
-
 ## Main results
 
 * `TauCeti.freeRemove_quantumDividedPower_succ`: `Lᵢ θᵢ^(n + 1) = t^n θᵢ^(n)` when `χ i i = t²`
@@ -44,7 +40,8 @@ neighbouring summands to `Lᵢ Sᵢⱼ` cancel in pairs.
 * `TauCeti.serreSum_mem_halfRadical`: the quantum Serre elements lie in the radical `J`.
 * `TauCeti.serreSum_halfGenerator_eq_zero`: the quantum Serre relations hold in `f`.
 * `TauCeti.star_serreSum`, `TauCeti.freeHalfScale_serreSum`: word reversal and the diagonal
-  scalings send `Sᵢⱼ` to a scalar multiple of itself.
+  scalings send `Sᵢⱼ` to a scalar multiple of itself; `TauCeti.freeHalfScale_quantumDividedPower_ι`
+  does the same for the divided powers `θᵢ^(r)`.
 
 ## References
 
@@ -63,28 +60,6 @@ namespace TauCeti
 open FreeAlgebra Finset QuantizedEnvelopingAlgebra
 
 variable {I X Y K : Type*} [AddCommGroup X] [AddCommGroup Y] [Field K]
-
-/-! ### The bicharacter of a Cartan datum -/
-
-/-- The bicharacter `χ(αᵢ, αⱼ) = qᵢ^(aᵢⱼ) = q^(dᵢ aᵢⱼ)` on the simple roots of a Cartan datum.
-It is symmetric by symmetrizability (`TauCeti.cartanBraiding_symm`), and the positive part of the
-quantized enveloping algebra is the free algebra modulo the radical of Lusztig's form for it. -/
-def cartanBraiding (D : CartanDatum I X Y) (q : K) (i j : I) : K :=
-  (q ^ D.symmetrizer i) ^ D.cartan i j
-
-@[simp]
-theorem cartanBraiding_apply (D : CartanDatum I X Y) (q : K) (i j : I) :
-    cartanBraiding D q i j = (q ^ D.symmetrizer i) ^ D.cartan i j := (rfl)
-
-/-- The bicharacter of a Cartan datum is symmetric: `qᵢ^(aᵢⱼ) = qⱼ^(aⱼᵢ)`. -/
-theorem cartanBraiding_symm (D : CartanDatum I X Y) (q : K) (i j : I) :
-    cartanBraiding D q i j = cartanBraiding D q j i :=
-  zpow_symmetrizer_cartan_comm D q i j
-
-/-- On the diagonal, the bicharacter of a Cartan datum is `qᵢ²`. -/
-theorem cartanBraiding_self (D : CartanDatum I X Y) (q : K) (i : I) :
-    cartanBraiding D q i i = (q ^ D.symmetrizer i) ^ 2 := by
-  simp
 
 /-! ### Skew derivatives of divided powers -/
 
@@ -116,12 +91,14 @@ variable (D : CartanDatum I X Y) (q : K)
 /-- Word reversal sends the quantum Serre element `Sᵢⱼ` to `(-1)^(1 - aᵢⱼ) Sᵢⱼ`. -/
 theorem star_serreSum (i j : I) :
     star (serreSum D q (ι K) i j) = (-1 : K) ^ D.serreLength i j • serreSum D q (ι K) i j := by
-  have hstar : ∀ x : FreeAlgebra K I, star x = MulOpposite.unop (FreeAlgebra.starHom x) :=
-    fun x => by simp [FreeAlgebra.starHom]
-  have hι : ∀ l : I, FreeAlgebra.starHom (ι K l) = MulOpposite.op (ι K l) := fun l => by
-    simp [FreeAlgebra.starHom]
-  rw [hstar, map_serreSum]
-  simp only [hι, unop_serreSum]
+  rw [← MulOpposite.unop_op (star _), ← FreeAlgebra.starHom_apply, map_serreSum]
+  simp only [FreeAlgebra.starHom_apply, star_ι, unop_serreSum]
+
+/-- A diagonal scaling `θₗ ↦ cₗ θₗ` multiplies the divided power `θᵢ^(r)` by `cᵢ^r`. -/
+theorem freeHalfScale_quantumDividedPower_ι (c : I → K) (t : K) (i : I) (r : ℕ) :
+    freeHalfScale c (quantumDividedPower t (ι K i) r) =
+      c i ^ r • quantumDividedPower t (ι K i) r := by
+  simp only [map_quantumDividedPower, freeHalfScale_ι, quantumDividedPower_smul]
 
 /-- A diagonal scaling `θₗ ↦ cₗ θₗ` multiplies the quantum Serre element `Sᵢⱼ` by
 `cᵢ^(1 - aᵢⱼ) cⱼ`, its value on the degree of `Sᵢⱼ`. -/
@@ -154,8 +131,7 @@ private theorem freeRemove_serreSum_right {i j : I} (hij : i ≠ j)
   have hP : ∀ r, freeRemove (cartanBraiding D q) j (P r) = 0 := fun r => by
     simp [P, quantumDividedPower_def, freeRemove_ι_pow_of_ne _ hij.symm]
   have hσ : ∀ r, freeHalfScale (cartanBraiding D q j) (P r) = (t ^ (1 - (m : ℤ))) ^ r • P r :=
-    fun r => by simp only [P, map_quantumDividedPower, freeHalfScale_ι, hχ,
-      quantumDividedPower_smul]
+    fun r => by simp only [P, freeHalfScale_quantumDividedPower_ι, hχ]
   have hterm : ∀ r ∈ range (m + 1), freeRemove (cartanBraiding D q) j
       ((-1 : K) ^ r • (P r * ι K j * P (m - r))) =
       ((-1 : K) ^ r * t ^ ((r : ℤ) * (1 - (m : ℤ))) * quantumBinomial t m r) • P m := by
@@ -194,9 +170,7 @@ private theorem freeRemove_serreSum_left {i j : I} (hij : i ≠ j)
       (quantumFactorial_ne_zero_of_le (by omega) hfac)
   have hL0 : L (P 0) = 0 := by simp [L, P]
   have hσ : ∀ r, freeHalfScale (cartanBraiding D q i) (P r) = t ^ (2 * r) • P r := fun r => by
-    simp only [P, map_quantumDividedPower, freeHalfScale_ι, cartanBraiding_self,
-      quantumDividedPower_smul]
-    rw [← pow_mul]
+    rw [freeHalfScale_quantumDividedPower_ι, cartanBraiding_self, ← pow_mul]
   -- Expand each summand by the Leibniz rule into a left and a right contribution.
   set a : ℕ → FreeAlgebra K I := fun r => (-1 : K) ^ r • (L (P r) * ι K j * P (n + 1 - r))
   set b : ℕ → FreeAlgebra K I := fun r =>
