@@ -84,13 +84,7 @@ generators generate every finite cube. In particular, this applies to compact ge
 def normalizedCubicalChainComplexGeneratedByIso :
     (TopCat.toGeneratedByTopCat (X := G) ⋙ GeneratedByTopCat.toTopCat) ⋙
         normalizedCubicalChainComplex R ≅ normalizedCubicalChainComplex R :=
-  NatIso.ofComponents
-    (fun X ↦ asIso ((normalizedCubicalChainComplex R).map
-      ((GeneratedByTopCat.adjCounit (X := G)).app X)))
-    (fun f ↦ by
-      simpa only [asIso_hom, Functor.comp_map, Functor.id_map, ← Functor.map_comp] using
-        congrArg ((normalizedCubicalChainComplex R).map)
-          ((GeneratedByTopCat.adjCounit (X := G)).naturality f))
+  generatedByFunctorIso G (normalizedCubicalChainComplex R)
 
 /-- The forward comparison is the chain map induced by the counit. -/
 @[simp]
@@ -98,7 +92,7 @@ theorem normalizedCubicalChainComplexGeneratedByIso_hom_app (X : TopCat.{u}) :
     (normalizedCubicalChainComplexGeneratedByIso G R).hom.app X =
       (normalizedCubicalChainComplex R).map
         ((GeneratedByTopCat.adjCounit (X := G)).app X) :=
-  (rfl)
+  generatedByFunctorIso_hom_app G (normalizedCubicalChainComplex R) X
 
 /-- On generators, the inverse comparison lifts the same cube to the generated topology. -/
 theorem normalizedCubicalChainComplexGeneratedByIso_inv_app_f_ofCube (X : TopCat.{u})

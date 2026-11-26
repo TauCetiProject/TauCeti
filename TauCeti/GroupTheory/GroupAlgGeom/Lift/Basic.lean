@@ -253,12 +253,6 @@ theorem not_hasLiftNe_of_subsingleton [Subsingleton (CoordGroup ι S)] : ¬HasLi
 
 /-! ### Lifts from words solving the system on a separating family -/
 
-private theorem eval_sumElim_wordMap {K : Type*} [Group K] (κ : G →* K) (y : Y → GX G X) (p : X → K)
-    (w : GX G (X ⊕ Y)) : eval κ (Sum.elim p (wordMap κ y p)) w =
-      eval κ p (eval (inl : G →* GX G X) (Sum.elim (fun x => inr (FreeGroup.of x)) y) w) := by
-  rw [← MonoidHom.comp_apply, eval_comp_eval]
-  exact congrArg (eval κ · w) (funext fun z => by cases z <;> simp)
-
 private theorem sumElim_genericPoint_wordMap_mem_V {Θ : Set (X → H)} (hΘ : I ι Θ ≤ Rad ι S)
     (y : Y → GX G X) (hT : ∀ θ ∈ Θ, Sum.elim θ (wordMap ι y θ) ∈ V ι T) :
     Sum.elim (CoordGroup.genericPoint ι S)
@@ -267,7 +261,7 @@ private theorem sumElim_genericPoint_wordMap_mem_V {Θ : Set (X → H)} (hΘ : I
   mem_V.2 fun t ht => by
     rw [eval_sumElim_wordMap, CoordGroup.eval_genericPoint, QuotientGroup.eq_one_iff]
     exact hΘ <| mem_I.2 fun θ hθ =>
-      (eval_sumElim_wordMap ι y θ t).symm.trans (mem_V.1 (hT θ hθ) t ht)
+      (eval_sumElim_wordMap y θ t).symm.trans (mem_V.1 (hT θ hθ) t ht)
 
 /-- Let `Θ` be a family of points whose ideal `I(Θ)`, the words vanishing at every point of `Θ`,
 lies in the radical of `S`; for a family of solutions of `S` this says that the evaluations at the
@@ -287,7 +281,7 @@ theorem hasLiftNe_of_forall_sumElim_wordMap_mem_V {Θ : Set (X → H)} (hΘ : I 
     (hW : eval ι (Sum.elim v (wordMap ι y v)) W ≠ 1) : HasLiftNe ι S T W := by
   refine ⟨_, sumElim_genericPoint_wordMap_mem_V hΘ y hT, fun h => hW ?_⟩
   rw [eval_sumElim_wordMap, CoordGroup.eval_genericPoint, QuotientGroup.eq_one_iff] at h
-  exact (eval_sumElim_wordMap ι y v W).trans (mem_Rad.1 h v hv)
+  exact (eval_sumElim_wordMap y v W).trans (mem_Rad.1 h v hv)
 
 /-- A solution `Y(X)` of `T` in `G[X]` at the tuple of variables gives an `S`-lift of `T` for
 every system `S`: the words `Y(X)` solve `T` at every solution of `S`. -/

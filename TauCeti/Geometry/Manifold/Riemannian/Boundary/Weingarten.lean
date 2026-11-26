@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Basic
 public import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
+import TauCeti.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Geometry.Manifold.MFDeriv.Slice
 
 /-!
@@ -41,12 +42,19 @@ curvatures `1` and `H = 1`.
   bundled as `TauCeti.boundaryPrincipalBasis`
   (`TauCeti.boundaryWeingarten_boundaryPrincipalDirection`,
   `TauCeti.boundaryInducedForm_boundaryPrincipalDirection`), in which `II_q` is diagonal
-  (`TauCeti.boundarySecondFundamentalForm_boundaryPrincipalDirection`).
+  (`TauCeti.boundarySecondFundamentalForm_boundaryPrincipalDirection`), so that
+  `II_q(u, u) = ∑ᵢ κᵢ uᵢ²` (`TauCeti.boundarySecondFundamentalForm_self_eq_sum`).
+* `TauCeti.boundaryPrincipalCurvatures_eq_of_eigenbasis`: a decreasing family of eigenvalues of
+  `S_q` on any basis of `T_q∂M`, orthonormal or not, is the family of principal curvatures.
 * `TauCeti.boundaryMeanCurvature`: the mean curvature `H(q) = tr S_q / n`, with
   `TauCeti.sum_boundarySecondFundamentalForm_eq_mul_boundaryMeanCurvature`: `tr_h II = n H`, the
   sum of `II_q(e_i, e_i)` over every `h`-orthonormal basis `(e_i)`, and
   `TauCeti.mul_boundaryMeanCurvature`, `TauCeti.boundaryMeanCurvature_eq_sum_div`: `n H` is the
   sum of the principal curvatures, `H` their average.
+* `TauCeti.boundaryWeingarten_eq_smul_id_iff`: `S_q = c • id ↔ II_q = c • h`, in which case
+  every principal curvature and, for `n ≥ 1`, the mean curvature is `c`
+  (`TauCeti.boundaryPrincipalCurvatures_eq_of_boundaryWeingarten_eq_smul`,
+  `TauCeti.boundaryMeanCurvature_eq_of_boundaryWeingarten_eq_smul`).
 
 ## References
 
@@ -94,6 +102,15 @@ theorem eq_boundaryWeingarten_iff (q : (𝓡∂ (n + 1)).boundary M)
   refine eq_of_forall_inner_comp (injective_mfderiv_subtypeVal_boundary q) fun w ↦ ?_
   rw [ContinuousLinearMap.coe_coe, ← boundaryInducedForm_apply, h,
     ← boundaryInducedForm_boundaryWeingarten, boundaryInducedForm_apply]
+
+/-- The Weingarten map is the scalar `c` exactly when the second fundamental form is `c` times the
+induced metric: `S_q = c • id ↔ II_q = c • h`. -/
+theorem boundaryWeingarten_eq_smul_id_iff (q : (𝓡∂ (n + 1)).boundary M) (c : ℝ) :
+    boundaryWeingarten q = c • LinearMap.id ↔
+      boundarySecondFundamentalForm q = c • boundaryInducedForm q := by
+  rw [eq_comm, eq_boundaryWeingarten_iff, LinearMap.ext_iff₂]
+  refine forall₂_congr fun u w ↦ ?_
+  simp only [LinearMap.smul_apply, LinearMap.id_apply, map_smul, eq_comm]
 
 /-- **The Weingarten map is self-adjoint** for the induced metric: `h(S_q u, w) = h(u, S_q w)`. -/
 theorem boundaryInducedForm_boundaryWeingarten_comm (q : (𝓡∂ (n + 1)).boundary M)
@@ -216,6 +233,19 @@ theorem boundaryPrincipalCurvatures_antitone (q : (𝓡∂ (n + 1)).boundary M) 
     Antitone (boundaryPrincipalCurvatures q) :=
   LinearMap.IsSymmetric.eigenvalues_antitone _ _
 
+/-- **The principal curvatures are the decreasing eigenvalues on any eigenbasis.** If a basis
+`(bᵢ)` of the tangent space of the boundary at `q` satisfies `S_q bᵢ = μᵢ bᵢ` for a decreasing
+family `μ`, then `μ` is the family of principal curvatures at `q`. The basis need not be
+orthonormal, so this characterisation does not mention the induced metric. -/
+theorem boundaryPrincipalCurvatures_eq_of_eigenbasis (q : (𝓡∂ (n + 1)).boundary M)
+    (b : Module.Basis (Fin n) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q))
+    {μ : Fin n → ℝ} (hμ : Antitone μ) (hb : ∀ i, boundaryWeingarten q (b i) = μ i • b i) :
+    boundaryPrincipalCurvatures q = μ :=
+  (isSymmetric_boundaryWeingartenTangent q).eigenvalues_eq_of_eigenbasis _
+    (b.map (boundaryTangentEquiv q)) hμ fun i ↦ by
+      rw [Module.Basis.map_apply, boundaryWeingartenTangent_boundaryTangentEquiv, hb, map_smul,
+        RCLike.ofReal_real_eq_id, id]
+
 /-- The `i`-th principal direction is an eigenvector of the Weingarten map for the `i`-th
 principal curvature: `S_q eᵢ = κᵢ eᵢ`. -/
 @[simp]
@@ -249,6 +279,19 @@ theorem boundarySecondFundamentalForm_boundaryPrincipalDirection (q : (𝓡∂ (
     map_smul, LinearMap.smul_apply, boundaryInducedForm_boundaryPrincipalDirection]
   split_ifs <;> simp
 
+/-- **The second fundamental form in principal coordinates**: `II_q(u, u) = ∑ᵢ κᵢ uᵢ²`, where
+`uᵢ` are the coordinates of `u` in the basis of principal directions. -/
+theorem boundarySecondFundamentalForm_self_eq_sum (q : (𝓡∂ (n + 1)).boundary M)
+    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    boundarySecondFundamentalForm q u u =
+      ∑ i, boundaryPrincipalCurvatures q i * (boundaryPrincipalBasis q).repr u i ^ 2 := by
+  conv_lhs => rw [← (boundaryPrincipalBasis q).sum_repr u]
+  simp only [coe_boundaryPrincipalBasis, map_sum, map_smul, LinearMap.coe_sum,
+    LinearMap.coe_smul, Finset.sum_apply, Pi.smul_apply,
+    boundarySecondFundamentalForm_boundaryPrincipalDirection, smul_eq_mul, mul_ite, mul_zero,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+  exact Finset.sum_congr rfl fun i _ ↦ by ring
+
 /-- The principal directions are nonzero. -/
 theorem boundaryPrincipalDirection_ne_zero (q : (𝓡∂ (n + 1)).boundary M) (i : Fin n) :
     boundaryPrincipalDirection q i ≠ 0 := fun h ↦ by
@@ -272,6 +315,14 @@ theorem hasEigenvalue_boundaryWeingarten_iff (q : (𝓡∂ (n + 1)).boundary M) 
     exact Module.End.hasEigenvalue_of_hasEigenvector
       ⟨Module.End.mem_eigenspace_iff.mpr (boundaryWeingarten_boundaryPrincipalDirection q i),
         boundaryPrincipalDirection_ne_zero q i⟩
+
+/-- If the Weingarten map is the scalar `c`, then every principal curvature is `c`. -/
+theorem boundaryPrincipalCurvatures_eq_of_boundaryWeingarten_eq_smul
+    {q : (𝓡∂ (n + 1)).boundary M} {c : ℝ} (h : boundaryWeingarten q = c • LinearMap.id)
+    (i : Fin n) : boundaryPrincipalCurvatures q i = c := by
+  have h' := boundaryWeingarten_boundaryPrincipalDirection q i
+  rw [h, LinearMap.smul_apply, LinearMap.id_apply] at h'
+  exact smul_left_injective ℝ (boundaryPrincipalDirection_ne_zero q i) h'.symm
 
 /-! ### Mean curvature -/
 
@@ -304,6 +355,13 @@ theorem mul_boundaryMeanCurvature (q : (𝓡∂ (n + 1)).boundary M) :
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   · rw [boundaryMeanCurvature_eq_sum_div, mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr hn)]
+
+/-- If the Weingarten map is the scalar `c`, then the mean curvature is `c`, for `n ≥ 1`. -/
+theorem boundaryMeanCurvature_eq_of_boundaryWeingarten_eq_smul [NeZero n]
+    {q : (𝓡∂ (n + 1)).boundary M} {c : ℝ} (h : boundaryWeingarten q = c • LinearMap.id) :
+    boundaryMeanCurvature q = c := by
+  rw [boundaryMeanCurvature_eq_sum_div]
+  simp [boundaryPrincipalCurvatures_eq_of_boundaryWeingarten_eq_smul h, NeZero.ne n]
 
 /-- **`tr_h II = n H`**: for every basis `(eᵢ)` of the tangent space of the boundary at `q`,
 orthonormal for the induced metric, `∑ᵢ II_q(eᵢ, eᵢ) = n H(q)`. -/

@@ -72,17 +72,18 @@ variable {E V P H G M N : Type*}
 `Φ : ν ≃ W` of `f` inside `O` is a framed tube around `f`. -/
 private theorem exists_isFramedTube_diffeomorph (f : SmoothEmbedding I J ∞ M N)
     (hn : (∞ : ℕ∞ω) ≠ 0) (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
-    (φ : Trivialization P (π P fun x ↦ f.NormalSpace x hn)) [φ.IsLinear ℝ]
+    (φ : Trivialization P (π P fun x ↦ f.isImmersion.NormalSpace x hn)) [φ.IsLinear ℝ]
     (hφ : φ.baseSet = univ) {O : Set N} (hO : IsOpen O) (hfO : range f ⊆ O) :
     letI := f.normalSpaceFiberBundle hn hdim
     ∃ W : TopologicalSpace.Opens N, (W : Set N) ⊆ O ∧
-      ∃ Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W,
+      ∃ Φ : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W,
         IsFramedTube f fun p ↦ (Φ (φ.toOpenPartialHomeomorph.symm p) : N) := by
   let := f.normalSpaceFiberBundle hn hdim
   obtain ⟨W, hWO, Φ, hΦ⟩ := f.exists_diffeomorph_normalBundle_subset (P := P) hdim hO hfO
   have hbase (x : M) : x ∈ φ.baseSet := hφ ▸ mem_univ x
   have hψ (x : M) :
-      φ.toOpenPartialHomeomorph.symm (x, 0) = zeroSection P (fun x ↦ f.NormalSpace x hn) x := by
+      φ.toOpenPartialHomeomorph.symm (x, 0) = zeroSection P
+          (fun x ↦ f.isImmersion.NormalSpace x hn) x := by
     have h0 : φ.symm x 0 = 0 := by
       rw [← φ.symmₗ_apply (R := ℝ) (hbase x)]
       exact map_zero _
@@ -101,7 +102,7 @@ by a global fibrewise linear trivialization `φ` with fibre `P` admits a framed 
 `f`. The tube is the inverse of the framing followed by a tubular neighbourhood of `f`. -/
 theorem exists_isFramedTube (f : SmoothEmbedding I J ∞ M N) (hn : (∞ : ℕ∞ω) ≠ 0)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
-    (φ : Trivialization P (π P fun x ↦ f.NormalSpace x hn)) [φ.IsLinear ℝ]
+    (φ : Trivialization P (π P fun x ↦ f.isImmersion.NormalSpace x hn)) [φ.IsLinear ℝ]
     (hφ : φ.baseSet = univ) {O : Set N} (hO : IsOpen O) (hfO : range f ⊆ O) :
     ∃ τ : M × P → N, IsFramedTube f τ ∧ range τ ⊆ O := by
   obtain ⟨W, hWO, Φ, hτ⟩ := f.exists_isFramedTube_diffeomorph hn hdim φ hφ hO hfO
@@ -116,7 +117,7 @@ is moreover a smooth local diffeomorphism. This is the smoothness of the tube th
 transversality computations of the Pontryagin–Thom collapse use. -/
 theorem exists_isFramedTube_isLocalDiffeomorph (f : SmoothEmbedding I J ∞ M N)
     (hn : (∞ : ℕ∞ω) ≠ 0) (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
-    (φ : Trivialization P (π P fun x ↦ f.NormalSpace x hn)) [φ.IsLinear ℝ]
+    (φ : Trivialization P (π P fun x ↦ f.isImmersion.NormalSpace x hn)) [φ.IsLinear ℝ]
     (hφ : φ.baseSet = univ)
     (hφs : letI := f.normalSpaceFiberBundle hn hdim
       ContMDiff (I.prod 𝓘(ℝ, P)) (I.prod 𝓘(ℝ, P)) ∞ φ)
@@ -143,7 +144,7 @@ of the framed tube given by `TauCeti.SmoothEmbedding.exists_isFramedTube`, which
 access the tube itself. -/
 theorem exists_pontryaginThomCollapse [CompactSpace M] (f : SmoothEmbedding I J ∞ M N)
     (hn : (∞ : ℕ∞ω) ≠ 0) (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
-    (φ : Trivialization P (π P fun x ↦ f.NormalSpace x hn)) [φ.IsLinear ℝ]
+    (φ : Trivialization P (π P fun x ↦ f.isImmersion.NormalSpace x hn)) [φ.IsLinear ℝ]
     (hφ : φ.baseSet = univ) {O : Set N} (hO : IsOpen O) (hfO : range f ⊆ O) :
     ∃ c : C(N, OnePoint P), (∀ y, c y = (0 : P) ↔ y ∈ range f) ∧ ∀ y ∉ O, c y = OnePoint.infty := by
   obtain ⟨τ, hτ, hτO⟩ := f.exists_isFramedTube hn hdim φ hφ hO hfO

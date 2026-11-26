@@ -29,6 +29,10 @@ This is how wrapped laws on the circle obtain their densities.
 Reading the circle in the symmetric chart `(-T/2, T/2]`, on which the distance to `0` is `|x|`,
 also bounds the integral of a radial function `h ↦ g ‖h‖` by twice the integral of `g` over the
 half line (`AddCircle.lintegral_comp_norm_le`).
+
+Mathlib's translation action of `ℝ` on `AddCircle T`, `t +ᵥ x = t + x` (`AddCircle.vadd_eq_add`),
+is jointly measurable and preserves every additively left-invariant measure, such as circle
+volume and the normalized Haar measure (`AddCircle.instVAddInvariantMeasureReal`).
 -/
 
 public section
@@ -39,6 +43,24 @@ open MeasureTheory Set
 open scoped ENNReal
 
 namespace AddCircle
+
+/-- Mathlib's translation action of `ℝ` on `AddCircle T` adds the image of `t` in the circle. -/
+@[simp]
+protected theorem vadd_eq_add {T : ℝ} (t : ℝ) (x : AddCircle T) :
+    t +ᵥ x = (t : AddCircle T) + x :=
+  QuotientAddGroup.induction_on x fun y ↦ by
+    rw [AddAction.Quotient.vadd_coe, vadd_eq_add, QuotientAddGroup.mk_add]
+
+/-- The translation action of `ℝ` on `AddCircle T` is jointly measurable. -/
+instance instMeasurableVAdd₂Real {T : ℝ} : MeasurableVAdd₂ ℝ (AddCircle T) :=
+  ⟨continuous_vadd.measurable⟩
+
+/-- The translation action of `ℝ` on `AddCircle T` preserves every additively left-invariant
+measure. -/
+instance instVAddInvariantMeasureReal {T : ℝ} {μ : Measure (AddCircle T)}
+    [μ.IsAddLeftInvariant] : VAddInvariantMeasure ℝ (AddCircle T) μ :=
+  ⟨fun t s _ ↦ by
+    simpa only [AddCircle.vadd_eq_add] using measure_preimage_add μ (t : AddCircle T) s⟩
 
 variable {T : ℝ} [hT : Fact (0 < T)]
 

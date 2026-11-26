@@ -297,6 +297,15 @@ def compactlySupportedFlowDiffeotopy (hn : 1 ≤ n)
     (isCompleteVectorField_of_isCompact_of_eq_zero_off (hv.of_le (by exact_mod_cast hn)) hK
       hzero) a
 
+/-- The compactly supported motion is the global flow motion of the same field, for any proof
+that the field is complete. -/
+theorem compactlySupportedFlowDiffeotopy_eq_globalFlowDiffeotopy (hn : 1 ≤ n)
+    (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    (hK : IsCompact K) (hzero : ∀ y ∉ K, v y = 0) (hcomplete : IsCompleteVectorField v)
+    (a : ℝ) :
+    compactlySupportedFlowDiffeotopy hn hv hK hzero a = globalFlowDiffeotopy hn hv hcomplete a := by
+  rw [compactlySupportedFlowDiffeotopy]
+
 /-- The compactly supported motion is the maximal integral curve at the rescaled time. -/
 @[simp] theorem compactlySupportedFlowDiffeotopy_apply (hn : 1 ≤ n)
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))

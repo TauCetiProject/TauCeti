@@ -10,6 +10,9 @@ import TauCeti.ModelTheory.RelationalConfiguration.Topology
 import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 import TauCeti.ModelTheory.Infinitary.Infinite
 import Mathlib.ModelTheory.Order
+import Mathlib.ModelTheory.Graph
+import TauCeti.MeasureTheory.Constructions.Cylinder.FullShift
+import TauCeti.Dynamics.SymbolicDynamics.Basic
 
 /-!
 # Spaces of structures on finite, infinite and empty carriers
@@ -17,7 +20,7 @@ import Mathlib.ModelTheory.Order
 The order on `ℕ` survives encoding and decoding, and its atom `0 ≤ 1` gives a clopen cylinder.
 The finite and infinite coding spaces have the advertised standard Borel structures. Empty
 carriers still retain nullary relations, and transport to a different universe preserves
-infinitary sentences.
+infinitary sentences. The coding space of graphs on `ℕ` has continuum many points.
 -/
 
 open FirstOrder FirstOrder.Language TauCeti RelationalConfiguration
@@ -60,3 +63,20 @@ example {L : Language} [L.IsRelational] :
 -- Model classes of `L_{ω₁ω}` sentences on countable carriers are standard Borel spaces.
 example {L : Language} [L.IsRelational] [∀ n, Countable (L.Relations n)] (φ : L.Sentenceω) :
     StandardBorelSpace (modelsOf φ : Set (RelationalConfiguration L ℕ)) := inferInstance
+
+-- The coding space of graphs on `ℕ` has continuum many points.
+example : Cardinal.mk (RelationalConfiguration Language.graph ℕ) = Cardinal.continuum :=
+  mk_eq_continuum _ _ two_ne_zero Language.adj
+
+-- Finite cylinders of configurations are measurable.
+example {L : Language} {V : Type*} (s : Finset (Atom L V)) (f : Atom L V → Bool) :
+    MeasurableSet
+      (SymbolicDynamics.FullShift.cylinder s f : Set (RelationalConfiguration L V)) :=
+  SymbolicDynamics.FullShift.measurableSet_cylinder s f
+
+-- The finite cylinders form a basis of the topology of the coding space.
+example {L : Language} {V : Type*} :
+    TopologicalSpace.IsTopologicalBasis
+      (Set.range fun p : Finset (Atom L V) × (Atom L V → Bool) =>
+        (SymbolicDynamics.FullShift.cylinder p.1 p.2 : Set (RelationalConfiguration L V))) :=
+  SymbolicDynamics.FullShift.isTopologicalBasis_cylinders

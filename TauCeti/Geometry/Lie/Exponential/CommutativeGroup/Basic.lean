@@ -35,7 +35,10 @@ its Lie algebra by a lattice.
 * `TauCeti.range_lieExp`: the exponential image is the identity component.
 * `TauCeti.lieExp_surjective_of_preconnectedSpace`: the exponential of a preconnected
   commutative Lie group is surjective.
+* `TauCeti.lieExpLattice`: the kernel `Λ` of the exponential, as a `ℤ`-submodule of the Lie
+  algebra.
 * `TauCeti.discreteTopology_ker_lieExpAddMonoidHom`: the kernel of the exponential is discrete.
+* `TauCeti.finite_lieExpLattice`: the exponential lattice is a finitely generated `ℤ`-module.
 * `TauCeti.isOpenMap_lieExpAddMonoidHom` and `TauCeti.isOpenMap_lieExp`: the exponential of a
   commutative Lie group is an open map.
 * `TauCeti.lieExpAddMonoidHom_surjective_of_preconnectedSpace`: the exponential homomorphism of
@@ -46,8 +49,8 @@ its Lie algebra by a lattice.
   commutative Lie group that vanishes on the kernel of the exponential descends to the group.
 * `TauCeti.compactSpace_quotient_ker_lieExpAddMonoidHom`: for a compact commutative Lie group
   the quotient of the Lie algebra by the kernel of the exponential is compact.
-* `TauCeti.span_ker_lieExpAddMonoidHom_eq_top`, `TauCeti.isZLattice_ker_lieExpAddMonoidHom` and
-  `TauCeti.finrank_ker_lieExpAddMonoidHom`: for a compact commutative Lie group the kernel of the
+* `TauCeti.span_ker_lieExpAddMonoidHom_eq_top`, `TauCeti.isZLattice_lieExpLattice` and
+  `TauCeti.finrank_lieExpLattice`: for a compact commutative Lie group the kernel of the
   exponential is a lattice of full rank in the Lie algebra.
 
 ## References
@@ -119,6 +122,16 @@ theorem mem_ker_lieExpAddMonoidHom {X : LeftInvariantDerivation I G} :
   -- Not a `simp` lemma: `simp` already proves it from `AddMonoidHom.mem_ker`,
   -- `lieExpAddMonoidHom_apply` and `ofMul_eq_zero`, so the simpNF linter rejects the attribute.
   rw [AddMonoidHom.mem_ker, lieExpAddMonoidHom_apply, ofMul_eq_zero]
+
+/-- The exponential lattice `Λ = ker exp` of a commutative Lie group, as a `ℤ`-submodule of the
+Lie algebra. -/
+abbrev lieExpLattice : Submodule ℤ (LeftInvariantDerivation I G) :=
+  (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule
+
+/-- Membership in the exponential lattice. -/
+theorem mem_lieExpLattice {X : LeftInvariantDerivation I G} :
+    X ∈ lieExpLattice (I := I) (G := G) ↔ lieExp X = 1 :=
+  mem_ker_lieExpAddMonoidHom
 
 /-- **The kernel of the exponential of a commutative Lie group is a discrete subgroup** of the
 Lie algebra. -/
@@ -201,6 +214,12 @@ theorem lieExp_surjective_of_preconnectedSpace [PreconnectedSpace G] :
 noncomputable local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
   finiteDimensional_leftInvariantDerivation
     (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+
+omit [IsTopologicalGroup G] in
+/-- **The exponential lattice of a commutative Lie group is finitely generated**, being discrete
+in the finite-dimensional Lie algebra. -/
+instance finite_lieExpLattice : Module.Finite ℤ (lieExpLattice (I := I) (G := G)) :=
+  instModuleFinite_of_discrete_submodule _
 
 section Preconnected
 
@@ -294,18 +313,17 @@ theorem span_ker_lieExpAddMonoidHom_eq_top :
       ((lieExpAddMonoidHom (I := I) (G := G)).ker : Set (LeftInvariantDerivation I G)) = ⊤ :=
   AddSubgroup.span_eq_top_of_compactSpace_quotient _
 
-/-- **The kernel of the exponential of a compact commutative Lie group is a lattice**
-in the Lie algebra. -/
-instance isZLattice_ker_lieExpAddMonoidHom :
-    IsZLattice ℝ (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule where
+/-- **The exponential lattice of a compact commutative Lie group is a lattice** in the Lie
+algebra. -/
+instance isZLattice_lieExpLattice : IsZLattice ℝ (lieExpLattice (I := I) (G := G)) where
   span_top := by
     rw [AddSubgroup.coe_toIntSubmodule]
     exact span_ker_lieExpAddMonoidHom_eq_top (I := I) (G := G)
 
 omit [IsTopologicalGroup G] in
-/-- The rank of the kernel of the exponential is the dimension of the group. -/
-theorem finrank_ker_lieExpAddMonoidHom :
-    Module.finrank ℤ (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule =
+/-- The rank of the exponential lattice is the dimension of the group. -/
+theorem finrank_lieExpLattice :
+    Module.finrank ℤ (lieExpLattice (I := I) (G := G)) =
       Module.finrank ℝ (LeftInvariantDerivation I G) := by
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   exact ZLattice.rank ℝ _

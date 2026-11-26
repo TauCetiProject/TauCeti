@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.LinearAlgebra.DirectSum.Finite
 public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.RepresentationTheory.Stabilizer
-import TauCeti.RepresentationTheory.OfMulAction.CosetLift
+import TauCeti.RepresentationTheory.OfMulAction.Coset.Lift
 import TauCeti.RepresentationTheory.Rep.DirectSum.AsModule
 
 /-!

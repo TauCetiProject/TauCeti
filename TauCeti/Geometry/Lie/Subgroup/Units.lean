@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
+import TauCeti.Geometry.Lie.Subgroup.CartanChart
 
 /-!
 # The Lie algebra of a closed subgroup of the units of a normed algebra
@@ -32,6 +33,13 @@ Lie subalgebra; for a closed subgroup its carrier is the exponential-line set.
   line of `x : R` is the Banach-algebra exponential line.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff`: for a closed
   subgroup, membership in its Lie algebra is that exponential line staying inside the subgroup.
+* `Subgroup.star_mem_linearLieAlgebra`: the exponential-line set of a subgroup is invariant under
+  a star that preserves the subgroup.
+* `Subgroup.star_mem_linearLieSubalgebra`: the same for the Lie algebra of a closed subgroup.
+* `Subgroup.conj_mem_linearLieSubalgebra`: the Lie algebra of a subgroup is invariant under
+  conjugation by the subgroup.
+* `Subgroup.le_of_linearLieSubalgebra_le`: a closed connected subgroup lies in every closed
+  subgroup whose Lie algebra contains its own.
 -/
 
 public section
@@ -120,6 +128,15 @@ theorem neg_mem_linearLieAlgebra (hx : x ∈ G.linearLieAlgebra) :
     -x ∈ G.linearLieAlgebra := by
   simpa only [neg_one_smul] using smul_mem_linearLieAlgebra (-1) hx
 
+/-- The linear Lie algebra of a subgroup stable under a continuous star is stable under the
+star. -/
+theorem star_mem_linearLieAlgebra [StarRing R] [StarModule ℝ R] [ContinuousStar R]
+    (hstar : ∀ y ∈ G, star y ∈ G) (hx : x ∈ G.linearLieAlgebra) :
+    star x ∈ G.linearLieAlgebra := by
+  intro t
+  rw [← star_trivial t, ← star_smul, TauCeti.expUnit_star]
+  exact hstar _ (hx t)
+
 /-- The linear Lie algebra of a closed subgroup is a closed subset of the ambient algebra. -/
 theorem isClosed_linearLieAlgebra (hG : IsClosed (G : Set Rˣ)) :
     IsClosed G.linearLieAlgebra := by
@@ -155,12 +172,23 @@ theorem linearLieSubalgebra_eq_map (G : Subgroup Rˣ) :
 
 variable {G : Subgroup Rˣ} {x y : R}
 
+/-- Membership in the transported Lie subalgebra is membership of the corresponding element in
+the intrinsic Lie algebra of the subgroup. -/
+theorem mem_linearLieSubalgebra :
+    x ∈ G.linearLieSubalgebra ↔
+      (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := R)).symm x ∈
+        TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) G := by
+  rw [linearLieSubalgebra_eq_map, LieSubalgebra.mem_map]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    rwa [LieEquiv.coe_toLieHom, LieEquiv.symm_apply_apply]
+  · exact fun hx ↦ ⟨_, hx, LieEquiv.apply_symm_apply _ x⟩
+
 /-- For a closed subgroup, membership in the transported Lie subalgebra is equivalent to the
 exponential-line condition. -/
 theorem mem_linearLieSubalgebra_iff (hG : IsClosed (G : Set Rˣ)) :
     x ∈ G.linearLieSubalgebra ↔ x ∈ G.linearLieAlgebra := by
-  rw [linearLieSubalgebra_eq_map, LieSubalgebra.mem_map_submodule,
-    Submodule.mem_map_equiv, LieSubalgebra.mem_toSubmodule]
+  rw [mem_linearLieSubalgebra]
   exact TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff hG x
 
 /-- For a closed subgroup, the transported Lie subalgebra has the exponential-line set as its
@@ -182,6 +210,35 @@ theorem commutator_mem_linearLieAlgebra (hG : IsClosed (G : Set Rˣ))
     x * y - y * x ∈ G.linearLieAlgebra := by
   rw [← mem_linearLieSubalgebra_iff hG] at hx hy ⊢
   exact G.linearLieSubalgebra.lie_mem hx hy
+
+/-- The Lie algebra of a subgroup `G` of `Rˣ` is invariant under conjugation by `G`: this is
+`TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup`, read through `TauCeti.Lie.unitsLieAlgebraLieEquiv`,
+under which the adjoint action is conjugation in `R` (`TauCeti.Lie.unitsLieAlgebraEquiv_Ad`). -/
+theorem conj_mem_linearLieSubalgebra {y : Rˣ} (hy : y ∈ G) (hx : x ∈ G.linearLieSubalgebra) :
+    (y : R) * x * ↑y⁻¹ ∈ G.linearLieSubalgebra := by
+  rw [mem_linearLieSubalgebra] at hx ⊢
+  convert TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) (Subgroup.le_normalizer hy)
+    hx using 1
+  rw [LieEquiv.symm_apply_eq, TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+    TauCeti.Lie.unitsLieAlgebraEquiv_Ad, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+    LieEquiv.apply_symm_apply]
+
+/-- The Lie algebra of a closed subgroup stable under a continuous star is stable under the
+star. -/
+theorem star_mem_linearLieSubalgebra [StarRing R] [StarModule ℝ R] [ContinuousStar R]
+    (hG : IsClosed (G : Set Rˣ)) (hstar : ∀ y ∈ G, star y ∈ G)
+    (hx : x ∈ G.linearLieSubalgebra) : star x ∈ G.linearLieSubalgebra :=
+  (mem_linearLieSubalgebra_iff hG).2 <|
+    star_mem_linearLieAlgebra hstar ((mem_linearLieSubalgebra_iff hG).1 hx)
+
+/-- A closed connected subgroup `G` of `Rˣ` lies in every closed subgroup `L` whose Lie algebra
+contains its own. -/
+theorem le_of_linearLieSubalgebra_le {L : Subgroup Rˣ} (hG : IsClosed (G : Set Rˣ))
+    (hconn : IsPreconnected (G : Set Rˣ)) (hL : IsClosed (L : Set Rˣ))
+    (h : G.linearLieSubalgebra ≤ L.linearLieSubalgebra) : G ≤ L := by
+  refine TauCeti.Lie.le_of_lieSubalgebraOfSubgroup_le (I := 𝓘(ℝ, R)) hG hconn hL fun x hx ↦ ?_
+  rw [← (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := R)).symm_apply_apply x] at hx ⊢
+  exact mem_linearLieSubalgebra.1 (h (mem_linearLieSubalgebra.2 hx))
 
 end FiniteDimensional
 

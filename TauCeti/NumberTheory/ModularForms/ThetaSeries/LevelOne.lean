@@ -163,9 +163,8 @@ theorem qExpansion_thetaForm_coeff (hL : IsEven L) (hU : IsUnimodular L)
 /-- The theta series of an even unimodular lattice is a nonzero modular form. -/
 @[simp]
 theorem thetaForm_ne_zero (hL : IsEven L) (hU : IsUnimodular L) (hk : finrank ℝ E = 2 * k) :
-    thetaForm hL hU hk ≠ 0 := fun h ↦
-  thetaSeries_ne_zero_of_re_eq_zero L UpperHalfPlane.I_re (by
-    rw [← coe_thetaForm hL hU hk, h, zero_apply])
+    thetaForm hL hU hk ≠ 0 :=
+  ne_zero_of_coe_eq_thetaSeries L (coe_thetaForm hL hU hk)
 
 /-- The theta series of an even unimodular lattice is not a cusp form: its value at `∞` is `1`. -/
 @[simp]

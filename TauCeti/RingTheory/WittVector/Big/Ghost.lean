@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.WittVector.Big.TruncationSet
 import Mathlib.Algebra.Regular.SMul
 import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.NumberTheory.Basic
+import TauCeti.NumberTheory.Divisors
 import TauCeti.RingTheory.Coprime.Lemmas
 
 /-!
@@ -40,6 +41,8 @@ is a unit, every sequence is the ghost sequence of a unique coordinate sequence 
 
 ## Main results
 
+* `TauCeti.BigWitt.ghostPolynomial_ite_dvd`: the ghost components of a coordinate sequence
+  spread out along the multiples of `n`.
 * `TauCeti.BigWitt.ghostPolynomial_sub_map_ghostPolynomial_div_mem`: for every sequence `x`,
   `w_n(x) ≡ φ_p(w_{n/p}(x))` modulo `p ^ v_p(n)`.
 * `TauCeti.BigWitt.ghost_image`: Dwork's lemma, the congruence description of the image of the
@@ -198,6 +201,31 @@ theorem ghostPolynomial_eq_sum_properDivisors_add (hn : n ≠ 0) (x : ℕ → R)
     ghostPolynomial n x = ∑ d ∈ n.properDivisors, (d : R) * x d ^ (n / d) + n * x n := by
   rw [ghostPolynomial_eq_sum, ← Nat.cons_self_properDivisors hn, sum_cons, add_comm,
     Nat.div_self (Nat.pos_of_ne_zero hn), pow_one]
+
+/-- **Ghost components of a spread-out sequence.** Moving the coordinate of index `e` to index
+`n * e` and putting zeros at the indices not divisible by `n` multiplies the ghost components by
+`n` and spreads them out the same way:
+`w_m(x') = n * w_{m/n}(x)` if `n ∣ m` and `w_m(x') = 0` otherwise. -/
+theorem ghostPolynomial_ite_dvd (n m : ℕ) (x : ℕ → R) :
+    ghostPolynomial m (fun k ↦ if n ∣ k then x (k / n) else 0) =
+      if n ∣ m then n * ghostPolynomial (m / n) x else 0 := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  -- a term indexed by a divisor `d` of `m` not divisible by `n` is `d * 0 ^ (m / d) = 0`
+  have hzero : ∀ d ∈ m.divisors, ¬n ∣ d →
+      (d : R) * (if n ∣ d then x (d / n) else 0) ^ (m / d) = 0 := fun d hd hnd ↦ by
+    rw [ite_eq_right hnd,
+      zero_pow (Nat.div_pos (Nat.divisor_le hd) (Nat.pos_of_mem_divisors hd)).ne', mul_zero]
+  rw [ghostPolynomial_eq_sum]
+  split_ifs with hnm
+  · -- only the divisors `d = n * e` with `e ∣ m / n` contribute
+    have hn : 0 < n := Nat.pos_of_ne_zero (ne_zero_of_dvd_ne_zero hm hnm)
+    rw [← sum_filter_of_ne (p := (n ∣ ·)) fun d hd h ↦ by_contra (h <| hzero d hd ·),
+      Nat.sum_divisors_filter_dvd hnm, ghostPolynomial_eq_sum, mul_sum]
+    refine sum_congr rfl fun e _ ↦ ?_
+    rw [ite_eq_left (dvd_mul_right n e), Nat.mul_div_cancel_left e hn, Nat.div_div_eq_div_mul,
+      Nat.cast_mul, mul_assoc]
+  · exact sum_eq_zero fun d hd ↦ hzero d hd fun hnd ↦ hnm (hnd.trans (Nat.dvd_of_mem_divisors hd))
 
 end Semiring
 

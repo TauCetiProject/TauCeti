@@ -122,8 +122,7 @@ theorem coadjointRepresentation_apply_comp_tangentAd (g : G)
   ext X
   simp only [LinearMap.comp_apply, LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, tangentAd_apply,
     coadjointRepresentation_apply]
-  rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, inv_mul_cancel,
-    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
+  rw [adjointContinuousLinearMap_inv_adjointContinuousLinearMap]
 
 end TangentAd
 
