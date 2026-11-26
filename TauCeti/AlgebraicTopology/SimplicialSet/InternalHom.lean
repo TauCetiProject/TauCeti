@@ -42,7 +42,8 @@ it is a Kan complex. For `p = 𝟙 B` there is exactly one functor over `f`, and
 
 ## Main results
 
-* `SSet.ihomOver.homEquiv`: maps `Z ⟶ Fun_B(K, E)` are the maps `K ⊗ Z ⟶ E` over `f`.
+* `SSet.ihomOver.homEquiv`: maps `Z ⟶ Fun_B(K, E)` are the maps `K ⊗ Z ⟶ E` over `f`, and
+  restriction `SSet.ihomOver.pre` along a map `L ⟶ K` restricts them (`homEquiv_comp_pre_coe`).
 * `SSet.ihomOver.objEquiv`: the `n`-simplices of `Fun_B(K, E)` are the maps `K ⊗ Δ[n] ⟶ E`
   over `f`.
 * `SSet.ihomOver.obj₀Equiv`: the vertices of `Fun_B(K, E)` are the maps `K ⟶ E` over `f`.
@@ -325,6 +326,27 @@ lemma homEquiv_symm_apply_ι {Z : SSet.{u}} (g : {g : K ⊗ Z ⟶ E // g ≫ p =
 lemma homEquiv_comp_coe {Z Z' : SSet.{u}} (h : Z' ⟶ Z) (φ : Z ⟶ ihomOver p f) :
     (homEquiv (h ≫ φ)).val = K ◁ h ≫ (homEquiv φ).val := by
   rw [homEquiv_apply_coe, homEquiv_apply_coe, Category.assoc, uncurry_natural_left]
+
+/-- Restriction `Fun_B(K, E) ⟶ Fun_B(L, E)` of functors over `f` along a map `i : L ⟶ K`, to
+functors over `i ≫ f`. -/
+noncomputable def pre {L : SSet.{u}} (i : L ⟶ K) :
+    (ihomOver p f : SSet) ⟶ ihomOver p (i ≫ f) :=
+  Subcomplex.lift ((ihomOver p f).ι ≫ (MonoidalClosed.pre i).app E) (by
+    rw [range_le_ihomOver_iff, uncurry_pre_app, Category.assoc,
+      (range_le_ihomOver_iff (p := p) (f := f) (ihomOver p f).ι).1 (by simp),
+      whiskerRight_fst_assoc])
+
+@[reassoc (attr := simp)]
+lemma pre_ι {L : SSet.{u}} (i : L ⟶ K) :
+    pre i ≫ (ihomOver p (i ≫ f)).ι = (ihomOver p f).ι ≫ (MonoidalClosed.pre i).app E :=
+  (rfl)
+
+/-- Under the universal property, restriction along `i : L ⟶ K` restricts a map `K ⊗ Z ⟶ E`
+along `i ▷ Z`. -/
+lemma homEquiv_comp_pre_coe {Z L : SSet.{u}} (φ : Z ⟶ ihomOver p f) (i : L ⟶ K) :
+    (homEquiv (φ ≫ pre i)).val = i ▷ Z ≫ (homEquiv φ).val := by
+  rw [homEquiv_apply_coe, homEquiv_apply_coe, Category.assoc, pre_ι, ← Category.assoc,
+    uncurry_pre_app]
 
 /-- **The relative simplex description of `Fun_B(K, E)`**: its `n`-simplices are the maps
 `K ⊗ Δ[n] ⟶ E` over `f`, that is, whose composite with `p` is the projection to `K` followed

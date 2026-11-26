@@ -32,6 +32,9 @@ inner horn filling and Joyal's theorem (`SSet.Quasicategory.exists_fill_of_ne_la
 
 ## Main results
 
+* `SSet.exists_lift_of_forall_boundary`: a map whose lifting problems against boundary inclusions,
+  with bottom map in a full enhanced subcategory of the target, all have solutions, restricts over
+  that full subcategory to a trivial fibration.
 * `SSet.prodStdSimplex.exists_ext_unionProd_horn_zero`: a map from
   `(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n])` to a quasicategory which sends the vertical edges
   `(0, t) ⟶ (1, t)` to equivalences extends to `Δ[m + 2] ⊗ Δ[n]`.
@@ -96,6 +99,54 @@ theorem exists_ext_unionProd_horn_zero [Quasicategory C] {m n : ℕ}
 
 end prodStdSimplex
 
+/-- **Lifting along monomorphisms from lifting along boundaries, over a full subcategory.** Let
+`ρ : A ⟶ B` be a map of simplicial sets and `P` a predicate on the vertices of `B`. Suppose that
+every lifting problem of `∂Δ[n] ⟶ Δ[n]` against `ρ` whose bottom map `Δ[n] ⟶ B` sends all vertices
+into `P` has a solution. Then so does every lifting problem of a monomorphism `i : Y ⟶ Z` against
+`ρ` whose bottom map sends all vertices into `P`: the restriction of `ρ` over the full enhanced
+subcategory `B.fullEnhancedSubcategory P` is a trivial fibration. -/
+theorem exists_lift_of_forall_boundary {A B : SSet.{u}} (ρ : A ⟶ B) (P : B _⦋0⦌ → Prop)
+    (hρ : ∀ (n : ℕ) (t : (∂Δ[n] : SSet.{u}) ⟶ A) (b : Δ[n] ⟶ B), t ≫ ρ = ∂Δ[n].ι ≫ b →
+      (∀ z : Δ[n] _⦋0⦌, P (b.app _ z)) → ∃ l : Δ[n] ⟶ A, ∂Δ[n].ι ≫ l = t ∧ l ≫ ρ = b)
+    {Y Z : SSet.{u}} (i : Y ⟶ Z) [Mono i] (t : Y ⟶ A) (b : Z ⟶ B) (w : t ≫ ρ = i ≫ b)
+    (hb : ∀ z : Z _⦋0⦌, P (b.app _ z)) :
+    ∃ l : Z ⟶ A, i ≫ l = t ∧ l ≫ ρ = b := by
+  let H := B.fullEnhancedSubcategory P
+  -- A map lands in the preimage of `H` when its composite with `ρ` lands in `H`.
+  have hpre {W : SSet.{u}} (f : W ⟶ A) (hf : Subcomplex.range (f ≫ ρ) ≤ H) :
+      Subcomplex.range f ≤ H.preimage ρ := by
+    rwa [← Subcomplex.image_le_iff, ← Subcomplex.range_comp]
+  -- Restriction of `ρ` over `H` is a trivial fibration: it suffices to lift against boundary
+  -- inclusions.
+  have hρ' : (MorphismProperty.monomorphisms SSet.{u}).rlp (H.fromPreimage ρ) := by
+    rw [rlp_monomorphisms]
+    rintro _ _ _ ⟨n⟩
+    refine ⟨fun {t b} sq ↦ ?_⟩
+    obtain ⟨l, hl₁, hl₂⟩ := hρ n (t ≫ (H.preimage ρ).ι) (b ≫ H.ι)
+      (by rw [Category.assoc, ← Subcomplex.fromPreimage_ι, ← Category.assoc, sq.w,
+        Category.assoc])
+      (fun z ↦ (mem_fullEnhancedSubcategory_obj_zero_iff _ _).1 (b.app _ z).property)
+    have hl : Subcomplex.range l ≤ H.preimage ρ := hpre l (by
+      rw [hl₂, Subcomplex.range_comp]
+      exact (Subcomplex.image_le_range _ _).trans (by simp))
+    exact ⟨⟨{ l := Subcomplex.lift l hl
+              fac_left := by rw [← cancel_mono (H.preimage ρ).ι, Category.assoc,
+                Subcomplex.lift_ι, hl₁]
+              fac_right := by rw [← cancel_mono H.ι, Category.assoc,
+                Subcomplex.fromPreimage_ι, ← Category.assoc, Subcomplex.lift_ι, hl₂] }⟩⟩
+  have hb' : Subcomplex.range b ≤ H := (range_le_fullEnhancedSubcategory_iff _ _).2 hb
+  have ht : Subcomplex.range t ≤ H.preimage ρ := hpre t (by
+    rw [w, Subcomplex.range_comp]
+    exact (Subcomplex.image_le_range _ _).trans hb')
+  have sq : CommSq (Subcomplex.lift t ht) i (H.fromPreimage ρ) (Subcomplex.lift b hb') :=
+    ⟨by rw [← cancel_mono H.ι, Category.assoc, Subcomplex.fromPreimage_ι, ← Category.assoc,
+      Subcomplex.lift_ι, Category.assoc, Subcomplex.lift_ι, w]⟩
+  have := hρ' i (MorphismProperty.monomorphisms.infer_property i)
+  refine ⟨sq.lift ≫ (H.preimage ρ).ι, ?_, ?_⟩
+  · rw [← Category.assoc, sq.fac_left, Subcomplex.lift_ι]
+  · rw [Category.assoc, ← Subcomplex.fromPreimage_ι, ← Category.assoc, sq.fac_right,
+      Subcomplex.lift_ι]
+
 namespace Quasicategory
 
 variable {m : ℕ}
@@ -143,43 +194,8 @@ theorem exists_lift_pre_horn_zero [Quasicategory C] {Y Z : SSet.{u}} (i : Y ⟶ 
     (hb : ∀ z : Z _⦋0⦌, (Edge.mk' ((ihomObj₀Equiv _ C (b.app _ z)).app _
       (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)))).IsEquivalence) :
     ∃ l : Z ⟶ (ihom Δ[m + 2]).obj C, i ≫ l = t ∧ l ≫ (pre Λ[m + 2, 0].ι).app C = b := by
-  let H := ((ihom (Λ[m + 2, 0] : SSet.{u})).obj C).fullEnhancedSubcategory
-    HasEquivalenceInitialEdge
-  let ρ := (pre Λ[m + 2, 0].ι).app C
-  -- A map lands in the preimage of `H` when its composite with `ρ` lands in `H`.
-  have hpre {W : SSet.{u}} (f : W ⟶ (ihom Δ[m + 2]).obj C) (hf : Subcomplex.range (f ≫ ρ) ≤ H) :
-      Subcomplex.range f ≤ H.preimage ρ := by
-    rwa [← Subcomplex.image_le_iff, ← Subcomplex.range_comp]
-  -- Restriction of `ρ` over `H` is a trivial fibration: it suffices to lift against boundary
-  -- inclusions, which is `exists_lift_boundary`.
-  have hρ : (MorphismProperty.monomorphisms SSet.{u}).rlp (H.fromPreimage ρ) := by
-    rw [rlp_monomorphisms]
-    rintro _ _ _ ⟨n⟩
-    refine ⟨fun {t b} sq ↦ ?_⟩
-    obtain ⟨l, hl₁, hl₂⟩ := exists_lift_boundary (t ≫ (H.preimage ρ).ι) (b ≫ H.ι)
-      (by rw [Category.assoc, ← Subcomplex.fromPreimage_ι, ← Category.assoc, sq.w,
-        Category.assoc])
-      (fun z ↦ (mem_fullEnhancedSubcategory_obj_zero_iff _ _).1 (b.app _ z).property)
-    have hl : Subcomplex.range l ≤ H.preimage ρ := hpre l (by
-      rw [hl₂, Subcomplex.range_comp]
-      exact (Subcomplex.image_le_range _ _).trans (by simp))
-    exact ⟨⟨{ l := Subcomplex.lift l hl
-              fac_left := by rw [← cancel_mono (H.preimage ρ).ι, Category.assoc,
-                Subcomplex.lift_ι, hl₁]
-              fac_right := by rw [← cancel_mono H.ι, Category.assoc,
-                Subcomplex.fromPreimage_ι, ← Category.assoc, Subcomplex.lift_ι, hl₂] }⟩⟩
-  have hb' : Subcomplex.range b ≤ H := (range_le_fullEnhancedSubcategory_iff _ _).2 hb
-  have ht : Subcomplex.range t ≤ H.preimage ρ := hpre t (by
-    rw [w, Subcomplex.range_comp]
-    exact (Subcomplex.image_le_range _ _).trans hb')
-  have sq : CommSq (Subcomplex.lift t ht) i (H.fromPreimage ρ) (Subcomplex.lift b hb') :=
-    ⟨by rw [← cancel_mono H.ι, Category.assoc, Subcomplex.fromPreimage_ι, ← Category.assoc,
-      Subcomplex.lift_ι, Category.assoc, Subcomplex.lift_ι, w]⟩
-  have := hρ i (MorphismProperty.monomorphisms.infer_property i)
-  refine ⟨sq.lift ≫ (H.preimage ρ).ι, ?_, ?_⟩
-  · rw [← Category.assoc, sq.fac_left, Subcomplex.lift_ι]
-  · rw [Category.assoc, ← Subcomplex.fromPreimage_ι, ← Category.assoc, sq.fac_right,
-      Subcomplex.lift_ι]
+  exact exists_lift_of_forall_boundary _ HasEquivalenceInitialEdge
+    (fun _ t b w hb ↦ exists_lift_boundary t b w hb) i t b w hb
 
 end Quasicategory
 

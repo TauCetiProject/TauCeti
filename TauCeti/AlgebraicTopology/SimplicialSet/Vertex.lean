@@ -24,8 +24,8 @@ monotone along the vertices of every simplex.
   vertices of each simplex.
 * `SSet.map_const_castSucc_of_δ_last`: the first `n + 1` vertices of an `(n + 1)`-simplex whose
   last face is constant at `x` are `x`.
-* `SSet.yonedaEquiv_const_one`: the constant map `Δ[1] ⟶ X` at a vertex `x` is the degenerate
-  edge at `x`.
+* `SSet.yonedaEquiv_const_one`, `SSet.const_app_one`: the constant map `Δ[1] ⟶ X` at a vertex
+  `x` is the degenerate edge at `x`, and every constant map at `x` sends `1`-simplices to it.
 -/
 
 public section
@@ -76,5 +76,11 @@ lemma yonedaEquiv_const_one (x : X _⦋0⦌) :
     yonedaEquiv (const x : Δ[1] ⟶ X) = (Edge.id x).edge := by
   rw [Edge.id_edge, ← comp_const (stdSimplex.σ 0), ← yonedaEquiv_symm_zero,
     stdSimplex.yonedaEquiv_σ_comp, Equiv.apply_symm_apply]
+
+/-- A constant map at a vertex `x` sends every `1`-simplex to the degenerate edge at `x`. -/
+lemma const_app_one {W : SSet.{u}} (x : X _⦋0⦌) (e : W _⦋1⦌) :
+    (const x : W ⟶ X).app _ e = (Edge.id x).edge := by
+  rw [← yonedaEquiv_const_one, ← comp_const (yonedaEquiv.symm e), yonedaEquiv_comp,
+    Equiv.apply_symm_apply]
 
 end SSet
