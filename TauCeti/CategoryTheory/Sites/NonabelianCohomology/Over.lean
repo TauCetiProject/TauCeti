@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Sites.CoversTop
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Torsor
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 public import TauCeti.CategoryTheory.Sites.PseudofunctorSheafOver
 
 /-!
@@ -106,11 +107,9 @@ def overMapPullbackId (U : C) : overMapPullback (G := G) (𝟙 U) ≅ 𝟭 _ :=
   NatIso.ofComponents (fun P ↦ isoMk ((J.overMapPullbackId (Type w) U).app P.sheaf)
     (fun X g p ↦ by
       refine ((P.map_smul ((Over.mapId U).inv.app X.unop).op g p).trans (congrArg (· • _) ?_))
-      -- The restriction maps of `G.over U` are by definition those of `G` along the underlying
-      -- morphisms, here an identity.
-      change G.obj.map ((Over.mapId U).inv.app X.unop).left.op g = g
-      simp
-      rfl))
+      -- The restriction is along a morphism whose underlying morphism of `C` is an identity.
+      exact (over_obj_map_apply G ((Over.mapId U).inv.app X.unop).op g).trans
+        ((ConcreteCategory.congr_hom (G.obj.map_id _) g).trans (id_apply g))))
     (fun φ ↦ by ext1; exact (J.overMapPullbackId (Type w) U).hom.naturality φ.hom)
 
 variable (G) in
@@ -131,11 +130,9 @@ def overMapPullbackComp (a : V ⟶ U) (b : W ⟶ V) (ab : W ⟶ U) (h : b ≫ a 
       refine (P.map_smul (Over.homMk (𝟙 X.left) (by simp [← h]) :
         (Over.map a).obj ((Over.map b).obj X) ⟶ (Over.map ab).obj X).op g p).trans
           (congrArg (· • _) ?_)
-      -- The restriction maps of `G.over U` are by definition those of `G` along the underlying
-      -- morphisms, here an identity.
-      change G.obj.map (𝟙 X.left).op g = g
-      simp
-      rfl))
+      exact (over_obj_map_apply G (Over.homMk (𝟙 X.left) (by simp [← h]) :
+        (Over.map a).obj ((Over.map b).obj X) ⟶ (Over.map ab).obj X).op g).trans
+          ((ConcreteCategory.congr_hom (G.obj.map_id _) g).trans (id_apply g))))
     (fun φ ↦ by
       ext1
       exact ((J.pseudofunctorOver (Type w)).mapComp' a.op.toLoc b.op.toLoc ab.op.toLoc
@@ -176,13 +173,6 @@ lemma overMapPullbackComp_inv_app_hom (a : V ⟶ U) (b : W ⟶ V) (ab : W ⟶ U)
         (by rw [← h]; rfl)).inv.toNatTrans.app P.sheaf :=
   (rfl)
 
-omit [Category.{v} C] in
-/-- Restricting a section of a presheaf of types along `d` and then along `c` gives it back when
-`c ≫ d` is an identity. -/
-private lemma map_map_eq_self {E : Type*} [Category* E] (F : Eᵒᵖ ⥤ Type*) {Y Z : E} (c : Y ⟶ Z)
-    (d : Z ⟶ Y) (h : c ≫ d = 𝟙 Y) (x : F.obj (op Y)) : F.map c.op (F.map d.op x) = x := by
-  rw [← Functor.map_comp_apply, ← op_comp, h, op_id, Functor.map_id_apply]
-
 /-- The composition isomorphisms of the restriction of torsors are associative. -/
 lemma overMapPullbackComp_assoc {U₀ U₁ U₂ U₃ : C} (a : U₁ ⟶ U₀) (b : U₂ ⟶ U₁) (c : U₃ ⟶ U₂)
     (ab : U₂ ⟶ U₀) (bc : U₃ ⟶ U₁) (abc : U₃ ⟶ U₀) (hab : b ≫ a = ab) (hbc : c ≫ b = bc)
@@ -211,7 +201,11 @@ lemma overMapPullbackComp_comp_id (a : V ⟶ U) (h : a ≫ 𝟙 U = a) (P : Tors
       (by simp)).hom.toNatTrans.app P.sheaf).hom.app (op X) p) = p
   rw [key]
   simp only [GrothendieckTopology.overMapPullbackId_hom_app_hom_app]
-  refine map_map_eq_self P.sheaf.obj ((Over.mapId U).inv.app ((Over.map a).obj X)) _ ?_ p
+  -- The two restrictions compose to the restriction along an identity.
+  refine (Functor.map_comp_apply P.sheaf.obj _
+    ((Over.mapId U).inv.app ((Over.map a).obj X)).op p).symm.trans
+      ((congrArg (P.sheaf.obj.map · p) (op_comp.symm.trans
+        ((congrArg Quiver.Hom.op ?_).trans op_id))).trans (Functor.map_id_apply P.sheaf.obj _ p))
   ext
   simp
 
@@ -230,7 +224,11 @@ lemma overMapPullbackComp_id_comp (a : V ⟶ U) (h : 𝟙 V ≫ a = a) (P : Tors
       (by simp)).hom.toNatTrans.app P.sheaf).hom.app (op X) p) = p
   rw [key]
   simp only [GrothendieckTopology.overMapPullbackId_hom_app_hom_app]
-  refine map_map_eq_self P.sheaf.obj ((Over.map a).map ((Over.mapId V).inv.app X)) _ ?_ p
+  -- The two restrictions compose to the restriction along an identity.
+  refine (Functor.map_comp_apply P.sheaf.obj _
+    ((Over.map a).map ((Over.mapId V).inv.app X)).op p).symm.trans
+      ((congrArg (P.sheaf.obj.map · p) (op_comp.symm.trans
+        ((congrArg Quiver.Hom.op ?_).trans op_id))).trans (Functor.map_id_apply P.sheaf.obj _ p))
   ext
   simp
 
@@ -270,6 +268,24 @@ instance (U : LocallyDiscrete Cᵒᵖ) : IsGroupoid ((torsorPseudofunctor G).obj
 @[simp]
 lemma torsorPseudofunctor_map_toFunctor {U V : LocallyDiscrete Cᵒᵖ} (f : U ⟶ V) :
     ((torsorPseudofunctor G).map f).toFunctor = Torsor.overMapPullback f.as.unop :=
+  (rfl)
+
+/-- The unit isomorphisms `mapId` of the pseudofunctor of torsors lie over those of the
+pseudofunctor of sheaves on slices. -/
+@[simp]
+lemma torsorPseudofunctor_mapId_hom_app_hom (U : LocallyDiscrete Cᵒᵖ)
+    (P : Torsor (G.over U.as.unop)) :
+    (((torsorPseudofunctor G).mapId U).hom.toNatTrans.app P).hom =
+      ((J.pseudofunctorOver (Type w)).mapId U).hom.toNatTrans.app P.sheaf :=
+  (rfl)
+
+/-- The inverses of the unit isomorphisms `mapId` of the pseudofunctor of torsors lie over those
+of the pseudofunctor of sheaves on slices. -/
+@[simp]
+lemma torsorPseudofunctor_mapId_inv_app_hom (U : LocallyDiscrete Cᵒᵖ)
+    (P : Torsor (G.over U.as.unop)) :
+    (((torsorPseudofunctor G).mapId U).inv.toNatTrans.app P).hom =
+      ((J.pseudofunctorOver (Type w)).mapId U).inv.toNatTrans.app P.sheaf :=
   (rfl)
 
 /-- The composition isomorphisms `mapComp'` of the pseudofunctor of torsors lie over those of the

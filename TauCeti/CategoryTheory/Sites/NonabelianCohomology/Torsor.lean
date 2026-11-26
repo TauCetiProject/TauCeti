@@ -39,8 +39,11 @@ relative to a fixed family of objects; here no covering is chosen.
   of sheaves.
 * `CategoryTheory.Sheaf.Torsor.trivialHomEquiv`: morphisms from the trivial torsor to `P` are
   the global sections of `P`.
-* `CategoryTheory.Sheaf.Torsor.nonempty_trivial_iso_of_isTerminal`: a torsor with a section over
-  a terminal object is trivial.
+* `CategoryTheory.Sheaf.Torsor.diff`: the difference of two sections of a torsor, the unique
+  section of `G` taking the first to the second.
+* `CategoryTheory.Sheaf.Torsor.nonempty_sections_of_isTerminal` and
+  `CategoryTheory.Sheaf.Torsor.nonempty_trivial_iso_of_isTerminal`: a torsor with a section over
+  a terminal object has a global section, and is trivial.
 * `CategoryTheory.Sheaf.Torsor.isoOfSection`: a section of `P` along a functor `u` identifies
   the restrictions of `G` and of `P` along `u`.
 * `CategoryTheory.Sheaf.Torsor.exists_sections_eq_of_smul_invariant`: a `G`-invariant morphism
@@ -108,6 +111,24 @@ variable {U} in
 lemma smul_left_injective (p : P.sheaf.obj.obj U) :
     Function.Injective fun g : G.obj.obj U ↦ g • p := fun g h hgh ↦
   (Prod.ext_iff.1 (@(P.bijective U).1 (g, p) (h, p) (Prod.ext hgh rfl))).1
+
+variable {U} in
+/-- The difference of two sections `p` and `q` of a torsor over `U`: the unique section `g` of
+`G` over `U` with `g • p = q` (`diff_smul`, `eq_diff_of_smul_eq`). -/
+noncomputable def diff (p q : P.sheaf.obj.obj U) : G.obj.obj U :=
+  (MulAction.exists_smul_eq (G.obj.obj U) p q).choose
+
+variable {U} in
+/-- The difference of `p` and `q` takes `p` to `q`. -/
+@[simp]
+lemma diff_smul (p q : P.sheaf.obj.obj U) : P.diff p q • p = q :=
+  (MulAction.exists_smul_eq (G.obj.obj U) p q).choose_spec
+
+variable {U} in
+/-- A section of `G` taking `p` to `q` is the difference of `p` and `q`. -/
+lemma eq_diff_of_smul_eq {p q : P.sheaf.obj.obj U} {g : G.obj.obj U} (hg : g • p = q) :
+    g = P.diff p q :=
+  P.smul_left_injective p (hg.trans (P.diff_smul p q).symm)
 
 end Action
 
@@ -261,13 +282,20 @@ lemma trivialHomEquiv_symm_apply_hom_app (P : Torsor G) (s : P.sheaf.obj.section
     ((trivialHomEquiv P).symm s).hom.hom.app U g = g • s.val U := by
   rfl
 
-/-- A torsor with a section over a terminal object is isomorphic to the trivial torsor: the
-restrictions of the section form a global section. -/
+/-- A torsor with a section over a terminal object has a global section: the restrictions of the
+section. -/
+lemma nonempty_sections_of_isTerminal (P : Torsor G) {T : C} (hT : IsTerminal T)
+    (p : P.sheaf.obj.obj (op T)) : P.sheaf.obj.sections.Nonempty :=
+  ⟨fun W ↦ P.sheaf.obj.map (hT.from W.unop).op p, fun _ ↦
+    (Functor.map_comp_apply _ _ _ _).symm.trans
+      (congrArg (fun k ↦ P.sheaf.obj.map k p) (Quiver.Hom.unop_inj (hT.hom_ext _ _)))⟩
+
+/-- A torsor with a section over a terminal object is isomorphic to the trivial torsor
+(`nonempty_sections_of_isTerminal`). -/
 lemma nonempty_trivial_iso_of_isTerminal (P : Torsor G) {T : C} (hT : IsTerminal T)
     (p : P.sheaf.obj.obj (op T)) : Nonempty (trivial G ≅ P) :=
-  ⟨asIso ((trivialHomEquiv P).symm ⟨fun W ↦ P.sheaf.obj.map (hT.from W.unop).op p,
-    fun _ ↦ (Functor.map_comp_apply _ _ _ _).symm.trans
-      (congrArg (fun k ↦ P.sheaf.obj.map k p) (Quiver.Hom.unop_inj (hT.hom_ext _ _)))⟩)⟩
+  let ⟨s, hs⟩ := P.nonempty_sections_of_isTerminal hT p
+  ⟨asIso ((trivialHomEquiv P).symm ⟨s, hs⟩)⟩
 
 /-- A section `s` of a `G`-torsor `P` along a functor `u : D ⥤ C`, that is a family of sections
 `s d` of `P` over `u d` compatible with restriction, identifies `u.op ⋙ G` with `u.op ⋙ P`: a
@@ -310,9 +338,7 @@ section: some object over which it has a section receives a map from `T`. -/
 lemma nonempty_sections_of_isTerminal_of_id_mem (P : Torsor G) {T : C} (hT : IsTerminal T)
     (hJ : ∀ S ∈ J T, S (𝟙 T)) : P.sheaf.obj.sections.Nonempty := by
   obtain ⟨⟨i, ⟨p⟩⟩, ⟨f⟩⟩ := hJ _ (P.coversTop T)
-  refine ⟨fun U ↦ P.sheaf.obj.map (hT.from U.unop ≫ f).op p, fun {U V} g ↦ ?_⟩
-  have : g.unop ≫ hT.from U.unop = hT.from V.unop := hT.hom_ext _ _
-  simp [← this, -IsTerminal.comp_from]
+  exact P.nonempty_sections_of_isTerminal hT (P.sheaf.obj.map f.op p)
 
 /-- A `G`-invariant morphism from a torsor `P` to a sheaf of sets `F` is constant: its values
 are those of a global section of `F`. -/
