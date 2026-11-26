@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.NewtonPolynomial
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Matrix.MvPolynomial
+import TauCeti.Algebra.Regular.NatCast
 import TauCeti.LinearAlgebra.Charpoly.Nilpotent
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
@@ -34,9 +35,11 @@ The same reduction expresses the traces through the coefficients: `p_k` is the N
 `TauCeti.newtonMvPolynomial`, the universal integer polynomial giving the power sum `p_k` in terms
 of the elementary symmetric functions, evaluated at `e_j = (-1) ^ j c_j`.
 
-When division by the integers `1, …, r` is unique, the recurrence determines `c_r` from the traces
-`p_1, …, p_r`. So over a ring without additive torsion, such as a field of characteristic zero,
-the traces of the first `d` powers of a `d × d` matrix determine its characteristic polynomial.
+When the integers `1, …, r` are non-zero-divisors, equivalently when `r!` is a non-zero-divisor
+(`IsRegular`), the recurrence determines `c_r` from the traces `p_1, …, p_r`. So over a ring
+without additive torsion, such as a field of characteristic zero, or over a field of
+characteristic `p > d`, the traces of the first `d` powers of a `d × d` matrix determine its
+characteristic polynomial.
 
 ## Main results
 
@@ -56,6 +59,10 @@ the traces of the first `d` powers of a `d × d` matrix determine its characteri
 * `Matrix.charpoly_eq_of_trace_pow_eq`, `LinearMap.charpoly_eq_of_trace_pow_eq`: without additive
   torsion, the traces of `A ^ j` for `0 < j ≤ d` already determine the characteristic polynomial
   of a `d × d` matrix, or of an endomorphism of a free module of rank `d`.
+* `Matrix.coeff_charpolyRev_eq_of_trace_pow_eq_of_isRegular`,
+  `Matrix.charpoly_eq_of_trace_pow_eq_of_isRegular`,
+  `LinearMap.charpoly_eq_of_trace_pow_eq_of_isRegular`: the same when only `d!` is a
+  non-zero-divisor, as over a field of characteristic `p > d`.
 * `LinearMap.trace_pow_eq_of_charpoly_eq`, `LinearMap.charpoly_eq_iff_trace_pow_eq`: the same
   comparisons for endomorphisms of finite free modules.
 * `Matrix.charpoly_eq_of_sq_eq_one`, `LinearMap.charpoly_eq_of_sq_eq_one`: without additive
@@ -223,14 +230,16 @@ theorem trace_pow_eq_of_charpoly_eq {A : Matrix n n R} {B : Matrix m m R}
     simp [hnm]
   exact trace_pow_eq_of_charpolyRev_eq (by rw [← reverse_charpoly, ← reverse_charpoly, h]) hj
 
-/-- Without additive torsion in the scalars, the traces of `A ^ j` for `0 < j ≤ r` determine the
-`r`-th coefficient of `det (1 - X A)`. -/
-theorem coeff_charpolyRev_eq_of_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R}
-    {B : Matrix m m R} {r : ℕ} (h : ∀ j, 0 < j → j ≤ r → (A ^ j).trace = (B ^ j).trace) :
+/-- When `r!` is a non-zero-divisor of the scalars, the traces of `A ^ j` for `0 < j ≤ r`
+determine the `r`-th coefficient of `det (1 - X A)`. Over a field of characteristic `p` this asks
+for `r < p`. -/
+theorem coeff_charpolyRev_eq_of_trace_pow_eq_of_isRegular {A : Matrix n n R} {B : Matrix m m R}
+    {r : ℕ} (hr : IsRegular (r.factorial : R))
+    (h : ∀ j, 0 < j → j ≤ r → (A ^ j).trace = (B ^ j).trace) :
     A.charpolyRev.coeff r = B.charpolyRev.coeff r := by
   induction r using Nat.strong_induction_on with
   | _ r ih =>
-  rcases Nat.eq_zero_or_pos r with rfl | hr
+  rcases Nat.eq_zero_or_pos r with rfl | hr0
   · simp
   have hA := A.mul_coeff_charpolyRev_eq_neg_sum r
   have hB := B.mul_coeff_charpolyRev_eq_neg_sum r
@@ -238,9 +247,19 @@ theorem coeff_charpolyRev_eq_of_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n 
       ∑ j ∈ range r, B.charpolyRev.coeff (r - (j + 1)) * (B ^ (j + 1)).trace :=
     sum_congr rfl fun j hj ↦ by
       rw [mem_range] at hj
-      rw [ih _ (by omega) fun i hi hir ↦ h i hi (by omega), h _ (by omega) (by omega)]
-  rw [hsum, ← hB, ← nsmul_eq_mul, ← nsmul_eq_mul] at hA
-  exact ((AddCommute.all _ _).nsmul_right_inj hr.ne').1 hA
+      rw [ih _ (by omega) (TauCeti.isRegular_natCast_of_dvd (Nat.factorial_dvd_factorial
+        (by omega)) hr) fun i hi hir ↦ h i hi (by omega), h _ (by omega) (by omega)]
+  rw [hsum, ← hB] at hA
+  -- `r` divides `r!`, so it is a non-zero-divisor as well
+  exact (TauCeti.isRegular_natCast_of_dvd (Nat.dvd_factorial hr0 le_rfl) hr).left hA
+
+/-- Without additive torsion in the scalars, the traces of `A ^ j` for `0 < j ≤ r` determine the
+`r`-th coefficient of `det (1 - X A)`. -/
+theorem coeff_charpolyRev_eq_of_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R}
+    {B : Matrix m m R} {r : ℕ} (h : ∀ j, 0 < j → j ≤ r → (A ^ j).trace = (B ^ j).trace) :
+    A.charpolyRev.coeff r = B.charpolyRev.coeff r :=
+  coeff_charpolyRev_eq_of_trace_pow_eq_of_isRegular
+    (TauCeti.isRegular_natCast_of_ne_zero (Nat.factorial_ne_zero r)) h
 
 /-- Without additive torsion in the scalars, `det (1 - X A)` and `det (1 - X B)` agree if and only
 if `A` and `B` have the same traces of all positive powers. The matrices may have different
@@ -258,17 +277,29 @@ theorem charpoly_eq_iff_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R}
     A.charpoly = B.charpoly ↔ ∀ j, 0 < j → (A ^ j).trace = (B ^ j).trace := by
   rw [← charpolyRev_eq_charpolyRev_iff hnm, charpolyRev_eq_iff_trace_pow_eq]
 
+/-- When `d!` is a non-zero-divisor of the scalars, the traces of `A ^ j` for `0 < j ≤ d` determine
+the characteristic polynomial of a `d × d` matrix `A`. Over a field of characteristic `p` this asks
+for `d < p`. -/
+theorem charpoly_eq_of_trace_pow_eq_of_isRegular {A : Matrix n n R} {B : Matrix m m R}
+    (hnm : Fintype.card n = Fintype.card m) (hd : IsRegular ((Fintype.card n).factorial : R))
+    (h : ∀ j, 0 < j → j ≤ Fintype.card n → (A ^ j).trace = (B ^ j).trace) :
+    A.charpoly = B.charpoly := by
+  have hrev : A.charpolyRev = B.charpolyRev := AddMonoidAlgebra.ext <| Finsupp.ext fun r ↦ by
+    rcases le_or_gt r (Fintype.card n) with hr | hr
+    · exact coeff_charpolyRev_eq_of_trace_pow_eq_of_isRegular
+        (TauCeti.isRegular_natCast_of_dvd (Nat.factorial_dvd_factorial hr) hd)
+        fun j hj hjr ↦ h j hj (hjr.trans hr)
+    · rw [coeff_charpolyRev_eq_zero A hr, coeff_charpolyRev_eq_zero B (hnm ▸ hr)]
+  exact (charpolyRev_eq_charpolyRev_iff hnm).1 hrev
+
 /-- Without additive torsion in the scalars, the traces of `A ^ j` for `0 < j ≤ d` determine the
 characteristic polynomial of a `d × d` matrix `A`. -/
 theorem charpoly_eq_of_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R} {B : Matrix m m R}
     (hnm : Fintype.card n = Fintype.card m)
     (h : ∀ j, 0 < j → j ≤ Fintype.card n → (A ^ j).trace = (B ^ j).trace) :
-    A.charpoly = B.charpoly := by
-  have hrev : A.charpolyRev = B.charpolyRev := AddMonoidAlgebra.ext <| Finsupp.ext fun r ↦ by
-    rcases le_or_gt r (Fintype.card n) with hr | hr
-    · exact coeff_charpolyRev_eq_of_trace_pow_eq fun j hj hjr ↦ h j hj (hjr.trans hr)
-    · rw [coeff_charpolyRev_eq_zero A hr, coeff_charpolyRev_eq_zero B (hnm ▸ hr)]
-  exact (charpolyRev_eq_charpolyRev_iff hnm).1 hrev
+    A.charpoly = B.charpoly :=
+  charpoly_eq_of_trace_pow_eq_of_isRegular hnm
+    (TauCeti.isRegular_natCast_of_ne_zero (Nat.factorial_ne_zero _)) h
 
 /-- Without additive torsion in the scalars, a `d × d` matrix `A` whose powers `A ^ j` for
 `0 < j ≤ d` all have trace zero satisfies `A ^ d = 0`. Its characteristic polynomial is then
@@ -325,19 +356,31 @@ theorem trace_pow_eq_of_charpoly_eq {N : Type*} [AddCommGroup N] [Module R N] [M
     trace_eq_matrix_trace R (Module.Free.chooseBasis R N), ← LinearMap.toMatrix_pow]
   exact Matrix.trace_pow_eq_of_charpoly_eq h j
 
+/-- When `d!` is a non-zero-divisor of the scalars, the traces of `f ^ j` for `0 < j ≤ d`
+determine the characteristic polynomial of an endomorphism `f` of a free module of rank `d`. Over a
+field of characteristic `p` this asks for `d < p`. -/
+theorem charpoly_eq_of_trace_pow_eq_of_isRegular {N : Type*} [AddCommGroup N] [Module R N]
+    [Module.Free R N] [Module.Finite R N] {f : Module.End R M} {g : Module.End R N}
+    (hMN : Module.finrank R M = Module.finrank R N)
+    (hd : IsRegular ((Module.finrank R M).factorial : R))
+    (h : ∀ j, 0 < j → j ≤ Module.finrank R M → trace R M (f ^ j) = trace R N (g ^ j)) :
+    f.charpoly = g.charpoly := by
+  nontriviality R
+  simp only [trace_eq_matrix_trace R (Module.Free.chooseBasis R M),
+    trace_eq_matrix_trace R (Module.Free.chooseBasis R N), ← LinearMap.toMatrix_pow,
+    Module.finrank_eq_card_chooseBasisIndex] at h hMN hd
+  rw [charpoly_def, charpoly_def]
+  exact Matrix.charpoly_eq_of_trace_pow_eq_of_isRegular hMN hd h
+
 /-- Without additive torsion in the scalars, the traces of `f ^ j` for `0 < j ≤ d` determine the
 characteristic polynomial of an endomorphism `f` of a free module of rank `d`. -/
 theorem charpoly_eq_of_trace_pow_eq {N : Type*} [AddCommGroup N] [Module R N] [Module.Free R N]
     [Module.Finite R N] [IsAddTorsionFree R] {f : Module.End R M} {g : Module.End R N}
     (hMN : Module.finrank R M = Module.finrank R N)
     (h : ∀ j, 0 < j → j ≤ Module.finrank R M → trace R M (f ^ j) = trace R N (g ^ j)) :
-    f.charpoly = g.charpoly := by
-  nontriviality R
-  simp only [trace_eq_matrix_trace R (Module.Free.chooseBasis R M),
-    trace_eq_matrix_trace R (Module.Free.chooseBasis R N), ← LinearMap.toMatrix_pow,
-    Module.finrank_eq_card_chooseBasisIndex] at h hMN
-  rw [charpoly_def, charpoly_def]
-  exact Matrix.charpoly_eq_of_trace_pow_eq hMN h
+    f.charpoly = g.charpoly :=
+  charpoly_eq_of_trace_pow_eq_of_isRegular hMN
+    (TauCeti.isRegular_natCast_of_ne_zero (Nat.factorial_ne_zero _)) h
 
 /-- Without additive torsion in the scalars, an endomorphism `f` of a free module of rank `d`
 whose powers `f ^ j` for `0 < j ≤ d` all have trace zero satisfies `f ^ d = 0`. -/
