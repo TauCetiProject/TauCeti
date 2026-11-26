@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs
-public import TauCeti.RingTheory.Ideal.Order
+public import TauCeti.RingTheory.Ideal.Order.Basic
 import Mathlib.RingTheory.Localization.Algebra
 import Mathlib.AlgebraicGeometry.Morphisms.Affine
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic

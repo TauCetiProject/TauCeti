@@ -91,8 +91,8 @@ theorem algebraicIndependent_mk_of_forall_apply_mem {k R ι : Type*} [Field k] [
     AlgebraicIndependent k (Ideal.Quotient.mk P ∘ x) := by
   -- The preimage of `P` in the polynomial ring is stable under every partial derivative, hence
   -- `⊥` or `⊤`; it is not `⊤` because `P` is proper.
-  have hJ : (P.comap (aeval x)).derivativeIdeal ≤ P.comap (aeval x) :=
-    Ideal.derivativeIdeal_le_iff.mpr ⟨le_rfl, fun i f hf ↦ by
+  have hJ : (P.comap (aeval x)).derivativeIdeal k ≤ P.comap (aeval x) :=
+    Ideal.derivativeIdeal_le_iff_pderiv.mpr ⟨le_rfl, fun i f hf ↦ by
       rw [Ideal.mem_comap, ← (δ i).map_aeval_eq_aeval_pderiv (hδ i)]
       exact hPδ i _ hf⟩
   have hJ' : P.comap (aeval (R := k) x) ≠ ⊤ := Ideal.comap_ne_top _ hP
