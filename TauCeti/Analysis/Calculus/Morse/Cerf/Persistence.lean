@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Cerf.Cubic
+public import TauCeti.Analysis.Calculus.Morse.Cerf.Isolated
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Prod
-import TauCeti.Analysis.Normed.Operator.CompactFamily
 import TauCeti.Analysis.Normed.Operator.Surjective
 import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Topology.MetricSpace.HausdorffDistance
 import TauCeti.Topology.UniformSpace.HeineCantor
 
 /-!
@@ -25,8 +26,9 @@ critical points of adjacent indices is born or dies (`TauCeti.Analysis.Calculus.
 At a nondegenerate critical point of a jointly `C²` family both conditions hold automatically. A
 family **has only birth–death degeneracies** on a set `s ⊆ ℝ × E`
 (`TauCeti.HasBirthDeathCriticalPointsOn f s`) when both conditions hold at every critical point
-in `s`. On a compact set such a family has only finitely many degenerate critical points
-(`TauCeti.finite_setOf_fderiv_eq_zero_and_not_isNondegenerateCriticalPoint`).
+in `s`. If such a family is jointly `C³` at every point of a compact set `K`, it has only finitely
+many degenerate critical points in `K`
+(`HasBirthDeathCriticalPointsOn.finite_setOf_fderiv_eq_zero_and_not_isNondegenerateCriticalPoint`).
 
 This file proves that having only birth–death degeneracies on a compact set `K` is an open
 condition, and combines it with the density statements of `TauCeti.Analysis.Calculus.Morse.Cerf`
@@ -49,7 +51,9 @@ and `TauCeti.Analysis.Calculus.Morse.Cerf.Cubic`.
   the polynomials of degree at most three for which `f t - cubicPerturbation p` has only
   birth–death degeneracies on `K` form an open
   (`TauCeti.isOpen_setOf_hasBirthDeathCriticalPointsOn_sub_cubicPerturbation`) and dense
-  (`TauCeti.dense_setOf_hasBirthDeathCriticalPointsOn_sub_cubicPerturbation`) set. Intersecting
+  (`TauCeti.dense_setOf_hasBirthDeathCriticalPointsOn_sub_cubicPerturbation`) set, whose
+  complement is Haar null
+  (`TauCeti.ae_hasBirthDeathCriticalPointsOn_sub_cubicPerturbation`). Intersecting
   these sets over the closed balls of integer radius, for a family jointly `C⁴` everywhere, the
   coefficients for which `f t - cubicPerturbation p` has only birth–death degeneracies on all of
   `ℝ × E` form a residual set
@@ -59,10 +63,14 @@ and `TauCeti.Analysis.Calculus.Morse.Cerf.Cubic`.
 
 * `TauCeti.HasBirthDeathCriticalPointsOn`: every critical point of the family in a set is
   nondegenerate or a birth–death point.
+* `HasBirthDeathCriticalPointsOn.finite_setOf_fderiv_eq_zero_and_not_isNondegenerateCriticalPoint`:
+  finitely many degenerate critical points in a compact set.
 * `TauCeti.HasBirthDeathCriticalPointsOn.exists_pos_forall_hasBirthDeathCriticalPointsOn`:
   persistence under perturbations that are small up to third derivatives on a compact set.
 * `TauCeti.HasBirthDeathCriticalPointsOn.eventually_hasBirthDeathCriticalPointsOn`: openness in a
   jointly `C³` parameter.
+* `TauCeti.ae_hasBirthDeathCriticalPointsOn_sub_cubicPerturbation`: almost every cubic
+  perturbation leaves only birth–death degeneracies.
 * `TauCeti.isOpen_setOf_hasBirthDeathCriticalPointsOn_sub_cubicPerturbation`,
   `TauCeti.dense_setOf_hasBirthDeathCriticalPointsOn_sub_cubicPerturbation`: the good cubic
   perturbations form an open dense set.
@@ -116,6 +124,21 @@ theorem hasBirthDeathCriticalPointsOn_iff {f : ℝ → E → ℝ} {s : Set (ℝ 
 theorem HasBirthDeathCriticalPointsOn.mono {f : ℝ → E → ℝ} {s t : Set (ℝ × E)}
     (h : HasBirthDeathCriticalPointsOn f s) (hts : t ⊆ s) : HasBirthDeathCriticalPointsOn f t :=
   fun _ hz ↦ h (hts hz)
+
+namespace HasBirthDeathCriticalPointsOn
+
+/-- **A family with only birth–death degeneracies has finitely many of them in a compact set.** If
+`f` has only birth–death degeneracies on a compact set `K ⊆ ℝ × E` and is jointly `C³` at every
+point of `K`, then only finitely many points `(t, x) ∈ K` are degenerate critical points of
+`f t`. -/
+theorem finite_setOf_fderiv_eq_zero_and_not_isNondegenerateCriticalPoint [FiniteDimensional ℝ E]
+    {f : ℝ → E → ℝ} {K : Set (ℝ × E)} (h : HasBirthDeathCriticalPointsOn f K) (hK : IsCompact K)
+    (hf : ∀ z ∈ K, ContDiffAt ℝ 3 (uncurry f) z) :
+    {z ∈ K | fderiv ℝ (f z.1) z.2 = 0 ∧ ¬ IsNondegenerateCriticalPoint (f z.1) z.2}.Finite :=
+  TauCeti.finite_setOf_fderiv_eq_zero_and_not_isNondegenerateCriticalPoint hK hf
+    (fun _ hz hz₀ ↦ (h hz hz₀).1) fun _ hz hz₀ ↦ (h hz hz₀).2
+
+end HasBirthDeathCriticalPointsOn
 
 /-! ### Persistence on compact sets -/
 
@@ -330,27 +353,38 @@ theorem isOpen_setOf_hasBirthDeathCriticalPointsOn_sub_cubicPerturbation {K : Se
     (contDiff_cubicPerturbation.comp (contDiff_fst.prodMk contDiff_snd.snd)).contDiffAt
   exact ((hf z hz).comp (p₀, z) contDiffAt_snd).sub hP
 
+/-- **Almost every cubic perturbation leaves only birth–death degeneracies.** Let `f` be a
+one-parameter family of functions on a finite-dimensional real normed space, jointly `C⁴` at every
+point of a set `W ⊆ ℝ × E`. For a Haar measure `ν` on the coefficients and `ν`-almost every `p`,
+the family `f t - cubicPerturbation p` has only birth–death degeneracies on `W`. This combines
+`TauCeti.ae_forall_surjective_fderiv_fderiv_sub_cubicPerturbation` and
+`TauCeti.ae_forall_fderiv_fderiv_fderiv_sub_cubicPerturbation_apply_ne_zero`. -/
+theorem ae_hasBirthDeathCriticalPointsOn_sub_cubicPerturbation
+    [MeasurableSpace (CubicCoefficients E)] [BorelSpace (CubicCoefficients E)]
+    (ν : MeasureTheory.Measure (CubicCoefficients E)) [ν.IsAddHaarMeasure] {W : Set (ℝ × E)}
+    (hf : ∀ z ∈ W, ContDiffAt ℝ 4 (uncurry f) z) :
+    ∀ᵐ p ∂ν, HasBirthDeathCriticalPointsOn (fun t y ↦ f t y - cubicPerturbation p y) W := by
+  filter_upwards [ae_forall_surjective_fderiv_fderiv_sub_cubicPerturbation ν
+      fun z hz ↦ (hf z hz).of_le (by norm_num),
+    ae_forall_fderiv_fderiv_fderiv_sub_cubicPerturbation_apply_ne_zero ν hf]
+    with p hs h₃ z hz hz₀
+  refine ⟨hs z hz hz₀, fun v hv hv₃ ↦ ?_⟩
+  by_contra hv₀
+  exact h₃ z hz hz₀ v hv₀ hv hv₃
+
 /-- **The cubic perturbations leaving only birth–death degeneracies form a dense set.** Let `f` be
 a one-parameter family of functions on a finite-dimensional real normed space, jointly `C⁴` at
 every point of a set `W ⊆ ℝ × E`. The coefficients `p` of the polynomials of degree at most three
 for which `f t - cubicPerturbation p` has only birth–death degeneracies on `W` form a dense set:
-by `TauCeti.ae_forall_surjective_fderiv_fderiv_sub_cubicPerturbation` and
-`TauCeti.ae_forall_fderiv_fderiv_fderiv_sub_cubicPerturbation_apply_ne_zero`, their complement is
-a Haar null set. -/
+by `TauCeti.ae_hasBirthDeathCriticalPointsOn_sub_cubicPerturbation`, their complement is a Haar
+null set. -/
 theorem dense_setOf_hasBirthDeathCriticalPointsOn_sub_cubicPerturbation {W : Set (ℝ × E)}
     (hf : ∀ z ∈ W, ContDiffAt ℝ 4 (uncurry f) z) :
     Dense {p : CubicCoefficients E |
       HasBirthDeathCriticalPointsOn (fun t y ↦ f t y - cubicPerturbation p y) W} := by
   borelize (CubicCoefficients E)
-  have hae := (ae_forall_surjective_fderiv_fderiv_sub_cubicPerturbation
-    (MeasureTheory.Measure.addHaar : MeasureTheory.Measure (CubicCoefficients E))
-      fun z hz ↦ (hf z hz).of_le (by norm_num)).and
-    (ae_forall_fderiv_fderiv_fderiv_sub_cubicPerturbation_apply_ne_zero
-      MeasureTheory.Measure.addHaar hf)
-  refine MeasureTheory.Measure.dense_of_ae
-    (hae.mono fun p hp z hz hz₀ ↦ ⟨hp.1 z hz hz₀, fun v hv hv₃ ↦ ?_⟩)
-  by_contra hv₀
-  exact hp.2 z hz hz₀ v hv₀ hv hv₃
+  exact MeasureTheory.Measure.dense_of_ae
+    (ae_hasBirthDeathCriticalPointsOn_sub_cubicPerturbation MeasureTheory.Measure.addHaar hf)
 
 /-- **Generic cubic perturbations leave only birth–death degeneracies.** Let `f` be a jointly `C⁴`
 one-parameter family of functions on a finite-dimensional real normed space. For a residual set of
