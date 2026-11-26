@@ -35,7 +35,7 @@ prefix order of the tree of its paths from the least element.
 * `TauCeti.isTreeOrder_of_injective`: the order pulled back from `ℕ` along an injection is a tree
   order.
 * `TauCeti.IsTreeOrder.exists_relCovBy`, `TauCeti.IsTreeOrder.rel_of_relCovBy`: every element
-  other than the least element covers its *parent*, the largest of its strict predecessors.
+  with a strict predecessor covers its *parent*, the largest of its strict predecessors.
 * `TauCeti.IsTreeOrder.eq_of_relCovBy`: every element covers at most one element.
 * `TauCeti.isTreeOrder_isPrefix`, `TauCeti.IsTreeOrder.exists_relIso_tree`: tree orders are the
   prefix orders of nonempty trees of finite sequences, up to isomorphism.
@@ -119,14 +119,14 @@ theorem rel_of_relCovBy {p y z : V} (hpy : RelCovBy r p y) (hz : r z y) (hzy : z
   refine ((h.isChain_setOf y).total hz hpy.1.1).elim hzp fun hpz => ?_
   exact hpy.2 z ⟨⟨hpz, hzp⟩, hz, fun hyz => hzy (antisymm_of r hz hyz)⟩
 
-/-- In a tree order every element other than the least element `a` covers some element: the
-largest of its strict predecessors. -/
-theorem exists_relCovBy {a y : V} (ha : ∀ x, r a x) (hy : y ≠ a) : ∃ p, RelCovBy r p y := by
+/-- In a tree order every element with a strict predecessor `z` covers some element: the largest
+of its strict predecessors. -/
+theorem exists_relCovBy {y z : V} (hz : r z y) (hzy : z ≠ y) : ∃ p, RelCovBy r p y := by
   have := h.isPartialOrder
   let S := {z | r z y} \ {y}
   have hS : S.Finite := (h.finite_setOf y).sdiff
   obtain ⟨p, ⟨hpy, hpy'⟩, hmax⟩ := Set.exists_max_image S (fun z => {w | r w z}.ncard) hS
-    ⟨a, ha y, Ne.symm hy⟩
+    ⟨z, hz, hzy⟩
   have hp (z : V) (hz : r z y) (hzy : z ≠ y) : r z p := by
     refine ((h.isChain_setOf y).total hz hpy).elim id fun hpz => ?_
     have hsub : {w | r w p} ⊆ {w | r w z} := fun w hw => trans_of r hw hpz
@@ -170,10 +170,9 @@ private theorem le_of_not_nonempty {x : V} (hx : ¬ (Iio x).Nonempty) (y : V) : 
 
 include h in
 private theorem exists_covBy {x : V} (hx : (Iio x).Nonempty) : ∃ p, p ⋖ x := by
-  obtain ⟨a, ha⟩ := h.exists_forall
   obtain ⟨z, hz⟩ := hx
   simp_rw [← relCovBy_le_iff_covBy]
-  exact h.exists_relCovBy ha fun hxa => not_le_of_gt hz (hxa ▸ ha z)
+  exact h.exists_relCovBy hz.le hz.ne
 
 open Classical in
 /-- The parent of a node with a strict predecessor: the node it covers. -/

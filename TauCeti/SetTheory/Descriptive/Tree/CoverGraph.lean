@@ -61,7 +61,7 @@ theorem exists_isPath_support {a : V} (ha : ∀ x, r a x) (y : V) :
   · subst hya
     exact ⟨.nil, .nil, fun x => by
       simpa using ⟨fun hx => hx ▸ refl_of r x, fun hx => antisymm_of r hx (ha x)⟩⟩
-  obtain ⟨q, hq⟩ := h.exists_relCovBy ha hya
+  obtain ⟨q, hq⟩ := h.exists_relCovBy (ha y) (Ne.symm hya)
   obtain ⟨p, hp, hsupp⟩ := ih q ⟨hq.rel, hq.not_rel⟩
   have hadj : (SimpleGraph.fromRel (RelCovBy r)).Adj q y :=
     (SimpleGraph.fromRel_adj _ _ _).2 ⟨hq.ne, .inl hq⟩
