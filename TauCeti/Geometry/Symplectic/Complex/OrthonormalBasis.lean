@@ -1058,6 +1058,35 @@ theorem coe_centralizerToUnitaryGroup_apply (g : Subgroup.centralizer {J₀}) (i
   rw [complexCoords_centralizerToUnitaryGroup_apply, LinearEquiv.apply_symm_apply,
     Matrix.mulVec_single_one, Matrix.col_apply]
 
+/-- The entry `(i, j)` of the matrix `centralizerToUnitaryGroup g` is
+`⟪e (2i), g (e (2j))⟫ + i ⟪e (2i + 1), g (e (2j))⟫`. -/
+theorem coe_centralizerToUnitaryGroup_apply_eq_inner (g : Subgroup.centralizer {J₀})
+    (i j : Fin 2) :
+    (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g : Matrix (Fin 2) (Fin 2) ℂ) i j =
+      (inner ℝ (e ⟨2 * i.val, by omega⟩) (((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V)
+          (e ⟨2 * j.val, by omega⟩)) : ℂ) +
+        Complex.I * inner ℝ (e ⟨2 * i.val + 1, by omega⟩) (((g : unitary (V →L[ℝ] V)) :
+          V →L[ℝ] V) (e ⟨2 * j.val, by omega⟩)) := by
+  let J : TauCeti.AlmostComplexStructure V :=
+    ⟨(J₀ : V →L[ℝ] V).toLinearMap, LinearMap.ext fun v ↦ by simpa using hJ₀ v⟩
+  let := J.complexModule
+  let b := TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour (J := J) (e := e) h₀ h₂
+  have hb (w : V) : e.complexCoords 2 w = b.equivFun w :=
+    (TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour_equivFun_apply h₀ h₂ w).symm
+  have hj : (e.complexCoords 2).symm (Pi.single j 1) = e ⟨2 * j.val, by omega⟩ := by
+    have hbj : b j = e ⟨2 * j.val, by omega⟩ := by
+      fin_cases j
+      exacts [TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour_zero h₀ h₂,
+        TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour_one h₀ h₂]
+    rw [LinearEquiv.symm_apply_eq, hb, ← hbj]
+    ext k
+    rw [Module.Basis.equivFun_self]
+    simp [Pi.single_apply, eq_comm]
+  rw [coe_centralizerToUnitaryGroup_apply, hj, hb, Module.Basis.equivFun_apply]
+  fin_cases i
+  exacts [TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour_repr_apply_zero h₀ h₂ _,
+    TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour_repr_apply_one h₀ h₂ _]
+
 /-- The matrix of a complex rotation depends continuously on it, for the operator norm. -/
 @[fun_prop]
 theorem continuous_centralizerToUnitaryGroup :
