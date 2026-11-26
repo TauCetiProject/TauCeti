@@ -48,7 +48,8 @@ smallest C*-norm on `A ⊗[𝕜] B`; the subscript `min` is only the conventiona
 
 * `TauCeti.spatialTensorLinearMap`: the linear map `B(E, E') ⊗[𝕜] B(F, F') → B(E ⊗₂ F, E' ⊗₂ F')`,
   with its matrix coefficients `TauCeti.inner_spatialTensorLinearMap`, its right slices
-  `TauCeti.sliceRight_spatialTensorLinearMap`,
+  `TauCeti.sliceRight_spatialTensorLinearMap` (and
+  `TauCeti.sliceRight_spatialTensorLinearMap_rTensor` for `(π ⊗ 1)(y)`),
   `TauCeti.spatialTensorLinearMap_injective`, and its invariance under the flip
   `E ⊗₂ F ≃ F ⊗₂ E` (`TauCeti.spatialTensorLinearMap_comm_apply`,
   `TauCeti.norm_spatialTensorLinearMap_comm`).
@@ -125,6 +126,16 @@ theorem sliceRight_spatialTensorLinearMap [CompleteSpace E'] (x : (E →L[𝕜] 
   induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul a b => simp
+
+/-- The right slice of `(π ⊗ 1)(y)` at `(g, f)` is `π` applied to the contraction of `y` against
+the vector functional `b ↦ ⟪f, b g⟫` on its second factor. -/
+theorem sliceRight_spatialTensorLinearMap_rTensor {A : Type*} [AddCommGroup A] [Module 𝕜 A]
+    [CompleteSpace E'] (π : A →ₗ[𝕜] E →L[𝕜] E') (y : A ⊗[𝕜] (F →L[𝕜] F')) (g : F) (f : F') :
+    sliceRight g f (spatialTensorLinearMap 𝕜 E F E' F' (π.rTensor _ y)) =
+      π (LinearMap.tensorComponent
+        (vectorFunctional g f : (F →L[𝕜] F') →L[𝕜] 𝕜).toLinearMap y) := by
+  rw [sliceRight_spatialTensorLinearMap, LinearMap.rTensor, LinearMap.tensorComponent_map,
+    LinearMap.comp_id]
 
 /-- **Injectivity of the spatial tensor map** on the full operator spaces. -/
 theorem spatialTensorLinearMap_injective :
