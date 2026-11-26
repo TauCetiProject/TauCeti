@@ -40,8 +40,8 @@ In the namespace `CategoryTheory.Pseudofunctor.BandFixtures`:
 
 ## References
 
-* [The Stacks Project, Section 8.11 (06NY)](https://stacks.math.columbia.edu/tag/06NY): the
-  central sections `ZF(U)` that the constant fixture tests are those of this section.
+* [The Stacks Project, Lemma 8.11.8 (06NY)](https://stacks.math.columbia.edu/tag/06NY): the
+  central sections `ZF(U)` computed here for the constant pseudofunctor are those of this lemma.
 -/
 
 public section
