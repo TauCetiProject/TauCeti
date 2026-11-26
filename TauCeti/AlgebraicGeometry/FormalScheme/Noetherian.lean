@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.FormalScheme.SectionsTopology
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Noetherian
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk
