@@ -112,6 +112,12 @@ theorem contLinear_coordPlaneMap (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (
       (LinearIsometry.piLpExtendByZero 2 ℝ ℝ I).toContinuousLinearMap := by
   simp [coordPlaneMap]
 
+/-- `coordPlaneMap I x s` differs from the base point `x` by the linear part applied to `s`. -/
+theorem coordPlaneMap_sub_self (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
+    (s : EuclideanSpace ℝ (Fin k)) :
+    coordPlaneMap I x s - x = (coordPlaneMap I x).contLinear s := by
+  simp [coordPlaneMap]
+
 /-- The linear part of `coordPlaneMap I x` sends the `j`-th axis to the `I j`-th axis. -/
 @[simp]
 theorem contLinear_coordPlaneMap_single (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))

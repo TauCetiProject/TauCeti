@@ -107,18 +107,12 @@ theorem coordBoxCurrent_eq_frameCurrent (I : Fin k ↪ Fin n) (x : EuclideanSpac
     coordBoxCurrent I x r Ω =
       frameCurrent ((coordPlaneMap I x '' (ofLp ⁻¹' Icc 0 r)).indicator 1)
         fun _ j ↦ EuclideanSpace.single (I j) 1 := by
-  set B := coordPlaneMap I x '' (ofLp ⁻¹' Icc 0 r)
-  have hB : MeasurableSet B := (isCompact_coordPlaneMap_image_Icc I x r).isClosed.measurableSet
-  have hBi : LocallyIntegrable (B.indicator (1 : EuclideanSpace ℝ (Fin n) → ℝ)) μHE[k] :=
-    locallyIntegrable_indicator_image_coordPlaneMap I x r
   ext ω
-  rw [coordBoxCurrent_apply_eq_setIntegral, frameCurrent_apply
-    (τ := fun _ j ↦ EuclideanSpace.single (I j) 1) (hBi.locallyIntegrableOn _)
-    measurable_const fun _ _ ↦ EuclideanSpace.orthonormal_single.comp _ I.injective,
-    ← integral_indicator hB]
-  congr 1
-  funext y
-  by_cases hy : y ∈ B <;> simp [hy]
+  rw [coordBoxCurrent_apply_eq_setIntegral, frameCurrent_indicator_one_apply
+    (τ := fun _ j ↦ EuclideanSpace.single (I j) 1)
+    (isCompact_coordPlaneMap_image_Icc I x r).isClosed.measurableSet
+    ((locallyIntegrable_indicator_image_coordPlaneMap I x r).locallyIntegrableOn _)
+    measurable_const fun _ _ ↦ EuclideanSpace.orthonormal_single.comp _ I.injective]
 
 /-- **A coordinate box is an integer-rectifiable current**: it is the frame current of the
 multiplicity one on the box, which lies in the affine plane `x + span e_I`, with the constant
@@ -130,8 +124,8 @@ theorem isIntegerRectifiable_coordBoxCurrent (I : Fin k ↪ Fin n) (x : Euclidea
   have hB : MeasurableSet B := (isCompact_coordPlaneMap_image_Icc I x r).isClosed.measurableSet
   have hcast : (fun y ↦ ((B.indicator (1 : EuclideanSpace ℝ (Fin n) → ℤ) y : ℤ) : ℝ)) =
       B.indicator 1 := by
-    funext y
-    by_cases hy : y ∈ B <;> simp [hy]
+    ext y
+    simp [indicator, apply_ite]
   have hBi : LocallyIntegrable (B.indicator (1 : EuclideanSpace ℝ (Fin n) → ℝ)) μHE[k] :=
     locallyIntegrable_indicator_image_coordPlaneMap I x r
   rw [coordBoxCurrent_eq_frameCurrent, ← hcast]
@@ -139,11 +133,7 @@ theorem isIntegerRectifiable_coordBoxCurrent (I : Fin k ↪ Fin n) (x : Euclidea
     (EuclideanSpace.orthonormal_single.comp _ I.injective) x (measurable_one.indicator hB)
     (hcast ▸ hBi.locallyIntegrableOn _) fun y hy ↦ ?_
   obtain ⟨s, -, rfl⟩ := mem_of_indicator_ne_zero hy
-  have h0 : coordPlaneMap I x 0 = x := by simp [coordPlaneMap_apply]
-  have hs : coordPlaneMap I x s - x = (coordPlaneMap I x).contLinear s := by
-    rw [ContinuousAffineMap.coe_contLinear]
-    simpa [h0] using ((coordPlaneMap I x).toAffineMap.linear_apply_vsub s 0).symm
-  rw [hs]
+  rw [coordPlaneMap_sub_self]
   exact contLinear_coordPlaneMap_mem_span I x s
 
 /-- **A coordinate box is a locally integral current**: it is integer-rectifiable, and so is its
