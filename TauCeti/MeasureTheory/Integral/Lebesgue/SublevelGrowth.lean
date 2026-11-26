@@ -84,8 +84,10 @@ theorem lintegral_ofReal_rpow_neg_le_of_measure_le_rpow (hu : AEMeasurable u ν)
             gcongr
             exact (measure_mono hsub).trans (h _ ((one_le_inv₀ ht).2 ht₁.le))
         _ = ENNReal.ofReal (t ^ (A - 1 - ε)) * C := by
-            rw [mul_right_comm, ← ENNReal.ofReal_mul (by positivity), Real.inv_rpow ht.le,
-              ← Real.rpow_neg ht.le, ← Real.rpow_add ht, neg_add_eq_sub, sub_right_comm]
+            have hexp : A - 1 - ε = -ε + (A - 1) := by ring
+            rw [mul_right_comm, ← ENNReal.ofReal_mul (by positivity)]
+            congr 2
+            simp [hexp, Real.rpow_add ht, Real.rpow_neg ht.le, Real.inv_rpow ht.le]
     · have hsub : {x | t < (u x)⁻¹} ⊆ {x | u x < 1} := fun x hx ↦
         (one_lt_inv₀ (hpos hx)).1 ((not_lt.1 ht₁).trans_lt hx)
       simp [measure_mono_null hsub hnull]
@@ -105,8 +107,10 @@ theorem lintegral_ofReal_rpow_neg_le_of_measure_le_rpow (hu : AEMeasurable u ν)
         rw [setLIntegral_indicator measurableSet_Ioo,
           inter_eq_left.2 Ioo_subset_Ioi_self, lintegral_mul_const _ (by fun_prop),
           lintegral_ofReal_rpow_Ioo (by linarith) zero_le_one, ← mul_assoc,
-          ← ENNReal.ofReal_mul hA.le, Real.one_rpow, sub_right_comm, sub_add_cancel,
-          mul_one_div]
+          ← ENNReal.ofReal_mul hA.le]
+        congr 2
+        simp only [Real.one_rpow]
+        congr 1; ring
 
 /-- **Integrability of negative powers under polynomial sublevel growth.** If `u ≥ 1` almost
 everywhere is measurable and `ν {u ≤ R} ≤ R ^ ε * C` for every `R ≥ 1`, with `C` finite, then
