@@ -14,7 +14,13 @@ permissions:
 
 jobs:
   rebuild:
+    # While vars.FLEET_PRIORITY_LABEL names a label (empty is off), adding it rebuilds the PR so its
+    # build moves to the Fleet PR priority class (TauCetiTools docs/project-setup.md); the new run
+    # supersedes the PR's queued or running build. Expressions compare labels case-insensitively.
     if: >-
+      (github.event.action == 'labeled' && vars.FLEET_PRIORITY_LABEL != '' &&
+       github.event.label.name == vars.FLEET_PRIORITY_LABEL &&
+       !contains(github.event.pull_request.labels.*.name, 'self-tested')) ||
       github.event.label.name == 'self-tested' ||
       (github.event.action == 'labeled' && github.event.label.name == 'full-lint') ||
       (contains(github.event.pull_request.labels.*.name, 'self-tested') &&
