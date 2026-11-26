@@ -18,10 +18,11 @@ Let `w : TriEdge → ℝ` be an edge weight. A tiling `M` of a region `R` has th
 `∏_{e ∈ M} w(e)`, and the partition function `Z_R(w)` of `R` is the sum of the weights of its
 tilings. A finite region has finitely many tilings, each a finite set of edges, so these are finite
 sums and products; they are written with `finsum` and `finprod` so that `partitionFunction` is
-defined for every region. When `Z_R(w)` is positive, the Boltzmann measure of a finite region is the
-probability measure on configurations `TriEdge → Bool` giving each tiling, read as its indicator
-configuration, the mass `∏_{e ∈ M} w(e) / Z_R(w)`. With unit weights it is the uniform measure on
-the tilings of `R`.
+defined for every region. The Boltzmann measure of a finite region is the measure on configurations
+`TriEdge → Bool` giving each tiling, read as its indicator configuration, the mass
+`ENNReal.ofReal (∏_{e ∈ M} w(e) / Z_R(w))`. When `w` is nonnegative and `Z_R(w)` is positive, this
+mass is `∏_{e ∈ M} w(e) / Z_R(w)` and the Boltzmann measure is a probability measure. With unit
+weights it is the uniform measure on the tilings of `R`.
 
 The Kasteleyn matrix of `TauCeti.Combinatorics.Tiling.Lozenge.Kasteleyn` computes `Z_R(w)`.
 
@@ -38,7 +39,8 @@ The Kasteleyn matrix of `TauCeti.Combinatorics.Tiling.Lozenge.Kasteleyn` compute
 * `TauCeti.partitionFunction_vadd`, `TauCeti.partitionFunction_rot`: translations and the rotation
   `ρ` preserve the partition function, with translated or rotated weights.
 * `TauCeti.boltzmannMeasure_singleton`, `TauCeti.boltzmannMeasure_setOf_not_isTiling`: the
-  Boltzmann measure gives a tiling the mass `∏_{e ∈ M} w(e) / Z_R(w)` and is carried by tilings.
+  Boltzmann measure gives a tiling the mass `ENNReal.ofReal (∏_{e ∈ M} w(e) / Z_R(w))` and is
+  carried by tilings.
 * `TauCeti.isProbabilityMeasure_boltzmannMeasure`: for a nonnegative weight with positive partition
   function, it is a probability measure.
 
@@ -136,9 +138,10 @@ theorem finite_setOf_isTiling_setOf_eq_true (R : Finset TriFace) :
 
 /-- The Boltzmann measure of a finite region `R` for an edge weight `w`: the measure on
 configurations giving the indicator configuration of each tiling `M` of `R` the mass
-`∏_{e ∈ M} w(e) / Z_R(w)`. It is a probability measure when `w` is nonnegative and `Z_R(w) > 0`
-(`TauCeti.isProbabilityMeasure_boltzmannMeasure`), and for `w ≡ 1` it is the uniform measure on the
-tilings of `R`. -/
+`ENNReal.ofReal (∏_{e ∈ M} w(e) / Z_R(w))`, which truncates a negative ratio to `0`. When `w` is
+nonnegative and `Z_R(w) > 0`, this mass is `∏_{e ∈ M} w(e) / Z_R(w)` and the measure is a
+probability measure (`TauCeti.isProbabilityMeasure_boltzmannMeasure`); for `w ≡ 1` it is the uniform
+measure on the tilings of `R`. -/
 def boltzmannMeasure (R : Finset TriFace) (w : TriEdge → ℝ) : Measure (TriEdge → Bool) :=
   ∑ ω ∈ (finite_setOf_isTiling_setOf_eq_true R).toFinset,
     ENNReal.ofReal ((∏ᶠ e ∈ {e | ω e = true}, w e) / partitionFunction R w) • Measure.dirac ω
@@ -149,8 +152,8 @@ theorem boltzmannMeasure_def (R : Finset TriFace) (w : TriEdge → ℝ) :
         Measure.dirac ω :=
   (rfl)
 
-/-- The mass of a set `A` of configurations under the Boltzmann measure is the sum of the
-normalized weights of the tilings in `A`. -/
+/-- The mass of a set `A` of configurations under the Boltzmann measure is the sum, over the
+tilings `M` in `A`, of `ENNReal.ofReal (∏_{e ∈ M} w(e) / Z_R(w))`. -/
 theorem boltzmannMeasure_apply (R : Finset TriFace) (w : TriEdge → ℝ) (A : Set (TriEdge → Bool)) :
     boltzmannMeasure R w A = ∑ ω ∈ (finite_setOf_isTiling_setOf_eq_true R).toFinset,
       A.indicator (fun ω =>
@@ -161,7 +164,7 @@ theorem boltzmannMeasure_apply (R : Finset TriFace) (w : TriEdge → ℝ) (A : S
   by_cases hω : ω ∈ A <;> simp [hω]
 
 /-- The Boltzmann measure gives a tiling `M` of `R`, read as the configuration `ω` with
-`{e | ω e = true} = M`, the mass `∏_{e ∈ M} w(e) / Z_R(w)`. -/
+`{e | ω e = true} = M`, the mass `ENNReal.ofReal (∏_{e ∈ M} w(e) / Z_R(w))`. -/
 theorem boltzmannMeasure_singleton (R : Finset TriFace) (w : TriEdge → ℝ) {ω : TriEdge → Bool}
     (hω : IsTiling (R : Set TriFace) {e | ω e = true}) :
     boltzmannMeasure R w {ω} =
