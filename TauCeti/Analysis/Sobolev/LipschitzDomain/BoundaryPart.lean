@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.AdmissibleBoundaryPart
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Intrinsic
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
@@ -26,7 +27,9 @@ space `W^{1,p}_Γ(Ω)` of Sobolev functions vanishing on `Γ` (`TauCeti.w1pVanis
   test functions on the whole space are dense in `W^{1,p}(Ω)`.
 * Every `u ∈ W^{1,p}_Γ(Ω)` has trace zero `σ`-almost everywhere on `Γ`. The generators vanish on
   `closure Γ` and are continuous up to the boundary, so their traces vanish there, and the trace is
-  continuous. No regularity of `Γ` is used.
+  continuous. No regularity of `Γ` is used. In a boundary-part chart (`Set.IsBoundaryPartChart`),
+  which presents `Γ` inside its cylinder as the part of the graph over a base region `B`, zero trace
+  on `Γ` is zero local chart trace on `B`.
 * Conversely, for `Γ` missing `Ω`, a function whose trace vanishes on `Γ` lies in `W^{1,p}_Γ(Ω)` as
   soon as it does so near each point of `closure Γ ∩ closure (frontier Ω \ Γ)`, the relative
   boundary of `Γ` in the frontier, where the Dirichlet and Neumann parts meet. Membership in
@@ -62,6 +65,8 @@ from the model space along a boundary chart of `U`, an affine isometry onto a Li
 * `TauCeti.w1pVanishingOnSubmodule_empty_of_isLipschitzDomainWith`: `W^{1,p}_∅(Ω) = W^{1,p}(Ω)`.
 * `TauCeti.W1p.frontierTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`: functions in
   `W^{1,p}_Γ(Ω)` have zero trace on `Γ`.
+* `TauCeti.W1p.lipschitzChartTrace_ae_eq_zero_of_isBoundaryPartChart`: zero trace on `Γ` gives zero
+  local trace over the base region of a boundary-part chart.
 * `TauCeti.W1p.mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero_of_forall_mem_closure_inter`:
   the converse reduced to neighbourhoods of the relative boundary of `Γ`, and
   `TauCeti.W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_disjoint_closure`: the
@@ -121,6 +126,33 @@ theorem W1p.frontierTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule (hp : p ≠ 
   W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule (fun φ =>
     W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb φ.continuous.continuousOn
       (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)) hu
+
+/-- **Zero trace on a boundary part gives zero chart trace over its base region.** On a bounded
+Lipschitz domain and for `p < ∞`, let a Lipschitz chart present `Γ`, inside its cylinder, as the
+part of the graph lying over the base region `B` (`Set.IsBoundaryPartChart`). If the trace of `u`
+vanishes almost everywhere on `Γ` for surface measure, then the local trace of `u` through the
+chart vanishes at almost every point of `B`. -/
+theorem W1p.lipschitzChartTrace_ae_eq_zero_of_isBoundaryPartChart (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {L' : ℝ≥0}
+    {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ} {B : Set E}
+    (hc : (Ω : Set (WithLp 2 (ℝ × E))).IsBoundaryPartChart Γ e φ L' a b B) (hφ : φ 0 = 0)
+    {ψ : WithLp 2 (ℝ × E) → ℝ} {M : ℝ} (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) {u : W1p volume Ω p}
+    (hu : W1p.frontierTrace hp hΩ hb u =ᵐ[((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+      (frontier (Ω : Set (WithLp 2 (ℝ × E))))).restrict Γ] 0) :
+    ∀ᵐ y ∂(volume : Measure E), y ∈ B → W1p.lipschitzChartTrace hp
+      (hc.isLipschitzChart.isLipschitzChartWith hφ) ψ hψ hM hψM hgM hs u y = 0 := by
+  have h := hc.isLipschitzChart.isLipschitzChartWith hφ
+  filter_upwards [W1p.lipschitzChartTrace_ae_eq_zero_of_frontierTrace_ae_eq_zero hp hΩ hb h hψ hM
+      hψM hgM hs hu, W1p.lipschitzChartTrace_ae_eq_zero_of_notMem hp hΩ hb h hψ hM hψM hgM hs u]
+    with y hyΓ hyC hyB
+  -- Inside the cylinder the graph point over `y ∈ B` is the image of a point of `Γ`; outside it the
+  -- local trace vanishes anyway.
+  by_cases hC : normalGraphEmbedding φ y ∈ normalCylinder a b
+  · exact hyΓ (hc.setOf_inter_normalCylinder_subset ⟨by simpa using hyB, hC⟩)
+  · exact hyC hC
 
 /-- On a connected domain, a function of `W^{1,p}_Γ(Ω)` with zero gradient vanishes when `Γ`
 charges the frontier: it is a constant, which is its trace, and the trace vanishes on `Γ`. -/

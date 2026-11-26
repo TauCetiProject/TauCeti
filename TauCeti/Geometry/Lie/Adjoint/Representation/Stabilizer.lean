@@ -54,6 +54,9 @@ one-parameter subgroup `T_μ`, the closure of `{exp (t μ) | t ∈ ℝ}`
   stabilizer of `μ` is the centralizer of `{exp (t μ) | t ∈ ℝ}`.
 * `TauCeti.Lie.stabilizer_adjointRepresentation_eq_centralizer_closedOneParameterSubgroup`: it is
   the centralizer of the closed one-parameter subgroup `T_μ`.
+* `stabilizer_continuousAdjointRepresentation_eq_centralizer_closedOneParameterSubgroup`, in the
+  `TauCeti.Lie` namespace: likewise `Z_G(Y)` is the centralizer of the closed one-parameter
+  subgroup of `Y`.
 
 ## References
 
@@ -179,6 +182,22 @@ theorem stabilizer_adjointRepresentation_eq_centralizer_closedOneParameterSubgro
       Subgroup.mem_centralizer_singleton_iff.1 (hle hh)
   · rintro _ ⟨t, rfl⟩
     exact mulInvariantExp_smul_mem_closedOneParameterSubgroup μ t
+
+/-- **The adjoint stabilizer `Z_G(Y)` is the centralizer of the closed one-parameter subgroup of
+`Y`**, the closure of `{exp (t Y) | t ∈ ℝ}`, with `Y` read in the tangent Lie algebra. -/
+theorem stabilizer_continuousAdjointRepresentation_eq_centralizer_closedOneParameterSubgroup
+    (Y : LeftInvariantDerivation I G) :
+    (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y =
+      Subgroup.centralizer (closedOneParameterSubgroup
+        (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          BoundarylessManifold.isInteriorPoint Y) : Set G) := by
+  rw [← stabilizer_adjointRepresentation_eq_centralizer_closedOneParameterSubgroup]
+  ext g
+  rw [mem_stabilizer_continuousAdjointRepresentation_iff, Representation.mem_stabilizer,
+    adjointRepresentation_apply,
+    ← EquivLike.apply_eq_iff_eq (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+      BoundarylessManifold.isInteriorPoint), leftInvariantDerivationLieEquivGroupLieAlgebra_Ad,
+    tangentAd_apply]
 
 end TopologicalGroup
 

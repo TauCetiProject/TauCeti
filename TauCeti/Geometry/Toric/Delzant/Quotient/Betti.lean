@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.BettiNumber
+public import TauCeti.Geometry.Manifold.Morse.Perfect
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Index
 public import TauCeti.Geometry.Toric.Delzant.Quotient.Darboux
 public import TauCeti.Geometry.Toric.Delzant.Quotient.Hamiltonian
@@ -53,8 +54,9 @@ is a Morse function whose critical points are exactly the points over the vertic
 **Perfection.** The component `f` is a component of the moment map of the torus action on `M_Δ`
 (`TauCeti.Toric.IsDelzant.hamiltonianTorusData_delzantQuotientSymplecticForm`), and a moment map
 component which is a Morse function is perfect, since all its indices are even
-(`TauCeti.SmoothTwoForm.IsMomentMap.isPerfectMorse`). So `b_j(M_Δ)` is the number of critical
-points of `f` of index `j`, and these lie one over each vertex.
+(`TauCeti.SmoothTwoForm.IsMomentMap.isPerfectMorse`,
+`TauCeti.Toric.IsDelzant.isPerfectMorse_reducedMomentMap_apply`). So `b_j(M_Δ)` is the number of
+critical points of `f` of index `j`, and these lie one over each vertex.
 
 For instance, along the direction `(1, 2, …, n)` the standard `n`-simplex, the polytope of `ℂPⁿ`,
 has no descending edge at the vertex `0` and `p + 1` descending edges at the vertex `a e p*`. So
@@ -69,9 +71,14 @@ normals (`TauCeti.Toric.IsSmoothVertex.eq_edgeBasis_iff`).
 * `TauCeti.Toric.IsDelzant.manifoldMorseIndex_vertexChart_symm_zero`: the Morse index of
   `⟨μ_Δ, x⟩` at the point over a vertex is twice the number of edges along which `⟨·, x⟩`
   decreases.
+* `TauCeti.Toric.IsDelzant.mem_criticalPoints_reducedMomentMap_apply`,
+  `TauCeti.Toric.IsDelzant.manifoldMorseIndex_reducedMomentMap_apply`: every point over a vertex
+  is a critical point of every `⟨μ_Δ, x⟩`, with Morse index twice its number of descending edges.
 * `TauCeti.Toric.IsDelzant.isMorse_reducedMomentMap_apply`,
   `TauCeti.Toric.IsDelzant.mem_criticalPoints_reducedMomentMap_apply_iff`: for `x` on which no
   edge vector vanishes, `⟨μ_Δ, x⟩` is a Morse function whose critical points lie over the vertices.
+* `TauCeti.Toric.IsDelzant.isPerfectMorse_reducedMomentMap_apply`: for such `x`, `⟨μ_Δ, x⟩` is a
+  perfect Morse function for every division ring of coefficients.
 * `TauCeti.Toric.IsDelzant.bettiNumber_delzantQuotient_eq_ncard`: the Betti numbers of `M_Δ`
   count vertices by their descending edges.
 * `TauCeti.Toric.IsDelzant.bettiNumber_delzantQuotient_two_mul_finrank_sub`: the symmetry
@@ -228,6 +235,43 @@ private theorem exists_eq_vertexChart_symm_zero [FiniteDimensional ℝ V] {x : V
   exact ⟨v, hv, hΔ.eq_vertexChart_symm_zero_and_isManifoldNondegenerateCriticalPoint hi _ hv.1 hβ
     (hx v hv) hq hcrit⟩
 
+/-- The point of `M_Δ` over a vertex of `Δ` is the centre of the vertex chart there. -/
+private theorem eq_vertexChart_symm_zero [FiniteDimensional ℝ V] {q : DelzantQuotient i u c}
+    (hq : reducedMomentMap hβ q ∈ (facetPolyhedron i u c).extremePoints ℝ)
+    [Fintype (activeSet (facetPairing i u) c (reducedMomentMap hβ q))] :
+    q = (vertexChart (hΔ.isSmoothVertex _ hq) hi hq.1).symm 0 := by
+  have hs := mem_vertexChart_source_of_reducedMomentMap_eq (hΔ.isSmoothVertex _ hq) hi hq.1 rfl
+  rw [← (vertexChart_eq_zero_iff _ hi hq.1 hs).2 rfl, (vertexChart _ hi hq.1).left_inv hs]
+
+/-- **The points over the vertices are critical.** At the point of `M_Δ` over a vertex of `Δ`,
+every component `⟨μ_Δ, x⟩` of the moment map has a critical point. -/
+theorem mem_criticalPoints_reducedMomentMap_apply [FiniteDimensional ℝ V] (x : V)
+    {q : DelzantQuotient i u c}
+    (hq : reducedMomentMap hβ q ∈ (facetPolyhedron i u c).extremePoints ℝ) :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    q ∈ criticalPoints 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+        (Fin (Fintype.card ι + finrank ℝ V) → ℝ))
+        (fun q : DelzantQuotient i u c ↦ reducedMomentMap hβ q x) := by
+  let := Fintype.ofFinite (activeSet (facetPairing i u) c (reducedMomentMap hβ q))
+  rw [hΔ.eq_vertexChart_symm_zero hi hβ hq]
+  exact hΔ.vertexChart_symm_zero_mem_criticalPoints hi _ hq.1 hβ x
+
+/-- **The Morse index at the point over a vertex.** At a point of `M_Δ` over a vertex of `Δ`, the
+component `⟨μ_Δ, x⟩` of the moment map has Morse index twice the number of edges there along
+which `⟨·, x⟩` decreases. -/
+theorem manifoldMorseIndex_reducedMomentMap_apply [FiniteDimensional ℝ V] (x : V)
+    {q : DelzantQuotient i u c}
+    (hq : reducedMomentMap hβ q ∈ (facetPolyhedron i u c).extremePoints ℝ) :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    manifoldMorseIndex 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+        (Fin (Fintype.card ι + finrank ℝ V) → ℝ))
+        (fun q : DelzantQuotient i u c ↦ reducedMomentMap hβ q x) q =
+      2 * {k | (hΔ.isSmoothVertex _ hq).edgeBasis hi k x < 0}.ncard := by
+  let _ := hΔ.delzantQuotientChartedSpace hi
+  let := Fintype.ofFinite (activeSet (facetPairing i u) c (reducedMomentMap hβ q))
+  exact (congrArg (manifoldMorseIndex _ _) (hΔ.eq_vertexChart_symm_zero hi hβ hq)).trans
+    (hΔ.manifoldMorseIndex_vertexChart_symm_zero hi _ hq.1 hβ x)
+
 /-- **Critical points of a generic component.** If no edge vector at any vertex of `Δ` vanishes
 on `x`, then a point of `M_Δ` is a critical point of `⟨μ_Δ, x⟩` exactly when its moment value is
 a vertex of `Δ`. -/
@@ -244,17 +288,7 @@ theorem mem_criticalPoints_reducedMomentMap_apply_iff [FiniteDimensional ℝ V] 
   · intro hcrit
     obtain ⟨v, hv, rfl, -⟩ := hΔ.exists_eq_vertexChart_symm_zero hi hβ hx hcrit
     rwa [reducedMomentMap_vertexChart_symm_zero]
-  · intro hq
-    let := Fintype.ofFinite (activeSet (facetPairing i u) c (reducedMomentMap hβ q))
-    have hsv := hΔ.isSmoothVertex _ hq
-    -- The point over the vertex `μ_Δ(q)` is fixed, as is `q`, and they have the same moment
-    -- value, so they agree.
-    have hbij := bijOn_reducedMomentMap_fixedPoints hβ hi (c := c)
-    have h0 : reducedMomentMap hβ ((vertexChart hsv hi hq.1).symm 0) = reducedMomentMap hβ q :=
-      reducedMomentMap_vertexChart_symm_zero hsv hi hq.1
-    have hfix := (mem_fixedPoints_iff hβ hi).2 hq
-    rw [hbij.injOn ((mem_fixedPoints_iff hβ hi).2 (h0.symm ▸ hq)) hfix h0 |>.symm]
-    exact hΔ.vertexChart_symm_zero_mem_criticalPoints hi hsv hq.1 hβ x
+  · exact hΔ.mem_criticalPoints_reducedMomentMap_apply hi hβ x
 
 /-- **Generic components are Morse functions.** If no edge vector at any vertex of `Δ` vanishes
 on `x`, then the component `⟨μ_Δ, x⟩` of the moment map is a Morse function on `M_Δ`. -/
@@ -272,6 +306,31 @@ theorem isMorse_reducedMomentMap_apply [FiniteDimensional ℝ V] {x : V}
   obtain ⟨v, hv, -, hnd⟩ := hΔ.exists_eq_vertexChart_symm_zero hi hβ hx hcrit
   exact hnd
 
+/-- **Generic components are perfect Morse functions.** If no edge vector at any vertex of `Δ`
+vanishes on `x`, then the component `⟨μ_Δ, x⟩` of the moment map is a perfect Morse function on
+`M_Δ`, for every division ring of coefficients. -/
+theorem isPerfectMorse_reducedMomentMap_apply (k : Type w) [DivisionRing k]
+    [FiniteDimensional ℝ V] {x : V}
+    (hx : ∀ v (hv : v ∈ (facetPolyhedron i u c).extremePoints ℝ) e,
+      (hΔ.isSmoothVertex v hv).edgeBasis hi e x ≠ 0) :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    IsPerfectMorse 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+        (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) k
+        (fun q : DelzantQuotient i u c ↦ reducedMomentMap hβ q x) := by
+  let _ := hΔ.delzantQuotientChartedSpace hi
+  have := hΔ.isManifold_delzantQuotient hi
+  have := hΔ.contMDiffVAdd_delzantQuotient hi
+  have := hi.t2Space_delzantQuotient (u := u) (c := c)
+  have := compactSpace_delzantQuotient (c := c) hΔ.isBounded
+  have h := hΔ.hamiltonianTorusData_delzantQuotientSymplecticForm hi hβ
+  have hσ := (hΔ.isSymplectic_delzantQuotientSymplecticForm hi).isNondegenerate
+  have hσG := fun g ↦
+    ((SmoothTwoForm.isSymplecticMap_iff_mpullback_eq _).2 (h.mpullback_smul g)).apply
+  -- The component `⟨μ_Δ, x⟩` is the component of the torus moment map along a preimage of `x`.
+  obtain ⟨ξ, rfl⟩ := hβ x
+  exact h.toIsMomentMap.isPerfectMorse hσ hσG k (ξ := ξ)
+    (hΔ.isMorse_reducedMomentMap_apply hi hβ hx)
+
 /-- **The Betti numbers of a Delzant toric manifold.** For `x ∈ V` on which no edge vector at any
 vertex of `Δ` vanishes, the Betti number `b_j(M_Δ)`, for any division ring of coefficients, is
 the number of vertices of `Δ` at which twice the number of edges along which `⟨·, x⟩` decreases
@@ -285,19 +344,7 @@ theorem bettiNumber_delzantQuotient_eq_ncard (k : Type w) [DivisionRing k] {x : 
   have := hi.finiteDimensional
   have hβ := surjective_linearCombination_real hi.span_range_eq_top hΔ.surjective_linearCombination
   let _ := hΔ.delzantQuotientChartedSpace hi
-  have := hΔ.isManifold_delzantQuotient hi
-  have := hΔ.contMDiffVAdd_delzantQuotient hi
-  have := hi.t2Space_delzantQuotient (u := u) (c := c)
-  have := compactSpace_delzantQuotient (c := c) hΔ.isBounded
-  have h := hΔ.hamiltonianTorusData_delzantQuotientSymplecticForm hi hβ
-  have hσ := (hΔ.isSymplectic_delzantQuotientSymplecticForm hi).isNondegenerate
-  have hσG := fun g ↦
-    ((SmoothTwoForm.isSymplecticMap_iff_mpullback_eq _).2 (h.mpullback_smul g)).apply
-  -- The component `⟨μ_Δ, x⟩` is the component of the torus moment map along a preimage of `x`.
-  obtain ⟨ξ, rfl⟩ := hβ x
-  have hperf := h.toIsMomentMap.isPerfectMorse hσ hσG k (ξ := ξ)
-    (hΔ.isMorse_reducedMomentMap_apply hi hβ hx)
-  rw [hperf.bettiNumber_eq_ncard j]
+  rw [(hΔ.isPerfectMorse_reducedMomentMap_apply hi hβ k hx).bettiNumber_eq_ncard j]
   refine BijOn.ncard_eq (f := reducedMomentMap hβ) ⟨fun q ⟨hcrit, hj⟩ ↦ ?_,
     fun q ⟨hcrit, _⟩ q' ⟨hcrit', _⟩ hqq' ↦ ?_, fun v ⟨hv, hj⟩ ↦ ?_⟩
   · obtain ⟨v, hv, rfl, -⟩ := hΔ.exists_eq_vertexChart_symm_zero hi hβ hx hcrit

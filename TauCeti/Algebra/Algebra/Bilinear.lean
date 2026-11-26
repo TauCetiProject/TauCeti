@@ -23,6 +23,10 @@ is the variant with the second factor read in the opposite algebra.
 
 `Algebra.lsmul_eq_mulLeft` identifies the action `Algebra.lsmul R R A a` of `a` on `A` itself
 with left multiplication `LinearMap.mulLeft R a`.
+
+Left multiplication `Algebra.lmul R A` is the action map `Algebra.lsmul R R A` of `A` on itself
+regarded as a module over itself (`TauCeti.Algebra.lmul_eq_lsmul`), so results about the trace or
+action of an arbitrary module specialise to the regular module.
 -/
 
 public section
@@ -73,5 +77,16 @@ theorem mulUnop'_tmul (a : A) (b : Aᵐᵒᵖ) : mulUnop' R A (a ⊗ₜ b) = a *
   (rfl)
 
 end LinearMap
+
+namespace Algebra
+
+variable (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A]
+
+/-- Left multiplication `L_a` is the action of `a` on `A` regarded as a module over itself. -/
+theorem lmul_eq_lsmul : Algebra.lmul R A = Algebra.lsmul R R A := by
+  ext a z
+  rw [Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', Algebra.lsmul_apply, smul_eq_mul]
+
+end Algebra
 
 end TauCeti

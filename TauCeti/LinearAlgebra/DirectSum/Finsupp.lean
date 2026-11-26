@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
+public import TauCeti.LinearAlgebra.Finsupp.SignReversal
 
 /-!
 # Tensor products with spaces of finitely supported functions
@@ -25,6 +26,8 @@ which identifies `(α →₀ R) ⊗[R] (β →₀ R)` with `α × β →₀ R`.
   index types.
 * `finsuppTensorFinsupp'_rTensor_apply`, `finsuppTensorFinsupp'_lTensor_apply`: the coefficients
   of `(φ ⊗ 1) t` and `(1 ⊗ ψ) t` are those of `t` multiplied by the matrix of `φ` or `ψ`.
+* `finsuppTensorFinsupp'_map_signReversal_apply`: the coefficients of the tensor product of two
+  sign reversals.
 * `LinearMap.mul'_map_lapply_lapply`, `LinearMap.mul'_map_apply_eq_sum`: the product of two linear
   forms evaluated on `(α →₀ R) ⊗ (β →₀ R)` reads the coefficients, weighted by the values of the
   forms on the basis.
@@ -227,3 +230,29 @@ theorem domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor {
   by_cases h : p = p' <;> simp [h]
 
 end FinsuppTensorFinsupp
+
+section SignReversal
+
+open scoped TensorProduct
+
+variable {R : Type*} [CommRing R] {α β : Type*}
+
+/-- **The coefficients of a tensor product of sign reversals.** The coefficient of `(q, r)` in the
+image of `t` under the tensor product of the sign reversals `Finsupp.signReversal` on `S₁` and on
+`S₂` is that of `t`, multiplied by `-1` for `q ∈ S₁` and by `-1` for `r ∈ S₂`. -/
+theorem finsuppTensorFinsupp'_map_signReversal_apply (S₁ : Set α) [DecidablePred (· ∈ S₁)]
+    (S₂ : Set β) [DecidablePred (· ∈ S₂)] (t : (α →₀ R) ⊗[R] (β →₀ R)) (q : α) (r : β) :
+    finsuppTensorFinsupp' R α β
+        (TensorProduct.map (Finsupp.signReversal R S₁).toLinearMap
+          (Finsupp.signReversal R S₂).toLinearMap t) (q, r) =
+      ((if q ∈ S₁ then -1 else 1) * (if r ∈ S₂ then -1 else 1) : R) *
+        finsuppTensorFinsupp' R α β t (q, r) := by
+  induction t with
+  | tmul x y =>
+    rw [TensorProduct.map_tmul, finsuppTensorFinsupp'_apply_apply,
+      finsuppTensorFinsupp'_apply_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+      Finsupp.signReversal_apply, Finsupp.signReversal_apply]
+    by_cases hq : q ∈ S₁ <;> by_cases hr : r ∈ S₂ <;> simp [hq, hr]
+  | add t t' ht ht' => simp only [map_add, Finsupp.add_apply, ht, ht', mul_add]
+
+end SignReversal
