@@ -353,7 +353,7 @@ theorem fderiv_centralForceEnergyMomentum_apply {m : ℝ} {U : ℝ → ℝ} {U' 
   rw [(hasFDerivAt_centralForceEnergyMomentum b hU hq).fderiv,
     (hasFDerivAt_centralForceHamiltonian hU hq).fderiv, (hasFDerivAt_angularMomentum _ _ x).fderiv]
   ext i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp
 
 /-- On a circular orbit, the differential of the energy–momentum map sends `v` to
 `dL(v) (Ω, 1)`, for the angular velocity `Ω = L / (m ‖q‖²)`. -/

@@ -43,12 +43,13 @@ computed from the Hessians of the angular momentum, `2 L`
 (`TauCeti.hessianQuadraticForm_angularMomentum`), and of the energy
 (`TauCeti.hessianQuadraticForm_centralForceHamiltonian_apply`). Hence:
 
-* the point `x` is a nondegenerate point of `F` exactly when `U_ℓ''(r) ≠ 0`
+* for `m ≠ 0`, the point `x` is a nondegenerate point of `F` exactly when `U_ℓ''(r) ≠ 0`
   (`TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`);
 * at a nondegenerate minimum of the effective potential, `U_ℓ''(r) > 0`, and for `m > 0`, the
   transversal Hessian is positive definite, so it is `ν` times the elliptic block
   `(x² + y²) / 2` of a Darboux basis of the transversal plane, for some `ν > 0`: one elliptic
-  block (`TauCeti.exists_isDarbouxBasis_hessianQuadraticForm_eq_smul_elliptic`).
+  block. This is
+  `TauCeti.exists_isDarbouxBasis_hessianQuadraticForm_centralForceHamiltonian_sub_eq_smul_elliptic`.
 
 The same statements cover the rest points with `L = 0`, where `p = 0`, `Ω = 0` and `U_0 = U`.
 
@@ -60,10 +61,10 @@ The same statements cover the rest points with `L = 0`, where `p = 0`, `Ω = 0` 
   Hessian of `q ↦ U(‖q‖)` plus `‖δp‖² / m`.
 * `TauCeti.comp_centralForceEnergyMomentum_eq_smul_of_comp_fderiv_eq_zero`: the critical functions
   at a circular orbit are the multiples of `H - Ω L`.
-* `TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`: a circular orbit is a
-  nondegenerate rank-one point exactly when `U_ℓ''(r) ≠ 0`.
-* `TauCeti.exists_isDarbouxBasis_hessianQuadraticForm_eq_smul_elliptic`: at a nondegenerate
-  minimum of the effective potential its transversal type is one elliptic block.
+* `TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`: for `m ≠ 0`, a circular orbit
+  is a nondegenerate rank-one point exactly when `U_ℓ''(r) ≠ 0`.
+* `TauCeti.exists_isDarbouxBasis_hessianQuadraticForm_centralForceHamiltonian_sub_eq_smul_elliptic`:
+  at a nondegenerate minimum of the effective potential its transversal type is one elliptic block.
 
 ## References
 
@@ -256,15 +257,14 @@ private theorem exists_basis_reducedSpace_ker_fderiv_centralForceEnergyMomentum 
 
 /-- At a point of a circular orbit, the Hessian of `H - Ω L` descends to the transversal
 space. -/
-private theorem exists_reducedQuadraticForm_eq_hessianQuadraticForm
-    (hU : ContDiffAt ℝ 2 U ‖x.1‖) (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
-    (hU' : deriv U ‖x.1‖ = angularMomentum (b 0) (b 1) x ^ 2 / (m * ‖x.1‖ ^ 3)) :
+private theorem exists_reducedQuadraticForm_eq_hessianQuadraticForm {U' : ℝ}
+    (hU : ContDiffAt ℝ 2 U ‖x.1‖) (hUd : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0)
+    (h0 : ⟪x.1, x.2⟫_ℝ = 0) (hU' : U' = angularMomentum (b 0) (b 1) x ^ 2 / (m * ‖x.1‖ ^ 3)) :
     ∃ Q : QuadraticForm ℝ ((stdSymplecticForm (V := V)).ReducedSpace
         (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker),
       ∀ u, Q (Submodule.Quotient.mk u) = hessianQuadraticForm (fun y ↦
         centralForceHamiltonian m U y -
           angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2) * angularMomentum (b 0) (b 1) y) x u := by
-  have hUd : HasDerivAt U (deriv U ‖x.1‖) ‖x.1‖ := (hU.differentiableAt two_ne_zero).hasDerivAt
   obtain ⟨ℓ₀, hℓ₀, hcomp⟩ := exists_comp_fderiv_eq_zero_and_comp_eq b hUd hq h0 hU'
   rw [← hcomp]
   exact ⟨_, (stdSymplecticForm (V := V)).reducedQuadraticForm_mk _ _ fun _ hw u _ ↦
@@ -309,9 +309,9 @@ private theorem span_range_eq_span_range_const {U' : ℝ}
 /-- On the basis of the classes of `(q, -p)` and `(0, q)`, the transversal Hessian of `H - Ω L`
 takes the values `‖q‖² U_ℓ''(‖q‖)` and `‖q‖² / m`, and the two basis vectors are orthogonal for
 it. -/
-private theorem exists_basis_apply_eq (hm : m ≠ 0) (hU : ContDiffAt ℝ 2 U ‖x.1‖)
-    (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
-    (hU' : deriv U ‖x.1‖ = angularMomentum (b 0) (b 1) x ^ 2 / (m * ‖x.1‖ ^ 3))
+private theorem exists_basis_apply_eq {U' : ℝ} (hm : m ≠ 0) (hU : ContDiffAt ℝ 2 U ‖x.1‖)
+    (hUd : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+    (hU' : U' = angularMomentum (b 0) (b 1) x ^ 2 / (m * ‖x.1‖ ^ 3))
     {Q : QuadraticForm ℝ ((stdSymplecticForm (V := V)).ReducedSpace
       (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker)}
     (hQ : ∀ u, Q (Submodule.Quotient.mk u) = hessianQuadraticForm (fun y ↦
@@ -322,7 +322,6 @@ private theorem exists_basis_apply_eq (hm : m ≠ 0) (hU : ContDiffAt ℝ 2 U �
       Q (e 0) = ‖x.1‖ ^ 2 *
           iteratedDeriv 2 (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ ∧
         Q (e 1) = ‖x.1‖ ^ 2 / m ∧ QuadraticMap.polar Q (e 0) (e 1) = 0 := by
-  have hUd : HasDerivAt U (deriv U ‖x.1‖) ‖x.1‖ := (hU.differentiableAt two_ne_zero).hasDerivAt
   obtain ⟨e, u₀, u₁, hu₀, hu₁, he₀, he₁⟩ :=
     exists_basis_reducedSpace_ker_fderiv_centralForceEnergyMomentum b hUd hq h0 hU'
   have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
@@ -354,9 +353,8 @@ private theorem exists_basis_apply_eq (hm : m ≠ 0) (hU : ContDiffAt ℝ 2 U �
     have hnorm : ‖-x.2 + x.1‖ ^ 2 = ‖x.2‖ ^ 2 + ‖x.1‖ ^ 2 := by
       rw [norm_add_sq_real, norm_neg, inner_neg_left, real_inner_comm, h0]
       ring
-    rw [QuadraticMap.polar, he₀, he₁, ← Submodule.Quotient.mk_add, hQ, hQ, hQ,
-      Submodule.coe_add, hu₀, hu₁, Prod.mk_add_mk, add_zero, hH, hH, hH, hsum, hneg,
-      hzero, hnorm, norm_neg, QuadraticMap.map_zero]
+    simp only [QuadraticMap.polar, he₀, he₁, ← Submodule.Quotient.mk_add, hQ]
+    simp [hu₀, hu₁, hH, hsum, hneg, hzero, hnorm]
     ring
 
 /-! ### Nondegeneracy and the elliptic type -/
@@ -364,17 +362,17 @@ private theorem exists_basis_apply_eq (hm : m ≠ 0) (hU : ContDiffAt ℝ 2 U �
 /-- **Circular orbits of a planar central force are nondegenerate rank-one points exactly at
 nondegenerate critical points of the effective potential.** Let `x = (q, p)` lie off the collision
 set with `⟪q, p⟫ = 0` and `U'(‖q‖) = ℓ² / (m ‖q‖³)` for `ℓ = L(x)`, a point of a circular orbit
-or, for `ℓ = 0`, a rest point, where `U` is `C²` at `‖q‖`. Then `x` is a nondegenerate point of the
-energy–momentum map `F = (H, L)` exactly when `U_ℓ''(‖q‖) ≠ 0` for the effective potential
-`U_ℓ(r) = ℓ² / (2 m r²) + U(r)`. -/
+or, for `ℓ = 0`, a rest point, where `U` is `C²` at `‖q‖`, and let `m ≠ 0`. Then `x` is a
+nondegenerate point of the energy–momentum map `F = (H, L)` exactly when `U_ℓ''(‖q‖) ≠ 0` for the
+effective potential `U_ℓ(r) = ℓ² / (2 m r²) + U(r)`. -/
 theorem isNondegeneratePoint_centralForceEnergyMomentum_iff (hm : m ≠ 0)
     (hU : ContDiffAt ℝ 2 U ‖x.1‖) (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
     (hU' : deriv U ‖x.1‖ = angularMomentum (b 0) (b 1) x ^ 2 / (m * ‖x.1‖ ^ 3)) :
     (stdSymplecticForm (V := V)).IsNondegeneratePoint (centralForceEnergyMomentum b m U) x ↔
       iteratedDeriv 2 (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ ≠ 0 := by
   have hUd : HasDerivAt U (deriv U ‖x.1‖) ‖x.1‖ := (hU.differentiableAt two_ne_zero).hasDerivAt
-  obtain ⟨Q, hQ⟩ := exists_reducedQuadraticForm_eq_hessianQuadraticForm b hU hq h0 hU'
-  obtain ⟨e, he₀, he₁, he₀₁⟩ := exists_basis_apply_eq b hm hU hq h0 hU' hQ
+  obtain ⟨Q, hQ⟩ := exists_reducedQuadraticForm_eq_hessianQuadraticForm b hU hUd hq h0 hU'
+  obtain ⟨e, he₀, he₁, he₀₁⟩ := exists_basis_apply_eq b hm hU hUd hq h0 hU' hQ
   have hr : ‖x.1‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 hq)
   -- All the critical functions are multiples of `H - Ω L`, and the transversal space is a plane,
   -- so nondegeneracy is that of the single transversal Hessian `Q`, which is diagonal in `e`.
@@ -404,8 +402,8 @@ type.** Let `x = (q, p)` be a point of a circular orbit, or a rest point, as in
 `Ω = ℓ / (m ‖q‖²)`, and the Hessian of `H - Ω L` on the transversal plane is `ν` times the elliptic
 block `(x² + y²) / 2` of a Darboux basis of that plane, for some `ν > 0`: the transversal Williamson
 type is one elliptic block. -/
-theorem exists_isDarbouxBasis_hessianQuadraticForm_eq_smul_elliptic (hm : 0 < m)
-    (hU : ContDiffAt ℝ 2 U ‖x.1‖) (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+theorem exists_isDarbouxBasis_hessianQuadraticForm_centralForceHamiltonian_sub_eq_smul_elliptic
+    (hm : 0 < m) (hU : ContDiffAt ℝ 2 U ‖x.1‖) (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
     (hU' : deriv U ‖x.1‖ = angularMomentum (b 0) (b 1) x ^ 2 / (m * ‖x.1‖ ^ 3))
     (hmin : 0 < iteratedDeriv 2 (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖) :
     ∃ (e : Basis (Fin 1 × Fin 2) ℝ ((stdSymplecticForm (V := V)).ReducedSpace
@@ -416,26 +414,26 @@ theorem exists_isDarbouxBasis_hessianQuadraticForm_eq_smul_elliptic (hm : 0 < m)
             angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2) * angularMomentum (b 0) (b 1) y) x u =
               ν * SymplecticForm.elliptic e 0 (Submodule.Quotient.mk u) := by
   have hUd : HasDerivAt U (deriv U ‖x.1‖) ‖x.1‖ := (hU.differentiableAt two_ne_zero).hasDerivAt
-  obtain ⟨Q, hQ⟩ := exists_reducedQuadraticForm_eq_hessianQuadraticForm b hU hq h0 hU'
-  obtain ⟨e, he₀, he₁, he₀₁⟩ := exists_basis_apply_eq b hm.ne' hU hq h0 hU' hQ
-  -- In the orthogonal basis `e`, the form `Q` has the positive diagonal entries
+  obtain ⟨Q, hQ⟩ := exists_reducedQuadraticForm_eq_hessianQuadraticForm b hU hUd hq h0 hU'
+  obtain ⟨e, he₀, he₁, he₀₁⟩ := exists_basis_apply_eq b hm.ne' hU hUd hq h0 hU' hQ
+  -- In the orthogonal basis `e`, the form `Q` is the diagonal form with the positive entries
   -- `‖q‖² U_ℓ''(‖q‖)` and `‖q‖² / m`.
   have hpos : Q.PosDef := by
-    intro v hv
-    have hA : 0 < ‖x.1‖ ^ 2 *
-        iteratedDeriv 2 (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ := by
-      positivity
-    have hB : 0 < ‖x.1‖ ^ 2 / m := by positivity
-    have hst : e.repr v 0 ≠ 0 ∨ e.repr v 1 ≠ 0 := by
-      by_contra h
-      simp only [not_or, not_not] at h
-      exact hv (by rw [← e.sum_repr v, Fin.sum_univ_two, h.1, h.2, zero_smul, zero_smul, add_zero])
-    rw [← e.sum_repr v, Fin.sum_univ_two, QuadraticMap.map_add Q, QuadraticMap.map_smul,
-      QuadraticMap.map_smul, QuadraticMap.polar_smul_left, QuadraticMap.polar_smul_right, he₀₁,
-      he₀, he₁, smul_eq_mul, smul_eq_mul, smul_eq_mul, smul_eq_mul]
-    rcases hst with h | h
-    · nlinarith [mul_pos (mul_self_pos.2 h) hA, mul_nonneg (mul_self_nonneg (e.repr v 1)) hB.le]
-    · nlinarith [mul_pos (mul_self_pos.2 h) hB, mul_nonneg (mul_self_nonneg (e.repr v 0)) hA.le]
+    have horth : (QuadraticMap.associated (R := ℝ) Q).IsOrthoᵢ e := by
+      refine LinearMap.isOrthoᵢ_def.2 fun i j hij ↦ ?_
+      rw [QuadraticMap.associated_isOrtho, ← QuadraticMap.isOrtho_polarBilin,
+        QuadraticMap.polarBilin_apply_apply]
+      fin_cases i <;> fin_cases j
+      · exact absurd rfl hij
+      · exact he₀₁
+      · rwa [QuadraticMap.polar_comm]
+      · exact absurd rfl hij
+    have h := (QuadraticMap.posDef_weightedSumSquares_iff fun i ↦ Q (e i)).2
+      (Fin.forall_fin_two.2 ⟨he₀ ▸ by positivity, he₁ ▸ by positivity⟩)
+    rw [← Q.basisRepr_eq_of_iIsOrtho e horth] at h
+    convert h.comp e.equivFun.toLinearMap e.equivFun.injective
+    ext v
+    simp [QuadraticMap.basisRepr]
   obtain ⟨n, d, ν, hd, hν, hQd⟩ :=
     ((stdSymplecticForm (V := V)).reduction _).exists_isDarbouxBasis_eq_sum_smul_elliptic_of_posDef
       hpos
