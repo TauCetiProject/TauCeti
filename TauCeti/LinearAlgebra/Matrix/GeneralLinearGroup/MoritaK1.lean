@@ -63,9 +63,10 @@ isomorphism of `GL_∞` also gives the Morita invariance of the Steinberg group 
   inverse on images of invertible matrices.
 * `TauCeti.AlgebraicK1.matrixEquiv_mk`, `TauCeti.AlgebraicK1.matrixEquiv_symm_mk`: the Morita
   isomorphism and its inverse on classes of invertible matrices.
-* `TauCeti.compGL_reindexGL`, `TauCeti.AlgebraicK1.matrixEquiv_mkOfFintype`: flattening commutes
-  with relabelling the blocks, and the Morita isomorphism on classes of block matrices indexed by
-  an arbitrary finite type.
+* `TauCeti.compGL_reindexGL`, `TauCeti.AlgebraicK1.matrixEquiv_mkOfFintype`,
+  `TauCeti.AlgebraicK1.matrixEquiv_symm_mkOfFintype`: flattening commutes with relabelling the
+  blocks, and the Morita isomorphism and its inverse on classes of block matrices indexed by an
+  arbitrary finite type.
 * `TauCeti.AlgebraicK1.matrixEquiv_ofUnits`, `TauCeti.AlgebraicK1.matrixEquiv_symm_ofUnits`: the
   Morita isomorphism on classes of units of the matrix ring, and its inverse on classes of units
   of `R`.
@@ -375,6 +376,14 @@ theorem matrixEquiv_mkOfFintype {m : Type*} [Fintype m] [DecidableEq m]
     matrixEquiv R ι (mkOfFintype _ m u) = mkOfFintype R (m × ι) (compGL m ι R u) := by
   rw [mkOfFintype_eq_mk_reindexGL (Fintype.equivFin m), matrixEquiv_mk, flattenGL,
     MulEquiv.trans_apply, mk_reindexGL_eq_mkOfFintype, compGL_reindexGL, mkOfFintype_reindexGL]
+
+/-- The inverse Morita isomorphism sends the class of an invertible matrix indexed by `m × ι`,
+for an arbitrary finite type `m`, to the class of the `m × m` block matrix with the same entries. -/
+@[simp]
+theorem matrixEquiv_symm_mkOfFintype {m : Type*} [Fintype m] [DecidableEq m]
+    (u : GL (m × ι) R) :
+    (matrixEquiv R ι).symm (mkOfFintype R (m × ι) u) = mkOfFintype _ m ((compGL m ι R).symm u) := by
+  rw [MulEquiv.symm_apply_eq, matrixEquiv_mkOfFintype, MulEquiv.apply_symm_apply]
 
 /-- **The size-one normalization of the Morita isomorphism**: an invertible matrix `u` over `R`
 indexed by `ι` is a unit of the matrix ring `Matrix ι ι R`, and the Morita isomorphism sends the

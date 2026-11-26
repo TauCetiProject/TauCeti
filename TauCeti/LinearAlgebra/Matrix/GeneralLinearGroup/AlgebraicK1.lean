@@ -27,7 +27,8 @@ additively as in the usual notation `[u]`:
 * the class of an invertible diagonal matrix is the sum of the classes of its entries, so the
   scalar matrix `a • 1` of size `n` has class `n [a]`;
 * `[1 + ab] = [1 + ba]` whenever both are units, so a unit `1 + ab` with `ba = 0` has trivial class.
-  Over a matrix ring this makes the unit-to-`K₁` map `TauCeti.AlgebraicK1.ofUnits` non-injective.
+  Over the `ι × ι` matrices over a nontrivial ring, with `ι` of size at least two, this makes the
+  unit-to-`K₁` map `TauCeti.AlgebraicK1.ofUnits` non-injective.
 
 It then computes `K₁` of the zero ring, which is trivial, and of a product of two rings,
 `K₁(A × B) ≅ K₁(A) × K₁(B)` through the two projections. The latter holds because an invertible
@@ -61,8 +62,8 @@ product of the classes of the matrices `(u, 1)` and `(1, v)`.
   an invertible diagonal matrix is the sum of the classes of its diagonal entries.
 * `TauCeti.AlgebraicK1.ofUnits_eq_ofUnits_of_coe_eq_one_add_mul`: `[1 + ab] = [1 + ba]`.
 * `TauCeti.AlgebraicK1.ofUnits_eq_one_of_coe_eq_one_add_mul`: `[1 + ab] = 0` when `ba = 0`.
-* `TauCeti.AlgebraicK1.not_injective_ofUnits_matrix`: over a matrix ring of size at least two, the
-  class map on units is not injective.
+* `TauCeti.AlgebraicK1.not_injective_ofUnits_matrix`: over a matrix ring of size at least two
+  over a nontrivial ring, the class map on units is not injective.
 * `TauCeti.AlgebraicK1.instSubsingleton`: `K₁` of the zero ring is trivial.
 * `TauCeti.AlgebraicK1.prodEquiv_apply`, `TauCeti.AlgebraicK1.prodEquiv_symm_mk`: the isomorphism
   `K₁(A × B) ≃* K₁(A) × K₁(B)` and its inverse on classes.
