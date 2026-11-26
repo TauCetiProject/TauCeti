@@ -28,8 +28,11 @@ theorem and the zero-Jacobian image theorem.
 
 When `s` is `μHE[k]`-null-measurable,
 `CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover` refines the cover to pairwise
-disjoint Borel bi-Lipschitz images inside `s`, and for `LocallyLipschitzOn s g` into a
-finite-dimensional real normed space,
+disjoint Borel bi-Lipschitz images inside `s`, yielding patch-reduction principles for
+almost-everywhere properties (`TauCeti.CountablyRectifiable.ae_of_forall_bilipschitz_patch`) and
+almost-everywhere measurability
+(`TauCeti.CountablyRectifiable.aemeasurable_of_forall_bilipschitz_patch`); for
+`LocallyLipschitzOn s g` into a finite-dimensional real normed space,
 `LocallyLipschitzOn.exists_disjoint_measurable_bilipschitz_extension_cover` further refines the
 patches so that `g` agrees on each patch with a globally Lipschitz map.
 
@@ -143,6 +146,37 @@ theorem CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover {k : �
     fun n ↦ (subset_iUnion (fun m ↦ f m '' B m) n).trans hsub_s, ?_⟩
   refine Filter.EventuallySubset.antisymm (Filter.Eventually.of_forall fun _ hx ↦ hsub_s hx) ?_
   simpa only [inter_self, hUnion] using (ae_subset.mpr hc).inter hs₀_ae.symm.subset
+
+/-- If a predicate holds `μHE[k]`-almost everywhere on every bi-Lipschitz Borel patch
+`f '' B ⊆ s`, then it holds `μHE[k]`-almost everywhere on the null-measurable countably
+`k`-rectifiable set `s`. -/
+theorem CountablyRectifiable.ae_of_forall_bilipschitz_patch {k : ℕ} {s : Set V} {p : V → Prop}
+    (hs : CountablyRectifiable k s) (hsm : NullMeasurableSet s μHE[k])
+    (hp : ∀ {B : Set (EuclideanSpace ℝ (Fin k))} {f : EuclideanSpace ℝ (Fin k) → V} {K L : ℝ≥0},
+      MeasurableSet B → f '' B ⊆ s → LipschitzWith K f → AntilipschitzWith L (B.domRestrict f) →
+      ∀ᵐ y ∂μHE[k], y ∈ f '' B → p y) :
+    ∀ᵐ x ∂μHE[k], x ∈ s → p x := by
+  obtain ⟨B, f, _, _, hBm, -, hbi, -, hsub, hcov⟩ :=
+    hs.exists_disjoint_measurable_bilipschitz_cover hsm
+  filter_upwards [hcov.symm.subset,
+    ae_all_iff.2 fun n => hp (hBm n) (hsub n) (hbi n).1 (hbi n).2] with x hcovx hpx hxs
+  obtain ⟨n, hxn⟩ := mem_iUnion.1 (hcovx hxs)
+  exact hpx n hxn
+
+/-- If a map `g : V → α` is `(μHE[k].restrict (f '' B))`-a.e. measurable on every bi-Lipschitz
+Borel patch `f '' B ⊆ s`, then `g` is `(μHE[k].restrict s)`-a.e. measurable on the null-measurable
+countably `k`-rectifiable set `s`. -/
+theorem CountablyRectifiable.aemeasurable_of_forall_bilipschitz_patch
+    {α : Type*} [MeasurableSpace α] {k : ℕ} {s : Set V} {g : V → α}
+    (hs : CountablyRectifiable k s) (hsm : NullMeasurableSet s μHE[k])
+    (hg : ∀ {B : Set (EuclideanSpace ℝ (Fin k))} {f : EuclideanSpace ℝ (Fin k) → V} {K L : ℝ≥0},
+      MeasurableSet B → f '' B ⊆ s → LipschitzWith K f → AntilipschitzWith L (B.domRestrict f) →
+      AEMeasurable g (μHE[k].restrict (f '' B))) :
+    AEMeasurable g (μHE[k].restrict s) := by
+  obtain ⟨B, f, _, _, hBm, -, hbi, -, hsub, hcov⟩ :=
+    hs.exists_disjoint_measurable_bilipschitz_cover hsm
+  rw [← Measure.restrict_congr_set hcov]
+  exact AEMeasurable.iUnion fun n => hg (hBm n) (hsub n) (hbi n).1 (hbi n).2
 
 end TauCeti
 

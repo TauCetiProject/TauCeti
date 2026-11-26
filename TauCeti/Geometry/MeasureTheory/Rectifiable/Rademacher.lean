@@ -9,20 +9,19 @@ public import TauCeti.Geometry.MeasureTheory.Rectifiable.TangentialFDeriv
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.Rademacher
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
-import TauCeti.Analysis.Normed.Ring.Units
+import TauCeti.Analysis.Calculus.TangentCone.Haar
 import TauCeti.Geometry.Euclidean.Volume.Density
 import TauCeti.Geometry.Euclidean.Volume.Measure
-import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
-import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
+import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Rademacher's theorem and measurability for tangential derivatives on rectifiable sets
 
-Every locally Lipschitz map `g : V → W` on a countably `k`-rectifiable, `μHE[k]`-null-measurable
-set `E` with locally finite restricted measure `μHE[k].restrict E` is tangentially differentiable
-at `μHE[k]`-almost every point of `E`, and both `tangentialFDeriv k E g` and
-`tangentialJacobian k E g` are `μHE[k].restrict E`-a.e. measurable.
+Every locally Lipschitz map `g : V → W` into a finite-dimensional real normed space on a countably
+`k`-rectifiable, `μHE[k]`-null-measurable set `E` with locally finite restricted measure
+`μHE[k].restrict E` is tangentially differentiable at `μHE[k]`-almost every point of `E`, and both
+`tangentialFDeriv k E g` and `tangentialJacobian k E g` are `μHE[k].restrict E`-a.e. measurable.
 
 The proof refines a disjoint Borel bi-Lipschitz cover of `E` so that `g` extends globally as a
 Lipschitz map `gExt n` on each patch
@@ -30,9 +29,11 @@ Lipschitz map `gExt n` on each patch
 Rademacher's theorem on `EuclideanSpace ℝ (Fin k)` combined with Lebesgue density and the
 patchwise chain rule (`Rectifiable.TangentialFDeriv`) then yields a.e. tangential
 differentiability (hence `μHE[k].restrict E`-a.e. additivity and subtraction of `tangentialFDeriv`,
-complementing unconditional `tangentialFDeriv_const_smul` and `tangentialFDeriv_neg`), sharp norm
-and Jacobian bounds `‖D x‖ ≤ K` and `J x ≤ K ^ k` for `LipschitzOnWith K g E`, and patchwise
-measurable formulas enabling integration of the tangential Jacobian in `Rectifiable.AreaFormula`.
+complementing unconditional `tangentialFDeriv_const_smul` and `tangentialFDeriv_neg`) and patchwise
+measurable formulas (via `ContinuousLinearMap.measurable_gramLeftInverse`) enabling integration of
+the tangential Jacobian in `Rectifiable.AreaFormula`. The sharp operator-norm and Jacobian bounds
+`‖D x‖ ≤ K` and `J x ≤ K ^ k` for `LipschitzOnWith K g E` hold without finite-dimensionality of the
+codomain `W`.
 
 ## References
 
@@ -72,16 +73,15 @@ theorem ae_regular_and_density_on_patch {V : Type*} [NormedAddCommGroup V] [Inne
   have hS_vol : volume ({u | ¬ Tendsto (fun r => volume (B ∩ closedBall u r) /
     volume (closedBall u r)) (𝓝[>] 0) (𝓝 1)} ∩ B) = 0 := nonpos_iff_eq_zero.mp <|
     (le_restrict_apply B _).trans_eq (ae_iff.mp (Besicovitch.ae_tendsto_measure_inter_div volume B))
-  have hbadJ : volume {u ∈ B | (fderiv ℝ f u).toLinearMap.normDet = 0} = 0 := by
-    refine hvol0 (sep_subset _ _) <| measure_mono_null ?_
-      (by simpa only [finrank_euclideanSpace_fin] using
-        hf_lip.euclideanHausdorffMeasure_image_setOf_normDet_fderiv_eq_zero)
-    rintro _ ⟨u, ⟨_, h0⟩, rfl⟩; exact ⟨u, h0, rfl⟩
-  filter_upwards [hf_lip.ae_differentiableAt, measure_eq_zero_iff_ae_notMem.mp hbadJ,
-    measure_eq_zero_iff_ae_notMem.mp hS_vol, measure_eq_zero_iff_ae_notMem.mp hbadT] with u hdiff hJ
+  filter_upwards [hf_lip.ae_differentiableAt,
+    measure_eq_zero_iff_ae_notMem.mp hS_vol, measure_eq_zero_iff_ae_notMem.mp hbadT] with u hdiff
     hD hT huB
-  exact ⟨hdiff, ((fderiv ℝ f u).toLinearMap.normDet_ne_zero_tfae.out 1 5).mp fun h0 => hJ ⟨huB, h0⟩,
-    by simpa only [addHaar_closedBall_center] using not_not.mp fun h => hD ⟨h, huB⟩,
+  have hdens1 : Tendsto (fun r => volume (B ∩ closedBall u r) / volume (closedBall u r))
+      (𝓝[>] 0) (𝓝 1) := not_not.mp fun h => hD ⟨h, huB⟩
+  exact ⟨hdiff,
+    hdiff.hasFDerivAt.hasFDerivWithinAt.injective_of_tendsto_inter_closedBall_div volume huB
+      hf_anti hdens1,
+    by simpa only [addHaar_closedBall_center] using hdens1,
     not_not.mp fun h => hT ⟨huB, h⟩⟩
 private lemma ae_patch_tangential {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup W]
@@ -115,7 +115,7 @@ private lemma ae_patch_tangential {V W : Type*} [NormedAddCommGroup V] [InnerPro
     dsimp only [U]; rwa [finrank_euclideanSpace_fin]
   exact ⟨u, huB, rfl, hinj, hf_diff.hasFDerivAt.hasFDerivWithinAt, hgf_w,
     by simpa only [U, finrank_euclideanSpace_fin] using
-      hf_diff.hasFDerivAt.hasFDerivWithinAt.hasTangentialFDerivAt_of_comp hinj hf_anti huB hsub
+      hf_diff.hasFDerivAt.hasFDerivWithinAt.hasTangentialFDerivAt_of_comp hf_anti huB hsub
         hdens hdiff' hgf_w, hdens, hdiff'⟩
 end TauCeti
 section RectifiableRademacher
@@ -161,19 +161,14 @@ theorem aemeasurable_tangentialFDeriv [NormedSpace ℝ W] [FiniteDimensional ℝ
     AEMeasurable (D) (μHE[k].restrict E) := by
   refine aemeasurable_of_extension_cover hg hE hEm fun {_ f gExt _ _ _} hBm hf_lip hf_anti hgExt_lip
     hgExt_eq hsub => ?_
-  have hm_f := measurable_fderiv ℝ f
-  have hm_adj := ContinuousLinearMap.adjoint.continuous.measurable.comp hm_f
-  have hm_inv := IsOpenUnits.measurable_ringInverse.comp
-    ((continuous_fst.clm_comp continuous_snd).measurable.comp (hm_adj.prodMk hm_f))
-  refine ⟨fun u => fderiv ℝ (gExt ∘ f) u ∘L (fderiv ℝ f u).gramLeftInverse, ?_, ?_⟩
-  · simp_rw [ContinuousLinearMap.gramLeftInverse_def]
-    exact (continuous_fst.clm_comp continuous_snd).measurable.comp
+  refine ⟨fun u => fderiv ℝ (gExt ∘ f) u ∘L (fderiv ℝ f u).gramLeftInverse,
+    (continuous_fst.clm_comp continuous_snd).measurable.comp
       ((measurable_fderiv ℝ (gExt ∘ f)).prodMk
-        ((continuous_fst.clm_comp continuous_snd).measurable.comp (hm_inv.prodMk hm_adj)))
-  · filter_upwards [ae_patch_tangential hEm hgExt_lip hgExt_eq hBm hf_lip hf_anti hsub]
-      with x hx hxB
-    obtain ⟨u, huB, rfl, _, _, _, htan, _, _⟩ := hx hxB
-    exact ⟨u, huB, rfl, htan.tangentialFDeriv_eq⟩
+        (ContinuousLinearMap.measurable_gramLeftInverse.comp (measurable_fderiv ℝ f))), ?_⟩
+  filter_upwards [ae_patch_tangential hEm hgExt_lip hgExt_eq hBm hf_lip hf_anti hsub]
+    with x hx hxB
+  obtain ⟨u, huB, rfl, _, _, _, htan, _, _⟩ := hx hxB
+  exact ⟨u, huB, rfl, htan.tangentialFDeriv_eq⟩
 /-- Measurability of `tangentialJacobian` for `LocallyLipschitzOn`. -/
 theorem aemeasurable_tangentialJacobian [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] :
     AEMeasurable (J) (μHE[k].restrict E) := by
@@ -187,7 +182,7 @@ theorem aemeasurable_tangentialJacobian [InnerProductSpace ℝ W] [FiniteDimensi
   refine ⟨u, huB, rfl, eq_div_of_mul_eq
     (((fderiv ℝ f u).toLinearMap.normDet_ne_zero_tfae.out 5 1).mp hinj) ?_⟩
   simpa only [finrank_euclideanSpace_fin] using
-    hf_w.tangentialJacobian_mul_normDet hinj hf_anti huB hsub hdens hdiff' hgf_w
+    hf_w.tangentialJacobian_mul_normDet hf_anti huB hsub hdens hdiff' hgf_w
 omit hg in
 /-- Almost-everywhere additivity of `tangentialFDeriv` for locally Lipschitz maps on `E`. -/
 theorem tangentialFDeriv_add_ae_eq [NormedSpace ℝ W] [FiniteDimensional ℝ W] {g₁ g₂ : V → W}
@@ -213,35 +208,33 @@ namespace LipschitzOnWith
 variable {K : ℝ≥0} (hg : LipschitzOnWith K g E) (hE : CountablyRectifiable k E)
     (hEm : NullMeasurableSet E μHE[k]) [IsLocallyFiniteMeasure (μHE[k].restrict E)]
 include hg hE hEm
-/-- Tangential Rademacher theorem with sharp norm bound `≤ K` for `LipschitzOnWith`. -/
-theorem ae_hasTangentialFDerivAt_and_norm_le [NormedSpace ℝ W] [FiniteDimensional ℝ W] :
-    ∀ᵐ x ∂μHE[k], x ∈ E → HasTangentialFDerivAt k E g (D x) x ∧ ‖D x‖ ≤ K := by
-  obtain ⟨gExt, hgExt_lip, hgExt_eq⟩ := hg.extend_finite_dimension
-  obtain ⟨B, f, _, _, hBm, _, hbi, _, hsubE, hcover_ae⟩ :=
-    hE.exists_disjoint_measurable_bilipschitz_cover hEm
-  filter_upwards [hcover_ae.symm.subset, ae_all_iff.mpr fun n =>
-    ae_patch_tangential hEm hgExt_lip (hgExt_eq.mono (hsubE n)) (hBm n) (hbi n).1 (hbi n).2
-      (hsubE n)] with x hcov hp hxE
-  obtain ⟨n, hxn⟩ := mem_iUnion.mp (hcov hxE)
-  obtain ⟨u, huB, rfl, hinj, hf_w, hgf_w, htan, hdens, hdiff'⟩ := hp n hxn
-  exact ⟨hasTangentialFDerivAt_tangentialFDeriv ⟨_, htan⟩, by
-    simpa only [finrank_euclideanSpace_fin] using hf_w.norm_tangentialFDeriv_le_of_lipschitzOnWith
-      hinj (hbi n).2 huB (hsubE n) hdens hdiff' hgf_w hg⟩
+/-- Almost-everywhere sharp bound `‖tangentialFDeriv k E g x‖ ≤ K` for `LipschitzOnWith` into any
+real normed space `W` (without requiring `W` to be finite-dimensional). -/
+theorem ae_norm_tangentialFDeriv_le [NormedSpace ℝ W] :
+    ∀ᵐ x ∂μHE[k], x ∈ E → ‖D x‖ ≤ K := by
+  refine hE.ae_of_forall_bilipschitz_patch hEm fun {B f _ _} hBm hsub hf_lip hf_anti => ?_
+  have himg := (hf_lip.lipschitzOnWith (s := B)).ae_euclideanHausdorffMeasure_exists_of_addHaar
+    volume (ae_regular_and_density_on_patch hEm hBm hf_lip hf_anti)
+  rw [finrank_euclideanSpace_fin] at himg
+  filter_upwards [himg] with x hx hxB
+  obtain ⟨u, huB, rfl, hf_diff, -, hdens, -⟩ := hx hxB
+  simpa only [finrank_euclideanSpace_fin] using
+    hf_diff.hasFDerivAt.hasFDerivWithinAt.norm_tangentialFDeriv_le_of_lipschitzOnWith
+      hf_anti huB hsub hdens hg
 /-- Almost-everywhere tangential differentiability for `LipschitzOnWith`. -/
 theorem ae_hasTangentialFDerivAt [NormedSpace ℝ W] [FiniteDimensional ℝ W] : ∀ᵐ x ∂μHE[k], x ∈ E →
     HasTangentialFDerivAt k E g (D x) x := hg.locallyLipschitzOn.ae_hasTangentialFDerivAt hE hEm
-/-- Almost-everywhere sharp bound `‖tangentialFDeriv k E g x‖ ≤ K` for `LipschitzOnWith`. -/
-theorem ae_norm_tangentialFDeriv_le [NormedSpace ℝ W] [FiniteDimensional ℝ W] :
-    ∀ᵐ x ∂μHE[k], x ∈ E → ‖D x‖ ≤ K :=
-  (hg.ae_hasTangentialFDerivAt_and_norm_le hE hEm).mono fun _ hx hxE => (hx hxE).2
 /-- Measurability of `tangentialFDeriv` for `LipschitzOnWith`. -/
 theorem aemeasurable_tangentialFDeriv [NormedSpace ℝ W] [FiniteDimensional ℝ W] :
     AEMeasurable (D) (μHE[k].restrict E) :=
   hg.locallyLipschitzOn.aemeasurable_tangentialFDeriv hE hEm
-/-- Almost-everywhere sharp bound `tangentialJacobian k E g x ≤ K ^ k` for `LipschitzOnWith`. -/
-theorem ae_tangentialJacobian_le [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] : ∀ᵐ x ∂μHE[k],
-    x ∈ E → J x ≤ (K : ℝ) ^ k := (hg.ae_hasTangentialFDerivAt_and_norm_le hE hEm).mono fun _ h hx =>
-  (h hx).1.tangentialJacobian_le_opNorm_pow.trans (pow_le_pow_left₀ (norm_nonneg _) (h hx).2 _)
+/-- Almost-everywhere sharp bound `tangentialJacobian k E g x ≤ K ^ k` for `LipschitzOnWith` into
+any real inner product space `W` (without requiring `W` to be finite-dimensional). -/
+theorem ae_tangentialJacobian_le [InnerProductSpace ℝ W] : ∀ᵐ x ∂μHE[k],
+    x ∈ E → J x ≤ (K : ℝ) ^ k :=
+  (hg.ae_norm_tangentialFDeriv_le hE hEm).mono fun _ h hx =>
+    (tangentialJacobian_le_norm_tangentialFDeriv_pow k E g _).trans
+      (pow_le_pow_left₀ (norm_nonneg _) (h hx) _)
 /-- Measurability of `tangentialJacobian` for `LipschitzOnWith`. -/
 theorem aemeasurable_tangentialJacobian [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] :
     AEMeasurable (J) (μHE[k].restrict E) :=
@@ -254,11 +247,13 @@ include hg hE hEm
 /-- Almost-everywhere tangential differentiability for `K`-Lipschitz maps. -/
 theorem ae_hasTangentialFDerivAt [NormedSpace ℝ W] [FiniteDimensional ℝ W] : ∀ᵐ x ∂μHE[k], x ∈ E →
     HasTangentialFDerivAt k E g (D x) x := hg.lipschitzOnWith.ae_hasTangentialFDerivAt hE hEm
-/-- Almost-everywhere sharp bound `‖tangentialFDeriv k E g x‖ ≤ K` for `K`-Lipschitz maps. -/
-theorem ae_norm_tangentialFDeriv_le [NormedSpace ℝ W] [FiniteDimensional ℝ W] : ∀ᵐ x ∂μHE[k],
+/-- Almost-everywhere sharp bound `‖tangentialFDeriv k E g x‖ ≤ K` for `K`-Lipschitz maps into any
+real normed space `W`. -/
+theorem ae_norm_tangentialFDeriv_le [NormedSpace ℝ W] : ∀ᵐ x ∂μHE[k],
     x ∈ E → ‖D x‖ ≤ K := hg.lipschitzOnWith.ae_norm_tangentialFDeriv_le hE hEm
-/-- Almost-everywhere sharp bound `tangentialJacobian k E g x ≤ K ^ k` for `K`-Lipschitz maps. -/
-theorem ae_tangentialJacobian_le [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] : ∀ᵐ x ∂μHE[k],
+/-- Almost-everywhere sharp bound `tangentialJacobian k E g x ≤ K ^ k` for `K`-Lipschitz maps into
+any real inner product space `W`. -/
+theorem ae_tangentialJacobian_le [InnerProductSpace ℝ W] : ∀ᵐ x ∂μHE[k],
     x ∈ E → J x ≤ (K : ℝ) ^ k := hg.lipschitzOnWith.ae_tangentialJacobian_le hE hEm
 /-- Measurability of `tangentialFDeriv` for `K`-Lipschitz maps. -/
 theorem aemeasurable_tangentialFDeriv [NormedSpace ℝ W] [FiniteDimensional ℝ W] :

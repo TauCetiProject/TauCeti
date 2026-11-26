@@ -60,11 +60,11 @@ private lemma lintegral_patch_tangentialJacobian_mul (w : V → ℝ≥0∞) : (�
     (setLIntegral_congr_fun_ae hBm ?_)
   filter_upwards [ae_regular_and_density_on_patch hEm hBm hf_lip hf_anti, (hgExt_lip.comp
     hf_lip).ae_differentiableAt] with u hreg hgf_diff huB
-  obtain ⟨hf_diff, hinj_df, hdens, hdiff⟩ := hreg huB
+  obtain ⟨hf_diff, -, hdens, hdiff⟩ := hreg huB
   have hmul : tangentialJacobian k E g (f u) * (fderiv ℝ f u).normDet = (fderiv ℝ (gExt ∘ f)
     u).normDet := by
     simpa only [U, finrank_euclideanSpace_fin] using
-      hf_diff.hasFDerivAt.hasFDerivWithinAt.tangentialJacobian_mul_normDet hinj_df hf_anti huB hsub
+      hf_diff.hasFDerivAt.hasFDerivWithinAt.tangentialJacobian_mul_normDet hf_anti huB hsub
         hdens (by rwa [finrank_euclideanSpace_fin])
         (hgf_diff.hasFDerivAt.hasFDerivWithinAt.congr
           (fun _ hv => hgExt_eq (mem_image_of_mem f hv)) (hgExt_eq (mem_image_of_mem f huB)))

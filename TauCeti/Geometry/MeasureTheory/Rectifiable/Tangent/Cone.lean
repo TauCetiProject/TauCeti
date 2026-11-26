@@ -98,7 +98,7 @@ namespace TauCeti
 open Filter
 open scoped Topology
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [MeasurableSpace V]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [MeasurableSpace V]
   [BorelSpace V] {k : ℕ}
 
 /-- The **cone-density condition** of an approximate tangent plane: the part of `S` outside every

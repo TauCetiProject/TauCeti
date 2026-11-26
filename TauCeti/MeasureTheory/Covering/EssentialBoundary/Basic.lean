@@ -65,8 +65,9 @@ interior.
 * `TauCeti.essentialBoundary_union_subset` and `TauCeti.essentialBoundary_inter_subset`.
 * `TauCeti.essentialInterior_preimage_add_right` and its companions: for a translation-invariant
   measure, the three sets commute with translations.
-* `TauCeti.interior_subset_essentialInterior`, `TauCeti.essentialInterior_subset_closure` and
-  `TauCeti.essentialBoundary_subset_frontier`: comparison with the topological notions.
+* `TauCeti.interior_subset_essentialInterior`, `TauCeti.hasDensityAt_one_of_mem_nhds`,
+  `TauCeti.essentialInterior_subset_closure` and `TauCeti.essentialBoundary_subset_frontier`:
+  comparison with the topological notions.
 * `TauCeti.essentialInterior_ae_eq` and `TauCeti.measure_essentialBoundary`: Lebesgue's density
   theorem.
 * `TauCeti.not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball`: a lower
@@ -447,6 +448,12 @@ variable [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
 charges every open set. -/
 theorem interior_subset_essentialInterior : interior s ⊆ essentialInterior μ s := fun x hx =>
   mem_essentialInterior_of_mem_interior (eventually_measure_closedBall_ne_zero_ne_top μ x) hx
+
+/-- A neighborhood of `x` has density one at `x`, for a locally finite measure that charges every
+open set. For arbitrary measures whose small closed balls around `x` have positive finite measure,
+see `TauCeti.mem_essentialInterior_of_mem_interior`. -/
+theorem hasDensityAt_one_of_mem_nhds (hs : s ∈ 𝓝 x) : HasDensityAt μ s x 1 :=
+  mem_essentialInterior.1 (interior_subset_essentialInterior (mem_interior_iff_mem_nhds.2 hs))
 
 /-- The essential exterior of `s` lies in the complement of its interior. -/
 theorem essentialExterior_subset_compl_interior : essentialExterior μ s ⊆ (interior s)ᶜ :=

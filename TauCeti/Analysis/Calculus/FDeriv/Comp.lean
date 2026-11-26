@@ -10,7 +10,9 @@ public import Mathlib.Analysis.Calculus.FDeriv.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Congr
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import Mathlib.Topology.MetricSpace.Antilipschitz
 
+import Mathlib.Analysis.Asymptotics.Arith
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Tactic.Abel
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
@@ -25,7 +27,8 @@ is locally bounded, so near a point the differential of `f ∘ φ` is at most a 
 of `f`, and estimates bounding a function by its differential survive changes of coordinates.
 
 At a fixed point of a map preserving the germ of `f`, the derivative of `f` is unchanged by
-precomposition with the derivative of that map.
+precomposition with the derivative of that map. Along an inverse-Lipschitz parametrization `f`,
+differentiability of `g ∘ f` within `s` pushes forward to differentiability of `g` within `f '' s`.
 
 For precomposition with an affine change of variables `w ↦ c + a • w`, or with the
 multiplication `w ↦ c • w` by a fixed scalar `c` of a division semiring `𝕜'` over which the domain
@@ -42,6 +45,9 @@ scalars `𝕜`; for instance, for `f` on `ℂ`,
   of its derivative.
 * `HasFDerivAt.injective_of_eventuallyEq_id`: a map with a differentiable local left inverse has
   injective derivative.
+* `HasFDerivWithinAt.of_comp_antilipschitzWith`: along an inverse-Lipschitz parametrization `f`,
+  differentiability of `g ∘ f` within `s` pushes forward to differentiability of `g` within
+  `f '' s`.
 * `TauCeti.differentiableAt_iterate`: an iterate is differentiable at a point where the map is
   differentiable along its orbit.
 * `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`: `b` is a critical point of `f ∘ φ` exactly
@@ -87,6 +93,46 @@ theorem _root_.HasFDerivAt.injective_of_eventuallyEq_id {f : E → F} {g : F →
   have hcomp := ((hg.comp x hf).congr_of_eventuallyEq hgf.symm).unique (hasFDerivAt_id x)
   exact Function.LeftInverse.injective fun a => by
     simpa using congrArg (fun L : E →L[𝕜] E => L a) hcomp
+
+section Antilipschitz
+
+open Filter Metric Set
+open scoped NNReal Topology
+
+/-- Along an inverse-Lipschitz parametrization `f`, if `g ∘ f` has derivative `B` within `s` at
+`x ∈ s` and `D : F →L[𝕜] G` satisfies `D (A u) = B u`, then `g` has derivative `D` within `f '' s`
+at `f x`. -/
+theorem _root_.HasFDerivWithinAt.of_comp_antilipschitzWith
+    {f : E → F} {g : F → G} {s : Set E} {x : E} {A : E →L[𝕜] F} {B : E →L[𝕜] G} {D : F →L[𝕜] G}
+    (hf : HasFDerivWithinAt f A s x) (hx : x ∈ s) {K : ℝ≥0}
+    (hi : AntilipschitzWith K (s.domRestrict f)) (hgf : HasFDerivWithinAt (g ∘ f) B s x)
+    (hD : ∀ u, D (A u) = B u) : HasFDerivWithinAt g D (f '' s) (f x) := by
+  have hrem : (fun y => g (f y) - g (f x) - D (f y - f x)) =o[𝓝[s] x] (fun y => y - x) := by
+    have heq : (fun y => g (f y) - g (f x) - D (f y - f x)) =
+        fun y => (g (f y) - g (f x) - B (y - x)) - D (f y - f x - A (y - x)) :=
+      funext fun y => by
+        rw [show D (f y - f x) = B (y - x) + D (f y - f x - A (y - x)) by
+          rw [← hD (y - x), ← map_add, add_sub_cancel]]
+        abel
+    exact heq ▸ hgf.isLittleO.sub ((D.isBigO_comp _ _).trans_isLittleO hf.isLittleO)
+  rw [hasFDerivWithinAt_iff_isLittleO, Asymptotics.isLittleO_iff]
+  intro c hc
+  let C : ℝ := K + 1
+  have hC : 0 < C := by positivity
+  obtain ⟨δ, hδ, hb⟩ := Metric.eventually_nhds_iff.1
+    (eventually_nhdsWithin_iff.1 (hrem.bound (div_pos hc hC)))
+  rw [eventually_nhdsWithin_iff, Metric.eventually_nhds_iff]
+  refine ⟨δ / C, div_pos hδ hC, ?_⟩
+  rintro _ hz ⟨y, hys, rfl⟩
+  have hdy : dist y x ≤ C * dist (f y) (f x) := (hi.le_mul_dist ⟨y, hys⟩ ⟨x, hx⟩).trans
+    (mul_le_mul_of_nonneg_right (by dsimp [C]; linarith) dist_nonneg)
+  have hyδ : dist y x < δ := hdy.trans_lt ((mul_lt_mul_of_pos_left hz hC).trans_eq (by field_simp))
+  calc ‖g (f y) - g (f x) - D (f y - f x)‖
+      ≤ (c / C) * dist y x := by simpa only [dist_eq_norm] using hb hyδ hys
+    _ ≤ (c / C) * (C * dist (f y) (f x)) := mul_le_mul_of_nonneg_left hdy (by positivity)
+    _ = c * ‖f y - f x‖ := by rw [dist_eq_norm]; field_simp
+
+end Antilipschitz
 
 /-- **Iterates are differentiable along differentiable orbits.** If `f` is differentiable at the
 first `n` points `f^[j] x`, `j < n`, of the orbit of `x`, then `f^[n]` is differentiable at `x`.

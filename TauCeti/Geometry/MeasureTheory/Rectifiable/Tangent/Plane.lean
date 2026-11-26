@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Euclidean.Volume.Density
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Approximate
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Uniqueness
 public import Mathlib.Order.LiminfLimsup
+import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
-import TauCeti.Geometry.Euclidean.Volume.Density
+import TauCeti.Analysis.Calculus.TangentCone.Haar
+import TauCeti.MeasureTheory.OuterMeasure.DensityQuotient
 
 /-!
 # Canonical approximate tangent planes and projections
@@ -24,12 +27,20 @@ almost-everywhere existence and uniqueness
 `approximateTangentPlane` (defaulting to `⊥` where none exists) and its orthogonal projection
 `approximateTangentProjection` (defaulting to `0`), which is `μHE[k].restrict E`-a.e. measurable.
 
+Approximate tangent planes place the basepoint in `closure E`
+(`IsApproximateTangentPlane.mem_closure`) and depend on `E` only up to `k`-density-zero symmetric
+differences at `x` (`IsApproximateTangentPlane.congr_of_tendsto_symmDiff_div`,
+`approximateTangentPlane_congr_of_tendsto_symmDiff_div`), subsuming both `μHE[k]`-null and germ
+modifications.
+
 For inverse-Lipschitz parametrizations `f : U → V` differentiable within `s` at a Lebesgue
-density-one point `x₀ ∈ s` (without assuming `f` is Lipschitz on `s`), any subspace with
-cone-density zero contains `range A` (`HasFDerivWithinAt.range_le_of_densityZeroOutsideCones`),
-identifying `approximateTangentPlane` on both general patches and differentiable normal graphs.
-The canonical plane and projection provide the linear domain for tangential derivatives and
-Jacobians in `Rectifiable.TangentialFDeriv`.
+density-one point `x₀ ∈ s` (without assuming `f` is Lipschitz on `s` or separately assuming
+`Injective A`, since `HasFDerivWithinAt.injective_of_tendsto_inter_closedBall_div_zero` deduces
+injectivity automatically), any closed subspace with cone-density zero contains `range A`
+(`HasFDerivWithinAt.range_le_of_densityZeroOutsideCones`), identifying `approximateTangentPlane`
+on both general patches and differentiable normal graphs. The canonical plane and projection
+provide the linear domain for tangential derivatives and Jacobians in
+`Rectifiable.TangentialFDeriv`.
 
 ## References
 
@@ -48,52 +59,9 @@ local notation "cb" => Metric.closedBall
 namespace HasFDerivWithinAt
 open TauCeti
 variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace U]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace U]
     [BorelSpace U] [MeasurableSpace V] [BorelSpace V] {f : U → V} {s : Set U} {A : U →L[ℝ] V}
     {x₀ : U} {L : ℝ≥0} {E : Set V} {Q : Submodule ℝ V}
-
-omit [FiniteDimensional ℝ U] [MeasurableSpace U] [BorelSpace U]
-  [MeasurableSpace V] [BorelSpace V] in
-private lemma image_shifted_closedBall_subset_outside_cone {u : U} (hu : ‖u‖ = 1)
-    {d : ℝ} (hd_def : d = infDist (A u) (Q : Set V)) (hd0 : 0 < d) (hsub : f '' s ⊆ E)
-    {ρ : ℝ} (hρ0 : 0 < ρ)
-    (hδb : ∀ y, dist y x₀ ≤ ρ → y ∈ s → ‖f y - f x₀ - A (y - x₀)‖ ≤ min 1 (d / 16) * ‖y - x₀‖) :
-    f '' (s ∩ cb (x₀ + (ρ / 2) • u) ((min (1 / 2) (d / (2 * (‖A‖ + 1))) / 4) * ρ)) ⊆
-      {z ∈ E ∩ cb (f x₀) ((‖A‖ + 1) * ρ) |
-        (d / (16 * (‖A‖ + 1))) * dist z (f x₀) < infDist (z - f x₀) (Q : Set V)} := by
-  set η : ℝ := min (1 / 2) (d / (2 * (‖A‖ + 1)))
-  have hηA : η * ‖A‖ ≤ d / 2 := (mul_le_mul (min_le_right _ _) (le_add_of_nonneg_right zero_le_one)
-    (norm_nonneg A) (by positivity)).trans_eq (by field_simp)
-  rintro _ ⟨x, ⟨hxs, hxD⟩, rfl⟩
-  have hy : ‖x - (x₀ + (ρ / 2) • u)‖ ≤ (η / 4) * ρ := by simpa [dist_eq_norm] using hxD
-  have hdist_x : ‖x - x₀‖ ≤ ρ := by
-    have h1 := (by abel : x - (x₀ + (ρ / 2) • u) + (ρ / 2) • u = x - x₀) ▸
-      norm_add_le (x - (x₀ + (ρ / 2) • u)) ((ρ / 2) • u)
-    rw [norm_smul, Real.norm_of_nonneg (by positivity), hu] at h1
-    nlinarith [min_le_left (1 / 2) (d / (2 * (‖A‖ + 1)))]
-  have herr := hδb x (by simpa [dist_eq_norm] using hdist_x) hxs
-  have herr1 : ‖f x - f x₀ - A (x - x₀)‖ ≤ ‖x - x₀‖ := by
-    simpa using herr.trans (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg _))
-  have herr2 : ‖f x - f x₀ - A (x - x₀)‖ ≤ (d / 16) * ρ :=
-    herr.trans ((mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg _)).trans (by gcongr))
-  have hfx_dist : dist (f x) (f x₀) ≤ (‖A‖ + 1) * ρ :=
-    (A.dist_le_add_one_mul_of_norm_sub_le herr1).trans (by rw [dist_eq_norm]; gcongr)
-  refine ⟨⟨hsub (mem_image_of_mem f hxs), mem_closedBall.mpr hfx_dist⟩, ?_⟩
-  have hAy : ‖A (x - (x₀ + (ρ / 2) • u))‖ ≤ (d / 8) * ρ :=
-    (A.le_opNorm _).trans <| (mul_le_mul_of_nonneg_left hy (norm_nonneg A)).trans (by nlinarith)
-  have hdiff : ‖(f x - f x₀) - (ρ / 2) • A u‖ ≤ (3 / 16) * d * ρ :=
-    (by simp [map_sub, map_add, map_smul]; abel : (f x - f x₀) - (ρ / 2) • A u =
-      (f x - f x₀ - A (x - x₀)) + A (x - (x₀ + (ρ / 2) • u))) ▸
-      (norm_add_le _ _).trans (by linarith)
-  have hsmul : infDist ((ρ / 2) • A u) (Q : Set V) = (ρ / 2) * d := by
-    rw [hd_def, ← Q.dist_starProjection_eq_infDist, ← Q.dist_starProjection_eq_infDist,
-      dist_eq_norm, dist_eq_norm, Q.starProjection.map_smul (ρ / 2), ← smul_sub, norm_smul,
-      Real.norm_of_nonneg (by positivity)]
-  have hlip := (lipschitz_infDist_pt (Q : Set V)).dist_le_mul (f x - f x₀) ((ρ / 2) • A u)
-  rw [NNReal.coe_one, one_mul, Real.dist_eq, dist_eq_norm, hsmul] at hlip
-  have hcone_lhs : (d / (16 * (‖A‖ + 1))) * dist (f x) (f x₀) ≤ (d / 16) * ρ :=
-    (mul_le_mul_of_nonneg_left hfx_dist (by positivity)).trans_eq (by field_simp)
-  linarith [neg_le_of_abs_le hlip, mul_pos hd0 hρ0]
 
 /-- Patchwise lower bound `range A ≤ Q` on any cone-density-zero subspace `Q ≤ V`, without
 requiring `f` to be Lipschitz on `s`. -/
@@ -101,26 +69,9 @@ theorem range_le_of_densityZeroOutsideCones (hf : HasFDerivWithinAt f A s x₀)
     (hi : AntilipschitzWith L (s.domRestrict f)) (hsub : f '' s ⊆ E)
     (hdens : Tendsto (fun r => volume (s ∩ cb x₀ r) / volume (cb (0 : U) r)) 𝓝₊ (𝓝 1))
     (hQ : DensityZeroOutsideCones (finrank ℝ U) E (f x₀) Q) :
-    LinearMap.range A.toLinearMap ≤ Q := by
-  by_contra hnot; obtain ⟨_, ⟨v, rfl⟩, hvQ⟩ := IsConcreteLE.not_le_iff_exists.mp hnot
-  have hv0 : v ≠ 0 := fun h => hvQ (by simp [h])
-  let u : U := ‖v‖⁻¹ • v; have hu : ‖u‖ = 1 := norm_smul_inv_norm hv0
-  have hAu : A u ∉ Q := fun h => hvQ <| by
-    simpa [u, smul_smul, norm_ne_zero_iff.mpr hv0] using Q.smul_mem ‖v‖ h
-  set d := infDist (A u) (Q : Set V) with hd_def
-  have hd0 : 0 < d := (Q.isClosed_of_finiteDimensional.notMem_iff_infDist_pos ⟨0, Q.zero_mem⟩).mp
-    hAu
-  set η : ℝ := min (1 / 2) (d / (2 * (‖A‖ + 1)))
-  have hη0 : 0 < η := lt_min (by norm_num) (by positivity)
-  let C : ℝ≥0 := ⟨‖A‖ + 1, by positivity⟩; have hC0 : 0 < C := Subtype.mk_lt_mk.mpr (by positivity)
-  obtain ⟨δ, hδ, hδb⟩ := hf.exists_ball_remainder_le (by positivity : (0 : ℝ) < min 1 (d / 16))
-  refine not_tendsto_volume_inter_shifted_closedBall_div_zero hdens hu hη0 (min_le_left _ _) <|
-    tendsto_volume_div_zero_of_antilipschitzWith hi hC0
-      (densityZeroOutsideCones_iff.mp hQ (d / (16 * C))
-        (div_pos hd0 (mul_pos (by norm_num) (NNReal.coe_pos.2 hC0)))) ?_
-  filter_upwards [Ioo_mem_nhdsGT hδ] with ρ ⟨hρ0, hρδ⟩
-  exact image_shifted_closedBall_subset_outside_cone hu hd_def hd0 hsub hρ0
-    fun y hy => hδb y (mem_ball.mpr (hy.trans_lt hρδ))
+    LinearMap.range A.toLinearMap ≤ Q :=
+  hf.range_le_of_tendsto_euclideanHausdorffMeasure_outside_cone_div hi hdens hsub
+    Q.isClosed_of_finiteDimensional (densityZeroOutsideCones_iff.mp hQ)
 
 /-- Patchwise uniqueness `Q = range A` when `A` is injective and `finrank ℝ Q ≤ finrank ℝ U`. -/
 theorem eq_range_of_densityZeroOutsideCones (hf : HasFDerivWithinAt f A s x₀) (hinj : Injective A)
@@ -130,24 +81,6 @@ theorem eq_range_of_densityZeroOutsideCones (hf : HasFDerivWithinAt f A s x₀) 
     Q = LinearMap.range A.toLinearMap :=
   (Submodule.eq_of_le_of_finrank_le (hf.range_le_of_densityZeroOutsideCones hi hsub hdens hQ)
     (hQdim.trans_eq (LinearMap.finrank_range_of_inj hinj).symm)).symm
-
-omit [FiniteDimensional ℝ V] in
-/-- Positive upper `(dim U)`-density of `E` at `f x₀` on an inverse-Lipschitz patch. -/
-theorem limsup_euclideanHausdorffMeasure_inter_closedBall_div_pos (hf : HasFDerivWithinAt f A s x₀)
-    (hi : AntilipschitzWith L (s.domRestrict f)) (hsub : f '' s ⊆ E)
-    (hdens : Tendsto (fun r => volume (s ∩ cb x₀ r) / volume (cb (0 : U) r)) 𝓝₊ (𝓝 1)) :
-    0 < limsup (fun r => μHE[finrank ℝ U] (E ∩ cb (f x₀) r) / ω[finrank ℝ U](r)) 𝓝₊ := by
-  by_contra! hle
-  let C : ℝ≥0 := ⟨‖A‖ + 1, by positivity⟩
-  obtain ⟨δ, hδ, hδb⟩ := hf.exists_ball_dist_le_add_one_mul
-  refine one_ne_zero <| tendsto_nhds_unique hdens <| tendsto_volume_div_zero_of_antilipschitzWith hi
-    (Subtype.mk_lt_mk.mpr (by positivity) : 0 < C)
-    (tendsto_of_le_liminf_of_limsup_le zero_le (nonpos_iff_eq_zero.mp hle).le) ?_
-  filter_upwards [Ioo_mem_nhdsGT hδ] with ρ ⟨_, hρδ⟩
-  rintro _ ⟨x, ⟨hxs, hxB⟩, rfl⟩
-  exact ⟨hsub (mem_image_of_mem f hxs), mem_closedBall.mpr <|
-    (hδb x (mem_ball.mpr ((mem_closedBall.mp hxB).trans_lt hρδ)) hxs).trans
-      (mul_le_mul_of_nonneg_left (mem_closedBall.mp hxB) (by positivity))⟩
 
 omit [FiniteDimensional ℝ U] [FiniteDimensional ℝ V] [MeasurableSpace U] [BorelSpace U] in
 /-- Zero `(dim U)`-density outside every cone around `range A` on an inverse-Lipschitz patch. -/
@@ -181,6 +114,12 @@ structure IsApproximateTangentPlane (k : ℕ) (E : Set V) (x : V) (P : Submodule
   /-- Outside every cone around `P`, `E` has `k`-dimensional density zero at `x`. -/
   densityZeroOutsideCones : DensityZeroOutsideCones k E x P
 
+omit [FiniteDimensional ℝ V] in
+/-- The empty set has no approximate tangent plane at any point. -/
+@[simp] theorem not_isApproximateTangentPlane_empty (k : ℕ) (x : V) (P : Submodule ℝ V) :
+    ¬ IsApproximateTangentPlane k (∅ : Set V) x P := fun h => by
+  have h0 := h.limsup_pos; simp at h0
+
 namespace IsApproximateTangentPlane
 
 /-- In dimension zero, any approximate tangent plane is `⊥`. -/
@@ -188,38 +127,52 @@ theorem eq_bot {x : V} {P : Submodule ℝ V} (h : IsApproximateTangentPlane 0 E 
   have := finrank_zero_iff.mp h.finrank_eq; exact Submodule.eq_bot_of_subsingleton
 
 omit [FiniteDimensional ℝ V] in
-private lemma of_eventually_eq_measure {x : V} {P : Submodule ℝ V}
-    (hb : ∀ᶠ r in 𝓝[>] (0 : ℝ), μHE[k] (E₁ ∩ cb x r) = μHE[k] (E₂ ∩ cb x r))
-    (hc : ∀ ε, ∀ᶠ r in 𝓝[>] (0 : ℝ),
-      μHE[k] {z ∈ E₁ ∩ cb x r | ε * dist z x < infDist (z - x) (P : Set V)} =
-        μHE[k] {z ∈ E₂ ∩ cb x r | ε * dist z x < infDist (z - x) (P : Set V)})
-    (h : IsApproximateTangentPlane k E₁ x P) :
-    IsApproximateTangentPlane k E₂ x P :=
-  ⟨h.finrank_eq, (limsup_congr (hb.mono fun _ hr => congrArg (· / _) hr)).symm ▸ h.limsup_pos,
-    densityZeroOutsideCones_iff.mpr fun ε hε =>
-      (densityZeroOutsideCones_iff.mp h.densityZeroOutsideCones ε hε).congr'
-        ((hc ε).mono fun _ hr => by rw [hr])⟩
+/-- Any point admitting an approximate tangent plane to `E` lies in `closure E`. -/
+theorem mem_closure {x : V} {P : Submodule ℝ V} (h : IsApproximateTangentPlane k E x P) :
+    x ∈ closure E := by
+  by_contra hx
+  have h0 : ∀ᶠ z in 𝓝 x, z ∉ E :=
+    Filter.mem_of_superset (isClosed_closure.isOpen_compl.mem_nhds hx) fun _ hz hE =>
+      hz (subset_closure hE)
+  exact h.limsup_pos.ne' (tendsto_measure_inter_div_of_eventually_notMem h0
+    ((tendsto_closedBall_smallSets x).mono_left nhdsWithin_le_nhds) _).limsup_eq
+
+omit [FiniteDimensional ℝ V] in
+/-- Approximate tangency is preserved under `k`-density-zero set differences at `x`. -/
+theorem of_tendsto_diff {x : V} {P : Submodule ℝ V} (h : IsApproximateTangentPlane k E₁ x P)
+    (h12 : Tendsto (fun r => μHE[k] ((E₁ \ E₂) ∩ cb x r) / ω[k](r)) 𝓝₊ (𝓝 0))
+    (h21 : Tendsto (fun r => μHE[k] ((E₂ \ E₁) ∩ cb x r) / ω[k](r)) 𝓝₊ (𝓝 0)) :
+    IsApproximateTangentPlane k E₂ x P where
+  finrank_eq := h.finrank_eq
+  limsup_pos := h.limsup_pos.trans_le <| (limsup_measure_inter_div_le_of_tendsto_diff h12).trans
+    (limsup_le_limsup (Eventually.of_forall fun _ => by gcongr; exact inter_subset_right))
+  densityZeroOutsideCones := densityZeroOutsideCones_iff.mpr fun ε hε =>
+    tendsto_measure_sep_inter_div_of_sdiff
+      (densityZeroOutsideCones_iff.mp h.densityZeroOutsideCones ε hε) h21
+
+omit [FiniteDimensional ℝ V] in
+/-- Approximate tangency depends on `E` only up to `k`-density-zero symmetric differences at `x`. -/
+theorem congr_of_tendsto_symmDiff_div {x : V} {P : Submodule ℝ V}
+    (hsym : Tendsto (fun r => μHE[k] ((E₁ ∆ E₂) ∩ cb x r) / ω[k](r)) 𝓝₊ (𝓝 0)) :
+    IsApproximateTangentPlane k E₁ x P ↔ IsApproximateTangentPlane k E₂ x P :=
+  let ⟨h12, h21⟩ := tendsto_measure_symmDiff_inter_div_iff.mp hsym
+  ⟨fun h => h.of_tendsto_diff h12 h21, fun h => h.of_tendsto_diff h21 h12⟩
 
 omit [FiniteDimensional ℝ V] in
 /-- Modifying `E` by a `μHE[k]`-null set preserves approximate tangent planes at `x`. -/
 theorem congr_ae (h : E₁ =ᵐ[μHE[k]] E₂) {x : V} {P : Submodule ℝ V} :
     IsApproximateTangentPlane k E₁ x P ↔ IsApproximateTangentPlane k E₂ x P :=
-  have go {A B : Set V} (hab : A =ᵐ[μHE[k]] B) := of_eventually_eq_measure (x := x) (P := P)
-    (.of_forall fun _ => measure_congr (hab.inter .rfl)) fun _ => .of_forall fun _ =>
-      measure_congr (hab.mono fun _ hz => and_congr_left' (and_congr_left' hz))
-  ⟨go h, go h.symm⟩
+  congr_of_tendsto_symmDiff_div
+    (tendsto_measure_inter_div_of_measure_eq_zero Subset.rfl
+      (measure_symmDiff_eq_zero_iff.2 h) _ _ _)
 
 omit [FiniteDimensional ℝ V] in
 /-- Approximate tangent planes depend only on the germ of `E` at `x`. -/
 theorem congr_nhds {x : V} (h : E₁ =ᶠ[𝓝 x] E₂) {P : Submodule ℝ V} :
-    IsApproximateTangentPlane k E₁ x P ↔ IsApproximateTangentPlane k E₂ x P := by
-  obtain ⟨δ, hδ, hδeq⟩ := Metric.eventually_nhds_iff.mp h
-  have hi : ∀ᶠ r in 𝓝[>] (0 : ℝ), E₁ ∩ cb x r = E₂ ∩ cb x r :=
-    Filter.mem_of_superset (Ioo_mem_nhdsGT hδ) fun _ ⟨_, hr⟩ => Set.ext fun _ =>
-      and_congr_left fun hzr => by simpa using hδeq ((mem_closedBall.mp hzr).trans_lt hr)
-  exact ⟨of_eventually_eq_measure (hi.mono fun _ hr => by rw [hr]) (fun _ => hi.mono fun _ hr => by
-      simp only [hr]), of_eventually_eq_measure (hi.mono fun _ hr => by rw [hr]) fun _ =>
-    hi.mono fun _ hr => by simp only [hr]⟩
+    IsApproximateTangentPlane k E₁ x P ↔ IsApproximateTangentPlane k E₂ x P :=
+  congr_of_tendsto_symmDiff_div
+    (tendsto_measure_symmDiff_inter_div_of_eventuallyEq h
+      ((tendsto_closedBall_smallSets x).mono_left nhdsWithin_le_nhds) _)
 
 end IsApproximateTangentPlane
 
@@ -270,6 +223,15 @@ omit [FiniteDimensional ℝ V] in
     (h : ¬ ∃ P : Submodule ℝ V, IsApproximateTangentPlane k E x P) :
     approximateTangentProjection k E x = 0 := by simp [approximateTangentProjection, h]
 
+omit [FiniteDimensional ℝ V] in
+/-- On the empty set, `approximateTangentPlane` takes the fallback value `⊥`. -/
+theorem approximateTangentPlane_empty (k : ℕ) (x : V) :
+    approximateTangentPlane k (∅ : Set V) x = ⊥ := by simp
+
+/-- On the empty set, `approximateTangentProjection` vanishes. -/
+theorem approximateTangentProjection_empty (k : ℕ) (x : V) :
+    approximateTangentProjection k (∅ : Set V) x = 0 := by simp
+
 /-- In dimension zero, `approximateTangentPlane 0 E x = ⊥`. -/
 @[simp] theorem approximateTangentPlane_zero (E : Set V) (x : V) :
     approximateTangentPlane 0 E x = ⊥ := by
@@ -286,6 +248,21 @@ private lemma approximateTangentPlane_eq_of_iff {x : V}
     approximateTangentPlane k E₁ x = approximateTangentPlane k E₂ x := by
   unfold approximateTangentPlane
   rw [funext fun P => propext (hiff P)]
+
+omit [FiniteDimensional ℝ V] in
+/-- Symmetric-difference `k`-density-zero invariance of `approximateTangentPlane`. -/
+theorem approximateTangentPlane_congr_of_tendsto_symmDiff_div {x : V}
+    (hsym : Tendsto (fun r => μHE[k] ((E₁ ∆ E₂) ∩ cb x r) / ω[k](r)) 𝓝₊ (𝓝 0)) :
+    approximateTangentPlane k E₁ x = approximateTangentPlane k E₂ x :=
+  approximateTangentPlane_eq_of_iff fun _ =>
+    IsApproximateTangentPlane.congr_of_tendsto_symmDiff_div hsym
+
+/-- Symmetric-difference `k`-density-zero invariance of `approximateTangentProjection`. -/
+theorem approximateTangentProjection_congr_of_tendsto_symmDiff_div {x : V}
+    (hsym : Tendsto (fun r => μHE[k] ((E₁ ∆ E₂) ∩ cb x r) / ω[k](r)) 𝓝₊ (𝓝 0)) :
+    approximateTangentProjection k E₁ x = approximateTangentProjection k E₂ x := by
+  simp only [approximateTangentProjection,
+    approximateTangentPlane_congr_of_tendsto_symmDiff_div hsym]
 
 omit [FiniteDimensional ℝ V] in
 /-- Null-set invariance of `approximateTangentPlane`. -/
@@ -349,9 +326,8 @@ variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteD
     [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace U]
     [BorelSpace U] [MeasurableSpace V] [BorelSpace V] {f : U → V} {s : Set U} {A : U →L[ℝ] V}
     {x₀ : U} {L : ℝ≥0} {E : Set V} {Q : Submodule ℝ V}
-    (hf : HasFDerivWithinAt f A s x₀) (hinj : Injective A)
-    (hi : AntilipschitzWith L (s.domRestrict f)) (hx₀ : x₀ ∈ s)
-include hf hinj hi hx₀
+    (hf : HasFDerivWithinAt f A s x₀) (hi : AntilipschitzWith L (s.domRestrict f)) (hx₀ : x₀ ∈ s)
+include hf hi hx₀
 
 section WithSub
 variable (hsub : f '' s ⊆ E)
@@ -360,10 +336,12 @@ variable (hsub : f '' s ⊆ E)
     ω[finrank ℝ U](r)) 𝓝₊ (𝓝 0))
 include hsub hdens hdiff
 
-/-- Characterization `IsApproximateTangentPlane (dim U) E (f x₀) Q ↔ Q = range A` on a patch. -/
+/-- Characterization `IsApproximateTangentPlane (dim U) E (f x₀) Q ↔ Q = range A` on a patch,
+without separately assuming `Injective A`. -/
 theorem isApproximateTangentPlane_iff :
-    IsApproximateTangentPlane (finrank ℝ U) E (f x₀) Q ↔ Q = LinearMap.range A.toLinearMap :=
-  ⟨fun hQ => hf.eq_range_of_densityZeroOutsideCones hinj hi hsub hdens hQ.finrank_eq.le
+    IsApproximateTangentPlane (finrank ℝ U) E (f x₀) Q ↔ Q = LinearMap.range A.toLinearMap := by
+  have hinj : Injective A := hf.injective_of_tendsto_inter_closedBall_div_zero volume hx₀ hi hdens
+  exact ⟨fun hQ => hf.eq_range_of_densityZeroOutsideCones hinj hi hsub hdens hQ.finrank_eq.le
       hQ.densityZeroOutsideCones,
     fun h => h ▸ ⟨LinearMap.finrank_range_of_inj hinj,
       hf.limsup_euclideanHausdorffMeasure_inter_closedBall_div_pos hi hsub hdens,
@@ -372,7 +350,7 @@ theorem isApproximateTangentPlane_iff :
 /-- Formula `approximateTangentPlane (dim U) E (f x₀) = range A` on an inverse-Lipschitz patch. -/
 theorem approximateTangentPlane_eq_range :
     approximateTangentPlane (finrank ℝ U) E (f x₀) = LinearMap.range A.toLinearMap := by
-  have hiff := fun Q => hf.isApproximateTangentPlane_iff hinj hi hx₀ hsub hdens hdiff (Q := Q)
+  have hiff := fun Q => hf.isApproximateTangentPlane_iff hi hx₀ hsub hdens hdiff (Q := Q)
   exact ((hiff _).mpr rfl).approximateTangentPlane_eq fun Q hQ => (hiff Q).mp hQ
 
 end WithSub
@@ -385,12 +363,12 @@ include hdens
 theorem isApproximateTangentPlane_image_iff :
     IsApproximateTangentPlane (finrank ℝ U) (f '' s) (f x₀) Q ↔
       Q = LinearMap.range A.toLinearMap :=
-  hf.isApproximateTangentPlane_iff hinj hi hx₀ Subset.rfl hdens (by simp)
+  hf.isApproximateTangentPlane_iff hi hx₀ Subset.rfl hdens (by simp)
 
 /-- Formula `approximateTangentPlane (dim U) (f '' s) (f x₀) = range A`. -/
 theorem approximateTangentPlane_image_eq_range :
     approximateTangentPlane (finrank ℝ U) (f '' s) (f x₀) = LinearMap.range A.toLinearMap :=
-  hf.approximateTangentPlane_eq_range hinj hi hx₀ Subset.rfl hdens (by simp)
+  hf.approximateTangentPlane_eq_range hi hx₀ Subset.rfl hdens (by simp)
 
 end ImageOnly
 end HasFDerivWithinAt
