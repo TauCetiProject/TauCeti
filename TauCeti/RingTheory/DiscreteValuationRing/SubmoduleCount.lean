@@ -22,9 +22,10 @@ import TauCeti.RingTheory.Length
 Let `O` be a discrete valuation ring whose residue field has `q` elements, and `M` a free
 `O`-module of rank `j + 1`. The number of submodules of `M` of colength `e`, that is of index
 `q ^ e`, is the Gaussian binomial coefficient `[e + j, j]_q`
-(`IsDiscreteValuationRing.card_submodule_length_quotient_eq_gaussianBinomial`). In the notation
-of a rank `j ≥ 1` this is `[e + j - 1, j - 1]_q`. It is at most `q ^ (e (j + 1))` and at most
-`(e + 1) ^ j q ^ (e j)`; in rank `j` the second bound reads `(e + 1) ^ (j - 1) q ^ (e (j - 1))`.
+(`TauCeti.IsDiscreteValuationRing.card_submodule_length_quotient_eq_gaussianBinomial`).
+In the notation of a rank `j ≥ 1` this is `[e + j - 1, j - 1]_q`. It is at most
+`q ^ (e (j + 1))` and at most `(e + 1) ^ j q ^ (e j)`; in rank `j` the second bound reads
+`(e + 1) ^ (j - 1) q ^ (e (j - 1))`.
 
 The count is by induction on the rank. In `O × N`, a submodule `L` of index `q ^ e` has a
 projection `ϖ^c O` to `O`, of index `q ^ c`, and an intersection `K` with `N`, of index
@@ -36,15 +37,15 @@ of submodules of index `q ^ e` in `O^j`, this gives
 
 ## Main results
 
-* `IsDiscreteValuationRing.cardQuot_eq_pow_iff`: the ideals of index `q ^ c` are `ϖ^c O`.
-* `IsDiscreteValuationRing.card_submodule_prod_cardQuot_eq_sum`: the recursion
+* `TauCeti.IsDiscreteValuationRing.cardQuot_eq_pow_iff`: the ideals of index `q ^ c` are `ϖ^c O`.
+* `TauCeti.IsDiscreteValuationRing.card_submodule_prod_cardQuot_eq_sum`: the recursion
   `s_{O × N}(e) = ∑_{k ≤ e} q^k s_N(k)`.
-* `IsDiscreteValuationRing.card_submodule_cardQuot_eq_gaussianBinomial`,
-  `IsDiscreteValuationRing.card_submodule_length_quotient_eq_gaussianBinomial`: the number of
-  submodules of index `q ^ e`, equivalently of colength `e`, of a free module of rank `j + 1` is
-  `[e + j, j]_q`.
-* `IsDiscreteValuationRing.card_submodule_length_quotient_le_pow`,
-  `IsDiscreteValuationRing.card_submodule_length_quotient_le_succ_pow_mul_pow`: the bounds
+* `TauCeti.IsDiscreteValuationRing.card_submodule_cardQuot_eq_gaussianBinomial`,
+  `TauCeti.IsDiscreteValuationRing.card_submodule_length_quotient_eq_gaussianBinomial`: the
+  number of submodules of index `q ^ e`, equivalently of colength `e`, of a free module of
+  rank `j + 1` is `[e + j, j]_q`.
+* `TauCeti.IsDiscreteValuationRing.card_submodule_length_quotient_le_pow`,
+  `TauCeti.IsDiscreteValuationRing.card_submodule_length_quotient_le_succ_pow_mul_pow`: the bounds
   `q ^ (e (j + 1))` and `(e + 1) ^ j q ^ (e j)`.
 
 ## Attribution
@@ -66,7 +67,7 @@ public section
 
 open IsLocalRing Module Submodule Finset TauCeti
 
-namespace IsDiscreteValuationRing
+namespace TauCeti.IsDiscreteValuationRing
 
 variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O] {ϖ : O}
 
@@ -81,7 +82,8 @@ theorem cardQuot_span_pow (hϖ : Irreducible ϖ) (c : ℕ) :
 some `c`. -/
 theorem exists_eq_span_pow_of_cardQuot_ne_zero (hϖ : Irreducible ϖ) {I : Ideal O}
     (hI : I.cardQuot ≠ 0) : ∃ c : ℕ, I = Ideal.span {ϖ ^ c} :=
-  ideal_eq_span_pow_irreducible (fun h ↦ hI (by rw [h, cardQuot_bot])) hϖ
+  _root_.IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
+    (fun h ↦ hI (by rw [h, cardQuot_bot])) hϖ
 
 variable [Finite (ResidueField O)]
 
@@ -179,7 +181,7 @@ variable (O N) in
 theorem finite_submodule_prod_cardQuot_eq
     (hN : ∀ k : ℕ, Finite {K : Submodule O N // K.cardQuot = Nat.card (ResidueField O) ^ k})
     (e : ℕ) : Finite {L : Submodule O (O × N) // L.cardQuot = Nat.card (ResidueField O) ^ e} := by
-  obtain ⟨ϖ, hϖ⟩ := exists_irreducible O
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible O
   have (b : Σ k : Fin (e + 1),
       {K : Submodule O N // K.cardQuot = Nat.card (ResidueField O) ^ (k : ℕ)}) :
       Finite (N ⧸ b.snd.val) :=
@@ -196,7 +198,7 @@ theorem card_submodule_prod_cardQuot_eq_sum
     Nat.card {L : Submodule O (O × N) // L.cardQuot = Nat.card (ResidueField O) ^ e} =
       ∑ k ∈ range (e + 1), Nat.card (ResidueField O) ^ k *
         Nat.card {K : Submodule O N // K.cardQuot = Nat.card (ResidueField O) ^ k} := by
-  obtain ⟨ϖ, hϖ⟩ := exists_irreducible O
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible O
   have (k : ℕ) :=
     Fintype.ofFinite {K : Submodule O N // K.cardQuot = Nat.card (ResidueField O) ^ k}
   have (b : Σ k : Fin (e + 1),
@@ -289,4 +291,4 @@ theorem card_submodule_length_quotient_le_succ_pow_mul_pow (hM : finrank O M = j
 
 end Free
 
-end IsDiscreteValuationRing
+end TauCeti.IsDiscreteValuationRing
