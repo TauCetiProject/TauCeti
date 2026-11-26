@@ -43,7 +43,10 @@ that Rellich--Kondrachov for `W^{1,p}_0(Ω)` consumes: extending by zero makes a
 functions the translation increments are controlled in the same way by the `Lᵖ` norm of the
 derivative (`ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`), so `C¹` functions vanishing
 off a fixed bounded set with uniformly bounded values and derivatives in `Lᵖ` form a totally
-bounded family (`TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`).
+bounded family (`TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`). In particular, if a
+cutoff `χ` vanishing off a bounded set has `‖χ u‖_p` and `‖D(χ u)‖_p` controlled by a gauge `J u`
+for every `C¹` function `u`, the cut-offs of the `u` with `J u ≤ 1` are totally bounded
+(`TauCeti.totallyBounded_setOf_ae_eq_smul`); this is the interior step of Rellich's theorem.
 
 ## The proof
 
@@ -427,6 +430,29 @@ theorem totallyBounded_of_contDiff_of_eLpNorm_fderiv_le [NormedSpace ℝ E] (hp'
                 gcongr; linarith
             _ = r := div_mul_cancel₀ _ (by positivity)
       _ ≤ ε := hrε.le
+
+/-- **The Fréchet--Kolmogorov criterion for cut-off `C¹` functions.** Let `χ` vanish off a bounded
+set `s`, and let `J` be a gauge on functions such that, for every `C¹` function `u`, the product
+`χ u` is `C¹` with `Lᵖ` norm at most `J u` and derivative of `Lᵖ` norm at most `A J u`. Then the
+cut-offs `χ u` of the `C¹` functions `u` with `J u ≤ 1` form a totally bounded family. This is the
+interior step of Rellich's theorem, with `J u` the `W^{1,p}` norm of `u` on a domain. -/
+theorem totallyBounded_setOf_ae_eq_smul [NormedSpace ℝ E] (hp' : p ≠ ∞) {s : Set E}
+    (hs : Bornology.IsBounded s) {χ : E → ℝ} (hχs : ∀ x, χ x ≠ 0 → x ∈ s)
+    {J : (E → F) → ℝ≥0∞} {A : ℝ≥0∞} (hA : A ≠ ∞)
+    (hest : ∀ u : E → F, ContDiff ℝ 1 u → ContDiff ℝ 1 (fun x ↦ χ x • u x) ∧
+      eLpNorm (fun x ↦ χ x • u x) p mu ≤ J u ∧
+      eLpNorm (fderiv ℝ fun x ↦ χ x • u x) p mu ≤ A * J u) :
+    TotallyBounded {f : Lp F p mu |
+      ∃ u : E → F, ContDiff ℝ 1 u ∧ J u ≤ 1 ∧ f =ᵐ[mu] fun x ↦ χ x • u x} := by
+  refine totallyBounded_of_contDiff_of_eLpNorm_fderiv_le hp' hs (M := 1 ⊔ A) (by finiteness) ?_
+  rintro f ⟨u, hu, hu1, hf⟩
+  obtain ⟨h₁, h₂, h₃⟩ := hest u hu
+  refine ⟨fun x ↦ χ x • u x, h₁, fun x hx ↦ ?_, le_sup_of_le_left (h₂.trans hu1),
+    le_sup_of_le_right (h₃.trans ?_), hf⟩
+  · by_contra h
+    exact hx (hχs x (left_ne_zero_of_smul h))
+  · calc A * J u ≤ A * 1 := by gcongr
+      _ = A := mul_one A
 
 end FrechetKolmogorov
 

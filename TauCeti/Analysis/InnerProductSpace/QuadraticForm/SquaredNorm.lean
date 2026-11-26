@@ -25,6 +25,7 @@ variable (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 def negNormSqForm : QuadraticForm ℝ V :=
   -LinearMap.BilinMap.toQuadraticMap (innerₗ V)
 
+/-- Evaluating the negative squared-norm form gives minus the squared norm. -/
 @[simp]
 theorem negNormSqForm_apply (v : V) : negNormSqForm V v = -‖v‖ ^ 2 := by
   simp [negNormSqForm]

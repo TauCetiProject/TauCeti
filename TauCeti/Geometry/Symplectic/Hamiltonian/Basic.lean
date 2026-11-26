@@ -272,6 +272,14 @@ theorem hamiltonianVectorField_add_const (ω : SymplecticForm V) (H : V → ℝ)
   funext x
   rw [hamiltonianVectorField_def, hamiltonianVectorField_def, fderiv_add_const]
 
+/-- Translating a Hamiltonian translates its Hamiltonian vector field:
+`X_{H(· + c)}(x) = X_H(x + c)`. No differentiability is needed. -/
+@[simp]
+theorem hamiltonianVectorField_comp_add_right (ω : SymplecticForm V) (H : V → ℝ) (c : V) :
+    ω.hamiltonianVectorField (fun x ↦ H (x + c)) = fun x ↦ ω.hamiltonianVectorField H (x + c) := by
+  funext x
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, fderiv_comp_add_right]
+
 /-- The Hamiltonian vector field is linear in Hamiltonians differentiable at the point:
 `X_{aF + bG} = a X_F + b X_G`. -/
 theorem hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V) {F G : V → ℝ}

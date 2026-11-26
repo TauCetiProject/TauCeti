@@ -104,7 +104,7 @@ theorem isFredholm_floerSobolevOperator_cappedCylinderComponent (ω : Symplectic
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hb zero t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
       (cappedCylinderComponent Hb L 1) (cappedCylinderComponent Hb L Complex.I) u).IsFredholm :=
   ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω
     (isCylindricalNearEnds_cappedCylinderComponent hHb hHbs hL (fun _ ↦ hJ.contDiffAt) hJRp hJRm)
@@ -153,9 +153,9 @@ theorem index_floerSobolevOperator_cappedCylinderComponent_eq_continuationHomoto
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hb zero t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
       (cappedCylinderComponent Hb L 1) (cappedCylinderComponent Hb L Complex.I) u).index =
-      (ω.floerSobolevOperator
+      (ω.floerSobolevOperator 2
         (fun w y ↦ (continuationAlmostComplex h₀ Jm' Jp' hJmt hJpt w y).toLinearMap
           |>.toContinuousLinearMap)
         (fun _ _ ↦ 0) (continuationHomotopy (Hb inf) (Hb zero)) u).index := by
@@ -168,8 +168,8 @@ theorem index_floerSobolevOperator_cappedCylinderComponent_eq_continuationHomoto
     (contDiff_uncurry_continuationHomotopy (hHbs inf) (hHbs zero)) hJ
     (contDiff_uncurry_cappedCylinderComponent hHb hHbs hL 1)
     (contDiff_uncurry_cappedCylinderComponent hHb hHbs hL Complex.I)
-    (compatible_continuationAlmostComplex h₀ hJmc hJpc) hJc hu hXm hxm hndm huxm hδm hXp hxp hndp
-    huxp hδp
+    (fun _ _ ↦ compatible_continuationAlmostComplex h₀ (hJmc _ _) (hJpc _ _)) hJc hu hXm hxm hndm
+    huxm hδm hXp hxp hndp huxp hδp
     (isFredholm_floerSobolevOperator_continuationHomotopy ω hω h₀ hJm' hJp' hJmc hJpc hXm
       hHinf (hHb inf) hXp hHzero (hHb zero) hxm hxmper hndm hxp hxpper hndp hu huxm hδm
       huxp hδp)
@@ -207,7 +207,7 @@ theorem index_floerSobolevOperator_cappedCylinderComponent_eq_zero (ω : Symplec
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hb zero t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
       (cappedCylinderComponent Hb L 1) (cappedCylinderComponent Hb L Complex.I) u).index = 0 := by
   -- The capped datum is cylindrical near the ends with the Hamiltonian `Hb 0` at both ends.
   have hcyl := isCylindricalNearEnds_cappedCylinderComponent hHb hHbs hL

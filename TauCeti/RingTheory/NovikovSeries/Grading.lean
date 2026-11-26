@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.NovikovSeries.Map
 public import TauCeti.RingTheory.NovikovSeries.Multiplication
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import Mathlib.Algebra.Group.Torsion
@@ -53,6 +54,9 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
 * `TauCeti.NovikovSeries.iSupIndep_gradeBy`: the homogeneous pieces are independent.
 * `TauCeti.NovikovSeries.ofAddMonoidAlgebra_mem_gradeBy_iff`: the inclusion of the group ring
   preserves and reflects the degree.
+* `TauCeti.NovikovSeries.map_mem_gradeBy`: the pushforward `TauCeti.NovikovSeries.map` along an
+  exponent homomorphism compatible with the degrees preserves the degree, and it also reflects it
+  along injective maps (`TauCeti.NovikovSeries.map_mem_gradeBy_iff`).
 * `TauCeti.NovikovSeries.finite_support_of_mem_gradeBy`: a homogeneous series is finitely
   supported when the period is bounded above on its fibre.
 * `TauCeti.NovikovSeries.mem_iSup_gradeBy_iff`: if the period is bounded above on every fibre,
@@ -69,6 +73,10 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
   values in a torsion-free cancellative monoid and nontrivial coefficients, this happens exactly
   when the period or the degree vanishes, since a nonzero degree `δ` takes the infinitely many
   values `n δ(C)` for a class `C` with `δ(C) ≠ 0`.
+* `TauCeti.NovikovSeries.single_mem_gradeByCoeff_iff_of_mem`: for pairwise disjoint pieces of
+  the coefficient module, a nonzero homogeneous monomial has exactly one degree.
+* `TauCeti.NovikovSeries.map_mem_gradeByCoeff`: a pushforward of Novikov series whose coefficient
+  map and exponent map respect the degrees preserves the degree.
 
 ## References
 
@@ -167,6 +175,18 @@ theorem mem_gradeBy_iff {f : H → ι} {i : ι} {a : NovikovSeries R H N} :
 theorem single_mem_gradeBy (f : H → ι) (h : H) (r : R) :
     (single h r : NovikovSeries R H N) ∈ gradeBy R N f (f h) := fun _ hg => by
   rw [mem_singleton_iff.1 (support_single_subset h r hg), mem_preimage, mem_singleton_iff]
+
+/-- A nonzero monomial `r e^h` has degree `i` exactly when `f h = i`. -/
+theorem single_mem_gradeBy_iff {f : H → ι} {h : H} {r : R} (hr : r ≠ 0) {i : ι} :
+    (single h r : NovikovSeries R H N) ∈ gradeBy R N f i ↔ f h = i :=
+  ⟨fun hs => hs (mem_support.2 (by rwa [coeff_single_same])),
+    fun hi => hi ▸ single_mem_gradeBy f h r⟩
+
+/-- Composing the degree function with an injective map of degrees does not change the pieces;
+for instance, negating both the degree function and the degree. -/
+theorem gradeBy_comp_of_injective {κ : Type*} {g : ι → κ} (hg : Injective g) (f : H → ι)
+    (i : ι) : gradeBy R N (g ∘ f) (g i) = gradeBy R N f i := by
+  rw [gradeBy, gradeBy, preimage_comp, ← image_singleton, hg.preimage_image]
 
 /-- There are no nonzero series of a degree that no exponent has. -/
 theorem gradeBy_eq_bot {f : H → ι} {i : ι} (hi : i ∉ range f) : gradeBy R N f i = ⊥ := by
@@ -360,6 +380,14 @@ section Internal
 
 variable [AddGroup H] {N : H →+ ℝ}
 
+/-- For the degree function `2 • c` of an integer-valued homomorphism `c`, the monomial `r e^(k h)`
+has degree `2 k c(h)`. -/
+theorem single_zsmul_mem_gradeBy_two_smul (c : H →+ ℤ) (k : ℤ) (h : H) (r : R) :
+    (single (k • h) r : NovikovSeries R H N) ∈ gradeBy R N (2 • c : H →+ ℤ) (2 * k * c h) := by
+  convert single_mem_gradeBy (R := R) (N := N) (2 • c : H →+ ℤ) (k • h) r using 2
+  simp only [map_zsmul, AddMonoidHom.smul_apply, smul_eq_mul]
+  ring
+
 /-- Over a nontrivial ring, if the period is nonzero and the additive degree `δ` takes infinitely
 many values, some Novikov series has nonzero coefficients in infinitely many degrees. -/
 theorem exists_infinite_image_support [Nontrivial R] [AddMonoid ι] (hN : N ≠ 0) {δ : H →+ ι}
@@ -458,6 +486,34 @@ end Additive
 
 end Semiring
 
+section Map
+
+variable {T H' : Type*} [Semiring R] [Semiring T] [AddZeroClass H] [AddZeroClass H']
+  {N : H →+ ℝ} {N' : H' →+ ℝ} (ρ : R →+ T) (φ : H →+ H')
+  (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) {f : H → ι} {f' : H' → ι}
+
+/-- **Pushforwards preserve degrees.** If the degree `f'` of `φ h` is the degree `f h` of `h`, the
+pushforward along `φ` sends series of degree `i` to series of degree `i`. -/
+theorem map_mem_gradeBy (hf : ∀ h, f' (φ h) = f h) {i : ι} {a : NovikovSeries R H N}
+    (ha : a ∈ gradeBy R N f i) : map ρ φ hφ a ∈ gradeBy T N' f' i := by
+  intro h' hh'
+  obtain ⟨h, hh, rfl⟩ := support_map_subset ρ φ hφ a hh'
+  rw [mem_preimage, hf]
+  exact ha hh
+
+/-- Along injective coefficient and exponent maps, the pushforward also reflects degrees. -/
+theorem map_mem_gradeBy_iff (hρ : Injective ρ) (hinj : Injective φ) (hf : ∀ h, f' (φ h) = f h)
+    {i : ι} {a : NovikovSeries R H N} :
+    map ρ φ hφ a ∈ gradeBy T N' f' i ↔ a ∈ gradeBy R N f i := by
+  refine ⟨fun ha h hh => ?_, map_mem_gradeBy ρ φ hφ hf⟩
+  have hφh : φ h ∈ (map ρ φ hφ a).support := by
+    rw [mem_support, coeff_map_of_injective ρ φ hφ hinj, ← map_zero ρ]
+    exact hρ.ne (mem_support.1 hh)
+  have := ha hφh
+  rwa [mem_preimage, hf] at this
+
+end Map
+
 /-- The inclusion of the group ring into the Novikov series preserves and reflects the degree. -/
 theorem ofAddMonoidAlgebra_mem_gradeBy_iff [CommSemiring R] [AddMonoid H] {N : H →+ ℝ}
     {f : H → ι} {i : ι} {x : AddMonoidAlgebra R H} :
@@ -501,6 +557,41 @@ theorem gradeByCoeff_ite_eq_gradeBy [DecidableEq Γ] (δ : H → Γ) (D : Γ) :
   by_cases hA : D = δ A
   · simp [hA]
   · simp [hA, Ne.symm hA]
+
+/-- The monomial `e^h v` has degree `D` exactly when its coefficient `v` has degree `D - δ h`. -/
+theorem single_mem_gradeByCoeff_iff {𝒱 : Γ → Submodule R V} {δ : H → Γ} {D : Γ} {h : H}
+    {v : V} : (single h v : NovikovSeries V H N) ∈ gradeByCoeff N 𝒱 δ D ↔ v ∈ 𝒱 (D - δ h) := by
+  refine ⟨fun hv => by simpa using hv h, fun hv A => ?_⟩
+  rcases eq_or_ne A h with rfl | hA
+  · simpa using hv
+  · simp [coeff_single_of_ne hA]
+
+/-- **A homogeneous monomial has exactly one degree.** If the pieces `𝒱` are pairwise disjoint
+and `v ≠ 0` has degree `j`, the monomial `e^h v` has degree `D` exactly when `D = j + δ h`. -/
+theorem single_mem_gradeByCoeff_iff_of_mem {𝒱 : Γ → Submodule R V}
+    (h𝒱 : Pairwise (Disjoint on 𝒱)) {δ : H → Γ} {D j : Γ} {h : H} {v : V} (hv : v ∈ 𝒱 j)
+    (hv₀ : v ≠ 0) :
+    (single h v : NovikovSeries V H N) ∈ gradeByCoeff N 𝒱 δ D ↔ D = j + δ h := by
+  rw [single_mem_gradeByCoeff_iff, ← sub_eq_iff_eq_add]
+  refine ⟨fun hD => ?_, fun hD => hD ▸ hv⟩
+  by_contra hne
+  exact hv₀ (Submodule.disjoint_def.1 (h𝒱 hne) v hD hv)
+
+/-- **Pushforwards preserve degrees.** If the coefficient map `ρ : V →+ W` sends each piece
+`𝒱 k` into `𝒲 k`, and the exponent map `φ` carries the degree `δ` to `δ'`, then the pushforward
+`TauCeti.NovikovSeries.map ρ φ hφ` sends the series of degree `D` to series of degree `D`: its
+coefficient at `h'` is a finite sum of images of coefficients at exponents `h` with
+`δ h = δ' h'`. -/
+theorem map_mem_gradeByCoeff {H' W : Type*} [AddZeroClass H'] {N' : H' →+ ℝ} [AddCommMonoid W]
+    [Module R W] {𝒱 : Γ → Submodule R V} {𝒲 : Γ → Submodule R W} {ρ : V →+ W}
+    (hρ : ∀ k, ∀ v ∈ 𝒱 k, ρ v ∈ 𝒲 k) {φ : H →+ H'} (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
+    {δ : H → Γ} {δ' : H' → Γ} (hδ : ∀ h, δ' (φ h) = δ h) {D : Γ} {v : NovikovSeries V H N}
+    (hv : v ∈ gradeByCoeff N 𝒱 δ D) : map ρ φ hφ v ∈ gradeByCoeff N' 𝒲 δ' D := fun h' => by
+  rw [coeff_map]
+  refine finsum_mem_induction (· ∈ 𝒲 (D - δ' h')) (zero_mem _) (fun _ _ => add_mem)
+    fun h hh => ?_
+  rw [← mem_singleton_iff.1 hh, hδ]
+  exact hρ _ _ (hv h)
 
 end GradeByCoeff
 

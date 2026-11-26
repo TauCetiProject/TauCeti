@@ -30,6 +30,13 @@ how classifying elements behave under transport of `R` along an isomorphism of p
 the comparison isomorphism between two representing objects, and under postcomposition with a
 morphism between representing objects.
 
+## Corepresentations of functors to types
+
+For a functor `Y : C ⥤ Type w` corepresented by `A`, natural transformations from `Y` to any
+functor `G` are the elements of `G(A)`
+(`CategoryTheory.Functor.CorepresentableBy.natTransEquiv`). Mathlib states this only for the
+standard corepresentable functors `coyoneda.obj (op A)` and their universe lifts.
+
 ## Main results
 
 * `TauCeti.CategoryTheory.isIso_iff_existsUnique_of_homEquiv`: the isomorphism criterion.
@@ -40,6 +47,16 @@ morphism between representing objects.
 * `CategoryTheory.Functor.RepresentableBy.homEquiv_homEquiv_symm_comp_naturality`: postcomposition
   with a morphism between representing objects, read through the two representations, commutes
   with the maps of the presheaves.
+* `CategoryTheory.Functor.CorepresentableBy.natTransEquiv`: the Yoneda lemma for an arbitrary
+  corepresentation of a functor to types.
+
+## References
+
+* [ShortProof]: `grh-lean`, https://github.com/lsernau/grh-lean, file
+  `src/Lib/Cohomology/Etale/Basic.lean` (declaration `New.Variety.homReprEquiv`, the free abelian
+  group adjunction followed by Mathlib's `uliftCoyonedaEquiv`); Apache 2.0, Copyright 2026
+  Anthropic, PBC. `CategoryTheory.Functor.CorepresentableBy.natTransEquiv` generalises its Yoneda
+  step to an arbitrary corepresentation.
 -/
 
 public section
@@ -118,3 +135,37 @@ theorem homEquiv_homEquiv_symm_comp_naturality {G : Cᵒᵖ ⥤ Type w'} {Y' : C
   rw [← comp_homEquiv_symm, Category.assoc, homEquiv_comp]
 
 end CategoryTheory.Functor.RepresentableBy
+
+namespace CategoryTheory.Functor.CorepresentableBy
+
+variable {C : Type u} [Category.{v} C] {Y : C ⥤ Type w} {A : C} (e : Y.CorepresentableBy A)
+
+/-- **Yoneda lemma** for a functor `Y : C ⥤ Type w` corepresented by `A`: natural transformations
+from `Y` to a functor `G` are the elements of `G(A)`, by evaluation at the universal element. -/
+def natTransEquiv (G : C ⥤ Type w) : (Y ⟶ G) ≃ G.obj A where
+  toFun φ := φ.app A (e.homEquiv (𝟙 A))
+  invFun g :=
+    { app _ := ↾fun y ↦ G.map (e.homEquiv.symm y) g
+      naturality _ _ f := by
+        ext y
+        simp [← e.homEquiv_symm_comp] }
+  left_inv φ := by
+    ext c y
+    obtain ⟨f, rfl⟩ := e.homEquiv.surjective y
+    simp [← NatTrans.naturality_apply, ← e.homEquiv_comp]
+  right_inv g := by simp
+
+/-- The Yoneda bijection evaluates a natural transformation at the universal element. -/
+@[simp]
+lemma natTransEquiv_apply (G : C ⥤ Type w) (φ : Y ⟶ G) :
+    e.natTransEquiv G φ = φ.app A (e.homEquiv (𝟙 A)) :=
+  (rfl)
+
+/-- The natural transformation corresponding to `g ∈ G(A)` sends `y ∈ Y(c)`, the image of a
+morphism `A ⟶ c`, to the image of `g` under that morphism. -/
+@[simp]
+lemma natTransEquiv_symm_apply_app (G : C ⥤ Type w) (g : G.obj A) {c : C} (y : Y.obj c) :
+    ((e.natTransEquiv G).symm g).app c y = G.map (e.homEquiv.symm y) g :=
+  (rfl)
+
+end CategoryTheory.Functor.CorepresentableBy

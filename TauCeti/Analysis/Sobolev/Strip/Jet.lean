@@ -60,13 +60,14 @@ fundamental domain is the strip, in `TauCeti.Analysis.Sobolev.Cylinder`.
   (`TauCeti.StripSobolev.integrable_inner_apply_jet`). The jet also
   bounds the whole derivative (`TauCeti.StripSobolev.norm_fderiv_le_two_mul_norm_jet`), so a `C¹`
   cutoff supported in a set `P` multiplies a section into a map whose derivative is bounded in
-  `Lᵖ(ℝ²)` by the jet on `P` (`TauCeti.StripSobolev.eLpNorm_fderiv_smul_le`).
+  `Lᵖ(ℝ²)` by the jet on `P` (`TauCeti.eLpNorm_fderiv_smul_le_of_tsupport_subset`).
 * The **restricted value** `TauCeti.StripSobolev.restrictValue T` takes an `L²` jet on the strip
   to its value on the compact piece `[-T, T] × [0, 1]`, the operator whose compactness is
   Rellich's theorem on the cylinder and on the strip.
 * **Multiplication by a function `β(s)`** acts on jets through the coefficient field
-  `TauCeti.StripSobolev.cutoffCoeff`, `(ξ, ξ_s, ξ_t) ↦ (β ξ, β ξ_s + β' ξ, β ξ_t)`
-  (`TauCeti.StripSobolev.jet_smul_fst_eq_cutoffCoeff`), which is multiplicative and additive in
+  `TauCeti.StripSobolev.cutoffCoeff`, `(ξ, ξ_s, ξ_t) ↦ (β ξ, β ξ_s + β' ξ, β ξ_t)`, the change of
+  frame by `β(s) • id` (`TauCeti.StripSobolev.cutoffCoeff_eq_frameJetCoeff` and
+  `TauCeti.StripSobolev.jet_frame_eq_frameJetCoeff`), which is multiplicative and additive in
   `β` and essentially bounded on the strip when `β` is `C¹` with `β` and `β'` bounded
   (`TauCeti.StripSobolev.memLp_cutoffCoeff`).
 * **Translation in the `s` direction** preserves the strip measure
@@ -303,41 +304,6 @@ theorem integral_strip_eq_setIntegral_of_jet_eq_zero {E : Type*} [NormedAddCommG
     ∫ z, F z ∂stripMeasure = ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1, F z :=
   integral_strip_eq_setIntegral_Icc_of_jet_eq_zero (eq_zero_of_notMem_Ioo_neg hR) hF
 
-/-- Multiplying a `C¹` map by a `C¹` cutoff `χ` with `|χ| ≤ 1` and `‖Dχ‖ ≤ C`, whose topological
-support lies in a measurable set `P`, gives a map whose derivative is bounded in `Lᵖ(ℝ × ℝ)` by
-`C + 2` times the jet in `Lᵖ(P)`. -/
-theorem eLpNorm_fderiv_smul_le {χ : ℝ × ℝ → ℝ} {C : ℝ} (hχ : ContDiff ℝ 1 χ)
-    (hχ1 : ∀ z, |χ z| ≤ 1) (hC : ∀ z, ‖fderiv ℝ χ z‖ ≤ C) {P : Set (ℝ × ℝ)}
-    (hP : MeasurableSet P) (hχP : tsupport χ ⊆ P) (hξ : ContDiff ℝ 1 ξ) {p : ℝ≥0∞} :
-    eLpNorm (fderiv ℝ (fun z ↦ χ z • ξ z)) p volume ≤
-      ENNReal.ofReal (C + 2) * eLpNorm (jet ξ) p (volume.restrict P) := by
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
-  have hpt : ∀ z, ‖fderiv ℝ (fun z ↦ χ z • ξ z) z‖ ≤ (C + 2) * ‖P.indicator (jet ξ) z‖ := by
-    intro z
-    by_cases hz : z ∈ P
-    · rw [indicator_of_mem hz,
-        fderiv_fun_smul (hχ.differentiable one_ne_zero z) (hξ.differentiable one_ne_zero z)]
-      calc _ ≤ ‖χ z‖ * ‖fderiv ℝ ξ z‖ + ‖fderiv ℝ χ z‖ * ‖ξ z‖ := by
-            refine (norm_add_le _ _).trans ?_
-            rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply]
-        _ ≤ 1 * (2 * ‖jet ξ z‖) + C * ‖jet ξ z‖ := by
-            gcongr
-            exacts [(Real.norm_eq_abs _).trans_le (hχ1 z), norm_fderiv_le_two_mul_norm_jet ξ z,
-              hC z, norm_le_norm_jet ξ z]
-        _ = (C + 2) * ‖jet ξ z‖ := by ring
-    · have h0 : (fun z ↦ χ z • ξ z) =ᶠ[𝓝 z] 0 := by
-        filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hz (hχP h)] with w hw
-        simp [hw]
-      rw [h0.fderiv_eq, indicator_of_notMem hz]
-      simp
-  calc eLpNorm (fderiv ℝ (fun z ↦ χ z • ξ z)) p volume
-      ≤ ENNReal.ofReal (C + 2) * eLpNorm (P.indicator (jet ξ)) p volume :=
-        eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-          ((hχ.smul hξ).continuous_fderiv one_ne_zero).aestronglyMeasurable
-          (Eventually.of_forall hpt) p
-    _ = ENNReal.ofReal (C + 2) * eLpNorm (jet ξ) p (volume.restrict P) := by
-        rw [eLpNorm_indicator_eq_eLpNorm_restrict hP.nullMeasurableSet]
-
 /-! ### The restricted value -/
 
 /-- The value of an `L²` jet on the strip, restricted to the compact piece `[-T, T] × [0, 1]`. -/
@@ -371,7 +337,9 @@ theorem sSlot_apply (v : V × V × V) : sSlot V v = (0, v.1, 0) := by
 variable (V) in
 /-- The coefficient field of multiplication by a function `β(s)` of the first variable, acting
 on jets: `(ξ, ξ_s, ξ_t) ↦ (β ξ, β ξ_s + β' ξ, β ξ_t)`. On the jet of a section `ξ` it is the jet
-of `β(s) ξ` (`TauCeti.StripSobolev.jet_smul_fst_eq_cutoffCoeff`). -/
+of `β(s) ξ`: it is the change of frame by `β(s) • id`
+(`TauCeti.StripSobolev.cutoffCoeff_eq_frameJetCoeff`), so
+`TauCeti.StripSobolev.jet_frame_eq_frameJetCoeff` applies. -/
 def cutoffCoeff (β : ℝ → ℝ) (z : ℝ × ℝ) : V × V × V →L[ℝ] V × V × V :=
   β z.1 • ContinuousLinearMap.id ℝ (V × V × V) + deriv β z.1 • sSlot V
 
@@ -420,21 +388,6 @@ theorem cutoffCoeff_one (z : ℝ × ℝ) :
     cutoffCoeff V 1 z = ContinuousLinearMap.id ℝ (V × V × V) := by
   refine ContinuousLinearMap.ext fun v ↦ ?_
   simp [cutoffCoeff, Pi.one_def]
-
-/-- The jet of `β(s) ξ` is `cutoffCoeff V β` applied to the jet of `ξ`. -/
-theorem jet_smul_fst_eq_cutoffCoeff {β : ℝ → ℝ} {ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
-    (hβ : DifferentiableAt ℝ β z.1) (hξ : DifferentiableAt ℝ ξ z) :
-    jet (fun w ↦ β w.1 • ξ w) z = cutoffCoeff V β z (jet ξ z) := by
-  have hβ' : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1)
-      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (deriv β z.1)).comp
-        (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
-    hβ.hasDerivAt.hasFDerivAt.comp z hasFDerivAt_fst
-  have h : fderiv ℝ (fun w ↦ β w.1 • ξ w) z = β z.1 • fderiv ℝ ξ z +
-      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (deriv β z.1)).comp
-        (ContinuousLinearMap.fst ℝ ℝ ℝ)).smulRight (ξ z) :=
-    (hβ'.smul hξ.hasFDerivAt).fderiv
-  simp only [jet_apply, cutoffCoeff_apply, h]
-  simp [add_comm]
 
 /-- The coefficient of multiplication by `β(s)` has norm at most `|β(s)| + |β'(s)|`. -/
 theorem norm_cutoffCoeff_le (β : ℝ → ℝ) (z : ℝ × ℝ) :

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Homogeneous.Basic
 public import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
 import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Series
 
 /-!
@@ -148,19 +149,10 @@ theorem ae_ae_eq_apply_of_tendsto_eLpNorm_sub_sum_apply_block [Nontrivial V] {σ
         homogeneousLittlewoodPaleyBlock_toTemperedDistribution φ (hm j)]
   have hL2 := φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm f
   filter_upwards [hU] with b hb
-  set S : ℕ → Lp F 2 (volume : Measure V) := fun N ↦
-    ∑ j ∈ Finset.Ioc (-(N : ℤ)) N, T b (u.block j)
   -- Along the partial sums over `(-N, N]`, the series tends to `U(b)` in `L^r` and to `T(b) f` in
-  -- `L²`; both limits are limits in measure, so they agree almost everywhere.
-  have hr : TendstoInMeasure volume (fun N ↦ ⇑(S N)) atTop ⇑(U b) := by
-    refine tendstoInMeasure_of_tendsto_eLpNorm
-      (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ r)).ne' ?_
-    refine (hb.comp (Finset.tendsto_Ioc_neg (R := ℤ))).congr fun N ↦ ?_
-    rw [Function.comp_apply, eLpNorm_sub_comm]
-  have h2 : TendstoInMeasure volume (fun N ↦ ⇑(S N)) atTop ⇑(T b f) := by
-    refine tendstoInMeasure_of_tendsto_Lp (((T b).continuous.tendsto f).comp hL2 |>.congr ?_)
-    intro N
-    simp only [Function.comp_apply, map_sum, S, hblock]
-  exact tendstoInMeasure_ae_unique hr h2
+  -- `L²`.
+  refine ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum hb (Finset.tendsto_Ioc_neg (R := ℤ))
+    (((T b).continuous.tendsto f).comp hL2 |>.congr fun N ↦ ?_)
+  simp only [Function.comp_apply, map_sum, hblock]
 
 end ContDiffBump

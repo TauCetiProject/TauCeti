@@ -33,6 +33,10 @@ of the faces of `R`, which makes the local height rules of a tiling consistent.
   `R` is exact on `R`.
 * `TauCeti.neutralIncrement`: the neutral increment `c₀`, `0` along `e₁` and `e₂` and `1` along
   `e₃`.
+* `TauCeti.faceSum c f`: the sum `c(f, e₁) + c(f, e₂) − c(f, e₃)` of a cochain round a face, so
+  that `c` is closed on `R` when it vanishes on every face of `R`.
+* `TauCeti.faceSign f`: `1` on white faces and `−1` on black ones, the orientation making
+  `faceSign f * faceSum c f` the counterclockwise circulation of `c` round `f`.
 
 ## Main statements
 
@@ -100,6 +104,51 @@ variable {R S : Set TriFace} {c d : TriEdge → ℤ} {g g' : ℤ × ℤ → ℤ}
 theorem isClosedCochainOn_def :
     IsClosedCochainOn R c ↔ ∀ f ∈ R, c (f.edge 0) + c (f.edge 1) = c (f.edge 2) := Iff.rfl
 
+/-- The sum `c(f, e₁) + c(f, e₂) − c(f, e₃)` of a cochain round a face `f`. A cochain is closed on
+a region when this vanishes on every face of the region. -/
+def faceSum (c : TriEdge → ℤ) (f : TriFace) : ℤ :=
+  c (f.edge 0) + c (f.edge 1) - c (f.edge 2)
+
+/-- The orientation sign of a face: `1` for white faces and `−1` for black ones. Round a white face
+`faceSum` runs counterclockwise and round a black face clockwise. -/
+def faceSign (f : TriFace) : ℤ :=
+  if f.isWhite then 1 else -1
+
+theorem faceSum_def (c : TriEdge → ℤ) (f : TriFace) :
+    faceSum c f = c (f.edge 0) + c (f.edge 1) - c (f.edge 2) := (rfl)
+
+theorem faceSign_def (f : TriFace) : faceSign f = if f.isWhite then 1 else -1 := (rfl)
+
+@[simp] theorem faceSign_mk_true (v : ℤ × ℤ) : faceSign ⟨v, true⟩ = 1 := (rfl)
+
+@[simp] theorem faceSign_mk_false (v : ℤ × ℤ) : faceSign ⟨v, false⟩ = -1 := (rfl)
+
+/-- The two faces of an edge have opposite orientation signs. -/
+@[simp] theorem faceSign_across (f : TriFace) (k : Fin 3) :
+    faceSign (f.across k) = -faceSign f := by
+  simp only [faceSign_def, TriFace.isWhite_across]
+  cases f.isWhite <;> simp
+
+@[simp] theorem faceSum_zero (f : TriFace) : faceSum 0 f = 0 := by
+  simp [faceSum_def]
+
+@[simp] theorem faceSum_add (c c' : TriEdge → ℤ) (f : TriFace) :
+    faceSum (c + c') f = faceSum c f + faceSum c' f := by
+  simp only [faceSum_def, Pi.add_apply]
+  ring
+
+@[simp] theorem faceSum_neg (c : TriEdge → ℤ) (f : TriFace) : faceSum (-c) f = -faceSum c f := by
+  simp only [faceSum_def, Pi.neg_apply]
+  ring
+
+@[simp] theorem faceSum_sub (c c' : TriEdge → ℤ) (f : TriFace) :
+    faceSum (c - c') f = faceSum c f - faceSum c' f := by
+  simp only [faceSum_def, Pi.sub_apply]
+  ring
+
+theorem isClosedCochainOn_iff_faceSum : IsClosedCochainOn R c ↔ ∀ f ∈ R, faceSum c f = 0 := by
+  simp only [isClosedCochainOn_def, faceSum_def, sub_eq_zero]
+
 theorem isCochainPrimitiveOn_def :
     IsCochainPrimitiveOn R c g ↔ ∀ e ∈ regionEdges R, c e = g e.target - g e.v := Iff.rfl
 
@@ -114,6 +163,16 @@ theorem neutralIncrement_def (e : TriEdge) :
 @[simp] theorem neutralIncrement_mk_one (v : ℤ × ℤ) : neutralIncrement ⟨v, 1⟩ = 0 := (rfl)
 
 @[simp] theorem neutralIncrement_mk_two (v : ℤ × ℤ) : neutralIncrement ⟨v, 2⟩ = 1 := (rfl)
+
+/-- The edge of direction `k` of a face has neutral increment `1` if `k = 2` and `0` otherwise. -/
+theorem TriFace.neutralIncrement_edge (f : TriFace) (k : Fin 3) :
+    neutralIncrement (f.edge k) = if k = 2 then 1 else 0 := by
+  rw [neutralIncrement_def, TriFace.edge_k]
+
+theorem neutralIncrement_eq_zero_or_eq_one (e : TriEdge) :
+    neutralIncrement e = 0 ∨ neutralIncrement e = 1 := by
+  rw [neutralIncrement_def]
+  split_ifs <;> simp
 
 theorem IsClosedCochainOn.mono (h : IsClosedCochainOn S c) (hRS : R ⊆ S) :
     IsClosedCochainOn R c :=
@@ -225,6 +284,11 @@ theorem isClosedCochainOn_coboundary (R : Set TriFace) (g : ℤ × ℤ → ℤ) 
       latticeDir_two, Fin.reduceEq, ↓reduceIte, add_latticeDir_zero_add_latticeDir_one]
     ring
 
+/-- The coboundary of a function sums to zero round every face. -/
+theorem faceSum_coboundary (g : ℤ × ℤ → ℤ) (f : TriFace) :
+    faceSum (fun e => g e.target - g e.v) f = 0 :=
+  isClosedCochainOn_iff_faceSum.1 (isClosedCochainOn_coboundary Set.univ g) f (Set.mem_univ f)
+
 /-- Every `g : ℤ × ℤ → ℤ` is a primitive of its coboundary `g(u + e_k) − g(u)` on every
 region. -/
 theorem isCochainPrimitiveOn_coboundary (R : Set TriFace) (g : ℤ × ℤ → ℤ) :
@@ -272,6 +336,10 @@ theorem IsConnectedRegion.sub_eq_sub_of_isCochainPrimitiveOn (hR : IsConnectedRe
 section Translation
 
 variable (w : ℤ × ℤ)
+
+@[simp] theorem neutralIncrement_vadd (e : TriEdge) :
+    neutralIncrement (w +ᵥ e) = neutralIncrement e := by
+  simp [neutralIncrement_def]
 
 @[simp] theorem isClosedCochainOn_vadd_iff :
     IsClosedCochainOn (w +ᵥ R) c ↔ IsClosedCochainOn R fun e => c (w +ᵥ e) := by
@@ -515,5 +583,19 @@ theorem IsClosedCochainOn.isExactCochainOn_univ (hc : IsClosedCochainOn Set.univ
 /-- **The plane is simply connected.** -/
 theorem isSimplyConnectedRegion_univ : IsSimplyConnectedRegion Set.univ :=
   ⟨⟨⟨0, true⟩, Set.mem_univ _⟩, isConnectedRegion_univ, fun _ hc => hc.isExactCochainOn_univ⟩
+
+/-- A primitive on the plane is a function whose increment along every edge is the cochain. -/
+theorem isCochainPrimitiveOn_univ_iff :
+    IsCochainPrimitiveOn Set.univ c g ↔ ∀ e : TriEdge, c e = g e.target - g e.v := by
+  rw [isCochainPrimitiveOn_def]
+  exact ⟨fun h e => h e (mem_regionEdges_iff.2 (Or.inl (Set.mem_univ _))), fun h e _ => h e⟩
+
+/-- Two primitives on the plane of the same cochain that agree at `0` are equal. -/
+theorem eq_of_isCochainPrimitiveOn_univ (hg : IsCochainPrimitiveOn Set.univ c g)
+    (hg' : IsCochainPrimitiveOn Set.univ c g') (h0 : g 0 = g' 0) : g = g' := by
+  funext u
+  have := isConnectedRegion_univ.sub_eq_sub_of_isCochainPrimitiveOn hg hg'
+    (mem_regionVertices_univ u) (mem_regionVertices_univ 0)
+  omega
 
 end TauCeti

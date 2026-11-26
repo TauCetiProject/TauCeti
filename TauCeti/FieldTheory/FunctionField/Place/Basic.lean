@@ -31,6 +31,9 @@ equality of valuations (`TauCeti.Place.eq_of_isEquiv`).
 
 * `TauCeti.Place k F`: a place of `F/k`.
 * `TauCeti.Place.integers`: the valuation ring `𝒪_P ⊆ F` of a place.
+* `TauCeti.Place.integersAlgebra`: the `R`-algebra structure on `𝒪_P` induced by `R ⊆ 𝒪_P`, with
+  `TauCeti.Place.coe_algebraMap_integersAlgebra`, `TauCeti.Place.isScalarTower_integers`, and
+  `TauCeti.Place.isScalarTower_integers_extension`.
 * `TauCeti.Place.ord`: the additive order function `ord_P : F → ℤ`, normalized so that a prime
   element has order `1`. It has the junk value `ord_P 0 = 0`.
 * `TauCeti.Place.ResidueField`: the residue field `F_P = 𝒪_P / 𝔪_P`, a `k`-algebra.
@@ -558,6 +561,44 @@ corresponding statement for the algebra map between the valuation rings of two p
 theorem coe_algebraMap_constants (c : k) :
     ((algebraMap k P.integers c : P.integers) : F) = algebraMap k F c := by
   rw [IsScalarTower.algebraMap_apply k P.integers F, ValuationSubring.algebraMap_apply]
+
+/-- The `R`-algebra structure on `𝒪_P` induced by `R ⊆ 𝒪_P`. -/
+@[instance_reducible]
+noncomputable def integersAlgebra {R : Type*} [CommRing R] [Algebra R F]
+    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) :
+    Algebra R P.integers :=
+  ((algebraMap R F).codRestrict P.integers hR).toAlgebra
+
+/-- The `R`-algebra `TauCeti.Place.integersAlgebra` on `𝒪_P` sends `r` to `algebraMap R F r`
+in `F`. -/
+@[simp]
+theorem coe_algebraMap_integersAlgebra {R : Type*} [CommRing R] [Algebra R F]
+    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) (r : R) :
+    letI := P.integersAlgebra hR
+    ((algebraMap R P.integers r : P.integers) : F) = algebraMap R F r := by
+  rw [RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
+
+/-- The `R`-algebra `TauCeti.Place.integersAlgebra` on `𝒪_P` is compatible with the inclusion into
+`F`. -/
+theorem isScalarTower_integers {R : Type*} [CommRing R] [Algebra R F]
+    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) :
+    letI := P.integersAlgebra hR
+    IsScalarTower R P.integers F :=
+  letI := P.integersAlgebra hR
+  .of_algebraMap_eq fun r ↦ by
+    rw [ValuationSubring.algebraMap_apply, coe_algebraMap_integersAlgebra]
+
+/-- The `R`-algebra `TauCeti.Place.integersAlgebra` on `𝒪_P` is compatible with any field
+extension `F' / F` over `R` and `𝒪_P`. -/
+theorem isScalarTower_integers_extension {R F' : Type*} [CommRing R] [Field F']
+    [Algebra F F'] [Algebra R F] [Algebra R F'] [IsScalarTower R F F']
+    [Algebra P.integers F'] [IsScalarTower P.integers F F']
+    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) :
+    letI := P.integersAlgebra hR
+    IsScalarTower R P.integers F' :=
+  letI := P.integersAlgebra hR
+  have := P.isScalarTower_integers hR
+  IsScalarTower.to₁₂₄ R P.integers F F'
 
 /-- The residue field `F_P = 𝒪_P / 𝔪_P` of a place (Stichtenoth, Definition 1.1.14). The
 evaluation map `f ↦ f(P)` is `IsLocalRing.residue P.integers`. -/

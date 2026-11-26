@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Relative
+public import TauCeti.CategoryTheory.Monoidal.Preadditive
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 
@@ -47,6 +48,9 @@ pairing `μ : M ⊗ S ⟶ N` in an abelian monoidal category.
 * `TopPair.singularCap_coefficient_naturality`: the native relative cap product commutes with
   compatible changes of every coefficient object.
 * `TopPair.singularCap_coefficient_naturality_map`: the same square combined with a map of pairs.
+* `TopPair.singularCapWith`: for abelian groups, capping with a fixed class `γ ∈ Hₙ(X, A; ℤ)` as
+  a morphism `Hᵖ(X, A; L) ⟶ H_q(X; L)` of abelian groups; the local instance
+  `CategoryTheory.MonoidalPreadditive.monoidalLinearInt` supplies the `ℤ`-linear structure.
 * `TopPair.singularCap_singularCohomologyδ`: compatibility with the connecting morphisms of the
   pair, `x ⌢ δβ = i_*(∂x ⌢ β)` for `β ∈ Hᵖ(A)`, `x ∈ Hₙ(X, A)` and `i : A ⟶ X` the inclusion.
 
@@ -423,5 +427,35 @@ theorem singularCap_singularCohomologyδ (P : TopPair.{w}) (k : Type*) [Ring k] 
   rfl
 
 end Connecting
+
+section FixedClass
+
+/-! ### Capping with a fixed integral class -/
+
+attribute [local instance] MonoidalPreadditive.monoidalLinearInt
+
+/-- **Capping with a fixed homology class** `γ ∈ Hₙ(X, A; ℤ)` of a pair `P = (X, A)`: the map
+`Hᵖ(X, A; L) ⟶ H_q(X; L)`, `α ↦ γ ⌢ α`, for `p + q = n`. -/
+def singularCapWith (P : TopPair.{0}) (L : ModuleCat.{0} ℤ) {n : ℕ}
+    (γ : P.singularHomology (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n) (p q : ℕ)
+    (h : p + q = n) :
+    P.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p ⟶
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).obj P.fst :=
+  -- `AddMonoidHom.toIntLinearMap` would use the `ℤ`-module structures of the underlying additive
+  -- groups rather than those of the objects of `ModuleCat ℤ`.
+  let f := (LinearMap.applyₗ (R := ℤ) γ).toAddMonoidHom.comp <|
+    ModuleCat.homAddEquiv.toAddMonoidHom.comp
+      (P.singularCap ℤ (ρ_ _).inv (ρ_ L).hom p q n h).toAddMonoidHom
+  ModuleCat.ofHom { f with map_smul' := map_intCast_smul f ℤ ℤ }
+
+/-- Capping with a fixed class `γ` evaluates the relative cap product at `γ`. -/
+lemma singularCapWith_apply (P : TopPair.{0}) (L : ModuleCat.{0} ℤ) {n : ℕ}
+    (γ : P.singularHomology (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n) (p q : ℕ)
+    (h : p + q = n)
+    (α : P.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
+    P.singularCapWith L γ p q h α = (P.singularCap ℤ (ρ_ _).inv (ρ_ L).hom p q n h α).hom γ :=
+  (rfl)
+
+end FixedClass
 
 end TopPair

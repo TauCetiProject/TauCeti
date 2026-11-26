@@ -188,6 +188,13 @@ theorem invChart_coe (z : 𝕜) : invChart (z : OnePoint 𝕜) = z⁻¹ :=
 theorem invChart_infty : invChart (∞ : OnePoint 𝕜) = 0 :=
   (rfl)
 
+/-- The inverted chart does not vanish at the finite nonzero points. -/
+theorem invChart_ne_zero {x : OnePoint 𝕜} (hx : x ≠ (∞ : OnePoint 𝕜))
+    (hx0 : x ≠ ((0 : 𝕜) : OnePoint 𝕜)) : invChart x ≠ 0 := by
+  induction x using OnePoint.rec with
+  | infty => exact absurd rfl hx
+  | coe z => simpa using (show z ≠ 0 by simpa using hx0)
+
 @[simp]
 theorem invChart_symm_zero : invChart.symm (0 : 𝕜) = (∞ : OnePoint 𝕜) := by
   simp [invChart]

@@ -14,9 +14,9 @@ public import TauCeti.Data.Nat.Factorization.OddExponentPart
 
 Let `8 ∣ m₀`. On the natural numbers `q` prime to `n` in one residue class of odd numbers modulo
 `m₀`, the Jacobi symbol `J(n | q)` is `J(q | s)` up to a sign that depends only on the class, where
-`n = s t² A` and every prime factor of `A` divides `m₀`. The canonical choice of `s` is the product
-`s_{m₀}(n)` of the primes `p ∤ m₀` that divide `n` to an odd power, for which such `t` and `A`
-exist by `Nat.exists_eq_prod_mul_sq_mul`.
+`n = s t² A` and every prime factor of `A` divides `m₀`. The canonical choice of `s` is the
+odd-exponent part `Nat.oddExpPart m₀ n`, the product of the primes `p ∤ m₀` that divide `n` to an
+odd power, for which such `t` and `A` exist by `Nat.exists_eq_oddExpPart_mul_sq_mul`.
 
 The proof splits `J(n | q)` into three factors. The square `t²` contributes `1`. For a prime
 `p ∣ m₀` the symbol `J(p | q)` depends only on `q` modulo `4p` (Mathlib's `jacobiSym.mod_right`),
@@ -33,8 +33,8 @@ and `4p ∣ m₀`. Finally `J(s | q) J(q | s)` depends only on `q` modulo `8`, f
 * `TauCeti.exists_jacobiSym_eq_mul_jacobiSym`: reciprocity on a residue class. For `8 ∣ m₀`, odd
   `a₀` and `n = s t² A` with every prime factor of `A` dividing `m₀`, there is `ε = ±1` with
   `J(n | q) = ε J(q | s)` for every `q ≡ a₀ (mod m₀)` prime to `n`.
-* `TauCeti.exists_jacobiSym_eq_mul_jacobiSym_prod`: the same with `s = s_{m₀}(n)`, the product of
-  the primes `p ∤ m₀` dividing `n` to an odd power.
+* `TauCeti.exists_jacobiSym_eq_mul_jacobiSym_oddExpPart`: the same with `s = Nat.oddExpPart m₀ n`,
+  the product of the primes `p ∤ m₀` dividing `n` to an odd power.
 
 ## References
 
@@ -136,9 +136,9 @@ theorem jacobiSym_mul_jacobiSym_eq_of_modEq {m₀ n s t A q q' : ℕ} (h8 : 8 �
 every prime factor of `A` divides `m₀`. There is `ε = ±1` such that every `q ≡ a₀ (mod m₀)` prime
 to `n` satisfies `J(n | q) = ε J(q | s)`.
 
-The roadmap's choice of `s` is `s_{m₀}(n)`, the product of the primes `p ∤ m₀` dividing `n` to an
-odd power (`exists_jacobiSym_eq_mul_jacobiSym_prod`). A prime `q` of the class is prime to `n` when
-`q ∤ n`, and in particular when `n ≥ 1` and `q > n`. -/
+The canonical choice of `s` is `Nat.oddExpPart m₀ n`, the product of the primes `p ∤ m₀` dividing
+`n` to an odd power (`exists_jacobiSym_eq_mul_jacobiSym_oddExpPart`). A prime `q` of the class is
+prime to `n` when `q ∤ n`, and in particular when `n ≥ 1` and `q > n`. -/
 theorem exists_jacobiSym_eq_mul_jacobiSym {m₀ a₀ n s t A : ℕ} (h8 : 8 ∣ m₀) (ha₀ : Odd a₀)
     (hn : n = s * t ^ 2 * A) (hA : ∀ p, p.Prime → p ∣ A → p ∣ m₀) :
     ∃ ε : ℤ, (ε = 1 ∨ ε = -1) ∧
@@ -160,16 +160,15 @@ theorem exists_jacobiSym_eq_mul_jacobiSym {m₀ a₀ n s t A : ℕ} (h8 : 8 ∣ 
     rw [← jacobiSym_mul_jacobiSym_eq_of_modEq h8 hn hA hodd (hq.trans hq₀.symm) hnq hnq₀]
     linear_combination (-jacobiSym n q) * jacobiSym.sq_one (hs q hnq)
 
-/-- **Reciprocity on a residue class**, with the roadmap's `s_{m₀}(n)`. Let `8 ∣ m₀` and let `a₀`
-be odd. There is `ε = ±1` such that every `q ≡ a₀ (mod m₀)` prime to `n` satisfies
-`J(n | q) = ε J(q | s_{m₀}(n))`, where `s_{m₀}(n)` is the product of the primes `p ∤ m₀` that divide
-`n` to an odd power. A prime `q` of the class is prime to `n` when `q ∤ n`, and in particular when
-`n ≥ 1` and `q > n`. -/
-theorem exists_jacobiSym_eq_mul_jacobiSym_prod {m₀ a₀ n : ℕ} (h8 : 8 ∣ m₀) (ha₀ : Odd a₀) :
+/-- **Reciprocity on a residue class**, with the odd-exponent part. Let `8 ∣ m₀` and let `a₀` be
+odd. There is `ε = ±1` such that every `q ≡ a₀ (mod m₀)` prime to `n` satisfies
+`J(n | q) = ε J(q | Nat.oddExpPart m₀ n)`, where `Nat.oddExpPart m₀ n` is the product of the primes
+`p ∤ m₀` that divide `n` to an odd power. A prime `q` of the class is prime to `n` when `q ∤ n`,
+and in particular when `n ≥ 1` and `q > n`. -/
+theorem exists_jacobiSym_eq_mul_jacobiSym_oddExpPart {m₀ a₀ n : ℕ} (h8 : 8 ∣ m₀) (ha₀ : Odd a₀) :
     ∃ ε : ℤ, (ε = 1 ∨ ε = -1) ∧ ∀ q, q ≡ a₀ [MOD m₀] → n.Coprime q →
-      jacobiSym n q = ε * jacobiSym q
-        (∏ p ∈ n.primeFactors with ¬ p ∣ m₀ ∧ Odd (n.factorization p), p) := by
-  obtain ⟨t, A, hnA, hA⟩ := Nat.exists_eq_prod_mul_sq_mul m₀ n
+      jacobiSym n q = ε * jacobiSym q (Nat.oddExpPart m₀ n) := by
+  obtain ⟨t, A, hnA, hA⟩ := Nat.exists_eq_oddExpPart_mul_sq_mul m₀ n
   exact exists_jacobiSym_eq_mul_jacobiSym h8 ha₀ hnA hA
 
 end TauCeti
