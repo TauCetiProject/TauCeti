@@ -254,19 +254,19 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℂ F'] {W : M → Type*}
   [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace F' W)] [FiberBundle F' W]
   [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, Module ℂ (W x)]
-  [∀ x, IsScalarTower ℝ ℂ (W x)] [VectorBundle ℝ F' W] [VectorBundle ℂ F' W]
+  [∀ x, IsScalarTower ℝ ℂ (W x)] [VectorBundle ℝ F' W] [VectorBundle ℂ F' W] {n : ℕ∞ω}
 
 /-- **Complex differential operators are real differential operators.** Let the real structures
 of the fibres of `V` and `W` be those underlying their complex structures. A complex-linear
-operator `P : Γ(V) → Γ(W)` which is a differential operator of order at most `m` in
-Grothendieck's sense, for commutators with multiplication by complex-valued smooth functions, is,
-as a real-linear operator, a differential operator of order at most `m` for commutators with
-multiplication by real-valued smooth functions. Indeed a real function acts on sections as its
-complex inclusion does (`ContMDiffSection.ofReal_smul`). -/
+operator `P` between the `C^n` sections of `V` and `W` which is a differential operator of order
+at most `m` in Grothendieck's sense, for commutators with multiplication by complex-valued `C^n`
+functions, is, as a real-linear operator, a differential operator of order at most `m` for
+commutators with multiplication by real-valued `C^n` functions. Indeed a real function acts on
+sections as its complex inclusion does (`ContMDiffSection.ofReal_smul`). -/
 theorem restrictScalars_mem_differentialOperators_of_complex {m : ℕ}
-    {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℂ] Cₛ^∞⟮I; F', W⟯}
-    (hP : P ∈ differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m) :
-    P.restrictScalars ℝ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m :=
+    {P : Cₛ^n⟮I; F, V⟯ →ₗ[ℂ] Cₛ^n⟮I; F', W⟯}
+    (hP : P ∈ differentialOperators ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ Cₛ^n⟮I; F, V⟯ Cₛ^n⟮I; F', W⟯ m) :
+    P.restrictScalars ℝ ∈ differentialOperators ℝ C^n⟮I, M; ℝ⟯ Cₛ^n⟮I; F, V⟯ Cₛ^n⟮I; F', W⟯ m :=
   comp_comp_mem_differentialOperators (ρ := LinearMap.id) (σ := LinearMap.id)
     (fun b ↦ ⟨ContMDiffMap.ofReal b, fun s ↦ by simp, fun s ↦ by simp⟩)
     (restrictScalars_mem_differentialOperators hP)
