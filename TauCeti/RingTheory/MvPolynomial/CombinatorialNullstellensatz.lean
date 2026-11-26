@@ -8,6 +8,7 @@ module
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.Nullstellensatz
+import Mathlib.Algebra.MonoidAlgebra.Support
 import Mathlib.Data.Finset.Finsupp
 import Mathlib.Data.Finsupp.PWO
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
@@ -15,7 +16,6 @@ import Mathlib.Tactic.Linarith
 import TauCeti.Data.Finsupp.WeightOrder
 import TauCeti.Order.WellQuasiOrder
 import TauCeti.RingTheory.MvPolynomial.LocalOrder
-import TauCeti.RingTheory.MvPolynomial.Submodule
 import TauCeti.RingTheory.MvPolynomial.TaylorJet
 
 /-!
@@ -106,7 +106,10 @@ private lemma weightedBasis_mem_of_weight_le [Finite ι] {κ : ι → ℕ}
   refine add_mem (ih β (by simp) _ h_le') ?_
   -- `g u * b ∈ N` is the statement that `g u` lies in the preimage of `N` under `· * b`.
   suffices g u ∈ N.comap (LinearMap.mulRight K (weightedBasis κ g β γ)) by simpa
-  refine mem_submodule_of_forall_monomial_mem fun δ hδ ↦ ?_
+  refine Submodule.span_le.2 ?_ (AddMonoidAlgebra.mem_span_support_coeff (g u))
+  rintro _ ⟨δ, hδ, rfl⟩
+  change δ ∈ (g u).support at hδ
+  change monomial δ 1 ∈ N.comap (LinearMap.mulRight K (weightedBasis κ g β γ))
   have h_lt : cost (δ + β) < 1 + cost β := by simpa using hg u δ hδ
   rw [Submodule.mem_comap, LinearMap.mulRight_apply, monomial_mul_weightedBasis]
   exact ih (δ + β) h_lt γ (by linarith)
@@ -120,9 +123,13 @@ private lemma mem_of_forall_weightedBasis_mem [Finite ι] {κ : ι → ℕ}
     (hN : ∀ α ∈ p.support, ∀ β γ : ι →₀ ℕ, (∀ u : ι, β u < κ u) →
       γ.degree + weight (fun u : ι ↦ (κ u : ℝ))⁻¹ β ≤ weight (fun u : ι ↦ (κ u : ℝ))⁻¹ α →
         weightedBasis κ g β γ ∈ N) :
-    p ∈ N :=
-  mem_submodule_of_forall_monomial_mem fun α hα ↦ weightedBasis_zero κ g α ▸
-    weightedBasis_mem_of_weight_le hκ hg (hN α hα) α 0 (by simp)
+    p ∈ N := by
+  refine Submodule.span_le.2 ?_ (AddMonoidAlgebra.mem_span_support_coeff p)
+  rintro _ ⟨α, hα, rfl⟩
+  change α ∈ p.support at hα
+  change monomial α 1 ∈ N
+  rw [← weightedBasis_zero κ g α]
+  exact weightedBasis_mem_of_weight_le hκ hg (hN α hα) α 0 (by simp)
 
 /-- **Weighted Combinatorial Nullstellensatz with multiplicity.** Give each variable `u : ι` the
 weight `1 / κ u`. Take at least `∏ u, κ u` distinct points `z t : ι → K` at which each `X u ^ κ u`

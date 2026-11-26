@@ -57,11 +57,10 @@ theorem exists_forall_coeff_taylor_eq {K ι S : Type*} [Field K] [Finite S] {z :
   classical
   have := Fintype.ofFinite S
   let d : ℕ := Γ.sup Finsupp.degree + 1
-  have h_ker (w : ι → K) : vanishingIdeal K {w} = RingHom.ker (eval w) := by
-    ext p
-    simp
   have h_coprime : Pairwise (Function.onFun IsCoprime fun t : S ↦ vanishingIdeal K {z t} ^ d) :=
-    fun t t' h_ne ↦ .pow (by simpa only [h_ker] using TauCeti.isCoprime_ker_eval (hz_inj.ne h_ne))
+    fun t t' h_ne ↦ .pow (by
+      simpa only [vanishingIdeal_singleton_eq_ker_eval] using
+        TauCeti.isCoprime_ker_eval (hz_inj.ne h_ne))
   let q (t : S) : MvPolynomial ι K := taylor (-z t) (∑ γ : Γ, monomial γ (y (t, γ)))
   obtain ⟨p, hp⟩ := exists_forall_sub_mem_ideal h_coprime q
   refine ⟨p, fun t γ ↦ ?_⟩

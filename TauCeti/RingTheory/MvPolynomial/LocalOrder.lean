@@ -36,6 +36,12 @@ namespace MvPolynomial
 
 variable {σ k : Type*} [Field k]
 
+/-- The vanishing ideal of a rational point is the kernel of evaluation at that point. -/
+theorem vanishingIdeal_singleton_eq_ker_eval (a : σ → k) :
+    vanishingIdeal k {a} = RingHom.ker (eval a) := by
+  ext f
+  simp only [mem_vanishingIdeal_singleton_iff, RingHom.mem_ker, aeval_eq_eval]
+
 /-- A polynomial belongs to the `n`-th power of the ideal of a rational point exactly when
 its Taylor order there is at least `n`. -/
 theorem mem_pow_vanishingIdeal_singleton_iff (f : MvPolynomial σ k) (a : σ → k) (n : ℕ) :
