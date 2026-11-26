@@ -171,4 +171,12 @@ theorem unitPartResidue_neg (t : Fˣ) (ht : v.ord (t : F) = 1) (f : Fˣ) :
   congr 1
   simpa using v.unitPartResidue_coe t ht ⟨-1, v.valuationSubring.neg_one_mem_unitGroup⟩
 
+/-- Changing the parameter from `t` to `t' = c t` divides the reduced unit part of `f` by
+`γ ^ ord_v f`, where `γ`, the residue of `c`, is the reduced unit part of `t'` relative to `t`. -/
+theorem unitPartResidue_eq_mul_zpow (t : Fˣ) (ht : v.ord (t : F) = 1) (t' : Fˣ)
+    (ht' : v.ord (t' : F) = 1) (f : Fˣ) :
+    v.unitPartResidue t' ht' f =
+      v.unitPartResidue t ht f * v.unitPartResidue t ht t' ^ (-v.ord (f : F)) := by
+  rw [unitPartResidue_apply, ← v.unitPartResidue_coe t ht, coe_unitPart, map_mul, map_zpow]
+
 end Valuation
