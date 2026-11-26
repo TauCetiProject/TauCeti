@@ -65,6 +65,9 @@ the Milnor ring is not an exterior algebra. The grade involution `σ`, which is 
   spanned by the symbols of length `n`, and is the image of the degree-`n` tensors.
 * `TauCeti.MilnorK.iSup_degree_eq_top`, `TauCeti.MilnorK.span_range_symbol`: the degree
   submodules exhaust `MilnorK R`, and the symbols span it.
+* `TauCeti.MilnorK.surjective_of_symbol_mem_range`,
+  `TauCeti.MilnorK.surjOn_degree_of_symbol_mem_image`: an additive map into `MilnorK R` is onto,
+  or onto degree `n`, as soon as it hits every symbol, or every symbol of length `n`.
 * `TauCeti.MilnorK.instGradedMonoidDegree`: the degree submodules make `MilnorK R` a graded monoid.
 * `TauCeti.MilnorK.instCharZero`, `TauCeti.MilnorK.ofUnit_injective`: `ℤ` and `Rˣ` embed.
 * `TauCeti.MilnorK.ofUnit_mul_ofUnit_neg_self`, `TauCeti.MilnorK.ofUnit_mul_ofUnit_comm`,
@@ -428,6 +431,26 @@ theorem span_range_symbol : Submodule.span ℤ (Set.range (symbol (R := R))) = �
   congr 1
   ext x
   simp [eq_comm]
+
+/-- An additive map into the Milnor K-ring whose image contains every symbol is onto. -/
+theorem surjective_of_symbol_mem_range {M : Type*} [AddCommGroup M] (φ : M →+ MilnorK R)
+    (h : ∀ l : List Rˣ, symbol l ∈ Set.range φ) : Function.Surjective φ := by
+  rw [← AddMonoidHom.coe_toIntLinearMap, ← LinearMap.range_eq_top, eq_top_iff,
+    ← span_range_symbol, Submodule.span_le]
+  rintro _ ⟨l, rfl⟩
+  exact h l
+
+/-- An additive map into the Milnor K-ring whose image of a subgroup `A` contains every symbol of
+length `n` maps `A` onto `K_nᴹ(R)`. -/
+theorem surjOn_degree_of_symbol_mem_image {M : Type*} [AddCommGroup M] (φ : M →+ MilnorK R)
+    {A : Submodule ℤ M} {n : ℕ} (h : ∀ l : List Rˣ, l.length = n → symbol l ∈ φ '' A) :
+    Set.SurjOn φ A (degree R n) := by
+  have hle : degree R n ≤ A.map φ.toIntLinearMap := by
+    rw [degree_eq_span, Submodule.span_le]
+    rintro _ ⟨l, hl, rfl⟩
+    exact h l hl
+  intro y hy
+  simpa [Submodule.mem_map] using hle hy
 
 /-! ### Graded maps -/
 
