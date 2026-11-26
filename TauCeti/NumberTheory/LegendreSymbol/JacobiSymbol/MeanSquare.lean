@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Norm
-public import Mathlib.Data.Nat.Factorization.PrimePow
 public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.ResidueClass
 import TauCeti.Algebra.Order.BigOperators.Sum.Union
 import TauCeti.Data.Nat.Prime.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Tactic.Positivity
 
 /-!
 # Algebraic mean-square inequality for quadratic twists of prime-power sums
@@ -270,10 +268,9 @@ private lemma sum_cross_active_le {N sStar : ℕ} {S R A : Finset ℕ} {c : ℕ 
         (sum_fiber_nonneg (Finset.Subset.refl _) hc n₀.minFac).trans (hB n₀.minFac hp0)
       exact mul_nonneg hB0 hRR_nonneg
 
-private lemma sum_special_pairs_le {m₀ N sStar : ℕ} {S R A : Finset ℕ} {c : ℕ → ℝ} {B : ℝ}
+private lemma sum_special_pairs_le {m₀ N sStar : ℕ} {S R : Finset ℕ} {c : ℕ → ℝ} {B : ℝ}
     (hS : S = (Finset.Icc 1 N).filter IsPrimePow)
     (hR : R = S.filter fun n => oddExpPart m₀ n = 1)
-    (hA : A = S.filter fun n => oddExpPart m₀ n ≠ 1)
     (hc : ∀ n ∈ S, 0 ≤ c n)
     (hB : ∀ p ∈ (Finset.Icc 1 N).filter Nat.Prime,
       (∑ n ∈ S.filter (fun n => n.minFac = p), c n) ≤ B) :
@@ -283,6 +280,7 @@ private lemma sum_special_pairs_le {m₀ N sStar : ℕ} {S R A : Finset ℕ} {c 
         (∑ n ∈ S.filter (fun n => n.minFac = p), c n) ^ 2) +
         (∑ n ∈ R, c n) ^ 2 + 2 * B ^ 2 + 2 * B * (∑ n ∈ R, c n) := by
   classical
+  set A := S.filter (fun n => oddExpPart m₀ n ≠ 1) with hA
   have hRS : R ⊆ S := by rw [hR]; exact Finset.filter_subset _ _
   have hAS : A ⊆ S := by rw [hA]; exact Finset.filter_subset _ _
   have hpp : ∀ n ∈ S, IsPrimePow n := fun n hn => by
@@ -319,7 +317,7 @@ private lemma sum_special_pairs_le {m₀ N sStar : ℕ} {S R A : Finset ℕ} {c 
     exact sum_cross_active_le hS hRS hAS hc hB
   have hu : ∀ {T T' : Finset (ℕ × ℕ)}, (∀ x ∈ T ∩ T', 0 ≤ c x.1 * c x.2) →
       ∑ x ∈ T ∪ T', c x.1 * c x.2 ≤ ∑ x ∈ T, c x.1 * c x.2 + ∑ x ∈ T', c x.1 * c x.2 :=
-    fun h => Finset.sum_union_le_sum_add_sum h
+    fun h => Finset.sum_union_le h
   have hu5 := hu (T := U1 ∪ U2 ∪ U3 ∪ U4) (T' := U5) fun x hx =>
     hU_nonneg x (by simp [(Finset.mem_inter.mp hx).2])
   have hu4 := hu (T := U1 ∪ U2 ∪ U3) (T' := U4) fun x hx =>
@@ -454,7 +452,6 @@ theorem sum_norm_sq_jacobiSym_le {m₀ a₀ N sStar : ℕ} {P : Finset ℕ}
   classical
   set S := (Finset.Icc 1 N).filter IsPrimePow with hS
   set R := S.filter (fun n => oddExpPart m₀ n = 1) with hR
-  set A := S.filter (fun n => oddExpPart m₀ n ≠ 1) with hA
   have hSI : S ⊆ Finset.Icc 1 N := by rw [hS]; exact Finset.filter_subset _ _
   have hcS : ∀ n ∈ S, 0 ≤ c n := fun n hn => hc_nonneg n (hSI hn)
   have hsum_eq : ∀ q : ℕ,
@@ -478,7 +475,7 @@ theorem sum_norm_sq_jacobiSym_le {m₀ a₀ N sStar : ℕ} {P : Finset ℕ}
   have hB' : ∀ p ∈ (Finset.Icc 1 N).filter Nat.Prime,
       (∑ n ∈ S.filter (fun n => n.minFac = p), c n) ≤ B := fun p hp => by
     rw [hsP_eq p]; exact hB p hp
-  have hspec := sum_special_pairs_le (sStar := sStar) hS hR hA hcS hB'
+  have hspec := sum_special_pairs_le (sStar := sStar) hS hR hcS hB'
   rw [hR_eq] at hspec
   simp only [hsP_eq] at hspec
   have h1 := hexp.trans hsplit

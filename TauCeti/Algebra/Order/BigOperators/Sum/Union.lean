@@ -16,7 +16,7 @@ is nonnegative on the overlap `s ∩ t`. This is the order consequence of
 
 ## Main results
 
-* `Finset.sum_union_le_sum_add_sum`: `∑ i ∈ s ∪ t, f i ≤ ∑ i ∈ s, f i + ∑ i ∈ t, f i` when
+* `Finset.sum_union_le`: `∑ i ∈ s ∪ t, f i ≤ ∑ i ∈ s, f i + ∑ i ∈ t, f i` when
   `0 ≤ f i` for every `i ∈ s ∩ t`.
 -/
 
@@ -26,7 +26,7 @@ namespace Finset
 
 /-- A sum over `s ∪ t` is at most the sum over `s` plus the sum over `t` when the summand is
 nonnegative on `s ∩ t`. -/
-theorem sum_union_le_sum_add_sum {ι M : Type*} [DecidableEq ι] [AddCommMonoid M] [PartialOrder M]
+theorem sum_union_le {ι M : Type*} [DecidableEq ι] [AddCommMonoid M] [Preorder M]
     [IsOrderedAddMonoid M] {s t : Finset ι} {f : ι → M} (h : ∀ i ∈ s ∩ t, 0 ≤ f i) :
     ∑ i ∈ s ∪ t, f i ≤ ∑ i ∈ s, f i + ∑ i ∈ t, f i := by
   rw [← sum_union_inter]
