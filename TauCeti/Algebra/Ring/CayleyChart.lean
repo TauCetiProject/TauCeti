@@ -362,7 +362,7 @@ lemma cayleyCoord_of_not_isUnit (hJ : ¬IsUnit (j + J)) : cayleyCoord j J = 0 :=
   simp [cayleyCoord_def, Ring.inverse_non_unit _ hJ]
 
 /-- The two factors of the Cayley coordinate relative to `1` commute. -/
-lemma cayleyCoord_one_eq_inverse_mul (x : A) :
+lemma cayleyCoord_one_eq_ringInverse_mul (x : A) :
     cayleyCoord 1 x = Ring.inverse (1 + x) * (1 - x) := by
   by_cases hx : IsUnit (1 + x)
   · have h : (1 + x) * (1 - x) = (1 - x) * (1 + x) := by noncomm_ring
@@ -374,7 +374,7 @@ lemma cayleyCoord_one_eq_inverse_mul (x : A) :
 /-- The left multiplication form of the defining equation of the Cayley coordinate at `1`. -/
 lemma one_add_mul_cayleyCoord_one (hx : IsUnit (1 + J)) :
     (1 + J) * cayleyCoord 1 J = 1 - J := by
-  rw [cayleyCoord_one_eq_inverse_mul, ← mul_assoc, Ring.mul_inverse_cancel _ hx, one_mul]
+  rw [cayleyCoord_one_eq_ringInverse_mul, ← mul_assoc, Ring.mul_inverse_cancel _ hx, one_mul]
 
 /-- If `2` is a unit, the denominator of the iterated Cayley coordinate at `1` is a unit,
 even when the original denominator is not a unit. -/

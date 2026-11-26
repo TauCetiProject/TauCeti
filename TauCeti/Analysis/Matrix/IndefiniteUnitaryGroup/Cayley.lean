@@ -12,7 +12,6 @@ public import TauCeti.LinearAlgebra.Matrix.Hermitian.Congruence
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.Cayley
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Comp
-import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 import Mathlib.RingTheory.Complex
 import TauCeti.LinearAlgebra.Complex.Module
 
