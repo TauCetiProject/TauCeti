@@ -150,12 +150,19 @@ theorem partitionEntropyRate_le_measureEntropy {T : X → X} {a : X → ℕ} (ha
     partitionEntropyRate μ T a ≤ measureEntropy μ T :=
   le_iSup₂_of_le a ha (le_iSup_of_le hfin le_rfl)
 
+/-- The length-one itinerary has the entropy of the label, for every measure. -/
+@[simp]
+theorem countablePartitionEntropy_iteratedPartitionLabel_one (T : X → X) (a : X → ι) :
+    countablePartitionEntropy μ (iteratedPartitionLabel T a 1) =
+      countablePartitionEntropy μ a := by
+  rw [iteratedPartitionLabel_one]
+  exact countablePartitionEntropy_comp_of_injective a Function.const_injective
+
 /-- The entropy rate is at most the entropy of the label itself. -/
 theorem partitionEntropyRate_le (μ : Measure X) (T : X → X) (a : X → ι) :
     partitionEntropyRate μ T a ≤ countablePartitionEntropy μ a := by
   refine (partitionEntropyRate_le_div one_pos μ T a).trans_eq ?_
-  rw [Nat.cast_one, div_one, iteratedPartitionLabel_one,
-    countablePartitionEntropy_comp_of_injective a Function.const_injective]
+  rw [Nat.cast_one, div_one, countablePartitionEntropy_iteratedPartitionLabel_one]
 
 /-- **Maximal rate.** If every itinerary has the largest possible entropy,
 `H(join_n a) = n * H(a)` for all `n`, then the entropy rate is the entropy. -/
@@ -232,14 +239,6 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_add (T : X → X) (a : 
         fun x ↦ (iteratedPartitionLabel T a m x, iteratedPartitionLabel T a n (T^[m] x)) := by
   rw [iteratedPartitionLabel_add]
   exact countablePartitionEntropy_comp_of_injective _ (Fin.appendEquiv m n).injective
-
-/-- The length-one itinerary has the entropy of the label, for every measure. -/
-@[simp]
-theorem countablePartitionEntropy_iteratedPartitionLabel_one (T : X → X) (a : X → ι) :
-    countablePartitionEntropy μ (iteratedPartitionLabel T a 1) =
-      countablePartitionEntropy μ a := by
-  rw [iteratedPartitionLabel_one]
-  exact countablePartitionEntropy_comp_of_injective a Function.const_injective
 
 /-- A countable label is a coarsening of every itinerary of positive length, so its entropy is at
 most the entropy of the itinerary, for every measure. -/
