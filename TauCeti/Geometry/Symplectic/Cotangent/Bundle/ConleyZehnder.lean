@@ -24,10 +24,11 @@ vertical tangent spaces. Such an `L₀` is automatically Lagrangian, since `χ` 
 file shows that a family `Φ` of linear symplectic maps along a loop, such as the linearized flow
 of a Hamiltonian along a periodic orbit, has the same Conley–Zehnder index in any two vertical
 frames whose change of frame is a loop, such as two periodic vertical frames, whatever their models
-(`TauCeti.CotangentBundle.frameConleyZehnderIndex_eq_of_map_eq_ker_mfderiv_proj`). This is the
-index that grades Floer homology of cotangent bundles canonically, with no choice of caps or of
-trivializations: two vertical frames differ by a loop preserving a Lagrangian, which has Maslov
-index zero.
+(`TauCeti.CotangentBundle.frameConleyZehnderIndex_eq_of_map_eq_ker_mfderiv_proj`): two such
+frames differ by a loop preserving a Lagrangian, which has Maslov index zero. This is the
+independence among vertical frames that the canonical grading of Floer homology of cotangent
+bundles uses; the existence of vertical frames, and the twisted frames needed along loops whose
+pulled-back tangent bundle is not orientable, are not covered here.
 
 A periodic vertical frame along a loop `γ` trivializes the vertical tangent spaces along `γ`, the
 fibres of `T*M` along `π ∘ γ`, so it exists only when the pullback of `TM` along `π ∘ γ` is

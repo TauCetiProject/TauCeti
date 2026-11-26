@@ -68,11 +68,9 @@ theorem maslovIndex_eq_zero_of_mapsTo (hL : ω.IsLagrangian L) {A : V →L[ℝ] 
     ω.maslovIndex g hg = 0 := by
   -- A symplectic basis whose first half is a basis of `L`.
   let e := Module.finBasis ℝ L
-  have hL' : L = ω.toBilinForm.orthogonal L := by
-    rw [← orthogonal_def]
-    exact le_antisymm (isIsotropic_iff_le.1 hL.isIsotropic)
-      (isCoisotropic_iff_le.1 hL.isCoisotropic)
-  obtain ⟨b, hb, hbe⟩ := ω.isAlt.exists_basis_toMatrix_eq_J_inl_eq ω.nondegenerate e hL'
+  -- `IsLagrangian` is not exposed, so `L = ω.orthogonal L` comes from its two halves.
+  obtain ⟨b, hb, hbe⟩ := ω.isAlt.exists_basis_toMatrix_eq_J_inl_eq ω.nondegenerate e
+    (le_antisymm (isIsotropic_iff_le.1 hL.isIsotropic) (isCoisotropic_iff_le.1 hL.isCoisotropic))
   rw [ω.maslovIndex_eq hb]
   -- In it, the matrices of `g` have a vanishing lower left block.
   refine GLSymplectic.maslovIndex_eq_zero_of_toBlocks₂₁_eq_zero _ fun t ↦ ?_

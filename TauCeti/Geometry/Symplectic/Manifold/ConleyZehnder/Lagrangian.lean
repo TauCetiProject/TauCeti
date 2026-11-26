@@ -34,18 +34,21 @@ give the same index:
   symplectomorphism `W ≃ W'` carrying `L₀` onto `L₀'`
   (`TauCeti.SymplecticForm.exists_isSymplectomorphism_map_eq`) moves both frames to one model.
 
-This is how the Conley–Zehnder grading of a periodic orbit in a cotangent bundle, read in frames
-that send the vertical tangent spaces to a fixed Lagrangian of the model, is well defined, without
-caps and without a choice of frame. Without the Lagrangian condition the index does depend on the
-frame: along the constant loop at a point, a frame rotating once in a symplectic plane of the model
-changes the index by `2`.
+So the Conley–Zehnder index of a periodic orbit in a cotangent bundle, read in frames that send
+the vertical tangent spaces to a fixed Lagrangian of the model, does not depend on the choice among
+such frames whose change of frame is a loop. This file constructs no such frame; their existence,
+and the twisted frames needed along loops whose pulled-back tangent bundle is not orientable, are
+not covered here. Without the Lagrangian condition the index does depend on the frame: along the
+constant loop at a point, a frame rotating once in a symplectic plane of the model changes the
+index by `2`.
 
 ## Main results
 
 * `TauCeti.SmoothTwoForm.IsSymplecticFrame.isLagrangian_map_iff`: a symplectic frame carries a
   subspace of the model onto a Lagrangian subspace exactly when the subspace is Lagrangian.
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_of_map_eq`: two symplectic frames with the same
-  model, carrying a Lagrangian of the model to the same subspaces along `γ`, give the same index.
+  model whose change of frame is a loop, carrying a Lagrangian of the model to the same subspaces
+  along `γ`, give the same index.
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_of_map_eq_of_map_eq`: two symplectic frames,
   with any models and with a loop as change of frame, adapted to the same subspaces along `γ`
   through Lagrangians of their models, give the same index.
