@@ -66,8 +66,9 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
 * `TauCeti.ModularForm.qExpansion_qParam_mul_j_coeff_one`,
   `TauCeti.ModularForm.qExpansion_qParam_mul_j_coeff_two`: the coefficients `744` and `196884`.
 * `TauCeti.ModularForm.exists_qExpansion_qParam_mul_j_coeff_eq_intCast`,
-  `TauCeti.ModularForm.exists_laurentQExpansion_j_coeff_eq_intCast`: these coefficients are
-  integers.
+  `TauCeti.ModularForm.exists_laurentQExpansion_j_coeff_eq_intCast`,
+  `TauCeti.ModularForm.laurentQExpansion_j_mem_map_rangeS`: these coefficients are
+  integers, so the Laurent `q`-expansion of `j` lifts along any ring homomorphism to `ℂ`.
 * `TauCeti.ModularForm.j_J_smul`: `j (-conj τ) = conj (j τ)`, from the integrality of these
   coefficients; hence `j τ` is real whenever `2 * τ.re` is an integer
   (`TauCeti.ModularForm.im_j_eq_zero_of_two_mul_re_eq_intCast`).
@@ -524,6 +525,15 @@ theorem exists_laurentQExpansion_j_coeff_eq_intCast (n : ℤ) :
   · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = k - 1 := ⟨(n + 1).toNat, by omega⟩
     rw [laurentQExpansion_j_coeff_natCast_sub_one]
     exact exists_qExpansion_qParam_mul_j_coeff_eq_intCast k
+
+/-- **The Laurent `q`-expansion of `j` lies in the image of `LaurentSeries R`** along any ring
+homomorphism `R →+* ℂ`, as its coefficients are integers. -/
+theorem laurentQExpansion_j_mem_map_rangeS {R : Type*} [NonAssocRing R] (f : R →+* ℂ) :
+    UpperHalfPlane.laurentQExpansion 1 j ∈
+      (HahnSeries.mapRingHom f : LaurentSeries R →+* LaurentSeries ℂ).rangeS :=
+  HahnSeries.mem_map_rangeS.mpr fun n ↦ by
+    obtain ⟨m, hm⟩ := exists_laurentQExpansion_j_coeff_eq_intCast n
+    exact ⟨m, (map_intCast f m).trans hm.symm⟩
 
 /-- **`j` commutes with complex conjugation**: `j (-conj τ) = conj (j τ)`, where
 `J • τ = -conj τ` is the reflection in the imaginary axis. The `q`-parameter of `-conj τ` is the

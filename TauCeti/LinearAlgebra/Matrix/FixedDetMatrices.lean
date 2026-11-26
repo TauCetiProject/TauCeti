@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Basic.Real.Basic
+public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import TauCeti.Algebra.Module.Primitive
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Upper-triangular representatives of integral matrices of fixed determinant
@@ -50,6 +52,11 @@ common divisor one, the representatives `FixedDetMatrices.primitiveReps n` are t
 * `FixedDetMatrices.primitiveReps`: the primitive matrices of `FixedDetMatrices.reps n`, and
   `FixedDetMatrices.exists_smul_mem_primitiveReps`: for `n ≠ 0` every primitive matrix of
   determinant `n` can be moved into them by `SL(2, ℤ)`.
+* `TauCeti.isPrimitive_upperTri_mul_emod_iff`: multiplying the upper-right entry of `(a b; 0 d)` by
+  `m` coprime to `gcd(a, d)` modulo `d` preserves and reflects primitivity.
+* `FixedDetMatrices.scaleRep`: the action of `(ZMod m)ˣ` on `FixedDetMatrices.reps m` scaling the
+  upper-right residue `(a b; 0 d) ↦ (a, u b mod d; 0, d)`, which permutes
+  `FixedDetMatrices.primitiveReps m` (`FixedDetMatrices.image_scaleRep_primitiveReps`).
 
 ## References
 
@@ -62,6 +69,43 @@ public section
 
 open Matrix
 open scoped MatrixGroups
+
+namespace TauCeti
+
+/-- Multiplying the upper-right entry of an upper-triangular `2 × 2` integral matrix
+`!![a, b; 0, d]` by `m` coprime to `gcd(a, d)` and reducing modulo `d` preserves and reflects
+`IsPrimitive`. -/
+theorem isPrimitive_upperTri_mul_emod_iff {a b d m : ℤ} (hm : IsCoprime m (a.gcd d : ℤ)) :
+    IsPrimitive !![a, m * b % d; 0, d] ↔ IsPrimitive !![a, b; 0, d] := by
+  have hiff (b' : ℤ) :
+      IsPrimitive !![a, b'; 0, d] ↔ ∃ c₀₀ c₀₁ c₁₁ : ℤ, a * c₀₀ + b' * c₀₁ + d * c₁₁ = 1 := by
+    rw [isPrimitive_def]
+    refine ⟨fun ⟨f, hf⟩ ↦ ⟨f !![1, 0; 0, 0], f !![0, 1; 0, 0], f !![0, 0; 0, 1], ?_⟩,
+      fun ⟨c₀₀, c₀₁, c₁₁, hc⟩ ↦ ⟨c₀₀ • (entryAddMonoidHom ℤ 0 0).toIntLinearMap +
+        c₀₁ • (entryAddMonoidHom ℤ 0 1).toIntLinearMap +
+        c₁₁ • (entryAddMonoidHom ℤ 1 1).toIntLinearMap,
+        by simpa only [LinearMap.add_apply, LinearMap.smul_apply, AddMonoidHom.coe_toIntLinearMap,
+          entryAddMonoidHom_apply, of_apply, cons_val', cons_val_zero, cons_val_one,
+          cons_val_fin_one, smul_eq_mul] using by linear_combination hc⟩⟩
+    have hmat : !![a, b'; (0 : ℤ), d] =
+        a • !![1, 0; 0, 0] + b' • !![0, 1; 0, 0] + d • !![0, 0; 0, 1] := by
+      ext i j; fin_cases i <;> fin_cases j <;> simp
+    rw [hmat, map_add, map_add, map_zsmul, map_zsmul, map_zsmul] at hf
+    simpa only [zsmul_eq_mul, Int.cast_id] using hf
+  rw [hiff, hiff]
+  have hdiv : m * b % d + d * (m * b / d) = m * b := Int.emod_add_mul_ediv (m * b) d
+  constructor
+  · rintro ⟨c₀₀, c₀₁, c₁₁, hc⟩
+    exact ⟨c₀₀, m * c₀₁, c₁₁ - (m * b / d) * c₀₁, by linear_combination hc - c₀₁ * hdiv⟩
+  · rintro ⟨c₀₀, c₀₁, c₁₁, hc⟩
+    obtain ⟨x, y, hxy⟩ := hm
+    exact ⟨c₀₀ + y * b * a.gcdA d * c₀₁, x * c₀₁,
+      c₁₁ + (x * (m * b / d) + y * b * a.gcdB d) * c₀₁,
+      by
+        linear_combination
+          hc + c₀₁ * x * hdiv + c₀₁ * b * hxy - c₀₁ * y * b * Int.gcd_eq_gcd_ab a d⟩
+
+end TauCeti
 
 namespace FixedDetMatrices
 
@@ -121,6 +165,30 @@ lemma apply_zero_zero_mul_apply_one_one {R : Type*} [CommRing R] {m : R}
 theorem pos_val_one_one_of_mem_reps (hn : 0 < n) {A : FixedDetMatrix (Fin 2) ℤ n}
     (hA : A ∈ reps n) : 0 < A.val 1 1 :=
   pos_of_mul_pos_right ((apply_zero_zero_mul_apply_one_one hA.1).symm ▸ hn) hA.2.1.le
+
+/-- A representative `(a b; 0 d) ∈ reps n` has nonzero lower-right entry `d ≠ 0`. -/
+theorem apply_one_one_ne_zero_of_mem_reps {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ reps n) :
+    A.val 1 1 ≠ 0 :=
+  abs_pos.mp ((abs_nonneg _).trans_lt hA.2.2.2)
+
+/-- For an upper-triangular `2 × 2` integral matrix of determinant `n`, the absolute values of the
+diagonal entries multiply to `|n|`. -/
+theorem natAbs_apply_zero_zero_mul_natAbs_apply_one_one {A : FixedDetMatrix (Fin 2) ℤ n}
+    (h : A.val 1 0 = 0) : (A.val 0 0).natAbs * (A.val 1 1).natAbs = n.natAbs := by
+  rw [← Int.natAbs_mul, apply_zero_zero_mul_apply_one_one h]
+
+/-- For a representative `(a b; 0 d) ∈ reps n`, `|b| < |d|` as natural numbers. -/
+theorem natAbs_apply_zero_one_lt_of_mem_reps {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ reps n) :
+    (A.val 0 1).natAbs < (A.val 1 1).natAbs := by
+  zify
+  exact hA.2.2.2
+
+/-- An upper-triangular `2 × 2` matrix of fixed determinant is `!![A 0 0, A 0 1; 0, A 1 1]`. -/
+theorem val_eq_of_apply_one_zero_eq_zero {R : Type*} [CommRing R] {m : R}
+    {A : FixedDetMatrix (Fin 2) R m} (h : A.val 1 0 = 0) :
+    A.val = !![A.val 0 0, A.val 0 1; 0, A.val 1 1] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [h]
 
 /-- **The upper-triangular representatives, explicitly parametrized.** For `n ≠ 0`, a
 representative `(a b; 0 d)` is recorded by the positive factor pair `(|a|, |d|)` of `|n|`
@@ -322,5 +390,198 @@ theorem exists_smul_mem_primitiveReps (hn : n ≠ 0) {A : FixedDetMatrix (Fin 2)
     (hA : TauCeti.IsPrimitive A.val) : ∃ g : SL(2, ℤ), g • A ∈ primitiveReps n := by
   obtain ⟨g, hg⟩ := exists_smul_mem_reps hn A
   exact ⟨g, mem_primitiveReps.2 ⟨hg, (isPrimitive_smul_iff g A).2 hA⟩⟩
+
+/-! ### Scaling the upper-right residue of representatives -/
+
+section ScaleRep
+
+variable {m : ℕ}
+
+open scoped Classical in
+/-- A unit `u : (ZMod m)ˣ` acts on `reps m` (and `primitiveReps m`) by multiplying the upper-right
+residue `b` of `(a b; 0 d)` by `u.val` modulo `d`, and fixes matrices outside `reps m`. -/
+noncomputable def scaleRep (u : (ZMod m)ˣ) (A : FixedDetMatrix (Fin 2) ℤ m) :
+    FixedDetMatrix (Fin 2) ℤ m :=
+  if hA : A ∈ reps (m : ℤ) then
+    (⟨!![A.val 0 0, ((u : ZMod m).val : ℤ) * A.val 0 1 % A.val 1 1; 0, A.val 1 1],
+      by simpa [det_fin_two_of] using apply_zero_zero_mul_apply_one_one hA.1⟩ :
+      FixedDetMatrix (Fin 2) ℤ m)
+  else A
+
+/-- For `A ∈ reps m`, `scaleRep u A` is `(a, (u.val * b) % d; 0, d)`. -/
+theorem val_scaleRep_of_mem_reps (u : (ZMod m)ˣ) {A : FixedDetMatrix (Fin 2) ℤ m}
+    (hA : A ∈ reps (m : ℤ)) :
+    (scaleRep u A).val =
+      !![A.val 0 0, ((u : ZMod m).val : ℤ) * A.val 0 1 % A.val 1 1; 0, A.val 1 1] := by
+  classical
+  exact congrArg Subtype.val (dite_eq_left hA : scaleRep u A = _)
+
+/-- Outside `reps m`, `scaleRep u` acts as the identity. -/
+theorem scaleRep_of_notMem_reps (u : (ZMod m)ˣ) {A : FixedDetMatrix (Fin 2) ℤ m}
+    (hA : A ∉ reps (m : ℤ)) : scaleRep u A = A := by
+  classical
+  exact dite_eq_right hA
+
+/-- `scaleRep u` preserves the `(0, 0)`-entry. -/
+@[simp]
+theorem scaleRep_apply_zero_zero (u : (ZMod m)ˣ) (A : FixedDetMatrix (Fin 2) ℤ m) :
+    (scaleRep u A).val 0 0 = A.val 0 0 := by
+  by_cases hA : A ∈ reps (m : ℤ)
+  · simp [val_scaleRep_of_mem_reps u hA]
+  · rw [scaleRep_of_notMem_reps u hA]
+
+/-- `scaleRep u` preserves the `(1, 0)`-entry. -/
+@[simp]
+theorem scaleRep_apply_one_zero (u : (ZMod m)ˣ) (A : FixedDetMatrix (Fin 2) ℤ m) :
+    (scaleRep u A).val 1 0 = A.val 1 0 := by
+  by_cases hA : A ∈ reps (m : ℤ)
+  · simp [val_scaleRep_of_mem_reps u hA, hA.1]
+  · rw [scaleRep_of_notMem_reps u hA]
+
+/-- `scaleRep u` preserves the `(1, 1)`-entry. -/
+@[simp]
+theorem scaleRep_apply_one_one (u : (ZMod m)ˣ) (A : FixedDetMatrix (Fin 2) ℤ m) :
+    (scaleRep u A).val 1 1 = A.val 1 1 := by
+  by_cases hA : A ∈ reps (m : ℤ)
+  · simp [val_scaleRep_of_mem_reps u hA]
+  · rw [scaleRep_of_notMem_reps u hA]
+
+/-- For `A ∈ reps m`, `scaleRep u A` multiplies the upper-right entry `b` by `u.val` modulo `d`. -/
+theorem scaleRep_apply_zero_one_of_mem_reps (u : (ZMod m)ˣ) {A : FixedDetMatrix (Fin 2) ℤ m}
+    (hA : A ∈ reps (m : ℤ)) :
+    (scaleRep u A).val 0 1 = ((u : ZMod m).val : ℤ) * A.val 0 1 % A.val 1 1 := by
+  simp [val_scaleRep_of_mem_reps u hA]
+
+/-- Natural-number form of `scaleRep_apply_zero_one_of_mem_reps`. -/
+theorem natAbs_scaleRep_apply_zero_one_of_mem_reps (u : (ZMod m)ˣ)
+    {A : FixedDetMatrix (Fin 2) ℤ m} (hA : A ∈ reps (m : ℤ)) :
+    ((scaleRep u A).val 0 1).natAbs =
+      (u : ZMod m).val * (A.val 0 1).natAbs % (A.val 1 1).natAbs := by
+  rcases eq_or_ne m 0 with rfl | hm0
+  · simp at hA
+  have hd : 0 < A.val 1 1 :=
+    pos_val_one_one_of_mem_reps (Int.natCast_pos.2 (Nat.pos_of_ne_zero hm0)) hA
+  have hcast : ((u : ZMod m).val : ℤ) * A.val 0 1 % A.val 1 1 =
+      (((u : ZMod m).val * (A.val 0 1).natAbs % (A.val 1 1).natAbs : ℕ) : ℤ) := by
+    rw [Int.natCast_emod, Nat.cast_mul, Int.natAbs_of_nonneg hA.2.2.1, Int.natAbs_of_nonneg hd.le]
+  rw [scaleRep_apply_zero_one_of_mem_reps u hA, hcast, Int.natAbs_natCast]
+
+/-- `scaleRep u` preserves and reflects membership in `reps m`. -/
+@[simp]
+theorem scaleRep_mem_reps_iff (u : (ZMod m)ˣ) (A : FixedDetMatrix (Fin 2) ℤ m) :
+    scaleRep u A ∈ reps (m : ℤ) ↔ A ∈ reps (m : ℤ) := by
+  by_cases hA : A ∈ reps (m : ℤ)
+  · refine iff_of_true ⟨?_, ?_, ?_, ?_⟩ hA
+    · simp [hA.1]
+    · simpa using hA.2.1
+    · rw [scaleRep_apply_zero_one_of_mem_reps u hA]
+      exact Int.emod_nonneg _ (apply_one_one_ne_zero_of_mem_reps hA)
+    · rw [scaleRep_apply_zero_one_of_mem_reps u hA, scaleRep_apply_one_one,
+        abs_of_nonneg (Int.emod_nonneg _ (apply_one_one_ne_zero_of_mem_reps hA))]
+      exact Int.emod_lt_abs _ (apply_one_one_ne_zero_of_mem_reps hA)
+  · rw [scaleRep_of_notMem_reps u hA]
+
+/-- `scaleRep u` preserves and reflects primitivity. -/
+@[simp]
+theorem isPrimitive_scaleRep_iff (u : (ZMod m)ˣ) (A : FixedDetMatrix (Fin 2) ℤ m) :
+    TauCeti.IsPrimitive (scaleRep u A).val ↔ TauCeti.IsPrimitive A.val := by
+  by_cases hA : A ∈ reps (m : ℤ)
+  · have hm_mul : (A.val 0 0).natAbs * (A.val 1 1).natAbs = m :=
+      (natAbs_apply_zero_zero_mul_natAbs_apply_one_one hA.1).trans (Int.natAbs_natCast m)
+    have hdvd_m : (A.val 0 0).gcd (A.val 1 1) ∣ m :=
+      ((Int.gcd_dvd_natAbs_left _ _).trans (dvd_mul_right _ _)).trans hm_mul.dvd
+    have hcop : IsCoprime ((u : ZMod m).val : ℤ) ((A.val 0 0).gcd (A.val 1 1) : ℤ) := by
+      rw [Int.isCoprime_iff_nat_coprime, Int.natAbs_natCast, Int.natAbs_natCast]
+      exact (ZMod.val_coe_unit_coprime u).coprime_dvd_right hdvd_m
+    exact (congrArg TauCeti.IsPrimitive (val_scaleRep_of_mem_reps u hA)).to_iff.trans
+      ((TauCeti.isPrimitive_upperTri_mul_emod_iff hcop).trans
+        (congrArg TauCeti.IsPrimitive (val_eq_of_apply_one_zero_eq_zero hA.1).symm).to_iff)
+  · rw [scaleRep_of_notMem_reps u hA]
+
+/-- `scaleRep u` preserves and reflects membership in `primitiveReps m`. -/
+theorem scaleRep_mem_primitiveReps_iff (u : (ZMod m)ˣ) (A : FixedDetMatrix (Fin 2) ℤ m) :
+    scaleRep u A ∈ primitiveReps (m : ℤ) ↔ A ∈ primitiveReps (m : ℤ) := by
+  simp [mem_primitiveReps]
+
+/-- `1 : (ZMod m)ˣ` acts trivially under `scaleRep`. -/
+@[simp]
+theorem scaleRep_one (A : FixedDetMatrix (Fin 2) ℤ m) : scaleRep 1 A = A := by
+  by_cases hA : A ∈ reps (m : ℤ)
+  · rcases eq_or_ne m 0 with rfl | hm0
+    · simp at hA
+    have : NeZero m := ⟨hm0⟩
+    have hd : 0 < A.val 1 1 :=
+      pos_val_one_one_of_mem_reps (Int.natCast_pos.2 (Nat.pos_of_ne_zero hm0)) hA
+    have hdvd : A.val 1 1 ∣ (m : ℤ) :=
+      ⟨A.val 0 0, by rw [mul_comm, apply_zero_zero_mul_apply_one_one hA.1]⟩
+    have hb_lt : A.val 0 1 < A.val 1 1 := by
+      have := hA.2.2.2
+      rwa [abs_of_nonneg hA.2.2.1, abs_of_pos hd] at this
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp only [Fin.zero_eta, Fin.mk_one,
+      scaleRep_apply_zero_zero, scaleRep_apply_one_zero, scaleRep_apply_one_one]
+    rw [scaleRep_apply_zero_one_of_mem_reps 1 hA, Units.val_one, ZMod.val_one_eq_one_mod,
+      Int.natCast_emod, Nat.cast_one]
+    calc (1 % (m : ℤ)) * A.val 0 1 % A.val 1 1
+        = 1 * A.val 0 1 % A.val 1 1 :=
+          (Int.ModEq.of_dvd hdvd (Int.mod_modEq 1 m)).mul_right _
+      _ = A.val 0 1 := by rw [one_mul, Int.emod_eq_of_lt hA.2.2.1 hb_lt]
+  · exact scaleRep_of_notMem_reps 1 hA
+
+/-- `scaleRep` is compatible with multiplication in `(ZMod m)ˣ`. -/
+theorem scaleRep_mul (u v : (ZMod m)ˣ) (A : FixedDetMatrix (Fin 2) ℤ m) :
+    scaleRep (u * v) A = scaleRep u (scaleRep v A) := by
+  by_cases hA : A ∈ reps (m : ℤ)
+  · rcases eq_or_ne m 0 with rfl | hm0
+    · simp at hA
+    have : NeZero m := ⟨hm0⟩
+    have hAv : scaleRep v A ∈ reps (m : ℤ) := (scaleRep_mem_reps_iff v A).2 hA
+    have hdvd : A.val 1 1 ∣ (m : ℤ) :=
+      ⟨A.val 0 0, by rw [mul_comm, apply_zero_zero_mul_apply_one_one hA.1]⟩
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp only [Fin.zero_eta, Fin.mk_one,
+      scaleRep_apply_zero_zero, scaleRep_apply_one_zero, scaleRep_apply_one_one]
+    rw [scaleRep_apply_zero_one_of_mem_reps (u * v) hA,
+      scaleRep_apply_zero_one_of_mem_reps u hAv, scaleRep_apply_one_one,
+      scaleRep_apply_zero_one_of_mem_reps v hA, Units.val_mul, ZMod.val_mul,
+      Int.natCast_emod, Nat.cast_mul]
+    calc (((u : ZMod m).val : ℤ) * (v : ZMod m).val % m) * A.val 0 1 % A.val 1 1
+        = (((u : ZMod m).val : ℤ) * (v : ZMod m).val) * A.val 0 1 % A.val 1 1 :=
+          (Int.ModEq.of_dvd hdvd (Int.mod_modEq _ m)).mul_right _
+      _ = ((u : ZMod m).val : ℤ) * ((v : ZMod m).val * A.val 0 1) % A.val 1 1 := by
+          rw [mul_assoc]
+      _ = ((u : ZMod m).val : ℤ) *
+            (((v : ZMod m).val : ℤ) * A.val 0 1 % A.val 1 1) % A.val 1 1 :=
+          (Int.mod_modEq _ _).symm.mul_left _
+  · rw [scaleRep_of_notMem_reps (u * v) hA, scaleRep_of_notMem_reps v hA,
+      scaleRep_of_notMem_reps u hA]
+
+/-- `scaleRep u⁻¹` is a left inverse to `scaleRep u`. -/
+@[simp]
+theorem scaleRep_inv_scaleRep (u : (ZMod m)ˣ) (A : FixedDetMatrix (Fin 2) ℤ m) :
+    scaleRep u⁻¹ (scaleRep u A) = A := by
+  rw [← scaleRep_mul, inv_mul_cancel, scaleRep_one]
+
+/-- `scaleRep u⁻¹` is a right inverse to `scaleRep u`. -/
+@[simp]
+theorem scaleRep_scaleRep_inv (u : (ZMod m)ˣ) (A : FixedDetMatrix (Fin 2) ℤ m) :
+    scaleRep u (scaleRep u⁻¹ A) = A := by
+  rw [← scaleRep_mul, mul_inv_cancel, scaleRep_one]
+
+/-- `scaleRep u` is injective. -/
+theorem scaleRep_injective (u : (ZMod m)ˣ) : Function.Injective (scaleRep u) :=
+  Function.LeftInverse.injective (scaleRep_inv_scaleRep u)
+
+/-- `scaleRep u` permutes `primitiveReps m`. -/
+@[simp]
+theorem image_scaleRep_primitiveReps [DecidableEq (FixedDetMatrix (Fin 2) ℤ m)]
+    (u : (ZMod m)ˣ) :
+    (primitiveReps (m : ℤ)).image (scaleRep u) = primitiveReps (m : ℤ) := by
+  refine Finset.eq_of_subset_of_card_le (fun B hB ↦ ?_)
+    (Finset.card_image_of_injOn (scaleRep_injective u).injOn).ge
+  obtain ⟨A, hA, rfl⟩ := Finset.mem_image.1 hB
+  exact (scaleRep_mem_primitiveReps_iff u A).2 hA
+
+end ScaleRep
 
 end FixedDetMatrices

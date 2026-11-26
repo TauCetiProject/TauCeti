@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.ModularForms.QExpansion.Affine
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import Mathlib.RingTheory.Polynomial.IsIntegral
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.NumberTheory.ModularForms.LevelOne.IsogenyQExpansion
 import TauCeti.RingTheory.HahnSeries.Map
 
 /-!
@@ -88,10 +89,7 @@ private theorem mem_integralLaurentSeries_iff {x : LaurentSeries ℂ} :
 /-- The Laurent `q`-expansion of `j` has algebraic integer coefficients. -/
 private theorem laurentQExpansion_j_mem_integralLaurentSeries :
     laurentQExpansion 1 j ∈ integralLaurentSeries :=
-  mem_integralLaurentSeries_iff.2 fun k ↦ by
-    obtain ⟨z, hz⟩ := exists_laurentQExpansion_j_coeff_eq_intCast k
-    rw [hz]
-    exact isIntegral_intCast z
+  laurentQExpansion_j_mem_map_rangeS (algebraMap (integralClosure ℤ ℂ) ℂ)
 
 /-- Expanding by `X ↦ X ^ d` preserves algebraic integer coefficients. -/
 private theorem expand_mem_integralLaurentSeries {x : LaurentSeries ℂ}
@@ -130,20 +128,6 @@ private noncomputable abbrev repsTwist (A : FixedDetMatrix (Fin 2) ℤ n) : ℂ�
 
 private theorem natCast_pos : (0 : ℤ) < n := by exact_mod_cast NeZero.pos n
 
-/-- The function `τ ↦ j ((a τ + b) / d)` has a meromorphic cusp function at period `n`. -/
-private theorem meromorphicAt_cuspFunction_j_toGLReal_smul (hA : A ∈ reps (n : ℤ)) :
-    MeromorphicAt (cuspFunction n fun τ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) 0 :=
-  meromorphicAt_cuspFunction_comp_toGLReal_smul natCast_pos hA
-    periodic_j_comp_ofComplex meromorphicAt_cuspFunction_j
-
-/-- The Laurent expansion of `τ ↦ j ((a τ + b) / d)` at period `n`. -/
-private theorem laurentQExpansion_j_toGLReal_smul (hA : A ∈ reps (n : ℤ)) :
-    laurentQExpansion n (fun τ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) =
-      LaurentSeries.expand ℂ (repsExponent A)
-        (LaurentSeries.rescale (repsTwist A) (laurentQExpansion 1 j)) :=
-  laurentQExpansion_comp_toGLReal_smul natCast_pos hA
-    periodic_j_comp_ofComplex meromorphicAt_cuspFunction_j
-
 /-- The entry `d` of a representative `(a b; 0 d)` is positive. -/
 private theorem toNat_val_one_one_pos (hA : A ∈ reps (n : ℤ)) : 0 < (A.val 1 1).toNat := by
   have := pos_val_one_one_of_mem_reps natCast_pos hA
@@ -179,7 +163,7 @@ coefficients**: they are integers times roots of unity. -/
 theorem isIntegral_coeff_laurentQExpansion_j_toGLReal_smul (hA : A ∈ reps (n : ℤ)) (k : ℤ) :
     IsIntegral ℤ
       ((laurentQExpansion n fun τ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ)).coeff k) := by
-  rw [laurentQExpansion_j_toGLReal_smul hA, ← map_repsTwistUnit hA]
+  rw [laurentQExpansion_j_toGLReal_smul hA, ← repsTwist, ← map_repsTwistUnit hA]
   exact mem_integralLaurentSeries_iff.1 (expand_mem_integralLaurentSeries
     (rescale_mem_integralLaurentSeries laurentQExpansion_j_mem_integralLaurentSeries _) _) k
 
@@ -220,7 +204,7 @@ private theorem laurentQExpansion_sub_j_toGLReal_smul
       LaurentSeries.expand ℂ (nPNat n) (laurentQExpansion 1 j) -
         LaurentSeries.expand ℂ (repsExponent A)
           (LaurentSeries.rescale (repsTwist A) (laurentQExpansion 1 j)) := by
-  rw [← laurentQExpansion_j_nat,
+  rw [repsExponent, repsTwist, ← laurentQExpansion_j_nat,
     ← laurentQExpansion_j_toGLReal_smul hA]
   exact laurentQExpansion_sub meromorphicAt_cuspFunction_j_nat
     (meromorphicAt_cuspFunction_j_toGLReal_smul hA)

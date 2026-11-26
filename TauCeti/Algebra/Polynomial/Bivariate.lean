@@ -12,13 +12,15 @@ public import Mathlib.Algebra.Polynomial.Taylor
 # Coefficient maps and evaluation of bivariate polynomials
 
 Evaluating a bivariate polynomial at a point `(x, y)` is `eval₂` of the evaluation at `x`
-of its coefficients, read at `y`. The bivariate-to-multivariate equivalence also commutes
+of its coefficients, read at `y`; in particular, evaluating `p.eval X` at `z` agrees with
+evaluating `p` on the diagonal `(z, z)`. The bivariate-to-multivariate equivalence also commutes
 with coefficient maps and evaluation. The coefficients of `f(X + Y)` are binomial multiples of
 those of `f`.
 
 ## Main results
 
 * `Polynomial.aevalAeval_eq_eval₂`: `φ(x, y) = eval₂ (aeval x) y φ`.
+* `Polynomial.aeval_eval_X`: evaluating `p.eval X` at `z` agrees with `aevalAeval z z p`.
 * `Polynomial.coeff_coeff_aeval_C_X_add_Y`: the coefficient of `X ^ a * Y ^ b` in `f(X + Y)` is
   `(a + b).choose b * f_{a+b}`.
 -/
@@ -36,6 +38,14 @@ theorem aevalAeval_eq_eval₂ {R A : Type*} [CommSemiring R] [CommSemiring A] [A
   induction p using Polynomial.induction_on' with
   | add p q hp hq => simp only [map_add, hp, hq, eval₂_add]
   | monomial n a => simp [← C_mul_X_pow_eq_monomial]
+
+/-- Evaluating `p.eval X` at `z` agrees with evaluating the bivariate polynomial `p` at `(z, z)`. -/
+@[simp]
+theorem aeval_eval_X {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    (z : A) (p : R[X][Y]) : aeval z (p.eval X) = aevalAeval z z p := by
+  induction p using Polynomial.induction_on' with
+  | add p q hp hq => simp [eval_add, hp, hq]
+  | monomial k a => simp [← C_mul_X_pow_eq_monomial]
 
 /-- The bivariate-to-multivariate equivalence commutes with coefficient maps. -/
 @[simp]

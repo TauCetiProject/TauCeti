@@ -87,12 +87,8 @@ private theorem aeval_j_monomial (n : ℕ) (a : R) :
 /-- The Laurent `q`-coefficients of the powers of `j` are integers. -/
 private theorem exists_laurentQExpansion_j_pow_coeff_eq_intCast (k : ℕ) (n : ℤ) :
     ∃ m : ℤ, (UpperHalfPlane.laurentQExpansion 1 j ^ k).coeff n = m := by
-  have hj : UpperHalfPlane.laurentQExpansion 1 j ∈
-      (HahnSeries.mapRingHom (Int.castRingHom ℂ) : LaurentSeries ℤ →+* LaurentSeries ℂ).rangeS :=
-    HahnSeries.mem_map_rangeS.mpr fun g ↦ by
-      obtain ⟨m, hm⟩ := exists_laurentQExpansion_j_coeff_eq_intCast g
-      exact ⟨m, hm.symm⟩
-  obtain ⟨m, hm⟩ := HahnSeries.mem_map_rangeS.mp (pow_mem hj k) n
+  obtain ⟨m, hm⟩ := HahnSeries.mem_map_rangeS.mp
+    (pow_mem (laurentQExpansion_j_mem_map_rangeS (Int.castRingHom ℂ)) k) n
   exact ⟨m, hm.symm⟩
 
 end TauCeti.ModularForm
