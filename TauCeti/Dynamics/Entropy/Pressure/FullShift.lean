@@ -82,13 +82,14 @@ private lemma pressureNetSum_agreeOn_Iio_le (f : α → ℝ) (c n : ℕ) :
   have hinj : Set.InjOn r s := by
     intro x hx y hy hxy
     by_contra hne
+    -- `Iio c` lies in the window `{j + 0 | j < c}`, so agreement on `Iio (n + c)` suffices
+    have hwin : Iio c ⊆ (fun j : ℕ ↦ (Nat.cast j : ℕ) + 0) '' Iio c := by simp
     have hxy' : (x, y) ∈ dynEntourage (shift (1 : ℕ)) (agreeOn (Iio c)) n := by
-      rw [dynEntourage_shift_agreeOn, mem_agreeOn]
-      rintro _ ⟨_, ⟨k, rfl⟩, _, ⟨hk, rfl⟩, i, hi, rfl⟩
-      exact congrFun hxy ⟨k + i, by simp only [mem_Iio] at hi; omega⟩
-    have hyy : (y, y) ∈ dynEntourage (shift (1 : ℕ)) (agreeOn (Iio c)) n := by
-      rw [dynEntourage_shift_agreeOn, mem_agreeOn]
-      exact fun _ _ ↦ rfl
+      refine agreeOn_window_subset_dynEntourage_shift hwin n ?_
+      simp only [Nat.cast_id, add_zero, image_id', mem_agreeOn, mem_Iio]
+      exact fun i hi ↦ congrFun hxy ⟨i, hi⟩
+    have hyy : (y, y) ∈ dynEntourage (shift (1 : ℕ)) (agreeOn (Iio c)) n :=
+      agreeOn_window_subset_dynEntourage_shift hwin n (mem_agreeOn.mpr fun _ _ ↦ rfl)
     exact Set.disjoint_left.mp (hs.2 hx hy hne) (SetRel.mem_ball.mpr (SetRel.mem_inv.mpr hxy'))
       (SetRel.mem_ball.mpr (SetRel.mem_inv.mpr hyy))
   calc ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum (shift (1 : ℕ)) (fun y ↦ f (y 0)) n x))
@@ -120,10 +121,10 @@ private lemma pow_le_pressureNetSum_agreeOn_zero (f : α → ℝ) (n : ℕ) :
     simp only [Finset.coe_image, Finset.coe_univ, image_univ, mem_range] at hx hy
     obtain ⟨w, rfl⟩ := hx
     obtain ⟨w', rfl⟩ := hy
-    simp only [SetRel.mem_ball, SetRel.mem_inv, dynEntourage_shift_agreeOn, mem_agreeOn] at hzx hzy
+    simp only [SetRel.mem_ball, SetRel.mem_inv, dynEntourage_shift_agreeOn_singleton_zero,
+      Nat.cast_id, image_id', mem_agreeOn, mem_Iio] at hzx hzy
     refine congrArg e (funext fun k ↦ ?_)
-    have hk : (k : ℕ) ∈ ⋃ j < n, (fun i ↦ (j : ℕ) + i) '' ({0} : Set ℕ) :=
-      mem_iUnion₂.mpr ⟨k, Finset.mem_range.mp k.property, 0, rfl, add_zero _⟩
+    have hk : (k : ℕ) < n := Finset.mem_range.mp k.property
     rw [← extendWord_of_mem w k.property, ← extendWord_of_mem w' k.property]
     exact (hzx k hk).trans (hzy k hk).symm
   have hw (w : Finset.range n → α) :
@@ -131,8 +132,7 @@ private lemma pow_le_pressureNetSum_agreeOn_zero (f : α → ℝ) (n : ℕ) :
         ∏ i, ENNReal.ofReal (Real.exp (f (w i))) := by
     rw [ofReal_exp_birkhoffSum_shift, Fin.prod_univ_eq_prod_range
       (fun k ↦ ENNReal.ofReal (Real.exp (f (e w k)))), ← Finset.prod_coe_sort]
-    exact Fintype.prod_congr _ _ fun i ↦ by
-      rw [show e w i = w i from extendWord_of_mem w i.property]
+    exact Fintype.prod_congr _ _ fun i ↦ by simp only [e, extendWord_of_mem w i.property]
   calc (∑ a, ENNReal.ofReal (Real.exp (f a))) ^ n
       = ∏ _i : Finset.range n, ∑ a, ENNReal.ofReal (Real.exp (f a)) := by simp
     _ = ∑ w : Finset.range n → α, ∏ i, ENNReal.ofReal (Real.exp (f (w i))) := Fintype.prod_sum _

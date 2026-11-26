@@ -32,7 +32,9 @@ agreeing on `0, …, n - 1`, which needs at least `card α ^ n` points. Both bou
 * `TauCeti.agreeOn S`: the relation "agree on the coordinates of `S`" on `G → α`; for a discrete
   alphabet these relations for finite `S` form a basis of the product uniformity
   (`TauCeti.hasBasis_agreeOn`), and `TauCeti.dynEntourage_shift_agreeOn` describes them for `n`
-  steps of the shift.
+  steps of the shift (with the window and coordinate-`0` cases
+  `TauCeti.agreeOn_window_subset_dynEntourage_shift` and
+  `TauCeti.dynEntourage_shift_agreeOn_singleton_zero`).
 * `TauCeti.extendWord S w`: a configuration extending the word `w` on `S`.
 
 ## Main results
@@ -129,6 +131,28 @@ theorem dynEntourage_shift_agreeOn (S : Set G) (n : ℕ) :
   · intro h k hk i hi
     exact h _ ⟨k, hk, i, hi, rfl⟩
 
+/-- If `S` lies in the window `{j + a | j < c}`, agreeing on the window `{j + a | j < n + c}`
+implies agreeing on `S` for `n` steps of the shift. -/
+theorem agreeOn_window_subset_dynEntourage_shift {S : Set G} {a : G} {c : ℕ}
+    (hS : S ⊆ (fun j : ℕ ↦ (j : G) + a) '' Iio c) (n : ℕ) :
+    (agreeOn ((fun j : ℕ ↦ (j : G) + a) '' Iio (n + c)) : SetRel (G → α) (G → α)) ⊆
+      dynEntourage (shift (1 : G)) (agreeOn S) n := by
+  rw [dynEntourage_shift_agreeOn]
+  refine agreeOn_anti (iUnion₂_subset fun k hk ↦ image_subset_iff.2 fun i hi ↦ ?_)
+  obtain ⟨j, hj, rfl⟩ := hS hi
+  simp only [mem_preimage, mem_image, mem_Iio] at hj ⊢
+  exact ⟨k + j, by omega, by push_cast; rw [add_assoc]⟩
+
+/-- Agreeing at the coordinate `0` for `n` steps of the shift is agreeing on the coordinates
+`0, …, n - 1`. -/
+theorem dynEntourage_shift_agreeOn_singleton_zero (n : ℕ) :
+    dynEntourage (shift (1 : G)) (agreeOn {0} : SetRel (G → α) (G → α)) n =
+      agreeOn ((Nat.cast : ℕ → G) '' Iio n) := by
+  rw [dynEntourage_shift_agreeOn]
+  congr 1
+  ext g
+  simp [eq_comm]
+
 variable [Fintype α] [Nonempty α]
 
 /-- If `S` lies in the window `{a + j | j < c}`, the minimal dynamical covers for agreement on `S`
@@ -143,13 +167,8 @@ private lemma coverMincard_shift_le {S : Set G} {a : G} {c : ℕ}
   have hcov : IsDynCoverOf (shift (1 : G)) univ (agreeOn S) n (s : Set (G → α)) := by
     intro x _
     obtain ⟨y, hy, hxy⟩ := hs x
-    refine ⟨y, hy, ?_⟩
-    rw [dynEntourage_shift_agreeOn]
-    refine agreeOn_anti ?_ hxy
-    rintro _ ⟨_, ⟨k, rfl⟩, _, ⟨hk, rfl⟩, i, hi, rfl⟩
-    obtain ⟨j, hj, rfl⟩ := hS hi
-    simp only [W, Finset.coe_image, Finset.coe_range, mem_image, mem_Iio]
-    exact ⟨k + j, by simp only [mem_Iio] at hj; omega, by push_cast; rw [add_assoc]⟩
+    refine ⟨y, hy, agreeOn_window_subset_dynEntourage_shift hS n ?_⟩
+    simpa only [W, Finset.coe_image, Finset.coe_range] using hxy
   have hone : 1 ≤ Fintype.card α := Fintype.card_pos
   calc (coverMincard (shift (1 : G)) univ (agreeOn S) n : ℝ≥0∞) ≤ (s.card : ℝ≥0∞) :=
         ENat.toENNReal_le.2 hcov.coverMincard_le_card
@@ -165,8 +184,8 @@ private lemma pow_le_coverMincard_shift (hG : Function.Injective (Nat.cast : ℕ
       (coverMincard (shift (1 : G)) univ (agreeOn {0} : SetRel (G → α) (G → α)) n : ℝ≥0∞) := by
   classical
   let W : Finset G := (Finset.range n).image fun k : ℕ ↦ (k : G)
-  have hW : (W : Set G) = ⋃ k < n, (fun i ↦ (k : G) + i) '' {0} := by
-    ext g; simp [W, eq_comm]
+  have hW : (W : Set G) = (Nat.cast : ℕ → G) '' Iio n := by
+    simp [W]
   have hWcard : W.card = n := by
     rw [Finset.card_image_of_injective _ hG, Finset.card_range]
   have : ((Fintype.card α ^ n : ℕ) : ℕ∞) ≤
@@ -175,7 +194,7 @@ private lemma pow_le_coverMincard_shift (hG : Function.Injective (Nat.cast : ℕ
     rw [← hWcard]
     exact_mod_cast card_le_of_agreeOn W s fun x ↦ by
       obtain ⟨y, hy, hxy⟩ := hs (mem_univ x)
-      exact ⟨y, hy, by rw [hW, ← dynEntourage_shift_agreeOn]; exact hxy⟩
+      exact ⟨y, hy, by rw [hW, ← dynEntourage_shift_agreeOn_singleton_zero]; exact hxy⟩
   calc (Fintype.card α : ℝ≥0∞) ^ n = (((Fintype.card α ^ n : ℕ) : ℕ∞) : ℝ≥0∞) := by simp
     _ ≤ _ := ENat.toENNReal_le.2 this
 
