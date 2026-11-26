@@ -120,12 +120,12 @@ theorem shiftedEntry_def {ι : Type*} (γ : ℤ) (m : ℕ) (l : ι → ℤ) (i :
 /-- Negating `l` and replacing `γ` by `m - γ` negates `shiftedEntry`. -/
 @[simp] theorem shiftedEntry_neg {ι : Type*} (γ : ℤ) (m : ℕ) (l : ι → ℤ) :
     shiftedEntry ((m : ℤ) - γ) m (-l) = Neg.neg ∘ shiftedEntry γ m l :=
-  funext fun i ↦ by simp [shiftedEntry_def]; omega
+  funext fun i ↦ by simp only [shiftedEntry_def, Pi.neg_apply, Function.comp_apply]; omega
 
 /-- Shifting `γ` by `v` and `l` by `2 * v` leaves `shiftedEntry` unchanged. -/
 @[simp] theorem shiftedEntry_add {ι : Type*} (γ v : ℤ) (m : ℕ) (l : ι → ℤ) :
     shiftedEntry (γ + v) m (fun i ↦ l i + 2 * v) = shiftedEntry γ m l :=
-  funext fun i ↦ by simp [shiftedEntry_def]; omega
+  funext fun i ↦ by simp only [shiftedEntry_def]; omega
 
 /-- Shifting preserves injectivity. -/
 theorem shiftedEntry_injective {ι : Type*} {γ : ℤ} {m : ℕ} {l : ι → ℤ} (hl : l.Injective) :
@@ -327,8 +327,12 @@ theorem IsBlockRule.neg (h : IsBlockRule gap s t γ γ' l l') :
     IsBlockRule gap (-s) t (card ι₁ - γ) (card ι₂ - γ') (-l) (-l') := by
   refine ⟨fun _ _ hij ↦ h.injective_left (neg_inj.mp hij),
     fun _ _ hij ↦ h.injective_right (neg_inj.mp hij),
-    fun c ↦ by obtain ⟨k, hk⟩ := h.parity_left c; exact ⟨card ι₁ - 1 - k, by simp; omega⟩,
-    fun r ↦ by obtain ⟨k, hk⟩ := h.parity_right r; exact ⟨card ι₂ - 1 - k, by simp; omega⟩,
+    fun c ↦ by
+      obtain ⟨k, hk⟩ := h.parity_left c
+      exact ⟨card ι₁ - 1 - k, by simp only [Pi.neg_apply]; omega⟩,
+    fun r ↦ by
+      obtain ⟨k, hk⟩ := h.parity_right r
+      exact ⟨card ι₂ - 1 - k, by simp only [Pi.neg_apply]; omega⟩,
     fun c₁ c₂ hne ↦ by
       simpa [sub_neg_eq_add, neg_add_eq_sub, abs_sub_comm] using
         h.gap_left c₁ c₂ (fun heq ↦ hne (by simp [heq])),
