@@ -291,10 +291,7 @@ theorem borelMooreHomologyMap_comp_borelMooreHomologyRestrictOfExhaustion
     hf.of_isEmbedding_of_range_eq hi.isEmbedding hj.isEmbedding hcomm hpre
   have hKU := closure_image_subset_range_of_cartesian hf hi hj hsq hpre K KU hK
   let KU' := K.preimage hf'
-  have hKU' (n : ℕ) : closure (i.hom '' KU' n) ⊆ Set.range i.hom := by
-    simp only [KU', CompactExhaustion.preimage_apply,
-      hj.injective.image_preimage_eq_preimage_image hcomm hpre, hpre]
-    exact (f.hom.continuous.closure_preimage_subset _).trans (Set.preimage_mono (hK n))
+  have hKU' := closure_image_subset_range_of_cartesian hf hi hj hsq hpre K KU' hK
   rw [borelMooreHomologyRestrictOfExhaustion_eq ((pullback f.hom).obj L) hi KU KU' hKU hKU' k]
   have := quasiIso_locallyFiniteChainComplexToLimComplexOfInjective L K hj hK
   have hrK :=

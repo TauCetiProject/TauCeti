@@ -300,9 +300,10 @@ theorem borelMooreHomologyRestrictOfExhaustion_eq (hj : IsOpenEmbedding j.hom)
     (hK' : ∀ n, closure (j.hom '' K' n) ⊆ Set.range j.hom) (k : ℕ) :
     borelMooreHomologyRestrictOfExhaustion L hj K hK k =
       borelMooreHomologyRestrictOfExhaustion L hj K' hK' k := by
-  let K'' := K.union K'
+  let K'' := K.unionImage K' continuous_id IsOpenMap.id
   have hK'' (n : ℕ) : closure (j.hom '' K'' n) ⊆ Set.range j.hom := by
-    simp only [K'', CompactExhaustion.union_apply, Set.image_union, closure_union]
+    simp only [K'', CompactExhaustion.unionImage_apply, Set.image_id, Set.image_union,
+      closure_union]
     exact Set.union_subset (hK n) (hK' n)
   exact (borelMooreHomologyRestrictOfExhaustion_eq_of_subset L hj
       (fun _ ↦ by simp [K'']) hK hK'' k).symm.trans

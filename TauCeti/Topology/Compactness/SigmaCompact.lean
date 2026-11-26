@@ -19,7 +19,6 @@ of open sets:
 
 * `IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset`: a sigma-compact
   open subset of a locally compact space has a monotone sequence of compact subsets exhausting it.
-* `CompactExhaustion.union`: pointwise union of two compact exhaustions.
 * `CompactExhaustion.unionImage`: enlarging a compact exhaustion by the images of a compact
   exhaustion along a continuous open map.
 * `CompactExhaustion.preimage`: pulling back a compact exhaustion along a proper map.
@@ -99,23 +98,6 @@ theorem isOpen_of_subset_interior_succ {X : Type*} [TopologicalSpace X] {U : Set
 end TauCeti
 
 namespace CompactExhaustion
-
-/-- The pointwise union of two compact exhaustions is a compact exhaustion. -/
-def union {X : Type*} [TopologicalSpace X] (K K' : CompactExhaustion X) :
-    CompactExhaustion X where
-  toFun n := K n ∪ K' n
-  isCompact' n := (K.isCompact n).union (K'.isCompact n)
-  subset_interior_succ' n :=
-    Set.union_subset
-      ((K.subset_interior_succ n).trans (interior_mono Set.subset_union_left))
-      ((K'.subset_interior_succ n).trans (interior_mono Set.subset_union_right))
-  iUnion_eq' := by
-    rw [Set.iUnion_union_distrib, K.iUnion_eq, Set.univ_union]
-
-@[simp]
-lemma union_apply {X : Type*} [TopologicalSpace X] (K K' : CompactExhaustion X) (n : ℕ) :
-    (K.union K') n = K n ∪ K' n :=
-  (rfl)
 
 /-- Enlarging a compact exhaustion of `V` by the images of a compact exhaustion of `W` along a
 continuous open map `i : W → V` yields a compact exhaustion of `V`. -/

@@ -39,8 +39,8 @@ is natural in the coefficient system. On homology they give `borelMooreHomologyM
   finite chains, `locallyFiniteChainComplexMap` the chain map it forms and
   `borelMooreHomologyMap` the induced map on Borel–Moore homology.
 * `TauCeti.LocalCoefficientSystem.locallyFiniteChainsCoefficientMap`: the change of coefficients
-  of locally finite chains, with `locallyFiniteChainComplexCoefficientMap`,
-  `borelMooreHomologyCoefficientMap`, and `borelMooreHomologyCoefficientIso`.
+  of locally finite chains, with `locallyFiniteChainComplexCoefficientMap` and
+  `borelMooreHomologyCoefficientMap`.
 * `TauCeti.LocalCoefficientSystem.toLocallyFiniteChainComplex_comp_locallyFiniteChainComplexMap`
   and `toLocallyFiniteChainComplex_comp_locallyFiniteChainComplexCoefficientMap`: the inclusion of
   finite chains is natural for both.
@@ -312,33 +312,6 @@ lemma borelMooreHomologyCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) (k : �
     borelMooreHomologyCoefficientMap (η ≫ θ) k =
       borelMooreHomologyCoefficientMap η k ≫ borelMooreHomologyCoefficientMap θ k := by
   simp [borelMooreHomologyCoefficientMap, HomologicalComplex.homologyMap_comp]
-
-/-- Change of local coefficients on Borel–Moore homology along an isomorphism of systems. -/
-def borelMooreHomologyCoefficientIso (e : L ≅ K) (k : ℕ) :
-    borelMooreHomology L k ≅ borelMooreHomology K k where
-  hom := borelMooreHomologyCoefficientMap e.hom k
-  inv := borelMooreHomologyCoefficientMap e.inv k
-  hom_inv_id := by
-    rw [← borelMooreHomologyCoefficientMap_comp, e.hom_inv_id,
-      borelMooreHomologyCoefficientMap_id]
-  inv_hom_id := by
-    rw [← borelMooreHomologyCoefficientMap_comp, e.inv_hom_id,
-      borelMooreHomologyCoefficientMap_id]
-
-@[simp]
-lemma borelMooreHomologyCoefficientIso_hom (e : L ≅ K) (k : ℕ) :
-    (borelMooreHomologyCoefficientIso e k).hom = borelMooreHomologyCoefficientMap e.hom k :=
-  (rfl)
-
-@[simp]
-lemma borelMooreHomologyCoefficientIso_inv (e : L ≅ K) (k : ℕ) :
-    (borelMooreHomologyCoefficientIso e k).inv = borelMooreHomologyCoefficientMap e.inv k :=
-  (rfl)
-
-/-- An isomorphism of local coefficient systems induces an isomorphism on Borel–Moore homology. -/
-instance isIso_borelMooreHomologyCoefficientMap (η : L ⟶ K) [IsIso η] (k : ℕ) :
-    IsIso (borelMooreHomologyCoefficientMap η k) :=
-  (borelMooreHomologyCoefficientIso (asIso η) k).isIso_hom
 
 end Coefficients
 

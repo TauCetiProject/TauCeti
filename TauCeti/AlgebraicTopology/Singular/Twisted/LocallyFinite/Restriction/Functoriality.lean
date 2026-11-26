@@ -142,6 +142,43 @@ theorem borelMooreHomologyRestrictOfExhaustion_naturality (hj : IsOpenEmbedding 
             (locallyFiniteChainComplexToLimComplexOfInjective K E hj.injective) k :=
         (Category.assoc _ _ _).symm
 
+private lemma twistedChainComplexCoefficientMap_comp_twistedChainComplexMapOfFstEq_id
+    {X : TopCat.{v}} (L : LocalCoefficientSystem.{u, v, max v w} R X)
+    {A B : Set X} (hmap : Set.MapsTo (TopCat.Hom.hom (𝟙 X)) A B) (hEq : A = B) :
+    (TopPair.ofSubset A).twistedChainComplexCoefficientMap ((pullbackIdIso X).inv.app L) ≫
+      TopPair.twistedChainComplexMapOfFstEq (TopPair.ofSubsetMap (𝟙 X) hmap)
+        (TopPair.ofSubsetMap_fst _ _) L =
+      eqToHom (congrArg (fun S : Set X ↦ (TopPair.ofSubset S).twistedChainComplex L) hEq) := by
+  let p := TopPair.ofSubsetMap (𝟙 X) hmap
+  apply (TopPair.ofSubset A).twistedChainComplex_hom_ext L
+  have hfst : twistedChainComplexCoefficientMap ((pullbackIdIso X).inv.app L) ≫
+      twistedChainComplexMap (𝟙 X) L = 𝟙 (twistedChainComplex L) := by
+    rw [twistedChainComplexMap_id, ← twistedChainComplexCoefficientMap_comp]
+    simp
+  have h1 : (TopPair.ofSubset A).twistedChainComplexπ L ≫
+      (TopPair.ofSubset A).twistedChainComplexCoefficientMap ((pullbackIdIso X).inv.app L) ≫
+      TopPair.twistedChainComplexMapOfFstEq p (TopPair.ofSubsetMap_fst _ _) L =
+      (TopPair.ofSubset B).twistedChainComplexπ L := by
+    -- `(TopPair.ofSubset _).fst` is only definitionally `X`, so `trans` aligns the ambient types.
+    trans twistedChainComplexCoefficientMap ((pullbackIdIso X).inv.app L) ≫
+        (TopPair.ofSubset A).twistedChainComplexπ ((pullback (TopCat.Hom.hom (𝟙 X))).obj L) ≫
+        TopPair.twistedChainComplexMapOfFstEq p (TopPair.ofSubsetMap_fst _ _) L
+    · exact TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc
+        (TopPair.ofSubset A) ((pullbackIdIso X).inv.app L) _
+    trans twistedChainComplexCoefficientMap ((pullbackIdIso X).inv.app L) ≫
+        twistedChainComplexMap (𝟙 X) L ≫ (TopPair.ofSubset B).twistedChainComplexπ L
+    · exact congrArg (_ ≫ ·)
+        (TopPair.twistedChainComplexπ_comp_twistedChainComplexMapOfFstEq p
+          (TopPair.ofSubsetMap_fst _ _) L)
+    trans (twistedChainComplexCoefficientMap ((pullbackIdIso X).inv.app L) ≫
+        twistedChainComplexMap (𝟙 X) L) ≫ (TopPair.ofSubset B).twistedChainComplexπ L
+    · exact (Category.assoc _ _ _).symm
+    · exact (congrArg (· ≫ _) hfst).trans (Category.id_comp _)
+  refine h1.trans ?_
+  -- Both `A` and `B` are free variables here, so `subst hEq` rewrites `eqToHom` directly.
+  subst hEq
+  simp
+
 /-- Open restriction along the identity map is the coefficient comparison `pullbackIdIso.inv`. -/
 theorem borelMooreHomologyRestrictOfExhaustion_id
     (hid : IsOpenEmbedding (TopCat.Hom.hom (𝟙 X))) (K : CompactExhaustion X) (k : ℕ) :
@@ -155,44 +192,8 @@ theorem borelMooreHomologyRestrictOfExhaustion_id
     (fun n ↦ Set.image_mono (K.subset_succ n))).isLimitLimComplexCone.hom_ext
   rintro ⟨n⟩
   have hEq : (K n)ᶜ = (TopCat.Hom.hom (𝟙 X) '' K n)ᶜ := by simp
-  let p := TopPair.ofSubsetMap (𝟙 X)
-    (Set.SurjOn.mapsTo_compl (Set.surjOn_image (TopCat.Hom.hom (𝟙 X)) (K n)) hid.injective)
-  have hcomp : (TopPair.ofSubset (K n)ᶜ).twistedChainComplexCoefficientMap
-        ((pullbackIdIso X).inv.app L) ≫
-      TopPair.twistedChainComplexMapOfFstEq p (TopPair.ofSubsetMap_fst _ _) L =
-      eqToHom (congrArg (fun A : Set X ↦ (TopPair.ofSubset A).twistedChainComplex L) hEq) := by
-    apply (TopPair.ofSubset (K n)ᶜ).twistedChainComplex_hom_ext L
-    have hfst : twistedChainComplexCoefficientMap ((pullbackIdIso X).inv.app L) ≫
-        twistedChainComplexMap (𝟙 X) L = 𝟙 (twistedChainComplex L) := by
-      rw [twistedChainComplexMap_id, ← twistedChainComplexCoefficientMap_comp]
-      simp
-    have h1 : (TopPair.ofSubset (K n)ᶜ).twistedChainComplexπ L ≫
-        (TopPair.ofSubset (K n)ᶜ).twistedChainComplexCoefficientMap
-          ((pullbackIdIso X).inv.app L) ≫
-        TopPair.twistedChainComplexMapOfFstEq p (TopPair.ofSubsetMap_fst _ _) L =
-        (TopPair.ofSubset (TopCat.Hom.hom (𝟙 X) '' K n)ᶜ).twistedChainComplexπ L := by
-      -- `(TopPair.ofSubset _).fst` is only definitionally `X`, so `trans` aligns the ambient types.
-      trans twistedChainComplexCoefficientMap ((pullbackIdIso X).inv.app L) ≫
-          (TopPair.ofSubset (K n)ᶜ).twistedChainComplexπ
-            ((pullback (TopCat.Hom.hom (𝟙 X))).obj L) ≫
-          TopPair.twistedChainComplexMapOfFstEq p (TopPair.ofSubsetMap_fst _ _) L
-      · exact TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc
-          (TopPair.ofSubset (K n)ᶜ) ((pullbackIdIso X).inv.app L) _
-      trans twistedChainComplexCoefficientMap ((pullbackIdIso X).inv.app L) ≫
-          twistedChainComplexMap (𝟙 X) L ≫
-          (TopPair.ofSubset (TopCat.Hom.hom (𝟙 X) '' K n)ᶜ).twistedChainComplexπ L
-      · exact congrArg (_ ≫ ·)
-          (TopPair.twistedChainComplexπ_comp_twistedChainComplexMapOfFstEq p
-            (TopPair.ofSubsetMap_fst _ _) L)
-      trans (twistedChainComplexCoefficientMap ((pullbackIdIso X).inv.app L) ≫
-          twistedChainComplexMap (𝟙 X) L) ≫
-          (TopPair.ofSubset (TopCat.Hom.hom (𝟙 X) '' K n)ᶜ).twistedChainComplexπ L
-      · exact (Category.assoc _ _ _).symm
-      · exact (congrArg (· ≫ _) hfst).trans (Category.id_comp _)
-    refine h1.trans ?_
-    generalize hS : (TopCat.Hom.hom (𝟙 X) '' K n)ᶜ = S at hEq ⊢
-    subst hEq
-    simp
+  have hmap : Set.MapsTo (TopCat.Hom.hom (𝟙 X)) (K n)ᶜ (TopCat.Hom.hom (𝟙 X) '' K n)ᶜ :=
+    Set.SurjOn.mapsTo_compl (Set.surjOn_image (TopCat.Hom.hom (𝟙 X)) (K n)) hid.injective
   simp only [ComplexTower.limComplexCone_π_app, Category.assoc,
     locallyFiniteChainComplexToLimComplexOfInjective_comp_limComplexπ,
     locallyFiniteChainComplexToLimComplex_comp_limComplexπ]
@@ -201,7 +202,8 @@ theorem borelMooreHomologyRestrictOfExhaustion_id
         (K.isCompact n).compl_range_ofSubset_compl_map ≫
       (TopPair.ofSubset (K n)ᶜ).twistedChainComplexCoefficientMap
         ((pullbackIdIso X).inv.app L) ≫
-      TopPair.twistedChainComplexMapOfFstEq p (TopPair.ofSubsetMap_fst _ _) L
+      TopPair.twistedChainComplexMapOfFstEq (TopPair.ofSubsetMap (𝟙 X) hmap)
+        (TopPair.ofSubsetMap_fst _ _) L
   · exact
       TopPair.locallyFiniteChainComplexCoefficientMap_comp_locallyFiniteChainComplexToRelative_assoc
         (TopPair.ofSubset (K n)ᶜ) ((pullbackIdIso X).inv.app L)
@@ -209,7 +211,8 @@ theorem borelMooreHomologyRestrictOfExhaustion_id
   trans (TopPair.ofSubset (K n)ᶜ).locallyFiniteChainComplexToRelative L
         (K.isCompact n).compl_range_ofSubset_compl_map ≫
       eqToHom (congrArg (fun A : Set X ↦ (TopPair.ofSubset A).twistedChainComplex L) hEq)
-  · exact congrArg (_ ≫ ·) hcomp
+  · exact congrArg (_ ≫ ·)
+      (twistedChainComplexCoefficientMap_comp_twistedChainComplexMapOfFstEq_id L hmap hEq)
   · exact locallyFiniteChainComplexToRelative_congr L hEq _ _
 
 section CompHelpers
@@ -378,6 +381,20 @@ private lemma quasiIso_locallyFiniteChainComplexToLimComplexOfInjective_comp
 
 end CompHelpers
 
+/-- If `j : V ⟶ X` is an embedding and the closure of `(i ≫ j) '' S` lies in `Set.range (i ≫ j)`,
+then the closure of `i '' S` lies in `Set.range i`. -/
+lemma closure_image_subset_range_of_comp {W : TopCat.{v}} {i : W ⟶ V}
+    (hj : Topology.IsEmbedding j.hom) {S : Set W}
+    (hS : closure ((i ≫ j).hom '' S) ⊆ Set.range (i ≫ j).hom) :
+    closure (i.hom '' S) ⊆ Set.range i.hom := by
+  rw [hj.closure_eq_preimage_closure_image]
+  intro v hv
+  have hv' : j.hom v ∈ closure ((i ≫ j).hom '' S) := by
+    simpa only [Set.mem_preimage, Set.image_image, TopCat.hom_comp, ContinuousMap.coe_comp,
+      Function.comp_apply] using hv
+  obtain ⟨w, hw⟩ := hS hv'
+  exact ⟨w, hj.injective hw⟩
+
 /-- Composition law for exhaustion-explicit open restrictions. -/
 theorem borelMooreHomologyRestrictOfExhaustion_comp {W : TopCat.{v}} {i : W ⟶ V}
     (hi : IsOpenEmbedding i.hom) (hj : IsOpenEmbedding j.hom)
@@ -386,28 +403,14 @@ theorem borelMooreHomologyRestrictOfExhaustion_comp {W : TopCat.{v}} {i : W ⟶ 
     (hKV_X : ∀ n, closure (j.hom '' KV n) ⊆ Set.range j.hom) (k : ℕ) :
     borelMooreHomologyRestrictOfExhaustion L hj KV hKV_X k ≫
         borelMooreHomologyRestrictOfExhaustion ((pullback j.hom).obj L) hi KW
-          (fun n ↦ by
-            rw [hj.isEmbedding.closure_eq_preimage_closure_image]
-            intro v hv
-            have hv' : j.hom v ∈ closure ((i ≫ j).hom '' KW n) := by
-              simpa only [Set.mem_preimage, Set.image_image, TopCat.hom_comp,
-                ContinuousMap.coe_comp, Function.comp_apply] using hv
-            obtain ⟨w, hw⟩ := hKW_X n hv'
-            exact ⟨w, hj.injective hw⟩) k =
+          (fun n ↦ closure_image_subset_range_of_comp hj.isEmbedding (hKW_X n)) k =
       borelMooreHomologyRestrictOfExhaustion L (j := i ≫ j) (hj.comp hi) KW hKW_X k ≫
         borelMooreHomologyCoefficientMap ((pullbackCompIso i.hom j.hom).hom.app L) k := by
   -- Enlarge `KV` to `KV' := KV.unionImage KW` so `i '' KW n ⊆ KV' n` for every `n`, then cancel
   -- the quasi-isomorphism `locallyFiniteChainComplexToLimComplexOfInjective … ≫ limComplexMap`
   -- on the right and chase the three commuting squares (`comp_middle_square`,
   -- `locallyFiniteChainComplexToLimComplex_comp_limComplexMap`, and `comp_right_square`).
-  have hKW_V (n : ℕ) : closure (i.hom '' KW n) ⊆ Set.range i.hom := by
-    rw [hj.isEmbedding.closure_eq_preimage_closure_image]
-    intro v hv
-    have hv' : j.hom v ∈ closure ((i ≫ j).hom '' KW n) := by
-      simpa only [Set.mem_preimage, Set.image_image, TopCat.hom_comp, ContinuousMap.coe_comp,
-        Function.comp_apply] using hv
-    obtain ⟨w, hw⟩ := hKW_X n hv'
-    exact ⟨w, hj.injective hw⟩
+  have hKW_V (n : ℕ) := closure_image_subset_range_of_comp hj.isEmbedding (hKW_X n)
   let KV' := KV.unionImage KW hi.continuous hi.isOpenMap
   have hsub (n : ℕ) : i.hom '' KW n ⊆ KV' n := by
     simp only [KV', CompactExhaustion.unionImage_apply]
