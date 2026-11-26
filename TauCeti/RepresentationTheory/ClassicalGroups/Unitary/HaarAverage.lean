@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.MvPolynomial.CommRing
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
-import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.Unitary
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 import TauCeti.RepresentationTheory.Compact.Haar
