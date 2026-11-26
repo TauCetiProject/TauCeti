@@ -167,10 +167,7 @@ theorem smul_map_volume_restrict_circleMap (c : ℂ) (R a : ℝ) :
   · rw [abs_zero, ENNReal.ofReal_zero, zero_smul, eq_comm, Measure.restrict_eq_zero]
     simpa using hausdorffMeasure_sphere_zero c
   have himage : circleMap c R '' Icc a (a + 2 * π) = sphere c |R| := by
-    rw [← range_circleMap c R]
-    exact Subset.antisymm (image_subset_range _ _)
-      (((periodic_circleMap c R).image_Ioc two_pi_pos a).symm.subset.trans
-        (image_mono Ioc_subset_Icc_self))
+    rw [(periodic_circleMap c R).image_Icc two_pi_pos a, range_circleMap]
   have h := LipschitzOnWith.map_withDensity_enorm_deriv_eq_euclideanHausdorffMeasure_restrict
     ((lipschitzWith_circleMap c R).lipschitzOnWith (s := Icc a (a + 2 * π)))
     ((injOn_circleMap_of_abs_sub_le' hR (by simp)).mono Ioo_subset_Ico_self)
