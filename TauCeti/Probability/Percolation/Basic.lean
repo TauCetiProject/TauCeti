@@ -41,7 +41,8 @@ the open cluster of the origin is infinite, and the critical probability `p_c(d)
 * `TauCeti.percolationProb_zero_right`, `TauCeti.percolationProb_one_right` — `θ(0) = 0`, and
   `θ(1) = 1` in every positive dimension;
 * `TauCeti.le_criticalProb`, `TauCeti.criticalProb_le` — the characterisation of `p_c(d)` as a
-  supremum, with `0 ≤ p_c(d) ≤ 1`;
+  supremum;
+* `TauCeti.criticalProb_nonneg`, `TauCeti.criticalProb_le_one` — `0 ≤ p_c(d) ≤ 1`;
 * `TauCeti.percolationProb_zero_left`, `TauCeti.criticalProb_zero` — on the single point `ℤ^0`
   the cluster of the origin is never infinite, so `θ` vanishes and `p_c(0) = 1`.
 
@@ -185,9 +186,11 @@ theorem percolationProb_def (d : ℕ) (p : I) :
       (bondPercolation d p).real {G | (G.connectedComponentMk 0).supp.Infinite} :=
   (rfl)
 
+/-- The percolation probability is nonnegative: `0 ≤ θ(p)`. -/
 theorem percolationProb_nonneg (d : ℕ) (p : I) : 0 ≤ percolationProb d p :=
   measureReal_nonneg
 
+/-- The percolation probability is at most one: `θ(p) ≤ 1`. -/
 theorem percolationProb_le_one (d : ℕ) (p : I) : percolationProb d p ≤ 1 :=
   measureReal_le_one
 
@@ -234,9 +237,11 @@ theorem criticalProb_le {a : ℝ} (h : ∀ p : I, percolationProb d p = 0 → (p
     criticalProb d ≤ a :=
   csSup_le ⟨0, 0, percolationProb_zero_right d, rfl⟩ (by rintro _ ⟨p, hp, rfl⟩; exact h p hp)
 
+/-- The critical probability is nonnegative: `0 ≤ p_c(d)`. -/
 theorem criticalProb_nonneg (d : ℕ) : 0 ≤ criticalProb d :=
   le_criticalProb (p := 0) (percolationProb_zero_right d)
 
+/-- The critical probability is at most one: `p_c(d) ≤ 1`. -/
 theorem criticalProb_le_one (d : ℕ) : criticalProb d ≤ 1 :=
   criticalProb_le fun p _ => unitInterval.le_one p
 
