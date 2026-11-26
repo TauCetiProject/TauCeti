@@ -9,8 +9,8 @@ public import Mathlib.Topology.DiscreteSubset
 public import TauCeti.Geometry.Symplectic.Floer.Chart
 import TauCeti.Geometry.Manifold.ExtChartAt.MapsTo
 import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
+import TauCeti.Geometry.Symplectic.Floer.Rotation
 import TauCeti.Geometry.Symplectic.Floer.UniqueContinuation.Coordinate
-import TauCeti.Topology.Codiscrete
 
 /-!
 # Unique continuation for Floer solutions in a manifold
@@ -49,8 +49,8 @@ in `Ω`, the coordinate expressions cannot agree on the whole disc, so the coinc
 
 For a cylindrical datum `K = H_t dt` and an `s`-independent `J_t`, the translate
 `(s, t) ↦ u(s + c, t)` of a Floer trajectory is again one
-(`TauCeti.SmoothTwoForm.perturbedMFDeriv_comp_add_right`). So a trajectory in `M` which agrees with
-such a translate on a nonempty open set is `(c, 0)`-periodic
+(`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_add_right`). So a trajectory in
+`M` which agrees with such a translate on a nonempty open set is `(c, 0)`-periodic
 (`TauCeti.SmoothTwoForm.periodic_of_isComplexLinearMap_perturbedMFDeriv_of_eqOn`). This is the step
 of the argument of Floer, Hofer and Salamon for the density of the regular points of a
 nonstationary trajectory which excludes a trajectory coinciding with one of its translates on an
@@ -85,40 +85,77 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I (⊤ : ℕ∞) M] [I.Boundaryless] {ω : SmoothTwoForm I M}
   {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)} {Ks Kt : ℝ × ℝ → M → ℝ}
-  {u : ℝ × ℝ → M} {Ω : Set (ℝ × ℝ)}
+  {u v : ℝ × ℝ → M} {Ω : Set (ℝ × ℝ)}
 
-/-- The data read in a chart along a map. Let `J` and the Hamiltonian vector fields of `K_s` and
-`K_t` read in the chart at `α` be `C¹` on `Ω × (extChartAt I α).target`, and let `u` map `B ⊆ Ω`
-into the chart source. Along the graph over `B` of the coordinate expression `extChartAt I α ∘ u`,
-the structure and the Hamiltonian one-form read in the chart are `C¹`, and the structure squares
-to `-1`. -/
-private theorem contDiffAt_almostComplexInChartAt_and_hamiltonianOneFormInChartAt
-    (ω : SmoothTwoForm I M) {α : M} (hΩ : IsOpen Ω)
-    (hJ : ContDiffOn ℝ 1 (Floer.almostComplexInChartAt I α J) (Ω ×ˢ (extChartAt I α).target))
-    (hXs : ContDiffOn ℝ 1 (ω.hamiltonianVectorFieldInChartAt α Ks)
+/-- **The coordinate equation near a coincidence.** Let `u` and `v` be `C¹` solutions of the Floer
+equation on an open set `Ω` which agree at `z₀ ∈ Ω`, and let `J` and the Hamiltonian vector fields
+of `K_s` and `K_t`, read in every chart, be `C¹` over `Ω`. On some disc `B ⊆ Ω` around `z₀` both
+maps take values in the chart at `u z₀`, and their coordinate expressions are `C¹` solutions of the
+coordinate Floer equation. The structure and the Hamiltonian one-form read in that chart are `C¹`
+along the graph over `B` of the coordinate expression of `u`, where the structure squares to `-1`.
+-/
+private theorem exists_ball_and_fderiv_extChartAt_comp_stdComplexLineImag_sub
+    (ω : SmoothTwoForm I M) (hΩ : IsOpen Ω)
+    (hJ : ∀ α, ContDiffOn ℝ 1 (Floer.almostComplexInChartAt I α J)
       (Ω ×ˢ (extChartAt I α).target))
-    (hXt : ContDiffOn ℝ 1 (ω.hamiltonianVectorFieldInChartAt α Kt)
+    (hXs : ∀ α, ContDiffOn ℝ 1 (ω.hamiltonianVectorFieldInChartAt α Ks)
       (Ω ×ˢ (extChartAt I α).target))
-    {B : Set (ℝ × ℝ)} (hBΩ : B ⊆ Ω) (huB : MapsTo u B (extChartAt I α).source) :
-    (∀ z ∈ B, ContDiffAt ℝ 1 (Floer.almostComplexInChartAt I α J)
-        (z, (extChartAt I α ∘ u) z)) ∧
-      (∀ z ∈ B, ContDiffAt ℝ 1 (ω.hamiltonianOneFormInChartAt α Ks Kt)
-        (z, (extChartAt I α ∘ u) z)) ∧
-      ∀ z ∈ B, Floer.almostComplexInChartAt I α J (z, (extChartAt I α ∘ u) z) ∘L
-        Floer.almostComplexInChartAt I α J (z, (extChartAt I α ∘ u) z) =
-          -ContinuousLinearMap.id ℝ E := by
-  have hT : IsOpen (Ω ×ˢ (extChartAt I α).target) := hΩ.prod (isOpen_extChartAt_target α)
-  have hmem {z : ℝ × ℝ} (hz : z ∈ B) :
-      (z, (extChartAt I α ∘ u) z) ∈ Ω ×ˢ (extChartAt I α).target :=
-    ⟨hBΩ hz, (extChartAt I α).map_source (huB hz)⟩
-  refine ⟨fun z hz ↦ hJ.contDiffAt (hT.mem_nhds (hmem hz)),
-    fun z hz ↦
-      (contDiffOn_hamiltonianOneFormInChartAt hXs hXt).contDiffAt (hT.mem_nhds (hmem hz)),
-    fun z hz ↦ ContinuousLinearMap.ext fun w ↦ ?_⟩
+    (hXt : ∀ α, ContDiffOn ℝ 1 (ω.hamiltonianVectorFieldInChartAt α Kt)
+      (Ω ×ˢ (extChartAt I α).target))
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u Ω) (hv : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 v Ω)
+    (hFu : ∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap)
+    (hFv : ∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (v z))
+      (ω.perturbedMFDeriv Ks Kt v z).toLinearMap)
+    {z₀ : ℝ × ℝ} (hz₀ : z₀ ∈ Ω) (heq : u z₀ = v z₀) :
+    ∃ r > 0, Metric.ball z₀ r ⊆ Ω ∧
+      MapsTo u (Metric.ball z₀ r) (extChartAt I (u z₀)).source ∧
+      MapsTo v (Metric.ball z₀ r) (extChartAt I (u z₀)).source ∧
+      (∀ z ∈ Metric.ball z₀ r, ContDiffAt ℝ 1 (Floer.almostComplexInChartAt I (u z₀) J)
+        (z, (extChartAt I (u z₀) ∘ u) z)) ∧
+      (∀ z ∈ Metric.ball z₀ r,
+        Floer.almostComplexInChartAt I (u z₀) J (z, (extChartAt I (u z₀) ∘ u) z) ∘L
+          Floer.almostComplexInChartAt I (u z₀) J (z, (extChartAt I (u z₀) ∘ u) z) =
+            -ContinuousLinearMap.id ℝ E) ∧
+      (∀ z ∈ Metric.ball z₀ r, ContDiffAt ℝ 1 (ω.hamiltonianOneFormInChartAt (u z₀) Ks Kt)
+        (z, (extChartAt I (u z₀) ∘ u) z)) ∧
+      ContDiffOn ℝ 1 (extChartAt I (u z₀) ∘ u) (Metric.ball z₀ r) ∧
+      ContDiffOn ℝ 1 (extChartAt I (u z₀) ∘ v) (Metric.ball z₀ r) ∧
+      (∀ z ∈ Metric.ball z₀ r, fderiv ℝ (extChartAt I (u z₀) ∘ u) z stdComplexLineImag -
+          ω.hamiltonianOneFormInChartAt (u z₀) Ks Kt (z, (extChartAt I (u z₀) ∘ u) z)
+            stdComplexLineImag =
+        Floer.almostComplexInChartAt I (u z₀) J (z, (extChartAt I (u z₀) ∘ u) z)
+          (fderiv ℝ (extChartAt I (u z₀) ∘ u) z stdComplexLineReal -
+            ω.hamiltonianOneFormInChartAt (u z₀) Ks Kt (z, (extChartAt I (u z₀) ∘ u) z)
+              stdComplexLineReal)) ∧
+      ∀ z ∈ Metric.ball z₀ r, fderiv ℝ (extChartAt I (u z₀) ∘ v) z stdComplexLineImag -
+          ω.hamiltonianOneFormInChartAt (u z₀) Ks Kt (z, (extChartAt I (u z₀) ∘ v) z)
+            stdComplexLineImag =
+        Floer.almostComplexInChartAt I (u z₀) J (z, (extChartAt I (u z₀) ∘ v) z)
+          (fderiv ℝ (extChartAt I (u z₀) ∘ v) z stdComplexLineReal -
+            ω.hamiltonianOneFormInChartAt (u z₀) Ks Kt (z, (extChartAt I (u z₀) ∘ v) z)
+              stdComplexLineReal) := by
+  have hΩz₀ := hΩ.mem_nhds hz₀
+  obtain ⟨r, hr, hBΩ, huB, hvB⟩ := exists_ball_subset_mapsTo_extChartAt_source (I := I) hΩz₀
+    (hu.continuousOn.continuousAt hΩz₀) (hv.continuousOn.continuousAt hΩz₀) heq
+  obtain ⟨hu', hFu'⟩ := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub
+    Metric.isOpen_ball (hu.mono hBΩ) one_ne_zero huB fun z hz ↦ hFu z (hBΩ hz)
+  obtain ⟨hv', hFv'⟩ := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub
+    Metric.isOpen_ball (hv.mono hBΩ) one_ne_zero hvB fun z hz ↦ hFv z (hBΩ hz)
+  -- Along the graph of the coordinate expression of `u`, the data are read at interior points.
+  have hT : IsOpen (Ω ×ˢ (extChartAt I (u z₀)).target) :=
+    hΩ.prod (isOpen_extChartAt_target (u z₀))
+  have hmem {z : ℝ × ℝ} (hz : z ∈ Metric.ball z₀ r) :
+      Ω ×ˢ (extChartAt I (u z₀)).target ∈ 𝓝 (z, (extChartAt I (u z₀) ∘ u) z) :=
+    hT.mem_nhds ⟨hBΩ hz, (extChartAt I (u z₀)).map_source (huB hz)⟩
+  refine ⟨r, hr, hBΩ, huB, hvB, fun z hz ↦ (hJ _).contDiffAt (hmem hz),
+    fun z hz ↦ ContinuousLinearMap.ext fun w ↦ ?_,
+    fun z hz ↦ (contDiffOn_hamiltonianOneFormInChartAt (hXs _) (hXt _)).contDiffAt (hmem hz),
+    hu', hv', hFu', hFv'⟩
   simpa using Floer.almostComplexInChartAt_apply_apply (J := J)
-    ((extChartAt I α).map_source (huB hz)) z w
+    ((extChartAt I (u z₀)).map_source (huB hz)) z w
 
-variable [T2Space M] {v : ℝ × ℝ → M}
+variable [T2Space M]
 
 /-- **Unique continuation for Floer solutions in a manifold.** Let `M` be a boundaryless Hausdorff
 manifold with a two-form `ω`, and let `J` and the Hamiltonian vector fields of `K_s` and `K_t`, read
@@ -159,15 +196,9 @@ theorem eqOn_of_isComplexLinearMap_perturbedMFDeriv_of_eqOn (hΩ : IsOpen Ω)
         (eventually_nhdsWithin_of_forall fun z hz ↦ (hS.1 hz).eq_of_nhds.symm))
   -- On a disc `B` around `z₀` both maps take values in the chart at `u z₀`, and their coordinate
   -- expressions solve the coordinate Floer equation and agree on `B ∩ S`.
-  obtain ⟨r, hr, hBΩ, huB, hvB⟩ := exists_ball_subset_mapsTo_extChartAt_source (I := I) hΩz₀
-    (hu.continuousOn.continuousAt hΩz₀) (hv.continuousOn.continuousAt hΩz₀) heq
-  obtain ⟨hJ', hX', hJJ'⟩ :=
-    contDiffAt_almostComplexInChartAt_and_hamiltonianOneFormInChartAt ω hΩ (hJ _) (hXs _)
-      (hXt _) hBΩ huB
-  obtain ⟨hu', hFu'⟩ := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub
-    Metric.isOpen_ball (hu.mono hBΩ) one_ne_zero huB fun z hz ↦ hFu z (hBΩ hz)
-  obtain ⟨hv', hFv'⟩ := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub
-    Metric.isOpen_ball (hv.mono hBΩ) one_ne_zero hvB fun z hz ↦ hFv z (hBΩ hz)
+  obtain ⟨r, hr, -, huB, hvB, hJ', hJJ', hX', hu', hv', hFu', hFv'⟩ :=
+    exists_ball_and_fderiv_extChartAt_comp_stdComplexLineImag_sub ω hΩ hJ hXs hXt hu hv hFu hFv
+      hz₀Ω heq
   have hcoord := Floer.eqOn_of_fderiv_stdComplexLineImag_sub_of_eqOn Metric.isOpen_ball
     (convex_ball z₀ r).isPreconnected hJ' hJJ' hX' hu' hv' hFu' hFv'
     (Metric.isOpen_ball.inter hSo)
@@ -205,16 +236,11 @@ theorem setOf_ne_mem_codiscreteWithin_of_isComplexLinearMap_perturbedMFDeriv (h�
       (((hu.continuousOn.continuousAt hΩz₀).ne_iff_eventually_ne
         (hv.continuousOn.continuousAt hΩz₀)).1 heq)
       fun z hz ↦ Or.inl hz)
-  -- On a disc `B` around a coincidence both maps take values in the chart at `u z₀`.
-  obtain ⟨r, hr, hBΩ, huB, hvB⟩ := exists_ball_subset_mapsTo_extChartAt_source (I := I) hΩz₀
-    (hu.continuousOn.continuousAt hΩz₀) (hv.continuousOn.continuousAt hΩz₀) heq
-  obtain ⟨hJ', hX', hJJ'⟩ :=
-    contDiffAt_almostComplexInChartAt_and_hamiltonianOneFormInChartAt ω hΩ (hJ _) (hXs _)
-      (hXt _) hBΩ huB
-  obtain ⟨hu', hFu'⟩ := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub
-    Metric.isOpen_ball (hu.mono hBΩ) one_ne_zero huB fun z hz ↦ hFu z (hBΩ hz)
-  obtain ⟨hv', hFv'⟩ := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub
-    Metric.isOpen_ball (hv.mono hBΩ) one_ne_zero hvB fun z hz ↦ hFv z (hBΩ hz)
+  -- On a disc `B` around a coincidence both maps take values in the chart at `u z₀`, and their
+  -- coordinate expressions solve the coordinate Floer equation.
+  obtain ⟨r, hr, hBΩ, huB, hvB, hJ', hJJ', hX', hu', hv', hFu', hFv'⟩ :=
+    exists_ball_and_fderiv_extChartAt_comp_stdComplexLineImag_sub ω hΩ hJ hXs hXt hu hv hFu hFv
+      hz₀ heq
   -- If the coordinate expressions agreed on all of `B`, so would `u` and `v`, and then they would
   -- agree on all of `Ω`.
   have hne' :
@@ -253,11 +279,10 @@ theorem periodic_of_isComplexLinearMap_perturbedMFDeriv_of_eqOn
   have hFc (z : ℝ × ℝ) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (J z.2 (u (z + (c, 0)))) (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun z ↦ H z.2)
         (fun w ↦ u (w + (c, 0))) z).toLinearMap := by
-    have h := ω.perturbedMFDeriv_comp_add_right (fun _ _ ↦ 0) (fun z ↦ H z.2) u (c, 0) z
-    simp only [Prod.snd_add, add_zero] at h
+    have hF' := hF (z + (c, 0))
     have hz : (z + (c, 0)).2 = z.2 := by simp
-    rw [h, ← hz]
-    exact hF (z + (c, 0))
+    rw [hz] at hF'
+    exact ω.isComplexLinearMap_perturbedMFDeriv_comp_add_right rfl (by simp) hF'
   have hXs (α : M) : ContDiffOn ℝ 1 (ω.hamiltonianVectorFieldInChartAt α
       fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ)) (univ ×ˢ (extChartAt I α).target) := by
     rw [hamiltonianVectorFieldInChartAt_zero]

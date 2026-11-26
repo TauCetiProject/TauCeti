@@ -26,7 +26,7 @@ namespace `TauCeti.SmoothTwoForm`,
 the Hamiltonian one-form read in the chart. That one-form is not the Hamiltonian one-form of a
 constant symplectic form, so the vector-space theorems for `TauCeti.SymplecticForm.floerOperator`
 (`TauCeti.SymplecticForm.eqOn_of_floerOperator_eq_zero_of_eqOn`) do not apply to it. Here `X` and
-`J` are arbitrary and `C¹`, as in the compactness theory
+`J` are arbitrary `C¹` data; the equation is the coordinate form used in the compactness theory
 (`TauCeti.Geometry.Symplectic.Floer.Compactness.Basic`):
 
 * the difference `w = u - v` of two solutions satisfies the Cauchy–Riemann inequality
@@ -111,19 +111,21 @@ theorem exists_eventually_norm_le_of_fderiv_stdComplexLineImag_sub (hΩ : IsOpen
     (hu.differentiableOn one_ne_zero).differentiableAt (hΩ.mem_nhds hz)
   have hdv : DifferentiableAt ℝ v z :=
     (hv.differentiableOn one_ne_zero).differentiableAt (hΩ.mem_nhds hz)
-  -- By the equation of `u`, `J ∂ₜu = -(∂ₛu - X(z, u) 1) + J X(z, u) i`.
-  have hAu : A (fderiv ℝ u z stdComplexLineImag) =
-      -(fderiv ℝ u z stdComplexLineReal - X (z, u z) stdComplexLineReal) +
-        A (X (z, u z) stdComplexLineImag) := by
-    rw [← hA, ← map_add, ← hFu z hz, sub_add_cancel]
+  -- Applying `J(z, u z)` to the equation of `u` gives
+  -- `J ∂ₜu - J X(z, u) i = -(∂ₛu - X(z, u) 1)`, since `J(z, u z)² = -1`.
+  have hAu : A (fderiv ℝ u z stdComplexLineImag) - A (X (z, u z) stdComplexLineImag) =
+      -(fderiv ℝ u z stdComplexLineReal - X (z, u z) stdComplexLineReal) := by
+    rw [← map_sub, hFu z hz, hA]
+  -- The equation of `v` reads `J(z, v z) (a z) = ∂ₜv - X(z, v) i`.
+  have hBv : B (a z) = fderiv ℝ v z stdComplexLineImag - X (z, v z) stdComplexLineImag :=
+    (hFv z hz).symm
   -- Subtracting the two equations expresses the operator through differences of the data.
   have hD : fderiv ℝ (u - v) z stdComplexLineReal + A (fderiv ℝ (u - v) z stdComplexLineImag) =
       (X (z, u z) - X (z, v z)) stdComplexLineReal +
         A ((X (z, u z) - X (z, v z)) stdComplexLineImag) + A ((A - B) (a z)) := by
-    rw [fderiv_sub hdu hdv, sub_apply, sub_apply,
-      map_sub, hAu, sub_apply A B, map_sub, hA, ← hFv z hz]
-    simp only [a, sub_apply, map_sub]
-    abel
+    simp only [fderiv_sub hdu hdv, sub_apply, map_sub, hA, hBv]
+    simp only [a]
+    linear_combination (norm := module) hAu
   rw [hD, Pi.sub_apply]
   calc _ ≤ ‖X (z, u z) - X (z, v z)‖ * ‖stdComplexLineReal‖ +
           ‖A‖ * (‖X (z, u z) - X (z, v z)‖ * ‖stdComplexLineImag‖) +
