@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.LSeries.Conjugate
 
 /-!
 # The trivial ideal weight and Dedekind zeta coefficients
@@ -57,10 +58,24 @@ noncomputable def dedekindZetaCoeff (n : ℕ) : ℕ :=
 theorem dedekindZetaCoeff_zero : dedekindZetaCoeff K 0 = 1 := by
   simp [dedekindZetaCoeff, Ideal.absNorm_eq_zero_iff]
 
+/-- The unit ideal is the unique integral ideal of absolute norm one. -/
+@[simp]
+theorem dedekindZetaCoeff_one : dedekindZetaCoeff K 1 = 1 := by
+  simp [dedekindZetaCoeff, Ideal.absNorm_eq_one_iff]
+
 /-- The Dedekind zeta function is the `LSeries` of `dedekindZetaCoeff`. -/
 theorem dedekindZeta_eq_LSeries_dedekindZetaCoeff (s : ℂ) :
     NumberField.dedekindZeta K s = LSeries (fun n ↦ (dedekindZetaCoeff K n : ℂ)) s := by
   simp [NumberField.dedekindZeta, dedekindZetaCoeff]
+
+open scoped ComplexConjugate in
+/-- The Dedekind zeta Dirichlet series commutes with complex conjugation. -/
+@[simp] theorem _root_.NumberField.dedekindZeta_conj (s : ℂ) :
+    NumberField.dedekindZeta K (conj s) = conj (NumberField.dedekindZeta K s) := by
+  have h : star (fun n ↦ (dedekindZetaCoeff K n : ℂ)) =
+      fun n ↦ (dedekindZetaCoeff K n : ℂ) := funext fun n ↦ by simp [Pi.star_apply]
+  simpa only [dedekindZeta_eq_LSeries_dedekindZetaCoeff, Complex.star_def, h] using
+    TauCeti.LSeries.LSeries_star (fun n ↦ (dedekindZetaCoeff K n : ℂ)) s
 
 private def normFiberSubtypeEquiv {n : ℕ} (hn : n ≠ 0) :
     {I : (Ideal (𝓞 K))⁰ // Ideal.absNorm (I : Ideal (𝓞 K)) = n} ≃
