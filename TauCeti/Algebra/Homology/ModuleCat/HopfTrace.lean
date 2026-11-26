@@ -227,6 +227,15 @@ theorem charpoly_f_eq_charpoly_homologyMap_mul (φ : K ⟶ K) {p n m : ι} (hp :
     charpoly_restrict_ker_eq_charpoly_boundaryMap_mul φ hp hm,
     mul_comm (φ.boundaryMap p n).charpoly]
 
+/-- The characteristic polynomial of `φ` on the boundaries `im (K.X i ⟶ K.X j)` is one when the
+differential `K.d i j` vanishes. -/
+theorem Hom.charpoly_boundaryMap_eq_one (φ : K ⟶ K) {i j : ι} [Module.Finite k (K.X j)]
+    (h : K.d i j = 0) : (φ.boundaryMap i j).charpoly = 1 := by
+  have : Subsingleton (LinearMap.range (K.d i j).hom) := by
+    rw [h, ModuleCat.hom_zero, LinearMap.range_zero]
+    infer_instance
+  exact charpoly_eq_one_of_subsingleton _
+
 end HomologicalComplex
 
 namespace ChainComplex
@@ -241,11 +250,8 @@ product of those of `H₀(φ)` and of `φ | im (K₁ ⟶ K₀)`. -/
 theorem charpoly_f_zero [Module.Finite k (K.X 0)] :
     (φ.f 0).hom.charpoly =
       (homologyMap φ 0).hom.charpoly * (φ.boundaryMap 1 0).charpoly := by
-  have : Subsingleton (LinearMap.range (K.d 0 0).hom) := by
-    rw [K.shape 0 0 (by simp), ModuleCat.hom_zero, LinearMap.range_zero]
-    infer_instance
   rw [HomologicalComplex.charpoly_f_eq_charpoly_homologyMap_mul φ (p := 1) (by simp)
-    ChainComplex.next_nat_zero, charpoly_eq_one_of_subsingleton (φ.boundaryMap 0 0), mul_one]
+    ChainComplex.next_nat_zero, φ.charpoly_boundaryMap_eq_one (K.shape 0 0 (by simp)), mul_one]
 
 /-- In degree `n + 1`, the characteristic polynomial of `φₙ₊₁` is the product of those of
 `Hₙ₊₁(φ)`, of `φ | im (Kₙ₊₂ ⟶ Kₙ₊₁)` and of `φ | im (Kₙ₊₁ ⟶ Kₙ)`. -/
@@ -275,14 +281,9 @@ theorem prod_charpoly_f_mul_prod_charpoly_homologyMap_mul (n : ℕ) :
   | succ n ih =>
     rw [Finset.prod_range_succ _ (n + 1), Finset.prod_range_succ _ (n + 1),
       Finset.prod_range_succ _ (n + 1), Finset.prod_range_succ _ (n + 1), charpoly_f_succ]
-    rcases Nat.even_or_odd n with hn | hn
-    · have hn' : ¬Even (n + 1) := Nat.not_even_iff_odd.2 hn.add_one
-      simp only [hn, hn', Nat.not_even_iff_odd.1 hn', ↓reduceIte, mul_one] at ih ⊢
-      linear_combination (homologyMap φ (n + 1)).hom.charpoly *
-        (φ.boundaryMap (n + 2) (n + 1)).charpoly * ih
-    · have hn' : Even (n + 1) := hn.add_one
-      simp only [hn', Nat.not_even_iff_odd.2 hn, Nat.not_odd_iff_even.2 hn', ↓reduceIte,
-        mul_one] at ih ⊢
+    by_cases hn : Even n <;>
+      simp only [hn, Nat.even_add_one, ← Nat.not_even_iff_odd, not_true_eq_false,
+        not_false_eq_true, ↓reduceIte, mul_one] at ih ⊢ <;>
       linear_combination (homologyMap φ (n + 1)).hom.charpoly *
         (φ.boundaryMap (n + 2) (n + 1)).charpoly * ih
 
@@ -295,10 +296,8 @@ theorem prod_charpoly_f_mul_prod_charpoly_homologyMap {n : ℕ} (hn : K.d (n + 1
         ∏ i ∈ Finset.range (n + 1) with Odd i, (homologyMap φ i).hom.charpoly =
       (∏ i ∈ Finset.range (n + 1) with Odd i, (φ.f i).hom.charpoly) *
         ∏ i ∈ Finset.range (n + 1) with Even i, (homologyMap φ i).hom.charpoly := by
-  have : Subsingleton (LinearMap.range (K.d (n + 1) n).hom) := by
-    rw [hn, ModuleCat.hom_zero, LinearMap.range_zero]
-    infer_instance
-  simpa using prod_charpoly_f_mul_prod_charpoly_homologyMap_mul φ n
+  simpa only [φ.charpoly_boundaryMap_eq_one hn, ite_self, mul_one] using
+    prod_charpoly_f_mul_prod_charpoly_homologyMap_mul φ n
 
 /-- **The Hopf trace formula, in the form `det (1 - X φ)`.** If the terms of `K` are
 finite-dimensional and the differential `Kₙ₊₁ ⟶ Kₙ` vanishes, then up to degree `n` the
@@ -341,11 +340,9 @@ theorem subst_exp_mul_prod_even_eq_prod_odd [Algebra ℚ k] {n : ℕ} (hn : K.d 
     (prod_reverse_charpoly_f_mul_prod_reverse_charpoly_homologyMap φ hn)
   simp only [map_mul, map_prod, Polynomial.coeToPowerSeries.ringHom_apply] at hC
   -- `B'` has constant coefficient one, so it can be cancelled.
-  have hB' : B' ≠ 0 := by
-    refine fun h ↦ one_ne_zero (α := k) ?_
-    rw [← Finset.prod_eq_one fun i _ ↦
-      LinearMap.constantCoeff_coe_reverse_charpoly (homologyMap φ i).hom, ← map_prod]
-    exact (congrArg PowerSeries.constantCoeff h).trans (map_zero _)
+  have hB' : B' ≠ 0 := ne_zero_of_map (f := PowerSeries.constantCoeff (R := k))
+    ((LinearMap.constantCoeff_prod_coe_reverse_charpoly _ fun i ↦ (homologyMap φ i).hom).trans_ne
+      one_ne_zero)
   refine mul_right_cancel₀ hB' ?_
   linear_combination E * hC + B * hH
 
