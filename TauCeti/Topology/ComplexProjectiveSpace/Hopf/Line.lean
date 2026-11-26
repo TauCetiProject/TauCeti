@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Exact
-public import TauCeti.Topology.ComplexProjectiveSpace.Line
+public import TauCeti.Topology.ComplexProjectiveSpace.Line.Basic
 
 /-!
 # The projective line induces an isomorphism on `π₂(CPⁿ)`
