@@ -28,6 +28,7 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Topology.Connected.MetricSpace
 import TauCeti.Topology.Connected.TotallyDisconnected
 import TauCeti.Topology.ContinuousMap.Ascoli
@@ -125,8 +126,10 @@ and the defect tends uniformly to zero, the slice velocity `∂_t u` converges u
 are bounded on the strip when this holds at both ends
 (`TauCeti.exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect`). Both conditions pass
 from two `C¹` maps to every point `u + μ (u' - u)` of the segment between them
-(`TauCeti.tendstoUniformlyOn_add_smul_sub_and_sliceDefect`). These are the asymptotics along which
-the linearized Floer operator is deformed.
+(`TauCeti.tendstoUniformlyOn_add_smul_sub_and_sliceDefect`), and the defect condition passes to
+every continuous vector field that agrees with `X` along `x`
+(`TauCeti.tendstoUniformlyOn_sliceDefect_of_apply_eq`). These are the asymptotics along which the
+linearized Floer operator is deformed.
 
 ## References
 
@@ -248,18 +251,6 @@ section Reflection
 
 open LinearIsometryEquiv (negFst)
 
-/-- The derivative of the reflected map `(s, t) ↦ u(-s, t)` at `z` is the derivative of `u` at
-`(-z.1, z.2)` precomposed with the reflection. -/
-theorem fderiv_comp_neg_fst {z : ℝ × ℝ} :
-    fderiv ℝ (fun w ↦ u (-w.1, w.2)) z =
-      (fderiv ℝ u (-z.1, z.2)).comp
-        ((negFst ℝ ℝ ℝ).toContinuousLinearEquiv : ℝ × ℝ →L[ℝ] ℝ × ℝ) := by
-  have h : (fun w ↦ u (-w.1, w.2)) = u ∘ (negFst ℝ ℝ ℝ).toContinuousLinearEquiv := by
-    funext w
-    simp
-  rw [h, ContinuousLinearEquiv.comp_right_fderiv]
-  simp
-
 /-- A map `C^n` on the half-cylinder `(-∞, a) × T` reflects to a map `C^n` on
 `(-a, ∞) × T`. -/
 theorem contDiffOn_comp_neg_fst {n : WithTop ℕ∞} {T : Set ℝ} (hu : ContDiffOn ℝ n u (Iio a ×ˢ T)) :
@@ -284,16 +275,13 @@ theorem setLIntegral_norm_sq_sliceDefect_comp_neg_fst :
       ∫⁻ z in Iio a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) := by
   -- The reflection preserves Lebesgue measure and carries `(-a, ∞) × [0, 1]` onto
   -- `(-∞, a) × [0, 1]`.
-  have hmp : MeasurePreserving (negFst ℝ ℝ ℝ) := by
-    rw [LinearIsometryEquiv.coe_negFst, Measure.volume_eq_prod]
-    exact (Measure.measurePreserving_neg (volume : Measure ℝ)).prod
-      (MeasurePreserving.id (volume : Measure ℝ))
   have hpre : negFst ℝ ℝ ℝ ⁻¹' (Iio a ×ˢ Icc 0 1) = Ioi (-a) ×ˢ Icc 0 1 := by
     ext z
     simp [neg_lt]
   simp_rw [sliceDefect_comp_neg_fst, ← LinearIsometryEquiv.negFst_apply ℝ]
   rw [← hpre]
-  exact hmp.setLIntegral_comp_preimage_emb (negFst ℝ ℝ ℝ).toHomeomorph.measurableEmbedding
+  exact LinearIsometryEquiv.measurePreserving_negFst.setLIntegral_comp_preimage_emb
+    (negFst ℝ ℝ ℝ).toHomeomorph.measurableEmbedding
     (fun z ↦ ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2)) _
 
 end Reflection
@@ -1222,6 +1210,21 @@ theorem tendstoUniformlyOn_fderiv_apply_of_sliceDefect [ProperSpace V] (hX : Con
     hx.continuousOn hux)).congr (.of_forall fun s t _ ↦ ?_)).congr_right fun t _ ↦ ?_
   · simp only [sliceDefect_def, uncurry_apply_pair, sub_add_cancel]
   · simp only [Pi.zero_apply, uncurry_apply_pair, zero_add]
+
+/-- If the loops of `u` converge uniformly to a continuous loop `x` and the slice defect
+`∂t u - X_t(u)` tends uniformly to zero, then so does the slice defect `∂t u - Y_t(u)` for every
+continuous time-dependent vector field `Y` that agrees with `X` along `x`. -/
+theorem tendstoUniformlyOn_sliceDefect_of_apply_eq [ProperSpace V] {Y : ℝ → V → V}
+    (hX : Continuous (uncurry X)) (hY : Continuous (uncurry Y)) (hx : Continuous x)
+    (hXY : ∀ t, Y t (x t) = X t (x t))
+    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect X u (s, t)) 0 l (Icc 0 1)) :
+    TendstoUniformlyOn (fun s t ↦ sliceDefect Y u (s, t)) 0 l (Icc 0 1) := by
+  refine ((tendstoUniformlyOn_fderiv_apply_of_sliceDefect hX hx hux hδ).fun_sub
+    (isCompact_Icc.tendstoUniformlyOn_comp_prodMk_of_continuous hY hx.continuousOn hux)).congr
+      (.of_forall fun s t _ ↦ ?_) |>.congr_right fun t _ ↦ ?_
+  · simp only [sliceDefect_def, uncurry_apply_pair]
+  · simp only [Pi.zero_apply, uncurry_apply_pair, hXY, sub_self]
 
 /-- A `C¹` map of the cylinder and its derivative in `t` are bounded on the strip `ℝ × [0, 1]`
 when its loops converge uniformly to continuous loops at both ends and its slice defects for

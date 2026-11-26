@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.Determinant
+public import TauCeti.RepresentationTheory.ClassicalGroups.Rational
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.SymmetricPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Tensor
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Dual
@@ -48,6 +49,7 @@ weights by the determinant twist (`TauCeti.weightSpace_tprod_detPowerRep`).
   contragredient of `V_(a,b)` are those of `V_(-b,-a)`.
 * `TauCeti.weightSpace_dual_gl2CoefficientRep_highest_ne_bot`: `(-b, -a)` is a weight of the
   contragredient of `V_(a,b)`.
+* `TauCeti.isRationalRep_gl2CoefficientRep`: `V_(a,b)` is a rational representation of `GL₂(ℂ)`.
 -/
 
 public section
@@ -205,5 +207,11 @@ theorem weightSpace_dual_gl2CoefficientRep_highest_ne_bot
     ⟨by simpa using hab, by simp, by simp⟩
 
 end Field
+
+/-- **`V_(a,b)` is a rational representation of `GL₂(ℂ)`**: it is the tensor product of a
+symmetric power of the standard representation, which is polynomial, and a power of the
+determinant. -/
+theorem isRationalRep_gl2CoefficientRep (a b : ℤ) : IsRationalRep (gl2CoefficientRep ℂ a b) :=
+  (isPolynomialRep_symPowerRep 2 _).isRationalRep.tprod (isRationalRep_detPowerRep b)
 
 end TauCeti

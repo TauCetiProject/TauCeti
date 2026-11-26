@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Cartan
 public import TauCeti.Geometry.Lie.Exponential.Matrix.SpecialLinear
 public import TauCeti.Geometry.Manifold.Instances.Unitary
+public import TauCeti.LinearAlgebra.Matrix.Hermitian.TraceZero
 import TauCeti.Analysis.Matrix.Polar.Deformation
 import TauCeti.Analysis.Calculus.ContDiff.Star
 import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
@@ -57,7 +58,7 @@ under conjugate transpose and contains the whole line `exp (t X)` once it contai
   `val_cartanDiffeomorph_apply`, `cartanDiffeomorph_symm_apply_fst` and
   `coe_cartanDiffeomorph_symm_apply_snd` identifying the underlying homeomorphism and coordinates.
 * `Matrix.SpecialLinearGroup.cartanHomeomorph`: the homeomorphism
-  `specialUnitaryGroup n 𝕜 × {X ∈ selfAdjoint (Matrix n n 𝕜) | trace X = 0} ≃ₜ SL n 𝕜`,
+  `specialUnitaryGroup n 𝕜 × traceZeroSelfAdjoint n 𝕜 ≃ₜ SL n 𝕜`,
   `(k, X) ↦ k * exp X`, with `Matrix.SpecialLinearGroup.val_cartanHomeomorph_apply`,
   `Matrix.SpecialLinearGroup.coe_cartanHomeomorph_symm_apply_fst` and
   `Matrix.SpecialLinearGroup.coe_cartanHomeomorph_symm_apply_snd` computing it and its inverse.
@@ -222,8 +223,7 @@ It is the restriction of the Cartan decomposition of `GL(n, 𝕜)` to the determ
 which form a subgroup closed under conjugate transpose whose Hermitian Lie algebra elements are the
 trace-free Hermitian matrices (`Subgroup.cartanHomeomorph`). -/
 def cartanHomeomorph :
-    specialUnitaryGroup n 𝕜 × {X : selfAdjoint (Matrix n n 𝕜) // (X : Matrix n n 𝕜).trace = 0} ≃ₜ
-      SpecialLinearGroup n 𝕜 := by
+    specialUnitaryGroup n 𝕜 × traceZeroSelfAdjoint n 𝕜 ≃ₜ SpecialLinearGroup n 𝕜 := by
   -- The general statement needs a complete normed `ℝ`-algebra with an isometric functional
   -- calculus, which `Matrix n n 𝕜` is for the scoped `ℓ²` operator norm.
   open scoped Matrix.Norms.L2Operator in
@@ -246,10 +246,10 @@ def cartanHomeomorph :
       invFun u := ⟨u.val, mem_specialUnitaryGroup_iff.2 ⟨u.val.property, (hG _).1 u.property⟩⟩
       continuous_toFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
       continuous_invFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _ }
-  let eP : {X : selfAdjoint (Matrix n n 𝕜) // (X : Matrix n n 𝕜).trace = 0} ≃ₜ
+  let eP : traceZeroSelfAdjoint n 𝕜 ≃ₜ
       {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ G} :=
-    { toFun X := ⟨X.val, (hline _).2 X.property⟩
-      invFun x := ⟨x.val, (hline _).1 x.property⟩
+    { toFun X := ⟨X.val, (hline _).2 (mem_traceZeroSelfAdjoint.1 X.property)⟩
+      invFun x := ⟨x.val, mem_traceZeroSelfAdjoint.2 ((hline _).1 x.property)⟩
       continuous_toFun := continuous_subtypeVal.subtype_mk _
       continuous_invFun := continuous_subtypeVal.subtype_mk _ }
   let eSL : G ≃ₜ SpecialLinearGroup n 𝕜 :=
@@ -262,8 +262,7 @@ def cartanHomeomorph :
 /-- The Cartan decomposition map of `SL(n, 𝕜)` sends `(k, X)` to `k * exp X`. -/
 @[simp]
 theorem val_cartanHomeomorph_apply
-    (p : specialUnitaryGroup n 𝕜 ×
-      {X : selfAdjoint (Matrix n n 𝕜) // (X : Matrix n n 𝕜).trace = 0}) :
+    (p : specialUnitaryGroup n 𝕜 × traceZeroSelfAdjoint n 𝕜) :
     (cartanHomeomorph n 𝕜 p : Matrix n n 𝕜) =
       p.1 * NormedSpace.exp ((p.2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) := by
   open scoped Matrix.Norms.L2Operator in
