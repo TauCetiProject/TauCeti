@@ -81,7 +81,7 @@ theorem dist_apply_le_of_lojasiewicz (hφ : IsNegativeGradient φ f) (hf : Diffe
 the results on flows with a Lyapunov function. -/
 private theorem tendsto_lengthBound (hθ : θ < 1) :
     Tendsto (fun e : ℝ ↦ e ^ (1 - θ) / (c * (1 - θ))) (𝓝[≥] 0) (𝓝 0) := by
-  simpa using ((TauCeti.tendsto_rpow_nhds_zero (sub_pos.2 hθ)).div_const (c * (1 - θ))).mono_left
+  simpa using ((tendsto_id.rpow_const_nhds_zero (sub_pos.2 hθ)).div_const (c * (1 - θ))).mono_left
     nhdsWithin_le_nhds
 
 variable (hφ : IsNegativeGradient φ f) (hf : Differentiable ℝ f) (hC : IsCompact C)
