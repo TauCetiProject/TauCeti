@@ -29,6 +29,9 @@ half-space `{x | ⟪x, ‖ν‖⁻¹ • ν⟫ < c / ‖ν‖}` of a unit vector
 (`TauCeti.setOf_inner_lt_eq_smul_inv_norm`). Moving by `c ν` along a unit normal `ν` raises the
 height `⟪·, ν⟫` by `c` (`TauCeti.real_inner_add_smul_self_of_norm_eq_one`), and translating
 `{x | ⟪x, ν⟫ < s}` by any `v` gives `{x | ⟪x, ν⟫ < s + ⟪v, ν⟫}` (`TauCeti.vadd_setOf_inner_lt`).
+If a set `Ω` agrees with the half-space `{x | c < ⟪x, ν⟫}` on a ball and `ν ≠ 0`, every point
+of the hyperplane `{x | ⟪x, ν⟫ = c}` in that ball is a limit of points outside `closure Ω`
+(`TauCeti.mem_closure_compl_closure_of_inter_ball_eq`).
 In rigid coordinates `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a
 constant, so the region where it is positive is a half-space.
 -/
@@ -168,6 +171,33 @@ theorem setOf_inner_lt_eq_smul_inv_norm {E : Type*} [NormedAddCommGroup E]
   ext x
   simp only [Set.mem_ofPred_eq, real_inner_smul_right, lt_div_iff₀ hn]
   field_simp
+
+open Filter Topology in
+/-- A point `z` of the hyperplane `⟪z, ν⟫ = c₀` inside `ball y₀ r` is a limit of points outside
+`closure Ω`, when `ν ≠ 0` and `Ω ∩ ball y₀ r` is the half-ball `{c₀ < ⟪x, ν⟫} ∩ ball y₀ r`: the
+points `z - tν`, `t > 0` small, lie below the hyperplane in a region disjoint from `Ω`. -/
+theorem mem_closure_compl_closure_of_inter_ball_eq {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] {H Ω : Set E} {ν : E} {c₀ : ℝ} (hν : ν ≠ 0)
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {y₀ : E} {r : ℝ}
+    (hΩ : Ω ∩ Metric.ball y₀ r = H ∩ Metric.ball y₀ r) {z : E} (hzr : z ∈ Metric.ball y₀ r)
+    (hzν : ⟪z, ν⟫_ℝ = c₀) : z ∈ closure (closure Ω)ᶜ := by
+  have hW : {x | ⟪x, ν⟫_ℝ < c₀} ∩ Metric.ball y₀ r ⊆ (closure Ω)ᶜ := fun x hx =>
+    Set.disjoint_left.1 (Disjoint.closure_right (Set.disjoint_left.2 fun y hy hyΩ => by
+      have h1 : y ∈ Ω ∩ Metric.ball y₀ r := ⟨hyΩ, hy.2⟩
+      rw [hΩ] at h1
+      exact lt_asymm hy.1 ((hH y).1 h1.1))
+      ((isOpen_lt (by fun_prop) continuous_const).inter Metric.isOpen_ball)) hx
+  have hline : Tendsto (fun t : ℝ => z - t • ν) (𝓝[>] 0) (𝓝 z) := by
+    simpa using ((by fun_prop : Continuous fun t : ℝ => z - t • ν).tendsto 0).mono_left
+      nhdsWithin_le_nhds
+  exact closure_mono hW <| mem_closure_of_tendsto hline
+    (by
+      filter_upwards [hline.eventually (Metric.isOpen_ball.mem_nhds hzr), self_mem_nhdsWithin]
+        with t ht ht0
+      refine ⟨(?_ : ⟪z - t • ν, ν⟫_ℝ < c₀), ht⟩
+      have hν2 : 0 < ‖ν‖ ^ 2 := pow_pos (norm_pos_iff.2 hν) 2
+      rw [inner_sub_left, real_inner_smul_left, hzν, real_inner_self_eq_norm_sq]
+      nlinarith [Set.mem_Ioi.1 ht0])
 
 end TauCeti
 
