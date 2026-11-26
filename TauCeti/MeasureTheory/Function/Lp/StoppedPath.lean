@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.Algebra.Order.Group.Pointwise.Interval
 import Mathlib.Tactic.Positivity
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Stopped paths in `L∞`
@@ -26,8 +27,6 @@ coefficient does not change along a path of admissible coefficients.
 
 ## Main results
 
-* `MeasureTheory.Lp.dist_le_of_ae_dist_le`: an almost everywhere bound of the pointwise
-  distance bounds the `L∞` distance.
 * `TauCeti.continuous_of_ae_eq_comp_min`: the stopped paths of a continuous path depend
   continuously on the stopping time in `L∞`.
 * `TauCeti.tendsto_atBot_of_ae_eq_comp_min` and `TauCeti.tendsto_atTop_of_ae_eq_comp_min`: the
@@ -38,21 +37,6 @@ public section
 
 open Filter MeasureTheory Set
 open scoped ENNReal Topology
-
-namespace MeasureTheory.Lp
-
-variable {α E : Type*} {m : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup E]
-
-/-- The `L∞` distance of two classes is at most any almost everywhere bound of the pointwise
-distance. -/
-theorem dist_le_of_ae_dist_le {f g : Lp E ∞ μ} {δ : ℝ} (hδ : 0 ≤ δ)
-    (h : ∀ᵐ x ∂μ, dist (f x) (g x) ≤ δ) : dist f g ≤ δ := by
-  rw [_root_.dist_eq_norm]
-  refine norm_le_of_ae_bound_top hδ ?_
-  filter_upwards [coeFn_sub f g, h] with x hx h
-  rwa [hx, Pi.sub_apply, ← _root_.dist_eq_norm]
-
-end MeasureTheory.Lp
 
 namespace TauCeti
 
@@ -65,7 +49,7 @@ theorem continuous_of_ae_eq_comp_min (hf : Continuous f)
   refine Metric.continuous_iff.2 fun t ε hε ↦ ?_
   obtain ⟨δ, hδ, hfδ⟩ := Metric.continuous_iff.1 hf t (ε / 4) (by positivity)
   refine ⟨δ, hδ, fun t' ht' ↦ ?_⟩
-  refine (Lp.dist_le_of_ae_dist_le (half_pos hε).le ?_).trans_lt (half_lt_self hε)
+  refine (Lp.dist_le_of_ae_dist_le_top (half_pos hε).le ?_).trans_lt (half_lt_self hε)
   filter_upwards [hF t', hF t] with s h' h
   rw [h', h]
   rcases le_total s (min t t') with hs | hs
@@ -91,7 +75,7 @@ theorem tendsto_atBot_of_ae_eq_comp_min {b : E} (hf : Tendsto f atBot (𝓝 b))
   refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
   obtain ⟨N, hN⟩ := eventually_atBot.1 (Metric.tendsto_nhds.1 hf (ε / 2) (half_pos hε))
   refine eventually_atBot.2 ⟨N, fun t ht ↦ ?_⟩
-  refine (Lp.dist_le_of_ae_dist_le (half_pos hε).le ?_).trans_lt (half_lt_self hε)
+  refine (Lp.dist_le_of_ae_dist_le_top (half_pos hε).le ?_).trans_lt (half_lt_self hε)
   filter_upwards [hF t, hG] with s h h'
   rw [h, h']
   exact (hN _ ((min_le_right s t).trans ht)).le
@@ -104,7 +88,7 @@ theorem tendsto_atTop_of_ae_eq_comp_min {b : E} (hf : Tendsto f atTop (𝓝 b))
   refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
   obtain ⟨N, hN⟩ := eventually_atTop.1 (Metric.tendsto_nhds.1 hf (ε / 4) (by positivity))
   refine eventually_atTop.2 ⟨N, fun t ht ↦ ?_⟩
-  refine (Lp.dist_le_of_ae_dist_le (half_pos hε).le ?_).trans_lt (half_lt_self hε)
+  refine (Lp.dist_le_of_ae_dist_le_top (half_pos hε).le ?_).trans_lt (half_lt_self hε)
   filter_upwards [hF t, hG] with s h h'
   rw [h, h']
   rcases le_total s t with hst | hst
