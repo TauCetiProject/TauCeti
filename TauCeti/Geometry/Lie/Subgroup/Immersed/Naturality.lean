@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.Image
-public import TauCeti.Geometry.Lie.Subgroup.Immersed.Existence
+public import TauCeti.Geometry.Lie.Subgroup.Immersed.Correspondence
 
 /-!
 # Naturality of integral leaf subgroups
@@ -23,6 +23,12 @@ an abstract subgroup, by the exponentials of its Lie subalgebra
 (`LieSubalgebra.integralLeafSubgroup_eq_closure_lieExp_image`), `Subgroup.map` commutes with
 `Subgroup.closure`, and `φ ∘ lieExp = lieExp ∘ lieMap φ` (`map_lieExp`).
 
+With the Galois coinsertion of `TauCeti.Lie.gc_integralLeafSubgroup_lieSubalgebraOfSubgroup`,
+naturality turns into an adjunction for images: the image of a connected immersed subgroup `K`
+lies in an arbitrary subgroup `Q'` exactly when `K` lies in the integral leaf subgroup of the
+preimage of `lieSubalgebraOfSubgroup Q'` under the Lie map
+(`TauCeti.Lie.IsImmersedLieSubgroup.map_le_iff_le_integralLeafSubgroup_comap`).
+
 Second countability enters through `LieSubalgebra.integralLeafSubgroup_eq_closure_lieExp_image`,
 whose proof factors smooth maps through the intrinsic manifold structure of a Frobenius leaf.
 
@@ -32,6 +38,9 @@ whose proof factors smooth maps through the intrinsic manifold structure of a Fr
   of `𝔥` onto the integral leaf subgroup of `𝔥.map (lieMap φ)`.
 * `ContMDiffMonoidMorphism.range_eq_integralLeafSubgroup`: the range of a smooth homomorphism
   from a connected Lie group is the integral leaf subgroup of the range of its Lie map.
+* `TauCeti.Lie.IsImmersedLieSubgroup.map_le_iff_le_integralLeafSubgroup_comap`: the image of a
+  connected immersed subgroup lies in `Q'` exactly when the subgroup lies in the integral leaf
+  subgroup of `(lieSubalgebraOfSubgroup Q').comap (lieMap φ)`.
 
 ## References
 
@@ -77,6 +86,29 @@ theorem map_integralLeafSubgroup (φ : ContMDiffMonoidMorphism I I' ∞ G G')
   exact image_congr fun X _ ↦ map_lieExp φ X
 
 end LieSubalgebra
+
+namespace TauCeti.Lie.IsImmersedLieSubgroup
+
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {G : Type w} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+  [SecondCountableTopology G] [T2Space G] [T2Space G']
+
+/-- **The image of a connected immersed subgroup under a smooth homomorphism.** For a connected
+immersed Lie subgroup `K ≤ G` and an arbitrary subgroup `Q' ≤ G'`, the image of `K` lies in `Q'`
+exactly when `K` lies in the integral leaf subgroup of the preimage, under the Lie map, of the Lie
+algebra of `Q'`. -/
+theorem map_le_iff_le_integralLeafSubgroup_comap {K : Subgroup G}
+    (hK : IsImmersedLieSubgroup (I := I) K) (φ : ContMDiffMonoidMorphism I I' ∞ G G')
+    {Q' : Subgroup G'} :
+    K.map φ.toMonoidHom ≤ Q' ↔
+      K ≤ ((lieSubalgebraOfSubgroup (I := I') Q').comap (lieMap φ)).integralLeafSubgroup
+        (I := I) := by
+  rw [← hK.integralLeafSubgroup_lieSubalgebraOfSubgroup, LieSubalgebra.map_integralLeafSubgroup,
+    gc_integralLeafSubgroup_lieSubalgebraOfSubgroup, LieSubalgebra.map_le_iff_le_comap,
+    LieSubalgebra.integralLeafSubgroup_le_integralLeafSubgroup_iff]
+
+end TauCeti.Lie.IsImmersedLieSubgroup
 
 namespace ContMDiffMonoidMorphism
 
