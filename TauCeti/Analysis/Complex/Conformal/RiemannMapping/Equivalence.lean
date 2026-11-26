@@ -10,6 +10,7 @@ import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Group
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
+import TauCeti.Data.Set.Function
 
 /-!
 # Conformal equivalence of simply connected domains
@@ -39,6 +40,9 @@ other. This file proves those two statements, and the sharpness of the propernes
   such set. This is why `Ω ≠ Set.univ` cannot be dropped from the *biholomorphic* equivalence
   statements above. Homogeneity needs no properness hypothesis either: `Ω = Set.univ` is
   homogeneous too, because the translations already act transitively on `ℂ`.
+* `TauCeti.isSimplyConnected_and_ne_univ_of_bijOn_ball` — the converse domain characterization: an
+  open subset of `ℂ` mapped holomorphically and bijectively onto the open unit disc is simply
+  connected and proper.
 
 ## Proof outline
 
@@ -73,21 +77,6 @@ open _root_.Complex Metric Set
 
 variable {Ω Ω' : Set ℂ}
 
-/-- The inverse of a Riemann map, as a bijection of the open unit disc onto the domain. -/
-private lemma bijOn_invFunOn_of_bijOn_ball {g : ℂ → ℂ} (hbij : BijOn g Ω (ball 0 1)) :
-    BijOn (Function.invFunOn g Ω) (ball 0 1) Ω :=
-  BijOn.symm hbij.invOn_invFunOn.symm hbij
-
-/-- A holomorphic bijection of an open set onto its image has a holomorphic inverse there.
-
-This repackages `DifferentiableOn.invFunOn` with the image identified by a `Set.BijOn`
-hypothesis, which is the form the constructions in this file produce. -/
-private lemma differentiableOn_invFunOn_of_bijOn {f : ℂ → ℂ} (hΩo : IsOpen Ω)
-    (hfd : DifferentiableOn ℂ f Ω) (hbij : BijOn f Ω Ω') :
-    DifferentiableOn ℂ (Function.invFunOn f Ω) Ω' := by
-  have hinv := DifferentiableOn.invFunOn hfd hΩo hbij.injOn
-  rwa [hbij.image_eq] at hinv
-
 /-- **Any two simply connected proper domains of `ℂ` are conformally equivalent.** If `Ω` and `Ω'`
 are simply connected open proper subsets of `ℂ`, then some holomorphic `f` maps `Ω` bijectively
 onto `Ω'`, and its inverse `Function.invFunOn f Ω` is holomorphic on `Ω'`.
@@ -107,11 +96,10 @@ theorem exists_bijOn_differentiableOn_invFunOn_of_isSimplyConnected
   obtain ⟨g, hgbij, hgd, -⟩ := riemannMapping hΩo hΩc hΩ
   obtain ⟨h, hhbij, -, hhinvd, -, -⟩ :=
     exists_bijOn_ball_differentiableOn_invFunOn hΩ'o hΩ'c hΩ'
-  have hbij : BijOn (Function.invFunOn h Ω' ∘ g) Ω Ω' :=
-    (bijOn_invFunOn_of_bijOn_ball hhbij).comp hgbij
+  have hbij : BijOn (Function.invFunOn h Ω' ∘ g) Ω Ω' := hhbij.invFunOn.comp hgbij
   have hfd : DifferentiableOn ℂ (Function.invFunOn h Ω' ∘ g) Ω :=
     hhinvd.comp hgd hgbij.mapsTo
-  exact ⟨_, hbij, hfd, differentiableOn_invFunOn_of_bijOn hΩo hfd hbij,
+  exact ⟨_, hbij, hfd, hfd.invFunOn_of_bijOn hΩo hbij,
     hbij.injOn.leftInvOn_invFunOn, hbij.surjOn.rightInvOn_invFunOn⟩
 
 /-- **Conformal equivalence of simply connected proper domains, packaged.** A biholomorphism of
@@ -212,7 +200,7 @@ theorem exists_bijOn_self_apply_eq_of_isSimplyConnected
       (Equiv.addRight (z₁ - z₀)).bijective.bijOn_univ
     have hfd : DifferentiableOn ℂ (· + (z₁ - z₀)) (univ : Set ℂ) :=
       (differentiable_id.add_const _).differentiableOn
-    refine ⟨_, hbij, hfd, differentiableOn_invFunOn_of_bijOn hΩo hfd hbij, ?_⟩
+    refine ⟨_, hbij, hfd, hfd.invFunOn_of_bijOn hΩo hbij, ?_⟩
     ring
   obtain ⟨g, hgbij, hgd, hginvd, hgleft, -⟩ :=
     exists_bijOn_ball_differentiableOn_invFunOn hΩo hΩc hΩ
@@ -220,10 +208,10 @@ theorem exists_bijOn_self_apply_eq_of_isSimplyConnected
   have hb : ‖g z₁‖ < 1 := by simpa [mem_ball_zero_iff] using hgbij.mapsTo hz₁
   obtain ⟨φ, hφbij, hφd, hφa⟩ := exists_bijOn_ball_apply_eq ha hb
   have hbij : BijOn ((Function.invFunOn g Ω ∘ φ) ∘ g) Ω Ω :=
-    ((bijOn_invFunOn_of_bijOn_ball hgbij).comp hφbij).comp hgbij
+    (hgbij.invFunOn.comp hφbij).comp hgbij
   have hfd : DifferentiableOn ℂ ((Function.invFunOn g Ω ∘ φ) ∘ g) Ω :=
     (hginvd.comp hφd hφbij.mapsTo).comp hgd hgbij.mapsTo
-  refine ⟨_, hbij, hfd, differentiableOn_invFunOn_of_bijOn hΩo hfd hbij, ?_⟩
+  refine ⟨_, hbij, hfd, hfd.invFunOn_of_bijOn hΩo hbij, ?_⟩
   simpa [Function.comp_def, hφa] using hgleft hz₁
 
 /-- **An entire function with values in a simply connected proper domain is constant.** Composing
@@ -272,5 +260,19 @@ theorem not_bijOn_univ_of_isSimplyConnected {f : ℂ → ℂ} (hf : Differentiab
     (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) (hΩ : Ω ≠ univ) :
     ¬ BijOn f univ Ω := fun hbij =>
   not_injOn_univ_of_isSimplyConnected hf hΩo hΩc hΩ hbij.mapsTo hbij.injOn
+
+/-- **Converse domain characterization for disc biholomorphisms.** An open subset of `ℂ` mapped
+holomorphically and bijectively onto the open unit disc is simply connected and proper: the
+homeomorphism onto the contractible disc supplies simple connectivity, and
+`TauCeti.not_bijOn_univ_of_isSimplyConnected` rules out `Ω = Set.univ`. -/
+theorem isSimplyConnected_and_ne_univ_of_bijOn_ball {f : ℂ → ℂ} (hΩo : IsOpen Ω)
+    (hfd : DifferentiableOn ℂ f Ω) (hfbij : BijOn f Ω (ball (0 : ℂ) 1)) :
+    IsSimplyConnected Ω ∧ Ω ≠ univ := by
+  have : ContractibleSpace (ball (0 : ℂ) 1) := contractibleSpace_ball one_pos
+  refine ⟨(hfd.toHomeomorphOfBijOn hΩo hfbij).toHomotopyEquiv.simplyConnectedSpace, ?_⟩
+  rintro rfl
+  exact not_bijOn_univ_of_isSimplyConnected (differentiableOn_univ.mp hfd) isOpen_ball
+    (inferInstance : SimplyConnectedSpace (ball (0 : ℂ) 1))
+    (ne_of_apply_ne ((1 : ℂ) ∈ ·) (by simp)) hfbij
 
 end TauCeti

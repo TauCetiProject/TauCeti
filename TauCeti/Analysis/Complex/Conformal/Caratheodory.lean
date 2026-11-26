@@ -12,11 +12,11 @@ public import TauCeti.Topology.JordanCurve.Basic
 import TauCeti.Analysis.Complex.Conformal.Area
 import TauCeti.Analysis.Complex.Conformal.Crosscut.Basic
 import TauCeti.Analysis.Complex.Conformal.Crosscut.SmallEnclosure
-import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.Conformal.Jordan.Domain
 import TauCeti.Analysis.Complex.Conformal.LocallyConnectedBoundary
 import TauCeti.Analysis.Complex.Conformal.RiemannMapping.Normalization
 import TauCeti.Analysis.Normed.Module.Ball.Cut
+import TauCeti.Data.Set.Function
 import TauCeti.Topology.MetricSpace.Cut
 import TauCeti.Topology.UniformlyLocallyConnected
 
@@ -262,14 +262,8 @@ theorem exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_front
     rintro rfl
     exact NormedSpace.unbounded_univ ℝ ℂ hΩb
   obtain ⟨φ, hφ⟩ := exists_isNormalizedRiemannMapOn hΩo hΩs hΩne hp
-  -- Dot notation would resolve to `Function.invFunOn`; name the lemma explicitly.
-  have hgd := DifferentiableOn.invFunOn hφ.differentiableOn hΩo hφ.injOn
-  rw [hφ.image_eq] at hgd
-  have hgbij : BijOn (Function.invFunOn φ Ω) (ball 0 1) Ω :=
-    BijOn.symm hφ.bijOn.invOn_invFunOn.symm hφ.bijOn
-  have hg0 : Function.invFunOn φ Ω 0 = p :=
-    hφ.injOn (hgbij.mapsTo (mem_ball_self one_pos)) hp
-      (by rw [hφ.map_base]; exact hφ.bijOn.surjOn.rightInvOn_invFunOn (mem_ball_self one_pos))
+  have hgd := hφ.differentiableOn_invFunOn hΩo
+  have hgbij := hφ.bijOn.invFunOn
   have himg : Function.invFunOn φ Ω '' ball 0 1 = Ω := hgbij.image_eq
   have hb : IsBounded (Function.invFunOn φ Ω '' ball 0 1) := by rw [himg]; exact hΩb
   have : LocallyConnectedSpace (frontier (Function.invFunOn φ Ω '' ball 0 1)) := by
@@ -278,7 +272,7 @@ theorem exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_front
     exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier hgd
       hgbij.injOn hb
   exact ⟨G, hGc, hgd.congr fun _ hz => hGeq hz, hgbij.congr fun _ hz => (hGeq hz).symm,
-    (hGeq (mem_ball_self one_pos)).trans hg0⟩
+    (hGeq (mem_ball_self one_pos)).trans hφ.invFunOn_zero⟩
 
 /-- **A bounded simply connected domain with locally connected boundary is the image of the disc
 under a holomorphic bijection continuous up to the closed disc.** No hypothesis that `Ω ≠ ℂ` is

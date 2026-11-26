@@ -7,20 +7,22 @@ module
 
 public import Mathlib.Analysis.RCLike.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The principal square root and the slit plane
 
 The principal square root has nonnegative real part, and its real part is strictly positive
-exactly on the slit plane. These facts control the branches in algebraic transformations
-involving sums of principal roots. The file also records the values `√i = e^{π i / 4}` and
-`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, the splitting `√(r z) = √r √z`
-for real `r ≥ 0` and the identification of the real square root of `x ≥ 0` with the complex
-half-power `x ^ (1 / 2)`, records that the real square root of a nonnegative real, cast to `ℂ`,
-squares back to it, and packages the principal square root of a nonzero complex number as a unit,
-`Complex.sqrtUnit`. A complex unit of absolute value one has a square root of absolute value one,
-`Complex.exists_sq_eq_and_star_mul_self_eq_one`.
+exactly on the slit plane; consequently squaring carries the open right half-plane bijectively
+onto `Complex.slitPlane` (`TauCeti.bijOn_sq_setOf_re_pos_slitPlane`). These facts control the
+branches in algebraic transformations involving sums of principal roots. The file also records the
+values `√i = e^{π i / 4}` and `√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, the
+splitting `√(r z) = √r √z` for real `r ≥ 0` and the identification of the real square root of
+`x ≥ 0` with the complex half-power `x ^ (1 / 2)`, records that the real square root of a
+nonnegative real, cast to `ℂ`, squares back to it, and packages the principal square root of a
+nonzero complex number as a unit, `Complex.sqrtUnit`. A complex unit of absolute value one has a
+square root of absolute value one, `Complex.exists_sq_eq_and_star_mul_self_eq_one`.
 
 The real square root of a positive real, cast to `ℂ`, is nonzero, and that of a nonnegative
 real `x` squares to `x` (`Complex.sq_ofReal_sqrt`), so its inverse squares to `x⁻¹`
@@ -169,3 +171,17 @@ theorem one_add_I_ne_zero : 1 + I ≠ 0 := fun h ↦ by
   simpa using congrArg re h
 
 end Complex
+
+namespace TauCeti
+
+/-- Squaring maps the open right half-plane `{w | 0 < w.re}` bijectively onto
+`Complex.slitPlane`. -/
+theorem bijOn_sq_setOf_re_pos_slitPlane :
+    Set.BijOn (· ^ 2 : ℂ → ℂ) {w : ℂ | 0 < w.re} Complex.slitPlane :=
+  Set.InvOn.bijOn
+    ⟨fun _ hw => by simpa only [Complex.sqrt] using Complex.sq_cpow_two_inv hw,
+      fun z _ => Complex.sq_sqrt z⟩
+    (fun _ hw => by rw [sq]; exact mul_mem_slitPlane_of_re_pos hw hw)
+    (fun z hz => (Complex.sqrt_re_pos_iff z).mpr hz)
+
+end TauCeti

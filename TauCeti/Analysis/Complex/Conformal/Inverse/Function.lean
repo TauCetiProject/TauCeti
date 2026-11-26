@@ -18,8 +18,8 @@ functions that are injective on an open set and for holomorphic open partial hom
 
 ## Main results
 
-* `DifferentiableOn.invFunOn` — the inverse of a holomorphic injection on an open set is
-  holomorphic on its image.
+* `DifferentiableOn.invFunOn` and `DifferentiableOn.invFunOn_of_bijOn` — the inverse of a
+  holomorphic injection on an open set is holomorphic on its image.
 * `TauCeti.hasDerivAt_invFunOn` — the derivative of the inverse at `f z₀` is
   `(deriv f z₀)⁻¹`, via `HasDerivAt.of_local_left_inverse`.
 * `TauCeti.hasDerivAt_invFunOn_comp_segment` — the chain rule for the inverse along an affine
@@ -61,6 +61,12 @@ theorem _root_.DifferentiableOn.invFunOn {f : ℂ → ℂ} {U : Set ℂ} (hf : D
     analyticAt_id.congr hleft.symm
   exact ((analyticAt_comp_iff_of_deriv_ne_zero hfz hderiv).mp hcomp).differentiableAt
     |>.differentiableWithinAt
+
+/-- A holomorphic bijection of an open set onto `V` has a holomorphic inverse on `V`. -/
+theorem _root_.DifferentiableOn.invFunOn_of_bijOn {f : ℂ → ℂ} {U V : Set ℂ}
+    (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hbij : BijOn f U V) :
+    DifferentiableOn ℂ (Function.invFunOn f U) V :=
+  hbij.image_eq ▸ hf.invFunOn hU hbij.injOn
 
 /-- The inverse of a holomorphic open partial homeomorphism of `ℂ` is holomorphic on its target. -/
 theorem OpenPartialHomeomorph.differentiableOn_symm {e : OpenPartialHomeomorph ℂ ℂ}

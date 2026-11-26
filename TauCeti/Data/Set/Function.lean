@@ -12,6 +12,8 @@ public import Mathlib.Data.Set.Function
 
 * `Set.InjOn.union_of_disjoint_image`: a map injective on two sets with disjoint images is
   injective on their union.
+* `Set.BijOn.invFunOn`: on a nonempty type, `Function.invFunOn f s` maps `t` bijectively onto `s`
+  when `f` maps `s` bijectively onto `t`.
 * `Set.MapsTo.image_eq_of_involutive`: an involution mapping a set into itself maps it onto
   itself.
 * `Set.MapsTo.image_inter_eq_preimage_of_involutive`: such an involution carries `s ∩ t` onto
@@ -41,6 +43,12 @@ theorem InjOn.union_of_disjoint_image (hs : InjOn f s) (ht : InjOn f t)
     (h : Disjoint (f '' s) (f '' t)) : InjOn f (s ∪ t) :=
   (injOn_union h.of_image).2 ⟨hs, ht, fun _ hx _ hy hxy ↦
     disjoint_left.1 h (mem_image_of_mem f hx) (hxy ▸ mem_image_of_mem f hy)⟩
+
+/-- On a nonempty type, `Function.invFunOn f s` maps `t` bijectively onto `s` whenever `f` maps `s`
+bijectively onto `t`. -/
+theorem BijOn.invFunOn [Nonempty α] {t : Set β} (h : BijOn f s t) :
+    BijOn (Function.invFunOn f s) t s :=
+  h.symm h.invOn_invFunOn.symm
 
 /-- An involution mapping a set into itself maps it onto itself. -/
 theorem MapsTo.image_eq_of_involutive {f : α → α} {s : Set α} (hf : Function.Involutive f)
