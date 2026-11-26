@@ -20,7 +20,9 @@ We also show that a map `x ↦ (f x, g x)` is antilipschitz, and uniformly induc
 `g` are uniformly continuous, on a set where `dist x y` is bounded by a combination of
 `dist (f x) (f y)` and `dist (g x) (g y)`.
 
-`AntilipschitzWith.domRestrict_mono` restricts inverse-Lipschitz control on a set to any subset.
+`AntilipschitzWith.domRestrict_mono` restricts inverse-Lipschitz control on a set to any subset,
+and `AntilipschitzWith.dist_le_add_one_mul_of_domRestrict` gives the strictly-positive-constant
+distance bound `dist x y ≤ (L + 1) * dist (f x) (f y)` on `s`.
 -/
 
 public section
@@ -82,6 +84,15 @@ theorem domRestrict_mono {X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpac
   intro x y
   simpa only [Set.domRestrict_apply, Subtype.edist_eq, Subtype.edist_mk_mk] using
     hi ⟨x, ht x.property⟩ ⟨y, ht y.property⟩
+
+/-- An `L`-antilipschitz restriction `s.domRestrict f` bounds source distances on `s` with the
+strictly positive factor `(L : ℝ) + 1`. -/
+theorem dist_le_add_one_mul_of_domRestrict {X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {L : ℝ≥0} {f : X → Y} {s : Set X}
+    (hi : AntilipschitzWith L (s.domRestrict f)) {x y : X} (hx : x ∈ s) (hy : y ∈ s) :
+    dist x y ≤ ((L : ℝ) + 1) * dist (f x) (f y) :=
+  (hi.le_mul_dist ⟨x, hx⟩ ⟨y, hy⟩).trans
+    (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right zero_le_one) dist_nonneg)
 
 /-- If distances in `X` are controlled by the distances of the images under `f` and `g`, then
 `x ↦ (f x, g x)` is antilipschitz, with constant `A + B`. -/

@@ -221,13 +221,8 @@ theorem hasNonzeroWeightVector_of_forall_isUnipotentPoint_of_le_derivedDefiningI
   let _ : Nontrivial (Fin (Module.finrank k M) → k) := e.symm.toEquiv.nontrivial
   have hweight : HasNonzeroWeightVector k H (Fin (Module.finrank k M) → k) :=
     hasNonzeroWeightVector_of_forall_isUnipotentPoint_of_le_derivedDefiningIdeal_aux I hID hI
-  obtain ⟨v, c, hv, hc, hvc⟩ := (hasNonzeroWeightVector_iff (k := k) (C := H)).mp hweight
-  refine (hasNonzeroWeightVector_iff (k := k) (C := H)).mpr
-    ⟨e.symm v, c, e.symm.map_ne_zero_iff.mpr hv, hc, ?_⟩
-  have hmap := (Comodule.transportInvHom (R := k) (C := H) e).map_coact_apply v
-  rw [hvc] at hmap
-  simpa only [Comodule.transportInvHom_apply, Comodule.transportInvHom_toLinearMap,
-    LinearEquiv.coe_coe, TensorProduct.map_tmul, LinearMap.id_apply] using hmap.symm
+  exact hasNonzeroWeightVector_of_injective (Comodule.transportInvHom e)
+    (Comodule.transportInvHom_injective e) hweight
 
 /-- If every point of the derived closed subgroup acts unipotently, then every nonzero
 finite-dimensional representation has a nonzero weight vector.

@@ -138,6 +138,15 @@ theorem comp_toHom (f : X ⟶ Y) (g : Y ⟶ Z) :
 
 theorem comp_base (f : X ⟶ Y) (g : Y ⟶ Z) : (f ≫ g).base = f.base ≫ g.base := rfl
 
+/-- The point map of a composite sends `x` to `g.base (f.base x)`. -/
+@[simp]
+theorem comp_base_apply (f : X ⟶ Y) (g : Y ⟶ Z) (x : X) : (f ≫ g).base x = g.base (f.base x) :=
+  rfl
+
+/-- The point map of the identity fixes every point. -/
+@[simp]
+theorem id_base_apply (X : PreAdicSpace.{u}) (x : X) : (𝟙 X : X ⟶ X).base x = x := rfl
+
 theorem comp_c_app (f : X ⟶ Y) (g : Y ⟶ Z) (U : (Opens Z)ᵒᵖ) :
     (f ≫ g).c.app U = g.c.app U ≫ f.c.app (Opposite.op ((Opens.map g.base).obj U.unop)) := rfl
 

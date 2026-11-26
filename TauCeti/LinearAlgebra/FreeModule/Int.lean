@@ -40,6 +40,9 @@ abelian group of rank two has exactly four homomorphisms to `ℤ/2`: given a non
 * `LinearMap.index_range_eq_natAbs_det_toMatrix`: for any `ℤ`-linear map between free abelian
   groups with bases indexed by the same finite type, the index of the image is the absolute value
   of the determinant of its matrix.
+* `Matrix.natCard_quotient_range_mulVecLin_eq_natAbs_det`: the cokernel of a square integer
+  matrix `A` has `Nat.card` equal to `|det A|`, which is `0` exactly when the cokernel is
+  infinite.
 * `Module.Basis.card_quotient_span_range_nsmul`: rescaling the vectors of a finite integral basis
   by natural numbers `m k`, the quotient by the span of the `m k • b k` has `Nat.card` equal to
   `∏ k, m k`.
@@ -122,6 +125,20 @@ theorem index_range_eq_natAbs_det_toMatrix {ι : Type*} [Fintype ι] [DecidableE
   exact congr(c.repr $(LinearEquiv.ofInjective_apply f (h := hf) (b j)) i)
 
 end LinearMap
+
+/-- **The cokernel of a square integer matrix.** For `A : Matrix ι ι ℤ`, the cokernel
+`ℤ^ι ⧸ A ℤ^ι` has `Nat.card` equal to `|det A|`, with no hypothesis on `A`. When `det A ≠ 0` the
+cokernel is finite with `|det A|` elements; when `det A = 0` it is infinite
+(`LinearMap.infinite_quotient_range_of_det_eq_zero`) and both sides are `0`. For `det A ≠ 0` this
+is the case `R = ℤ` of `Matrix.card_quotient_range_mulVecLin_eq_card_quotient_span_det`. -/
+theorem Matrix.natCard_quotient_range_mulVecLin_eq_natAbs_det {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (A : Matrix ι ι ℤ) :
+    Nat.card ((ι → ℤ) ⧸ LinearMap.range A.mulVecLin) = A.det.natAbs := by
+  rw [← Matrix.toLin'_apply']
+  -- the quotient module and the quotient group by the underlying subgroup are the same type
+  refine (AddSubgroup.index_eq_card _).symm.trans ?_
+  simpa [LinearMap.toMatrix_eq_toMatrix'] using
+    LinearMap.index_range_eq_natAbs_det_toMatrix (Pi.basisFun ℤ ι) (Pi.basisFun ℤ ι) A.toLin'
 
 /-! ### Rescaled bases -/
 

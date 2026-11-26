@@ -45,8 +45,12 @@ closed, since a proper specialization of such a point would have codimension at 
   Krull dimension at least one.
 * `TauCeti.topologicalKrullDim_eq_iSup_coheight`: on a quasi-sober space, the Krull dimension is
   the supremum of the codimensions of the points for the specialization preorder.
+* `TauCeti.topologicalKrullDim_le_of_forall_coheight_le`: on a quasi-sober space all of whose
+  points have codimension at most `n`, the Krull dimension is at most `n`.
 * `TauCeti.height_eq_topologicalKrullDim_closure_singleton`: on a quasi-sober space, the height
   of a point for the specialization preorder is the Krull dimension of its closure.
+* `IsGenericPoint.height_eq_topologicalKrullDim`: on a quasi-sober space, the height of a generic
+  point of the whole space is the Krull dimension of the space.
 * `TauCeti.topologicalKrullDim_closure_singleton_le_of_not_isMax`: on a quasi-sober space all
   of whose points have codimension at most `d + 1`, the closure of a point that is not a generic
   point of an irreducible component has dimension at most `d`.
@@ -155,6 +159,14 @@ theorem topologicalKrullDim_eq_iSup_coheight (α : Type*) [TopologicalSpace α] 
   exact krullDim_le_of_strictMono g hmono
 
 attribute [local instance] specializationPreorder in
+/-- On a quasi-sober topological space all of whose points have codimension at most `n` for the
+specialization preorder, the Krull dimension is at most `n`. -/
+theorem topologicalKrullDim_le_of_forall_coheight_le {α : Type*} [TopologicalSpace α]
+    [QuasiSober α] {n : ℕ∞} (h : ∀ x : α, coheight x ≤ n) : topologicalKrullDim α ≤ n := by
+  rw [topologicalKrullDim_eq_iSup_coheight]
+  exact iSup_le fun x ↦ by exact_mod_cast h x
+
+attribute [local instance] specializationPreorder in
 /-- On a quasi-sober topological space, the height of a point for the specialization preorder
 (`x ≤ y ↔ y ⤳ x`) is the Krull dimension of its closure: the points below `x` are the points of
 `closure {x}`, whose Krull dimension for the specialization preorder is the topological one. -/
@@ -191,6 +203,15 @@ theorem topologicalKrullDim_closure_singleton_le_of_not_isMax {α : Type*} [Topo
   exact (ENat.add_le_add_iff_right ENat.one_ne_top).mp this
 
 end TauCeti
+
+attribute [local instance] specializationPreorder in
+/-- On a quasi-sober topological space, the height of a generic point `x` of the whole space for the
+specialization preorder is the Krull dimension of the space, the closure of `x`. -/
+theorem IsGenericPoint.height_eq_topologicalKrullDim {α : Type*} [TopologicalSpace α]
+    [QuasiSober α] {x : α} (hx : IsGenericPoint x ⊤) :
+    (height x : WithBot ℕ∞) = topologicalKrullDim α := by
+  rw [TauCeti.height_eq_topologicalKrullDim_closure_singleton, hx.def, Set.top_eq_univ,
+    (Homeomorph.Set.univ α).isHomeomorph.topologicalKrullDim_eq]
 
 attribute [local instance] specializationPreorder in
 /-- A continuous generalizing map cannot increase the coheight of a point for the specialization

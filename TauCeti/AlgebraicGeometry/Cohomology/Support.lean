@@ -24,8 +24,10 @@ on `H^q(W, M)` (`TauCeti.AlgebraicGeometry.Cohomology.Module.Basic`), so `H^q_Z(
 `Γ(X, 𝒪_X)`-module (`Scheme.Modules.cohomologyWithSupportModule`). In degree zero and for
 `W = ⊤` it is the module of global sections supported in `Z`
 (`Scheme.Modules.cohomologyWithSupportZeroLinearEquiv`); it vanishes when `W` does not meet `Z`
-(`Scheme.Modules.subsingleton_cohomologyWithSupport_of_le_compl`), in particular for `Z = ∅`. The
-long exact sequence of supports
+(`Scheme.Modules.subsingleton_cohomologyWithSupport_of_le_compl`), in particular for `Z = ∅`, and
+it is `H^q(W, M)` when `W ⊆ Z` (`Scheme.Modules.cohomologyWithSupportLinearEquivOfSubset`), in
+particular for `Z = X`, where in degree zero it is the module of global sections
+(`Scheme.Modules.cohomologyWithSupportZeroLinearEquivOfEqUniv`). The long exact sequence of supports
 
 `⋯ ⟶ H^q_Z(W, M) ⟶ H^q(W, M) ⟶ H^q(W ∖ Z, M) ⟶ H^{q+1}_Z(W, M) ⟶ ⋯`
 
@@ -40,11 +42,18 @@ is an exact sequence of `Γ(X, 𝒪_X)`-modules (Stacks, Tag 0G6Y), with the coh
 * `Scheme.Modules.cohomologyWithSupportZeroLinearEquiv`: `H⁰_Z(X, M) ≃ₗ Γ_Z(X, M)`.
 * `Scheme.Modules.subsingleton_cohomologyWithSupport_of_le_compl`: `H^q_Z(W, M) = 0` when
   `W ∩ Z = ∅`.
+* `Scheme.Modules.cohomologyWithSupportLinearEquivOfSubset`: `H^q_Z(W, M) ≃ₗ H^q(W, M)` when
+  `W ⊆ Z`, for instance `H^q_X(W, M) ≃ₗ H^q(W, M)`.
+* `Scheme.Modules.cohomologyWithSupportZeroLinearEquivOfEqUniv`: `H⁰_Z(X, M) ≃ₗ Γ(X, M)` when
+  `Z = X`.
 * `Scheme.Modules.cohomologyWithSupportToCohomologyOn`, `Scheme.Modules.cohomologyWithSupportδ`:
   the linear maps of the long exact sequence of supports, whose exactness is
   `Scheme.Modules.exact_cohomologyWithSupportToCohomologyOn_cohomologyOnResLinear`,
   `Scheme.Modules.exact_cohomologyOnResLinear_cohomologyWithSupportδ` and
   `Scheme.Modules.exact_cohomologyWithSupportδ_cohomologyWithSupportToCohomologyOn`.
+* `Scheme.Modules.cohomologyWithSupportSuccLinearEquiv`: when `H^{q+1}(W, M) = 0`, the connecting
+  map is surjective (`Scheme.Modules.cohomologyWithSupportδ_surjective`) and identifies
+  `H^{q+1}_Z(W, M)` with the quotient of `H^q(W ∖ Z, M)` by the restrictions from `H^q(W, M)`.
 
 ## References
 
@@ -193,6 +202,42 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportToCohomologyO
       Sheaf.relativeH'.toH' ((toSheaf X).obj M) (Z.complInclusion W) q x :=
   (rfl)
 
+/-- Cohomology on `W` with supports in a closed `Z` containing `W` is cohomology: the map
+`H^q_Z(W, M) ⟶ H^q(W, M)` of the long exact sequence of supports is a linear equivalence over
+global functions. For `Z = X` this says `H^q_X(W, M) ≃ₗ H^q(W, M)`. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportLinearEquivOfSubset {W : X.Opens}
+    (hW : (W : Set X) ⊆ Z) (q : ℕ) : M.cohomologyWithSupport Z W q ≃ₗ[Γ(X, ⊤)] cohomologyOn M q W :=
+  LinearEquiv.ofBijective (M.cohomologyWithSupportToCohomologyOn Z W q) <| by
+    -- by their `_apply` lemmas, both maps evaluate to `relativeH'.toH'`
+    have h : ⇑(M.cohomologyWithSupportToCohomologyOn Z W q) =
+        ⇑(((toSheaf X).obj M).supportedHEquivOfSubset Z hW q) :=
+      funext fun x ↦ (M.cohomologyWithSupportToCohomologyOn_apply Z W q x).trans
+        (Sheaf.supportedHEquivOfSubset_apply _ Z hW x).symm
+    rw [h]
+    exact (((toSheaf X).obj M).supportedHEquivOfSubset Z hW q).bijective
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportLinearEquivOfSubset_apply
+    {W : X.Opens} (hW : (W : Set X) ⊆ Z) (q : ℕ) (x : M.cohomologyWithSupport Z W q) :
+    M.cohomologyWithSupportLinearEquivOfSubset Z hW q x =
+      M.cohomologyWithSupportToCohomologyOn Z W q x :=
+  (rfl)
+
+/-- Degree-zero cohomology with supports in a closed subset `Z` equal to the whole scheme is the
+module of global sections: `H⁰_X(X, M) ≃ₗ Γ(X, M)`, linearly over global functions. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportZeroLinearEquivOfEqUniv
+    (hZ : (Z : Set X) = Set.univ) : M.cohomologyWithSupport Z ⊤ 0 ≃ₗ[Γ(X, ⊤)] Γ(M, ⊤) :=
+  (M.cohomologyWithSupportLinearEquivOfSubset Z (hZ ▸ Set.subset_univ _) 0).trans
+    ((M.cohomologyOnTopLinearEquiv 0).trans M.cohomologyZeroLinearEquiv)
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportZeroLinearEquivOfEqUniv_apply
+    (hZ : (Z : Set X) = Set.univ) (x : M.cohomologyWithSupport Z ⊤ 0) :
+    M.cohomologyWithSupportZeroLinearEquivOfEqUniv Z hZ x =
+      M.cohomologyZeroLinearEquiv
+        (M.cohomologyOnTopLinearEquiv 0 (M.cohomologyWithSupportToCohomologyOn Z ⊤ 0 x)) :=
+  (rfl)
+
 /-- The connecting map `H^q(W ∖ Z, M) ⟶ H^{q+1}_Z(W, M)` of the long exact sequence of supports,
 as a linear map over global functions. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportδ {q₀ q₁ : ℕ}
@@ -254,5 +299,42 @@ theorem exact_cohomologyWithSupportδ_cohomologyWithSupportToCohomologyOn
     Function.Exact (M.cohomologyWithSupportδ Z W h)
       (M.cohomologyWithSupportToCohomologyOn Z W q₁) :=
   Sheaf.relativeH'.exact_δ_toH' _ _ h
+
+/-- The connecting map `H^q(W ∖ Z, M) → H^{q+1}_Z(W, M)` of the long exact sequence of supports is
+surjective when `H^{q+1}(W, M)` vanishes. -/
+theorem cohomologyWithSupportδ_surjective {q₀ q₁ : ℕ} (h : 1 + q₀ = q₁)
+    [Subsingleton (cohomologyOn M q₁ W)] :
+    Function.Surjective (M.cohomologyWithSupportδ Z W h) := fun x ↦
+  (exact_cohomologyWithSupportδ_cohomologyWithSupportToCohomologyOn M Z W h x).mp
+    (Subsingleton.elim _ _)
+
+/-- **Cohomology with supports in positive degree.** When `H^{q+1}(W, M)` vanishes, the connecting
+map identifies `H^{q+1}_Z(W, M)` with the quotient of `H^q(W ∖ Z, M)` by the restrictions of
+classes in `H^q(W, M)`, linearly over global functions. -/
+noncomputable def cohomologyWithSupportSuccLinearEquiv {q₀ q₁ : ℕ} (h : 1 + q₀ = q₁)
+    [Subsingleton (cohomologyOn M q₁ W)] :
+    (cohomologyOn M q₀ (W ⊓ Z.compl) ⧸
+        LinearMap.range (cohomologyOnResLinear M q₀ (inf_le_left : W ⊓ Z.compl ≤ W))) ≃ₗ[Γ(X, ⊤)]
+      M.cohomologyWithSupport Z W q₁ :=
+  (exact_cohomologyOnResLinear_cohomologyWithSupportδ M Z W h).linearEquivOfSurjective
+    (cohomologyWithSupportδ_surjective M Z W h)
+
+/-- The identification of `H^{q+1}_Z(W, M)` with a quotient of `H^q(W ∖ Z, M)` sends the class of
+a cohomology class to its image under the connecting map. -/
+@[simp]
+lemma cohomologyWithSupportSuccLinearEquiv_mk {q₀ q₁ : ℕ} (h : 1 + q₀ = q₁)
+    [Subsingleton (cohomologyOn M q₁ W)] (x : cohomologyOn M q₀ (W ⊓ Z.compl)) :
+    M.cohomologyWithSupportSuccLinearEquiv Z W h (Submodule.Quotient.mk x) =
+      M.cohomologyWithSupportδ Z W h x :=
+  (rfl)
+
+/-- The inverse of the identification of `H^{q+1}_Z(W, M)` with a quotient of `H^q(W ∖ Z, M)`
+sends the image of a class under the connecting map to its class in the quotient. -/
+lemma cohomologyWithSupportSuccLinearEquiv_symm_cohomologyWithSupportδ {q₀ q₁ : ℕ}
+    (h : 1 + q₀ = q₁) [Subsingleton (cohomologyOn M q₁ W)] (x : cohomologyOn M q₀ (W ⊓ Z.compl)) :
+    (M.cohomologyWithSupportSuccLinearEquiv Z W h).symm (M.cohomologyWithSupportδ Z W h x) =
+      Submodule.Quotient.mk x :=
+  (exact_cohomologyOnResLinear_cohomologyWithSupportδ M Z W h).linearEquivOfSurjective_symm_apply
+    (cohomologyWithSupportδ_surjective M Z W h) x
 
 end AlgebraicGeometry.Scheme.Modules

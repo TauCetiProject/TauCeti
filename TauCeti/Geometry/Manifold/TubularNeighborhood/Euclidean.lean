@@ -271,7 +271,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The normal space of a map `f : M → V` into a real inner product space at `x`: the orthogonal
 complement in `V` of the range of the differential of `f` at `x`. It realizes the quotient normal
-space `TauCeti.SmoothEmbedding.NormalSpace` as a subspace of `V`, using the inner product. -/
+space `Manifold.IsImmersion.NormalSpace` as a subspace of `V`, using the inner product. -/
 @[expose] noncomputable def normalSubspace (f : M → V) (x : M) : Submodule ℝ V :=
   (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).rangeᗮ
 

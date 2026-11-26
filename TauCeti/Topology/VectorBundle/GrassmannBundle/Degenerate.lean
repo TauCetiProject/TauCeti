@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.GrassmannBundle
+public import TauCeti.Topology.VectorBundle.GrassmannBundle.Basic
 import Mathlib.Topology.VectorBundle.FiniteDimensional
 
 /-!

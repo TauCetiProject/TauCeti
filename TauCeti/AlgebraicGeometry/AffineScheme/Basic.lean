@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Sites.Spaces
 public import Mathlib.RingTheory.Ideal.Pointwise
+import TauCeti.AlgebraicGeometry.Restrict
 import Mathlib.AlgebraicGeometry.QuasiAffine
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Localization.Tower
@@ -327,6 +328,23 @@ lemma Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE {Z B : Scheme.{u}} (k : 
       _ = k.appLE V U e ≫ U.ι.appLE U T (by simp) := by
         rw [← Category.assoc, ← Scheme.ΓSpecIso_inv_naturality, Category.assoc,
           Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE]
+
+/-- Over an affine base `Y`, the preimage `f'⁻¹ V` of an affine open `V` of `Y'` is the base change
+of `X` along `Spec Γ(Y', V) ⟶ Spec Γ(Y, ⊤)`. -/
+lemma _root_.CategoryTheory.IsPullback.isPullback_preimage_ι_comp
+    {X Y X' Y' : Scheme.{u}} {f : X ⟶ Y} {g : Y' ⟶ Y} {f' : X' ⟶ Y'} {g' : X' ⟶ X}
+    (H : IsPullback g' f' f g) [IsAffine Y] {V : Y'.Opens}
+    (hV : IsAffineOpen V) (hVg : V ≤ g ⁻¹ᵁ ⊤) :
+    IsPullback ((f' ⁻¹ᵁ V).ι ≫ g') (f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom)
+      (f ≫ Y.toSpecΓ) (Spec.map (g.appLE ⊤ V hVg)) := by
+  have : IsIso V.toSpecΓ := inferInstanceAs (IsIso hV.isoSpec.hom)
+  have hB : IsPullback (V.ι ≫ g) V.toSpecΓ Y.toSpecΓ (Spec.map (g.appLE ⊤ V hVg)) := by
+    refine IsPullback.of_vert_isIso ⟨?_⟩
+    rw [Category.assoc, Scheme.toSpecΓ_naturality,
+      ← Scheme.Opens.toSpecΓ_SpecMap_presheaf_map_top_assoc, ← Spec.map_comp]
+    -- `g.appLE ⊤ V hVg` is by definition `g.appTop` followed by restriction to `V`.
+    rfl
+  exact ((f'.isPullback_resLE_of_eq V rfl).flip.paste_horiz H).paste_vert hB
 
 /-- Reading a function on an affine open chart `ι : Spec A ⟶ X` as an element of `A` and
 mapping it along `φ : A ⟶ A'` is the same as restricting it to the image `V` of `Spec A'` and

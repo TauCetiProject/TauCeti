@@ -118,6 +118,12 @@ theorem differential_tprod (n : ℕ) (X : Module.End R M) (v : Fin n → M) :
   simp_rw [Function.apply_update (fun _ ↦ SymmetricAlgebra.ι R M)]
   rw [prod_update_of_mem (mem_univ j), sdiff_singleton_eq_erase]
 
+/-- In degree zero the differential vanishes. -/
+@[simp]
+theorem differential_zero : differential R M 0 = 0 := by
+  ext X v
+  simp
+
 /-- **Naturality of the differential**: a linear map `f` intertwining `X` with `Y` makes
 `Symⁿ(f)` intertwine `d Symⁿ(X)` with `d Symⁿ(Y)`. -/
 theorem map_comp_differential {N : Type*} [AddCommGroup N] [Module R N] (n : ℕ)

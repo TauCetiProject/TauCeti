@@ -37,6 +37,9 @@ the chains of the loop space are compared in Brown's theory of twisted tensor pr
   to the identity, by truncation.
 * `TauCeti.MoorePathBetween.toMoorePathFrom`: a Moore path from `b` to `c` as a path from `b`. It is
   an equivariant embedding onto the paths ending at `c`, the fibre of the end point map over `c`.
+* `TauCeti.MoorePathBetween.transFrom a b`: concatenation `P_{a→b} X × P_b X → P_a X` of a path
+  from `a` to `b` with a path starting at `b`, balanced over the loops at `b` and commuting with the
+  loops at `a` acting in front.
 * `TauCeti.MooreLoopSpace.toMoorePathFrom`: a Moore loop at `b` as a Moore path from `b`, an
   embedding (`TauCeti.MooreLoopSpace.isEmbedding_toMoorePathFrom`) which turns the product of loops
   into the left action (`TauCeti.MooreLoopSpace.toMoorePathFrom_mul`).
@@ -237,6 +240,32 @@ theorem isEmbedding_toMoorePathFrom : Topology.IsEmbedding (toMoorePathFrom b c)
       Subtype.val :=
     funext fun ⟨γ, hγ⟩ ↦ toMoorePath_mk γ hγ
   exact (Topology.IsEmbedding.subtypeVal.of_comp_iff).1 (h ▸ Topology.IsEmbedding.subtypeVal)
+
+/-! ### Concatenating a path with a path from its end point -/
+
+/-- **Concatenation** `P_{a→b} X × P_b X → P_a X` of a Moore path from `a` to `b` with a Moore path
+starting at `b`. -/
+def transFrom (a b : X) : C(MoorePathBetween X a b × MoorePathFrom X b, MoorePathFrom X a) where
+  toFun p := ⟨p.1.toMoorePath.trans p.2.toMoorePath (p.1.target.trans p.2.source.symm),
+    (MoorePath.source_trans _ _ _).trans p.1.source⟩
+  continuous_toFun := ((continuous_toMoorePath.comp continuous_fst).moorePath_trans
+    (MoorePathFrom.continuous_toMoorePath.comp continuous_snd)
+      fun p ↦ p.1.target.trans p.2.source.symm).subtype_mk _
+
+@[simp]
+theorem toMoorePath_transFrom {a : X} (p : MoorePathBetween X a b × MoorePathFrom X b) :
+    (transFrom a b p).toMoorePath = p.1.toMoorePath.trans p.2.toMoorePath (by simp) :=
+  MoorePathFrom.toMoorePath_mk _ _
+
+/-- Concatenation is balanced over the loops at `b`: `(γ ⋆ ω) ⋆ δ = γ ⋆ (ω ⋆ δ)`. -/
+theorem transFrom_op_smul {a : X} (ω : MooreLoopSpace X b) (γ : MoorePathBetween X a b)
+    (δ : MoorePathFrom X b) : transFrom a b (MulOpposite.op ω • γ, δ) = transFrom a b (γ, ω • δ) :=
+  MoorePathFrom.ext (by simp [MoorePath.trans_assoc])
+
+/-- Concatenation commutes with the loops at `a` acting in front: `(ω ⋆ γ) ⋆ δ = ω ⋆ (γ ⋆ δ)`. -/
+theorem transFrom_smul {a : X} (ω : MooreLoopSpace X a) (γ : MoorePathBetween X a b)
+    (δ : MoorePathFrom X b) : transFrom a b (ω • γ, δ) = ω • transFrom a b (γ, δ) :=
+  MoorePathFrom.ext (by simp [MoorePath.trans_assoc])
 
 end MoorePathBetween
 

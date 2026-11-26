@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.DedekindDomain.Ideal.Congruence
 public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.DedekindDomain.Ideal.UnitsAway
 
 /-!
@@ -130,6 +130,10 @@ theorem finitePart_ne_zero (𝔪 : Modulus K) : 𝔪.finitePart ≠ 0 := fun h �
 a nonzero ideal. -/
 instance finite_quotient_finitePart (𝔪 : Modulus K) : Finite (𝓞 K ⧸ 𝔪.finitePart) :=
   Ring.HasFiniteQuotients.finiteQuotient 𝔪.finitePart_ne_bot
+
+/-- The finite part of a modulus has nonzero absolute norm. -/
+instance neZero_absNorm_finitePart (𝔪 : Modulus K) : NeZero (Ideal.absNorm 𝔪.finitePart) :=
+  ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
 
 /-- **Divisibility of moduli**: `𝔪 ∣ 𝔫` when the finite part of `𝔪` divides that of `𝔫` and the
 infinite part of `𝔪` is contained in that of `𝔫`, so that the congruence conditions imposed by

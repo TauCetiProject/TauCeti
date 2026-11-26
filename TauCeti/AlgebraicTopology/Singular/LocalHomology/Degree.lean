@@ -54,6 +54,9 @@ classes along the parts.
 * `TauCeti.HomologicalOrientation.singularHomologyToLocalHomology_mapFundamentalClass`: for compact
   `M`, the image of `f_*[M]` in the local homology at `y` is the local degree at `y` times the
   local orientation, with no connectedness of `N`.
+* `TauCeti.HomologicalOrientation.fundamentalClass_eq_sum_mapFundamentalClass_comap`: if `M` is
+  compact and the union of the disjoint ranges of finitely many open embeddings of compact spaces,
+  its fundamental class is the sum of the images of the fundamental classes of the pieces.
 * `TauCeti.HomologicalOrientation.localDegree_comap_comp`: excision, the local degree at `y` is
   unchanged on restricting to an open subset containing the fibre over `y`.
 * `TauCeti.HomologicalOrientation.isLocallyConstant_localDegree`: the local degree of a proper
@@ -323,6 +326,36 @@ theorem localDegree_id (y : M) : o.localDegree o hE (ContinuousMap.id M) y = 1 :
 @[simp]
 theorem degree_id [Nonempty M] : o.degree o hE (ContinuousMap.id M) = 1 := by
   rw [degree_eq_localDegree_some o o hE _ ‹_›, localDegree_id]
+
+/-- **The fundamental class of a decomposition into open pieces.** Let a compact oriented manifold
+`M` be the union of the pairwise disjoint ranges of finitely many open embeddings `j i : N i → M`
+of compact spaces. Then the fundamental class of `M` is the sum of the images of the fundamental
+classes of the `N i`, oriented by pulling back `o`. For instance, the fundamental class of a finite
+disjoint union is the sum of the images of the fundamental classes of its components. -/
+theorem fundamentalClass_eq_sum_mapFundamentalClass_comap [CompactSpace M] {ι : Type*}
+    [Fintype ι] {N : ι → Type} [∀ i, TopologicalSpace (N i)] [∀ i, T2Space (N i)]
+    [∀ i, ChartedSpace E (N i)] [∀ i, CompactSpace (N i)] {j : ∀ i, C(N i, M)}
+    (hj : ∀ i, IsOpenEmbedding (j i))
+    (hdisj : Pairwise fun i k ↦ Disjoint (range (j i)) (range (j k)))
+    (hcover : ∀ y, ∃ i, y ∈ range (j i)) :
+    o.fundamentalClass hE = ∑ i, (o.comap (hj i)).mapFundamentalClass hE (j i) := by
+  refine (o.eq_fundamentalClass hE fun y ↦ ?_).symm
+  obtain ⟨k, hk⟩ := hcover y
+  -- At `y`, only the piece `k` whose range contains `y` contributes, with local degree `1`. The
+  -- sum is read in `SSet.homology`, the domain of the map to local homology.
+  refine (map_sum (singularHomologyToLocalHomology (ModuleCat.of ℤ (ULift.{0} ℤ)) y n)
+    (fun i ↦ ((o.comap (hj i)).mapFundamentalClass hE (j i) :
+      ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+        ModuleCat.{0} ℤ))) _).trans ?_
+  rw [Finset.sum_eq_single k (fun i _ hik ↦ ?_) (by simp)]
+  · have h := o.localDegree_comap_comp o hE hE (hj k) (ContinuousMap.id M) (y := y)
+      (by simpa using hk)
+    rw [ContinuousMap.id_comp, localDegree_id] at h
+    refine (singularHomologyToLocalHomology_mapFundamentalClass _ o hE (j k) y).trans ?_
+    rw [h, one_smul]
+  · refine (singularHomologyToLocalHomology_mapFundamentalClass _ o hE (j i) y).trans ?_
+    rw [localDegree_eq_zero_of_notMem_range _ o hE hE _ fun hy ↦
+      disjoint_left.1 (hdisj hik) hy hk, zero_smul]
 
 /-- Reversing the orientation of the source negates the local degree. -/
 @[simp]

@@ -8,12 +8,12 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Morrey
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Holder.CompLinear
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Planar
 import TauCeti.Analysis.Sobolev.Local.Wkp
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Sobolev.WeakDeriv.ContinuousRepresentative
+import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 
 /-!
 # Higher-order Morrey embedding for local Sobolev maps on planar domains
@@ -225,36 +225,13 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_basis {q : 
   refine ⟨(∑ l, ‖A l‖₊) * K, fun {Ω} u hsub hu => ?_⟩
   choose v hv g hg hug hb using fun l =>
     hK (Ω := Ω) (fun z => ℓ l (u z)) hsub (hu.clm_comp (ℓ l))
-  have hsum (x : F) : x = ∑ l, A l (ℓ l x) := by
-    simp only [A, ℓ, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
-      LinearMap.coe_toContinuousLinearMap', Basis.coord_apply]
-    exact (b.sum_repr x).symm
-  have hvl (l : ι) : ‖v l‖₊ ≤ ∑ l', ‖v l'‖₊ :=
-    Finset.single_le_sum (f := fun l' => ‖v l'‖₊) (fun _ _ => zero_le) (Finset.mem_univ l)
-  have hC : ∑ l, ‖A l‖₊ * (K * ∑ l', ‖v l'‖₊) = (∑ l, ‖A l‖₊) * K * ∑ l, ‖v l‖₊ := by
-    rw [← Finset.sum_mul]
-    ring
   refine ⟨v, hv, fun z => ∑ l, A l (g l z),
-    ContDiffOn.sum fun l _ => (A l).contDiff.comp_contDiffOn (hg l), ?_, fun i hi => ⟨?_, ?_⟩⟩
-  · filter_upwards [ae_all_iff.2 hug] with z hz
-    rw [hsum (u z)]
-    exact Finset.sum_congr rfl fun l _ => by rw [hz l]
-  · intro z hz
-    refine (norm_iteratedFDeriv_sum_comp_left_le Finset.univ A fun l _ =>
-      ((hg l).contDiffAt (isOpen_ball.mem_nhds hz)).of_le (by exact_mod_cast hi)).trans ?_
-    calc
-      _ ≤ ∑ l, ‖A l‖ * (K * ∑ l', ‖v l'‖) :=
-        Finset.sum_le_sum fun l _ => mul_le_mul_of_nonneg_left
-          (((hb l i hi).1 z hz).trans (by
-            gcongr
-            simpa using NNReal.coe_le_coe.2 (hvl l))) (norm_nonneg _)
-      _ = _ := by
-        rw [← Finset.sum_mul]
-        push_cast
-        ring
-  · rw [← hC]
-    exact holderOnWith_iteratedFDeriv_sum_comp_left A isOpen_ball
-      (fun l => (hg l).of_le (by exact_mod_cast hi))
-      fun l => (hb l i hi).2.mono_const (mul_le_mul' le_rfl (hvl l))
+    ContDiffOn.sum fun l _ => (A l).contDiff.comp_contDiffOn (hg l), ?_, fun i hi => ?_⟩
+  · exact (b.ae_eq_sum_smul_of_coord_ae_eq hug).trans
+      (Filter.Eventually.of_forall fun z => by simp [A])
+  · have h := norm_iteratedFDeriv_le_and_holderOnWith_sum_comp_left A (c := fun l => ‖v l‖₊)
+      (fun l z hz => ((hg l).contDiffAt (isOpen_ball.mem_nhds hz)).of_le (by exact_mod_cast hi))
+      fun l => ⟨fun z hz => by simpa using (hb l i hi).1 z hz, (hb l i hi).2⟩
+    exact ⟨fun z hz => by simpa using h.1 z hz, h.2⟩
 
 end TauCeti
