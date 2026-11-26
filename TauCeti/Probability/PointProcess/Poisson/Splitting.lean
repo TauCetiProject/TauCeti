@@ -55,7 +55,8 @@ theorem iIndepFun_nat_count_prod {E ι : Type*} [MeasurableSpace E]
       (fun i ω (t : ℝ≥0) ↦ ⌊(M ω (Ioc 0 t ×ˢ A i)).toNNReal⌋₊) P := by
   simpa only [Function.comp_def, Measure.map_fst_restrict_prod_apply _ _ _
     measurableSet_Ioc, inter_univ] using
-    (h.iIndepFun_map_fst_restrict_univ_prod hA hd).comp _ (fun _ ↦ measurable_nat_count_path)
+    (h.iIndepFun_map_fst_restrict_univ_prod hA hd).comp _
+      (fun _ ↦ measurable_natFloor_measure_Ioc 0)
 
 /-- Two disjoint measurable mark sets give independent complete temporal count paths,
 without product-intensity or local-finiteness assumptions. -/

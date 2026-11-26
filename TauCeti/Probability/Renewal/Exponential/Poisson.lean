@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Measure.NNReal
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 import TauCeti.Probability.Renewal.Exponential.Process
 import TauCeti.Probability.PointProcess.Poisson.Temporal
+import TauCeti.Probability.RandomMeasure.Cumulative
 
 /-!
 # Exponential renewal arrivals as a homogeneous Poisson random measure
@@ -107,7 +108,7 @@ theorem identDistrib_renewalCountNat_nat_count_of_isPoissonRandomMeasure
     IdentDistrib (fun ω t ↦ renewalCountNat T t ω)
       (fun ω t ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) P Q := by
   have hcomp := (identDistrib_renewalArrivalMeasure_of_isPoissonRandomMeasure
-    hindep hlaw hM).comp measurable_nat_count_path
+    hindep hlaw hM).comp (measurable_natFloor_measure_Ioc 0)
   have hae : (fun ω t ↦ ⌊(renewalArrivalMeasure T ω (Ioc 0 t)).toNNReal⌋₊) =ᵐ[P]
       fun ω t ↦ renewalCountNat T t ω := by
     filter_upwards [ae_renewalArrivalMeasure_Ioc_eq_of_expMeasure hindep hlaw] with ω hω
