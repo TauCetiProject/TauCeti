@@ -107,8 +107,7 @@ theorem not_isBounded_torusRho₁₂TypeD [Nontrivial R] : ¬(torusRho₁₂Type
     (fun y hy ↦ absurd (Subsingleton.elim y ()) hy) fun k h ↦ ?_
   -- The coordinate of the strand `ρ₁₂` takes the value `1` on each factor of `ρ₁₂^{⊗ k}`.
   have := congrArg (PiTensorProduct.dualDistrib (PiTensorProduct.tprod R fun _ : Fin k ↦
-    ((basis R (Fin 4)).coord (single 0 2 (by decide))).comp
-      (matchedSummand R genusOne.pair 1).toSubmodule.subtype)) h
+    oneStrandChordCoord R genusOne.pair (by decide : (0 : Fin 4) < 2))) h
   simp [PiTensorProduct.dualDistrib_apply] at this
 
 end StrandsAlgebra
