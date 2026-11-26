@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStru
 import TauCeti.Algebra.Group.Pi.Pairing
 import TauCeti.Algebra.Group.Subgroup.Pi
 import TauCeti.Algebra.Module.ZMod.Annihilator
+import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Reciprocity
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Orthogonality
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 import TauCeti.GroupTheory.Index.Comap
@@ -36,9 +37,10 @@ The proof is the orthogonality half of global duality. The local Tate pairings
 `H¹(K_v, E₁[φ]) × H¹(K_v, E₂[φ̂]) → ℤ/deg φ` at the places of `S` add up to a perfect pairing of
 the products (`AddMonoidHom.piPairing_bijective`). Under it, the classes of `∏_v H¹_φ(K_v)` and the
 localisations of `Sel_φ^S` are orthogonal to the localisations of `Sel_φ̂`: the former by local
-orthogonality of the Selmer conditions, the latter by global reciprocity
-(`TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`). Counting orthogonal
-subgroups of a perfect pairing (`AddMonoidHom.natCard_mul_natCard_le_zmod`) gives the bound.
+orthogonality of the Selmer conditions, the latter by global reciprocity; see
+`sum_ringEquivCongr_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relaxedAt_of_mem_selmerGroup`
+in `TauCeti.Isogeny`. Counting orthogonal subgroups of a perfect pairing
+(`AddMonoidHom.natCard_mul_natCard_le_zmod`) gives the bound.
 
 Poitou–Tate duality gives equality: the image of `Sel_φ^S` in `∏_v H¹(K_v, E₁[φ]) / H¹_φ(K_v)` is
 the exact annihilator of the image of `Sel_φ̂`. That is the comparison of Selmer groups in
@@ -73,94 +75,13 @@ variable {K : Type} [Field K] [NumberField K] {W₁ W₂ : WeierstrassCurve K} [
   (τ : ∀ v : GlobalNumberFields.Place K,
     SeparableClosure K →ₐ[K] SeparableClosure v.Completion)
 
-/-! ### The local pairings at finite places, with a common target
+/-! ### The orthogonality bound
 
 At a finite place `v`, the Selmer structures localise to `GlobalNumberFields.Place.Completion
 (.inl v)`, which is `v.adicCompletion K` by definition, with the same field and `K`-algebra
 structures. The local pairings and global reciprocity are stated over `v.adicCompletion K`; the
 proofs below pass between the two descriptions of the same local cohomology group by this
 definitional identification. -/
-
-/-- The local Tate pairing of the base change of `φ` to `K_v`, with values transported from
-`ℤ/deg φ_{K_v}` to `ℤ/deg φ`. -/
-private def localPairing (v : HeightOneSpectrum (𝓞 K)) :
-    H1 (AbsoluteGaloisGroup (v.adicCompletion K))
-        (ofIsogeny (φ.baseChange (v.adicCompletion K))).KerCoeff →+
-      H1 (AbsoluteGaloisGroup (v.adicCompletion K))
-        (ofIsogeny (φ.baseChange (v.adicCompletion K)).dual).KerCoeff →+ ZMod φ.degree :=
-  (AddMonoidHom.compHom (ZMod.ringEquivCongr (degree_baseChange φ)).toAddMonoidHom).comp
-    ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-      (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero))
-
-private theorem localPairing_apply (v : HeightOneSpectrum (𝓞 K))
-    (a : H1 (AbsoluteGaloisGroup (v.adicCompletion K))
-      (ofIsogeny (φ.baseChange (v.adicCompletion K))).KerCoeff)
-    (b : H1 (AbsoluteGaloisGroup (v.adicCompletion K))
-      (ofIsogeny (φ.baseChange (v.adicCompletion K)).dual).KerCoeff) :
-    localPairing φ v a b = ZMod.ringEquivCongr (degree_baseChange φ)
-      ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-        (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero) a b) :=
-  (rfl)
-
-private theorem localPairing_bijective (v : HeightOneSpectrum (𝓞 K)) :
-    Function.Bijective (localPairing φ v) := by
-  let e := ZMod.ringEquivCongr (degree_baseChange φ (K := v.adicCompletion K))
-  -- `localPairing` is the composite of the local Tate pairing with transport of values; unfolding
-  -- it by `rw` would split the match in its body, so its shape is stated directly.
-  change Function.Bijective (AddMonoidHom.compHom e.toAddMonoidHom ∘ _)
-  refine (Function.bijective_iff_has_inverse.mpr
-    ⟨AddMonoidHom.compHom e.symm.toAddMonoidHom, fun f ↦ ?_, fun f ↦ ?_⟩).comp
-    ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing_bijective _) <;>
-  ext <;> simp [e]
-
-/-- At a finite place `v`, the local condition of `φ` is orthogonal to the restriction of a class
-satisfying the local condition of `φ̂` at `v`. -/
-private theorem localPairing_dualKerRes_eq_zero (v : HeightOneSpectrum (𝓞 K))
-    {a : H1 (AbsoluteGaloisGroup (v.adicCompletion K))
-      (ofIsogeny (φ.baseChange (v.adicCompletion K))).KerCoeff}
-    (ha : a ∈ (φ.baseChange (v.adicCompletion K)).localKummerCondition)
-    {d : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
-    (hd : d ∈ φ.dual.selmerGroup τ) :
-    localPairing φ v a (φ.dualKerRes (L := v.adicCompletion K) (τ (.inl v)) d) = 0 := by
-  have hd' := (φ.dual.mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition τ).mp hd (.inl v)
-  rw [mem_localKummerCondition_iff] at hd'
-  rw [localPairing_apply, localTateKerWeilPairing_apply,
-    kerH1WeilPairing_eq_zero_of_mem_localKummerCondition _ _ ha (by
-      rw [mem_localKummerCondition_iff, explicitCoeff1_kerCoeffIncl_dualKerRes]
-      exact hd'), map_zero, map_zero, map_zero]
-
-/-- **Reciprocity at the places of `S`**: a class of the `φ`-Selmer group relaxed at `S` and a class
-of the `φ̂`-Selmer group have local pairings at the places of `S` summing to zero. -/
-private theorem sum_localPairing_eq_zero (S : Finset (HeightOneSpectrum (𝓞 K)))
-    {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
-    (hc : c ∈ ((φ.selmerStructure τ).relaxedAt (Sum.inl '' S)).selmerGroup)
-    {d : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
-    (hd : d ∈ φ.dual.selmerGroup τ) :
-    ∑ v : S, localPairing φ v (φ.kerRes (L := (v : HeightOneSpectrum (𝓞 K)).adicCompletion K)
-      (τ (.inl v)) c) (φ.dualKerRes (L := (v : HeightOneSpectrum (𝓞 K)).adicCompletion K)
-        (τ (.inl v)) d) = 0 := by
-  have hc' (i : GlobalNumberFields.Place K)
-      (hi : i ∉ Sum.inl '' (S : Set (HeightOneSpectrum (𝓞 K)))) :=
-    ((φ.selmerStructure τ).mem_selmerGroup_relaxedAt_iff _).mp hc i hi
-  have hd' := (φ.dual.mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition τ).mp hd
-  simp only [selmerStructure_localization, selmerStructure_localCondition,
-    mem_localKummerCondition_iff] at hc' hd'
-  apply ZMod.toRatAddCircle_injective φ.degree
-  rw [map_sum, map_zero]
-  simp only [localPairing_apply, ZMod.toRatAddCircle_ringEquivCongr]
-  refine (Finset.sum_coe_sort S _).trans <|
-    φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero c d (fun v ↦ τ (.inl v))
-      (fun w ↦ τ (.inr w)) S (fun v hv ↦ ?_) (fun v _ ↦ ?_) (fun w ↦ ?_) (fun w ↦ ?_)
-  · rw [pointRes_kerCoeffIncl]
-    exact hc' (.inl v) (by simpa using hv)
-  · rw [pointRes_kerCoeffIncl]
-    exact hd' (.inl v)
-  · rw [pointRes_kerCoeffIncl]
-    exact hc' (.inr w) (by simp)
-  · rw [pointRes_kerCoeffIncl]
-    exact hd' (.inr w)
-
-/-! ### The orthogonality bound -/
 
 variable (S : Finset (HeightOneSpectrum (𝓞 K)))
 
@@ -199,9 +120,20 @@ private theorem natCard_sup_mul_natCard_map_le
     Nat.card (∀ v : S, H1 (AbsoluteGaloisGroup ((v : HeightOneSpectrum (𝓞 K)).adicCompletion K))
       (ofIsogeny (φ.baseChange ((v : HeightOneSpectrum (𝓞 K)).adicCompletion K))).KerCoeff) := by
   have : NeZero φ.degree := ⟨φ.degree_ne_zero⟩
-  refine (AddMonoidHom.piPairing fun v : S ↦ localPairing φ v).natCard_mul_natCard_le_zmod
-    (AddMonoidHom.piPairing_bijective _ fun v ↦ localPairing_bijective φ v)
+  let e (v : HeightOneSpectrum (𝓞 K)) :=
+    ZMod.ringEquivCongr (degree_baseChange φ (K := v.adicCompletion K))
+  let pairing (v : S) :=
+    (AddMonoidHom.compHom (e v.val).toAddMonoidHom).comp
+      ((φ.baseChange (v.val.adicCompletion K)).localTateKerWeilPairing
+        (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.val.adicCompletion K)).degree_ne_zero))
+  refine (AddMonoidHom.piPairing pairing).natCard_mul_natCard_le_zmod
+    (AddMonoidHom.piPairing_bijective _ fun v ↦ ?_)
     (fun y ↦ funext fun v ↦ nsmul_H1_eq_zero (fun Q ↦ ?_) (y v)) ?_
+  · change Function.Bijective (AddMonoidHom.compHom (e v.val).toAddMonoidHom ∘ _)
+    refine (Function.bijective_iff_has_inverse.mpr
+      ⟨AddMonoidHom.compHom (e v.val).symm.toAddMonoidHom, fun f ↦ ?_, fun f ↦ ?_⟩).comp
+      ((φ.baseChange (v.val.adicCompletion K)).localTateKerWeilPairing_bijective _) <;>
+    ext <;> simp [e]
   · simpa only [degree_dual, degree_baseChange] using degree_nsmul_kerCoeff_eq_zero
       (φ.baseChange ((v : HeightOneSpectrum (𝓞 K)).adicCompletion K)).dual Q
   · intro x hx y hy
@@ -209,8 +141,19 @@ private theorem natCard_sup_mul_natCard_map_le
     obtain ⟨d, hd, rfl⟩ := hy
     rw [_root_.map_add, AddMonoidHom.add_apply, AddMonoidHom.piPairing_apply,
       AddMonoidHom.piPairing_apply, Finset.sum_eq_zero fun v _ ↦ ?_, zero_add]
-    · exact sum_localPairing_eq_zero φ τ S hc hd
-    · exact localPairing_dualKerRes_eq_zero φ τ v.val (hp v (Set.mem_univ v)) hd
+    · dsimp only [pairing, e, AddMonoidHom.comp_apply, AddMonoidHom.compHom_apply_apply,
+        locRes, locDualRes, AddMonoidHom.pi_apply]
+      exact (Finset.sum_coe_sort S _).trans (
+  sum_ringEquivCongr_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relaxedAt_of_mem_selmerGroup
+        φ τ S hc hd)
+    · have hd' :=
+        (φ.dual.mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition τ).mp hd (.inl v)
+      rw [mem_localKummerCondition_iff] at hd'
+      simp only [pairing, e, AddMonoidHom.comp_apply, AddMonoidHom.compHom_apply_apply,
+        locDualRes, AddMonoidHom.pi_apply, localTateKerWeilPairing_apply]
+      rw [kerH1WeilPairing_eq_zero_of_mem_localKummerCondition _ _ (hp v (Set.mem_univ v)) (by
+        rw [mem_localKummerCondition_iff, explicitCoeff1_kerCoeffIncl_dualKerRes]
+        exact hd'), map_zero, map_zero, map_zero]
 
 /-- The order of the subgroup generated by the local conditions and the localisations of the
 relaxed Selmer group is `#∏_v H¹_φ(K_v) · [Sel_φ^S : Sel_φ]`. -/
