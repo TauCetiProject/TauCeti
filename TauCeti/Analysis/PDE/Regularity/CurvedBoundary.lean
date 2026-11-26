@@ -10,13 +10,13 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
-import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
 import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Flattening
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
+import TauCeti.Analysis.Sobolev.Wkp.ClosedGraph
 import TauCeti.Analysis.Sobolev.Wkp.Gluing
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.Topology.Instances.Matrix
@@ -49,9 +49,9 @@ boundary, the weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem for
 `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = F` with `F ∈ H¹(Ω)` lies in `H³(Ω)`
 (`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_contDiff_graph`), with the global
 estimate `‖u‖_{H³(Ω)} ≤ C (‖u‖_{L²(Ω)} + ‖F‖_{H¹(Ω)})`
-(`TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_of_value_eq_value_of_contDiff_graph`). This is
-Evans, §6.3.2, Theorem 5, for `m = 1`. Smoothness, rather than finitely many derivatives, of the
-boundary and of `a` is what the flat model
+(`TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_norm_value_of_value_eq_value_of_contDiff_graph`).
+This is Evans, §6.3.2, Theorem 5, for `m = 1`. Smoothness, rather than finitely many derivatives,
+of the boundary and of `a` is what the flat model
 `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace` asks of the
 transformed coefficient.
 
@@ -101,7 +101,7 @@ The classical proof (Evans, §6.3.2, Theorem 4) flattens the boundary.
   regularity `∇u ∈ H¹(Ω)`, so the forcing `F - ⟨b, ∇u⟩ - c u` of the principal equation lies in
   `H¹(Ω)` (`TauCeti.PDE.exists_wkp_forcing_energyFormH1_principal_eq_of_contDiffOn`). The global
   `H³` estimate follows from regularity as the `H²` one does: the closed graph theorem
-  (`ContinuousLinearMap.exists_norm_le_of_range_le_range`) bounds `‖u‖_{H³}` by
+  (`TauCeti.Wkp.exists_norm_le_of_forall_exists_value_ae_eq`) bounds `‖u‖_{H³}` by
   `‖u‖_{H¹} + ‖F‖_{H¹}`, and Gårding's inequality removes the gradient of `u`.
 
 ## Main declarations
@@ -119,8 +119,8 @@ The classical proof (Evans, §6.3.2, Theorem 4) flattens the boundary.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_contDiff_graph`: `H³` regularity of
   the Dirichlet problem on a bounded open set with smooth boundary (Evans, §6.3.2, Theorem 5, for
   `m = 1`).
-* `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_of_value_eq_value_of_contDiff_graph`: the
-  global `H³` estimate in terms of `‖u‖_{L²}` and `‖F‖_{H¹}`.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_norm_value_of_value_eq_value_of_contDiff_graph`:
+  the global `H³` estimate in terms of `‖u‖_{L²}` and `‖F‖_{H¹}`.
 
 ## References
 
@@ -740,7 +740,7 @@ theorem UniformlyEllipticOn.exists_value_eq_value_of_contDiff_graph
 solution `u ∈ H¹₀(Ω)` and its forcing form a closed subspace, the preimage of the graph of the
 Dirichlet problem, and `H³` regularity factors the value of `u` through `W^{3,2}(Ω)`, boundedly by
 the closed graph theorem. -/
-private theorem UniformlyEllipticOn.exists_norm_le_norm_add_norm_of_value_eq_value_of_contDiff_graph
+private theorem UniformlyEllipticOn.exists_norm_le_of_value_eq_value_of_contDiff_graph
     (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (hbdry : ∀ x ∈ frontier (Omega : Set (EuclideanSpace ℝ ι)),
       ∃ (e : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ),
@@ -775,18 +775,14 @@ private theorem UniformlyEllipticOn.exists_norm_le_norm_add_norm_of_value_eq_val
   have hf (p : S) : f p = W1p.value (p : W1p mu Omega 2 × W1p mu Omega 2).1 := by
     simp only [f, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
       Submodule.subtypeL_apply, W1p.valueL_apply]
-  have hrange : LinearMap.range (f : S →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)) ≤
-      LinearMap.range (Wkp.valueL (mu := mu) (Omega := Omega) (p := 2) 3 :
-        Wkp mu Omega 2 3 →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)) := by
-    rintro _ ⟨p, rfl⟩
+  obtain ⟨C, hC⟩ := Wkp.exists_norm_le_of_forall_exists_value_ae_eq (k := 3) f fun p => by
     obtain ⟨hp0, hp⟩ := (hmem p).1 p.property
     obtain ⟨w, hw⟩ := ha.exists_value_eq_value_of_contDiff_graph hΩ hbdry hW hsmooth hb hc hp0 hp
-    exact ⟨w, by rw [ContinuousLinearMap.coe_coe, Wkp.valueL_apply, hw]; exact (hf p).symm⟩
-  obtain ⟨C, hC0, hC⟩ := ContinuousLinearMap.exists_norm_le_of_range_le_range f (Wkp.valueL 3)
-    (Wkp.valueL_injective 3) hrange
-  refine ⟨C, hC0, fun F u hu0 hu w hw => ?_⟩
-  refine (hC ⟨(u, F), (hmem _).2 ⟨hu0, hu⟩⟩ w (by rw [Wkp.valueL_apply, hf, hw])).trans
-    (mul_le_mul_of_nonneg_left ?_ hC0)
+    exact ⟨w, by rw [hw, hf]⟩
+  refine ⟨max C 0, le_max_right _ _, fun F u hu0 hu w hw => ?_⟩
+  obtain ⟨v, hv, hvC⟩ := hC ⟨(u, F), (hmem _).2 ⟨hu0, hu⟩⟩
+  obtain rfl : w = v := Wkp.ext 3 (hw.trans ((Lp.ext hv).trans (hf _)).symm)
+  refine hvC.trans (mul_le_mul (le_max_left _ _) ?_ (norm_nonneg _) (le_max_right _ _))
   rw [← Submodule.norm_coe, Prod.norm_def]
   exact max_le_add_of_nonneg (norm_nonneg _) (norm_nonneg _)
 
@@ -803,7 +799,7 @@ the element `w ∈ W^{3,2}(Ω)` with the value of `u` satisfies
 The constant depends on `Ω` and on the coefficients, but not on `u` or `F`. No sign condition on
 `c` and no smallness of `b` is assumed, so `u` need not be unique, and the `L²` norm of `u` cannot
 be dropped from the right-hand side. -/
-theorem UniformlyEllipticOn.exists_norm_le_of_value_eq_value_of_contDiff_graph
+theorem UniformlyEllipticOn.exists_norm_le_norm_value_of_value_eq_value_of_contDiff_graph
     (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (hbdry : ∀ x ∈ frontier (Omega : Set (EuclideanSpace ℝ ι)),
       ∃ (e : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ),
@@ -819,8 +815,7 @@ theorem UniformlyEllipticOn.exists_norm_le_of_value_eq_value_of_contDiff_graph
       ∀ w : Wkp mu Omega 2 3, Wkp.value 3 w = W1p.value u →
         ‖w‖ ≤ C * (‖W1p.value u‖ + ‖F‖) := by
   obtain ⟨C, hC0, hC⟩ :=
-    ha.exists_norm_le_norm_add_norm_of_value_eq_value_of_contDiff_graph (mu := mu) hΩ hbdry hW
-      hsmooth hb hc
+    ha.exists_norm_le_of_value_eq_value_of_contDiff_graph (mu := mu) hΩ hbdry hW hsmooth hb hc
   -- Gårding's inequality and the equation tested against `u` itself bound `‖u‖_{H¹}`.
   have hΩc := hΩ.isCompact_closure
   have hmΩ := Omega.isOpen.measurableSet
