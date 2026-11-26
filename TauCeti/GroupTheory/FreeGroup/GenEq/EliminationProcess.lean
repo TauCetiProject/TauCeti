@@ -131,16 +131,20 @@ private theorem exists_bijective_succ {Ω : GenEq A} {μ : Fin Ω.numBases} (n :
     ((MulEquiv.coprodCongr (MulEquiv.ofBijective (e₁ : _ →* _) he₁) (.refl _)).trans
       (GX.sumEquiv _ (Fin n) Unit).symm).trans
         (GX.renameEquiv _ ((Equiv.optionEquivSumPUnit (Fin n)).symm.trans (finSuccEquiv n).symm))
-  -- Sending the free generators to `1` after `E` is sending them to `1` before and after `e₁`.
-  have hE : (eval (MonoidHom.id _) fun _ => (1 : SystemGroup (FreeGroup A) Ω.toSystem)).comp
-      E.toMonoidHom = ((eval (MonoidHom.id _) fun _ => 1).comp e₁.toMonoidHom).comp
-        (eval (MonoidHom.id _) fun _ => 1) :=
-    GX.ext_hom (fun _ => by simp [E, Function.comp_def]) fun _ => by simp [E]
   refine ⟨GHom.ofMulEquiv E fun g => ?_, GHom.ofMulEquiv_bijective _ _, fun y => ?_⟩
   · simpa [E] using congrArg (fun x => GX.renameEquiv _ _ ((GX.sumEquiv _ (Fin n) Unit).symm
       (inl x))) (e₁.map_coeff g)
-  · simpa only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, GHom.toMonoidHom_eq_coe,
-      MonoidHom.coe_ofClass, GHom.coe_ofMulEquiv] using DFunLike.congr_fun hE y
+  -- Sending the free generators to `1` after `E` is sending them to `1` before and after `e₁`.
+  · have hy : MulEquiv.coprodCongr (MulEquiv.ofBijective (e₁ : _ →* _) he₁) (.refl _) y =
+        Monoid.Coprod.map e₁.toMonoidHom (FreeGroup.map id) y :=
+      DFunLike.congr_fun (congrArg (Monoid.Coprod.map e₁.toMonoidHom)
+        (FreeGroup.ext_hom (MonoidHom.id _) (FreeGroup.map id) fun _ => rfl)) y
+    rw [GHom.coe_ofMulEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply, GX.eval_renameEquiv,
+      GX.eval_sumEquiv_symm, hy, eval_map]
+    simp only [hom_eval]
+    congr 2
+    funext
+    simp
 
 /-- **Elimination process on presented groups** (the form of Lemma 16 which holds). If `Ω` has
 no boundary connections and `K` is obtained from `Ω` by `n` removals of eliminable bases, the
