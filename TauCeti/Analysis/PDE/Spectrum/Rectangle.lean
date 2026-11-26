@@ -114,8 +114,9 @@ private theorem setIntegral_Icc_mul_fderiv_add_eq {g₀ g₀' g₁ g₁' : ℝ �
   -- The divergence of `(f, g)` is the integrand minus `(κ₀ + κ₁) g₀ g₁ ψ`.
   set E : ℝ × ℝ → ℝ := fun p => g₀' p.1 * g₁ p.2 * fderiv ℝ ψ p (1, 0) +
       g₀ p.1 * g₁' p.2 * fderiv ℝ ψ p (0, 1) - (κ₀ + κ₁) * (g₀ p.1 * g₁ p.2 * ψ p) with hE
-  have hEi : IntegrableOn E (Icc a b) :=
-    (Continuous.continuousOn (by fun_prop)).integrableOn_compact isCompact_Icc
+  have hint {F : ℝ × ℝ → ℝ} (hF : Continuous F) : IntegrableOn F (Icc a b) :=
+    hF.continuousOn.integrableOn_compact isCompact_Icc
+  have hEi : IntegrableOn E (Icc a b) := hint (by fun_prop)
   have hdiv := integral_divergence_prod_Icc_of_hasFDerivAt_of_le f g _ _ a b hab
     (by fun_prop) (by fun_prop) (fun p _ => hf p) (fun p _ => hg p)
     (hEi.congr_fun (fun p _ => by simp [hE]; ring) measurableSet_Icc)
@@ -126,11 +127,12 @@ private theorem setIntegral_Icc_mul_fderiv_add_eq {g₀ g₀' g₁ g₁' : ℝ �
     simp [hf_def, hψa y hy]
   simp only [hf_def, hg_def, hb₀, ha₁, hb₁, mul_zero, zero_mul, intervalIntegral.integral_zero,
     sub_zero, zero_add] at hdiv hside
-  rw [hside, setIntegral_congr_fun measurableSet_Icc (g := E) (fun p _ => by simp [hE]; ring),
-    integral_sub ((Continuous.continuousOn (by fun_prop)).integrableOn_compact isCompact_Icc)
-      ((Continuous.continuousOn (by fun_prop)).integrableOn_compact isCompact_Icc),
-    integral_const_mul, sub_self, sub_eq_zero] at hdiv
-  exact hdiv
+  -- So the divergence `E` integrates to zero.
+  have hE0 : ∫ p in Icc a b, E p = 0 := by
+    rwa [hside, sub_zero, setIntegral_congr_fun measurableSet_Icc (g := E)
+      fun p _ => by simp [hE]; ring] at hdiv
+  rw [integral_sub (hint (by fun_prop)) (hint (by fun_prop)), integral_const_mul] at hE0
+  linarith
 
 /-! ### The rectangle in coordinates -/
 
@@ -233,12 +235,7 @@ private theorem inner_gradient_eq_of_mem_w1pVanishingOnSubmodule {a b : Fin 2 �
     ((hC1 h₀ h₀').comp (contDiff_piLp_apply 2)).mul ((hC1 h₁ h₁').comp (contDiff_piLp_apply 2))
   have hgrad := W1p.gradient_ae_eq_of_locallyLipschitzOn u hu
     hGc.locallyLipschitz.locallyLipschitzOn
-  refine w1pVanishingOnSubmodule_subset_of_isClosed (s := {v | ⟪W1p.gradient u,
-      W1p.gradient v⟫_ℝ = (κ₀ + κ₁) * ⟪W1p.value u, W1p.value v⟫_ℝ})
-    (isClosed_eq (continuous_const.inner (W1p.gradientL.continuous.congr W1p.gradientL_apply))
-      (continuous_const.mul (continuous_const.inner
-        (W1p.valueL.continuous.congr W1p.valueL_apply)))) (fun φ hφ => ?_) hv
-  rw [mem_ofPred_eq]
+  refine inner_gradient_eq_mul_inner_value_of_mem_w1pVanishingOnSubmodule (fun φ hφ => ?_) hv
   have hgφ := W1p.gradient_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := 2)
     (le_top : boxDomain a b ≤ ⊤) φ
   have hvφ := W1p.value_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := 2)

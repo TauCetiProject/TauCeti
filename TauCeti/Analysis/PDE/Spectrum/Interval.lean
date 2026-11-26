@@ -593,13 +593,8 @@ private theorem inner_gradient_eq_of_mem_w1pVanishingOnSubmodule (hab : a ≤ b)
     {v : W1p volume (intervalDomain a b) 2}
     (hv : v ∈ w1pVanishingOnSubmodule volume (intervalDomain a b) 2 Γ) :
     ⟪W1p.gradient u, W1p.gradient v⟫_ℝ = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ := by
-  refine w1pVanishingOnSubmodule_subset_of_isClosed (s := {v | ⟪W1p.gradient u,
-      W1p.gradient v⟫_ℝ = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ})
-    (isClosed_eq (continuous_const.inner (W1p.gradientL.continuous.congr W1p.gradientL_apply))
-      (continuous_const.mul (continuous_const.inner
-        (W1p.valueL.continuous.congr W1p.valueL_apply)))) (fun φ hφ => ?_) hv
-  rw [mem_ofPred_eq, inner_gradient_restrictL_ofTestFunctionₗ_eq hab hg hg' hu φ, hbd φ hφ,
-    sub_self, zero_add]
+  refine inner_gradient_eq_mul_inner_value_of_mem_w1pVanishingOnSubmodule (fun φ hφ => ?_) hv
+  rw [inner_gradient_restrictL_ofTestFunctionₗ_eq hab hg hg' hu φ, hbd φ hφ, sub_self, zero_add]
 
 /-- **The cosine modes are weak Neumann eigenfunctions of `-Δ` on an interval.** For every
 `k : ℕ`, the function `x ↦ cos (k π (x - a) / (b - a))` is the value of some `u ∈ H¹_∅(a, b)`,

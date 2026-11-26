@@ -109,6 +109,8 @@ map.
   eigenvalue problem of `-Δ` on the space `H¹_Γ(Ω)` of Sobolev functions vanishing on `Γ`
   (`TauCeti.W1pVanishingOn`), a family of eigenfunctions complete in `L²(Ω)` has all the
   eigenvalues. This is how the explicit spectra of intervals and rectangles are identified.
+  `TauCeti.PDE.inner_gradient_eq_mul_inner_value_of_mem_w1pVanishingOnSubmodule` extends a weak
+  eigen-identity from the generators of `H¹_Γ(Ω)` to all of it.
 
 ## References
 
@@ -734,13 +736,31 @@ end Euclidean
 
 section Complete
 
-open scoped Gradient
+open scoped Distributions Gradient
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {Γ : Set E}
 
 attribute [local instance] W1pVanishingOn.instNormedAddCommGroup
+
+/-- **A weak eigen-identity extends from the generators of `H¹_Γ(Ω)` to all of it.** If
+`∫ ∇u · ∇v = κ ∫ u v` holds whenever `v` is the restriction to `Ω` of a test function on `E` whose
+support avoids the closure of `Γ`, then it holds for every `v ∈ H¹_Γ(Ω)`: both sides are continuous
+in `v`, and `H¹_Γ(Ω)` is the closure of those restrictions. -/
+theorem inner_gradient_eq_mul_inner_value_of_mem_w1pVanishingOnSubmodule {u : W1p mu Omega 2}
+    {kappa : ℝ} (h : ∀ φ : 𝓓((⊤ : Opens E), ℝ), Disjoint (tsupport φ) (closure Γ) →
+      ⟪W1p.gradient u, W1p.gradient (W1p.restrictL (le_top : Omega ≤ ⊤)
+          (W1p.ofTestFunctionₗ mu ⊤ 2 φ))⟫_ℝ =
+        kappa * ⟪W1p.value u, W1p.value (W1p.restrictL (le_top : Omega ≤ ⊤)
+          (W1p.ofTestFunctionₗ mu ⊤ 2 φ))⟫_ℝ)
+    {v : W1p mu Omega 2} (hv : v ∈ w1pVanishingOnSubmodule mu Omega 2 Γ) :
+    ⟪W1p.gradient u, W1p.gradient v⟫_ℝ = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ :=
+  w1pVanishingOnSubmodule_subset_of_isClosed (s := {v | ⟪W1p.gradient u,
+      W1p.gradient v⟫_ℝ = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ})
+    (isClosed_eq (continuous_const.inner (W1p.gradientL.continuous.congr W1p.gradientL_apply))
+      (continuous_const.mul (continuous_const.inner
+        (W1p.valueL.continuous.congr W1p.valueL_apply)))) h hv
 
 /-- **The weak eigenvalues of `-Δ` on `H¹_Γ(Ω)` are those of a complete family of
 eigenfunctions.** Let `w k ∈ H¹_Γ(Ω)`, `k ∈ ι`, be nonzero weak eigenfunctions,
