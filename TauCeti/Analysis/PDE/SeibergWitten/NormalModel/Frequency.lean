@@ -150,7 +150,8 @@ theorem pairedBaseCoupling_smulRight_innerSL (ξ : ℂ) (u : EuclideanSpace ℝ 
 theorem norm_normalBaseCoupling_smulRight_innerSL (ξ : ℂ) (v : EuclideanSpace ℝ (Fin 4)) :
     ‖normalBaseCoupling ((innerSL ℝ ξ).smulRight v)‖ = ‖ξ‖ * ‖v‖ := by
   -- `v` and `J' v` are orthogonal and have the same length.
-  have h0 : ⟪v, Vortex.targetComplexStructure v⟫ = 0 := Vortex.isAlt_compl₂_targetComplexStructure v
+  have h0 : ⟪v, Vortex.targetComplexStructure v⟫ = 0 :=
+    Vortex.inner_targetComplexStructure_self v
   have h : ‖normalBaseCoupling ((innerSL ℝ ξ).smulRight v)‖ ^ 2 = (‖ξ‖ * ‖v‖) ^ 2 := by
     rw [normalBaseCoupling_smulRight_innerSL, norm_sub_sq_real, inner_smul_left, inner_smul_right,
       h0, norm_smul, norm_smul, LinearIsometryEquiv.norm_map]
@@ -164,7 +165,7 @@ theorem norm_pairedBaseCoupling_smulRight_innerSL (ξ : ℂ) (u : EuclideanSpace
     ‖pairedBaseCoupling ((innerSL ℝ ξ).smulRight u)‖ = ‖ξ‖ * ‖u‖ := by
   -- `u` and `J u` are orthogonal and have the same length.
   have h0 : ⟪u, Vortex.variationComplexStructure u⟫ = 0 :=
-    Vortex.isAlt_compl₂_variationComplexStructure u
+    Vortex.inner_variationComplexStructure_self u
   have h : ‖pairedBaseCoupling ((innerSL ℝ ξ).smulRight u)‖ ^ 2 = (‖ξ‖ * ‖u‖) ^ 2 := by
     rw [pairedBaseCoupling_smulRight_innerSL, norm_add_sq_real, inner_smul_left, inner_smul_right,
       h0, norm_smul, norm_smul, LinearIsometryEquiv.norm_map]
@@ -413,13 +414,12 @@ private theorem norm_sq_add_norm_sq_frequencyNormalModel (ξ z : ℂ) :
       -⟪Vortex.gaugeFixedOperator x (fun w ↦ Vortex.variationComplexStructure (u w)) z, v z⟫ := by
     rw [Vortex.gaugeFixedOperator_variationComplexStructure,
       Vortex.inner_targetComplexStructure_left, neg_neg]
+  -- Expand the squares, then the coupling pairings, and normalize the order of the pairings.
   rw [frequencyNormalRow, frequencyPairedRow, norm_sub_sq_real, norm_add_sq_real,
     norm_normalBaseCoupling_smulRight_innerSL, norm_pairedBaseCoupling_smulRight_innerSL,
-    normalBaseCoupling_smulRight_innerSL, pairedBaseCoupling_smulRight_innerSL, inner_sub_right,
-    inner_smul_right,
-    inner_smul_right, inner_add_right, inner_smul_right, inner_smul_right, hA,
-    real_inner_comm (u z) (Vortex.gaugeFixedAdjoint x v z),
-    real_inner_comm (Vortex.variationComplexStructure (u z)) (Vortex.gaugeFixedAdjoint x v z)]
+    normalBaseCoupling_smulRight_innerSL, pairedBaseCoupling_smulRight_innerSL]
+  simp only [inner_sub_right, inner_add_right, inner_smul_right, hA,
+    real_inner_comm (Vortex.gaugeFixedAdjoint x v z)]
   ring
 
 /-- **The energy identity of the frozen normal model at frequency `ξ`.** For a continuous field
@@ -544,8 +544,8 @@ theorem integral_inner_frequencyPairedRow (hx : Continuous x) (hκ₁ : ContDiff
   have hJκ : Continuous fun z ↦ Vortex.variationComplexStructure (κ z) :=
     Vortex.variationComplexStructure.continuous.comp hκ₁.continuous
   -- `⟪κ, L_x* v⟫` is integrable and `∫ ⟪κ, L_x* v⟫ = ∫ ⟪L_x κ, v⟫ = 0`.
-  obtain ⟨i₁, h₀⟩ :=
-    integrable_inner_gaugeFixedAdjoint_and_integral_eq_zero (ν := ν) hx hv hvc hκ₁ hLκ
+  have i₁ := Vortex.integrable_inner_gaugeFixedAdjoint (μ := ν) hx hκ₁.continuous hv hvc
+  have h₀ := Vortex.integral_inner_gaugeFixedAdjoint_eq_zero (μ := ν) hκ₁ hv (.inr hvc) hLκ
   -- The other pairings are continuous and supported in the support of `u`.
   have i₂ : Integrable (fun z ↦ ⟪κ z, u z⟫) ν :=
     hκ₁.continuous.integrable_inner_of_hasCompactSupport_right hu huc
