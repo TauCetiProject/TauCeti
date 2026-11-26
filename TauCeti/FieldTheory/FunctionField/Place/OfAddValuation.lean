@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
-public import TauCeti.RingTheory.Valuation.ExpNeg
+public import TauCeti.RingTheory.Valuation.ToAdditive
 
 /-!
 # Places from additive order functions
@@ -51,8 +51,8 @@ noncomputable def ofAddValuation (v : AddValuation F (WithTop ℤ)) (hv : Functi
     | zero => exact ⟨0, by rw [map_zero]⟩
     | exp n =>
       obtain ⟨f, hf⟩ := hv (-n : ℤ)
-      exact ⟨f, by rw [AddValuation.expNeg_apply, hf, WithTop.expNeg_coe, neg_neg]⟩
-  isTrivialOn := ⟨fun c hc ↦ by rw [AddValuation.expNeg_apply, hk c hc, WithTop.expNeg_zero]⟩
+      exact ⟨f, by rw [← neg_neg n, AddValuation.expNeg_eq_exp_iff, hf]⟩
+  isTrivialOn := ⟨fun c hc ↦ AddValuation.expNeg_eq_one_iff.mpr (hk c hc)⟩
 
 variable {v : AddValuation F (WithTop ℤ)} {hv : Function.Surjective v}
   {hk : ∀ c : k, c ≠ 0 → v (algebraMap k F c) = 0}
@@ -64,8 +64,8 @@ theorem valuation_ofAddValuation : (ofAddValuation v hv hk).valuation = v.expNeg
 
 /-- The valuation of `ofAddValuation v` at a function of finite order `n` is `exp (-n)`. -/
 theorem valuation_ofAddValuation_of_eq_coe {f : F} {n : ℤ} (hf : v f = n) :
-    (ofAddValuation v hv hk).valuation f = WithZero.exp (-n) := by
-  rw [valuation_ofAddValuation, AddValuation.expNeg_apply, hf, WithTop.expNeg_coe]
+    (ofAddValuation v hv hk).valuation f = WithZero.exp (-n) :=
+  AddValuation.expNeg_eq_exp_iff.mpr hf
 
 /-- **The order function of `ofAddValuation v` is `v`**, read in `ℤ`: the value `⊤`, taken only
 at `0`, becomes the junk value `ord_P 0 = 0`. -/

@@ -218,16 +218,14 @@ theorem map_place_coe (a : ℂ) :
     sub_apply_of_eq_coe (coordinate_apply _) (by rw [coe_algebraMap]), sub_self]
 
 /-- **Every place of `ℂ(t)` is the place at a point of the sphere**: at infinity if `t` has a
-pole there, and otherwise at the value of `t` in the residue field `ℂ`. -/
+pole there, and otherwise at the root `a` of the linear polynomial `t - a` defining it. -/
 theorem exists_map_place_eq (Q : Place ℂ (RatFunc ℂ)) :
     ∃ y : OnePoint ℂ, (place y).map ratFuncEquiv.symm = Q := by
-  by_cases hX : RatFunc.X ∈ Q.integers
-  · obtain ⟨a, ha⟩ := Q.degree_eq_one_iff_forall_exists_valuation_sub_lt_one.mp
-      (Q.degree_eq_one_of_isAlgClosed_of_isFunctionField (IsFunctionField.ratFunc ℂ)) _ hX
-    refine ⟨a, (map_place_coe a).trans (Place.ord_X_sub_C_pos_iff.mp ?_).symm⟩
-    rw [RatFunc.algebraMap_eq_C] at ha
-    exact (Q.valuation_lt_one_iff_ord_pos (RatFunc.X_sub_C_ne_zero a)).mp ha
-  · exact ⟨∞, map_place_infty.trans (Place.X_notMem_integers_iff_eq_infty.mp hX).symm⟩
+  rcases Place.eq_infty_or_exists_eq_adicOfIrreducible_X_sub_C
+      (Q.degree_eq_one_of_isAlgClosed_of_isFunctionField (IsFunctionField.ratFunc ℂ))
+    with rfl | ⟨a, rfl⟩
+  · exact ⟨∞, map_place_infty⟩
+  · exact ⟨a, map_place_coe a⟩
 
 end Sphere
 
@@ -276,5 +274,18 @@ def placeEquiv : X ≃ Place ℂ (MeromorphicFunction X) :=
 @[simp]
 theorem placeEquiv_apply (x : X) : placeEquiv x = place x :=
   (rfl)
+
+@[simp]
+theorem placeEquiv_symm_place (x : X) : placeEquiv.symm (place x) = x :=
+  placeEquiv.symm_apply_apply x
+
+@[simp]
+theorem place_placeEquiv_symm (P : Place ℂ (MeromorphicFunction X)) :
+    place (placeEquiv.symm P) = P :=
+  placeEquiv.apply_symm_apply P
+
+theorem placeEquiv_symm_eq_iff {P : Place ℂ (MeromorphicFunction X)} {x : X} :
+    placeEquiv.symm P = x ↔ place x = P :=
+  placeEquiv.symm_apply_eq.trans eq_comm
 
 end TauCeti.RiemannSurface.MeromorphicFunction
