@@ -24,8 +24,6 @@ uniformizer. Conversely, `X ^ n` minus a uniformizer is Eisenstein for positive 
   polynomial `f` as `X ^ deg f + f(0) g` with `g(0) = 1`, and
   `Polynomial.IsEisensteinAt.exists_pow_natDegree_eq` gives the corresponding identity
   `x ^ deg f = -f(0) g(x)` for a root `x`.
-* `Polynomial.IsEisensteinAt.ne_zero_of_aeval_eq_zero`: such a root is nonzero in an algebra
-  with injective structure map.
 * `TauCeti.isEisensteinAt_X_pow_sub_C_of_irreducible` and
   `TauCeti.isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible` give Eisenstein polynomials
   from uniformizers.
@@ -110,16 +108,6 @@ theorem exists_pow_natDegree_eq (hf : f.IsEisensteinAt (maximalIdeal R))
     (hmo.natDegree_pos.mpr (by rintro rfl; simp at hx))
   refine ⟨g, hg0, eq_neg_of_add_eq_zero_left ?_⟩
   simpa [hx] using (congrArg (aeval x) hg).symm
-
-/-- A root of a monic polynomial which is Eisenstein at the maximal ideal of a discrete valuation
-ring `R` is nonzero in any `R`-algebra with injective structure map. -/
-theorem ne_zero_of_aeval_eq_zero [FaithfulSMul R S] (hf : f.IsEisensteinAt (maximalIdeal R))
-    (hmo : f.Monic) (hx : aeval x f = 0) : x ≠ 0 := by
-  have := (FaithfulSMul.algebraMap_injective R S).nontrivial
-  rintro rfl
-  have hirr := hf.irreducible_coeff_zero (hmo.natDegree_pos.mpr (by rintro rfl; simp at hx))
-  rw [← coeff_zero_eq_aeval_zero', map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective R S)] at hx
-  exact hirr.ne_zero hx
 
 end Polynomial.IsEisensteinAt
 

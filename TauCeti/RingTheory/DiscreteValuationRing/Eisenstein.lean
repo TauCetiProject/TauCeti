@@ -178,7 +178,8 @@ theorem isDiscreteValuationRing_of_adjoin_eq_top [IsDomain B] [FaithfulSMul A B]
     eq_span_singleton_of_isMaximal_of_monic hg hmo hgx hadj _
   have hfield : ¬IsField B := by
     rw [isField_iff_maximalIdeal_eq, hmax, Ideal.span_singleton_eq_bot]
-    exact hg.ne_zero_of_aeval_eq_zero hmo hgx
+    exact hf.ne_zero_of_isRoot_map (FaithfulSMul.algebraMap_injective A B)
+      (by rwa [IsRoot, eval_map_algebraMap])
   have : (maximalIdeal B).IsPrincipal := ⟨x, hmax⟩
   exact ((IsDiscreteValuationRing.TFAE B hfield).out 1 5).mpr this
 
@@ -188,10 +189,10 @@ maximal ideal of `A`, then `x` is irreducible in `B`, that is, a uniformizer of 
 theorem irreducible_of_adjoin_eq_top [IsDomain B] [FaithfulSMul A B]
     (hf : f.IsEisensteinAt (maximalIdeal A)) (hx : aeval x f = 0)
     (hadj : Algebra.adjoin A {x} = ⊤) : Irreducible x :=
-  let ⟨_, hmo, hg, hgx, _⟩ := hf.exists_monic_aeval_eq_zero hx
   have := isLocalRing_of_adjoin_eq_top hf hx hadj
   IsDiscreteValuationRing.irreducible_of_span_eq_maximalIdeal x
-    (hg.ne_zero_of_aeval_eq_zero hmo hgx)
+    (hf.ne_zero_of_isRoot_map (FaithfulSMul.algebraMap_injective A B)
+      (by rwa [IsRoot, eval_map_algebraMap]))
     (eq_span_singleton_of_isMaximal hf hx hadj _)
 
 /-- The monic case of `ramificationIdx_eq_natDegree`. -/

@@ -370,8 +370,9 @@ theorem newtonPolygon_ramificationPolynomial_one_eq_height {φ : 𝒪[K][X]}
     (hroot : ((φ.map (algebraMap 𝒪[K] K)).map (algebraMap K L)).IsRoot α) (hgen : K⟮α⟯ = ⊤) :
     (ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).newtonPolygon (realAddValuation L) 1 =
       (height K L : WithTop ℝ) := by
-  rw [newtonPolygon_ramificationPolynomial_one hφ hroot hgen,
-    ← realAddValuation_coeff_one_ramificationPolynomial hφ hroot hgen,
+  have htr := natTrailingDegree_ramificationPolynomial hroot
+    (separable_ramificationPolynomial_of_eisenstein hφ hroot (Algebra.IsSeparable.isSeparable K α))
+  rw [← htr, newtonPolygon_natTrailingDegree, trailingCoeff, htr,
     realAddValuation_coeff_one_ramificationPolynomial_eq_height hφ hroot hgen]
 
 /-- In a separable Eisenstein extension, the unit slopes of the ramification polygon are constant

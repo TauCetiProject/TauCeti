@@ -119,13 +119,8 @@ theorem addVal_eq_natCast_toNat_ord_intValuation {a : 𝒪[M]} (ha : a ≠ 0) :
       ((Valuation.ord (intValuation M) (a : M)).toNat : ℕ∞) := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[M]
   obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible ha hπ
-  have hu0 : intValuation M ((u : 𝒪[M]) : M) ≠ 0 :=
-    (intValuation M).ne_zero_iff.mpr fun h ↦ u.ne_zero (Subtype.ext h)
-  have hπ0 : intValuation M ((π : M) ^ n) ≠ 0 :=
-    (intValuation M).ne_zero_iff.mpr (pow_ne_zero n fun h ↦ hπ.ne_zero (Subtype.ext h))
-  rw [IsDiscreteValuationRing.addVal_def' u hπ n, Subring.coe_mul, Subring.coe_pow,
-    Valuation.ord_mul (intValuation M) hu0 hπ0, ord_intValuation_coe_integer_units,
-    Valuation.ord_pow, ord_intValuation_irreducible hπ, mul_one, zero_add, Int.toNat_natCast]
+  simp [IsDiscreteValuationRing.addVal_def' u hπ n, Valuation.ord_mul, hπ.ne_zero,
+    ord_intValuation_irreducible hπ]
 
 /-- If `a : 𝒪[M]` has finite DVR valuation `k : ℕ`, then
 `Valuation.ord (intValuation M) (a : M) = k`. -/
