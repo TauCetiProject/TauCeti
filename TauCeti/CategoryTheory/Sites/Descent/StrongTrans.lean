@@ -1,0 +1,424 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.CategoryTheory.Sites.Descent.IsStack
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
+public import TauCeti.CategoryTheory.Sites.Descent.IsPrestack
+
+/-!
+# Descent data along a strong transformation
+
+Let `η : F ⟶ G` be a strong transformation between pseudofunctors
+`LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat`. A morphism `φ : f₁^* M₁ ⟶ f₂^* M₂` between pullbacks of objects of
+`F` has an image `f₁^* (η M₁) ⟶ f₂^* (η M₂)`, the image `η φ` conjugated by the naturality
+isomorphisms of `η` (`Pseudofunctor.StrongTrans.mapPullHom`). It is compatible with composition,
+identities and Mathlib's pullback `LocallyDiscreteOpToCat.pullHom` of such morphisms
+(`Pseudofunctor.StrongTrans.mapPullHom_pullHom`). So `η` sends descent data for `F` along a family
+of morphisms `f i : X i ⟶ S` to descent data for `G` (`Pseudofunctor.StrongTrans.mapDescentData`),
+compatibly with the functors from the fibres over `S` up to the naturality isomorphisms of `η`
+(`Pseudofunctor.StrongTrans.toDescentDataCompMapDescentDataIso`).
+
+When the components of `η` are fully faithful, so is `η.mapDescentData f`, and a descent datum for
+`G` whose objects are isomorphic to images under `η` lifts to a descent datum for `F`
+(`Pseudofunctor.StrongTrans.liftDescentData`). When the components of `η` are equivalences of
+categories, `η.mapDescentData f` is an equivalence. Comparing the descent functors of `F` and `G`
+through it shows that the descent of morphisms and effective descent along a presieve transfer
+along `η`, so that `F` is a prestack, respectively a stack, if and only if `G` is
+(`Pseudofunctor.isPrestack_iff_of_isEquivalence`, `Pseudofunctor.isStack_iff_of_isEquivalence`).
+The descent of morphisms already transfers from `G` to `F` when the components of `η` are only
+fully faithful (`Pseudofunctor.isPrestack_source_of_fullyFaithful`).
+
+The descent data, prestacks and stacks are Mathlib's `Pseudofunctor.DescentData`,
+`Pseudofunctor.IsPrestack` and `Pseudofunctor.IsStack`, by Joël Riou and Christian Merten.
+
+## Main declarations
+
+* `CategoryTheory.Pseudofunctor.StrongTrans.mapDescentData`: the functor on descent data induced
+  by a strong transformation.
+* `CategoryTheory.Pseudofunctor.StrongTrans.isEquivalence_mapDescentData`: it is an equivalence
+  when the components are.
+* `CategoryTheory.Pseudofunctor.isPrestack_iff_of_isEquivalence`,
+  `CategoryTheory.Pseudofunctor.isStack_iff_of_isEquivalence`: being a prestack, respectively a
+  stack, is invariant under strong transformations whose components are equivalences.
+
+## References
+
+* [Stacks Project, Section 06NY](https://stacks.math.columbia.edu/tag/06NY), Lemma 8.11.2
+-/
+
+public section
+
+universe t v' v u' u
+
+open CategoryTheory Opposite Bicategory
+
+namespace CategoryTheory.Pseudofunctor.StrongTrans
+
+open LocallyDiscreteOpToCat
+
+variable {C : Type u} [Category.{v} C] {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
+  (η : StrongTrans F G)
+
+/-- The image under a strong transformation `η : F ⟶ G` of a morphism `φ : f₁^* M₁ ⟶ f₂^* M₂`
+between pullbacks, as a morphism `f₁^* (η M₁) ⟶ f₂^* (η M₂)`: the image `η φ` conjugated by
+the naturality isomorphisms of `η` at `f₁` and `f₂`. -/
+def mapPullHom ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄ ⦃Y : C⦄
+    ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄
+    (φ : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂) :
+    (G.map f₁.op.toLoc).toFunctor.obj ((η.app (.mk (op X₁))).toFunctor.obj M₁) ⟶
+      (G.map f₂.op.toLoc).toFunctor.obj ((η.app (.mk (op X₂))).toFunctor.obj M₂) :=
+  (η.naturality f₁.op.toLoc).inv.toNatTrans.app M₁ ≫ (η.app (.mk (op Y))).toFunctor.map φ ≫
+    (η.naturality f₂.op.toLoc).hom.toNatTrans.app M₂
+
+/-- The definition of `StrongTrans.mapPullHom`. -/
+lemma mapPullHom_def ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄ ⦃Y : C⦄
+    ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄
+    (φ : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂) :
+    η.mapPullHom φ = (η.naturality f₁.op.toLoc).inv.toNatTrans.app M₁ ≫
+      (η.app (.mk (op Y))).toFunctor.map φ ≫ (η.naturality f₂.op.toLoc).hom.toNatTrans.app M₂ :=
+  (rfl)
+
+/-- The image of an identity is an identity. -/
+@[simp]
+lemma mapPullHom_id ⦃X : C⦄ ⦃M : F.obj (.mk (op X))⦄ ⦃Y : C⦄ (f : Y ⟶ X) :
+    η.mapPullHom (𝟙 ((F.map f.op.toLoc).toFunctor.obj M)) = 𝟙 _ := by
+  simp [mapPullHom]
+
+/-- The image of a composite is the composite of the images. -/
+@[reassoc]
+lemma mapPullHom_comp ⦃X₁ X₂ X₃ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄
+    ⦃M₃ : F.obj (.mk (op X₃))⦄ ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄ ⦃f₃ : Y ⟶ X₃⦄
+    (φ : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂)
+    (ψ : (F.map f₂.op.toLoc).toFunctor.obj M₂ ⟶ (F.map f₃.op.toLoc).toFunctor.obj M₃) :
+    η.mapPullHom (φ ≫ ψ) = η.mapPullHom φ ≫ η.mapPullHom ψ := by
+  simp [mapPullHom]
+
+/-- The image of the pullback `f^* φ` of a morphism `φ` is the pullback `f^* (η φ)`. -/
+lemma mapPullHom_map ⦃X : C⦄ ⦃M N : F.obj (.mk (op X))⦄ (φ : M ⟶ N) ⦃Y : C⦄ (f : Y ⟶ X) :
+    η.mapPullHom ((F.map f.op.toLoc).toFunctor.map φ) =
+      (G.map f.op.toLoc).toFunctor.map ((η.app (.mk (op X))).toFunctor.map φ) := by
+  simp only [mapPullHom]
+  exact η.naturality_naturality_1 f.op.toLoc φ
+
+/-- Taking images under `η` commutes with pulling back morphisms between pullbacks. -/
+lemma mapPullHom_pullHom ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄
+    ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄
+    (φ : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂) ⦃Y' : C⦄
+    (g : Y' ⟶ Y) (gf₁ : Y' ⟶ X₁) (gf₂ : Y' ⟶ X₂) (hgf₁ : g ≫ f₁ = gf₁) (hgf₂ : g ≫ f₂ = gf₂) :
+    η.mapPullHom (pullHom φ g gf₁ gf₂ hgf₁ hgf₂) =
+      pullHom (η.mapPullHom φ) g gf₁ gf₂ hgf₁ hgf₂ := by
+  subst hgf₁ hgf₂
+  simp only [mapPullHom, pullHom, CategoryTheory.Functor.map_comp, Category.assoc,
+    η.naturality_comp'_inv_app f₁.op.toLoc g.op.toLoc (g ≫ f₁).op.toLoc rfl,
+    η.naturality_comp'_hom_app f₂.op.toLoc g.op.toLoc (g ≫ f₂).op.toLoc rfl]
+  rw [← CategoryTheory.Functor.map_comp_assoc _
+      ((F.mapComp' f₁.op.toLoc g.op.toLoc (g ≫ f₁).op.toLoc rfl).inv.toNatTrans.app M₁),
+    Cat.Hom.inv_hom_id_toNatTrans_app, CategoryTheory.Functor.map_id, Category.id_comp,
+    ← CategoryTheory.Functor.map_comp_assoc _
+      ((F.mapComp' f₂.op.toLoc g.op.toLoc (g ≫ f₂).op.toLoc rfl).inv.toNatTrans.app M₂),
+    Cat.Hom.inv_hom_id_toNatTrans_app]
+  -- The identity lives over `(F.map f₂ ≫ F.map g).toFunctor.obj M₂`, which is only
+  -- definitionally the source of `(η.naturality g).hom.toNatTrans.app`.
+  erw [CategoryTheory.Functor.map_id, Category.id_comp]
+  rw [η.naturality_naturality_1_assoc]
+
+/-- For a fully faithful component `η.app Y`, `StrongTrans.mapPullHom` is a bijection between the
+morphisms `f₁^* M₁ ⟶ f₂^* M₂` and `f₁^* (η M₁) ⟶ f₂^* (η M₂)`. -/
+noncomputable def mapPullHomEquiv ⦃X₁ X₂ : C⦄ (M₁ : F.obj (.mk (op X₁))) (M₂ : F.obj (.mk (op X₂)))
+    ⦃Y : C⦄ (f₁ : Y ⟶ X₁) (f₂ : Y ⟶ X₂) (h : (η.app (.mk (op Y))).toFunctor.FullyFaithful) :
+    ((F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂) ≃
+      ((G.map f₁.op.toLoc).toFunctor.obj ((η.app (.mk (op X₁))).toFunctor.obj M₁) ⟶
+        (G.map f₂.op.toLoc).toFunctor.obj ((η.app (.mk (op X₂))).toFunctor.obj M₂)) :=
+  h.homEquiv.trans ((η.naturalityObjIso f₁.op.toLoc M₁).homCongr
+    (η.naturalityObjIso f₂.op.toLoc M₂))
+
+/-- The bijection `StrongTrans.mapPullHomEquiv` is `StrongTrans.mapPullHom`. -/
+@[simp]
+lemma mapPullHomEquiv_apply ⦃X₁ X₂ : C⦄ (M₁ : F.obj (.mk (op X₁))) (M₂ : F.obj (.mk (op X₂)))
+    ⦃Y : C⦄ (f₁ : Y ⟶ X₁) (f₂ : Y ⟶ X₂) (h : (η.app (.mk (op Y))).toFunctor.FullyFaithful)
+    (φ : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂) :
+    η.mapPullHomEquiv M₁ M₂ f₁ f₂ h φ = η.mapPullHom φ := by
+  simp [mapPullHomEquiv, mapPullHom, Iso.homCongr_apply]
+
+/-- `StrongTrans.mapPullHom` is a left inverse of the inverse of `StrongTrans.mapPullHomEquiv`. -/
+@[simp]
+lemma mapPullHom_mapPullHomEquiv_symm ⦃X₁ X₂ : C⦄ (M₁ : F.obj (.mk (op X₁)))
+    (M₂ : F.obj (.mk (op X₂))) ⦃Y : C⦄ (f₁ : Y ⟶ X₁) (f₂ : Y ⟶ X₂)
+    (h : (η.app (.mk (op Y))).toFunctor.FullyFaithful)
+    (ψ : (G.map f₁.op.toLoc).toFunctor.obj ((η.app (.mk (op X₁))).toFunctor.obj M₁) ⟶
+      (G.map f₂.op.toLoc).toFunctor.obj ((η.app (.mk (op X₂))).toFunctor.obj M₂)) :
+    η.mapPullHom ((η.mapPullHomEquiv M₁ M₂ f₁ f₂ h).symm ψ) = ψ := by
+  rw [← mapPullHomEquiv_apply _ _ _ _ _ h, Equiv.apply_symm_apply]
+
+variable {ι : Type t} {S : C} {X : ι → C} (f : ∀ i, X i ⟶ S)
+
+/-- The functor from descent data for `F` to descent data for `G` induced by a strong
+transformation `η : F ⟶ G`. The image of a descent datum has the images under `η` of its objects,
+and the images of its compatibility morphisms given by `StrongTrans.mapPullHom`. -/
+@[expose, simps]
+def mapDescentData : F.DescentData f ⥤ G.DescentData f where
+  obj D :=
+    { obj i := (η.app (.mk (op (X i)))).toFunctor.obj (D.obj i)
+      hom _ q _ _ f₁ f₂ hf₁ hf₂ := η.mapPullHom (D.hom q f₁ f₂ hf₁ hf₂)
+      pullHom_hom _ _ g q q' hq _ _ f₁ f₂ hf₁ hf₂ gf₁ gf₂ hgf₁ hgf₂ := by
+        rw [← mapPullHom_pullHom, D.pullHom_hom g q q' hq f₁ f₂ hf₁ hf₂ gf₁ gf₂ hgf₁ hgf₂]
+      hom_self _ q _ g hg := by rw [D.hom_self q g hg, mapPullHom_id]
+      hom_comp _ q _ _ _ f₁ f₂ f₃ hf₁ hf₂ hf₃ := by rw [← mapPullHom_comp, D.hom_comp] }
+  map {D₁ D₂} φ :=
+    { hom i := (η.app (.mk (op (X i)))).toFunctor.map (φ.hom i)
+      comm _ q i₁ i₂ f₁ f₂ hf₁ hf₂ :=
+        calc _ = η.mapPullHom ((F.map f₁.op.toLoc).toFunctor.map (φ.hom i₁) ≫
+              D₂.hom q f₁ f₂ hf₁ hf₂) := by rw [mapPullHom_comp, mapPullHom_map]
+          _ = η.mapPullHom (D₁.hom q f₁ f₂ hf₁ hf₂ ≫
+              (F.map f₂.op.toLoc).toFunctor.map (φ.hom i₂)) := by rw [φ.comm q f₁ f₂ hf₁ hf₂]
+          _ = _ := by rw [mapPullHom_comp, mapPullHom_map] }
+  map_id _ := by ext; exact (η.app _).toFunctor.map_id _
+  map_comp _ _ := by ext; exact (η.app _).toFunctor.map_comp _ _
+
+/-- The naturality isomorphisms of `η` commute with the comparison isomorphisms
+`f₁^* (p₁^* M) ≅ f₂^* (p₂^* M)` of `F` and of `G` for `f₁ ≫ p₁ = f₂ ≫ p₂`. These are the
+compatibility morphisms of the descent data given by `M` and by `η M`. -/
+lemma map_naturality_comp_mapComp'_inv_comp_mapComp'_hom ⦃X₁ X₂ : C⦄ (p₁ : X₁ ⟶ S)
+    (p₂ : X₂ ⟶ S) (M : F.obj (.mk (op S))) ⦃Y : C⦄ (q : Y ⟶ S) (f₁ : Y ⟶ X₁) (f₂ : Y ⟶ X₂)
+    (h₁ : p₁.op.toLoc ≫ f₁.op.toLoc = q.op.toLoc) (h₂ : p₂.op.toLoc ≫ f₂.op.toLoc = q.op.toLoc) :
+    (G.map f₁.op.toLoc).toFunctor.map ((η.naturality p₁.op.toLoc).hom.toNatTrans.app M) ≫
+        (G.mapComp' p₁.op.toLoc f₁.op.toLoc q.op.toLoc h₁).inv.toNatTrans.app _ ≫
+          (G.mapComp' p₂.op.toLoc f₂.op.toLoc q.op.toLoc h₂).hom.toNatTrans.app _ =
+      η.mapPullHom ((F.mapComp' p₁.op.toLoc f₁.op.toLoc q.op.toLoc h₁).inv.toNatTrans.app M ≫
+          (F.mapComp' p₂.op.toLoc f₂.op.toLoc q.op.toLoc h₂).hom.toNatTrans.app M) ≫
+        (G.map f₂.op.toLoc).toFunctor.map ((η.naturality p₂.op.toLoc).hom.toNatTrans.app M) := by
+  -- Both sides are computed by the composition condition of `η` at `q = pₖ ≫ fₖ`.
+  have key₁ : (G.map f₁.op.toLoc).toFunctor.map
+        ((η.naturality p₁.op.toLoc).hom.toNatTrans.app M) ≫
+      (G.mapComp' p₁.op.toLoc f₁.op.toLoc q.op.toLoc h₁).inv.toNatTrans.app _ =
+      (η.naturality f₁.op.toLoc).inv.toNatTrans.app ((F.map p₁.op.toLoc).toFunctor.obj M) ≫
+        (η.app (.mk (op Y))).toFunctor.map
+          ((F.mapComp' p₁.op.toLoc f₁.op.toLoc q.op.toLoc h₁).inv.toNatTrans.app M) ≫
+        (η.naturality q.op.toLoc).hom.toNatTrans.app M := by
+    rw [η.naturality_comp'_hom_app p₁.op.toLoc f₁.op.toLoc q.op.toLoc h₁,
+      ← CategoryTheory.Functor.map_comp_assoc, Cat.Hom.inv_hom_id_toNatTrans_app]
+    -- The identity lives over `(F.map p₁ ≫ F.map f₁).toFunctor.obj M`, which is only
+    -- definitionally the source of `(η.naturality f₁).hom.toNatTrans.app`.
+    erw [CategoryTheory.Functor.map_id, Category.id_comp]
+    simp
+  have key₂ : (η.app (.mk (op Y))).toFunctor.map
+        ((F.mapComp' p₂.op.toLoc f₂.op.toLoc q.op.toLoc h₂).hom.toNatTrans.app M) ≫
+      (η.naturality f₂.op.toLoc).hom.toNatTrans.app ((F.map p₂.op.toLoc).toFunctor.obj M) ≫
+        (G.map f₂.op.toLoc).toFunctor.map ((η.naturality p₂.op.toLoc).hom.toNatTrans.app M) =
+      (η.naturality q.op.toLoc).hom.toNatTrans.app M ≫
+        (G.mapComp' p₂.op.toLoc f₂.op.toLoc q.op.toLoc h₂).hom.toNatTrans.app _ := by
+    rw [η.naturality_comp'_hom_app p₂.op.toLoc f₂.op.toLoc q.op.toLoc h₂]
+    simp
+  rw [reassoc_of% key₁, ← key₂]
+  simp [mapPullHom]
+
+/-- The descent functors of `F` and `G` commute with `η` up to the naturality isomorphisms of
+`η`. -/
+@[expose, simps!]
+def toDescentDataCompMapDescentDataIso :
+    F.toDescentData f ⋙ η.mapDescentData f ≅
+      (η.app (.mk (op S))).toFunctor ⋙ G.toDescentData f :=
+  NatIso.ofComponents
+    (fun M ↦ DescentData.isoMk (fun i ↦ (Cat.Hom.toNatIso (η.naturality (f i).op.toLoc)).app M)
+      (fun _ q _ _ f₁ f₂ hf₁ hf₂ ↦ η.map_naturality_comp_mapComp'_inv_comp_mapComp'_hom _ _ M q
+        f₁ f₂ (by rw [← hf₁]; rfl) (by rw [← hf₂]; rfl)))
+    (fun φ ↦ by
+      ext i
+      exact (η.naturality (f i).op.toLoc).hom.toNatTrans.naturality φ)
+
+/-- If the components of `η` are fully faithful, then so is the functor `η.mapDescentData f`. -/
+noncomputable def fullyFaithfulMapDescentData
+    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful) :
+    (η.mapDescentData f).FullyFaithful where
+  preimage {D₁ D₂} ψ :=
+    { hom i := (hη (X i)).preimage (ψ.hom i)
+      comm Y q i₁ i₂ f₁ f₂ hf₁ hf₂ := (η.mapPullHomEquiv _ _ f₁ f₂ (hη Y)).injective (by
+        simp only [mapPullHomEquiv_apply, mapPullHom_comp, mapPullHom_map]
+        -- `ψ.hom i` is typed by the objects of `(η.mapDescentData f).obj D`, which are only
+        -- definitionally the images under `η`.
+        erw [(hη _).map_preimage, (hη _).map_preimage]
+        exact ψ.comm q f₁ f₂ hf₁ hf₂) }
+  map_preimage ψ := by ext i; exact (hη _).map_preimage _
+  preimage_map φ := by ext i; exact (hη _).preimage_map _
+
+section lift
+
+variable (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful) (D : G.DescentData f)
+  {M : ∀ i, F.obj (.mk (op (X i)))}
+  (e : ∀ i, (η.app (.mk (op (X i)))).toFunctor.obj (M i) ≅ D.obj i)
+
+/-- The compatibility morphisms of a descent datum `D` for `G`, transported along isomorphisms
+`e i : η (M i) ≅ D.obj i`. -/
+def liftDescentDataHom ⦃Y : C⦄ (q : Y ⟶ S) ⦃i₁ i₂ : ι⦄ (f₁ : Y ⟶ X i₁) (f₂ : Y ⟶ X i₂)
+    (hf₁ : f₁ ≫ f i₁ = q) (hf₂ : f₂ ≫ f i₂ = q) :
+    (G.map f₁.op.toLoc).toFunctor.obj ((η.app (.mk (op (X i₁)))).toFunctor.obj (M i₁)) ⟶
+      (G.map f₂.op.toLoc).toFunctor.obj ((η.app (.mk (op (X i₂)))).toFunctor.obj (M i₂)) :=
+  (G.map f₁.op.toLoc).toFunctor.map (e i₁).hom ≫ D.hom q f₁ f₂ hf₁ hf₂ ≫
+    (G.map f₂.op.toLoc).toFunctor.map (e i₂).inv
+
+/-- The transported compatibility morphisms, composed with `e`, are those of `D`. -/
+@[reassoc]
+lemma liftDescentDataHom_comp ⦃Y : C⦄ (q : Y ⟶ S) ⦃i₁ i₂ : ι⦄ (f₁ : Y ⟶ X i₁)
+    (f₂ : Y ⟶ X i₂) (hf₁ : f₁ ≫ f i₁ = q) (hf₂ : f₂ ≫ f i₂ = q) :
+    η.liftDescentDataHom f D e q f₁ f₂ hf₁ hf₂ ≫ (G.map f₂.op.toLoc).toFunctor.map (e i₂).hom =
+      (G.map f₁.op.toLoc).toFunctor.map (e i₁).hom ≫ D.hom q f₁ f₂ hf₁ hf₂ := by
+  simp [liftDescentDataHom]
+
+/-- For a strong transformation `η : F ⟶ G` with fully faithful components, the descent datum for
+`F` with objects `M i` lifting a descent datum `D` for `G` along isomorphisms
+`e i : η (M i) ≅ D.obj i`. -/
+noncomputable def liftDescentData : F.DescentData f where
+  obj := M
+  hom Y q _ _ f₁ f₂ hf₁ hf₂ :=
+    (η.mapPullHomEquiv _ _ f₁ f₂ (hη Y)).symm (η.liftDescentDataHom f D e q f₁ f₂ hf₁ hf₂)
+  pullHom_hom Y' _ g q q' hq i₁ i₂ f₁ f₂ hf₁ hf₂ gf₁ gf₂ hgf₁ hgf₂ :=
+    (η.mapPullHomEquiv _ _ gf₁ gf₂ (hη Y')).injective (by
+      simp only [mapPullHomEquiv_apply, mapPullHom_pullHom, mapPullHom_mapPullHomEquiv_symm,
+        liftDescentDataHom]
+      rw [pullHom_comp _ _ g gf₁ gf₁ gf₂ hgf₁ hgf₁ hgf₂,
+        pullHom_comp _ _ g gf₁ gf₂ gf₂ hgf₁ hgf₂ hgf₂,
+        pullHom_map, pullHom_map, D.pullHom_hom g q q' hq f₁ f₂ hf₁ hf₂ gf₁ gf₂ hgf₁ hgf₂])
+  hom_self Y q i g hg := (η.mapPullHomEquiv _ _ g g (hη Y)).injective (by
+    simp [liftDescentDataHom, D.hom_self q g hg])
+  hom_comp Y q i₁ i₂ i₃ f₁ f₂ f₃ hf₁ hf₂ hf₃ := (η.mapPullHomEquiv _ _ f₁ f₃ (hη Y)).injective (by
+    simp [liftDescentDataHom, mapPullHom_comp])
+
+/-- The objects of the lift of `D` are the `M i`. -/
+lemma liftDescentData_obj (i : ι) : (η.liftDescentData f hη D e).obj i = M i :=
+  (rfl)
+
+/-- The image under `η.mapDescentData f` of the lift of a descent datum `D` along isomorphisms
+`e i : η (M i) ≅ D.obj i` is isomorphic to `D`. -/
+noncomputable def mapDescentDataLiftDescentDataIso :
+    (η.mapDescentData f).obj (η.liftDescentData f hη D e) ≅ D :=
+  DescentData.isoMk e (fun Y q i₁ i₂ f₁ f₂ hf₁ hf₂ ↦ by
+    simp only [mapDescentData_obj_hom, liftDescentData, mapPullHom_mapPullHomEquiv_symm]
+    exact (η.liftDescentDataHom_comp f D e q f₁ f₂ hf₁ hf₂).symm)
+
+end lift
+
+/-- If the components of `η` are fully faithful and those over the `X i` are essentially
+surjective, then the functor `η.mapDescentData f` is essentially surjective. -/
+lemma essSurj_mapDescentData (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful)
+    [∀ i, (η.app (.mk (op (X i)))).toFunctor.EssSurj] : (η.mapDescentData f).EssSurj where
+  mem_essImage D := ⟨_, ⟨η.mapDescentDataLiftDescentDataIso f hη D
+    (fun i ↦ (η.app (.mk (op (X i)))).toFunctor.objObjPreimageIso (D.obj i))⟩⟩
+
+/-- If the components of `η` are equivalences, then so is the functor `η.mapDescentData f`. -/
+lemma isEquivalence_mapDescentData
+    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.IsEquivalence) :
+    (η.mapDescentData f).IsEquivalence :=
+  have hff (U : C) :=
+    have := hη U; Functor.FullyFaithful.ofFullyFaithful (η.app (.mk (op U))).toFunctor
+  have := fun i ↦ hη (X i)
+  have := essSurj_mapDescentData η f hff
+  have := (η.fullyFaithfulMapDescentData f hff).full
+  have := (η.fullyFaithfulMapDescentData f hff).faithful
+  { }
+
+end CategoryTheory.Pseudofunctor.StrongTrans
+
+namespace CategoryTheory.Pseudofunctor
+
+variable {C : Type u} [Category.{v} C] {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
+  (η : StrongTrans F G) {ι : Type t} {S : C} {X : ι → C} (f : ∀ i, X i ⟶ S)
+
+/-- If the components of `η : F ⟶ G` are fully faithful and the descent functor of `G` along a
+family `f` is fully faithful, then so is that of `F`. -/
+noncomputable def StrongTrans.fullyFaithfulToDescentData
+    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful)
+    (hG : (G.toDescentData f).FullyFaithful) : (F.toDescentData f).FullyFaithful :=
+  have := (η.fullyFaithfulMapDescentData f hη).faithful
+  .ofCompFaithful (G := η.mapDescentData f)
+    (((hη S).comp hG).ofIso (η.toDescentDataCompMapDescentDataIso f).symm)
+
+section
+
+variable (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.IsEquivalence)
+include hη
+
+/-- For a strong transformation `η : F ⟶ G` whose components are equivalences, the descent
+functor of `F` along a family `f` is fully faithful if and only if that of `G` is. -/
+lemma nonempty_fullyFaithful_toDescentData_iff_of_isEquivalence :
+    Nonempty (F.toDescentData f).FullyFaithful ↔ Nonempty (G.toDescentData f).FullyFaithful := by
+  have hff (U : C) :=
+    have := hη U; Functor.FullyFaithful.ofFullyFaithful (η.app (.mk (op U))).toFunctor
+  refine ⟨fun ⟨hF⟩ ↦ ⟨?_⟩, fun ⟨hG⟩ ↦ ⟨StrongTrans.fullyFaithfulToDescentData η f hff hG⟩⟩
+  have := hη S
+  let E := (η.app (.mk (op S))).toFunctor
+  -- `G.toDescentData f` is `E.inv ⋙ E ⋙ G.toDescentData f`, and `E ⋙ G.toDescentData f` is
+  -- `F.toDescentData f ⋙ η.mapDescentData f`.
+  exact ((Functor.FullyFaithful.ofFullyFaithful E.inv).comp
+    ((hF.comp (η.fullyFaithfulMapDescentData f hff)).ofIso
+      (η.toDescentDataCompMapDescentDataIso f))).ofIso
+    ((Functor.associator _ _ _).symm ≪≫
+      Functor.isoWhiskerRight E.asEquivalence.counitIso (G.toDescentData f) ≪≫ Functor.leftUnitor _)
+
+/-- For a strong transformation `η : F ⟶ G` whose components are equivalences, the descent
+functor of `F` along a family `f` is an equivalence if and only if that of `G` is. -/
+lemma isEquivalence_toDescentData_iff_of_isEquivalence :
+    (F.toDescentData f).IsEquivalence ↔ (G.toDescentData f).IsEquivalence := by
+  have := hη S
+  have := η.isEquivalence_mapDescentData f hη
+  let e := η.toDescentDataCompMapDescentDataIso f
+  refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
+  · have := Functor.isEquivalence_of_iso e
+    exact Functor.isEquivalence_of_comp_left (η.app (.mk (op S))).toFunctor _
+  · have := Functor.isEquivalence_of_iso e.symm
+    exact Functor.isEquivalence_of_comp_right _ (η.mapDescentData f)
+
+omit hη in
+/-- If the components of `η : F ⟶ G` are fully faithful and `G` satisfies the descent of
+morphisms along a presieve `R`, then so does `F`. -/
+lemma IsPrestackFor.of_fullyFaithful (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful)
+    {R : Presieve S} (hG : G.IsPrestackFor R) : F.IsPrestackFor R :=
+  ⟨⟨StrongTrans.fullyFaithfulToDescentData η _ hη hG.fullyFaithful⟩⟩
+
+/-- For a strong transformation `η : F ⟶ G` whose components are equivalences, `F` satisfies the
+descent of morphisms along a presieve if and only if `G` does. -/
+lemma isPrestackFor_iff_of_isEquivalence (R : Presieve S) :
+    F.IsPrestackFor R ↔ G.IsPrestackFor R := by
+  simp only [isPrestackFor_iff]
+  exact nonempty_fullyFaithful_toDescentData_iff_of_isEquivalence η _ hη
+
+/-- For a strong transformation `η : F ⟶ G` whose components are equivalences, `F` has effective
+descent along a presieve if and only if `G` does. -/
+lemma isStackFor_iff_of_isEquivalence (R : Presieve S) : F.IsStackFor R ↔ G.IsStackFor R := by
+  simp only [isStackFor_iff]
+  exact isEquivalence_toDescentData_iff_of_isEquivalence η _ hη
+
+end
+
+variable {J : GrothendieckTopology C}
+
+/-- If the components of a strong transformation `η : F ⟶ G` are fully faithful and `G` is a
+prestack, then `F` is a prestack. -/
+theorem isPrestack_source_of_fullyFaithful [G.IsPrestack J] (η : StrongTrans F G)
+    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful) : F.IsPrestack J :=
+  .of_isPrestackFor fun _ R hR ↦ (G.isPrestackFor' R hR).of_fullyFaithful η hη
+
+/-- For a strong transformation `η : F ⟶ G` whose components are equivalences of fibre
+categories, `F` is a prestack if and only if `G` is. -/
+theorem isPrestack_iff_of_isEquivalence (η : StrongTrans F G)
+    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.IsEquivalence) :
+    F.IsPrestack J ↔ G.IsPrestack J :=
+  ⟨fun _ ↦ .of_isPrestackFor fun _ R hR ↦
+      (isPrestackFor_iff_of_isEquivalence η hη R.arrows).1 (F.isPrestackFor' R hR),
+    fun _ ↦ .of_isPrestackFor fun _ R hR ↦
+      (isPrestackFor_iff_of_isEquivalence η hη R.arrows).2 (G.isPrestackFor' R hR)⟩
+
+/-- For a strong transformation `η : F ⟶ G` whose components are equivalences of fibre
+categories, `F` is a stack if and only if `G` is. -/
+theorem isStack_iff_of_isEquivalence (η : StrongTrans F G)
+    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.IsEquivalence) :
+    F.IsStack J ↔ G.IsStack J :=
+  ⟨fun _ ↦ .of_isStackFor fun _ R hR ↦
+      (isStackFor_iff_of_isEquivalence η hη R.arrows).1 (F.isStackFor' R hR),
+    fun _ ↦ .of_isStackFor fun _ R hR ↦
+      (isStackFor_iff_of_isEquivalence η hη R.arrows).2 (G.isStackFor' R hR)⟩
+
+end CategoryTheory.Pseudofunctor
