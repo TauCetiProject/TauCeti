@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
+public import TauCeti.Topology.Algebra.Group.Connected
 import TauCeti.Geometry.Lie.Subgroup.CartanChart
 
 /-!
@@ -196,6 +197,23 @@ carrier. -/
 theorem coe_linearLieSubalgebra (hG : IsClosed (G : Set Rˣ)) :
     (G.linearLieSubalgebra : Set R) = G.linearLieAlgebra :=
   Set.ext fun _ => mem_linearLieSubalgebra_iff hG
+
+/-- A closed subgroup of algebra units and its identity component have the same Lie algebra.
+Each exponential line in the subgroup lies in its identity component. -/
+theorem linearLieSubalgebra_ambientConnectedComponentOfOne (hG : IsClosed (G : Set Rˣ)) :
+    G.ambientConnectedComponentOfOne.linearLieSubalgebra = G.linearLieSubalgebra := by
+  ext D
+  rw [mem_linearLieSubalgebra_iff (G.isClosed_ambientConnectedComponentOfOne hG),
+    mem_linearLieSubalgebra_iff hG]
+  simp only [mem_linearLieAlgebra_iff]
+  refine ⟨fun h t ↦ G.ambientConnectedComponentOfOne_le (h t), fun h t ↦ ?_⟩
+  have hconn : IsPreconnected (Set.range fun s : ℝ ↦ TauCeti.expUnit (s • D)) :=
+    isPreconnected_range (TauCeti.continuous_expUnit.comp (continuous_id.smul continuous_const))
+  have h₁ : 1 ∈ Set.range (fun s : ℝ ↦ TauCeti.expUnit (s • D)) := ⟨0, by simp⟩
+  have hsub : Set.range (fun s : ℝ ↦ TauCeti.expUnit (s • D)) ⊆ (G : Set Rˣ) :=
+    Set.range_subset_iff.2 h
+  rw [← SetLike.mem_coe, Subgroup.coe_ambientConnectedComponentOfOne]
+  exact hconn.subset_connectedComponentIn h₁ hsub ⟨t, rfl⟩
 
 /-- Addition preserves the linear Lie algebra of a closed subgroup. -/
 theorem add_mem_linearLieAlgebra (hG : IsClosed (G : Set Rˣ))
