@@ -170,9 +170,8 @@ theorem smul_mk_ofPolynomial_eq_iff (g : G) :
     (algebraMap_ofPolynomial_X q hq hcrit) (adjoin_ofPolynomialGen q hq hcrit)
     (algebraMap_ofPolynomial_X q hq hcrit)
 
-/-- An automorphism of `k` fixing a subsemiring or field `K` that contains the coefficients of `q`
-fixes the class of the polynomial Belyi pair `ofPolynomial q`. This also applies when `K` is only a
-commutative semiring containing the coefficients and no `TauCeti.AlgebraicBelyiPair.Model` is
+/-- An automorphism of `k` fixing the image of a commutative semiring `K → k` that contains the
+coefficients of `q` fixes the class of `ofPolynomial q`; no `TauCeti.AlgebraicBelyiPair.Model` is
 needed. -/
 theorem smul_mk_ofPolynomial_eq_self {K : Type*} [CommSemiring K] [Algebra K k]
     (hK : q ∈ lifts (algebraMap K k)) {g : k ≃ₐ[ℚ] k}

@@ -509,6 +509,13 @@ theorem isDefinedOver_self (c : IsoClass k) : c.IsDefinedOver k := by
   induction c using ind with
   | h X => exact isDefinedOver_mk_iff.mpr ⟨Model.refl X⟩
 
+/-- An isomorphism class defined over an intermediate field `K₀` is also defined over
+`IntermediateField.extendScalars h`. -/
+theorem IsDefinedOver.extendScalars {F : Type*} [Field F] [Algebra F k]
+    {F' K₀ : IntermediateField F k} (h : F' ≤ K₀) {c : IsoClass k} (hc : c.IsDefinedOver K₀) :
+    c.IsDefinedOver (IntermediateField.extendScalars h) :=
+  hc
+
 /-- If a class is defined over a field `K`, then every automorphism of `k` fixing `K` fixes the
 class. -/
 theorem IsDefinedOver.smul_eq {c : IsoClass k} (hc : c.IsDefinedOver K)

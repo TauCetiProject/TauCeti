@@ -17,13 +17,15 @@ Let `X = (F, k(t) ↪ F)` be an algebraic Belyi pair of degree `d` over a field 
 zero — possibly transcendental over `ℚ`, such as `ℂ` — and let `P` be a place of `F` of degree one
 lying over a finite point `t = q` with `q : ℚ` and `q ≠ 0, 1`. In
 `TauCeti.FieldTheory.FunctionField.Belyi.CoefficientDescent` a Laurent-normalized primitive element
-`z` of `F / k(t)` at `P` was shown to have minimal polynomial over `k(t)` with coefficients in
+`z` of `F / k(t)` at `P` is shown to have minimal polynomial over `k(t)` with coefficients in
 `K(t)`, where `K = X.pointedFieldOfModuli P` is the fixed field of the pointed stabilizer
-`U(X, P) ≤ Aut(k)`.
+`U(X, P) ≤ Aut(k)`, with `[K(t)(z) : K(t)] = [F : k(t)]`
+(`TauCeti.AlgebraicBelyiPair.exists_generator_finrank_adjoin_eq`).
 
-This file promotes that descended equation to a genuine **model** of `X` over `K`
+This file promotes that descended equation to a **model** of `X` over `K`
 (`TauCeti.AlgebraicBelyiPair.modelOverPointedFieldOfModuli`) via
-`TauCeti.AlgebraicBelyiPair.modelOfAdjoinSimple` and deduces **Köck's Theorem 2.2**:
+`TauCeti.AlgebraicBelyiPair.modelOfAdjoinSimple`, derives
+`TauCeti.AlgebraicBelyiPair.nonempty_model_pointedFieldOfModuli`, and proves **Köck's Theorem 2.2**:
 
 1. Because `[K(t)(z) : K(t)] = [F : k(t)]` and `K(t)(z) · k = F`, the image of `k` is linearly
    disjoint from `K(t)(z)` over `K` (`TauCeti.linearDisjoint_of_finrank_ratFunc_eq`),
@@ -36,15 +38,16 @@ This file promotes that descended equation to a genuine **model** of `X` over `K
    above `t = 2` yields a place of degree one whose pointed field of moduli has degree at most `d`
    over the field of moduli of `X`. Every isomorphism class `c` of Belyi pairs over `k` is thus
    defined over a finite extension of `c.fieldOfModuli` of degree at most `c.degree`
-   (`TauCeti.AlgebraicBelyiPair.IsoClass.exists_finrank_le_degree_and_isDefinedOver`, Köck's
-   Theorem 2.2(a)).
+   (`TauCeti.AlgebraicBelyiPair.IsoClass.exists_finrank_le_degree_and_isDefinedOver`, **Köck's
+   Theorem 2.2(a)**).
 4. When `F / k(t)` is Galois, `U(X, P) = U(X)`
    (`pointedStabilizer_eq_stabilizer_of_isGalois_of_restrict_eq_adicOfIrreducible`), so `K` is
    the field of moduli itself
    (`pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_adicOfIrreducible` in
-   `TauCeti.AlgebraicBelyiPair`), and over an algebraically closed field `X` is defined over its
-   field of moduli (`TauCeti.AlgebraicBelyiPair.nonempty_model_fieldOfModuli_of_isGalois`, Köck's
-   Theorem 2.2(b)).
+   `TauCeti.FieldTheory.FunctionField.Belyi.CoefficientDescent`), and over an algebraically closed
+   field `X` is defined over its field of moduli
+   (`TauCeti.AlgebraicBelyiPair.nonempty_model_fieldOfModuli_of_isGalois`, **Köck's
+   Theorem 2.2(b)**).
 
 ## Main definitions
 
@@ -54,9 +57,10 @@ This file promotes that descended equation to a genuine **model** of `X` over `K
 
 ## Main results
 
-* `TauCeti.AlgebraicBelyiPair.exists_generator_fieldRange_modelOverPointedFieldOfModuli` and
-  `TauCeti.AlgebraicBelyiPair.isDefinedOver_pointedFieldOfModuli`: properties of the model over the
-  pointed field of moduli.
+* `TauCeti.AlgebraicBelyiPair.exists_generator_fieldRange_modelOverPointedFieldOfModuli`,
+  `TauCeti.AlgebraicBelyiPair.nonempty_model_pointedFieldOfModuli`, and
+  `TauCeti.AlgebraicBelyiPair.isDefinedOver_pointedFieldOfModuli`: existence and generator
+  properties of the model over the pointed field of moduli.
 * `TauCeti.AlgebraicBelyiPair.exists_relfinrank_le_finrank_and_nonempty_model` and
   `TauCeti.AlgebraicBelyiPair.IsoClass.exists_finrank_le_degree_and_isDefinedOver`: **Köck's
   Theorem 2.2(a)**, every Belyi pair over an algebraically closed field of characteristic zero is
@@ -102,18 +106,19 @@ private noncomputable def modelOverPointedFieldOfModuliAux {P : Place k X} {q : 
         IsIntegral (RatFunc (X.pointedFieldOfModuli P)) z ∧
         (minpoly (RatFunc (X.pointedFieldOfModuli P)) z).map
           (algebraMap (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k)) = minpoly (RatFunc k) z ∧
-        M.embedding.fieldRange = ((RatFunc (X.pointedFieldOfModuli P))⟮z⟯).toSubfield } :=
+        M.embedding.fieldRange = ((RatFunc (X.pointedFieldOfModuli P))⟮z⟯).toSubfield } := by
   letI : Algebra (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) :=
     (ratFuncMapRingHom (X.pointedFieldOfModuli P) k).toAlgebra
   letI := X.ratFuncAlgebra (X.pointedFieldOfModuli P)
   haveI : IsScalarTower (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) X :=
     IsScalarTower.of_algebraMap_eq' rfl
-  let h := X.exists_generator_finrank_adjoin_eq hq₀ hq₁ hPa hP
+  have h := X.exists_generator_finrank_adjoin_eq hq₀ hq₁ hPa hP
     (ratFuncMapRingHom_C (X.pointedFieldOfModuli P) k)
     (ratFuncMapRingHom_X (X.pointedFieldOfModuli P) k)
-  ⟨X.modelOfAdjoinSimple h.choose_spec.1 h.choose_spec.2.2.2,
-    ⟨h.choose, h.choose_spec.1, h.choose_spec.2.1, h.choose_spec.2.2.1,
-      X.fieldRange_modelOfAdjoinSimple_embedding h.choose_spec.1 h.choose_spec.2.2.2⟩⟩
+  set z := h.choose
+  obtain ⟨hgen, hint, hmap, hfin⟩ := h.choose_spec
+  exact ⟨X.modelOfAdjoinSimple hgen hfin,
+    ⟨z, hgen, hint, hmap, X.fieldRange_modelOfAdjoinSimple_embedding hgen hfin⟩⟩
 
 /-- **Pointed-field model descent**: at a place `P` of `X` of degree one over a finite point
 `t = q` with `q : ℚ` and `q ≠ 0, 1`, `X` admits a model over `X.pointedFieldOfModuli P`. No
@@ -144,6 +149,16 @@ theorem exists_generator_fieldRange_modelOverPointedFieldOfModuli {P : Place k X
         ((RatFunc (X.pointedFieldOfModuli P))⟮z⟯).toSubfield :=
   (X.modelOverPointedFieldOfModuliAux hq₀ hq₁ hPa hP).property
 
+/-- **A pointed Belyi pair is defined over its pointed fixed field.** Let `P` be a place of degree
+one of an algebraic Belyi pair `X = (F, t)` over `k`, lying over the place `t = q` for a rational
+`q ≠ 0, 1`. Then `X` has a model over the fixed field of the pointed stabilizer of `P`, even when
+`k` is transcendental over this fixed field, as for `k = ℂ`. -/
+theorem nonempty_model_pointedFieldOfModuli {P : Place k X} {q : ℚ}
+    (hq₀ : (q : k) ≠ 0) (hq₁ : (q : k) ≠ 1)
+    (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k)))
+    (hP : P.degree = 1) : Nonempty (Model (X.pointedFieldOfModuli P) X) :=
+  ⟨X.modelOverPointedFieldOfModuli hq₀ hq₁ hPa hP⟩
+
 /-- The isomorphism class of a pair admitting a degree-one place over a finite point `t = q` with
 `q : ℚ` and `q ≠ 0, 1` is defined over its pointed field of moduli at that place. -/
 theorem isDefinedOver_pointedFieldOfModuli {P : Place k X} {q : ℚ}
@@ -151,7 +166,7 @@ theorem isDefinedOver_pointedFieldOfModuli {P : Place k X} {q : ℚ}
     (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k)))
     (hP : P.degree = 1) :
     (IsoClass.mk X).IsDefinedOver (X.pointedFieldOfModuli P) :=
-  IsoClass.isDefinedOver_mk_iff.mpr (nonempty_model_pointedFieldOfModuli hq₀ hq₁ hPa hP)
+  IsoClass.isDefinedOver_mk_iff.mpr (X.nonempty_model_pointedFieldOfModuli hq₀ hq₁ hPa hP)
 
 end PointedModel
 
@@ -182,7 +197,7 @@ theorem exists_relfinrank_le_finrank_and_nonempty_model [IsAlgClosed k]
   obtain ⟨P, hPa, hP⟩ := exists_place_over_two_and_degree_eq_one X
   exact ⟨X.pointedFieldOfModuli P, X.fieldOfModuli_le_pointedFieldOfModuli P,
     X.relfinrank_pointedFieldOfModuli_pos hPa, X.relfinrank_pointedFieldOfModuli_le hPa,
-    nonempty_model_pointedFieldOfModuli (q := 2) (by norm_num) (by norm_num) hPa hP⟩
+    X.nonempty_model_pointedFieldOfModuli (q := 2) (by norm_num) (by norm_num) hPa hP⟩
 
 namespace IsoClass
 
@@ -202,8 +217,8 @@ theorem exists_finrank_le_degree_and_isDefinedOver [IsAlgClosed k] (c : IsoClass
       (IntermediateField.relfinrank_eq_finrank_of_le hle).symm
     have : FiniteDimensional (mk X).fieldOfModuli K :=
       FiniteDimensional.of_finrank_pos (hfinrank ▸ hpos)
-    -- `extendScalars hle` shares the exact `Subfield` carrier and `k`-algebra map of `K₀`.
-    exact ⟨K, inferInstance, hfinrank ▸ by simpa using hdeg, isDefinedOver_mk_iff.mpr hM⟩
+    exact ⟨K, inferInstance, hfinrank.trans_le (hdeg.trans_eq (degree_mk X).symm),
+      (isDefinedOver_mk_iff.mpr hM).extendScalars hle⟩
 
 end IsoClass
 
@@ -224,7 +239,7 @@ theorem nonempty_model_fieldOfModuli_of_isGalois_of_degree_eq_one
     (hP : P.degree = 1) :
     Nonempty (Model (IsoClass.mk X).fieldOfModuli X) := by
   rw [← X.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_adicOfIrreducible hPa]
-  exact nonempty_model_pointedFieldOfModuli hq₀ hq₁ hPa hP
+  exact X.nonempty_model_pointedFieldOfModuli hq₀ hq₁ hPa hP
 
 /-- **Köck's Theorem 2.2(b), model form**: over an algebraically closed field `k` of characteristic
 zero (such as `ℂ` or `AlgebraicClosure ℚ`), every Galois algebraic Belyi pair `X` has a model over
