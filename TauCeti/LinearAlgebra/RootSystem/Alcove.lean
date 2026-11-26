@@ -259,7 +259,7 @@ end Alcove
 
 section SeparatingAffineRoots
 
-variable [LinearOrder R]
+variable [Preorder R]
 
 /-- The **affine roots separating `x` from `y`**: the affine roots `αⱼ - k`, encoded as pairs
 `(j, k)` of a root index and an integer, that are positive at `x` and negative at `y`. Each affine
