@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.DirectLimit
+public import TauCeti.Algebra.Group.Idempotent
 public import TauCeti.LinearAlgebra.PiTensorProduct.Restricted
 public import TauCeti.RingTheory.PiTensorProduct.Basic
 
@@ -86,16 +87,6 @@ theorem stageMap_mul (he : ∀ i, IsIdempotentElem (e i)) {S T : Finset ι} (h :
       · simp [Finset.restrict, Function.updateFinset_apply_of_notMem hi, (he i).eq]
     | add y y' hy hy' => rw [mul_add, map_add, hy, hy', map_add, mul_add]
   | add x x' hx hx' => rw [add_mul, map_add, hx, hx', map_add, add_mul]
-
-omit [DecidableEq ι] in
-/-- If `f` and `g` differ from the idempotents `e` at finitely many places, so does `f * g`. -/
-theorem finite_mul_ne (he : ∀ i, IsIdempotentElem (e i)) {f g : ∀ i, A i}
-    (hf : {i | f i ≠ e i}.Finite) (hg : {i | g i ≠ e i}.Finite) :
-    {i | (f * g) i ≠ e i}.Finite :=
-  (hf.union hg).subset fun i hi ↦ by
-    by_contra h
-    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_not] at h
-    exact hi (by rw [Pi.mul_apply, h.1, h.2, (he i).eq])
 
 variable (R e) in
 /-- The transition map adjoining idempotents, as a morphism of nonunital algebras. -/
@@ -247,13 +238,14 @@ theorem tprod_eq_ofFinite (f : ∀ i, A i) (hf : {i | f i ≠ e i}.Finite) (S : 
 @[simp]
 theorem tprod_mul_tprod (f g : ∀ i, A i) (hf : {i | f i ≠ e i}.Finite)
     (hg : {i | g i ≠ e i}.Finite) :
-    tprod R he f hf * tprod R he g hg = tprod R he (f * g) (finite_mul_ne he hf hg) := by
+    tprod R he f hf * tprod R he g hg =
+      tprod R he (f * g) (hf.mul_ne_of_isIdempotentElem hg he) := by
   have hfS : ∀ i ∉ hf.toFinset ∪ hg.toFinset, f i = e i := fun i hi ↦ by
     simpa using (Finset.notMem_union.mp hi).1
   have hgS : ∀ i ∉ hf.toFinset ∪ hg.toFinset, g i = e i := fun i hi ↦ by
     simpa using (Finset.notMem_union.mp hi).2
   rw [tprod_eq_ofFinite f hf _ hfS, tprod_eq_ofFinite g hg _ hgS,
-    tprod_eq_ofFinite (f * g) (finite_mul_ne he hf hg) _ fun i hi ↦ by
+    tprod_eq_ofFinite (f * g) (hf.mul_ne_of_isIdempotentElem hg he) _ fun i hi ↦ by
       rw [Pi.mul_apply, hfS i hi, hgS i hi, (he i).eq],
     ofFinite_tprod_mul_ofFinite_tprod]
   simp only [Pi.mul_apply]
