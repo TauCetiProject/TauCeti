@@ -15,7 +15,6 @@ public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 public import TauCeti.Topology.VectorBundle.Subbundle
-import Mathlib.Data.ZMod.QuotientRing
 import TauCeti.Geometry.Manifold.Immersion.NormalSpace.Basic
 import TauCeti.Geometry.Manifold.Morse.Bott.RankDegreeHomology
 import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
@@ -69,13 +68,13 @@ one (`nonempty_singularHomology_sublevelPair_succ_iso_twistedHomology`, in the n
 orientation local system of its negative normal line, and since that line is not orientable this is
 `R ⧸ 2R` for every commutative ring `R`
 (`TauCeti.KleinBottle.nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two`).
-Constant coefficients would give `H₀(C₁; R) = R` instead. With integer coefficients the top level
-contributes `ℤ/2` and not `ℤ`
-(`TauCeti.KleinBottle.not_nonempty_singularHomology_sublevelPair_height_linearEquiv_int`), and over
-a ring in which `2` is a unit, such as `ℚ`, it contributes nothing in degree one
+Constant coefficients would give `H₀(C₁; R) = R` instead. Whenever `2 ≠ 0` in `R`, for instance
+over `ℤ`, where the top level contributes `ℤ/2` and not `ℤ`, the group is not `R`
+(`KleinBottle.not_nonempty_singularHomology_sublevelPair_height_linearEquiv_self_of_two_ne_zero`),
+and over a ring in which `2` is a unit, such as `ℚ`, it contributes nothing in degree one
 (`TauCeti.KleinBottle.subsingleton_singularHomology_sublevelPair_height_of_isUnit_two`). Below the
 index the relative homology vanishes
-(`TauCeti.KleinBottle.isZero_singularHomology_sublevelPair_height_zero`).
+(`TauCeti.KleinBottle.isZero_singularHomology_zero_sublevelPair_height`).
 
 ## Main definitions
 
@@ -99,8 +98,8 @@ index the relative homology vanishes
   negative normal bundle of the maximum circle is not orientable.
 * `TauCeti.KleinBottle.nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two`:
   across the top level, `H₁({h ≤ b}, {h ≤ a}; R) ≅ R ⧸ 2R`.
-* `TauCeti.KleinBottle.not_nonempty_singularHomology_sublevelPair_height_linearEquiv_int`: with
-  integer coefficients this group is not `ℤ`.
+* `KleinBottle.not_nonempty_singularHomology_sublevelPair_height_linearEquiv_self_of_two_ne_zero`:
+  when `2 ≠ 0` in `R`, for instance over `ℤ`, this group is not `R`.
 
 ## References
 
@@ -284,6 +283,12 @@ section NegativeNormal
 
 variable (hn : (∞ : ℕ∞ω) ≠ 0)
 
+/-- The Morse index of the height function along the maximum circle is `1`. -/
+private theorem manifoldMorseIndex_height_criticalCircle_one (s : AddCircle ((1 : ℕ) : ℝ)) :
+    manifoldMorseIndex (𝓘(ℝ).prod (𝓡 1)) height (criticalCircle 1 (.inl rfl) s) = 1 := by
+  induction s using QuotientAddGroup.induction_on with | H t => ?_
+  rw [criticalCircle_coe, manifoldMorseIndex_height_mk_one]
+
 /-- **The negative normal space along the maximum circle is its whole normal line**, for every
 fibre metric `g`: the Morse index `1` along the circle is its codimension. -/
 @[simp]
@@ -297,8 +302,7 @@ theorem negativeNormalSpace_criticalCircle_one_eq_top
       hn (by simp) s,
     SmoothEmbedding.IsNondegenerateCriticalSubmanifold.finrank_negativeNormalSpace _
       (isNondegenerateCriticalSubmanifold_criticalCircle (.inl rfl))]
-  induction s using QuotientAddGroup.induction_on with | H t => ?_
-  rw [criticalCircle_coe, manifoldMorseIndex_height_mk_one]
+  exact manifoldMorseIndex_height_criticalCircle_one s
 
 /-- The vertical tangent vectors `d[t, ·]₁ w` at the points `[t, 1]` of the maximum circle depend
 continuously on `t`: on the cylinder they form the constant vector field `(0, w)` along
@@ -490,12 +494,6 @@ theorem height_criticalCircle {z : sphere (0 : ℂ) 1} (hz : z = 1 ∨ z = -1)
   induction s using QuotientAddGroup.induction_on with | H t => ?_
   rw [criticalCircle_coe, height_mk]
 
-/-- The Morse index of the height function along the maximum circle is `1`. -/
-private theorem manifoldMorseIndex_height_criticalCircle_one (s : AddCircle ((1 : ℕ) : ℝ)) :
-    manifoldMorseIndex (𝓘(ℝ).prod (𝓡 1)) height (criticalCircle 1 (.inl rfl) s) = 1 := by
-  induction s using QuotientAddGroup.induction_on with | H t => ?_
-  rw [criticalCircle_coe, manifoldMorseIndex_height_mk_one]
-
 /-- A band `[a, b]` of heights with `-1 < a` contains no critical point off the maximum circle. -/
 private theorem criticalPoints_inter_preimage_Icc_subset {a b : ℝ} (ha : -1 < a) :
     criticalPoints (𝓘(ℝ).prod (𝓡 1)) height ∩ height ⁻¹' Icc a b ⊆
@@ -560,7 +558,7 @@ theorem nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two {
 /-- **Below the index the top level contributes nothing.** For `-1 < a < 1 < b`, the relative
 homology `H₀({h ≤ b}, {h ≤ a})` of the height function on the Klein bottle vanishes, with
 coefficients in any abelian category with coproducts: the maximum circle has Morse index `1`. -/
-theorem isZero_singularHomology_sublevelPair_height_zero {a b : ℝ} (ha : a ∈ Ioo (-1) 1)
+theorem isZero_singularHomology_zero_sublevelPair_height {a b : ℝ} (ha : a ∈ Ioo (-1) 1)
     (hb : 1 < b) {C : Type*} [CategoryTheory.Category C] [CategoryTheory.Abelian C]
     [CategoryTheory.Limits.HasCoproducts.{0} C] (R : C) :
     CategoryTheory.Limits.IsZero
@@ -571,19 +569,24 @@ theorem isZero_singularHomology_sublevelPair_height_zero {a b : ℝ} (ha : a ∈
     (criticalPoints_inter_preimage_Icc_subset ha.1) manifoldMorseIndex_height_criticalCircle_one R
     zero_lt_one
 
-/-- **With integer coefficients the top level contributes `ℤ/2`, not `ℤ`.** For `-1 < a < 1 < b`,
-the group `H₁({h ≤ b}, {h ≤ a}; ℤ)` of the height function on the Klein bottle is not isomorphic to
-`ℤ = H₀(C₁; ℤ)`, the group that constant coefficients on the maximum circle `C₁` would give. -/
-theorem not_nonempty_singularHomology_sublevelPair_height_linearEquiv_int {a b : ℝ}
-    (ha : a ∈ Ioo (-1) 1) (hb : 1 < b) :
-    ¬Nonempty (((sublevelPair height (ha.2.trans hb).le).singularHomology (ModuleCat.of ℤ ℤ) 1 :
-      ModuleCat ℤ) ≃ₗ[ℤ] ℤ) := by
+/-- **Unless `2 = 0`, the top level does not contribute `R`.** For `-1 < a < 1 < b` and a
+commutative ring `R` in which `2 ≠ 0`, the group `H₁({h ≤ b}, {h ≤ a}; R)` of the height function on
+the Klein bottle is not isomorphic to `R = H₀(C₁; R)`, the group that constant coefficients on the
+maximum circle `C₁` would give. Over `ℤ` the top level contributes `ℤ/2`, not `ℤ`. -/
+theorem not_nonempty_singularHomology_sublevelPair_height_linearEquiv_self_of_two_ne_zero {a b : ℝ}
+    (ha : a ∈ Ioo (-1) 1) (hb : 1 < b) (R : Type) [CommRing R] (h2 : (2 : R) ≠ 0) :
+    ¬Nonempty (((sublevelPair height (ha.2.trans hb).le).singularHomology (ModuleCat.of R R) 1 :
+      ModuleCat R) ≃ₗ[R] R) := by
   rintro ⟨φ⟩
-  obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two ha hb ℤ
-  -- `ℤ` would be in bijection with the finite ring `ℤ ⧸ 2ℤ ≃ ZMod 2`.
-  have := Finite.of_equiv _
-    ((φ.symm ≪≫ₗ e).toEquiv.trans (Int.quotientSpanNatEquivZMod 2).toEquiv).symm
-  exact _root_.not_finite ℤ
+  obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two ha hb R
+  let ψ := φ.symm ≪≫ₗ e
+  obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective (ψ 1)
+  -- `ψ 2 = 2 • ψ 1` vanishes in `R ⧸ 2R`, so `2 = 0` in `R`.
+  have h : ψ ((2 : R) • 1) = 0 := by
+    rw [ψ.map_smul, ← hy, Algebra.smul_def, Ideal.Quotient.algebraMap_eq, ← map_mul,
+      Ideal.Quotient.eq_zero_iff_mem]
+    exact Ideal.mul_mem_right _ _ (Ideal.subset_span rfl)
+  exact h2 (by simpa using h)
 
 /-- **With `2` invertible the top level contributes nothing in degree one.** For `-1 < a < 1 < b`
 and a commutative ring `R` in which `2` is a unit, for instance `ℚ`, the group
