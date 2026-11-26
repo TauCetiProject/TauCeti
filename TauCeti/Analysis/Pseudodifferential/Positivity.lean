@@ -120,11 +120,7 @@ theorem isPositive_coefficient_principal_of_weight (a : ClassicalSymbol n H H m)
     rw [Complex.real_smul]
     exact mul_nonneg (Complex.zero_le_real.2 (Real.rpow_pos_of_pos ht _).le)
       (ha _ (hφc.mono hsupp) ((closure_mono hsupp).trans hφU))
-  have h := Complex.nonneg_iff.1 hwσ
-  simp only [Complex.real_smul, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
-    Complex.ofReal_im, zero_mul, sub_zero, add_zero] at h
-  exact Complex.nonneg_iff.2 ⟨nonneg_of_mul_nonneg_right h.1 hwx,
-    (mul_eq_zero.1 h.2.symm).resolve_left hwx.ne' ▸ rfl⟩
+  exact nonneg_of_smul_nonneg_of_pos_left hwσ hwx
 
 /-- **A positive operator has a positive principal symbol.** Let `a` be a classical symbol of
 order `m` with values in the endomorphisms of a complex Hilbert space `H`, and `U` an open set of

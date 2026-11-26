@@ -119,10 +119,9 @@ private theorem integral_inner_complexCutoffPullback_eq {x : M}
       rw [hext] at hz
       simp [OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he _ _ hz, f]
   rw [hext] at hint
-  -- `rw [hext]` reads the chart inverse through `e.toPartialEquiv`, which is `e.symm` up to
-  -- unfolding the coercions, so the last step is `exact` rather than a rewrite.
-  rw [hint, ← setIntegral_eq_integral_of_forall_compl_eq_zero h0]
-  exact setIntegral_congr_fun e.open_target.measurableSet hOp
+  simp only [OpenPartialHomeomorph.coe_toPartialEquiv_symm] at hint
+  rw [hint, ← setIntegral_eq_integral_of_forall_compl_eq_zero h0,
+    setIntegral_congr_fun e.open_target.measurableSet hOp]
 
 /-- **A positive operator has a nonnegative principal symbol.** Let `μ` be a positive continuous
 density measure on `M`, `U` an open set and `P` an operator on `C^∞(M, ℂ)`. If

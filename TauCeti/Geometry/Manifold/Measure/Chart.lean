@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Measures read in the preferred charts of a manifold
@@ -182,10 +183,7 @@ theorem integral_eq_setIntegral_smul_extChartAt_symm {G : Type*} [NormedAddCommG
   have hFF : EqOn F (fun z ↦ F (e.symm (e z))) e.source := fun z hz ↦ by
     simp only [e.left_inv hz]
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hF0, setIntegral_congr_fun hsrc hFF,
-    ← integral_map hae hFe, hw, integral_withDensity_eq_integral_toReal_smul₀
-      (f := fun y ↦ ENNReal.ofReal (w y))
-      ((ENNReal.continuous_ofReal.comp_continuousOn hwc).aemeasurable htgt)
-      (.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
-  exact setIntegral_congr_fun htgt fun y hy ↦ by rw [ENNReal.toReal_ofReal (hw0 y hy)]
+    ← integral_map hae hFe, hw, MeasureTheory.integral_withDensity_ofReal
+      (hwc.aemeasurable htgt) (ae_restrict_of_forall_mem htgt hw0)]
 
 end TauCeti
