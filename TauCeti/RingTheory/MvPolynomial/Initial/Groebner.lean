@@ -24,10 +24,12 @@ element. A positive integral weight realizing these comparisons identifies the w
 ideal with the original monomial-order leading-term ideal. This only represents the finite
 data needed for this ideal, not every comparison of the monomial order.
 
-Since an injective change of coefficients carries Gröbner bases to Gröbner bases, it also
-commutes with taking weight-initial ideals. Over a field `k`, for every ring homomorphism
-`φ : k →+* S`, for instance a field extension, the weight-initial ideal of the extension of an
-ideal `I` is the extension of the weight-initial ideal of `I` (`Ideal.weightInitialIdeal_map`).
+Since an injective change of coefficients carries a Gröbner basis whose nonzero members have
+unit leading coefficients to a Gröbner basis of the extended ideal, it commutes with taking
+weight-initial ideals whenever the weight-refined order admits such a basis. Over a field `k`,
+for every ring homomorphism `φ : k →+* S`, for instance a field extension, the weight-initial
+ideal of the extension of an ideal `I` is the extension of the weight-initial ideal of `I`
+(`Ideal.weightInitialIdeal_map`).
 
 ## References
 
@@ -174,6 +176,7 @@ namespace Ideal
 /-- **Weight-initial ideals under extension of a field of coefficients.** For a field `k` and a
 ring homomorphism `φ : k →+* S`, for instance a field extension, the weight-initial ideal of the
 extension of an ideal `I` of `k[σ]` is the extension of the weight-initial ideal of `I`. -/
+@[simp]
 theorem weightInitialIdeal_map {σ k S : Type*} [Field k] [CommRing S] (φ : k →+* S)
     (I : Ideal (MvPolynomial σ k)) (w : σ → ℕ) :
     (I.map (MvPolynomial.map φ)).weightInitialIdeal w =
