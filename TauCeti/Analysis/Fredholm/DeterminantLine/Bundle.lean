@@ -137,6 +137,19 @@ theorem chartCoord_def (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
   (rfl)
 
 omit [CompleteSpace 𝕜] [CompleteSpace E] in
+/-- The coordinates of two elements of determinant lines in a kernel chart lie on the same ray
+exactly when their readings in the kernel chart `ContinuousLinearMap.detLineChartEquiv` do. -/
+theorem sameRay_chartCoord_linearEquiv_symm_iff [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    {T₀ : {T : E →L[𝕜] F // T.IsFredholm}} {D₂ : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G}
+    (h : ((T.val.coprod D₂).prod q).IsInvertible) (h₀ : ((T₀.val.coprod D₂).prod q).IsInvertible)
+    (u : (T.val : E →ₗ[𝕜] F).detLine) (u₀ : (T₀.val : E →ₗ[𝕜] F).detLine) :
+    SameRay 𝕜 (chartCoord D₂ q h ((linearEquiv T).symm u))
+        (chartCoord D₂ q h₀ ((linearEquiv T₀).symm u₀)) ↔
+      SameRay 𝕜 (detLineChartEquiv T.val D₂ q h u) (detLineChartEquiv T₀.val D₂ q h₀ u₀) := by
+  simp only [chartCoord_def, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+  exact SameRay.sameRay_map_iff _
+
+omit [CompleteSpace 𝕜] [CompleteSpace E] in
 /-- A chart coordinate is a homeomorphism onto `𝕜`. -/
 theorem isInducing_chartCoord (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
     (h : ((T.val.coprod D₂).prod q).IsInvertible) : IsInducing (chartCoord D₂ q h) :=

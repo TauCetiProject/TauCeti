@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Bundle
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Transport
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
+public import TauCeti.Topology.VectorBundle.Orientation.ZeroSectionCompl
 import TauCeti.LinearAlgebra.Orientation.Basis
 
 /-!
@@ -30,24 +31,26 @@ This file proves that the two agree
 transport along coherent families, through which the orientation results on determinant lines
 are proved, is the monodromy of the orientation double cover of the determinant line bundle.
 
-The comparison rests on two facts relating the topology of the bundle to coherence.
+The comparison rests on two facts. First, **coherent families lift to the cover.** If `v` is
+coherent on `s` along a family `S` of Fredholm operators continuous on `s`, the orientations of the
+fibres given by `v x` (`TauCeti.FredholmDetLine.orientationOfNeZero`, the orientation of the
+one-vector basis `(v x)`) form a continuous map from `s` to the orientation double cover
+(`TauCeti.IsDetLineCoherentOn.continuous_mk_orientationOfNeZero`). The preferred trivialization of
+the bundle at each operator is a kernel chart
+(`TauCeti.FredholmDetLine.exists_trivializationAt_eq_trivialization`), in which the readings of
+`v x` lie on one ray nearby, so the orientation of `(v x)` read in it is locally constant. Second,
+coherent families exist along every such family `S` with any nonzero initial value
+(`TauCeti.exists_isDetLineCoherentOn_Icc`), so both transports can be computed along one of them.
 
-* **Coherent families lift to the cover.** If `v` is coherent on `s` along a family `S` of
-  Fredholm operators continuous on `s`, the orientations of the fibres given by `v x`
-  (`TauCeti.FredholmDetLine.orientationOfNeZero`, the orientation of the one-vector basis `(v x)`)
-  form a continuous map from `s` to the orientation double cover
-  (`TauCeti.IsDetLineCoherentOn.continuous_mk_orientationOfNeZero`). The preferred trivialization
-  of the bundle at each operator is a kernel chart
-  (`TauCeti.FredholmDetLine.exists_trivializationAt_eq_trivialization`), in which the readings of
-  `v x` lie on one ray nearby, so the orientation of `(v x)` read in it is locally constant.
-* **Continuous sections are coherent.** Conversely, a family `v` which is a continuous section of
-  the determinant line bundle over `s`, nonzero at every point of `s`, is coherent on `s`
-  (`TauCeti.isDetLineCoherentOn_of_continuousOn`): its readings in a kernel chart are continuous
-  and nonzero, hence keep their sign nearby. In particular orientation transport carries the
-  orientation of `v a` to that of `v b`
-  (`TauCeti.detLineOrientationTransport_rayOfNeZero_of_continuousOn`). Such a section also
-  determines a linear isomorphism between the end fibres, which orientation transport does not;
-  this compares the two.
+A companion fact runs in the converse direction: **continuous sections are coherent.** A family
+`v` which is a continuous section of the determinant line bundle over `s`, nonzero at every point of
+`s`, is coherent on `s` (`TauCeti.isDetLineCoherentOn_of_continuousOn`), since the orientations it
+gives form a continuous map to the orientation double cover
+(`TauCeti.zeroSectionComplOrientation`) and so stay in one sheet of a kernel chart nearby. In
+particular orientation transport carries the orientation of `v a` to that of `v b`
+(`TauCeti.detLineOrientationTransport_rayOfNeZero_of_continuousOn`). Such a section also
+determines a linear isomorphism between the end fibres, which orientation transport does not; this
+compares the two.
 
 ## Main definitions
 
@@ -106,6 +109,35 @@ theorem orientationOfNeZero_def {T : {T : E →L[ℝ] F // T.IsFredholm}}
         ((LinearEquiv.map_ne_zero_iff _).2 hu)).orientation :=
   (rfl)
 
+/-- The orientation given by a nonzero element `u` of a determinant line is the point of the
+orientation double cover given by `u` as a nonzero vector of the determinant line bundle. -/
+theorem zeroSectionComplOrientation_eq_mk_orientationOfNeZero
+    {T : {T : E →L[ℝ] F // T.IsFredholm}} (u : (T.val : E →ₗ[ℝ] F).detLine) (hu : u ≠ 0) :
+    zeroSectionComplOrientation (finrank_self ℝ)
+        ⟨⟨T, (linearEquiv T).symm u⟩,
+          mem_zeroSectionCompl.2 ((LinearEquiv.map_ne_zero_iff _).2 hu)⟩ =
+      ⟨T, orientationOfNeZero u hu⟩ := by
+  rw [zeroSectionComplOrientation_apply]
+  rfl
+
+omit [CompleteSpace E] [CompleteSpace F] in
+/-- The opposite element of a determinant line gives the opposite orientation. -/
+@[simp]
+theorem orientationOfNeZero_neg {T : {T : E →L[ℝ] F // T.IsFredholm}}
+    {u : (T.val : E →ₗ[ℝ] F).detLine} (hu : -u ≠ 0) :
+    orientationOfNeZero (-u) hu = -orientationOfNeZero u (neg_ne_zero (a := u).1 hu) := by
+  have h : (linearEquiv T).symm (-u) = -(linearEquiv T).symm u := (linearEquiv T).symm.map_neg u
+  simp only [orientationOfNeZero_def, h, orientation_basisSingleton_neg]
+
+omit [CompleteSpace E] [CompleteSpace F] in
+/-- A positive multiple of an element of a determinant line gives the same orientation. -/
+@[simp]
+theorem orientationOfNeZero_smul_of_pos {T : {T : E →L[ℝ] F // T.IsFredholm}}
+    {u : (T.val : E →ₗ[ℝ] F).detLine} {c : ℝ} (hc : 0 < c) (hu : c • u ≠ 0) :
+    orientationOfNeZero (c • u) hu = orientationOfNeZero u (right_ne_zero_of_smul hu) := by
+  have h : (linearEquiv T).symm (c • u) = c • (linearEquiv T).symm u := map_smul _ _ _
+  simp only [orientationOfNeZero_def, h, orientation_basisSingleton_smul_of_pos _ hc]
+
 omit [CompleteSpace E] [CompleteSpace F] in
 /-- Two nonzero elements of a determinant line give the same orientation of the fibre exactly when
 they lie on the same ray. -/
@@ -128,12 +160,10 @@ private theorem mapOrientation_orientationOfNeZero_eq_iff {T T₀ : {T : E →L[
     (trivialization D₂ q).mapOrientation (Fin 1) hT (orientationOfNeZero u hu) =
       (trivialization D₂ q).mapOrientation (Fin 1) hT₀ (orientationOfNeZero u₀ hu₀) ↔
       SameRay ℝ (detLineChartEquiv T.val D₂ q h u) (detLineChartEquiv T₀.val D₂ q h₀ u₀) := by
-  have hc : (trivialization D₂ q ⟨T, (linearEquiv T).symm u⟩).2 ≠ 0 := by
-    rw [trivialization_apply_mk D₂ q h]
-    exact (LinearEquiv.map_ne_zero_iff _).2 ((LinearEquiv.map_ne_zero_iff _).2 hu)
-  have hc₀ : (trivialization D₂ q ⟨T₀, (linearEquiv T₀).symm u₀⟩).2 ≠ 0 := by
-    rw [trivialization_apply_mk D₂ q h₀]
-    exact (LinearEquiv.map_ne_zero_iff _).2 ((LinearEquiv.map_ne_zero_iff _).2 hu₀)
+  have hc : (trivialization D₂ q ⟨T, (linearEquiv T).symm u⟩).2 ≠ 0 :=
+    ((trivialization D₂ q).snd_apply_ne_zero_iff ℝ hT).2 ((LinearEquiv.map_ne_zero_iff _).2 hu)
+  have hc₀ : (trivialization D₂ q ⟨T₀, (linearEquiv T₀).symm u₀⟩).2 ≠ 0 :=
+    ((trivialization D₂ q).snd_apply_ne_zero_iff ℝ hT₀).2 ((LinearEquiv.map_ne_zero_iff _).2 hu₀)
   rw [orientationOfNeZero_def, orientationOfNeZero_def,
     Trivialization.mapOrientation_orientation_basisSingleton _ hT finrank_eq_one
       (finrank_self ℝ) _ hc,
@@ -142,8 +172,7 @@ private theorem mapOrientation_orientationOfNeZero_eq_iff {T T₀ : {T : E →L[
     Basis.orientation_eq_iff_sameRay, FiniteDimensional.basisSingleton_apply,
     FiniteDimensional.basisSingleton_apply, trivialization_apply_mk D₂ q h,
     trivialization_apply_mk D₂ q h₀]
-  simp only [chartCoord_def, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
-  exact SameRay.sameRay_map_iff _
+  exact sameRay_chartCoord_linearEquiv_symm_iff h h₀ u u₀
 
 end FredholmDetLine
 
@@ -201,39 +230,30 @@ theorem isDetLineCoherentOn_of_continuousOn
     he ▸ mem_baseSet_trivializationAt ℝ (FredholmDetLine ℝ E F) (S x₀)
   have hi₀ : (((S x₀).val.coprod D₂).prod q).IsInvertible := by
     simpa using h₀
-  -- The coordinate `r x` of `v x` in the kernel chart is continuous at `x₀` and nonzero there.
-  set r : X → ℝ := fun x ↦ (trivialization D₂ q ⟨S x, (linearEquiv (S x)).symm (v x)⟩).2
-  have hr : ContinuousWithinAt r s x₀ :=
-    continuous_snd.continuousAt.comp_continuousWithinAt <|
-      ((trivialization D₂ q).continuousOn.continuousAt
-        ((trivialization D₂ q).open_source.mem_nhds
-          ((trivialization D₂ q).mem_source.2 h₀))).comp_continuousWithinAt (hv x₀ hx₀)
-  have hr₀ : r x₀ = chartCoord D₂ q hi₀ ((linearEquiv (S x₀)).symm (v x₀)) :=
-    congrArg Prod.snd (trivialization_apply_mk D₂ q hi₀ _)
-  have hr₀' : r x₀ ≠ 0 := by
-    rw [hr₀]
-    exact (LinearEquiv.map_ne_zero_iff _).2 ((LinearEquiv.map_ne_zero_iff _).2 (hv0 x₀ hx₀))
+  -- The orientations given by `v x` form a continuous map from `s` to the orientation double
+  -- cover, so near `x₀` they stay in the sheet of the kernel chart through the orientation given by
+  -- `v x₀`.
+  have hc : Continuous fun x : s ↦ (⟨S x, orientationOfNeZero (v x) (hv0 x x.property)⟩ :
+      VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) (Fin 1)) :=
+    ((zeroSectionComplOrientation (finrank_self ℝ)).continuous.comp
+      (hv.domRestrict.subtype_mk fun x ↦ mem_zeroSectionCompl.2
+        ((LinearEquiv.map_ne_zero_iff _).2 (hv0 x x.property)))).congr fun x ↦
+        zeroSectionComplOrientation_eq_mk_orientationOfNeZero _ _
+  have hev := (hc.continuousAt (x := ⟨x₀, hx₀⟩)).preimage_mem_nhds
+    ((VectorBundleOrientationCover.isOpen_sheet (by simp) (trivialization D₂ q)
+      ((trivialization D₂ q).mapOrientation (Fin 1) h₀
+        (orientationOfNeZero (v x₀) (hv0 x₀ hx₀)))).mem_nhds
+      (VectorBundleOrientationCover.mem_sheet_iff.2 ⟨h₀, rfl⟩))
   refine isDetLineCoherentWithinAt_of_eventually_sameRay
     (continuous_subtypeVal.continuousAt.comp_continuousWithinAt (hS x₀ hx₀)) (S x₀).property
     (hv0 x₀ hx₀) hi₀ ?_
-  -- Near `x₀` the operator stays in the base set of the chart, and the coordinate keeps its sign.
-  have hpos : ∀ᶠ x in 𝓝[s] x₀, 0 < r x / r x₀ :=
-    (hr.div_const (r x₀)).eventually (lt_mem_nhds (by simp [div_self hr₀']))
-  filter_upwards [hS x₀ hx₀ ((trivialization D₂ q).open_baseSet.mem_nhds h₀), hpos]
-    with x hx hxpos
+  rw [← map_nhds_subtypeVal (⟨x₀, hx₀⟩ : s), eventually_map]
+  filter_upwards [hev] with x hx
+  obtain ⟨hxe, hxo⟩ := VectorBundleOrientationCover.mem_sheet_iff.1 hx
   have hix : (((S x).val.coprod D₂).prod q).IsInvertible := by
-    simpa using hx
-  refine ⟨hix, ?_⟩
-  have hrx : r x = chartCoord D₂ q hix ((linearEquiv (S x)).symm (v x)) :=
-    congrArg Prod.snd (trivialization_apply_mk D₂ q hix _)
-  -- In the chart coordinate, the reading at `x` is a positive multiple of the reading at `x₀`.
-  have hsr : SameRay ℝ (chartCoord D₂ q hix ((linearEquiv (S x)).symm (v x)))
-      (chartCoord D₂ q hi₀ ((linearEquiv (S x₀)).symm (v x₀))) := by
-    rw [← hrx, ← hr₀, show r x = (r x / r x₀) • r x₀ by
-      rw [smul_eq_mul, div_mul_cancel₀ _ hr₀']]
-    exact SameRay.sameRay_pos_smul_left _ hxpos
-  simp only [chartCoord_def, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply] at hsr
-  exact (SameRay.sameRay_map_iff _).1 hsr
+    simpa using hxe
+  exact ⟨hix, (mapOrientation_orientationOfNeZero_eq_iff hix hi₀ hxe h₀ (hv0 x x.property)
+    (hv0 x₀ hx₀)).1 hxo⟩
 
 /-- **Transport along a continuous section.** If `v` is a continuous section of the determinant
 line bundle along a family `S` of Fredholm operators, continuous on `[[a, b]]` and nonzero at every
