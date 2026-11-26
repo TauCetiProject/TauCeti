@@ -43,16 +43,18 @@ minors of order `n`.
 The leading principal minors of `Z` are unchanged when `F` and `F'` are replaced by `F * U`
 and `F' * U'` for upper unitriangular `U` and `U'`, that is when each frame vector is changed by
 a combination of the earlier ones (`Matrix.det_submatrix_castLE_conjTranspose_mul_mul`, from
-`Matrix.det_submatrix_castLE_mul_mul`). If an
-isometry `s` and an invertible `s'` move the two frames in this way, the leading principal
-minors of the matrix of the products `⟨F_a, s x s'⁻¹ F'_b⟩` are those of the products
-`⟨F_a, x F'_b⟩` (`Matrix.det_submatrix_castLE_frame_mul_mul`); in particular so is `Gr`.
+`Matrix.det_submatrix_castLE_mul_mul`). If `s⁻¹` for an
+isometry `s`, and a matrix `y`, move the two frames in this way, the leading principal minors
+of the matrix of the products `⟨F_a, s x y F'_b⟩` are those of the products `⟨F_a, x F'_b⟩`
+(`Matrix.det_submatrix_castLE_frame_mul_mul`); in particular so is `Gr`. The case of interest
+is `y = s'⁻¹` for a second invertible `s'`.
 
 ## Main results
 
 * `Matrix.det_conjTranspose_fromCols_mul_mul_fromCols_of_frame`: the Gram determinant of two frames.
 * `Matrix.det_submatrix_castLE_frame_mul_mul`: invariance of the leading principal minors of the
-  products of two frames under isometries moving the frames by unitriangular matrices.
+  products of two frames under an isometry and a matrix moving the frames by unitriangular
+  matrices.
 
 ## Provenance and references
 
@@ -147,17 +149,17 @@ theorem det_submatrix_castLE_conjTranspose_mul_mul {ι : Type*} [Fintype ι] (A 
     det_submatrix_castLE_mul_mul hU.conjTranspose hU' h]
 
 /-- **Invariance of the leading principal minors of two frames.** Let `s` be an isometry of the
-form `A` and `s'` invertible, and suppose that `s⁻¹` and `s'⁻¹` move the frames `F` and `F'` by
-upper unitriangular matrices: `s⁻¹ F = F U` and `s'⁻¹ F' = F' U'`. Then for every `x` the
-leading principal minors of the matrix of the products `⟨F_a, s x s'⁻¹ F'_b⟩` are those of the
-products `⟨F_a, x F'_b⟩`. -/
+form `A` and `y` any matrix, and suppose that `s⁻¹` and `y` move the frames `F` and `F'` by
+upper unitriangular matrices: `s⁻¹ F = F U` and `y F' = F' U'`. Then for every `x` the
+leading principal minors of the matrix of the products `⟨F_a, s x y F'_b⟩` are those of the
+products `⟨F_a, x F'_b⟩`. The typical case is `y = s'⁻¹` for an invertible `s'`. -/
 theorem det_submatrix_castLE_frame_mul_mul {ι : Type*} [Fintype ι] [DecidableEq ι]
-    {A : Matrix ι ι R} {s s' : GL ι R} (hs : s ∈ unitaryGroupOf A) {F F' : Matrix ι (Fin n) R}
+    {A : Matrix ι ι R} {s : GL ι R} (hs : s ∈ unitaryGroupOf A) {y : Matrix ι ι R}
+    {F F' : Matrix ι (Fin n) R}
     {U U' : Matrix (Fin n) (Fin n) R} (hU : U.BlockUnitriangular id)
     (hU' : U'.BlockUnitriangular id) (hsF : (↑s⁻¹ : Matrix ι ι R) * F = F * U)
-    (hsF' : (↑s'⁻¹ : Matrix ι ι R) * F' = F' * U') (x : Matrix ι ι R) (h : l ≤ n) :
-    ((Fᴴ * A * ((s : Matrix ι ι R) * x * (↑s'⁻¹ : Matrix ι ι R) * F')).submatrix (castLE h)
-      (castLE h)).det =
+    (hy : y * F' = F' * U') (x : Matrix ι ι R) (h : l ≤ n) :
+    ((Fᴴ * A * ((s : Matrix ι ι R) * x * y * F')).submatrix (castLE h) (castLE h)).det =
       ((Fᴴ * A * (x * F')).submatrix (castLE h) (castLE h)).det := by
   -- `A s = (s⁻¹)ᴴ A`, since `s` preserves `A`.
   have h_form : A * s = (↑s⁻¹ : Matrix ι ι R)ᴴ * A := by
@@ -165,12 +167,11 @@ theorem det_submatrix_castLE_frame_mul_mul {ι : Type*} [Fintype ι] [DecidableE
     calc A * s = star (↑s⁻¹ : Matrix ι ι R) * A * (↑(s⁻¹ * s) : Matrix ι ι R) := by
           rw [Units.val_mul, ← Matrix.mul_assoc, hs']
       _ = _ := by rw [inv_mul_cancel, Units.val_one, Matrix.mul_one, star_eq_conjTranspose]
-  have h_eq : Fᴴ * A * ((s : Matrix ι ι R) * x * (↑s'⁻¹ : Matrix ι ι R) * F') =
-      (F * U)ᴴ * (A * x) * (F' * U') := by
-    calc _ = Fᴴ * (A * (s : Matrix ι ι R)) * x * ((↑s'⁻¹ : Matrix ι ι R) * F') := by
+  have h_eq : Fᴴ * A * ((s : Matrix ι ι R) * x * y * F') = (F * U)ᴴ * (A * x) * (F' * U') := by
+    calc _ = Fᴴ * (A * (s : Matrix ι ι R)) * x * (y * F') := by
           simp only [Matrix.mul_assoc]
       _ = _ := by
-        rw [h_form, hsF', ← hsF, conjTranspose_mul]
+        rw [h_form, hy, ← hsF, conjTranspose_mul]
         simp only [Matrix.mul_assoc]
   rw [h_eq, det_submatrix_castLE_conjTranspose_mul_mul _ _ _ hU hU' h]
   simp only [Matrix.mul_assoc]
