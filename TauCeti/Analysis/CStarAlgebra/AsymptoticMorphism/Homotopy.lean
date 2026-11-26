@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.AsymptoticMorphism.Basic
+import TauCeti.Analysis.Normed.Group.Bounded
 import TauCeti.Topology.ContinuousMap.Bounded.Normed
 import TauCeti.Topology.ContinuousMap.Star
 
@@ -26,8 +27,8 @@ the homotopy parameter `s`.
 * `TauCeti.AsymptoticMorphism.Homotopic.refl`, `TauCeti.AsymptoticMorphism.Homotopic.symm`,
   `TauCeti.AsymptoticMorphism.Homotopic.trans`, and `TauCeti.AsymptoticMorphism.homotopySetoid`:
   homotopy of asymptotic morphisms is an equivalence relation.
-* `TauCeti.AsymptoticMorphism.Equiv.homotopic`: asymptotically equivalent asymptotic morphisms are
-  homotopic via straight-line interpolation.
+* `TauCeti.AsymptoticMorphism.IsAsymptoticallyEquivalent.homotopic`: asymptotically equivalent
+  asymptotic morphisms are homotopic via straight-line interpolation.
 * `TauCeti.AsymptoticMorphism.Homotopic.compStarAlgHom` and
   `TauCeti.AsymptoticMorphism.Homotopic.postcompStarAlgHom`: functoriality of homotopy under
   pre- and post-composition with `⋆`-homomorphisms.
@@ -119,7 +120,8 @@ def homotopySetoid (A B : Type*) [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebr
 
 /-- Straight-line interpolation `(1 - s) • φ t a + s • ψ t a` shows that asymptotically equivalent
 asymptotic morphisms are homotopic. -/
-theorem Equiv.homotopic {φ ψ : AsymptoticMorphism A B} (h : φ.Equiv ψ) : φ.Homotopic ψ := by
+theorem IsAsymptoticallyEquivalent.homotopic {φ ψ : AsymptoticMorphism A B}
+    (h : φ.IsAsymptoticallyEquivalent ψ) : φ.Homotopic ψ := by
   let φc : AsymptoticMorphism A C(unitInterval, B) :=
     φ.postcompStarAlgHom (ContinuousMap.constNonUnitalStarAlgHom ℂ unitInterval B)
   let lineHom : B →+ C(unitInterval, B) :=
@@ -142,14 +144,8 @@ theorem Equiv.homotopic {φ ψ : AsymptoticMorphism A B} (h : φ.Equiv ψ) : φ.
     tendsto_zero_iff_norm_tendsto_zero.mpr <| squeeze_zero (fun _ ↦ norm_nonneg _)
       (fun t ↦ by simpa only [traj, add_sub_cancel_left] using hline_norm (ψ t a - φ t a))
       (tendsto_zero_iff_norm_tendsto_zero.mp (h.symm.tendsto a))
-  have htraj_bdd (a) : ∃ C, ∀ᶠ t in atTop, ‖traj a t‖ ≤ C := by
-    obtain ⟨C₀, hC₀⟩ := φc.exists_eventually_norm_le a
-    refine ⟨C₀ + 1, ?_⟩
-    filter_upwards [hC₀,
-      (tendsto_order.mp (tendsto_zero_iff_norm_tendsto_zero.mp (htraj_diff a))).2 1 zero_lt_one]
-      with t ht₀ htd
-    calc ‖traj a t‖ = ‖φc t a + (traj a t - φc t a)‖ := by rw [add_sub_cancel]
-      _ ≤ C₀ + 1 := (norm_add_le _ _).trans (add_le_add ht₀ htd.le)
+  have htraj_bdd (a) : ∃ C, ∀ᶠ t in atTop, ‖traj a t‖ ≤ C :=
+    (htraj_diff a).exists_eventually_norm_le_of_sub (φc.exists_eventually_norm_le a)
   let sec (a : A) : Ici (1 : ℝ) →ᵇ C(unitInterval, B) :=
     BoundedContinuousFunction.ofEventuallyBoundedIci (traj a) (htraj_cont a) (htraj_bdd a)
   have hsec (a) : AsymptoticAlgebra.mk (sec a) = φc.toAsymptoticHom a := by
@@ -170,8 +166,57 @@ theorem Homotopic.postcompStarAlgHom {φ ψ : AsymptoticMorphism A B} (h : φ.Ho
     (g : B →⋆ₙₐ[ℂ] C) : (φ.postcompStarAlgHom g).Homotopic (ψ.postcompStarAlgHom g) := by
   obtain ⟨H, h0, h1⟩ := h
   exact ⟨H.postcompStarAlgHom
-    (ContinuousMap.postcompNonUnitalStarAlgHom ℂ B C g (map_continuous g)),
+    (ContinuousMap.compNonUnitalStarAlgHom ℂ B C g (map_continuous g)),
     by rw [← h0]; ext; simp, by rw [← h1]; ext; simp⟩
+
+/-- Convex interpolation `(t, s) ↦ (1 - s) * t + s * r t` on `Set.Ici (1 : ℝ)`. -/
+private def reparamHomotopyMap (r : C(Ici (1 : ℝ), Ici (1 : ℝ))) :
+    C(Ici (1 : ℝ) × unitInterval, Ici (1 : ℝ)) where
+  toFun p := ⟨(1 - (p.2 : ℝ)) * (p.1 : ℝ) + (p.2 : ℝ) * (r p.1 : ℝ), by
+    rw [mem_Ici]
+    have hp1 : (1 : ℝ) ≤ p.1 := p.1.property
+    have hrp : (1 : ℝ) ≤ r p.1 := (r p.1).property
+    nlinarith [p.2.property.1, sub_nonneg.mpr p.2.property.2]⟩
+  continuous_toFun := by fun_prop
+
+@[simp]
+private theorem coe_reparamHomotopyMap (r : C(Ici (1 : ℝ), Ici (1 : ℝ)))
+    (p : Ici (1 : ℝ) × unitInterval) :
+    (reparamHomotopyMap r p : ℝ) = (1 - (p.2 : ℝ)) * (p.1 : ℝ) + (p.2 : ℝ) * (r p.1 : ℝ) := (rfl)
+
+/-- Curried path `t ↦ (s ↦ g (reparamHomotopyMap r (t, s)))` in `C(unitInterval, B)` attached to a
+continuous map `g : Set.Ici (1 : ℝ) → B`. -/
+private def reparamCurve (r : C(Ici (1 : ℝ), Ici (1 : ℝ))) (g : Ici (1 : ℝ) → B)
+    (hg : Continuous g) : C(Ici (1 : ℝ), C(unitInterval, B)) :=
+  ContinuousMap.curry
+    ⟨fun p ↦ g (reparamHomotopyMap r p), hg.comp (reparamHomotopyMap r).continuous⟩
+
+@[simp]
+private theorem reparamCurve_apply (r : C(Ici (1 : ℝ), Ici (1 : ℝ))) {g : Ici (1 : ℝ) → B}
+    (hg : Continuous g) (t : Ici (1 : ℝ)) (s : unitInterval) :
+    reparamCurve r g hg t s = g (reparamHomotopyMap r (t, s)) := by
+  rw [reparamCurve, ContinuousMap.curry_apply, ContinuousMap.coe_mk]
+
+/-- If `g : Set.Ici 1 → B` is continuous and tends to `0` at `∞`, and `r : C(Set.Ici 1, Set.Ici 1)`
+tends to `∞`, then `reparamCurve r g hg` tends to `0` uniformly on `unitInterval` as `t → ∞`. -/
+private theorem tendsto_reparamCurve_zero {r : C(Ici (1 : ℝ), Ici (1 : ℝ))}
+    (hr : Tendsto r atTop atTop) {g : Ici (1 : ℝ) → B} (hg_cont : Continuous g)
+    (hg : Tendsto g atTop (𝓝 0)) :
+    Tendsto (fun t ↦ reparamCurve r g hg_cont t) atTop (𝓝 0) := by
+  refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
+  obtain ⟨T, hT⟩ := eventually_atTop.mp ((Metric.tendsto_nhds.mp hg) (ε / 2) (half_pos hε))
+  obtain ⟨T₁, hT₁⟩ := eventually_atTop.mp (hr.eventually_ge_atTop T)
+  refine eventually_atTop.mpr ⟨max T T₁, fun t ht ↦ ?_⟩
+  have htT : (T : ℝ) ≤ (t : ℝ) := (le_max_left T T₁).trans ht
+  have hrtT : (T : ℝ) ≤ (r t : ℝ) := hT₁ t ((le_max_right T T₁).trans ht)
+  rw [dist_zero_right]
+  refine lt_of_le_of_lt
+    ((ContinuousMap.norm_le _ (half_pos hε).le).mpr fun s ↦ ?_) (half_lt_self hε)
+  have hR_ge : T ≤ reparamHomotopyMap r (t, s) := by
+    rw [← Subtype.coe_le_coe, coe_reparamHomotopyMap]
+    nlinarith [s.property.1, sub_nonneg.mpr s.property.2]
+  rw [reparamCurve_apply]
+  exact (dist_zero_right (g (reparamHomotopyMap r (t, s))) ▸ hT _ hR_ge).le
 
 /-- **Reparameterization invariance** (Blackadar, Proposition 25.1.5): for any continuous map
 `r : C(Set.Ici 1, Set.Ici 1)` with `Tendsto r atTop atTop`, `φ` is homotopic to `φ.reparam r hr`.
@@ -179,58 +224,33 @@ theorem Homotopic.postcompStarAlgHom {φ ψ : AsymptoticMorphism A B} (h : φ.Ho
 theorem homotopic_reparam (φ : AsymptoticMorphism A B)
     (r : C(Ici (1 : ℝ), Ici (1 : ℝ))) (hr : Tendsto r atTop atTop) :
     φ.Homotopic (φ.reparam r hr) := by
-  let R : C(Ici (1 : ℝ) × unitInterval, Ici (1 : ℝ)) :=
-    { toFun := fun p ↦ ⟨(1 - (p.2 : ℝ)) * (p.1 : ℝ) + (p.2 : ℝ) * (r p.1 : ℝ), by
-        rw [mem_Ici]
-        have hp1 : (1 : ℝ) ≤ p.1 := p.1.property
-        have hrp : (1 : ℝ) ≤ r p.1 := (r p.1).property
-        nlinarith [p.2.property.1, sub_nonneg.mpr p.2.property.2]⟩
-      continuous_toFun := by fun_prop }
-  have hpull_zero {g : Ici (1 : ℝ) → B} (hg_cont : Continuous g) (hg : Tendsto g atTop (𝓝 0)) :
-      Tendsto (fun t : Ici (1 : ℝ) ↦
-        (⟨fun s : unitInterval ↦ g (R (t, s)),
-          hg_cont.comp (R.continuous.comp (Continuous.prodMk_right t))⟩ : C(unitInterval, B)))
-        atTop (𝓝 0) := by
-    refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
-    obtain ⟨T, hT⟩ := eventually_atTop.mp ((Metric.tendsto_nhds.mp hg) (ε / 2) (half_pos hε))
-    obtain ⟨T₁, hT₁⟩ := eventually_atTop.mp (hr.eventually_ge_atTop T)
-    refine eventually_atTop.mpr ⟨max T T₁, fun t ht ↦ ?_⟩
-    have htT : (T : ℝ) ≤ (t : ℝ) := (le_max_left T T₁).trans ht
-    have hrtT : (T : ℝ) ≤ (r t : ℝ) := hT₁ t ((le_max_right T T₁).trans ht)
-    rw [dist_zero_right]
-    refine lt_of_le_of_lt
-      ((ContinuousMap.norm_le _ (half_pos hε).le).mpr fun s ↦ ?_) (half_lt_self hε)
-    have hR_ge : T ≤ R (t, s) := by
-      rw [← Subtype.coe_le_coe]; simp only [R, ContinuousMap.coe_mk]
-      nlinarith [s.property.1, sub_nonneg.mpr s.property.2]
-    exact (dist_zero_right (g (R (t, s))) ▸ hT (R (t, s)) hR_ge).le
   let H : AsymptoticMorphism A C(unitInterval, B) :=
-    { toFun := fun t a ↦
-        ContinuousMap.curry ⟨fun p ↦ φ (R p) a, (φ.continuous_apply a).comp R.continuous⟩ t
+    { toFun := fun t a ↦ reparamCurve r (fun u ↦ φ u a) (φ.continuous_apply a) t
       continuous_apply' := fun a ↦
-        (ContinuousMap.curry
-          ⟨fun p ↦ φ (R p) a, (φ.continuous_apply a).comp R.continuous⟩).continuous
+        (reparamCurve r (fun u ↦ φ u a) (φ.continuous_apply a)).continuous
       map_add_tendsto' := fun a b ↦
-        (hpull_zero ((φ.continuous_apply (a + b)).sub
+        (tendsto_reparamCurve_zero hr ((φ.continuous_apply (a + b)).sub
           ((φ.continuous_apply a).add (φ.continuous_apply b)))
-          (φ.map_add_tendsto a b)).congr fun _ ↦ by ext; rfl
+          (φ.map_add_tendsto a b)).congr fun _ ↦ by ext; simp
       map_smul_tendsto' := fun c a ↦
-        (hpull_zero ((φ.continuous_apply (c • a)).sub
+        (tendsto_reparamCurve_zero hr ((φ.continuous_apply (c • a)).sub
           (continuous_const.smul (φ.continuous_apply a)))
-          (φ.map_smul_tendsto c a)).congr fun _ ↦ by ext; rfl
+          (φ.map_smul_tendsto c a)).congr fun _ ↦ by ext; simp
       map_mul_tendsto' := fun a b ↦
-        (hpull_zero ((φ.continuous_apply (a * b)).sub
+        (tendsto_reparamCurve_zero hr ((φ.continuous_apply (a * b)).sub
           ((φ.continuous_apply a).mul (φ.continuous_apply b)))
-          (φ.map_mul_tendsto a b)).congr fun _ ↦ by ext; rfl
+          (φ.map_mul_tendsto a b)).congr fun _ ↦ by ext; simp
       map_star_tendsto' := fun a ↦
-        (hpull_zero ((φ.continuous_apply (star a)).sub (φ.continuous_apply a).star)
-          (φ.map_star_tendsto a)).congr fun _ ↦ by ext; rfl }
+        (tendsto_reparamCurve_zero hr ((φ.continuous_apply (star a)).sub
+          (φ.continuous_apply a).star)
+          (φ.map_star_tendsto a)).congr fun _ ↦ by ext; simp }
   refine ⟨H, ?_, ?_⟩
-  · ext t a; simp only [evalAt_apply, H, ContinuousMap.curry_apply, ContinuousMap.coe_mk]
-    congr 1; ext; simp [R]
   · ext t a
-    simp only [evalAt_apply, reparam_apply, H, ContinuousMap.curry_apply, ContinuousMap.coe_mk]
-    congr 1; ext; simp [R]
+    simp only [evalAt_apply, H, reparamCurve_apply]
+    congr 1; ext; simp
+  · ext t a
+    simp only [evalAt_apply, reparam_apply, H, reparamCurve_apply]
+    congr 1; ext; simp
 
 end AsymptoticMorphism
 
@@ -256,7 +276,8 @@ theorem mk_surjective : Function.Surjective (mk (A := A) (B := B)) := Quotient.m
 @[simp]
 theorem mk_eq_mk_iff {φ ψ : AsymptoticMorphism A B} : mk φ = mk ψ ↔ φ.Homotopic ψ := Quotient.eq
 
-theorem mk_eq_of_equiv {φ ψ : AsymptoticMorphism A B} (h : φ.Equiv ψ) : mk φ = mk ψ :=
+theorem mk_eq_of_isAsymptoticallyEquivalent {φ ψ : AsymptoticMorphism A B}
+    (h : φ.IsAsymptoticallyEquivalent ψ) : mk φ = mk ψ :=
   mk_eq_mk_iff.mpr h.homotopic
 
 @[simp]

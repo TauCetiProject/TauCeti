@@ -25,7 +25,7 @@ homomorphism on `C(unitInterval, A)`.
 * `ContinuousMap.constNonUnitalStarAlgHom`: constant-map inclusion `A →⋆ₙₐ[R] C(X, A)`.
 * `ContinuousMap.compNonUnitalStarAlgHom'`: precomposition `C(Y, A) →⋆ₙₐ[R] C(X, A)` along a
   continuous map `f : C(X, Y)`.
-* `ContinuousMap.postcompNonUnitalStarAlgHom`: postcomposition `C(X, A) →⋆ₙₐ[R] C(X, B)` along a
+* `ContinuousMap.compNonUnitalStarAlgHom`: postcomposition `C(X, A) →⋆ₙₐ[R] C(X, B)` along a
   continuous nonunital star-algebra homomorphism `g : A →⋆ₙₐ[R] B`.
 * `ContinuousMap.pathConcatSubalgebra` and `ContinuousMap.pathConcatNonUnitalStarAlgHom`: the
   nonunital `⋆`-subalgebra `{(f, g) ∈ C(I, A) × C(I, A) | f 1 = g 0}` (closed when `A` is `T₂`)
@@ -76,7 +76,7 @@ theorem compNonUnitalStarAlgHom'_apply (f : C(X, Y)) (g : C(Y, A)) (x : X) :
 
 /-- Postcomposition `C(X, A) →⋆ₙₐ[R] C(X, B)` along a continuous nonunital `⋆`-algebra homomorphism.
 -/
-def postcompNonUnitalStarAlgHom (g : A →⋆ₙₐ[R] B) (hg : Continuous g) :
+def compNonUnitalStarAlgHom (g : A →⋆ₙₐ[R] B) (hg : Continuous g) :
     C(X, A) →⋆ₙₐ[R] C(X, B) where
   toFun f := ⟨g ∘ f, hg.comp f.continuous⟩
   map_smul' c f := by ext x; exact map_smul g c (f x)
@@ -86,8 +86,8 @@ def postcompNonUnitalStarAlgHom (g : A →⋆ₙₐ[R] B) (hg : Continuous g) :
   map_star' f := by ext x; exact map_star g (f x)
 
 @[simp]
-theorem postcompNonUnitalStarAlgHom_apply (g : A →⋆ₙₐ[R] B) (hg : Continuous g)
-    (f : C(X, A)) (x : X) : postcompNonUnitalStarAlgHom R A B g hg f x = g (f x) := (rfl)
+theorem compNonUnitalStarAlgHom_apply (g : A →⋆ₙₐ[R] B) (hg : Continuous g)
+    (f : C(X, A)) (x : X) : compNonUnitalStarAlgHom R A B g hg f x = g (f x) := (rfl)
 
 end NonUnitalStarAlgHom
 
@@ -140,20 +140,25 @@ noncomputable def pathConcatNonUnitalStarAlgHom :
     ((Path.mk p.val.1 rfl rfl).trans
       (Path.mk p.val.2 (mem_pathConcatSubalgebra.mp p.property).symm rfl)).toContinuousMap
   map_smul' _ _ := by
-    ext; simp only [smul_apply, toFun_eq_coe, Path.coe_toContinuousMap, Path.trans_apply]
-    split_ifs <;> rfl
+    ext; simp only [smul_apply, toFun_eq_coe, Path.coe_toContinuousMap, Path.trans_apply,
+      Path.coe_mk']
+    split_ifs <;> simp
   map_zero' := by
-    ext; simp only [zero_apply, toFun_eq_coe, Path.coe_toContinuousMap, Path.trans_apply]
-    split_ifs <;> rfl
+    ext; simp only [zero_apply, toFun_eq_coe, Path.coe_toContinuousMap, Path.trans_apply,
+      Path.coe_mk']
+    split_ifs <;> simp
   map_add' _ _ := by
-    ext; simp only [add_apply, toFun_eq_coe, Path.coe_toContinuousMap, Path.trans_apply]
-    split_ifs <;> rfl
+    ext; simp only [add_apply, toFun_eq_coe, Path.coe_toContinuousMap, Path.trans_apply,
+      Path.coe_mk']
+    split_ifs <;> simp
   map_mul' _ _ := by
-    ext; simp only [mul_apply, toFun_eq_coe, Path.coe_toContinuousMap, Path.trans_apply]
-    split_ifs <;> rfl
+    ext; simp only [mul_apply, toFun_eq_coe, Path.coe_toContinuousMap, Path.trans_apply,
+      Path.coe_mk']
+    split_ifs <;> simp
   map_star' _ := by
-    ext; simp only [star_apply, toFun_eq_coe, Path.coe_toContinuousMap, Path.trans_apply]
-    split_ifs <;> rfl
+    ext; simp only [star_apply, toFun_eq_coe, Path.coe_toContinuousMap, Path.trans_apply,
+      Path.coe_mk']
+    split_ifs <;> simp
 
 /-- Pointwise evaluation of `pathConcatNonUnitalStarAlgHom` is given by `Path.trans`. -/
 @[simp]

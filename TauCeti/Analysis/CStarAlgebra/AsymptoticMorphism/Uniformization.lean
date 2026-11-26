@@ -24,10 +24,11 @@ asymptotic contractivity and compact-uniform algebra defect bounds (Blackadar, �
 
 ## Main definitions and results
 
-* `TauCeti.AsymptoticAlgebra.exists_continuous_nonlinearRightInverse_mkCLM`: the quotient map
-  `(Set.Ici (1 : ℝ) →ᵇ B) →L[ℂ] AsymptoticAlgebra B` admits a continuous Bartle–Graves section.
-* `TauCeti.AsymptoticMorphism.exists_equiv_continuous_toBounded`: replacement of `φ` by an
-  asymptotically equivalent `ψ` with continuous `ψ.toBounded` and `‖ψ t a‖ ≤ C * ‖a‖`.
+* `TauCeti.AsymptoticAlgebra.exists_continuous_positivelyHomogeneous_nonlinearRightInverse_mkCLM`:
+  the quotient map `(Set.Ici (1 : ℝ) →ᵇ B) →L[ℂ] AsymptoticAlgebra B` admits a continuous
+  Bartle–Graves section.
+* `TauCeti.AsymptoticMorphism.exists_isAsymptoticallyEquivalent_continuous_toBounded`: replacement
+  of `φ` by an asymptotically equivalent `ψ` with continuous `ψ.toBounded` and `‖ψ t a‖ ≤ C * ‖a‖`.
 * `TauCeti.AsymptoticMorphism.eventually_compact_norm_lt_add`,
   `TauCeti.AsymptoticMorphism.eventually_compact_map_add_lt`,
   `TauCeti.AsymptoticMorphism.eventually_compact_map_smul_lt`,
@@ -58,11 +59,12 @@ variable (B : Type*) [NonUnitalCStarAlgebra B]
 /-- The quotient map `mkCLM B : (Set.Ici (1 : ℝ) →ᵇ B) →L[ℂ] AsymptoticAlgebra B` admits a
 continuous, positively `ℝ`-homogeneous, linearly norm-bounded right inverse by the Bartle–Graves
 theorem. -/
-theorem exists_continuous_nonlinearRightInverse_mkCLM :
+theorem exists_continuous_positivelyHomogeneous_nonlinearRightInverse_mkCLM :
     ∃ s : (mkCLM B).NonlinearRightInverse,
       0 < s.nnNorm ∧ Continuous s ∧ ∀ ⦃c : ℝ⦄, 0 ≤ c → ∀ x, s (c • x) = c • s x := by
   obtain ⟨s, hpos, hcont, hhom⟩ :=
-    (mkCLM B).exists_continuous_nonlinearRightInverse_of_surjective (mkCLM_surjective B)
+    (mkCLM B).exists_continuous_positivelyHomogeneous_nonlinearRightInverse_of_surjective
+      (mkCLM_surjective B)
   refine ⟨s, hpos, hcont, fun {c} hc x ↦ ?_⟩
   simpa only [Algebra.algebraMap_eq_smul_one, Complex.real_smul, mul_one,
     Complex.coe_smul] using hhom hc x
@@ -79,24 +81,25 @@ variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
 asymptotic morphism `ψ` whose bounded-trajectory map `ψ.toBounded : A → (Set.Ici (1 : ℝ) →ᵇ B)` is
 continuous, positively `ℝ`-homogeneous, and satisfies a uniform linear norm bound
 `‖ψ t a‖ ≤ C * ‖a‖` for all `t ≥ 1` and `a ∈ A` with `0 < C`. -/
-theorem exists_equiv_continuous_toBounded (φ : AsymptoticMorphism A B) :
-    ∃ ψ : AsymptoticMorphism A B, ψ.Equiv φ ∧ Continuous ψ.toBounded ∧
+theorem exists_isAsymptoticallyEquivalent_continuous_toBounded (φ : AsymptoticMorphism A B) :
+    ∃ ψ : AsymptoticMorphism A B, ψ.IsAsymptoticallyEquivalent φ ∧ Continuous ψ.toBounded ∧
       (∀ ⦃c : ℝ⦄, 0 ≤ c → ∀ t a, ψ t (c • a) = c • ψ t a) ∧
       ∃ C : ℝ, 0 < C ∧ ∀ t a, ‖ψ t a‖ ≤ C * ‖a‖ := by
   obtain ⟨s, hs_pos, hs_cont, hs_hom⟩ :=
-    AsymptoticAlgebra.exists_continuous_nonlinearRightInverse_mkCLM B
+    AsymptoticAlgebra.exists_continuous_positivelyHomogeneous_nonlinearRightInverse_mkCLM B
   let sec : A → (Ici (1 : ℝ) →ᵇ B) := fun a ↦ s (φ.toAsymptoticHom a)
   have hsec_mk (a : A) : AsymptoticAlgebra.mk (sec a) = φ.toAsymptoticHom a := by
     rw [← AsymptoticAlgebra.mkCLM_apply]; exact s.right_inv (φ.toAsymptoticHom a)
   let ψ : AsymptoticMorphism A B := ofAsymptoticHomSection sec hsec_mk
-  refine ⟨ψ, equiv_iff_toAsymptoticHom_eq.mpr (toAsymptoticHom_ofAsymptoticHomSection sec hsec_mk),
+  refine ⟨ψ, isAsymptoticallyEquivalent_iff_toAsymptoticHom_eq.mpr
+      (toAsymptoticHom_ofAsymptoticHomSection sec hsec_mk),
     ?_, ?_, (s.nnNorm : ℝ), NNReal.coe_pos.mpr hs_pos, fun t a ↦ ?_⟩
   · rw [funext (toBounded_ofAsymptoticHomSection sec hsec_mk)]
     exact hs_cont.comp (map_continuous φ.toAsymptoticHom)
   · intro c hc t a
     have hsmul_hom : φ.toAsymptoticHom (c • a) = c • φ.toAsymptoticHom a := by
       rw [← Complex.coe_smul c a, map_smul, Complex.coe_smul]
-    simp only [ψ, ofAsymptoticHomSection_apply, sec, hsmul_hom, hs_hom hc]; rfl
+    simp only [ψ, ofAsymptoticHomSection_apply, sec, hsmul_hom, hs_hom hc, smul_apply]
   · calc ‖ψ t a‖ = ‖sec a t‖ := by simp [ψ]
       _ ≤ ‖sec a‖ := (sec a).norm_coe_le_norm t
       _ ≤ (s.nnNorm : ℝ) * ‖φ.toAsymptoticHom a‖ := s.bound' (φ.toAsymptoticHom a)
@@ -202,8 +205,8 @@ theorem continuous_toBounded_toAsymptoticMorphism (f : A →⋆ₙₐ[ℂ] B) :
     Continuous f.toAsymptoticMorphism.toBounded := by
   let constHom : B →+ (Ici (1 : ℝ) →ᵇ B) :=
     { toFun := BoundedContinuousFunction.const (Ici (1 : ℝ))
-      map_zero' := by ext; rfl
-      map_add' := fun _ _ ↦ by ext; rfl }
+      map_zero' := by ext; simp
+      map_add' := fun _ _ ↦ by ext; simp }
   have hconst_cont : Continuous constHom :=
     AddMonoidHomClass.continuous_of_bound constHom 1 fun b ↦ by
       simpa only [constHom, AddMonoidHom.coe_mk, ZeroHom.coe_mk, one_mul] using

@@ -101,7 +101,7 @@ theorem mk_tendstoZeroIdeal_eq_iff {R : Type*} [NonUnitalSeminormedRing R] {l : 
     TwoSidedIdeal.Quotient.mk (tendstoZeroIdeal R l) f =
       TwoSidedIdeal.Quotient.mk (tendstoZeroIdeal R l) g ↔
       Tendsto (fun x ↦ f x - g x) l (𝓝 0) := by
-  rw [← sub_eq_zero, ← map_sub, mk_tendstoZeroIdeal_eq_zero_iff]; rfl
+  rw [← sub_eq_zero, ← map_sub, mk_tendstoZeroIdeal_eq_zero_iff, FunLike.coe_sub, Pi.sub_def]
 
 end GeneralIdeal
 

@@ -38,13 +38,13 @@ sphere, and extends radially via `TauCeti.sphereCone` (`s(y) = ‖y‖ • σ(�
 * `ContinuousLinearMap.lowerHemicontinuous_sphere_preimage_inter_closedBall`: for `R > C` above a
   linear preimage bound `C > 0` of `q : E →L[ℝ] F`, the truncated fibre correspondence
   `y ↦ q ⁻¹' {y} ∩ closedBall 0 R` on `Metric.sphere (0 : F) 1` is lower hemicontinuous.
-* `ContinuousLinearMap.exists_continuous_nonlinearRightInverse_of_bound`: from a linear preimage
-  bound `C > 0` and any `R > C` (requiring completeness only of the domain `E`), constructs a
-  continuous, positively homogeneous `s : q.NonlinearRightInverse` with `(s.nnNorm : ℝ) = R`.
-* `ContinuousLinearMap.exists_continuous_positivelyHomogeneous_nonlinearRightInverse`: the
-  Bartle–Graves theorem for surjective `q : E →L[ℝ] F` between real Banach spaces.
-* `ContinuousLinearMap.exists_continuous_nonlinearRightInverse_of_surjective`: the `[RCLike 𝕜]`
-  form (covering `ℝ` and `ℂ`), producing a continuous positively `ℝ`-homogeneous
+* `ContinuousLinearMap.exists_continuous_positivelyHomogeneous_nonlinearRightInverse_of_bound`: from
+  a linear preimage bound `C > 0` and any `R > C` (requiring completeness only of the domain `E`),
+  constructs a continuous, positively homogeneous `s : q.NonlinearRightInverse` with
+  `(s.nnNorm : ℝ) = R`.
+* `ContinuousLinearMap.exists_continuous_positivelyHomogeneous_nonlinearRightInverse_of_surjective`:
+  the Bartle–Graves theorem for surjective `q : E →L[𝕜] F` between `[RCLike 𝕜]` Banach spaces
+  (covering `ℝ` and `ℂ`), producing a continuous positively `ℝ`-homogeneous
   `q.NonlinearRightInverse`.
 
 ## References
@@ -122,8 +122,9 @@ theorem lowerHemicontinuous_sphere_preimage_inter_closedBall (q : E →L[ℝ] F)
 `q : E →L[ℝ] F` admits preimages of norm at most `C * ‖y‖` (`C > 0`), then for every `R > C` there
 exists a continuous, positively homogeneous `s : q.NonlinearRightInverse` with `(s.nnNorm : ℝ) = R`.
 Completeness of `F` is not needed once the linear preimage bound `C` is given. -/
-theorem exists_continuous_nonlinearRightInverse_of_bound [CompleteSpace E] (q : E →L[ℝ] F)
-    {C R : ℝ} (hC : 0 < C) (hCR : C < R) (hpre : ∀ y : F, ∃ x : E, q x = y ∧ ‖x‖ ≤ C * ‖y‖) :
+theorem exists_continuous_positivelyHomogeneous_nonlinearRightInverse_of_bound [CompleteSpace E]
+    (q : E →L[ℝ] F) {C R : ℝ} (hC : 0 < C) (hCR : C < R)
+    (hpre : ∀ y : F, ∃ x : E, q x = y ∧ ‖x‖ ≤ C * ‖y‖) :
     ∃ s : q.NonlinearRightInverse,
       (s.nnNorm : ℝ) = R ∧ Continuous s ∧ ∀ ⦃c : ℝ⦄, 0 ≤ c → ∀ y, s (c • y) = c • s y := by
   have hR : 0 < R := hC.trans hCR
@@ -151,18 +152,6 @@ theorem exists_continuous_nonlinearRightInverse_of_bound [CompleteSpace E] (q : 
     rfl, TauCeti.continuous_sphereCone hσ_cont hσ_bound,
     fun {_} hc y ↦ TauCeti.sphereCone_smul hc y⟩
 
-/-- **The Bartle–Graves continuous selection theorem (real Banach spaces).** Every surjective
-continuous linear map `q : E →L[ℝ] F` between real Banach spaces admits a continuous, positively
-homogeneous `NonlinearRightInverse` with positive norm bound. -/
-theorem exists_continuous_positivelyHomogeneous_nonlinearRightInverse
-    [CompleteSpace E] [CompleteSpace F] (q : E →L[ℝ] F) (hq : Surjective q) :
-    ∃ s : q.NonlinearRightInverse,
-      0 < s.nnNorm ∧ Continuous s ∧ ∀ ⦃c : ℝ⦄, 0 ≤ c → ∀ y, s (c • y) = c • s y := by
-  obtain ⟨C, hC, hpre⟩ := q.exists_preimage_norm_le hq
-  obtain ⟨s, hsR, hscont, hshom⟩ :=
-    q.exists_continuous_nonlinearRightInverse_of_bound hC (lt_add_one C) hpre
-  exact ⟨s, NNReal.coe_pos.mp (hsR.symm ▸ by linarith), hscont, hshom⟩
-
 end RealBanach
 
 section RCLike
@@ -174,7 +163,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 /-- **The Bartle–Graves continuous selection theorem (`RCLike` Banach spaces).** Every surjective
 continuous `𝕜`-linear map `q : E →L[𝕜] F` between Banach spaces over `𝕜` (`ℝ` or `ℂ`) admits a
 continuous, positively `ℝ`-homogeneous `NonlinearRightInverse` with positive norm bound. -/
-theorem exists_continuous_nonlinearRightInverse_of_surjective
+theorem exists_continuous_positivelyHomogeneous_nonlinearRightInverse_of_surjective
     (q : E →L[𝕜] F) (hq : Surjective q) :
     ∃ s : q.NonlinearRightInverse,
       0 < s.nnNorm ∧ Continuous s ∧
@@ -183,10 +172,13 @@ theorem exists_continuous_nonlinearRightInverse_of_surjective
   have _ : IsScalarTower ℝ 𝕜 E := IsScalarTower.restrictScalars ℝ 𝕜 E
   let _ : NormedSpace ℝ F := NormedSpace.restrictScalars ℝ 𝕜 F
   have _ : IsScalarTower ℝ 𝕜 F := IsScalarTower.restrictScalars ℝ 𝕜 F
-  obtain ⟨s, hs_pos, hs_cont, hs_hom⟩ :=
-    (q.restrictScalars ℝ).exists_continuous_positivelyHomogeneous_nonlinearRightInverse hq
+  obtain ⟨C, hC, hpre⟩ := (q.restrictScalars ℝ).exists_preimage_norm_le hq
+  obtain ⟨s, hsR, hs_cont, hs_hom⟩ :=
+    (q.restrictScalars ℝ).exists_continuous_positivelyHomogeneous_nonlinearRightInverse_of_bound
+      hC (lt_add_one C) hpre
   exact ⟨{ toFun := s, nnNorm := s.nnNorm, bound' := s.bound, right_inv' := s.right_inv },
-    hs_pos, hs_cont, fun {_} hc y ↦ by simpa only [algebraMap_smul] using hs_hom hc y⟩
+    NNReal.coe_pos.mp (hsR.symm ▸ by linarith), hs_cont,
+    fun {_} hc y ↦ by simpa only [algebraMap_smul] using hs_hom hc y⟩
 
 end RCLike
 
