@@ -232,10 +232,8 @@ theorem mk_le {ι κ : Type u} {v : ι → E} (hv : Orthonormal 𝕜 v) (c : Hil
 basis `c : HilbertBasis κ 𝕜 E`. -/
 theorem lift_mk_le {ι : Type u} {κ : Type v} {v : ι → E} (hv : Orthonormal 𝕜 v)
     (c : HilbertBasis κ 𝕜 E) :
-    Cardinal.lift.{v} #ι ≤ Cardinal.lift.{u} #κ := by
-  have h := (hv.comp (Equiv.ulift : ULift.{v} ι ≃ ι) Equiv.ulift.injective).mk_le
-    (c.reindexOfRepr (Equiv.ulift.symm : κ ≃ ULift.{u} κ))
-  rwa [Cardinal.mk_uLift, Cardinal.mk_uLift] at h
+    Cardinal.lift.{v} #ι ≤ Cardinal.lift.{u} #κ :=
+  hv.lift_mk_le_of_forall_inner_eq_zero fun _ ↦ c.eq_zero_of_forall_inner_eq_zero
 
 end Orthonormal
 
@@ -377,26 +375,51 @@ theorem hilbertDim_le {𝕜 : Type*} {E : Type u} [RCLike 𝕜]
 
 end Submodule
 
-namespace LinearIsometryEquiv
+namespace ContinuousLinearMap
 
-/-- Linearly isometric Hilbert spaces have equal lifted Hilbert dimensions. -/
+/-- **Operators with dense range do not increase Hilbert dimension.** If `T : E →L[𝕜] F` has dense
+range, then the lifted Hilbert dimension of `F` is at most that of `E`. -/
+theorem lift_hilbertDim_le_of_denseRange {𝕜 : Type*} {E : Type u} {F : Type v} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    {T : E →L[𝕜] F} (hT : DenseRange T) :
+    Cardinal.lift.{u} (TauCeti.hilbertDim 𝕜 F) ≤ Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) := by
+  obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
+  obtain ⟨w', c, -⟩ := exists_hilbertBasis 𝕜 F
+  rw [b.hilbertDim_eq, c.hilbertDim_eq]
+  refine c.orthonormal.lift_mk_le_of_forall_inner_eq_zero (w := fun i ↦ T (b i)) fun x hx ↦ ?_
+  have h : (innerSL 𝕜 x).comp T = 0 := b.ext_continuousLinearMap fun i ↦ by
+    simpa [innerSL_apply_apply] using hx i
+  exact hT.eq_zero_of_inner_left 𝕜 fun y ↦ by
+    simpa [innerSL_apply_apply] using DFunLike.congr_fun h y
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
+
+/-- **Invariance of Hilbert dimension.** Hilbert spaces that are isomorphic as topological vector
+spaces have equal lifted Hilbert dimensions. -/
 theorem lift_hilbertDim_eq {𝕜 : Type*} {E : Type u} {F : Type v} [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
     [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
-    (e : E ≃ₗᵢ[𝕜] F) :
-    Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) = Cardinal.lift.{u} (TauCeti.hilbertDim 𝕜 F) := by
-  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
-  rw [b.hilbertDim_eq, (b.mapₗᵢ e).lift_hilbertDim_eq]
+    (e : E ≃L[𝕜] F) :
+    Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) = Cardinal.lift.{u} (TauCeti.hilbertDim 𝕜 F) :=
+  le_antisymm
+    (ContinuousLinearMap.lift_hilbertDim_le_of_denseRange (T := (e.symm : F →L[𝕜] E))
+      e.symm.surjective.denseRange)
+    (ContinuousLinearMap.lift_hilbertDim_le_of_denseRange (T := (e : E →L[𝕜] F))
+      e.surjective.denseRange)
 
-/-- Linearly isometric Hilbert spaces in the same universe have equal Hilbert dimensions. -/
+/-- Hilbert spaces in the same universe that are isomorphic as topological vector spaces have equal
+Hilbert dimensions. -/
 theorem hilbertDim_eq {𝕜 : Type*} {E F : Type u} [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
     [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
-    (e : E ≃ₗᵢ[𝕜] F) :
+    (e : E ≃L[𝕜] F) :
     TauCeti.hilbertDim 𝕜 E = TauCeti.hilbertDim 𝕜 F := by
   simpa using e.lift_hilbertDim_eq
 
-end LinearIsometryEquiv
+end ContinuousLinearEquiv
 
 namespace TauCeti
 
@@ -431,7 +454,7 @@ theorem isEmpty_linearIsometryEquiv_of_lift_hilbertDim_ne {E : Type u} {F : Type
     [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
     (h : Cardinal.lift.{v} (hilbertDim 𝕜 E) ≠ Cardinal.lift.{u} (hilbertDim 𝕜 F)) :
     IsEmpty (E ≃ₗᵢ[𝕜] F) :=
-  ⟨fun e ↦ h e.lift_hilbertDim_eq⟩
+  ⟨fun e ↦ h e.toContinuousLinearEquiv.lift_hilbertDim_eq⟩
 
 /-- Two Hilbert spaces in the same universe with distinct Hilbert dimensions admit no linear
 isometric equivalence. -/
@@ -440,7 +463,7 @@ theorem isEmpty_linearIsometryEquiv_of_hilbertDim_ne {E F : Type u}
     [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
     (h : hilbertDim 𝕜 E ≠ hilbertDim 𝕜 F) :
     IsEmpty (E ≃ₗᵢ[𝕜] F) :=
-  ⟨fun e ↦ h e.hilbertDim_eq⟩
+  ⟨fun e ↦ h e.toContinuousLinearEquiv.hilbertDim_eq⟩
 
 /-- The Hilbert dimension of `ℓ²(ι, 𝕜)` is the lifted cardinality of `ι`. -/
 @[simp]
@@ -624,52 +647,6 @@ theorem nonempty_linearIsometryEquiv_of_separableSpace_of_not_finiteDimensional
 end Separable
 
 end TauCeti
-
-namespace ContinuousLinearMap
-
-/-- **Operators with dense range do not increase Hilbert dimension.** If `T : E →L[𝕜] F` has dense
-range, then the lifted Hilbert dimension of `F` is at most that of `E`. -/
-theorem lift_hilbertDim_le_of_denseRange {𝕜 : Type*} {E : Type u} {F : Type v} [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
-    {T : E →L[𝕜] F} (hT : DenseRange T) :
-    Cardinal.lift.{u} (TauCeti.hilbertDim 𝕜 F) ≤ Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) := by
-  obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
-  obtain ⟨w', c, -⟩ := exists_hilbertBasis 𝕜 F
-  rw [b.hilbertDim_eq, c.hilbertDim_eq]
-  refine c.orthonormal.lift_mk_le_of_forall_inner_eq_zero (w := fun i ↦ T (b i)) fun x hx ↦ ?_
-  have h : (innerSL 𝕜 x).comp T = 0 := b.ext_continuousLinearMap fun i ↦ by
-    simpa [innerSL_apply_apply] using hx i
-  exact hT.eq_zero_of_inner_left 𝕜 fun y ↦ by
-    simpa [innerSL_apply_apply] using DFunLike.congr_fun h y
-
-end ContinuousLinearMap
-
-namespace ContinuousLinearEquiv
-
-/-- **Invariance of Hilbert dimension.** Hilbert spaces that are isomorphic as topological vector
-spaces have equal lifted Hilbert dimensions. -/
-theorem lift_hilbertDim_eq {𝕜 : Type*} {E : Type u} {F : Type v} [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
-    (e : E ≃L[𝕜] F) :
-    Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) = Cardinal.lift.{u} (TauCeti.hilbertDim 𝕜 F) :=
-  le_antisymm
-    (ContinuousLinearMap.lift_hilbertDim_le_of_denseRange (T := (e.symm : F →L[𝕜] E))
-      e.symm.surjective.denseRange)
-    (ContinuousLinearMap.lift_hilbertDim_le_of_denseRange (T := (e : E →L[𝕜] F))
-      e.surjective.denseRange)
-
-/-- Hilbert spaces in the same universe that are isomorphic as topological vector spaces have equal
-Hilbert dimensions. -/
-theorem hilbertDim_eq {𝕜 : Type*} {E F : Type u} [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
-    (e : E ≃L[𝕜] F) :
-    TauCeti.hilbertDim 𝕜 E = TauCeti.hilbertDim 𝕜 F := by
-  simpa using e.lift_hilbertDim_eq
-
-end ContinuousLinearEquiv
 
 namespace TauCeti
 
