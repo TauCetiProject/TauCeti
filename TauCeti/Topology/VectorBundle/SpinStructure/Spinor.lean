@@ -460,6 +460,12 @@ def vectorFrame (s : SpinCStructure F E 4) (b : OrthonormalBasis (Fin 4) ℝ V) 
   (s.frameAt p).symm.trans b.repr.symm
 
 omit [Fact (finrank ℝ V = 4)] in
+/-- `κ_p` is the inverse of the frame at `p` followed by the coordinates of `b`. -/
+theorem vectorFrame_def (s : SpinCStructure F E 4) (b : OrthonormalBasis (Fin 4) ℝ V) {x : X}
+    (p : s.P x) : s.vectorFrame b p = (s.frameAt p).symm.trans b.repr.symm :=
+  (rfl)
+
+omit [Fact (finrank ℝ V = 4)] in
 /-- `κ_p` is `b` applied to the coordinates of `v` in the frame `p`. -/
 theorem vectorFrame_apply (s : SpinCStructure F E 4) (b : OrthonormalBasis (Fin 4) ℝ V)
     {x : X} (p : s.P x) (v : E x) :

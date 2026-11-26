@@ -53,7 +53,8 @@ identity `c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about de
 
 ## Main results
 
-* `TauCeti.SpinCStructure.toFrame_chargeConj_inl`: the frame of `[p, 1]` is the frame of `p`.
+* `TauCeti.SpinCStructure.toFrame_chargeConj_inl`, `TauCeti.SpinCStructure.frameAt_chargeConj_inl`:
+  the frame of `[p, 1]` is the frame of `p`.
 * `TauCeti.SpinCStructure.determinantLineChargeConjEquiv_mk`: the formula
   `[[p, h], w] ↦ [p, conj (det h w)]`.
 * `TauCeti.SpinCStructure.continuous_determinantLineChargeConjEquiv`: it is continuous on total
@@ -127,6 +128,14 @@ def chargeConj (s : SpinCStructure F V n) : SpinCStructure F V n :=
 theorem toFrame_chargeConj_inl (s : SpinCStructure F V n) (x : X) (p : s.P x) :
     s.chargeConj.toFrame ⟨x, Extend.inl χ hχ p⟩ = s.toFrame ⟨x, p⟩ :=
   s.toFrame_extendSpinC_inl χ hχ hπχ x p
+
+/-- The orthonormal frame of `E x` at `[p, 1]` in the charge conjugate is the frame at `p`. -/
+@[simp]
+theorem frameAt_chargeConj_inl (s : SpinCStructure F V n) {x : X} (p : s.P x) :
+    s.chargeConj.frameAt (Extend.inl χ hχ p) = s.frameAt p := by
+  have h := (s.chargeConj.toFrame_mk (x := x) (Extend.inl χ hχ p)).symm.trans
+    ((s.toFrame_chargeConj_inl x p).trans (s.toFrame_mk p))
+  exact eq_of_heq (OrthonormalFrameBundle.mk.inj h).2
 
 /-- **The frame of `[p, h]`** in the charge conjugate of a `Spinᶜ` structure is the frame of `p`
 composed with the rotation of `h`. -/
