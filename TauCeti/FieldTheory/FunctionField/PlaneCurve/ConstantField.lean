@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.MvPolynomial.Fin.Two
 public import TauCeti.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.ConstantField
-import TauCeti.Algebra.Polynomial.Bivariate
+import TauCeti.Algebra.Polynomial.Bivariate.Basic
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import Mathlib.RingTheory.Polynomial.GaussLemma
