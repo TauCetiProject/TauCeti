@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.Riemannian.Invariant
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
+import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # Components of a moment map are Morse–Bott
@@ -401,29 +402,12 @@ theorem exists_isNondegenerateCriticalSubmanifold_orbit [CompactSpace G] [SigmaC
     rintro _ ⟨k, rfl⟩
     exact (smul_mem_fixedPointsOfFinrank_iff (n := ∞) (by simp) (hZ k.property)).2
       (mem_fixedPointsOfFinrank.2 ⟨hcrit ▸ hp, hd⟩)
-  -- The union `D` of the finitely many critical orbits other than that of `p` is closed, and the
-  -- orbit of `p` is the part of the critical set outside `D`.
-  set D := ⋃ O ∈ MulAction.orbit Z '' (criticalPoints 𝓘(ℝ, E') fun y ↦ μ y ξ) \
-    {MulAction.orbit Z p}, O
-  have hD : IsClosed D := hfin.sdiff.isClosed_biUnion fun _ hO ↦ by
-    obtain ⟨q, -, rfl⟩ := hO.1
-    exact hclosed q
-  refine ⟨C, hman, hi, ⟨Subtype.val ⁻¹' Dᶜ, hD.isOpen_compl.preimage continuous_subtypeVal⟩, ?_,
-    hMB.compLocalDiffeomorph (by simp) _ _, fun y ↦ ?_⟩
-  · ext x
-    constructor
-    · rintro ⟨⟨y, hyD⟩, rfl⟩
-      by_contra hyp
-      have hyc : (y : M) ∈ criticalPoints 𝓘(ℝ, E') fun y ↦ μ y ξ :=
-        hcrit ▸ fixedPointsOfFinrank_subset_fixedPoints d y.property
-      exact hyD (mem_biUnion ⟨mem_image_of_mem _ hyc, fun h' ↦
-        hyp (mem_singleton_iff.mp h' ▸ MulAction.mem_orbit_self (y : M))⟩
-        (MulAction.mem_orbit_self (y : M)))
-    · intro hx
-      refine ⟨⟨⟨x, hsub hx⟩, fun hxD ↦ ?_⟩, rfl⟩
-      obtain ⟨_, ⟨⟨q, -, rfl⟩, hne⟩, hxq⟩ := mem_iUnion₂.mp hxD
-      exact hne (by rw [mem_singleton_iff, ← MulAction.orbit_eq_iff.mpr hxq,
-        MulAction.orbit_eq_iff.mpr hx])
+  -- Finitely many closed `Z`-orbits meet `M^{T_ξ}_d`, so each of them is open in it.
+  have hU := isOpen_preimage_val_orbit_of_finite (hfin.subset <| image_mono <|
+    hcrit ▸ fixedPointsOfFinrank_subset_fixedPoints (I := 𝓘(ℝ, E')) d) (fun q _ ↦ hclosed q) p
+  refine ⟨C, hman, hi, ⟨_, hU⟩, ?_, hMB.compLocalDiffeomorph (by simp) _ _, fun y ↦ ?_⟩
+  · rw [range_comp, Subtype.range_coe, TopologicalSpace.Opens.coe_mk,
+      Subtype.image_preimage_coe, inter_eq_right.2 hsub]
   · rw [Manifold.range_mfderiv_comp_subtype_val, hrange, Function.comp_apply]
 
 end Model

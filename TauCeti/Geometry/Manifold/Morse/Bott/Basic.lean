@@ -473,15 +473,8 @@ theorem IsNondegenerateCriticalSubmanifold.compLocalDiffeomorph {S' : Type*}
     exact h.mem_criticalPoints (g s)
   ker_criticalHessian_le s v hv := by
     rw [compLocalDiffeomorph_apply] at hv
-    obtain ⟨u, hu⟩ := h.ker_criticalHessian_le (g s) hv
-    -- `dg_s` is invertible, so `u = dg_s (dg_s⁻¹ u)` and `v = d(i ∘ g)_s (dg_s⁻¹ u)`.
-    let e := (hg s).mfderivToContinuousLinearEquiv hn
-    refine ⟨e.symm u, ?_⟩
-    rw [ContinuousLinearMap.coe_coe, coe_compLocalDiffeomorph,
-      mfderiv_comp s ((i.contMDiff (g s)).mdifferentiableAt hn) ((hg s).mdifferentiableAt hn),
-      ContinuousLinearMap.comp_apply, ← IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv_coe
-        (hg s) hn, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
-    exact hu
+    rw [coe_compLocalDiffeomorph, (hg s).range_mfderiv_comp hn]
+    exact h.ker_criticalHessian_le (g s) hv
 
 section Prod
 

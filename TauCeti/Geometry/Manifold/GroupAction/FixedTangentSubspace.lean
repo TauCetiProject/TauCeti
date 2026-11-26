@@ -58,11 +58,11 @@ differential `dψ_p` carries `V_p` onto `V_(ψ p)`
 (`Diffeomorph.map_fixedTangentSubspace`). A globally equivariant diffeomorphism therefore carries
 the fixed set, its parts `M^K_d` and the connected components of the fixed set onto those of `N`
 (`TauCeti.MulAction.image_fixedPoints_of_bijective`, `Diffeomorph.image_fixedPointsOfFinrank`,
-`Homeomorph.image_connectedComponentIn_fixedPoints`). In particular, for a subgroup `K` of a
-group acting smoothly on `M`, every element of the centralizer of `K` maps each part `M^K_d` onto
-itself (`TauCeti.smul_mem_fixedPointsOfFinrank_iff`). No smoothness of the actions is used: where
-`k •` is not differentiable, the chain rule through a diffeomorphism still holds with both sides
-zero.
+`Homeomorph.image_connectedComponentIn_fixedPoints`). No smoothness of the actions is used in
+these diffeomorphism results: where `k •` is not differentiable, the chain rule through a
+diffeomorphism still holds with both sides zero. Applied to the diffeomorphisms `a •` of a group
+acting smoothly on `M`, they show that for a subgroup `K` every element of the centralizer of `K`
+maps each part `M^K_d` onto itself (`TauCeti.smul_mem_fixedPointsOfFinrank_iff`).
 
 ## Main definitions
 

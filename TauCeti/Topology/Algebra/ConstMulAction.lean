@@ -27,7 +27,8 @@ cannot otherwise reach, and continuity of maps equal to fixed-element scalar act
 A trivial action, fixing every point, is jointly continuous for any topologies.
 A continuous monoid action on a Hausdorff space has closed fixed sets, both of single elements and
 of the whole monoid, and a group action with continuous orbit maps on a `T₁` space has closed
-point stabilisers. If every orbit of a group action is open, then every orbit is also closed.
+point stabilisers. If every orbit of a group action is open, then every orbit is also closed;
+conversely, if finitely many closed orbits meet a set, then each of them is open in that set.
 Scaling by a nonzero element of a group with zero commutes with taking the frontier.
 A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
@@ -60,6 +61,8 @@ injective, the orbit projection is an open partial homeomorphism onto its image.
   space is closed.
 * `TauCeti.isClosed_orbit_of_forall_isOpen_orbit`: if every orbit of a group action is open,
   then every orbit is closed.
+* `TauCeti.isOpen_preimage_val_orbit_of_finite`: if finitely many orbits meet a set `s` and they
+  are all closed, then each orbit is open in `s`.
 * `TauCeti.frontier_smul₀`: `frontier (c • s) = c • frontier s` for `c ≠ 0`.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
@@ -135,6 +138,26 @@ theorem isClosed_orbit_of_forall_isOpen_orbit {G X : Type*} [Group G] [MulAction
   refine Filter.mem_of_superset ((h z).mem_nhds (MulAction.mem_orbit_self z)) fun w hw hwx ↦ hz ?_
   rw [← (MulAction.orbit_eq_iff.2 hw).symm.trans (MulAction.orbit_eq_iff.2 hwx)]
   exact MulAction.mem_orbit_self z
+
+/-- If only finitely many orbits of a group action meet a set `s`, and each of them is closed, then
+every orbit is open in `s`: within `s`, the complement of the orbit of `x` is covered by the union
+of the finitely many other closed orbits meeting `s`. -/
+theorem isOpen_preimage_val_orbit_of_finite {G X : Type*} [Group G] [MulAction G X]
+    [TopologicalSpace X] {s : Set X} (hfin : (MulAction.orbit G '' s).Finite)
+    (hclosed : ∀ y ∈ s, IsClosed (MulAction.orbit G y)) (x : X) :
+    IsOpen (Subtype.val ⁻¹' MulAction.orbit G x : Set s) := by
+  have hD : IsClosed (⋃ O ∈ MulAction.orbit G '' s \ {MulAction.orbit G x}, O) :=
+    hfin.sdiff.isClosed_biUnion fun _ hO ↦ by
+      obtain ⟨q, hq, rfl⟩ := hO.1
+      exact hclosed q hq
+  convert hD.isOpen_compl.preimage continuous_subtypeVal using 1
+  ext ⟨y, hy⟩
+  refine ⟨fun hyx hyD ↦ ?_, fun hyD ↦ by_contra fun hyx ↦ hyD ?_⟩
+  · obtain ⟨_, ⟨⟨q, -, rfl⟩, hne⟩, hyq⟩ := Set.mem_iUnion₂.mp hyD
+    exact hne (by rw [Set.mem_singleton_iff, ← MulAction.orbit_eq_iff.mpr hyq,
+      MulAction.orbit_eq_iff.mpr hyx])
+  · exact Set.mem_biUnion ⟨Set.mem_image_of_mem _ hy, fun h' ↦
+      hyx (Set.mem_singleton_iff.mp h' ▸ MulAction.mem_orbit_self y)⟩ (MulAction.mem_orbit_self y)
 
 /-- Scaling by a nonzero element of a group with zero commutes with taking the frontier, as
 Mathlib's `interior_smul₀` and `closure_smul₀'` do for interior and closure. -/
