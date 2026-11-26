@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Finset.Pi
 public import TauCeti.Topology.ImplicitAtlas.Basic
 import TauCeti.Algebra.Group.Pi.Finset
+import TauCeti.Topology.Constructions.Pi
 
 /-!
 # Deformation spaces of implicit atlases
@@ -421,12 +423,12 @@ private theorem extend_mem_deformationSpace {I I' J J' B B' : Finset A} (hII' : 
     (p : 𝒜.deformationSpace I hJB) (e' : (α : ↥(B' \ B)) → E α) :
     ((fun α : B' ↦
         if h : α.val ∈ B then p.val.1 ⟨α, h⟩ else e' ⟨α, Finset.mem_sdiff.2 ⟨α.property, h⟩⟩),
-      (fun α : B' ↦ if h : α.val ∈ B then p.val.2.1 ⟨α, h⟩ else 0),
+      Finset.extendByZero₂ (π := fun _ ↦ ℝ) B' p.val.2.1,
       𝒜.footprintMap hJ'J ⟨_, mem_kuranishiZeroSet_of_mem_deformationSpace hIJ' p.property⟩) ∈
       𝒜.deformationSpace I' (hJ'J.trans (hJB.trans hBB')) := by
   obtain ⟨ht, htI, hs, h, hx, hreg⟩ := p.property
   -- The extended parameter `t ⊕ 0` is positive at the same indices as `t`.
-  have hpos : positiveIndices (fun α : B' ↦ if h : α.val ∈ B then p.val.2.1 ⟨α, h⟩ else 0) =
+  have hpos : positiveIndices (Finset.extendByZero₂ (π := fun _ ↦ ℝ) B' p.val.2.1) =
       positiveIndices p.val.2.1 := by
     ext α
     simp only [mem_positiveIndices]
@@ -436,12 +438,17 @@ private theorem extend_mem_deformationSpace {I I' J J' B B' : Finset A} (hII' : 
     · simp [hαB] at hα
   refine ⟨fun α ↦ ?_, fun α hα ↦ ?_, fun α ↦ ?_, ?_⟩
   · dsimp only
-    split_ifs
-    exacts [ht _, le_rfl]
+    by_cases hαB : α.val ∈ B
+    · rw [Finset.extendByZero₂_of_mem _ _ hαB]
+      exact ht _
+    · rw [Finset.extendByZero₂_of_notMem _ _ hαB]
   · dsimp only
-    split_ifs with hαB
-    exacts [htI _ fun hαI ↦ hα (hII' hαI), rfl]
-  · simp only [𝒜.kuranishi_footprintMap, hJB (hJ'J α.property), ↓reduceDIte]
+    by_cases hαB : α.val ∈ B
+    · rw [Finset.extendByZero₂_of_mem _ _ hαB]
+      exact htI _ fun hαI ↦ hα (hII' hαI)
+    · rw [Finset.extendByZero₂_of_notMem _ _ hαB]
+  · simp only [𝒜.kuranishi_footprintMap, hJB (hJ'J α.property), ↓reduceDIte,
+      Finset.extendByZero₂_of_mem]
     exact hs ⟨α, hJ'J α.property⟩
   · dsimp only
     rw [hpos]
@@ -509,7 +516,7 @@ theorem continuous_deformationMap :
       (𝒜.deformationMap hII' hIJ' hJ'J hJB hBB' q.1 q.2).val) = fun q ↦
       ((fun α : B' ↦ if h : α.val ∈ B then q.1.val.1 ⟨α, h⟩
           else q.2 ⟨α, Finset.mem_sdiff.2 ⟨α.property, h⟩⟩),
-        (fun α : B' ↦ if h : α.val ∈ B then q.1.val.2.1 ⟨α, h⟩ else 0),
+        Finset.extendByZero₂ (π := fun _ ↦ ℝ) B' q.1.val.2.1,
         𝒜.footprintMap hJ'J
           ⟨_, mem_kuranishiZeroSet_of_mem_deformationSpace hIJ' q.1.property⟩) := by
     funext q
@@ -524,13 +531,8 @@ theorem continuous_deformationMap :
         continuous_fst))
     · simp only [hα, ↓reduceDIte]
       exact (continuous_apply _).comp continuous_snd
-  · refine continuous_pi fun α ↦ ?_
-    by_cases hα : α.val ∈ B
-    · simp only [hα, ↓reduceDIte]
-      exact (continuous_apply _).comp (continuous_snd.fst.comp (continuous_subtypeVal.comp
-        continuous_fst))
-    · simp only [hα, ↓reduceDIte]
-      exact continuous_const
+  · exact (Finset.continuous_extendByZero₂ (π := fun _ ↦ ℝ) B').comp
+      (continuous_snd.fst.comp (continuous_subtypeVal.comp continuous_fst))
   · exact (𝒜.continuous_footprintMap hJ'J).comp
       ((continuous_snd.snd.comp (continuous_subtypeVal.comp continuous_fst)).subtype_mk _)
 

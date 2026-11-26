@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.ImplicitAtlas.DeformationSpace.Basic
+import TauCeti.Topology.Constructions.Pi
 
 /-!
 # Corner charts of deformation spaces
@@ -46,8 +47,6 @@ deformation space is `D_(∅,∅,∅) = X_∅^reg`, of dimension `d` rather than
 
 ## Main results
 
-* `TauCeti.ImplicitAtlas.Core.exists_isOpen_forall_footprintMap_mem_regLocus`: near a point of
-  `Z_SJ` over `X_S^reg`, every point of `Z_(S'J)`, `S ⊆ S' ⊆ J`, lies over `X_(S')^reg`.
 * `TauCeti.ImplicitAtlas.exists_homeomorph_deformationSpace`: the corner charts of `D_(I,J,B)`.
 * `TauCeti.ImplicitAtlas.deformationSpace_inter_left`: `D_(I ∩ J,J,B) = D_(I,J,B)`.
 * `TauCeti.ImplicitAtlas.locallyCompactSpace_deformationSpace`: `D_(I,J,B)` is locally compact.
@@ -72,78 +71,7 @@ variable {A : Type*} [DecidableEq A] {Γ : A → Type*} [∀ α, Group (Γ α)] 
   {act : ∀ I : Finset A, ((α : I) → Γ α) →* (T I ≃ₜ T I)}
   {X : Type*} [TopologicalSpace X] {d : ℤ}
 
-namespace Core
-
-variable (𝒜 : ImplicitAtlas.Core Γ E ρ T act X)
-
-/-- **Regularity is open near a regular point.** Let `x ∈ Z_SJ` lie over the regular locus
-`X_S^reg`. Then there is a neighbourhood `W` of `x` in `X_J` such that every point `y ∈ W` of the
-zero set `Z_(S'J)`, for any `S ⊆ S' ⊆ J`, lies over `X_(S')^reg`. -/
-theorem exists_isOpen_forall_footprintMap_mem_regLocus {S J : Finset A} (hSJ : S ⊆ J)
-    (x : kuranishiZeroSet 𝒜.kuranishi S J) (hx : 𝒜.footprintMap hSJ x ∈ 𝒜.regLocus S) :
-    ∃ W : Set (T J), IsOpen W ∧ x.val ∈ W ∧ ∀ ⦃S' : Finset A⦄ (_ : S ⊆ S') (hS'J : S' ⊆ J)
-      (y : kuranishiZeroSet 𝒜.kuranishi S' J), y.val ∈ W →
-        𝒜.footprintMap hS'J y ∈ 𝒜.regLocus S' := by
-  -- For each of the finitely many `S'`, the point `ψ_S'J(x)` is regular, and regularity is open
-  -- in `Z_S'J`.
-  have key : ∀ S' ∈ J.powerset.filter (S ⊆ ·), ∃ W : Set (T J), IsOpen W ∧ x.val ∈ W ∧
-      ∀ (hS'J : S' ⊆ J) (y : kuranishiZeroSet 𝒜.kuranishi S' J), y.val ∈ W →
-        𝒜.footprintMap hS'J y ∈ 𝒜.regLocus S' := by
-    intro S' hS'
-    obtain ⟨hS'J, hSS'⟩ := Finset.mem_filter.1 hS'
-    rw [Finset.mem_powerset] at hS'J
-    have hx' : x.val ∈ kuranishiZeroSet 𝒜.kuranishi S' J :=
-      kuranishiZeroSet_mono _ hSS' J x.property
-    have hreg : 𝒜.footprintMap hS'J ⟨x, hx'⟩ ∈ 𝒜.regLocus S' := by
-      refine 𝒜.mem_regLocus_of_footprintMap_mem hSS' ⟨_,
-        (𝒜.mem_kuranishiZeroSet_iff_footprintMap_mem hS'J ⟨x, hx'⟩).1 x.property⟩ ?_
-      rwa [𝒜.footprintMap_footprintMap_mk hSS' hS'J ⟨x, hx'⟩ x.property]
-    obtain ⟨W, hW, hWeq⟩ := isOpen_induced_iff.1
-      ((𝒜.isOpen_regLocus S').preimage (𝒜.continuous_footprintMap hS'J))
-    refine ⟨W, hW, ?_, fun _ y hy ↦ ?_⟩
-    · have hmem : (⟨x, hx'⟩ : kuranishiZeroSet 𝒜.kuranishi S' J) ∈ Subtype.val ⁻¹' W := by
-        rw [hWeq]
-        exact hreg
-      exact hmem
-    · have hmem : y ∈ Subtype.val ⁻¹' W := hy
-      rw [hWeq] at hmem
-      exact hmem
-  choose! W hW hxW hWreg using key
-  refine ⟨⋂ S' ∈ J.powerset.filter (S ⊆ ·), W S', isOpen_biInter_finset hW,
-    mem_iInter₂.2 hxW, fun S' hSS' hS'J y hy ↦ ?_⟩
-  have hmem : S' ∈ J.powerset.filter (S ⊆ ·) := by simp [hS'J, hSS']
-  exact hWreg S' hmem hS'J y (mem_iInter₂.1 hy S' hmem)
-
-end Core
-
 /-! ### The chart maps -/
-
-/-- Extension by zero of parameters on `I` to parameters on `B`. -/
-private def extendParam (I B : Finset A) (τ : I → ℝ) (α : B) : ℝ :=
-  if h : α.val ∈ I then τ ⟨α, h⟩ else 0
-
-private theorem extendParam_of_mem {I B : Finset A} (τ : I → ℝ) (α : B) (h : α.val ∈ I) :
-    extendParam I B τ α = τ ⟨α, h⟩ :=
-  dite_eq_left h
-
-private theorem extendParam_of_notMem {I B : Finset A} (τ : I → ℝ) (α : B) (h : α.val ∉ I) :
-    extendParam I B τ α = 0 :=
-  dite_eq_right h
-
-private theorem continuous_extendParam (I B : Finset A) : Continuous (extendParam I B) :=
-  continuous_pi fun α ↦ by
-    by_cases h : α.val ∈ I
-    · simpa only [extendParam_of_mem _ _ h] using continuous_apply (⟨α, h⟩ : I)
-    · simpa only [extendParam_of_notMem _ _ h] using continuous_const
-
-/-- Restricting parameters which vanish off `I` to `I` and extending by zero recovers them. -/
-private theorem extendParam_restrict {I B : Finset A} (hIB : I ⊆ B) {t : B → ℝ}
-    (ht : ∀ α : B, α.val ∉ I → t α = 0) :
-    extendParam I B (Finset.restrict₂ (π := fun _ ↦ ℝ) hIB t) = t :=
-  funext fun α ↦ by
-    by_cases h : α.val ∈ I
-    · rw [extendParam_of_mem _ _ h, Finset.restrict₂]
-    · rw [extendParam_of_notMem _ _ h, ht α h]
 
 /-- The forward chart map `(e, t, x) ↦ ((c x).1, e|_(B \ S), t|_I)`. -/
 private def chartFwd {n : ℕ} {S I J B : Finset A} (hIB : I ⊆ B)
@@ -152,6 +80,15 @@ private def chartFwd {n : ℕ} {S I J B : Finset A} (hIB : I ⊆ B)
     EuclideanSpace ℝ (Fin n) × ((α : ↥(B \ S)) → E α) × (↥I → ℝ) :=
   ((c p.2.2).1, Finset.restrict₂ Finset.sdiff_subset p.1,
     Finset.restrict₂ (π := fun _ ↦ ℝ) hIB p.2.1)
+
+omit [∀ α, NormedAddCommGroup (E α)] [∀ α, NormedSpace ℝ (E α)] [∀ α, FiniteDimensional ℝ (E α)]
+  [∀ I, TopologicalSpace (T I)] [∀ I, T2Space (T I)] in
+/-- The corner coordinates of the forward chart map are the restricted parameters `t|_I`. -/
+private theorem chartFwd_snd_snd {n : ℕ} {S I J B : Finset A} (hIB : I ⊆ B)
+    (c : T J → EuclideanSpace ℝ (Fin n) × ((α : ↥(J \ S)) → E α))
+    (p : ((α : B) → E α) × (B → ℝ) × T J) :
+    (chartFwd hIB c p).2.2 = Finset.restrict₂ (π := fun _ ↦ ℝ) hIB p.2.1 :=
+  rfl
 
 omit [∀ α, NormedSpace ℝ (E α)] [∀ α, FiniteDimensional ℝ (E α)] [∀ I, T2Space (T I)] in
 private theorem continuousOn_chartFwd {n : ℕ} {S I J B : Finset A} (hIB : I ⊆ B)
@@ -167,15 +104,24 @@ extended by zero. -/
 private def chartArg {n : ℕ} {S I J B : Finset A} (hJB : J ⊆ B)
     (m : EuclideanSpace ℝ (Fin n) × ((α : ↥(B \ S)) → E α) × (↥I → ℝ)) :
     EuclideanSpace ℝ (Fin n) × ((α : ↥(J \ S)) → E α) :=
-  (m.1, fun α ↦ extendParam I B m.2.2 ⟨α, hJB (Finset.mem_sdiff.1 α.property).1⟩ •
-    m.2.1 ⟨α, Finset.mem_sdiff.2
-      ⟨hJB (Finset.mem_sdiff.1 α.property).1, (Finset.mem_sdiff.1 α.property).2⟩⟩)
+  (m.1, fun α ↦
+    Finset.extendByZero₂ (π := fun _ ↦ ℝ) B m.2.2 ⟨α, hJB (Finset.mem_sdiff.1 α.property).1⟩ •
+      m.2.1 ⟨α, Finset.mem_sdiff.2
+        ⟨hJB (Finset.mem_sdiff.1 α.property).1, (Finset.mem_sdiff.1 α.property).2⟩⟩)
+
+omit [∀ α, FiniteDimensional ℝ (E α)] in
+/-- The first coordinate of the argument of `c⁻¹` is the coordinate `u` of the model. -/
+private theorem chartArg_fst {n : ℕ} {S I J B : Finset A} (hJB : J ⊆ B)
+    (m : EuclideanSpace ℝ (Fin n) × ((α : ↥(B \ S)) → E α) × (↥I → ℝ)) :
+    (chartArg (E := E) hJB m).1 = m.1 :=
+  rfl
 
 omit [∀ α, FiniteDimensional ℝ (E α)] in
 private theorem continuous_chartArg {n : ℕ} {S I J B : Finset A} (hJB : J ⊆ B) :
     Continuous (chartArg (E := E) (n := n) (S := S) (I := I) hJB) :=
   continuous_fst.prodMk <| continuous_pi fun _ ↦
-    (((continuous_apply _).comp (continuous_extendParam I B)).comp continuous_snd.snd).smul
+    (((continuous_apply _).comp (Finset.continuous_extendByZero₂ (π := fun _ ↦ ℝ) B)).comp
+      continuous_snd.snd).smul
       ((continuous_apply _).comp continuous_snd.fst)
 
 variable (𝒜 : ImplicitAtlas Γ E ρ T act X d)
@@ -187,9 +133,10 @@ private noncomputable def chartInv {n : ℕ} {S I J B : Finset A} (hSJ : S ⊆ J
     (m : EuclideanSpace ℝ (Fin n) × ((α : ↥(B \ S)) → E α) × (↥I → ℝ)) :
     ((α : B) → E α) × (B → ℝ) × T J :=
   (fun α ↦ if h : α.val ∈ S then
-      (extendParam I B m.2.2 α)⁻¹ • 𝒜.kuranishi J ⟨α, hSJ h⟩ (c.symm (chartArg hJB m))
+      (Finset.extendByZero₂ (π := fun _ ↦ ℝ) B m.2.2 α)⁻¹ •
+        𝒜.kuranishi J ⟨α, hSJ h⟩ (c.symm (chartArg hJB m))
     else m.2.1 ⟨α, Finset.mem_sdiff.2 ⟨α.property, h⟩⟩,
-    extendParam I B m.2.2, c.symm (chartArg hJB m))
+    Finset.extendByZero₂ (π := fun _ ↦ ℝ) B m.2.2, c.symm (chartArg hJB m))
 
 variable {𝒜}
 
@@ -209,21 +156,21 @@ private theorem chartInv_mem_deformationSpace
     (hm : chartArg hJB m ∈ c.target ∩ c.symm ⁻¹' W) (hpos : ∀ α : I, α.val ∈ S → 0 < m.2.2 α)
     (hnn : ∀ α, 0 ≤ m.2.2 α) :
     chartInv 𝒜 (hSI.trans hIJ) hJB c m ∈ 𝒜.deformationSpace I hJB := by
-  have ht : ∀ α, 0 ≤ extendParam I B m.2.2 α := fun α ↦ by
+  have ht : ∀ α, 0 ≤ Finset.extendByZero₂ (π := fun _ ↦ ℝ) B m.2.2 α := fun α ↦ by
     by_cases h : α.val ∈ I
-    · rw [extendParam_of_mem _ _ h]
+    · rw [Finset.extendByZero₂_of_mem _ _ h]
       exact hnn _
-    · rw [extendParam_of_notMem _ _ h]
-  have htI : ∀ α : B, α.val ∉ I → extendParam I B m.2.2 α = 0 :=
-    fun α h ↦ extendParam_of_notMem _ α h
+    · rw [Finset.extendByZero₂_of_notMem _ _ h]
+  have htI : ∀ α : B, α.val ∉ I → Finset.extendByZero₂ (π := fun _ ↦ ℝ) B m.2.2 α = 0 :=
+    fun α h ↦ Finset.extendByZero₂_of_notMem _ α h
   have hsrc : c.symm (chartArg hJB m) ∈ c.source := c.map_target hm.1
   have hs : ∀ α : J, 𝒜.kuranishi J α (c.symm (chartArg hJB m)) =
-      extendParam I B m.2.2 ⟨α, hJB α.property⟩ •
+      Finset.extendByZero₂ (π := fun _ ↦ ℝ) B m.2.2 ⟨α, hJB α.property⟩ •
         (chartInv 𝒜 (hSI.trans hIJ) hJB c m).1 ⟨α, hJB α.property⟩ := by
     intro α
     by_cases h : α.val ∈ S
-    · have hτ : extendParam I B m.2.2 ⟨α, hJB α.property⟩ ≠ 0 := by
-        rw [extendParam_of_mem (B := B) m.2.2 ⟨α, hJB α.property⟩ (hSI h)]
+    · have hτ : Finset.extendByZero₂ (π := fun _ ↦ ℝ) B m.2.2 ⟨α, hJB α.property⟩ ≠ 0 := by
+        rw [Finset.extendByZero₂_of_mem (t := B) _ _ (hSI h)]
         exact (hpos _ h).ne'
       simp only [chartInv, dite_eq_left h, smul_smul, mul_inv_cancel₀ hτ, one_smul]
     · -- Off `S`, the Kuranishi map is the second coordinate of `c`.
@@ -237,7 +184,7 @@ private theorem chartInv_mem_deformationSpace
   refine mem_deformationSpace_of_footprintMap_mem hIJ hJB ht htI hs ?_
   refine hW (fun α hα ↦ mem_positiveIndices.2 ⟨hJB (hSI.trans hIJ hα), ?_⟩) _ _ hm.2
   simp only [chartInv]
-  rw [extendParam_of_mem (B := B) m.2.2 ⟨α, hJB (hSI.trans hIJ hα)⟩ (hSI hα)]
+  rw [Finset.extendByZero₂_of_mem (t := B) _ _ (hSI hα)]
   exact hpos _ hα
 
 include hc in
@@ -249,7 +196,8 @@ private theorem chartArg_chartFwd {p : ((α : B) → E α) × (B → ℝ) × T J
   refine Prod.ext rfl (funext fun α ↦ ?_)
   have hα := Finset.mem_sdiff.1 α.property
   have hp' := mem_deformationSpace.1 hp
-  simp only [chartArg, chartFwd, Finset.restrict₂, extendParam_restrict (hIJ.trans hJB) hp'.2.1]
+  simp only [chartArg, chartFwd, Finset.restrict₂,
+    Finset.extendByZero₂_restrict₂ (π := fun _ ↦ ℝ) (hIJ.trans hJB) hp'.2.1]
   rw [hc _ hpc, kuranishiSdiff_apply, hp'.2.2.1 ⟨α, hα.1⟩]
 
 include hc in
@@ -259,11 +207,12 @@ private theorem chartInv_chartFwd {p : ((α : B) → E α) × (B → ℝ) × T J
     (hpos : ∀ α : B, α.val ∈ S → 0 < p.2.1 α) :
     chartInv 𝒜 (hSI.trans hIJ) hJB c (chartFwd (hIJ.trans hJB) c p) = p := by
   have harg := chartArg_chartFwd hIJ hJB hc hp hpc
-  have ht := extendParam_restrict (hIJ.trans hJB) (mem_deformationSpace.1 hp).2.1
+  have ht := Finset.extendByZero₂_restrict₂ (π := fun _ ↦ ℝ) (hIJ.trans hJB)
+    (mem_deformationSpace.1 hp).2.1
   refine Prod.ext (funext fun α ↦ ?_) (Prod.ext ?_ ?_)
   · by_cases h : α.val ∈ S
     · simp only [chartInv, dite_eq_left h, harg, c.left_inv hpc]
-      rw [show extendParam I B (chartFwd (hIJ.trans hJB) c p).2.2 = p.2.1 from ht,
+      rw [chartFwd_snd_snd, ht,
         (mem_deformationSpace.1 hp).2.2.1 ⟨α, hSI.trans hIJ h⟩, smul_smul,
         inv_mul_cancel₀ (hpos α h).ne', one_smul]
     · simp only [chartInv, dite_eq_right h, chartFwd, Finset.restrict₂]
@@ -277,12 +226,10 @@ private theorem chartFwd_chartInv
     chartFwd (hIJ.trans hJB) c (chartInv 𝒜 (hSI.trans hIJ) hJB c m) = m := by
   refine Prod.ext ?_ (Prod.ext (funext fun α ↦ ?_) (funext fun α ↦ ?_))
   · simp only [chartFwd, chartInv]
-    rw [c.right_inv hm]
-    rfl
+    rw [c.right_inv hm, chartArg_fst]
   · simp only [chartFwd, chartInv, Finset.restrict₂,
       dite_eq_right (Finset.mem_sdiff.1 α.property).2]
-  · simp only [chartFwd, chartInv]
-    exact extendParam_of_mem _ _ α.property
+  · simp only [chartFwd, chartInv, Finset.restrict₂_extendByZero₂]
 
 /-- The inverse chart map is continuous where `t` is positive on `S` and `c⁻¹` is defined. -/
 private theorem continuousOn_chartInv :
@@ -292,13 +239,14 @@ private theorem continuousOn_chartInv :
       {m | chartArg hJB m ∈ c.target ∧ ∀ α : I, α.val ∈ S → 0 < m.2.2 α} :=
     c.continuousOn_symm.comp (continuous_chartArg hJB).continuousOn fun _ hm ↦ hm.1
   have ht : Continuous fun m : EuclideanSpace ℝ (Fin n) × ((α : ↥(B \ S)) → E α) × (↥I → ℝ) ↦
-      extendParam I B m.2.2 := (continuous_extendParam I B).comp continuous_snd.snd
+      Finset.extendByZero₂ (π := fun _ ↦ ℝ) B m.2.2 :=
+    (Finset.continuous_extendByZero₂ (π := fun _ ↦ ℝ) B).comp continuous_snd.snd
   refine ContinuousOn.prodMk (continuousOn_pi.2 fun α ↦ ?_) (ht.continuousOn.prodMk hx)
   by_cases h : α.val ∈ S
   · simp only [dite_eq_left h]
     refine (((continuous_apply α).comp ht).continuousOn.inv₀ fun m hm ↦ ?_).smul
       ((𝒜.continuous_kuranishi J _).comp_continuousOn hx)
-    simp only [Function.comp_apply, extendParam_of_mem _ _ (hSI h)]
+    simp only [Function.comp_apply, Finset.extendByZero₂_of_mem _ _ (hSI h)]
     exact (hm.2 _ h).ne'
   · simp only [dite_eq_right h]
     exact ((continuous_apply _).comp continuous_snd.fst).continuousOn
@@ -373,7 +321,7 @@ theorem exists_homeomorph_deformationSpace (hIJ : I ⊆ J) (hJB : J ⊆ B)
     refine ⟨c.map_source q.property.1.1, ?_⟩
     rw [mem_preimage, c.left_inv q.property.1.1]
     exact q.property.1.2
-  · simp only [chartInv, extendParam_of_mem _ _ (hSI hα)]
+  · simp only [chartInv, Finset.extendByZero₂_of_mem _ _ (hSI hα)]
     exact m.property.1.2 _ hα
   · exact Continuous.subtype_mk ((continuousOn_chartFwd (hIJ.trans hJB) c).comp_continuous
       (continuous_subtypeVal.comp continuous_subtypeVal) fun q ↦ q.property.1.1) _
