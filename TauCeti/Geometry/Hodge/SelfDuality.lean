@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
-public import TauCeti.Geometry.Hodge.Dual
+public import TauCeti.Geometry.Hodge.Dual.Basic
 public import TauCeti.Geometry.Hodge.HodgeForm
 public import TauCeti.Geometry.Hodge.Tate.Twist
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
@@ -40,6 +40,8 @@ turns this into a polarizing form of `V^*`.
   isomorphism.
 * `TauCeti.Hodge.Polarization.toDualHom_toIntLinearMap_bijective_iff_isPerfPair`: the integral
   self-duality is an isomorphism exactly for a perfect integral polarizing form.
+* `TauCeti.Hodge.Polarization.homOfCompToDualHom`: a lattice map that self-duality turns into an
+  integer multiple of the identity is a Hodge morphism `V^*(-n) → V`.
 * `TauCeti.Hodge.Polarization.exists_comp_toDualHom_eq_nsmul_id`: the integral self-duality is
   invertible up to a nonzero integer.
 * `TauCeti.Hodge.IsPolarizable.dual`: the dual of a polarizable pure Hodge structure is
@@ -142,7 +144,7 @@ theorem toDualHom_toLinearMap (P : Polarization hℂ hs) :
 theorem toDualHom_toIntLinearMap_injective (P : Polarization hℂ hs) :
     Function.Injective P.toDualHom.toIntLinearMap := by
   rw [toDualHom_toIntLinearMap]
-  exact LinearMap.ker_eq_bot.mp P.isPolarization.nondegenerate.ker_eq_bot
+  exact P.isPolarization.injective
 
 /-- The complex self-duality map induced by a polarization is injective. -/
 theorem toDualHom_toLinearMap_injective (P : Polarization hℂ hs) :
@@ -168,6 +170,37 @@ theorem toDualHom_toIntLinearMap_bijective_iff_isPerfPair (P : Polarization hℂ
   · intro h
     exact h.bijective_left
 
+/-- A lattice map `g : V^* → V` that self-duality turns into multiplication by an integer `k`,
+as a **Hodge morphism `V^*(-n) → V`**. -/
+noncomputable def homOfCompToDualHom (P : Polarization hℂ hs) (g : Module.Dual ℤ V →ₗ[ℤ] V)
+    (k : ℤ) (hg : P.toDualHom.toIntLinearMap ∘ₗ g = k • LinearMap.id) :
+    HodgeStructure.Hom hs.dualTateTwist hs where
+  toIntLinearMap := g
+  map_mem_F p y hy := by
+    have hcomplex : P.toDualHom.toLinearMap ∘ₗ
+        integralMapToComplex (isBaseChange_dualLatticeMap hℂ) ιℂ g = k • LinearMap.id := by
+      rw [HodgeStructure.Hom.toLinearMap_def, ← integralMapToComplex_comp, hg,
+        integralMapToComplex_zsmul, integralMapToComplex_id]
+    -- `k • y` lies in the image of self-duality, which by strictness meets `F^p` of the
+    -- target in the image of `F^p` of the source.
+    have hmem : k • y ∈ LinearMap.range P.toDualHom.toLinearMap ⊓ hs.dualTateTwist.F p :=
+      ⟨⟨_, by simpa using congr($hcomplex y)⟩, zsmul_mem hy k⟩
+    rw [P.toDualHom.range_inf_F] at hmem
+    obtain ⟨x, hx, hxy⟩ := hmem
+    have hgy : integralMapToComplex (isBaseChange_dualLatticeMap hℂ) ιℂ g y = x := by
+      refine P.toDualHom_toLinearMap_injective ?_
+      rw [hxy]
+      simpa using congr($hcomplex y)
+    exact hgy ▸ hx
+
+/-- The lattice map underlying `homOfCompToDualHom` is the given map. -/
+@[simp]
+theorem homOfCompToDualHom_toIntLinearMap (P : Polarization hℂ hs)
+    (g : Module.Dual ℤ V →ₗ[ℤ] V) (k : ℤ)
+    (hg : P.toDualHom.toIntLinearMap ∘ₗ g = k • LinearMap.id) :
+    (P.homOfCompToDualHom g k hg).toIntLinearMap = g :=
+  (rfl)
+
 /-- **Self-duality is invertible up to a nonzero integer.** For a polarization of `V`, there is a
 Hodge morphism `g : V^*(-n) → V` such that composing it with self-duality, in either order, is
 multiplication by a nonzero natural number `c`. Over `ℚ`, `c⁻¹ • g` is the inverse of
@@ -178,27 +211,12 @@ theorem exists_comp_toDualHom_eq_nsmul_id (P : Polarization hℂ hs) :
         g.comp P.toDualHom = c • HodgeStructure.Hom.id _ := by
   obtain ⟨c, hc, g, hfg, hgf⟩ := LinearMap.exists_comp_eq_nsmul_id_of_injective
     P.toDualHom_toIntLinearMap_injective (Module.finrank_linearMap_self ℤ ℤ V).symm
-  have hcomplex : P.toDualHom.toLinearMap ∘ₗ
-      integralMapToComplex (isBaseChange_dualLatticeMap hℂ) ιℂ g = c • LinearMap.id := by
-    rw [HodgeStructure.Hom.toLinearMap_def, ← integralMapToComplex_comp, hfg,
-      integralMapToComplex_nsmul, integralMapToComplex_id]
-  let g' : HodgeStructure.Hom hs.dualTateTwist hs :=
-    { toIntLinearMap := g
-      map_mem_F p y hy := by
-        -- `c • y` lies in the image of self-duality, which by strictness meets `F^p` of the
-        -- target in the image of `F^p` of the source.
-        have hmem : c • y ∈ LinearMap.range P.toDualHom.toLinearMap ⊓ hs.dualTateTwist.F p :=
-          ⟨⟨_, by simpa using congr($hcomplex y)⟩, nsmul_mem hy c⟩
-        rw [P.toDualHom.range_inf_F] at hmem
-        obtain ⟨x, hx, hxy⟩ := hmem
-        have hgy : integralMapToComplex (isBaseChange_dualLatticeMap hℂ) ιℂ g y = x := by
-          refine P.toDualHom_toLinearMap_injective ?_
-          rw [hxy]
-          simpa using congr($hcomplex y)
-        exact hgy ▸ hx }
-  refine ⟨c, hc, g', HodgeStructure.Hom.ext fun x ↦ ?_, HodgeStructure.Hom.ext fun x ↦ ?_⟩
-  · simpa [g'] using congr($hfg x)
-  · simpa [g'] using congr($hgf x)
+  have hfg' : P.toDualHom.toIntLinearMap ∘ₗ g = (c : ℤ) • LinearMap.id := by
+    rw [hfg, Nat.cast_smul_eq_nsmul]
+  refine ⟨c, hc, P.homOfCompToDualHom g c hfg', HodgeStructure.Hom.ext fun x ↦ ?_,
+    HodgeStructure.Hom.ext fun x ↦ ?_⟩
+  · simpa using congr($hfg x)
+  · simpa using congr($hgf x)
 
 end Polarization
 

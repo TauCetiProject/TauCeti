@@ -43,8 +43,8 @@ import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
    - **Unique inversion per orbit & `|Φ| = r · h`**
      (`card_quotient_sameCycle_weylGroupToPerm_wordProd`,
      `existsUnique_sameCycle_mem_inversions_wordProd`, `existsUnique_pow_mem_inversions_wordProd`,
-     `natCard_eq_card_support_mul_orderOf_wordProd`,
-     `ncard_posRoots_eq_card_support_mul_orderOf_wordProd_div_two`), plus `_of_isFiniteType` forms.
+     `ncard_posRoots_eq_card_support_mul_orderOf_wordProd_div_two`), plus `_of_isFiniteType` forms
+     (including `natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType`).
 
 ## References
 * R. Steinberg, *Finite reflection groups*, Trans. Amer. Math. Soc. **91** (1959), 493–504.
@@ -343,28 +343,16 @@ theorem ncard_setOf_sameCycle_weylGroupToPerm_wordProd (j : ι) :
       orderOf (wordProd P b l) :=
   (Equiv.Perm.ncard_setOf_sameCycle _ _).trans (b.minimalPeriod_weylGroupToPerm_wordProd hnd hall j)
 
-/-- **Bourbaki's root-count formula `|Φ| = r · h`.** In a finite, reduced, irreducible,
-crystallographic root pairing with base `b`, the total number of roots equals the rank
-`b.support.card` times the order of any Coxeter element `wordProd P b l`. -/
-theorem natCard_eq_card_support_mul_orderOf_wordProd :
-    Nat.card ι = b.support.card * orderOf (wordProd P b l) := by
-  by_cases hne : Nonempty ι
-  · have : NeZero (2 : R) := ⟨by norm_num⟩
-    exact b.natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType
-      (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall
-  · have : IsEmpty ι := not_nonempty_iff.mp hne
-    simp [Finset.eq_empty_iff_forall_notMem.mpr fun x _ ↦ IsEmpty.false x]
-
-/-- **Positive-root count formula `2 |Φ⁺| = r · h`.** Twice the number of positive roots equals
-`b.support.card * orderOf (wordProd P b l)`. -/
-theorem two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordProd :
-    2 * (posRoots P b).ncard = b.support.card * orderOf (wordProd P b l) :=
-  (two_mul_ncard_posRoots P b).trans (b.natCard_eq_card_support_mul_orderOf_wordProd hnd hall)
-
 /-- **Positive-root count formula `|Φ⁺| = r · h / 2`.** -/
 theorem ncard_posRoots_eq_card_support_mul_orderOf_wordProd_div_two :
     (posRoots P b).ncard = b.support.card * orderOf (wordProd P b l) / 2 := by
-  rw [ncard_posRoots_eq_natCard_div_two, b.natCard_eq_card_support_mul_orderOf_wordProd hnd hall]
+  by_cases hne : Nonempty ι
+  · have : NeZero (2 : R) := ⟨by norm_num⟩
+    exact b.ncard_posRoots_eq_card_support_mul_orderOf_wordProd_div_two_of_isFiniteType
+      (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall
+  · have : IsEmpty ι := not_nonempty_iff.mp hne
+    simp [Set.eq_empty_iff_forall_notMem.mpr fun x _ ↦ IsEmpty.false x,
+      Finset.eq_empty_iff_forall_notMem.mpr fun x _ ↦ IsEmpty.false x]
 
 /-- **Number of Coxeter orbits on roots.** Every Coxeter element `wordProd P b l` partitions the
 root indices `ι` into `b.support.card` cyclic orbits. -/
