@@ -24,7 +24,7 @@ namespace Nat
 
 /-- An invertible residue class contains infinitely many primes outside any set whose
 counting function is `O(x ^ B)` for `B < 1`. -/
-theorem infinite_setOf_prime_and_eq_mod_and_notMem_of_ncard_isBigO
+theorem infinite_setOfPred_prime_and_eq_mod_and_notMem_of_ncard_isBigO
     {q : ℕ} [NeZero q] {a : ZMod q} (ha : IsUnit a) {S : Set ℕ} {B : ℝ} (hB : B < 1)
     (hcount : (fun x : ℝ ↦ ({n ∈ S | (n : ℝ) ≤ x}.ncard : ℝ)) =O[atTop] (· ^ B)) :
     {p : ℕ | p.Prime ∧ (p : ZMod q) = a ∧ p ∉ S}.Infinite := by

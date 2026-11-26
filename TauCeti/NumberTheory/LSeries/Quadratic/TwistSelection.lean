@@ -63,7 +63,7 @@ theorem exists_prime_quad_twist_zero_free_of_density {q : ℕ} [NeZero q] {a : Z
       letI : NeZero (q.lcm d) := ⟨Nat.lcm_ne_zero (NeZero.ne q) hd.ne_zero⟩
       ∀ (χ : DirichletCharacter ℂ q) (s : ℂ),
         β ≤ s.re → |s.im| ≤ H → (χ.mul (jacobiChar ℂ d)).LFunction s ≠ 0 := by
-  have hinf := Nat.infinite_setOf_prime_and_eq_mod_and_notMem_of_ncard_isBigO ha hB hcount
+  have hinf := Nat.infinite_setOfPred_prime_and_eq_mod_and_notMem_of_ncard_isBigO ha hB hcount
   obtain ⟨d, ⟨hd, hda, hgood⟩, hdN⟩ := Set.infinite_iff_exists_gt.mp hinf N
   refine ⟨d, hdN, hd, hda, fun χ s hs ht hzero ↦ hgood ?_⟩
   exact ZMod.mem_quadraticTwistBadPrimes_iff.mpr ⟨hda, hd, χ, s, hs, ht, hzero⟩
