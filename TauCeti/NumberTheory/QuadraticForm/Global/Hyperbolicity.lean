@@ -8,9 +8,10 @@ module
 public import Mathlib.FieldTheory.IsRealClosed.Real
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Signature
 public import TauCeti.NumberTheory.QuadraticForm.Global.Classification
+import TauCeti.NumberTheory.QuadraticForm.Global.WittLocalization
 
 /-!
-# Local hyperbolicity of quadratic forms over a number field
+# Hyperbolicity of quadratic forms over a number field
 
 A regular quadratic form is hyperbolic when its isometry class is a sum `m • ℍ` of hyperbolic
 planes. This file characterizes hyperbolicity of the localizations of a regular form `Q` over a
@@ -25,10 +26,13 @@ number field `K` by the invariants of `Q`.
 
 Together, `Q` is hyperbolic at every finite and every real place exactly when it has rank `2m`,
 the discriminant `m · [-1]` at every finite place, the Hasse sign `(-1, -1)_v^{m(m-1)/2}` at every
-finite place `v`, and the positive index `m` at every real place. A form that is hyperbolic over
-`K` is hyperbolic at every place, so these are also necessary conditions for hyperbolicity over
-`K`. The converse, that a form hyperbolic at every finite and real place is hyperbolic over `K`,
-is the Hasse–Minkowski theorem for isometry applied to `Q` and `m • ℍ`; this file does not use it.
+finite place `v`, and the positive index `m` at every real place.
+
+A form that is hyperbolic over `K` is hyperbolic at every place. Conversely, a form that is
+hyperbolic at every finite and every real place is hyperbolic over `K`: its Witt class vanishes at
+every place, hence over `K` by the injectivity of the global-to-local map of Witt rings
+(`TauCeti.WittRing.globalToLocal_injective`), and a regular form with trivial Witt class is a sum
+of hyperbolic planes. So the conditions above also characterize hyperbolicity over `K`.
 
 ## Main results
 
@@ -38,6 +42,8 @@ is the Hasse–Minkowski theorem for isometry applied to `Q` and `m • ℍ`; th
   place by rank and positive index.
 * `QuadraticForm.locally_formClass_eq_nsmul_hyperbolicClass_iff`: hyperbolicity at every finite
   and every real place by the local invariants.
+* `QuadraticForm.formClass_eq_nsmul_hyperbolicClass_iff_locally`: a regular form is hyperbolic
+  over `K` exactly when it is hyperbolic at every finite and every real place.
 * `QuadraticForm.formClass_atFinitePlace_eq_nsmul_hyperbolicClass`,
   `QuadraticForm.formClass_atRealPlace_eq_nsmul_hyperbolicClass`: a form hyperbolic over `K` is
   hyperbolic at every finite and every real place.
@@ -46,6 +52,7 @@ is the Hasse–Minkowski theorem for isometry applied to `Q` and `m • ℍ`; th
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, Springer (1963), 63:20 and 66:4.
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, AMS (2005), Chapter VI, §3.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter VIII, Theorem 6.3, p. 252.
 -/
 
 public section
@@ -143,5 +150,33 @@ theorem formClass_atFinitePlace_eq_nsmul_hyperbolicClass {Q : _root_.QuadraticFo
       m • hyperbolicClass (v.adicCompletion K) := by
   have hb := formClass_atFinitePlace Q hQ v
   rwa [h, RegularFormClass.baseChange_nsmul, RegularFormClass.baseChange_hyperbolicClass] at hb
+
+/-- **Global hyperbolicity** (the Hasse–Minkowski theorem for hyperbolic forms). A regular form
+over a number field is the sum of `m` hyperbolic planes exactly when it is the sum of `m`
+hyperbolic planes at every finite and every real place. -/
+theorem formClass_eq_nsmul_hyperbolicClass_iff_locally (Q : _root_.QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (m : ℕ) :
+    formClass Q hQ = m • hyperbolicClass K ↔
+      (∀ v : HeightOneSpectrum (𝓞 K), formClass (Q.atFinitePlace v)
+          (Nondegenerate.atFinitePlace hQ v) = m • hyperbolicClass (v.adicCompletion K)) ∧
+        ∀ w : {w : InfinitePlace K // w.IsReal},
+          formClass (Q.atRealPlace w) (Nondegenerate.atRealPlace hQ w) = m • hyperbolicClass ℝ := by
+  refine ⟨fun h => ⟨formClass_atFinitePlace_eq_nsmul_hyperbolicClass h,
+    formClass_atRealPlace_eq_nsmul_hyperbolicClass h⟩, fun hloc => ?_⟩
+  have hr := ((locally_formClass_eq_nsmul_hyperbolicClass_iff Q hQ m).mp hloc).1
+  -- The Witt class of `Q` vanishes at every finite and every real place, hence over `K`.
+  have hW : wittClass (formClass Q hQ) = 0 := by
+    refine WittRing.globalToLocal_injective ?_
+    rw [map_zero, WittRing.globalToLocal_wittClass_formClass]
+    refine Prod.ext (funext fun v => ?_) (funext fun w => ?_) <;>
+      simp only [hloc.1, hloc.2, map_nsmul, wittClass_hyperbolicClass, smul_zero,
+        Prod.fst_zero, Prod.snd_zero, Pi.zero_apply]
+  -- So `Q` is a sum of hyperbolic planes, and comparing ranks gives their number.
+  obtain ⟨k, hk⟩ : ∃ k : ℕ, formClass Q hQ = k • hyperbolicClass K :=
+    ⟨_, by simpa [wittClass_eq_zero_iff.mp hW] using
+      RegularFormClass.wittDecomposition (formClass Q hQ)⟩
+  have hrk := congrArg RegularFormClass.rank hk
+  rw [rank_formClass, rank_nsmul_hyperbolicClass, hr] at hrk
+  rw [hk, show k = m by omega]
 
 end QuadraticForm
