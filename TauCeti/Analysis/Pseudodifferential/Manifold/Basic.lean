@@ -12,7 +12,6 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Ba
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
-import TauCeti.Geometry.Manifold.VectorBundle.Section.ComplexModule
 
 /-!
 # Classical pseudodifferential operators on a manifold

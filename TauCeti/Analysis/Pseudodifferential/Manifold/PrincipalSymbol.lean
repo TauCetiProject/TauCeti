@@ -11,7 +11,6 @@ import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
-import TauCeti.Geometry.Manifold.VectorBundle.Section.ComplexModule
 
 /-!
 # The principal symbol of a classical pseudodifferential operator on a manifold
