@@ -5,102 +5,207 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import TauCeti.Analysis.Fredholm.Restriction
-public import TauCeti.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.Fredholm.ClosedRange
+import TauCeti.Analysis.InnerProductSpace.QuotientRange
+import TauCeti.Analysis.Normed.Operator.QuotientRange
 
 /-!
-# The transverse-subspace lemma
+# Transverse subspaces, coproduct stability, and Fredholm defect bounds
 
-Let `T₀ : E →L[𝕜] F` be a continuous linear map between Banach spaces, `V` a closed subspace of
-`E` meeting the kernel of `T₀` trivially, and `W` a topological complement of `T₀(V)` in `F`. Then
-the map `V × W → F`, `(v, w) ↦ T₀ v + w`, is a continuous linear equivalence, and since invertible
-operators form an open set, so is `(v, w) ↦ T v + w` for every `T` close enough to `T₀` in the
-operator norm. For such `T`, the subspace `V` still meets `ker T` trivially and `W` is still a
-topological complement of `T(V)`.
+Let `T₀ : E →L[𝕜] F` be a continuous linear operator and let `V ≤ E` be a complete subspace
+transverse to `ker T₀` (`Disjoint V T₀.ker`) whose image `T₀(V)` admits a complete algebraic
+complement `W ≤ F` in a Banach space `F` — for instance `W = (T₀(V))ᗮ` whenever `F` is a Hilbert
+space and `T₀(V)` is closed. The general restricted-coproduct API for
+`(T.domRestrict V).coprod W.subtypeL : (V × W) →L[𝕜] F` lives below Fredholm theory:
 
-When `V` has finite codimension and `W` is finite-dimensional, this controls every operator near
-`T₀` directly: `T` restricts to an isomorphism between the closed finite-codimensional subspaces
-`V` and `T(V)`, so it is Fredholm, its kernel has dimension at most `codim V`, its cokernel has
-dimension at most `dim W`, and its index is `codim V - dim W`. Evaluating at `T₀` shows that the
-index of `T` equals that of `T₀`, so `dim ker T₀ - dim ker T = dim coker T₀ - dim coker T`.
+* Pointwise algebraic and topological consequences
+  (`disjoint_ker_of_isInvertible_coprod_domRestrict`, `domRestrictEquivMap`,
+  `isInvertible_restrict_map_of_isInvertible_coprod_domRestrict`,
+  `isTopCompl_map_of_isInvertible_coprod_domRestrict`,
+  `isClosed_map_of_isInvertible_coprod_domRestrict`) live in
+  `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.QuotientRange`.
+* Continuity, Banach-space basepoint invertibility, and neighborhood stability
+  (`continuous_coprod_domRestrict`, `isInvertible_coprod_domRestrict`,
+  `eventually_nhds_isInvertible_coprod_domRestrict`) live in
+  `TauCeti.Analysis.Normed.Operator.QuotientRange`.
+* Hilbert-space orthogonal specializations — the general orthogonal coproduct
+  (`isInvertible_coprod_domRestrict_orthogonal`,
+  `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal`), the Atiyah–Singer
+  finite-dimensional transverse-subspace lemma
+  (`isInvertible_coprod_domRestrict_orthogonal_of_finiteDimensional`,
+  `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_of_finiteDimensional`), and the
+  closed-range orthogonal-kernel specialization (`isInvertible_coprod_domRestrict_orthogonal_ker`,
+  `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_ker`) — live in
+  `TauCeti.Analysis.InnerProductSpace.QuotientRange`.
 
-Neither `V` nor `W` is required to be orthogonal to anything, and `V` need not be
-finite-dimensional or finite-codimensional for the first part. On a Hilbert space `F` one may take
-`W = (V.map T₀)ᗮ` whenever `V.map T₀` is closed, through `Submodule.isTopCompl_orthogonal`; this
-covers in particular every finite-dimensional `V` with `V ⊓ ker T₀ = ⊥`.
+This file develops the Fredholm and Banach transverse-subspace consequences:
 
-## Main results
+1. **Finite-codimension `V` (`[V.CoFG]`, `[FiniteDimensional 𝕜 W]`)**: invertibility of
+   `(T.domRestrict V).coprod W.subtypeL` implies the dimension bounds
+   `finrank 𝕜 T.ker ≤ finrank 𝕜 (E ⧸ V)` and `finrank 𝕜 (F ⧸ T.range) ≤ finrank 𝕜 W`, the index
+   formula `T.index = (finrank 𝕜 (E ⧸ V) : ℤ) - finrank 𝕜 W`, and — when `V` is closed in a
+   topological vector space over a complete scalar field — `T.IsFredholm`.
+2. **Banach `IsTopCompl` characterization and neighborhood stability**: when `E` and `F` are Banach
+   spaces and `V ≤ E` is closed, `(T.domRestrict V).coprod W.subtypeL` is invertible if and only if
+   `Disjoint V T.ker` and `IsTopCompl (V.map T) W` (`isInvertible_coprod_domRestrict_iff`), so
+   both conditions, Fredholmness, defect bounds, and index equality persist in an operator-norm
+   neighborhood of `T₀` (`eventually_disjoint_ker_and_isTopCompl_map`,
+   `eventually_isFredholm_and_index_eq_of_isTopCompl_map`,
+   `eventually_finrank_ker_sub_finrank_ker_eq_of_isTopCompl_map`).
+3. **Finite-codimension image in a Hilbert target (`[(V.map T₀).CoFG]`)**: completeness of `V` and
+   finite codimension of `T₀(V)` automatically force `T₀(V)` to be closed via
+   `ContinuousLinearMap.isClosed_range_of_finite_coker`, yielding basepoint invertibility and
+   neighborhood stability of `(T.domRestrict V).coprod (T₀(V))ᗮ.subtypeL`
+   (`isInvertible_coprod_domRestrict_orthogonal_of_coFG`,
+   `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_of_coFG`).
 
-* `ContinuousLinearMap.isInvertible_comp_subtypeL_coprod_iff`: `(v, w) ↦ T v + w` is invertible on
-  `V × W` exactly when `V` meets `ker T` trivially and `W` is a topological complement of `T(V)`.
-* `ContinuousLinearMap.eventually_disjoint_ker_and_isTopCompl_map`: the transverse-subspace lemma;
-  both conditions persist in an operator-norm neighbourhood of `T₀`.
-* `ContinuousLinearMap.isFredholm_of_disjoint_ker_of_isTopCompl_map` and
-  `ContinuousLinearMap.index_eq_of_disjoint_ker_of_isTopCompl_map`: under both conditions, with
-  `V` closed of finite codimension and `W` finite-dimensional, `T` is Fredholm of index
-  `codim V - dim W`.
-* `ContinuousLinearMap.eventually_isFredholm_and_index_eq_of_isTopCompl_map`: near `T₀`, every
-  operator is Fredholm with `dim ker T ≤ codim V`, `dim coker T ≤ dim W` and index
-  `codim V - dim W`.
-* `ContinuousLinearMap.eventually_finrank_ker_sub_finrank_ker_eq_of_isTopCompl_map`: near `T₀`,
-  every operator satisfies `dim ker T₀ - dim ker T = dim coker T₀ - dim coker T`.
+## Main declarations
+
+In `ContinuousLinearMap`:
+
+* `finrank_ker_le_of_isInvertible_coprod_domRestrict`,
+  `finrank_quotient_range_le_of_isInvertible_coprod_domRestrict`,
+  `index_eq_of_isInvertible_coprod_domRestrict`,
+  `isFredholm_of_isInvertible_coprod_domRestrict`: defect bounds, index formula, and Fredholmness
+  from an invertible finite-codimension transverse coproduct.
+* `isInvertible_coprod_domRestrict_iff`,
+  `eventually_disjoint_ker_and_isTopCompl_map`,
+  `isFredholm_of_disjoint_ker_of_isTopCompl_map`,
+  `index_eq_of_disjoint_ker_of_isTopCompl_map`,
+  `eventually_isFredholm_and_index_eq_of_isTopCompl_map`,
+  `eventually_finrank_ker_sub_finrank_ker_eq_of_isTopCompl_map`: Banach-space `IsTopCompl`
+  characterization and Atiyah–Singer transverse-subspace stability.
+* `isInvertible_coprod_domRestrict_orthogonal_of_coFG`,
+  `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_of_coFG`: basepoint invertibility and
+  neighborhood stability of the orthogonal restricted coproduct when `T₀(V)` has finite codimension
+  in a Hilbert space `F`.
 
 ## References
 
-* M. F. Atiyah, I. M. Singer, *The index of elliptic operators: I*, Ann. of Math. **87** (1968),
-  484–530, pp. 519–520.
+* M. F. Atiyah, I. M. Singer, *The Index of Elliptic Operators: I*, Annals of Mathematics **87**
+  (1968), 484–530, §6, pp. 519–520.
+* T. Kato, *Perturbation Theory for Linear Operators*, second edition, Chapter IV, §5.1.
 -/
 
 public section
 
-open Topology Module Submodule
+open Filter Function Module Submodule Topology
 
 namespace ContinuousLinearMap
+
+/-! ### Dimension bounds, index, and Fredholmness in finite codimension -/
+
+section DivisionRing
+
+variable {𝕜 E F : Type*} [DivisionRing 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
+  {T : E →L[𝕜] F} {V : Submodule 𝕜 E} {W : Submodule 𝕜 F}
+
+private theorem injective_mkQ_domRestrict_ker
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    Injective (V.mkQ.domRestrict T.ker) := by
+  rw [LinearMap.injective_domRestrict_iff, Submodule.ker_mkQ]
+  exact (disjoint_ker_of_isInvertible_coprod_domRestrict hinv).symm
+
+private theorem surjective_mkQ_domRestrict_range
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    Surjective (T.range.mkQ.domRestrict W) := by
+  rw [LinearMap.surjective_domRestrict_iff T.range.mkQ_surjective, Submodule.ker_mkQ]
+  exact (isTopCompl_map_of_isInvertible_coprod_domRestrict hinv).isCompl.symm.codisjoint.mono_right
+    LinearMap.map_le_range
+
+/-- If `(T.domRestrict V).coprod W.subtypeL` is invertible and `V` has finite codimension, then
+`finrank 𝕜 T.ker ≤ finrank 𝕜 (E ⧸ V)`. -/
+theorem finrank_ker_le_of_isInvertible_coprod_domRestrict [V.CoFG]
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    finrank 𝕜 T.ker ≤ finrank 𝕜 (E ⧸ V) :=
+  (V.mkQ.domRestrict T.ker).finrank_le_finrank_of_injective (injective_mkQ_domRestrict_ker hinv)
+
+/-- If `(T.domRestrict V).coprod W.subtypeL` is invertible and `W` is finite-dimensional, then
+`finrank 𝕜 (F ⧸ T.range) ≤ finrank 𝕜 W`. -/
+theorem finrank_quotient_range_le_of_isInvertible_coprod_domRestrict [FiniteDimensional 𝕜 W]
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    finrank 𝕜 (F ⧸ T.range) ≤ finrank 𝕜 W :=
+  (T.range.mkQ.domRestrict W).finrank_le_finrank_of_surjective
+    (surjective_mkQ_domRestrict_range hinv)
+
+/-- If `V` has finite codimension, `W` is finite-dimensional, and
+`(T.domRestrict V).coprod W.subtypeL` is invertible, then the index of `T` equals
+`(finrank 𝕜 (E ⧸ V) : ℤ) - finrank 𝕜 W`. -/
+theorem index_eq_of_isInvertible_coprod_domRestrict [V.CoFG] [FiniteDimensional 𝕜 W]
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    T.index = (finrank 𝕜 (E ⧸ V) : ℤ) - finrank 𝕜 W := by
+  let e := (V.map (T : E →ₗ[𝕜] F)).quotientEquivOfIsCompl W
+    (isTopCompl_map_of_isInvertible_coprod_domRestrict hinv).isCompl
+  have : FiniteDimensional 𝕜 T.ker := .of_injective _ (injective_mkQ_domRestrict_ker hinv)
+  have : FiniteDimensional 𝕜 (F ⧸ T.range) :=
+    .of_surjective _ (surjective_mkQ_domRestrict_range hinv)
+  have : FiniteDimensional 𝕜 V.subtype.ker := by
+    rw [Submodule.ker_subtype]
+    infer_instance
+  have : FiniteDimensional 𝕜 (E ⧸ V.subtype.range) := by
+    -- `Submodule.CoFG` and `FiniteDimensional` are both `abbrev`s for `Module.Finite`.
+    rw [Submodule.range_subtype]
+    infer_instance
+  -- `T|_V` is injective with cokernel `F ⧸ T(V) ≃ₗ W`, so `index (T|_V) = -dim W`.
+  have hinj : Injective ((T : E →ₗ[𝕜] F) ∘ₗ V.subtype) :=
+    LinearMap.injective_domRestrict_iff.mpr (disjoint_ker_of_isInvertible_coprod_domRestrict hinv)
+  have hres : ((T : E →ₗ[𝕜] F) ∘ₗ V.subtype).index = -(finrank 𝕜 W : ℤ) := by
+    rw [LinearMap.index_of_injective hinj, LinearMap.range_comp, Submodule.range_subtype,
+      e.finrank_eq]
+  have hcomp := LinearMap.index_comp (T : E →ₗ[𝕜] F) V.subtype
+  simp only [hres, LinearMap.index_subtype, ← T.index_def] at hcomp
+  omega
+
+end DivisionRing
+
+section FiniteCodimension
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F] [ContinuousSMul 𝕜 F]
+  {T : E →L[𝕜] F} {V : Submodule 𝕜 E} {W : Submodule 𝕜 F} [T1Space W]
+
+/-- **Fredholmness from an invertible finite-codimension transverse coproduct.** If `V` is closed
+of finite codimension, `W` is `T₁` and finite-dimensional, and `(T.domRestrict V).coprod W.subtypeL`
+is invertible, then `T` is Fredholm (and in particular has closed range). -/
+theorem isFredholm_of_isInvertible_coprod_domRestrict
+    (hV : IsClosed (V : Set E)) [V.CoFG] [FiniteDimensional 𝕜 W]
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    T.IsFredholm := by
+  have hTop := isTopCompl_map_of_isInvertible_coprod_domRestrict hinv
+  have : (V.map (T : E →ₗ[𝕜] F)).CoFG :=
+    Module.Finite.equiv ((V.map (T : E →ₗ[𝕜] F)).quotientEquivOfIsCompl W hTop.isCompl).symm
+  exact IsFredholm.of_isInvertible_restrict hV hTop.isClosed
+    (fun _ hx ↦ Submodule.mem_map_of_mem hx)
+    (isInvertible_restrict_map_of_isInvertible_coprod_domRestrict hinv)
+
+end FiniteCodimension
+
+/-! ### Banach `IsTopCompl` characterization and stability -/
+
+section Banach
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {T T₀ : E →L[𝕜] F} {V : Submodule 𝕜 E} {W : Submodule 𝕜 F}
 
 /-- For a closed subspace `V` of a Banach space `E` and a subspace `W` of a Banach space `F`, the
-map `V × W → F`, `(v, w) ↦ T v + w`, is invertible exactly when `V` meets the kernel of `T`
-trivially and `W` is a topological complement of `T(V)`. -/
-theorem isInvertible_comp_subtypeL_coprod_iff [CompleteSpace E] [CompleteSpace F]
+restricted coproduct `(T.domRestrict V).coprod W.subtypeL : V × W →L[𝕜] F`, `(v, w) ↦ T v + w`, is
+invertible exactly when `V` meets the kernel of `T` trivially and `W` is a topological complement of
+`T(V)`. -/
+theorem isInvertible_coprod_domRestrict_iff [CompleteSpace E] [CompleteSpace F]
     (hV : IsClosed (V : Set E)) :
-    ((T ∘L V.subtypeL).coprod W.subtypeL).IsInvertible ↔
+    ((T.domRestrict V).coprod W.subtypeL).IsInvertible ↔
       Disjoint V T.ker ∧ IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W := by
-  have hrange : (T ∘L V.subtypeL).range = V.map (T : E →ₗ[𝕜] F) := by
-    rw [toLinearMap_comp, LinearMap.range_comp, Submodule.toLinearMap_subtypeL,
-      Submodule.range_subtype]
-  constructor
-  · rintro ⟨e, he⟩
-    have he' (x : V × W) : e x = T x.1 + x.2 := by
-      rw [← ContinuousLinearEquiv.coe_coe, he, coprod_apply]
-      simp
-    have hleft (v : V) : e.symm (T v) = (v, 0) := e.symm_apply_eq.mpr (by simp [he'])
-    refine ⟨Submodule.disjoint_def.mpr fun x hxV hxK ↦ ?_, ?_⟩
-    · have h0 : e.symm (T x) = 0 := by simp [show T x = 0 by simpa [LinearMap.mem_ker] using hxK]
-      simpa using congr(($((hleft ⟨x, hxV⟩).symm.trans h0)).1)
-    -- `T ∘ V.subtype` has the continuous left inverse `fst ∘ e⁻¹`, whose kernel is `W`.
-    have hinv : Function.LeftInverse (fst 𝕜 V W ∘L (e.symm : F →L[𝕜] V × W))
-        (T ∘L V.subtypeL) := fun v ↦ by simp [hleft]
-    have hker : (fst 𝕜 V W ∘L (e.symm : F →L[𝕜] V × W)).ker = W := by
-      ext y
-      simp only [LinearMap.mem_ker, coe_coe, coe_comp, ContinuousLinearEquiv.coe_coe,
-        Function.comp_apply, coe_fst']
-      refine ⟨fun h ↦ ?_, fun hy ↦ ?_⟩
-      · rw [← e.apply_symm_apply y, he', h]
-        simp
-      · rw [show y = e (0, ⟨y, hy⟩) by simp [he']]
-        simp
-    rw [← hrange, ← hker]
-    exact (T ∘L V.subtypeL).isTopCompl_range_ker_of_leftInverse _ hinv
-  · rintro ⟨hker, hW⟩
-    have : CompleteSpace V := hV.isComplete.completeSpace_coe
-    have : CompleteSpace W := hW.isClosed'.isComplete.completeSpace_coe
-    exact ⟨(T ∘L V.subtypeL).coprodSubtypeLEquivOfIsCompl (hrange ▸ hW.isCompl)
-      (LinearMap.ker_eq_bot.2 (LinearMap.injective_domRestrict_iff.2 hker)),
-      coe_coprodSubtypeLEquivOfIsCompl ..⟩
+  refine ⟨fun h ↦ ⟨disjoint_ker_of_isInvertible_coprod_domRestrict h,
+      isTopCompl_map_of_isInvertible_coprod_domRestrict h⟩, fun ⟨hker, hW⟩ ↦ ?_⟩
+  have : CompleteSpace V := hV.isComplete.completeSpace_coe
+  have : CompleteSpace W := hW.isClosed'.isComplete.completeSpace_coe
+  exact isInvertible_coprod_domRestrict hW.isCompl hker
 
 /-- **The transverse-subspace lemma** (Atiyah–Singer). Let `V` be a closed subspace of a Banach
 space `E` meeting the kernel of `T₀ : E →L[𝕜] F` trivially, and `W` a topological complement of
@@ -112,21 +217,12 @@ theorem eventually_disjoint_ker_and_isTopCompl_map [CompleteSpace E] [CompleteSp
     ∀ᶠ T : E →L[𝕜] F in 𝓝 T₀, Disjoint V T.ker ∧ IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W := by
   have : CompleteSpace V := hV.isComplete.completeSpace_coe
   have : CompleteSpace W := hW.isClosed'.isComplete.completeSpace_coe
-  have hcont : Continuous fun T : E →L[𝕜] F ↦ (T ∘L V.subtypeL).coprod W.subtypeL := by
-    fun_prop
-  filter_upwards [hcont.tendsto T₀ |>.eventually
-    ((isInvertible_comp_subtypeL_coprod_iff hV).mpr ⟨hker, hW⟩).eventually_nhds] with T hT
-  exact (isInvertible_comp_subtypeL_coprod_iff hV).mp hT
+  filter_upwards [eventually_nhds_isInvertible_coprod_domRestrict hW.isCompl hker] with T hT
+  exact (isInvertible_coprod_domRestrict_iff hV).mp hT
 
-section Fredholm
+section BanachFredholm
 
 variable [CompleteSpace 𝕜] [CompleteSpace E] [CompleteSpace F]
-
-omit [CompleteSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
-/-- A subspace `T(V)` with a finite-dimensional complement has finite codimension. -/
-private theorem cofg_map_of_isTopCompl [FiniteDimensional 𝕜 W]
-    (hW : IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W) : (V.map (T : E →ₗ[𝕜] F)).CoFG :=
-  FG.cofg_of_isCompl hW.isCompl.symm .of_finite
 
 /-- If `T` is injective on a closed finite-codimensional subspace `V` and `T(V)` has a
 finite-dimensional topological complement `W`, then `T` is Fredholm. -/
@@ -134,23 +230,18 @@ theorem isFredholm_of_disjoint_ker_of_isTopCompl_map (hV : IsClosed (V : Set E))
     [FiniteDimensional 𝕜 W] (hker : Disjoint V T.ker)
     (hW : IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W) :
     T.IsFredholm :=
-  have := cofg_map_of_isTopCompl hW
-  .of_isInvertible_restrict hV hW.isClosed _
-    (isInvertible_restrict_map_of_disjoint_ker hV hker hW.isClosed)
+  isFredholm_of_isInvertible_coprod_domRestrict hV
+    ((isInvertible_coprod_domRestrict_iff hV).mpr ⟨hker, hW⟩)
 
+omit [CompleteSpace 𝕜] in
 /-- If `T` is injective on a closed finite-codimensional subspace `V` and `T(V)` has a
 finite-dimensional topological complement `W`, then the index of `T` is `codim V - dim W`. -/
 theorem index_eq_of_disjoint_ker_of_isTopCompl_map (hV : IsClosed (V : Set E)) [V.CoFG]
     [FiniteDimensional 𝕜 W] (hker : Disjoint V T.ker)
     (hW : IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W) :
-    T.index = finrank 𝕜 (E ⧸ V) - finrank 𝕜 W := by
-  have := cofg_map_of_isTopCompl hW
-  have hinv := isInvertible_restrict_map_of_disjoint_ker hV hker hW.isClosed
-  have h := index_restrict hV hW.isClosed _ hinv.isFredholm
-  obtain ⟨e, he⟩ := hinv
-  rw [← he, ContinuousLinearEquiv.index_eq_zero,
-    (quotientEquivOfIsCompl _ _ hW.isCompl).finrank_eq] at h
-  lia
+    T.index = finrank 𝕜 (E ⧸ V) - finrank 𝕜 W :=
+  index_eq_of_isInvertible_coprod_domRestrict
+    ((isInvertible_coprod_domRestrict_iff hV).mpr ⟨hker, hW⟩)
 
 /-- **The transverse-subspace lemma, Fredholm form.** Let `V` be a closed finite-codimensional
 subspace of a Banach space `E` meeting the kernel of `T₀ : E →L[𝕜] F` trivially, and `W` a
@@ -163,20 +254,13 @@ theorem eventually_isFredholm_and_index_eq_of_isTopCompl_map (hV : IsClosed (V :
     ∀ᶠ T : E →L[𝕜] F in 𝓝 T₀, T.IsFredholm ∧ finrank 𝕜 T.ker ≤ finrank 𝕜 (E ⧸ V) ∧
       finrank 𝕜 (F ⧸ T.range) ≤ finrank 𝕜 W ∧
       T.index = finrank 𝕜 (E ⧸ V) - finrank 𝕜 W := by
-  filter_upwards [eventually_disjoint_ker_and_isTopCompl_map hV hker hW] with T ⟨hkerT, hWT⟩
-  have hFred := isFredholm_of_disjoint_ker_of_isTopCompl_map hV hkerT hWT
-  have : FiniteDimensional 𝕜 T.ker := hFred.finite_ker
-  refine ⟨hFred, ?_, ?_, index_eq_of_disjoint_ker_of_isTopCompl_map hV hkerT hWT⟩
-  · -- The kernel of `T` injects into `E ⧸ V`.
-    refine LinearMap.finrank_le_finrank_of_injective (f := V.mkQ ∘ₗ T.ker.subtype) ?_
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_comp, ker_mkQ, ← disjoint_iff_comap_eq_bot]
-    exact hkerT.symm
-  · -- `W` maps onto `F ⧸ range T`, since `T(V) ⊔ W = ⊤` and `T(V) ≤ range T`.
-    have htop : W.map T.range.mkQ = ⊤ := by
-      rw [map_mkQ_eq_top]
-      exact top_unique (hWT.isCompl.sup_eq_top ▸ sup_le_sup_right LinearMap.map_le_range W)
-    have h := W.finrank_map_le T.range.mkQ
-    rwa [htop, finrank_top] at h
+  have : CompleteSpace V := hV.isComplete.completeSpace_coe
+  have : CompleteSpace W := hW.isClosed'.isComplete.completeSpace_coe
+  filter_upwards [eventually_nhds_isInvertible_coprod_domRestrict hW.isCompl hker] with T hT
+  exact ⟨isFredholm_of_isInvertible_coprod_domRestrict hV hT,
+    finrank_ker_le_of_isInvertible_coprod_domRestrict hT,
+    finrank_quotient_range_le_of_isInvertible_coprod_domRestrict hT,
+    index_eq_of_isInvertible_coprod_domRestrict hT⟩
 
 /-- **The transverse-subspace lemma, dimension form.** Under the hypotheses of
 `eventually_isFredholm_and_index_eq_of_isTopCompl_map`, every `T` close enough to `T₀` in the
@@ -192,8 +276,45 @@ theorem eventually_finrank_ker_sub_finrank_ker_eq_of_isTopCompl_map (hV : IsClos
     with T ⟨_, _, _, hT⟩
   have hT₀ := index_eq_of_disjoint_ker_of_isTopCompl_map hV hker hW
   rw [index_eq_finrank_sub] at hT hT₀
-  lia
+  omega
 
-end Fredholm
+end BanachFredholm
+
+end Banach
+
+/-! ### Finite-codimension orthogonal coproducts -/
+
+section HilbertCodomain
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- Basepoint invertibility of `(T₀.domRestrict V).coprod (T₀(V))ᗮ.subtypeL` when `V` is complete,
+`T₀(V)` has finite codimension in `F`, and `Disjoint V T₀.ker` (closedness of `T₀(V)` is
+automatic). -/
+theorem isInvertible_coprod_domRestrict_orthogonal_of_coFG {T₀ : E →L[𝕜] F} {V : Submodule 𝕜 E}
+    [CompleteSpace V] [(V.map (T₀ : E →ₗ[𝕜] F)).CoFG] (hdisj : Disjoint V T₀.ker) :
+    ((T₀.domRestrict V).coprod (V.map (T₀ : E →ₗ[𝕜] F))ᗮ.subtypeL).IsInvertible := by
+  have : FiniteDimensional 𝕜 (F ⧸ (T₀.domRestrict V).range) := by
+    rw [toLinearMap_domRestrict, LinearMap.range_domRestrict]
+    infer_instance
+  have hMapClosed : IsClosed (V.map (T₀ : E →ₗ[𝕜] F) : Set F) := by
+    rw [← LinearMap.range_domRestrict, ← toLinearMap_domRestrict]
+    exact (T₀.domRestrict V).isClosed_range_of_finite_coker
+  let : CompleteSpace (V.map (T₀ : E →ₗ[𝕜] F)) := hMapClosed.isComplete.completeSpace_coe
+  exact isInvertible_coprod_domRestrict_orthogonal hdisj
+
+/-- **Finite-codimension transverse-subspace stability.** If `V ≤ E` is complete, `T₀(V)` has
+finite codimension in the Hilbert space `F`, and `Disjoint V T₀.ker`, then
+`(T.domRestrict V).coprod (T₀(V))ᗮ.subtypeL` is invertible for all `T` near `T₀`. -/
+theorem eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_of_coFG {T₀ : E →L[𝕜] F}
+    {V : Submodule 𝕜 E} [CompleteSpace V] [(V.map (T₀ : E →ₗ[𝕜] F)).CoFG]
+    (hdisj : Disjoint V T₀.ker) :
+    ∀ᶠ T in 𝓝 T₀, ((T.domRestrict V).coprod (V.map (T₀ : E →ₗ[𝕜] F))ᗮ.subtypeL).IsInvertible :=
+  (continuous_coprod_domRestrict V _).tendsto T₀ |>.eventually
+    (isInvertible_coprod_domRestrict_orthogonal_of_coFG hdisj).eventually_nhds
+
+end HilbertCodomain
 
 end ContinuousLinearMap

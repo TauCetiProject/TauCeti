@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 import Mathlib.Analysis.Complex.Isometry
 import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.RigidMotion
-import TauCeti.Analysis.Fredholm.OrthogonalSplitting
+import TauCeti.Analysis.Fredholm.Orthogonal.Splitting
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.AffineIsometry
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace

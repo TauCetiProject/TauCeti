@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fredholm.OrthogonalSplitting
+public import TauCeti.Analysis.Fredholm.Orthogonal.Splitting
 public import TauCeti.Analysis.PDE.Vortex.Existence
 public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff

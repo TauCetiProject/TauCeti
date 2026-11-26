@@ -17,7 +17,8 @@ import Mathlib.Tactic.Abel
 
 Topological complementedness is preserved by continuous semilinear equivalences, allowing
 continuous projections to be transported between different presentations of a module. It is also
-preserved by restriction of scalars.
+preserved by restriction of scalars. Topological projections onto equal submodules along equal
+complements coincide (`Submodule.projectionOntoL_congr`, `Submodule.projectionL_congr`).
 A continuous linear map is unchanged by the projection along its kernel onto a topological
 complement of that kernel.
 A continuous linear quotient map admits a continuous linear section exactly when its kernel is
@@ -33,6 +34,26 @@ is inclusion into the ambient module, followed by `u`, then projection onto `p` 
 public section
 
 namespace Submodule
+
+section ProjectionCongr
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [TopologicalSpace M] [Module R M]
+
+/-- Two continuous linear projections onto the same submodule `p` along equal topological
+complements `q` and `q'` coincide. -/
+theorem projectionOntoL_congr {p q q' : Submodule R M} {h : IsTopCompl p q}
+    {h' : IsTopCompl p q'} (hq : q = q') :
+    p.projectionOntoL q h = p.projectionOntoL q' h' := by
+  subst hq; rfl
+
+/-- Two ambient continuous linear projections onto equal submodules `p` and `p'` along equal
+topological complements `q` and `q'` coincide. -/
+theorem projectionL_congr {p p' q q' : Submodule R M} {h : IsTopCompl p q}
+    {h' : IsTopCompl p' q'} (hp : p = p') (hq : q = q') :
+    p.projectionL q h = p'.projectionL q' h' := by
+  subst hp; subst hq; rfl
+
+end ProjectionCongr
 
 section Map
 

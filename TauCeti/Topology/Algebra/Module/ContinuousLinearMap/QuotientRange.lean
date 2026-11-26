@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Module.Complement
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
@@ -20,10 +21,22 @@ between fixed spaces. Ambient maps carrying one range into another induce coordi
 changes satisfying the cocycle law; ambient equivalences preserving the ranges give
 invertible changes. This is useful for local coordinates on normal bundles.
 
+When `A = T.domRestrict V` and `B = W.subtypeL` for submodules `V ≤ E` and `W ≤ F`,
+invertibility of the restricted coproduct `(T.domRestrict V).coprod W.subtypeL` implies that `V`
+is disjoint from `ker T` (`ContinuousLinearMap.disjoint_ker_of_isInvertible_coprod_domRestrict`),
+the first component of the inverse coproduct recovers `v ∈ V` from `T v`
+(`ContinuousLinearMap.fst_inverse_coprod_domRestrict_apply`), and `T` restricts to a continuous
+linear equivalence `V ≃L[R] V.map T` (`ContinuousLinearMap.domRestrictEquivMap`,
+`ContinuousLinearMap.isInvertible_restrict_map_of_isInvertible_coprod_domRestrict`), the image
+`V.map T` is closed whenever `W` is `T₁`
+(`ContinuousLinearMap.isClosed_map_of_isInvertible_coprod_domRestrict`), and over a ring `V.map T`
+and `W` are topological complements
+(`ContinuousLinearMap.isTopCompl_map_of_isInvertible_coprod_domRestrict`).
+
 The construction uses Mathlib's total continuous-linear inverse and continuous
 quotient lift. No norm, completeness, or choice of an inner product is required. The
-coordinates and their coordinate changes only need a semiring; the identification with
-the quotient needs a ring.
+coordinates, coordinate changes, and restricted-coproduct equivalences only need a semiring;
+the identification with the quotient and topological-complement statement need a ring.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
 the normal-bundle construction preceding Theorem 6.24.
@@ -210,5 +223,121 @@ theorem isInvertible_quotientRangeCoordinate_comp
     (.refl R F) (Submodule.map_id _)
 
 end CoordinateChange
+
+/-! ### Pointwise consequences of an invertible restricted coproduct -/
+
+section RestrictedCoprod
+
+variable {R E F : Type*} [Semiring R]
+  [TopologicalSpace E] [AddCommMonoid E] [Module R E]
+  [TopologicalSpace F] [AddCommMonoid F] [Module R F] [ContinuousAdd F]
+  {T : E →L[R] F} {V : Submodule R E} {W : Submodule R F}
+
+/-- If `(T.domRestrict V).coprod W.subtypeL` is invertible, then `V` is disjoint from `ker T`. -/
+theorem disjoint_ker_of_isInvertible_coprod_domRestrict
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    Disjoint V T.ker := by
+  rw [Submodule.disjoint_def]
+  intro x hxV hxker
+  exact congrArg (fun p : V × W ↦ (p.1 : E)) <|
+    hinv.injective (a₁ := (⟨x, hxV⟩, 0)) (a₂ := (0, 0)) <| by
+      simpa using LinearMap.mem_ker.mp hxker
+
+/-- When `(T.domRestrict V).coprod W.subtypeL` is invertible, the `V`-component of its inverse
+recovers `v` from `T v`. -/
+@[simp]
+theorem fst_inverse_coprod_domRestrict_apply
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) (v : V) :
+    (((T.domRestrict V).coprod W.subtypeL).inverse (T v)).1 = v := by
+  simpa using congrArg Prod.fst (hinv.inverse_apply_self (v, 0))
+
+/-- When `(T.domRestrict V).coprod W.subtypeL` is invertible, `T` restricts to a continuous linear
+equivalence between `V` and its image `V.map (T : E →ₗ[R] F)`. -/
+noncomputable def domRestrictEquivMap
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    V ≃L[R] V.map (T : E →ₗ[R] F) :=
+  ContinuousLinearEquiv.ofContinuousLinearMap
+    (T.restrict fun _ hx ↦ Submodule.mem_map_of_mem hx)
+    (fst R V W ∘L ((T.domRestrict V).coprod W.subtypeL).inverse ∘L
+      (V.map (T : E →ₗ[R] F)).subtypeL)
+    (ContinuousLinearMap.ext fun ⟨_, v, hv, rfl⟩ ↦ by
+      apply Subtype.ext
+      simp [fst_inverse_coprod_domRestrict_apply hinv ⟨v, hv⟩])
+    (ContinuousLinearMap.ext fun v ↦ by simp [fst_inverse_coprod_domRestrict_apply hinv])
+
+/-- The underlying continuous linear map of `domRestrictEquivMap` is the restriction of `T` to
+`V` and its image `V.map (T : E →ₗ[R] F)`. -/
+@[simp]
+theorem toContinuousLinearMap_domRestrictEquivMap
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    (domRestrictEquivMap hinv : V →L[R] V.map (T : E →ₗ[R] F)) =
+      T.restrict fun _ hx ↦ Submodule.mem_map_of_mem hx :=
+  (rfl)
+
+/-- Applying `domRestrictEquivMap` and coercing to the ambient space recovers `T`. -/
+@[simp]
+theorem coe_domRestrictEquivMap_apply
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) (v : V) :
+    (domRestrictEquivMap hinv v : F) = T v := by
+  rw [← ContinuousLinearEquiv.coe_coe, toContinuousLinearMap_domRestrictEquivMap,
+    coe_restrict_apply]
+
+/-- The inverse of `domRestrictEquivMap` reads the `V`-component of the inverse coproduct. -/
+@[simp]
+theorem domRestrictEquivMap_symm_apply
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) (y : V.map (T : E →ₗ[R] F)) :
+    (domRestrictEquivMap hinv).symm y =
+      (((T.domRestrict V).coprod W.subtypeL).inverse (y : F)).1 := by
+  simp [domRestrictEquivMap]
+
+/-- When `(T.domRestrict V).coprod W.subtypeL` is invertible, the restriction
+`T.restrict : V →L[R] V.map (T : E →ₗ[R] F)` is invertible. -/
+theorem isInvertible_restrict_map_of_isInvertible_coprod_domRestrict
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    (T.restrict (fun _ hx ↦ Submodule.mem_map_of_mem hx :
+      Set.MapsTo T V (V.map (T : E →ₗ[R] F)))).IsInvertible :=
+  ⟨domRestrictEquivMap hinv, toContinuousLinearMap_domRestrictEquivMap hinv⟩
+
+/-- When `(T.domRestrict V).coprod W.subtypeL` is invertible and `W` is `T₁`, the image `T(V)` is
+closed in `F`. -/
+theorem isClosed_map_of_isInvertible_coprod_domRestrict [T1Space W]
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    IsClosed (V.map (T : E →ₗ[R] F) : Set F) := by
+  have hker := ker_quotientRangeCoordinate hinv
+  rw [toLinearMap_domRestrict, LinearMap.range_domRestrict] at hker
+  rw [← hker]
+  exact isClosed_singleton.preimage
+    ((T.domRestrict V).quotientRangeCoordinate W.subtypeL).continuous
+
+end RestrictedCoprod
+
+section RestrictedCoprodRing
+
+variable {R E F : Type*} [Ring R]
+  [TopologicalSpace E] [AddCommGroup E] [Module R E]
+  [TopologicalSpace F] [AddCommGroup F] [Module R F] [ContinuousAdd F]
+  {T : E →L[R] F} {V : Submodule R E} {W : Submodule R F}
+
+/-- When `(T.domRestrict V).coprod W.subtypeL` is invertible, `V.map (T : E →ₗ[R] F)` and `W` are
+topological complements in `F`. -/
+theorem isTopCompl_map_of_isInvertible_coprod_domRestrict
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    Submodule.IsTopCompl (V.map (T : E →ₗ[R] F)) W := by
+  let p : F →L[R] V := fst R V W ∘L ((T.domRestrict V).coprod W.subtypeL).inverse
+  have hp : Function.LeftInverse p (T.domRestrict V) := fun v ↦ by
+    simpa [p] using fst_inverse_coprod_domRestrict_apply hinv v
+  have hker : p.ker = W := by
+    refine le_antisymm (fun y hy ↦ ?_) (fun y hy ↦ ?_)
+    · have h1 : (((T.domRestrict V).coprod W.subtypeL).inverse y).1 = 0 :=
+        LinearMap.mem_ker.mp hy
+      have hself := hinv.self_apply_inverse y
+      simp only [coprod_apply, h1, map_zero, zero_add, Submodule.coe_subtypeL,
+        Submodule.coe_subtype] at hself
+      exact hself ▸ (((T.domRestrict V).coprod W.subtypeL).inverse y).2.property
+    · simpa [p] using congrArg Prod.fst (hinv.inverse_apply_self (0, ⟨y, hy⟩))
+  simpa [toLinearMap_domRestrict, LinearMap.range_domRestrict, hker] using
+    (T.domRestrict V).isTopCompl_range_ker_of_leftInverse p hp
+
+end RestrictedCoprodRing
 
 end ContinuousLinearMap

@@ -18,8 +18,9 @@ Let `T x : E →L[𝕜] F` be a family of operators between Banach spaces, conti
 where `T x₀` is Fredholm. The dimensions of the kernel and of the cokernel of `T x` can only drop
 near `x₀` (`ContinuousLinearMap.IsFredholm.eventually_finrank_ker_le` and
 `ContinuousLinearMap.IsFredholm.eventually_finrank_quotient_range_le`), and since the index is
-locally constant they drop together: near `x₀` the nullity of `T x` is that of `T x₀` exactly
-when its conullity is (`ContinuousLinearMap.IsFredholm.eventually_finrank_ker_eq_iff`).
+locally constant their drops agree (`ContinuousLinearMap.IsFredholm.eventually_finrank_ker_sub_eq`),
+so near `x₀` the nullity of `T x` is that of `T x₀` exactly when its conullity is
+(`ContinuousLinearMap.IsFredholm.eventually_finrank_ker_eq_iff`).
 
 This file shows that the parameters near `x₀` where the nullity does not drop are those where a
 single finite-dimensional complement `S` of the range of `T x₀` stays a complement of the range
@@ -116,6 +117,17 @@ theorem IsFredholm.eventually_finrank_ker_le (hT₀ : IsFredholm (T x₀)) (hT :
     ∀ᶠ x in 𝓝 x₀, finrank 𝕜 (T x).ker ≤ finrank 𝕜 (T x₀).ker := by
   filter_upwards [hT₀.eventually_finrank_quotient_range_le hT,
     hT.eventually hT₀.eventually_nhds_index_eq] with x hcoker hindex
+  rw [LinearMap.index_eq_finrank_sub, LinearMap.index_eq_finrank_sub] at hindex
+  omega
+
+omit [CompleteSpace F] in
+/-- Near a parameter where a family continuous there is Fredholm, the drops in nullity and in
+conullity from `x₀` are equal as natural numbers. -/
+theorem IsFredholm.eventually_finrank_ker_sub_eq (hT₀ : IsFredholm (T x₀))
+    (hT : ContinuousAt T x₀) :
+    ∀ᶠ x in 𝓝 x₀, finrank 𝕜 (T x₀).ker - finrank 𝕜 (T x).ker =
+      finrank 𝕜 (F ⧸ (T x₀).range) - finrank 𝕜 (F ⧸ (T x).range) := by
+  filter_upwards [hT.eventually hT₀.eventually_nhds_index_eq] with x hindex
   rw [LinearMap.index_eq_finrank_sub, LinearMap.index_eq_finrank_sub] at hindex
   omega
 

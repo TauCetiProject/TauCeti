@@ -163,7 +163,9 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `U.starProjection`, commutation with `Uᗮ.starProjection` is equivalent to commutation with
   `U.starProjection`, and operators commuting with `U.starProjection` leave `U` invariant.
 * `LinearMap.apply_sub_starProjection_ker`,
-  `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component.
+  `LinearMap.map_orthogonal_ker_eq_range`,
+  `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component and
+  carry `(ker u)ᗮ` onto `range u`.
 * `LinearMap.exists_infDist_inf_ker_le`: distance to `P ⊓ ker D` is controlled by distance to `P`
   plus a multiple of `‖D (P.starProjection w)‖`.
 * `LinearIsometryEquiv.conjStarAlgEquiv_starProjection`: conjugating `P_V` by a linear isometry
@@ -868,6 +870,15 @@ theorem apply_sub_starProjection_ker (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonal
   rw [mem_ker] at hx
   simpa only [map_add, hx, add_zero] using
     congrArg u (sub_add_cancel x (u.ker.starProjection x))
+
+/-- When `ker u` admits an orthogonal projection, `u` maps `(ker u)ᗮ` onto `range u`. -/
+@[simp]
+theorem map_orthogonal_ker_eq_range (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonalProjection] :
+    u.kerᗮ.map u = u.range :=
+  le_antisymm map_le_range <| by
+    rintro _ ⟨x, rfl⟩
+    exact ⟨x - u.ker.starProjection x, u.ker.sub_starProjection_mem_orthogonal x,
+      u.apply_sub_starProjection_ker x⟩
 
 /-- **Subspace-kernel distance bound.** For `D : E →ₗ[𝕜] F` on a finite-dimensional inner product
 space and `P ≤ E`, `infDist w (P ⊓ ker D)` is bounded by

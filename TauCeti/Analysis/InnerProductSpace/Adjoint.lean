@@ -47,6 +47,17 @@ Its adjoint gives an equivalence in the reverse direction (`ContinuousLinearEqui
 with the adjoint of the inverse as inverse. For a family of equivalences continuous in the
 operator norm, the adjoints are again continuous
 (`ContinuousLinearEquiv.continuous_adjointEquiv`).
+Restricting a closed-range operator out of a Hilbert space to `(ker T)ᗮ` gives a continuous linear
+equivalence onto `range T` (`ContinuousLinearMap.orthogonalKerEquivRange`); between Hilbert spaces,
+its adjoint is bijective, so `T†` maps `range T` onto `(ker T)ᗮ`
+(`ContinuousLinearMap.map_adjoint_range_eq_orthogonal_ker_of_isClosed_range`), `range T† = (ker T)ᗮ`
+and `range T = (ker T†)ᗮ` (`ContinuousLinearMap.range_adjoint_eq_orthogonal_ker_of_isClosed_range`,
+`ContinuousLinearMap.range_eq_orthogonal_ker_adjoint_of_isClosed_range`), `T†` has closed range iff
+`T` does (`ContinuousLinearMap.isClosed_range_adjoint_iff`), `range T` and `ker T†` are topological
+complements (`ContinuousLinearMap.isTopCompl_range_ker_adjoint_of_isClosed_range`), and the Gram
+operators `T† ∘L T` and `T ∘L T†` have closed ranges `(ker T)ᗮ = range T†` and
+`(ker T†)ᗮ = range T` (`ContinuousLinearMap.range_adjoint_comp_self_of_isClosed_range`,
+`ContinuousLinearMap.range_self_comp_adjoint_of_isClosed_range`).
 For a finite-dimensional linear isometry, the adjoint returns its image vectors to their
 preimages (`LinearIsometry.adjoint_apply_apply`).
 
@@ -62,6 +73,8 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `ContinuousLinearEquiv.adjointEquiv`: the adjoint as a continuous linear equivalence, with the
   same operator norm (`ContinuousLinearEquiv.norm_adjointEquiv`), bounded below by `‖A⁻¹‖⁻¹`
   (`ContinuousLinearEquiv.norm_le_norm_symm_mul_norm_adjointEquiv`).
+* `ContinuousLinearMap.orthogonalKerEquivRange`: the continuous linear equivalence
+  `(ker T)ᗮ ≃L[𝕜] range T` for a closed-range operator out of a Hilbert space into a Banach space.
 * `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between real or complex
   Hilbert spaces as a real-linear continuous map.
 * `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`; for a
@@ -520,6 +533,51 @@ end ContinuousLinearEquiv
 
 namespace ContinuousLinearMap
 
+open scoped InnerProduct
+
+section OrthogonalKerEquivRange
+
+variable [CompleteSpace E] {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
+
+/-- The restriction of a closed-range operator to the orthogonal complement of its kernel is a
+continuous linear equivalence onto its range. -/
+noncomputable def orthogonalKerEquivRange (T : E →L[𝕜] G)
+    (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] G) : Set G)) :
+    (LinearMap.ker (T : E →ₗ[𝕜] G))ᗮ ≃L[𝕜]
+      LinearMap.range (T : E →ₗ[𝕜] G) :=
+  let : CompleteSpace (LinearMap.ker (T : E →ₗ[𝕜] G))ᗮ :=
+    (LinearMap.ker (T : E →ₗ[𝕜] G)).isClosed_orthogonal.completeSpace_coe
+  let : CompleteSpace (LinearMap.range (T : E →ₗ[𝕜] G)) := hT.completeSpace_coe
+  (LinearMap.kerComplementEquivRange (T : E →ₗ[𝕜] G)
+    (LinearMap.ker (T : E →ₗ[𝕜] G)).isCompl_orthogonal.symm).toContinuousLinearEquivOfContinuous
+      (Topology.IsInducing.subtypeVal.continuous_iff.mpr <|
+        (T.continuous.comp continuous_subtypeVal).congr fun x ↦
+          (LinearMap.kerComplementEquivRange_apply_coe _ _ x).symm)
+
+/-- The closed-range restriction equivalence acts by the original operator. -/
+@[simp]
+theorem orthogonalKerEquivRange_apply (T : E →L[𝕜] G)
+    (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] G) : Set G))
+    (x : (LinearMap.ker (T : E →ₗ[𝕜] G))ᗮ) :
+    (T.orthogonalKerEquivRange hT x : G) = T x := by
+  let : CompleteSpace (LinearMap.ker (T : E →ₗ[𝕜] G))ᗮ :=
+    (LinearMap.ker (T : E →ₗ[𝕜] G)).isClosed_orthogonal.completeSpace_coe
+  let : CompleteSpace (LinearMap.range (T : E →ₗ[𝕜] G)) := hT.completeSpace_coe
+  rw [orthogonalKerEquivRange, LinearEquiv.coeFn_toContinuousLinearEquivOfContinuous]
+  exact LinearMap.kerComplementEquivRange_apply_coe _ _ x
+
+/-- Applying a closed-range operator to the inverse of its orthogonal-kernel restriction
+recovers the given range element. -/
+@[simp]
+theorem orthogonalKerEquivRange_symm_apply (T : E →L[𝕜] G)
+    (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] G) : Set G))
+    (y : LinearMap.range (T : E →ₗ[𝕜] G)) :
+    T ((T.orthogonalKerEquivRange hT).symm y) = (y : G) :=
+  (T.orthogonalKerEquivRange_apply hT _).symm.trans <|
+    congr_arg Subtype.val ((T.orthogonalKerEquivRange hT).apply_symm_apply y)
+
+end OrthogonalKerEquivRange
+
 variable [CompleteSpace E] [CompleteSpace F]
 
 /-- The adjoint of an invertible operator between Hilbert spaces is invertible. -/
@@ -531,6 +589,135 @@ theorem IsInvertible.adjoint {A : E →L[𝕜] F} (hA : A.IsInvertible) : (adjoi
 @[simp]
 theorem isInvertible_adjoint_iff {A : E →L[𝕜] F} : (adjoint A).IsInvertible ↔ A.IsInvertible :=
   ⟨fun h ↦ adjoint_adjoint A ▸ h.adjoint, IsInvertible.adjoint⟩
+
+/-- For a continuous linear map `T` with closed range between Hilbert spaces, `T†` maps `range T`
+onto `(ker T)ᗮ`: restricting `T` gives an isomorphism `(ker T)ᗮ ≃L range T`, whose adjoint is
+`T†` restricted from `range T` to `(ker T)ᗮ` and is therefore bijective. -/
+theorem map_adjoint_range_eq_orthogonal_ker_of_isClosed_range (T : E →L[𝕜] F)
+    (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
+    (LinearMap.range (T : E →ₗ[𝕜] F)).map (T† : F →ₗ[𝕜] E) =
+      (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ := by
+  set K := LinearMap.ker (T : E →ₗ[𝕜] F)
+  set R := LinearMap.range (T : E →ₗ[𝕜] F)
+  refine le_antisymm ?_ fun x hx => ?_
+  · rintro _ ⟨y, -, rfl⟩
+    exact T.adjoint_apply_mem_orthogonal_ker y
+  · set e : Kᗮ ≃L[𝕜] R := T.orthogonalKerEquivRange hT with he
+    have he_apply (z : Kᗮ) : (e z : F) = T (z : E) := by
+      simpa only [he] using T.orthogonalKerEquivRange_apply hT z
+    have hcoe (y : R) :
+        ((((T†).domRestrict R).codRestrict Kᗮ
+            (fun y => T.adjoint_apply_mem_orthogonal_ker y)) y : E) = (T†) (y : F) :=
+      (coe_codRestrict_apply _ _ _ y).trans (congrFun (coe_domRestrict (T†) R) y)
+    have hB : ((T†).domRestrict R).codRestrict Kᗮ
+        (fun y => T.adjoint_apply_mem_orthogonal_ker y) = ((e : Kᗮ →L[𝕜] R)†) :=
+      (eq_adjoint_iff _ _).2 fun y z => by
+        rw [Submodule.coe_inner, hcoe, Submodule.coe_inner, T.adjoint_inner_left,
+          ContinuousLinearEquiv.coe_coe, he_apply]
+    have hsurj : Function.Surjective (((T†).domRestrict R).codRestrict Kᗮ
+        (fun y => T.adjoint_apply_mem_orthogonal_ker y)) := by
+      rw [hB]
+      exact e.adjoint_bijective.surjective
+    obtain ⟨y, hy⟩ := hsurj ⟨x, hx⟩
+    exact ⟨(y : F), y.property, (hcoe y).symm.trans (congr_arg Subtype.val hy)⟩
+
+/-- A continuous linear map with closed range has adjoint range equal to the orthogonal
+complement of its kernel. -/
+theorem range_adjoint_eq_orthogonal_ker_of_isClosed_range (T : E →L[𝕜] F)
+    (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
+    LinearMap.range (T† : F →ₗ[𝕜] E) =
+      (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ := by
+  refine le_antisymm ?_ ?_
+  · rintro _ ⟨y, rfl⟩
+    exact T.adjoint_apply_mem_orthogonal_ker y
+  · rw [← T.map_adjoint_range_eq_orthogonal_ker_of_isClosed_range hT]
+    exact LinearMap.map_le_range
+
+/-- A continuous linear map with closed range has range equal to the orthogonal complement of
+the kernel of its adjoint. -/
+theorem range_eq_orthogonal_ker_adjoint_of_isClosed_range
+    (T : E →L[𝕜] F) (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
+    LinearMap.range (T : E →ₗ[𝕜] F) = (LinearMap.ker (T† : F →ₗ[𝕜] E))ᗮ := by
+  have : CompleteSpace (LinearMap.range (T : E →ₗ[𝕜] F)) := hT.completeSpace_coe
+  rw [← T.orthogonal_range, Submodule.orthogonal_orthogonal]
+
+/-- If a continuous linear map between Hilbert spaces has closed range, then so does its
+adjoint. -/
+theorem isClosed_range_adjoint_of_isClosed_range (T : E →L[𝕜] F)
+    (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
+    IsClosed (LinearMap.range (T† : F →ₗ[𝕜] E) : Set E) := by
+  rw [T.range_adjoint_eq_orthogonal_ker_of_isClosed_range hT]
+  exact (LinearMap.ker (T : E →ₗ[𝕜] F)).isClosed_orthogonal
+
+/-- A continuous linear map between Hilbert spaces has closed range if and only if its adjoint
+does. -/
+@[simp]
+theorem isClosed_range_adjoint_iff (T : E →L[𝕜] F) :
+    IsClosed (LinearMap.range (T† : F →ₗ[𝕜] E) : Set E) ↔
+      IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F) := by
+  constructor
+  · intro hT
+    simpa using isClosed_range_adjoint_of_isClosed_range (T†) hT
+  · exact isClosed_range_adjoint_of_isClosed_range T
+
+/-- For a closed-range operator `T` between Hilbert spaces, `range T` and `ker T†` are topological
+complements. -/
+theorem isTopCompl_range_ker_adjoint_of_isClosed_range
+    (T : E →L[𝕜] F) (hT : IsClosed (T.range : Set F)) :
+    Submodule.IsTopCompl T.range (T†).ker := by
+  let : CompleteSpace T.range := hT.completeSpace_coe
+  simpa only [T.orthogonal_range] using T.range.isTopCompl_orthogonal
+
+/-- If a continuous linear map `T` between Hilbert spaces has closed range, then its Gram operator
+`T† ∘L T` has the same range in the source space as `T†`. -/
+theorem range_adjoint_comp_self_of_isClosed_range (T : E →L[𝕜] F)
+    (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
+    LinearMap.range ((T† ∘L T : E →L[𝕜] E) : E →ₗ[𝕜] E) = LinearMap.range (T† : F →ₗ[𝕜] E) := by
+  rw [toLinearMap_comp, LinearMap.range_comp,
+    T.map_adjoint_range_eq_orthogonal_ker_of_isClosed_range hT,
+    T.range_adjoint_eq_orthogonal_ker_of_isClosed_range hT]
+
+/-- If a continuous linear map `T` between Hilbert spaces has closed range, then the range of its
+Gram operator `T† ∘L T` is the orthogonal complement of `ker T`. -/
+theorem range_adjoint_comp_self_eq_orthogonal_ker_of_isClosed_range
+    (T : E →L[𝕜] F) (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
+    LinearMap.range ((T† ∘L T : E →L[𝕜] E) : E →ₗ[𝕜] E) =
+      (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ :=
+  (T.range_adjoint_comp_self_of_isClosed_range hT).trans
+    (T.range_adjoint_eq_orthogonal_ker_of_isClosed_range hT)
+
+/-- If a continuous linear map `T` between Hilbert spaces has closed range, then its Gram operator
+`T† ∘L T` also has closed range. -/
+theorem isClosed_range_adjoint_comp_self_of_isClosed_range
+    (T : E →L[𝕜] F) (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
+    IsClosed (LinearMap.range ((T† ∘L T : E →L[𝕜] E) : E →ₗ[𝕜] E) : Set E) := by
+  rw [T.range_adjoint_comp_self_eq_orthogonal_ker_of_isClosed_range hT]
+  exact (LinearMap.ker (T : E →ₗ[𝕜] F)).isClosed_orthogonal
+
+/-- If a continuous linear map `T` between Hilbert spaces has closed range, then `T ∘L T†` has the
+same range in the target space as `T`. -/
+theorem range_self_comp_adjoint_of_isClosed_range (T : E →L[𝕜] F)
+    (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
+    LinearMap.range ((T ∘L T† : F →L[𝕜] F) : F →ₗ[𝕜] F) = LinearMap.range (T : E →ₗ[𝕜] F) := by
+  simpa using range_adjoint_comp_self_of_isClosed_range (T†)
+    (isClosed_range_adjoint_of_isClosed_range T hT)
+
+/-- If a continuous linear map `T` between Hilbert spaces has closed range, then the range of
+`T ∘L T†` is the orthogonal complement of `ker T†`. -/
+theorem range_self_comp_adjoint_eq_orthogonal_ker_adjoint_of_isClosed_range
+    (T : E →L[𝕜] F) (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
+    LinearMap.range ((T ∘L T† : F →L[𝕜] F) : F →ₗ[𝕜] F) =
+      (LinearMap.ker (T† : F →ₗ[𝕜] E))ᗮ :=
+  (T.range_self_comp_adjoint_of_isClosed_range hT).trans
+    (T.range_eq_orthogonal_ker_adjoint_of_isClosed_range hT)
+
+/-- If a continuous linear map `T` between Hilbert spaces has closed range, then `T ∘L T†` also
+has closed range. -/
+theorem isClosed_range_self_comp_adjoint_of_isClosed_range
+    (T : E →L[𝕜] F) (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
+    IsClosed (LinearMap.range ((T ∘L T† : F →L[𝕜] F) : F →ₗ[𝕜] F) : Set F) := by
+  rw [T.range_self_comp_adjoint_of_isClosed_range hT]
+  exact hT
 
 end ContinuousLinearMap
 

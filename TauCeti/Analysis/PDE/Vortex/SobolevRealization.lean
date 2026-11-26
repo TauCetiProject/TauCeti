@@ -20,7 +20,7 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Normed.Group.Pi
 public import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Fredholm.Criteria
-public import TauCeti.Analysis.Fredholm.OrthogonalSplitting
+public import TauCeti.Analysis.Fredholm.Orthogonal.Splitting
 
 /-!
 # The gauge-fixed vortex operator on `H¹`: kernel, range and orthogonal splittings
