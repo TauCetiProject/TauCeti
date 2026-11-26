@@ -57,6 +57,8 @@ is the Fourier integral of `t^{s-1}`, regularised at `∞`.
   `Complex.integral_Ioi_cpow_mul_cexp_neg_mul_eq_sum`: integrability on `(δ, ∞)` and one or `n`
   integrations by parts.
 * `Complex.norm_cpow_mul_cexp_neg_mul_le`: the bound `‖t^γ e^{-wt}‖ ≤ t^{Re γ}` for `Re w ≥ 0`.
+* `Complex.integrableOn_Ioi_cpow_mul_cexp_mul_I`: on the imaginary axis, `t^γ e^{ixt}` is
+  integrable on `(δ, ∞)` for `Re γ < -1`.
 * `Complex.integral_cpow_mul_cexp_mul_I_add_sum_eq`: the Fourier integral of `t^{s-1}`,
   regularised by integration by parts, is `e^{iπs/2} Γ(s) x^{-s}`.
 * `TauCeti.integral_norm_cpow_mul_exp_neg_mul_Ioi`: the integral of the norm of the integrand is
@@ -370,6 +372,15 @@ theorem norm_cpow_mul_cexp_neg_mul_le (γ : ℂ) {w : ℂ} (hw : 0 ≤ w.re) {t 
   refine mul_le_of_le_one_right (by positivity) (Real.exp_le_one_iff.2 ?_)
   simp only [neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero, Left.neg_nonpos_iff]
   positivity
+
+/-- For `Re γ < -1` and `δ > 0`, the oscillatory power `t ↦ t^γ e^{ixt}` is integrable on
+`(δ, ∞)` for every real `x`. -/
+theorem integrableOn_Ioi_cpow_mul_cexp_mul_I {γ : ℂ} (hγ : γ.re < -1) (x : ℝ) {δ : ℝ}
+    (hδ : 0 < δ) :
+    IntegrableOn (fun t : ℝ => (t : ℂ) ^ γ * cexp (((x * t : ℝ) : ℂ) * I)) (Ioi δ) := by
+  refine Integrable.mono' (integrableOn_Ioi_rpow_of_lt hγ hδ) (by fun_prop) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : δ < t)
+  rw [norm_mul, norm_exp_ofReal_mul_I, mul_one, norm_cpow_eq_rpow_re_of_pos (hδ.trans ht)]
 
 /-- The Gamma integral `∫₀^∞ t^{α-1} e^{-wt} dt` split at `δ`, with the part over `(δ, ∞)`
 integrated by parts `n` times. For `0 < Re α < n` each term is defined and continuous on the closed
