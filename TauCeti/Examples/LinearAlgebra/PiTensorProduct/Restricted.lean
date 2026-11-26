@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.PiTensorProduct.Restricted.Rescale
 # Checks for restricted tensor products
 
 * The empty finite stage is the ring of scalars, with the empty pure tensor as `1`
-  (`TauCeti.RestrictedTensor.emptyStageEquiv_tprod`).
+  (Mathlib's `PiTensorProduct.isEmptyEquiv`).
 * A zero reference vector kills nonzero tensors: if `w j = 0`, the empty pure tensor, which is
   nonzero, has image `0` in the restricted tensor product, so the empty stage does not embed
   (`TauCeti.RestrictedTensor.not_injective_ofFinite_empty`). The nonzero-reference hypothesis of
@@ -31,14 +31,9 @@ namespace RestrictedTensor
 variable {ι : Type*} {R : Type*} [CommSemiring R] {W : ι → Type*}
   [∀ i, AddCommMonoid (W i)] [∀ i, Module R (W i)]
 
-variable (R W) in
-/-- The empty finite stage is the ring of scalars. -/
-noncomputable def emptyStageEquiv : (⨂[R] i : (∅ : Finset ι), W i) ≃ₗ[R] R :=
-  PiTensorProduct.isEmptyEquiv _
-
-/-- The empty pure tensor corresponds to `1`. -/
-theorem emptyStageEquiv_tprod (f : ∀ i : (∅ : Finset ι), W i) :
-    emptyStageEquiv R W (PiTensorProduct.tprod R f) = 1 :=
+-- The empty finite stage is the ring of scalars, with the empty pure tensor as `1`.
+example (f : ∀ i : (∅ : Finset ι), W i) :
+    PiTensorProduct.isEmptyEquiv (∅ : Finset ι) (PiTensorProduct.tprod R f) = 1 :=
   PiTensorProduct.isEmptyEquiv_apply_tprod _ f
 
 variable [DecidableEq ι]
@@ -51,7 +46,8 @@ theorem not_injective_ofFinite_empty [Nontrivial R] {w : ∀ i, W i} {j : ι} (h
   have h0 : ofFinite R W w ∅ (PiTensorProduct.tprod R fun i ↦ w i) = 0 := by
     rw [← tprod_ref, tprod_coord_zero w _ j hj]
   have hne : (PiTensorProduct.tprod R fun i : (∅ : Finset ι) ↦ w i) ≠ 0 := fun h ↦ by
-    simpa [h] using emptyStageEquiv_tprod (R := R) (W := W) fun i ↦ w i
+    simpa [h] using PiTensorProduct.isEmptyEquiv_apply_tprod (R := R)
+      (s := fun i : (∅ : Finset ι) ↦ W i) (∅ : Finset ι) fun i ↦ w i
   exact hne (hinj (h0.trans (map_zero _).symm))
 
 /-- Rescaling the references sends the pure tensor of the references to the pure tensor of the
