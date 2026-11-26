@@ -44,13 +44,15 @@ contains an open subgroup and is open, and hence closed, in `Kˣ`. Openness does
 any finiteness of the quotient `Kˣ ⧸ (Kˣ)ⁿ`: a subgroup of finite index in a topological group need
 not be open. Since the principal units are exactly the units of `𝒪[K]` that reduce to `1`, a unit
 of `𝒪[K]` is then an `n`-th power in `K` precisely when its residue is an `n`-th power in `𝓀[K]`.
-At `n = 2` that is the criterion for a unit of `𝒪[K]` to be a square. When moreover `n ∣ q - 1`,
-Euler's criterion in the cyclic group `𝓀[K]ˣ` turns it into the condition that `c ^ ((q - 1) / n)`
-be a principal unit. As a consequence, a subgroup
+At `n = 2` that is the criterion for a unit of `𝒪[K]` to be a square. As a consequence, a subgroup
 of `Kˣ` is open as soon as the exponent (for instance, the index) of the quotient by it is
 invertible in `𝒪[K]`, since it then contains the power subgroup attached to that exponent.
 The openness results are stated in `PowerSubgroup.Open`, including the general case
 `(n : K) ≠ 0` obtained from powers of deep units.
+
+When `n ∣ q - 1`, which forces `n` to be invertible in `𝒪[K]`, Euler's criterion in the cyclic
+group `𝓀[K]ˣ` of order `q - 1` makes the residue criterion explicit: a unit `c` of `𝒪[K]` is an
+`n`-th power in `K` exactly when `c ^ ((q - 1) / n)` is a principal unit.
 
 ## Main results
 
