@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.SmoothPartition
 
 /-!
@@ -14,6 +15,10 @@ import TauCeti.Geometry.Manifold.DifferentialForm.SmoothPartition
 A finite smooth localization reduces a compactly supported C1 form to boundary-centered chart
 patches and patches avoiding the boundary. Chart signs are constant on each patch. The local
 half-space theorem and finite additivity then give Stokes for the outward-first orientation.
+
+Since pullback commutes with the exterior derivative, the pullback of a closed form along a map
+`F : M → N` integrates to zero over the oriented boundary
+(`TauCeti.integralTopForm_mpullback_comp_subtypeVal_eq_zero`).
 -/
 
 public section
@@ -78,5 +83,25 @@ theorem integralTopForm_mextDeriv
     rw [boundaryRestriction_eq_zero_of_disjoint hd, integralTopForm_zero]
     exact integralTopForm_mextDeriv_eq_zero_of_tsupport_subset_chart l (hψ i hi) i
       (hcψ i hi) hs hσ hd
+
+/-- **Stokes' theorem for a pulled-back closed form.** For a `C²` map `F : M → N` from an oriented
+manifold with boundary and a closed `C¹` form `θ` on `N` whose pullback to `M` has compact support,
+the integral of `θ` pulled back to the oriented boundary `∂M` vanishes: it is the integral over `M`
+of `d(F^*θ) = F^*(dθ) = 0`. -/
+theorem integralTopForm_mpullback_comp_subtypeVal_eq_zero {E' H' N : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+    [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 2 N]
+    (o : Manifold.Orientation (𝓡∂ (n + 1)) M (Fin (n + 1))) {F : M → N}
+    (hF : ContMDiff (𝓡∂ (n + 1)) J 2 F) {θ : RoughForm J N ℝ n} (hθ : IsSmoothForm J 1 θ)
+    (hclosed : mextDeriv θ = 0)
+    (hc : IsCompact (_root_.tsupport (α := EuclideanSpace ℝ (Fin (n + 1)) [⋀^Fin n]→L[ℝ] ℝ)
+      (mpullback (𝓡∂ (n + 1)) J F θ))) :
+    integralTopForm (boundaryOrientation o)
+      (mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) J (F ∘ Subtype.val) θ) = 0 := by
+  rw [mpullback_comp
+      ((isImmersion_subtypeVal_boundary (k := 1) M).contMDiff.mdifferentiable one_ne_zero)
+      (hF.mdifferentiable (by simp)), ← boundaryRestriction_eq_mpullback,
+    ← integralTopForm_mextDeriv o (hθ.mpullback hF) hc, hθ.mextDeriv_mpullback_eq_zero hclosed hF,
+    integralTopForm_zero]
 
 end TauCeti

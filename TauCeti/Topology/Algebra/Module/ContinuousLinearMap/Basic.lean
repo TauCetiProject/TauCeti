@@ -43,6 +43,10 @@ then Mathlib's algebraic flip `LinearMap.flip` applies to it.
   determined by its values on the coordinate vectors.
 * `ContinuousLinearMap.apply_eq_sum_smul_single`: the expansion
   `f x = ∑ k, x k • f (Pi.single k 1)` of such a map in the coordinate vectors.
+* `ContinuousLinearMap.units_inv_apply_apply`, `ContinuousLinearMap.units_apply_inv_apply`: a
+  unit continuous linear endomorphism and its inverse undo each other pointwise.
+* `ContinuousLinearMap.mul_self_eq_neg_one_iff_comp_eq_neg_id`: `A * A = -1` in the ring of
+  continuous linear endomorphisms is `A ∘ A = -id`.
 * `LinearMap.flip_coeLMₛₗ_comp_apply`: evaluation of the algebraic flip of such a family `μ`,
   `((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip y x = μ x y`.
 -/
@@ -105,6 +109,24 @@ theorem apply_eq_sum_smul_single {R M κ : Type*} [Semiring R] [TopologicalSpace
     (f : (κ → R) →L[R] M) (x : κ → R) : f x = ∑ k, x k • f (Pi.single k 1) := by
   conv_lhs => rw [pi_eq_sum_univ' x]
   simp [map_sum]
+
+/-- Applying the inverse of a unit continuous linear endomorphism undoes applying the unit. -/
+@[simp]
+theorem units_inv_apply_apply (u : (M₁ →L[R₁] M₁)ˣ) (x : M₁) :
+    (↑u⁻¹ : M₁ →L[R₁] M₁) ((u : M₁ →L[R₁] M₁) x) = x := by
+  rw [← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self]
+
+/-- Applying a unit continuous linear endomorphism undoes applying its inverse. -/
+@[simp]
+theorem units_apply_inv_apply (u : (M₁ →L[R₁] M₁)ˣ) (x : M₁) :
+    (u : M₁ →L[R₁] M₁) ((↑u⁻¹ : M₁ →L[R₁] M₁) x) = x := by
+  rw [← mul_apply_eq_comp, Units.mul_inv, one_apply_eq_self]
+
+/-- `A * A = -1` in the ring of continuous linear endomorphisms is `A ∘ A = -id`. -/
+theorem mul_self_eq_neg_one_iff_comp_eq_neg_id {R M : Type*} [Ring R] [TopologicalSpace M]
+    [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M] {A : M →L[R] M} :
+    A * A = -1 ↔ A.comp A = -ContinuousLinearMap.id R M := by
+  rw [mul_def, one_def]
 
 end ContinuousLinearMap
 

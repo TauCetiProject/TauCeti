@@ -47,6 +47,7 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 
 * `LaurentPolynomial.T_sum`: the monomial of a finite sum of exponents is the product of the
   monomials.
+* `LaurentPolynomial.T_mul_mul_T_neg`: multiplying by `Tⁿ` and by `T⁻ⁿ` cancel.
 * `LaurentPolynomial.mapDomainAlgHom_mulRight_T` and
   `LaurentPolynomial.mapDomainAlgHom_mulRight_comp_toAlgHom`: the substitution `T ↦ Tⁿ` sends
   `Tᵐ` to `T^{mn}` and fixes constants.
@@ -62,6 +63,7 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 * `LaurentPolynomial.hom_eval₂`: a ring homomorphism commutes with `LaurentPolynomial.eval₂`.
 * `LaurentPolynomial.laurentEval_one_eq_sum`: evaluating a Laurent polynomial at `1` sums its
   coefficients.
+* `LaurentPolynomial.eval₂_id_one_eq_sum_coeff`: so does `LaurentPolynomial.eval₂` at `T = 1`.
 * `TauCeti.eval₂_C_injective_of_val_eq_T`: the substitution `T ↦ Tᵏ` is injective for `k ≠ 0`.
 * `TauCeti.mul_laurentEval`: an element commuting with a unit `u` up to a scalar `c` moves past
   evaluation at `u` by rescaling by `c`.
@@ -103,6 +105,11 @@ theorem T_sub_T_ne_zero {R : Type*} [Ring R] [Nontrivial R] {m n : ℤ} (h : m �
   intro hzero
   have hc := congrArg (fun p : R[T;T⁻¹] => p.coeff m) hzero
   simp [AddMonoidAlgebra.coeff_sub, h.symm] at hc
+
+/-- Multiplying by `Tⁿ` and by `T⁻ⁿ` cancel. -/
+theorem T_mul_mul_T_neg {R : Type*} [Semiring R] (n : ℤ) (f : R[T;T⁻¹]) :
+    T n * f * T (-n) = f := by
+  rw [T_mul, mul_T_assoc, add_neg_cancel, T_zero, mul_one]
 
 /-- The substitution `T ↦ Tⁿ` sends the Laurent monomial `Tᵐ` to `T^{mn}`. -/
 theorem mapDomainAlgHom_mulRight_T (n m : ℤ) :
@@ -271,6 +278,12 @@ theorem laurentEval_eq_eval₂ {S : Type*} [CommSemiring S] [Algebra R S] (u : S
 theorem _root_.LaurentPolynomial.laurentEval_one_eq_sum (f : R[T;T⁻¹]) :
     laurentEval (1 : Rˣ) f = f.coeff.sum fun _ c ↦ c := by
   simp [laurentEval, AddMonoidAlgebra.lift_apply']
+
+/-- Evaluating a Laurent polynomial at `T = 1` sums its coefficients. -/
+theorem _root_.LaurentPolynomial.eval₂_id_one_eq_sum_coeff (p : R[T;T⁻¹]) :
+    eval₂ (RingHom.id R) 1 p = ∑ n ∈ p.coeff.support, p.coeff n := by
+  rw [← Algebra.algebraMap_self, eval₂_eq_smeval, smeval_eq_sum, Finsupp.sum]
+  simp
 
 /-- **Substituting a nonzero power of `T` is injective.**  Evaluating a Laurent polynomial at a
 unit of `R[T;T⁻¹]` whose value is `T k` substitutes `Tᵏ` for `T`; for `k ≠ 0` this sends distinct

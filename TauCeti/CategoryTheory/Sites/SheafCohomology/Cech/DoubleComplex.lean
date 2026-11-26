@@ -28,7 +28,12 @@ needs a zero object in `A` and the total complex). When `A` is abelian and the a
 exact, it is a quasi-isomorphism (`TauCeti.CategoryTheory.quasiIso_presheafCechTotalAugmentation`).
 When `A` is abelian and products of the shape of Čech degree `p` are exact, the cohomology of the
 column `p` is the object of Čech cochains of degree `p` of the cohomology presheaves of `I`
-(`TauCeti.CategoryTheory.presheafCechColumnHomologyIso`).
+(`TauCeti.CategoryTheory.presheafCechColumnHomologyIso`). The Čech differentials of the terms of
+`I` form a map from the column `p` to the column `p + 1`
+(`TauCeti.CategoryTheory.cechColumnD`), whose opposite is the differential of the double complex
+(`TauCeti.CategoryTheory.presheafCechDoubleComplex_d_eq`); under these identifications, the map it
+induces on cohomology is the Čech differential of the cohomology presheaf
+(`TauCeti.CategoryTheory.presheafCechColumnHomologyIso_inv_comp_homologyMap_cechColumnD`).
 
 ## Main definitions
 
@@ -36,6 +41,8 @@ column `p` is the object of Čech cochains of degree `p` of the cohomology presh
   complex of presheaves, in `Aᵒᵖ`, with the Čech degree as first index.
 * `TauCeti.CategoryTheory.presheafCechTotalAugmentation`: the augmentation of its total complex to
   the complex of sections `I(T)`.
+* `TauCeti.CategoryTheory.cechColumnD U I p`: the map from the column `p` to the column `p + 1`
+  given by the Čech differentials.
 
 ## Main results
 
@@ -116,6 +123,27 @@ abbrev sectionsCochainComplex (T : C) (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) :
 abbrev cechColumn (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : ℕ) : CochainComplex A ℕ :=
   ((cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) p).mapHomologicalComplex
     (ComplexShape.up ℕ)).obj I
+
+/-- The map from the column `p` of the Čech double complex, before passing to `Aᵒᵖ`, to the
+column `p + 1`, given by the Čech differentials `Čᵖ(U, Iᵠ) ⟶ Čᵖ⁺¹(U, Iᵠ)` of the presheaves
+`Iᵠ`. -/
+abbrev cechColumnD (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : ℕ) :
+    cechColumn U I p ⟶ cechColumn U I (p + 1) :=
+  (NatTrans.mapHomologicalComplex (Functor.whiskerLeft (cechComplexFunctor U)
+    (HomologicalComplex.dNatTrans A (ComplexShape.up ℕ) p (p + 1))) (ComplexShape.up ℕ)).app I
+
+/-- The component of `cechColumnD U I p` in degree `q` is the Čech differential of `Iᵠ`. -/
+lemma cechColumnD_f (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p q : ℕ) :
+    (cechColumnD U I p).f q = ((cechComplexFunctor U).obj (I.X q)).d p (p + 1) :=
+  (rfl)
+
+/-- The differential of the Čech double complex from the column `p + 1` to the column `p` is the
+opposite of `cechColumnD U I p`. -/
+lemma presheafCechDoubleComplex_d_eq (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : ℕ) :
+    (presheafCechDoubleComplex U I).d (p + 1) p =
+      (opFunctor A (ComplexShape.up ℕ)).map (cechColumnD U I p).op := by
+  ext q
+  rfl
 
 section Augmentation
 
@@ -321,5 +349,20 @@ lemma presheafCechColumnHomologyIso_eq (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) 
     presheafCechColumnHomologyIso U I p k = (I.sc k).mapHomologyIso
       (cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) p) :=
   (rfl)
+
+/-- With exact products, under the identifications `presheafCechColumnHomologyIso` of the
+cohomology of the columns of the Čech double complex with Čech cochains of the cohomology presheaf
+of `I`, the map induced on cohomology by `cechColumnD U I p` is the Čech differential of the
+presheaf `Hᵏ(I)`. -/
+theorem presheafCechColumnHomologyIso_inv_comp_homologyMap_cechColumnD
+    (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : ℕ)
+    [HasExactLimitsOfShape (Discrete (Fin (p + 1) → ι)) A]
+    [HasExactLimitsOfShape (Discrete (Fin (p + 1 + 1) → ι)) A] (k : ℕ) :
+    (presheafCechColumnHomologyIso U I p k).inv ≫ homologyMap (cechColumnD U I p) k ≫
+      (presheafCechColumnHomologyIso U I (p + 1) k).hom =
+    ((cechComplexFunctor U).obj (I.homology k)).d p (p + 1) := by
+  rw [presheafCechColumnHomologyIso_eq, presheafCechColumnHomologyIso_eq]
+  exact (NatTrans.app_homology (Functor.whiskerLeft (cechComplexFunctor U)
+    (HomologicalComplex.dNatTrans A (ComplexShape.up ℕ) p (p + 1))) (I.sc k)).symm
 
 end TauCeti.CategoryTheory

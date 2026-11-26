@@ -206,17 +206,13 @@ theorem localMultiplicity_weierstrassSphereMap_zero :
   have := WithTop.coe_injective h'
   omega
 
-/-- The fibre of the Weierstrass map over `∞` is the class of `0`. -/
-private theorem toFinset_finite_fiber_infty :
-    (L.weierstrassSphereMap.finite_fiber ∞).toFinset = {0} := by
-  ext x
-  simp only [Set.Finite.mem_toFinset, Set.mem_preimage, Set.mem_singleton_iff,
-    Finset.mem_singleton, weierstrassSphereMap_eq_infty_iff]
-
 /-- **The Weierstrass map has degree `2`.** -/
 @[simp]
 theorem degree_weierstrassSphereMap : degree L.weierstrassSphereMap = 2 := by
-  rw [degree_eq_fiber_sum _ ∞, toFinset_finite_fiber_infty, Finset.sum_singleton,
+  have hfib : L.weierstrassSphereMap ⁻¹' {∞} = {0} := by
+    ext x
+    simp only [Set.mem_preimage, Set.mem_singleton_iff, weierstrassSphereMap_eq_infty_iff]
+  rw [degree_eq_localMultiplicity_of_preimage_eq_singleton _ hfib,
     localMultiplicity_weierstrassSphereMap_zero]
 
 /-- **The Weierstrass map has ramification degree `4`**, by Riemann–Hurwitz over the sphere for

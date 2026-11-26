@@ -69,7 +69,6 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
 * `TauCeti.AlmostComplexStructure.orthonormal_of_norm_eq_one_of_inner_eq_zero`: unit vectors
   `ξ`, `η` with `η` orthogonal to `ξ` and `J ξ` give the orthonormal family `(ξ, J ξ, η, J η)`.
 * `TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one`,
-  `TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis`,
   `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one`, and
   `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation`:
   existence of oriented unitary frames and completion of a unit vector in dimension four.
@@ -443,16 +442,6 @@ theorem exists_unitary_orthonormalBasis_of_norm_eq_one {J : AlmostComplexStructu
   · simp [he]
   · simp [he, K]
   · simp [he, hr, hη_norm, K]
-
-/-- Given an orthogonal almost complex structure `J` on a four-dimensional real inner product space
-`V`, there exists a unitary orthonormal basis `e` with `J (e 0) = e 1` and `J (e 2) = e 3`. -/
-theorem exists_unitary_orthonormalBasis {J : AlmostComplexStructure V}
-    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) :
-    ∃ e : OrthonormalBasis (Fin 4) ℝ V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
-  have hv : finrank ℝ V = 4 := Fact.out
-  obtain ⟨e, -, h₀, h₂⟩ := exists_unitary_orthonormalBasis_of_norm_eq_one hJ
-    ((stdOrthonormalBasis ℝ V).orthonormal.1 ⟨0, by omega⟩)
-  exact ⟨e, h₀, h₂⟩
 
 /-- **Every pair `(ω, J)` whose associated bilinear form `ω(·, J ·)` is the inner product induces
 an oriented unitary orthonormal frame extending any given unit vector `ξ`.** -/
@@ -1068,6 +1057,18 @@ theorem coe_centralizerToUnitaryGroup_apply (g : Subgroup.centralizer {J₀}) (i
         (((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V) ((e.complexCoords 2).symm (Pi.single j 1))) i := by
   rw [complexCoords_centralizerToUnitaryGroup_apply, LinearEquiv.apply_symm_apply,
     Matrix.mulVec_single_one, Matrix.col_apply]
+
+/-- The entry `(i, j)` of the matrix `centralizerToUnitaryGroup g` is
+`⟪e (2i), g (e (2j))⟫ + i ⟪e (2i + 1), g (e (2j))⟫`. -/
+theorem coe_centralizerToUnitaryGroup_apply_eq_inner (g : Subgroup.centralizer {J₀})
+    (i j : Fin 2) :
+    (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g : Matrix (Fin 2) (Fin 2) ℂ) i j =
+      (inner ℝ (e ⟨2 * i.val, by omega⟩) (((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V)
+          (e ⟨2 * j.val, by omega⟩)) : ℂ) +
+        Complex.I * inner ℝ (e ⟨2 * i.val + 1, by omega⟩) (((g : unitary (V →L[ℝ] V)) :
+          V →L[ℝ] V) (e ⟨2 * j.val, by omega⟩)) := by
+  rw [coe_centralizerToUnitaryGroup_apply, complexCoords_two_symm_apply, complexCoords_two_apply]
+  fin_cases i <;> fin_cases j <;> simp [mul_comm]
 
 /-- The matrix of a complex rotation depends continuously on it, for the operator norm. -/
 @[fun_prop]

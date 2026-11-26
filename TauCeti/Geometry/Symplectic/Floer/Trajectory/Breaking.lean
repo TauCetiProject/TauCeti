@@ -57,8 +57,8 @@ each `[b_i, b_{i+1}]` and none in `[a₀, b_0]` or `[b_m, a₁]` other than `a�
 orbit action strictly between `a₀` and `a₁` either the levels on its two sides coincide up to
 translation or the sequence breaks at a neck over an orbit of that action.
 
-As in `TauCeti.Geometry.Symplectic.Floer.Trajectory.Level`, the uniform bound on the derivatives
-excludes bubbling; it is assumed, not proved. That consecutive selected levels are joined at the
+As in `TauCeti.Geometry.Symplectic.Floer.Trajectory.Level`, the uniform bound on the derivatives,
+which excludes bubbling, is a hypothesis. That consecutive selected levels are joined at the
 neck orbits is proved in `TauCeti.Geometry.Symplectic.Floer.Trajectory.BrokenLimit`. That file also
 proves, as separate theorems not combined with the selection here, that a level converges to the
 common end orbit of trajectories converging uniformly to it at `s → ±∞`, provided at most one orbit

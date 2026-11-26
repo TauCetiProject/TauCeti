@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
+import Mathlib.Geometry.Manifold.MFDeriv.Tangent
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The Levi form on a complex manifold
@@ -50,6 +52,8 @@ index is at most `dim_ℂ E + q`.
 * `TauCeti.leviForm_comp_symm_apply_of_mem_maximalAtlas`: for `f` real `C²` at `x`, the Levi
   form of the coordinate expression in any holomorphic `C²` chart at `x` is the manifold Levi
   form.
+* `TauCeti.tendsto_manifoldLeviForm_tangentCoordChange`: for `f` real `C²` at `x₀`, the Levi form
+  read in the chart at `x₀` is continuous at `x₀`.
 * `TauCeti.re_manifoldLeviForm_apply`, `TauCeti.im_manifoldLeviForm_apply`: the real and imaginary
   parts of the Levi form in terms of the real critical Hessian.
 * `TauCeti.manifoldLeviForm_apply_self`: for `C²` `f`, its diagonal is the real number
@@ -354,6 +358,33 @@ theorem leviForm_comp_symm_apply_of_mem_maximalAtlas
     leviForm_comp_apply (hφy ▸ hfe) hφ, hDφ, hφy]
   -- The two sides differ only in reading the model space `E` as the tangent spaces of `M`.
   rfl
+
+/-- **The Levi form, read in the chart at `x₀`, is continuous at `x₀`** for a function that is
+real `C²` at `x₀`: `L_f(x)(B x u, B x v) → L_f(x₀)(u, v)`, where `B x` is the tangent coordinate
+change from the chart at `x₀` to the chart at `x`. -/
+theorem tendsto_manifoldLeviForm_tangentCoordChange [IsManifold 𝓘(ℂ, E) 2 M] {x₀ : M}
+    (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x₀) (u v : E) :
+    Tendsto (fun x ↦ manifoldLeviForm E f x (tangentCoordChange 𝓘(ℂ, E) x₀ x x u)
+      (tangentCoordChange 𝓘(ℂ, E) x₀ x x v)) (𝓝 x₀) (𝓝 (manifoldLeviForm E f x₀ u v)) := by
+  have : IsManifold 𝓘(ℝ, E) 2 M := IsManifold.restrictScalars ℝ ‹_›
+  set c := chartAt E x₀
+  -- In the chart at `x₀`, the Levi form is that of the coordinate expression `f ∘ c.symm`.
+  have hL : ∀ᶠ x in 𝓝 x₀, manifoldLeviForm E f x (tangentCoordChange 𝓘(ℂ, E) x₀ x x u)
+      (tangentCoordChange 𝓘(ℂ, E) x₀ x x v) = leviForm (f ∘ c.symm) (c x) u v := by
+    filter_upwards [c.open_source.mem_nhds (mem_chart_source E x₀),
+      (contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf] with x hx hfx
+    have hD (w : E) : mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) c x (tangentCoordChange 𝓘(ℂ, E) x₀ x x w) = w := by
+      rw [mfderiv_chartAt_eq_tangentCoordChange (I := 𝓘(ℂ, E)) hx]
+      exact tangentCoordChange_tangentCoordChange (by simpa using hx) (mem_extChartAt_source x) w
+    rw [← leviForm_comp_symm_apply_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x₀) hx
+      hfx, hD, hD]
+  -- The Levi form of `f ∘ c.symm` is continuous at `c x₀`, as its second derivative is.
+  have hD2 : ContinuousAt (fderiv ℝ (fderiv ℝ (f ∘ c.symm))) (c x₀) :=
+    ((hf.contDiffAt_comp_chartAt_symm.fderiv_right (m := 1) (by norm_num)).fderiv_right
+      (m := 0) (by norm_num)).continuousAt
+  rw [manifoldLeviForm_def]
+  exact ((hD2.leviForm_apply u v).tendsto.comp
+    (c.continuousAt (mem_chart_source E x₀)).tendsto).congr' (hL.mono fun x hx ↦ hx.symm)
 
 end Chart
 

@@ -15,6 +15,7 @@ import Mathlib.Analysis.LocallyConvex.WeakDual
 import TauCeti.Analysis.LocallyConvex.PointwiseConvergence
 import TauCeti.Analysis.LocallyConvex.WeakOperatorTopology
 import TauCeti.Analysis.Normed.Lp.Basic
+import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.Analysis.Normed.Module.Dual.Submodule
 
 /-!
@@ -31,7 +32,10 @@ transported along the ampliation. A net `Tᵢ` converges ultraweakly to `T` exac
 The topology lives on the type copy `TauCeti.ContinuousLinearMapUltraweak 𝕜 E F`, in the manner of
 Mathlib's `E →WOT[𝕜] F`. The copy is a Hausdorff locally convex topological vector space, with the
 seminorms `‖⟪η, (⊕ T) ξ⟫‖` (`withSeminorms`). On operators of a Hilbert space the adjoint is
-ultraweakly continuous and multiplication is separately continuous.
+ultraweakly continuous and multiplication is separately continuous; between general spaces,
+precomposition by bounded operators, postcomposition by linear isometric equivalences, and
+ampliation to `ℓ²(ι, ·)` are ultraweakly continuous without completeness assumptions, while
+postcomposition by general bounded operators is ultraweakly continuous between complete codomains.
 
 The ultraweak topology sits between the others: it is coarser than the ultrastrong topology of
 `TauCeti.ContinuousLinearMapUltrastrong` and finer than the weak operator topology
@@ -344,6 +348,72 @@ instance instIsSemitopologicalRing : IsSemitopologicalRing (ContinuousLinearMapU
     simpa using continuous_inner_ampliation_apply (lp.ampliation ℕ 2 A.toCLM ξ) η
 
 end Hilbert
+
+/-! ### Functoriality under composition and Hilbert-sum ampliation -/
+
+section Functoriality
+
+/-- Precomposition by a bounded operator is ultraweakly continuous. -/
+@[fun_prop] theorem continuous_precomp {E' : Type*} [NormedAddCommGroup E']
+    [InnerProductSpace 𝕜 E'] (Q : E' →L[𝕜] E) :
+    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦ ofCLM (A.toCLM ∘L Q) :=
+  continuous_of_continuous_inner_ampliation_apply fun ξ η ↦
+    (continuous_inner_ampliation_apply (lp.ampliation ℕ 2 Q ξ) η).congr fun A ↦ by
+      rw [lp.ampliation_comp, ContinuousLinearMap.comp_apply]
+
+/-- Postcomposition by a bounded operator between complete spaces is ultraweakly continuous. -/
+@[fun_prop] theorem continuous_postcomp {F' : Type*} [NormedAddCommGroup F']
+    [InnerProductSpace 𝕜 F'] [CompleteSpace F] [CompleteSpace F'] (P : F →L[𝕜] F') :
+    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦ ofCLM (P ∘L A.toCLM) :=
+  continuous_of_continuous_inner_ampliation_apply fun ξ η ↦
+    (continuous_inner_ampliation_apply ξ ((lp.ampliation ℕ 2 P).adjoint η)).congr fun A ↦ by
+      rw [ContinuousLinearMap.adjoint_inner_left, ← ContinuousLinearMap.comp_apply,
+        ← lp.ampliation_comp]
+/-- Postcomposition by a linear isometric equivalence is ultraweakly continuous, without
+completeness assumptions. -/
+@[fun_prop] theorem continuous_linearIsometryEquiv_postcomp {F' : Type*} [NormedAddCommGroup F']
+    [InnerProductSpace 𝕜 F'] (U : F ≃ₗᵢ[𝕜] F') :
+    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦
+      ofCLM (U.toLinearIsometry.toContinuousLinearMap ∘L A.toCLM) :=
+  continuous_of_continuous_inner_ampliation_apply fun ξ η ↦
+    (continuous_inner_ampliation_apply ξ
+      (lp.ampliation ℕ 2 U.symm.toLinearIsometry.toContinuousLinearMap η)).congr fun A ↦ by
+      simp [lp.inner_ampliation_apply, LinearIsometryEquiv.inner_map_eq_flip]
+open scoped Classical in private theorem exists_nat_lp_inner_ampliation_eq {ι : Type*}
+    (ξ : ℓ²(ℕ, ℓ²(ι, E))) (η : ℓ²(ℕ, ℓ²(ι, F))) :
+    ∃ (ξ' : ℓ²(ℕ, E)) (η' : ℓ²(ℕ, F)), ∀ T : E →L[𝕜] F,
+      ⟪η, lp.ampliation ℕ 2 (lp.ampliation ι 2 T) ξ⟫_𝕜 = ⟪η', lp.ampliation ℕ 2 T ξ'⟫_𝕜 := by
+  let S : Set (ℕ × ι) := ⋃ n : ℕ, Prod.mk n '' Function.support (ξ n)
+  have : Countable S := (Set.countable_iUnion fun n ↦
+    (((lp.memℓp (ξ n)).summable (by simp)).countable_support.mono fun i hi ↦ by
+      simp [Function.mem_support.mp hi]).image _).to_subtype
+  obtain ⟨e, he⟩ := Countable.exists_injective_nat S
+  let ξf : ℕ → E := Function.extend e (fun p : S ↦ ξ p.val.1 p.val.2) 0
+  let ηf : ℕ → F := Function.extend e (fun p : S ↦ η p.val.1 p.val.2) 0
+  let ξ' : ℓ²(ℕ, E) := ⟨ξf, ((lp.memℓp_prod ξ).comp_injective Subtype.val_injective).extend_zero he⟩
+  let η' : ℓ²(ℕ, F) := ⟨ηf, ((lp.memℓp_prod η).comp_injective Subtype.val_injective).extend_zero he⟩
+  refine ⟨ξ', η', fun T ↦ ?_⟩
+  have hsupp : Function.support (fun p : ℕ × ι ↦ ⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜) ⊆ S :=
+    fun p hp ↦ Set.mem_iUnion.2 ⟨p.1, ⟨p.2, fun h0 ↦ hp (by simp [h0]), rfl⟩⟩
+  -- Collapse the iterated `ℓ²` sum to `ℕ × ι`, restrict to `S`, and reindex along `e : S → ℕ`.
+  calc ⟪η, lp.ampliation ℕ 2 (lp.ampliation ι 2 T) ξ⟫_𝕜
+      = ∑' p : ℕ × ι, ⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜 := by
+          simpa using lp.inner_eq_tsum_prod η (lp.ampliation ℕ 2 (lp.ampliation ι 2 T) ξ)
+    _ = ∑' p : S, ⟪η p.val.1 p.val.2, T (ξ p.val.1 p.val.2)⟫_𝕜 :=
+          (tsum_subtype_eq_of_support_subset hsupp).symm
+    _ = ∑' k : ℕ, ⟪ηf k, T (ξf k)⟫_𝕜 := by
+          rw [← tsum_extend_zero he]; refine tsum_congr fun k ↦ ?_
+          by_cases hk : k ∈ Set.range e
+          · obtain ⟨p, rfl⟩ := hk; simp [ξf, ηf, he.extend_apply]
+          · simp [ξf, Function.extend_apply' _ _ _ hk]
+    _ = ⟪η', lp.ampliation ℕ 2 T ξ'⟫_𝕜 := (lp.inner_ampliation_apply T ξ' η').symm
+/-- Ampliation to `ℓ²(ι, ·)` is ultraweakly continuous for any index type `ι`. -/
+@[fun_prop] theorem continuous_ampliation (ι : Type*) :
+    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦ ofCLM (lp.ampliation ι 2 A.toCLM) :=
+  continuous_of_continuous_inner_ampliation_apply fun ξ η ↦ by
+    obtain ⟨ξ', η', h⟩ := exists_nat_lp_inner_ampliation_eq (𝕜 := 𝕜) ξ η
+    exact (continuous_inner_ampliation_apply ξ' η').congr fun A ↦ (h A.toCLM).symm
+end Functoriality
 
 /-! ### Comparison with the norm, ultrastrong and weak operator topologies -/
 

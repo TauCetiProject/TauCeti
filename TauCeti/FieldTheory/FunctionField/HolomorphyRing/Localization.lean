@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Prime
 public import TauCeti.RingTheory.Localization.AsSubring
+public import TauCeti.RingTheory.Localization.Subalgebra.Membership
 
 /-!
 # The localization of a holomorphy ring away from a function
@@ -70,9 +71,13 @@ theorem coe_ofField_powers_eq_holomorphyRing (hF : IsFunctionField k F)
   have hx0 : (x : F) ≠ 0 := fun h ↦
     nonZeroDivisors.ne_zero (hx (Submonoid.mem_powers x)) (Subtype.ext h)
   ext z
-  rw [SetLike.mem_coe, mem_ofField_powers_iff, Subalgebra.range_algebraMap, SetLike.mem_coe,
+  have hmem : z ∈ ofField F (Submonoid.powers x) hx ↔
+      ∃ n : ℕ, algebraMap A F x ^ n * z ∈ Set.range (algebraMap A F) := by
+    rw [ofField_eq, TauCeti.IsLocalization.mem_subalgebra_iff_exists_pow_mul_mem_range x]
+  rw [SetLike.mem_coe, hmem, ← RingHom.coe_range, Subalgebra.range_algebraMap, SetLike.mem_coe,
     mem_holomorphyRing_iff]
-  simp only [Subalgebra.mem_toSubring, Subalgebra.algebraMap_apply, hA', mem_holomorphyRing_iff,
+  simp only [SetLike.mem_coe, Subalgebra.mem_toSubring, Subalgebra.algebraMap_apply, hA',
+    mem_holomorphyRing_iff,
     Set.mem_inter_iff, Set.mem_ofPred_eq, and_imp]
   constructor
   · rintro ⟨n, hn⟩ P hP hPx

@@ -47,6 +47,8 @@ operators `MeasureTheory.Lp.reCLM` and `MeasureTheory.Lp.imCLM` between `Lp ℝ 
 * `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
 * `ContinuousLinearMap.compLp_compLp`, `ContinuousLinearMap.compLpL_comp_compLpL`,
   `ContinuousLinearMap.compLpL_compLpL`: composition laws for `compLp` and `compLpL`.
+* `ContinuousLinearMap.compLpL_comp_compLpL_eq`: two composites of `compLpL` operators agree when
+  the composites of the underlying maps do.
 * `ContinuousLinearMap.id_compLp`, `ContinuousLinearMap.id_compLpL`: identity laws for `compLp` and
   `compLpL`.
 * `LinearIsometry.toContinuousLinearMap_compLpₗᵢ`: postcomposition of `Lp` classes by a
@@ -154,6 +156,16 @@ operator. -/
 theorem compLpL_compLpL [Fact (1 ≤ p)] (L : F →SL[σ₂₃] G) (M : E →SL[σ₁₂] F) (f : Lp E p μ) :
     L.compLpL p μ (M.compLpL p μ f) = (L.comp M).compLpL p μ f :=
   L.compLp_compLp M f
+
+/-- Two composites of `compLpL` operators agree when the composites of the underlying continuous
+semilinear maps do. -/
+theorem compLpL_comp_compLpL_eq [Fact (1 ≤ p)] {H 𝕜₄ : Type*} [NormedAddCommGroup H]
+    [NontriviallyNormedField 𝕜₄] [NormedSpace 𝕜₄ H] {σ₁₄ : 𝕜₁ →+* 𝕜₄} {σ₄₃ : 𝕜₄ →+* 𝕜₃}
+    [RingHomCompTriple σ₁₄ σ₄₃ σ₁₃] [RingHomIsometric σ₁₄] [RingHomIsometric σ₄₃]
+    {L : F →SL[σ₂₃] G} {M : E →SL[σ₁₂] F} {L' : H →SL[σ₄₃] G} {M' : E →SL[σ₁₄] H}
+    (h : L.comp M = L'.comp M') :
+    (L.compLpL p μ).comp (M.compLpL p μ) = (L'.compLpL p μ).comp (M'.compLpL p μ) := by
+  rw [compLpL_comp_compLpL, compLpL_comp_compLpL, h]
 
 end Comp
 

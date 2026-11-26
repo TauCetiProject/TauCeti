@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # Lebesgue measure of intervals and centered interval differences
@@ -27,7 +29,9 @@ Pulling real Lebesgue measure on `(0,T]` back to `ℝ≥0` commutes with restric
 and the resulting finite-horizon measure has total mass `T`.
 
 On a finite coordinate space `ι → ℝ`, permuting the coordinates and changing their signs
-preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`).
+preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`). In particular the reflection
+`(s, t) ↦ (-s, t)` of the plane preserves Lebesgue measure
+(`LinearIsometryEquiv.measurePreserving_negFst`).
 
 The Lebesgue measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of
 their lengths (`TauCeti.volume_biUnion_uIoc_eq_ofReal_sum`).
@@ -123,6 +127,13 @@ theorem volume_preserving_signedPerm {ι : Type*} [Fintype ι] (e : Equiv.Perm �
         abs_inv, hc i, inv_one, ENNReal.ofReal_one, one_smul]⟩
   exact hmul.comp
     (volume_preserving_arrowCongr' e.symm (MeasurableEquiv.refl ℝ) (MeasurePreserving.id _))
+
+/-- The reflection `(s, t) ↦ (-s, t)` of the plane preserves Lebesgue measure. -/
+theorem _root_.LinearIsometryEquiv.measurePreserving_negFst :
+    MeasurePreserving (LinearIsometryEquiv.negFst ℝ ℝ ℝ) := by
+  rw [LinearIsometryEquiv.coe_negFst, Measure.volume_eq_prod]
+  exact (Measure.measurePreserving_neg (volume : Measure ℝ)).prod
+    (MeasurePreserving.id (volume : Measure ℝ))
 
 /-- The measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of their
 lengths `max (a i) (b i) - min (a i) (b i)`. -/

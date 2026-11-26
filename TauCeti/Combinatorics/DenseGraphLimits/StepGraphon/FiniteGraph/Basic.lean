@@ -12,7 +12,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Average
 public import TauCeti.MeasureTheory.Constructions.UnitInterval
 public import Mathlib.Probability.UniformOn
 import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Pullback
-import TauCeti.Probability.Distributions.Uniform.Finite
+import TauCeti.Probability.Distributions.Uniform.Finite.Basic
 
 /-!
 # A finite graph as a graphon

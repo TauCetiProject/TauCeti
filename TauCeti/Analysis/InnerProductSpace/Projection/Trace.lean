@@ -12,15 +12,16 @@ public import TauCeti.Analysis.Matrix.Frobenius
 import Mathlib.Analysis.Matrix.Hermitian
 
 /-!
-# Traces and matrix norms of orthogonal projections
+# Traces, determinants and matrix norms of orthogonal projections
 
 `Submodule.trace_starProjection` identifies the trace of an orthogonal projection with the
 dimension of its range. In orthonormal coordinates, the same dimension is the sum of the squared
 entry norms (`Submodule.sum_norm_sq_toMatrix_starProjection`). These identities identify the
 mean and the Frobenius parameter in quadratic-form estimates for distances to subspaces.
 The Euclidean-coordinate forms give the trace, squared Frobenius norm, and operator-norm bound
-`≤ 1` for any orthogonal projection. The quadratic form of the orthogonal-complement projection
-is squared distance to the original subspace.
+`≤ 1` for any orthogonal projection. The orthogonal projection onto a proper subspace has
+determinant zero (`Submodule.det_starProjection_eq_zero`). The quadratic form of the
+orthogonal-complement projection is squared distance to the original subspace.
 
 ## References
 
@@ -49,6 +50,14 @@ theorem trace_starProjection :
   have hr : LinearMap.range U.starProjection.toLinearMap = U := U.range_starProjection
   have h := (LinearMap.IsIdempotentElem.isProj_range _ hU).trace
   rwa [hr] at h
+
+variable {U} in
+/-- The orthogonal projection onto a proper subspace `U` has determinant zero: its kernel is
+`Uᗮ ≠ 0`. -/
+theorem det_starProjection_eq_zero (hU : U ≠ ⊤) :
+    LinearMap.det ((U.starProjection : E →L[𝕜] E) : E →ₗ[𝕜] E) = 0 :=
+  LinearMap.det_eq_zero_iff_ker_ne_bot.2 <|
+    U.ker_starProjection.trans_ne (orthogonal_eq_bot_iff.not.2 hU)
 
 omit [FiniteDimensional 𝕜 E] in
 /-- In an orthonormal basis, the squared Frobenius norm of an orthogonal projection is the

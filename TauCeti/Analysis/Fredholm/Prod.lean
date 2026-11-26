@@ -25,6 +25,8 @@ and cokernels and is provided by `TauCeti.Topology.Algebra.Module.ContinuousLine
 
 * `ContinuousLinearMap.IsFredholm.prodMap`: a product of Fredholm operators is Fredholm.
 * `ContinuousLinearMap.index_prodMap`: the Fredholm index is additive under products.
+* `ContinuousLinearMap.IsFredholm.index_prodMap`: Fredholm hypotheses supply the finite/free
+  kernel and cokernel instances for the product-index formula.
 * `ContinuousLinearMap.isFredholm_prodMap_iff`: conversely, a product is Fredholm only if both
   factors are.
 * `ContinuousLinearMap.isFredholm_withLpProdMap_iff`: the same for the block sum on an `L^p`
@@ -128,6 +130,21 @@ lemma isFredholm_withLpProdMap_iff {p : ℝ≥0∞} :
     IsFredholm (T.withLpProdMap p S) ↔ IsFredholm T ∧ IsFredholm S := by
   rw [isFredholm_iff_of_comp_eq (S := T.prodMap S) (WithLp.prodContinuousLinearEquiv p K E₁ E₂)
     (WithLp.prodContinuousLinearEquiv p K F₁ F₂) (by ext x <;> simp), isFredholm_prodMap_iff]
+
+omit [IsTopologicalAddGroup E₁] [IsTopologicalAddGroup E₂] in
+/-- The indices of Fredholm maps add under Cartesian products. -/
+lemma IsFredholm.index_prodMap (hT : IsFredholm T) (hS : IsFredholm S) :
+    (T.prodMap S).index = T.index + S.index := by
+  let := hT.finite_ker
+  let := hS.finite_ker
+  let := hT.finite_coker
+  let := hS.finite_coker
+  let := Module.Free.of_divisionRing K T.ker
+  let := Module.Free.of_divisionRing K S.ker
+  let := Module.Free.of_divisionRing K (F₁ ⧸ T.range)
+  let := Module.Free.of_divisionRing K (F₂ ⧸ S.range)
+  exact ContinuousLinearMap.index_prodMap T S
+
 
 section Inclusion
 

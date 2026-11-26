@@ -320,6 +320,11 @@ theorem ofBounded_apply (A : X →L[ℝ] X) (t : ℝ) : ofBounded A t = exp (t �
   rw [ofBounded]
   rfl
 
+/-- The group of the zero operator is the identity group: `ofBounded 0 t = 1`. Not `@[simp]`,
+since `simp` already proves it from `ofBounded_apply`. -/
+theorem ofBounded_zero_apply (t : ℝ) : ofBounded (0 : X →L[ℝ] X) t = 1 := by
+  rw [ofBounded_apply, smul_zero, exp_zero]
+
 /-- The forward semigroup of `ofBounded A` is the bounded-generator semigroup of `A`. -/
 @[simp]
 theorem ofBounded_toSemigroup (A : X →L[ℝ] X) :

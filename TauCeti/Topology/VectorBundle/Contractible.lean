@@ -63,6 +63,11 @@ needed.
 * `TauCeti.continuous_trans_symm_of_continuous_frame`: two continuous frames of a finite-rank
   bundle along the same map differ by a continuous family of automorphisms of their common
   source, for instance the model fibre.
+* `TauCeti.exists_continuous_transition_of_continuous_frame`: continuous frames along two
+  pointwise equal maps differ by a continuous family of automorphisms of the model fibre.
+* `TauCeti.frame_trans_symm_eq_of_totalSpaceMk'_eq`,
+  `TauCeti.eq_of_frame_comp_totalSpaceMk'_eq`: frames that agree as maps to the total space have
+  the same transitions, and determine the automorphisms they are composed with.
 * `TauCeti.exists_orthonormal_trivialization_baseSet_eq_univ_of_contractibleSpace`: for a
   finite-rank real bundle with continuous fibre metric, the trivialization can be chosen
   isometric on every fibre.
@@ -151,6 +156,45 @@ theorem exists_trivialization_baseSet_eq_univ_of_contractibleSpace :
     proj_toFun _ _ := rfl }, ⟨fun b _ ↦ (Ψ b).toLinearEquiv.toLinearMap.isLinear⟩, rfl⟩
 
 end Linear
+
+section FrameValues
+
+variable {𝕜 : Type*} [Semiring 𝕜] {X : Type*}
+  {F : Type*} [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+  {E : X → Type*} [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, TopologicalSpace (E x)]
+
+/-- Two pairs of frames at the points `b` and `b'` that agree in the total space have the same
+transitions. -/
+theorem frame_trans_symm_eq_of_totalSpaceMk'_eq {b b' : X} {σ₁ σ₂ : F ≃L[𝕜] E b}
+    {ρ₁ ρ₂ : F ≃L[𝕜] E b'}
+    (h₁ : ∀ v, TotalSpace.mk' F b (σ₁ v) = TotalSpace.mk' F b' (ρ₁ v))
+    (h₂ : ∀ v, TotalSpace.mk' F b (σ₂ v) = TotalSpace.mk' F b' (ρ₂ v)) :
+    σ₁.trans σ₂.symm = ρ₁.trans ρ₂.symm := by
+  obtain rfl : b = b' := congrArg TotalSpace.proj (h₁ 0)
+  obtain rfl : σ₁ = ρ₁ := ContinuousLinearEquiv.ext (funext fun v ↦ TotalSpace.mk_inj.1 (h₁ v))
+  obtain rfl : σ₂ = ρ₂ := ContinuousLinearEquiv.ext (funext fun v ↦ TotalSpace.mk_inj.1 (h₂ v))
+  rfl
+
+/-- A frame at `b`, read at a point `b'` equal to `b`. -/
+private def frameCast {b b' : X} (h : b = b') (φ : F ≃L[𝕜] E b) : F ≃L[𝕜] E b' :=
+  h ▸ φ
+
+/-- A frame read at an equal point by `frameCast` has the same values in the total space. -/
+@[simp]
+private theorem mk'_frameCast {b b' : X} (h : b = b') (φ : F ≃L[𝕜] E b) (v : F) :
+    TotalSpace.mk' F b' (frameCast h φ v) = TotalSpace.mk' F b (φ v) := by
+  subst h
+  rfl
+
+/-- An automorphism of `F` is determined by what a frame at `b` makes of it in the total space. -/
+theorem eq_of_frame_comp_totalSpaceMk'_eq {b b' : X} {φ : F ≃L[𝕜] E b}
+    {φ' : F ≃L[𝕜] E b'}
+    {S T : F ≃L[𝕜] F} (hS : ∀ v, TotalSpace.mk' F b (φ (S v)) = TotalSpace.mk' F b' (φ' v))
+    (hT : ∀ v, TotalSpace.mk' F b (φ (T v)) = TotalSpace.mk' F b' (φ' v)) : S = T :=
+  ContinuousLinearEquiv.ext <| funext fun v ↦
+    φ.injective (TotalSpace.mk_inj.1 ((hS v).trans (hT v).symm))
+
+end FrameValues
 
 section Frame
 
@@ -242,6 +286,22 @@ theorem continuous_trans_symm_of_continuous_frame [CompleteSpace 𝕜] [FiniteDi
       (continuous_const (y := (ι : W →L[𝕜] F)))).congr fun y ↦ ?_
   ext v
   simp
+
+/-- **Transitions between frames along equal maps.** Let `φ` and `ψ` be continuous frames of a
+finite-rank vector bundle along maps `f` and `g` that agree pointwise. Then `ψ y ∘ A y` is `φ y`,
+as maps to the total space, for automorphisms `A y` of `F` that depend continuously on `y`. -/
+theorem exists_continuous_transition_of_continuous_frame [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 F] [VectorBundle 𝕜 F E] {g : B → X} (hfg : ∀ y, f y = g y)
+    {φ : ∀ y, F ≃L[𝕜] E (f y)} {ψ : ∀ y, F ≃L[𝕜] E (g y)}
+    (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2))
+    (hψ : Continuous fun q : B × F ↦ TotalSpace.mk' F (g q.1) (ψ q.1 q.2)) :
+    ∃ A : B → F ≃L[𝕜] F, Continuous (fun y ↦ (A y : F →L[𝕜] F)) ∧
+      ∀ y v, TotalSpace.mk' F (g y) (ψ y (A y v)) = TotalSpace.mk' F (f y) (φ y v) := by
+  refine ⟨fun y ↦ (frameCast (hfg y) (φ y)).trans (ψ y).symm,
+    continuous_trans_symm_of_continuous_frame
+      (hφ.congr fun q ↦ (mk'_frameCast (hfg q.1) (φ q.1) q.2).symm) hψ, fun y v ↦ ?_⟩
+  simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.apply_symm_apply]
+  exact mk'_frameCast _ _ v
 
 /-- **Frames over contractible spaces.** Along every continuous map `f` from a contractible
 paracompact R₁ space, for instance a cube, a vector bundle `E` has a frame: linear isomorphisms
@@ -367,14 +427,7 @@ theorem exists_orthonormalFrameBundle_lift_of_contractibleSpace
   obtain ⟨e, he, hbase⟩ :=
     exists_trivialization_baseSet_eq_univ_of_contractibleSpace 𝕜 F ((g : Y → B) *ᵖ E)
   have hY (y : Y) : y ∈ e.baseSet := hbase ▸ mem_univ y
-  -- Its Gram–Schmidt orthonormal frame, read as a frame of `E` along `g`. Gram–Schmidt reads the
-  -- pullback fibres with the topology of their norms, which agrees with the pullback fibre topology
-  -- only after unfolding instances, so the fibre and vector bundle structures of the pullback are
-  -- restated for it.
-  let fb : @FiberBundle Y F _ _ ((g : Y → B) *ᵖ E) _ fun _ ↦ UniformSpace.toTopologicalSpace :=
-    FiberBundle.pullback (F := F) (E := E) g
-  let : @VectorBundle 𝕜 Y F ((g : Y → B) *ᵖ E) _ _ _ _ _ _ _ _ fb :=
-    VectorBundle.pullback 𝕜 (F := F) (E := E) g
+  -- Its Gram–Schmidt orthonormal frame, read as a frame of `E` along `g`.
   let c := Module.finBasisOfFinrankEq 𝕜 F h.symm
   let o := stdOrthonormalBasis 𝕜 V
   exact ⟨⟨fun y ↦ OrthonormalFrameBundle.pullbackLift g ⟨y, e.orthonormalFrame c o ⟨y, hY y⟩⟩,

@@ -46,6 +46,17 @@ At `k = 0` this is the weighted theory of `C_b^{2+α,1+α/2}`
 (`TauCeti.ParabolicC2HolderSpace.existsUnique_exp_mul`), now with data and solutions of every
 higher order.
 
+The estimates transport in the same way. With `M = 21 (k + 1)² 2ᵏ` the constant of the product
+estimate, `‖b_wⁱ‖ ≤ ‖bⁱ‖ + 2 M ∑ⱼ (‖aⁱʲ‖ + ‖aʲⁱ‖) ‖∂ⱼℓ‖` and similarly for `c_w`, so bounds on the
+coefficients and on the derivatives of `ℓ` bound the conjugated coefficients, and the Schauder
+estimate of order `k` (`TauCeti.ParabolicCkHolderSpace.exists_norm_le_parabolicOperatorL`) applies
+to `P_w`. If `u = w v` is a classical solution of `P u = w g`, then
+`‖v‖_{k+2+α} ≤ C (‖g‖_{k+α} + ‖v(·, 0)‖_{C^{k+2,α}})`, with `C` depending only on the dimension,
+`α`, `k`, the ellipticity constant, bounds on the norms of the coefficients and of the derivatives
+of `ℓ`, and a bound on the horizon. The weighted solution operators of both problems are bounded
+uniformly in the same quantities, and for a fixed weight they depend Lipschitz continuously on the
+coefficients in operator norm, since `b_w` and `c_w` are linear in `a`, `b`, `c`.
+
 The conjugation identity is the pointwise computation
 `TauCeti.PDE.exp_mul_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq` applied to the time slices of
 `v`, together with `∂ₜ(w v) = w ∂ₜv`, since `w` does not depend on time; the values of the
@@ -69,6 +80,15 @@ All declarations are in the `TauCeti.ParabolicCkHolderSpace` namespace.
   problem of order `k` and its unique solvability.
 * `eq_euclideanTerminalDataCLE_symm_iff_exp_mul` and `existsUnique_exp_mul_backward`: the same for
   the weighted terminal-value problem.
+* `norm_euclideanWeightedFirstOrderCoeff_le` and `norm_euclideanWeightedZerothOrderCoeff_le`: the
+  bounds on the conjugated coefficients.
+* `exists_norm_le_of_eq_exp_mul`: the Schauder estimate in the weighted class of order `k`.
+* `exists_norm_euclideanInitialDataCLE_weighted_symm_le` and
+  `exists_norm_euclideanInitialDataCLE_weighted_symm_sub_le`: the uniform bound on the weighted
+  solution operators of the Cauchy problem and their Lipschitz dependence on the coefficients.
+* `exists_norm_euclideanTerminalDataCLE_weighted_symm_le` and
+  `exists_norm_euclideanTerminalDataCLE_weighted_symm_sub_le`: the same for the weighted
+  terminal-value problem.
 * `existsUnique_one_add_exp_mul` and `existsUnique_one_add_exp_mul_backward`: on the line, both
   problems are uniquely solvable at every order in the class `u / (1 + exp x) ∈ C_{par,b}^{k+2+α}`,
   since the derivatives of `log (1 + exp x)` of every positive order, the derivatives of the
@@ -153,6 +173,93 @@ theorem euclideanWeightedZerothOrderCoeff_apply (hα : α ≤ 1)
           dℓ i (p : ParabolicSpaceTime _).space * dℓ j (p : ParabolicSpaceTime _).space) +
         ∑ i, b i p * dℓ i (p : ParabolicSpaceTime _).space := by
   simp [euclideanWeightedZerothOrderCoeff, mul_add]
+
+/-- Linearity of the conjugated first-order coefficient in the coefficients `aⁱʲ`, `bⁱ`, for a
+fixed weight. -/
+@[simp]
+theorem euclideanWeightedFirstOrderCoeff_sub (hα : α ≤ 1)
+    (a' : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht)
+    (b' : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) (i : ι) :
+    euclideanWeightedFirstOrderCoeff hα (a - a') (b - b') dℓ i =
+      euclideanWeightedFirstOrderCoeff hα a b dℓ i -
+        euclideanWeightedFirstOrderCoeff hα a' b' dℓ i :=
+  ext fun p ↦ by
+    simp only [euclideanWeightedFirstOrderCoeff_apply, coe_sub, Pi.sub_apply, sub_mul, add_mul,
+      Finset.sum_sub_distrib, Finset.sum_add_distrib]
+    ring
+
+/-- Linearity of the conjugated zeroth-order coefficient in the coefficients `aⁱʲ`, `bⁱ`, `c`,
+for a fixed weight. -/
+@[simp]
+theorem euclideanWeightedZerothOrderCoeff_sub (hα : α ≤ 1)
+    (a' : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht)
+    (b' : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht)
+    (c' : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
+    euclideanWeightedZerothOrderCoeff hα (a - a') (b - b') (c - c') dℓ d2ℓ =
+      euclideanWeightedZerothOrderCoeff hα a b c dℓ d2ℓ -
+        euclideanWeightedZerothOrderCoeff hα a' b' c' dℓ d2ℓ :=
+  ext fun p ↦ by
+    simp only [euclideanWeightedZerothOrderCoeff_apply, coe_sub, Pi.sub_apply, sub_mul,
+      Finset.sum_sub_distrib]
+    ring
+
+variable (a b c dℓ d2ℓ) in
+/-- **Bound on the conjugated first-order coefficient.**
+`‖b_wⁱ‖ ≤ ‖bⁱ‖ + 2 M ∑ⱼ (‖aⁱʲ‖ + ‖aʲⁱ‖) ‖∂ⱼℓ‖` in `C_{par,b}^{k+α}`, where `M = 21 (k + 1)² 2ᵏ` is
+the constant of the product estimate `ContinuousLinearMap.norm_compParabolicCkHolder₂_le` and the
+factor `2` bounds the time-independent lift of `∂ⱼℓ` to the slab
+(`TauCeti.CkHolderSpace.norm_compSlabSpaceL_apply_le`). This is the order-`k` form of
+`TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedFirstOrderCoeff_le`. -/
+theorem norm_euclideanWeightedFirstOrderCoeff_le (hα : α ≤ 1) (i : ι) :
+    ‖euclideanWeightedFirstOrderCoeff hα a b dℓ i‖ ≤
+      ‖b i‖ + 2 * (21 * (k + 1) ^ 2 * 2 ^ k) * ∑ j, (‖a i j‖ + ‖a j i‖) * ‖dℓ j‖ := by
+  rw [Finset.mul_sum]
+  refine (norm_add_le _ _).trans (add_le_add le_rfl ((norm_sum_le _ _).trans
+    (Finset.sum_le_sum fun j _ ↦
+      (ContinuousLinearMap.norm_mul_compParabolicCkHolder₂_apply_le hα _ _).trans ?_)))
+  have h₁ := norm_add_le (a i j) (a j i)
+  have h₂ := CkHolderSpace.norm_compSlabSpaceL_apply_le (hab := ht) (dℓ j)
+  calc _ ≤ 21 * (k + 1) ^ 2 * 2 ^ k * ((‖a i j‖ + ‖a j i‖) * (2 * ‖dℓ j‖)) := by gcongr
+    _ = _ := by ring
+
+variable (a b c dℓ d2ℓ) in
+/-- **Bound on the conjugated zeroth-order coefficient.**
+`‖c_w‖ ≤ ‖c‖ + 2 M ∑ᵢⱼ ‖aⁱʲ‖ (‖∂ᵢ∂ⱼℓ‖ + 2 M ‖∂ᵢℓ‖ ‖∂ⱼℓ‖) + 2 M ∑ᵢ ‖bⁱ‖ ‖∂ᵢℓ‖` in
+`C_{par,b}^{k+α}`, with `M = 21 (k + 1)² 2ᵏ` as in `norm_euclideanWeightedFirstOrderCoeff_le`.
+This is the order-`k` form of
+`TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedZerothOrderCoeff_le`. -/
+theorem norm_euclideanWeightedZerothOrderCoeff_le (hα : α ≤ 1) :
+    ‖euclideanWeightedZerothOrderCoeff hα a b c dℓ d2ℓ‖ ≤
+      ‖c‖ + 2 * (21 * (k + 1) ^ 2 * 2 ^ k) * ∑ i, ∑ j, ‖a i j‖ *
+          (‖d2ℓ i j‖ + 2 * (21 * (k + 1) ^ 2 * 2 ^ k) * (‖dℓ i‖ * ‖dℓ j‖)) +
+        2 * (21 * (k + 1) ^ 2 * 2 ^ k) * ∑ i, ‖b i‖ * ‖dℓ i‖ := by
+  set M : ℝ := 21 * (k + 1) ^ 2 * 2 ^ k
+  have hS (f : CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ) :=
+    CkHolderSpace.norm_compSlabSpaceL_apply_le (hab := ht) f
+  refine (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans (add_le_add le_rfl ?_)) ?_)
+  · rw [Finset.mul_sum]
+    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+    rw [Finset.mul_sum]
+    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦
+      (ContinuousLinearMap.norm_mul_compParabolicCkHolder₂_apply_le hα _ _).trans ?_)
+    -- The second factor is `∂ᵢ∂ⱼℓ + ∂ᵢℓ ∂ⱼℓ`, lifted to the slab.
+    have h : ‖CkHolderSpace.compSlabSpaceL ht (d2ℓ i j) +
+        (ContinuousLinearMap.mul ℝ ℝ).compParabolicCkHolder₂ hα
+          (CkHolderSpace.compSlabSpaceL ht (dℓ i)) (CkHolderSpace.compSlabSpaceL ht (dℓ j))‖ ≤
+        2 * (‖d2ℓ i j‖ + 2 * M * (‖dℓ i‖ * ‖dℓ j‖)) := by
+      refine (norm_add_le _ _).trans ?_
+      calc _ ≤ 2 * ‖d2ℓ i j‖ + M * ((2 * ‖dℓ i‖) * (2 * ‖dℓ j‖)) :=
+            add_le_add (hS _)
+              ((ContinuousLinearMap.norm_mul_compParabolicCkHolder₂_apply_le hα _ _).trans
+                (by gcongr <;> exact hS _))
+        _ = _ := by ring
+    calc _ ≤ M * (‖a i j‖ * (2 * (‖d2ℓ i j‖ + 2 * M * (‖dℓ i‖ * ‖dℓ j‖)))) := by gcongr
+      _ = _ := by ring
+  · rw [Finset.mul_sum]
+    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦
+      (ContinuousLinearMap.norm_mul_compParabolicCkHolder₂_apply_le hα _ _).trans ?_)
+    calc _ ≤ M * (‖b i‖ * (2 * ‖dℓ i‖)) := by gcongr; exact hS _
+      _ = _ := by ring
 
 end Coefficients
 
@@ -472,6 +579,337 @@ theorem existsUnique_exp_mul_backward (hα₀ : 0 < α) (hα₁ : α < 1) (hT : 
     (hv _ hext)
 
 end Solution
+
+/-! ### Estimates -/
+
+section Estimates
+
+variable [Fintype ι]
+
+variable (ι) in
+/-- The bound `K (1 + 6 n M L + 2 n² M (L + 2 M L²))` on the coefficients of the conjugated
+operator of order `k`, where `K` bounds the coefficients, `L` bounds the derivatives of the
+logarithm of the weight, `n` is the dimension and `M = 21 (k + 1)² 2ᵏ` is the constant of the
+product estimate. -/
+private def weightedCoeffBound (k : ℕ) (K L : ℝ≥0) : ℝ≥0 :=
+  K * (1 + 6 * Fintype.card ι * (21 * (k + 1) ^ 2 * 2 ^ k) * L +
+    2 * Fintype.card ι ^ 2 * (21 * (k + 1) ^ 2 * 2 ^ k) *
+      (L + 2 * (21 * (k + 1) ^ 2 * 2 ^ k) * L * L))
+
+/-- The coefficients `aⁱʲ` and the weighted coefficients of order `k` are bounded by
+`weightedCoeffBound ι k K L` when the coefficients are bounded by `K` and the derivatives of the
+logarithm of the weight by `L`. -/
+private theorem norm_weightedCoeff_le (hα : α ≤ 1) {t₀ t₁ : ℝ} {ht : t₀ < t₁} {K L : ℝ≥0}
+    {a : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht}
+    {b : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht}
+    {c : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht}
+    {dℓ : ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ}
+    {d2ℓ : ι → ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ}
+    (hak : ∀ i j, ‖a i j‖ ≤ K) (hbk : ∀ i, ‖b i‖ ≤ K) (hck : ‖c‖ ≤ K)
+    (hdℓ : ∀ i, ‖dℓ i‖ ≤ L) (hd2ℓ : ∀ i j, ‖d2ℓ i j‖ ≤ L) :
+    (∀ i j, ‖a i j‖ ≤ weightedCoeffBound ι k K L) ∧
+      (∀ i, ‖euclideanWeightedFirstOrderCoeff hα a b dℓ i‖ ≤ weightedCoeffBound ι k K L) ∧
+      ‖euclideanWeightedZerothOrderCoeff hα a b c dℓ d2ℓ‖ ≤ weightedCoeffBound ι k K L := by
+  set M : ℝ := 21 * (k + 1) ^ 2 * 2 ^ k
+  set n : ℝ := (Fintype.card ι : ℝ)
+  have hB : (weightedCoeffBound ι k K L : ℝ) =
+      K * (1 + 6 * n * M * L + 2 * n ^ 2 * M * (L + 2 * M * L * L)) := by
+    simp only [weightedCoeffBound, M, n]
+    push_cast
+    ring
+  have hK : (0 : ℝ) ≤ K := K.property
+  have hL : (0 : ℝ) ≤ L := L.property
+  have hM : 0 ≤ M := by positivity
+  have hn : 0 ≤ n := Nat.cast_nonneg _
+  have hb (i : ι) :
+      ‖euclideanWeightedFirstOrderCoeff hα a b dℓ i‖ ≤ K + 2 * M * (n * (2 * K * L)) := by
+    refine (norm_euclideanWeightedFirstOrderCoeff_le a b dℓ hα i).trans
+      (add_le_add (hbk i) (mul_le_mul_of_nonneg_left ?_ (by positivity)))
+    calc ∑ j, (‖a i j‖ + ‖a j i‖) * ‖dℓ j‖ ≤ ∑ _j : ι, 2 * (K : ℝ) * L :=
+          Finset.sum_le_sum fun j _ ↦ by
+            nlinarith [hak i j, hak j i, hdℓ j, norm_nonneg (dℓ j), norm_nonneg (a i j)]
+      _ = _ := by simp [n]
+  have hc : ‖euclideanWeightedZerothOrderCoeff hα a b c dℓ d2ℓ‖ ≤
+      K + 2 * M * (n * (n * (K * (L + 2 * M * (L * L))))) + 2 * M * (n * (K * L)) := by
+    refine (norm_euclideanWeightedZerothOrderCoeff_le a b c dℓ d2ℓ hα).trans
+      (add_le_add (add_le_add hck (mul_le_mul_of_nonneg_left ?_ (by positivity)))
+        (mul_le_mul_of_nonneg_left ?_ (by positivity)))
+    · calc ∑ i, ∑ j, ‖a i j‖ * (‖d2ℓ i j‖ + 2 * M * (‖dℓ i‖ * ‖dℓ j‖)) ≤
+            ∑ _i : ι, ∑ _j : ι, (K : ℝ) * (L + 2 * M * (L * L)) :=
+            Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ by
+              gcongr
+              · exact hak i j
+              · exact hd2ℓ i j
+              · exact hdℓ i
+              · exact hdℓ j
+        _ = _ := by simp [n]
+    · calc ∑ i, ‖b i‖ * ‖dℓ i‖ ≤ ∑ _i : ι, (K : ℝ) * L :=
+            Finset.sum_le_sum fun i _ ↦ by gcongr; exacts [hbk i, hdℓ i]
+        _ = _ := by simp [n]
+  rw [hB]
+  refine ⟨fun i j ↦ (hak i j).trans (le_mul_of_one_le_right hK ?_), fun i ↦ (hb i).trans ?_,
+    hc.trans ?_⟩
+  · nlinarith [mul_nonneg (mul_nonneg hn hM) hL,
+      mul_nonneg (mul_nonneg (sq_nonneg n) hM) (by positivity : 0 ≤ L + 2 * M * L * L)]
+  · rw [show K * (1 + 6 * n * M * L + 2 * n ^ 2 * M * (L + 2 * M * L * L)) =
+      (K + 2 * M * (n * (2 * K * L))) + K * (2 * n * M * L + 2 * n ^ 2 * M * (L + 2 * M * L * L))
+      by ring]
+    exact le_add_of_nonneg_right (by positivity)
+  · rw [show K * (1 + 6 * n * M * L + 2 * n ^ 2 * M * (L + 2 * M * L * L)) =
+      (K + 2 * M * (n * (n * (K * (L + 2 * M * (L * L))))) + 2 * M * (n * (K * L))) +
+        K * (4 * n * M * L) by ring]
+    exact le_add_of_nonneg_right (by positivity)
+
+/-- For a fixed weight whose logarithm has derivatives bounded by `L`, the total distance between
+the coefficient triples `(a, b_w, c_w)` and `(a', b'_w, c'_w)` of two conjugated operators of order
+`k` is at most `1 + 6 M L + 4 M² L²` times the total distance between `(a, b, c)` and
+`(a', b', c')`, where `M = 21 (k + 1)² 2ᵏ`. -/
+private theorem weightedCoeff_sub_le_mul (hα : α ≤ 1) {t₀ t₁ : ℝ} {ht : t₀ < t₁} {L : ℝ≥0}
+    {a a' : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht}
+    {b b' : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht}
+    {c c' : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht}
+    {dℓ : ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ}
+    {d2ℓ : ι → ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ}
+    (hdℓ : ∀ i, ‖dℓ i‖ ≤ L) (hd2ℓ : ∀ i j, ‖d2ℓ i j‖ ≤ L) :
+    ∑ i, ∑ j, ‖a i j - a' i j‖ +
+        ∑ i, ‖euclideanWeightedFirstOrderCoeff hα a b dℓ i -
+          euclideanWeightedFirstOrderCoeff hα a' b' dℓ i‖ +
+        ‖euclideanWeightedZerothOrderCoeff hα a b c dℓ d2ℓ -
+          euclideanWeightedZerothOrderCoeff hα a' b' c' dℓ d2ℓ‖ ≤
+      (1 + 6 * (21 * (k + 1) ^ 2 * 2 ^ k) * L + 4 * (21 * (k + 1) ^ 2 * 2 ^ k) ^ 2 * L ^ 2) *
+        (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
+  set M : ℝ := 21 * (k + 1) ^ 2 * 2 ^ k
+  set A := ∑ i, ∑ j, ‖a i j - a' i j‖
+  set B := ∑ i, ‖b i - b' i‖
+  -- The weighted coefficients are linear in `a`, `b`, `c`, so their differences are the weighted
+  -- coefficients of the differences.
+  have hbw : ∑ i, ‖euclideanWeightedFirstOrderCoeff hα a b dℓ i -
+      euclideanWeightedFirstOrderCoeff hα a' b' dℓ i‖ ≤ B + 4 * M * L * A := by
+    calc _ ≤ ∑ i, (‖b i - b' i‖ +
+          2 * M * ∑ j, (‖a i j - a' i j‖ + ‖a j i - a' j i‖) * L) :=
+          Finset.sum_le_sum fun i _ ↦ by
+            rw [← euclideanWeightedFirstOrderCoeff_sub]
+            refine (norm_euclideanWeightedFirstOrderCoeff_le _ _ _ hα i).trans
+              (add_le_add le_rfl (mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun j _ ↦
+                mul_le_mul_of_nonneg_left (hdℓ j) (by positivity)) (by positivity)))
+      _ = _ := by
+          have hswap : ∑ i, ∑ j, ‖a j i - a' j i‖ = A := Finset.sum_comm
+          simp only [Finset.sum_add_distrib, add_mul, ← Finset.sum_mul, ← Finset.mul_sum, hswap]
+          ring
+  have hcw : ‖euclideanWeightedZerothOrderCoeff hα a b c dℓ d2ℓ -
+      euclideanWeightedZerothOrderCoeff hα a' b' c' dℓ d2ℓ‖ ≤
+        ‖c - c'‖ + 2 * M * (L + 2 * M * (L * L)) * A + 2 * M * L * B := by
+    rw [← euclideanWeightedZerothOrderCoeff_sub]
+    refine (norm_euclideanWeightedZerothOrderCoeff_le _ _ _ _ _ hα).trans ?_
+    simp only [Pi.sub_apply]
+    have h₁ : ∑ i, ∑ j, ‖a i j - a' i j‖ * (‖d2ℓ i j‖ + 2 * M * (‖dℓ i‖ * ‖dℓ j‖)) ≤
+        (L + 2 * M * (L * L)) * A := by
+      rw [Finset.mul_sum]
+      refine Finset.sum_le_sum fun i _ ↦ ?_
+      rw [Finset.mul_sum]
+      refine Finset.sum_le_sum fun j _ ↦ ?_
+      rw [mul_comm]
+      gcongr
+      · exact hd2ℓ i j
+      · exact hdℓ i
+      · exact hdℓ j
+    have h₂ : ∑ i, ‖b i - b' i‖ * ‖dℓ i‖ ≤ L * B := by
+      rw [Finset.mul_sum]
+      exact Finset.sum_le_sum fun i _ ↦ by rw [mul_comm]; gcongr; exact hdℓ i
+    calc _ ≤ ‖c - c'‖ + 2 * M * ((L + 2 * M * (L * L)) * A) + 2 * M * (L * B) := by
+          gcongr
+      _ = _ := by ring
+  refine (add_le_add (add_le_add le_rfl hbw) hcw).trans (sub_nonneg.1 ?_)
+  -- The terms in `A`, `B` and `‖c - c'‖` leave nonnegative multiples.
+  rw [show (1 + 6 * M * L + 4 * M ^ 2 * L ^ 2) * (A + B + ‖c - c'‖) -
+      (A + (B + 4 * M * L * A) + (‖c - c'‖ + 2 * M * (L + 2 * M * (L * L)) * A + 2 * M * L * B)) =
+        (4 * M * L + 4 * M ^ 2 * L ^ 2) * B + (6 * M * L + 4 * M ^ 2 * L ^ 2) * ‖c - c'‖ by ring]
+  positivity
+
+variable [DecidableEq ι]
+
+/-- **The Schauder estimate in a weighted class at every order.** For `0 < α < 1`, `k : ℕ`, an
+ellipticity constant `λ > 0`, a bound `K` on the norms of the coefficients in `C_{par,b}^{k+α}`, a
+bound `L` on the norms of the partial derivatives `∂ᵢℓ` and `∂ᵢ∂ⱼℓ` of the logarithm of the weight
+in `C_b^{k,α}`, and a bound `T₀` on the horizon, there is a constant `C` with the following
+property. On `ℝⁿ × [0, T]`, `T ≤ T₀`, let `u = exp ℓ * v` with `v ∈ C_{par,b}^{k+2+α}`, and let `u`
+be a classical solution of `P u = exp ℓ * g` with `g ∈ C_{par,b}^{k+α}`, where
+`P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u`. Then
+`‖v‖_{k+2+α} ≤ C (‖g‖_{k+α} + ‖v(·, 0)‖_{C^{k+2,α}})`, that is
+`‖u / w‖_{k+2+α} ≤ C (‖P u / w‖_{k+α} + ‖u(·, 0) / w‖_{C^{k+2,α}})`. The weight itself enters only
+through `L`. This is the order-`k` form of
+`TauCeti.ParabolicC2HolderSpace.exists_norm_le_of_eq_exp_mul`. -/
+theorem exists_norm_le_of_eq_exp_mul (hα₀ : 0 < α) (hα₁ : α < 1) {lam : ℝ} (hlam : 0 < lam)
+    (k : ℕ) (K L T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
+      ∀ (a : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (b : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (c : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT),
+        (∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) →
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+      ∀ (dℓ : ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ)
+        (d2ℓ : ι → ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ),
+        (∀ i, ‖dℓ i‖ ≤ L) → (∀ i j, ‖d2ℓ i j‖ ≤ L) →
+      ∀ ℓ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ 2 ℓ →
+        (∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x) →
+        (∀ i j x, fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1) = d2ℓ i j x) →
+      ∀ (v : ParabolicCkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ hT)
+        (u : EuclideanSpace ℝ ι → ℝ → ℝ)
+        (g : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT),
+        (∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) * v (slabMk y s)) →
+        (∀ x (t : Icc (0 : ℝ) T), derivWithin (u x) (Icc 0 T) t -
+          (∑ i, ∑ j, a i j (slabMk x t) * fderiv ℝ (fderiv ℝ fun y ↦ u y t) x
+              (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+            ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u y t) x (EuclideanSpace.single i 1) +
+            c (slabMk x t) * u x t) = exp (ℓ x) * g (slabMk x t)) →
+        ‖v‖ ≤ C * (‖g‖ + ‖v.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩‖) := by
+  obtain ⟨C, hC, hest⟩ := exists_norm_le_parabolicOperatorL (ι := ι) hα₀ hα₁ hlam k
+    (weightedCoeffBound ι k K L) T₀
+  refine ⟨C, hC, fun T hT hTT₀ a b c ha hak hbk hck dℓ d2ℓ hdk hd2k ℓ hℓ hdℓ hd2ℓ v u g hu hP ↦ ?_⟩
+  obtain ⟨ha', hb, hc⟩ := norm_weightedCoeff_le hα₁.le hak hbk hck hdk hd2k
+  -- The classical equation for `u` is the conjugated equation `P_w v = g` for `v`.
+  have hPv := (parabolicOperatorL_euclideanWeightedCoeff_eq_iff hα₁.le hℓ hdℓ hd2ℓ v hu g).2 hP
+  have h := hest T hT hTT₀ a _ _ ha ha' hb hc v
+  rwa [hPv] at h
+
+/-- **The weighted Cauchy problem at every order: uniform bound on the solution operators.** For
+`0 < α < 1`, `k : ℕ`, an ellipticity constant `λ > 0`, a bound `K` on the norms of the coefficients
+in `C_{par,b}^{k+α}`, a bound `L` on the norms of the derivatives `∂ᵢℓ`, `∂ᵢ∂ⱼℓ` of the logarithm
+of the weight in `C_b^{k,α}` and a bound `T₀` on the horizon, the weighted solution operators on
+`ℝⁿ × [0, T]`, `T ≤ T₀`, are bounded uniformly: the solution `u = exp ℓ * v` of
+`P u = exp ℓ * f`, `u(·, 0) = exp ℓ * g` (`eq_euclideanInitialDataCLE_symm_iff_exp_mul`) satisfies
+`‖v‖_{k+2+α} ≤ C max (‖f‖_{k+α}) (‖g‖_{C^{k+2,α}})`. This is the order-`k` form of
+`TauCeti.ParabolicC2HolderSpace.exists_norm_euclideanInitialDataCLE_weighted_symm_le`. -/
+theorem exists_norm_euclideanInitialDataCLE_weighted_symm_le (hα₀ : 0 < α) (hα₁ : α < 1)
+    {lam : ℝ} (hlam : 0 < lam) (k : ℕ) (K L T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
+      ∀ (a : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (b : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (c : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (dℓ : ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ)
+        (d2ℓ : ι → ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ)
+        (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ),
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+        (∀ i, ‖dℓ i‖ ≤ L) → (∀ i j, ‖d2ℓ i j‖ ≤ L) →
+        ‖(euclideanInitialDataCLE hα₀ hα₁ a (euclideanWeightedFirstOrderCoeff hα₁.le a b dℓ)
+          (euclideanWeightedZerothOrderCoeff hα₁.le a b c dℓ d2ℓ)
+            ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap‖ ≤ C := by
+  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanInitialDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam k
+    (weightedCoeffBound ι k K L) T₀
+  refine ⟨C, hC, fun T hT hTT₀ a b c dℓ d2ℓ ha hak hbk hck hdℓ hd2ℓ ↦ ?_⟩
+  obtain ⟨ha', hb, hc⟩ := norm_weightedCoeff_le hα₁.le hak hbk hck hdℓ hd2ℓ
+  exact hest T hT hTT₀ a _ _ ha ha' hb hc
+
+/-- **The weighted Cauchy problem at every order: Lipschitz dependence on the coefficients.**
+Under the bounds of `exists_norm_euclideanInitialDataCLE_weighted_symm_le`, for a fixed weight the
+weighted solution operators of two Cauchy problems differ in operator norm by at most
+`C (∑ᵢⱼ ‖aⁱʲ - a'ⁱʲ‖ + ∑ᵢ ‖bⁱ - b'ⁱ‖ + ‖c - c'‖)`, with the norms of `C_{par,b}^{k+α}`. This is the
+order-`k` form of
+`TauCeti.ParabolicC2HolderSpace.exists_norm_euclideanInitialDataCLE_weighted_symm_sub_le`. -/
+theorem exists_norm_euclideanInitialDataCLE_weighted_symm_sub_le (hα₀ : 0 < α) (hα₁ : α < 1)
+    {lam : ℝ} (hlam : 0 < lam) (k : ℕ) (K L T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
+      ∀ (a a' : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (b b' : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (c c' : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (dℓ : ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ)
+        (d2ℓ : ι → ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ)
+        (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+        (ha' : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a' i j p).toQuadraticForm' ξ),
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+        (∀ i j, ‖a' i j‖ ≤ K) → (∀ i, ‖b' i‖ ≤ K) → ‖c'‖ ≤ K →
+        (∀ i, ‖dℓ i‖ ≤ L) → (∀ i j, ‖d2ℓ i j‖ ≤ L) →
+        ‖(euclideanInitialDataCLE hα₀ hα₁ a (euclideanWeightedFirstOrderCoeff hα₁.le a b dℓ)
+            (euclideanWeightedZerothOrderCoeff hα₁.le a b c dℓ d2ℓ)
+              ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap -
+          (euclideanInitialDataCLE hα₀ hα₁ a' (euclideanWeightedFirstOrderCoeff hα₁.le a' b' dℓ)
+            (euclideanWeightedZerothOrderCoeff hα₁.le a' b' c' dℓ d2ℓ)
+              ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap‖ ≤
+          C * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
+  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanInitialDataCLE_symm_sub_le (ι := ι) hα₀ hα₁ hlam k
+    (weightedCoeffBound ι k K L) T₀
+  set M : ℝ := 21 * (k + 1) ^ 2 * 2 ^ k
+  refine ⟨C * (1 + 6 * M * L + 4 * M ^ 2 * L ^ 2), by positivity, fun T hT hTT₀ a a' b b' c c'
+    dℓ d2ℓ ha ha' hak hbk hck hak' hbk' hck' hdℓ hd2ℓ ↦ ?_⟩
+  obtain ⟨hak₁, hb, hc⟩ := norm_weightedCoeff_le hα₁.le hak hbk hck hdℓ hd2ℓ
+  obtain ⟨hak₁', hb', hc'⟩ := norm_weightedCoeff_le hα₁.le hak' hbk' hck' hdℓ hd2ℓ
+  refine (hest T hT hTT₀ a a' _ _ _ _ ha ha' hak₁ hb hc hak₁' hb' hc').trans ?_
+  exact mul_le_mul_of_nonneg_left (weightedCoeff_sub_le_mul hα₁.le hdℓ hd2ℓ) hC |>.trans_eq
+    (by ring)
+
+/-- **The weighted terminal-value problem at every order: uniform bound on the solution
+operators.** Under the bounds of `exists_norm_euclideanInitialDataCLE_weighted_symm_le`, the
+weighted solution operators of the terminal-value problems on `ℝⁿ × [0, T]`, `T ≤ T₀`, are bounded
+uniformly: the solution `u = exp ℓ * v` of `∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = exp ℓ * f`,
+`u(·, T) = exp ℓ * g` (`eq_euclideanTerminalDataCLE_symm_iff_exp_mul`) satisfies
+`‖v‖_{k+2+α} ≤ C max (‖f‖_{k+α}) (‖g‖_{C^{k+2,α}})`. This is the order-`k` form of
+`TauCeti.ParabolicC2HolderSpace.exists_norm_euclideanTerminalDataCLE_weighted_symm_le`. -/
+theorem exists_norm_euclideanTerminalDataCLE_weighted_symm_le (hα₀ : 0 < α) (hα₁ : α < 1)
+    {lam : ℝ} (hlam : 0 < lam) (k : ℕ) (K L T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
+      ∀ (a : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (b : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (c : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (dℓ : ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ)
+        (d2ℓ : ι → ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ)
+        (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ),
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+        (∀ i, ‖dℓ i‖ ≤ L) → (∀ i j, ‖d2ℓ i j‖ ≤ L) →
+        ‖(euclideanTerminalDataCLE hα₀ hα₁ a (euclideanWeightedFirstOrderCoeff hα₁.le a b dℓ)
+          (euclideanWeightedZerothOrderCoeff hα₁.le a b c dℓ d2ℓ)
+            ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap‖ ≤ C := by
+  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanTerminalDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam k
+    (weightedCoeffBound ι k K L) T₀
+  refine ⟨C, hC, fun T hT hTT₀ a b c dℓ d2ℓ ha hak hbk hck hdℓ hd2ℓ ↦ ?_⟩
+  obtain ⟨ha', hb, hc⟩ := norm_weightedCoeff_le hα₁.le hak hbk hck hdℓ hd2ℓ
+  exact hest T hT hTT₀ a _ _ ha ha' hb hc
+
+/-- **The weighted terminal-value problem at every order: Lipschitz dependence on the
+coefficients.** Under the bounds of `exists_norm_euclideanTerminalDataCLE_weighted_symm_le`, for
+a fixed weight the weighted solution operators of two terminal-value problems differ in operator
+norm by at most `C (∑ᵢⱼ ‖aⁱʲ - a'ⁱʲ‖ + ∑ᵢ ‖bⁱ - b'ⁱ‖ + ‖c - c'‖)`, with the norms of
+`C_{par,b}^{k+α}`. This is the order-`k` form of
+`TauCeti.ParabolicC2HolderSpace.exists_norm_euclideanTerminalDataCLE_weighted_symm_sub_le`. -/
+theorem exists_norm_euclideanTerminalDataCLE_weighted_symm_sub_le (hα₀ : 0 < α) (hα₁ : α < 1)
+    {lam : ℝ} (hlam : 0 < lam) (k : ℕ) (K L T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
+      ∀ (a a' : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (b b' : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (c c' : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (dℓ : ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ)
+        (d2ℓ : ι → ι → CkHolderSpace k α (EuclideanSpace ℝ ι) ℝ)
+        (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+        (ha' : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a' i j p).toQuadraticForm' ξ),
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+        (∀ i j, ‖a' i j‖ ≤ K) → (∀ i, ‖b' i‖ ≤ K) → ‖c'‖ ≤ K →
+        (∀ i, ‖dℓ i‖ ≤ L) → (∀ i j, ‖d2ℓ i j‖ ≤ L) →
+        ‖(euclideanTerminalDataCLE hα₀ hα₁ a (euclideanWeightedFirstOrderCoeff hα₁.le a b dℓ)
+            (euclideanWeightedZerothOrderCoeff hα₁.le a b c dℓ d2ℓ)
+              ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap -
+          (euclideanTerminalDataCLE hα₀ hα₁ a' (euclideanWeightedFirstOrderCoeff hα₁.le a' b' dℓ)
+            (euclideanWeightedZerothOrderCoeff hα₁.le a' b' c' dℓ d2ℓ)
+              ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap‖ ≤
+          C * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
+  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanTerminalDataCLE_symm_sub_le (ι := ι) hα₀ hα₁ hlam
+    k (weightedCoeffBound ι k K L) T₀
+  set M : ℝ := 21 * (k + 1) ^ 2 * 2 ^ k
+  refine ⟨C * (1 + 6 * M * L + 4 * M ^ 2 * L ^ 2), by positivity, fun T hT hTT₀ a a' b b' c c'
+    dℓ d2ℓ ha ha' hak hbk hck hak' hbk' hck' hdℓ hd2ℓ ↦ ?_⟩
+  obtain ⟨hak₁, hb, hc⟩ := norm_weightedCoeff_le hα₁.le hak hbk hck hdℓ hd2ℓ
+  obtain ⟨hak₁', hb', hc'⟩ := norm_weightedCoeff_le hα₁.le hak' hbk' hck' hdℓ hd2ℓ
+  refine (hest T hT hTT₀ a a' _ _ _ _ ha ha' hak₁ hb hc hak₁' hb' hc').trans ?_
+  exact mul_le_mul_of_nonneg_left (weightedCoeff_sub_le_mul hα₁.le hdℓ hd2ℓ) hC |>.trans_eq
+    (by ring)
+
+end Estimates
 
 /-! ### The weight `1 + exp x` on the line -/
 
