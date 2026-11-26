@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Fin.VecNotation
 public import TauCeti.Algebra.Lie.Free.Enveloping
-public import TauCeti.Algebra.Lie.UniversalEnveloping.BCH
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Completion.Primitive
 public import TauCeti.RingTheory.Ideal.Quotient.Nilpotent
 public import TauCeti.RingTheory.Nilpotent.BCH
