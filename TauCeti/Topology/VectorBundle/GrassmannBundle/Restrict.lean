@@ -160,13 +160,18 @@ def restrictRestrictHomeomorph (W' : Set W) :
 theorem inclusion_restrictRestrictHomeomorph {W' : Set W}
     (p : grassmannBundle F (ContinuousMap.subtypeVal W' *ᵖ (ContinuousMap.subtypeVal W *ᵖ E)) k) :
     inclusion F E k (Subtype.val '' W') (restrictRestrictHomeomorph F E k W' p) =
-      inclusion F E k W (inclusion F (ContinuousMap.subtypeVal W *ᵖ E) k W' p) :=
-  -- Both sides are the map induced by the inclusion `W' → B` and the identities of the fibres.
-  (congrArg (inclusion F E k (Subtype.val '' W'))
-    (congrFun (coe_mapHomeomorphOfInverse ..) p)).trans
-    ((congrFun (map_comp _ _ _ _) p).symm.trans (congrFun (map_comp (ContinuousMap.subtypeVal W')
+      inclusion F E k W (inclusion F (ContinuousMap.subtypeVal W *ᵖ E) k W' p) := by
+  refine (congrArg (inclusion F E k (Subtype.val '' W'))
+    (congrFun (coe_mapHomeomorphOfInverse ..) p)).trans ?_
+  -- Both sides are composites of two induced maps (`inclusion` is `map` by definition), covering
+  -- inclusions of bases by identities of fibres. `map_comp` turns each composite into a single
+  -- induced map, and `map_congr` compares the two on the total space of `E`, where both send
+  -- `(x, v)` to `(x, v)`. The `by exact` defers that pointwise `rfl` until both `map_comp`s have
+  -- fixed the two maps it compares.
+  exact congrFun ((map_comp _ _ _ _).symm.trans ((map_congr (by exact fun _ _ ↦ rfl)).trans
+    (map_comp (ContinuousMap.subtypeVal W')
       (fun x ↦ LinearIsometryEquiv.refl ℝ ((ContinuousMap.subtypeVal W *ᵖ E) x))
-      (ContinuousMap.subtypeVal W) fun x ↦ LinearIsometryEquiv.refl ℝ (E x)) p))
+      (ContinuousMap.subtypeVal W) fun x ↦ LinearIsometryEquiv.refl ℝ (E x)))) p
 
 /-- The homeomorphism `G_k((E|_W)|_{W'}) ≃ₜ G_k(E|_{W'})` covers the identification of `W'` with
 its image in `B`. -/
