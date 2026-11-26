@@ -17,7 +17,6 @@ import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Analysis.Calculus.PeriodicDeriv
-import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Geometry.Symplectic.Transport
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -1032,13 +1031,6 @@ theorem eventually_eq_zero_of_asymptoticOperator_eq_smul
     hne (h₀ ζ hζ hζp fun t ↦ by simpa using hA t)) fun δ hδ ζ hζ hζp hA ↦ ?_
   by_contra hne
   exact hδ ⟨ζ, hζ, hζp, hne, hA⟩
-
-/-- An orbit `x' = X_{H_t}(x)` of a jointly `C¹` time-dependent Hamiltonian `H` is `C¹`. -/
-theorem contDiff_one_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V)
-    {H : ℝ → V → ℝ} (hH : ContDiff ℝ 1 (uncurry H)) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) : ContDiff ℝ 1 x :=
-  contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous hx
 
 /-- **The linearized Hamiltonian vector field along a periodic loop is a loop.** Along a
 one-periodic `C¹` loop `x`, for instance a one-periodic orbit, and for a one-periodic, jointly `C³`

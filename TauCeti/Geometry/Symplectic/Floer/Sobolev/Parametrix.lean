@@ -376,25 +376,15 @@ theorem isFredholm_floerSobolevOperator_of_cylindrical (ω : SymplecticForm F)
         Ks Kt u).IsFredholm := by
   -- This is the weighted theorem with slope `c = 0`: an orbit is `C¹`, and at a nondegenerate
   -- orbit the unshifted field has a nondegenerate return map.
-  have hdet {H : ℝ → F → ℝ} {K : ℝ≥0}
-      (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-      (hH : ContDiff ℝ 3 (uncurry H)) {x : ℝ → F}
-      (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
-      (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-      LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
-        fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
-          (0 : ℝ) • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-            1 : F →L[ℝ] F) : F →ₗ[ℝ] F) ≠ 0 := by
-    simpa only [zero_smul, sub_zero] using
-      ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX (hH.of_le (by norm_num))
-        hx hnd
   rw [← floerWeightedSobolevOperator_zero]
   exact ω.isFredholm_floerWeightedSobolevOperator_of_cylindrical hω hcyl hu continuous_const
     (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hHm hHmper
     (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hHm.of_le (by norm_num)) hxm) hxmper
-    (hdet hXm hHm hxm hndm) huxm hHp hHpper
+    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt hXm
+      (hHm.of_le (by norm_num)) hxm hndm _) huxm hHp hHpper
     (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hHp.of_le (by norm_num)) hxp) hxpper
-    (hdet hXp hHp hxp hndp) huxp
+    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt hXp
+      (hHp.of_le (by norm_num)) hxp hndp _) huxp
 
 /-- **The linearized Floer operator along a Floer trajectory is Fredholm in a unitary
 trivialization.** Let `F` be a finite-dimensional complex inner product space whose symplectic
