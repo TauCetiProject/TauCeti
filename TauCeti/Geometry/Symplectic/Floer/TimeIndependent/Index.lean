@@ -613,18 +613,17 @@ theorem continuous_neg_comp_fderiv_hamiltonianVectorField {G : F → ℝ} (hG : 
   (continuous_const.clm_comp
     ((ω.contDiff_hamiltonianVectorField (n := 1) hG).continuous_fderiv one_ne_zero)).neg
 
-/-- If `ω = Im ⟪·, ·⟫` and `G` is `C²`, then at every point `p` the operator `-i dX_G(p)` is
-symmetric for the real inner product `Re ⟪·, ·⟫`: it is the negative of the Hessian of `G` at
-`p`. -/
+/-- If `ω = Im ⟪·, ·⟫` and `G` is `C²` at `p`, then the operator `-i dX_G(p)` is symmetric for the
+real inner product `Re ⟪·, ·⟫`: it is the negative of the Hessian of `G` at `p`. -/
 theorem isSymmetric_neg_comp_fderiv_hamiltonianVectorField
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {G : F → ℝ} (hG : ContDiff ℝ 2 G) (p : F) :
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {G : F → ℝ} {p : F} (hG : ContDiffAt ℝ 2 G p) :
     let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
     ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
       (fderiv ℝ (ω.hamiltonianVectorField G) p)) : F →L[ℝ] F) : F →ₗ[ℝ] F).IsSymmetric := by
   intro _ u v
   have hg := ω.apply_ofComplexModule_eq_inner hω
   have h := (ω.invariant_of_apply_apply_eq_inner
-    hg).associatedBilinForm_apply_fderiv_hamiltonianVectorField_comm (hG.contDiffAt (x := p)) u v
+    hg).associatedBilinForm_apply_fderiv_hamiltonianVectorField_comm hG u v
   rw [associatedBilinForm_apply, associatedBilinForm_apply, hg, hg] at h
   simpa [inner_neg_left, inner_neg_right] using h
 
@@ -678,7 +677,7 @@ theorem index_floerSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank
   -- `B_G(p)` is the negative of the Hessian, symmetric for the real inner product.
   have hsym {G : F → ℝ} (hG : ContDiff ℝ 2 G) (p : F) :
       ((B G p : F →L[ℝ] F) : F →ₗ[ℝ] F).IsSymmetric :=
-    isSymmetric_neg_comp_fderiv_hamiltonianVectorField hω hG p
+    isSymmetric_neg_comp_fderiv_hamiltonianVectorField hω hG.contDiffAt
   -- At the limits, `B_{H±}(p±)` is injective, hence bounded below.
   have hbound (G : F → ℝ) (p : F)
       (hp : Function.Injective (fderiv ℝ (ω.hamiltonianVectorField G) p)) :

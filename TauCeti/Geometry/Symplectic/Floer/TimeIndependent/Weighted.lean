@@ -16,42 +16,45 @@ import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 # The weighted linearized operator along a time-independent cylinder
 
 Let `(V, ω)` be a finite-dimensional symplectic vector space with a compatible complex structure
-`J`, let `H : V → ℝ` be an autonomous Hamiltonian and `γ` a curve, and let `D` be the linearized
+`J`, let `H_s` be Hamiltonians depending on `s` and `γ` a curve, and let `D` be the linearized
 Floer operator along the time-independent cylinder `(s, t) ↦ γ(s)`,
-`D ξ = ∂s ξ + J (∂t ξ - dX_H(γ(s)) ξ)`. On the Sobolev spaces with the exponential weight
-`e^{δ s}` of constant slope `δ`, `D` acts as the operator `D - δ`
-(`TauCeti.SymplecticForm.floerWeightedSobolevOperator` with the slope `fun _ ↦ δ`). This file
-computes its index. All declarations below are in the namespace `TauCeti.SymplecticForm`.
+`D ξ = ∂s ξ + J (∂t ξ - dX_{H_s}(γ(s)) ξ)`. On the Sobolev spaces with the exponential weight
+`e^{κ(s)}` of slope `c = κ'`, `D` acts as the operator `D - c(s)`
+(`TauCeti.SymplecticForm.floerWeightedSobolevOperator`). This file computes its index. All
+declarations below are in the namespace `TauCeti.SymplecticForm`.
 
-* **A constant slope is a quadratic Hamiltonian.** For `Q(y) = (δ / 2) ‖y‖²`, where the inner
+* **A weight slope is a quadratic Hamiltonian.** For `Q(y) = (δ / 2) ‖y‖²`, where the inner
   product is the metric `ω(·, J ·)`, the Hamiltonian vector field is `X_Q = -δ J`, so
   `-J dX_{H + Q} = -J dX_H - δ`
-  (`neg_comp_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq`). Hence `D - δ` is the
-  linearized operator of the Hamiltonian `H + Q` along the same cylinder
+  (`neg_comp_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq`). Hence `D - c(s)` is the
+  linearized operator of the Hamiltonians `H_s + (c(s) / 2) ‖·‖²` along the same cylinder
   (`floerWeightedSobolevOperator_eq_floerSobolevOperator_add_div_two_mul_norm_sq`). The curve `γ`
-  need not be a solution for either Hamiltonian.
+  need not be a solution for either family.
 * **Fredholm property and index.** In a unitary trivialization, where `V = F` is a complex inner
-  product space with `ω = Im ⟪·, ·⟫` and `J = i`, the linearized operator of an autonomous
-  Hamiltonian along `(s, t) ↦ γ(s)` with `‖dX(γ(s))‖ < 2π` has the index of its zero-mode Morse
-  operator (`index_floerSobolevOperator_eq_index_trajectoryOperator`). For `H + Q` this operator
-  is the trajectory operator of `A - δ` with `A(s) = -i dX_H(γ(s))`, the trajectory operator on
-  the spaces of weight `e^{δ s}`. Suppose `γ` converges to `p±` at `±∞` and
-  `‖dX_H(γ(s))‖ + |δ| < 2π`. If `δ` is not an eigenvalue of the asymptotic operators
-  `A(p±) = -i dX_H(p±)`, the negatives of the Hessians of `H` at `p±`, then `D - δ` is Fredholm
+  product space with `ω = Im ⟪·, ·⟫` and `J = i`, the linearized operator of a jointly `C²` family
+  along `(s, t) ↦ γ(s)` with `‖dX_{H_s}(γ(s))‖ < 2π` has the index of its zero-mode Morse operator
+  (`index_floerSobolevOperator_eq_index_trajectoryOperator`). For a `C²` slope `c` this operator
+  is the trajectory operator of `A - c` with `A(s) = -i dX_{H_s}(γ(s))`, the trajectory operator on
+  the spaces of weight `e^{κ(s)}`. Suppose `H_s` equals `H₋` near `-∞` and `H₊` near `+∞`, `γ`
+  converges to `p±` at `±∞`, `c` tends to `δ±` at `±∞`, and `‖dX_{H_s}(γ(s))‖ + |c(s)| < 2π`. If
+  `δ±` is not an eigenvalue of the asymptotic operator `A(p±) = -i dX_{H±}(p±)`, the negative of
+  the Hessian of `H±` at `p±`, then `D - c` is Fredholm
   (`isFredholm_floerWeightedSobolevOperator_comp_fst`) of index
-  `n_{< δ}(A(p₋)) - n_{< δ}(A(p₊))`, where `n_{< δ}(B)` is the number of eigenvalues of `B` below
-  `δ`, counted with multiplicity
+  `n_{< δ₋}(A(p₋)) - n_{< δ₊}(A(p₊))`, where `n_{< δ}(B)` is the number of eigenvalues of `B`
+  below `δ`, counted with multiplicity
   (`index_floerWeightedSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank`). The points
   `p±` need not be nondegenerate critical points: `A(p±)` has finitely many eigenvalues, so every
-  small nonzero weight `δ` is non-exceptional even where `A(p±)` has a kernel.
-* **Crossing an eigenvalue.** Hence the index depends on `δ` only through its position relative
-  to the two spectra, and as `δ` increases from `δ₁` to `δ₂` the index decreases by the number of
-  eigenvalues of `A(p₊)` in `[δ₁, δ₂)` and increases by the number of eigenvalues of `A(p₋)` there
+  small nonzero limit `δ±` is non-exceptional even where `A(p±)` has a kernel. A constant slope
+  `c = δ` and an autonomous Hamiltonian `H_s = H` are special cases.
+* **Crossing an eigenvalue.** Hence the index depends on the slope only through the positions of
+  its limits relative to the two spectra. Passing from a slope `c₁` to a slope `c₂` with limits
+  `δ₁± ≤ δ₂±`, the index decreases by the number of eigenvalues of `A(p₊)` in `[δ₁₊, δ₂₊)` and
+  increases by the number of eigenvalues of `A(p₋)` in `[δ₁₋, δ₂₋)`
   (`index_floerWeightedSobolevOperator_eq_add_finrank_pointSpectralSubspace_Ico`). The weight
-  `e^{δ s}` is a decay weight at `+∞` and a growth weight at `-∞` when `δ > 0`: as `δ` increases
-  through one exceptional value of `A(p₊)` alone, the index decreases by the dimension of its
-  eigenspace (`index_floerWeightedSobolevOperator_eq_add_finrank_eigenspace_atTop`), and through
-  one exceptional value of `A(p₋)` alone it increases by that dimension
+  `e^{κ(s)}` is a decay weight at `+∞` and a growth weight at `-∞` when `c > 0`: as the limit at
+  `+∞` increases through one exceptional value of `A(p₊)`, the index decreases by the dimension of
+  its eigenspace (`index_floerWeightedSobolevOperator_eq_add_finrank_eigenspace_atTop`), and as the
+  limit at `-∞` increases through one exceptional value of `A(p₋)`, it increases by that dimension
   (`index_floerWeightedSobolevOperator_eq_add_finrank_eigenspace_atBot`).
 
 These are the statements of `TauCeti.Analysis.ODE.EnergyEstimate.WeightCrossing` for the trajectory
@@ -80,46 +83,46 @@ namespace TauCeti.SymplecticForm
 
 section Quadratic
 
-/-! ### A constant weight slope as a quadratic Hamiltonian -/
+/-! ### A weight slope as a quadratic Hamiltonian -/
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : V → ℝ}
+  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : ℝ × ℝ → V → ℝ}
 
-/-- **A constant weight slope is a quadratic Hamiltonian, on coefficients.** If the inner product
-of `V` is the metric `ω(·, J ·)`, then for the constant structure `J`, the perturbation `K = H dt`
-of an autonomous Hamiltonian and any map `u`, the coefficient field of `D_u - δ` on jets at `z` is
-that of the linearized operator of the Hamiltonian `H + (δ / 2) ‖·‖²`, as soon as `X_H` is
-differentiable at `u z`. -/
+/-- **A weight slope is a quadratic Hamiltonian, on coefficients.** If the inner product of `V` is
+the metric `ω(·, J ·)`, then for the constant structure `J`, the perturbation `K = H dt` of
+Hamiltonians `H_z` and any map `u`, the coefficient field at `z = (s, t)` of `D_u - c(s)` on jets
+is that of the linearized operator of the Hamiltonians `H_z + (c(s) / 2) ‖·‖²`, as soon as `H_z`
+is differentiable and `X_{H_z}` is differentiable at `u z`. -/
 theorem floerJetCoeff_add_div_two_mul_norm_sq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    (hH : Differentiable ℝ H) {u : ℝ × ℝ → V} {z : ℝ × ℝ}
-    (hX : DifferentiableAt ℝ (ω.hamiltonianVectorField H) (u z)) (δ : ℝ) :
+    {u : ℝ × ℝ → V} {z : ℝ × ℝ} (hH : Differentiable ℝ (H z))
+    (hX : DifferentiableAt ℝ (ω.hamiltonianVectorField (H z)) (u z)) (c : ℝ → ℝ) :
     ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ x ↦ H x + δ / 2 * ‖x‖ ^ 2) u z =
-      ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) u z - δ • fst ℝ V (V × V) := by
+        (fun z x ↦ H z x + c z.1 / 2 * ‖x‖ ^ 2) u z =
+      ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) H u z -
+        c z.1 • fst ℝ V (V × V) := by
   rw [floerJetCoeff_const_eq, floerJetCoeff_const_eq,
-    neg_comp_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq hg hH hX δ]
+    neg_comp_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq hg hH hX (c z.1)]
   refine ContinuousLinearMap.ext fun v ↦ ?_
   simp [sub_eq_add_neg, add_assoc]
 
-/-- **A constant weight slope is a quadratic Hamiltonian.** If the inner product of `V` is the
-metric `ω(·, J ·)`, and `H` and its Hamiltonian vector field are differentiable, the linearized
-Floer operator of the data `(J, 0, H dt)` along any map `u`, conjugated by the exponential weight
-`e^{δ s}` of constant slope `δ`, is the linearized operator of the Hamiltonian
-`H + (δ / 2) ‖·‖²` along `u`, on `W^{1,2}(ℝ × S¹, V)`. -/
+/-- **A weight slope is a quadratic Hamiltonian.** If the inner product of `V` is the metric
+`ω(·, J ·)`, the Hamiltonians `H_z` are differentiable and their Hamiltonian vector fields are
+differentiable along a map `u`, then the linearized Floer operator of the data `(J, 0, H dt)` along
+`u`, conjugated by the exponential weight `e^{κ(s)}` of slope `c = κ'`, is the linearized operator
+of the Hamiltonians `H_z + (c(s) / 2) ‖·‖²` along `u`, on `W^{1,2}(ℝ × S¹, V)`. -/
 theorem floerWeightedSobolevOperator_eq_floerSobolevOperator_add_div_two_mul_norm_sq
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : Differentiable ℝ H)
-    (hX : Differentiable ℝ (ω.hamiltonianVectorField H)) (u : ℝ × ℝ → V) (δ : ℝ) :
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ∀ z, Differentiable ℝ (H z)) {u : ℝ × ℝ → V}
+    (hX : ∀ z, DifferentiableAt ℝ (ω.hamiltonianVectorField (H z)) (u z)) (c : ℝ → ℝ) :
     ω.floerWeightedSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) u (fun _ ↦ δ) =
+        H u c =
       ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ x ↦ H x + δ / 2 * ‖x‖ ^ 2) u := by
+        (fun z x ↦ H z x + c z.1 / 2 * ‖x‖ ^ 2) u := by
   have hcoeff : (fun z ↦ ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun _ ↦ H) u z - (fun _ ↦ δ) z.1 • fst ℝ V (V × V)) =
+      (fun _ _ ↦ 0) H u z - c z.1 • fst ℝ V (V × V)) =
       ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ x ↦ H x + δ / 2 * ‖x‖ ^ 2) u := by
+        (fun z x ↦ H z x + c z.1 / 2 * ‖x‖ ^ 2) u := by
     funext z
-    exact (floerJetCoeff_add_div_two_mul_norm_sq hg hH (hX _) δ).symm
+    exact (floerJetCoeff_add_div_two_mul_norm_sq hg (hH z) (hX z) c).symm
   rw [floerWeightedSobolevOperator_def, floerSobolevOperator_def, hcoeff]
 
 end Quadratic
@@ -129,213 +132,252 @@ section Unitary
 /-! ### The index in a unitary trivialization -/
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
-  {ω : SymplecticForm F} {H : F → ℝ} {γ : ℝ → F}
+  {ω : SymplecticForm F} {H : ℝ → F → ℝ} {γ : ℝ → F} {Hm Hp : F → ℝ} {pminus pplus : F}
 
 /-- The reduction of the weighted operator to the weight-crossing theorems. Under the hypotheses
 of `index_floerWeightedSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank`, the weighted
-operator `D - δ` is the unweighted operator of `H + (δ / 2) ‖·‖²`, whose zero-mode comparison is
-the trajectory operator of `s ↦ A(s) - δ` with `A(s) = -i dX_H(γ(s))`. That operator is Fredholm
-of index `n_{< δ}(A(p₋)) - n_{< δ}(A(p₊))`, so `D - δ` is too. -/
+operator `D - c` is the unweighted operator of `H_s + (c(s) / 2) ‖·‖²`, whose zero-mode comparison
+is the trajectory operator of `s ↦ A(s) - c(s)` with `A(s) = -i dX_{H_s}(γ(s))`. That operator is
+Fredholm of index `n_{< δ₋}(A(p₋)) - n_{< δ₊}(A(p₊))`, so `D - c` is too. -/
 private theorem isFredholm_floerWeightedSobolevOperator_and_index_eq
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a δ : ℝ}
-    (ha : a + |δ| < 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
-    {pminus pplus : F} (hbot : Tendsto γ atBot (𝓝 pminus)) (htop : Tendsto γ atTop (𝓝 pplus))
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 (Function.uncurry H))
+    (hγ : Continuous γ) {c : ℝ → ℝ} (hc : ContDiff ℝ 2 c) {a : ℝ} (ha : a < 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ + |c s| ≤ a)
+    (hHm : ∀ᶠ s in atBot, H s = Hm) (hHp : ∀ᶠ s in atTop, H s = Hp)
+    (hbot : Tendsto γ atBot (𝓝 pminus)) (htop : Tendsto γ atTop (𝓝 pplus))
+    {δminus δplus : ℝ} (hcbot : Tendsto c atBot (𝓝 δminus)) (hctop : Tendsto c atTop (𝓝 δplus))
     (hδminus : ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ)
+        (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δminus)
     (hδplus : ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ) :
+        (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δplus) :
     (ω.floerWeightedSobolevOperator
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) fun _ ↦ δ).IsFredholm ∧
+        (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) c).IsFredholm ∧
       (ω.floerWeightedSobolevOperator
           (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-          (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) fun _ ↦ δ).index =
+          (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) c).index =
         (Module.finrank ℝ (Module.End.pointSpectralSubspace
-          ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-            (fderiv ℝ (ω.hamiltonianVectorField H) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) (Iio δ)) :
-              ℤ) -
-          Module.finrank ℝ (Module.End.pointSpectralSubspace
-            ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-              (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F)
-                (Iio δ)) := by
-  let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hg := ω.apply_ofComplexModule_eq_inner hω
-  set Jc := (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap
-  have hH₁ : Differentiable ℝ H := hH.differentiable two_ne_zero
-  have hX : Differentiable ℝ (ω.hamiltonianVectorField H) :=
-    (ω.contDiff_hamiltonianVectorField (n := 1) hH).differentiable one_ne_zero
-  -- The shifted Hamiltonian `H + (δ / 2) ‖·‖²` is `C²`, with `‖dX(γ(s))‖ ≤ a + |δ| < 2π`.
-  have hH' : ContDiff ℝ 2 (Function.uncurry fun (_ : ℝ) (x : F) ↦ H x + δ / 2 * ‖x‖ ^ 2) :=
-    (hH.add (contDiff_const.mul (contDiff_norm_sq ℝ))).comp contDiff_snd
-  have haγ' (s : ℝ) :
-      ‖fderiv ℝ (ω.hamiltonianVectorField fun x ↦ H x + δ / 2 * ‖x‖ ^ 2) (γ s)‖ ≤ a + |δ| :=
-    (norm_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq_le hg hH₁ (hX _) δ).trans
-      (add_le_add_left (haγ s) _)
-  -- The coefficient `s ↦ -i dX_H(γ(s)) - δ` is continuous and bounded.
-  have hAc := continuous_neg_comp_fderiv_hamiltonianVectorField (ω := ω) hH
-  have hBL : MemLp (fun s ↦ -(Jc.comp (fderiv ℝ (ω.hamiltonianVectorField H) (γ s))) -
-      δ • ContinuousLinearMap.id ℝ F) ∞
-      (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)) := by
-    refine memLp_top_of_bound ((hAc.comp hγ).sub continuous_const).aestronglyMeasurable
-      (‖Jc‖ * a + ‖δ • ContinuousLinearMap.id ℝ F‖) (.of_forall fun s ↦ ?_)
-    refine (norm_sub_le _ _).trans (add_le_add_left ?_ _)
-    rw [norm_neg]
-    exact (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left (haγ s) (norm_nonneg _))
-  -- It is `-i dX_{H + Q}(γ(s))`, the coefficient of the Morse operator of the shifted Hamiltonian.
-  have hB : ⇑(hBL.toLp _) =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
-      fun s ↦ -(Jc.comp
-        (fderiv ℝ (ω.hamiltonianVectorField fun x ↦ H x + δ / 2 * ‖x‖ ^ 2) (γ s))) := by
-    filter_upwards [hBL.coeFn_toLp] with s hs
-    rw [hs, neg_comp_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq hg hH₁ (hX _) δ]
-  rw [floerWeightedSobolevOperator_eq_floerSobolevOperator_add_div_two_mul_norm_sq hg hH₁ hX,
-    isFredholm_floerSobolevOperator_iff_isFredholm_trajectoryOperator hω hH' hγ ha haγ' hB,
-    index_floerSobolevOperator_eq_index_trajectoryOperator hω hH' hγ ha haγ' hB]
-  -- The weight-crossing theorems for the trajectory operator of `s ↦ A(s) - δ`.
-  have hsym := isSymmetric_neg_comp_fderiv_hamiltonianVectorField hω hH
-  exact ⟨WeakDerivStep.isFredholm_trajectoryOperator_sub_smul_id (hAc.comp hγ) (hsym pminus)
-      (hsym pplus) ((hAc.tendsto pminus).comp hbot) ((hAc.tendsto pplus).comp htop)
-      continuous_const tendsto_const_nhds tendsto_const_nhds hδminus hδplus _ hBL.coeFn_toLp,
-    WeakDerivStep.index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank
-      (hAc.comp hγ) (hsym pminus) (hsym pplus) ((hAc.tendsto pminus).comp hbot)
-      ((hAc.tendsto pplus).comp htop) continuous_const tendsto_const_nhds tendsto_const_nhds
-      hδminus hδplus _ hBL.coeFn_toLp⟩
-
-/-- **The weighted operator along a gradient line is Fredholm.** Let `F` be a finite-dimensional
-complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, let `H` be a `C²` autonomous
-Hamiltonian and `γ` a continuous curve with `‖dX_H(γ(s))‖ ≤ a` for every `s`, converging to `p₋` at
-`-∞` and to `p₊` at `+∞`, and let `δ` be a weight slope with `a + |δ| < 2π` which is an eigenvalue
-neither of `-i dX_H(p₋)` nor of `-i dX_H(p₊)`. Then the linearized operator along `(s, t) ↦ γ(s)`
-on the spaces of weight `e^{δ s}`, the operator `D - δ : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)`, is
-Fredholm. -/
-theorem isFredholm_floerWeightedSobolevOperator_comp_fst
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a δ : ℝ}
-    (ha : a + |δ| < 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
-    {pminus pplus : F} (hbot : Tendsto γ atBot (𝓝 pminus)) (htop : Tendsto γ atTop (𝓝 pplus))
-    (hδminus : ¬Module.End.HasEigenvalue
-      ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ)
-    (hδplus : ¬Module.End.HasEigenvalue
-      ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ) :
-    (ω.floerWeightedSobolevOperator
-      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) fun _ ↦ δ).IsFredholm :=
-  (isFredholm_floerWeightedSobolevOperator_and_index_eq hω hH hγ ha haγ hbot htop hδminus
-    hδplus).1
-
-/-- **The index of the weighted operator along a gradient line.** Let `F` be a finite-dimensional
-complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, let `H` be a `C²` autonomous
-Hamiltonian and `γ` a continuous curve with `‖dX_H(γ(s))‖ ≤ a` for every `s`, converging to `p₋` at
-`-∞` and to `p₊` at `+∞`, and let `δ` be a weight slope with `a + |δ| < 2π` which is an eigenvalue
-neither of `A(p₋)` nor of `A(p₊)`, where `A(p) = -i dX_H(p)` is the negative of the Hessian of `H`
-at `p`. Then the linearized operator along `(s, t) ↦ γ(s)` on the spaces of weight `e^{δ s}`, the
-operator `D - δ : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)`, has index `n_{< δ}(A(p₋)) - n_{< δ}(A(p₊))`,
-where `n_{< δ}(B)` is the number of eigenvalues of `B` below `δ`, counted with multiplicity. -/
-theorem index_floerWeightedSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a δ : ℝ}
-    (ha : a + |δ| < 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
-    {pminus pplus : F} (hbot : Tendsto γ atBot (𝓝 pminus)) (htop : Tendsto γ atTop (𝓝 pplus))
-    (hδminus : ¬Module.End.HasEigenvalue
-      ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ)
-    (hδplus : ¬Module.End.HasEigenvalue
-      ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ) :
-    (ω.floerWeightedSobolevOperator
-        (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) fun _ ↦ δ).index =
-      (Module.finrank ℝ (Module.End.pointSpectralSubspace
         ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-          (fderiv ℝ (ω.hamiltonianVectorField H) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) (Iio δ)) :
+          (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) (Iio δminus)) :
             ℤ) -
         Module.finrank ℝ (Module.End.pointSpectralSubspace
           ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-            (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) (Iio δ)) :=
-  (isFredholm_floerWeightedSobolevOperator_and_index_eq hω hH hγ ha haγ hbot htop hδminus
-    hδplus).2
+            (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F)
+            (Iio δplus)) := by
+  let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  have hg := ω.apply_ofComplexModule_eq_inner hω
+  set Jc := (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap
+  have hHs (s : ℝ) : ContDiff ℝ 2 (H s) := hH.comp (contDiff_const.prodMk contDiff_id)
+  have hH₁ (s : ℝ) : Differentiable ℝ (H s) := (hHs s).differentiable two_ne_zero
+  have hX (s : ℝ) : Differentiable ℝ (ω.hamiltonianVectorField (H s)) :=
+    (ω.contDiff_hamiltonianVectorField (n := 1) (hHs s)).differentiable one_ne_zero
+  -- The shifted family `H_s + (c(s) / 2) ‖·‖²` is jointly `C²`, with `‖dX(γ(s))‖ ≤ a < 2π`.
+  have hH' : ContDiff ℝ 2 (Function.uncurry fun s (x : F) ↦ H s x + c s / 2 * ‖x‖ ^ 2) :=
+    hH.add (((hc.comp contDiff_fst).div_const 2).mul ((contDiff_norm_sq ℝ).comp contDiff_snd))
+  have haγ' (s : ℝ) :
+      ‖fderiv ℝ (ω.hamiltonianVectorField fun x ↦ H s x + c s / 2 * ‖x‖ ^ 2) (γ s)‖ ≤ a :=
+    (norm_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq_le hg (hH₁ s) (hX s _)
+      (c s)).trans (haγ s)
+  -- `A(s) = -i dX_{H_s}(γ(s))` is continuous, and `A(s) - c(s)` is bounded.
+  set A : ℝ → F →L[ℝ] F := fun s ↦ -(Jc.comp (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)))
+  have hAc : Continuous A :=
+    (continuous_const.clm_comp (ω.continuous_fderiv_hamiltonianVectorField_comp hH hγ)).neg
+  have hshift (s : ℝ) : A s - c s • ContinuousLinearMap.id ℝ F =
+      -(Jc.comp (fderiv ℝ (ω.hamiltonianVectorField fun x ↦ H s x + c s / 2 * ‖x‖ ^ 2) (γ s))) :=
+    (neg_comp_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq hg (hH₁ s) (hX s _)
+      (c s)).symm
+  have hBL : MemLp (fun s ↦ A s - c s • ContinuousLinearMap.id ℝ F) ∞
+      (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)) :=
+    memLp_top_of_bound (hAc.sub (hc.continuous.smul continuous_const)).aestronglyMeasurable
+      (‖Jc‖ * a) (.of_forall fun s ↦ by
+        rw [hshift, norm_neg]
+        exact (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left (haγ' s) (norm_nonneg _)))
+  have hB := hBL.coeFn_toLp.trans (.of_eq (funext hshift))
+  rw [floerWeightedSobolevOperator_eq_floerSobolevOperator_add_div_two_mul_norm_sq hg
+      (fun z ↦ hH₁ z.1) (fun z ↦ hX z.1 _) c,
+    isFredholm_floerSobolevOperator_iff_isFredholm_trajectoryOperator hω hH' hγ ha haγ' hB,
+    index_floerSobolevOperator_eq_index_trajectoryOperator hω hH' hγ ha haγ' hB]
+  -- Near the ends `A` tends to `A(p±)`, the symmetric negative of the Hessian of `H±` at `p±`.
+  have hend {G : F → ℝ} {l : Filter ℝ} [l.NeBot] (hl : ∀ᶠ s in l, H s = G) : ContDiff ℝ 2 G :=
+    let ⟨s, hs⟩ := hl.exists; hs ▸ hHs s
+  have hlim {G : F → ℝ} {l : Filter ℝ} [l.NeBot] {p : F} (hl : ∀ᶠ s in l, H s = G)
+      (hγl : Tendsto γ l (𝓝 p)) :
+      Tendsto A l (𝓝 (-(Jc.comp (fderiv ℝ (ω.hamiltonianVectorField G) p)))) :=
+    ((continuous_neg_comp_fderiv_hamiltonianVectorField (hend hl)).tendsto p |>.comp hγl).congr'
+      (hl.mono fun s hs ↦ by simp only [A, Jc, Function.comp_apply, hs])
+  have hsym {G : F → ℝ} {l : Filter ℝ} [l.NeBot] (hl : ∀ᶠ s in l, H s = G) (p : F) :=
+    isSymmetric_neg_comp_fderiv_hamiltonianVectorField hω (hend hl).contDiffAt (p := p)
+  exact ⟨WeakDerivStep.isFredholm_trajectoryOperator_sub_smul_id hAc (hsym hHm pminus)
+      (hsym hHp pplus) (hlim hHm hbot) (hlim hHp htop) hc.continuous hcbot hctop hδminus hδplus _
+      hBL.coeFn_toLp,
+    WeakDerivStep.index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank
+      hAc (hsym hHm pminus) (hsym hHp pplus) (hlim hHm hbot) (hlim hHp htop) hc.continuous hcbot
+      hctop hδminus hδplus _ hBL.coeFn_toLp⟩
+
+/-- **The weighted operator along a time-independent cylinder is Fredholm.** Let `F` be a
+finite-dimensional complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, let `H_s`
+be jointly `C²` Hamiltonians depending on `s`, equal to `H₋` for `s` near `-∞` and to `H₊` for `s`
+near `+∞`, and let `γ` be a continuous curve converging to `p₋` at `-∞` and to `p₊` at `+∞`. Let
+`c` be a `C²` weight slope tending to `δ₋` at `-∞` and to `δ₊` at `+∞`, with
+`‖dX_{H_s}(γ(s))‖ + |c(s)| ≤ a < 2π` for every `s`, where `δ₋` is not an eigenvalue of
+`-i dX_{H₋}(p₋)` and `δ₊` is not one of `-i dX_{H₊}(p₊)`. Then the linearized operator along
+`(s, t) ↦ γ(s)` on the spaces of weight `e^{κ(s)}`, `κ' = c`, the operator
+`D - c : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)`, is Fredholm. -/
+theorem isFredholm_floerWeightedSobolevOperator_comp_fst
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 (Function.uncurry H))
+    (hγ : Continuous γ) {c : ℝ → ℝ} (hc : ContDiff ℝ 2 c) {a : ℝ} (ha : a < 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ + |c s| ≤ a)
+    (hHm : ∀ᶠ s in atBot, H s = Hm) (hHp : ∀ᶠ s in atTop, H s = Hp)
+    (hbot : Tendsto γ atBot (𝓝 pminus)) (htop : Tendsto γ atTop (𝓝 pplus))
+    {δminus δplus : ℝ} (hcbot : Tendsto c atBot (𝓝 δminus)) (hctop : Tendsto c atTop (𝓝 δplus))
+    (hδminus : ¬Module.End.HasEigenvalue
+      ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δminus)
+    (hδplus : ¬Module.End.HasEigenvalue
+      ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δplus) :
+    (ω.floerWeightedSobolevOperator
+      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) c).IsFredholm :=
+  (isFredholm_floerWeightedSobolevOperator_and_index_eq hω hH hγ hc ha haγ hHm hHp hbot htop hcbot
+    hctop hδminus hδplus).1
+
+/-- **The index of the weighted operator along a time-independent cylinder.** Let `F` be a
+finite-dimensional complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, let `H_s`
+be jointly `C²` Hamiltonians depending on `s`, equal to `H₋` for `s` near `-∞` and to `H₊` for `s`
+near `+∞`, and let `γ` be a continuous curve converging to `p₋` at `-∞` and to `p₊` at `+∞`. Let
+`c` be a `C²` weight slope tending to `δ₋` at `-∞` and to `δ₊` at `+∞`, with
+`‖dX_{H_s}(γ(s))‖ + |c(s)| ≤ a < 2π` for every `s`, where `δ±` is not an eigenvalue of
+`A(p±) = -i dX_{H±}(p±)`, the negative of the Hessian of `H±` at `p±`. Then the linearized operator
+along `(s, t) ↦ γ(s)` on the spaces of weight `e^{κ(s)}`, `κ' = c`, the operator
+`D - c : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)`, has index `n_{< δ₋}(A(p₋)) - n_{< δ₊}(A(p₊))`,
+where `n_{< δ}(B)` is the number of eigenvalues of `B` below `δ`, counted with multiplicity. -/
+theorem index_floerWeightedSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 (Function.uncurry H))
+    (hγ : Continuous γ) {c : ℝ → ℝ} (hc : ContDiff ℝ 2 c) {a : ℝ} (ha : a < 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ + |c s| ≤ a)
+    (hHm : ∀ᶠ s in atBot, H s = Hm) (hHp : ∀ᶠ s in atTop, H s = Hp)
+    (hbot : Tendsto γ atBot (𝓝 pminus)) (htop : Tendsto γ atTop (𝓝 pplus))
+    {δminus δplus : ℝ} (hcbot : Tendsto c atBot (𝓝 δminus)) (hctop : Tendsto c atTop (𝓝 δplus))
+    (hδminus : ¬Module.End.HasEigenvalue
+      ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δminus)
+    (hδplus : ¬Module.End.HasEigenvalue
+      ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δplus) :
+    (ω.floerWeightedSobolevOperator
+        (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) c).index =
+        (Module.finrank ℝ (Module.End.pointSpectralSubspace
+        ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
+          (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) (Iio δminus)) :
+            ℤ) -
+        Module.finrank ℝ (Module.End.pointSpectralSubspace
+          ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
+            (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F)
+            (Iio δplus)) :=
+  (isFredholm_floerWeightedSobolevOperator_and_index_eq hω hH hγ hc ha haγ hHm hHp hbot htop hcbot
+    hctop hδminus hδplus).2
 
 /-- **The index jumps by the eigenvalues crossed by the weight.** Under the hypotheses of
 `index_floerWeightedSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank` for two weight
-slopes `δ₁ ≤ δ₂`, the index of `D - δ₁` is the index of `D - δ₂`, plus the number of eigenvalues
-of `A(p₊) = -i dX_H(p₊)` in `[δ₁, δ₂)`, minus the number of eigenvalues of `A(p₋)` in `[δ₁, δ₂)`,
+slopes `c₁` and `c₂` whose limits satisfy `δ₁₋ ≤ δ₂₋` at `-∞` and `δ₁₊ ≤ δ₂₊` at `+∞`, the index of
+`D - c₁` is the index of `D - c₂`, plus the number of eigenvalues of `A(p₊) = -i dX_{H₊}(p₊)` in
+`[δ₁₊, δ₂₊)`, minus the number of eigenvalues of `A(p₋) = -i dX_{H₋}(p₋)` in `[δ₁₋, δ₂₋)`,
 counted with multiplicity. -/
 theorem index_floerWeightedSobolevOperator_eq_add_finrank_pointSpectralSubspace_Ico
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ)
-    {a δ₁ δ₂ : ℝ} (hδ : δ₁ ≤ δ₂) (ha₁ : a + |δ₁| < 2 * π) (ha₂ : a + |δ₂| < 2 * π)
-    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
-    {pminus pplus : F} (hbot : Tendsto γ atBot (𝓝 pminus)) (htop : Tendsto γ atTop (𝓝 pplus))
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 (Function.uncurry H))
+    (hγ : Continuous γ)
+    {c₁ c₂ : ℝ → ℝ} (hc₁ : ContDiff ℝ 2 c₁) (hc₂ : ContDiff ℝ 2 c₂) {a : ℝ} (ha : a < 2 * π)
+    (haγ₁ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ + |c₁ s| ≤ a)
+    (haγ₂ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ + |c₂ s| ≤ a)
+    (hHm : ∀ᶠ s in atBot, H s = Hm) (hHp : ∀ᶠ s in atTop, H s = Hp)
+    (hbot : Tendsto γ atBot (𝓝 pminus)) (htop : Tendsto γ atTop (𝓝 pplus))
+    {δ₁minus δ₁plus δ₂minus δ₂plus : ℝ}
+    (hc₁bot : Tendsto c₁ atBot (𝓝 δ₁minus)) (hc₁top : Tendsto c₁ atTop (𝓝 δ₁plus))
+    (hc₂bot : Tendsto c₂ atBot (𝓝 δ₂minus)) (hc₂top : Tendsto c₂ atTop (𝓝 δ₂plus))
+    (hminus : δ₁minus ≤ δ₂minus) (hplus : δ₁plus ≤ δ₂plus)
     (hδ₁minus : ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₁)
+        (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₁minus)
     (hδ₁plus : ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₁)
+        (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₁plus)
     (hδ₂minus : ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₂)
+        (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₂minus)
     (hδ₂plus : ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₂) :
+        (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₂plus) :
     (ω.floerWeightedSobolevOperator
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) fun _ ↦ δ₁).index =
+        (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) c₁).index =
       (ω.floerWeightedSobolevOperator
           (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-          (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) fun _ ↦ δ₂).index +
+          (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) c₂).index +
         Module.finrank ℝ (Module.End.pointSpectralSubspace
           ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-            (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F)
-              (Ico δ₁ δ₂)) -
+            (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F)
+            (Ico δ₁plus δ₂plus)) -
         Module.finrank ℝ (Module.End.pointSpectralSubspace
           ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-            (fderiv ℝ (ω.hamiltonianVectorField H) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F)
-              (Ico δ₁ δ₂)) := by
-  rw [index_floerWeightedSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank hω hH hγ ha₁
-      haγ hbot htop hδ₁minus hδ₁plus,
-    index_floerWeightedSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank hω hH hγ ha₂
-      haγ hbot htop hδ₂minus hδ₂plus]
-  simp only [Module.End.finrank_pointSpectralSubspace_Iio_eq_add hδ]
+            (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F)
+            (Ico δ₁minus δ₂minus)) := by
+  rw [index_floerWeightedSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank hω hH hγ hc₁
+      ha haγ₁ hHm hHp hbot htop hc₁bot hc₁top hδ₁minus hδ₁plus,
+    index_floerWeightedSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank hω hH hγ hc₂
+      ha haγ₂ hHm hHp hbot htop hc₂bot hc₂top hδ₂minus hδ₂plus]
+  simp only [Module.End.finrank_pointSpectralSubspace_Iio_eq_add hminus,
+    Module.End.finrank_pointSpectralSubspace_Iio_eq_add hplus]
   push_cast
   ring
 
 /-- **Crossing one exceptional value of the limit at `+∞`.** Under the hypotheses of
 `index_floerWeightedSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank` for two weight
-slopes `δ₁ < δ₂`, suppose that `ν ∈ (δ₁, δ₂)` is the only eigenvalue of `A(p₊) = -i dX_H(p₊)` in
-`[δ₁, δ₂]`, and that `A(p₋)` has no eigenvalue in `[δ₁, δ₂]`. Then the index of `D - δ₁` exceeds
-that of `D - δ₂` by the multiplicity of `ν`: as the weight `e^{δ s}`, a decay weight at `+∞`,
-increases through `ν`, the index decreases by the dimension of the eigenspace of `A(p₊)` at
-`ν`. -/
+slopes `c₁` and `c₂`, with limits `δ₁₋ ≤ δ₂₋` at `-∞` and `δ₁ < δ₂` at `+∞`, suppose that
+`ν ∈ (δ₁, δ₂)` is the only eigenvalue of `A(p₊) = -i dX_{H₊}(p₊)` in `[δ₁, δ₂]`, and that
+`A(p₋) = -i dX_{H₋}(p₋)` has no eigenvalue in `[δ₁₋, δ₂₋]`. Then the index of `D - c₁` exceeds
+that of `D - c₂` by the multiplicity of `ν`: as the limit at `+∞` of the slope of the weight, a
+decay weight there, increases through `ν`, the index decreases by the dimension of the eigenspace
+of `A(p₊)` at `ν`. -/
 theorem index_floerWeightedSobolevOperator_eq_add_finrank_eigenspace_atTop
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ)
-    {a δ₁ δ₂ ν : ℝ} (hν : ν ∈ Ioo δ₁ δ₂) (ha₁ : a + |δ₁| < 2 * π) (ha₂ : a + |δ₂| < 2 * π)
-    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
-    {pminus pplus : F} (hbot : Tendsto γ atBot (𝓝 pminus)) (htop : Tendsto γ atTop (𝓝 pplus))
-    (hminus : ∀ μ ∈ Icc δ₁ δ₂, ¬Module.End.HasEigenvalue
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 (Function.uncurry H))
+    (hγ : Continuous γ)
+    {c₁ c₂ : ℝ → ℝ} (hc₁ : ContDiff ℝ 2 c₁) (hc₂ : ContDiff ℝ 2 c₂) {a : ℝ} (ha : a < 2 * π)
+    (haγ₁ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ + |c₁ s| ≤ a)
+    (haγ₂ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ + |c₂ s| ≤ a)
+    (hHm : ∀ᶠ s in atBot, H s = Hm) (hHp : ∀ᶠ s in atTop, H s = Hp)
+    (hbot : Tendsto γ atBot (𝓝 pminus)) (htop : Tendsto γ atTop (𝓝 pplus))
+    {δ₁minus δ₂minus δ₁ δ₂ ν : ℝ}
+    (hc₁bot : Tendsto c₁ atBot (𝓝 δ₁minus)) (hc₁top : Tendsto c₁ atTop (𝓝 δ₁))
+    (hc₂bot : Tendsto c₂ atBot (𝓝 δ₂minus)) (hc₂top : Tendsto c₂ atTop (𝓝 δ₂))
+    (hle : δ₁minus ≤ δ₂minus) (hν : ν ∈ Ioo δ₁ δ₂)
+    (hminus : ∀ μ ∈ Icc δ₁minus δ₂minus, ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) μ)
+        (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) μ)
     (hδ₁ : ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₁)
+        (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₁)
     (hδ₂ : ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₂)
+        (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₂)
     (hother : ∀ μ ∈ Ioo δ₁ δ₂, μ ≠ ν → ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) μ) :
+        (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) μ) :
     (ω.floerWeightedSobolevOperator
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) fun _ ↦ δ₁).index =
+        (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) c₁).index =
       (ω.floerWeightedSobolevOperator
           (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-          (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) fun _ ↦ δ₂).index +
+          (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) c₂).index +
         Module.finrank ℝ (Module.End.eigenspace
           ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-            (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) ν) := by
-  have hle : δ₁ ≤ δ₂ := (hν.1.trans hν.2).le
-  rw [index_floerWeightedSobolevOperator_eq_add_finrank_pointSpectralSubspace_Ico hω hH hγ hle ha₁
-      ha₂ haγ hbot htop (hminus δ₁ (left_mem_Icc.2 hle)) hδ₁ (hminus δ₂ (right_mem_Icc.2 hle)) hδ₂,
+            (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) ν) := by
+  rw [index_floerWeightedSobolevOperator_eq_add_finrank_pointSpectralSubspace_Ico hω hH hγ hc₁ hc₂
+      ha haγ₁ haγ₂ hHm hHp hbot htop hc₁bot hc₁top hc₂bot hc₂top hle (hν.1.trans hν.2).le
+      (hminus _ (left_mem_Icc.2 hle)) hδ₁ (hminus _ (right_mem_Icc.2 hle)) hδ₂,
     Module.End.pointSpectralSubspace_eq_bot_iff.2 fun μ hμ ↦ hminus μ (Ico_subset_Icc_self hμ),
     Module.End.pointSpectralSubspace_Ico_eq_eigenspace (𝕜 := ℝ) (Ioo_subset_Ico_self hν) hδ₁
       hother]
@@ -343,40 +385,48 @@ theorem index_floerWeightedSobolevOperator_eq_add_finrank_eigenspace_atTop
 
 /-- **Crossing one exceptional value of the limit at `-∞`.** Under the hypotheses of
 `index_floerWeightedSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank` for two weight
-slopes `δ₁ < δ₂`, suppose that `ν ∈ (δ₁, δ₂)` is the only eigenvalue of `A(p₋) = -i dX_H(p₋)` in
-`[δ₁, δ₂]`, and that `A(p₊)` has no eigenvalue in `[δ₁, δ₂]`. Then the index of `D - δ₂` exceeds
-that of `D - δ₁` by the multiplicity of `ν`: as the weight `e^{δ s}`, a growth weight at `-∞`
-when `δ > 0`, increases through `ν`, the index increases by the dimension of the eigenspace of
-`A(p₋)` at `ν`. -/
+slopes `c₁` and `c₂`, with limits `δ₁ < δ₂` at `-∞` and `δ₁₊ ≤ δ₂₊` at `+∞`, suppose that
+`ν ∈ (δ₁, δ₂)` is the only eigenvalue of `A(p₋) = -i dX_{H₋}(p₋)` in `[δ₁, δ₂]`, and that
+`A(p₊) = -i dX_{H₊}(p₊)` has no eigenvalue in `[δ₁₊, δ₂₊]`. Then the index of `D - c₂` exceeds
+that of `D - c₁` by the multiplicity of `ν`: as the limit at `-∞` of the slope of the weight, a
+growth weight there when positive, increases through `ν`, the index increases by the dimension of
+the eigenspace of `A(p₋)` at `ν`. -/
 theorem index_floerWeightedSobolevOperator_eq_add_finrank_eigenspace_atBot
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ)
-    {a δ₁ δ₂ ν : ℝ} (hν : ν ∈ Ioo δ₁ δ₂) (ha₁ : a + |δ₁| < 2 * π) (ha₂ : a + |δ₂| < 2 * π)
-    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
-    {pminus pplus : F} (hbot : Tendsto γ atBot (𝓝 pminus)) (htop : Tendsto γ atTop (𝓝 pplus))
-    (hplus : ∀ μ ∈ Icc δ₁ δ₂, ¬Module.End.HasEigenvalue
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 (Function.uncurry H))
+    (hγ : Continuous γ)
+    {c₁ c₂ : ℝ → ℝ} (hc₁ : ContDiff ℝ 2 c₁) (hc₂ : ContDiff ℝ 2 c₂) {a : ℝ} (ha : a < 2 * π)
+    (haγ₁ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ + |c₁ s| ≤ a)
+    (haγ₂ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ + |c₂ s| ≤ a)
+    (hHm : ∀ᶠ s in atBot, H s = Hm) (hHp : ∀ᶠ s in atTop, H s = Hp)
+    (hbot : Tendsto γ atBot (𝓝 pminus)) (htop : Tendsto γ atTop (𝓝 pplus))
+    {δ₁ δ₂ δ₁plus δ₂plus ν : ℝ}
+    (hc₁bot : Tendsto c₁ atBot (𝓝 δ₁)) (hc₁top : Tendsto c₁ atTop (𝓝 δ₁plus))
+    (hc₂bot : Tendsto c₂ atBot (𝓝 δ₂)) (hc₂top : Tendsto c₂ atTop (𝓝 δ₂plus))
+    (hν : ν ∈ Ioo δ₁ δ₂) (hle : δ₁plus ≤ δ₂plus)
+    (hplus : ∀ μ ∈ Icc δ₁plus δ₂plus, ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) μ)
+        (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) μ)
     (hδ₁ : ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₁)
+        (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₁)
     (hδ₂ : ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₂)
+        (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) δ₂)
     (hother : ∀ μ ∈ Ioo δ₁ δ₂, μ ≠ ν → ¬Module.End.HasEigenvalue
       ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) μ) :
+        (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) μ) :
     (ω.floerWeightedSobolevOperator
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) fun _ ↦ δ₂).index =
+        (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) c₂).index =
       (ω.floerWeightedSobolevOperator
           (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-          (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) fun _ ↦ δ₁).index +
+          (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) c₁).index +
         Module.finrank ℝ (Module.End.eigenspace
           ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-            (fderiv ℝ (ω.hamiltonianVectorField H) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) ν) := by
-  have hle : δ₁ ≤ δ₂ := (hν.1.trans hν.2).le
-  rw [index_floerWeightedSobolevOperator_eq_add_finrank_pointSpectralSubspace_Ico hω hH hγ hle ha₁
-      ha₂ haγ hbot htop hδ₁ (hplus δ₁ (left_mem_Icc.2 hle)) hδ₂ (hplus δ₂ (right_mem_Icc.2 hle)),
+            (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) ν) := by
+  rw [index_floerWeightedSobolevOperator_eq_add_finrank_pointSpectralSubspace_Ico hω hH hγ hc₁ hc₂
+      ha haγ₁ haγ₂ hHm hHp hbot htop hc₁bot hc₁top hc₂bot hc₂top (hν.1.trans hν.2).le hle hδ₁
+      (hplus _ (left_mem_Icc.2 hle)) hδ₂ (hplus _ (right_mem_Icc.2 hle)),
     Module.End.pointSpectralSubspace_eq_bot_iff.2 fun μ hμ ↦ hplus μ (Ico_subset_Icc_self hμ),
     Module.End.pointSpectralSubspace_Ico_eq_eigenspace (𝕜 := ℝ) (Ioo_subset_Ico_self hν) hδ₁
       hother]
