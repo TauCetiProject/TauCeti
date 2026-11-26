@@ -287,10 +287,9 @@ theorem det_fderiv_realChart_add_mul_cylindricalEndLift (c a : ℂ) (ζ : ℝ ×
       4 * π ^ 2 * ‖Complex.equivRealProdCLM.symm
         (realChart (fun z ↦ c + a * zero.cylindricalEndLift z) ζ) - c‖ ^ 2 := by
   rw [TauCeti.Complex.det_fderiv_realChart (hasDerivAt_add_mul_cylindricalEndLift c a _),
-    deriv_cylindricalEndLift, TauCeti.Complex.equivRealProdCLM_symm_realChart,
-    Complex.normSq_eq_norm_sq, endCenter_zero, sub_zero, add_sub_cancel_left, norm_mul, norm_neg,
-    norm_mul, norm_mul, Complex.norm_ofNat, Complex.norm_real, Real.norm_of_nonneg pi_pos.le,
-    norm_mul a]
+    deriv_cylindricalEndLift, TauCeti.Complex.equivRealProdCLM_symm_realChart]
+  simp only [Complex.normSq_eq_norm_sq, endCenter_zero, sub_zero, add_sub_cancel_left, norm_mul,
+    norm_neg, Complex.norm_ofNat, Complex.norm_real, Real.norm_of_nonneg pi_pos.le]
   ring
 
 /-- On the part `s ≥ 0` of the input end with center `c` and scale `a`, the point

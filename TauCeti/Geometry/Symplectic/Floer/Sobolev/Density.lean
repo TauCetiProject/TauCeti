@@ -25,7 +25,8 @@ records the derivatives of a section cut off by a function of `s`.
 
 ## Main results
 
-* `TauCeti.Floer.sobolevDensity_nonneg`: the density is nonnegative.
+* `TauCeti.Floer.sobolevDensity_nonneg`, `TauCeti.Floer.integral_sobolevDensity_nonneg`: the
+  density and its integral against any measure, in particular over any set, are nonnegative.
 * `TauCeti.Floer.continuous_sobolevDensity`, `TauCeti.Floer.continuousAt_sobolevDensity`: the
   density of a `C¹` map is continuous, and that of a map `C¹` at a point is continuous there.
 * `TauCeti.Floer.sobolevDensity_congr_of_eventuallyEq`: the density at `z` depends only on the
@@ -69,6 +70,12 @@ theorem sobolevDensity_apply (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
 theorem sobolevDensity_nonneg (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : 0 ≤ sobolevDensity ξ z := by
   rw [sobolevDensity_apply]
   positivity
+
+/-- The `W^{1,2}` energy `∫ sobolevDensity ξ ∂μ` is nonnegative for every measure `μ`; in
+particular every set integral `∫ z in S, sobolevDensity ξ z` is nonnegative. -/
+theorem integral_sobolevDensity_nonneg {μ : Measure (ℝ × ℝ)} (ξ : ℝ × ℝ → V) :
+    0 ≤ ∫ z, sobolevDensity ξ z ∂μ :=
+  integral_nonneg (sobolevDensity_nonneg ξ)
 
 /-- The zero map has zero energy density. -/
 @[simp]

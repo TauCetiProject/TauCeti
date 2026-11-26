@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.SemiFredholm
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Topology.Separation.Basic
 
@@ -378,17 +379,15 @@ private theorem setIntegral_puncturedSphereWeight_le_add (ha : ∀ i, a i ≠ 0)
         20 * π ^ 2 * (1 + 4 * Fintype.card ι) *
           ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart inf) ζ := by
   have hρ := isWeight_puncturedSphereWeight c
-  have hd (f : ℝ × ℝ → V) (S : Set (ℝ × ℝ)) : 0 ≤ ∫ z in S, sobolevDensity f z :=
-    integral_nonneg fun z ↦ sobolevDensity_nonneg f z
   have h₀ : 0 ≤ (B + 1) * (∫ z in Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a T,
-      sobolevDensity ξ z) := mul_nonneg (by linarith) (hd _ _)
+      sobolevDensity ξ z) := mul_nonneg (by linarith) (integral_sobolevDensity_nonneg _)
   have h₁ : 0 ≤ ∑ i, 4 * π ^ 2 * (‖a i‖ ^ 2 + ∑ j, ‖a i‖ ^ 2 / ‖a j‖ ^ 2) *
       ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1,
         sobolevDensity (ξ ∘ realChart fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ :=
-    Finset.sum_nonneg fun i _ ↦ mul_nonneg (by positivity) (hd _ _)
+    Finset.sum_nonneg fun i _ ↦ mul_nonneg (by positivity) (integral_sobolevDensity_nonneg _)
   have h₂ : 0 ≤ 20 * π ^ 2 * (1 + 4 * Fintype.card ι) *
       ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart inf) ζ :=
-    mul_nonneg (by positivity) (hd _ _)
+    mul_nonneg (by positivity) (integral_sobolevDensity_nonneg _)
   have := hξ.continuous_fderiv one_ne_zero
   have := hξ.continuous
   have hfm : AEStronglyMeasurable (fun z ↦ puncturedSphereWeight c z * ‖ξ z‖ ^ 2 +
@@ -403,7 +402,8 @@ private theorem setIntegral_puncturedSphereWeight_le_add (ha : ∀ i, a i ≠ 0)
       positivity) hfm]
   refine ENNReal.toReal_le_of_le_ofReal (add_nonneg (add_nonneg h₀ h₁) h₂) ?_
   rw [ENNReal.ofReal_add (add_nonneg h₀ h₁) h₂, ENNReal.ofReal_add h₀ h₁,
-    ENNReal.ofReal_sum_of_nonneg fun i _ ↦ mul_nonneg (by positivity) (hd _ _)]
+    ENNReal.ofReal_sum_of_nonneg fun i _ ↦
+      mul_nonneg (by positivity) (integral_sobolevDensity_nonneg _)]
   -- The sphere is covered by `Σ_T` and the bands of the ends, where the energies are compared.
   refine (lintegral_mono_set (subset_preimage_puncturedSphereTruncation_union ha T)).trans
     ((lintegral_union_le _ _ _).trans (add_le_add
@@ -461,8 +461,6 @@ theorem exists_forall_setIntegral_puncturedSphereWeight_le (ha : ∀ i, a i ≠ 
     have := Finset.single_le_sum (f := Mi) (fun i _ ↦ by positivity) (Finset.mem_univ i)
     linarith [abs_nonneg B]
   refine ⟨A, by linarith [abs_nonneg B], fun ξ hξ hξc hξU ↦ ?_⟩
-  have hd (f : ℝ × ℝ → V) (S : Set (ℝ × ℝ)) : 0 ≤ ∫ z in S, sobolevDensity f z :=
-    integral_nonneg fun z ↦ sobolevDensity_nonneg f z
   refine (setIntegral_puncturedSphereWeight_le_add ha hsep hout hT (abs_nonneg B) hBK hξ hξc
     hξU).trans ?_
   -- Name the energies on the input ends, on the output end and on `Σ_T`.
@@ -472,10 +470,13 @@ theorem exists_forall_setIntegral_puncturedSphereWeight_le (ha : ∀ i, a i ≠ 
   set EK := ∫ z in K, sobolevDensity ξ z
   have h₁ : ∑ i, Mi i * Ei i ≤ A * ∑ i, Ei i := by
     rw [Finset.mul_sum]
-    exact Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (hMiA i) (hd _ _)
-  have h₂ := mul_le_mul_of_nonneg_right (show |B| + 1 ≤ A by linarith) (hd ξ K)
+    exact Finset.sum_le_sum fun i _ ↦
+      mul_le_mul_of_nonneg_right (hMiA i) (integral_sobolevDensity_nonneg _)
+  have h₂ := mul_le_mul_of_nonneg_right (show |B| + 1 ≤ A by linarith)
+    (integral_sobolevDensity_nonneg (μ := volume.restrict K) ξ)
   have h₃ := mul_le_mul_of_nonneg_right (show Mo ≤ A by linarith [abs_nonneg B])
-    (hd (ξ ∘ positiveEndChart inf) (Ioi T ×ˢ Icc (0 : ℝ) 1))
+    (integral_sobolevDensity_nonneg (μ := volume.restrict (Ioi T ×ˢ Icc (0 : ℝ) 1))
+      (ξ ∘ positiveEndChart inf))
   rw [mul_add, mul_add]
   linarith
 
@@ -489,13 +490,6 @@ open Floer ConformalSobolev
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ι : Type*} [Fintype ι] {c a : ι → ℂ}
-
-/-- A weight `ρ ≥ d⁻²`, `d > 0`, has `ρ^(-1/2) ≤ d`. -/
-private theorem inv_sqrt_le_of_inv_sq_le {ρ d : ℝ} (hd : 0 < d) (h : (d ^ 2)⁻¹ ≤ ρ) :
-    (√ρ)⁻¹ ≤ d := by
-  have h' := Real.sqrt_le_sqrt h
-  rw [Real.sqrt_inv, Real.sqrt_sq hd.le] at h'
-  simpa using inv_anti₀ (inv_pos.2 hd) h'
 
 /-- **The coefficient field on an input end.** At the point `ψ_i(s, t)` of the input end `i`,
 `s > 2`, where the structures are `J_e(t)` and `u` solves the Floer equation of the datum
@@ -546,7 +540,7 @@ private theorem norm_floerConformalJetCoeff_realChart_add_mul_cylindricalEndLift
     ring
   -- The weight is at least `d⁻²`, so `ρ^(-1/2) ≤ d`.
   have hρd : (√(puncturedSphereWeight c (ψ (s, t))))⁻¹ ≤ d :=
-    inv_sqrt_le_of_inv_sq_le hd (inv_norm_sub_sq_le_puncturedSphereWeight c i (ψ (s, t)))
+    Real.inv_sqrt_le_of_inv_sq_le hd (inv_norm_sub_sq_le_puncturedSphereWeight c i (ψ (s, t)))
   -- Beyond `s = 2` the datum is `H_i(t) dt` in the chart.
   have hKpull (v : ℝ × ℝ) := perturbationPullback_realChart_puncturedSpherePerturbation_of_two_le
     (Hout := Hout) hH ha hsep hout i (ζ := (s, t)) hs.le v
@@ -600,7 +594,7 @@ private theorem norm_floerConformalJetCoeff_positiveEndChart_inf_le (ω : Symple
       (inv_one_add_norm_sq_le_puncturedSphereWeight c _)
   have hρr : (√(puncturedSphereWeight c (positiveEndChart inf (s, t))))⁻¹ ≤
       π⁻¹ * positiveEndChartScale inf (s, t) := by
-    refine (inv_sqrt_le_of_inv_sq_le (by positivity) hρw).trans_eq ?_
+    refine (Real.inv_sqrt_le_of_inv_sq_le (by positivity) hρw).trans_eq ?_
     rw [positiveEndChartScale_apply, endCenter_inf, sub_zero, ← hw]
     field_simp
   exact ω.norm_floerConformalJetCoeff_le_of_perturbationPullback
