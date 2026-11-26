@@ -50,7 +50,8 @@ For a family of operators `T i : E i →L[𝕜] F i`, the block-diagonal operato
 `ContinuousLinearMap.piMap T` transported along `PiLp.continuousLinearEquiv`. For `p = 2` and
 Hilbert spaces this is the orthogonal direct sum of the `T i` on a finite Hilbert sum. Its
 coordinates and its action on coordinate inclusions are computed blockwise
-(`PiLp.proj_comp_piMap`, `PiLp.piMap_comp_singleCLM`).
+(`PiLp.proj_comp_piMap`, `PiLp.piMap_comp_singleCLM`), and for `p ≥ 1` its operator norm is at
+most any common bound on the norms of the blocks (`PiLp.norm_piMap_le`).
 
 ## Source
 
@@ -483,6 +484,26 @@ coordinate. -/
 theorem proj_comp_piMap (T : ∀ i, E i →L[𝕜] F i) (i : ι) :
     proj p F i ∘L piMap p T = T i ∘L proj p E i :=
   (rfl)
+
+end PiLp
+
+namespace PiLp
+
+variable {𝕜 ι : Type*} [Fintype ι] {E F : ι → Type*} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+  [NontriviallyNormedField 𝕜] [∀ i, SeminormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+  [∀ i, SeminormedAddCommGroup (F i)] [∀ i, NormedSpace 𝕜 (F i)]
+
+/-- **The norm of a block-diagonal operator.** For `p ≥ 1`, if every block `T i` has operator norm
+at most `C ≥ 0`, then so does the block-diagonal operator `PiLp.piMap p T` on the `Lᵖ` product. -/
+theorem norm_piMap_le {T : ∀ i, E i →L[𝕜] F i} {C : ℝ} (hC : 0 ≤ C) (hT : ∀ i, ‖T i‖ ≤ C) :
+    ‖piMap p T‖ ≤ C := by
+  refine ContinuousLinearMap.opNorm_le_bound _ hC fun x ↦ ?_
+  -- Compare coordinatewise with the vector of coordinate norms of `x`, scaled by `C`.
+  calc ‖piMap p T x‖ ≤ ‖C • WithLp.toLp p (fun i ↦ ‖x i‖)‖ := norm_mono fun i ↦ by
+        rw [piMap_apply, smul_apply, toLp_apply, smul_eq_mul, norm_mul, _root_.norm_norm,
+          Real.norm_of_nonneg hC]
+        exact (T i).le_of_opNorm_le (hT i) (x i)
+    _ = C * ‖x‖ := by rw [norm_smul, Real.norm_of_nonneg hC, norm_norm]
 
 end PiLp
 
