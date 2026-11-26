@@ -174,7 +174,7 @@ instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK] 
       exact congr(($(appLE_comp_app_genericι U)).hom)
   have : Algebra.FiniteType R Γ(M.total, U) := RingHom.finiteType_algebraMap.mp <|
     M.toBase.algebraMap_sections U ▸ M.toBase.finiteType_ΓSpecIso_inv_comp_appLE hU
-  have := M.krullDimLE_sections_quotient hU hπ
+  have := M.krullDimLE_sections_quotient (d := 1) hU hπ
   have : IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) := by
     refine M.genericι.isLocalization_app_of_inf_opensRange_eq hU.isCompact hU.isQuasiSeparated ?_
     -- The generic fibre is the basic open of the pullback of `π`.

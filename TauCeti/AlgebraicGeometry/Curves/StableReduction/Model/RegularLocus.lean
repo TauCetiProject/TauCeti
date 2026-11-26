@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.Locus
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.Scheme.Normal
-import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 import TauCeti.RingTheory.RegularLocalRing.FiniteNonregularLocus
@@ -74,9 +73,8 @@ subscheme of the total space. -/
 theorem range_genericι_subset_regularLocus [IsRegular C] :
     Set.range M.genericι ⊆ M.total.regularLocus := by
   have := M.isOpenImmersion_genericι
-  rintro _ ⟨c, rfl⟩
-  exact Scheme.mem_regularLocus.mpr
-    ((isRegularLocalRing_stalk_iff_of_isOpenImmersion M.genericι c).mpr inferInstance)
+  rw [← Set.image_univ, Set.image_subset_iff, M.genericι.preimage_regularLocus,
+    Scheme.regularLocus_eq_univ]
 
 variable {M}
 
@@ -89,11 +87,11 @@ private lemma finite_compl_regularLocus_inter [IsNormalScheme M.total] [IsRegula
   have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
   have : IsNoetherianRing Γ(M.total, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
   have := M.isNagata_sections_quotient hU hπ
-  have := M.krullDimLE_sections_quotient hU hπ
+  have := M.krullDimLE_sections_quotient (d := 1) hU hπ
   -- On `Spec Γ(U)`, only finitely many primes containing `π` are not regular.
   have hfin := Excellence.finite_zeroLocus_sdiff_regularLocus
     (M.algebraMap_mem_nonZeroDivisors_sections hU hπ.ne_zero)
-    hU.mem_regularLocus_of_mem_minimalPrimes
+    hU.mem_regularLocus_of_mem_minimalPrimes_span_singleton
   refine (hfin.image hU.fromSpec).subset ?_
   rintro x ⟨hx, hxU⟩
   set p := hU.primeIdealOf ⟨x, hxU⟩
@@ -111,9 +109,8 @@ private lemma finite_compl_regularLocus_inter [IsNormalScheme M.total] [IsRegula
       ((mem_maximalIdeal π).mpr hπ.not_isUnit) hπ.ne_zero).mpr hcomap
     exact (PrimeSpectrum.mem_zeroLocus _ _).mpr (Set.singleton_subset_iff.mpr this)
   · rw [← hpx]
-    exact Scheme.mem_regularLocus.mpr <|
-      (isRegularLocalRing_stalk_iff_of_isOpenImmersion hU.fromSpec p).mpr <|
-        (isRegularLocalRing_stalk_Spec_iff _ p).mpr (Excellence.mem_regularLocus.mp hp)
+    change p ∈ hU.fromSpec ⁻¹' _
+    rwa [hU.fromSpec.preimage_regularLocus, Scheme.regularLocus_Spec]
 
 variable (M)
 
@@ -133,17 +130,12 @@ theorem finite_compl_regularLocus [IsNormalScheme M.total]
   have : IsRegular C := .of_isNormalScheme_of_topologicalKrullDim_le_one
     ((AlgebraicGeometry.relativeDimensionLE_iff_of_field toK).mp inferInstance)
   have : CompactSpace M.total := QuasiCompact.compactSpace_of_compactSpace M.toBase
-  have hcov (x : M.total) : ∃ U : M.total.Opens, IsAffineOpen U ∧ x ∈ U := by
-    obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
-      M.total.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
-    exact ⟨U, hU, hxU⟩
-  choose U hU hxU using hcov
-  obtain ⟨t, -, ht⟩ := isCompact_univ.elim_nhds_subcover (fun x ↦ (U x : Set M.total))
-    fun x _ ↦ (U x).isOpen.mem_nhds (hxU x)
-  refine (t.finite_toSet.biUnion fun x _ ↦ finite_compl_regularLocus_inter (hU x)).subset
-    fun y hy ↦ ?_
-  obtain ⟨x, hx, hyx⟩ := Set.mem_iUnion₂.mp (ht (Set.mem_univ y))
-  exact Set.mem_biUnion hx ⟨hy, hyx⟩
+  -- Cover the quasi-compact total space by finitely many affine opens.
+  let 𝒰 := M.total.affineCover.finiteSubcover
+  refine (Set.finite_iUnion fun j ↦
+    finite_compl_regularLocus_inter (isAffineOpen_opensRange (𝒰.f j))).subset fun y hy ↦ ?_
+  obtain ⟨j, z, rfl⟩ := 𝒰.exists_eq y
+  exact Set.mem_iUnion.mpr ⟨j, hy, z, rfl⟩
 
 /-- **The normalization of a model of a smooth curve has finitely many singular points.** If the
 generic fibre `C` is smooth of relative dimension one over `K`, the normalization of the total

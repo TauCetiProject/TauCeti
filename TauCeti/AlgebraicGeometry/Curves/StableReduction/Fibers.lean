@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 public import TauCeti.RingTheory.Nagata
 
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
-import TauCeti.RingTheory.Flat.NonZeroDivisors
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.NonZeroDivisors
 import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 import TauCeti.RingTheory.UniversallyJapanese
 
@@ -38,7 +38,7 @@ Over an affine open `U` of the total space, with `π` a uniformizer of `R`, the 
 flat over `R`, so `π` is a nonzerodivisor on them
 (`TauCeti.Model.algebraMap_mem_nonZeroDivisors_sections`), and the special fibre `Γ(U) ⧸ π Γ(U)` is
 of finite type over the residue field, hence Nagata (`TauCeti.Model.isNagata_sections_quotient`),
-of dimension at most one when the model has relative dimension at most one
+of dimension at most `d` when the model has relative dimension at most `d`
 (`TauCeti.Model.krullDimLE_sections_quotient`).
 -/
 
@@ -220,26 +220,32 @@ instance relativeDimensionLE_toBase {d : ℕ} (M : Model R K C toK)
     AlgebraicGeometry.topologicalKrullDim_range_of_isPreimmersion]
   exact (AlgebraicGeometry.relativeDimensionLE_iff_of_field toK).mp inferInstance
 
-/-- Over an affine open `U` of the total space of a model of relative dimension at most one, the
-special fibre `Γ(U) ⧸ π Γ(U)` has Krull dimension at most one. -/
-lemma krullDimLE_sections_quotient (M : Model R K C toK)
-    [AlgebraicGeometry.RelativeDimensionLE 1 M.toBase] {U : M.total.Opens} (hU : IsAffineOpen U)
+/-- Over an open `U` of the total space of a model, the fibre of `Γ(U)` over the closed point of
+`Spec R` is the special fibre `Γ(U) ⧸ π Γ(U)`, for a uniformizer `π` of `R`. -/
+private noncomputable def fiberRingEquivSectionsQuotient (M : Model R K C toK) (U : M.total.Opens)
     {π : R} (hπ : Irreducible π) :
     letI := M.toBase.sectionsAlgebra U
-    Ring.KrullDimLE 1 (Γ(M.total, U) ⧸ Ideal.span {algebraMap R Γ(M.total, U) π}) := by
+    (maximalIdeal R).Fiber Γ(M.total, U) ≃+*
+      Γ(M.total, U) ⧸ Ideal.span {algebraMap R Γ(M.total, U) π} :=
+  letI := M.toBase.sectionsAlgebra U
+  (Ideal.Fiber.algEquivQuotientMap (maximalIdeal R)).toRingEquiv.trans
+    (Ideal.quotEquivOfEq (by rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton]))
+
+/-- Over an affine open `U` of the total space of a model of relative dimension at most `d`, the
+special fibre `Γ(U) ⧸ π Γ(U)` has Krull dimension at most `d`. -/
+lemma krullDimLE_sections_quotient (M : Model R K C toK) {d : ℕ}
+    [AlgebraicGeometry.RelativeDimensionLE d M.toBase] {U : M.total.Opens} (hU : IsAffineOpen U)
+    {π : R} (hπ : Irreducible π) :
+    letI := M.toBase.sectionsAlgebra U
+    Ring.KrullDimLE d (Γ(M.total, U) ⧸ Ideal.span {algebraMap R Γ(M.total, U) π}) := by
   let := M.toBase.sectionsAlgebra U
   -- `Spec Γ(U) ⟶ Spec R` is the restriction of the structure morphism to `U`.
-  have : AlgebraicGeometry.RelativeDimensionLE 1
+  have : AlgebraicGeometry.RelativeDimensionLE d
       (Spec.map (CommRingCat.ofHom (algebraMap R Γ(M.total, U)))) :=
     M.toBase.fromSpec_toSpec hU ▸ inferInstance
   have hdim :=
     (AlgebraicGeometry.relativeDimensionLE_SpecMap_iff R Γ(M.total, U)).mp this (maximalIdeal R)
-  -- The fibre over the closed point is `Γ(U) ⧸ 𝔪 Γ(U)`, and `𝔪 = (π)`.
-  have hmap : (maximalIdeal R).map (algebraMap R Γ(M.total, U)) =
-      Ideal.span {algebraMap R Γ(M.total, U) π} := by
-    rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton]
-  rw [← hmap, Ring.krullDimLE_iff, ← ringKrullDim_eq_of_ringEquiv
-    (Ideal.Fiber.algEquivQuotientMap (B := Γ(M.total, U)) (maximalIdeal R)).toRingEquiv]
+  rw [Ring.krullDimLE_iff, ← ringKrullDim_eq_of_ringEquiv (M.fiberRingEquivSectionsQuotient U hπ)]
   exact_mod_cast hdim
 
 /-- Over an affine open `U` of a model, a nonzero element of `R` is a nonzerodivisor on the
@@ -249,12 +255,10 @@ lemma algebraMap_mem_nonZeroDivisors_sections (M : Model R K C toK) {U : M.total
     letI := M.toBase.sectionsAlgebra U
     algebraMap R Γ(M.total, U) π ∈ nonZeroDivisors Γ(M.total, U) := by
   let := M.toBase.sectionsAlgebra U
-  have : Module.Flat R Γ(M.total, U) := by
-    refine RingHom.flat_algebraMap_iff.mp ?_
-    rw [M.toBase.algebraMap_sections, CommRingCat.hom_comp]
-    exact (RingHom.Flat.of_bijective (ConcreteCategory.bijective_of_isIso _)).comp
-      (M.toBase.flat_appLE (isAffineOpen_top _) hU _)
-  exact Module.Flat.algebraMap_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hπ)
+  have := M.toBase.isSMulRegular_appLE (isAffineOpen_top _) hU le_top
+    (Scheme.isSMulRegular_ΓSpecIso_inv (IsSMulRegular.of_ne_zero hπ))
+  rw [M.toBase.algebraMap_sections]
+  exact (isLeftRegular_iff_isRegular.mp this).mem_nonZeroDivisors
 
 /-- Over an affine open `U` of a model, the special fibre `Γ(U) ⧸ π Γ(U)` is of finite type over
 the residue field of `R`, hence a Nagata ring. -/
@@ -265,13 +269,9 @@ lemma isNagata_sections_quotient (M : Model R K C toK) {U : M.total.Opens}
   let := M.toBase.sectionsAlgebra U
   have : Algebra.FiniteType R Γ(M.total, U) := RingHom.finiteType_algebraMap.mp <|
     M.toBase.algebraMap_sections U ▸ M.toBase.finiteType_ΓSpecIso_inv_comp_appLE hU
-  have hmap : (maximalIdeal R).map (algebraMap R Γ(M.total, U)) =
-      Ideal.span {algebraMap R Γ(M.total, U) π} := by
-    rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton]
   have : Ring.IsNagata ((maximalIdeal R).Fiber Γ(M.total, U)) :=
     Ring.IsUniversallyJapanese.isNagata_of_finiteType (maximalIdeal R).ResidueField _
-  exact ((Ideal.Fiber.algEquivQuotientMap (maximalIdeal R)).toRingEquiv.trans
-    (Ideal.quotEquivOfEq hmap)).isNagata
+  exact (M.fiberRingEquivSectionsQuotient U hπ).isNagata
 
 /-- The image of a model's chosen generic fibre in its total space is the basic open of the
 pullback of a nonzero element `π` of the maximal ideal, such as a uniformizer. -/
