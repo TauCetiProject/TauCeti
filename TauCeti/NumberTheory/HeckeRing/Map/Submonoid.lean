@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.LinearAlgebra.Finsupp.Defs
 public import TauCeti.NumberTheory.HeckeRing.Associativity
+public import TauCeti.NumberTheory.HeckeRing.Degree
 public import TauCeti.NumberTheory.HeckeRing.Multiplicity.Equiv
 
 import TauCeti.NumberTheory.HeckeRing.LinearExtension
@@ -16,20 +18,23 @@ import TauCeti.NumberTheory.HeckeRing.LinearExtension
 
 When `Δ₁ ≤ Δ₂` are submonoids of a group `G` and `H₁, H₂, H₃ ≤ G` are held fixed, widening `Δ₁` to
 `Δ₂` embeds `HeckeCoset Δ₁ H₁ H₂` injectively into `HeckeCoset Δ₂ H₁ H₂` with the same underlying
-double cosets and decomposition quotients, and any coset appearing with nonzero multiplicity in a
-product of `Δ₁`-cosets already lies in `Δ₁`. Pushing combinations forward along `HeckeCoset.map`
-therefore gives an injective `R`-linear map `HeckeCosetModule.mapSubmonoid` compatible with
-`HeckeCosetModule.mul` and an injective ring homomorphism
+double cosets, decomposition quotients, and degrees, and any coset appearing with nonzero
+multiplicity in a product of `Δ₁`-cosets already lies in `Δ₁`. Pushing combinations forward along
+`HeckeCoset.map` therefore gives an injective `R`-linear map `HeckeCosetModule.mapSubmonoid`
+compatible with `HeckeCosetModule.mul` and an injective degree-preserving ring homomorphism
 `HeckeCosetModule.mapSubmonoidRingHom : 𝕋 Δ₁ H R →+* 𝕋 Δ₂ H R` (the abstract half of Proposition
 3.16 of [Shimura][shimura1971] and §2 of [Rhodes–Shemanske][rhodes1999]).
 
 ## Main definitions and results
 
-* `HeckeCoset.toSet_map_of_le`, `HeckeCoset.map_injective_of_le`,
-  `HeckeCoset.mem_range_map_of_le_iff`: injectivity and range of `HeckeCoset.map hΔ le_rfl le_rfl`.
+* `HeckeCoset.toSet_map_of_le`, `HeckeCoset.degree_map_of_le`, `HeckeCoset.map_injective_of_le`,
+  `HeckeCoset.mem_range_map_of_le_iff`: set, degree, injectivity, and range of
+  `HeckeCoset.map hΔ le_rfl le_rfl`.
 * `HeckeCosetModule.mapSubmonoid`, `HeckeCosetModule.mapSubmonoid_mul`: the injective `R`-linear
   pushforward intertwining `HeckeCosetModule.mul`.
-* `HeckeCosetModule.mapSubmonoidRingHom`: the injective ring homomorphism `𝕋 Δ₁ H R →+* 𝕋 Δ₂ H R`.
+* `HeckeCosetModule.mapSubmonoidRingHom`, `HeckeCosetModule.deg_mapSubmonoidRingHom`,
+  `HeckeCosetModule.mapSubmonoidSubringEquiv`: the injective degree-preserving ring homomorphism
+  `𝕋 Δ₁ H R →+* 𝕋 Δ₂ H R` and its restriction to an explicit range subring.
 
 ## References
 
@@ -52,6 +57,13 @@ underlying subset `H₁gH₂ ⊆ G` unchanged. -/
 @[simp]
 theorem toSet_map_of_le (hΔ : Δ₁ ≤ Δ₂) (D : HeckeCoset Δ₁ H₁ H₂) :
     (D.map hΔ le_rfl le_rfl).toSet = D.toSet := by
+  induction D using HeckeCoset.induction with | h g => simp
+
+/-- Widening the ambient submonoid while keeping the subgroups fixed preserves the degree of every
+double coset. -/
+@[simp]
+theorem degree_map_of_le (hΔ : Δ₁ ≤ Δ₂) (D : HeckeCoset Δ₁ H₁ H₂) :
+    (D.map hΔ le_rfl le_rfl).degree = D.degree := by
   induction D using HeckeCoset.induction with | h g => simp
 
 /-- Widening the ambient submonoid with the subgroups fixed injects `HeckeCoset Δ₁ H₁ H₂` into
@@ -77,6 +89,8 @@ end HeckeCoset
 namespace HeckeCosetModule
 
 open scoped HeckeCosetModule
+
+section Semiring
 
 variable {G : Type*} [Group G] {Δ₁ Δ₂ Δ₃ : Submonoid G} {H₁ H₂ H₃ H : Subgroup G}
 variable (R : Type*) [Semiring R]
@@ -207,6 +221,49 @@ theorem mapSubmonoidRingHom_comp [IsHeckeTriple Δ₁ H H] [IsHeckeTriple Δ₂ 
     (mapSubmonoidRingHom R (H := H) h₂₃).comp (mapSubmonoidRingHom R h₁₂) =
       mapSubmonoidRingHom R (h₁₂.trans h₂₃) :=
   RingHom.ext fun f ↦ DFunLike.congr_fun (mapSubmonoid_comp R h₁₂ h₂₃) f
+
+/-- `mapSubmonoidRingHom` preserves the degree homomorphism `LeftCosetModule.deg`. -/
+@[simp]
+theorem deg_mapSubmonoidRingHom [IsHeckeTriple Δ₁ H H] [IsHeckeTriple Δ₂ H H]
+    (hΔ : Δ₁ ≤ Δ₂) (f : 𝕋 Δ₁ H R) :
+    LeftCosetModule.deg Δ₂ H R (mapSubmonoidRingHom R hΔ f) = LeftCosetModule.deg Δ₁ H R f := by
+  induction f using HeckeCosetModule.induction_linear with
+  | h0 => simp
+  | hadd _ _ ih₁ ih₂ => simp [ih₁, ih₂]
+  | hsingle D b => simp
+
+/-- Precomposing `LeftCosetModule.deg` with `mapSubmonoidRingHom` recovers `LeftCosetModule.deg`. -/
+@[simp]
+theorem deg_comp_mapSubmonoidRingHom [IsHeckeTriple Δ₁ H H] [IsHeckeTriple Δ₂ H H]
+    (hΔ : Δ₁ ≤ Δ₂) :
+    (LeftCosetModule.deg Δ₂ H R).comp (mapSubmonoidRingHom R hΔ) = LeftCosetModule.deg Δ₁ H R :=
+  RingHom.ext (deg_mapSubmonoidRingHom R hΔ)
+
+end Semiring
+
+section SubringEquiv
+
+variable {G : Type*} [Group G] {Δ₁ Δ₂ : Submonoid G} {H : Subgroup G} {R : Type*} [Ring R]
+
+/-- When `(mapSubmonoidRingHom R hΔ).range = S`, `mapSubmonoidRingHom` restricts to a ring
+isomorphism `𝕋 Δ₁ H R ≃+* S`. -/
+noncomputable def mapSubmonoidSubringEquiv [IsHeckeTriple Δ₁ H H] [IsHeckeTriple Δ₂ H H]
+    (hΔ : Δ₁ ≤ Δ₂) {S : Subring (𝕋 Δ₂ H R)} (hS : (mapSubmonoidRingHom R hΔ).range = S) :
+    𝕋 Δ₁ H R ≃+* S :=
+  (RingEquiv.ofBijective (mapSubmonoidRingHom R hΔ).rangeRestrict
+    ⟨fun _ _ h ↦ mapSubmonoidRingHom_injective R hΔ (congrArg Subtype.val h),
+      (mapSubmonoidRingHom R hΔ).rangeRestrict_surjective⟩).trans
+    (RingEquiv.subringCongr hS)
+
+/-- Coercing `mapSubmonoidSubringEquiv hΔ hS f` into `𝕋 Δ₂ H R` recovers
+`mapSubmonoidRingHom R hΔ f`. -/
+@[simp]
+theorem coe_mapSubmonoidSubringEquiv_apply [IsHeckeTriple Δ₁ H H] [IsHeckeTriple Δ₂ H H]
+    (hΔ : Δ₁ ≤ Δ₂) {S : Subring (𝕋 Δ₂ H R)} (hS : (mapSubmonoidRingHom R hΔ).range = S)
+    (f : 𝕋 Δ₁ H R) :
+    (mapSubmonoidSubringEquiv hΔ hS f : 𝕋 Δ₂ H R) = mapSubmonoidRingHom R hΔ f := (rfl)
+
+end SubringEquiv
 
 end HeckeCosetModule
 

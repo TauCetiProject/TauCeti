@@ -31,7 +31,10 @@ embeds the first into the second by enlarging the submonoid.
 These are the local counterparts of the global rings `HeckeRing.GLn.IntegralHeckeRing` and
 `HeckeRing.GLn.FullHeckeRing`. Rhodes and Shemanske compare the `p`-primary part of the integral
 Hecke ring of `GL_n` over `ℤ` with the integral local ring, by sending a `p`-primary lattice to its
-`ℤ_p`-completion; that comparison is not made here. The central scalar `p I` lies in `Δ_p` while
+`ℤ_p`-completion; that comparison is carried out in
+`TauCeti.NumberTheory.HeckeRing.GLn.Padic.IntegralComparison`
+(`HeckeRing.GLn.pLocalToPadicIntegralRingEquiv`), and the double-coset classification is in
+`TauCeti.NumberTheory.HeckeRing.GLn.Padic.Cosets`. The central scalar `p I` lies in `Δ_p` while
 `p⁻¹ I` does not, and its double coset becomes a unit of the rational local ring
 (`HeckeRing.GLn.padicScalarUnit`).
 
@@ -46,6 +49,8 @@ congruence-subgroup argument for the fraction field of a ring with finite quotie
 
 * `HeckeRing.GLn.padicIntEntries ι p`: the submonoid `M_n(ℤ_p) ∩ GL_n(ℚ_p)` of `GL_n(ℚ_p)`,
   for any finite index type `ι`.
+* `HeckeRing.GLn.padicIntMatrix ι p`: the `ℤ_p`-matrix underlying an element of
+  `padicIntEntries ι p`, bundled as a monoid homomorphism.
 * `HeckeRing.GLn.PadicIntegralHeckeRing n p`, `HeckeRing.GLn.PadicRationalHeckeRing n p`: the
   Hecke rings of `(GL_n(ℤ_p), M_n(ℤ_p) ∩ GL_n(ℚ_p))` and `(GL_n(ℤ_p), GL_n(ℚ_p))` over `ℤ`.
 * `HeckeRing.GLn.padicIntegralToRationalRingHom`: the injective ring homomorphism between them,
@@ -53,8 +58,9 @@ congruence-subgroup argument for the fraction field of a ring with finite quotie
 
 ## Main results
 
-* `HeckeRing.GLn.mem_padicIntEntries_iff`, `HeckeRing.GLn.mem_padicIntEntries_iff_norm_le_one`:
-  membership in `Δ_p` is integrality of the entries.
+* `HeckeRing.GLn.mem_padicIntEntries_iff`, `HeckeRing.GLn.mem_padicIntEntries_iff_norm_le_one`,
+  `HeckeRing.GLn.transposeMulEquiv_mem_padicIntEntries`:
+  membership in `Δ_p` is integrality of the entries, and `Δ_p` is closed under transposition.
 * `HeckeRing.GLn.mem_glPadicInt_iff_mem_padicIntEntries_and_inv_mem`: `g ∈ GL_n(ℤ_p)` exactly
   when `g` and `g⁻¹` lie in `Δ_p`.
 * `HeckeRing.GLn.glPadicInt_eq_integralGL`: `GL_n(ℤ_p)` is the subgroup of integral points
@@ -130,6 +136,69 @@ theorem mem_glPadicInt_iff_mem_padicIntEntries_and_inv_mem {g : GL ι ℚ_[p]} :
 theorem glPadicInt_le_padicIntEntries :
     (GLPadicInt ι p).toSubmonoid ≤ padicIntEntries ι p :=
   fun _ hg ↦ (mem_glPadicInt_iff_mem_padicIntEntries_and_inv_mem.mp hg).1
+
+/-- `M_n(ℤ_p) ∩ GL_n(ℚ_p)` is closed under matrix transposition. -/
+theorem transposeMulEquiv_mem_padicIntEntries {g : GL ι ℚ_[p]} (hg : g ∈ padicIntEntries ι p) :
+    (GeneralLinearGroup.transposeMulEquiv ι g).unop ∈ padicIntEntries ι p := by
+  obtain ⟨A, hA⟩ := mem_padicIntEntries_iff.mp hg
+  rw [map_coe_eq_mapMatrix] at hA
+  refine mem_padicIntEntries_iff.mpr ⟨Aᵀ, ?_⟩
+  rw [map_coe_eq_mapMatrix, GeneralLinearGroup.coe_unop_transposeMulEquiv, ← hA]
+  ext i j; simp
+
+private lemma exists_map_coe_ringHom_eq (g : padicIntEntries ι p) :
+    ∃ A : Matrix ι ι ℤ_[p],
+      A.map (PadicInt.Coe.ringHom (p := p)) = ((g : GL ι ℚ_[p]) : Matrix ι ι ℚ_[p]) := by
+  obtain ⟨A, hA⟩ := mem_padicIntEntries_iff.mp g.property
+  rw [map_coe_eq_mapMatrix, RingHom.mapMatrix_apply] at hA
+  exact ⟨A, hA⟩
+
+variable (ι p) in
+/-- The `ℤ_p`-matrix underlying an element of `padicIntEntries ι p`, as a monoid homomorphism. -/
+noncomputable def padicIntMatrix : padicIntEntries ι p →* Matrix ι ι ℤ_[p] where
+  toFun g := (exists_map_coe_ringHom_eq g).choose
+  map_one' := Matrix.map_injective (f := PadicInt.Coe.ringHom (p := p)) Subtype.val_injective <| by
+    dsimp only
+    rw [(exists_map_coe_ringHom_eq 1).choose_spec, Submonoid.coe_one, Units.val_one,
+      Matrix.map_one _ (map_zero _) (map_one _)]
+  map_mul' g h :=
+    Matrix.map_injective (f := PadicInt.Coe.ringHom (p := p)) Subtype.val_injective <| by
+      dsimp only
+      rw [(exists_map_coe_ringHom_eq (g * h)).choose_spec, Submonoid.coe_mul, Units.val_mul,
+        Matrix.map_mul, (exists_map_coe_ringHom_eq g).choose_spec,
+        (exists_map_coe_ringHom_eq h).choose_spec]
+
+/-- Casting `padicIntMatrix ι p g` to `ℚ_p` recovers the matrix of `g`. -/
+@[simp]
+theorem map_padicIntMatrix (g : padicIntEntries ι p) :
+    (padicIntMatrix ι p g).map (PadicInt.Coe.ringHom (p := p)) =
+      ((g : GL ι ℚ_[p]) : Matrix ι ι ℚ_[p]) :=
+  (exists_map_coe_ringHom_eq g).choose_spec
+
+/-- `padicIntMatrix ι p g = A` if and only if `A` casts to the matrix of `g`. -/
+theorem padicIntMatrix_eq_iff {g : padicIntEntries ι p} {A : Matrix ι ι ℤ_[p]} :
+    padicIntMatrix ι p g = A ↔
+      ((g : GL ι ℚ_[p]) : Matrix ι ι ℚ_[p]) = A.map (PadicInt.Coe.ringHom (p := p)) :=
+  ⟨fun h ↦ h ▸ (map_padicIntMatrix g).symm,
+    fun h ↦ Matrix.map_injective (f := PadicInt.Coe.ringHom (p := p)) Subtype.val_injective
+      ((map_padicIntMatrix g).trans h)⟩
+
+/-- The `ℤ_p`-matrix of an invertible element has nonzero determinant. -/
+theorem det_padicIntMatrix_ne_zero (g : padicIntEntries ι p) :
+    (padicIntMatrix ι p g).det ≠ 0 := by
+  intro h0
+  have hdet := (g : GL ι ℚ_[p]).det_ne_zero
+  rw [← map_padicIntMatrix g, ← RingHom.mapMatrix_apply, ← RingHom.map_det, h0, map_zero] at hdet
+  exact hdet rfl
+
+/-- If `g ∈ GL ι ℚ` has integer entries, then `castGLPadic ι p g` lies in `padicIntEntries ι p`. -/
+theorem castGLPadic_mem_padicIntEntries_of_exists_int_matrix {g : GL ι ℚ}
+    (h : ∃ A : Matrix ι ι ℤ, (g : Matrix ι ι ℚ) = A.map (Int.cast : ℤ → ℚ)) :
+    castGLPadic ι p g ∈ padicIntEntries ι p := by
+  obtain ⟨A, hA⟩ := h
+  refine mem_padicIntEntries_iff.mpr ⟨A.map (Int.castRingHom ℤ_[p]), ?_⟩
+  rw [map_coe_eq_mapMatrix, castGLPadic_coe, hA]
+  ext i j; simp
 
 end Subgroups
 

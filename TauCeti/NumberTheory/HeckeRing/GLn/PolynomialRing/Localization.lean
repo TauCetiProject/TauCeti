@@ -24,9 +24,12 @@ universal property of localization away from `heckeGen n p (Fin.rev 0)`, present
 
 ## Main definitions
 
-* `HeckeRing.GLn.intPowDiagGL`, `HeckeRing.GLn.intPowDiagCoset`, `HeckeRing.GLn.intPowDiagElem`:
-  `p`-power diagonal matrices `diag(p ^ e₁, …, p ^ eₙ) ∈ GL_n^+(ℚ)` (`e : Fin n → ℤ`), their
-  `SL_n(ℤ)`-double cosets, and the corresponding basis elements of `RationalHeckeRing n`.
+The rational diagonal matrix `intPowDiagGL` (`diag(p ^ e₁, …, p ^ eₙ) ∈ GL_n^+(ℚ)`) and its
+matrix-level API live in `TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Basic`.
+
+* `HeckeRing.GLn.intPowDiagCoset`, `HeckeRing.GLn.intPowDiagElem`:
+  the `SL_n(ℤ)`-double cosets of `intPowDiagGL n p e` and the corresponding basis elements of
+  `RationalHeckeRing n`.
 * `HeckeRing.GLn.pLocalRationalSubring`: the `p`-local rational Hecke subring of
   `RationalHeckeRing n`.
 * `HeckeRing.GLn.integralToRationalLocal`, `HeckeRing.GLn.scalarLocalUnit`,
@@ -68,86 +71,6 @@ variable (n : ℕ)
 attribute [local instance] commRingRationalHeckeRing
 
 section PLocalRational
-
-/-- The `p`-power diagonal matrix `diag(p ^ e₁, …, p ^ eₙ) ∈ GL_n(ℚ)` with integer exponents
-`e : Fin n → ℤ` for `p ≠ 0`, taking the junk value `1` at `p = 0` to match `natDiagGL`. -/
-noncomputable def intPowDiagGL (p : ℕ) (e : Fin n → ℤ) : GL (Fin n) ℚ :=
-  if hp : p = 0 then 1
-  else TauCeti.diagGL fun i ↦ Units.mk0 (p : ℚ) (Nat.cast_ne_zero.mpr hp) ^ e i
-
-/-- Formula for `intPowDiagGL` when `0 < p`. -/
-theorem intPowDiagGL_of_pos {p : ℕ} (hp : 0 < p) (e : Fin n → ℤ) :
-    intPowDiagGL n p e =
-      TauCeti.diagGL fun i ↦ Units.mk0 (p : ℚ) (Nat.cast_ne_zero.mpr hp.ne') ^ e i :=
-  dite_eq_right hp.ne'
-
-/-- Matrix coercion of `intPowDiagGL` for `0 < p`. -/
-@[simp]
-theorem intPowDiagGL_coe {p : ℕ} (hp : 0 < p) (e : Fin n → ℤ) :
-    (↑(intPowDiagGL n p e) : Matrix (Fin n) (Fin n) ℚ) =
-      Matrix.diagonal fun i ↦ (p : ℚ) ^ e i := by
-  rw [intPowDiagGL_of_pos n hp, TauCeti.diagGL_coe]; congr 1; funext i
-  rw [Units.val_zpow_eq_zpow_val, Units.val_mk0]
-
-/-- `intPowDiagGL` at the zero exponent vector is `1`. -/
-@[simp]
-theorem intPowDiagGL_zero (p : ℕ) : intPowDiagGL n p 0 = 1 := by
-  rcases Nat.eq_zero_or_pos p with rfl | hp
-  · simp [intPowDiagGL]
-  · exact Units.ext (by simp [intPowDiagGL_coe n hp])
-
-/-- `intPowDiagGL` converts addition of exponent vectors into matrix multiplication. -/
-@[simp]
-theorem intPowDiagGL_add (p : ℕ) (e f : Fin n → ℤ) :
-    intPowDiagGL n p (e + f) = intPowDiagGL n p e * intPowDiagGL n p f := by
-  rcases Nat.eq_zero_or_pos p with rfl | hp
-  · simp [intPowDiagGL]
-  · exact Units.ext (by
-      simp [intPowDiagGL_coe n hp, zpow_add₀ (Nat.cast_ne_zero.mpr hp.ne' : (p : ℚ) ≠ 0)])
-
-/-- `intPowDiagGL` converts negation of exponent vectors into group inversion. -/
-@[simp]
-theorem intPowDiagGL_neg (p : ℕ) (e : Fin n → ℤ) :
-    intPowDiagGL n p (-e) = (intPowDiagGL n p e)⁻¹ :=
-  eq_inv_of_mul_eq_one_left (by rw [← intPowDiagGL_add, neg_add_cancel, intPowDiagGL_zero])
-
-/-- Every `p`-power diagonal matrix `intPowDiagGL n p e` has positive rational determinant. -/
-theorem intPowDiagGL_mem_glpos (p : ℕ) (e : Fin n → ℤ) :
-    intPowDiagGL n p e ∈ Matrix.GLPos (Fin n) ℚ := by
-  rcases Nat.eq_zero_or_pos p with rfl | hp
-  · simp [intPowDiagGL]
-  · rw [Matrix.mem_glpos, Matrix.GeneralLinearGroup.val_det_apply, intPowDiagGL_coe n hp,
-      Matrix.det_diagonal]
-    exact Finset.prod_pos fun i _ ↦ zpow_pos (Nat.cast_pos.mpr hp) (e i)
-
-/-- On natural exponents, `intPowDiagGL` agrees with `natDiagGL` of `primePowDiag`. -/
-theorem intPowDiagGL_natCast (p : ℕ) (e : Fin n → ℕ) :
-    intPowDiagGL n p (fun i ↦ (e i : ℤ)) = natDiagGL n (primePowDiag n p e) := by
-  rcases Nat.eq_zero_or_pos p with rfl | hp
-  · simp only [intPowDiagGL, ↓reduceDIte]
-    by_cases he : ∀ i, e i = 0
-    · have hpp : primePowDiag n 0 e = fun _ ↦ 1 := funext fun i ↦ by simp [he i]
-      rw [hpp, natDiagGL_one]
-    · obtain ⟨i, hi⟩ := not_forall.mp he
-      exact (natDiagGL_of_not_pos n fun h ↦ absurd (h i)
-        (by simp [primePowDiag_apply, Nat.zero_pow (Nat.pos_of_ne_zero hi)])).symm
-  · exact Units.ext (by simp [intPowDiagGL_coe n hp, natDiagGL_coe n _ (primePowDiag_pos n p hp e)])
-
-/-- At the constant exponent `-1`, `intPowDiagGL` is the inverse of `diag(p, …, p)`. -/
-theorem intPowDiagGL_const_neg_one (p : ℕ) :
-    intPowDiagGL n p (fun _ ↦ -1) = (natDiagGL n (fun _ ↦ p))⁻¹ := by
-  have hneg : (fun _ : Fin n ↦ (-1 : ℤ)) = -(fun _ ↦ ((1 : ℕ) : ℤ)) := funext fun _ ↦ by simp
-  rw [hneg, intPowDiagGL_neg, intPowDiagGL_natCast]
-  exact congrArg Inv.inv (congrArg (natDiagGL n)
-    (funext fun i ↦ (primePowDiag_apply n p (fun _ ↦ 1) i).trans (pow_one p)))
-
-/-- Multiplying `intPowDiagGL n p e` by `diag(p ^ k, …, p ^ k)` shifts every exponent by `k`. -/
-theorem intPowDiagGL_mul_natDiagGL_const (p : ℕ) (e : Fin n → ℤ) (k : ℕ) :
-    intPowDiagGL n p e * natDiagGL n (fun _ ↦ p ^ k) =
-      intPowDiagGL n p (fun i ↦ e i + (k : ℤ)) := by
-  have hpow : (fun _ : Fin n ↦ p ^ k) = primePowDiag n p (fun _ ↦ k) :=
-    funext fun i ↦ (primePowDiag_apply n p (fun _ ↦ k) i).symm
-  rw [hpow, ← intPowDiagGL_natCast n p (fun _ ↦ k), ← intPowDiagGL_add, Pi.add_def]
 
 /-- The `SL_n(ℤ)`-double coset in `GL_n^+(ℚ)` of `intPowDiagGL n p e`. -/
 noncomputable def intPowDiagCoset (p : ℕ) (e : Fin n → ℤ) :
@@ -230,7 +153,7 @@ theorem intPowDiagElem_mul_scalarUnit_pow (p : ℕ) (e : Fin n → ℤ) (k : ℕ
 theorem intPowDiagElem_natCast (p : ℕ) (e : Fin n → ℕ) :
     intPowDiagElem n p (fun i ↦ (e i : ℤ)) =
       integralToRational n (diagElem (primePowDiag n p e)) := by
-  rw [intPowDiagElem_def, intPowDiagCoset_def, integralToRational_diagElem]
+  rw [intPowDiagElem_def, intPowDiagCoset_def, integralToRational_diagElem, primePowDiag_eq]
   exact congrArg (HeckeCosetModule.single ℤ · 1)
     (HeckeCoset.mk_congr_val (intPowDiagGL_natCast n p e))
 

@@ -16,6 +16,8 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- `TauCeti.GLPadicInt.isOpen` and `TauCeti.GLPadicInt.isCompact`.
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Instances.Matrix
+-- `TauCeti.diagGL` occurs in the statement of `TauCeti.GLPadicInt.diagGL_map_mem`.
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 -- Non-public: the compactness of `ℤ_[p]` is used only in the compactness proof, and the
 -- ultrametric determinant bound only in `TauCeti.GLPadicInt.mem_iff_inv`.
 import Mathlib.NumberTheory.Padics.ProperSpace
@@ -45,6 +47,7 @@ of the entries alone is not enough: `!![p, 0; 0, 1]` has integral entries, but i
 
 * `TauCeti.GLPadicInt n p`: the subgroup `GLₙ(ℤ_p)` of `GL n ℚ_[p]`.
 * `TauCeti.GLPadicInt.mulEquiv`: the isomorphism `GL n ℤ_[p] ≃* GLPadicInt n p`.
+* `TauCeti.castGLPadic n p`: the injective entrywise embedding `GL n ℚ →* GL n ℚ_[p]`.
 
 ## Main results
 
@@ -53,6 +56,11 @@ of the entries alone is not enough: `!![p, 0; 0, 1]` has integral entries, but i
 * `TauCeti.GLPadicInt.mem_iff_inv`: `g ∈ GLₙ(ℤ_p)` if and only if `g` and `g⁻¹` have integral
   entries.
 * `TauCeti.GLPadicInt.isOpen`, `TauCeti.GLPadicInt.isCompact`: `GLₙ(ℤ_p)` is open and compact.
+* `TauCeti.GLPadicInt.neg_one_mem`, `TauCeti.GLPadicInt.diagGL_map_mem`,
+  `TauCeti.GLPadicInt.transpose_mem`: closure of `GLₙ(ℤ_p)` under `-1`, diagonal `ℤ_pˣ`-matrices,
+  and transposition.
+* `TauCeti.castGLPadic_injective`, `TauCeti.GLPadicInt.castGLPadic_map_intCast_mem`: properties of
+  the rational embedding `GL_n(ℚ) ↪ GL_n(ℚ_p)`.
 * `PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`: an invertible matrix over `ℤ_p` that reduces
   to `1` modulo `p ^ m` is `1 + p ^ m C` for a matrix `C` over `ℤ_p`.
 
@@ -177,7 +185,60 @@ theorem coe_mulEquiv_apply (γ : GL n ℤ_[p]) :
       GeneralLinearGroup.map PadicInt.Coe.ringHom γ :=
   (rfl)
 
+/-- Matrix coercion of the canonical embedding `GL n ℤ_[p] →* GL n ℚ_[p]`. -/
+theorem map_coe (u : GL n ℤ_[p]) :
+    ((GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) u : GL n ℚ_[p]) : Matrix n n ℚ_[p]) =
+      (u : Matrix n n ℤ_[p]).map (PadicInt.Coe.ringHom (p := p)) := by
+  ext i j; simp
+
+variable (n p) in
+/-- `-1` belongs to `GLₙ(ℤ_p)`. -/
+theorem neg_one_mem : (-1 : GL n ℚ_[p]) ∈ GLPadicInt n p :=
+  ⟨-1, by rw [GeneralLinearGroup.map_neg, map_one]⟩
+
+/-- Every diagonal matrix of `ℤ_pˣ`-units belongs to `GLₙ(ℤ_p)`. -/
+theorem diagGL_map_mem (u : n → ℤ_[p]ˣ) :
+    TauCeti.diagGL (fun i ↦ Units.map (PadicInt.Coe.ringHom (p := p) : ℤ_[p] →* ℚ_[p]) (u i)) ∈
+      GLPadicInt n p :=
+  TauCeti.map_diagGL (PadicInt.Coe.ringHom (p := p)) u ▸ map_mem (TauCeti.diagGL u)
+
+/-- `GLₙ(ℤ_p)` is closed under matrix transposition. -/
+theorem transpose_mem {g : GL n ℚ_[p]} (hg : g ∈ GLPadicInt n p) :
+    (GeneralLinearGroup.transposeMulEquiv n g).unop ∈ GLPadicInt n p := by
+  obtain ⟨u, rfl⟩ := mem_iff_exists_map.mp hg
+  exact mem_iff_exists_map.mpr
+    ⟨(GeneralLinearGroup.transposeMulEquiv n u).unop, Units.ext (by ext i j; simp)⟩
+
 end GLPadicInt
+
+section Embedding
+
+/-- The canonical entrywise group homomorphism `GL n ℚ →* GL n ℚ_[p]`. -/
+noncomputable def castGLPadic : GL n ℚ →* GL n ℚ_[p] :=
+  GeneralLinearGroup.map (Rat.castHom ℚ_[p])
+
+/-- Defining equation for `castGLPadic`. -/
+theorem castGLPadic_def :
+    castGLPadic n p = GeneralLinearGroup.map (Rat.castHom ℚ_[p]) := (rfl)
+
+/-- Matrix coercion of `castGLPadic`. -/
+@[simp]
+theorem castGLPadic_coe (g : GL n ℚ) :
+    ((castGLPadic n p g : GL n ℚ_[p]) : Matrix n n ℚ_[p]) =
+      (g : Matrix n n ℚ).map (Rat.castHom ℚ_[p]) := by
+  ext i j; simp [castGLPadic]
+
+/-- `castGLPadic` is injective because `ℚ ↪ ℚ_p` is injective. -/
+theorem castGLPadic_injective : Function.Injective (castGLPadic n p) :=
+  GeneralLinearGroup.map_injective (Rat.castHom ℚ_[p]).injective
+
+/-- `castGLPadic` sends the image of `GL n ℤ` in `GL n ℚ` into `GLₙ(ℤ_p)`. -/
+theorem GLPadicInt.castGLPadic_map_intCast_mem (γ : GL n ℤ) :
+    castGLPadic n p (GeneralLinearGroup.map (Int.castRingHom ℚ) γ) ∈ GLPadicInt n p :=
+  ⟨GeneralLinearGroup.map (Int.castRingHom ℤ_[p]) γ,
+    Units.ext (by ext i j; simp [castGLPadic])⟩
+
+end Embedding
 
 end TauCeti
 

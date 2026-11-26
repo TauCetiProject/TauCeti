@@ -8,8 +8,10 @@ module
 -- `Matrix.mul_apply` expands a product entry as a sum; it also re-exports
 -- `Mathlib.Data.Matrix.Diagonal`, which supplies `Matrix.diagonal_apply_eq`.
 public import Mathlib.Data.Matrix.Mul
+public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.RingTheory.Coprime.Basic
+import Mathlib.Data.Nat.Prime.Basic
 -- `Fin.prod_castLE_dvd_prod_of_injective`, used only inside proofs below.
 import TauCeti.Algebra.BigOperators.Fin
 
@@ -69,6 +71,10 @@ proves the uniqueness of the Smith normal form, from one diagonal factor to two.
 * `Matrix.prod_castLE_mul_prod_castLE_dvd_of_mul_diagonal_mul_diagonal_mul_eq`: if
   `P * diagonal c₁ * Q * diagonal c₂ * S = diagonal d`, then the product of the first `k`
   entries of `d` is divisible by those of `c₁` and `c₂`.
+* `Matrix.det_dvd_pow_card_of_mul_eq_smul_one`,
+  `Matrix.exists_natAbs_det_eq_pow_of_mul_eq_pow_smul_one`: if `X * Y = r • 1` for square matrices
+  over a commutative ring, then `det X ∣ r ^ card ι` (and for `r = p ^ k` over `ℤ`, `|det X|` is a
+  power of `p`).
 -/
 
 public section
@@ -287,5 +293,23 @@ theorem prod_castLE_mul_prod_castLE_dvd_of_mul_diagonal_mul_diagonal_mul_eq
     (Fin.castLE hk) (Fin.castLE hk)
 
 end ChainMinor
+
+/-- If `X * Y = r • 1` for square matrices over a commutative ring, then `det X` divides
+`r ^ card ι`. -/
+theorem det_dvd_pow_card_of_mul_eq_smul_one {ι R : Type*} [Fintype ι] [DecidableEq ι]
+    [CommRing R] {X Y : Matrix ι ι R} {r : R} (h : X * Y = r • 1) :
+    X.det ∣ r ^ Fintype.card ι :=
+  ⟨Y.det, by simpa [det_mul, det_smul, det_one] using (congrArg det h).symm⟩
+
+/-- If `X * Y = (p : ℤ) ^ k • 1` for square integer matrices and a prime `p`, then `|det X|` is a
+power `p ^ r` with `r ≤ k * card ι`. -/
+theorem exists_natAbs_det_eq_pow_of_mul_eq_pow_smul_one {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {X Y : Matrix ι ι ℤ} {p : ℕ} (hp : p.Prime) {k : ℕ} (h : X * Y = (p : ℤ) ^ k • 1) :
+    ∃ r ≤ k * Fintype.card ι, X.det.natAbs = p ^ r := by
+  have hdvdZ : X.det ∣ (p : ℤ) ^ (k * Fintype.card ι) := by
+    simpa [pow_mul] using det_dvd_pow_card_of_mul_eq_smul_one h
+  have hdvd : X.det.natAbs ∣ p ^ (k * Fintype.card ι) := by
+    simpa [Int.natAbs_pow, Int.natAbs_natCast] using Int.natAbs_dvd_natAbs.mpr hdvdZ
+  exact (Nat.dvd_prime_pow hp).mp hdvd
 
 end Matrix

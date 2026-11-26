@@ -12,18 +12,18 @@ import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.NumberTheory.HeckeRing.StabConjugation
 
 /-!
-# Transporting Hecke multiplicities along group equivalences and inclusions
+# Transporting Hecke multiplicities along injective homomorphisms and inclusions
 
 The double-coset multiplicity is unchanged when the ambient group, its three subgroups, and
-the three elements are transported along a group equivalence, when representatives are varied
-within their double cosets (including along `HeckeCoset.map`), or when a subgroup `H'` is
-intersected with an ambient subgroup `P` containing the representatives and meeting all
-stabilizer cosets.
+the three elements are transported along an injective group homomorphism (in particular, a group
+equivalence), when representatives are varied within their double cosets (including along
+`HeckeCoset.map`), or when a subgroup `H'` is intersected with an ambient subgroup `P` containing
+the representatives and meeting all stabilizer cosets.
 
 ## Main results
 
-* `DoubleCoset.multiplicity_map_equiv`: transport of Shimura's multiplicity along a group
-  equivalence.
+* `DoubleCoset.multiplicity_map_of_injective` and `DoubleCoset.multiplicity_map_equiv`: transport
+  of Shimura's multiplicity along an injective group homomorphism and along a group equivalence.
 * `DoubleCoset.multiplicity_doubleCoset_congr_first` and
   `DoubleCoset.multiplicity_doubleCoset_congr_second`: invariance in the first and second inputs,
   with `HeckeCoset.multiplicity_map_rep` for chosen representatives of mapped cosets.
@@ -40,9 +40,40 @@ namespace DoubleCoset
 
 variable {G K : Type*} [Group G] [Group K]
 
-/-- A group equivalence carries the decomposition quotient of `g` to that of its image. The
-special case of `decompQuotientEquivMapOfInjective` at an isomorphism, which is the only
-injective homomorphism the multiplicity transport needs. -/
+/-- **Shimura's multiplicity is invariant under an injective group homomorphism**, with no
+finiteness assumptions. -/
+theorem multiplicity_map_of_injective (φ : G →* K) (hφ : Function.Injective φ)
+    (H₁ H₂ H₃ : Subgroup G) (g h d : G) :
+    multiplicity (H₁.map φ) (H₂.map φ) (H₃.map φ) (φ g) (φ h) (φ d) =
+      multiplicity H₁ H₂ H₃ g h d := by
+  let eg := decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g
+  let eh := decompQuotientEquivMapOfInjective φ hφ H₂ H₃ h
+  let c : DecompQuotient H₁ H₂ g → H₂.map φ := fun i ↦
+    ⟨(φ g)⁻¹ * (((eg i).out : K)⁻¹ * φ (i.out : G)) * φ g,
+      decompQuotientEquivMapOfInjective_out φ hφ H₁ H₂ g i⟩
+  -- Transporting the first representative introduces the middle-subgroup correction `c i`.
+  -- Shearing the transported second quotient by it matches the full defining fibres directly.
+  let epairs := Equiv.prodShear eg fun i ↦ eh.trans (MulAction.toPerm (c i))
+  rw [multiplicity_def, multiplicity_def]
+  symm
+  refine Nat.card_congr (Equiv.subtypeEquiv epairs fun ⟨i, j⟩ ↦ ?_)
+  set q := c i • eh j
+  have hprod :
+      (((eg i).out : K) * φ g * ((q.out : K) * φ h) : K ⧸ (H₃.map φ)) =
+        (φ ((i.out : G) * g * ((j.out : G) * h)) : K ⧸ (H₃.map φ)) := by
+    rw [QuotientGroup.eq]
+    have hm := (H₃.map φ).mul_mem
+      (conj_mem_of_mk_eq (φ h) (QuotientGroup.mk_out_smul (c i) (eh j)))
+      (decompQuotientEquivMapOfInjective_out φ hφ H₂ H₃ h j)
+    dsimp only [q, c, eh, Subtype.coe_mk] at hm ⊢
+    simpa only [Subgroup.coe_mul, map_mul, mul_inv_rev, mul_assoc, mul_inv_cancel_left] using hm
+  simp only [Set.mem_ofPred_eq, epairs, Equiv.prodShear_apply, Equiv.trans_apply,
+    MulAction.toPerm_apply]
+  rw [hprod, QuotientGroup.eq, QuotientGroup.eq, ← map_inv, ← map_mul,
+    Subgroup.mem_map_iff_mem hφ]
+
+/-- A group equivalence carries the decomposition quotient of `g` to that of its image: the
+special case of `decompQuotientEquivMapOfInjective` at an isomorphism. -/
 noncomputable def decompQuotientEquivMap (e : G ≃* K) (H₁ H₂ : Subgroup G) (g : G) :
     DecompQuotient H₁ H₂ g ≃
       DecompQuotient (H₁.map (e : G →* K)) (H₂.map (e : G →* K)) (e g) :=
@@ -56,62 +87,13 @@ noncomputable def decompQuotientEquivMap (e : G ≃* K) (H₁ H₂ : Subgroup G)
   exact (decompQuotientEquivMapOfInjective_mk _ _ _ _ _ x).trans
     (congrArg QuotientGroup.mk (Subtype.ext (by simp)))
 
-/-- The chosen representative after transport differs from the transported representative by
-an element of the stabilizer. -/
-lemma decompQuotientEquivMap_out (e : G ≃* K) (H₁ H₂ : Subgroup G) (g : G)
-    (i : DecompQuotient H₁ H₂ g) :
-    ((e : G →* K) g)⁻¹ * (((decompQuotientEquivMap e H₁ H₂ g i).out : K)⁻¹ *
-      (e : G →* K) (i.out : G)) * (e : G →* K) g ∈ H₂.map (e : G →* K) := by
-  have hmk :
-      ((decompQuotientEquivMap e H₁ H₂ g i).out :
-          DecompQuotient (H₁.map (e : G →* K)) (H₂.map (e : G →* K)) ((e : G →* K) g)) =
-        (e.subgroupMap H₁ i.out :
-          DecompQuotient (H₁.map (e : G →* K)) (H₂.map (e : G →* K)) ((e : G →* K) g)) := by
-    calc
-      _ = decompQuotientEquivMap e H₁ H₂ g i := QuotientGroup.out_eq' _
-      _ = decompQuotientEquivMap e H₁ H₂ g (i.out : DecompQuotient H₁ H₂ g) :=
-        congrArg (decompQuotientEquivMap e H₁ H₂ g) (QuotientGroup.out_eq' i).symm
-      _ = _ := decompQuotientEquivMap_mk e H₁ H₂ g i.out
-  exact conj_mem_of_mk_eq ((e : G →* K) g) hmk
-
 /-- Shimura's multiplicity is unchanged when all of its data are transported along a group
 equivalence, without any finiteness hypothesis. -/
 @[simp] theorem multiplicity_map_equiv (e : G ≃* K) (H₁ H₂ H₃ : Subgroup G) (g h d : G) :
     multiplicity (H₁.map (e : G →* K)) (H₂.map (e : G →* K)) (H₃.map (e : G →* K))
         (e g) (e h) (e d) =
-      multiplicity H₁ H₂ H₃ g h d := by
-  let eg := decompQuotientEquivMap e H₁ H₂ g
-  let eh := decompQuotientEquivMap e H₂ H₃ h
-  let c : DecompQuotient H₁ H₂ g → H₂.map (e : G →* K) := fun i ↦
-    ⟨((e : G →* K) g)⁻¹ * (((eg i).out : K)⁻¹ * (e : G →* K) (i.out : G)) *
-      (e : G →* K) g, decompQuotientEquivMap_out e H₁ H₂ g i⟩
-  -- Transporting the first representative introduces the middle-subgroup correction `c i`.
-  -- Shearing the transported second quotient by it matches the full defining fibres directly.
-  let epairs := Equiv.prodShear eg fun i ↦ eh.trans (MulAction.toPerm (c i))
-  rw [multiplicity_def, multiplicity_def]
-  symm
-  refine Nat.card_congr (Equiv.subtypeEquiv epairs fun ⟨i, j⟩ ↦ ?_)
-  let q := c i • eh j
-  have hprod :
-      (((eg i).out : K) * (e : G →* K) g * ((q.out : K) * (e : G →* K) h) :
-          K ⧸ (H₃.map (e : G →* K))) =
-        ((e : G →* K) ((i.out : G) * g * ((j.out : G) * h)) :
-          K ⧸ (H₃.map (e : G →* K))) := by
-    rw [QuotientGroup.eq]
-    have hm := (H₃.map (e : G →* K)).mul_mem
-      (conj_mem_of_mk_eq ((e : G →* K) h) (QuotientGroup.mk_out_smul (c i) (eh j)))
-      (decompQuotientEquivMap_out e H₂ H₃ h j)
-    dsimp only [q, c, eh, Subtype.coe_mk] at hm ⊢
-    simpa only [Subgroup.coe_mul, map_mul, mul_inv_rev, mul_assoc, mul_inv_cancel_left] using hm
-  -- Unfold only the pair equivalence so its second component is the named quotient `q` above.
-  dsimp only [epairs, Equiv.prodShear_apply, Equiv.trans_apply, MulAction.toPerm_apply]
-  change
-    (((i.out : G) * g * ((j.out : G) * h) : G ⧸ H₃) = (d : G ⧸ H₃)) ↔
-      ((((eg i).out : K) * (e : G →* K) g * ((q.out : K) * (e : G →* K) h) :
-          K ⧸ (H₃.map (e : G →* K))) =
-        ((e : G →* K) d : K ⧸ (H₃.map (e : G →* K))))
-  rw [hprod, QuotientGroup.eq, QuotientGroup.eq, ← map_inv, ← map_mul,
-    Subgroup.mem_map_iff_mem (f := (e : G →* K)) e.injective]
+      multiplicity H₁ H₂ H₃ g h d :=
+  multiplicity_map_of_injective (e : G →* K) e.injective H₁ H₂ H₃ g h d
 
 /-- Shimura's multiplicity depends on its second input only through its double coset, without
 any finiteness or Hecke-triple hypothesis. -/

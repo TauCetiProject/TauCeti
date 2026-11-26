@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.HeckeRing.Defs
 public import Mathlib.GroupTheory.Index
 public import TauCeti.Algebra.Group.Subgroup.Map
 import Mathlib.Tactic.Group
+import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
 # Hecke rings: the double coset API
@@ -46,11 +47,16 @@ degree section is instead ported from the AINTLIB `LeanModularForms` project
   `HeckeCoset.map` moves a coset along inclusions *within* a fixed ambient group, these move it
   *between* ambient groups — the case a theorem needs when it is applied along a homomorphism
   defined only on a subgroup.
+* `HeckeCoset.mapHom` and `HeckeCoset.mapEquivOfInjective`: pushforward of a Hecke double coset
+  along a group homomorphism `φ : G →* K`, with functor laws (`mapHom_mk`, `mapHom_id`,
+  `mapHom_mapHom`, `mapHom_one`), bijectivity under injectivity (`mapHom_bijective`), and
+  degree preservation (`HeckeCoset.degree_mapHom_of_injective`).
 * `DoubleCoset.DecompQuotient`: the quotient `Γ₁ ⧸ (Γ₁ ∩ gΓ₂g⁻¹)` indexing the left cosets
   in `Γ₁gΓ₂`; finite for a Hecke triple. Its mirror `DecompQuotient Γ₂ Γ₁ g⁻¹` indexes the
   right cosets `Γ₁a`, and is finite too.
 * `DoubleCoset.decompQuotientEquivMapOfInjective`: that quotient transported along an injective
-  homomorphism, with `DoubleCoset.map_subgroupOf_smul` for the subgroup underneath it;
+  homomorphism, with `DoubleCoset.map_subgroupOf_smul` for the subgroup underneath it and
+  `DoubleCoset.decompQuotientEquivMapOfInjective_out` for comparing chosen representatives;
   `DoubleCoset.decompQuotientEquivMap` (`HeckeRing/Multiplicity/Equiv.lean`) is its special case
   at an isomorphism.
 * `DoubleCoset.decompQuotientEquivMapOfKerInfLe`: the same transport **without** injectivity,
@@ -79,14 +85,16 @@ degree section is instead ported from the AINTLIB `LeanModularForms` project
   restatement is the only form `simp` can apply.
 * `HeckeCoset.degree`: the number of left cosets in the decomposition of a double coset,
   with `degree_eq_relIndex` and `degree_mk` presenting it as a relative index,
-  `degree_eq_natCard_decompQuotient` as the (hypothesis-free) count of that quotient, and
-  `degree_one` the identity coset.
+  `degree_eq_natCard_decompQuotient` as the (hypothesis-free) count of that quotient,
+  `degree_one` for the identity coset, and `degree_mapHom_of_injective` for invariance under
+  injective group homomorphisms.
 
 ## Main results
 
 * `HeckeCoset.eq_iff`: `mk H₁ H₂ g = mk H₁ H₂ h ↔ H₁gH₂ = H₁hH₂`, with `HeckeCoset.mk_congr_val`
-  when `g` and `h` have the same underlying element of `G` and `HeckeCoset.rep_map_mem_doubleCoset`
-  for chosen representatives of mapped cosets.
+  when `g` and `h` have the same underlying element of `G`, `HeckeCoset.rep_map_mem_doubleCoset`
+  for chosen representatives of mapped cosets, and `HeckeCoset.rep_mapHom_mem_doubleCoset` along
+  group homomorphisms.
 * `HeckeCoset.toSet_injective`: a double coset is determined by its underlying set.
 * `DoubleCoset.doubleCoset_eq_iUnion_rightCosets` and
   `DoubleCoset.op_mul_out_inv_smul_injective`: Shimura's decomposition `Γ₁gΓ₂ = ⊔ᵥ Γ₁(gτᵥ⁻¹)`
@@ -108,6 +116,8 @@ degree section is instead ported from the AINTLIB `LeanModularForms` project
   `Γ₁δ₁Γ₂ · Γ₂δ₂Γ₃`, though not without repetition.
 * `IsHeckeTriple.commensurable_conjAct_inv_left`, and the `Finite` instance beside it: that
   right-coset index is finite, the mirror of the `Fintype` instance on `DecompQuotient H₁ H₂ g`.
+* `IsHeckeTriple.map`: any group homomorphism `φ : G →* K` pushes a Hecke triple `(Δ, H₁, H₂)`
+  forward to `(Δ.map φ, H₁.map φ, H₂.map φ)`.
 * `HeckeCoset.restrict_bijective`, with `HeckeCoset.restrict_injective` and
   `HeckeCoset.restrict_surjective`: restriction loses nothing — the double cosets of `Δ` and those
   of `Δ.comap H.subtype` are the same objects described twice.
@@ -273,8 +283,8 @@ double cosets, never split them.
 Compute with `map_mk`: the underlying element of `G` is unchanged, only retyped into `Δ'` by
 `Submonoid.inclusion`. The functor laws are `map_id` and `map_map`; all three are `@[simp]`.
 This widens subgroups inside one fixed ambient group — transporting a double coset along a
-homomorphism `G →* G'` is a different operation, carried out for the decomposition quotient by
-`DoubleCoset.decompQuotientEquivMapOfInjective`. -/
+homomorphism `G →* K` is a different operation, carried out by `HeckeCoset.mapHom` (and for the
+decomposition quotient by `DoubleCoset.decompQuotientEquivMapOfInjective`). -/
 def map (hΔ : Δ ≤ Δ') (h₁ : H₁ ≤ H₁') (h₂ : H₂ ≤ H₂') :
     HeckeCoset Δ H₁ H₂ → HeckeCoset Δ' H₁' H₂' :=
   Quotient.map (Submonoid.inclusion hΔ) fun a b hab ↦ by
@@ -435,6 +445,98 @@ theorem restrict_injective (hΔ : Δ ≤ H.toSubmonoid) (h₁ : H₁ ≤ H) (h�
 theorem restrict_surjective (hΔ : Δ ≤ H.toSubmonoid) (h₁ : H₁ ≤ H) (h₂ : H₂ ≤ H) :
     Function.Surjective (fun D : HeckeCoset Δ H₁ H₂ ↦ D.restrict hΔ h₁ h₂) :=
   (restrict_bijective hΔ h₁ h₂).2
+
+/-! ### Pushforward along a group homomorphism -/
+
+section MapHom
+
+variable {K : Type*} [Group K]
+
+/-- Push a Hecke double coset forward along a group homomorphism `φ : G →* K`. -/
+def mapHom (φ : G →* K) (D : HeckeCoset Δ H₁ H₂) :
+    HeckeCoset (Δ.map φ) (H₁.map φ) (H₂.map φ) :=
+  Quotient.map (fun g : Δ ↦ (⟨φ g, ⟨g, g.property, rfl⟩⟩ : ↥(Δ.map φ)))
+    (fun a b hab ↦ by
+      obtain ⟨γ₁, hγ₁, γ₂, hγ₂, hb⟩ := DoubleCoset.rel_iff.mp hab
+      refine DoubleCoset.rel_iff.mpr ⟨φ γ₁, ⟨γ₁, hγ₁, rfl⟩, φ γ₂, ⟨γ₂, hγ₂, rfl⟩, ?_⟩
+      simpa [mul_assoc] using congrArg φ hb) D
+
+/-- Computation rule for `HeckeCoset.mapHom` on an explicit coset `mk H₁ H₂ g`. -/
+@[simp]
+theorem mapHom_mk (φ : G →* K) (g : Δ) :
+    (mk H₁ H₂ g).mapHom φ =
+      mk (H₁.map φ) (H₂.map φ) (⟨φ g, ⟨g, g.property, rfl⟩⟩ : ↥(Δ.map φ)) := (rfl)
+
+/-- `HeckeCoset.mapHom` along `MonoidHom.id G` agrees with the identity up to `HeckeCoset.map`
+along `Submonoid.map_id` and `Subgroup.map_id`. -/
+@[simp]
+theorem mapHom_id (D : HeckeCoset Δ H₁ H₂)
+    (hΔ : Δ.map (MonoidHom.id G) ≤ Δ := (Submonoid.map_id Δ).le)
+    (h₁ : H₁.map (MonoidHom.id G) ≤ H₁ := (Subgroup.map_id H₁).le)
+    (h₂ : H₂.map (MonoidHom.id G) ≤ H₂ := (Subgroup.map_id H₂).le) :
+    (D.mapHom (MonoidHom.id G)).map hΔ h₁ h₂ = D := by
+  induction D using HeckeCoset.induction with | h g =>
+  rw [mapHom_mk, map_mk]
+  exact mk_congr_val rfl
+
+/-- `HeckeCoset.mapHom` composes functorially along `φ : G →* K` and `ψ : K →* L` up to
+`HeckeCoset.map` along `Submonoid.map_map` and `Subgroup.map_map`. -/
+@[simp]
+theorem mapHom_mapHom {L : Type*} [Group L] (φ : G →* K) (ψ : K →* L) (D : HeckeCoset Δ H₁ H₂)
+    (hΔ : (Δ.map φ).map ψ ≤ Δ.map (ψ.comp φ) := (Δ.map_map ψ φ).le)
+    (h₁ : (H₁.map φ).map ψ ≤ H₁.map (ψ.comp φ) := (H₁.map_map ψ φ).le)
+    (h₂ : (H₂.map φ).map ψ ≤ H₂.map (ψ.comp φ) := (H₂.map_map ψ φ).le) :
+    ((D.mapHom φ).mapHom ψ).map hΔ h₁ h₂ = D.mapHom (ψ.comp φ) := by
+  induction D using HeckeCoset.induction with | h g =>
+  rw [mapHom_mk, mapHom_mk, map_mk, mapHom_mk]
+  exact mk_congr_val rfl
+
+/-- `HeckeCoset.mapHom` sends the identity coset to the identity coset. -/
+@[simp]
+theorem mapHom_one (φ : G →* K) :
+    (1 : HeckeCoset Δ H H).mapHom φ = (1 : HeckeCoset (Δ.map φ) (H.map φ) (H.map φ)) := by
+  rw [one_def, one_def, mapHom_mk]
+  exact mk_congr_val (_root_.map_one φ)
+
+/-- The chosen representative of `D.mapHom φ` lies in the `(H₁.map φ, H₂.map φ)`-double coset of
+`φ D.rep`. -/
+theorem rep_mapHom_mem_doubleCoset (φ : G →* K) (D : HeckeCoset Δ H₁ H₂) :
+    (((D.mapHom φ).rep : ↥(Δ.map φ)) : K) ∈
+      doubleCoset (φ (D.rep : G)) (H₁.map φ) (H₂.map φ) := by
+  let w : ↥(Δ.map φ) := ⟨φ (D.rep : G), ⟨D.rep, D.rep.property, rfl⟩⟩
+  have hmap : D.mapHom φ = mk (H₁.map φ) (H₂.map φ) w := by
+    conv_lhs => rw [← mk_rep D, mapHom_mk]
+  simpa only [hmap] using rep_mk_mem_doubleCoset (H₁ := H₁.map φ) (H₂ := H₂.map φ) w
+
+/-- When `φ : G →* K` is injective, `HeckeCoset.mapHom φ` is bijective. -/
+theorem mapHom_bijective {φ : G →* K} (hφ : Function.Injective φ) :
+    Function.Bijective (mapHom (Δ := Δ) (H₁ := H₁) (H₂ := H₂) φ) := by
+  refine ⟨fun D₁ D₂ hEq ↦ ?_, fun E ↦ ?_⟩
+  · induction D₁ using HeckeCoset.induction with | h g₁ =>
+    induction D₂ using HeckeCoset.induction with | h g₂ =>
+    rw [mapHom_mk, mapHom_mk, eq_iff] at hEq
+    obtain ⟨_, ⟨γ₁, hγ₁, rfl⟩, _, ⟨γ₂, hγ₂, rfl⟩, hmul⟩ :=
+      mem_doubleCoset.mp (hEq ▸ mem_doubleCoset_self (H₁.map φ) (H₂.map φ) _)
+    exact mk_eq_mk_of_mem (mem_doubleCoset.mpr ⟨γ₁, hγ₁, γ₂, hγ₂,
+      hφ (by simpa [mul_assoc] using hmul)⟩)
+  · induction E using HeckeCoset.induction with | h y =>
+    obtain ⟨g, hg, hy⟩ := y.property
+    refine ⟨mk H₁ H₂ ⟨g, hg⟩, ?_⟩
+    rw [mapHom_mk]
+    exact mk_congr_val hy
+
+/-- Equivalence of Hecke double cosets induced by an injective group homomorphism `φ : G →* K`. -/
+noncomputable def mapEquivOfInjective (φ : G →* K) (hφ : Function.Injective φ) :
+    HeckeCoset Δ H₁ H₂ ≃ HeckeCoset (Δ.map φ) (H₁.map φ) (H₂.map φ) :=
+  Equiv.ofBijective (mapHom φ) (mapHom_bijective hφ)
+
+/-- `mapEquivOfInjective` computes as `HeckeCoset.mapHom`. -/
+@[simp]
+theorem mapEquivOfInjective_apply (φ : G →* K) (hφ : Function.Injective φ)
+    (D : HeckeCoset Δ H₁ H₂) :
+    mapEquivOfInjective φ hφ D = D.mapHom φ := (rfl)
+
+end MapHom
 
 end HeckeCoset
 
@@ -628,6 +730,23 @@ lemma conj_mem_of_mk_eq {H₁ H₂ : Subgroup G} (g : G) {u₁ u₂ : H₁}
     (h : (QuotientGroup.mk u₁ : DecompQuotient H₁ H₂ g) = QuotientGroup.mk u₂) :
     g⁻¹ * ((u₁ : G)⁻¹ * u₂) * g ∈ H₂ :=
   conj_mem_of_stabilizer g ⟨_, QuotientGroup.eq.mp h⟩
+
+/-- The chosen representative after transport along an injective group homomorphism differs from
+the transported representative by an element of the stabilizer. -/
+lemma decompQuotientEquivMapOfInjective_out {K : Type*} [Group K] (φ : G →* K)
+    (hφ : Function.Injective φ) (H₁ H₂ : Subgroup G) (g : G) (i : DecompQuotient H₁ H₂ g) :
+    (φ g)⁻¹ * (((decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g i).out : K)⁻¹ *
+      φ (i.out : G)) * φ g ∈ H₂.map φ := by
+  have hmk :
+      ((decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g i).out :
+          DecompQuotient (H₁.map φ) (H₂.map φ) (φ g)) =
+        (Subgroup.equivMapOfInjective H₁ φ hφ i.out :
+          DecompQuotient (H₁.map φ) (H₂.map φ) (φ g)) := by
+    calc _ = decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g i := QuotientGroup.out_eq' _
+      _ = decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g (i.out : DecompQuotient H₁ H₂ g) :=
+        congrArg (decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g) (QuotientGroup.out_eq' i).symm
+      _ = _ := decompQuotientEquivMapOfInjective_mk φ hφ H₁ H₂ g i.out
+  exact conj_mem_of_mk_eq (φ g) hmk
 
 /-- **Shimura's decomposition of a double coset into right cosets.** `Γ₁gΓ₂` is the union of the
 right cosets `Γ₁ · (g τᵥ⁻¹)`, where `τᵥ` runs over representatives of `Γ₂ ⧸ (Γ₂ ∩ g⁻¹Γ₁g)` — the
@@ -943,6 +1062,26 @@ instance {Δ : Submonoid G} {H₁ H₂ : Subgroup G} [IsHeckeTriple Δ H₁ H₂
     (Subgroup.fintypeOfIndexNeZero
       (IsHeckeTriple.commensurable_conjAct_inv_left g).1.relIndex_ne_zero)
 
+/-- Pushing a Hecke triple `(Δ, H₁, H₂)` forward along a group homomorphism `φ : G →* K` yields a
+Hecke triple `(Δ.map φ, H₁.map φ, H₂.map φ)`. -/
+instance map {K : Type*} [Group K] {Δ : Submonoid G} {H₁ H₂ : Subgroup G}
+    [IsHeckeTriple Δ H₁ H₂] (φ : G →* K) :
+    IsHeckeTriple (Δ.map φ) (H₁.map φ) (H₂.map φ) where
+  left_le := by
+    rintro _ ⟨x, hx, rfl⟩
+    exact ⟨x, IsHeckeTriple.mem_of_mem_left H₂ hx, rfl⟩
+  right_le := by
+    rintro _ ⟨x, hx, rfl⟩
+    exact ⟨x, IsHeckeTriple.mem_of_mem_right H₁ hx, rfl⟩
+  commensurable := (IsHeckeTriple.commensurable (Δ := Δ)).map φ
+  le_commensurator_right := by
+    rintro _ ⟨g, hg, rfl⟩
+    rw [Subgroup.mem_toSubmonoid, Subgroup.Commensurable.commensurator_mem_iff,
+      ← TauCeti.map_conj_eq_conj_smul, ← MulEquiv.toMonoidHom_eq_coe, ← Subgroup.map_map_conj,
+      MulEquiv.toMonoidHom_eq_coe, TauCeti.map_conj_eq_conj_smul]
+    exact ((Subgroup.Commensurable.commensurator_mem_iff H₂ g).mp
+      (IsHeckeTriple.mem_commensurator_right H₁ ⟨g, hg⟩)).map φ
+
 end IsHeckeTriple
 
 namespace HeckeCoset
@@ -993,6 +1132,15 @@ same term. -/
 lemma degree_eq_natCard_decompQuotient (D : HeckeCoset Δ H₁ H₂) :
     D.degree = Nat.card (DecompQuotient H₁ H₂ (D.rep : G)) :=
   (rfl)
+
+/-- An injective group homomorphism preserves the degree of every double coset. -/
+@[simp]
+theorem degree_mapHom_of_injective {K : Type*} [Group K] {φ : G →* K} (hφ : Function.Injective φ)
+    (D : HeckeCoset Δ H₁ H₂) :
+    (D.mapHom φ).degree = D.degree := by
+  induction D using HeckeCoset.induction with | h g =>
+  rw [mapHom_mk, degree_mk, degree_mk]
+  exact (Nat.card_congr (decompQuotientEquivMapOfInjective φ hφ H₁ H₂ (g : G))).symm
 
 variable [IsHeckeTriple Δ H₁ H₂]
 
