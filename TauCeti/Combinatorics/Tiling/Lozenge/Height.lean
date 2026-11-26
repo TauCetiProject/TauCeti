@@ -73,17 +73,17 @@ noncomputable def heightCochain (M : Set TriEdge) (e : TriEdge) : ℤ :=
 
 variable {e : TriEdge}
 
-theorem heightCochain_of_mem (he : e ∈ M) : heightCochain M e = 1 - neutralIncrement e := by
+@[simp] theorem heightCochain_of_mem (he : e ∈ M) : heightCochain M e = 1 - neutralIncrement e := by
   simp [heightCochain, he]
 
-theorem heightCochain_of_notMem (he : e ∉ M) : heightCochain M e = neutralIncrement e := by
+@[simp] theorem heightCochain_of_notMem (he : e ∉ M) : heightCochain M e = neutralIncrement e := by
   simp [heightCochain, he]
 
 /-- The height cochain takes the non-neutral value `1 − c₀(e)` exactly on the edges of `M`. -/
 theorem heightCochain_eq_one_sub_neutralIncrement_iff :
     heightCochain M e = 1 - neutralIncrement e ↔ e ∈ M := by
   by_cases he : e ∈ M
-  · simp [heightCochain_of_mem he, he]
+  · simp [he]
   · rw [heightCochain_of_notMem he]
     rcases neutralIncrement_eq_zero_or_eq_one e with h | h <;> simp [h, he]
 
@@ -252,7 +252,7 @@ theorem tilingOfHeight_bijOn :
 
 /-! ### Translations -/
 
-theorem heightCochain_vadd (w : ℤ × ℤ) (M : Set TriEdge) (e : TriEdge) :
+@[simp] theorem heightCochain_vadd (w : ℤ × ℤ) (M : Set TriEdge) (e : TriEdge) :
     heightCochain (w +ᵥ M) e = heightCochain M (-w +ᵥ e) := by
   by_cases he : -w +ᵥ e ∈ M
   · rw [heightCochain_of_mem he, heightCochain_of_mem (Set.mem_vadd_set_iff_neg_vadd_mem.2 he),
@@ -271,9 +271,9 @@ theorem IsTiling.tilingHeight_vadd (h : IsTiling Set.univ M) (w v : ℤ × ℤ) 
       fun v => tilingHeight M (v - w) - tilingHeight M (-w) := by
     rw [isCochainPrimitiveOn_univ_iff]
     intro e
-    rw [heightCochain_vadd, ← h.tilingHeight_target_sub_v, TriEdge.target_vadd, TriEdge.vadd_v,
-      sub_eq_neg_add e.target, sub_eq_neg_add e.v]
-    ring
+    rw [heightCochain_vadd, ← h.tilingHeight_target_sub_v]
+    simp only [TriEdge.target_vadd, TriEdge.vadd_v]
+    abel_nf
   exact congrFun (hw.eq_tilingHeight hg (by simp)).symm v
 
 /-! ### The Lipschitz bound -/

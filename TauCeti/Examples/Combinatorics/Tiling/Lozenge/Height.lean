@@ -11,8 +11,9 @@ import Mathlib.Tactic.FinCases
 /-!
 # Checks: heights of plane lozenge tilings
 
-* The tilings `M₁`, `M₂`, `M₃` by lozenges of a single type, `M_j = {e | e.k = j}`, have heights
-  `H_{M₁} = x`, `H_{M₂} = y` and `H_{M₃} = 0`.
+* The tilings `M₁`, `M₂`, `M₃` by lozenges of a single type, where `M_j` is
+  `typeTiling (j - 1) = {e | e.k = j - 1}` (the field `e.k` counts directions from `0`), have
+  heights `H_{M₁} = x`, `H_{M₂} = y` and `H_{M₃} = 0`.
 * `H(x, y) = ⌊(x + y)/2⌋` is a height function, and its tiling has no lozenge of type 3, since
   `H(v + e₃) − H(v) = 1` everywhere.
 * `H(x, y) = x + y` is not a height function: its increment along `e₃` is `2`.
@@ -36,7 +37,7 @@ theorem isTiling_typeTiling (j : Fin 3) : IsTiling Set.univ (typeTiling j) := by
   rw [isTiling_univ_iff]
   intro f
   rw [TriFace.existsUnique_mem_edges_iff]
-  exact ⟨j, TriFace.edge_k f j, fun k hk => by simpa [typeTiling] using hk⟩
+  exact ⟨j, mem_typeTiling.2 (TriFace.edge_k f j), fun k hk => by simpa using hk⟩
 
 /-- The height of a single-type tiling is the given function once it has the right increments
 and vanishes at `0`. -/
