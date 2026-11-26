@@ -87,13 +87,6 @@ public section
 
 namespace WeierstrassCurve
 
-private theorem algebraMap_fractionRing_quotient_eq_zero {R : Type*} [CommRing R] {P : Ideal R}
-    {x : R} :
-    algebraMap R (FractionRing (R ⧸ P)) x = 0 ↔ x ∈ P := by
-  rw [IsScalarTower.algebraMap_apply R (R ⧸ P) (FractionRing (R ⧸ P)),
-    map_eq_zero_iff _ (IsFractionRing.injective (R ⧸ P) (FractionRing (R ⧸ P))),
-    Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem]
-
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) {p n : ℕ}
 
 /-- **Prime ideals containing `I_n(Ê)` for `n ≥ 3`.** Over an arbitrary commutative ring `R`, at
@@ -103,27 +96,27 @@ theorem heightIdeal_formalGroup_le_prime_iff (hp : p.Prime) (hn : 3 ≤ n) {P : 
     [P.IsPrime] :
     (formalGroup W).heightIdeal p n ≤ P ↔ Ideal.span {(p : R), W.c₄, W.Δ} ≤ P := by
   have : Fact p.Prime := ⟨hp⟩
-  let K := FractionRing (R ⧸ P)
+  let K := P.ResidueField
   let φ : R →+* K := algebraMap R K
   rw [(formalGroup W).heightIdeal_le_prime_iff hp, ← map_formalGroup]
   simp only [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
   by_cases hpP : (p : R) ∈ P
   · have : CharP K p := (CharP.charP_iff_prime_eq_zero hp).mpr
-      (by rw [← map_natCast φ]; exact algebraMap_fractionRing_quotient_eq_zero.mpr hpP)
+      (by rw [← map_natCast φ]; exact P.algebraMap_residueField_eq_zero.mpr hpP)
     refine ⟨fun hnh ↦ ⟨hpP, ?_⟩, fun ⟨_, hc₄P, hΔP⟩ ↦ ?_⟩
     · have hnotle : ¬ (formalGroup (W.map φ)).height p ≤ 2 := fun h2 ↦
         absurd (le_trans (by exact_mod_cast hn) (hnh.trans h2) : (3 : ℕ∞) ≤ 2) (by decide)
-      have hcΔ : (W.map φ).c₄ = 0 ∧ (W.map φ).Δ = 0 := by
+      obtain ⟨hc₄, hΔ⟩ : (W.map φ).c₄ = 0 ∧ (W.map φ).Δ = 0 := by
         simpa only [not_or, not_ne_iff] using
           mt (W.map φ).height_formalGroup_le_two_iff.mpr hnotle
-      exact ⟨algebraMap_fractionRing_quotient_eq_zero.mp (by simpa [φ] using hcΔ.1),
-        algebraMap_fractionRing_quotient_eq_zero.mp (by simpa [φ] using hcΔ.2)⟩
+      exact ⟨P.algebraMap_residueField_eq_zero.mp (by rwa [map_c₄] at hc₄),
+        P.algebraMap_residueField_eq_zero.mp (by rwa [map_Δ] at hΔ)⟩
     · rw [(W.map φ).height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero
-        (by simpa [φ] using algebraMap_fractionRing_quotient_eq_zero.mpr hΔP)
-        (by simpa [φ] using algebraMap_fractionRing_quotient_eq_zero.mpr hc₄P)]
+        (by rw [map_Δ]; exact P.algebraMap_residueField_eq_zero.mpr hΔP)
+        (by rw [map_c₄]; exact P.algebraMap_residueField_eq_zero.mpr hc₄P)]
       exact le_top
   · have hpK : (p : K) ≠ 0 := by
-      rw [← map_natCast φ]; exact mt algebraMap_fractionRing_quotient_eq_zero.mp hpP
+      rw [← map_natCast φ]; exact mt P.algebraMap_residueField_eq_zero.mp hpP
     rw [(formalGroup (W.map φ)).height_eq_zero_of_natCast_ne_zero hpK]
     exact iff_of_false (by simpa using (by omega : n ≠ 0)) (fun h ↦ hpP h.1)
 
@@ -219,25 +212,25 @@ theorem heightIdeal_formalGroup_le_prime_iff_of_Δ_eq_zero (hΔ : W.Δ = 0) (hp 
     (hn : 2 ≤ n) {P : Ideal R} [P.IsPrime] :
     (formalGroup W).heightIdeal p n ≤ P ↔ Ideal.span {(p : R), W.c₄} ≤ P := by
   have : Fact p.Prime := ⟨hp⟩
-  let K := FractionRing (R ⧸ P)
+  let K := P.ResidueField
   let φ : R →+* K := algebraMap R K
   have hΔφ : (W.map φ).Δ = 0 := by rw [map_Δ, hΔ, map_zero]
   rw [(formalGroup W).heightIdeal_le_prime_iff hp, ← map_formalGroup]
   simp only [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
   by_cases hpP : (p : R) ∈ P
   · have : CharP K p := (CharP.charP_iff_prime_eq_zero hp).mpr
-      (by rw [← map_natCast φ]; exact algebraMap_fractionRing_quotient_eq_zero.mpr hpP)
+      (by rw [← map_natCast φ]; exact P.algebraMap_residueField_eq_zero.mpr hpP)
     refine ⟨fun hnh ↦ ⟨hpP, ?_⟩, fun ⟨_, hc₄P⟩ ↦ ?_⟩
     · by_contra hc₄P
       have hc₄φ : (W.map φ).c₄ ≠ 0 := by
-        rw [map_c₄]; exact mt algebraMap_fractionRing_quotient_eq_zero.mp hc₄P
+        rw [map_c₄]; exact mt P.algebraMap_residueField_eq_zero.mp hc₄P
       rw [(W.map φ).height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero hΔφ hc₄φ] at hnh
       exact absurd (le_trans (by exact_mod_cast hn) hnh : (2 : ℕ∞) ≤ 1) (by decide)
     · rw [(W.map φ).height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero hΔφ
-        (by simpa [φ] using algebraMap_fractionRing_quotient_eq_zero.mpr hc₄P)]
+        (by rw [map_c₄]; exact P.algebraMap_residueField_eq_zero.mpr hc₄P)]
       exact le_top
   · have hpK : (p : K) ≠ 0 := by
-      rw [← map_natCast φ]; exact mt algebraMap_fractionRing_quotient_eq_zero.mp hpP
+      rw [← map_natCast φ]; exact mt P.algebraMap_residueField_eq_zero.mp hpP
     rw [(formalGroup (W.map φ)).height_eq_zero_of_natCast_ne_zero hpK]
     exact iff_of_false (by simpa using (by omega : n ≠ 0)) (fun h ↦ hpP h.1)
 

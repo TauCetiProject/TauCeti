@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.Regular.RegularSequence
 public import TauCeti.RingTheory.FormalGroup.Height.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
@@ -94,7 +95,7 @@ of `v_n` modulo `I_n`.
   homomorphism into a field kills `I_n(F)` (for commutative `F` and prime `p`) iff the base-changed
   law has `p`-height at least `n` and kills `⨆ n, I_n(F)` (for `1 < p`) iff that law has infinite
   `p`-height; in particular this characterizes the prime ideals `P` containing `I_n(F)` and
-  `⨆ n, I_n(F)` through `FractionRing (R ⧸ P)`.
+  `⨆ n, I_n(F)` through `P.ResidueField`.
 * `FormalGroup.heightIdeal_eq_top_iff_forall_height_lt`: positive-index height ideals are the
   unit ideal exactly when all characteristic-`p` field specializations have height below the index.
 * `FormalGroup.isUnit_mk_coeff_nsmulSeries_iff`: `v_n` is a unit modulo `I_n` exactly when
@@ -635,20 +636,13 @@ theorem iSup_heightIdeal_le_ker_iff_height_eq_top {K : Type*} [Field K] (hp : 1 
     ⨆ n, F.heightIdeal p n ≤ RingHom.ker φ ↔ (F.map φ).height p = ⊤ := by
   rw [iSup_heightIdeal_le_ker_iff hp, height_eq_top_iff]
 
-private theorem ker_algebraMap_fractionRing_quotient (P : Ideal R) :
-    RingHom.ker (algebraMap R (FractionRing (R ⧸ P))) = P := by
-  ext x
-  rw [RingHom.mem_ker, IsScalarTower.algebraMap_apply R (R ⧸ P) (FractionRing (R ⧸ P)),
-    map_eq_zero_iff _ (IsFractionRing.injective (R ⧸ P) (FractionRing (R ⧸ P))),
-    Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem]
-
 /-- **Prime ideals containing `⨆ n, I_n(F)`.** For `1 < p`, a prime ideal `P` of `R` contains the
-supremum `⨆ n, F.heightIdeal p n` if and only if the specialization of `F` to
-`FractionRing (R ⧸ P)` has infinite `p`-height. -/
+supremum `⨆ n, F.heightIdeal p n` if and only if the specialization of `F` to `P.ResidueField` has
+infinite `p`-height. -/
 theorem iSup_heightIdeal_le_prime_iff (hp : 1 < p) {P : Ideal R} [P.IsPrime] :
     ⨆ n, F.heightIdeal p n ≤ P ↔
-      (F.map (algebraMap R (FractionRing (R ⧸ P)))).height p = ⊤ := by
-  nth_rw 1 [← ker_algebraMap_fractionRing_quotient P]
+      (F.map (algebraMap R P.ResidueField)).height p = ⊤ := by
+  nth_rw 1 [← P.ker_algebraMap_residueField]
   exact F.iSup_heightIdeal_le_ker_iff_height_eq_top hp _
 
 variable [F.IsComm]
@@ -700,12 +694,11 @@ theorem heightIdeal_le_ker_iff_le_height {K : Type*} [Field K] (hp : p.Prime) {n
 
 /-- **Prime ideals containing `I_n(F)`.** For a commutative formal group law `F` over `R`, a prime
 `p`, any `n : ℕ`, and a prime ideal `P` of `R`, `P` contains `F.heightIdeal p n` if and only if the
-specialization of `F` to the residue field `FractionRing (R ⧸ P)` of `P` has `p`-height at least
-`n`. -/
+specialization of `F` to `P.ResidueField` has `p`-height at least `n`. -/
 theorem heightIdeal_le_prime_iff (hp : p.Prime) {n : ℕ} {P : Ideal R} [P.IsPrime] :
     F.heightIdeal p n ≤ P ↔
-      (n : ℕ∞) ≤ (F.map (algebraMap R (FractionRing (R ⧸ P)))).height p := by
-  nth_rw 1 [← ker_algebraMap_fractionRing_quotient P]
+      (n : ℕ∞) ≤ (F.map (algebraMap R P.ResidueField)).height p := by
+  nth_rw 1 [← P.ker_algebraMap_residueField]
   exact F.heightIdeal_le_ker_iff_le_height hp _
 
 end FormalGroup
