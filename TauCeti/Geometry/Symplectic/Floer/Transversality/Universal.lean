@@ -19,7 +19,7 @@ Let `(V, ω)` be a finite-dimensional symplectic vector space, `J_t` a family of
 structures of period one in `t`, and `u` a nonstationary Floer trajectory of a Hamiltonian `H_t`
 of period one in `t`, `∂s u + J_t(u) (∂t u - X_{H_t}(u)) = 0`, of period one in `t` and
 asymptotic to one-periodic orbits. Its linearized operator `D_u` is realized as a bounded operator
-`W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` (`TauCeti.SymplecticForm.floerSobolevOperator`). Varying the
+`W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` (`TauCeti.SymplecticForm.floerSobolevOperator 2`). Varying the
 almost complex structure along `J + τ Y` changes the Floer operator at `u` to first order by
 `Y_t(u) (∂t u - X_{H_t}(u))`. The *universal* linearized operator adds these variations to `D_u`.
 Floer, Hofer and Salamon showed that it is onto; this is the transversality input for choosing
@@ -115,7 +115,7 @@ theorem eq_zero_of_forall_inner_floerSobolevOperator_eq_zero (ω : SymplecticFor
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop (Icc 0 1))
     {η : Lp V 2 stripMeasure}
-    (hD : ∀ x, ⟪η, ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    (hD : ∀ x, ⟪η, ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) u x⟫_ℝ = 0)
     (hY : ∀ Y : ℝ × V → V →L[ℝ] V, ContDiff ℝ n Y → (∀ t y, Y (t + 1, y) = Y (t, y)) →
       (∀ᶠ p in comap Prod.snd (cocompact V), Y p = 0) →
@@ -217,12 +217,12 @@ theorem exists_surjective_floerSobolevOperator_coprod (ω : SymplecticForm F)
         (∀ p, (Y i p : Module.End ℝ F) ∈ ω.compatibleTangentSpace (J p.1 p.2)) ∧
         y i =ᵐ[stripMeasure]
           fun z ↦ Y i (z.2, u z) (sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u z)) ∧
-      Function.Surjective ((ω.floerSobolevOperator
+      Function.Surjective ((ω.floerSobolevOperator 2
         (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
           u).coprod (Fintype.linearCombination ℝ y).toContinuousLinearMap) := by
   -- `L²(ℝ × [0, 1], F)` is a real Hilbert space for the real part of the inner product of `F`.
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  set D := ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+  set D := ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
     (fun _ _ ↦ 0) (fun w ↦ H w.2) u
   set δ := sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u
   -- The admissible variations of the Floer operator, as elements of `L²`.

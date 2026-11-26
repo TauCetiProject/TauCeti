@@ -34,9 +34,10 @@ open scoped Topology
 namespace TauCeti
 
 private theorem gaussianMonomial_rescale (j : Fin 2) {u : ℝ} (hu : 0 < u) :
-    let f (t : ℝ) : ℂ := gaussianMonomial j (t * u)
-    (∀ t : ℝ, DifferentiableAt ℝ f t) ∧ IntegrableOn (deriv f) (Set.Ici 0) ∧
-      Tendsto f atTop (𝓝 0) ∧ (∫ t in Set.Ioi 0, ‖deriv f t‖) ≤ 1 := by
+    Differentiable ℝ (fun t : ℝ ↦ (gaussianMonomial j (t * u) : ℂ)) ∧
+      IntegrableOn (deriv fun t : ℝ ↦ (gaussianMonomial j (t * u) : ℂ)) (Set.Ici 0) ∧
+      Tendsto (fun t : ℝ ↦ (gaussianMonomial j (t * u) : ℂ)) atTop (𝓝 0) ∧
+      (∫ t in Set.Ioi 0, ‖deriv (fun x : ℝ ↦ (gaussianMonomial j (x * u) : ℂ)) t‖) ≤ 1 := by
   let f (t : ℝ) : ℂ := gaussianMonomial j (t * u)
   have hderiv (t : ℝ) : HasDerivAt f ((deriv (gaussianMonomial j) (t * u) * u : ℝ) : ℂ) t := by
     have hm : HasDerivAt (fun t ↦ t * u) u t := by simpa using (hasDerivAt_id t).mul_const u
@@ -75,25 +76,23 @@ at every positive scale, without a primitivity or parity-matching hypothesis. -/
 theorem norm_gaussianTheta_le_of_ne_one {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
     (hχ : χ ≠ 1) (j : Fin 2) {u : ℝ} (hu : 0 < u) :
     ‖gaussianTheta j (fun n ↦ χ n) u‖ ≤ N := by
-  let f (t : ℝ) : ℂ := gaussianMonomial j (t * u)
   have hχ0 : χ (0 : ZMod N) = 0 := χ.map_zero' (by rintro rfl; exact hχ (Subsingleton.elim _ _))
   have hpartial (n : ℕ) : ‖∑ k ∈ Finset.Icc 0 n, χ k‖ ≤ (N : ℝ) := by
-    rw [Finset.Icc_eq_cons_Ioc n.zero_le, Finset.sum_cons, Nat.cast_zero, hχ0, zero_add,
-      ← Finset.Icc_add_one_left_eq_Ioc]
-    exact χ.norm_sum_Icc_le_level hχ n
+    simpa [Finset.Icc_eq_cons_Ioc n.zero_le, ← Finset.Icc_add_one_left_eq_Ioc, hχ0] using
+      χ.norm_sum_Icc_le_level hχ n
   obtain ⟨hf, hi, ht, hb⟩ := gaussianMonomial_rescale j hu
-  obtain ⟨L, hL, hnorm⟩ := exists_tendsto_sum_mul_and_norm_le (f := f) hpartial
-    (fun t _ ↦ hf t) hi ht
-  have hs : Summable (fun n : ℕ ↦ f n * χ n) :=
-    summable_pnat_iff_summable_nat.mp <| by
-      simpa only [f, Nat.cast_ofNat, mul_comm] using
-        summable_gaussianTheta (j := j) (c := fun n ↦ χ n) (fun n ↦ χ.norm_le_one _) hu
-  have heq : (∑' n : ℕ, f n * χ n) = gaussianTheta j (fun n ↦ χ n) u := by
-    rw [hs.tsum_eq_zero_add, Nat.cast_zero, Nat.cast_zero, hχ0,
-      mul_zero, zero_add, gaussianTheta_def]
-    rw [tsum_pnat_eq_tsum_succ (f := fun n : ℕ ↦ χ n * gaussianMonomial j (n * u))]
-    simp only [f, mul_comm]
-  have htheta : Tendsto (fun n : ℕ ↦ ∑ k ∈ Finset.Icc 0 n, f k * χ k) atTop
+  obtain ⟨L, hL, hnorm⟩ := exists_tendsto_sum_mul_and_norm_le
+    (f := fun t : ℝ ↦ (gaussianMonomial j (t * u) : ℂ)) hpartial (fun t _ ↦ hf t) hi ht
+  have hs : Summable (fun n : ℕ ↦ χ n * (gaussianMonomial j (n * u) : ℂ)) :=
+    summable_pnat_iff_summable_nat.mp <|
+      summable_gaussianTheta (j := j) (c := fun n ↦ χ n) (fun n ↦ χ.norm_le_one _) hu
+  have heq : (∑' n : ℕ, χ n * (gaussianMonomial j (n * u) : ℂ)) =
+      gaussianTheta j (fun n ↦ χ n) u := by
+    rw [gaussianTheta_def]
+    simpa only [hs.tsum_eq_zero_add, Nat.cast_zero, hχ0, zero_mul, zero_add] using
+      (tsum_pnat_eq_tsum_succ (f := fun n : ℕ ↦ χ n * (gaussianMonomial j (n * u) : ℂ))).symm
+  have htheta : Tendsto
+      (fun n : ℕ ↦ ∑ k ∈ Finset.Icc 0 n, χ k * (gaussianMonomial j (k * u) : ℂ)) atTop
       (𝓝 (gaussianTheta j (fun n ↦ χ n) u)) := by
     simpa only [Function.comp_def, Nat.range_succ_eq_Icc_zero, heq] using
       hs.hasSum.tendsto_sum_nat.comp (tendsto_add_atTop_nat 1)

@@ -100,7 +100,14 @@ gives, for every sequence of solutions with parameters in a compact window `C �
 at most `A`, on every open `Ω` of a compact window of the plane chart, a subsequence whose
 parameters converge in `C` and which converges off a finite set `Z` of bubbling points with
 `#Z * δ ≤ A + 2 (B₀ + B₁ + B_∞)`, locally uniformly after applying `e` and pointwise in `M`, with
-no condition on where the solutions take their values. Near the pole `∞` the data are standard, and
+no condition on where the solutions take their values. For the structures of the family built
+from period-one `C²` end structures this regularity holds over the whole plane chart, the poles
+`0` and `1` included, since the family is smooth jointly in the parameter, the domain point and
+the target point (`TauCeti.SmoothTwoForm.Compatible.contMDiff_cappedComparisonAlmostComplex`).
+The same conclusion therefore holds with no regularity hypothesis on the structures (in the
+namespace `TauCeti.SmoothTwoForm.Compatible`,
+`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappedComparison`).
+Near the pole `∞` the data are standard, and
 the compactness theorem at infinity in a closed manifold (in the namespace `TauCeti.SmoothTwoForm`,
 `IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_inv`) gives
 the same conclusion in the chart `y ↦ y⁻¹`, the pole included
@@ -645,3 +652,106 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappe
 end Closed
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
+
+namespace TauCeti.SmoothTwoForm.Compatible
+
+open Bundle Floer
+
+variable {E G M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [I.Boundaryless] [TopologicalSpace M]
+  [ChartedSpace G M] [IsManifold I (⊤ : ℕ∞) M] [CompactSpace M] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {σ : SmoothTwoForm I M} {J₀ : SmoothAlmostComplexStructure I M}
+  {H : Puncture → ℝ → M → ℝ} {e : M → F}
+
+/-- **Solutions of the capped comparison family in a closed manifold converge off finitely many
+bubbling points, for the structures of the family.** Let `σ` be a two-form on a closed manifold
+`M` compatible with a smooth almost complex structure `J₀`, and let the end structures `J q t` be
+tamed by `σ`, of period one in `t` and jointly `C²` on `ℝ × M`. Take the structures
+`TauCeti.SmoothTwoForm.Compatible.cappedComparisonAlmostComplex` of the comparison family, and
+otherwise the hypotheses of
+`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappedComparison` in
+the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`, for a compact window `C ⊆ [0, ∞)` of
+parameters and a compact window `D` of the plane chart `ℝ × ℝ ≅ ℂ`: the structures of the family,
+read in the charts of `M`, are `C²` jointly in the parameter, the domain point and the chart
+coordinate, over the whole plane including the poles `0` and `1`, so only the uniform tameness
+with respect to `e` and the bound on the Hamiltonian vector fields remain as hypotheses. Then there
+is a threshold `δ > 0` such that every sequence of solutions for parameters in `C` with symplectic
+area at most `A` has a subsequence whose parameters converge in `C` and which converges on an open
+`Ω ⊆ D` off a finite set `Z` of bubbling points, with `#Z * δ ≤ A + 2 (B₀ + B₁ + B_∞)`. -/
+theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappedComparison
+    (h₀ : σ.Compatible J₀) (J : Puncture → ℝ → SmoothAlmostComplexStructure I M)
+    (hJ : ∀ q t, σ.Tames (J q t)) (hJp : ∀ q, Periodic (J q) 1)
+    (hJs : ∀ q, ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) 2
+      (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
+        p.2 ((J q p.1).toEndomorphism p.2)))
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
+    (he : ∀ x, MDifferentiableAt I 𝓘(ℝ, F) e x) (he_inj : Injective e)
+    {C : Set ℝ} {D : Set (ℝ × ℝ)} (hC : IsCompact C) (hC₀ : C ⊆ Ici 0) (hD : IsCompact D)
+    {c L : ℝ} (hc : 0 < c)
+    (hJc : ∀ R ∈ C, ∀ z ∈ D, ∀ x v, c * ‖mvfderiv I e x v‖ ^ 2 ≤
+      σ.eval₂ x v (h₀.cappedComparisonAlmostComplex J hJ R (equivRealProdCLM.symm z) x v))
+    (hLs : ∀ R ∈ C, ∀ z ∈ D, ∀ x, ‖mvfderiv I e x (σ.hamiltonianVectorField
+      (fun y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y 1) x)‖ ≤ L)
+    (hLt : ∀ R ∈ C, ∀ z ∈ D, ∀ x, ‖mvfderiv I e x (σ.hamiltonianVectorField
+      (fun y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y Complex.I) x)‖ ≤ L) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃R : ℕ → ℝ⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃A : ℝ⦄, IsOpen Ω → Ω ⊆ D →
+      (∀ k, R k ∈ C) → (∀ k, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 (u k)) →
+      (∀ k z, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        ((h₀.cappedComparisonAlmostComplex J hJ (R k)
+          (equivRealProdCLM.symm z)).almostComplexStructureAt (u k z))
+        (σ.perturbedMFDeriv
+          (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x Complex.I)
+          (u k) z).toLinearMap) →
+      (∀ k, Integrable (σ.floerEnergyDensity
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x Complex.I)
+        (u k))) →
+      (∀ k, Integrable fun z ↦ σ.hamiltonianCurvature
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x Complex.I)
+        z (u k z)) →
+      (∀ k, ∫ z, (SmoothBundleForm.eval₂ σ (u k z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineImag) : ℝ) ≤ A) →
+      ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ R₀ ∈ C, Tendsto (fun n ↦ R (φ n)) atTop (𝓝 R₀) ∧
+        ∃ Z : Finset (ℝ × ℝ), ↑Z ⊆ Ω ∧ Z.card * δ ≤ A + 2 * ∑ q, B q ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, σ.floerEnergyDensity
+          (fun z x ↦ cappedComparisonPerturbation H (R (φ n)) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ cappedComparisonPerturbation H (R (φ n)) (equivRealProdCLM.symm z) x Complex.I)
+          (u (φ n)) y) ∧
+        (∀ L', IsCompact L' → L' ⊆ Ω \ ↑Z → ∃ A', ∀ n, ∀ y ∈ L', σ.floerEnergyDensity
+          (fun z x ↦ cappedComparisonPerturbation H (R (φ n)) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ cappedComparisonPerturbation H (R (φ n)) (equivRealProdCLM.symm z) x Complex.I)
+          (u (φ n)) y ≤ A') ∧
+        ∃ v : ℝ × ℝ → M, ContinuousOn v (Ω \ ↑Z) ∧
+          TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) (e ∘ v) atTop (Ω \ ↑Z) ∧
+          ∀ z ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (φ n) z) atTop (𝓝 (v z)) := by
+  have hω := h₀.isNondegenerate
+  -- The structures of the family are `C²` jointly in `(R, z, x)`, at every parameter and every
+  -- point of the plane.
+  have hJ' (p : ℝ × (ℝ × ℝ)) (_ : p ∈ univ) (x : M) :
+      ContMDiffAt (𝓘(ℝ, ℝ × (ℝ × ℝ)).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) (2 : ℕ∞)
+        (fun q : (ℝ × (ℝ × ℝ)) × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+          (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+          ((h₀.cappedComparisonAlmostComplex J hJ q.1.1
+            (equivRealProdCLM.symm q.1.2)).toEndomorphism q.2)) (p, x) :=
+    (h₀.contMDiff_cappedComparisonAlmostComplex J hJ hJp hJs
+      (contDiff_fst.contMDiff.comp contMDiff_fst)
+      ((equivRealProdCLM.symm.contDiff.comp contDiff_snd).contMDiff.comp contMDiff_fst)
+      contMDiff_snd).contMDiffAt
+  exact
+    hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappedComparison
+    h₀ hJ hH hHs hB isOpen_univ
+    (contDiffOn_almostComplexInChartAt_almostComplexStructureAt (n := 2)
+      (J := fun q : ℝ × (ℝ × ℝ) ↦
+        h₀.cappedComparisonAlmostComplex J hJ q.1 (equivRealProdCLM.symm q.2)) hJ')
+    he he_inj hC hC₀ hD (subset_univ _) hc
+    (fun R hR z hz x v ↦ by
+      simpa only [IsNondegenerate.symplecticFormAt_apply,
+        SmoothAlmostComplexStructure.almostComplexStructureAt_apply] using hJc R hR z hz x v)
+    hLs hLt
+
+end TauCeti.SmoothTwoForm.Compatible

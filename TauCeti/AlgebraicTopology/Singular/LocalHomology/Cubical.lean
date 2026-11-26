@@ -14,9 +14,9 @@ import TauCeti.AlgebraicTopology.Singular.LocalHomology.Dense
 # Generators of local cubical homology
 
 The local homology of a manifold is computed by singular chains, while relative cycles such as the
-fundamental chains of compactified trajectory spaces are cubical. This file reads three facts about
-generators of local singular homology through the comparison isomorphisms between relative cubical
-and relative singular homology
+fundamental chains of compactified trajectory spaces are cubical. This file reads facts about
+generators and local classes of local singular homology through the comparison isomorphisms
+between relative cubical and relative singular homology
 (`TopPair.singularCubicalHomologyIso`).
 
 ## Main results
@@ -34,6 +34,10 @@ and relative singular homology
   relative cubical class along an open set vanish on a preconnected subset as soon as they vanish
   at one of its points, the cubical form of
   `TauCeti.localHomologyRestriction_eq_zero_of_isPreconnected`.
+* `TauCeti.homologyMap_cubicalChainComplexMap_ofSubsetMap_eq_of_isPreconnected`: the local classes
+  of a relative class carried along a map that sends its subspace off an open set agree with
+  those of an absolute class on a whole preconnected subset of the open set as soon as they agree
+  at one of its points.
 -/
 
 public section
@@ -195,5 +199,61 @@ theorem homologyMap_cubicalChainComplexMap_eq_zero_of_isPreconnected {Y : Type u
   refine ((key y (hSU hy)).trans ?_).trans (map_zero _).symm
   refine localHomologyRestriction_eq_zero_of_isPreconnected (E := E) _ hU hS hSU hx hy ?_
   rw [← key x (hSU hx), hθ, map_zero]
+
+/-- **An equality of local classes spreads along preconnected sets.** Let `Y` be a manifold,
+`U ⊆ Y` open, `g : X → Y` a map sending a subspace `B` of `X` into `Y ∖ U`, `v` a class of the
+relative cubical homology `Hₘ(X, B; k)`, `w` a class of the cubical homology `Hₘ(Y; k)`, and
+`S ⊆ U` preconnected. If the images of `v` (along `g`) and of `w` in the local cubical homology
+`Hₘ(Y, Y ∖ {x}; k)` agree at one point `x` of `S`, they agree at every point of `S`.
+
+For the face condition of representing chain systems, `v` is the class of a face, a cross product
+carried along a composition map, and `w` is a signed boundary of a relative fundamental class; the
+condition then needs to be checked at one point of each connected component of the face
+interior. -/
+theorem homologyMap_cubicalChainComplexMap_ofSubsetMap_eq_of_isPreconnected {X : TopCat.{u}}
+    {B : Set X} {Y : Type u} [TopologicalSpace Y] [T2Space Y] {E : Type u} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E Y] {U S : Set Y} (hU : IsOpen U)
+    (hS : IsPreconnected S) (hSU : S ⊆ U) {g : X ⟶ TopCat.of Y} (hg : MapsTo g B Uᶜ) {m : ℕ}
+    (v : ((TopPair.ofSubset B).cubicalChainComplex k).homology m)
+    (w : ((normalizedCubicalChainComplex k).obj (TopCat.of Y)).homology m)
+    {x y : Y} (hx : x ∈ S) (hy : y ∈ S)
+    (hvw : (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
+        (TopPair.ofSubsetMap g
+          (hg.mono_right (compl_subset_compl.2 (singleton_subset_iff.2 (hSU hx)))))) m).hom v =
+      (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
+        (TopPair.ofSubset (X := TopCat.of Y) {x}ᶜ).map)) m).hom w) :
+    (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
+        (TopPair.ofSubsetMap g
+          (hg.mono_right (compl_subset_compl.2 (singleton_subset_iff.2 (hSU hy)))))) m).hom v =
+      (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
+        (TopPair.ofSubset (X := TopCat.of Y) {y}ᶜ).map)) m).hom w := by
+  -- The restriction from the local homology along `U` to the local homology at a point of `U`.
+  let ρ (z : Y) (hz : z ∈ U) :
+      TopPair.ofSubset (X := TopCat.of Y) Uᶜ ⟶ TopPair.ofSubset (X := TopCat.of Y) {z}ᶜ :=
+    TopPair.ofSubsetMap (𝟙 (TopCat.of Y)) (compl_subset_compl.2 (singleton_subset_iff.2 hz))
+  -- Both sides at a point `z` of `U` factor through the local homology along `U`.
+  have hv (z : Y) (hz : z ∈ U) :
+      (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k (TopPair.ofSubsetMap g
+          (hg.mono_right (compl_subset_compl.2 (singleton_subset_iff.2 hz))))) m).hom v =
+        (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k (ρ z hz)) m).hom
+          ((HomologicalComplex.homologyMap
+            (TopPair.cubicalChainComplexMap k (TopPair.ofSubsetMap g hg)) m).hom v) :=
+    (TopPair.homologyMap_cubicalChainComplexMap_ofSubsetMap_apply_of_comp_eq _ _ _
+      (Category.comp_id _) m v).symm
+  have hw (z : Y) (hz : z ∈ U) :
+      (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
+          (TopPair.ofSubset (X := TopCat.of Y) {z}ᶜ).map)) m).hom w =
+        (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k (ρ z hz)) m).hom
+          ((HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
+            (TopPair.ofSubset (X := TopCat.of Y) Uᶜ).map)) m).hom w) := by
+    have e := congr((HomologicalComplex.homologyMap
+      $(TopPair.π_cubicalChainComplexMap_ofSubsetMap_id k (X := TopCat.of Y) (B := Uᶜ)
+        (B' := {z}ᶜ) (compl_subset_compl.2 (singleton_subset_iff.2 hz))) m).hom w)
+    simp only [HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp] at e
+    exact e.symm
+  -- So the equality at `z` is the vanishing at `z` of the local class of one class along `U`.
+  rw [hv x (hSU hx), hw x (hSU hx), ← sub_eq_zero, ← map_sub] at hvw
+  rw [hv y (hSU hy), hw y (hSU hy), ← sub_eq_zero, ← map_sub]
+  exact homologyMap_cubicalChainComplexMap_eq_zero_of_isPreconnected (E := E) hU hS hSU hx hy hvw
 
 end TauCeti

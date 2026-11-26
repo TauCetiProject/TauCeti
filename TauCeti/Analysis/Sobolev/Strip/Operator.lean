@@ -21,7 +21,7 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 A first-order operator `D ξ = M (ξ, ∂s ξ, ∂t ξ)` on sections `ξ : ℝ × ℝ → V` over the strip
 `ℝ × [0, 1]`, with an essentially bounded coefficient field
 `M : ℝ × ℝ → (V × V × V →L[ℝ] W)`, acts on `L²` jets of the strip by
-`TauCeti.jetOperator stripMeasure M`, the operator of `TauCeti.Analysis.Sobolev.JetOperator`
+`TauCeti.jetOperator 2 stripMeasure M`, the operator of `TauCeti.Analysis.Sobolev.JetOperator`
 for the strip measure. It serves every Sobolev space built from jets over the strip: the
 Sobolev space of the strip with boundary conditions in `TauCeti.Analysis.Sobolev.Strip.Basic`
 and that of the cylinder `ℝ × S¹`, whose fundamental domain is the strip, in
@@ -89,7 +89,7 @@ variable {S : Submodule ℝ (ℝ × ℝ → V)} [HasLpJets 2 S]
 first-order operator of a coefficient field `M` is `z ↦ M z (ξ z, ∂s ξ z, ∂t ξ z)`. -/
 theorem jetOperator_jetLp_ae_eq {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
     (ξ : S) :
-    jetOperator stripMeasure M (jetLp 2 S ξ) =ᵐ[stripMeasure]
+    jetOperator 2 stripMeasure M (jetLp 2 S ξ) =ᵐ[stripMeasure]
       fun z ↦ M z (jet (ξ : ℝ × ℝ → V) z) := by
   filter_upwards [coeFn_jetOperator hM (jetLp 2 S ξ), coeFn_jetLp 2 ξ] with z h₁ h₂
   rw [h₁, h₂]
@@ -98,7 +98,7 @@ theorem jetOperator_jetLp_ae_eq {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM
 sections with square integrable jets is the integral of `‖M (ξ, ∂s ξ, ∂t ξ)‖²` over the strip. -/
 theorem sq_norm_jetOperator_jetLp {M : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM : MemLp M ∞ stripMeasure) (ξ : S) :
-    ‖jetOperator stripMeasure M (jetLp 2 S ξ)‖ ^ 2 =
+    ‖jetOperator 2 stripMeasure M (jetLp 2 S ξ)‖ ^ 2 =
       ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure := by
   rw [← Lp.integral_norm_sq_eq_norm_sq]
   exact integral_congr_ae ((jetOperator_jetLp_ae_eq hM ξ).mono fun z hz ↦ by simp only [hz])
@@ -142,8 +142,8 @@ theorem norm_jetLp_le_of_setIntegral_le {M : ℝ × ℝ → V × V × V →L[ℝ
         ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2)) :
     ‖jetLp 2 S ξ‖ ≤
       √(max C 0) *
-        (‖jetOperator stripMeasure M (jetLp 2 S ξ)‖ + ‖restrictValue T (jetLp 2 S ξ)‖) := by
-  set x := ‖jetOperator stripMeasure M (jetLp 2 S ξ)‖
+        (‖jetOperator 2 stripMeasure M (jetLp 2 S ξ)‖ + ‖restrictValue T (jetLp 2 S ξ)‖) := by
+  set x := ‖jetOperator 2 stripMeasure M (jetLp 2 S ξ)‖
   set y := ‖restrictValue T (jetLp 2 S ξ)‖
   -- The squared norms of the two terms of the estimate as integrals.
   have hx : x ^ 2 = ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 := by
@@ -157,7 +157,7 @@ theorem norm_jetLp_le_of_setIntegral_le {M : ℝ × ℝ → V × V × V →L[ℝ
     _ ≤ max C 0 * (x ^ 2 + y ^ 2) := by gcongr; exact le_max_left _ _
     _ ≤ max C 0 * (x + y) ^ 2 := by
         refine mul_le_mul_of_nonneg_left ?_ (le_max_right _ _)
-        nlinarith [norm_nonneg (jetOperator stripMeasure M (jetLp 2 S ξ)),
+        nlinarith [norm_nonneg (jetOperator 2 stripMeasure M (jetLp 2 S ξ)),
           norm_nonneg (restrictValue T (jetLp 2 S ξ))]
 
 /-- An `L²` bound `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²` over the strip, for a continuous element `ξ` of a space
@@ -169,7 +169,7 @@ theorem norm_restrictValue_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hL2 : ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
       C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
     ‖restrictValue T (jetLp 2 S ξ)‖ ≤
-      √(max C' 0) * ‖jetOperator stripMeasure M (jetLp 2 S ξ)‖ := by
+      √(max C' 0) * ‖jetOperator 2 stripMeasure M (jetLp 2 S ξ)‖ := by
   have hint := integrable_norm_sq_of_continuous hξ hR
   have hsub : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ≤
       ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure :=
@@ -184,13 +184,13 @@ theorem norm_restrictValue_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W}
 extends to `jetClosure 2 S`, with the restricted value as a compact error term. -/
 private theorem norm_le_of_forall_norm_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} {c T : ℝ}
     (hest : ∀ ξ : S, ‖jetLp 2 S ξ‖ ≤
-      c * (‖jetOperator stripMeasure M (jetLp 2 S ξ)‖ + ‖restrictValue T (jetLp 2 S ξ)‖))
+      c * (‖jetOperator 2 stripMeasure M (jetLp 2 S ξ)‖ + ‖restrictValue T (jetLp 2 S ξ)‖))
     (x : jetClosure 2 S) :
-    ‖x‖ ≤ c * ‖(jetOperator stripMeasure M).comp (jetClosure 2 S).subtypeL x‖ +
+    ‖x‖ ≤ c * ‖(jetOperator 2 stripMeasure M).comp (jetClosure 2 S).subtypeL x‖ +
       ‖(c • (restrictValue T).comp (jetClosure 2 S).subtypeL) x‖ := by
   -- The estimate is a closed condition, and it holds on the jets of the elements of `S`.
   have hx := jetClosure_subset_of_isClosed
-    (s := {f | ‖f‖ ≤ c * (‖jetOperator stripMeasure M f‖ + ‖restrictValue T f‖)})
+    (s := {f | ‖f‖ ≤ c * (‖jetOperator 2 stripMeasure M f‖ + ‖restrictValue T f‖)})
     (isClosed_le continuous_norm (by fun_prop)) (by rintro _ ⟨ξ, rfl⟩; exact hest ξ) x.property
   simp only [mem_ofPred_eq] at hx
   simp only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, smul_apply, norm_smul,
@@ -208,8 +208,8 @@ theorem finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
     {M : ℝ × ℝ → V × V × V →L[ℝ] W} {c T : ℝ}
     (hK : IsCompactOperator ((restrictValue (V := V) T).comp (jetClosure 2 S).subtypeL))
     (hest : ∀ ξ : S, ‖jetLp 2 S ξ‖ ≤
-      c * (‖jetOperator stripMeasure M (jetLp 2 S ξ)‖ + ‖restrictValue T (jetLp 2 S ξ)‖)) :
-    FiniteDimensional ℝ ((jetOperator stripMeasure M).comp (jetClosure 2 S).subtypeL).ker :=
+      c * (‖jetOperator 2 stripMeasure M (jetLp 2 S ξ)‖ + ‖restrictValue T (jetLp 2 S ξ)‖)) :
+    FiniteDimensional ℝ ((jetOperator 2 stripMeasure M).comp (jetClosure 2 S).subtypeL).ker :=
   ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate _ (hK.smul c)
     (norm_le_of_forall_norm_jetLp_le hest)
 
@@ -220,8 +220,8 @@ theorem isClosed_range_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le [Comple
     {M : ℝ × ℝ → V × V × V →L[ℝ] W} {c T : ℝ}
     (hK : IsCompactOperator ((restrictValue (V := V) T).comp (jetClosure 2 S).subtypeL))
     (hest : ∀ ξ : S, ‖jetLp 2 S ξ‖ ≤
-      c * (‖jetOperator stripMeasure M (jetLp 2 S ξ)‖ + ‖restrictValue T (jetLp 2 S ξ)‖)) :
-    IsClosed (((jetOperator stripMeasure M).comp (jetClosure 2 S).subtypeL).range :
+      c * (‖jetOperator 2 stripMeasure M (jetLp 2 S ξ)‖ + ‖restrictValue T (jetLp 2 S ξ)‖)) :
+    IsClosed (((jetOperator 2 stripMeasure M).comp (jetClosure 2 S).subtypeL).range :
       Set (Lp W 2 stripMeasure)) :=
   ContinuousLinearMap.isClosed_range_of_compact_estimate _ (hK.smul c)
     (norm_le_of_forall_norm_jetLp_le hest)
@@ -233,17 +233,17 @@ Then `‖x‖ ≤ c (1 + c') ‖D x‖` for every `x` in `jetClosure 2 S`. -/
 theorem norm_le_mul_norm_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
     {M : ℝ × ℝ → V × V × V →L[ℝ] W} {c c' T : ℝ} (hc : 0 ≤ c)
     (hest : ∀ ξ : S, ‖jetLp 2 S ξ‖ ≤
-      c * (‖jetOperator stripMeasure M (jetLp 2 S ξ)‖ + ‖restrictValue T (jetLp 2 S ξ)‖))
+      c * (‖jetOperator 2 stripMeasure M (jetLp 2 S ξ)‖ + ‖restrictValue T (jetLp 2 S ξ)‖))
     (hL2 : ∀ ξ : S,
-      ‖restrictValue T (jetLp 2 S ξ)‖ ≤ c' * ‖jetOperator stripMeasure M (jetLp 2 S ξ)‖)
+      ‖restrictValue T (jetLp 2 S ξ)‖ ≤ c' * ‖jetOperator 2 stripMeasure M (jetLp 2 S ξ)‖)
     (x : jetClosure 2 S) :
-    ‖x‖ ≤ c * (1 + c') * ‖(jetOperator stripMeasure M).comp (jetClosure 2 S).subtypeL x‖ := by
+    ‖x‖ ≤ c * (1 + c') * ‖(jetOperator 2 stripMeasure M).comp (jetClosure 2 S).subtypeL x‖ := by
   -- The estimate is a closed condition, and it holds on the jets of the elements of `S`.
   refine jetClosure_subset_of_isClosed
-    (s := {f | ‖f‖ ≤ c * (1 + c') * ‖jetOperator stripMeasure M f‖})
+    (s := {f | ‖f‖ ≤ c * (1 + c') * ‖jetOperator 2 stripMeasure M f‖})
     (isClosed_le continuous_norm (by fun_prop)) ?_ x.property
   rintro _ ⟨ξ, rfl⟩
-  set d := ‖jetOperator stripMeasure M (jetLp 2 S ξ)‖
+  set d := ‖jetOperator 2 stripMeasure M (jetLp 2 S ξ)‖
   calc ‖jetLp 2 S ξ‖ ≤ c * (d + ‖restrictValue T (jetLp 2 S ξ)‖) := hest ξ
     _ ≤ c * (d + c' * d) := by
         gcongr; exact hL2 ξ
@@ -287,17 +287,17 @@ theorem isFredholm_and_index_eq_of_isPreconnected
     (hs : IsPreconnected s) {M : X → ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM : ∀ x ∈ s, MemLp (M x) ∞ stripMeasure)
     (hcont : ∀ x ∈ s, Tendsto (fun y ↦ eLpNorm (M y - M x) ∞ stripMeasure) (𝓝[s] x) (𝓝 0))
-    (hker : ∀ x ∈ s, FiniteDimensional ℝ ((jetOperator stripMeasure (M x)).comp H.subtypeL).ker)
-    (hrange : ∀ x ∈ s, IsClosed (((jetOperator stripMeasure (M x)).comp H.subtypeL).range :
+    (hker : ∀ x ∈ s, FiniteDimensional ℝ ((jetOperator 2 stripMeasure (M x)).comp H.subtypeL).ker)
+    (hrange : ∀ x ∈ s, IsClosed (((jetOperator 2 stripMeasure (M x)).comp H.subtypeL).range :
       Set (Lp W 2 stripMeasure)))
     {x₀ x : X} (hx₀ : x₀ ∈ s) (hx : x ∈ s)
-    (h₀ : ((jetOperator stripMeasure (M x₀)).comp H.subtypeL).IsFredholm) :
-    ((jetOperator stripMeasure (M x)).comp H.subtypeL).IsFredholm ∧
-      ((jetOperator stripMeasure (M x)).comp H.subtypeL).index =
-        ((jetOperator stripMeasure (M x₀)).comp H.subtypeL).index := by
-  have hT : ContinuousOn (fun y ↦ (jetOperator stripMeasure (M y)).comp H.subtypeL) s :=
+    (h₀ : ((jetOperator 2 stripMeasure (M x₀)).comp H.subtypeL).IsFredholm) :
+    ((jetOperator 2 stripMeasure (M x)).comp H.subtypeL).IsFredholm ∧
+      ((jetOperator 2 stripMeasure (M x)).comp H.subtypeL).index =
+        ((jetOperator 2 stripMeasure (M x₀)).comp H.subtypeL).index := by
+  have hT : ContinuousOn (fun y ↦ (jetOperator 2 stripMeasure (M y)).comp H.subtypeL) s :=
     (continuousOn_jetOperator hM hcont).clm_comp continuousOn_const
-  have hF : ∀ y ∈ s, ((jetOperator stripMeasure (M y)).comp H.subtypeL).IsFredholm := fun y hy ↦
+  have hF : ∀ y ∈ s, ((jetOperator 2 stripMeasure (M y)).comp H.subtypeL).IsFredholm := fun y hy ↦
     hT.isFredholm_of_isPreconnected hker hrange hs hx₀ h₀ hy
   exact ⟨hF x hx, ContinuousOn.index_eq_of_isPreconnected hT hF hs hx hx₀⟩
 

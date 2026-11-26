@@ -28,7 +28,7 @@ theorem exists_tendsto_sum_mul_and_norm_le {𝕜 : Type*} [RCLike 𝕜] {c : ℕ
     {B : ℝ} (hc : ∀ n, ‖∑ k ∈ Icc 0 n, c k‖ ≤ B)
     (hf : ∀ t ∈ Set.Ici 0, DifferentiableAt ℝ f t)
     (hdf : IntegrableOn (deriv f) (Set.Ici 0)) (hlim : Tendsto f atTop (𝓝 0)) :
-    ∃ L, Tendsto (fun n : ℕ ↦ ∑ k ∈ Icc 0 n, f k * c k) atTop (𝓝 L) ∧
+    ∃ L, Tendsto (fun n : ℕ ↦ ∑ k ∈ Icc 0 n, c k * f k) atTop (𝓝 L) ∧
       ‖L‖ ≤ B * ∫ t in Ioi 0, ‖deriv f t‖ := by
   have hzero : Tendsto (fun n : ℕ ↦ f n * ∑ k ∈ Icc 0 n, c k) atTop (𝓝 0) := by
     refine (hlim.comp tendsto_natCast_atTop_atTop).op_zero_isBoundedUnder_le
@@ -40,6 +40,7 @@ theorem exists_tendsto_sum_mul_and_norm_le {𝕜 : Type*} [RCLike 𝕜] {c : ℕ
     IsBigO.of_bound B (Eventually.of_forall hbound)
   have hsum := tendsto_sum_mul_atTop_nhds_one_sub_integral c hf hdf.locallyIntegrableOn
     hzero hbig (integrableAtFilter_atTop_iff.mpr ⟨0, hdf⟩)
+  simp_rw [mul_comm (f _) (c _)] at hsum
   refine ⟨_, hsum, ?_⟩
   rw [zero_sub, norm_neg, ← integral_const_mul]
   exact norm_integral_le_of_norm_le ((hdf.mono_set Ioi_subset_Ici_self).norm.const_mul B)

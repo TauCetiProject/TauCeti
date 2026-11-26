@@ -41,6 +41,8 @@ The case `P = G` of a Lie group with right translation by a closed subgroup `K` 
 
 * `TauCeti.BalancedProduct.isManifold`, `TauCeti.BalancedProduct.isSubmersion_quotientMk`:
   `P ×_K Z` is a smooth manifold and the projection from `P × Z` is a smooth submersion.
+* `TauCeti.BalancedProduct.ker_mfderiv_quotientMk`: the kernel of the differential of the
+  projection is the orbit tangent space of `K`.
 * `TauCeti.BalancedProduct.contMDiff_iff`: a map out of `P ×_K Z` is smooth exactly when its
   composite with the projection is.
 * `TauCeti.BalancedProduct.contMDiff_orbitProj_of_contMDiff`,
@@ -113,6 +115,17 @@ theorem isSubmersion_quotientMk :
       (Quotient.mk (MulAction.orbitRel K (P × Z))) := by
   have := quotient_hypotheses (IK := IK) (IZ := IZ) (K := K) (P := P) (Z := Z)
   exact ProperSMul.isSubmersion_quotientMk
+
+/-- **The vertical directions of the projection `P × Z → P ×_K Z` are the orbit directions of
+`K`.** The kernel of its differential at `x` is the orbit tangent space `𝔨 · x` of the diagonal
+action. -/
+theorem ker_mfderiv_quotientMk (x : P × Z) :
+    letI := chartedSpace IK K IP P IZ Z
+    (mfderiv (IP.prod IZ) 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EP × EZ))
+      (Quotient.mk (MulAction.orbitRel K (P × Z))) x).ker =
+      (InfinitesimalAction.fundamental IK K (IP.prod IZ) (P × Z)).orbitTangent x := by
+  have := quotient_hypotheses (IK := IK) (IZ := IZ) (K := K) (P := P) (Z := Z)
+  exact ProperSMul.ker_mfderiv_quotientMk x
 
 /-- Smoothness descends from `P × Z` to `P ×_K Z`: a map out of the balanced product is `C^m`,
 for `m ≤ ∞`, exactly when its composite with the projection is. -/

@@ -58,6 +58,8 @@ elliptic of order `2` (`TauCeti.IsLaplaceType.isClassicalElliptic_complexifyLine
   is unchanged by perturbations of order `m - 1` and by nonzero scalars.
 * `TauCeti.IsClassicalEllipticAt.mem`, `TauCeti.IsClassicalEllipticAt.notMem_sub_one`: in positive
   dimension an operator elliptic at a point has order `m` and not `m - 1`.
+* `TauCeti.IsClassicalElliptic.mem_of_isProperlySupported`: in every dimension a properly supported
+  elliptic operator has order `m`.
 * `TauCeti.isClassicalEllipticAt_of_subsingleton`: in dimension zero every operator is elliptic.
 * `TauCeti.IsClassicalEllipticAt.eventually`, `TauCeti.isOpen_setOf_isClassicalEllipticAt`:
   ellipticity is an open condition.
@@ -164,6 +166,19 @@ theorem IsClassicalEllipticAt.mem [Nontrivial (CoordinateSpace n)] {x : M}
   by_contra hP
   obtain ⟨ξ, hξ⟩ := hPx.exists_ne_zero
   exact hξ (classicalPrincipalSymbol_of_notMem hP x ξ)
+
+/-- **Ellipticity forces the order of a properly supported operator.** A properly supported
+operator elliptic at every point is a classical pseudodifferential operator of order `m`. Proper
+support is only needed in dimension zero, where every operator is elliptic. -/
+theorem IsClassicalElliptic.mem_of_isProperlySupported (hPe : IsClassicalElliptic m P)
+    (hPs : IsProperlySupported P) : P ∈ classicalPseudodifferentialOperators m := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
+  · -- An empty manifold has no charts.
+    exact mem_classicalPseudodifferentialOperators_iff.2 ⟨hPs, fun e _ _ _ ↦ isEmptyElim (e.symm 0)⟩
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · exact mem_classicalPseudodifferentialOperators_of_dim_eq_zero hn hPs m
+  · have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+    exact (hPe x).mem
 
 /-- **An elliptic operator has exact order `m`.** Over a manifold of positive dimension, an operator
 elliptic at some point is not of order `m - 1`, since its principal symbol would vanish. -/
