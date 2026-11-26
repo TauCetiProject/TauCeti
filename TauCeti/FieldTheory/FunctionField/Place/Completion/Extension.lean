@@ -217,8 +217,8 @@ theorem isScalarTower_completionAlgebraBase_completionExtension :
   let _ := P.completionExtensionAlgebra P' hP
   let _ := completionAlgebraBase (k := k) P'
   refine IsScalarTower.of_algebraMap_eq fun c ↦ ?_
-  rw [P.algebraMap_completionExtensionAlgebra P' hP, P.completionExtension_algebraMap P' hP]
-  rfl
+  rw [P.algebraMap_completionExtensionAlgebra P' hP, P.completionExtension_algebraMap P' hP,
+    algebraMap_completionAlgebraBase (k := k) P']
 
 section Integers
 

@@ -88,9 +88,8 @@ its bundled tensor-product `AlgEquiv` form (over the valuation rings as well as 
   `TauCeti.Place.completionEmbedding_trace_of_isSeparable`, and
   `TauCeti.Place.completionEmbedding_trace`: **the trace formula**
   `Tr_{F'/F} x = ∑_{P' ∣ P} Tr_{F̂'_{P'}/F̂_P} x`.
-* `TauCeti.Place.trace_completionSemilocalEquiv_symm_single_mul` and
-  `TauCeti.Place.trace_integralCompletionSemilocalToField_tmul_mul`: componentwise and integral
-  trace-pairing formulas.
+* `TauCeti.Place.trace_integralCompletionSemilocalToField_tmul_mul`: integral trace-pairing
+  formula.
 
 ## References
 
@@ -784,26 +783,6 @@ theorem completionEmbedding_trace_of_moduleFinite (x : F') :
     ← TauCeti.Algebra.trace_baseChange_tmul (A := P.Completion) (B := F') x,
     trace_eq_sum_trace_completionSemilocalEquiv k' F' P]
   exact Finset.sum_congr rfl fun Q _ ↦ by simp
-
-variable {k' F' P} in
-/-- An element of `F̂_{P'}`, placed in the `P'`-component of `F̂_P ⊗[F] F'`, has the same trace
-pairing with `x ∈ F'` as in `F̂_{P'}`. -/
-theorem trace_completionSemilocalEquiv_symm_single_mul
-    [DecidableEq {Q : Place k' F' // Q.restrict k F = P}]
-    (P' : Place k' F') (hP : P'.restrict k F = P) (z : P'.Completion) (x : F') :
-    letI := P.completionExtensionAlgebra P' hP
-    Algebra.trace P.Completion (P.Completion ⊗[F] F')
-        ((completionSemilocalEquiv k' F' P).symm
-          (Pi.single (⟨P', hP⟩ : {Q : Place k' F' // Q.restrict k F = P}) z) * (1 ⊗ₜ x)) =
-      Algebra.trace P.Completion P'.Completion (z * P'.completionEmbedding x) := by
-  have := Fintype.ofFinite {Q : Place k' F' // Q.restrict k F = P}
-  rw [trace_eq_sum_trace_completionSemilocalEquiv k' F' P, Finset.sum_eq_single
-    (⟨P', hP⟩ : {Q : Place k' F' // Q.restrict k F = P})]
-  · simp
-  · intro Q _ hQ
-    rw [map_mul, AlgEquiv.apply_symm_apply, Pi.mul_apply, Pi.single_eq_of_ne hQ, zero_mul,
-      map_zero]
-  · simp
 
 end Equiv
 

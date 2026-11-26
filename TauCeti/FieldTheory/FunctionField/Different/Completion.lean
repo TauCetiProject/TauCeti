@@ -102,7 +102,27 @@ namespace TauCeti.Place
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
+section FibreInstances
+
+variable {k F F' : Type*} [Field k] [Field F] [Field F']
+  [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
+  [FiniteDimensional F F'] {P : Place k F}
+
+@[instance_reducible]
+private noncomputable def fieldCompletionAbove :
+    ∀ w : {Q' : Place k F' // Q'.restrict k F = P}, Field w.val.Completion :=
+  fun _ ↦ inferInstance
+
+private theorem finiteDimensional_completion_above
+    (w : {Q' : Place k F' // Q'.restrict k F = P}) :
+    FiniteDimensional P.Completion w.val.Completion :=
+  finiteDimensional_completion P w.val w.property
+
+end FibreInstances
+
 section OnePlace
+
+attribute [local instance] fieldCompletionAbove finiteDimensional_completion_above
 
 variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [Algebra k F] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
@@ -118,6 +138,31 @@ private theorem isTorsionFree_integers [Algebra.IsIntegral F F'] (Q' : Place k' 
 
 /-! ### Trace-dual expansions and the completed complementary module -/
 
+private abbrev restrictScalarsAbove : {Q' : Place k F' // Q'.restrict k F = P} :=
+  ⟨P'.restrictScalars k, (P'.restrict_restrictScalars (k := k) (F := F)).trans hP⟩
+
+omit [FiniteDimensional F F'] in
+private theorem trace_mul_completionEmbedding_restrictScalars (z : P'.Completion) (x : F') :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := P.completionExtensionAlgebra (P'.restrictScalars k)
+      ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+    Algebra.trace P.Completion P'.Completion (z * P'.completionEmbedding x) =
+      Algebra.trace P.Completion (P'.restrictScalars k).Completion
+        ((P'.completionRestrictScalarsRingEquiv k).symm z *
+          (P'.restrictScalars k).completionEmbedding x) := by
+  let _ := P.completionExtensionAlgebra P' hP
+  let _ := P.completionExtensionAlgebra (P'.restrictScalars k)
+    ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+  let e := P.completionExtensionRestrictScalarsEquiv P' hP
+  have hmul : e.symm (z * P'.completionEmbedding x) =
+      (P'.completionRestrictScalarsRingEquiv k).symm z *
+        (P'.restrictScalars k).completionEmbedding x := by
+    rw [map_mul, completionExtensionRestrictScalarsEquiv_symm_apply,
+      completionExtensionRestrictScalarsEquiv_symm_apply,
+      completionRestrictScalarsRingEquiv_symm_completionEmbedding]
+  exact (Algebra.trace_eq_of_algEquiv e.symm (z * P'.completionEmbedding x)).symm.trans
+    (congrArg (Algebra.trace P.Completion (P'.restrictScalars k).Completion) hmul)
+
 /-- **Trace-dual expansions pass to place completions.** If `x = ∑ᵢ Tr_{F'/F}(x bᵢ) yᵢ` for every
 `x ∈ F'`, then `z = ∑ᵢ Tr_{F̂'_{P'}/F̂_P}(z bᵢ) yᵢ` for every `z ∈ P'.Completion`. -/
 theorem sum_trace_mul_smul_completionEmbedding_eq {ι : Type*} [Fintype ι] (b y : ι → F')
@@ -125,39 +170,20 @@ theorem sum_trace_mul_smul_completionEmbedding_eq {ι : Type*} [Fintype ι] (b y
     letI := P.completionExtensionAlgebra P' hP
     ∑ i, Algebra.trace P.Completion P'.Completion
         (z * P'.completionEmbedding (b i)) • P'.completionEmbedding (y i) = z := by
-  let P₀' : Place k F' := P'.restrictScalars k
-  have hP₀ : P₀'.restrict k F = P := (P'.restrict_restrictScalars (k := k) (F := F)).trans hP
-  let w₀ : {Q' : Place k F' // Q'.restrict k F = P} := ⟨P₀', hP₀⟩
-  let _ (w : {Q' : Place k F' // Q'.restrict k F = P}) : Field w.val.Completion := inferInstance
-  have (w : {Q' : Place k F' // Q'.restrict k F = P}) :
-      FiniteDimensional P.Completion w.val.Completion :=
-    finiteDimensional_completion P w.val w.property
-  have h₀ := (completionSemilocalEquiv k F' P).sum_trace_mul_smul_eq
-    b y h w₀ ((P'.completionRestrictScalarsRingEquiv k).symm z)
-  simp only [completionSemilocalEquiv_tmul, map_one, one_mul] at h₀
   let _ := P.completionExtensionAlgebra P' hP
-  let _ := P.completionExtensionAlgebra P₀' hP₀
+  let _ := P.completionExtensionAlgebra (P'.restrictScalars k)
+    ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
   let e := P.completionExtensionRestrictScalarsEquiv P' hP
-  have he : e (∑ i, Algebra.trace P.Completion P₀'.Completion
-        ((P'.completionRestrictScalarsRingEquiv k).symm z * P₀'.completionEmbedding (b i)) •
-      P₀'.completionEmbedding (y i)) = z :=
-    (congrArg e h₀).trans (by
-      rw [completionExtensionRestrictScalarsEquiv_apply, RingEquiv.apply_symm_apply])
-  refine Eq.trans ?_ he
-  rw [map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  symm
-  rw [map_smul, ← Algebra.trace_eq_of_algEquiv e]
-  have hmul : e (((P'.completionRestrictScalarsRingEquiv k).symm z) *
-        P₀'.completionEmbedding (b i)) =
-      z * P'.completionEmbedding (b i) := by
-    rw [map_mul, completionExtensionRestrictScalarsEquiv_apply,
-      RingEquiv.apply_symm_apply, completionExtensionRestrictScalarsEquiv_apply,
-      completionRestrictScalarsRingEquiv_completionEmbedding]
-  have hyi : e (P₀'.completionEmbedding (y i)) = P'.completionEmbedding (y i) := by
-    rw [completionExtensionRestrictScalarsEquiv_apply,
-      completionRestrictScalarsRingEquiv_completionEmbedding]
-  rw [hmul, hyi]
+  have h₀ := (completionSemilocalEquiv k F' P).sum_trace_mul_smul_eq
+    b y h (restrictScalarsAbove P P' hP) ((P'.completionRestrictScalarsRingEquiv k).symm z)
+  simp only [completionSemilocalEquiv_tmul, map_one, one_mul] at h₀
+  have he := (congrArg e h₀).trans (by
+    rw [completionExtensionRestrictScalarsEquiv_apply, RingEquiv.apply_symm_apply])
+  rw [map_sum] at he
+  refine Eq.trans (Finset.sum_congr rfl fun i _ ↦ ?_) he
+  rw [trace_mul_completionEmbedding_restrictScalars P P' hP, map_smul,
+    completionExtensionRestrictScalarsEquiv_apply,
+    completionRestrictScalarsRingEquiv_completionEmbedding]
 
 private theorem completionEmbedding_mem_traceDual {d : F'}
     (hd : d ∈ Submodule.traceDual P.integers F (1 : Submodule (integralClosure P.integers F') F')) :
@@ -166,45 +192,29 @@ private theorem completionEmbedding_mem_traceDual {d : F'}
     P'.completionEmbedding d ∈
       Submodule.traceDual P.completionPlace.integers P.Completion
         (1 : Submodule P'.completionPlace.integers P'.Completion) := by
-  let P₀' : Place k F' := P'.restrictScalars k
-  have hP₀ : P₀'.restrict k F = P := (P'.restrict_restrictScalars (k := k) (F := F)).trans hP
-  let w₀ : {Q' : Place k F' // Q'.restrict k F = P} := ⟨P₀', hP₀⟩
-  let _ (w : {Q' : Place k F' // Q'.restrict k F = P}) : Field w.val.Completion := inferInstance
-  have (w : {Q' : Place k F' // Q'.restrict k F = P}) :
-      FiniteDimensional P.Completion w.val.Completion :=
-    finiteDimensional_completion P w.val w.property
+  let _ := P.completionExtensionAlgebra P' hP
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  let _ := P.completionExtensionAlgebra (P'.restrictScalars k)
+    ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+  let _ := P.completionIntegersExtensionAlgebra (P'.restrictScalars k)
+    ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
   have h₀ := (completionSemilocalEquiv k F' P).mem_traceDual_one_of_semilocal
     (integralCompletionSemilocalEquiv k F' P)
     (fun w ↦ w.val.completionEmbedding.toRingHom)
     (fun w ↦ P.completionIntegersIntegralClosureHom w.val w.property)
     (fun a x w ↦ completionSemilocalEquiv_tmul a x w)
     (fun a x w ↦ integralCompletionSemilocalEquiv_tmul a x w)
-    (fun w x ↦ by
-      rw [ValuationSubring.algebraMap_apply, Subalgebra.algebraMap_apply,
-        P.coe_completionIntegersIntegralClosureHom w.val w.property, AlgHom.toRingHom_eq_coe,
-        RingHom.coe_coe])
-    w₀ hd
-  let _ := P.completionExtensionAlgebra P' hP
-  let _ := P.completionIntegersExtensionAlgebra P' hP
-  let _ := P.completionExtensionAlgebra P₀' hP₀
-  let e := P.completionExtensionRestrictScalarsEquiv P' hP
+    (fun _ _ ↦ by simp) (restrictScalarsAbove P P' hP) hd
   rw [Submodule.mem_traceDual]
   intro _ hz
   obtain ⟨z, rfl⟩ := Submodule.mem_one.mp hz
-  have hz₀ : e.symm (z : P'.Completion) ∈ P₀'.completionPlace.integers := by
-    rw [completionExtensionRestrictScalarsEquiv_symm_apply,
-      completionRestrictScalarsRingEquiv_symm_mem_integers_iff]
-    exact z.property
-  have hmem₀ := (letI := P.completionIntegersExtensionAlgebra P₀' hP₀
-    Submodule.mem_traceDual.mp h₀ (e.symm (z : P'.Completion))
-      (Submodule.mem_one.mpr ⟨⟨_, hz₀⟩, rfl⟩))
-  rw [Algebra.traceForm_apply] at hmem₀ ⊢
-  rw [ValuationSubring.algebraMap_apply, ← Algebra.trace_eq_of_algEquiv e.symm]
-  have hmul : e.symm (P'.completionEmbedding d * (z : P'.Completion)) =
-      P₀'.completionEmbedding d * e.symm (z : P'.Completion) := by
-    rw [map_mul, completionExtensionRestrictScalarsEquiv_symm_apply,
-      completionRestrictScalarsRingEquiv_symm_completionEmbedding]
-  rwa [hmul]
+  have hz₀ : (P'.completionRestrictScalarsRingEquiv k).symm (z : P'.Completion) ∈
+      (P'.restrictScalars k).completionPlace.integers :=
+    (P'.completionRestrictScalarsRingEquiv_symm_mem_integers_iff (k₀ := k)).mpr z.property
+  have hmem₀ := Submodule.mem_traceDual.mp h₀ _ (Submodule.mem_one.mpr ⟨⟨_, hz₀⟩, rfl⟩)
+  rw [Algebra.traceForm_apply, ValuationSubring.algebraMap_apply, mul_comm,
+    trace_mul_completionEmbedding_restrictScalars P P' hP, mul_comm]
+  rwa [Algebra.traceForm_apply, ValuationSubring.algebraMap_apply] at hmem₀
 
 /-- **The completed complementary module is generated by the local-model complementary module**,
 with no hypothesis on the residue fields. -/
@@ -219,11 +229,7 @@ theorem traceDual_one_completionIntegers_eq_span :
   let _ := P.completionExtensionAlgebra P' hP
   let _ := P.completionIntegersExtensionAlgebra P' hP
   exact (P'.completionEmbedding.toRingHom.span_traceDual_one_eq_traceDual_one_of_forall
-    (P.completionIntegersIntegralClosureHom P' hP)
-    (fun x ↦ by
-      rw [ValuationSubring.algebraMap_apply, Subalgebra.algebraMap_apply,
-        P.coe_completionIntegersIntegralClosureHom P' hP, AlgHom.toRingHom_eq_coe,
-        RingHom.coe_coe])
+    (P.completionIntegersIntegralClosureHom P' hP) (fun _ ↦ by simp)
     (fun _ hd ↦ completionEmbedding_mem_traceDual P P' hP hd)
     (fun b y hb ↦ P.sum_trace_mul_smul_completionEmbedding_eq P' hP b y hb)).symm
 
@@ -249,11 +255,7 @@ theorem extended_dual_one_eq_dual_one_completionIntegers :
   have := P.isSeparable_completion P' hP
   exact P'.completionEmbedding.toRingHom.extended_dual_one_eq_dual_one_of_span_eq
     (P.completionIntegersIntegralClosureHom P' hP)
-    (P.completionIntegersIntegralClosureHom_injective P' hP)
-    (fun x ↦ by
-      rw [ValuationSubring.algebraMap_apply, Subalgebra.algebraMap_apply,
-        P.coe_completionIntegersIntegralClosureHom P' hP, AlgHom.toRingHom_eq_coe,
-        RingHom.coe_coe])
+    (P.completionIntegersIntegralClosureHom_injective P' hP) (fun _ ↦ by simp)
     (P.traceDual_one_completionIntegers_eq_span P' hP).symm
 
 /-! ### Compatibility of the different ideal with completion -/

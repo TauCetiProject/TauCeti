@@ -61,21 +61,36 @@ section IntegralClosureMem
 variable {B : Type*} {C : Type*} [CommRing B] [Algebra B F] [CommRing C] [Algebra C F']
   [Algebra B F'] [IsScalarTower B F F'] [IsIntegralClosure C B F']
 
+@[instance_reducible]
+private noncomputable def algebraBaseLocalModel (P : Place k F)
+    (hB : ∀ b : B, algebraMap B F b ∈ P.integers) : Algebra B P.integers :=
+  ((algebraMap B F).codRestrict P.integers hB).toAlgebra
+
+omit [CommRing C] [Algebra C F'] [Algebra B F'] [IsScalarTower B F F'] [IsIntegralClosure C B F'] in
+private theorem isScalarTower_baseLocalModel_field (P : Place k F)
+    (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
+    letI := algebraBaseLocalModel P hB
+    IsScalarTower B P.integers F :=
+  letI := algebraBaseLocalModel P hB
+  .of_algebraMap_eq fun _ ↦ rfl
+
+omit [CommRing C] [Algebra C F'] [IsIntegralClosure C B F'] in
+private theorem isScalarTower_baseLocalModel_top (P : Place k F)
+    (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
+    letI := algebraBaseLocalModel P hB
+    IsScalarTower B P.integers F' :=
+  letI := algebraBaseLocalModel P hB
+  .of_algebraMap_eq fun x ↦ IsScalarTower.algebraMap_apply B F F' x
+
 /-- If an `F`-subring `B` lands in `P.integers`, its integral closure `C` in `F'` lands in
 `integralClosure P.integers F'`. -/
 theorem algebraMap_mem_integralClosure_of_forall_mem_integers (P : Place k F)
     (hB : ∀ b : B, algebraMap B F b ∈ P.integers) (c : C) :
     algebraMap C F' c ∈ integralClosure P.integers F' := by
-  let _ : Algebra B P.integers := ((algebraMap B F).codRestrict P.integers hB).toAlgebra
-  have : IsScalarTower B P.integers F' :=
-    .of_algebraMap_eq fun x ↦ IsScalarTower.algebraMap_apply B F F' x
+  let _ := algebraBaseLocalModel P hB
+  have := isScalarTower_baseLocalModel_top (F' := F') P hB
   exact IsIntegral.tower_top (R := B) (A := P.integers)
     ((IsIntegralClosure.isIntegral_iff (A := C) (R := B)).mpr ⟨c, rfl⟩)
-
-@[instance_reducible]
-private noncomputable def algebraBaseLocalModel (P : Place k F)
-    (hB : ∀ b : B, algebraMap B F b ∈ P.integers) : Algebra B P.integers :=
-  ((algebraMap B F).codRestrict P.integers hB).toAlgebra
 
 @[instance_reducible]
 private noncomputable def algebraLocalModel (B C : Type*) [CommRing B] [Algebra B F] [CommRing C]
@@ -85,15 +100,48 @@ private noncomputable def algebraLocalModel (B C : Type*) [CommRing B] [Algebra 
   ((algebraMap C F').codRestrict (integralClosure P.integers F')
     (algebraMap_mem_integralClosure_of_forall_mem_integers (B := B) P hB)).toAlgebra
 
+omit [CommRing C] [Algebra C F'] [IsIntegralClosure C B F'] in
+private theorem isScalarTower_baseLocalModel_integralClosure (P : Place k F)
+    (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
+    letI := algebraBaseLocalModel P hB
+    haveI := isScalarTower_baseLocalModel_top (F' := F') P hB
+    IsScalarTower B P.integers (integralClosure P.integers F') := by
+  let _ := algebraBaseLocalModel P hB
+  have := isScalarTower_baseLocalModel_top (F' := F') P hB
+  exact .of_algebraMap_eq fun x ↦ Subtype.ext (IsScalarTower.algebraMap_apply B F F' x)
+
+private theorem isScalarTower_localModel_top (P : Place k F)
+    (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
+    letI := algebraLocalModel B C (F' := F') P hB
+    IsScalarTower C (integralClosure P.integers F') F' :=
+  letI := algebraLocalModel B C (F' := F') P hB
+  .of_algebraMap_eq fun _ ↦ rfl
+
+private theorem isScalarTower_localModel_left [Algebra B C] [IsScalarTower B C F']
+    (P : Place k F) (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
+    letI := algebraBaseLocalModel P hB
+    letI := algebraLocalModel B C (F' := F') P hB
+    haveI := isScalarTower_baseLocalModel_top (F' := F') P hB
+    IsScalarTower B C (integralClosure P.integers F') := by
+  let _ := algebraBaseLocalModel P hB
+  let _ := algebraLocalModel B C (F' := F') P hB
+  have := isScalarTower_baseLocalModel_top (F' := F') P hB
+  exact .of_algebraMap_eq fun x ↦ Subtype.ext (IsScalarTower.algebraMap_apply B C F' x)
+
 end IntegralClosureMem
 
 section LocalModelLocalization
+
+attribute [local instance] isScalarTower_baseLocalModel_field isScalarTower_baseLocalModel_top
+  isScalarTower_baseLocalModel_integralClosure isScalarTower_localModel_top
+  isScalarTower_localModel_left
 
 variable {B : Type*} {C : Type*} [CommRing B] [IsDedekindDomain B] [Algebra B F]
   [IsFractionRing B F] [CommRing C] [IsDedekindDomain C] [Algebra C F']
   [Algebra B C] [Algebra B F'] [IsScalarTower B C F'] [IsScalarTower B F F']
   [IsIntegralClosure C B F']
 
+@[local instance]
 private theorem isLocalization_baseLocalModel (P : Place k F)
     (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
     letI := algebraBaseLocalModel P hB
@@ -106,6 +154,7 @@ private theorem isLocalization_baseLocalModel (P : Place k F)
       fun _ ↦ rfl
   exact IsLocalization.isLocalization_of_algEquiv (P.center hB).asIdeal.primeCompl eB
 
+@[local instance]
 private theorem isLocalization_localModel (C : Type*) [CommRing C] [Algebra C F']
     [Algebra B C] [IsScalarTower B C F'] [IsIntegralClosure C B F']
     (P : Place k F) (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
@@ -115,16 +164,6 @@ private theorem isLocalization_localModel (C : Type*) [CommRing C] [Algebra C F'
       (integralClosure P.integers F') := by
   let _ := algebraBaseLocalModel P hB
   let _ := algebraLocalModel B C (F' := F') P hB
-  have : IsScalarTower B P.integers F := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsLocalization (P.center hB).asIdeal.primeCompl P.integers :=
-    isLocalization_baseLocalModel P hB
-  have : IsScalarTower B P.integers F' :=
-    .of_algebraMap_eq fun x ↦ IsScalarTower.algebraMap_apply B F F' x
-  have : IsScalarTower C (integralClosure P.integers F') F' := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower B C (integralClosure P.integers F') :=
-    .of_algebraMap_eq fun x ↦ Subtype.ext (IsScalarTower.algebraMap_apply B C F' x)
-  have : IsScalarTower B P.integers (integralClosure P.integers F') :=
-    .of_algebraMap_eq fun x ↦ Subtype.ext (IsScalarTower.algebraMap_apply B F F' x)
   exact isLocalization_algebraMapSubmonoid_of_isIntegralClosure (R := B) (Rₘ := P.integers)
     (S := C) (Sₘ := integralClosure P.integers F') (L := F')
     (M := (P.center hB).asIdeal.primeCompl)
@@ -144,18 +183,6 @@ theorem map_differentIdeal_eq_differentIdeal_of_isIntegralClosure
   have : IsFractionRing C F' := IsIntegralClosure.isFractionRing_of_finite_extension B F F' C
   let _ := algebraBaseLocalModel P hB
   let _ := algebraLocalModel B C (F' := F') P hB
-  have : IsScalarTower B P.integers F := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower B P.integers F' :=
-    .of_algebraMap_eq fun x ↦ IsScalarTower.algebraMap_apply B F F' x
-  have : IsScalarTower C (integralClosure P.integers F') F' := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower B C (integralClosure P.integers F') :=
-    .of_algebraMap_eq fun x ↦ Subtype.ext (IsScalarTower.algebraMap_apply B C F' x)
-  have : IsScalarTower B P.integers (integralClosure P.integers F') :=
-    .of_algebraMap_eq fun x ↦ Subtype.ext (IsScalarTower.algebraMap_apply B F F' x)
-  have : IsLocalization (P.center hB).asIdeal.primeCompl P.integers :=
-    isLocalization_baseLocalModel P hB
-  have : IsLocalization (Algebra.algebraMapSubmonoid C (P.center hB).asIdeal.primeCompl)
-      (integralClosure P.integers F') := isLocalization_localModel C P hB
   exact TauCeti.map_differentIdeal_eq_differentIdeal (R := B) (Rₘ := P.integers) (S := C)
     (Sₘ := integralClosure P.integers F') (K := F) (L := F')
     (M := (P.center hB).asIdeal.primeCompl)
@@ -173,6 +200,9 @@ variable [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
 variable [FiniteDimensional F F'] [Algebra.IsSeparable F F']
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+attribute [local instance] isScalarTower_baseLocalModel_field isScalarTower_baseLocalModel_top
+  isScalarTower_baseLocalModel_integralClosure isScalarTower_localModel_top
+  isScalarTower_localModel_left isLocalization_baseLocalModel isLocalization_localModel
 
 variable {B : Type*} {C : Type*} [CommRing B] [IsDedekindDomain B] [Algebra B F]
   [IsFractionRing B F] [CommRing C] [IsDedekindDomain C] [Algebra C F'] [IsFractionRing C F']
@@ -191,18 +221,6 @@ theorem differentExponent_eq_multiplicity_center (P' : Place k' F')
   have : Module.Finite B C := IsIntegralClosure.finite B F F' C
   let _ := algebraBaseLocalModel P hB
   let _ := algebraLocalModel B C (F' := F') P hB
-  have : IsScalarTower B P.integers F := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower B P.integers F' :=
-    .of_algebraMap_eq fun x ↦ IsScalarTower.algebraMap_apply B F F' x
-  have : IsScalarTower C (integralClosure P.integers F') F' := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower B C (integralClosure P.integers F') :=
-    .of_algebraMap_eq fun x ↦ Subtype.ext (IsScalarTower.algebraMap_apply B C F' x)
-  have : IsScalarTower B P.integers (integralClosure P.integers F') :=
-    .of_algebraMap_eq fun x ↦ Subtype.ext (IsScalarTower.algebraMap_apply B F F' x)
-  have : IsLocalization (P.center hB).asIdeal.primeCompl P.integers :=
-    isLocalization_baseLocalModel P hB
-  have : IsLocalization (Algebra.algebraMapSubmonoid C (P.center hB).asIdeal.primeCompl)
-      (integralClosure P.integers F') := isLocalization_localModel C P hB
   have hunder : (centerIntegralClosure k F P').asIdeal.under C = (P'.center hC).asIdeal := by
     ext c
     rw [Ideal.mem_under]
