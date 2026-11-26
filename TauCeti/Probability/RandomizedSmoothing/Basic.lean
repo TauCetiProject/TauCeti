@@ -51,7 +51,7 @@ theorem smooth_zero_scale (f : E → ℝ) (x : E) : smooth 0 f x = f x := by
   simp [smooth]
 
 /-- Smoothing commutes with translating the argument of the function. -/
-theorem smooth_add (σ : ℝ) (f : E → ℝ) (x y : E) :
+theorem smooth_apply_add (σ : ℝ) (f : E → ℝ) (x y : E) :
     smooth σ f (x + y) = smooth σ (fun z => f (x + z)) y := by
   simp only [smooth, add_assoc]
 
