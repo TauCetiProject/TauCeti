@@ -249,6 +249,25 @@ private theorem sq_integral_two_mul_div_le {u v : ℝ → ℝ} {ε : ℝ} (hε :
   rw [div_le_iff₀ hP, ← htP]; rw [← htP] at h0
   nlinarith [mul_nonneg h0 hP.le]
 
+/-- Regularity, range, derivative formula, and `γ`-square-integrability for the regularized square
+`x ↦ f x ^ 2 + ε` of a bounded `C¹` test function `f` with bounded derivative. -/
+private theorem contDiff_sq_add_and_bounds {f : ℝ → ℝ} {A B : ℝ} (hf : ContDiff ℝ 1 f)
+    (hA : ∀ x, |f x| ≤ A) (hB : ∀ x, |deriv f x| ≤ B) (ε : ℝ) :
+    ContDiff ℝ 1 (fun x ↦ f x ^ 2 + ε) ∧
+      (∀ x, ε ≤ f x ^ 2 + ε) ∧
+      (∀ x, f x ^ 2 + ε ≤ A ^ 2 + ε) ∧
+      (∀ x, deriv (fun z ↦ f z ^ 2 + ε) x = 2 * f x * deriv f x) ∧
+      Integrable (fun x ↦ deriv f x ^ 2) γ :=
+  ⟨(hf.pow 2).add contDiff_const,
+    fun _ ↦ le_add_of_nonneg_left (sq_nonneg _),
+    fun x ↦ add_le_add_left (sq_le_sq.2 ((hA x).trans (le_abs_self _))) ε,
+    fun x ↦
+      let hdf := (hf.differentiable one_ne_zero x).hasDerivAt
+      ((((hdf.mul hdf).add_const ε).congr_of_eventuallyEq
+        (.of_forall fun _ ↦ by simp [sq])).congr_deriv (by ring)).deriv,
+    (MemLp.of_bound (hf.continuous_deriv le_rfl).aestronglyMeasurable B
+      (ae_of_all _ fun x ↦ (Real.norm_eq_abs _).trans_le (hB x))).integrable_sq⟩
+
 /-- Integrated Fisher-information bound along the Gaussian interpolation. -/
 private theorem integral_sq_deriv_div_gaussianInterp_le
     {f : ℝ → ℝ} {A B ε : ℝ} (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x| ≤ A)
@@ -260,18 +279,10 @@ private theorem integral_sq_deriv_div_gaussianInterp_le
   -- integrate in `x` and use rotational invariance of `γ ⊗ γ` to evaluate the right-hand side.
   have := hf.continuous
   have := hf.continuous_deriv le_rfl
+  obtain ⟨hg, hg_lo, hg_hi, _, hdsq_int⟩ := contDiff_sq_add_and_bounds hf hA hB ε
   let g : ℝ → ℝ := fun z ↦ f z ^ 2 + ε
-  have hg : ContDiff ℝ 1 g := (hf.pow 2).add contDiff_const
-  have hg_lo (z : ℝ) : ε ≤ g z := le_add_of_nonneg_left (sq_nonneg _)
-  have hg_hi (z : ℝ) : g z ≤ A ^ 2 + ε :=
-    add_le_add_left (sq_le_sq' (abs_le.1 (hA z)).1 (abs_le.1 (hA z)).2) ε
   have hP_pos (x : ℝ) : 0 < gaussianInterp g θ x :=
     hε.trans_le (gaussianInterp_mem_Icc hg hε hg_lo hg_hi θ x).1
-  have hdsq_int : Integrable (fun x ↦ deriv f x ^ 2) γ :=
-    Integrable.of_bound (by fun_prop : Continuous _).aestronglyMeasurable (B ^ 2) <|
-      ae_of_all _ fun z ↦ by
-        rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-        exact sq_le_sq' (abs_le.1 (hB z)).1 (abs_le.1 (hB z)).2
   have hpt (x : ℝ) :
       (∫ y, 2 * f (cos θ * x + sin θ * y) * deriv f (cos θ * x + sin θ * y) ∂γ) ^ 2 /
           gaussianInterp g θ x ≤
@@ -279,10 +290,8 @@ private theorem integral_sq_deriv_div_gaussianInterp_le
     sq_integral_two_mul_div_le hε (integrable_comp_gaussianInterp hg hε hg_lo hg_hi θ x)
       (Integrable.of_bound (by fun_prop : Continuous _).aestronglyMeasurable (2 * A * B) <|
         ae_of_all _ fun _ ↦ (Real.norm_eq_abs _).trans_le (abs_two_mul_deriv_le hA hB _))
-      (Integrable.of_bound (by fun_prop : Continuous _).aestronglyMeasurable (B ^ 2) <|
-        ae_of_all _ fun _ ↦ by
-          rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-          exact sq_le_sq' (abs_le.1 (hB _)).1 (abs_le.1 (hB _)).2)
+      ((MemLp.of_bound (by fun_prop : Continuous _).aestronglyMeasurable B <|
+        ae_of_all _ fun _ ↦ (Real.norm_eq_abs _).trans_le (hB _)).integrable_sq)
   have hmp := (measurePreserving_fst (μ := γ) (ν := γ)).comp
     (measurePreserving_reflection_gaussianReal θ)
   have hrot_int : Integrable (fun p : ℝ × ℝ ↦ deriv f (cos θ * p.1 + sin θ * p.2) ^ 2)
@@ -365,15 +374,8 @@ private theorem entropy_add_pos_le_two_mul_integral_deriv_sq_gaussianReal
     Measure.entropy γ (fun x ↦ f x ^ 2 + ε) ≤ 2 * ∫ x, deriv f x ^ 2 ∂γ := by
   -- Along `[0, π / 2]`, `θ ↦ ψ θ + 2 sin² θ · D` has derivative `sin θ cos θ (4 D - I θ) ≥ 0`,
   -- and comparing its values at `0` and `π / 2` gives `Ent_γ(f² + ε) ≤ 2 D`.
+  obtain ⟨hg, hg_lo, hg_hi, hderiv_g, _⟩ := contDiff_sq_add_and_bounds hf hA hB ε
   let g : ℝ → ℝ := fun x ↦ f x ^ 2 + ε
-  have hg : ContDiff ℝ 1 g := (hf.pow 2).add contDiff_const
-  have hg_lo (x : ℝ) : ε ≤ g x := le_add_of_nonneg_left (sq_nonneg _)
-  have hg_hi (x : ℝ) : g x ≤ A ^ 2 + ε :=
-    add_le_add_left (sq_le_sq' (abs_le.1 (hA x)).1 (abs_le.1 (hA x)).2) ε
-  have hderiv_g (x : ℝ) : deriv g x = 2 * f x * deriv f x :=
-    let hdf := (hf.differentiable one_ne_zero x).hasDerivAt
-    ((((hdf.mul hdf).add_const ε).congr_of_eventuallyEq
-      (.of_forall fun _ ↦ by simp [g, sq])).congr_deriv (by ring)).deriv
   have hdg (x : ℝ) : |deriv g x| ≤ 2 * A * B := by
     rw [hderiv_g]; exact abs_two_mul_deriv_le hA hB x
   let D := ∫ x, deriv f x ^ 2 ∂γ
@@ -394,7 +396,7 @@ private theorem entropy_add_pos_le_two_mul_integral_deriv_sq_gaussianReal
       (sin_nonneg_of_nonneg_of_le_pi hθ.1.le (by linarith [hθ.2, pi_pos]))
       (cos_nonneg_of_mem_Icc ⟨by linarith [hθ.1, pi_pos], hθ.2.le⟩))
       (sub_nonneg.2 <| by
-        simpa only [I, D, hderiv_g] using integral_sq_deriv_div_gaussianInterp_le hf hA hB hε θ)
+        simpa only [I, D, g, hderiv_g] using integral_sq_deriv_div_gaussianInterp_le hf hA hB hε θ)
   have hle := hmono ⟨le_rfl, by linarith [pi_pos]⟩ ⟨by linarith [pi_pos], le_rfl⟩
     (by linarith [pi_pos])
   simp only [sin_zero, sin_pi_div_two, ψ, gaussianInterp, cos_zero, one_mul, zero_mul, add_zero,
@@ -412,7 +414,7 @@ theorem entropy_sq_le_two_mul_integral_deriv_sq_gaussianReal {f : ℝ → ℝ} (
   let g : ℕ → ℝ → ℝ := fun n x ↦ f x ^ 2 + ((n : ℝ) + 1)⁻¹
   have hg_pos (n : ℕ) : 0 < ((n : ℝ) + 1)⁻¹ := by positivity
   have hg_le (n : ℕ) (x : ℝ) : g n x ≤ A ^ 2 + 1 :=
-    add_le_add (sq_le_sq' (abs_le.1 (hA x)).1 (abs_le.1 (hA x)).2)
+    add_le_add (sq_le_sq.2 ((hA x).trans (le_abs_self _)))
       (inv_le_one_of_one_le₀ (by linarith [Nat.cast_nonneg (α := ℝ) n]))
   have hgpt (x : ℝ) : Tendsto (fun n ↦ g n x) atTop (𝓝 (f x ^ 2)) := by
     simpa only [g, one_div, add_zero] using

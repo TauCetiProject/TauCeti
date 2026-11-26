@@ -13,7 +13,7 @@ import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 import TauCeti.Analysis.Normed.Module.Normalize.Measurable
 import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.Distributions.Chi.Moments
-import TauCeti.Probability.Distributions.Gaussian.Concentration
+import TauCeti.Probability.Concentration.Poincare.Gaussian.LogSobolev.Basic
 import TauCeti.Probability.Distributions.Uniform.Sphere.Norm
 
 /-!
@@ -21,10 +21,10 @@ import TauCeti.Probability.Distributions.Uniform.Sphere.Norm
 
 Let `σ` be the uniform law on the unit sphere of a real inner product space `E` of dimension
 `d ≥ 1`, and let `f` be an `L`-Lipschitz real function on the sphere. Then `f` concentrates
-around its mean at scale `L / √d`: `f - 𝔼 f` is sub-Gaussian with variance proxy `8 π² L² / d`,
+around its mean at scale `L / √d`: `f - 𝔼 f` is sub-Gaussian with variance proxy `32 L² / d`,
 so that for `t ≥ 0`
 
-`σ {u | t ≤ |f u - 𝔼 f|} ≤ 2 exp (-d t² / (16 π² L²))`.
+`σ {u | t ≤ |f u - 𝔼 f|} ≤ 2 exp (-d t² / (64 L²))`.
 
 This is the concentration of measure on the sphere behind Dvoretzky's theorem on almost Euclidean
 sections of finite-dimensional normed spaces. In dimension zero the sphere is empty and both
@@ -35,18 +35,18 @@ The proof transfers Gaussian concentration to the sphere. The centred function `
 `G x = ‖x‖ g (x / ‖x‖)` over `g`, is `4L`-Lipschitz on `E` (`LipschitzWith.sphereCone`).
 Gaussian concentration of Lipschitz functions
 (`LipschitzWith.hasSubgaussianMGF_stdGaussian_sub_integral`) makes `G` sub-Gaussian with variance
-proxy `4 π² L²` under the standard Gaussian law, and the polar factorization of that law makes
+proxy `16 L²` under the standard Gaussian law, and the polar factorization of that law makes
 `G` have mean zero. Since the direction `x / ‖x‖` and the radius `‖x‖` of a standard Gaussian
 vector are independent, uniform on the sphere and chi distributed, Jensen's inequality in the
 radius gives `𝔼_σ exp (t m g) ≤ 𝔼 exp (t G)`, where `m ≥ √(d / 2)` is the mean of the chi law.
-Rescaling `t` by `m` turns the variance proxy `4 π² L²` of `G` into `8 π² L² / d` for `g`.
+Rescaling `t` by `m` turns the variance proxy `16 L²` of `G` into `32 L² / d` for `g`.
 
 ## Main results
 
 * `LipschitzWith.hasSubgaussianMGF_uniformSphereMeasure_sub_integral`: an `L`-Lipschitz function
-  on the sphere is sub-Gaussian about its mean with variance proxy `8 π² L² / d`.
+  on the sphere is sub-Gaussian about its mean with variance proxy `32 L² / d`.
 * `LipschitzWith.measureReal_uniformSphereMeasure_setOf_le_abs_sub_integral_le`: the tail bound
-  `2 exp (-d t² / (16 π² L²))`.
+  `2 exp (-d t² / (64 L²))`.
 
 ## References
 
@@ -192,10 +192,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-- **Concentration of measure on the sphere, exponential-moment form.** In dimension `d`, an
 `L`-Lipschitz function `f` on the unit sphere is sub-Gaussian about its uniform mean with variance
-proxy `8 π² L² / d`: `𝔼 exp (t (f - 𝔼 f)) ≤ exp (4 π² L² t² / d)`. -/
+proxy `32 L² / d`: `𝔼 exp (t (f - 𝔼 f)) ≤ exp (16 L² t² / d)`. -/
 theorem hasSubgaussianMGF_uniformSphereMeasure_sub_integral (hf : LipschitzWith L f) :
     HasSubgaussianMGF (fun u ↦ f u - ∫ v, f v ∂uniformSphereMeasure E)
-      (8 * NNReal.pi ^ 2 * L ^ 2 / Module.finrank ℝ E) (uniformSphereMeasure E) := by
+      (32 * L ^ 2 / Module.finrank ℝ E) (uniformSphereMeasure E) := by
   rcases isEmpty_or_nonempty (sphere (0 : E) 1) with hE | ⟨⟨e⟩⟩
   · -- In dimension zero the sphere is empty and its uniform law vanishes.
     rw [show uniformSphereMeasure E = 0 from Subsingleton.elim _ _]
@@ -221,21 +221,21 @@ theorem hasSubgaussianMGF_uniformSphereMeasure_sub_integral (hf : LipschitzWith 
   have hG := hasSubgaussianMGF_stdGaussian_sub_integral <|
     hgL.sphereCone fun u ↦ (Real.norm_eq_abs _).trans_le (hgM u)
   simp only [hG0, sub_zero] at hG
-  -- Gaussian concentration at proxy `π² (4L)² / 4` transfers to proxy `8 π² L² / d`.
+  -- Gaussian concentration at proxy `(4L)² = 16 L²` transfers to proxy `32 L² / d`.
   convert hasSubgaussianMGF_uniformSphereMeasure_of_stdGaussian hgL.continuous.measurable hgM e hG
     using 2
   ring
 
 /-- **Concentration of measure on the sphere.** In dimension `d`, an `L`-Lipschitz function `f` on
-the unit sphere satisfies `σ {u | t ≤ |f u - 𝔼 f|} ≤ 2 exp (-d t² / (16 π² L²))` for `t ≥ 0`, where
+the unit sphere satisfies `σ {u | t ≤ |f u - 𝔼 f|} ≤ 2 exp (-d t² / (64 L²))` for `t ≥ 0`, where
 `σ` is the uniform law on the sphere. -/
 theorem measureReal_uniformSphereMeasure_setOf_le_abs_sub_integral_le (hf : LipschitzWith L f)
     {t : ℝ} (ht : 0 ≤ t) :
     (uniformSphereMeasure E).real {u | t ≤ |f u - ∫ v, f v ∂uniformSphereMeasure E|} ≤
-      2 * exp (-(Module.finrank ℝ E) * t ^ 2 / (16 * π ^ 2 * L ^ 2)) := by
-  have hc : -t ^ 2 / (2 * ((8 * NNReal.pi ^ 2 * L ^ 2 / Module.finrank ℝ E : ℝ≥0) : ℝ)) =
-      -(Module.finrank ℝ E) * t ^ 2 / (16 * π ^ 2 * L ^ 2) := by
-    push_cast [NNReal.coe_real_pi]
+      2 * exp (-(Module.finrank ℝ E) * t ^ 2 / (64 * L ^ 2)) := by
+  have hc : -t ^ 2 / (2 * ((32 * L ^ 2 / Module.finrank ℝ E : ℝ≥0) : ℝ)) =
+      -(Module.finrank ℝ E) * t ^ 2 / (64 * L ^ 2) := by
+    push_cast
     rw [mul_div_assoc', div_div_eq_mul_div]
     ring
   simpa only [hc] using

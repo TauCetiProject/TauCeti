@@ -58,6 +58,8 @@ scalars `𝕜`; for instance, for `f` on `ℂ`,
   this way when `Φ` is a split injection.
 * `TauCeti.fderiv_comp_add_smul`: `fderiv 𝕜` of `w ↦ f (c + a • w)` at `w` is `a` times
   `fderiv 𝕜 f (c + a • w)`, for every `f`.
+* `LinearIsometryEquiv.norm_fderiv_comp`: precomposing with a linear isometry equivalence preserves
+  the operator norm of `fderiv 𝕜` at every point, with no differentiability assumption.
 * `TauCeti.fderiv_comp_smul_apply`: `fderiv 𝕜 (fun w ↦ f (c • w)) x v` equals
   `fderiv 𝕜 f (c • x) (c • v)`, for every `f` and a scalar `c` of a division semiring `𝕜'` over
   which `E` is a module, with each `w ↦ c • w` continuous and commuting with `𝕜`.
@@ -135,6 +137,15 @@ theorem norm_fderiv_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     {f : E → ℝ} (a : ℝ) (x : E) :
     ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ = |a| * ‖fderiv ℝ f (a • x)‖ := by
   rw [_root_.fderiv_comp_smul a, norm_smul, Real.norm_eq_abs]
+
+/-- Precomposing a map with a linear isometry equivalence preserves the operator norm of its
+Fréchet derivative at every point, with no differentiability assumption. -/
+theorem _root_.LinearIsometryEquiv.norm_fderiv_comp (e : E ≃ₗᵢ[𝕜] F) (f : F → G) (x : E) :
+    ‖fderiv 𝕜 (fun y ↦ f (e y)) x‖ = ‖fderiv 𝕜 f (e x)‖ := by
+  have hfd := e.toContinuousLinearEquiv.comp_right_fderiv (𝕜 := 𝕜) (f := f) (x := x)
+  simp only [Function.comp_def, LinearIsometryEquiv.coe_toContinuousLinearEquiv] at hfd
+  rw [hfd]
+  exact ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ e
 
 /-- **The chain rule for an affine change of variables.** `fderiv 𝕜` of `w ↦ f (c + a • w)` at
 `w` is `a` times `fderiv 𝕜 f (c + a • w)`. Like `fderiv_comp_smul`, this holds for every `f`: if

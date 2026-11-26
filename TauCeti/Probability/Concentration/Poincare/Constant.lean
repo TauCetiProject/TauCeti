@@ -97,7 +97,6 @@ section Marginals
 variable {ι : Type*} [Fintype ι] {E : ι → Type*}
   [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℝ (E i)]
   [∀ i, MeasurableSpace (E i)]
-  [∀ i, BorelSpace (E i)] [∀ i, SecondCountableTopology (E i)]
 
 /-- Each factor's optimal Poincaré constant is bounded by the product constant. -/
 theorem poincareConstant_le_piLp (μ : ∀ i, Measure (E i))

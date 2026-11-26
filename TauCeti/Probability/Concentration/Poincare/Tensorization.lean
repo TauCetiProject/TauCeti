@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import TauCeti.Probability.Concentration.Poincare.LogSobolev
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
+import TauCeti.MeasureTheory.Constructions.WithLp
 import TauCeti.MeasureTheory.Integral.Entropy.Product
 import TauCeti.MeasureTheory.Integral.Pi
 import TauCeti.Probability.Concentration.EfronStein
@@ -60,7 +61,6 @@ section Marginals
 variable {ι : Type*} [Fintype ι] {E : ι → Type*}
   [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℝ (E i)]
   [∀ i, MeasurableSpace (E i)]
-  [∀ i, BorelSpace (E i)] [∀ i, SecondCountableTopology (E i)]
 
 /-- Every marginal of a finite `PiLp 2` product inherits its Poincaré inequality. -/
 theorem PoincareInequality.of_piLp {μ : ∀ i, Measure (E i)}
@@ -70,11 +70,8 @@ theorem PoincareInequality.of_piLp {μ : ∀ i, Measure (E i)}
   classical
   let ρ := (Measure.pi μ).map (WithLp.toLp 2)
   let q := (PiLp.proj 2 E i : PiLp 2 E →L[ℝ] E i)
-  have hm : MeasurePreserving q ρ (μ i) := by
-    refine ⟨q.continuous.measurable, ?_⟩
-    dsimp only [ρ]
-    rw [Measure.map_map q.continuous.measurable (WithLp.measurable_toLp 2 _)]
-    exact (measurePreserving_eval μ i).map_eq
+  have hm : MeasurePreserving q ρ (μ i) :=
+    funext (PiLp.proj_apply (𝕜 := ℝ) 2 E i) ▸ PiLp.measurePreserving_eval_map_toLp 2 μ i
   rw [PoincareInequality_def]
   intro f hf hfL hdf
   have hn (x : PiLp 2 E) :
@@ -104,9 +101,7 @@ theorem LogSobolevInequality.of_piLp {μ : ∀ i, Measure (E i)}
   let ρ := (Measure.pi μ).map (WithLp.toLp 2)
   let q := (PiLp.proj 2 E i : PiLp 2 E →L[ℝ] E i)
   have hm : MeasurePreserving q ρ (μ i) :=
-    ⟨q.continuous.measurable, by
-      rw [Measure.map_map q.continuous.measurable (WithLp.measurable_toLp 2 _)]
-      exact (measurePreserving_eval μ i).map_eq⟩
+    funext (PiLp.proj_apply (𝕜 := ℝ) 2 E i) ▸ PiLp.measurePreserving_eval_map_toLp 2 μ i
   have hn (x : PiLp 2 E) : ‖fderiv ℝ (fun y : PiLp 2 E ↦ f (q y)) x‖ = ‖fderiv ℝ f (q x)‖ :=
     PiLp.norm_fderiv_comp_proj (hf.differentiable (by simp) _)
   have hv := h.apply (fun x ↦ f (q x)) (hf.comp q.contDiff)
@@ -114,7 +109,7 @@ theorem LogSobolevInequality.of_piLp {μ : ∀ i, Measure (E i)}
     (hm.integrable_comp_of_integrable hf2) (hm.integrable_comp_of_integrable hf2log)
   have hent : entropy ρ (fun x ↦ f (q x) ^ 2) = entropy (μ i) (fun y ↦ f y ^ 2) := by
     simpa only [Function.comp_def] using
-      hm.entropy_comp (g := fun y ↦ f y ^ 2) (hf.continuous.pow 2).aestronglyMeasurable
+      hm.entropy_comp (g := fun y ↦ f y ^ 2) hf2.aestronglyMeasurable
   have he : (∫ x, ‖fderiv ℝ (fun y ↦ f (q y)) x‖ ^ 2 ∂ρ) = ∫ y, ‖fderiv ℝ f y‖ ^ 2 ∂μ i := by
     simp only [hn]
     rw [← hm.map_eq, integral_map hm.measurable.aemeasurable

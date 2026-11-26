@@ -39,8 +39,8 @@ proxy `K ^ 2`, and
 * `TauCeti.Probability.logSobolevInequality_stdGaussian` and
   `TauCeti.Probability.logSobolevInequality_stdGaussian_iff`: sharp `LogSobolevInequality` for
   `stdGaussian E`.
-* `TauCeti.Probability.hasSubgaussianMGF_stdGaussian_sub_integral_of_lipschitzWith` and
-  `TauCeti.Probability.measureReal_stdGaussian_abs_sub_integral_ge_le_of_lipschitzWith`: sharp
+* `LipschitzWith.hasSubgaussianMGF_stdGaussian_sub_integral` and
+  `LipschitzWith.measureReal_stdGaussian_setOf_le_abs_sub_integral_le`: sharp
   Gaussian Lipschitz concentration with variance proxy `K ^ 2`.
 
 ## References
@@ -119,26 +119,31 @@ theorem logSobolevInequality_stdGaussian_iff [Nontrivial E] {C : ℝ} :
     exact one_le_of_logSobolevInequality_gaussianReal (hpi.of_piLp ⟨0, Module.finrank_pos⟩),
     fun h ↦ (logSobolevInequality_stdGaussian E).mono h⟩
 
+end TauCeti.Probability
+
+namespace LipschitzWith
+
+open TauCeti.Probability
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  {K : ℝ≥0} {f : E → ℝ}
+
 /-- **Gaussian Lipschitz MGF bound**: for any `K`-Lipschitz function `f : E → ℝ` on a
 finite-dimensional real inner product space, `f - ∫ f ∂stdGaussian E` is sub-Gaussian with sharp
 variance proxy `K ^ 2`. -/
-theorem hasSubgaussianMGF_stdGaussian_sub_integral_of_lipschitzWith
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    {K : ℝ≥0} {f : E → ℝ} (hf : LipschitzWith K f) :
+theorem hasSubgaussianMGF_stdGaussian_sub_integral (hf : LipschitzWith K f) :
     HasSubgaussianMGF (fun x ↦ f x - ∫ y, f y ∂stdGaussian E) (K ^ 2) (stdGaussian E) := by
   simpa using (logSobolevInequality_stdGaussian E).hasSubgaussianMGF_of_lipschitzWith hf
 
 /-- **Gaussian Lipschitz concentration**: for any `K`-Lipschitz function `f : E → ℝ` on a
 finite-dimensional real inner product space and `0 ≤ t`,
 `(stdGaussian E).real {x | t ≤ |f x - ∫ y, f y ∂stdGaussian E|} ≤ 2 * exp (-t² / (2 * K²))`. -/
-theorem measureReal_stdGaussian_abs_sub_integral_ge_le_of_lipschitzWith
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    {K : ℝ≥0} {f : E → ℝ} (hf : LipschitzWith K f) {t : ℝ} (ht : 0 ≤ t) :
+theorem measureReal_stdGaussian_setOf_le_abs_sub_integral_le (hf : LipschitzWith K f)
+    {t : ℝ} (ht : 0 ≤ t) :
     (stdGaussian E).real {x | t ≤ |f x - ∫ y, f y ∂stdGaussian E|} ≤
       2 * Real.exp (-t ^ 2 / (2 * (K : ℝ) ^ 2)) := by
   simpa only [one_mul] using
     (logSobolevInequality_stdGaussian E).measureReal_abs_sub_integral_ge_le_of_lipschitzWith hf ht
 
-end TauCeti.Probability
+end LipschitzWith

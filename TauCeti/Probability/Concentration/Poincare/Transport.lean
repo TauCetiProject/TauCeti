@@ -84,14 +84,6 @@ section LinearIsometryEquiv
 
 variable [BorelSpace E] [BorelSpace F]
 
-omit [MeasurableSpace E] [MeasurableSpace F] [BorelSpace E] [BorelSpace F] in
-private theorem norm_fderiv_comp_linearIsometryEquiv (e : E ≃ₗᵢ[ℝ] F) (f : F → ℝ) (x : E) :
-    ‖fderiv ℝ (fun y ↦ f (e y)) x‖ = ‖fderiv ℝ f (e x)‖ := by
-  have hfd := e.toContinuousLinearEquiv.comp_right_fderiv (𝕜 := ℝ) (f := f) (x := x)
-  simp only [Function.comp_def, LinearIsometryEquiv.coe_toContinuousLinearEquiv] at hfd
-  rw [hfd]
-  exact ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ e
-
 private theorem map_symm_map_linearIsometryEquiv (μ : Measure E) (e : E ≃ₗᵢ[ℝ] F) :
     (μ.map e).map e.symm = μ := by
   simpa using e.toHomeomorph.toMeasurableEquiv.map_symm_map (μ := μ)
@@ -100,8 +92,7 @@ private theorem map_symm_map_linearIsometryEquiv (μ : Measure E) (e : E ≃ₗ�
 inequality with the same constant. -/
 theorem PoincareInequality.map_linearIsometryEquiv (h : PoincareInequality μ C)
     (e : E ≃ₗᵢ[ℝ] F) : PoincareInequality (μ.map e) C :=
-  h.map_of_norm_fderiv_comp e.toHomeomorph.measurableEmbedding e.contDiff
-    (norm_fderiv_comp_linearIsometryEquiv e)
+  h.map_of_norm_fderiv_comp e.toHomeomorph.measurableEmbedding e.contDiff e.norm_fderiv_comp
 
 /-- The Poincaré inequality with constant `C` is invariant under pushing the measure forward
 along a linear isometry equivalence. -/
@@ -115,8 +106,7 @@ theorem poincareInequality_map_linearIsometryEquiv_iff (e : E ≃ₗᵢ[ℝ] F) 
 Sobolev inequality with the same constant. -/
 theorem LogSobolevInequality.map_linearIsometryEquiv (h : LogSobolevInequality μ C)
     (e : E ≃ₗᵢ[ℝ] F) : LogSobolevInequality (μ.map e) C :=
-  h.map_of_norm_fderiv_comp e.toHomeomorph.measurableEmbedding e.contDiff
-    (norm_fderiv_comp_linearIsometryEquiv e)
+  h.map_of_norm_fderiv_comp e.toHomeomorph.measurableEmbedding e.contDiff e.norm_fderiv_comp
 
 /-- The logarithmic Sobolev inequality with constant `C` is invariant under pushing the measure
 forward along a linear isometry equivalence. -/

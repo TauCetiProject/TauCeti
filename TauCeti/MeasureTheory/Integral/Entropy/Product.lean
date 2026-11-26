@@ -153,6 +153,19 @@ private theorem integrable_and_integral_mul_log_marginal_fst {g : α × β → �
     rw [integral_prod _ hint]
     exact integral_congr_ae (.of_forall fun x ↦ integral_mul_const (Real.log (G x)) _)⟩
 
+private theorem integrable_and_integral_mul_log_marginal_snd {g : α × β → ℝ}
+    (hgm : Measurable g) (hg0 : ∀ p, 0 ≤ g p) (hg : Integrable g (μ.prod ν))
+    (hglog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν)) :
+    Integrable (fun p : α × β ↦ g p * Real.log (∫ x, g (x, p.2) ∂μ)) (μ.prod ν) ∧
+      (∫ p, g p * Real.log (∫ x, g (x, p.2) ∂μ) ∂(μ.prod ν)) =
+        ∫ y, (∫ x, g (x, y) ∂μ) * Real.log (∫ x, g (x, y) ∂μ) ∂ν := by
+  obtain ⟨hint, heq⟩ :=
+    integrable_and_integral_mul_log_marginal_fst (hgm.comp measurable_swap)
+      (fun q ↦ hg0 (Prod.swap q)) (measurePreserving_swap.integrable_comp_of_integrable hg)
+      (measurePreserving_swap.integrable_comp_of_integrable hglog)
+  exact ⟨measurePreserving_swap.integrable_comp_of_integrable hint, by
+    rw [← integral_prod_swap (fun p : α × β ↦ g p * Real.log (∫ x, g (x, p.2) ∂μ))]; exact heq⟩
+
 private theorem ae_eq_zero_of_integral_fst_eq_zero {g : α × β → ℝ}
     (hgm : Measurable g) (hg0 : ∀ p, 0 ≤ g p) (hg : Integrable g (μ.prod ν)) :
     ∀ᵐ p ∂(μ.prod ν), (∫ y, g (p.1, y) ∂ν) = 0 → g p = 0 := by
@@ -217,27 +230,18 @@ private theorem entropy_integral_prod_le_of_measurable {g : α × β → ℝ}
     (hgm : Measurable g) (hg0 : ∀ p, 0 ≤ g p) (hg : Integrable g (μ.prod ν))
     (hglog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν)) :
     entropy μ (fun x ↦ ∫ y, g (x, y) ∂ν) ≤ ∫ y, entropy μ (fun x ↦ g (x, y)) ∂ν := by
-  set G : α → ℝ := fun x ↦ ∫ y, g (x, y) ∂ν
-  set m : β → ℝ := fun y ↦ ∫ x, g (x, y) ∂μ with hm_def
-  set M : ℝ := ∫ p, g p ∂(μ.prod ν) with hM_def
+  let G : α → ℝ := fun x ↦ ∫ y, g (x, y) ∂ν
+  let m : β → ℝ := fun y ↦ ∫ x, g (x, y) ∂μ
+  let M : ℝ := ∫ p, g p ∂(μ.prod ν)
   -- Degenerate case `M = 0`: `g` vanishes a.e.
   rcases (integral_nonneg hg0 : 0 ≤ M).eq_or_lt with hM_zero | hM_pos
   · exact entropy_integral_prod_le_of_integral_eq_zero hg0 hg hM_zero.symm
   -- Positive-mass case: integrate the pointwise Klein bound against `G p.1 * m p.2 / M` and
-  -- identify each `μ.prod ν` integral with the corresponding marginal entropy term.
-  obtain ⟨h_glogG_int', h_glogG_eq'⟩ :=
+  -- evaluate the left-hand and right-hand product integrals separately.
+  obtain ⟨h_glogG_int, h_glogG_eq⟩ :=
     integrable_and_integral_mul_log_marginal_fst hgm hg0 hg hglog
-  have h_glogG_int : Integrable (fun p : α × β ↦ g p * Real.log (G p.1)) (μ.prod ν) := h_glogG_int'
-  have h_glogG_eq : ∫ p, g p * Real.log (G p.1) ∂(μ.prod ν) = ∫ x, G x * Real.log (G x) ∂μ :=
-    h_glogG_eq'
-  obtain ⟨h_gslogm_int, h_gslogm_eq⟩ :=
-    integrable_and_integral_mul_log_marginal_fst (hgm.comp measurable_swap)
-      (fun q ↦ hg0 (Prod.swap q)) (measurePreserving_swap.integrable_comp_of_integrable hg)
-      (measurePreserving_swap.integrable_comp_of_integrable hglog)
-  have h_glogm_int : Integrable (fun p : α × β ↦ g p * Real.log (m p.2)) (μ.prod ν) :=
-    measurePreserving_swap.integrable_comp_of_integrable h_gslogm_int
-  have h_glogm_eq : ∫ p, g p * Real.log (m p.2) ∂(μ.prod ν) = ∫ y, m y * Real.log (m y) ∂ν := by
-    rw [← integral_prod_swap (fun p : α × β ↦ g p * Real.log (m p.2))]; exact h_gslogm_eq
+  obtain ⟨h_glogm_int, h_glogm_eq⟩ :=
+    integrable_and_integral_mul_log_marginal_snd hgm hg0 hg hglog
   have h_sum1 : Integrable (fun p ↦ g p * Real.log (G p.1) + g p * Real.log (m p.2)) (μ.prod ν) :=
     h_glogG_int.add h_glogm_int
   have h_sum2 : Integrable (fun p ↦
@@ -245,25 +249,28 @@ private theorem entropy_integral_prod_le_of_measurable {g : α × β → ℝ}
     h_sum1.sub (hg.mul_const (Real.log M))
   have h_rhs : Integrable (fun p : α × β ↦ G p.1 * m p.2 / M) (μ.prod ν) :=
     (hg.integral_prod_left.mul_prod hg.integral_prod_right).div_const M
-  have hpt : ∀ᵐ p ∂(μ.prod ν),
-      g p * Real.log (G p.1) + g p * Real.log (m p.2) -
-        g p * Real.log M - g p * Real.log (g p) ≤ G p.1 * m p.2 / M - g p :=
-    ae_mul_log_marginal_sub_le hgm hg0 hg hM_pos
   have hint_le : ∫ p, (g p * Real.log (G p.1) + g p * Real.log (m p.2) -
       g p * Real.log M - g p * Real.log (g p)) ∂(μ.prod ν) ≤
       ∫ p, (G p.1 * m p.2 / M - g p) ∂(μ.prod ν) :=
-    integral_mono_ae (h_sum2.sub hglog) (h_rhs.sub hg) hpt
+    integral_mono_ae (h_sum2.sub hglog) (h_rhs.sub hg)
+      (ae_mul_log_marginal_sub_le hgm hg0 hg hM_pos)
+  have hlhs : ∫ p, (g p * Real.log (G p.1) + g p * Real.log (m p.2) -
+      g p * Real.log M - g p * Real.log (g p)) ∂(μ.prod ν) =
+      (∫ x, G x * Real.log (G x) ∂μ) + (∫ y, m y * Real.log (m y) ∂ν) -
+        M * Real.log M - ∫ p, g p * Real.log (g p) ∂(μ.prod ν) := by
+    rw [integral_sub h_sum2 hglog, integral_sub h_sum1 (hg.mul_const _),
+      integral_add h_glogG_int h_glogm_int, integral_mul_const]
+    rw [h_glogG_eq, h_glogm_eq]
   have h_GM : ∫ x, G x ∂μ = M := (integral_prod g hg).symm
   have h_mM : ∫ y, m y ∂ν = M := (integral_prod_symm g hg).symm
-  rw [integral_sub h_sum2 hglog, integral_sub h_sum1 (hg.mul_const _),
-    integral_add h_glogG_int h_glogm_int, integral_mul_const, h_glogG_eq, h_glogm_eq,
-    integral_sub h_rhs hg, integral_div, integral_prod_mul G m, h_GM, h_mM,
-    mul_div_cancel_right₀ M hM_pos.ne', sub_self, ← hM_def] at hint_le
+  have hrhs : ∫ p, (G p.1 * m p.2 / M - g p) ∂(μ.prod ν) = 0 := by
+    rw [integral_sub h_rhs hg, integral_div, integral_prod_mul G m, h_GM, h_mM]
+    exact sub_eq_zero.2 (mul_div_cancel_right₀ M hM_pos.ne')
+  rw [hlhs, hrhs] at hint_le
   simp only [entropy_def]
   rw [integral_sub hglog.integral_prod_right
     (integrable_mul_log_integral_prod_right (.of_forall hg0) hg hglog),
     ← integral_prod_symm _ hglog, h_GM]
-  rw [hm_def] at hint_le
   linarith
 
 /-- **Convexity of functional entropy under marginal averaging.** Under probability measures `μ`
