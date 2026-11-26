@@ -19,26 +19,27 @@ commuting with Clifford multiplication, such as multiplication by `i` on a compl
 module, and let `θ` be a smooth real one-form. This file applies the energy identity of a Dirac
 operator split along a parallel unit field
 (`CovariantDerivative.IsMetricCompatible.integral_norm_diracOperator_sq_eq_sum_curvatureOperator`)
-to the twisted connection `∇' = ∇ + θ ⊗ J` (`CovariantDerivative.scalarOneForm`).
+to the twisted connection `∇' = ∇ + θ ⊗ J` (`CovariantDerivative.smulRightOneForm`).
 
 The twisted connection satisfies the hypotheses of that identity: it is smooth and metric
-(`CovariantDerivative.contMDiffCovariantDerivative_addOneForm_scalarOneForm`,
-`CovariantDerivative.IsMetricCompatible.addOneForm_scalarOneForm`) and it stays compatible with
-Clifford multiplication (`CovariantDerivative.addOneForm_scalarOneForm_clifford_apply`). Its
-curvature is `R' = R + dθ ⊗ J` (`CovariantDerivative.curvatureOperator_addOneForm_scalarOneForm`).
+(`CovariantDerivative.contMDiffCovariantDerivative_addOneForm_smulRightOneForm`,
+`CovariantDerivative.IsMetricCompatible.addOneForm_smulRightOneForm`) and it stays compatible with
+Clifford multiplication (`CovariantDerivative.addOneForm_smulRightOneForm_clifford_apply`). Its
+curvature is `R' = R + dθ ⊗ J`
+(`CovariantDerivative.curvatureOperator_addOneForm_smulRightOneForm`).
 So, for a parallel unit field `T` and smooth fields `e₁, …, eₖ` completing it to an orthonormal
 frame and commuting with it, the curvature term of the identity splits as
 
 `c(T) ∑ᵢ c(eᵢ) R'(T, eᵢ) σ = c(T) ∑ᵢ c(eᵢ) R(T, eᵢ) σ + c(T) c(a) J σ`,  `a = ∑ᵢ dθ(T, eᵢ) eᵢ`
 
-(`CovariantDerivative.sum_clifford_curvatureOperator_addOneForm_scalarOneForm`). The vector `a`
+(`CovariantDerivative.sum_clifford_curvatureOperator_addOneForm_smulRightOneForm`). The vector `a`
 is the metric dual of the contraction `ι_T dθ`, since `dθ(T, T) = 0`. When the curvature of `∇`
 vanishes along `T`, as on a Riemannian product `S¹ × Y` with `T = ∂ₛ`, only the twisting term
 remains, and for every compactly supported smooth section `σ`
 
 `∫ ‖D' σ‖² dV = ∫ ‖∇'_T σ‖² dV + ∫ ‖B'_T σ‖² dV + ∫ ⟪σ, c(T) c(a) J σ⟫ dV`
 
-(`IsMetricCompatible.integral_norm_diracOperator_addOneForm_scalarOneForm_sq_eq`, in the
+(`IsMetricCompatible.integral_norm_diracOperator_addOneForm_smulRightOneForm_sq_eq`, in the
 namespace `CovariantDerivative`), where `D'` and `B'_T` are the Dirac and transverse Dirac
 operators of `∇'`.
 
@@ -51,14 +52,14 @@ computed in `TauCeti.SeibergWitten.re_inner_I_div_two_smul_ι_mul_ι_twoVectorCo
 
 ## Main results
 
-* `CovariantDerivative.addOneForm_scalarOneForm_clifford_apply`: the twisted connection is
+* `CovariantDerivative.addOneForm_smulRightOneForm_clifford_apply`: the twisted connection is
   compatible with Clifford multiplication and the Levi-Civita connection when `∇` is and `J`
   commutes with Clifford multiplication.
-* `CovariantDerivative.sum_clifford_curvatureOperator_addOneForm_scalarOneForm`: the frame sum
+* `CovariantDerivative.sum_clifford_curvatureOperator_addOneForm_smulRightOneForm`: the frame sum
   `∑ᵢ c(eᵢ) R'(T, eᵢ) σ` of the twisted connection.
-* `IsMetricCompatible.integral_norm_diracOperator_addOneForm_scalarOneForm_sq_eq_sum`, in the
+* `IsMetricCompatible.integral_norm_diracOperator_addOneForm_smulRightOneForm_sq_eq_sum`, in the
   namespace `CovariantDerivative`: the energy identity of the twisted Dirac operator.
-* `IsMetricCompatible.integral_norm_diracOperator_addOneForm_scalarOneForm_sq_eq`, in the
+* `IsMetricCompatible.integral_norm_diracOperator_addOneForm_smulRightOneForm_sq_eq`, in the
   namespace `CovariantDerivative`: its form when the curvature of `∇` vanishes along `T`.
 
 ## References
@@ -99,16 +100,16 @@ omit [VectorBundle ℝ F V] in
 /-- **The twisted connection is compatible with Clifford multiplication.** If `∇` satisfies
 `∇_u (c(Y) τ) = c(∇^LC_u Y) τ + c(Y) ∇_u τ` and every `J x` commutes with Clifford
 multiplication, then so does `∇ + θ ⊗ J`, at every point where the identity for `∇` holds. -/
-theorem addOneForm_scalarOneForm_clifford_apply (θ : SmoothForm I M ℝ 1)
+theorem addOneForm_smulRightOneForm_clifford_apply (θ : SmoothForm I M ℝ 1)
     {cov : _root_.CovariantDerivative I F V}
     (hJc : ∀ x (v : TangentSpace I x) (s : V x), J x (c x v s) = c x v (J x s))
     {Y : Π y : M, TangentSpace I y} {τ : Π y : M, V y} {x : M} {u : TangentSpace I x}
     (hcomp : cov (fun y ↦ c y (Y y) (τ y)) x u =
       c x (leviCivitaConnection I M Y x u) (τ x) + c x (Y x) (cov τ x u)) :
-    cov.addOneForm (scalarOneForm θ J) (fun y ↦ c y (Y y) (τ y)) x u =
+    cov.addOneForm (smulRightOneForm θ J) (fun y ↦ c y (Y y) (τ y)) x u =
       c x (leviCivitaConnection I M Y x u) (τ x) +
-        c x (Y x) (cov.addOneForm (scalarOneForm θ J) τ x u) := by
-  simp only [addOneForm_scalarOneForm_apply, hcomp, hJc, map_add, map_smul]
+        c x (Y x) (cov.addOneForm (smulRightOneForm θ J) τ x u) := by
+  simp only [addOneForm_smulRightOneForm_apply, hcomp, hJc, map_add, map_smul]
   abel
 
 end Clifford
@@ -121,7 +122,7 @@ along `σ` at `x`, then for vector fields `T` and `e₁, …, eₖ`
 
 at `x`. The other hypotheses are the differentiability at `x` of the vector fields and of the
 sections `∇_T σ`, `∇_{eᵢ} σ` and `J σ`. -/
-theorem sum_clifford_curvatureOperator_addOneForm_scalarOneForm [IsManifold I 1 M]
+theorem sum_clifford_curvatureOperator_addOneForm_smulRightOneForm [IsManifold I 1 M]
     (θ : SmoothForm I M ℝ 1) (cov : _root_.CovariantDerivative I F V) {ι : Type*} [Fintype ι]
     {e : ι → Π y : M, TangentSpace I y} {σ : Π y : M, V y} {x : M}
     (hT : MDiffAt (T% T) x) (he : ∀ i, MDiffAt (T% (e i)) x)
@@ -129,10 +130,10 @@ theorem sum_clifford_curvatureOperator_addOneForm_scalarOneForm [IsManifold I 1 
     (heσ : ∀ i, MDiffAt (T% (fun y ↦ cov σ y (e i y))) x)
     (hJσ : MDiffAt (T% (fun y ↦ J y (σ y))) x)
     (hJ : ∀ v, cov (fun y ↦ J y (σ y)) x v = J x (cov σ x v)) :
-    ∑ i, c x (e i x) (curvatureOperator (cov.addOneForm (scalarOneForm θ J)) T (e i) σ x) =
+    ∑ i, c x (e i x) (curvatureOperator (cov.addOneForm (smulRightOneForm θ J)) T (e i) σ x) =
       ∑ i, c x (e i x) (curvatureOperator cov T (e i) σ x) +
         c x (∑ i, mextDeriv θ.val x ![T x, e i x] • e i x) (J x (σ x)) := by
-  simp only [curvatureOperator_addOneForm_scalarOneForm cov θ J hT (he _) hTσ (heσ _) hJσ hJ,
+  simp only [curvatureOperator_addOneForm_smulRightOneForm cov θ J hT (he _) hTσ (heσ _) hJσ hJ,
     map_add, map_smul, Finset.sum_add_distrib, map_sum, sum_apply, smul_apply]
 
 variable [IsManifold I ∞ M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
@@ -160,7 +161,7 @@ satisfy, for every compactly supported smooth section `σ`,
 `    + ∫ ⟪σ, c(T) (∑ᵢ c(eᵢ) R^∇(T, eᵢ) σ + c(∑ᵢ dθ(T, eᵢ) eᵢ) J σ)⟫ dV`
 
 for the Riemannian volume. -/
-theorem integral_norm_diracOperator_addOneForm_scalarOneForm_sq_eq_sum (θ : SmoothForm I M ℝ 1)
+theorem integral_norm_diracOperator_addOneForm_smulRightOneForm_sq_eq_sum (θ : SmoothForm I M ℝ 1)
     (hc : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F →L[ℝ] F)) ∞
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] F →L[ℝ] F)
         (E := fun y ↦ TangentSpace I y →L[ℝ] V y →L[ℝ] V y) x (c x)))
@@ -183,24 +184,24 @@ theorem integral_norm_diracOperator_addOneForm_scalarOneForm_sq_eq_sum (θ : Smo
       b none = T x ∧ ∀ i, b (some i) = e i x)
     (hbr : ∀ i x, VectorField.mlieBracket I T (e i) x = 0)
     {σ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0})) :
-    ∫ x, ‖(cov.addOneForm (scalarOneForm θ J)).diracOperator c σ x‖ ^ 2
+    ∫ x, ‖(cov.addOneForm (smulRightOneForm θ J)).diracOperator c σ x‖ ^ 2
         ∂riemannianVolume I M =
-      ∫ x, ‖cov.addOneForm (scalarOneForm θ J) σ x (T x)‖ ^ 2 ∂riemannianVolume I M +
-        ∫ x, ‖(cov.addOneForm (scalarOneForm θ J)).transverseDiracOperator c T σ x‖ ^ 2
+      ∫ x, ‖cov.addOneForm (smulRightOneForm θ J) σ x (T x)‖ ^ 2 ∂riemannianVolume I M +
+        ∫ x, ‖(cov.addOneForm (smulRightOneForm θ J)).transverseDiracOperator c T σ x‖ ^ 2
           ∂riemannianVolume I M +
           ∫ x, ⟪σ x, c x (T x) (∑ i, c x (e i x) (curvatureOperator cov T (e i) σ x) +
             c x (∑ i, mextDeriv θ.val x ![T x, e i x] • e i x) (J x (σ x)))⟫
               ∂riemannianVolume I M := by
-  have := contMDiffCovariantDerivative_addOneForm_scalarOneForm
+  have := contMDiffCovariantDerivative_addOneForm_smulRightOneForm
     (inferInstance : ContMDiffCovariantDerivative cov ∞) θ hJs
   rw [integral_norm_diracOperator_sq_eq_sum_curvatureOperator hc hskew
-    (fun Y τ hY hτ x u ↦ addOneForm_scalarOneForm_clifford_apply θ hJc (hcomp Y τ hY hτ x u))
-    (hcov.addOneForm_scalarOneForm θ hJskew) hcl hTs hTpar hT1 e he hframe hbr hσ hσc]
+    (fun Y τ hY hτ x u ↦ addOneForm_smulRightOneForm_clifford_apply θ hJc (hcomp Y τ hY hτ x u))
+    (hcov.addOneForm_smulRightOneForm θ hJskew) hcl hTs hTpar hT1 e he hframe hbr hσ hσc]
   congr 1
   refine integral_congr_ae (.of_forall fun x ↦ ?_)
   have hσ' : CMDiff (∞ + 1) (T% σ) := by simpa using hσ
   dsimp only
-  rw [sum_clifford_curvatureOperator_addOneForm_scalarOneForm θ cov
+  rw [sum_clifford_curvatureOperator_addOneForm_smulRightOneForm θ cov
     (hTs.mdifferentiableAt (by simp)) (fun i ↦ (he i).mdifferentiableAt (by simp))
     ((cov.contMDiff_apply hTs hσ').mdifferentiableAt (by simp))
     (fun i ↦ (cov.contMDiff_apply (he i) hσ').mdifferentiableAt (by simp))
@@ -208,13 +209,13 @@ theorem integral_norm_diracOperator_addOneForm_scalarOneForm_sq_eq_sum (θ : Smo
 
 /-- **The energy identity of a Dirac operator twisted by a scalar one-form, on a product.** Under
 the hypotheses of
-`IsMetricCompatible.integral_norm_diracOperator_addOneForm_scalarOneForm_sq_eq_sum`, if the
+`IsMetricCompatible.integral_norm_diracOperator_addOneForm_smulRightOneForm_sq_eq_sum`, if the
 curvature `R^∇(T, eᵢ) σ` of `∇` vanishes, as on a Riemannian product `S¹ × Y` with `T = ∂ₛ`, then
 
 `∫ ‖D' σ‖² dV = ∫ ‖∇'_T σ‖² dV + ∫ ‖B'_T σ‖² dV + ∫ ⟪σ, c(T) c(∑ᵢ dθ(T, eᵢ) eᵢ) J σ⟫ dV`
 
 for the Dirac operator `D'` and the transverse Dirac operator `B'_T` of `∇' = ∇ + θ ⊗ J`. -/
-theorem integral_norm_diracOperator_addOneForm_scalarOneForm_sq_eq (θ : SmoothForm I M ℝ 1)
+theorem integral_norm_diracOperator_addOneForm_smulRightOneForm_sq_eq (θ : SmoothForm I M ℝ 1)
     (hc : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F →L[ℝ] F)) ∞
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] F →L[ℝ] F)
         (E := fun y ↦ TangentSpace I y →L[ℝ] V y →L[ℝ] V y) x (c x)))
@@ -238,14 +239,14 @@ theorem integral_norm_diracOperator_addOneForm_scalarOneForm_sq_eq (θ : SmoothF
     (hbr : ∀ i x, VectorField.mlieBracket I T (e i) x = 0)
     {σ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0}))
     (hR : ∀ i x, curvatureOperator cov T (e i) σ x = 0) :
-    ∫ x, ‖(cov.addOneForm (scalarOneForm θ J)).diracOperator c σ x‖ ^ 2
+    ∫ x, ‖(cov.addOneForm (smulRightOneForm θ J)).diracOperator c σ x‖ ^ 2
         ∂riemannianVolume I M =
-      ∫ x, ‖cov.addOneForm (scalarOneForm θ J) σ x (T x)‖ ^ 2 ∂riemannianVolume I M +
-        ∫ x, ‖(cov.addOneForm (scalarOneForm θ J)).transverseDiracOperator c T σ x‖ ^ 2
+      ∫ x, ‖cov.addOneForm (smulRightOneForm θ J) σ x (T x)‖ ^ 2 ∂riemannianVolume I M +
+        ∫ x, ‖(cov.addOneForm (smulRightOneForm θ J)).transverseDiracOperator c T σ x‖ ^ 2
           ∂riemannianVolume I M +
           ∫ x, ⟪σ x, c x (T x) (c x (∑ i, mextDeriv θ.val x ![T x, e i x] • e i x)
             (J x (σ x)))⟫ ∂riemannianVolume I M := by
-  rw [integral_norm_diracOperator_addOneForm_scalarOneForm_sq_eq_sum θ hc hskew hcomp hcov hcl
+  rw [integral_norm_diracOperator_addOneForm_smulRightOneForm_sq_eq_sum θ hc hskew hcomp hcov hcl
     hJs hJskew hJc hJpar hTs hTpar hT1 e he hframe hbr hσ hσc]
   simp only [hR, map_zero, Finset.sum_const_zero, zero_add]
 
