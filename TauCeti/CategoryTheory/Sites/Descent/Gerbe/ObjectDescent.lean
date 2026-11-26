@@ -48,8 +48,9 @@ In the namespace `CategoryTheory.Pseudofunctor.GerbeMorphismDescent`:
 * `targetOverlapIso`, `targetOverlapIso_hom`, `targetOverlapIso_self`,
   `targetOverlapIso_hom_comp_hom`, `targetOverlapIso_trans`, `targetOverlapIso_inv`,
   `targetOverlapIso_symm`, `map_liftDescentData_hom`, `mapIso_liftDescentData_iso`.
-* `liftedOverlapIso`, `mapPullHom_liftedOverlapIso_hom`, `map_liftedOverlapIso_hom`,
-  `map_liftedOverlapIso_inv`, `mapIso_liftedOverlapIso`, `liftedOverlapIso_self`,
+* `liftedOverlapIso`, `liftedOverlapIso_def`, `mapPullHom_liftedOverlapIso_hom`,
+  `map_liftedOverlapIso_hom`, `map_liftedOverlapIso_inv`, `mapIso_liftedOverlapIso`,
+  `liftedOverlapIso_self`,
   `liftedOverlapIso_hom_comp_hom`, `liftedOverlapIso_trans`, `liftedOverlapIso_inv`,
   `liftedOverlapIso_symm`.
 
@@ -244,6 +245,14 @@ noncomputable def liftedOverlapIso {Y : C} (q : Y ⟶ U) {i j : ι} (a : Y ⟶ X
     (F.map a.op.toLoc).toFunctor.obj (x i) ≅ (F.map b.op.toLoc).toFunctor.obj (x j) :=
   (η.liftDescentData f (hη) ((G.toDescentData f).obj z) e).iso
     q a b ha hb
+
+/-- The lifted overlap is the gluing isomorphism of `StrongTrans.liftDescentData` of the canonical
+descent datum of `z` along the local preimages, so the laws of that datum apply to it. -/
+theorem liftedOverlapIso_def {Y : C} (q : Y ⟶ U) {i j : ι} (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
+    liftedOverlapIso η f z e hη q a b ha hb =
+      (η.liftDescentData f hη ((G.toDescentData f).obj z) e).iso q a b ha hb :=
+  (rfl)
 
 /-- Conjugated by the naturality isomorphisms of `η` (`StrongTrans.mapPullHom`), the lifted overlap
 is the gluing morphism of the canonical descent datum of `z` transported along the local
