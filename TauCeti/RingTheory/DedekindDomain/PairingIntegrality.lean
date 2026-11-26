@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.Factorization
+import TauCeti.RingTheory.Valuation.Integers
 
 /-!
 # Integrality of a pairing after division
@@ -44,9 +45,12 @@ of the valuations, and additive valuations are integers.
 
 ## References
 
-* GluedTargetAndDivisionInequality §7.12 of the roadmap family
-  RiemannHypothesisForDirichletLFunctions, where the statement is
-  `pairing_integral_of_localDivision`.
+* L. Alpöge, the Lean formalization of the Riemann hypothesis for Dirichlet `L`-functions,
+  <https://github.com/leanprover-community/riemann-hypothesis> (commit
+  `40e56bab026552e089d7afcfeff08d2defb9c005`): the statement over the ring of integers of a number
+  field is `Formalism.DivisionValues.DivIntoDualShift`
+  (`src/Formalism/QuotientMetricDivisors/DivIntoDualShift.lean`), and the proof here follows its
+  route: pull the local bound back along the span, then add the valuation of the divisor.
 -/
 
 public section
@@ -58,21 +62,6 @@ open scoped nonZeroDivisors
 variable {R K : Type*} [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
   [IsFractionRing R K] {c : K →+* K} {V W : Type*} [AddCommGroup V] [Module K V]
   [AddCommGroup W] [Module K W]
-
-/-- A bound for a valuation of the values of a `c`-semilinear form on a set persists on the span
-of that set over the ring of `e` with `c e` integral. -/
-private lemma valuation_apply_le_of_mem_span {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
-    (w : Valuation K Γ₀) (f : W →ₛₗ[c] K) {S : Set W} {γ : Γ₀} (hS : ∀ y ∈ S, w (f y) ≤ γ)
-    {y : W} (hy : y ∈ Submodule.span (w.comap c).integer S) : w (f y) ≤ γ := by
-  induction hy using Submodule.span_induction with
-  | mem y hy => exact hS y hy
-  | zero => simp
-  | add y z _ _ hy hz =>
-    rw [map_add]
-    exact (w.map_add _ _).trans (max_le hy hz)
-  | smul e y _ hy =>
-    rw [Subring.smul_def, map_smulₛₗ, smul_eq_mul, map_mul]
-    exact mul_le_of_le_one_of_le e.property hy
 
 /-- **Integrality after division, for one product.** Let `B` be `K`-linear in `V` and
 `c`-semilinear in `W`. If at every height one prime `v` the set `X` lies in the span of `S v` over
@@ -88,7 +77,7 @@ theorem pairing_smul_integral_of_localDivision (B : V →ₗ[K] W →ₛₗ[c] K
     {φ : V} (hφ : φ ∈ N) {x : W} (hx : x ∈ X) :
     B (a • φ) x ∈ (algebraMap R K).range := by
   refine mem_integers_of_valuation_le_one K _ fun v ↦ ?_
-  have hB := valuation_apply_le_of_mem_span _ (B φ) (hS v φ hφ) (hX v hx)
+  have hB := (v.valuation K).map_apply_le_of_mem_span_comap_integer (B φ) (hS v φ hφ) (hX v hx)
   have ha' := FractionalIdeal.valuation_le_exp_neg_count_of_mem v ha
   rw [FractionalIdeal.count_finprod K v _ (Filter.eventually_cofinite.mpr
     (τ.support.finite_toSet.subset fun w hw ↦ by simpa using hw)), neg_neg] at ha'
