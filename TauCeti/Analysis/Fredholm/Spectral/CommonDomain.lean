@@ -61,6 +61,10 @@ potentials `TauCeti.IsSpectralFlowPotential` of the bounded spectral flow in
   (`TauCeti.domainSpectralFlow_comp_neg`).
 * A path of invertible operators `A t : D → H` has no spectral flow
   (`TauCeti.domainSpectralFlow_eq_zero_of_forall_isInvertible`): every transform is invertible.
+* Paths with the same potentials, possibly on different spaces, have the same spectral flow
+  (`TauCeti.domainSpectralFlow_eq_of_isDomainSpectralFlowPotential_iff`). In particular it is
+  unchanged by changes of trivialization (`TauCeti.domainSpectralFlow_comp_comp_symm`, in
+  `TauCeti.Analysis.Fredholm.Spectral.CommonDomain.Conjugation`).
 * It extends the bounded spectral flow: on a finite-dimensional space, with `D = H` and `ι = 1`,
   every path of self-adjoint operators qualifies, and its spectral flow is
   `TauCeti.spectralFlow A a b` (`TauCeti.domainSpectralFlow_one`). Then `τ_c A` is the image
@@ -86,6 +90,8 @@ here.
 * `TauCeti.domainSpectralFlow_eq_sub`: the spectral flow is the increment of any potential.
 * `TauCeti.domainSpectralFlow_eq_spectralFlow_shiftedResolventTransform`: the spectral flow over
   an interval with a single admissible shift.
+* `TauCeti.domainSpectralFlow_eq_of_isDomainSpectralFlowPotential_iff`: paths with the same
+  potentials have the same spectral flow.
 * `TauCeti.domainSpectralFlow_add_adjacent_intervals`: concatenation.
 * `TauCeti.IsDomainSpectralFlowPotential.comp_of_mapsTo`: potentials of reparametrized paths.
 * `TauCeti.domainSpectralFlow_comp_of_mapsTo`, `TauCeti.domainSpectralFlow_comp_of_mapsTo_of_ge`,
@@ -332,6 +338,21 @@ theorem domainSpectralFlow_congr {B : ℝ → D →L[𝕜] H} {a b : ℝ} (h : E
     exact spectralFlow_congr fun u hu ↦ by simp only [hEq hu]
   have hpot : IsDomainSpectralFlowPotential ι A a b = IsDomainSpectralFlowPotential ι B a b :=
     funext fun F ↦ propext ⟨key h F, key h.symm F⟩
+  unfold domainSpectralFlow
+  rw [hpot]
+
+/-- **Comparison of spectral flows.** Two paths on common domains, possibly embedded in different
+Hilbert spaces, with the same spectral flow potentials on `[a, b]` have the same spectral flow. No
+regularity of either path is assumed. -/
+theorem domainSpectralFlow_eq_of_isDomainSpectralFlowPotential_iff {D' K : Type*}
+    [NormedAddCommGroup D'] [NormedSpace 𝕜 D'] [NormedAddCommGroup K] [InnerProductSpace 𝕜 K]
+    [CompleteSpace K] [NormedAlgebra ℝ (K →L[𝕜] K)]
+    [IsometricContinuousFunctionalCalculus ℝ (K →L[𝕜] K) IsSelfAdjoint] {ι' : D' →L[𝕜] K}
+    {B : ℝ → D' →L[𝕜] K} {a b : ℝ}
+    (h : ∀ F, IsDomainSpectralFlowPotential ι' B a b F ↔ IsDomainSpectralFlowPotential ι A a b F) :
+    domainSpectralFlow ι' B a b = domainSpectralFlow ι A a b := by
+  have hpot : IsDomainSpectralFlowPotential ι' B a b = IsDomainSpectralFlowPotential ι A a b :=
+    funext fun F ↦ propext (h F)
   unfold domainSpectralFlow
   rw [hpot]
 

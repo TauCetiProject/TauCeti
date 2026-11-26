@@ -51,6 +51,13 @@ on the shift (`TauCeti.spectralFlow_shiftedResolventTransform_eq`): this is
 For `D = H` and `ι = 1`, the transform at `c` is itself such an image, `A (1 - A / c)⁻¹`
 (`ContinuousLinearMap.shiftedResolventTransform_one_eq_mul_ringInverse`).
 
+Transforms are natural under changes of trivialization: if isomorphisms `V : D ≃L D'` and
+`U : H ≃L K` intertwine the embeddings, `ι' ∘ V = U ∘ ι`, then `c ι' - U A V⁻¹ = U (c ι - A) V⁻¹`,
+so `c` is admissible for `U A V⁻¹` exactly when it is for `A`
+(`ContinuousLinearMap.isInvertible_smul_sub_comp_comp_symm_iff`), and the transform of `U A V⁻¹`
+with respect to `ι'` is `U (τ_c A) U⁻¹`
+(`ContinuousLinearMap.shiftedResolventTransform_comp_comp_symm`).
+
 ## References
 
 * J. Robbin and D. Salamon, *The spectral flow and the Maslov index*, Bull. London Math. Soc.
@@ -216,6 +223,47 @@ theorem isUnit_one_add_smul_shiftedResolventTransform (h' : ((c' : 𝕜) • ι 
   rw [one_add_smul_shiftedResolventTransform_eq h hc hc', ← isInvertible_iff_isUnit,
     isInvertible_smul_iff (RCLike.ofReal_ne_zero.2 (div_ne_zero hc hc'))]
   exact h'.comp h.inverse
+
+section Conjugation
+
+variable {D' K : Type*} [NormedAddCommGroup D'] [NormedSpace 𝕜 D'] [NormedAddCommGroup K]
+  [InnerProductSpace 𝕜 K] {ι' : D' →L[𝕜] K}
+
+/-- If `V : D ≃L D'` and `U : H ≃L K` intertwine the embeddings, `ι' ∘ V = U ∘ ι`, then every
+shift of the conjugated operator `U A V⁻¹` is the conjugate of the corresponding shift of `A`. -/
+private theorem smul_sub_comp_comp_symm (U : H ≃L[𝕜] K) (V : D ≃L[𝕜] D')
+    (h : ι' ∘L (V : D →L[𝕜] D') = (U : H →L[𝕜] K) ∘L ι) (A : D →L[𝕜] H) (c : 𝕜) :
+    c • ι' - (U : H →L[𝕜] K) ∘L A ∘L (V.symm : D' →L[𝕜] D) =
+      (U : H →L[𝕜] K) ∘L (c • ι - A) ∘L (V.symm : D' →L[𝕜] D) := by
+  ext x
+  have hx : ι' x = U (ι (V.symm x)) := by
+    simpa using congr($h (V.symm x))
+  simp [hx]
+
+/-- **Admissible shifts under a change of trivialization.** If `V : D ≃L D'` and `U : H ≃L K`
+intertwine the embeddings, `ι' ∘ V = U ∘ ι`, then a shift `c` is admissible for the conjugated
+operator `U A V⁻¹`, that is `c ι' - U A V⁻¹` is invertible, exactly when it is admissible for
+`A`. -/
+theorem isInvertible_smul_sub_comp_comp_symm_iff (U : H ≃L[𝕜] K) (V : D ≃L[𝕜] D')
+    (h : ι' ∘L (V : D →L[𝕜] D') = (U : H →L[𝕜] K) ∘L ι) (c : 𝕜) :
+    (c • ι' - (U : H →L[𝕜] K) ∘L A ∘L (V.symm : D' →L[𝕜] D)).IsInvertible ↔
+      (c • ι - A).IsInvertible := by
+  rw [smul_sub_comp_comp_symm U V h, isInvertible_equiv_comp, isInvertible_comp_equiv]
+
+/-- **Shifted resolvent transforms under a change of trivialization.** If `V : D ≃L D'` and
+`U : H ≃L K` intertwine the embeddings, `ι' ∘ V = U ∘ ι`, then at every shift `c` the shifted
+resolvent transform of the conjugated operator `U A V⁻¹` with respect to `ι'` is the conjugate
+`U (τ_c A) U⁻¹` of the shifted resolvent transform of `A` with respect to `ι`. -/
+theorem shiftedResolventTransform_comp_comp_symm (U : H ≃L[𝕜] K) (V : D ≃L[𝕜] D')
+    (h : ι' ∘L (V : D →L[𝕜] D') = (U : H →L[𝕜] K) ∘L ι) (A : D →L[𝕜] H) (c : ℝ) :
+    ι'.shiftedResolventTransform ((U : H →L[𝕜] K) ∘L A ∘L (V.symm : D' →L[𝕜] D)) c =
+      (U : H →L[𝕜] K) ∘L ι.shiftedResolventTransform A c ∘L (U.symm : K →L[𝕜] H) := by
+  rw [shiftedResolventTransform_def, shiftedResolventTransform_def, smul_sub_comp_comp_symm U V h,
+    inverse_equiv_comp, inverse_comp_equiv]
+  ext x
+  simp
+
+end Conjugation
 
 section RealScalars
 
