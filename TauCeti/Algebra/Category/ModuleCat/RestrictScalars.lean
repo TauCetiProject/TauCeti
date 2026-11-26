@@ -43,6 +43,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   linear equivalence after restriction along compatible coefficient homomorphisms.
 * `RingHom.restrictScalarsSemilinearMap`: the identity of a module, as a semilinear map from its
   restriction of scalars.
+* `RingEquiv.restrictScalarsSemilinearEquiv`: the identity of a module, as a semilinear
+  equivalence from its restriction of scalars along a ring isomorphism.
 * `RingHom.finiteModulesRestrictScalars`: restriction of scalars along a finite ring
   homomorphism, as a functor between the categories of finitely generated modules.
 * `RingHom.finiteModulesRestrictScalarsCompιIso`: the underlying module of an image under
@@ -191,19 +193,49 @@ end RingHom
 
 namespace RingEquiv
 
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm in
+/-- The identity map of an `S`-module `M`, as an `e`-semilinear equivalence from `M` with scalars
+restricted along `e : R ≃+* S` to `M` itself. The underlying additive group of
+`(ModuleCat.restrictScalars (e : R →+* S)).obj M` is `M`, and `map_smul'` is
+`ModuleCat.restrictScalars.smul_def`. -/
+def restrictScalarsSemilinearEquiv (e : R ≃+* S) (M : ModuleCat.{v} S) :
+    (ModuleCat.restrictScalars (e : R →+* S)).obj M ≃ₛₗ[(e : R →+* S)] M where
+  toFun m := m
+  invFun m := m
+  map_add' _ _ := rfl
+  map_smul' r m := ModuleCat.restrictScalars.smul_def (e : R →+* S) r m
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm in
+@[simp]
+theorem restrictScalarsSemilinearEquiv_toLinearMap (e : R ≃+* S) (M : ModuleCat.{v} S) :
+    (e.restrictScalarsSemilinearEquiv M).toLinearMap =
+      (e : R →+* S).restrictScalarsSemilinearMap M :=
+  (rfl)
+
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm in
+@[simp]
+theorem restrictScalarsSemilinearEquiv_apply (e : R ≃+* S) (M : ModuleCat.{v} S)
+    (m : (ModuleCat.restrictScalars (e : R →+* S)).obj M) :
+    e.restrictScalarsSemilinearEquiv M m = m :=
+  (rfl)
+
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm in
+@[simp]
+theorem restrictScalarsSemilinearEquiv_symm_apply (e : R ≃+* S) (M : ModuleCat.{v} S)
+    (m : M) :
+    (e.restrictScalarsSemilinearEquiv M).symm m = m :=
+  (rfl)
+
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm in
 /-- **Projectivity along a ring isomorphism.** Restricting scalars along a ring isomorphism
 preserves and reflects projectivity: the identity is a semilinear equivalence between the two
 module structures, and projectivity transports along semilinear equivalences. -/
 theorem projective_restrictScalars_iff (e : R ≃+* S) (M : ModuleCat.{v} S) :
-    Module.Projective R ((ModuleCat.restrictScalars e.toRingHom).obj M) ↔
+    Module.Projective R ((ModuleCat.restrictScalars (e : R →+* S)).obj M) ↔
       Module.Projective S M := by
-  have : RingHomInvPair e.toRingHom e.symm.toRingHom := RingHomInvPair.of_ringEquiv e
-  have : RingHomInvPair e.symm.toRingHom e.toRingHom := RingHomInvPair.of_ringEquiv_symm e
-  let φ : (ModuleCat.restrictScalars e.toRingHom).obj M ≃ₛₗ[e.toRingHom] M :=
-    { e.toRingHom.restrictScalarsSemilinearMap M with
-      invFun := fun m ↦ m
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
+  let φ := e.restrictScalarsSemilinearEquiv M
   exact ⟨fun _ ↦ Module.Projective.of_equiv φ, fun _ ↦ Module.Projective.of_equiv φ.symm⟩
 
 end RingEquiv
