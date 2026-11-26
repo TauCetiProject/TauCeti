@@ -7,15 +7,18 @@ module
 
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.GrowthNearOne
 import Mathlib.NumberTheory.LSeries.Nonvanishing
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # A zero-free region with a bound for the logarithmic derivative
 
-For a Dirichlet character `χ` modulo `N ≥ 1`, primitive or not, and a large logarithmic scale
-`l`, the function `E_χ` (`DirichletCharacter.entireLFunction`: `L(s, χ)` with the pole of the
-principal character removed) has no zero in the region `Re s ≥ 1 - l⁻²⁵`, `‖s‖ ≤ e^l`, and its
-logarithmic derivative is at most `2 l²⁵` there.
+Let `χ` be a Dirichlet character modulo `N ≥ 1`, primitive or not, and `E_χ`
+(`DirichletCharacter.entireLFunction`) its L-function with the pole of the principal character
+removed. For a logarithmic scale `l`, `E_χ` has no zero in the region `Re s ≥ 1 - l⁻²⁵`,
+`‖s‖ ≤ e^l`, and its logarithmic derivative is at most `2 l²⁵` there, in two forms:
+uniformly in `l ≥ 10¹⁰` and `N ≤ e^l`, assuming `‖f_χ‖ ≥ 1 / l` within `1 / l` of `1` when `χ²`
+is principal; or for one fixed `χ` and all `l` large in terms of `χ`.
 
 The proof bounds `f_χ` (`DirichletCharacter.regularizedLFunction`) from below just to the right of
 `Re s = 1` and carries the bound across the line with the derivative bound of
@@ -29,15 +32,15 @@ large `l` because `f_χ(1) ≠ 0`.
 
 ## Main results
 
-* `DirichletCharacter.eventually_le_norm_regularizedLFunction`: (a), `‖f_χ(z)‖ ≥ r` for
+* `DirichletCharacter.eventually_le_norm_regularizedLFunction`: `‖f_χ(z)‖ ≥ r` for
   `‖z - 1‖ ≤ r` and all small `r > 0`.
-* `DirichletCharacter.entireLFunction_ne_zero_and_norm_logDeriv_le`: (b), the uniform form.
-* `DirichletCharacter.eventually_entireLFunction_ne_zero_and_norm_logDeriv_le`: (c), for one
+* `DirichletCharacter.entireLFunction_ne_zero_and_norm_logDeriv_le`: the zero-free region and the
+  bound for the logarithmic derivative, uniformly in `N ≤ e^l` under the lower bound near `1`.
+* `DirichletCharacter.eventually_entireLFunction_ne_zero_and_norm_logDeriv_le`: the same for one
   character and all large `l`.
 
-These are ShortGRH roadmap ZeroFreeRegionsAndPrimesInShortWindows 1.4 (a), (b), (c), with the
-constants `10¹⁰` and `25` of the formal proof cited there; any fixed exponent in place of `25`
-serves the applications. The classical region `Re s ≥ 1 - c / log (N (|Im s| + 3))` is
+The exponent `25` and the threshold `10¹⁰` are what the numerical steps give; any fixed exponent
+would do for the applications. The classical region `Re s ≥ 1 - c / log (N (|Im s| + 3))` is
 `TauCeti.LFunctions.dirichletLFunction_zeroFreeRegion`; it does not bound the logarithmic
 derivative.
 
@@ -63,14 +66,15 @@ namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) {s : ℂ} {l : ℝ}
 
-/-- (a) Since `f_χ(1) ≠ 0`, for all small `r`, `‖f_χ(z)‖ ≥ r` whenever `‖z - 1‖ ≤ r`. -/
+/-- For all small `r`, `‖f_χ(z)‖ ≥ r` whenever `‖z - 1‖ ≤ r`. -/
 theorem eventually_le_norm_regularizedLFunction :
     ∀ᶠ r : ℝ in 𝓝 0, ∀ z : ℂ, ‖z - 1‖ ≤ r → r ≤ ‖χ.regularizedLFunction z‖ := by
+  -- `f_χ(1) ≠ 0` and `f_χ` is continuous at `1`.
   have h_pos : 0 < ‖χ.regularizedLFunction 1‖ :=
     norm_pos_iff.2 (χ.regularizedLFunction_ne_zero_of_one_le_re (by simp))
   have h_near : ∀ᶠ z : ℂ in 𝓝 1, ‖χ.regularizedLFunction 1‖ / 2 ≤ ‖χ.regularizedLFunction z‖ :=
-    (χ.differentiableAt_regularizedLFunction (by simp)).continuousAt.norm.eventually_const_le
-      (half_lt_self h_pos)
+    (χ.differentiableAt_regularizedLFunction (.inl one_ne_zero)).continuousAt.norm
+      |>.eventually_const_le (half_lt_self h_pos)
   filter_upwards [eventually_le_nhds (half_pos h_pos), eventually_closedBall_subset h_near]
     with r hr h_ball z hz using hr.trans (h_ball (mem_closedBall_iff_norm.2 hz))
 
@@ -143,8 +147,7 @@ theorem div_pow_le_norm_regularizedLFunction (hl : 10 ^ 10 ≤ l) (hN : N ≤ re
       _ ≤ ‖χ.regularizedLFunction s‖ := h_near hχ s h_close.le
 
 /-- Under the hypotheses of `div_pow_le_norm_regularizedLFunction`, `f_χ(s) ≠ 0` and
-`‖f_χ'(s) / f_χ(s)‖ ≤ l²⁵` on `Re s ≥ 1 - l⁻²⁵`, `‖s‖ ≤ e^l`: the bound at `s + 2 l⁻²⁵` changes by
-at most `4 / l²²` on the way back to `s`. -/
+`‖f_χ'(s) / f_χ(s)‖ ≤ l²⁵` on `Re s ≥ 1 - l⁻²⁵`, `‖s‖ ≤ e^l`. -/
 theorem regularizedLFunction_ne_zero_and_norm_logDeriv_le (hl : 10 ^ 10 ≤ l) (hN : N ≤ rexp l)
     (h_near : χ ^ 2 = 1 → ∀ z : ℂ, ‖z - 1‖ ≤ 1 / l → 1 / l ≤ ‖χ.regularizedLFunction z‖)
     (h_re : 1 - 1 / l ^ 25 ≤ s.re) (h_norm : ‖s‖ ≤ rexp l) :
@@ -172,7 +175,8 @@ theorem regularizedLFunction_ne_zero_and_norm_logDeriv_le (hl : 10 ^ 10 ≤ l) (
   have change_le : ‖χ.regularizedLFunction v - χ.regularizedLFunction s‖ ≤ 4 / l ^ 22 := calc
     _ ≤ 2 * l ^ 3 * ‖v - s‖ :=
       (convex_closedBall s (2 * η)).norm_image_sub_le_of_norm_deriv_le
-        (fun z hz ↦ χ.differentiableAt_regularizedLFunction (by linarith [(bounds z hz).1]))
+        (fun z hz ↦ χ.differentiableAt_regularizedLFunction
+          (.inl (ne_zero_of_re_pos (by linarith [(bounds z hz).1]))))
         deriv_le hs_mem (mem_closedBall_iff_norm.2 dist_v.le)
     _ = 4 / l ^ 22 := by rw [dist_v]; field
   have large_v : 12 / l ^ 22 ≤ ‖χ.regularizedLFunction v‖ :=
@@ -188,7 +192,7 @@ theorem regularizedLFunction_ne_zero_and_norm_logDeriv_le (hl : 10 ^ 10 ≤ l) (
     _ = l ^ 25 / 4 := by field
     _ ≤ l ^ 25 := div_le_self (by positivity) (by norm_num)
 
-/-- *Zero-free region*, uniform form (b): let `l ≥ 10¹⁰` and `N ≤ e^l`, and, if `χ²` is principal,
+/-- *Zero-free region*, uniform form: let `l ≥ 10¹⁰` and `N ≤ e^l`, and, if `χ²` is principal,
 suppose `‖f_χ(z)‖ ≥ 1 / l` whenever `‖z - 1‖ ≤ 1 / l`. Then for `Re s ≥ 1 - l⁻²⁵` and `‖s‖ ≤ e^l`,
 `E_χ(s) ≠ 0` and `‖E_χ'(s) / E_χ(s)‖ ≤ 2 l²⁵`. -/
 theorem entireLFunction_ne_zero_and_norm_logDeriv_le (hl : 10 ^ 10 ≤ l) (hN : N ≤ rexp l)
@@ -213,7 +217,8 @@ theorem entireLFunction_ne_zero_and_norm_logDeriv_le (hl : 10 ^ 10 ≤ l) (hN : 
         logDeriv id s + logDeriv (1 : DirichletCharacter ℂ N).regularizedLFunction s := by
       rw [logDeriv_apply, h_ev.deriv_eq, h_ev.eq_of_nhds, ← logDeriv_apply]
       exact logDeriv_mul s hs_ne h_ne differentiableAt_id
-        ((1 : DirichletCharacter ℂ N).differentiableAt_regularizedLFunction (by linarith))
+        ((1 : DirichletCharacter ℂ N).differentiableAt_regularizedLFunction
+          (.inl (ne_zero_of_re_pos (by linarith))))
     refine ⟨by rw [h_ev.eq_of_nhds]; exact mul_ne_zero hs_ne h_ne, ?_⟩
     have h_id : ‖logDeriv id s‖ ≤ 2 := by
       simpa [logDeriv_apply] using (one_div_le (by linarith) two_pos).2 hs_norm
@@ -224,7 +229,7 @@ theorem entireLFunction_ne_zero_and_norm_logDeriv_le (hl : 10 ^ 10 ≤ l) (hN : 
     rw [entireLFunction_of_ne_one χ hχ]
     exact ⟨h_ne, h_bound.trans (by linarith)⟩
 
-/-- *Zero-free region* for one character (c): for all large `l`, on `Re s ≥ 1 - l⁻²⁵`,
+/-- *Zero-free region* for one character: for all large `l`, on `Re s ≥ 1 - l⁻²⁵`,
 `‖s‖ ≤ e^l`, `E_χ(s) ≠ 0` and `‖E_χ'(s) / E_χ(s)‖ ≤ 2 l²⁵`. -/
 theorem eventually_entireLFunction_ne_zero_and_norm_logDeriv_le :
     ∀ᶠ l : ℝ in atTop, ∀ s : ℂ, 1 - 1 / l ^ 25 ≤ s.re → ‖s‖ ≤ rexp l →

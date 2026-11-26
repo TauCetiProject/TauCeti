@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Entire
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 import Mathlib.Analysis.Complex.Hadamard
 import Mathlib.Analysis.Complex.LocallyUniformLimit
-import Mathlib.NumberTheory.Harmonic.ZetaAsymp
+import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
 # Growth of Dirichlet L-functions near the line `Re s = 1`
@@ -18,31 +18,29 @@ Let `χ` be a Dirichlet character modulo `N ≥ 1`, primitive or not, and `f_χ`
 L-function (`DirichletCharacter.regularizedLFunction`: `L(s, χ)`, times `(s - 1) / s` if `χ` is
 principal). Then:
 
-* (a) `‖f_χ(s)‖ ≤ 16 N ‖s‖` on `Re s ≥ 1 / 2`
+* `‖f_χ(s)‖ ≤ 16 N ‖s‖` on `Re s ≥ 1 / 2`
   (`DirichletCharacter.norm_regularizedLFunction_le_mul_norm`);
-* (b) if `l ≥ 10¹⁰` and `N ≤ e^l`, then `‖f_χ(s)‖ ≤ l²` on `Re s ≥ 1 - 1 / l`, `‖s‖ ≤ 3 e^l`
+* if `l ≥ 10¹⁰` and `N ≤ e^l`, then `‖f_χ(s)‖ ≤ l²` on `Re s ≥ 1 - 1 / l`, `‖s‖ ≤ 3 e^l`
   (`DirichletCharacter.norm_regularizedLFunction_le_sq`);
-* (c) under the same hypotheses, `‖f_χ'(s)‖ ≤ 2 l³` on `Re s ≥ 1 - 1 / (2 l)`, `‖s‖ ≤ 2 e^l`
+* under the same hypotheses, `‖f_χ'(s)‖ ≤ 2 l³` on `Re s ≥ 1 - 1 / (2 l)`, `‖s‖ ≤ 2 e^l`
   (`DirichletCharacter.norm_deriv_regularizedLFunction_le`).
 
-(a) comes from the level-dependent bound `DirichletCharacter.norm_LFunction_le` for the continued
-L-function. (b) interpolates by the three-lines theorem on a vertical strip of width `1 / 3`
-whose right edge lies in `Re z ≥ 1 + 1 / l`, between (a) on the left edge and the comparison of the
-Dirichlet series with `ζ(Re z) ≤ 1 + l` on the right edge; the left edge has weight `6 / l` at `s`,
-which reduces its size `e^{3l}` to a constant. (c) is Cauchy's estimate on circles of radius
-`1 / (2 l)`.
-
-This is ShortGRH roadmap ZeroFreeRegionsAndPrimesInShortWindows 1.3. The roadmap states (a) as
-`‖f_χ(s)‖ ≤ 1 + 4 N ‖s‖`; the constant `16` here is what the existing bound for `L(s, χ)` gives, and
-(b), (c) are unchanged.
+The linear bound comes from the level-dependent bound `DirichletCharacter.norm_LFunction_le` for
+the continued L-function. The bound near `Re s = 1` interpolates by the three-lines theorem on a
+vertical strip of width `1 / 3` whose right edge lies in `Re z ≥ 1 + 1 / l`, between the linear
+bound on the left edge and the comparison of the Dirichlet series with `ζ(Re z) ≤ 1 + l` on the
+right edge (`DirichletCharacter.norm_LSeries_le_one_add`); the left edge has weight `6 / l` at `s`,
+which reduces its size `e^{3l}` to a constant. The derivative bound is Cauchy's estimate on circles
+of radius `1 / (2 l)`.
 
 ## Provenance
 
 Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic,
-PBC), file `src/Lib/Analytic/PrimeNumberTheorem/LFunctionGrowth.lean` (`New.norm_LSeries_char_le`,
-`New.norm_LSeries_le_mul_norm_regularL`, `New.norm_regularL_le_sq`, `New.norm_deriv_regularL_le`).
-There (a) is proved by partial summation; here it is derived from
-`DirichletCharacter.norm_LFunction_le`.
+PBC), file `src/Lib/Analytic/PrimeNumberTheorem/LFunctionGrowth.lean`
+(`New.norm_LSeries_le_mul_norm_regularL`, `New.norm_regularL_le_sq`, `New.norm_deriv_regularL_le`);
+`New.norm_LSeries_char_le` from the same file is `DirichletCharacter.norm_LSeries_le_one_add` in
+`TauCeti/NumberTheory/DirichletCharacter/LFunction/Bounds.lean`. There the linear bound is proved by
+partial summation; here it is derived from `DirichletCharacter.norm_LFunction_le`.
 
 ## References
 
@@ -58,7 +56,7 @@ namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) {s : ℂ} {l : ℝ}
 
-/-- The bound (a) away from the pole: `‖f_χ(s)‖ ≤ 16 N ‖s‖` for `Re s ≥ 1 / 2`, when `s ≠ 1` or
+/-- The linear bound away from the pole: `‖f_χ(s)‖ ≤ 16 N ‖s‖` for `Re s ≥ 1 / 2`, when `s ≠ 1` or
 `χ` is not principal. -/
 private theorem norm_regularizedLFunction_le_of_ne (hs : 1 / 2 ≤ s.re) (h1 : s ≠ 1 ∨ χ ≠ 1) :
     ‖χ.regularizedLFunction s‖ ≤ 16 * N * ‖s‖ := by
@@ -94,7 +92,7 @@ private theorem norm_regularizedLFunction_le_of_ne (hs : 1 / 2 ≤ s.re) (h1 : s
       _ ≤ N * ‖s‖ / (1 / 2) := by gcongr
       _ ≤ 16 * N * ‖s‖ := by nlinarith [norm_nonneg s, (N.cast_nonneg : (0 : ℝ) ≤ N)]
 
-/-- *Linear growth* (a): `‖f_χ(s)‖ ≤ 16 N ‖s‖` for `Re s ≥ 1 / 2`. -/
+/-- *Linear growth*: `‖f_χ(s)‖ ≤ 16 N ‖s‖` for `Re s ≥ 1 / 2`. -/
 theorem norm_regularizedLFunction_le_mul_norm (hs : 1 / 2 ≤ s.re) :
     ‖χ.regularizedLFunction s‖ ≤ 16 * N * ‖s‖ := by
   by_cases h1 : s ≠ 1 ∨ χ ≠ 1
@@ -102,7 +100,7 @@ theorem norm_regularizedLFunction_le_mul_norm (hs : 1 / 2 ≤ s.re) :
   -- At the pole of the principal character, pass to the limit from nearby points.
   obtain ⟨rfl, -⟩ : s = 1 ∧ χ = 1 := by simpa [not_or] using h1
   have h_cont : ContinuousAt (fun z ↦ ‖χ.regularizedLFunction z‖ - 16 * N * ‖z‖) 1 :=
-    ((χ.differentiableAt_regularizedLFunction (by simp)).continuousAt.norm).sub
+    ((χ.differentiableAt_regularizedLFunction (.inl one_ne_zero)).continuousAt.norm).sub
       (continuous_const.mul continuous_norm).continuousAt
   have h_near : ∀ᶠ z in 𝓝[≠] (1 : ℂ), ‖χ.regularizedLFunction z‖ - 16 * N * ‖z‖ ≤ 0 := by
     have h_re : ∀ᶠ z in 𝓝 (1 : ℂ), 1 / 2 < z.re :=
@@ -110,32 +108,6 @@ theorem norm_regularizedLFunction_le_mul_norm (hs : 1 / 2 ≤ s.re) :
     filter_upwards [nhdsWithin_le_nhds h_re, self_mem_nhdsWithin] with z hz (hz₁ : z ≠ 1)
     linarith [χ.norm_regularizedLFunction_le_of_ne hz.le (.inl hz₁)]
   linarith [le_of_tendsto (h_cont.tendsto.mono_left nhdsWithin_le_nhds) h_near]
-
-omit [NeZero N] in
-/-- If `Re s ≥ 1 + 1 / A` with `A > 0`, then `‖L(s, χ)‖ ≤ 1 + A`: the Dirichlet series of `χ` is
-dominated by `ζ(Re s) ≤ 1 + 1 / (Re s - 1)`. -/
-theorem norm_LSeries_le_one_add {A : ℝ} (hA : 0 < A) (hs : 1 + 1 / A ≤ s.re) :
-    ‖LSeries (fun n ↦ χ n) s‖ ≤ 1 + A := by
-  have hs_one : 1 < s.re := by linarith [one_div_pos.2 hA]
-  have h_summable : Summable fun n : ℕ ↦ 1 / (n : ℝ) ^ s.re :=
-    Real.summable_one_div_nat_rpow.2 hs_one
-  have term_le (n : ℕ) : ‖LSeries.term (χ ·) s n‖ ≤ 1 / (n : ℝ) ^ s.re := by
-    rw [LSeries.norm_term_eq]
-    split_ifs
-    · positivity
-    · exact div_le_div_of_nonneg_right (χ.norm_le_one _) (by positivity)
-  -- `ζ(σ) - 1 / (σ - 1) = 1 - σ T` with `T ≥ 0`.
-  have zeta_le : ∑' n : ℕ, 1 / (n + 1 : ℝ) ^ s.re ≤ 1 + 1 / (s.re - 1) := by
-    have h_nonneg : 0 ≤ s.re * ZetaAsymptotics.termTSum s.re :=
-      mul_nonneg (by linarith) (tsum_nonneg fun n ↦ ZetaAsymptotics.term_nonneg _ _)
-    linarith [ZetaAsymptotics.zeta_limit_aux1 hs_one]
-  calc ‖LSeries (fun n ↦ χ n) s‖
-    _ ≤ ∑' n : ℕ, 1 / (n : ℝ) ^ s.re := tsum_of_norm_bounded h_summable.hasSum term_le
-    _ = ∑' n : ℕ, 1 / (n + 1 : ℝ) ^ s.re := by
-      rw [h_summable.tsum_eq_zero_add]
-      simp [Real.zero_rpow (one_pos.trans hs_one).ne']
-    _ ≤ 1 + 1 / (s.re - 1) := zeta_le
-    _ ≤ 1 + A := by linarith [(one_div_le hA (sub_pos.2 hs_one)).1 (by linarith)]
 
 /-- For `l ≥ 1` and `Re s > 1`, at distance at least `1 / l` from `1` if `χ` is principal,
 `‖L(s, χ)‖ ≤ 2 l ‖f_χ(s)‖`. -/
@@ -171,7 +143,7 @@ private theorem norm_div_le_exp_cube (hl : 10 ^ 10 ≤ l) (hN : N ≤ rexp l)
       gcongr
       nlinarith [sq_nonneg (rexp l), mul_le_mul exp_ge exp_ge (by linarith) (by positivity)]
 
-/-- *Growth near `Re s = 1`* (b): if `l ≥ 10¹⁰` and `N ≤ e^l`, then `‖f_χ(s)‖ ≤ l²` for
+/-- *Growth near `Re s = 1`*: if `l ≥ 10¹⁰` and `N ≤ e^l`, then `‖f_χ(s)‖ ≤ l²` for
 `Re s ≥ 1 - 1 / l` and `‖s‖ ≤ 3 e^l`. -/
 theorem norm_regularizedLFunction_le_sq (hl : 10 ^ 10 ≤ l) (hN : N ≤ rexp l)
     (h_re : 1 - 1 / l ≤ s.re) (h_norm : ‖s‖ ≤ 3 * rexp l) : ‖χ.regularizedLFunction s‖ ≤ l ^ 2 := by
@@ -207,8 +179,8 @@ theorem norm_regularizedLFunction_le_sq (hl : 10 ^ 10 ≤ l) (hN : N ≤ rexp l)
     rw [verticalStrip, closure_preimage_re, closure_Ioo (by linarith)] at hz
     obtain ⟨hz_left, -⟩ : a ≤ z.re ∧ z.re ≤ a + 1 / 3 := hz
     have h_denom : z - (s - 2) ≠ 0 := norm_pos_iff.1 (one_pos.trans_le (denom_ge z hz_left))
-    have hz_pos : 0 < z.re := by linarith
-    exact ((χ.differentiableAt_regularizedLFunction hz_pos).fun_div (by fun_prop)
+    have hz_ne : z ≠ 0 := ne_zero_of_re_pos (by linarith)
+    exact ((χ.differentiableAt_regularizedLFunction (.inl hz_ne)).fun_div (by fun_prop)
       h_denom).differentiableWithinAt
   have weight : (s.re - a) / (a + 1 / 3 - a) = 1 - 6 / l := by rw [ha]; ring
   have three_lines : ‖g s‖ ≤ (rexp l ^ 3) ^ (1 - (1 - 6 / l)) * (1 + l) ^ (1 - 6 / l) := by
@@ -228,7 +200,7 @@ theorem norm_regularizedLFunction_le_sq (hl : 10 ^ 10 ≤ l) (hN : N ≤ rexp l)
     _ ≤ 2 * (3 ^ 18 * (1 + l)) := by grw [three_lines, left_factor, right_factor]
     _ ≤ l ^ 2 := by nlinarith
 
-/-- *Cauchy's estimate* (c): if `l ≥ 10¹⁰` and `N ≤ e^l`, then `‖f_χ'(s)‖ ≤ 2 l³` for
+/-- *Cauchy's estimate*: if `l ≥ 10¹⁰` and `N ≤ e^l`, then `‖f_χ'(s)‖ ≤ 2 l³` for
 `Re s ≥ 1 - 1 / (2 l)` and `‖s‖ ≤ 2 e^l`. -/
 theorem norm_deriv_regularizedLFunction_le (hl : 10 ^ 10 ≤ l) (hN : N ≤ rexp l)
     (h_re : 1 - 1 / l / 2 ≤ s.re) (h_norm : ‖s‖ ≤ 2 * rexp l) :
@@ -241,7 +213,7 @@ theorem norm_deriv_regularizedLFunction_le (hl : 10 ^ 10 ≤ l) (hN : N ≤ rexp
       by linarith [norm_le_norm_sub_add z s, add_one_le_exp l]⟩
   have h_diff : DiffContOnCl ℂ χ.regularizedLFunction (ball s (1 / l / 2)) :=
     DifferentiableOn.diffContOnCl_ball (fun z hz ↦ (χ.differentiableAt_regularizedLFunction
-      (by linarith [(disc z hz).1])).differentiableWithinAt) subset_rfl
+      (.inl (ne_zero_of_re_pos (by linarith [(disc z hz).1])))).differentiableWithinAt) subset_rfl
   have h_sphere (z : ℂ) (hz : z ∈ sphere s (1 / l / 2)) : ‖χ.regularizedLFunction z‖ ≤ l ^ 2 := by
     obtain ⟨hz_re, hz_norm⟩ := disc z (sphere_subset_closedBall hz)
     exact χ.norm_regularizedLFunction_le_sq hl hN hz_re hz_norm
