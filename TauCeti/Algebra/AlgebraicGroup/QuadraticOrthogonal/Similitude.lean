@@ -160,6 +160,7 @@ private theorem comul_relation_mem {x : ambientHopfAlgebra R n} (hx : x ∈ rela
   have hcomul := (hL.transpose_mul_mul ((matrixCoord R n).map (rightCopy R n))).add
     (hR.smul (leftCopy R n (multiplierCoord R n)))
   rw [← relationMatrix_map_comul] at hcomul
+  rw [relationSet_def] at hx
   simpa only [Bialgebra.comulAlgHom_apply] using hcomul.apply_mem_of_map hx
 
 /-- **The antipode of the relation matrix**: for `W = S(X)` and `s = S(r)`,
@@ -208,6 +209,7 @@ noncomputable def definingHopfIdeal : HopfIdeal R (ambientHopfAlgebra R n) :=
   HopfIdeal.ofSpan (relationSet R n q)
     (fun _ hx => comul_relation_mem R n q hx)
     (fun _ hx => by
+      rw [relationSet_def] at hx
       have h0 : IsAltMod ⊥ ((relationMatrix R n q).map
           (Bialgebra.counitAlgHom R (ambientHopfAlgebra R n))) := by
         rw [counit_relationMatrix]
@@ -229,7 +231,7 @@ theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [CommRing T] [Algebra R
     (phi : ambientHopfAlgebra R n →ₐ[R] T) :
     (definingHopfIdeal R n q).toIdeal ≤ RingHom.ker (phi : _ →+* T) ↔
       IsAltMod ⊥ ((relationMatrix R n q).map phi) := by
-  rw [definingHopfIdeal_toIdeal, relationSet, span_altRelationSet_le_iff]
+  rw [definingHopfIdeal_toIdeal, relationSet_def, span_altRelationSet_le_iff]
   simp only [isAltMod_iff, Matrix.map_apply, RingHom.mem_ker, Ideal.mem_bot, AlgHom.coe_toRingHom,
     map_add]
 
@@ -268,7 +270,8 @@ theorem isAltMod_map_coordinateMap :
     IsAltMod ⊥ ((relationMatrix R n q).map (coordinateMap R n q).hom) :=
   (isAltMod_span_altRelationSet (relationMatrix R n q)).map _ <|
     Ideal.map_le_iff_le_comap.mpr <| Ideal.span_le.mpr fun _ hx =>
-      Ideal.mem_comap.mpr (Ideal.mem_bot.mpr (coordinateMap_eq_zero_of_mem_relationSet R n q hx))
+      Ideal.mem_comap.mpr (Ideal.mem_bot.mpr (coordinateMap_eq_zero_of_mem_relationSet R n q
+        ((relationSet_def R n q).symm ▸ hx)))
 
 /-- **The orthogonal similitude group scheme `GO(q)`** of a quadratic form on `Rⁿ`: the closed
 subgroup scheme of `GLₙ × 𝔾_m` of pairs `(g, c)` with `q(g x) = c q(x)`. -/
@@ -492,7 +495,9 @@ def pointsSubgroupMap (phi : A →ₐ[R] B) : pointsSubgroup R n q A →* points
       have h := ((mem_pointsSubgroup_iff_isAltMod R n q _).mp p.property).map phi
         (by rw [Ideal.map_bot])
       rw [Matrix.map_transpose_mul_mul_sub_smul] at h
-      rw [mem_pointsSubgroup_iff_isAltMod]
+      rw [mem_pointsSubgroup_iff_isAltMod, MonoidHom.comp_apply, Subgroup.coe_subtype,
+        MonoidHom.coe_prodMap, Prod.map_fst, Prod.map_snd, Units.coe_map, MonoidHom.coe_ofClass,
+        Matrix.GeneralLinearGroup.val_map_apply, RingHom.coe_coe]
       exact h
 
 /-- The similitude `pointsSubgroupMap phi p` is `p` with `phi` applied to both components. -/

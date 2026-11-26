@@ -63,6 +63,20 @@ section Coordinate
 variable {R : Type u} {K : Type max u v} [CommRing R] [CommRing K] [Algebra R K] {n : ℕ}
 variable {q : QuadraticForm R (Fin n → R)} {q' : QuadraticForm K (Fin n → K)}
 
+variable (R K n) in
+/-- The ring morphism `x ↦ e (1 ⊗ x)` from `O(GLₙ, R)` to `O(GLₙ, K)`, for `e` the general-linear
+base-change isomorphism `K ⊗[R] O(GLₙ, R) ≅ O(GLₙ, K)`. -/
+private noncomputable def oneTmulBaseChange :
+    GeneralLinear.coordinateHopfAlgebra R n →+* GeneralLinear.coordinateHopfAlgebra K n :=
+  (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom.toAlgHom.toRingHom.comp
+    Algebra.TensorProduct.includeRight.toRingHom
+
+/-- The morphism `oneTmulBaseChange R K n` sends `x` to `e (1 ⊗ x)`. -/
+private theorem oneTmulBaseChange_apply (x : GeneralLinear.coordinateHopfAlgebra R n) :
+    oneTmulBaseChange R K n x =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom (1 ⊗ₜ[R] x) :=
+  rfl
+
 /-- The general-linear base-change isomorphism carries each scalar-extended entry of the relation
 matrix `Xᵀ M X - M` of `q` to the corresponding entry for `q'`, when the coefficients of `q` map
 to those of `q'`. -/
@@ -72,24 +86,24 @@ theorem coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom
         (1 ⊗ₜ[R] relationMatrix R n q i j) =
       relationMatrix K n q' i j := by
-  let φ : GeneralLinear.coordinateHopfAlgebra R n →+* GeneralLinear.coordinateHopfAlgebra K n :=
-    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom.toAlgHom.toRingHom.comp
-      Algebra.TensorProduct.includeRight.toRingHom
-  have hgeneric : (GeneralLinear.genericMatrix R n).map φ = GeneralLinear.genericMatrix K n :=
+  have hgeneric :
+      (GeneralLinear.genericMatrix R n).map (oneTmulBaseChange R K n) =
+        GeneralLinear.genericMatrix K n :=
     Matrix.ext (GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_genericMatrix R K n)
   have hform : ((coefficientMatrix q (Pi.basisFun R (Fin n))).map
-        (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n))).map φ =
+        (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n))).map (oneTmulBaseChange R K n) =
       (coefficientMatrix q' (Pi.basisFun K (Fin n))).map
         (algebraMap K (GeneralLinear.coordinateHopfAlgebra K n)) := by
     rw [← hq, Matrix.map_map, Matrix.map_map]
     congr 1
     funext r
-    simp only [φ, Function.comp_apply, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
-      RingHom.coe_coe, AlgHom.commutes]
-    rw [IsScalarTower.algebraMap_apply R K, AlgHom.commutes]
-  have hmatrix : (relationMatrix R n q).map φ = relationMatrix K n q' := by
-    rw [relationMatrix_def, relationMatrix_def, Matrix.map_sub _ (map_sub φ), Matrix.map_mul,
-      Matrix.map_mul, Matrix.transpose_map, hgeneric, hform]
+    rw [Function.comp_apply, Function.comp_apply, oneTmulBaseChange_apply,
+      ← Algebra.TensorProduct.includeRight_apply, AlgHom.commutes,
+      IsScalarTower.algebraMap_apply R K, AlgHomClass.commutes]
+  have hmatrix : (relationMatrix R n q).map (oneTmulBaseChange R K n) = relationMatrix K n q' := by
+    rw [relationMatrix_def, relationMatrix_def,
+      Matrix.map_sub _ (map_sub (oneTmulBaseChange R K n)), Matrix.map_mul, Matrix.map_mul,
+      Matrix.transpose_map, hgeneric, hform]
   exact congrFun (congrFun hmatrix i) j
 
 /-- The general-linear base-change isomorphism carries the scalar-extended relation set of `q`
@@ -101,13 +115,15 @@ theorem image_relationSet_baseChange
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom (1 ⊗ₜ[R] x)) ''
         relationSet R n q =
       relationSet K n q' := by
-  let φ : GeneralLinear.coordinateHopfAlgebra R n →+* GeneralLinear.coordinateHopfAlgebra K n :=
-    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom.toAlgHom.toRingHom.comp
-      Algebra.TensorProduct.includeRight.toRingHom
-  have hmatrix : (relationMatrix R n q).map φ = relationMatrix K n q' :=
-    Matrix.ext (coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix hq)
-  rw [relationSet_def, relationSet_def, ← hmatrix, ← Matrix.image_altRelationSet]
-  rfl
+  have hmatrix : (relationMatrix R n q).map (oneTmulBaseChange R K n) = relationMatrix K n q' :=
+    Matrix.ext fun i j => by
+      rw [Matrix.map_apply, oneTmulBaseChange_apply,
+        coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix hq]
+  have hfun : (fun x : GeneralLinear.coordinateHopfAlgebra R n ↦
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom (1 ⊗ₜ[R] x)) =
+        oneTmulBaseChange R K n :=
+    funext fun x => (oneTmulBaseChange_apply x).symm
+  rw [hfun, relationSet_def, relationSet_def, ← hmatrix, Matrix.image_altRelationSet]
 
 /-- The general-linear base-change isomorphism carries the base-changed defining Hopf ideal of
 `O(q)` onto the defining Hopf ideal of `O(q')`, when the coefficients of `q` map to those of

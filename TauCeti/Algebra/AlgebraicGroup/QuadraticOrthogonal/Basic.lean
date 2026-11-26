@@ -177,6 +177,7 @@ private theorem comul_relation_mem {x : GeneralLinear.coordinateHopfAlgebra R n}
   have hcomul := (hL.transpose_mul_mul ((GeneralLinear.genericMatrix R n).map
     (Algebra.TensorProduct.includeRight (R := R)))).add hR
   rw [← relationMatrix_map_comul] at hcomul
+  rw [relationSet_def] at hx
   simpa only [Bialgebra.comulAlgHom_apply] using hcomul.apply_mem_of_map hx
 
 /-- The antipode image of the relation matrix is the negative of the relation matrix framed by
@@ -212,6 +213,7 @@ noncomputable def definingHopfIdeal : HopfIdeal R (GeneralLinear.coordinateHopfA
   HopfIdeal.ofSpan (relationSet R n q)
     (fun _ hx => comul_relation_mem R n q hx)
     (fun _ hx => by
+      rw [relationSet_def] at hx
       have h0 : IsAltMod ⊥ ((relationMatrix R n q).map
           (Bialgebra.counitAlgHom R (GeneralLinear.coordinateHopfAlgebra R n))) := by
         rw [counit_relationMatrix]
@@ -232,7 +234,7 @@ theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [CommRing T] [Algebra R
     (phi : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] T) :
     (definingHopfIdeal R n q).toIdeal ≤ RingHom.ker (phi : _ →+* T) ↔
       IsAltMod ⊥ ((relationMatrix R n q).map phi) := by
-  rw [definingHopfIdeal_toIdeal, relationSet, span_altRelationSet_le_iff]
+  rw [definingHopfIdeal_toIdeal, relationSet_def, span_altRelationSet_le_iff]
   simp only [isAltMod_iff, Matrix.map_apply, RingHom.mem_ker, Ideal.mem_bot, AlgHom.coe_toRingHom,
     map_add]
 
