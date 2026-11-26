@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Homology.CochainComplexOpposite
 public import Mathlib.Algebra.Homology.Embedding.RestrictionHomology
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.Algebra.Category.ModuleCat.Ulift
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Order.Interval.Set.OrdConnected
@@ -61,7 +62,10 @@ studies its spectral sequence, for any such data.
   components (`TauCeti.BottChainData.isBilimitComplexOnBicone`). The Bott complex of a single
   component `C` has in total degree `n` the chains of degree `n - λ_C` on `C`
   (`TauCeti.BottChainData.mem_totalDegree_restrictGrading_eq_iff`), with differential
-  `(-1)^λ_C ∂`. If each band contains a single critical value, the first page is therefore
+  `(-1)^λ_C ∂`, so its homology in total degree `n` is the homology `H_(n - λ_C)(C)` of the
+  chain complex `TauCeti.BottChainData.componentChains` of the chains on `C` with the boundary `∂`
+  (`TauCeti.BottChainData.componentComplexHomologyIso`, up to a universe lift). If each band
+  contains a single critical value, the first page is therefore
   `E_(p,q) = ⊕_(C in the band) H_(n - λ_C)(C)`, the homology of the chains on the components
   shifted by their negative-normal ranks
   (`TauCeti.BottChainData.spectralSequenceFirstPageXIsoBiproduct`).
@@ -88,6 +92,9 @@ manifold by sublevel sets, are not attempted here.
 * `TauCeti.BottChainData.filtrationAbutmentIso`,
   `TauCeti.BottChainData.spectralSequencePageXIsoGraded`: its convergence to the homology of the
   Bott complex.
+* `TauCeti.BottChainData.componentChains`,
+  `TauCeti.BottChainData.componentComplexHomologyIso`: the chain complex of a single component
+  and the homology of the Bott complex of that component.
 
 ## References
 
@@ -346,6 +353,13 @@ theorem chainComplexOn_X (k : ℤ) :
       ModuleCat.of R ((B.restrict p hp).totalDegree (restrictGrading p S) k) :=
   (rfl)
 
+/-- A chain of total degree `k` on the components of `p` vanishes on the components outside
+`p`. -/
+theorem apply_eq_zero_of_mem_restrict_totalDegree {k : ℤ} {x : ∀ C, M C}
+    (hx : x ∈ (B.restrict p hp).totalDegree (restrictGrading p S) k) {C : ι} (hC : ¬p C) :
+    x C = 0 :=
+  eq_zero_of_mem_restrictGrading S ((mem_totalDegree_iff _ _).1 hx C) hC
+
 /-- The differential of the Bott complex of `p` is the Bott differential of `p`. -/
 @[simp]
 theorem chainComplexOn_d_apply (k : ℤ)
@@ -411,7 +425,7 @@ noncomputable def chainComplexOnInclusion (hpq : ∀ C, p C → q C)
     -- the inclusion of submodules does not change the underlying chain
     refine (B.restrict_differential_eq_of_lower p hp hq hpq hlow (x := x.val) fun C hC ↦ ?_).trans
       (chainComplexOn_d_apply B p hp hboundary hpushforward k x).symm
-    exact eq_zero_of_mem_restrictGrading S ((mem_totalDegree_iff _ _).1 x.property C) hC
+    exact B.apply_eq_zero_of_mem_restrict_totalDegree _ _ x.property hC
 
 /-- The inclusion of a lower part sends a chain to the same chain. -/
 @[simp]
@@ -452,7 +466,7 @@ noncomputable def chainComplexOnRestriction (hpq : ∀ C, p C → q C)
     refine (B.restrict_differential_restrictProj_of_upper p hp hq hpq hup (x := x.val)
       fun C hC ↦ ?_).trans
         (congrArg _ (chainComplexOn_d_apply B q hq hboundary hpushforward k x).symm)
-    exact eq_zero_of_mem_restrictGrading S ((mem_totalDegree_iff _ _).1 x.property C) hC
+    exact B.apply_eq_zero_of_mem_restrict_totalDegree _ _ x.property hC
 
 /-- The restriction to an upper part projects a chain onto the chains of `p`. -/
 @[simp]
@@ -471,7 +485,7 @@ theorem restrictProj_eq_self {k : ℤ} {x : ∀ C, M C}
   funext C
   by_cases hC : p C
   · simp [hC]
-  · simp [hC, eq_zero_of_mem_restrictGrading S ((mem_totalDegree_iff _ _).1 hx C) hC]
+  · simp [hC, B.apply_eq_zero_of_mem_restrict_totalDegree _ _ hx hC]
 
 instance epi_chainComplexOnRestriction (hpq : ∀ C, p C → q C)
     (hup : ∀ C D, q C → p D → ¬p C → B.pushforward C D = 0) :
@@ -499,7 +513,7 @@ noncomputable def chainComplexOnι (hlow : ∀ C D, p C → ¬p D → B.pushforw
     -- the inclusion of submodules does not change the underlying chain
     refine (B.differential_eq_restrict_differential_of_lower p hp hlow (x := x.val)
       fun C hC ↦ ?_).trans (chainComplexOn_d_apply B p hp hboundary hpushforward k x).symm
-    exact eq_zero_of_mem_restrictGrading S ((mem_totalDegree_iff _ _).1 x.property C) hC
+    exact B.apply_eq_zero_of_mem_restrict_totalDegree _ _ x.property hC
 
 /-- The inclusion of a lower set into the Bott complex sends a chain to the same chain. -/
 @[simp]
@@ -558,8 +572,7 @@ noncomputable def chainComplexOnShortComplex : ShortComplex (ChainComplex (Modul
     change restrictProj R r x.val C = 0
     by_cases hC : r C
     · simp only [restrictProj_apply, hC, ite_true]
-      exact eq_zero_of_mem_restrictGrading S ((mem_totalDegree_iff _ _).1 x.property C)
-        ((hpr C (hrq C hC)).1 hC)
+      exact B.apply_eq_zero_of_mem_restrict_totalDegree _ _ x.property ((hpr C (hrq C hC)).1 hC)
     · simp [hC]
 
 /-- The first map of the sequence of a lower part and its complement is the inclusion. -/
@@ -603,7 +616,7 @@ theorem chainComplexOnShortComplex_shortExact :
         -- `hx` states that the projection of `x` to the chains of `r` vanishes.
         change restrictProj R r x.val C = 0 at h
         simpa only [restrictProj_apply, (hpr C hqC).2 hC, ite_true] using h
-      · exact eq_zero_of_mem_restrictGrading S ((mem_totalDegree_iff _ _).1 x.property C) hqC
+      · exact B.apply_eq_zero_of_mem_restrict_totalDegree _ _ x.property hqC
     refine ⟨⟨x.val, (mem_totalDegree_iff _ _).2 fun C ↦ ?_⟩, rfl⟩
     by_cases hC : p C
     · rw [restrictGrading_of_pos S hC]
@@ -653,6 +666,13 @@ theorem restrict_differential_apply_of_value_eq (s : Set ℝ) [s.OrdConnected]
   · rw [correspondence_apply, hv C D (hs C D h.1 h.2).le, LinearMap.zero_apply, smul_zero]
   · rfl
 
+include hv in
+/-- **No pushforward leaves a sublevel**: a pushforward from a component with value at most `b` to
+one with value above `b` vanishes. -/
+theorem pushforward_eq_zero_of_mem_Iic_of_notMem_Iic {b : ℝ} {C D : ι} (hC : v C ∈ Iic b)
+    (hD : v D ∉ Iic b) : B.pushforward C D = 0 :=
+  hv C D (le_trans (mem_Iic.1 hC) (not_le.1 hD).le)
+
 variable {S : ∀ C, ℤ → Submodule R (M C)}
   (hboundary : ∀ C j, ∀ x ∈ S C j, B.boundary C x ∈ S C (j - 1))
   (hpushforward : ∀ C D j, ∀ x ∈ S C j,
@@ -677,7 +697,7 @@ noncomputable abbrev bandSequence {a b : ℝ} (hab : a ≤ b) :
     (B.pushforward_comp_pushforward_eq_zero_of_ordConnected v hv (Ioc a b))
     (fun _ hC ↦ mem_Iic.2 (le_trans (mem_Iic.1 hC) hab)) (fun _ hC ↦ mem_Iic.2 hC.2)
     (fun _ hC ↦ ⟨fun h ↦ not_le.2 h.1, fun h ↦ ⟨not_le.1 h, hC⟩⟩)
-    (fun C D hC _ hD ↦ hv C D (le_trans (mem_Iic.1 hC) (not_le.1 hD).le))
+    (fun _ _ hC _ hD ↦ B.pushforward_eq_zero_of_mem_Iic_of_notMem_Iic v hv hC hD)
 
 /-- **The sublevel–band sequence is short exact.** -/
 theorem bandSequence_shortExact {a b : ℝ} (hab : a ≤ b) :
@@ -691,14 +711,14 @@ noncomputable def filtrationι (b : ℝ) :
         ComplexShape.embeddingUpIntDownInt ⟶
       (B.chainComplex hboundary hpushforward).restriction ComplexShape.embeddingUpIntDownInt :=
   restrictionMap (B.chainComplexOnι _ _ hboundary hpushforward
-    fun C D hC hD ↦ hv C D (le_trans (mem_Iic.1 hC) (not_le.1 hD).le)) _
+    fun _ _ hC hD ↦ B.pushforward_eq_zero_of_mem_Iic_of_notMem_Iic v hv hC hD) _
 
 /-- The regraded inclusion of the components with value at most `b` is the restriction along
 `n ↦ -n` of the inclusion of their Bott complex into the Bott complex. -/
 theorem filtrationι_def (b : ℝ) :
     B.filtrationι v hv hboundary hpushforward b =
       restrictionMap (B.chainComplexOnι _ _ hboundary hpushforward
-        fun C D hC hD ↦ hv C D (le_trans (mem_Iic.1 hC) (not_le.1 hD).le)) _ :=
+        fun _ _ hC hD ↦ B.pushforward_eq_zero_of_mem_Iic_of_notMem_Iic v hv hC hD) _ :=
   (rfl)
 
 instance mono_filtrationι (b : ℝ) : Mono (B.filtrationι v hv hboundary hpushforward b) :=
@@ -726,7 +746,7 @@ noncomputable abbrev sublevelInclusion {b c : ℝ} (hbc : b ≤ c) :
       B.complexOn v hv hboundary hpushforward (Iic c) :=
   B.chainComplexOnInclusion _ _ hboundary hpushforward _
     (fun _ hC ↦ mem_Iic.2 (le_trans (mem_Iic.1 hC) hbc))
-    (fun C D hC _ hD ↦ hv C D (le_trans (mem_Iic.1 hC) (not_le.1 hD).le))
+    (fun _ _ hC _ hD ↦ B.pushforward_eq_zero_of_mem_Iic_of_notMem_Iic v hv hC hD)
 
 /-- For `b ≤ c`, the regraded inclusion of the components with value at most `b` into the Bott
 complex factors through the components with value at most `c`. -/
@@ -761,9 +781,12 @@ theorem filtration_eq_bot {q : ℤ} (hq : ∀ C, a q < v C) :
         (restrictGrading (fun C ↦ v C ∈ Iic (a q)) S) j) := fun j ↦
     ⟨fun x y ↦ Subtype.ext <| funext fun C ↦ by
       have hC : ¬v C ∈ Iic (a q) := not_le.2 (hq C)
-      rw [eq_zero_of_mem_restrictGrading S ((mem_totalDegree_iff _ _).1 x.property C) hC,
-        eq_zero_of_mem_restrictGrading S ((mem_totalDegree_iff _ _).1 y.property C) hC]⟩
+      rw [B.apply_eq_zero_of_mem_restrict_totalDegree _ _ x.property hC,
+        B.apply_eq_zero_of_mem_restrict_totalDegree _ _ y.property hC]⟩
   have := hsub (ComplexShape.embeddingUpIntDownInt.f k)
+  -- The term of the regraded complex at `k` is, by `TauCeti.BottChainData.chainComplexOn_X`, the
+  -- module of chains of total degree `embeddingUpIntDownInt.f k` on these components, which is a
+  -- subsingleton; the placeholder in `ModuleCat.of R _` is solved by unfolding to it.
   exact (ModuleCat.isZero_of_subsingleton (ModuleCat.of R _)).eq_of_src _ _
 
 /-- Above all critical values, the critical-value filtration is everything. -/
@@ -809,6 +832,20 @@ noncomputable def filtrationCokernelIso (q : ℤ) :
     (B.restrictionMap_sublevelInclusion_comp_filtrationι v hv hboundary hpushforward
       (ha (Int.le_add_one le_rfl))) _ _
     (B.bandSequence_map_shortExact v hv hboundary hpushforward ha q).gIsCokernel
+
+/-- The identification of the graded piece of the critical-value filtration with the band complex
+restricts chains to the band: under the identification of the stage `a (q + 1)` with the sublevel
+chains, the cokernel projection is the restriction to the band `Ioc (a q) (a (q + 1))`. -/
+@[reassoc (attr := simp)]
+theorem π_filtrationCokernelIso_hom (q : ℤ) :
+    cokernel.π _ ≫ (B.filtrationCokernelIso v hv hboundary hpushforward ha q).hom =
+      (CochainComplex.filtrationFunctorObjIsoOfEqMk _
+          (B.monotone_filtration v hv hboundary hpushforward ha)
+          (B.filtrationι v hv hboundary hpushforward (a (q + 1)))
+          (B.filtration_eq_mk v hv hboundary hpushforward a (q + 1))).hom ≫
+        restrictionMap (B.bandSequence v hv hboundary hpushforward
+          (ha (Int.le_add_one le_rfl : q ≤ q + 1))).g ComplexShape.embeddingUpIntDownInt :=
+  CochainComplex.π_cokernelFiltrationFunctorMapIsoOfIsColimit_hom _ _ _ _ _ _ _ _ _ _
 
 /-- **The critical-value spectral sequence of the Bott complex.** For monotone cut values
 `a : ℤ → ℝ`, the spectral sequence of the filtration of the Bott complex by the components with
@@ -871,6 +908,32 @@ theorem pushforward_comp_pushforward_eq_zero_of_eq (C : ι) (D E F : ι) (hD : D
   · rw [hv C E h, LinearMap.comp_zero]
   · rw [hv E C (not_le.1 h).le, LinearMap.zero_comp]
 
+/-- **The chain complex of a component** `C`: the chains `S C j` of degree `j` on `C`, with the
+internal boundary `∂` of `C`. -/
+-- The body is exposed so that the terms of the complex compute to the chains of each degree,
+-- which the identification `TauCeti.BottChainData.componentComplexHomologyIso` is built on.
+@[expose]
+noncomputable def componentChains (C : ι) : ChainComplex (ModuleCat R) ℤ :=
+  ChainComplex.of (fun j ↦ ModuleCat.of R (S C j))
+    (fun j ↦ ModuleCat.ofHom ((B.boundary C).restrict fun x hx ↦ by
+      simpa using hboundary C (j + 1) x hx))
+    (fun j ↦ by
+      ext x : 2
+      exact Subtype.ext (LinearMap.congr_fun (B.boundary_comp_boundary C) x.val))
+
+/-- The term of the chain complex of `C` in degree `j` consists of the chains of degree `j` on
+`C`. -/
+theorem componentChains_X (C : ι) (j : ℤ) :
+    (B.componentChains hboundary C).X j = ModuleCat.of R (S C j) :=
+  (rfl)
+
+/-- The differential of the chain complex of `C` is the boundary of `C`. -/
+theorem componentChains_d_apply (C : ι) {i k : ℤ} (hik : i = k + 1) (x : S C i) :
+    ((((B.componentChains hboundary C).d i k).hom x : S C k)).val = B.boundary C x.val := by
+  subst hik
+  simp only [componentChains, ChainComplex.of_d, ModuleCat.hom_ofHom]
+  exact LinearMap.coe_restrict_apply _ _
+
 variable [DecidableEq ι]
 
 /-- **The Bott complex of a single component** `C`: its chains in total degree `n` are the chains
@@ -878,6 +941,117 @@ of degree `n - λ_C` on `C`, with differential `(-1)^λ_C ∂`. -/
 noncomputable abbrev componentComplex (C : ι) : ChainComplex (ModuleCat R) ℤ :=
   B.chainComplexOn (· = C) (B.pushforward_comp_pushforward_eq_zero_of_eq v hv C) hboundary
     hpushforward
+
+/-- **The Bott data of a single component** `C`: the boundary of `C`, and no pushforwards. -/
+abbrev componentData (C : ι) : BottChainData R ι M :=
+  B.restrict (· = C) (B.pushforward_comp_pushforward_eq_zero_of_eq v hv C)
+
+/-- The differential of the Bott complex of a single component `C` is `(-1)^λ_C ∂`. -/
+theorem componentComplex_d_apply (C : ι) {i k : ℤ} (hik : i = k + 1)
+    (x : (B.componentData v hv C).totalDegree (restrictGrading (· = C) S) i) :
+    (((B.componentComplex v hv hboundary hpushforward C).d i k).hom x :
+        (B.componentData v hv C).totalDegree (restrictGrading (· = C) S) k).val C =
+      (B.rank C : ℤ).negOnePow • B.boundary C (x.val C) := by
+  subst hik
+  rw [chainComplexOn_d_apply, restrict_differential_apply, add_eq_left]
+  refine Finset.sum_eq_zero fun D _ ↦ ?_
+  split_ifs with hD
+  · rw [hD.1, correspondence_apply, hv C C le_rfl, LinearMap.zero_apply, smul_zero]
+  · rfl
+
+/-- **The chains of total degree `m` on a single component** `C` are, by evaluation at `C`, the
+chains of degree `j = m - λ_C` on `C`. The evaluation is multiplied by a sign `u`. -/
+noncomputable def componentTotalDegreeEquiv (B : BottChainData R ι M) (C : ι) (u : ℤˣ) {m j : ℤ}
+    (h : m - B.rank C = j) : B.totalDegree (restrictGrading (· = C) S) m ≃ₗ[R] S C j where
+  toFun x := ⟨u • x.val C, by
+    have := ((B.mem_totalDegree_restrictGrading_eq_iff C).1 x.property).1
+    rw [h] at this
+    rw [Units.smul_def]
+    exact zsmul_mem this _⟩
+  invFun y := ⟨Pi.single C (u • y.val), (B.mem_totalDegree_restrictGrading_eq_iff C).2
+    ⟨by rw [Pi.single_eq_same, h, Units.smul_def]; exact zsmul_mem y.property _,
+      fun _ hD ↦ Pi.single_eq_of_ne hD _⟩⟩
+  map_add' x y := Subtype.ext (smul_add u (x.val C) (y.val C))
+  map_smul' r x := Subtype.ext (smul_comm u r (x.val C))
+  left_inv x := Subtype.ext <| funext fun D ↦ by
+    by_cases hD : D = C
+    · subst hD
+      simp [smul_smul]
+    · simp [Pi.single_eq_of_ne hD,
+        ((B.mem_totalDegree_restrictGrading_eq_iff C).1 x.property).2 D hD]
+  right_inv y := Subtype.ext (by simp [smul_smul])
+
+@[simp]
+theorem componentTotalDegreeEquiv_apply_coe (B : BottChainData R ι M) (C : ι) (u : ℤˣ) {m j : ℤ}
+    (h : m - B.rank C = j) (x : B.totalDegree (restrictGrading (· = C) S) m) :
+    (B.componentTotalDegreeEquiv C u h x : M C) = u • x.val C :=
+  (rfl)
+
+/-- The short complex of the Bott complex of a single component `C` in total degree `n` is that of
+the chain complex of `C` in degree `n - λ_C`, lifted to the universe of the Bott complex:
+evaluation at `C`, multiplied by `(-1)^λ_C` in total degree `n`, identifies the differential
+`(-1)^λ_C ∂` with `∂`. -/
+noncomputable def componentComplexScIso (C : ι) (n : ℤ) :
+    (B.componentComplex v hv hboundary hpushforward C).sc' (n + 1) n (n - 1) ≅
+      ((B.componentChains hboundary C).sc' (n - B.rank C + 1) (n - B.rank C)
+        (n - B.rank C - 1)).map (ModuleCat.uliftFunctor R) :=
+  ShortComplex.isoMk
+    (((B.componentData v hv C).componentTotalDegreeEquiv C 1
+      (by rw [restrict_rank]; ring : _ = n - B.rank C + 1)).trans
+        ULift.moduleEquiv.symm).toModuleIso
+    (((B.componentData v hv C).componentTotalDegreeEquiv C (B.rank C : ℤ).negOnePow
+      (rfl : _ = n - B.rank C)).trans ULift.moduleEquiv.symm).toModuleIso
+    (((B.componentData v hv C).componentTotalDegreeEquiv C 1
+      (by rw [restrict_rank]; ring : _ = n - B.rank C - 1)).trans
+        ULift.moduleEquiv.symm).toModuleIso
+    (ModuleCat.hom_ext (LinearMap.ext fun (x : (B.componentData v hv C).totalDegree
+        (restrictGrading (· = C) S) (n + 1)) ↦ ULift.ext (Subtype.ext (by
+      -- On chains, the square states `∂ (x C) = (-1)^λ_C • (-1)^λ_C • ∂ (x C)`; the terms of the
+      -- complexes are the modules of chains only after unfolding, so `change` states it there.
+      change (((B.componentChains hboundary C).d (n - B.rank C + 1) (n - B.rank C)).hom
+          ((B.componentData v hv C).componentTotalDegreeEquiv C 1
+            (by rw [restrict_rank]; ring : _ = n - B.rank C + 1) x) : S C _).val =
+        (B.rank C : ℤ).negOnePow • ((((B.componentComplex v hv hboundary hpushforward C).d
+          (n + 1) n).hom x : (B.componentData v hv C).totalDegree (restrictGrading (· = C) S) n).val
+            C)
+      rw [B.componentChains_d_apply hboundary C rfl]
+      change B.boundary C ((1 : ℤˣ) • x.val C) = _
+      rw [B.componentComplex_d_apply v hv hboundary hpushforward C rfl, smul_smul,
+        Int.units_mul_self, one_smul, one_smul]))))
+    (ModuleCat.hom_ext (LinearMap.ext fun (x : (B.componentData v hv C).totalDegree
+        (restrictGrading (· = C) S) n) ↦ ULift.ext (Subtype.ext (by
+      -- On chains, the square states `∂ ((-1)^λ_C • x C) = (-1)^λ_C • ∂ (x C)`.
+      change (((B.componentChains hboundary C).d (n - B.rank C) (n - B.rank C - 1)).hom
+          ((B.componentData v hv C).componentTotalDegreeEquiv C (B.rank C : ℤ).negOnePow
+            (rfl : _ = n - B.rank C) x) : S C _).val =
+        (1 : ℤˣ) • ((((B.componentComplex v hv hboundary hpushforward C).d n (n - 1)).hom x :
+          (B.componentData v hv C).totalDegree (restrictGrading (· = C) S) (n - 1)).val C)
+      rw [B.componentChains_d_apply hboundary C (by ring)]
+      change B.boundary C ((B.rank C : ℤ).negOnePow • x.val C) = _
+      rw [B.componentComplex_d_apply v hv hboundary hpushforward C (by ring), one_smul,
+        LinearMap.map_smul_of_tower]))))
+
+/-- In total degree `n`, the identification `TauCeti.BottChainData.componentComplexScIso`
+evaluates a chain at `C` and multiplies it by `(-1)^λ_C`. -/
+theorem componentComplexScIso_hom_τ₂_apply (C : ι) (n : ℤ)
+    (x : (B.componentData v hv C).totalDegree (restrictGrading (· = C) S) n) :
+    Subtype.val (p := (· ∈ S C (n - B.rank C)))
+        ((B.componentComplexScIso v hv hboundary hpushforward C n).hom.τ₂.hom x).down =
+      (B.rank C : ℤ).negOnePow • x.val C :=
+  (rfl)
+
+/-- **The homology of the Bott complex of a single component** `C` in total degree `n` is the
+homology `H_(n - λ_C)(C)` of the chains on `C`, lifted to the universe of the Bott complex
+(`TauCeti.BottChainData.componentComplexScIso`). -/
+noncomputable def componentComplexHomologyIso (C : ι) (n : ℤ) :
+    (B.componentComplex v hv hboundary hpushforward C).homology n ≅
+      (ModuleCat.uliftFunctor R).obj ((B.componentChains hboundary C).homology (n - B.rank C)) :=
+  (B.componentComplex v hv hboundary hpushforward C).homologyIsoSc' (n + 1) n (n - 1)
+      (by simp) (by simp) ≪≫
+    ShortComplex.homologyMapIso (B.componentComplexScIso v hv hboundary hpushforward C n) ≪≫
+    ((B.componentChains hboundary C).sc' _ _ _).mapHomologyIso (ModuleCat.uliftFunctor R) ≪≫
+    (ModuleCat.uliftFunctor R).mapIso ((B.componentChains hboundary C).homologyIsoSc'
+      (n - B.rank C + 1) (n - B.rank C) (n - B.rank C - 1) (by simp) (by simp)).symm
 
 variable (s : Set ℝ) [s.OrdConnected] [DecidablePred (· ∈ s)]
   (hs : ∀ C D, v C ∈ s → v D ∈ s → v C = v D)
@@ -909,7 +1083,7 @@ noncomputable def complexOnBicone :
       by_cases hE : E = D.val
       · subst hE
         simp only [restrictProj_apply, ite_true]
-        exact eq_zero_of_mem_restrictGrading S ((mem_totalDegree_iff _ _).1 x.property _)
+        exact B.apply_eq_zero_of_mem_restrict_totalDegree _ _ x.property
           fun h' ↦ h (Subtype.ext h'.symm)
       · simp [hE]
 
@@ -931,6 +1105,14 @@ noncomputable def isBilimitComplexOnBicone :
     have hP (C : {C // v C ∈ s}) : ((B.complexOnBicone v hv hboundary hpushforward s hs).π C ≫
         (B.complexOnBicone v hv hboundary hpushforward s hs).ι C).f k =
           ModuleCat.ofHom ((restrictProj R (· = C.val)).restrict (p := T) (q := T) (hT C)) :=
+      -- In degree `k`, `π C ≫ ι C` is the `ModuleCat` composite of the projection
+      -- `ofHom ((restrictProj R (· = C)).restrict _)` of `chainComplexOnRestriction` and the
+      -- inclusion `ofHom (Submodule.inclusion _)` of `chainComplexOnInclusion`. Both maps are
+      -- restrictions of linear maps of `∀ D, M D`, so their composite is, by unfolding
+      -- `ModuleCat.ofHom`, `LinearMap.restrict` and `Submodule.inclusion`, the restriction of
+      -- `restrictProj R (· = C)` to `T`. The rewriting lemmas `HomologicalComplex.comp_f` and
+      -- `ModuleCat.hom_comp` do not apply, as the terms of the complexes are the modules of chains
+      -- only after unfolding `chainComplexOn`.
       (rfl)
     rw [show (∑ C, (B.complexOnBicone v hv hboundary hpushforward s hs).π C ≫
         (B.complexOnBicone v hv hboundary hpushforward s hs).ι C).f k =
@@ -951,7 +1133,7 @@ noncomputable def isBilimitComplexOnBicone :
         simp
       · rw [Finset.sum_eq_zero fun C _ ↦ ite_eq_right_iff.2 fun (h : E = C.val) ↦
           absurd (h ▸ C.property) hE]
-        exact (eq_zero_of_mem_restrictGrading S ((mem_totalDegree_iff _ _).1 x.property E) hE).symm
+        exact (B.apply_eq_zero_of_mem_restrict_totalDegree _ _ x.property hE).symm
     exact key
 
 /-- **The homology of a band with a single value is the direct sum of the homologies of its
@@ -980,18 +1162,20 @@ noncomputable def homologyComplexOnIsoBiproduct (n : ℤ) :
 end Component
 /-- **The first page of the critical-value spectral sequence for a single critical value per
 band.** If all values in the band `Ioc (a q) (a (q + 1))` agree, the object at `(p, q)` on the first
-page, with `p + q = -n`, is the direct sum over the components `C` in the band of the homology in
-total degree `n` of the Bott complex of `C`, which consists of the chains of degree `n - λ_C` on
-`C` (`TauCeti.BottChainData.mem_totalDegree_restrictGrading_eq_iff`). -/
+page, with `p + q = -n`, is the direct sum `⊕ H_(n - λ_C)(C)` over the components `C` in the band
+of the homology in degree `n - λ_C` of the chains on `C` (`TauCeti.BottChainData.componentChains`),
+lifted to the universe of the Bott complex (`TauCeti.BottChainData.componentComplexHomologyIso`).
+-/
 noncomputable def spectralSequenceFirstPageXIsoBiproduct [DecidableEq ι] (pq : ℤ × ℤ) (n : ℤ)
     (hn : pq.1 + pq.2 = -n)
     (hband : ∀ C D, v C ∈ Ioc (a pq.2) (a (pq.2 + 1)) → v D ∈ Ioc (a pq.2) (a (pq.2 + 1)) →
       v C = v D) :
     ((B.spectralSequence v hv hboundary hpushforward ha).page 2).X pq ≅
-      ⨁ fun C : {C // v C ∈ Ioc (a pq.2) (a (pq.2 + 1))} ↦
-        (B.componentComplex v hv hboundary hpushforward C.val).homology n :=
+      ⨁ fun C : {C // v C ∈ Ioc (a pq.2) (a (pq.2 + 1))} ↦ (ModuleCat.uliftFunctor R).obj
+        ((B.componentChains hboundary C.val).homology (n - B.rank C.val)) :=
   B.spectralSequenceFirstPageXIso v hv hboundary hpushforward ha pq n hn ≪≫
-    B.homologyComplexOnIsoBiproduct v hv hboundary hpushforward _ hband n
+    B.homologyComplexOnIsoBiproduct v hv hboundary hpushforward _ hband n ≪≫
+    biproduct.mapIso fun C ↦ B.componentComplexHomologyIso v hv hboundary hpushforward C.val n
 
 end Value
 
