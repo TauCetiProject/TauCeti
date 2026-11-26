@@ -140,6 +140,16 @@ theorem unitPartResidue_apply (t : Fˣ) (ht : v.ord (t : F) = 1) (f : Fˣ) :
       v.valuationSubring.unitGroupToResidueFieldUnits (v.unitPart t ht f) :=
   (rfl)
 
+/-- The reduced unit part of `f` is the residue of any element of the valuation ring whose value
+is the unit part `f * t ^ (-ord_v f)`. -/
+theorem coe_unitPartResidue_eq_residue (t : Fˣ) (ht : v.ord (t : F) = 1) {f : Fˣ}
+    {x : v.valuationSubring} (hx : (x : F) = (v.unitPart t ht f : Fˣ)) :
+    (v.unitPartResidue t ht f : IsLocalRing.ResidueField v.valuationSubring) =
+      IsLocalRing.residue v.valuationSubring x := by
+  rw [unitPartResidue_apply, ValuationSubring.coe_unitGroupToResidueFieldUnits_apply,
+    ← IsLocalRing.residue_def]
+  exact congrArg _ (Subtype.ext hx.symm)
+
 /-- The reduced unit part of a unit of the valuation ring is its residue. -/
 @[simp]
 theorem unitPartResidue_coe (t : Fˣ) (ht : v.ord (t : F) = 1)
