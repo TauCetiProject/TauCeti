@@ -150,6 +150,8 @@ variable {k : Type w} [CommSemiring k]
   [MonoidalPreadditive D] [MonoidalLinear k D]
 
 -- Simplify the duality operations before rewriting the pure objects as matrix embeddings.
+-- After `bifunctor_obj_obj`, `using!` identifies the inferred Deligne and matrix dual instances
+-- by definitional equality.
 section RightDual
 
 variable [RightRigidCategory C] [RightRigidCategory D]
@@ -158,9 +160,8 @@ variable [RightRigidCategory C] [RightRigidCategory D]
 @[simp↓]
 theorem rightDual_bifunctor_obj_obj (X : C) (Y : D) :
     (((bifunctor k C D).obj X).obj Y)ᘁ = ((bifunctor k C D).obj Xᘁ).obj Yᘁ := by
-  have h := Mat_.rightDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D)
-  rw [LinearTensor.rightDual_def] at h
-  exact h
+  simpa only [bifunctor_obj_obj, LinearTensor.rightDual_def] using!
+    (Mat_.rightDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D))
 
 /-- The evaluation of a pure object against its right dual is the one-entry matrix whose entry
 is the pure tensor of the evaluations in the factors. -/
@@ -168,9 +169,8 @@ is the pure tensor of the evaluations in the factors. -/
 theorem evaluation_rightDual_bifunctor_obj_obj (X : C) (Y : D) :
     ε_ (((bifunctor k C D).obj X).obj Y) ((((bifunctor k C D).obj X).obj Y)ᘁ) =
       fun _ _ ↦ LinearTensor.tmul (ε_ X Xᘁ) (ε_ Y Yᘁ) := by
-  have h := Mat_.evaluation_rightDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D)
-  simp only [LinearTensor.rightDual_evaluation] at h
-  exact h
+  simpa only [bifunctor_obj_obj, LinearTensor.rightDual_evaluation] using!
+    (Mat_.evaluation_rightDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D))
 
 /-- The coevaluation of a pure object with its right dual is the one-entry matrix whose entry
 is the pure tensor of the coevaluations in the factors. -/
@@ -178,9 +178,8 @@ is the pure tensor of the coevaluations in the factors. -/
 theorem coevaluation_rightDual_bifunctor_obj_obj (X : C) (Y : D) :
     η_ (((bifunctor k C D).obj X).obj Y) ((((bifunctor k C D).obj X).obj Y)ᘁ) =
       fun _ _ ↦ LinearTensor.tmul (η_ X Xᘁ) (η_ Y Yᘁ) := by
-  have h := Mat_.coevaluation_rightDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D)
-  simp only [LinearTensor.rightDual_coevaluation] at h
-  exact h
+  simpa only [bifunctor_obj_obj, LinearTensor.rightDual_coevaluation] using!
+    (Mat_.coevaluation_rightDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D))
 
 end RightDual
 
@@ -193,9 +192,8 @@ variable [LeftRigidCategory C] [LeftRigidCategory D]
 theorem leftDual_bifunctor_obj_obj (X : C) (Y : D) :
     (ᘁ(((bifunctor k C D).obj X).obj Y) : DeligneProduct k C D) =
       ((bifunctor k C D).obj (ᘁX)).obj (ᘁY) := by
-  have h := Mat_.leftDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D)
-  rw [LinearTensor.leftDual_def] at h
-  exact h
+  simpa only [bifunctor_obj_obj, LinearTensor.leftDual_def] using!
+    (Mat_.leftDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D))
 
 /-- The evaluation of a pure object against its left dual is the one-entry matrix whose entry
 is the pure tensor of the evaluations in the factors. -/
@@ -203,9 +201,8 @@ is the pure tensor of the evaluations in the factors. -/
 theorem evaluation_leftDual_bifunctor_obj_obj (X : C) (Y : D) :
     ε_ (ᘁ(((bifunctor k C D).obj X).obj Y)) (((bifunctor k C D).obj X).obj Y) =
       fun _ _ ↦ LinearTensor.tmul (ε_ (ᘁX) X) (ε_ (ᘁY) Y) := by
-  have h := Mat_.evaluation_leftDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D)
-  simp only [LinearTensor.leftDual_evaluation] at h
-  exact h
+  simpa only [bifunctor_obj_obj, LinearTensor.leftDual_evaluation] using!
+    (Mat_.evaluation_leftDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D))
 
 /-- The coevaluation of a pure object with its left dual is the one-entry matrix whose entry
 is the pure tensor of the coevaluations in the factors. -/
@@ -213,9 +210,8 @@ is the pure tensor of the coevaluations in the factors. -/
 theorem coevaluation_leftDual_bifunctor_obj_obj (X : C) (Y : D) :
     η_ (ᘁ(((bifunctor k C D).obj X).obj Y)) (((bifunctor k C D).obj X).obj Y) =
       fun _ _ ↦ LinearTensor.tmul (η_ (ᘁX) X) (η_ (ᘁY) Y) := by
-  have h := Mat_.coevaluation_leftDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D)
-  simp only [LinearTensor.leftDual_coevaluation] at h
-  exact h
+  simpa only [bifunctor_obj_obj, LinearTensor.leftDual_coevaluation] using!
+    (Mat_.coevaluation_leftDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D))
 
 end LeftDual
 
