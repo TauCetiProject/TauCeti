@@ -162,7 +162,7 @@ theorem polynomialFiltration_eq_pow (n d : ℕ) :
 /-- The polynomial filtration is increasing: `L_d ≤ L_e` for `d ≤ e`. -/
 theorem polynomialFiltration_mono (n : ℕ) : Monotone (polynomialFiltration F n) :=
   fun _ _ hd ↦ Submodule.span_mono <| Set.image_mono fun _ hl ↦
-    ⟨hl.1, fun u hu ↦ (hl.2 u hu).imp fun _ hp ↦ ⟨hp.1.trans hd, hp.2⟩⟩
+    ⟨hl.1, fun u hu ↦ degreeLEUnits_mono hd (hl.2 u hu)⟩
 
 /-- Each `L_d` is a subgroup of the Milnor K-group `K_nᴹ(F(t))`. -/
 theorem polynomialFiltration_le_degree (n d : ℕ) :
@@ -173,10 +173,6 @@ theorem polynomialFiltration_le_degree (n d : ℕ) :
 /-- The unit of `F(t)` given by a nonzero polynomial. -/
 private def polyUnit (p : F[X]) (hp : p ≠ 0) : (RatFunc F)ˣ :=
   Units.mk0 (algebraMap F[X] (RatFunc F) p) (RatFunc.algebraMap_ne_zero hp)
-
-private theorem polyUnit_mem_degreeLEUnits {p : F[X]} (hp : p ≠ 0) {d : ℕ}
-    (hd : p.natDegree ≤ d) : polyUnit p hp ∈ degreeLEUnits F d :=
-  mk0_algebraMap_mem_degreeLEUnits hp hd
 
 private theorem ofUnit_mem_span_degreeLEUnits {d : ℕ} {u : (RatFunc F)ˣ}
     (hu : u ∈ degreeLEUnits F d) : ofUnit u ∈ Submodule.span ℤ (ofUnit '' degreeLEUnits F d) :=
@@ -214,7 +210,8 @@ private theorem span_degreeLEUnits_succ (d : ℕ) :
       rw [mul_left_comm, ← C_mul, mul_inv_cancel₀ hc, C_1, mul_one]
     rw [hu, ofUnit_mul]
     refine add_mem (Submodule.mem_sup_left (ofUnit_mem_span_degreeLEUnits
-      (polyUnit_mem_degreeLEUnits hC (by simp)))) (Submodule.mem_sup_right (Submodule.subset_span
+      (mk0_algebraMap_mem_degreeLEUnits hC (by simp))))
+      (Submodule.mem_sup_right (Submodule.subset_span
       ⟨_, ⟨_, monic_mul_leadingCoeff_inv hp0, irreducible_mul_leadingCoeff_inv.2 hirr, ?_, rfl⟩,
         rfl⟩))
     rw [natDegree_mul_C (inv_ne_zero hc), hp]
@@ -234,8 +231,8 @@ private theorem span_degreeLEUnits_succ (d : ℕ) :
       simp [polyUnit, ← hpu]
     rw [hu, ofUnit_mul]
     exact Submodule.mem_sup_left (add_mem
-      (ofUnit_mem_span_degreeLEUnits (polyUnit_mem_degreeLEUnits ha0 (by omega)))
-      (ofUnit_mem_span_degreeLEUnits (polyUnit_mem_degreeLEUnits hb0 (by omega))))
+      (ofUnit_mem_span_degreeLEUnits (mk0_algebraMap_mem_degreeLEUnits ha0 (by omega)))
+      (ofUnit_mem_span_degreeLEUnits (mk0_algebraMap_mem_degreeLEUnits hb0 (by omega))))
 
 /-- Modulo the classes of polynomials of degree at most `d`, a class of a monic irreducible
 polynomial of degree `d + 1` can be moved to the right of a class of a polynomial of degree at
@@ -290,8 +287,9 @@ private theorem span_monicIrreducibleUnits_mul_self_le (d : ℕ) :
   have hsub : (u₁ : RatFunc F) - u₂ = polyUnit _ hπ := by
     simp [polyUnit, ← hπ₁, ← hπ₂]
   rw [ofUnit_mul_ofUnit_eq_of_sub_eq hsub]
-  exact add_mem (sub_mem (hmem (polyUnit_mem_degreeLEUnits hπ hdeg) ⟨π₂, hm₂, hi₂, hd₂, hπ₂⟩)
-    (hmem (polyUnit_mem_degreeLEUnits hπ hdeg) ⟨π₁, hm₁, hi₁, hd₁, hπ₁⟩))
+  exact add_mem
+    (sub_mem (hmem (mk0_algebraMap_mem_degreeLEUnits hπ hdeg) ⟨π₂, hm₂, hi₂, hd₂, hπ₂⟩)
+      (hmem (mk0_algebraMap_mem_degreeLEUnits hπ hdeg) ⟨π₁, hm₁, hi₁, hd₁, hπ₁⟩))
     (hneg ⟨π₁, hm₁, hi₁, hd₁, hπ₁⟩)
 
 /-- The polynomial filtration exhausts `K_nᴹ(F(t))`: every rational function is a quotient of two
@@ -315,8 +313,9 @@ theorem iSup_polynomialFiltration (n : ℕ) :
       refine Submodule.mul_mem_mul ?_ (hD d (le_of_max_le_left hd))
       rw [ha, ofUnit_div]
       exact sub_mem
-        (ofUnit_mem_span_degreeLEUnits (polyUnit_mem_degreeLEUnits _ (by omega)))
-        (ofUnit_mem_span_degreeLEUnits (polyUnit_mem_degreeLEUnits _ (by omega)))
+        (ofUnit_mem_span_degreeLEUnits (mk0_algebraMap_mem_degreeLEUnits hnum (by omega)))
+        (ofUnit_mem_span_degreeLEUnits
+          (mk0_algebraMap_mem_degreeLEUnits (a : RatFunc F).denom_ne_zero (by omega)))
   rw [degree_eq_span, Submodule.span_le]
   rintro _ ⟨l, rfl, rfl⟩
   obtain ⟨D, hD⟩ := key l
