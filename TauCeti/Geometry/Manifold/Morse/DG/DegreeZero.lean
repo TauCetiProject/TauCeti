@@ -30,10 +30,10 @@ with local coefficients in the second page of its index spectral sequence.
   of unbroken trajectories from `x` to `y`, one point for each unparametrized trajectory
   (`IsAdaptedPseudoGradient.IsMorseSmale.finite_morseBrokenTrajectorySpace`,
   `IsAdaptedPseudoGradient.IsMorseSmale.natCard_morseBrokenTrajectorySpace`). If every trajectory
-  carries the coefficient `1` in the chain of `S`, as in the mod-two fundamental chain of the
-  finite set `L(x, y)`, the truncated entry is the sum of the classes of the loops `θ ∘ u` over
-  the trajectories `u`, and its augmentation is the number of trajectories. With coefficients in
-  `ZMod 2` this is the coefficient of `y` in the mod-two Morse boundary of `x`
+  carries the coefficient `1` in the chain of `S`, the truncated entry is the sum of the classes
+  of the loops `θ ∘ u` over the trajectories `u`, and its augmentation is the number of
+  trajectories. With coefficients in `ZMod 2` this is the coefficient of `y` in the mod-two Morse
+  boundary of `x`
   (`IsMorseSmale.augmentation_loopChainToGroupAlgebra_barraudCorneaCocycle_m` and its form
   `..._eq_morseBoundaryCoeff`, in the namespace `TauCeti.IsAdaptedPseudoGradient`).
 
@@ -42,9 +42,9 @@ trajectory is weighted by the homotopy class of its loop. For instance (an illus
 formalized here), for the height function of the circle, with `θ` collapsing one of the two arcs
 between the critical points, the two trajectories from the maximum to the minimum have loops of
 classes `1` and `t`, a generator of `π₁(S¹)`, and the truncated entry is `1 + t` in
-`(ZMod 2)[π₁(S¹)]`. The integral form is not covered here: once integral representing chain
-systems are available, the first point would apply with the orientation signs of the trajectories
-as the coefficients `r_u`.
+`(ZMod 2)[π₁(S¹)]`. For integral fundamental chains of the trajectory spaces the coefficients
+`r_u` are instead the orientation signs of the trajectories; this integral form is a remark, not
+formalized here.
 
 ## Main results
 
@@ -135,10 +135,9 @@ private theorem natCard_morseBrokenTrajectorySpace_of_eq_add_one (h : hX.IsMorse
 
 /-- **Between consecutive indices the truncated Barraud–Cornea cocycle counts trajectories.**
 Under the Morse–Smale condition, let `ind x = ind y + 1`, and let the chain of `S` give every
-trajectory from `x` to `y` the coefficient `1`, as the mod-two fundamental chain of the finite set
-`L(x, y)` does. Then the truncation of the entry at `(x, y)`, the sum of the classes of the loops
-of the trajectories, has as augmentation the number of unparametrized trajectories from `x`
-to `y`. -/
+trajectory from `x` to `y` the coefficient `1`. Then the truncation of the entry at `(x, y)`, the
+sum of the classes of the loops of the trajectories, has as augmentation the number of
+unparametrized trajectories from `x` to `y`. -/
 theorem augmentation_loopChainToGroupAlgebra_barraudCorneaCocycle_m (h : hX.IsMorseSmale)
     (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R)
     {x y : criticalPoints 𝓘(ℝ, E) f}
@@ -160,9 +159,9 @@ theorem augmentation_loopChainToGroupAlgebra_barraudCorneaCocycle_m (h : hX.IsMo
 
 /-- **Modulo two the truncated Barraud–Cornea cocycle is the Morse differential.** Under the
 Morse–Smale condition, let `ind x = ind y + 1`, and let the chain of `S`, with coefficients in
-`ZMod 2`, give every trajectory from `x` to `y` the coefficient `1`, as the mod-two fundamental
-chain of `L(x, y)` does. Then the augmentation of the truncation of the entry at `(x, y)` is the
-coefficient of `y` in the mod-two Morse boundary of `x`. -/
+`ZMod 2`, give every trajectory from `x` to `y` the coefficient `1`, as the chain of the finite set
+`L(x, y)` with every point weighted `1` does. Then the augmentation of the truncation of the entry
+at `(x, y)` is the coefficient of `y` in the mod-two Morse boundary of `x`. -/
 theorem augmentation_loopChainToGroupAlgebra_barraudCorneaCocycle_m_eq_morseBoundaryCoeff
     {Y : Type} [TopologicalSpace Y] {θ : C(M, Y)} {y₀ : Y}
     (hθ : ∀ x : criticalPoints 𝓘(ℝ, E) f, θ x = y₀) (h : hX.IsMorseSmale)
