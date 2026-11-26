@@ -19,8 +19,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 Let `S` be a compact connected Hausdorff Riemann surface, `N` a Hausdorff manifold with a smooth
 almost complex structure `J`, and `u : S → N` a nonconstant pseudoholomorphic map of class `C²`.
 Its critical values have the finite preimage `B = u⁻¹(u(Crit u))`
-(`TauCeti.criticalValuePreimage`,
-`TauCeti.finite_preimage_image_setOf_mfderiv_eq_zero_of_isPseudoholomorphic`). On `S \ B` the
+(`TauCeti.criticalValuePreimage`, `TauCeti.finite_criticalValuePreimage`). On `S \ B` the
 relation `Γ₀`, under which `z` and `ζ` are related when the branches of `u` at `z` and at `ζ` differ
 by a holomorphic change of source coordinate (`TauCeti.RiemannSurface.GermFactorsThrough u z u ζ`),
 is a closed equivalence relation (`TauCeti.equivalence_germFactorsThrough`,
@@ -70,7 +69,6 @@ A proper local homeomorphism with Hausdorff domain is a covering map
 
 ## Main definitions
 
-* `TauCeti.criticalValuePreimage`: the preimage `B = u⁻¹(u(Crit u))` of the critical values.
 * `TauCeti.coincidentBranches`: the coincident-branch relation `Γ₀ ⊆ (S \ B) × (S \ B)`.
 
 ## Main results
@@ -114,34 +112,6 @@ variable {S : Type*} [TopologicalSpace S] [ChartedSpace ℂ S] [IsManifold 𝓘(
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace N] [ChartedSpace H N] [IsManifold I ∞ N]
   {J : SmoothAlmostComplexStructure I N} {u : S → N}
-
-/-! ### The preimage of the critical values -/
-
-omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
-variable (I) in
-/-- The preimage `B = u⁻¹(u(Crit u))` of the critical values of a map `u : S → N` from a Riemann
-surface: the points `z` whose fibre `u⁻¹(u z)` contains a point at which the derivative of `u`
-vanishes. Off `B` all the points of each fibre are immersed. -/
-def criticalValuePreimage (u : S → N) : Set S :=
-  u ⁻¹' (u '' {x | mfderiv 𝓘(ℝ, ℂ) I u x = 0})
-
-omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
-@[simp]
-theorem mem_criticalValuePreimage {z : S} :
-    z ∈ criticalValuePreimage I u ↔ ∃ x, mfderiv 𝓘(ℝ, ℂ) I u x = 0 ∧ u x = u z :=
-  Iff.rfl
-
-omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
-/-- The set `u⁻¹(u(Crit u))` is a union of fibres of `u`. -/
-theorem mem_criticalValuePreimage_iff_of_apply_eq {z ζ : S} (h : u z = u ζ) :
-    z ∈ criticalValuePreimage I u ↔ ζ ∈ criticalValuePreimage I u := by
-  simp only [criticalValuePreimage, mem_preimage, h]
-
-omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
-/-- A map is immersed at the points outside the preimage of its critical values. -/
-theorem mfderiv_ne_zero_of_notMem_criticalValuePreimage {z : S}
-    (hz : z ∉ criticalValuePreimage I u) : mfderiv 𝓘(ℝ, ℂ) I u z ≠ 0 :=
-  fun h ↦ hz ⟨z, h, rfl⟩
 
 /-! ### The number of coincident branches -/
 
@@ -264,10 +234,10 @@ theorem exists_pos_forall_ncard_setOf_germFactorsThrough_eq [CompactSpace S] [Co
     (finite_preimage_singleton_of_isPseudoholomorphic hu₁ hJu hne (u z)).subset
       fun ζ hζ ↦ (GermFactorsThrough.apply_eq hζ).symm
   have himm : ∀ z ∉ B, ∀ ζ, u ζ = u z → mfderiv 𝓘(ℝ, ℂ) I u ζ ≠ 0 :=
-    fun z hz ζ hζ h0 ↦ hz ⟨ζ, h0, hζ⟩
+    fun z hz ζ hζ h0 ↦ hz (mem_criticalValuePreimage.2 ⟨ζ, h0, hζ⟩)
   have hBc : IsConnected Bᶜ := isConnected_compl_of_finite_of_one_lt_rank (E := ℂ)
     (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat)
-    (finite_preimage_image_setOf_mfderiv_eq_zero_of_isPseudoholomorphic hu₁ hJu hne)
+    (finite_criticalValuePreimage hu₁ hJu hne)
   -- The count is locally constant on `S \ B`, hence constant there.
   have hcont : ContinuousOn (fun z ↦ {ζ | GermFactorsThrough u z u ζ}.ncard) Bᶜ :=
     fun z hz ↦ (continuousAt_const.congr (EventuallyEq.symm
@@ -298,13 +268,6 @@ theorem mem_coincidentBranches
     {p : ↥(criticalValuePreimage I u)ᶜ × ↥(criticalValuePreimage I u)ᶜ} :
     p ∈ coincidentBranches I u ↔ GermFactorsThrough u (p.1 : S) u (p.2 : S) :=
   Iff.rfl
-
-omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
-/-- A point related to a point outside `u⁻¹(u(Crit u))` lies outside it too. -/
-theorem RiemannSurface.GermFactorsThrough.notMem_criticalValuePreimage {z ζ : S}
-    (h : GermFactorsThrough u z u ζ) (hz : z ∉ criticalValuePreimage I u) :
-    ζ ∉ criticalValuePreimage I u :=
-  (mem_criticalValuePreimage_iff_of_apply_eq h.apply_eq).not.1 hz
 
 /-- **The coincident-branch relation is an equivalence relation** on the complement of the
 preimage of the critical values of a `C²` pseudoholomorphic map from a Riemann surface. -/
