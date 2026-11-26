@@ -423,10 +423,10 @@ private theorem eval₂_fubiniStudyForm_eq_im_fubiniStudyHermitian (x : ComplexP
     (v w : Fin n → ℂ) :
     SmoothBundleForm.eval₂ (fubiniStudyForm n) x v w =
       (fubiniStudyHermitian ℂ
-        (affineVector (exists_mem_affineOpen x).choose (chartAt (Fin n → ℂ) x x))
-        (insertZeroL (exists_mem_affineOpen x).choose v)
-        (insertZeroL (exists_mem_affineOpen x).choose w)).im := by
-  have h := (SmoothForm.eval₂_mpullback (affineParam (exists_mem_affineOpen x).choose)
+        (affineVector (chartIndex x) (chartAt (Fin n → ℂ) x x))
+        (insertZeroL (chartIndex x) v)
+        (insertZeroL (chartIndex x) w)).im := by
+  have h := (SmoothForm.eval₂_mpullback (affineParam (chartIndex x))
     (contMDiff_affineParam_real _ ∞) (fubiniStudyForm n) (chartAt (Fin n → ℂ) x x) v w).symm.trans
     (eval₂_mpullback_affineParam_fubiniStudyForm _ (chartAt (Fin n → ℂ) x x) v w)
   rwa [mfderiv_affineParam_chartAt_apply x v, mfderiv_affineParam_chartAt_apply x w,

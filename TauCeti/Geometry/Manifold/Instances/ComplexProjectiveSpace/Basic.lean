@@ -41,18 +41,25 @@ noncomputable section
 
 variable {n : ℕ}
 
+/-- The index of the preferred chart at `x`: a homogeneous coordinate `k` of `x` that is nonzero,
+chosen by `exists_mem_affineOpen x`, so that `x` lies in the affine open `X_k ≠ 0`. -/
+def chartIndex (x : ComplexProjectiveSpace n) : Fin (n + 1) := (exists_mem_affineOpen x).choose
+
+/-- Every point `x` lies in the affine open of its chart index. -/
+theorem mem_affineOpen_chartIndex (x : ComplexProjectiveSpace n) : x ∈ affineOpen (chartIndex x) :=
+  (exists_mem_affineOpen x).choose_spec
+
 /-- The standard atlas consists of the `n + 1` homogeneous-ratio charts. -/
 instance instChartedSpace : ChartedSpace (Fin n → ℂ) (ComplexProjectiveSpace n) where
   atlas := range affineChart
-  chartAt p := affineChart (exists_mem_affineOpen p).choose
+  chartAt p := affineChart (chartIndex p)
   mem_chart_source p := by
-    simpa only [affineChart_source] using (exists_mem_affineOpen p).choose_spec
+    simpa only [affineChart_source] using mem_affineOpen_chartIndex p
   chart_mem_atlas p := mem_range_self _
 
-/-- By the definition of the atlas, the preferred chart at `x` is `affineChart k` for the index `k`
-chosen by `exists_mem_affineOpen x`. -/
+/-- By the definition of the atlas, the preferred chart at `x` is `affineChart (chartIndex x)`. -/
 theorem chartAt_def (x : ComplexProjectiveSpace n) :
-    chartAt (Fin n → ℂ) x = affineChart (exists_mem_affineOpen x).choose :=
+    chartAt (Fin n → ℂ) x = affineChart (chartIndex x) :=
   (rfl)
 
 /-- Membership in the standard projective atlas means being a homogeneous-ratio chart. -/
@@ -66,7 +73,7 @@ the coordinate `k`, is the homogeneous-ratio chart `X_k ≠ 0`: it is the only c
 @[simp]
 theorem chartAt_affineParam_zero (k : Fin (n + 1)) :
     chartAt (Fin n → ℂ) (affineParam k 0) = affineChart k := by
-  have h := (exists_mem_affineOpen (affineParam k (0 : Fin n → ℂ))).choose_spec
+  have h := mem_affineOpen_chartIndex (affineParam k (0 : Fin n → ℂ))
   rw [affineParam_zero_mem_affineOpen_iff] at h
   rw [chartAt_def, h]
 
@@ -130,21 +137,23 @@ theorem contMDiff_affineParam_real (k : Fin (n + 1)) (r : ℕ∞ω) :
 
 /-- The derivative of the parametrization `affineParam k` of the preferred chart `affineChart k`
 at `x`, taken at the chart point of `x`, is the identity in the coordinates of that chart. -/
+@[simp]
 theorem mfderiv_affineParam_chartAt_apply (x : ComplexProjectiveSpace n)
     (v : TangentSpace 𝓘(ℝ, Fin n → ℂ) (chartAt (Fin n → ℂ) x x)) :
-    mfderiv 𝓘(ℝ, Fin n → ℂ) 𝓘(ℝ, Fin n → ℂ) (affineParam (exists_mem_affineOpen x).choose)
+    mfderiv 𝓘(ℝ, Fin n → ℂ) 𝓘(ℝ, Fin n → ℂ) (affineParam (chartIndex x))
         (chartAt (Fin n → ℂ) x x) v = v := by
   have h := mfderivWithin_range_extChartAt_symm (I := 𝓘(ℝ, Fin n → ℂ)) (x := x)
   rw [modelWithCornersSelf_coe, range_id, mfderivWithin_univ] at h
-  have hf : (extChartAt 𝓘(ℝ, Fin n → ℂ) x).symm = affineParam (exists_mem_affineOpen x).choose := by
+  have hf : (extChartAt 𝓘(ℝ, Fin n → ℂ) x).symm = affineParam (chartIndex x) := by
     funext z
     simp [chartAt_def, affineChart_symm_apply]
   rw [hf, extChartAt_coe] at h
   exact congrArg (fun L ↦ L v) h
 
 /-- The parametrization of the preferred chart at `x` sends the chart point of `x` back to `x`. -/
+@[simp]
 theorem affineParam_chartAt (x : ComplexProjectiveSpace n) :
-    affineParam (exists_mem_affineOpen x).choose (chartAt (Fin n → ℂ) x x) = x := by
+    affineParam (chartIndex x) (chartAt (Fin n → ℂ) x x) = x := by
   rw [← affineChart_symm_apply, ← chartAt_def]
   exact (chartAt (Fin n → ℂ) x).left_inv (mem_chart_source (Fin n → ℂ) x)
 
