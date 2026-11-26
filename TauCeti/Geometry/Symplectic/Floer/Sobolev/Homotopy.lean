@@ -47,7 +47,8 @@ Between them, the model data form a family whose end Hamiltonians move with `μ`
 stay nondegenerate, along which the Fredholm property and the index are constant
 (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_and_index_eq_of_family`). The slice
 defects `∂t u - X_{H±_μ,t}(u)` tend to zero at the ends for every `μ` because the vector fields
-`X_{H±_μ}` all agree along the orbits (`TauCeti.tendstoUniformlyOn_sliceDefect_of_apply_eq`).
+`X_{H±_μ}` all agree along the orbits
+(`TauCeti.SymplecticForm.tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt`).
 
 ## References
 
@@ -88,28 +89,6 @@ private theorem isCylindricalNearEnds_continuationHomotopy_const {ω : Symplecti
   rwa [show Floer.continuationAlmostComplex hJ₀ (fun _ _ ↦ J₀) (fun _ _ ↦ J₀)
       (fun _ _ ↦ hJ₀.tames) (fun _ _ ↦ hJ₀.tames) = fun _ _ ↦ J₀ from
     funext₂ fun z x ↦ Floer.continuationAlmostComplex_self hJ₀ z x] at h
-
-/-- Along a homotopy of time-dependent Hamiltonians `H_μ` of which `x` is an orbit for every
-`μ ∈ [0, 1]`, the slice defects of `u` for every `H_μ` tend to zero at an end along which `u`
-converges to `x` and its slice defect for `H_0` tends to zero: the vector fields `X_{H_μ}` all
-agree along `x`. -/
-private theorem tendstoUniformlyOn_sliceDefect_homotopy (ω : SymplecticForm V)
-    {H : ℝ → ℝ → V → ℝ} (hH : ContDiff ℝ 2 fun p : ℝ × ℝ × V ↦ H p.1 p.2.1 p.2.2) {x : ℝ → V}
-    (hx : ∀ μ ∈ Icc (0 : ℝ) 1, ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H μ t) (x t)) t)
-    {u : ℝ × ℝ → V} {l : Filter ℝ} (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
-    (hδ : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H 0 t)) u (s, t)) 0 l (Icc 0 1))
-    {μ : ℝ} (hμ : μ ∈ Icc (0 : ℝ) 1) :
-    TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H μ t)) u (s, t)) 0 l
-        (Icc 0 1) := by
-  have h₀ : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
-  have hXc (ν : ℝ) : Continuous (uncurry fun t ↦ ω.hamiltonianVectorField (H ν t)) :=
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (K := H ν)
-      (hH.comp (contDiff_prodMk_right ν))).continuous
-  exact tendstoUniformlyOn_sliceDefect_of_apply_eq (hXc 0) (hXc μ)
-    (continuous_iff_continuousAt.2 fun t ↦ (hx 0 h₀ t).continuousAt)
-    (fun t ↦ (hx μ hμ t).unique (hx 0 h₀ t)) hux hδ
 
 /-- The Fredholm property and the index are constant along the model data
 `(J₀, 0, H_{μ,(s, t)})` of the homotopies `H±`, for `μ ∈ [0, 1]`, along a map `u` asymptotic to
@@ -224,8 +203,12 @@ private theorem isFredholm_iff_and_index_eq_of_homotopy (ω : SymplecticForm V)
     contDiff_const
   have hKsD : ContDiff ℝ 2 (uncurry fun (_ : ℝ × ℝ) (_ : V) ↦ (0 : ℝ)) := contDiff_const
   have hJ₀c : ∀ (_ : ℝ × ℝ) (_ : V), ω.Compatible J₀ := fun _ _ ↦ hJc 0 0
-  have hδm₁ := tendstoUniformlyOn_sliceDefect_homotopy ω hHm hxm huxm hδm h₁
-  have hδp₁ := tendstoUniformlyOn_sliceDefect_homotopy ω hHp hxp huxp hδp h₁
+  have hδm₁ := ω.tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt
+    (H := Hm 0) (H' := Hm 1) ((hHm.comp (contDiff_prodMk_right 0)).of_le one_le_two)
+    ((hHm.comp (contDiff_prodMk_right 1)).of_le one_le_two) (hxm 0 h₀) (hxm 1 h₁) huxm hδm
+  have hδp₁ := ω.tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt
+    (H := Hp 0) (H' := Hp 1) ((hHp.comp (contDiff_prodMk_right 0)).of_le one_le_two)
+    ((hHp.comp (contDiff_prodMk_right 1)).of_le one_le_two) (hxp 0 h₀) (hxp 1 h₁) huxp hδp
   have hfam₀₁ := isFredholm_and_index_eq_of_homotopy_model ω (hJc 0 0) hu h₀ h₁ hHm hHp hXm hxm
     hndm huxm hδm hXp hxp hndp huxp hδp
   have hfam₁₀ := isFredholm_and_index_eq_of_homotopy_model ω (hJc 0 0) hu h₁ h₀ hHm hHp hXm hxm

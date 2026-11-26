@@ -54,8 +54,11 @@ when the asymptotic orbits are one-periodic and nondegenerate.
   `H±_μ` that may move with `μ` while their suspended vector fields stay globally Lipschitz and
   `x±` stay nondegenerate orbits of them, the Fredholm property and the index of `D_u` are
   constant over a preconnected set of parameters
-  (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_and_index_eq_of_family`). This gives the
-  homotopy invariance of the index in the end Hamiltonians, in
+  (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_and_index_eq_of_family`). The slice
+  defects need only tend to zero for the end Hamiltonians at one parameter: those for two
+  Hamiltonians with a common orbit tend to zero together
+  (`TauCeti.SymplecticForm.tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt`).
+  This gives the homotopy invariance of the index in the end Hamiltonians, in
   `TauCeti.Geometry.Symplectic.Floer.Sobolev.Homotopy`.
 * **Equal ends.** In a unitary trivialization, where `V = F` is a finite-dimensional complex inner
   product space with `ω = Im ⟪·, ·⟫`, take the `s`-independent Floer data `(i, 0, H_t)` of a
@@ -708,6 +711,27 @@ theorem index_floerSobolevOperator_eq_of_cylindrical (ω : SymplecticForm V)
   (isFredholm_and_index_eq_of_cylindrical ω hcyl hJ hKs hKt hJc hu hu' hXm hxm hndm huxm hδm
     hu'xm hδ'm hXp hxp hndp huxp hδp hu'xp hδ'p h).2
 
+/-- If a loop `x` is an orbit of two time-dependent Hamiltonians `H` and `H'` with jointly `C¹`
+Hamiltonians, the loops of `u` converge uniformly to `x` and the slice defect
+`∂t u - X_{H_t}(u)` tends uniformly to zero, then so does the slice defect `∂t u - X_{H'_t}(u)`:
+the vector fields `X_H` and `X_{H'}` agree along `x`. -/
+theorem tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt
+    (ω : SymplecticForm V) {H H' : ℝ → V → ℝ} (hH : ContDiff ℝ 1 (uncurry H))
+    (hH' : ContDiff ℝ 1 (uncurry H')) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hx' : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H' t) (x t)) t) {u : ℝ × ℝ → V}
+    {l : Filter ℝ} (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+    (hδ : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 l (Icc 0 1)) :
+    TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H' t)) u (s, t)) 0 l
+        (Icc 0 1) :=
+  tendstoUniformlyOn_sliceDefect_of_apply_eq
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH')).continuous
+    (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
+    (fun t ↦ (hx' t).unique (hx t)) hux hδ
+
 /-- **The Fredholm property and the index along a family of data.** Let `(J_μ, K_{s,μ}, K_{t,μ})`
 be a family of Floer data, `C¹` jointly in the parameter `μ`, the point of the cylinder and the
 target point (with `C²` Hamiltonians), compatible with `ω`, and, for `μ` in a preconnected set
@@ -772,16 +796,14 @@ theorem isFredholm_floerSobolevOperator_and_index_eq_of_family (ω : SymplecticF
       fun z ↦ hJc (μ, z))
   -- The slice defects tend to zero for every parameter, since the vector fields `X_{H±_μ}` all
   -- agree along the orbits `x±`.
-  have hXmc (μ : ℝ) (hμ : μ ∈ P) :=
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (hend μ hμ).1.2.1).continuous
-  have hXpc (μ : ℝ) (hμ : μ ∈ P) :=
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (hend μ hμ).2.2.1).continuous
-  have hδm' (μ : ℝ) (hμ : μ ∈ P) := tendstoUniformlyOn_sliceDefect_of_apply_eq (hXmc μ₀ hμ₀)
-    (hXmc μ hμ) (continuous_iff_continuousAt.2 fun t ↦ (hxm μ₀ hμ₀ t).continuousAt)
-    (fun t ↦ (hxm μ hμ t).unique (hxm μ₀ hμ₀ t)) huxm hδm
-  have hδp' (μ : ℝ) (hμ : μ ∈ P) := tendstoUniformlyOn_sliceDefect_of_apply_eq (hXpc μ₀ hμ₀)
-    (hXpc μ hμ) (continuous_iff_continuousAt.2 fun t ↦ (hxp μ₀ hμ₀ t).continuousAt)
-    (fun t ↦ (hxp μ hμ t).unique (hxp μ₀ hμ₀ t)) huxp hδp
+  have hδm' (μ : ℝ) (hμ : μ ∈ P) :=
+    ω.tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt
+      ((hend μ₀ hμ₀).1.2.1.of_le one_le_two) ((hend μ hμ).1.2.1.of_le one_le_two) (hxm μ₀ hμ₀)
+      (hxm μ hμ) huxm hδm
+  have hδp' (μ : ℝ) (hμ : μ ∈ P) :=
+    ω.tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt
+      ((hend μ₀ hμ₀).2.2.1.of_le one_le_two) ((hend μ hμ).2.2.1.of_le one_le_two) (hxp μ₀ hμ₀)
+      (hxp μ hμ) huxp hδp
   set M : ℝ → ℝ × ℝ → V × V × V →L[ℝ] V := fun μ ↦ ω.floerJetCoeff
     (fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap) (fun w ↦ Ks (μ, w))
     (fun w ↦ Kt (μ, w)) u
@@ -795,7 +817,8 @@ theorem isFredholm_floerSobolevOperator_and_index_eq_of_family (ω : SymplecticF
       (hndp μ hμ) (hend μ hμ).2.1 (fun t ↦ (hend μ hμ).2.2.2 t _) huxp (hδp' μ hμ)
   -- `u` and its derivative in `t` are bounded on the strip.
   obtain ⟨B, hB⟩ := exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect
-    (hXmc μ₀ hμ₀) (hXpc μ₀ hμ₀) hu
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (hend μ₀ hμ₀).1.2.1).continuous
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (hend μ₀ hμ₀).2.2.1).continuous hu
     (continuous_iff_continuousAt.2 fun t ↦ (hxm μ₀ hμ₀ t).continuousAt)
     (continuous_iff_continuousAt.2 fun t ↦ (hxp μ₀ hμ₀ t).continuousAt) huxm hδm huxp hδp
   have hcont (μ : ℝ) (hμ : μ ∈ P) :
