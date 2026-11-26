@@ -29,7 +29,7 @@ instances automatically.
 
 ## Main results
 
-* `TauCeti.mem_range_algebraMap_of_isWeaklyRegular_mem_radical_denIdeal` and
+* `RingTheory.Sequence.IsWeaklyRegular.mem_range_algebraMap_of_mem_radical_denIdeal` and
   `TauCeti.mem_range_algebraMap_of_two_le_depth_of_le_radical_denIdeal`: denominator-ideal criteria
   for an element of a total ring of fractions to lie in the base ring.
 * `TauCeti.IsLocalization.iInf_subalgebra_powers_eq_bot_of_isWeaklyRegular`: if the radical of
@@ -49,15 +49,13 @@ public section
 
 open IsLocalRing RingTheory.Sequence
 
-namespace TauCeti
-
-section FractionRing
+section IsWeaklyRegular
 
 variable {A K : Type*} [CommRing A] [CommRing K] [Algebra A K] [IsFractionRing A K]
 
 /-- If `[u, v]` is a weakly `A`-regular sequence whose entries lie in the radical of the
 denominator ideal of `z : K`, then `z` belongs to the image of `A` in `K`. -/
-theorem mem_range_algebraMap_of_isWeaklyRegular_mem_radical_denIdeal {u v : A}
+theorem RingTheory.Sequence.IsWeaklyRegular.mem_range_algebraMap_of_mem_radical_denIdeal {u v : A}
     (hreg : IsWeaklyRegular A [u, v]) {z : K}
     (hu : u ∈ (Algebra.denIdeal K z).radical) (hv : v ∈ (Algebra.denIdeal K z).radical) :
     z ∈ (algebraMap A K).range := by
@@ -66,6 +64,14 @@ theorem mem_range_algebraMap_of_isWeaklyRegular_mem_radical_denIdeal {u v : A}
   obtain ⟨a, ha⟩ := (Algebra.mem_denIdeal_iff K).mp hn
   obtain ⟨b, hb⟩ := (Algebra.mem_denIdeal_iff K).mp hj
   exact hreg.mem_range_algebraMap_of_pow_mul_mem ⟨a, ha.symm⟩ ⟨b, hb.symm⟩
+
+end IsWeaklyRegular
+
+namespace TauCeti
+
+section FractionRing
+
+variable {A K : Type*} [CommRing A] [CommRing K] [Algebra A K] [IsFractionRing A K]
 
 /-- **Algebraic Hartogs for a total ring of fractions.** Over a Noetherian ring `A`, if an ideal
 `I` lies in the radical of `Algebra.denIdeal K z` and `depth A_p ≥ 2` at every prime `p ≥ I`, then
@@ -82,7 +88,7 @@ theorem mem_range_algebraMap_of_two_le_depth_of_le_radical_denIdeal [IsNoetheria
   obtain ⟨u, v, rfl⟩ : ∃ u v, rs = [u, v] := by
     rcases rs with _ | ⟨u, _ | ⟨v, _ | _⟩⟩ <;> simp at hlen
     exact ⟨u, v, rfl⟩
-  exact mem_range_algebraMap_of_isWeaklyRegular_mem_radical_denIdeal hreg
+  exact hreg.mem_range_algebraMap_of_mem_radical_denIdeal
     (hI (hmem u (by simp))) (hI (hmem v (by simp)))
 
 end FractionRing
@@ -104,8 +110,7 @@ theorem iInf_subalgebra_powers_eq_bot_of_isWeaklyRegular {ι : Type*} (a : ι �
   have hrad : (Ideal.span (Set.range a)).radical ≤ (Algebra.denIdeal K z).radical :=
     Ideal.radical_le_radical_iff.mpr
       ((mem_iInf_subalgebra_powers_iff_span_range_le_radical_denIdeal a B z).mp hz)
-  exact mem_range_algebraMap_of_isWeaklyRegular_mem_radical_denIdeal hreg
-    (hrad hu) (hrad hv)
+  exact hreg.mem_range_algebraMap_of_mem_radical_denIdeal (hrad hu) (hrad hv)
 
 /-- **Algebraic Hartogs for embedded principal localizations.** Over a Noetherian ring `A` with
 total ring of fractions `K`, if `depth A_p ≥ 2` at every prime `p` containing all `a_i`, then any
