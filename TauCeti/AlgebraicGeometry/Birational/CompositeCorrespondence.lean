@@ -379,8 +379,19 @@ theorem compositeYZToDomain_ι :
 
 omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
   [(f.comp g).IsOver sX sZ] in
+/-- `compositeYZToDomain` followed by the representative of `g` is the composite of the
+representatives of `f` and `g` on `U ∩ f⁻¹(V_g)`. -/
+@[reassoc (attr := simp)]
+theorem compositeYZToDomain_hom :
+    compositeYZToDomain f g ≫ g.representative.hom =
+      X.homOfLE (compositeDomainYZ_le_comp_domain f g) ≫
+        (f.representative.comp g.representative).hom := by
+  rw [compositeYZToDomain_def, Category.assoc, PartialMap.compDomainRestrict_hom]
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
+  [(f.comp g).IsOver sX sZ] in
 /-- The restriction of the representative of `f` to `U ∩ f⁻¹(V_g)` is dominant, as `f` is. -/
-theorem isDominant_compositeYZToDomain : IsDominant (compositeYZToDomain f g) := by
+instance isDominant_compositeYZToDomain : IsDominant (compositeYZToDomain f g) := by
   have := Opens.isDominant_homOfLE (dense_compositeDomainYZ f g)
     ((compositeDomainYZ_le_comp_domain f g).trans (PartialMap.comp_domain_le _ _))
   have : IsDominant (compositeYZToDomain f g ≫ g.representative.domain.ι) := by
@@ -403,8 +414,7 @@ theorem homOfLE_opensGraph_tripleToYZ :
   · simp [compositeToY_eq, representative_hom_eq f]
   · simp only [Category.assoc, tripleToYZ_snd, opensGraph_snd_assoc, compositeLift_snd,
       compositeToZ_eq, Scheme.homOfLE_homOfLE_assoc, opensGraph_snd]
-    rw [compositeYZToDomain_def, Category.assoc, PartialMap.compDomainRestrict_hom, hP,
-      Scheme.homOfLE_homOfLE_assoc]
+    rw [compositeYZToDomain_hom, hP, Scheme.homOfLE_homOfLE_assoc]
 
 /-- The ideal of `Γ_g` lies in the pushforward along `X ×_S (Y ×_S Z) → Y × Z` of the ideal of
 `W_{f,g}`, so this projection carries `W_{f,g}` into `Γ_g`. The comparison is made on
@@ -571,10 +581,9 @@ theorem homOfLE_toCompositeCorrespondence_compositeCorrespondenceToGraphYZ :
 instance for `Y` Noetherian), `(q_Y, q_Z) : W_{f,g} → Γ_g` is surjective: it is proper, hence
 closed, and dominant, since on `U ∩ f⁻¹(V_g)` it is the dominant restriction of `f` followed by
 the inclusion `V_g → Γ_g`, which is dominant as `γ_g` is quasi-compact. -/
-theorem surjective_compositeCorrespondenceToGraphYZ [IsProper sX] [IsProper sZ]
+instance surjective_compositeCorrespondenceToGraphYZ [IsProper sX] [IsProper sZ]
     [QuasiCompact (graphLift g)] :
     Surjective (compositeCorrespondenceToGraphYZ sX sY sZ f g) := by
-  have := isDominant_compositeYZToDomain f g
   have : IsDominant ((X.homOfLE (compositeDomainYZ_le_compositeDomain f g) ≫
       toCompositeCorrespondence sX sY sZ f g) ≫ compositeCorrespondenceToGraphYZ sX sY sZ f g) := by
     rw [Category.assoc, homOfLE_toCompositeCorrespondence_compositeCorrespondenceToGraphYZ]
