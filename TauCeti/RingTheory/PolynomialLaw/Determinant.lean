@@ -560,8 +560,19 @@ theorem algHomDet_toFun (ρ : R →ₐ[A] Matrix n n A) (S : Type*) [CommRing S]
     (algHomDet ρ).toLaw.toFun S x =
       (TauCeti.Algebra.matrixBaseChangeAlgEquiv A S n
         (Algebra.TensorProduct.map (AlgHom.id A S) ρ x)).det ⊗ₜ 1 := by
-  rw [algHomDet, PolynomialLaw.toFun_comp_apply, LinearMap.toPolynomialLaw_toFun,
-    PolynomialLaw.det_toFun, LinearMap.baseChange_eq_lTensor, AlgHom.lTensor_toLinearMap_apply]
+  simp [algHomDet, PolynomialLaw.toFun_comp_apply, LinearMap.baseChange_eq_lTensor,
+    AlgHom.lTensor_toLinearMap_apply]
+
+/-- After scalar extension to any commutative `A`-algebra `S`, the law of `algHomDet ρ` is the
+Leibniz formula, with the signs acting through `A`, for `ρ` extended to `S`. Over a commutative
+ring this is `algHomDet_toFun`. -/
+theorem algHomDet_toFun_eq_leibniz (ρ : R →ₐ[A] Matrix n n A) (S : Type*) [CommSemiring S]
+    [Algebra A S] (x : S ⊗[A] R) :
+    (algHomDet ρ).toLaw.toFun S x = (∑ σ : Equiv.Perm n, ((Equiv.Perm.sign σ : ℤ) : A) •
+      ∏ i, TauCeti.Algebra.matrixBaseChangeAlgEquiv A S n
+        (Algebra.TensorProduct.map (AlgHom.id A S) ρ x) (σ i) i) ⊗ₜ 1 := by
+  simp [algHomDet, PolynomialLaw.toFun_comp_apply, PolynomialLaw.det_toFun_eq_leibniz,
+    LinearMap.baseChange_eq_lTensor, AlgHom.lTensor_toLinearMap_apply]
 
 /-- The value of `algHomDet ρ` at `x` is `det (ρ x)`. -/
 @[simp]
@@ -572,8 +583,8 @@ theorem algHomDet_apply (ρ : R →ₐ[A] Matrix n n A) (x : R) : algHomDet ρ x
 @[simp]
 theorem charpoly_algHomDet (ρ : R →ₐ[A] Matrix n n A) (x : R) :
     (algHomDet ρ).charpoly x = (ρ x).charpoly := by
-  rw [charpoly, PolynomialLaw.toFun'_eq_toFun, algHomDet_toFun, Algebra.TensorProduct.rid_tmul,
-    one_smul, Matrix.charpoly]
+  rw [charpoly, PolynomialLaw.toFun'_eq_toFun, algHomDet_toFun]
+  simp only [Algebra.TensorProduct.rid_tmul, one_smul, Matrix.charpoly]
   congr 1
   ext i j
   simp [Matrix.charmatrix_apply, Matrix.diagonal_apply, Matrix.algebraMap_matrix_apply,
@@ -595,9 +606,7 @@ theorem trace_algHomDet (ρ : R →ₐ[A] Matrix n n A) (x : R) :
 theorem algHomDet_innerAut_comp (g : GL n A) (ρ : R →ₐ[A] Matrix n n A) :
     algHomDet ((Matrix.GeneralLinearGroup.innerAut g).toAlgHom.comp ρ) = algHomDet ρ := by
   ext1
-  dsimp only [algHomDet]
-  rw [AlgHom.comp_toLinearMap, LinearMap.toPolynomialLaw_comp,
-    PolynomialLaw.comp_assoc, AlgEquiv.toAlgHom_toLinearMap, PolynomialLaw.det_comp_innerAut]
+  simp [algHomDet, LinearMap.toPolynomialLaw_comp, PolynomialLaw.comp_assoc]
 
 end AlgHomDet
 

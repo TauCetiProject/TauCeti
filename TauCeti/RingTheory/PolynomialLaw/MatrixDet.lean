@@ -28,6 +28,8 @@ matrix representation in the sense of Chenevier (`TauCeti.Determinant.algHomDet`
 * `PolynomialLaw.det`: the determinant of `n × n` matrices as a polynomial law.
 * `PolynomialLaw.det_toFun`, `PolynomialLaw.ground_det`: after scalar extension to a commutative
   ring `S`, it is the determinant over `S`; its ground map is `Matrix.det`.
+* `PolynomialLaw.det_toFun_eq_leibniz`: after scalar extension to any commutative `A`-algebra `S`,
+  it is the Leibniz formula with the signs acting through `A`.
 * `PolynomialLaw.isHomogeneousOfDegree_det`, `PolynomialLaw.isMultiplicative_det`: it is
   homogeneous of degree `card n` and multiplicative.
 * `PolynomialLaw.det_comp_innerAut`: it is invariant under conjugation by an invertible matrix.
@@ -88,6 +90,11 @@ private theorem leibniz_mul (M N : Matrix n n S) :
   let : CommRing S := (algebraMap A S).commSemiringToCommRing
   rw [leibniz_eq_det, leibniz_eq_det, leibniz_eq_det, Matrix.det_mul]
 
+private theorem leibniz_conj {G G' : Matrix n n S} (h : G * G' = 1) (M : Matrix n n S) :
+    leibniz A (G * M * G') = leibniz A M := by
+  let : CommRing S := (algebraMap A S).commSemiringToCommRing
+  rw [leibniz_eq_det, leibniz_eq_det, Matrix.det_mul_right_comm, h, one_mul]
+
 end Leibniz
 
 /-- The determinant of `n × n` matrices over `A`, as a polynomial law. After scalar extension to a
@@ -106,20 +113,24 @@ private theorem det_toFun'_def (S : Type u) [CommSemiring S] [Algebra A S]
     (det n A).toFun' S x = leibniz A (matrixBaseChangeAlgEquiv A S n x) ⊗ₜ 1 :=
   (rfl)
 
-private theorem det_toFun_eq_leibniz (S : Type*) [CommSemiring S] [Algebra A S]
+/-- After scalar extension to any commutative `A`-algebra `S`, the determinant law is given by the
+Leibniz formula for the corresponding matrix over `S`, with the signs acting through `A`. Over a
+commutative ring this is `PolynomialLaw.det_toFun`. -/
+theorem det_toFun_eq_leibniz (S : Type*) [CommSemiring S] [Algebra A S]
     (x : S ⊗[A] Matrix n n A) :
-    (det n A).toFun S x = leibniz A (matrixBaseChangeAlgEquiv A S n x) ⊗ₜ 1 := by
+    (det n A).toFun S x = (∑ σ : Perm n,
+      ((Perm.sign σ : ℤ) : A) • ∏ i, matrixBaseChangeAlgEquiv A S n x (σ i) i) ⊗ₜ 1 := by
   obtain ⟨k, ψ, p, rfl⟩ := exists_lift x
-  rw [← isCompat_apply, ← toFun'_eq_toFun, det_toFun'_def, LinearMap.rTensor_tmul,
-    AlgHom.toLinearMap_apply, map_leibniz,
-    matrixBaseChangeAlgEquiv_rTensor]
+  rw [← isCompat_apply, ← toFun'_eq_toFun, det_toFun'_def]
+  simp [matrixBaseChangeAlgEquiv_rTensor, leibniz]
 
 /-- After scalar extension to a commutative ring `S`, the determinant law is the determinant of the
 corresponding matrix over `S`. -/
 @[simp]
 theorem det_toFun (S : Type*) [CommRing S] [Algebra A S] (x : S ⊗[A] Matrix n n A) :
     (det n A).toFun S x = (matrixBaseChangeAlgEquiv A S n x).det ⊗ₜ 1 := by
-  rw [det_toFun_eq_leibniz, leibniz_eq_det]
+  rw [det_toFun_eq_leibniz]
+  exact congrArg (· ⊗ₜ 1) (leibniz_eq_det A _)
 
 /-- The ground map of the determinant law is the determinant. -/
 @[simp]
@@ -156,11 +167,8 @@ theorem det_comp_innerAut (g : GL n A) :
     | tmul s M =>
       simp [G, G', Matrix.map_mul]
     | add x y hx hy => simp [hx, hy, Matrix.mul_add, Matrix.add_mul]
-  have hG : G * G' = 1 := by
-    rw [← Matrix.map_mul, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-      Matrix.map_one _ (map_zero _) (map_one _)]
+  have hG : G * G' = 1 := by simp [G, G', ← Matrix.map_mul]
   rw [comp_toFun', Function.comp_apply, LinearMap.toPolynomialLaw_toFun', det_toFun'_def,
-    det_toFun'_def, hconj, leibniz_mul, leibniz_mul, mul_right_comm, ← leibniz_mul, hG,
-    leibniz_one, one_mul]
+    det_toFun'_def, hconj, leibniz_conj A hG]
 
 end PolynomialLaw
