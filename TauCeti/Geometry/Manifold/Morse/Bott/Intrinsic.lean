@@ -58,8 +58,8 @@ finite-dimensional space.
 Together, `TauCeti.isMorseBott_iff_exists_isMorseBottFamily`: a function is Morse–Bott exactly
 when some family of embedded submanifolds, each modelled on a subspace of the model space,
 exhibits it as one. In particular Morse functions are Morse–Bott (`TauCeti.IsMorse.isMorseBott`),
-as are constant functions on connected manifolds (`TauCeti.isMorseBott_const`), and `f` is
-Morse–Bott exactly when `-f` is (`TauCeti.isMorseBott_neg_iff`).
+as are constant functions (`TauCeti.isMorseBott_const`), and `f` is Morse–Bott exactly when `-f`
+is (`TauCeti.isMorseBott_neg_iff`).
 
 ## References
 
@@ -103,20 +103,6 @@ structure IsMorseBott (I : ModelWithCorners ℝ E H) (f : M → ℝ) : Prop wher
       ∀ z ∈ q.source, z ∈ criticalPoints I f →
         (criticalHessian I f z).ker = V.comap (mfderiv I 𝓘(ℝ, E) q z).toLinearMap
 
-/-- The derivative of a chart `q` with smooth inverse is invertible, so the preimage under it of
-a subspace `V` of the model space has the dimension of `V`. -/
-private theorem finrank_comap_mfderiv {q : OpenPartialHomeomorph M E}
-    (hq : ∀ z ∈ q.source, ContMDiffAt I 𝓘(ℝ, E) ∞ q z)
-    (hqs : ∀ z ∈ q.target, ContMDiffAt 𝓘(ℝ, E) I ∞ q.symm z) (V : Submodule ℝ E)
-    (hx : x ∈ q.source) :
-    Module.finrank ℝ (V.comap (mfderiv I 𝓘(ℝ, E) q x).toLinearMap) = Module.finrank ℝ V := by
-  have he : q.MDifferentiable I 𝓘(ℝ, E) :=
-    ⟨fun z hz ↦ ((hq z hz).mdifferentiableAt (by simp)).mdifferentiableWithinAt,
-      fun z hz ↦ ((hqs z hz).mdifferentiableAt (by simp)).mdifferentiableWithinAt⟩
-  let e : TangentSpace I x ≃ₗ[ℝ] E := (he.mfderiv hx).toLinearEquiv
-  change Module.finrank ℝ (V.comap (e : TangentSpace I x →ₗ[ℝ] E)) = _
-  rw [Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq]
-
 /-- `f` is Morse–Bott exactly when `-f` is: the two functions have the same critical points, and
 their critical Hessians are opposite, with the same kernels. -/
 @[simp]
@@ -157,27 +143,24 @@ theorem SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_sliceChart
       ∀ z ∈ q.source, z ∈ criticalPoints I f →
         (criticalHessian I f z).ker = V.comap (mfderiv I 𝓘(ℝ, E) q z).toLinearMap := by
   have hn0 : n ≠ 0 := ne_bot_of_le_ne_bot (by simp) hn
-  have h2 : (2 : ℕ∞ω) ≤ n := le_trans (by simp) hn
-  -- The slice chart of the embedding, valued in the splitting `E' × F` of `E`, cut down to an
-  -- open set `U` in which the critical set is the image of `i`.
+  -- The slice chart of `i` in `E' × F ≃ E`, and an open `U` cutting the critical set to `range i`.
   have hI := (i.isImmersion.isImmersionAt s).isImmersionAtOfComplement_complement
   set L := hI.equiv
   obtain ⟨Φ, hsΦ, hslice, hΦ, hΦs⟩ :=
     exists_contMDiffOn_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplement i.isEmbedding hI
-  obtain ⟨U, hUo, hU⟩ := hi.exists_isOpen_criticalPoints_inter_eq_range h2
+  obtain ⟨U, hUo, hU⟩ := hi.exists_isOpen_criticalPoints_inter_eq_range (le_trans (by simp) hn)
   set Ψ := Φ.restrOpen U hUo
   set q := Ψ.transHomeomorph L.toHomeomorph
   -- The slice `E' × {0}`, read in `E` through `L`, has dimension `dim E'`.
-  set π := (ContinuousLinearMap.snd ℝ E' _).comp L.symm.toContinuousLinearMap
-  set V : Submodule ℝ E := LinearMap.ker π.toLinearMap
-  have hVdim : Module.finrank ℝ V = Module.finrank ℝ E' := by
-    change Module.finrank ℝ (LinearMap.ker
-      ((LinearMap.snd ℝ E' _).comp L.symm.toLinearEquiv.toLinearMap)) = _
+  have hVdim : Module.finrank ℝ (LinearMap.ker
+      ((LinearMap.snd ℝ E' _).comp L.symm.toLinearEquiv.toLinearMap)) = Module.finrank ℝ E' := by
     rw [LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq,
       LinearMap.ker_snd, LinearMap.finrank_range_of_inj LinearMap.inl_injective]
-  have hcrit (z : M) (hz : z ∈ Ψ.source) : z ∈ criticalPoints I f ↔ z ∈ range i := by
-    rw [← hU, OpenPartialHomeomorph.restrOpen_source] at *
-    exact ⟨fun h ↦ ⟨h, hz.2⟩, And.left⟩
+  set V : Submodule ℝ E :=
+    LinearMap.ker ((LinearMap.snd ℝ E' _).comp L.symm.toLinearEquiv.toLinearMap)
+  set π := (ContinuousLinearMap.snd ℝ E' _).comp L.symm.toContinuousLinearMap
+  have hcrit (z : M) (hz : z ∈ Ψ.source) : z ∈ criticalPoints I f ↔ z ∈ range i :=
+    ⟨fun h ↦ hU.le ⟨h, hz.2⟩, fun h ↦ (hU.ge h).1⟩
   -- The chart is `L ∘ Φ` on an open subset of the source of `Φ`, and its inverse is `Φ⁻¹ ∘ L⁻¹`.
   have hq (z : M) (hz : z ∈ q.source) : ContMDiffAt I 𝓘(ℝ, E) ∞ q z :=
     L.contDiff.contMDiff.contMDiffAt.comp z ((hΦ.contMDiffAt (Φ.open_source.mem_nhds
@@ -187,7 +170,11 @@ theorem SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_sliceChart
       L.symm.contDiff.contMDiff.contMDiffAt
   have hflat (z : M) (hz : z ∈ q.source) : z ∈ criticalPoints I f ↔ q z ∈ V := by
     rw [hcrit z hz |>.trans (isSliceChart_iff.1 hslice z hz.1)]
-    simp [V, π, q, J.range_eq_univ, Ψ, L]
+    simp only [V, q, Ψ, J.range_eq_univ, mem_prod, mem_univ, mem_singleton_iff, true_and,
+      OpenPartialHomeomorph.transHomeomorph_apply, ContinuousLinearEquiv.coe_toHomeomorph,
+      OpenPartialHomeomorph.coe_restrOpen, comp_apply, LinearMap.mem_ker, LinearMap.coe_comp,
+      LinearMap.coe_snd, LinearEquiv.coe_coe, ContinuousLinearEquiv.toLinearEquiv_symm,
+      ContinuousLinearEquiv.coe_symm_toLinearEquiv, ContinuousLinearEquiv.symm_apply_apply]
   refine ⟨q, V, ⟨hsΦ, (hU.ge (mem_range_self s)).2⟩, hq, hqs, hflat, fun z hz hzc ↦ ?_⟩
   -- Every critical point of the chart lies on the submanifold, whose tangent space is the kernel
   -- of the critical Hessian. The chart carries it into `V`, and both have dimension `dim E'`.
@@ -203,7 +190,7 @@ theorem SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_sliceChart
       π.mfderiv_eq] at hπ
     exact fun v hv ↦ hπ ((hi.ker_criticalHessian hn0 t).le hv)
   refine Submodule.eq_of_le_of_finrank_le hle ?_
-  rw [finrank_comap_mfderiv hq hqs V hz, hVdim,
+  rw [OpenPartialHomeomorph.finrank_comap_mfderiv (by simp) hq hqs V hz, hVdim,
     (hi.toIsCriticalSubmanifold.isNondegenerateCriticalSubmanifold_iff_finrank_ker hn0).1 hi t]
 
 variable {ι : Type*} {E' : ι → Type*} [∀ a, NormedAddCommGroup (E' a)]
@@ -237,8 +224,9 @@ theorem eventually_finrank_ker_criticalHessian_eq (hx : x ∈ criticalPoints I f
       Module.finrank ℝ (criticalHessian I f x).ker := by
   obtain ⟨q, V, hxq, hq, hqs, -, hker⟩ := hf.exists_sliceChart x hx
   filter_upwards [inter_mem_nhdsWithin _ (q.open_source.mem_nhds hxq)] with z hz
-  rw [hker z hz.2 hz.1, hker x hxq hx, finrank_comap_mfderiv hq hqs V hz.2,
-    finrank_comap_mfderiv hq hqs V hxq]
+  rw [hker z hz.2 hz.1, hker x hxq hx,
+    OpenPartialHomeomorph.finrank_comap_mfderiv (by simp) hq hqs V hz.2,
+    OpenPartialHomeomorph.finrank_comap_mfderiv (by simp) hq hqs V hxq]
 
 /-- **The nullity of the critical Hessian is constant on each connected component of the
 critical set** of a Morse–Bott function. -/
@@ -281,7 +269,7 @@ theorem exists_sliceChart_connectedComponentIn (hx : x ∈ criticalPoints I f) :
   · simp only [OpenPartialHomeomorph.coe_restrOpen]
     refine ⟨fun hz' ↦ (hcrit z hz.1).1 (connectedComponentIn_subset _ _ hz'), fun hzV ↦ ?_⟩
     exact hsub ⟨q z, ⟨hz.2.2, hzV⟩, q.left_inv hz.1⟩
-  · rw [hker x hxq hx, finrank_comap_mfderiv hq hqs V hxq]
+  · rw [hker x hxq hx, OpenPartialHomeomorph.finrank_comap_mfderiv (by simp) hq hqs V hxq]
 
 end IsMorseBott
 
@@ -375,10 +363,13 @@ theorem IsMorse.isMorseBott [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifo
   obtain ⟨i, -, h⟩ := hf.exists_isMorseBottFamily (n := ∞) (by simp) (Fin 0 → ℝ)
   exact h.isMorseBott le_rfl
 
-/-- **A constant function on a connected manifold is Morse–Bott**, with the whole manifold as its
-critical submanifold. -/
-theorem isMorseBott_const [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I ∞ M]
-    [ConnectedSpace M] (c : ℝ) : IsMorseBott I (fun _ : M ↦ c) :=
-  (isMorseBottFamily_const (I := I) (n := ∞) c).isMorseBott le_rfl
+/-- **A constant function is Morse–Bott**, with the connected components of the manifold as its
+critical submanifolds. -/
+theorem isMorseBott_const [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I ∞ M] (c : ℝ) :
+    IsMorseBott I (fun _ : M ↦ c) :=
+  -- A manifold is locally connected, as its model is.
+  have : LocallyConnectedSpace H := I.toHomeomorph.locallyConnectedSpace
+  have : LocallyConnectedSpace M := ChartedSpace.locallyConnectedSpace H M
+  (isMorseBottFamily_ofOpens_const (I := I) (n := ∞) (by simp) c).isMorseBott le_rfl
 
 end TauCeti
