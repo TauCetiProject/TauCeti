@@ -23,6 +23,8 @@ characters at their common level, including primes dividing both conductors.
 The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves zeros and exact
 meromorphic orders there, including the simple pole at `s = 1` for principal characters. At `s = 1`
 pointwise L-function comparison requires nonprincipal characters, as in the native continuation API.
+The factors are also nonzero on `Re(s) < 0`:
+`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`.
 
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,
 by David Loeffler and Michael Stoll.
@@ -49,15 +51,29 @@ private theorem norm_mul_prime_cpow_le {M p : ℕ} (χ : DirichletCharacter ℂ 
     _ ≤ (2 : ℝ) ^ (-δ) :=
       Real.rpow_le_rpow_of_nonpos (by norm_num) (by exact_mod_cast hp.two_le) (by linarith)
 
-/-- Deleted Euler factors have no zeros in the open right half-plane, for arbitrary complex
-Dirichlet characters, including principal ones. -/
+/-- Deleted Euler factors have no zeros off the imaginary axis, for arbitrary complex Dirichlet
+characters, including principal ones. Each term `χ(p) p⁻ˢ` is `0` or has absolute value
+`p^(-Re s)`, which is `< 1` for `Re s > 0` and `> 1` for `Re s < 0`. -/
 theorem prod_one_sub_mul_prime_cpow_ne_zero {M N : ℕ} (χ : DirichletCharacter ℂ M)
-    {s : ℂ} (hs : 0 < s.re) :
+    {s : ℂ} (hs : s.re ≠ 0) :
     (∏ p ∈ N.primeFactors, (1 - χ p * (p : ℂ) ^ (-s))) ≠ 0 := by
-  refine prod_ne_zero_iff.2 fun p hp ↦ ?_
-  have h := (norm_mul_prime_cpow_le χ (Nat.prime_of_mem_primeFactors hp) hs le_rfl).trans_lt
-    (Real.rpow_lt_one_of_one_lt_of_neg (by norm_num) (neg_neg_of_pos hs))
-  exact sub_ne_zero.mpr fun he ↦ by rw [← he, norm_one] at h; exact (lt_self_iff_false 1).mp h
+  refine prod_ne_zero_iff.2 fun p hp h ↦ ?_
+  have hp := Nat.prime_of_mem_primeFactors hp
+  have h1 : χ p * (p : ℂ) ^ (-s) = 1 := (sub_eq_zero.1 h).symm
+  rcases hs.lt_or_gt with hs | hs
+  · by_cases hu : IsUnit (p : ZMod M)
+    · have hlt : 1 < ‖χ p * (p : ℂ) ^ (-s)‖ := by
+        rw [norm_mul, norm_natCast_cpow_of_pos hp.pos, ← hu.unit_spec, χ.unit_norm_eq_one,
+          one_mul, neg_re]
+        exact Real.one_lt_rpow (by exact_mod_cast hp.one_lt) (by linarith)
+      rw [h1, norm_one] at hlt
+      exact lt_irrefl _ hlt
+    · rw [χ.map_nonunit hu, zero_mul] at h1
+      exact zero_ne_one h1
+  · have hlt := (norm_mul_prime_cpow_le χ hp hs le_rfl).trans_lt
+      (Real.rpow_lt_one_of_one_lt_of_neg (by norm_num) (neg_neg_of_pos hs))
+    rw [h1, norm_one] at hlt
+    exact (lt_self_iff_false 1).mp hlt
 
 /-- On a fixed closed right half-plane, the deleted Euler product and its reciprocal cost at
 most an arbitrarily small power of the ambient level. The same constant works for every
@@ -124,7 +140,7 @@ half-plane. At the possible pole `1`, require the original character to be nonpr
     (h : χ ≠ 1 ∨ s ≠ 1) :
     (changeLevel hMN χ).LFunction s = 0 ↔ χ.LFunction s = 0 := by
   rw [LFunction_changeLevel hMN χ h, mul_eq_zero]
-  simp [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs]
+  simp [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs.ne']
 
 /-- Raising the level preserves the meromorphic order of the continued L-function at every point of
 the open right half-plane `Re(s) > 0`, including `s = 1` for principal characters. -/
@@ -136,7 +152,7 @@ the open right half-plane `Re(s) > 0`, including `s = 1` for principal character
     Differentiable.finsetProd fun _ hp ↦ Complex.differentiable_one_sub_mul_cpow_neg
       (mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero) _
   have hPs : (∏ p ∈ N.primeFactors, fun z : ℂ ↦ 1 - χ p * (p : ℂ) ^ (-z)) s ≠ 0 := by
-    simpa [Finset.prod_apply] using prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs
+    simpa [Finset.prod_apply] using prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs.ne'
   rw [meromorphicOrderAt_congr (LFunction_changeLevel_eventuallyEq_nhdsNE χ hMN s),
     meromorphicOrderAt_mul_of_ne_zero (hPdiff.analyticAt s) hPs]
 
@@ -152,7 +168,7 @@ theorem exists_norm_LFunction_changeLevel_le_rpow {δ ε : ℝ} (hδ : 0 < δ) (
   refine ⟨A, hA, fun M N _ _ χ hMN s hs h ↦ ?_⟩
   obtain ⟨hup, hinv⟩ := hb M N (NeZero.ne N) χ s hs
   have he := LFunction_changeLevel hMN χ h
-  have hne := prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ (hδ.trans_le hs)
+  have hne := prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ (hδ.trans_le hs).ne'
   constructor
   · rw [he, norm_mul, mul_comm]
     exact mul_le_mul_of_nonneg_right hup (norm_nonneg _)

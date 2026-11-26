@@ -66,6 +66,9 @@ compatibility with composition characterizes the transport
   `(M, M ∖ T, M ∖ S)` is an isomorphism when the local homology along `S` vanishes.
 * `TauCeti.isIso_localHomologyRestriction_symm_image`: the restriction from a compact set in a
   chart, star-convex about one of its points, to that point is an isomorphism.
+* `TauCeti.exists_isCompact_subset_mem_nhds_isIso_localHomologyRestriction`: inside every
+  neighbourhood of a point there is a compact neighbourhood `B` from which the restriction to each
+  of its points is an isomorphism.
 * `TauCeti.localHomologyTransport`: the transport of local homology along a path class.
 * `TauCeti.localHomologySystem`: the local homology groups as a functor out of the fundamental
   groupoid, with these transport maps.
@@ -569,6 +572,37 @@ theorem isIso_localHomologyRestriction_symm_image [T2Space M] (φ : OpenPartialH
   isIso_singularHomologyMap_compl_of_chart R φ hx hK hxK hKc.isBounded
     hKc.isClosed (φ.isClosed_image_symm_of_isCompact hKc hKφ) hKφ k
 
+/-- **Every neighbourhood of a point of a manifold contains a compact neighbourhood along which
+local homology is constant.** If `M` is a Hausdorff space modelled on a finite-dimensional real
+normed space and `U` is a neighbourhood of `x ∈ M`, there is a compact neighbourhood `B ⊆ U` of
+`x`, the image under a chart of a closed ball, such that the restriction
+`Hₖ(M, M ∖ B) ⟶ Hₖ(M, M ∖ {y})` is an isomorphism for every `y ∈ B`. -/
+theorem exists_isCompact_subset_mem_nhds_isIso_localHomologyRestriction [T2Space M]
+    [ChartedSpace E M] [FiniteDimensional ℝ E] {x : M} {U : Set M} (hU : U ∈ 𝓝 x) (k : ℕ) :
+    ∃ B ∈ 𝓝 x, IsCompact B ∧ B ⊆ U ∧
+      ∀ y (hy : y ∈ B), IsIso (localHomologyRestriction R (singleton_subset_iff.2 hy) k) := by
+  let φ := chartAt E x
+  have hx := mem_chart_source E x
+  -- A ball about `φ x` inside the target whose image under `φ.symm` lies in `U`.
+  have hV : φ.target ∩ φ.symm ⁻¹' U ∈ 𝓝 (φ x) := by
+    refine Filter.inter_mem (φ.open_target.mem_nhds (φ.map_source hx)) ?_
+    exact φ.continuousAt_symm (φ.map_source hx) (by rwa [φ.left_inv hx])
+  obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
+  have hKV : closedBall (φ x) (ε / 2) ⊆ φ.target ∩ φ.symm ⁻¹' U :=
+    (closedBall_subset_ball (half_lt_self hε)).trans hεV
+  have hKφ : closedBall (φ x) (ε / 2) ⊆ φ.target := hKV.trans inter_subset_left
+  have hKc : IsCompact (closedBall (φ x) (ε / 2)) := isCompact_closedBall _ _
+  refine ⟨φ.symm '' closedBall (φ x) (ε / 2), ?_,
+    hKc.image_of_continuousOn (φ.continuousOn_symm.mono hKφ),
+    image_subset_iff.2 (hKV.trans inter_subset_right), ?_⟩
+  · have h := φ.symm.image_mem_nhds (φ.map_source hx) (closedBall_mem_nhds (φ x) (half_pos hε))
+    rwa [φ.left_inv hx] at h
+  · rintro y ⟨w, hw, rfl⟩
+    have hw' : w ∈ φ.target := hKφ hw
+    have hw'' : φ (φ.symm w) ∈ closedBall (φ x) (ε / 2) := by rwa [φ.right_inv hw']
+    exact isIso_localHomologyRestriction_symm_image R φ ((convex_closedBall _ _).starConvex hw'')
+      hKc hKφ (φ.map_target hw') hw'' k
+
 /-- **Every point of a manifold has a compact neighbourhood along which local homology is
 constant.** If `M` is a Hausdorff space modelled on a finite-dimensional real normed space, every
 `x ∈ M` has a compact neighbourhood `B`, the image under a chart of a closed ball, such that the
@@ -577,21 +611,10 @@ theorem exists_isCompact_mem_nhds_isIso_localHomologyRestriction [T2Space M] [Ch
     [FiniteDimensional ℝ E] (x : M) (k : ℕ) :
     ∃ B ∈ 𝓝 x, IsCompact B ∧
       ∀ y (hy : y ∈ B), IsIso (localHomologyRestriction R (singleton_subset_iff.2 hy) k) := by
-  let φ := chartAt E x
-  obtain ⟨ε, hε, hεφ⟩ := isOpen_iff.1 φ.open_target (φ x) (mem_chart_target E x)
-  have hKφ : closedBall (φ x) (ε / 2) ⊆ φ.target :=
-    (closedBall_subset_ball (half_lt_self hε)).trans hεφ
-  have hKc : IsCompact (closedBall (φ x) (ε / 2)) := isCompact_closedBall _ _
-  refine ⟨φ.symm '' closedBall (φ x) (ε / 2), ?_,
-    hKc.image_of_continuousOn (φ.continuousOn_symm.mono hKφ), ?_⟩
-  · have h := φ.symm.image_mem_nhds (mem_chart_target E x)
-      (closedBall_mem_nhds (φ x) (half_pos hε))
-    rwa [φ.left_inv (mem_chart_source E x)] at h
-  · rintro y ⟨w, hw, rfl⟩
-    have hw' : w ∈ φ.target := hKφ hw
-    have hw'' : φ (φ.symm w) ∈ closedBall (φ x) (ε / 2) := by rwa [φ.right_inv hw']
-    exact isIso_localHomologyRestriction_symm_image R φ ((convex_closedBall _ _).starConvex hw'')
-      hKc hKφ (φ.map_target hw') hw'' k
+  obtain ⟨B, hB, hBc, -, hiso⟩ :=
+    exists_isCompact_subset_mem_nhds_isIso_localHomologyRestriction (E := E) R
+      (Filter.univ_mem : univ ∈ 𝓝 x) k
+  exact ⟨B, hB, hBc, hiso⟩
 
 /-- An open, bounded, convex subset of the target of a chart whose closure also lies in the
 target. These patches index the cover over which the local homology system is glued. -/

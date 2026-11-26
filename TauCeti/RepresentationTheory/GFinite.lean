@@ -44,6 +44,7 @@ representation of a compact group, this is the space of `K`-finite vectors of ha
   vectors are invariant under the representation.
 * `Representation.IsGFinite.map` and `Representation.map_gFiniteSubmodule_le`: intertwining maps
   preserve `G`-finiteness.
+* `Representation.IsGFinite.of_injective`: injective intertwining maps reflect `G`-finiteness.
 * `Representation.gFiniteSubmodule_eq_top`: every vector of a finite-dimensional representation is
   `G`-finite.
 
@@ -143,6 +144,18 @@ theorem IsGFinite.map (f : IntertwiningMap ρ σ) {v : V} (hv : ρ.IsGFinite v) 
   rw [isGFinite_iff] at hv
   exact IsGFinite.of_apply_eq f.toLinearMap fun g =>
     (IntertwiningMap.isIntertwining _ _ f g v).symm
+
+/-- An injective intertwining map reflects `G`-finiteness: a vector whose image is `G`-finite is
+`G`-finite. -/
+theorem IsGFinite.of_injective (f : IntertwiningMap ρ σ) (hf : Function.Injective f) {v : V}
+    (hv : σ.IsGFinite (f v)) : ρ.IsGFinite v := by
+  rw [isGFinite_iff] at hv ⊢
+  have : FiniteDimensional k
+      ((Submodule.span k (Set.range fun g : G => ρ g v)).map f.toLinearMap) := by
+    rwa [Submodule.map_span, ← Set.range_comp,
+      show ⇑f.toLinearMap ∘ (fun g : G => ρ g v) = fun g => σ g (f v) from
+        funext fun g => IntertwiningMap.isIntertwining _ _ f g v]
+  exact LinearEquiv.finiteDimensional (Submodule.equivMapOfInjective _ hf _).symm
 
 variable (ρ)
 

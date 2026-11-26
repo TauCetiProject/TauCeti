@@ -53,6 +53,8 @@ abstract algebra, where invertibility makes the factor an element of the unitary
   `Units.sqrt_star_mul_eq`: the two positive factors are conjugate by the unitary factor.
 * `Units.polarUnitary_unitary_mul_mul_unitary`, `Units.sqrt_unitary_mul_mul_unitary`: unitary
   equivariance.
+* `Units.coe_polarUnitary_map`: naturality of the unitary factor for unital star ring
+  homomorphisms.
 
 ## References
 
@@ -281,5 +283,18 @@ theorem sqrt_unitary_mul_mul_unitary (v w : unitary A) :
   sqrt_mul_star_eq_of_mul_eq _
     (star_right_conjugate_nonneg (CFC.sqrt_nonneg ((a : A) * star (a : A))) (v : A))
     (unitary_mul_mul_unitary_eq a v w)
+
+
+/-- **Naturality of the unitary factor**: a unital star ring homomorphism sends the unitary factor
+of `a` to the unitary factor of the image of `a`. -/
+theorem coe_polarUnitary_map {B : Type*} [PartialOrder B] [Ring B] [StarRing B]
+    [StarOrderedRing B] [TopologicalSpace B] [Algebra ℝ B]
+    [ContinuousFunctionalCalculus ℝ B IsSelfAdjoint] [NonnegSpectrumClass ℝ B]
+    [IsSemitopologicalRing B] [T2Space B] {F : Type*} [FunLike F A B] [RingHomClass F A B]
+    [StarHomClass F A B] (φ : F) :
+    ((Units.map (φ : A →* B) a).polarUnitary : B) = φ (a.polarUnitary : A) :=
+  congrArg Subtype.val (polarUnitary_eq_of_mul_eq (v := ⟨_, Unitary.map_mem φ a.polarUnitary.prop⟩)
+    _ (map_nonneg φ (CFC.sqrt_nonneg ((a : A) * star (a : A))))
+    (by simp [← map_mul, sqrt_mul_star_mul_polarUnitary]))
 
 end Units
