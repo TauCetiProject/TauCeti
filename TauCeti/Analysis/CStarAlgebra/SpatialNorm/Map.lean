@@ -62,7 +62,8 @@ open UniformSpace TensorProduct ContinuousLinearMap
 namespace NonUnitalStarSubalgebra
 
 open TauCeti
-open Algebra.TensorProduct (mapNonUnitalStarAlgHom coe_mapNonUnitalStarAlgHom)
+open Algebra.TensorProduct (mapNonUnitalStarAlgHom coe_mapNonUnitalStarAlgHom
+  mapNonUnitalStarAlgHom_tmul mapNonUnitalStarAlgHom_id mapNonUnitalStarAlgHom_comp)
 
 section RCLike
 
@@ -83,11 +84,14 @@ theorem spatialTensorHom_mapNonUnitalStarAlgHom (φ : A →⋆ₙₐ[𝕜] A') (
     spatialTensorHom A' B' (mapNonUnitalStarAlgHom φ ψ x) =
       ((NonUnitalStarSubalgebraClass.subtype A').comp φ).spatialTensorHom
         ((NonUnitalStarSubalgebraClass.subtype B').comp ψ) x := by
-  rw [spatialTensorHom_apply, NonUnitalStarAlgHom.spatialTensorHom_apply,
-    coe_mapNonUnitalStarAlgHom, TensorProduct.map_map]
-  -- The linear map underlying a composite of star homomorphisms is, by definition, the composite
-  -- of the underlying linear maps.
-  rfl
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy =>
+    rw [coe_mapNonUnitalStarAlgHom] at hx hy ⊢
+    rw [map_add, map_add, map_add, hx, hy]
+  | tmul a b => rw [mapNonUnitalStarAlgHom_tmul, spatialTensorHom_tmul,
+      NonUnitalStarAlgHom.spatialTensorHom_tmul, NonUnitalStarAlgHom.comp_apply,
+      NonUnitalStarAlgHom.comp_apply, NonUnitalStarSubalgebraClass.subtype_apply,
+      NonUnitalStarSubalgebraClass.subtype_apply]
 
 /-! ### Extension to the spatial tensor products -/
 
@@ -315,11 +319,7 @@ theorem minTensorMap_id :
       NonUnitalStarAlgHom.id ℂ (minTensor A B) := by
   refine DFunLike.coe_injective <| minTensor_funext (continuous_minTensorMap _ _)
     continuous_id fun x ↦ ?_
-  have hid : TensorProduct.map (NonUnitalStarAlgHom.id ℂ A : A →ₗ[ℂ] A)
-      (NonUnitalStarAlgHom.id ℂ B : B →ₗ[ℂ] B) = LinearMap.id :=
-    TensorProduct.map_id
-  rw [minTensorMap_toMinTensor, coe_mapNonUnitalStarAlgHom, hid, LinearMap.id_apply,
-    NonUnitalStarAlgHom.coe_id, id_eq]
+  simp only [minTensorMap_toMinTensor, mapNonUnitalStarAlgHom_id, NonUnitalStarAlgHom.coe_id, id_eq]
 
 /-- `minTensorMap` is compatible with composition. -/
 theorem minTensorMap_comp {E'' F'' : Type*} [NormedAddCommGroup E''] [InnerProductSpace ℂ E'']
@@ -331,12 +331,8 @@ theorem minTensorMap_comp {E'' F'' : Type*} [NormedAddCommGroup E''] [InnerProdu
     minTensorMap (φ'.comp φ) (ψ'.comp ψ) = (minTensorMap φ' ψ').comp (minTensorMap φ ψ) := by
   refine DFunLike.coe_injective <| minTensor_funext (continuous_minTensorMap _ _)
     ((continuous_minTensorMap _ _).comp (continuous_minTensorMap _ _)) fun x ↦ ?_
-  simp only [NonUnitalStarAlgHom.coe_comp, Function.comp_apply, minTensorMap_toMinTensor,
-    coe_mapNonUnitalStarAlgHom]
-  rw [TensorProduct.map_map]
-  -- The linear map underlying a composite of star homomorphisms is, by definition, the composite
-  -- of the underlying linear maps.
-  rfl
+  rw [NonUnitalStarAlgHom.comp_apply, minTensorMap_toMinTensor, minTensorMap_toMinTensor,
+    minTensorMap_toMinTensor, mapNonUnitalStarAlgHom_comp, NonUnitalStarAlgHom.comp_apply]
 
 /-- For inclusions `A ≤ A₁` and `B ≤ B₁`, `minTensorMap` of the inclusions is the inclusion
 `A ⊗_min B ⊆ A₁ ⊗_min B₁` (`NonUnitalStarSubalgebra.minTensor_mono`). -/
