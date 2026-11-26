@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Hull
-public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
-public import Mathlib.MeasureTheory.Measure.Haar.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import TauCeti.Analysis.Calculus.IteratedGradient.Contraction
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
