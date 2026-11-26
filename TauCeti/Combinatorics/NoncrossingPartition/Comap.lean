@@ -143,6 +143,12 @@ theorem comapOrderIso_apply (hf : StrictMonoOn f s) (ρ : NoncrossingPartition (
     comapOrderIso hf ρ = comap hf.monotoneOn ρ :=
   (rfl)
 
+/-- Pulling back the preimage of `π` under `comapOrderIso hf` recovers `π`. -/
+@[simp]
+theorem comap_comapOrderIso_symm_apply (hf : StrictMonoOn f s) (π : NoncrossingPartition s) :
+    comap hf.monotoneOn ((comapOrderIso hf).symm π) = π :=
+  (comapOrderIso hf).apply_symm_apply π
+
 /-- Let `f` be monotone on `s` and identify no two positions other than `i ≤ j`, which are adjacent
 in `s`. If the join in `NC(s)` of `π` with the partition `σ_f` into the fibres of `f` is `1`, then
 `s` is the union of the parts of `π` through `i` and `j`: merging these two parts gives a

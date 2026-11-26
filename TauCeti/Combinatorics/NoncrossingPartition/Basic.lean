@@ -509,6 +509,29 @@ theorem coe_restrict (σ : NoncrossingPartition s) {B : Finset α} (hB : B ≤ s
       (σ : Finpartition s).restrict hB :=
   (rfl)
 
+/-- Restriction to a subset is monotone. -/
+theorem restrict_mono {σ τ : NoncrossingPartition s} {B : Finset α} (hB : B ≤ s) (h : σ ≤ τ) :
+    σ.restrict hB ≤ τ.restrict hB := by
+  rw [← Subtype.coe_le_coe, coe_restrict, coe_restrict]
+  exact Finpartition.restrict_mono hB h
+
+/-- The restriction of the partition into one part is the partition into one part. -/
+@[simp]
+theorem restrict_top {B : Finset α} (hB : B ≤ s) : (⊤ : NoncrossingPartition s).restrict hB = ⊤ :=
+  Subtype.ext <| (coe_restrict _ hB).trans (Finpartition.restrict_top hB)
+
+/-- The restriction of the partition into singletons is the partition into singletons. -/
+@[simp]
+theorem restrict_bot {B : Finset α} (hB : B ≤ s) : (⊥ : NoncrossingPartition s).restrict hB = ⊥ :=
+  Subtype.ext <| (coe_restrict _ hB).trans (Finpartition.restrict_bot hB)
+
+/-- The restriction of a noncrossing partition to one of its parts is the partition of that part
+into one part. -/
+@[simp]
+theorem restrict_of_mem_parts (π : NoncrossingPartition s) {B : Finset α}
+    (hB : B ∈ π.val.parts) : π.restrict (π.val.le hB) = ⊤ :=
+  Subtype.ext <| (coe_restrict π _).trans (Finpartition.restrict_of_mem_parts hB)
+
 /-- The noncrossing partitions of `s` form a finite poset with decidable order, hence a locally
 finite order; this makes its incidence algebra, with its zeta and Möbius functions, available. -/
 instance : LocallyFiniteOrder (NoncrossingPartition s) :=

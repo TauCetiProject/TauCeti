@@ -658,8 +658,7 @@ theorem kreweras_bijective : Function.Bijective (kreweras : NoncrossingPartition
   intro σ
   obtain ⟨ρ, hρ⟩ := kreweras_surjective_fin (comapOrderIso hf' σ)
   refine ⟨(comapOrderIso hf').symm ρ, (comapOrderIso hf').injective ?_⟩
-  rw [comapOrderIso_apply, comap_kreweras hf', ← comapOrderIso_apply hf', OrderIso.apply_symm_apply,
-    hρ]
+  rw [comapOrderIso_apply, comap_kreweras hf', comap_comapOrderIso_symm_apply, hρ]
 
 /-- The Kreweras complement on `NC(s)` is injective. -/
 @[simp]
