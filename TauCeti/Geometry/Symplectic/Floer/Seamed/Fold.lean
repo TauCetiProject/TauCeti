@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import TauCeti.Geometry.Symplectic.Manifold.TwistedProd
+import TauCeti.Geometry.Symplectic.JHolomorphic.Conj
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 
 /-!
@@ -187,6 +188,18 @@ private theorem lower_mem_period (hz : z ∈ (univ : Set ℝ) ×ˢ Icc 0 1) :
   simp only [mem_prod, mem_univ, mem_Icc, true_and] at hz ⊢
   constructor <;> linarith [hz.1, hz.2]
 
+/-- The reflection `(a, b) ↦ (a, -b)` negates the imaginary unit `(0, 1)` of the plane:
+`stdComplexLineConj_apply_imag` with the conjugation written out, as it occurs in the fold. -/
+private theorem reflect_stdComplexLineImag :
+    ((stdComplexLineImag : ℝ × ℝ).1, -(stdComplexLineImag : ℝ × ℝ).2) = -stdComplexLineImag :=
+  (stdComplexLineConj_apply _).symm.trans stdComplexLineConj_apply_imag
+
+/-- The reflection `(a, b) ↦ (a, -b)` fixes the real unit `(1, 0)` of the plane:
+`stdComplexLineConj_apply_real` with the conjugation written out, as it occurs in the fold. -/
+private theorem reflect_stdComplexLineReal :
+    ((stdComplexLineReal : ℝ × ℝ).1, -(stdComplexLineReal : ℝ × ℝ).2) = stdComplexLineReal :=
+  (stdComplexLineConj_apply _).symm.trans stdComplexLineConj_apply_real
+
 /-- The linear algebra behind the Cauchy–Riemann equation of the fold: a map
 `a ↦ (½ A a, ½ B (a.1, -a.2))` is complex linear for `J₁ ⊕ (-J₂)` exactly when `A` is complex
 linear for `J₁` and `B` for `J₂`, since the reflection `(a, b) ↦ (a, -b)` is antiholomorphic. -/
@@ -197,16 +210,10 @@ private theorem isComplexLinearMap_of_apply_eq_smul_iff {V W : Type*} [AddCommGr
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J₁.prod (-J₂)) F ↔
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) J₁ A ∧
         IsComplexLinearMap (AlmostComplexStructure.product ℝ) J₂ B := by
-  have hI : ((stdComplexLineImag : ℝ × ℝ).1, -(stdComplexLineImag : ℝ × ℝ).2) =
-      -stdComplexLineImag := by
-    simp [stdComplexLineImag]
-  have hR : ((stdComplexLineReal : ℝ × ℝ).1, -(stdComplexLineReal : ℝ × ℝ).2) =
-      stdComplexLineReal := by
-    simp [stdComplexLineReal]
   have h2 : (2⁻¹ : ℝ) ≠ 0 := by norm_num
   rw [isComplexLinearMap_stdComplexLine_iff, isComplexLinearMap_stdComplexLine_iff,
-    isComplexLinearMap_stdComplexLine_iff, hF, hF, hI, hR, map_neg,
-    AlmostComplexStructure.prod_apply, Prod.ext_iff]
+    isComplexLinearMap_stdComplexLine_iff, hF, hF, reflect_stdComplexLineImag,
+    reflect_stdComplexLineReal, map_neg, AlmostComplexStructure.prod_apply, Prod.ext_iff]
   simp only [AlmostComplexStructure.neg_apply, AlmostComplexStructure.apply_smul]
   rw [(smul_right_injective V h2).eq_iff, (smul_right_injective W h2).eq_iff, neg_inj]
 
@@ -227,15 +234,13 @@ theorem tangentSpaceProdEquiv_mfderiv_fold_apply
   have hfold : fold v = fun w ↦ ((v ∘ foldUpper) w, (v ∘ foldLower) w) := by
     funext w
     simp [foldUpper_apply, foldLower_apply]
-  -- The chain rule for the two linear reparametrizations of the domain.
+  -- The chain rule for the two linear reparametrizations of the domain, whose derivatives are
+  -- themselves (`ContinuousLinearMap.mfderiv_eq`).
   have hcomp (L : ℝ × ℝ →L[ℝ] ℝ × ℝ) (hL : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I v (L z)) :
-      mfderiv 𝓘(ℝ, ℝ × ℝ) I (v ∘ L) z = (mfderiv 𝓘(ℝ, ℝ × ℝ) I v (L z)).comp L := by
-    rw [mfderiv_comp z hL L.differentiableAt.mdifferentiableAt, mfderiv_eq_fderiv, L.fderiv]
-    -- What remains are the identifications of the tangent spaces of the plane with `ℝ × ℝ`,
-    -- which are identities.
-    rfl
-  have hd := mfderiv_prodMk (hv₁.comp z foldUpper.differentiableAt.mdifferentiableAt)
-    (hv₂.comp z foldLower.differentiableAt.mdifferentiableAt)
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I (v ∘ L) z = (mfderiv 𝓘(ℝ, ℝ × ℝ) I v (L z)).comp L :=
+    (mfderiv_comp z hL L.mdifferentiableAt).trans (congrArg _ L.mfderiv_eq)
+  have hd := mfderiv_prodMk (hv₁.comp z foldUpper.mdifferentiableAt)
+    (hv₂.comp z foldLower.mdifferentiableAt)
   rw [hcomp _ hv₁, hcomp _ hv₂] at hd
   rw [hfold, hd]
   have hU : foldUpper a = (2⁻¹ : ℝ) • a := by ext <;> simp [foldUpper]
@@ -335,19 +340,15 @@ theorem floerEnergyDensity_twistedProd_fold (σ : SmoothTwoForm I M)
   rw [floerEnergyDensity_zero, floerEnergyDensity_zero, floerEnergyDensity_zero, eval₂_twistedProd,
     tangentSpaceProdEquiv_mfderiv_fold_apply hv₁ hv₂,
     tangentSpaceProdEquiv_mfderiv_fold_apply hv₁ hv₂]
-  have hI : ((stdComplexLineImag : ℝ × ℝ).1, -(stdComplexLineImag : ℝ × ℝ).2) =
-      -stdComplexLineImag := by
-    simp [stdComplexLineImag]
-  have hR : ((stdComplexLineReal : ℝ × ℝ).1, -(stdComplexLineReal : ℝ × ℝ).2) =
-      stdComplexLineReal := by
-    simp [stdComplexLineReal]
   rw [fold_apply]
-  simp only [hI, hR, SmoothBundleForm.eval₂_smul_left, SmoothBundleForm.eval₂_smul_right,
-    smul_eq_mul]
-  -- The derivative is linear, but its domain is the tangent space of the plane, so `map_neg` is
-  -- applied up to the identification of that tangent space with `ℝ × ℝ`.
-  erw [map_neg]
-  rw [SmoothBundleForm.eval₂_neg_right]
+  simp only [reflect_stdComplexLineImag, reflect_stdComplexLineReal,
+    SmoothBundleForm.eval₂_smul_left, SmoothBundleForm.eval₂_smul_right, smul_eq_mul]
+  -- The reflected vector `-stdComplexLineImag` is negated in `ℝ × ℝ`; `map_neg` for the linear
+  -- derivative is stated with that negation, so that a plain rewrite applies it.
+  have hneg : mfderiv 𝓘(ℝ, ℝ × ℝ) I v (z.1 / 2, -z.2 / 2) (-stdComplexLineImag : ℝ × ℝ) =
+      -mfderiv 𝓘(ℝ, ℝ × ℝ) I v (z.1 / 2, -z.2 / 2) stdComplexLineImag :=
+    map_neg _ _
+  rw [hneg, SmoothBundleForm.eval₂_neg_right]
   ring
 
 /-- **Folding preserves the energy.** If `v` is differentiable on one period `ℝ × [-1/2, 1/2]`
