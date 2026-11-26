@@ -202,6 +202,8 @@ def fixedEndpointsEquiv {k : ℕ} (a b : α) :
   right_inv := by
     rintro ⟨u, ha, hb⟩
     apply Subtype.ext
+    -- Reduce the two maps and the subtype projection to see the tuple reconstructed from its
+    -- interior. The endpoint hypotheses then identify the inserted entries with those of u.
     change snoc (cons a (tail (init u))) b = u
     rw [← ha, ← hb]
     exact (cons_self_tail (init u)).symm ▸ snoc_init_self u
