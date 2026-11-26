@@ -48,15 +48,17 @@ The stabiliser of `x` under the contragredient `π′(s) = (π(s)ᵀ)⁻¹`, `π
 `s` with `xᵀ π(s) = xᵀ`, that is `x ᵥ* π s = x`; this file uses the latter form, which needs no
 inverse transpose on `GL_d`.
 
-## References
+## Provenance
 
-These results are adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0,
-Copyright 2026 Anthropic PBC), file `src/New/Spanning/SecondMoment/PositiveType.lean`
-(`New.norm_sq_sum_tmul_eq_card_mul_sum`, `New.re_sum_addChar_dotProduct_mul_le`,
-`New.card_mul_sum_det_eq_zero_le`); the Gram sum, the orthonormal Fourier vectors, the left-kernel
-count and the translate lemmas it uses are `TauCeti.inner_sum_sum_eq_card_mul_sum`,
-`AddChar.orthonormal_dotProduct`, `Matrix.card_le_card_filter_vecMul_eq_zero`,
-`MonoidHom.vecMul_inv_eq_vecMul_inv_iff` and `MonoidHom.mulVec_eq_mulVec_iff`.
+Adapted from grh-lean (https://github.com/lsernau/grh-lean at commit `72fead1`, Apache 2.0,
+Copyright 2026 Anthropic, PBC), file `src/New/Spanning/SecondMoment/PositiveType.lean`,
+declarations `New.re_sum_addChar_dotProduct_mul_le`, `New.inner_addChar_invTranspose_smul_single`
+and `New.card_mul_sum_det_eq_zero_le`. The general helpers adapted from the same file live in
+`TauCeti.RepresentationTheory.PositiveType.Basic`, `TauCeti.InformationTheory.Coding.CharacterSum`
+and `TauCeti.LinearAlgebra.Matrix.Determinant.LeftKernel`, each with its own provenance note. Here
+the contragredient stabiliser is written as the row condition `x ᵥ* π s = x` (see
+`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Translate`) in place of grh-lean's
+`New.invTransposeGL`.
 -/
 
 public section
@@ -70,25 +72,6 @@ variable {G : Type*} [Group G] [Fintype G]
 namespace TauCeti.PositiveType
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-
-/-- Let `Θ` have positive type, `Θ (a⁻¹ * b) = ⟪u a, u b⟫`, let `c` be an orthonormal family and
-`y : G → X` a family of indices with `y a = y b` exactly when `P (a⁻¹ * b)`. Then the squared norm
-of `∑ a, c (y a) ⊗ u a` is `#G` times the `Θ`-mass of `P`. -/
-private theorem norm_sq_sum_tmul_eq {X E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-    {c : X → E} (hc : Orthonormal ℂ c) (y : G → X) (P : G → Prop) [DecidablePred P]
-    (hy : ∀ a b, y a = y b ↔ P (a⁻¹ * b)) {Θ : G → ℝ} {u : G → H}
-    (hu : ∀ a b, ⟪u a, u b⟫_ℂ = Θ (a⁻¹ * b)) :
-    ‖∑ a, c (y a) ⊗ₜ[ℂ] u a‖ ^ 2 = Fintype.card G * ∑ s with P s, Θ s := by
-  classical
-  have h_inner (a b : G) : ⟪c (y a) ⊗ₜ[ℂ] u a, c (y b) ⊗ₜ[ℂ] u b⟫_ℂ =
-      ((if P (a⁻¹ * b) then Θ (a⁻¹ * b) else 0 : ℝ) : ℂ) := by
-    rw [TensorProduct.inner_tmul, orthonormal_iff_ite.1 hc, hu]
-    by_cases h : P (a⁻¹ * b)
-    · simp [(hy a b).2 h, h]
-    · simp [mt (hy a b).1 h, h]
-  rw [norm_sq_eq_re_inner (𝕜 := ℂ), inner_sum_sum_eq_card_mul_sum
-    (fun s ↦ ((if P s then Θ s else 0 : ℝ) : ℂ)) h_inner, sum_filter]
-  simp [← Complex.ofReal_natCast, ← Complex.ofReal_sum, ← Complex.ofReal_mul]
 
 variable {k n : Type*} [Field k] [Fintype k] [DecidableEq k] [Fintype n] [DecidableEq n]
 
@@ -124,10 +107,10 @@ private theorem re_sum_addChar_mul_le {ψ : AddChar k ℂ} (hψ : ψ.IsPrimitive
     inner_sum_sum_eq_card_mul_sum _ h_inner
   have hG₀ : (0 : ℝ) ≤ Fintype.card G := Nat.cast_nonneg _
   have hX₁ : ‖X₁‖ ^ 2 ≤ Fintype.card G * Y :=
-    (norm_sq_sum_tmul_eq (AddChar.orthonormal_dotProduct hψ) _ _
+    (norm_sq_sum_tmul_eq_card_mul_sum (AddChar.orthonormal_dotProduct hψ) _ _
       (π.vecMul_inv_eq_vecMul_inv_iff x) hu).trans_le (mul_le_mul_of_nonneg_left hx hG₀)
   have hX₀ : ‖X₀‖ ^ 2 ≤ Fintype.card G * Y :=
-    (norm_sq_sum_tmul_eq EuclideanSpace.orthonormal_single _ _
+    (norm_sq_sum_tmul_eq_card_mul_sum EuclideanSpace.orthonormal_single _ _
       (π.mulVec_eq_mulVec_iff z) hu).trans_le (mul_le_mul_of_nonneg_left hz hG₀)
   have h_cs : 2 * (⟪X₁, X₀⟫_ℂ).re ≤ ‖X₁‖ ^ 2 + ‖X₀‖ ^ 2 := by
     have h_re : (⟪X₁, X₀⟫_ℂ).re ≤ ‖X₁‖ * ‖X₀‖ := re_inner_le_norm (𝕜 := ℂ) X₁ X₀

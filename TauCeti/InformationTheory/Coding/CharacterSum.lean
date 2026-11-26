@@ -44,9 +44,12 @@ F. J. MacWilliams and N. J. A. Sloane, *The Theory of Error-Correcting Codes*, N
 (1977), Chapter 5, §2, Lemmas 2 and 11; W. C. Huffman and V. Pless, *Fundamentals of
 Error-Correcting Codes*, Cambridge University Press (2003), §7.2.
 
-`AddChar.orthonormal_dotProduct` is adapted from grh-lean (https://github.com/lsernau/grh-lean,
-Apache 2.0, Copyright 2026 Anthropic PBC), file `src/New/Spanning/SecondMoment/PositiveType.lean`
-(`New.orthonormal_addChar_div_sqrt`).
+## Provenance
+
+`AddChar.orthonormal_dotProduct` is adapted from grh-lean (https://github.com/lsernau/grh-lean at
+commit `72fead1`, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/New/Spanning/SecondMoment/PositiveType.lean`, declaration `New.orthonormal_addChar_div_sqrt`.
+Here it is stated for a primitive character of any finite commutative ring.
 -/
 
 public section

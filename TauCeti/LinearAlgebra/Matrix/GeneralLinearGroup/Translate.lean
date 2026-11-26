@@ -19,6 +19,14 @@ indexed by the cosets of its stabiliser.
 
 * `MonoidHom.vecMul_inv_eq_vecMul_inv_iff`: `x π(a)⁻¹ = x π(b)⁻¹ ↔ x π(a⁻¹ b) = x`.
 * `MonoidHom.mulVec_eq_mulVec_iff`: `π(a) z = π(b) z ↔ π(a⁻¹ b) z = z`.
+
+## Provenance
+
+These lemmas supply the stabiliser bookkeeping of grh-lean's
+`New.norm_sq_sum_tmul_eq_card_mul_sum` and `New.re_sum_addChar_dotProduct_mul_le`
+(https://github.com/lsernau/grh-lean at commit `72fead1`, Apache 2.0, Copyright 2026 Anthropic,
+PBC, file `src/New/Spanning/SecondMoment/PositiveType.lean`), where the row translates are
+expressed with the inverse transpose `New.invTransposeGL`.
 -/
 
 public section

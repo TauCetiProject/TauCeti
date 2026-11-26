@@ -18,11 +18,11 @@ lie in the left kernel. So the left kernel has at least `q` elements.
 
 * `Matrix.card_le_card_filter_vecMul_eq_zero`: `q ≤ #{y | y ᵥ* Z = 0}` when `det Z = 0`.
 
-## References
+## Provenance
 
-This is adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026
-Anthropic PBC), file `src/New/Spanning/SecondMoment/PositiveType.lean`
-(`New.card_le_card_filter_vecMul_eq_zero`).
+Adapted from grh-lean (https://github.com/lsernau/grh-lean at commit `72fead1`, Apache 2.0,
+Copyright 2026 Anthropic, PBC), file `src/New/Spanning/SecondMoment/PositiveType.lean`,
+declaration `New.card_le_card_filter_vecMul_eq_zero`.
 -/
 
 public section
