@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.Count.MeasurePreserving
 public import TauCeti.RepresentationTheory.Continuous.LpKoopman
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import Mathlib.MeasureTheory.Group.Measure
@@ -55,14 +56,8 @@ variable (p : ℝ≥0∞) [Fact (1 ≤ p)]
 
 /-- Every permutation of `Fin 3` preserves counting measure. -/
 theorem measurePreserving_perm_count (g : Equiv.Perm (Fin 3)) :
-    MeasurePreserving (g • · : Fin 3 → Fin 3) Measure.count Measure.count := by
-  refine ⟨measurable_of_finite _, ?_⟩
-  ext s hs
-  rw [Measure.map_apply (measurable_of_finite _) hs]
-  have : (g • · : Fin 3 → Fin 3) ⁻¹' s = g.symm '' s := by
-    ext x
-    simp [Equiv.Perm.smul_def]
-  rw [this, Measure.count_injective_image g.symm.injective]
+    MeasurePreserving (g • · : Fin 3 → Fin 3) Measure.count Measure.count :=
+  Measure.measurePreserving_count (measurable_of_finite _) (MulAction.bijective g)
 
 /-- Every permutation of `Fin 3` preserves the zero measure. -/
 theorem measurePreserving_perm_zero (g : Equiv.Perm (Fin 3)) :
@@ -79,22 +74,25 @@ example (g : Equiv.Perm (Fin 3)) (f : Lp ℂ p (0 : Measure (Fin 3))) :
 noncomputable abbrev obs (a b c : ℂ) : Lp ℂ p (Measure.count : Measure (Fin 3)) :=
   MemLp.of_discrete.toLp ![a, b, c]
 
-/-- The pullback of an observable on `Fin 3` by a permutation `g` is `v ∘ g⁻¹`. -/
-theorem lpKoopman_obs (g : Equiv.Perm (Fin 3)) (a b c : ℂ) :
+/-- The pullback of the observable `v = (a, b, c)` on `Fin 3` by a permutation `g` is the
+observable `v ∘ g⁻¹`. -/
+private theorem lpKoopman_obs (g : Equiv.Perm (Fin 3)) (a b c : ℂ) :
     lpKoopman ℂ ℂ p Measure.count measurePreserving_perm_count g (obs p a b c) =
-      MemLp.of_discrete.toLp fun x ↦ ![a, b, c] (g⁻¹ • x) := by
+      obs p (![a, b, c] (g⁻¹ • 0)) (![a, b, c] (g⁻¹ • 1)) (![a, b, c] (g⁻¹ • 2)) := by
   rw [Lp.ext_iff]
   refine (coeFn_lpKoopman _ _).trans ?_
   have h₁ := MemLp.coeFn_toLp (MemLp.of_discrete (f := ![a, b, c]) (p := p) (μ := .count))
-  have h₂ := MemLp.coeFn_toLp
-    (MemLp.of_discrete (f := fun x ↦ ![a, b, c] (g⁻¹ • x)) (p := p) (μ := .count))
+  have h₂ := MemLp.coeFn_toLp (MemLp.of_discrete
+    (f := ![![a, b, c] (g⁻¹ • 0), ![a, b, c] (g⁻¹ • 1), ![a, b, c] (g⁻¹ • 2)]) (p := p)
+    (μ := .count))
   rw [Filter.EventuallyEq, Measure.ae_count_iff] at h₁ h₂ ⊢
   intro x
   rw [h₁, h₂]
+  fin_cases x <;> simp
 
 omit [Fact (1 ≤ p)] in
 /-- Two observables on `Fin 3` with counting measure are equal exactly when their entries are. -/
-theorem obs_eq_obs_iff {a b c a' b' c' : ℂ} :
+private theorem obs_eq_obs_iff {a b c a' b' c' : ℂ} :
     obs p a b c = obs p a' b' c' ↔ a = a' ∧ b = b' ∧ c = c' := by
   rw [MemLp.toLp_eq_toLp_iff, Filter.EventuallyEq, Measure.ae_count_iff]
   refine ⟨fun h ↦ ⟨h 0, h 1, h 2⟩, fun ⟨ha, hb, hc⟩ x ↦ ?_⟩
@@ -104,9 +102,7 @@ theorem obs_eq_obs_iff {a b c a' b' c' : ℂ} :
 theorem lpKoopman_finRotate :
     lpKoopman ℂ ℂ p Measure.count measurePreserving_perm_count (finRotate 3) (obs p 0 1 2) =
       obs p 2 0 1 := by
-  rw [lpKoopman_obs, MemLp.toLp_eq_toLp_iff, Filter.EventuallyEq, Measure.ae_count_iff]
-  intro x
-  fin_cases x <;> rfl
+  simp [lpKoopman_obs, Equiv.Perm.smul_def, Equiv.Perm.inv_def]
 
 /-- **Check.** For the cycle `c` and the transposition `τ = (0 1)`, the pullback of `(0, 1, 2)`
 by `c τ` is `π(c) (π(τ) f) = (2, 1, 0)`. -/
@@ -119,9 +115,7 @@ theorem lpKoopman_finRotate_mul_swap :
     lpKoopman ℂ ℂ p Measure.count measurePreserving_perm_count (finRotate 3 * Equiv.swap 0 1)
       (obs p 0 1 2) = obs p 2 1 0 := by
   refine ⟨by rw [map_mul, mul_apply_eq_comp], ?_⟩
-  rw [lpKoopman_obs, MemLp.toLp_eq_toLp_iff, Filter.EventuallyEq, Measure.ae_count_iff]
-  intro x
-  fin_cases x <;> rfl
+  simp [lpKoopman_obs, Equiv.Perm.smul_def, Equiv.Perm.inv_def, Equiv.swap_apply_of_ne_of_ne]
 
 /-- **Check.** Composing in the forward order, `π(τ) (π(c) f) = (0, 2, 1)`, differs from
 `π(c τ) f = (2, 1, 0)`. -/
@@ -131,10 +125,7 @@ theorem lpKoopman_swap_lpKoopman_finRotate :
           (obs p 0 1 2)) = obs p 0 2 1 ∧
     obs p 0 2 1 ≠ obs p 2 1 0 := by
   refine ⟨?_, fun h ↦ by simpa using ((obs_eq_obs_iff p).mp h).1⟩
-  rw [lpKoopman_finRotate, lpKoopman_obs, MemLp.toLp_eq_toLp_iff, Filter.EventuallyEq,
-    Measure.ae_count_iff]
-  intro x
-  fin_cases x <;> rfl
+  simp [lpKoopman_obs, Equiv.Perm.smul_def, Equiv.Perm.inv_def, Equiv.swap_apply_of_ne_of_ne]
 
 end FinThree
 
