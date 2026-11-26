@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Square
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # Classical pseudodifferential operators between vector bundles
@@ -68,6 +69,11 @@ in `K` each entry of `R ∘ P` is a finite sum of compositions of an entry of `R
 suffices, since the chart compressions only see such inputs
 (`TauCeti.mem_classicalPseudodifferentialOperators_iff_forall_isCompact`).
 
+More generally than the entries, reading `P` along any smooth section `s` of `E` gives a classical
+pseudodifferential operator `f ↦ χ · ℓ(t' (P (f · s)))` of order `m`
+(`TauCeti.cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferentialOperators`):
+near a compact set, `s` is a finite sum of cut-off frame sections with smooth coefficients.
+
 ## Main definitions
 
 * `TauCeti.sectionEntry`: the matrix entry `f ↦ χ ℓ(t' (P (f ψ t⁻¹ v)))` of an operator.
@@ -101,6 +107,10 @@ suffices, since the chart compressions only see such inputs
 * `TauCeti.comp_mem_sectionClassicalPseudodifferentialOperators`: the composition of operators of
   orders `m'` and `m` between bundles, through a middle bundle with finite-dimensional fibre, has
   order `m' + m`.
+* `TauCeti.cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferentialOperators`:
+  reading an operator of order `m` along an arbitrary smooth section `s`,
+  `f ↦ χ · ℓ(t' (P (f · s)))`, gives a classical pseudodifferential operator of order `m`; the
+  entries are the case of cut-off frame sections.
 
 ## References
 
@@ -278,22 +288,52 @@ theorem sectionEntry_apply_eq_cutoffFrameCoeff
       t'.cutoffFrameCoeff χ hχ ℓ (P (f • t.cutoffFrameSection ψ hψ v)) :=
   (rfl)
 
+/-- The matrix entry of `P` is `P` read along the cut-off frame section `ψ t⁻¹ v` and through the
+cut-off frame coefficient `χ ℓ(t' ·)`. -/
+theorem sectionEntry_eq_comp
+    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
+    sectionEntry t ψ hψ v t' χ hχ ℓ P = t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+      (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ :=
+  (rfl)
+
+omit [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)]
+  [ContMDiffVectorBundle ∞ W F 𝓘(ℝ, CoordinateSpace n)] in
+/-- Reading a properly supported operator `P` along a section `s` and through an operator `L` from
+sections of `F` to functions such that `L r` vanishes wherever `r` does, `f ↦ L (P (f · s))`, gives
+a properly supported operator on functions. -/
+theorem IsSectionProperlySupported.comp_comp_toSpanSingleton
+    {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
+    (hP : IsSectionProperlySupported P)
+    {L : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hL : ∀ r x, r x = 0 → L r x = 0) (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    IsProperlySupported (L ∘ₗ P ∘ₗ (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ) := by
+  refine isProperlySupported_iff.2 fun K hK ↦ ?_
+  obtain ⟨K', hK', hP₁, hP₂⟩ := hP K hK
+  refine ⟨K', hK', fun f hf ↦ ?_, fun f hf x hx ↦ ?_⟩
+  · have h₂ := hP₁ _ ((ContMDiffSection.tsupport_smul_function_subset_of_normedAlgebra f
+      s).trans (inter_subset_left.trans hf))
+    rw [ContMDiffSection.tsupport_def] at h₂
+    refine (closure_mono fun y hy ↦ ?_).trans h₂
+    exact fun h ↦ hy (hL _ y h)
+  · exact hL _ x (hP₂ (f • s) (hf.mono fun y hy ↦ by simp [hy]) x hx)
+
+omit [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)] in
+/-- Reading a properly supported operator `P` along a section `s` and through a cut-off frame
+coefficient, `f ↦ χ · ℓ(t' (P (f · s)))`, gives a properly supported operator on functions. -/
+theorem IsSectionProperlySupported.cutoffFrameCoeff_comp_comp_toSpanSingleton
+    {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
+    (hP : IsSectionProperlySupported P) (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    IsProperlySupported (t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+      (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ) :=
+  hP.comp_comp_toSpanSingleton (fun r x h ↦ by simp [h]) s
+
 /-- The entries of a properly supported operator are properly supported. -/
 theorem IsSectionProperlySupported.sectionEntry
     {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
     (hP : IsSectionProperlySupported P) :
     IsProperlySupported (TauCeti.sectionEntry t ψ hψ v t' χ hχ ℓ P) := by
-  refine isProperlySupported_iff.2 fun K hK ↦ ?_
-  obtain ⟨K', hK', hP₁, hP₂⟩ := hP K hK
-  refine ⟨K', hK', fun f hf ↦ ?_, fun f hf x hx ↦ ?_⟩
-  · have h₂ := hP₁ _ ((ContMDiffSection.tsupport_smul_function_subset_of_normedAlgebra f
-      (t.cutoffFrameSection ψ hψ v)).trans (inter_subset_left.trans hf))
-    rw [ContMDiffSection.tsupport_def] at h₂
-    refine (closure_mono fun y hy ↦ ?_).trans h₂
-    simp only [Function.mem_support, sectionEntry_apply] at hy
-    exact fun h ↦ hy (by rw [h, map_zero, map_zero, smul_zero])
-  · rw [sectionEntry_apply, hP₂ _ (hf.mono fun y hy ↦ by simp [hy]) x hx]
-    simp
+  rw [sectionEntry_eq_comp]
+  exact hP.cutoffFrameCoeff_comp_comp_toSpanSingleton t' χ hχ ℓ (t.cutoffFrameSection ψ hψ v)
 
 /-- **The entries of a differential operator are differential operators.** If `P : Γ(E) → Γ(F)` is
 a differential operator of order at most `m` in Grothendieck's sense, for commutators with
@@ -620,5 +660,74 @@ theorem comp_mem_sectionClassicalPseudodifferentialOperators [FiniteDimensional 
     sectionEntry_apply_eq_cutoffFrameCoeff]
 
 end Composition
+
+/-! ### Entries along arbitrary sections -/
+
+section EntryAlongSection
+
+variable [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
+  [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)]
+  [ContMDiffVectorBundle ∞ W F 𝓘(ℝ, CoordinateSpace n)] [FiniteDimensional ℂ V] {m : ℝ}
+  {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
+  (t' : Trivialization W (π W F)) [MemTrivializationAtlas t']
+  (χ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hχ : tsupport χ ⊆ t'.baseSet) (ℓ : W →L[ℂ] ℂ)
+
+/-- `TauCeti.cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferentialOperators`
+for a section with compact support, which is a finite sum of cut-off frame sections. -/
+private theorem cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_of_isCompact
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    {s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯} (hs : IsCompact s.tsupport) :
+    t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ ∈
+      classicalPseudodifferentialOperators m := by
+  set b := Module.finBasis ℂ V
+  obtain ⟨ι, _, c, ρ, ψ, hρ, hψ, hsum⟩ :=
+    hs.exists_sum_sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply
+      (I := 𝓘(ℝ, CoordinateSpace n)) (F := E) b
+  -- `s` is the sum of the cut-off frame sections `ψᵢ tᵢ⁻¹ bⱼ` with the coefficients
+  -- `ρᵢ bⱼ*(tᵢ s)`, so reading `P` along `s` is a sum of entries of `P` composed with
+  -- multiplications by these coefficients.
+  set a : ι → Fin (Module.finrank ℂ V) → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ :=
+    fun i j ↦ (trivializationAt V E (c i)).cutoffFrameCoeff (ρ i) (hρ i)
+      (b.coord j).toContinuousLinearMap s
+  have hs' : s = ∑ i, ∑ j, a i j •
+      (trivializationAt V E (c i)).cutoffFrameSection (ψ i) (hψ i) (b j) := by
+    ext x
+    by_cases hx : x ∈ s.tsupport
+    · exact (hsum s x hx).symm
+    · simp [a, s.eq_zero_of_notMem_tsupport hx]
+  have heq : t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+      (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ =
+      ∑ i, ∑ j, sectionEntry (trivializationAt V E (c i)) (ψ i) (hψ i) (b j) t' χ hχ ℓ P ∘ₗ
+        LinearMap.mulLeft ℂ (a i j) := by
+    refine LinearMap.ext fun f ↦ ?_
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+      LinearMap.toSpanSingleton_apply, hs']
+    simp only [Finset.smul_sum, smul_smul, map_sum, LinearMap.sum_apply, LinearMap.comp_apply,
+      LinearMap.mulLeft_apply, sectionEntry_apply_eq_cutoffFrameCoeff, mul_comm]
+  rw [heq]
+  exact sum_mem fun i _ ↦ sum_mem fun j _ ↦
+    comp_mulLeft_mem_classicalPseudodifferentialOperators (hP.2 _ _ _ _ _ _ _ _) _
+
+/-- **Reading an operator along a section.** If `P` is a classical pseudodifferential operator of
+order `m` from `E` to `F`, then for every smooth section `s` of `E`, every trivialization `t'` of
+`F` in its atlas, every real smooth function `χ` supported in its base set and every
+complex-linear functional `ℓ` on the model fibre of `F`, the operator
+`f ↦ χ · ℓ(t' (P (f · s)))` is a classical pseudodifferential operator of order `m` on `M`. The
+entries of `P` (`TauCeti.sectionEntry`) are the case of cut-off frame sections `s = ψ t⁻¹ v`. -/
+theorem cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferentialOperators
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ ∈
+      classicalPseudodifferentialOperators m := by
+  refine mem_classicalPseudodifferentialOperators_iff_forall_isCompact.2
+    ⟨hP.1.cutoffFrameCoeff_comp_comp_toSpanSingleton t' χ hχ ℓ s, fun K hK ↦ ?_⟩
+  -- On functions supported in `K`, `s` may be replaced by a section with compact support.
+  obtain ⟨s', hs', hss'⟩ := hK.exists_isCompact_tsupport_forall_smul_eq ℂ s
+  refine ⟨_, cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_of_isCompact t' χ hχ ℓ hP hs',
+    fun f hf ↦ ?_⟩
+  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+    LinearMap.toSpanSingleton_apply, hss' f hf]
+
+end EntryAlongSection
 
 end TauCeti
