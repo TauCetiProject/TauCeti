@@ -16,17 +16,15 @@ import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
 Comparing any finite reduced crystallographic root pairing carrying a base of valid Cartan type `t`
 with `t.simplyConnectedRootDatum` via `RootPairing.Base.indexEquivOfCartanMatrixEq` shows that it
-has `t.numRoots` roots and `t.numRoots / 2` positive roots.
+has `t.numRoots` roots and twice its number of positive roots is `t.numRoots`.
 
 ## Main results
 
 * `TauCeti.HasCartanType.nonempty_equiv_fin_numRoots`: `Nonempty (ι ≃ Fin t.numRoots)`.
-* `TauCeti.HasCartanType.natCard_eq_numRoots`,
-  `TauCeti.HasCartanType.two_mul_ncard_posRoots_eq_numRoots`, and
-  `TauCeti.HasCartanType.ncard_posRoots_eq_numRoots_div_two`.
-* `RootPairing.Base.natCard_eq_numRoots_classifiedDynkinType`,
-  `RootPairing.Base.two_mul_ncard_posRoots_eq_numRoots_classifiedDynkinType`, and
-  `RootPairing.Base.ncard_posRoots_eq_numRoots_classifiedDynkinType_div_two`.
+* `TauCeti.HasCartanType.natCard_eq_numRoots` and
+  `TauCeti.HasCartanType.two_mul_ncard_posRoots_eq_numRoots`.
+* `RootPairing.Base.natCard_eq_numRoots_classifiedDynkinType` and
+  `RootPairing.Base.two_mul_ncard_posRoots_eq_numRoots_classifiedDynkinType`.
 * `RootPairing.natCard_eq_of_hasCartanType_A` and `RootPairing.ncard_posRoots_of_hasCartanType_A`:
   specializations to type `Aₙ`, including the rank-zero case `n = 0`.
 
@@ -67,11 +65,6 @@ theorem HasCartanType.two_mul_ncard_posRoots_eq_numRoots {b : P.Base} {t : Dynki
     (h : HasCartanType P b t) (ht : t.Valid) : 2 * (posRoots P b).ncard = t.numRoots :=
   (TauCeti.two_mul_ncard_posRoots P b).trans (h.natCard_eq_numRoots ht)
 
-/-- **A base of valid Cartan type `t` has `t.numRoots / 2` positive roots.** -/
-theorem HasCartanType.ncard_posRoots_eq_numRoots_div_two {b : P.Base} {t : DynkinType}
-    (h : HasCartanType P b t) (ht : t.Valid) : (posRoots P b).ncard = t.numRoots / 2 := by
-  rw [ncard_posRoots_eq_natCard_div_two, h.natCard_eq_numRoots ht]
-
 end HasCartanType
 
 end TauCeti
@@ -96,13 +89,6 @@ system is the root count of its classified Dynkin type.** -/
 theorem two_mul_ncard_posRoots_eq_numRoots_classifiedDynkinType (b : P.Base) :
     2 * (posRoots P b).ncard = (classifiedDynkinType b).numRoots :=
   (hasCartanType_classifiedDynkinType b).two_mul_ncard_posRoots_eq_numRoots
-    (valid_classifiedDynkinType b)
-
-/-- **An irreducible reduced crystallographic finite root system has `numRoots / 2` positive
-roots.** -/
-theorem ncard_posRoots_eq_numRoots_classifiedDynkinType_div_two (b : P.Base) :
-    (posRoots P b).ncard = (classifiedDynkinType b).numRoots / 2 :=
-  (hasCartanType_classifiedDynkinType b).ncard_posRoots_eq_numRoots_div_two
     (valid_classifiedDynkinType b)
 
 end RootPairing.Base
