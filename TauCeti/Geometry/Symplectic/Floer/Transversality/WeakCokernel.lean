@@ -58,7 +58,7 @@ frozen almost complex structure
 variations of `J_t` along a Floer trajectory
 (`ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator`), and variations
 of `J_t` along a Floer strip, or any band `ℝ × T` over an open interval `T`
-(`ae_restrict_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator`),
+(`ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator_timeDependent`),
 all in the namespace `TauCeti.SymplecticForm`. In each case `η = 0` almost everywhere, on the band
 in the last case, where the annihilation of the range of `D_u` is used only for the regularity of
 `η`. The surjectivity of
@@ -79,7 +79,8 @@ codimension, is `range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_to
 * `ae_eq_zero_of_integral_floerLinearization_of_integral_floerOperator_add_sub`,
   `ae_eq_zero_of_integral_floerLinearization_of_integral_deriv_floerOperator`,
   `ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator` and, along a Floer
-  strip, `ae_restrict_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator`, in
+  strip,
+  `ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator_timeDependent`, in
   the namespace `TauCeti.SymplecticForm`: weak cokernel elements of the universal operator
   vanish.
 
@@ -239,11 +240,12 @@ section Vanishing
 
 /-! ### Weak cokernel elements of the universal operator vanish
 
-The three transversality arguments of `TauCeti.Geometry.Symplectic.Floer.Transversality.Cokernel`
-take a `C¹` covector field. Applied to the `C¹` representative of a weak cokernel element, they show
-that a locally `L^q` covector field annihilating the range of the universal linearized operator
-vanishes almost everywhere, once the data have one more derivative than the classical statements
-ask for. -/
+The transversality arguments of `TauCeti.Geometry.Symplectic.Floer.Transversality.Cokernel` take
+a covector field that is `C¹` on the plane, or in the strip case continuous on the band `ℝ × T` and
+`C¹` there. Applied to the `C¹` representative of a weak cokernel element, they show that a locally
+`L^q` covector field annihilating the range of the universal linearized operator vanishes almost
+everywhere, on the band in the strip case, once the data have one more derivative than the
+classical statements ask for. -/
 
 variable {U : Set (ℝ × ℝ)} {η : ℝ × ℝ → V →L[ℝ] ℝ} {q : ℝ≥0∞}
 
@@ -411,7 +413,7 @@ over the band the derivative of the Floer operator along `J + τ Y` for every co
 `Cⁿ` field `Y` supported in `T × V` and tangent to the compatible structures. Then `η = 0` almost
 everywhere on the band. This is the weak form of
 `SymplecticForm.eqOn_zero_of_setIntegral_apply_deriv_floerOperator_timeDependent_eq_zero`. -/
-theorem ae_restrict_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator
+theorem ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator_timeDependent
     {n : ℕ∞} {J : ℝ × V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ n fun p ↦ LinearMap.toContinuousLinearMap (J p).toLinearMap) (hn : 2 ≤ n)
     (hJω : ∀ p, ω.Invariant (J p)) {T : Set ℝ} (hT : IsOpen T) (hTc : IsPreconnected T)
