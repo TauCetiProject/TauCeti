@@ -30,6 +30,9 @@ subsequence of `F` converges locally uniformly on `s`
 continuous function by `m` gives a sequence tending to `0` locally uniformly
 (`TauCeti.tendstoLocallyUniformly_div_natCast`).
 
+Families converging locally uniformly converge jointly, as families of tuples
+(`TauCeti.tendstoLocallyUniformlyOn_pi`).
+
 Uniform and locally uniform convergence along a filter `l` pass to any family of indices tending
 to `l`, for instance to a subsequence (`TendstoUniformlyOn.comp_tendsto`,
 `TendstoLocallyUniformlyOn.comp_tendsto`, `TendstoLocallyUniformly.comp_tendsto`); along an image
@@ -191,6 +194,17 @@ theorem not_tendstoLocallyUniformlyOn_comp_of_tendsto_norm_atTop {E : Type*}
   intro h
   exact not_tendsto_nhds_of_tendsto_atTop (hF.comp hφ.tendsto_atTop) ‖g z‖
     ((h.tendsto_at hz).norm)
+
+/-- Families converging locally uniformly on `s` converge jointly: the tuples `x ↦ (F k x i)ᵢ`
+converge locally uniformly on `s` to `x ↦ (f x i)ᵢ`, for the product uniformity. -/
+theorem tendstoLocallyUniformlyOn_pi {κ : Type*} {γ : κ → Type*} [∀ i, UniformSpace (γ i)]
+    {F : ι → α → ∀ i, γ i} {f : α → ∀ i, γ i}
+    (h : ∀ i, TendstoLocallyUniformlyOn (fun k x ↦ F k x i) (fun x ↦ f x i) l s) :
+    TendstoLocallyUniformlyOn F f l s := by
+  simp_rw [tendstoLocallyUniformlyOn_iff_filter, tendstoUniformlyOnFilter_iff_tendsto] at h ⊢
+  intro x hx
+  rw [Pi.uniformity, tendsto_iInf]
+  exact fun i ↦ tendsto_comap_iff.2 (h i x hx)
 
 /-- Locally uniform convergence along the image `map g q` of a filter is locally uniform
 convergence of the reindexed family `F ∘ g` along `q`. -/

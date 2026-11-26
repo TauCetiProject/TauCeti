@@ -20,6 +20,8 @@ This module collects operator identities independent of projection-valued measur
 * `ContinuousLinearMap.eq_of_diagonal` uses complex polarization to identify operators from
   their diagonal inner products.
 * `ContinuousLinearMap.adjoint_ofReal_smul`: the adjoint commutes with real scalars.
+* `ContinuousLinearMap.adjoint_apply_one`: the adjoint of an operator on the scalars takes the
+  conjugate value at `1`.
 * `ContinuousLinearMap.norm_apply_sq_of_adjoint_comp_eq_smul`: if `T† T = c` for a real scalar
   `c`, then `‖T x‖² = c ‖x‖²`.
 * `ContinuousLinearMap.adjoint_smul_comp_smul`: multiplying `T` by a scalar `c` multiplies
@@ -94,6 +96,13 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- An operator on the scalars is multiplication by its value `T 1`, and its adjoint is
+multiplication by the conjugate value: `T† 1 = conj (T 1)`. -/
+theorem adjoint_apply_one (T : 𝕜 →L[𝕜] 𝕜) : T.adjoint 1 = starRingEnd 𝕜 (T 1) := by
+  have h := T.adjoint_inner_left 1 1
+  simp only [RCLike.inner_apply, map_one, mul_one, one_mul] at h
+  rw [← h, starRingEnd_self_apply]
 
 /-- The adjoint commutes with multiplication by a real scalar. -/
 theorem adjoint_ofReal_smul (r : ℝ) (T : E →L[𝕜] F) :

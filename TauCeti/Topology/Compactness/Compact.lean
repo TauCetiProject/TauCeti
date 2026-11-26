@@ -34,7 +34,9 @@ embedding of `K` (`IsCompact.isClosedEmbedding_domRestrict`). So neighbourhoods 
 eventually in `K` (`IsCompact.tendsto_nhds_of_tendsto_comp`) and limits of maps whose values
 eventually lie in `K` (`IsCompact.exists_tendsto_of_tendsto_comp`) can be read through it. These
 are the versions, for compact sets, of the results for an inducing restriction in
-`TauCeti.Topology.Maps.IsInducing`.
+`TauCeti.Topology.Maps.IsInducing`. Without injectivity, the points of `K` mapped near `y` still
+lie in any open set containing the points of `K` mapped to `y`
+(`IsCompact.exists_mem_nhds_inter_preimage_subset_of_forall_eq`).
 
 A nonempty compact set totally ordered by specialization contains a point specializing all of its
 points (`IsCompact.exists_forall_specializes`).
@@ -146,6 +148,21 @@ theorem _root_.IsCompact.exists_mem_nhds_inter_preimage_subset {Y : Type*} [Topo
     (hinj : InjOn f K) {x : X} (hx : x ∈ K) {s : Set X} (hs : s ∈ 𝓝[K] x) :
     ∃ t ∈ 𝓝 (f x), K ∩ f ⁻¹' t ⊆ s :=
   (hK.isClosedEmbedding_domRestrict hf hinj).isInducing.exists_mem_nhds_inter_preimage_subset hx hs
+
+/-- **Points of a compact set mapped near `y` stay near the fibre over `y`.** Let `f` be continuous
+on a compact set `K` with values in a Hausdorff space. If every point of `K` that `f` maps to `y`
+lies in an open set `N`, then there is a neighbourhood `t` of `y` such that every point of `K` that
+`f` maps into `t` lies in `N`. -/
+theorem _root_.IsCompact.exists_mem_nhds_inter_preimage_subset_of_forall_eq {Y : Type*}
+    [TopologicalSpace Y] [T2Space Y] {K : Set X} {f : X → Y} (hK : IsCompact K)
+    (hf : ContinuousOn f K) {N : Set X} (hN : IsOpen N) {y : Y} (hy : ∀ x ∈ K, f x = y → x ∈ N) :
+    ∃ t ∈ 𝓝 y, K ∩ f ⁻¹' t ⊆ N := by
+  -- The image of the compact set `K \ N` is closed and does not contain `y`.
+  have hc : IsCompact (f '' (K \ N)) := (hK.diff hN).image_of_continuousOn (hf.mono sdiff_subset)
+  refine ⟨(f '' (K \ N))ᶜ, hc.isClosed.isOpen_compl.mem_nhds
+    fun ⟨x, ⟨hxK, hxN⟩, hxy⟩ => hxN (hy x hxK hxy), fun x ⟨hxK, hxt⟩ => ?_⟩
+  by_contra hxN
+  exact hxt ⟨x, ⟨hxK, hxN⟩, rfl⟩
 
 /-- **Convergence in a compact set is read through a continuous injection.** Let `f` be continuous
 and injective on a compact set `K` with values in a Hausdorff space, and let `g` eventually take

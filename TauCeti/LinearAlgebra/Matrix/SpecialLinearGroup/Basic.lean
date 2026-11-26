@@ -83,6 +83,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
 * `Matrix.SpecialLinearGroup.coe_ne_zero`: a square matrix of determinant one over a nontrivial
   ring, indexed by a nonempty type, is nonzero.
+* `Matrix.SpecialLinearGroup.coe_mul_coe_inv` and `Matrix.SpecialLinearGroup.coe_inv_mul_coe`:
+  an element of `SL(n, R)` and its inverse multiply to `1` as matrices.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
   nonassociative ring.
@@ -99,6 +101,9 @@ proof is independent of the source's.
   row `(a, b)`.
 * `Matrix.SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero`: an
   upper triangular `(a b; 0 d)` in `SL₂(R)` has `a d = 1`.
+* `Matrix.SpecialLinearGroup.apply_zero_zero_ne_zero_of_apply_one_zero_eq_zero` and
+  `Matrix.SpecialLinearGroup.apply_one_one_ne_zero_of_apply_one_zero_eq_zero`: over a nontrivial
+  ring, both diagonal entries of such a matrix are nonzero.
 * `Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin`: the center of `SL(Fin n, A)` is
   `rootsOfUnity n A` when `0 < n`.
 * `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one` and
@@ -150,6 +155,18 @@ nonzero. -/
 theorem coe_ne_zero {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [Fintype n]
     [DecidableEq n] [Nonempty n] (A : SpecialLinearGroup n R) : (A : Matrix n n R) ≠ 0 := fun h ↦
   A.det_ne_zero (by rw [h, det_zero])
+
+/-- An element of `SL(n, R)` times its inverse, as matrices, is `1`. -/
+theorem coe_mul_coe_inv {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n]
+    (A : SpecialLinearGroup n R) : (A : Matrix n n R) * ((A⁻¹ : SpecialLinearGroup n R) :
+      Matrix n n R) = 1 := by
+  rw [← coe_mul, mul_inv_cancel, coe_one]
+
+/-- The inverse of an element of `SL(n, R)` times the element, as matrices, is `1`. -/
+theorem coe_inv_mul_coe {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n]
+    (A : SpecialLinearGroup n R) : ((A⁻¹ : SpecialLinearGroup n R) : Matrix n n R) *
+      (A : Matrix n n R) = 1 := by
+  rw [← coe_mul, inv_mul_cancel, coe_one]
 
 /-- Entrywise coefficient mapping commutes with scalar extension of an integer matrix. -/
 @[simp]
@@ -310,6 +327,16 @@ lemma mul_sub_mul_eq_one_of_lowerRow {R : Type*} [CommRing R] {c d : R} {σ : SL
 lemma apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero {R : Type*} [CommRing R]
     {σ : SL(2, R)} (hσ : σ 1 0 = 0) : σ 0 0 * σ 1 1 = 1 := by
   simpa [hσ] using fin_two_mul_sub_mul_eq_one σ
+
+/-- The upper-left entry of an upper triangular `σ = (a b; 0 d)` of `SL₂(R)` is nonzero. -/
+lemma apply_zero_zero_ne_zero_of_apply_one_zero_eq_zero {R : Type*} [CommRing R] [Nontrivial R]
+    {σ : SL(2, R)} (hσ : σ 1 0 = 0) : σ 0 0 ≠ 0 :=
+  left_ne_zero_of_mul_eq_one (apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hσ)
+
+/-- The lower-right entry of an upper triangular `σ = (a b; 0 d)` of `SL₂(R)` is nonzero. -/
+lemma apply_one_one_ne_zero_of_apply_one_zero_eq_zero {R : Type*} [CommRing R] [Nontrivial R]
+    {σ : SL(2, R)} (hσ : σ 1 0 = 0) : σ 1 1 ≠ 0 :=
+  right_ne_zero_of_mul_eq_one (apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hσ)
 
 /-- For `0 < n`, the center of `SL(Fin n, A)` is the group of `n`th roots of unity. -/
 noncomputable def centerMulEquivRootsOfUnityFin (n : ℕ) (hn : 0 < n)

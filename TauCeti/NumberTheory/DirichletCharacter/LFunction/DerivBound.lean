@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
@@ -57,6 +56,8 @@ real-zero separation `‖L(1, χ)‖ / (64 (log N) ^ 2) ≤ 1 - β` for every re
 * `DirichletCharacter.norm_deriv_LFunction_le_mul_log_sq` and
   `DirichletCharacter.norm_LFunction_sub_le_of_one_sub_one_div_log_le`: uniform derivative bound
   `‖L'(σ, χ)‖ ≤ 64 * (log N) ^ 2` and Lipschitz bound on `[1 - 1 / log N, ∞)`.
+* `DirichletCharacter.one_lt_log_level_of_ne_one`: `1 < log N` for any nonprincipal character of
+  nonzero level `N`.
 * `DirichletCharacter.norm_LFunction_one_div_log_sq_le_one_sub_of_LFunction_eq_zero`:
   unconditional real-zero separation `‖L(1, χ)‖ / (64 (log N) ^ 2) ≤ 1 - β` for any real zero `β`
   of any nonprincipal character `χ` of nonzero level `N`.
@@ -74,6 +75,13 @@ open Finset Filter MeasureTheory Complex Asymptotics
 open scoped Topology
 
 namespace DirichletCharacter
+
+/-- A nonprincipal Dirichlet character at a nonzero level `N` has `1 < log N`, since `N ≥ 3 > e`
+(`DirichletCharacter.three_le_level_of_ne_one`). -/
+theorem one_lt_log_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 1 < Real.log N := by
+  rw [Real.lt_log_iff_exp_lt (by exact_mod_cast (NeZero.pos N))]
+  exact Real.exp_one_lt_three.trans_le (mod_cast χ.three_le_level_of_ne_one hχ)
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
@@ -316,8 +324,7 @@ theorem norm_LFunction_one_div_log_sq_le_one_sub_of_LFunction_eq_zero (hχ : χ 
     ‖χ.LFunction 1‖ / (64 * Real.log N ^ 2) ≤ 1 - β := by
   -- Nonvanishing on `Re(s) ≥ 1` forces `β < 1`; for `β < 1 - 1 / log N` use
   -- `‖L(1, χ)‖ ≤ 1 + log N`.
-  have hlog : 1 < Real.log N :=
-    Real.one_lt_log_of_three_le (mod_cast χ.three_le_level_of_ne_one hχ)
+  have hlog : 1 < Real.log N := χ.one_lt_log_level_of_ne_one hχ
   have hlog_pos : 0 < Real.log N := zero_lt_one.trans hlog
   have hβ1 : β < 1 := by
     by_contra! h1

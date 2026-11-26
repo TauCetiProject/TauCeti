@@ -54,6 +54,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   `DirichletCharacter.changeLevel_primitiveCharacter_ofUnitHom_one_toUnitHom`.
 * `DirichletCharacter.factorsThroughEquiv`: the characters at level `N` factoring through
   `d ∣ N` correspond to the characters modulo `d`.
+* `DirichletCharacter.changeLevel_apply_unitsMap`: evaluate a lifted character at a unit by
+  reducing the unit to the original level.
 * `DirichletCharacter.changeLevel_ringHomComp`: raising the level commutes with a change of
   coefficient ring.
 * `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
@@ -128,6 +130,13 @@ divides `gcd (N, L N / p) = N / p` — stated once for characters valued in any
 public section
 
 namespace DirichletCharacter
+
+/-- On a unit, a Dirichlet character lifted to a multiple level takes its value at the reduction
+of that unit to the original level. -/
+theorem changeLevel_apply_unitsMap {R : Type*} [CommMonoidWithZero R] {M N : ℕ}
+    (χ : DirichletCharacter R M) (hMN : M ∣ N) (a : (ZMod N)ˣ) :
+    changeLevel hMN χ a = χ (ZMod.unitsMap hMN a) := by
+  rw [changeLevel_eq_cast_of_dvd, ZMod.unitsMap_val]
 
 /-- At an even level, a Dirichlet character vanishes on even residue classes. -/
 theorem apply_eq_zero_of_even {R : Type*} [CommMonoidWithZero R] {N : ℕ}

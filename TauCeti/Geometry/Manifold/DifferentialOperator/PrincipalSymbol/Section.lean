@@ -91,6 +91,8 @@ symbol is its fibre map.
 * `TauCeti.sectionPrincipalSymbol_eq_inv_two_smul_sectionCommutatorSymbol`: an operator of order
   at most two has `σ_geom(P)(ξ) = ½ [[P, ξ], ξ]`.
 * `TauCeti.sectionPrincipalSymbol_comp`: principal symbols multiply under composition.
+* `TauCeti.sectionPrincipalSymbol_comp_sectionPrincipalSymbol_eq_zero`: the principal symbols of a
+  complex of differential operators form a complex.
 * `TauCeti.sectionPrincipalSymbol_restrictScalars`: the principal symbol of a `C^∞(M)`-linear map,
   as an operator of order zero, is its fibre map.
 
@@ -519,6 +521,21 @@ theorem sectionPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
     field_simp
   simp only [t, ← Nat.cast_smul_eq_nsmul ℝ, LinearMap.smul_apply, LinearMap.comp_apply, map_smul,
     ContMDiffSection.coe_smul, Pi.smul_apply, smul_smul, hc]
+
+/-- **The symbols of a complex form a complex.** If the differential operators `P : Γ(W) → Γ(U)`
+and `Q : Γ(V) → Γ(W)` satisfy `P Q = 0`, then their principal symbols satisfy
+`σ(P)(ξ) σ(Q)(ξ) = 0` at every covector `ξ`. -/
+theorem sectionPrincipalSymbol_comp_sectionPrincipalSymbol_eq_zero (hx : I.IsInteriorPoint x)
+    {m k : ℕ} {P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F', W⟯ Cₛ^∞⟮I; F'', U⟯ m}
+    {Q : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ k}
+    (hPQ : (P : Cₛ^∞⟮I; F', W⟯ →ₗ[ℝ] Cₛ^∞⟮I; F'', U⟯) ∘ₗ
+      (Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) = 0)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    sectionPrincipalSymbol I hx P ξ ∘ₗ sectionPrincipalSymbol I hx Q ξ = 0 := by
+  have h0 : (⟨_, comp_mem_differentialOperators P.property Q.property⟩ :
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F'', U⟯ (m + k)) = 0 :=
+    Submodule.coe_eq_zero.1 hPQ
+  rw [← sectionPrincipalSymbol_comp, h0, sectionPrincipalSymbol_zero]
 
 end FiniteRank
 

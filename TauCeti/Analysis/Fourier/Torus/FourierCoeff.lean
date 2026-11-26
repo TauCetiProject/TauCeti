@@ -40,6 +40,14 @@ each Fourier coefficient is a continuous linear functional of norm at most one.
   functional on `Lᵖ(𝕋ᵈ)`.
 * `TauCeti.UnitAddTorus.mFourierCoeffContinuousMapCLM`: the `n`-th Fourier coefficient as a
   continuous linear functional of norm at most one on `C(𝕋ᵈ, ℂ)` with the supremum norm.
+* `TauCeti.UnitAddTorus.hasSum_mFourierCoeff_mul`: the Fourier coefficients of the product of a
+  continuous function with summable coefficients and an integrable function are the convolution
+  of their coefficients.
+* `TauCeti.UnitAddTorus.coeFn_sum_smul_mFourierLp` and
+  `TauCeti.UnitAddTorus.mFourierCoeff_sum_smul_mFourierLp`: a trigonometric polynomial in
+  `Lᵖ(𝕋ᵈ)` as a function, and its Fourier coefficients.
+* `TauCeti.UnitAddTorus.norm_sum_smul_mFourierLp_add`: multiplying a trigonometric polynomial by
+  a monomial `eₘ` preserves its `Lᵖ` norm.
 -/
 
 public section
@@ -153,6 +161,41 @@ theorem mFourierCoeff_sum_mul_mFourier (s : Finset (d → ℤ)) (c : (d → ℤ)
   simp_rw [mul_comm (c _)]
   exact mFourierCoeff_sum_mFourier_mul s c m
 
+/-- **Fourier coefficients of a product.** If `g` is continuous on the torus with summable Fourier
+coefficients and `f` is integrable, the Fourier coefficients of `g f` are the convolution of those
+of `g` and `f`, the series converging absolutely: `(g f)^(n) = ∑ₘ ĝ(m) f̂(n - m)`. -/
+theorem hasSum_mFourierCoeff_mul {g : C(UnitAddTorus d, ℂ)} (hg : Summable (mFourierCoeff g))
+    {f : UnitAddTorus d → ℂ} (hf : Integrable f) (n : d → ℤ) :
+    HasSum (fun m ↦ mFourierCoeff g m * mFourierCoeff f (n - m))
+      (mFourierCoeff (fun x ↦ g x * f x) n) := by
+  -- Expanding `g` in its Fourier series, the integrand of `(g f)^(n)` is the sum of the
+  -- `F m = ĝ(m) e_{m - n} f`, whose integrals are `ĝ(m) f̂(n - m)`.
+  set F : (d → ℤ) → UnitAddTorus d → ℂ := fun m x ↦
+    mFourierCoeff g m * (mFourier (-(n - m)) x * f x)
+  have hF_int (m : d → ℤ) : Integrable (F m) :=
+    (hf.bdd_mul (mFourier (-(n - m))).continuous.aestronglyMeasurable
+      (.of_forall fun x ↦ (norm_mFourier_apply _ x).le)).const_mul _
+  have hF_norm (m : d → ℤ) : ∫ x, ‖F m x‖ = ‖mFourierCoeff g m‖ * ∫ x, ‖f x‖ := by
+    simp only [F, norm_mul, norm_mFourier_apply, one_mul]
+    exact integral_const_mul _ _
+  have hF : HasSum (fun m ↦ ∫ x, F m x) (∫ x, ∑' m, F m x) :=
+    hasSum_integral_of_summable_integral_norm hF_int
+      (by simpa only [hF_norm] using hg.norm.mul_right (∫ x, ‖f x‖))
+  have hF_eq (m : d → ℤ) : ∫ x, F m x = mFourierCoeff g m * mFourierCoeff f (n - m) := by
+    rw [integral_const_mul, mFourierCoeff_eq_integral_volume f]
+    simp only [smul_eq_mul]
+  have hsum (x : UnitAddTorus d) : ∑' m, F m x = mFourier (-n) x • (g x * f x) := by
+    have hx : HasSum (fun m ↦ mFourierCoeff g m * mFourier m x) (g x) := by
+      simpa only [smul_eq_mul] using hasSum_mFourier_series_apply_of_summable hg x
+    refine (HasSum.tsum_eq ?_)
+    convert hx.mul_right (mFourier (-n) x * f x) using 1
+    · funext m
+      simp only [F, show -(n - m) = m + -n by abel, mFourier_add]
+      ring
+    · rw [smul_eq_mul]
+      ring
+  simpa only [hF_eq, hsum, mFourierCoeff_eq_integral_volume] using hF
+
 /-! ### Fourier coefficients of `Lᵖ` functions -/
 
 section Lp
@@ -232,6 +275,52 @@ theorem norm_mFourierCoeffContinuousMapCLM_le (n : d → ℤ) :
     rw [mFourierCoeffContinuousMapCLM, ContinuousLinearMap.comp_apply, mFourierCoeffCLM_apply,
       one_mul]
     exact (norm_mFourierCoeff_le_norm _ n).trans (ContinuousMap.norm_toLp_top_le volume f)
+
+/-! ### Trigonometric polynomials in `Lᵖ` -/
+
+/-- A trigonometric polynomial `∑ n ∈ s, a n • eₙ` in `Lᵖ(𝕋ᵈ)` agrees almost everywhere with the
+function `x ↦ ∑ n ∈ s, a n eₙ(x)`. -/
+theorem coeFn_sum_smul_mFourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (s : Finset (d → ℤ))
+    (a : (d → ℤ) → ℂ) :
+    (∑ n ∈ s, a n • mFourierLp p n : Lp ℂ p (volume : Measure (UnitAddTorus d))) =ᵐ[volume]
+      fun x ↦ ∑ n ∈ s, a n * mFourier n x := by
+  have h : ∀ n ∈ s, ∀ᵐ x ∂(volume : Measure (UnitAddTorus d)),
+      (a n • mFourierLp p n : Lp ℂ p (volume : Measure (UnitAddTorus d))) x =
+        a n * mFourier n x := fun n _ ↦ by
+    filter_upwards [Lp.coeFn_smul (a n) (mFourierLp p n), coeFn_mFourierLp p n] with x hx hx'
+    rw [hx, Pi.smul_apply, hx', smul_eq_mul]
+  filter_upwards [Lp.coeFn_finsetSum s fun n ↦ a n • mFourierLp p n,
+    (Filter.eventually_all_finset s).2 h] with x hx hx'
+  rw [hx, Finset.sum_apply]
+  exact Finset.sum_congr rfl hx'
+
+/-- The Fourier coefficients of a trigonometric polynomial `∑ n ∈ s, a n • eₙ` in `Lᵖ(𝕋ᵈ)` are `a`
+on `s` and zero elsewhere. -/
+theorem mFourierCoeff_sum_smul_mFourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (s : Finset (d → ℤ))
+    (a : (d → ℤ) → ℂ) (n : d → ℤ) :
+    mFourierCoeff (∑ k ∈ s, a k • mFourierLp p k : Lp ℂ p (volume : Measure (UnitAddTorus d))) n =
+      if n ∈ s then a n else 0 := by
+  rw [mFourierCoeff_congr_ae (coeFn_sum_smul_mFourierLp p s a)]
+  exact mFourierCoeff_sum_mul_mFourier s a n
+
+/-- **Modulation preserves `Lᵖ` norms.** Multiplying a trigonometric polynomial by the monomial
+`eₘ`, which shifts its frequencies by `m`, does not change its `Lᵖ` norm, since `|eₘ| = 1`. -/
+theorem norm_sum_smul_mFourierLp_add (p : ℝ≥0∞) [Fact (1 ≤ p)] (s : Finset (d → ℤ))
+    (a : (d → ℤ) → ℂ) (m : d → ℤ) :
+    ‖(∑ n ∈ s, a n • mFourierLp p (n + m) : Lp ℂ p (volume : Measure (UnitAddTorus d)))‖ =
+      ‖(∑ n ∈ s, a n • mFourierLp p n : Lp ℂ p (volume : Measure (UnitAddTorus d)))‖ := by
+  -- Reindexed by its frequencies, the shifted polynomial is `eₘ` times the original one.
+  have hre : (∑ n ∈ s, a n • mFourierLp p (n + m) : Lp ℂ p (volume : Measure (UnitAddTorus d))) =
+      ∑ n ∈ s.map (addRightEmbedding m), a (n - m) • mFourierLp p n := by
+    simp [Finset.sum_map]
+  rw [hre, Lp.norm_def, Lp.norm_def]
+  refine congrArg ENNReal.toReal
+    (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_)
+  filter_upwards [coeFn_sum_smul_mFourierLp p (s.map (addRightEmbedding m)) fun n ↦ a (n - m),
+    coeFn_sum_smul_mFourierLp p s a] with x hx hx'
+  rw [hx, hx', Finset.sum_map]
+  simp only [addRightEmbedding_apply, add_sub_cancel_right, mFourier_add, ← mul_assoc,
+    ← Finset.sum_mul, norm_mul, norm_mFourier_apply, mul_one]
 
 end Lp
 

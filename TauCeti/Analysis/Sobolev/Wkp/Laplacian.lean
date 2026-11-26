@@ -8,12 +8,12 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Zero
 import TauCeti.Topology.Algebra.Module.Trace
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 

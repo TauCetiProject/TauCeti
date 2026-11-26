@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Stochastic
 
 import Mathlib.Tactic.FieldSimp
@@ -12,9 +13,10 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Order.BigOperators.Sum.PosPart
+import TauCeti.Algebra.Ring.Invertible
 
 /-!
-# Row-stochastic transition couplings
+# Row-stochastic matrices: transition couplings and discounted resolvents
 
 Given two vectors `p q : ι → R` on a finite index type with equal total sum and `q` nonnegative
 over a linearly ordered field, `Matrix.exists_mem_rowStochastic_vecMul_eq` constructs a
@@ -25,10 +27,22 @@ For probability distributions on `ι`, this yields an optimal Markov transition 
 to `q` whose total probability of changing state equals the total-variation distance
 `∑ i, max (p i - q i) 0 = (1 / 2) ∑ i, |p i - q i|`.
 
+For a row-stochastic matrix `P` and a discount `0 ≤ c < 1`, the matrix `1 - c • P` is
+invertible, and its inverse `Ring.inverse (1 - c • P)`, the discounted resolvent
+`∑ₙ cⁿ Pⁿ`, has nonnegative entries and row sums `(1 - c)⁻¹`. These facts are proved by the
+discrete maximum principle `Matrix.nonneg_of_eq_add_smul_mulVec`, without norms or series: a
+solution of `x = b + c • P *ᵥ x` with `b ≥ 0` is nonnegative, because at a minimal coordinate
+`x i ≥ c x i`.
+
 ## Main results
 
 * `Matrix.exists_mem_rowStochastic_vecMul_eq`: existence of a row-stochastic transition matrix
   mapping `p` to `q` with minimal off-diagonal mass `p i * (1 - M i i) = max (p i - q i) 0`.
+* `Matrix.isUnit_one_sub_smul_of_mem_rowStochastic`: `1 - c • P` is a unit for `0 ≤ c < 1`.
+* `Matrix.ringInverse_one_sub_smul_nonneg`: the entries of `Ring.inverse (1 - c • P)` are
+  nonnegative.
+* `Matrix.ringInverse_one_sub_smul_mulVec_one`: the row sums of `Ring.inverse (1 - c • P)` are
+  `(1 - c)⁻¹`.
 -/
 
 public section
@@ -133,5 +147,86 @@ theorem exists_mem_rowStochastic_vecMul_eq {R ι : Type*} [Fintype ι] [Decidabl
     · simp only [hlt, ↓reduceIte, sub_self, mul_zero,
         max_eq_right (sub_nonpos.2 (not_lt.1 hlt))]
   exact ⟨M, hM_mem, hvecMul, hdiag⟩
+
+section Resolvent
+
+variable {R n : Type*} [Fintype n] [DecidableEq n] [Field R] [LinearOrder R]
+  [IsStrictOrderedRing R] {P : Matrix n n R} {c : R}
+
+/-- **Discrete maximum principle.** For a row-stochastic matrix `P` and `0 ≤ c < 1`, a solution
+of `x = b + c • P *ᵥ x` with nonnegative `b` is nonnegative. -/
+theorem nonneg_of_eq_add_smul_mulVec (hP : P ∈ rowStochastic R n) (hc₀ : 0 ≤ c) (hc₁ : c < 1)
+    {b x : n → R} (hb : 0 ≤ b) (hx : x = b + c • P *ᵥ x) : 0 ≤ x := by
+  cases isEmpty_or_nonempty n
+  · exact fun i ↦ isEmptyElim i
+  obtain ⟨i₀, -, hi₀⟩ := Finset.exists_min_image Finset.univ x Finset.univ_nonempty
+  have hmin (j : n) : x i₀ ≤ x j := hi₀ j (Finset.mem_univ j)
+  -- At a minimal coordinate, the average `(P *ᵥ x) i₀` is at least `x i₀`.
+  have hP_ge : x i₀ ≤ (P *ᵥ x) i₀ := by
+    calc x i₀ = ∑ j, P i₀ j * x i₀ := by
+          rw [← Finset.sum_mul, sum_row_of_mem_rowStochastic hP, one_mul]
+      _ ≤ ∑ j, P i₀ j * x j :=
+          Finset.sum_le_sum fun j _ ↦ mul_le_mul_of_nonneg_left (hmin j) (hP.1 _ _)
+  have hxi₀ : x i₀ = b i₀ + c * (P *ᵥ x) i₀ := by
+    simpa using congrFun hx i₀
+  have h₀ : 0 ≤ x i₀ := by
+    have hb₀ : 0 ≤ b i₀ := hb i₀
+    have h : 0 ≤ (1 - c) * x i₀ := by
+      linarith [mul_le_mul_of_nonneg_left hP_ge hc₀]
+    exact (mul_nonneg_iff_of_pos_left (sub_pos.2 hc₁)).1 h
+  exact fun i ↦ h₀.trans (hmin i)
+
+/-- For a row-stochastic matrix `P` and `0 ≤ c < 1`, the matrix `1 - c • P` is a unit. -/
+theorem isUnit_one_sub_smul_of_mem_rowStochastic (hP : P ∈ rowStochastic R n) (hc₀ : 0 ≤ c)
+    (hc₁ : c < 1) : IsUnit (1 - c • P) := by
+  have key (z : n → R) (hz : (1 - c • P) *ᵥ z = 0) : 0 ≤ z :=
+    nonneg_of_eq_add_smul_mulVec hP hc₀ hc₁ le_rfl <| by
+      rw [sub_mulVec, one_mulVec, smul_mulVec, sub_eq_zero] at hz
+      rw [zero_add, ← hz]
+  rw [← mulVec_injective_iff_isUnit]
+  intro x y hxy
+  have h₁ := key (x - y) (by rw [mulVec_sub, hxy, sub_self])
+  have h₂ := key (y - x) (by rw [mulVec_sub, hxy, sub_self])
+  exact le_antisymm (sub_nonneg.1 h₂) (sub_nonneg.1 h₁)
+
+/-- For a row-stochastic matrix `P` and `0 ≤ c < 1`, the resolvent `Ring.inverse (1 - c • P)`
+maps nonnegative vectors to nonnegative vectors. -/
+theorem ringInverse_one_sub_smul_mulVec_nonneg (hP : P ∈ rowStochastic R n) (hc₀ : 0 ≤ c)
+    (hc₁ : c < 1) {b : n → R} (hb : 0 ≤ b) : 0 ≤ Ring.inverse (1 - c • P) *ᵥ b := by
+  refine nonneg_of_eq_add_smul_mulVec hP hc₀ hc₁ hb ?_
+  conv_lhs => rw [Ring.inverse_one_sub_eq (isUnit_one_sub_smul_of_mem_rowStochastic hP hc₀ hc₁)]
+  rw [add_mulVec, one_mulVec, smul_mul_assoc, smul_mulVec, mulVec_mulVec]
+
+/-- For a row-stochastic matrix `P` and `0 ≤ c < 1`, the entries of the resolvent
+`Ring.inverse (1 - c • P)` are nonnegative. -/
+theorem ringInverse_one_sub_smul_nonneg (hP : P ∈ rowStochastic R n) (hc₀ : 0 ≤ c)
+    (hc₁ : c < 1) (i j : n) : 0 ≤ Ring.inverse (1 - c • P) i j := by
+  have h := ringInverse_one_sub_smul_mulVec_nonneg hP hc₀ hc₁
+    (b := Pi.single j 1) (Pi.single_nonneg.2 zero_le_one) i
+  rwa [mulVec_single_one] at h
+
+/-- For a row-stochastic matrix `P` and `0 ≤ c < 1`, the entries of `P * Ring.inverse (1 - c • P)`
+are nonnegative. -/
+theorem mul_ringInverse_one_sub_smul_nonneg (hP : P ∈ rowStochastic R n) (hc₀ : 0 ≤ c)
+    (hc₁ : c < 1) (i j : n) : 0 ≤ (P * Ring.inverse (1 - c • P)) i j := by
+  rw [Matrix.mul_apply]
+  exact Finset.sum_nonneg fun k _ ↦
+    mul_nonneg (hP.1 i k) (ringInverse_one_sub_smul_nonneg hP hc₀ hc₁ k j)
+
+/-- For a row-stochastic matrix `P` and `0 ≤ c < 1`, the resolvent `Ring.inverse (1 - c • P)`
+has row sums `(1 - c)⁻¹`. -/
+theorem ringInverse_one_sub_smul_mulVec_one (hP : P ∈ rowStochastic R n) (hc₀ : 0 ≤ c)
+    (hc₁ : c < 1) : Ring.inverse (1 - c • P) *ᵥ 1 = (1 - c)⁻¹ • 1 := by
+  have hu := isUnit_one_sub_smul_of_mem_rowStochastic hP hc₀ hc₁
+  have h : (1 - c • P) *ᵥ ((1 - c)⁻¹ • 1) = 1 := by
+    rw [mulVec_smul, sub_mulVec, one_mulVec, smul_mulVec, one_vecMul_of_mem_rowStochastic hP]
+    ext i
+    simp only [Pi.smul_apply, Pi.sub_apply, Pi.one_apply, smul_eq_mul, mul_one]
+    exact inv_mul_cancel₀ (sub_ne_zero.2 hc₁.ne')
+  calc Ring.inverse (1 - c • P) *ᵥ 1
+      = Ring.inverse (1 - c • P) *ᵥ ((1 - c • P) *ᵥ ((1 - c)⁻¹ • 1)) := by rw [h]
+    _ = (1 - c)⁻¹ • 1 := by rw [mulVec_mulVec, Ring.inverse_mul_cancel _ hu, one_mulVec]
+
+end Resolvent
 
 end Matrix

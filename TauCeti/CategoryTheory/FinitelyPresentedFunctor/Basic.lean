@@ -173,6 +173,12 @@ theorem IsFinitelyGeneratedFunctor.additive (hF : IsFinitelyGeneratedFunctor F) 
 theorem IsFinitelyPresentedFunctor.additive (hF : IsFinitelyPresentedFunctor F) : F.Additive :=
   hF.isFinitelyGeneratedFunctor.additive
 
+variable (C) in
+/-- Finitely presented functors are additive: `mod C` is contained in the additive functors. -/
+theorem isFinitelyPresentedFunctor_le_additiveFunctor :
+    isFinitelyPresentedFunctor C ≤ additiveFunctor Cᵒᵖ AddCommGrpCat.{v} :=
+  fun _ hF ↦ hF.additive
+
 /-! ### Finite sums of representable functors -/
 
 /-- A functor is isomorphic to a finite sum of representable functors. -/

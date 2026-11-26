@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
-public import TauCeti.Analysis.Holder.OpenSet.Basic
+public import TauCeti.Analysis.Holder.OpenSet.Comp.Left
 
 /-!
 # The Cauchy–Riemann operator on the Hölder space `C^{1,α}(Ω)`
@@ -26,6 +26,8 @@ Cauchy–Riemann operators of holomorphic curves, in the Hölder setting of the 
   `C^{1,α}(Ω, F) →L[ℝ] C^{0,α}(Ω, F)`, `u ↦ ∂u/∂(conj z)`.
 * `TauCeti.CkHolderSpaceOn.conjWirtingerDerivL_apply`: it equals `∂/∂(conj z)` of a representative
   of the germ at the evaluation point.
+* `TauCeti.CkHolderSpaceOn.conjWirtingerDerivL_compLeftL`: it commutes with postcomposition by a
+  complex-linear map, for instance with the coordinate projections of `ℂⁿ`.
 -/
 
 public noncomputable section
@@ -61,5 +63,18 @@ theorem conjWirtingerDerivL_apply (u : CkHolderSpaceOn 1 α Ω F) (z : Ω) {g : 
     (hg : u.extend =ᶠ[𝓝 (z : ℂ)] g) :
     conjWirtingerDerivL α Ω F u z = conjWirtingerDeriv g z 1 := by
   rw [conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_extend, hg.conjWirtingerDeriv_eq]
+
+/-- The Cauchy–Riemann operator on `C^{1,α}(Ω)` commutes with postcomposition by a continuous
+complex-linear map `L`: `∂(L ∘ u)/∂(conj z) = L ∘ ∂u/∂(conj z)`. -/
+theorem conjWirtingerDerivL_compLeftL {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    (L : F →L[ℂ] G) (u : CkHolderSpaceOn 1 α Ω F) :
+    conjWirtingerDerivL α Ω G (compLeftL (L.restrictScalars ℝ) u) =
+      HolderSpace.compLeftL (L.restrictScalars ℝ) (conjWirtingerDerivL α Ω F u) := by
+  ext z
+  rw [conjWirtingerDerivL_apply _ z (extend_compLeftL_eventuallyEq _ u z.property),
+    HolderSpace.compLeftL_apply]
+  simp only [ContinuousLinearMap.coe_restrictScalars']
+  rw [L.conjWirtingerDeriv_comp_left (u.differentiableAt_extend z.property),
+    conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_extend, ContinuousLinearMap.comp_apply]
 
 end TauCeti.CkHolderSpaceOn

@@ -45,6 +45,12 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
   adjoint symbol is minus the transpose of the operator symbol (`inner_gaugeFixedOperatorSymbol`).
 * `norm_sq_gaugeFixedOperator_fun_smul_le`: the resulting Leibniz bound
   `|L_x (w y)|² ≤ 2 w² |L_x y|² + 2 |dw|² |y|²`.
+* `linearizedEquation_fun_smul`: the Leibniz rule `d₁ (w y) = w d₁ y + σ(dw) y` of the linearized
+  equation, whose symbol `linearizedEquationSymbol` is the last three rows of
+  `gaugeFixedOperatorSymbol` (`gaugeFixedOperatorSymbol_apply_succ`). With the degree-two
+  homogeneity `quadraticTerm_fun_smul`, it gives the exact defect of an interpolation
+  `x + χ (y - x)` of two fields (`equation_lineMap`):
+  `(1 - χ) equation x + χ equation y + σ(dχ) (y - x) + (χ² - χ) quadraticTerm (y - x)`.
 * `gaugeFixedOperator_gaugeFixedAdjoint`: the pointwise Weitzenböck formula for `L_x L_x*` at
   every field, with the vortex defects `equation x` appearing explicitly. In complex notation,
   with `φ = α / 2`, `η = (ξ, ζ)`, `∇ = d + a` and the complex defect `E = ∂bar_a α`, it reads
@@ -326,6 +332,20 @@ def gaugeFixedZerothOrder :
       WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w i j * v j :=
   (rfl)
 
+/-- The adjoint of the zeroth-order part `Z(w, ·)` at a value `w` is multiplication by the
+transpose of the matrix `gaugeFixedZerothOrderMatrix w`. -/
+@[simp] theorem adjoint_gaugeFixedZerothOrder_apply (w y : EuclideanSpace ℝ (Fin 4)) :
+    ContinuousLinearMap.adjoint (gaugeFixedZerothOrder w) y =
+      WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w j i * y j := by
+  ext i
+  have h := EuclideanSpace.inner_single_right i (1 : ℝ)
+    (ContinuousLinearMap.adjoint (gaugeFixedZerothOrder w) y)
+  simp only [one_mul, conj_trivial] at h
+  rw [← h, ContinuousLinearMap.adjoint_inner_left]
+  simp only [gaugeFixedZerothOrder_apply, PiLp.single_apply, mul_comm, ite_mul, one_mul, zero_mul,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, PiLp.inner_apply, RCLike.inner_apply,
+    conj_trivial]
+
 /-- The first-order part of the gauge-fixed operator `L_x`, as a linear map of the gradients
 `g j = ∇y_j` of the four coordinates of the variation. Along the frame `(∂₁, ∂₂) = (1, i)`,
 `∂_k y_j = ⟪g j, e_k⟫`, and the rows are `∂₁y₀ + ∂₂y₁`, `∂₂y₀ - ∂₁y₁`, `∂₁y₂ - ∂₂y₃` and
@@ -547,6 +567,80 @@ theorem norm_sq_gaugeFixedOperator_fun_smul_le (x : ℂ → EuclideanSpace ℝ (
       (gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z)),
     sq_nonneg (‖w z • gaugeFixedOperator x y z‖ - ‖gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z)‖),
     norm_nonneg (w z • gaugeFixedOperator x y z + gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z))]
+
+/-- The principal symbol of the linearized vortex equation `d₁ = TauCeti.Vortex.linearizedEquation`,
+as a bilinear map of a real covector `d` and a field value `v`: the terms of `d₁ (w v)` in the
+derivative `d = dw` of a real function `w` (`TauCeti.Vortex.linearizedEquation_fun_smul`). These
+are the last three rows of the symbol of the gauge-fixed operator
+(`TauCeti.Vortex.gaugeFixedOperatorSymbol_apply_succ`). -/
+def linearizedEquationSymbol :
+    (ℂ →L[ℝ] ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 3) :=
+  LinearMap.toContinuousLinearMap <|
+    (LinearMap.toContinuousLinearMap :
+        (EuclideanSpace ℝ (Fin 4) →ₗ[ℝ] EuclideanSpace ℝ (Fin 3)) ≃ₗ[ℝ]
+          (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 3))).toLinearMap ∘ₗ
+      LinearMap.mk₂ ℝ (fun (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) ↦
+        !₂[d I * v 0 - d 1 * v 1, d 1 * v 2 - d I * v 3, d 1 * v 3 + d I * v 2])
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+
+/-- The defining formula of `linearizedEquationSymbol`. -/
+@[simp]
+theorem linearizedEquationSymbol_apply (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
+    linearizedEquationSymbol d v =
+      !₂[d I * v 0 - d 1 * v 1, d 1 * v 2 - d I * v 3, d 1 * v 3 + d I * v 2] :=
+  (rfl)
+
+/-- The last three rows of the symbol of the gauge-fixed operator `L_x = d₀* ⊕ d₁` are the symbol of
+the linearized equation `d₁`, as the last three rows of `L_x` are
+`TauCeti.Vortex.linearizedEquation`. -/
+@[simp]
+theorem gaugeFixedOperatorSymbol_apply_succ (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4))
+    (i : Fin 3) : gaugeFixedOperatorSymbol d v i.succ = linearizedEquationSymbol d v i := by
+  fin_cases i <;> simp
+
+/-- **The Leibniz rule of the linearized equation** for a real weight `w`, with its exact symbol
+commutator: `d₁ (w y) = w d₁ y + σ(dw) y`. These are the last three rows of
+`TauCeti.Vortex.gaugeFixedOperator_fun_smul`. -/
+theorem linearizedEquation_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} {w : ℂ → ℝ} {z : ℂ}
+    (hw : DifferentiableAt ℝ w z) (hy : DifferentiableAt ℝ y z) :
+    linearizedEquation x (fun t ↦ w t • y t) z =
+      w z • linearizedEquation x y z + linearizedEquationSymbol (fderiv ℝ w z) (y z) := by
+  ext i
+  simpa only [gaugeFixedOperator_apply_succ, gaugeFixedOperatorSymbol_apply_succ, PiLp.add_apply,
+    PiLp.smul_apply] using congr($(gaugeFixedOperator_fun_smul x hw hy) i.succ)
+
+/-- **The vortex defect of an interpolation.** For a real function `χ` and fields `x`, `y`,
+differentiable at `z`, the interpolation `x + χ (y - x)` has defect
+`(1 - χ) equation x + χ equation y + σ(dχ) (y - x) + (χ² - χ) quadraticTerm (y - x)` at `z`, with
+`σ = TauCeti.Vortex.linearizedEquationSymbol`. -/
+theorem equation_lineMap {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {χ : ℂ → ℝ} {z : ℂ}
+    (hx : DifferentiableAt ℝ x z) (hy : DifferentiableAt ℝ y z) (hχ : DifferentiableAt ℝ χ z) :
+    equation (fun t ↦ AffineMap.lineMap (x t) (y t) (χ t)) z =
+      (1 - χ z) • equation x z + χ z • equation y z +
+        linearizedEquationSymbol (fderiv ℝ χ z) (y z - x z) +
+        (χ z ^ 2 - χ z) • quadraticTerm (y - x) z := by
+  have hi {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : DifferentiableAt ℝ u z) (i : Fin 4) :
+      DifferentiableAt ℝ (fun t ↦ u t i) z :=
+    (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hu
+  have hv : DifferentiableAt ℝ (y - x) z := hy.sub hx
+  have hχv : DifferentiableAt ℝ (fun t ↦ χ t • (y - x) t) z := hχ.smul hv
+  have hG : (fun t ↦ AffineMap.lineMap (x t) (y t) (χ t)) =
+      x + (1 : ℝ) • fun t ↦ χ t • (y - x) t := by
+    ext1 t
+    simp [AffineMap.lineMap_apply, add_comm]
+  have hy' : y = x + (1 : ℝ) • (y - x) := by simp
+  have hey : equation y z = equation x z + linearizedEquation x (y - x) z + quadraticTerm (y - x) z
+      := by
+    conv_lhs => rw [hy']
+    simpa using equation_add_smul (hi hx) (hi hv) 1
+  rw [hG, equation_add_smul (hi hx) (hi hχv), linearizedEquation_fun_smul x hχ hv,
+    quadraticTerm_fun_smul, hey]
+  simp only [Pi.sub_apply, one_smul, one_pow]
+  module
 
 /-- The infinitesimal gauge action `d₀ f` is differentiable at a point where the phase `f` is
 `C²` and the section coordinates of the field are differentiable. -/

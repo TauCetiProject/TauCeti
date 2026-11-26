@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Realization
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
-import TauCeti.Analysis.SpecialFunctions.Log.Pow
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.DerivBound

@@ -183,17 +183,7 @@ theorem coeFn_littlewoodPaleyBlockLp {p : ℝ≥0∞} [Fact (1 ≤ p)] {j : ℕ}
     littlewoodPaleyBlockLp φ p j c =ᵐ[volume] fun x ↦
       ∑ n ∈ s, (φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n * mFourier n x := by
   rw [littlewoodPaleyBlockLp_eq_sum hs]
-  set g : (d → ℤ) → Lp ℂ p (volume : Measure (UnitAddTorus d)) := fun n ↦
-    ((φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n) • mFourierLp p n
-  have h : ∀ n ∈ s, ∀ᵐ x ∂volume,
-      g n x = (φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n * mFourier n x :=
-    fun n _ ↦ by
-      filter_upwards [Lp.coeFn_smul (((φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) *
-        c n)) (mFourierLp p n), coeFn_mFourierLp p n] with x hx hx'
-      rw [hx, Pi.smul_apply, hx', smul_eq_mul]
-  filter_upwards [Lp.coeFn_finsetSum s g, (eventually_all_finset s).2 h] with x hx hx'
-  rw [hx, Finset.sum_apply]
-  exact Finset.sum_congr rfl hx'
+  exact coeFn_sum_smul_mFourierLp p s _
 
 /-- The Fourier coefficients of the block `Δⱼ c` are `ψⱼ(n) c(n)`. -/
 @[simp]
@@ -399,7 +389,7 @@ theorem exists_norm_littlewoodPaleyBlockLp_mFourierCoeff_le :
 
 /-- `ψⱼ` vanishes at the lattice points `n` with `2^j max 1 φ.rOut < ‖n‖`, for the supremum norm
 of `n : ℤᵈ`, which is at most the Euclidean norm of `n`. -/
-private theorem inhomogeneousLittlewoodPaley_latticePoint_eq_zero {j : ℕ} {n : d → ℤ}
+theorem inhomogeneousLittlewoodPaley_latticePoint_eq_zero {j : ℕ} {n : d → ℤ}
     (hn : 2 ^ j * max 1 φ.rOut < ‖n‖) :
     φ.inhomogeneousLittlewoodPaley j (latticePoint n) = 0 := by
   refine φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm ?_
@@ -865,25 +855,35 @@ instance : CompleteSpace (BesovSpace φ s p q) := by
   rw [completeSpace_iff_isComplete_range (weightedBlocksₗᵢ φ s p q).isometry.isUniformInducing]
   exact isClosed_range_weightedBlocks.isComplete
 
+/-- **Window bounds.** If each weighted block `2^{js} ‖Δ'ⱼ v‖` of `v`, taken in a periodic Besov
+space built from a bump function `φ'`, is at most `K` times the sum of the weighted blocks
+`2^{ks} ‖Δₖ u‖` of `u` over the window `j - L ≤ k < j + L`, then `‖v‖ ≤ K (2 L) ‖u‖`. -/
+theorem norm_le_of_rpow_mul_norm_le_sum_Ico {φ' : ContDiffBump (0 : EuclideanSpace ℝ d)}
+    {K : ℝ} (hK : 0 ≤ K) {L : ℕ} (u : BesovSpace φ s p q) (v : BesovSpace φ' s p q)
+    (h : ∀ j : ℕ, 2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ' p j v.coeff‖ ≤
+      K * ∑ k ∈ Finset.Ico (j - L) (j + L), 2 ^ (s * k) * ‖littlewoodPaleyBlockLp φ p k u.coeff‖) :
+    ‖v‖ ≤ K * (2 * L) * ‖u‖ := by
+  -- The weighted block norms of `u`, and their window sums, as elements of `ℓ^q`.
+  set b := lp.normSeq u.weightedBlocks
+  obtain ⟨w, hw, hwn⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le b L
+  rw [← norm_weightedBlocks]
+  calc ‖v.weightedBlocks‖
+      ≤ ‖K • w‖ := lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
+        rw [norm_weightedBlocks_apply, lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hw]
+        refine (h j).trans ((le_of_eq ?_).trans (Real.le_norm_self _))
+        simp only [b, lp.normSeq_apply, norm_weightedBlocks_apply]
+    _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
+    _ ≤ K * (2 * L * ‖b‖) := by gcongr
+    _ = K * (2 * L) * ‖u‖ := by rw [lp.norm_normSeq, norm_weightedBlocks, mul_assoc K]
+
 /-- The norms of `B^s_{p,q}(𝕋ᵈ)` built from two bump functions are comparable: there is `C`,
 depending only on `φ`, `φ'` and `s`, with `‖u‖_{B'} ≤ C ‖u‖_B` for all `1 ≤ p, q ≤ ∞`. -/
 private theorem exists_norm_of_bump_le (φ' : ContDiffBump (0 : EuclideanSpace ℝ d)) :
     ∃ C : ℝ, ∀ (p q : ℝ≥0∞) [Fact (1 ≤ p)] [Fact (1 ≤ q)] (u : BesovSpace φ s p q),
       ‖(⟨u.coeff, u.memBesov_coeff.of_bump φ'⟩ : BesovSpace φ' s p q)‖ ≤ C * ‖u‖ := by
   obtain ⟨K, L, hK, hKL⟩ := exists_rpow_mul_norm_littlewoodPaleyBlockLp_le_sum_Ico φ φ' s
-  refine ⟨K * (2 * L), fun p q _ _ u ↦ ?_⟩
-  -- The weighted block norms of `u`, and their window sums, as elements of `ℓ^q`.
-  set b := lp.normSeq u.weightedBlocks
-  obtain ⟨w, hw, hwn⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le b L
-  rw [← norm_weightedBlocks]
-  calc ‖(⟨u.coeff, u.memBesov_coeff.of_bump φ'⟩ : BesovSpace φ' s p q).weightedBlocks‖
-      ≤ ‖K • w‖ := lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
-        rw [norm_weightedBlocks_apply, lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hw]
-        refine (hKL p j u.coeff).trans ((le_of_eq ?_).trans (Real.le_norm_self _))
-        simp only [b, lp.normSeq_apply, norm_weightedBlocks_apply]
-    _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
-    _ ≤ K * (2 * L * ‖b‖) := by gcongr
-    _ = K * (2 * L) * ‖u‖ := by rw [lp.norm_normSeq, norm_weightedBlocks, mul_assoc K]
+  exact ⟨K * (2 * L), fun p q _ _ u ↦ norm_le_of_rpow_mul_norm_le_sum_Ico hK u _
+    fun j ↦ hKL p j u.coeff⟩
 
 /-- **Independence of the bump function.** The periodic Besov spaces `B^s_{p,q}(𝕋ᵈ)` built from
 the Littlewood–Paley partitions of two bump functions `φ` and `φ'` consist of the same formal

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Distribution.VectorBundle
 public import TauCeti.Geometry.Manifold.Distribution.Diffeomorph
+public import TauCeti.Geometry.Manifold.Distribution.Quotient
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -41,6 +42,12 @@ map with invertible differential at `x`, mapping `D x` into `D' (f x)`, whose in
 map `D'` into `D` near `x`, for `C¹` distributions `D` and `D'`. It follows from the naturality of
 the Lie bracket under pullback of vector fields, and is stated with the induced map of quotients.
 
+The Levi form takes values in the quotient bundle `TM ⧸ D`
+(`TauCeti.IsContMDiffDistribution.quotientPrebundle`), and it is a smooth section of it along
+smooth sections of `D`: for `C^(m+1)` sections `U` and `V` of a `C^n` distribution `D`, with
+`1 ≤ n` and `m ≤ n`, the section `x ↦ L_D(U x, V x) = -[U, V] x mod D x` of `TM ⧸ D` is `C^m`,
+being the image of the `C^m` vector field `[V, U]` under the `C^n` quotient map `TM → TM ⧸ D`.
+
 ## Main definitions
 
 * `TauCeti.distributionLeviForm D x`: the Levi form of `D` at `x`, computed from a `C¹` local frame
@@ -62,6 +69,9 @@ the Lie bracket under pullback of vector fields, and is stated with the induced 
   diffeomorphisms: if `f` pulls a `C¹` distribution `D'` back to `D` near `x`, then `df_x` carries
   the Levi form of `D` at `x` to that of `D'` at `f x`, through the isomorphism of normal spaces
   `T_x M ⧸ D x ≃ T_(f x) N ⧸ D' (f x)` it induces (`IsLocalDiffeomorphAt.mfderivQuotientEquiv`).
+* `TauCeti.IsContMDiffDistribution.contMDiffOn_totalSpace_distributionLeviForm` and
+  `TauCeti.IsContMDiffDistribution.contMDiff_totalSpace_distributionLeviForm`: along `C^(m+1)`
+  sections of `D`, the Levi form is a `C^m` section of the quotient bundle `TM ⧸ D`.
 * `TauCeti.distributionLeviForm_swap` and `TauCeti.distributionLeviForm_self`: the Levi form is
   antisymmetric and alternating.
 * `TauCeti.distributionLeviForm_eq_zero_iff`: vanishing at a point can be tested on local
@@ -507,6 +517,69 @@ theorem distributionLeviForm_restrict_mfderiv (hD : IsContMDiffDistribution I 1 
   simp [hbracket]
 
 end NaturalityInvertible
+
+/-! ### The Levi form as a section of the quotient bundle -/
+
+section QuotientBundle
+
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [IsManifold I (n + 1) M] {r : ℕ}
+  {m : ℕ∞} [IsManifold I (m + 1 + 1) M]
+
+/-- **The Levi form is a `C^m` section of `TM ⧸ D`.** Let `D` be a `C^n` distribution of rank `k`
+with `1 ≤ n`, on a manifold of dimension `k + r`, and let `U` and `V` be sections of `D` which are
+`C^(m+1)` on an open set `W`, with `m ≤ n`. Then `x ↦ L_D(U x, V x)` is a `C^m` section on `W` of
+the quotient bundle `TM ⧸ D` (`TauCeti.IsContMDiffDistribution.quotientPrebundle`); it is the
+section `x ↦ -[U, V] x mod D x` (`TauCeti.distributionLeviForm_apply`). -/
+theorem IsContMDiffDistribution.contMDiffOn_totalSpace_distributionLeviForm
+    (hD : IsContMDiffDistribution I n k D) (hr : k + r = finrank 𝕜 E) (hn : 1 ≤ n)
+    (hm : (m : ℕ∞ω) ≤ n) {W : Set M} (hW : IsOpen W) {U V : Π x : M, D x}
+    (hU : CMDiff[W] (m + 1) (T% fun x ↦ (U x : TangentSpace I x)))
+    (hV : CMDiff[W] (m + 1) (T% fun x ↦ (V x : TangentSpace I x))) :
+    letI := (hD.quotientPrebundle hr).totalSpaceTopology
+    letI := (hD.quotientPrebundle hr).toFiberBundle
+    ContMDiffOn I (I.prod 𝓘(𝕜, Fin r → 𝕜)) m (fun x ↦ Bundle.TotalSpace.mk' (Fin r → 𝕜)
+      (E := fun x ↦ TangentSpace I x ⧸ D x) x (distributionLeviForm D x (U x) (V x))) W := by
+  let := (hD.quotientPrebundle hr).totalSpaceTopology
+  let := (hD.quotientPrebundle hr).toFiberBundle
+  have : IsManifold I (minSmoothness 𝕜 2) M := by
+    rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
+  have : IsManifold I (((m + 1 : ℕ∞) : ℕ∞ω) + 1) M :=
+    IsManifold.of_le (n := (m : ℕ∞ω) + 1 + 1) (by push_cast; exact le_rfl)
+  -- The Lie bracket `[V, U] = -[U, V]` of the two sections is `C^m` on `W`.
+  have hb : CMDiff[W] m (T% (mlieBracket I (fun x ↦ (V x : TangentSpace I x))
+      (fun x ↦ (U x : TangentSpace I x)))) :=
+    (ContMDiffOn.mlieBracketWithin_vectorField (n := m + 1) (by exact_mod_cast hV)
+      (by exact_mod_cast hU) hW.uniqueMDiffOn
+      (by simp [minSmoothness_of_isRCLikeNormedField])).congr
+      fun x hx ↦ by rw [mlieBracketWithin_of_isOpen hW hx]
+  refine (((hD.contMDiff_totalSpace_mkQ hr).of_le hm).comp_contMDiffOn hb).congr
+    fun x hx ↦ ?_
+  have hd {Y : Π x : M, D x} (hY : CMDiff[W] (m + 1) (T% fun x ↦ (Y x : TangentSpace I x))) :
+      MDiffAt (T% fun x ↦ (Y x : TangentSpace I x)) x :=
+    (hY.contMDiffAt (hW.mem_nhds hx)).mdifferentiableAt (by simp)
+  have h := distributionLeviForm_apply hD hn (hd hU) (hd hV)
+    (Eventually.of_forall fun y ↦ (U y).property) (Eventually.of_forall fun y ↦ (V y).property)
+  simp only [Subtype.coe_eta] at h
+  simp [h, mlieBracket_swap_apply (V := fun x ↦ (U x : TangentSpace I x))]
+
+/-- **The Levi form is a `C^m` section of `TM ⧸ D`.** For a `C^n` distribution `D` with `1 ≤ n` and
+`C^(m+1)` sections `U` and `V` of `D`, with `m ≤ n`, the section `x ↦ L_D(U x, V x)` of the quotient
+bundle `TM ⧸ D` is `C^m`. -/
+theorem IsContMDiffDistribution.contMDiff_totalSpace_distributionLeviForm
+    (hD : IsContMDiffDistribution I n k D) (hr : k + r = finrank 𝕜 E) (hn : 1 ≤ n)
+    (hm : (m : ℕ∞ω) ≤ n) {U V : Π x : M, D x}
+    (hU : CMDiff (m + 1) (T% fun x ↦ (U x : TangentSpace I x)))
+    (hV : CMDiff (m + 1) (T% fun x ↦ (V x : TangentSpace I x))) :
+    letI := (hD.quotientPrebundle hr).totalSpaceTopology
+    letI := (hD.quotientPrebundle hr).toFiberBundle
+    ContMDiff I (I.prod 𝓘(𝕜, Fin r → 𝕜)) m (fun x ↦ Bundle.TotalSpace.mk' (Fin r → 𝕜)
+      (E := fun x ↦ TangentSpace I x ⧸ D x) x (distributionLeviForm D x (U x) (V x))) := by
+  let := (hD.quotientPrebundle hr).totalSpaceTopology
+  let := (hD.quotientPrebundle hr).toFiberBundle
+  exact contMDiffOn_univ.1 (hD.contMDiffOn_totalSpace_distributionLeviForm hr hn hm isOpen_univ
+    (contMDiffOn_univ.2 hU) (contMDiffOn_univ.2 hV))
+
+end QuotientBundle
 
 /-- The Levi form of the standard contact distribution `ker (dz - x dy)` on `ℝ³` is nonzero at
 every point: it sends the values of the tangent fields `(1, 0, 0)` and `(0, 1, x)` to the class of
