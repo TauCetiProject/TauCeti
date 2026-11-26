@@ -8,6 +8,8 @@ module
 public import TauCeti.Dynamics.Entropy.Pressure
 import Mathlib.Analysis.MeanInequalities
 import TauCeti.Analysis.Asymptotics.ExpGrowth
+import TauCeti.Data.EReal.Operations
+import TauCeti.Dynamics.BirkhoffSum.Basic
 
 /-!
 # Convexity of topological pressure
@@ -55,8 +57,8 @@ private theorem ofReal_exp_birkhoffSum_smul_add_smul (T : X → X) (φ ψ : X �
         ENNReal.ofReal (Real.exp (birkhoffSum T ψ n x)) ^ (1 - t) := by
   have hsum : birkhoffSum T (t • φ + (1 - t) • ψ) n x =
       t * birkhoffSum T φ n x + (1 - t) * birkhoffSum T ψ n x := by
-    simp only [birkhoffSum, Finset.mul_sum, ← Finset.sum_add_distrib, Pi.add_apply,
-      Pi.smul_apply, smul_eq_mul]
+    rw [birkhoffSum_add_apply, birkhoffSum_smul_apply, birkhoffSum_smul_apply, smul_eq_mul,
+      smul_eq_mul]
   rw [hsum, ENNReal.ofReal_rpow_of_pos (Real.exp_pos _),
     ENNReal.ofReal_rpow_of_pos (Real.exp_pos _), ← ENNReal.ofReal_mul (by positivity),
     ← Real.exp_mul, ← Real.exp_mul, ← Real.exp_add]
@@ -100,14 +102,12 @@ theorem netPressureEntourage_smul_add_smul_le (ht₀ : 0 < t) (ht₁ : t < 1)
     netPressureEntourage T (t • φ + (1 - t) • ψ) U ≤
       t * netPressureEntourage T φ U + ((1 - t : ℝ) : EReal) * netPressureEntourage T ψ U := by
   have h1t : (0 : ℝ) < 1 - t := sub_pos.mpr ht₁
-  rcases eq_or_ne (netPressureEntourage T φ U) ⊤ with hφ | hφ
-  · rw [hφ, EReal.coe_mul_top_of_pos ht₀, EReal.top_add_of_ne_bot]
-    · exact le_top
-    · simp [EReal.mul_ne_bot, h.resolve_left (not_not.mpr hφ), h1t.le, -EReal.coe_sub]
-  rcases eq_or_ne (netPressureEntourage T ψ U) ⊤ with hψ | hψ
-  · rw [hψ, EReal.coe_mul_top_of_pos h1t, EReal.add_top_of_ne_bot]
-    · exact le_top
-    · simp [EReal.mul_ne_bot, h'.resolve_right (not_not.mpr hψ), ht₀.le]
+  by_cases hT : netPressureEntourage T φ U = ⊤ ∨ netPressureEntourage T ψ U = ⊤
+  · obtain ⟨ha, hb⟩ : netPressureEntourage T φ U ≠ ⊥ ∧ netPressureEntourage T ψ U ≠ ⊥ := by
+      rcases hT with hT | hT <;> simp_all
+    rw [EReal.coe_mul_add_coe_mul_eq_top ht₀ h1t ha hb hT]
+    exact le_top
+  obtain ⟨hφ, hψ⟩ := not_or.mp hT
   replace h1t := h1t.le
   rw [netPressureEntourage_def] at hφ hψ ⊢
   rw [netPressureEntourage_def, netPressureEntourage_def, ← expGrowthSup_rpow ht₀.le,
@@ -133,15 +133,12 @@ theorem topologicalPressure_smul_add_smul_le [UniformSpace X] (ht₀ : 0 ≤ t) 
   · simp
   rcases ht₁.eq_or_lt with rfl | ht₁
   · simp
-  have h1t : (0 : ℝ) < 1 - t := sub_pos.mpr ht₁
-  rcases eq_or_ne (topologicalPressure T φ) ⊤ with hφ | hφ
-  · rw [hφ, EReal.coe_mul_top_of_pos ht₀, EReal.top_add_of_ne_bot]
-    · exact le_top
-    · simp [EReal.mul_ne_bot, h.resolve_left (not_not.mpr hφ), h1t.le, -EReal.coe_sub]
-  rcases eq_or_ne (topologicalPressure T ψ) ⊤ with hψ | hψ
-  · rw [hψ, EReal.coe_mul_top_of_pos h1t, EReal.add_top_of_ne_bot]
-    · exact le_top
-    · simp [EReal.mul_ne_bot, h'.resolve_right (not_not.mpr hψ), ht₀.le]
+  by_cases hT : topologicalPressure T φ = ⊤ ∨ topologicalPressure T ψ = ⊤
+  · obtain ⟨ha, hb⟩ : topologicalPressure T φ ≠ ⊥ ∧ topologicalPressure T ψ ≠ ⊥ := by
+      rcases hT with hT | hT <;> simp_all
+    rw [EReal.coe_mul_add_coe_mul_eq_top ht₀ (sub_pos.mpr ht₁) ha hb hT]
+    exact le_top
+  obtain ⟨hφ, hψ⟩ := not_or.mp hT
   rw [topologicalPressure_le_iff]
   intro U hU
   have hφU : netPressureEntourage T φ U ≠ ⊤ :=
