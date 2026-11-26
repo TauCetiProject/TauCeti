@@ -17,7 +17,7 @@ public import TauCeti.RingTheory.LocalProperties.Fiber.Splitting
 # Splitting degree-zero cohomology off a nonnegative complex
 
 Let `C` be a nonnegative cochain complex of finite projective modules and let `u : M[0] ⟶ C`
-be a map from a finite projective module in degree zero. If `u` induces an isomorphism on
+be a map from a finite module in degree zero. If `u` induces an isomorphism on
 zeroth cohomology over every residue field, then `C` deformation retracts onto the sum of
 `M[0]` and a complex of finite projective modules supported in strictly positive degrees. The
 inclusion of `M[0]` is the given map `u`, and the complement inherits any upper degree bound
@@ -103,7 +103,7 @@ private lemma exists_single_retraction_of_residueField
     (C : CochainComplex (ModuleCat.{v} R) ℤ) [C.IsStrictlyGE 0]
     [Module.Finite R (C.X 0)] [Module.Projective R (C.X 0)]
     [Module.Finite R (C.X 1)] [Module.Projective R (C.X 1)]
-    (M : ModuleCat.{v} R) [Module.Finite R M] [Module.Projective R M]
+    (M : ModuleCat.{v} R) [Module.Finite R M]
     (u : (single _ (.up ℤ) 0).obj M ⟶ C)
     (hu : ∀ p : PrimeSpectrum R, Function.Injective
       (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor p.asIdeal.ResidueField))
@@ -139,7 +139,7 @@ equivalence includes the specified copy of `M[0]`. -/
 theorem exists_homotopyEquiv_biprod_single_of_residueField
     (C : CochainComplex (ModuleCat.{v} R) ℤ) [C.IsStrictlyGE 0]
     [∀ i, Module.Finite R (C.X i)] [∀ i, Module.Projective R (C.X i)]
-    (M : ModuleCat.{v} R) [Module.Finite R M] [Module.Projective R M]
+    (M : ModuleCat.{v} R) [Module.Finite R M]
     (u : (single _ (.up ℤ) 0).obj M ⟶ C)
     (hu : ∀ p : PrimeSpectrum R, Function.Injective
       (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor p.asIdeal.ResidueField))
@@ -188,13 +188,13 @@ theorem exists_homotopyEquiv_biprod_single_of_residueField
 
 /-- A map from `M[0]` to a nonnegative complex which induces an isomorphism on degree-zero
 cohomology over every residue field still induces one after applying any additive functor, in
-particular after arbitrary extension of scalars. Only `M`, `C⁰` and `C¹` need to be finite
-projective. -/
+particular after arbitrary extension of scalars. The source `M` is finite, and only `C⁰` and
+`C¹` need to be finite projective. -/
 theorem isIso_homologyMap_zero_of_residueField
     {C : CochainComplex (ModuleCat.{v} R) ℤ} [C.IsStrictlyGE 0]
     [Module.Finite R (C.X 0)] [Module.Projective R (C.X 0)]
     [Module.Finite R (C.X 1)] [Module.Projective R (C.X 1)]
-    {M : ModuleCat.{v} R} [Module.Finite R M] [Module.Projective R M]
+    {M : ModuleCat.{v} R} [Module.Finite R M]
     (u : (single _ (.up ℤ) 0).obj M ⟶ C)
     (hu : ∀ p : PrimeSpectrum R, Function.Injective
       (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor p.asIdeal.ResidueField))
