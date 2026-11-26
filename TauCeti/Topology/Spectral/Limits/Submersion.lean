@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Category.TopCat.Limits.Basic
+public import TauCeti.CategoryTheory.Limits.ConcreteCategory.Basic
 public import TauCeti.Topology.Spectral.Limits.Descent
 public import TauCeti.Topology.Spectral.Limits.Detection
 public import TauCeti.Topology.Spectral.Limits.Maps
@@ -57,7 +57,31 @@ open Set Topology TopologicalSpace CategoryTheory CategoryTheory.Limits
 
 namespace TopCat
 
-universe v u
+universe v u w
+
+section Spectral
+
+variable {J : Type v} [Category.{w} J]
+  (F G : J ⥤ TopCat.{max v u}) [∀ j, SpectralSpace (F.obj j)] [∀ j, SpectralSpace (G.obj j)]
+  (η : F ⟶ G)
+  (hF : ∀ {i j} (f : i ⟶ j), IsSpectralMap (F.map f))
+  (hG : ∀ {i j} (f : i ⟶ j), IsSpectralMap (G.map f))
+  (c : Cone F) (hc : IsLimit c) {d : Cone G} (hd : IsLimit d)
+
+include hF hG hc
+
+/-- The map `hd.map c η` between limits of diagrams of spectral spaces with spectral transition
+maps, induced by a natural transformation `η` with spectral components, is spectral. No
+filteredness is needed. -/
+theorem isSpectralMap_isLimitMap (hη : ∀ j, IsSpectralMap (η.app j)) :
+    IsSpectralMap (hd.map c η) := by
+  have := spectralSpace_of_isLimit F hF c hc
+  refine (isSpectralMap_of_isLimit_iff G hG d hd _).2 fun j ↦ ?_
+  have : d.π.app j ∘ hd.map c η = η.app j ∘ c.π.app j := funext (IsLimit.map_π_apply c hd η j)
+  rw [this]
+  exact (hη j).comp (isSpectralMap_of_isLimit_π F hF c hc j)
+
+end Spectral
 
 variable {J : Type v} [SmallCategory J] [IsCofiltered J]
   (F G : J ⥤ TopCat.{max v u}) [∀ j, SpectralSpace (F.obj j)] [∀ j, SpectralSpace (G.obj j)]
@@ -71,18 +95,6 @@ section Compatible
 variable (c : Cone F) (hc : IsLimit c) {d : Cone G} (hd : IsLimit d)
 
 include hF hG hc
-
-omit [IsCofiltered J] in
-/-- The map `hd.map c η` between limits of diagrams of spectral spaces with spectral transition
-maps, induced by a natural transformation `η` with spectral components, is spectral. No
-filteredness is needed. -/
-theorem isSpectralMap_isLimitMap (hη : ∀ j, IsSpectralMap (η.app j)) :
-    IsSpectralMap (hd.map c η) := by
-  have := spectralSpace_of_isLimit F hF c hc
-  refine (isSpectralMap_of_isLimit_iff G hG d hd _).2 fun j ↦ ?_
-  have : d.π.app j ∘ hd.map c η = η.app j ∘ c.π.app j := funext (isLimitMap_π_apply c hd η j)
-  rw [this]
-  exact (hη j).comp (isSpectralMap_of_isLimit_π F hF c hc j)
 
 /-- A cofiltered limit of surjective spectral maps between spectral spaces with spectral
 transition maps is surjective: if the components of `η` are surjective spectral maps, then the
@@ -107,7 +119,7 @@ theorem isLimitMap_surjective (hη : ∀ j, IsSpectralMap (η.app j))
   -- Hence `η j ⁻¹' W` misses the image of the limit of `F`, and so that of some stage `k`.
   have hempty : c.π.app j ⁻¹' (η.app j ⁻¹' W) = ∅ :=
     eq_empty_iff_forall_notMem.2 fun x hx ↦ hVφ
-      (mem_preimage.2 (by rwa [isLimitMap_π_apply]))
+      (mem_preimage.2 (by rwa [IsLimit.map_π_apply]))
       (mem_range_self x)
   obtain ⟨k, f, hf⟩ := exists_preimage_eq_empty_of_isProConstructible F hF c hc
     ((hη j).isConstructible_preimage hW).isProConstructible hempty
@@ -148,7 +160,7 @@ theorem isSpectralSubmersion_isLimitMap : TauCeti.IsSpectralSubmersion (hd.map c
   -- agree after a transition map `g : l ⟶ min i j`.
   have hst : c.π.app _ ⁻¹' s = c.π.app _ ⁻¹' t := by
     ext x
-    simpa only [s, t, mem_preimage, Cone.w_apply, ← isLimitMap_π_apply c hd η] using
+    simpa only [s, t, mem_preimage, Cone.w_apply, ← IsLimit.map_π_apply c hd η] using
       (Set.ext_iff.1 hV x).symm
   obtain ⟨l, g, hg⟩ := exists_preimage_eq_of_isConstructible F hF c hc hs ht hst
   -- At stage `l`, the preimage of `G.map b ⁻¹' W` under `η l` is quasi-compact open, so this set
