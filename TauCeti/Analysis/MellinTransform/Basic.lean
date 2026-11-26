@@ -25,10 +25,12 @@ holomorphy of these two partial Mellin integrals.
 
 The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing there have the same
 transform, with the same convergence. Kernels that are extended by zero off `(0, ∞)` are compared
-with their unextended forms this way.
+with their unextended forms this way. A finite sum of kernels with absolutely convergent
+Mellin transforms at a common parameter can be transformed term by term.
 
 ## Main results
 
+* `HasMellin.finsetSum`: finite sums preserve absolute convergence and transform term by term.
 * `TauCeti.hasMellin_congr`: functions agreeing on `(0, ∞)` have the same Mellin transform.
 * `TauCeti.mellinConvergent_indicator_Ioi_iff`: convergence of the Mellin transform of an
   upper-tail indicator is integrability of the upper Mellin integrand.
@@ -71,6 +73,18 @@ with their unextended forms this way.
 public section
 
 open Set MeasureTheory Complex
+
+/-- The Mellin transform of a finite sum is the sum of the individual transforms, with
+absolute convergence. -/
+theorem HasMellin.finsetSum {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {t : Finset ι} {f : ι → ℝ → E} {s : ℂ} {m : ι → E}
+    (h : ∀ i ∈ t, HasMellin (f i) s (m i)) :
+    HasMellin (fun x ↦ ∑ i ∈ t, f i x) s (∑ i ∈ t, m i) := by
+  have hi i (hit : i ∈ t) := (h i hit).1
+  refine ⟨?_, ?_⟩
+  · simpa only [MellinConvergent, IntegrableOn, Finset.smul_sum] using integrable_finsetSum t hi
+  · simp only [mellin, Finset.smul_sum, integral_finsetSum t hi]
+    exact Finset.sum_congr rfl fun i hit ↦ (h i hit).2
 
 namespace TauCeti
 
