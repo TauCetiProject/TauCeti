@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.SymplecticMap
 
 import TauCeti.Geometry.Symplectic.Coadjoint
 import TauCeti.Geometry.Lie.RightInvariantVectorField
+import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.RegularLevel
 
 /-!
 # The Kirillov–Kostant–Souriau form on a homogeneous coadjoint orbit
@@ -67,7 +68,11 @@ injective immersion into `𝔤*`. The orbit has dimension `dim 𝔤 - dim 𝔤_�
   `ω_ν(dπ ξ^L, dπ η^L) = ν ⁅ξ, η⁆`.
 * `Module.Dual.eval₂_coadjointOrbitForm_fundamentalVectorField`: `ω_ν(ξ_O, η_O) = μ ⁅ξ, η⁆`.
 * `Module.Dual.injective_differential_orbitMap_coadjointRepresentation`: the orbit map is an
-  immersion.
+  immersion; `Module.Dual.injective_mfderiv_orbitMap_coadjointRepresentation_components` is the
+  same statement read in a basis of `𝔤`.
+* `Module.Dual.range_mfderiv_orbitMap_coadjointRepresentation_components`: in a basis of `𝔤`, the
+  tangent images of the orbit map are the coordinates of the tangent spaces `{⁅ξ, μ⁆}` of the
+  coadjoint orbit.
 * `Module.Dual.even_finrank_quotientModelSpace`: the orbit has even dimension.
 
 ## References
@@ -331,5 +336,53 @@ theorem injective_differential_orbitMap_coadjointRepresentation
     rw [SmoothForm.bilinFormAt_apply, hξ, LinearMap.zero_apply]
   rw [ker_bilinFormAt_leftInvariantKirillovForm_eq_ker_mfderiv] at hu
   exact hu
+
+variable {κ : Type*} [Fintype κ]
+
+/-- **The tangent images of the orbit map, in coordinates.** Read in a basis `b` of `𝔤`, the
+differential of the orbit map `μ : [g] ↦ Ad*_g ν` at `x` has as image the coordinates of the
+tangent space `{⁅ξ, μ(x)⁆}` of the coadjoint orbit of `μ(x)` in `𝔤*`: the generators `ξ_O` span the
+tangent spaces of the orbit, and `dμ` carries `ξ_O(x)` to `⁅ξ, μ(x)⁆`. The same image, written
+with the Lie–Poisson sharp map, is
+`Module.Dual.range_differential_orbitMap_coadjointRepresentation`. -/
+theorem range_mfderiv_orbitMap_coadjointRepresentation_components
+    (b : Basis κ ℝ (GroupLieAlgebra I G))
+    (x : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) :
+    Set.range (mfderiv
+        𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
+        𝓘(ℝ, κ → ℝ) (fun y i ↦ (coadjointRepresentation ℝ I G).orbitMap ν y (b i)) x) =
+      Set.range fun ξ : GroupLieAlgebra I G ↦
+        fun i ↦ (⁅ξ, (coadjointRepresentation ℝ I G).orbitMap ν x⁆ : Dual ℝ _) (b i) := by
+  have h := ν.isEquivariantMomentMap_coadjointOrbitForm
+  have hξ : ∀ ξ : GroupLieAlgebra I G, mfderiv
+      𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
+      𝓘(ℝ, κ → ℝ) (fun y i ↦ (coadjointRepresentation ℝ I G).orbitMap ν y (b i)) x
+        (fundamentalVectorField
+          𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν)) ξ x) =
+      fun i ↦ (⁅ξ, (coadjointRepresentation ℝ I G).orbitMap ν x⁆ : Dual ℝ _) (b i) :=
+    fun ξ ↦ funext fun i ↦ by
+      rw [h.toIsMomentMap.mfderiv_components_apply, ← InfinitesimalAction.fundamental_apply,
+        h.toIsMomentMap.differential_apply_of_momentCocycle_eq_zero (h.momentCocycle_eq_zero x)]
+  ext w
+  constructor
+  · rintro ⟨v, rfl⟩
+    obtain ⟨ξ, rfl⟩ := Subgroup.surjective_fundamentalVectorField
+      (isClosed_stabilizer_coadjointRepresentation I ν) x v
+    exact ⟨ξ, (hξ ξ).symm⟩
+  · rintro ⟨ξ, rfl⟩
+    exact ⟨_, hξ ξ⟩
+
+/-- **The orbit map is an immersion, in coordinates.** Read in a basis `b` of `𝔤`, the
+differential of the orbit map `[g] ↦ Ad*_g ν` is injective at every point. -/
+theorem injective_mfderiv_orbitMap_coadjointRepresentation_components
+    (b : Basis κ ℝ (GroupLieAlgebra I G))
+    (x : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) :
+    Function.Injective (mfderiv
+        𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
+        𝓘(ℝ, κ → ℝ) (fun y i ↦ (coadjointRepresentation ℝ I G).orbitMap ν y (b i)) x) := by
+  have h := ν.isEquivariantMomentMap_coadjointOrbitForm.toIsMomentMap
+  intro v w hvw
+  refine ν.injective_differential_orbitMap_coadjointRepresentation x (b.ext fun i ↦ ?_)
+  rw [← h.mfderiv_components_apply, ← h.mfderiv_components_apply, hvw]
 
 end Module.Dual

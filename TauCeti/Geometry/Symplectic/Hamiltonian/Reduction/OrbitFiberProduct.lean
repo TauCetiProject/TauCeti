@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Lie.Subgroup.BalancedProduct
 public import TauCeti.Geometry.Manifold.FiberProduct.Manifold
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.RegularLevel
 
 /-!
@@ -62,7 +63,9 @@ level of the shifting map on `M × O⁻`
 * `TauCeti.OrbitFiberProduct`: the orbit fibre product
   `W_O`, as a subtype of `M × G ⧸ G_c`.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductChartedSpace`: its atlas as a
-  transverse fibre product.
+  transverse fibre product, whose tangent vectors are the pairs `(v, w)` with `dμ(v) = dι_O(w)`
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.mem_range_mfderiv_coe_orbitFiberProduct_iff`,
+  `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.mfderiv_components_mfderiv_fst_orbitFiberProduct`).
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorph`: the diffeomorphism
   `G ×_{G_c} μ⁻¹(c) ≃ W_O`, `[g, z] ↦ (g • z, g G_c)`.
 
@@ -231,6 +234,63 @@ theorem isSmoothEmbedding_coe_orbitFiberProduct (h : σ.IsEquivariantMomentMap �
   isSmoothEmbedding_coe_transverseFiberProduct (by simp) (h.toIsMomentMap.contMDiff_components b)
     (c.contMDiff_orbitMap_coadjointRepresentation_components b)
     (h.range_mfderiv_components_sup_eq_top hreg b)
+
+/-- **The tangent vectors of the orbit fibre product.** At a point `(x, o)` of `W_O`, a tangent
+vector `(v, w)` of `M × G ⧸ G_c` is tangent to `W_O` exactly when `dμ_x(v) = dι_O(w)`, both
+differentials being read in the basis `b`. -/
+theorem mem_range_mfderiv_coe_orbitFiberProduct_iff (h : σ.IsEquivariantMomentMap μ)
+    (hreg : ∀ x, μ x = c → Function.Surjective (h.differential x))
+    (b : Basis κ ℝ (GroupLieAlgebra I G)) (p : OrbitFiberProduct μ c b)
+    (v : TangentSpace (I'.prod
+      𝓘(ℝ, Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)))
+      p.val) :
+    letI := h.orbitFiberProductChartedSpace c hreg b
+    v ∈ (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ
+        (Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
+          finrank ℝ (κ → ℝ)) → ℝ)
+      (I'.prod
+        𝓘(ℝ, Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)))
+      (Subtype.val : OrbitFiberProduct μ c b → _) p).range ↔
+      mfderiv I' 𝓘(ℝ, κ → ℝ) (fun x i ↦ μ x (b i)) p.val.1 v.1 =
+        tangentSpaceCast 𝓘(ℝ, κ → ℝ)
+          ((fun o i ↦ (Lie.coadjointRepresentation ℝ I G).orbitMap c o (b i)) p.val.2)
+          ((fun x i ↦ μ x (b i)) p.val.1)
+          (mfderiv
+            𝓘(ℝ, Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c))
+            𝓘(ℝ, κ → ℝ) (fun o i ↦ (Lie.coadjointRepresentation ℝ I G).orbitMap c o (b i))
+            p.val.2 v.2) :=
+  mem_range_mfderiv_coe_transverseFiberProduct_iff (by simp)
+    (h.toIsMomentMap.contMDiff_components b)
+    (c.contMDiff_orbitMap_coadjointRepresentation_components b)
+    (h.range_mfderiv_components_sup_eq_top hreg b) p v
+
+/-- **The tangent vectors of the orbit fibre product, by their projections.** For a tangent vector
+`ξ` of `W_O` at `(x, o)`, the differentials of the projections to `M` and to `O` satisfy
+`dμ_x(d pr_M ξ) = dι_O(d pr_O ξ)`, both read in the basis `b`. -/
+theorem mfderiv_components_mfderiv_fst_orbitFiberProduct (h : σ.IsEquivariantMomentMap μ)
+    (hreg : ∀ x, μ x = c → Function.Surjective (h.differential x))
+    (b : Basis κ ℝ (GroupLieAlgebra I G)) (p : OrbitFiberProduct μ c b) :
+    letI := h.orbitFiberProductChartedSpace c hreg b
+    ∀ ξ : TangentSpace 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ
+        (Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
+          finrank ℝ (κ → ℝ)) → ℝ) p,
+    mfderiv I' 𝓘(ℝ, κ → ℝ) (fun x i ↦ μ x (b i)) p.val.1
+        (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ
+          (Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
+            finrank ℝ (κ → ℝ)) → ℝ) I' (fun p : OrbitFiberProduct μ c b ↦ p.val.1) p ξ) =
+      mfderiv 𝓘(ℝ, Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c))
+        𝓘(ℝ, κ → ℝ) (fun o i ↦ (Lie.coadjointRepresentation ℝ I G).orbitMap c o (b i)) p.val.2
+        (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ
+          (Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
+            finrank ℝ (κ → ℝ)) → ℝ)
+          𝓘(ℝ, Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c))
+          (fun p : OrbitFiberProduct μ c b ↦ p.val.2) p ξ) := by
+  let _ := h.orbitFiberProductChartedSpace c hreg b
+  intro ξ
+  have hval := ((h.isSmoothEmbedding_coe_orbitFiberProduct hreg b).contMDiff p).mdifferentiableAt
+    (by simp)
+  rw [hval.mfderiv_fst_apply, hval.mfderiv_snd_apply]
+  exact (h.mem_range_mfderiv_coe_orbitFiberProduct_iff hreg b p _).1 (LinearMap.mem_range_self _ ξ)
 
 /-! ### The diffeomorphism with the balanced product -/
 

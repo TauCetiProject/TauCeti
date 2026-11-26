@@ -31,6 +31,8 @@ subtype-topology convergence API for continuous maps on subtypes.
 * `Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`: open maps are stable under
   pullback; the projection of a fibre product to one factor is open onto its range when the map
   from the other factor is.
+* `Function.Pullback.isEmbedding_fst`: embeddings are stable under pullback; the projection of a
+  fibre product to one factor is an embedding when the map from the other factor is.
 * `ContinuousMap.pullbackFst`, `ContinuousMap.pullbackSnd`, `ContinuousMap.mapPullback`,
   `ContinuousMap.mapPullbackSnd`, `Homeomorph.pullbackComm`: bundled projections, functoriality,
   and symmetry of the fibre product.
@@ -145,6 +147,22 @@ theorem Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp [TopologicalSp
     obtain ⟨x, hxU, hx⟩ : g (ι q).2 ∈ f '' U := hfU ▸ ⟨hqO, (ι q).1, hfg q⟩
     obtain ⟨q', hq'⟩ : (x, (ι q).2) ∈ range ι := hrange ▸ hx
     exact ⟨q', show ι q' ∈ T from hq' ▸ hUV ⟨hxU, hqV⟩, Subtype.ext (by simp [hq'])⟩
+
+/-- **Embeddings are stable under pullback.** If `g : Z → Y` is an embedding and `f : X → Y` is
+continuous, then the projection `X ×_Y Z → X` is an embedding: the second coordinate of a point of
+the fibre product is recovered continuously from the first through the embedding `g`. -/
+theorem Function.Pullback.isEmbedding_fst [TopologicalSpace Y] (hf : Continuous f)
+    (hg : IsEmbedding g) : IsEmbedding (Pullback.fst : f.Pullback g → X) := by
+  refine ⟨⟨le_antisymm (continuous_iff_le_induced.1 continuous_fst) ?_⟩, fun p q hpq ↦ ?_⟩
+  · -- For the topology induced by the first projection, the second projection is continuous,
+    -- since `g` composed with it is `f` composed with the first projection.
+    let t : TopologicalSpace (f.Pullback g) := .induced Pullback.fst ‹_›
+    have hsnd : Continuous (Pullback.snd : f.Pullback g → Z) := by
+      rw [hg.isInducing.continuous_iff]
+      exact (hf.comp continuous_induced_dom).congr fun p ↦ p.property
+    exact continuous_iff_le_induced.1 (continuous_induced_dom.prodMk hsnd)
+  · exact Subtype.ext (Prod.ext hpq
+      (hg.injective (p.property.symm.trans ((congrArg f hpq).trans q.property))))
 
 variable (f g)
 
