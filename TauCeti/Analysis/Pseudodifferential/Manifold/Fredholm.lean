@@ -58,9 +58,9 @@ operators whose principal symbols are joined by the straight-line homotopy
 * `TauCeti.index_chartSobolevExtension_eq_neg_of_comp_sub_id_mem`: a parametrix has the opposite
   index.
 * `TauCeti.isLocallyConstant_index_chartSobolevExtension_sum_smul`,
-  `TauCeti.index_chartSobolevExtension_eq_of_segment`: the index is constant along continuous
-  finite-dimensional families of elliptic operators, in particular along a straight-line homotopy
-  of elliptic principal symbols.
+  `TauCeti.index_chartSobolevExtension_eq_of_segment`: the index is locally constant along
+  continuous finite-dimensional families of elliptic operators (so constant over connected
+  parameter spaces), in particular along a straight-line homotopy of elliptic principal symbols.
 
 ## References
 
@@ -139,11 +139,11 @@ theorem IsClassicalElliptic.isFredholm_chartSobolevExtension [CompactSpace M]
 /-! ### The index -/
 
 /-- **The index ignores lower-order terms.** On a compact manifold, adding an operator `R` of
-order `m - 1` to an elliptic operator `P` of order `m` does not change the index of its extension
+order `r < m` to an elliptic operator `P` of order `m` does not change the index of its extension
 `H^s(M) → H^{s - m}(M)`: the extension of `R` is compact. -/
-theorem IsClassicalElliptic.index_chartSobolevExtension_add [CompactSpace M]
+theorem IsClassicalElliptic.index_chartSobolevExtension_add [CompactSpace M] {r : ℝ}
     (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P)
-    (hR : R ∈ classicalPseudodifferentialOperators (m - 1))
+    (hR : R ∈ classicalPseudodifferentialOperators r) (hr : r < m)
     (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
     (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) :
     (chartSobolevExtension hc ψ hc' φ (P + R) s (s - m)).index =
@@ -167,7 +167,8 @@ theorem IsClassicalElliptic.index_chartSobolevExtension_eq_of_classicalPrincipal
       (chartSobolevExtension hc ψ hc' φ P s (s - m)).index := by
   rw [← add_sub_cancel P Q]
   exact hPe.index_chartSobolevExtension_add hP
-    (sub_mem_classicalPseudodifferentialOperators_of_classicalPrincipalSymbol_eq hQ hP h) hψ hφ s
+    (sub_mem_classicalPseudodifferentialOperators_of_classicalPrincipalSymbol_eq hQ hP h)
+    (by linarith) hψ hφ s
 
 /-- **The index of a composition.** On a compact manifold, let `P` and `Q` be elliptic classical
 pseudodifferential operators of orders `m` and `m'`. The index of the extension of `P ∘ Q` to
@@ -262,7 +263,6 @@ theorem index_chartSobolevExtension_eq_of_segment [CompactSpace M]
       by simp only [f, Matrix.cons_val_one, Matrix.cons_val_fin_one]; fun_prop⟩
   have hconst := (isLocallyConstant_index_chartSobolevExtension_sum_smul hA hf he hψ hφ
     s).apply_eq_of_preconnectedSpace 0 1
-  simpa only [hsum, Set.Icc.coe_zero, Set.Icc.coe_one, Complex.ofReal_zero, Complex.ofReal_one,
-    sub_zero, sub_self, one_smul, zero_smul, add_zero, zero_add] using hconst
+  simpa [hsum] using hconst
 
 end TauCeti
