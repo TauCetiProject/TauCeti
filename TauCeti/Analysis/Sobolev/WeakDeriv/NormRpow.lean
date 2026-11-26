@@ -49,7 +49,8 @@ second weak derivatives of norm powers are their classical ones.
 
 The radial field `x ↦ ‖x‖ ^ p • x`, the gradient of `‖x‖ ^ (p + 2) / (p + 2)`, is weakly
 differentiable with its classical derivative for `p > -1`, where it is continuous, by the removable
-point lemma; at `p = -1`, the unit radial field, it is assembled from the coordinates above.
+point lemma; for every `p > -d`, including the unit radial field at `p = -1`, it is assembled from
+the coordinates above.
 
 ## Main declarations
 
@@ -70,7 +71,8 @@ point lemma; at `p = -1`, the unit radial field, it is assembled from the coordi
   weakly differentiable on every open set, with its classical derivative.
 * `TauCeti.locallyIntegrable_norm_rpow_smul_id_add_smulRight_pow`: for `p > -1`, the `d`-th power
   of the norm of that derivative is locally integrable.
-* `TauCeti.hasWeakFDerivOn_norm_rpow_neg_one_smul_self`: for `d ≥ 2`, so is the unit radial field.
+* `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self_of_neg_finrank_lt`: for `p > -d`, so is the radial
+  field `‖x‖ ^ p • x`, which for `p ≤ -1` is unbounded or discontinuous at the origin.
 -/
 
 public section
@@ -558,22 +560,21 @@ theorem hasWeakFDerivOn_norm_rpow_smul_self {p : ℝ} (hp : -1 < p) (Ω : Opens 
   · have : (1 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hd
     exact locallyIntegrable_rpow_smul_id_add_smulRight (by linarith)
 
-/-- **The weak derivative of the unit radial field.** If `dim E ≥ 2`, the unit radial field
-`x ↦ ‖x‖⁻¹ • x`, which is discontinuous at the origin, has its classical derivative
-`‖x‖⁻¹ id - ‖x‖⁻³ ⟪x, ·⟫ x`, taken away from the origin, as weak derivative on every open set. This
-is the exponent `p = -1` of `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`. -/
-theorem hasWeakFDerivOn_norm_rpow_neg_one_smul_self (hd : 1 < Module.finrank ℝ E)
-    (Ω : Opens E) :
-    HasWeakFDerivOn μ Ω (fun x : E ↦ ‖x‖ ^ (-1 : ℝ) • x)
-      (fun x ↦ ‖x‖ ^ (-1 : ℝ) • ContinuousLinearMap.id ℝ E +
-        ((-1 * ‖x‖ ^ ((-1 : ℝ) - 2)) • innerSL ℝ x).smulRight x) := by
+/-- **The weak derivative of a singular radial field.** For `p > -dim E`, the radial field
+`x ↦ ‖x‖ ^ p • x` has its classical derivative `‖x‖ ^ p id + p ‖x‖ ^ (p - 2) ⟪x, ·⟫ x`, taken away
+from the origin, as weak derivative on every open set. For `p ≤ -1` the field is unbounded or
+discontinuous at the origin; at `p = -1` it is the unit radial field `x / ‖x‖`. The derivative has
+size `O(‖x‖ ^ p)`, locally integrable exactly when `p > -dim E`. For `p > -1` and in every
+dimension, including zero, see `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`. -/
+theorem hasWeakFDerivOn_norm_rpow_smul_self_of_neg_finrank_lt {p : ℝ}
+    (hp : -(Module.finrank ℝ E : ℝ) < p) (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω (fun x : E ↦ ‖x‖ ^ p • x)
+      (fun x ↦ ‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
+        ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x) := by
   set b := stdOrthonormalBasis ℝ E
   refine (hasWeakFDerivOn_iff_coordinates b.toBasis).2 fun i ↦ ?_
-  -- The coordinates are the components `‖x‖⁻¹ ⟪x, bᵢ⟫` of the unit radial field.
-  have hs : -(Module.finrank ℝ E : ℝ) < -1 := by
-    have : (1 : ℝ) < Module.finrank ℝ E := by exact_mod_cast hd
-    linarith
-  convert hasWeakFDerivOn_norm_rpow_mul_inner (μ := μ) hs (b i) Ω using 1
+  -- The coordinates are the products `‖x‖ ^ p ⟪x, bᵢ⟫`.
+  convert hasWeakFDerivOn_norm_rpow_mul_inner (μ := μ) hp (b i) Ω using 1
   · funext x
     simp [OrthonormalBasis.repr_apply_apply, real_inner_comm]
   · funext x
@@ -581,7 +582,6 @@ theorem hasWeakFDerivOn_norm_rpow_neg_one_smul_self (hd : 1 < Module.finrank ℝ
     simp only [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
       Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
       OrthonormalBasis.repr_apply_apply]
-    rw [show (-1 : ℝ) - 2 = -3 by norm_num]
     simp only [add_apply, smul_apply, ContinuousLinearMap.id_apply,
       ContinuousLinearMap.smulRight_apply, coe_innerSL_apply, smul_eq_mul, inner_add_right,
       inner_smul_right, real_inner_comm]
