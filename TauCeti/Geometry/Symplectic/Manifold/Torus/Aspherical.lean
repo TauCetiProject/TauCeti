@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.UniversalCover.Torus.HigherHomotopy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Covering
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chern
+public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Torus.Basic
 
 /-!
@@ -22,9 +23,9 @@ of symplectic atoroidality:
   (`TauCeti.vanishesOnSpheres_torusSymplecticForm`). The covering map
   `π : (ι → ℂ) → T` (`TauCeti.complexPiTorusCover`) pulls `ω_T` back to the constant form `ω₀` of
   complex coordinate space, which is exact, with primitive `λₓ(v) = ω₀(x, v) / 2`
-  (`TauCeti.SymplecticForm.val_constSmooth_eq_mextDeriv`). Spheres in `T` lift to spheres in
-  `ι → ℂ` (`TauCeti.IsWeaklyExact.of_mpullback`, `TauCeti.VanishesOnSpheres.of_mpullback`), over
-  which exact forms integrate to zero.
+  (`TauCeti.SymplecticForm.radialPrimitive`, `TauCeti.SymplecticForm.mextDeriv_radialPrimitive`).
+  Spheres in `T` lift to spheres in `ι → ℂ` (`TauCeti.IsWeaklyExact.of_mpullback`,
+  `TauCeti.VanishesOnSpheres.of_mpullback`), over which exact forms integrate to zero.
 * The first Chern number `c₁ : π₂(T, x) → ℤ` of `ω_T` vanishes
   (`TauCeti.firstChernHom_torusSymplecticForm_eq_zero`), since `π₂(T, x)` is trivial. With the
   area condition, this is symplectic asphericity of `T`.
@@ -77,11 +78,10 @@ derivative of the radial primitive of the standard symplectic form of `ι → �
 private theorem mpullback_complexPiTorusCover_torusSymplecticForm_eq_mextDeriv :
     TauCeti.mpullback 𝓘(ℝ, ι → ℂ) (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ))
         (complexPiTorusCover p) (torusSymplecticForm p).val =
-      mextDeriv (fun x ↦ (stdComplexPiSymplecticForm ι).toBilinForm.toContinuousBilinearMap
-        |>.liouvilleFormCLM x : RoughForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) ℝ 1) := by
+      mextDeriv (stdComplexPiSymplecticForm ι).radialPrimitive.val := by
   have h := congrArg Subtype.val (mpullback_complexPiTorusCover_torusSymplecticForm p)
   rw [SmoothForm.coe_mpullback] at h
-  rw [h, SymplecticForm.val_constSmooth_eq_mextDeriv]
+  rw [h, SymplecticForm.mextDeriv_radialPrimitive]
 
 /-- **The standard symplectic form of the torus is weakly exact**: its integral over every sphere,
 a cylinder between two constant loops, vanishes. -/
@@ -90,7 +90,8 @@ theorem isWeaklyExact_torusSymplecticForm : IsWeaklyExact (torusSymplecticForm p
     (complexPiTorusCover_surjective p)
     ((isLocalDiffeomorph_complexPiTorusCover p).of_le (by simp)) ?_
   rw [mpullback_complexPiTorusCover_torusSymplecticForm_eq_mextDeriv]
-  exact isWeaklyExact_mextDeriv (isSmoothForm_modelSpace_iff.2 (ContinuousLinearMap.contDiff _))
+  exact isWeaklyExact_mextDeriv
+    ((stdComplexPiSymplecticForm ι).radialPrimitive.isSmoothForm.of_le (by simp))
 
 /-- **The standard symplectic form of the torus vanishes on spheres**: its integral over every
 smooth map of the square that factors through a sphere vanishes. -/
@@ -99,7 +100,7 @@ theorem vanishesOnSpheres_torusSymplecticForm : VanishesOnSpheres (torusSymplect
     (complexPiTorusCover_surjective p) (isLocalDiffeomorph_complexPiTorusCover p) ?_
   rw [mpullback_complexPiTorusCover_torusSymplecticForm_eq_mextDeriv]
   exact vanishesOnSpheres_mextDeriv
-    (isSmoothForm_modelSpace_iff.2 (ContinuousLinearMap.contDiff _))
+    ((stdComplexPiSymplecticForm ι).radialPrimitive.isSmoothForm.of_le (by simp))
 
 /-- **The first Chern number of the standard symplectic torus vanishes**: `c₁ : π₂(T, x) → ℤ` is
 zero at every point, since `π₂(T, x)` is trivial. -/

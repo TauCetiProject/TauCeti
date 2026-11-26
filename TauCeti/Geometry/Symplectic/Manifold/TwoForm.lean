@@ -73,9 +73,7 @@ example.
   surjective differential carries a tamed almost complex structure to one tamed by the constant
   form.
 * `TauCeti.SymplecticForm.constSmooth`: a symplectic form as a constant smooth two-form, which is
-  symplectic (`TauCeti.SymplecticForm.isSymplectic_constSmooth`) and exact, with the radial
-  primitive `λₓ(v) = ω(x, v) / 2` (`TauCeti.SymplecticForm.val_constSmooth_eq_mextDeriv`), together
-  with its `mvfderiv` and
+  symplectic (`TauCeti.SymplecticForm.isSymplectic_constSmooth`), together with its `mvfderiv` and
   partial-diffeomorphism pullback characterizations
   (`TauCeti.SymplecticForm.eval₂_constSmooth_mfderiv_eq`,
   `TauCeti.SmoothTwoForm.mpullback_constSmooth_eq_mpullback_subtype_val_iff`).
@@ -524,13 +522,6 @@ lemma isNondegenerate_constSmooth_symplecticFormAt (omegaForm : SymplecticForm V
 /-- A constant smooth symplectic form is closed. -/
 lemma isClosed_constSmooth (omegaForm : SymplecticForm V) : omegaForm.constSmooth.IsClosed :=
   SmoothTwoForm.isClosed_const _
-
-/-- A constant smooth symplectic form is exact: it is the exterior derivative of the radial
-one-form `λₓ(v) = ω(x, v) / 2`. -/
-lemma val_constSmooth_eq_mextDeriv (omegaForm : SymplecticForm V) :
-    omegaForm.constSmooth.val = mextDeriv (fun x ↦
-      omegaForm.toBilinForm.toContinuousBilinearMap.liouvilleFormCLM x : RoughForm 𝓘(ℝ, V) V ℝ 1) :=
-  SmoothTwoForm.val_const_eq_mextDeriv _
 
 /-- **A symplectic vector space is a symplectic manifold**: a constant smooth symplectic form is
 symplectic. -/
