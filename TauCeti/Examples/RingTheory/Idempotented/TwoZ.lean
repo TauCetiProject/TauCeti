@@ -46,18 +46,20 @@ noncomputable abbrev moduleInt : Module (Unitization ℤ H) ℤ :=
 
 attribute [local instance] moduleM moduleInt
 
+/-- `ℤ ⊕ 2ℤ` acts on `ℤ[1/2]` by multiplication through `φ`. -/
+theorem smul_M_def (r : Unitization ℤ H) (m : M) : r • m = algebraMap ℤ M (φ r) * m := rfl
+
+/-- `ℤ ⊕ 2ℤ` acts on `ℤ` by multiplication through `φ`. -/
+theorem smul_int_def (r : Unitization ℤ H) (n : ℤ) : r • n = φ r * n := rfl
+
 /-- `φ` is the inclusion on `2ℤ`. -/
 theorem φ_inr (h : H) : φ (h : Unitization ℤ H) = (h : ℤ) := by
   simp [φ]
 
-/-- `2 ∈ 2ℤ`. -/
-theorem two_mem : (2 : ℤ) ∈ (Ideal.span {(2 : ℤ)} : Ideal ℤ) :=
-  Ideal.mem_span_singleton_self 2
-
 /-- **`2ℤ` is not idempotented**: an idempotent `e` of `2ℤ` with `e * 2 = 2` would be `1`. -/
 theorem not_isIdempotented : ¬IsIdempotented H := by
   intro h
-  obtain ⟨e, -, hs⟩ := h.exists_isIdempotentElem {⟨2, two_mem⟩}
+  obtain ⟨e, -, hs⟩ := h.exists_isIdempotentElem {⟨2, Ideal.mem_span_singleton_self 2⟩}
   have h2 : (e : ℤ) * 2 = 2 := congrArg Subtype.val (hs _ (Finset.mem_singleton_self _)).1
   obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.1 e.property
   omega
@@ -66,10 +68,9 @@ theorem not_isIdempotented : ¬IsIdempotented H := by
 theorem isNondegenerate_M : IsNondegenerate ℤ H M := by
   rw [isNondegenerate_iff_nondegeneratePart_eq_top, eq_top_iff]
   intro m _
-  have : ((⟨2, two_mem⟩ : H) : Unitization ℤ H) • (IsLocalization.Away.invSelf (2 : ℤ) * m) =
-      m := by
-    change algebraMap ℤ M (φ _) * _ = m
-    rw [φ_inr, ← mul_assoc, IsLocalization.Away.mul_invSelf, one_mul]
+  have : ((⟨2, Ideal.mem_span_singleton_self 2⟩ : H) : Unitization ℤ H) •
+      (IsLocalization.Away.invSelf (2 : ℤ) * m) = m := by
+    rw [smul_M_def, φ_inr, ← mul_assoc, IsLocalization.Away.mul_invSelf, one_mul]
   rw [← this]
   exact inr_smul_mem_nondegeneratePart _ _
 
@@ -78,8 +79,7 @@ noncomputable def incl : ℤ →ₗ[Unitization ℤ H] M where
   toFun := algebraMap ℤ M
   map_add' := map_add _
   map_smul' r n := by
-    change algebraMap ℤ M (φ r * n) = algebraMap ℤ M (φ r) * algebraMap ℤ M n
-    rw [map_mul]
+    rw [smul_int_def, smul_M_def, map_mul, RingHom.id_apply]
 
 /-- The inclusion `ℤ → ℤ[1/2]` is injective. -/
 theorem incl_injective : Function.Injective incl :=
@@ -93,10 +93,11 @@ theorem not_isNondegenerate_int : ¬IsNondegenerate ℤ H ℤ := by
     { carrier := {m | (2 : ℤ) ∣ m}
       add_mem' := fun ha hb => dvd_add ha hb
       zero_mem' := dvd_zero 2
-      smul_mem' := fun r _ hm => (dvd_mul_of_dvd_right hm (φ r) : (2 : ℤ) ∣ φ r * _) }
+      smul_mem' := fun r m hm => by
+        rw [smul_int_def]
+        exact dvd_mul_of_dvd_right hm (φ r) }
   have hle : nondegeneratePart ℤ H ℤ ≤ N := nondegeneratePart_le_iff.2 fun h m => by
-    change (2 : ℤ) ∣ φ h * m
-    rw [φ_inr]
+    rw [smul_int_def, φ_inr]
     exact dvd_mul_of_dvd_left (Ideal.mem_span_singleton.1 h.property) m
   have h1 : (1 : ℤ) ∈ N := hle (by rw [isNondegenerate_iff_nondegeneratePart_eq_top.1 hnd]; trivial)
   exact (by decide : ¬(2 : ℤ) ∣ 1) h1
