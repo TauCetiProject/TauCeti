@@ -14,6 +14,7 @@ import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.Analysis.Sobolev.W1p.Convex
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 import TauCeti.Topology.Instances.Matrix
+import TauCeti.Topology.MetricSpace.Bounded
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -222,9 +223,7 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWi
     ∃ C : ℝ≥0, HolderOnWith C β (preciseRepresentative volume (W1p.gradient u)) S := by
   -- A bound for the distances in the bounded set `S_ρ`.
   obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ thickening ρ S, ∀ y ∈ thickening ρ S, edist x y ≤ D :=
-    ⟨(Metric.ediam (thickening ρ S)).toNNReal, fun x hx y hy => by
-      rw [ENNReal.coe_toNNReal (Metric.isBounded_iff_ediam_ne_top.1 hS.thickening)]
-      exact Metric.edist_le_ediam_of_mem hx hy⟩
+    ⟨_, fun x hx y hy => Metric.edist_le_diam_of_mem hS.thickening hx hy⟩
   have haK := holderOnWith_matrixBilinearForm_comp hD (fun s => (hAx s).mono hρS)
     (fun x hx => hAs x (hρS hx)) hγα (hv.of_le hD hγγ₀)
   have hGK : HolderOnWith (KG * D ^ ((α : ℝ) - γ)) γ G (thickening ρ S) :=
@@ -247,6 +246,18 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWi
       (n := n) hβ hβ1 hβγ hq2 hβq (lam := lam) (Lam := Lam)
       (M := ↑(Kx * D ^ ((α : ℝ) - γ) + L * (Cv * D ^ ((γ₀ : ℝ) - γ))) * ρ ^ (γ : ℝ))
   exact ⟨_, h hell haK hGK le_rfl (hf.mono_measure (Measure.restrict_mono hρS le_rfl)) hu' hρ hρS⟩
+
+/-- A positive Hölder exponent `β ≤ 1 - (n + 1) / q` for the gradient, as in the Schauder
+estimates with a datum `f ∈ L^q`, forces `q > n + 1`, where `(n + 1) / ∞ = 0`. -/
+theorem natCast_add_one_lt_of_le_one_sub_div {β : ℝ≥0} (hβ : 0 < β) (hq : 2 ≤ q)
+    (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) : (n : ℝ≥0∞) + 1 < q := by
+  have hβ' : (0 : ℝ) < β := hβ
+  rcases eq_or_ne q ⊤ with rfl | hqt
+  · simp
+  · have hq0 : 0 < q.toReal := ENNReal.toReal_pos (by rintro rfl; simp at hq) hqt
+    refine (ENNReal.toReal_lt_toReal (by simp) hqt).1 ?_
+    rw [ENNReal.toReal_add (by simp) (by simp), ENNReal.toReal_natCast, ENNReal.toReal_one]
+    exact (div_lt_one hq0).1 (by linarith)
 
 /-- **Interior `C^{1,β}` regularity for quasilinear divergence-form equations.** Let `Ω ⊆ ℝⁿ⁺¹`
 be open and let `A(x, s)` be a field of matrices, uniformly elliptic with constants `λ, Λ` in `x`
@@ -283,14 +294,7 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH
     ∃ C : ℝ≥0, HolderOnWith C β (preciseRepresentative volume (W1p.gradient u)) S := by
   have hα : 0 < α := hβ.trans_le hβα
   -- The datum costs `(n + 1) / q < 1` of a derivative, so `q > n + 1`.
-  have hβ' : (0 : ℝ) < β := hβ
-  have hqn : (n : ℝ≥0∞) + 1 < q := by
-    rcases eq_or_ne q ⊤ with rfl | hqt
-    · simp
-    · have hq0 : 0 < q.toReal := ENNReal.toReal_pos (by rintro rfl; simp at hq2) hqt
-      refine (ENNReal.toReal_lt_toReal (by simp) hqt).1 ?_
-      rw [ENNReal.toReal_add (by simp) (by simp), ENNReal.toReal_natCast, ENNReal.toReal_one]
-      exact (div_lt_one hq0).1 (by linarith)
+  have hqn : (n : ℝ≥0∞) + 1 < q := natCast_add_one_lt_of_le_one_sub_div hβ hq2 hβq
   -- De Giorgi: `ū` is `γ₀`-Hölder on `S_{R/2}`.
   obtain ⟨γ₀, C₀, hγ₀, h₀⟩ :=
     exists_holderOnWith_preciseRepresentative_value hα hq2 hqn hA hAx hAs hG hf hu hS hR hRS

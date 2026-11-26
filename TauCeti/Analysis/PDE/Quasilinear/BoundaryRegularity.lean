@@ -12,6 +12,7 @@ import TauCeti.Analysis.PDE.Quasilinear.Regularity
 import TauCeti.Analysis.Sobolev.LipschitzDomain.ContDiff
 import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 import TauCeti.Topology.Instances.Matrix
+import TauCeti.Topology.MetricSpace.Bounded
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -86,17 +87,17 @@ an affine isometry identifies `ℝ × E` with `ℝⁿ⁺¹`. -/
 private theorem forall_frontier_exists_graph_of_le {Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))}
     {α α' : ℝ≥0} (hα' : α' ≤ α) (hα'1 : α' ≤ 1)
     (hchart : ∀ x ∈ frontier Ω,
-      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ)
-        (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
-        HolderWith Kγ α (fderiv ℝ γ) ∧
-        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ γ z.snd < z.fst)) :
+      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (ψ : E → ℝ) (h₀ r₀ : ℝ)
+        (Kψ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ ψ 0 = 0 ∧ ContDiff ℝ 1 ψ ∧
+        HolderWith Kψ α (fderiv ℝ ψ) ∧
+        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ ψ z.snd < z.fst)) :
     ∀ x ∈ frontier Ω,
-      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ)
-        (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
-        HolderWith Kγ α' (fderiv ℝ γ) ∧
-        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ γ z.snd < z.fst) := by
+      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (ψ : E → ℝ) (h₀ r₀ : ℝ)
+        (Kψ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ ψ 0 = 0 ∧ ContDiff ℝ 1 ψ ∧
+        HolderWith Kψ α' (fderiv ℝ ψ) ∧
+        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ ψ z.snd < z.fst) := by
   intro x hx
-  obtain ⟨e, γ, h₀, r₀, Kγ, hex, hh₀, hr₀, hγ0, hγ, hγK, hgraph⟩ := hchart x hx
+  obtain ⟨e, ψ, h₀, r₀, Kψ, hex, hh₀, hr₀, hψ0, hψ, hψK, hgraph⟩ := hchart x hx
   -- `E` is a linear image of `ℝ × E ≃ ℝⁿ⁺¹`, so it is finite-dimensional.
   have : FiniteDimensional ℝ (WithLp 2 (ℝ × E)) :=
     LinearEquiv.finiteDimensional e.linearIsometryEquiv.toLinearEquiv
@@ -104,8 +105,8 @@ private theorem forall_frontier_exists_graph_of_le {Ω : Set (EuclideanSpace ℝ
     Module.Finite.of_surjective
       ((LinearMap.snd ℝ ℝ E).comp (WithLp.linearEquiv 2 ℝ (ℝ × E)).toLinearMap)
       fun y => ⟨WithLp.toLp 2 (0, y), rfl⟩
-  obtain ⟨γ', K', hγ', heq, hK'⟩ := hγ.exists_eqOn_ball_and_holderWith_fderiv hγK hα' hα'1 0 r₀
-  refine ⟨e, γ', h₀, r₀, K', hex, hh₀, hr₀, by rw [heq (mem_ball_self hr₀), hγ0], hγ', hK',
+  obtain ⟨ψ', K', hψ', heq, hK'⟩ := hψ.exists_eqOn_ball_and_holderWith_fderiv hψK hα' hα'1 0 r₀
+  refine ⟨e, ψ', h₀, r₀, K', hex, hh₀, hr₀, by rw [heq (mem_ball_self hr₀), hψ0], hψ', hK',
     fun z hz => ?_⟩
   rw [hgraph z hz, heq (mem_ball_zero_iff.2 (mem_normalCylinder.1 hz).2.2)]
 
@@ -117,8 +118,8 @@ variable {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
 
 /-- **Gradient regularity up to the boundary for quasilinear equations with Hölder solutions.**
 Let `Ω ⊆ ℝⁿ⁺¹` be a bounded open set with `C^{1,α}` boundary: for every frontier point `x` there
-are rigid coordinates `e` with `e x = 0` and a `C¹` function `γ` with `γ 0 = 0` and `α`-Hölder
-derivative such that, inside a normal cylinder, `Ω` is the region above the graph of `γ`. Let
+are rigid coordinates `e` with `e x = 0` and a `C¹` function `ψ` with `ψ 0 = 0` and `α`-Hölder
+derivative such that, inside a normal cylinder, `Ω` is the region above the graph of `ψ`. Let
 `A(x, s)` be uniformly elliptic with constants `λ, Λ` on `closure Ω` for every `s`, `α`-Hölder in
 `x ∈ closure Ω` uniformly in `s` and Lipschitz in `s` uniformly in `x ∈ closure Ω`. Let `G` be
 `α`-Hölder on `closure Ω`, let `f ∈ L^q(Ω)` with `q ≥ 2`, and let `u, g ∈ H¹(Ω)` with
@@ -136,10 +137,10 @@ theorem exists_gradient_ae_eq_and_holderOnWith_closure_quasilinear_of_holderOnWi
     (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal)
     (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (hchart : ∀ x ∈ frontier (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ)
-        (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
-        HolderWith Kγ α (fderiv ℝ γ) ∧
-        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ γ z.snd < z.fst))
+      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (ψ : E → ℝ) (h₀ r₀ : ℝ)
+        (Kψ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ ψ 0 = 0 ∧ ContDiff ℝ 1 ψ ∧
+        HolderWith Kψ α (fderiv ℝ ψ) ∧
+        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ ψ z.snd < z.fst))
     (hA : ∀ s, UniformlyEllipticOn (closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))
       (fun x => A x s) lam Lam)
     (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s))
@@ -171,9 +172,7 @@ theorem exists_gradient_ae_eq_and_holderOnWith_closure_quasilinear_of_holderOnWi
   -- The Hölder representative of `u`, extended to `closure Ω`.
   obtain ⟨w, hwv, hwK⟩ := hvK.exists_eqOn_holderOnWith_closure (hβ.trans_le hβγ)
   obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ s, ∀ y ∈ s, edist x y ≤ D :=
-    ⟨(Metric.ediam s).toNNReal, fun x hx y hy => by
-      rw [ENNReal.coe_toNNReal (Metric.isBounded_iff_ediam_ne_top.1 hΩ.closure)]
-      exact Metric.edist_le_ediam_of_mem hx hy⟩
+    ⟨_, fun x hx y hy => Metric.edist_le_diam_of_mem hΩ.closure hx hy⟩
   -- The coefficient frozen at `w` is `α'`-Hölder on `closure Ω`.
   have haK := holderOnWith_matrixBilinearForm_comp hD hAx hAs hα'α (hwK.of_le hD hα'γ)
   obtain ⟨C, -, H⟩ := exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule hβ hβ1 hβα'
@@ -193,17 +192,6 @@ theorem exists_gradient_ae_eq_and_holderOnWith_closure_quasilinear_of_holderOnWi
     le_rfl (hG.of_le hD hα'α) hf hug hDg (hDgK.of_le hD hα'α)
     (fun y hy => (hMg _ (mem_image_of_mem _ hy)).trans (Real.le_coe_toNNReal _)) hu'
   exact ⟨h, _, hae, hK⟩
-
-/-- A positive exponent `β ≤ 1 - (n + 1) / q` forces `q > n + 1`. -/
-private theorem natCast_add_one_lt_of_le_one_sub_div {β : ℝ≥0} (hβ : 0 < β) (hq : 2 ≤ q)
-    (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) : (n : ℝ≥0∞) + 1 < q := by
-  have hβ' : (0 : ℝ) < β := hβ
-  rcases eq_or_ne q ⊤ with rfl | hqt
-  · simp
-  · have hq0 : 0 < q.toReal := ENNReal.toReal_pos (by rintro rfl; simp at hq) hqt
-    refine (ENNReal.toReal_lt_toReal (by simp) hqt).1 ?_
-    rw [ENNReal.toReal_add (by simp) (by simp), ENNReal.toReal_natCast, ENNReal.toReal_one]
-    exact (div_lt_one hq0).1 (by linarith)
 
 /-- An equation tested against `H¹₀(Ω)`, `B(u, φ) = ∫_Ω f φ - ∫_Ω ⟨F, ∇φ⟩`, holds in particular for
 test functions, where it reads `B(u, φ) = ∫_Ω ⟨-F, ∇φ⟩ + ∫_Ω f φ`. -/
@@ -233,8 +221,8 @@ private theorem forall_testFunction_of_forall_w1p0 {a : EuclideanSpace ℝ (Fin 
 
 /-- **Gradient regularity up to the boundary for quasilinear equations.** Let `Ω ⊆ ℝⁿ⁺¹` be a
 bounded open set with `C^{1,α}` boundary: for every frontier point `x` there are rigid coordinates
-`e` with `e x = 0` and a `C¹` function `γ` with `γ 0 = 0` and `α`-Hölder derivative such that,
-inside a normal cylinder, `Ω` is the region above the graph of `γ`. Let `q ≥ 2` and `λ, Λ` be
+`e` with `e x = 0` and a `C¹` function `ψ` with `ψ 0 = 0` and `α`-Hölder derivative such that,
+inside a normal cylinder, `Ω` is the region above the graph of `ψ`. Let `q ≥ 2` and `λ, Λ` be
 given. There is an exponent `α₀ > 0`, depending only on `Ω`, `n`, `q`, `λ` and `Λ`, with the
 following property.
 
@@ -252,10 +240,10 @@ with `β ≤ α`, `β ≤ α₀` and `β ≤ 1 - (n + 1) / q`, where `(n + 1) / 
 theorem exists_gradient_ae_eq_and_holderOnWith_closure_quasilinear {α : ℝ≥0} (hq : 2 ≤ q)
     (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (hchart : ∀ x ∈ frontier (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ)
-        (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
-        HolderWith Kγ α (fderiv ℝ γ) ∧
-        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ γ z.snd < z.fst))
+      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (ψ : E → ℝ) (h₀ r₀ : ℝ)
+        (Kψ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ ψ 0 = 0 ∧ ContDiff ℝ 1 ψ ∧
+        HolderWith Kψ α (fderiv ℝ ψ) ∧
+        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ ψ z.snd < z.fst))
     (lam Lam : ℝ) :
     ∃ α₀ : ℝ≥0, 0 < α₀ ∧ ∀ {β : ℝ≥0}, 0 < β → β < 1 → β ≤ α → β ≤ α₀ →
       (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal →
@@ -295,8 +283,8 @@ theorem exists_gradient_ae_eq_and_holderOnWith_closure_quasilinear {α : ℝ≥0
   have : (0 : ℝ) ≤ n := n.cast_nonneg
   have hΩL : (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))).IsLipschitzDomain E :=
     isLipschitzDomain_of_contDiffAt fun x hx => by
-      obtain ⟨e, γ, h₀, r₀, -, hex, hh₀, hr₀, hγ0, hγ, -, hgraph⟩ := hchart x hx
-      exact ⟨e, γ, h₀, r₀, hex, hh₀, hr₀, hγ0, hγ.contDiffAt, hgraph⟩
+      obtain ⟨e, ψ, h₀, r₀, -, hex, hh₀, hr₀, hψ0, hψ, -, hgraph⟩ := hchart x hx
+      exact ⟨e, ψ, h₀, r₀, hex, hh₀, hr₀, hψ0, hψ.contDiffAt, hgraph⟩
   obtain ⟨α₀, C₀, hα₀, -, -, hreg⟩ := hΩL.exists_ae_eq_and_holderOnWith_quasilinear (mu := volume)
     hΩ (lam := lam) (Lam := Lam) (r := r) (q := n + 3)
     (by exact_mod_cast (show (1 : ℝ) < r by linarith)) (by rw [hcard]; linarith)

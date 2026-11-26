@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.BoundedDomain
+import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.PDE.Regularity.FrozenCoefficient
 import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
+import TauCeti.Topology.MetricSpace.Bounded
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -61,38 +63,6 @@ namespace PDE
 
 variable {n : ℕ}
 
-/-- Applying a Hölder field of bilinear forms `b` to a Hölder vector field `ξ` in its second slot
-gives a Hölder field of linear forms, and so a Hölder vector field through the Riesz
-representation: if on `s` the field `b` is `α`-Hölder with constant `K_b` and bounded by `M_b`, and
-`ξ` is `α`-Hölder with constant `K_ξ` and bounded by `M_ξ`, then `x ↦ b(x)(·, ξ(x))` is `α`-Hölder
-on `s` with constant `K_b M_ξ + M_b K_ξ`. -/
-private theorem holderOnWith_toDual_symm_flip_apply {X V : Type*} [PseudoMetricSpace X]
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V] {s : Set X}
-    {b : X → V →L[ℝ] V →L[ℝ] ℝ} {ξ : X → V} {α Kb Kξ Mb Mξ : ℝ≥0}
-    (hb : HolderOnWith Kb α b s) (hbM : ∀ x ∈ s, ‖b x‖ ≤ Mb)
-    (hξ : HolderOnWith Kξ α ξ s) (hξM : ∀ x ∈ s, ‖ξ x‖ ≤ Mξ) :
-    HolderOnWith (Kb * Mξ + Mb * Kξ) α (fun x => (toDual ℝ V).symm ((b x).flip (ξ x))) s := by
-  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-  rw [dist_eq_norm, ← map_sub, LinearIsometryEquiv.norm_map]
-  have hbxy : ‖b x - b y‖ ≤ Kb * dist x y ^ (α : ℝ) := by
-    simpa only [dist_eq_norm] using hb.dist_le hx hy
-  have hξxy : ‖ξ x - ξ y‖ ≤ Kξ * dist x y ^ (α : ℝ) := by
-    simpa only [dist_eq_norm] using hξ.dist_le hx hy
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w => ?_
-  have hsplit : ((b x).flip (ξ x) - (b y).flip (ξ y)) w =
-      (b x - b y) w (ξ x) + b y w (ξ x - ξ y) := by
-    simp only [sub_apply, ContinuousLinearMap.flip_apply, map_sub]
-    ring
-  rw [hsplit]
-  calc ‖(b x - b y) w (ξ x) + b y w (ξ x - ξ y)‖
-      ≤ ‖b x - b y‖ * ‖w‖ * ‖ξ x‖ + ‖b y‖ * ‖w‖ * ‖ξ x - ξ y‖ :=
-        (norm_add_le _ _).trans (add_le_add ((b x - b y).le_opNorm₂ w (ξ x))
-          ((b y).le_opNorm₂ w (ξ x - ξ y)))
-    _ ≤ Kb * dist x y ^ (α : ℝ) * ‖w‖ * Mξ + Mb * ‖w‖ * (Kξ * dist x y ^ (α : ℝ)) := by
-        gcongr
-        exacts [hξM x hx, hbM y hy]
-    _ = ↑(Kb * Mξ + Mb * Kξ) * dist x y ^ (α : ℝ) * ‖w‖ := by push_cast; ring
-
 /-- The field `H(x) = a(x) Dg(x)`, written as the Riesz representative of
 `η ↦ ⟨a(x) Dg(x), η⟩`, is `α`-Hölder on `s` with constant `K_a M_g + Λ K_g` and bounded by
 `Λ M_g`, when on `s` the coefficient `a` is uniformly elliptic and `α`-Hölder with constant `K_a`
@@ -110,7 +80,8 @@ private theorem holderOnWith_and_norm_le_toDual_symm_flip_matrixBilinearForm
         (Lam.toNNReal * Mg : ℝ≥0) := by
   have hBM : ∀ x ∈ s, ‖matrixBilinearForm (a x)‖ ≤ (Lam.toNNReal : ℝ) := fun x hx =>
     (hell.opNorm_matrixBilinearForm_le hx).trans (Real.le_coe_toNNReal _)
-  refine ⟨holderOnWith_toDual_symm_flip_apply hKa hBM hDgK hDgM, fun x hx => ?_⟩
+  refine ⟨(toDual ℝ _).symm.isometry.comp_holderOnWith
+    (ContinuousLinearMap.holderOnWith_flip_apply hKa hDgK hBM hDgM), fun x hx => ?_⟩
   rw [LinearIsometryEquiv.norm_map, NNReal.coe_mul]
   refine (ContinuousLinearMap.le_opNorm _ _).trans ?_
   rw [ContinuousLinearMap.opNorm_flip]
@@ -211,9 +182,7 @@ theorem exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule {E : Type*
     exists_holderOnWith_gradient_closure_of_isBounded hβ hβ1 hβα hq hβq hΩ hchart lam Lam M
   -- A bound `D` for the distances in `closure Ω`, to lower the exponent of `Dg` from `α` to `β`.
   obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ s, ∀ y ∈ s, edist x y ≤ D :=
-    ⟨(Metric.ediam s).toNNReal, fun x hx y hy => by
-      rw [ENNReal.coe_toNNReal (Metric.isBounded_iff_ediam_ne_top.1 hΩ.closure)]
-      exact Metric.edist_le_ediam_of_mem hx hy⟩
+    ⟨_, fun x hx y hy => Metric.edist_le_diam_of_mem hΩ.closure hx hy⟩
   set M' : ℝ := max M 0
   have : 0 ≤ M' := le_max_right _ _
   set Dβ : ℝ := (D : ℝ) ^ ((α : ℝ) - β) with hDβdef
@@ -235,7 +204,7 @@ theorem exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule {E : Type*
   -- `w = u - g ∈ H¹₀(Ω)` solves the equation with zero boundary values and the datum `G - H`.
   obtain ⟨hw', hwae, hwK, hwM⟩ := H₀ (u := ⟨u - g, hug⟩) hell hKa hKaM (hKG.sub hH) hf
     (energyFormH1_sub_ofTestFunctionₗ_eq hcoeff hG2 hH2 hDg hu)
-  rw [show ‖(⟨u - g, hug⟩ : W1p0 volume Ω 2)‖ = ‖u - g‖ from rfl] at hwK hwM
+  rw [← Submodule.norm_coe (⟨u - g, hug⟩ : W1p0 volume Ω 2), Submodule.coe_mk] at hwK hwM
   push_cast at hwK hwM
   -- The constants: `K_a ≤ M ≤ M'`.
   have key := mul_add_add_le_mul hC₀ Ka.coe_nonneg (hKaM.trans (le_max_left M 0))
@@ -244,8 +213,8 @@ theorem exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule {E : Type*
     (F := (eLpNorm f q (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))).toReal)
   refine ⟨fun x => hw' x + Dg x, ?_, ?_, fun y hy => ?_⟩
   · filter_upwards [W1p.gradient_sub_ae u g, hwae, hDg] with x h₁ h₂ h₃
-    have h₂' : W1p.gradient (u - g) x = hw' x := h₂
-    rw [← h₂', h₁, ← h₃, Pi.sub_apply, sub_add_cancel]
+    rw [Subtype.coe_mk] at h₂
+    rw [← h₂, h₁, ← h₃, Pi.sub_apply, sub_add_cancel]
   · refine (hwK.add (hDgK.of_le hD hβα)).mono_const ?_
     rw [← NNReal.coe_le_coe, NNReal.coe_add, NNReal.coe_mul, NNReal.coe_rpow,
       Real.coe_toNNReal (C₀ * _) (by positivity),

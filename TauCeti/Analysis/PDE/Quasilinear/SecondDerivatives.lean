@@ -15,6 +15,7 @@ import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 import TauCeti.Topology.Instances.Matrix
+import TauCeti.Topology.MetricSpace.Bounded
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -168,9 +169,7 @@ private theorem exists_holderOnWith_and_lipschitzWith_truncation (hα1 : α ≤ 
     ((convex_closedBall x₀ ε).prod (convex_Icc _ _))
     ((isCompact_closedBall x₀ ε).prod isCompact_Icc)
   obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ closedBall x₀ ε, ∀ y ∈ closedBall x₀ ε, edist x y ≤ D :=
-    ⟨(Metric.ediam (closedBall x₀ ε)).toNNReal, fun x hx y hy => by
-      rw [ENNReal.coe_toNNReal (Metric.isBounded_iff_ediam_ne_top.1 isBounded_closedBall)]
-      exact Metric.edist_le_ediam_of_mem hx hy⟩
+    ⟨_, fun x hx y hy => Metric.edist_le_diam_of_mem isBounded_closedBall hx hy⟩
   refine ⟨_, _, fun s => holderOnWith_matrixBilinearForm_of_forall fun i j =>
       ((hL i j).comp (LipschitzWith.prodMk_right _).lipschitzOnWith
         fun _ hx => ⟨hx, hcK s⟩).holderOnWith.of_le hD hα1,
