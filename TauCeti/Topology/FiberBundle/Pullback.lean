@@ -131,6 +131,7 @@ abbrev Bundle.Pullback.totalSpaceMulAction (hf : ∀ (g : G) (x : B'), f (g • 
 
 /-- The action `Bundle.Pullback.totalSpaceMulAction` on the total space of a pullback bundle covers
 the action on the base. -/
+@[simp]
 theorem Bundle.Pullback.totalSpaceMulAction_proj_smul (hf : ∀ (g : G) (x : B'), f (g • x) = f x)
     (g : G) (z : TotalSpace F (f *ᵖ E)) :
     letI := totalSpaceMulAction (F := F) (E := E) hf
