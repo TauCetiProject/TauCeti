@@ -491,12 +491,33 @@ noncomputable def quotientEquivOfInvMemDoubleCoset {G : Type*} [Group G] (K : Su
   Equiv.ofBijective _
     (mk_mulEquiv_out_bijective τ (K.map_mem_iff_of_inv_mem_doubleCoset hτg))
 
+/-- Application formula for `Subgroup.quotientEquivOfInvMemDoubleCoset`. -/
+theorem quotientEquivOfInvMemDoubleCoset_apply {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (q : G ⧸ K) :
+    K.quotientEquivOfInvMemDoubleCoset τ hτg q = ((τ q.out : G) : G ⧸ K) :=
+  (rfl)
+
+/-- `Subgroup.quotientEquivOfInvMemDoubleCoset` sends the coset of `g` to the coset of `τ g`. -/
+@[simp] theorem quotientEquivOfInvMemDoubleCoset_mk {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (g : G) :
+    K.quotientEquivOfInvMemDoubleCoset τ hτg (g : G ⧸ K) = ((τ g : G) : G ⧸ K) := by
+  rw [quotientEquivOfInvMemDoubleCoset_apply, QuotientGroup.eq, ← map_inv, ← map_mul,
+    K.map_mem_iff_of_inv_mem_doubleCoset hτg, ← QuotientGroup.eq, QuotientGroup.out_eq']
+
+/-- The inverse of `Subgroup.quotientEquivOfInvMemDoubleCoset` sends the coset of `g` to the coset
+of `τ.symm g`. -/
+@[simp] theorem quotientEquivOfInvMemDoubleCoset_symm_mk {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (g : G) :
+    (K.quotientEquivOfInvMemDoubleCoset τ hτg).symm (g : G ⧸ K) = ((τ.symm g : G) : G ⧸ K) := by
+  apply (K.quotientEquivOfInvMemDoubleCoset τ hτg).injective
+  simp
+
 /-- The chosen representative of `K.quotientEquivOfInvMemDoubleCoset τ hτg q` differs from
 `τ q.out` on the right by an element of `K`. -/
 theorem out_quotientEquivOfInvMemDoubleCoset_eq_mul {G : Type*} [Group G] (K : Subgroup G)
     (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (q : G ⧸ K) :
     ∃ k ∈ K, (K.quotientEquivOfInvMemDoubleCoset τ hτg q).out = τ q.out * k := by
   obtain ⟨⟨k, hk⟩, hq⟩ := QuotientGroup.mk_out_eq_mul K (τ q.out)
-  exact ⟨k, hk, by simpa [quotientEquivOfInvMemDoubleCoset] using hq⟩
+  exact ⟨k, hk, by rw [quotientEquivOfInvMemDoubleCoset_apply]; exact hq⟩
 
 end Subgroup
