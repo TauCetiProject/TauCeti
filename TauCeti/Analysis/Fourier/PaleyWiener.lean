@@ -44,7 +44,8 @@ extension of `φ` by zero, and in the complex plane it is entire of exponential 
 * `TauCeti.paleyWienerFunction_eq_integral_mul_conj_paleyWienerKernel`: the reproducing property
   `F(λ) = ∫_ℝ F(x) conj(k_t(λ, x)) dx` of the kernel
   `k_t(λ, z) = sin(t(z - conj λ))/(π(z - conj λ))` (`TauCeti.paleyWienerKernel`), which lies in
-  `PW_t` (`TauCeti.memLp_paleyWienerKernel`) and has
+  `PW_t` (`TauCeti.paleyWienerKernel_def` with `TauCeti.memLp_paleyWienerKernel_density`), is
+  square integrable on `ℝ` (`TauCeti.memLp_paleyWienerKernel`) and has
   `‖k_t(λ, ·)‖²_{L²(ℝ)} = k_t(λ, λ)` (`TauCeti.integral_norm_paleyWienerKernel_sq`).
 
 ## References
@@ -253,8 +254,8 @@ theorem conj_paleyWienerFunction_conj (t : ℝ) (φ : ℝ → ℂ) (z : ℂ) :
     (fun s : ℝ ↦ conj (φ (-s)) * cexp (I * s * z)) (a := -t) (b := t)
 
 /-- **Nesting.** For `0 ≤ s ≤ t`, the Paley–Wiener function of `φ` on `[-s, s]` is the one of
-`φ 1_{(-s, s]}` on `[-t, t]`; together with `MeasureTheory.MemLp.indicator` this gives
-`PW_s ⊆ PW_t`. -/
+`φ 1_{(-s, s]}` on `[-t, t]`; together with `MeasureTheory.memLp_indicator_iff_restrict` and
+`MeasureTheory.Measure.restrict_restrict` this gives `PW_s ⊆ PW_t`. -/
 theorem paleyWienerFunction_eq_paleyWienerFunction_indicator {s : ℝ} (hs : 0 ≤ s) (hst : s ≤ t)
     (φ : ℝ → ℂ) :
     paleyWienerFunction s φ = paleyWienerFunction t ((Ioc (-s) s).indicator φ) := by
@@ -343,8 +344,7 @@ theorem memLp_paleyWienerKernel_density (t : ℝ) (w : ℂ) :
   exact div_le_div_of_nonneg_right (norm_cexp_I_mul_le (abs_le.2 ⟨hs.1.le, hs.2⟩) _)
     Real.two_pi_pos.le
 
-/-- The reproducing kernel `k_t(λ, ·)` of `PW_t` is square integrable on `ℝ`, so it lies in
-`PW_t`. -/
+/-- The reproducing kernel `k_t(λ, ·)` of `PW_t` is square integrable on `ℝ`. -/
 theorem memLp_paleyWienerKernel (ht : 0 ≤ t) (w : ℂ) :
     MemLp (fun x : ℝ ↦ paleyWienerKernel t w x) 2 :=
   memLp_paleyWienerFunction ht (memLp_paleyWienerKernel_density t w)
