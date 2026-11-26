@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.BaseChange
 public import Mathlib.Algebra.Lie.Sl2
 public import Mathlib.LinearAlgebra.Complex.Module
 import TauCeti.Algebra.Lie.Sl2.Spectrum
+import TauCeti.LinearAlgebra.Complex.Conjugation
 
 /-!
 # Rotation speeds in finite-dimensional representations of `so(3)`
@@ -106,7 +107,7 @@ theorem exists_int_two_mul_eq_of_lie_eq_smul {L M : Type*} [LieRing L] [LieAlgeb
   -- It is nonzero, since its real part is `u`.
   have hm0 : U + I • W ≠ 0 := by
     intro h
-    have := congrArg (TensorProduct.lift ((LinearMap.lsmul ℝ M).comp reLm)) h
+    have := congrArg (realPart M) h
     simp [U, W, smul_tmul', hu0] at this
   by_cases hh : (2 * I) • A 2 = 0
   · -- If `a₂` acts by zero on the complexification, the speed `c` vanishes.
