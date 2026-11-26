@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
+public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 public import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Order.Monotone.InvFunOn
 
 /-!
 # The inverse function theorem with a `C^n` inverse on a whole open set
@@ -25,13 +28,17 @@ On such a set every Fréchet derivative of the map is within `c` of `L` in norm,
 invertible by `ContinuousLinearMap.isInvertible_of_norm_sub_le_half`. This file extracts that
 estimate and runs Mathlib's smooth inverse function theorem at every point of the target.
 
-Two forms are given. The first is about Mathlib's own homeomorphism, over an arbitrary
+Three forms are given. The first is about Mathlib's own homeomorphism, over an arbitrary
 nontrivially normed field: strict differentiability alone makes derivative invertibility persist,
 while inverse `C^n` regularity also assumes the corresponding `C^n` regularity of the map. It is
 the form a consumer that cannot choose its homeomorphism — such as the implicit-function chart of
 a level set — needs. The second packages the classical statement over `ℝ` or `ℂ`: a `C^n` map with
 invertible derivative at a point of an open set `s` restricts to an `OpenPartialHomeomorph` inside
-`s` whose inverse is `C^n` on its target.
+`s` whose inverse is `C^n` on its target. The third is the global one-dimensional form for the
+scalar inverse `Function.invFunOn f s` of an injective change of variables `f` with nonvanishing
+derivative on `s`, giving its strict derivative, `C^n` regularity and continuity on `f '' s`,
+together with evaluation, continuity and real positivity of its divided difference
+`dslope (Function.invFunOn f s) (f a)` across `f a`.
 
 ## Main results
 
@@ -63,6 +70,15 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
   `s` and mapping `s` into `t` maps `interior s` into `interior t`.
 * `TauCeti.exists_contDiffAt_graph_of_isInvertible`: a disc `z ↦ (a z, b z)` whose second
   component has invertible derivative at `z₀` is, near `z₀`, the graph of a map `C^n` at `b z₀`.
+* `HasStrictDerivAt.invFunOn`, `HasStrictDerivAt.deriv_invFunOn`,
+  `HasStrictDerivAt.dslope_invFunOn_eq`, `ContDiffOn.invFunOn`,
+  `ContDiffOn.continuousOn_dslope_invFunOn`, `StrictMonoOn.dslope_invFunOn_pos`,
+  `TauCeti.isOpen_image_of_hasStrictDerivAt`,
+  `TauCeti.continuousOn_invFunOn_of_hasStrictDerivAt`,
+  `TauCeti.continuousOn_dslope_invFunOn_of_hasStrictDerivAt`: one-dimensional `Function.invFunOn`
+  strict differentiability, derivative formula, `C^n` regularity, open image, continuity on
+  `f '' s`, and evaluation, continuity and real positivity of
+  `dslope (Function.invFunOn f s) (f a)`.
 
 ## References
 
@@ -317,6 +333,125 @@ theorem exists_contDiffAt_graph_of_isInvertible {G : Type*} [NormedAddCommGroup 
   exact ⟨_, hwU, rfl, hw⟩
 
 end TauCeti
+
+section OneDim
+
+section NormedField
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+
+/-- If `f : 𝕜 → 𝕜` has a nonzero strict derivative `f'` at `a` and is injective on a neighbourhood
+`s` of `a`, then `Function.invFunOn f s` has strict derivative `f'⁻¹` at `f a`. -/
+theorem HasStrictDerivAt.invFunOn {f : 𝕜 → 𝕜} {f' a : 𝕜} {s : Set 𝕜}
+    (hf : HasStrictDerivAt f f' a) (hf' : f' ≠ 0) (hs : s ∈ 𝓝 a) (hinj : InjOn f s) :
+    HasStrictDerivAt (Function.invFunOn f s) f'⁻¹ (f a) :=
+  hf.to_local_left_inverse hf' (eventually_of_mem hs fun _ hx ↦ hinj.leftInvOn_invFunOn hx)
+
+/-- If `f : 𝕜 → 𝕜` is injective on a neighbourhood `s` of `Function.invFunOn f s y` and has a
+nonzero strict derivative `f'` there, then at `y ∈ f '' s` the derivative of
+`Function.invFunOn f s` is `(deriv f (Function.invFunOn f s y))⁻¹`. -/
+theorem HasStrictDerivAt.deriv_invFunOn {f : 𝕜 → 𝕜} {f' y : 𝕜} {s : Set 𝕜}
+    (hf : HasStrictDerivAt f f' (Function.invFunOn f s y)) (hy : y ∈ f '' s) (hf' : f' ≠ 0)
+    (hs : s ∈ 𝓝 (Function.invFunOn f s y)) (hinj : InjOn f s) :
+    deriv (Function.invFunOn f s) y = (deriv f (Function.invFunOn f s y))⁻¹ := by
+  have h := hf.invFunOn hf' hs hinj
+  rw [Function.invFunOn_eq hy] at h
+  rw [h.hasDerivAt.deriv, hf.hasDerivAt.deriv]
+
+/-- If `f : 𝕜 → 𝕜` is injective on a neighbourhood `s` of `a ∈ s` and has a nonzero strict
+derivative `f'` at `a` with `f a = b`, then `dslope (Function.invFunOn f s) b` evaluates to `f'⁻¹`
+at `b` and to `(Function.invFunOn f s y - a) / (y - b)` away from `b`. -/
+theorem HasStrictDerivAt.dslope_invFunOn_eq {f : 𝕜 → 𝕜} {f' a b : 𝕜} {s : Set 𝕜}
+    [∀ y, Decidable (y = b)] (hf : HasStrictDerivAt f f' a) (hf' : f' ≠ 0) (ha : a ∈ s)
+    (hs : s ∈ 𝓝 a) (hinj : InjOn f s) (hb : f a = b) (y : 𝕜) :
+    dslope (Function.invFunOn f s) b y =
+      if y = b then f'⁻¹ else (Function.invFunOn f s y - a) / (y - b) := by
+  subst hb
+  by_cases hy : y = f a
+  · simp [hy, dslope_same, (hf.invFunOn hf' hs hinj).hasDerivAt.deriv]
+  · simp [hy, dslope_of_ne _ hy, slope_def_field, hinj.leftInvOn_invFunOn ha]
+
+namespace TauCeti
+
+/-- If `f : 𝕜 → 𝕜` has a nonzero strict derivative at every point of an open set `s`, then
+`f '' s` is open. -/
+theorem isOpen_image_of_hasStrictDerivAt {f f' : 𝕜 → 𝕜} {s : Set 𝕜} (hs : IsOpen s)
+    (hf : ∀ x ∈ s, HasStrictDerivAt f (f' x) x) (hf' : ∀ x ∈ s, f' x ≠ 0) :
+    IsOpen (f '' s) := by
+  rw [isOpen_iff_mem_nhds]
+  rintro _ ⟨x, hx, rfl⟩
+  rw [← (hf x hx).map_nhds_eq (hf' x hx)]
+  exact image_mem_map (hs.mem_nhds hx)
+
+/-- If `f : 𝕜 → 𝕜` is injective on an open set `s` and has a nonzero strict derivative at every
+point of `s`, then `Function.invFunOn f s` is continuous on `f '' s`. -/
+theorem continuousOn_invFunOn_of_hasStrictDerivAt {f f' : 𝕜 → 𝕜} {s : Set 𝕜} (hs : IsOpen s)
+    (hinj : InjOn f s) (hf : ∀ x ∈ s, HasStrictDerivAt f (f' x) x) (hf' : ∀ x ∈ s, f' x ≠ 0) :
+    ContinuousOn (Function.invFunOn f s) (f '' s) := by
+  rintro _ ⟨x, hx, rfl⟩
+  exact ((hf x hx).invFunOn (hf' x hx) (hs.mem_nhds hx) hinj).hasDerivAt.continuousAt
+    |>.continuousWithinAt
+
+/-- If `f : 𝕜 → 𝕜` is injective on an open set `s` and has a nonzero strict derivative at every
+point of `s`, then for any `a ∈ s` the divided difference `dslope (Function.invFunOn f s) (f a)` is
+continuous on `f '' s`. -/
+theorem continuousOn_dslope_invFunOn_of_hasStrictDerivAt {f f' : 𝕜 → 𝕜} {s : Set 𝕜} {a : 𝕜}
+    (hs : IsOpen s) (ha : a ∈ s) (hinj : InjOn f s)
+    (hf : ∀ x ∈ s, HasStrictDerivAt f (f' x) x) (hf' : ∀ x ∈ s, f' x ≠ 0) :
+    ContinuousOn (dslope (Function.invFunOn f s) (f a)) (f '' s) :=
+  (continuousOn_dslope
+    ((isOpen_image_of_hasStrictDerivAt hs hf hf').mem_nhds (mem_image_of_mem f ha))).mpr
+    ⟨continuousOn_invFunOn_of_hasStrictDerivAt hs hinj hf hf',
+      ((hf a ha).invFunOn (hf' a ha) (hs.mem_nhds ha) hinj).hasDerivAt.differentiableAt⟩
+
+end TauCeti
+
+end NormedField
+
+/-- If `f : 𝕂 → 𝕂` is `C^n` (`n ≠ 0`) and injective on an open set `s` with nonvanishing
+derivative on `s`, then `Function.invFunOn f s` is `C^n` on `f '' s`. -/
+theorem ContDiffOn.invFunOn {𝕂 : Type*} [RCLike 𝕂] {f : 𝕂 → 𝕂} {s : Set 𝕂} {n : ℕ∞ω}
+    (hf : ContDiffOn 𝕂 n f s) (hn : n ≠ 0) (hs : IsOpen s) (hinj : InjOn f s)
+    (hd : ∀ x ∈ s, deriv f x ≠ 0) :
+    ContDiffOn 𝕂 n (Function.invFunOn f s) (f '' s) := by
+  rintro _ ⟨x, hx, rfl⟩
+  have hca : ContDiffAt 𝕂 n f x := hf.contDiffAt (hs.mem_nhds hx)
+  have hfd := ((hca.hasStrictDerivAt_deriv hn).hasStrictFDerivAt_equiv (hd x hx)).hasFDerivAt
+  have hloc : ContDiffAt 𝕂 n (hca.localInverse hfd hn) (f x) := hca.to_localInverse hfd hn
+  have hmem : ∀ᶠ y in 𝓝 (f x), hca.localInverse hfd hn y ∈ s :=
+    hloc.continuousAt.preimage_mem_nhds
+      (by rw [hca.localInverse_apply_image hfd hn]; exact hs.mem_nhds hx)
+  have hright : ∀ᶠ y in 𝓝 (f x), f (hca.localInverse hfd hn y) = y :=
+    (hca.hasStrictFDerivAt hfd hn).eventually_right_inverse
+  have heq : Function.invFunOn f s =ᶠ[𝓝 (f x)] hca.localInverse hfd hn := by
+    filter_upwards [hmem, hright] with y hys hyr
+    simpa only [hyr] using hinj.leftInvOn_invFunOn hys
+  exact (hloc.congr_of_eventuallyEq heq).contDiffWithinAt
+
+/-- If `f : 𝕂 → 𝕂` is `C^n` (`n ≠ 0`) and injective on an open set `s` with nonvanishing
+derivative on `s`, then for any `a ∈ s` the divided difference
+`dslope (Function.invFunOn f s) (f a)` is continuous on `f '' s`. -/
+theorem ContDiffOn.continuousOn_dslope_invFunOn {𝕂 : Type*} [RCLike 𝕂] {f : 𝕂 → 𝕂}
+    {s : Set 𝕂} {n : ℕ∞ω} {a : 𝕂} (hf : ContDiffOn 𝕂 n f s) (hn : n ≠ 0) (hs : IsOpen s)
+    (ha : a ∈ s) (hinj : InjOn f s) (hd : ∀ x ∈ s, deriv f x ≠ 0) :
+    ContinuousOn (dslope (Function.invFunOn f s) (f a)) (f '' s) :=
+  TauCeti.continuousOn_dslope_invFunOn_of_hasStrictDerivAt hs ha hinj
+    (fun _ hx ↦ (hf.contDiffAt (hs.mem_nhds hx)).hasStrictDerivAt_deriv hn) hd
+
+/-- If `f : ℝ → ℝ` is strictly monotone on a neighbourhood `s` of `a ∈ s` and has a positive
+strict derivative `f'` at `a`, then `dslope (Function.invFunOn f s) (f a)` is strictly positive on
+`f '' s`. -/
+theorem StrictMonoOn.dslope_invFunOn_pos {f : ℝ → ℝ} {f' a y : ℝ} {s : Set ℝ}
+    (hmono : StrictMonoOn f s) (ha : a ∈ s) (hy : y ∈ f '' s) (hs : s ∈ 𝓝 a)
+    (hf : HasStrictDerivAt f f' a) (hf' : 0 < f') :
+    0 < dslope (Function.invFunOn f s) (f a) y := by
+  rcases eq_or_ne y (f a) with rfl | hne
+  · rw [dslope_same, (hf.invFunOn hf'.ne' hs hmono.injOn).hasDerivAt.deriv]
+    exact inv_pos.mpr hf'
+  · rw [dslope_of_ne _ hne]
+    exact hmono.invFunOn.slope_pos (mem_image_of_mem f ha) hy hne.symm
+
+end OneDim
 
 end
 

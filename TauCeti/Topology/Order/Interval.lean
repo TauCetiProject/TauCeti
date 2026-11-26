@@ -79,9 +79,12 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
 * `ContinuousOn.strictMonoOn_Icc_of_strictMonoOn_Ioo`,
   `ContinuousOn.strictAntiOn_Icc_of_strictAntiOn_Ioo` — a function continuous on `[a, b]` and
   strictly monotone (antitone) on `(a, b)` is strictly monotone (antitone) on `[a, b]`.
-* `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto` — a continuous strictly increasing map on
-  `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
-  endpoint value and its limit.
+* `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto`,
+  `ContinuousOn.image_Ioi_of_strictMonoOn_of_tendsto`,
+  `ContinuousOn.image_Ioo_of_strictMonoOn_of_tendsto`,
+  `ContinuousOn.image_Ioo_of_strictMonoOn_of_tendsto_atTop` — a continuous strictly increasing map
+  on a half-open or half-infinite interval sends it to the interval between its left endpoint value
+  and its finite or `+∞` right limit.
 * `ContinuousOn.image_Ioi_eq_Ioi_of_tendsto`, `ContinuousOn.image_Iio_eq_Ioi_of_tendsto` — a
   continuous function on a half-infinite interval that stays above `v`, tends to `v` at infinity
   and to `+∞` at the finite endpoint has image `Ioi v`.
@@ -344,6 +347,65 @@ theorem _root_.ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto
   have hyD : d y ≤ D := ge_of_tendsto hdl <|
     eventually_atTop.2 ⟨y, fun z hz ↦ hdmono.monotoneOn hy (hy.trans hz) hz⟩
   exact ⟨hdmono.monotoneOn self_mem_Ici hx hx, (hdmono hx hy hxy).trans_le hyD⟩
+
+/-- **A continuous strictly increasing map sends an open half-line to an open interval.** The
+finite limit at `+∞` is approached but not attained. -/
+theorem _root_.ContinuousOn.image_Ioi_of_strictMonoOn_of_tendsto
+    {α β : Type*} [ConditionallyCompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α]
+    [DenselyOrdered α] [NoMaxOrder α]
+    [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] {f : α → β} {a : α} {l : β}
+    (hf : ContinuousOn f (Ici a)) (hmono : StrictMonoOn f (Ici a))
+    (hl : Tendsto f atTop (𝓝 l)) :
+    f '' Ioi a = Ioo (f a) l := by
+  rw [← Ici_sdiff_left, hmono.injOn.image_sdiff_subset (singleton_subset_iff.mpr self_mem_Ici),
+    hf.image_Ici_of_strictMonoOn_of_tendsto hmono hl, image_singleton, Ico_sdiff_left]
+
+/-- **A continuous strictly increasing map sends an open interval to an open interval** determined
+by its left endpoint value and its finite left limit at the right endpoint. -/
+theorem _root_.ContinuousOn.image_Ioo_of_strictMonoOn_of_tendsto
+    {α β : Type*} [ConditionallyCompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α]
+    [DenselyOrdered α]
+    [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] {f : α → β} {a b : α} {l : β}
+    (hab : a < b) (hf : ContinuousOn f (Ico a b)) (hmono : StrictMonoOn f (Ico a b))
+    (hl : Tendsto f (𝓝[<] b) (𝓝 l)) :
+    f '' Ioo a b = Ioo (f a) l := by
+  have ht0 : Tendsto f (𝓝[Ioo a b] a) (𝓝 (f a)) :=
+    ((hf a ⟨le_rfl, hab⟩).mono Ioo_subset_Ico_self).tendsto
+  have htb : Tendsto f (𝓝[Ioo a b] b) (𝓝 l) := by rwa [nhdsWithin_Ioo_eq_nhdsLT hab]
+  have := left_nhdsWithin_Ioo_neBot hab
+  have hnb := right_nhdsWithin_Ioo_neBot hab
+  have : (𝓝[<] b).NeBot := nhdsWithin_Ioo_eq_nhdsLT hab ▸ hnb
+  refine Subset.antisymm ?_ <| isPreconnected_Ioo.intermediate_value_Ioo
+    (l₁ := 𝓝[Ioo a b] a) (l₂ := 𝓝[Ioo a b] b)
+    inf_le_right inf_le_right (hf.mono Ioo_subset_Ico_self) ht0 htb
+  rintro _ ⟨t, ht, rfl⟩
+  obtain ⟨m, htm, hmb⟩ := exists_between ht.2
+  have hmIco : m ∈ Ico a b := ⟨ht.1.le.trans htm.le, hmb⟩
+  have hle : f m ≤ l := ge_of_tendsto hl <| by
+    filter_upwards [Ioo_mem_nhdsLT hmb] with s hs
+    exact hmono.monotoneOn hmIco ⟨hmIco.1.trans hs.1.le, hs.2⟩ hs.1.le
+  exact ⟨hmono ⟨le_rfl, hab⟩ ⟨ht.1.le, ht.2⟩ ht.1,
+    (hmono ⟨ht.1.le, ht.2⟩ hmIco htm).trans_le hle⟩
+
+/-- **A continuous strictly increasing map sends an open interval to an open half-line** when it
+tends to `+∞` at the right endpoint. -/
+theorem _root_.ContinuousOn.image_Ioo_of_strictMonoOn_of_tendsto_atTop
+    {α β : Type*} [ConditionallyCompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α]
+    [DenselyOrdered α]
+    [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] {f : α → β} {a b : α}
+    (hab : a < b) (hf : ContinuousOn f (Ico a b)) (hmono : StrictMonoOn f (Ico a b))
+    (hl : Tendsto f (𝓝[<] b) atTop) :
+    f '' Ioo a b = Ioi (f a) := by
+  have ht0 : Tendsto f (𝓝[Ioo a b] a) (𝓝 (f a)) :=
+    ((hf a ⟨le_rfl, hab⟩).mono Ioo_subset_Ico_self).tendsto
+  have htb : Tendsto f (𝓝[Ioo a b] b) atTop := by rwa [nhdsWithin_Ioo_eq_nhdsLT hab]
+  have := left_nhdsWithin_Ioo_neBot hab
+  have := right_nhdsWithin_Ioo_neBot hab
+  refine Subset.antisymm ?_ <| isPreconnected_Ioo.intermediate_value_Ioi
+    (l₁ := 𝓝[Ioo a b] a) (l₂ := 𝓝[Ioo a b] b)
+    inf_le_right inf_le_right (hf.mono Ioo_subset_Ico_self) ht0 htb
+  rintro _ ⟨t, ht, rfl⟩
+  exact hmono ⟨le_rfl, hab⟩ ⟨ht.1.le, ht.2⟩ ht.1
 
 /-- A continuous strictly increasing function `f` on `[a, b]` has a continuous inverse `τ` on its
 range `[c, d]`, extended to the whole codomain by being constant outside `[c, d]` (that is, `τ` is
