@@ -47,6 +47,9 @@ Mathlib's `idealSet K J` for a nonzero integral ideal `J`:
 * `NumberField.mixedEmbedding.fundamentalCone.coneOrbitEquiv`: choosing coset representatives
   identifies `(fundamentalCone K ∩ idealLattice K I) × ((𝓞 K)ˣ ⧸ torsion K)` bijectively with the
   nonzero points of `idealLattice K I`.
+* `NumberField.mixedEmbedding.fundamentalCone.mem_iff_norm_ne_zero_of_rank_eq_zero`: in unit
+  rank `0`, as for `ℚ` and the imaginary quadratic fields, the cone is the set of points of nonzero
+  norm.
 
 ## References
 
@@ -334,5 +337,14 @@ theorem coneOrbitEquiv_apply_coe (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
     ((coneOrbitEquiv I (a, g) : {x : idealLattice K I // x ≠ 0}) : mixedSpace K) =
       (Quotient.out g : (𝓞 K)ˣ) • (a : mixedSpace K) :=
   Units.unitSMulIdealLatticeEquiv_apply _ _ _
+
+/-- **The cone in unit rank `0`.** When the unit rank is `0`, as for `ℚ` and the imaginary
+quadratic fields, there is no logarithmic condition to impose, and the fundamental cone is the set
+of points of nonzero norm. -/
+theorem mem_iff_norm_ne_zero_of_rank_eq_zero (hr : Units.rank K = 0) (x : mixedSpace K) :
+    x ∈ fundamentalCone K ↔ mixedEmbedding.norm x ≠ 0 := by
+  simp only [fundamentalCone, Set.mem_sdiff, Set.mem_preimage, ZSpan.mem_fundamentalDomain,
+    Set.mem_ofPred_eq]
+  exact ⟨fun h ↦ h.2, fun h ↦ ⟨fun i ↦ absurd i.isLt (by omega), h⟩⟩
 
 end NumberField.mixedEmbedding.fundamentalCone

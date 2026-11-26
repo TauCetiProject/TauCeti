@@ -32,20 +32,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
+attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
+
 /-- Riemannian volume is positive on every nonempty open set. -/
 instance isOpenPosMeasure_riemannianVolume :
-    Measure.IsOpenPosMeasure (riemannianVolume I M) where
-  open_pos U hU hne := by
-    obtain ⟨x, hx⟩ := hne
-    let s := U ∩ (chartAt H x).source
-    have hs : IsOpen s := hU.inter (chartAt H x).open_source
-    have hne_s : s.Nonempty := ⟨x, hx, mem_chart_source H x⟩
-    have hpos_chart : 0 < chartRiemannianVolume (I := I) x s :=
-      chartRiemannianVolume_pos_of_isOpen_subset_source x hs inter_subset_right hne_s
-    have hpos : 0 < riemannianVolume I M s := by
-      rw [riemannianVolume_apply_of_subset inter_subset_right]
-      exact hpos_chart
-    exact (lt_of_lt_of_le hpos (measure_mono inter_subset_left)).ne'
+    Measure.IsOpenPosMeasure (riemannianVolume I M) :=
+  isPositiveDensityMeasure_riemannianVolume.isOpenPosMeasure
 
 end TauCeti
 

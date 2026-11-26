@@ -35,6 +35,8 @@ everywhere and vanishing off a set of finite measure lies in every `Lᵖ`
 * `TauCeti.eLpNorm_le_eLpNorm_rpow_toReal_sub_one`: its form for Hölder conjugate exponents.
 * `TauCeti.eLpNorm_le_rpow_inv_mul_eLpNorm_of_eLpNorm_norm_rpow_le`: a bound between seminorms of
   `‖f‖ ^ r` and `‖g‖ ^ r` is a bound between seminorms of `f` and `g` at `r` times the exponents.
+* `MeasureTheory.exists_eLpNorm_le_mul_eLpNorm_of_le`: on a finite measure space,
+  `‖f‖_p ≤ c ‖f‖_q` for `p ≤ q`, with `c` independent of `f`.
 * `TauCeti.memLp_fun_prod_of_memLp_mul_card`: a product over a nonempty finset `s` of functions
   in `L^(p * s.card)` lies in `Lᵖ`.
 * `TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm`: convergence to zero in `Lᵖ`
@@ -287,6 +289,23 @@ theorem eLpNorm_le_of_exponent_le
   rw [hnorm, ENNReal.inv_mul_le_iff (ENNReal.ofReal_ne_zero_iff.2 hM)
     ENNReal.ofReal_ne_top, mul_one] at h
   exact h
+
+/-- On a finite measure space, the `Lᵖ` seminorm is bounded by a constant multiple of the `Lᵠ`
+seminorm for `p ≤ q`, with a constant independent of the function. -/
+theorem exists_eLpNorm_le_mul_eLpNorm_of_le [IsFiniteMeasure μ] (hpq : p ≤ q) :
+    ∃ c : NNReal, ∀ f : α → E, eLpNorm f p μ ≤ c * eLpNorm f q μ := by
+  rcases eq_or_ne p 0 with rfl | hp0
+  · refine ⟨1, fun f => ?_⟩
+    by_cases hf : AEStronglyMeasurable f μ
+    · rw [eLpNorm_exponent_zero hf]
+      exact zero_le
+    · simp [eLpNorm_of_not_aestronglyMeasurable hf]
+  rcases eq_zero_or_neZero μ with rfl | _
+  · exact ⟨0, fun f => by simp⟩
+  refine ⟨(μ Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toNNReal, fun f => ?_⟩
+  rw [ENNReal.coe_toNNReal (ENNReal.rpow_ne_top_of_ne_zero (NeZero.ne _)
+    (measure_ne_top μ _)), mul_comm]
+  exact eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hpq (pos_iff_ne_zero.2 hp0)
 
 /-- A function bounded almost everywhere and vanishing off a set of finite measure lies in every
 `Lᵖ`. -/

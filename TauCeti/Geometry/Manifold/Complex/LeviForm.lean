@@ -54,9 +54,12 @@ index is at most `dim_ℂ E + q`.
   parts of the Levi form in terms of the real critical Hessian.
 * `TauCeti.manifoldLeviForm_apply_self`: for `C²` `f`, its diagonal is the real number
   `(Hess f(v, v) + Hess f(I • v, I • v)) / 4`.
+* `TauCeti.re_manifoldLeviForm_apply_self_nonpos_of_isLocalMax`: at a local maximum of a `C²`
+  function, the Levi form is negative semidefinite.
 * `TauCeti.manifoldLeviForm_add`, `TauCeti.manifoldLeviForm_neg`, `TauCeti.manifoldLeviForm_smul`,
   `TauCeti.manifoldLeviForm_mul_apply`, `TauCeti.manifoldLeviForm_scalar_comp_apply`: the sum,
-  negation, scalar multiple, product and composition rules.
+  negation, scalar multiple, product and composition rules, and `TauCeti.manifoldLeviForm_const`:
+  the Levi form of a constant function vanishes.
 * `TauCeti.manifoldLeviForm_I_smul_I_smul`: invariance under `I • ·` in both arguments.
 * `TauCeti.manifoldLeviForm_comp_apply`: the pullback rule under a complex `C²` map.
 * `TauCeti.le_re_manifoldLeviForm_scalar_comp_apply_self`: post-composition with an increasing
@@ -169,6 +172,18 @@ theorem isSymm_manifoldLeviForm (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) 
     (manifoldLeviForm E f x).IsSymm :=
   isSymm_leviForm hf.contDiffAt_comp_chartAt_symm
 
+/-- **The Levi form at a local maximum.** If `f` is `C²` at a local maximum `x`, the real part of
+`L_f(x)(v, v)` is nonpositive. -/
+theorem re_manifoldLeviForm_apply_self_nonpos_of_isLocalMax
+    (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) (hmax : IsLocalMax f x) (v : E) :
+    (manifoldLeviForm E f x v v).re ≤ 0 := by
+  have hx : (chartAt E x).symm (chartAt E x x) = x := (chartAt E x).left_inv (mem_chart_source E x)
+  have hmax' : IsLocalMax (f ∘ (chartAt E x).symm) (chartAt E x x) :=
+    IsLocalMax.comp_continuous (hx.symm ▸ hmax)
+      ((chartAt E x).continuousAt_symm (mem_chart_target E x))
+  rw [manifoldLeviForm_def]
+  exact re_leviForm_nonpos_of_isLocalMax hf.contDiffAt_comp_chartAt_symm hmax' v
+
 /-! ### Algebraic rules -/
 
 /-- **The sum rule** for the Levi form on a complex manifold. -/
@@ -182,6 +197,11 @@ theorem manifoldLeviForm_add {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘
 theorem manifoldLeviForm_neg (f : M → ℝ) (x : M) :
     manifoldLeviForm E (-f) x = -manifoldLeviForm E f x :=
   leviForm_neg (f ∘ (chartAt E x).symm) (chartAt E x x)
+
+/-- The Levi form of a constant function vanishes. -/
+@[simp]
+theorem manifoldLeviForm_const (c : ℝ) (x : M) : manifoldLeviForm E (fun _ : M ↦ c) x = 0 :=
+  leviForm_const c (chartAt E x x)
 
 /-- The Levi form on a complex manifold is real homogeneous in the function. -/
 @[simp]

@@ -25,7 +25,9 @@ transports it along the diffeomorphism `Φ_c(s, t) = (s + c (1 - μ(|w|)), t)` o
 with slope at most `1/4` (`TauCeti.Floer.exchangeMap`).
 
 * `Φ_c` is the identity near the inputs `0`, `1` and the translation by `c` near the output end
-  (`TauCeti.Floer.exchangeMap_of_norm_le`, `TauCeti.Floer.exchangeMap_of_le_norm`). It keeps
+  (`TauCeti.Floer.exchangeMap_of_norm_le`, `TauCeti.Floer.exchangeMap_of_le_norm`), in
+  particular near every point beyond the height `1` of the output end
+  (`TauCeti.Floer.exchangeMap_eventuallyEq_add_of_one_lt`). It keeps
   the `t` coordinate and, for `c ≥ 0`, moves `s` by an amount between `0` and `c`
   (`TauCeti.Floer.snd_exchangeMap`, `TauCeti.Floer.le_fst_exchangeMap`,
   `TauCeti.Floer.fst_exchangeMap_le`). It is `C²` (`TauCeti.Floer.contDiff_exchangeMap`), and
@@ -258,6 +260,11 @@ theorem exchangeMap_eventuallyEq_add (hy : 8 < ‖Complex.equivRealProdCLM.symm 
     (continuous_norm.comp Complex.equivRealProdCLM.symm.continuous)).mem_nhds hy] with y' hy'
   ext <;> simp [exchangeMap, exchangeShift_of_le_norm (le_of_lt hy')]
 
+/-- Beyond the height `1` of the output end, the map `Φ_c` is the translation by `c` nearby. -/
+theorem exchangeMap_eventuallyEq_add_of_one_lt (hy : 1 < (positiveEndCoord inf y).1) :
+    exchangeMap c =ᶠ[𝓝 y] (· + (c, 0)) :=
+  exchangeMap_eventuallyEq_add (eight_lt_norm_of_one_lt_fst_positiveEndCoord_inf hy)
+
 /-- On the disc `|w| ≤ 3` the map `Φ_c` is the identity. -/
 theorem exchangeMap_of_norm_le (hy : ‖Complex.equivRealProdCLM.symm y‖ ≤ 3) :
     exchangeMap c y = y := by
@@ -441,8 +448,8 @@ theorem image_exchangeMap_truncation (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {R : �
         ⟨by linarith, by linarith, by linarith⟩
     · -- Near the output end `Φ_c` is the translation by `c`.
       rw [exchangeMap_of_le_norm h₈.le]
-      have he : Complex.equivRealProdCLM.symm (y + (c, 0)) = w + c := by
-        apply Complex.ext <;> simp [w]
+      have he : Complex.equivRealProdCLM.symm (y + (c, 0)) = w + c :=
+        TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero y c
       have hw₁ := norm_sub_norm_le w 1
       have hw₂ := norm_sub_norm_le (w + c) 1
       have hw₃ := norm_sub_norm_le w (-(c : ℂ))

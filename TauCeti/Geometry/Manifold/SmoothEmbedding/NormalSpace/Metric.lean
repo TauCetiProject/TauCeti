@@ -51,7 +51,7 @@ variable {E V P H G M N : Type*}
 /-- The metric on intrinsic normal classes obtained by pairing their orthogonal representatives.
 It induces the existing quotient topology on each fibre. -/
 def normalRiemannianMetric (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) :
-    RiemannianMetric (fun x => f.NormalSpace x hn) where
+    RiemannianMetric (fun x => f.isImmersion.NormalSpace x hn) where
   inner x := (ContinuousLinearMap.precomp ℝ (f.normalRepresentative x hn)).comp
     ((innerSL ℝ).comp (f.normalRepresentative x hn))
   symm x v w := by
@@ -65,10 +65,10 @@ def normalRiemannianMetric (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) :
     intro h
     apply hv
     simpa only [map_zero, normalClass_normalRepresentative] using
-      congrArg (f.normalClass x hn) h
+      congrArg (f.isImmersion.normalClass x hn) h
   isVonNBounded x := by
     let e := f.normalSpaceOrthogonalComplementEquiv x hn
-    refine ((NormedSpace.isVonNBounded_ball ℝ ((f.tangentRange x hn)ᗮ) 1).image
+    refine ((NormedSpace.isVonNBounded_ball ℝ ((f.isImmersion.tangentRange x hn)ᗮ) 1).image
       e.symm.toContinuousLinearMap).subset ?_
     intro v hv
     refine ⟨e v, ?_, e.symm_apply_apply v⟩
@@ -86,7 +86,7 @@ def normalRiemannianMetric (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) :
 /-- The normal metric is the ambient inner product on orthogonal representatives. -/
 @[simp]
 theorem normalRiemannianMetric_inner (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (x : M) (v w : f.NormalSpace x hn) :
+    (x : M) (v w : f.isImmersion.NormalSpace x hn) :
     (f.normalRiemannianMetric hn).inner x v w =
       inner ℝ (f.normalRepresentative x hn v) (f.normalRepresentative x hn w) :=
   by simp [normalRiemannianMetric]
@@ -103,7 +103,7 @@ def normalContMDiffRiemannianMetric (f : SmoothEmbedding I J n M N)
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     letI := f.normalSpaceVectorBundle hn hdim
-    ContMDiffRiemannianMetric I m P (fun x => f.NormalSpace x hn) := by
+    ContMDiffRiemannianMetric I m P (fun x => f.isImmersion.NormalSpace x hn) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   have : IsManifold J 1 N := .of_le (n := m + 1) le_add_self
   let := f.normalSpaceFiberBundle hn hdim
@@ -111,7 +111,7 @@ def normalContMDiffRiemannianMetric (f : SmoothEmbedding I J n M N)
   let := f.normalSpaceContMDiffVectorBundle hn hm hdim
   refine { f.normalRiemannianMetric hn with contMDiff := ?_ }
   intro x
-  let e := trivializationAt P (fun x => f.NormalSpace x hn) x
+  let e := trivializationAt P (fun x => f.isImmersion.NormalSpace x hn) x
   let b := Module.Basis.ofVectorSpace ℝ P
   -- Test the bilinear field on two copies of a local normal frame.
   have hform := TauCeti.Manifold.contMDiffOn_bilinear_of_localFrame (I := I) (n := m) b
@@ -136,7 +136,7 @@ def normalContMDiffRiemannianMetric (f : SmoothEmbedding I J n M N)
 theorem normalContMDiffRiemannianMetric_inner (f : SmoothEmbedding I J n M N)
     (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
-    (x : M) (v w : f.NormalSpace x hn) :
+    (x : M) (v w : f.isImmersion.NormalSpace x hn) :
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     letI := f.normalSpaceVectorBundle hn hdim
@@ -163,7 +163,7 @@ theorem isContMDiffRiemannianBundle_normalRiemannianMetric
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     letI := f.normalSpaceVectorBundle hn hdim
-    let ν : M → Type _ := fun x => f.NormalSpace x hn
+    let ν : M → Type _ := fun x => f.isImmersion.NormalSpace x hn
     letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
     letI : ∀ x, NormedAddCommGroup (ν x) := fun _ => inferInstance
     letI : ∀ x, InnerProductSpace ℝ (ν x) := fun _ => inferInstance
@@ -171,7 +171,7 @@ theorem isContMDiffRiemannianBundle_normalRiemannianMetric
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
-  let ν : M → Type _ := fun x => f.NormalSpace x hn
+  let ν : M → Type _ := fun x => f.isImmersion.NormalSpace x hn
   let : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
   let : ∀ x, NormedAddCommGroup (ν x) := fun _ => inferInstance
   let : ∀ x, InnerProductSpace ℝ (ν x) := fun _ => inferInstance
@@ -202,7 +202,7 @@ theorem nonempty_contMDiffRiemannianMetric_normalSpace [T2Space N] [SigmaCompact
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E) :
     letI := f.normalSpaceFiberBundle hn hdim
     letI := f.normalSpaceVectorBundle hn hdim
-    Nonempty (ContMDiffRiemannianMetric I ∞ P fun x ↦ f.NormalSpace x hn) := by
+    Nonempty (ContMDiffRiemannianMetric I ∞ P fun x ↦ f.isImmersion.NormalSpace x hn) := by
   have : T2Space M := f.isEmbedding.t2Space
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
@@ -210,6 +210,6 @@ theorem nonempty_contMDiffRiemannianMetric_normalSpace [T2Space N] [SigmaCompact
   let := f.normalSpaceVectorBundle hn hdim
   let := f.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
   exact nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := P)
-    (E := fun x ↦ f.NormalSpace x hn)
+    (E := fun x ↦ f.isImmersion.NormalSpace x hn)
 
 end TauCeti.SmoothEmbedding

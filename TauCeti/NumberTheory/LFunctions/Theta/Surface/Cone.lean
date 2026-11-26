@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Group.FundamentalDomain
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Haar
 public import TauCeti.Analysis.MellinTransform
-import Mathlib.LinearAlgebra.Countable
+import TauCeti.NumberTheory.NumberField.Countable
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Prod
 
@@ -260,7 +260,6 @@ theorem hasSum_integral_unitCone_unitScale (hD : IsUnitFundamentalDomain K D)
     {g : realSpace K → E} (hg : Integrable g (archHaar K)) :
     HasSum (fun u : (𝓞 K)ˣ ↦ ∫ y in unitCone D, g (unitScale u y) ∂archHaar K)
       (Units.torsionOrder K • ∫ y, g y ∂archHaar K) := by
-  have : Countable (𝓞 K) := Countable.of_moduleFinite (R := ℤ)
   have : Countable (𝓞 K)ˣ := Function.Injective.countable (Units.val_injective (α := 𝓞 K))
   have hmeas (u : (𝓞 K)ˣ) : Measurable (unitScale (K := K) u) :=
     Measurable.of_eval fun w ↦ by

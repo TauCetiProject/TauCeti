@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.CanonicalHeight.Basic
+public import TauCeti.NumberTheory.Height.TateLimit
 
 /-!
 # The canonical height as a limit along all multiples
@@ -19,6 +20,8 @@ Convergence is uniform in the point: the error is bounded by `C / n²`, with `C`
 only on the curve. No Northcott or number-field assumption is needed. We also characterize
 the canonical height as the unique quadratic map at bounded distance from the naïve height.
 This fixes its normalization without referring to the doubling sequence used to construct it.
+Finally, the canonical height is Tate's limit `TauCeti.tateLimit` of the naïve height along
+multiplication by any `m ≥ 2`, with scaling factor `m ^ 2`.
 
 ## Main results
 
@@ -26,6 +29,8 @@ This fixes its normalization without referring to the doubling sequence used to 
 * `WeierstrassCurve.Affine.tendstoUniformly_naiveHeight_nsmul_div_sq`: uniform convergence.
 * `WeierstrassCurve.Affine.Point.tendsto_naiveHeight_nsmul_div_sq`: the classical pointwise limit.
 * `WeierstrassCurve.Affine.canonicalHeightQuadratic_eq_iff`: the bounded-distance characterization.
+* `WeierstrassCurve.Affine.Point.canonicalHeight_eq_tateLimit`: the canonical height is Tate's
+  limit of the naïve height along `P ↦ m • P`.
 
 ## References
 
@@ -106,5 +111,16 @@ theorem canonicalHeightQuadratic_eq_iff (W : Affine F) [W.toAffine.IsElliptic]
     (tendsto_const_nhds.sub P.tendsto_naiveHeight_nsmul_div_sq) hzero
   rw [canonicalHeightQuadratic_apply]
   exact (sub_eq_zero.mp hvalue).symm
+
+/-- **The canonical height is Tate's limit of the naïve height** along multiplication by any
+`m ≥ 2`, with scaling factor `m ^ 2`. For `m = 2` this is the doubling construction defining
+`canonicalHeight`; for general `m` it says that the construction does not depend on the
+multiplication map used. -/
+theorem Point.canonicalHeight_eq_tateLimit {m : ℕ} (hm : 1 < m) (P : W.Point) :
+    P.canonicalHeight =
+      TauCeti.tateLimit (fun Q : W.Point ↦ m • Q) ((m : ℝ) ^ 2) Point.naiveHeight P := by
+  obtain ⟨D, hD⟩ := Point.abs_canonicalHeight_sub_naiveHeight_le (W := W)
+  have hm' : (1 : ℝ) < (m : ℝ) ^ 2 := one_lt_pow₀ (by exact_mod_cast hm) two_ne_zero
+  exact (congrFun (TauCeti.tateLimit_unique hm' (Point.canonicalHeight_nsmul m) hD) P).symm
 
 end WeierstrassCurve.Affine

@@ -65,13 +65,6 @@ open MvPolynomial
 
 variable {k : Type u} [Field k]
 
-/-- The ideal `(x, y)` of the origin in `k[x, y]` is the ideal of the variables. -/
-private theorem span_X_pair_eq_idealOfVars :
-    Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1} = idealOfVars (Fin 2) k := by
-  congr 1
-  ext p
-  simp [Fin.exists_fin_two, eq_comm]
-
 /-- On the plane `Spec k[x, y]`, the coherent module of `k[x, y] ⧸ (x, y)` is Cohen–Macaulay, of
 depth `0` with support a point. -/
 private theorem isCohenMacaulay_tilde_quotient_origin :
@@ -81,7 +74,7 @@ private theorem isCohenMacaulay_tilde_quotient_origin :
   rw [Modules.isCohenMacaulay_tilde_iff]
   intro p _
   have : (Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1}).IsMaximal := by
-    rw [span_X_pair_eq_idealOfVars]
+    rw [← idealOfVars_fin_two]
     infer_instance
   by_cases hp : Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1} ≤ p
   · -- The support is the origin alone.
@@ -108,7 +101,7 @@ private theorem not_isCohenMacaulay_tilde_quotient_embedded :
   rw [Modules.isCohenMacaulay_tilde_iff]
   intro h
   have : (Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1}).IsMaximal := by
-    rw [span_X_pair_eq_idealOfVars]
+    rw [← idealOfVars_fin_two]
     infer_instance
   set m := Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1}
   set I := Ideal.span {(X 0 ^ 2 : MvPolynomial (Fin 2) k), X 0 * X 1}
