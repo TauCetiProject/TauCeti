@@ -18,8 +18,8 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Inversion
 import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
-import TauCeti.Topology.Algebra.Module.Cone
 
 /-!
 # The wave front set of a distribution

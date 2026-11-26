@@ -10,7 +10,7 @@ import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Analysis.Fourier.Inversion
-import TauCeti.Topology.Algebra.Module.Cone
+import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Topology.Compactness.Compact
 
 /-!
