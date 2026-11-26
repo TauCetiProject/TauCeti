@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Group.OrbitCutoff.Discrete
+public import TauCeti.MeasureTheory.Measure.Count.Basic
 
 /-!
 # Quotient integrals in stages, and two vanishing criteria
@@ -23,6 +24,9 @@ deduces two criteria for the integral of a continuous left `Γ`-invariant functi
   multiple of the integral of `F` over `Γ \ G`.
 * `Subgroup.integral_cutoffMeasure_stages`: if `(z, a) ↦ i(a) T(z)` carries `m × ν` to `μ`, with
   `i(Λ) = Γ`, the integral over `Γ \ G` is an iterated integral with inner integral over `Λ \ H`.
+* `MeasureTheory.Measure.cosetMeasure μ ν i`: the measure computing integrals over `i(H) \ G`, and
+  `MeasureTheory.Measure.measurePreserving_cosetMeasure`, its unfolding along a closed embedding
+  `i : H → G`.
 * `Subgroup.integral_cutoffMeasure_eq_integral_cosetMeasure`: the case of a closed embedding
   `i : H → G`, with outer integral over `i(H) \ G`.
 * `Subgroup.integral_cutoffMeasure_eq_zero_of_mean`: the integral vanishes if an average of right
@@ -48,16 +52,53 @@ open MeasureTheory Measure Topology Function ProbabilityTheory Set
 
 open scoped ENNReal NNReal Pointwise
 
-namespace Subgroup
+/-! ### The measure computing integrals over `i(H) \ G` -/
 
-/-- A bijection of countable spaces with measurable singletons preserves counting measure. -/
-private theorem measurePreserving_count_equiv {α β : Type*} [MeasurableSpace α]
-    [MeasurableSpace β] [Countable α] [MeasurableSingletonClass α]
-    (e : α ≃ β) : MeasurePreserving e count count := by
-  refine ⟨measurable_of_countable _,
-    (Measure.map_sum (measurable_of_countable _).aemeasurable).trans ?_⟩
-  simp only [Measure.map_dirac' (measurable_of_countable e)]
-  exact sum_comp_equiv e (fun b ↦ dirac b)
+namespace MeasureTheory.Measure
+
+variable {G H : Type*} [Group G] [MeasurableSpace G] [Group H] [MeasurableSpace H]
+
+/-- The measure computing integrals over `i(H) \ G`, carried by `G`: `μ` weighted by an orbit cutoff
+of the action of `H` on `G` by left translation through `i`, for the measure `ν`. -/
+noncomputable def cosetMeasure (μ : Measure G) (ν : Measure H) (i : H →* G) : Measure G :=
+  letI := MulAction.compHom G i
+  ν.cutoffMeasure μ
+
+/-- The measure `μ.cosetMeasure ν i` is `ν.cutoffMeasure μ` for the action of `H` on `G` by left
+translation through `i`. -/
+theorem cosetMeasure_def (μ : Measure G) (ν : Measure H) (i : H →* G) :
+    μ.cosetMeasure ν i = letI := MulAction.compHom G i; ν.cutoffMeasure μ :=
+  (rfl)
+
+instance (μ : Measure G) [SFinite μ] (ν : Measure H) (i : H →* G) :
+    SFinite (μ.cosetMeasure ν i) := by
+  let := MulAction.compHom G i
+  rw [cosetMeasure_def]
+  infer_instance
+
+/-- **Unfolding along a closed subgroup.** For a closed embedding `i : H → G`, a left Haar measure
+`μ` on `G` and a left Haar measure `ν` on `H` that is also right invariant, the map
+`(g, a) ↦ i(a) g` carries `μ.cosetMeasure ν i × ν` to `μ`. -/
+theorem measurePreserving_cosetMeasure [TopologicalSpace G] [IsTopologicalGroup G]
+    [LocallyCompactSpace G] [SecondCountableTopology G] [T2Space G] [BorelSpace G]
+    [TopologicalSpace H] [IsTopologicalGroup H] [LocallyCompactSpace H] [SecondCountableTopology H]
+    [BorelSpace H] (μ : Measure G) [μ.IsHaarMeasure] (ν : Measure H) [ν.IsHaarMeasure]
+    [ν.IsMulRightInvariant] {i : H →* G} (hi : IsClosedEmbedding i) :
+    MeasurePreserving (fun p : G × H ↦ i p.2 * p.1) ((μ.cosetMeasure ν i).prod ν) μ := by
+  -- `μ.cosetMeasure ν i` is the cutoff measure of the proper action of `H` through `i`, and
+  -- `h • g` is `i h * g` for this action.
+  let := MulAction.compHom G i
+  have : SMulInvariantMeasure H G μ := ⟨by simp [MulAction.compHom_smul_def]⟩
+  have : MeasurableSMul₂ H G :=
+    ⟨((hi.continuous.comp continuous_fst).mul continuous_snd).measurable⟩
+  have : ProperSMul H G := properSMul_of_isClosedEmbedding i hi fun _ _ ↦ rfl
+  have : ν.IsInvInvariant := isInvInvariant_of_isMulRightInvariant ν
+  rw [cosetMeasure_def]
+  exact measurePreserving_cutoffMeasure
+
+end MeasureTheory.Measure
+
+namespace Subgroup
 
 variable {G H V : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [SecondCountableTopology G] [T2Space G] [MeasurableSpace G] [BorelSpace G]
@@ -118,17 +159,10 @@ theorem integral_cutoffMeasure_stages {Z : Type*} [MeasurableSpace Z] {m : Measu
         (measurePreserving_prodAssoc m (Λ.cutoffMeasure ν) count))
   have h_dist : IdentDistrib F (fun p : Z × H ↦ F (i p.2 * T p.1)) (Γ.cutoffMeasure μ)
       (m.prod (Λ.cutoffMeasure ν)) :=
-    (isOrbitCutoff_orbitCutoff _).identDistrib_withDensity_of_measurePreserving
-      (measurePreserving_count_equiv e.toEquiv) h_unfold hF hT.measurable
-      fun γ ↦ hF_inv γ γ.property
+    identDistrib_cutoffMeasure_of_measurePreserving e.toEquiv.measurePreserving_count h_unfold hF
+      hT.measurable fun γ ↦ hF_inv γ γ.property
   have h_int := h_dist.integrable_snd hF_int
   exact ⟨h_int.integral_prod_left, h_dist.integral_eq.trans (integral_prod _ h_int)⟩
-
-/-- The measure computing integrals over `i(H) \ G`, carried by `G`: `μ` weighted by an orbit cutoff
-of the action of `H` on `G` by left translation through `i`, for the measure `ν`. -/
-noncomputable def cosetMeasure (i : H →* G) : Measure G :=
-  letI := MulAction.compHom G i
-  ν.cutoffMeasure μ
 
 /-- **Integration in stages along a closed subgroup.** Let `i : H → G` be a closed embedding with
 `ν` also right invariant, and `F` measurable, left `i(Λ)`-invariant and integrable over
@@ -138,20 +172,12 @@ theorem integral_cutoffMeasure_eq_integral_cosetMeasure [ν.IsMulRightInvariant]
     (hi : IsClosedEmbedding i) {F : G → V} (hF : Measurable F)
     (hF_inv : ∀ γ ∈ Λ.map i, ∀ g, F (γ * g) = F g)
     (hF_int : Integrable F ((Λ.map i).cutoffMeasure μ)) :
-    Integrable (fun g ↦ ∫ a, F (i a * g) ∂Λ.cutoffMeasure ν) (cosetMeasure μ ν i) ∧
+    Integrable (fun g ↦ ∫ a, F (i a * g) ∂Λ.cutoffMeasure ν) (μ.cosetMeasure ν i) ∧
       ∫ g, F g ∂(Λ.map i).cutoffMeasure μ =
-        ∫ g, ∫ a, F (i a * g) ∂Λ.cutoffMeasure ν ∂cosetMeasure μ ν i := by
-  let : MulAction H G := MulAction.compHom G i
-  have : SMulInvariantMeasure H G μ := ⟨by simp [MulAction.compHom_smul_def]⟩
-  have : MeasurableSMul₂ H G :=
-    ⟨((hi.continuous.comp continuous_fst).mul continuous_snd).measurable⟩
-  have : ProperSMul H G := properSMul_of_isClosedEmbedding i hi fun _ _ ↦ rfl
-  have : ν.IsInvInvariant := isInvInvariant_of_isMulRightInvariant ν
+        ∫ g, ∫ a, F (i a * g) ∂Λ.cutoffMeasure ν ∂μ.cosetMeasure ν i := by
   have : DiscreteTopology (Λ.map i) := (hi.isEmbedding.homeomorphImage Λ).discreteTopology
-  have : SFinite (cosetMeasure μ ν i) := inferInstanceAs (SFinite (ν.cutoffMeasure μ))
-  have h_unfold : MeasurePreserving (fun p : G × H ↦ i p.2 * p.1) ((cosetMeasure μ ν i).prod ν) μ :=
-    measurePreserving_cutoffMeasure
-  exact integral_cutoffMeasure_stages Λ μ ν (fun g ↦ g) hi.injective h_unfold rfl hF hF_inv hF_int
+  exact integral_cutoffMeasure_stages Λ μ ν (fun g ↦ g) hi.injective
+    (measurePreserving_cosetMeasure μ ν hi) rfl hF hF_inv hF_int
 
 /-! ### Vanishing of quotient integrals by averaging or by a twist -/
 
@@ -197,6 +223,8 @@ theorem integral_cutoffMeasure_eq_zero_of_mean (hF : Continuous F)
   obtain ⟨x, hx⟩ : ∃ x : G, ∫ s, F (s * x) ∂σ ≠ 0 :=
     exists_ne_zero_of_integral_ne_zero (by rwa [← h_integral_eq])
   -- right translation by `t x b` multiplies the measure of `Γ \ H` by `d`
+  -- supplied explicitly: instance search for it exhausts its budget in this context
+  have : HasOrbitCutoff (count : Measure Λ) H := hasOrbitCutoff_of_properSMul
   have h_dist (b : C) :
       IdentDistrib (fun s : H ↦ F (s * t x b * x)) (fun s : H ↦ F (s * x)) σ (d • σ) := by
     simpa [σ, cutoffMeasure_def, ← coe_nnreal_smul, withDensity_smul_measure, Function.comp_def]
@@ -229,6 +257,7 @@ theorem integral_cutoffMeasure_eq_zero_of_twist (hF : Continuous F)
       mul_mem' := fun {r s} hr hs t y ↦ by rw [mul_assoc, hr, hs]
       inv_mem' := fun {s} hs t y ↦ by simpa using (hs (s⁻¹ * t) y).symm }
   have hS : IsClosed (S : Set G) := by
+    -- the carrier of `S` is the set defining it, an intersection of closed sets
     change IsClosed {s : G | ∀ r y, defect (s * r) y = defect r y}
     simp only [ofPred_forall]
     exact isClosed_iInter fun r ↦ isClosed_iInter fun y ↦ isClosed_eq (by fun_prop) continuous_const

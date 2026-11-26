@@ -32,10 +32,11 @@ the measure that computes integrals over `H \ X` when the action has a cutoff
 (`MeasureTheory.HasOrbitCutoff`). For a subgroup `Γ` of a group `G`, acting by left multiplication
 with counting measure, `Subgroup.cutoffMeasure Γ μ` computes integrals over `Γ \ G`.
 
-This is a measure-theoretic notion, unrelated to the smooth cutoff functions
-`TauCeti.MulAction.IsCutoff` of proper actions on manifolds. For a countable group with counting
-measure an orbit cutoff is a measurable weight whose values along every orbit sum to one
-(`MeasureTheory.isOrbitCutoff_count_iff`).
+This is a measure-theoretic notion, distinct from the topological cutoff functions
+`TauCeti.MulAction.IsCutoff`: real-valued nonnegative functions whose translates sum to one at every
+point and whose support meets the translates of each compact set for only finitely many group
+elements. For a countable group with counting measure an orbit cutoff is a measurable weight whose
+values along every orbit sum to one (`MeasureTheory.isOrbitCutoff_count_iff`).
 
 ## Main definitions
 
@@ -52,6 +53,8 @@ measure an orbit cutoff is a measurable weight whose values along every orbit su
   functions.
 * `MeasureTheory.IsOrbitCutoff.identDistrib_withDensity_of_measurePreserving`: an invariant `F`
   under `β μ` has the distribution of `F ∘ T` under any measure `m` unfolding to `μ` along `T`.
+* `MeasureTheory.identDistrib_cutoffMeasure_of_measurePreserving`: the same for the measure
+  `ν.cutoffMeasure μ` weighted by the chosen cutoff.
 * `MeasureTheory.IsOrbitCutoff.identDistrib_withDensity`: independence of the cutoff.
 * `MeasureTheory.identDistrib_cutoffMeasure_comp`: change of variables along an equivariant measure
   preserving map.
@@ -111,13 +114,18 @@ noncomputable def Measure.orbitCutoff : X → ℝ≥0∞ :=
 cutoff, `ν` is inversion invariant and `μ` is `H`-invariant, both s-finite, integrating an
 `H`-invariant function against it computes its integral over `H \ X`, and every cutoff gives the
 same result (`MeasureTheory.IsOrbitCutoff.identDistrib_withDensity`). -/
-@[expose] noncomputable def Measure.cutoffMeasure (μ : Measure X) : Measure X :=
+noncomputable def Measure.cutoffMeasure (μ : Measure X) : Measure X :=
   μ.withDensity ν.orbitCutoff
 
 /-- If the action has an orbit cutoff, the chosen weight `ν.orbitCutoff` is an orbit cutoff. -/
 theorem Measure.isOrbitCutoff_orbitCutoff [h : HasOrbitCutoff ν X] :
     IsOrbitCutoff ν (ν.orbitCutoff : X → ℝ≥0∞) :=
   Classical.epsilon_spec h.exists_isOrbitCutoff
+
+/-- An orbit cutoff gives the action an orbit cutoff. -/
+theorem IsOrbitCutoff.hasOrbitCutoff {ν : Measure H} {β : X → ℝ≥0∞} (hβ : IsOrbitCutoff ν β) :
+    HasOrbitCutoff ν X :=
+  ⟨β, hβ⟩
 
 /-- The measure `cutoffMeasure ν μ` is `μ` weighted by the chosen cutoff. -/
 theorem Measure.cutoffMeasure_def (μ : Measure X) :
@@ -169,6 +177,20 @@ theorem IsOrbitCutoff.identDistrib_withDensity_of_measurePreserving (hβ : IsOrb
         refine lintegral_congr fun z ↦ ?_
         rw [lintegral_mul_const _ (by fun_prop), h_orbit, one_mul]
     _ = ∫⁻ y, f y ∂m.map (F ∘ T) := (lintegral_map hf (hF.comp hT)).symm
+
+/-- **The quotient integral does not depend on how `μ` is unfolded**, for the chosen cutoff. Let `σ`
+carry an s-finite measure `ρ` to `ν`, and let `(z, l) ↦ σ l • T z` carry `m × ρ` to `μ`, with `T`
+measurable. Then a measurable `H`-invariant function `F` has the same distribution under
+`ν.cutoffMeasure μ` as `F ∘ T` under `m`. -/
+theorem identDistrib_cutoffMeasure_of_measurePreserving [HasOrbitCutoff ν X] {Z L : Type*}
+    [MeasurableSpace Z] [MeasurableSpace L] {ρ : Measure L} [SFinite ρ] {σ : L → H}
+    (hσ : MeasurePreserving σ ρ ν) {T : Z → X} {m : Measure Z}
+    (hT_unfold : MeasurePreserving (fun p : Z × L ↦ σ p.2 • T p.1) (m.prod ρ) μ)
+    (hF : Measurable F) (hT : Measurable T) (hF_inv : ∀ (h : H) (x : X), F (h • x) = F x) :
+    IdentDistrib F (F ∘ T) (ν.cutoffMeasure μ) m := by
+  rw [cutoffMeasure_def]
+  exact (isOrbitCutoff_orbitCutoff ν).identDistrib_withDensity_of_measurePreserving hσ hT_unfold hF
+    hT hF_inv
 
 end Unfold
 
@@ -291,7 +313,7 @@ theorem integral_cutoffMeasure_integral [HasOrbitCutoff ν X] {E : Type*} [Norme
 theorem IsOrbitCutoff.identDistrib_cutoffMeasure (hβ : IsOrbitCutoff ν β) (hF : Measurable F)
     (hF_inv : ∀ (h : H) (x : X), F (h • x) = F x) :
     IdentDistrib F F (ν.cutoffMeasure μ) (μ.withDensity β) :=
-  haveI : HasOrbitCutoff ν X := ⟨β, hβ⟩
+  haveI : HasOrbitCutoff ν X := hβ.hasOrbitCutoff
   (isOrbitCutoff_orbitCutoff ν).identDistrib_withDensity hβ hF hF_inv
 
 /-- For any orbit cutoff `β`, the lower integral of a measurable `H`-invariant function over `H \ X`
@@ -301,7 +323,7 @@ theorem IsOrbitCutoff.lintegral_cutoffMeasure (hβ : IsOrbitCutoff ν β) {F : X
     ∫⁻ x, F x ∂ν.cutoffMeasure μ = ∫⁻ x, β x * F x ∂μ := by
   rw [(hβ.identDistrib_cutoffMeasure hF hF_inv).lintegral_eq,
     lintegral_withDensity_eq_lintegral_mul _ hβ.measurable hF]
-  rfl
+  simp only [Pi.mul_apply]
 
 /-- For any orbit cutoff `β`, the integral of a measurable `H`-invariant function over `H \ X` is
 `∫_X β F dμ`. -/

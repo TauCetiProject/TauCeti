@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Function.L1Space.HasFiniteIntegral
 public import TauCeti.MeasureTheory.Group.OrbitCutoff.Discrete
 public import TauCeti.MeasureTheory.Measure.Haar.Unique
 
@@ -41,8 +42,7 @@ The statements and proofs are adapted from grh-lean (https://github.com/lsernau/
 (`New.exists_measurable_mul_eq_of_scale`, `New.ofReal_mul_lintegral_iwasawa_translate`,
 `New.lintegral_iwasawa_inv_mul_translate`, `New.lintegral_iwasawa`,
 `New.exists_equiv_prod_subgroupOf`, `New.ofReal_mul_lintegral_quotMeasure_tsum`,
-`New.ae_eq_zero_of_integrable_top_smul`, `New.exists_integral_eq_mul_of_smul_measure`,
-`New.integral_quotMeasure_iwasawa`).
+`New.exists_integral_eq_mul_of_smul_measure`, `New.integral_quotMeasure_iwasawa`).
 -/
 
 public section
@@ -78,35 +78,30 @@ private theorem exists_measurable_mul_eq_of_scale {X : Type*} [MeasurableSpace X
     rw [← hs f hf, ENNReal.mul_div_cancel_right hx_zero hx_top]
   simp only [h_div, mul_assoc, hs φ hφ]
 
-/-- A function that is integrable for `∞ • q` vanishes `q`-almost everywhere. -/
-private theorem ae_eq_zero_of_integrable_top_smul {X : Type*} [MeasurableSpace X] {q : Measure X}
-    {F : X → ℂ} (h_int : Integrable F (∞ • q)) : F =ᵐ[q] 0 := by
-  have hF : AEStronglyMeasurable F q :=
-    h_int.aestronglyMeasurable.mono_ac (absolutelyContinuous_smul ENNReal.top_ne_zero)
-  have h_lt : ∞ * ∫⁻ x, ‖F x‖ₑ ∂q < ∞ := by
-    simpa [HasFiniteIntegral] using h_int.hasFiniteIntegral
-  have h_norm : ∫⁻ x, ‖F x‖ₑ ∂q = 0 := by simpa [ENNReal.mul_lt_top_iff] using h_lt
-  filter_upwards [(lintegral_eq_zero_iff' hF.eNorm).1 h_norm] with x hx using by simpa using hx
-
 /-- Dividing an integral formula by a factor `c ∈ (0, ∞]` of the measure: for finite nonzero `V`
 there is `a ≠ 0` such that if `F` is integrable for `c • q` with integral `V I`, then `F` is
 integrable for `q` with integral `a I`. -/
-private theorem exists_integral_eq_mul_of_smul_measure {X : Type*} [MeasurableSpace X]
-    (q : Measure X) {c V : ℝ≥0∞} (hc : c ≠ 0) (hV_zero : V ≠ 0) (hV_top : V ≠ ∞) :
-    ∃ a ≠ (0 : ℝ), ∀ (F : X → ℂ) (I : ℂ), Integrable F (c • q) →
-      ∫ x, F x ∂(c • q) = V.toReal * I → Integrable F q ∧ ∫ x, F x ∂q = a * I := by
+private theorem exists_integral_eq_mul_of_smul_measure {X E : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (q : Measure X) {c V : ℝ≥0∞} (hc : c ≠ 0)
+    (hV_zero : V ≠ 0) (hV_top : V ≠ ∞) :
+    ∃ a ≠ (0 : ℝ), ∀ (F : X → E) (I : E), Integrable F (c • q) →
+      ∫ x, F x ∂(c • q) = V.toReal • I → Integrable F q ∧ ∫ x, F x ∂q = a • I := by
   have hV : V.toReal ≠ 0 := ENNReal.toReal_ne_zero.2 ⟨hV_zero, hV_top⟩
   rcases eq_or_ne c ∞ with rfl | hc_top
   · -- for `c = ∞` integrability forces `F = 0` almost everywhere
     refine ⟨1, one_ne_zero, fun F I h_int h_eq ↦ ?_⟩
-    have hF_zero : F =ᵐ[q] 0 := ae_eq_zero_of_integrable_top_smul h_int
-    obtain rfl : I = 0 := by simpa [hV] using h_eq
-    exact ⟨(integrable_zero X ℂ q).congr hF_zero.symm, by simp [integral_eq_zero_of_ae hF_zero]⟩
+    have hF_zero : F =ᵐ[q] 0 := TauCeti.MeasureTheory.ae_eq_zero_of_hasFiniteIntegral_top_smul
+      (h_int.aestronglyMeasurable.mono_ac (absolutelyContinuous_smul ENNReal.top_ne_zero))
+      h_int.hasFiniteIntegral
+    obtain rfl : I = 0 := by
+      rw [integral_smul_measure, ENNReal.toReal_top, zero_smul, eq_comm, smul_eq_zero] at h_eq
+      exact h_eq.resolve_left hV
+    exact ⟨(integrable_zero X E q).congr hF_zero.symm, by simp [integral_eq_zero_of_ae hF_zero]⟩
   · have hc_real : c.toReal ≠ 0 := ENNReal.toReal_ne_zero.2 ⟨hc, hc_top⟩
     refine ⟨V.toReal / c.toReal, div_ne_zero hV hc_real,
       fun F I h_int h_eq ↦ ⟨(integrable_smul_measure hc hc_top).1 h_int, ?_⟩⟩
-    rw [integral_smul_measure, Complex.real_smul] at h_eq
-    simp [div_mul_eq_mul_div, ← h_eq, hc_real]
+    rw [integral_smul_measure] at h_eq
+    rw [div_eq_inv_mul, mul_smul, ← h_eq, smul_smul, inv_mul_cancel₀ hc_real, one_smul]
 
 /-- If `i(a) ∈ N` only for `a = 1`, `δ` is injective, and `Γ` contains every `i(δ d)` and lies in
 the union of the `N i(δ d)⁻¹`, then every element of `Γ` is uniquely `i(δ d) γ` with
@@ -313,12 +308,14 @@ private theorem ofReal_mul_lintegral_cutoffMeasure_tsum {Γ : Subgroup G} [Discr
 `MeasureTheory.exists_lintegral_iwasawa_eq_mul`, let moreover `i(a) ∈ N` only for `a = 1`, and let
 `Γ ⊂ G` be discrete with `Γ ∩ N` cocompact in `N` and `Γ = (Γ ∩ N) · i(δ(D))` for an injective
 `δ : D → M` from a countable set. Let `α` be a measure on `M` that unfolds to `ν` along `δ`,
-standing for the quotient `δ(D) \ M`. There is `c ≠ 0` such that for every measurable
-`F : G → ℂ`, left invariant under `N` and under `Γ`, with `(m, k) ↦ w(m) F(i(m) k)` integrable for
-`α × κ`, `F` is integrable over `Γ \ G` and `∫_{Γ\G} F = c ∫∫ w(m) F(i(m) k) dα(m) dκ(k)`. -/
-theorem exists_integral_cutoffMeasure_iwasawa (μ : Measure G) [μ.IsHaarMeasure]
+standing for the quotient `δ(D) \ M`. Let `w` be measurable. There is `c ≠ 0` such that for every
+measurable `F` from `G` to a real normed space, left invariant under `N` and under `Γ`, with
+`(m, k) ↦ w(m) F(i(m) k)` integrable for `α × κ`, `F` is integrable over `Γ \ G` and
+`∫_{Γ\G} F = c ∫∫ w(m) F(i(m) k) dα(m) dκ(k)`. -/
+theorem exists_integral_cutoffMeasure_iwasawa {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure G) [μ.IsHaarMeasure]
     [μ.IsMulRightInvariant] {Γ : Subgroup G} [DiscreteTopology Γ] (hN : IsClosed (N : Set G))
-    (hw : Continuous w) (hw_pos : ∀ m, 0 < w m) (hi : Continuous i)
+    (hw : Measurable w) (hw_pos : ∀ m, 0 < w m) (hi : Continuous i)
     (h_dec : ∀ g : G, ∃ (n : N) (m : M) (k : K), g = n * i m * k)
     (h_conj : ∀ m (f : G → ℝ≥0∞), Measurable f →
       ∫⁻ n : N, f (i m * n * (i m)⁻¹) ∂lam = .ofReal (w m) * ∫⁻ n : N, f n ∂lam)
@@ -327,11 +324,11 @@ theorem exists_integral_cutoffMeasure_iwasawa (μ : Measure G) [μ.IsHaarMeasure
     (hα : ∀ f : M → ℝ≥0∞, Measurable f → ∫⁻ m, f m ∂ν = ∫⁻ m, ∑' d, f (δ d * m) ∂α)
     (hδ_mem : ∀ d, i (δ d) ∈ Γ) (hΓ : ∀ g ∈ Γ, ∃ d, g * i (δ d) ∈ N)
     {C : Set N} (hC : IsCompact C) (hΓC : ((Γ.subgroupOf N : Set N)) * C = univ) :
-    ∃ c ≠ (0 : ℝ), ∀ F : G → ℂ, Measurable F → (∀ n ∈ N, ∀ g, F (n * g) = F g) →
+    ∃ c ≠ (0 : ℝ), ∀ F : G → E, Measurable F → (∀ n ∈ N, ∀ g, F (n * g) = F g) →
       (∀ γ ∈ Γ, ∀ g, F (γ * g) = F g) →
-      Integrable (fun p : M × K ↦ (w p.1 : ℂ) * F (i p.1 * p.2)) (α.prod κ) →
+      Integrable (fun p : M × K ↦ w p.1 • F (i p.1 * p.2)) (α.prod κ) →
       Integrable F (Γ.cutoffMeasure μ) ∧
-        ∫ g, F g ∂Γ.cutoffMeasure μ = c * ∫ p : M × K, (w p.1 : ℂ) * F (i p.1 * p.2) ∂α.prod κ := by
+        ∫ g, F g ∂Γ.cutoffMeasure μ = c • ∫ p : M × K, w p.1 • F (i p.1 * p.2) ∂α.prod κ := by
   -- By the Iwasawa formula, `w (α × κ) × (Γ ∩ N) \ N` in the coordinates `n i(m) k` unfolds to
   -- `r • μ` along `Γ`; `(Γ ∩ N) \ N` has finite volume, so `N` is unimodular.
   have : LocallyCompactSpace N := hN.locallyCompactSpace
@@ -363,7 +360,7 @@ theorem exists_integral_cutoffMeasure_iwasawa (μ : Measure G) [μ.IsHaarMeasure
       _ = ∫⁻ k : K, ∫⁻ m : M, ∫⁻ n : N, f (i m * n * k) ∂lam ∂ν ∂κ :=
         lintegral_congr fun k ↦ (hα (fun m ↦ ∫⁻ n : N, f (i m * n * k) ∂lam) (by fun_prop)).symm
       _ = ∫⁻ g, f g ∂(r • μ) := by rw [h_iwa f hf, lintegral_smul_measure, smul_eq_mul]
-  obtain ⟨c, hc, h_div⟩ := exists_integral_eq_mul_of_smul_measure (Γ.cutoffMeasure μ) hr
+  obtain ⟨c, hc, h_div⟩ := exists_integral_eq_mul_of_smul_measure (E := E) (Γ.cutoffMeasure μ) hr
     (NeZero.ne (lam' univ)) (measure_ne_top lam' univ)
   refine ⟨c, hc, fun F hF hFN hFΓ h_weighted ↦ ?_⟩
   -- By `h_unfold`, `F` on `Γ \ G` has the law of `F ∘ τ`, which does not depend on `n`.

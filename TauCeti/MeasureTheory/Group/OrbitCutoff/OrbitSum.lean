@@ -110,35 +110,26 @@ theorem lintegral_tsum_block (hS : S ≤ Γ) (hC : ∀ γ : Γ, ∀ y ∈ C, γ 
     _ = ∫⁻ x, ∑' y : C, g y x ∂S.cutoffMeasure μ := by
         rw [Subgroup.cutoffMeasure, cutoffMeasure_def, lintegral_withDensity_eq_lintegral_mul _ hβ.1
           (Measurable.tsum fun y : C ↦ hg y)]
-        rfl
+        simp only [Pi.mul_apply, β]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E]
 
-omit [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] in
-/-- For integrable `(x, y) ↦ k_y x` on `X × Y`, `Y` countable with counting measure, the integral is
-that of `x ↦ ∑ y, k_y x`. -/
-private theorem integral_prod_count_eq_integral_tsum {X Z : Type*} [MeasurableSpace X]
-    [MeasurableSpace Z] [MeasurableSingletonClass Z] [Countable Z] {m : Measure X} [SFinite m]
-    {k : Z → X → E} (h_int : Integrable (fun p : X × Z ↦ k p.2 p.1) (m.prod count)) :
-    ∫ p : X × Z, k p.2 p.1 ∂m.prod count = ∫ x, ∑' z, k z x ∂m := by
-  rw [integral_prod _ h_int]
-  refine integral_congr_ae ?_
-  filter_upwards [h_int.prod_right_ae] with x hx
-  rw [integral_countable hx]
-  simp [measureReal_def]
-
 /-- **Unfolding over a block.** Let `γ ∈ Γ` carry a point of `C ⊂ Y` into `C` exactly when
 `γ ∈ S ⊂ Γ`, let `D` be the union of the translates of `C`, and let the `k_y` be measurable with
 `k_{γ • y} (γ x) = k_y (x)`. If `∑_{y ∈ D} ‖k_y‖` has finite integral over `Γ \ G`, or
-`∑_{y ∈ C} ‖k_y‖` has finite integral over `S \ G`, then both have, `∑_{y ∈ C} k_y` is integrable
-over `S \ G`, and `∫_{Γ\G} ∑_{y ∈ D} k_y = ∫_{S\G} ∑_{y ∈ C} k_y`. -/
+`∑_{y ∈ C} ‖k_y‖` has finite integral over `S \ G`, then both have, `∑_{y ∈ D} k_y` is integrable
+over `Γ \ G`, `∑_{y ∈ C} k_y` is integrable over `S \ G`, and
+`∫_{Γ\G} ∑_{y ∈ D} k_y = ∫_{S\G} ∑_{y ∈ C} k_y`. -/
 theorem integral_tsum_block (hS : S ≤ Γ) (hC : ∀ γ : Γ, ∀ y ∈ C, γ • y ∈ C ↔ ↑γ ∈ S)
     (hD : ∀ y, y ∈ D ↔ ∃ γ : Γ, γ • y ∈ C) {k : Y → G → E} (hk : ∀ y, Measurable (k y))
     (hk_inv : ∀ (γ : Γ) y x, k (γ • y) (γ * x) = k y x)
     (h_fin : ∫⁻ x, ∑' y : D, ‖k y x‖ₑ ∂Γ.cutoffMeasure μ < ∞ ∨
       ∫⁻ x, ∑' y : C, ‖k y x‖ₑ ∂S.cutoffMeasure μ < ∞) :
-    Integrable (fun x ↦ ∑' y : C, k y x) (S.cutoffMeasure μ) ∧
+    ∫⁻ x, ∑' y : D, ‖k y x‖ₑ ∂Γ.cutoffMeasure μ < ∞ ∧
+      ∫⁻ x, ∑' y : C, ‖k y x‖ₑ ∂S.cutoffMeasure μ < ∞ ∧
+      Integrable (fun x ↦ ∑' y : D, k y x) (Γ.cutoffMeasure μ) ∧
+      Integrable (fun x ↦ ∑' y : C, k y x) (S.cutoffMeasure μ) ∧
       ∫ x, ∑' y : D, k y x ∂Γ.cutoffMeasure μ = ∫ x, ∑' y : C, k y x ∂S.cutoffMeasure μ := by
   -- `(x, y) ↦ k_y x` has the same law on `(Γ \ G) × D` and on `(S \ G) × C`; then Fubini.
   let : MeasurableSpace Y := ⊤
@@ -147,6 +138,8 @@ theorem integral_tsum_block (hS : S ≤ Γ) (hC : ∀ γ : Γ, ∀ y ∈ C, γ �
     lintegral_tsum_block hS hC hD (g := fun y x ↦ f (k y x)) (fun y ↦ hf.comp (hk y))
       fun γ y x ↦ by simp [hk_inv]
   rw [h_unfold _ measurable_eNorm, or_self] at h_fin
+  have hD_fin : ∫⁻ x, ∑' y : D, ‖k y x‖ₑ ∂Γ.cutoffMeasure μ < ∞ := by
+    rwa [h_unfold _ measurable_eNorm]
   have h_meas (T : Set Y) : Measurable fun p : G × T ↦ k p.2 p.1 :=
     measurable_from_prod_countable_left fun y ↦ hk y
   have h_dist : IdentDistrib (fun p : G × D ↦ k p.2 p.1) (fun p : G × C ↦ k p.2 p.1)
@@ -161,27 +154,28 @@ theorem integral_tsum_block (hS : S ≤ Γ) (hC : ∀ γ : Γ, ∀ y ∈ C, γ �
     rw [HasFiniteIntegral, lintegral_prod _ (h_meas C).eNorm.aemeasurable]
     simpa only [lintegral_count] using h_fin
   have hD_int := h_dist.integrable_iff.2 hC_int
-  refine ⟨?_, ?_⟩
-  · refine hC_int.integral_prod_left.congr ?_
-    filter_upwards [hC_int.prod_right_ae] with x hx
-    rw [integral_countable hx]
-    simp [measureReal_def]
-  · calc ∫ x, ∑' y : D, k y x ∂Γ.cutoffMeasure μ
-        _ = ∫ p : G × D, k p.2 p.1 ∂(Γ.cutoffMeasure μ).prod count :=
-          (integral_prod_count_eq_integral_tsum (k := fun (y : D) x ↦ k y x) hD_int).symm
-        _ = ∫ p : G × C, k p.2 p.1 ∂(S.cutoffMeasure μ).prod count := h_dist.integral_eq
-        _ = ∫ x, ∑' y : C, k y x ∂S.cutoffMeasure μ :=
-          integral_prod_count_eq_integral_tsum (k := fun (y : C) x ↦ k y x) hC_int
+  refine ⟨hD_fin, h_fin,
+    integrable_tsum_of_integrable_prod_count (k := fun (y : D) x ↦ k y x) hD_int,
+    integrable_tsum_of_integrable_prod_count (k := fun (y : C) x ↦ k y x) hC_int, ?_⟩
+  calc ∫ x, ∑' y : D, k y x ∂Γ.cutoffMeasure μ
+      _ = ∫ p : G × D, k p.2 p.1 ∂(Γ.cutoffMeasure μ).prod count :=
+        (integral_prod_count_eq_integral_tsum (k := fun (y : D) x ↦ k y x) hD_int).symm
+      _ = ∫ p : G × C, k p.2 p.1 ∂(S.cutoffMeasure μ).prod count := h_dist.integral_eq
+      _ = ∫ x, ∑' y : C, k y x ∂S.cutoffMeasure μ :=
+        integral_prod_count_eq_integral_tsum (k := fun (y : C) x ↦ k y x) hC_int
 
 /-- **Unfolding over an orbit.** Let the `k_y` be measurable with `k_{γ • y} (γ x) = k_y (x)`, and
 let `Γ_y` be the stabiliser of `y`, as a subgroup of `G`. If the sum of `‖k_z‖` over the orbit of
-`y` has finite integral over `Γ \ G`, or `k_y` is integrable over `Γ_y \ G`, then `k_y` is
-integrable over `Γ_y \ G` and `∫_{Γ\G} ∑_{z ∈ Γ y} k_z = ∫_{Γ_y\G} k_y`. -/
+`y` has finite integral over `Γ \ G`, or `k_y` is integrable over `Γ_y \ G`, then both hold, the
+sum of the `k_z` over the orbit is integrable over `Γ \ G`, and
+`∫_{Γ\G} ∑_{z ∈ Γ y} k_z = ∫_{Γ_y\G} k_y`. -/
 theorem integral_tsum_orbit_eq_integral_stabilizer {k : Y → G → E} (hk : ∀ y, Measurable (k y))
     (hk_inv : ∀ (γ : Γ) y x, k (γ • y) (γ * x) = k y x) {y : Y}
     (h_fin : ∫⁻ x, ∑' z : orbit Γ y, ‖k z x‖ₑ ∂Γ.cutoffMeasure μ < ∞ ∨
       Integrable (k y) (((stabilizer Γ y).map Γ.subtype).cutoffMeasure μ)) :
-    Integrable (k y) (((stabilizer Γ y).map Γ.subtype).cutoffMeasure μ) ∧
+    ∫⁻ x, ∑' z : orbit Γ y, ‖k z x‖ₑ ∂Γ.cutoffMeasure μ < ∞ ∧
+      Integrable (fun x ↦ ∑' z : orbit Γ y, k z x) (Γ.cutoffMeasure μ) ∧
+      Integrable (k y) (((stabilizer Γ y).map Γ.subtype).cutoffMeasure μ) ∧
       ∫ x, ∑' z : orbit Γ y, k z x ∂Γ.cutoffMeasure μ =
         ∫ x, k y x ∂((stabilizer Γ y).map Γ.subtype).cutoffMeasure μ := by
   -- The block `C = {y}`: the orbit is the union of its translates.
@@ -195,6 +189,10 @@ theorem integral_tsum_orbit_eq_integral_stabilizer {k : Y → G → E} (hk : ∀
   have h_block : ∫⁻ x, ∑' z : orbit Γ y, ‖k z x‖ₑ ∂Γ.cutoffMeasure μ < ∞ ∨
       ∫⁻ x, ∑' z : ({y} : Set Y), ‖k z x‖ₑ ∂((stabilizer Γ y).map Γ.subtype).cutoffMeasure μ < ∞ :=
     h_fin.imp_right fun h_int ↦ by simpa [HasFiniteIntegral] using h_int.hasFiniteIntegral
-  simpa using integral_tsum_block (μ := μ) hS hC hD hk hk_inv h_block
+  obtain ⟨h_orbit, -, h_int, h_int', h_eq⟩ :=
+    integral_tsum_block (μ := μ) hS hC hD hk hk_inv h_block
+  simp only [tsum_fintype, Finset.univ_unique, default_coe_singleton, Finset.sum_singleton]
+    at h_int' h_eq
+  exact ⟨h_orbit, h_int, h_int', h_eq⟩
 
 end Subgroup

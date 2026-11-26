@@ -8,10 +8,12 @@ module
 public import Mathlib.MeasureTheory.Group.FundamentalDomain
 public import Mathlib.MeasureTheory.Group.ModularCharacter
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
-public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.MeasureTheory.Group.OrbitCutoff.Basic
+public import TauCeti.MeasureTheory.Integral.Bochner.SumMeasure
 public import TauCeti.MeasureTheory.Measure.Count.Topology
+public import TauCeti.MeasureTheory.Measure.Haar.Unimodular
+public import TauCeti.Topology.Algebra.Group.DiscreteSubgroup
 
 /-!
 # Orbit cutoffs of proper actions and of discrete subgroups
@@ -31,11 +33,6 @@ covolume is finite, `μ` is also right invariant
 (`Subgroup.isMulRightInvariant_of_isFiniteMeasure_cutoffMeasure`), and the covolume is finite when
 some compact set meets every orbit (`Subgroup.isFiniteMeasure_cutoffMeasure_of_isCompact`).
 
-Two facts on unimodular groups are used throughout: every s-finite right invariant measure is a
-multiple of a right invariant Haar measure
-(`MeasureTheory.Measure.exists_eq_smul_of_isMulRightInvariant`), and a right invariant Haar measure
-is invariant under inversion (`MeasureTheory.Measure.isInvInvariant_of_isMulRightInvariant`).
-
 Finally, the integral over a quotient by a countable group acting diagonally on a product of a
 subgroup `R ⊂ G` and `G` may be taken over either factor
 (`MeasureTheory.integral_cutoff_swap`).
@@ -47,9 +44,7 @@ subgroup `R ⊂ G` and `G` may be taken over either factor
 The statements and proofs are adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache
 2.0, Copyright 2026 Anthropic PBC), `src/Lib/Adelic/QuotientMeasure/Basic.lean`
 (`New.hasCutoff_of_proper`, `New.integral_quotMeasure_tsum`,
-`New.isMulRightInvariant_of_finite_covolume`, `New.isFiniteMeasure_quotMeasure_of_cocompact`,
-`New.exists_eq_smul_haar`, and the instance for `IsInvInvariant` of a right invariant Haar measure)
-and
+`New.isMulRightInvariant_of_finite_covolume`, `New.isFiniteMeasure_quotMeasure_of_cocompact`) and
 `src/Lib/Adelic/QuotientMeasure/MovingTheQuotient.lean` (`New.integral_cutoff_swap`). The comparison
 with fundamental domains is new.
 -/
@@ -59,45 +54,6 @@ public section
 open MeasureTheory Measure Set
 
 open scoped ENNReal Pointwise
-
-namespace MeasureTheory.Measure
-
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
-  [MeasurableSpace G] [BorelSpace G] (μ : Measure G) [μ.IsHaarMeasure]
-
-/-- On a group with a right invariant left Haar measure `μ`, every s-finite right invariant measure
-is `d • μ` for some `d ∈ [0, ∞]`. -/
-theorem exists_eq_smul_of_isMulRightInvariant [SecondCountableTopology G] [μ.IsMulRightInvariant]
-    {ν : Measure G} [SFinite ν] [ν.IsMulRightInvariant] : ∃ d : ℝ≥0∞, ν = d • μ := by
-  -- Compare `ν.inv` with `(μ V)⁻¹ • μ` for a set `V` of finite positive measure, by
-  -- `measure_mul_lintegral_eq`; right invariance of `μ` makes the weight there one.
-  obtain ⟨V, hV_meas, -, hV_pos, hV_fin⟩ :
-      ∃ V : Set G, MeasurableSet V ∧ V ⊆ univ ∧ 0 < μ V ∧ μ V < ∞ :=
-    μ.exists_subset_measure_lt_top .univ (NeZero.pos _)
-  refine ⟨ν.inv V * (μ V)⁻¹, Eq.symm (ext_of_lintegral _ fun f hf ↦ ?_)⟩
-  have h_compare : ν.inv V * ∫⁻ y, f y ∂(μ V)⁻¹ • μ =
-      ∫⁻ x, ((μ V)⁻¹ • μ) ((· * x) ⁻¹' V) * f x⁻¹ ∂ν.inv :=
-    measure_mul_lintegral_eq ν.inv ((μ V)⁻¹ • μ) hV_meas f hf
-  have h_weight (x : G) : ((μ V)⁻¹ • μ) ((· * x) ⁻¹' V) = 1 := by
-    simp [measure_preimage_mul_right, ENNReal.inv_mul_cancel hV_pos.ne' hV_fin.ne]
-  simpa [h_weight, mul_assoc, measurableEmbedding_inv.lintegral_map, inv_def] using h_compare
-
-/-- A right invariant Haar measure is invariant under inversion. -/
-theorem isInvInvariant_of_isMulRightInvariant [SecondCountableTopology G]
-    [μ.IsMulRightInvariant] : μ.IsInvInvariant := by
-  -- `μ.inv` and `μ` are left invariant, so both are multiples of the Haar measure normalised on
-  -- `K = K₀ ∪ K₀⁻¹`; the factors agree because `K` is symmetric.
-  obtain ⟨K₀⟩ : Nonempty (TopologicalSpace.PositiveCompacts G) := inferInstance
-  let K : TopologicalSpace.PositiveCompacts G := K₀ ⊔ K₀.map _ continuous_inv (isOpenMap_inv G)
-  have h_mass : μ.inv K = μ K := by
-    simp only [K, Measure.inv_apply]
-    simp [inv_inv, union_comm]
-  constructor
-  calc μ.inv = μ.inv K • haarMeasure K := haarMeasure_unique _ K
-    _ = μ K • haarMeasure K := by rw [h_mass]
-    _ = μ := (haarMeasure_unique μ K).symm
-
-end MeasureTheory.Measure
 
 namespace MeasureTheory
 
@@ -195,16 +151,6 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Loca
   [SecondCountableTopology G] [T2Space G] [MeasurableSpace G] [BorelSpace G]
   (Γ : Subgroup G) [DiscreteTopology Γ] {μ : Measure G} [μ.IsHaarMeasure]
 
-omit [IsTopologicalGroup G] [LocallyCompactSpace G] [SecondCountableTopology G] [T2Space G]
-  [MeasurableSpace G] [BorelSpace G] in
-/-- The trace `Γ ∩ N` of a discrete subgroup on a subgroup `N` is discrete in `N`. -/
-instance discreteTopology_subgroupOf (N : Subgroup G) : DiscreteTopology (Γ.subgroupOf N) :=
-  .preimage_of_continuous_injective (Γ : Set G) continuous_subtypeVal Subtype.val_injective
-
-/-- A discrete subgroup of a second countable locally compact group, with counting measure, acting
-by left multiplication has an orbit cutoff. -/
-instance hasOrbitCutoff_count : HasOrbitCutoff (count : Measure Γ) G := inferInstance
-
 /-- **Unfolding over a discrete subgroup** (Weil's formula): for `f` integrable for a left Haar
 measure `μ`, `g ↦ ∑ γ, f (γ g)` is integrable over `Γ \ G` and its integral is `∫ f dμ`. -/
 theorem integral_cutoffMeasure_tsum {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -217,10 +163,8 @@ theorem integral_cutoffMeasure_tsum {E : Type*} [NormedAddCommGroup E] [NormedSp
   have h_int : Integrable (fun p : G × Γ ↦ f (p.2 * p.1)) ((Γ.cutoffMeasure μ).prod count) :=
     (measurePreserving_cutoffMeasure (ν := (count : Measure Γ))).integrable_comp_of_integrable hf
   have h_ae : (fun g ↦ ∫ γ : Γ, f (γ * g) ∂count) =ᵐ[Γ.cutoffMeasure μ]
-      fun g ↦ ∑' γ : Γ, f (γ * g) := by
-    filter_upwards [h_int.prod_right_ae] with g hg
-    rw [integral_countable hg]
-    simp [measureReal_def]
+      fun g ↦ ∑' γ : Γ, f (γ * g) :=
+    integral_count_ae_eq_tsum_of_integrable_prod (k := fun (γ : Γ) g ↦ f (γ * g)) h_int
   obtain ⟨h₁, h₂⟩ := integral_cutoffMeasure_integral (ν := (count : Measure Γ)) (μ := μ) hf
   exact ⟨h₁.congr h_ae, (integral_congr_ae h_ae).symm.trans h₂⟩
 
@@ -247,10 +191,14 @@ theorem isMulRightInvariant_of_isFiniteMeasure_cutoffMeasure
       (fun γ x ↦ smul_mul_assoc γ x g) measurable_const fun _ _ ↦ rfl).symm.lintegral_eq
   have h_scale : (modularCharacterFun g : ℝ≥0∞) * Γ.cutoffMeasure μ univ =
       Γ.cutoffMeasure μ univ := by
-    simpa [cutoffMeasure_def, ← coe_nnreal_smul, withDensity_smul_measure,
-      -withDensity_apply] using h_vol
+    rw [lintegral_one, lintegral_one, Subgroup.cutoffMeasure, Subgroup.cutoffMeasure,
+      cutoffMeasure_def, cutoffMeasure_def, ← coe_nnreal_smul, withDensity_smul_measure,
+      smul_apply, smul_eq_mul] at h_vol
+    rwa [Subgroup.cutoffMeasure, cutoffMeasure_def]
   have h_one : modularCharacterFun g = 1 := by
-    simpa [NeZero.ne, ENNReal.mul_eq_right, measure_ne_top] using h_scale
+    rw [← ENNReal.coe_eq_one]
+    exact (ENNReal.mul_eq_right (measure_univ_ne_zero.2 (NeZero.ne _)) (measure_ne_top _ _)).1
+      h_scale
   rw [h_mod, h_one, one_smul]
 
 /-- **A cocompact discrete subgroup has finite covolume**: if `Γ C = G` for a compact set `C`, the
@@ -279,14 +227,16 @@ end Subgroup
 
 /-- **Moving the quotient.** Let `R` be a subgroup of `G` with left invariant measures `ν` on `R`
 and `μ` on `G`, and let `i` be a homomorphism from a countable group `Λ` to `R`. Let `β` be a
-measurable weight on `G` whose `Λ`-translates sum to one. If `F` on `R × G` is measurable,
-invariant under the diagonal action of `Λ`, and `β(s) F(s, x)` is `ν × μ`-integrable, then
+measurable weight on `G` whose `Λ`-translates sum to one. If `F` from `R × G` to a real normed
+space is measurable, invariant under the diagonal action of `Λ`, and `β(s) F(s, x)` is
+`ν × μ`-integrable, then
 `∫_G β(x) ∫_R F(s, x) dν(s) dμ(x) = ∫_R β(s) ∫_G F(s, x) dμ(x) dν(s)`. -/
-theorem integral_cutoff_swap {G Λ : Type*} [Group G] [MeasurableSpace G] [MeasurableMul₂ G]
-    [Group Λ] [Countable Λ] {R : Subgroup G} [MeasurableMul R] (μ : Measure G) [SFinite μ]
+theorem integral_cutoff_swap {G Λ E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [Group G] [MeasurableSpace G] [MeasurableMul₂ G] [Group Λ]
+    [Countable Λ] {R : Subgroup G} [MeasurableMul R] (μ : Measure G) [SFinite μ]
     [μ.IsMulLeftInvariant]
     (ν : Measure R) [SFinite ν] [ν.IsMulLeftInvariant] (i : Λ →* R) {β : G → ℝ≥0∞}
-    (hβ : Measurable β) (hβ_one : ∀ x : G, ∑' l : Λ, β (i l * x) = 1) {F : R × G → ℂ}
+    (hβ : Measurable β) (hβ_one : ∀ x : G, ∑' l : Λ, β (i l * x) = 1) {F : R × G → E}
     (hF : Measurable F) (hF_inv : ∀ (l : Λ) (s : R) (x : G), F (i l * s, i l * x) = F (s, x))
     (h_int : Integrable (fun p : R × G ↦ (β p.1).toReal • F p) (ν.prod μ)) :
     ∫ x, (β x).toReal • ∫ s, F (s, x) ∂ν ∂μ = ∫ s, (β s).toReal • ∫ x, F (s, x) ∂μ ∂ν := by
