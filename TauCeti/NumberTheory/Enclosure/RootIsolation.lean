@@ -29,11 +29,13 @@ region contains exactly one root is part of the datum; a numerical root is never
 exact.
 
 Such data exist for every algebraic `z` and can be taken inside any prescribed neighbourhood of
-`σ z`, with `σ z` in the interior of the region, so no root of `f` lies on its boundary; data of
-finitely many distinct values can be taken pairwise disjoint. Equality of two isolated values is
-decided exactly: `z = z'` if and only if the gcd of the two polynomials has a complex root in the
-intersection of the two regions. Overlapping regions alone prove nothing: `[1, 2]` isolates both
-`√2` (as a root of `X² - 2`) and `√3` (as a root of `X² - 3`).
+`σ z`, with `σ z` in the interior of the region when it is a disc or a rectangle and strictly
+between the endpoints when it is an interval, so no root of `f` lies on the boundary circle, the
+sides or the endpoints of the region; data of finitely many distinct values can be taken pairwise
+disjoint. Equality of two isolated values is decided exactly: `z = z'` if and only if the gcd of
+the two polynomials has a complex root in the intersection of the two regions. Overlapping regions
+alone prove nothing: `[1, 2]` isolates both `√2` (as a root of `X² - 2`) and `√3` (as a root of
+`X² - 3`).
 
 ## Main definitions
 
@@ -55,7 +57,8 @@ intersection of the two regions. Overlapping regions alone prove nothing: `[1, 2
 * `TauCeti.RootIsolation.exists_disc`, `TauCeti.RootIsolation.exists_box`,
   `TauCeti.RootIsolation.exists_interval`: for every squarefree annihilator `f` of `z` and every
   neighbourhood `V` of `σ z`, there is an isolation by `f` whose region is a disc, a rectangle or
-  (when `σ z` is real) an interval contained in `V` and containing `σ z` in its interior.
+  (when `σ z` is real) an interval contained in `V`, with `σ z` in the interior of the disc or
+  rectangle and strictly between the endpoints of the interval.
 * `TauCeti.RootIsolation.nonempty_iff_isAlgebraic`: an element of `K` has a root isolation
   exactly when it is algebraic over `ℚ`.
 * `TauCeti.RootIsolation.exists_diam_lt`: every algebraic value has isolations of arbitrarily
@@ -214,7 +217,7 @@ theorem exists_box_subset {x : ℂ} {V : Set ℂ} (hV : V ∈ 𝓝 x) :
   linarith [hw.1, hw.2]
 
 /-- Every neighbourhood of a real number `x` of `ℂ` contains a real interval with rational
-endpoints containing `x` in its interior. -/
+endpoints, with `x.re` strictly between its endpoints. -/
 theorem exists_interval_subset {x : ℂ} (hx : x.im = 0) {V : Set ℂ} (hV : V ∈ 𝓝 x) :
     ∃ J : NonemptyInterval ℚ, x.re ∈ Set.Ioo (J.fst : ℝ) J.snd ∧ (interval J).toSet ⊆ V := by
   obtain ⟨R, J, hR, hJ, hsub⟩ := exists_box_subset hV
@@ -357,7 +360,7 @@ theorem exists_box {f : ℚ[X]} (hf : Squarefree f) (hz : aeval z f = 0) {V : Se
 
 /-- For every squarefree annihilator `f` of `z` such that `σ z` is real, and every neighbourhood
 `V` of `σ z`, there is an isolation of `z` by `f` whose region is a real interval with rational
-endpoints contained in `V`, with `σ z` in its interior. -/
+endpoints contained in `V`, with `(σ z).re` strictly between its endpoints. -/
 theorem exists_interval {f : ℚ[X]} (hf : Squarefree f) (hz : aeval z f = 0)
     (hreal : (σ z).im = 0) {V : Set ℂ} (hV : V ∈ 𝓝 (σ z)) :
     ∃ (J : NonemptyInterval ℚ) (D : RootIsolation σ z), D.poly = f ∧ D.region = .interval J ∧
