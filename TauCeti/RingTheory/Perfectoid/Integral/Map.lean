@@ -268,9 +268,10 @@ theorem exists_map_teichmuller_mul_eq_and_fontaineTheta_eq {f : A →+* B}
     (IsIntegralPerfectoid.surjective_fontaineTheta (p := p) (A := A))] at hz₂
   obtain ⟨k, hk, hkθ⟩ := hz₂
   refine ⟨v₂ - k, ?_, ?_⟩
-  · rw [RingHom.mem_ker] at hk
-    rw [map_mul, map_teichmuller, map_sub, hk, sub_zero, hv₂, map_sub, map_mul, map_teichmuller,
-      mul_sub, ← mul_assoc, ← map_mul, hm, teichmuller_zero, zero_mul, sub_zero]
+  · have hm' : teichmuller p (PreTilt.map p f a) * teichmuller p (PreTilt.map p f m') = 0 := by
+      rw [← map_mul, hm, teichmuller_zero]
+    simp only [map_mul, map_sub, map_teichmuller, RingHom.mem_ker.mp hk, hv₂, sub_zero]
+    linear_combination (-map (PreTilt.map p f) ε) * hm'
   · rw [map_mul, fontaineTheta_teichmuller, map_sub, hkθ, ← he]
     linear_combination (-(a.untilt * fontaineTheta A p v₂)) * e.mul_inv
 

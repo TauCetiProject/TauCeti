@@ -143,7 +143,11 @@ theorem of_pi [IsIntegralPerfectoid p (∀ i, A i)] (i : ι) : IsIntegralPerfect
 perfectoid. -/
 instance prod {R : Type u} {S : Type v} [CommRing R] [CommRing S] [IsIntegralPerfectoid p R]
     [IsIntegralPerfectoid p S] : IsIntegralPerfectoid p (R × S) := by
-  -- `R × S` is the product of the family `![ULift R, ULift S]` indexed by `Fin 2`.
+  -- `R × S` is the product of the family `![ULift R, ULift S]` indexed by `Fin 2`. The ring
+  -- structures on the factors are built by `Fin.cases`, so `![..] 0` and `![..] 1` reduce by `rfl`
+  -- (`Matrix.cons_val_zero`, `Matrix.cons_val_one`) to `ULift R` and `ULift S` with their usual
+  -- ring structures. This definitional unfolding is what lets `RingEquiv.piFinTwo` compose with
+  -- `ULift.ringEquiv.prodCongr ULift.ringEquiv` below.
   let _ : ∀ i, CommRing (![ULift.{v} R, ULift.{u} S] i) :=
     Fin.cases (inferInstanceAs (CommRing (ULift R)))
       (Fin.cases (inferInstanceAs (CommRing (ULift S))) finZeroElim)
