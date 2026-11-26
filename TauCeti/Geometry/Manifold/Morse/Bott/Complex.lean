@@ -446,6 +446,11 @@ theorem ofBoundary_pushforward (C D : ι) :
     (ofBoundary rank dim boundary hboundary).pushforward C D = 0 :=
   (rfl)
 
+@[simp]
+theorem correspondence_ofBoundary (C D : ι) :
+    (ofBoundary rank dim boundary hboundary).correspondence C D = 0 := by
+  simp [correspondence]
+
 end ofBoundary
 
 /-- Without trajectories, the Bott differential is the internal boundary `(-1)^λ_C ∂` of each
@@ -454,7 +459,7 @@ theorem differential_ofBoundary_apply (rank dim : ι → ℕ) (boundary : ∀ C,
     (hboundary : ∀ C, boundary C ∘ₗ boundary C = 0) (x : ∀ C, M C) (D : ι) :
     (ofBoundary rank dim boundary hboundary).differential x D =
       (rank D : ℤ).negOnePow • boundary D (x D) := by
-  simp [differential_apply, correspondence_apply]
+  simp
 
 end BottChainData
 
