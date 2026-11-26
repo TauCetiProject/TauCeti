@@ -95,6 +95,15 @@ private noncomputable def stdFDRepConjMidEquiv {H K : Subgroup SU2} {g : SU2}
       ↥(FDRep.of (stdRep H)).V :=
   LinearMap.GeneralLinearGroup.toLinearEquiv (Matrix.GeneralLinearGroup.toLin (toGL g⁻¹))
 
+private theorem stdFDRepConjMidEquiv_apply {H K : Subgroup SU2} {g : SU2}
+    (hK : K = H.map (MulAut.conj g : SU2 →* SU2)) (v : Fin 2 → ℂ) :
+    stdFDRepConjMidEquiv hK v = TauCeti.stdRep ℂ 2 (toGL g⁻¹) v :=
+  -- `stdFDRepConjMidEquiv` is defined as `toLinearEquiv (toLin (toGL g⁻¹))` across the
+  -- definitional equality between `Action.res` / `FDRep.of` carriers and `Fin 2 → ℂ`.
+  (LinearMap.GeneralLinearGroup.coe_toLinearEquiv
+      (Matrix.GeneralLinearGroup.toLin (toGL g⁻¹))).symm ▸
+    by rw [Matrix.GeneralLinearGroup.toLin_apply, ← TauCeti.stdRep_apply]
+
 open CategoryTheory in
 private noncomputable def stdFDRepConjMid {H K : Subgroup SU2} {g : SU2}
     (hK : K = H.map (MulAut.conj g : SU2 →* SU2)) :
@@ -105,40 +114,28 @@ private noncomputable def stdFDRepConjMid {H K : Subgroup SU2} {g : SU2}
       FDRep.of (stdRep H) :=
   let φ : H →* K :=
     (((MulAut.conj g).subgroupMap H).trans (MulEquiv.subgroupCongr hK.symm) : H ≃* K)
-  let e : (Fin 2 → ℂ) ≃ₗ[ℂ] (Fin 2 → ℂ) :=
-    LinearMap.GeneralLinearGroup.toLinearEquiv (Matrix.GeneralLinearGroup.toLin (toGL g⁻¹))
   LinearEquiv.toFDRepIso (X := (Action.res (FGModuleCat ℂ) φ).obj (FDRep.of (stdRep K)))
     (Y := FDRep.of (stdRep H)) (stdFDRepConjMidEquiv hK) fun h v ↦ by
-    have he (x : Fin 2 → ℂ) : e x = TauCeti.stdRep ℂ 2 (toGL g⁻¹) x := by
-      dsimp only [e]
-      rw [LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
-        Matrix.GeneralLinearGroup.toLin_apply, ← TauCeti.stdRep_apply]
     have hval : ((φ h : K) : SU2) = g * h.val * g⁻¹ := by
       simp only [φ, MonoidHom.coe_ofClass, MulEquiv.trans_apply,
         MulEquiv.subgroupCongr_apply, MulEquiv.coe_subgroupMap_apply, MulAut.conj_apply]
     rw [LinearMap.congr_fun (FDRep.res_ρ φ (FDRep.of (stdRep K)) h) v, FDRep.of_ρ', FDRep.of_ρ']
+    -- View `v` in `Fin 2 → ℂ` (definitionally equal to the `Action.res` / `FDRep.of` carrier)
+    -- so `stdFDRepConjMidEquiv_apply` and `TauCeti.stdRep` composition lemmas apply directly.
     let x : Fin 2 → ℂ := v
-    change e (stdRep K (φ h) x) = stdRep H h (e x)
-    calc
-      e (stdRep K (φ h) x)
-        = TauCeti.stdRep ℂ 2 (toGL g⁻¹) (TauCeti.stdRep ℂ 2 (toGL (g * h.val * g⁻¹)) x) := by
-          rw [he, stdRep, MonoidHom.comp_apply, MonoidHom.comp_apply, Subgroup.coe_subtype, hval]
-      _ = TauCeti.stdRep ℂ 2 (toGL (g⁻¹ * (g * h.val * g⁻¹))) x := by
-          rw [← mul_apply_eq_comp, ← map_mul, ← map_mul]
-      _ = TauCeti.stdRep ℂ 2 (toGL (h.val * g⁻¹)) x := by
-          rw [← mul_assoc, inv_mul_cancel_left]
-      _ = stdRep H h (e x) := by
-          rw [map_mul, map_mul, mul_apply_eq_comp, ← he x, stdRep, MonoidHom.comp_apply,
-            MonoidHom.comp_apply, Subgroup.coe_subtype]
+    change stdFDRepConjMidEquiv hK (stdRep K (φ h) x) = stdRep H h (stdFDRepConjMidEquiv hK x)
+    rw [stdFDRepConjMidEquiv_apply, stdFDRepConjMidEquiv_apply hK x,
+      stdRep_apply_apply, stdRep_apply_apply, TauCeti.stdRep_apply_apply,
+      TauCeti.stdRep_apply_apply, coe_toGL, hval, Matrix.mulVec_mulVec, Matrix.mulVec_mulVec,
+      ← Submonoid.coe_mul, ← Submonoid.coe_mul, ← mul_assoc, inv_mul_cancel_left]
 
 open CategoryTheory in
 private theorem isoToLinearEquiv_stdFDRepConjMid_apply {H K : Subgroup SU2} {g : SU2}
     (hK : K = H.map (MulAut.conj g : SU2 →* SU2)) (v : Fin 2 → ℂ) :
     FDRep.isoToLinearEquiv (stdFDRepConjMid hK) v =
-      (LinearMap.GeneralLinearGroup.toLinearEquiv
-        (Matrix.GeneralLinearGroup.toLin (toGL g⁻¹))) v := by
-  rw [stdFDRepConjMid, FDRep.isoToLinearEquiv_toFDRepIso]
-  rfl
+      ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v := by
+  rw [stdFDRepConjMid, FDRep.isoToLinearEquiv_toFDRepIso, stdFDRepConjMidEquiv_apply,
+    TauCeti.stdRep_apply_apply, coe_toGL]
 
 open CategoryTheory in
 /-- Conjugation by `g : SU2` induces an isomorphism in `FDRep ℂ H` from the restriction of
@@ -158,6 +155,17 @@ noncomputable def stdFDRepConjIso {H K : Subgroup SU2} {g : SU2}
     (eqToIso (stdFDRep_def H)).symm
 
 open CategoryTheory in
+private theorem isoToLinearEquiv_stdFDRepConjIso_eq {H K : Subgroup SU2} {g : SU2}
+    (hK : K = H.map (MulAut.conj g : SU2 →* SU2)) (v : Fin 2 → ℂ) :
+    FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def H))
+        (FDRep.isoToLinearEquiv (stdFDRepConjIso hK)
+          ((FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def K))).symm v)) =
+      FDRep.isoToLinearEquiv (stdFDRepConjMid hK) v := by
+  -- `Action.res.mapIso` preserves the underlying linear map (`Action.res_map_hom`) and each
+  -- `eqToIso (stdFDRep_def _)` cancels with its inverse on the underlying `Fin 2 → ℂ`.
+  rfl
+
+open CategoryTheory in
 /-- Evaluating `stdFDRepConjIso hK` on a vector multiplies on the left by `(g⁻¹ : Matrix ...)`. -/
 theorem isoToLinearEquiv_stdFDRepConjIso_apply {H K : Subgroup SU2} {g : SU2}
     (hK : K = H.map (MulAut.conj g : SU2 →* SU2)) (v : Fin 2 → ℂ) :
@@ -165,27 +173,18 @@ theorem isoToLinearEquiv_stdFDRepConjIso_apply {H K : Subgroup SU2} {g : SU2}
         (FDRep.isoToLinearEquiv (stdFDRepConjIso hK)
           ((FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def K))).symm v)) =
       ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v := by
-  let φ : H →* K :=
-    (((MulAut.conj g).subgroupMap H).trans (MulEquiv.subgroupCongr hK.symm) : H ≃* K)
-  let x : (Action.res (FGModuleCat ℂ) φ).obj (stdFDRep K) :=
-    (FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def K))).symm v
-  have hx :
-      FDRep.isoToLinearEquiv ((Action.res (FGModuleCat ℂ) φ).mapIso (eqToIso (stdFDRep_def K))) x =
-        v :=
-    (FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def K))).apply_symm_apply v
-  have hmid :
-      FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def H))
-          (FDRep.isoToLinearEquiv (stdFDRepConjIso hK) x) =
-        (LinearMap.GeneralLinearGroup.toLinearEquiv
-          (Matrix.GeneralLinearGroup.toLin (toGL g⁻¹))) v := by
-    simp only [stdFDRepConjIso, FDRep.isoToLinearEquiv_trans, LinearEquiv.trans_apply,
-      FDRep.isoToLinearEquiv_symm, LinearEquiv.apply_symm_apply]
-    change FDRep.isoToLinearEquiv (stdFDRepConjMid hK) _ = _
-    rw [hx, isoToLinearEquiv_stdFDRepConjMid_apply]
-  change FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def H))
-      (FDRep.isoToLinearEquiv (stdFDRepConjIso hK) x) = _
-  rw [hmid, LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
-    Matrix.GeneralLinearGroup.toLin_apply, Matrix.mulVecLin_apply, coe_toGL]
+  rw [isoToLinearEquiv_stdFDRepConjIso_eq, isoToLinearEquiv_stdFDRepConjMid_apply]
+
+open CategoryTheory in
+private theorem isoToLinearEquiv_stdFDRepConjIso_symm_eq {H K : Subgroup SU2} {g : SU2}
+    (hK : K = H.map (MulAut.conj g : SU2 →* SU2)) (v : Fin 2 → ℂ) :
+    FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def K))
+        ((FDRep.isoToLinearEquiv (stdFDRepConjIso hK)).symm
+          ((FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def H))).symm v)) =
+      (FDRep.isoToLinearEquiv (stdFDRepConjMid hK)).symm v := by
+  -- `Action.res.mapIso` preserves the underlying linear map (`Action.res_map_hom`) and each
+  -- `eqToIso (stdFDRep_def _)` cancels with its inverse on the underlying `Fin 2 → ℂ`.
+  rfl
 
 open CategoryTheory in
 /-- Evaluating the inverse of `stdFDRepConjIso hK` on a vector multiplies on the left by
@@ -196,38 +195,10 @@ theorem isoToLinearEquiv_stdFDRepConjIso_symm_apply {H K : Subgroup SU2} {g : SU
         ((FDRep.isoToLinearEquiv (stdFDRepConjIso hK)).symm
           ((FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def H))).symm v)) =
       (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v := by
-  let φ : H →* K :=
-    (((MulAut.conj g).subgroupMap H).trans (MulEquiv.subgroupCongr hK.symm) : H ≃* K)
-  let y : (Action.res (FGModuleCat ℂ) φ).obj (stdFDRep K) :=
-    (FDRep.isoToLinearEquiv (stdFDRepConjIso hK)).symm
-      ((FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def H))).symm v)
-  let x : (Action.res (FGModuleCat ℂ) φ).obj (stdFDRep K) :=
-    (FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def K))).symm
-      ((g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v)
-  have hxy : FDRep.isoToLinearEquiv (stdFDRepConjIso hK) x =
-      FDRep.isoToLinearEquiv (stdFDRepConjIso hK) y := by
-    apply (FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def H))).injective
-    have hy :
-        FDRep.isoToLinearEquiv (stdFDRepConjIso hK) y =
-          (FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def H))).symm v :=
-      (FDRep.isoToLinearEquiv (stdFDRepConjIso hK)).apply_symm_apply _
-    rw [hy, LinearEquiv.apply_symm_apply]
-    change FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def H))
-        (FDRep.isoToLinearEquiv (stdFDRepConjIso hK)
-          ((FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def K))).symm
-            ((g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v))) = v
-    rw [isoToLinearEquiv_stdFDRepConjIso_apply]
-    calc
-      ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ ((g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v)
-        = TauCeti.stdRep ℂ 2 (toGL g⁻¹) (TauCeti.stdRep ℂ 2 (toGL g) v) := by
-            rw [TauCeti.stdRep_apply_apply, TauCeti.stdRep_apply_apply, coe_toGL, coe_toGL]
-      _ = TauCeti.stdRep ℂ 2 (toGL (g⁻¹ * g)) v := by
-            rw [← mul_apply_eq_comp, ← map_mul, ← map_mul]
-      _ = v := by simp
-  have hxy' : x = y := (FDRep.isoToLinearEquiv (stdFDRepConjIso hK)).injective hxy
-  change FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def K)) y = _
-  have hxy'' : (y : stdFDRep K) = (x : stdFDRep K) := hxy'.symm
-  rw [hxy'']
-  exact (FDRep.isoToLinearEquiv (eqToIso (stdFDRep_def K))).apply_symm_apply _
+  rw [isoToLinearEquiv_stdFDRepConjIso_symm_eq]
+  apply (FDRep.isoToLinearEquiv (stdFDRepConjMid hK)).injective
+  rw [LinearEquiv.apply_symm_apply, isoToLinearEquiv_stdFDRepConjMid_apply,
+    Matrix.mulVec_mulVec, ← Submonoid.coe_mul, inv_mul_cancel, Submonoid.coe_one,
+    Matrix.one_mulVec]
 
 end TauCeti.SU2

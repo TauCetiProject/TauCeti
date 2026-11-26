@@ -29,14 +29,14 @@ For an object `V` of `FDRep k G`, the **McKay matrix** `FDRep.mckayMatrix V` (`V
 the matrix indexed by `TauCeti.SimpleFDRepClasses k G` whose `(c₁, c₂)` entry is
 `dim_k Hom_G(X, V ⊗ Y)` for representatives `c₁ = [X]` and `c₂ = [Y]`; under split semisimplicity
 (for instance over an algebraically closed field in which `|G|` is invertible), this is the
-multiplicity of `c₁` in `V ⊗ Y`. This file establishes its loop-freeness on faithful
-two-dimensional representations of determinant `1` over an algebraically closed field of
-characteristic zero, its duality `(V.mckayMatrix)ᵀ = (ᘁV).mckayMatrix` and symmetry under
-self-duality, its comparison with `TauCeti.fusionMatrix` and with left multiplication on
-`TauCeti.SplitK0 (FDRep k G)`, the column-sum identity and dimension null-vector equation
-`M δ = (dim V) δ` (for finite groups over an algebraically closed field in which the group order
-`|G|` is invertible), the identification `(V.tensorPower n).mckayMatrix = V.mckayMatrix ^ n` with
-its entry formulas, and reachability to the trivial class for faithful complex representations.
+multiplicity of `c₁` in `V ⊗ Y`. This file establishes its loop-freeness for a nontrivial finite
+group `G` on faithful two-dimensional representations of determinant `1` over an algebraically
+closed field of characteristic zero, its duality `(V.mckayMatrix)ᵀ = (ᘁV).mckayMatrix` and
+symmetry under self-duality, its comparison with `TauCeti.fusionMatrix` and with left
+multiplication on `TauCeti.SplitK0 (FDRep k G)`, the column-sum identity and dimension null-vector
+equation `M δ = (dim V) δ` (for finite groups over an algebraically closed field in which the group
+order `|G|` is invertible), the identification `(V.tensorPower n).mckayMatrix = V.mckayMatrix ^ n`
+with its entry formulas, and reachability to the trivial class for faithful complex representations.
 
 ## Main definitions and results
 
@@ -45,7 +45,7 @@ its entry formulas, and reachability to the trivial class for faithful complex r
   `FDRep.mckayMatrix_tensorUnit`, `FDRep.mckayMatrix_tensor`, and `FDRep.mckayMatrix_res_apply`.
 * `FDRep.finrank_hom_tensor_self_eq_zero_of_central`, `FDRep.finrank_hom_tensor_self_eq_zero`, and
   `FDRep.mckayMatrix_apply_self_eq_zero`: loop-freeness for faithful two-dimensional
-  representations of determinant `1`.
+  representations of determinant `1` of a nontrivial finite group.
 * `FDRep.mckayMatrix_transpose`, `FDRep.isSymm_mckayMatrix_of_equiv_dual`, and
   `FDRep.isSymm_mckayMatrix_of_finrank_eq_two`: transpose via `ᘁV` and symmetry.
 * `FDRep.reindex_mckayMatrix_eq_transpose_fusionMatrix`: reindexing `V.mckayMatrix` along
@@ -130,55 +130,6 @@ theorem finrank_hom_tensor_self_eq_zero_of_central [IsAlgClosed k] {V : FDRep k 
       rw [LinearMap.rTensor_comp, LinearMap.comp_apply]
     _ = 0 := by rw [hz0, map_zero]
 
-private theorem det_eq_det_mul_det_of_equiv_prod
-    {W₀ W₁ W₂ : Type*} [AddCommGroup W₀] [Module k W₀]
-    [AddCommGroup W₁] [Module k W₁] [FiniteDimensional k W₁]
-    [AddCommGroup W₂] [Module k W₂] [FiniteDimensional k W₂]
-    {ρ : _root_.Representation k G W₀} {ρ₁ : _root_.Representation k G W₁}
-    {ρ₂ : _root_.Representation k G W₂} (e : ρ.Equiv (ρ₁.prod ρ₂)) (g : G) :
-    LinearMap.det (ρ g) = LinearMap.det (ρ₁ g) * LinearMap.det (ρ₂ g) := by
-  have hconj :
-      (e.toLinearEquiv : W₀ →ₗ[k] W₁ × W₂) ∘ₗ ρ g ∘ₗ
-          (e.toLinearEquiv.symm : W₁ × W₂ →ₗ[k] W₀) =
-        LinearMap.prodMap (ρ₁ g) (ρ₂ g) := by
-    refine LinearMap.ext fun x ↦ ?_
-    have h := LinearMap.congr_fun (e.isIntertwining' g) (e.toLinearEquiv.symm x)
-    change e.toLinearEquiv ((ρ g) (e.toLinearEquiv.symm x)) = _
-    change e.toLinearEquiv ((ρ g) (e.toLinearEquiv.symm x)) =
-      ((ρ₁.prod ρ₂) g) (e.toLinearEquiv (e.toLinearEquiv.symm x)) at h
-    rw [h, LinearEquiv.apply_symm_apply]
-    rfl
-  rw [← LinearMap.det_conj (ρ g) e.toLinearEquiv, hconj, LinearMap.det_prodMap]
-
-private theorem not_hasEigenvalue_one_of_equiv_prod_finrank_eq_one
-    {W₀ W₁ W₂ : Type*} [AddCommGroup W₀] [Module k W₀]
-    [AddCommGroup W₁] [Module k W₁] [AddCommGroup W₂] [Module k W₂]
-    {ρ : _root_.Representation k G W₀} {ρ₁ : _root_.Representation k G W₁}
-    {ρ₂ : _root_.Representation k G W₂} (e : ρ.Equiv (ρ₁.prod ρ₂))
-    (hW₁ : Module.finrank k W₁ = 1) (hW₂ : Module.finrank k W₂ = 1)
-    {g : G} (hc₁ : LinearMap.det (ρ₁ g) ≠ 1) (hc₂ : LinearMap.det (ρ₂ g) ≠ 1) :
-    ¬ Module.End.HasEigenvalue (ρ g) 1 := by
-  have : FiniteDimensional k W₁ := Module.finite_of_finrank_pos (by omega)
-  have : FiniteDimensional k W₂ := Module.finite_of_finrank_pos (by omega)
-  intro hev
-  obtain ⟨v, hv, hv0⟩ := hev.exists_hasEigenvector
-  have hv_fix : ρ g v = v := by simpa using Module.End.mem_eigenspace_iff.mp hv
-  have hpair : (LinearMap.det (ρ₁ g) • (e v).1, LinearMap.det (ρ₂ g) • (e v).2) = e v := by
-    calc
-      (LinearMap.det (ρ₁ g) • (e v).1, LinearMap.det (ρ₂ g) • (e v).2)
-        = (ρ₁ g (e v).1, ρ₂ g (e v).2) :=
-            Prod.ext (LinearMap.apply_eq_det_smul_of_finrank_eq_one hW₁ _ _).symm
-              (LinearMap.apply_eq_det_smul_of_finrank_eq_one hW₂ _ _).symm
-      _ = e (ρ g v) := by simpa using (LinearMap.congr_fun (e.isIntertwining' g) v).symm
-      _ = e v := by rw [hv_fix]
-  have h1 : (e v).1 = 0 := by
-    by_contra hnz
-    exact hc₁ (smul_left_injective k hnz (by simpa using congrArg Prod.fst hpair))
-  have h2 : (e v).2 = 0 := by
-    by_contra hnz
-    exact hc₂ (smul_left_injective k hnz (by simpa using congrArg Prod.snd hpair))
-  exact hv0 (e.injective ((Prod.ext h1 h2).trans (map_zero e).symm))
-
 /-- A reducible faithful semisimple two-dimensional representation of determinant `1` has a
 central group element without eigenvalue `1`. -/
 private theorem exists_central_no_eigenvalue_one_of_not_isIrreducible [Nontrivial G]
@@ -204,7 +155,7 @@ private theorem exists_central_no_eigenvalue_one_of_not_isIrreducible [Nontrivia
       (by simpa [LinearMap.apply_eq_det_smul_of_finrank_eq_one hW'1] using congrArg Prod.snd h)
   have hdet_prod (g : G) :
       LinearMap.det (W.toRepresentation g) * LinearMap.det (W'.toRepresentation g) = 1 :=
-    (det_eq_det_mul_det_of_equiv_prod e g).symm.trans (hdet g)
+    (e.det_apply_eq_mul_of_prod g).symm.trans (hdet g)
   have hcomm (g h : G) : g * h = h * g :=
     hfaithful <| LinearMap.ext fun v ↦ e.injective <| by
       simp [map_mul, mul_apply_eq_comp, he_apply, smul_smul, mul_comm]
@@ -219,8 +170,7 @@ private theorem exists_central_no_eigenvalue_one_of_not_isIrreducible [Nontrivia
     hne_one ⟨h1, by simpa [h1] using hdet_prod g₀⟩
   have hc₂_ne : LinearMap.det (W'.toRepresentation g₀) ≠ 1 := fun h2 ↦
     hne_one ⟨by simpa [h2] using hdet_prod g₀, h2⟩
-  exact ⟨g₀, hcomm g₀,
-    not_hasEigenvalue_one_of_equiv_prod_finrank_eq_one e hW1 hW'1 hc₁_ne hc₂_ne⟩
+  exact ⟨g₀, hcomm g₀, e.not_hasEigenvalue_of_prod_finrank_eq_one hW1 hW'1 hc₁_ne hc₂_ne⟩
 
 /-- **Loop-freeness of the McKay graph.** For a nontrivial finite group `G` and a faithful
 two-dimensional representation `V : FDRep k G` of determinant `1` over an algebraically closed

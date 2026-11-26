@@ -352,9 +352,7 @@ theorem resEquiv_refl :
   induction c using ind with
   | h X hX =>
     rw [resEquiv_mk, Equiv.refl_apply, mk_eq_mk_iff]
-    exact ⟨eqToIso (by
-      rw [show (MulEquiv.refl G₁ : G₁ →* G₁) = MonoidHom.id G₁ from rfl, MonoidHom.actionRes_id]
-      rfl)⟩
+    exact ⟨eqToIso (by rw [MulEquiv.toMonoidHom_refl, MonoidHom.actionRes_id, Functor.id_obj])⟩
 
 /-- Restricting along a composite monoid isomorphism is contravariant in the equivalence. -/
 @[simp]
@@ -364,10 +362,7 @@ theorem resEquiv_trans {G₃ : Type*} [Monoid G₃] (φ : G₁ ≃* G₂) (ψ : 
   induction c using ind with
   | h X hX =>
     rw [resEquiv_mk, Equiv.trans_apply, resEquiv_mk, resEquiv_mk, mk_eq_mk_iff]
-    exact ⟨eqToIso (by
-      rw [show ((φ.trans ψ : G₁ ≃* G₃) : G₁ →* G₃) = (ψ : G₂ →* G₃).comp (φ : G₁ →* G₂) from rfl,
-        MonoidHom.actionRes_comp]
-      rfl)⟩
+    exact ⟨eqToIso (by rw [MulEquiv.toMonoidHom_trans, MonoidHom.actionRes_comp, Functor.comp_obj])⟩
 
 end SimpleFDRepClasses
 
