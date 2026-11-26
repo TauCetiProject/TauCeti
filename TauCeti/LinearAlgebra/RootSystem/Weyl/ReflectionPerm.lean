@@ -19,6 +19,10 @@ of type A, whose character lattices have different ranks.
 The construction compares the ranges of Mathlib's `RootPairing.weylGroupToPerm`,
 using `RootPairing.range_weylGroupToPerm`. The resulting equivalence preserves the
 root-index action and each indexed reflection.
+
+A companion construction, `RootPairing.weylGroupEquivOfRangeReflectionEq`, compares two
+root pairings on the same weight space whose sets of reflections coincide, using
+`RootPairing.range_weylGroup_weightHom` and `RootPairing.Equiv.weightHom_injective`.
 -/
 
 public section
@@ -72,5 +76,50 @@ theorem weylGroupEquivOfReflectionPermEq_symm_ofIdx (i : ι) :
     MulEquiv.symm_apply_apply]
 
 end
+
+section RangeReflection
+
+variable {ι₁ ι₂ R M N₁ N₂ : Type*} [CommRing R]
+  [AddCommGroup M] [Module R M]
+  [AddCommGroup N₁] [Module R N₁]
+  [AddCommGroup N₂] [Module R N₂]
+
+/-- Two root pairings on the same weight space whose sets of reflections agree have canonically
+isomorphic Weyl groups. -/
+noncomputable def weylGroupEquivOfRangeReflectionEq
+    (P : RootPairing ι₁ R M N₁) (Q : RootPairing ι₂ R M N₂)
+    (h : Set.range P.reflection = Set.range Q.reflection) :
+    P.weylGroup ≃* Q.weylGroup :=
+  (MonoidHom.ofInjective
+      (f := (Equiv.weightHom P).domRestrict P.weylGroup)
+      ((Equiv.weightHom_injective P).comp Subtype.val_injective)).trans
+    ((MulEquiv.subgroupCongr (by
+      rw [range_weylGroup_weightHom, range_weylGroup_weightHom, h])).trans
+      (MonoidHom.ofInjective
+        (f := (Equiv.weightHom Q).domRestrict Q.weylGroup)
+        ((Equiv.weightHom_injective Q).comp Subtype.val_injective)).symm)
+
+/-- The reflection-range comparison intertwines the Weyl-group actions on the weight space. -/
+@[simp]
+theorem weylGroupEquivOfRangeReflectionEq_smul
+    (P : RootPairing ι₁ R M N₁) (Q : RootPairing ι₂ R M N₂)
+    (h : Set.range P.reflection = Set.range Q.reflection) (w : P.weylGroup) (x : M) :
+    weylGroupEquivOfRangeReflectionEq P Q h w • x = w • x := by
+  have hmem :
+      ((Equiv.weightHom Q).domRestrict Q.weylGroup)
+          (weylGroupEquivOfRangeReflectionEq P Q h w) =
+        ((Equiv.weightHom P).domRestrict P.weylGroup) w := by
+    have h' := (MonoidHom.ofInjective
+        (f := (Equiv.weightHom Q).domRestrict Q.weylGroup)
+        ((Equiv.weightHom_injective Q).comp Subtype.val_injective)).apply_symm_apply
+      ((MulEquiv.subgroupCongr (by
+          rw [range_weylGroup_weightHom, range_weylGroup_weightHom, h]))
+        (MonoidHom.ofInjective
+          (f := (Equiv.weightHom P).domRestrict P.weylGroup)
+          ((Equiv.weightHom_injective P).comp Subtype.val_injective) w))
+    exact congrArg Subtype.val h'
+  exact congrArg (fun f : M ≃ₗ[R] M ↦ f x) hmem
+
+end RangeReflection
 
 end RootPairing
