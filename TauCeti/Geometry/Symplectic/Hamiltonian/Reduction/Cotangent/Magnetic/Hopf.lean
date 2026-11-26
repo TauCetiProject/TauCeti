@@ -168,7 +168,8 @@ theorem add_smul_sphereContactForm_apply_eq_zero_of_mfderiv_hopfMap_eq_zero
     rw [← SmoothForm.degreeOneEquiv_apply_apply_vec, map_smul,
       SmoothForm.degreeOneEquiv_apply_apply_vec, smul_eq_mul]
   rw [hvt, map_smul, hp v₀ hv₀, hlin]
-  simp [SymplecticForm.sphereContactForm_apply_of_mvfderiv_eq_I_smul hΩ hv₀]
+  simp only [SetLike.val_smul, Pi.smul_apply, ContinuousAlternatingMap.coe_smul, smul_eq_mul,
+    SymplecticForm.sphereContactForm_apply_of_mvfderiv_eq_I_smul hΩ hv₀]
   ring
 
 variable {EX HX : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]

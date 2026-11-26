@@ -152,11 +152,6 @@ the kernel of the differential of the Hopf map exactly when, read in `ℂ²`, it
 theorem mfderiv_hopfMap_eq_zero_iff (z : S³) (v : TangentSpace (𝓡 3) z) :
     mfderiv (𝓡 3) (𝓡 2) hopfMap z v = 0 ↔
       ∃ t : ℝ, mvfderiv (𝓡 3) ((↑) : S³ → ℂ²) z v = t • (I • (z : ℂ²)) := by
-  -- `Im ⟪a, b⟫_ℂ` is the real inner product of `b` with `i a`.
-  have him (a b : ℂ²) : (⟪a, b⟫_ℂ).im = ⟪b, I • a⟫_ℝ := by
-    rw [EuclideanSpace.real_inner_eq_re_inner, inner_smul_right, ← inner_conj_symm a b,
-      conj_im, mul_re, I_re, I_im]
-    ring
   constructor
   · intro h
     -- `i v` is orthogonal to every tangent vector at `z`, so it lies on the normal line `ℝ z`.
@@ -164,7 +159,8 @@ theorem mfderiv_hopfMap_eq_zero_iff (z : S³) (v : TangentSpace (𝓡 3) z) :
       rw [← range_mvfderiv_subtypeVal (n := 3) z]
       rintro _ ⟨w, rfl⟩
       have hw := eval₂_sphereAreaForm_mfderiv_hopfMap z v w
-      rw [h, SmoothBundleForm.eval₂_zero_left, him] at hw
+      rw [h, SmoothBundleForm.eval₂_zero_left, EuclideanSpace.im_inner_eq_real_inner_I_smul,
+        real_inner_comm] at hw
       exact (mul_eq_zero.1 hw.symm).resolve_left four_ne_zero
     rw [Submodule.orthogonal_orthogonal, Submodule.mem_span_singleton] at horth
     obtain ⟨s, hs⟩ := horth
@@ -174,9 +170,10 @@ theorem mfderiv_hopfMap_eq_zero_iff (z : S³) (v : TangentSpace (𝓡 3) z) :
     refine (SmoothTwoForm.isNondegenerate_iff_separatingLeft.1
       isSymplectic_sphereAreaForm.isNondegenerate) (hopfMap z) _ fun u ↦ ?_
     obtain ⟨w, rfl⟩ := mfderiv_hopfMap_surjective z u
-    have hn : I • t • I • (z : ℂ²) = (-t) • (z : ℂ²) := by match_scalars; ring_nf; simp
-    rw [eval₂_sphereAreaForm_mfderiv_hopfMap, ht, him, hn, real_inner_comm, real_inner_smul_left,
-      inner_coe_mvfderiv_subtypeVal_sphere]
+    have hn : I • t • I • (z : ℂ²) = (-t) • (z : ℂ²) := by
+      simp [smul_comm I t, smul_smul]
+    rw [eval₂_sphereAreaForm_mfderiv_hopfMap, ht, EuclideanSpace.im_inner_eq_real_inner_I_smul, hn,
+      real_inner_smul_left, inner_coe_mvfderiv_subtypeVal_sphere]
     simp
 
 /-! ### The reduced space of a level -/

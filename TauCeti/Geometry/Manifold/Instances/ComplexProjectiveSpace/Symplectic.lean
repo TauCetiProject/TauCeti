@@ -141,10 +141,6 @@ theorem ker_bilinFormAt_mpullback_coe_sphere
   have horth (w : TangentSpace (𝓡 (2 * n + 1)) x) :
       ⟪(x : EuclideanSpace ℂ (Fin (n + 1))), D w⟫_ℝ = 0 :=
     inner_coe_mvfderiv_subtypeVal_sphere x w
-  -- `Im ⟪v, w⟫_ℂ = ⟪i v, w⟫_ℝ`.
-  have him (v w : EuclideanSpace ℂ (Fin (n + 1))) : (⟪v, w⟫_ℂ).im = ⟪I • v, w⟫_ℝ := by
-    rw [EuclideanSpace.real_inner_eq_re_inner, inner_smul_left]
-    simp
   ext u
   simp only [LinearMap.mem_ker, Submodule.mem_comap, Submodule.mem_span_singleton,
     ContinuousLinearMap.coe_coe, LinearMap.ext_iff, SmoothForm.bilinFormAt_apply,
@@ -163,7 +159,7 @@ theorem ker_bilinFormAt_mpullback_coe_sphere
     obtain ⟨w, hw⟩ := exists_mvfderiv_coe_sphere_eq (n := 2 * n + 1) x hy
     have hyy : ⟪y, y⟫_ℝ = 0 := by
       have h0 := h w
-      rw [hw, him] at h0
+      rw [hw, EuclideanSpace.im_inner_eq_real_inner_I_smul] at h0
       have hsplit : I • D u = y + s • (x : EuclideanSpace ℂ (Fin (n + 1))) := by
         rw [sub_add_cancel]
       rw [hsplit, inner_add_left, real_inner_smul_left, real_inner_comm, hy, mul_zero,
@@ -187,7 +183,8 @@ theorem ker_bilinFormAt_mpullback_coe_sphere
       congr 1
       push_cast
       linear_combination (t : ℂ) * Complex.I_sq
-    rw [← ht, him, hIt, real_inner_smul_left, horth, mul_zero]
+    rw [← ht, EuclideanSpace.im_inner_eq_real_inner_I_smul, hIt, real_inner_smul_left, horth,
+      mul_zero]
 
 /-- **The restriction of `Im ⟪·, ·⟫_ℂ` to the sphere is invariant under the circle** acting by
 unit scalars, which acts on `ℂⁿ⁺¹` by unitary maps. -/

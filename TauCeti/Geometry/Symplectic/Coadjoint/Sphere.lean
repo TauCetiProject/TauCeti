@@ -56,7 +56,7 @@ with its outward-normal orientation is `4π r` (`TauCeti.integralTopForm_smul_sp
 read on that sphere, the KKS form is `1 / r` times its Euclidean area form. For `r ≤ 0` the
 integral is a signed value. Since an exact top form integrates to zero over the closed manifold
 `S²`, no nonzero multiple of `σ` is exact (`TauCeti.smul_sphereAreaForm_notMem_exactForms`).
-Its unsigned total Liouville measure `4π |r|` is computed in
+The unsigned total Liouville measure `4π |r|` of `r σ` is computed in
 `TauCeti.Geometry.Symplectic.Manifold.Sphere.Area`
 (`Orientation.liouvilleMeasure_smul_sphereVolumeForm_univ`).
 
