@@ -1070,9 +1070,9 @@ open scoped ContDiff in
 theorem quantizeSchwartzValue_smulLeft {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ)
     (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeSchwartzValue (smulLeft hψ a).coefficient u x =
-      ψ x • quantizeSchwartzValue a.coefficient u x := by
-  rw [quantizeSchwartzValue_congr_left (b := ψ x • a.coefficient)
-    (fun ξ ↦ coefficient_smulLeft hψ a (x, ξ)), quantizeSchwartzValue_smul_left]
+      ψ x • quantizeSchwartzValue a.coefficient u x :=
+  (quantizeSchwartzValue_congr_left (fun ξ ↦ coefficient_smulLeft hψ a (x, ξ)) u).trans
+    (quantizeSchwartzValue_comp_fst_smul_left ψ a.coefficient u x)
 
 open scoped ContDiff in
 /-- The symbol `f(x)` of multiplication by `f` quantizes to multiplication: `Op(f) u = f u`. -/
