@@ -39,7 +39,8 @@ A contact structure `ξ` (`TauCeti.IsContactDistribution`) is a hyperplane field
 `dim M - 1`, whose Levi form is nondegenerate at every point. For it the quotient `L = TM ⧸ ξ` is
 the contact line, a line bundle (`r = 1`), and the last statement says that the Levi form
 identifies `ξ` with `Hom(ξ, L)` as smooth vector bundles: `L_ξ` is a nondegenerate `L`-valued
-alternating form on `ξ`, smoothly in the base point.
+alternating form on `ξ`, smoothly in the base point
+(`TauCeti.IsContactDistribution.exists_bundleDiffeomorph_distributionLeviFormL`).
 
 ## Main definitions
 
