@@ -17,7 +17,9 @@ their module with the module of functions on `ConjClasses G`, computes its finit
 are finitely many conjugacy classes, pulls class functions back along a group homomorphism,
 twists them by a power map, inverts the group element, changes their coefficients along a ring
 homomorphism, shows that characters of representations are class functions, and evaluates a sum
-over a finite group one conjugacy class at a time.
+over a finite group one conjugacy class at a time. On a normal subgroup that is maximal among
+proper subgroups, a class function invariant under conjugation by one outside element is invariant
+under all ambient conjugations (`TauCeti.ClassFunction.apply_conjNormal_eq_of_isCoatom`).
 
 Inverting the group element, `TauCeti.ClassFunction.invMap`, is the involution that turns the
 character of a representation into the character of its dual
@@ -138,6 +140,32 @@ each factor in turn. -/
 theorem comap_comp {H : Type w} {J : Type w'} [Group H] [Group J] (φ : H →* G) (ψ : J →* H) :
     comap (k := k) (φ.comp ψ) = (comap ψ).comp (comap φ) :=
   (rfl)
+
+/-- On a normal subgroup that is maximal among proper subgroups, invariance of a class function
+under conjugation by one outside element implies invariance under all ambient conjugations. -/
+theorem apply_conjNormal_eq_of_isCoatom {N : Subgroup G} [N.Normal] (f : ClassFunction k N)
+    (hN : IsCoatom N) {x : G} (hx : x ∉ N)
+    (hf : ∀ n : N, f.val (MulAut.conjNormal x n) = f.val n) (g : G) (n : N) :
+    f.val (MulAut.conjNormal g n) = f.val n := by
+  let : MulAction (ConjAct G) (N → k) := arrowAction
+  let S : Subgroup G := (MulAction.stabilizer (ConjAct G) f.val).comap
+    (ConjAct.toConjAct : G ≃* ConjAct G).toMonoidHom
+  have mem_S (a : G) : a ∈ S ↔ ∀ y : N, f.val (MulAut.conjNormal a⁻¹ y) = f.val y := by
+    rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff, funext_iff]
+    -- The action on functions precomposes by inverse conjugation.
+    rfl
+  have hle : N ≤ S := by
+    intro a ha
+    apply (mem_S a).2
+    intro y
+    let a' : N := ⟨a⁻¹, N.inv_mem ha⟩
+    have ha' : (a' : G) = a⁻¹ := rfl
+    rw [← ha', MulAut.conjNormal_val]
+    exact mem_iff.mp f.property y a'
+  have hxS : x⁻¹ ∈ S := (mem_S x⁻¹).2 (by simpa only [inv_inv] using hf)
+  have htop : S = ⊤ := (hN.le_iff.mp hle).resolve_right fun h ↦
+    hx (N.inv_mem_iff.mp (h ▸ hxS))
+  simpa only [inv_inv] using (mem_S g⁻¹).1 (htop ▸ Subgroup.mem_top g⁻¹) n
 
 /-- The linear power-map twist `f ↦ (g ↦ f (g ^ j))` of a class function. For a finite group,
 powers coprime to its exponent describe the cyclotomic Galois action on character values. -/
