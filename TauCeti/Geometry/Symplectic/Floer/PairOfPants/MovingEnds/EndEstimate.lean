@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.Chart
 import TauCeti.Analysis.Complex.ThricePuncturedSphere.MovingEnds
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Topology.Instances.Real.TSupport
@@ -264,15 +265,6 @@ theorem
           (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
             Complex.I) u ξ z‖ ^ 2 := by
-  -- Beyond `s = 1` the output end lies outside the disc `‖w‖ ≤ 2 exp (2π)` of the input ends.
-  have hψne (ζ : ℝ × ℝ) (hζ : 1 < ζ.1) (j : ι) :
-      Complex.equivRealProdCLM.symm (positiveEndChart inf ζ) ≠ c j := by
-    intro h
-    have h₁ := norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
-    rw [Prod.mk.eta, h] at h₁
-    have : Real.exp (2 * π) < Real.exp (2 * π * ζ.1) :=
-      Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
-    linarith [hout j, norm_nonneg (a j)]
   obtain ⟨C, R, hR, hest⟩ :=
     ω.exists_forall_setIntegral_comp_le_mul_integral_floerLinearization_of_chart (R₁ := 2) hX
       ((hHouts.comp (contDiff_fst.neg.prodMk contDiff_snd)).neg) hx hnd hJe hJex
@@ -302,7 +294,8 @@ theorem
     norm_equivRealProdCLM_symm_positiveEndChart_inf hξc hξR
     fun z _ ↦ (hlim.eventually_gt_atTop _).exists
   exact hest hξ hb (ω.integrable_norm_floerLinearization_sq_puncturedSpherePerturbation hH hHs
-    hHout hHouts ha (fun ζ hζ ↦ hψne ζ (by linarith)) hJ hu hξ hξc
-    (hξR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))
+    hHout hHouts ha (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne
+      (fun i ↦ by linarith [hout i, norm_nonneg (a i)]) (by linarith))
+    hJ hu hξ hξc (hξR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))
 
 end TauCeti.SymplecticForm
