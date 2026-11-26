@@ -109,15 +109,15 @@ theorem hasDerivAt_secondOrderEulerianPolynomial_div (k : ℕ) {t : ℝ} (ht : t
   field_simp [h1t]
   ring
 
-/-- Applying `-t d/dt` to `(-1)^k b_k(t) / (1 - t)^{2k + 1}` produces
+/-- Applying `-t d/dt` to `(-1)^k b_k(t) / (1 - t)^{2k + 1}` away from `t = 1` produces
 `(-1)^{k+1} b_{k+1}(t) / (1 - t)^{2k + 2}`. -/
-theorem neg_mul_deriv_secondOrderEulerianPolynomial_div (k : ℕ) (t : ℝ) :
-    -t * ((-1 : ℝ) ^ k *
-        ((1 - t) * aeval t (secondOrderEulerianPolynomial k).derivative +
-          (2 * (k : ℝ) + 1) * aeval t (secondOrderEulerianPolynomial k)) /
-        (1 - t) ^ (2 * k + 2)) =
+theorem neg_mul_deriv_secondOrderEulerianPolynomial_div (k : ℕ) {t : ℝ} (ht : t ≠ 1) :
+    -t * deriv
+        (fun y : ℝ =>
+          (-1 : ℝ) ^ k * aeval y (secondOrderEulerianPolynomial k) / (1 - y) ^ (2 * k + 1)) t =
       (-1 : ℝ) ^ (k + 1) * aeval t (secondOrderEulerianPolynomial (k + 1)) /
         (1 - t) ^ (2 * k + 2) := by
+  rw [(hasDerivAt_secondOrderEulerianPolynomial_div k ht).deriv]
   have hpoly : aeval t (secondOrderEulerianPolynomial (k + 1)) =
       t * ((1 - t) * aeval t (secondOrderEulerianPolynomial k).derivative +
         (2 * (k : ℝ) + 1) * aeval t (secondOrderEulerianPolynomial k)) := by
@@ -182,11 +182,8 @@ private theorem continuousOn_ratio_div {r : ℝ} (hr1 : r < 1) (p : ℤ[X]) (m :
     ContinuousOn
       (fun x : ℝ => aeval (r * (1 - x)) p / (1 - r * (1 - x)) ^ m) [[0, 1]] := by
   rw [Set.uIcc_of_le zero_le_one]
-  refine ContinuousOn.div ?_ ?_ fun x hx => pow_ne_zero _ (one_sub_mul_pos hr1 hx).ne'
-  · exact (p.continuous_aeval.comp
-      (continuous_const.mul (continuous_const.sub continuous_id))).continuousOn
-  · exact ((continuous_const.sub
-      (continuous_const.mul (continuous_const.sub continuous_id))).pow m).continuousOn
+  exact ContinuousOn.div (by fun_prop) (by fun_prop) fun x hx =>
+    pow_ne_zero _ (one_sub_mul_pos hr1 hx).ne'
 
 private theorem hasDerivAt_one_sub_cpow_mul_cexp {a : ℂ} (ha0 : a ≠ 0) (r : ℝ)
     {x : ℝ} (hx : x ∈ Ioo (0 : ℝ) 1) :
@@ -220,18 +217,10 @@ private def ratioKernelDeriv (r : ℝ) (k : ℕ) (x : ℝ) : ℝ :=
 private theorem continuousOn_ratioKernelDeriv {r : ℝ} (hr1 : r < 1) (k : ℕ) :
     ContinuousOn (fun x : ℝ => (ratioKernelDeriv r k x : ℂ)) [[0, 1]] := by
   rw [Set.uIcc_of_le zero_le_one]
-  refine continuous_ofReal.comp_continuousOn (continuousOn_const.mul (ContinuousOn.div ?_ ?_
-    fun x hx => pow_ne_zero _ (one_sub_mul_pos hr1 hx).ne'))
-  · refine continuousOn_const.mul (ContinuousOn.add ?_ ?_)
-    · exact ((continuous_const.sub (continuous_const.mul
-        (continuous_const.sub continuous_id))).mul
-        ((TauCeti.secondOrderEulerianPolynomial k).derivative.continuous_aeval.comp
-          (continuous_const.mul (continuous_const.sub continuous_id)))).continuousOn
-    · exact (continuous_const.mul
-        ((TauCeti.secondOrderEulerianPolynomial k).continuous_aeval.comp
-          (continuous_const.mul (continuous_const.sub continuous_id)))).continuousOn
-  · exact ((continuous_const.sub
-      (continuous_const.mul (continuous_const.sub continuous_id))).pow _).continuousOn
+  unfold ratioKernelDeriv
+  exact continuous_ofReal.comp_continuousOn (continuousOn_const.mul
+    (ContinuousOn.div (by fun_prop) (by fun_prop) fun x hx =>
+      pow_ne_zero _ (one_sub_mul_pos hr1 hx).ne'))
 
 private theorem integral_ratioKernel_mul_deriv (a : ℂ) {r : ℝ} (hr1 : r < 1) (k : ℕ) :
     (∫ x in (0 : ℝ)..1,
@@ -257,7 +246,7 @@ private theorem integral_ratioKernel_mul_deriv (a : ℂ) {r : ℝ} (hr1 : r < 1)
       push_cast; ring
     _ = _ := by rw [hreal]
 
-private theorem integral_ratioKernelDeriv_mul (a : ℂ) (r : ℝ) (k : ℕ) :
+private theorem integral_ratioKernelDeriv_mul (a : ℂ) {r : ℝ} (hr1 : r < 1) (k : ℕ) :
     (∫ x in (0 : ℝ)..1,
       (ratioKernelDeriv r k x : ℂ) * (((1 - x : ℝ) : ℂ) ^ a * cexp (a * r * x))) =
       fixedRatioRemIntegral a r (k + 1) := by
@@ -266,17 +255,18 @@ private theorem integral_ratioKernelDeriv_mul (a : ℂ) (r : ℝ) (k : ℕ) :
   filter_upwards [volume.ae_ne (1 : ℝ)] with x hxne hx
   rw [Set.uIoc_of_le zero_le_one] at hx
   have hxpos : 0 < 1 - x := sub_pos.mpr (lt_of_le_of_ne hx.2 hxne)
+  have hrx : r * (1 - x) ≠ 1 := by linarith [one_sub_mul_pos hr1 (Ioc_subset_Icc_self hx)]
   have hreal : ratioKernelDeriv r k x * (1 - x) =
       (-1 : ℝ) ^ (k + 1) * aeval (r * (1 - x)) (TauCeti.secondOrderEulerianPolynomial (k + 1)) /
         (1 - r * (1 - x)) ^ (2 * (k + 1)) := by
     calc ratioKernelDeriv r k x * (1 - x)
-      _ = -(r * (1 - x)) * ((-1 : ℝ) ^ k *
-          ((1 - r * (1 - x)) *
-            aeval (r * (1 - x)) (TauCeti.secondOrderEulerianPolynomial k).derivative +
-            (2 * (k : ℝ) + 1) * aeval (r * (1 - x)) (TauCeti.secondOrderEulerianPolynomial k)) /
-          (1 - r * (1 - x)) ^ (2 * k + 2)) := by
+      _ = -(r * (1 - x)) * deriv
+          (fun y : ℝ => (-1 : ℝ) ^ k *
+            aeval y (TauCeti.secondOrderEulerianPolynomial k) / (1 - y) ^ (2 * k + 1))
+          (r * (1 - x)) := by
+        rw [(TauCeti.hasDerivAt_secondOrderEulerianPolynomial_div k hrx).deriv]
         dsimp [ratioKernelDeriv]; ring
-      _ = _ := TauCeti.neg_mul_deriv_secondOrderEulerianPolynomial_div k (r * (1 - x))
+      _ = _ := TauCeti.neg_mul_deriv_secondOrderEulerianPolynomial_div k hrx
   calc _
     _ = ((ratioKernelDeriv r k x * (1 - x) : ℝ) : ℂ) *
         ((1 - x : ℝ) : ℂ) ^ (a - 1) * cexp (a * r * x) := by
@@ -304,12 +294,10 @@ private theorem intervalIntegrable_deriv_one_sub_cpow_mul_cexp {a : ℂ} (ha : 0
   have h1 : IntervalIntegrable (fun x : ℝ => ((1 - x : ℝ) : ℂ) ^ (a - 1)) volume 0 1 := by
     simpa only [ofReal_sub, ofReal_one] using
       TauCeti.intervalIntegrable_one_sub_ofReal_cpow (s := a - 1) (by simp [ha]) 0
-  have hc1 : ContinuousOn (fun x : ℝ => -a * ((1 - r * (1 - x) : ℝ) : ℂ)) [[0, 1]] :=
-    (continuous_const.mul (continuous_ofReal.comp
-      (continuous_const.sub (continuous_const.mul (continuous_const.sub continuous_id)))))
-      |>.continuousOn
-  have hc2 : ContinuousOn (fun x : ℝ => cexp (a * r * x)) [[0, 1]] :=
-    (Complex.continuous_exp.comp (continuous_const.mul continuous_ofReal)).continuousOn
+  have hc1 : ContinuousOn (fun x : ℝ => -a * ((1 - r * (1 - x) : ℝ) : ℂ)) [[0, 1]] := by
+    fun_prop
+  have hc2 : ContinuousOn (fun x : ℝ => cexp (a * r * x)) [[0, 1]] := by
+    fun_prop
   simpa [mul_assoc] using (h1.continuousOn_mul hc1).mul_continuousOn hc2
 
 /-- One integration-by-parts step on `fixedRatioRemIntegral`. -/
@@ -332,10 +320,10 @@ private theorem fixedRatioRemIntegral_step {a : ℂ} (ha : 0 < a.re) {r : ℝ} (
       continuousOn_const.mul
         (continuousOn_ratio_div hr1 (TauCeti.secondOrderEulerianPolynomial k) (2 * k + 1))
     exact continuous_ofReal.comp_continuousOn (hc.congr fun x _ => by simp [mul_div_assoc])
-  have hv_cont : ContinuousOn v [[0, 1]] :=
-    (((Complex.continuous_ofReal_cpow_const ha).comp
-      (continuous_const.sub continuous_id)).mul
-        (Complex.continuous_exp.comp (continuous_const.mul continuous_ofReal))).continuousOn
+  have hv_cont : ContinuousOn v [[0, 1]] := by
+    have hpow : Continuous fun x : ℝ => ((1 - x : ℝ) : ℂ) ^ a :=
+      (Complex.continuous_ofReal_cpow_const ha).comp (by fun_prop)
+    fun_prop
   have hu_deriv : ∀ x ∈ Ioo (min (0 : ℝ) 1) (max 0 1),
       HasDerivAt u (ratioKernelDeriv r k x : ℂ) x := by
     rw [min_eq_left zero_le_one, max_eq_right zero_le_one]
@@ -355,9 +343,9 @@ private theorem fixedRatioRemIntegral_step {a : ℂ} (ha : 0 < a.re) {r : ℝ} (
     dsimp only [u]
     rw [sub_zero, mul_one, ← ofReal_aeval]
     push_cast
-    rfl
+    ring
   rw [integral_ratioKernel_mul_deriv a hr1 k, hv1, hv0, mul_zero, mul_one, zero_sub,
-    integral_ratioKernelDeriv_mul a r k, hu0] at hibp
+    integral_ratioKernelDeriv_mul a hr1 k, hu0] at hibp
   have heq := congr_arg (fun z : ℂ => (-a)⁻¹ * z) hibp
   have h1r : (1 - (r : ℂ)) ^ (2 * k + 1) ≠ 0 := pow_ne_zero _ (one_sub_ofReal_ne_zero hr1)
   rw [← mul_assoc, inv_mul_cancel₀ (neg_ne_zero.mpr ha0), one_mul] at heq
@@ -880,7 +868,7 @@ theorem isBigO_sub_mul_lowerIncompleteGamma_fixedRatio {r : ℝ} (hr0 : 0 < r) (
       push_cast
       rw [Complex.ofReal_cpow hra.le, ← Complex.lowerIncompleteGamma_ofReal ha hra.le]
       push_cast
-      rfl
+      ring
     · filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
       simp only [Function.comp_def, Complex.norm_real, Real.norm_of_nonneg ha.le]
   rw [← isBigO_norm_left] at hcast ⊢
@@ -932,7 +920,7 @@ theorem regularizedGamma_fixedRatio_isEquivalent {r : ℝ} (hr0 : 0 < r) (hr1 : 
       push_cast
       rw [Complex.ofReal_cpow hr0.le, Complex.ofReal_cpow ha.le]
       push_cast
-      rfl
+      ring
   rw [IsEquivalent, ← isLittleO_norm_norm] at hcast ⊢
   simpa only [Pi.sub_apply, ← Complex.ofReal_sub, Complex.norm_real] using hcast
 

@@ -48,7 +48,7 @@ normalization (`A₀ = A₁ = 1`, `A_k(1) = k!`, whereas `b_k(1) = (2k - 1)‼`)
   `TauCeti.coeff_secondOrderEulerianPolynomial_pos`,
   `TauCeti.aeval_secondOrderEulerianPolynomial_nonneg`,
   `TauCeti.aeval_secondOrderEulerianPolynomial_pos`: nonnegativity and positivity of coefficients
-  and evaluations over ordered commutative rings.
+  and evaluations over ordered rings.
 
 ## References
 
@@ -262,27 +262,25 @@ theorem coeff_secondOrderEulerianPolynomial_pos {k j : ℕ} (hj1 : 1 ≤ j) (hjk
           mul_pos (by positivity) hpos
         linarith
 
-/-- `b_k(x) ≥ 0` for `x ≥ 0` in any strict ordered commutative ring. -/
-theorem aeval_secondOrderEulerianPolynomial_nonneg {R : Type*} [CommRing R] [LinearOrder R]
-    [IsStrictOrderedRing R] {x : R} (hx : 0 ≤ x) (k : ℕ) :
+/-- `b_k(x) ≥ 0` for `x ≥ 0` in any ordered ring. -/
+theorem aeval_secondOrderEulerianPolynomial_nonneg {R : Type*} [Ring R] [PartialOrder R]
+    [IsOrderedRing R] {x : R} (hx : 0 ≤ x) (k : ℕ) :
     0 ≤ aeval x (secondOrderEulerianPolynomial k) := by
   rw [aeval_eq_sum_range]
   refine Finset.sum_nonneg fun i _ => ?_
   rw [Algebra.smul_def, eq_intCast]
-  have hc : (0 : R) ≤ ((secondOrderEulerianPolynomial k).coeff i : R) := by
-    exact_mod_cast coeff_secondOrderEulerianPolynomial_nonneg k i
-  exact mul_nonneg hc (pow_nonneg hx i)
+  exact mul_nonneg (Int.cast_nonneg (coeff_secondOrderEulerianPolynomial_nonneg k i))
+    (pow_nonneg hx i)
 
-/-- `b_k(x) > 0` for `x > 0` in any strict ordered commutative ring. -/
-theorem aeval_secondOrderEulerianPolynomial_pos {R : Type*} [CommRing R] [LinearOrder R]
+/-- `b_k(x) > 0` for `x > 0` in any strict ordered ring. -/
+theorem aeval_secondOrderEulerianPolynomial_pos {R : Type*} [Ring R] [PartialOrder R]
     [IsStrictOrderedRing R] {x : R} (hx : 0 < x) (k : ℕ) :
     0 < aeval x (secondOrderEulerianPolynomial k) := by
   rw [aeval_eq_sum_range' (Nat.lt_succ_of_le (natDegree_secondOrderEulerianPolynomial k).le)]
   refine Finset.sum_pos' (fun i _ => ?_) ⟨k, Finset.mem_range.mpr (Nat.lt_succ_self k), ?_⟩
   · rw [Algebra.smul_def, eq_intCast]
-    have hc : (0 : R) ≤ ((secondOrderEulerianPolynomial k).coeff i : R) := by
-      exact_mod_cast coeff_secondOrderEulerianPolynomial_nonneg k i
-    exact mul_nonneg hc (pow_nonneg hx.le i)
+    exact mul_nonneg (Int.cast_nonneg (coeff_secondOrderEulerianPolynomial_nonneg k i))
+      (pow_nonneg hx.le i)
   · rw [Algebra.smul_def, eq_intCast, coeff_secondOrderEulerianPolynomial_self, Int.cast_natCast]
     exact mul_pos (Nat.cast_pos.mpr (Nat.factorial_pos k)) (pow_pos hx k)
 
