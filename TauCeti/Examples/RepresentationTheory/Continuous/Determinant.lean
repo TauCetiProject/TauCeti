@@ -17,9 +17,9 @@ import TauCeti.RepresentationTheory.Continuous.Determinant.Operations
 * The trivial representation has trivial determinant character.
 * The determinant of a rank-one character line is the character itself, not its inverse.
 * The determinant of the direct sum of two character lines is the product of the characters.
-* After the nonflat coefficient change `ℤ → ℤ/2`, an element acting by `-1` on a character line
-  over `ℤ` acts on the base-changed line with determinant `1`: the determinant character commutes
-  with every coefficient change, flat or not.
+* After the nonflat coefficient change `ℤ → ℤ/2`, a character line over `ℤ`, such as a sign
+  character with an element acting by `-1`, has trivial determinant character: the determinant
+  character commutes with every coefficient change, flat or not.
 -/
 
 open TauCeti ContinuousRep
@@ -43,12 +43,13 @@ example [IsTopologicalRing A] (χ ψ : Γ →ₜ* Aˣ) :
     ((ofCharacter χ).prod (ofCharacter ψ)).det = (χ : Γ →* Aˣ) * ψ := by
   rw [det_prod, det_ofCharacter, det_ofCharacter]
 
--- After the nonflat coefficient change `ℤ → ℤ/2`, an element acting by `-1` acts with
--- determinant `1`.
+-- After the nonflat coefficient change `ℤ → ℤ/2`, every element acts with determinant `1`, also
+-- an element acting by `-1` before the change: `-1 = 1` in `ℤ/2`.
 open scoped TensorProduct in
-example (χ : Γ →ₜ* ℤˣ) (g : Γ) (hg : χ g = -1) [TopologicalSpace (ZMod 2 ⊗[ℤ] ℤ)]
+example (χ : Γ →ₜ* ℤˣ) [TopologicalSpace (ZMod 2 ⊗[ℤ] ℤ)]
     [IsModuleTopology (ZMod 2) (ZMod 2 ⊗[ℤ] ℤ)] :
-    ((ofCharacter χ).baseChange (ZMod 2)).det g = 1 := by
-  ext
-  rw [coe_det_baseChange_apply, det_ofCharacter, MonoidHom.coe_ofClass, hg]
-  decide
+    ((ofCharacter χ).baseChange (ZMod 2)).det = 1 := by
+  ext g
+  rw [coe_det_baseChange_apply, det_ofCharacter, MonoidHom.coe_ofClass, MonoidHom.one_apply,
+    Units.val_one]
+  rcases Int.units_eq_one_or (χ g) with h | h <;> rw [h] <;> decide
