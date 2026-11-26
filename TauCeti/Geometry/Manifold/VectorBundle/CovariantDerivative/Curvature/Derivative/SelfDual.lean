@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Bianchi
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Basic
-public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Form
 public import Mathlib.Topology.VectorBundle.Riemannian
 
 /-!
@@ -18,9 +17,10 @@ curvature `R`, and let `∇ᵀ` be a smooth torsion-free connection on the tange
 Levi-Civita connection. At a point `x`, the covariant derivative `∇_v R` of the curvature
 (`CovariantDerivative.derivCurvatureTensor`) is antisymmetric in its two curvature arguments, so it
 is a two-form on `T_x M` with values in the endomorphisms of `V x`,
-`CovariantDerivative.derivCurvatureForm`, with `u ∧ w ↦ (∇_v R)(u, w)`. The second Bianchi
-identity `(∇_u R)(v, w) + (∇_v R)(w, u) + (∇_w R)(u, v) = 0`
-(`CovariantDerivative.derivCurvatureTensor_cyclic_eq_zero`) says that this linear family of
+`CovariantDerivative.derivCurvatureForm`, with `u ∧ w ↦ (∇_v R)(u, w)`
+(`TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Form`). The
+second Bianchi identity for these forms
+(`CovariantDerivative.derivCurvatureForm_cyclic_eq_zero`) says that this linear family of
 two-forms is a Bianchi family in the sense of
 `TauCeti.Analysis.InnerProductSpace.HodgeStar.Bianchi`.
 
@@ -50,16 +50,8 @@ gradient bound
 (`TauCeti.SeibergWitten.innerCovariantDerivative_self_add_mul_innerCovariantDerivative_self_le`),
 although `∇R` itself is not bounded.
 
-## Main definitions
-
-* `CovariantDerivative.derivCurvatureForm`: the covariant derivative `∇_v R` of the curvature at a
-  point, as an endomorphism-valued two-form.
-
 ## Main results
 
-* `CovariantDerivative.derivCurvatureForm_apply_ιMulti`: `(∇_v R)(u ∧ w) = (∇_v R)(u, w)`.
-* `CovariantDerivative.derivCurvatureForm_cyclic_eq_zero`: the second Bianchi identity for these
-  forms.
 * `CovariantDerivative.sum_vectorFormHodgeStar_derivCurvatureForm_apply_ιMulti_eq_zero`: the
   divergence of the Hodge dual of `∇R` vanishes in dimension four.
 * `CovariantDerivative.sum_derivCurvatureTensor_eq_two_smul_sum_vectorFormSelfDualPart`,
@@ -96,41 +88,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
   (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
   (covT : CovariantDerivative I E (TangentSpace I : M → Type _))
-
-/-- The covariant derivative `∇_v R` of the curvature of `∇` at `x`, as a two-form on `T_x M`
-with values in the endomorphisms of `V x`: `u ∧ w ↦ (∇_v R)(u, w)`, depending linearly on `v`. -/
-def derivCurvatureForm (x : M) :
-    TangentSpace I x →ₗ[ℝ] ⋀[ℝ]^2 (TangentSpace I x) →ₗ[ℝ] (V x →ₗ[ℝ] V x) where
-  toFun v := alternatingMapLinearEquiv
-    (LinearMap.IsAlt.toAlternatingMap
-      -- `IsAlt` unfolds to `∀ u, B u u = 0`, the statement of `derivCurvatureTensor_self`.
-      (show (cov.derivCurvatureTensor covT x v).IsAlt from cov.derivCurvatureTensor_self covT x v))
-  map_add' v v' := by
-    rw [← map_add]
-    congr 1
-    ext w
-    simp
-  map_smul' c v := by
-    rw [← map_smul]
-    congr 1
-    ext w
-    simp
-
-/-- The two-form `∇_v R` evaluates on `u ∧ w` to `(∇_v R)(u, w)`. -/
-@[simp]
-theorem derivCurvatureForm_apply_ιMulti (x : M) (v u w : TangentSpace I x) :
-    cov.derivCurvatureForm covT x v (ιMulti ℝ 2 ![u, w]) =
-      cov.derivCurvatureTensor covT x v u w := by
-  simp [derivCurvatureForm, alternatingMapLinearEquiv_apply_ιMulti]
-
-/-- **The second Bianchi identity** for the two-forms `∇_v R`:
-`(∇_u R)(v ∧ w) + (∇_v R)(w ∧ u) + (∇_w R)(u ∧ v) = 0`, for a smooth torsion-free `∇ᵀ`. -/
-theorem derivCurvatureForm_cyclic_eq_zero [ContMDiffCovariantDerivative covT ∞]
-    (ht : covT.torsion = 0) (x : M) (u v w : TangentSpace I x) :
-    cov.derivCurvatureForm covT x u (ιMulti ℝ 2 ![v, w]) +
-        cov.derivCurvatureForm covT x v (ιMulti ℝ 2 ![w, u]) +
-      cov.derivCurvatureForm covT x w (ιMulti ℝ 2 ![u, v]) = 0 := by
-  simpa using cov.derivCurvatureTensor_cyclic_eq_zero covT ht x u v w
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [ContMDiffCovariantDerivative covT ∞]
   (ht : covT.torsion = 0) (x : M) [Fact (finrank ℝ (TangentSpace I x) = 4)]
