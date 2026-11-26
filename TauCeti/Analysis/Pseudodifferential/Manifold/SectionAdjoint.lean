@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Basic
 import TauCeti.Analysis.InnerProductSpace.Complex
+import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Complex
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Square
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 
@@ -51,9 +52,10 @@ Each of these is a properly supported formal adjoint, for `μ`, of the scalar op
 `g ↦ ⟪σ, P (g s)⟫_ℂ`: the Hermitian metrics are conjugate-linear in the first argument and
 Hermitian (`TauCeti.extendRCLike_innerₗ_smul_left`, `TauCeti.conj_extendRCLike_innerₗ`), which
 turns the scalar adjoint identity into the adjoint identity of `P` and `Q` for the sections `g s`
-and `f σ`. Over the support of `σ`, the pairing with `σ` is a sum of cut-off frame coefficients
-with smooth coefficients, so `g ↦ ⟪σ, P (g s)⟫_ℂ` is a classical pseudodifferential operator of
-order `m` by
+and `f σ` with the complex pairings
+(`LinearMap.IsFormalAdjoint.integral_complexInnerSection_eq`). Over the support of `σ`, the
+pairing with `σ` is a sum of cut-off frame coefficients with smooth coefficients, so
+`g ↦ ⟪σ, P (g s)⟫_ℂ` is a classical pseudodifferential operator of order `m` by
 `TauCeti.cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferentialOperators`.
 The scalar theorem then applies.
 
@@ -145,45 +147,6 @@ private theorem complexInnerSection_comp_comp_toSpanSingleton_mem [FiniteDimensi
     (cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferentialOperators _ _ _ _
       hP s) _
 
-omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
-  [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)]
-  [ContMDiffVectorBundle ∞ W F 𝓘(ℝ, CoordinateSpace n)] in
-/-- **Integration by parts for the complex pairings.** If `Q` is a formal adjoint of `P` for the
-real inner products, then `∫ ⟪P a, b⟫_ℂ dμ = ∫ ⟪a, Q b⟫_ℂ dμ` for the complex pairings, for
-compactly supported sections `a` and `b`. -/
-private theorem integral_pairing_eq [MeasurableSpace M] [OpensMeasurableSpace M] {μ : Measure M}
-    [IsFiniteMeasureOnCompacts μ]
-    (hPQ : (P.restrictScalars ℝ).IsFormalAdjoint (Q.restrictScalars ℝ) μ)
-    {a : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯} (ha : IsCompact a.tsupport)
-    {b : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯} (hb : IsCompact b.tsupport) :
-    ∫ x, complexInnerSection (P a) b x ∂μ = ∫ x, complexInnerSection a (Q b) x ∂μ := by
-  have hb' : IsCompact (Complex.I • b).tsupport := by
-    rwa [ContMDiffSection.tsupport_smul_of_normedAlgebra _ _ Complex.I_ne_zero]
-  -- The real pairings are continuous with compact support, hence integrable.
-  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
-    (IB := 𝓘(ℝ, CoordinateSpace n)) (n := ∞) (F := V) (V := E)
-  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
-    (IB := 𝓘(ℝ, CoordinateSpace n)) (n := ∞) (F := W) (V := F)
-  have hP' (x : M) : complexInnerSection (P a) b x =
-      (⟪P a x, b x⟫ : ℂ) - Complex.I * (⟪P a x, (Complex.I • b) x⟫ : ℂ) := by
-    rw [complexInnerSection_apply, extendRCLike_innerₗ_apply,
-      ContMDiffSection.coe_smul_of_normedAlgebra, Pi.smul_apply]
-  have hQ' (x : M) : complexInnerSection a (Q b) x =
-      (⟪a x, Q b x⟫ : ℂ) - Complex.I * (⟪a x, Q (Complex.I • b) x⟫ : ℂ) := by
-    rw [complexInnerSection_apply, extendRCLike_innerₗ_apply, map_smul,
-      ContMDiffSection.coe_smul_of_normedAlgebra, Pi.smul_apply]
-  simp only [hP', hQ']
-  rw [integral_sub (ContMDiffSection.integrable_inner (Or.inr hb)).ofReal
-      ((ContMDiffSection.integrable_inner (Or.inr hb')).ofReal.const_mul _),
-    integral_sub (ContMDiffSection.integrable_inner (Or.inl ha)).ofReal
-      ((ContMDiffSection.integrable_inner (Or.inl ha)).ofReal.const_mul _),
-    integral_const_mul, integral_const_mul, integral_complex_ofReal, integral_complex_ofReal,
-    integral_complex_ofReal, integral_complex_ofReal]
-  have h₁ := hPQ.integral_inner_eq (s := a) (t := b) (Or.inl ha)
-  have h₂ := hPQ.integral_inner_eq (s := a) (t := Complex.I • b) (Or.inl ha)
-  simp only [LinearMap.coe_restrictScalars] at h₁ h₂
-  rw [h₁, h₂]
-
 /-- Reading `Q` along a compactly supported section `σ` of `F` and pairing the result with a
 compactly supported section `s` of `E`, `f ↦ ⟪s, Q (f · σ)⟫_ℂ`, gives a classical
 pseudodifferential operator of order `m`: it is a properly supported formal adjoint of the
@@ -210,7 +173,8 @@ private theorem complexInnerSection_comp_comp_toSpanSingleton_mem_of_isFormalAdj
   have hb : IsCompact (v • σ).tsupport := hσ.of_isClosed_subset
     (ContMDiffSection.isClosed_tsupport _)
     ((ContMDiffSection.tsupport_smul_function_subset_of_normedAlgebra v σ).trans inter_subset_right)
-  -- Pointwise, the two integrands are the complex pairings of `integral_pairing_eq`.
+  -- Pointwise, the two integrands are the complex pairings of
+  -- `LinearMap.IsFormalAdjoint.integral_complexInnerSection_eq`.
   have h₁ (x : M) : inner ℂ (complexInnerSection σ (P (u • s)) x) (v x) =
       complexInnerSection (P (u • s)) (v • σ) x := by
     rw [complexInnerSection_apply, complexInnerSection_apply, RCLike.inner_apply',
@@ -222,7 +186,7 @@ private theorem complexInnerSection_comp_comp_toSpanSingleton_mem_of_isFormalAdj
       ContMDiffSection.smul_apply_of_normedAlgebra, extendRCLike_innerₗ_smul_left (hE x)]
   simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
     LinearMap.toSpanSingleton_apply, h₁, h₂]
-  exact integral_pairing_eq hPQ ha hb
+  exact hPQ.integral_complexInnerSection_eq ha hb
 
 /-- **Formal adjoints of pseudodifferential operators between vector bundles.** Let `E` and `F` be
 smooth complex vector bundles of finite rank over a manifold `M` modelled on `ℝⁿ`, whose fibres

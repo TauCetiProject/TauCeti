@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.RCLike.Extend
 
+import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+
 /-!
 # Real and complex inner product compatibility and real-span isotropy
 
@@ -112,10 +114,10 @@ section ExtendRCLike
 
 open ComplexConjugate
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Module ℂ E]
-  [IsScalarTower ℝ ℂ E]
-
 namespace TauCeti
+
+variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E] [Module ℂ E]
+  [IsScalarTower ℝ ℂ E]
 
 /-- The complex-linear extension of `⟪v, ·⟫` is `w ↦ ⟪v, w⟫ - i ⟪v, i w⟫`, with the coercion
 `Complex.ofReal`. -/
@@ -125,12 +127,12 @@ theorem extendRCLike_innerₗ_apply (v w : E) :
   rw [Module.Dual.extendRCLike_apply, innerₗ_apply_apply, innerₗ_apply_apply, RCLike.I_to_complex,
     RCLike.ofReal_eq_complex_ofReal]
 
-omit [IsScalarTower ℝ ℂ E] in
-/-- If multiplication by `i` preserves a real inner product, then `⟪i v, w⟫ = -⟪v, i w⟫`. -/
+/-- If multiplication by `i` preserves a real inner product, then `⟪i v, w⟫ = -⟪v, i w⟫`: the case
+`J = i` of `TauCeti.AlmostComplexStructure.bilinForm_apply_left_eq_neg_apply_right`. -/
 theorem real_inner_I_smul_left (hE : ∀ v w : E, ⟪Complex.I • v, Complex.I • w⟫_ℝ = ⟪v, w⟫_ℝ)
     (v w : E) : ⟪Complex.I • v, w⟫_ℝ = -⟪v, Complex.I • w⟫_ℝ := by
-  have h := hE v (Complex.I • w)
-  rwa [smul_smul, Complex.I_mul_I, neg_one_smul, inner_neg_right, neg_eq_iff_eq_neg] at h
+  simpa using (AlmostComplexStructure.ofComplexModule E).bilinForm_apply_left_eq_neg_apply_right
+    (g := innerₗ E) (by simpa using hE) v w
 
 /-- If multiplication by `i` preserves a real inner product, then the complex-linear extension
 `⟪v, w⟫ - i ⟪v, i w⟫` of `⟪v, ·⟫` is conjugate-linear in `v`. -/
@@ -167,6 +169,9 @@ theorem conj_extendRCLike_innerₗ (hE : ∀ v w : E, ⟪Complex.I • v, Comple
   ring
 
 end TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Module ℂ E]
+  [IsScalarTower ℝ ℂ E]
 
 /-- **Expansion in a real orthonormal basis.** If `b` is a real orthonormal basis of a complex
 vector space `E` with a real inner product, every complex-linear functional `l` on `E` is
