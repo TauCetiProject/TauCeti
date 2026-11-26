@@ -38,7 +38,9 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
   (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`, and invariant under
   reindexing (`CStarMatrix.normalizedTraceMap_comp_reindexₐ`).
 * `CStarMatrix.normalizedTrace_blockDiagonal'`: the normalized trace of a block-diagonal matrix
-  weights the block `i` by `|n i| / |Σ i, n i|`.
+  weights the block `i` by `|n i| / |Σ i, n i|`, and so does
+  `CStarMatrix.normalizedTwoNorm_blockDiagonal'_sq` for `‖·‖₂²`; hence
+  `CStarMatrix.normalizedTwoNorm_blockDiagonal'_le`: `‖diag(x_i)‖₂ ≤ c` when every `‖x_i‖₂ ≤ c`.
 * `CStarMatrix.normalizedTwoNorm`: the normalized 2-norm `‖x‖₂`.
 * `CStarMatrix.normalizedTwoNorm_eq_inv_sqrt_mul_frobenius_norm`: `‖x‖₂ = k^{-1/2}‖x‖_F`.
 * `CStarMatrix.normalizedTwoNorm_matrixUnit`: `‖e_ij‖₂ = k^{-1/2}`.
@@ -696,6 +698,36 @@ theorem normalizedTrace_blockDiagonalSingle (i : ι) (x : CStarMatrix (n i) (n i
   rw [← sum_blockDiagonalSingle (R := ℂ), Fintype.sum_eq_single i (fun j hj => by simp [hj]),
     Fintype.sum_eq_single i (fun j hj => by simp [hj]), Pi.single_eq_same] at h
   exact h
+
+/-- **Block additivity of the normalized 2-norm** for a block-diagonal matrix:
+`‖diag(x_i)‖₂² = Σᵢ (|n i| / |Σ i, n i|) ‖x_i‖₂²`. -/
+theorem normalizedTwoNorm_blockDiagonal'_sq (x : ∀ i, CStarMatrix (n i) (n i) ℂ) :
+    normalizedTwoNorm (ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))) ^ 2 =
+      ∑ i, (Fintype.card (n i) / Fintype.card (Σ i, n i) : ℝ) * normalizedTwoNorm (x i) ^ 2 := by
+  have h : star (ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))) *
+      ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i)) =
+      ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (star (x i) * x i)) := by
+    apply ofMatrix.symm.injective
+    simp [Matrix.blockDiagonal'_conjTranspose, ← Matrix.blockDiagonal'_mul]
+  rw [normalizedTwoNorm_sq, h, normalizedTrace_blockDiagonal', Complex.re_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [normalizedTrace_star_mul_self, ← Complex.ofReal_natCast, ← Complex.ofReal_natCast,
+    ← Complex.ofReal_div, ← Complex.ofReal_mul, Complex.ofReal_re]
+
+/-- A block-diagonal matrix whose blocks all have normalized 2-norm at most `c` has normalized
+2-norm at most `c`: `‖diag(x_i)‖₂²` is a weighted average of the `‖x_i‖₂²`. -/
+theorem normalizedTwoNorm_blockDiagonal'_le {x : ∀ i, CStarMatrix (n i) (n i) ℂ} {c : ℝ}
+    (hc : 0 ≤ c) (h : ∀ i, normalizedTwoNorm (x i) ≤ c) :
+    normalizedTwoNorm (ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))) ≤ c := by
+  refine (pow_le_pow_iff_left₀ (normalizedTwoNorm_nonneg _) hc two_ne_zero).1 ?_
+  rw [normalizedTwoNorm_blockDiagonal'_sq]
+  calc ∑ i, (Fintype.card (n i) / Fintype.card (Σ i, n i) : ℝ) * normalizedTwoNorm (x i) ^ 2
+      ≤ ∑ i, (Fintype.card (n i) / Fintype.card (Σ i, n i) : ℝ) * c ^ 2 := by
+        gcongr with i
+        exacts [normalizedTwoNorm_nonneg _, h i]
+    _ = (Fintype.card (Σ i, n i) / Fintype.card (Σ i, n i) : ℝ) * c ^ 2 := by
+        rw [← Finset.sum_mul, ← Finset.sum_div, Fintype.card_sigma, Nat.cast_sum]
+    _ ≤ c ^ 2 := mul_le_of_le_one_left (by positivity) (div_self_le_one _)
 
 end BlockDiagonal
 
