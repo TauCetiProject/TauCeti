@@ -12,7 +12,6 @@ import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Deriv
-import TauCeti.NumberTheory.AbelSummation
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.IntervalSum
 import TauCeti.NumberTheory.Harmonic.Bounds
