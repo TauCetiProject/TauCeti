@@ -13,6 +13,7 @@ import TauCeti.Geometry.Lie.Adjoint.InvariantForm
 import TauCeti.LinearAlgebra.SesquilinearForm.Separating
 import TauCeti.RepresentationTheory.Continuous.Basic
 import TauCeti.Topology.Algebra.Module.ModuleTopology
+import TauCeti.Topology.Homeomorph.Quotient
 
 /-!
 # The adjoint and coadjoint orbit spaces of a compact Lie group
@@ -154,8 +155,9 @@ theorem IsMaximalTorus.weylOrbitHomeomorph_mk (hT : IsMaximalTorus T)
     (X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) :
     hT.weylOrbitHomeomorph (Quotient.mk _ X) =
       Quotient.mk (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel
-        (X : LeftInvariantDerivation I G) :=
-  (rfl)
+        (X : LeftInvariantDerivation I G) := by
+  simp only [weylOrbitHomeomorph, Homeomorph.trans_apply, Homeomorph.Quotient.congrRight_mk,
+    Topology.IsQuotientMap.homeomorph_apply (f := ⟨_, _⟩), ContinuousMap.coe_mk, Setoid.kerLift_mk]
 
 end Compact
 
@@ -284,8 +286,10 @@ theorem IsMaximalTorus.weylCoadjointOrbitHomeomorph_mk (hT : IsMaximalTorus T)
     (hB' : LinearMap.SeparatingLeft B) (X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) :
     hT.weylCoadjointOrbitHomeomorph hB hB' (Quotient.mk _ X) =
       Quotient.mk (coadjointRepresentation ℝ I G).orbitRel
-        (B (evalOne (X : LeftInvariantDerivation I G))) :=
-  (rfl)
+        (B (evalOne (X : LeftInvariantDerivation I G))) := by
+  simp only [weylCoadjointOrbitHomeomorph, Homeomorph.trans_apply,
+    Homeomorph.Quotient.congrRight_mk, Topology.IsQuotientMap.homeomorph_apply (f := ⟨_, _⟩),
+    ContinuousMap.coe_mk, Setoid.kerLift_mk]
 
 end Coadjoint
 
