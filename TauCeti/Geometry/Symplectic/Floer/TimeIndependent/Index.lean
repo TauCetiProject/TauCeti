@@ -275,7 +275,7 @@ private theorem ker_sliceAverageLp_le_range_floerSobolevOperator_of_bijective
   have hmaps (G : V → ℝ) : ∀ x ∈ N₁, jetOperator stripMeasure (ω.floerJetCoeff
       (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ G)
       (fun z ↦ γ z.1)) x ∈ N₂ := fun _ hx ↦ jetOperator_floerJetCoeff_mem_ker_sliceAverageLp G hx
-  have : CompleteSpace N₁ := ((isClosed_jetClosure _).inter
+  have : CompleteSpace N₁ := ((isClosed_jetClosure 2 _).inter
     (isClosed_ker (sliceAverageLp : Lp (V × V × V) 2 stripMeasure →L[ℝ] _))).completeSpace_coe
   set R₀ := (jetOperator stripMeasure (ω.floerJetCoeff
     (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
