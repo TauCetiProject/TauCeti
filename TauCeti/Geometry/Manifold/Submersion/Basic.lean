@@ -286,6 +286,41 @@ private def codTransition {E'' G N : Type*} [NormedAddCommGroup E''] [NormedSpac
   (J.toHomeomorph.symm.transOpenPartialHomeomorph (ψ₁.symm.trans ψ₂)).transHomeomorph
     J.toHomeomorph
 
+private theorem mem_codTransition_source_iff {E'' G N : Type*} [NormedAddCommGroup E'']
+    [NormedSpace 𝕜 E''] [TopologicalSpace G] (J : ModelWithCorners 𝕜 E'' G) [J.Boundaryless]
+    [TopologicalSpace N] (ψ₁ ψ₂ : OpenPartialHomeomorph N G) (u : E'') :
+    u ∈ (codTransition J ψ₁ ψ₂).source ↔ J.symm u ∈ ψ₁.target ∧ ψ₁.symm (J.symm u) ∈ ψ₂.source := by
+  simp only [codTransition, OpenPartialHomeomorph.transHomeomorph_source,
+    Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.trans_source,
+    OpenPartialHomeomorph.symm_source, Set.mem_preimage, ModelWithCorners.toHomeomorph_symm_apply,
+    Set.mem_inter_iff]
+
+private theorem codTransition_toPartialEquiv {E'' G N : Type*} [NormedAddCommGroup E'']
+    [NormedSpace 𝕜 E''] [TopologicalSpace G] (J : ModelWithCorners 𝕜 E'' G) [J.Boundaryless]
+    [TopologicalSpace N] (ψ₁ ψ₂ : OpenPartialHomeomorph N G) :
+    (codTransition J ψ₁ ψ₂).toPartialEquiv = J.extendCoordChange ψ₁ ψ₂ := by
+  ext u
+  · rfl
+  · rfl
+  · rw [mem_codTransition_source_iff, ModelWithCorners.extendCoordChange,
+      PartialEquiv.trans_source, PartialEquiv.symm_source, Set.mem_inter_iff, Set.mem_preimage,
+      OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.extend_source,
+      J.range_eq_univ, Set.inter_univ]
+    rfl
+
+private theorem codTransition_symm {E'' G N : Type*} [NormedAddCommGroup E'']
+    [NormedSpace 𝕜 E''] [TopologicalSpace G] (J : ModelWithCorners 𝕜 E'' G) [J.Boundaryless]
+    [TopologicalSpace N] (ψ₁ ψ₂ : OpenPartialHomeomorph N G) :
+    (codTransition J ψ₁ ψ₂).symm = codTransition J ψ₂ ψ₁ := by
+  refine OpenPartialHomeomorph.ext _ _ (fun _ ↦ rfl) (fun _ ↦ rfl) ?_
+  simp only [OpenPartialHomeomorph.symm_toPartialEquiv, codTransition_toPartialEquiv,
+    J.extendCoordChange_symm]
+
+private theorem codTransition_apply {E'' G N : Type*} [NormedAddCommGroup E'']
+    [NormedSpace 𝕜 E''] [TopologicalSpace G] (J : ModelWithCorners 𝕜 E'' G) [J.Boundaryless]
+    [TopologicalSpace N] (ψ₁ ψ₂ : OpenPartialHomeomorph N G) (u : E'') :
+    codTransition J ψ₁ ψ₂ u = J (ψ₂ (ψ₁.symm (J.symm u))) := rfl
+
 private theorem contMDiffOn_codTransition {E'' G N : Type*} [NormedAddCommGroup E'']
     [NormedSpace 𝕜 E''] [TopologicalSpace G] {J : ModelWithCorners 𝕜 E'' G}
     [TopologicalSpace N] [ChartedSpace G N] [J.Boundaryless] {n : ℕ∞ω}
@@ -293,11 +328,13 @@ private theorem contMDiffOn_codTransition {E'' G N : Type*} [NormedAddCommGroup 
     (h₁ : ψ₁ ∈ IsManifold.maximalAtlas J n N) (h₂ : ψ₂ ∈ IsManifold.maximalAtlas J n N) :
     ContMDiffOn 𝓘(𝕜, E'') 𝓘(𝕜, E'') n (codTransition J ψ₁ ψ₂)
       (codTransition J ψ₁ ψ₂).source := by
-  have hJ_symm : ContMDiff 𝓘(𝕜, E'') J n J.symm :=
-    contMDiffOn_univ.1 (J.range_eq_univ ▸ J.contMDiffOn_symm)
-  exact J.contMDiff.comp_contMDiffOn <| (contMDiffOn_of_mem_maximalAtlas h₂).comp
-    ((contMDiffOn_symm_of_mem_maximalAtlas h₁).comp hJ_symm.contMDiffOn fun _ hu ↦ hu.1)
-    fun _ hu ↦ hu.2
+  have hEq := codTransition_toPartialEquiv J ψ₁ ψ₂
+  have hs : (codTransition J ψ₁ ψ₂).source = (J.extendCoordChange ψ₁ ψ₂).source :=
+    congrArg PartialEquiv.source hEq
+  have hf : (codTransition J ψ₁ ψ₂ : E'' → E'') = J.extendCoordChange ψ₁ ψ₂ :=
+    congrArg PartialEquiv.toFun hEq
+  rw [hs, hf]
+  exact (J.contDiffOn_extendCoordChange h₁ h₂).contMDiffOn
 
 /-- Lift a transition map on `E''` along `L : E ≃L[𝕜] E'' × F` by acting as the identity on `F`. -/
 private def liftCodTransition {E E'' F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -305,6 +342,40 @@ private def liftCodTransition {E E'' F : Type*} [NormedAddCommGroup E] [NormedSp
     (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'') : OpenPartialHomeomorph E E :=
   (L.toHomeomorph.transOpenPartialHomeomorph
     (σ.prod (OpenPartialHomeomorph.refl F))).transHomeomorph L.symm.toHomeomorph
+
+private theorem mem_liftCodTransition_source_iff {E E'' F : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'') (u : E) :
+    u ∈ (liftCodTransition L σ).source ↔ (L u).1 ∈ σ.source := by
+  simp only [liftCodTransition, OpenPartialHomeomorph.transHomeomorph_source,
+    Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.prod_source,
+    OpenPartialHomeomorph.refl_source, Set.mem_preimage, Set.mem_prod, Set.mem_univ, and_true]
+  rfl
+
+private theorem mem_liftCodTransition_target_iff {E E'' F : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'') (u : E) :
+    u ∈ (liftCodTransition L σ).target ↔ (L u).1 ∈ σ.target := by
+  simp only [liftCodTransition, OpenPartialHomeomorph.transHomeomorph_target,
+    Homeomorph.transOpenPartialHomeomorph_target, OpenPartialHomeomorph.prod_target,
+    OpenPartialHomeomorph.refl_target, Set.mem_preimage, Set.mem_prod, Set.mem_univ, and_true]
+  rfl
+
+private theorem liftCodTransition_symm {E E'' F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'') :
+    (liftCodTransition L σ).symm = liftCodTransition L σ.symm := by
+  refine OpenPartialHomeomorph.ext _ _ (fun _ ↦ rfl) (fun _ ↦ rfl) ?_
+  ext u
+  rw [OpenPartialHomeomorph.symm_source, mem_liftCodTransition_target_iff,
+    mem_liftCodTransition_source_iff, OpenPartialHomeomorph.symm_source]
+
+private theorem liftCodTransition_apply_fst {E E'' F : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'') (u : E) :
+    (L (liftCodTransition L σ u)).1 = σ (L u).1 := by
+  change (L (L.symm (σ (L u).1, (L u).2))).1 = σ (L u).1
+  rw [L.apply_symm_apply]
 
 private theorem contMDiffOn_liftCodTransition {E E'' F : Type*} [NormedAddCommGroup E]
     [NormedSpace 𝕜 E] [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [NormedAddCommGroup F]
@@ -331,17 +402,15 @@ theorem exists_domChart_of_codChart [I.Boundaryless] [J.Boundaryless] [IsManifol
       x ∈ φ.source ∧
       φ.source ⊆ f ⁻¹' ψ.source ∧
       ∀ z ∈ φ.source, ψ.extend J (f z) = (h.equiv (φ.extend I z)).1 := by
-  have hI : ∀ u : E, I (I.symm u) = u := fun u ↦ I.right_inv (by simp [I.range_eq_univ])
+  have hI : ∀ u : E, I (I.symm u) = u := fun u ↦ I.right_inv (I.range_eq_univ ▸ Set.mem_univ u)
   have hI_symm : ContMDiff 𝓘(𝕜, E) I n I.symm :=
     contMDiffOn_univ.1 (I.range_eq_univ ▸ I.contMDiffOn_symm)
   let τ := codTransition J h.codChart ψ
   let g := liftCodTransition h.equiv τ
   let φ : OpenPartialHomeomorph M H :=
     ((h.domChart.transHomeomorph I.toHomeomorph).trans g).transHomeomorph I.toHomeomorph.symm
-  have hτ_inv : τ.symm = codTransition J ψ h.codChart := by
-    ext u <;> simp [τ, codTransition]
-  have hg_inv : g.symm = liftCodTransition h.equiv τ.symm := by
-    ext u <;> simp [g, liftCodTransition]
+  have hτ_inv : τ.symm = codTransition J ψ h.codChart := codTransition_symm J h.codChart ψ
+  have hg_inv : g.symm = liftCodTransition h.equiv τ.symm := liftCodTransition_symm h.equiv τ
   -- Verify `φ` belongs to the maximal atlas by smoothness of the forward and inverse transitions.
   have hφ_atlas : φ ∈ IsManifold.maximalAtlas I n M := by
     refine φ.mem_maximalAtlas_of_contMDiffOn ?_ ?_
@@ -352,23 +421,32 @@ theorem exists_domChart_of_codChart [I.Boundaryless] [J.Boundaryless] [IsManifol
             (contMDiffOn_codTransition h.codChart_mem_maximalAtlas hψ)).comp
           (h1.mono fun z hz ↦ hz.1) fun z hz ↦ hz.2)
     · have h1 := (contMDiffOn_symm_of_mem_maximalAtlas h.domChart_mem_maximalAtlas).comp
-        (hI_symm.contMDiffOn (s := I '' h.domChart.target)) fun u ⟨w, hw, hw'⟩ ↦
-          hw' ▸ by simpa [I.left_inv] using hw
+        (hI_symm.contMDiffOn (s := I '' h.domChart.target)) fun u ⟨w, hw, hw'⟩ ↦ by
+          rw [← hw', Set.mem_preimage, I.left_inv]
+          exact hw
       have h2 := (hg_inv ▸ contMDiffOn_liftCodTransition h.equiv
           (hτ_inv ▸ contMDiffOn_codTransition hψ h.codChart_mem_maximalAtlas)).comp
-        (I.contMDiff.contMDiffOn (s := φ.target)) fun z hz ↦ by simpa [φ, hI] using hz.1
-      exact h1.comp h2 fun z hz ↦ ⟨I.symm (g.symm (I z)), by simpa [φ, hI] using hz.2, hI _⟩
+        (I.contMDiff.contMDiffOn (s := φ.target)) fun z hz ↦ by
+          change I z ∈ g.symm.source
+          change I z ∈ ((h.domChart.transHomeomorph I.toHomeomorph).trans g).target at hz
+          rw [OpenPartialHomeomorph.trans_target, Set.mem_inter_iff] at hz
+          exact hz.1
+      exact h1.comp h2 fun z hz ↦ by
+        have hz2 : I.symm (g.symm (I z)) ∈ h.domChart.target := by
+          change I z ∈ ((h.domChart.transHomeomorph I.toHomeomorph).trans g).target at hz
+          rw [OpenPartialHomeomorph.trans_target, Set.mem_inter_iff] at hz
+          have hmem : g.symm (I z) ∈ (h.domChart.transHomeomorph I.toHomeomorph).target := hz.2
+          rw [OpenPartialHomeomorph.transHomeomorph_target, Set.mem_preimage] at hmem
+          exact hmem
+        exact ⟨I.symm (g.symm (I z)), hz2, hI _⟩
   -- Express `z ∈ φ.source` explicitly in terms of `h.domChart.source` and `τ.source`.
   have hmem_tau : ∀ {z : M}, z ∈ h.domChart.source →
       ((h.equiv (h.domChart.extend I z)).1 ∈ τ.source ↔ f z ∈ ψ.source) := fun {z} hz ↦ by
+    have hfcod : f z ∈ h.codChart.source := h.source_subset_preimage_source hz
     rw [← h.projection_apply, ← h.codChart_extend_apply hz]
-    simp only [τ, codTransition, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
-      OpenPartialHomeomorph.transHomeomorph_source,
-      Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.trans_source,
-      OpenPartialHomeomorph.symm_source, Set.mem_inter_iff, Set.mem_preimage,
-      ModelWithCorners.toHomeomorph_symm_apply, J.left_inv,
-      h.codChart.left_inv (h.source_subset_preimage_source hz)]
-    exact and_iff_right (h.codChart.map_source (h.source_subset_preimage_source hz))
+    change J (h.codChart (f z)) ∈ τ.source ↔ f z ∈ ψ.source
+    rw [mem_codTransition_source_iff, J.left_inv, h.codChart.left_inv hfcod]
+    exact and_iff_right (h.codChart.map_source hfcod)
   have hx_φ : x ∈ φ.source := by
     refine ⟨h.mem_domChart_source, ⟨?_, trivial⟩⟩
     exact (hmem_tau h.mem_domChart_source).2 hx
@@ -377,12 +455,13 @@ theorem exists_domChart_of_codChart [I.Boundaryless] [J.Boundaryless] [IsManifol
   -- On `φ.source`, `φ.extend I` equals `g ∘ h.domChart.extend I`, which intertwines `τ` with `ψ`.
   refine ⟨φ, hφ_atlas, hx_φ, hsub, fun z hz ↦ ?_⟩
   have hφz : φ.extend I z = g (h.domChart.extend I z) := by
-    simp [φ, OpenPartialHomeomorph.extend, hI]
-  have hLg : (h.equiv (g (h.domChart.extend I z))).1 = τ (h.equiv (h.domChart.extend I z)).1 := by
-    simp [g, liftCodTransition]
+    change I (I.symm (g (I (h.domChart z)))) = g (I (h.domChart z))
+    exact hI _
+  have hLg : (h.equiv (g (h.domChart.extend I z))).1 = τ (h.equiv (h.domChart.extend I z)).1 :=
+    liftCodTransition_apply_fst h.equiv τ _
   rw [hφz, hLg, ← h.projection_apply, ← h.codChart_extend_apply hz.1]
-  simp [τ, codTransition, OpenPartialHomeomorph.extend, J.left_inv,
-    h.codChart.left_inv (h.source_subset_preimage_source hz.1)]
+  change J (ψ (f z)) = τ (J (h.codChart (f z)))
+  rw [codTransition_apply, J.left_inv, h.codChart.left_inv (h.source_subset_preimage_source hz.1)]
 
 end IsSubmersionAtOfComplement
 

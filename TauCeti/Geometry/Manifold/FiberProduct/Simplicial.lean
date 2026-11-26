@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.FiberProduct.IteratedSubmersion
+public import TauCeti.Geometry.Manifold.FiberProduct.Iterated.Submersion
 import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Pi
+import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 
 /-!
 # Simplicial structure of iterated submersion fibre products
@@ -463,15 +464,13 @@ theorem continuous_degeneracy {m : ℕ} (i : Fin (m + 1)) :
 by `face i.castSucc`. -/
 theorem isEmbedding_degeneracy {m : ℕ} (i : Fin (m + 1)) :
     IsEmbedding (degeneracy (π := π) i) :=
-  (leftInverse_face_castSucc_degeneracy i).isEmbedding
-    (continuous_face i.castSucc) (continuous_degeneracy i)
+  degeneracy_eq_reindex i ▸ isEmbedding_reindex_of_surjective (Fin.predAbove_surjective i)
 
 /-- When `Y` is Hausdorff, every degeneracy map `degeneracy i : Y^[m + 1] → Y^[m + 2]` is a closed
 topological embedding. -/
 theorem isClosedEmbedding_degeneracy [T2Space Y] {m : ℕ} (i : Fin (m + 1)) :
     IsClosedEmbedding (degeneracy (π := π) i) :=
-  (leftInverse_face_castSucc_degeneracy i).isClosedEmbedding
-    (continuous_face i.castSucc) (continuous_degeneracy i)
+  degeneracy_eq_reindex i ▸ isClosedEmbedding_reindex_of_surjective (Fin.predAbove_surjective i)
 
 end Topology
 
@@ -635,11 +634,9 @@ theorem isSmoothEmbedding_reindex_of_surjective {m₁ m₂ : ℕ} {α : Fin (m�
   let := iteratedFiberProductChartedSpace hn hπ m₁
   have := isManifold_iteratedFiberProduct hn hπ m₂
   have := isManifold_iteratedFiberProduct hn hπ m₁
-  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
-  refine ⟨(contMDiff_reindex hn hπ le_rfl α).isImmersion_of_leftInverse hn
-    (fun _ ↦ ((contMDiff_reindex hn hπ le_rfl (surjInv hα)) _).mdifferentiableAt hn0)
-    (IteratedFiberProduct.leftInverse_reindex_surjInv hα),
-    IteratedFiberProduct.isEmbedding_reindex_of_surjective hα⟩
+  exact (contMDiff_reindex hn hπ le_rfl α).isSmoothEmbedding_of_leftInverse hn
+    (contMDiff_reindex hn hπ hn (surjInv hα))
+    (IteratedFiberProduct.leftInverse_reindex_surjInv hα)
 
 /-- Every face map `face i : Y^[m + 2] → Y^[m + 1]` is `C^{m'}` for `m' ≤ n`. -/
 theorem contMDiff_face {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) (i : Fin (m + 2)) :
@@ -715,12 +712,8 @@ theorem isImmersion_degeneracy {m : ℕ} (i : Fin (m + 1)) :
         IteratedFiberProduct π (m + 1) → IteratedFiberProduct π (m + 2)) := by
   let := iteratedFiberProductChartedSpace hn hπ m
   let := iteratedFiberProductChartedSpace hn hπ (m + 1)
-  have := isManifold_iteratedFiberProduct hn hπ m
-  have := isManifold_iteratedFiberProduct hn hπ (m + 1)
-  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
-  exact (contMDiff_degeneracy hn hπ le_rfl i).isImmersion_of_leftInverse hn
-    (fun _ ↦ ((contMDiff_face hn hπ le_rfl i.castSucc) _).mdifferentiableAt hn0)
-    (IteratedFiberProduct.leftInverse_face_castSucc_degeneracy i)
+  exact (IteratedFiberProduct.degeneracy_eq_reindex i ▸
+    isSmoothEmbedding_reindex_of_surjective hn hπ (Fin.predAbove_surjective i)).isImmersion
 
 /-- **Every diagonal degeneracy map is a smooth embedding.** On `IteratedFiberProduct π (m + 1)`,
 `degeneracy i : Y^[m + 1] → Y^[m + 2]` is a `C^n` smooth embedding. -/
@@ -734,7 +727,8 @@ theorem isSmoothEmbedding_degeneracy {m : ℕ} (i : Fin (m + 1)) :
         IteratedFiberProduct π (m + 1) → IteratedFiberProduct π (m + 2)) := by
   let := iteratedFiberProductChartedSpace hn hπ m
   let := iteratedFiberProductChartedSpace hn hπ (m + 1)
-  exact ⟨isImmersion_degeneracy hn hπ i, IteratedFiberProduct.isEmbedding_degeneracy i⟩
+  exact IteratedFiberProduct.degeneracy_eq_reindex i ▸
+    isSmoothEmbedding_reindex_of_surjective hn hπ (Fin.predAbove_surjective i)
 
 end Manifold
 

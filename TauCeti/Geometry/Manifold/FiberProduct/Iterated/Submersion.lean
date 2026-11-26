@@ -14,6 +14,7 @@ import TauCeti.Geometry.Manifold.Immersion.Diffeomorph
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Pi
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 
 /-!
 # Iterated fibre products of submersions
@@ -291,6 +292,27 @@ private def iteratedStepHomeomorph {π : Y → M} (m : ℕ) :
       simp only [Fin.snoc_castSucc]
       exact (IteratedFiberProduct.continuous_eval k).comp continuous_subtypeVal.fst
 
+omit [ChartedSpace HY Y] [ChartedSpace HM M] in
+/-- On a product chart domain `∏ i, (φ i).source` over a codomain chart `ψ` where `ψ.extend IM ∘ π`
+reads as `(L i ∘ (φ i).extend IY ·).1`, a tuple `w : ι → Y` satisfies the equal-fibre
+matching condition `∀ i j, π (w i) = π (w j)` if and only if all base-projection coordinates
+`(L i ((φ i).extend IY (w i))).1` agree. -/
+theorem forall_apply_eq_iff_fst_extend_eq {π : Y → M} {ι F : Type*}
+    {ψ : OpenPartialHomeomorph M HM}
+    {φ : ι → OpenPartialHomeomorph Y HY}
+    {L : ι → EY → EM × F}
+    (hφ_sub : ∀ i, (φ i).source ⊆ π ⁻¹' ψ.source)
+    (hφ_eq : ∀ (i : ι) {w : Y}, w ∈ (φ i).source →
+      ψ.extend IM (π w) = (L i ((φ i).extend IY w)).1)
+    {w : ι → Y} (hw : ∀ i, w i ∈ (φ i).source) :
+    (∀ i j : ι, π (w i) = π (w j)) ↔
+      ∀ i j : ι, (L i ((φ i).extend IY (w i))).1 = (L j ((φ j).extend IY (w j))).1 :=
+  ⟨fun h i j ↦ by rw [← hφ_eq i (hw i), ← hφ_eq j (hw j), h i j], fun h i j ↦
+    (ψ.extend IM).injOn
+      (by rw [OpenPartialHomeomorph.extend_source]; exact hφ_sub i (hw i))
+      (by rw [OpenPartialHomeomorph.extend_source]; exact hφ_sub j (hw j))
+      (by rw [hφ_eq i (hw i), hφ_eq j (hw j)]; exact h i j)⟩
+
 variable [IsManifold IY n Y] [IsManifold IM n M]
   [IY.Boundaryless]
   [FiniteDimensional ℝ EY] [FiniteDimensional ℝ EM]
@@ -323,15 +345,9 @@ theorem exists_submersionCharts_iteratedFiberProduct {π : Y → M} (hn : 1 ≤ 
       hπ.exists_domChart_mem_maximalAtlas_chartAt hn (y.val i)
   refine ⟨φ, L, fun i _ ↦ hyφ i, TauCeti.pi_mem_maximalAtlas hφmax, hφeq, fun z hz ↦ ?_⟩
   rw [mem_range_coe_iteratedFiberProduct_iff]
-  have hzeq : ∀ i, (L i ((φ i).extend IY (z i))).1 =
-      extChartAt IM (IteratedFiberProduct.baseProj y) (π (z i)) :=
-    fun i ↦ (hφeq i (z i) (hz i trivial)).symm
-  refine ⟨fun h i j ↦ by rw [hzeq i, hzeq j, h i j], fun h i j ↦ ?_⟩
-  have hinj := h i j
-  rw [hzeq i, hzeq j] at hinj
-  exact (extChartAt IM (IteratedFiberProduct.baseProj y)).injOn
-    ((extChartAt_source IM (IteratedFiberProduct.baseProj y)).symm ▸ hφsub i (hz i trivial))
-    ((extChartAt_source IM (IteratedFiberProduct.baseProj y)).symm ▸ hφsub j (hz j trivial)) hinj
+  exact forall_apply_eq_iff_fst_extend_eq
+    (ψ := chartAt HM (IteratedFiberProduct.baseProj y)) (L := fun i ↦ (L i))
+    hφsub (fun i _ hw ↦ hφeq i _ hw) (fun i ↦ hz i trivial)
 
 variable [IM.Boundaryless]
 
@@ -638,11 +654,8 @@ theorem isSmoothEmbedding_const (m : ℕ) :
       (IteratedFiberProduct.const (π := π) (m + 1)) := by
   let := iteratedFiberProductChartedSpace hn hπ m
   have := isManifold_iteratedFiberProduct hn hπ m
-  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
-  refine ⟨(contMDiff_const hn hπ le_rfl).isImmersion_of_leftInverse hn
-    (fun _ ↦ ((contMDiff_eval hn hπ le_rfl 0) _).mdifferentiableAt hn0)
-    (fun z ↦ IteratedFiberProduct.eval_const 0 z),
-    IteratedFiberProduct.isEmbedding_const m⟩
+  exact (contMDiff_const hn hπ le_rfl).isSmoothEmbedding_of_leftInverse hn
+    (contMDiff_eval hn hπ hn 0) (fun z ↦ IteratedFiberProduct.eval_const 0 z)
 
 /-- The base projection `baseProj : Y^[m + 1] → M` is `C^{m'}` for `m' ≤ n`. -/
 theorem contMDiff_baseProj {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) :

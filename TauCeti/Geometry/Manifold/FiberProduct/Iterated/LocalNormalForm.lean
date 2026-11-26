@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.FiberProduct.IteratedSubmersion
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Geometry.Manifold.FiberProduct.Iterated.Submersion
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
 # Local projection normal form of iterated fibre products
@@ -84,12 +84,9 @@ private theorem isOpen_localNormalFormTarget (k : ℕ)
           ((φ i).extend IY).target := by
     ext; simp
   rw [hEq]
-  refine isOpen_iInter_of_finite fun i ↦ ?_
-  have ht : IsOpen ((φ i).extend IY).target := by
-    rw [OpenPartialHomeomorph.extend_target, IY.range_eq_univ, inter_univ]
-    exact (φ i).open_target.preimage IY.continuous_symm
-  exact ht.preimage ((L i).symm.continuous.comp
-    (continuous_fst.prodMk ((continuous_apply i).comp continuous_snd)))
+  refine isOpen_iInter_of_finite fun i ↦
+    (φ i).isOpen_extend_target.preimage ((L i).symm.continuous.comp
+      (continuous_fst.prodMk ((continuous_apply i).comp continuous_snd)))
 
 private theorem contMDiffOn_localNormalForm_toFun {π : Y → M} (hn : 1 ≤ n)
     (hπ : Manifold.IsSubmersion IY IM n π) (k : ℕ)
@@ -163,6 +160,21 @@ private theorem contMDiffOn_localNormalForm_invFun {π : Y → M} (hn : 1 ≤ n)
         fun p hp ↦ hinv_eq p hp i
   exact (isSmoothEmbedding_coe_iteratedFiberProduct hn hπ k).contMDiffOn_iff_comp.2 hinv_pi
 
+omit [ChartedSpace HY Y] [ChartedSpace HM M]
+  [IsManifold IY n Y] [IsManifold IM n M] [IY.Boundaryless] [IM.Boundaryless]
+  [FiniteDimensional ℝ EY] [FiniteDimensional ℝ EM] in
+private theorem localNormalForm_pair_eq {π : Y → M} {k : ℕ}
+    {ψ : OpenPartialHomeomorph M HM}
+    {φ : Fin (k + 1) → OpenPartialHomeomorph Y HY}
+    {L : Fin (k + 1) → EY ≃L[ℝ] EM × (Fin (finrank ℝ EY - finrank ℝ EM) → ℝ)}
+    (hφ_eq : ∀ (i : Fin (k + 1)) {z : Y}, z ∈ (φ i).source →
+      ψ.extend IM (π z) = (L i ((φ i).extend IY z)).1)
+    {z : IteratedFiberProduct π (k + 1)} (hz : ∀ i, z.val i ∈ (φ i).source)
+    (i : Fin (k + 1)) :
+    L i ((φ i).extend IY (z.val i)) =
+      (ψ.extend IM (IteratedFiberProduct.baseProj z), (L i ((φ i).extend IY (z.val i))).2) :=
+  Prod.ext (by rw [← hφ_eq i (hz i), ← IteratedFiberProduct.baseProj_eq_apply z i]) rfl
+
 /-- Assemble the simultaneous submersion charts `φ i` and linear splittings `L i` over a base
 chart `ψ` into a `C^n` `PartialDiffeomorph` around `y ∈ Y^[k + 1]`. -/
 private noncomputable def localNormalFormPartialDiffeomorph {π : Y → M} (hn : 1 ≤ n)
@@ -193,19 +205,18 @@ private noncomputable def localNormalFormPartialDiffeomorph {π : Y → M} (hn :
     simpa only [OpenPartialHomeomorph.extend_source] using ((φ i).extend IY).map_target (hp i)
   have hinv_match : ∀ {p : EM × (Fin (k + 1) → F)}, p ∈ V → ∀ (i j : Fin (k + 1)),
       π (((φ i).extend IY).symm ((L i).symm (p.1, p.2 i))) =
-        π (((φ j).extend IY).symm ((L j).symm (p.1, p.2 j))) := fun hp i j ↦
-    (ψ.extend IM).injOn
-      (by rw [OpenPartialHomeomorph.extend_source]; exact hφ_sub i (hinv_mem hp i))
-      (by rw [OpenPartialHomeomorph.extend_source]; exact hφ_sub j (hinv_mem hp j)) <| by
-      rw [hφ_eq i (hinv_mem hp i), hφ_eq j (hinv_mem hp j), ((φ i).extend IY).right_inv (hp i),
-        ((φ j).extend IY).right_inv (hp j), (L i).apply_symm_apply, (L j).apply_symm_apply]
+        π (((φ j).extend IY).symm ((L j).symm (p.1, p.2 j))) := fun hp ↦
+    (forall_apply_eq_iff_fst_extend_eq (L := fun i ↦ (L i)) hφ_sub hφ_eq (hinv_mem hp)).2
+      fun i j ↦ by
+        rw [((φ i).extend IY).right_inv (hp i), ((φ j).extend IY).right_inv (hp j),
+          (L i).apply_symm_apply, (L j).apply_symm_apply]
   let invFun : EM × (Fin (k + 1) → F) → IteratedFiberProduct π (k + 1) := fun p ↦
     if hp : p ∈ V then
       ⟨fun i ↦ ((φ i).extend IY).symm ((L i).symm (p.1, p.2 i)), hinv_match hp⟩
     else y
   have htoFun_pair : ∀ {z : IteratedFiberProduct π (k + 1)}, z ∈ U → ∀ i : Fin (k + 1),
-      ((toFun z).1, (toFun z).2 i) = L i ((φ i).extend IY (z.val i)) := fun {z} hz i ↦
-    Prod.ext (by rw [← hφ_eq i (hz i), ← IteratedFiberProduct.baseProj_eq_apply z i]) rfl
+      ((toFun z).1, (toFun z).2 i) = L i ((φ i).extend IY (z.val i)) := fun hz i ↦
+    (localNormalForm_pair_eq hφ_eq hz i).symm
   have hmap_source : ∀ z ∈ U, toFun z ∈ V := fun z hz i ↦ by
     rw [htoFun_pair hz i, (L i).symm_apply_apply]
     exact ((φ i).extend IY).map_source (by rw [OpenPartialHomeomorph.extend_source]; exact hz i)
@@ -233,6 +244,44 @@ private noncomputable def localNormalFormPartialDiffeomorph {π : Y → M} (hn :
         contMDiffOn_localNormalForm_invFun hn hπ k φ hφ_atlas L invFun fun p hp i ↦ by
           have hpV : p ∈ V := hp
           simp only [invFun, hpV, ↓reduceDIte] }
+
+private theorem localNormalFormPartialDiffeomorph_source {π : Y → M} (hn : 1 ≤ n)
+    (hπ : Manifold.IsSubmersion IY IM n π) (k : ℕ) (y : IteratedFiberProduct π (k + 1))
+    {ψ : OpenPartialHomeomorph M HM} (hψ : ψ ∈ IsManifold.maximalAtlas IM n M)
+    (φ : Fin (k + 1) → OpenPartialHomeomorph Y HY)
+    (hφ_atlas : ∀ i, φ i ∈ IsManifold.maximalAtlas IY n Y)
+    (hφ_sub : ∀ i, (φ i).source ⊆ π ⁻¹' ψ.source)
+    (L : Fin (k + 1) → EY ≃L[ℝ] EM × (Fin (finrank ℝ EY - finrank ℝ EM) → ℝ))
+    (hφ_eq : ∀ (i : Fin (k + 1)) {z : Y}, z ∈ (φ i).source →
+      ψ.extend IM (π z) = (L i ((φ i).extend IY z)).1) :
+    (localNormalFormPartialDiffeomorph hn hπ k y hψ φ hφ_atlas hφ_sub L hφ_eq).source =
+      {z : IteratedFiberProduct π (k + 1) | ∀ i, z.val i ∈ (φ i).source} := rfl
+
+private theorem localNormalFormPartialDiffeomorph_apply_fst {π : Y → M} (hn : 1 ≤ n)
+    (hπ : Manifold.IsSubmersion IY IM n π) (k : ℕ) (y : IteratedFiberProduct π (k + 1))
+    {ψ : OpenPartialHomeomorph M HM} (hψ : ψ ∈ IsManifold.maximalAtlas IM n M)
+    (φ : Fin (k + 1) → OpenPartialHomeomorph Y HY)
+    (hφ_atlas : ∀ i, φ i ∈ IsManifold.maximalAtlas IY n Y)
+    (hφ_sub : ∀ i, (φ i).source ⊆ π ⁻¹' ψ.source)
+    (L : Fin (k + 1) → EY ≃L[ℝ] EM × (Fin (finrank ℝ EY - finrank ℝ EM) → ℝ))
+    (hφ_eq : ∀ (i : Fin (k + 1)) {z : Y}, z ∈ (φ i).source →
+      ψ.extend IM (π z) = (L i ((φ i).extend IY z)).1)
+    (z : IteratedFiberProduct π (k + 1)) :
+    (localNormalFormPartialDiffeomorph hn hπ k y hψ φ hφ_atlas hφ_sub L hφ_eq z).1 =
+      ψ.extend IM (IteratedFiberProduct.baseProj z) := rfl
+
+private theorem localNormalFormPartialDiffeomorph_apply_snd {π : Y → M} (hn : 1 ≤ n)
+    (hπ : Manifold.IsSubmersion IY IM n π) (k : ℕ) (y : IteratedFiberProduct π (k + 1))
+    {ψ : OpenPartialHomeomorph M HM} (hψ : ψ ∈ IsManifold.maximalAtlas IM n M)
+    (φ : Fin (k + 1) → OpenPartialHomeomorph Y HY)
+    (hφ_atlas : ∀ i, φ i ∈ IsManifold.maximalAtlas IY n Y)
+    (hφ_sub : ∀ i, (φ i).source ⊆ π ⁻¹' ψ.source)
+    (L : Fin (k + 1) → EY ≃L[ℝ] EM × (Fin (finrank ℝ EY - finrank ℝ EM) → ℝ))
+    (hφ_eq : ∀ (i : Fin (k + 1)) {z : Y}, z ∈ (φ i).source →
+      ψ.extend IM (π z) = (L i ((φ i).extend IY z)).1)
+    (z : IteratedFiberProduct π (k + 1)) (i : Fin (k + 1)) :
+    (localNormalFormPartialDiffeomorph hn hπ k y hψ φ hφ_atlas hφ_sub L hφ_eq z).2 i =
+      (L i ((φ i).extend IY (z.val i))).2 := rfl
 
 /-- **Local projection normal form of `IteratedFiberProduct π (k + 1)`.** Around any point
 `y ∈ Y^[k+1]` and any chart `ψ` of `M` around `IteratedFiberProduct.baseProj y`, there exist
@@ -294,14 +343,20 @@ theorem exists_localNormalForm_iteratedFiberProduct {π : Y → M} (hn : 1 ≤ n
       ψ.extend IM (π z) = (L i ((φ i).extend IY z)).1 :=
     fun i _ hz ↦ (hchart i).choose_spec.2.2.2 _ hz
   let Φ := localNormalFormPartialDiffeomorph hn hπ k y hψ φ hφ_atlas hφ_sub L hφ_eq
-  refine ⟨φ, L, Φ, hφ_atlas, hy_φ, hφ_sub, hy_φ, rfl, fun z _ ↦ rfl, ?_, ?_⟩
+  have hΦ_src : Φ.source = {z : IteratedFiberProduct π (k + 1) | ∀ i, z.val i ∈ (φ i).source} :=
+    localNormalFormPartialDiffeomorph_source hn hπ k y hψ φ hφ_atlas hφ_sub L hφ_eq
+  have hΦ_fst : ∀ z, (Φ z).1 = ψ.extend IM (IteratedFiberProduct.baseProj z) :=
+    localNormalFormPartialDiffeomorph_apply_fst hn hπ k y hψ φ hφ_atlas hφ_sub L hφ_eq
+  have hΦ_snd : ∀ z i, (Φ z).2 i = (L i ((φ i).extend IY (z.val i))).2 :=
+    localNormalFormPartialDiffeomorph_apply_snd hn hπ k y hψ φ hφ_atlas hφ_sub L hφ_eq
+  refine ⟨φ, L, Φ, hφ_atlas, hy_φ, hφ_sub, ?_, hΦ_src, fun z _ ↦ (hΦ_fst z).symm, ?_, ?_⟩
+  · rw [hΦ_src]
+    exact hy_φ
   · intro z hz i
-    exact Prod.ext (by rw [← hφ_eq i (hz i), ← IteratedFiberProduct.baseProj_eq_apply z i]; rfl) rfl
-  · intro w hw
-    exact ⟨fun h i j ↦ by rw [← hφ_eq i (hw i), ← hφ_eq j (hw j), h i j], fun h i j ↦
-      (ψ.extend IM).injOn (by rw [OpenPartialHomeomorph.extend_source]; exact hφ_sub i (hw i))
-        (by rw [OpenPartialHomeomorph.extend_source]; exact hφ_sub j (hw j))
-        (by rw [hφ_eq i (hw i), hφ_eq j (hw j)]; exact h i j)⟩
+    rw [hΦ_src] at hz
+    rw [hΦ_fst z, hΦ_snd z i]
+    exact localNormalForm_pair_eq hφ_eq hz i
+  · exact fun w hw ↦ forall_apply_eq_iff_fst_extend_eq (L := fun i ↦ (L i)) hφ_sub hφ_eq hw
 
 end LocalNormalForm
 
