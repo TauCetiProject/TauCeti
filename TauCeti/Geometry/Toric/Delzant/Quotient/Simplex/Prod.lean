@@ -53,7 +53,6 @@ relabelling the coordinates of `ℂ⁴`. So the Delzant quotient of the rectangl
 
 ## Main results
 
-* `TauCeti.Toric.isDelzant_rectangle`: the rectangle `[0, a] × [0, b]` is Delzant.
 * `TauCeti.Toric.DelzantQuotient.mpullback_simplexProdDiffeomorph_prod`,
   `TauCeti.Toric.DelzantQuotient.isSymplectomorphism_simplexProdDiffeomorph`: the Delzant quotient
   of `Δ_a × Δ_b` is `(ℂPⁿ × ℂPᵐ, 2π a ω_FS ⊕ 2π b ω_FS)`.
@@ -77,13 +76,6 @@ open Metric Module Real
 open scoped Manifold ContDiff
 
 namespace TauCeti.Toric
-
-/-- **The rectangle is Delzant.** For `a, b > 0`, the rectangle `[0, a] × [0, b]`, presented in
-`ℤ²` as the Hirzebruch trapezoid with `k = 0`, is a Delzant polytope: the case `k = 0` of
-`isDelzant_hirzebruch`. -/
-theorem isDelzant_rectangle {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
-    IsDelzant ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal 0) (hirzebruchSupport a b) :=
-  isDelzant_hirzebruch hb ha (by simpa using ha)
 
 namespace DelzantQuotient
 
@@ -561,19 +553,27 @@ theorem isSymplectomorphism_rectangleDiffeomorph (ha : 0 < a) (hb : 0 < b) :
   SmoothTwoForm.isSymplectomorphism_iff_mpullback_eq.2
     (mpullback_rectangleDiffeomorph_prod ha hb)
 
-/-- The two moment map coordinates of the rectangle at `(rectangleDiffeomorph ha hb).symm p` agree
-with the corresponding coordinates of the product of two intervals at
-`(simplexProdDiffeomorph 1 1 ha hb).symm p`. -/
-private theorem reducedMomentMap_rectangleDiffeomorph_symm_apply (ha : 0 < a) (hb : 0 < b)
-    (hβ : Function.Surjective (Fintype.linearCombination ℝ
+/-- The first two facet normals of the rectangle, `(1, 0)` and `(0, 1)`, are the standard basis
+vectors of `ℝ²`. -/
+private theorem intCast_hirzebruchNormal_zero_castSucc_castSucc (j : Fin 2) :
+    (Int.castAddHom ℝ).compLeft (Fin 2) (hirzebruchNormal 0 j.castSucc.castSucc) =
+      Pi.single j 1 := by
+  ext k
+  fin_cases j <;> fin_cases k <;> simp [hirzebruchNormal_def]
+
+/-- The moment map coordinate of the rectangle along the `j`-th basis vector of `ℝ²` at
+`(rectangleDiffeomorph ha hb).symm p` agrees with the coordinate of the product of two intervals
+at `(simplexProdDiffeomorph 1 1 ha hb).symm p` along the matching facet normal: both facets have
+support constant `0`. -/
+private theorem reducedMomentMap_rectangleDiffeomorph_symm_apply_single (ha : 0 < a)
+    (hb : 0 < b) (hβ : Function.Surjective (Fintype.linearCombination ℝ
       fun j ↦ (Int.castAddHom ℝ).compLeft (Fin 2) (hirzebruchNormal 0 j)))
-    (p : ComplexProjectiveSpace 1 × ComplexProjectiveSpace 1) (j : Fin 4) :
+    (p : ComplexProjectiveSpace 1 × ComplexProjectiveSpace 1) (j : Fin 2) :
     letI := (isDelzant_rectangle ha hb).delzantQuotientChartedSpace (isIntegralLattice_intCast 2)
     letI := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast 1).injective
         (isIntegralLattice_intCast 1).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
       ((isIntegralLattice_intCast 1).prod (isIntegralLattice_intCast 1))
-    reducedMomentMap hβ ((rectangleDiffeomorph ha hb).symm p)
-        ((Int.castAddHom ℝ).compLeft (Fin 2) (hirzebruchNormal 0 j)) - hirzebruchSupport a b j =
+    reducedMomentMap hβ ((rectangleDiffeomorph ha hb).symm p) (Pi.single j 1) =
       reducedMomentMap (i := ((Int.castAddHom ℝ).compLeft (Fin 1)).prodMap
           ((Int.castAddHom ℝ).compLeft (Fin 1)))
           (u := prodNormal (simplexNormal (Fin 1)) (simplexNormal (Fin 1)))
@@ -583,8 +583,7 @@ private theorem reducedMomentMap_rectangleDiffeomorph_symm_apply (ha : 0 < a) (h
           ((simplexProdDiffeomorph 1 1 ha hb).symm p)
           ((((Int.castAddHom ℝ).compLeft (Fin 1)).prodMap ((Int.castAddHom ℝ).compLeft (Fin 1)))
             (prodNormal (simplexNormal (Fin 1)) (simplexNormal (Fin 1))
-              (rectangleFacetEquiv j))) -
-        Sum.elim (simplexSupport a) (simplexSupport b) (rectangleFacetEquiv j) := by
+              (rectangleFacetEquiv j.castSucc.castSucc))) := by
   let _ := (isDelzant_rectangle ha hb).delzantQuotientChartedSpace (isIntegralLattice_intCast 2)
   let _ := ((isDelzant_simplex ha).prod (isIntegralLattice_intCast 1).injective
         (isIntegralLattice_intCast 1).injective (isDelzant_simplex hb)).delzantQuotientChartedSpace
@@ -593,14 +592,15 @@ private theorem reducedMomentMap_rectangleDiffeomorph_symm_apply (ha : 0 < a) (h
     prodMap_piLpCongrLeft_mem_delzantLevel_rectangle_iff
     comp_symm_mem_ker_facetTorusHom_rectangle_iff
     (surjective_linearCombination_prodNormal surjective_linearCombination_simplexNormal
-      surjective_linearCombination_simplexNormal) hβ ((rectangleDiffeomorph ha hb).symm p) j
+      surjective_linearCombination_simplexNormal) hβ ((rectangleDiffeomorph ha hb).symm p)
+    j.castSucc.castSucc
   have hq : DelzantQuotient.congr rectangleFacetEquiv
       prodMap_piLpCongrLeft_mem_delzantLevel_rectangle_iff
       comp_symm_mem_ker_facetTorusHom_rectangle_iff ((rectangleDiffeomorph ha hb).symm p) =
       (simplexProdDiffeomorph 1 1 ha hb).symm p := by
     rw [coe_rectangleDiffeomorph_symm, Function.comp_apply, Homeomorph.apply_symm_apply]
-  rw [hq] at h
-  exact h.symm
+  rw [hq, intCast_hirzebruchNormal_zero_castSucc_castSucc] at h
+  fin_cases j <;> simpa [hirzebruchSupport_def] using h.symm
 
 /-- **The moment map of `ℂP¹ × ℂP¹`, first coordinate.** Under `rectangleDiffeomorph`, the reduced
 moment map of the Delzant quotient of the rectangle `[0, a] × [0, b]` sends the point
@@ -614,16 +614,8 @@ theorem reducedMomentMap_rectangleDiffeomorph_symm_mk_apply_zero (ha : 0 < a) (h
     reducedMomentMap hβ ((rectangleDiffeomorph ha hb).symm
         (ComplexProjectiveSpace.mk 1 w, ComplexProjectiveSpace.mk 1 w')) (Pi.single 0 1) =
       a * ‖(w : EuclideanSpace ℂ (Fin 2)) 1‖ ^ 2 := by
-  have h := reducedMomentMap_rectangleDiffeomorph_symm_apply ha hb hβ
-    (ComplexProjectiveSpace.mk 1 w, ComplexProjectiveSpace.mk 1 w') 0
-  have hn : (Int.castAddHom ℝ).compLeft (Fin 2) (hirzebruchNormal 0 0) = Pi.single 0 1 := by
-    ext k
-    fin_cases k <;> simp [hirzebruchNormal_def]
-  simp only [rectangleFacetEquiv_zero, hn, prodNormal_inl, simplexNormal_some,
-    AddMonoidHom.coe_prodMap, Prod.map_apply, AddMonoidHom.compLeft_single, Int.coe_castAddHom,
-    Int.cast_one, map_zero, Sum.elim_inl,
-    simplexSupport_some, hirzebruchSupport_def, Matrix.cons_val_zero, sub_zero] at h
-  rw [h, reducedMomentMap_simplexProdDiffeomorph_symm_mk_apply_fst, Fin.succ_zero_eq_one]
+  rw [reducedMomentMap_rectangleDiffeomorph_symm_apply_single]
+  simpa using reducedMomentMap_simplexProdDiffeomorph_symm_mk_apply_fst 1 1 ha hb w w' 0
 
 /-- **The moment map of `ℂP¹ × ℂP¹`, second coordinate.** Under `rectangleDiffeomorph`, the
 reduced moment map of the Delzant quotient of the rectangle `[0, a] × [0, b]` sends the point
@@ -637,17 +629,8 @@ theorem reducedMomentMap_rectangleDiffeomorph_symm_mk_apply_one (ha : 0 < a) (hb
     reducedMomentMap hβ ((rectangleDiffeomorph ha hb).symm
         (ComplexProjectiveSpace.mk 1 w, ComplexProjectiveSpace.mk 1 w')) (Pi.single 1 1) =
       b * ‖(w' : EuclideanSpace ℂ (Fin 2)) 1‖ ^ 2 := by
-  have h := reducedMomentMap_rectangleDiffeomorph_symm_apply ha hb hβ
-    (ComplexProjectiveSpace.mk 1 w, ComplexProjectiveSpace.mk 1 w') 1
-  have hn : (Int.castAddHom ℝ).compLeft (Fin 2) (hirzebruchNormal 0 1) = Pi.single 1 1 := by
-    ext k
-    fin_cases k <;> simp [hirzebruchNormal_def]
-  simp only [rectangleFacetEquiv_one, hn, prodNormal_inr, simplexNormal_some,
-    AddMonoidHom.coe_prodMap, Prod.map_apply, AddMonoidHom.compLeft_single, Int.coe_castAddHom,
-    Int.cast_one, map_zero, Sum.elim_inr,
-    simplexSupport_some, hirzebruchSupport_def, Matrix.cons_val_one, Matrix.cons_val_zero,
-    sub_zero] at h
-  rw [h, reducedMomentMap_simplexProdDiffeomorph_symm_mk_apply_snd, Fin.succ_zero_eq_one]
+  rw [reducedMomentMap_rectangleDiffeomorph_symm_apply_single]
+  simpa using reducedMomentMap_simplexProdDiffeomorph_symm_mk_apply_snd 1 1 ha hb w w' 0
 
 end Rectangle
 
