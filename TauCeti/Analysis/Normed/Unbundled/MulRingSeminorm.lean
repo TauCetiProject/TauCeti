@@ -240,6 +240,21 @@ theorem iInfOfDirected_le {ι : Sort*} [Nonempty ι] (p : ι → RingSeminorm R)
     iInfOfDirected p hp a ≤ p i a :=
   ciInf_le ⟨0, by rintro _ ⟨j, rfl⟩; exact apply_nonneg (p j) a⟩ i
 
+/-- Any real lower bound on `p i a` for all `i` bounds `iInfOfDirected p hp a` from below. -/
+theorem le_iInfOfDirected {ι : Sort*} [Nonempty ι] (p : ι → RingSeminorm R)
+    (hp : Directed (· ≥ ·) (fun i ↦ (p i : R → ℝ))) {a : R} {r : ℝ}
+    (hr : ∀ i, r ≤ p i a) :
+    r ≤ iInfOfDirected p hp a :=
+  le_ciInf hr
+
+/-- A function `q : R → ℝ` bounds `iInfOfDirected p hp` from below pointwise if and only if
+it bounds every `p i` from below pointwise. -/
+theorem le_iInfOfDirected_iff {ι : Sort*} [Nonempty ι] (p : ι → RingSeminorm R)
+    (hp : Directed (· ≥ ·) (fun i ↦ (p i : R → ℝ))) {q : R → ℝ} :
+    (∀ a, q a ≤ iInfOfDirected p hp a) ↔ ∀ i a, q a ≤ p i a :=
+  ⟨fun h i a ↦ (h a).trans (iInfOfDirected_le p hp i a),
+    fun h a ↦ le_iInfOfDirected p hp fun i ↦ h i a⟩
+
 end NonUnitalRing
 
 section Ring
