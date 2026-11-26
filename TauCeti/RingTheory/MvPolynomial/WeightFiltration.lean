@@ -276,7 +276,7 @@ theorem weightReesAeval_X : weightReesAeval c d Polynomial.X = Polynomial.X :=
 
 /-- Evaluating the Rees presentation map at `t = 1` recovers substitution of the generators `c`. -/
 @[simp]
-theorem eval_one_weightReesAeval (f : (MvPolynomial ι R)[X]) :
+theorem _root_.Polynomial.eval_one_weightReesAeval (f : (MvPolynomial ι R)[X]) :
     (weightReesAeval c d f).eval 1 = aeval c (f.eval 1) := by
   have h :
       ((Polynomial.aeval (1 : MvPolynomial σ R)).restrictScalars R).comp (weightReesAeval c d) =

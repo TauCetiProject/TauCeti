@@ -39,7 +39,9 @@ namespace Algebra.TensorProduct
 
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R[X] A]
 
-private theorem includeRight_algebraMap_X (a : R) :
+/-- Under evaluation at `a`, the canonical map `includeRight : A →ₐ[R[X]] R ⊗[R[X]] A` sends
+`algebraMap R[X] A X` to `algebraMap R (R ⊗[R[X]] A) a`. -/
+theorem includeRight_algebraMap_X (a : R) :
     letI := Algebra.compHom R (evalRingHom a)
     (includeRight : A →ₐ[R[X]] R ⊗[R[X]] A) (algebraMap R[X] A X) =
       algebraMap R (R ⊗[R[X]] A) a := by

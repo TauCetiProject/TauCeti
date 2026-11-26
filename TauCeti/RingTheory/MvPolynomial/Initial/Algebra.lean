@@ -96,14 +96,7 @@ theorem toSubmodule_weightInitialAlgebra (A : Subalgebra R (MvPolynomial σ R)) 
     · rw [h0]; exact S.zero_mem
     · rw [hpmul]; exact Submodule.subset_span ⟨p * q, A.mul_mem hp hq, rfl⟩
   let B : Subalgebra R (MvPolynomial σ R) :=
-    { carrier := S
-      zero_mem' := SetLike.mem_coe.mpr S.zero_mem
-      add_mem' := fun ha hb ↦ SetLike.mem_coe.mpr (S.add_mem ha hb)
-      one_mem' := SetLike.mem_coe.mpr hone
-      mul_mem' := fun ha hb ↦ SetLike.mem_coe.mpr (hmul _ ha _ hb)
-      algebraMap_mem' := fun r ↦ SetLike.mem_coe.mpr <| by
-        rw [Algebra.algebraMap_eq_smul_one]
-        exact S.smul_mem r hone }
+    S.toSubalgebra hone (fun x y hx hy ↦ hmul x hx y hy)
   exact (A.weightInitialAlgebra_le_iff (B := B) w).mpr fun f hf ↦
     SetLike.mem_coe.mpr (Submodule.subset_span ⟨f, hf, rfl⟩)
 

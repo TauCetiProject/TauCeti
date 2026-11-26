@@ -356,7 +356,7 @@ theorem coe_evalOne_weightReesAevalLift (f : (MvPolynomial ι R)[X]) :
     (coeffSubalgebra.evalOne (A.weightFiltration w) (weightReesAevalLift hcA hc f) :
       MvPolynomial σ R) = aeval c (f.eval 1) := by
   rw [coeffSubalgebra.evalOne_eq_eval, coe_eval_weightReesAevalLift, map_one,
-    eval_one_weightReesAeval]
+    Polynomial.eval_one_weightReesAeval]
 
 /-- Composing `weightReesMap` with `weightReesAevalLift` gives the lift for the larger
 subalgebra. -/
