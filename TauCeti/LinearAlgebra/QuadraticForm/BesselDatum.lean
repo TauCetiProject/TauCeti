@@ -166,6 +166,7 @@ vectors `e₋ℓ, …, e₋₁, e₁, …, e_ℓ`. -/
 def middleSpace : Submodule R M :=
   LinearMap.BilinForm.orthogonal (associated Q) (Submodule.span R (Set.range D.e ∪ Set.range D.f))
 
+@[simp]
 theorem mem_middleSpace_iff {x : M} :
     x ∈ D.middleSpace ↔ (∀ i, associated Q (D.e i) x = 0) ∧ ∀ i, associated Q (D.f i) x = 0 := by
   simp only [middleSpace, LinearMap.BilinForm.orthogonal, Submodule.mem_orthogonalBilin_span,
@@ -192,6 +193,9 @@ theorem linearIndependent_e_f : LinearIndependent R (Sum.elim D.e D.f) :=
 
 theorem linearIndependent_e : LinearIndependent R D.e :=
   D.linearIndependent_e_f.comp _ Sum.inl_injective
+
+theorem linearIndependent_f : LinearIndependent R D.f :=
+  D.linearIndependent_e_f.comp _ Sum.inr_injective
 
 /-- The span of the vectors `e₋ℓ, …, e₋₁, e₁, …, e_ℓ` of a Bessel datum and its middle space are
 complementary: `V = ⟨e₋ℓ, …, e_ℓ⟩ ⊕ V_ℓ`. -/
