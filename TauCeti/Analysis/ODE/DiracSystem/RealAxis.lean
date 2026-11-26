@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.ODE.DiracSystem.HermiteBiehler
 public import TauCeti.Analysis.ODE.DiracSystem.Symmetry
-public import TauCeti.Analysis.ODE.Propagator.Dissipative
+public import TauCeti.Analysis.ODE.Propagator.SymmetricPart
+import TauCeti.Analysis.Matrix.EuclideanLin
 
 /-!
 # The Hermite–Biehler functions of a Dirac system on the real axis
@@ -56,65 +57,72 @@ theorem abs_re_inner_diracCoeff_ofReal_le (q : ℝ → ℂ) (x s : ℝ) (v : Euc
     |(inner ℂ v (toEuclideanCLM (𝕜 := ℂ) (diracCoeff q x s) v)).re| ≤ ‖q s‖ * ‖v‖ ^ 2 := by
   have hskew : (inner ℂ v (toEuclideanCLM (𝕜 := ℂ) ((x : ℂ) • !![(0 : ℂ), -1; 1, 0]) v)).re =
       0 := by
-    simp only [map_smul, smul_apply, inner_smul_right, PiLp.inner_apply,
-      Fin.sum_univ_two, ofLp_toEuclideanCLM, mulVec, dotProduct]
-    simp only [Fin.isValue, of_apply, cons_val', cons_val_zero, cons_val_fin_one, zero_mul,
-      cons_val_one, neg_mul, one_mul, zero_add, RCLike.inner_apply, add_zero, mul_re, ofReal_re,
-      add_re, neg_re, conj_re, conj_im, mul_neg, sub_neg_eq_add, neg_add_rev, ofReal_im, add_im,
-      neg_im, mul_im, neg_neg, sub_zero, mul_eq_zero]
-    exact Or.inr (by ring)
+    simp [PiLp.inner_apply, Fin.sum_univ_two, mulVec, dotProduct]
+    ring
   rw [diracCoeff_eq_smul_add, map_add, add_apply, inner_add_right, Complex.add_re, hskew,
     zero_add]
   refine (Complex.abs_re_le_norm _).trans ((norm_inner_le_norm _ _).trans ?_)
   rw [norm_toEuclideanCLM_diracCoeff_zero_apply]
-  ring_nf
-  rfl
+  exact le_of_eq (by ring)
 
-/-- For a real spectral parameter `x` and `t ≥ 0`, each column `M_q(t, x) e_j` of the fundamental
-matrix has norm at most `e^{∫₀ᵗ |q|}`. -/
+/-- For a real spectral parameter `x` and `t ≥ 0`, both bounds on `‖M_q(t, x) v‖`, from the
+propagator bounds from the symmetric part of the coefficient. -/
+private theorem diracFundamentalMatrix_ofReal_apply_bounds (hq : IntegrableOn q (Icc 0 t))
+    (ht : 0 ≤ t) (x : ℝ) (v : EuclideanSpace ℂ (Fin 2)) :
+    Real.exp (-∫ s in (0 : ℝ)..t, ‖q s‖) * ‖v‖ ≤
+        ‖toEuclideanCLM (𝕜 := ℂ) (diracFundamentalMatrix q t x) v‖ ∧
+      ‖toEuclideanCLM (𝕜 := ℂ) (diracFundamentalMatrix q t x) v‖ ≤
+        Real.exp (∫ s in (0 : ℝ)..t, ‖q s‖) * ‖v‖ := by
+  let : InnerProductSpace ℝ (EuclideanSpace ℂ (Fin 2)) := InnerProductSpace.complexToReal
+  have hP := integrableOn_toEuclideanCLM_diracCoeff hq x
+  have hm := hq.norm
+  rw [← uIcc_of_le ht] at hP hm
+  rw [toEuclideanCLM_diracFundamentalMatrix,
+    ← abs_of_nonneg (intervalIntegral.integral_nonneg ht fun _ _ ↦ norm_nonneg _)]
+  refine ⟨exp_neg_mul_norm_le_norm_propagator_apply_of_abs_inner_le hP hm ?_ v,
+    norm_propagator_apply_le_of_abs_inner_le hP hm ?_ v⟩ <;>
+  exact .of_forall fun s w ↦ abs_re_inner_diracCoeff_ofReal_le q x s w
+
+/-- For a real spectral parameter `x` and `t ≥ 0`, each vector `M_q(t, x) v` has norm at most
+`e^{∫₀ᵗ |q|} ‖v‖`. -/
 theorem norm_diracFundamentalMatrix_ofReal_apply_le (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t)
     (x : ℝ) (v : EuclideanSpace ℂ (Fin 2)) :
     ‖toEuclideanCLM (𝕜 := ℂ) (diracFundamentalMatrix q t x) v‖ ≤
-      Real.exp (∫ s in (0 : ℝ)..t, ‖q s‖) * ‖v‖ := by
-  let : InnerProductSpace ℝ (EuclideanSpace ℂ (Fin 2)) := InnerProductSpace.complexToReal
-  have hu : uIcc 0 t = Icc 0 t := uIcc_of_le ht
-  have h := norm_propagator_apply_le_of_abs_inner_le
-    (P := fun s ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff q x s)) (m := fun s ↦ ‖q s‖)
-    (s := 0) (t := t) (by rw [hu]; exact integrableOn_toEuclideanCLM_diracCoeff hq x)
-    (by rw [hu]; exact hq.norm) (.of_forall fun _ ↦ norm_nonneg _)
-    (.of_forall fun s w ↦ abs_re_inner_diracCoeff_ofReal_le q x s w) v
-  rw [toEuclideanCLM_diracFundamentalMatrix]
-  rwa [abs_of_nonneg (intervalIntegral.integral_nonneg ht fun _ _ ↦ norm_nonneg _)] at h
+      Real.exp (∫ s in (0 : ℝ)..t, ‖q s‖) * ‖v‖ :=
+  (diracFundamentalMatrix_ofReal_apply_bounds hq ht x v).2
 
 /-- For a real spectral parameter `x` and `t ≥ 0`, each vector `M_q(t, x) v` has norm at least
 `e^{-∫₀ᵗ |q|} ‖v‖`. -/
 theorem exp_neg_mul_norm_le_norm_diracFundamentalMatrix_ofReal_apply
     (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t) (x : ℝ) (v : EuclideanSpace ℂ (Fin 2)) :
     Real.exp (-∫ s in (0 : ℝ)..t, ‖q s‖) * ‖v‖ ≤
-      ‖toEuclideanCLM (𝕜 := ℂ) (diracFundamentalMatrix q t x) v‖ := by
-  let : InnerProductSpace ℝ (EuclideanSpace ℂ (Fin 2)) := InnerProductSpace.complexToReal
-  have hu : uIcc 0 t = Icc 0 t := uIcc_of_le ht
-  have h := exp_neg_mul_norm_le_norm_propagator_apply_of_abs_inner_le
-    (P := fun s ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff q x s)) (m := fun s ↦ ‖q s‖)
-    (s := 0) (t := t) (by rw [hu]; exact integrableOn_toEuclideanCLM_diracCoeff hq x)
-    (by rw [hu]; exact hq.norm) (.of_forall fun _ ↦ norm_nonneg _)
-    (.of_forall fun s w ↦ abs_re_inner_diracCoeff_ofReal_le q x s w) v
-  rw [toEuclideanCLM_diracFundamentalMatrix]
-  rwa [abs_of_nonneg (intervalIntegral.integral_nonneg ht fun _ _ ↦ norm_nonneg _)] at h
+      ‖toEuclideanCLM (𝕜 := ℂ) (diracFundamentalMatrix q t x) v‖ :=
+  (diracFundamentalMatrix_ofReal_apply_bounds hq ht x v).1
 
-/-- `|a - ic|² = |a|² + |c|²` for real `a`, `c`. -/
-private theorem norm_sub_I_mul_sq {a c : ℂ} (ha : a.im = 0) (hc : c.im = 0) :
-    ‖a - I * c‖ ^ 2 = ‖a‖ ^ 2 + ‖c‖ ^ 2 := by
-  simp only [Complex.sq_norm, Complex.normSq_apply, sub_re, sub_im, mul_re, mul_im, I_re, I_im,
-    ha, hc]
+/-- On the real axis, for `t ≥ 0`, `|M₀ⱼ - i M₁ⱼ|` is the norm of the column `M_q(t, x) e_j`,
+since the entries of `M_q(t, x)` are real there. -/
+private theorem norm_diracFundamentalMatrix_ofReal_sub_I_mul (hq : LocallyIntegrableOn q (Ici 0))
+    (ht : 0 ≤ t) (x : ℝ) (j : Fin 2) :
+    ‖diracFundamentalMatrix q t x 0 j - I * diracFundamentalMatrix q t x 1 j‖ =
+      ‖toEuclideanCLM (𝕜 := ℂ) (diracFundamentalMatrix q t x) (EuclideanSpace.single j 1)‖ := by
+  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
+  rw [norm_toEuclideanCLM_single_sq, Fin.sum_univ_two,
+    ← conj_eq_iff_re.1 (conj_diracFundamentalMatrix_ofReal hq ht x 0 j),
+    ← conj_eq_iff_re.1 (conj_diracFundamentalMatrix_ofReal hq ht x 1 j), sub_eq_add_neg,
+    mul_comm I, ← neg_mul, ← ofReal_neg]
+  simp only [Complex.sq_norm, normSq_add_mul_I, normSq_ofReal]
   ring
 
-/-- The `j`-th column of a `2 × 2` matrix, as a vector of `ℂ²`, has squared norm
-`|M₀ⱼ|² + |M₁ⱼ|²`. -/
-private theorem norm_toEuclideanCLM_single_sq (M : Matrix (Fin 2) (Fin 2) ℂ) (j : Fin 2) :
-    ‖toEuclideanCLM (𝕜 := ℂ) M (EuclideanSpace.single j 1)‖ ^ 2 = ‖M 0 j‖ ^ 2 + ‖M 1 j‖ ^ 2 := by
-  rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_two]
-  simp
+/-- On the real axis, for `t ≥ 0`, both bounds hold for each column `M_q(t, x) e_j`. -/
+private theorem diracFundamentalMatrix_ofReal_single_bounds (hq : LocallyIntegrableOn q (Ici 0))
+    (ht : 0 ≤ t) (x : ℝ) (j : Fin 2) :
+    Real.exp (-∫ s in (0 : ℝ)..t, ‖q s‖) ≤
+        ‖toEuclideanCLM (𝕜 := ℂ) (diracFundamentalMatrix q t x) (EuclideanSpace.single j 1)‖ ∧
+      ‖toEuclideanCLM (𝕜 := ℂ) (diracFundamentalMatrix q t x) (EuclideanSpace.single j 1)‖ ≤
+        Real.exp (∫ s in (0 : ℝ)..t, ‖q s‖) := by
+  simpa using diracFundamentalMatrix_ofReal_apply_bounds
+    (hq.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc) ht x
+    (EuclideanSpace.single j 1)
 
 /-- On the real axis, for `t ≥ 0`, `|E(t, x)|` is the norm of the first column `(A, C)` of
 `M_q(t, x)`, since `A` and `C` are real there. -/
@@ -122,10 +130,8 @@ theorem norm_diracHermiteBiehler_ofReal (hq : LocallyIntegrableOn q (Ici 0)) (ht
     (x : ℝ) :
     ‖diracHermiteBiehler q t x‖ =
       ‖toEuclideanCLM (𝕜 := ℂ) (diracFundamentalMatrix q t x) (EuclideanSpace.single 0 1)‖ := by
-  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-  rw [norm_toEuclideanCLM_single_sq, diracHermiteBiehler_def,
-    norm_sub_I_mul_sq (Complex.conj_eq_iff_im.1 (conj_diracFundamentalMatrix_ofReal hq ht x 0 0))
-      (Complex.conj_eq_iff_im.1 (conj_diracFundamentalMatrix_ofReal hq ht x 1 0))]
+  rw [diracHermiteBiehler_def]
+  exact norm_diracFundamentalMatrix_ofReal_sub_I_mul hq ht x 0
 
 /-- On the real axis, for `t ≥ 0`, `|E~(t, x)|` is the norm of the second column `(B, D)` of
 `M_q(t, x)`, since `B` and `D` are real there. -/
@@ -133,49 +139,37 @@ theorem norm_diracHermiteBiehlerDirichlet_ofReal (hq : LocallyIntegrableOn q (Ic
     (ht : 0 ≤ t) (x : ℝ) :
     ‖diracHermiteBiehlerDirichlet q t x‖ =
       ‖toEuclideanCLM (𝕜 := ℂ) (diracFundamentalMatrix q t x) (EuclideanSpace.single 1 1)‖ := by
-  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-  rw [norm_toEuclideanCLM_single_sq, diracHermiteBiehlerDirichlet_def,
-    norm_sub_I_mul_sq (Complex.conj_eq_iff_im.1 (conj_diracFundamentalMatrix_ofReal hq ht x 0 1))
-      (Complex.conj_eq_iff_im.1 (conj_diracFundamentalMatrix_ofReal hq ht x 1 1))]
+  rw [diracHermiteBiehlerDirichlet_def]
+  exact norm_diracFundamentalMatrix_ofReal_sub_I_mul hq ht x 1
 
 /-- **Upper bound for `E` on `ℝ`.** For `q` locally integrable on `[0, ∞)`, `t ≥ 0` and real `x`,
 `|E(t, x)| ≤ e^{∫₀ᵗ |q|}`. -/
 theorem norm_diracHermiteBiehler_ofReal_le (hq : LocallyIntegrableOn q (Ici 0)) (ht : 0 ≤ t)
     (x : ℝ) : ‖diracHermiteBiehler q t x‖ ≤ Real.exp (∫ s in (0 : ℝ)..t, ‖q s‖) := by
-  have hqt : IntegrableOn q (Icc 0 t) :=
-    hq.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc
   rw [norm_diracHermiteBiehler_ofReal hq ht]
-  simpa using norm_diracFundamentalMatrix_ofReal_apply_le hqt ht x (EuclideanSpace.single 0 1)
+  exact (diracFundamentalMatrix_ofReal_single_bounds hq ht x 0).2
 
 /-- **Lower bound for `E` on `ℝ`.** For `q` locally integrable on `[0, ∞)`, `t ≥ 0` and real `x`,
 `e^{-∫₀ᵗ |q|} ≤ |E(t, x)|`; in particular `E(t, x) ≠ 0`. -/
 theorem exp_neg_le_norm_diracHermiteBiehler_ofReal (hq : LocallyIntegrableOn q (Ici 0))
     (ht : 0 ≤ t) (x : ℝ) : Real.exp (-∫ s in (0 : ℝ)..t, ‖q s‖) ≤ ‖diracHermiteBiehler q t x‖ := by
-  have hqt : IntegrableOn q (Icc 0 t) :=
-    hq.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc
   rw [norm_diracHermiteBiehler_ofReal hq ht]
-  simpa using exp_neg_mul_norm_le_norm_diracFundamentalMatrix_ofReal_apply hqt ht x
-    (EuclideanSpace.single 0 1)
+  exact (diracFundamentalMatrix_ofReal_single_bounds hq ht x 0).1
 
 /-- **Upper bound for `E~` on `ℝ`.** For `q` locally integrable on `[0, ∞)`, `t ≥ 0` and real
 `x`, `|E~(t, x)| ≤ e^{∫₀ᵗ |q|}`. -/
 theorem norm_diracHermiteBiehlerDirichlet_ofReal_le (hq : LocallyIntegrableOn q (Ici 0))
     (ht : 0 ≤ t) (x : ℝ) :
     ‖diracHermiteBiehlerDirichlet q t x‖ ≤ Real.exp (∫ s in (0 : ℝ)..t, ‖q s‖) := by
-  have hqt : IntegrableOn q (Icc 0 t) :=
-    hq.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc
   rw [norm_diracHermiteBiehlerDirichlet_ofReal hq ht]
-  simpa using norm_diracFundamentalMatrix_ofReal_apply_le hqt ht x (EuclideanSpace.single 1 1)
+  exact (diracFundamentalMatrix_ofReal_single_bounds hq ht x 1).2
 
 /-- **Lower bound for `E~` on `ℝ`.** For `q` locally integrable on `[0, ∞)`, `t ≥ 0` and real
 `x`, `e^{-∫₀ᵗ |q|} ≤ |E~(t, x)|`; in particular `E~(t, x) ≠ 0`. -/
 theorem exp_neg_le_norm_diracHermiteBiehlerDirichlet_ofReal (hq : LocallyIntegrableOn q (Ici 0))
     (ht : 0 ≤ t) (x : ℝ) :
     Real.exp (-∫ s in (0 : ℝ)..t, ‖q s‖) ≤ ‖diracHermiteBiehlerDirichlet q t x‖ := by
-  have hqt : IntegrableOn q (Icc 0 t) :=
-    hq.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc
   rw [norm_diracHermiteBiehlerDirichlet_ofReal hq ht]
-  simpa using exp_neg_mul_norm_le_norm_diracFundamentalMatrix_ofReal_apply hqt ht x
-    (EuclideanSpace.single 1 1)
+  exact (diracFundamentalMatrix_ofReal_single_bounds hq ht x 1).1
 
 end TauCeti

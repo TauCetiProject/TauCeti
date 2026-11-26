@@ -111,13 +111,19 @@ private theorem norm_sq_propagator_apply_le (hP : IntegrableOn P (uIcc s t))
   have : f r - f s ≤ |∫ u in s..r, deriv f u| := hFTC ▸ le_abs_self _
   linarith
 
-/-- **Upper bound from the symmetric part.** If `P` and `m` are integrable between `s` and `t`,
-`m ≥ 0` and `|⟪v, P(u) v⟫| ≤ m(u) ‖v‖²` for almost every `u` there and every `v`, then
+/-- **Upper bound from the symmetric part.** If `P` and `m` are integrable between `s` and `t`
+and `|⟪v, P(u) v⟫| ≤ m(u) ‖v‖²` for almost every `u` there and every `v`, then
 `‖N_P(t, s) v‖ ≤ exp |∫ₛᵗ m| ‖v‖`. -/
 theorem norm_propagator_apply_le_of_abs_inner_le (hP : IntegrableOn P (uIcc s t))
-    (hm : IntegrableOn m (uIcc s t)) (hm₀ : ∀ᵐ u ∂volume.restrict (uIcc s t), 0 ≤ m u)
+    (hm : IntegrableOn m (uIcc s t))
     (hPm : ∀ᵐ u ∂volume.restrict (uIcc s t), ∀ v, |⟪v, P u v⟫| ≤ m u * ‖v‖ ^ 2) (v : E) :
     ‖propagator P t s v‖ ≤ exp |∫ u in s..t, m u| * ‖v‖ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · simp [Subsingleton.elim v 0]
+  -- `m ≥ 0` follows from the bound at any nonzero vector.
+  obtain ⟨w, hw⟩ := exists_ne (0 : E)
+  have hm₀ : ∀ᵐ u ∂volume.restrict (uIcc s t), 0 ≤ m u := hPm.mono fun u hu ↦
+    nonneg_of_mul_nonneg_left ((abs_nonneg _).trans (hu w)) (pow_pos (norm_pos_iff.2 hw) 2)
   have hβu : IntegrableOn (fun r ↦ 2 * m r * ‖propagator P r s v‖ ^ 2) (uIcc s t) :=
     IntegrableOn.mul_continuousOn (hm.const_mul 2)
       (absolutelyContinuousOnInterval_norm_sq_propagator_apply hP v).continuousOn isCompact_uIcc
@@ -135,29 +141,29 @@ theorem norm_propagator_apply_le_of_abs_inner_le (hP : IntegrableOn P (uIcc s t)
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 (h2 ▸ hg)
 
 /-- **Lower bound from the symmetric part.** Under the hypotheses of
-`TauCeti.norm_propagator_apply_le_of_abs_inner_le`, `‖v‖ ≤ exp |∫ₛᵗ m| ‖N_P(t, s) v‖`, that is
-`exp (-|∫ₛᵗ m|) ‖v‖ ≤ ‖N_P(t, s) v‖`. -/
+`TauCeti.norm_propagator_apply_le_of_abs_inner_le`, `‖v‖ ≤ exp |∫ₛᵗ m| ‖N_P(t, s) v‖`. This is
+the multiplicative form of the lower bound
+`TauCeti.exp_neg_mul_norm_le_norm_propagator_apply_of_abs_inner_le`. -/
 theorem norm_le_exp_mul_norm_propagator_apply_of_abs_inner_le (hP : IntegrableOn P (uIcc s t))
-    (hm : IntegrableOn m (uIcc s t)) (hm₀ : ∀ᵐ u ∂volume.restrict (uIcc s t), 0 ≤ m u)
+    (hm : IntegrableOn m (uIcc s t))
     (hPm : ∀ᵐ u ∂volume.restrict (uIcc s t), ∀ v, |⟪v, P u v⟫| ≤ m u * ‖v‖ ^ 2) (v : E) :
     ‖v‖ ≤ exp |∫ u in s..t, m u| * ‖propagator P t s v‖ := by
   have hP' : IntegrableOn P (Icc (min s t) (max s t)) := by rwa [← uIcc]
   have hinv := congrArg (fun L : E →L[𝕜] E ↦ L v) (propagator_comp_propagator_swap hP'
     ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩)
   simp only [ContinuousLinearMap.comp_apply, one_apply_eq_self] at hinv
-  rw [uIcc_comm] at hP hm hm₀ hPm
-  have h := norm_propagator_apply_le_of_abs_inner_le hP hm hm₀ hPm (propagator P t s v)
+  rw [uIcc_comm] at hP hm hPm
+  have h := norm_propagator_apply_le_of_abs_inner_le hP hm hPm (propagator P t s v)
   rwa [hinv, intervalIntegral.integral_symm, abs_neg] at h
 
-/-- **Two-sided bound from the symmetric part.** Under the hypotheses of
+/-- **Lower bound from the symmetric part.** Under the hypotheses of
 `TauCeti.norm_propagator_apply_le_of_abs_inner_le`,
 `exp (-|∫ₛᵗ m|) ‖v‖ ≤ ‖N_P(t, s) v‖`. -/
 theorem exp_neg_mul_norm_le_norm_propagator_apply_of_abs_inner_le
     (hP : IntegrableOn P (uIcc s t)) (hm : IntegrableOn m (uIcc s t))
-    (hm₀ : ∀ᵐ u ∂volume.restrict (uIcc s t), 0 ≤ m u)
     (hPm : ∀ᵐ u ∂volume.restrict (uIcc s t), ∀ v, |⟪v, P u v⟫| ≤ m u * ‖v‖ ^ 2) (v : E) :
     exp (-|∫ u in s..t, m u|) * ‖v‖ ≤ ‖propagator P t s v‖ := by
-  have h := norm_le_exp_mul_norm_propagator_apply_of_abs_inner_le hP hm hm₀ hPm v
+  have h := norm_le_exp_mul_norm_propagator_apply_of_abs_inner_le hP hm hPm v
   rw [Real.exp_neg, inv_mul_le_iff₀ (exp_pos _)]
   exact h
 
