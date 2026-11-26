@@ -23,17 +23,22 @@ open TauCeti TauCeti.PositiveInvolutionExamples NumberField
 namespace TauCeti.PositiveInvolutionCenterExamples
 
 /-- The transpose of `M_2(ℚ)` induces the identity on the centre `ℚ`. -/
-example : (transpose (Fin 2)).centerInvolution ℚ = RingHom.id ℚ :=
+example :
+    letI := (transpose (Fin 2)).toStarRing
+    Algebra.centerInvolution ℚ (Matrix (Fin 2) (Fin 2) ℚ) = RingHom.id ℚ :=
   Subsingleton.elim _ _
 
 /-- The induced involution of the transpose on the centre `ℚ` of `M_2(ℚ)` is positive for the
 trace: `Tr_{ℚ/ℚ}(x σ(x)) = x² > 0`. -/
 example {x : ℚ} (hx : x ≠ 0) :
-    0 < Algebra.trace ℚ ℚ (x * (transpose (Fin 2)).centerInvolution ℚ x) :=
+    letI := (transpose (Fin 2)).toStarRing
+    0 < Algebra.trace ℚ ℚ (x * Algebra.centerInvolution ℚ (Matrix (Fin 2) (Fin 2) ℚ) x) :=
   (transpose (Fin 2)).trace_mul_centerInvolution_pos ℚ hx
 
 /-- The fixed field of the identity involution of `ℚ` is totally real. -/
-example : IsTotallyReal ((rat.centerInvolution ℚ).eqLocusField (RingHom.id ℚ)) :=
+example :
+    letI := rat.toStarRing
+    IsTotallyReal ((Algebra.centerInvolution ℚ ℚ).eqLocusField (RingHom.id ℚ)) :=
   rat.fixedCenter_totallyReal ℚ
 
 end TauCeti.PositiveInvolutionCenterExamples
