@@ -36,6 +36,9 @@ vanish, rather than being unconstrained data hidden from the bar construction.
 
 * `TauCeti.AInfinityAlgebra.stasheff`: the unsuspended Stasheff identities, with
   `stasheff_arity_one` through `stasheff_arity_four` evaluated verbatim.
+* `TauCeti.AInfinityAlgebra.m_one_m_two`, `TauCeti.AInfinityAlgebra.m_one_m_three` and
+  `TauCeti.AInfinityAlgebra.m_one_m_four`: the identities of arities two to four for arbitrary
+  inputs, with the Koszul signs carried by the degree-one twist.
 * `TauCeti.AInfinity.stasheff_arity_two_of_stasheffSum_eq_zero`: an operation family satisfying
   the arity-two identity on homogeneous inputs satisfies the graded Leibniz rule on all inputs.
 * `TauCeti.AInfinityAlgebra.taylor_of_two` and
@@ -808,6 +811,53 @@ theorem m_two_assoc_of_m_three_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : �
   have hz : 𝒜.m 1 ![(0 : A)] = 0 := (𝒜.m 1).map_coord_zero 0 rfl
   simp only [h₃, _root_.zero_apply, hz, sub_zero] at h
   exact (sub_eq_zero.mp h.symm).symm
+
+/-- The arity-four Stasheff identity for arbitrary inputs, with the Koszul signs of the first three
+inputs carried by the degree-one twist.  It expresses the boundary of the quaternary operation
+through the composites of the binary and ternary operations, modulo the four terms in which the
+quaternary operation meets a unary boundary.  Since the inputs are arbitrary, this is the identity
+of four-linear maps
+`m₁m₄ - m₂(m₃ ⊗ 1) - m₂(1 ⊗ m₃) + m₃(m₂ ⊗ 1 ⊗ 1) - m₃(1 ⊗ m₂ ⊗ 1) + m₃(1 ⊗ 1 ⊗ m₂)
+  - m₄(m₁ ⊗ 1 ⊗ 1 ⊗ 1 + 1 ⊗ m₁ ⊗ 1 ⊗ 1 + 1 ⊗ 1 ⊗ m₁ ⊗ 1 + 1 ⊗ 1 ⊗ 1 ⊗ m₁) = 0`
+under the Koszul rule for tensor products of maps. -/
+theorem m_one_m_four (𝒜 : AInfinityAlgebra R A) (a b c d : A) :
+    𝒜.m 1 ![𝒜.m 4 ![a, b, c, d]] =
+      𝒜.m 2 ![𝒜.m 3 ![a, b, c], d] + 𝒜.m 2 ![𝒜.grading.koszulTwist 1 a, 𝒜.m 3 ![b, c, d]]
+        - 𝒜.m 3 ![𝒜.m 2 ![a, b], c, d] + 𝒜.m 3 ![a, 𝒜.m 2 ![b, c], d]
+        - 𝒜.m 3 ![a, b, 𝒜.m 2 ![c, d]]
+        + 𝒜.m 4 ![𝒜.m 1 ![a], b, c, d]
+        + 𝒜.m 4 ![𝒜.grading.koszulTwist 1 a, 𝒜.m 1 ![b], c, d]
+        + 𝒜.m 4 ![𝒜.grading.koszulTwist 1 a, 𝒜.grading.koszulTwist 1 b, 𝒜.m 1 ![c], d]
+        + 𝒜.m 4 ![𝒜.grading.koszulTwist 1 a, 𝒜.grading.koszulTwist 1 b,
+            𝒜.grading.koszulTwist 1 c, 𝒜.m 1 ![d]] := by
+  rw [← sub_eq_zero]
+  -- Unfolding `![x, …]` to `Fin.cons` and currying one slot at a time turns every operation into
+  -- iterated applications of linear maps, on which `map_add` and `map_smul` act input by input.
+  -- Both sides are additive in each of the first three inputs, so the identity extends from
+  -- homogeneous inputs one slot at a time; the last input is arbitrary in `stasheff_arity_four`.
+  induction a using DirectSum.Decomposition.inductionOn 𝒜.grading.piece
+  case' homogeneous a =>
+    induction b using DirectSum.Decomposition.inductionOn 𝒜.grading.piece
+    case' homogeneous b =>
+      induction c using DirectSum.Decomposition.inductionOn 𝒜.grading.piece
+      case homogeneous c =>
+        -- On homogeneous inputs the twists are the signs of the evaluated arity-four identity.
+        have h := 𝒜.stasheff_arity_four a b c d _ _ _ a.property b.property c.property
+        simp only [𝒜.grading.koszulTwist_one_apply_of_mem a.property,
+          𝒜.grading.koszulTwist_one_apply_of_mem b.property,
+          𝒜.grading.koszulTwist_one_apply_of_mem c.property, ← negOnePowCast_eq_intCast,
+          negOnePowCast_add, mul_smul, Matrix.vecCons, ← MultilinearMap.curryLeft_apply,
+          map_smul, smul_apply] at h ⊢
+        exact Eq.trans (by abel) h
+  -- The `zero` and `add` cases of the three inductions.
+  all_goals first
+    | simp only [Matrix.vecCons, ← MultilinearMap.curryLeft_apply, map_zero, zero_apply,
+        add_zero, sub_self]; done
+    | next _ _ h h' =>
+      have h₂ := congrArg₂ (· + ·) h h'
+      simp only [Matrix.vecCons, ← MultilinearMap.curryLeft_apply, map_add, add_apply, add_zero]
+        at h₂ ⊢
+      exact Eq.trans (by abel) h₂
 
 end AInfinityAlgebra
 
