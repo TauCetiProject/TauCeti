@@ -30,7 +30,7 @@ inversion of `U(1)`, with `ψ = [·, 1]`. Then
 `[[(p, l), a], h] ↦ [([p, 1], ψ l), χ(a) h]`
 (`TauCeti.SpinCStructure.chargeConjTwistEquiv_toEquiv_mk`). The identity behind it is
 `χ (μ (a, w)) = μ (χ a, w⁻¹)`, since `χ [1, w] = [1, w⁻¹]`
-(`CliffordAlgebra.spinCGroup.chargeConj_ofCircle`): the map `(p, l) ↦ [([p, 1], ψ l), 1]` from
+(`CliffordAlgebra.spinCGroup.chargeConj_mulCircle`): the map `(p, l) ↦ [([p, 1], ψ l), 1]` from
 `P ×_X L` is equivariant along `χ ∘ μ`, and extending along `μ` and then along `χ` is extending
 along `χ ∘ μ` (`TauCeti.OrthonormalFrameLift.extendCompEquiv`).
 
@@ -102,13 +102,6 @@ local notation "hπχ" => Eq.trans (MonoidHom.comp_assoc _ _ _)
       (Subgroup.subtype (QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0))))
     (spinCGroup.toSpecialOrthogonal_comp_chargeConj (realCliffordForm n 0) hQ))
 
-/-- Charge conjugation of a product with the central circle: `χ (μ (a, w)) = μ (χ a, w⁻¹)`. -/
-private theorem chargeConj_mulCircle (g : spinCGroup (realCliffordForm n 0) hQ × Circle) :
-    χ (μ g) = μ (χ g.1, g.2⁻¹) := by
-  obtain ⟨a, w⟩ := g
-  simp only [MonoidHom.coe_ofClass, spinCGroup.mulCircle_apply, map_mul,
-    spinCGroup.chargeConj_ofCircle]
-
 /-- Multiplication by the central circle covers the rotation of the first factor,
 `πᶜ ∘ μ = πᶜ ∘ fst`. -/
 private theorem rotation_comp_mulCircle :
@@ -134,7 +127,8 @@ private theorem chargeConjTwistMap_smul (s : SpinCStructure F V n) (ψ : ∀ x, 
       (congrArg₂ FiberProd.mk (Extend.inl_smul χ hχ (FiberProd.fst (P := s.P) (Q := L) z) g.1)
         (hψ x (FiberProd.snd (P := s.P) (Q := L) z) g.2))).trans
     ((Extend.inl_smul μ hμ (P := (s.chargeConj.fiberProd Circle L').P) _ (χ g.1, g.2⁻¹)).trans
-      (congrArg (fun k ↦ op k • chargeConjTwistMap s ψ x z) (chargeConj_mulCircle g).symm))
+      (congrArg (fun k ↦ op k • chargeConjTwistMap s ψ x z)
+        (spinCGroup.chargeConj_mulCircle _ hQ g.1 g.2).symm))
 
 /-- **The charge conjugate of a twist is the twist of the charge conjugate by the inverse
 bundle**: `(s.twist L).chargeConj ≃ s.chargeConj.twist L'` for a principal `U(1)`-bundle `L'`
