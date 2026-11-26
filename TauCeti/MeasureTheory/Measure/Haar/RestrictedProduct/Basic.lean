@@ -16,6 +16,7 @@ public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Principal
 public import TauCeti.Topology.Bases
 import TauCeti.Algebra.BigOperators.Finprod
+import TauCeti.Data.Set.Function
 import TauCeti.MeasureTheory.Group.Arithmetic
 import TauCeti.MeasureTheory.Group.ModularCharacter
 import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
@@ -696,19 +697,6 @@ variable {H : ι → Type*} [∀ i, Group (H i)] [∀ i, TopologicalSpace (H i)]
   [∀ i, IsTopologicalGroup (H i)] [∀ i, LocallyCompactSpace (H i)]
   [∀ i, SecondCountableTopology (H i)] [∀ i, MeasurableSpace (H i)] [∀ i, BorelSpace (H i)]
 
-/-- An injective map carrying `s` bijectively onto `t` has `f ⁻¹' t = s`. -/
-private theorem preimage_eq_of_bijOn {α β : Type*} {f : α → β} (hf : Function.Injective f)
-    {s : Set α} {t : Set β} (h : BijOn f s t) : f ⁻¹' t = s := by
-  rw [← h.image_eq, preimage_image_eq _ hf]
-
-/-- The pushforward along an isomorphism of topological groups evaluates on preimages. -/
-@[to_additive]
-private theorem map_continuousMulEquiv_apply {A B : Type*} [Mul A] [Mul B] [TopologicalSpace A]
-    [TopologicalSpace B] [MeasurableSpace A] [BorelSpace A] [MeasurableSpace B] [BorelSpace B]
-    (φ : A ≃ₜ* B) (μ : Measure A) (s : Set B) : μ.map φ s = μ (φ ⁻¹' s) := by
-  have hφ : MeasurableEmbedding φ := φ.toHomeomorph.measurableEmbedding
-  exact hφ.map_apply μ s
-
 omit [Countable ι] [∀ i, IsTopologicalGroup (G i)] [∀ i, LocallyCompactSpace (G i)]
   [∀ i, SecondCountableTopology (G i)] [∀ i, IsTopologicalGroup (H i)]
   [∀ i, LocallyCompactSpace (H i)] [∀ i, SecondCountableTopology (H i)] in
@@ -722,7 +710,8 @@ theorem eventually_map_mulEquiv_apply_eq_one (U : ∀ i, Subgroup (G i)) (U' : �
     (μ : ∀ i, Measure (G i)) (hμU : ∀ᶠ i in cofinite, μ i (U i) = 1) :
     ∀ᶠ i in cofinite, (μ i).map (φ i) (U' i) = 1 := by
   filter_upwards [hφ, hμU] with i hi h
-  rwa [map_continuousMulEquiv_apply, preimage_eq_of_bijOn (φ i).injective hi]
+  rwa [MeasurableEmbedding.map_apply (f := φ i) (φ i).toHomeomorph.measurableEmbedding,
+    hi.preimage_eq_of_injective (φ i).injective]
 
 /-- **Functoriality of restricted products of Haar measures.** Isomorphisms of topological groups
 `φ i : G i ≃ₜ* H i` carrying `U i` onto `U' i` cofinitely induce
@@ -751,17 +740,14 @@ theorem map_restrictedProductCongrRight_restrictedHaar (U : ∀ i, Subgroup (G i
   have _ : ((restrictedHaar U μ hμU).map Φ).IsHaarMeasure :=
     Φ.isHaarMeasure_map (restrictedHaar U μ hμU) hΦ hΦsymm
   refine restrictedHaar_unique U' _ _ fun C hCmeas hCU' ↦ ?_
-  have hpre : Φ ⁻¹' (box C : Set (Πʳ i, [H i, (U' i : Set (H i))])) =
-      box fun i ↦ φ i ⁻¹' C i := by
-    ext x
-    simp only [Φ, mem_box, mem_preimage, restrictedProductCongrRight_apply]
-    -- `(φ i).toMulEquiv` and `φ i` have the same underlying function by definition.
-    rfl
-  rw [map_apply hΦ.measurable (measurableSet_box hCmeas), hpre,
+  -- Below, `(φ i).toMulEquiv`, `(φ i).toHomeomorph` and `φ i` have the same underlying function
+  -- (`ContinuousMulEquiv.toMulEquiv_eq_coe` is proved by `rfl`).
+  rw [map_apply hΦ.measurable (measurableSet_box hCmeas), preimage_restrictedProductCongrRight_box,
     restrictedHaar_box_eq_finprod U μ hμU (by
       filter_upwards [hCU', hφ] with i h1 h2
-      rw [h1, preimage_eq_of_bijOn (φ i).injective h2])]
-  exact finprod_congr fun i ↦ (map_continuousMulEquiv_apply (φ i) (μ i) (C i)).symm
+      rw [h1]
+      exact h2.preimage_eq_of_injective (φ i).injective)]
+  exact finprod_congr fun i ↦ ((φ i).toHomeomorph.measurableEmbedding.map_apply _ _).symm
 
 /-- **Independence of the integral model for `restrictedHaar`.** If two families of open subgroups
 `U` and `U'` agree cofinitely, then `restrictedProductCongr U U' h` pushes `restrictedHaar` for `U`
