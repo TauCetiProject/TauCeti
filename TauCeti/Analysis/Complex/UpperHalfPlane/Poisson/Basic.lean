@@ -422,26 +422,25 @@ theorem locallyIntegrable_of_integrable_upperHalfPlanePoissonMeasure {E : Type*}
   exact (setLIntegral_Icc_le_mul_lintegral_upperHalfPlanePoissonMeasure _ R).trans_lt
     (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hh.2)
 
-/-- **The far part of a Poisson integral.** If `P(z, s) ≤ c / (1 + s ^ 2)` whenever
-`|s - x| > δ`, the integral of `f` against the Poisson kernel `P(z, ·)` off the closed ball
-`B(x, δ)` is at most `c ∫ f dΠ`. -/
-theorem lintegral_indicator_compl_closedBall_mul_upperHalfPlanePoissonKernel_le {f : ℝ → ℝ≥0∞}
-    (hf : AEMeasurable f) {z : ℂ} {x δ c : ℝ}
-    (hc : ∀ s, δ < |s - x| → upperHalfPlanePoissonKernel z s ≤ c * (1 + s ^ 2)⁻¹) :
-    ∫⁻ s, (closedBall x δ)ᶜ.indicator f s * ENNReal.ofReal (upperHalfPlanePoissonKernel z s) ≤
+/-- **The far part of a Poisson integral.** If `P(z, s) ≤ c / (1 + s ^ 2)` for every `s ∉ S`, the
+integral of `f` against the Poisson kernel `P(z, ·)` off `S` is at most `c ∫ f dΠ`. -/
+theorem lintegral_indicator_compl_mul_upperHalfPlanePoissonKernel_le {f : ℝ → ℝ≥0∞}
+    (hf : AEMeasurable f) {z : ℂ} {S : Set ℝ} {c : ℝ}
+    (hc : ∀ s ∉ S, upperHalfPlanePoissonKernel z s ≤ c * (1 + s ^ 2)⁻¹) :
+    ∫⁻ s, Sᶜ.indicator f s * ENNReal.ofReal (upperHalfPlanePoissonKernel z s) ≤
       ENNReal.ofReal c * ∫⁻ s, f s ∂upperHalfPlanePoissonMeasure := by
   rw [upperHalfPlanePoissonMeasure_eq_withDensity,
     lintegral_withDensity_eq_lintegral_mul₀ (by fun_prop) hf, ← lintegral_const_mul' _ _
       ENNReal.ofReal_ne_top]
   refine lintegral_mono fun s => ?_
-  by_cases hs : s ∈ closedBall x δ
+  by_cases hs : s ∈ S
   · simp [hs]
   rw [Set.indicator_of_mem (Set.mem_compl hs)]
   simp only [Pi.mul_apply]
   calc f s * ENNReal.ofReal (upperHalfPlanePoissonKernel z s)
       ≤ f s * ENNReal.ofReal (c * (1 + s ^ 2)⁻¹) := by
         gcongr
-        exact hc s (by simpa [Real.dist_eq] using hs)
+        exact hc s hs
     _ = ENNReal.ofReal c * (ENNReal.ofReal (1 + s ^ 2)⁻¹ * f s) := by
         rw [ENNReal.ofReal_mul' (by positivity)]
         ring

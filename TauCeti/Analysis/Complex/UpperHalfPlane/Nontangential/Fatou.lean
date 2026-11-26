@@ -104,7 +104,8 @@ theorem enorm_upperHalfPlanePoissonIntegralFun_sub_le {h : ℝ → ℂ}
         exact lintegral_add_left' (hg.mul
           (measurable_upperHalfPlanePoissonKernel z).ennreal_ofReal.aemeasurable) _
     _ ≤ _ := add_le_add hnear
-        (lintegral_indicator_compl_closedBall_mul_upperHalfPlanePoissonKernel_le hmeas hc)
+        (lintegral_indicator_compl_mul_upperHalfPlanePoissonKernel_le hmeas fun s hs =>
+          hc s (by simpa [Real.dist_eq] using hs))
 
 /-- **Fatou's theorem at a Lebesgue point.** Let `h ∈ L¹(Π)` and let `x` be a Lebesgue point of
 `h`: the averages of `‖h - h(x)‖` over the closed balls `B(x, r)` tend to `0` as `r → 0⁺`. Then

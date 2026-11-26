@@ -224,7 +224,6 @@ theorem upperHalfPlanePoissonLIntegral_le_of_mem_nontangentialCone_one {g : ℝ 
   set S := Icc (-(R + 2)) (R + 2)
   set k : ℝ → ℝ≥0∞ := fun s => ENNReal.ofReal (upperHalfPlanePoissonKernel z s)
   have hk : Measurable k := (measurable_upperHalfPlanePoissonKernel z).ennreal_ofReal
-  have hd : Measurable fun s : ℝ => ENNReal.ofReal (1 + s ^ 2)⁻¹ := by fun_prop
   -- Split the integral over `S` and its complement.
   rw [upperHalfPlanePoissonLIntegral_def,
     ← lintegral_add_compl _ (measurableSet_Icc : MeasurableSet S)]
@@ -245,25 +244,18 @@ theorem upperHalfPlanePoissonLIntegral_le_of_mem_nontangentialCone_one {g : ℝ 
       _ ≤ 3 * maximalFunction volume (S.indicator g) x :=
           nontangentialMaximalFunction_one_upperHalfPlanePoissonLIntegral_le 1 _ x
   · -- Off `S`: the kernel is dominated by the density of the Poisson measure.
-    rw [upperHalfPlanePoissonMeasure_eq_withDensity,
-      lintegral_withDensity_eq_lintegral_mul₀ hd.aemeasurable hg,
-      restrict_withDensity measurableSet_Icc.compl,
-      lintegral_withDensity_eq_lintegral_mul₀ hg.restrict hk.aemeasurable,
-      ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-    refine (setLIntegral_le_lintegral _ _).trans' (setLIntegral_mono' measurableSet_Icc.compl
-      fun s hs => ?_)
+    rw [restrict_withDensity measurableSet_Icc.compl,
+      ← withDensity_indicator measurableSet_Icc.compl,
+      lintegral_withDensity_eq_lintegral_mul₀ (hg.indicator measurableSet_Icc.compl)
+        hk.aemeasurable]
+    refine lintegral_indicator_compl_mul_upperHalfPlanePoissonKernel_le hg fun s hs => ?_
     have hs' : R + 2 ≤ |s| := by
       have hR : 0 ≤ R := (abs_nonneg x).trans hx
-      simp only [mem_compl_iff, mem_Icc, not_and_or, not_le] at hs
+      simp only [mem_Icc, not_and_or, not_le] at hs
       rcases hs with hs | hs
       · rw [abs_of_neg (by linarith)]; linarith
       · rw [abs_of_pos (by linarith)]; linarith
-    simp only [Pi.mul_apply, k]
-    rw [mul_comm (‖g s‖ₑ), ← mul_assoc]
-    gcongr
-    rw [← ENNReal.ofReal_mul (by positivity)]
-    exact ENNReal.ofReal_le_ofReal
-      (upperHalfPlanePoissonKernel_le_of_mem_nontangentialCone_one hx hz hs')
+    exact upperHalfPlanePoissonKernel_le_of_mem_nontangentialCone_one hx hz hs'
 
 /-- **Localisation of the nontangential maximal function.** For `g ∈ L¹(Π)` and `|x| ≤ R`,
 `M_1 P[|g| dx](x) ≤ 3 M(g 1_{[-R-2, R+2]})(x) + 2 (R + 2) ^ 2 / π · ∫ |g| dΠ`, where `M_1` is the

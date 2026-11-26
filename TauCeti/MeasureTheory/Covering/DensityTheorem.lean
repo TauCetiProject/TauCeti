@@ -36,7 +36,7 @@ variable {α E : Type*} [PseudoMetricSpace α] [MeasurableSpace α] (μ : Measur
 
 /-- The closed balls `closedBall x r` centred at `x` tend to `x` along the Vitali family of `μ`
 as `r → 0⁺`. -/
-private theorem tendsto_closedBall_self_filterAt (x : α) :
+theorem tendsto_closedBall_self_filterAt (x : α) :
     Tendsto (closedBall x) (𝓝[>] 0) ((vitaliFamily μ 1).filterAt x) :=
   tendsto_closedBall_filterAt μ (fun _ => x) id tendsto_id
     (eventually_mem_nhdsWithin.mono fun r hr => mem_closedBall_self (by simpa using (le_of_lt hr)))
