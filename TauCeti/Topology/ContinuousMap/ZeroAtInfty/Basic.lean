@@ -237,17 +237,6 @@ theorem compLeft_comp {G : Type*} [SeminormedAddCommGroup G] [Module R G] [Conti
     (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) (hvu : ∃ C, ∀ x, ‖v.comp u x‖ ≤ C * ‖x‖) :
     compLeft (α := α) (v.comp u) hvu = (compLeft v hv).comp (compLeft u hu) := (rfl)
 
-/-- Over a nontrivially normed field, the coordinatewise action of a composite is the composite of
-the coordinatewise actions, using the operator-norm bounds `ContinuousLinearMap.le_opNorm`. -/
-theorem compLeft_comp_normed {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    {E F G : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-    [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
-    (v : F →L[𝕜] G) (u : E →L[𝕜] F) :
-    compLeft (α := α) (v.comp u) ⟨‖v.comp u‖, (v.comp u).le_opNorm⟩ =
-      (compLeft v ⟨‖v‖, v.le_opNorm⟩).comp (compLeft u ⟨‖u‖, u.le_opNorm⟩) :=
-  compLeft_comp v u _ _ _
-
 /-- A uniform bound `C` for `u` is also a uniform bound for its coordinatewise action. -/
 theorem norm_compLeft_apply_le (u : E →L[R] F) {C : ℝ}
     (hC : ∀ x, ‖u x‖ ≤ C * ‖x‖) (f : C₀(α, E)) : ‖compLeft u ⟨C, hC⟩ f‖ ≤ C * ‖f‖ :=
