@@ -291,6 +291,10 @@ private theorem continuous_mfderiv_mk_one (w : TangentSpace (𝓡 1) (1 : sphere
   rw [Function.comp_apply, tangentMap,
     SmoothMappingTorus.mfderiv_mk_apply conjCircleDiffeomorph (by simp),
     Manifold.tangentSpaceProdEquiv_symm_apply]
+  simp only [Function.uncurry_apply_pair]
+  -- The two sides now differ only by the abbreviation `mk t 1` for
+  -- `SmoothMappingTorus.mk conjCircleDiffeomorph t 1` and by implicit fibre-type arguments of the
+  -- tangent bundle, which agree definitionally.
   rfl
 
 /-- A nonzero vertical vector at a point of the maximum circle is not tangent to the circle, so
