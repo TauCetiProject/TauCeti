@@ -12,7 +12,7 @@ import TauCeti.Algebra.Ring.NegOnePow
 import TauCeti.Order.WellFounded.Basic
 
 /-!
-# Homotopies of twisting chain systems
+# Homotopies of twisting and continuation chain systems
 
 Let `S` and `S'` be twisting chain systems (`TauCeti.TwistingChainSystem`) on the same spaces
 `M x y` with the same composition maps `ι`, for instance two representing chain systems of the
@@ -46,6 +46,28 @@ at the pairs of smaller index difference
 relative class is `μ x y - μ x y = 0`, since the continuation sum lies in `A x y`; injectivity
 makes it a boundary.
 
+The same argument compares two continuation chain systems `T₀` and `T₁` from `S` to `S'`
+(`TauCeti.ContinuationChainSystem`) on the spaces `N x y` of continuation trajectories. If both
+represent the same classes `ν x y ∈ H_{ind x - indQ y}(N x y, B x y)`, they are joined by a
+parametrized chain system (`TauCeti.ParametrizedChainSystem`) on the spaces `N x y` themselves,
+included by the identities
+(`TauCeti.ContinuationChainSystem.IsRepresenting.nonempty_parametrizedChainSystem`): chains
+`h x y` of dimension `ind x - indQ y + 1` with
+
+`∂ h x y = ν₁ x y - ν₀ x y + Σ_z (-1) ^ (ind x - ind z) • κ_* (s x z × h z y)
+  + Σ_z (-1) ^ (ind x - indQ z) • κ'_* (h x z × s' z y)`.
+
+The right-hand side is a cycle once the equation holds at the pairs of smaller index difference
+(`TauCeti.cubicalChainDifferential_parametrizedChainSum`), its relative class is
+`ν x y - ν x y = 0`, and injectivity of
+`H_{ind x - indQ y}(N x y) → H_{ind x - indQ y}(N x y, B x y)` makes it a boundary. Pushed
+forward along multiplicative evaluation maps, this is a parametrized cocycle between the
+continuation cocycles of `T₀` and `T₁`
+(`TauCeti.ContinuationChainSystem.IsRepresenting.nonempty_parametrizedCocycle`), so the
+continuation maps of twisted complexes that the two systems induce are chain homotopic
+(`TauCeti.ParametrizedCocycle.homotopy`): the continuation morphism of a homotopy of Morse
+functions does not depend on the representing chain system of its continuation trajectories.
+
 ## Main definitions
 
 * `TauCeti.TwistingChainSystem.Homotopy`: a homotopy of twisting chain systems.
@@ -60,6 +82,11 @@ makes it a boundary.
   the same classes are joined by a homotopy.
 * `TauCeti.TwistingChainSystem.Homotopy.isUnit_continuationCocycle`: the continuation cocycle of a
   homotopy whose chains vanish on the pairs of equal index is invertible.
+* `TauCeti.ContinuationChainSystem.IsRepresenting.nonempty_parametrizedChainSystem`: two
+  representing continuation chain systems of the same classes are joined by a parametrized chain
+  system.
+* `TauCeti.ContinuationChainSystem.IsRepresenting.nonempty_parametrizedCocycle`: so their
+  continuation cocycles are joined by a parametrized cocycle.
 
 ## References
 
@@ -388,5 +415,264 @@ theorem IsRepresenting.nonempty_homotopy (hS : S.IsRepresenting A μ)
 end TwistingChainSystem
 
 end Existence
+
+/-! ### Parametrized chain systems between representing continuation chain systems -/
+
+section ContinuationExistence
+
+variable {P : Type*} [Fintype P] {ind : P → ℤ} {M : P → P → Type*}
+  [∀ x y, TopologicalSpace (M x y)] {Q : Type*} [Fintype Q] {indQ : Q → ℤ} {M' : Q → Q → Type*}
+  [∀ x y, TopologicalSpace (M' x y)] {N : P → Q → TopCat.{u}}
+  {ι : ∀ x y z, C(M x y × M y z, M x z)} {ι' : ∀ x y z, C(M' x y × M' y z, M' x z)}
+  {κ : ∀ x y z, C(M x y × N y z, N x z)} {κ' : ∀ x y z, C(N x y × M' y z, N x z)}
+  {k : Type u} [CommRing k] {S : TwistingChainSystem ind ι k}
+  {S' : TwistingChainSystem indQ ι' k} {T₀ T₁ : ContinuationChainSystem κ κ' S S'}
+  {B : ∀ x y, Set (N x y)}
+  {ν : ∀ x y, ((TopPair.ofSubset (B x y)).cubicalChainComplex k).homology (ind x - indQ y).toNat}
+
+namespace ContinuationChainSystem
+
+/-- The parametrized sum of a family of chains of the spaces `N x y` themselves, included by the
+identities, for composition maps with values in the subspaces `B x y`: the difference of the
+chains of `T₁` and `T₀` plus the push-forward of a chain of `B x y` of the same cohomological
+degree. -/
+private theorem exists_parametrizedChainSum_eq_sub_add (hB : ∀ x z y p, κ x z y p ∈ B x y)
+    (hB' : ∀ x z y p, κ' x z y p ∈ B x y) {h : ∀ x y, normalizedCubicalChainAlgebra (N x y) k}
+    (hh : ∀ x y, h x y ∈ cubicalChainGrading (N x y) k (indQ y - ind x - 1)) (x : P) (y : Q) :
+    ∃ b : normalizedCubicalChainAlgebra (B x y) k,
+      b ∈ cubicalChainGrading (B x y) k (indQ y - ind x) ∧
+      parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
+          (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain h x y =
+        T₁.chain x y - T₀.chain x y +
+          cubicalChainSumMap k (ContinuousMap.subtypeVal (B x y)) b := by
+  -- The composition maps, corestricted to the subspaces `B x y`.
+  let κB : ∀ z, C(M x z × N z y, B x y) := fun z ↦
+    ⟨fun p ↦ ⟨κ x z y p, hB x z y p⟩, (κ x z y).continuous.subtype_mk _⟩
+  let κB' : ∀ z, C(N x z × M' z y, B x y) := fun z ↦
+    ⟨fun p ↦ ⟨κ' x z y p, hB' x z y p⟩, (κ' x z y).continuous.subtype_mk _⟩
+  have hκB (z : P) : (ContinuousMap.subtypeVal (B x y)).comp (κB z) = κ x z y := rfl
+  have hκB' (z : Q) : (ContinuousMap.subtypeVal (B x y)).comp (κB' z) = κ' x z y := rfl
+  refine ⟨∑ z, (ind x - ind z).negOnePow • cubicalChainSumPairing k (κB z) (S.chain x z) (h z y) +
+    ∑ z, (ind x - indQ z).negOnePow • cubicalChainSumPairing k (κB' z) (h x z) (S'.chain z y),
+    add_mem (Submodule.sum_mem _ fun z _ ↦ ?_) (Submodule.sum_mem _ fun z _ ↦ ?_), ?_⟩
+  · have hdeg : ind z - ind x + 1 + (indQ y - ind z - 1) = indQ y - ind x := by ring
+    rw [Units.smul_def]
+    exact zsmul_mem (hdeg ▸ cubicalChainSumPairing_mem _ (S.mem_graded x z) (hh z y)) _
+  · have hdeg : indQ z - ind x - 1 + (indQ y - indQ z + 1) = indQ y - ind x := by ring
+    rw [Units.smul_def]
+    exact zsmul_mem (hdeg ▸ cubicalChainSumPairing_mem _ (hh x z) (S'.mem_graded z y)) _
+  · simp only [parametrizedChainSum_def, cubicalChainSumMap_id, LinearMap.id_apply, map_add,
+      map_sum, map_zsmul_unit, cubicalChainSumMap_cubicalChainSumPairing, hκB, hκB', add_assoc]
+
+/-- The parametrized equation holds at the pairs `(x, y)` with `ind x < indQ y`, where all its
+terms vanish for degree reasons. -/
+private theorem parametrized_of_lt {h : ∀ x y, normalizedCubicalChainAlgebra (N x y) k}
+    (hh : ∀ x y, h x y ∈ cubicalChainGrading (N x y) k (indQ y - ind x - 1)) {x : P} {y : Q}
+    (hxy : ind x < indQ y) :
+    cubicalChainDifferential (N x y) k (h x y) =
+      parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
+        (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain h x y := by
+  rw [cubicalChainDifferential_eq_zero_of_nonneg _ _ (by omega) (hh x y),
+    parametrizedChainSum_eq_zero_of_lt S.mem_graded S'.mem_graded T₀.mem_graded T₁.mem_graded hh
+      hxy]
+
+/-- The chain of a pair `(x, y)` with `indQ y ≤ ind x` in the inductive construction of a
+parametrized chain system from `T₀` to `T₁`: a chain whose boundary is the parametrized sum, which
+is a cycle with vanishing relative class. -/
+private theorem exists_chain_of_parametrized (hT₀ : T₀.IsRepresenting B ν)
+    (hT₁ : T₁.IsRepresenting B ν)
+    (hκ : ∀ x w z y (a : M x w) (b : M w z) (c : N z y),
+      κ x z y (ι x w z (a, b), c) = κ x w y (a, κ w z y (b, c)))
+    (hκκ' : ∀ x w z y (a : M x w) (b : N w z) (c : M' z y),
+      κ' x z y (κ x w z (a, b), c) = κ x w y (a, κ' w z y (b, c)))
+    (hκ' : ∀ x w z y (a : N x w) (b : M' w z) (c : M' z y),
+      κ' x z y (κ' x w z (a, b), c) = κ' x w y (a, ι' w z y (b, c)))
+    (hB : ∀ x z y p, κ x z y p ∈ B x y) (hB' : ∀ x z y p, κ' x z y p ∈ B x y)
+    (hinj : ∀ x y, indQ y ≤ ind x → Function.Injective (HomologicalComplex.homologyMap
+      (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (B x y)).map))
+        (ind x - indQ y).toNat).hom)
+    {h : ∀ x y, normalizedCubicalChainAlgebra (N x y) k}
+    (hh : ∀ x y, h x y ∈ cubicalChainGrading (N x y) k (indQ y - ind x - 1)) {x : P} {y : Q}
+    (hxy : indQ y ≤ ind x)
+    (hd : ∀ x' y', ind x' - indQ y' < ind x - indQ y →
+      cubicalChainDifferential (N x' y') k (h x' y') =
+        parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
+          (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain h x' y') :
+    ∃ e : normalizedCubicalChainAlgebra (N x y) k,
+      e ∈ cubicalChainGrading (N x y) k (indQ y - ind x - 1) ∧
+      cubicalChainDifferential (N x y) k e =
+        parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
+          (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain h x y := by
+  obtain ⟨b, hb, hsum⟩ := exists_parametrizedChainSum_eq_sub_add (T₀ := T₀) (T₁ := T₁) hB hB' hh
+    x y
+  have hcycle := cubicalChainDifferential_parametrizedChainSum
+    (fun x y ↦ ContinuousMap.id (N x y)) (fun x y ↦ ContinuousMap.id (N x y)) T₀ T₁ hh
+    (hκ x · · y) (hκκ' x · · y) (hκ' x · · y) (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl)
+    (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl) (fun z _ h₂ ↦ hd z y (by omega))
+    fun z h₁ _ ↦ hd x z (by omega)
+  rw [hsum] at hcycle ⊢
+  have hdeg : indQ y - ind x = -(((ind x - indQ y).toNat : ℕ) : ℤ) := by omega
+  obtain ⟨e, he, hde⟩ := ((T₁.isRepresenting_iff ν).1 hT₁ x y hxy)
+    |>.exists_cubicalChainDifferential_eq_sub_add ((T₀.isRepresenting_iff ν).1 hT₀ x y hxy)
+      (hdeg ▸ hb) hcycle (hinj x y hxy)
+  have hdeg' : -((((ind x - indQ y).toNat + 1 : ℕ)) : ℤ) = indQ y - ind x - 1 := by omega
+  exact ⟨e, hdeg' ▸ he, hde⟩
+
+/-- The inductive step of the construction of a parametrized chain system from `T₀` to `T₁`: if
+chains of the pairs of smaller index difference than `(x, y)` have the right degrees and satisfy
+the parametrized equation, some chain of `(x, y)` satisfies it too. -/
+private theorem exists_chain_of_forall_lt (hT₀ : T₀.IsRepresenting B ν)
+    (hT₁ : T₁.IsRepresenting B ν)
+    (hκ : ∀ x w z y (a : M x w) (b : M w z) (c : N z y),
+      κ x z y (ι x w z (a, b), c) = κ x w y (a, κ w z y (b, c)))
+    (hκκ' : ∀ x w z y (a : M x w) (b : N w z) (c : M' z y),
+      κ' x z y (κ x w z (a, b), c) = κ x w y (a, κ' w z y (b, c)))
+    (hκ' : ∀ x w z y (a : N x w) (b : M' w z) (c : M' z y),
+      κ' x z y (κ' x w z (a, b), c) = κ' x w y (a, ι' w z y (b, c)))
+    (hB : ∀ x z y p, κ x z y p ∈ B x y) (hB' : ∀ x z y p, κ' x z y p ∈ B x y)
+    (hinj : ∀ x y, indQ y ≤ ind x → Function.Injective (HomologicalComplex.homologyMap
+      (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (B x y)).map))
+        (ind x - indQ y).toNat).hom)
+    {x : P} {y : Q} (hyx : indQ y ≤ ind x)
+    (h : ∀ p : P × Q, normalizedCubicalChainAlgebra (N p.1 p.2) k)
+    (hlt : ∀ p : P × Q, (ind p.1 - indQ p.2 + 1).toNat < (ind x - indQ y + 1).toNat →
+      h p ∈ cubicalChainGrading (N p.1 p.2) k (indQ p.2 - ind p.1 - 1) ∧
+        (indQ p.2 ≤ ind p.1 → cubicalChainDifferential (N p.1 p.2) k (h p) =
+          parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
+            (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain
+            (fun x y ↦ h (x, y)) p.1 p.2)) :
+    ∃ e : normalizedCubicalChainAlgebra (N x y) k,
+      e ∈ cubicalChainGrading (N x y) k (indQ y - ind x - 1) ∧
+      cubicalChainDifferential (N x y) k e =
+        parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
+          (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain
+          (fun x y ↦ h (x, y)) x y := by
+  classical
+  -- Extend the chains of the pairs of smaller index difference by zero.
+  let lt (x' : P) (y' : Q) : Prop := (ind x' - indQ y' + 1).toNat < (ind x - indQ y + 1).toNat
+  let h' : ∀ x y, normalizedCubicalChainAlgebra (N x y) k := fun x' y' ↦
+    if lt x' y' then h (x', y') else 0
+  have hh'r {x' : P} {y' : Q} (h₁ : lt x' y') : h' x' y' = h (x', y') := by simp [h', h₁]
+  have hh' (x' : P) (y' : Q) :
+      h' x' y' ∈ cubicalChainGrading (N x' y') k (indQ y' - ind x' - 1) := by
+    by_cases h₁ : lt x' y'
+    · exact hh'r h₁ ▸ (hlt (x', y') h₁).1
+    · rw [show h' x' y' = 0 by simp [h', h₁]]
+      exact zero_mem _
+  have hcongr {x' : P} {y' : Q} (h₁ : ind x' - indQ y' ≤ ind x - indQ y) :
+      parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
+          (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain h' x' y' =
+        parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
+          (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain
+          (fun x y ↦ h (x, y)) x' y' :=
+    parametrizedChainSum_congr S.mem_graded S'.mem_graded
+      (fun _ _ ↦ hh'r (show lt _ _ by omega)) fun _ _ ↦ hh'r (show lt _ _ by omega)
+  obtain ⟨e, he, hde⟩ := exists_chain_of_parametrized hT₀ hT₁ hκ hκκ' hκ' hB hB' hinj hh' hyx
+    fun x' y' h₁ ↦ by
+      by_cases h₂ : ind x' < indQ y'
+      · exact parametrized_of_lt hh' h₂
+      · rw [hh'r (show lt x' y' by omega), (hlt (x', y') (show lt x' y' by omega)).2
+          (show indQ y' ≤ ind x' by omega), hcongr (by omega)]
+  exact ⟨e, he, hde.trans (by rw [hcongr le_rfl])⟩
+
+/-- **Any two representing continuation chain systems are joined by a parametrized chain
+system.** Let `T₀` and `T₁` be continuation chain systems from `S` to `S'` representing the same
+classes `ν x y` of `H_{ind x - indQ y}(N x y, B x y)`, for associative composition maps `κ` and
+`κ'` with values in the subspaces `B x y`. If the maps
+`H_{ind x - indQ y}(N x y) → H_{ind x - indQ y}(N x y, B x y)` are injective whenever
+`indQ y ≤ ind x`, then there is a parametrized chain system from `T₀` to `T₁` on the spaces
+`N x y` themselves, included by the identities.
+
+For the compactified spaces of continuation trajectories of a homotopy of Morse functions,
+`N x y` is a compact manifold with corners of dimension `ind x - indQ y` and boundary `B x y`,
+which has no homology in that degree, so the injectivity holds. The push-forwards of the
+parametrized chain system then relate the continuation cocycles of `T₀` and `T₁` by a
+parametrized cocycle
+(`TauCeti.ContinuationChainSystem.IsRepresenting.nonempty_parametrizedCocycle`), so the
+continuation maps of the two systems are chain homotopic: the continuation morphism of a homotopy
+does not depend on the representing chain system. -/
+theorem IsRepresenting.nonempty_parametrizedChainSystem (hT₀ : T₀.IsRepresenting B ν)
+    (hT₁ : T₁.IsRepresenting B ν)
+    (hκ : ∀ x w z y (a : M x w) (b : M w z) (c : N z y),
+      κ x z y (ι x w z (a, b), c) = κ x w y (a, κ w z y (b, c)))
+    (hκκ' : ∀ x w z y (a : M x w) (b : N w z) (c : M' z y),
+      κ' x z y (κ x w z (a, b), c) = κ x w y (a, κ' w z y (b, c)))
+    (hκ' : ∀ x w z y (a : N x w) (b : M' w z) (c : M' z y),
+      κ' x z y (κ' x w z (a, b), c) = κ' x w y (a, ι' w z y (b, c)))
+    (hB : ∀ x z y p, κ x z y p ∈ B x y) (hB' : ∀ x z y p, κ' x z y p ∈ B x y)
+    (hinj : ∀ x y, indQ y ≤ ind x → Function.Injective (HomologicalComplex.homologyMap
+      (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (B x y)).map))
+        (ind x - indQ y).toNat).hom) :
+    Nonempty (ParametrizedChainSystem κ κ' (fun x y ↦ ContinuousMap.id (N x y))
+      (fun x y ↦ ContinuousMap.id (N x y)) T₀ T₁) := by
+  classical
+  -- Recursion on the index difference: at a pair `(x, y)` with `indQ y ≤ ind x`, the parametrized
+  -- equation only involves the chains of the pairs of smaller index difference.
+  let r : P × Q → P × Q → Prop := InvImage (· < ·) fun p ↦ (ind p.1 - indQ p.2 + 1).toNat
+  have hr {x x' : P} {y y' : Q}
+      (h : (ind x' - indQ y' + 1).toNat < (ind x - indQ y + 1).toNat) : r (x', y') (x, y) := h
+  refine ((InvImage.wf _ wellFounded_lt : WellFounded r).exists_forall_of_forall_exists
+    (X := fun p ↦ normalizedCubicalChainAlgebra (N p.1 p.2) k)
+    (fun h p a ↦ a ∈ cubicalChainGrading (N p.1 p.2) k (indQ p.2 - ind p.1 - 1) ∧
+      (indQ p.2 ≤ ind p.1 → cubicalChainDifferential (N p.1 p.2) k a =
+        parametrizedChainSum ind indQ κ κ' (fun x y ↦ ContinuousMap.id (N x y))
+          (fun x y ↦ ContinuousMap.id (N x y)) k S.chain S'.chain T₀.chain T₁.chain
+          (fun x y ↦ h (x, y)) p.1 p.2)) ?_ ?_).elim fun h hh ↦
+    ⟨⟨fun x y ↦ h (x, y), fun x y ↦ (hh (x, y)).1, fun x y ↦ if hxy : indQ y ≤ ind x
+      then (hh (x, y)).2 hxy else parametrized_of_lt (fun x y ↦ (hh (x, y)).1) (not_le.1 hxy)⟩⟩
+  · -- The condition at `(x, y)` only depends on the chains of the pairs of smaller index
+    -- difference.
+    rintro ⟨x, y⟩ a h h' hhh' ⟨ha, hd⟩
+    dsimp only at ha hd ⊢
+    refine ⟨ha, fun hyx ↦ (hd hyx).trans ?_⟩
+    rw [parametrizedChainSum_congr (h' := fun x y ↦ h' (x, y)) S.mem_graded S'.mem_graded
+      (fun z _ ↦ hhh' (z, y) (hr (by omega))) fun z _ ↦ hhh' (x, z) (hr (by omega))]
+  · rintro ⟨x, y⟩ h hlt
+    dsimp only
+    by_cases hyx : indQ y ≤ ind x
+    · obtain ⟨e, he, hde⟩ := exists_chain_of_forall_lt hT₀ hT₁ hκ hκκ' hκ' hB hB' hinj hyx h hlt
+      exact ⟨e, he, fun _ ↦ hde⟩
+    · -- At the pairs with `ind x < indQ y` only the degree condition is imposed.
+      exact ⟨0, zero_mem _, fun h ↦ absurd h hyx⟩
+
+section Evaluation
+
+variable {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G] {q : ∀ x y, C(M x y, G)}
+  {q' : ∀ x y, C(M' x y, G)} {r : ∀ x y, C(N x y, G)}
+
+/-- **The continuation cocycles of two representing continuation chain systems are related by a
+parametrized cocycle.** Under the hypotheses of
+`TauCeti.ContinuationChainSystem.IsRepresenting.nonempty_parametrizedChainSystem`, for evaluation
+maps `q`, `q'` and `r` into a topological monoid that are multiplicative for all the composition
+maps, the continuation cocycles of push-forwards of `T₀` and `T₁` are joined by a parametrized
+cocycle. Through `TauCeti.ParametrizedCocycle.homotopy`, the continuation maps of the twisted
+complexes they induce are therefore chain homotopic, for every differential graded right module
+over `C^□_*(G; k)`. -/
+theorem IsRepresenting.nonempty_parametrizedCocycle (hT₀ : T₀.IsRepresenting B ν)
+    (hT₁ : T₁.IsRepresenting B ν)
+    (hκ : ∀ x w z y (a : M x w) (b : M w z) (c : N z y),
+      κ x z y (ι x w z (a, b), c) = κ x w y (a, κ w z y (b, c)))
+    (hκκ' : ∀ x w z y (a : M x w) (b : N w z) (c : M' z y),
+      κ' x z y (κ x w z (a, b), c) = κ x w y (a, κ' w z y (b, c)))
+    (hκ' : ∀ x w z y (a : N x w) (b : M' w z) (c : M' z y),
+      κ' x z y (κ' x w z (a, b), c) = κ' x w y (a, ι' w z y (b, c)))
+    (hB : ∀ x z y p, κ x z y p ∈ B x y) (hB' : ∀ x z y p, κ' x z y p ∈ B x y)
+    (hinj : ∀ x y, indQ y ≤ ind x → Function.Injective (HomologicalComplex.homologyMap
+      (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (B x y)).map))
+        (ind x - indQ y).toNat).hom)
+    (hq : ∀ x z y (u : M x z) (v : M z y), q x y (ι x z y (u, v)) = q x z u * q z y v)
+    (hq' : ∀ x z y (u : M' x z) (v : M' z y), q' x y (ι' x z y (u, v)) = q' x z u * q' z y v)
+    (hrκ : ∀ x z y (u : M x z) (v : N z y), r x y (κ x z y (u, v)) = q x z u * r z y v)
+    (hrκ' : ∀ x z y (u : N x z) (v : M' z y), r x y (κ' x z y (u, v)) = r x z u * q' z y v) :
+    Nonempty (ParametrizedCocycle (T₀.continuationCocycle r hq hq' hrκ hrκ')
+      (T₁.continuationCocycle r hq hq' hrκ hrκ')) :=
+  (hT₀.nonempty_parametrizedChainSystem hT₁ hκ hκκ' hκ' hB hB' hinj).map fun η ↦
+    η.parametrizedCocycle r hq hq' hrκ hrκ' hrκ hrκ' (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hrκ hrκ'
+
+end Evaluation
+
+end ContinuationChainSystem
+
+end ContinuationExistence
 
 end TauCeti
