@@ -194,12 +194,11 @@ variable {R : Type*} [CommSemiring R]
 
 /-- A continuous `R`-algebra map induces an `R`-algebra map between the completions. -/
 noncomputable def mapAlgHom (f : α →ₐ[R] β) (hf : Continuous f) :
-    Completion α →ₐ[R] Completion β := by
-  let g := mapRingHom f.toRingHom hf
-  have hg (r : R) : g (algebraMap R (Completion α) r) = algebraMap R (Completion β) r := by
-    simp only [g, algebraMap_def, mapRingHom_coe, AlgHom.toRingHom_eq_coe,
-      AlgHom.coe_toRingHom, f.commutes]
-  exact ⟨g, hg⟩
+    Completion α →ₐ[R] Completion β where
+  toRingHom := mapRingHom (f : α →+* β) hf
+  commutes' r := by
+    rw [RingHom.toFun_eq_coe, algebraMap_def, algebraMap_def,
+      mapRingHom_coe (f := (f : α →+* β)) hf, AlgHom.coe_toRingHom, f.commutes]
 
 /-- The ring homomorphism underlying `mapAlgHom f` is the completion of the underlying ring map. -/
 @[simp]

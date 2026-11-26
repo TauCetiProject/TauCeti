@@ -89,7 +89,11 @@ theorem torsionByMap_tateCurveAt_sub_id_sq_eq_zero_of_isAlgebraic {m : ℕ} [NeZ
   have h := congrArg Subtype.val <| LinearMap.congr_fun
     (torsionByMap_tateCurveAt_sub_id_sq_eq_zero q hq m τ hτ hroots)
     (torsionByMap (m : ℤ) (Point.map ι).toIntLinearMap P)
-  simpa [pow_two, mul_apply_eq_comp, coe_torsionByMap_apply, hcomm] using h
+  -- Evaluate both displacement operators on points, then commute the coefficient maps.
+  simp only [pow_two, mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.id_apply,
+    AddSubgroupClass.coe_sub, coe_torsionByMap_apply, AddMonoidHom.coe_toIntLinearMap,
+    LinearMap.zero_apply, ZeroMemClass.coe_zero] at h ⊢
+  simpa only [map_sub (Point.map ι), ← hcomm, map_zero] using h
 
 /-- An automorphism of an algebraic extension that fixes a primitive root at every `ℓ`-power
 level acts with square-zero displacement on the `ℓ`-adic Tate module of a Tate curve. -/
