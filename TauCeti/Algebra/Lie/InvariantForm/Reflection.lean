@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.InvariantForm.RankOne
-import TauCeti.Algebra.Lie.InvariantForm.Exponential
+public import TauCeti.Algebra.Lie.InvariantForm.Exponential
 
 /-!
 # Root reflections of a compact Lie algebra
@@ -37,8 +37,10 @@ root `β` to a nonzero root plane with root `s_α(β)`
 (`TauCeti.IsRootPlane.exists_isRootPlane_sub_smul`). The Cartan integer `⟨β, α^∨⟩` is an integer by
 `LinearMap.BilinForm.exists_int_two_mul_root_apply_lie_eq_mul_of_lie_eq_smul`.
 
-The automorphism is the inner automorphism `θ = exp (π ad X)` for an element `X` of the rank-one
-subalgebra of the root pair (`LinearMap.BilinForm.exists_soThree_triple_of_lie_eq_smul`). With
+The automorphism `θ` is the inner automorphism `exp (π ad X)` for a multiple `X = c • x` of `x`:
+the statement records that the matrix of `θ` in every basis of `L` is the matrix exponential of `π`
+times the matrix of `ad X`. Here `X` lies in the rank-one subalgebra of the root pair
+(`LinearMap.BilinForm.exists_soThree_triple_of_lie_eq_smul`). With
 `X = x / √α(Z)`, `Y = y / √α(Z)` and `K = Z / α(Z)`, the elements `X, Y, K` satisfy the bracket
 relations of the standard basis of `so(3)`, so `ad X` rotates the plane of `K` and `Y`, and the
 rotation through the angle `π` sends `K` to `-K`. On the other hand `ad X` kills the kernel of `α`
@@ -50,7 +52,8 @@ to the root.
 ## Main results
 
 * `LinearMap.BilinForm.exists_lieEquiv_apply_eq_sub_smul_of_lie_eq_smul`: the root reflection
-  `H ↦ H - α(H) α^∨` of `t` extends to a Lie algebra automorphism of `L` preserving `B`.
+  `H ↦ H - α(H) α^∨` of `t` extends to the Lie algebra automorphism `exp (π ad X)` of `L`, for a
+  multiple `X` of `x`, and it preserves `B`.
 * `LinearMap.BilinForm.exists_ne_zero_lie_eq_sub_smul_of_lie_eq_smul`: the real roots are closed
   under the root reflections.
 * `TauCeti.IsRootPlane.exists_isRootPlane_sub_smul`: the reflection of the root of a nonzero root
@@ -100,27 +103,39 @@ private theorem exists_apply_eq_of_apply_eq_sub_smul {θ : L ≃ₗ⁅ℝ⁆ L} 
 invariant form on a finite-dimensional real Lie algebra `L` and `t` a subspace. Let `x, y` be a root
 pair of `t` with root `α`, `⁅H, x⁆ = α(H) y` and `⁅H, y⁆ = -α(H) x` for `H ∈ t`, whose bracket
 `Z = ⁅x, y⁆` lies in `t`. Then there is a Lie algebra automorphism `θ` of `L` preserving `B` which
-acts on `t` as the root reflection `H ↦ H - α(H) α^∨`, with coroot `α^∨ = (2 / α(Z)) Z`. When
-`α(Z) = 0`, which happens only when `x = 0` or `α = 0`, the reflection is the identity. -/
+acts on `t` as the root reflection `H ↦ H - α(H) α^∨`, with coroot `α^∨ = (2 / α(Z)) Z`. It is
+`exp (π ad X)` for a multiple `X = c • x` of `x`: its matrix in every basis `b`, indexed by a finite
+type in `Type`, is the matrix exponential of `π` times the matrix of `ad X`. When `α(Z) = 0`, which
+happens only when `x = 0` or `α = 0`, the reflection is the identity, with `c = 0`. -/
 theorem exists_lieEquiv_apply_eq_sub_smul_of_lie_eq_smul (B : LinearMap.BilinForm ℝ L)
     (hBs : B.IsSymm) (hBp : B.toQuadraticMap.PosDef) (hB : B.lieInvariant L)
     (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y) (hy : ∀ H : t, ⁅(H : L), y⁆ = -(α H • x))
     (hxy : ⁅x, y⁆ ∈ t) :
-    ∃ θ : L ≃ₗ⁅ℝ⁆ L, (∀ v w, B (θ v) (θ w) = B v w) ∧
+    ∃ (c : ℝ) (θ : L ≃ₗ⁅ℝ⁆ L),
+      (∀ {ι : Type} [Fintype ι] [DecidableEq ι] (b : Basis ι ℝ L),
+        LinearMap.toMatrix b b θ.toLinearEquiv =
+          NormedSpace.exp (Real.pi • LinearMap.toMatrix b b (LieAlgebra.ad ℝ L (c • x)))) ∧
+      (∀ v w, B (θ v) (θ w) = B v w) ∧
       ∀ H : t, θ H = (H : L) - (2 * α H / α ⟨⁅x, y⁆, hxy⟩) • ⁅x, y⁆ := by
   set Z : t := ⟨⁅x, y⁆, hxy⟩
-  -- In the degenerate cases the identity works.
+  -- In the degenerate cases the identity `exp (π ad 0)` works.
+  have hrefl {ι : Type} [Fintype ι] [DecidableEq ι] (b : Basis ι ℝ L) :
+      LinearMap.toMatrix b b (LieEquiv.refl : L ≃ₗ⁅ℝ⁆ L).toLinearEquiv =
+        NormedSpace.exp (Real.pi • LinearMap.toMatrix b b (LieAlgebra.ad ℝ L ((0 : ℝ) • x))) := by
+    simp only [zero_smul, map_zero, smul_zero, NormedSpace.exp_zero]
+    exact LinearMap.toMatrix_id b
   by_cases hα : α = 0
-  · exact ⟨LieEquiv.refl, fun _ _ ↦ rfl, fun H ↦ by simp [hα]⟩
+  · exact ⟨0, LieEquiv.refl, fun b ↦ hrefl b, fun _ _ ↦ rfl, fun H ↦ by simp [hα]⟩
   by_cases hx0 : x = 0
-  · exact ⟨LieEquiv.refl, fun _ _ ↦ rfl, fun H ↦ by simp [hx0]⟩
+  · exact ⟨0, LieEquiv.refl, fun b ↦ hrefl b, fun _ _ ↦ rfl, fun H ↦ by simp [hx0]⟩
   -- The rank-one subalgebra of `x, y`: its third basis vector is `K = c² ⁅x, y⁆`, with
   -- `α(K) = c² α(⁅x, y⁆) = 1`.
   obtain ⟨a, c, -, h₀, -, h₂, hf₀, hf₁, hKZ, hcZ⟩ :=
     B.exists_soThree_triple_of_lie_eq_smul hBs hBp hB hα hx0 hx hy hxy
-  -- `θ = exp (π ad X)` for `X = a 0`.
-  obtain ⟨θ, hθB, hθ0, hθrot⟩ := B.exists_lieEquiv_apply_eq_cos_smul_add_sin_smul hB (a 0) Real.pi
-  refine ⟨θ, hθB, fun H ↦ ?_⟩
+  -- `θ = exp (π ad X)` for `X = a 0 = c • x`.
+  obtain ⟨θ, hθexp, hθB, hθ0, hθrot⟩ :=
+    B.exists_lieEquiv_apply_eq_cos_smul_add_sin_smul hB (a 0) Real.pi
+  refine ⟨c, θ, fun b ↦ hf₀ ▸ hθexp b, hθB, fun H ↦ ?_⟩
   -- `ad X` kills `H - α(H) K` and rotates the plane of `K` and `Y = a 1`.
   have hHX : ⁅(H : L), a 0⁆ = α H • a 1 := by
     simp only [hf₀, hf₁, lie_smul, hx, smul_comm c]
@@ -153,7 +168,7 @@ theorem exists_ne_zero_lie_eq_sub_smul_of_lie_eq_smul (B : LinearMap.BilinForm �
         (β - (2 * β ⟨⁅x, y⁆, hxy⟩ / α ⟨⁅x, y⁆, hxy⟩) • α) H • w') ∧
       ∀ H : t, ⁅(H : L), w'⁆ =
         -((β - (2 * β ⟨⁅x, y⁆, hxy⟩ / α ⟨⁅x, y⁆, hxy⟩) • α) H • u') := by
-  obtain ⟨θ, -, hθ⟩ := B.exists_lieEquiv_apply_eq_sub_smul_of_lie_eq_smul hBs hBp hB hx hy hxy
+  obtain ⟨-, θ, -, -, hθ⟩ := B.exists_lieEquiv_apply_eq_sub_smul_of_lie_eq_smul hBs hBp hB hx hy hxy
   obtain ⟨s, hs, hγs⟩ := exists_apply_eq_of_apply_eq_sub_smul hθ
   refine ⟨θ u, θ w, (map_ne_zero_iff θ θ.injective).mpr hu0, fun H ↦ ?_, fun H ↦ ?_⟩
   · rw [← hs H, ← LieEquiv.map_lie, hu, map_smul, hγs]
@@ -172,8 +187,7 @@ definite invariant form on a finite-dimensional real Lie algebra `L` and `t` a s
 every element that commutes with it, such as a maximal commutative subspace. Let `E` and `E'` be
 nonzero root planes of `t` with roots `α` and `β`, and let `a ∈ t` represent `α` through `B`. Then
 there is a nonzero root plane with root `s_α(β) = β - (2 β(a) / α(a)) α`, the reflection of `β` in
-the root `α`. The proof constructs it as the image of `E'` under a Lie algebra automorphism
-preserving `B`. -/
+the root `α`. -/
 theorem exists_isRootPlane_sub_smul (hE : IsRootPlane B t α E J)
     (hE' : IsRootPlane B t β E' J') (hBs : B.IsSymm) (hBp : B.toQuadraticMap.PosDef)
     (hB : B.lieInvariant L) (ht : ∀ z : L, (∀ H : t, ⁅(H : L), z⁆ = 0) → z ∈ t) (hE0 : E ≠ ⊥)
@@ -186,20 +200,12 @@ theorem exists_isRootPlane_sub_smul (hE : IsRootPlane B t α E J)
   have hy (H : t) : ⁅(H : L), y⁆ = -(α H • v) := by
     rw [hy_def, hE.lie_apply, hE.apply_apply, Submodule.coe_neg, smul_neg]
   have hxy := lie_mem_of_lie_eq_smul ht hx hy
-  obtain ⟨θ, hθB, hθ⟩ := B.exists_lieEquiv_apply_eq_sub_smul_of_lie_eq_smul hBs hBp hB hx hy hxy
+  obtain ⟨-, θ, -, hθB, hθ⟩ :=
+    B.exists_lieEquiv_apply_eq_sub_smul_of_lie_eq_smul hBs hBp hB hx hy hxy
   obtain ⟨s, hs, hγs⟩ := LinearMap.BilinForm.exists_apply_eq_of_apply_eq_sub_smul hθ
-  -- The bracket `Z = ⁅v, J v⁆` is `B(J v, J v) • a`, since both pair with `H ∈ t` to
-  -- `α(H) B(J v, J v)` and `B` is definite on `t`.
-  have hZa : (⟨⁅v, y⁆, hxy⟩ : t) = B y y • a := by
-    have hd : (⟨⁅v, y⁆, hxy⟩ - B y y • a : t) = 0 := by
-      set d : t := ⟨⁅v, y⁆, hxy⟩ - B y y • a
-      refine Subtype.ext (hBp.anisotropic _ ?_)
-      have h₁ : B d ⁅v, y⁆ = α d * B y y := hB.apply_lie_eq_mul_of_lie_eq_smul hx d
-      have h₂ : B d a = α d := by rw [← ha, hBs.eq]
-      simp only [LinearMap.BilinMap.toQuadraticMap_apply]
-      calc B (d : L) d = B d ⁅v, y⁆ - B y y * B d a := by simp [d, map_sub]
-        _ = 0 := by rw [h₁, h₂]; ring
-    exact sub_eq_zero.mp hd
+  -- The bracket `Z = ⁅v, J v⁆` is `B(J v, J v) • a`.
+  have hZa : (⟨⁅v, y⁆, hxy⟩ : t) = B y y • a :=
+    Subtype.ext (hB.lie_eq_smul_of_lie_eq_smul hBs hBp hx hxy ha)
   have hyy : B y y ≠ 0 := by
     have hy0 : y ≠ 0 := fun h ↦ hv0 (congrArg Subtype.val
       (hE.injective ((Subtype.ext h : J ⟨v, hv⟩ = 0).trans (map_zero J).symm)))

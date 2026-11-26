@@ -31,10 +31,9 @@ operators, satisfy
   automorphism of `B`. Applied to the derivations `t • D`, this makes every `exp (t • D)` an
   automorphism; the Singer–Wermer theorem composes characters with these automorphisms.
 * For the bracket of a finite-dimensional real Lie algebra and a derivation `D = ad X`, it says
-  that `exp (ad X)` is a Lie algebra automorphism; for an invariant bilinear form `B` with values
-  in `ℝ`, `D₃ = 0` and `D₁ = D₂ = ad X`, it says that `exp (ad X)` preserves `B`. These are the
-  inner automorphisms `exp (s ad X)` of `TauCeti.Algebra.Lie.InvariantForm.Exponential`, which
-  realize the root reflections of a compact Lie algebra.
+  that `exp (ad X)` is a Lie algebra automorphism. These are the inner automorphisms
+  `exp (s ad X)` of `TauCeti.Algebra.Lie.InvariantForm.Exponential`, which realize the root
+  reflections of a compact Lie algebra.
 
 The proof differentiates `t ↦ exp (-t D₃) (β (exp (t D₁) x) (exp (t D₂) y))`, whose derivative
 vanishes by the Leibniz rule, so that it is constant.

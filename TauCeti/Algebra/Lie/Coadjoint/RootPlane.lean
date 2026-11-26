@@ -88,6 +88,8 @@ Hessian (`TauCeti.Algebra.Lie.Coadjoint.Height`) and the dimension of the orbit
   `LinearMap.BilinForm.lieInvariant.root_apply_lie_pos_of_lie_eq_smul`: for `α ≠ 0`, the triple
   `x, y, ⁅x, y⁆` is orthogonal for a symmetric invariant form, and `α(⁅x, y⁆) > 0` when the form is
   positive definite and `x ≠ 0`.
+* `LinearMap.BilinForm.lieInvariant.lie_eq_smul_of_lie_eq_smul`: for a symmetric positive
+  definite invariant form, `⁅x, y⁆ = B(y, y) • a` when `⁅x, y⁆ ∈ t` and `a ∈ t` represents `α`.
 * `TauCeti.IsRootPlane.mem_lieAnnihilator_iff`: a root plane meets the stabilizer of `B p` only
   in `0` when `α(p) ≠ 0`, and lies in it when `α(p) = 0`.
 
@@ -406,6 +408,24 @@ theorem root_apply_lie_pos_of_lie_eq_smul (hB : B.lieInvariant L) (hBp : B.toQua
     rw [h, map_zero, eq_comm] at h₀
     exact (mul_ne_zero hH₀ (hpos y hy0).ne') h₀
   exact (pos_iff_pos_of_mul_pos (hBZ _ ▸ hpos _ hZ0)).mpr (hpos y hy0)
+
+omit [IsStrictOrderedRing R] in
+/-- If every `H ∈ t` rotates the pair `x, y` by `α(H)`, `⁅x, y⁆ ∈ t`, and `a ∈ t` represents `α`
+through a symmetric positive definite invariant form `B`, then `⁅x, y⁆ = B(y, y) • a`: the
+bracket points in the coroot direction of `α`. -/
+theorem lie_eq_smul_of_lie_eq_smul (hB : B.lieInvariant L) (hBs : B.IsSymm)
+    (hBp : B.toQuadraticMap.PosDef) (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y) (hxy : ⁅x, y⁆ ∈ t)
+    {a : t} (ha : ∀ H : t, B a H = α H) : ⁅x, y⁆ = B y y • (a : L) := by
+  -- `d = ⁅x, y⁆ - B(y, y) • a ∈ t` pairs with itself to `α(d) B(y, y) - B(y, y) α(d) = 0`.
+  set d : t := ⟨⁅x, y⁆, hxy⟩ - B y y • a
+  have h₁ : B d ⁅x, y⁆ = α d * B y y := hB.apply_lie_eq_mul_of_lie_eq_smul hx d
+  have h₂ : B d a = α d := by rw [← ha, hBs.eq]
+  have hd : (d : L) = 0 := by
+    refine hBp.anisotropic _ ?_
+    simp only [LinearMap.BilinMap.toQuadraticMap_apply]
+    calc B (d : L) d = B d ⁅x, y⁆ - B y y * B d a := by simp [d, map_sub]
+      _ = 0 := by rw [h₁, h₂]; ring
+  exact sub_eq_zero.mp hd
 
 end OrderedCommRing
 
