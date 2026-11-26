@@ -32,12 +32,17 @@ sends `p ⊗ q`, for critical points with `ind p + ind q = n`, to the critical p
 Koszul sign `(-1) ^ ind p` of the differential of the tensor product complex is exactly the sign
 of the trajectories of the product moving in the second factor, so, unlike the mod-two comparison
 `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseComplexTensorIso`, this one has to match signs.
+The construction follows that mod-two comparison in
+`TauCeti.Geometry.Manifold.Morse.Boundary.Kunneth` (itself after `TauCeti.koszulComplex.tensorIso`):
+its degreewise comparison maps and their evaluation on `p ⊗ q` are adapted from there to any
+commutative ring, with the matching of the Koszul sign with the parity sign added.
 
 Over a principal ideal ring `R` without zero divisors, for instance `ℤ`, the terms of `ℒ` are free,
 so the algebraic Künneth theorem (`HomologicalComplex.homologyKunnethShortComplex_shortExact`)
 applies to `𝒦 ⊗ ℒ`.
-Transported along this isomorphism, it gives the **Künneth short exact sequence** of integral Morse
-homology
+Transported along this isomorphism, as in the cubical Künneth sequence
+`TauCeti.cubicalHomologyKunnethShortComplex_shortExact`, it gives the **Künneth short exact
+sequence** of integral Morse homology
 
 `0 ⟶ ⨁_{p + q = m + 1} Hₚ(f) ⊗ H_q(g) ⟶ Hₘ₊₁(f ∘ Prod.fst + g ∘ Prod.snd)`
 `  ⟶ ⨁_{p + q = m} Tor₁(Hₚ(f), H_q(g)) ⟶ 0`
@@ -501,6 +506,19 @@ abbrev signedMorseHomologyKunnethShortComplex (m : ℕ) : ShortComplex (ModuleCa
         homologyMap_signedMorseComplexTensorIso_hom_comp_signedMorseHomologyToTor,
         homologyKunneth_comp_homologyToTor]
 
+variable (hXs hYs hf hg 𝔬 𝔬' R hsqX hsqY) in
+/-- The algebraic Künneth short complex of the integral Morse complexes is that of integral Morse
+homology, through the isomorphism induced on homology by `signedMorseComplexTensorIso`. -/
+private def kunnethShortComplexIso (m : ℕ) :
+    homologyKunnethShortComplex 𝒦 ℒ m ≅
+      signedMorseHomologyKunnethShortComplex hXs hYs hf hg 𝔬 𝔬' R hsqX hsqY m :=
+  ShortComplex.isoMk (Iso.refl _)
+    ((homologyFunctor _ _ (m + 1)).mapIso
+      (signedMorseComplexTensorIso hXs hYs hf hg 𝔬 𝔬' R hsqX hsqY))
+    (Iso.refl _) (Category.id_comp _)
+    ((homologyMap_signedMorseComplexTensorIso_hom_comp_signedMorseHomologyToTor m).trans
+      (Category.comp_id _).symm)
+
 /-- **The Künneth theorem for integral Morse homology.** For Morse–Smale pseudo-gradients `X` on
 `M` and `Y` on `N` with orientation data, over a principal ideal ring `R` without zero divisors,
 such as `ℤ`, for which both integral Morse boundaries square to zero, the sequence
@@ -512,13 +530,7 @@ of integral Morse homology, with the product field and the product orientation d
 is exact. -/
 theorem signedMorseHomologyKunnethShortComplex_shortExact (m : ℕ) :
     (signedMorseHomologyKunnethShortComplex hXs hYs hf hg 𝔬 𝔬' R hsqX hsqY m).ShortExact :=
-  ShortComplex.shortExact_of_iso
-    (ShortComplex.isoMk (S₁ := homologyKunnethShortComplex 𝒦 ℒ m) (Iso.refl _)
-      ((homologyFunctor _ _ (m + 1)).mapIso
-        (signedMorseComplexTensorIso hXs hYs hf hg 𝔬 𝔬' R hsqX hsqY))
-      (Iso.refl _) (Category.id_comp _)
-      ((homologyMap_signedMorseComplexTensorIso_hom_comp_signedMorseHomologyToTor m).trans
-        (Category.comp_id _).symm))
+  ShortComplex.shortExact_of_iso (kunnethShortComplexIso hXs hYs hf hg 𝔬 𝔬' R hsqX hsqY m)
     (homologyKunnethShortComplex_shortExact 𝒦 ℒ m)
 
 variable (hXs hYs hf hg 𝔬 𝔬' R hsqX hsqY) in
@@ -530,12 +542,7 @@ chosen splittings of the cycles and is not natural. -/
 def signedMorseHomologyKunnethShortComplexSplitting (m : ℕ) :
     (signedMorseHomologyKunnethShortComplex hXs hYs hf hg 𝔬 𝔬' R hsqX hsqY m).Splitting :=
   (homologyKunnethShortComplexSplitting 𝒦 ℒ m).ofIso
-    (ShortComplex.isoMk (S₁ := homologyKunnethShortComplex 𝒦 ℒ m) (Iso.refl _)
-      ((homologyFunctor _ _ (m + 1)).mapIso
-        (signedMorseComplexTensorIso hXs hYs hf hg 𝔬 𝔬' R hsqX hsqY))
-      (Iso.refl _) (Category.id_comp _)
-      ((homologyMap_signedMorseComplexTensorIso_hom_comp_signedMorseHomologyToTor m).trans
-        (Category.comp_id _).symm))
+    (kunnethShortComplexIso hXs hYs hf hg 𝔬 𝔬' R hsqX hsqY m)
 
 end Kunneth
 
