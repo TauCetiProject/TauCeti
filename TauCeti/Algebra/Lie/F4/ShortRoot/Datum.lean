@@ -363,16 +363,28 @@ abbrev chevalleyDatum : DynkinType.ChevalleyDatum .F4 (by trivial) where
 
 /-- The actual torus coordinates of the datum are the native fundamental-weight coordinates. -/
 @[simp] theorem chevalleyDatum_coordinateWeight :
-    chevalleyDatum.coordinateWeight = fun a i => f4ShortRootWeight a (Fin.cast rank_F4 i) :=
-  chevalleyDatum.coordinateWeight_eq_of_coe_weightLatticeBasis
-    coe_chevalleyDatum_weightLatticeBasis
+    chevalleyDatum.coordinateWeight = fun a i => f4ShortRootWeight a (Fin.cast rank_F4 i) := by
+  ext a i
+  have h := chevalleyDatum.sum_coordinateWeight_smul a
+  conv_lhs at h =>
+    arg 2
+    ext j
+    rw [coe_chevalleyDatum_weightLatticeBasis]
+  simp only [← Pi.single_smul, smul_eq_mul, mul_one, Finset.univ_sum_single] at h
+  exact congrFun h i
 
 /-- Root characters use the pinned root datum's fundamental-weight coordinates. -/
 @[simp] theorem chevalleyDatum_coordinateRoot (γ : Fin DynkinType.F4.numRoots) :
     chevalleyDatum.coordinateRoot γ =
-      (DynkinType.F4.simplyConnectedRootDatum valid_F4).root γ :=
-  chevalleyDatum.coordinateRoot_eq_of_coe_weightLatticeBasis
-    coe_chevalleyDatum_weightLatticeBasis γ
+      (DynkinType.F4.simplyConnectedRootDatum valid_F4).root γ := by
+  ext i
+  have h := chevalleyDatum.sum_coordinateRoot_smul γ
+  conv_lhs at h =>
+    arg 2
+    ext j
+    rw [coe_chevalleyDatum_weightLatticeBasis]
+  simp only [← Pi.single_smul, smul_eq_mul, mul_one, Finset.univ_sum_single] at h
+  exact congrFun h i
 
 end
 
