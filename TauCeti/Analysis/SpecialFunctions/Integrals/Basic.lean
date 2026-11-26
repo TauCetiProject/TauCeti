@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
+public import Mathlib.Basic.Real.Sign
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
@@ -16,6 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 import TauCeti.Analysis.Calculus.Deriv.Complex
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
@@ -75,6 +77,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_pow_mul_sub`: `∫ x in p..r, xⁿ (x - p)` as a binomial sum in powers of `r - p`.
 * `Real.integral_div_sub_sq_add_sq`: the integral of the Poisson kernel `η / ((t - x)² + η²)`
   over an interval is a difference of arctangents.
+* `Real.tendsto_intervalIntegral_upperHalfPlanePoissonKernel`: the limiting mass of the
+  normalized Poisson kernel on an oriented interval, with half weight at each endpoint.
 * `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
   `b ≥ 0`.
 * `Complex.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` as the
@@ -655,6 +659,17 @@ theorem integral_div_sub_sq_add_sq (a b t η : ℝ) :
   simp_rw [← neg_sub _ t, neg_sq, add_comm _ (η ^ 2)]
   rw [intervalIntegral.integral_comp_sub_right (fun x => η / (η ^ 2 + x ^ 2)),
     integral_div_sq_add_sq]
+
+open Filter Topology in
+/-- As its height tends to zero from above, the normalized upper-half-plane Poisson kernel
+has limiting mass `(sign (b - x) - sign (a - x)) / 2` on the oriented interval from `a` to `b`. -/
+theorem tendsto_intervalIntegral_upperHalfPlanePoissonKernel (a b x : ℝ) :
+    Tendsto (fun η : ℝ ↦ π⁻¹ * ∫ t in a..b, η / ((x - t) ^ 2 + η ^ 2))
+      (𝓝[>] 0) (𝓝 ((sign (b - x) - sign (a - x)) / 2)) := by
+  simp_rw [integral_div_sub_sq_add_sq]
+  convert ((tendsto_arctan_div_nhdsGT_zero (b - x)).sub
+    (tendsto_arctan_div_nhdsGT_zero (a - x))).const_mul π⁻¹ using 2
+  field_simp
 
 open Set intervalIntegral in
 /-- The reciprocal-square kernel has an elementary integral on each nonnegative interval:
