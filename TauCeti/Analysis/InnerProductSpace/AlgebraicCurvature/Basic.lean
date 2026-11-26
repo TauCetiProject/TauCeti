@@ -14,6 +14,7 @@ import Mathlib.Data.Fin.Tuple.Reflection
 import Mathlib.LinearAlgebra.Multilinear.Basis
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Analysis.InnerProductSpace.Parseval
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Algebraic curvature tensors
@@ -155,28 +156,6 @@ namespace FourTensor
 
 section NormedSpace
 
-section Update
-
-variable {V : Type*}
-
-private theorem update_zero (a b c d x : V) :
-    Function.update ![a, b, c, d] 0 x = ![x, b, c, d] := by
-  funext i; fin_cases i <;> rfl
-
-private theorem update_one (a b c d x : V) :
-    Function.update ![a, b, c, d] 1 x = ![a, x, c, d] := by
-  funext i; fin_cases i <;> rfl
-
-private theorem update_two (a b c d x : V) :
-    Function.update ![a, b, c, d] 2 x = ![a, b, x, d] := by
-  funext i; fin_cases i <;> rfl
-
-private theorem update_three (a b c d x : V) :
-    Function.update ![a, b, c, d] 3 x = ![a, b, c, x] := by
-  funext i; fin_cases i <;> rfl
-
-end Update
-
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
   [NormedSpace ℝ W]
 
@@ -186,35 +165,35 @@ variable (r : FourTensor V) (a b c d x y : V) (t : ℝ)
 
 /-- A four-tensor is additive in its first argument. -/
 theorem apply_add_first : r ![x + y, b, c, d] = r ![x, b, c, d] + r ![y, b, c, d] := by
-  simpa only [update_zero] using r.map_update_add ![x, b, c, d] 0 x y
+  simpa only [Matrix.update_vec4_zero] using r.map_update_add ![x, b, c, d] 0 x y
 
 /-- A four-tensor is additive in its second argument. -/
 theorem apply_add_second : r ![a, x + y, c, d] = r ![a, x, c, d] + r ![a, y, c, d] := by
-  simpa only [update_one] using r.map_update_add ![a, x, c, d] 1 x y
+  simpa only [Matrix.update_vec4_one] using r.map_update_add ![a, x, c, d] 1 x y
 
 /-- A four-tensor is additive in its third argument. -/
 theorem apply_add_third : r ![a, b, x + y, d] = r ![a, b, x, d] + r ![a, b, y, d] := by
-  simpa only [update_two] using r.map_update_add ![a, b, x, d] 2 x y
+  simpa only [Matrix.update_vec4_two] using r.map_update_add ![a, b, x, d] 2 x y
 
 /-- A four-tensor is additive in its fourth argument. -/
 theorem apply_add_fourth : r ![a, b, c, x + y] = r ![a, b, c, x] + r ![a, b, c, y] := by
-  simpa only [update_three] using r.map_update_add ![a, b, c, x] 3 x y
+  simpa only [Matrix.update_vec4_three] using r.map_update_add ![a, b, c, x] 3 x y
 
 /-- A four-tensor is homogeneous in its first argument. -/
 theorem apply_smul_first : r ![t • x, b, c, d] = t * r ![x, b, c, d] := by
-  simpa only [update_zero, smul_eq_mul] using r.map_update_smul ![x, b, c, d] 0 t x
+  simpa only [Matrix.update_vec4_zero, smul_eq_mul] using r.map_update_smul ![x, b, c, d] 0 t x
 
 /-- A four-tensor is homogeneous in its second argument. -/
 theorem apply_smul_second : r ![a, t • x, c, d] = t * r ![a, x, c, d] := by
-  simpa only [update_one, smul_eq_mul] using r.map_update_smul ![a, x, c, d] 1 t x
+  simpa only [Matrix.update_vec4_one, smul_eq_mul] using r.map_update_smul ![a, x, c, d] 1 t x
 
 /-- A four-tensor is homogeneous in its third argument. -/
 theorem apply_smul_third : r ![a, b, t • x, d] = t * r ![a, b, x, d] := by
-  simpa only [update_two, smul_eq_mul] using r.map_update_smul ![a, b, x, d] 2 t x
+  simpa only [Matrix.update_vec4_two, smul_eq_mul] using r.map_update_smul ![a, b, x, d] 2 t x
 
 /-- A four-tensor is homogeneous in its fourth argument. -/
 theorem apply_smul_fourth : r ![a, b, c, t • x] = t * r ![a, b, c, x] := by
-  simpa only [update_three, smul_eq_mul] using r.map_update_smul ![a, b, c, x] 3 t x
+  simpa only [Matrix.update_vec4_three, smul_eq_mul] using r.map_update_smul ![a, b, c, x] 3 t x
 
 end Linearity
 

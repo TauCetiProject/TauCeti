@@ -37,6 +37,8 @@ finite dimension a skew-symmetric linear map `f` has a nonzero kernel vector, si
   is an `OrthonormalBasis ι ℝ (ℝ ∙ x)ᗮ`.
 * `TauCeti.exists_ne_zero_apply_eq_zero_of_skew_of_odd_finrank`: a skew-symmetric linear map of an
   odd-dimensional space has a nonzero kernel vector.
+* `OrthonormalBasis.sum_smul_apply_eq_neg_sum_smul`: a skew-symmetric linear map `A` moves across
+  a sum over an orthonormal basis, `∑ₖ G(bₖ) • Φ(A bₖ) = -∑ₖ G(A bₖ) • Φ(bₖ)`.
 
 ## References
 
@@ -197,3 +199,32 @@ theorem orthonormalBasisOrthogonalOfSkewFamily_repr_apply {ι : Type*} [Fintype 
     coe_orthonormalBasisOrthogonalOfSkewFamily_apply]
 
 end TauCeti
+
+namespace OrthonormalBasis
+
+variable {E W : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [AddCommGroup W] [Module ℝ W]
+  {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
+
+/-- **Moving a skew-symmetric map across a sum over an orthonormal basis.** For a skew-symmetric
+linear map `A`, an orthonormal basis `(bₖ)` and linear maps `G` and `Φ`,
+`∑ₖ G(bₖ) • Φ(A bₖ) = -∑ₖ G(A bₖ) • Φ(bₖ)`. -/
+theorem sum_smul_apply_eq_neg_sum_smul {A : E →ₗ[ℝ] E}
+    (hA : ∀ u w, ⟪A u, w⟫_ℝ = -⟪u, A w⟫_ℝ) (G : E →ₗ[ℝ] ℝ) (Φ : E →ₗ[ℝ] W) :
+    ∑ k, G (b k) • Φ (A (b k)) = -∑ k, G (A (b k)) • Φ (b k) := by
+  have hrow (j : ι) : ∑ k, ⟪b j, A (b k)⟫_ℝ • b k = -A (b j) := by
+    conv_rhs => rw [← b.sum_repr' (A (b j))]
+    rw [← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [real_inner_comm, hA, neg_smul]
+  calc ∑ k, G (b k) • Φ (A (b k))
+      = ∑ k, ∑ j, (⟪b j, A (b k)⟫_ℝ * G (b k)) • Φ (b j) := by
+        refine Finset.sum_congr rfl fun k _ ↦ ?_
+        conv_lhs => rw [← b.sum_repr' (A (b k))]
+        simp [map_sum, map_smul, Finset.smul_sum, smul_smul, mul_comm]
+    _ = ∑ j, G (∑ k, ⟪b j, A (b k)⟫_ℝ • b k) • Φ (b j) := by
+        rw [Finset.sum_comm]
+        simp [map_sum, map_smul, Finset.sum_smul]
+    _ = -∑ k, G (A (b k)) • Φ (b k) := by
+        simp [hrow, ← Finset.sum_neg_distrib]
+
+end OrthonormalBasis

@@ -40,7 +40,9 @@ module it is degree zero and the trace is zero.
 * `exteriorPower.lieMap_wedge`: the Leibniz rule `f (x ∧ y) = f x ∧ y + x ∧ f y`.
 * `exteriorPower.lieMap_finrank_apply`: in degree `Module.finrank K V` (the top exterior power
   when `V` is finite), `f` acts by `trace f`.
-* `exteriorPower.wedgePairing_lieMap_add_wedgePairing_lieMap`: consequently, for a pairing of
+* `AlternatingMap.sum_update_eq_trace_smul`: consequently, an alternating map `f` of degree
+  `Module.finrank K V` satisfies `∑ᵢ f(v₁, …, A vᵢ, …, vₙ) = trace A • f(v₁, …, vₙ)`.
+* `exteriorPower.wedgePairing_lieMap_add_wedgePairing_lieMap`: similarly, for a pairing of
   complementary exterior powers, `⟨f x, y⟩ + ⟨x, f y⟩ = trace f * ⟨x, y⟩`.
 -/
 
@@ -134,6 +136,18 @@ theorem lieMap_finrank_apply [Module.Free K V]
   have : lieMap (Module.finrank K V) f = LinearMap.trace K V f • LinearMap.id :=
     (b.exteriorPower _).ext fun s ↦ by rw [hb, LinearMap.smul_apply, LinearMap.id_apply, htop]
   simpa using LinearMap.congr_fun this x
+
+/-- **An endomorphism acts on alternating maps of degree `Module.finrank K V` by its trace**:
+applying `A` to one argument at a time and summing gives
+`∑ᵢ f(v₁, …, A vᵢ, …, vₙ) = trace A • f(v₁, …, vₙ)`. -/
+theorem _root_.AlternatingMap.sum_update_eq_trace_smul [Module.Free K V] {N : Type*}
+    [AddCommGroup N] [Module K N] (f : V [⋀^Fin (Module.finrank K V)]→ₗ[K] N)
+    (A : Module.End K V) (v : Fin (Module.finrank K V) → V) :
+    ∑ i, f (Function.update v i (A (v i))) = LinearMap.trace K V A • f v := by
+  -- Factor `f` through the exterior power, where `A` acts by its trace.
+  have h := congrArg (alternatingMapLinearEquiv f) (lieMap_finrank_apply A (ιMulti K _ v))
+  simpa only [lieMap_apply_ιMulti, map_sum, map_smul, alternatingMapLinearEquiv_apply_ιMulti]
+    using h
 
 /-- **Endomorphisms are infinitesimally conformal for wedge pairings**: for every trivialization
 `vol` of the exterior power in degree `Module.finrank K V` (the top exterior power when `V` is
