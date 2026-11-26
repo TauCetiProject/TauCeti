@@ -10,7 +10,10 @@ public import Mathlib.RepresentationTheory.Coinvariants
 public import TauCeti.RepresentationTheory.Coset
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.GroupTheory.QuotientGroup.Basic
+import TauCeti.Algebra.Module.NatInt
+import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # The relative norm and the relative transfer of a subgroup
@@ -44,10 +47,18 @@ subgroup in the two degrees where Tate cohomology is not ordinary group cohomolo
 
 * `Representation.relNorm_comp_norm`: `N_{G/H} ∘ N_H = N_G`.
 * `Representation.norm_comp_relTransfer`: `N_H ∘ N_{G/H}' = N_G`.
+* `Representation.IntertwiningMap.map_relNorm`, `Representation.IntertwiningMap.map_relNorm_comp`:
+  intertwining maps commute with the relative norm, also of restricted representations.
 * `Representation.relNorm_apply_eq_self`: the relative norm carries `H`-fixed vectors to `G`-fixed
   vectors, over any semiring.
 * `Representation.relNorm_apply_of_forall_apply_eq`: on `G`-fixed vectors the relative norm is
   `[G : H] • ·`, over any semiring.
+* `Representation.relNorm_apply_eq_relIndex_nsmul_relNorm_apply`,
+  `Representation.inverse_index_smul_relNorm_apply_of_le`: along a tower `H' ≤ H`, on `H`-fixed
+  vectors the relative norm of `H'` is `[H : H']` times the relative norm of `H`, so the relative
+  norm normalized by the index does not depend on the subgroup.
+* `Representation.relNorm_sub_index_nsmul_mem`: modulo the augmentation submodule of `G` the
+  relative norm is `[G : H] • ·`.
 * `Representation.relNorm_linHom_apply`, `Representation.relNorm_linHom_apply_comm`,
   `Representation.relNorm_linHom_mem`, `Representation.relNorm_linHom_apply_of_mem`: relative-norm
   averaging of linear maps under conjugation, sending `H`-equivariant maps to `G`-equivariant maps
@@ -109,6 +120,23 @@ theorem relNorm_apply (x : V) : relNorm ρ H x = ∑ q : G ⧸ H, ρ q.out x := 
 chosen coset representatives. -/
 theorem relTransfer_apply (x : V) : relTransfer ρ H x = ∑ q : G ⧸ H, ρ q.out⁻¹ x := by
   simp [relTransfer]
+
+variable (H) in
+/-- An intertwining map commutes with the relative norm. -/
+@[simp]
+theorem IntertwiningMap.map_relNorm {W : Type*} [AddCommMonoid W] [Module R W]
+    {σ : Representation R G W} (f : IntertwiningMap ρ σ) (x : V) :
+    f (relNorm ρ H x) = relNorm σ H (f x) := by
+  simp only [relNorm_apply, map_sum, f.isIntertwining]
+
+/-- An intertwining map of representations of `G` commutes with the relative norm of the
+restrictions along `φ : K →* G`. -/
+@[simp]
+theorem IntertwiningMap.map_relNorm_comp {K W : Type*} [Group K] [AddCommMonoid W] [Module R W]
+    {σ : Representation R G W} (f : IntertwiningMap ρ σ) (φ : K →* G) (L : Subgroup K)
+    [Fintype (K ⧸ L)] (x : V) :
+    f (relNorm (ρ.comp φ) L x) = relNorm (σ.comp φ) L (f x) := by
+  simpa only [IntertwiningMap.coe_res] using (f.res φ).map_relNorm L x
 
 end Defs
 
@@ -194,6 +222,37 @@ theorem relNorm_apply_of_forall_apply_eq {x : V} (hx : ∀ g : G, ρ g x = x) :
   rw [relNorm_apply, Finset.sum_congr rfl fun q _ => hx q.out,
     Finset.sum_const, Finset.card_univ]
   simp [Subgroup.index, Nat.card_eq_fintype_card]
+
+/-- **The relative norm along a tower.** For subgroups `H' ≤ H` of finite index and an `H`-fixed
+vector `x`, the relative norm of `H'` is `[H : H']` times the relative norm of `H`: each coset of
+`H` is the union of `[H : H']` cosets of `H'`. -/
+theorem relNorm_apply_eq_relIndex_nsmul_relNorm_apply {H' : Subgroup G} [Fintype (G ⧸ H')]
+    (hle : H' ≤ H) {x : V} (hx : ∀ h : H, ρ h x = x) :
+    relNorm ρ H' x = H'.relIndex H • relNorm ρ H x := by
+  have : H'.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  have : H.FiniteIndex := Subgroup.finiteIndex_of_le hle
+  -- Let `G` act on `V` through `ρ`, so that `g • y` is `ρ g y` by definition.
+  let _ : MulAction G V := MulAction.compHom V ρ
+  have hsmul (g : G) (y : V) : g • y = ρ g y := rfl
+  have key := Subgroup.sum_out_smul_eq_relIndex_nsmul hle (m := x) fun h hh ↦
+    (hsmul h x).trans (hx ⟨h, hh⟩)
+  simp only [hsmul] at key
+  -- `key` sums over the instances `Subgroup.fintypeQuotientOfFiniteIndex`; any two `Fintype`
+  -- instances on a type are equal, so replace the given ones by them.
+  have e' : ‹Fintype (G ⧸ H')› = Subgroup.fintypeQuotientOfFiniteIndex := Subsingleton.elim _ _
+  have e : ‹Fintype (G ⧸ H)› = Subgroup.fintypeQuotientOfFiniteIndex := Subsingleton.elim _ _
+  rw [relNorm_apply, relNorm_apply, e', e, key]
+
+/-- **The normalized relative norm does not depend on the subgroup.** For subgroups `H' ≤ H` with
+`[G : H']` invertible and an `H`-fixed vector `x`, dividing the relative norm by the index gives
+the same vector for `H'` and for `H`. -/
+theorem inverse_index_smul_relNorm_apply_of_le {H' : Subgroup G} [Fintype (G ⧸ H')]
+    (hle : H' ≤ H) (hu : IsUnit (H'.index : R)) {x : V} (hx : ∀ h : H, ρ h x = x) :
+    Ring.inverse (H'.index : R) • relNorm ρ H' x = Ring.inverse (H.index : R) • relNorm ρ H x := by
+  rw [← Subgroup.relIndex_mul_index hle, Nat.cast_mul] at hu
+  have hr := ((Nat.cast_commute _ _).isUnit_mul_iff.1 hu).1
+  rw [relNorm_apply_eq_relIndex_nsmul_relNorm_apply ρ hle hx, ← Subgroup.relIndex_mul_index hle,
+    Nat.cast_mul, Ring.inverse_mul (Or.inl hr), mul_smul, Ring.inverse_natCast_smul_nsmul hr]
 
 end FixedVectors
 
@@ -301,11 +360,14 @@ variable [Fintype (G ⧸ H)]
 index. -/
 theorem relTransfer_sub_index_nsmul_mem (x : V) :
     relTransfer ρ H x - H.index • x ∈ Coinvariants.ker ρ := by
-  have hrw : relTransfer ρ H x - H.index • x = ∑ q : G ⧸ H, (ρ (q.out : G)⁻¹ x - x) := by
-    rw [relTransfer_apply, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ]
-    simp [Subgroup.index, Nat.card_eq_fintype_card]
-  rw [hrw]
-  exact Submodule.sum_mem _ fun q _ => Coinvariants.sub_mem_ker _ _
+  rw [relTransfer_apply, H.index_eq_card, Nat.card_eq_fintype_card, ← Finset.card_univ]
+  exact sum_apply_sub_card_nsmul_mem_coinvariantsKer ρ _ (fun q : G ⧸ H ↦ (q.out : G)⁻¹) x
+
+/-- Modulo the augmentation submodule of `G`, the relative norm is multiplication by the index. -/
+theorem relNorm_sub_index_nsmul_mem (x : V) :
+    relNorm ρ H x - H.index • x ∈ Coinvariants.ker ρ := by
+  rw [relNorm_apply, H.index_eq_card, Nat.card_eq_fintype_card, ← Finset.card_univ]
+  exact sum_apply_sub_card_nsmul_mem_coinvariantsKer ρ _ (fun q : G ⧸ H ↦ q.out) x
 
 /-- The relative transfer carries the augmentation submodule of `G` into the augmentation
 submodule of `H`; it is therefore the transfer of `H` on coinvariants. -/

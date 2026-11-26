@@ -77,11 +77,19 @@ instance pi.isGerbe {I : Type w} [Finite I]
     [∀ i, (F i).IsGerbe J] : (pi F).IsGerbe J where
   isGroupoid _ := inferInstance
   exists_covering_nonempty U := by
+    classical
+    let := Fintype.ofFinite I
     choose R hR h using fun i ↦ IsGerbe.exists_covering_nonempty (F := F i) (J := J) U
-    exact ⟨⨅ i, R i, J.iInf_covering hR, fun _ f hf ↦ ⟨fun i ↦ (h i f (iInf_le R i _ hf)).some⟩⟩
+    have hR' : ⨅ i, R i ∈ J _ := by
+      simpa [Finset.inf_eq_iInf] using J.finset_inf_mem (t := Finset.univ) (fun i _ ↦ hR i)
+    exact ⟨⨅ i, R i, hR', fun _ f hf ↦ ⟨fun i ↦ (h i f (iInf_le R i _ hf)).some⟩⟩
   exists_covering_iso x y := by
+    classical
+    let := Fintype.ofFinite I
     choose R hR h using fun i ↦ IsGerbe.exists_covering_iso (F := F i) (J := J) (x i) (y i)
-    exact ⟨⨅ i, R i, J.iInf_covering hR, fun _ f hf ↦
+    have hR' : ⨅ i, R i ∈ J _ := by
+      simpa [Finset.inf_eq_iInf] using J.finset_inf_mem (t := Finset.univ) (fun i _ ↦ hR i)
+    exact ⟨⨅ i, R i, hR', fun _ f hf ↦
       ⟨Pi.isoMk fun i ↦ (h i f (iInf_le R i _ hf)).some⟩⟩
 
 /-- The terminal pseudofunctor is a gerbe. -/

@@ -6,41 +6,33 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.Grothendieck
-import Mathlib.Data.Finset.Lattice.Fold
+public import Mathlib.Data.Finset.Lattice.Fold
 
 /-!
 # Finite intersections of covering sieves
 
-For sieves on a single object of a site `(C, J)`, the intersection of a finite family of sieves is
-covering if and only if every member is. The intersection of infinitely many covering sieves need
-not be covering.
-
-## Main declarations
-
-* `CategoryTheory.GrothendieckTopology.iInf_covering`,
-  `CategoryTheory.GrothendieckTopology.iInf_covering_iff`: the intersection of a finite family of
-  sieves is covering if and only if every member is.
+For a Grothendieck topology `J`, the intersection of finitely many sieves on `X` covers `X` if
+and only if each of them does (`CategoryTheory.GrothendieckTopology.finset_inf_mem_iff`). This
+extends Mathlib's `CategoryTheory.GrothendieckTopology.intersection_covering_iff` from two sieves
+to the infimum of a finite family.
 -/
 
 public section
 
-universe u v
-
 namespace CategoryTheory.GrothendieckTopology
 
-variable {C : Type u} [Category.{v} C]
+variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {ι : Type*} {X : C}
 
-/-- The intersection of a finite family of covering sieves is covering. -/
-theorem iInf_covering (J : GrothendieckTopology C) {ι : Type*} [Finite ι] {X : C}
-    {R : ι → Sieve X} (hR : ∀ i, R i ∈ J X) : ⨅ i, R i ∈ J X := by
-  cases nonempty_fintype ι
-  simpa [Finset.inf_eq_iInf] using Finset.inf_induction (p := (· ∈ J X)) (J.top_mem X)
-    (fun _ h₁ _ h₂ ↦ J.intersection_covering h₁ h₂) fun i (_ : i ∈ Finset.univ) ↦ hR i
+/-- The intersection of finitely many covering sieves is a covering sieve. -/
+theorem finset_inf_mem {S : ι → Sieve X} {t : Finset ι} (h : ∀ i ∈ t, S i ∈ J X) :
+    t.inf S ∈ J X :=
+  Finset.inf_induction (J.top_mem X) (fun _ h₁ _ h₂ ↦ J.intersection_covering h₁ h₂) h
 
-/-- The intersection of a finite family of sieves is covering if and only if every member is. -/
+/-- The intersection of finitely many sieves is a covering sieve if and only if each of them is
+a covering sieve. -/
 @[simp]
-theorem iInf_covering_iff (J : GrothendieckTopology C) {ι : Type*} [Finite ι] {X : C}
-    {R : ι → Sieve X} : ⨅ i, R i ∈ J X ↔ ∀ i, R i ∈ J X :=
-  ⟨fun h i ↦ J.superset_covering (iInf_le R i) h, J.iInf_covering⟩
+theorem finset_inf_mem_iff {S : ι → Sieve X} {t : Finset ι} :
+    t.inf S ∈ J X ↔ ∀ i ∈ t, S i ∈ J X :=
+  ⟨fun h _ hi ↦ J.superset_covering (Finset.inf_le hi) h, J.finset_inf_mem⟩
 
 end CategoryTheory.GrothendieckTopology
