@@ -47,9 +47,12 @@ lower `p`-series for large `k`.
   `p`-adic analytic.
 * `TauCeti.IsCompactPAdicAnalytic.exists_isProP`: a compact `p`-adic analytic group has an open
   normal pro-`p` subgroup.
-* `TauCeti.IsUniform.isCompactPAdicAnalytic`, `TauCeti.isCompactPAdicAnalytic_of_finite`: compact
-  uniform groups, among them `ℤ_p ^ d` of dimension `d`, and finite discrete groups, of dimension
-  `0`, are compact `p`-adic analytic.
+* `TauCeti.IsUniform.isCompactPAdicAnalytic`, `TauCeti.isCompactPAdicAnalytic_of_finite`,
+  `TauCeti.isCompactPAdicAnalytic_multiplicative_pi_padicInt`: compact uniform groups, finite
+  discrete groups and `ℤ_p ^ X` for finite `X` are compact `p`-adic analytic.
+* `TauCeti.IsUniform.analyticDim_eq_topologicalGeneratorRankNat`, `TauCeti.analyticDim_of_finite`,
+  `TauCeti.analyticDim_multiplicative_pi_padicInt`: a compact uniform group has its dimension as a
+  uniform group, a finite discrete group has dimension `0`, and `ℤ_p ^ X` has dimension `#X`.
 
 ## References
 
@@ -114,19 +117,12 @@ theorem IsPowerful.exists_openNormalSubgroup_isUniform_subset {U : Subgroup G} [
     (hU : IsPowerful p U) (hUo : IsOpen (U : Set G)) (hP : IsProP p U)
     (hfg : IsTopologicallyFinitelyGenerated U) {S : Set G} (hS : S ∈ 𝓝 (1 : G)) :
     ∃ W : OpenNormalSubgroup G, IsUniform p W.toSubgroup ∧ (W : Set G) ⊆ S := by
-  have : CompactSpace U :=
-    isCompact_iff_compactSpace.mp (Subgroup.isClosed_of_isOpen U hUo).isCompact
-  obtain ⟨k, hk, hkS⟩ := ((hU.eventually_isUniform_pLowerCentralSeries hP hfg).and
-    ((hP.hasAntitoneBasis_nhds_one_pLowerCentralSeries hfg hp.out).eventually_subset
-      (continuous_subtypeVal.continuousAt.preimage_mem_nhds hS))).exists
-  have hopen : IsOpen ((pLowerCentralSeries p U k).map U.subtype : Set G) := by
-    rw [Subgroup.coe_map]
-    exact hUo.isOpenMap_subtypeVal _ (hfg.isOpen_pLowerCentralSeries hp.out k)
+  obtain ⟨k, hopen, hk, hkS⟩ :=
+    hU.exists_isUniform_map_pLowerCentralSeries_subset hUo hP hfg hS
+  -- The term `λ_k(U)` is characteristic in the normal subgroup `U`, hence normal in `G`.
   have : ((pLowerCentralSeries p U k).map U.subtype).Normal :=
     (isTopCharacteristic_pLowerCentralSeries (G := U) p k).map_subtype_normal
-  refine ⟨⟨⟨_, hopen⟩, this⟩, isUniform_map_subtype_iff.mpr hk, ?_⟩
-  rintro _ ⟨x, hx, rfl⟩
-  exact hkS hx
+  exact ⟨⟨⟨_, hopen⟩, this⟩, hk, hkS⟩
 
 end Compact
 

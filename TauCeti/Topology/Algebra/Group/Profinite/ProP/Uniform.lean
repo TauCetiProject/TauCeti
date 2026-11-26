@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Rank
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Torsion
+import TauCeti.Data.Nat.Pow
 
 /-!
 # Uniform pro-`p` groups
@@ -72,10 +73,11 @@ By contrast `ℤ/p` is powerful but not uniform, since it has torsion.
 * `TauCeti.IsProP.isUniform_iff_isPowerful_and_relIndex_eq`: a topologically finitely generated
   pro-`p` group is uniform exactly when it is powerful with every `[λ_k : λ_{k+1}]` equal to
   `[G : λ_1]`.
-* `TauCeti.IsPowerful.map_subtype_pLowerCentralSeries_pLowerCentralSeries`: in a powerful group,
-  `λ_j(λ_k) = λ_{k+j}`.
 * `TauCeti.IsPowerful.eventually_isUniform_pLowerCentralSeries`: in a topologically finitely
-  generated powerful pro-`p` group, `λ_k` is uniform for all large `k`.
+  generated powerful pro-`p` group, `λ_k` is uniform for all large `k`;
+  `TauCeti.IsPowerful.exists_isUniform_map_pLowerCentralSeries_subset`: if such a group is an open
+  subgroup of a compact totally disconnected group, every neighbourhood of the identity contains a
+  term `λ_k` that is open and uniform in the ambient group.
 * `TauCeti.IsUniform.topologicalGeneratorRankNat_subgroup_eq`,
   `TauCeti.IsUniform.topologicalGeneratorRankNat_eq_of_le`,
   `TauCeti.IsUniform.topologicalGeneratorRankNat_eq_of_isOpen`: open uniform subgroups of a
@@ -202,6 +204,7 @@ theorem IsUniform.prod (hG : IsUniform p G) (hH : IsUniform p H) : IsUniform p (
   isPowerful := hG.isPowerful.prod hH.isPowerful
 
 /-- The top subgroup is uniform exactly when the group is. -/
+@[simp]
 theorem isUniform_top_iff : IsUniform p (⊤ : Subgroup G) ↔ IsUniform p G :=
   isUniform_congr
     { Subgroup.topEquiv (G := G) with
@@ -216,6 +219,7 @@ theorem isUniform_subgroupOf_iff {H K : Subgroup G} (hKH : K ≤ H) :
 
 /-- A subgroup `K` of a subgroup `H` is uniform exactly when its image in the ambient group is
 uniform. -/
+@[simp]
 theorem isUniform_map_subtype_iff {H : Subgroup G} {K : Subgroup H} :
     IsUniform p (K.map H.subtype) ↔ IsUniform p K := by
   rw [← isUniform_subgroupOf_iff (Subgroup.map_subtype_le K), Subgroup.subgroupOf,
@@ -325,27 +329,6 @@ theorem IsProP.isUniform_iff_isPowerful_and_relIndex_eq (hP : IsProP p G)
 
 /-! ### Uniform terms of the lower `p`-series of a powerful group -/
 
-/-- **The lower `p`-series of a term of the lower `p`-series**: for a topologically finitely
-generated powerful pro-`p` group, the `j`-th term of the lower `p`-series of `λ_k`, computed inside
-`λ_k`, is `λ_{k+j}`. Both are closed power subgroups, `(λ_k)^{p^j}` and `G^{p^{k+j}}`. -/
-theorem IsPowerful.map_subtype_pLowerCentralSeries_pLowerCentralSeries (hG : IsPowerful p G)
-    (hP : IsProP p G) (hfg : IsTopologicallyFinitelyGenerated G) (k j : ℕ) :
-    (pLowerCentralSeries p (pLowerCentralSeries p G k) j).map (pLowerCentralSeries p G k).subtype =
-      pLowerCentralSeries p G (k + j) := by
-  have hL := hfg.of_openSubgroup ⟨_, hfg.isOpen_pLowerCentralSeries hp.out k⟩
-  rw [(hG.to_pLowerCentralSeries hp.out hP hfg k).pLowerCentralSeries_eq_closedPowerSubgroup
-    hp.out (hP.subgroup _) hL j]
-  refine le_antisymm ?_ ?_
-  · rw [Subgroup.map_le_iff_le_comap]
-    refine (closedPowerSubgroup_le_iff ((isClosed_pLowerCentralSeries (k + j)).preimage
-      continuous_subtypeVal)).mpr fun x ↦ ?_
-    rw [Subgroup.mem_comap, Subgroup.coe_subtype, Subgroup.coe_pow]
-    exact pow_pow_mem_pLowerCentralSeries x.property j
-  · rw [hG.pLowerCentralSeries_eq_closedPowerSubgroup hp.out hP hfg, pow_add]
-    exact closedPowerSubgroup_mul_le_map_subtype_closedPowerSubgroup
-      (isClosed_pLowerCentralSeries k)
-      fun g ↦ closedPowerSubgroup_pow_le_pLowerCentralSeries k (pow_mem_closedPowerSubgroup g)
-
 /-- **A powerful group is virtually uniform**: in a topologically finitely generated powerful
 pro-`p` group, the term `λ_k` of the lower `p`-series is uniform for every large enough `k`
 (Dixon–du Sautoy–Mann–Segal, Theorem 4.2). -/
@@ -361,7 +344,7 @@ theorem IsPowerful.eventually_isUniform_pLowerCentralSeries (hG : IsPowerful p G
   have hconst : ∀ k ≥ Function.argmin a, a k = a (Function.argmin a) := fun k hk ↦
     le_antisymm (ha hk) (Function.argmin_le a k)
   refine Filter.eventually_atTop.mpr ⟨Function.argmin a, fun k hk ↦ ?_⟩
-  have hmap := hG.map_subtype_pLowerCentralSeries_pLowerCentralSeries hP hfg k
+  have hmap := hG.map_subtype_pLowerCentralSeries_pLowerCentralSeries hp.out hP hfg k
   refine ((hP.subgroup _).isUniform_iff_isPowerful_and_relIndex_eq
     (hfg.of_openSubgroup ⟨_, hfg.isOpen_pLowerCentralSeries hp.out k⟩)).mpr
     ⟨hG.to_pLowerCentralSeries hp.out hP hfg k, fun j ↦ ?_⟩
@@ -377,20 +360,29 @@ section Dimension
 
 /-! ### The dimension of an open uniform subgroup -/
 
-/-- Exponential growth rates are compared by their exponents: if `p ^ (a * k) ≤ C * p ^ (b * k)` for
-every `k`, where `1 < p`, then `a ≤ b`. -/
-private theorem le_of_forall_pow_mul_le_mul_pow {a b C : ℕ} (hp : 1 < p)
-    (h : ∀ k, p ^ (a * k) ≤ C * p ^ (b * k)) : a ≤ b := by
-  by_contra hab
-  have hlt : C * p ^ (b * C) < p ^ (a * C) :=
-    calc C * p ^ (b * C) < p ^ C * p ^ (b * C) :=
-          Nat.mul_lt_mul_of_pos_right (Nat.lt_pow_self hp) (by positivity)
-      _ = p ^ ((b + 1) * C) := by ring
-      _ ≤ p ^ (a * C) := Nat.pow_le_pow_right (by omega) (Nat.mul_le_mul_right _ (by omega))
-  exact (h C).not_gt hlt
-
 variable [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- **Open uniform subgroups inside a neighbourhood of the identity.** If an open subgroup `U` of a
+compact totally disconnected group is a topologically finitely generated powerful pro-`p` group,
+then every neighbourhood `S` of the identity contains a term `λ_k` of the lower `p`-series of `U`
+that is open and uniform as a subgroup of the ambient group. -/
+theorem IsPowerful.exists_isUniform_map_pLowerCentralSeries_subset {U : Subgroup G}
+    (hU : IsPowerful p U) (hUo : IsOpen (U : Set G)) (hP : IsProP p U)
+    (hfg : IsTopologicallyFinitelyGenerated U) {S : Set G} (hS : S ∈ nhds (1 : G)) :
+    ∃ k, IsOpen ((pLowerCentralSeries p U k).map U.subtype : Set G) ∧
+      IsUniform p ((pLowerCentralSeries p U k).map U.subtype) ∧
+      ((pLowerCentralSeries p U k).map U.subtype : Set G) ⊆ S := by
+  have : CompactSpace U :=
+    isCompact_iff_compactSpace.mp (Subgroup.isClosed_of_isOpen U hUo).isCompact
+  obtain ⟨k, hk, hkS⟩ := ((hU.eventually_isUniform_pLowerCentralSeries hP hfg).and
+    ((hP.hasAntitoneBasis_nhds_one_pLowerCentralSeries hfg hp.out).eventually_subset
+      (continuous_subtypeVal.continuousAt.preimage_mem_nhds hS))).exists
+  refine ⟨k, ?_, isUniform_map_subtype_iff.mpr hk, ?_⟩
+  · rw [Subgroup.coe_map]
+    exact hUo.isOpenMap_subtypeVal _ (hfg.isOpen_pLowerCentralSeries hp.out k)
+  · rintro _ ⟨x, hx, rfl⟩
+    exact hkS hx
 
 /-- **An open uniform subgroup of a uniform group has the same dimension.** -/
 theorem IsUniform.topologicalGeneratorRankNat_subgroup_eq (hG : IsUniform p G) {W : Subgroup G}
@@ -409,9 +401,9 @@ theorem IsUniform.topologicalGeneratorRankNat_subgroup_eq (hG : IsUniform p G) {
   have hidx (k : ℕ) : ((closedPowerSubgroup (p ^ k) W).map W.subtype).index =
       p ^ (topologicalGeneratorRankNat W hW.isTopologicallyFinitelyGenerated * k) * W.index := by
     rw [Subgroup.index_map_subtype, hW.index_closedPowerSubgroup_pow]
-  refine le_antisymm (le_of_forall_pow_mul_le_mul_pow hp.out.one_lt
+  refine le_antisymm (Nat.le_of_forall_pow_mul_le_mul_pow hp.out.one_lt
     (C := p ^ (topologicalGeneratorRankNat G hG.isTopologicallyFinitelyGenerated * m)) fun k ↦ ?_)
-    (le_of_forall_pow_mul_le_mul_pow hp.out.one_lt (C := W.index) fun k ↦ ?_)
+    (Nat.le_of_forall_pow_mul_le_mul_pow hp.out.one_lt (C := W.index) fun k ↦ ?_)
   · -- `G^{p^{m+k}} ≤ W^{p^k}`, since every `p^m`-th power lies in `λ_m ≤ W`.
     have hle : closedPowerSubgroup (p ^ m * p ^ k) G ≤
         (closedPowerSubgroup (p ^ k) W).map W.subtype :=
@@ -448,21 +440,8 @@ theorem IsUniform.topologicalGeneratorRankNat_eq_of_isOpen {U V : Subgroup G} (h
       topologicalGeneratorRankNat V hV.isTopologicallyFinitelyGenerated := by
   -- A term `λ_k(U)` of the lower `p`-series of `U` with large `k` is an open uniform subgroup of
   -- `G` contained in both.
-  have : CompactSpace U := isCompact_iff_compactSpace.mp
-    (Subgroup.isClosed_of_isOpen U hUo).isCompact
-  obtain ⟨k, hk, hkV⟩ := ((hU.isPowerful.eventually_isUniform_pLowerCentralSeries hU.isProP
-    hU.isTopologicallyFinitelyGenerated).and
-    ((hU.isProP.hasAntitoneBasis_nhds_one_pLowerCentralSeries hU.isTopologicallyFinitelyGenerated
-      hp.out).eventually_subset
-      ((Subgroup.subgroupOf_isOpen U V hVo).mem_nhds (V.subgroupOf U).one_mem))).exists
-  have hT := isUniform_map_subtype_iff.mpr hk
-  have hTo : IsOpen ((pLowerCentralSeries p U k).map U.subtype : Set G) := by
-    rw [Subgroup.coe_map]
-    exact hUo.isOpenMap_subtypeVal _
-      (hU.isTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries hp.out k)
-  have hTV : (pLowerCentralSeries p U k).map U.subtype ≤ V := by
-    rintro _ ⟨x, hx, rfl⟩
-    exact Subgroup.mem_subgroupOf.mp (hkV hx)
+  obtain ⟨k, hTo, hT, hTV⟩ := hU.isPowerful.exists_isUniform_map_pLowerCentralSeries_subset hUo
+    hU.isProP hU.isTopologicallyFinitelyGenerated (hVo.mem_nhds V.one_mem)
   exact (hU.topologicalGeneratorRankNat_eq_of_le (Subgroup.map_subtype_le _) hTo hT).symm.trans
     (hV.topologicalGeneratorRankNat_eq_of_le hTV hTo hT)
 
