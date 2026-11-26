@@ -212,7 +212,7 @@ theorem map_vectorFrame_canonicalSpinCStructureInl_kahlerForm {x : X} [FiniteDim
   rw [hJx, hκ, hκ, hJV, ← hp, LinearIsometryEquiv.symm_apply_apply]
 
 include hJV hu in
-/-- **The canonical spinor spans the canonical line**: `C(iω) u₀ = 2 u₀`, that is,
+/-- **The canonical spinor lies on the canonical line**: `C(iω) u₀ = 2 u₀`, that is,
 `c₂(ω) u₀ = -2i u₀`, for the Kähler two-vector `ω` of `J`, on every fibre. -/
 theorem cliffordRestriction_kahlerForm_canonicalSpinor (x : X) [FiniteDimensional ℝ (E x)]
     {Jx : AlmostComplexStructure (E x)} (hJx : ∀ v, Jx v = J x v) :

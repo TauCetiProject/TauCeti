@@ -396,6 +396,7 @@ def negNormSqForm : QuadraticForm ℝ (EuclideanSpace ℝ (Fin 4)) :=
   -LinearMap.BilinMap.toQuadraticMap (innerₗ (EuclideanSpace ℝ (Fin 4)))
 
 /-- The form `TauCeti.negNormSqForm` is `v ↦ -‖v‖²`. -/
+@[simp]
 theorem negNormSqForm_apply (v : EuclideanSpace ℝ (Fin 4)) :
     negNormSqForm v = -‖v‖ ^ 2 := by
   simp [negNormSqForm]
