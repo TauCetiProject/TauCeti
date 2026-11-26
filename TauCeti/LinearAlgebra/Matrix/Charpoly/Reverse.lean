@@ -134,7 +134,8 @@ theorem coeff_charpolyRev_card_sub_of_mem_unitaryGroup [StarRing R] {A : Matrix 
   have hdet : star A.det * A.det = 1 := Unitary.star_mul_self_of_mem (det_of_mem_unitary hA)
   have hinv : A⁻¹ = Aᵀ.map (starRingEnd R) := by
     rw [inv_eq_right_inv (mem_unitaryGroup_iff.mp hA), star_eq_conjTranspose]
-    rfl
+    ext i j
+    simp [starRingEnd_apply]
   have hu : IsUnit A.det := .of_mul_eq_one_right _ hdet
   have hC : (-1 : R[X]) ^ Fintype.card ι * C (Ring.inverse A.det) =
       C ((-1) ^ Fintype.card ι * star A.det) := by
