@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.RingTheory.Valuation.LocalSubring
 public import TauCeti.RingTheory.Valuation.Sum
+import TauCeti.RingTheory.Polynomial.Gauss.Valuation.Basic
 
 /-!
 # Valuations of polynomial expressions
@@ -103,17 +104,11 @@ theorem map_coeff_mul_mul_pow_le {P Q : R[X]} {a b : ℕ}
     (hP : ∀ k, v (P.coeff k * x ^ k) * S ^ a ≤ A ^ a * S ^ k)
     (hQ : ∀ k, v (Q.coeff k * x ^ k) * S ^ b ≤ A ^ b * S ^ k) (k : ℕ) :
     v ((P * Q).coeff k * x ^ k) * S ^ (a + b) ≤ A ^ (a + b) * S ^ k := by
-  rw [coeff_mul, Finset.sum_mul]
-  refine v.map_sum_mul_le fun ij hij ↦ ?_
-  rw [Finset.mem_antidiagonal] at hij
-  calc v (P.coeff ij.1 * Q.coeff ij.2 * x ^ k) * S ^ (a + b)
-      = v (P.coeff ij.1 * x ^ ij.1) * S ^ a * (v (Q.coeff ij.2 * x ^ ij.2) * S ^ b) := by
-        simp only [← hij, pow_add, map_mul]
-        ac_rfl
-    _ ≤ A ^ a * S ^ ij.1 * (A ^ b * S ^ ij.2) := mul_le_mul' (hP _) (hQ _)
-    _ = A ^ (a + b) * S ^ k := by
-        rw [← hij, pow_add, pow_add]
-        ac_rfl
+  simpa only [map_mul, map_pow, pow_add] using
+    v.map_coeff_mul_mul_pow_le_of_le (r := v x) (s₁ := S ^ a) (s₂ := S ^ b)
+      (A₁ := A ^ a) (A₂ := A ^ b) (S := S)
+      (fun i ↦ by simpa only [map_mul, map_pow] using hP i)
+      (fun j ↦ by simpa only [map_mul, map_pow] using hQ j) k
 
 /-- The `n`-th power of a polynomial of weight `1` has weight `n`. -/
 theorem map_coeff_pow_mul_pow_le {Q : R[X]} (hQ : ∀ k, v (Q.coeff k * x ^ k) * S ≤ A * S ^ k)
