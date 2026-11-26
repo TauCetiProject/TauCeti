@@ -296,6 +296,19 @@ theorem RoughForm.inChartAt_mpullback_inclusion_eventuallyEq {U W : Opens M} (h 
   ext v
   exact (inChartAt_apply γ (Opens.inclusion h x) z v).symm
 
+/-- On a boundaryless manifold, the coordinate expression of the restriction of a form on `W` to an
+open subset `U ≤ W` has, at the chart point of a point of `U`, the derivative of the coordinate
+expression of the form itself. -/
+theorem RoughForm.hasFDerivAt_inChartAt_mpullback_inclusion [I.Boundaryless] {U W : Opens M}
+    (h : U ≤ W) (γ : RoughForm I W F k) (x : U) {L : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F}
+    (hγ : HasFDerivAt (γ.inChartAt (Opens.inclusion h x)) L
+      (extChartAt I (Opens.inclusion h x) (Opens.inclusion h x))) :
+    HasFDerivAt ((mpullback I I (Opens.inclusion h) γ).inChartAt x) L (extChartAt I x x) := by
+  have heq := RoughForm.inChartAt_mpullback_inclusion_eventuallyEq h γ x
+  rw [ModelWithCorners.range_eq_univ, nhdsWithin_univ] at heq
+  rw [extChartAt_inclusion_self] at hγ
+  exact hγ.congr_of_eventuallyEq heq
+
 /-- Restriction to a smaller open subset commutes with the exterior derivative, with no regularity
 assumption: near every point of the smaller subset both are computed from the same coordinate
 expression. -/
