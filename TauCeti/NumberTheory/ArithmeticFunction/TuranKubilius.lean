@@ -11,7 +11,7 @@ import TauCeti.Algebra.BigOperators.Finset.SquaredDeviation
 import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecificLimits.ReciprocalSeries
-import TauCeti.Data.Nat.Factorization.Basic
+import TauCeti.Data.Nat.Factorization.ValuationCount
 import TauCeti.Data.Nat.Log
 import TauCeti.Data.Nat.Prime.Basic
 import TauCeti.NumberTheory.Chebyshev.Mertens
