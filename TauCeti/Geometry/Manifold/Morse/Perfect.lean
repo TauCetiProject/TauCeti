@@ -15,7 +15,7 @@ public import TauCeti.Geometry.Manifold.Morse.Polynomial
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Morse.Torus
-import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Basic
+import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Classification
 
 /-!
 # Perfect Morse functions
@@ -234,21 +234,6 @@ theorem IsMorse.isPerfectMorse_iff_eq_zero (hf : IsMorse I f) {Q : ℕ[X]}
   rw [eq_comm, ← forall_criticalCount_eq_bettiNumber_add_coeff_iff hQ, isPerfectMorse_iff]
   simp [hf, bettiNumber_def]
 
-/-- **A nontrivial fundamental group obstructs perfection.** If a compact manifold whose
-fundamental group is nontrivial at some basepoint carries a perfect Morse function with
-coefficients in `k`, then `H₁(M; k) ≠ 0`: every Morse function on such a manifold has a critical
-point of index one (`TauCeti.IsMorse.criticalCount_one_ne_zero`). So a compact manifold with a
-nontrivial fundamental group and vanishing first Betti number over `k`, such as `ℝPⁿ` for `n ≥ 2`
-over `ℚ`, has no perfect Morse function over `k`. -/
-theorem IsPerfectMorse.finrank_singularHomology_one_ne_zero (hf : IsPerfectMorse I k f) (x : M)
-    [Nontrivial (FundamentalGroup M x)] :
-    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) 1).obj
-      (ModuleCat.of k k)).obj (TopCat.of M)) ≠ 0 := by
-  have hc := hf.isMorse.contMDiff.continuous
-  have h := hf.isMorse.criticalCount_one_ne_zero hc.isProperMap (isCompact_range hc).bddBelow x
-  rw [hf.criticalCount_eq] at h
-  exact_mod_cast h
-
 end Compact
 
 variable [I.Boundaryless] [CompactSpace M] {k : Type u} [DivisionRing k] in
@@ -260,6 +245,22 @@ theorem IsPerfectMorse.finrank_singularHomology_finrank_ne_zero [Nonempty M]
     finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) (finrank ℝ E)).obj
       (ModuleCat.of k k)).obj (TopCat.of M)) ≠ 0 := by
   have h := hf.isMorse.criticalCount_finrank_ne_zero
+  rw [hf.criticalCount_eq] at h
+  exact_mod_cast h
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
+  {k : Type u} [DivisionRing k] in
+/-- **A nontrivial fundamental group obstructs perfection.** If a manifold whose fundamental group
+is nontrivial at some basepoint carries a perfect Morse function `f` with coefficients in `k`, and
+`f` is proper and bounded below, for instance on a compact manifold, then `H₁(M; k) ≠ 0`: such a
+Morse function has a critical point of index one (`TauCeti.IsMorse.criticalCount_one_ne_zero`).
+So a compact manifold with a nontrivial fundamental group and vanishing first Betti number over
+`k`, such as `ℝPⁿ` for `n ≥ 2` over `ℚ`, has no perfect Morse function over `k`. -/
+theorem IsPerfectMorse.finrank_singularHomology_one_ne_zero (hf : IsPerfectMorse I k f)
+    (hp : IsProperMap f) (hbdd : BddBelow (range f)) (x : M) [Nontrivial (FundamentalGroup M x)] :
+    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) 1).obj
+      (ModuleCat.of k k)).obj (TopCat.of M)) ≠ 0 := by
+  have h := hf.isMorse.criticalCount_one_ne_zero hp hbdd x
   rw [hf.criticalCount_eq] at h
   exact_mod_cast h
 
@@ -349,8 +350,9 @@ theorem not_isPerfectMorse_projectivization_real (hn : 2 ≤ n) {k : Type} [Divi
     ¬ IsPerfectMorse 𝓘(ℝ, Fin n → ℝ) k f := by
   intro hf
   let x : ℙ ℝ (Fin (n + 1) → ℝ) := Projectivization.mk ℝ (Pi.single 0 1) (by simp)
-  have := RealProjectiveSpace.nontrivial_fundamentalGroup_projectivization n hn x
-  have h := hf.finrank_singularHomology_one_ne_zero x
+  have := RealProjectiveSpace.nontrivial_fundamentalGroup_projectivization (by omega) x
+  have hc := hf.isMorse.contMDiff.continuous
+  have h := hf.finrank_singularHomology_one_ne_zero hc.isProperMap (isCompact_range hc).bddBelow x
   rw [RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_ne_zero h2] at h
   exact h (ite_eq_right_iff.2 fun h₁ ↦ by obtain h₁ | ⟨rfl, -⟩ := h₁ <;> omega)
 

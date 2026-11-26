@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.NotSimplyConnected
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Deck
-public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Projectivization
 
 /-!
 # The fundamental group of real projective space
@@ -46,8 +44,6 @@ homeomorphic) to `ℝ`.
 * `TauCeti.RealProjectiveSpace.card_fundamentalGroup_of_two_le`:
   `Nat.card (FundamentalGroup (RealProjectiveSpace n) x) = 2`.
 * `TauCeti.RealProjectiveSpace.nontrivial_fundamentalGroup`: the fundamental group is nontrivial.
-* `TauCeti.RealProjectiveSpace.nontrivial_fundamentalGroup_projectivization`: so is that of the
-  real projectivization `ℙ ℝ (Fin (n + 1) → ℝ)`, the manifold model of `RPⁿ`.
 * `TauCeti.RealProjectiveSpace.not_simplyConnectedSpace`: `RPⁿ` is not simply connected.
 * `TauCeti.RealProjectiveSpace.not_contractibleSpace`: `RPⁿ` is not contractible.
 * `TauCeti.RealProjectiveSpace.isEmpty_homotopyEquiv_real`: `RPⁿ` is not homotopy equivalent
@@ -159,15 +155,6 @@ theorem nontrivial_fundamentalGroup (hn : 2 ≤ n)
     Nontrivial (FundamentalGroup (RealProjectiveSpace n) x) := by
   have hunit : Nontrivial ℤˣ := ⟨(1 : ℤˣ), (-1 : ℤˣ), by decide⟩
   exact @Equiv.nontrivial _ _ (fundamentalGroupMulEquivAt n hn x).toEquiv hunit
-
-open scoped LinearAlgebra.Projectivization in
-/-- For `2 ≤ n`, the fundamental group of the real projectivization `ℙ ℝ (Fin (n + 1) → ℝ)`,
-which is homeomorphic to `RPⁿ` (`TauCeti.RealProjectiveSpace.homeomorphProjectivization`), is
-nontrivial at every basepoint. -/
-theorem nontrivial_fundamentalGroup_projectivization (hn : 2 ≤ n) (x : ℙ ℝ (Fin (n + 1) → ℝ)) :
-    Nontrivial (FundamentalGroup (ℙ ℝ (Fin (n + 1) → ℝ)) x) :=
-  have := nontrivial_fundamentalGroup n hn ((homeomorphProjectivization n).symm x)
-  (FundamentalGroup.homeomorphMulEquiv (homeomorphProjectivization n).symm x).toEquiv.nontrivial
 
 /-- For `2 ≤ n`, real projective space `RPⁿ` is not simply connected. -/
 theorem not_simplyConnectedSpace (hn : 2 ≤ n)
