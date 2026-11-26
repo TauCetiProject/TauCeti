@@ -21,35 +21,47 @@ On `ℝ⁴ = ℝ² × ℝ²` with the split symplectic form `ω = ω₀ ⊕ ω�
 
 `Y (v₁, v₂) = (C v₂, 0)`, `C = [[0, -2], [-2, 0]]`
 
-(`TauCeti.shearDirection`). It anticommutes with `J₀`, so it is a tangent vector to the space of
-complex structures at `J₀` (`TauCeti.shearDirection_mem_tangentSpace`), but it is not skew-adjoint
-for `ω`, so it is not tangent to the compatible structures
-(`TauCeti.shearDirection_notMem_compatibleTangentSpace`).
+(`TauCeti.SymplecticForm.TameNotCompatibleExample.shearDirection`). All declarations of this file
+live in the namespace `TauCeti.SymplecticForm.TameNotCompatibleExample`, since they concern this
+one fixed example. The variation `Y` anticommutes with `J₀`, so it is a tangent vector to the space
+of complex structures at `J₀`
+(`TauCeti.SymplecticForm.TameNotCompatibleExample.shearDirection_mem_tangentSpace`), but it is not
+skew-adjoint for `ω`, so it is not tangent to the compatible structures
+(`TauCeti.SymplecticForm.TameNotCompatibleExample.shearDirection_notMem_compatibleTangentSpace`).
 
 Its tangent path `J_ε = exp(ε B) J₀ exp(-ε B)`, `B = ½ J₀ Y`
-(`TauCeti.AlmostComplexStructure.tangentPath`), is the family `TauCeti.shearComplexStructure`.
+(`TauCeti.AlmostComplexStructure.tangentPath`), is the family
+`TauCeti.SymplecticForm.TameNotCompatibleExample.shearComplexStructure`.
 Here `B (v₁, v₂) = (diag(1, -1) v₂, 0)` squares to zero, so `exp(ε B)` is the shear
 `[[I, ε diag(1, -1)], [0, I]]`, and the path is the straight line `J_ε = J₀ + ε Y`
-(`TauCeti.shearComplexStructure_apply`), that is `J_ε = [[j, ε C], [0, j]]`. Along it
+(`TauCeti.SymplecticForm.TameNotCompatibleExample.shearComplexStructure_apply`), that is
+`J_ε = [[j, ε C], [0, j]]`; at `ε = 0` it is `J₀`
+(`TauCeti.SymplecticForm.TameNotCompatibleExample.shearComplexStructure_zero`). Along it
 
 `ω(v, J_ε v) = |v|² + ε ω₀(v₁, C v₂) = |v|² + 2 ε (b d - a c)` for `v = ((a, b), (c, d))`
 
-(`TauCeti.apply_shearComplexStructure_self`). Since `|ω₀(v₁, C v₂)| ≤ |v|²`, this gives:
+(`TauCeti.SymplecticForm.TameNotCompatibleExample.apply_shearComplexStructure_self`). Since
+`|ω₀(v₁, C v₂)| ≤ |v|²`, this gives:
 
-* `TauCeti.tames_shearComplexStructure_iff`: `ω` tames `J_ε` exactly when `|ε| < 1`. At `ε = 1`
-  the vector `v = ((1, 0), (1, 0))` has `ω(v, J₁ v) = 0`, so the unscaled shear is not tame.
-* `TauCeti.compatible_shearComplexStructure_iff`: `ω` is compatible with `J_ε` only for `ε = 0`,
-  since `ω(J_ε e₃, J_ε e₄) = 1 - 4 ε²` while `ω(e₃, e₄) = 1`
-  (`TauCeti.invariant_shearComplexStructure_iff`).
-* `TauCeti.gradientOperator_ne_shearComplexStructure`: for `0 < |ε| < 1` the gradient operator of
-  the tame pair `(ω, J_ε)` is not `J_ε`, so `-J_ε (γ' - X_H)` is not the gradient of the action for
-  the symmetrized metric of `(ω, J_ε)`.
+* `TauCeti.SymplecticForm.TameNotCompatibleExample.tames_shearComplexStructure_iff`: `ω` tames
+  `J_ε` exactly when `|ε| < 1`. At `ε = 1` the vector `v = ((1, 0), (1, 0))` has
+  `ω(v, J₁ v) = 0`, so the unscaled shear is not tame.
+* `TauCeti.SymplecticForm.TameNotCompatibleExample.compatible_shearComplexStructure_iff`: `ω` is
+  compatible with `J_ε` only for `ε = 0`, since `ω(J_ε e₃, J_ε e₄) = 1 - 4 ε²` while
+  `ω(e₃, e₄) = 1`
+  (`TauCeti.SymplecticForm.TameNotCompatibleExample.invariant_shearComplexStructure_iff`).
+* `TauCeti.SymplecticForm.TameNotCompatibleExample.gradientOperator_ne_shearComplexStructure`: for
+  `0 < |ε| < 1` the gradient operator of the tame pair `(ω, J_ε)` is not `J_ε`, so
+  `-J_ε (γ' - X_H)` is not the gradient of the action for the symmetrized metric of `(ω, J_ε)`.
 
-So the tangent path of a tame variation can be tame only on a bounded time interval, in contrast
-with the compatible case (`TauCeti.SymplecticForm.Compatible.tangentPath`), which only
-`TauCeti.SymplecticForm.Tames.eventually_tangentPath` replaces for tame variations. The tame
-structures are strictly more than the compatible ones from real dimension `4` on, while in
-dimension `2` they coincide (`TauCeti.SymplecticForm.Tames.compatible_of_finrank_le_two`).
+So this particular path, through an anti-`J₀` direction that is not tangent to the compatible
+structures, is tame exactly on the bounded interval `|ε| < 1`. By contrast, the tangent path of
+a compatible structure in a compatible direction stays compatible for all times
+(`TauCeti.SymplecticForm.Compatible.tangentPath`), while for a tame structure and an arbitrary
+direction the general result `TauCeti.SymplecticForm.Tames.eventually_tangentPath` only gives
+tameness for small times. On `ℝ⁴` the tame structures are therefore strictly more than the
+compatible ones, while in dimension `2` they coincide
+(`TauCeti.SymplecticForm.Tames.compatible_of_finrank_le_two`).
 
 ## References
 
@@ -60,14 +72,15 @@ dimension `2` they coincide (`TauCeti.SymplecticForm.Tames.compatible_of_finrank
 
 public section
 
-namespace TauCeti
+namespace TauCeti.SymplecticForm.TameNotCompatibleExample
 
 open NormedSpace
 
 /-- The variation `Y (v₁, v₂) = (C v₂, 0)` of the standard complex structure of `ℝ² × ℝ²`, with
 `C = [[0, -2], [-2, 0]]`. It anticommutes with `J₀ = j ⊕ j`
-(`TauCeti.shearDirection_mem_tangentSpace`), and is not skew-adjoint for `ω₀ ⊕ ω₀`
-(`TauCeti.shearDirection_notMem_compatibleTangentSpace`). -/
+(`TauCeti.SymplecticForm.TameNotCompatibleExample.shearDirection_mem_tangentSpace`), and is not
+skew-adjoint for `ω₀ ⊕ ω₀`
+(`TauCeti.SymplecticForm.TameNotCompatibleExample.shearDirection_notMem_compatibleTangentSpace`). -/
 noncomputable def shearDirection : ((ℝ × ℝ) × (ℝ × ℝ)) →L[ℝ] ((ℝ × ℝ) × (ℝ × ℝ)) :=
   LinearMap.toContinuousLinearMap
     { toFun := fun v ↦ ((-2 * v.2.2, -2 * v.2.1), 0)
@@ -101,11 +114,18 @@ theorem shearDirection_notMem_compatibleTangentSpace :
 /-- The family `J_ε` of complex structures on `ℝ² × ℝ²`: the tangent path
 `exp(ε B) J₀ exp(-ε B)`, `B = ½ J₀ Y`, of the standard structure `J₀ = j ⊕ j` in the direction
 `Y = TauCeti.shearDirection`. It is the straight line `J₀ + ε Y`
-(`TauCeti.shearComplexStructure_apply`). -/
+(`TauCeti.SymplecticForm.TameNotCompatibleExample.shearComplexStructure_apply`). -/
 noncomputable def shearComplexStructure (ε : ℝ) :
     AlmostComplexStructure ((ℝ × ℝ) × (ℝ × ℝ)) :=
   ((AlmostComplexStructure.product ℝ).prod (AlmostComplexStructure.product ℝ)).tangentPath
     shearDirection ε
+
+/-- At `ε = 0` the shear path is the standard structure `J₀ = j ⊕ j`. -/
+@[simp]
+theorem shearComplexStructure_zero :
+    shearComplexStructure 0 =
+      (AlmostComplexStructure.product ℝ).prod (AlmostComplexStructure.product ℝ) :=
+  AlmostComplexStructure.tangentPath_zero _ _
 
 /-- **The shear path is a straight line**: `J_ε = J₀ + ε Y`, that is
 `J_ε ((a, b), (c, d)) = ((-b - 2 ε d, a - 2 ε c), (-d, c))`. -/
@@ -155,13 +175,12 @@ theorem tames_shearComplexStructure_iff {ε : ℝ} :
       linarith
   · rw [apply_shearComplexStructure_self]
     obtain ⟨⟨a, b⟩, ⟨c, d⟩⟩ := v
+    -- `|v|² > 0` is the tameness of `J₀`, the member `ε = 0` of the path.
     have hS : 0 < a ^ 2 + b ^ 2 + c ^ 2 + d ^ 2 := by
-      by_contra! hS
-      have ha : a = 0 := by nlinarith [sq_nonneg a, sq_nonneg b, sq_nonneg c, sq_nonneg d]
-      have hb : b = 0 := by nlinarith [sq_nonneg a, sq_nonneg b, sq_nonneg c, sq_nonneg d]
-      have hc : c = 0 := by nlinarith [sq_nonneg a, sq_nonneg b, sq_nonneg c, sq_nonneg d]
-      have hd : d = 0 := by nlinarith [sq_nonneg a, sq_nonneg b, sq_nonneg c, sq_nonneg d]
-      exact hv (by simp [ha, hb, hc, hd])
+      have h₀ := (SymplecticForm.prod_compatible stdSymplecticForm_compatible_product
+        stdSymplecticForm_compatible_product).tames _ hv
+      rw [← shearComplexStructure_zero, apply_shearComplexStructure_self] at h₀
+      simpa using h₀
     obtain ⟨hε₁, hε₂⟩ := abs_lt.1 hε
     rcases le_total 0 ε with h0 | h0
     · nlinarith [mul_pos (sub_pos.2 hε₂) hS,
@@ -179,19 +198,19 @@ theorem invariant_shearComplexStructure_iff {ε : ℝ} :
     simp at this
     nlinarith [sq_nonneg ε]
   · rintro rfl
-    simpa [shearComplexStructure] using
+    simpa using
       SymplecticForm.prod_invariant stdSymplecticForm_invariant_product
         stdSymplecticForm_invariant_product
 
 /-- **`J_ε` is compatible with `ω₀ ⊕ ω₀` only at `ε = 0`**, where it is the standard structure. So
 for `0 < |ε| < 1` the structure `J_ε` is tame but not compatible
-(`TauCeti.tames_shearComplexStructure_iff`). -/
+(`TauCeti.SymplecticForm.TameNotCompatibleExample.tames_shearComplexStructure_iff`). -/
 theorem compatible_shearComplexStructure_iff {ε : ℝ} :
     ((stdSymplecticForm (V := ℝ)).prod stdSymplecticForm).Compatible (shearComplexStructure ε) ↔
       ε = 0 := by
   refine ⟨fun h ↦ invariant_shearComplexStructure_iff.1 h.invariant, ?_⟩
   rintro rfl
-  simpa [shearComplexStructure] using
+  simpa using
     SymplecticForm.prod_compatible stdSymplecticForm_compatible_product
       stdSymplecticForm_compatible_product
 
@@ -204,4 +223,4 @@ theorem gradientOperator_ne_shearComplexStructure {ε : ℝ}
     h.gradientOperator ≠ (shearComplexStructure ε).toLinearMap :=
   fun h' ↦ hε (compatible_shearComplexStructure_iff.1 (h.gradientOperator_eq_iff.1 h'))
 
-end TauCeti
+end TauCeti.SymplecticForm.TameNotCompatibleExample
