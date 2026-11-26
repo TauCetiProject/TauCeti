@@ -11,9 +11,12 @@ public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Pullback
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.LinearAlgebra.FiniteDimensional.Extension
 
 /-!
-# The tangent bundle of projective space along the coordinate line is `𝒪(2) ⊕ 𝒪(1)ᵐ`
+# The tangent bundle of projective space along a line is `𝒪(2) ⊕ 𝒪(1)ᵐ`
 
 Let `𝕜` be a complete nontrivially normed field and `ℓ : ℙ¹ → ℙᵐ⁺¹` the coordinate line
 `[v₀ : v₁] ↦ [v₀ : v₁ : 0 : ⋯ : 0]` (`Projectivization.coordLine`). This file proves that the
@@ -22,7 +25,8 @@ pullback `ℓ* Tℙᵐ⁺¹` of the tangent bundle is the split bundle `𝒪(2) 
 `𝒪(1)`), as analytic vector bundles (`Projectivization.coordLineTangentDiffeomorph`). For `𝕜 = ℂ`
 this is the holomorphic splitting `ℓ* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹`. In every chart, the summand `𝒪(2)`
 is the coordinate along the line and the summands `𝒪(1)` are the coordinates normal to it. For
-`m = 0` the line is the identity of `ℙ¹`, and the statement is `Tℙ¹ ≅ 𝒪(2)`.
+`m = 0` the line is the identity of `ℙ¹`, and the statement is `Tℙ¹ ≅ 𝒪(2)`. The same splitting
+then holds along every line of `ℙᵐ⁺¹`.
 
 **Coordinates along the line.** For `a ∈ {0, 1}`, the standard affine chart `a` of `ℙᵐ⁺¹` has the
 coordinates `vⱼ / vₐ` for `j ≠ a`. On the line its first coordinate is `v_b / vₐ`, for the other
@@ -43,9 +47,19 @@ the line in the chart `a`, and multiplying its tangent coordinate by `εₐ`, gi
 (`Projectivization.contMDiff_coordLineTangentEquiv`), so they form an analytic diffeomorphism of
 total spaces over `ℙ¹`.
 
+**Every line.** A line of `ℙᵐ⁺¹` is a map `ℓ' : [v] ↦ [f v]` for an injective linear map
+`f : 𝕜² → 𝕜ᵐ⁺²`. It is the image `A ∘ ℓ` of the coordinate line under the projective
+transformation of a linear automorphism `A` of `𝕜ᵐ⁺²` with `A ∘ ι = f`, for the inclusion `ι` of
+the first two coordinates (`TauCeti.exists_linearEquiv_comp_eq_of_injective`). The differential
+of that transformation identifies `ℓ* Tℙᵐ⁺¹` with `ℓ'* Tℙᵐ⁺¹`
+(`Diffeomorph.pullbackTangentDiffeomorph`), so `ℓ'* Tℙᵐ⁺¹` is `𝒪(2) ⊕ 𝒪(1)ᵐ` as well
+(`Projectivization.lineTangentDiffeomorph`,
+`Projectivization.exists_continuousLinearEquiv_pullback_map_tangentSpace_twistSumCore_lineTwist`).
+
 Combined with the vanishing `H¹(ℂP¹, 𝒪(k)) = 0` for `k ≥ -1`, the splitting
-`ℓ* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` gives `H¹(ℂP¹, ℓ* TℂPⁿ) = 0`: the linearized Cauchy–Riemann operator
-along `ℓ` is onto, so `ℓ` is regular as a holomorphic sphere in `ℂPⁿ`.
+`ℓ'* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` gives `H¹(ℂP¹, ℓ'* TℂPⁿ) = 0` along every line `ℓ'`: the linearized
+Cauchy–Riemann operator along `ℓ'` is onto, so every line is regular as a holomorphic sphere in
+`ℂPⁿ`.
 
 ## Main declarations
 
@@ -56,6 +70,12 @@ along `ℓ` is onto, so `ℓ` is regular as a holomorphic sphere in `ℂPⁿ`.
   `T_{ℓ x}ℙᵐ⁺¹ ≃ (𝒪(2) ⊕ 𝒪(1)ᵐ)ₓ`.
 * `Projectivization.coordLineTangentDiffeomorph`: the analytic diffeomorphism of total spaces
   `ℓ* Tℙᵐ⁺¹ ≃ 𝒪(2) ⊕ 𝒪(1)ᵐ` over `ℙ¹`.
+* `Projectivization.lineTangentDiffeomorph`: the analytic diffeomorphism of total spaces
+  `ℓ'* Tℙᵐ⁺¹ ≃ 𝒪(2) ⊕ 𝒪(1)ᵐ` over `ℙ¹` along the image `ℓ'` of the coordinate line under a
+  projective linear transformation.
+* `Projectivization.exists_continuousLinearEquiv_pullback_map_tangentSpace_twistSumCore_lineTwist`:
+  along every line `ℓ'` of `ℙᵐ⁺¹`, the bundles `ℓ'* Tℙᵐ⁺¹` and `𝒪(2) ⊕ 𝒪(1)ᵐ` are isomorphic
+  analytic vector bundles.
 
 ## References
 
@@ -420,5 +440,122 @@ theorem proj_coordLineTangentDiffeomorph (n : ℕ∞ω)
   simp
 
 end Equiv
+
+/-! ### Every line -/
+
+section Line
+
+variable {m} [CompleteSpace 𝕜]
+
+/-- **The tangent bundle of `ℙᵐ⁺¹` along a translate of the coordinate line.** Let `A` be a linear
+automorphism of `𝕜ᵐ⁺²` and `ℓ'` an analytic map `ℙ¹ → ℙᵐ⁺¹` equal to `A ∘ ℓ`, the image of the
+coordinate line under the projective transformation of `A`. The differential of that
+transformation identifies `ℓ* Tℙᵐ⁺¹` with `ℓ'* Tℙᵐ⁺¹`
+(`Diffeomorph.pullbackTangentDiffeomorph`), so `ℓ'* Tℙᵐ⁺¹` is `𝒪(2) ⊕ 𝒪(1)ᵐ` as well: this is a
+`C^n` diffeomorphism of total spaces over the identity of `ℙ¹`, fibrewise linear, for every `n`
+and hence analytic at `n = ω`. For `𝕜 = ℂ` it is a biholomorphism of total spaces. -/
+noncomputable def lineTangentDiffeomorph (A : (Fin (m + 2) → 𝕜) ≃ₗ[𝕜] Fin (m + 2) → 𝕜)
+    (ℓ' : C^ω⟮𝓘(𝕜, Fin 1 → 𝕜), ℙ 𝕜 (Fin 2 → 𝕜); 𝓘(𝕜, Fin (m + 1) → 𝕜),
+      ℙ 𝕜 (Fin (m + 2) → 𝕜)⟯)
+    (hℓ' : ∀ x, ℓ' x = mapDiffeomorph A ω (coordLine m x)) (n : ℕ∞ω) :
+    TotalSpace (Fin (m + 1) → 𝕜)
+        ((ℓ' : ℙ 𝕜 (Fin 2 → 𝕜) → ℙ 𝕜 (Fin (m + 2) → 𝕜)) *ᵖ
+          (TangentSpace 𝓘(𝕜, Fin (m + 1) → 𝕜))) ≃ₘ^n⟮𝓘(𝕜, Fin 1 → 𝕜).prod 𝓘(𝕜, Fin (m + 1) → 𝕜),
+        𝓘(𝕜, Fin 1 → 𝕜).prod 𝓘(𝕜, Fin (m + 1) → 𝕜)⟯
+      TotalSpace (Fin (m + 1) → 𝕜) (twistSumCore (𝕜 := 𝕜) (n := 1) (lineTwist m)).Fiber :=
+  ((mapDiffeomorph A ω).pullbackTangentDiffeomorph le_top coordLineContMDiffMap
+    (contMDiff_coordLine m n) ℓ' hℓ').symm.trans
+    (coordLineTangentDiffeomorph n)
+
+/-- **The isomorphism `ℓ'* Tℙᵐ⁺¹ ≃ 𝒪(2) ⊕ 𝒪(1)ᵐ`.** A tangent vector of `ℙᵐ⁺¹` at `ℓ' x` goes to
+`Projectivization.coordLineTangentEquiv` of its preimage, under the differential of the projective
+transformation of `A`, at the point `ℓ x` of the coordinate line. -/
+@[simp]
+theorem lineTangentDiffeomorph_apply (A : (Fin (m + 2) → 𝕜) ≃ₗ[𝕜] Fin (m + 2) → 𝕜)
+    (ℓ' : C^ω⟮𝓘(𝕜, Fin 1 → 𝕜), ℙ 𝕜 (Fin 2 → 𝕜); 𝓘(𝕜, Fin (m + 1) → 𝕜),
+      ℙ 𝕜 (Fin (m + 2) → 𝕜)⟯)
+    (hℓ' : ∀ x, ℓ' x = mapDiffeomorph A ω (coordLine m x)) (n : ℕ∞ω)
+    (q : TotalSpace (Fin (m + 1) → 𝕜)
+      ((ℓ' : ℙ 𝕜 (Fin 2 → 𝕜) → ℙ 𝕜 (Fin (m + 2) → 𝕜)) *ᵖ
+        (TangentSpace 𝓘(𝕜, Fin (m + 1) → 𝕜)))) :
+    lineTangentDiffeomorph A ℓ' hℓ' n q =
+      ⟨q.proj, coordLineTangentEquiv q.proj
+        (((mapDiffeomorph A ω).mfderivToContinuousLinearEquiv (by simp)
+          (coordLine m q.proj)).symm q.snd)⟩ := by
+  rw [lineTangentDiffeomorph, Diffeomorph.coe_trans, Function.comp_apply]
+  rw [Diffeomorph.pullbackTangentDiffeomorph_symm_apply (mapDiffeomorph A ω) le_top
+    coordLineContMDiffMap (contMDiff_coordLine m n) ℓ' hℓ' q, coordLineTangentDiffeomorph_apply]
+  -- Both sides apply `(dΦ)⁻¹` and then `coordLineTangentEquiv` at the point `coordLine m q.proj`,
+  -- which is the bundled coordinate line at `q.proj`.
+  rw [coe_coordLineContMDiffMap]
+
+/-- The isomorphism `ℓ'* Tℙᵐ⁺¹ ≃ 𝒪(2) ⊕ 𝒪(1)ᵐ` lies over the identity of `ℙ¹`. -/
+theorem proj_lineTangentDiffeomorph (A : (Fin (m + 2) → 𝕜) ≃ₗ[𝕜] Fin (m + 2) → 𝕜)
+    (ℓ' : C^ω⟮𝓘(𝕜, Fin 1 → 𝕜), ℙ 𝕜 (Fin 2 → 𝕜); 𝓘(𝕜, Fin (m + 1) → 𝕜),
+      ℙ 𝕜 (Fin (m + 2) → 𝕜)⟯)
+    (hℓ' : ∀ x, ℓ' x = mapDiffeomorph A ω (coordLine m x)) (n : ℕ∞ω)
+    (q : TotalSpace (Fin (m + 1) → 𝕜)
+      ((ℓ' : ℙ 𝕜 (Fin 2 → 𝕜) → ℙ 𝕜 (Fin (m + 2) → 𝕜)) *ᵖ
+        (TangentSpace 𝓘(𝕜, Fin (m + 1) → 𝕜)))) :
+    (lineTangentDiffeomorph A ℓ' hℓ' n q).proj = q.proj := by
+  simp
+
+/-- **The inverse isomorphism `𝒪(2) ⊕ 𝒪(1)ᵐ ≃ ℓ'* Tℙᵐ⁺¹`.** A vector of `𝒪(2) ⊕ 𝒪(1)ᵐ` over `x`
+goes to the image, under the differential of the projective transformation of `A`, of the
+corresponding tangent vector of `ℙᵐ⁺¹` along the coordinate line
+(`Projectivization.coordLineTangentEquiv`). -/
+@[simp]
+theorem lineTangentDiffeomorph_symm_apply (A : (Fin (m + 2) → 𝕜) ≃ₗ[𝕜] Fin (m + 2) → 𝕜)
+    (ℓ' : C^ω⟮𝓘(𝕜, Fin 1 → 𝕜), ℙ 𝕜 (Fin 2 → 𝕜); 𝓘(𝕜, Fin (m + 1) → 𝕜),
+      ℙ 𝕜 (Fin (m + 2) → 𝕜)⟯)
+    (hℓ' : ∀ x, ℓ' x = mapDiffeomorph A ω (coordLine m x)) (n : ℕ∞ω)
+    (q : TotalSpace (Fin (m + 1) → 𝕜) (twistSumCore (𝕜 := 𝕜) (n := 1) (lineTwist m)).Fiber) :
+    (lineTangentDiffeomorph A ℓ' hℓ' n).symm q =
+      ⟨q.proj, mfderiv 𝓘(𝕜, Fin (m + 1) → 𝕜) 𝓘(𝕜, Fin (m + 1) → 𝕜) (mapDiffeomorph A ω)
+        (coordLine m q.proj) ((coordLineTangentEquiv q.proj).symm q.snd)⟩ := by
+  rw [lineTangentDiffeomorph, Diffeomorph.symm_trans', Diffeomorph.symm_symm,
+    Diffeomorph.coe_trans, Function.comp_apply, coordLineTangentDiffeomorph_symm_apply]
+  rw [Diffeomorph.pullbackTangentDiffeomorph_apply (mapDiffeomorph A ω) le_top
+    coordLineContMDiffMap (contMDiff_coordLine m n) ℓ' hℓ']
+  -- The bundled coordinate line is `coordLine m`.
+  rw [coe_coordLineContMDiffMap]
+
+/-- **The tangent bundle of `ℙᵐ⁺¹` along every line is `𝒪(2) ⊕ 𝒪(1)ᵐ`.** Let `ℓ'` be an analytic
+map `ℙ¹ → ℙᵐ⁺¹` sending `[v]` to `[f v]` for an injective linear map `f : 𝕜² → 𝕜ᵐ⁺²`, a line of
+`ℙᵐ⁺¹`. Then `ℓ'* Tℙᵐ⁺¹` and `𝒪(2) ⊕ 𝒪(1)ᵐ` are isomorphic analytic vector bundles over `ℙ¹`: there
+are linear isomorphisms of their fibres which form an analytic map of total spaces, and hence an
+analytic diffeomorphism of total spaces (`TauCeti.bundleDiffeomorph`). For `𝕜 = ℂ` this is the
+holomorphic splitting `ℓ'* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` along every line of `ℂPⁿ`. The line is the image
+of the coordinate line under a projective linear transformation
+(`TauCeti.exists_linearEquiv_comp_eq_of_injective`), and the isomorphism is
+`Projectivization.lineTangentDiffeomorph` for it. -/
+theorem exists_continuousLinearEquiv_pullback_map_tangentSpace_twistSumCore_lineTwist
+    (f : (Fin 2 → 𝕜) →ₗ[𝕜] Fin (m + 2) → 𝕜) (hf : Function.Injective f)
+    (ℓ' : C^ω⟮𝓘(𝕜, Fin 1 → 𝕜), ℙ 𝕜 (Fin 2 → 𝕜); 𝓘(𝕜, Fin (m + 1) → 𝕜),
+      ℙ 𝕜 (Fin (m + 2) → 𝕜)⟯)
+    (hℓ' : ∀ x, ℓ' x = map f hf x) :
+    ∃ e : ∀ x, ((ℓ' : ℙ 𝕜 (Fin 2 → 𝕜) → ℙ 𝕜 (Fin (m + 2) → 𝕜)) *ᵖ
+        (TangentSpace 𝓘(𝕜, Fin (m + 1) → 𝕜))) x ≃L[𝕜]
+          (twistSumCore (𝕜 := 𝕜) (n := 1) (lineTwist m)).Fiber x,
+      ContMDiff (𝓘(𝕜, Fin 1 → 𝕜).prod 𝓘(𝕜, Fin (m + 1) → 𝕜))
+        (𝓘(𝕜, Fin 1 → 𝕜).prod 𝓘(𝕜, Fin (m + 1) → 𝕜)) ω
+        (fun q : TotalSpace (Fin (m + 1) → 𝕜)
+            ((ℓ' : ℙ 𝕜 (Fin 2 → 𝕜) → ℙ 𝕜 (Fin (m + 2) → 𝕜)) *ᵖ
+              (TangentSpace 𝓘(𝕜, Fin (m + 1) → 𝕜))) ↦
+          TotalSpace.mk' (Fin (m + 1) → 𝕜)
+            (E := (twistSumCore (𝕜 := 𝕜) (n := 1) (lineTwist m)).Fiber) q.proj
+            (e q.proj q.snd)) := by
+  obtain ⟨A, hA⟩ :=
+    TauCeti.exists_linearEquiv_comp_eq_of_injective (coordLineEmbedding_injective m) hf
+  have hℓA : ∀ x, ℓ' x = mapDiffeomorph A ω (coordLine m x) := fun x ↦ by
+    induction x using Projectivization.ind with | h v hv => ?_
+    rw [hℓ', coordLine_mk, coe_mapDiffeomorph, map_mk, map_mk]
+    simp only [← hA, LinearMap.comp_apply, LinearEquiv.coe_coe]
+  let Φ := mapDiffeomorph A ω
+  refine ⟨fun x ↦ (Φ.mfderivToContinuousLinearEquiv (by simp) (coordLine m x)).symm.trans
+    (coordLineTangentEquiv x), (lineTangentDiffeomorph A ℓ' hℓA ω).contMDiff.congr fun q ↦
+      (lineTangentDiffeomorph_apply A ℓ' hℓA ω q).symm⟩
+
+end Line
 
 end Projectivization
