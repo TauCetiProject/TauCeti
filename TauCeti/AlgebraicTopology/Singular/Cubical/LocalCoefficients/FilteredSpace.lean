@@ -172,7 +172,10 @@ lemma twistedCubicalChainFiltration_eq_top {b : ℤ} (hb : X b = Set.univ) :
     have hx := NormalizedTwistedCubicalChain.map_ofCube (X := TopCat.of ↥(X b))
       (f := ContinuousMap.subtypeVal (X b)) (L := L) c x
     rw [normalizedTwistedCubicalChainComplexMap_f] at hgh
-    -- Evaluate the composites with `ofCube` produced by the extensionality lemma at `x`.
+    -- Evaluate the composites with `ofCube` produced by the extensionality lemma at `x`. This needs
+    -- `change`: in that goal `g.hom` is applied as a map out of `NormalizedTwistedCubicalChain n`,
+    -- which is the object of the chain complex in degree `n` only up to unfolding, so the goal is
+    -- not type-correct at the transparency `rw [LinearMap.comp_apply]` or `dsimp` work at.
     change g.hom (NormalizedTwistedCubicalChain.ofCube L _ x) =
       h.hom (NormalizedTwistedCubicalChain.ofCube L _ x)
     rw [← hx]
@@ -180,10 +183,8 @@ lemma twistedCubicalChainFiltration_eq_top {b : ℤ} (hb : X b = Set.univ) :
       (NormalizedTwistedCubicalChain.ofCube (X := TopCat.of ↥(X b)) _ c x)) hgh
   have (n : ℕ) : IsIso ((normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥(X b))
       (ContinuousMap.subtypeVal (X b)) L).f n) := by
-    have : Mono ((normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥(X b))
-        (ContinuousMap.subtypeVal (X b)) L).f n) := (ModuleCat.mono_iff_injective _).2 <| by
-      rw [normalizedTwistedCubicalChainComplexMap_f]
-      exact NormalizedTwistedCubicalChain.map_injective Subtype.val_injective n
+    have := mono_normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥(X b))
+      (f := ContinuousMap.subtypeVal (X b)) Subtype.val_injective L
     exact isIso_of_mono_of_epi _
   have := HomologicalComplex.Hom.isIso_of_components
     (normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥(X b))
