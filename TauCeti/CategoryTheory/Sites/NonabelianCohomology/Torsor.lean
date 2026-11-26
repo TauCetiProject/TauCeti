@@ -42,6 +42,8 @@ relative to a fixed family of objects; here no covering is chosen.
   from a torsor to a sheaf of sets is given by a global section.
 * `CategoryTheory.Sheaf.Torsor.isIso_of_bijective_app`: a morphism of sheaves of sets which is
   bijective over every object over which a torsor has a section is an isomorphism.
+* `CategoryTheory.Sheaf.Torsor.hom_ext_of_coversTop`: two morphisms of torsors which agree on
+  one section over each object of a covering family are equal.
 * `CategoryTheory.Sheaf.NonabelianH1 G`: the pointed set of isomorphism classes of `G`-torsors,
   with `NonabelianH1.mk`, `NonabelianH1.lift` and `NonabelianH1.mk_eq_mk_iff`.
 * `CategoryTheory.Sheaf.NonabelianH1.mk_eq_one_iff`: a torsor is trivial if and only if it has a
@@ -285,6 +287,24 @@ lemma isIso_of_bijective_app (P : Torsor G) {F F' : Sheaf J (Type w)} (f : F ⟶
     rw [← ObjectProperty.isIso_hom_iff, NatTrans.isIso_iff_isIso_app]
     rintro ⟨V⟩
     exact (isIso_iff_bijective _).2 (hf V.left ⟨P.sheaf.obj.map V.hom.op i.property.some⟩)
+
+/-- Two morphisms of `G`-torsors are equal as soon as they agree on one section over each object
+of a covering family: by equivariance they then agree on every section over every object with a
+map to the family, and these objects cover the site. -/
+lemma hom_ext_of_coversTop {P Q : Torsor G} {f g : P ⟶ Q} {I : Type*} {Y : I → C}
+    (hY : J.CoversTop Y) (p : ∀ i, P.sheaf.obj.obj (op (Y i)))
+    (h : ∀ i, f.hom.hom.app _ (p i) = g.hom.hom.app _ (p i)) : f = g := by
+  have key {V : C} (i : I) (a : V ⟶ Y i) (x : P.sheaf.obj.obj (op V)) :
+      f.hom.hom.app _ x = g.hom.hom.app _ x := by
+    obtain ⟨b, rfl⟩ :=
+      MulAction.exists_smul_eq (G.obj.obj (op V)) (P.sheaf.obj.map a.op (p i)) x
+    rw [f.map_smul, g.map_smul, NatTrans.naturality_apply f.hom.hom,
+      NatTrans.naturality_apply g.hom.hom, h]
+  ext U x
+  refine (((isSheaf_iff_isSheaf_of_type J _).1 Q.sheaf.property).isSeparated _
+    (hY U.unop)).ext fun V a ⟨i, ⟨b⟩⟩ ↦ ?_
+  exact ((NatTrans.naturality_apply f.hom.hom a.op x).symm.trans (key i b _)).trans
+    (NatTrans.naturality_apply g.hom.hom a.op x)
 
 end Torsor
 
