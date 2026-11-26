@@ -18,7 +18,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 A Lagrangian immersion is a different notion from a Lagrangian embedding: it is the
 parametrization that carries the Lagrangian structure, and its image may have self-intersections.
 This file exhibits the simplest example. In the plane `ℝ × ℝ`, with its standard symplectic form
-`dx ∧ dy` (`TauCeti.SymplecticForm.stdSymplecticForm`, read as a constant two-form), every immersed
+`dx ∧ dy` (`TauCeti.stdSymplecticForm`, read as a constant two-form), every immersed
 curve is a Lagrangian immersion
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianImmersion_of_finrank_eq_one`). The
 **figure-eight**
@@ -85,16 +85,34 @@ def figureEight : AddCircle (2 * π) → ℝ × ℝ :=
 /-- The figure-eight at the class of `t` is `(sin t, sin t cos t)`. -/
 @[simp]
 theorem figureEight_coe (t : ℝ) : figureEight t = (sin t, sin t * cos t) :=
-  (rfl)
+  periodic_sin_sin_mul_cos.lift_coe t
 
 /-- The figure-eight passes through the origin at `t = 0`. -/
 @[simp]
 theorem figureEight_zero : figureEight 0 = 0 := by
-  rw [← QuotientAddGroup.mk_zero, figureEight_coe, sin_zero, zero_mul, Prod.mk_zero_zero]
+  simpa [Prod.mk_zero_zero] using figureEight_coe 0
 
 /-- The figure-eight passes through the origin again at `t = π`. -/
 theorem figureEight_pi : figureEight (π : ℝ) = 0 := by
-  rw [figureEight_coe, sin_pi, zero_mul, Prod.mk_zero_zero]
+  simp [figureEight_coe]
+
+/-! `Real.Angle` is by definition `AddCircle (2 * π)`, with the same coercion from `ℝ`. The next
+three lemmas transfer Mathlib's statements about angles to the points of the circle, so that this
+definitional identification is used only here. -/
+
+/-- The class of `s` in the circle lies in `{0, π}` exactly when `sin s = 0`. -/
+private theorem coe_mem_zero_pi_iff (s : ℝ) :
+    (s : AddCircle (2 * π)) ∈ ({0, ((π : ℝ) : AddCircle (2 * π))} : Set _) ↔ sin s = 0 :=
+  (Real.Angle.sin_eq_zero_iff (θ := s)).symm.trans (by rw [Real.Angle.sin_coe])
+
+/-- Two reals with the same sine and cosine have the same class in the circle. -/
+private theorem coe_eq_coe_of_cos_eq_of_sin_eq {s t : ℝ} (hc : cos s = cos t)
+    (hs : sin s = sin t) : (s : AddCircle (2 * π)) = t :=
+  Real.Angle.cos_sin_inj hc hs
+
+/-- The class of `π` in the circle is not zero. -/
+private theorem coe_pi_ne_zero : ((π : ℝ) : AddCircle (2 * π)) ≠ 0 :=
+  Real.Angle.pi_ne_zero
 
 /-- The figure-eight is smooth. -/
 theorem contMDiff_figureEight : ContMDiff 𝓘(ℝ) 𝓘(ℝ, ℝ × ℝ) ∞ figureEight :=
@@ -149,15 +167,12 @@ theorem figureEight_eq_figureEight_iff {x y : AddCircle (2 * π)} :
   · intro h
     simp only [figureEight_coe, Prod.mk.injEq] at h
     obtain ⟨hs, hsc⟩ := h
-    -- `Real.Angle` is by definition `AddCircle (2 * π)`, with the same coercion from `ℝ`, so
-    -- Mathlib's statements about angles apply to the points of the circle.
     by_cases h₀ : sin s = 0
     · -- Both points are sent to the origin, so both lie in `{0, π}`.
-      exact Or.inr ⟨Real.Angle.sin_eq_zero_iff.1 ((Real.Angle.sin_coe s).trans h₀),
-        Real.Angle.sin_eq_zero_iff.1 ((Real.Angle.sin_coe t).trans (hs ▸ h₀))⟩
+      exact Or.inr ⟨(coe_mem_zero_pi_iff s).2 h₀, (coe_mem_zero_pi_iff t).2 (hs ▸ h₀)⟩
     · -- Away from the origin the second coordinate recovers the cosine.
       rw [← hs] at hsc
-      exact Or.inl (Real.Angle.cos_sin_inj (mul_left_cancel₀ h₀ hsc) hs)
+      exact Or.inl (coe_eq_coe_of_cos_eq_of_sin_eq (mul_left_cancel₀ h₀ hsc) hs)
   · rintro (h | ⟨hx, hy⟩)
     · rw [h]
     · have hx' : figureEight (s : AddCircle (2 * π)) = 0 := by
@@ -169,8 +184,7 @@ theorem figureEight_eq_figureEight_iff {x y : AddCircle (2 * π)} :
 /-- The figure-eight is not injective: `0` and `π` are distinct points of the circle with the same
 image, the origin. -/
 theorem not_injective_figureEight : ¬Function.Injective figureEight := fun h ↦
-  -- `Real.Angle` is by definition `AddCircle (2 * π)`, with the same coercion from `ℝ`.
-  Real.Angle.pi_ne_zero (h (figureEight_pi.trans figureEight_zero.symm))
+  coe_pi_ne_zero (h (figureEight_pi.trans figureEight_zero.symm))
 
 /-- **The figure-eight is not a Lagrangian embedding**: it is not injective. -/
 theorem not_isLagrangianEmbedding_figureEight :
