@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Dimension
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Basic
 public import TauCeti.CategoryTheory.Monoidal.Tor.Basic
-import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor.Basic
 import TauCeti.Algebra.Homology.ShortComplex.Exact
 
 /-!
