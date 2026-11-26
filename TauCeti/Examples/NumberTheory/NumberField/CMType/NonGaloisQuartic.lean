@@ -258,8 +258,8 @@ private theorem finrank_E_and_inf_realField :
   finrank_eq_four_and_inf_realField_eq (adjoin_simple_le_iff.2 sqrt_two_mem_E)
     finrank_adjoin_sqrt_two (adjoin_simple_le_iff.2 (ofReal_mem_realField _))
     (fun h ↦ a_im_pos.ne' (mem_realField_iff.1 (h (mem_adjoin_simple_self ℚ a))))
-    ((finrank_adjoin_simple_le_natDegree monic_quartic_a.ne_zero aeval_a).trans
-      natDegree_quartic_a.le)
+    ((TauCeti.IntermediateField.finrank_adjoin_simple_le_natDegree
+      monic_quartic_a.ne_zero aeval_a).trans natDegree_quartic_a.le)
 
 /-- **`[E : ℚ] = 4`.** -/
 theorem finrank_E : finrank ℚ E = 4 :=
@@ -267,10 +267,8 @@ theorem finrank_E : finrank ℚ E = 4 :=
 
 /-- **The minimal polynomial of `a` is `X⁴ + 6 X² + 7`.** -/
 theorem minpoly_a : minpoly ℚ a = X ^ 4 + C 6 * X ^ 2 + C 7 :=
-  (minpoly.unique_of_degree_le_degree_minpoly ℚ a monic_quartic_a aeval_a (by
-    rw [degree_eq_natDegree monic_quartic_a.ne_zero,
-      degree_eq_natDegree (minpoly.ne_zero isIntegral_a), ← adjoin.finrank isIntegral_a,
-      finrank_E, natDegree_quartic_a])).symm
+  TauCeti.IntermediateField.minpoly_eq_of_natDegree_le_finrank_adjoin_simple monic_quartic_a
+    aeval_a (natDegree_quartic_a.trans finrank_E.symm).le
 
 /-- **The real elements of `E` are those of `ℚ(√2)`.** -/
 theorem mem_E_and_im_eq_zero_iff {x : ℂ} : x ∈ E ∧ x.im = 0 ↔ x ∈ ℚ⟮((√2 : ℝ) : ℂ)⟯ := by
@@ -311,8 +309,8 @@ private theorem finrank_Estar_and_inf_realField :
     finrank_adjoin_sqrt_seven (adjoin_simple_le_iff.2 (ofReal_mem_realField _))
     (fun h ↦ (add_pos a_im_pos b_im_pos).ne'
       (by simpa using mem_realField_iff.1 (h (mem_adjoin_simple_self ℚ (a + b)))))
-    ((finrank_adjoin_simple_le_natDegree monic_quartic_a_add_b.ne_zero aeval_a_add_b).trans
-      natDegree_quartic_a_add_b.le)
+    ((TauCeti.IntermediateField.finrank_adjoin_simple_le_natDegree
+      monic_quartic_a_add_b.ne_zero aeval_a_add_b).trans natDegree_quartic_a_add_b.le)
 
 /-- **`[E* : ℚ] = 4`.** -/
 theorem finrank_Estar : finrank ℚ Estar = 4 :=
@@ -320,10 +318,8 @@ theorem finrank_Estar : finrank ℚ Estar = 4 :=
 
 /-- **The minimal polynomial of `a + b` is `X⁴ + 12 X² + 8`.** -/
 theorem minpoly_a_add_b : minpoly ℚ (a + b) = X ^ 4 + C 12 * X ^ 2 + C 8 :=
-  (minpoly.unique_of_degree_le_degree_minpoly ℚ _ monic_quartic_a_add_b aeval_a_add_b (by
-    rw [degree_eq_natDegree monic_quartic_a_add_b.ne_zero,
-      degree_eq_natDegree (minpoly.ne_zero isIntegral_a_add_b),
-      ← adjoin.finrank isIntegral_a_add_b, finrank_Estar, natDegree_quartic_a_add_b])).symm
+  TauCeti.IntermediateField.minpoly_eq_of_natDegree_le_finrank_adjoin_simple
+    monic_quartic_a_add_b aeval_a_add_b (natDegree_quartic_a_add_b.trans finrank_Estar.symm).le
 
 /-- **The real elements of `E*` are those of `ℚ(√7)`.** -/
 theorem mem_Estar_and_im_eq_zero_iff {x : ℂ} :
@@ -359,7 +355,8 @@ theorem ιb_gen : ιb gen = b :=
 theorem ringHom_ext {ψ₁ ψ₂ : E →+* ℂ} (h : ψ₁ gen = ψ₂ gen) : ψ₁ = ψ₂ := by
   have := (adjoin.powerBasis isIntegral_a).algHom_ext (f := ψ₁.toRatAlgHom)
     (g := ψ₂.toRatAlgHom) h
-  exact RingHom.ext fun x ↦ congrArg (· x) this
+  exact RingHom.ext fun x ↦ by
+    rw [← RingHom.toRatAlgHom_apply, ← RingHom.toRatAlgHom_apply, this]
 
 /-- **Every complex embedding of `E`** sends the generator to one of `a`, `-a`, `b`, `-b`. -/
 theorem apply_gen_mem (ψ : E →+* ℂ) : ψ gen ∈ ({a, -a, b, -b} : Set ℂ) := by
