@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.RemainderMell
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.VonMangoldt
 import Mathlib.NumberTheory.LSeries.Injectivity
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.VonMangoldtCoeff
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 
 /-!
 # Riesz coefficients and Mellin expressions over ℚ
@@ -40,14 +39,9 @@ by norm gives the twisted von Mangoldt coefficients of the corresponding Dirichl
   · simp
   let χ := (toPrimitiveRayClassCharacter ψ).character.toUnitaryIdealWeight
   let f := χ.toIdealArithmeticFunction
-  have habs {s : ℂ} (hs : 1 < s.re) : idealAbscissaOfAbsConv ℚ f < s.re := by
-    obtain ⟨t, ht, hts⟩ := exists_between hs
-    have ht' : 1 < (t : ℂ).re := by simpa using ht
-    have hm := summable_idealTerm_of_unitary_of_one_lt_re χ ht'
-    have hle : idealAbscissaOfAbsConv ℚ f ≤ (t : EReal) := by
-      rw [idealAbscissaOfAbsConv_def]
-      exact sInf_le ⟨t, hm, rfl⟩
-    exact hle.trans_lt (EReal.coe_lt_coe_iff.mpr hts)
+  have habs {s : ℂ} (hs : 1 < s.re) : idealAbscissaOfAbsConv ℚ f < s.re :=
+    idealAbscissaOfAbsConv_lt_re_of_bounded (f := f) (C := 1) (fun I ↦ by
+      simpa [f] using χ.norm_le_one I) hs
   have hsum {s : ℂ} (hs : 1 < s.re) :=
     IdealArithmeticFunction.summable_idealTerm_vonMangoldtTransform (f := f) (habs hs)
   have htwo : 1 < (2 : ℂ).re := by norm_num
@@ -69,11 +63,8 @@ by norm gives the twisted von Mangoldt coefficients of the corresponding Dirichl
       exact habs hx'
     have hlog := χ.val.logDeriv_LSeries_eq_neg_tsum_vonMangoldtTransform hxval
     rw [← χ.toIdealArithmeticFunction_eq_val] at hlog
-    rw [LSeries_normCoeff ℚ (hsum hx'), ← neg_inj, ← hlog, hseries]
-    exact ((logDeriv_congr_nhds (eventually_of_mem
-      ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds hx')
-      (fun z hz ↦ ψ.character.LFunction_eq_LSeries hz))).eq_of_nhds).symm.trans
-      (ψ.character.logDeriv_LFunction_eq_neg_LSeries hx')
+    rw [LSeries_normCoeff ℚ (hsum hx'), ← neg_inj, ← hlog, hseries, logDeriv_apply,
+      DirichletCharacter.LSeries_twist_vonMangoldt_eq _ hx', neg_div, neg_neg]
 
 /-- The first Riesz Mellin expressions of a primitive Dirichlet character and its rational
 ray class character agree as meromorphic normal forms. -/
