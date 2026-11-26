@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.CutoffFrame
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Square
 
 /-!
 # Classical pseudodifferential operators between vector bundles
@@ -54,6 +56,18 @@ is the quantization `Op(a)` of a classical symbol `a` of order `m` with values i
 is the local description of a pseudodifferential operator between bundles in Taylor (Lecture I,
 §8) and Melrose (§5.3).
 
+The class is closed under composition: if `P : Γ(E) → Γ(F)` has order `m` and `R : Γ(F) → Γ(G)`
+has order `m'`, then `R ∘ P` has order `m' + m`
+(`TauCeti.comp_mem_sectionClassicalPseudodifferentialOperators`). On the sections supported in a
+compact set `K`, the outputs of `P` are supported in a compact set `K'`, and over `K'` they expand
+in finitely many cut-off frames `gᵢ tᵢ⁻¹ bⱼ` of `F` with `∑ᵢ gᵢ² = 1`
+(`ContMDiffSection.eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection`). So on functions supported
+in `K` each entry of `R ∘ P` is a finite sum of compositions of an entry of `R` with an entry of
+`P`, and these have order `m' + m` by the scalar composition theorem
+(`TauCeti.comp_mem_classicalPseudodifferentialOperators`). Agreement on compactly supported inputs
+suffices, since the chart compressions only see such inputs
+(`TauCeti.mem_classicalPseudodifferentialOperators_iff_forall_isCompact`).
+
 ## Main definitions
 
 * `TauCeti.sectionEntry`: the matrix entry `f ↦ χ ℓ(t' (P (f ψ t⁻¹ v)))` of an operator.
@@ -74,6 +88,8 @@ is the local description of a pseudodifferential operator between bundles in Tay
 * `TauCeti.exists_quantizeSchwartzValue_eq_apply_chartCutoffSection`: in a chart over which both
   bundles are trivial, the compression of an operator of order `m` is the quantization of a
   classical symbol of order `m` with values in `V →L[ℂ] W`.
+* `TauCeti.comp_mem_sectionClassicalPseudodifferentialOperators`: the composition of operators of
+  orders `m'` and `m` between bundles has order `m' + m`.
 
 ## References
 
@@ -241,6 +257,15 @@ theorem sectionEntry_apply
     sectionEntry t ψ hψ v t' χ hχ ℓ P f x =
       χ x • ℓ (t'.continuousLinearMapAt ℂ x (P (f • t.cutoffFrameSection ψ hψ v) x)) :=
   by simp [sectionEntry]
+
+/-- The matrix entry of `P` applied to `f` is the cut-off frame coefficient of `P` applied to the
+section `f · ψ t⁻¹ v`. -/
+theorem sectionEntry_apply_eq
+    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯)
+    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    sectionEntry t ψ hψ v t' χ hχ ℓ P f =
+      t'.cutoffFrameCoeff χ hχ ℓ (P (f • t.cutoffFrameSection ψ hψ v)) :=
+  (rfl)
 
 /-- The entries of a properly supported operator are properly supported. -/
 theorem IsSectionProperlySupported.sectionEntry
@@ -436,5 +461,55 @@ theorem exists_quantizeSchwartzValue_eq_apply_chartCutoffSection [FiniteDimensio
   simp [hρy, ← smul_assoc, Complex.real_smul]
 
 end Chart
+
+/-! ### Composition -/
+
+section Composition
+
+variable [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
+  [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)]
+  [ContMDiffVectorBundle ∞ W F 𝓘(ℝ, CoordinateSpace n)]
+  {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U]
+  {G : M → Type*} [TopologicalSpace (TotalSpace U G)] [∀ x, AddCommGroup (G x)]
+  [∀ x, Module ℝ (G x)] [∀ x, Module ℂ (G x)] [∀ x, TopologicalSpace (G x)] [FiberBundle U G]
+  [VectorBundle ℝ U G] [VectorBundle ℂ U G] [ContMDiffVectorBundle ∞ U G 𝓘(ℝ, CoordinateSpace n)]
+
+/-- **Composition of pseudodifferential operators between bundles.** If `P : Γ(E) → Γ(F)` is a
+classical pseudodifferential operator of order `m` and `R : Γ(F) → Γ(G)` one of order `m'`, then
+`R ∘ P : Γ(E) → Γ(G)` is a classical pseudodifferential operator of order `m' + m`. -/
+theorem comp_mem_sectionClassicalPseudodifferentialOperators [FiniteDimensional ℂ W] {m m' : ℝ}
+    {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
+    {R : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); U, G⟯}
+    (hR : R ∈ sectionClassicalPseudodifferentialOperators m')
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) :
+    R ∘ₗ P ∈ sectionClassicalPseudodifferentialOperators (m' + m) := by
+  refine ⟨hR.1.comp hP.1, fun t _ ψ hψ v t'' _ χ hχ ℓ ↦
+    mem_classicalPseudodifferentialOperators_iff_forall_isCompact.2
+      ⟨(hR.1.comp hP.1).sectionEntry t ψ hψ v t'' χ hχ ℓ, fun K hK ↦ ?_⟩⟩
+  -- `P` sends the sections supported in `K` to sections supported in a compact set `K'`. Over
+  -- `K'`, cut-off frames `gᵢ tᵢ⁻¹ bⱼ` of `F` with `∑ᵢ gᵢ² = 1` expand these sections, which
+  -- writes the entry of `R ∘ P` on functions supported in `K` as a finite sum of compositions of
+  -- entries of `R` and of `P`.
+  obtain ⟨K', hK', hPK', -⟩ := hP.1 K hK
+  obtain ⟨ι, _, c, g, hg, hg1⟩ := hK'.exists_sum_sq_eq_one 𝓘(ℝ, CoordinateSpace n)
+    (U := fun x ↦ (trivializationAt W F x).baseSet) fun x _ ↦
+      (trivializationAt W F x).open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' x)
+  set b := Module.finBasis ℂ W
+  have hg' (i : ι) : tsupport (g i) ⊆ (trivializationAt W F (c i)).baseSet := (hg i).2
+  refine ⟨∑ i, ∑ j, sectionEntry (trivializationAt W F (c i)) (g i) (hg' i) (b j) t'' χ hχ ℓ R ∘ₗ
+      sectionEntry t ψ hψ v (trivializationAt W F (c i)) (g i) (hg' i)
+        (b.coord j).toContinuousLinearMap P,
+    sum_mem fun i _ ↦ sum_mem fun j _ ↦ comp_mem_classicalPseudodifferentialOperators
+      (hR.2 _ _ _ _ _ _ _ _) (hP.2 _ _ _ _ _ _ _ _), fun f hf ↦ ?_⟩
+  have hs : (f • t.cutoffFrameSection ψ hψ v).tsupport ⊆ K :=
+    (ContMDiffSection.tsupport_smul_function_subset_of_normedAlgebra f _).trans
+      (inter_subset_left.trans hf)
+  have hPs (x : M) (hx : P (f • t.cutoffFrameSection ψ hψ v) x ≠ 0) : ∑ i, g i x ^ 2 = 1 :=
+    hg1 x (hPK' _ hs (by rw [ContMDiffSection.tsupport_def]; exact subset_closure hx))
+  rw [sectionEntry_apply_eq, LinearMap.comp_apply,
+    (P _).eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection _ g hg' hPs b]
+  simp only [map_sum, LinearMap.sum_apply, LinearMap.comp_apply, sectionEntry_apply_eq]
+
+end Composition
 
 end TauCeti

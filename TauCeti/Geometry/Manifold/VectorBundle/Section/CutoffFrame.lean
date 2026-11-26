@@ -29,6 +29,12 @@ These read operators between sections of bundles as matrices of operators on fun
 restricting to the base set of a trivialization: the entries of an operator `P` are the operators
 `f ↦ χ ℓ(t' (P (f ψ t⁻¹ v)))` on functions on `M`.
 
+Conversely, cut-off frames recover sections: if `tᵢ` are finitely many trivializations, `gᵢ`
+functions supported in their base sets with `∑ᵢ gᵢ² = 1` wherever a section `h` does not vanish,
+and `(bⱼ)` a basis of the model fibre, then `h = ∑ᵢ ∑ⱼ gᵢ bⱼ*(tᵢ h) · gᵢ tᵢ⁻¹ bⱼ`
+(`ContMDiffSection.eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection`). This is what composes the
+matrices of two operators.
+
 In a chart `e` whose source lies in the base set of `t`, a Schwartz function `u` on the model space
 and a cutoff `ψ` with compact support in the chart target give the **chart cut-off section**
 `x ↦ t⁻¹ₓ (ψ(e x) u(e x))` (`Bundle.Trivialization.chartCutoffSection`), on which chart
@@ -130,7 +136,60 @@ theorem cutoffFrameCoeff_apply (χ : C^n⟮I, M; ℝ⟯) (hχ : tsupport χ ⊆ 
     t.cutoffFrameCoeff χ hχ ℓ h x = χ x • ℓ (t.continuousLinearMapAt ℂ x (h x)) :=
   (rfl)
 
+/-- In one trivialization `t`, with the same function `g` cutting off the frame and the
+coefficients, the cut-off frame sections `g t⁻¹ bⱼ` multiplied by the cut-off frame coefficients
+`g bⱼ*(t h)` add up to `g² h`. -/
+private theorem sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply [FiniteDimensional ℂ W]
+    (g : C^n⟮I, M; ℝ⟯) (hg : tsupport g ⊆ t.baseSet) {κ : Type*} [Fintype κ]
+    (b : Module.Basis κ ℂ W) (h : Cₛ^n⟮I; W, F⟯) (x : M) :
+    ∑ j, t.cutoffFrameCoeff g hg (b.coord j).toContinuousLinearMap h x •
+      t.cutoffFrameSection g hg (b j) x = ((g x ^ 2 : ℝ) : ℂ) • h x := by
+  by_cases hx : x ∈ t.baseSet
+  · -- On the base set, `t⁻¹ₓ` is linear over `ℝ` and over `ℂ`, and the real and complex actions
+    -- of `g x` on the model fibre agree, so each term is `t⁻¹ₓ (g x ^ 2 • bⱼ*(tₓ h) • bⱼ)`.
+    have hterm (j : κ) : t.cutoffFrameCoeff g hg (b.coord j).toContinuousLinearMap h x •
+        t.cutoffFrameSection g hg (b j) x = t.symmL ℂ x (((g x ^ 2 : ℝ) : ℂ) •
+          (b.coord j).toContinuousLinearMap (t.continuousLinearMapAt ℂ x (h x)) • b j) := by
+      rw [cutoffFrameCoeff_apply, cutoffFrameSection_apply, ← t.symmL_apply (R := ℝ) hx,
+        ← map_smul (t.symmL ℝ x) (g x), ← Complex.coe_smul (g x) (b j),
+        t.symmL_apply (R := ℝ) hx, ← t.symmL_apply (R := ℂ) hx, ← map_smul (t.symmL ℂ x)]
+      congr 1
+      simp only [smul_smul, Complex.real_smul, Complex.ofReal_pow]
+      congr 1
+      ring
+    rw [Finset.sum_congr rfl fun j _ ↦ hterm j, ← map_sum, ← Finset.smul_sum]
+    simp only [LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply, b.sum_repr,
+      map_smul, t.symmL_continuousLinearMapAt hx]
+  · have hgx : g x = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hx (hg h)
+    simp [hgx]
+
 end Coeff
+
+/-- **Expansion of a section in cut-off frames.** Let `tᵢ` be finitely many trivializations of a
+complex vector bundle `F` in its atlas and `gᵢ` real `C^n` functions supported in their base sets,
+and let `(bⱼ)` be a basis of the model fibre with coordinate functionals `bⱼ*`. If `∑ᵢ gᵢ² = 1` at
+every point where the section `h` does not vanish, then `h` is the sum of the cut-off frame
+sections `gᵢ tᵢ⁻¹ bⱼ` multiplied by the cut-off frame coefficients `gᵢ bⱼ*(tᵢ h)`. -/
+theorem _root_.ContMDiffSection.eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection
+    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] {HM : Type*} [TopologicalSpace HM]
+    {I : ModelWithCorners ℝ EM HM} {M : Type*} [TopologicalSpace M] [ChartedSpace HM M] {n : ℕ∞ω}
+    {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [FiniteDimensional ℂ W]
+    {F : M → Type*} [TopologicalSpace (TotalSpace W F)] [∀ x, AddCommGroup (F x)]
+    [∀ x, Module ℝ (F x)] [∀ x, Module ℂ (F x)] [∀ x, TopologicalSpace (F x)] [FiberBundle W F]
+    [VectorBundle ℝ W F] [VectorBundle ℂ W F] [ContMDiffVectorBundle n W F I]
+    (h : Cₛ^n⟮I; W, F⟯) {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (t : ι → Trivialization W (π W F)) [∀ i, MemTrivializationAtlas (t i)]
+    (g : ι → C^n⟮I, M; ℝ⟯) (hg : ∀ i, tsupport (g i) ⊆ (t i).baseSet)
+    (hh : ∀ x, h x ≠ 0 → ∑ i, g i x ^ 2 = 1) (b : Module.Basis κ ℂ W) :
+    h = ∑ i, ∑ j, (t i).cutoffFrameCoeff (g i) (hg i) (b.coord j).toContinuousLinearMap h •
+      (t i).cutoffFrameSection (g i) (hg i) (b j) := by
+  ext x
+  simp only [ContMDiffSection.coe_sum, Finset.sum_apply,
+    ContMDiffSection.smul_apply_of_normedAlgebra,
+    sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply, ← Finset.sum_smul]
+  by_cases hx : h x = 0
+  · simp [hx]
+  rw [← Complex.ofReal_sum, hh x hx, Complex.ofReal_one, one_smul]
 
 section ChartCutoff
 
