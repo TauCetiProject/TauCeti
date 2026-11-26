@@ -12,9 +12,19 @@ public import Mathlib.Topology.Order.IntermediateValue
 /-!
 # Closed lifts through coverings with ordered fibers
 
-A lift of a loop is closed if the initial fiber is finite and a continuous real-valued
-height separates points in each fiber along the loop. Distinct lifts never meet, so their
-heights keep their order. A strictly monotone self-map of a finite linear order fixes each point.
+A lift of a loop is closed if the initial fiber is finite and a continuous height in a
+linearly ordered space with closed order separates points in each fiber along the loop.
+Distinct lifts never meet, so their heights keep their order. A strictly monotone self-map of a
+finite linear order fixes each point.
+
+Adapted from Giada Franz's formalization in
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/b30e86b2c963e206ab7ee1435ab5665fe7db0cce/ForTauCeti/Topology/Covering/ClosedLift.lean).
+
+## References
+
+* T. H. Colding and W. P. Minicozzi II, *The space of embedded minimal surfaces of fixed genus
+  in a 3-manifold II; Multi-valued graphs in disks*, Ann. of Math. 160 (2004), 69–92,
+  proof of Lemma 1.10. The real-valued height is the coordinate normal to the projection plane.
 -/
 
 public section
@@ -23,12 +33,13 @@ open Set unitInterval
 
 namespace IsCoveringMap
 
-/-- A lift of a loop is closed when its initial fiber is finite and a continuous real-valued
-height separates points in each fiber along the loop. -/
+/-- A lift of a loop is closed when its initial fiber is finite and a continuous height in a
+linearly ordered space with closed order separates points in each fiber along the loop. -/
 theorem apply_one_eq_apply_zero_of_injOn_fiber {E B : Type*} [TopologicalSpace E]
     [TopologicalSpace B] {p : E → B} (hp : IsCoveringMap p) {Γ : C(I, E)}
     (hΓ : p (Γ 1) = p (Γ 0)) (hfin : (p ⁻¹' {p (Γ 0)}).Finite)
-    {h : E → ℝ} (hh : Continuous h) (hsep : ∀ t, InjOn h (p ⁻¹' {p (Γ t)})) :
+    {α : Type*} [LinearOrder α] [TopologicalSpace α] [OrderClosedTopology α]
+    {h : E → α} (hh : Continuous h) (hsep : ∀ t, InjOn h (p ⁻¹' {p (Γ t)})) :
     Γ 1 = Γ 0 := by
   let S := p ⁻¹' {p (Γ 0)}
   let γ : C(I, B) := ⟨p ∘ Γ, hp.continuous.comp Γ.continuous⟩
@@ -41,7 +52,9 @@ theorem apply_one_eq_apply_zero_of_injOn_fiber {E B : Type*} [TopologicalSpace E
   let : LinearOrder S := LinearOrder.lift' (fun y : S ↦ h y) (hsep 0).injective
   have hmono : StrictMono τ := by
     intro x y hxy
+    -- The order on S is pulled back along h by LinearOrder.lift', so its comparisons unfold.
     change h x < h y at hxy
+    -- Unfold the same pulled-back order and τ, whose underlying endpoint is L · 1.
     change h (L x 1) < h (L y 1)
     by_contra! hle
     obtain ⟨t, ht⟩ := intermediate_value_univ₂ (a := 0) (b := 1)
