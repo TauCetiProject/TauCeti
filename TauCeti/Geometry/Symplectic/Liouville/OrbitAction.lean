@@ -25,17 +25,23 @@ the action for which the energy of a Floer cylinder is the drop of the action be
 loop with a cap it is the action `TauCeti.contractibleLoopAction` of contractible loops.
 
 This file computes it on the orbits of a Hamiltonian `F` that agrees with `φ ∘ r` on a region
-`{r > R}`, `R ≥ 1`. Such an orbit stays on a level `r = c` and has velocity `φ'(c) X_r`
-(`TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_eq_of_isMIntegralCurve`), and
-`α(X_r) = -r` there, so `α` takes the constant value `-c φ'(c)` on its velocity
+`{r > R}`, `R ≥ 1`. Such an orbit stays on a level `r = c`
+(`TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_eq_of_isMIntegralCurve`) and has velocity
+`φ'(c) X_r` (`TauCeti.IsLiouvilleCompletion.hamiltonianVectorField_eq_smul_of_eventuallyEq`), and
+`α(X_r) = -r` there, so `α(X_F) = -c φ'(c)`
+(`TauCeti.IsLiouvilleCompletion.apply_hamiltonianVectorField_of_eventuallyEq`): `α` takes this
+constant value on the velocity of the orbit
 (`TauCeti.IsLiouvilleCompletion.apply_curveVelocity_of_isMIntegralCurve`). Hence
 
 `A_F(γ) = c φ'(c) - φ(c)`
 
 (`TauCeti.IsLiouvilleCompletion.neg_pathIntegral_sub_integral_of_isMIntegralCurve`), the value at
 `c` of the Legendre-type function `c ↦ c φ'(c) - φ(c)`. For a `1`-periodic orbit with `φ'(c) ≠ 0`
-the number `φ'(c)` is a period of the closed orbits of `X_r`, that is, of the Reeb flow of the
-boundary `∂W` (`TauCeti.IsLiouvilleCompletion.exists_periodic_hamiltonianVectorField_iff`).
+the number `φ'(c)` is a period of the closed orbits of `X_r` on any level `c' > 1`
+(`TauCeti.IsLiouvilleCompletion.exists_periodic_hamiltonianVectorField_iff`). Given a
+parametrization `ι` of the boundary `frontier W`, these are the periods of the Reeb flow of the
+boundary
+(`TauCeti.IsLiouvilleCompletion.exists_periodic_hamiltonianVectorField_iff_reebVectorField`).
 
 If `φ` is convex, the tangent line at `c` lies below `φ` at `R`, which bounds the action from below
 by `R φ'(c) - φ(R)`
@@ -43,8 +49,8 @@ by `R φ'(c) - φ(R)`
 is nondecreasing, `φ'(c) = 0` forces `φ(c) = φ(R)`. This separates the orbits on the end into two
 **action windows**: an orbit with `φ'(c) = 0`, a constant orbit, has action `-φ(R)`, and every
 other `1`-periodic orbit has action greater than `ε` as soon as `ε + φ(R) < R T` for every period
-`T` of the Reeb flow
-(`TauCeti.IsLiouvilleCompletion.neg_pathIntegral_sub_integral_eq_or_lt`). For `R = 1` and
+`T` of the closed orbits of `X_r`, that is, of the Reeb flow
+(`TauCeti.IsLiouvilleCompletion.neg_pathIntegral_sub_integral_eq_or_gt`). For `R = 1` and
 `|φ(1)| < ε` the first value lies in the window `(-ε, ε)` and the others in `(ε, ∞)`. This is the
 cylindrical-end half of the splitting of the generators of the Floer complex of a Hamiltonian that
 is `C²`-small on `W` and convex on the end into constant orbits, of action in `(-ε, ε)`, and
@@ -61,7 +67,7 @@ zero-energy and positive parts; the orbits inside `W` are not treated here.
   action of a capped orbit.
 * `TauCeti.IsLiouvilleCompletion.mul_deriv_sub_le_neg_pathIntegral_sub_integral`: for convex `φ`
   the action is at least `R φ'(c) - φ(R)`.
-* `TauCeti.IsLiouvilleCompletion.neg_pathIntegral_sub_integral_eq_or_lt`: for convex nondecreasing
+* `TauCeti.IsLiouvilleCompletion.neg_pathIntegral_sub_integral_eq_or_gt`: for convex nondecreasing
   `φ`, a `1`-periodic orbit on the end has action `-φ(R)` or action greater than `ε`.
 
 ## References
@@ -109,9 +115,7 @@ theorem apply_curveVelocity_of_isMIntegralCurve (h : IsLiouvilleCompletion ω α
       ![ω.hamiltonianVectorField F (γ t)] := by
     funext k
     fin_cases k
-    rw [← Manifold.curveVelocityWithin_univ]
-    exact Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt (hγ t).hasMFDerivWithinAt
-      uniqueDiffWithinAt_univ
+    exact (Manifold.isMIntegralCurve_iff_curveVelocity_eq.1 hγ t).2
   have hFr : F =ᶠ[𝓝 (γ t)] φ ∘ r := by
     filter_upwards [(isOpen_lt continuous_const
       (h.continuous_liouvilleRadialCoordinate hZ)).mem_nhds hRt] with y hy using hF y hy
@@ -189,13 +193,15 @@ theorem mul_deriv_sub_le_neg_pathIntegral_sub_integral (h : IsLiouvilleCompletio
 /-- **Action windows of a convex radial Hamiltonian.** On a completion, let `F` agree with
 `φ ∘ r` on the region `{r > R}`, `R ≥ 1`, with `φ` convex and nondecreasing on `[R, ∞)` and
 differentiable on `(R, ∞)`. Suppose that `ε + φ(R) < R T` for every period `T > 0` of a closed
-orbit of `X_r`, that is, of the Reeb flow of the boundary, on some level `c' > 1`. Then every
-`1`-periodic orbit of `X_F` meeting the region `{r > R}` either has action `-φ(R)` or has action
-greater than `ε`. The first case is that of the levels `c` with `φ'(c) = 0`, on which `X_F`
-vanishes.
+orbit of `X_r` on some level `c' > 1`; given a parametrization `ι` of the boundary `frontier W`,
+these are the periods of the Reeb flow of the boundary
+(`TauCeti.IsLiouvilleCompletion.exists_periodic_hamiltonianVectorField_iff_reebVectorField`).
+Then every `1`-periodic orbit of `X_F` meeting the region `{r > R}` either has action `-φ(R)`
+or has action greater than `ε`. The first case is that of the levels `c` with `φ'(c) = 0`, on
+which `X_F` vanishes.
 
 For `R = 1` and `|φ(1)| < ε`, the first window lies in `(-ε, ε)` and the second in `(ε, ∞)`. -/
-theorem neg_pathIntegral_sub_integral_eq_or_lt (h : IsLiouvilleCompletion ω α W)
+theorem neg_pathIntegral_sub_integral_eq_or_gt (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.val = α.val) (hR : 1 ≤ R)
     (hF : ∀ y, R < liouvilleRadialCoordinate Z W y → F y = φ (liouvilleRadialCoordinate Z W y))
     (hφ : DifferentiableOn ℝ φ (Ioi R)) (hφc : ConvexOn ℝ (Ici R) φ)
@@ -213,21 +219,19 @@ theorem neg_pathIntegral_sub_integral_eq_or_lt (h : IsLiouvilleCompletion ω α 
   have hd : 0 ≤ deriv φ c := by
     rw [← derivWithin_of_mem_nhds (Ici_mem_nhds ht₀)]
     exact hφm.derivWithin_nonneg
+  have hlow := h.mul_deriv_sub_le_neg_pathIntegral_sub_integral hZ hR hF hφ hφc hγ ht₀
   rcases hd.eq_or_lt with hd | hd
   · -- If `φ'(c) = 0`, convexity and monotonicity give `φ(c) = φ(R)`.
     left
-    have hslope := hφc.slope_le_deriv self_mem_Ici ht₀.le ht₀ hφd
-    rw [← hd, slope_def_field, div_le_iff₀ (sub_pos.2 ht₀), zero_mul, sub_nonpos] at hslope
+    rw [h.neg_pathIntegral_sub_integral_of_isMIntegralCurve hZ hR hF hφ hγ ht₀, ← hd] at hlow ⊢
     have hle : φ R ≤ φ c := hφm self_mem_Ici ht₀.le ht₀.le
-    rw [h.neg_pathIntegral_sub_integral_of_isMIntegralCurve hZ hR hF hφ hγ ht₀, ← hd, mul_zero,
-      zero_sub, le_antisymm hslope hle]
-  · -- If `φ'(c) > 0`, it is a period of the Reeb flow, and the lower bound applies.
+    linarith
+  · -- If `φ'(c) > 0`, it is a period of the closed orbits of `X_r`, and the lower bound applies.
     right
     have hlevel : ∀ t, liouvilleRadialCoordinate Z W (γ t) = c :=
       h.liouvilleRadialCoordinate_eq_of_isMIntegralCurve hZ hR hF hφ hγ ht₀
     have hT := hper _ hd ((h.exists_periodic_hamiltonianVectorField_iff hZ hR hF ht₀ hφd hd.ne'
       hc').1 ⟨γ, hγ, hγ1, hlevel⟩)
-    have hlow := h.mul_deriv_sub_le_neg_pathIntegral_sub_integral hZ hR hF hφ hφc hγ ht₀
     linarith
 
 end IsLiouvilleCompletion
