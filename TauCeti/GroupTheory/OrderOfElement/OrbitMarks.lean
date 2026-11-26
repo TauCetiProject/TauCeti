@@ -12,9 +12,10 @@ public import TauCeti.GroupTheory.OrderOfElement.NoRelation
 # Cyclic words marked by intersections with a power image
 
 For a word of period `N` read along a group orbit, mark the positions at which the orbit meets
-a left translate of a power image. If the acting element has large order, the window bound from
-`NoRelation` gives clusters of at most two nearby marks. If its order is small, any two marks
-represent the same point of the orbit, so their spacing is a multiple of the order instead.
+a target set. For a translated power image in a long orbit, the window bound from `NoRelation`
+gives clusters of at most two nearby marks. If the target meets the orbit in at most one point,
+then any two marked exponents differ by a multiple of the orbit order. The short-orbit bound
+from `NoRelation` supplies this hypothesis for translated power images.
 
 The motivating orbit bounds for thick places are those of Levent Alpöge's formalization
 `Formalism.HC.Frame.hostThickOrbit` and `GlobalTheory.HTW.LongWindow.main`.
@@ -74,43 +75,41 @@ theorem NoRelation.hasMarkClusters_orbitMarks (hT : NoRelation L T) (hN : orderO
     (hj : 2 * j < L) : (orbitMarks N y h (u • ((a ^ ·) '' T))).HasMarkClusters j :=
   HasMarkClusters.of_encard_window_le_two (hT.encard_orbitMarks_window_le_two hN hTM hh) hj
 
-/-- In a short orbit, any two marked exponents are congruent modulo the order of the acting
-element. Only the diameter condition on the power image is needed. -/
-theorem modEq_of_mem_orbitMarks (hN : orderOf h ∣ N)
-    (hTM : ∀ s ∈ T, 0 ≤ s ∧ (s : ℝ) < orderOf a / (4 * L)) (hh : orderOf h ≤ 4 * L)
-    {i k : ℤ} (hi : (i : ZMod N) ∈ orbitMarks N y h (u • ((a ^ ·) '' T)))
-    (hk : (k : ZMod N) ∈ orbitMarks N y h (u • ((a ^ ·) '' T))) : i ≡ k [ZMOD orderOf h] := by
-  have hs := subsingleton_smul_zpowers_inter_smul_image_zpow_of_orderOf_le hTM hh y u
+/-- If the target meets the orbit in at most one point, any two marked exponents are
+congruent modulo the order of the acting element. -/
+theorem modEq_of_mem_orbitMarks {S : Set G} (hN : orderOf h ∣ N)
+    (hS : (y • (Subgroup.zpowers h : Set G) ∩ S).Subsingleton)
+    {i k : ℤ} (hi : (i : ZMod N) ∈ orbitMarks N y h S)
+    (hk : (k : ZMod N) ∈ orbitMarks N y h S) : i ≡ k [ZMOD orderOf h] := by
   have him := (intCast_mem_orbitMarks_iff hN _ i).1 hi
   have hkm := (intCast_mem_orbitMarks_iff hN _ k).1 hk
   have hm (t : ℤ) : y * h ^ t ∈ y • (Subgroup.zpowers h : Set G) :=
     ⟨h ^ t, Subgroup.zpow_mem_zpowers h t, rfl⟩
-  exact zpow_eq_zpow_iff_modEq.1 (mul_left_cancel (hs ⟨hm i, him⟩ ⟨hm k, hkm⟩))
+  exact zpow_eq_zpow_iff_modEq.1 (mul_left_cancel (hS ⟨hm i, him⟩ ⟨hm k, hkm⟩))
 
-/-- A short-orbit mark has no marked predecessor at a positive distance below the orbit order.
-In particular there are no adjacent marks when the order exceeds one. -/
-theorem sub_notMem_orbitMarks_of_lt_orderOf (hN : orderOf h ∣ N)
-    (hTM : ∀ s ∈ T, 0 ≤ s ∧ (s : ℝ) < orderOf a / (4 * L)) (hh : orderOf h ≤ 4 * L)
-    {i : ZMod N} (hi : i ∈ orbitMarks N y h (u • ((a ^ ·) '' T)))
-    {d : ℕ} (hd : 0 < d) (hdh : d < orderOf h) :
-    i - d ∉ orbitMarks N y h (u • ((a ^ ·) '' T)) := by
+/-- If the target meets the orbit in at most one point, a mark has no marked predecessor
+at a positive distance below the orbit order. -/
+theorem sub_notMem_orbitMarks_of_lt_orderOf {S : Set G} (hN : orderOf h ∣ N)
+    (hS : (y • (Subgroup.zpowers h : Set G) ∩ S).Subsingleton)
+    {i : ZMod N} (hi : i ∈ orbitMarks N y h S) {d : ℕ} (hd : 0 < d) (hdh : d < orderOf h) :
+    i - d ∉ orbitMarks N y h S := by
   obtain ⟨k, rfl⟩ := ZMod.intCast_surjective i
   intro hprev
-  have hprev' : ((k - (d : ℤ) : ℤ) : ZMod N) ∈ orbitMarks N y h (u • ((a ^ ·) '' T)) := by
+  have hprev' : ((k - (d : ℤ) : ℤ) : ZMod N) ∈ orbitMarks N y h S := by
     simpa using hprev
-  have hdiv := (modEq_of_mem_orbitMarks hN hTM hh hprev' hi).dvd
+  have hdiv := (modEq_of_mem_orbitMarks hN hS hprev' hi).dvd
   rw [sub_sub_cancel] at hdiv
   have hle : orderOf h ≤ d := Nat.le_of_dvd hd (by exact_mod_cast hdiv)
   omega
 
-/-- The short-orbit word has clusters at depths below its orbit order, since each mark has no
-preceding mark within that depth. -/
-theorem hasMarkClusters_orbitMarks_of_orderOf_le (hN : orderOf h ∣ N)
-    (hTM : ∀ s ∈ T, 0 ≤ s ∧ (s : ℝ) < orderOf a / (4 * L)) (hh : orderOf h ≤ 4 * L)
-    (hj : j < orderOf h) : (orbitMarks N y h (u • ((a ^ ·) '' T))).HasMarkClusters j :=
+/-- If the target meets the orbit in at most one point, the word has clusters at depths below
+its orbit order, since no mark has a marked predecessor within that depth. -/
+theorem hasMarkClusters_orbitMarks_of_lt_orderOf {S : Set G} (hN : orderOf h ∣ N)
+    (hS : (y • (Subgroup.zpowers h : Set G) ∩ S).Subsingleton) (hj : j < orderOf h) :
+    (orbitMarks N y h S).HasMarkClusters j :=
   hasMarkClusters_iff.2 fun _ hi ↦
     Or.inl fun d hd hdj ↦
-      sub_notMem_orbitMarks_of_lt_orderOf hN hTM hh hi (d := d) hd (hdj.trans_lt hj)
+      sub_notMem_orbitMarks_of_lt_orderOf hN hS hi (d := d) hd (hdj.trans_lt hj)
 
 /-- Three consecutive positions cannot all be marked in a long orbit of window length at least
 three. In a short orbit of order greater than one, even adjacent marks are impossible. -/
@@ -126,7 +125,9 @@ theorem NoRelation.sub_two_notMem_orbitMarks (hT : NoRelation L T) (hN : orderOf
       (d := 2) (e := 1) (by omega) (by omega) (by omega) (by omega) (by simpa using hi₂)
       (by simpa using hi₁)
     omega
-  · exact (sub_notMem_orbitMarks_of_lt_orderOf hN hTM (by omega) hi (d := 1) (by omega) hh
+  · have hS := subsingleton_smul_zpowers_inter_smul_image_zpow_of_orderOf_le hTM
+      (h := h) (by omega) y u
+    exact (sub_notMem_orbitMarks_of_lt_orderOf hN hS hi (d := 1) (by omega) hh
       (by simpa using hi₁)).elim
 
 /-- In both order ranges there is an unmarked position if the acting element has finite order
