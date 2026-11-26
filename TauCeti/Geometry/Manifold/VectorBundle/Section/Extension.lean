@@ -476,8 +476,8 @@ theorem exists_eventuallyEq_isCompact_tsupport_subset_of_opens {U : TopologicalS
 /-- **Cutting off a section near a compact set.** For a compact set `K` and a `C^n` section `h`
 (`n ≤ ∞`) there is a `C^n` section `h'` with compact support, equal to `h` near `K`
 (`ContMDiffSection.exists_eventuallyEq_isCompact_tsupport_subset`), such that `f • h = f • h'`
-for every `C^n` function `f` with values in a normed `ℝ`-algebra `𝕜`, acting fibrewise, that is
-supported in `K`. -/
+for every `C^n` function `f` with values in a nontrivially normed field `𝕜` that is a normed
+`ℝ`-algebra (e.g. `ℂ`), acting fibrewise, that is supported in `K`. -/
 theorem _root_.IsCompact.exists_isCompact_tsupport_forall_smul_eq (𝕜 : Type*)
     [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F]
     [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V] {K : Set M} (hK : IsCompact K)
