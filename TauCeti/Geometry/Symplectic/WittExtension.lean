@@ -49,6 +49,8 @@ isometrically. Such a pair exists for a suitable `v`:
   any two pairs `(q, p)` and `(q', p')` with `ω₁(q, p) = 1 = ω₂(q', p')`.
 * `TauCeti.SymplecticForm.exists_isSymplectomorphism`: two symplectic vector spaces of the same
   finite dimension are symplectomorphic.
+* `TauCeti.SymplecticForm.exists_isSymplectomorphism_map_eq`: a linear symplectomorphism carries
+  any Lagrangian subspace onto any other.
 
 ## References
 
@@ -276,6 +278,30 @@ theorem exists_isSymplectomorphism [FiniteDimensional ℝ V] [FiniteDimensional 
       rw [Subsingleton.elim x 0]
       simp
   exact ⟨e, he⟩
+
+/-- **Lagrangian subspaces are linearly symplectomorphic.** For Lagrangian subspaces `L ⊆ V` and
+`L' ⊆ W` of symplectic vector spaces of the same finite dimension, some linear symplectomorphism
+`V ≃ W` carries `L` onto `L'`: any linear isomorphism `L ≃ L'` preserves the forms, which vanish on
+both, and so extends by Witt's theorem. -/
+theorem exists_isSymplectomorphism_map_eq [FiniteDimensional ℝ V] [FiniteDimensional ℝ W]
+    (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (hdim : finrank ℝ V = finrank ℝ W)
+    {L : Submodule ℝ V} {L' : Submodule ℝ W} (hL : ω₁.IsLagrangian L)
+    (hL' : ω₂.IsLagrangian L') :
+    ∃ e : V ≃ₗ[ℝ] W, IsSymplectomorphism ω₁ ω₂ e ∧ L.map (e : V →ₗ[ℝ] W) = L' := by
+  have hLL' : finrank ℝ L = finrank ℝ L' := by
+    have := hL.two_mul_finrank
+    have := hL'.two_mul_finrank
+    omega
+  let f : L ≃ₗ[ℝ] L' := LinearEquiv.ofFinrankEq L L' hLL'
+  obtain ⟨e, he, hext⟩ := exists_isSymplectomorphism_extend_linearEquiv ω₁ ω₂ hdim f
+    fun x y ↦ by
+      rw [hL.symplecticForm_apply_eq_zero x.property y.property,
+        hL'.symplecticForm_apply_eq_zero (f x).property (f y).property]
+  refine ⟨e, he, le_antisymm ?_ fun y hy ↦ ⟨f.symm ⟨y, hy⟩, (f.symm ⟨y, hy⟩).property, ?_⟩⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    rw [LinearEquiv.coe_coe, hext ⟨x, hx⟩]
+    exact (f ⟨x, hx⟩).property
+  · rw [LinearEquiv.coe_coe, hext, LinearEquiv.apply_symm_apply]
 
 end SymplecticForm
 
