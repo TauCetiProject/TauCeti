@@ -95,7 +95,8 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-- The **unit tangent of the end chart** `φ'_q` at `ζ`: the image `(a', b') = r⁻¹ dφ'_q(ζ) (1, 0)`
 of the unit longitudinal vector under the rotation part of the chart, for the conformal scale `r`
-of the chart at `ζ`. It satisfies `a'² + b'² = 1`. -/
+of the chart at `ζ`. It satisfies `a'² + b'² = 1`
+(`TauCeti.Floer.fst_endUnitTangent_sq_add_snd_sq`). -/
 def endUnitTangent (q : Puncture) (ζ : ℝ × ℝ) : ℝ × ℝ :=
   ((positiveEndChartScale q ζ)⁻¹ • fderiv ℝ (positiveEndChart q) ζ) (1, 0)
 
@@ -116,19 +117,24 @@ theorem continuous_endUnitTangent (q : Puncture) : Continuous (endUnitTangent q)
   exact (((continuous_positiveEndChartScale q).inv₀
     fun ζ ↦ (positiveEndChartScale_pos q ζ).ne').smul hd).clm_apply continuous_const
 
+/-- **The unit tangent of the end chart is a unit vector**: `a'² + b'² = 1`, since
+`a² + b² = r²` for `(a, b) = dφ'_q (1, 0)`. -/
+theorem fst_endUnitTangent_sq_add_snd_sq (q : Puncture) (ζ : ℝ × ℝ) :
+    (endUnitTangent q ζ).1 ^ 2 + (endUnitTangent q ζ).2 ^ 2 = 1 := by
+  have hr : positiveEndChartScale q ζ ≠ 0 := (positiveEndChartScale_pos q ζ).ne'
+  simp only [endUnitTangent, smul_apply, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_pow,
+    ← mul_add, ← sq_positiveEndChartScale_eq_sq_add_sq, inv_pow]
+  exact inv_mul_cancel₀ (pow_ne_zero 2 hr)
+
 /-- The first component of the unit tangent of the end chart is at most one in absolute value. -/
-theorem abs_fst_endUnitTangent_le (q : Puncture) (ζ : ℝ × ℝ) : |(endUnitTangent q ζ).1| ≤ 1 := by
-  have hr := positiveEndChartScale_pos q ζ
-  simp only [endUnitTangent, smul_apply, Prod.smul_fst, smul_eq_mul, abs_mul,
-    abs_inv, abs_of_pos hr]
-  exact (inv_mul_le_one₀ hr).2 (abs_fst_fderiv_positiveEndChart_le q ζ)
+theorem abs_fst_endUnitTangent_le (q : Puncture) (ζ : ℝ × ℝ) : |(endUnitTangent q ζ).1| ≤ 1 :=
+  sq_le_one_iff_abs_le_one _ |>.1 <| by
+    linarith [fst_endUnitTangent_sq_add_snd_sq q ζ, sq_nonneg (endUnitTangent q ζ).2]
 
 /-- The second component of the unit tangent of the end chart is at most one in absolute value. -/
-theorem abs_snd_endUnitTangent_le (q : Puncture) (ζ : ℝ × ℝ) : |(endUnitTangent q ζ).2| ≤ 1 := by
-  have hr := positiveEndChartScale_pos q ζ
-  simp only [endUnitTangent, smul_apply, Prod.smul_snd, smul_eq_mul, abs_mul,
-    abs_inv, abs_of_pos hr]
-  exact (inv_mul_le_one₀ hr).2 (abs_snd_fderiv_positiveEndChart_le q ζ)
+theorem abs_snd_endUnitTangent_le (q : Puncture) (ζ : ℝ × ℝ) : |(endUnitTangent q ζ).2| ≤ 1 :=
+  sq_le_one_iff_abs_le_one _ |>.1 <| by
+    linarith [fst_endUnitTangent_sq_add_snd_sq q ζ, sq_nonneg (endUnitTangent q ζ).1]
 
 /-- The **rotation of the end model** of the end `q` at `ζ = (s, t)`, for a loop `J_t` of almost
 complex structures: `r⁻¹ (a + b J_t)`, where `(a, b) = dφ'_q (1, 0)` is the image of the unit
@@ -170,12 +176,8 @@ theorem endModelRotation_eq_of_snd_eq (q : Puncture) (J : ℝ → AlmostComplexS
 `a² + b² = r²` for `(a, b) = dφ'_q (1, 0)`. -/
 theorem isInvertible_endModelRotation (q : Puncture) (J : ℝ → AlmostComplexStructure V)
     (ζ : ℝ × ℝ) : (endModelRotation q J ζ).IsInvertible := by
-  have hr : positiveEndChartScale q ζ ≠ 0 := (positiveEndChartScale_pos q ζ).ne'
   rw [endModelRotation_eq]
-  refine (J ζ.2).isInvertible_smul_id_add_smul ?_
-  simp only [endUnitTangent, smul_apply, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_pow,
-    ← mul_add, ← sq_positiveEndChartScale_eq_sq_add_sq]
-  exact mul_ne_zero (pow_ne_zero 2 (inv_ne_zero hr)) (pow_ne_zero 2 hr)
+  exact (J ζ.2).isInvertible_smul_id_add_smul <| fst_endUnitTangent_sq_add_snd_sq q ζ ▸ one_ne_zero
 
 /-- For a continuous loop `J_t`, the rotation of the end model is continuous. -/
 theorem continuous_endModelRotation (q : Puncture) {J : ℝ → AlmostComplexStructure V}
