@@ -55,10 +55,14 @@ of the family near `(t, x)` form the `C²` curve `c(σ) = Φ⁻¹ (0, ℓ x + σ
 (`TauCeti.exists_curve_apply_eq_zero`), with `c(0) = (t, x)` and `c'(0) = (0, v)`. Writing
 `c = (τ, ξ)` and differentiating `f τ ξ = 0` twice, then applying `φ`, gives
 `τ''(0) = -φ (D²(f t)_x (v, v)) / φ (∂ₜ f)`, so the parameter `τ` folds at `0`
-(`TauCeti.eventually_setOf_eq_of_deriv_eq_zero`), and the zeros of `f s` near `x` are the points
-`ξ(σ)` with `τ(σ) = s`, one on each side of `0`, where `τ'` has opposite signs. Along the curve,
-with `Ψ (ξ, a) = (DF (a, ξ), ℓ ξ)` for the derivative `DF` of `(s, y) ↦ f s y`, the identity
-`DF(c') = 0` and a block determinant computation give
+(`TauCeti.eventually_fold_curve_fst`, from `TauCeti.eventually_setOf_eq_of_deriv_eq_zero`), and
+the zeros of `f s` near `x` are the points `ξ(σ)` with `τ(σ) = s`, one on each side of `0`, where
+`τ'` has opposite signs. These two steps hold more generally for families of maps `E → F` between
+finite-dimensional spaces of the same dimension; for instance, the critical points of a family of
+functions are the zeros of its family of differentials `E → E*`, which is how
+`TauCeti.Analysis.Calculus.Morse.Cerf.Fold` uses them. Along the curve, with
+`Ψ (ξ, a) = (DF (a, ξ), ℓ ξ)` for the derivative `DF` of `(s, y) ↦ f s y`, the identity
+`DF(c') = 0` and the block determinant computation `LinearMap.det_comp_inr_eq_det_prod_mul` give
 
 `det D(f τ)_ξ = det Ψ · τ'`,
 
@@ -66,12 +70,16 @@ and `det Ψ` has a constant sign near `0`. So the Jacobian signs at the two zero
 
 ## Main results
 
-* `TauCeti.exists_curve_apply_eq_zero`: the zeros of the family near a fold point form a `C²`
-  curve through it, with velocity `(0, v)`.
+* `TauCeti.exists_curve_apply_eq_zero`: the zeros of a family of maps `E → F` near a fold point
+  form a `C²` curve through it, with velocity `(0, v)`.
+* `TauCeti.eventually_fold_curve_fst`: the parameter folds back along that curve.
 * `TauCeti.exists_mem_nhds_setOf_apply_eq_zero_eq_pair`: the birth or death of two zeros of
   opposite Jacobian signs at a fold point.
 * `TauCeti.exists_mem_nhds_finsum_sign_det_fderiv_eq_zero`: the signed count of the zeros near a
   fold point vanishes on both sides.
+
+The lemmas `TauCeti.exists_pos_forall_mem_of_mem_nhds` and
+`TauCeti.setOf_eq_image_of_forall_eq_curve` locate the solutions near a point on such a curve.
 
 ## References
 
@@ -90,43 +98,95 @@ open scoped Topology
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E → E} {t : ℝ} {x : E}
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {t : ℝ} {x : E}
 
-/-! ### The derivative of the family at a fold point -/
+/-! ### Zeros along a curve -/
 
-/-- The derivative of `(s, y) ↦ f s y` splits along the two factors: its value at `(τ, ξ)` is
-`τ` times its value at `(1, 0)` plus `D(f s)_y ξ`. -/
+omit [NormedSpace ℝ E] in
+/-- **Small product balls in a neighbourhood.** If `N` is a neighbourhood of `(t, x)` in `ℝ × E`
+and `g : E → ℝ` is continuous at `x`, then for some `r > 0` every `(s, y)` with `|s - t| < r` and
+`y ∈ ball x r` lies in `N` and has `g y - g x ∈ (-δ, δ)`. -/
+theorem exists_pos_forall_mem_of_mem_nhds {N : Set (ℝ × E)} (hN : N ∈ 𝓝 (t, x)) {g : E → ℝ}
+    (hg : ContinuousAt g x) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ r > 0, ∀ s y, dist s t < r → y ∈ ball x r → (s, y) ∈ N ∧ g y - g x ∈ Ioo (-δ) δ := by
+  obtain ⟨r₁, hr₁, hr₁N⟩ := Metric.mem_nhds_iff.1 hN
+  obtain ⟨r₂, hr₂, hr₂g⟩ := Metric.eventually_nhds_iff.1 (Metric.tendsto_nhds.1 hg δ hδ)
+  refine ⟨min r₁ r₂, lt_min hr₁ hr₂, fun s y hs hy ↦ ⟨hr₁N ?_, ?_⟩⟩
+  · rw [mem_ball, Prod.dist_eq, max_lt_iff]
+    exact ⟨hs.trans_le (min_le_left _ _), (mem_ball.1 hy).trans_le (min_le_left _ _)⟩
+  · have := hr₂g ((mem_ball.1 hy).trans_le (min_le_right _ _))
+    rw [Real.dist_eq] at this
+    exact mem_Ioo.2 (abs_lt.1 this)
+
+/-- **The solutions over a parameter value along a curve.** Let `c` be a curve in `ℝ × X` whose
+points over `I` satisfy `Z`, and suppose that every `y ∈ U` with `Z s y` is the point `c (π y)` of
+the curve, with `π y ∈ I`. If the parameter component of `c` takes the value `s` on `I` exactly on
+`S`, and `c` lies over `U` on `S`, then the points `y ∈ U` with `Z s y` are the space components of
+the points `c σ`, `σ ∈ S`. -/
+theorem setOf_eq_image_of_forall_eq_curve {X : Type*} {Z : ℝ → X → Prop} {c : ℝ → ℝ × X}
+    {π : X → ℝ} {I S : Set ℝ} {U : Set X} {s : ℝ} (hcZ : ∀ σ ∈ I, Z (c σ).1 (c σ).2)
+    (hZ : ∀ y ∈ U, Z s y → π y ∈ I ∧ c (π y) = (s, y)) (hS : {σ ∈ I | (c σ).1 = s} = S)
+    (hSU : ∀ σ ∈ S, (c σ).2 ∈ U) :
+    {y ∈ U | Z s y} = (fun σ ↦ (c σ).2) '' S := by
+  ext y
+  refine ⟨fun ⟨hy, hy0⟩ ↦ ?_, ?_⟩
+  · obtain ⟨hσ, hcσ⟩ := hZ y hy hy0
+    exact ⟨π y, hS ▸ ⟨hσ, by simp [hcσ]⟩, by simp [hcσ]⟩
+  · rintro ⟨σ, hσ, rfl⟩
+    obtain ⟨hσI, hσs⟩ := hS.symm ▸ hσ
+    exact ⟨hSU σ hσ, hσs ▸ hcZ σ hσI⟩
+
+section Family
+
+variable {f : ℝ → E → F}
+
+/-! ### The derivative of the family -/
+
+/-- The derivative of `(s, y) ↦ f s y` at `p` sends `(τ, ξ)` to `τ ∂ₜ f + D(f p.1)_{p.2} ξ`. -/
 private theorem fderiv_uncurry_apply {p : ℝ × E} (hf : DifferentiableAt ℝ (uncurry f) p)
     (w : ℝ × E) :
-    fderiv ℝ (uncurry f) p w = w.1 • fderiv ℝ (uncurry f) p (1, 0) + fderiv ℝ (f p.1) p.2 w.2 := by
-  have hslice : fderiv ℝ (f p.1) p.2 = (fderiv ℝ (uncurry f) p).comp
-      (ContinuousLinearMap.inr ℝ ℝ E) := fderiv_slice_right (f := uncurry f) hf
-  rw [hslice, ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply, ← map_smul, ← map_add]
-  congr 1
-  ext <;> simp
+    fderiv ℝ (uncurry f) p w = w.1 • deriv (fun r ↦ f r p.2) p.1 + fderiv ℝ (f p.1) p.2 w.2 := by
+  obtain ⟨s, y⟩ := p
+  rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right hf]
+  simp only [uncurry_apply_pair, fderiv_eq_smul_deriv]
 
 /-- **The derivative of `(s, y) ↦ (f s y, ℓ y)` at a fold point is injective.** If the kernel of
 `D = D(f t)_x` is the line through `v`, `φ` vanishes on the range of `D` but not on `∂ₜ f`, and
 `ℓ v = 1`, then `(τ, ξ) ↦ (τ ∂ₜ f + D ξ, ℓ ξ)` is injective. -/
 private theorem injective_fderiv_prod (hf : DifferentiableAt ℝ (uncurry f) (t, x)) {v : E}
-    (hker : LinearMap.ker (fderiv ℝ (f t) x : E →ₗ[ℝ] E) = ℝ ∙ v) {φ : StrongDual ℝ E}
+    (hker : LinearMap.ker (fderiv ℝ (f t) x : E →ₗ[ℝ] F) = ℝ ∙ v) {φ : StrongDual ℝ F}
     (hφ : ∀ y, φ (fderiv ℝ (f t) x y) = 0) (ha : φ (deriv (fun r ↦ f r x) t) ≠ 0)
     {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1) :
     Injective ((fderiv ℝ (uncurry f) (t, x)).prod (ℓ.comp (ContinuousLinearMap.snd ℝ ℝ E))) := by
-  have hdt : fderiv ℝ (uncurry f) (t, x) (1, 0) = deriv (fun r ↦ f r x) t := by
-    exact (DFunLike.congr_fun (fderiv_slice_left (f := uncurry f) hf) 1).symm
   refine (injective_iff_map_eq_zero _).2 fun ⟨τ, ξ⟩ h ↦ ?_
-  rw [ContinuousLinearMap.prod_apply, Prod.mk_eq_zero, fderiv_uncurry_apply hf, hdt] at h
+  rw [ContinuousLinearMap.prod_apply, Prod.mk_eq_zero, fderiv_uncurry_apply hf] at h
   -- Applying `φ` kills `D ξ`, so `τ = 0`; then `ξ` is a multiple of `v` on which `ℓ` vanishes.
   have hτ : τ = 0 := by
     have := congrArg φ h.1
     rw [map_add, map_smul, hφ, smul_eq_mul, add_zero, map_zero, mul_eq_zero] at this
     exact this.resolve_right ha
   subst hτ
-  have hξ : ξ ∈ LinearMap.ker (fderiv ℝ (f t) x : E →ₗ[ℝ] E) := by simpa using h.1
+  have hξ : ξ ∈ LinearMap.ker (fderiv ℝ (f t) x : E →ₗ[ℝ] F) := by simpa using h.1
   rw [hker, Submodule.mem_span_singleton] at hξ
   obtain ⟨c, rfl⟩ := hξ
   simp_all
+
+/-- **The velocity of a curve of zeros lies in the kernel of the derivative.** Along a `C²` curve
+of zeros through a point where the family is jointly `C²`, near `0` the family is `C²` at the
+points of the curve, the curve has a velocity, and the derivative of `(s, y) ↦ f s y` kills it. -/
+private theorem eventually_fderiv_apply_deriv_eq_zero (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))
+    {c : ℝ → ℝ × E} (hc0 : c 0 = (t, x)) (hcd : ContDiffAt ℝ 2 c 0)
+    (hzero : ∀ᶠ s in 𝓝 0, f (c s).1 (c s).2 = 0) :
+    ∀ᶠ s in 𝓝 0, ContDiffAt ℝ 2 (uncurry f) (c s) ∧ HasDerivAt c (deriv c s) s ∧
+      fderiv ℝ (uncurry f) (c s) (deriv c s) = 0 := by
+  filter_upwards [hzero.eventually_nhds, hcd.eventually (by simp),
+    hcd.continuousAt.tendsto.eventually ((hc0 ▸ hf).eventually (by simp))] with s hs hsd hsf
+  have hcs : HasDerivAt c (deriv c s) s := (hsd.differentiableAt two_ne_zero).hasDerivAt
+  refine ⟨hsf, hcs, ?_⟩
+  rw [← ((hsf.differentiableAt two_ne_zero).hasFDerivAt.comp_hasDerivAt s hcs).deriv]
+  have hev : uncurry f ∘ c =ᶠ[𝓝 s] fun _ ↦ 0 := hs.mono fun _ h ↦ by simpa [uncurry_def] using h
+  exact hev.deriv_eq.trans (deriv_const _ _)
 
 /-! ### The fold of the parameter along a curve of zeros -/
 
@@ -135,28 +195,27 @@ through `(t, x)` with velocity `(0, v)`, where `v` is a kernel vector of `D(f t)
 vanishes on the range of `D(f t)_x` but not on `∂ₜ f`. Then
 `τ''(0) = -φ (D²(f t)_x (v, v)) / φ (∂ₜ f)`. -/
 private theorem hasDerivAt_deriv_fst (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) {v : E}
-    {φ : StrongDual ℝ E} (hφ : ∀ y, φ (fderiv ℝ (f t) x y) = 0)
+    {φ : StrongDual ℝ F} (hφ : ∀ y, φ (fderiv ℝ (f t) x y) = 0)
     (ha : φ (deriv (fun r ↦ f r x) t) ≠ 0) {c : ℝ → ℝ × E} (hc0 : c 0 = (t, x))
     (hcd : ContDiffAt ℝ 2 c 0) (hc' : HasDerivAt c (0, v) 0)
     (hzero : ∀ᶠ s in 𝓝 0, f (c s).1 (c s).2 = 0) :
     HasDerivAt (fun s ↦ (deriv c s).1)
       (-φ (fderiv ℝ (fderiv ℝ (f t)) x v v) / φ (deriv (fun r ↦ f r x) t)) 0 := by
-  set G : ℝ × E → E →L[ℝ] E := fun w ↦ fderiv ℝ (f w.1) w.2
+  set G : ℝ × E → E →L[ℝ] F := fun w ↦ fderiv ℝ (f w.1) w.2
   have hG : ContDiffAt ℝ 1 G (t, x) := hf.fderiv_slice (m := 1) le_rfl
   have hF1 : ContDiffAt ℝ 1 (fderiv ℝ (uncurry f)) (t, x) := hf.fderiv_right (m := 1) le_rfl
-  have hfd : DifferentiableAt ℝ (uncurry f) (t, x) := hf.differentiableAt two_ne_zero
+  have hcurve := eventually_fderiv_apply_deriv_eq_zero hf hc0 hcd hzero
+  -- `∂ₜ f` at a point where the family is differentiable is its derivative applied to `(1, 0)`.
+  have hdt {p : ℝ × E} (hp : DifferentiableAt ℝ (uncurry f) p) :
+      fderiv ℝ (uncurry f) p (1, 0) = deriv (fun r ↦ f r p.2) p.1 := by
+    simp [fderiv_uncurry_apply hp]
   -- Differentiating `f τ ξ = 0` once: `τ' φ (∂ₜ f (c s)) + φ (D(f τ)_ξ ξ') = 0` near `0`.
-  have hfc : ∀ᶠ s in 𝓝 0, ContDiffAt ℝ 2 (uncurry f) (c s) :=
-    hcd.continuousAt.tendsto.eventually ((hc0 ▸ hf).eventually (by simp))
   have hid : ∀ᶠ s in 𝓝 0, (deriv c s).1 * φ (fderiv ℝ (uncurry f) (c s) (1, 0)) +
       φ (G (c s) (deriv c s).2) = 0 := by
-    filter_upwards [hzero.eventually_nhds, hcd.eventually (by simp), hfc] with s hs hsd hsf
-    have hFd : DifferentiableAt ℝ (uncurry f) (c s) := hsf.differentiableAt two_ne_zero
-    have h0 : fderiv ℝ (uncurry f) (c s) (deriv c s) = 0 := by
-      rw [← (hFd.hasFDerivAt.comp_hasDerivAt s (hsd.differentiableAt two_ne_zero).hasDerivAt).deriv]
-      have hev : uncurry f ∘ c =ᶠ[𝓝 s] fun _ ↦ 0 := hs.mono fun _ h ↦ h
-      exact hev.deriv_eq.trans (deriv_const _ _)
-    rw [fderiv_uncurry_apply hFd] at h0
+    filter_upwards [hcurve] with s hs
+    obtain ⟨hsf, -, h0⟩ := hs
+    have hsd := hsf.differentiableAt two_ne_zero
+    rw [fderiv_uncurry_apply hsd, ← hdt hsd] at h0
     simpa [G, mul_comm] using congrArg φ h0
   -- `q s = φ (D(f τ)_ξ ξ')` vanishes at `0` with derivative `φ (D²(f t)_x (v, v))` there.
   have hc'd : HasDerivAt (deriv c) (deriv (deriv c) 0) 0 :=
@@ -181,9 +240,7 @@ private theorem hasDerivAt_deriv_fst (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) 
   -- `d s = φ (∂ₜ f (c s))` tends to `φ (∂ₜ f (t, x))`.
   have hd : Tendsto (fun s ↦ φ (fderiv ℝ (uncurry f) (c s) (1, 0))) (𝓝 0)
       (𝓝 (φ (deriv (fun r ↦ f r x) t))) := by
-    have hdt : fderiv ℝ (uncurry f) (t, x) (1, 0) = deriv (fun r ↦ f r x) t := by
-      exact (DFunLike.congr_fun (fderiv_slice_left (f := uncurry f) hfd) 1).symm
-    rw [← hdt]
+    rw [← hdt (hf.differentiableAt two_ne_zero)]
     have hFc : ContinuousAt (fun s ↦ fderiv ℝ (uncurry f) (c s)) 0 :=
       (hc0 ▸ hF1.continuousAt).comp hcd.continuousAt
     refine (φ.continuous.tendsto _).comp ?_
@@ -196,8 +253,8 @@ zeros through `(t, x)` with velocity `(0, v)`, and let `φ` vanish on the range 
 the parameter `τ` on `(-δ, δ)` avoids `s` if `b (s - t) > 0`, takes the value `t` only at `0`, and
 takes the value `s` exactly twice, once on each side of `0` and with `τ'` of opposite signs there,
 if `b (s - t) < 0`. -/
-private theorem eventually_fold_curve_fst (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) {v : E}
-    {φ : StrongDual ℝ E} (hφ : ∀ y, φ (fderiv ℝ (f t) x y) = 0)
+theorem eventually_fold_curve_fst (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) {v : E}
+    {φ : StrongDual ℝ F} (hφ : ∀ y, φ (fderiv ℝ (f t) x y) = 0)
     (hb : φ (fderiv ℝ (fderiv ℝ (f t)) x v v) * φ (deriv (fun r ↦ f r x) t) ≠ 0)
     {c : ℝ → ℝ × E} (hc0 : c 0 = (t, x)) (hcd : ContDiffAt ℝ 2 c 0)
     (hc' : HasDerivAt c (0, v) 0) (hzero : ∀ᶠ s in 𝓝 0, f (c s).1 (c s).2 = 0) :
@@ -236,35 +293,36 @@ private theorem eventually_fold_curve_fst (hf : ContDiffAt ℝ 2 (uncurry f) (t,
   · rw [hsign]
     exact div_pos (neg_pos.2 h) (by positivity)
 
-variable [FiniteDimensional ℝ E]
-
 /-! ### The curve of zeros through a fold point -/
 
-/-- **The curve of zeros through a fold point.** Let the family `f` be jointly `C²` at `(t, x)`,
-with `f t x = 0`, let the kernel of `D(f t)_x` be the line through `v`, and let `φ` vanish on the
-range of `D(f t)_x` but not on `∂ₜ f (t, x)`. For a functional `ℓ` with `ℓ v = 1` there is a `C²`
-curve `c` through `(t, x)` with velocity `(0, v)`, made of zeros of the family, along which `ℓ`
-of the space component increases at unit rate, and which passes through every zero of the family
-near `(t, x)`. It is the image of the line `{0} × ℝ` under the local inverse of
-`(s, y) ↦ (f s y, ℓ y)`. -/
-theorem exists_curve_apply_eq_zero (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) (h0 : f t x = 0)
-    {v : E} (hker : LinearMap.ker (fderiv ℝ (f t) x : E →ₗ[ℝ] E) = ℝ ∙ v) {φ : StrongDual ℝ E}
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+
+/-- **The curve of zeros through a fold point.** Let `f s : E → F` be a family of maps between
+finite-dimensional spaces of the same dimension, jointly `C²` at `(t, x)`, with `f t x = 0`, let
+the kernel of `D(f t)_x` be the line through `v`, and let `φ` vanish on the range of `D(f t)_x` but
+not on `∂ₜ f (t, x)`. For a functional `ℓ` with `ℓ v = 1` there is a `C²` curve `c` through
+`(t, x)` with velocity `(0, v)`, made of zeros of the family, along which `ℓ` of the space
+component increases at unit rate, and which passes through every zero of the family near `(t, x)`.
+It is the image of the line `{0} × ℝ` under the local inverse of `(s, y) ↦ (f s y, ℓ y)`. -/
+theorem exists_curve_apply_eq_zero (hdim : finrank ℝ F = finrank ℝ E)
+    (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) (h0 : f t x = 0) {v : E}
+    (hker : LinearMap.ker (fderiv ℝ (f t) x : E →ₗ[ℝ] F) = ℝ ∙ v) {φ : StrongDual ℝ F}
     (hφ : ∀ y, φ (fderiv ℝ (f t) x y) = 0) (ha : φ (deriv (fun r ↦ f r x) t) ≠ 0)
     {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1) :
     ∃ c : ℝ → ℝ × E, ∃ N ∈ 𝓝 (t, x), c 0 = (t, x) ∧ ContDiffAt ℝ 2 c 0 ∧
       HasDerivAt c (0, v) 0 ∧ (∀ᶠ s in 𝓝 0, f (c s).1 (c s).2 = 0 ∧ ℓ (c s).2 = ℓ x + s) ∧
       ∀ z ∈ N, f z.1 z.2 = 0 → c (ℓ z.2 - ℓ x) = z := by
   have hfd : DifferentiableAt ℝ (uncurry f) (t, x) := hf.differentiableAt two_ne_zero
-  set Φ : ℝ × E → E × ℝ := fun w ↦ (uncurry f w, ℓ w.2)
+  set Φ : ℝ × E → F × ℝ := fun w ↦ (uncurry f w, ℓ w.2)
   have hΦ : ContDiffAt ℝ 2 Φ (t, x) := hf.prodMk (ℓ.contDiff.contDiffAt.comp _ contDiffAt_snd)
   set D := (fderiv ℝ (uncurry f) (t, x)).prod (ℓ.comp (ContinuousLinearMap.snd ℝ ℝ E))
-  have hdim : finrank ℝ (ℝ × E) = finrank ℝ (E × ℝ) := by simp [add_comm]
-  set e : (ℝ × E) ≃L[ℝ] E × ℝ := (LinearMap.linearEquivOfInjective D.toLinearMap
-    (injective_fderiv_prod hfd hker hφ ha hℓ) hdim).toContinuousLinearEquiv
-  have hΦ' : HasFDerivAt Φ (e : ℝ × E →L[ℝ] E × ℝ) (t, x) :=
+  have hdim' : finrank ℝ (ℝ × E) = finrank ℝ (F × ℝ) := by simp [hdim, add_comm]
+  set e : (ℝ × E) ≃L[ℝ] F × ℝ := (LinearMap.linearEquivOfInjective D.toLinearMap
+    (injective_fderiv_prod hfd hker hφ ha hℓ) hdim').toContinuousLinearEquiv
+  have hΦ' : HasFDerivAt Φ (e : ℝ × E →L[ℝ] F × ℝ) (t, x) :=
     hfd.hasFDerivAt.prodMk (ℓ.hasFDerivAt.comp _ hasFDerivAt_snd)
   have hv : fderiv ℝ (f t) x v = 0 := by
-    have : v ∈ LinearMap.ker (fderiv ℝ (f t) x : E →ₗ[ℝ] E) :=
+    have : v ∈ LinearMap.ker (fderiv ℝ (f t) x : E →ₗ[ℝ] F) :=
       hker ▸ Submodule.mem_span_singleton_self v
     simpa using this
   have hD : D (0, v) = (0, 1) := by
@@ -274,12 +332,12 @@ theorem exists_curve_apply_eq_zero (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) (h
   set P := hΦ.toOpenPartialHomeomorph Φ hΦ' two_ne_zero
   have hΦp : Φ (t, x) = (0, ℓ x) := by simp [Φ, h0]
   -- The curve `c s = Φ⁻¹ (0, ℓ x + s)`.
-  set L : ℝ → E × ℝ := fun s ↦ (0, ℓ x + s)
+  set L : ℝ → F × ℝ := fun s ↦ (0, ℓ x + s)
   have hL : HasDerivAt L (0, 1) 0 :=
-    (hasDerivAt_const (0 : ℝ) (0 : E)).prodMk ((hasDerivAt_id (0 : ℝ)).const_add _)
+    (hasDerivAt_const (0 : ℝ) (0 : F)).prodMk ((hasDerivAt_id (0 : ℝ)).const_add _)
   have hL0 : L 0 = Φ (t, x) := by simp [L, hΦp]
   have hinv : ContDiffAt ℝ 2 P.symm (L 0) := hL0 ▸ hΦ.to_localInverse hΦ' two_ne_zero
-  have hinv' : HasFDerivAt P.symm (e.symm : E × ℝ →L[ℝ] ℝ × E) (L 0) :=
+  have hinv' : HasFDerivAt P.symm (e.symm : F × ℝ →L[ℝ] ℝ × E) (L 0) :=
     hL0 ▸ ((hΦ.hasStrictFDerivAt hΦ' two_ne_zero).to_localInverse).hasFDerivAt
   have htarget : L 0 ∈ P.target := hL0 ▸ hΦ.image_mem_toOpenPartialHomeomorph_target hΦ' _
   refine ⟨P.symm ∘ L, P.source, P.open_source.mem_nhds
@@ -290,54 +348,27 @@ theorem exists_curve_apply_eq_zero (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) (h
   · simpa [hev] using hinv'.comp_hasDerivAt (0 : ℝ) hL
   · filter_upwards [hL.continuousAt.preimage_mem_nhds (P.open_target.mem_nhds htarget)] with s hs
     have h := P.right_inv hs
-    exact ⟨congrArg Prod.fst h, congrArg Prod.snd h⟩
-  · have hFz : uncurry f z = 0 := hz₀
-    have hΦz : L (ℓ z.2 - ℓ x) = Φ z := by simp [L, Φ, hFz]
+    rw [hΦ.toOpenPartialHomeomorph_coe] at h
+    simpa [Φ, L, uncurry_def, Prod.ext_iff] using h
+  · have hΦz : L (ℓ z.2 - ℓ x) = Φ z := by simp [L, Φ, uncurry_def, hz₀]
     rw [comp_apply, hΦz]
     exact P.left_inv hz
 
+end Family
+
 /-! ### The Jacobian sign along a curve of zeros -/
 
-/-- **The Jacobian along a curve of zeros.** Let `A : ℝ × E → E` be linear, `w` a vector in its
-kernel and `ℓ` a functional with `ℓ w.2 = 1`. Then the restriction of `A` to `E` has determinant
-`det Ψ · w.1`, where `Ψ (ξ, a) = (A (a, ξ), ℓ ξ)`. With `A` the derivative of `(s, y) ↦ f s y` at a
-zero and `w` the velocity of a curve of zeros, this compares the Jacobian of `f s` with the
-parameter velocity of the curve. -/
-private theorem det_comp_inr_eq (A : ℝ × E →ₗ[ℝ] E) (ℓ : E →ₗ[ℝ] ℝ)
-    {w : ℝ × E} (hw : A w = 0) (hℓ : ℓ w.2 = 1) :
-    LinearMap.det (A ∘ₗ LinearMap.inr ℝ ℝ E) =
-      LinearMap.det ((A ∘ₗ (LinearEquiv.prodComm ℝ E ℝ).toLinearMap).prod
-        (ℓ ∘ₗ LinearMap.fst ℝ E ℝ)) * w.1 := by
-  set Ψ := (A ∘ₗ (LinearEquiv.prodComm ℝ E ℝ).toLinearMap).prod (ℓ ∘ₗ LinearMap.fst ℝ E ℝ)
-  -- `K (ξ, a) = (ξ + a w.2, a w.1)`, so that `Ψ ∘ K (ξ, a) = (A (0, ξ), ℓ ξ + a)`.
-  set K : Module.End ℝ (E × ℝ) := (LinearMap.fst ℝ E ℝ + (LinearMap.snd ℝ E ℝ).smulRight w.2).prod
-    ((LinearMap.snd ℝ E ℝ).smulRight w.1)
-  have hAw (ξ : E) (a : ℝ) : A (a • w.1, ξ + a • w.2) = A (0, ξ) := by
-    rw [show ((a • w.1, ξ + a • w.2) : ℝ × E) = (0, ξ) + a • w by ext <;> simp [add_comm],
-      map_add, map_smul, hw, smul_zero, add_zero]
-  have hA0 (a : ℝ) : A (a • w.1, a • w.2) = 0 := by
-    simpa only [zero_add, Prod.mk_zero_zero, map_zero] using hAw 0 a
-  have hΨK : LinearMap.det (Ψ ∘ₗ K) = LinearMap.det (A ∘ₗ LinearMap.inr ℝ ℝ E) := by
-    rw [LinearMap.det_eq_det_mul_det_of_fst_apply_inr fun a ↦ by simpa [Ψ, K] using hA0 a]
-    have h₁ : LinearMap.fst ℝ E ℝ ∘ₗ (Ψ ∘ₗ K) ∘ₗ LinearMap.inl ℝ E ℝ = A ∘ₗ LinearMap.inr ℝ ℝ E :=
-      LinearMap.ext fun ξ ↦ by simp [Ψ, K]
-    have h₂ : LinearMap.snd ℝ E ℝ ∘ₗ (Ψ ∘ₗ K) ∘ₗ LinearMap.inr ℝ E ℝ = LinearMap.id :=
-      LinearMap.ext fun a ↦ by simp [Ψ, K, hℓ]
-    rw [h₁, h₂, LinearMap.det_id, mul_one]
-  -- Conjugated by the swap of factors, `K` becomes lower triangular with diagonal `(w.1, 1)`.
-  have hK : LinearMap.det K = w.1 := by
-    set σ := LinearEquiv.prodComm ℝ E ℝ
-    rw [← LinearMap.det_conj K σ,
-      LinearMap.det_eq_det_mul_det_of_fst_apply_inr fun ξ ↦ by simp [σ, K]]
-    have h₁ : LinearMap.fst ℝ ℝ E ∘ₗ (σ.toLinearMap ∘ₗ K ∘ₗ σ.symm.toLinearMap) ∘ₗ
-        LinearMap.inl ℝ ℝ E = w.1 • LinearMap.id :=
-      LinearMap.ext fun a ↦ by simp [σ, K, mul_comm]
-    have h₂ : LinearMap.snd ℝ ℝ E ∘ₗ (σ.toLinearMap ∘ₗ K ∘ₗ σ.symm.toLinearMap) ∘ₗ
-        LinearMap.inr ℝ ℝ E = LinearMap.id :=
-      LinearMap.ext fun ξ ↦ by simp [σ, K]
-    rw [h₁, h₂, LinearMap.det_id, mul_one, LinearMap.det_smul, LinearMap.det_id, mul_one,
-      Module.finrank_self, pow_one]
-  rw [← hΨK, LinearMap.det_comp, hK]
+section Square
+
+variable {f : ℝ → E → E}
+
+/-- The kernel vector `v` of a fold point is nonzero: the fold coefficient vanishes at `v = 0`. -/
+private theorem ne_zero_of_fold_coeff_ne_zero {v : E} {φ : StrongDual ℝ E} {a : ℝ}
+    (hb : φ (fderiv ℝ (fderiv ℝ (f t)) x v v) * a ≠ 0) : v ≠ 0 := by
+  rintro rfl
+  simp at hb
+
+variable [FiniteDimensional ℝ E]
 
 /-- **The Jacobian sign along the curve of zeros.** Let `c = (τ, ξ)` be a `C²` curve of zeros
 through `(t, x)` along which `ℓ ξ` increases at unit rate. If the derivative of
@@ -356,6 +387,11 @@ private theorem exists_eventually_sign_det_fderiv_eq (hf : ContDiffAt ℝ 2 (unc
     fun A ↦ (A.comp P).prod (ℓ.comp (ContinuousLinearMap.fst ℝ E ℝ))
   have hΨ : Continuous Ψ := (ContinuousLinearMap.prodL ℝ).continuous.comp
     ((continuous_id.clm_comp continuous_const).prodMk continuous_const)
+  -- As a linear map, `Ψ A` is `(ξ, a) ↦ (A (a, ξ), ℓ ξ)`.
+  have hΨdet (A : ℝ × E →L[ℝ] E) : (Ψ A).det = LinearMap.det
+      (((A : ℝ × E →ₗ[ℝ] E) ∘ₗ (LinearEquiv.prodComm ℝ E ℝ).toLinearMap).prod
+        ((ℓ : E →ₗ[ℝ] ℝ) ∘ₗ LinearMap.fst ℝ E ℝ)) :=
+    congrArg LinearMap.det (LinearMap.ext fun z ↦ by simp [Ψ, P])
   set h : ℝ → ℝ := fun σ ↦ (Ψ (fderiv ℝ (uncurry f) (c σ))).det
   have hF1 : ContDiffAt ℝ 1 (fderiv ℝ (uncurry f)) (c 0) :=
     hc0 ▸ hf.fderiv_right (m := 1) le_rfl
@@ -374,18 +410,13 @@ private theorem exists_eventually_sign_det_fderiv_eq (hf : ContDiffAt ℝ 2 (unc
       rw [sign_neg hσ, sign_neg hneg]
     · filter_upwards [hh.eventually (lt_mem_nhds hpos)] with σ hσ
       rw [sign_pos hσ, sign_pos hpos]
-  have hfc : ∀ᶠ s in 𝓝 0, ContDiffAt ℝ 2 (uncurry f) (c s) :=
-    hcd.continuousAt.tendsto.eventually ((hc0 ▸ hf).eventually (by simp))
   refine ⟨SignType.sign (h 0), sign_ne_zero.2 hh0, ?_⟩
-  filter_upwards [hsgn, hcurve.eventually_nhds, hcd.eventually (by simp), hfc]
-    with σ hσsgn hσc hσd hσf
-  have hFd : DifferentiableAt ℝ (uncurry f) (c σ) := hσf.differentiableAt two_ne_zero
-  have hcσ : HasDerivAt c (deriv c σ) σ := (hσd.differentiableAt two_ne_zero).hasDerivAt
-  -- The velocity of the curve lies in the kernel of the derivative, and `ℓ ξ' = 1`.
-  have hw : fderiv ℝ (uncurry f) (c σ) (deriv c σ) = 0 := by
-    rw [← (hFd.hasFDerivAt.comp_hasDerivAt σ hcσ).deriv]
-    have hev : uncurry f ∘ c =ᶠ[𝓝 σ] fun _ ↦ 0 := hσc.mono fun _ h ↦ h.1
-    exact hev.deriv_eq.trans (deriv_const _ _)
+  filter_upwards [hsgn, hcurve.eventually_nhds,
+    eventually_fderiv_apply_deriv_eq_zero hf hc0 hcd (hcurve.mono fun _ h ↦ h.1)]
+    with σ hσsgn hσc hσ
+  obtain ⟨hσf, hcσ, hw⟩ := hσ
+  -- The velocity of the curve lies in the kernel of the derivative, and `ℓ ξ' = 1` since `ℓ ξ`
+  -- increases at unit rate.
   have hℓw : ℓ (deriv c σ).2 = 1 := by
     have h₁ : HasDerivAt (fun s ↦ ℓ (c s).2) (ℓ (deriv c σ).2) σ :=
       (ℓ.comp (ContinuousLinearMap.snd ℝ ℝ E)).hasFDerivAt.comp_hasDerivAt σ hcσ
@@ -394,65 +425,14 @@ private theorem exists_eventually_sign_det_fderiv_eq (hf : ContDiffAt ℝ 2 (unc
     exact h₁.unique h₂
   have hslice : (fderiv ℝ (f (c σ).1) (c σ).2 : E →ₗ[ℝ] E) =
       (fderiv ℝ (uncurry f) (c σ) : ℝ × E →ₗ[ℝ] E) ∘ₗ LinearMap.inr ℝ ℝ E := by
-    exact congrArg (fun L : E →L[ℝ] E ↦ (L : E →ₗ[ℝ] E)) (fderiv_slice_right (f := uncurry f) hFd)
+    exact congrArg (fun L : E →L[ℝ] E ↦ (L : E →ₗ[ℝ] E))
+      (fderiv_slice_right (f := uncurry f) (hσf.differentiableAt two_ne_zero))
   have hτ : deriv (fun σ ↦ (c σ).1) σ = (deriv c σ).1 :=
     ((ContinuousLinearMap.fst ℝ ℝ E).hasFDerivAt.comp_hasDerivAt σ hcσ).deriv
-  rw [hslice, det_comp_inr_eq _ ℓ.toLinearMap hw hℓw, hτ, sign_mul, ← hσsgn]
-  rfl
+  rw [hslice, LinearMap.det_comp_inr_eq_det_prod_mul _ ℓ.toLinearMap hw hℓw, ← hΨdet, hτ,
+    sign_mul, hσsgn]
 
 /-! ### Births and deaths of zeros -/
-
-omit [FiniteDimensional ℝ E] in
-/-- **Zeros near `(t, x)` lie on the curve.** If every zero `z` of the family in a neighbourhood
-`N` of `(t, x)` is the point `c (ℓ z.2 - ℓ x)` of a curve `c`, then for some `r > 0` every zero
-`y` of `f s` with `|s - t| < r` and `y ∈ ball x r` is `c σ` for `σ = ℓ y - ℓ x ∈ (-δ, δ)`. -/
-private theorem exists_pos_forall_mem_ball {c : ℝ → ℝ × E} {ℓ : StrongDual ℝ E}
-    {N : Set (ℝ × E)} (hN : N ∈ 𝓝 (t, x)) (hcN : ∀ z ∈ N, f z.1 z.2 = 0 → c (ℓ z.2 - ℓ x) = z)
-    {δ : ℝ} (hδ : 0 < δ) :
-    ∃ r > 0, ∀ s y, dist s t < r → y ∈ ball x r → f s y = 0 →
-      ℓ y - ℓ x ∈ Ioo (-δ) δ ∧ c (ℓ y - ℓ x) = (s, y) := by
-  obtain ⟨r₁, hr₁, hr₁N⟩ := Metric.mem_nhds_iff.1 hN
-  obtain ⟨r₂, hr₂, hr₂ℓ⟩ := Metric.eventually_nhds_iff.1
-    (Metric.tendsto_nhds.1 (ℓ.continuous.tendsto x) δ hδ)
-  refine ⟨min r₁ r₂, lt_min hr₁ hr₂, fun s y hs hy hy0 ↦ ⟨?_, hcN (s, y) (hr₁N ?_) hy0⟩⟩
-  · have := hr₂ℓ ((mem_ball.1 hy).trans_le (min_le_right _ _))
-    rw [Real.dist_eq] at this
-    exact mem_Ioo.2 (abs_lt.1 this)
-  · rw [mem_ball, Prod.dist_eq, max_lt_iff]
-    exact ⟨hs.trans_le (min_le_left _ _), (mem_ball.1 hy).trans_le (min_le_left _ _)⟩
-
-omit [FiniteDimensional ℝ E] in
-/-- **The zeros over a set of parameters.** Let `c` be a curve of zeros on `(-δ, δ)` such that every
-zero `y ∈ U` of `f s` is `c σ` for `σ = ℓ y - ℓ x ∈ (-δ, δ)`. If the parameter component of `c`
-takes the value `s` on `(-δ, δ)` exactly on `S`, and `c` lies over `U` on `S`, then the zeros of
-`f s` in `U` are the space components of the points `c σ`, `σ ∈ S`. -/
-private theorem setOf_apply_eq_zero_eq_image {c : ℝ → ℝ × E} {ℓ : StrongDual ℝ E} {U : Set E}
-    {S : Set ℝ} {s δ : ℝ} (hcz : ∀ σ ∈ Ioo (-δ) δ, f (c σ).1 (c σ).2 = 0)
-    (hzero : ∀ y ∈ U, f s y = 0 → ℓ y - ℓ x ∈ Ioo (-δ) δ ∧ c (ℓ y - ℓ x) = (s, y))
-    (hset : {σ ∈ Ioo (-δ) δ | (c σ).1 = s} = S) (hSU : ∀ σ ∈ S, (c σ).2 ∈ U) :
-    {y ∈ U | f s y = 0} = (fun σ ↦ (c σ).2) '' S := by
-  ext y
-  refine ⟨fun ⟨hy, hy0⟩ ↦ ?_, ?_⟩
-  · obtain ⟨hσ, hcσ⟩ := hzero y hy hy0
-    exact ⟨ℓ y - ℓ x, hset ▸ ⟨hσ, by simp [hcσ]⟩, by simp [hcσ]⟩
-  · rintro ⟨σ, hσ, rfl⟩
-    obtain ⟨hσI, hσs⟩ := hset.symm ▸ hσ
-    exact ⟨hSU σ hσ, hσs ▸ hcz σ hσI⟩
-
-/-- If `g` takes the value `s` on `(-δ₀, δ₀)` exactly at `x₁ < 0 < x₂`, and on the smaller
-interval `(-δ₁, δ₁)` exactly at `σ₁ < 0 < σ₂`, then `σ₁ = x₁` and `σ₂ = x₂`. -/
-private theorem eq_and_eq_of_setOf_eq_pair {g : ℝ → ℝ} {s δ₀ δ₁ x₁ x₂ σ₁ σ₂ : ℝ} (hδ : δ₁ ≤ δ₀)
-    (hx₁ : x₁ < 0) (hx₂ : 0 < x₂) (h₀ : {σ ∈ Ioo (-δ₀) δ₀ | g σ = s} = {x₁, x₂})
-    (hσ₁ : σ₁ < 0) (hσ₂ : 0 < σ₂) (h₁ : {σ ∈ Ioo (-δ₁) δ₁ | g σ = s} = {σ₁, σ₂}) :
-    σ₁ = x₁ ∧ σ₂ = x₂ := by
-  have hsub : ∀ σ ∈ ({σ₁, σ₂} : Set ℝ), σ ∈ ({x₁, x₂} : Set ℝ) := fun σ hσ ↦ by
-    rw [← h₁] at hσ
-    rw [← h₀]
-    exact ⟨⟨by linarith [hσ.1.1], by linarith [hσ.1.2]⟩, hσ.2⟩
-  refine ⟨(hsub σ₁ (by simp)).resolve_right fun h ↦ ?_,
-    mem_singleton_iff.1 <| (hsub σ₂ (by simp)).resolve_left fun h ↦ ?_⟩
-  · linarith [mem_singleton_iff.1 h]
-  · linarith
 
 /-- Two reals whose signs are a common nonzero sign `ε` times the signs of two reals of opposite
 signs have opposite signs. -/
@@ -483,11 +463,9 @@ theorem exists_mem_nhds_setOf_apply_eq_zero_eq_pair (hf : ContDiffAt ℝ 2 (uncu
           LinearMap.det (fderiv ℝ (f s) y₁ : E →ₗ[ℝ] E) *
             LinearMap.det (fderiv ℝ (f s) y₂ : E →ₗ[ℝ] E) < 0) := by
   have ha : φ (deriv (fun r ↦ f r x) t) ≠ 0 := right_ne_zero_of_mul hb
-  have hv0 : v ≠ 0 := by
-    rintro rfl
-    simp at hb
-  obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := ℝ) hv0
-  obtain ⟨c, N, hN, hc0, hcd, hc', hcurve, hcN⟩ := exists_curve_apply_eq_zero hf h0 hker hφ ha hℓ
+  obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := ℝ) (ne_zero_of_fold_coeff_ne_zero hb)
+  obtain ⟨c, N, hN, hc0, hcd, hc', hcurve, hcN⟩ :=
+    exists_curve_apply_eq_zero rfl hf h0 hker hφ ha hℓ
   have hfold := eventually_fold_curve_fst hf hφ hb hc0 hcd hc' (hcurve.mono fun _ h ↦ h.1)
   obtain ⟨ε, hε, hsign⟩ := exists_eventually_sign_det_fderiv_eq hf
     (injective_fderiv_prod (hf.differentiableAt two_ne_zero) hker hφ ha hℓ) hc0 hcd hcurve
@@ -497,7 +475,10 @@ theorem exists_mem_nhds_setOf_apply_eq_zero_eq_pair (hf : ContDiffAt ℝ 2 (uncu
   obtain ⟨δ₀, hfold₀, hδ₀⟩ := (hfold.and (Ioo_mem_nhdsGT hρ)).exists
   have hρI : ∀ σ ∈ Ioo (-δ₀) δ₀, dist σ 0 < ρ := fun σ hσ ↦
     (Real.dist_0_eq_abs σ).trans_lt ((abs_lt.2 hσ).trans hδ₀.2)
-  obtain ⟨r, hr, hzero⟩ := exists_pos_forall_mem_ball hN hcN hδ₀.1
+  obtain ⟨r, hr, hrN⟩ := exists_pos_forall_mem_of_mem_nhds hN ℓ.continuous.continuousAt hδ₀.1
+  have hzero (s : ℝ) (hs : dist s t < r) (y : E) (hy : y ∈ ball x r) (hy0 : f s y = 0) :
+      ℓ y - ℓ x ∈ Ioo (-δ₀) δ₀ ∧ c (ℓ y - ℓ x) = (s, y) :=
+    ⟨(hrN s y hs hy).2, hcN (s, y) (hrN s y hs hy).1 hy0⟩
   have hξ : Tendsto (fun σ ↦ (c σ).2) (𝓝 0) (𝓝 x) := by
     simpa [hc0] using hcd.continuousAt.snd.tendsto
   obtain ⟨ε₁, hε₁, hε₁U⟩ := Metric.eventually_nhds_iff.1 (hξ.eventually (ball_mem_nhds x hr))
@@ -508,14 +489,14 @@ theorem exists_mem_nhds_setOf_apply_eq_zero_eq_pair (hf : ContDiffAt ℝ 2 (uncu
       ((abs_lt.2 hσ).trans (hδ₁.2.trans_le (min_le_right _ _))))
   refine ⟨ball x r, ball_mem_nhds x hr, ?_, ?_⟩
   · -- At `t` the only zero in the ball is `x`, the point of the curve at `σ = 0`.
-    rw [setOf_apply_eq_zero_eq_image hcz (fun y hy hy0 ↦ hzero t y (by simpa using hr) hy hy0)
-      (hfold₀.self_of_nhds.2.1 rfl) (fun σ hσ ↦ by
+    rw [setOf_eq_image_of_forall_eq_curve (Z := fun s y ↦ f s y = 0) hcz
+      (hzero t (by simpa using hr)) (hfold₀.self_of_nhds.2.1 rfl) (fun σ hσ ↦ by
         rw [mem_singleton_iff.1 hσ, hc0]
         exact mem_ball_self hr), image_singleton,
       hc0]
   filter_upwards [hfold₀, hfold₁, ball_mem_nhds t hr] with s h₀ h₁ hst
   refine ⟨fun hpos y hy hy0 ↦ ?_, fun hneg ↦ ?_⟩
-  · obtain ⟨hσ, hcσ⟩ := hzero s y hst hy hy0
+  · obtain ⟨hσ, hcσ⟩ := hzero s hst y hy hy0
     exact h₀.1 hpos _ hσ (by simp [hcσ])
   -- The two parameters with value `s` are the same on `(-δ₁, δ₁)` and on `(-δ₀, δ₀)`.
   obtain ⟨σ₁, hσ₁, σ₂, hσ₂, hset₁, hd⟩ := h₁.2.2 hneg
@@ -531,7 +512,8 @@ theorem exists_mem_nhds_setOf_apply_eq_zero_eq_pair (hf : ContDiffAt ℝ 2 (uncu
   -- The Jacobian signs are `ε` times the signs of `τ'`, which are opposite.
   refine ⟨(c σ₁).2, (c σ₂).2, ?_, mul_neg_of_sign_eq_mul_sign hε (hval σ₁ (by simp)).2
     (hval σ₂ (by simp)).2 hd⟩
-  rw [setOf_apply_eq_zero_eq_image hcz (fun y hy hy0 ↦ hzero s y hst hy hy0) hset₀ ?_, image_pair]
+  rw [setOf_eq_image_of_forall_eq_curve (Z := fun s y ↦ f s y = 0) hcz (hzero s hst) hset₀ ?_,
+    image_pair]
   rintro σ (rfl | rfl)
   · exact hU _ ⟨hσ₁.1, hσ₁.2.trans hδ₁.1⟩
   · exact hU _ ⟨by linarith [hσ₂.1, hδ₁.1], hσ₂.2⟩
@@ -567,15 +549,14 @@ theorem exists_mem_nhds_finsum_sign_det_fderiv_eq_zero (hf : ContDiffAt ℝ 2 (u
       rcases mul_eq_zero.1 heq with h | h
       · exact absurd h hb
       · linarith
-    have hv0 : v ≠ 0 := by
-      rintro rfl
-      simp at hb
     have hdet : LinearMap.det (fderiv ℝ (f s) x : E →ₗ[ℝ] E) = 0 := by
       rw [LinearMap.det_eq_zero_iff_ker_ne_bot, hker]
-      simpa using hv0
+      simpa using ne_zero_of_fold_coeff_ne_zero hb
     rw [hS, h₀, finsum_mem_singleton, hdet, sign_zero, SignType.coe_zero]
   · have hempty : {y ∈ U | f s y = 0} = ∅ :=
       Set.eq_empty_of_forall_notMem fun y hy ↦ hpos hgt y hy.1 hy.2
     rw [hS, hempty, finsum_mem_empty]
+
+end Square
 
 end TauCeti

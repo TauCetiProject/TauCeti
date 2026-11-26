@@ -80,7 +80,8 @@ intermediate value theorem, and the dependence on `t` enters only through the si
 
 * `TauCeti.eventually_fold`: the zeros near a fold point and their signs.
 * `TauCeti.eventually_setOf_eq_of_deriv_eq_zero`: the solutions of `g σ = s` near a nondegenerate
-  critical point of `g`, and the signs of `g'` at them.
+  critical point of `g`, and the signs of `g'` at them; `TauCeti.eq_and_eq_of_setOf_eq_pair`
+  identifies the two solutions found on nested intervals.
 * `TauCeti.eventually_pitchfork`: the zeros near a pitchfork point of an odd family and their
   signs.
 
@@ -386,6 +387,22 @@ theorem eventually_setOf_eq_of_deriv_eq_zero {g : ℝ → ℝ} (hg : ContDiffAt 
     refine ⟨σ₁, hσ₁, σ₂, hσ₂, hset ▸ hs, ?_⟩
     rw [hdF] at h₁ h₂'
     nlinarith [mul_neg_of_neg_of_pos h₁ h₂']
+
+/-- **The two solutions on nested intervals agree.** If `g` takes the value `s` on `(-δ₀, δ₀)`
+exactly at `x₁ < 0 < x₂`, and on the smaller interval `(-δ₁, δ₁)` exactly at `σ₁ < 0 < σ₂`, then
+`σ₁ = x₁` and `σ₂ = x₂`. -/
+theorem eq_and_eq_of_setOf_eq_pair {g : ℝ → ℝ} {s δ₀ δ₁ x₁ x₂ σ₁ σ₂ : ℝ} (hδ : δ₁ ≤ δ₀)
+    (hx₁ : x₁ < 0) (hx₂ : 0 < x₂) (h₀ : {σ ∈ Ioo (-δ₀) δ₀ | g σ = s} = {x₁, x₂})
+    (hσ₁ : σ₁ < 0) (hσ₂ : 0 < σ₂) (h₁ : {σ ∈ Ioo (-δ₁) δ₁ | g σ = s} = {σ₁, σ₂}) :
+    σ₁ = x₁ ∧ σ₂ = x₂ := by
+  have hsub : ∀ σ ∈ ({σ₁, σ₂} : Set ℝ), σ ∈ ({x₁, x₂} : Set ℝ) := fun σ hσ ↦ by
+    rw [← h₁] at hσ
+    rw [← h₀]
+    exact ⟨⟨by linarith [hσ.1.1], by linarith [hσ.1.2]⟩, hσ.2⟩
+  refine ⟨(hsub σ₁ (by simp)).resolve_right fun h ↦ ?_,
+    mem_singleton_iff.1 <| (hsub σ₂ (by simp)).resolve_left fun h ↦ ?_⟩
+  · linarith [mem_singleton_iff.1 h]
+  · linarith
 
 /-! ### The equivariant pitchfork -/
 
