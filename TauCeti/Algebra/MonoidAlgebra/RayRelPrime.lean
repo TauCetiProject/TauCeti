@@ -9,17 +9,17 @@ public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.RingTheory.Coprime.Basic
 public import TauCeti.Algebra.Group.UniqueProds.TorsionFree
-public import TauCeti.Algebra.MonoidAlgebra.Degree
+public import TauCeti.Algebra.MonoidAlgebra.Grading
 public import TauCeti.Algebra.MonoidAlgebra.Units
 import Mathlib.Algebra.Order.Field.Rat
 import Mathlib.Tactic.Abel
-import TauCeti.GroupTheory.Divisible
+import TauCeti.GroupTheory.Divisible.Basic
 
 /-!
 # Relative primality along independent rays in torsion-free group algebras
 
 Using the weighted degree width API (`TauCeti.GradedAlgebra.degWidth` on
-`AddMonoidAlgebra.gradeBy R w` from `TauCeti.Algebra.MonoidAlgebra.Degree`), this file applies
+`AddMonoidAlgebra.gradeBy R w` from `TauCeti.Algebra.MonoidAlgebra.Grading`), this file applies
 rational functionals `w : L →+ ℚ` (`TauCeti.exists_addMonoidHom_apply_eq_zero_and_apply_eq`,
 constructed via Baer's criterion) to divisibility in the group algebra `R[L]` of a torsion-free
 commutative group `L` over `[CommSemiring R] [NoZeroDivisors R]`: any divisor of a nonzero element
@@ -57,7 +57,7 @@ theorem exists_zsmul_sub_eq_zsmul_of_dvd_of_support_subset_zsmul {a : L} {h P : 
     ∃ (n k : ℤ), n ≠ 0 ∧ n • (x - y) = k • a := by
   by_contra! H
   obtain ⟨w, hwa, hwxy⟩ := TauCeti.exists_addMonoidHom_apply_eq_zero_and_apply_eq H (1 : ℚ)
-  have hPmem : P ∈ gradeBy R w 0 := fun m hm ↦ by
+  have hPmem : P ∈ gradeBy R w 0 := (mem_gradeBy_iff R w 0 P).mpr fun m hm ↦ by
     obtain ⟨k, rfl⟩ := hP hm
     simp [hwa]
   have hwidthP : degWidth (gradeBy R w) P = 0 := degWidth_of_mem (gradeBy R w) hPmem

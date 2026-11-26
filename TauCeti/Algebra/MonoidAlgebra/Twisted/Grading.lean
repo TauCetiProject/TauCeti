@@ -33,8 +33,10 @@ identifies the algebra with `AddMonoidAlgebra k L`.
   projections.
 * `TauCeti.TwistedMonoidAlgebra.gradeByHom`, `grade`, `gradeByAddHom`, `degWidth_of_mul`,
   `degWidth_mul_of`: additive weight `GradedAlgebra` structures and basis-unit width invariance.
-* `TauCeti.TwistedMonoidAlgebra.map_gradeBy_addMonoidAlgebraEquiv`: compatibility of the
-  trivial-twist fiber grading with `AddMonoidAlgebra.gradeBy` under `addMonoidAlgebraEquiv`.
+* `TauCeti.TwistedMonoidAlgebra.map_gradeBy_addMonoidAlgebraEquiv`,
+  `TauCeti.TwistedMonoidAlgebra.map_gradeByAddHom_addMonoidAlgebraEquiv`: compatibility of the
+  trivial-twist fiber and additive-weight gradings with `AddMonoidAlgebra.gradeBy` under
+  `addMonoidAlgebraEquiv`.
 -/
 
 public section
@@ -93,11 +95,7 @@ noncomputable instance instDecompositionGradeBy {ι : Type*} [DecidableEq ι] (w
 /-- The basis of `gradeBy k G α w i` formed by the elements `of g` with `w g = i`. -/
 noncomputable def basisGradeBy {ι : Type*} (w : G → ι) (i : ι) :
     Basis {g : G // w g = i} k (gradeBy k G α w i) :=
-  (Basis.span (R := k) (v := (of : G → twistedMonoidAlgebra k G α) ∘ Subtype.val) <| by
-    simpa only [Function.comp_def, ← basis_apply k G α] using
-      (basis k G α).linearIndependent.comp Subtype.val Subtype.val_injective).map
-    (LinearEquiv.ofEq _ (gradeBy k G α w i) <| by
-      rw [gradeBy, Set.range_comp, Subtype.range_coe_subtype])
+  ((basis k G α).spanImageFiber w i).map (LinearEquiv.ofEq _ _ (gradeBy_eq_span_basis w i).symm)
 
 @[simp]
 theorem coe_basisGradeBy {ι : Type*} (w : G → ι) (i : ι) (g : {g : G // w g = i}) :
@@ -116,6 +114,7 @@ theorem finrank_gradeBy [StrongRankCondition k] {ι : Type*} (w : G → ι) (i :
 variable {k G α}
 
 /-- Homogeneous projection onto grade `i` restricts the basis coordinates to the fiber `w g = i`. -/
+@[simp]
 theorem repr_decompose_gradeBy {ι : Type*} [DecidableEq ι] (w : G → ι)
     (x : twistedMonoidAlgebra k G α) (i : ι) (g : G) :
     (basis k G α).repr (decompose (gradeBy k G α w) x i : twistedMonoidAlgebra k G α) g =
@@ -168,16 +167,19 @@ theorem gradeByHom_def {ι : Type*} [AddMonoid ι] (w : Additive G →+ ι) (i :
 theorem mem_gradeByHom_iff {ι : Type*} [AddMonoid ι] (w : Additive G →+ ι) (i : ι)
     (x : twistedMonoidAlgebra k G α) :
     x ∈ gradeByHom k G α w i ↔
-      ∀ g ∈ ((basis k G α).repr x).support, w (Additive.ofMul g) = i :=
-  mem_gradeBy_iff _ i x
+      ∀ g ∈ ((basis k G α).repr x).support, w (Additive.ofMul g) = i := by
+  rw [gradeByHom_def]
+  exact mem_gradeBy_iff _ i x
 
 theorem of_mem_gradeByHom {ι : Type*} [AddMonoid ι] (w : Additive G →+ ι) (g : G) :
-    (of g : twistedMonoidAlgebra k G α) ∈ gradeByHom k G α w (w (Additive.ofMul g)) :=
-  of_mem_gradeBy _ g
+    (of g : twistedMonoidAlgebra k G α) ∈ gradeByHom k G α w (w (Additive.ofMul g)) := by
+  rw [gradeByHom_def]
+  exact of_mem_gradeBy _ g
 
 theorem smul_of_mem_gradeByHom {ι : Type*} [AddMonoid ι] (w : Additive G →+ ι) (c : k) (g : G) :
-    c • (of g : twistedMonoidAlgebra k G α) ∈ gradeByHom k G α w (w (Additive.ofMul g)) :=
-  smul_of_mem_gradeBy _ c g
+    c • (of g : twistedMonoidAlgebra k G α) ∈ gradeByHom k G α w (w (Additive.ofMul g)) := by
+  rw [gradeByHom_def]
+  exact smul_of_mem_gradeBy _ c g
 
 instance instGradedMonoidGradeByHom {ι : Type*} [AddMonoid ι] (w : Additive G →+ ι) :
     SetLike.GradedMonoid (gradeByHom k G α w) where
@@ -267,6 +269,12 @@ noncomputable abbrev gradeByAddHom {ι : Type*} [AddMonoid ι]
     ι → Submodule k (twistedMonoidAlgebra k (Multiplicative L) α) :=
   gradeByHom k (Multiplicative L) α (w.comp (AddEquiv.additiveMultiplicative L).toAddMonoidHom)
 
+theorem gradeByAddHom_eq {ι : Type*} [AddMonoid ι]
+    (α : Multiplicative L → Multiplicative L → kˣ) [IsFactorSet α] (w : L →+ ι) (i : ι) :
+    gradeByAddHom k L α w i = gradeBy k (Multiplicative L) α (w ∘ Multiplicative.toAdd) i := by
+  ext x
+  simp [gradeByAddHom, mem_gradeByHom_iff, mem_gradeBy_iff]
+
 /-- Under `addMonoidAlgebraEquiv`, the fiber grading of the trivial-twist algebra matches
 `AddMonoidAlgebra.gradeBy`. -/
 @[simp]
@@ -289,6 +297,15 @@ theorem map_gradeBy_addMonoidAlgebraEquiv {ι : Type*} (w : L → ι) (i : ι) :
     exact Submodule.smul_mem _ _
       (Submodule.subset_span ⟨_, ⟨Multiplicative.ofAdd m, hwm, rfl⟩, rfl⟩)
 
+/-- Under `addMonoidAlgebraEquiv`, `gradeByAddHom` for the trivial factor set matches
+`AddMonoidAlgebra.gradeBy`. -/
+@[simp]
+theorem map_gradeByAddHom_addMonoidAlgebraEquiv {ι : Type*} [AddMonoid ι]
+    (w : L →+ ι) (i : ι) :
+    (gradeByAddHom k L 1 w i).map (addMonoidAlgebraEquiv k L).toLinearMap =
+      AddMonoidAlgebra.gradeBy k w i := by
+  rw [gradeByAddHom_eq, map_gradeBy_addMonoidAlgebraEquiv]
+
 end Lattice
 
 /-! ### Checks -/
@@ -309,11 +326,5 @@ example {k L : Type*} [CommRing k] [IsDomain k] [AddCommGroup L] [IsAddTorsionFr
     GradedAlgebra.minHomogPart_mul _ x y, GradedAlgebra.maxHomogPart_mul _ x y,
     GradedAlgebra.minDeg_mul _ hx hy, GradedAlgebra.maxDeg_mul _ hx hy,
     GradedAlgebra.degWidth_mul _ hx hy⟩
-
-example (k L : Type*) [CommSemiring k] [AddMonoid L] {ι : Type*} [AddMonoid ι] (w : L →+ ι)
-    (i : ι) :
-    (gradeByAddHom k L 1 w i).map (addMonoidAlgebraEquiv k L).toLinearMap =
-      AddMonoidAlgebra.gradeBy k w i :=
-  map_gradeBy_addMonoidAlgebraEquiv k L w i
 
 end TauCeti.TwistedMonoidAlgebra
