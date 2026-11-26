@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Basic
 Let `θ` be an automorphism of a Lie algebra `𝔤₀` with `-1`-eigenspace `𝔭`, and `𝔞` a maximal
 abelian subspace of `𝔭`. For reductive `𝔤₀` the centre `𝔷(𝔤₀)` is in general nonzero, and the
 restricted root theory of `𝔞` only sees its part in `[𝔤₀, 𝔤₀]`. This file proves the centre
-clauses of `RealSemisimpleLieGroups` §1.2:
+statements of restricted root theory:
 
 * `𝔞` contains `𝔭 ∩ 𝔷(𝔤₀)`, so `𝔞_𝔷 = 𝔞 ∩ 𝔷(𝔤₀) = 𝔭 ∩ 𝔷(𝔤₀)`
   (`LieEquiv.IsMaximalAbelianInP.cartanP_inf_center_le`,
