@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Ideal.Order
+public import Mathlib.RingTheory.Spectrum.Prime.Basic
+public import TauCeti.RingTheory.Ideal.Order.Basic
 public import TauCeti.RingTheory.RegularLocalRing.AssociatedGraded
 
 /-!
@@ -82,6 +83,10 @@ least `d`. -/
 def cosupport (P : MarkedIdeal R) : Set (PrimeSpectrum R) :=
   {p | (P.mark : ℕ∞) ≤ P.ideal.orderAt p}
 
+/-- The defining threshold locus of `MarkedIdeal.cosupport`. -/
+theorem cosupport_def (P : MarkedIdeal R) :
+    P.cosupport = {p | (P.mark : ℕ∞) ≤ P.ideal.orderAt p} := (rfl)
+
 /-- A prime lies in the cosupport exactly when the order of the ideal there reaches the mark. -/
 @[simp]
 theorem mem_cosupport_iff (P : MarkedIdeal R) (p : PrimeSpectrum R) :
@@ -120,6 +125,18 @@ theorem cosupport_eq_univ_of_ideal_eq_bot {P : MarkedIdeal R} (h : P.ideal = ⊥
   ext p
   simp [h]
 
+/-- The unit ideal with any positive mark has empty cosupport. -/
+@[simp]
+theorem cosupport_top (d : ℕ) (hd : 0 < d) :
+    (⟨⊤, d, hd⟩ : MarkedIdeal R).cosupport = ∅ :=
+  cosupport_eq_empty_of_ideal_eq_top rfl
+
+/-- The zero ideal with any positive mark has full cosupport. -/
+@[simp]
+theorem cosupport_bot (d : ℕ) (hd : 0 < d) :
+    (⟨⊥, d, hd⟩ : MarkedIdeal R).cosupport = Set.univ :=
+  cosupport_eq_univ_of_ideal_eq_bot rfl
+
 /-- The cosupport is antitone: a smaller ideal with a mark that is not larger has a larger
 cosupport. -/
 theorem cosupport_anti {P Q : MarkedIdeal R} (hI : P.ideal ≤ Q.ideal) (hd : P.mark ≤ Q.mark) :
@@ -142,7 +159,14 @@ def pow (P : MarkedIdeal R) (k : ℕ) [NeZero k] : MarkedIdeal R where
   mark := k * P.mark
   mark_pos := Nat.mul_pos (Nat.pos_of_ne_zero (NeZero.ne k)) P.mark_pos
 
-variable (P : MarkedIdeal R) (k : ℕ) [NeZero k]
+variable (P : MarkedIdeal R)
+
+/-- Rescaling by `1` is the identity. -/
+@[simp]
+theorem pow_one : P.pow 1 = P :=
+  MarkedIdeal.ext (_root_.pow_one P.ideal) (one_mul P.mark)
+
+variable (k : ℕ) [NeZero k]
 
 /-- The ideal of a rescaled marked ideal is the power of the ideal. -/
 @[simp]
@@ -152,6 +176,32 @@ theorem pow_ideal : (P.pow k).ideal = P.ideal ^ k := (rfl)
 @[simp]
 theorem pow_mark : (P.pow k).mark = k * P.mark := (rfl)
 
+/-- Rescaling composes multiplicatively. -/
+@[simp]
+theorem pow_pow (l : ℕ) [NeZero l] :
+    (P.pow k).pow l = P.pow (k * l) :=
+  MarkedIdeal.ext (pow_mul P.ideal k l).symm (by simp [mul_left_comm, mul_comm])
+
+/-- Rescaling the unit ideal keeps the unit ideal and scales the mark. -/
+@[simp]
+theorem pow_top (d : ℕ) (hd : 0 < d) :
+    (⟨⊤, d, hd⟩ : MarkedIdeal R).pow k =
+      ⟨⊤, k * d, Nat.mul_pos (Nat.pos_of_ne_zero (NeZero.ne k)) hd⟩ :=
+  MarkedIdeal.ext (by rw [pow_ideal, Ideal.top_pow]) rfl
+
+/-- Rescaling the zero ideal keeps the zero ideal and scales the mark. -/
+@[simp]
+theorem pow_bot (d : ℕ) (hd : 0 < d) :
+    (⟨⊥, d, hd⟩ : MarkedIdeal R).pow k =
+      ⟨⊥, k * d, Nat.mul_pos (Nat.pos_of_ne_zero (NeZero.ne k)) hd⟩ :=
+  MarkedIdeal.ext (by rw [pow_ideal, Ideal.bot_pow (NeZero.ne k)]) rfl
+
+/-- Rescaling a principal marked ideal `(⟨f⟩, d)` by `k` gives `(⟨f ^ k⟩, k * d)`. -/
+theorem pow_span_singleton (f : R) (d : ℕ) (hd : 0 < d) :
+    (⟨Ideal.span {f}, d, hd⟩ : MarkedIdeal R).pow k =
+      ⟨Ideal.span {f ^ k}, k * d, Nat.mul_pos (Nat.pos_of_ne_zero (NeZero.ne k)) hd⟩ :=
+  MarkedIdeal.ext (Ideal.span_singleton_pow f k) rfl
+
 /-- Rescaling never shrinks the cosupport. -/
 theorem cosupport_subset_cosupport_pow : P.cosupport ⊆ (P.pow k).cosupport := fun p hp ↦ by
   rw [mem_cosupport_iff, pow_ideal, pow_mark, Nat.cast_mul, ← nsmul_eq_mul]
@@ -159,6 +209,7 @@ theorem cosupport_subset_cosupport_pow : P.cosupport ⊆ (P.pow k).cosupport := 
 
 /-- At a prime whose local ring has an associated graded ring without zero divisors, for instance a
 prime with regular localization, rescaling does not change membership in the cosupport. -/
+@[simp high]
 theorem mem_cosupport_pow_iff (p : PrimeSpectrum R)
     [NoZeroDivisors (maximalIdeal (Localization.AtPrime p.asIdeal)).AssociatedGraded] :
     p ∈ (P.pow k).cosupport ↔ p ∈ P.cosupport := by
@@ -198,6 +249,41 @@ theorem sum_comm : P.sum Q = Q.sum P := by
   · simp [sup_comm]
   · simp [mul_comm]
 
+/-- Adding a unit summand on the left produces the unit ideal with the product mark. -/
+@[simp]
+theorem sum_top_left (d : ℕ) (hd : 0 < d) :
+    (⟨⊤, d, hd⟩ : MarkedIdeal R).sum P = ⟨⊤, d * P.mark, Nat.mul_pos hd P.mark_pos⟩ :=
+  MarkedIdeal.ext (by rw [sum_ideal, Ideal.top_pow, top_sup_eq]) rfl
+
+/-- Adding a unit summand on the right produces the unit ideal with the product mark. -/
+@[simp]
+theorem sum_top_right (d : ℕ) (hd : 0 < d) :
+    P.sum ⟨⊤, d, hd⟩ = ⟨⊤, P.mark * d, Nat.mul_pos P.mark_pos hd⟩ :=
+  MarkedIdeal.ext (by rw [sum_ideal, Ideal.top_pow, sup_top_eq]) rfl
+
+/-- Adding a zero summand on the left rescales the other summand by its mark. -/
+@[simp]
+theorem sum_bot_left (d : ℕ) (hd : 0 < d) :
+    haveI : NeZero d := ⟨hd.ne'⟩
+    (⟨⊥, d, hd⟩ : MarkedIdeal R).sum P = P.pow d :=
+  MarkedIdeal.ext (by rw [sum_ideal, pow_ideal, Ideal.bot_pow P.mark_pos.ne', bot_sup_eq]) rfl
+
+/-- Adding a zero summand on the right rescales the other summand by its mark. -/
+@[simp]
+theorem sum_bot_right (d : ℕ) (hd : 0 < d) :
+    haveI : NeZero d := ⟨hd.ne'⟩
+    P.sum ⟨⊥, d, hd⟩ = P.pow d := by
+  rw [sum_comm, sum_bot_left]
+
+/-- The marked sum of two principal marked ideals `(⟨f⟩, a)` and `(⟨g⟩, b)` has ideal
+`⟨f ^ b, g ^ a⟩` and mark `a * b`. -/
+theorem sum_span_singleton (f g : R) {a b : ℕ} (ha : 0 < a) (hb : 0 < b) :
+    (⟨Ideal.span {f}, a, ha⟩ : MarkedIdeal R).sum ⟨Ideal.span {g}, b, hb⟩ =
+      ⟨Ideal.span {f ^ b, g ^ a}, a * b, Nat.mul_pos ha hb⟩ :=
+  MarkedIdeal.ext
+    (by rw [sum_ideal, Ideal.span_singleton_pow, Ideal.span_singleton_pow, ← Ideal.span_union,
+      Set.singleton_union]) rfl
+
 /-- The cosupport of the marked sum of `(I, a)` and `(J, b)` is the intersection of the
 cosupports of the rescalings `(Iᵇ, b a)` and `(Jᵃ, a b)`. -/
 theorem cosupport_sum_eq_inter_cosupport_pow :
@@ -214,6 +300,7 @@ theorem cosupport_inter_subset_cosupport_sum :
 /-- At a prime whose local ring has an associated graded ring without zero divisors, for instance a
 prime with regular localization, the prime lies in the cosupport of a marked sum exactly when it
 lies in both cosupports. -/
+@[simp high]
 theorem mem_cosupport_sum_iff (p : PrimeSpectrum R)
     [NoZeroDivisors (maximalIdeal (Localization.AtPrime p.asIdeal)).AssociatedGraded] :
     p ∈ (P.sum Q).cosupport ↔ p ∈ P.cosupport ∧ p ∈ Q.cosupport := by
