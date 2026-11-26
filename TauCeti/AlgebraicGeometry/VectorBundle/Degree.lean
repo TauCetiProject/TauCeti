@@ -16,6 +16,10 @@ public import TauCeti.AlgebraicGeometry.VectorBundle.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Curves.Degree.Pullback
 public import TauCeti.AlgebraicGeometry.VectorBundle.FreeSubsheaf
 import TauCeti.AlgebraicGeometry.Noetherian
+import TauCeti.AlgebraicGeometry.Cohomology.PushforwardAcyclic.Affine
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dominant
+import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
+import TauCeti.AlgebraicGeometry.VectorBundle.Pushforward
 
 /-!
 # The degree of a vector bundle on a curve
@@ -71,7 +75,14 @@ Pullback along a finite flat morphism `f : X ⟶ Y` of constant rank `d` onto a 
 curve multiplies the degree of a vector bundle of rank one by `d`
 (`LineBundleClass.eulerDegree_pullback_of_finrank_eq`), and when `X` is integral and `f` dominant,
 `d` is the degree `[K(X) : f^* K(Y)]` of the extension of function fields (the rank-one case of
-Stacks, Lemma 0AYZ).
+Stacks, Lemma 0AYZ). When the codimension-one local rings of `Y` are discrete valuation rings, the
+same holds in every rank: `f` is affine, so the cohomology of `X` is that of `f_*` on `Y`
+(`AlgebraicGeometry.Scheme.Hom.eulerCharBelow_pushforward_of_isAffineHom`), and by the projection
+formula `f_* f^* E ≅ E ⊗ f_* 𝒪_X`, where `f_* 𝒪_X` is a vector bundle of rank `d`
+(`FiniteLocallyFreeSheaf.rank_pushforward_unit_apply`). The formula for the degree of a tensor
+product then gives `deg f^* E = deg (E ⊗ f_* 𝒪_X) - r · deg (f_* 𝒪_X) = d · deg E`. A finite
+dominant morphism from an integral scheme onto such a curve is flat, as the local rings of the curve
+are valuation rings.
 
 ## Main declarations
 
@@ -124,7 +135,12 @@ Stacks, Lemma 0AYZ).
   `FixedRank.vectorBundleDegree_pullback_eq_finrank_functionField_mul`: for a vector bundle `E` of
   rank one on a proper integral curve `Y` and a finite flat morphism `f : X ⟶ Y` of constant rank
   `d`, `deg f^* E = d · deg E`, with `d = [K(X) : f^* K(Y)]` when `X` is integral and `f` is
-  dominant.
+  dominant;
+* `FixedRank.vectorBundleDegree_pullback_of_finrank_eq_of_isCurveOver` and
+  `FixedRank.vectorBundleDegree_pullback_eq_finrank_functionField_mul_of_isCurveOver`: the same
+  formulas for vector bundles of every constant rank, on a proper integral curve `Y` whose
+  codimension-one local rings are discrete valuation rings, the second for a finite dominant
+  morphism from an integral scheme.
 
 ## References
 
@@ -729,6 +745,65 @@ theorem vectorBundleDegree_tensor_of_isCurveOver [X.IsCurveOver k]
   linear_combination h₁ - h₄ - (s : ℤ) * h₂ + (s : ℤ) * h₃
 
 end Tensor
+
+section PullbackOfIsCurveOver
+
+open MonoidalCategory
+
+variable {Y : Scheme.{u}} [Y.Over (Spec (.of k))] {f : X ⟶ Y} [f.IsOver (Spec (.of k))]
+  [IsFinite f] [Y.IsCurveOver k]
+  [∀ y : CodimensionOnePoint Y, IsDiscreteValuationRing (Y.presheaf.stalk (y : Y))]
+
+/-- **The degree of a vector bundle under finite flat pullback** (Stacks, Lemma 0AYZ). Let `Y` be
+a proper integral curve over `k` whose codimension-one local rings are discrete valuation rings
+and `f : X ⟶ Y` a finite flat morphism over `k` of constant rank `d`. Then `deg f^* E = d · deg E`
+for every vector bundle `E` of constant rank on `Y`. The scheme `X` may be singular, reducible or
+nonreduced. -/
+theorem vectorBundleDegree_pullback_of_finrank_eq_of_isCurveOver [Flat f] {d : ℕ}
+    (hf : ∀ y, f.finrank y = d) (E : FixedRank Y r) :
+    vectorBundleDegree k ((pullback f).obj E) = d * vectorBundleDegree k E := by
+  have : IsNoetherian Y := isNoetherian_of_finiteType (Y ↘ Spec (.of k))
+  -- The direct image `V = f_* 𝒪_X` is a vector bundle of rank `d` on `Y`.
+  let V : FixedRank Y d := ⟨(FiniteLocallyFreeSheaf.pushforward f).obj (𝟙_ _),
+    (isConstantRank_iff _ _).mpr fun y ↦ (rank_pushforward_unit_apply f y).trans (hf y)⟩
+  have hV : V.obj.obj = (Scheme.Modules.pushforward f).obj (𝟙_ X.Modules) :=
+    FiniteLocallyFreeSheaf.pushforward_obj_obj f _
+  -- `χ(X, f^* E) = χ(Y, E ⊗ V)` by the projection formula, and `χ(X, 𝒪_X) = χ(Y, V)`.
+  have h₁ : eulerCharBelow k X ((pullback f).obj E).obj.obj 2 =
+      eulerCharBelow k Y (E.tensor V).obj.obj 2 := by
+    rw [tensor_obj_obj, pullback_obj_obj, hV]
+    exact ((eulerCharBelow_congr k (tensorPushforwardUnitIso f E.obj) 2).trans
+      (Scheme.Hom.eulerCharBelow_pushforward_of_isAffineHom f k _ 2)).symm
+  have h₂ : eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 =
+      eulerCharBelow k Y V.obj.obj 2 := by
+    rw [eulerCharBelow_congr k (InvertibleSheaf.trivialObjIsoUnit X), hV]
+    exact (Scheme.Hom.eulerCharBelow_pushforward_of_isAffineHom f k _ 2).symm
+  -- `deg (E ⊗ V) = d · deg E + r · deg V` on the curve `Y`.
+  have h₃ := vectorBundleDegree_tensor_of_isCurveOver k E V
+  rw [vectorBundleDegree_def k (E.tensor V), vectorBundleDegree_def k V] at h₃
+  rw [vectorBundleDegree_def k ((pullback f).obj E), h₁, h₂]
+  push_cast at h₃ ⊢
+  linear_combination h₃
+
+/-- **The degree of a vector bundle under pullback along a nonconstant map of curves**
+(Stacks, Lemma 0AYZ). Let `Y` be a proper integral curve over `k` whose codimension-one local
+rings are discrete valuation rings and `f : X ⟶ Y` a finite dominant morphism over `k` from an
+integral scheme. Then `deg f^* E = [K(X) : f^* K(Y)] · deg E` for every vector bundle `E` of
+constant rank on `Y`, the degree of `f` being that of the function field of `X` over the image of
+the function field of `Y`. Flatness of `f` is automatic, as the local rings of `Y` are valuation
+rings. -/
+theorem vectorBundleDegree_pullback_eq_finrank_functionField_mul_of_isCurveOver [IsIntegral X]
+    [IsDominant f] (E : FixedRank Y r) :
+    vectorBundleDegree k ((pullback f).obj E) =
+      Module.finrank f.functionFieldMap.hom.fieldRange X.functionField * vectorBundleDegree k E :=
+  have : ∀ y : Y, ValuationRing (Y.presheaf.stalk y) :=
+    Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one
+      (Scheme.IsCurveOver.topologicalKrullDim_eq_one k).le
+  have := f.flat_of_isDominant_of_valuationRing
+  vectorBundleDegree_pullback_of_finrank_eq_of_isCurveOver k
+    f.finrank_eq_finrank_fieldRange_functionFieldMap E
+
+end PullbackOfIsCurveOver
 
 end FiniteLocallyFreeSheaf.FixedRank
 
