@@ -58,6 +58,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   `exteriorPower.map_bijective`: the map induced by `f` sends a two-vector `u ∧ w` to
   `f u ∧ f w`, induced maps preserve commuting squares, and bijective maps induce bijections of
   exterior powers.
+* `exteriorPower.exists_finite_mem_range_map`: every element of an exterior power comes from
+  the exterior power of a finitely generated submodule.
 * `exteriorPower.map_smul_eq_pow_smul`: the map induced by `c • f` on the `n`th exterior power is
   `c ^ n` times the map induced by `f`.
 * `exteriorPower.ofEq_ιMulti`: the identification of exterior powers of equal degree renumbers the
@@ -352,6 +354,28 @@ theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) 
     Function.Bijective (map n f) :=
   ⟨map_injective (LinearEquiv.ofBijective f hf).symm.toLinearMap (by ext; simp),
     map_surjective hf.2⟩
+
+/-- Every element of `⋀ⁿ M` lies in the image of `⋀ⁿ W → ⋀ⁿ M` for some finitely generated
+submodule `W ≤ M`. -/
+theorem exists_finite_mem_range_map {n : ℕ} (X : ⋀[R]^n M) :
+    ∃ W : Submodule R M, Module.Finite R W ∧ X ∈ LinearMap.range (map n W.subtype) := by
+  have hX : X ∈ Submodule.span R (Set.range (ιMulti R n)) := by rw [ιMulti_span]; trivial
+  induction hX using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨v, rfl⟩ := hx
+    refine ⟨Submodule.span R (Set.range v), Module.Finite.span_of_finite R (Set.finite_range v),
+      ιMulti R n fun i ↦ ⟨v i, Submodule.subset_span ⟨i, rfl⟩⟩, ?_⟩
+    simp [map_apply_ιMulti, Function.comp_def]
+  | zero => exact ⟨⊥, inferInstance, 0, map_zero _⟩
+  | add x y _ _ hx hy =>
+    obtain ⟨W₁, _, x₁, rfl⟩ := hx
+    obtain ⟨W₂, _, y₂, rfl⟩ := hy
+    refine ⟨W₁ ⊔ W₂, inferInstance,
+      map n (Submodule.inclusion le_sup_left) x₁ + map n (Submodule.inclusion le_sup_right) y₂, ?_⟩
+    simp [← LinearMap.comp_apply, ← map_comp, Submodule.subtype_comp_inclusion]
+  | smul r x _ hx =>
+    obtain ⟨W, hW, x₀, rfl⟩ := hx
+    exact ⟨W, hW, r • x₀, map_smul _ _ _⟩
 
 /-- Scaling a linear map by `c` scales the induced map on the `n`th exterior power by `c ^ n`. -/
 @[simp] theorem map_smul_eq_pow_smul (n : ℕ) (c : R) (f : M →ₗ[R] N) :
