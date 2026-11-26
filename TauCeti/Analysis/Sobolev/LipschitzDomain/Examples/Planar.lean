@@ -108,7 +108,10 @@ theorem measurePreserving_toLp_openUnitSquare :
     MeasurePreserving (MeasurableEquiv.toLp 2 (ℝ × ℝ))
       ((volume.restrict (Ioo (0 : ℝ) 1)).prod (volume.restrict (Ioo (0 : ℝ) 1)))
       (volume.restrict openUnitSquare) := by
-  rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
+  have hpre : WithLp.toLp 2 ⁻¹' openUnitSquare = Ioo (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1 := by
+    ext y
+    simp [Set.mem_prod]
+  rw [Measure.prod_restrict, ← Measure.volume_eq_prod, ← hpre, MeasurableEquiv.coe_toLp]
   exact (WithLp.volume_preserving_toLp ℝ ℝ).restrict_preimage isOpen_openUnitSquare.measurableSet
 
 /-- The frontier of the open unit square lies in the closed square. -/
