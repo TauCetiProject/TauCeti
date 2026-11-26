@@ -10,7 +10,6 @@ public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import Mathlib.Geometry.Manifold.Immersion
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
-import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 
