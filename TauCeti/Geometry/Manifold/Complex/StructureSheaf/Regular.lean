@@ -108,11 +108,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 ring, with no global manifold assumption beyond the chart itself. -/
 theorem isRegularLocalRing_holomorphicStalk (e : OpenPartialHomeomorph X H)
     (he : e ∈ IsManifold.maximalAtlas I 1 X) {x : X} (hx : x ∈ e.source) :
-    IsRegularLocalRing ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
-  have := isRegularLocalRing_stalk_modelSpace
-    ((ContinuousLinearEquiv.ofFinrankEq (by simp) :
-      E ≃L[ℂ] Fin (finrank ℂ E) → ℂ) (e.extend I x))
-  exact .of_ringEquiv (e.holomorphicStalkEquivFin he hx).symm
+    IsRegularLocalRing ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
+  @IsRegularLocalRing.of_ringEquiv _ _
+    (isRegularLocalRing_stalk_modelSpace _) _ _ (e.holomorphicStalkEquivFin he hx).symm
 
 /-- The Krull dimension of the holomorphic stalk at any point in the domain of a holomorphic chart
 equals `Module.finrank ℂ E`. -/
