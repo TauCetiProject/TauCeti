@@ -175,10 +175,8 @@ theorem PosSemidef.norm_det_conjTranspose_mul_mul_sq_le {G : Matrix m m 𝕜} (h
   have hblock :
       fromBlocks (Aᴴ * G * A) (Aᴴ * G * B) (Aᴴ * G * B)ᴴ (Bᴴ * G * B) =
         (fromCols A B)ᴴ * G * fromCols A B := by
-    rw [conjTranspose_fromCols_eq_fromRows_conjTranspose, fromRows_mul, mul_fromCols,
-      conjTranspose_mul, conjTranspose_mul, conjTranspose_conjTranspose, hG.isHermitian.eq]
-    ext i j
-    cases i <;> cases j <;> simp [Matrix.mul_assoc]
+    rw [conjTranspose_fromCols_eq_fromRows_conjTranspose, fromRows_mul, fromRows_mul_fromCols]
+    simp only [conjTranspose_mul, conjTranspose_conjTranspose, hG.isHermitian.eq, Matrix.mul_assoc]
   exact (hblock ▸ hG.conjTranspose_mul_mul_same (fromCols A B)).norm_det_sq_le_of_fromBlocks
 
 omit [DecidableEq m] in
