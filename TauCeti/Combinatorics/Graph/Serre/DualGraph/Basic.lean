@@ -177,6 +177,8 @@ def DualPlace.swap (p : DualPlace Γ Δ f) : DualPlace Γ Δ f :=
 
 @[simp] theorem DualPlace.swap_pt (p : DualPlace Γ Δ f) : p.swap.pt = p.pt := (rfl)
 
+@[simp] theorem DualPlace.swap_swap (p : DualPlace Γ Δ f) : p.swap.swap = p := (rfl)
+
 /-- A place linked to another is linked to it with its ends exchanged. -/
 theorem DualPlace.Linked.swap_right {p q : DualPlace Γ Δ f} (h : p.Linked q) :
     p.Linked q.swap := by
@@ -292,6 +294,10 @@ theorem DualDart.toDart_eq_toDart_iff {p q : DualDart Γ Δ f} :
 theorem DualPlace.Linked.toVertex_eq {p q : DualPlace Γ Δ f} (h : p.Linked q) :
     p.toVertex = q.toVertex :=
   Quot.sound h
+
+/-- A place and the same place with its ends exchanged lie in the same vertex of the dual graph. -/
+@[simp] theorem DualPlace.toVertex_swap (p : DualPlace Γ Δ f) : p.swap.toVertex = p.toVertex :=
+  (DualPlace.linked_swap p).symm.toVertex_eq
 
 /-- Linked crossings lie on the same dart of the dual graph. -/
 theorem DualDart.Linked.toDart_eq {p q : DualDart Γ Δ f} (h : p.Linked q) :
@@ -621,7 +627,7 @@ theorem IsBandVertex.exists_darts (hΔ : Δ.IsAcyclic) {x : (dualGraph Γ Δ f).
     exact DualPlace.of_toVertex_eq step he.symm hN q (.inl rfl)
   · rintro (rfl | rfl)
     · exact congrArg DualPlace.toVertex hq₁
-    · exact (congrArg DualPlace.toVertex hq₂).trans (DualPlace.linked_swap p).symm.toVertex_eq
+    · exact (congrArg DualPlace.toVertex hq₂).trans p.toVertex_swap
 
 end SerreGraph
 
