@@ -147,7 +147,7 @@ private theorem mk_steinbergRoot_mem_iSup_height {α β d : Fin t.numRoots}
         (t.steinbergRootSubgroup ht A γ).range :=
   (le_iSup₂ (f := fun γ _ => (t.steinbergRootSubgroup ht A γ).range) d
     (Finset.mem_filter.mpr ⟨(mem_posRootsFinset _ _ d).mpr hd, hheight⟩))
-    ⟨ofAdd w, t.steinbergRootSubgroup_apply ht A d (ofAdd w)⟩
+    ⟨ofAdd w, t.steinbergRootSubgroup_ofAdd ht A d w⟩
 
 /-- **Commutators of root generators outside `G₂`.** If the roots `α` and `β` sum to a root `γ`,
 the commutator of the generators at `α` and `β` lies in every subgroup that contains the generators
@@ -193,34 +193,6 @@ theorem commutatorElement_mem_of_isNotG2_of_root_eq_add [(t.rationalRootSystem h
       rw [commutatorElement_eq_of_isSteinbergRelator
         (IsSteinbergRelator.commutator_add hγ hdouble hdouble' u v)]
       exact hγH _
-
-/-- A root `jα + kβ` with `j, k > 0` and `α`, `β` positive is positive, of height larger than
-those of `α` and `β`. -/
-private theorem mem_posRoots_and_max_height_lt {α β δ : Fin t.numRoots}
-    (hα : α ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (hβ : β ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) {j k : ℕ} (hj : 0 < j)
-    (hk : 0 < k)
-    (hδ : (t.rationalRootSystem ht).root δ =
-      j • (t.rationalRootSystem ht).root α + k • (t.rationalRootSystem ht).root β) :
-    δ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) ∧
-      max ((t.rationalBase ht).height α) ((t.rationalBase ht).height β) <
-        (t.rationalBase ht).height δ := by
-  let P := t.rationalRootSystem ht
-  let b := t.rationalBase ht
-  refine ⟨(mem_posRoots_iff_root_mem_posRootCone P b).mpr ?_, ?_⟩
-  · rw [hδ]
-    exact add_mem (nsmul_mem (root_mem_posRootCone_of_mem_posRoots P b hα) j)
-      (nsmul_mem (root_mem_posRootCone_of_mem_posRoots P b hβ) k)
-  · have hheight : (b.height δ : ℚ) = j * b.height α + k * b.height β := by
-      rw [← heightLinearMap_root, ← heightLinearMap_root, ← heightLinearMap_root, hδ, map_add,
-        map_nsmul, map_nsmul, nsmul_eq_mul, nsmul_eq_mul]
-    have hheight' : b.height δ = j * b.height α + k * b.height β := by exact_mod_cast hheight
-    have ha := one_le_height_of_mem_posRoots P b hα
-    have hb := one_le_height_of_mem_posRoots P b hβ
-    have hj' : (1 : ℤ) ≤ j := by exact_mod_cast hj
-    have hk' : (1 : ℤ) ≤ k := by exact_mod_cast hk
-    rw [hheight', max_lt_iff]
-    constructor <;> nlinarith [hj', hk', ha, hb]
 
 /-- Outside `G₂`, if the sum of two positive roots `α` and `β` is a root `γ`, the commutator of
 their generators is a product of generators at `γ` and possibly `2α + β` or `α + 2β`, all of

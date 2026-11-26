@@ -264,6 +264,12 @@ theorem steinbergRootSubgroup_apply (γ : Fin t.numRoots) (a : Multiplicative A)
     t.steinbergRootSubgroup ht A γ a = PresentedGroup.of (γ, a.toAdd) :=
   (rfl)
 
+/-- The root generator `X_γ(w)` is the class of the letter `steinbergRoot γ w`. -/
+theorem steinbergRootSubgroup_ofAdd (γ : Fin t.numRoots) (w : A) :
+    t.steinbergRootSubgroup ht A γ (ofAdd w) =
+      PresentedGroup.mk (t.steinbergRelators ht A) (steinbergRoot γ w) :=
+  (rfl)
+
 /-- **Steinberg's Weyl element** `W_γ(s) = X_γ(s) X_{-γ}(-s⁻¹) X_γ(s)` of the presented group, the
 class of the word `steinbergWeylWord`. -/
 noncomputable def steinbergWeylElement (γ : Fin t.numRoots) (s : Aˣ) :
@@ -278,7 +284,7 @@ theorem steinbergWeylElement_eq (γ : Fin t.numRoots) (s : Aˣ) :
           (ofAdd (-((s⁻¹ : Aˣ) : A))) *
         t.steinbergRootSubgroup ht A γ (ofAdd (s : A)) := by
   rw [steinbergWeylElement, steinbergWeylWord_def, map_mul, map_mul]
-  simp only [steinbergRootSubgroup_apply, toAdd_ofAdd, PresentedGroup.of]
+  simp only [steinbergRootSubgroup_ofAdd]
 
 variable {t ht A}
 
