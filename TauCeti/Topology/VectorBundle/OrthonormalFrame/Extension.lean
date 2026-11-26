@@ -188,7 +188,7 @@ theorem frameAt_extend_inl {x : X} (p : s.P x) :
     (s.extend σ hσ hσρ hρ'n hρ'c).frameAt (Extend.inl σ hσ p) = s.frameAt p := by
   have h := ((s.extend σ hσ hσρ hρ'n hρ'c).toFrame_mk (Extend.inl σ hσ p)).symm.trans
     ((s.toFrame_extend_inl σ hσ hσρ hρ'n hρ'c x p).trans (s.toFrame_mk p))
-  exact eq_of_heq (OrthonormalFrameBundle.mk.inj h).2
+  exact OrthonormalFrameBundle.mk_eq_mk_iff.1 h
 
 end Construction
 
