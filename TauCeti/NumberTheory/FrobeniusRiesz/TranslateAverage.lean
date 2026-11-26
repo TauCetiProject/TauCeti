@@ -32,9 +32,9 @@ public section
 open Finset
 open scoped BigOperators ComplexConjugate
 
-namespace TauCeti
+namespace Subgroup
 
-variable {G ι κ : Type*} [CommGroup G]
+variable {G ι κ : Type*} [Group G]
 
 open scoped Classical in
 /-- Averaging frozen thick terms retains only the characters trivial on `H`. The factor
@@ -51,6 +51,7 @@ theorem expect_sum_frobenius_thick_eq (H : Subgroup G) [Fintype H] (J tops : Fin
           conj (χ i d) * ∑ t ∈ tops, χ i t * F i t := by
   classical
   let χc (i : ι) : G →* ℂ := (Complex.conjAe.toRingHom.toMonoidHom).comp (χ i)
+  have heval (i : ι) (g : G) : χc i g = conj (χ i g) := rfl
   have hc (i : ι) : (χc i).comp H.subtype = 1 ↔ (χ i).comp H.subtype = 1 := by
     have hinj (z : ℂ) : conj z = 1 ↔ z = 1 := by
       refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
@@ -68,9 +69,9 @@ theorem expect_sum_frobenius_thick_eq (H : Subgroup G) [Fintype H] (J tops : Fin
       sum_image (fun s _ s' _ h ↦ Subtype.ext (mul_left_cancel (mul_right_cancel h)))]
     congr 1
     refine sum_congr rfl fun s _ ↦ sum_congr rfl fun i _ ↦ ?_
-    have hcomm : d * (u : G) * s * t⁻¹ = (d * t⁻¹) * u * s := by ac_rfl
-    rw [hcomm]
-    exact mul_comm _ _
+    rw [← heval]
+    simp only [map_mul]
+    ac_rfl
   have htop (t : G) (ht : t ∈ tops) :
       (𝔼 u : H, ∑ _k ∈ steps, 𝔼 g ∈ J,
         if g ∈ T.image (fun s : H ↦ d * u * s * t⁻¹) then
@@ -82,7 +83,6 @@ theorem expect_sum_frobenius_thick_eq (H : Subgroup G) [Fintype H] (J tops : Fin
       ← expect_mul, H.expect_sum_sum_mul_apply_mul_eq_card_mul_sum_filter, hc]
     simp only [mul_sum, sum_mul]
     refine sum_congr rfl fun i hi ↦ ?_
-    have heval : χc i (d * t⁻¹) = conj (χ i (d * t⁻¹)) := (rfl)
     rw [heval, map_mul, map_mul, hnorm i (mem_filter.mp hi).1 t ht]
     ring
   rw [expect_sum_comm, sum_congr rfl htop, ← mul_sum, sum_comm]
@@ -116,10 +116,11 @@ theorem norm_expect_sum_frobenius_sub_projected_le [Finite G]
       (tops.card : ℝ) * steps.card * (b / x) := by
   classical
   -- The frozen average in the cap estimate is normalized by `J`, so it projects exactly.
-  rw [← expect_sum_frobenius_thick_eq H J tops T steps C χ d b (fun i t ↦ R i (a t / b))
+  rw [← H.expect_sum_frobenius_thick_eq J tops T steps C χ d b (fun i t ↦ R i (a t / b))
     (fun i _ t _ ↦ ((χ i).isOfFinOrder (isOfFinOrder_of_finite t)).norm_eq_one) hJ]
-  refine norm_expect_sum_scaledRemainder_sub_thick_le_of_costs J C (univ : Finset H) tops steps
-    (fun (u : H) t ↦ T.image fun s : H ↦ d * u * s * t⁻¹) (fun g i ↦ conj (χ i g)) R a w
+  refine TauCeti.norm_expect_sum_scaledRemainder_sub_thick_le_of_costs J C (univ : Finset H)
+    tops steps (fun (u : H) t ↦ T.image fun s : H ↦ d * u * s * t⁻¹)
+    (fun g i ↦ conj (χ i g)) R a w
     hx hD hXb hscale (fun g _ i _ ↦ ?_) (fun u _ t ht k hk g _ hg ↦ ?_)
     (fun u _ t ht k hk g hg hnot ↦ ?_) hsaving hvariation hthickCost hthinCost
   · rw [Complex.norm_conj, ((χ i).isOfFinOrder (isOfFinOrder_of_finite g)).norm_eq_one]
@@ -127,4 +128,4 @@ theorem norm_expect_sum_frobenius_sub_projected_le [Finite G]
     exact hthick u t ht k hk s hs
   · exact hthin u t ht k hk g hg (fun s hs heq ↦ hnot (mem_image.mpr ⟨s, hs, heq⟩))
 
-end TauCeti
+end Subgroup
