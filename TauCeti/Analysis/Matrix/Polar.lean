@@ -34,13 +34,15 @@ or the symplectic group (`W = J`), contains the polar factors of its elements.
 
 ## Main results
 
-* `Matrix.GeneralLinearGroup.posDef_sqrt_mul_star`: the positive factor `√(A Aᴴ)` is positive
-  definite.
+* `Matrix.GeneralLinearGroup.posDef_sqrt_mul_star`,
+  `Matrix.GeneralLinearGroup.posDef_sqrt_star_mul`: the positive factors `√(A Aᴴ)` and `√(Aᴴ A)`
+  of the left and right polar decompositions are positive definite.
 * `Matrix.GeneralLinearGroup.existsUnique_posDef_mul_unitary`: existence and uniqueness of the
   polar decomposition `A = P U` with `P` positive definite and `U` unitary.
 * `Matrix.GeneralLinearGroup.coe_mul_inv_toUnits_polarUnitary`: the positive factor is `A U⁻¹`.
-* `Matrix.det_sqrt_mul_star`, `Matrix.GeneralLinearGroup.det_polarUnitary`: the determinants of
-  the two factors; the first holds for every square matrix.
+* `Matrix.det_sqrt_mul_star`, `Matrix.det_sqrt_star_mul`,
+  `Matrix.GeneralLinearGroup.det_polarUnitary`: the determinants of the factors; the first two hold
+  for every square matrix.
 * `Matrix.GeneralLinearGroup.exists_scalar_mul_mul_toGL_eq`: every invertible matrix is a scalar
   times a unitary matrix times a matrix of determinant one.
 * `Matrix.GeneralLinearGroup.det_rpow_sqrt_mul_star_of_det_eq_one`,
@@ -74,6 +76,14 @@ theorem det_sqrt_mul_star (A : Matrix n n 𝕜) : (CFC.sqrt (A * star A)).det = 
     RCLike.star_def, RCLike.mul_conj, ← RCLike.ofReal_pow, RCLike.ofReal_re, ← Real.sqrt_eq_rpow,
     Real.sqrt_sq (norm_nonneg _)]
 
+/-- The determinant of the positive factor `√(Aᴴ A)` of the right polar decomposition is
+`‖det A‖`; this holds for every square matrix `A`, invertible or not. -/
+theorem det_sqrt_star_mul (A : Matrix n n 𝕜) : (CFC.sqrt (star A * A)).det = ‖A.det‖ := by
+  have hAA : (star A * A).PosSemidef := nonneg_iff_posSemidef.1 (star_mul_self_nonneg _)
+  rw [CFC.sqrt_eq_rpow, hAA.det_rpow, det_mul, star_eq_conjTranspose, det_conjTranspose,
+    RCLike.star_def, RCLike.conj_mul, ← RCLike.ofReal_pow, RCLike.ofReal_re, ← Real.sqrt_eq_rpow,
+    Real.sqrt_sq (norm_nonneg _)]
+
 namespace GeneralLinearGroup
 
 variable (A : GL n 𝕜)
@@ -82,6 +92,11 @@ variable (A : GL n 𝕜)
 definite. -/
 theorem posDef_sqrt_mul_star : (CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜))).PosDef :=
   isStrictlyPositive_iff_posDef.1 (Units.isStrictlyPositive_sqrt_mul_star A)
+
+/-- The positive factor `√(Aᴴ A)` of the right polar decomposition of an invertible matrix is
+positive definite. -/
+theorem posDef_sqrt_star_mul : (CFC.sqrt (star (A : Matrix n n 𝕜) * (A : Matrix n n 𝕜))).PosDef :=
+  isStrictlyPositive_iff_posDef.1 (Units.isStrictlyPositive_sqrt_star_mul A)
 
 /-- **The polar decomposition of an invertible matrix.** Every `A : GL n 𝕜` is uniquely a product
 `P U` of a positive definite matrix `P` and a unitary matrix `U`; over `ℝ`, `U` is orthogonal. -/

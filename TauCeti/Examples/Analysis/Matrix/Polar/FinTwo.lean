@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Matrix.Polar.FinTwo
 
 * At `g = 1`, `H = 1` and `P = (H + 1) / √(tr H + 2) = 2 / 2 = 1`, and the normalized-segment
   deformation fixes `1` at every time.
+* The unitary factor changes sign with `g`, so `-g = (-U) P`.
 * For `g = diag(2, 1/2)`, `H = diag(4, 1/4)`, `√(tr H + 2) = 5/2` and `P = diag(2, 1/2) = g`, with
   `P² = H` and `det P = 1`; the unitary factor of the positive matrix `g` is `1`.
 -/
@@ -34,6 +35,13 @@ example : (√(RCLike.re (1 : Matrix (Fin 2) (Fin 2) ℂ).trace + 2))⁻¹ •
 
 example (s : I) : polarSegmentHomotopy ℂ (s, 1) = 1 :=
   (polarSegmentHomotopy ℂ).eq_fst s ⟨1, map_one _⟩
+
+/-! ### `-g = (-U) P` -/
+
+example (g : SpecialLinearGroup (Fin 2) ℂ) :
+    (polarRetraction (Fin 2) ℂ (-g) : Matrix (Fin 2) (Fin 2) ℂ) =
+      -(polarRetraction (Fin 2) ℂ g : Matrix (Fin 2) (Fin 2) ℂ) :=
+  coe_polarRetraction_neg g
 
 /-! ### The diagonal matrix `diag(2, 1/2)` -/
 

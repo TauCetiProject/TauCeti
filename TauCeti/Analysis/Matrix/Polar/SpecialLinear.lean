@@ -54,6 +54,8 @@ For `n = 2` and `𝕜 = ℂ` this deforms the Möbius group of the Riemann spher
 * `Matrix.SpecialLinearGroup.polarRetraction_toSL_mul`,
   `Matrix.SpecialLinearGroup.polarHomotopy_toSL_mul`: the retraction and the deformation of
   `SL(n, 𝕜)` commute with left multiplication by `SU(n)`.
+* `Matrix.SpecialLinearGroup.coe_polarRetraction_neg`: in even dimension, the retraction changes
+  sign with `g`.
 * `Matrix.ProjectiveSpecialLinearGroup.polarHomotopy_mk`: the deformation of `PSL(n, 𝕜)` is induced
   by that of `SL(n, 𝕜)`.
 
@@ -120,6 +122,23 @@ theorem polarRetraction_toSL_mul (k : specialUnitaryGroup n 𝕜) (g : SpecialLi
   rw [map_one, mul_one, mul_one, ← toGL_toSL, ← map_mul] at h
   rw [coe_polarRetraction_apply, h, Submonoid.coe_mul, Submonoid.coe_mul, Submonoid.coe_inclusion,
     coe_polarRetraction_apply]
+
+/-- **`-g = (-U) P`.** In even dimension, the polar retraction of `-g` is the negative of that of
+`g`: `-1` is a special unitary matrix, and the polar retraction commutes with left multiplication
+by `SU(n)`. -/
+theorem coe_polarRetraction_neg [Fact (Even (Fintype.card n))] (g : SpecialLinearGroup n 𝕜) :
+    (polarRetraction n 𝕜 (-g) : Matrix n n 𝕜) = -(polarRetraction n 𝕜 g : Matrix n n 𝕜) := by
+  have hk : (-1 : Matrix n n 𝕜) ∈ specialUnitaryGroup n 𝕜 :=
+    mem_specialUnitaryGroup_iff.2 ⟨by simp [mem_unitaryGroup_iff],
+      by simpa using (-1 : SpecialLinearGroup n 𝕜).property⟩
+  have h : toSL ⟨-1, hk⟩ * g = -g := Subtype.ext <| by
+    rw [coe_mul, coe_toSL, coe_neg, neg_one_mul]
+  rw [← h, polarRetraction_toSL_mul, Submonoid.coe_mul, neg_one_mul]
+
+/-- The matrix `gᴴ g` of `g ∈ SL(n, 𝕜)` has determinant one. -/
+theorem det_star_mul_self (g : SpecialLinearGroup n 𝕜) :
+    (star (g : Matrix n n 𝕜) * g).det = 1 := by
+  rw [det_mul, star_eq_conjTranspose, det_conjTranspose, det_coe, star_one, one_mul]
 
 variable (n 𝕜) in
 /-- **`SL(n, 𝕜)` deformation retracts onto `SU(n)`**, for `𝕜 = ℝ` or `ℂ`. The polar deformation

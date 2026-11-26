@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Matrix.PosSemidef.FinTwo
 public import TauCeti.Analysis.Matrix.Polar.SpecialLinear
-import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -24,7 +23,8 @@ For `𝕜 = ℝ` or `ℂ` and `g ∈ SL(2, 𝕜)`, put `H = gᴴ g` and `t = tr 
   retraction `SL(2, 𝕜) → SU(2)` of `Matrix.SpecialLinearGroup.polarRetraction`, is
   `U = g P⁻¹ = (t + 2) ^ (-1/2) • ((t + 1) • g - g gᴴ g)`
   (`Matrix.SpecialLinearGroup.coe_polarRetraction_fin_two`). It changes sign with `g`, while `P`
-  does not, so `-g = (-U) P` (`Matrix.SpecialLinearGroup.coe_polarRetraction_neg_fin_two`).
+  does not, so `-g = (-U) P`, as in every even dimension
+  (`Matrix.SpecialLinearGroup.coe_polarRetraction_neg`).
 
 **The normalized segment.** The positive factor is contracted to `1` along the segment from `P` to
 `1`, rescaled to determinant one:
@@ -52,7 +52,6 @@ sphere deformed onto its rotation group.
 
 * `Matrix.SpecialLinearGroup.sqrt_star_mul_self_fin_two`: `√(gᴴ g) = (t + 2) ^ (-1/2) • (gᴴ g + 1)`.
 * `Matrix.SpecialLinearGroup.coe_polarRetraction_fin_two`: the explicit unitary factor.
-* `Matrix.SpecialLinearGroup.coe_polarRetraction_neg_fin_two`: `-g = (-U) P`.
 * `Matrix.SpecialLinearGroup.polarSegmentHomotopy`: the normalized-segment deformation retraction
   of `SL(2, 𝕜)` onto `SU(2)`, with its formula `coe_polarSegmentHomotopy_apply`.
 * `Matrix.ProjectiveSpecialLinearGroup.polarSegmentHomotopy`: its descent to `PSL(2, 𝕜)`.
@@ -79,12 +78,20 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 
 attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
-/-- The matrix `gᴴ g` of `g ∈ SL(2, 𝕜)` is positive semidefinite of determinant one. -/
-private theorem posSemidef_star_mul_self (g : SpecialLinearGroup (Fin 2) 𝕜) :
-    (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g).PosSemidef ∧
-      (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g).det = 1 :=
-  ⟨nonneg_iff_posSemidef.1 (star_mul_self_nonneg _), by
-    rw [det_mul, star_eq_conjTranspose, det_conjTranspose, det_coe, star_one, one_mul]⟩
+/-- The trace `t` of `gᴴ g` is real: `(re t : 𝕜) = t`. -/
+private theorem ofReal_re_trace_star_mul_self (g : SpecialLinearGroup (Fin 2) 𝕜) :
+    ((RCLike.re (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g).trace : ℝ) : 𝕜) =
+      (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g).trace := by
+  obtain ⟨t, -, ht⟩ := RCLike.nonneg_iff_exists_ofReal.mp
+    (nonneg_iff_posSemidef.1 (star_mul_self_nonneg (g : Matrix (Fin 2) (Fin 2) 𝕜))).trace_nonneg
+  rw [← ht, RCLike.ofReal_re]
+
+/-- The trace `t` of `gᴴ g` is nonnegative, so `t + 2 > 0`. -/
+private theorem re_trace_star_mul_self_add_two_pos (g : SpecialLinearGroup (Fin 2) 𝕜) :
+    0 < RCLike.re (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g).trace + 2 := by
+  have h := (RCLike.nonneg_iff.1
+    (nonneg_iff_posSemidef.1 (star_mul_self_nonneg (g : Matrix (Fin 2) (Fin 2) 𝕜))).trace_nonneg).1
+  linarith
 
 /-- **The positive polar factor of `SL(2, 𝕜)`.** For `g ∈ SL(2, 𝕜)`, the positive factor `√(gᴴ g)`
 of the polar decomposition `g = U √(gᴴ g)` is `(t + 2) ^ (-1/2) • (gᴴ g + 1)`, where `t` is the
@@ -93,8 +100,7 @@ theorem sqrt_star_mul_self_fin_two (g : SpecialLinearGroup (Fin 2) 𝕜) :
     CFC.sqrt (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g) =
       (√(RCLike.re (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g).trace + 2))⁻¹ •
         (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g + 1) := by
-  obtain ⟨hH, hdet⟩ := posSemidef_star_mul_self g
-  rw [hH.sqrt_fin_two, hdet]
+  rw [(nonneg_iff_posSemidef.1 (star_mul_self_nonneg _)).sqrt_fin_two, det_star_mul_self]
   simp
 
 /-- **The unitary polar factor of `SL(2, 𝕜)`.** For `g ∈ SL(2, 𝕜)`, the polar retraction
@@ -106,22 +112,24 @@ theorem coe_polarRetraction_fin_two (g : SpecialLinearGroup (Fin 2) 𝕜) :
         ((RCLike.re (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g).trace + 1) •
             (g : Matrix (Fin 2) (Fin 2) 𝕜) -
           g * star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g) := by
-  obtain ⟨hH, hdet⟩ := posSemidef_star_mul_self g
-  obtain ⟨t, ht0, ht⟩ := RCLike.nonneg_iff_exists_ofReal.mp hH.trace_nonneg
-  rw [← ht, RCLike.ofReal_re]
-  set H := star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g with hHdef
+  have ht2 := re_trace_star_mul_self_add_two_pos g
   -- Cayley–Hamilton: `H² = t H - 1`, so `P⁻¹ = (t + 2) ^ (-1/2) • ((t + 1) • 1 - H)`.
-  have hCH : H * H = t • H - 1 := by
-    rw [← sq, sq_eq_trace_smul_sub_det_smul_one_fin_two, ← ht, hdet, one_smul,
-      ← RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+  have hCH : (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g) * (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g) =
+      RCLike.re (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g).trace •
+        (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g) - 1 := by
+    rw [← sq, sq_eq_trace_smul_sub_det_smul_one_fin_two, det_star_mul_self, one_smul,
+      RCLike.real_smul_eq_coe_smul (K := 𝕜), ofReal_re_trace_star_mul_self]
+  have hsqrt := sqrt_star_mul_self_fin_two g
+  set t := RCLike.re (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g).trace
+  set H := star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g with hHdef
   have hP : CFC.sqrt H * ((√(t + 2))⁻¹ • ((t + 1) • (1 : Matrix (Fin 2) (Fin 2) 𝕜) - H)) = 1 := by
     have h : (H + 1) * ((t + 1) • (1 : Matrix (Fin 2) (Fin 2) 𝕜) - H) =
         (t + 2) • (1 : Matrix (Fin 2) (Fin 2) 𝕜) := by
       rw [mul_sub, add_mul, add_mul, hCH, mul_smul_comm, mul_smul_comm, mul_one, one_mul, one_mul]
       module
-    have ht2 : 0 < t + 2 := by linarith
-    rw [hHdef, sqrt_star_mul_self_fin_two, ← hHdef, ← ht, RCLike.ofReal_re, smul_mul_smul, h,
-      smul_smul, ← mul_inv, Real.mul_self_sqrt ht2.le, inv_mul_cancel₀ ht2.ne', one_smul]
+    rw [hsqrt, smul_mul_smul, h, smul_smul]
+    field_simp
+    rw [Real.sq_sqrt ht2.le, div_self ht2.ne', one_smul]
   calc (polarRetraction (Fin 2) 𝕜 g : Matrix (Fin 2) (Fin 2) 𝕜)
       = (polarRetraction (Fin 2) 𝕜 g : Matrix (Fin 2) (Fin 2) 𝕜) * (CFC.sqrt H *
           ((√(t + 2))⁻¹ • ((t + 1) • (1 : Matrix (Fin 2) (Fin 2) 𝕜) - H))) := by
@@ -130,27 +138,13 @@ theorem coe_polarRetraction_fin_two (g : SpecialLinearGroup (Fin 2) 𝕜) :
       rw [← mul_assoc, hHdef, coe_polarRetraction_mul_sqrt_star_mul_self, mul_smul_comm, mul_sub,
         mul_smul_comm, mul_one, mul_assoc]
 
-/-- **`-g = (-U) P`.** The unitary polar factor of `-g ∈ SL(2, 𝕜)` is the negative of that of `g`.
-Since `(-g)ᴴ (-g) = gᴴ g`, the positive factor `P = √(gᴴ g)` is the same for `g` and `-g`. -/
-theorem coe_polarRetraction_neg_fin_two (g : SpecialLinearGroup (Fin 2) 𝕜) :
-    (polarRetraction (Fin 2) 𝕜 (-g) : Matrix (Fin 2) (Fin 2) 𝕜) =
-      -(polarRetraction (Fin 2) 𝕜 g : Matrix (Fin 2) (Fin 2) 𝕜) := by
-  rw [coe_polarRetraction_fin_two, coe_polarRetraction_fin_two]
-  simp only [coe_neg, star_neg, neg_mul, mul_neg, neg_neg]
-  module
-
-/-- The positive factor `√(gᴴ g)` of `g ∈ SL(2, 𝕜)` is positive definite. -/
-private theorem posDef_sqrt_star_mul_self (g : SpecialLinearGroup (Fin 2) 𝕜) :
-    (CFC.sqrt (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g)).PosDef := by
-  simpa using GeneralLinearGroup.posDef_sqrt_mul_star (star (toGL g))
-
 /-- For `0 ≤ s ≤ 1`, the point `(1 - s) • √(gᴴ g) + s • 1` of the segment from the positive factor
 of `g` to `1` is positive definite. -/
 private theorem posDef_segment (g : SpecialLinearGroup (Fin 2) 𝕜) (s : I) :
     ((1 - (s : ℝ)) • CFC.sqrt (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g) +
       (s : ℝ) • (1 : Matrix (Fin 2) (Fin 2) 𝕜)).PosDef := by
   rcases (unitInterval.le_one s).lt_or_eq with hs | hs
-  · exact ((posDef_sqrt_star_mul_self g).smul (sub_pos.2 hs)).add_posSemidef
+  · exact ((GeneralLinearGroup.posDef_sqrt_star_mul (toGL g)).smul (sub_pos.2 hs)).add_posSemidef
       (PosSemidef.one.smul (unitInterval.nonneg s))
   · simpa [hs] using PosDef.one
 
@@ -184,19 +178,11 @@ private theorem det_segmentFactor (g : SpecialLinearGroup (Fin 2) 𝕜) (s : I) 
 private theorem segmentFactor_zero (g : SpecialLinearGroup (Fin 2) 𝕜) :
     segmentFactor g 0 = CFC.sqrt (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g) := by
   have h : (CFC.sqrt (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g)).det = 1 := by
-    rw [← star_star (g : Matrix (Fin 2) (Fin 2) 𝕜), star_star (star _), det_sqrt_mul_star,
-      star_eq_conjTranspose, det_conjTranspose, det_coe, star_one, norm_one, RCLike.ofReal_one]
+    rw [det_sqrt_star_mul, det_coe, norm_one, RCLike.ofReal_one]
   simp [segmentFactor, h]
 
 private theorem segmentFactor_one (g : SpecialLinearGroup (Fin 2) 𝕜) : segmentFactor g 1 = 1 := by
   simp [segmentFactor]
-
-private theorem sqrt_re_trace_star_mul_self_add_two_pos (g : SpecialLinearGroup (Fin 2) 𝕜) :
-    0 < √(RCLike.re (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g).trace + 2) := by
-  obtain ⟨t, ht0, ht⟩ := RCLike.nonneg_iff_exists_ofReal.mp
-    (posSemidef_star_mul_self g).1.trace_nonneg
-  rw [← ht, RCLike.ofReal_re]
-  exact Real.sqrt_pos.2 (by linarith)
 
 /-- The segment factor is continuous in the time and the matrix: the positive factor is given by
 the explicit formula `sqrt_star_mul_self_fin_two`, and the determinant stays positive. -/
@@ -215,7 +201,7 @@ private theorem continuous_segmentFactor :
           (star (p.2 : Matrix (Fin 2) (Fin 2) 𝕜) * p.2 + 1) :=
       (Continuous.inv₀ (Real.continuous_sqrt.comp
         ((RCLike.continuous_re.comp hH.matrix_trace).add continuous_const))
-          fun p => (sqrt_re_trace_star_mul_self_add_two_pos p.2).ne').smul
+          fun p => (Real.sqrt_pos.2 (re_trace_star_mul_self_add_two_pos p.2)).ne').smul
             (hH.add continuous_const)
     exact h.congr fun p => (sqrt_star_mul_self_fin_two p.2).symm
   have hs : Continuous fun p : I × SpecialLinearGroup (Fin 2) 𝕜 => (p.1 : ℝ) :=
@@ -295,6 +281,18 @@ theorem coe_polarSegmentHomotopy_apply (s : I) (g : SpecialLinearGroup (Fin 2) �
             (s : ℝ) • (1 : Matrix (Fin 2) (Fin 2) 𝕜))) :=
   (rfl)
 
+/-- The right polar decomposition of the normalized-segment homotopy at time `s`: `g_s = U Q_s`
+has unitary factor `U` and positive factor `Q_s`. -/
+private theorem polarUnitary_eq_and_sqrt_star_mul_eq_polarSegmentHomotopy (s : I)
+    (g : SpecialLinearGroup (Fin 2) 𝕜) :
+    (toGL (polarSegmentHomotopy 𝕜 (s, g))).polarUnitary = (toGL g).polarUnitary ∧
+      CFC.sqrt (star ((toGL (polarSegmentHomotopy 𝕜 (s, g)) : GL (Fin 2) 𝕜) :
+          Matrix (Fin 2) (Fin 2) 𝕜) * (toGL (polarSegmentHomotopy 𝕜 (s, g)) : GL (Fin 2) 𝕜)) =
+        segmentFactor g s :=
+  ((toGL (polarSegmentHomotopy 𝕜 (s, g))).mul_eq_iff_polarUnitary_eq_and_sqrt_star_mul_eq
+    (posDef_segmentFactor g s).posSemidef.nonneg).1
+      (by rw [coe_GL_coe_matrix, coe_polarSegmentHomotopy_apply', coe_polarRetraction_apply])
+
 /-- The normalized-segment homotopy keeps the unitary polar factor: `g_s = U Q_s` has unitary
 factor `U`. -/
 @[simp]
@@ -302,10 +300,7 @@ theorem polarRetraction_polarSegmentHomotopy (s : I) (g : SpecialLinearGroup (Fi
     polarRetraction (Fin 2) 𝕜 (polarSegmentHomotopy 𝕜 (s, g)) = polarRetraction (Fin 2) 𝕜 g := by
   refine Subtype.ext ?_
   rw [coe_polarRetraction_apply, coe_polarRetraction_apply,
-    ((toGL (polarSegmentHomotopy 𝕜 (s, g))).mul_eq_iff_polarUnitary_eq_and_sqrt_star_mul_eq
-      (posDef_segmentFactor g s).posSemidef.nonneg (v := (toGL g).polarUnitary)).1
-        (by rw [coe_GL_coe_matrix, coe_polarSegmentHomotopy_apply', coe_polarRetraction_apply])
-        |>.1]
+    (polarUnitary_eq_and_sqrt_star_mul_eq_polarSegmentHomotopy s g).1]
 
 /-- The positive polar factor of the normalized-segment homotopy at time `s` is
 `Q_s = ((1 - s) P + s) / √(det ((1 - s) P + s))`, where `P = √(gᴴ g)`. -/
@@ -316,9 +311,7 @@ theorem sqrt_star_mul_self_polarSegmentHomotopy (s : I) (g : SpecialLinearGroup 
           (s : ℝ) • (1 : Matrix (Fin 2) (Fin 2) 𝕜)).det))⁻¹ •
         ((1 - (s : ℝ)) • CFC.sqrt (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g) +
           (s : ℝ) • (1 : Matrix (Fin 2) (Fin 2) 𝕜)) := by
-  have h := ((toGL (polarSegmentHomotopy 𝕜 (s, g))).mul_eq_iff_polarUnitary_eq_and_sqrt_star_mul_eq
-      (posDef_segmentFactor g s).posSemidef.nonneg (v := (toGL g).polarUnitary)).1
-        (by rw [coe_GL_coe_matrix, coe_polarSegmentHomotopy_apply', coe_polarRetraction_apply]) |>.2
+  have h := (polarUnitary_eq_and_sqrt_star_mul_eq_polarSegmentHomotopy s g).2
   rwa [coe_GL_coe_matrix] at h
 
 /-- The normalized-segment homotopy commutes with left multiplication by `SU(2)`. -/
