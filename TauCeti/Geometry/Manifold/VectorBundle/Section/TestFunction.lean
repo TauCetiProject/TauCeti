@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Distribution.TestFunction
 import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
+import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 
 /-!
 # Native test functions in bundle charts
@@ -218,23 +218,21 @@ theorem exists_testFunction_apply_eq {c : OpenPartialHomeomorph X E}
     (hψc : HasCompactSupport ψ) (hψ : tsupport ψ ⊆ c.source) :
     ∃ ψ' : 𝓓(⟨c.target, c.open_target⟩, ℝ), tsupport ψ' ⊆ c '' tsupport ψ ∧
       ∀ x ∈ c.source, ψ' (c x) = ψ x := by
-  -- A cutoff `θ` equal to `1` near the compact set `c (supp ψ)`, and `ψ' = θ · (ψ ∘ c⁻¹)`.
+  -- A cutoff `θ` equal to `1` near the compact set `c (supp ψ)`, and `ψ' = (ψ ∘ c⁻¹) · θ`.
   have hC : IsCompact (c '' tsupport ψ) :=
     hψc.isCompact.image_of_continuousOn (c.continuousOn.mono hψ)
   obtain ⟨θ, hθ, -⟩ := TestFunction.exists_eventually_eq_one
     (Ω := ⟨c.target, c.open_target⟩) (n := ⊤) hC
     (image_subset_iff.2 fun p hp ↦ c.map_source (hψ hp))
-  have hsmooth : ContDiff ℝ ∞ fun z ↦ θ z * ψ (c.symm z) := by
-    have h := ContMDiffOn.contMDiff_smul_of_tsupport_subset
-      (ψ.contMDiff.comp_contMDiffOn hcs) c.open_target θ.contDiff.contMDiff.contMDiffOn
-      θ.tsupport_subset
-    simpa only [smul_eq_mul, Function.comp_apply] using contMDiff_iff_contDiff.1 h
-  refine ⟨⟨fun z ↦ θ z * ψ (c.symm z), hsmooth, θ.hasCompactSupport.mul_right,
-    tsupport_mul_subset_left.trans θ.tsupport_subset⟩, ?_, fun x hx ↦ ?_⟩
+  have hg : ContDiffOn ℝ ∞ (ψ ∘ c.symm) c.target :=
+    contMDiffOn_iff_contDiffOn.1 (ψ.contMDiff.comp_contMDiffOn hcs)
+  refine ⟨TestFunction.smulLeftCLMOfContDiffOn hg θ, ?_, fun x hx ↦ ?_⟩
   · refine closure_minimal (fun z hz ↦ ?_) hC.isClosed
-    have hzt : z ∈ c.target := θ.tsupport_subset (subset_tsupport _ (left_ne_zero_of_mul hz))
-    exact ⟨c.symm z, subset_tsupport _ (right_ne_zero_of_mul hz), c.right_inv hzt⟩
-  · rw [TestFunction.coe_mk, c.left_inv hx]
+    rw [Function.mem_support, TestFunction.smulLeftCLMOfContDiffOn_apply, smul_eq_mul] at hz
+    have hzt : z ∈ c.target := θ.tsupport_subset (subset_tsupport _ (right_ne_zero_of_mul hz))
+    exact ⟨c.symm z, subset_tsupport _ (left_ne_zero_of_mul hz), c.right_inv hzt⟩
+  · rw [TestFunction.smulLeftCLMOfContDiffOn_apply, Function.comp_apply, c.left_inv hx,
+      smul_eq_mul, mul_comm]
     exact TauCeti.mul_eq_right_of_ne_zero_imp_eq_one fun hψx ↦
       hθ.self_of_nhdsSet _ (mem_image_of_mem c (subset_tsupport _ hψx))
 

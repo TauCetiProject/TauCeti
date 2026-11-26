@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Bas
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
@@ -751,35 +750,15 @@ theorem IsCompact.exists_sum_cutoffPullback_eq_one {K : Set M} (hK : IsCompact K
     closure_mono (fs.support_toSmoothPartitionOfUnity_subset i)
   have hfe (i : ι) : tsupport (f i) ⊆ (chartAt E (fs.c i)).source :=
     (hf i).trans (fs i).tsupport_subset_chartAt_source
-  have hK' (i : ι) : IsCompact (chartAt E (fs.c i) '' tsupport (f i)) :=
-    ((fs i).hasCompactSupport.isCompact.of_isClosed_subset (isClosed_tsupport _)
-      (hf i)).image_of_continuousOn ((chartAt E (fs.c i)).continuousOn.mono (hfe i))
-  -- In the chart at `cᵢ`, `ρᵢ` is `fᵢ ∘ (chartAt cᵢ)⁻¹` times a cutoff equal to `1` on the image of
-  -- the support of `fᵢ`.
-  choose θ hθ using fun i ↦ TestFunction.exists_eventually_eq_one
-    (Ω := ⟨(chartAt E (fs.c i)).target, (chartAt E (fs.c i)).open_target⟩) (n := ⊤) (hK' i)
-    (image_subset_iff.2 fun y hy ↦ (chartAt E (fs.c i)).map_source (hfe i hy))
-  have hg (i : ι) : ContDiffOn ℝ ∞ (f i ∘ (chartAt E (fs.c i)).symm) (chartAt E (fs.c i)).target :=
-    contMDiffOn_iff_contDiffOn.1 ((f i).contMDiff.comp_contMDiffOn
-      (contMDiffOn_symm_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas (fs.c i))))
-  have hρ (i : ι) (y : M) : (chartAt E (fs.c i)).cutoffPullback
-      (IsManifold.chart_mem_maximalAtlas (fs.c i))
-      (TestFunction.smulLeftCLMOfContDiffOn (hg i) (θ i)) 1 y = f i y := by
-    by_cases hy : y ∈ (chartAt E (fs.c i)).source
-    · rw [OpenPartialHomeomorph.cutoffPullback_one_apply_of_mem _ _ hy,
-        TestFunction.smulLeftCLMOfContDiffOn_apply, Function.comp_apply,
-        (chartAt E (fs.c i)).left_inv hy, smul_eq_mul]
-      by_cases hfy : f i y = 0
-      · rw [hfy, zero_mul]
-      · rw [(hθ i).1.self_of_nhdsSet _ (mem_image_of_mem _ (subset_tsupport _ hfy)), mul_one]
-    · rw [OpenPartialHomeomorph.cutoffPullback_apply_of_notMem _ _ _ hy,
-        image_eq_zero_of_notMem_tsupport fun h ↦ hy (hfe i h)]
+  -- In the chart at `cᵢ`, `fᵢ` is the pullback of a cutoff `ρᵢ`.
+  choose ρ hρ using fun i ↦ (chartAt E (fs.c i)).exists_cutoffPullback_one_eq
+    (IsManifold.chart_mem_maximalAtlas (fs.c i))
+    ((fs i).hasCompactSupport.isCompact.of_isClosed_subset (isClosed_tsupport _) (hf i)) (hfe i)
   -- Index the finitely many charts by `Fin N`.
   set σ := Fintype.equivFin ι
-  refine ⟨Fintype.card ι, fun j ↦ fs.c (σ.symm j),
-    fun j ↦ TestFunction.smulLeftCLMOfContDiffOn (hg (σ.symm j)) (θ (σ.symm j)), fun y hy ↦ ?_⟩
+  refine ⟨Fintype.card ι, fun j ↦ fs.c (σ.symm j), fun j ↦ ρ (σ.symm j), fun y hy ↦ ?_⟩
   rw [← f.sum_eq_one hy, finsum_eq_sum_of_fintype, ← σ.symm.sum_comp]
-  exact Finset.sum_congr rfl fun j _ ↦ hρ (σ.symm j) y
+  exact Finset.sum_congr rfl fun j _ ↦ DFunLike.congr_fun (hρ (σ.symm j)) y
 
 namespace TauCeti
 
