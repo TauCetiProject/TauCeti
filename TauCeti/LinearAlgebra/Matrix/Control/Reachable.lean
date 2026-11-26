@@ -63,6 +63,10 @@ variable [CommSemiring R] (A : Matrix n n R) (B : Matrix n m R)
 noncomputable def reachableSubspace : Submodule R (n → R) :=
   ⨆ k : ℕ, LinearMap.range (A ^ k * B).mulVecLin
 
+theorem reachableSubspace_def :
+    reachableSubspace A B = ⨆ k : ℕ, LinearMap.range (A ^ k * B).mulVecLin :=
+  (rfl)
+
 /-- The pair `(A, B)` is controllable when its reachable subspace is the whole state space. -/
 def IsControllable : Prop :=
   reachableSubspace A B = ⊤
@@ -121,13 +125,15 @@ theorem reachableSubspace_le {W : Submodule R (n → R)} (hB : ∀ v, B *ᵥ v �
   | succ k ih => simpa [pow_succ', mul_assoc, ← mulVec_mulVec] using hA _ ih
 
 /-- With no inputs, the reachable subspace is `0`. -/
-theorem reachableSubspace_of_isEmpty [IsEmpty m] : reachableSubspace A B = ⊥ :=
+@[simp]
+theorem reachableSubspace_eq_bot_of_isEmpty [IsEmpty m] : reachableSubspace A B = ⊥ :=
   eq_bot_iff.2 <| reachableSubspace_le (fun v => by simp [Subsingleton.elim v 0]) fun x hx => by
     simp [(Submodule.mem_bot R).1 hx]
 
 /-- With no states, every pair is controllable. -/
+@[simp]
 theorem isControllable_of_isEmpty [IsEmpty n] : IsControllable A B :=
-  Subsingleton.elim _ _
+  (isControllable_iff A B).2 (Subsingleton.elim _ _)
 
 end CommSemiring
 
@@ -137,7 +143,7 @@ variable [CommRing R] (A : Matrix n n R) (B : Matrix n m R)
 
 /-- By the Cayley–Hamilton theorem, every column of `A ^ k * B` lies in the span of the columns of
 `A ^ j * B` with `j < Fintype.card n`. -/
-theorem pow_mul_mulVec_mem_iSup_fin_card (k : ℕ) (v : m → R) :
+private theorem pow_mul_mulVec_mem_iSup_fin_card (k : ℕ) (v : m → R) :
     (A ^ k * B) *ᵥ v ∈ ⨆ j : Fin (Fintype.card n), LinearMap.range (A ^ (j : ℕ) * B).mulVecLin := by
   nontriviality R
   obtain ⟨q, hqk⟩ : ∃ q, X ^ k %ₘ A.charpoly = q := ⟨_, rfl⟩
@@ -173,21 +179,21 @@ theorem range_mulVecLin_ctrbMatrix :
   rw [reachableSubspace_eq_iSup_fin_card, range_mulVecLin, hcols, Submodule.span_iUnion]
   simp only [range_mulVecLin]
 
+/-- The rank of the controllability matrix is the dimension of the reachable subspace. -/
+theorem rank_ctrbMatrix : (ctrbMatrix A B).rank = finrank R (reachableSubspace A B) := by
+  rw [← finrank_range_mulVecLin, range_mulVecLin_ctrbMatrix]
+
 end CommRing
 
 section Field
 
 variable [Field K] (A : Matrix n n K) (B : Matrix n m K)
 
-/-- The rank of the controllability matrix is the dimension of the reachable subspace. -/
-theorem rank_ctrbMatrix : (ctrbMatrix A B).rank = finrank K (reachableSubspace A B) := by
-  rw [← finrank_range_mulVecLin, range_mulVecLin_ctrbMatrix]
-
 /-- The Kalman rank condition: `(A, B)` is controllable if and only if its controllability matrix
 has rank `Fintype.card n`. -/
 theorem isControllable_iff_rank_ctrbMatrix :
     IsControllable A B ↔ (ctrbMatrix A B).rank = Fintype.card n := by
-  rw [rank_ctrbMatrix, IsControllable, ← finrank_fintype_fun_eq_card (R := K)]
+  rw [rank_ctrbMatrix, isControllable_iff, ← finrank_fintype_fun_eq_card (R := K)]
   exact ⟨fun h => by rw [h, finrank_top], Submodule.eq_top_of_finrank_eq⟩
 
 end Field
