@@ -330,17 +330,13 @@ theorem ae_setIntegral_ballGreenKernel_eq (hn : n ≠ 1) :
     (z := 0) (R := 1) hΩ.le (h1.toLp _)
   have hw : ContDiff ℝ 2 (PDE.ballTorsionFunction (Fin (n + 1))) :=
     PDE.contDiff_ballTorsionFunction
-  -- `Δ` is the sum of the second derivatives along the standard basis.
-  have hΔ : ∀ x, Δ (PDE.ballTorsionFunction (Fin (n + 1))) x = -1 := fun x => by
-    rw [laplacian_eq_iteratedFDeriv_orthonormalBasis _ (EuclideanSpace.basisFun _ ℝ)]
-    simpa [iteratedFDeriv_two_apply] using PDE.sum_fderiv_fderiv_ballTorsionFunction x
   have hwu := hu.value_ae_eq_of_contDiffOn hΩ.le hw.contDiffOn hw.continuous.continuousOn
     (fun x hx => by
       rw [hΩ, frontier_ball 0 one_ne_zero] at hx
       exact PDE.ballTorsionFunction_eq_zero_of_mem_sphere hx)
     (by
       filter_upwards [h1.coeFn_toLp] with x hx
-      rw [hx, Pi.neg_apply, hΔ x, neg_neg])
+      rw [hx, Pi.neg_apply, PDE.laplacian_ballTorsionFunction, neg_neg])
   filter_upwards [hwu.symm.trans (hu.value_ae_eq_setIntegral_ballGreenKernel_mul hn hΩ)]
     with x hx
   rw [hx]

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
 import Mathlib.Algebra.Order.Star.Real
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -31,7 +32,7 @@ All declarations are in the `TauCeti.PDE` namespace.
   contact set `B` is the ball of radius `1 / n` (`image_gradient_ballTorsionFunction_ball`).
 * Its Hessian operator is `-1 / n` times the identity (`hessianOperator_ballTorsionFunction`), so
   `|det D²v| = n⁻ⁿ` (`abs_det_hessianOperator_ballTorsionFunction`) and `Δv = -1`
-  (`sum_fderiv_fderiv_ballTorsionFunction`).
+  (`sum_fderiv_fderiv_ballTorsionFunction`, `laplacian_ballTorsionFunction`).
 * Hence, for every additive Haar measure `μ`, both sides of the change-of-variables inequality
   `μ (∇v(Γ⁺)) ≤ ∫_{Γ⁺} |det D²v| dμ`
   (`addHaar_image_gradient_le_lintegral_abs_det_hessianOperator`) are `n⁻ⁿ μ(B)`
@@ -57,7 +58,7 @@ public section
 
 noncomputable section
 
-open InnerProductSpace Metric MeasureTheory Module Set
+open InnerProductSpace Laplacian Metric MeasureTheory Module Set
 open scoped ENNReal Gradient RealInnerProductSpace
 
 namespace TauCeti
@@ -146,6 +147,15 @@ theorem sum_fderiv_fderiv_ballTorsionFunction [Nonempty ι] [DecidableEq ι]
     PiLp.single_apply, ite_true, mul_one, Finset.sum_const, Finset.card_univ,
     nsmul_eq_mul]
   field_simp
+
+/-- **The Laplacian of the torsion function is `Δv = -1`**, in every dimension `n ≥ 1`. -/
+theorem laplacian_ballTorsionFunction [Nonempty ι] (x : EuclideanSpace ℝ ι) :
+    Δ (ballTorsionFunction ι) x = -1 := by
+  classical
+  rw [laplacian_eq_iteratedFDeriv_orthonormalBasis _ (EuclideanSpace.basisFun ι ℝ)]
+  simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    EuclideanSpace.basisFun_apply]
+  exact sum_fderiv_fderiv_ballTorsionFunction x
 
 /-- The determinant of the Hessian operator of the torsion function is `(-1 / n)ⁿ`. -/
 theorem det_hessianOperator_ballTorsionFunction (x : EuclideanSpace ℝ ι) :
