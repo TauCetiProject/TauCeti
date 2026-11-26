@@ -893,6 +893,33 @@ theorem W1p.posPart_eq_self_of_ae_nonneg (hp : p ≠ ∞) {u : W1p mu Omega p}
   filter_upwards [Lp.coeFn_posPart (W1p.value u), hu] with x hx hux
   rw [hx, max_eq_left hux]
 
+/-- The positive part of the zero Sobolev function is zero. -/
+@[simp]
+theorem W1p.posPart_zero (hp : p ≠ ∞) :
+    W1p.posPart hp (0 : W1p mu Omega p) = 0 := by
+  refine W1p.posPart_eq_self_of_ae_nonneg hp ?_
+  rw [W1p.value_zero]
+  exact (Lp.coeFn_zero ℝ p (mu.restrict Omega)).mono fun _ h => by rw [h, Pi.zero_apply]
+
+/-- Taking `W1p.posPart` is idempotent. -/
+@[simp]
+theorem W1p.posPart_posPart (hp : p ≠ ∞) (u : W1p mu Omega p) :
+    W1p.posPart hp (W1p.posPart hp u) = W1p.posPart hp u := by
+  simp [← W1p.posPartAbove_zero]
+
+/-- For `1 ≤ p < ∞`, the sum `u⁺ + (-u)⁺` has value `|W1p.value u|` almost everywhere on `Ω`. -/
+theorem W1p.value_posPart_add_posPart_neg_ae (hp : p ≠ ∞) (u : W1p mu Omega p) :
+    ⇑(W1p.value (W1p.posPart hp u + W1p.posPart hp (-u))) =ᵐ[mu.restrict Omega]
+      fun x => |W1p.value u x| := by
+  filter_upwards [W1p.value_add_ae (W1p.posPart hp u) (W1p.posPart hp (-u)),
+    Lp.coeFn_posPart (W1p.value u), Lp.coeFn_posPart (W1p.value (-u)),
+    W1p.value_neg_ae u] with x hadd hp1 hp2 hneg
+  simp only [W1p.value_posPart, Pi.add_apply, Pi.neg_apply] at hadd hp1 hp2 hneg ⊢
+  rw [hadd, hp1, hp2, hneg]
+  rcases le_total 0 (W1p.value u x) with h | h
+  · rw [abs_of_nonneg h, max_eq_left h, max_eq_right (neg_nonpos.2 h), add_zero]
+  · rw [abs_of_nonpos h, max_eq_right h, max_eq_left (neg_nonneg.2 h), zero_add]
+
 end PosPart
 
 end TauCeti

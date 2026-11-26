@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.SmoothSheaf
-public import TauCeti.AlgebraicGeometry.Sites.Etale.FiniteLisseSepClosed
+public import TauCeti.AlgebraicGeometry.Sites.Etale.FiniteLisse.SepClosed
 public import TauCeti.CategoryTheory.Galois.ModuleSheaf
 public import TauCeti.CategoryTheory.Sites.ConstantSheaf
 public import TauCeti.RingTheory.Etale.Field

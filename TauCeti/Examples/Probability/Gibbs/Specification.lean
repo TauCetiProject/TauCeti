@@ -89,8 +89,8 @@ theorem idSpec_kernel_apply (Λ : Finset (Multiplicative ℤ)) (ω : X₀) :
     idSpec.kernel Λ ω = Measure.dirac ω :=
   Kernel.deterministic_apply (measurable_id_exterior Λ) ω
 
-/-- The identity specification on `X₀` is a specification for which every measure is Gibbs. -/
-example (μ : Measure X₀) : idSpec.IsGibbs μ := by
+/-- Every measure on `X₀` is Gibbs for the identity specification. -/
+theorem isGibbs_idSpec (μ : Measure X₀) : idSpec.IsGibbs μ := by
   refine Specification.isGibbs_iff.2 fun Λ => ?_
   have h : ⇑(idSpec.kernel Λ) = Measure.dirac := funext (idSpec_kernel_apply Λ)
   rw [h, Measure.bind_dirac]
