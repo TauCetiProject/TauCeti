@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Module.Semidef
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
 
-import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
+public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 
 /-!
 # Basic norm estimates for Hilbert C⋆-modules
@@ -60,7 +60,9 @@ Riesz theorem.
   `∀ a : A, ‖a • y‖ ≤ C * ‖a • x‖`, Paschke's inequality `⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` for
   any action-preserving function with pointwise norm bound `‖T x‖ ≤ C * ‖x‖`, and its bounded
   operator specialization `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A`.
-* `CStarModule.tendsto_smul`: the action is essential, `e x → x` along an approximate unit.
+* `CStarModule.tendsto_smul`, `CStarModule.tendsto_unitization_smul`: the action is essential,
+  `e x → x` along an approximate unit, and `(v.fst • e + v.snd * e) z → v.fst • z + v.snd • z`
+  for `v : Unitization ℂ A`.
 * `CStarModule.star_unop_inner_mul_unop_inner_le`: the Cauchy–Schwarz inequality
   `⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² ⟨y, y⟩_A` for right modules.
 * `CStarModule.isGreatest_norm_unop_inner`, `CStarModule.norm_op_smul_le`,
@@ -414,6 +416,25 @@ theorem tendsto_op_smul [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] {l : Filt
   rw [tendsto_map'_iff]
   simpa [Function.comp_def] using (continuous_op.tendsto (unop b)).comp (hl (unop b))
 
+/-- The action of `Unitization ℂ A` on a Hilbert C⋆-module is approximated along the approximate
+unit of `A` by `(v.fst • e + v.snd * e) • z → v.fst • z + v.snd • z`. -/
+theorem tendsto_unitization_smul [SMul A E] [CStarModule A E] (v : Unitization ℂ A) (z : E) :
+    Tendsto (fun e : A ↦ (v.fst • e + v.snd * e) • z)
+      (CStarAlgebra.approximateUnit A) (𝓝 (v.fst • z + v.snd • z)) := by
+  let : NormedSpace ℂ E := .ofCore (CStarModule.normedSpaceCore A)
+  have hsmul : Tendsto (· • z) (CStarAlgebra.approximateUnit A) (𝓝 z) :=
+    CStarModule.tendsto_smul (CStarAlgebra.increasingApproximateUnit A).tendsto_mul_right z
+  have hsnd : Tendsto (fun e : A ↦ v.snd • (e • z)) (CStarAlgebra.approximateUnit A)
+      (𝓝 (v.snd • z)) := by
+    rw [tendsto_iff_norm_sub_tendsto_zero]
+    refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun e ↦ ?_)
+      (by simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hsmul).const_mul ‖v.snd‖)
+    simpa [CStarModule.ext_inner_left (A := A) (x := v.snd • (e • z) - v.snd • z)
+      (y := v.snd • (e • z - z)) fun w ↦ by simp [mul_sub]] using
+      CStarModule.norm_smul_le v.snd (e • z - z)
+  refine ((hsmul.const_smul v.fst).add hsnd).congr fun e ↦ CStarModule.ext_inner_left (A := A)
+    fun w ↦ by simp [add_mul, mul_assoc, smul_mul_assoc]
+
 end Essential
 
 end CStarModule
@@ -515,24 +536,6 @@ private lemma inr_inner_self_le_sq_smul_of_le {E F : Type*} [AddCommGroup E] [Mo
       (hv_sa.conjugate_nonneg (Unitization.inr_nonneg ℂ _ CStarModule.inner_self_nonneg))).mp
       hvpv_norm
 
-private lemma tendsto_unitization_smul {G : Type*} [NormedAddCommGroup G] [Module ℂ G]
-    [SMul A G] [CStarModule A G] (v : Unitization ℂ A) (z : G) :
-    Tendsto (fun e : A ↦ (v.fst • e + v.snd * e) • z)
-      (CStarAlgebra.approximateUnit A) (𝓝 (v.fst • z + v.snd • z)) := by
-  let : NormedSpace ℂ G := .ofCore (CStarModule.normedSpaceCore A)
-  have hsmul : Tendsto (· • z) (CStarAlgebra.approximateUnit A) (𝓝 z) :=
-    CStarModule.tendsto_smul (CStarAlgebra.increasingApproximateUnit A).tendsto_mul_right z
-  have hsnd : Tendsto (fun e : A ↦ v.snd • (e • z)) (CStarAlgebra.approximateUnit A)
-      (𝓝 (v.snd • z)) := by
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun e ↦ ?_)
-      (by simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hsmul).const_mul ‖v.snd‖)
-    simpa [CStarModule.ext_inner_left (A := A) (x := v.snd • (e • z) - v.snd • z)
-      (y := v.snd • (e • z - z)) fun w ↦ by simp [mul_sub]] using
-      CStarModule.norm_smul_le v.snd (e • z - z)
-  refine ((hsmul.const_smul v.fst).add hsnd).congr fun e ↦ CStarModule.ext_inner_left (A := A)
-    fun w ↦ by simp [add_mul, mul_assoc, smul_mul_assoc]
-
 /-- **Paschke's inequality** (two-vector form): if `x : E` and `y : F` satisfy
 `‖a • y‖ ≤ C * ‖a • x‖` for all `a : A`, then `⟪y, y⟫_A ≤ C ^ 2 • ⟪x, x⟫_A`, with no linearity,
 continuity, adjointability, or completeness assumptions. -/
@@ -555,9 +558,11 @@ theorem inner_self_le_of_norm_smul_le {E F : Type*} [AddCommGroup E] [Module ℂ
         (isStrictlyPositive_algebraMap hε))
       (le_add_of_nonneg_right (isStrictlyPositive_algebraMap hε).nonneg)
       (le_of_tendsto_of_tendsto'
-        (tendsto_unitization_smul (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ) y).norm
-        ((tendsto_unitization_smul (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ)
-          x).norm.const_mul C) fun e ↦ h _))
+        (_root_.CStarModule.tendsto_unitization_smul
+          (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ) y).norm
+        ((_root_.CStarModule.tendsto_unitization_smul
+          (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ) x).norm.const_mul C)
+        fun e ↦ h _))
 
 /-- **Paschke's inequality** for any function `T : E → F` commuting with the `A`-action
 (`∀ a x, T (a • x) = a • T x`) and satisfying a pointwise norm bound `‖T x‖ ≤ C * ‖x‖`:

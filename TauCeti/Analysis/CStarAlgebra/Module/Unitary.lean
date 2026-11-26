@@ -65,12 +65,11 @@ is its adjoint if and only if it is surjective and preserves the `A`-valued inne
   linear isometries and isometric equivalences from inner-product preservation, without
   `[StarModule ℂ A]`.
 * `LinearIsometry.inner_map_map_of_map_smul_cstarModule`,
-  `LinearIsometryEquiv.inner_map_map_of_map_smul_cstarModule`,
   `LinearIsometryEquiv.inner_map_eq_flip_of_map_smul_cstarModule`: over a (possibly non-unital)
   C⋆-algebra `A`, every complex-linear isometry (not necessarily surjective) commuting with the
   `A`-action preserves `⟪·, ·⟫_A`, and surjective ones flip across `⟪·, ·⟫_A`.
 * `LinearIsometry.inner_map_map_cstarModule`, `LinearIsometryEquiv.inner_map_map_cstarModule`,
-  `LinearIsometryEquiv.unop_inner_map_map_cstarModule`: over a unital C⋆-algebra `A`, every
+  `LinearIsometryEquiv.inner_map_eq_flip_cstarModule`: over a unital C⋆-algebra `A`, every
   bundled `A`-linear or `Aᵐᵒᵖ`-linear isometry preserves the `A`-valued inner product.
 
 ## References
@@ -825,24 +824,7 @@ variable {A E F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   exact LinearIsometry.inner_map_map_of_map_smul_cstarModule
     ⟨f.toLinearMap.restrictScalars ℂ, f.norm_map⟩ f.map_smul x y
 
-/-- Every `A`-linear isometry `f : E →ₗᵢ[A] F` preserves diagonal inner products `⟪x, x⟫_A`. -/
-theorem inner_map_map_self_cstarModule (f : E →ₗᵢ[A] F) (x : E) :
-    inner A (f x) (f x) = inner A x x := f.inner_map_map_cstarModule x x
-
 end Left
-
-section Right
-
-variable {A E F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [SeminormedAddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
-  [SeminormedAddCommGroup F] [Module ℂ F] [Module Aᵐᵒᵖ F] [CStarModule Aᵐᵒᵖ F]
-
-/-- Every right `A`-linear isometry `f : E →ₗᵢ[Aᵐᵒᵖ] F` preserves `⟨x, y⟩_A`. -/
-theorem unop_inner_map_map_cstarModule (f : E →ₗᵢ[Aᵐᵒᵖ] F) (x y : E) :
-    unop (inner Aᵐᵒᵖ (f x) (f y)) = unop (inner Aᵐᵒᵖ x y) :=
-  congrArg unop (f.inner_map_map_cstarModule x y)
-
-end Right
 
 end LinearIsometry
 
@@ -854,20 +836,14 @@ variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
   [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [CStarModule A E]
   [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [CStarModule A F]
 
-/-- **Lance's theorem** (Lance, Theorem 3.5) over a (possibly non-unital) C⋆-algebra `A`: every
-`f : E ≃ₗᵢ[ℂ] F` commuting with the `A`-action preserves `⟪·, ·⟫_A`. -/
-theorem inner_map_map_of_map_smul_cstarModule (f : E ≃ₗᵢ[ℂ] F)
-    (hf : ∀ (a : A) (x : E), f (a • x) = a • f x) (x y : E) :
-    inner A (f x) (f y) = inner A x y :=
-  f.toLinearIsometry.inner_map_map_of_map_smul_cstarModule hf x y
-
 /-- Moving a surjective complex-linear isometry `f : E ≃ₗᵢ[ℂ] F` commuting with the `A`-action
 across the `A`-valued inner product over a (possibly non-unital) C⋆-algebra:
 `⟪f x, y⟫_A = ⟪x, f.symm y⟫_A`. -/
 theorem inner_map_eq_flip_of_map_smul_cstarModule (f : E ≃ₗᵢ[ℂ] F)
     (hf : ∀ (a : A) (x : E), f (a • x) = a • f x) (x : E) (y : F) :
     inner A (f x) y = inner A x (f.symm y) := by
-  conv_lhs => rw [← f.apply_symm_apply y, f.inner_map_map_of_map_smul_cstarModule hf]
+  conv_lhs => rw [← f.apply_symm_apply y]
+  exact f.toLinearIsometry.inner_map_map_of_map_smul_cstarModule hf x (f.symm y)
 
 end NonUnital
 
@@ -883,11 +859,6 @@ over a unital C⋆-algebra preserves `⟪·, ·⟫_A`. -/
     inner A (f x) (f y) = inner A x y :=
   f.toLinearIsometry.inner_map_map_cstarModule x y
 
-/-- A surjective `A`-linear isometry `f : E ≃ₗᵢ[A] F` preserves diagonal inner products
-`⟪x, x⟫_A`. -/
-theorem inner_map_map_self_cstarModule (f : E ≃ₗᵢ[A] F) (x : E) :
-    inner A (f x) (f x) = inner A x x := f.inner_map_map_cstarModule x x
-
 /-- Moving a surjective `A`-linear isometry `f : E ≃ₗᵢ[A] F` across the `A`-valued inner
 product: `⟪f x, y⟫_A = ⟪x, f.symm y⟫_A`. -/
 theorem inner_map_eq_flip_cstarModule (f : E ≃ₗᵢ[A] F) (x : E) (y : F) :
@@ -898,24 +869,5 @@ theorem inner_map_eq_flip_cstarModule (f : E ≃ₗᵢ[A] F) (x : E) (y : F) :
     ⟨f.toLinearEquiv.restrictScalars ℂ, f.norm_map⟩ f.map_smul x y
 
 end Left
-
-section Right
-
-variable {A E F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [SeminormedAddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
-  [SeminormedAddCommGroup F] [Module ℂ F] [Module Aᵐᵒᵖ F] [CStarModule Aᵐᵒᵖ F]
-
-/-- A surjective right `A`-linear isometry `f : E ≃ₗᵢ[Aᵐᵒᵖ] F` preserves `⟨x, y⟩_A`. -/
-theorem unop_inner_map_map_cstarModule (f : E ≃ₗᵢ[Aᵐᵒᵖ] F) (x y : E) :
-    unop (inner Aᵐᵒᵖ (f x) (f y)) = unop (inner Aᵐᵒᵖ x y) :=
-  congrArg unop (f.inner_map_map_cstarModule x y)
-
-/-- Moving a surjective right `A`-linear isometry `f : E ≃ₗᵢ[Aᵐᵒᵖ] F` across the `A`-valued
-inner product: `⟨f x, y⟩_A = ⟨x, f.symm y⟩_A`. -/
-theorem unop_inner_map_eq_flip_cstarModule (f : E ≃ₗᵢ[Aᵐᵒᵖ] F) (x : E) (y : F) :
-    unop (inner Aᵐᵒᵖ (f x) y) = unop (inner Aᵐᵒᵖ x (f.symm y)) :=
-  congrArg unop (f.inner_map_eq_flip_cstarModule x y)
-
-end Right
 
 end LinearIsometryEquiv
