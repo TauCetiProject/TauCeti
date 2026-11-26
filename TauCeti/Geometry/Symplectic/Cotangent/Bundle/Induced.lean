@@ -109,12 +109,24 @@ def inducedLiouvilleForm (hf : ContMDiff IN 𝓘(ℝ, E →L[ℝ] ℝ) ∞ f) :
     (SmoothForm.mpullback (leftTrivialization I G) (leftTrivialization I G).contMDiff
       (liouvilleForm I G))
 
+/-- The induced Liouville form is the pullback of the left-trivialized Liouville form of `T*G`
+along `(g, n) ↦ (g, f n)`. -/
+theorem inducedLiouvilleForm_def (hf : ContMDiff IN 𝓘(ℝ, E →L[ℝ] ℝ) ∞ f) :
+    inducedLiouvilleForm I G hf = SmoothForm.mpullback (Prod.map id f) (contMDiff_id.prodMap hf)
+      (SmoothForm.mpullback (leftTrivialization I G) (leftTrivialization I G).contMDiff
+        (liouvilleForm I G)) :=
+  (rfl)
+
 /-- The induced Liouville form sends a tangent vector `(v, u)` at `(g, n)` to
 `f n (d(L_{g⁻¹})_g v)`. -/
 theorem inducedLiouvilleForm_apply (hf : ContMDiff IN 𝓘(ℝ, E →L[ℝ] ℝ) ∞ f) (p : G × N)
     (v : Fin 1 → TangentSpace (I.prod IN) p) :
-    (inducedLiouvilleForm I G hf).val p v = f p.2 (mfderiv I I (p.1⁻¹ * ·) p.1 (v 0).1) :=
-  mpullback_prodMap_leftTrivialization_liouvilleForm_apply hf p v
+    (inducedLiouvilleForm I G hf).val p v = f p.2 (mfderiv I I (p.1⁻¹ * ·) p.1 (v 0).1) := by
+  rw [inducedLiouvilleForm_def, SmoothForm.coe_mpullback, TauCeti.mpullback_apply,
+    mpullback_leftTrivialization_liouvilleForm_apply,
+    mfderiv_prodMap_apply_fst ((hf p.2).mdifferentiableAt (by simp)), mfderiv_id]
+  -- `Prod.map id f p = (p.1, f p.2)` definitionally.
+  rfl
 
 /-- On a tangent vector whose `G`-component is the value `ξ^L(g)` of the left-invariant vector
 field of `ξ`, the induced Liouville form takes the value `f n ξ`. -/
@@ -138,12 +150,8 @@ theorem mpullback_prodMap_mul_left_inducedLiouvilleForm (hf : ContMDiff IN 𝓘(
   rw [SmoothForm.coe_mpullback, TauCeti.mpullback_apply,
     inducedLiouvilleForm_apply_of_fst_eq hf p hξ.symm]
   refine inducedLiouvilleForm_apply_of_fst_eq hf _ ?_
-  have hd : (mfderiv (I.prod IN) (I.prod IN) (Prod.map (k * ·) id) p (v 0)).1 =
-      mfderiv I I (k * ·) p.1 (v 0).1 := by
-    rw [mfderiv_prodMap mdifferentiableAt_mul_left mdifferentiableAt_id]
-    -- `ContinuousLinearMap.prodMap` acts componentwise, definitionally.
-    rfl
-  rw [hd, ← hξ, mfderiv_mul_left_mulInvariantVectorField, Prod.map_fst]
+  rw [mfderiv_prodMap_apply_fst mdifferentiableAt_id, ← hξ,
+    mfderiv_mul_left_mulInvariantVectorField, Prod.map_fst]
 
 /-- **Right translation of the induced Liouville form.** Right translation of the `G`-factor by
 `k`, together with a map `φ` of `N` such that `f (φ n) = f n ∘ Ad_k`, preserves `⟨f, θ⟩`. -/
@@ -163,12 +171,8 @@ theorem mpullback_prodMap_mul_right_inducedLiouvilleForm
     -- `(f ∘ Ad_k) (Ad_{k⁻¹} ξ) = f (Ad_k (Ad_{k⁻¹} ξ))`, by `ContinuousLinearMap.comp_apply`, which
     -- `rw` cannot use since `Ad_k` acts on `GroupLieAlgebra I G` and `f p.2` on the model space.
     exact congrArg (f p.2) (Lie.adjointContinuousLinearMap_adjointContinuousLinearMap_inv k ξ)
-  · have hd : (mfderiv (I.prod IN) (I.prod IN) (Prod.map (· * k) φ) p (v 0)).1 =
-        mfderiv I I (· * k) p.1 (v 0).1 := by
-      rw [mfderiv_prodMap mdifferentiableAt_mul_right ((hφ p.2).mdifferentiableAt (by simp))]
-      -- `ContinuousLinearMap.prodMap` acts componentwise, definitionally.
-      rfl
-    rw [hd, ← hξ, Lie.mfderiv_mul_right_mulInvariantVectorField, Prod.map_fst]
+  · rw [mfderiv_prodMap_apply_fst ((hφ p.2).mdifferentiableAt (by simp)), ← hξ,
+      Lie.mfderiv_mul_right_mulInvariantVectorField, Prod.map_fst]
 
 /-! ### The two-form `-d⟨f, θ⟩ + pr₂^* σ` -/
 
@@ -198,7 +202,7 @@ theorem neg_mextDerivₗ_inducedLiouvilleForm (hf : ContMDiff IN 𝓘(ℝ, E →
       SmoothForm.mpullback (Prod.map id f) (contMDiff_id.prodMap hf)
         (SmoothForm.mpullback (leftTrivialization I G) (leftTrivialization I G).contMDiff
           (symplecticForm I G)) := by
-  rw [inducedLiouvilleForm, SmoothForm.mextDerivₗ_mpullback, SmoothForm.mextDerivₗ_mpullback,
+  rw [inducedLiouvilleForm_def, SmoothForm.mextDerivₗ_mpullback, SmoothForm.mextDerivₗ_mpullback,
     ← map_neg, ← map_neg, symplecticForm_eq_neg_mextDerivₗ]
 
 /-- **The induced form is closed** when `σ` is. -/
@@ -295,23 +299,6 @@ theorem eval₂_inducedForm_eq_zero (hf : ContMDiff IN 𝓘(ℝ, E →L[ℝ] ℝ
 
 variable [CompleteSpace EN]
 
-/-- The fundamental vector fields of left multiplication on the `G`-factor of `G × N`, read on the
-product. -/
-private theorem mfderiv_prodMk_mul_right_one (p : G × N) (ξ : GroupLieAlgebra I G) :
-    mfderiv I (I.prod IN) (fun k : G ↦ (k * p.1, p.2)) 1 ξ =
-      ((InfinitesimalAction.fundamental I G I G).prod
-        (0 : InfinitesimalAction (GroupLieAlgebra I G) IN N)) ξ p := by
-  have hι : MDifferentiableAt I (I.prod IN) (fun k : G ↦ (k * p.1, p.2)) 1 :=
-    mdifferentiableAt_mul_right.prodMk mdifferentiableAt_const
-  rw [InfinitesimalAction.prod_apply, InfinitesimalAction.zero_apply]
-  refine Prod.ext ?_ ?_
-  · rw [prodVectorField_fst, InfinitesimalAction.fundamental_apply, fundamentalVectorField_apply,
-      ← hι.mfderiv_fst_apply]
-    -- `(k * p.1, p.2).1` is `k * p.1`, which is `k • p.1` for the action of `G` on itself.
-    rfl
-  · rw [prodVectorField_snd, Pi.zero_apply, ← hι.mfderiv_snd_apply, mfderiv_const,
-      zero_apply]
-
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space G]
 
 /-- **The moment map of the induced form.** For the infinitesimal action of `𝔤` on `G × N` by the
@@ -331,12 +318,12 @@ theorem isMomentMap_inducedForm (hf : ContMDiff IN 𝓘(ℝ, E →L[ℝ] ℝ) �
         InfinitesimalAction.fundamental I G (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBundle I G) ξ
           (Ψ p) := by
     intro ξ p
-    have hcomp : Ψ ∘ (fun k : G ↦ (k * p.1, p.2)) = fun k ↦ k • Ψ p := by
+    have hcomp : Ψ ∘ (fun k : G ↦ (k • p.1, p.2)) = fun k ↦ k • Ψ p := by
       funext k
       exact leftTrivialization_mul k p.1 (f p.2)
-    rw [← mfderiv_prodMk_mul_right_one, InfinitesimalAction.fundamental_apply,
+    rw [InfinitesimalAction.fundamental_prod_zero_apply, InfinitesimalAction.fundamental_apply,
       fundamentalVectorField_apply, ← hcomp]
-    exact (mfderiv_comp_apply_of_eq (f := fun k : G ↦ (k * p.1, p.2)) (1 : G)
+    exact (mfderiv_comp_apply_of_eq (f := fun k : G ↦ (k • p.1, p.2)) (1 : G)
       ((hΨ p).mdifferentiableAt (by simp)) (mdifferentiableAt_mul_right.prodMk
         mdifferentiableAt_const) (by simp) ξ).symm
   -- The cotangent moment map along `Ψ` is the coadjoint orbit map of `f`.
