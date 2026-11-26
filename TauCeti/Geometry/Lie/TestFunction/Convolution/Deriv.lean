@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
-public import TauCeti.Geometry.Lie.TestFunction.Convolution
+public import TauCeti.Geometry.Lie.TestFunction.Convolution.Basic
 public import TauCeti.Geometry.Lie.TestFunction.RightDeriv.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Deriv
 
@@ -19,7 +18,8 @@ exponential lines through a point:
 
 `R(X) a (g) = d/dt|₀ a (g exp(tX))`, `L_X a (g) = d/dt|₀ a (exp(tX) g)`
 
-(`TauCeti.LieTestFunction.hasDerivAt_rightDeriv`, `TauCeti.LieTestFunction.hasDerivAt_leftDeriv`).
+(`TauCeti.LieTestFunction.hasDerivAt_apply_mul_mulInvariantExp_smul_zero`,
+`TauCeti.LieTestFunction.hasDerivAt_apply_mulInvariantExp_smul_mul_zero`).
 Differentiating the convolution `(a * b) g = ∫ x, a x * b (x⁻¹ g) ∂μ` under the integral sign then
 moves each derivative onto one factor:
 
@@ -32,8 +32,6 @@ of `a` in the first, and outside `g (supp b)⁻¹` in the second.
 
 ## Main results
 
-* `TauCeti.LieTestFunction.hasDerivAt_rightDeriv`, `TauCeti.LieTestFunction.hasDerivAt_leftDeriv`:
-  right and left differentiation are derivatives along exponential lines.
 * `TauCeti.LieTestFunction.rightDeriv_convolution`: `R(X) (a * b) = a * R(X) b`.
 * `TauCeti.LieTestFunction.leftDeriv_convolution`: `L_X (a * b) = L_X a * b` for a left-invariant
   measure.
@@ -61,40 +59,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
-/-! ### Differentiation along exponential lines -/
-
-section ExponentialLine
-
-local instance instContMDiffMulOneLieTestFunctionDeriv : ContMDiffMul I 1 G :=
-  ContMDiffMul.of_le (m := 1) (n := ∞) (by norm_num)
-
-local instance instBoundarylessManifoldLieTestFunctionDeriv : BoundarylessManifold I G :=
-  ContMDiffMul.boundarylessManifold
-
-/-- **Right differentiation is the derivative along right exponential lines**:
-`R(X) a (g) = d/dt|₀ a (g exp(tX))`. -/
-theorem hasDerivAt_rightDeriv (X : GroupLieAlgebra I G) (a : LieTestFunction I G) (g : G) :
-    let _ : T2Space G := I.t2Space_of_lieGroup ∞
-    HasDerivAt (fun t : ℝ ↦ a (g * mulInvariantExp (I := I) (G := G) (t • X)))
-      (rightDeriv X a g) 0 := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  rw [rightDeriv_apply]
-  exact (a.contMDiff.mdifferentiableAt (x := g) (by simp)).hasMFDerivAt
-    |>.hasDerivAt_comp_mul_mulInvariantExp_smul_zero X
-
-/-- **Left differentiation is the derivative along left exponential lines**:
-`L_X a (g) = d/dt|₀ a (exp(tX) g)`. -/
-theorem hasDerivAt_leftDeriv (X : GroupLieAlgebra I G) (a : LieTestFunction I G) (g : G) :
-    let _ : T2Space G := I.t2Space_of_lieGroup ∞
-    HasDerivAt (fun t : ℝ ↦ a (mulInvariantExp (I := I) (G := G) (t • X) * g))
-      (leftDeriv X a g) 0 := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  rw [leftDeriv_apply]
-  exact (a.contMDiff.mdifferentiableAt (x := g) (by simp)).hasMFDerivAt
-    |>.hasDerivAt_comp_mulInvariantExp_smul_mul_zero X
-
-end ExponentialLine
-
 /-! ### Derivatives of convolutions -/
 
 variable [I.Boundaryless] [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G)
@@ -119,11 +83,11 @@ theorem rightDeriv_convolution (X : GroupLieAlgebra I G) (a b : LieTestFunction 
     (fun x _ ↦ (hf (0, x)).of_le (by simp))
     (.of_forall fun t x hx ↦ by simp [f, image_eq_zero_of_notMem_tsupport hx])
   have hfx (x : G) : deriv (fun s ↦ f s x) 0 = a x * rightDeriv X b (x⁻¹ * g) := by
-    have h := (hasDerivAt_rightDeriv X b (x⁻¹ * g)).const_mul (a x)
+    have h := (hasDerivAt_apply_mul_mulInvariantExp_smul_zero X b (x⁻¹ * g)).const_mul (a x)
     simp only [mul_assoc] at h
     exact h.deriv
   simp only [hfx] at hderiv
-  refine (hasDerivAt_rightDeriv X (convolution μ a b) g).unique ?_
+  refine (hasDerivAt_apply_mul_mulInvariantExp_smul_zero X (convolution μ a b) g).unique ?_
   simpa [f, e] using hderiv
 
 /-- **Left differentiation acts on the first factor of a convolution** for a left-invariant
@@ -150,14 +114,14 @@ theorem leftDeriv_convolution [MeasurableMul G] [μ.IsMulLeftInvariant] (X : Gro
     (fun x _ ↦ (hf (0, x)).of_le (by simp))
     (.of_forall fun t x hx ↦ by simp [f, image_eq_zero_of_notMem_tsupport (hKb hx)])
   have hfx (x : G) : deriv (fun s ↦ f s x) 0 = leftDeriv X a x * b (x⁻¹ * g) :=
-    ((hasDerivAt_leftDeriv X a x).mul_const (b (x⁻¹ * g))).deriv
+    ((hasDerivAt_apply_mulInvariantExp_smul_mul_zero X a x).mul_const (b (x⁻¹ * g))).deriv
   simp only [hfx] at hderiv
-  refine (hasDerivAt_leftDeriv X (convolution μ a b) g).unique ?_
+  refine (hasDerivAt_apply_mulInvariantExp_smul_mul_zero X (convolution μ a b) g).unique ?_
   -- substitute `x ↦ exp(tX) x` in `(a * b) (exp(tX) g)`
-  have hconv (t : ℝ) : convolution μ a b (e t * g) = ∫ x, f t x ∂μ := by
+  have hconv (t : ℝ) :
+      convolution μ a b (mulInvariantExp (I := I) (G := G) (t • X) * g) = ∫ x, f t x ∂μ := by
     rw [convolution_apply, ← integral_mul_left_eq_self _ (e t)]
-    simp [f, mul_assoc]
-  change HasDerivAt (fun t ↦ convolution μ a b (e t * g)) _ 0
+    simp [f, e, mul_assoc]
   rw [funext hconv, convolution_apply]
   exact hderiv
 
