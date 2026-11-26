@@ -48,6 +48,9 @@ subcategory, where every object is a summand of an object of the subcategory.
   `K ⟶ X₁ ⊞ X₂ ⟶ Y ⟶ K⟦1⟧` whose second morphism is invertible on `X₂`, the projection
   `K ⟶ X₁` is an isomorphism; `CategoryTheory.Pretriangulated.isIso_comp_biprod_snd` is the
   symmetric statement.
+* `CategoryTheory.Functor.map_distTriang_biprod`: the image under a triangulated functor of a
+  distinguished triangle `K ⟶ X₁ ⊞ X₂ ⟶ Y ⟶ K⟦1⟧`, with middle vertex rewritten to
+  `F X₁ ⊞ F X₂` through `F.mapBiprod`, is distinguished.
 * `CategoryTheory.Functor.isIso_map_comp_biprod_fst` and
   `CategoryTheory.Functor.isIso_map_comp_biprod_snd`: the same after applying a triangulated
   functor, when only the image of the second morphism is invertible on a summand.
@@ -175,7 +178,7 @@ variable {D : Type*} [Category* D] [Preadditive D] [HasZeroObject D] [HasShift D
 
 /-- The image of a distinguished triangle `K ⟶ X₁ ⊞ X₂ ⟶ Y ⟶ K⟦1⟧` under a triangulated functor
 `F`, with middle vertex `F X₁ ⊞ F X₂`, is distinguished. -/
-private lemma map_distTriang_biprod (hT : Triangle.mk k Φ δ ∈ distTriang C) :
+theorem Functor.map_distTriang_biprod (hT : Triangle.mk k Φ δ ∈ distTriang C) :
     Triangle.mk (F.map k ≫ (F.mapBiprod X₁ X₂).hom) ((F.mapBiprod X₁ X₂).inv ≫ F.map Φ)
       (F.map δ ≫ (F.commShiftIso (1 : ℤ)).hom.app K) ∈ distTriang D := by
   simpa using distinguished_mk_of_iso (F.map_distinguished _ hT) (Iso.refl _) (F.mapBiprod _ _)
@@ -190,7 +193,7 @@ theorem Functor.isIso_map_comp_biprod_fst (hT : Triangle.mk k Φ δ ∈ distTria
   have : IsIso (biprod.inr ≫ (F.mapBiprod X₁ X₂).inv ≫ F.map Φ) := by
     rwa [mapBiprod_inv, biprod.inr_desc_assoc, ← F.map_comp]
   simpa only [Category.assoc, mapBiprod_hom, biprod.lift_fst, ← F.map_comp] using
-    isIso_comp_biprod_fst (map_distTriang_biprod F hT)
+    isIso_comp_biprod_fst (F.map_distTriang_biprod hT)
 
 /-- **A triangulated functor and an invertible summand of the second morphism**: for a
 triangulated functor `F` and a distinguished triangle `K ⟶ X₁ ⊞ X₂ ⟶ Y ⟶ K⟦1⟧` whose second
@@ -201,7 +204,7 @@ theorem Functor.isIso_map_comp_biprod_snd (hT : Triangle.mk k Φ δ ∈ distTria
   have : IsIso (biprod.inl ≫ (F.mapBiprod X₁ X₂).inv ≫ F.map Φ) := by
     rwa [mapBiprod_inv, biprod.inl_desc_assoc, ← F.map_comp]
   simpa only [Category.assoc, mapBiprod_hom, biprod.lift_snd, ← F.map_comp] using
-    isIso_comp_biprod_snd (map_distTriang_biprod F hT)
+    isIso_comp_biprod_snd (F.map_distTriang_biprod hT)
 
 end Functor
 
