@@ -36,11 +36,15 @@ charge conjugation is involutive: `[[p, h], k] ↦ p • χ(h) k` is an equivale
 `s.chargeConj.chargeConj ≃ s` (`TauCeti.SpinCStructure.chargeConjChargeConjEquiv`).
 
 **Relation to twisting.** Twisting a `Spinᶜ` structure by a principal `U(1)`-bundle is
-`TauCeti.SpinCStructure.twist`. Since `χ x = x [1, (det x)⁻¹]`
-(`CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`), `s.chargeConj` should be
-equivalent to the twist of `s` by the inverse of the `U(1)`-bundle of its determinant line. On a
-symplectic four-manifold this gives `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`, whose group-level input
-is `CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`. Neither equivalence is proved here; the
+`TauCeti.SpinCStructure.twist`. Charge conjugation turns a twist by `L` into a twist by an
+inverse `L'` of `L`, `(s.twist L).chargeConj ≃ s.chargeConj.twist L'`
+(`TauCeti.SpinCStructure.chargeConjTwistEquiv`, in
+`TauCeti.Topology.VectorBundle.SpinStructure.Twist.ChargeConjugation`). Since
+`χ x = x [1, (det x)⁻¹]` (`CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`),
+`s.chargeConj` should moreover be equivalent to the twist of `s` by the inverse of the
+`U(1)`-bundle of its determinant line. On a symplectic four-manifold the two together give
+`conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`, whose group-level input is
+`CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`. The second equivalence is not proved; the
 identity `c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about determinant classes.
 
 ## Main definitions
