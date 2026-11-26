@@ -710,8 +710,9 @@ theorem IsPartitionTable.eq_nil_of_systemSize_eq_zero (hT : IsPartitionTable r T
 
 /-- In a partition table, the letter `y` of a one-letter word `[y]` of the system has an
 occurrence with the empty word. -/
-theorem IsPartitionTable.exists_occurrence_eq_nil_of_singleton_mem (hT : IsPartitionTable r T)
-    {y : (X ⊕ A) × Bool} (hy : [y] ∈ r) : ∃ o : Occurrence r, r[o.1][o.2] = y ∧ T o = [] := by
+theorem IsPartitionTable.exists_occurrence_with_word_eq_nil_of_singleton_mem
+    (hT : IsPartitionTable r T) {y : (X ⊕ A) × Bool} (hy : [y] ∈ r) :
+    ∃ o : Occurrence r, r[o.1][o.2] = y ∧ T o = [] := by
   obtain ⟨i, hi, hw⟩ := List.getElem_of_mem hy
   have h : 0 < r[i].length := by simp [hw]
   refine ⟨⟨⟨i, hi⟩, ⟨0, h⟩⟩, by simp [hw], List.eq_nil_of_length_eq_zero ?_⟩

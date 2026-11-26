@@ -100,7 +100,7 @@ private theorem cancellationFamily_ineq_one [Finite A] :
   refine Finset.eq_empty_of_forall_notMem fun T hT => ?_
   obtain ⟨hT, hne⟩ := mem_cancellationFamily.1 hT
   -- The word `z⁻¹` of the witness.
-  obtain ⟨o, ho, h⟩ := hT.exists_occurrence_eq_nil_of_singleton_mem
+  obtain ⟨o, ho, h⟩ := hT.exists_occurrence_with_word_eq_nil_of_singleton_mem
     (y := (Sum.inl (Sum.inr ⟨0, Nat.zero_lt_one⟩), false))
     (mem_toWords.2 (.inr (.inl ⟨⟨0, Nat.zero_lt_one⟩, .inl (by simp)⟩)))
   exact hne o ⟨0, Nat.zero_lt_one⟩ (congrArg Prod.fst ho) h

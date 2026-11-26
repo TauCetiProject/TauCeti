@@ -263,7 +263,8 @@ private theorem cancellationFamily_singleton_inr {X A : Type*} [Finite A] (a : A
     cancellationFamily ([[(Sum.inr a, true)]] : List (List ((X ⊕ A) × Bool))) = ∅ := by
   refine Finset.eq_empty_of_forall_notMem fun T hT => ?_
   have hT := mem_cancellationFamily.1 hT
-  obtain ⟨o, ho, h⟩ := hT.exists_occurrence_eq_nil_of_singleton_mem (List.mem_singleton_self _)
+  obtain ⟨o, ho, h⟩ :=
+    hT.exists_occurrence_with_word_eq_nil_of_singleton_mem (List.mem_singleton_self _)
   simpa [h] using hT.eq_of_eq_inr o (congrArg Prod.fst ho)
 
 /-- The equation `a = 1` has no solution, by Lemma 14(1). -/
