@@ -17,9 +17,9 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.Normed.Operator.Prod
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 import Mathlib.Topology.Instances.Real.Lemmas
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Periodicity of the derivative and the logarithmic derivative
@@ -142,17 +142,9 @@ theorem Periodic.exists_forall_norm_le_comp_snd {E F : Type*} [NormedAddCommGrou
   obtain ⟨B₁, hB₁⟩ :=
     (hf.deriv.isBounded_of_continuous hc (hf₁.continuous_deriv le_rfl)).exists_norm_le
   refine ⟨max B₀ B₁, fun z ↦ ⟨(hB₀ _ (Set.mem_range_self _)).trans (le_max_left _ _), ?_⟩⟩
-  have hd : HasFDerivAt (fun w : E × ℝ ↦ f w.2)
-      ((fderiv ℝ f z.2).comp (ContinuousLinearMap.snd ℝ E ℝ)) z :=
-    (hf₁.differentiable one_ne_zero z.2).hasFDerivAt.comp z hasFDerivAt_snd
-  rw [hd.fderiv]
-  calc ‖(fderiv ℝ f z.2).comp (ContinuousLinearMap.snd ℝ E ℝ)‖
-      ≤ ‖fderiv ℝ f z.2‖ * ‖ContinuousLinearMap.snd ℝ E ℝ‖ :=
-        ContinuousLinearMap.opNorm_comp_le _ _
-    _ ≤ ‖fderiv ℝ f z.2‖ * 1 := by gcongr; exact ContinuousLinearMap.norm_snd_le ℝ E ℝ
-    _ ≤ max B₀ B₁ := by
-        rw [mul_one, ← norm_deriv_eq_norm_fderiv]
-        exact (hB₁ _ (Set.mem_range_self _)).trans (le_max_right _ _)
+  refine (TauCeti.norm_fderiv_comp_snd_le f z).trans ?_
+  rw [← norm_deriv_eq_norm_fderiv]
+  exact (hB₁ _ (Set.mem_range_self _)).trans (le_max_right _ _)
 
 end Function
 

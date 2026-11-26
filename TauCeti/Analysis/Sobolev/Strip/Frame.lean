@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.Prod
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Comp
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Changes of frame acting on jets
@@ -119,13 +120,9 @@ theorem frameJetCoeff_const_id (z : ℝ × ℝ) :
 coefficient field of multiplication by `β(s)` is that of the change of frame by `β(s) • id`. -/
 theorem cutoffCoeff_eq_frameJetCoeff {β : ℝ → ℝ} {z : ℝ × ℝ} (hβ : DifferentiableAt ℝ β z.1) :
     cutoffCoeff V β z = frameJetCoeff (fun w ↦ β w.1 • ContinuousLinearMap.id ℝ V) z := by
-  have hβ' : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1)
-      ((ContinuousLinearMap.toSpanSingleton ℝ (deriv β z.1)).comp
-        (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
-    hβ.hasDerivAt.hasFDerivAt.comp z hasFDerivAt_fst
-  have hd := hβ'.smul_const (ContinuousLinearMap.id ℝ V)
+  have hd := (hβ.hasFDerivAt.smul_const (ContinuousLinearMap.id ℝ V)).fderiv
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  simp [hd.fderiv]
+  simp [fderiv_comp_fst (fun s ↦ β s • ContinuousLinearMap.id ℝ V), hd]
 
 /-- The coefficient field of a change of frame has norm at most `‖Φ z‖ + ‖dΦ z‖`. -/
 theorem norm_frameJetCoeff_le (Φ : ℝ × ℝ → V →L[ℝ] W) (z : ℝ × ℝ) :
@@ -163,10 +160,10 @@ theorem continuous_frameJetCoeff {Φ : ℝ × ℝ → V →L[ℝ] W} (hΦ : Cont
 
 /-- For a `C¹` frame `Φ` with `Φ` and `dΦ` bounded, the coefficient field of the change of frame
 is essentially bounded. -/
-theorem memLp_frameJetCoeff {Φ : ℝ × ℝ → V →L[ℝ] W} (hΦ : ContDiff ℝ 1 Φ) {B : ℝ}
-    (hΦB : ∀ z, ‖Φ z‖ ≤ B) (hΦ'B : ∀ z, ‖fderiv ℝ Φ z‖ ≤ B) :
+theorem memLp_frameJetCoeff {Φ : ℝ × ℝ → V →L[ℝ] W} (hΦ : ContDiff ℝ 1 Φ) {B B' : ℝ}
+    (hΦB : ∀ z, ‖Φ z‖ ≤ B) (hΦ'B : ∀ z, ‖fderiv ℝ Φ z‖ ≤ B') :
     MemLp (frameJetCoeff Φ) ∞ stripMeasure :=
-  memLp_top_of_bound (continuous_frameJetCoeff hΦ).aestronglyMeasurable (B + B)
+  memLp_top_of_bound (continuous_frameJetCoeff hΦ).aestronglyMeasurable (B + B')
     (ae_of_all _ fun z ↦ (norm_frameJetCoeff_le Φ z).trans (add_le_add (hΦB z) (hΦ'B z)))
 
 /-- **First-order operators in a frame.** Let `Ψ z` be a left inverse of `Φ z`. Reading the
