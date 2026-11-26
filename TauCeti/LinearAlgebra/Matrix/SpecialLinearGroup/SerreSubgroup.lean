@@ -131,9 +131,8 @@ theorem transvection_one_zero_mem_serreElementarySubgroup {t : A} (ht : t ∈ I)
         transvection (zero_ne_one : (0 : Fin 2) ≠ 1) (-1)
   have hw : w * transvection (zero_ne_one : (0 : Fin 2) ≠ 1) (-t) =
       transvection (one_ne_zero : (1 : Fin 2) ≠ 0) t * w := by
-    refine Matrix.SpecialLinearGroup.ext _ _ fun i j ↦ ?_
-    simp only [w, coe_mul, coe_transvection_zero_one, coe_transvection_one_zero]
-    fin_cases i <;> fin_cases j <;> simp
+    rw [antidiagonal_mul_transvection zero_ne_one (by simp [w]) (by simp [w])]
+    simp [w]
   rw [eq_mul_inv_of_mul_eq hw.symm]
   exact I.normal_serreElementarySubgroup.conj_mem _
     (transvection_zero_one_mem_serreElementarySubgroup (I.neg_mem ht)) w
