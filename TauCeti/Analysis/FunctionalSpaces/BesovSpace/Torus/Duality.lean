@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus
+import Mathlib.Analysis.Normed.Group.Tannery
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Normed.Lp.Basic
@@ -28,7 +29,8 @@ exponents in `[1, ∞]`. This file identifies the continuous dual of the periodi
 `(B^s_{p,q}(𝕋ᵈ))^* ≃ B^{-s}_{p',q'}(𝕋ᵈ)` for `1 ≤ p ≤ ∞` and `1 ≤ q < ∞`,
 
 through the bilinear pairing `⟨u, w⟩ = ∑ₙ u(n) w(-n)` of Fourier coefficients, which for functions
-is the integral `∫ u w` over the torus.
+is the integral `∫ u w` over the torus
+(`TauCeti.UnitAddTorus.BesovSpace.pairing_eq_integral_of_coeff_eq`).
 
 The series `∑ₙ u(n) w(-n)` need not converge absolutely, so the pairing is defined blockwise: with
 `Δ⁺ₖ = ∑_{k - L ≤ j < k + L} Δⱼ`, where `L = φ.littlewoodPaleyOverlap φ` is the overlap width of
@@ -68,8 +70,11 @@ Fourier coefficients on the torus.
 * `TauCeti.UnitAddTorus.BesovSpace.pairing`: the pairing `B^s_{p,q}(𝕋ᵈ) × B^{-s}_{p',q'}(𝕋ᵈ) → ℂ`,
   a continuous bilinear map, with the series `TauCeti.UnitAddTorus.BesovSpace.hasSum_pairing`, the
   finite sums `TauCeti.UnitAddTorus.BesovSpace.pairing_eq_sum_of_support_subset` on trigonometric
-  polynomials, and the bound `TauCeti.UnitAddTorus.BesovSpace.exists_norm_pairing_le`, uniform in
-  the exponents.
+  polynomials, the sum `TauCeti.UnitAddTorus.BesovSpace.pairing_eq_tsum_of_summable` of
+  `∑ₙ u(n) w(-n)` whenever that series is summable, the integral
+  `TauCeti.UnitAddTorus.BesovSpace.pairing_eq_integral_of_coeff_eq` for the coefficients of
+  `f, g ∈ L²(𝕋ᵈ)`, and the bound `TauCeti.UnitAddTorus.BesovSpace.exists_norm_pairing_le`, uniform
+  in the exponents.
 * `TauCeti.UnitAddTorus.BesovSpace.strongDualEquiv`: **the duality
   `B^{-s}_{p',q'}(𝕋ᵈ) ≃ (B^s_{p,q}(𝕋ᵈ))^*`** for `1 ≤ p ≤ ∞` and `1 ≤ q < ∞`. Its inverse sends
   `Λ` to the coefficients `n ↦ Λ(e₋ₙ)`
@@ -228,7 +233,9 @@ variable (φ s p p' q q') in
 `Δ⁺ₖ = ∑_{k - L ≤ j < k + L} Δⱼ`, with `L = φ.littlewoodPaleyOverlap φ`, is the identity on the
 frequencies of `Δₖ`. The pairing is the sum of the series `∑ₖ ∑ₙ ψₖ(n) u(n) w(-n)`
 (`TauCeti.UnitAddTorus.BesovSpace.hasSum_pairing`), which is `∑ₙ u(n) w(-n)` when `u` is a
-trigonometric polynomial (`TauCeti.UnitAddTorus.BesovSpace.pairing_eq_sum_of_support_subset`). -/
+trigonometric polynomial (`TauCeti.UnitAddTorus.BesovSpace.pairing_eq_sum_of_support_subset`) and
+whenever that series is summable (`TauCeti.UnitAddTorus.BesovSpace.pairing_eq_tsum_of_summable`).
+-/
 def pairing : BesovSpace φ s p q →L[ℂ] BesovSpace φ (-s) p' q' →L[ℂ] ℂ :=
   (lp.dualPairing q q'
     (fun _ : ℕ ↦ (ContinuousLinearMap.mul ℂ ℂ).lpPairing (volume : Measure (UnitAddTorus d)) p p')
@@ -308,6 +315,49 @@ theorem pairing_eq_sum_of_support_subset {t : Finset (d → ℤ)} {u : BesovSpac
   refine hasSum_sum fun n _ ↦ ?_
   simpa only [mul_assoc] using
     hasSum_inhomogeneousLittlewoodPaley_latticePoint_mul n (u.coeff n * w.coeff (-n))
+
+/-- **The pairing as a series of coefficients.** If the series `∑ₙ u(n) w(-n)` is summable, then
+`⟨u, w⟩` is its sum. The partial sums `∑_{k ≤ N} ψₖ(n) = φ(2^{-N} n)` lie in `[0, 1]`, so the
+blockwise series converges to `∑ₙ u(n) w(-n)` by dominated convergence. -/
+theorem pairing_eq_tsum_of_summable {u : BesovSpace φ s p q} {w : BesovSpace φ (-s) p' q'}
+    (h : Summable fun n ↦ u.coeff n * w.coeff (-n)) :
+    pairing φ s p p' q q' u w = ∑' n, u.coeff n * w.coeff (-n) := by
+  set a : (d → ℤ) → ℂ := fun n ↦ u.coeff n * w.coeff (-n)
+  have hbound (N : ℕ) (n : d → ℤ) : ‖∑ k ∈ Finset.range (N + 1),
+      (φ.inhomogeneousLittlewoodPaley k (latticePoint n) : ℂ) * a n‖ ≤ ‖a n‖ := by
+    rw [← Finset.sum_mul, ← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range,
+      norm_mul, Complex.norm_real, Real.norm_of_nonneg φ.nonneg]
+    exact mul_le_of_le_one_left (norm_nonneg _) φ.le_one
+  have hlim := tendsto_tsum_of_dominated_convergence h.norm
+    (fun n ↦ (hasSum_inhomogeneousLittlewoodPaley_latticePoint_mul n (a n)).tendsto_sum_nat.comp
+      (tendsto_add_atTop_nat 1)) (Eventually.of_forall hbound)
+  refine tendsto_nhds_unique ((hasSum_pairing u w).tendsto_sum_nat.comp
+    (tendsto_add_atTop_nat 1)) (hlim.congr fun N ↦ ?_)
+  simp only [Function.comp_apply]
+  rw [Summable.tsum_finsetSum fun k _ ↦ summable_of_ne_finset_zero fun n hn ↦ by
+    rw [inhomogeneousLittlewoodPaley_eq_zero_of_notMem (φ := φ) k hn, Complex.ofReal_zero,
+      zero_mul]]
+  simp only [a, mul_assoc]
+
+/-- **The pairing of square-integrable functions.** If `u` and `w` have the Fourier coefficients
+of `f, g ∈ L²(𝕋ᵈ)`, then `⟨u, w⟩ = ∫ f g`: by Parseval's identity for `star f` and `g`, the
+series `∑ₙ f̂(n) ĝ(-n)` converges to `∫ f g`. -/
+theorem pairing_eq_integral_of_coeff_eq {u : BesovSpace φ s p q} {w : BesovSpace φ (-s) p' q'}
+    {f g : Lp ℂ 2 (volume : Measure (UnitAddTorus d))} (hu : u.coeff = mFourierCoeff f)
+    (hw : w.coeff = mFourierCoeff g) :
+    pairing φ s p p' q q' u w = ∫ x, f x * g x := by
+  have hstar (n : d → ℤ) :
+      starRingEnd ℂ (mFourierCoeff (star f : Lp ℂ 2 volume) n) = mFourierCoeff f (-n) := by
+    rw [mFourierCoeff_congr_ae (Lp.coeFn_star f), mFourierCoeff, mFourierCoeff, ← integral_conj]
+    refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
+    simp [mFourier_neg]
+  have hint : ∫ x, starRingEnd ℂ ((star f : Lp ℂ 2 volume) x) * g x = ∫ x, f x * g x :=
+    integral_congr_ae (by filter_upwards [Lp.coeFn_star f] with x hx; simp [hx])
+  have hP := hasSum_prod_mFourierCoeff (star f) g
+  simp only [hstar, hint] at hP
+  have hP' : HasSum (fun n ↦ u.coeff n * w.coeff (-n)) (∫ x, f x * g x) := by
+    simpa [hu, hw, Function.comp_def] using (Equiv.neg (d → ℤ)).hasSum_iff.2 hP
+  rw [pairing_eq_tsum_of_summable hP'.summable, hP'.tsum_eq]
 
 variable (φ s) in
 /-- **Hölder's inequality for the pairing.** There is `C`, depending only on `φ` and `s`, such that

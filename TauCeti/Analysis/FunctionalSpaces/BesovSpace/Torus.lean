@@ -135,13 +135,6 @@ variable {d : Type*} [Fintype d]
 -- here so that the Besov spaces are built on that same space.
 attribute [local instance 2000] instMeasureSpaceUnitAddCircle
 
-/-- The volume of the torus, for the measure given by `instMeasureSpaceUnitAddCircle` on each
-circle factor, is a finite measure. That volume is by definition the product
-`Measure.pi fun _ ↦ AddCircle.haarAddCircle` of the Haar probability measures, so the instance is
-the one Mathlib provides for that product. -/
-theorem isFiniteMeasure_volume : IsFiniteMeasure (volume : Measure (UnitAddTorus d)) :=
-  inferInstanceAs (IsFiniteMeasure (Measure.pi fun _ ↦ AddCircle.haarAddCircle))
-
 attribute [local instance] isFiniteMeasure_volume
 
 variable (φ : ContDiffBump (0 : EuclideanSpace ℝ d))
