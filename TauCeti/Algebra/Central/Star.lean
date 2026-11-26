@@ -13,7 +13,8 @@ import Mathlib.Algebra.Star.Center
 /-!
 # The involution induced on the centre of a central star algebra
 
-Let `B` be a star ring which is a central algebra over a field `K`. The involution `x ↦ x*` maps
+Let `B` be a star ring which is a central algebra over a commutative semiring `K`, with
+`algebraMap K B` injective (`FaithfulSMul K B`). The involution `x ↦ x*` maps
 the centre of `B`, the image of `K`, into itself, and since `K` is commutative it restricts to a
 ring endomorphism `σ` of `K` with `σ² = id` (`TauCeti.Algebra.centerInvolution`). An involution of
 a central simple algebra is of the first kind when `σ` is the identity and of the second kind
@@ -37,20 +38,20 @@ public section
 
 namespace TauCeti.Algebra
 
-variable (K : Type*) (B : Type*)
+variable (K : Type*) (B : Type*) [CommSemiring K] [Semiring B] [StarRing B] [Algebra K B]
+  [Algebra.IsCentral K B]
 
 /-- The involution maps the image of `K` into itself. -/
-theorem exists_algebraMap_eq_star [CommSemiring K] [Semiring B] [StarRing B] [Algebra K B]
-    [Algebra.IsCentral K B] (x : K) : ∃ y : K, algebraMap K B y = star (algebraMap K B x) :=
+theorem exists_algebraMap_eq_star (x : K) : ∃ y : K, algebraMap K B y = star (algebraMap K B x) :=
   Algebra.mem_bot.mp <| Algebra.IsCentral.out <|
     Set.star_mem_center ((Subalgebra.center K B).algebraMap_mem x)
 
-variable [Field K] [Ring B] [StarRing B] [Algebra K B] [Algebra.IsCentral K B] [Nontrivial B]
+variable [FaithfulSMul K B]
 
 /-- The **involution induced on the centre** `K` of `B`: `σ(x)` is the element of `K` with image
 `(algebraMap K B x)*`. It is a ring endomorphism since `K` is commutative. -/
 noncomputable def centerInvolution : K →+* K :=
-  have hinj : Function.Injective (algebraMap K B) := (algebraMap K B).injective
+  have hinj : Function.Injective (algebraMap K B) := FaithfulSMul.algebraMap_injective K B
   have hspec (x : K) : algebraMap K B (exists_algebraMap_eq_star K B x).choose =
       star (algebraMap K B x) := (exists_algebraMap_eq_star K B x).choose_spec
   { toFun x := (exists_algebraMap_eq_star K B x).choose
@@ -71,7 +72,7 @@ theorem algebraMap_centerInvolution (x : K) :
 @[simp]
 theorem centerInvolution_centerInvolution (x : K) :
     centerInvolution K B (centerInvolution K B x) = x :=
-  (algebraMap K B).injective <| by
+  FaithfulSMul.algebraMap_injective K B <| by
     rw [algebraMap_centerInvolution, algebraMap_centerInvolution, star_star]
 
 end TauCeti.Algebra
