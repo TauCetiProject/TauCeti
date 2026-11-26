@@ -53,6 +53,9 @@ then shows that a parametrix of `T` has index `-index T`.
   left parametrix modulo compact operators has finite-dimensional kernel and closed range.
 * `ContinuousLinearMap.cofg_range_of_isCompactOperator_comp_sub_one`: an operator with a right
   parametrix modulo compact operators has finite-codimensional range.
+* `ContinuousLinearMap.cofg_range_of_comp_eq_one_add_add`: the same when the right parametrix
+  inverts the operator only up to a compact operator plus an operator of norm less than one, as
+  for parametrices spliced from inverses of approximate models.
 * `ContinuousLinearMap.IsFredholm.of_isCompactOperator_comp_sub_one`,
   `ContinuousLinearMap.IsFredholm.exists_isCompactOperator_comp_sub_one` and
   `TauCeti.isFredholm_iff_exists_isCompactOperator_comp_sub_one`: Atkinson's theorem.
@@ -154,6 +157,23 @@ theorem _root_.ContinuousLinearMap.cofg_range_of_isCompactOperator_comp_sub_one
     rintro y ⟨z, rfl⟩
     exact ⟨S z, rfl⟩
   exact hfred.finite_coker.of_le hrange
+
+omit [CompleteSpace E] in
+/-- An operator with a right parametrix modulo a compact operator and an operator of norm less than
+one has finite-codimensional range: if `T ∘ S = 1 + K + R` with `K` compact and `‖R‖ < 1`, then
+`S (1 + R)⁻¹` is a right parametrix of `T` modulo the compact operator `K (1 + R)⁻¹`. -/
+theorem _root_.ContinuousLinearMap.cofg_range_of_comp_eq_one_add_add (T : E →L[𝕜] F)
+    {S : F →L[𝕜] E} {K R : F →L[𝕜] F} (hTS : T.comp S = 1 + K + R) (hK : IsCompactOperator K)
+    (hR : ‖R‖ < 1) : T.range.CoFG := by
+  set U : (F →L[𝕜] F)ˣ := Units.oneSub (-R) (by rwa [norm_neg])
+  set Uinv : F →L[𝕜] F := ↑U⁻¹
+  have hU : (1 + R).comp Uinv = 1 := by
+    rw [← ContinuousLinearMap.mul_def, ← sub_neg_eq_add,
+      ← Units.val_oneSub (-R) (by rwa [norm_neg]), Units.mul_inv]
+  refine T.cofg_range_of_isCompactOperator_comp_sub_one (S := S.comp Uinv) ?_
+  rw [← ContinuousLinearMap.comp_assoc, hTS, add_right_comm, ContinuousLinearMap.add_comp, hU,
+    add_sub_cancel_left]
+  exact hK.comp_clm _
 
 /-- **Atkinson's theorem**, parametrix direction: an operator between Banach spaces with a
 two-sided parametrix modulo compact operators is Fredholm. -/
