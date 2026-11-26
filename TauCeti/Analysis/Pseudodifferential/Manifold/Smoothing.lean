@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.ChartQuantization
+public import TauCeti.Analysis.Pseudodifferential.Manifold.PatchedQuantization
 public import TauCeti.Analysis.Pseudodifferential.Manifold.PrincipalSymbol
 import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Topology.Compactness.Compact
 
 /-!
@@ -46,7 +48,11 @@ by `ρᵢ` and `χᵢ`
 When the `ρᵢ` add up to `1`, this is `P` itself
 (`TauCeti.sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`), and on a compact
 manifold such cutoffs exist. This is the converse of
-`OpenPartialHomeomorph.chartQuantization_mem_classicalPseudodifferentialOperators`.
+`OpenPartialHomeomorph.chartQuantization_mem_classicalPseudodifferentialOperators`. For a locally
+finite family of charts, as on a σ-compact manifold, the sum is the patched quantization
+(`TauCeti.sub_patchedQuantization_mem_smoothingPseudodifferentialOperators`): near every compact
+set only finitely many charts matter, and there the difference is the finite sum of the
+pseudolocal operators `ρᵢ P (1 - χᵢ)`.
 
 ## Main definitions
 
@@ -65,6 +71,8 @@ manifold such cutoffs exist. This is the converse of
 * `TauCeti.sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`: a classical
   pseudodifferential operator is a sum of chart quantizations modulo an operator of order `-∞`,
   given cutoffs in charts adding up to `1`.
+* `TauCeti.sub_patchedQuantization_mem_smoothingPseudodifferentialOperators`: the same for a locally
+  finite family of charts, with the patched quantization `TauCeti.patchedQuantization`.
 * `TauCeti.exists_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`: on a compact
   manifold, every classical pseudodifferential operator of order `m` is a finite sum of chart
   quantizations of classical symbols of order `m`, modulo an operator of order `-∞`, in finitely
@@ -327,6 +335,98 @@ theorem sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators
   simpa [hρ, LinearMap.mulLeft_one] using
     mulLeft_sum_comp_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators hP hχ ha hφ
       hψ
+
+/-- At a point `x` where only the charts `i ∈ I` contribute, `P - ∑ᵢ Op_{eᵢ}(aᵢ)` is
+`∑_{i ∈ I} ρᵢ P (1 - χᵢ)`: each chart quantization is `ρᵢ P χᵢ`, and the `ρᵢ` add up to `1`. -/
+private theorem sub_patchedQuantization_apply_eq_sum {ι : Type*}
+    {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+    {he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
+    {ρ χ φ ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ)} {a : ι → ClassicalSymbol n ℂ ℂ m}
+    (hρ : ∀ y, ∑ᶠ i, (e i).cutoffPullback (he i) (ρ i) 1 y = 1)
+    (ha : ∀ i (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n),
+      quantizeSchwartzValue (a i).toSymbol.coefficient u x =
+        (e i).complexChartCompression (he i) (ρ i) (χ i) P
+          (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x)
+    (hφ : ∀ i, EqOn (φ i) 1 (tsupport (ρ i))) (hψ : ∀ i, EqOn (ψ i) 1 (tsupport (χ i)))
+    (hS : LocallyFinite fun i ↦ (e i).symm '' (tsupport (φ i) ∪ tsupport (ψ i))) {I : Finset ι}
+    {x : M} (hI : ∀ i, x ∈ (e i).symm '' (tsupport (φ i) ∪ tsupport (ψ i)) → i ∈ I)
+    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (P - patchedQuantization he φ ψ a hS) f x =
+      (∑ i ∈ I, LinearMap.mulLeft ℂ ((e i).complexCutoffPullback (he i) (ρ i) 1) ∘ₗ P ∘ₗ
+        LinearMap.mulLeft ℂ (1 - (e i).complexCutoffPullback (he i) (χ i) 1)) f x := by
+  set c := fun i ↦ (e i).complexCutoffPullback (he i) (ρ i) 1
+  have hsum : ∑ i ∈ I, c i x = 1 := by
+    have h := hρ x
+    rw [finsum_eq_sum_of_support_subset _ (s := I) fun i hi ↦ hI i
+      (((e i).tsupport_cutoffPullback_subset (he i) _ _).trans (image_mono fun y hy ↦
+        Or.inl (subset_tsupport _ (by rw [Function.mem_support, hφ i hy]; exact one_ne_zero)))
+        (subset_tsupport _ hi))] at h
+    simp only [c, OpenPartialHomeomorph.complexCutoffPullback_one_apply]
+    exact_mod_cast h
+  have hpatch : patchedQuantization he φ ψ a hS f x =
+      ∑ i ∈ I, c i x * P ((e i).complexCutoffPullback (he i) (χ i) 1 * f) x := by
+    rw [patchedQuantization_apply, finsum_eq_sum_of_support_subset _ (s := I) fun i hi ↦
+      hI i (image_mono subset_union_left ((e i).tsupport_chartQuantization_subset (he i) _ _ _ f
+        (subset_tsupport _ hi)))]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [(e i).chartQuantization_eq_mulLeft_comp_comp_mulLeft (he i) (ha i) (hφ i) (hψ i)]
+    simp [c]
+  simp only [LinearMap.sub_apply, ContMDiffMap.coe_sub, Pi.sub_apply, hpatch, LinearMap.sum_apply,
+    ContMDiffMap.coe_sum, Finset.sum_apply, LinearMap.comp_apply, LinearMap.mulLeft_apply,
+    ContMDiffMap.coe_mul, Pi.mul_apply, sub_mul, one_mul, map_sub]
+  rw [Finset.sum_sub_distrib, ← Finset.sum_mul, hsum, one_mul]
+
+/-- **A classical pseudodifferential operator is a locally finite sum of chart quantizations
+modulo order `-∞`.** Let `P` be a classical pseudodifferential operator of order `m`. For a family
+of charts `eᵢ`, let `ρᵢ` be cutoffs whose pullbacks to `M` add up to `1`, `χᵢ` cutoffs equal to
+`1` near the supports of the `ρᵢ`, and `aᵢ` the symbol of the chart compression of `P` by `ρᵢ` and
+`χᵢ`. If `φᵢ` and `ψᵢ` are cutoffs equal to `1` on the supports of `ρᵢ` and `χᵢ` whose chart
+preimages form a locally finite family, then `P` and the patched quantization `∑ᵢ Op_{eᵢ}(aᵢ)`,
+localized by the `φᵢ` and `ψᵢ`, differ by an operator of order `-∞`. This is the locally finite
+form of `TauCeti.sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`. -/
+theorem sub_patchedQuantization_mem_smoothingPseudodifferentialOperators
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {ι : Type*}
+    {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+    {he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
+    {ρ χ φ ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ)} {a : ι → ClassicalSymbol n ℂ ℂ m}
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hρ : ∀ y, ∑ᶠ i, (e i).cutoffPullback (he i) (ρ i) 1 y = 1)
+    (hχ : ∀ i, ∀ᶠ y in 𝓝ˢ (tsupport (ρ i)), χ i y = 1)
+    (ha : ∀ i (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n),
+      quantizeSchwartzValue (a i).toSymbol.coefficient u x =
+        (e i).complexChartCompression (he i) (ρ i) (χ i) P
+          (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x)
+    (hφ : ∀ i, EqOn (φ i) 1 (tsupport (ρ i))) (hψ : ∀ i, EqOn (ψ i) 1 (tsupport (χ i)))
+    (hS : LocallyFinite fun i ↦ (e i).symm '' (tsupport (φ i) ∪ tsupport (ψ i))) :
+    P - patchedQuantization he φ ψ a hS ∈ smoothingPseudodifferentialOperators := by
+  have hPQ := sub_mem hP (patchedQuantization_mem_classicalPseudodifferentialOperators he φ ψ a hS)
+  refine mem_smoothingPseudodifferentialOperators_iff.2 fun m' ↦
+    mem_classicalPseudodifferentialOperators_of_forall_mulLeft_comp_mem
+      (mem_classicalPseudodifferentialOperators_iff.1 hPQ).1 fun K hK ↦ ?_
+  -- A cutoff `g = 1` near `K` with compact support `L`; only the finitely many charts `i ∈ I`
+  -- with `eᵢ⁻¹(supp φᵢ ∪ supp ψᵢ)` meeting `L` matter on `L`, where
+  -- `g (P - ∑ᵢ ρᵢ P χᵢ) = g ∑_{i ∈ I} ρᵢ P (1 - χᵢ)`.
+  obtain ⟨σ, hσ, hσK, hσc, -, -⟩ := hK.exists_contMDiff_one_nhds_tsupport_subset
+    𝓘(ℝ, CoordinateSpace n) isOpen_univ (subset_univ K)
+  set I := (hS.finite_nonempty_inter_compact hσc.isCompact).toFinset
+  set g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ := ContMDiffMap.ofReal ⟨σ, hσ⟩
+  have hg (x : M) : g x = σ x := ContMDiffMap.ofReal_apply _ x
+  refine ⟨g, fun x hx ↦ by simp [hg, hσK.self_of_nhdsSet x hx], ?_⟩
+  have key : LinearMap.mulLeft ℂ g ∘ₗ (P - patchedQuantization he φ ψ a hS) =
+      LinearMap.mulLeft ℂ g ∘ₗ ∑ i ∈ I, LinearMap.mulLeft ℂ ((e i).complexCutoffPullback (he i)
+        (ρ i) 1) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (1 - (e i).complexCutoffPullback (he i) (χ i) 1) := by
+    ext f x
+    by_cases hx : σ x = 0
+    · simp [hg, hx]
+    simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply]
+    rw [sub_patchedQuantization_apply_eq_sum hρ ha hφ hψ hS (fun i hi ↦
+      (hS.finite_nonempty_inter_compact hσc.isCompact).mem_toFinset.2
+        ⟨x, hi, subset_tsupport _ hx⟩) f]
+  rw [key]
+  exact smoothingPseudodifferentialOperators_le_classicalPseudodifferentialOperators m'
+    (mulLeft_comp_mem_smoothingPseudodifferentialOperators (Submodule.sum_mem _ fun i _ ↦
+      mulLeft_comp_comp_mulLeft_mem_smoothingPseudodifferentialOperators hP
+        (OpenPartialHomeomorph.disjoint_tsupport_complexCutoffPullback_one_sub (he i) (hχ i))) _)
 
 /-- **On a compact manifold, classical pseudodifferential operators are finite sums of chart
 quantizations modulo order `-∞`.** If `M` is compact, there are finitely many points `x` and cutoffs
