@@ -52,7 +52,8 @@ splitting, stated on the Matsumoto group of an ordered field, is
 * `TauCeti.MilnorK.positiveEntryEquiv R hn`: the splitting
   `degree R n ≃ₗ[ℤ] ZMod 2 × positiveEntrySpan R n`, for `n ≠ 0`.
 * `TauCeti.MilnorK.ModTwo R`: the Milnor K-ring modulo two `K_*ᴹ(R) / 2`, of characteristic two,
-  with quotient map `TauCeti.MilnorK.ModTwo.mk`.
+  with quotient map `TauCeti.MilnorK.ModTwo.mk` and universal property
+  `TauCeti.MilnorK.ModTwo.lift`.
 * `TauCeti.MilnorK.modTwoEquiv R hsq`: the ring isomorphism `K_*ᴹ(R) / 2 ≃+* (ZMod 2)[X]` when
   every positive unit is a square.
 
@@ -410,6 +411,21 @@ theorem ModTwo.two_eq_zero : (2 : ModTwo R) = 0 := by
   exact RingQuot.mkRingHom_rel ⟨rfl, rfl⟩
 
 omit [LinearOrder R] [IsStrictOrderedRing R] in
+/-- The **universal property** of the Milnor K-ring modulo two: a ring homomorphism out of
+`K_*ᴹ(R)` sending `2` to `0` descends to `K_*ᴹ(R) / 2`. -/
+def ModTwo.lift {A : Type*} [Semiring A] (f : MilnorK R →+* A) (hf : f 2 = 0) :
+    ModTwo R →+* A :=
+  RingQuot.lift ⟨f, by
+    rintro _ _ ⟨rfl, rfl⟩
+    rw [hf, map_zero]⟩
+
+omit [LinearOrder R] [IsStrictOrderedRing R] in
+@[simp]
+theorem ModTwo.lift_mk {A : Type*} [Semiring A] (f : MilnorK R →+* A) (hf : f 2 = 0)
+    (x : MilnorK R) : ModTwo.lift f hf (ModTwo.mk x) = f x :=
+  RingQuot.lift_mkRingHom_apply _ _ x
+
+omit [LinearOrder R] [IsStrictOrderedRing R] in
 /-- Ring homomorphisms out of the Milnor K-ring modulo two agreeing on the classes of degree-one
 symbols are equal. -/
 theorem ModTwo.ringHom_ext {A : Type*} [Ring A] {f g : ModTwo R →+* A}
@@ -421,22 +437,20 @@ omit [LinearOrder R] [IsStrictOrderedRing R] in
 homomorphism `K_*ᴹ(R) →+* ZMod 2` killing every degree-one class descends to it. -/
 instance ModTwo.instCharP : CharP (ModTwo R) 2 :=
   CharTwo.of_one_ne_zero_of_two_eq_zero (fun h ↦ by
-    let f : ModTwo R →+* ZMod 2 := RingQuot.lift ⟨MilnorK.lift 0 fun _ _ _ ↦ zero_mul _, by
-      rintro _ _ ⟨rfl, rfl⟩
-      rw [map_ofNat, map_zero]
-      exact CharTwo.two_eq_zero⟩
+    let f : ModTwo R →+* ZMod 2 := ModTwo.lift (MilnorK.lift 0 fun _ _ _ ↦ zero_mul _) <| by
+      rw [map_ofNat]
+      exact CharTwo.two_eq_zero
     simpa using congrArg f h) ModTwo.two_eq_zero
 
 /-- The sign polynomial, descended to the Milnor K-ring modulo two. -/
 private def modTwoToPolynomial : ModTwo R →+* (ZMod 2)[X] :=
-  RingQuot.lift ⟨signPolynomial R, by
-    rintro _ _ ⟨rfl, rfl⟩
-    rw [map_ofNat, map_zero]
-    exact CharTwo.two_eq_zero⟩
+  ModTwo.lift (signPolynomial R) <| by
+    rw [map_ofNat]
+    exact CharTwo.two_eq_zero
 
 private theorem modTwoToPolynomial_mk (x : MilnorK R) :
     modTwoToPolynomial (ModTwo.mk x) = signPolynomial R x :=
-  RingQuot.lift_mkRingHom_apply _ _ x
+  ModTwo.lift_mk _ _ x
 
 /-- The ring homomorphism `(ZMod 2)[X] →+* K_*ᴹ(R) / 2` sending `X` to the class of `{-1}`. -/
 private def polynomialToModTwo : (ZMod 2)[X] →+* ModTwo R :=
