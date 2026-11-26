@@ -47,10 +47,10 @@ quadratic forms with the subgroup preserving both summands.
 * `LinearMap.det_comp_inr_eq_det_prod_mul`: for a linear map `A : R × M₁ → M₁` with a kernel
   vector `w`, `det (A ∘ inr) = det Ψ * w.1` with `Ψ (ξ, a) = (A (a, ξ), ℓ ξ)` and `ℓ w.2 = 1`.
 * `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
-* `LinearMap.graphAddSubgroup`, `LinearMap.graphAddCommGroup`, and `LinearMap.graphEquiv`:
-  the `AddSubgroup` and `AddCommGroup` structure on the graph of a semiring-linear map between
-  additive commutative groups, and the linear equivalence `M ≃ₗ[R] f.graph` with simp lemmas
-  `LinearMap.coe_graphEquiv_apply` and `LinearMap.graphEquiv_symm_apply`.
+* `LinearMap.graphAddCommGroup` and `LinearMap.graphEquiv`: the `AddCommGroup` structure on the
+  graph of a semiring-linear map between additive commutative groups, and the linear equivalence
+  `M ≃ₗ[R] f.graph` with simp lemmas `LinearMap.coe_graphEquiv_apply` and
+  `LinearMap.graphEquiv_symm_apply`.
 * `LinearMap.isCompl_graph_ker_fst`: the graph of a linear map `M → M₂` is a complement of
   `0 × M₂`.
 * `TauCeti.antidiagDiagEquiv`: when `2` is invertible, the linear automorphism
@@ -337,24 +337,6 @@ theorem graph_neg_mem {R E F : Type*} [Semiring R] [AddCommGroup E] [Module R E]
     ∀ p ∈ f.graph, -p ∈ f.graph := fun p hp ↦
   (mem_graph_iff f (-p)).mpr <| by
     rw [Prod.snd_neg, Prod.fst_neg, map_neg, (mem_graph_iff f p).mp hp]
-
-/-- The graph of a semiring-linear map between additive commutative groups as an `AddSubgroup`. -/
-@[expose]
-def graphAddSubgroup {R E F : Type*} [Semiring R] [AddCommGroup E] [Module R E]
-    [AddCommGroup F] [Module R F] (f : E →ₗ[R] F) : AddSubgroup (E × F) :=
-  f.graph.toAddSubgroupOfNegMem f.graph_neg_mem
-
-@[simp]
-theorem coe_graphAddSubgroup {R E F : Type*} [Semiring R] [AddCommGroup E] [Module R E]
-    [AddCommGroup F] [Module R F] (f : E →ₗ[R] F) :
-    (f.graphAddSubgroup : Set (E × F)) = f.graph :=
-  rfl
-
-@[simp]
-theorem mem_graphAddSubgroup {R E F : Type*} [Semiring R] [AddCommGroup E] [Module R E]
-    [AddCommGroup F] [Module R F] (f : E →ₗ[R] F) {p : E × F} :
-    p ∈ f.graphAddSubgroup ↔ p ∈ f.graph :=
-  Iff.rfl
 
 /-- The graph of a semiring-linear map between additive commutative groups inherits an
 `AddCommGroup` structure. -/

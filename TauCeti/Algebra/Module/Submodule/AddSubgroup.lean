@@ -21,8 +21,8 @@ a `Semiring`, a submodule `p` need not be closed under negation in general, but 
   submodule over a semiring.
 * `Submodule.addCommGroupOfNegMem`: the corresponding `AddCommGroup` structure on `↥p`, with
   explicit compatibility lemmas for coercion and `p.subtype.toAddMonoidHom`.
-* `LinearMap.rangeAddSubgroup` and `LinearMap.rangeAddCommGroup`: the specialization to the range
-  of a semiring-linear map between additive commutative groups.
+* `LinearMap.rangeAddCommGroup`: the specialization to the range of a semiring-linear map
+  between additive commutative groups.
 -/
 
 public section
@@ -103,19 +103,6 @@ variable {R E F : Type*} [Semiring R] [AddCommGroup E] [Module R E] [AddCommGrou
 theorem range_neg_mem : ∀ y ∈ f.range, -y ∈ f.range := by
   rintro _ ⟨x, rfl⟩
   exact ⟨-x, map_neg f x⟩
-
-/-- The range of a semiring-linear map between additive groups as an `AddSubgroup`. -/
-@[expose]
-def rangeAddSubgroup : AddSubgroup F :=
-  f.range.toAddSubgroupOfNegMem f.range_neg_mem
-
-@[simp]
-theorem coe_rangeAddSubgroup : (f.rangeAddSubgroup : Set F) = f.range :=
-  rfl
-
-@[simp]
-theorem mem_rangeAddSubgroup {y : F} : y ∈ f.rangeAddSubgroup ↔ y ∈ f.range :=
-  Iff.rfl
 
 /-- The range of a semiring-linear map between additive commutative groups inherits an
 `AddCommGroup` structure. -/
