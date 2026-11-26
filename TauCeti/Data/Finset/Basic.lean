@@ -108,6 +108,9 @@ import TauCeti.Data.Set.PowersetCard
   `U` is removing all of `S`.
 * `Finset.notMem_insert_of_notMem_insert_swap`: if `c ∉ s` and `a ∉ insert c s`, then
   `c ∉ insert a s`.
+* `Finset.exists_notMem_insert_eq_of_mem`: any finset `U` of integer-cast cardinality `r'`
+  containing `c`, where `r + 1 = r'`, is `insert c S` for a finset `S` of integer-cast
+  cardinality `r` avoiding `c`.
 -/
 
 public section
@@ -668,6 +671,15 @@ theorem add_one_add_card_erase_eq_zero {α : Type*} [DecidableEq α] {s : Finset
     (ht : t ∈ s) {d : ℤ} (hd : d + #s = 0) : d + 1 + #(s.erase t) = 0 := by
   have := card_erase_add_one ht
   omega
+
+/-- Any finset `U` of integer-cast cardinality `r'` containing `c`, where `r + 1 = r'`, is
+`insert c S` for a finset `S` of integer-cast cardinality `r` avoiding `c`. -/
+theorem exists_notMem_insert_eq_of_mem {α : Type*} [DecidableEq α] {c : α} {r r' : ℤ}
+    (hr : r + 1 = r') (U : {U : Finset α // (#U : ℤ) = r'}) (hc : c ∈ U.val) :
+    ∃ (S : {S : Finset α // (#S : ℤ) = r}) (hcS : c ∉ S.val),
+      U = ⟨insert c S.val, by rw [card_insert_of_notMem hcS, Nat.cast_succ, S.property, hr]⟩ :=
+  ⟨⟨U.val.erase c, by have := card_erase_add_one hc; have := U.property; omega⟩,
+    notMem_erase c U.val, Subtype.ext (insert_erase hc).symm⟩
 
 /-- If an integer `d` cancels the cardinality of a finset `s` of a linear order, then splitting `s`
 at one of its elements `t`, the negated cardinalities of the elements below and above `t` add up to

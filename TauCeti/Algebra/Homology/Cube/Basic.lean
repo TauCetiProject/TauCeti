@@ -70,19 +70,6 @@ open CategoryTheory Limits Finset
 
 universe w v u
 
-namespace Finset
-
-/-- Any vertex `U` of integer-cast height `r'` containing `c`, where `r + 1 = r'`, is
-`insert c S` for a vertex `S` of height `r` avoiding `c`. -/
-theorem exists_notMem_insert_eq_of_mem {α : Type*} [DecidableEq α] {c : α} {r r' : ℤ}
-    (hr : r + 1 = r') (U : {U : Finset α // (#U : ℤ) = r'}) (hc : c ∈ U.val) :
-    ∃ (S : {S : Finset α // (#S : ℤ) = r}) (hcS : c ∉ S.val),
-      U = ⟨insert c S.val, by rw [card_insert_of_notMem hcS, Nat.cast_succ, S.property, hr]⟩ :=
-  ⟨⟨U.val.erase c, by have := card_erase_add_one hc; have := U.property; omega⟩,
-    notMem_erase c U.val, Subtype.ext (insert_erase hc).symm⟩
-
-end Finset
-
 namespace CategoryTheory
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteBiproducts C]

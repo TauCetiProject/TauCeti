@@ -39,7 +39,8 @@ and `q` at `c`.
 * `CategoryTheory.Functor.cubeReverseEdgeHom`: the degree-`-1` family of morphisms between signed
   cube complexes induced by reverse-edge maps in direction `c`.
 * `CategoryTheory.Functor.IsCubeReverseEdgeCompatible`: commutativity of the reverse-edge maps with
-  the cube edges in all directions other than `c`.
+  the cube edges in all directions other than `c` (`Functor.isCubeReverseEdgeCompatible_iff`,
+  `Functor.IsCubeReverseEdgeCompatible.comp_map`).
 * `CategoryTheory.Functor.cubeReverseEdgeHomotopyZero`,
   `CategoryTheory.Functor.cubeReverseEdgeHomotopyNeg`: the resulting `Homotopy` witnesses on signed
   cube complexes.
@@ -101,6 +102,7 @@ def cubeReverseEdgeHom (i j : ℤ) : F.cubeComplex.X i ⟶ G.cubeComplex.X j :=
   else 0
 
 /-- The reverse-edge map vanishes outside cochain degree `-1`. -/
+@[simp]
 lemma cubeReverseEdgeHom_of_ne {i j : ℤ} (hij : j + 1 ≠ i) :
     cubeReverseEdgeHom F G c h i j = 0 :=
   dite_eq_right hij
@@ -239,14 +241,39 @@ section Homotopy
 omit [Preadditive C] [HasFiniteBiproducts C] [Fintype ι] in
 /-- Compatibility of a reverse-edge family in direction `c` with all other cube directions `a ≠ c`:
 around every mixed square on `S` (`c ∉ S`, `a ∉ insert c S`), reversing `c` and then advancing `a`
-equals advancing `a` and then reversing `c`. -/
-@[expose]
+equals advancing `a` and then reversing `c` (`Functor.isCubeReverseEdgeCompatible_iff`,
+`Functor.IsCubeReverseEdgeCompatible.comp_map`). -/
 def IsCubeReverseEdgeCompatible (F G : Finset ι ⥤ C) (c : ι)
     (h : ∀ (S : Finset ι), c ∉ S → (F.obj (insert c S) ⟶ G.obj S)) : Prop :=
   ∀ (S : Finset ι) (hc : c ∉ S) (a : ι) (ha : a ∉ insert c S),
     h S hc ≫ G.map (homOfLE (S.subset_insert a)) =
       F.map (homOfLE (insert_subset_insert c (S.subset_insert a))) ≫
         h (insert a S) (notMem_insert_of_notMem_insert_swap hc ha)
+
+omit [Preadditive C] [HasFiniteBiproducts C] [Fintype ι] in
+/-- Defining characterization of `Functor.IsCubeReverseEdgeCompatible`: every mixed square of a
+reverse `c`-edge and a forward `a`-edge (`a ∉ insert c S`) commutes. -/
+lemma isCubeReverseEdgeCompatible_iff (F G : Finset ι ⥤ C) (c : ι)
+    (h : ∀ (S : Finset ι), c ∉ S → (F.obj (insert c S) ⟶ G.obj S)) :
+    IsCubeReverseEdgeCompatible F G c h ↔
+      ∀ (S : Finset ι) (hc : c ∉ S) (a : ι) (ha : a ∉ insert c S),
+        h S hc ≫ G.map (homOfLE (S.subset_insert a)) =
+          F.map (homOfLE (insert_subset_insert c (S.subset_insert a))) ≫
+            h (insert a S) (notMem_insert_of_notMem_insert_swap hc ha) :=
+  Iff.rfl
+
+omit [Preadditive C] [HasFiniteBiproducts C] [Fintype ι] in
+/-- Around any mixed square on `S` (`c ∉ S`, `a ∉ insert c S`), a compatible reverse-edge family
+commutes with the forward `a`-edge. -/
+@[reassoc]
+lemma IsCubeReverseEdgeCompatible.comp_map {F G : Finset ι ⥤ C} {c : ι}
+    {h : ∀ (S : Finset ι), c ∉ S → (F.obj (insert c S) ⟶ G.obj S)}
+    (hcomp : IsCubeReverseEdgeCompatible F G c h) {S : Finset ι} (hc : c ∉ S) {a : ι}
+    (ha : a ∉ insert c S) :
+    h S hc ≫ G.map (homOfLE (S.subset_insert a)) =
+      F.map (homOfLE (insert_subset_insert c (S.subset_insert a))) ≫
+        h (insert a S) (notMem_insert_of_notMem_insert_swap hc ha) :=
+  hcomp S hc a ha
 
 /-- On a vertex `S` avoiding `c`, `dNext + prevD` of `cubeReverseEdgeHom` reduces to the single
 forward-then-reverse composite `F(S) ⟶ F(insert c S) ⟶ G(S)`: `prevD` vanishes on `S`, and in
@@ -331,7 +358,7 @@ private lemma ι_cubeComplex_d_comp_cubeReverseEdgeHom_insert (F G : Finset ι �
   have ha : a.val ∉ insert c S.val := mem_compl.mp a.property
   rw [Preadditive.zsmul_comp, Category.assoc,
     map_homOfLE_insert_insert_comp_cubeReverseEdgeHom F G c h S hc ha, smul_smul,
-    ← Category.assoc (h S.val hc), hcomp S.val hc a.val ha, Category.assoc]
+    hcomp.comp_map_assoc hc ha]
 
 /-- On `insert c S`, reversing `c` and then applying `d` splits into the `c`-edge round-trip
 `F(insert c S) ⟶ G(S) ⟶ G(insert c S)` (whose two Koszul signs square to `+1`) plus the sum over
@@ -358,21 +385,13 @@ private lemma ι_cubeReverseEdgeHom_comp_cubeComplex_d_insert (F G : Finset ι �
   congr 1
   · simp only [cIdx, Preadditive.comp_zsmul, smul_smul, ← pow_add, ← two_mul, pow_mul,
       neg_one_sq, one_pow, one_smul]
-  · refine Finset.sum_bij
-      (fun a ha ↦ (⟨a.val, mem_compl.mpr fun hmem ↦ by
-        rcases mem_insert.mp hmem with rfl | haS
-        · exact (mem_erase.mp ha).left (Subtype.ext rfl)
-        · exact mem_compl.mp a.property haS⟩ : ((insert c S.val)ᶜ : Finset ι)))
-      (fun _ _ ↦ mem_univ _)
-      (fun a₁ _ a₂ _ hEq ↦
-        Subtype.ext (congrArg (Subtype.val : ((insert c S.val)ᶜ : Finset ι) → ι) hEq))
-      (fun b _ ↦ ⟨⟨b.val, mem_compl.mpr fun hbS ↦
-          mem_compl.mp b.property (mem_insert_of_mem hbS)⟩,
-        mem_erase.mpr ⟨fun hEq ↦ mem_compl.mp b.property
-          (congrArg (Subtype.val : (S.valᶜ : Finset ι) → ι) hEq ▸ mem_insert_self c S.val),
-          mem_univ _⟩, rfl⟩)
-      fun a _ ↦ ?_
+  · rw [← Finset.sum_coe_sort]
+    refine Fintype.sum_equiv
+      ((Equiv.subtypeSubtypeEquivSubtypeExists _ _).trans
+        (Equiv.subtypeEquivRight fun x ↦ by simp [cIdx, Subtype.ext_iff, and_comm]))
+      _ _ fun a ↦ ?_
     simp only [Preadditive.comp_zsmul, smul_smul]
+    rfl
 
 /-- On a vertex `insert c S` (`c ∉ S`), when `h` commutes with all unaffected edges, the
 contributions of all `a ∉ insert c S` to `dNext` and `prevD` cancel with opposite Koszul signs,
@@ -473,7 +492,12 @@ lemma cubeReverseEdgeHomotopyNeg_hom {F G : Finset ι ⥤ C} (c : ι)
     (i j : ℤ) :
     (cubeReverseEdgeHomotopyNeg c h hcomp α β h_notMem h_insert).hom i j =
       cubeReverseEdgeHom F G c h i j := by
-  simp [cubeReverseEdgeHomotopyNeg, Homotopy.equivSubZero]
+  -- `Homotopy.equivSubZero` (`@[expose]`, no `@[simps]`) preserves `.hom` definitionally.
+  rw [cubeReverseEdgeHomotopyNeg]
+  change ((Homotopy.ofEq _).trans
+    (cubeReverseEdgeHomotopyZero c h hcomp (α + β) h_notMem h_insert)).hom i j = _
+  rw [Homotopy.trans_hom, Homotopy.ofEq_hom, Pi.zero_apply, Pi.zero_apply, zero_add,
+    cubeReverseEdgeHomotopyZero_hom]
 
 end Homotopy
 

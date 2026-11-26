@@ -101,23 +101,18 @@ section Cube
 
 variable (D : PDCode n) (c : Fin n) (hD : D.IsPlanar) (R : Type u) [CommRing R] {j j' j'' : ℤ}
 
-private theorem reverseSaddle_resolutionCubeι_mem_range (hj : j' = j - 2) {S : Finset (Fin n)}
-    (hc : c ∉ S) (x : (D.resolutionCube hD R j).obj (insert c S)) :
+private theorem resolutionEdgeMap_insert_mem_piece (hj : j' = j - 2) {S : Finset (Fin n)}
+    (hc : c ∉ S)
+    {x : Khovanov.CircleTensor R (D.ResolvedCircle (cubeState (insert c S)))}
+    (hx : x ∈ (Khovanov.circleQuantumGrading R
+      (D.ResolvedCircle (cubeState (insert c S)))).piece (j - #(insert c S))) :
     D.resolutionEdgeMap cubeState_insert_eq_of_ne (cubeState_insert_ne hc)
         (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two cubeState_insert_eq_of_ne
-          (cubeState_insert_ne hc)) R
-        ((D.resolutionCubeι hD R j (insert c S)).hom x) ∈
-      LinearMap.range (D.resolutionCubeι hD R j' S).hom := by
-  have hx : (D.resolutionCubeι hD R j (insert c S)).hom x ∈
-      (Khovanov.circleQuantumGrading R (D.ResolvedCircle (cubeState (insert c S)))).piece
-        (j - #(insert c S)) := by
-    rw [← range_resolutionCubeι]
-    exact LinearMap.mem_range_self _ x
-  rw [range_resolutionCubeι]
-  have hx' := (D.isHomogeneous_resolutionEdgeMap cubeState_insert_eq_of_ne (cubeState_insert_ne hc)
+          (cubeState_insert_ne hc)) R x ∈
+      (Khovanov.circleQuantumGrading R (D.ResolvedCircle (cubeState S))).piece (j' - #S) := by
+  convert (D.isHomogeneous_resolutionEdgeMap cubeState_insert_eq_of_ne (cubeState_insert_ne hc)
     (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two cubeState_insert_eq_of_ne
-      (cubeState_insert_ne hc)) R).map_mem hx
-  convert hx' using 2
+      (cubeState_insert_ne hc)) R).map_mem hx using 2
   rw [card_insert_of_notMem hc, Nat.cast_succ]
   omega
 
@@ -127,13 +122,15 @@ Because removing `c` lowers the cube height by `1` while the saddle map has circ
 degree `-1`, the net shift in `j` is `-2`. -/
 def resolutionCubeReverseSaddle (hj : j' = j - 2) (S : Finset (Fin n)) (hc : c ∉ S) :
     (D.resolutionCube hD R j).obj (insert c S) ⟶ (D.resolutionCube hD R j').obj S :=
+  -- `resolutionCube` is not `@[expose]`, so `resolutionCubeVertexEquiv` identifies each vertex
+  -- with its graded submodule for `LinearMap.restrict`.
   ModuleCat.ofHom <|
-    (LinearEquiv.ofInjective _ (D.resolutionCubeι_injective hD R j' S)).symm.toLinearMap ∘ₗ
+    (D.resolutionCubeVertexEquiv hD R j' S).symm.toLinearMap ∘ₗ
       ((D.resolutionEdgeMap cubeState_insert_eq_of_ne (cubeState_insert_ne hc)
           (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two cubeState_insert_eq_of_ne
-            (cubeState_insert_ne hc)) R) ∘ₗ
-        (D.resolutionCubeι hD R j (insert c S)).hom).codRestrict _
-        (D.reverseSaddle_resolutionCubeι_mem_range c hD R hj hc)
+            (cubeState_insert_ne hc)) R).restrict
+        (fun _ hx ↦ D.resolutionEdgeMap_insert_mem_piece c hD R hj hc hx)) ∘ₗ
+      (D.resolutionCubeVertexEquiv hD R j (insert c S)).toLinearMap
 
 /-- Under the vertex inclusions `resolutionCubeι`, `resolutionCubeReverseSaddle` acts by the saddle
 map from `cubeState (insert c S)` back to `cubeState S`. -/
@@ -146,7 +143,11 @@ theorem resolutionCubeReverseSaddle_comp_resolutionCubeι (hj : j' = j - 2) (S :
           (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two cubeState_insert_eq_of_ne
             (cubeState_insert_ne hc)) R) := by
   ext x
-  simp [resolutionCubeReverseSaddle]
+  simp only [resolutionCubeReverseSaddle, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
+    LinearMap.comp_apply, LinearEquiv.coe_coe]
+  change D.resolutionCubeι hD R j' S _ = _
+  rw [← coe_resolutionCubeVertexEquiv, LinearEquiv.apply_symm_apply, LinearMap.restrict_apply,
+    Subtype.coe_mk, coe_resolutionCubeVertexEquiv]
 
 /-- **The reverse saddle at `c` commutes with all unaffected cube edges `a ≠ c`.** Each mixed square
 consists of four saddle edges between states differing at `c` and `a`, which commute by
@@ -154,6 +155,7 @@ consists of four saddle edges between states differing at `c` and `a`, which com
 theorem isCubeReverseEdgeCompatible_resolutionCubeReverseSaddle (hj : j' = j - 2) :
     Functor.IsCubeReverseEdgeCompatible (D.resolutionCube hD R j) (D.resolutionCube hD R j') c
       (D.resolutionCubeReverseSaddle c hD R hj) := by
+  rw [Functor.isCubeReverseEdgeCompatible_iff]
   intro S hc a ha
   have haS : a ∉ S := fun haS ↦ ha (mem_insert_of_mem haS)
   have hc' : c ∉ insert a S := notMem_insert_of_notMem_insert_swap hc ha
@@ -297,6 +299,7 @@ def khovanovComplexMarkSlideHom (hj : j' = j - 2) (i l : ℤ) :
     eqToHom (D.khovanovComplex_X hD R j' l).symm
 
 /-- The mark-slide homotopy vanishes outside cochain degree `-1`. -/
+@[simp]
 theorem khovanovComplexMarkSlideHom_of_ne (hj : j' = j - 2) {i l : ℤ} (hil : l + 1 ≠ i) :
     D.khovanovComplexMarkSlideHom c hD R hj i l = 0 := by
   rw [khovanovComplexMarkSlideHom,
@@ -539,7 +542,12 @@ def khovanovComplexMarkSlideHomotopyNeg (k : Fin 4) (hj : j' = j - 2) :
 theorem khovanovComplexMarkSlideHomotopyNeg_hom (k : Fin 4) (hj : j' = j - 2) (i l : ℤ) :
     (D.khovanovComplexMarkSlideHomotopyNeg c hD R k hj).hom i l =
       D.khovanovComplexMarkSlideHom c hD R hj i l := by
-  simp [khovanovComplexMarkSlideHomotopyNeg, Homotopy.equivSubZero]
+  -- `Homotopy.equivSubZero` (`@[expose]`, no `@[simps]`) preserves `.hom` definitionally.
+  rw [khovanovComplexMarkSlideHomotopyNeg]
+  change ((Homotopy.ofEq (sub_neg_eq_add _ _)).trans
+    (D.khovanovComplexMarkSlideHomotopyZero c hD R k hj)).hom i l = _
+  rw [Homotopy.trans_hom, Homotopy.ofEq_hom, Pi.zero_apply, Pi.zero_apply, zero_add,
+    khovanovComplexMarkSlideHomotopyZero_hom]
 
 /-- **Sliding a mark across one crossing negates the induced `X` map on Khovanov homology.** For
 opposite arc marks `p` and `q` at slot `k` and `oppositeCrossingSlot k` of crossing `c`, the maps
