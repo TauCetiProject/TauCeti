@@ -78,6 +78,7 @@ Each further order `r` first applies one Sobolev embedding and then the case `r 
 * `TauCeti.SobolevSection.isCompactOperator_lowerOrderL`: **Rellich's theorem** for Sobolev
   sections, `W^{k+1,p}(V) → W^{k,p}(V)` is compact.
 * `TauCeti.SobolevSection.isCompactOperator_lowerOrdersL`: `W^{k+d+1,p}(V) → W^{k,p}(V)` is compact.
+* `TauCeti.SobolevSection.isCompactOperator_lowerToZeroL`: `W^{k+1,p}(V) → W^{0,p}(V)` is compact.
 * `TauCeti.SobolevSection.exists_norm_lowerOrdersL_le`: **Ehrling's inequality**
   `‖w‖_{W^{k,p}} ≤ ε ‖w‖_{W^{k+d+1,p}} + C_ε ‖w‖_{Lᵖ}`.
 * `TauCeti.SobolevSection.exists_isCompactOperator_of_le`: `W^{k+1,p}(V) → W^{k,q}(V)` is compact
@@ -218,6 +219,14 @@ theorem isCompactOperator_lowerOrderL [T2Space M] :
 theorem isCompactOperator_lowerOrdersL [T2Space M] (d : ℕ) :
     IsCompactOperator (A.sectionChartData.lowerOrdersL μ p k (d + 1)) :=
   SectionChartData.isCompactOperator_lowerOrdersL (isCompactOperator_lowerOrderL A μ p (k + d))
+
+/-- **Rellich's theorem for Sobolev sections**, forgetting all derivatives: the inclusion
+`W^{k+1,p}(V) → W^{0,p}(V)` is a compact operator for `1 ≤ p ≤ ∞`. -/
+theorem isCompactOperator_lowerToZeroL [T2Space M] :
+    IsCompactOperator (A.sectionChartData.lowerToZeroL μ p (k + 1)) := by
+  have h := (isCompactOperator_lowerOrderL A μ p k).clm_comp
+    (A.sectionChartData.lowerToZeroL μ p k)
+  simpa only [Function.comp_def, SectionChartData.lowerToZeroL_lowerOrderL] using h
 
 /-- **Rellich with exponent change.** The inclusion `W^{k+d+1,q} → W^{k,p}` is compact
 for `1 ≤ p ≤ q`; both exponents may be infinite. -/
