@@ -529,7 +529,7 @@ theorem differentiable_cappedPerturbation_domain (hH : ∀ q, Function.Periodic 
   exact (h.contDiff.differentiable one_ne_zero).clm_apply (differentiable_const v)
 
 /-- The capped perturbation is differentiable in the target point. -/
-private theorem mdifferentiable_cappedPerturbation_target (hH : ∀ q, Function.Periodic (H q) 1)
+theorem mdifferentiable_cappedPerturbation_target (hH : ∀ q, Function.Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry (H q))) (a L : ℝ) (w v : ℂ) :
     MDifferentiable I 𝓘(ℝ) fun y ↦ cappedPerturbation a L H w y v := by
   have h : ContMDiff I 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 fun y ↦ cappedPerturbation a L H w y :=
@@ -631,6 +631,12 @@ theorem contMDiff_cappedComparisonPerturbation {n : ℕ∞} (hH : ∀ q, Functio
   exact (contMDiff_cappedPerturbation hH hHs).comp
     (contMDiff_fst.prodMk ((hρL.comp (contMDiff_fst.comp contMDiff_snd)).prodMk
       (contMDiff_snd.comp contMDiff_snd)))
+
+/-- The comparison datum `K_R` is differentiable in the target point, for every `R`. -/
+theorem mdifferentiable_cappedComparisonPerturbation_target (hH : ∀ q, Function.Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry (H q))) (R : ℝ) (w v : ℂ) :
+    MDifferentiable I 𝓘(ℝ) fun y ↦ cappedComparisonPerturbation H R w y v :=
+  mdifferentiable_cappedPerturbation_target hH hHs _ _ w v
 
 end Smooth
 
