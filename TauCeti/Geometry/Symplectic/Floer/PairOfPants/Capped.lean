@@ -50,7 +50,8 @@ is the single-neck model of the same deformation.
   (`TauCeti.Floer.differentiableAt_cappedPerturbation_apply`); the family `K_R` is smooth in `R`
   (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation`), and so are its components
   (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation_apply`, and on a vector space
-  `TauCeti.Floer.contDiff_cappedComparisonPerturbation_apply`).
+  `TauCeti.Floer.contDiff_cappedComparisonPerturbation_apply`), hence differentiable in the target
+  point (`TauCeti.Floer.mdifferentiable_cappedComparisonPerturbation_apply`).
 * On the part `±s > 0` of the end `q` it pulls back to `a β(σ - 1) β(L + 3 - σ) H_q(t) dt`
   (`TauCeti.Floer.cappedPerturbation_cylindricalEndLift_of_pos`). For `L ≥ 0` it is
   `a H_q(t) dt` on the neck `2 ≤ σ ≤ L + 2`, and `a` times the pair-of-pants datum
@@ -655,6 +656,16 @@ theorem contMDiff_cappedComparisonPerturbation_apply {n : ℕ∞} (hH : ∀ q, P
       (contMDiff_fst.comp contMDiff_snd)).prodMk
         (contMDiff_fst.prodMk (contMDiff_snd.comp contMDiff_snd))
   exact ((contMDiff_cappedComparisonPerturbation hH hHs).comp hι).clm_apply contMDiff_const
+
+/-- For `C¹` Hamiltonians, each component of the comparison datum at a fixed family parameter `R`
+and a fixed point `z` of the plane chart is differentiable in the target point. -/
+theorem mdifferentiable_cappedComparisonPerturbation_apply (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (R : ℝ) (z : ℝ × ℝ)
+    (v : ℂ) :
+    MDifferentiable I 𝓘(ℝ, ℝ) fun x ↦
+      cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x v :=
+  ((contMDiff_cappedComparisonPerturbation_apply hH hHs v).comp
+    (contMDiff_const.prodMk (contMDiff_const.prodMk contMDiff_id))).mdifferentiable one_ne_zero
 
 end Smooth
 

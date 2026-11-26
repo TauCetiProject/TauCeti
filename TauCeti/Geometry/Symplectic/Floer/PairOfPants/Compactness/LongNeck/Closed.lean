@@ -147,12 +147,8 @@ theorem Compatible.isComplexLinearMap_perturbedMFDeriv_comp_realChart_endShift
     cappedAlmostComplex_endShift h₀ J hJ hJp 1 (by linarith) hw] at h
   have h' := σ.isComplexLinearMap_perturbedMFDeriv_perturbationPullback
     ((q.contDiff_realChart_endShift (R - 1) (n := 1)).differentiable one_ne_zero w) hu
-    (((contMDiff_cappedComparisonPerturbation_apply hH hHs 1).comp
-      (contMDiff_const.prodMk (contMDiff_const.prodMk contMDiff_id))).mdifferentiable
-        one_ne_zero _)
-    (((contMDiff_cappedComparisonPerturbation_apply hH hHs Complex.I).comp
-      (contMDiff_const.prodMk (contMDiff_const.prodMk contMDiff_id))).mdifferentiable
-        one_ne_zero _)
+    (mdifferentiable_cappedComparisonPerturbation_apply hH hHs _ _ 1 _)
+    (mdifferentiable_cappedComparisonPerturbation_apply hH hHs _ _ Complex.I _)
     (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_endShift _ _)) h
   rwa [σ.perturbedMFDeriv_congr_perturbation
     (Ks' := fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x 1)
@@ -186,12 +182,8 @@ theorem integral_floerEnergyDensity_image_endShift (ω : SmoothTwoForm I M)
   rw [ω.integral_floerEnergyDensity_image hΩm (realChart_injective (q.endShift_injective _)).injOn
     (fun w _ ↦ (q.contDiff_realChart_endShift (R - 1) (n := 1)).differentiable one_ne_zero w)
     (fun w _ ↦ det_fderiv_realChart_nonneg (q.hasDerivAt_endShift _ _)) hu
-    (fun w _ ↦ ((contMDiff_cappedComparisonPerturbation_apply hH hHs 1).comp
-      (contMDiff_const.prodMk (contMDiff_const.prodMk contMDiff_id))).mdifferentiable
-        one_ne_zero _)
-    (fun w _ ↦ ((contMDiff_cappedComparisonPerturbation_apply hH hHs Complex.I).comp
-      (contMDiff_const.prodMk (contMDiff_const.prodMk contMDiff_id))).mdifferentiable
-        one_ne_zero _)]
+    (fun w _ ↦ mdifferentiable_cappedComparisonPerturbation_apply hH hHs _ _ 1 _)
+    (fun w _ ↦ mdifferentiable_cappedComparisonPerturbation_apply hH hHs _ _ Complex.I _)]
   refine setIntegral_congr_fun hΩm fun w hw ↦ ω.floerEnergyDensity_congr_perturbation _
     (funext fun x ↦ ?_) (funext fun x ↦ ?_)
   · rw [perturbationPullback_cappedComparisonPerturbation_endShift (hH q) hR (hΩ w hw),
