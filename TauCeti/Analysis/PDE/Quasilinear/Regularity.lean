@@ -15,6 +15,8 @@ import TauCeti.Analysis.Sobolev.W1p.Convex
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 import TauCeti.Topology.Instances.Matrix
 import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.MeasureTheory.Function.LpSeminorm.HolderOnWith
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # Interior regularity for quasilinear divergence-form equations
@@ -157,11 +159,8 @@ private theorem exists_holderOnWith_preciseRepresentative_value (hα : 0 < α) (
       aestronglyMeasurable_const (fun _ hx η ξ => hell.upper_bound hx η ξ) (beta := 0)
       (fun _ _ => by simp) (gamma := 0) (fun _ _ => by simp)
   -- The datum `G` is bounded on the bounded set `B`.
-  have hGB : HolderOnWith KG α G B := hG.mono hB
-  obtain ⟨MG, hMG⟩ := (hGB.isBounded_image hBb).exists_norm_le
   have hGtop : MemLp G ⊤ (volume.restrict B) :=
-    memLp_top_of_bound ((hGB.continuousOn hα).aestronglyMeasurable B.isOpen.measurableSet) MG
-      (ae_restrict_of_forall_mem B.isOpen.measurableSet (forall_mem_image.1 hMG))
+    (hG.mono hB).memLp_top hα hBb B.isOpen.measurableSet subset_rfl
   have hfB : MemLp f q (volume.restrict B) := hf.mono_measure hrestr
   have hw := forall_energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_neg_inner hB hint hu
     (hGtop.mono_exponent le_top) (hfB.mono_exponent hq2)
@@ -176,11 +175,11 @@ private theorem exists_holderOnWith_preciseRepresentative_value (hα : 0 < α) (
     (B.isOpen.mem_nhds (hK (self_subset_cthickening _ hx))) (W1p.value_restrictL_ae hB u)
 
 /-- The coefficient `A(x, v(x))` frozen at a `γ`-Hölder function `v` is `γ`-Hölder on a bounded
-set, when `A` is `α`-Hölder in `x`, with `γ ≤ α`, and Lipschitz in `s`. -/
-private theorem holderOnWith_matrixBilinearForm_comp {T : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    {D : ℝ≥0} (hD : ∀ x ∈ T, ∀ y ∈ T, edist x y ≤ D) (hTΩ : T ⊆ Omega)
-    (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s)) Omega)
-    (hAs : ∀ x ∈ Omega, LipschitzWith L fun s => matrixBilinearForm (A x s))
+set `T`, when `A` is `α`-Hölder in `x ∈ S ⊇ T`, with `γ ≤ α`, and Lipschitz in `s`. -/
+theorem holderOnWith_matrixBilinearForm_comp {S T : Set (EuclideanSpace ℝ (Fin (n + 1)))}
+    {D : ℝ≥0} (hD : ∀ x ∈ T, ∀ y ∈ T, edist x y ≤ D) (hTΩ : T ⊆ S)
+    (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s)) S)
+    (hAs : ∀ x ∈ S, LipschitzWith L fun s => matrixBilinearForm (A x s))
     {γ Cv : ℝ≥0} (hγα : γ ≤ α) {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
     (hv : HolderOnWith Cv γ v T) :
     HolderOnWith (Kx * D ^ ((α : ℝ) - γ) + L * Cv) γ
@@ -221,9 +220,7 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWi
     ∃ C : ℝ≥0, HolderOnWith C β (preciseRepresentative volume (W1p.gradient u)) S := by
   -- A bound for the distances in the bounded set `S_ρ`.
   obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ thickening ρ S, ∀ y ∈ thickening ρ S, edist x y ≤ D :=
-    ⟨(Metric.ediam (thickening ρ S)).toNNReal, fun x hx y hy => by
-      rw [ENNReal.coe_toNNReal (Metric.isBounded_iff_ediam_ne_top.1 hS.thickening)]
-      exact Metric.edist_le_ediam_of_mem hx hy⟩
+    ⟨_, fun _ hx _ hy => Metric.edist_le_diam_of_mem hS.thickening hx hy⟩
   have haK := holderOnWith_matrixBilinearForm_comp hD hρS hAx hAs hγα (hv.of_le hD hγγ₀)
   have hGK : HolderOnWith (KG * D ^ ((α : ℝ) - γ)) γ G (thickening ρ S) :=
     (hG.mono hρS).of_le hD hγα
@@ -245,6 +242,18 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWi
       (n := n) hβ hβ1 hβγ hq2 hβq (lam := lam) (Lam := Lam)
       (M := ↑(Kx * D ^ ((α : ℝ) - γ) + L * (Cv * D ^ ((γ₀ : ℝ) - γ))) * ρ ^ (γ : ℝ))
   exact ⟨_, h hell haK hGK le_rfl (hf.mono_measure (Measure.restrict_mono hρS le_rfl)) hu' hρ hρS⟩
+
+/-- The exponent conditions `0 < β ≤ 1 - (n + 1) / q` of the `C^{1,β}` estimates force
+`q > n + 1`: the datum `f ∈ L^q` costs `(n + 1) / q < 1` of a derivative. -/
+theorem natCast_add_one_lt_of_le_one_sub_div {β : ℝ≥0} (hβ : 0 < β) {q : ℝ≥0∞} (hq : q ≠ 0)
+    (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) : (n : ℝ≥0∞) + 1 < q := by
+  have hβ' : (0 : ℝ) < β := hβ
+  rcases eq_or_ne q ⊤ with rfl | hqt
+  · simp
+  · have hq0 : 0 < q.toReal := ENNReal.toReal_pos hq hqt
+    refine (ENNReal.toReal_lt_toReal (by simp) hqt).1 ?_
+    rw [ENNReal.toReal_add (by simp) (by simp), ENNReal.toReal_natCast, ENNReal.toReal_one]
+    exact (div_lt_one hq0).1 (by linarith)
 
 /-- **Interior `C^{1,β}` regularity for quasilinear divergence-form equations.** Let `Ω ⊆ ℝⁿ⁺¹`
 be open and let `A(x, s)` be a field of matrices, uniformly elliptic with constants `λ, Λ` in `x`
@@ -280,15 +289,7 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH
     (hR : 0 < R) (hRS : thickening R S ⊆ Omega) :
     ∃ C : ℝ≥0, HolderOnWith C β (preciseRepresentative volume (W1p.gradient u)) S := by
   have hα : 0 < α := hβ.trans_le hβα
-  -- The datum costs `(n + 1) / q < 1` of a derivative, so `q > n + 1`.
-  have hβ' : (0 : ℝ) < β := hβ
-  have hqn : (n : ℝ≥0∞) + 1 < q := by
-    rcases eq_or_ne q ⊤ with rfl | hqt
-    · simp
-    · have hq0 : 0 < q.toReal := ENNReal.toReal_pos (by rintro rfl; simp at hq2) hqt
-      refine (ENNReal.toReal_lt_toReal (by simp) hqt).1 ?_
-      rw [ENNReal.toReal_add (by simp) (by simp), ENNReal.toReal_natCast, ENNReal.toReal_one]
-      exact (div_lt_one hq0).1 (by linarith)
+  have hqn := natCast_add_one_lt_of_le_one_sub_div hβ (zero_lt_two.trans_le hq2).ne' hβq
   -- De Giorgi: `ū` is `γ₀`-Hölder on `S_{R/2}`.
   obtain ⟨γ₀, C₀, hγ₀, h₀⟩ :=
     exists_holderOnWith_preciseRepresentative_value hα hq2 hqn hA hAx hAs hG hf hu hS hR hRS
@@ -348,11 +349,8 @@ private theorem exists_mem_nhds_holderOnWith_preciseRepresentative_gradient (hα
   have hBΩ : B ≤ Omega := (ball_subset_ball (min_le_right _ _)).trans hρΩ
   -- The datum is Hölder, hence bounded, on `B`.
   have hfB : HolderOnWith Cf α f B := hCf.mono (ball_subset_ball (min_le_left _ _))
-  obtain ⟨M, hM⟩ := (hfB.isBounded_image isBounded_ball).exists_norm_le
   have hftop : MemLp f ⊤ (volume.restrict B) :=
-    memLp_top_of_bound ((hfB.continuousOn hα).aestronglyMeasurable
-      B.isOpen.measurableSet) M (ae_restrict_of_forall_mem B.isOpen.measurableSet
-        (forall_mem_image.1 hM))
+    hfB.memLp_top hα isBounded_ball B.isOpen.measurableSet subset_rfl
   -- The restriction of `u` to `B` solves the restricted equation against test functions.
   have huB : ∀ φ : 𝓓(B, ℝ), energyFormH1 (fun y => A y (W1p.value (W1p.restrictL hBΩ u) y)) 0 0
       (W1p.restrictL hBΩ u) (W1p.ofTestFunctionₗ volume B 2 φ) =
