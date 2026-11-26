@@ -10,6 +10,7 @@ import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Partial diffeomorphisms and open subsets
@@ -48,6 +49,9 @@ subset of the target manifold.
 * `PartialDiffeomorph.toDiffeomorphSourceTarget`: a partial diffeomorphism as a diffeomorphism
   between its open source and its open target.
 * `Diffeomorph.ofTop`: an open subset equal to `⊤` is diffeomorphic to the ambient manifold.
+* `Diffeomorph.nestedOpen`: for nested open subsets `U ≤ D`, the preimage of `U` in `D` is
+  diffeomorphic to `U`. It compares structures on a restriction to `D` followed by a restriction
+  to `U` with the direct restriction to `U`.
 * `Diffeomorph.subtype`: a diffeomorphism restricts to a diffeomorphism between open subsets that
   it maps onto each other.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
@@ -59,7 +63,9 @@ subset of the target manifold.
 * `PartialDiffeomorph.subtypeVal`: the inclusion of a nonempty open subset as a partial
   diffeomorphism.
 * `PartialDiffeomorph.liftOpens`: a partial diffeomorphism between nonempty open subsets, as a
-  partial diffeomorphism between the ambient manifolds.
+  partial diffeomorphism between the ambient manifolds. On the open subset it has the values
+  (`PartialDiffeomorph.liftOpens_comp_subtypeVal`) and the differentials
+  (`PartialDiffeomorph.mfderiv_liftOpens_apply_coe`) of the original one.
 * `IsLocalDiffeomorphAt.exists_partialDiffeomorph_eqOn`: a local diffeomorphism at `x` agrees with
   a partial diffeomorphism whose source contains `x` and lies in a prescribed open set.
 * `PartialDiffeomorph.exists_diffeomorph_opens_comp_eq`: a partial diffeomorphism corrected by a
@@ -277,6 +283,32 @@ theorem coe_ofTop_symm_apply {U : TopologicalSpace.Opens M} {hU : U = ⊤} (x : 
     ((ofTop (I := I) (n := n) U hU).symm x : M) = x :=
   (rfl)
 
+/-- For nested open subsets `U ≤ D`, the preimage of `U` in `D` is diffeomorphic to `U`. -/
+def nestedOpen {U D : TopologicalSpace.Opens M} (h : U ≤ D) :
+    (TopologicalSpace.Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U)
+      ≃ₘ^n⟮I, I⟯ U where
+  toFun x := ⟨x.val.val, x.property⟩
+  invFun u := ⟨⟨u.val, h u.property⟩, u.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff U _).mp
+    ((contMDiff_subtypeVal (I := I) (U := D)).comp contMDiff_subtypeVal)
+  contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).mp
+    ((TauCeti.ContMDiff.subtypeVal_comp_iff D _).mp contMDiff_subtypeVal)
+
+/-- The diffeomorphism `Diffeomorph.nestedOpen` keeps the underlying point. -/
+@[simp]
+theorem nestedOpen_apply {U D : TopologicalSpace.Opens M} (h : U ≤ D)
+    (x : TopologicalSpace.Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U) :
+    nestedOpen (I := I) (n := n) h x = ⟨x.val.val, x.property⟩ :=
+  (rfl)
+
+/-- The inverse of `Diffeomorph.nestedOpen` views a point of `U` in `D`. -/
+@[simp]
+theorem nestedOpen_symm_apply {U D : TopologicalSpace.Opens M} (h : U ≤ D) (x : U) :
+    (nestedOpen (I := I) (n := n) h).symm x = ⟨⟨x.val, h x.property⟩, x.property⟩ :=
+  (rfl)
+
 section Subtype
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {G : Type*} [TopologicalSpace G]
@@ -458,6 +490,18 @@ variable {U : TopologicalSpace.Opens M} {V : TopologicalSpace.Opens N}
 theorem liftOpens_apply_coe (x : U) : ⇑(Ψ.liftOpens hU hV) x = Ψ x := by
   simp only [liftOpens, coe_trans, Function.comp_apply, PartialDiffeomorph.symm_toPartialEquiv,
     subtypeVal_symm_apply_coe, coe_subtypeVal]
+
+/-- The lift of `Ψ` restricts to `Ψ` on `U`. -/
+theorem liftOpens_comp_subtypeVal :
+    ⇑(Ψ.liftOpens hU hV) ∘ Subtype.val = Subtype.val ∘ Ψ :=
+  funext (Ψ.liftOpens_apply_coe hU hV)
+
+/-- On `U`, the lift of `Ψ` has the differential of `Ψ`, the tangent spaces of `U` and `V` being
+those of `M` and `N`. -/
+theorem mfderiv_liftOpens_apply_coe (x : U) (v : TangentSpace I (x : M)) :
+    mfderiv I J (Ψ.liftOpens hU hV) x v = mfderiv I J Ψ x v :=
+  (TauCeti.Manifold.mfderiv_apply_of_subtype_val_comp_eq
+    (Ψ.liftOpens_comp_subtypeVal hU hV).symm v).symm
 
 /-- On `V`, the inverse of the lift of `Ψ` is the inverse of `Ψ`. -/
 @[simp]

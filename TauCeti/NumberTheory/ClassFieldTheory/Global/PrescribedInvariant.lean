@@ -615,13 +615,9 @@ private theorem exists_coe_eq_ofMul_units_map {U : Subgroup (AbsoluteGaloisGroup
   have hle : τ'.fieldRange.fixingSubgroup ≤ U.comap
       (absoluteGaloisGroupMap τ : AbsoluteGaloisGroup (v.adicCompletion K) →*
         AbsoluteGaloisGroup K) := by
-    intro g' hg'
-    rw [Subgroup.mem_comap, hF, IntermediateField.mem_fixingSubgroup_iff]
-    intro x hx
-    have h : τ (absoluteGaloisGroupMap τ g' x) = τ x := by
-      rw [absoluteGaloisGroupMap_commutes, hτ ⟨x, hx⟩]
-      exact (IntermediateField.mem_fixingSubgroup_iff _ _).1 hg' _ ⟨_, rfl⟩
-    exact τ.injective h
+    rw [hF]
+    exact F.fixingSubgroup_le_comap_absoluteGaloisGroupMap τ'.fieldRange τ
+      (fun x hx ↦ ⟨algebraMap F (w.adicCompletion F) ⟨x, hx⟩, (hτ ⟨x, hx⟩).symm⟩)
   obtain ⟨b₀, hb₀⟩ : ((Additive.toMul (c : UnitsCoeff (v.adicCompletion K)) :
       (SeparableClosure (v.adicCompletion K))ˣ) : SeparableClosure (v.adicCompletion K)) ∈
         τ'.fieldRange := by

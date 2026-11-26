@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
+public import Mathlib.Algebra.Group.Idempotent
+public import Mathlib.Data.Nat.Factorial.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
 import TauCeti.Algebra.Group.Pow
 
@@ -22,17 +24,30 @@ Both facts bound the data needed to evaluate a morphism into a finite monoid on 
 a word is the value of a word of length less than `|N|`. This is how they are used in
 recompression for equations in free groups and in free monoids with involution.
 
+Since the exponent `p` is at most `|N|`, it divides `m !` for every `m ≥ |N|`. Hence the factorial
+powers `t ^ m !` are all equal from `m = |N|` on, and this common value is the idempotent power of
+`t`. The threshold `|N|` depends only on the monoid, not on `t`, which is what makes factorial
+powers converge in an inverse limit of finite monoids, as in Hida's ordinary projector.
+
 ## Main results
 
 * `TauCeti.exists_pow_two_mul_eq_pow`: every element `t` of a finite monoid `N` has a power
   `t ^ p` with `0 < p ≤ |N|` and `t ^ (2 * p) = t ^ p`.
 * `List.exists_sublist_length_lt_card_prod_eq`: the product of a list of elements of a finite
   monoid `N` is the product of a sublist of length less than `|N|`.
+* `TauCeti.pow_eq_pow_of_factorial_dvd`: `t ^ a = t ^ b` for all positive multiples `a` and `b`
+  of `m !` whenever `|N| ≤ m`.
+* `TauCeti.pow_factorial_eq_pow_factorial_of_card_le`: `t ^ n ! = t ^ m !` whenever
+  `|N| ≤ m ≤ n`.
+* `TauCeti.isIdempotentElem_pow_factorial_of_card_le`: `t ^ m !` is idempotent whenever
+  `|N| ≤ m`.
 
 ## References
 
 * V. Diekert, A. Jez, W. Plandowski, *Finding all solutions of equations in free groups and
   monoids with involution*, arXiv:1405.5133, §3.2 (idempotent power) and the proof of Lemma 11.
+* C. B. Khare, J. A. Thorne, *Potential automorphy and the Leopoldt conjecture*, Amer. J. Math.
+  139 (2017), §2.4, Lemma 2.10 and its proof (factorial powers in a finite set).
 -/
 
 public section
@@ -89,5 +104,35 @@ theorem exists_pow_two_mul_eq_pow [Finite N] (t : N) :
   refine ⟨q * (x / q + 1), by lia, by lia, ?_⟩
   refine pow_eq_pow_of_modEq_of_pow_add_eq hprod.symm (by lia) hx.le ?_
   simp [Nat.ModEq, mul_left_comm]
+
+open Nat in
+/-- In a finite monoid, `t ^ a = t ^ b` for all positive multiples `a` and `b` of `m !` as soon as
+`|N| ≤ m`. -/
+theorem pow_eq_pow_of_factorial_dvd [Finite N] (t : N) {m a b : ℕ}
+    (hm : Nat.card N ≤ m) (ha : m ! ∣ a) (hb : m ! ∣ b) (ha0 : 0 < a) (hb0 : 0 < b) :
+    t ^ a = t ^ b := by
+  obtain ⟨p, hp, hpN, h⟩ := exists_pow_two_mul_eq_pow t
+  rw [two_mul] at h
+  have hpm : p ∣ m ! := Nat.dvd_factorial hp (hpN.trans hm)
+  have hpa := hpm.trans ha
+  have hpb := hpm.trans hb
+  exact pow_eq_pow_of_modEq_of_pow_add_eq h (Nat.le_of_dvd ha0 hpa) (Nat.le_of_dvd hb0 hpb)
+    ((Nat.modEq_zero_iff_dvd.2 hpa).trans (Nat.modEq_zero_iff_dvd.2 hpb).symm)
+
+open Nat in
+/-- In a finite monoid the factorial powers of an element are constant from the cardinality of
+the monoid on: `t ^ n ! = t ^ m !` whenever `|N| ≤ m ≤ n`. -/
+theorem pow_factorial_eq_pow_factorial_of_card_le [Finite N] (t : N) {m n : ℕ}
+    (hm : Nat.card N ≤ m) (hmn : m ≤ n) : t ^ n ! = t ^ m ! :=
+  pow_eq_pow_of_factorial_dvd t hm (Nat.factorial_dvd_factorial hmn) dvd_rfl
+    (Nat.factorial_pos n) (Nat.factorial_pos m)
+
+open Nat in
+/-- In a finite monoid the factorial power `t ^ m !` is idempotent as soon as `|N| ≤ m`. -/
+theorem isIdempotentElem_pow_factorial_of_card_le [Finite N] (t : N) {m : ℕ}
+    (hm : Nat.card N ≤ m) : IsIdempotentElem (t ^ m !) := by
+  rw [isIdempotentElem_iff, ← pow_add]
+  exact pow_eq_pow_of_factorial_dvd t hm (Nat.dvd_add dvd_rfl dvd_rfl) dvd_rfl
+    (Nat.add_pos_left (Nat.factorial_pos m) _) (Nat.factorial_pos m)
 
 end TauCeti

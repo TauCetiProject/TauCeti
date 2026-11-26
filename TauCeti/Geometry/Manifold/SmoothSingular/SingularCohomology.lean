@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.AB
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
-public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham
+public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham.Basic
 public import TauCeti.Geometry.Manifold.SmoothSingular.Smoothing
 
 /-!

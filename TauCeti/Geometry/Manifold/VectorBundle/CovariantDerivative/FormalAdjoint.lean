@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
 # The formal adjoint of a connection
@@ -56,8 +57,11 @@ divergence.
 
 * `CovariantDerivative.formalAdjoint`: the formal adjoint `∇*α` of a `V`-valued one-form at a
   point.
+* `CovariantDerivative.formalAdjoint_def`: it is the negative metric trace of `∇α`.
 * `CovariantDerivative.formalAdjoint_eq_sum`: its value in an orthonormal basis.
 * `CovariantDerivative.formalAdjoint_smul`: the Leibniz rule `∇*(f α) = f ∇*α - α(grad f)`.
+* `CovariantDerivative.contMDiff_formalAdjoint`: the formal adjoint of a smooth one-form is
+  smooth.
 * `CovariantDerivative.roughLaplacian_eq_formalAdjoint`: `∇*∇ σ = ∇*(∇σ)` for a smooth section.
 * `CovariantDerivative.IsMetricCompatible.integral_inner_formalAdjoint` and
   `CovariantDerivative.IsMetricCompatible.integral_inner_formalAdjoint_of_isCompact_left`:
@@ -88,7 +92,7 @@ section Definition
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
@@ -102,23 +106,27 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
 /-- The **formal adjoint** `∇*α = -tr_g ∇α` of the connection `∇`, applied to a `V`-valued
-one-form `α` at `x`: the negative metric trace of the covariant derivative of `α` for the
-connection induced by `∇ᵀ` and `∇` on `Hom(TM, V)`. In an orthonormal basis it is
-`-∑ᵢ (∇_{eᵢ} α)(eᵢ)` (`formalAdjoint_eq_sum`). For a metric connection and the Levi-Civita
-connection it is the formal adjoint of `∇` for the Riemannian volume
+one-form `α` at `x`: the negative metric trace (`LinearMap.BilinMap.metricTrace`) of the
+covariant derivative of `α` for the connection induced by `∇ᵀ` and `∇` on `Hom(TM, V)`. In an
+orthonormal basis it is `-∑ᵢ (∇_{eᵢ} α)(eᵢ)` (`formalAdjoint_eq_sum`). For a metric connection
+and the Levi-Civita connection it is the formal adjoint of `∇` for the Riemannian volume
 (`IsMetricCompatible.integral_inner_formalAdjoint`), and `∇*(∇σ)` is the rough Laplacian
 (`roughLaplacian_eq_formalAdjoint`). It is zero at points where `α` is not differentiable. -/
 def formalAdjoint (α : Π x : M, TangentSpace I x →L[ℝ] V x) (x : M) : V x :=
-  -TensorProduct.lift.equiv (.id ℝ) (TangentSpace I x) (TangentSpace I x) (V x)
-    (ContinuousLinearMap.toLinearMap₁₂ (covT.hom cov α x))
-    (InnerProductSpace.canonicalCovariantTensor (TangentSpace I x))
+  -LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (covT.hom cov α x))
+
+/-- The formal adjoint is the negative metric trace of the covariant derivative of the one-form. -/
+theorem formalAdjoint_def (α : Π x : M, TangentSpace I x →L[ℝ] V x) (x : M) :
+    cov.formalAdjoint covT α x =
+      -LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (covT.hom cov α x)) :=
+  (rfl)
 
 /-- The formal adjoint of a connection in an orthonormal basis: `∇*α = -∑ᵢ (∇_{eᵢ} α)(eᵢ)`. -/
 theorem formalAdjoint_eq_sum (α : Π x : M, TangentSpace I x →L[ℝ] V x) (x : M) {ι : Type*}
     [Fintype ι] (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
     cov.formalAdjoint covT α x = -∑ i, covT.hom cov α x (b i) (b i) := by
-  rw [formalAdjoint, InnerProductSpace.canonicalCovariantTensor_eq_sum _ b, map_sum]
-  simp only [TensorProduct.lift.equiv_apply, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
+  simp only [formalAdjoint_def, LinearMap.BilinMap.metricTrace_eq_sum _ b,
+    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
 
 /-- The formal adjoint vanishes at a point where the one-form is not differentiable. -/
 @[simp]
@@ -126,15 +134,14 @@ theorem formalAdjoint_eq_zero_of_not_mdifferentiableAt {x : M}
     (hα : ¬MDiffAt
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (α y)) x) :
     cov.formalAdjoint covT α x = 0 := by
-  simp [formalAdjoint, hom_eq_zero_of_not_mdifferentiableAt covT cov hα]
+  simp [formalAdjoint_def, hom_eq_zero_of_not_mdifferentiableAt covT cov hα]
 
 /-- The formal adjoint of the zero one-form is zero. -/
 @[simp]
 theorem formalAdjoint_zero (x : M) :
     cov.formalAdjoint covT (0 : Π x : M, TangentSpace I x →L[ℝ] V x) x = 0 := by
-  rw [formalAdjoint_eq_sum cov covT _ x (stdOrthonormalBasis ℝ (TangentSpace I x)),
-    (covT.hom cov).isCovariantDerivativeOnUniv.zero]
-  simp
+  rw [formalAdjoint_def, (covT.hom cov).isCovariantDerivativeOnUniv.zero, map_zero, map_zero,
+    neg_zero]
 
 /-- The formal adjoint is additive on one-forms differentiable at the point. -/
 theorem formalAdjoint_add {β : Π x : M, TangentSpace I x →L[ℝ] V x} {x : M}
@@ -143,10 +150,8 @@ theorem formalAdjoint_add {β : Π x : M, TangentSpace I x →L[ℝ] V x} {x : M
     (hβ : MDiffAt
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (β y)) x) :
     cov.formalAdjoint covT (α + β) x = cov.formalAdjoint covT α x + cov.formalAdjoint covT β x := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  simp only [formalAdjoint_eq_sum cov covT _ x b,
-    (covT.hom cov).isCovariantDerivativeOnUniv.add hα hβ, add_apply,
-    Finset.sum_add_distrib, neg_add]
+  simp only [formalAdjoint_def, (covT.hom cov).isCovariantDerivativeOnUniv.add hα hβ, map_add,
+    neg_add]
 
 /-- The formal adjoint commutes with multiplication of the one-form by a constant. -/
 @[simp]
@@ -154,10 +159,8 @@ theorem formalAdjoint_const_smul (c : ℝ) (x : M) :
     cov.formalAdjoint covT (c • α) x = c • cov.formalAdjoint covT α x := by
   by_cases hα : MDiffAt
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (α y)) x
-  · set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-    simp only [formalAdjoint_eq_sum cov covT _ x b,
-      (covT.hom cov).isCovariantDerivativeOnUniv.smul_const c hα, smul_apply,
-      ← Finset.smul_sum, smul_neg]
+  · simp only [formalAdjoint_def, (covT.hom cov).isCovariantDerivativeOnUniv.smul_const c hα,
+      map_smul, smul_neg]
   · rcases eq_or_ne c 0 with rfl | hc
     · simp
     · have hcα : ¬MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
@@ -192,29 +195,90 @@ theorem formalAdjoint_smul {f : M → ℝ} {x : M} (hf : MDiffAt f x)
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (α y)) x) :
     cov.formalAdjoint covT (f • α) x =
       f x • cov.formalAdjoint covT α x - α x (TauCeti.Manifold.mgradient I f x) := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  -- `∑ᵢ df(eᵢ) α(eᵢ) = α(grad f)`, since `grad f = ∑ᵢ df(eᵢ) eᵢ`.
-  have hgrad : ∑ i, d% f x (b i) • α x (b i) = α x (TauCeti.Manifold.mgradient I f x) := by
-    conv_rhs => rw [← b.sum_repr' (TauCeti.Manifold.mgradient I f x)]
-    simp only [map_sum, map_smul, TauCeti.Manifold.inner_mgradient_right]
-  simp only [formalAdjoint_eq_sum cov covT _ x b,
-    (covT.hom cov).isCovariantDerivativeOnUniv.leibniz hα hf, add_apply,
-    smul_apply, ContinuousLinearMap.smulRight_apply, Finset.sum_add_distrib,
-    ← Finset.smul_sum, hgrad]
-  module
+  -- The Leibniz term is the rank-one map `(v, w) ↦ ⟪grad f, v⟫ • α w`, whose trace is
+  -- `α (grad f)`.
+  rw [formalAdjoint_def, formalAdjoint_def,
+    (covT.hom cov).isCovariantDerivativeOnUniv.leibniz hα hf, map_add, map_smul,
+    ContinuousLinearMap.toLinearMap₁₂_smulRight,
+    TauCeti.Manifold.toLinearMap_mvfderiv_eq_innerₗ_mgradient, map_add, map_smul,
+    LinearMap.BilinMap.metricTrace_innerₗ_smulRight, ContinuousLinearMap.coe_coe, neg_add,
+    smul_neg, sub_eq_add_neg]
 
-variable [T2Space M] [ContMDiffCovariantDerivative cov ∞] {σ : Π x : M, V x}
+end Definition
+
+section RoughLaplacian
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  (cov : _root_.CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
+  (covT : _root_.CovariantDerivative I E (TangentSpace I : M → Type _))
+  {σ : Π x : M, V x}
 
 /-- **The rough Laplacian is the composite of the connection and its formal adjoint**:
 `∇*∇ σ = ∇*(∇σ)` for a smooth section `σ`. -/
 theorem roughLaplacian_eq_formalAdjoint (hσ : CMDiff ∞ (T% σ)) :
     cov.roughLaplacian covT σ = cov.formalAdjoint covT (cov σ) := by
   funext x
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  simp only [roughLaplacian_eq_sum cov covT σ x b, formalAdjoint_eq_sum cov covT _ x b,
-    secondCovariantDerivative_eq_hom_apply cov covT hσ]
+  rw [roughLaplacian_def, formalAdjoint_def,
+    secondCovariantDerivative_eq_toLinearMap₁₂_hom cov covT hσ x]
 
-end Definition
+end RoughLaplacian
+
+/-! ### Regularity -/
+
+section Regularity
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
+  (cov : _root_.CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
+  (covT : _root_.CovariantDerivative I E (TangentSpace I : M → Type _))
+  [ContMDiffCovariantDerivative covT ∞]
+  {α : Π x : M, TangentSpace I x →L[ℝ] V x}
+
+/-- The formal adjoint of a smooth one-form is a smooth section. On a chart domain it is
+`-∑ᵢₖ gⁱᵏ (∇_{eᵢ} α)(eₖ)` for the chart-local frame `eᵢ` and the inverse Gram matrix `gⁱᵏ`. -/
+theorem contMDiff_formalAdjoint
+    (hα : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
+      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (α x))) :
+    CMDiff ∞ (T% (cov.formalAdjoint covT α)) := by
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  intro x
+  have hbase : (trivializationAt E (TangentSpace I) x).baseSet ∈ 𝓝 x :=
+    (trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds (by simp)
+  have hA := contMDiff_hom covT cov hα x
+  have hframe (i) := contMDiffAt_chartLocalFrame (I := I) (n := ∞) x i
+  -- On the chart source, the metric trace is read off with the inverse Gram matrix.
+  have heq : (T% (-fun y ↦ ∑ i, ∑ k, chartInvGramMatrix (I := I) x y i k •
+      covT.hom cov α y (chartLocalFrame (I := I) x i y) (chartLocalFrame (I := I) x k y)))
+      =ᶠ[𝓝 x] T% (cov.formalAdjoint covT α) := by
+    filter_upwards [(chartAt H x).open_source.mem_nhds (mem_chart_source H x)] with y hy
+    rw [formalAdjoint_def, metricTrace_eq_sum_chartInvGramMatrix x hy]
+    simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, Pi.neg_apply]
+  refine ContMDiffAt.congr_of_eventuallyEq (ContMDiffAt.neg_section ?_) heq.symm
+  refine ContMDiffAt.sum_section (t := fun i y ↦ ∑ k, chartInvGramMatrix (I := I) x y i k •
+    covT.hom cov α y (chartLocalFrame (I := I) x i y) (chartLocalFrame (I := I) x k y))
+    fun i _ ↦ ContMDiffAt.sum_section fun k _ ↦ ?_
+  exact ((contMDiffOn_chartInvGramMatrix_entry (I := I) (n := ∞) x i k).contMDiffAt
+    hbase).smul_section ((hA.clm_bundle_apply (hframe i)).clm_bundle_apply (hframe k))
+
+end Regularity
 
 /-! ### Integration by parts -/
 
@@ -343,10 +407,7 @@ theorem integral_inner_formalAdjoint (hcov : cov.IsMetricCompatible)
       ∫ x, (α x).hilbertSchmidtInner (cov τ x) ∂riemannianVolume I M := by
   refine integral_inner_formalAdjoint_of_subset hcov hα hτ hτc isClosed_closure
     (fun y hy ↦ ?_) (fun y hy ↦ ?_)
-  · have hτy : τ y = 0 := by
-      by_contra h
-      exact hy (subset_closure h)
-    simp [pairingField, hτy, LinearIsometryEquiv.map_zero]
+  · simp [pairingField, Bundle.apply_eq_zero_of_notMem_closure hy, LinearIsometryEquiv.map_zero]
   · simp [cov.apply_eq_zero_of_notMem_closure hy]
 
 /-- **Integration by parts for the formal adjoint of a connection**, when the one-form has
@@ -357,9 +418,8 @@ theorem integral_inner_formalAdjoint_of_isCompact_left (hcov : cov.IsMetricCompa
     (hτ : CMDiff ∞ (T% τ)) (hαc : IsCompact (closure {x | α x ≠ 0})) :
     ∫ x, ⟪cov.formalAdjoint (leviCivitaConnection I M) α x, τ x⟫ ∂riemannianVolume I M =
       ∫ x, (α x).hilbertSchmidtInner (cov τ x) ∂riemannianVolume I M := by
-  have hαy {y : M} (hy : y ∉ closure {x | α x ≠ 0}) : α y = 0 := by
-    by_contra h
-    exact hy (subset_closure h)
+  have hαy {y : M} (hy : y ∉ closure {x | α x ≠ 0}) : α y = 0 :=
+    Bundle.apply_eq_zero_of_notMem_closure hy
   refine integral_inner_formalAdjoint_of_subset hcov hα hτ hαc isClosed_closure
     (fun y hy ↦ ?_) (fun y hy ↦ ?_)
   · simp [pairingField, hαy hy, LinearIsometryEquiv.map_zero]

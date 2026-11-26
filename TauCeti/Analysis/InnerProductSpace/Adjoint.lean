@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Compression
+public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Operator.Basic
@@ -18,7 +19,9 @@ import TauCeti.Analysis.Normed.Operator.ClosedRange
 An endomorphism and its adjoint have the same real quadratic form
 (`ContinuousLinearMap.re_inner_star_apply_self`).
 For bounded operators between complete inner product spaces, the adjoint takes values in the
-orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
+orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`),
+and the adjoint is injective exactly when the operator has dense range
+(`ContinuousLinearMap.adjoint_injective_iff_denseRange`).
 The Gram operator of an operator with finite-dimensional source is invertible exactly when the
 operator is injective (`ContinuousLinearMap.isUnit_adjoint_comp_self_iff`).
 An operator on a Hilbert space is invertible exactly when its adjoint is
@@ -64,10 +67,14 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`; for a
   continuous family it is continuous (`Continuous.clm_adjoint`).
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
-  continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
+  continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`; sandwiched compositions obey
+  `‖P† ∘ T ∘ Q‖ ≤ ‖P‖ * ‖T‖ * ‖Q‖` (`ContinuousLinearMap.norm_adjoint_comp_comp_le`).
 
 The adjoint commutes with real scalars whenever these act on operators through `𝕜`
 (`ContinuousLinearMap.starModule_real`).
+A continuous endomorphism of a real Hilbert space lies in the Lie algebra
+`so(V) = skewAdjointLieSubalgebra (innerₗ V)` exactly when it is skew-adjoint, `A† = -A`
+(`ContinuousLinearMap.coe_mem_skewAdjointLieSubalgebra_innerₗ_iff`).
 
 ## Further results
 
@@ -87,7 +94,8 @@ Similarly, if `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`, then `‖M‖ ≤ λ⁻¹ �
 (`ContinuousLinearEquiv.norm_le_inv_mul_norm_adjoint_comp_comp`).
 If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 (`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`). The determinant of the adjoint of an
-endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`), so the determinants
+endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`), and likewise for
+the adjoint equivalence (`ContinuousLinearEquiv.det_adjointEquiv`), so the determinants
 of an invertible real operator and of the adjoint of its inverse multiply to `1`
 (`ContinuousLinearMap.det_mul_det_adjoint_ringInverse`). For a surjective
 linear map, the orthogonal complement of its kernel has the dimension of the codomain
@@ -121,6 +129,15 @@ theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
     (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
   rw [orthogonal_ker]
   exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
+
+/-- The adjoint of a bounded operator between Hilbert spaces is injective exactly when the
+operator has dense range: its kernel is the orthogonal complement of the range. -/
+theorem adjoint_injective_iff_denseRange [CompleteSpace E] [CompleteSpace F] {u : E →L[𝕜] F} :
+    Function.Injective (u†) ↔ DenseRange u := by
+  rw [← coe_coe, ← LinearMap.ker_eq_bot, ← orthogonal_range,
+    ← Submodule.topologicalClosure_eq_top_iff, ← Submodule.dense_iff_topologicalClosure_eq_top,
+    LinearMap.coe_range, coe_coe]
+  rfl
 
 /-- The pointwise adjoint `x ↦ (f x)†` of a continuous family of operators between Hilbert spaces
 is continuous. -/
@@ -277,6 +294,35 @@ theorem norm_compAdjointL_apply_le (T S : V →L[ℂ] W) : ‖compAdjointL T S�
   exact opNorm_comp_le _ _
 
 end RealAdjointBilinear
+
+/-- Operator-norm bound `‖P† ∘ T ∘ Q‖ ≤ ‖P‖ * ‖T‖ * ‖Q‖`. -/
+theorem norm_adjoint_comp_comp_le {G H : Type*} [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+    [SeminormedAddCommGroup H] [NormedSpace 𝕜 H] [CompleteSpace E] [CompleteSpace F]
+    (P : E →L[𝕜] F) (T : H →L[𝕜] F) (Q : G →L[𝕜] H) : ‖P† ∘L T ∘L Q‖ ≤ ‖P‖ * ‖T‖ * ‖Q‖ := by
+  calc ‖P† ∘L T ∘L Q‖ ≤ ‖P†‖ * (‖T‖ * ‖Q‖) := (opNorm_comp_le _ _).trans <|
+        mul_le_mul_of_nonneg_left (opNorm_comp_le _ _) (norm_nonneg _)
+    _ = ‖P‖ * ‖T‖ * ‖Q‖ := by rw [adjoint.norm_map]; ring
+
+section SkewAdjointLieSubalgebra
+
+/-- A continuous endomorphism of a real Hilbert space lies in `so(V)`, the Lie algebra of
+endomorphisms that are skew-adjoint for the inner product, exactly when it is a skew-adjoint
+element of the star algebra `V →L[ℝ] V`, that is `A† = -A`. -/
+theorem coe_mem_skewAdjointLieSubalgebra_innerₗ_iff {V : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V] {A : V →L[ℝ] V} :
+    (A : Module.End ℝ V) ∈ skewAdjointLieSubalgebra (innerₗ V) ↔ A ∈ skewAdjoint (V →L[ℝ] V) := by
+  -- Membership in `skewAdjointLieSubalgebra B` is membership in `B.skewAdjointSubmodule`, and
+  -- Mathlib states its characterization only for the submodule.
+  change _ ∈ LinearMap.skewAdjointSubmodule _ ↔ _
+  rw [LinearMap.mem_skewAdjointSubmodule, skewAdjoint.mem_iff,
+    ContinuousLinearMap.star_eq_adjoint, eq_comm, ContinuousLinearMap.eq_adjoint_iff]
+  simp only [neg_apply, inner_neg_left]
+  refine ⟨fun h x y ↦ ?_, fun h x y ↦ ?_⟩
+  · have h' : inner ℝ (A x) y = -inner ℝ x (A y) := by simpa using h x y
+    linarith
+  · simp [← h x y]
+
+end SkewAdjointLieSubalgebra
 
 end ContinuousLinearMap
 
@@ -701,6 +747,27 @@ instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
     exact (star_comm_self (x := T)).map (Module.End.toContinuousLinearMap (𝕜 := 𝕜) E)
 
 end LinearMap
+
+namespace ContinuousLinearEquiv
+
+omit [FiniteDimensional 𝕜 E] in
+/-- The determinant of the adjoint equivalence is the conjugate of the determinant. -/
+@[simp]
+theorem det_adjointEquiv [CompleteSpace E] (A : E ≃L[𝕜] E) :
+    LinearMap.det (A.adjointEquiv : E →ₗ[𝕜] E) = star (LinearMap.det (A : E →ₗ[𝕜] E)) := by
+  -- In infinite dimensions both determinants are `1`.
+  by_cases hE : FiniteDimensional 𝕜 E
+  swap
+  · simp [LinearMap.det_eq_one_of_not_module_finite hE]
+  have h : (A.adjointEquiv : E →ₗ[𝕜] E) = LinearMap.adjoint (A : E →ₗ[𝕜] E) := by
+    have hA : LinearMap.toContinuousLinearMap (A : E →ₗ[𝕜] E) = (A : E →L[𝕜] E) := by
+      ext; simp
+    ext x
+    rw [LinearMap.adjoint_eq_toCLM_adjoint, hA]
+    simp [adjointEquiv_apply]
+  rw [h, LinearMap.det_adjoint]
+
+end ContinuousLinearEquiv
 
 namespace ContinuousLinearMap
 

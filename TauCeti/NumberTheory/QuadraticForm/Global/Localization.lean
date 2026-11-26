@@ -181,16 +181,16 @@ theorem _root_.QuadraticMap.Represents.atComplexEmbedding
   rw [atComplexEmbedding_def]
   simpa only [RingHom.algebraMap_toAlgebra] using h.baseChange (A := ℂ)
 
-/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate at every finite place. -/
-theorem Nondegenerate.atFinitePlace [NumberField K] [FiniteDimensional K V]
+/-- A nondegenerate quadratic form stays nondegenerate at every finite place. -/
+theorem Nondegenerate.atFinitePlace [NumberField K]
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (v : HeightOneSpectrum (𝓞 K)) :
     (Q.atFinitePlace v).Nondegenerate := by
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   rw [atFinitePlace_def]
   exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
 
-/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate at every real place. -/
-theorem Nondegenerate.atRealPlace [FiniteDimensional K V]
+/-- A nondegenerate quadratic form stays nondegenerate at every real place. -/
+theorem Nondegenerate.atRealPlace
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : {w : InfinitePlace K // w.IsReal}) :
     (Q.atRealPlace w).Nondegenerate := by
   let : CharZero K := RingHom.charZero w.val.embedding
@@ -199,9 +199,9 @@ theorem Nondegenerate.atRealPlace [FiniteDimensional K V]
   rw [atRealPlace_def]
   exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
 
-/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after scalar extension
+/-- A nondegenerate quadratic form stays nondegenerate after scalar extension
 through a complex embedding. -/
-theorem Nondegenerate.atComplexEmbedding [FiniteDimensional K V]
+theorem Nondegenerate.atComplexEmbedding
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
     (Q.atComplexEmbedding w).Nondegenerate := by
   let : CharZero K := RingHom.charZero w.embedding

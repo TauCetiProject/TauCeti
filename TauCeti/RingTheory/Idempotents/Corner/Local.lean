@@ -32,6 +32,17 @@ since units lift modulo the radical (`TauCeti.Ring.isLocalHom_mk_jacobson`).
 * `IsIdempotentElem.isLocalRing_corner_of_isPrimitiveIdempotent_mk`: an idempotent that is
   primitive modulo the Jacobson radical has a local corner, when the radical quotient is
   semisimple.
+* `TauCeti.IsPrimitiveIdempotent.exists_mul_mul_eq_or`: for a primitive idempotent `e` of a
+  commutative Artinian ring and every `w`, one of `w e` and `(1 - w) e` is invertible in `eA`.
+* `IsIdempotentElem.exists_mem_of_mem_iSup` (Rosenberg's lemma): an idempotent with local corner
+  that lies in a sum of two-sided ideals lies in one of them; for a primitive idempotent of an
+  Artinian ring, such as a finite-dimensional algebra, this is
+  `TauCeti.IsPrimitiveIdempotent.exists_mem_of_mem_iSup`.
+
+## References
+
+* Peter Webb, *A Course in Finite Group Representation Theory*, Cambridge University Press
+  (2016), Lemma 11.6.8(2), for Rosenberg's lemma.
 -/
 
 public section
@@ -68,6 +79,20 @@ theorem IsPrimitiveIdempotent.isLocalRing_corner [IsArtinianRing A] (he : IsPrim
   have := (isPrimitiveIdempotent_iff_isLocalRing_end he.isIdempotentElem hfin).1 he
   exact he.isIdempotentElem.isLocalRing_corner_of_isLocalRing_end
 
+/-- **The corner of a primitive idempotent of a commutative Artinian ring is local**, read in
+`A`: for every `w`, one of `w e` and `(1 - w) e` is invertible in `eA`, that is, there is a `z`
+with `w z e = e`, or one with `(1 - w) z e = e`. -/
+theorem IsPrimitiveIdempotent.exists_mul_mul_eq_or {A : Type*} [CommRing A] [IsArtinianRing A]
+    {e : A} (he : IsPrimitiveIdempotent e) (w : A) :
+    (∃ z, w * z * e = e) ∨ ∃ z, (1 - w) * z * e = e := by
+  have := he.isLocalRing_corner
+  have hi := he.isIdempotentElem
+  have hsum : hi.compress w + hi.compress (1 - w) = 1 := by
+    rw [← IsIdempotentElem.compress_add, add_sub_cancel, IsIdempotentElem.compress_one]
+  exact (IsLocalRing.isUnit_or_isUnit_of_add_one hsum).imp
+    (hi.exists_mul_mul_eq_of_isUnit_compress (Commute.all _ _))
+    (hi.exists_mul_mul_eq_of_isUnit_compress (Commute.all _ _))
+
 end TauCeti
 
 namespace IsIdempotentElem
@@ -89,4 +114,46 @@ theorem isLocalRing_corner_of_isPrimitiveIdempotent_mk [IsSemisimpleRing (A ⧸ 
     he.cornerQuotientJacobsonEquiv.symm.toRingHom he.cornerQuotientJacobsonEquiv.symm.surjective
   exact (Ideal.Quotient.mk (Ring.jacobson he.Corner)).domain_isLocalRing
 
+variable (he : IsIdempotentElem e)
+
+/-- **Rosenberg's lemma** (Webb, Lemma 11.6.8(2)). An idempotent with local corner ring
+`eAe` that lies in a sum of two-sided ideals lies in one of them. The ideals must be two-sided: in
+`Matrix (Fin 2) (Fin 2) k` the idempotent `E₁₁` lies in the sum of the left ideals of matrices with
+rows in `k (1, 1)` and in `k (0, 1)`, but in neither. -/
+theorem exists_mem_of_mem_iSup [IsLocalRing he.Corner] {ι : Type*} (J : ι → Ideal A)
+    [∀ i, (J i).IsTwoSided] (h : e ∈ ⨆ i, J i) : ∃ i, e ∈ J i := by
+  by_contra! hJ
+  -- The compression of an element of `J i` lies in `e (J i) e`, a left ideal of `eAe` without `1`,
+  -- so it is a nonunit; as nonunits of the local ring `eAe` are closed under addition, so is the
+  -- compression of every element of the sum, but `e` compresses to the unit of `eAe`.
+  have hmem (i : ι) {x : A} (hx : x ∈ J i) : he.compress x ∈ nonunits he.Corner := fun hu ↦ by
+    have hx' : he.compress x ∈ he.cornerIdeal (J i) := by
+      rw [mem_cornerIdeal, val_compress]
+      exact (J i).mul_mem_right e ((J i).mul_mem_left e hx)
+    have h1 :=
+      (he.cornerIdeal (J i)).eq_top_iff_one.1 ((he.cornerIdeal (J i)).eq_top_of_isUnit_mem hx' hu)
+    rw [mem_cornerIdeal, Corner.val_one] at h1
+    exact hJ i h1
+  have hsum : he.compress e ∈ nonunits he.Corner :=
+    Submodule.iSup_induction J (motive := fun x ↦ he.compress x ∈ nonunits he.Corner) h hmem
+      (by simp [compress_zero])
+      fun x y hx hy ↦ by simpa [compress_add] using IsLocalRing.nonunits_add hx hy
+  have he1 : he.compress e = 1 := by simpa only [Corner.val_one] using he.compress_val 1
+  exact hsum (he1 ▸ isUnit_one)
+
 end IsIdempotentElem
+
+namespace TauCeti
+
+variable {A : Type*} [Ring A] {e : A}
+
+/-- **Rosenberg's lemma for Artinian rings** (Webb, Lemma 11.6.8(2)). A primitive idempotent of an
+Artinian ring, for instance of a finite-dimensional algebra, that lies in a sum of two-sided ideals
+lies in one of them. -/
+theorem IsPrimitiveIdempotent.exists_mem_of_mem_iSup [IsArtinianRing A]
+    (he : IsPrimitiveIdempotent e) {ι : Type*} (J : ι → Ideal A) [∀ i, (J i).IsTwoSided]
+    (h : e ∈ ⨆ i, J i) : ∃ i, e ∈ J i :=
+  have := he.isLocalRing_corner
+  he.isIdempotentElem.exists_mem_of_mem_iSup J h
+
+end TauCeti
