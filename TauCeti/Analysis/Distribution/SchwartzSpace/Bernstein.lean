@@ -66,8 +66,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- On the annulus `1 ≤ ‖ξ‖ ≤ θ` there are Schwartz symbols `σᵢ` inverting the partial derivatives
-along an orthonormal basis `b`, `∑ i, σᵢ(ξ) 2πi ⟪ξ, bᵢ⟫ = 1`: on the annulus they agree with
-`⟪bᵢ, ξ⟫ / (2πi ‖ξ‖²)`, and `∑ᵢ ⟪ξ, bᵢ⟫² = ‖ξ‖²`. -/
+along an orthonormal basis `b`: `∑ i, σᵢ(ξ) 2πi ⟪ξ, bᵢ⟫ = 1` there. The proof builds the symbols
+to agree with `⟪bᵢ, ξ⟫ / (2πi ‖ξ‖²)` on the annulus and uses `∑ᵢ ⟪ξ, bᵢ⟫² = ‖ξ‖²`; only the sum
+identity is part of the statement. -/
 theorem _root_.OrthonormalBasis.exists_sum_mul_eq_one_of_one_le_norm_of_norm_le {ι : Type*}
     [Fintype ι] (b : OrthonormalBasis ι ℝ E) (θ : ℝ) :
     ∃ σ : ι → 𝓢(E, ℂ), ∀ ξ : E, 1 ≤ ‖ξ‖ → ‖ξ‖ ≤ θ →

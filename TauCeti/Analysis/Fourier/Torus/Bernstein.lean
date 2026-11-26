@@ -83,15 +83,17 @@ For a derivative along `v`, the symbol `2πi ⟪n, v⟫ ∏ j, χ (n j / R)` is 
 one derivative at a fixed exponent. Derivatives of higher order follow by iteration through
 intermediate trigonometric polynomials, and the gain of integrability is applied last.
 
-For the reverse inequality, Schwartz symbols `σᵢ` on `ℝᵈ` agreeing with `ξ i / (2πi ‖ξ‖²)` on the
-annulus `1 ≤ ‖ξ‖ ≤ θ` satisfy `∑ i, σᵢ(ξ) 2πi ξ i = 1` there
-(`OrthonormalBasis.exists_sum_mul_eq_one_of_one_le_norm_of_norm_le`). Hence
+For the reverse inequality, there are Schwartz symbols `σᵢ` on `ℝᵈ` with `∑ i, σᵢ(ξ) 2πi ξ i = 1`
+on the annulus `1 ≤ ‖ξ‖ ≤ θ` (`OrthonormalBasis.exists_sum_mul_eq_one_of_one_le_norm_of_norm_le`,
+whose symbols are built from `ξ i / (2πi ‖ξ‖²)`). Hence
 `f = R⁻¹ ∑ᵢ Kᵢ ⋆ ∂ᵢ f` for the periodic kernels `Kᵢ` of the dilated symbols `σᵢ (· / R)`, and
 Young's inequality for these kernels (`SchwartzMap.eLpNorm_periodicKernel_convolution_le`) bounds
 each term by `∫ ‖𝓕⁻ σᵢ‖`, for every `R > 0`. This is the periodic counterpart of the whole-space
 proof in `TauCeti/Analysis/Distribution/SchwartzSpace/Bernstein.lean`
-(`SchwartzMap.exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_support_fourier_subset`) and of
-`OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq`, with the same symbols.
+(`SchwartzMap.exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_support_fourier_subset`), with the same
+symbols. The reverse Bernstein inequality for `Lᵖ` functions on a Euclidean space,
+`OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq`, is proved through tempered
+distributions with different, explicitly cut off symbols.
 
 ## Main declarations
 
