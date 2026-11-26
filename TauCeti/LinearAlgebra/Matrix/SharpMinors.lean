@@ -9,9 +9,10 @@ public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Length
-import Mathlib.Algebra.Module.PID
+import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 import TauCeti.LinearAlgebra.Pi.Orthogonal
 import TauCeti.RingTheory.DiscreteValuationRing.Length
+import TauCeti.RingTheory.Length.LinearMap
 
 /-!
 # Maximal minors and kernel lengths over discrete valuation rings
@@ -26,13 +27,14 @@ The proof has two steps:
    isomorphic via `Submodule.orthogonalPiEquiv` to the module of `O`-linear maps from
    `(k → O) ⧸ A.rowLattice a` to `O ⧸ Ideal.span {a}`. Over a principal ideal domain, any finitely
    generated module annihilated by `a ≠ 0` has the same length as its module of linear maps into
-   `O ⧸ Ideal.span {a}` (by the structure theorem for finitely generated torsion modules).
+   `O ⧸ Ideal.span {a}` (`TauCeti.length_linearMap_quotient_span`).
 2. The quotient `(k → O) ⧸ A.rowLattice a` has length equal to the least valuation of a maximal
-   minor of `A.fromRows (a • 1)`: every choice of `k` rows spans a sublattice whose colength is
-   the valuation of the corresponding minor (`Matrix.length_quotient_span_range_eq_addVal_det`),
-   while `A.rowLattice a` has finite colength, hence is spanned by the rows of a square matrix
-   (`IsDiscreteValuationRing.exists_matrix_span_range_row_eq`) whose determinant is a linear
-   combination of these minors by multilinearity of the determinant.
+   minor of `A.fromRows (a • 1)` (for any `a : O`, including `a = 0`): every choice of `k` rows
+   spans a sublattice whose colength is the valuation of the corresponding minor
+   (`Matrix.length_quotient_span_range_eq_addVal_det`), while if `A.rowLattice a` has finite
+   colength it is spanned by the rows of a square matrix
+   (`IsDiscreteValuationRing.exists_matrix_span_range_row_eq`) whose determinant is divisible by
+   any common divisor of those minors (`Matrix.dvd_det_of_forall_row_mem_span`).
 
 ## Main definitions and results
 
@@ -83,6 +85,31 @@ def rowLattice [DecidableEq k] (A : Matrix r k O) (a : O) : Submodule O (k → O
   span O (Set.range (A.fromRows (a • (1 : Matrix k k O))).row)
 
 omit [Fintype k] in
+/-- Every row of `A` lies in `A.rowLattice a`. -/
+theorem row_mem_rowLattice [DecidableEq k] (A : Matrix r k O) (a : O) (i : r) :
+    A.row i ∈ A.rowLattice a :=
+  subset_span ⟨.inl i, rfl⟩
+
+omit [Fintype k] in
+/-- Every `a`-scaled standard basis vector lies in `A.rowLattice a`. -/
+theorem smul_single_mem_rowLattice [DecidableEq k] (A : Matrix r k O) (a : O) (j : k) :
+    a • Pi.single j (1 : O) ∈ A.rowLattice a :=
+  subset_span ⟨.inr j, by ext i; simp [Matrix.one_apply, Pi.single_apply, eq_comm]⟩
+
+omit [Fintype k] in
+/-- `A.rowLattice a` is contained in a submodule `N` if and only if `N` contains every row of `A`
+and every `a`-scaled standard basis vector. -/
+theorem rowLattice_le_iff [DecidableEq k] {A : Matrix r k O} {a : O} {N : Submodule O (k → O)} :
+    A.rowLattice a ≤ N ↔ (∀ i : r, A.row i ∈ N) ∧ ∀ j : k, a • Pi.single j (1 : O) ∈ N := by
+  refine ⟨fun h ↦ ⟨fun i ↦ h (A.row_mem_rowLattice a i),
+      fun j ↦ h (A.smul_single_mem_rowLattice a j)⟩, fun ⟨hA, ha⟩ ↦ span_le.2 ?_⟩
+  rintro _ ⟨i | j, rfl⟩
+  · exact hA i
+  · have h : (A.fromRows (a • (1 : Matrix k k O))).row (.inr j) = a • Pi.single j (1 : O) := by
+      ext i; simp [Matrix.one_apply, Pi.single_apply, eq_comm]
+    simpa [h] using ha j
+
+omit [Fintype k] in
 /-- Every multiple of `a` lies in `A.rowLattice a`. -/
 theorem smul_mem_rowLattice [Finite k] [DecidableEq k] (A : Matrix r k O) (a : O) (v : k → O) :
     a • v ∈ A.rowLattice a := by
@@ -90,8 +117,7 @@ theorem smul_mem_rowLattice [Finite k] [DecidableEq k] (A : Matrix r k O) (a : O
   rw [pi_eq_sum_univ' v, Finset.smul_sum]
   refine sum_mem fun j _ ↦ ?_
   rw [smul_comm]
-  exact smul_mem _ _
-    (subset_span ⟨.inr j, by ext i; simp [Matrix.one_apply, Pi.single_apply, eq_comm]⟩)
+  exact smul_mem _ _ (A.smul_single_mem_rowLattice a j)
 
 end CommSemiring
 
@@ -104,6 +130,13 @@ indexes the columns. The family of rows of `A` may be infinite. A choice of rows
 is allowed; it contributes the minor `0`. -/
 def maximalMinors (A : Matrix r k Λ) (a : Λ) : Set Λ :=
   Set.range fun f : k → r ⊕ k ↦ ((A.fromRows (a • 1)).submatrix f id).det
+
+/-- An element lies in `A.maximalMinors a` exactly when it is the determinant of a `card k`-row
+selection from `A.fromRows (a • 1)`. -/
+@[simp]
+theorem mem_maximalMinors_iff {A : Matrix r k Λ} {a x : Λ} :
+    x ∈ A.maximalMinors a ↔ ∃ f : k → r ⊕ k, ((A.fromRows (a • 1)).submatrix f id).det = x :=
+  Iff.rfl
 
 /-- A ring homomorphism `ev` maps the maximal minors of the rows of `A` and `a • 1` onto those of
 the rows of `A.map ev` and `ev a • 1`. -/
@@ -132,101 +165,14 @@ theorem length_matrixKernel_eq_length_linearMap (A : Matrix r k O) (a : O) :
 
 end CommRing
 
-end Matrix
-
-namespace TauCeti
-
-/-- In an integral domain `O`, if `d ∣ a` with `a ≠ 0`, then the module of `O`-linear maps
-`(O ⧸ Ideal.span {d}) →ₗ[O] (O ⧸ Ideal.span {a})` has the same length as `O ⧸ Ideal.span {d}`. -/
-theorem length_linearMap_quotient_span_of_dvd {O : Type*} [CommRing O] [IsDomain O]
-    {a d : O} (ha : a ≠ 0) (hd : d ∣ a) :
-    length O ((O ⧸ Ideal.span {d}) →ₗ[O] O ⧸ Ideal.span {a}) =
-      length O (O ⧸ Ideal.span {d}) := by
-  -- The linear maps `O / d → O / a` are the multiples of multiplication by `a / d`.
-  obtain ⟨c, rfl⟩ := hd
-  have h_mul_le :
-      Ideal.span {d} ≤ Submodule.comap (LinearMap.lsmul O O c) (Ideal.span {d * c}) :=
-    (Ideal.span_singleton_le_iff_mem _).2 (Ideal.mem_span_singleton.2 (by simp [mul_comm]))
-  let mulC : (O ⧸ Ideal.span {d}) →ₗ[O] O ⧸ Ideal.span {d * c} :=
-    mapQ _ _ (LinearMap.lsmul O O c) h_mul_le
-  let φ : O →ₗ[O] (O ⧸ Ideal.span {d}) →ₗ[O] O ⧸ Ideal.span {d * c} :=
-    LinearMap.toSpanSingleton O _ mulC
-  have hφ (t : O) : φ t 1 = Ideal.Quotient.mk _ (t * c) :=
-    congrArg (Ideal.Quotient.mk _) (by simp)
-  have h_ext {g g' : (O ⧸ Ideal.span {d}) →ₗ[O] O ⧸ Ideal.span {d * c}}
-      (h_one : g 1 = g' 1) : g = g' :=
-    linearMap_qext _ (LinearMap.ext_ring h_one)
-  have h_ker : LinearMap.ker φ = Ideal.span {d} := by
-    ext t
-    rw [LinearMap.mem_ker, Ideal.mem_span_singleton,
-      ← mul_dvd_mul_iff_right (right_ne_zero_of_mul ha),
-      ← Ideal.Quotient.eq_zero_iff_dvd, ← hφ]
-    exact ⟨fun h ↦ by rw [h, LinearMap.zero_apply], fun h ↦ h_ext h⟩
-  have h_surj : Function.Surjective φ := fun g ↦ by
-    obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective (g 1)
-    have h_zero : Ideal.Quotient.mk (Ideal.span {d * c}) (d * y) = 0 := by
-      have h_smul : Ideal.Quotient.mk (Ideal.span {d * c}) (d * y) =
-          d • Ideal.Quotient.mk (Ideal.span {d * c}) y := by
-        simp [Algebra.smul_def]
-      rw [h_smul, hy, ← map_smul]
-      have h_kill : d • (1 : O ⧸ Ideal.span {d}) = 0 := by
-        simp [Algebra.smul_def, (Ideal.Quotient.eq_zero_iff_dvd d d).2 dvd_rfl]
-      rw [h_kill, map_zero]
-    obtain ⟨t, rfl⟩ : c ∣ y := by
-      rwa [Ideal.Quotient.eq_zero_iff_dvd,
-        mul_dvd_mul_iff_left (left_ne_zero_of_mul ha)] at h_zero
-    exact ⟨t, h_ext (by rw [hφ, mul_comm t, hy])⟩
-  exact ((quotEquivOfEq _ _ h_ker.symm).trans
-    (φ.quotKerEquivOfSurjective h_surj)).length_eq.symm
-
-/-- Over a principal ideal domain `O`, a finitely generated module `Q` annihilated by `a ≠ 0` has
-the same length as its module of `O`-linear maps into `O ⧸ Ideal.span {a}`. -/
-theorem length_linearMap_quotient_span {O Q : Type*} [CommRing O] [IsDomain O]
-    [IsPrincipalIdealRing O] [AddCommGroup Q] [Module O Q] [Module.Finite O Q]
-    {a : O} (ha : a ≠ 0) (h_kill : ∀ x : Q, a • x = 0) :
-    length O (Q →ₗ[O] O ⧸ Ideal.span {a}) = length O Q := by
-  classical
-  have h_torsion : IsTorsion O Q := fun x ↦ ⟨⟨a, mem_nonZeroDivisors_of_ne_zero ha⟩, h_kill x⟩
-  obtain ⟨ι, _, p, -, n, ⟨e⟩⟩ := equiv_directSum_of_isTorsion h_torsion
-  let d (i : ι) : O := p i ^ n i
-  let e' : Q ≃ₗ[O] ∀ i, O ⧸ Ideal.span {d i} := e.trans DFinsupp.linearEquivFunOnFintype
-  have h_dvd (i : ι) : d i ∣ a := by
-    have h_one : a • (1 : O ⧸ Ideal.span {d i}) = 0 := by
-      simpa using congrFun (congrArg e' (h_kill (e'.symm (Pi.single i 1)))) i
-    simpa [← Ideal.Quotient.eq_zero_iff_dvd, Algebra.smul_def] using h_one
-  calc length O (Q →ₗ[O] O ⧸ Ideal.span {a})
-    _ = length O (∀ i, (O ⧸ Ideal.span {d i}) →ₗ[O] O ⧸ Ideal.span {a}) :=
-        ((LinearMap.lsum O _ O).trans (e'.symm.congrLeft _ O)).length_eq.symm
-    _ = length O Q := by
-        simp [e'.length_eq, length_pi_of_fintype,
-          length_linearMap_quotient_span_of_dvd ha (h_dvd _)]
-
-/-- If every row of a square matrix `N` lies in the row span of a matrix `M`, then `det N` is an
-`O`-linear combination of maximal minors of `M`, so any common divisor `x` of those minors divides
-`det N`. -/
-theorem dvd_det_of_forall_row_mem_span {O m k : Type*} [CommRing O] [Fintype k] [DecidableEq k]
-    {M : Matrix m k O} {N : Matrix k k O} {x : O}
-    (h_minor : ∀ f : k → m, x ∣ (M.submatrix f id).det)
-    (h_row : ∀ i : k, N.row i ∈ span O (Set.range M.row)) : x ∣ N.det := by
-  choose c hc using fun i : k ↦ Finsupp.mem_span_range_iff_exists_finsupp.1 (h_row i)
-  have h_det : N.det =
-      detRowAlternating.toMultilinearMap fun i ↦ ∑ t ∈ (c i).support, c i t • M.row t :=
-    congrArg det (funext fun i ↦ (hc i).symm)
-  simp only [h_det, MultilinearMap.map_sum_finset, MultilinearMap.map_smul_univ]
-  exact Finset.dvd_sum fun f _ ↦ (h_minor f).mul_left _
-
-end TauCeti
-
-namespace Matrix
-
 section DVR
 
 variable {Λ O r k : Type*} [CommRing Λ] [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
   [Fintype k] [DecidableEq k]
 
-/-- Over a discrete valuation ring `O` and for `a ≠ 0`, the quotient of `k → O` by `A.rowLattice a`
-has length equal to the least valuation of a maximal minor in `A.maximalMinors a`. -/
-theorem isLeast_length_quotient_rowLattice (A : Matrix r k O) {a : O} (ha : a ≠ 0) :
+/-- Over a discrete valuation ring `O`, the quotient of `k → O` by `A.rowLattice a` has length
+equal to the least valuation of a maximal minor in `A.maximalMinors a`. -/
+theorem isLeast_length_quotient_rowLattice (A : Matrix r k O) (a : O) :
     IsLeast (addVal O '' A.maximalMinors a) (length O ((k → O) ⧸ A.rowLattice a)) := by
   let M : Matrix (r ⊕ k) k O := A.fromRows (a • 1)
   let v (f : k → r ⊕ k) : ℕ∞ := addVal O (M.submatrix f id).det
@@ -235,22 +181,20 @@ theorem isLeast_length_quotient_rowLattice (A : Matrix r k O) {a : O} (ha : a �
       span_mono (Set.range_comp_subset_range f M.row)
     simpa only [length_quotient_span_range_eq_addVal_det] using
       length_le_of_surjective _ (factor_surjective h_le)
-  have h_fin : length O ((k → O) ⧸ A.rowLattice a) ≠ ⊤ := by
-    refine ne_top_of_le_ne_top ?_ (h_lower .inr)
-    have h_sub : M.submatrix .inr id = a • (1 : Matrix k k O) := by ext i j; simp [M]
-    simp only [v, h_sub, det_smul, det_one, mul_one]
-    exact mt addVal_eq_top_iff.1 (pow_ne_zero _ ha)
-  obtain ⟨N, hN⟩ := IsDiscreteValuationRing.exists_matrix_span_range_row_eq _ h_fin
-  have : Nonempty (k → r ⊕ k) := ⟨.inr⟩
-  let f₀ : k → r ⊕ k := Function.argmin v
-  have h_dvd : (M.submatrix f₀ id).det ∣ N.det :=
-    TauCeti.dvd_det_of_forall_row_mem_span
-      (fun f ↦ addVal_le_iff_dvd.1 (Function.argmin_le v f))
-      fun i ↦ hN.le (subset_span ⟨i, rfl⟩)
-  have h_upper : v f₀ ≤ length O ((k → O) ⧸ A.rowLattice a) :=
-    (addVal_le_iff_dvd.2 h_dvd).trans_eq (by rw [← hN, length_quotient_span_range_eq_addVal_det])
-  exact ⟨⟨(M.submatrix f₀ id).det, ⟨f₀, rfl⟩, h_upper.antisymm (h_lower f₀)⟩,
-    Set.forall_mem_image.2 (Set.forall_mem_range.2 h_lower)⟩
+  refine ⟨?_, Set.forall_mem_image.2 (Set.forall_mem_range.2 h_lower)⟩
+  rcases eq_or_ne (length O ((k → O) ⧸ A.rowLattice a)) ⊤ with h_top | h_fin
+  · exact ⟨(M.submatrix .inr id).det, ⟨.inr, rfl⟩,
+      (top_le_iff.1 (h_top ▸ h_lower .inr)).trans h_top.symm⟩
+  · obtain ⟨N, hN⟩ := IsDiscreteValuationRing.exists_matrix_span_range_row_eq _ h_fin
+    have : Nonempty (k → r ⊕ k) := ⟨.inr⟩
+    let f₀ : k → r ⊕ k := Function.argmin v
+    have h_dvd : (M.submatrix f₀ id).det ∣ N.det :=
+      dvd_det_of_forall_row_mem_span
+        (fun f ↦ addVal_le_iff_dvd.1 (Function.argmin_le v f))
+        fun i ↦ hN.le (subset_span ⟨i, rfl⟩)
+    have h_upper : v f₀ ≤ length O ((k → O) ⧸ A.rowLattice a) :=
+      (addVal_le_iff_dvd.2 h_dvd).trans_eq (by rw [← hN, length_quotient_span_range_eq_addVal_det])
+    exact ⟨(M.submatrix f₀ id).det, ⟨f₀, rfl⟩, h_upper.antisymm (h_lower f₀)⟩
 
 /-- For a matrix `A` over a commutative ring `Λ` with columns indexed by a finite type `k`, and a
 ring homomorphism `ev : Λ →+* O` into a discrete valuation ring with `ev a ≠ 0`, the length of
@@ -264,7 +208,7 @@ theorem isLeast_length_matrixKernel (A : Matrix r k Λ) (a : Λ) (ev : Λ →+* 
     simpa [← Quotient.mk_smul] using (A.map ev).smul_mem_rowLattice (ev a) v
   rw [length_matrixKernel_eq_length_linearMap, TauCeti.length_linearMap_quotient_span ha h_kill,
     ← Set.image_image (addVal O) ev, image_maximalMinors]
-  exact (A.map ev).isLeast_length_quotient_rowLattice ha
+  exact (A.map ev).isLeast_length_quotient_rowLattice (ev a)
 
 end DVR
 
