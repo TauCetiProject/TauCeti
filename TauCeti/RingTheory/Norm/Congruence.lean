@@ -25,6 +25,8 @@ nonnegative product.
   congruent modulo `I`.
 * `Algebra.intCast_norm_eq_of_sub_mem_span_natCast`: congruent elements have congruent integer
   norms.
+* `Algebra.norm_eq_one_of_isUnit_of_sub_one_mem_span_natCast`: a unit congruent to `1` modulo
+  `m > 2` has integer norm `1`.
 -/
 
 public section
@@ -67,5 +69,18 @@ theorem Algebra.intCast_norm_eq_of_sub_mem_span_natCast {m : ℕ} {a b : S}
     ((Algebra.norm ℤ a : ℤ) : ZMod m) = ((Algebra.norm ℤ b : ℤ) : ZMod m) := by
   rw [ZMod.intCast_eq_intCast_iff_dvd_sub, ← neg_sub, dvd_neg, ← Ideal.mem_span_singleton]
   exact Algebra.norm_sub_norm_mem_of_sub_mem_map (by simpa [Ideal.map_span] using h)
+
+/-- **Units congruent to one modulo `m > 2` have integer norm one.** Since `a` is a unit, its
+integer norm is `±1`, while congruence `a ≡ 1 (mod m)` makes the norm congruent to `1` modulo `m`,
+ruling out `-1` when `2 < m`. -/
+theorem Algebra.norm_eq_one_of_isUnit_of_sub_one_mem_span_natCast {m : ℕ} (hm : 2 < m)
+    {a : S} (ha : IsUnit a) (h : a - 1 ∈ Ideal.span {(m : S)}) :
+    Algebra.norm ℤ a = 1 := by
+  rcases Int.isUnit_iff.mp (ha.map (Algebra.norm ℤ)) with h1 | hneg
+  · exact h1
+  · have hc := Algebra.intCast_norm_eq_of_sub_mem_span_natCast (a := a) (b := 1) h
+    rw [hneg, map_one, Int.cast_neg, Int.cast_one, neg_eq_iff_add_eq_zero, one_add_one_eq_two,
+      ← Nat.cast_two, ZMod.natCast_eq_zero_iff] at hc
+    exact absurd (Nat.le_of_dvd (by decide) hc) (not_le_of_gt hm)
 
 end IntCongruence
