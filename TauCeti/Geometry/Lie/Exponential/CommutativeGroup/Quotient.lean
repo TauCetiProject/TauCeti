@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Isogeny
 public import TauCeti.Geometry.Lie.Subgroup.NormalQuotient
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import TauCeti.Geometry.Lie.Exponential.Classification
 import TauCeti.Topology.Algebra.Group.Connected
 
@@ -91,6 +92,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [T2Space G] [BoundarylessManifold I G] [T2Space G'] [BoundarylessManifold I' G']
   [IsMulCommutative G]
 
+omit [IsMulCommutative G] in
+/-- If `exp(t X)` lies in the kernel of `f` for every `t`, then the Lie map of `f` kills `X`. -/
+private theorem lieMap_eq_zero_of_forall_lieExp_smul_mem_ker (f : G →ₜ* G')
+    {X : LeftInvariantDerivation I G} (hX : ∀ t : ℝ, lieExp (t • X) ∈ f.ker) :
+    lieMap (I := I) (I' := I') f X = 0 := by
+  apply oneParameterSubgroup_injective (I := I') (G := G')
+  ext t
+  obtain ⟨t, rfl⟩ := Multiplicative.ofAdd.surjective t
+  simpa [← map_smul, ← map_lieExp (I' := I')] using hX t
+
 /-- **The exponential image of the kernel of the Lie map is the identity component of the
 kernel.** For a continuous homomorphism `f : G → G'` out of a commutative Lie group, the
 exponential maps the kernel of the Lie map `df` onto the identity component of `ker f`. -/
@@ -131,16 +142,15 @@ theorem image_lieExp_ker_lieMap (f : G →ₜ* G') :
     have hrange := range_lieExp (I := 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) f.ker).toSubmodule))
       (G := f.ker)
     obtain ⟨Y, rfl⟩ : n ∈ Set.range lieExp := by rw [hrange]; exact hn
-    refine ⟨d.lieMapSubtypeVal Y, ?_, ?_⟩
-    · -- `t ↦ f(exp(t dι Y))` is trivial, so the one-parameter subgroup of `df(dι Y)` is trivial.
-      apply oneParameterSubgroup_injective (I := I') (G := G')
-      ext t
-      rw [← ofAdd_toAdd t, oneParameterSubgroup_apply, oneParameterSubgroup_apply, smul_zero,
-        lieExp_zero, ← map_smul, ← map_lieExp (I' := I'), ← map_smul, d.lieMapSubtypeVal_apply,
-        ← _root_.map_lieExp d.subtypeVal, d.subtypeVal_apply]
-      exact MonoidHom.mem_ker.1 (lieExp (t.toAdd • Y)).property
-    · rw [d.lieMapSubtypeVal_apply, ← _root_.map_lieExp d.subtypeVal, d.subtypeVal_apply,
-        Subgroup.coe_subtype]
+    -- The inclusion intertwines the exponentials of `ker f` and `G`.
+    have hexp (Z : LeftInvariantDerivation _ f.ker) :
+        lieExp (d.lieMapSubtypeVal Z) = ((lieExp Z : f.ker) : G) := by
+      rw [d.lieMapSubtypeVal_apply, ← _root_.map_lieExp d.subtypeVal, d.subtypeVal_apply]
+    refine ⟨d.lieMapSubtypeVal Y, ?_, by rw [hexp, Subgroup.coe_subtype]⟩
+    -- `t ↦ exp(t dι Y)` lies in `ker f`, so `df(dι Y)` vanishes.
+    refine lieMap_eq_zero_of_forall_lieExp_smul_mem_ker f fun t ↦ ?_
+    rw [← map_smul, hexp]
+    exact (lieExp (t • Y)).property
 
 variable [IsMulCommutative G'] [PreconnectedSpace G]
 
@@ -256,6 +266,32 @@ theorem periodLattice_inf_ker_lieMap_quotientMkSmoothHom (hN : IsClosed (N : Set
     lieMap_quotientMkSmoothHom_eq_zero_iff, Submodule.mem_toAddSubgroup,
     LieSubalgebra.mem_toSubmodule]
 
+omit [LieGroup I ∞ G] [IsMulCommutative G] in
+private theorem ker_quotientMkContinuousMonoidHom [N.Normal] :
+    (quotientMkContinuousMonoidHom N).ker = N := by
+  ext
+  simp
+
+/-- The Lie map of the projection `G → G ⧸ N`, viewed as a continuous homomorphism, is the Lie map
+of the smooth projection. -/
+theorem lieMap_quotientMkContinuousMonoidHom (hN : IsClosed (N : Set G)) :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    haveI := lieGroup_quotientOfIsClosed (I := I) hN
+    haveI : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+    haveI : T2Space G := I.t2Space_of_lieGroup ∞
+    ContinuousMonoidHom.lieMap (I := I) (I' := 𝓘(ℝ, QuotientModelSpace I N))
+        (quotientMkContinuousMonoidHom N) =
+      lieMap (quotientMkSmoothHom I hN) := by
+  let _ := quotientChartedSpaceOfIsClosed I hN
+  have := lieGroup_quotientOfIsClosed (I := I) hN
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  rw [ContinuousMonoidHom.lieMap_def]
+  congr 1
+  apply DFunLike.coe_injective
+  rw [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism, coe_quotientMkSmoothHom]
+  exact funext (quotientMkContinuousMonoidHom_apply N)
+
 variable [PreconnectedSpace G]
 
 /-- **The quotient lattice has index the number of components.** For a closed subgroup `N` of a
@@ -277,18 +313,9 @@ theorem relIndex_map_lieMap_quotientMkSmoothHom_periodLattice (hN : IsClosed (N 
   have : IsMulCommutative (G ⧸ N) := (QuotientGroup.mk'_surjective N).isMulCommutative
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   have : T2Space G := I.t2Space_of_lieGroup ∞
-  -- The projection as a continuous homomorphism, with the same Lie map.
-  let q : G →ₜ* G ⧸ N := { QuotientGroup.mk' N with continuous_toFun := continuous_quotient_mk' }
-  have hq : ContinuousMonoidHom.lieMap (I := I) (I' := 𝓘(ℝ, QuotientModelSpace I N)) q =
-      lieMap (quotientMkSmoothHom I hN) := by
-    rw [ContinuousMonoidHom.lieMap_def]
-    congr 1
-    apply DFunLike.coe_injective
-    rw [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism, coe_quotientMkSmoothHom]
-    -- `q` is the quotient map by construction.
-    rfl
+  have hq := lieMap_quotientMkContinuousMonoidHom (I := I) hN
   rw [← hq, ContinuousMonoidHom.relIndex_map_lieMap_periodLattice_eq_index_connectedComponentOfOne
-    q (hq ▸ surjective_lieMap_quotientMkSmoothHom hN), QuotientGroup.ker_mk' N]
+    _ (hq ▸ surjective_lieMap_quotientMkSmoothHom hN), ker_quotientMkContinuousMonoidHom]
 
 /-- **Quotients by connected subgroups use the quotient lattice.** For a closed connected
 subgroup `N` of a connected commutative Lie group `G`, the Lie map of the projection
@@ -307,12 +334,12 @@ theorem map_lieMap_quotientMkSmoothHom_periodLattice (hN : IsClosed (N : Set G))
   have : IsMulCommutative (G ⧸ N) := (QuotientGroup.mk'_surjective N).isMulCommutative
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   have : T2Space G := I.t2Space_of_lieGroup ∞
-  refine le_antisymm ?_ (AddSubgroup.relIndex_eq_one.1 ?_)
-  · rintro _ ⟨X, hX, rfl⟩
-    rw [SetLike.mem_coe, mem_periodLattice] at hX
-    rw [mem_periodLattice, LinearMap.toAddMonoidHom_coe, LieHom.coe_toLinearMap, ← map_smul,
-      ← _root_.map_lieExp, hX, map_one]
-  · rw [relIndex_map_lieMap_quotientMkSmoothHom_periodLattice hN, connectedComponentOfOne_eq_top,
-      index_top]
+  have : PreconnectedSpace (quotientMkContinuousMonoidHom N).ker := by
+    rw [ker_quotientMkContinuousMonoidHom]
+    infer_instance
+  have hq := lieMap_quotientMkContinuousMonoidHom (I := I) hN
+  rw [← hq]
+  exact ContinuousMonoidHom.map_lieMap_periodLattice_of_surjective _
+    (hq ▸ surjective_lieMap_quotientMkSmoothHom hN)
 
 end Subgroup

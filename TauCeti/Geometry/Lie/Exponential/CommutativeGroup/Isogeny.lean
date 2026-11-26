@@ -179,10 +179,9 @@ theorem relIndex_map_lieMap_periodLattice_of_surjective (f : G →ₜ* G')
     ext Y
     simp only [AddSubgroup.mem_inf, and_congr_left_iff]
     intro _
-    rw [← lieExpAddMonoidHom_mem_map_ker_iff f s hs', AddMonoidHom.mem_ker, hφ,
-      AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff,
-      AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, LinearMap.comp_apply,
-      LinearMap.smul_apply, LinearMap.id_apply]
+    simp only [AddMonoidHom.mem_ker, hφ, AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply,
+      QuotientAddGroup.eq_zero_iff]
+    exact (lieExpAddMonoidHom_mem_map_ker_iff f s hs').symm
   rw [← AddSubgroup.inf_relIndex_right, hker, AddSubgroup.inf_relIndex_right,
     AddSubgroup.relIndex_ker, hφ, map_periodLattice_eq_map_ker f s hs',
     ← AddSubgroup.relIndex_ker, QuotientAddGroup.ker_mk']
