@@ -5,41 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.Algebra.Category.ModuleCat.EpiMono
-public import Mathlib.Algebra.Category.ModuleCat.Subobject
 public import Mathlib.RingTheory.Ideal.Span
-public import TauCeti.CategoryTheory.Filtration.Decreasing
+public import TauCeti.Algebra.Category.ModuleCat.Filtration
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Ring.GeomSum
+import Mathlib.RingTheory.Multiplicity
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# Checks: exhaustive, separated and complete filtrations of modules
+# Checks: exhaustive, separated and complete filtrations of `ℤ`
 
-An antitone family `F : ℤ → Submodule R M` of submodules is a decreasingly filtered object of
-`ModuleCat R` (`TauCeti.Examples.DecreasingFiltration.ofSubmodules`), whose step `F^p` is the
-subobject of `F p` (`step_ofSubmodules`). Through Mathlib's order isomorphism
-`ModuleCat.subobjectModule` between subobjects and submodules, the filtration is exhaustive
-exactly when no proper submodule contains every `F p`
-(`isExhaustive_ofSubmodules_iff`), and separated exactly when no nonzero submodule lies in every
-`F p` (`isSeparated_ofSubmodules_iff`).
-
-Checks on `ℤ` as a `ℤ`-module:
+An antitone family of submodules is a decreasingly filtered module
+(`CategoryTheory.FilteredObject.ofSubmodules`), whose exhaustiveness and separatedness read in the
+lattice of submodules. Checks on `ℤ` as a `ℤ`-module:
 
 * the constant filtration `F^p = ℤ` is exhaustive and not separated
   (`isExhaustive_const_top`, `not_isSeparated_const_top`);
 * the zero filtration `F^p = 0` is separated and not exhaustive
   (`isSeparated_const_bot`, `not_isExhaustive_const_bot`);
-* for `ℓ ≥ 2`, the `ℓ`-adic filtration `F^p = ℓ^p ℤ` for `p ≥ 0`, and `ℤ` for `p ≤ 0`, is
-  exhaustive and separated (`isExhaustive_adicFiltration`, `isSeparated_adicFiltration`): an
-  integer divisible by every power of `ℓ` is `0`. It is not complete
-  (`not_isComplete_adicFiltration`): the partial sums `∑_{i < p} (-ℓ)^i` of the `ℓ`-adic expansion
-  of `1 / (1 + ℓ)` are a compatible family in the quotients `ℤ / ℓ^p` that no integer represents.
-
-Through `ModuleCat.cokernelIsoRangeQuotient`, two maps `R ⟶ M`, `1 ↦ x` and `1 ↦ y`, agree in the
-quotient `M / F^p` of the filtration exactly when `x - y ∈ F p`
-(`toSpan_comp_quotientCone_π_eq_iff`).
+* the `ℓ`-adic filtration `F^p = ℓ^p ℤ` for `p ≥ 0`, and `ℤ` for `p ≤ 0`, is exhaustive
+  (`isExhaustive_adicFiltration`), and separated for `|ℓ| ≠ 1` (`isSeparated_adicFiltration`):
+  by Mathlib's `Int.finiteMultiplicity_iff`, an integer divisible by every power of `ℓ` is `0`.
+  For `ℓ ≥ 2` it is not complete (`not_isComplete_adicFiltration`): the partial sums
+  `∑_{i < p} (-ℓ)^i` of the `ℓ`-adic expansion of `1 / (1 + ℓ)` are a compatible family in the
+  quotients `ℤ / ℓ^p` that no integer represents.
 -/
 
 public section
@@ -48,110 +37,7 @@ open CategoryTheory Opposite
 
 namespace TauCeti.Examples.DecreasingFiltration
 
-universe u
-
-variable {R : Type u} [Ring R] {M : Type u} [AddCommGroup M] [Module R M]
-
-/-- The decreasingly filtered module with steps an antitone family `F` of submodules. -/
-noncomputable abbrev ofSubmodules (F : ℤ → Submodule R M) (hF : Antitone F) :
-    FilteredObject (ModuleCat.{u} R) ℤᵒᵖ where
-  X := ModuleCat.of R M
-  filtration.toMonoOver :=
-    { obj p := MonoOver.mk (hf := ModuleCat.mono_as_hom'_subtype (X := ModuleCat.of R M) (F p.unop))
-        (ModuleCat.ofHom (F p.unop).subtype)
-      map {p q} f := MonoOver.homMk
-        (ModuleCat.ofHom (Submodule.inclusion (hF (leOfHom f.unop)))) rfl }
-
-/-- The inclusion of the step `F^p` of `ofSubmodules F hF` is the inclusion of `F p`. -/
-theorem stepι_ofSubmodules (F : ℤ → Submodule R M) (hF : Antitone F) (p : ℤ) :
-    (ofSubmodules F hF).stepι (op p) = ModuleCat.ofHom (F p).subtype := by
-  rw [← FilteredObject.filtration_ι_app]
-  rfl
-
-/-- The step `F^p` of `ofSubmodules F hF` is the subobject of `F p`. -/
-theorem step_ofSubmodules (F : ℤ → Submodule R M) (hF : Antitone F) (p : ℤ) :
-    (ofSubmodules F hF).step (op p) =
-      (ModuleCat.subobjectModule (ModuleCat.of R M)).symm (F p) := by
-  have h := stepι_ofSubmodules F hF p
-  have hm : Mono (ModuleCat.ofHom (F p).subtype) :=
-    ModuleCat.mono_as_hom'_subtype (X := ModuleCat.of R M) (F p)
-  have : Mono ((ofSubmodules F hF).stepι (op p)) := by
-    rw [h]
-    exact hm
-  rw [← FilteredObject.mk_stepι]
-  exact Subobject.mk_eq_mk_of_comm _ (ModuleCat.ofHom (F p).subtype) (Iso.refl _) (by simp [h])
-
-/-- `ofSubmodules F hF` is exhaustive exactly when every submodule containing every `F p` is
-everything. -/
-theorem isExhaustive_ofSubmodules_iff (F : ℤ → Submodule R M) (hF : Antitone F) :
-    (ofSubmodules F hF).IsExhaustive ↔ ∀ N : Submodule R M, (∀ p, F p ≤ N) → N = ⊤ := by
-  set e := ModuleCat.subobjectModule (ModuleCat.of R M)
-  rw [FilteredObject.isExhaustive_iff]
-  refine ⟨fun h N hN ↦ ?_, fun h S hS ↦ ?_⟩
-  · have := h (e.symm N) fun p ↦ ?_
-    · have h' := congrArg e this
-      rwa [OrderIso.apply_symm_apply, OrderIso.map_top] at h'
-    · induction p using Opposite.rec with
-      | op p => exact (step_ofSubmodules F hF p) ▸ e.symm.monotone (hN p)
-  · have := h (e S) fun p ↦ by
-      have h' := e.monotone (hS (op p))
-      rwa [step_ofSubmodules, OrderIso.apply_symm_apply] at h'
-    have h' := congrArg e.symm this
-    rwa [OrderIso.symm_apply_apply, OrderIso.map_top] at h'
-
-/-- `ofSubmodules F hF` is separated exactly when every submodule contained in every `F p` is
-zero. -/
-theorem isSeparated_ofSubmodules_iff (F : ℤ → Submodule R M) (hF : Antitone F) :
-    (ofSubmodules F hF).IsSeparated ↔ ∀ N : Submodule R M, (∀ p, N ≤ F p) → N = ⊥ := by
-  set e := ModuleCat.subobjectModule (ModuleCat.of R M)
-  rw [FilteredObject.isSeparated_iff]
-  refine ⟨fun h N hN ↦ ?_, fun h S hS ↦ ?_⟩
-  · have := h (e.symm N) fun p ↦ ?_
-    · have h' := congrArg e this
-      rwa [OrderIso.apply_symm_apply, OrderIso.map_bot] at h'
-    · induction p using Opposite.rec with
-      | op p => exact (step_ofSubmodules F hF p) ▸ e.symm.monotone (hN p)
-  · have := h (e S) fun p ↦ by
-      have h' := e.monotone (hS (op p))
-      rwa [step_ofSubmodules, OrderIso.apply_symm_apply] at h'
-    have h' := congrArg e.symm this
-    rwa [OrderIso.symm_apply_apply, OrderIso.map_bot] at h'
-
-/-- The linear map underlying the inclusion of the step `F^p` is the inclusion of `F p`. -/
-theorem stepι_hom_ofSubmodules (F : ℤ → Submodule R M) (hF : Antitone F) (p : ℤ) :
-    ((ofSubmodules F hF).stepι (op p)).hom = (F p).subtype := by
-  rw [stepι_ofSubmodules]
-  rfl
-
-/-- The map `R ⟶ M`, `1 ↦ x`, into the underlying module of `ofSubmodules F hF`. -/
-noncomputable def toSpan (F : ℤ → Submodule R M) (hF : Antitone F) (x : M) :
-    ModuleCat.of R R ⟶ (ofSubmodules F hF).quotientCone.pt :=
-  ModuleCat.ofHom (LinearMap.toSpanSingleton R M x)
-
-/-- The maps `R ⟶ M`, `1 ↦ x` and `1 ↦ y`, agree in the quotient `M / F p` exactly when
-`x - y ∈ F p`. -/
-theorem toSpan_comp_quotientCone_π_eq_iff (F : ℤ → Submodule R M) (hF : Antitone F)
-    (p : ℤ) (x y : M) :
-    toSpan F hF x ≫ (ofSubmodules F hF).quotientCone.π.app (op p) =
-      toSpan F hF y ≫ (ofSubmodules F hF).quotientCone.π.app (op p) ↔ x - y ∈ F p := by
-  -- The isomorphism `M / F^p ≅ M ⧸ F p`, with domain the quotient in the diagram.
-  obtain ⟨e, he⟩ : ∃ e : (ofSubmodules F hF).quotientDiagram.obj (op p) ⟶
-      ModuleCat.of R (M ⧸ LinearMap.range ((ofSubmodules F hF).stepι (op p)).hom),
-      e = (ModuleCat.cokernelIsoRangeQuotient ((ofSubmodules F hF).stepι (op p))).hom :=
-    ⟨_, rfl⟩
-  have : Mono e := (ModuleCat.mono_iff_injective e).2 (by
-    subst he
-    exact (ModuleCat.cokernelIsoRangeQuotient _).toLinearEquiv.injective)
-  have hπ : (ofSubmodules F hF).quotientCone.π.app (op p) ≫ e =
-      ModuleCat.ofHom (LinearMap.range ((ofSubmodules F hF).stepι (op p)).hom).mkQ :=
-    he ▸ ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom _
-  rw [← cancel_mono e, Category.assoc, Category.assoc, hπ, ModuleCat.hom_ext_iff,
-    LinearMap.ext_ring_iff]
-  change (LinearMap.range ((ofSubmodules F hF).stepι (op p)).hom).mkQ ((1 : R) • x) =
-      (LinearMap.range ((ofSubmodules F hF).stepι (op p)).hom).mkQ ((1 : R) • y) ↔ x - y ∈ F p
-  rw [one_smul, one_smul, Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq,
-    stepι_hom_ofSubmodules]
-  exact ⟨fun ⟨z, hz⟩ ↦ hz ▸ z.property, fun h ↦ ⟨⟨x - y, h⟩, rfl⟩⟩
+open FilteredObject
 
 /-! ### Constant filtrations of `ℤ` -/
 
@@ -197,22 +83,14 @@ theorem isExhaustive_adicFiltration (ℓ : ℤ) : (adicFiltration ℓ).IsExhaust
   (isExhaustive_ofSubmodules_iff _ _).2 fun N hN ↦ top_le_iff.1 (by
     simpa [adicStep, Ideal.span_singleton_one] using hN 0)
 
-/-- An integer divisible by every power of `ℓ`, for `ℓ ≥ 2`, is `0`. -/
-private theorem eq_zero_of_forall_pow_dvd {ℓ : ℤ} (hℓ : 2 ≤ ℓ) {n : ℤ}
-    (h : ∀ k : ℕ, ℓ ^ k ∣ n) : n = 0 := by
-  by_contra hn
-  have hk := Int.natAbs_le_of_dvd_ne_zero (h n.natAbs) hn
-  rw [Int.natAbs_pow] at hk
-  have hlt : n.natAbs < ℓ.natAbs ^ n.natAbs :=
-    Nat.lt_of_lt_of_le Nat.lt_two_pow_self (Nat.pow_le_pow_left (by omega) _)
-  omega
-
-/-- The `ℓ`-adic filtration of `ℤ`, for `ℓ ≥ 2`, is separated: an integer divisible by every
+/-- The `ℓ`-adic filtration of `ℤ`, for `|ℓ| ≠ 1`, is separated: an integer divisible by every
 power of `ℓ` is `0`. -/
-theorem isSeparated_adicFiltration {ℓ : ℤ} (hℓ : 2 ≤ ℓ) : (adicFiltration ℓ).IsSeparated := by
-  refine (isSeparated_ofSubmodules_iff _ _).2 fun N hN ↦ (Submodule.eq_bot_iff N).2 fun n hn ↦ ?_
-  refine eq_zero_of_forall_pow_dvd hℓ fun k ↦ ?_
-  have := hN k hn
+theorem isSeparated_adicFiltration {ℓ : ℤ} (hℓ : ℓ.natAbs ≠ 1) :
+    (adicFiltration ℓ).IsSeparated := by
+  refine (isSeparated_ofSubmodules_iff_forall_mem _ _).2 fun n hn ↦ ?_
+  by_contra h0
+  refine FiniteMultiplicity.not_iff_forall.2 (fun k ↦ ?_) (Int.finiteMultiplicity_iff.2 ⟨hℓ, h0⟩)
+  have := hn k
   rwa [adicStep, Int.toNat_natCast, Ideal.mem_span_singleton] at this
 
 /-- The partial sums `sₖ = ∑_{i < k} (-ℓ)^i` of the `ℓ`-adic expansion of `1 / (1 + ℓ)`. -/
@@ -242,7 +120,7 @@ theorem not_isComplete_adicFiltration {ℓ : ℤ} (hℓ : 2 ≤ ℓ) :
   rw [FilteredObject.isComplete_iff]
   rintro ⟨hL⟩
   set s := adicPartialSum ℓ
-  let g (k : ℕ) := toSpan (adicStep ℓ) (antitone_adicStep ℓ) (s k)
+  let g (k : ℕ) := toSpanSingleton (adicStep ℓ) (antitone_adicStep ℓ) (s k)
   let c : Limits.Cone (adicFiltration ℓ).quotientDiagram :=
     { pt := ModuleCat.of ℤ ℤ
       π :=
@@ -250,23 +128,21 @@ theorem not_isComplete_adicFiltration {ℓ : ℤ} (hℓ : 2 ≤ ℓ) :
           naturality p q f := by
             simp only [Functor.const_obj_obj, Functor.const_obj_map, Category.id_comp,
               Category.assoc, Limits.Cone.w]
-            refine (toSpan_comp_quotientCone_π_eq_iff (adicStep ℓ)
+            refine (toSpanSingleton_comp_quotientCone_π_eq_iff (adicStep ℓ)
               (antitone_adicStep ℓ) q.unop _ _).2 ?_
             rw [adicStep, Ideal.mem_span_singleton, ← dvd_neg, neg_sub]
             exact pow_dvd_adicPartialSum_sub ℓ (Int.toNat_le_toNat (leOfHom f.unop)) } }
   set n : ℤ := (hL.lift c).hom (1 : ℤ)
-  have hlift : hL.lift c = toSpan (adicStep ℓ) (antitone_adicStep ℓ) n :=
-    ModuleCat.hom_ext (LinearMap.ext_ring (by
-      change n = (1 : ℤ) • n
-      rw [one_smul]))
+  have hlift : hL.lift c = toSpanSingleton (adicStep ℓ) (antitone_adicStep ℓ) n :=
+    ModuleCat.hom_ext (LinearMap.ext_ring (toSpanSingleton_hom_one _ _ n).symm)
   have hdvd (k : ℕ) : ℓ ^ k ∣ (1 + ℓ) * n - 1 := by
-    have h : toSpan (adicStep ℓ) (antitone_adicStep ℓ) n ≫
+    have h : toSpanSingleton (adicStep ℓ) (antitone_adicStep ℓ) n ≫
         (adicFiltration ℓ).quotientCone.π.app (op (k : ℤ)) =
-        toSpan (adicStep ℓ) (antitone_adicStep ℓ) (s k) ≫
+        toSpanSingleton (adicStep ℓ) (antitone_adicStep ℓ) (s k) ≫
           (adicFiltration ℓ).quotientCone.π.app (op (k : ℤ)) := by
       rw [← hlift]
       exact hL.fac c (op (k : ℤ))
-    have h' := (toSpan_comp_quotientCone_π_eq_iff (adicStep ℓ) (antitone_adicStep ℓ)
+    have h' := (toSpanSingleton_comp_quotientCone_π_eq_iff (adicStep ℓ) (antitone_adicStep ℓ)
       k n (s k)).1 h
     rw [adicStep, Ideal.mem_span_singleton, Int.toNat_natCast] at h'
     have : (1 + ℓ) * n - 1 = (1 + ℓ) * (n - s k) - (-ℓ) ^ k := by
@@ -275,8 +151,9 @@ theorem not_isComplete_adicFiltration {ℓ : ℤ} (hℓ : 2 ≤ ℓ) :
     rw [this, neg_pow]
     exact dvd_sub (h'.mul_left _) (dvd_mul_left _ _)
   have h1 : (1 + ℓ) * n = 1 := by
-    have := eq_zero_of_forall_pow_dvd hℓ hdvd
-    omega
+    by_contra h0
+    exact FiniteMultiplicity.not_iff_forall.2 hdvd
+      (Int.finiteMultiplicity_iff.2 ⟨by omega, sub_ne_zero.2 h0⟩)
   rcases Int.eq_one_or_neg_one_of_mul_eq_one h1 with h | h <;> omega
 
 end TauCeti.Examples.DecreasingFiltration
