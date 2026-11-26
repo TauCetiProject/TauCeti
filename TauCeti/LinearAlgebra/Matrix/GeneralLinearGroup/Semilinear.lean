@@ -27,7 +27,7 @@ attribute [local instance] RingHomInvPair.of_ringEquiv
 namespace Matrix.GeneralLinearGroup
 
 open Matrix
-open TauCeti (matrixLinearEquiv matrixGeneralLinearEquiv_apply)
+open TauCeti (matrixLinearEquiv matrixLinearEquiv_apply)
 
 variable {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
 
@@ -43,13 +43,22 @@ noncomputable def semilinearEquiv (σ : R ≃+* R) :
     apply LinearEquiv.ext
     intro x
     rw [MulEquiv.apply_symm_apply]
-    exact congrArg (matrixLinearEquiv b) ((σ.piSemilinearEquiv ι).apply_symm_apply x)
+    -- Project to ordinary equivalences: the inferred semilinear inverse uses `σ.symm.symm`,
+    -- which prevents the generic semilinear composition laws from matching implicitly.
+    change (matrixLinearEquiv b).toEquiv
+      ((σ.piSemilinearEquiv ι).toEquiv ((σ.piSemilinearEquiv ι).toEquiv.symm x)) =
+      (matrixLinearEquiv b).toEquiv x
+    simp only [Equiv.apply_symm_apply]
   right_inv e := by
     apply LinearEquiv.ext
     intro x
-    have h := matrixLinearEquiv.apply_symm_apply ((σ.piSemilinearEquiv ι).symm.trans e)
-    exact (congrArg (fun f : (ι → R) ≃ₗ[R] (ι → R) => f (σ.piSemilinearEquiv ι x)) h).trans
-      (congrArg e ((σ.piSemilinearEquiv ι).symm_apply_apply x))
+    change (matrixLinearEquiv
+      (matrixLinearEquiv.symm ((σ.piSemilinearEquiv ι).symm.trans e))).toEquiv
+      ((σ.piSemilinearEquiv ι).toEquiv x) = e.toEquiv x
+    rw [MulEquiv.apply_symm_apply]
+    change e.toEquiv ((σ.piSemilinearEquiv ι).toEquiv.symm
+      ((σ.piSemilinearEquiv ι).toEquiv x)) = e.toEquiv x
+    simp only [Equiv.symm_apply_apply]
 
 /-- The semilinear action applies the coefficient automorphism before the linear matrix action. -/
 theorem semilinearEquiv_apply_eq_matrixLinearEquiv
@@ -59,8 +68,7 @@ theorem semilinearEquiv_apply_eq_matrixLinearEquiv
 @[simp]
 theorem semilinearEquiv_apply (σ : R ≃+* R) (b : GeneralLinearGroup ι R) (x : ι → R) :
     semilinearEquiv ι σ b x = (b : Matrix ι ι R) *ᵥ (σ ∘ x) := by
-  simp only [semilinearEquiv_apply_eq_matrixLinearEquiv, MulEquiv.trans_apply,
-    matrixGeneralLinearEquiv_apply,
+  simp only [semilinearEquiv_apply_eq_matrixLinearEquiv, matrixLinearEquiv_apply,
     RingEquiv.piSemilinearEquiv_apply]
 
 @[simp]
@@ -75,7 +83,7 @@ theorem piSemilinearEquiv_matrixLinearEquiv_apply
     (σ : R ≃+* R) (g : GeneralLinearGroup ι R) (x : ι → R) :
     σ.piSemilinearEquiv ι (matrixLinearEquiv g x) =
       matrixLinearEquiv (mapEquiv ι σ g) (σ.piSemilinearEquiv ι x) := by
-  simp only [MulEquiv.trans_apply, matrixGeneralLinearEquiv_apply,
+  simp only [matrixLinearEquiv_apply,
     RingEquiv.piSemilinearEquiv_apply, coe_mapEquiv_apply]
   exact funext (RingHom.map_mulVec (σ : R →+* R) (g : Matrix ι ι R) x)
 

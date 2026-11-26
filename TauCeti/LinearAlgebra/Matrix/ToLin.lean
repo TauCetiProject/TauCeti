@@ -38,7 +38,7 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 * `TauCeti.matrixGeneralLinearEquiv`: matrix `GL` and the linear automorphisms of coordinate
   vectors are equivalent over a commutative semiring; the abbreviation
   `TauCeti.matrixLinearEquiv` lands in `(n → R) ≃ₗ[R] (n → R)`, and evaluates through
-  `TauCeti.matrixGeneralLinearEquiv_apply`.
+  `TauCeti.matrixLinearEquiv_apply`.
 * `Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis`: an endomorphism with one matrix-unit
   coordinate action has the corresponding single-entry matrix.
 * `LinearMap.vecMul_toMatrixRight'` and `LinearMap.isIdempotentElem_toMatrixRight'_iff`: over a
@@ -109,6 +109,12 @@ identification of `LinearMap.GeneralLinearGroup` with linear automorphisms. -/
 noncomputable abbrev matrixLinearEquiv {R : Type*} [CommSemiring R] {n : Type*} [Fintype n]
     [DecidableEq n] : Matrix.GeneralLinearGroup n R ≃* ((n → R) ≃ₗ[R] (n → R)) :=
   matrixGeneralLinearEquiv.trans (LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R))
+
+/-- A general linear matrix acts on coordinate vectors by matrix-vector multiplication. -/
+theorem matrixLinearEquiv_apply {R : Type*} [CommSemiring R] {n : Type*}
+    [Fintype n] [DecidableEq n] (A : Matrix.GeneralLinearGroup n R) (v : n → R) :
+    matrixLinearEquiv A v = Matrix.mulVec (A : Matrix n n R) v :=
+  matrixGeneralLinearEquiv_apply A v
 
 end TauCeti
 

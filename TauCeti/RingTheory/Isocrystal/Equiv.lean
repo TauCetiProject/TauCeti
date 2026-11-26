@@ -23,7 +23,8 @@ variable {p : ℕ} [Fact p.Prime] {k : Type*} [CommRing k] [CharP k p] [PerfectR
 variable {V V₂ V₃ : Type*} [AddCommGroup V] [AddCommGroup V₂] [AddCommGroup V₃]
 variable [source : Isocrystal p k V] [middle : Isocrystal p k V₂] [target : Isocrystal p k V₃]
 
-/-- The inverse of an isocrystal isomorphism. -/
+/-- The inverse of an isocrystal isomorphism. The named instance arguments `source` and
+`middle` specify the two isocrystals even when their underlying types coincide. -/
 noncomputable def symm (f : V ≃ᶠⁱ[p, k] V₂) : V₂ ≃ᶠⁱ[p, k] V where
   toLinearEquiv := f.toLinearEquiv.symm
   frob_equivariant x := by
@@ -34,7 +35,8 @@ noncomputable def symm (f : V ≃ᶠⁱ[p, k] V₂) : V₂ ≃ᶠⁱ[p, k] V whe
 theorem symm_toLinearEquiv (f : V ≃ᶠⁱ[p, k] V₂) :
     f.symm.toLinearEquiv = f.toLinearEquiv.symm := (rfl)
 
-/-- The composition of isocrystal isomorphisms, applying `f` first. -/
+/-- The composition of isocrystal isomorphisms, applying `f` first. The named instance
+arguments `source`, `middle`, and `target` distinguish isocrystals on the same underlying type. -/
 noncomputable def trans (f : V ≃ᶠⁱ[p, k] V₂) (g : V₂ ≃ᶠⁱ[p, k] V₃) : V ≃ᶠⁱ[p, k] V₃ where
   toLinearEquiv := f.toLinearEquiv.trans g.toLinearEquiv
   frob_equivariant x := by
