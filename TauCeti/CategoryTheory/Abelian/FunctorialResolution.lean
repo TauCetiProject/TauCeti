@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.Additive
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.SingleHomology
 public import Mathlib.CategoryTheory.Abelian.Exact
@@ -168,6 +169,31 @@ theorem toResolution_app_f_zero (X : C) : (ι.toResolution.app X).f 0 = ι.app X
   CochainComplex.fromSingle₀Equiv_symm_apply_f_zero _ _
 
 end Construction
+
+section Preadditive
+
+variable [Preadditive C] [HasCokernels C] {G : C ⥤ C} [G.Additive] (ι : 𝟭 C ⟶ G)
+
+/-- Taking the cokernels of a natural transformation into an additive functor is additive. -/
+instance additive_cokernelFunctor : ι.cokernelFunctor.Additive where
+  map_add {X Y} f g := by
+    rw [← cancel_epi (cokernel.π (ι.app X))]
+    simp only [← ι.toCokernelFunctor_app, Preadditive.comp_add,
+      ← ι.toCokernelFunctor.naturality, Functor.map_add, Preadditive.add_comp]
+
+/-- Iterating the cokernel construction preserves additivity. -/
+instance additive_cosyzygyFunctor (n : ℕ) : (ι.cosyzygyFunctor n).Additive := by
+  induction n with
+  | zero => rw [cosyzygyFunctor_zero]; infer_instance
+  | succ n ih => rw [cosyzygyFunctor_succ]; infer_instance
+
+/-- The functorial resolution of an additive endofunctor is additive. -/
+instance additive_resolution : ι.resolution.Additive where
+  map_add {X Y} f g := by
+    ext1 n
+    simp
+
+end Preadditive
 
 section Abelian
 
