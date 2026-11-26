@@ -384,6 +384,20 @@ noncomputable def finiteProjectiveModulesRestrictScalarsCompιIso :
       (finiteProjectiveModules S).ι ⋙ ModuleCat.restrictScalars f :=
   ObjectProperty.liftCompιIso _ _ _
 
+@[simp]
+theorem finiteProjectiveModulesRestrictScalarsCompιIso_hom_app
+    (M : (finiteProjectiveModules S).FullSubcategory) :
+    (f.finiteProjectiveModulesRestrictScalarsCompιIso hfin hproj).hom.app M =
+      eqToHom (f.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj M) :=
+  (rfl)
+
+@[simp]
+theorem finiteProjectiveModulesRestrictScalarsCompιIso_inv_app
+    (M : (finiteProjectiveModules S).FullSubcategory) :
+    (f.finiteProjectiveModulesRestrictScalarsCompιIso hfin hproj).inv.app M =
+      eqToHom (f.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj M).symm :=
+  (rfl)
+
 end RestrictScalars
 
 end RingHom

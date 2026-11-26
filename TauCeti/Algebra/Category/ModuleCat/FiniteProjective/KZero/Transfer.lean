@@ -48,12 +48,12 @@ satisfies the **projection formula** `f_*(y · f^* x) = f_*(y) · x`. This comes
   with `RingHom.finiteProjectiveModulesK0Restrict_id` and
   `RingHom.finiteProjectiveModulesK0Restrict_comp` their forms for the literal identity and
   composite.
-* `RingHom.finiteProjectiveModulesK0Restrict_mul_map` and
-  `RingHom.finiteProjectiveModulesK0Restrict_map_mul`: the projection formula for commutative
-  rings.
-* `RingHom.finiteProjectiveModulesK0Restrict_map`: `f_* (f^* x) = [S] · x`, and
-  `RingHom.finiteProjectiveModulesK0Restrict_map_of_basis`: `f_* (f^* x) = n • x` when `S` has a
-  basis of `n` elements over `R`.
+* `RingHom.finiteProjectiveModulesK0Restrict_mul_map_extendScalars` and
+  `RingHom.finiteProjectiveModulesK0Restrict_map_extendScalars_mul`: the projection formula for
+  commutative rings.
+* `RingHom.finiteProjectiveModulesK0Restrict_map_extendScalars`: `f_* (f^* x) = [S] · x`, and
+  `RingHom.finiteProjectiveModulesK0Restrict_map_extendScalars_of_basis`: `f_* (f^* x) = n • x`
+  when `S` has a basis of `n` elements over `R`.
 
 ## References
 
@@ -168,7 +168,7 @@ variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
   (hproj : letI := f.toModule; Module.Projective R S)
 
 /-- The projection formula on classes: `f_*([Q] · [S ⊗_R P]) = f_*[Q] · [P]`. -/
-private theorem finiteProjectiveModulesK0Restrict_of_mul_map_of
+private theorem finiteProjectiveModulesK0Restrict_of_mul_map_extendScalars_of
     (Q : (finiteProjectiveModules S).FullSubcategory)
     (P : (finiteProjectiveModules R).FullSubcategory) :
     f.finiteProjectiveModulesK0Restrict hfin hproj
@@ -188,7 +188,7 @@ private theorem finiteProjectiveModulesK0Restrict_of_mul_map_of
 
 /-- **The projection formula.** For commutative rings, the transfer satisfies
 `f_*(y · f^* x) = f_*(y) · x`, where `f^*` is extension of scalars. -/
-theorem finiteProjectiveModulesK0Restrict_mul_map
+theorem finiteProjectiveModulesK0Restrict_mul_map_extendScalars
     (y : SplitK0.{u} (finiteProjectiveModules S).FullSubcategory)
     (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) :
     f.finiteProjectiveModulesK0Restrict hfin hproj
@@ -200,7 +200,8 @@ theorem finiteProjectiveModulesK0Restrict_mul_map
           ((AddMonoidHom.mulLeft (SplitK0.of.{u} Q)).comp
             (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars)) =
         AddMonoidHom.mulLeft (f.finiteProjectiveModulesK0Restrict hfin hproj (SplitK0.of Q)) :=
-    SplitK0.hom_ext (f.finiteProjectiveModulesK0Restrict_of_mul_map_of hfin hproj Q)
+    SplitK0.hom_ext
+      (f.finiteProjectiveModulesK0Restrict_of_mul_map_extendScalars_of hfin hproj Q)
   have h' : (f.finiteProjectiveModulesK0Restrict hfin hproj).comp
       (AddMonoidHom.mulRight (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x)) =
         (AddMonoidHom.mulRight x).comp (f.finiteProjectiveModulesK0Restrict hfin hproj) :=
@@ -209,30 +210,30 @@ theorem finiteProjectiveModulesK0Restrict_mul_map
 
 /-- **The projection formula.** For commutative rings, the transfer satisfies
 `f_*(f^* x · y) = x · f_*(y)`, where `f^*` is extension of scalars. -/
-theorem finiteProjectiveModulesK0Restrict_map_mul
+theorem finiteProjectiveModulesK0Restrict_map_extendScalars_mul
     (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory)
     (y : SplitK0.{u} (finiteProjectiveModules S).FullSubcategory) :
     f.finiteProjectiveModulesK0Restrict hfin hproj
         (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x * y) =
       x * f.finiteProjectiveModulesK0Restrict hfin hproj y := by
-  rw [mul_comm, finiteProjectiveModulesK0Restrict_mul_map, mul_comm]
+  rw [mul_comm, finiteProjectiveModulesK0Restrict_mul_map_extendScalars, mul_comm]
 
 /-- **Transfer after extension of scalars.** For commutative rings, `f_* (f^* x) = [S] · x`,
 where `[S]` is the class of `S` as an `R`-module through `f`. -/
-theorem finiteProjectiveModulesK0Restrict_map
+theorem finiteProjectiveModulesK0Restrict_map_extendScalars
     (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) :
     f.finiteProjectiveModulesK0Restrict hfin hproj
         (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x) =
       SplitK0.of.{u} ((f.finiteProjectiveModulesRestrictScalars hfin hproj).obj
         (finiteProjectiveModulesRegular S)) * x := by
-  have h := f.finiteProjectiveModulesK0Restrict_mul_map hfin hproj 1 x
+  have h := f.finiteProjectiveModulesK0Restrict_mul_map_extendScalars hfin hproj 1 x
   rwa [one_mul, ← FiniteProjectiveModules.splitK0_of_finiteProjectiveModulesRegular,
     finiteProjectiveModulesK0Restrict_of] at h
 
 /-- **Transfer after extension of scalars along a free extension.** For commutative rings, if `S`
 has a basis of `n` elements as an `R`-module through `f`, then `f_* (f^* x) = n • x`. For a finite
 field extension of degree `d` this is multiplication by `d`. -/
-theorem finiteProjectiveModulesK0Restrict_map_of_basis {ι : Type*} [Fintype ι]
+theorem finiteProjectiveModulesK0Restrict_map_extendScalars_of_basis {ι : Type*} [Fintype ι]
     (b : letI := f.toModule; Module.Basis ι R S)
     (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) :
     f.finiteProjectiveModulesK0Restrict (letI := f.toModule; .of_basis b)
@@ -240,10 +241,11 @@ theorem finiteProjectiveModulesK0Restrict_map_of_basis {ι : Type*} [Fintype ι]
         (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x) =
       Fintype.card ι • x := by
   let := f.toModule
-  -- `S`, as an `R`-module through `f`, is `R^ι`.
+  -- `S`, as an `R`-module through `f`, is `R^ι`. The ascription relies on the module structure
+  -- `f.toModule` of `b` being, by definition, that of `ModuleCat.restrictScalars f` on `S`.
   let e : (ModuleCat.restrictScalars f).obj (ModuleCat.of S S) ≃ₗ[R] (Fin (Fintype.card ι) → R) :=
     (b.reindex (Fintype.equivFin ι)).equivFun
-  rw [finiteProjectiveModulesK0Restrict_map,
+  rw [finiteProjectiveModulesK0Restrict_map_extendScalars,
     SplitK0.of_eq_nsmul_of_linearEquiv_fin (R' := finiteProjectiveModulesRegular R)
       (((f.finiteProjectiveModulesRestrictScalarsCompιIso _ _).app
         (finiteProjectiveModulesRegular S)).toLinearEquiv.trans e) (.refl _ _),

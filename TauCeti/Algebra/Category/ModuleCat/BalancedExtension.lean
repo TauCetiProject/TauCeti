@@ -269,6 +269,39 @@ open MonoidalCategory
 
 variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
 
+/-- The `S`-linear equivalence `Q ⊗_S (S ⊗_R P) ≃ Q ⊗_R P`, `q ⊗ (s ⊗ p) ↦ s q ⊗ p`, underlying
+`TauCeti.BalancedExtension.restrictScalarsTensorIso`: identify `S ⊗_R P` with Mathlib's extension
+of scalars and cancel the base change. -/
+private noncomputable def restrictScalarsTensorEquiv (Q : ModuleCat.{u} S) (P : ModuleCat.{u} R) :
+    letI := f.toAlgebra
+    letI : Module R Q := Module.compHom Q f
+    haveI : IsScalarTower R S Q := ⟨fun r s q ↦ mul_smul (f r) s q⟩
+    TensorProduct S Q (BalancedExtension f P) ≃ₗ[S] TensorProduct R Q P :=
+  letI := f.toAlgebra
+  letI : Module R Q := Module.compHom Q f
+  haveI : IsScalarTower R S Q := ⟨fun r s q ↦ mul_smul (f r) s q⟩
+  let e₁ : TensorProduct S Q (BalancedExtension f P) ≃ₗ[S]
+      TensorProduct S Q (TensorProduct R S P) :=
+    TensorProduct.congr (LinearEquiv.refl S Q) ((extendScalarsIso f).app P).toLinearEquiv
+  e₁.trans (TensorProduct.AlgebraTensorModule.cancelBaseChange R S S Q P)
+
+private theorem restrictScalarsTensorEquiv_tmul (Q : ModuleCat.{u} S) (P : ModuleCat.{u} R)
+    (q : Q) (s : S) (p : P) :
+    letI := f.toAlgebra
+    letI : Module R Q := Module.compHom Q f
+    haveI : IsScalarTower R S Q := ⟨fun r s q ↦ mul_smul (f r) s q⟩
+    restrictScalarsTensorEquiv f Q P (q ⊗ₜ[S] tmul f s p) = (s • q) ⊗ₜ[R] p :=
+  -- The instances of the statement.
+  letI := f.toAlgebra
+  letI : Module R Q := Module.compHom Q f
+  haveI : IsScalarTower R S Q := ⟨fun r s q ↦ mul_smul (f r) s q⟩
+  -- The comparison with `ModuleCat.extendScalars` sends `tmul f s p` to `s ⊗ₜ p`, which
+  -- `cancelBaseChange` sends to `s • q ⊗ₜ p`.
+  (congrArg (TensorProduct.AlgebraTensorModule.cancelBaseChange R S S Q P)
+    ((TensorProduct.congr_tmul _ _ _ _).trans
+      (congrArg (q ⊗ₜ[S] ·) (extendScalarsIso_hom_app_tmul f P s p)))).trans
+    (TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul R S S q p s)
+
 /-- **The projection formula for modules.** For commutative rings, an `S`-module `Q` and an
 `R`-module `P`, the `R`-module `Q ⊗_S (S ⊗_R P)`, with scalars restricted along `f`, is
 `Q ⊗_R P`, by `q ⊗ (s ⊗ p) ↦ s q ⊗ p`
@@ -280,13 +313,9 @@ noncomputable def restrictScalarsTensorIso (Q : ModuleCat.{u} S)
   letI := f.toAlgebra
   letI : Module R Q := Module.compHom Q f
   haveI : IsScalarTower R S Q := ⟨fun r s q ↦ mul_smul (f r) s q⟩
-  -- Identify `S ⊗_R P` with Mathlib's extension of scalars and cancel the base change; the
-  -- resulting `S`-linear equivalence is `R`-linear for the restricted scalars, because `f r`
-  -- acts on `Q ⊗_R P` as `r` does.
-  let e₁ : TensorProduct S Q (BalancedExtension f P) ≃ₗ[S]
-      TensorProduct S Q (TensorProduct R S P) :=
-    TensorProduct.congr (LinearEquiv.refl S Q) ((extendScalarsIso f).app P).toLinearEquiv
-  let e := e₁.trans (TensorProduct.AlgebraTensorModule.cancelBaseChange R S S Q P)
+  -- The `S`-linear equivalence is `R`-linear for the restricted scalars, because `f r` acts on
+  -- `Q ⊗_R P` as `r` does.
+  let e := restrictScalarsTensorEquiv f Q P
   f.restrictScalarsIsoOfAddEquiv e.toAddEquiv fun r x ↦
     (e.map_smul (f r) x).trans (algebraMap_smul S r (e x))
 
@@ -295,22 +324,9 @@ theorem restrictScalarsTensorIso_hom_tmul (Q : ModuleCat.{u} S)
     (P : ModuleCat.{u} R) (q : Q) (s : S) (p : P) :
     (restrictScalarsTensorIso f Q P).hom
         (q ⊗ₜ[S] tmul f s p : TensorProduct S Q (BalancedExtension f P)) =
-      ((s • q : Q) ⊗ₜ[R] p : TensorProduct R ((ModuleCat.restrictScalars f).obj Q) P) := by
-  let := f.toAlgebra
-  let : Module R Q := Module.compHom Q f
-  have : IsScalarTower R S Q := ⟨fun r s q ↦ mul_smul (f r) s q⟩
-  -- The comparison with `ModuleCat.extendScalars` sends `tmul f s p` to `s ⊗ₜ p`, which
-  -- `cancelBaseChange` sends to `s • q ⊗ₜ p`.
-  let e₁ : TensorProduct S Q (BalancedExtension f P) ≃ₗ[S]
-      TensorProduct S Q (TensorProduct R S P) :=
-    TensorProduct.congr (LinearEquiv.refl S Q) ((extendScalarsIso f).app P).toLinearEquiv
-  have h₁ : e₁ (q ⊗ₜ[S] tmul f s p) = q ⊗ₜ[S] (s ⊗ₜ[R] p) :=
-    (TensorProduct.congr_tmul _ _ _ _).trans
-      (congrArg (q ⊗ₜ[S] ·) (extendScalarsIso_hom_app_tmul f P s p))
-  have h : (e₁.trans (TensorProduct.AlgebraTensorModule.cancelBaseChange R S S Q P))
-      (q ⊗ₜ[S] tmul f s p) = (s • q) ⊗ₜ[R] p := by
-    rw [LinearEquiv.trans_apply, h₁, TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul]
-  exact (RingHom.restrictScalarsIsoOfAddEquiv_hom_apply f _ _ _).trans h
+      ((s • q : Q) ⊗ₜ[R] p : TensorProduct R ((ModuleCat.restrictScalars f).obj Q) P) :=
+  (RingHom.restrictScalarsIsoOfAddEquiv_hom_apply f _ _ _).trans
+    (restrictScalarsTensorEquiv_tmul f Q P q s p)
 
 @[simp]
 theorem restrictScalarsTensorIso_inv_tmul (Q : ModuleCat.{u} S)
