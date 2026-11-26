@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Locality
 import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Base
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 
 /-!
 # Nodal relative curves over an arbitrary base
@@ -118,9 +119,6 @@ theorem AffineAtWorstNodalOfRelativeDimensionOne.comp_specAlgebraMap {R S : Type
   let : X.Over (Spec (.of R)) := ⟨f ≫ Spec.algebraMap R S⟩
   have : SyntomicOfRelativeDimension 1 f := h.syntomic
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of S)) := h.syntomic
-  have : Etale (Spec.algebraMap R S) := by
-    rw [HasRingHomProperty.Spec_iff (P := @Etale)]
-    exact RingHom.etale_algebraMap.mpr inferInstance
   -- An étale morphism is syntomic of relative dimension zero, and dimensions add.
   have hs : SyntomicOfRelativeDimension 1 (f ≫ Spec.algebraMap R S) :=
     add_zero 1 ▸ inferInstanceAs (SyntomicOfRelativeDimension (1 + 0) _)

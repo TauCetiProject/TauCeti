@@ -15,10 +15,12 @@ Let `R` be a discrete valuation ring with fraction field `K` and residue field `
 a proper model over `R` of a prestable curve `C ⟶ Spec K`, for instance a smooth proper
 geometrically connected curve (`TauCeti.AlgebraicGeometry.PrestableFamily.of_smooth`). This file
 shows that `M` is a prestable model exactly when its special fibre `X_k` is geometrically
-connected and, after base change to a separably closed extension of `k` such as an algebraic
-closure, every point is a smooth point or an ordinary node, in the étale-local sense of
-`TauCeti.AlgebraicGeometry.IsOrdinaryNodeOrSmoothAt`. Equivalently, a finite separable residue
-extension, chosen at each singular point of `X_k`, makes some point above it an ordinary node.
+connected and every point of `X_k` is a smooth point or an ordinary node, in the étale-local sense
+of `TauCeti.AlgebraicGeometry.IsOrdinaryNodeOrSmoothAt`. Equivalently, the same holds after base
+change to any field extension of `k`, for instance an algebraic closure, over which the nodes are
+split. When `X_k` has pure relative dimension one, it is also equivalent to ask, at each singular
+point of `X_k`, for a point above it that is an ordinary node after some finite separable
+extension of `k`.
 
 Geometric reducedness of the special fibre is not assumed separately, and the geometric
 irreducible components need not be smooth: a component may cross itself at an ordinary
@@ -26,13 +28,13 @@ node.
 
 ## Main results
 
-* `TauCeti.Model.prestableFamily_toBase_of_specialFiber`: a proper model of a prestable curve
-  whose special fibre is geometrically connected with only ordinary nodes after some field
-  extension is a prestable model.
-* `TauCeti.Model.prestableFamily_toBase_iff_of_isSepClosed`: the prestable criterion after
-  base change to a separably closed extension of the residue field.
+* `TauCeti.Model.prestableFamily_toBase_iff_forall_isOrdinaryNodeOrSmoothAt`: the prestable
+  criterion on the special fibre.
+* `TauCeti.Model.prestableFamily_toBase_iff_forall_baseChange_isOrdinaryNodeOrSmoothAt`: the
+  prestable criterion after base change to a field extension of the residue field.
 * `TauCeti.Model.prestableFamily_toBase_iff_forall_notMem_smoothLocus_exists_isSeparable`: the
-  equivalent criterion with finite separable residue extensions at the singular points.
+  equivalent criterion with finite separable residue extensions at the singular points, for a
+  special fibre of pure relative dimension one.
 
 ## References
 
@@ -57,32 +59,28 @@ variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
 
 /-- **The prestable criterion.** A proper model of a prestable curve over a discrete valuation
-ring is a prestable model when its special fibre is geometrically connected and, after a field
-extension `L` of the residue field (for instance an algebraic closure), each point of the base
-changed special fibre is a smooth point or an ordinary node. -/
-theorem prestableFamily_toBase_of_specialFiber (M : Model R K C toK) [M.IsProper]
-    [PrestableFamily toK] [GeometricallyConnected (specialFiber R M.toBase).hom]
-    (L : Type u) [Field L] [Algebra (IsLocalRing.ResidueField R) L]
-    (h : ∀ x, IsOrdinaryNodeOrSmoothAt
-      (pullback.fst (Spec.algebraMap (IsLocalRing.ResidueField R) L)
-        (specialFiber R M.toBase).hom) x) :
-    PrestableFamily M.toBase :=
-  M.prestableFamily_toBase_iff_atWorstNodal.mpr ⟨‹_›,
-    AtWorstNodalOfRelativeDimensionOne.of_baseChange_isOrdinaryNodeOrSmoothAt L _ h⟩
+ring is a prestable model exactly when its special fibre is geometrically connected and each of
+its points is a smooth point or an ordinary node. -/
+theorem prestableFamily_toBase_iff_forall_isOrdinaryNodeOrSmoothAt (M : Model R K C toK)
+    [M.IsProper] [PrestableFamily toK] :
+    PrestableFamily M.toBase ↔ GeometricallyConnected (specialFiber R M.toBase).hom ∧
+      ∀ x, IsOrdinaryNodeOrSmoothAt (specialFiber R M.toBase).hom x := by
+  rw [M.prestableFamily_toBase_iff_atWorstNodal,
+    atWorstNodalOfRelativeDimensionOne_iff_forall_isOrdinaryNodeOrSmoothAt]
 
-/-- **The prestable criterion over a separable closure.** A proper model of a prestable curve
-over a discrete valuation ring is a prestable model exactly when its special fibre is
-geometrically connected and, after base change to a separably closed extension `L` of the residue
-field (for instance an algebraic closure), each point is a smooth point or an ordinary node. -/
-theorem prestableFamily_toBase_iff_of_isSepClosed (M : Model R K C toK) [M.IsProper]
-    [PrestableFamily toK] (L : Type u) [Field L] [Algebra (IsLocalRing.ResidueField R) L]
-    [IsSepClosed L] :
+/-- **The prestable criterion after a field extension.** A proper model of a prestable curve over
+a discrete valuation ring is a prestable model exactly when its special fibre is geometrically
+connected and, after base change to a field extension `L` of the residue field (for instance an
+algebraic closure), each point is a smooth point or an ordinary node. -/
+theorem prestableFamily_toBase_iff_forall_baseChange_isOrdinaryNodeOrSmoothAt
+    (M : Model R K C toK) [M.IsProper] [PrestableFamily toK] (L : Type u) [Field L]
+    [Algebra (IsLocalRing.ResidueField R) L] :
     PrestableFamily M.toBase ↔ GeometricallyConnected (specialFiber R M.toBase).hom ∧
       ∀ x, IsOrdinaryNodeOrSmoothAt
         (pullback.fst (Spec.algebraMap (IsLocalRing.ResidueField R) L)
           (specialFiber R M.toBase).hom) x := by
   rw [M.prestableFamily_toBase_iff_atWorstNodal,
-    atWorstNodalOfRelativeDimensionOne_iff_forall_isOrdinaryNodeOrSmoothAt_of_isSepClosed L]
+    atWorstNodalOfRelativeDimensionOne_iff_forall_baseChange_isOrdinaryNodeOrSmoothAt L]
 
 /-- **The prestable criterion with finite separable residue extensions at singular points.** Let
 `M` be a proper model of a prestable curve over a discrete valuation ring whose special fibre has
