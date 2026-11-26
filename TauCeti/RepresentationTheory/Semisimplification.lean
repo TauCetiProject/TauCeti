@@ -56,6 +56,7 @@ theorem semisimplification_def :
   (rfl)
 
 /-- A group element acts on `V^ss` through the corresponding basis element of `k[G]`. -/
+@[simp]
 theorem semisimplification_apply (g : G) (x : TauCeti.semisimplification k[G] ρ.asModule) :
     ρ.semisimplification g x = MonoidAlgebra.single g (1 : k) • x :=
   TauCeti.Representation.ofModule'_apply _ g x
@@ -102,9 +103,10 @@ same characteristic polynomial on `V^ss` as on `V`. -/
 @[simp]
 theorem charpoly_semisimplification_apply (g : G) :
     (ρ.semisimplification g).charpoly = (ρ g).charpoly := by
-  rw [← charpoly_lsmul_asModule_of ρ g]
-  exact TauCeti.charpoly_lsmul_semisimplification (k := k) (M := ρ.asModule)
-    (MonoidAlgebra.of k G g)
+  have h : ρ.semisimplification g = Algebra.lsmul k k _ (MonoidAlgebra.of k G g) := by
+    ext x
+    rw [semisimplification_apply, Algebra.lsmul_coe, MonoidAlgebra.of_apply]
+  rw [h, ← charpoly_lsmul_asModule_of ρ g, TauCeti.charpoly_lsmul_semisimplification]
 
 /-- The semisimplification has the traces of `ρ`. -/
 @[simp]
