@@ -83,7 +83,6 @@ variable {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The **iterated separated sum** of a function `f` on `M`: the function
 `(x₀, …, xₙ) ↦ f x₀ + ⋯ + f xₙ` on the product `IteratedProd M n` of `n + 1` copies of `M`. -/
-@[expose]
 def iteratedProdSum (f : M → ℝ) : (n : ℕ) → IteratedProd M n → ℝ
   | 0 => f
   | n + 1 => iteratedProdSum f n ∘ Prod.fst + f ∘ Prod.snd
@@ -104,7 +103,6 @@ variable [TopologicalSpace M] [ChartedSpace E M]
 
 /-- The **iterated product field** of a vector field `X` on `M`: the vector field `(X, …, X)` on the
 product `IteratedProd M n` of `n + 1` copies of `M`, in the product charts. -/
-@[expose]
 noncomputable def iteratedProdField (X : (x : M) → TangentSpace 𝓘(ℝ, E) x) :
     (n : ℕ) → (x : IteratedProd M n) → TangentSpace 𝓘(ℝ, IteratedProdModel E n) x
   | 0 => X
