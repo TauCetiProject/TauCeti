@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 import TauCeti.AlgebraicTopology.Cohomology.Cup.SquareModTwo
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # The singular cohomology of real projective space
@@ -238,9 +239,7 @@ def singularCohomologySuccLinearEquivOfOdd (h2 : IsRegular (2 : k)) (M : ModuleC
         ((isZero_singularHomology_of_even k h2.right hn.add_one n.succ_ne_zero).eq_of_src _
           _)⟩).symm ≪≫ₗ
     extLinearEquivOfIso k (singularHomologyLinearEquivOfOdd k hn hnN ≪≫ₗ
-      Submodule.quotEquivOfEq _ _ (by
-        rw [← Submodule.ideal_span_singleton_smul, smul_eq_mul, Ideal.mul_top])).toModuleIso
-      (Iso.refl M) 1 ≪≫ₗ
+      (QuotSMulTop.equivQuotSpanSingleton 2).symm).toModuleIso (Iso.refl M) 1 ≪≫ₗ
     ModuleCat.extOneQuotSMulTopEquiv h2.left M
 
 end Regular
@@ -251,8 +250,8 @@ def singularCohomologySuccIntLinearEquivOfOdd {n : ℕ} (hn : Odd n) (hnN : n < 
     (TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of ℤ ℤ) ℤ
       (ModuleCat.of ℤ ℤ) (n + 1) ≃ₗ[ℤ] ZMod 2 :=
   singularCohomologySuccLinearEquivOfOdd (isRegular_iff_ne_zero.2 two_ne_zero) _ hn hnN ≪≫ₗ
-    Submodule.quotEquivOfEq _ _ (by
-      rw [← Submodule.ideal_span_singleton_smul, smul_eq_mul, Ideal.mul_top, Nat.cast_ofNat]) ≪≫ₗ
+    QuotSMulTop.equivQuotSpanSingleton 2 ≪≫ₗ
+      Submodule.quotEquivOfEq _ _ (by rw [Nat.cast_ofNat]) ≪≫ₗ
     (Int.quotientSpanNatEquivZMod 2).toAddEquiv.toIntLinearEquiv
 
 /-- **Integral cohomology of real projective space has torsion.** For odd `n < N`, the group
