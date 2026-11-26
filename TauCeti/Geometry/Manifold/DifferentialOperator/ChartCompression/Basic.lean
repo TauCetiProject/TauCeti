@@ -81,6 +81,8 @@ with no continuity assumed) and computes their principal symbols:
 * `IsCompact.exists_sum_cutoffPullback_eq_one`: a compact set has finitely many cutoffs in preferred
   charts whose pullbacks sum to `1` on it, through which operators on `M` are assembled from
   operators in charts.
+* `TauCeti.compactSpace_of_forall_sum_cutoffPullback_eq_one`: conversely, a manifold with finitely
+  many chart cutoffs whose pullbacks sum to `1` everywhere is compact.
 * `TauCeti.exists_locallyFinite_finsum_sq_cutoffPullback_eq_one`: a Hausdorff σ-compact manifold
   has a locally finite family of cutoffs in preferred charts whose pullbacks have squares summing
   to `1` everywhere, through which operators on a noncompact manifold are assembled symmetrically.
@@ -853,6 +855,21 @@ theorem IsCompact.exists_sum_cutoffPullback_eq_one {K : Set M} (hK : IsCompact K
   exact ⟨N, c, ρ, hρ⟩
 
 namespace TauCeti
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- **Chart cutoffs summing to one force compactness.** If finitely many cutoffs `ψᵢ` in charts
+`eᵢ`, read on `M` as `ψᵢ ∘ eᵢ` extended by `0`, add up to `1` at every point, then `M` is compact:
+it is covered by the compact sets `eᵢ⁻¹(supp ψᵢ)`. -/
+theorem compactSpace_of_forall_sum_cutoffPullback_eq_one {ι : Type*} [Fintype ι]
+    {e : ι → OpenPartialHomeomorph M E} (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ))
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1) : CompactSpace M := by
+  refine ⟨(isCompact_iUnion fun i ↦ (e i).isCompact_symm_image_tsupport (ψ i)).of_isClosed_subset
+    isClosed_univ fun x _ ↦ ?_⟩
+  obtain ⟨i, -, hi⟩ := Finset.exists_ne_zero_of_sum_ne_zero (s := Finset.univ)
+    (f := fun i ↦ (e i).cutoffPullback (he i) (ψ i) 1 x) (by rw [hψ x]; exact one_ne_zero)
+  exact mem_iUnion.2 ⟨i, OpenPartialHomeomorph.tsupport_cutoffPullback_subset (he i) (ψ i) 1
+    (subset_tsupport _ hi)⟩
 
 /-- **Chart cutoffs whose squares sum to one.** A Hausdorff σ-compact manifold modelled on a
 finite-dimensional space has points `cᵢ` and cutoffs `χᵢ` with compact supports in the targets of
