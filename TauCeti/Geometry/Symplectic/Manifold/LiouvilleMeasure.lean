@@ -41,7 +41,10 @@ range of `f` (`MeasurableEmbedding.map_liouvilleMeasure`). In particular the
 Liouville measure of the restriction of `σ` to an open subset `U` is the restriction of the
 Liouville measure of `σ` to `U`
 (`TauCeti.SmoothTwoForm.map_liouvilleMeasure_mpullback_subtypeVal`). Replacing `σ` by `r • σ`
-multiplies the Liouville measure by `|r|ⁿ` (`TauCeti.SmoothTwoForm.liouvilleMeasure_smul`).
+multiplies the Liouville measure by `|r|ⁿ` (`TauCeti.SmoothTwoForm.liouvilleMeasure_smul`). On a
+nonempty compact manifold the total Liouville measure of a nondegenerate form is finite and
+positive, so `σ` and `r • σ` are not symplectomorphic unless `|r|ⁿ = 1`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.abs_pow_eq_one_of_mpullback_smul_eq`).
 
 On a symplectic vector space `(V, σ)`, regarded as a manifold with the constant form `σ`, the
 Liouville measure is the Haar measure normalized by any Darboux basis
@@ -80,6 +83,8 @@ measure on the target of the chart to the Liouville measure of `σ` on its sourc
   restriction to an open subset is the restricted Liouville measure.
 * `TauCeti.SmoothTwoForm.liouvilleMeasure_smul`: the Liouville measure of `r • σ` is `|r|ⁿ` times
   that of `σ`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.abs_pow_eq_one_of_mpullback_smul_eq`: on a nonempty
+  compact manifold, a differentiable homeomorphism pulling `r • σ` back to `σ` forces `|r|ⁿ = 1`.
 * `TauCeti.SymplecticForm.liouvilleMeasure_constSmooth`: the Liouville measure of a constant
   symplectic form is the Haar measure of a Darboux basis.
 * `TauCeti.SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm`: the Liouville measure of
@@ -193,6 +198,28 @@ theorem measurePreserving_liouvilleMeasure {σ : SmoothTwoForm I M} {τ : Smooth
   exact Φ.measurePreserving_measure_mpullback hΦ _
 
 end Homeomorph
+
+namespace TauCeti.SmoothTwoForm.IsNondegenerate
+
+variable [CompactSpace M] [Nonempty M] {σ : SmoothTwoForm I M}
+
+/-- **Rescaling changes the symplectic volume.** On a nonempty compact manifold of dimension
+`2 * n`, a differentiable homeomorphism pulling `r • σ` back to a nondegenerate two-form `σ` forces
+`|r|ⁿ = 1`. It carries the Liouville measure of `σ`, which has finite positive total mass, to that
+of `r • σ`, which is `|r|ⁿ` times it. So in positive dimension `σ` and `r • σ` are not
+symplectomorphic unless `r = 1` or `r = -1`. -/
+theorem abs_pow_eq_one_of_mpullback_smul_eq (hσ : σ.IsNondegenerate) {r : ℝ} (Φ : M ≃ₜ M)
+    (hΦ : MDifferentiable I I Φ) (h : mpullback I I Φ (r • σ).val = σ.val) : |r| ^ n = 1 := by
+  have := hσ.isOpenPosMeasure_liouvilleMeasure (n := n)
+  have hμ := (Φ.measurePreserving_liouvilleMeasure (n := n) hΦ h).measure_preimage
+    MeasurableSet.univ.nullMeasurableSet
+  rw [preimage_univ, liouvilleMeasure_smul, smul_apply, smul_eq_mul] at hμ
+  have h0 : σ.liouvilleMeasure n univ ≠ 0 := (isOpen_univ.measure_pos _ univ_nonempty).ne'
+  have htop : σ.liouvilleMeasure n univ ≠ ⊤ := isCompact_univ.measure_lt_top.ne
+  rw [← ENNReal.ofReal_eq_one]
+  exact (ENNReal.mul_eq_right h0 htop).1 hμ.symm
+
+end TauCeti.SmoothTwoForm.IsNondegenerate
 
 namespace MeasurableEmbedding
 
