@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.Coarea.Lipschitz
-public import TauCeti.Geometry.Euclidean.Volume.Polar
-public import TauCeti.Geometry.Euclidean.Volume.Sphere
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import Mathlib.Analysis.InnerProductSpace.Calculus
