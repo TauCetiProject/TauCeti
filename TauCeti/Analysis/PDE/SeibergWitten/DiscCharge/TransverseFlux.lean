@@ -20,8 +20,8 @@ normal coordinate `w ∈ ℂ`, and let `Θ = i F_a + d(χ(|α|²) τ)` be its cu
 of `α` concentrate along the curve, so outside a tube `{‖w‖ ≤ R}` the section `α` lies in the
 vacuum region `|α|² > c`. This file shows that `Θ` then has **constant integer transverse flux**:
 it is a two-form supported in the tube whose normal slices `μ_z = Θ(z, w)(∂_x, ∂_y) dx dy`
-(`TauCeti.sliceMoment`) all have the same total mass `2π n`, where `n ∈ ℤ` is the winding number
-of `α` around any normal circle `{z} × {‖w‖ = ρ}` outside the tube.
+(`TauCeti.sliceMoment`) all have the same total flux `∫ dμ_z = 2π n`, where `n ∈ ℤ` is the
+winding number of `α` around any normal circle `{z} × {‖w‖ = ρ}` outside the tube.
 
 * Outside the tube the cutoff current vanishes
   (`TauCeti.SeibergWitten.cutoffCurrent_eq_zero_of_notMem_closedBall`), since there `χ = 1`

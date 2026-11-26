@@ -59,6 +59,11 @@ Suppose that `T` vanishes on `E × (ℂ \ K)` for a compact set `K`. Then:
   `(v, 0)`. For `g = wᵏ` this is `dM_k = π_*(k w^(k-1) dw ∧ T)`
   (`TauCeti.fderiv_sliceMoment_pow_apply`).
 
+For any two-form `T`, any weight `g` and `a ≠ 0`, pulling `T` back by the fibre dilation
+`Φ_a (z, w) = (z, a w)` rescales the weight: `∫ g dμ_z(Φ_a^* T) = ∫ g(a⁻¹ w) dμ_z(T)`
+(`TauCeti.sliceMoment_compContinuousLinearMap_prodMap_smul`). So the flux `∫ dμ_z` is unchanged
+and the moments `M_k` scale by `a⁻ᵏ`.
+
 Further results concern the flux `M₀(z) = ∫ dμ_z` and the pairing of `T` with forms pulled back
 from the base, when `E` is two-dimensional with basis `b`:
 
@@ -328,10 +333,9 @@ theorem norm_sliceMoment_le {B C : ℝ} (hK : IsCompact K) (hT : ∀ z, ∀ w �
 
 /-- **Slice moments under a dilation of the normal fibres.** Pulling a two-form `T` back by the
 fibre dilation `Φ_a (z, w) = (z, a w)`, `a ≠ 0`, rescales the weights of its slice moments:
-`∫ g dμ_z(Φ_a^* T) = ∫ g(a⁻¹ w) dμ_z(T)`. The slice density picks up the Jacobian `a²` of the
-dilation of the fibre, which the change of variables `w ↦ a w` cancels. In particular the flux
-`M₀ = ∫ dμ_z` is unchanged, and the moments `M_k = ∫ wᵏ dμ_z` of `Φ_a^* T` are `a⁻ᵏ` times
-those of `T`. No regularity of `T` or `g` is needed. -/
+`∫ g dμ_z(Φ_a^* T) = ∫ g(a⁻¹ w) dμ_z(T)`. In particular the flux `M₀ = ∫ dμ_z` is unchanged,
+and the moments `M_k = ∫ wᵏ dμ_z` of `Φ_a^* T` are `a⁻ᵏ` times those of `T`.
+No regularity of `T` or `g` is needed. -/
 theorem sliceMoment_compContinuousLinearMap_prodMap_smul (T : E × ℂ → (E × ℂ) [⋀^Fin 2]→L[ℝ] ℝ)
     (g : ℂ → F) {a : ℝ} (ha : a ≠ 0) (z : E) :
     sliceMoment (fun x ↦ (T (x.1, a • x.2)).compContinuousLinearMap
