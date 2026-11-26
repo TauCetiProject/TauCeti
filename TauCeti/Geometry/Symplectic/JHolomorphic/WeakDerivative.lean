@@ -39,9 +39,10 @@ at the end of a finite-energy plane: the inverted map `w ↦ u w⁻¹`, filled a
 `u` at infinity, is such a weak solution near `0`
 (`SymplecticForm.exists_isWeakCauchyRiemannOn_update_comp_inv_of_finite_energy`). Both give a
 continuous `W^{1,p}` weak solution with `p > 2` for a `C²` structure `J`, the input of interior
-elliptic regularity for the nonlinear Cauchy--Riemann equation. That regularity theorem is not
-proved here. The regularity it gives the filling is limited by that of `J`, so a smooth filling,
-which completes the removal of singularities, also needs a smooth `J`.
+elliptic regularity for the nonlinear Cauchy--Riemann equation. The regularity it gives the filling
+is limited by that of `J`, so a smooth filling, which completes the removal of singularities, also
+needs a smooth `J`; this is done in
+`TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Smooth`.
 
 ## References
 

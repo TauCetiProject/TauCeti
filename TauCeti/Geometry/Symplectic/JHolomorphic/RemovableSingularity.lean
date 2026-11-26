@@ -39,9 +39,9 @@ This is the continuous part of removal of singularities for pseudoholomorphic cu
 filling solves the Cauchy--Riemann equation weakly across the puncture, and the inverted filling
 weakly at infinity, is proved in `TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative`
 (`SymplecticForm.exists_isWeakCauchyRiemannOn_update_of_finite_energy`,
-`SymplecticForm.exists_isWeakCauchyRiemannOn_update_comp_inv_of_finite_energy`). Differentiability
-of the filling and the classical equation at the puncture or at infinity still require elliptic
-regularity for the extended map.
+`SymplecticForm.exists_isWeakCauchyRiemannOn_update_comp_inv_of_finite_energy`). Elliptic
+regularity then makes the filling as regular as the structure, with the classical equation at the
+puncture and at infinity, in `TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Smooth`.
 
 The analytic inputs are
 `SymplecticForm.exists_pos_integrableOn_deriv_radial` (finite radial length) and
