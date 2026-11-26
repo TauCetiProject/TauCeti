@@ -48,7 +48,10 @@ The set `T(A)` is convex (`TauCeti.convex_tracialStates`), contains every weak-*
 of itself that has norm one (`TauCeti.closure_tracialStates_inter_subset`), and for unital `A`
 is weak-* closed and compact (`TauCeti.isClosed_tracialStates`,
 `TauCeti.isCompact_tracialStates`). Without a unit it need not be weak-* closed: on `c₀` the
-point evaluations are tracial states converging weak-* to `0`.
+point evaluations are tracial states converging weak-* to `0`. It is always closed in the norm
+topology of the continuous dual (`TauCeti.isClosed_preimage_toWeakDual_tracialStates`), and its
+elements are the functionals of tracial states
+(`TauCeti.mem_tracialStates_iff_exists_isTracialState`).
 
 ## References
 
@@ -263,6 +266,25 @@ evaluations converge weak-* to `0`. -/
 theorem closure_tracialStates_inter_subset :
     closure (tracialStates A) ∩ {φ | ‖toStrongDual φ‖ = 1} ⊆ tracialStates A :=
   CStarAction.closure_kmsStates_inter_subset
+
+/-- The elements of `T(A)` are the functionals induced by tracial states. -/
+theorem mem_tracialStates_iff_exists_isTracialState :
+    φ ∈ tracialStates A ↔ ∃ τ : A →P[ℂ] ℂ, τ.IsTracialState ∧
+      StrongDual.toWeakDual (τ : A →L[ℂ] ℂ) = φ := by
+  simp only [tracialStates, CStarAction.mem_kmsStates_iff,
+    CStarAction.isKMSState_trivial_iff_isTracialState]
+
+/-- In the norm topology of the continuous dual, the tracial state space is closed. -/
+theorem isClosed_preimage_toWeakDual_tracialStates :
+    IsClosed (StrongDual.toWeakDual ⁻¹' tracialStates A) := by
+  have h : StrongDual.toWeakDual ⁻¹' tracialStates A = StrongDual.toWeakDual ⁻¹' stateSpace A ∩
+      ⋂ a : A, ⋂ b : A, {x : StrongDual ℂ A | x (a * b) = x (b * a)} := by
+    ext x
+    simp [mem_tracialStates_iff]
+  rw [h]
+  exact isClosed_preimage_toWeakDual_stateSpace.inter <| isClosed_iInter fun a =>
+    isClosed_iInter fun b => isClosed_eq (ContinuousLinearMap.apply ℂ ℂ (a * b)).continuous
+      (ContinuousLinearMap.apply ℂ ℂ (b * a)).continuous
 
 /-- On a commutative C⋆-algebra every state is tracial: `T(A) = S(A)`. -/
 theorem tracialStates_eq_stateSpace {B : Type*} [NonUnitalCommCStarAlgebra B] [PartialOrder B]
