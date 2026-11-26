@@ -318,18 +318,14 @@ theorem comparisonDist_of_isEmpty {U : Opens ℂ} [IsEmpty U] (f g : holomorphic
     comparisonDist U f g = 0 :=
   (U.compactExhaustion 0).continuousMapDist_of_isEmpty f.val g.val
 
-private theorem algebraMap_val_eq_const {U : Opens ℂ} (c : ℂ) :
-    (algebraMap ℂ (holomorphicFunctions U) c).val = ContinuousMap.const U c := by
-  ext z
-  simp
-
 /-- When stage `0` of `U.compactExhaustion 0` is nonempty, shifting any
 `f : holomorphicFunctions U` by a constant `c : ℂ` moves it by `‖c‖ / (1 + ‖c‖)` in
 `comparisonDist U`. -/
 theorem comparisonDist_add_algebraMap_of_nonempty {U : Opens ℂ}
     (hU : (U.compactExhaustion 0 0).Nonempty) (f : holomorphicFunctions U) (c : ℂ) :
     comparisonDist U (f + algebraMap ℂ (holomorphicFunctions U) c) f = ‖c‖ / (1 + ‖c‖) := by
-  rw [comparisonDist_def, Subalgebra.coe_add, algebraMap_val_eq_const]
+  rw [comparisonDist_def, Subalgebra.coe_add, Subalgebra.coe_algebraMap,
+    ContinuousMap.algebraMap_eq_const, Algebra.algebraMap_self_apply]
   exact (U.compactExhaustion 0).continuousMapDist_add_const_of_nonempty hU f.val c
 
 /-- When stage `0` of `U.compactExhaustion 0` is nonempty, the comparison distance between
@@ -338,7 +334,8 @@ theorem comparisonDist_algebraMap_of_nonempty {U : Opens ℂ}
     (hU : (U.compactExhaustion 0 0).Nonempty) (a b : ℂ) :
     comparisonDist U (algebraMap ℂ (holomorphicFunctions U) a)
       (algebraMap ℂ (holomorphicFunctions U) b) = dist a b / (1 + dist a b) := by
-  rw [comparisonDist_def, algebraMap_val_eq_const, algebraMap_val_eq_const]
+  simp_rw [comparisonDist_def, Subalgebra.coe_algebraMap, ContinuousMap.algebraMap_eq_const,
+    Algebra.algebraMap_self_apply]
   exact (U.compactExhaustion 0).continuousMapDist_const_of_nonempty hU a b
 
 /-- When stage `0` of `U.compactExhaustion 0` is nonempty, holomorphic functions differing by `1`
@@ -365,11 +362,8 @@ theorem half_tsum_min_one_eq_comparisonDist_one_zero {U : Opens ℂ}
         min 1 (dist ((1 : holomorphicFunctions U).val.restrict (U.compactExhaustion 0 n))
           ((0 : holomorphicFunctions U).val.restrict (U.compactExhaustion 0 n)))) =
       comparisonDist U 1 0 := by
-  have h1 : (1 : holomorphicFunctions U).val = ContinuousMap.const U 1 := by
-    simpa only [map_one] using algebraMap_val_eq_const (U := U) 1
-  have h0 : (0 : holomorphicFunctions U).val = ContinuousMap.const U 0 := by
-    simpa only [map_zero] using algebraMap_val_eq_const (U := U) 0
-  rw [comparisonDist_def, h1, h0]
+  rw [comparisonDist_def, Subalgebra.coe_one, Subalgebra.coe_zero,
+    ← ContinuousMap.const_one, ← ContinuousMap.const_zero]
   exact (U.compactExhaustion 0).half_tsum_min_one_eq_continuousMapDist_const hU (by simp)
 
 /-- On the whole complex plane `⊤`, constant entire functions `a` and `b` have comparison distance

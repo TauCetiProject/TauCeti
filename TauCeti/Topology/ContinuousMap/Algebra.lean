@@ -13,6 +13,10 @@ import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 /-!
 # Algebraic operations on continuous maps
 
+The algebra map `R →+* C(X, A)` into continuous maps valued in a topological `R`-algebra sends `r`
+to the constant map `ContinuousMap.const X (algebraMap R A r)`
+(`ContinuousMap.algebraMap_eq_const`).
+
 When a bundled continuous map `f : C(X, M₀)` into a topological monoid with zero is a unit,
 evaluating `f⁻¹ʳ` at `x : X` agrees with `(f x)⁻¹ʳ` (`ContinuousMap.ringInverse_apply`). Without
 `IsUnit f`, `f⁻¹ʳ` vanishes globally even at points where `f x` is individually invertible.
@@ -28,6 +32,13 @@ open Set TopologicalSpace
 open scoped Ring
 
 namespace ContinuousMap
+
+/-- The algebra map `R →+* C(X, A)` sends `r` to the constant continuous map with value
+`algebraMap R A r`. -/
+theorem algebraMap_eq_const {X R A : Type*} [TopologicalSpace X] [CommSemiring R]
+    [TopologicalSpace A] [Semiring A] [Algebra R A] [IsTopologicalSemiring A] (r : R) :
+    algebraMap R C(X, A) r = const X (algebraMap R A r) :=
+  (rfl)
 
 /-- Evaluating `f⁻¹ʳ` at a point `x` gives `(f x)⁻¹ʳ` whenever `f : C(X, M₀)` is a unit. -/
 theorem ringInverse_apply {X M₀ : Type*} [TopologicalSpace X] [MonoidWithZero M₀]

@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.Complex.RemovableSingularity
-public import Mathlib.Topology.ContinuousMap.Algebra
 public import TauCeti.Topology.Algebra.IsUniformGroup.Subalgebra
+public import TauCeti.Topology.ContinuousMap.Algebra
 public import TauCeti.Topology.ContinuousMap.CompactConvergence.Group
 public import TauCeti.Topology.Sets.Opens
 
