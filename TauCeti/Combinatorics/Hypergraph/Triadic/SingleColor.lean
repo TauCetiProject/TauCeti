@@ -29,9 +29,9 @@ These complexes calibrate the strong regular approximation `IsStrongRegularAppro
   decomposition, top regularity and the complexity bound hold automatically.
 * When the schedule is at least one, the regularity conditions are void, and every coloring is
   approximated by itself over an equipartition into `t₀` cells, at the complexity bound
-  `t₀³ + t₀ + 1` (`Colored3Graph.exists_strong_regular_approximation3_of_one_le`). So the
-  complexity bound of a strong regular approximation is cubic in the number of cells even in
-  the trivial case, because the complexity counts the polyads.
+  `t₀³ + t₀ + 1` (`Colored3Graph.exists_strong_regular_approximation3_of_one_le`). The bound
+  obtained this way is cubic in the number of cells, because the complexity of
+  `ofFinpartition P` counts its `t³` polyads.
 
 ## Main definitions
 
@@ -93,15 +93,16 @@ theorem ofFinpartition_vertexPart : (ofFinpartition P).skeleton.vertexPart = P :
 theorem ofFinpartition_polyads : (ofFinpartition P).polyads = univ :=
   (rfl)
 
-/-- All ordered distinct pairs have the same pair color. -/
-theorem ofFinpartition_color_eq (p q : {p : V × V // p.1 ≠ p.2}) :
-    (ofFinpartition P).skeleton.pairColors.color p =
-      (ofFinpartition P).skeleton.pairColors.color q :=
-  -- The pair coloring of `ofFinpartition P` is `PairColorSystem.const 0` by definition.
-  (PairColorSystem.const_color _ p).trans (PairColorSystem.const_color _ q).symm
+/-- Every ordered distinct pair has the single pair color: the pair coloring is
+`PairColorSystem.const`. -/
+@[simp]
+theorem ofFinpartition_pairColors :
+    (ofFinpartition P).skeleton.pairColors = .const ⟨0, by simp⟩ :=
+  (rfl)
 
 /-- Over a partition into `t` cells with one pair color there are `t³` polyads, one for each
 choice of three cells. -/
+@[simp]
 theorem card_polyad3_ofFinpartition :
     Fintype.card (Polyad3 (ofFinpartition P).skeleton) = #P.parts ^ 3 := by
   rw [card_polyad3, ofFinpartition_vertexPart, Fintype.card_fin, ofFinpartition_pairColorCount,
@@ -109,6 +110,7 @@ theorem card_polyad3_ofFinpartition :
 
 /-- The complex over a partition into `t` cells has `t` cells, one pair color and `t³` polyads,
 so its complexity is `t + 1 + t³`. -/
+@[simp]
 theorem complexity_ofFinpartition :
     (ofFinpartition P).complexity = #P.parts + 1 + #P.parts ^ 3 := by
   rw [complexity_def, ofFinpartition_polyads, card_univ, card_polyad3_ofFinpartition,
@@ -139,9 +141,8 @@ theorem lowerSkeletonRegular_ofFinpartition_iff {F : ℕ → ℝ} (hF : 0 < F (#
     (ofFinpartition P).skeleton.LowerSkeletonRegular F ↔
       ∀ A ∈ P.parts, #A ≤ 1 ∨ 1 < F (#P.parts + 1) * #A := by
   rw [PairSkeleton3.lowerSkeletonRegular_iff, ofFinpartition_vertexPart, Fintype.card_fin]
-  -- The skeleton of `ofFinpartition P` is `⟨P, PairColorSystem.const 0⟩` by definition; it cannot
-  -- be stated as an equation, since its palette `Fin (ofFinpartition P).pairColorCount` is `Fin 1`
-  -- only by unfolding.
+  -- The skeleton of `ofFinpartition P` is `⟨P, PairColorSystem.const 0⟩` by definition, over the
+  -- palette `Fin 1`.
   exact PairSkeleton3.isPairColorRegular_const_iff (κ := Fin 1) P 0 hF
 
 end TriadicComplex3
