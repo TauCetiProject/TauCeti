@@ -193,14 +193,14 @@ theorem isRegular_pair_of_coeff_zero {x : 𝕎 S} (hx : x.coeff 0 ∈ S⁰)
 /-- The intersection of all `(p ^ r)` for `r ≥ 1` in `W(S)` is zero. -/
 theorem iInf_span_natCast_pow_eq_bot :
     (⨅ (r : ℕ) (_ : 1 ≤ r), span {(p : 𝕎 S) ^ r}) = ⊥ := by
-  rw [eq_bot_iff]
-  intro x hx
-  rw [Ideal.mem_bot]
-  ext n
-  rw [zero_coeff]
-  rw [Submodule.mem_iInf] at hx
-  have hx' := (Submodule.mem_iInf _).mp (hx (n + 1)) (Nat.le_add_left 1 n)
-  exact (mem_span_p_pow_iff_le_coeff_eq_zero x (n + 1)).mp hx' n (Nat.lt_succ_self n)
+  have h := (isAdicCompleteIdealSpanP (p := p) (k := S)).toIsHausdorff.iInf_pow_smul
+  simp only [smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow] at h
+  refine le_antisymm ?_ bot_le
+  rw [← h]
+  refine le_iInf fun n ↦ ?_
+  rcases n with _ | n
+  · simp
+  · exact iInf₂_le (n + 1) (Nat.le_add_left 1 n)
 
 private theorem exists_sub_teichmuller_eq_natCast_mul {x : ℕ → 𝕎 S} {m : 𝕎 S}
     (hm : ∀ r, 1 ≤ r → m ∈ span {x r}) (hx₀ : ∀ r, 1 ≤ r → (x r).coeff 0 ∈ S⁰)

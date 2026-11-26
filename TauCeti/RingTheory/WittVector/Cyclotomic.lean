@@ -354,24 +354,6 @@ theorem cyclotomicXiTildeLevel_two (ε : S) :
   rw [cyclotomicXiTildeLevel_eq_prod_xiTilde, Finset.prod_range_succ, Finset.prod_range_one,
     Function.iterate_zero, id_eq, Function.iterate_one, _root_.WittVector.frobeniusEquiv_apply]
 
-private theorem iterate_frobeniusEquiv_mul (n : ℕ) (a b : 𝕎 S) :
-    ((frobeniusEquiv p S)^[n]) (a * b) =
-      ((frobeniusEquiv p S)^[n]) a * ((frobeniusEquiv p S)^[n]) b := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-    rw [Function.iterate_succ_apply', Function.iterate_succ_apply',
-      Function.iterate_succ_apply', ih, map_mul]
-
-private theorem iterate_frobeniusEquiv_symm_mul (n : ℕ) (a b : 𝕎 S) :
-    ((frobeniusEquiv p S).symm^[n]) (a * b) =
-      ((frobeniusEquiv p S).symm^[n]) a * ((frobeniusEquiv p S).symm^[n]) b := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-    rw [Function.iterate_succ_apply', Function.iterate_succ_apply',
-      Function.iterate_succ_apply', ih, map_mul]
-
 private theorem iterate_frobeniusEquiv_symm_cyclotomicXi_eq (n : ℕ) (ε : S) :
     ((frobeniusEquiv p S).symm^[n]) (cyclotomicXi p ε) =
       cyclotomicXi p (((_root_.frobeniusEquiv S p).symm^[n]) ε) := by
@@ -415,22 +397,6 @@ theorem cyclotomicXiTildeLevel_succ' (ε : S) (r : ℕ) :
       ← map_mul (frobeniusEquiv p S), ← cyclotomicXiTildeLevel_succ,
       _root_.WittVector.frobeniusEquiv_apply, ih]
 
-private theorem iterate_frobeniusEquiv_symm_cancel (r : ℕ) (x : 𝕎 S) :
-    ((frobeniusEquiv p S)^[r]) (((frobeniusEquiv p S).symm^[r]) x) = x := by
-  induction r generalizing x with
-  | zero => rfl
-  | succ r ih =>
-    rw [Function.iterate_succ_apply (frobeniusEquiv p S), Function.iterate_succ_apply',
-      (frobeniusEquiv p S).apply_symm_apply, ih]
-
-private theorem iterate_frobeniusEquiv_cancel (r : ℕ) (x : 𝕎 S) :
-    ((frobeniusEquiv p S).symm^[r]) (((frobeniusEquiv p S)^[r]) x) = x := by
-  induction r generalizing x with
-  | zero => rfl
-  | succ r ih =>
-    rw [Function.iterate_succ_apply (frobeniusEquiv p S).symm, Function.iterate_succ_apply',
-      (frobeniusEquiv p S).symm_apply_apply, ih]
-
 /-- `φʳ(ξ_r) = ξ'_r`. -/
 theorem iterate_frobeniusEquiv_cyclotomicXiLevel (ε : S) (r : ℕ) :
     ((frobeniusEquiv p S)^[r]) (cyclotomicXiLevel p ε r) = cyclotomicXiTildeLevel p ε r := by
@@ -438,14 +404,14 @@ theorem iterate_frobeniusEquiv_cyclotomicXiLevel (ε : S) (r : ℕ) :
   | zero => simp
   | succ r ih =>
     rw [cyclotomicXiLevel_succ', cyclotomicXiTildeLevel_succ, Function.iterate_succ_apply,
-      map_mul, (frobeniusEquiv p S).apply_symm_apply, iterate_frobeniusEquiv_mul, ih,
+      map_mul, (frobeniusEquiv p S).apply_symm_apply, iterate_map_mul (frobeniusEquiv p S), ih,
       ← Function.iterate_succ_apply (frobeniusEquiv p S) r (cyclotomicXi p ε), mul_comm]
 
 /-- `φ⁻ʳ(ξ'_r) = ξ_r`. -/
 theorem iterate_frobeniusEquiv_symm_cyclotomicXiTildeLevel (ε : S) (r : ℕ) :
     ((frobeniusEquiv p S).symm^[r]) (cyclotomicXiTildeLevel p ε r) = cyclotomicXiLevel p ε r := by
   rw [← iterate_frobeniusEquiv_cyclotomicXiLevel]
-  exact iterate_frobeniusEquiv_cancel p r _
+  exact ((frobeniusEquiv p S).left_inv.iterate r) _
 
 /-- At `ε = 1`, `ξ_r(1) = p ^ r`. -/
 @[simp]
@@ -494,15 +460,15 @@ theorem cyclotomicMu_eq_cyclotomicXiLevel_mul (ε : S) (r : ℕ) :
   | succ r ih =>
     conv_lhs => rw [ih]
     rw [cyclotomicXiLevel_succ, Function.iterate_succ_apply (frobeniusEquiv p S).symm r, mul_assoc,
-      ← iterate_frobeniusEquiv_symm_mul, ← cyclotomicMu_eq_cyclotomicXi_mul]
+      ← iterate_map_mul (frobeniusEquiv p S).symm, ← cyclotomicMu_eq_cyclotomicXi_mul]
 
 /-- **`φʳ(μ) = ξ'_r · μ`**, the Frobenius twist of `cyclotomicMu_eq_cyclotomicXiLevel_mul`. -/
 theorem iterate_frobeniusEquiv_cyclotomicMu_eq_cyclotomicXiTildeLevel_mul (ε : S) (r : ℕ) :
     ((frobeniusEquiv p S)^[r]) (cyclotomicMu p ε) =
       cyclotomicXiTildeLevel p ε r * cyclotomicMu p ε := by
   have h := congrArg ((frobeniusEquiv p S)^[r]) (cyclotomicMu_eq_cyclotomicXiLevel_mul p ε r)
-  rw [iterate_frobeniusEquiv_mul, iterate_frobeniusEquiv_cyclotomicXiLevel,
-    iterate_frobeniusEquiv_symm_cancel] at h
+  rw [iterate_map_mul (frobeniusEquiv p S), iterate_frobeniusEquiv_cyclotomicXiLevel,
+    Function.LeftInverse.iterate (frobeniusEquiv p S).apply_symm_apply r] at h
   exact h
 
 /-- `ξ_r` divides `μ` in `W(S)`. -/
@@ -519,15 +485,6 @@ section LevelNatural
 
 variable [CharP T p] [PerfectRing T p]
 
-private theorem iterate_ring_frobeniusEquiv_symm_map (f : S →+* T) (j : ℕ) (x : S) :
-    f (((_root_.frobeniusEquiv S p).symm^[j]) x) =
-      ((_root_.frobeniusEquiv T p).symm^[j]) (f x) := by
-  induction j with
-  | zero => rfl
-  | succ j ih =>
-    rw [Function.iterate_succ_apply', Function.iterate_succ_apply',
-      RingHom.map_frobeniusEquiv_symm, ih]
-
 /-- `WittVector.map f` sends `ξ_r(ε)` to `ξ_r(f ε)`. -/
 @[simp]
 theorem map_cyclotomicXiLevel (f : S →+* T) (ε : S) (r : ℕ) :
@@ -535,7 +492,7 @@ theorem map_cyclotomicXiLevel (f : S →+* T) (ε : S) (r : ℕ) :
   simp only [cyclotomicXiLevel_def, map_prod]
   refine Finset.prod_congr rfl fun j _ ↦ ?_
   rw [iterate_frobeniusEquiv_symm_cyclotomicXi_eq, map_cyclotomicXi,
-    iterate_frobeniusEquiv_symm_cyclotomicXi_eq, iterate_ring_frobeniusEquiv_symm_map]
+    iterate_frobeniusEquiv_symm_cyclotomicXi_eq, RingHom.map_iterate_frobeniusEquiv_symm p f j _]
 
 /-- `WittVector.map f` sends `ξ'_r(ε)` to `ξ'_r(f ε)`. -/
 @[simp]
@@ -694,10 +651,8 @@ theorem cyclotomicXiTildeLevel_coeff_zero_mem_jacobson {ε : S} (hε : ε - 1 �
     (pow_pos hp.out.pos r)
 
 private theorem not_isUnit_of_mem_jacobson [Nontrivial S] {a : S} (ha : a ∈ Ring.jacobson S) :
-    ¬ IsUnit a := fun hu ↦ by
-  have htop : Ring.jacobson S = ⊤ := Ideal.eq_top_of_isUnit_mem (Ring.jacobson S) ha hu
-  rw [← Ideal.jacobson_bot, Ideal.jacobson_eq_top_iff] at htop
-  exact bot_ne_top htop
+    ¬ IsUnit a :=
+  fun hu ↦ (Ring.jacobson_lt_top (R := S)).ne (Ideal.eq_top_of_isUnit_mem _ ha hu)
 
 /-- If `ε - 1 ∈ S⁰`, then `μ = [ε] - 1` is a nonzerodivisor in `W(S)`. -/
 theorem cyclotomicMu_mem_nonZeroDivisors {ε : S} (hε : ε - 1 ∈ S⁰) :
