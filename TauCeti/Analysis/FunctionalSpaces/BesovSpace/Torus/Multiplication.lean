@@ -263,22 +263,9 @@ private theorem exists_norm_shift_le (s : ℝ) :
   refine ⟨A * (2 * c₀) ^ (|s| + 1) * 2, by positivity, fun p q _ _ m u ↦ ?_⟩
   obtain ⟨L, hL2, hL⟩ := hA m
   set K := A * 2 ^ (|s| * L)
-  -- The weighted block norms of `u`, and their window sums, as elements of `ℓ^q`.
-  set b := lp.normSeq u.weightedBlocks
-  obtain ⟨w, hw, hwn⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le b L
-  have hnorm : ‖(⟨fun n ↦ u.coeff (n - m), u.memBesov_coeff.shift m⟩ :
-      BesovSpace φ s p q)‖ ≤ K * (2 * L) * ‖u‖ := by
-    rw [← norm_weightedBlocks]
-    calc ‖(⟨fun n ↦ u.coeff (n - m), u.memBesov_coeff.shift m⟩ :
-          BesovSpace φ s p q).weightedBlocks‖
-        ≤ ‖K • w‖ := lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
-          rw [norm_weightedBlocks_apply, lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hw]
-          refine (hL p j u.coeff).trans ((le_of_eq ?_).trans (Real.le_norm_self _))
-          simp only [b, K, lp.normSeq_apply, norm_weightedBlocks_apply]
-      _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-      _ ≤ K * (2 * L * ‖b‖) := by gcongr
-      _ = K * (2 * L) * ‖u‖ := by rw [lp.norm_normSeq, norm_weightedBlocks, mul_assoc K]
-  refine hnorm.trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg u))
+  refine (norm_le_of_rpow_mul_norm_le_sum_Ico (K := K) (by positivity) u
+    ⟨fun n ↦ u.coeff (n - m), u.memBesov_coeff.shift m⟩ fun j ↦ hL p j u.coeff).trans
+      (mul_le_mul_of_nonneg_right ?_ (norm_nonneg u))
   -- `2^{|s| L} 2 L ≤ 2 (2^L)^{|s| + 1} ≤ 2 (2 c₀ (1 + ‖m‖))^{|s| + 1}`.
   have hL1 : (L : ℝ) ≤ 2 ^ L := by exact_mod_cast (Nat.lt_two_pow_self).le
   have h2L : (2 : ℝ) ^ (|s| * L) * L ≤ ((2 : ℝ) ^ L) ^ (|s| + 1) := by
