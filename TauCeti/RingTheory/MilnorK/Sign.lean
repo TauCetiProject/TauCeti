@@ -132,10 +132,20 @@ theorem sign_symbol (n : ℕ) (l : List Rˣ) :
   · simp only [eq_true hl, and_true, ite_true, coeff_X_pow, eq_comm]
   · simp only [eq_false hl, and_false, ite_false, coeff_zero]
 
-/-- The sign map in degree `n` sends `{-1, …, -1}`, with `n` entries, to `1`. -/
 @[simp]
-theorem sign_ofUnit_neg_one_pow (n : ℕ) : sign R n (ofUnit (-1 : Rˣ) ^ n) = 1 := by
+theorem sign_ofUnit (n : ℕ) (a : Rˣ) :
+    sign R n (ofUnit a) = if n = 1 ∧ (a : R) < 0 then 1 else 0 := by
+  rw [← symbol_singleton, sign_symbol]
+  simp [eq_comm]
+
+@[simp]
+theorem sign_ofUnit_pow (n k : ℕ) (a : Rˣ) :
+    sign R n (ofUnit a ^ k) = if k = n ∧ (k = 0 ∨ (a : R) < 0) then 1 else 0 := by
   rw [← symbol_replicate, sign_symbol]
+  simp [or_iff_not_imp_left]
+
+/-- The sign map in degree `n` sends `{-1, …, -1}`, with `n` entries, to `1`. -/
+theorem sign_ofUnit_neg_one_pow (n : ℕ) : sign R n (ofUnit (-1 : Rˣ) ^ n) = 1 := by
   simp
 
 /-- **The symbol `{-1, …, -1}` is nonzero** in every degree of the Milnor K-ring of a linearly
@@ -198,6 +208,11 @@ theorem sign_eq_zero_of_mem_positiveEntrySpan (m : ℕ) {n : ℕ} {x : MilnorK R
     (hx : x ∈ positiveEntrySpan R n) : sign R m x = 0 := by
   rw [sign_apply, signPolynomial_eq_zero_of_mem_positiveEntrySpan hx, coeff_zero]
 
+/-- The symbol `{-1, …, -1}` lies in no positive-entry span: its sign is `1`. -/
+theorem ofUnit_neg_one_pow_notMem_positiveEntrySpan (n m : ℕ) :
+    ofUnit (-1 : Rˣ) ^ n ∉ positiveEntrySpan R m := fun h ↦ by
+  simpa using sign_eq_zero_of_mem_positiveEntrySpan n h
+
 omit [IsStrictOrderedRing R] in
 /-- Left multiplication by a degree-one class maps `Dₙ` into `Dₙ₊₁`. -/
 private theorem ofUnit_mul_mem_positiveEntrySpan (a : Rˣ) {n : ℕ} {x : MilnorK R}
@@ -220,7 +235,7 @@ theorem symbol_sub_mem_positiveEntrySpan (l : List Rˣ) :
     · -- Write `a = (-1) * (-a)`: then `{a, l} = {-1} {l} + {-a, l}`, where `-a > 0`.
       have hpos : 0 < ((-a : Rˣ) : R) := by simpa using ha
       have hsplit : symbol (a :: l) = ofUnit (-1) * symbol l + symbol ((-a) :: l) := by
-        rw [symbol_cons, symbol_cons, ← add_mul, ← ofUnit_mul, neg_one_mul, neg_neg]
+        rw [symbol_cons, symbol_cons, ← add_mul, ofUnit_neg_one_add_ofUnit_neg]
       have h₁ := ofUnit_mul_mem_positiveEntrySpan (-1) ih
       have h₂ := symbol_mem_positiveEntrySpan (l := (-a) :: l) ⟨-a, List.mem_cons_self, hpos⟩
       rw [List.length_cons] at h₂ ⊢
@@ -399,7 +414,7 @@ private theorem mkRingHom_ofUnit (hsq : ∀ a : Rˣ, 0 < (a : R) → IsSquare a)
     rw [ofUnit_mul, ← two_mul, map_mul, map_ofNat, two_eq_zero_modTwo, zero_mul]
   split_ifs with ha
   · have hneg : 0 < ((-a : Rˣ) : R) := by simpa using ha
-    rw [← neg_neg a, ← neg_one_mul (-a), ofUnit_mul, map_add, hpos _ hneg, add_zero]
+    rw [← ofUnit_neg_one_add_ofUnit_neg a, map_add, hpos _ hneg, add_zero]
   · exact hpos a (lt_of_le_of_ne (not_lt.1 ha) (Units.ne_zero a).symm)
 
 private theorem modTwoToPolynomial_comp_polynomialToModTwo :
@@ -458,8 +473,7 @@ private theorem exists_mem_positiveEntrySpan_nsmul_eq_symbol {m : ℕ}
   refine ⟨symbol (l₁ ++ Units.mk0 r hr.ne' :: l₂), ?_, ?_⟩
   · simpa using symbol_mem_positiveEntrySpan (l := l₁ ++ Units.mk0 r hr.ne' :: l₂)
       ⟨Units.mk0 r hr.ne', by simp, hr⟩
-  · rw [symbol_append, symbol_append, symbol_cons, symbol_cons, ofUnit_pow, smul_mul_assoc,
-      mul_smul_comm]
+  · simp [symbol_append, -nsmul_eq_mul]
 
 /-- **The positive-entry span is divisible** over a real closed field such as `ℝ`: multiplication
 by every `m ≠ 0` is surjective on it. -/

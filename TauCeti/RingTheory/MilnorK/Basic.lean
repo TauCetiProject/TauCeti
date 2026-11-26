@@ -198,6 +198,10 @@ theorem ofUnit_zpow (a : Rˣ) (n : ℤ) : ofUnit (a ^ n) = n • ofUnit a :=
 theorem neg_ofUnit_neg_one : -ofUnit (-1 : Rˣ) = ofUnit (-1) := by
   rw [← ofUnit_inv, inv_neg_one]
 
+/-- `{a} = {-1} + {-a}`, since `a = (-1) * (-a)`. -/
+theorem ofUnit_neg_one_add_ofUnit_neg (a : Rˣ) : ofUnit (-1) + ofUnit (-a) = ofUnit a := by
+  rw [← ofUnit_mul, neg_one_mul, neg_neg]
+
 /-- `{-1}` is killed by `2`, since `(-1) ^ 2 = 1`. -/
 theorem two_nsmul_ofUnit_neg_one : 2 • ofUnit (-1 : Rˣ) = 0 := by
   rw [← ofUnit_pow, neg_one_sq, ofUnit_one]
