@@ -16,10 +16,10 @@ public import Mathlib.Data.ZMod.Basic
 * **The line.** On the nearest-neighbour graph of `ℤ` there are exactly two dimer
   configurations, the even edges `{2k, 2k + 1}` and the odd edges `{2k + 1, 2k + 2}`
   (`setOf_isDimerConfiguration_int`); with `2ℤ` acting by translations they form the subshift
-  `dimerSubshiftInt`, whose two points `evenPt` and `oddPt` are fixed by `2ℤ`
-  (`smul_eq_self_dimerSubshiftInt`). For `F = ∅` the two completion sets are the two different
-  singletons, while their sets of restrictions to `F` agree: the completion set itself is not
-  determined by `ω` near `F`, only its restrictions to `F` are
+  `dimerSubshiftInt`, whose only points `evenPt` and `oddPt` (`eq_evenPt_or_eq_oddPt`) are
+  fixed by `2ℤ` (`smul_eq_self_dimerSubshiftInt`). For `F = ∅` the two completion sets are the
+  two different singletons, while their sets of restrictions to `F` agree: the completion set
+  itself is not determined by `ω` near `F`, only its restrictions to `F` are
   (`dimerCompletionSet_empty_evenConfig_ne_oddConfig`,
   `image_restrict_dimerCompletionSet_empty_eq`).
 * **Local finiteness is needed for closedness.** On the vertices `c, d, x_n, y_n` (`n : ℕ`) with
@@ -298,19 +298,23 @@ theorem coe_oddPt : (oddPt : (nnGraph ℤ).edgeSet → Bool) = oddConfig :=
 theorem evenPt_ne_oddPt : evenPt ≠ oddPt := fun h =>
   evenConfig_ne_oddConfig (congrArg Subtype.val h)
 
+/-- Every point of `dimerSubshiftInt` is `evenPt` or `oddPt`. -/
+theorem eq_evenPt_or_eq_oddPt (ω : dimerSubshiftInt) : ω = evenPt ∨ ω = oddPt := by
+  have := ω.property
+  rw [← SetLike.mem_coe, coe_dimerSubshiftInt] at this
+  simpa [Subtype.ext_iff] using this
+
 /-- **`2ℤ` fixes both points of `dimerSubshiftInt`**: translations by even numbers preserve
 parity. -/
+@[simp]
 theorem smul_eq_self_dimerSubshiftInt (g : Multiplicative ℤ) (ω : dimerSubshiftInt) :
     g • ω = ω := by
-  have hω : ω.val = evenConfig ∨ ω.val = oddConfig := by
-    have := ω.property
-    rw [← SetLike.mem_coe, coe_dimerSubshiftInt] at this
-    simpa using this
   apply Subtype.ext
   funext e
   obtain ⟨a, rfl⟩ := exists_edge_eq e
   rw [Subshift.smul_apply, ← ofAdd_toAdd g⁻¹, ofAdd_smul_edge]
-  rcases hω with h | h <;> rw [h] <;> simp [Int.even_add, Int.odd_add, parity_simps]
+  rcases eq_evenPt_or_eq_oddPt ω with rfl | rfl <;>
+    simp [Int.even_add, Int.odd_add, parity_simps]
 
 /-- At `F = ∅` the completion set of the even edges is the singleton of it. -/
 theorem dimerCompletionSet_empty_evenConfig :

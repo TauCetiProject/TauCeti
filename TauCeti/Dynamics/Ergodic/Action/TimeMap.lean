@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.Ergodic.Action.Basic
 public import Mathlib.Dynamics.Ergodic.Ergodic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
+import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
 # Ergodicity of an action from one ergodic element
@@ -75,8 +76,7 @@ measure `0` or `1`, so it is almost empty or almost everything. -/
 measurable set has measure `0` or `1`, so it is almost empty or almost everything. -/]
 theorem ergodicSMul_dirac (x : X) [SMulInvariantMeasure M X (Measure.dirac x)] :
     ErgodicSMul M X (Measure.dirac x) where
-  aeconst_of_forall_preimage_smul_ae_eq {s} hs _ := by
-    refine Filter.eventuallyConst_iff_exists_eventuallyEq.2 ⟨x ∈ s, (ae_dirac_iff ?_).2 rfl⟩
-    by_cases h : x ∈ s <;> simp [h, hs, ← compl_ofPred]
+  aeconst_of_forall_preimage_smul_ae_eq hs _ :=
+    eventuallyEmptyOrUniv_ae_dirac hs.nullMeasurableSet
 
 end TauCeti
