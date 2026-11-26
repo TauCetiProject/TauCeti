@@ -97,7 +97,7 @@ first.
 include hD hDs in
 /-- The elliptic estimate for a smooth real Cauchy–Riemann operator at order `k + 2`, with its
 `L^q` error term written as a compact operator, the Rellich inclusion `W^{k+2,q} → L^q` rescaled
-by the constant. -/
+by a constant. -/
 private theorem exists_compact_estimate_sobolevSuccL (hq : 1 < q) :
     ∃ (C : ℝ) (K : SobolevSection A volume q (k + 1 + 1) →L[ℝ] SobolevSection A volume q 0),
       IsCompactOperator K ∧ ∀ w, ‖w‖ ≤ C * ‖hD.sobolevSuccL A hDs volume q (k + 1) w‖ + ‖K w‖ := by

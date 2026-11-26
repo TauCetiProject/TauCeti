@@ -81,6 +81,30 @@ namespace ContinuousLinearMap
 open Filter
 open scoped Topology
 
+section Seminormed
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+variable [SeminormedAddCommGroup E] [Module 𝕜 E] [SeminormedAddCommGroup F] [Module 𝕜 F]
+variable [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] {C : ℝ}
+
+/-- An estimate `‖x‖ ≤ C * (‖T x‖ + ‖K x‖)` with `K` compact has the compact-error form
+`‖x‖ ≤ C' * ‖T x‖ + ‖K' x‖`. The new compact error is `x ↦ a • K x` for a scalar `a` of large
+enough norm. The domain need only be seminormed, and the target of `T` only enters through its
+seminorm. -/
+theorem exists_compact_estimate_of_norm_le_mul_add_norm {T : E →L[𝕜] F} {K : E →L[𝕜] G}
+    (hK : IsCompactOperator K) (hbound : ∀ x, ‖x‖ ≤ C * (‖T x‖ + ‖K x‖)) :
+    ∃ (C' : ℝ) (K' : E →L[𝕜] G), IsCompactOperator K' ∧ ∀ x, ‖x‖ ≤ C' * ‖T x‖ + ‖K' x‖ := by
+  obtain ⟨a, ha⟩ := NormedField.exists_lt_norm 𝕜 |C|
+  refine ⟨|C|, a • K, hK.smul a, fun x ↦ ?_⟩
+  rw [smul_apply, norm_smul]
+  calc ‖x‖ ≤ C * (‖T x‖ + ‖K x‖) := hbound x
+    _ ≤ |C| * (‖T x‖ + ‖K x‖) := by gcongr; exact le_abs_self C
+    _ ≤ |C| * ‖T x‖ + ‖a‖ * ‖K x‖ := by
+        rw [mul_add]
+        exact add_le_add_right (mul_le_mul_of_nonneg_right ha.le (norm_nonneg (K x))) _
+
+end Seminormed
+
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 variable [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
@@ -134,22 +158,6 @@ theorem exists_compact_estimate_of_isCompactOperator_sub [NormedAddCommGroup F] 
           gcongr
           exacts [le_abs_self C, hT.trans (by gcongr)]
       _ ≤ |C| * ‖S x‖ + ‖a‖ * N := by nlinarith
-
-/-- An estimate `‖x‖ ≤ C * (‖T x‖ + ‖K x‖)` with `K` compact has the compact-error form
-`‖x‖ ≤ C' * ‖T x‖ + ‖K' x‖`. The new compact error is `x ↦ a • K x` for a scalar `a` of large
-enough norm. -/
-theorem exists_compact_estimate_of_norm_le_mul_add_norm [SeminormedAddCommGroup F]
-    [NormedSpace 𝕜 F] {T : E →L[𝕜] F} {K : E →L[𝕜] G} (hK : IsCompactOperator K)
-    (hbound : ∀ x, ‖x‖ ≤ C * (‖T x‖ + ‖K x‖)) :
-    ∃ (C' : ℝ) (K' : E →L[𝕜] G), IsCompactOperator K' ∧ ∀ x, ‖x‖ ≤ C' * ‖T x‖ + ‖K' x‖ := by
-  obtain ⟨a, ha⟩ := NormedField.exists_lt_norm 𝕜 |C|
-  refine ⟨|C|, a • K, hK.smul a, fun x ↦ ?_⟩
-  rw [smul_apply, norm_smul]
-  calc ‖x‖ ≤ C * (‖T x‖ + ‖K x‖) := hbound x
-    _ ≤ |C| * (‖T x‖ + ‖K x‖) := by gcongr; exact le_abs_self C
-    _ ≤ |C| * ‖T x‖ + ‖a‖ * ‖K x‖ := by
-        rw [mul_add]
-        exact add_le_add_right (mul_le_mul_of_nonneg_right ha.le (norm_nonneg (K x))) _
 
 /-- A compact operator bounded below, `‖x‖ ≤ C * ‖K x‖`, has finite-dimensional domain. -/
 theorem _root_.IsCompactOperator.finiteDimensional_of_norm_le_mul_norm [CompleteSpace 𝕜]
