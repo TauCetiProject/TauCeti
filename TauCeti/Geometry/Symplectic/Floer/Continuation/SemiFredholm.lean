@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Continuation
 public import TauCeti.Geometry.Symplectic.Floer.Continuation.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
 
 /-!
@@ -21,7 +22,10 @@ almost complex structures at the two ends
 (`TauCeti.Floer.isCylindricalNearEnds_continuationHomotopy`), so the semi-Fredholm estimate for
 data that are cylindrical near the ends,
 `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`
-in `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`, applies to them. This file records the
+in `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`, applies to them. Likewise the path
+(`TauCeti.Floer.pathAlmostComplex`, `TauCeti.Floer.pathHamiltonian`) between two sets of data that
+are cylindrical near the ends with the same end Hamiltonians stays cylindrical near the ends
+(`TauCeti.Floer.isCylindricalNearEnds_path`). This file records the
 resulting estimate for the linearized operator `D_u` along a map `u` of the cylinder asymptotic to
 a nondegenerate one-periodic orbit `x₋` of `H₋` at `-∞` and to a nondegenerate one-periodic orbit
 `x₊` of `H₊` at `+∞`: there are `C ≥ 0` and `T` such that
@@ -73,6 +77,65 @@ theorem isCylindricalNearEnds_continuationHomotopy {ω : SymplecticForm V}
   contDiffAt_almostComplex _ := (contDiff_continuationAlmostComplex h₀ hJm hJp).contDiffAt
   contDiffAt_hamiltonianS _ := contDiffAt_const
   contDiffAt_hamiltonianT _ := (contDiff_uncurry_continuationHomotopy hHm hHp).contDiffAt
+
+/-- Let `(J, K_s, K_t)` and `(J', K'_s, K'_t)` be two sets of Floer data on a domain `Z` whose
+pullbacks along a `C²` map `f` from the cylinder to `Z` are cylindrical near the ends with the same
+end Hamiltonians, with radii `R` and `R'`. Then the pullbacks along `f` of the path of data between
+them are all cylindrical near the ends with the radius `max R R'` and the same end Hamiltonians. At
+the parameter `μ` the almost complex structures of the ends are those of the path at
+`f (∓ max R R', t)`. With `f` the identity this joins two sets of data on the cylinder; with
+`f = (ν, ·)` it joins the data at the parameter `ν` of two families of data. -/
+theorem isCylindricalNearEnds_path {Z : Type*} [NormedAddCommGroup Z]
+    [NormedSpace ℝ Z] {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
+    (h₀ : ω.Compatible J₀) {J J' : Z → V → AlmostComplexStructure V} {Ks Kt Ks' Kt' : Z → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp Jm' Jp' : ℝ → V → AlmostComplexStructure V} {R R' : ℝ}
+    {u : ℝ × ℝ → V} {f : ℝ × ℝ → Z} (hf : ContDiff ℝ 2 f)
+    (hcyl : IsCylindricalNearEnds (fun w ↦ J (f w)) (fun w ↦ Ks (f w)) (fun w ↦ Kt (f w))
+      Jm Jp Hm Hp R u)
+    (hcyl' : IsCylindricalNearEnds (fun w ↦ J' (f w)) (fun w ↦ Ks' (f w))
+      (fun w ↦ Kt' (f w)) Jm' Jp' Hm Hp R' u)
+    (hJt : ∀ z y, ω.Tames (J z y)) (hJ't : ∀ z y, ω.Tames (J' z y))
+    (hJ : ContDiff ℝ 1 fun p : Z × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJ' : ContDiff ℝ 1 fun p : Z × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (Function.uncurry Ks)) (hKs' : ContDiff ℝ 2 (Function.uncurry Ks'))
+    (hKt : ContDiff ℝ 2 (Function.uncurry Kt)) (hKt' : ContDiff ℝ 2 (Function.uncurry Kt'))
+    (μ : ℝ) :
+    IsCylindricalNearEnds (fun w ↦ pathAlmostComplex h₀ hJt hJ't (μ, f w))
+      (fun w ↦ pathHamiltonian Ks Ks' (μ, f w))
+      (fun w ↦ pathHamiltonian Kt Kt' (μ, f w))
+      (fun t ↦ pathAlmostComplex h₀ hJt hJ't (μ, f (-max R R', t)))
+      (fun t ↦ pathAlmostComplex h₀ hJt hJ't (μ, f (max R R', t))) Hm Hp (max R R') u := by
+  have h₁ := hcyl.mono (le_max_left R R')
+  have h₂ := hcyl'.mono (le_max_right R R')
+  -- Where both Hamiltonians equal the same end Hamiltonian, so does every point of the path.
+  have hKeq {K K' : Z → V → ℝ} {z : Z} (e : V → ℝ) (he : K z = e) (he' : K' z = e) :
+      pathHamiltonian K K' (μ, z) = e :=
+    (pathHamiltonian_of_eq μ (he.trans he'.symm)).trans he
+  -- The pullback along `f` at the parameter `μ` is a `C²` map into the domain of the path.
+  have hg : ContDiff ℝ 2 fun p : (ℝ × ℝ) × V ↦ ((μ, f p.1), p.2) :=
+    (contDiff_const.prodMk (hf.comp contDiff_fst)).prodMk contDiff_snd
+  exact
+    { almostComplex_eq_of_le_neg := fun z hz ↦ pathAlmostComplex_congr h₀ μ
+        ((h₁.almostComplex_eq_of_le_neg z hz).trans
+          (h₁.almostComplex_eq_of_le_neg (_, z.2) le_rfl).symm)
+        ((h₂.almostComplex_eq_of_le_neg z hz).trans
+          (h₂.almostComplex_eq_of_le_neg (_, z.2) le_rfl).symm)
+      almostComplex_eq_of_le := fun z hz ↦ pathAlmostComplex_congr h₀ μ
+        ((h₁.almostComplex_eq_of_le z hz).trans (h₁.almostComplex_eq_of_le (_, z.2) le_rfl).symm)
+        ((h₂.almostComplex_eq_of_le z hz).trans (h₂.almostComplex_eq_of_le (_, z.2) le_rfl).symm)
+      hamiltonianS_eq_zero := fun z hz ↦ hKeq _ (h₁.hamiltonianS_eq_zero z hz)
+        (h₂.hamiltonianS_eq_zero z hz)
+      hamiltonianT_eq_of_le_neg := fun z hz ↦ hKeq _ (h₁.hamiltonianT_eq_of_le_neg z hz)
+        (h₂.hamiltonianT_eq_of_le_neg z hz)
+      hamiltonianT_eq_of_le := fun z hz ↦ hKeq _ (h₁.hamiltonianT_eq_of_le z hz)
+        (h₂.hamiltonianT_eq_of_le z hz)
+      contDiffAt_almostComplex := fun _ ↦
+        ((contDiff_pathAlmostComplex h₀ hJt hJ't hJ hJ').comp
+          (hg.of_le one_le_two)).contDiffAt
+      contDiffAt_hamiltonianS := fun _ ↦
+        ((contDiff_pathHamiltonian hKs hKs').comp hg).contDiffAt
+      contDiffAt_hamiltonianT := fun _ ↦
+        ((contDiff_pathHamiltonian hKt hKt').comp hg).contDiffAt }
 
 end TauCeti.Floer
 

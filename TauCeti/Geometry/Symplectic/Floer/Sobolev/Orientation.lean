@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Fredholm.DeterminantLine.Homotopy
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import TauCeti.Geometry.Symplectic.Floer.Continuation.SemiFredholm
 
 /-!
 # Orientation transport for the linearized Floer operator along paths of Floer data
@@ -272,11 +273,7 @@ theorem detLineOrientationTransport_floerSobolevOperator_eq_map (ω : Symplectic
   rw [Function.comp_apply, Function.comp_apply, detLineOrientationTransport_eq_map_of_forall_eq _ _
     fun μ _ ↦ (hconst μ).trans (hconst a).symm] at this
   rw [← (Equiv.symm_apply_eq _).2 this, Module.Ray.map_symm, LinearMap.detLineCongrOfEq_symm]
-  induction o using Module.Ray.ind with | h v hv => ?_
-  simp only [Module.Ray.map_apply]
-  congr 1
-  rw [← LinearEquiv.trans_apply, ← LinearEquiv.trans_apply, LinearMap.detLineCongrOfEq_trans,
-    LinearMap.detLineCongrOfEq_trans]
+  simp only [LinearMap.map_detLineCongrOfEq_map_detLineCongrOfEq]
 
 end Transport
 
