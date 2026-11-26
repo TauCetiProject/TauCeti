@@ -31,7 +31,9 @@ the maximal ideal `𝔪`.
 * `Matrix.mem_range_scalar_of_commute_of_span_eq_top`: a matrix commuting with a spanning family
   is scalar.
 * `Matrix.span_range_map_eq_top`: the image of a spanning family under a ring homomorphism spans.
-* `IsLocalRing.mem_maximalIdeal_smul_top_iff_map_residue_eq_zero`: a matrix over a local ring
+* `Matrix.mem_ideal_smul_top_iff`: a matrix lies in `I • M_n(R)` exactly when its entries lie
+  in the ideal `I`.
+* `IsLocalRing.mem_maximalIdeal_smul_top_iff_map_residue_eq_zero`: so a matrix over a local ring
   lies in `𝔪 • M_n(R)` exactly when its reduction vanishes.
 * `IsLocalRing.span_range_eq_top_of_span_range_map_residue_eq_top`: over a local ring, a family
   whose reductions span the matrix algebra over the residue field spans.
@@ -86,6 +88,21 @@ theorem span_range_map_eq_top [Finite n] {S : Type*} [CommSemiring R] [CommSemir
   refine sum_mem fun i _ ↦ sum_mem fun j _ ↦ ?_
   simpa [map_single, smul_single] using P.smul_mem (y i j) (hmap (single i j 1))
 
+/-- A matrix lies in `I • M_n(R)` exactly when all its entries lie in the ideal `I`. -/
+theorem mem_ideal_smul_top_iff [CommSemiring R] [Finite n] (I : Ideal R) {x : Matrix n n R} :
+    x ∈ I • (⊤ : Submodule R (Matrix n n R)) ↔ ∀ i j, x i j ∈ I := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · refine smul_induction_on hx (fun r hr m _ i j ↦ ?_) fun y z hy hz i j ↦ ?_
+    · simpa using I.mul_mem_right (m i j) hr
+    · simpa using I.add_mem (hy i j) (hz i j)
+  -- Otherwise `x` is the sum of its entries, all in `I`, times the matrix units.
+  have := Fintype.ofFinite n
+  classical
+  rw [matrix_eq_sum_single x]
+  refine sum_mem fun i _ ↦ sum_mem fun j _ ↦ ?_
+  rw [show single i j (x i j) = x i j • single i j 1 by simp [smul_single]]
+  exact smul_mem_smul (hx i j) mem_top
+
 end Matrix
 
 namespace IsLocalRing
@@ -96,18 +113,7 @@ variable {R ι n : Type*} [CommRing R] [IsLocalRing R]
 when all its entries lie in the maximal ideal `𝔪`. -/
 theorem mem_maximalIdeal_smul_top_iff_map_residue_eq_zero [Finite n] {x : Matrix n n R} :
     x ∈ maximalIdeal R • (⊤ : Submodule R (Matrix n n R)) ↔ x.map (residue R) = 0 := by
-  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
-  · refine smul_induction_on hx (fun r hr m _ ↦ ?_) fun y z hy hz ↦ ?_
-    · ext i j
-      simp [(residue_eq_zero_iff r).mpr hr]
-    · rw [Matrix.map_add _ (map_add _), hy, hz, add_zero]
-  -- Otherwise `x` is the sum of its entries, all in `𝔪`, times the matrix units.
-  have := Fintype.ofFinite n
-  classical
-  rw [Matrix.matrix_eq_sum_single x]
-  refine sum_mem fun i _ ↦ sum_mem fun j _ ↦ ?_
-  rw [show Matrix.single i j (x i j) = x i j • Matrix.single i j 1 by simp [Matrix.smul_single]]
-  exact smul_mem_smul ((residue_eq_zero_iff _).mp (by simpa using congrFun₂ hx i j)) mem_top
+  simp [Matrix.mem_ideal_smul_top_iff, ← Matrix.ext_iff, residue_eq_zero_iff]
 
 /-- **Nakayama's lemma for spanning families of matrices.** Over a local ring `R`, a family of
 matrices whose reductions span the matrix algebra over the residue field spans `M_n(R)`. -/

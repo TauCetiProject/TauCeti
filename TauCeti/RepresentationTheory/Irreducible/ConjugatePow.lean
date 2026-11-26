@@ -98,8 +98,10 @@ theorem isIrreducible_of_map_conj_eq_pow [FiniteDimensional k V]
     ρ.IsIrreducible := by
   obtain ⟨v, hv⟩ := hμ.exists_hasEigenvector
   have : Nontrivial V := nontrivial_of_ne v 0 hv.2
-  exact (AlgHom.id k (End k V)).isIrreducible_toMonoidHom_comp_of_span_eq_top surjective_id ρ
+  have := (AlgHom.id k (End k V)).isIrreducible_toMonoidHom_comp_of_span_eq_top surjective_id ρ
     (span_range_eq_top_of_map_conj_eq_pow h hμ hdist)
+  rwa [show (AlgHom.id k (End k V) : End k V →* End k V).comp ρ = ρ from
+    MonoidHom.ext fun _ ↦ by simp] at this
 
 end Representation
 
