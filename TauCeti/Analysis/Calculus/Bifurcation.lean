@@ -79,6 +79,8 @@ intermediate value theorem, and the dependence on `t` enters only through the si
 ## Main results
 
 * `TauCeti.eventually_fold`: the zeros near a fold point and their signs.
+* `TauCeti.eventually_setOf_eq_of_deriv_eq_zero`: the solutions of `g σ = s` near a nondegenerate
+  critical point of `g`, and the signs of `g'` at them.
 * `TauCeti.eventually_pitchfork`: the zeros near a pitchfork point of an odd family and their
   signs.
 
@@ -337,6 +339,53 @@ theorem eventually_fold (hF : ContDiffAt ℝ 2 F 0) (h₀ : F 0 = 0)
       rwa [h₀'] at this
     exact fold_slice hδpos (strictConvexOn_of_foldBox hbox hδδ₀ ht) (fun x hx =>
       (hbox ((abs_le.2 hx).trans_lt hδδ₀) ht).hasDerivAt_fst.differentiableAt) hF0t hFn hFp
+
+/-- **A nondegenerate critical point folds the nearby values.** Let `g : ℝ → ℝ` be `C²` near `0`,
+with `g' (0) = 0` and `g'' (0) ≠ 0`. Then for all small `δ > 0` and all `s` near `g 0`, the
+solutions of `g σ = s` in `(-δ, δ)` are: none if `g'' (0) (s - g 0) < 0`; only `0` if `s = g 0`;
+and exactly two, `σ₁ ∈ (-δ, 0)` and `σ₂ ∈ (0, δ)`, at which `g'` has opposite signs, if
+`0 < g'' (0) (s - g 0)`. This is `eventually_fold` for `F (σ, u) = g'' (0) (g σ - g 0 - u)`. -/
+theorem eventually_setOf_eq_of_deriv_eq_zero {g : ℝ → ℝ} (hg : ContDiffAt ℝ 2 g 0)
+    (h₁ : deriv g 0 = 0) (h₂ : iteratedDeriv 2 g 0 ≠ 0) :
+    ∀ᶠ δ in 𝓝[>] 0, ∀ᶠ s in 𝓝 (g 0),
+      (iteratedDeriv 2 g 0 * (s - g 0) < 0 → ∀ σ ∈ Ioo (-δ) δ, g σ ≠ s) ∧
+      (s = g 0 → {σ ∈ Ioo (-δ) δ | g σ = s} = {0}) ∧
+      (0 < iteratedDeriv 2 g 0 * (s - g 0) → ∃ σ₁ ∈ Ioo (-δ) 0, ∃ σ₂ ∈ Ioo 0 δ,
+        {σ ∈ Ioo (-δ) δ | g σ = s} = {σ₁, σ₂} ∧ deriv g σ₁ * deriv g σ₂ < 0) := by
+  set a := iteratedDeriv 2 g 0
+  set F : ℝ × ℝ → ℝ := fun p ↦ a * (g p.1 - g 0 - p.2)
+  have hF : ContDiffAt ℝ 2 F 0 :=
+    contDiffAt_const.mul (((hg.comp (0 : ℝ × ℝ) contDiffAt_fst).sub contDiffAt_const).sub
+      contDiffAt_snd)
+  have hdF (u : ℝ) : deriv (fun σ ↦ F (σ, u)) = fun σ ↦ a * deriv g σ := by
+    simp only [F, deriv_const_mul_field', sub_sub, deriv_sub_const]
+  have hb : deriv (fun u ↦ F (0, u)) 0 = -a := by
+    rw [show (fun u ↦ F (0, u)) = fun u ↦ -a * u from funext fun u ↦ by simp only [F]; ring]
+    simp
+  have h2F : iteratedDeriv 2 (fun σ ↦ F (σ, 0)) 0 = a * a := by
+    rw [iteratedDeriv_succ', iteratedDeriv_one, hdF, deriv_const_mul_field']
+    simp only [a, iteratedDeriv_succ', iteratedDeriv_zero]
+  have hfold := eventually_fold hF (by simp [F]) (by simp [hdF, h₁])
+    (by rw [h2F]; exact mul_self_pos.2 h₂) (by rw [hb]; exact neg_ne_zero.2 h₂)
+  have hst : Tendsto (fun s ↦ s - g 0) (𝓝 (g 0)) (𝓝 0) := by
+    simpa using (continuous_sub_right (g 0)).tendsto (g 0)
+  filter_upwards [hfold] with δ hδ
+  filter_upwards [hst.eventually hδ] with s ⟨hlt, heq, hgt⟩
+  rw [hb] at hlt hgt
+  have hFs (σ : ℝ) : F (σ, s - g 0) = 0 ↔ g σ = s := by
+    simp only [F, mul_eq_zero, h₂, false_or]
+    constructor <;> intro h <;> linarith
+  have hset : {σ ∈ Ioo (-δ) δ | F (σ, s - g 0) = 0} = {σ ∈ Ioo (-δ) δ | g σ = s} := by
+    ext σ
+    simp [hFs]
+  refine ⟨fun h σ hσ hgσ ↦ ?_, fun h ↦ hset ▸ heq (by rw [h, sub_self]), fun h ↦ ?_⟩
+  · have := hlt (by nlinarith) σ hσ
+    rw [(hFs σ).2 hgσ] at this
+    exact lt_irrefl 0 this
+  · obtain ⟨σ₁, hσ₁, σ₂, hσ₂, hs, h₁, h₂'⟩ := hgt (by nlinarith)
+    refine ⟨σ₁, hσ₁, σ₂, hσ₂, hset ▸ hs, ?_⟩
+    rw [hdF] at h₁ h₂'
+    nlinarith [mul_neg_of_neg_of_pos h₁ h₂']
 
 /-! ### The equivariant pitchfork -/
 
