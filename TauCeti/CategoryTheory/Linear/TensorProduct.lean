@@ -117,12 +117,8 @@ instance : (swapFunctor (R := R) (C := C) (D := D)).Linear R :=
 /-- Swapping the factors twice fixes each morphism. -/
 @[simp]
 theorem swapFunctor_map_swapFunctor_map {P Q : LinearTensor R C D} (t : P ⟶ Q) :
-    swapFunctor.map (swapFunctor.map t) = t := by
-  obtain ⟨X, X'⟩ := P
-  obtain ⟨Y, Y'⟩ := Q
-  induction t using hom_induction_on with
-  | tmul f g => simp only [swapFunctor_map_tmul]
-  | add a b ha hb => simp only [Functor.map_add, ha, hb]
+    swapFunctor.map (swapFunctor.map t) = t :=
+  TensorProduct.comm_comm R _ _ t
 
 /-- Exchanging the two factors of a linear tensor product gives an equivalence, with the same
 exchange in the reverse direction. -/
