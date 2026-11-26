@@ -9,10 +9,11 @@ public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Bas
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.MellinInversion
+import TauCeti.Analysis.SpecialFunctions.Beta.Complex
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
@@ -346,52 +347,6 @@ theorem analyticOnNhd_integral_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_c
   exact (hasFDerivAt_integral_of_dominated_of_fderiv_le hU_nhds hF_meas
     (integrable_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_cpow p₀.1 hp₀ ha hb hσ)
     hF'_meas h_bound h_dom_int h_diff).differentiableAt.differentiableWithinAt
-
-/-- Product integrability on `(0, 1) × ℝ` of a Beta-weighted kernel
-`(t, y) ↦ t^{u y - 1} (1 - t)^{v y - 1} g y`, where `u, v : ℝ → ℂ` are continuous with
-constant positive real parts `u₀, v₀` and `g : ℝ → ℂ` is continuous and integrable on `ℝ`. -/
-private theorem integrable_beta_mul_profile {u₀ v₀ : ℝ} {u v : ℝ → ℂ} {g : ℝ → ℂ}
-    (hu_cont : Continuous u) (hv_cont : Continuous v)
-    (hu_re : ∀ y, (u y).re = u₀) (hv_re : ∀ y, (v y).re = v₀)
-    (hu₀ : 0 < u₀) (hv₀ : 0 < v₀) (hg_cont : Continuous g) (hg_int : Integrable g) :
-    Integrable
-      (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1) * g p.2)
-      ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) := by
-  have hmeas_oo : (volume.restrict (Ioo (0 : ℝ) 1)).prod (volume : Measure ℝ) =
-      volume.restrict (Ioo (0 : ℝ) 1 ×ˢ (univ : Set ℝ)) := by
-    simpa [Measure.volume_eq_prod] using
-      Measure.prod_restrict (μ := (volume : Measure ℝ)) (ν := (volume : Measure ℝ))
-        (Ioo 0 1) univ
-  have hφ : Integrable
-      (fun t : ℝ ↦ ‖(t : ℂ) ^ ((u₀ : ℂ) - 1) * (1 - (t : ℂ)) ^ ((v₀ : ℂ) - 1)‖)
-      (volume.restrict (Ioo (0 : ℝ) 1)) := by
-    have hb_conv := betaIntegral_convergent (u := u₀) (v := v₀) (by simpa using hu₀)
-      (by simpa using hv₀)
-    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one] at hb_conv
-    exact (hb_conv.mono_set Ioo_subset_Ioc_self).norm
-  have hF_meas : AEStronglyMeasurable
-      (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1) * g p.2)
-      ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) := by
-    rw [hmeas_oo]
-    refine ContinuousOn.aestronglyMeasurable (fun ⟨t, y⟩ ⟨⟨ht0, ht1⟩, _⟩ ↦ ?_)
-      (measurableSet_Ioo.prod MeasurableSet.univ)
-    have h1t_slit : 1 - (t : ℂ) ∈ slitPlane := by
-      rw [← ofReal_one, ← ofReal_sub]
-      exact ofReal_mem_slitPlane.2 (sub_pos.2 ht1)
-    exact (((ContinuousAt.cpow (by fun_prop) ((hu_cont.sub continuous_const).continuousAt.comp
-        continuousAt_snd) (ofReal_mem_slitPlane.2 ht0)).mul
-      (ContinuousAt.cpow (by fun_prop) ((hv_cont.sub continuous_const).continuousAt.comp
-        continuousAt_snd) h1t_slit)).mul
-      (hg_cont.continuousAt.comp continuousAt_snd)).continuousWithinAt
-  refine (hφ.mul_prod hg_int.norm).mono' hF_meas ?_
-  rw [hmeas_oo]
-  filter_upwards [ae_restrict_mem (measurableSet_Ioo.prod MeasurableSet.univ)] with
-    ⟨t, y⟩ ⟨⟨ht0, ht1⟩, _⟩
-  have h1t : 0 < 1 - t := sub_pos.2 ht1
-  rw [← ofReal_one, ← ofReal_sub]
-  simp only [norm_mul, norm_cpow_eq_rpow_re_of_pos ht0, norm_cpow_eq_rpow_re_of_pos h1t,
-    sub_re, ofReal_re, hu_re, hv_re]
-  exact le_rfl
 
 /-- Product integrability on `(0, 1) × ℝ` for Beta-times-Mellin–Barnes integrands whose
 exponents `u y` and `v y` have constant positive real parts `u₀` and `v₀`. -/

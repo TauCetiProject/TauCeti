@@ -19,6 +19,7 @@ import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Analysis.Contour.Residue.VerticalLineShift
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.SpecialFunctions.Pochhammer
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -89,8 +90,6 @@ the integral sign.
   full-line L¹ bound for all-order Perron kernels, with separate first/last-factor margins.
 * `TauCeti.isTheta_cpow_div_ascPochhammer`: the all-order Perron kernel decays as
   `|t|⁻(j+1)` uniformly on every bounded set of real parts.
-* `TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp`: product bound for two polynomial–exponential
-  profiles `(1 + |y|) ^ R * exp (α * |y|)` with signed rates.
 * `TauCeti.integrable_cpow_smul_of_norm_le_exp_neg_mul_abs`,
   `TauCeti.integrable_cpow_neg_smul_of_norm_le_exp_neg_mul_abs`: integrability on `ℝ` of
   `y ↦ w ^ (±(σ + i y)) • g y` whenever `|arg w| < α` and
@@ -426,23 +425,6 @@ theorem integral_neg_add_mul_I {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     ∫ y : ℝ, F (-((σ : ℂ) + y * I)) y = ∫ y : ℝ, F (((-σ : ℝ) : ℂ) + y * I) (-y) := by
   conv_rhs => rw [← integral_neg_eq_self]
   exact integral_congr_ae (Eventually.of_forall fun y ↦ by simp only [neg_contour_eq, neg_neg])
-
-/-- Product bound for two nonnegative quantities bounded by polynomial–exponential profiles
-`C * (1 + |y|) ^ R * exp (α * |y|)` with signed rates `α₁` and `α₂`. -/
-theorem mul_le_mul_one_add_abs_rpow_mul_exp {x₁ x₂ C₁ R₁ α₁ C₂ R₂ α₂ y : ℝ}
-    (hx₁ : 0 ≤ x₁) (hx₂ : 0 ≤ x₂)
-    (h₁ : x₁ ≤ C₁ * (1 + |y|) ^ R₁ * Real.exp (α₁ * |y|))
-    (h₂ : x₂ ≤ C₂ * (1 + |y|) ^ R₂ * Real.exp (α₂ * |y|)) :
-    x₁ * x₂ ≤ C₁ * C₂ * (1 + |y|) ^ (R₁ + R₂) * Real.exp ((α₁ + α₂) * |y|) := by
-  have h1y : 0 < 1 + |y| := by positivity
-  calc x₁ * x₂
-      ≤ (C₁ * (1 + |y|) ^ R₁ * Real.exp (α₁ * |y|)) *
-          (C₂ * (1 + |y|) ^ R₂ * Real.exp (α₂ * |y|)) :=
-        mul_le_mul h₁ h₂ hx₂ (hx₁.trans h₁)
-    _ = C₁ * C₂ * ((1 + |y|) ^ R₁ * (1 + |y|) ^ R₂) *
-          (Real.exp (α₁ * |y|) * Real.exp (α₂ * |y|)) := by ring
-    _ = C₁ * C₂ * (1 + |y|) ^ (R₁ + R₂) * Real.exp ((α₁ + α₂) * |y|) := by
-        rw [← Real.rpow_add h1y, ← Real.exp_add, ← add_mul]
 
 private lemma norm_cpow_deriv_smul_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     {σ y r₀ r₁ α' α C R : ℝ} {w : ℂ} {v : E} (hr₀ : 0 < r₀) (hw_lo : r₀ ≤ ‖w‖)
