@@ -291,21 +291,15 @@ theorem discriminantOrthogonalHom_conjMulEquiv [L.IsNondegenerate] [M.IsNondegen
       (e.discriminantQuadraticIsometry hL).orthogonalGroupCongr
         (discriminantOrthogonalHom L hL g) :=
   Subtype.ext <| LinearEquiv.ext fun a ↦ by
-    obtain ⟨b, rfl⟩ := e.discriminantGroupEquiv.surjective a
-    refine (discriminantGroupEquiv_conjMulEquiv_apply e g b).trans <| Eq.trans ?_
-      (QuadraticMap.IsometryEquiv.coe_orthogonalGroupCongr_apply
-        (e.discriminantQuadraticIsometry hL) (discriminantOrthogonalHom L hL g)
-        (e.discriminantGroupEquiv b)).symm
-    -- The induced quadratic isometry `q_L ≅ q_M` is `e.discriminantGroupEquiv` on the carrier of
-    -- the discriminant quadratic module, which `rw` does not identify with `DiscriminantGroup`.
-    have hb : (e.discriminantQuadraticIsometry hL).symm (e.discriminantGroupEquiv b) = b :=
-      (congrArg _ (discriminantQuadraticIsometry_apply e hL b).symm).trans
-        ((e.discriminantQuadraticIsometry hL).symm_apply_apply b)
-    rw [hb]
-    exact (discriminantQuadraticIsometry_apply e hL _).symm.trans <|
-      congrArg (e.discriminantQuadraticIsometry hL) <|
-        (congrArg (fun f ↦ f b) ((coe_discriminantOrthogonalHom hL g).trans
-          (discriminantGroupHom_apply g))).symm
+    obtain ⟨b, rfl⟩ := EquivLike.surjective (e.discriminantQuadraticIsometry hL) a
+    rw [QuadraticMap.IsometryEquiv.coe_orthogonalGroupCongr_apply,
+      QuadraticMap.IsometryEquiv.symm_apply_apply, coe_discriminantOrthogonalHom,
+      coe_discriminantOrthogonalHom, discriminantGroupHom_apply, discriminantGroupHom_apply]
+    -- Rewrite the discriminant-group statement into the quadratic-module one: the goal's carrier
+    -- is that of the discriminant quadratic module, where `rw` cannot reach the arguments.
+    have h := discriminantGroupEquiv_conjMulEquiv_apply e g b
+    rwa [← discriminantQuadraticIsometry_apply e hL,
+      ← discriminantQuadraticIsometry_apply e hL b] at h
 
 /-- The surjectivity of `O(L) → O(q_L)` is invariant under isometries of lattices. -/
 theorem discriminantOrthogonalHom_surjective_iff [L.IsNondegenerate] [M.IsNondegenerate]

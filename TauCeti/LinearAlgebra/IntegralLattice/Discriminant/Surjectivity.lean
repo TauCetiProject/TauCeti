@@ -137,9 +137,7 @@ theorem discriminantOrthogonalHom_surjective_of_isometry_scale_two (S : Integral
   rw [Isometry.discriminantOrthogonalHom_surjective_iff hS (e.isEven_iff.mp hS) e]
   refine discriminantOrthogonalHom_smul_two_hyperbolicPlane_orthogonalSum_surjective
     ((isEven_neg_iff _).mpr isEven_typeE₈RootLattice) ?_ ?_
-  · rw [isUnimodular_iff_discriminant_eq_one, discriminant_neg,
-      ← isUnimodular_iff_discriminant_eq_one]
-    exact isUnimodular_typeE₈RootLattice
+  · exact (isUnimodular_neg_iff _).mpr isUnimodular_typeE₈RootLattice
   · rw [finrank_neg, finrank_carrier, finrank_fin_fun]
     decide
 
