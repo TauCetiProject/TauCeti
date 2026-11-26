@@ -14,6 +14,7 @@ import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.Matrix.Symmetric
+import TauCeti.RingTheory.Ideal.Quotient.Defs
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
 
 /-!
@@ -199,11 +200,8 @@ theorem IsSymm.exists_isCharacteristic_of_finite [Free R M] [Module.Finite R M]
   let b := Free.chooseBasis R M
   let I : Ideal R := Ideal.span {(2 : R)}
   let _ : BooleanRing (R ⧸ I) :=
-    { (inferInstance : Ring (R ⧸ I)) with
-      isIdempotentElem x := by
-        obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
-        rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.eq, Ideal.mem_span_singleton]
-        simpa [sq] using h2 r }
+    Ideal.Quotient.booleanRing I fun c ↦ by
+      simpa [sq] using Ideal.mem_span_singleton.mpr (h2 c)
   let A : Matrix (Free.ChooseBasisIndex R M) (Free.ChooseBasisIndex R M) (R ⧸ I) :=
     Matrix.of fun i j ↦ Ideal.Quotient.mk I (B (b i) (b j))
   have hA : A.IsSymm :=

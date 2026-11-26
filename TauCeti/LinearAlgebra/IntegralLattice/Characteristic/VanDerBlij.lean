@@ -131,12 +131,13 @@ private theorem halfCharacteristicDual_mem_primaryComponent_two [L.IsNondegenera
 
 private theorem natCard_comap_primaryComponent_two_evenSublattice_sq [L.IsNondegenerate]
     (hodd : Odd L.discriminant) :
-    let A := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
-    let H : AddSubgroup A := L.evenSublattice.discriminantSubgroup
-      (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le)
-    Nat.card (H.comap (AddCommGroup.primaryComponent A 2).subtype) ^ 2 =
-      Nat.card (A.restrict (AddCommGroup.primaryComponent A 2)) := by
-  dsimp only
+    Nat.card ((L.evenSublattice.discriminantSubgroup
+        (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le)).comap
+      (AddCommGroup.primaryComponent
+        (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice) 2).subtype) ^ 2 =
+      Nat.card ((L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice).restrict
+        (AddCommGroup.primaryComponent
+          (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice) 2)) := by
   let A := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
   let P := AddCommGroup.primaryComponent A 2
   let I := L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le
@@ -162,23 +163,23 @@ private theorem natCard_comap_primaryComponent_two_evenSublattice_sq [L.IsNondeg
         L.evenSublattice_carrier_le]
   have hfac0 : L.discriminant.factorization 2 = 0 :=
     Nat.factorization_eq_zero_of_not_dvd hodd.not_two_dvd_nat
+  have hidx_ne : idx ≠ 0 := by rcases hidx_cases with h | h <;> simp [h]
+  have hfac : (L.discriminant * idx ^ 2).factorization 2 = 2 * idx.factorization 2 := by
+    simp [hodd.pos.ne', hidx_ne, hfac0, Nat.factorization_mul, Nat.factorization_pow]
   rw [hcardH₂, A.natCard_restrict P,
-    TauCeti.AddCommGroup.natCard_primaryComponent A Nat.prime_two, hcardA]
-  rcases hidx_cases with h1 | h2
-  · simp [h1, hfac0]
-  · rw [h2, Nat.factorization_mul hodd.pos.ne' (by positivity), Finsupp.coe_add, Pi.add_apply,
-      hfac0, Nat.factorization_pow, Finsupp.smul_apply, Nat.prime_two.factorization_self]
-    norm_num
+    TauCeti.AddCommGroup.natCard_primaryComponent A Nat.prime_two, hcardA, hfac]
+  rcases hidx_cases with h | h <;> simp [h, Nat.prime_two.factorization_self]
 
 private theorem isLagrangian_comap_primaryComponent_two_evenSublattice [L.IsNondegenerate]
     (hodd : Odd L.discriminant) :
-    let A := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
-    let P := AddCommGroup.primaryComponent A 2
-    let H : AddSubgroup A := L.evenSublattice.discriminantSubgroup
-      (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le)
-    (A.restrict P).toFiniteBilinearModule.IsLagrangian (H.comap P.subtype) ∧
-      Nat.card (H.comap P.subtype) ^ 2 = Nat.card (A.restrict P) := by
-  dsimp only
+    ((L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice).restrict
+      (AddCommGroup.primaryComponent
+        (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice)
+        2)).toFiniteBilinearModule.IsLagrangian
+      ((L.evenSublattice.discriminantSubgroup
+          (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le)).comap
+        (AddCommGroup.primaryComponent
+          (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice) 2).subtype) := by
   let A := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
   let P := AddCommGroup.primaryComponent A 2
   let I := L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le
@@ -191,10 +192,10 @@ private theorem isLagrangian_comap_primaryComponent_two_evenSublattice [L.IsNond
       ((IntermediateCarrier.isIntegral_iff_isIsotropic_discriminantSubgroup I).mp
         (L.isIntegral_toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le))
       2 Nat.prime_two
-  exact ⟨FiniteBilinearModule.IsIsotropic.isLagrangian_of_card_sq_eq _ hH₂_iso
+  exact FiniteBilinearModule.IsIsotropic.isLagrangian_of_card_sq_eq _ hH₂_iso
     (A.isNondegenerate_restrict_primaryComponent
       (L.evenSublattice.isNondegenerate_discriminantQuadraticModule L.isEven_evenSublattice)
-      Nat.prime_two) hsq, hsq⟩
+      Nat.prime_two) hsq
 
 /-- For a nondegenerate integral lattice of odd discriminant, the `2`-primary component of the
 discriminant quadratic module of its even sublattice has Gauss-sum invariant equal to the norm of
@@ -210,7 +211,9 @@ theorem gaussSign_restrict_primaryComponent_two_evenSublattice [L.IsNondegenerat
   let H : AddSubgroup A := L.evenSublattice.discriminantSubgroup
     (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le)
   let H₂ : AddSubgroup A₂ := H.comap P.subtype
-  obtain ⟨hH₂_lag, hsq⟩ := isLagrangian_comap_primaryComponent_two_evenSublattice L hodd
+  have hH₂_lag := isLagrangian_comap_primaryComponent_two_evenSublattice L hodd
+  have hsq : Nat.card H₂ ^ 2 = Nat.card A₂ :=
+    (natCard_comap_primaryComponent_two_evenSublattice_sq L hodd).trans (A.natCard_restrict P).symm
   let a₂ : A₂ := ⟨Submodule.Quotient.mk (halfCharacteristicDual L hw),
     halfCharacteristicDual_mem_primaryComponent_two L hw⟩
   have ha₂ (h : H₂) : A₂.quadratic (a₂ + h) = A₂.quadratic a₂ :=
@@ -223,10 +226,9 @@ theorem gaussSign_restrict_primaryComponent_two_evenSublattice [L.IsNondegenerat
     (A.restrict_quadratic P a₂).trans <|
       (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice
         a₂.val).trans (quadratic_halfCharacteristicDual L hw)
-  have hsq' : Nat.card H₂ ^ 2 = Nat.card A₂ := hsq.trans (A.natCard_restrict P).symm
   refine FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq A₂ ?_
   rw [FiniteQuadraticModule.gaussSum_eq_natCard_mul_expCircle_of_bilinear_isLagrangian a₂
-    hH₂_lag ha₂, hqa₂, ← hsq', Nat.cast_pow, Real.sqrt_sq (Nat.cast_nonneg _),
+    hH₂_lag ha₂, hqa₂, ← hsq, Nat.cast_pow, Real.sqrt_sq (Nat.cast_nonneg _),
     Complex.ofReal_natCast]
 
 /-- Milgram's theorem applied to `L.evenSublattice` expresses its Gauss-sum invariant as the

@@ -382,6 +382,37 @@ private theorem pivotPairSystem_symm {S : Type*} [BooleanRing S] {m : ℕ}
     ha ((k.succAbove i).castSucc) k.castSucc, ha (Fin.last (m + 1)) ((k.succAbove j).castSucc)]
   ring
 
+/-- Schur-complement expansion for the two-coordinate lift `u` at an off-pivot index `f j'`. -/
+private theorem pivotPairSystem_sum_eq {S : Type*} [BooleanRing S] {m : ℕ}
+    (a : Fin (m + 2) → Fin (m + 2) → S) (k : Fin (m + 1)) (u'' : Fin m → S) (j' : Fin m) :
+    let last : Fin (m + 2) := Fin.last (m + 1)
+    let f (i : Fin m) : Fin (m + 2) := (k.succAbove i).castSucc
+    let vk : S := ∑ i : Fin m, u'' i * a (f i) last
+    let v : Fin (m + 1) → S := k.insertNth vk u''
+    let sk : S := ∑ i : Fin (m + 1), v i * a i.castSucc k.castSucc
+    let u : Fin (m + 2) → S := Fin.snoc v (a k.castSucc k.castSucc + sk)
+    ∑ i, u i * a i (f j') =
+      (∑ i, u'' i * pivotPairSystem a k i j') + a k.castSucc k.castSucc * a last (f j') := by
+  intro last f vk v sk u
+  have hsum_u : ∑ i, u i * a i (f j') = vk * a k.castSucc (f j') +
+      (∑ i : Fin m, u'' i * a (f i) (f j')) + (a k.castSucc k.castSucc + sk) * a last (f j') := by
+    rw [Fin.sum_univ_castSucc, Fin.sum_univ_succAbove _ k]
+    simp only [u, v, f, last, Fin.snoc_castSucc, Fin.snoc_last, Fin.insertNth_apply_same,
+      Fin.insertNth_apply_succAbove]
+  have hsk : sk = vk * a k.castSucc k.castSucc + ∑ i, u'' i * a (f i) k.castSucc := by
+    dsimp only [sk]; rw [Fin.sum_univ_succAbove _ k]
+    simp only [v, f, Fin.insertNth_apply_same, Fin.insertNth_apply_succAbove]
+  rw [hsum_u, hsk]
+  have hterm (i : Fin m) :
+      u'' i * pivotPairSystem a k i j' =
+        u'' i * a (f i) (f j') + (u'' i * a (f i) last) * a k.castSucc (f j') +
+          (u'' i * a (f i) k.castSucc) * a last (f j') +
+          a k.castSucc k.castSucc * (u'' i * a (f i) last) * a last (f j') := by
+    simp only [pivotPairSystem, f, last]; ring
+  simp_rw [hterm, Finset.sum_add_distrib, ← Finset.sum_mul, ← Finset.mul_sum]
+  dsimp only [vk]
+  ring
+
 /-- Lifting a two-coordinate Schur-complement solution along an off-diagonal pivot `(k, last)`. -/
 private theorem exists_mul_sum_eq_diag_of_pivot_pair {S : Type*} [BooleanRing S]
     {m : ℕ} {a : Fin (m + 2) → Fin (m + 2) → S} (ha : ∀ i j, a i j = a j i)
@@ -392,45 +423,37 @@ private theorem exists_mul_sum_eq_diag_of_pivot_pair {S : Type*} [BooleanRing S]
           a k.castSucc (Fin.last (m + 1)) * ∑ i, u i * a i j =
         (1 - a (Fin.last (m + 1)) (Fin.last (m + 1))) *
           a k.castSucc (Fin.last (m + 1)) * a j j := by
+  -- Work in the idempotent localization `c = (1 - d) * e`, where `d = a last last = 0` and
+  -- `e = a k.castSucc last = 1`.
   let last : Fin (m + 2) := Fin.last (m + 1)
   let d : S := a last last; let e : S := a k.castSucc last; let c : S := (1 - d) * e
   have hcd : c * d = 0 := by linear_combination -e * BooleanRing.mul_self d
   have hce : c * e = c := by linear_combination (1 - d) * BooleanRing.mul_self e
   let f (i : Fin m) : Fin (m + 2) := (k.succAbove i).castSucc
+  -- Choose `v k = vk` to cancel the off-pivot `last`-column sum (`vk * e + vk * e = 0`), and
+  -- `u last = a k k + sk` to match `a k k` in the `k`-column (`sk + (a k k + sk) * e = a k k`).
   let vk : S := ∑ i : Fin m, u'' i * a (f i) last
   let v : Fin (m + 1) → S := k.insertNth vk u''
   let sk : S := ∑ i : Fin (m + 1), v i * a i.castSucc k.castSucc
   let u : Fin (m + 2) → S := Fin.snoc v (a k.castSucc k.castSucc + sk)
-  have hsum_u (j : Fin (m + 2)) : ∑ i, u i * a i j = vk * a k.castSucc j +
-      (∑ i : Fin m, u'' i * a (f i) j) + (a k.castSucc k.castSucc + sk) * a last j := by
-    rw [Fin.sum_univ_castSucc, Fin.sum_univ_succAbove _ k]
-    simp only [u, v, f, last, Fin.snoc_castSucc, Fin.snoc_last, Fin.insertNth_apply_same,
-      Fin.insertNth_apply_succAbove]
   refine ⟨u, Fin.lastCases ?_ (Fin.succAboveCases k ?_ fun j' ↦ ?_)⟩
-  · rw [hsum_u last]; dsimp only [c, d, e, vk, sk] at hcd hce ⊢
+  · -- Branch `j = last`: reduce `∑ i, u i * a i last` via `c * e = c`, `c * d = 0`, `2 = 0`.
+    rw [Fin.sum_univ_castSucc, Fin.sum_univ_succAbove _ k]
+    simp only [u, v, Fin.snoc_castSucc, Fin.snoc_last, Fin.insertNth_apply_same,
+      Fin.insertNth_apply_succAbove]
+    dsimp only [c, d, e, vk, sk] at hcd hce ⊢
     linear_combination vk * hce + (a k.castSucc k.castSucc + sk) * hcd +
       BooleanRing.add_self (c * vk) - hcd
-  · rw [Fin.sum_univ_castSucc]; simp only [u, Fin.snoc_castSucc, Fin.snoc_last]
-    rw [ha last k.castSucc]; dsimp only [c, e, sk] at hce ⊢
+  · -- Branch `j = k.castSucc`: the `v` sum is `sk`, leaving `(a k k + sk) * e` (`c * e = c`).
+    rw [Fin.sum_univ_castSucc]
+    simp only [u, Fin.snoc_castSucc, Fin.snoc_last]
+    rw [ha last k.castSucc]
+    dsimp only [c, e, sk] at hce ⊢
     linear_combination (a k.castSucc k.castSucc + sk) * hce + BooleanRing.add_self (c * sk)
-  · congr 1; rw [hsum_u]
-    have hsk : sk = vk * a k.castSucc k.castSucc + ∑ i, u'' i * a (f i) k.castSucc := by
-      dsimp only [sk]; rw [Fin.sum_univ_succAbove _ k]
-      simp only [v, f, Fin.insertNth_apply_same, Fin.insertNth_apply_succAbove]
-    have hsum : vk * a k.castSucc (f j') + (∑ i : Fin m, u'' i * a (f i) (f j')) +
-        (a k.castSucc k.castSucc + sk) * a last (f j') =
-        (∑ i, u'' i * pivotPairSystem a k i j') + a k.castSucc k.castSucc * a last (f j') := by
-      rw [hsk]
-      have hterm (i : Fin m) :
-          u'' i * pivotPairSystem a k i j' =
-            u'' i * a (f i) (f j') + (u'' i * a (f i) last) * a k.castSucc (f j') +
-              (u'' i * a (f i) k.castSucc) * a last (f j') +
-              a k.castSucc k.castSucc * (u'' i * a (f i) last) * a last (f j') := by
-        simp only [pivotPairSystem, f, last]; ring
-      simp_rw [hterm, Finset.sum_add_distrib, ← Finset.sum_mul, ← Finset.mul_sum]
-      dsimp only [vk]
-      ring
-    rw [hsum, hu'' j']
+  · -- Branch `j = f j'`: holds before multiplying by `c` via the Schur-complement identity `hu''`,
+    -- using symmetry and Boolean-ring `2 = 0`, `x^2 = x` to cancel the remaining terms.
+    congr 1
+    rw [pivotPairSystem_sum_eq a k u'' j', hu'' j']
     simp only [pivotPairSystem]
     rw [ha (k.succAbove j').castSucc last, ha k.castSucc (k.succAbove j').castSucc]
     linear_combination

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Idempotent
+public import Mathlib.Algebra.Ring.BooleanRing
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 
 /-!
@@ -17,7 +18,8 @@ For a two-sided ideal `I` of a ring `R` and an element `x ∈ R`, the fibre of t
 to a single residue class without assuming commutativity of multiplication.
 
 An element `a` is idempotent modulo `I` if and only if `a * a - a ∈ I`
-(`Ideal.Quotient.isIdempotentElem_mk_iff`).
+(`Ideal.Quotient.isIdempotentElem_mk_iff`). When this holds for every `a : R`, the quotient
+`R ⧸ I` is a Boolean ring (`Ideal.Quotient.booleanRing`).
 -/
 
 public section
@@ -40,5 +42,12 @@ variable {I} in
 /-- An element is idempotent modulo a two-sided ideal `I` if and only if `a * a - a ∈ I`. -/
 theorem isIdempotentElem_mk_iff {a : R} : IsIdempotentElem (mk I a) ↔ a * a - a ∈ I := by
   rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.eq]
+
+/-- If `a * a - a ∈ I` for every `a : R`, then `R ⧸ I` is a Boolean ring. -/
+abbrev booleanRing (h : ∀ a : R, a * a - a ∈ I) : BooleanRing (R ⧸ I) :=
+  { (inferInstance : Ring (R ⧸ I)) with
+    isIdempotentElem x := by
+      obtain ⟨r, rfl⟩ := mk_surjective x
+      exact isIdempotentElem_mk_iff.mpr (h r) }
 
 end Ideal.Quotient
