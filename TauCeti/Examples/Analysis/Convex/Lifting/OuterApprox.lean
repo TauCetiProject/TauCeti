@@ -43,7 +43,11 @@ heights.
   direct set `|x₀ + x₁| ≤ 5/4` and the projected shared set `|x₀| + |x₁| ≤ 5/4`. The objective
   `-x₀ + x₁` attains `-2`, `-5/4` and `-1` on the direct set, the projected shared set and the
   original set, and the exact
-  lift of `TauCeti.ConvexLifting.liftedSet` retains `-1`.
+  lift of `TauCeti.ConvexLifting.liftedSet` retains `-1`. As support rows, the shared set is
+  `TauCeti.ConvexLifting.sharedRows` and the direct set is the projection of
+  `TauCeti.ConvexLifting.independentRows` for the rows `2 c x_j - 1`, `c = ±1`; the point
+  `(1, -1/2)` lies in the direct set but violates the mixed choice of `(1, 1)` in the first
+  coordinate and `(-1, -1)` in the second, so it is not in the projected shared set.
 * For `g x = x ^ 2` and `h = id` with budget `1/4`, the shared heights at the anchor `0` project
   onto the whole line, while the direct row at the anchor `1` is `C x = 2 x - 1`, whose budget
   constraint gives the direct set `x ≤ 5/8`: with different anchors the shared projection need not
@@ -60,6 +64,9 @@ heights.
   row on the first coordinate, the projected shared set and the direct set are both `[-1, ∞)`, and
   the original set is `[-1, 1]`; the outer derivative `(-2, 1)` is not monotone but is nonnegative
   on the nonnegative directions vanishing on the first coordinate.
+* Without anchors the shared approximation for the outer sum imposes no budget, so for budget `0`
+  it contains the height `1`, which `TauCeti.ConvexLifting.sharedRows` excludes: identifying the
+  two needs at least one anchor.
 * With no height coordinates (`ι = Fin 0`), arbitrary inner and outer maps, arbitrary row maps, an
   arbitrary height domain `E` and at least one anchor, every row reduces to the scalar condition
   `h 0 ≤ b`, and the shared set retains the membership of the unique height `0` in `E`.
@@ -314,6 +321,46 @@ theorem fst_image_sharedOuterApprox_sq_sum_one_neg_one :
     · rw [outerRow_sum_coord, Fin.sum_univ_two]
       simp only [mem_ofPred_eq] at hb
       linarith
+
+/-- For the outer sum, the shared approximation at the anchors `(1, 1)` and `(-1, -1)` with budget
+`1/2` and all heights admissible is the system of shared support rows `2 c x_j - 1 ≤ y_j` for
+`c = ±1`, with `y₀ + y₁ ≤ 1/2`. -/
+theorem sharedOuterApprox_sq_sum_one_neg_one_eq_sharedRows :
+    sharedOuterApprox (Icc (-1) 1) univ (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) (fun y ↦ ∑ j, y j)
+      ![1, -1] (fun i ↦ mul ℝ _ (2 * ![1, -1] i)) (fun _ ↦ ∑ j, proj j) (1 / 2) =
+      sharedRows (Icc (-1) 1) (fun j i x ↦ 2 * ![1, -1] i * x j - 1) (fun _ ↦ Finset.univ)
+        (1 / 2) := by
+  simp only [sharedOuterApprox_univ_sum_coord_eq_sharedRows, componentRow_sq_one_neg_one]
+
+/-- For the outer sum, the direct set at the anchors `(1, 1)` and `(-1, -1)` with budget `1/2` is
+the projection of the independent support rows `2 c x_j - 1 ≤ y_{c, j}` with
+`y_{c, 0} + y_{c, 1} ≤ 1/2` for `c = ±1`. -/
+theorem directOuterApprox_sq_sum_one_neg_one_eq_fst_image_independentRows :
+    directOuterApprox (Icc (-1) 1) (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) (fun y ↦ ∑ j, y j)
+      ![1, -1] (fun i ↦ mul ℝ _ (2 * ![1, -1] i)) (fun _ ↦ ∑ j, proj j) (1 / 2) =
+      Prod.fst '' independentRows (Icc (-1) 1) (fun i j x ↦ 2 * ![1, -1] i * x j - 1)
+        fun _ ↦ 1 / 2 := by
+  simp only [directOuterApprox_sum_coord_eq_fst_image_independentRows,
+    componentRow_sq_one_neg_one]
+
+/-- Shared heights at the anchors `(1, 1)` and `(-1, -1)` with budget `1/2` enforce every mixed
+choice of anchors: the point `(1, -1/2)`, which satisfies both same-anchor sums, violates the
+choice of `(1, 1)` in the first coordinate and `(-1, -1)` in the second. -/
+theorem mem_directOuterApprox_and_notMem_fst_image_sharedOuterApprox_sq_sum_one_neg_one :
+    ![1, -1 / 2] ∈ directOuterApprox (Icc (-1) 1) (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2)
+        (fun y ↦ ∑ j, y j) ![1, -1] (fun i ↦ mul ℝ _ (2 * ![1, -1] i)) (fun _ ↦ ∑ j, proj j)
+        (1 / 2) ∧
+      ![1, -1 / 2] ∉ Prod.fst '' sharedOuterApprox (Icc (-1) 1) univ
+        (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) (fun y ↦ ∑ j, y j) ![1, -1]
+        (fun i ↦ mul ℝ _ (2 * ![1, -1] i)) (fun _ ↦ ∑ j, proj j) (1 / 2) := by
+  rw [fst_image_sharedOuterApprox_univ_sum_coord_eq_forall, directOuterApprox_sq_sum_one_neg_one]
+  refine ⟨⟨mem_Icc.2 ⟨fun j ↦ ?_, fun j ↦ ?_⟩, ?_⟩, fun ⟨_, h⟩ ↦ ?_⟩
+  · fin_cases j <;> norm_num
+  · fin_cases j <;> norm_num
+  · norm_num [abs_of_pos]
+  · have := h ![0, 1]
+    simp only [componentRow_sq_one_neg_one, Fin.sum_univ_two] at this
+    norm_num at this
 
 /-- The objective `-x₀ + x₁` attains its minimum `-2` on the direct set at the anchors `(1, 1)` and
 `(-1, -1)` with budget `1/2`, at the corner `(1, -1)`. -/
@@ -682,6 +729,29 @@ theorem originalSet_id_sq_two :
   simp [this, sq_le_one_iff_abs_le_one, abs_le]
 
 end Line
+
+/-! ### No anchors and the outer sum -/
+
+section NoAnchors
+
+variable (g : ℝ → Fin 1 → ℝ) (Dg : Fin 0 → ℝ →L[ℝ] Fin 1 → ℝ)
+
+/-- Without anchors the shared approximation imposes no budget on the heights, while `sharedRows`
+always imposes `∑ j, y j ≤ b`: for the outer sum with budget `0`, the height `1` is shared but not
+a shared support row height. So the identification of the shared approximation with `sharedRows`
+needs at least one anchor. -/
+theorem sharedOuterApprox_sum_coord_ne_sharedRows_of_isEmpty :
+    sharedOuterApprox univ univ g (fun y ↦ ∑ j, y j) Fin.elim0 Dg (fun _ ↦ ∑ j, proj j) 0 ≠
+      sharedRows univ (fun j i x ↦ componentRow g (Fin.elim0 i) (Dg i) x j)
+        (fun _ ↦ Finset.univ) 0 := by
+  intro h
+  have hz : ((0 : ℝ), (1 : Fin 1 → ℝ)) ∈ sharedOuterApprox univ univ g (fun y ↦ ∑ j, y j)
+      Fin.elim0 Dg (fun _ ↦ ∑ j, proj j) 0 := by
+    simp
+  rw [h, mem_sharedRows_iff] at hz
+  norm_num at hz
+
+end NoAnchors
 
 /-! ### No height coordinates -/
 

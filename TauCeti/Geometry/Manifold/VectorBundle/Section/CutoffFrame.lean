@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Ba
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ComplexModule
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
 /-!
 # Cut-off frames of a vector bundle
@@ -24,6 +25,14 @@ Multiplying by a smooth function `ψ` supported in the base set turns it into gl
   `x ↦ χ(x) ℓ(tₓ (h x))` of a smooth section `h`, for a complex-linear functional `ℓ` on the model
   fibre (`Bundle.Trivialization.cutoffFrameCoeff`), is a smooth complex-valued function on `M`,
   complex-linear in `h`.
+
+For a basis `(bᵢ)` of the model fibre and `ψ = 1` on the support of `ρ`, the cut-off frame sections
+`ψ t⁻¹ bᵢ` with the coefficients `ρ bᵢ*(t h)` add up to `ρ h`
+(`Bundle.Trivialization.sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply`). Over a compact set
+`K` finitely many trivializations and a partition of unity then write every section as a finite
+sum of cut-off frame sections with cut-off frame coefficients
+(`IsCompact.exists_sum_sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply`). This is how an
+operator out of the sections of a bundle is split into its matrix entries near `K`.
 
 These read operators between sections of bundles as matrices of operators on functions, without
 restricting to the base set of a trivialization: the entries of an operator `P` are the operators
@@ -48,7 +57,9 @@ public section
 noncomputable section
 
 open Bundle Set
-open scoped ContDiff Distributions Manifold SchwartzMap
+open scoped ContDiff Distributions Manifold SchwartzMap Topology
+
+universe u
 
 namespace Bundle.Trivialization
 
@@ -147,7 +158,7 @@ theorem cutoffFrameSection_apply_eq_symmL (g : C^n⟮I, M; ℝ⟯) (hg : tsuppor
 /-- In one trivialization `t`, with the same function `g` cutting off the frame and the
 coefficients, the cut-off frame sections `g t⁻¹ bⱼ` multiplied by the cut-off frame coefficients
 `g bⱼ*(t h)` add up to `g² h`. -/
-private theorem sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply [FiniteDimensional ℂ W]
+private theorem sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply_sq [FiniteDimensional ℂ W]
     (g : C^n⟮I, M; ℝ⟯) (hg : tsupport g ⊆ t.baseSet) {κ : Type*} [Fintype κ]
     (b : Module.Basis κ ℂ W) (h : Cₛ^n⟮I; W, F⟯) (x : M) :
     ∑ j, t.cutoffFrameCoeff g hg (b.coord j).toContinuousLinearMap h x •
@@ -168,6 +179,27 @@ private theorem sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply [FiniteDimens
       map_smul, t.symmL_continuousLinearMapAt hx]
   · have hgx : g x = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hx (hg h)
     simp [hgx]
+
+
+/-- **A section in a cut-off frame.** Let `ρ` be a real `C^n` function supported in the base set of
+`t`, `ψ` one supported there and equal to `1` on the support of `ρ`, and `(bᵢ)` a basis of the
+model fibre `W` with coordinate functionals `bᵢ*`. For every `C^n` section `h` of `F`, the cut-off
+frame sections `ψ t⁻¹ bᵢ` multiplied by the cut-off frame coefficients `ρ bᵢ*(t h)` add up to
+`ρ h`. -/
+theorem sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply [FiniteDimensional ℂ W]
+    (ρ : C^n⟮I, M; ℝ⟯) (hρ : tsupport ρ ⊆ t.baseSet) (ψ : C^n⟮I, M; ℝ⟯)
+    (hψ : tsupport ψ ⊆ t.baseSet) (hψρ : ∀ x ∈ tsupport ρ, ψ x = 1) {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι ℂ W) (h : Cₛ^n⟮I; W, F⟯) (x : M) :
+    (∑ i, t.cutoffFrameCoeff ρ hρ (b.coord i).toContinuousLinearMap h •
+      t.cutoffFrameSection ψ hψ (b i)) x = (ρ x : ℂ) • h x := by
+  rw [ContMDiffSection.coe_sum, Finset.sum_apply]
+  by_cases hx : ρ x = 0
+  · simp [hx]
+  have hxt : x ∈ t.baseSet := hρ (subset_tsupport _ hx)
+  conv_rhs => rw [← t.symmL_continuousLinearMapAt (R := ℂ) hxt (h x),
+    ← b.sum_repr (t.continuousLinearMapAt ℂ x (h x)), map_sum, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp [hψρ x (subset_tsupport _ hx), ← t.symmL_apply (R := ℂ) hxt, mul_smul, Complex.real_smul]
 
 end Coeff
 
@@ -192,10 +224,59 @@ theorem _root_.ContMDiffSection.eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection
   ext x
   simp only [ContMDiffSection.coe_sum, Finset.sum_apply,
     ContMDiffSection.smul_apply_of_normedAlgebra,
-    sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply, ← Finset.sum_smul]
+    sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply_sq, ← Finset.sum_smul]
   by_cases hx : h x = 0
   · simp [hx]
   rw [← Complex.ofReal_sum, hh x hx, Complex.ofReal_one, one_smul]
+
+section Compact
+
+variable {EM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [FiniteDimensional ℝ EM]
+  {HM : Type*} [TopologicalSpace HM] {I : ModelWithCorners ℝ EM HM} {M : Type u}
+  [TopologicalSpace M] [ChartedSpace HM M] [T2Space M] [IsManifold I ∞ M]
+  {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [FiniteDimensional ℂ W]
+  {F : M → Type*} [TopologicalSpace (TotalSpace W F)] [∀ x, AddCommGroup (F x)]
+  [∀ x, Module ℝ (F x)] [∀ x, Module ℂ (F x)] [∀ x, TopologicalSpace (F x)] [FiberBundle W F]
+  [VectorBundle ℝ W F] [VectorBundle ℂ W F] [ContMDiffVectorBundle ∞ W F I]
+
+/-- **Cut-off frames over a compact set.** Let `K` be a compact subset of `M` and `(bⱼ)` a basis of
+the model fibre `W` with coordinate functionals `bⱼ*`. There are finitely many points `cᵢ` and
+smooth real functions `ρᵢ`, `ψᵢ` supported in the base sets of the trivializations `tᵢ` of `F` at
+`cᵢ`, such that every smooth section `h` of `F` agrees on `K` with the finite sum of the cut-off
+frame sections `ψᵢ tᵢ⁻¹ bⱼ` multiplied by the cut-off frame coefficients `ρᵢ bⱼ*(tᵢ h)`. -/
+theorem _root_.IsCompact.exists_sum_sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply
+    {K : Set M} (hK : IsCompact K) {ι' : Type*} [Fintype ι'] (b : Module.Basis ι' ℂ W) :
+    ∃ (ι : Type u) (_ : Fintype ι) (c : ι → M) (ρ ψ : ι → C^∞⟮I, M; ℝ⟯)
+      (hρ : ∀ i, tsupport (ρ i) ⊆ (trivializationAt W F (c i)).baseSet)
+      (hψ : ∀ i, tsupport (ψ i) ⊆ (trivializationAt W F (c i)).baseSet),
+      ∀ (h : Cₛ^∞⟮I; W, F⟯), ∀ x ∈ K,
+        (∑ i, ∑ j, (trivializationAt W F (c i)).cutoffFrameCoeff (ρ i) (hρ i)
+          (b.coord j).toContinuousLinearMap h •
+            (trivializationAt W F (c i)).cutoffFrameSection (ψ i) (hψ i) (b j)) x = h x := by
+  -- A finite partition of unity `ρᵢ` on `K` subordinate to the base sets of trivializations, and
+  -- cutoffs `ψᵢ` equal to `1` near the compact supports of the `ρᵢ`.
+  obtain ⟨ι, _, f, hf⟩ := hK.exists_smoothBumpCovering_isSubordinate I
+    (U := fun x ↦ (trivializationAt W F x).baseSet) fun x _ ↦
+      (trivializationAt W F x).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt W F x)
+  set ρ := f.toSmoothPartitionOfUnity
+  have hρ (i : ι) : tsupport (ρ i) ⊆ (trivializationAt W F (f.c i)).baseSet :=
+    hf.toSmoothPartitionOfUnity i
+  have hρc (i : ι) : IsCompact (tsupport (ρ i)) :=
+    (f i).hasCompactSupport.isCompact.of_isClosed_subset (isClosed_tsupport _)
+      (closure_mono (f.support_toSmoothPartitionOfUnity_subset i))
+  choose ψ hψ hψ1 _ hψt _ using fun i ↦ (hρc i).exists_contMDiff_one_nhds_tsupport_subset I
+    (trivializationAt W F (f.c i)).open_baseSet (hρ i)
+  set ψ' : ι → C^∞⟮I, M; ℝ⟯ := fun i ↦ ⟨ψ i, hψ i⟩
+  refine ⟨ι, inferInstance, f.c, fun i ↦ ρ i, ψ', hρ, hψt, fun h x hx ↦ ?_⟩
+  have hsum (i : ι) :=
+    (trivializationAt W F (f.c i)).sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply
+      (ρ i) (hρ i) (ψ' i) (hψt i) (fun y hy ↦ (hψ1 i).self_of_nhdsSet y hy) b h x
+  rw [ContMDiffSection.coe_sum, Finset.sum_apply, Finset.sum_congr rfl fun i _ ↦ hsum i,
+    ← Finset.sum_smul, ← Complex.ofReal_sum, ← finsum_eq_sum_of_fintype, ρ.sum_eq_one hx,
+    Complex.ofReal_one, one_smul]
+
+end Compact
 
 section ChartCutoff
 

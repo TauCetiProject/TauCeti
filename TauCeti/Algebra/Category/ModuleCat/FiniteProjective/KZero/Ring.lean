@@ -25,6 +25,7 @@ and `N`. Extension of scalars along a ring homomorphism of commutative rings pre
 * `TauCeti.FiniteProjectiveModules.splitK0_of_self`: `[R] = 1`.
 * `TauCeti.FiniteProjectiveModules.splitK0_of_fin`: `[Rⁿ] = n`.
 * `TauCeti.FiniteProjectiveModules.splitK0_of_tensorProduct`: `[M ⊗[R] N] = [M] * [N]`.
+* `TauCeti.FiniteProjectiveModules.splitK0_of_eq_classOf_add`: `[M] = ([M] - n[R]) + n`.
 * `TauCeti.SplitK0.map_extendScalars_one`: extension of scalars sends `1 = [R]` to `1 = [S]`.
 
 ## References
@@ -71,6 +72,13 @@ theorem splitK0_of_tensorProduct (M N : Type u) [AddCommGroup M] [Module R M] [M
     SplitK0.of.{u} (of R (M ⊗[R] N)) = SplitK0.of.{u} (of R M) * SplitK0.of.{u} (of R N) :=
   (SplitK0.of_congr (ObjectProperty.isoMk _ (LinearEquiv.refl R (M ⊗[R] N)).toModuleIso)).trans
     (SplitK0.of_mul_of _ _).symm
+
+/-- The class of a finite projective module `M` is its reduced class `[M] - n[R]`
+(`TauCeti.FiniteProjectiveModules.classOf`) plus the integer `n` in the ring projective `K₀`. -/
+theorem splitK0_of_eq_classOf_add (M : Type u) [AddCommGroup M] [Module R M] [Module.Finite R M]
+    [Module.Projective R M] (n : ℕ) :
+    SplitK0.of.{u} (of R M) = classOf R M n + n := by
+  rw [classOf_def, splitK0_of_self, nsmul_one, sub_add_cancel]
 
 end FiniteProjectiveModules
 

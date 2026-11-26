@@ -41,8 +41,9 @@ Morse–Smale pair on a compact orientable surface vanishes as soon as `f` has a
 point of index `2` and at most one of index `0`
 (`IsMorseSmale.signedMorseBoundary_eq_zero_of_finrank_eq_two`),
 with coefficients in any ring and whatever the orientations `𝔬`. The standard Morse function on the
-torus is such a function (`IsMorseSmale.signedMorseBoundary_sphereHeight_comp_fst_add_comp_snd`):
-its integral Morse complex is free on one generator in degrees `0` and `2` and two in degree `1`,
+torus is such a function
+(`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_sphereHeight_comp_fst_add_comp_snd`): its
+integral Morse complex is free on one generator in degrees `0` and `2` and two in degree `1`,
 with zero differential, and its homology is the integral homology `ℤ, ℤ², ℤ` of the torus.
 
 ## Main results
