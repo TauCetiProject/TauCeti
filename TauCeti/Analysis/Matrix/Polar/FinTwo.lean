@@ -125,7 +125,7 @@ theorem coe_polarRetraction_fin_two (g : SpecialLinearGroup (Fin 2) 𝕜) :
   have hP : CFC.sqrt H * ((√(t + 2))⁻¹ • ((t + 1) • (1 : Matrix (Fin 2) (Fin 2) 𝕜) - H)) = 1 := by
     have h : (H + 1) * ((t + 1) • (1 : Matrix (Fin 2) (Fin 2) 𝕜) - H) =
         (t + 2) • (1 : Matrix (Fin 2) (Fin 2) 𝕜) := by
-      rw [mul_sub, add_mul, add_mul, hCH, mul_smul_comm, mul_smul_comm, mul_one, one_mul, one_mul]
+      simp only [mul_sub, add_mul, hCH, mul_smul_comm, mul_one, one_mul]
       module
     rw [hsqrt, smul_mul_smul, h, smul_smul]
     field_simp
@@ -135,8 +135,8 @@ theorem coe_polarRetraction_fin_two (g : SpecialLinearGroup (Fin 2) 𝕜) :
           ((√(t + 2))⁻¹ • ((t + 1) • (1 : Matrix (Fin 2) (Fin 2) 𝕜) - H))) := by
         rw [hP, mul_one]
     _ = _ := by
-      rw [← mul_assoc, hHdef, coe_polarRetraction_mul_sqrt_star_mul_self, mul_smul_comm, mul_sub,
-        mul_smul_comm, mul_one, mul_assoc]
+      rw [← mul_assoc, hHdef, coe_polarRetraction_mul_sqrt_star_mul_self]
+      simp [mul_sub, mul_assoc]
 
 /-- For `0 ≤ s ≤ 1`, the point `(1 - s) • √(gᴴ g) + s • 1` of the segment from the positive factor
 of `g` to `1` is positive definite. -/
@@ -171,9 +171,8 @@ private theorem posDef_segmentFactor (g : SpecialLinearGroup (Fin 2) 𝕜) (s : 
 private theorem det_segmentFactor (g : SpecialLinearGroup (Fin 2) 𝕜) (s : I) :
     (segmentFactor g s).det = 1 := by
   obtain ⟨d, hd0, hd⟩ := RCLike.pos_iff_exists_ofReal.mp (posDef_segment g s).det_pos
-  rw [segmentFactor, RCLike.real_smul_eq_coe_smul (K := 𝕜), det_smul, Fintype.card_fin, ← hd,
-    RCLike.ofReal_re, ← RCLike.ofReal_pow, inv_pow, Real.sq_sqrt hd0.le, ← RCLike.ofReal_mul,
-    inv_mul_cancel₀ hd0.ne', RCLike.ofReal_one]
+  rw [segmentFactor, RCLike.real_smul_eq_coe_smul (K := 𝕜), det_smul, ← hd]
+  simp [← RCLike.ofReal_pow, hd0.le, hd0.ne']
 
 private theorem segmentFactor_zero (g : SpecialLinearGroup (Fin 2) 𝕜) :
     segmentFactor g 0 = CFC.sqrt (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g) := by

@@ -29,9 +29,9 @@ namespace TauCeti.PolarFinTwoExample
 
 example : (√(RCLike.re (1 : Matrix (Fin 2) (Fin 2) ℂ).trace + 2))⁻¹ •
     ((1 : Matrix (Fin 2) (Fin 2) ℂ) + 1) = 1 := by
-  rw [trace_one, Fintype.card_fin, Nat.cast_ofNat, RCLike.ofNat_re,
-    show (2 + 2 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq zero_le_two, ← two_smul ℝ, smul_smul,
-    inv_mul_cancel₀ two_ne_zero, one_smul]
+  rw [show RCLike.re (1 : Matrix (Fin 2) (Fin 2) ℂ).trace + 2 = 2 ^ 2 by simp; norm_num,
+    Real.sqrt_sq zero_le_two, ← two_smul ℝ, smul_smul]
+  norm_num
 
 example (s : I) : polarSegmentHomotopy ℂ (s, 1) = 1 :=
   (polarSegmentHomotopy ℂ).eq_fst s ⟨1, map_one _⟩
@@ -88,10 +88,10 @@ example : (!![2, 0; 0, 1 / 2] : Matrix (Fin 2) (Fin 2) ℂ) * !![2, 0; 0, 1 / 2]
   · norm_num [det_fin_two_of]
 
 example : (polarRetraction (Fin 2) ℂ diagTwoHalf : Matrix (Fin 2) (Fin 2) ℂ) = 1 := by
-  rw [coe_polarRetraction_fin_two, mul_assoc, star_mul_self_diagTwoHalf, trace_fin_two_of,
-    show RCLike.re (4 + 1 / 4 : ℂ) + 2 = (5 / 2) ^ 2 by norm_num, Real.sqrt_sq (by norm_num),
-    show RCLike.re (4 + 1 / 4 : ℂ) = 17 / 4 by norm_num, coe_diagTwoHalf, mul_fin_two]
+  rw [coe_polarRetraction_fin_two, mul_assoc, star_mul_self_diagTwoHalf, coe_diagTwoHalf,
+    show RCLike.re (!![4, 0; 0, 1 / 4] : Matrix (Fin 2) (Fin 2) ℂ).trace + 2 = (5 / 2) ^ 2 by
+      norm_num [trace_fin_two_of], Real.sqrt_sq (by norm_num)]
   ext i j
-  fin_cases i <;> fin_cases j <;> norm_num
+  fin_cases i <;> fin_cases j <;> norm_num [trace_fin_two_of, mul_fin_two]
 
 end TauCeti.PolarFinTwoExample
