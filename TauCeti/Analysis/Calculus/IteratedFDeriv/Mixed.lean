@@ -277,7 +277,7 @@ theorem mixedIteratedFDeriv_fderiv_apply_of_mem {n a : ℕ} (ha : a ≤ n) {f : 
 /-- **A horizontal derivative raises the horizontal order.** For `a ≤ n`, `f` of class `Cⁿ⁺¹` at
 `x` and a horizontal vector `e ∈ Vᗮ`, the mixed derivative of order `(a, n - a)` of the derivative
 of `f` along `e` is the mixed derivative of order `(a + 1, n - a)` of `f` with `e` inserted in
-slot `a`, the first normal slot. -/
+slot `a`, the last horizontal slot. -/
 theorem mixedIteratedFDeriv_fderiv_apply_of_mem_orthogonal {n a : ℕ} (ha : a ≤ n) {f : E → F}
     {x : E} (hf : ContDiffAt ℝ (n + 1) f x) {e : E} (he : e ∈ Vᗮ) (m : Fin n → E) :
     V.mixedIteratedFDeriv n a (fun y ↦ fderiv ℝ f y e) x m =

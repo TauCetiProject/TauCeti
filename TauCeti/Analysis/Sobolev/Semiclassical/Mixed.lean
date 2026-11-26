@@ -54,10 +54,10 @@ At scale one the mixed norm is equivalent to the ordinary Sobolev norm
 (`Submodule.memLp_iteratedFDeriv_and_semiclassicalSobolevNorm_one_le`,
 `Submodule.mixedSemiclassicalSobolevNorm_one_le_mul_semiclassicalSobolevNorm_one`). Together with
 the dilation identity this gives the **Sobolev embedding uniformly in the scale**: if `2j > dim E`,
-then `|f(x)| ≤ C ‖f‖_{j,h,V}` for every `h > 0`, with `C` independent of `h`
-(`Submodule.exists_norm_le_mul_mixedSemiclassicalSobolevNorm`). This is the pointwise control of
-fields in the tube norms; the volume normalization `h^(-dim V / 2)` is the one that makes it
-uniform.
+then `|f(x)| ≤ C ‖f‖_{j,h,V}` for every real-valued `f` and every `h > 0`, with `C` independent of
+`h` (`Submodule.exists_norm_le_mul_mixedSemiclassicalSobolevNorm`). This is the pointwise control
+of real-valued functions in the tube norms; the volume normalization `h^(-dim V / 2)` is the one
+that makes it uniform.
 
 **Derivatives.** A horizontal derivative is bounded from order `j + 1` to order `j` with no loss
 in `h`, `‖∂_e f‖_{j,h,V} ≤ ‖e‖ ‖f‖_{j+1,h,V}` for `e ∈ Vᗮ`
@@ -374,9 +374,9 @@ theorem mixedSemiclassicalSobolevNorm_one_le_mul_semiclassicalSobolevNorm_one {j
         exact_mod_cast Nat.succ_le_succ hn
 
 /-- **The Sobolev embedding for the mixed norms, uniformly in the scale.** If `2j > dim E`, there
-is a constant `C ≥ 0` such that for every `h > 0` and every function `f` of class `Cʲ` whose mixed
-derivatives through total order `j` are square integrable, `|f(x)| ≤ C ‖f‖_{j,h,V}` at every
-point. -/
+is a constant `C ≥ 0` such that for every `h > 0` and every real-valued function `f` of class
+`Cʲ` whose mixed derivatives through total order `j` are square integrable,
+`|f(x)| ≤ C ‖f‖_{j,h,V}` at every point. -/
 theorem exists_norm_le_mul_mixedSemiclassicalSobolevNorm {j : ℕ} (hj : finrank ℝ E < 2 * j) :
     ∃ C, 0 ≤ C ∧ ∀ h : ℝ, 0 < h → ∀ f : E → ℝ, ContDiff ℝ j f →
       (∀ n ≤ j, ∀ a ≤ n, MemLp (V.mixedIteratedFDeriv n a f) 2) →
