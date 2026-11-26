@@ -52,12 +52,13 @@ theorem apply_eq_zero_of_mem_restrictedRoots_of_mem_center [IsDomain R] [IsTorsi
 and `H ∈ 𝔞` with `μ(H) ≠ 0`, `x = μ(H)⁻¹ [H, x]`. -/
 theorem restrictedRootSpace_le_derived {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
     {𝔞 : Submodule K L} {μ : Dual K 𝔞} (hμ : μ ≠ 0) :
-    𝔞.restrictedRootSpace μ ≤ (⁅(⊤ : LieIdeal K L), ⊤⁆ : LieIdeal K L).toSubmodule := by
+    𝔞.restrictedRootSpace μ ≤ (derivedSeries K L 1).toSubmodule := by
   intro x hx
   obtain ⟨H, hH⟩ := not_forall.mp (mt LinearMap.ext hμ)
   have hx' : x = (μ H)⁻¹ • ⁅(H : L), x⁆ := by
     rw [mem_restrictedRootSpace.mp hx H, smul_smul, inv_mul_cancel₀ hH, one_smul]
-  rw [hx', LieSubmodule.mem_toSubmodule]
+  rw [hx', LieSubmodule.mem_toSubmodule, derivedSeries_def, derivedSeriesOfIdeal_succ,
+    derivedSeriesOfIdeal_zero]
   exact Submodule.smul_mem _ _
     (LieSubmodule.lie_mem_lie (LieSubmodule.mem_top _) (LieSubmodule.mem_top _))
 
