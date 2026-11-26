@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Symplectic.Liouville.Collar
 public import TauCeti.Geometry.Symplectic.Liouville.Completion
 public import TauCeti.Geometry.Symplectic.Liouville.Flow.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
@@ -55,8 +56,6 @@ along the boundary `{0} × S`.
 
 ## Main results
 
-* `PartialDiffeomorph.isContactForm_of_mpullback_eq_symplectization`: the boundary form of a
-  Liouville collar is a contact form.
 * `PartialDiffeomorph.isNondegenerate_mextDerivₗ_glueForm`: the glued two-form is nondegenerate.
 * `PartialDiffeomorph.mfderiv_glueInr_apply_prodVectorField`: on the end, the Liouville field of
   the glued primitive is `∂_t`.
@@ -196,39 +195,6 @@ private theorem compl_image_glueInr_Ioi_eq_setOf_extend_le {c : ℝ} (hc : c ≤
 
 variable [IsManifold J ∞ S] [IsManifold (𝓘(ℝ).prod J) ∞ X]
   {α : SmoothForm (𝓘(ℝ).prod J) X ℝ 1} {β : SmoothForm J S ℝ 1}
-
-/-! ### The Liouville collar -/
-
-/-- **The boundary form of a Liouville collar is a contact form.** If `Φ` pulls `α` back to the
-symplectization form `eᵗ β` on its source, `dα` is nondegenerate, and the source meets every line
-`ℝ × {s}`, then `β` is a contact form: at a point of the source, `d(eᵗ β)` is the pullback of the
-nondegenerate form `dα` along a local diffeomorphism. -/
-theorem isContactForm_of_mpullback_eq_symplectization
-    (hα : SmoothTwoForm.IsNondegenerate (mextDerivₗ (𝓘(ℝ).prod J) 1 α))
-    (hαβ : ∀ y ∈ Φ.source,
-      mpullback (𝓘(ℝ).prod J) (𝓘(ℝ).prod J) Φ α.val y = β.symplectization.val y)
-    (hs : ∀ s : S, ∃ t : ℝ, (t, s) ∈ Φ.source) : β.IsContactForm := by
-  rw [SmoothForm.isContactForm_iff_forall_isContactFormAt]
-  intro s
-  obtain ⟨t, ht⟩ := hs s
-  rw [← SmoothForm.nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff β (t, s),
-    LinearMap.BilinForm.Nondegenerate,
-    (SmoothForm.isAlt_bilinFormAt _ (t, s)).isRefl.nondegenerate_iff_separatingLeft]
-  intro v hv
-  have hinv := Φ.isInvertible_mfderiv (by simp) ht
-  refine (injective_iff_map_eq_zero _).1 hinv.injective v
-    (SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 hα (Φ (t, s)) _ fun w ↦ ?_)
-  obtain ⟨u, rfl⟩ := hinv.surjective w
-  -- `dα(dΦ v, dΦ u) = (Φ^* dα)(v, u) = d(eᵗ β)(v, u) = 0`.
-  have hvu : (fun i ↦ mfderiv (𝓘(ℝ).prod J) (𝓘(ℝ).prod J) Φ (t, s) (![v, u] i)) =
-      ![mfderiv (𝓘(ℝ).prod J) (𝓘(ℝ).prod J) Φ (t, s) v,
-        mfderiv (𝓘(ℝ).prod J) (𝓘(ℝ).prod J) Φ (t, s) u] := by
-    ext i
-    fin_cases i <;> rfl
-  have h := hv u
-  rw [SmoothForm.bilinFormAt_apply, SmoothBundleForm.eval₂_apply,
-    ← Φ.mpullback_mextDerivₗ_apply hαβ ht, mpullback_apply, hvu] at h
-  rwa [SmoothBundleForm.eval₂_apply]
 
 variable [ChartedSpace (ModelProd ℝ G) Φ.toOpenPartialHomeomorph.glueData.toGlueData.glued]
   [IsManifold (𝓘(ℝ).prod J) ∞ Φ.toOpenPartialHomeomorph.glueData.toGlueData.glued]
