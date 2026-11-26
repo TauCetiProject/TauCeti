@@ -88,21 +88,21 @@ private theorem eq_of_max_le_fst_positiveEndCoord {J J' : ℝ × ℝ → V → A
 /-- **Continuity of the coefficient fields along a family of data in `L^∞`.** Let
 `(J_μ, K_{s,μ}, K_{t,μ})` be a family of Floer data on `S`, `C¹` (with `C²` Hamiltonians) jointly in
 the parameter `μ`, the domain point and the target point along the graph of a map `u` which is `C¹`
-on `S`, and independent of `μ` outside the truncation `S_R`. If the coefficient fields on conformal
-jets of the data at every `μ` are almost everywhere strongly measurable on `S`, then they depend
-continuously on `μ` in `L^∞(S)`. -/
+on `S`, and equal outside the truncation `S_R` to the data at `lam`. If the coefficient fields on
+conformal jets of the data at every `μ` are almost everywhere strongly measurable on `S`, then they
+converge in `L^∞(S)` to the coefficient field at `lam` as `μ → lam`. -/
 private theorem tendsto_eLpNorm_floerConformalJetCoeff_family (ω : SymplecticForm V)
     {J : ℝ × (ℝ × ℝ) → V → V →L[ℝ] V} {Ks Kt : ℝ × (ℝ × ℝ) → V → ℝ} {R : ℝ} {u : ℝ × ℝ → V}
     (hJ : ∀ μ, ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 (uncurry J) ((μ, z), u z))
     (hKs : ∀ μ, ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) ((μ, z), u z))
     (hKt : ∀ μ, ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) ((μ, z), u z))
-    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
-    (heq : ∀ μ lam, ∀ z ∈ thricePuncturedSphereReal,
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {lam : ℝ}
+    (heq : ∀ μ, ∀ z ∈ thricePuncturedSphereReal,
       z ∉ Complex.equivRealProdCLM.symm ⁻¹' truncation R →
         J (μ, z) = J (lam, z) ∧ Ks (μ, z) = Ks (lam, z) ∧ Kt (μ, z) = Kt (lam, z))
     (hmeas : ∀ μ, AEStronglyMeasurable (ω.floerConformalJetCoeff cylindricalWeight
       (fun z ↦ J (μ, z)) (fun z ↦ Ks (μ, z)) (fun z ↦ Kt (μ, z)) u)
-        (volume.restrict thricePuncturedSphereReal)) (lam : ℝ) :
+        (volume.restrict thricePuncturedSphereReal)) :
     Tendsto (fun μ ↦ eLpNorm (ω.floerConformalJetCoeff cylindricalWeight (fun z ↦ J (μ, z))
       (fun z ↦ Ks (μ, z)) (fun z ↦ Kt (μ, z)) u - ω.floerConformalJetCoeff cylindricalWeight
         (fun z ↦ J (lam, z)) (fun z ↦ Ks (lam, z)) (fun z ↦ Kt (lam, z)) u) ∞
@@ -110,15 +110,15 @@ private theorem tendsto_eLpNorm_floerConformalJetCoeff_family (ω : SymplecticFo
   refine tendsto_eLpNorm_top_sub_of_continuousAt_of_eq
     (M := fun μ ↦ ω.floerConformalJetCoeff cylindricalWeight (fun z ↦ J (μ, z))
       (fun z ↦ Ks (μ, z)) (fun z ↦ Kt (μ, z)) u)
-    isOpen_thricePuncturedSphereReal.measurableSet (isCompact_preimage_truncation R) hmeas
-    (fun z hzK ↦ ?_) (fun μ lam' z hz hzK ↦ ?_)
+    isOpen_thricePuncturedSphereReal.measurableSet (isCompact_preimage_truncation R)
+    (.of_forall hmeas) (fun z hzK ↦ ?_) (.of_forall fun μ z hz hzK ↦ ?_)
   -- On the compact truncation `S_R` the coefficient field is jointly continuous in `(μ, z)`.
   · have hz := preimage_truncation_subset_thricePuncturedSphereReal R hzK
     exact continuousAt_floerConformalJetCoeff_family ω (hJ lam z hz) (hKs lam z hz)
       (hKt lam z hz) (hu z hz) (isWeight_cylindricalWeight.continuousOn.continuousAt
         (isOpen_thricePuncturedSphereReal.mem_nhds hz)) (isWeight_cylindricalWeight.pos _ hz)
   -- Off the truncation the data, hence the coefficient fields, do not depend on `μ`.
-  · obtain ⟨hJz, hsz, htz⟩ := heq μ lam' z hz hzK
+  · obtain ⟨hJz, hsz, htz⟩ := heq μ z hz hzK
     exact ω.floerConformalJetCoeff_congr_data _ u hJz hsz htz
 
 /-- **The Fredholm property and the index along a family of data on the pair of pants.** Let
@@ -215,10 +215,10 @@ private theorem isFredholm_and_index_eq_of_family (ω : SymplecticForm V)
     exact (continuousOn_jetOperator (fun μ _ ↦ hM μ) fun lam _ ↦ tendsto_nhdsWithin_of_tendsto_nhds
       (tendsto_eLpNorm_floerConformalJetCoeff_family ω
         (J := fun p y ↦ (J p y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
-        (fun μ lam z hz hzK ↦ by
+        (fun μ z hz hzK ↦ by
           obtain ⟨hJz, hsz, htz⟩ := heq μ lam z hz hzK
           exact ⟨by rw [hJz], hsz, htz⟩)
-        (fun μ ↦ (hM μ).aestronglyMeasurable) lam)).clm_comp continuousOn_const
+        (fun μ ↦ (hM μ).aestronglyMeasurable))).clm_comp continuousOn_const
   have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := left_mem_Icc.2 zero_le_one
   have h1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
   have hFred (μ : ℝ) (hμ : μ ∈ Icc (0 : ℝ) 1) : (T μ).IsFredholm :=
