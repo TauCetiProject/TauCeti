@@ -50,7 +50,8 @@ This needs no compactness.
 * `OpenSubgroup.compactSpace_toSubgroup`: the underlying subgroup of an open subgroup of a
   compact group is compact.
 * `Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact`: an open subgroup has finite index in every
-  compact subgroup.
+  compact subgroup; `Subgroup.isFiniteRelIndex_of_isOpen_of_isCompact` is the same fact as a
+  `Subgroup.IsFiniteRelIndex` statement.
 * `OpenSubgroup.finiteIndex_comap`: the preimage of an open subgroup of finite index under a
   continuous homomorphism has finite index.
 * `Subgroup.isOpen_normalCore`: the normal core of an open subgroup whose normalizer has finite
@@ -98,6 +99,15 @@ theorem Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact {G : Type*} [Group G]
   have := Subgroup.quotient_finite_of_isOpen _ (Subgroup.subgroupOf_isOpen U U' hU')
   rw [Subgroup.relIndex]
   exact Subgroup.index_ne_zero_of_finite
+
+/-- **An open subgroup has finite relative index in every compact subgroup**, in the form of the
+`Subgroup.IsFiniteRelIndex` class. No containment is assumed. -/
+@[to_additive /-- **An open additive subgroup has finite relative index in every compact additive
+subgroup**, in the form of the `AddSubgroup.IsFiniteRelIndex` class. No containment is assumed. -/]
+theorem Subgroup.isFiniteRelIndex_of_isOpen_of_isCompact {G : Type*} [Group G]
+    [TopologicalSpace G] [SeparatelyContinuousMul G] {U U' : Subgroup G}
+    (hU' : IsOpen (U' : Set G)) (hU : IsCompact (U : Set G)) : U'.IsFiniteRelIndex U :=
+  ⟨relIndex_ne_zero_of_isOpen_of_isCompact hU' hU⟩
 
 /-- **The preimage of an open subgroup of finite index has finite index.** Mathlib's instance
 for `Subgroup.comap` does not fire on `OpenSubgroup.comap` directly, since instance search does not

@@ -22,8 +22,8 @@ This file also records how membership in a double coset `HaK` interacts with mul
 
 * `DoubleCoset.doubleCoset_eq_iUnion_leftCosets`: `HaK` is the union of the left cosets
   `(h * a) • K`, `h` running over representatives of `H ⧸ (aKa⁻¹).subgroupOf H`.
-* `DoubleCoset.mul_mem_doubleCoset_iff`: membership in `HaK` is invariant under left
-  multiplication by `H`.
+* `DoubleCoset.mul_mem_doubleCoset_iff`, `DoubleCoset.mul_mem_doubleCoset_iff_right`: membership
+  in `HaK` is invariant under left multiplication by `H` and right multiplication by `K`.
 * `DoubleCoset.mul_mul_mem_doubleCoset`: membership in `HaK` is closed under left multiplication
   by `H` and right multiplication by `K`, for arbitrary subsemigroups `H` and `K`.
 * `DoubleCoset.mul_mem_doubleCoset_of_mem_right`: membership in `HaK` is closed under right
@@ -73,6 +73,16 @@ lemma mul_mem_doubleCoset_iff {H : Subgroup G} {K : Set G} {b : G} (hb : b ∈ H
     obtain ⟨x, hx, y, hy, rfl⟩ := mem_doubleCoset.mp hz
     exact mem_doubleCoset.mpr ⟨c * x, H.mul_mem hc hx, y, hy, by simp only [mul_assoc]⟩
   exact ⟨fun h ↦ by simpa using key (H.inv_mem hb) h, key hb⟩
+
+/-- **Membership in a double coset is invariant under right multiplication by the right
+subgroup.** -/
+lemma mul_mem_doubleCoset_iff_right {H : Set G} {K : Subgroup G} {b : G} (hb : b ∈ K) {a z : G} :
+    z * b ∈ doubleCoset a H (K : Set G) ↔ z ∈ doubleCoset a H (K : Set G) := by
+  have key {c z : G} (hc : c ∈ K) (hz : z ∈ doubleCoset a H (K : Set G)) :
+      z * c ∈ doubleCoset a H (K : Set G) := by
+    obtain ⟨x, hx, y, hy, rfl⟩ := mem_doubleCoset.mp hz
+    exact mem_doubleCoset.mpr ⟨x, hx, y * c, K.mul_mem hy hc, by simp only [mul_assoc]⟩
+  exact ⟨fun h ↦ by simpa using key (K.inv_mem hb) h, key hb⟩
 
 /-- **Membership in a double coset is closed under two-sided multiplication** by the bounding
 subsemigroups. -/
