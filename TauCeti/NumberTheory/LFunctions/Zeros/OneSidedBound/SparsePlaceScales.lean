@@ -47,8 +47,8 @@ theorem eventually_sparse_place_parameter_bounds {δ : ℝ} (hδ : 0 < δ) (hδl
   have hlog₂ : 0 < log 2 := log_pos (by norm_num)
   have hC : 0 < C := by dsimp [C]; positivity
   have hcap := ((isLittleO_log_rpow_rpow_atTop n hδ).const_mul_left ((2 * C) ^ n)).eventuallyLE
-  have hcost := ((isLittleO_log_rpow_atTop (show 0 < δ * 3 by positivity)).const_mul_left
-    (3 * C * n * 2 ^ n)).eventuallyLE
+  have hδ3 : 0 < δ * 3 := by positivity
+  have hcost := ((isLittleO_log_rpow_atTop hδ3).const_mul_left (3 * C * n * 2 ^ n)).eventuallyLE
   refine ⟨n, hn₀, ?_⟩
   filter_upwards [eventually_gt_atTop (1 : ℝ), hcap, hcost] with x hx hcapₓ hcostₓ s hlow hupp
   have hx₀ : 0 < x := zero_lt_one.trans hx
