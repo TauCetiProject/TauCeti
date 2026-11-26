@@ -37,6 +37,9 @@ the image of an open `V` exactly when `y` lies in `V`.
   open set `U` is the image of a compact subset of `U` under its inclusion.
 * `IsOpenMap.apply_mem_functor_obj_iff`: for an injective open map `f`, the point `f y` lies in the
   image of an open `V` exactly when `y` lies in `V`.
+* `Homeomorph.opensCongr_inverse_refl`, `Homeomorph.opensCongr_inverse_trans`,
+  `Homeomorph.opensCongr_inverse_op_trans`: the inverse-opens functors of the order equivalences
+  `Homeomorph.opensCongr`, possibly across base universes, satisfy identity and composition laws.
 -/
 
 public section
@@ -104,5 +107,28 @@ theorem apply_mem_functor_obj_iff {X Y : TopCat.{u}} {f : Y ⟶ X} (hf : IsOpenM
   hf'.mem_set_image
 
 end IsOpenMap
+
+namespace Homeomorph
+
+variable {X : Type*} [TopologicalSpace X] {Y : Type*} [TopologicalSpace Y] (h : X ≃ₜ Y)
+
+/-- The inverse-opens functor of the identity homeomorphism is the native identity functor. -/
+theorem opensCongr_inverse_refl :
+    (Homeomorph.refl X).opensCongr.equivalence.inverse = 𝟭 (TopologicalSpace.Opens X) := by
+  rfl
+
+/-- Inverse-opens transport follows the actual composite in the contravariant order. -/
+theorem opensCongr_inverse_trans {Z : Type*} [TopologicalSpace Z] (k : Y ≃ₜ Z) :
+    (h.trans k).opensCongr.equivalence.inverse =
+      k.opensCongr.equivalence.inverse ⋙ h.opensCongr.equivalence.inverse := by
+  rfl
+
+/-- The actual inverse-opens precomposition functors compose in the same order after `op`. -/
+theorem opensCongr_inverse_op_trans {Z : Type*} [TopologicalSpace Z] (k : Y ≃ₜ Z) :
+    (h.trans k).opensCongr.equivalence.inverse.op =
+      k.opensCongr.equivalence.inverse.op ⋙ h.opensCongr.equivalence.inverse.op := by
+  rfl
+
+end Homeomorph
 
 end
