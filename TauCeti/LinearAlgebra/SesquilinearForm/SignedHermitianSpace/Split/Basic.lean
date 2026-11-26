@@ -32,7 +32,6 @@ bijective (`E` is artinian, `IsArtinian.bijective_of_injective_of_linearEquiv`).
 
 ## Main statements
 
-* `RingHomInvPair.of_forall_eq_swap`: the swap `(a, b) ↦ (b, a)` is an involution.
 * `TauCeti.SignedHermitianSpace.exists_linearEquiv_form_eq_sum_split`: the diagonal model.
 * `TauCeti.SignedHermitianSpace.equivalent_of_finrank_eq_split`: classification by the rank.
 * `TauCeti.SignedHermitianSpace.equivalent_of_equivalent_prod_split`: Witt cancellation over
@@ -47,11 +46,6 @@ bijective (`E` is artinian, `IsArtinian.bijective_of_injective_of_linearEquiv`).
 public section
 
 open Module
-
-/-- A ring endomorphism of `R × R` acting as the swap `(a, b) ↦ (b, a)` is an involution. -/
-theorem RingHomInvPair.of_forall_eq_swap {R : Type*} [Semiring R] {σ : R × R →+* R × R}
-    (hσ : ∀ x, σ x = x.swap) : RingHomInvPair σ σ :=
-  ⟨RingHom.ext fun x ↦ by simp [hσ], RingHom.ext fun x ↦ by simp [hσ]⟩
 
 namespace TauCeti
 

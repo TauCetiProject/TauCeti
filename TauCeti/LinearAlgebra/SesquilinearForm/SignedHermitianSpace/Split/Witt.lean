@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Split.Basic
 public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Witt.Decomposition
+import TauCeti.Algebra.Ring.Prod
 
 /-!
 # The Witt decomposition over the split quadratic algebra `F × F`

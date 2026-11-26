@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.CompTypeclasses
 public import Mathlib.Algebra.Ring.Invertible
+public import Mathlib.Algebra.Ring.Prod
 
 /-!
-# Sum and difference coordinates
+# Lemmas about the product ring `R × R`
 
 Over a ring with invertible `2`, the half-sum and half-difference of a pair
-have sum and difference equal to that pair.
+have sum and difference equal to that pair (`Prod.invOf_two_mul_add_sub`).
+A ring endomorphism of `R × R` acting as the swap `(a, b) ↦ (b, a)` is an involution
+(`RingHomInvPair.of_forall_eq_swap`).
 -/
 
 public section
@@ -27,3 +31,8 @@ theorem invOf_two_mul_add_sub (z : R × R) :
   ext <;> simp [← mul_add, ← mul_sub, ← two_mul]
 
 end Prod
+
+/-- A ring endomorphism of `R × R` acting as the swap `(a, b) ↦ (b, a)` is an involution. -/
+theorem RingHomInvPair.of_forall_eq_swap {R : Type*} [Semiring R] {σ : R × R →+* R × R}
+    (hσ : ∀ x, σ x = x.swap) : RingHomInvPair σ σ :=
+  ⟨RingHom.ext fun x ↦ by simp [hσ], RingHom.ext fun x ↦ by simp [hσ]⟩
