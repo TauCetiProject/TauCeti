@@ -42,7 +42,8 @@ Here `K` is Peetre's `K`-functional `CompatibleCouple.kFunctional` and `dt / t` 
   linear map of the real interpolation spaces. For any endpoint bounds `M₀`, `M₁` it multiplies
   the norm by at most `M₀ ^ (1 - θ) * M₁ ^ θ` (`KMethodSpace.norm_map_le`,
   `KMethodSpace.opNorm_map_le`; the underlying estimate `CompatibleCouple.kMethodENorm_map_le`
-  holds over any normed field). It respects identities and composition
+  holds over any normed field, and for additive maps between couples over different fields, such
+  as real-linear maps between a real and a complex couple). It respects identities and composition
   (`KMethodSpace.map_id`, `KMethodSpace.map_comp`). Thus the real method is an exact
   interpolation functor of exponent `θ`. Endpoint contractions induce a contraction
   (`KMethodSpace.norm_map_le_of_norm_le`).
@@ -556,14 +557,15 @@ end KMethodSpace
 
 section Map
 
-variable {Y₀ Y₁ W : Type*} [NormedAddCommGroup Y₀] [NormedSpace 𝕜 Y₀] [NormedAddCommGroup Y₁]
-  [NormedSpace 𝕜 Y₁] [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W] [ContinuousAdd W]
-  {D : CompatibleCouple 𝕜 Y₀ Y₁ W}
+variable {𝕜' Y₀ Y₁ W : Type*} [NormedField 𝕜'] [NormedAddCommGroup Y₀] [NormedSpace 𝕜' Y₀]
+  [NormedAddCommGroup Y₁] [NormedSpace 𝕜' Y₁] [AddCommGroup W] [Module 𝕜' W] [TopologicalSpace W]
+  [ContinuousAdd W] {D : CompatibleCouple 𝕜' Y₀ Y₁ W}
 
-/-- A linear map `T` between the sum spaces of two couples that restricts to maps
-`T₀ : X₀ → Y₀` and `T₁ : X₁ → Y₁` with `‖T₀ x‖ ≤ M₀ ‖x‖` and `‖T₁ x‖ ≤ M₁ ‖x‖`, where `M₀`, `M₁`
-are positive, multiplies the `K`-method norm by at most `M₀ ^ (1 - θ) * M₁ ^ θ`. -/
-theorem kMethodENorm_map_le (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X₀ → Y₀} {T₁ : X₁ → Y₁}
+/-- An additive map `T` between the sum spaces of two couples, possibly over different scalar
+fields, that restricts to maps `T₀ : X₀ → Y₀` and `T₁ : X₁ → Y₁` with `‖T₀ x‖ ≤ M₀ ‖x‖` and
+`‖T₁ x‖ ≤ M₁ ‖x‖`, where `M₀`, `M₁` are positive, multiplies the `K`-method norm by at most
+`M₀ ^ (1 - θ) * M₁ ^ θ`. -/
+theorem kMethodENorm_map_le (T : C.SumSpace →+ D.SumSpace) {T₀ : X₀ → Y₀} {T₁ : X₁ → Y₁}
     (hT₀ : ∀ x, T (C.fstToSum x) = D.fstToSum (T₀ x))
     (hT₁ : ∀ x, T (C.sndToSum x) = D.sndToSum (T₁ x)) {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
     (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) (u : C.SumSpace) :
@@ -598,13 +600,13 @@ theorem kMethodENorm_map_le (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X�
           (aestronglyMeasurable_rpow_neg_mul_kFunctional θ u) hmp,
           Real.eNorm_of_nonneg (by positivity), kMethodENorm]
 
-/-- **Retracts.** Let `P` be a linear map of sum spaces restricting to maps `P₀ : Y₀ → X₀` and
+/-- **Retracts.** Let `P` be an additive map of sum spaces restricting to maps `P₀ : Y₀ → X₀` and
 `P₁ : Y₁ → X₁` with `‖P₀ y‖ ≤ N₀ ‖y‖` and `‖P₁ y‖ ≤ N₁ ‖y‖`, where `N₀`, `N₁` are positive. If `P`
-is a left inverse of a linear map `I` of sum spaces, then the `K`-method norm of `u` is at most
+is a left inverse of an additive map `I` of sum spaces, then the `K`-method norm of `u` is at most
 `N₀ ^ (1 - θ) * N₁ ^ θ` times that of `I u`. When `I` is a morphism of couples as well,
 `kMethodENorm_map_le` gives the reverse estimate, so the two norms are equivalent. -/
-theorem kMethodENorm_le_of_leftInverse {I : C.SumSpace →ₗ[𝕜] D.SumSpace}
-    (P : D.SumSpace →ₗ[𝕜] C.SumSpace) {P₀ : Y₀ → X₀} {P₁ : Y₁ → X₁}
+theorem kMethodENorm_le_of_leftInverse {I : C.SumSpace →+ D.SumSpace}
+    (P : D.SumSpace →+ C.SumSpace) {P₀ : Y₀ → X₀} {P₁ : Y₁ → X₁}
     (hP₀ : ∀ y, P (D.fstToSum y) = C.fstToSum (P₀ y))
     (hP₁ : ∀ y, P (D.sndToSum y) = C.sndToSum (P₁ y)) (hPI : Function.LeftInverse P I)
     {N₀ N₁ : ℝ} (hN₀ : 0 < N₀) (hN₁ : 0 < N₁) (h₀ : ∀ y, ‖P₀ y‖ ≤ N₀ * ‖y‖)
@@ -638,7 +640,7 @@ theorem map_mem_kMethod (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X₀ �
     (hu : u ∈ C.kMethod θ q) : T u ∈ D.kMethod θ q := by
   obtain ⟨M₀, hM₀, h₀⟩ := T₀.bound
   obtain ⟨M₁, hM₁, h₁⟩ := T₁.bound
-  exact (kMethodENorm_map_le T hT₀ hT₁ hM₀ hM₁ h₀ h₁ u).trans_lt
+  exact (kMethodENorm_map_le T.toAddMonoidHom hT₀ hT₁ hM₀ hM₁ h₀ h₁ u).trans_lt
     (ENNReal.mul_lt_top ENNReal.ofReal_lt_top (mem_kMethod_iff.1 hu))
 
 namespace KMethodSpace
@@ -669,7 +671,8 @@ private theorem norm_mk_map_toSumₗ_le {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM
   rw [norm_mk, norm_def, ← ENNReal.toReal_ofReal (by positivity : 0 ≤ M₀ ^ (1 - θ) * M₁ ^ θ),
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-    (kMethodENorm_toSumₗ_lt_top u).ne) (kMethodENorm_map_le T hT₀ hT₁ hM₀ hM₁ h₀ h₁ _)
+    (kMethodENorm_toSumₗ_lt_top u).ne)
+    (kMethodENorm_map_le T.toAddMonoidHom hT₀ hT₁ hM₀ hM₁ h₀ h₁ _)
 
 /-- The continuous linear map `(X₀, X₁)_{θ,q} → (Y₀, Y₁)_{θ,q}` induced by a linear map `T` of
 sum spaces that restricts to continuous linear maps `T₀ : X₀ →L[𝕜] Y₀` and
