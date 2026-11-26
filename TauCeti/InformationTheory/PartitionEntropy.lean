@@ -51,8 +51,8 @@ of two labels `a`, `b` is the pair label `x ↦ (a x, b x)`.
   label.
 * `TauCeti.countablePartitionEntropy_congr_ae`, `TauCeti.conditionalPartitionEntropy_congr_ae`:
   almost-everywhere equal labels have equal entropy and conditional entropy.
-* `TauCeti.conditionalPartitionEntropy_comp_self`: the conditional entropy `H(a | f ∘ a)` of a
-  label given a coarsening of itself, as a sum over the atoms of `a`.
+* `TauCeti.conditionalPartitionEntropy_comp_right_self_eq_tsum`: the conditional entropy
+  `H(a | f ∘ a)` of a label given a coarsening of itself, as a sum over the atoms of `a`.
 * `TauCeti.tendsto_conditionalPartitionEntropy_min`: a label `a : X → ℕ` of finite entropy is
   approximated by its truncations, `H(a | min a N) → 0` as `N → ∞`.
 
@@ -250,7 +250,8 @@ theorem conditionalPartitionEntropy_self (μ : Measure X) (a : X → ι) :
 /-- The conditional entropy of a label given a coarsening `f ∘ a` of itself: each atom
 `a ⁻¹' {i}` lies in the atom `a ⁻¹' (f ⁻¹' {f i})` of the coarsening, and contributes
 `p_i log (q_i / p_i)`, with `p_i`, `q_i` the masses of the two atoms. -/
-theorem conditionalPartitionEntropy_comp_self (μ : Measure X) (a : X → ι) (f : ι → κ) :
+theorem conditionalPartitionEntropy_comp_right_self_eq_tsum (μ : Measure X) (a : X → ι)
+    (f : ι → κ) :
     conditionalPartitionEntropy μ a (f ∘ a) = ∑' i, ENNReal.ofReal (μ.real (a ⁻¹' {i}) *
       log (μ.real (a ⁻¹' (f ⁻¹' {f i})) / μ.real (a ⁻¹' {i}))) := by
   rw [conditionalPartitionEntropy_def, tsum_prod']
@@ -485,7 +486,7 @@ theorem tendsto_conditionalPartitionEntropy_min [IsZeroOrProbabilityMeasure μ] 
         mul_nonpos_of_nonneg_of_nonpos hp.le (log_nonpos (hp.le.trans hpr) measureReal_le_one)
       linarith
     calc conditionalPartitionEntropy μ a (fun x ↦ min (a x) N) = ∑' i, t i :=
-          conditionalPartitionEntropy_comp_self μ a fun j ↦ min j N
+          conditionalPartitionEntropy_comp_right_self_eq_tsum μ a fun j ↦ min j N
       _ = ∑' k, t (k + N) := by
           rw [← CompleteLattice.summable.sum_add_tsum_nat_add' (k := N), Finset.sum_eq_zero hlow,
             zero_add]
