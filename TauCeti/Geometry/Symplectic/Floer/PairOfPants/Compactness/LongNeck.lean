@@ -312,8 +312,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComp
     ((mem_truncation.1 (hΩT hz)).2.2 q).trans hL
   have hKb (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) (v : ℂ) : KR k v z = Kb v z := funext fun x ↦ by
     simp only [KR, Kb]
-    rw [cappedComparisonPerturbation_of_two_le H (hR2 k),
-      cappedPerturbation_eq_smul_pairOfPantsPerturbation (hσ hz (by linarith [hRT k])), one_smul]
+    rw [cappedComparisonPerturbation_eq_pairOfPantsPerturbation H (hR2 k)
+      fun q ↦ ((mem_truncation.1 (hΩT hz)).2.2 q).trans (hRT k)]
   have hJb (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) (x : V) :
       cappedComparisonAlmostComplex h₀ J hJ (R k) (equivRealProdCLM.symm z) x =
         cappedAlmostComplex h₀ J hJ 1 T (equivRealProdCLM.symm z) x := by

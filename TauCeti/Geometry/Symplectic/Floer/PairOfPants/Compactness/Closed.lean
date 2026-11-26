@@ -153,16 +153,13 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pairO
           ∀ z ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (φ n) z) atTop (𝓝 (v z)) := by
   -- Each component `z ↦ K_z(w)` of the perturbation is `C³` jointly in `z ∈ S` and the target
   -- point, so its Hamiltonian vector field is `C²` in every chart.
-  have hK (w : ℂ) (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :
-      ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
-        (uncurry fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x w) (z, x) :=
-    (((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
-      ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd).contMDiffAt).clm_apply contMDiffAt_const).of_le (by norm_num)
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset
     he he_inj isOpen_thricePuncturedSphereReal hD hDS hJ
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK 1))
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK Complex.I)) (fun z hz ↦ hJt z (hDS hz))
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2)
+      (contMDiffAt_pairOfPantsPerturbation_apply_equivRealProdCLM hH hHs 1))
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2)
+      (contMDiffAt_pairOfPantsPerturbation_apply_equivRealProdCLM hH hHs Complex.I))
+    (fun z hz ↦ hJt z (hDS hz))
     hc hJc hLs hLt
   refine ⟨δ, hδ, fun Ω u x A hΩ hΩD hu hfl hx hE hA htop ↦ ?_⟩
   have hΩS : Ω ⊆ thricePuncturedSphereReal := hΩD.trans hDS

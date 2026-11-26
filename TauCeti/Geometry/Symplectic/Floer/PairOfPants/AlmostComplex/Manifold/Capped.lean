@@ -193,6 +193,19 @@ theorem cappedAlmostComplex_cylindricalEndLift_add_endSign_mul (hJp : Function.P
     exact Floer.cappedAlmostComplex_cylindricalEndLift_add_endSign_mul (h₀.compatibleAt x)
       (fun t => by simp only [hJp t]) r hL hz ()
 
+/-- **The PSS plane pieces in coordinates independent of the neck length.** If `J q` has period one
+in `t`, then at the center `c_q` of the end `q`, its pole for an input end, and at every point
+beyond the neck, where the signed longitudinal coordinate is at least `2`, the capped structure with
+neck length `L ≥ 0` at the translate `TauCeti.ThricePuncturedSphere.Puncture.endShift q L w` is the
+structure with `L = 0` at `w`. -/
+theorem cappedAlmostComplex_endShift (hJp : Function.Periodic (J q) 1) (r : ℝ) (hL : 0 ≤ L)
+    {w : ℂ} (hw : w = q.endCenter ∨ 2 ≤ q.endSign * (q.endCoord w).re) :
+    h₀.cappedAlmostComplex J hJ r L (q.endShift L w) = h₀.cappedAlmostComplex J hJ r 0 w :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    rw [almostComplexStructureAt_cappedAlmostComplex, almostComplexStructureAt_cappedAlmostComplex]
+    exact Floer.cappedAlmostComplex_endShift (h₀.compatibleAt x)
+      (fun t => by simp only [hJp t]) r hL hw ()
+
 /-- **The structure is the pair-of-pants structure up to the necks.** For `r ≥ 1`, at points of
 the pair of pants where the signed longitudinal coordinate of every end is at most `L + 2`, the
 capped structure is the pair-of-pants structure. -/
@@ -286,6 +299,17 @@ theorem cappedComparisonAlmostComplex_of_two_le (hR : 2 ≤ R) :
     h₀.cappedComparisonAlmostComplex J hJ R = h₀.cappedAlmostComplex J hJ 1 (R - 1) := by
   rw [cappedComparisonAlmostComplex_def, Floer.comparisonNeckLength_of_ge hR,
     cappedAlmostComplex_of_one_le h₀ J hJ (by linarith)]
+
+/-- **The comparison family is the pair-of-pants structure up to the necks.** For `R ≥ 2`, at
+points of the pair of pants where the signed longitudinal coordinate of every end is at most
+`R + 1`, such as the points of the truncation `S_T` for `T ≤ R + 1`, the structure is the
+pair-of-pants structure. -/
+theorem cappedComparisonAlmostComplex_eq_pairOfPantsAlmostComplex (hR : 2 ≤ R)
+    {w : ThricePuncturedSphere} (hw : ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R + 1) :
+    h₀.cappedComparisonAlmostComplex J hJ R w = h₀.pairOfPantsAlmostComplex J hJ w := by
+  rw [cappedComparisonAlmostComplex_of_two_le h₀ J hJ hR]
+  exact cappedAlmostComplex_eq_pairOfPantsAlmostComplex h₀ J hJ le_rfl
+    fun q ↦ (hw q).trans (by linarith)
 
 /-- **The comparison family is smooth** along every `C^n` family of family parameters `R`, points
 `f` of `ℂ` and points `b` of `M`. -/
