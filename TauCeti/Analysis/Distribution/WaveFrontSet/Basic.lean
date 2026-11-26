@@ -75,6 +75,10 @@ not microlocally smooth.
   is, Lebesgue measure of `V` pushed forward to `E`, has wave front set `(Ω ∩ V) × (Vᗮ \ {0})`,
   the conormal set of `V`. Its localized Fourier transform is computed by
   `Distribution.localFourier_ofFun_one_map_subtype` as a Fourier transform on `V`.
+* `Distribution.waveFrontSet_ofFun_one_map_of_injective`: an additive Haar measure pushed forward
+  along an injective linear map `L` has wave front set the conormal set of `range L`. By uniqueness
+  of Haar measure it is a positive multiple of the surface measure of `range L`; this is how a
+  measure on a submanifold reads in charts in which the submanifold is a linear subspace.
 * `Distribution.waveFrontSet_compCLMOfContinuousLinearEquiv`: the wave front set is invariant
   under linear changes of coordinates, with covectors transforming by the transpose. If a linear
   automorphism `e` identifies `V` with `Ω`, then `(x, ξ)` lies in the wave front set of the
@@ -781,6 +785,60 @@ theorem waveFrontSet_ofFun_one_map_subtype (V : Submodule ℝ E) :
       hT (isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem V hx hxV ξ)
   · exact by_contra fun hξV =>
       hT (isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem_orthogonal V hx hξV)
+
+/-! ### Haar measure on the image of an injective linear map -/
+
+section LinearImage
+
+open MeasureTheory
+open scoped NNReal
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [MeasurableSpace E'] [BorelSpace E']
+
+/-- **The wave front set of a Haar measure carried by a subspace.** For an injective continuous
+linear map `L : E' → E` and an additive Haar measure `μ` on `E'`, the measure `L_* μ` is singular
+exactly at the points `L u` in `Ω`, and there exactly in the nonzero directions orthogonal to the
+range of `L`. -/
+theorem waveFrontSet_ofFun_one_map_of_injective (μ : Measure E') [μ.IsAddHaarMeasure]
+    {L : E' →L[ℝ] E} (hL : Function.Injective L) (Ω : Opens E) :
+    (ofFun Ω (1 : E → ℂ) (μ.map L) ⊤).waveFrontSet =
+      {p : E × E | p.1 ∈ Ω ∧ (∃ u, L u = p.1) ∧ p.2 ≠ 0 ∧ ∀ u, ⟪p.2, L u⟫ = 0} := by
+  set V := LinearMap.range (L : E' →ₗ[ℝ] E)
+  -- `L` is an isomorphism onto `V`, which carries `μ` to a Haar measure of `V`, a positive multiple
+  -- `c` of the volume of `V`.
+  let L' : E' ≃L[ℝ] V := (LinearEquiv.ofInjective (L : E' →ₗ[ℝ] E) hL).toContinuousLinearEquiv
+  have := L'.isAddHaarMeasure_map μ
+  set c := Measure.addHaarScalarFactor (μ.map L') volume
+  have hc : 0 < c := Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _
+  have hL' : (L : E' → E) = ((↑) : V → E) ∘ L' :=
+    funext fun u ↦ (LinearEquiv.ofInjective_apply (L : E' →ₗ[ℝ] E) (h := hL) u).symm
+  have hμ : μ.map L = c • volume.map ((↑) : V → E) := by
+    rw [hL', ← Measure.map_map continuous_subtypeVal.measurable L'.continuous.measurable,
+      ← Measure.map_smul]
+    · exact congrArg (Measure.map _) (Measure.isAddLeftInvariant_eq_smul (μ.map L') volume)
+    · exact continuous_subtypeVal.aemeasurable
+  have hce : Topology.IsClosedEmbedding ((↑) : V → E) :=
+    V.isClosedEmbedding_subtype V.isClosed_of_finiteDimensional
+  have := Measure.isFiniteMeasureOnCompacts_map_of_isProperMap volume hce.isProperMap
+  -- Scaling the measure by `c` scales the distribution by `c`.
+  have hS : ofFun Ω (1 : E → ℂ) (μ.map L) ⊤ =
+      ((c : ℝ) : ℂ) • ofFun Ω (1 : E → ℂ) (volume.map ((↑) : V → E)) ⊤ := by
+    ext φ
+    rw [hμ, smul_apply, ofFun_apply (f := 1) ((locallyIntegrable_const 1).locallyIntegrableOn _),
+      ofFun_apply (f := 1) ((locallyIntegrable_const 1).locallyIntegrableOn _),
+      integral_smul_nnreal_measure, NNReal.smul_def, Complex.real_smul, smul_eq_mul]
+  rw [hS, waveFrontSet_smul (Complex.ofReal_ne_zero.2 (NNReal.coe_ne_zero.2 hc.ne')),
+    waveFrontSet_ofFun_one_map_subtype]
+  ext ⟨x, ξ⟩
+  simp only [mem_prod, mem_inter_iff, SetLike.mem_coe, Set.mem_sdiff, mem_singleton_iff,
+    Submodule.mem_orthogonal', mem_ofPred_eq]
+  have hξ : (∀ v ∈ V, ⟪ξ, v⟫ = 0) ↔ ∀ u, ⟪ξ, L u⟫ = 0 :=
+    ⟨fun h u ↦ h _ ⟨u, rfl⟩, fun h _ ⟨u, hu⟩ ↦ hu ▸ h u⟩
+  rw [LinearMap.mem_range, hξ]
+  tauto
+
+end LinearImage
 
 end FiniteDimensional
 

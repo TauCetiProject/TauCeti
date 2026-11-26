@@ -74,6 +74,8 @@ section.
 * `TauCeti.Manifold.contDiffOn_trivializationAt_extChartAt_symm_prod`: the coordinates, in the
   trivialization at `α` and along the chart at `α`, of a section depending jointly on a parameter
   in a normed space are `C^n` in the parameter and the chart coordinate.
+* `TauCeti.continuousAt_comp_symmL_of_contMDiffOn`: covectors `ℓ y` on the fibres along a
+  continuous map that are `C^n` in the frames are continuous in the frames.
 -/
 
 public noncomputable section
@@ -540,3 +542,25 @@ theorem contMDiffOn_scalarCoordChange {n : ℕ∞ω}
       e.scalarCoordChange_def e' q q' x
 
 end Bundle.Trivialization
+
+namespace TauCeti
+
+/-- Covectors `ℓ y` on the fibres `V (ι y)` that are `C^n` in `y` in the frames along a continuous
+map `ι` are continuous in the frames: near `y₀` the map `y ↦ ℓ y ∘ t⁻¹` is `C^n` on the open set
+`ι⁻¹ t.baseSet`, which contains `y₀`. -/
+theorem continuousAt_comp_symmL_of_contMDiffOn {M F : Type*} [TopologicalSpace M]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+    [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+    [FiberBundle F V] [VectorBundle ℝ F V]
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] {n : WithTop ℕ∞}
+    {ι : N → M} (hι : Continuous ι) {ℓ : (y : N) → V (ι y) →L[ℝ] ℝ}
+    (hℓ : ∀ y₀, ContMDiffOn J 𝓘(ℝ, F →L[ℝ] ℝ) n
+      (fun y ↦ ℓ y ∘L (trivializationAt F V (ι y₀)).symmL ℝ (ι y))
+      (ι ⁻¹' (trivializationAt F V (ι y₀)).baseSet)) (y₀ : N) :
+    ContinuousAt (fun y ↦ ℓ y ∘L (trivializationAt F V (ι y₀)).symmL ℝ (ι y)) y₀ :=
+  (hℓ y₀).continuousOn.continuousAt <| ((trivializationAt F V (ι y₀)).open_baseSet.preimage hι)
+    |>.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' _)
+
+end TauCeti

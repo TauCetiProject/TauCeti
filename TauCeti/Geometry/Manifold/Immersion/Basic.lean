@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.Immersion
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.MFDeriv.OfCompLeft
 
 /-!
@@ -66,6 +67,10 @@ both sides, in order to apply the rule to `e.symm` as well.
 * `Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend_eq`: in the charts of
   immersion data, a point `b` of the source chart is sent by `f` to the point read as
   `h.equiv (b, 0)` in the target chart.
+* `Manifold.IsImmersionAt.exists_chart_eq_linearMap`: a continuous immersion of a manifold
+  modelled on `E` into a manifold with boundaryless model reads as an injective continuous linear
+  map in a chart of its source and a chart of its target of class `C^n` with inverse of class
+  `C^n`, inside any given open neighbourhood.
 * `IsDiffImmersionAt.mdifferentiableAt_iff_comp`: a map is differentiable at `x` exactly when it
   is continuous at `x` and its composite with a map whose differential at the image point has a
   continuous left inverse, such as an immersion of positive order, is differentiable at `x`.
@@ -97,8 +102,8 @@ noncomputable section
 
 namespace TauCeti
 
-open Manifold
-open scoped Manifold ContDiff
+open _root_.Manifold
+open scoped _root_.Manifold ContDiff
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -479,6 +484,59 @@ theorem _root_.Manifold.IsImmersion.tangentMap_injective_iff
   · obtain rfl : x₁ = x₂ := hinj (congrArg Bundle.TotalSpace.proj hp)
     simp only [tangentMap, Bundle.TotalSpace.mk_inj] at hp ⊢
     exact hf.mfderiv_injective hn x₁ hp
+
+/-! ### Charts in which an immersion is linear -/
+
+section LinearChart
+
+open Set Function
+
+variable {M₀ : Type*} [TopologicalSpace M₀] [ChartedSpace E M₀] [J.Boundaryless] {g : M₀ → N}
+
+/-- **Charts in which an immersion is linear.** Let `g` be continuous and an immersion at `x`,
+with source modelled on `E` itself, and let `U` be an open neighbourhood of `g x`. There are a
+chart `c` of `N` into `E'` at `g x`, of class `C^n` with inverse of class `C^n`, whose source lies
+in `U`, a chart `φ` of the maximal atlas of the source at `x` mapped by `g` into the source of
+`c`, and an injective continuous linear map `L` with `c ∘ g = L ∘ φ` on the source of `φ`. -/
+theorem _root_.Manifold.IsImmersionAt.exists_chart_eq_linearMap {x : M₀}
+    (h : IsImmersionAt 𝓘(𝕜, E) J n g x) (hg : Continuous g) {U : Set N} (hU : IsOpen U)
+    (hxU : g x ∈ U) :
+    ∃ (c : OpenPartialHomeomorph N E') (_ : ContMDiffOn J 𝓘(𝕜, E') n c c.source)
+      (_ : ContMDiffOn 𝓘(𝕜, E') J n c.symm c.target) (_ : c.source ⊆ U)
+      (φ : OpenPartialHomeomorph M₀ E) (L : E →L[𝕜] E'), g x ∈ c.source ∧
+      φ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M₀ ∧ x ∈ φ.source ∧ Injective L ∧
+      MapsTo g φ.source c.source ∧ ∀ y ∈ φ.source, c (g y) = L (φ y) := by
+  set ψ := h.codChart
+  set c := (ψ.restr U).extendTrans J (Homeomorph.refl E')
+  have hψ : ψ.restr U ∈ IsManifold.maximalAtlas J n N :=
+    restr_mem_maximalAtlas _ h.codChart_mem_maximalAtlas hU
+  have hcs : c.source = ψ.source ∩ U := by
+    rw [OpenPartialHomeomorph.extendTrans_source, OpenPartialHomeomorph.restr_source' _ _ hU]
+  set φ := h.domChart.restr (g ⁻¹' U)
+  have hφs : φ.source = h.domChart.source ∩ g ⁻¹' U :=
+    OpenPartialHomeomorph.restr_source' _ _ (hU.preimage hg)
+  refine ⟨c, (ψ.restr U).contMDiffOn_extendTrans hψ contDiff_id,
+    (ψ.restr U).contMDiffOn_extendTrans_symm hψ contDiff_id, hcs ▸ inter_subset_right, φ,
+    (h.equiv : (E × h.complement) →L[𝕜] E') ∘L ContinuousLinearMap.inl 𝕜 E h.complement,
+    hcs ▸ ⟨h.mem_codChart_source, hxU⟩,
+    restr_mem_maximalAtlas _ h.domChart_mem_maximalAtlas (hU.preimage hg),
+    hφs ▸ ⟨h.mem_domChart_source, hxU⟩,
+    h.equiv.injective.comp fun u v h ↦ (Prod.ext_iff.1 h).1, fun y hy ↦ ?_, fun y hy ↦ ?_⟩
+  · rw [hφs] at hy
+    rw [hcs]
+    exact ⟨h.source_subset_preimage_source hy.1, hy.2⟩
+  · rw [hφs] at hy
+    -- In the charts of the immersion, `g` reads `u ↦ A (u, 0)`.
+    have h' := h.writtenInCharts (show h.domChart y ∈ (h.domChart.extend 𝓘(𝕜, E)).target by
+      rw [OpenPartialHomeomorph.extend_target']
+      exact ⟨_, h.domChart.map_source hy.1, rfl⟩)
+    simp only [comp_apply, OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
+      modelWithCornersSelf_coe_symm, id_eq, h.domChart.left_inv hy.1] at h'
+    simp only [c, φ, OpenPartialHomeomorph.extendTrans_apply, Homeomorph.refl_apply, id_eq,
+      OpenPartialHomeomorph.restr_apply, ContinuousLinearMap.coe_comp, comp_apply,
+      ContinuousLinearMap.inl_apply, ContinuousLinearEquiv.coe_coe, ← h', ψ]
+
+end LinearChart
 
 /-! ### Lifting differentiability through a split differential -/
 
