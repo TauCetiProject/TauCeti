@@ -23,7 +23,7 @@ The checks of the two presentations of trees:
   incomparable, is the star with its centre marked;
 * the cover-graph map is not continuous on `treeClass`: inserting `n` between `0` and `1` in the
   star gives coded trees `T_n` converging to the star, but `0` and `1` are adjacent in the cover
-  graph of the star and in that of no `T_n`.
+  graph of the star and in that of no `T_n` with `n ≥ 2`.
 
 The star and the trees `T_n` as coded trees, and the trees of finite sequences, are in the
 examples for `OrderClass`.
@@ -120,8 +120,8 @@ theorem not_isoSetoid_ray_zero_one : ¬ isoSetoid markedGraphLanguage ℕ (ray 0
 
 /-! ### The cover graph of the star -/
 
-/-- **The cover graph of the star is the star with its centre marked**: `u` and `v` are adjacent
-exactly when one of them is `0` and the other is not, and `0` is the only marked vertex. -/
+/-- In the cover graph of the star, `u` and `v` are adjacent exactly when one of them is `0` and
+the other is not. Its marked vertices are described by `isMarked_coverGraphCode_star`. -/
 theorem codeRel_coverGraphCode_star (u v : ℕ) :
     codeRel adjSymb (coverGraphCode star) u v ↔ u = 0 ∧ v ≠ 0 ∨ v = 0 ∧ u ≠ 0 := by
   have hcov (a b : ℕ) : RelCovBy (codeRel leSymb star) a b ↔ a = 0 ∧ b ≠ 0 := by
