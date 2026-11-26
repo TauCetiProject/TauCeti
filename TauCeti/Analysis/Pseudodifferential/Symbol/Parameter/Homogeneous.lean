@@ -27,6 +27,12 @@ behaviour under the operations of the symbol calculus.
 * A position derivative keeps the degree (`TauCeti.ParameterSymbol.IsQuasiHomogeneous.spatialDeriv`)
   and a frequency derivative lowers it by one
   (`TauCeti.ParameterSymbol.IsQuasiHomogeneous.frequencyDeriv`).
+* `TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove a μ R`: the same relation for `t ≥ 1` at
+  frequencies of norm at least `R` only. A smooth symbol of negative degree cannot be
+  quasi-homogeneous near `(ξ, z) = (0, 0)`, so this is the form taken by the terms of Seeley's
+  resolvent parametrix once they are cut off near the origin. It is implied by quasi-homogeneity
+  (`TauCeti.ParameterSymbol.IsQuasiHomogeneous.isQuasiHomogeneousAbove`) and preserved by the
+  linear operations, the inclusions and pointwise composition.
 * Examples: the quasi-homogeneous symbols `TauCeti.ParameterSymbol.ofQuasiHomogeneous`
   (`TauCeti.ParameterSymbol.isQuasiHomogeneous_ofQuasiHomogeneous`), such as the spectral
   parameter `z`, and the symbol `‖ξ‖² - z` of `-Δ - z`, of degree `2`
@@ -210,6 +216,88 @@ theorem isQuasiHomogeneous_shiftedLaplacian_zero :
     Complex.real_smul]
   push_cast
   ring
+
+/-! ### Quasi-homogeneity at large frequencies -/
+
+/-- A parameter-dependent symbol is *quasi-homogeneous of degree `μ` above the radius `R`* if
+`a((x, t ξ), t² z) = t ^ μ a((x, ξ), z)` for every `t ≥ 1` and every frequency `ξ` of norm at least
+`R` such that both `z` and `t² z` lie in `Λ`
+(`TauCeti.ParameterSymbol.isQuasiHomogeneousAbove_iff`).
+A quasi-homogeneous symbol of negative degree is singular at `(ξ, z) = (0, 0)`, so a smooth symbol
+whose set of spectral parameters contains `0` can only be quasi-homogeneous away from it; the terms
+of Seeley's resolvent parametrix are cut off near the origin in this way. Integrated along the
+spectral parameter, such symbols become homogeneous symbols at large frequencies
+(`TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove.isHomogeneousAbove_balakrishnanIntegral`). -/
+def IsQuasiHomogeneousAbove (a : ParameterSymbol n Λ V W m) (μ R : ℝ) : Prop :=
+  ∀ x ξ, R ≤ ‖ξ‖ → ∀ z ∈ Λ, ∀ t : ℝ, 1 ≤ t → (t ^ 2 : ℝ) • z ∈ Λ →
+    a.coefficient ((x, t • ξ), (t ^ 2 : ℝ) • z) = t ^ μ • a.coefficient ((x, ξ), z)
+
+variable {R R' : ℝ}
+
+theorem isQuasiHomogeneousAbove_iff {a : ParameterSymbol n Λ V W m} :
+    a.IsQuasiHomogeneousAbove μ R ↔ ∀ x ξ, R ≤ ‖ξ‖ → ∀ z ∈ Λ, ∀ t : ℝ, 1 ≤ t →
+      (t ^ 2 : ℝ) • z ∈ Λ →
+        a.coefficient ((x, t • ξ), (t ^ 2 : ℝ) • z) = t ^ μ • a.coefficient ((x, ξ), z) :=
+  Iff.rfl
+
+/-- A quasi-homogeneous symbol is quasi-homogeneous above every radius. -/
+theorem IsQuasiHomogeneous.isQuasiHomogeneousAbove {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneous μ) (R : ℝ) : a.IsQuasiHomogeneousAbove μ R :=
+  fun x ξ _ z hz t ht htz => isQuasiHomogeneous_iff.1 ha x ξ z hz t (zero_lt_one.trans_le ht) htz
+
+theorem IsQuasiHomogeneousAbove.mono {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneousAbove μ R) (h : R ≤ R') : a.IsQuasiHomogeneousAbove μ R' :=
+  fun x ξ hξ => ha x ξ (h.trans hξ)
+
+@[simp]
+theorem isQuasiHomogeneousAbove_zero :
+    (0 : ParameterSymbol n Λ V W m).IsQuasiHomogeneousAbove μ R :=
+  fun _ _ _ _ _ _ _ _ => by simp
+
+theorem IsQuasiHomogeneousAbove.add {a b : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneousAbove μ R) (hb : b.IsQuasiHomogeneousAbove μ R) :
+    (a + b).IsQuasiHomogeneousAbove μ R := fun x ξ hξ z hz t ht htz => by
+  rw [coefficient_add, Pi.add_apply, Pi.add_apply, ha x ξ hξ z hz t ht htz,
+    hb x ξ hξ z hz t ht htz, smul_add]
+
+theorem IsQuasiHomogeneousAbove.smul {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneousAbove μ R) (c : ℂ) : (c • a).IsQuasiHomogeneousAbove μ R :=
+  fun x ξ hξ z hz t ht htz => by
+    rw [coefficient_smul, Pi.smul_apply, Pi.smul_apply, ha x ξ hξ z hz t ht htz, smul_comm]
+
+@[simp]
+theorem isQuasiHomogeneousAbove_neg_iff {a : ParameterSymbol n Λ V W m} :
+    (-a).IsQuasiHomogeneousAbove μ R ↔ a.IsQuasiHomogeneousAbove μ R := by
+  simp only [isQuasiHomogeneousAbove_iff, coefficient_neg, Pi.neg_apply, smul_neg, neg_inj]
+
+theorem IsQuasiHomogeneousAbove.neg {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneousAbove μ R) : (-a).IsQuasiHomogeneousAbove μ R :=
+  isQuasiHomogeneousAbove_neg_iff.2 ha
+
+theorem IsQuasiHomogeneousAbove.sub {a b : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneousAbove μ R) (hb : b.IsQuasiHomogeneousAbove μ R) :
+    (a - b).IsQuasiHomogeneousAbove μ R := by
+  simpa only [sub_eq_add_neg] using ha.add hb.neg
+
+@[simp]
+theorem isQuasiHomogeneousAbove_inclusion_iff {a : ParameterSymbol n Λ V W m} (h : m ≤ m') :
+    (inclusion h a).IsQuasiHomogeneousAbove μ R ↔ a.IsQuasiHomogeneousAbove μ R := by
+  simp only [isQuasiHomogeneousAbove_iff, coefficient_inclusion]
+
+theorem IsQuasiHomogeneousAbove.inclusion {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneousAbove μ R) (h : m ≤ m') :
+    (inclusion h a).IsQuasiHomogeneousAbove μ R :=
+  (isQuasiHomogeneousAbove_inclusion_iff h).2 ha
+
+/-- The pointwise composition of symbols quasi-homogeneous of degrees `μ'` and `μ` above the radius
+`R` is quasi-homogeneous of degree `μ' + μ` above `R`. -/
+theorem IsQuasiHomogeneousAbove.comp {b : ParameterSymbol n Λ W U m'}
+    {a : ParameterSymbol n Λ V W m} (hb : b.IsQuasiHomogeneousAbove μ' R)
+    (ha : a.IsQuasiHomogeneousAbove μ R) : (b.comp a).IsQuasiHomogeneousAbove (μ' + μ) R :=
+  fun x ξ hξ z hz t ht htz => by
+    simp only [coefficient_comp, hb x ξ hξ z hz t ht htz, ha x ξ hξ z hz t ht htz,
+      ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul, smul_smul,
+      Real.rpow_add (zero_lt_one.trans_le ht), mul_comm]
 
 end ParameterSymbol
 
