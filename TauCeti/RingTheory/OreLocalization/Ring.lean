@@ -50,27 +50,34 @@ theorem numeratorAlgHom_apply (r : R) : numeratorAlgHom R₀ (S := S) r = numera
 theorem toRingHom_numeratorAlgHom :
     (numeratorAlgHom R₀ (S := S) : R →+* OreLocalization S R) = numeratorRingHom := (rfl)
 
-variable {R₀} {T : Type*} [Semiring T] [Algebra R₀ T]
+variable {T : Type*} [Semiring T]
 
-/-- Two `R₀`-algebra maps out of an Ore localization agreeing on numerators are equal. -/
-@[ext high] -- This should have higher precedence than `AlgHom.ext`.
-theorem algHom_ext {φ ψ : OreLocalization S R →ₐ[R₀] T}
-    (h : φ.comp (numeratorAlgHom R₀) = ψ.comp (numeratorAlgHom R₀)) : φ = ψ := by
+/-- Two ring maps out of an Ore localization agreeing on numerators are equal. -/
+@[ext high] -- This should have higher precedence than `RingHom.ext`.
+theorem ringHom_ext {φ ψ : OreLocalization S R →+* T}
+    (h : φ.comp numeratorRingHom = ψ.comp numeratorRingHom) : φ = ψ := by
   let n : S →* (OreLocalization S R)ˣ :=
     Units.liftRight (numeratorHom.comp S.subtype) numeratorUnit (fun _ ↦ rfl)
   let ψS : S →* Tˣ := (Units.map ψ.toMonoidHom).comp n
-  have hψS : ∀ s : S, (ψ.toRingHom.comp numeratorRingHom) s = ψS s := fun _ ↦ rfl
-  apply AlgHom.toRingHom_injective
+  have hψS : ∀ s : S, (ψ.comp numeratorRingHom) s = ψS s := fun _ ↦ rfl
   calc
-    φ.toRingHom = universalHom (ψ.toRingHom.comp numeratorRingHom) ψS hψS := by
+    φ = universalHom (ψ.comp numeratorRingHom) ψS hψS := by
       apply universalHom_unique
       intro r
-      exact AlgHom.congr_fun h r
-    _ = ψ.toRingHom := by
+      exact RingHom.congr_fun h r
+    _ = ψ := by
       symm
       apply universalHom_unique
       intro r
       rfl
+
+variable {R₀} [Algebra R₀ T]
+
+/-- Two `R₀`-algebra maps out of an Ore localization agreeing on numerators are equal. -/
+@[ext high] -- This should have higher precedence than `AlgHom.ext`.
+theorem algHom_ext {φ ψ : OreLocalization S R →ₐ[R₀] T}
+    (h : φ.comp (numeratorAlgHom R₀) = ψ.comp (numeratorAlgHom R₀)) : φ = ψ :=
+  AlgHom.toRingHom_injective <| ringHom_ext (congrArg AlgHom.toRingHom h)
 
 /-- The universal lift of an `R₀`-algebra map `f : R →ₐ[R₀] T` sending `S` to units of `T`
 to an `R₀`-algebra map `OreLocalization S R →ₐ[R₀] T`: the `R₀`-linear form of
@@ -84,7 +91,7 @@ def universalAlgHom (f : R →ₐ[R₀] T) (fS : S →* Tˣ) (hf : ∀ s : S, f 
 @[simp]
 theorem universalAlgHom_apply (f : R →ₐ[R₀] T) (fS : S →* Tˣ) (hf : ∀ s : S, f s = fS s)
     (r : R) (s : S) : universalAlgHom f fS hf (r /ₒ s) = ((fS s)⁻¹ : Tˣ) * f r :=
-  (rfl)
+  universalHom_apply f.toRingHom fS hf
 
 theorem universalAlgHom_numeratorHom (f : R →ₐ[R₀] T) (fS : S →* Tˣ)
     (hf : ∀ s : S, f s = fS s) (r : R) : universalAlgHom f fS hf (numeratorHom r) = f r :=
