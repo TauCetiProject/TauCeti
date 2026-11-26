@@ -33,11 +33,20 @@ theorem cmp_eq_cmp_of_le_iff_le {x y : α} {x' y' : β} (h₁ : x ≤ y ↔ x' �
 
 /-- The comparison of `x` with `z` when `x` and `z` compare with a third point `w` as `s₀` and
 `s`, with `s ≠ s₀` (see `TauCeti.cmp_eq_cmpOfNe`). Its value at `s = s₀` is the junk value `.eq`.
-The body is exposed so that its values can be computed by `rfl` or `decide`. -/
-@[expose] def cmpOfNe : Ordering → Ordering → Ordering
+-/
+def cmpOfNe : Ordering → Ordering → Ordering
   | .lt, .eq | .lt, .gt | .eq, .gt => .gt
   | .eq, .lt | .gt, .lt | .gt, .eq => .lt
   | _, _ => .eq
+
+/-! The values of `cmpOfNe` off the diagonal. -/
+
+@[simp] theorem cmpOfNe_lt_eq : cmpOfNe .lt .eq = .gt := (rfl)
+@[simp] theorem cmpOfNe_lt_gt : cmpOfNe .lt .gt = .gt := (rfl)
+@[simp] theorem cmpOfNe_eq_gt : cmpOfNe .eq .gt = .gt := (rfl)
+@[simp] theorem cmpOfNe_eq_lt : cmpOfNe .eq .lt = .lt := (rfl)
+@[simp] theorem cmpOfNe_gt_lt : cmpOfNe .gt .lt = .lt := (rfl)
+@[simp] theorem cmpOfNe_gt_eq : cmpOfNe .gt .eq = .lt := (rfl)
 
 /-- If `x` and `z` compare differently with `w`, their own comparison is determined by these two
 comparisons. -/

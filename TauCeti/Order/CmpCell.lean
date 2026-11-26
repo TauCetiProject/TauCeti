@@ -55,7 +55,7 @@ variable {M : Type w} {N : Type w'} [LinearOrder M] [LinearOrder N] {n : ℕ}
 
 /-- The cell of the comparison pattern `σ` for the tuple `a`: the points `z` with
 `cmp (a i) z = σ i` for every `i`. -/
-@[expose] def cmpCell (a : Fin n → M) (σ : Fin n → Ordering) : Set M :=
+def cmpCell (a : Fin n → M) (σ : Fin n → Ordering) : Set M :=
   {z | ∀ i, cmp (a i) z = σ i}
 
 @[simp]

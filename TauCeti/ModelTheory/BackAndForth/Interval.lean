@@ -78,8 +78,8 @@ private theorem IntervalLemma.forth_cmpCell {γ : Ordinal.{o}} (ih : IntervalLem
       (snoc (Fin.elim0 : Fin 0 → cmpCell a σ) p) (snoc (Fin.elim0 : Fin 0 → cmpCell b σ) q) := by
   obtain ⟨y, hy⟩ := hf p
   obtain ⟨hs, hc⟩ := (ih M N _ _ _).1 hy
-  have hq : y ∈ cmpCell b σ := fun i =>
-    ((sameAtomicType_snoc_iff_cmp.1 hs).2 i).symm.trans (p.property i)
+  have hq : y ∈ cmpCell b σ := mem_cmpCell.2 fun i =>
+    ((sameAtomicType_snoc_iff_cmp.1 hs).2 i).symm.trans (mem_cmpCell.1 p.property i)
   refine ⟨⟨y, hq⟩, (ih _ _ _ _ _).2 ⟨sameAtomicType_snoc_elim0 _ _, fun τ => ?_⟩⟩
   exact (hc _).orderIso_congr (cmpCellSnocOrderIso a σ p τ).symm
     (cmpCellSnocOrderIso b σ ⟨y, hq⟩ τ).symm
@@ -95,7 +95,8 @@ private theorem IntervalLemma.forth_snoc {γ : Ordinal.{o}} (ih : IntervalLemma.
   obtain ⟨q, hq⟩ := ((BFEquiv.add_one γ _ _).1 (hc σ₀)).2.1 ⟨x, hx⟩
   obtain ⟨-, hsub⟩ := (ih _ _ _ _ _).1 hq
   refine ⟨q, (ih M N _ _ _).2
-    ⟨sameAtomicType_snoc_iff_cmp.2 ⟨hs, fun i => (hx i).trans (q.property i).symm⟩,
+    ⟨sameAtomicType_snoc_iff_cmp.2
+      ⟨hs, fun i => (mem_cmpCell.1 hx i).trans (mem_cmpCell.1 q.property i).symm⟩,
       fun σ' => ?_⟩⟩
   obtain ⟨σ, o, rfl⟩ : ∃ σ o, σ' = snoc σ o := ⟨init σ', σ' (last n), (snoc_init_self σ').symm⟩
   by_cases hσ : σ = σ₀
