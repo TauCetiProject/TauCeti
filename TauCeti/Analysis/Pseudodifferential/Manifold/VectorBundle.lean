@@ -241,6 +241,21 @@ theorem sectionEntry_apply
       χ x • ℓ (t'.continuousLinearMapAt ℂ x (P (f • t.cutoffFrameSection ψ hψ v) x)) :=
   by simp [sectionEntry]
 
+/-- The matrix entries of an operator `s ↦ Q (c s) σ`, for a scalar operator `Q`, a map `c` from
+the sections of `E` to functions which is linear over functions and a section `σ` of `F`, are `Q`
+multiplied on both sides by smooth functions. -/
+theorem sectionEntry_smulRight
+    (Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    {c : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hc : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, c (f • s) = f * c s)
+    (σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
+    sectionEntry t ψ hψ v t' χ hχ ℓ ((Q ∘ₗ c).smulRight σ) =
+      LinearMap.mulLeft ℂ (t'.cutoffFrameCoeff χ hχ ℓ σ) ∘ₗ Q ∘ₗ
+        LinearMap.mulLeft ℂ (c (t.cutoffFrameSection ψ hψ v)) := by
+  ext f x
+  simp [hc, mul_comm, mul_assoc]
+
 /-- The entries of a properly supported operator are properly supported. -/
 theorem IsSectionProperlySupported.sectionEntry
     {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}

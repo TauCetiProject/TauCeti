@@ -139,8 +139,7 @@ def sectionChartQuantization (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
       simp only [sectionChartQuantizationFun_apply_of_mem he t hE t' hF _ _ _ _ hx, map_add,
         quantizeSchwartzValue_add_right
           (a.toSymbol.continuous_coefficient_slice (e x)).aestronglyMeasurable hC, smul_add]
-      rw [← t'.symmL_apply (R := ℂ) (hF hx), ← t'.symmL_apply (R := ℂ) (hF hx),
-        ← t'.symmL_apply (R := ℂ) (hF hx), map_add]
+      exact t'.symm_apply_add ℂ (hF hx) _ _
     · simp [sectionChartQuantizationFun_apply_of_notMem he t hE t' hF _ _ _ _ hx]
   map_smul' c s := by
     ext x
@@ -148,7 +147,7 @@ def sectionChartQuantization (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     by_cases hx : x ∈ e.source
     · simp only [sectionChartQuantizationFun_apply_of_mem he t hE t' hF _ _ _ _ hx, map_smul,
         quantizeSchwartzValue_smul_right, smul_comm (φ (e x))]
-      rw [← t'.symmL_apply (R := ℂ) (hF hx), ← t'.symmL_apply (R := ℂ) (hF hx), map_smul]
+      exact t'.symm_apply_smul (hF hx) c _
     · simp [sectionChartQuantizationFun_apply_of_notMem he t hE t' hF _ _ _ _ hx]
 
 /-- On the chart source, the chart quantization of `a` is `t'⁻¹ (φ · Op(a) v)` read through the
@@ -187,7 +186,7 @@ theorem tsupport_sectionChartQuantization_subset (φ ψ : 𝓓(⟨e.target, e.op
   by_cases hxs : x ∈ e.source
   · have hφ : φ (e x) = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hx ⟨e x, h, e.left_inv hxs⟩
     rw [sectionChartQuantization_apply_of_mem he t hE t' hF φ ψ a s hxs, hφ, zero_smul,
-      ← t'.symmL_apply (R := ℂ) (hF hxs), map_zero]
+      t'.symm_apply_zero ℂ (hF hxs)]
   · exact sectionChartQuantization_apply_of_notMem he t hE t' hF φ ψ a s hxs
 
 /-- The chart quantization only sees its input on the image of the support of `ψ` under the
@@ -206,7 +205,7 @@ theorem sectionChartQuantization_eq_zero (φ ψ : 𝓓(⟨e.target, e.open_targe
   rw [ContMDiffSection.coe_zero, Pi.zero_apply]
   by_cases hx : x ∈ e.source
   · rw [sectionChartQuantization_apply_of_mem he t hE t' hF φ ψ a s hx, hv,
-      quantizeSchwartzValue_zero_right, smul_zero, ← t'.symmL_apply (R := ℂ) (hF hx), map_zero]
+      quantizeSchwartzValue_zero_right, smul_zero, t'.symm_apply_zero ℂ (hF hx)]
   · exact sectionChartQuantization_apply_of_notMem he t hE t' hF φ ψ a s hx
 
 /-- **Chart quantizations between bundles are properly supported.** For every compact set, one may
@@ -269,34 +268,14 @@ theorem sectionChartQuantization_eq_sum (φ ψ : 𝓓(⟨e.target, e.open_target
     Bundle.Trivialization.cutoffFrameSection_apply, ClassicalSymbol.toSymbol_map]
   rw [sectionChartQuantization_apply_of_mem he t hE t' hF φ ψ a s hx]
   by_cases hφ : φ (e x) = 0
-  · simp [hφ, ← t'.symmL_apply (R := ℂ) (hF hx)]
+  · simp [hφ, t'.symm_apply_zero ℂ (hF hx)]
   have hρx : ρ x = 1 := by
     simpa [e.left_inv hx] using hρ (e x) (Or.inl (subset_tsupport _ hφ))
   rw [hρx, ← Symbol.sum_quantizeSchwartzValue_map_entryMap_smul a.toSymbol bV bW v (e x),
-    ← t'.symmL_apply (R := ℂ) (hF hx), ← Complex.coe_smul, map_smul, map_sum]
+    ← Complex.coe_smul, t'.symm_apply_smul (hF hx), ← t'.symmL_apply (R := ℂ) (hF hx), map_sum]
   simp only [map_smul]
   simp only [t'.symmL_apply (R := ℂ) (hF hx), one_smul, Finset.smul_sum, smul_smul,
     Finset.sum_smul, Complex.real_smul]
-
-omit [T2Space M] [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] in
-/-- The matrix entries of an operator `s ↦ Q (c s) σ`, for a scalar operator `Q`, a map `c` from
-the sections of `E` to functions which is linear over functions and a section `σ` of `F`, are `Q`
-multiplied on both sides by smooth functions. -/
-private theorem sectionEntry_smulRight
-    (Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
-    {c : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
-    (hc : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, c (f • s) = f * c s)
-    (σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯)
-    (t₂ : Trivialization V (π V E)) [MemTrivializationAtlas t₂]
-    (ψ₂ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hψ₂ : tsupport ψ₂ ⊆ t₂.baseSet) (v : V)
-    (t₂' : Trivialization W (π W F)) [MemTrivializationAtlas t₂']
-    (χ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hχ : tsupport χ ⊆ t₂'.baseSet) (ℓ : W →L[ℂ] ℂ) :
-    sectionEntry t₂ ψ₂ hψ₂ v t₂' χ hχ ℓ ((Q ∘ₗ c).smulRight σ) =
-      LinearMap.mulLeft ℂ (t₂'.cutoffFrameCoeff χ hχ ℓ σ) ∘ₗ Q ∘ₗ
-        LinearMap.mulLeft ℂ (c (t₂.cutoffFrameSection ψ₂ hψ₂ v)) := by
-  ext f x
-  simp [hc, mul_comm, mul_assoc]
 
 /-- **Chart quantizations between bundles are classical pseudodifferential operators.** The
 quantization of a classical symbol of order `m` with values in `V →L[ℂ] W`, in a chart of the
@@ -336,7 +315,7 @@ theorem sectionChartQuantization_mem_sectionClassicalPseudodifferentialOperators
         f * t.cutoffFrameCoeff ρ (hρs.trans hE) (bV.coord i).toContinuousLinearMap s := by
     ext y
     simp [mul_left_comm]
-  rw [sectionEntry_smulRight _ hc]
+  rw [sectionEntry_smulRight t₂ ψ₂ hψ₂ v t₂' χ hχ ℓ _ hc]
   exact comp_mulLeft_mem_classicalPseudodifferentialOperators
     (mulLeft_comp_mem_classicalPseudodifferentialOperators
       (chartQuantization_mem_classicalPseudodifferentialOperators he φ ψ _) _) _
@@ -374,9 +353,9 @@ theorem sectionChartQuantization_eq_smul_comp {φ ψ : 𝓓(⟨e.target, e.open_
     t.chartCutoffSection_cutoffPushforwardSchwartz he hE hψ₁, complexCutoffPullback_apply_of_mem
       he _ _ hx]
   by_cases hφ : φ (e x) = 0
-  · simp [hφ, ← t'.symmL_apply (R := ℂ) (hF hx)]
-  rw [hφ₁ _ (subset_tsupport _ hφ), one_smul, ← t'.symmL_apply (R := ℂ) (hF hx),
-    ← Complex.coe_smul, map_smul, t'.symmL_continuousLinearMapAt (hF hx)]
+  · simp [hφ, t'.symm_apply_zero ℂ (hF hx)]
+  rw [hφ₁ _ (subset_tsupport _ hφ), one_smul, ← Complex.coe_smul, t'.symm_apply_smul (hF hx),
+    ← t'.symmL_apply (R := ℂ) (hF hx), t'.symmL_continuousLinearMapAt (hF hx)]
   simp
 
 /-- **Localized operators are chart quantizations.** Let `P` be a classical pseudodifferential

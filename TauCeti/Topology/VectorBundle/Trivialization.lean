@@ -46,7 +46,9 @@ exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff
 `Bundle.Trivialization.snd_apply_eq_zero_iff`), and likewise
 for its inverse over the base set (`Bundle.Trivialization.symm_apply_ne_zero_iff`); both commute
 with scalar multiplication over the base set (`Bundle.Trivialization.snd_apply_mk_smul`,
-`Bundle.Trivialization.symm_apply_smul`). Near a point whose image under a map continuous there
+`Bundle.Trivialization.symm_apply_smul`), and over the base set the inverse is additive and sends
+`0` to `0` (`Bundle.Trivialization.symm_apply_add`, `Bundle.Trivialization.symm_apply_zero`). Near
+a point whose image under a map continuous there
 lies in the base set, a linear pretrivialization, in particular a linear trivialization, carries a
 fibrewise operation on sections along that map to an operation on their coordinates, provided every
 linear equivalence from a fibre to the model fibre carries the first operation to the second; the
@@ -238,6 +240,17 @@ multiplication. -/
 theorem symm_apply_smul {b : B} (hb : b ∈ e.baseSet) (c : R) (w : F) :
     e.symm b (c • w) = c • e.symm b w := by
   simpa only [linearEquivAt_symm_apply] using (e.linearEquivAt R b hb).symm.map_smul c w
+
+include R in
+/-- Over its base set, the inverse of a linear trivialization is additive. -/
+theorem symm_apply_add {b : B} (hb : b ∈ e.baseSet) (w w' : F) :
+    e.symm b (w + w') = e.symm b w + e.symm b w' := by
+  simpa only [linearEquivAt_symm_apply] using (e.linearEquivAt R b hb).symm.map_add w w'
+
+include R in
+/-- Over its base set, the inverse of a linear trivialization sends `0` to `0`. -/
+theorem symm_apply_zero {b : B} (hb : b ∈ e.baseSet) : e.symm b 0 = 0 := by
+  simpa only [linearEquivAt_symm_apply] using (e.linearEquivAt R b hb).symm.map_zero
 
 /-- Over the base set, the fibrewise linear inverse of a linear trivialization is the inverse of
 its fibrewise linear equivalence. -/

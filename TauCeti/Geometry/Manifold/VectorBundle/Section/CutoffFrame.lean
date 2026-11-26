@@ -256,9 +256,9 @@ theorem chartCutoffSection_cutoffPushforwardSchwartz {ψ ψ₁ : 𝓓(⟨e.targe
   · rw [t.chartCutoffSection_apply_of_mem he hE _ _ hx, cutoffPushforwardSchwartz_apply,
       e.left_inv hx, e.complexCutoffPullback_apply_of_mem he _ _ hx]
     by_cases hψx : ψ (e x) = 0
-    · simp [hψx, ← t.symmL_apply (R := ℂ) (hE hx)]
-    rw [hψ₁ _ (subset_tsupport _ hψx), one_smul, ← t.symmL_apply (R := ℂ) (hE hx),
-      ← Complex.coe_smul, map_smul, t.symmL_continuousLinearMapAt (hE hx)]
+    · simp [hψx, t.symm_apply_zero ℂ (hE hx)]
+    rw [hψ₁ _ (subset_tsupport _ hψx), one_smul, ← Complex.coe_smul, t.symm_apply_smul (hE hx),
+      ← t.symmL_apply (R := ℂ) (hE hx), t.symmL_continuousLinearMapAt (hE hx)]
     simp
   · simp [t.chartCutoffSection_apply_of_notMem he hE _ _ hx,
       e.complexCutoffPullback_apply_of_notMem he _ _ hx]
