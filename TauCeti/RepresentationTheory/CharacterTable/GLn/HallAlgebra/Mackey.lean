@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Expect
 public import TauCeti.LinearAlgebra.End.Invariant
+public import TauCeti.LinearAlgebra.Prod
 public import TauCeti.RepresentationTheory.CharacterTable.GLn.HallAlgebra.Basic
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Module.Projective
@@ -57,7 +58,7 @@ subspaces `W` of `V_a`.
   `New.Hall.blockAverage`, `New.Hall.IsCuspidal`, `New.Hall.blockAverage_simClassOf`,
   `New.Hall.blockAverage_mul` and `New.Hall.blockAverage_of_dim_eq_zero`, here with the
   invariant block first. The block maps `Module.End.blockTriangular` (`New.blockTriangularEnd`)
-  and the shears `LinearMap.shear` are in `TauCeti.LinearAlgebra.End.Invariant`, and the lifting
+  and the shears `LinearMap.shear` are in `TauCeti.LinearAlgebra.Prod`, and the lifting
   lemma `Submodule.exists_restrict_eq_and_mapQ_eq` (`New.Hall.exists_restrict_eq_and_mapQ_eq`) is
   in `TauCeti.LinearAlgebra.Quotient.Lift`.
 -/
