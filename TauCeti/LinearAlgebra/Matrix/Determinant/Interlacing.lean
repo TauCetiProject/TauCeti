@@ -60,6 +60,8 @@ theorem det_interlacing_indicator {k : ℕ} {x y : Fin k → α} (hx : Antitone 
           (if y 0 < x 0 then 1 else 0) *
             det (of fun b c : Fin k ↦ if y c.succ < x b.succ then (1 : R) else 0) := by
         simp [det_succ_column_zero, Fin.sum_univ_succ, h_none]
+        -- The minor `(of f).submatrix Fin.succ Fin.succ` is, by the definitions of `submatrix`
+        -- and `of`, the matrix `of fun b c ↦ f b.succ c.succ`.
         rfl
       rw [h_expand, ih (x := fun b ↦ x b.succ) (y := fun b ↦ y b.succ)
         (hx.comp_monotone (Fin.strictMono_succ).monotone)

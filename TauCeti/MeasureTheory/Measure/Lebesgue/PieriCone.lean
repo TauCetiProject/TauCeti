@@ -15,6 +15,7 @@ import Mathlib.LinearAlgebra.Matrix.Permutation
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.BigOperators.Group.List
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.Determinant.Interlacing
 
@@ -61,9 +62,8 @@ only on `k` and `q`. It is then computed for a single letter, where the step map
 of ratio `q - 1` and the cone in the slab is the preimage of the slab under a triangular map of
 determinant `∏ l < k, (q ^ (l + 1) - 1) / (q - 1)`.
 
-This is target 1.11 (the share of the Pieri cone in a slab) of the roadmap
-`ShortGRH/CompositeThetaLiftsAndShortForms`. It serves the bound for the dimension of the forms
-of bounded defect (target 1.12 there), where the count of exponents in a cone becomes a volume.
+The share is used to bound the dimension of forms of bounded defect, where a count of exponents
+in a cone becomes a volume.
 
 ## Provenance
 
@@ -116,6 +116,7 @@ def pieriCone [Add T] [One T] (v : T → Bool) (P : ℝ) : Set (Fin k × T → �
     if v j then P * ν (b', j + 1) ≤ ν (b, j) else ν (b', j) ≤ P * ν (b, j + 1)}
 
 /-- Membership in the Pieri cone is Pieri's inequalities. -/
+@[simp]
 theorem mem_pieriCone [Add T] [One T] {v : T → Bool} {P : ℝ} {ν : Fin k × T → ℝ} :
     ν ∈ pieriCone v P ↔ ∀ (j : T) (b b' : Fin k), b.val + 1 = b'.val →
       if v j then P * ν (b', j + 1) ≤ ν (b, j) else ν (b', j) ≤ P * ν (b, j + 1) :=
@@ -137,6 +138,7 @@ def degreeSlab (k : ℕ) (D : T → ℝ) : Set (Fin k × T → ℝ) :=
   {β | 0 ≤ β ∧ ∀ j : T, ∑ b : Fin k, β (b, j) ∈ Icc (D j - 1) (D j)}
 
 /-- Membership in the slab: nonnegativity and the bounds on the degrees. -/
+@[simp]
 theorem mem_degreeSlab {D : T → ℝ} {β : Fin k × T → ℝ} :
     β ∈ degreeSlab k D ↔ 0 ≤ β ∧ ∀ j : T, ∑ b : Fin k, β (b, j) ∈ Icc (D j - 1) (D j) :=
   Iff.rfl
@@ -161,9 +163,7 @@ section StepMap
 
 variable {T : Type*} [AddGroup T] [One T]
 
-/-- For `|P| ≠ 1` the twisted step map `pieriStepMap v P σ` is invertible: on its kernel,
-multiplication by `P` only rearranges the entries of a vector, so `|P| * ‖ν‖ = ‖ν‖`. (For
-infinitely many letters the determinant is `1` by convention.) -/
+/-- For `|P| ≠ 1` every twisted step map `pieriStepMap v P σ` has nonzero determinant. -/
 theorem det_pieriStepMap_ne_zero (v : T → Bool) {P : ℝ} (hP : |P| ≠ 1) (σ : T → Perm (Fin k)) :
     LinearMap.det (pieriStepMap v P σ) ≠ 0 := by
   by_cases h_fin : Module.Finite ℝ (Fin k × T → ℝ)
@@ -174,6 +174,8 @@ theorem det_pieriStepMap_ne_zero (v : T → Bool) {P : ℝ} (hP : |P| ≠ 1) (σ
   have : Fintype (Fin k × T) :=
     have : Finite (Fin k × T) := (Pi.linearIndependent_single_one (Fin k × T) ℝ).finite
     Fintype.ofFinite _
+  -- On the kernel, multiplication by `P` only rearranges the entries of a vector, so
+  -- `|P| * ‖ν‖ = ‖ν‖` forces `ν = 0`.
   intro h_det
   obtain ⟨ν, hν, h_ne⟩ := (Submodule.ne_bot_iff _).1 (bot_lt_ker_of_det_eq_zero h_det).ne'
   have h_step (b : Fin k) (j : T) : P * ν (b, j + 1) = ν (σ j b, j) := by
@@ -421,7 +423,16 @@ private lemma sum_indicator_positiveStepSet (hP : 0 ≤ P) (D : Fin (m + 1) → 
       have h_cone := (hΩ' _).1 h_mem j b b' h_succ
       have h_pos_b := h_pos j b
       have h_pos_b' := h_pos j b'
-      cases hv : v j <;> simp_all <;> linarith
+      simp only [pieriStepMap_apply, Pi.one_apply, Perm.coe_one, id_eq, Function.comp_apply,
+        prodCongrLeft_apply] at h_cone h_pos_b h_pos_b'
+      cases hv : v j
+      · -- `ν (b', j) ≤ P * ν (b, j + 1) < ν (b, j)`, read in the sorted blocks.
+        simp only [hv, Bool.false_eq_true, ite_false, neg_mul, one_mul, neg_pos, sub_neg]
+          at h_cone h_pos_b
+        linarith
+      · -- `ν (b', j) < P * ν (b', j + 1) ≤ ν (b, j)`, read in the sorted blocks.
+        simp only [hv, ite_true, one_mul, sub_pos] at h_cone h_pos_b'
+        linarith
     exact funext fun j ↦ Tuple.eq_sort_iff'.2 ((strictMono_iff_forall_covBy _).2 fun b b' h_cov ↦
       Prod.Lex.left _ _ (neg_lt_neg (h_desc j b b' h_cov.coe_fin.succ_eq)))
   rw [Fintype.sum_eq_single τ fun τ' h_ne ↦ indicator_of_notMem (mt (h_sort τ') h_ne) _]
@@ -434,22 +445,15 @@ private lemma sum_indicator_positiveStepSet (hP : 0 ≤ P) (D : Fin (m + 1) → 
         ∀ j b, 0 < pieriStepMap v P σ ν (b, j) := by
       simp only [positiveStepSet, Set.mem_ofPred_eq, h_deg, implies_true, true_and,
         Set.mem_univ, and_true]
-      rfl
+      -- Rearranging every block by the identity permutation leaves `ν` unchanged.
+      have h_id : ν ∘ prodCongrLeft (1 : Fin (m + 1) → Perm (Fin k)) = ν := by
+        ext ⟨b, j⟩
+        simp [prodCongrLeft_apply]
+      rw [h_id]
     simp only [indicator_apply, h_left, h_right, Pi.one_apply]
     exact (sum_sign_indicator_pos_eq_indicator_pieriCone v P hP h_anti).symm
   · simp only [indicator_apply, positiveStepSet, Set.mem_ofPred_eq, h_deg, false_and, ite_false,
       sum_const_zero]
-
-/-- The sum of `f (σ 0 * ⋯ * σ m)` over all families `σ` of permutations is `k ! ^ m` times the
-sum of `f`: choose `σ 1, …, σ m` and solve for `σ 0`. -/
-private lemma sum_comp_prod_ofFn (f : Perm (Fin k) → ℝ) :
-    ∑ σ : Fin (m + 1) → Perm (Fin k), f (List.ofFn σ).prod =
-      k.factorial ^ m * ∑ τ : Perm (Fin k), f τ := by
-  let e : Perm (Fin k) × (Fin m → Perm (Fin k)) ≃ (Fin (m + 1) → Perm (Fin k)) :=
-    (prodCongrLeft fun g ↦ .mulRight (List.ofFn g).prod⁻¹).trans
-      (Fin.consEquiv fun _ ↦ Perm (Fin k))
-  rw [← e.sum_comp]
-  simp [e, Fintype.sum_prod_type_right, Fintype.card_perm]
 
 /-- The sets `positiveStepSet v P D σ τ Y` have finite volume, as they lie over the slab. -/
 private lemma volume_positiveStepSet_ne_top (hP : 1 < P) (D : Fin (m + 1) → ℝ)
@@ -505,6 +509,8 @@ private lemma volume_real_inter_degreeSlab_eq_signed_sum_aux (hP : 1 < P) (D : F
   -- Each set in `sum_volume_real_positiveStepSet` is a linear preimage of a part of the slab, and
   -- the determinants are known up to a common factor `c`.
   let Δ (τ : Perm (Fin k)) : ℝ := |LinearMap.det (1 - (P ^ (m + 1))⁻¹ • funLeft ℝ ℝ ⇑τ)|
+  -- The goal is stated with `Δ` unfolded; fold it so that `field_simp` below treats each `Δ τ`
+  -- as an atom.
   change _ = Δ 1 / k.factorial * (∑ τ : Perm (Fin k), (Perm.sign τ : ℝ) / Δ τ) *
     volume.real (degreeSlab k D)
   obtain ⟨c, hc⟩ := exists_det_pieriStepMap_eq (k := k) v (zero_lt_one.trans hP).ne'
@@ -517,7 +523,11 @@ private lemma volume_real_inter_degreeSlab_eq_signed_sum_aux (hP : 1 < P) (D : F
   have h_eq : (k.factorial : ℝ) ^ (m + 1) * ((|c| * Δ 1)⁻¹ * volume.real (Ω ∩ degreeSlab k D)) =
       k.factorial ^ m * ∑ τ : Perm (Fin k),
         (|c| * Δ τ)⁻¹ * volume.real (degreeSlab k D) * (Perm.sign τ : ℝ) := by
-    simpa [← sum_comp_prod_ofFn, h_vol, Fintype.card_perm] using
+    -- The ordered product `σ 0 * ⋯ * σ m` takes every value `k ! ^ m` times.
+    have h_count (f : Perm (Fin k) → ℝ) : ∑ σ : Fin (m + 1) → Perm (Fin k), f (List.ofFn σ).prod =
+        k.factorial ^ m * ∑ τ : Perm (Fin k), f τ := by
+      rw [List.sum_comp_prod_ofFn, Fintype.card_perm, Fintype.card_fin, nsmul_eq_mul, Nat.cast_pow]
+    simpa [← h_count, h_vol, Fintype.card_perm] using
       sum_volume_real_positiveStepSet v P hP D hΩ
   have h_sum : ∑ τ : Perm (Fin k),
       (|c| * Δ τ)⁻¹ * volume.real (degreeSlab k D) * (Perm.sign τ : ℝ) =
