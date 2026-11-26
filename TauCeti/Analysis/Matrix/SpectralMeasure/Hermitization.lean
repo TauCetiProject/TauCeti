@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.SpectralMeasure.LogarithmicPotential
 public import TauCeti.Analysis.Matrix.SpectralMeasure.SingularValues
 
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
+import TauCeti.LinearAlgebra.Matrix.SecularEquation
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.LogIntegral
 
 /-!
@@ -86,9 +87,8 @@ theorem logarithmicPotential_eigenvalueMeasure_eq_integral_log_singularValueMeas
     (A : Matrix n n ℂ) {z : ℂ} (hz : z ∉ spectrum ℂ A) :
     (A.eigenvalueMeasure : Measure ℂ).logarithmicPotential z =
       ∫ s, Real.log s ∂((A - z • 1).singularValueMeasure : Measure ℝ) := by
-  have hdet : (A - z • 1).det ≠ 0 := by
-    simpa only [Algebra.algebraMap_eq_smul_one, neg_sub] using
-      ((isUnit_iff_isUnit_det _).mp (spectrum.notMem_iff.mp hz).neg).ne_zero
+  have hdet : (A - z • 1).det ≠ 0 :=
+    ((isUnit_iff_isUnit_det _).mp (isUnit_sub_smul_one_of_notMem_spectrum hz)).ne_zero
   rw [logarithmicPotential_eigenvalueMeasure_eq_log_norm_det A hz,
     integral_log_singularValueMeasure_eq_log_norm_det hdet]
 
@@ -204,9 +204,8 @@ theorem tendsto_integral_log_singularValueMeasure_sub_smul_one {ι : Type*}
     exact mul_le_mul_of_nonneg_left (add_le_add_left hn _) (by norm_num)
   refine ProbabilityMeasure.tendsto_integral_log_of_log_tail_zero hweak ?_ hsq hzero
   filter_upwards [hspec] with k hk
-  apply ae_pos_singularValueMeasure_of_det_ne_zero
-  simpa only [Algebra.algebraMap_eq_smul_one, neg_sub] using
-    ((isUnit_iff_isUnit_det _).mp (spectrum.notMem_iff.mp hk).neg).ne_zero
+  exact ae_pos_singularValueMeasure_of_det_ne_zero
+    ((isUnit_iff_isUnit_det _).mp (isUnit_sub_smul_one_of_notMem_spectrum hk)).ne_zero
 
 variable {ιs κs : ℕ → Type*} [∀ n, Fintype (ιs n)] [∀ n, DecidableEq (ιs n)]
   [∀ n, Nonempty (ιs n)] [∀ n, Fintype (κs n)] [∀ n, DecidableEq (κs n)] [∀ n, Nonempty (κs n)]
