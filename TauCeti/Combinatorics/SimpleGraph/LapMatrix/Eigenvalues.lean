@@ -90,11 +90,8 @@ theorem lapEigenvalues_eq_zero_iff (i : Fin (Fintype.card V)) :
 components (Brouwer–Haemers, Proposition 1.3.7). -/
 theorem card_lapEigenvalues_eq_zero :
     #{i | G.lapEigenvalues i = 0} = Fintype.card G.ConnectedComponent := by
-  have hsplit := card_filter_add_card_filter_not (s := univ)
-    (fun i : Fin (Fintype.card V) ↦ G.lapEigenvalues i = 0)
-  have hrank := (G.isHermitian_lapMatrix ℝ).rank_eq_card_non_zero_eigenvalues₀
-  rw [Fintype.card_subtype, ← lapEigenvalues_def] at hrank
-  rw [card_univ, Fintype.card_fin, ← hrank] at hsplit
+  have h := (G.isHermitian_lapMatrix ℝ).card_eigenvalues₀_eq_zero_add_rank
+  rw [← lapEigenvalues_def] at h
   have := G.rank_lapMatrix_add_card_connectedComponent
   omega
 
