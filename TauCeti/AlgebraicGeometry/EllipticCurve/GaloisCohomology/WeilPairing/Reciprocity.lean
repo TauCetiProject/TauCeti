@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairi
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Local
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.SumFormula
+public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
 
 /-!
 # Global reciprocity for the Weil cup product
@@ -33,9 +34,10 @@ Here `b` is restricted into the kernel of the dual of the base change of `φ`
 degree of the base change of `φ` to `K_v` equals `n` only propositionally, so this form is stated
 in `ℚ/ℤ` only. At a place where both classes satisfy the Selmer local conditions, their local
 pairing vanishes (`TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`, in
-`WeilPairing/Orthogonality`). So if `a` and `b` satisfy them at every infinite place and at every
-finite place outside a finite set `S`, the pairings at the places of `S` sum to zero
-(`TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`).
+`WeilPairing/Orthogonality`). So if `a` and `b` satisfy them at every place outside a finite set
+`S` of places, finite or infinite, the pairings at the places of `S` sum to zero (in the namespace
+`TauCeti.Isogeny`,
+`sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`).
 
 This is the reciprocity input for comparing global Selmer conditions with their orthogonals; in
 the isogeny form it is the global duality input of Cassels' comparison of the `φ`- and
@@ -53,9 +55,9 @@ applying the Brauer sum formula
   the isogeny Weil cup product are the local Tate pairings of the restricted classes.
 * `finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`,
   in the namespace `TauCeti.Isogeny`: global reciprocity for the isogeny Weil cup product.
-* `TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`: global classes satisfying
-  the Selmer local conditions outside a finite set `S` of finite places have local pairings at
-  the places of `S` summing to zero.
+* `sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`,
+  in the namespace `TauCeti.Isogeny`: global classes satisfying the Selmer local conditions outside
+  a finite set `S` of places have local pairings at the places of `S` summing to zero.
 
 ## References
 
@@ -253,38 +255,43 @@ theorem finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWei
 
 /-- **Orthogonality of global classes satisfying the Selmer local conditions outside `S`.** Let
 `a ∈ H¹(K, E₁[φ])` and `b ∈ H¹(K, E₂[φ̂])` be global classes whose images in `H¹(K, E₁)` and
-`H¹(K, E₂)` are locally trivial at every infinite place and at every finite place outside a
-finite set `S`. Then the local Tate pairings of their restrictions at the places of `S`, embedded
-in `ℚ/ℤ`, sum to zero. This is the orthogonality half of global duality for the localisations of
-the Selmer groups of `φ` and `φ̂` relaxed at `S`. -/
-theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
+`H¹(K, E₂)` are locally trivial at every place outside a finite set `S` of places, finite or
+infinite. Then the local Tate pairings of their restrictions at the finite places of `S` and the
+archimedean local Tate pairings at the infinite places of `S`, embedded in `ℚ/ℤ`, sum to zero.
+This is the orthogonality half of global duality for the localisations of the Selmer groups of
+`φ` and `φ̂` relaxed at `S`. -/
+theorem sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero
     (τ : ∀ v : HeightOneSpectrum (𝓞 K),
       SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
     (τ' : ∀ w : InfinitePlace K, SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
-    (S : Finset (HeightOneSpectrum (𝓞 K)))
-    (ha : ∀ v ∉ S, W₁.pointRes (τ v)
+    (S : Finset (GlobalNumberFields.Place K))
+    (ha : ∀ v, .inl v ∉ S → W₁.pointRes (τ v)
       (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0)
-    (hb : ∀ v ∉ S, W₂.pointRes (τ v)
+    (hb : ∀ v, .inl v ∉ S → W₂.pointRes (τ v)
       (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0)
-    (ha' : ∀ w, W₁.pointRes (τ' w)
+    (ha' : ∀ w, .inr w ∉ S → W₁.pointRes (τ' w)
       (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0)
-    (hb' : ∀ w, W₂.pointRes (τ' w)
+    (hb' : ∀ w, .inr w ∉ S → W₂.pointRes (τ' w)
       (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0) :
-    ∑ v ∈ S, ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
+    ∑ v ∈ S.toLeft, ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
       ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
         (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
-        (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b)) = 0 := by
+        (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b)) +
+      ∑ w ∈ S.toRight, ZMod.toRatAddCircle (φ.baseChange w.Completion).degree
+        ((φ.baseChange w.Completion).infiniteTateKerWeilPairing (φ.kerRes (τ' w) a)
+          (φ.dualKerRes (τ' w) b)) = 0 := by
   have h :=
     φ.finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero
       a b τ τ'
-  rwa [Finset.sum_eq_zero fun w _ ↦ by
+  rwa [finsum_eq_sum_of_support_subset _ (s := S.toLeft) fun v hv ↦ by_contra fun hvS ↦ hv <| by
+      rw [Finset.mem_coe, Finset.mem_toLeft] at hvS
+      rw [toRatAddCircle_localTateKerWeilPairing,
+        φ.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero _ _ (ha v hvS) (hb v hvS), map_zero],
+    ← Finset.sum_subset (Finset.subset_univ S.toRight) fun w _ hw ↦ by
+      rw [Finset.mem_toRight] at hw
       rw [(φ.baseChange w.Completion).toRatAddCircle_infiniteTateKerWeilPairing
           (isUnit_natCast_of_ne_zero ℚ (φ.baseChange w.Completion).degree_ne_zero),
-        φ.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero _ _ (ha' w) (hb' w), map_zero],
-    add_zero, finsum_eq_sum_of_support_subset _ (s := S) fun v hv ↦ by_contra fun hvS ↦ hv <| by
-      rw [toRatAddCircle_localTateKerWeilPairing,
-        φ.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero _ _ (ha v hvS) (hb v hvS),
-        map_zero]] at h
+        φ.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero _ _ (ha' w hw) (hb' w hw), map_zero]] at h
 
 end TauCeti.Isogeny
 
