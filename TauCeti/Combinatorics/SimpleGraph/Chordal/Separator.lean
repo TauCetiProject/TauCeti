@@ -160,9 +160,9 @@ theorem isChordal_of_forall_isMinimalSeparator_isClique
   have h1 : f ⟨1, by lia⟩ ∈ S := by
     by_contra h1
     have h01 : (G.induce Sᶜ).Adj ⟨f ⟨0, by lia⟩, hsep.left_notMem⟩ ⟨f ⟨1, by lia⟩, h1⟩ :=
-      (hadj _ _).2 (by lia)
+      induce_adj.2 ((hadj _ _).2 (by lia))
     have h12 : (G.induce Sᶜ).Adj ⟨f ⟨1, by lia⟩, h1⟩ ⟨f ⟨2, by lia⟩, hsep.right_notMem⟩ :=
-      (hadj _ _).2 (by lia)
+      induce_adj.2 ((hadj _ _).2 (by lia))
     exact hsep.not_reachable (h01.reachable.trans h12.reachable)
   -- and the vertex at position `m + 3`; the two are not adjacent, so `S` is not a clique
   have h3 := mem_of_isSeparator_of_subset_neighborSet f hsep hSN
