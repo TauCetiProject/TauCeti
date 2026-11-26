@@ -150,6 +150,7 @@ theorem diagGL_mul_permutationGL_injective [Nontrivial k] :
 
 /-- Two monomial factorizations `diagGL d * permutationGL σ` agree exactly when both their
 diagonal and their permutation factors agree, over a nontrivial semiring. -/
+@[simp]
 theorem diagGL_mul_permutationGL_inj [Nontrivial k] {d e : Fin n → kˣ}
     {σ τ : Equiv.Perm (Fin n)} :
     (diagGL d * permutationGL σ : GL (Fin n) k) = diagGL e * permutationGL τ ↔ d = e ∧ σ = τ :=
