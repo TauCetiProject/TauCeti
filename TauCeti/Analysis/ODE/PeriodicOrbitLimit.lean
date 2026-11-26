@@ -125,8 +125,10 @@ and the defect tends uniformly to zero, the slice velocity `∂_t u` converges u
 are bounded on the strip when this holds at both ends
 (`TauCeti.exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect`). Both conditions pass
 from two `C¹` maps to every point `u + μ (u' - u)` of the segment between them
-(`TauCeti.tendstoUniformlyOn_add_smul_sub_and_sliceDefect`). These are the asymptotics along which
-the linearized Floer operator is deformed.
+(`TauCeti.tendstoUniformlyOn_add_smul_sub_and_sliceDefect`), and the defect condition passes to
+every continuous vector field that agrees with `X` along `x`
+(`TauCeti.tendstoUniformlyOn_sliceDefect_of_apply_eq`). These are the asymptotics along which the
+linearized Floer operator is deformed.
 
 ## References
 
@@ -1222,6 +1224,21 @@ theorem tendstoUniformlyOn_fderiv_apply_of_sliceDefect [ProperSpace V] (hX : Con
     hx.continuousOn hux)).congr (.of_forall fun s t _ ↦ ?_)).congr_right fun t _ ↦ ?_
   · simp only [sliceDefect_def, uncurry_apply_pair, sub_add_cancel]
   · simp only [Pi.zero_apply, uncurry_apply_pair, zero_add]
+
+/-- If the loops of `u` converge uniformly to a continuous loop `x` and the slice defect
+`∂t u - X_t(u)` tends uniformly to zero, then so does the slice defect `∂t u - Y_t(u)` for every
+continuous time-dependent vector field `Y` that agrees with `X` along `x`. -/
+theorem tendstoUniformlyOn_sliceDefect_of_apply_eq [ProperSpace V] {Y : ℝ → V → V}
+    (hX : Continuous (uncurry X)) (hY : Continuous (uncurry Y)) (hx : Continuous x)
+    (hXY : ∀ t, Y t (x t) = X t (x t))
+    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect X u (s, t)) 0 l (Icc 0 1)) :
+    TendstoUniformlyOn (fun s t ↦ sliceDefect Y u (s, t)) 0 l (Icc 0 1) := by
+  refine ((tendstoUniformlyOn_fderiv_apply_of_sliceDefect hX hx hux hδ).fun_sub
+    (isCompact_Icc.tendstoUniformlyOn_comp_prodMk_of_continuous hY hx.continuousOn hux)).congr
+      (.of_forall fun s t _ ↦ ?_) |>.congr_right fun t _ ↦ ?_
+  · simp only [sliceDefect_def, uncurry_apply_pair]
+  · simp only [Pi.zero_apply, uncurry_apply_pair, hXY, sub_self]
 
 /-- A `C¹` map of the cylinder and its derivative in `t` are bounded on the strip `ℝ × [0, 1]`
 when its loops converge uniformly to continuous loops at both ends and its slice defects for
