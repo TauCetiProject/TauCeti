@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Variational.FormOperator
 public import TauCeti.Analysis.PDE.MixedProblem
 public import TauCeti.Analysis.PDE.Spectrum.Operator.Basic
+import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 
 /-!
 # The mixed realization of a divergence-form operator
@@ -63,6 +64,25 @@ hypothesis but the Rellich property holds outright: the mixed Laplacian `-Δ_Γ`
 nonnegative, every negative number is a resolvent point, and on a domain with the Rellich property
 it has compact resolvent and spectrum its mixed eigenvalues, all nonnegative.
 
+## The first mixed eigenvalue
+
+On a nonempty domain with the Rellich property the spectrum of `-Δ_Γ` has a least point `λ₁`, the
+first mixed eigenvalue, and the **Rayleigh principle** identifies it as the greatest `C` with
+`C ‖u‖²_{L²} ≤ ‖∇u‖²_{L²}` on `H¹_Γ(Ω)`. It is computed from the shift `ω = 1`, where the mixed
+form `∫_Ω ∇u · ∇v + ∫_Ω u v` is the inner product of `H¹(Ω)`: `λ₁ + 1` is the reciprocal of the
+norm of its solution operator.
+
+A **Poincaré–Friedrichs inequality** `‖u‖_{L²} ≤ P ‖∇u‖_{L²}` on `H¹_Γ(Ω)` makes every `κ` with
+`κ P² < 1` a resolvent point, without any compactness. So `-Δ_Γ` is invertible, its inverse being
+the solution operator of the unshifted mixed form, coercive with constant `1 / (P² + 1)`, and its
+spectrum lies in `[1 / P², ∞)`. Together with the Rayleigh principle this identifies `λ₁^{-1/2}` as
+the optimal Poincaré–Friedrichs constant. On a bounded connected Lipschitz domain, with `Γ` meeting
+the frontier in a set of positive surface measure, the Poincaré–Friedrichs inequality and the
+Rellich property both hold, so `λ₁ > 0`, `0` is a resolvent point, and `λ₁^{-1/2}` is the optimal
+constant. For `Γ = ∅` the constants lie in `H¹_∅(Ω) = H¹(Ω)` on a bounded Lipschitz domain
+(`TauCeti.w1pVanishingOnSubmodule_empty_of_isLipschitzDomainWith`), so `λ₁ = 0` there and the
+hypothesis on `Γ` cannot be dropped.
+
 ## Main declarations
 
 * `TauCeti.PDE.mixedOperator`: the mixed realization, with
@@ -96,11 +116,29 @@ it has compact resolvent and spectrum its mixed eigenvalues, all nonnegative.
   `TauCeti.PDE.mem_graph_mixedOperator_laplacian_iff`,
   `TauCeti.PDE.mem_domain_mixedOperator_laplacian_iff` and
   `TauCeti.PDE.value_mem_domain_mixedOperator_laplacian`: the mixed Laplacian `-Δ_Γ`.
+* `TauCeti.PDE.exists_isLeast_spectrum_mixedOperator_laplacian` and
+  `TauCeti.PDE.isGreatest_of_isLeast_spectrum_mixedOperator_laplacian`: the first mixed
+  eigenvalue and its Rayleigh principle.
+* `TauCeti.PDE.mem_resolventSet_mixedOperator_laplacian_of_mul_sq_lt_one`,
+  `TauCeti.PDE.zero_mem_resolventSet_mixedOperator_laplacian_of_poincare`,
+  `TauCeti.PDE.one_le_mul_sq_of_mem_spectrum_mixedOperator_laplacian`,
+  `TauCeti.PDE.pos_of_mem_spectrum_mixedOperator_laplacian_of_poincare`,
+  `TauCeti.PDE.isCoercive_mixedForm_laplacian_of_poincare` and
+  `TauCeti.PDE.resolvent_mixedOperator_laplacian_zero`: the mixed Laplacian under a
+  Poincaré–Friedrichs inequality, and its inverse.
+* `TauCeti.PDE.isLeast_inv_sqrt_of_isLeast_spectrum_mixedOperator_laplacian`: `λ₁^{-1/2}` is the
+  optimal Poincaré–Friedrichs constant.
+* `TauCeti.PDE.zero_mem_resolventSet_mixedOperator_laplacian_of_isLipschitzDomainWith` and
+  `TauCeti.PDE.exists_isLeast_spectrum_mixedOperator_laplacian_of_isLipschitzDomainWith`: the case
+  of a bounded connected Lipschitz domain and a Dirichlet part of positive surface measure.
 
 ## References
 
 * H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
   Theorem 9.31 (the Dirichlet case) and Proposition 9.24 (the Neumann problem).
+* S. Bauer, D. Pauly and M. Schomburg, *The Maxwell compactness property in bounded weak
+  Lipschitz domains with mixed boundary conditions*, Theorem 4.8 (the Poincaré–Friedrichs
+  inequality for mixed boundary conditions).
 * T. Kato, *Perturbation Theory for Linear Operators*, Chapter VI, §2 (the representation
   theorem for closed semibounded forms).
 -/
@@ -752,7 +790,274 @@ theorem spectrum_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
             kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ} :=
   Set.ext fun _ ↦ mem_spectrum_mixedOperator_laplacian_iff hΓ hK
 
+/-! ### The mixed Laplacian under a Poincaré–Friedrichs inequality -/
+
+/-- The Gårding inequality of `-Δ - κ` for `0 ≤ κ`, from a Poincaré–Friedrichs bound
+`‖u‖_{L²} ≤ P ‖∇u‖_{L²}`: the constant `(1 - κ P²) / (P² + 1)` is positive when `κ P² < 1`. -/
+private theorem div_mul_norm_sq_le_energyFormH1_laplacian_sub {P kappa : ℝ}
+    (hkappa : 0 ≤ kappa) {u : W1p mu Omega 2} (hu : ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
+    (1 - kappa * P ^ 2) / (P ^ 2 + 1) * ‖u‖ ^ 2 ≤
+      energyFormH1 (fun _ ↦ 1) 0 0 u u + -kappa * ‖W1p.value u‖ ^ 2 :=
+  mul_norm_sq_le_of_gradient_sub_value_bound (A := 1) (B := kappa) (by linarith)
+    (by rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq]; linarith) hu
+
+/-- **A Poincaré–Friedrichs inequality keeps the spectrum of `-Δ_Γ` away from `0`.** If
+`‖u‖_{L²} ≤ P ‖∇u‖_{L²}` for every `u ∈ H¹_Γ(Ω)`, every `κ` with `κ P² < 1` is a resolvent point of
+the mixed Laplacian `-Δ_Γ`. No compactness of the value map is needed. -/
+theorem mem_resolventSet_mixedOperator_laplacian_of_mul_sq_lt_one (hΓ : Disjoint Γ Omega)
+    {P kappa : ℝ}
+    (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖)
+    (hkappa : kappa * P ^ 2 < 1) :
+    kappa ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+      (1 : Matrix ι ι ℝ)) Γ).resolventSet := by
+  rcases lt_or_ge kappa 0 with hneg | hnonneg
+  · exact mem_resolventSet_mixedOperator_laplacian_of_neg hΓ hneg
+  have h := neg_mem_resolventSet_mixedOperator
+    (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega) (1 : Matrix ι ι ℝ)) hΓ
+    (div_pos (sub_pos.2 hkappa) (by positivity))
+    fun v ↦ div_mul_norm_sq_le_energyFormH1_laplacian_sub hnonneg (hP _ v.property)
+  rwa [neg_neg] at h
+
+/-- **The mixed Laplacian `-Δ_Γ` is invertible under a Poincaré–Friedrichs inequality**
+`‖u‖_{L²} ≤ P ‖∇u‖_{L²}` on `H¹_Γ(Ω)`: `0` is a resolvent point. -/
+theorem zero_mem_resolventSet_mixedOperator_laplacian_of_poincare (hΓ : Disjoint Γ Omega)
+    {P : ℝ}
+    (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
+    (0 : ℝ) ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+      (1 : Matrix ι ι ℝ)) Γ).resolventSet :=
+  mem_resolventSet_mixedOperator_laplacian_of_mul_sq_lt_one hΓ hP (by rw [zero_mul]; exact one_pos)
+
+/-- **The spectrum of `-Δ_Γ` lies above `1 / P²`** under a Poincaré–Friedrichs inequality
+`‖u‖_{L²} ≤ P ‖∇u‖_{L²}` on `H¹_Γ(Ω)`: every `κ` in it has `1 ≤ κ P²`. -/
+theorem one_le_mul_sq_of_mem_spectrum_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
+    {P kappa : ℝ}
+    (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖)
+    (hkappa : kappa ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
+      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).spectrum) :
+    1 ≤ kappa * P ^ 2 :=
+  not_lt.1 fun h ↦ (LinearPMap.mem_spectrum_iff _ _).1 hkappa
+    (mem_resolventSet_mixedOperator_laplacian_of_mul_sq_lt_one hΓ hP h)
+
+/-- **The spectrum of `-Δ_Γ` is positive** under a Poincaré–Friedrichs inequality
+`‖u‖_{L²} ≤ P ‖∇u‖_{L²}` on `H¹_Γ(Ω)`. -/
+theorem pos_of_mem_spectrum_mixedOperator_laplacian_of_poincare (hΓ : Disjoint Γ Omega)
+    {P kappa : ℝ}
+    (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖)
+    (hkappa : kappa ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
+      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).spectrum) :
+    0 < kappa := by
+  have h := one_le_mul_sq_of_mem_spectrum_mixedOperator_laplacian hΓ hP hkappa
+  by_contra hle
+  nlinarith [mul_nonpos_of_nonpos_of_nonneg (not_lt.1 hle) (sq_nonneg P)]
+
+/-- Under a Poincaré–Friedrichs inequality `‖u‖_{L²} ≤ P ‖∇u‖_{L²}` on `H¹_Γ(Ω)`, the unshifted
+mixed form `∫_Ω ∇u · ∇v` of `-Δ` is coercive on `H¹_Γ(Ω)`, with constant `1 / (P² + 1)`. -/
+theorem isCoercive_mixedForm_laplacian_of_poincare {P : ℝ}
+    (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
+    IsCoercive (mixedForm (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+      (1 : Matrix ι ι ℝ)) Γ 0) := by
+  refine isCoercive_mixedForm _ (theta := (P ^ 2 + 1)⁻¹) (by positivity) fun v ↦ ?_
+  simpa using div_mul_norm_sq_le_energyFormH1_laplacian_sub le_rfl (hP _ v.property)
+
+/-- **The inverse of `-Δ_Γ`.** Under a Poincaré–Friedrichs inequality on `H¹_Γ(Ω)`, the resolvent
+of the mixed Laplacian at `0` is minus the solution operator `f ↦ u` of
+`∫_Ω ∇u · ∇v = ∫_Ω f v` for every `v ∈ H¹_Γ(Ω)`. So `-Δ_Γ` has the inverse
+`TauCeti.PDE.mixedSolutionOperator`, which is symmetric
+(`TauCeti.PDE.isSymmetric_mixedSolutionOperator`), positive semidefinite
+(`TauCeti.PDE.inner_mixedSolutionOperator_self_nonneg`), and compact on a domain with the Rellich
+property (`TauCeti.PDE.isCompactOperator_mixedSolutionOperator`). -/
+theorem resolvent_mixedOperator_laplacian_zero (hΓ : Disjoint Γ Omega) {P : ℝ}
+    (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
+    (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+      (1 : Matrix ι ι ℝ)) Γ).resolvent 0 =
+      -mixedSolutionOperator _ Γ (isCoercive_mixedForm_laplacian_of_poincare hP) := by
+  have h := resolvent_mixedOperator_neg _ hΓ (isCoercive_mixedForm_laplacian_of_poincare hP)
+  rwa [neg_zero] at h
+
+/-! ### The bottom of the spectrum of the mixed Laplacian -/
+
+/-- A point `κ` of the spectrum of `-Δ_Γ`, on a domain with the Rellich property, has an
+eigenfunction `u ∈ H¹_Γ(Ω)` with nonzero value and `‖∇u‖² = κ ‖u‖²`. -/
+private theorem exists_value_ne_zero_of_mem_spectrum_mixedOperator_laplacian
+    (hΓ : Disjoint Γ Omega)
+    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2))) {kappa : ℝ}
+    (hkappa : kappa ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
+      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).spectrum) :
+    ∃ u : W1pVanishingOn mu Omega 2 Γ, W1p.value (u : W1p mu Omega 2) ≠ 0 ∧
+      ‖W1p.gradient (u : W1p mu Omega 2)‖ ^ 2 =
+        kappa * ‖W1p.value (u : W1p mu Omega 2)‖ ^ 2 := by
+  obtain ⟨u, hu, heq⟩ := (mem_spectrum_mixedOperator_laplacian_iff hΓ hK).1 hkappa
+  refine ⟨u, fun h ↦ hu (W1pVanishingOn.valueL_injective ?_), ?_⟩
+  · rw [W1pVanishingOn.valueL_apply, h, map_zero]
+  · rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq, heq u]
+
+/-- Every `C` with `C ‖u‖² ≤ ‖∇u‖²` on `H¹_Γ(Ω)` lies below every point of the spectrum of
+`-Δ_Γ`, on a domain with the Rellich property. -/
+private theorem le_of_mem_spectrum_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
+    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2))) {C kappa : ℝ}
+    (hC : ∀ u : W1pVanishingOn mu Omega 2 Γ,
+      C * ‖W1p.value (u : W1p mu Omega 2)‖ ^ 2 ≤ ‖W1p.gradient (u : W1p mu Omega 2)‖ ^ 2)
+    (hkappa : kappa ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
+      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).spectrum) :
+    C ≤ kappa := by
+  obtain ⟨u, hu, heq⟩ := exists_value_ne_zero_of_mem_spectrum_mixedOperator_laplacian hΓ hK hkappa
+  have hpos : 0 < ‖W1p.value (u : W1p mu Omega 2)‖ ^ 2 := by positivity
+  exact le_of_mul_le_mul_right (heq ▸ hC u) hpos
+
+/-- On a domain with the Rellich property and a nonzero value map `H¹_Γ(Ω) → L²(Ω)`, some point
+`μ` of the spectrum of `-Δ_Γ` has `μ ‖u‖² ≤ ‖∇u‖²` on all of `H¹_Γ(Ω)`. It is `‖S‖⁻¹ - 1` for
+the solution operator `S` of the coercive form `∫_Ω ∇u · ∇v + ∫_Ω u v`, by the Rayleigh principle
+for that form. -/
+private theorem exists_mem_spectrum_mixedOperator_laplacian_forall_mul_le
+    (hΓ : Disjoint Γ Omega)
+    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)))
+    (hJ : (W1pVanishingOn.valueL (mu := mu) (Omega := Omega) (p := 2) (Γ := Γ)) ≠ 0) :
+    ∃ μ ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+      (1 : Matrix ι ι ℝ)) Γ).spectrum, ∀ u : W1pVanishingOn mu Omega 2 Γ,
+        μ * ‖W1p.value (u : W1p mu Omega 2)‖ ^ 2 ≤ ‖W1p.gradient (u : W1p mu Omega 2)‖ ^ 2 := by
+  have hB := isCoercive_mixedForm
+    (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega) (1 : Matrix ι ι ℝ))
+    (Γ := Γ) (lt_min one_pos one_pos)
+    fun v ↦ min_mul_norm_sq_le_energyFormH1_one_zero_zero_add 1 (v : W1p mu Omega 2)
+  have hsymm (u v : W1pVanishingOn mu Omega 2 Γ) :
+      mixedForm (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+        (1 : Matrix ι ι ℝ)) Γ 1 u v =
+      mixedForm (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+        (1 : Matrix ι ι ℝ)) Γ 1 v u := by
+    rw [mixedForm_apply, mixedForm_apply, energyFormH1_one_zero_zero_comm, real_inner_comm]
+  obtain ⟨u, hu, heq⟩ := hB.exists_ne_zero_forall_apply_eq_inv_norm_smul_inner
+    (W1pVanishingOn.isCompactOperator_valueL hK) hsymm hJ
+  refine ⟨‖hB.formSolutionOperator W1pVanishingOn.valueL‖⁻¹ - 1,
+    (mem_spectrum_mixedOperator_laplacian_iff hΓ hK).2 ⟨u, hu, fun v ↦ ?_⟩, fun v ↦ ?_⟩
+  · have h := heq v
+    rw [mixedForm_apply, energyFormH1_one_zero_zero_eq_inner, W1pVanishingOn.valueL_apply,
+      W1pVanishingOn.valueL_apply] at h
+    linarith
+  · have h := hB.inv_norm_formSolutionOperator_mul_norm_apply_sq_le W1pVanishingOn.valueL hsymm v
+    rw [mixedForm_apply, energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
+      real_inner_self_eq_norm_sq, W1pVanishingOn.valueL_apply] at h
+    linarith
+
+/-- **The spectrum of `-Δ_Γ` has a least point** `λ₁ ≥ 0` on a nonempty domain with the Rellich
+property, for every `Γ` disjoint from `Ω`. It is the first mixed eigenvalue, characterized by the
+Rayleigh principle `TauCeti.PDE.isGreatest_of_isLeast_spectrum_mixedOperator_laplacian`. -/
+theorem exists_isLeast_spectrum_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
+    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)))
+    (hOmega : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty) :
+    ∃ lam : ℝ, IsLeast (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
+      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).spectrum lam := by
+  obtain ⟨μ, hμ, hle⟩ := exists_mem_spectrum_mixedOperator_laplacian_forall_mul_le hΓ hK
+    (W1pVanishingOn.valueL_ne_zero hΓ hOmega)
+  exact ⟨μ, hμ, fun _ ↦ le_of_mem_spectrum_mixedOperator_laplacian hΓ hK hle⟩
+
+/-- **The Rayleigh principle for the first mixed eigenvalue.** On a domain with the Rellich
+property, the least point `λ₁` of the spectrum of the mixed Laplacian `-Δ_Γ` is the greatest `C`
+with
+
+`C ‖u‖²_{L²(Ω)} ≤ ‖∇u‖²_{L²(Ω)}` for every `u ∈ H¹_Γ(Ω)`. -/
+theorem isGreatest_of_isLeast_spectrum_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
+    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2))) {lam : ℝ}
+    (hlam : IsLeast (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
+      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).spectrum lam) :
+    IsGreatest {C : ℝ | ∀ u : W1pVanishingOn mu Omega 2 Γ,
+      C * ‖W1p.value (u : W1p mu Omega 2)‖ ^ 2 ≤ ‖W1p.gradient (u : W1p mu Omega 2)‖ ^ 2} lam := by
+  -- An eigenfunction of `λ₁` shows that the value map is nonzero.
+  obtain ⟨u, hu, -⟩ := exists_value_ne_zero_of_mem_spectrum_mixedOperator_laplacian hΓ hK hlam.1
+  obtain ⟨μ, hμ, hle⟩ := exists_mem_spectrum_mixedOperator_laplacian_forall_mul_le hΓ hK
+    fun h ↦ hu (by rw [← W1pVanishingOn.valueL_apply, h, zero_apply])
+  have hμlam : μ = lam :=
+    (IsLeast.unique ⟨hμ, fun _ ↦ le_of_mem_spectrum_mixedOperator_laplacian hΓ hK hle⟩ hlam)
+  exact ⟨hμlam ▸ hle, fun C hC ↦ le_of_mem_spectrum_mixedOperator_laplacian hΓ hK hC hlam.1⟩
+
+/-- **The optimal Poincaré–Friedrichs constant is `λ₁^{-1/2}`.** On a domain with the Rellich
+property, if the least point `λ₁` of the spectrum of the mixed Laplacian `-Δ_Γ` is positive, then
+`λ₁^{-1/2}` is the least `P ≥ 0` with `‖u‖_{L²(Ω)} ≤ P ‖∇u‖_{L²(Ω)}` for every
+`u ∈ H¹_Γ(Ω)`. Conversely any such inequality forces `λ₁ > 0`
+(`TauCeti.PDE.pos_of_mem_spectrum_mixedOperator_laplacian_of_poincare`). -/
+theorem isLeast_inv_sqrt_of_isLeast_spectrum_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
+    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2))) {lam : ℝ}
+    (hlam : IsLeast (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
+      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).spectrum lam) (hpos : 0 < lam) :
+    IsLeast {P : ℝ | 0 ≤ P ∧ ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ,
+      ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖} (√lam)⁻¹ := by
+  have hsqrt : 0 < √lam := Real.sqrt_pos.2 hpos
+  refine ⟨⟨by positivity, fun u hu ↦ ?_⟩, fun P ⟨hP0, hP⟩ ↦ ?_⟩
+  · have h := (isGreatest_of_isLeast_spectrum_mixedOperator_laplacian hΓ hK hlam).1 ⟨u, hu⟩
+    rw [inv_mul_eq_div, le_div_iff₀ hsqrt]
+    refine (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).1 ?_
+    rw [mul_pow, Real.sq_sqrt hpos.le, mul_comm]
+    exact h
+  · have h := one_le_mul_sq_of_mem_spectrum_mixedOperator_laplacian hΓ hP hlam.1
+    rw [inv_le_iff_one_le_mul₀' hsqrt]
+    refine (one_le_pow_iff_of_nonneg (by positivity) two_ne_zero).1 ?_
+    rwa [mul_pow, Real.sq_sqrt hpos.le]
+
 end Laplacian
+
+/-! ### Lipschitz domains -/
+
+section Lipschitz
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {V : Opens (WithLp 2 (ℝ × E))} {L : NNReal}
+  {ι : Type*} [Fintype ι] [DecidableEq ι] {Omega : Opens (EuclideanSpace ℝ ι)}
+  {Γ : Set (EuclideanSpace ℝ ι)}
+
+/-- **`-Δ_Γ` is invertible on a Lipschitz domain with a Dirichlet part of positive measure.** Let
+an affine isometry `e` carry the connected open set `Ω ⊆ EuclideanSpace ℝ ι` onto a bounded
+Lipschitz domain `V`, and let `Γ` be disjoint from `Ω` and meet its frontier in a set of positive
+surface measure. Then `0` is a resolvent point of the mixed Laplacian `-Δ_Γ`; its inverse is a
+solution operator (`TauCeti.PDE.resolvent_mixedOperator_laplacian_zero`), which is compact and
+symmetric. -/
+theorem zero_mem_resolventSet_mixedOperator_laplacian_of_isLipschitzDomainWith
+    (hV : (V : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hVb : IsBounded (V : Set (WithLp 2 (ℝ × E))))
+    (e : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
+    (hVΩ : (V : Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' Omega)
+    (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι))) (hΓ : Disjoint Γ Omega)
+    (hΓmeas : (μHE[Module.finrank ℝ E] : Measure (EuclideanSpace ℝ ι))
+      (Γ ∩ frontier (Omega : Set (EuclideanSpace ℝ ι))) ≠ 0) :
+    (0 : ℝ) ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := volume)
+      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).resolventSet := by
+  obtain ⟨P, -, hP⟩ :=
+    W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_affineIsometryEquiv
+      (p := 2) ENNReal.ofNat_ne_top hV hVb e hVΩ hconn hΓmeas
+  exact zero_mem_resolventSet_mixedOperator_laplacian_of_poincare hΓ hP
+
+/-- **The first mixed eigenvalue on a Lipschitz domain with a Dirichlet part of positive
+measure.** Let an affine isometry `e` carry the connected open set `Ω ⊆ EuclideanSpace ℝ ι` onto a
+bounded Lipschitz domain `V`, and let `Γ` be disjoint from `Ω` and meet its frontier in a set of
+positive surface measure. Then the spectrum of the mixed Laplacian `-Δ_Γ` has a least point
+`λ₁ > 0`, and `λ₁^{-1/2}` is the optimal constant `P ≥ 0` in the Poincaré–Friedrichs inequality
+`‖u‖_{L²(Ω)} ≤ P ‖∇u‖_{L²(Ω)}` on `H¹_Γ(Ω)`. -/
+theorem exists_isLeast_spectrum_mixedOperator_laplacian_of_isLipschitzDomainWith
+    (hV : (V : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hVb : IsBounded (V : Set (WithLp 2 (ℝ × E))))
+    (e : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
+    (hVΩ : (V : Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' Omega)
+    (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι))) (hΓ : Disjoint Γ Omega)
+    (hΓmeas : (μHE[Module.finrank ℝ E] : Measure (EuclideanSpace ℝ ι))
+      (Γ ∩ frontier (Omega : Set (EuclideanSpace ℝ ι))) ≠ 0) :
+    ∃ lam : ℝ, 0 < lam ∧
+      IsLeast (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := volume)
+        (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).spectrum lam ∧
+      IsLeast {P : ℝ | 0 ≤ P ∧ ∀ u ∈ w1pVanishingOnSubmodule volume Omega 2 Γ,
+        ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖} (√lam)⁻¹ := by
+  obtain ⟨P, -, hP⟩ :=
+    W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_affineIsometryEquiv
+      (p := 2) ENNReal.ofNat_ne_top hV hVb e hVΩ hconn hΓmeas
+  have hK := W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv
+    (p := 2) hV hVb e hVΩ
+  -- `Ω` is nonempty, since `Γ` meets its frontier.
+  have hOmega : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty := by
+    refine ne_empty_iff_nonempty.1 fun hempty ↦ hΓmeas ?_
+    rw [hempty, frontier_empty, inter_empty, measure_empty]
+  obtain ⟨lam, hlam⟩ := exists_isLeast_spectrum_mixedOperator_laplacian hΓ hK hOmega
+  have hpos := pos_of_mem_spectrum_mixedOperator_laplacian_of_poincare hΓ hP hlam.1
+  exact ⟨lam, hpos, hlam,
+    isLeast_inv_sqrt_of_isLeast_spectrum_mixedOperator_laplacian hΓ hK hlam hpos⟩
+
+end Lipschitz
 
 end PDE
 
