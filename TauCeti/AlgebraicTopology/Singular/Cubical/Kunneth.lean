@@ -41,8 +41,6 @@ cubes (an instance in `Cubical/Normalization.lean`).
 * `TauCeti.singularCubicalHomologyIso_inv_homologyMap_cubicalCrossProduct_homologyCross`: on
   classes, the comparison isomorphism carries the cubical cross product to the singular one
   (`TopCat.singularHomologyCrossBilinear`).
-* `TauCeti.homologyMap_cubicalCrossProduct_homologyCross_homologyπ`: the cubical cross product of
-  the classes of two cubes that are cycles is the class of their cross product cube.
 -/
 
 public section
@@ -268,56 +266,6 @@ theorem singularCubicalHomologyIso_inv_homologyMap_cubicalCrossProduct_homologyC
   rw [singularCubicalHomologyIso_inv, singularCubicalHomologyIso_inv,
     singularCubicalHomologyIso_inv, TopCat.singularHomologyCrossBilinear_apply]
   exact e'.symm
-
-variable {X Y} in
-/-- **The cross product of the classes of two cubes.** If cycles `z₁` of `X` and `z₂` of `Y` have
-the cubes `c` and `d` as underlying chains, then the cubical cross product of their classes is the
-class of any cycle of `X × Y` whose underlying chain is the cross product cube `c × d`. -/
-theorem homologyMap_cubicalCrossProduct_homologyCross_homologyπ {p q : ℕ}
-    {c : SingularCube X p} {d : SingularCube Y q}
-    (z₁ : ((normalizedCubicalChainComplex k).obj X).cycles p)
-    (hz₁ : ((normalizedCubicalChainComplex k).obj X).iCycles p z₁ =
-      NormalizedCubicalChain.ofCube X k c)
-    (z₂ : ((normalizedCubicalChainComplex k).obj Y).cycles q)
-    (hz₂ : ((normalizedCubicalChainComplex k).obj Y).iCycles q z₂ =
-      NormalizedCubicalChain.ofCube Y k d)
-    (w : ((normalizedCubicalChainComplex k).obj (X ⊗ Y)).cycles (p + q))
-    (hw : ((normalizedCubicalChainComplex k).obj (X ⊗ Y)).iCycles (p + q) w =
-      NormalizedCubicalChain.ofCube (X × Y) k (SingularCube.crossProduct c d)) :
-    homologyMap (cubicalCrossProduct k X Y) (p + q)
-        (homologyCross ((normalizedCubicalChainComplex k).obj X)
-          ((normalizedCubicalChainComplex k).obj Y) p q (p + q) rfl
-          (((normalizedCubicalChainComplex k).obj X).homologyπ p z₁ ⊗ₜ
-            ((normalizedCubicalChainComplex k).obj Y).homologyπ q z₂)) =
-      ((normalizedCubicalChainComplex k).obj (X ⊗ Y)).homologyπ (p + q) w := by
-  -- The cross product of the classes is the class of the cross product of the cycles.
-  have h₁ := ConcreteCategory.congr_hom (homologyπ_tensorHom_homologyCross
-    ((normalizedCubicalChainComplex k).obj X) ((normalizedCubicalChainComplex k).obj Y) p q (p + q)
-    rfl) (z₁ ⊗ₜ z₂)
-  rw [ConcreteCategory.comp_apply, ModuleCat.MonoidalCategory.tensorHom_tmul] at h₁
-  rw [h₁]
-  have h₂ := ConcreteCategory.congr_hom (homologyπ_naturality (cubicalCrossProduct k X Y) (p + q))
-    ((cyclesCross ((normalizedCubicalChainComplex k).obj X)
-      ((normalizedCubicalChainComplex k).obj Y) p q (p + q) rfl).hom (z₁ ⊗ₜ z₂))
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₂
-  refine h₂.trans (congrArg _ (moduleCat_iCycles_injective _ _ ?_))
-  -- On chains, the cross product of the two cubes is the cube `c × d`.
-  have h₃ := ConcreteCategory.congr_hom (cyclesCross_iCycles
-    ((normalizedCubicalChainComplex k).obj X) ((normalizedCubicalChainComplex k).obj Y) p q (p + q)
-    rfl) (z₁ ⊗ₜ z₂)
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
-    ModuleCat.MonoidalCategory.tensorHom_tmul, hz₁, hz₂] at h₃
-  have h₄ := ConcreteCategory.congr_hom (ι_cubicalCrossProduct_f (R := k) (X := X) (Y := Y)
-    (rfl : p + q = p + q))
-    (NormalizedCubicalChain.ofCube X k c ⊗ₜ NormalizedCubicalChain.ofCube Y k d)
-  simp only [ModuleCat.hom_comp] at h₄
-  -- The cycles of the tensor product are named through `HomologicalComplex.tensorObj`, which agrees
-  -- with the monoidal tensor product only after unfolding, so the steps are chained by
-  -- transitivity rather than rewritten.
-  refine (moduleCat_iCycles_cyclesMap_apply _ _ _ _).trans ?_
-  refine ((congrArg _ h₃).trans h₄).trans ?_
-  refine (cubicalCrossProductSummand_apply k X Y p q (p + q) rfl _ _).trans ?_
-  rw [NormalizedCubicalChain.cast_rfl, NormalizedCubicalChain.crossProduct_ofCube, hw]
 
 variable [NoZeroDivisors k] [IsPrincipalIdealRing k]
 
