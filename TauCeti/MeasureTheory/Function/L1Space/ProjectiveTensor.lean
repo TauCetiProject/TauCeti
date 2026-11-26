@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Completion
 import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.MeasureTheory.Integral.SetToL1.L1
+import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 
@@ -153,11 +154,7 @@ private theorem lpOneTensorL_coe_tmul (φ : Lp 𝕜 1 μ) (x : X) :
       (ContinuousLinearMap.toSpanSingleton 𝕜 x).compLp φ := by
   simp only [lpOneTensorL, CompletedProjectiveTensor.liftIsometry_coe,
     ProjectiveTensor.liftIsometry_apply_tmul, ContinuousLinearMap.flip_apply,
-    ContinuousLinearMap.compLpL₂_apply_apply]
-  have : (ContinuousLinearMap.lsmul 𝕜 𝕜).flip x = ContinuousLinearMap.toSpanSingleton 𝕜 x := by
-    ext
-    simp
-  rw [this]
+    ContinuousLinearMap.compLpL₂_apply_apply, ContinuousLinearMap.lsmul_flip_apply]
 
 private theorem lpOneTensorL_tmulL_indicatorConstLp {A : Set S} (hA : MeasurableSet A)
     (hμA : μ A ≠ ∞) (x : X) :
@@ -267,14 +264,12 @@ theorem lpOneTensorEquiv_mapL_id [NormedSpace ℝ Y] [IsScalarTower ℝ 𝕜 Y] 
       CompletedProjectiveTensor.mapL (.id 𝕜 _) T =
         T.compLpL 1 μ ∘L ((lpOneTensorEquiv 𝕜 X μ).toContinuousLinearEquiv : _ →L[𝕜] Lp X 1 μ)
     from congr($this u)
-  refine CompletedProjectiveTensor.continuousLinearMap_ext fun φ x ↦ Lp.ext ?_
+  refine CompletedProjectiveTensor.continuousLinearMap_ext fun φ x ↦ ?_
   simp only [ContinuousLinearMap.comp_apply, CompletedProjectiveTensor.mapL_coe,
     ProjectiveTensor.mapL_tmul, ContinuousLinearMap.id_apply, ContinuousLinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-  filter_upwards [coeFn_lpOneTensorEquiv_coe_tmul φ (T x),
-    T.coeFn_compLpL (lpOneTensorEquiv 𝕜 X μ (⟨φ ⊗ₜ x⟩ : ProjectiveTensor 𝕜 (Lp 𝕜 1 μ) X)),
-    coeFn_lpOneTensorEquiv_coe_tmul φ x] with s h₁ h₂ h₃
-  rw [h₁, h₂, h₃, map_smul]
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, lpOneTensorEquiv_coe_tmul,
+    ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.compLp_compLp,
+    ContinuousLinearMap.comp_toSpanSingleton]
 
 /-- Naturality of `L¹(μ) ⊗̂π X ≃ L¹(μ; X)` under measure-preserving maps: pulling back the scalar
 factor along a measure-preserving `g` corresponds to pulling back Bochner `L¹` along `g`. -/
