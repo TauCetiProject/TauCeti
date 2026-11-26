@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ODE.BoundaryValue
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import Mathlib.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.ODE.Regularity
@@ -44,7 +45,10 @@ embedding of this domain into `L²`, and the symmetry of `J (w' - S w)` for Lagr
   jets `t ↦ (w t, w' t)` of the `C¹` paths `w` with `w 0 ∈ F₀` and `w 1 ∈ F₁`
   (`TauCeti.PathSobolev.boundaryPath`). It is the completion of these paths in a norm equivalent to
   the `W^{1,2}` norm, and its elements are `L²` pairs `(w, w')`, with projections
-  `TauCeti.PathSobolev.valueL` and `TauCeti.PathSobolev.derivL`. The construction follows that of
+  `TauCeti.PathSobolev.valueL` and `TauCeti.PathSobolev.derivL`. The second component is the weak
+  derivative of the first on `(0, 1)` (`TauCeti.PathSobolev.hasWeakLineDerivOn_derivL`), so an
+  element is determined by its value (`TauCeti.PathSobolev.valueL_injective`), and `H1` is a space
+  of paths. The construction follows that of
   `TauCeti.StripSobolev.H1` (`TauCeti.Analysis.Sobolev.Strip.Basic`), here for paths on `[0, 1]`
   instead of functions on the strip.
 * **The operator.** For an essentially bounded coefficient `A`, given as a class in
@@ -73,6 +77,8 @@ embedding of this domain into `L²`, and the symmetry of `J (w' - S w)` for Lagr
 
 ## Main results
 
+* `TauCeti.PathSobolev.hasWeakLineDerivOn_derivL`: `w'` is the weak derivative of `w` on `(0, 1)`.
+* `TauCeti.PathSobolev.valueL_injective`: an element of `H1` is determined by its value.
 * `TauCeti.PathSobolev.exists_forall_norm_le_mul_norm_boundaryValueOperator`: the operator is
   bounded below when `Ψ(1) F₀ ∩ F₁ = 0`.
 * `TauCeti.PathSobolev.disjoint_map_dysonSeriesLeft_of_injective`: if it is injective, then
@@ -93,7 +99,7 @@ public section
 noncomputable section
 
 open Function MeasureTheory Set Filter Topology
-open scoped ENNReal
+open scoped ENNReal Distributions
 
 namespace TauCeti
 
@@ -141,6 +147,21 @@ def pathJet (w : ℝ → X) (t : ℝ) : X × X :=
 @[simp]
 theorem pathJet_apply (w : ℝ → X) (t : ℝ) : pathJet w t = (w t, deriv w t) :=
   (rfl)
+
+/-- A path with boundary values in `F₀` and `F₁` is square integrable on `(0, 1]`. -/
+theorem memLp_coe (w : boundaryPath F₀ F₁) : MemLp (w : ℝ → X) 2 μ₁ :=
+  (contDiff_coe w).continuous.memLp_restrict_Ioc 2
+
+/-- The derivative of a path with boundary values in `F₀` and `F₁` is square integrable on
+`(0, 1]`. -/
+theorem memLp_deriv (w : boundaryPath F₀ F₁) : MemLp (deriv (w : ℝ → X)) 2 μ₁ :=
+  ((contDiff_coe w).continuous_deriv le_rfl).memLp_restrict_Ioc 2
+
+/-- The residual `t ↦ w' t - S t (w t)` of a path with boundary values in `F₀` and `F₁` is
+continuous, for a continuous path of operators `S`. -/
+theorem continuous_deriv_sub {S : ℝ → X →L[ℝ] X} (hS : Continuous S) (w : boundaryPath F₀ F₁) :
+    Continuous fun t ↦ deriv (w : ℝ → X) t - S t ((w : ℝ → X) t) :=
+  ((contDiff_coe w).continuous_deriv le_rfl).sub (hS.clm_apply (contDiff_coe w).continuous)
 
 /-- The jet of a path with boundary values in `F₀` and `F₁` is square integrable on `(0, 1]`. -/
 theorem memLp_pathJet (w : boundaryPath F₀ F₁) : MemLp (pathJet (w : ℝ → X)) 2 μ₁ :=
@@ -230,21 +251,18 @@ theorem coeFn_derivL (x : H1 F₀ F₁) :
 /-- The value of the jet of a classical path is the path. -/
 @[simp]
 theorem valueL_jetH1 (w : boundaryPath F₀ F₁) :
-    valueL F₀ F₁ (jetH1 F₀ F₁ w) = ((contDiff_coe w).continuous.memLp_restrict_Ioc 2).toLp w := by
+    valueL F₀ F₁ (jetH1 F₀ F₁ w) = (memLp_coe w).toLp w := by
   refine Lp.ext ((coeFn_valueL _).trans ?_)
-  filter_upwards [MemLp.coeFn_toLp (memLp_pathJet w),
-    MemLp.coeFn_toLp ((contDiff_coe w).continuous.memLp_restrict_Ioc 2)] with t h₁ h₂
+  filter_upwards [MemLp.coeFn_toLp (memLp_pathJet w), MemLp.coeFn_toLp (memLp_coe w)]
+    with t h₁ h₂
   rw [coe_jetH1, jetLp_apply, h₁, h₂, pathJet_apply]
 
 /-- The derivative of the jet of a classical path is the derivative of the path. -/
 @[simp]
 theorem derivL_jetH1 (w : boundaryPath F₀ F₁) :
-    derivL F₀ F₁ (jetH1 F₀ F₁ w) =
-      (((contDiff_coe w).continuous_deriv le_rfl).memLp_restrict_Ioc 2).toLp
-        (deriv (w : ℝ → X)) := by
+    derivL F₀ F₁ (jetH1 F₀ F₁ w) = (memLp_deriv w).toLp (deriv (w : ℝ → X)) := by
   refine Lp.ext ((coeFn_derivL _).trans ?_)
-  filter_upwards [MemLp.coeFn_toLp (memLp_pathJet w),
-    MemLp.coeFn_toLp (((contDiff_coe w).continuous_deriv le_rfl).memLp_restrict_Ioc 2)]
+  filter_upwards [MemLp.coeFn_toLp (memLp_pathJet w), MemLp.coeFn_toLp (memLp_deriv w)]
     with t h₁ h₂
   rw [coe_jetH1, jetLp_apply, h₁, h₂, pathJet_apply]
 
@@ -273,6 +291,84 @@ theorem norm_le_norm_valueL_add_norm_derivL (x : H1 F₀ F₁) :
     refine mul_le_of_le_one_left (norm_nonneg _) ((ContinuousLinearMap.norm_compLpL_le _).trans ?_)
     exact ContinuousLinearMap.norm_inr_le_one ℝ X X
 
+/-! ### Elements of `H1` are determined by their values -/
+
+section WeakDeriv
+
+variable [CompleteSpace X]
+
+/-- Integration by parts on `(0, 1)` for a `C¹` path against a test function supported in
+`(0, 1)`: the integral of `φ' w + φ w'` over `(0, 1]` vanishes. -/
+private theorem integral_lineDeriv_smul_add_integral_smul_deriv_eq_zero {w : ℝ → X}
+    (hw : ContDiff ℝ 1 w) (φ : 𝓓(⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩, ℝ)) :
+    ∫ t, lineDeriv ℝ (φ : ℝ → ℝ) t 1 • w t ∂μ₁ + ∫ t, (φ : ℝ → ℝ) t • deriv w t ∂μ₁ = 0 := by
+  have h := hasWeakLineDerivOn_of_hasLineDerivAt (μ := volume)
+    (Ω := ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩) (v := (1 : ℝ))
+    (hw.continuous.locallyIntegrable.locallyIntegrableOn _)
+    ((hw.continuous_deriv le_rfl).locallyIntegrable.locallyIntegrableOn _)
+    fun t _ ↦ by
+      simpa using ((hw.differentiable one_ne_zero t).hasDerivAt.hasFDerivAt.hasLineDerivAt 1)
+  have hsub {g : ℝ → X} (hg : ∀ t ∉ Ioo (0 : ℝ) 1, g t = 0) : ∫ t, g t ∂μ₁ = ∫ t, g t :=
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun t ht ↦
+      hg t fun h ↦ ht (Ioo_subset_Ioc_self h)
+  rw [hsub fun t ht ↦ by
+      rw [lineDeriv_of_notMem_tsupport (fun h ↦ ht (φ.tsupport_subset h)) 1, zero_smul],
+    hsub fun t ht ↦ by
+      rw [image_eq_zero_of_notMem_tsupport (fun h ↦ ht (φ.tsupport_subset h)), zero_smul],
+    h.integral_lineDeriv_smul_eq_neg_integral_smul φ, neg_add_cancel]
+
+/-- **The derivative of an element of `H1` is the weak derivative of its value** on `(0, 1)`. -/
+theorem hasWeakLineDerivOn_derivL (x : H1 F₀ F₁) :
+    HasWeakLineDerivOn μ₁ ⟨Ioo 0 1, isOpen_Ioo⟩ (valueL F₀ F₁ x) (derivL F₀ F₁ x) 1 := by
+  have hloc (f : Lp X 2 μ₁) : LocallyIntegrableOn f (Ioo 0 1) μ₁ :=
+    ((Lp.memLp f).locallyIntegrable (by norm_num)).locallyIntegrableOn _
+  refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hloc _, hloc _, fun φ ↦ ?_⟩
+  refine eq_neg_of_add_eq_zero_left ?_
+  -- Both integrals are continuous linear functionals of `x`, which vanish on classical jets.
+  have hφ : MemLp (φ : ℝ → ℝ) 2 μ₁ := φ.continuous.memLp_restrict_Ioc 2
+  have hφ' : MemLp (fun t ↦ lineDeriv ℝ (φ : ℝ → ℝ) t 1) 2 μ₁ := by
+    simpa only [lineDeriv_one] using (φ.contDiff.continuous_deriv (by simp)).memLp_restrict_Ioc 2
+  set B : ℝ →L[ℝ] X →L[ℝ] X := ContinuousLinearMap.lsmul ℝ ℝ
+  have hpair {ψ : ℝ → ℝ} (hψ : MemLp ψ 2 μ₁) (f : Lp X 2 μ₁) :
+      B.lpPairing μ₁ 2 2 (hψ.toLp ψ) f = ∫ t, ψ t • f t ∂μ₁ := by
+    rw [ContinuousLinearMap.lpPairing_eq_integral]
+    refine integral_congr_ae ?_
+    filter_upwards [hψ.coeFn_toLp] with t ht
+    simp [B, ht]
+  have key : ∀ y : H1 F₀ F₁, B.lpPairing μ₁ 2 2 (hφ'.toLp _) (valueL F₀ F₁ y) +
+      B.lpPairing μ₁ 2 2 (hφ.toLp _) (derivL F₀ F₁ y) = 0 := by
+    refine H1_induction (isClosed_eq (((B.lpPairing μ₁ 2 2 _).continuous.comp
+      (valueL F₀ F₁).continuous).add ((B.lpPairing μ₁ 2 2 _).continuous.comp
+      (derivL F₀ F₁).continuous)) continuous_const) fun w ↦ ?_
+    rw [hpair, hpair, valueL_jetH1, derivL_jetH1]
+    refine Eq.trans (congrArg₂ (· + ·) (integral_congr_ae ?_) (integral_congr_ae ?_))
+      (integral_lineDeriv_smul_add_integral_smul_deriv_eq_zero (contDiff_coe w) φ)
+    · filter_upwards [(memLp_coe w).coeFn_toLp] with t ht
+      rw [ht]
+    · filter_upwards [(memLp_deriv w).coeFn_toLp] with t ht
+      rw [ht]
+  simpa only [hpair] using key x
+
+/-- **An element of `H1` is determined by its value.** The value map `(w, w') ↦ w` is injective on
+`H1`: if the value of an element vanishes, so does its derivative, as its weak derivative. Thus
+`H1` is a space of paths. -/
+theorem valueL_injective : Injective (valueL F₀ F₁) := by
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
+  have hv : valueL F₀ F₁ x =ᵐ[μ₁] 0 := by
+    rw [hx]
+    exact Lp.coeFn_zero ..
+  -- The derivative vanishes almost everywhere, as the weak derivative of `0`.
+  have hd : derivL F₀ F₁ x =ᵐ[μ₁] 0 := by
+    have h := ((hasWeakLineDerivOn_derivL x).congr_ae (ae_restrict_of_ae hv)).ae_eq
+      hasWeakLineDerivOn_zero
+    rwa [TopologicalSpace.Opens.coe_mk, Measure.restrict_restrict measurableSet_Ioo,
+      inter_eq_left.2 Ioo_subset_Ioc_self, Measure.restrict_congr_set Ioo_ae_eq_Ioc] at h
+  refine Subtype.ext ((Lp.eq_zero_iff_ae_eq_zero).2 ?_)
+  filter_upwards [coeFn_valueL x, coeFn_derivL x, hv, hd] with t h₁ h₂ h₃ h₄
+  exact Prod.ext (h₁.symm.trans h₃) (h₂.symm.trans h₄)
+
+end WeakDeriv
+
 /-! ### The boundary value operator -/
 
 variable (F₀ F₁) in
@@ -292,21 +388,16 @@ theorem boundaryValueOperator_apply (A : Lp (X →L[ℝ] X) ∞ μ₁) (x : H1 F
 theorem boundaryValueOperator_jetH1 {A : Lp (X →L[ℝ] X) ∞ μ₁} {S : ℝ → X →L[ℝ] X}
     (hA : A =ᵐ[μ₁] S) (hS : Continuous S) (w : boundaryPath F₀ F₁) :
     boundaryValueOperator F₀ F₁ A (jetH1 F₀ F₁ w) =
-      ((((contDiff_coe w).continuous_deriv le_rfl).sub
-        (hS.clm_apply (contDiff_coe w).continuous)).memLp_restrict_Ioc 2).toLp
+      ((continuous_deriv_sub hS w).memLp_restrict_Ioc 2).toLp
         fun t ↦ deriv (w : ℝ → X) t - S t ((w : ℝ → X) t) := by
   rw [boundaryValueOperator_apply, valueL_jetH1, derivL_jetH1]
   refine Lp.ext ?_
-  filter_upwards [Lp.coeFn_sub
-      ((((contDiff_coe w).continuous_deriv le_rfl).memLp_restrict_Ioc 2).toLp
-        (deriv (w : ℝ → X)))
-      (Lp.operatorMultiplication 2 A (((contDiff_coe w).continuous.memLp_restrict_Ioc 2).toLp w)),
-    Lp.operatorMultiplication_ae A (((contDiff_coe w).continuous.memLp_restrict_Ioc 2).toLp w),
-    MemLp.coeFn_toLp (((contDiff_coe w).continuous_deriv le_rfl).memLp_restrict_Ioc 2),
-    MemLp.coeFn_toLp ((contDiff_coe w).continuous.memLp_restrict_Ioc 2),
+  filter_upwards [Lp.coeFn_sub ((memLp_deriv w).toLp (deriv (w : ℝ → X)))
+      (Lp.operatorMultiplication 2 A ((memLp_coe w).toLp w)),
+    Lp.operatorMultiplication_ae A ((memLp_coe w).toLp w), MemLp.coeFn_toLp (memLp_deriv w),
+    MemLp.coeFn_toLp (memLp_coe w),
     MemLp.coeFn_toLp (f := fun t ↦ deriv (w : ℝ → X) t - S t ((w : ℝ → X) t))
-      ((((contDiff_coe w).continuous_deriv le_rfl).sub
-        (hS.clm_apply (contDiff_coe w).continuous)).memLp_restrict_Ioc 2), hA]
+      ((continuous_deriv_sub hS w).memLp_restrict_Ioc 2), hA]
     with t h h₁ h₂ h₃ h₄ h₅
   rw [h, Pi.sub_apply, h₁, h₂, h₃, h₄, h₅]
 
@@ -371,8 +462,7 @@ theorem exists_forall_norm_valueL_le_mul_norm_boundaryValueOperator
   · exact isClosed_le (continuous_norm.comp (valueL F₀ F₁).continuous)
       (continuous_const.mul (continuous_norm.comp (boundaryValueOperator F₀ F₁ A).continuous))
   -- For a classical path, this is the `L²` estimate for `w' = S w + f` with `f = w' - S w`.
-  have hf : Continuous fun t ↦ deriv (w : ℝ → X) t - S t ((w : ℝ → X) t) :=
-    ((contDiff_coe w).continuous_deriv le_rfl).sub (hS.clm_apply (contDiff_coe w).continuous)
+  have hf := continuous_deriv_sub hS w
   have hw (t : ℝ) : HasDerivAt (w : ℝ → X)
       (S t ((w : ℝ → X) t) + (deriv (w : ℝ → X) t - S t ((w : ℝ → X) t))) t := by
     rw [add_sub_cancel]
