@@ -15,8 +15,8 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 The **multiplier ring** of a lattice `Λ ⊆ ℂ` is the subring `{α ∈ ℂ | α Λ ⊆ Λ}`, the left order
 `L.lattice.leftOrder` of the lattice (`Submodule.leftOrder`). Through the scalar maps of
 `PeriodPair.scalarPointHom`, it acts on the points `E_Λ(ℂ)` of the Weierstrass curve of `Λ`: this
-is the ring homomorphism `PeriodPair.endRingHom`, which is injective. These are the analytic
-endomorphisms of the complex uniformization.
+is the ring homomorphism `PeriodPair.endRingHom`, which is injective. So the multiplier ring acts
+by analytic endomorphisms of the complex uniformization.
 
 Writing `α ω₁ = a ω₁ + b ω₂` and `α ω₂ = e ω₁ + f ω₂` with integers `a, b, e, f`, the
 determinant `a f - b e` of the integer matrix `[[a, e], [b, f]]` of `α` is its norm `|α|²`
@@ -56,7 +56,7 @@ variable {L L' : PeriodPair}
 variable (L)
 
 /-- The action of the multiplier ring `L.lattice.leftOrder = {α | α Λ ⊆ Λ}` on the points of the
-Weierstrass curve by the scalar maps: these are the analytic endomorphisms of `E_Λ(ℂ)`. -/
+Weierstrass curve by the scalar maps: these give analytic endomorphisms of `E_Λ(ℂ)`. -/
 def endRingHom : L.lattice.leftOrder →+* AddMonoid.End L.weierstrassCurve.toAffine.Point where
   toFun α := scalarPointHom (α : ℂ) (Submodule.mem_leftOrder_iff.mp α.property)
   map_one' := scalarPointHom_one
