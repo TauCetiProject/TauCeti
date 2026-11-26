@@ -14,14 +14,17 @@ import TauCeti.GroupTheory.Commutator
 /-!
 # Morita invariance of the Steinberg group and of algebraic `K₂`
 
+By the Kervaire–Steinberg theorem, `St(A) → E_∞(A)` is a universal central extension, and every
+homomorphism `GL_∞(A) →* GL_∞(B)` carries the commutator subgroup `E_∞(A)` into `E_∞(B)`. Hence
+every isomorphism `Φ : GL_∞(A) ≃* GL_∞(B)` lifts uniquely to an isomorphism
+`St(A) ≃* St(B)` over it (`TauCeti.SteinbergGroup.congr`), which restricts to an isomorphism
+`K₂(A) ≃* K₂(B)` (`TauCeti.AlgebraicK2.congr`).
+
 For a nonempty finite index type `ι`, flattening block matrices is an isomorphism
-`Φ : GL_∞(Matrix ι ι R) ≃* GL_∞(R)` (`TauCeti.StableGeneralLinearGroup.matrixEquiv`), which
-carries `E_∞(Matrix ι ι R)` onto `E_∞(R)`, as these are the commutator subgroups. By the
-Kervaire–Steinberg theorem both
-`St(Matrix ι ι R) → E_∞(Matrix ι ι R)` and `St(R) → E_∞(R)` are universal central extensions, so
-they are isomorphic over `Φ`: there is exactly one homomorphism `St(Matrix ι ι R) →* St(R)` lying
-over `Φ`, and it is an isomorphism. Restricting it to the kernels of the projections to `GL_∞`
-gives the **Morita invariance of Milnor's `K₂`**:
+`Φ : GL_∞(Matrix ι ι R) ≃* GL_∞(R)` (`TauCeti.StableGeneralLinearGroup.matrixEquiv`), so there
+is exactly one homomorphism `St(Matrix ι ι R) →* St(R)` lying over `Φ`, and it is an isomorphism.
+Restricting it to the kernels of the projections to `GL_∞` gives the **Morita invariance of
+Milnor's `K₂`**:
 
   `K₂(Mₙ(R)) ≃* K₂(R)` for `n ≥ 1`,
 
@@ -31,12 +34,18 @@ gives the **Morita invariance of Milnor's `K₂`**:
 
 ## Main definitions
 
+* `TauCeti.SteinbergGroup.congr`: the isomorphism `St(A) ≃* St(B)` over an isomorphism
+  `GL_∞(A) ≃* GL_∞(B)`.
+* `TauCeti.AlgebraicK2.congr`: its restriction `K₂(A) ≃* K₂(B)`.
 * `TauCeti.SteinbergGroup.matrixEquiv`: the Morita isomorphism
   `St(Matrix ι ι R) ≃* St(R)` over the flattening isomorphism of `GL_∞`.
 * `TauCeti.AlgebraicK2.matrixEquiv`: the Morita isomorphism `K₂(Matrix ι ι R) ≃* K₂(R)`.
 
 ## Main results
 
+* `TauCeti.SteinbergGroup.toStableGL_congr`, `TauCeti.SteinbergGroup.toStableGL_congr_symm`,
+  `TauCeti.SteinbergGroup.congr_unique`: the lift of an isomorphism of `GL_∞` lies over it, and is
+  the only homomorphism doing so.
 * `TauCeti.SteinbergGroup.toStableGL_matrixEquiv`,
   `TauCeti.SteinbergGroup.toStableGL_matrixEquiv_symm`: the Morita isomorphism of Steinberg
   groups lies over the flattening isomorphism of `GL_∞`.
@@ -60,60 +69,76 @@ noncomputable section
 
 namespace TauCeti
 
-/-! ## The Morita isomorphism of Steinberg groups -/
+/-! ## Isomorphisms of Steinberg groups over isomorphisms of `GL_∞` -/
 
 namespace SteinbergGroup
 
+section congr
+
+variable {A B : Type*} [Ring A] [Ring B]
+
+/-- The unique homomorphism `St(A) →* St(B)` over a homomorphism `GL_∞(A) →* GL_∞(B)`. -/
+private def liftHom (Ψ : StableGeneralLinearGroup A →* StableGeneralLinearGroup B) :
+    SteinbergGroup A →* SteinbergGroup B :=
+  (existsUnique_toStableGL_comp_eq Ψ).exists.choose
+
+private theorem toStableGL_liftHom (Ψ : StableGeneralLinearGroup A →* StableGeneralLinearGroup B)
+    (z : SteinbergGroup A) : toStableGL B (liftHom Ψ z) = Ψ (toStableGL A z) :=
+  DFunLike.congr_fun (existsUnique_toStableGL_comp_eq Ψ).exists.choose_spec z
+
+/-- An isomorphism `Φ : GL_∞(A) ≃* GL_∞(B)` lifts to an isomorphism `St(A) ≃* St(B)` over it
+(`TauCeti.SteinbergGroup.toStableGL_congr`), and this property determines the lift
+(`TauCeti.SteinbergGroup.congr_unique`). No compatibility with elementary matrices is assumed. -/
+def congr (Φ : StableGeneralLinearGroup A ≃* StableGeneralLinearGroup B) :
+    SteinbergGroup A ≃* SteinbergGroup B :=
+  MonoidHom.toMulEquiv (liftHom Φ.toMonoidHom) (liftHom Φ.symm.toMonoidHom)
+    (MonoidHom.eq_of_comp_eq_of_ker_le_center ker_toStableGL_le_center <| MonoidHom.ext fun z ↦ by
+      simp [toStableGL_liftHom])
+    (MonoidHom.eq_of_comp_eq_of_ker_le_center ker_toStableGL_le_center <| MonoidHom.ext fun z ↦ by
+      simp [toStableGL_liftHom])
+
+/-- The lift of an isomorphism of `GL_∞` to Steinberg groups lies over it. -/
+@[simp]
+theorem toStableGL_congr (Φ : StableGeneralLinearGroup A ≃* StableGeneralLinearGroup B)
+    (z : SteinbergGroup A) : toStableGL B (congr Φ z) = Φ (toStableGL A z) :=
+  toStableGL_liftHom _ z
+
+/-- The inverse of the lift of an isomorphism of `GL_∞` to Steinberg groups lies over the inverse
+isomorphism. -/
+@[simp]
+theorem toStableGL_congr_symm (Φ : StableGeneralLinearGroup A ≃* StableGeneralLinearGroup B)
+    (z : SteinbergGroup B) : toStableGL A ((congr Φ).symm z) = Φ.symm (toStableGL B z) :=
+  toStableGL_liftHom _ z
+
+/-- **Uniqueness of the lift**: every homomorphism `St(A) →* St(B)` over an isomorphism
+`Φ : GL_∞(A) ≃* GL_∞(B)` is `TauCeti.SteinbergGroup.congr Φ`. -/
+theorem congr_unique (Φ : StableGeneralLinearGroup A ≃* StableGeneralLinearGroup B)
+    (ψ : SteinbergGroup A →* SteinbergGroup B)
+    (hψ : (toStableGL B).comp ψ = Φ.toMonoidHom.comp (toStableGL A)) :
+    ψ = (congr Φ).toMonoidHom :=
+  MonoidHom.eq_of_comp_eq_of_ker_le_center ker_toStableGL_le_center <|
+    hψ.trans <| MonoidHom.ext fun z ↦ by simp
+
+end congr
+
+/-! ## The Morita isomorphism of Steinberg groups -/
+
 variable {R : Type*} [Ring R] {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι]
-
-variable (R ι) in
-/-- The homomorphism `St(Matrix ι ι R) →* St(R)` over the flattening isomorphism of `GL_∞`. -/
-private def flattenHom : SteinbergGroup (Matrix ι ι R) →* SteinbergGroup R :=
-  (existsUnique_toStableGL_comp_eq
-    (StableGeneralLinearGroup.matrixEquiv R ι).toMonoidHom).exists.choose
-
-private theorem toStableGL_flattenHom (z : SteinbergGroup (Matrix ι ι R)) :
-    toStableGL R (flattenHom R ι z) =
-      StableGeneralLinearGroup.matrixEquiv R ι (toStableGL (Matrix ι ι R) z) :=
-  DFunLike.congr_fun (existsUnique_toStableGL_comp_eq _).exists.choose_spec z
-
-variable (R ι) in
-/-- The homomorphism `St(R) →* St(Matrix ι ι R)` over the inverse flattening isomorphism. -/
-private def unflattenHom : SteinbergGroup R →* SteinbergGroup (Matrix ι ι R) :=
-  (existsUnique_toStableGL_comp_eq
-    (StableGeneralLinearGroup.matrixEquiv R ι).symm.toMonoidHom).exists.choose
-
-private theorem toStableGL_unflattenHom (z : SteinbergGroup R) :
-    toStableGL (Matrix ι ι R) (unflattenHom R ι z) =
-      (StableGeneralLinearGroup.matrixEquiv R ι).symm (toStableGL R z) :=
-  DFunLike.congr_fun (existsUnique_toStableGL_comp_eq _).exists.choose_spec z
 
 variable (R ι) in
 /-- **Morita invariance of the Steinberg group**: for a nonempty finite index type `ι`, the
 Steinberg groups `St(Matrix ι ι R)` and `St(R)` are isomorphic over the flattening isomorphism
 `GL_∞(Matrix ι ι R) ≃* GL_∞(R)` (`TauCeti.SteinbergGroup.toStableGL_matrixEquiv`), and this
 property determines the isomorphism (`TauCeti.SteinbergGroup.matrixEquiv_unique`). -/
-def matrixEquiv : SteinbergGroup (Matrix ι ι R) ≃* SteinbergGroup R where
-  toFun := flattenHom R ι
-  invFun := unflattenHom R ι
-  left_inv z := by
-    have : (unflattenHom R ι).comp (flattenHom R ι) = MonoidHom.id _ :=
-      MonoidHom.eq_of_comp_eq_of_ker_le_center ker_toStableGL_le_center <| MonoidHom.ext fun z ↦ by
-        simp [toStableGL_unflattenHom, toStableGL_flattenHom]
-    exact DFunLike.congr_fun this z
-  right_inv z := by
-    have : (flattenHom R ι).comp (unflattenHom R ι) = MonoidHom.id _ :=
-      MonoidHom.eq_of_comp_eq_of_ker_le_center ker_toStableGL_le_center <| MonoidHom.ext fun z ↦ by
-        simp [toStableGL_unflattenHom, toStableGL_flattenHom]
-    exact DFunLike.congr_fun this z
-  map_mul' := map_mul _
+def matrixEquiv : SteinbergGroup (Matrix ι ι R) ≃* SteinbergGroup R :=
+  congr (StableGeneralLinearGroup.matrixEquiv R ι)
 
 /-- The Morita isomorphism of Steinberg groups lies over the flattening isomorphism of `GL_∞`. -/
 @[simp]
 theorem toStableGL_matrixEquiv (z : SteinbergGroup (Matrix ι ι R)) :
     toStableGL R (matrixEquiv R ι z) =
       StableGeneralLinearGroup.matrixEquiv R ι (toStableGL (Matrix ι ι R) z) :=
-  toStableGL_flattenHom z
+  toStableGL_congr _ z
 
 /-- The inverse Morita isomorphism of Steinberg groups lies over the inverse flattening
 isomorphism of `GL_∞`. -/
@@ -121,7 +146,7 @@ isomorphism of `GL_∞`. -/
 theorem toStableGL_matrixEquiv_symm (z : SteinbergGroup R) :
     toStableGL (Matrix ι ι R) ((matrixEquiv R ι).symm z) =
       (StableGeneralLinearGroup.matrixEquiv R ι).symm (toStableGL R z) :=
-  toStableGL_unflattenHom z
+  toStableGL_congr_symm _ z
 
 /-- **Uniqueness of the Morita isomorphism**: every homomorphism `St(Matrix ι ι R) →* St(R)` over
 the flattening isomorphism of `GL_∞` is the Morita isomorphism. -/
@@ -129,8 +154,7 @@ theorem matrixEquiv_unique (ψ : SteinbergGroup (Matrix ι ι R) →* SteinbergG
     (hψ : (toStableGL R).comp ψ =
       (StableGeneralLinearGroup.matrixEquiv R ι).toMonoidHom.comp (toStableGL (Matrix ι ι R))) :
     ψ = (matrixEquiv R ι).toMonoidHom :=
-  MonoidHom.eq_of_comp_eq_of_ker_le_center ker_toStableGL_le_center <|
-    hψ.trans <| MonoidHom.ext fun z ↦ by simp
+  congr_unique _ ψ hψ
 
 /-- The Morita isomorphism of Steinberg groups is natural in ring homomorphisms `f : R →+* S`: it
 intertwines `St(f)` with `St` of `f` applied to the entries of `ι × ι` matrices. -/
@@ -146,9 +170,43 @@ theorem map_matrixEquiv {S : Type*} [Ring S] (f : R →+* S)
 
 end SteinbergGroup
 
-/-! ## The Morita isomorphism of `K₂` -/
+/-! ## Isomorphisms of `K₂` over isomorphisms of `GL_∞` -/
 
 namespace AlgebraicK2
+
+section congr
+
+variable {A B : Type*} [Ring A] [Ring B]
+
+/-- An isomorphism `Φ : GL_∞(A) ≃* GL_∞(B)` induces an isomorphism `K₂(A) ≃* K₂(B)`: the
+restriction of its lift `TauCeti.SteinbergGroup.congr Φ` to the kernels of the projections to
+`GL_∞`. -/
+def congr (Φ : StableGeneralLinearGroup A ≃* StableGeneralLinearGroup B) :
+    AlgebraicK2 A ≃* AlgebraicK2 B where
+  toFun x := ⟨SteinbergGroup.congr Φ x, by simp⟩
+  invFun y := ⟨(SteinbergGroup.congr Φ).symm y, by simp⟩
+  left_inv x := Subtype.ext (by simp)
+  right_inv y := Subtype.ext (by simp)
+  map_mul' x y := Subtype.ext (map_mul _ _ _)
+
+/-- The isomorphism of `K₂` induced by an isomorphism of `GL_∞` is the restriction of its lift to
+Steinberg groups. -/
+@[simp]
+theorem coe_congr (Φ : StableGeneralLinearGroup A ≃* StableGeneralLinearGroup B)
+    (x : AlgebraicK2 A) : (congr Φ x : SteinbergGroup B) = SteinbergGroup.congr Φ x :=
+  (rfl)
+
+/-- The inverse of the isomorphism of `K₂` induced by an isomorphism of `GL_∞` is the restriction
+of the inverse of its lift to Steinberg groups. -/
+@[simp]
+theorem coe_congr_symm (Φ : StableGeneralLinearGroup A ≃* StableGeneralLinearGroup B)
+    (y : AlgebraicK2 B) :
+    ((congr Φ).symm y : SteinbergGroup A) = (SteinbergGroup.congr Φ).symm y :=
+  (rfl)
+
+end congr
+
+/-! ## The Morita isomorphism of `K₂` -/
 
 variable {R : Type*} [Ring R] {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι]
 
@@ -156,12 +214,8 @@ variable (R ι) in
 /-- **Morita invariance of algebraic `K₂`**: for a nonempty finite index type `ι`, the Morita
 isomorphism of Steinberg groups restricts to an isomorphism `K₂(Matrix ι ι R) ≃* K₂(R)` of the
 kernels of the projections to `GL_∞`. -/
-def matrixEquiv : AlgebraicK2 (Matrix ι ι R) ≃* AlgebraicK2 R where
-  toFun x := ⟨SteinbergGroup.matrixEquiv R ι x, by simp⟩
-  invFun y := ⟨(SteinbergGroup.matrixEquiv R ι).symm y, by simp⟩
-  left_inv x := Subtype.ext (by simp)
-  right_inv y := Subtype.ext (by simp)
-  map_mul' x y := Subtype.ext (map_mul _ _ _)
+def matrixEquiv : AlgebraicK2 (Matrix ι ι R) ≃* AlgebraicK2 R :=
+  congr (StableGeneralLinearGroup.matrixEquiv R ι)
 
 /-- The Morita isomorphism of `K₂` is the restriction of that of Steinberg groups. -/
 @[simp]
