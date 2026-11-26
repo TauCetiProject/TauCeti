@@ -97,6 +97,18 @@ theorem specialLinearRestrictedRoot_self (k : Fin (r + 1)) :
     specialLinearRestrictedRoot r A k k = 0 :=
   LinearMap.ext fun H ↦ by rw [specialLinearRestrictedRoot_apply, sub_self, LinearMap.zero_apply]
 
+/-- `-(e_i - e_j) = e_j - e_i`. -/
+@[simp]
+theorem neg_specialLinearRestrictedRoot (i j : Fin (r + 1)) :
+    -specialLinearRestrictedRoot r A i j = specialLinearRestrictedRoot r A j i :=
+  LinearMap.ext fun H ↦ by simp
+
+/-- `(e_i - e_k) - (e_j - e_k) = e_i - e_j`. -/
+theorem specialLinearRestrictedRoot_sub_specialLinearRestrictedRoot (i j k : Fin (r + 1)) :
+    specialLinearRestrictedRoot r A i k - specialLinearRestrictedRoot r A j k =
+      specialLinearRestrictedRoot r A i j :=
+  LinearMap.ext fun H ↦ by simp
+
 /-- The functionals `e_k - e_l` and `e_i - e_j` with `i ≠ j` coincide exactly when
 `(k, l) = (i, j)`. -/
 @[simp]
