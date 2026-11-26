@@ -109,6 +109,13 @@ theorem smulCommutator_apply_apply (a : A) (D : M →ₗ[R] N) (x : M) :
     smulCommutator R a D x = D (a • x) - a • D x := by
   simp [smulCommutator]
 
+/-- Left multiplication by `a` in an `R`-algebra, as `Algebra.lsmul`, is `LinearMap.mulLeft R a`.
+This converts `smulCommutator` with `a : A` acting on `A` itself into the Lie bracket with
+`LinearMap.mulLeft R a`. -/
+theorem _root_.Algebra.lsmul_eq_mulLeft {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    (a : A) : Algebra.lsmul R R A a = LinearMap.mulLeft R a :=
+  LinearMap.ext fun x ↦ smul_eq_mul a x
+
 /-- For endomorphisms, `smulCommutator R a` is the Lie bracket with multiplication by `a` in the
 associative algebra `Module.End R N`. -/
 theorem smulCommutator_eq_lie (a : A) (D : Module.End R N) :
