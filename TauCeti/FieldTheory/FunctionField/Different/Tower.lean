@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 public import TauCeti.RingTheory.DedekindDomain.Different.Tower
 import TauCeti.FieldTheory.FunctionField.Different.Derivative
+import TauCeti.FieldTheory.Separable.Localization
 
 /-!
 # The different in a tower of function fields
@@ -104,15 +105,8 @@ private theorem differentExponent_restrict_add_of_affineModel (P₂ : Place k₂
   let _ : Module.IsTorsionFree A F₂ := .trans_faithfulSMul A F₀ F₂
   let _ : Module.IsTorsionFree A B := IsIntegralClosure.isTorsionFree A F₁
   let _ : Module.IsTorsionFree A C := IsIntegralClosure.isTorsionFree A F₂
-  -- Transport separability of `F₂ / F₀` to the canonical fraction fields of `A` and `C`.
-  let _ : Algebra.IsSeparable (FractionRing A) (FractionRing C) := by
-    refine Algebra.IsSeparable.of_equiv_equiv (FractionRing.algEquiv A F₀).symm.toRingEquiv
-      (FractionRing.algEquiv C F₂).symm.toRingEquiv ?_
-    apply IsLocalization.ringHom_ext A⁰
-    ext a
-    simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,
-      AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
-    rw [IsScalarTower.algebraMap_apply A C F₂, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
+  let _ : Algebra.IsSeparable (FractionRing A) (FractionRing C) :=
+    .of_isLocalization A⁰ C⁰ F₀ F₂
   let _ : Module.IsTorsionFree B F₂ := .trans_faithfulSMul B F₁ F₂
   let _ : Module.IsTorsionFree B C := IsIntegralClosure.isTorsionFree B F₂
   let P₁ : Place k₁ F₁ := P₂.restrict k₁ F₁

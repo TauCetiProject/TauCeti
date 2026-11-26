@@ -57,8 +57,7 @@ completed extension.
 * `TauCeti.Place.isIntegralClosure_completionIntegers`,
   `TauCeti.Place.isSeparable_completion`, and `TauCeti.Place.restrict_completionPlace`: `𝒪̂_{P'}`
   is the integral closure of `𝒪̂_P` in `F̂'_{P'}`, separability of `F' / F` passes to
-  `F̂'_{P'} / F̂_P`, and over a common constant field `k` the completed upper place restricts to the
-  completed lower place.
+  `F̂'_{P'} / F̂_P`, and the completed upper place restricts to the completed lower place.
 
 ## References
 
@@ -528,26 +527,17 @@ theorem isSeparable_completion [Algebra.IsSeparable F F'] :
         (minpoly.dvd P.Completion _ haeval)
   exact fun z _ ↦ hsub (span_completion_eq_top P P' hP u hsp ht ▸ Submodule.mem_top)
 
-end Degree
-
-section Constants
-
-variable {k F F' : Type*} [Field k] [Field F] [Field F']
-  [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
-  [Algebra.IsIntegral F F'] (P : Place k F) (P' : Place k F') (hP : P'.restrict k F = P)
-  [FiniteDimensional (P'.restrict k F).ResidueField P'.ResidueField]
-
-/-- For an integral extension `F' / F` over `k` with finite residue extension at `P' ∣ P`, the
-completed upper place restricts to the completed lower place. -/
+/-- Restricting the completed place of `P'` to `P.Completion` recovers `P.completionPlace`. -/
 @[simp]
-theorem restrict_completionPlace :
+theorem restrict_completionPlace [alg : Algebra k P'.Completion]
+    [@IsScalarTower k k' P'.Completion _ (P'.instAlgebraCompletion).toSMul alg.toSMul]
+    [@IsScalarTower k P.Completion P'.Completion
+      (P.instAlgebraCompletion).toSMul (P.completionExtensionAlgebra P' hP).toSMul alg.toSMul] :
     letI := P.completionExtensionAlgebra P' hP
-    haveI := P.isScalarTower_completionExtensionAlgebra P' hP
     haveI : Algebra.IsIntegral P.Completion P'.Completion :=
       haveI := P.finiteDimensional_completion P' hP; .of_finite _ _
     P'.completionPlace.restrict k P.Completion = P.completionPlace := by
   let _ := P.completionExtensionAlgebra P' hP
-  have := P.isScalarTower_completionExtensionAlgebra P' hP
   have := P.finiteDimensional_completion P' hP
   have : Algebra.IsIntegral P.Completion P'.Completion := .of_finite _ _
   refine (restrict_eq_iff_integers_le k P.Completion P'.completionPlace P.completionPlace).mpr
@@ -555,6 +545,6 @@ theorem restrict_completionPlace :
   rw [P.algebraMap_completionExtensionAlgebra P' hP]
   exact P.completionExtension_mem_integers P' hP hx
 
-end Constants
+end Degree
 
 end TauCeti.Place

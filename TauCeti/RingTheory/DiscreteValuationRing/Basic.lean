@@ -40,6 +40,8 @@ extension of a ring of dimension at most one in it is injective.
   elements of additive valuation `1`.
 * `TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow`: the quotient by `𝔪 ^ n`
   has cardinality `Nat.card (ResidueField S) ^ n`.
+* `Ideal.eq_maximalIdeal_pow_multiplicity`: every nonzero ideal `I` of a discrete valuation ring is
+  `𝔪 ^ multiplicity 𝔪 I`.
 * `TauCeti.IsDiscreteValuationRing.cardQuot_span_pow`,
   `TauCeti.IsDiscreteValuationRing.cardQuot_eq_pow_iff`: for a uniformizer `ϖ`, the ideal
   `ϖ^c S` has index `Nat.card (ResidueField S) ^ c`, and it is the only ideal of that index.
@@ -116,13 +118,20 @@ theorem cardQuot_span_pow {ϖ : S} (hϖ : Irreducible ϖ) (c : ℕ) :
   rw [← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, Submodule.cardQuot_apply,
     natCard_quotient_maximalIdeal_pow]
 
+/-- Every nonzero ideal of a discrete valuation ring is the power of the maximal ideal given by
+its multiplicity at the maximal ideal. -/
+theorem _root_.Ideal.eq_maximalIdeal_pow_multiplicity (I : Ideal S) (hI : I ≠ ⊥) :
+    I = maximalIdeal S ^ multiplicity (maximalIdeal S) I := by
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
+  obtain ⟨n, hn⟩ := _root_.IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI hϖ
+  rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, multiplicity_pow_self_of_prime
+    (Ideal.prime_of_isPrime (_root_.IsDiscreteValuationRing.not_a_field S) inferInstance)]
+
 /-- **A discrete valuation ring with finite residue field has finite quotients**: a nonzero ideal
 is a power of the maximal ideal. -/
 instance hasFiniteQuotients [Finite (ResidueField S)] : Ring.HasFiniteQuotients S where
   finiteQuotient {I} hI := by
-    obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
-    obtain ⟨n, hn⟩ := _root_.IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI hϖ
-    rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]
+    rw [I.eq_maximalIdeal_pow_multiplicity hI]
     infer_instance
 
 /-- The index of `𝔪 ^ (k + e)` in `𝔪 ^ k` is `Nat.card (ResidueField S) ^ e`: multiplication by

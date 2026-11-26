@@ -7,17 +7,22 @@ module
 
 public import Mathlib.Algebra.Group.Pi.Units
 public import Mathlib.RingTheory.Norm.Basic
+public import Mathlib.RingTheory.TensorProduct.Basic
 public import Mathlib.RingTheory.Trace.Basic
 public import TauCeti.RingTheory.Norm.Units
 public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.LinearAlgebra.Trace.Pi
+import TauCeti.RingTheory.NormTrace.BaseChange
 
 /-!
 # Norms and traces of finite products
 
 This file records the determinant, norm, and trace calculations for finite dependent products.
 `TauCeti.Algebra.normUnits_eq_finprod_of_algEquiv` transports the unit norm to a finite product;
-`TauCeti.Algebra.mem_range_normUnits_iff_of_algEquiv` characterizes its range.
+`TauCeti.Algebra.mem_range_normUnits_iff_of_algEquiv` characterizes its range;
+`AlgEquiv.trace_symm_single_mul` computes the trace pairing of an element supported in a single
+component under an algebra isomorphism to a finite product; and `AlgEquiv.sum_trace_mul_smul_eq`
+transports finite trace-dual expansions through a base-change isomorphism to a finite product.
 The scalar-extension identities used by the number-field local-global development live in
 `TauCeti.RingTheory.NormTrace.BaseChange`.
 -/
@@ -104,3 +109,59 @@ theorem Algebra.trace_pi (x : ∀ i, L i) :
 end Trace
 
 end TauCeti
+
+namespace AlgEquiv
+
+section TraceSingle
+
+variable {K : Type*} [CommRing K]
+  {ι : Type*} [Finite ι] [DecidableEq ι] {S : Type*} [CommRing S] [Algebra K S]
+  {L : ι → Type*} [∀ i, CommRing (L i)] [∀ i, Algebra K (L i)]
+  [∀ i, Module.Free K (L i)] [∀ i, Module.Finite K (L i)]
+
+/-- Under an algebra isomorphism `e : S ≃ₐ[K] ∀ j, L j` to a finite product, the trace pairing of
+an element supported in a single component `i` with any `s : S` reduces to the trace pairing in
+`L i`. -/
+theorem trace_symm_single_mul (e : S ≃ₐ[K] ∀ j, L j) (i : ι) (z : L i)
+    (s : S) :
+    Algebra.trace K S (e.symm (Pi.single i z) * s) = Algebra.trace K (L i) (z * e s i) := by
+  let := Fintype.ofFinite ι
+  rw [← Algebra.trace_eq_of_algEquiv e, map_mul, AlgEquiv.apply_symm_apply,
+    TauCeti.Algebra.trace_pi, Finset.sum_eq_single i]
+  · simp
+  · intro j _ hj
+    simp [Pi.single_eq_of_ne hj]
+  · simp
+
+end TraceSingle
+
+section TraceDualExpansion
+
+open scoped TensorProduct
+
+variable {K A B : Type*} [CommRing K] [CommRing A] [CommRing B]
+  [Algebra K A] [Algebra K B] [Module.Free K B]
+  {ι : Type*} [Finite ι] {L : ι → Type*}
+  [∀ i, CommRing (L i)] [∀ i, Algebra A (L i)]
+  [∀ i, Module.Free A (L i)] [∀ i, Module.Finite A (L i)]
+
+/-- **Trace-dual expansions pass through a finite-product decomposition after base change.** If
+`e : A ⊗[K] B ≃ₐ[A] ∀ i, L i` is an `A`-algebra isomorphism to a finite product, then any finite
+`K`-linear trace-dual expansion on `B` holds in every factor `L i`. -/
+theorem sum_trace_mul_smul_eq
+    (e : A ⊗[K] B ≃ₐ[A] ∀ i, L i) {J : Type*} [Fintype J] (b y : J → B)
+    (h : ∀ x : B, ∑ j, Algebra.trace K B (x * b j) • y j = x)
+    (i : ι) (z : L i) :
+    ∑ j, Algebra.trace A (L i) (z * e (1 ⊗ₜ[K] b j) i) • e (1 ⊗ₜ[K] y j) i = z := by
+  classical
+  -- Extend the `K`-linear expansion to `A ⊗[K] B`, evaluate at `e.symm (Pi.single i z)`,
+  -- and read off the `i`-th component.
+  have h' := congrArg (fun ξ ↦ e ξ i)
+    (TauCeti.Algebra.sum_trace_mul_smul_tmul_eq (A := A) b y h (e.symm (Pi.single i z)))
+  simp only [AlgEquiv.apply_symm_apply, Pi.single_eq_same, map_sum, map_smul,
+    Finset.sum_apply, Pi.smul_apply, e.trace_symm_single_mul] at h'
+  exact h'
+
+end TraceDualExpansion
+
+end AlgEquiv

@@ -40,6 +40,8 @@ equality of valuations (`TauCeti.Place.eq_of_isEquiv`).
 * `TauCeti.Place.ord_mul_eq_zero`, `ord_inv_eq_zero` and `ord_div_eq_zero`:
   the units of order zero form a subgroup of `Fˣ`, read off that homomorphism. Its identity is
   `ord_one` itself, since `((1 : Fˣ) : F)` is `1` definitionally.
+* `TauCeti.Place.restrictScalars`: view a place of `F/k` as a place of `F/k₀` along any field
+  tower `k₀ → k → F`.
 
 ## Main results
 
@@ -399,6 +401,46 @@ theorem isTrivialOn_iff_integers_comap_eq_top {R : Type*} [Field R] [Algebra R F
         have := h; exact Valuation.IsTrivialOn.valuation_algebraMap_le_one P.valuation f⟩,
     fun h ↦ .of_le_one P.valuation fun x ↦
       P.mem_integers_iff.mp (ValuationSubring.mem_comap.mp (h.symm ▸ ValuationSubring.mem_top x))⟩
+
+/-- View a place `P` of `F / k` as a place of `F / k₀` along any field tower `k₀ → k → F`, with no
+integrality assumption on `k / k₀`: a valuation trivial on `k` is trivial on `k₀` because
+`algebraMap k₀ k` is injective. -/
+def restrictScalars (k₀ : Type*) [Field k₀] [Algebra k₀ k] [Algebra k₀ F]
+    [IsScalarTower k₀ k F] (P : Place k F) : Place k₀ F where
+  valuation := P.valuation
+  valuation_surjective := P.valuation_surjective
+  isTrivialOn := ⟨fun c hc ↦ by
+    rw [IsScalarTower.algebraMap_apply k₀ k F]
+    exact P.isTrivialOn.eq_one _ ((map_ne_zero (algebraMap k₀ k)).mpr hc)⟩
+
+@[simp]
+theorem valuation_restrictScalars (k₀ : Type*) [Field k₀] [Algebra k₀ k] [Algebra k₀ F]
+    [IsScalarTower k₀ k F] (P : Place k F) :
+    (P.restrictScalars k₀).valuation = P.valuation :=
+  (rfl)
+
+@[simp]
+theorem integers_restrictScalars (k₀ : Type*) [Field k₀] [Algebra k₀ k] [Algebra k₀ F]
+    [IsScalarTower k₀ k F] (P : Place k F) :
+    (P.restrictScalars k₀).integers = P.integers :=
+  SetLike.ext fun _ ↦ by rw [mem_integers_iff, mem_integers_iff, valuation_restrictScalars]
+
+@[simp]
+theorem ord_restrictScalars (k₀ : Type*) [Field k₀] [Algebra k₀ k] [Algebra k₀ F]
+    [IsScalarTower k₀ k F] (P : Place k F) :
+    (P.restrictScalars k₀).ord = P.ord :=
+  funext fun f ↦ by rw [← ord_valuation, valuation_restrictScalars, ord_valuation]
+
+@[simp]
+theorem restrictScalars_self (P : Place k F) : P.restrictScalars k = P :=
+  ext rfl
+
+@[simp]
+theorem restrictScalars_restrictScalars (k₀ k₁ : Type*) [Field k₀] [Field k₁]
+    [Algebra k₀ k₁] [Algebra k₁ k] [Algebra k₀ k] [Algebra k₀ F] [Algebra k₁ F]
+    [IsScalarTower k₀ k₁ F] [IsScalarTower k₁ k F] [IsScalarTower k₀ k F] (P : Place k F) :
+    (P.restrictScalars k₁).restrictScalars k₀ = P.restrictScalars k₀ :=
+  ext rfl
 
 end Constants
 

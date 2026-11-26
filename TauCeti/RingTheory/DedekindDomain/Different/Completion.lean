@@ -9,9 +9,10 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Multiplicity
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Semilocal
 public import TauCeti.RingTheory.DedekindDomain.Different.Discriminant
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
-import Mathlib.RingTheory.Flat.EquationalCriterion
-import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
-import TauCeti.RingTheory.NormTrace.BaseChange
+import Mathlib.RingTheory.Finiteness.Projective
+import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.RingTheory.DedekindDomain.Different.Semilocal
+import TauCeti.RingTheory.NormTrace.Pi
 
 /-!
 # The trace-dual different under adic completion
@@ -61,6 +62,15 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 private abbrev primeAbove : {u : HeightOneSpectrum B // u.asIdeal.LiesOver v.asIdeal} :=
   ⟨w, inferInstance⟩
 
+include K L in
+omit [IsDedekindDomain B] [IsFractionRing B L] [Module.IsTorsionFree R B] in
+private theorem moduleProjective_of_isIntegralClosure : Module.Projective R B := by
+  have : Module.Finite R B := IsIntegralClosure.finite R K L B
+  have : Module.IsTorsionFree R L := .trans_faithfulSMul R K L
+  have : Module.IsTorsionFree R B := IsIntegralClosure.isTorsionFree R L
+  have := Module.finitePresentation_of_finite R B
+  exact Module.Flat.projective_of_finitePresentation
+
 omit [Module.IsTorsionFree R B] in
 /-- **Trace-dual expansions pass to completions.** If `x = ∑ᵢ Tr_{L/K}(x bᵢ) yᵢ` for every `x ∈ L`,
 then `z = ∑ᵢ Tr_{L_w/K_v}(z bᵢ) yᵢ` for every `z ∈ L_w`. -/
@@ -69,55 +79,12 @@ theorem sum_trace_adicCompletion_mul_smul_eq {ι : Type*} [Fintype ι] (b y : ι
     ∑ i, Algebra.trace (v.adicCompletion K) (w.adicCompletion L)
         (z * algebraMap L (w.adicCompletion L) (b i)) • algebraMap L (w.adicCompletion L) (y i) =
       z := by
-  classical
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  have hF (ξ : v.adicCompletion K ⊗[K] L) :
-      ∑ i, Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L) (ξ * (1 ⊗ₜ b i)) •
-        ((1 : v.adicCompletion K) ⊗ₜ[K] y i) = ξ := by
-    induction ξ using TensorProduct.inductionOn with
-    | add _ _ hξ hη =>
-      conv_rhs => rw [← hξ, ← hη]
-      simp only [add_mul, map_add, add_smul, Finset.sum_add_distrib]
-    | tmul a x =>
-      conv_rhs => rw [← h x, TensorProduct.tmul_sum]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      have ha : a ⊗ₜ[K] (x * b i) = a • ((1 : v.adicCompletion K) ⊗ₜ[K] (x * b i)) := by
-        rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha, map_smul, Algebra.trace_baseChange_tmul]
-      simp only [smul_eq_mul, TensorProduct.smul_tmul', mul_one, mul_comm a,
-        ← Algebra.smul_def, TensorProduct.smul_tmul]
-  simpa [adicCompletionSemilocalEquiv_tmul, trace_adicCompletionSemilocalEquiv_symm_single_mul]
-    using congrArg (fun ξ ↦ v.adicCompletionSemilocalEquiv K B L ξ (primeAbove v w))
-      (hF ((v.adicCompletionSemilocalEquiv K B L).symm (Pi.single (primeAbove v w) z)))
-
-omit [Module.IsTorsionFree R B] in
-private theorem algebraMap_mem_traceDual_adicCompletionIntegers {d : L}
-    (hd : d ∈ Submodule.traceDual R K (1 : Submodule B L)) :
-    algebraMap L (w.adicCompletion L) d ∈
-      Submodule.traceDual (v.adicCompletionIntegers K) (v.adicCompletion K)
-        (1 : Submodule (w.adicCompletionIntegers L) (w.adicCompletion L)) := by
-  classical
-  have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  rw [Submodule.mem_traceDual]; rintro _ hz
-  obtain ⟨z, rfl⟩ := Submodule.mem_one.mp hz
-  obtain ⟨t, ht⟩ :=
-    (v.adicCompletionIntegersSemilocalEquiv K B L).surjective (Pi.single (primeAbove v w) z)
-  have hξ : v.adicCompletionIntegersSemilocalToField K B L t =
-      (v.adicCompletionSemilocalEquiv K B L).symm (Pi.single (primeAbove v w)
-        (algebraMap (w.adicCompletionIntegers L) (w.adicCompletion L) z)) := by
-    rw [AlgEquiv.eq_symm_apply, adicCompletionIntegersSemilocalEquiv_fieldCompatibility, ht]
-    funext w'; obtain rfl | hw' := eq_or_ne w' (primeAbove v w) <;> simp [Pi.single_eq_of_ne, *]
-  rw [Algebra.traceForm_apply, mul_comm,
-    ← v.trace_adicCompletionSemilocalEquiv_symm_single_mul (B := B) w, ← hξ]
-  clear ht hξ
-  induction t using TensorProduct.inductionOn with
-  | add _ _ hx hy => rw [map_add, add_mul, map_add]; exact add_mem hx hy
-  | tmul a x =>
-    obtain ⟨r, hr⟩ := Submodule.mem_traceDual.mp hd _ (Submodule.mem_one.mpr ⟨x, rfl⟩)
-    refine ⟨a * algebraMap R (v.adicCompletionIntegers K) r, ?_⟩
-    rw [trace_adicCompletionIntegersSemilocalToField_tmul_mul, mul_comm (algebraMap B L x),
-      ← Algebra.traceForm_apply, ← hr]
-    simp [ValuationSubring.algebraMap_apply, algebraMap_adicCompletionIntegers_apply]
+  have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
+  have : Module.IsTorsionFree R B :=
+    Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective R B)
+  simpa [adicCompletionSemilocalEquiv_tmul] using
+    (v.adicCompletionSemilocalEquiv K B L).sum_trace_mul_smul_eq b y h (primeAbove v w) z
 
 omit [Module.IsTorsionFree R B] in
 /-- **The completed complementary module is spanned by the global one** (with arbitrary residue
@@ -128,20 +95,19 @@ theorem traceDual_one_adicCompletionIntegers_eq_span :
       Submodule.span (w.adicCompletionIntegers L)
         (algebraMap L (w.adicCompletion L) '' Submodule.traceDual R K (1 : Submodule B L)) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
+  have : Module.Projective R B :=
+    moduleProjective_of_isIntegralClosure (R := R) (K := K) (B := B) (L := L)
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
   have : Module.IsTorsionFree R B :=
     Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective R B)
-  have := Module.finitePresentation_of_finite R B
-  have : Module.Projective R B := Module.Flat.projective_of_finitePresentation
-  refine le_antisymm (fun z hz ↦ ?_) (Submodule.span_le.mpr fun _ ⟨d, hd, h⟩ ↦
-    h ▸ algebraMap_mem_traceDual_adicCompletionIntegers v w hd)
-  obtain ⟨n, b, y, hy, hb⟩ := exists_sum_trace_mul_smul_eq R K (L := L) (B := B)
-  rw [← sum_trace_adicCompletion_mul_smul_eq v w (fun i ↦ algebraMap B L (b i)) y hb z]
-  refine Submodule.sum_mem _ fun i _ ↦ ?_
-  obtain ⟨c, hc⟩ := Submodule.mem_traceDual.mp hz _ (Submodule.mem_one.mpr
-    ⟨_, (w.algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers (b i)).symm⟩)
-  rw [Algebra.traceForm_apply] at hc; rw [← hc, algebraMap_smul]
-  exact Submodule.smul_of_tower_mem _ c (Submodule.subset_span ⟨y i, hy i, rfl⟩)
+  exact ((v.adicCompletionSemilocalEquiv K B L).span_traceDual_one_eq_traceDual_one_of_semilocal
+    (v.adicCompletionIntegersSemilocalEquiv K B L)
+    (fun u ↦ algebraMap L (u.val.adicCompletion L))
+    (fun u ↦ algebraMap B (u.val.adicCompletionIntegers L))
+    (fun a x u ↦ v.adicCompletionSemilocalEquiv_tmul a x u)
+    (fun a x u ↦ v.adicCompletionIntegersSemilocalEquiv_tmul a x u)
+    (fun u x ↦ (u.val.algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers x).symm)
+    (primeAbove v w)).symm
 
 omit [Module.IsTorsionFree R B] in
 /-- **The fractional-ideal trace dual of the ring of integers commutes with adic completion**: the
@@ -154,19 +120,20 @@ theorem dual_one_adicCompletionIntegers_eq_extended :
         (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
           (FaithfulSMul.algebraMap_injective B (w.adicCompletionIntegers L))) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  have hmap : IsLocalization.map (S := L) (w.adicCompletion L)
-      (algebraMap B (w.adicCompletionIntegers L))
-      (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-        (FaithfulSMul.algebraMap_injective B (w.adicCompletionIntegers L))) =
-      algebraMap L (w.adicCompletion L) := IsFractionRing.ringHom_ext (A := B) fun x ↦ by
-    rw [IsLocalization.map_eq, algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers]
-  have hdual : ((FractionalIdeal.dual R K (1 : FractionalIdeal B⁰ L)) : Set L) =
-      Submodule.traceDual R K (1 : Submodule B L) := Set.ext fun x ↦ by
-    rw [SetLike.mem_coe, SetLike.mem_coe, ← FractionalIdeal.mem_coeToSubmodule,
-      FractionalIdeal.coeToSubmodule_dual_one]
-  rw [← FractionalIdeal.coeToSubmodule_inj, FractionalIdeal.coeToSubmodule_dual_one,
-    FractionalIdeal.coeToSubmodule_extended_eq_span, hmap, hdual]
-  exact traceDual_one_adicCompletionIntegers_eq_span v w
+  have : Module.Projective R B :=
+    moduleProjective_of_isIntegralClosure (R := R) (K := K) (B := B) (L := L)
+  have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
+  have : Module.IsTorsionFree R B :=
+    Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective R B)
+  exact ((v.adicCompletionSemilocalEquiv K B L).extended_dual_one_eq_dual_one_of_semilocal
+    (v.adicCompletionIntegersSemilocalEquiv K B L)
+    (fun u ↦ algebraMap L (u.val.adicCompletion L))
+    (fun u ↦ algebraMap B (u.val.adicCompletionIntegers L))
+    (fun a x u ↦ v.adicCompletionSemilocalEquiv_tmul a x u)
+    (fun a x u ↦ v.adicCompletionIntegersSemilocalEquiv_tmul a x u)
+    (fun u x ↦ (u.val.algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers x).symm)
+    (primeAbove v w)
+    (FaithfulSMul.algebraMap_injective B (w.adicCompletionIntegers L))).symm
 
 include K L in
 /-- **The different ideal commutes with adic completion** (with arbitrary residue fields):
@@ -175,14 +142,17 @@ theorem differentIdeal_adicCompletionIntegers_eq_map :
     differentIdeal (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) =
       (differentIdeal R B).map (algebraMap B (w.adicCompletionIntegers L)) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  rw [← FractionalIdeal.coeIdeal_inj (K := w.adicCompletion L),
-    ← FractionalIdeal.extended_coeIdeal_eq_map (K := L) (w.adicCompletion L)
-      (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-        (FaithfulSMul.algebraMap_injective B (w.adicCompletionIntegers L))),
-    ← FractionalIdeal.extendedHom'_apply, coeIdeal_differentIdeal R K L B,
-    coeIdeal_differentIdeal (v.adicCompletionIntegers K) (v.adicCompletion K) (w.adicCompletion L)
-      (w.adicCompletionIntegers L), map_inv₀, FractionalIdeal.extendedHom'_apply,
-    dual_one_adicCompletionIntegers_eq_extended v w]
+  have : Module.Projective R B :=
+    moduleProjective_of_isIntegralClosure (R := R) (K := K) (B := B) (L := L)
+  exact ((v.adicCompletionSemilocalEquiv K B L).map_differentIdeal_eq_differentIdeal_of_semilocal
+    (v.adicCompletionIntegersSemilocalEquiv K B L)
+    (fun u ↦ algebraMap L (u.val.adicCompletion L))
+    (fun u ↦ algebraMap B (u.val.adicCompletionIntegers L))
+    (fun a x u ↦ v.adicCompletionSemilocalEquiv_tmul a x u)
+    (fun a x u ↦ v.adicCompletionIntegersSemilocalEquiv_tmul a x u)
+    (fun u x ↦ (u.val.algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers x).symm)
+    (primeAbove v w)
+    (FaithfulSMul.algebraMap_injective B (w.adicCompletionIntegers L))).symm
 
 /-- **The different of the integral semilocal algebra, read componentwise.** Extending
 `differentIdeal R B` to `𝒪_v ⊗[R] B` and transporting along `adicCompletionIntegersSemilocalEquiv`
@@ -195,29 +165,10 @@ theorem differentIdeal_adicCompletionIntegersSemilocal :
       Ideal.pi fun u ↦
         differentIdeal (v.adicCompletionIntegers K) (u.val.adicCompletionIntegers L) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  let f : B →+* ∀ u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-      u.val.adicCompletionIntegers L :=
-    (v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom.comp
-      (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom
-  have hcomp (u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
-      ((differentIdeal R B).map f).map (Pi.evalRingHom _ u) =
-        differentIdeal (v.adicCompletionIntegers K) (u.val.adicCompletionIntegers L) := by
-    rw [Ideal.map_map, differentIdeal_adicCompletionIntegers_eq_map (K := K) (L := L) v u.val]
-    congr 1; ext x; simp [f]
-  have hf : ((differentIdeal R B).map
-      (Algebra.TensorProduct.includeRight : B →ₐ[R] v.adicCompletionIntegers K ⊗[R] B)).map
-      (v.adicCompletionIntegersSemilocalEquiv K B L) = (differentIdeal R B).map f :=
-    Ideal.map_map (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom
-      (v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom
-  have hI : (differentIdeal R B).map f =
-      Ideal.pi (Ideal.piOrderIso ((differentIdeal R B).map f)) :=
-    SetLike.coe_injective <| by
-      conv_lhs => rw [← Ideal.piOrderIso.symm_apply_apply ((differentIdeal R B).map f)]
-      exact (Ideal.coe_piOrderIso_symm_apply _).trans (Set.ext fun _ ↦ by simp [Ideal.mem_pi])
-  rw [hf, hI]
-  refine congrArg Ideal.pi (funext fun u ↦ ?_)
-  rw [← Ideal.map_evalRingHom_pi (I := Ideal.piOrderIso ((differentIdeal R B).map f)) u, ← hI,
-    hcomp u]
+  exact (v.adicCompletionIntegersSemilocalEquiv K B L).map_differentIdeal_semilocal
+    (fun u ↦ algebraMap B (u.val.adicCompletionIntegers L))
+    (fun a x u ↦ v.adicCompletionIntegersSemilocalEquiv_tmul a x u)
+    fun u ↦ (differentIdeal_adicCompletionIntegers_eq_map (K := K) (L := L) v u.val).symm
 
 include K L in
 /-- **Completion preserves the different exponent**: the multiplicity of the maximal ideal of `𝒪_w`
@@ -239,13 +190,10 @@ theorem differentIdeal_adicCompletionIntegers_eq_maximalIdeal_pow :
       IsLocalRing.maximalIdeal (w.adicCompletionIntegers L) ^
         multiplicity w.asIdeal (differentIdeal R B) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (w.adicCompletionIntegers L)
-  obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
+  rw [← multiplicity_differentIdeal_adicCompletionIntegers (K := K) (L := L) v w]
+  exact (differentIdeal _ _).eq_maximalIdeal_pow_multiplicity
     (differentIdeal_ne_bot_of_isSeparable (R := v.adicCompletionIntegers K)
-      (K := v.adicCompletion K) (L := w.adicCompletion L)) hϖ
-  rw [← multiplicity_differentIdeal_adicCompletionIntegers (K := K) (L := L) v w, hn,
-    ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, multiplicity_pow_self_of_prime
-      (Ideal.prime_of_isPrime (IsDiscreteValuationRing.not_a_field _) inferInstance)]
+      (K := v.adicCompletion K) (L := w.adicCompletion L))
 
 /-- **Completed complementary-module length formula**: `length 𝒪_v (C_w / 𝒪_w) = d(w ∣ v) * f`. -/
 theorem length_traceDual_adicCompletionIntegers_quotient :

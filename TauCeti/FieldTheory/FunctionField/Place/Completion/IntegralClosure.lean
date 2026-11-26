@@ -28,11 +28,13 @@ integral closure of `𝒪̂_P` in `F̂_{P'}` (`TauCeti.Place.isIntegralClosure_c
 completed extension `F̂_{P'} / F̂_P` is separable as well (`TauCeti.Place.isSeparable_completion`),
 regardless of whether the residue extension is separable.
 
-When `F` and `F'` share a constant field `k` and the residue extension is finite, the completed
-places `P'.completionPlace` and `P.completionPlace` form an extension of places with
-`P'.completionPlace.restrict k P.Completion = P.completionPlace` and matching relative degree. This
-makes `𝒪̂_P ⊆ 𝒪̂_{P'}` an instance of the general local-extension and different-ideal machinery for
-discrete valuation rings.
+When `P'.Completion` is equipped with a compatible `k`-algebra structure (such as
+`TauCeti.Place.completionAlgebraBase`, or `instAlgebraCompletion` when `k' = k`) and the residue
+extension is finite, the completed places `P'.completionPlace` and `P.completionPlace` form an
+extension of places with `P'.completionPlace.restrict k P.Completion = P.completionPlace`
+(`TauCeti.Place.restrict_completionPlace`) and matching relative degree
+(`TauCeti.Place.relativeDegree_completionPlace`). This makes `𝒪̂_P ⊆ 𝒪̂_{P'}` an instance of the
+general local-extension and different-ideal machinery for discrete valuation rings.
 
 The integral-closure identification parallels the affine-model theorem in
 `TauCeti/RingTheory/DedekindDomain/AdicValuation/IntegralClosure.lean`, and the separability
@@ -48,15 +50,10 @@ transfer provides the intrinsic-place counterpart of
 
 * `TauCeti.Place.completionIntegersIntegralClosureHom_injective`: the canonical homomorphism
   `𝒪'_P →+* 𝒪̂_{P'}` is injective.
-* `TauCeti.Place.isIntegralClosure_completionIntegers`: when the residue extension is finite,
-  `𝒪̂_{P'}` is the integral closure of `𝒪̂_P` in `F̂_{P'}`.
-* `TauCeti.Place.isSeparable_completionEmbedding` and `TauCeti.Place.isSeparable_completion`:
-  when `F' / F` is separable, completed elements of `F'` are separable over `F̂_P`, and when the
-  residue extension is finite `F̂_{P'} / F̂_P` is separable (even if the residue extension is
-  inseparable).
-* `TauCeti.Place.completionPlace_restrict` and `TauCeti.Place.relativeDegree_completionPlace`:
-  over a common constant field and with finite residue extension, completion commutes with place
-  restriction and preserves the full relative degree.
+* `TauCeti.Place.isSeparable_completionEmbedding`: when `F' / F` is separable, completed elements
+  of `F'` are separable over `F̂_P`.
+* `TauCeti.Place.relativeDegree_completionPlace`: with finite residue extension, completion
+  preserves the full relative degree `f(P' ∣ P)` (including any inseparable factor).
 
 ## References
 
@@ -132,49 +129,27 @@ section FiniteResidue
 
 variable [FiniteDimensional (P'.restrict k F).ResidueField P'.ResidueField]
 
-end FiniteResidue
-
-end General
-
-section SameConstants
-
-variable {k F F' : Type*} [Field k] [Field F] [Field F']
-  [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
-  [Algebra.IsIntegral F F'] (P : Place k F) (P' : Place k F')
-  (hP : P'.restrict k F = P)
-  [FiniteDimensional (P'.restrict k F).ResidueField P'.ResidueField]
-
-/-- Over a common constant field `k`, the completed place `P'.completionPlace` restricts to
-`P.completionPlace` along the completed field extension. -/
-theorem completionPlace_restrict :
+/-- Completion preserves the full relative degree `f(P' ∣ P)`, including any inseparable residue
+factor. -/
+@[simp]
+theorem relativeDegree_completionPlace [alg : Algebra k P'.Completion]
+    [@IsScalarTower k k' P'.Completion _ (P'.instAlgebraCompletion).toSMul alg.toSMul]
+    [@IsScalarTower k P.Completion P'.Completion
+      (P.instAlgebraCompletion).toSMul (P.completionExtensionAlgebra P' hP).toSMul alg.toSMul] :
     letI := P.completionExtensionAlgebra P' hP
-    letI := P.isScalarTower_completionExtensionAlgebra P' hP
-    haveI : FiniteDimensional P.Completion P'.Completion := finiteDimensional_completion P P' hP
-    P'.completionPlace.restrict k P.Completion = P.completionPlace := by
-  let _ := P.completionExtensionAlgebra P' hP
-  let _ := P.isScalarTower_completionExtensionAlgebra P' hP
-  have : FiniteDimensional P.Completion P'.Completion := finiteDimensional_completion P P' hP
-  rw [restrict_eq_iff_exists_ord_eq]
-  refine ⟨ramificationIdx F P', ramificationIdx_pos F P', fun x ↦ ?_⟩
-  rw [algebraMap_completionExtensionAlgebra, P.ord_completionExtension P' hP x]
-
-/-- Over a common constant field `k`, completion preserves the full relative degree `f(P' ∣ P)`,
-including any inseparable residue factor. -/
-theorem relativeDegree_completionPlace :
-    letI := P.completionExtensionAlgebra P' hP
-    letI := P.isScalarTower_completionExtensionAlgebra P' hP
-    haveI : FiniteDimensional P.Completion P'.Completion := finiteDimensional_completion P P' hP
+    haveI : Algebra.IsIntegral P.Completion P'.Completion :=
+      haveI := P.finiteDimensional_completion P' hP; .of_finite _ _
     relativeDegree k P.Completion P'.completionPlace = relativeDegree k F P' := by
   subst hP
-  let P := P'.restrict k F
-  let _ := P.completionExtensionAlgebra P' rfl
-  let _ := P.isScalarTower_completionExtensionAlgebra P' rfl
-  let _ := P.completionIntegersExtensionAlgebra P' rfl
-  have : FiniteDimensional P.Completion P'.Completion := finiteDimensional_completion P P' rfl
-  let Q := P'.completionPlace.restrict k P.Completion
-  have hsub : Q.integers.toSubring = P.completionPlace.integers.toSubring :=
-    congrArg (fun R : Place k P.Completion ↦ R.integers.toSubring)
-      (completionPlace_restrict P P' rfl)
+  let P₀ := P'.restrict k F
+  let _ := P₀.completionExtensionAlgebra P' rfl
+  let _ := P₀.completionIntegersExtensionAlgebra P' rfl
+  have : FiniteDimensional P₀.Completion P'.Completion := finiteDimensional_completion P₀ P' rfl
+  have : Algebra.IsIntegral P₀.Completion P'.Completion := .of_finite _ _
+  have hsub : (P'.completionPlace.restrict k P₀.Completion).integers.toSubring =
+      P₀.completionPlace.integers.toSubring :=
+    congrArg (fun R : Place k P₀.Completion ↦ R.integers.toSubring)
+      (restrict_completionPlace P₀ P' rfl)
   rw [relativeDegree_def, ← P'.finrank_residueField_completion (k := k) (F := F)]
   refine Algebra.finrank_eq_of_equiv_equiv (ResidueField.mapEquiv (RingEquiv.subringCongr hsub))
     (.refl _) ?_
@@ -188,6 +163,8 @@ theorem relativeDegree_completionPlace :
   rw [coe_algebraMap_integers, coe_algebraMap_completionIntegersExtensionAlgebra,
     algebraMap_completionExtensionAlgebra, RingEquiv.coe_subringCongr_apply]
 
-end SameConstants
+end FiniteResidue
+
+end General
 
 end TauCeti.Place

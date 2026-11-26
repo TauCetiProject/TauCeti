@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
-public import Mathlib.Topology.Algebra.Valued.WithVal
+public import TauCeti.Topology.Algebra.Valued.WithVal
 public import Mathlib.RingTheory.AdicCompletion.Noetherian
 
 /-!
@@ -24,9 +24,12 @@ interval in the completion. In particular, completion does not change the residu
 identifications allow local calculations with finitely many coefficients to pass between the
 field and its completion. No finiteness or perfectness of the residue field is assumed.
 
-The `PlaceCompletionExtension` scope installs the single-place completion algebra structures
-`F → F̂_P`, `𝒪_P → F̂_P`, and `𝒪_P → 𝒪̂_P` together with their `algebraMap` characterizations and
-scalar towers, kept scoped to avoid global `Algebra` instance diamonds.
+Restricting the constant field of `P` via `TauCeti.Place.restrictScalars` induces a canonical
+topological ring isomorphism `TauCeti.Place.completionRestrictScalarsRingEquiv` preserving the
+completed valuation and valuation ring. The `PlaceCompletionExtension` scope installs the
+single-place completion algebra structures `F → F̂_P`, `𝒪_P → F̂_P`, and `𝒪_P → 𝒪̂_P` together with
+their `algebraMap` characterizations and scalar towers, kept scoped to avoid global `Algebra`
+instance diamonds.
 
 The underlying complete field and extension of the valuation are Mathlib's
 `Valuation.Completion` and `Valued.valuedCompletion`.
@@ -313,6 +316,73 @@ theorem residueFieldEquivCompletion_symm_residue_completionIntegersEmbedding (x 
 theorem degree_completionPlace : P.completionPlace.degree = P.degree := by
   simp only [degree_eq_finrank]
   exact P.residueFieldEquivCompletion.toLinearEquiv.finrank_eq.symm
+
+section RestrictScalars
+
+variable (k₀ : Type*) [Field k₀] [Algebra k₀ k] [Algebra k₀ F] [IsScalarTower k₀ k F]
+
+/-- Restricting the constant field of `P` from `k` to `k₀` induces a canonical topological ring
+isomorphism `(P.restrictScalars k₀).Completion ≃+* P.Completion` extending the identity on `F`. -/
+noncomputable def completionRestrictScalarsRingEquiv :
+    (P.restrictScalars k₀).Completion ≃+* P.Completion :=
+  Valuation.Completion.congr (RingEquiv.refl F) fun _ ↦ by simp
+
+variable {k₀}
+
+/-- `completionRestrictScalarsRingEquiv` commutes with the canonical completion embeddings of
+`F`. -/
+@[simp]
+theorem completionRestrictScalarsRingEquiv_completionEmbedding (x : F) :
+    P.completionRestrictScalarsRingEquiv k₀ ((P.restrictScalars k₀).completionEmbedding x) =
+      P.completionEmbedding x := by
+  rw [completionRestrictScalarsRingEquiv, completionEmbedding_apply, completionEmbedding_apply]
+  exact Valuation.Completion.congr_coe (σ := RingEquiv.refl F) _ x
+
+/-- The inverse of `completionRestrictScalarsRingEquiv` commutes with the canonical completion
+embeddings of `F`. -/
+@[simp]
+theorem completionRestrictScalarsRingEquiv_symm_completionEmbedding (x : F) :
+    (P.completionRestrictScalarsRingEquiv k₀).symm (P.completionEmbedding x) =
+      (P.restrictScalars k₀).completionEmbedding x := by
+  rw [RingEquiv.symm_apply_eq, completionRestrictScalarsRingEquiv_completionEmbedding]
+
+/-- `completionRestrictScalarsRingEquiv` is continuous. -/
+theorem continuous_completionRestrictScalarsRingEquiv :
+    Continuous (P.completionRestrictScalarsRingEquiv k₀) :=
+  Valuation.Completion.continuous_congr _
+
+/-- `completionRestrictScalarsRingEquiv` preserves the completed valuation. -/
+@[simp]
+theorem valuation_completionRestrictScalarsRingEquiv
+    (z : (P.restrictScalars k₀).Completion) :
+    Valued.v (P.completionRestrictScalarsRingEquiv k₀ z) = Valued.v z :=
+  Valuation.Completion.valued_congr (P.restrictScalars k₀).valuation_surjective _ z
+
+/-- The inverse of `completionRestrictScalarsRingEquiv` preserves the completed valuation. -/
+@[simp]
+theorem valuation_completionRestrictScalarsRingEquiv_symm (z : P.Completion) :
+    Valued.v ((P.completionRestrictScalarsRingEquiv k₀).symm z) = Valued.v z := by
+  simpa using (P.valuation_completionRestrictScalarsRingEquiv
+    ((P.completionRestrictScalarsRingEquiv k₀).symm z)).symm
+
+/-- `completionRestrictScalarsRingEquiv` identifies the completed valuation rings. -/
+theorem completionRestrictScalarsRingEquiv_mem_integers_iff
+    {z : (P.restrictScalars k₀).Completion} :
+    P.completionRestrictScalarsRingEquiv k₀ z ∈ P.completionPlace.integers ↔
+      z ∈ (P.restrictScalars k₀).completionPlace.integers := by
+  simp only [mem_integers_iff, completionPlace_valuation,
+    valuation_completionRestrictScalarsRingEquiv]
+
+/-- The inverse of `completionRestrictScalarsRingEquiv` identifies the completed valuation
+rings. -/
+theorem completionRestrictScalarsRingEquiv_symm_mem_integers_iff {z : P.Completion} :
+    (P.completionRestrictScalarsRingEquiv k₀).symm z ∈
+        (P.restrictScalars k₀).completionPlace.integers ↔
+      z ∈ P.completionPlace.integers := by
+  rw [← P.completionRestrictScalarsRingEquiv_mem_integers_iff (k₀ := k₀),
+    RingEquiv.apply_symm_apply]
+
+end RestrictScalars
 
 section ScopedInstances
 

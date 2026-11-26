@@ -23,13 +23,16 @@ finite trace-dual family `bᵢ ∈ B` and `yᵢ ∈ Bᵛ` satisfying
 `x = ∑ᵢ Tr_{L/K}(x bᵢ) yᵢ` for every `x ∈ L`.
 
 This identity is used to compare trace duals after extending scalars, in particular when
-comparing a number-field different with the different of a completed extension.
+comparing a global different with the different of a completed extension.
 
 ## Main results
 
 * `TauCeti.exists_trace_mul_algebraMap_eq`: every `A`-linear form on `B` is a trace pairing.
 * `TauCeti.exists_sum_trace_mul_smul_eq`: a projective integral closure has a finite trace-dual
   family `(bᵢ, yᵢ)` with `bᵢ ∈ B`, `yᵢ ∈ Bᵛ` and `x = ∑ᵢ Tr(x bᵢ) yᵢ`.
+* `RingHom.span_traceDual_one_eq_traceDual_one_of_forall`: if global trace-dual elements map into
+  a local trace dual and trace-dual expansions persist along `fField₀ : L →+* L₀`, then the local
+  trace dual is spanned by the image of the global trace dual.
 
 ## References
 
@@ -127,3 +130,48 @@ theorem exists_sum_trace_mul_smul_eq :
     hpair]
 
 end TauCeti
+
+namespace RingHom
+
+variable {R K S L R' K' S₀ L₀ : Type*}
+  [CommRing R] [Field K] [CommRing S] [Field L]
+  [CommRing R'] [Field K'] [CommRing S₀] [Field L₀]
+  [Algebra R K] [Algebra K L] [Algebra R S] [Algebra S L] [Algebra R L]
+  [IsScalarTower R K L] [IsScalarTower R S L]
+  [Algebra R' K'] [Algebra K' L₀] [Algebra R' S₀] [Algebra S₀ L₀] [Algebra R' L₀]
+  [IsScalarTower R' K' L₀] [IsScalarTower R' S₀ L₀]
+
+/-- **Local trace duals from global trace-dual families.** If elements of the global trace dual of
+`S / R` map into the local trace dual of `S₀ / R'` and finite `K`-linear trace-dual expansions on
+`L` persist in `L₀`, then the trace dual of `S₀ / R'` is spanned over `S₀` by the image of the
+trace dual of `S / R`. -/
+theorem span_traceDual_one_eq_traceDual_one_of_forall
+    [IsDomain R] [IsFractionRing R K]
+    [FiniteDimensional K L] [Algebra.IsSeparable K L]
+    [IsIntegralClosure S R L] [Module.Finite R S] [Module.Projective R S]
+    (fField₀ : L →+* L₀) (fInt₀ : S →+* S₀)
+    (hfCompat₀ : ∀ x : S, algebraMap S₀ L₀ (fInt₀ x) = fField₀ (algebraMap S L x))
+    (hMem : ∀ ⦃d : L⦄, d ∈ Submodule.traceDual R K (1 : Submodule S L) →
+      fField₀ d ∈ Submodule.traceDual R' K' (1 : Submodule S₀ L₀))
+    (hExp : ∀ {n : ℕ} (b y : Fin n → L),
+      (∀ x : L, ∑ j, Algebra.trace K L (x * b j) • y j = x) →
+      ∀ z : L₀, ∑ j, Algebra.trace K' L₀ (z * fField₀ (b j)) • fField₀ (y j) = z) :
+    Submodule.span S₀ (fField₀ '' Submodule.traceDual R K (1 : Submodule S L)) =
+      Submodule.traceDual R' K' (1 : Submodule S₀ L₀) := by
+  refine le_antisymm (Submodule.span_le.mpr ?_) fun z hz ↦ ?_
+  · rintro _ ⟨d, hd, rfl⟩
+    exact hMem hd
+  obtain ⟨n, b, y, hy, hb⟩ := TauCeti.exists_sum_trace_mul_smul_eq R K (L := L) (B := S)
+  rw [← hExp (fun j ↦ algebraMap S L (b j)) y hb z]
+  refine Submodule.sum_mem _ fun j _ ↦ ?_
+  obtain ⟨c, hc⟩ := Submodule.mem_traceDual.mp hz _
+    (Submodule.mem_one.mpr ⟨fInt₀ (b j), hfCompat₀ (b j)⟩)
+  rw [Algebra.traceForm_apply] at hc
+  have hsmul : Algebra.trace K' L₀ (z * fField₀ (algebraMap S L (b j))) • fField₀ (y j) =
+      algebraMap R' S₀ c • fField₀ (y j) := by
+    rw [← hc, Algebra.smul_def, Algebra.smul_def, ← IsScalarTower.algebraMap_apply R' K' L₀,
+      IsScalarTower.algebraMap_apply R' S₀ L₀]
+  rw [hsmul]
+  exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨y j, hy j, rfl⟩)
+
+end RingHom

@@ -19,6 +19,8 @@ import TauCeti.RingTheory.Valuation.NontrivialComap
 import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
 -- Proof-only: a surjective valuation is nontrivial.
 import TauCeti.RingTheory.Valuation.Surjective
+-- Proof-only: separability transports from abstract fraction fields to `FractionRing`.
+import TauCeti.FieldTheory.Separable.Localization
 
 /-!
 # Extensions of places: the ramification index and the relative degree
@@ -57,7 +59,9 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.algebraIntegersExtension` and `TauCeti.Place.isScalarTowerIntegersExtension`: the
   action of the valuation ring of a place of `F / k` on an `F`-algebra `F'`, to be installed
   with `attribute [local instance 10]`.
-* `TauCeti.Place.restrict`: the place of `F / k` that a place of `F' / k'` lies over.
+* `TauCeti.Place.restrict`: the place of `F / k` that a place of `F' / k'` lies over, with
+  `TauCeti.Place.restrictScalarsAbove` packaging its restriction of constants in the fibre above a
+  given place of `F / k`.
 * `TauCeti.Place.ramificationIdx`: the ramification index `e(P' | P)`.
 * `TauCeti.Place.relativeDegree`: the relative degree `f(P' | P) = [F'_{P'} : F_P]`.
 * `TauCeti.Place.ramificationIdxIn`: the ramification index of a place `P` of the base in an
@@ -276,15 +280,8 @@ omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k
 integral-closure API. -/
 instance isSeparable_fractionRing_integralClosure :
     Algebra.IsSeparable (FractionRing (P.integers))
-      (FractionRing (integralClosure (P.integers) F')) := by
-  refine Algebra.IsSeparable.of_equiv_equiv (FractionRing.algEquiv (P.integers) F).symm.toRingEquiv
-    (FractionRing.algEquiv (integralClosure (P.integers) F') F').symm.toRingEquiv ?_
-  apply IsLocalization.ringHom_ext (P.integers)⁰
-  ext a
-  simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,
-    AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
-  rw [IsScalarTower.algebraMap_apply (P.integers) (integralClosure (P.integers) F') F',
-    AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
+      (FractionRing (integralClosure (P.integers) F')) :=
+  .of_isLocalization (P.integers)⁰ (integralClosure (P.integers) F')⁰ F F'
 
 end LocalIntegralClosure
 
@@ -339,35 +336,24 @@ def constantsEquiv : Place k F' ≃ Place k' F' where
       isTrivialOn := ⟨fun c hc ↦ Q.valuation_eq_one_of_isAlgebraic
         (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).isAlgebraic
         fun h ↦ hc ((algebraMap k' F').injective (by rw [h, map_zero]))⟩ }
-  invFun Q :=
-    { valuation := Q.valuation
-      valuation_surjective := Q.valuation_surjective
-      isTrivialOn := ⟨fun c hc ↦ by
-        rw [IsScalarTower.algebraMap_apply k k' F']
-        exact Q.isTrivialOn.eq_one _ fun h ↦
-          hc ((algebraMap k k').injective (by rw [h, map_zero]))⟩ }
-  left_inv _ := rfl
-  right_inv _ := rfl
+  invFun := restrictScalars k
+  left_inv _ := ext (valuation_restrictScalars k _)
+  right_inv _ := ext (valuation_restrictScalars k _)
 
 variable {k k' F'}
+
+@[simp]
+theorem constantsEquiv_symm_apply (Q : Place k' F') :
+    (constantsEquiv k k' F').symm Q = Q.restrictScalars k := (rfl)
 
 @[simp]
 theorem valuation_constantsEquiv (Q : Place k F') :
     (constantsEquiv k k' F' Q).valuation = Q.valuation := (rfl)
 
 @[simp]
-theorem valuation_constantsEquiv_symm (Q : Place k' F') :
-    ((constantsEquiv k k' F').symm Q).valuation = Q.valuation := (rfl)
-
-@[simp]
 theorem integers_constantsEquiv (Q : Place k F') :
     (constantsEquiv k k' F' Q).integers = Q.integers :=
   SetLike.ext fun x ↦ by rw [mem_integers_iff, mem_integers_iff, valuation_constantsEquiv]
-
-@[simp]
-theorem integers_constantsEquiv_symm (Q : Place k' F') :
-    ((constantsEquiv k k' F').symm Q).integers = Q.integers :=
-  SetLike.ext fun x ↦ by rw [mem_integers_iff, mem_integers_iff, valuation_constantsEquiv_symm]
 
 end Constants
 
@@ -402,6 +388,26 @@ noncomputable def restrict : Place k F where
       Valuation.IsTrivialOn.comap P'.valuation (IsScalarTower.toAlgHom k F F')
     exact Valuation.IsTrivialOn.normalization _
 
+private theorem valuation_restrict :
+    (P'.restrict k F).valuation = (P'.valuation.comap (algebraMap F F')).normalization := (rfl)
+
+/-- Restricting the constant field of `P'` commutes with restricting `P'` to `F / k`. -/
+@[simp]
+theorem restrict_restrictScalars {k₁ : Type*} [Field k₁] [Algebra k k₁] [Algebra k₁ k']
+    [Algebra k₁ F'] [IsScalarTower k k₁ F'] [IsScalarTower k₁ k' F'] :
+    (P'.restrictScalars k₁).restrict k F = P'.restrict k F := by
+  apply ext
+  rw [valuation_restrict, valuation_restrict, valuation_restrictScalars]
+
+variable {k F} in
+/-- Restricting the constant field of a place `P'` lying over `P` to an intermediate field `k₁`
+gives a place of `F' / k₁` in the fibre above `P`. -/
+abbrev restrictScalarsAbove (k₁ : Type*) [Field k₁] [Algebra k k₁] [Algebra k₁ k']
+    [Algebra k₁ F'] [IsScalarTower k k₁ F'] [IsScalarTower k₁ k' F'] {P : Place k F}
+    (hP : P'.restrict k F = P) :
+    {Q' : Place k₁ F' // Q'.restrict k F = P} :=
+  ⟨P'.restrictScalars k₁, (P'.restrict_restrictScalars k F).trans hP⟩
+
 /-- **The ramification index** `e(P' ∣ P)` of a place `P'` of `F' / k'` over the place `P` of
 `F / k` it lies over: the factor by which the order function at `P'` scales the order function
 at `P` (Stichtenoth, Definition 3.1.5). -/
@@ -413,6 +419,14 @@ omit [Algebra.IsIntegral F F'] in
 lemma ramificationIdx_def :
     ramificationIdx F P' = Valuation.ordIndex (P'.valuation.comap (algebraMap F F')) := by
   rw [ramificationIdx]
+
+omit [Algebra.IsIntegral F F'] in
+/-- Restricting the constant field of `P'` does not change its ramification index over `F`. -/
+@[simp]
+theorem ramificationIdx_restrictScalars {k₁ : Type*} [Field k₁] [Algebra k₁ k']
+    [Algebra k₁ F'] [IsScalarTower k₁ k' F'] :
+    ramificationIdx F (P'.restrictScalars k₁) = ramificationIdx F P' := by
+  simp [ramificationIdx_def]
 
 omit [Algebra.IsIntegral F F'] in
 /-- **The ramification index does not depend on how the field below is presented**: if
@@ -429,9 +443,6 @@ theorem ramificationIdx_eq_of_ringEquiv {F₀ : Type*} [Field F₀] [Algebra F�
 /-- The ramification index of a restricted place is positive. -/
 theorem ramificationIdx_pos : 0 < ramificationIdx F P' :=
   Nat.pos_of_ne_zero (ordIndex_comap_ne_zero F P')
-
-private theorem valuation_restrict :
-    (P'.restrict k F).valuation = (P'.valuation.comap (algebraMap F F')).normalization := (rfl)
 
 /-- **The defining property of the ramification index** (Stichtenoth, Definition 3.1.5): on `F`
 the order function at `P'` is `e(P' ∣ P)` times the order function at `P`. -/

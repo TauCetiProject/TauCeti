@@ -46,8 +46,7 @@ and separability instances below.
   `finiteDimensional_adicCompletion_of_finite`, `isSeparable_adicCompletion_of_isSeparable`.
 * `finrank_adicCompletionIntegers_of_finite`, `finrank_adicCompletion_of_finite`,
   `sum_finrank_adicCompletion_of_finite`, `algebraMap_norm_eq_prod_norm_adicCompletion`,
-  `algebraMap_trace_eq_sum_trace_adicCompletion`,
-  `trace_adicCompletionSemilocalEquiv_symm_single_mul`.
+  `algebraMap_trace_eq_sum_trace_adicCompletion`.
 
 ## References
 
@@ -506,24 +505,6 @@ theorem trace_eq_sum_trace_adicCompletionSemilocalEquiv
           (v.adicCompletionSemilocalEquiv K B L ξ w) := by
   classical
   rw [← Algebra.trace_eq_of_algEquiv (v.adicCompletionSemilocalEquiv K B L), Algebra.trace_pi]
-
-open scoped Classical in
-/-- Placing `z ∈ L_w` in the `w`-component of `K_v ⊗[K] L` preserves its trace pairing with `L`. -/
-theorem trace_adicCompletionSemilocalEquiv_symm_single_mul (w : HeightOneSpectrum B)
-    [w.asIdeal.LiesOver v.asIdeal] (z : w.adicCompletion L) (x : L) :
-    Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)
-        ((v.adicCompletionSemilocalEquiv K B L).symm
-          (Pi.single (⟨w, inferInstance⟩ :
-            {u : HeightOneSpectrum B // u.asIdeal.LiesOver v.asIdeal}) z) * (1 ⊗ₜ x)) =
-      Algebra.trace (v.adicCompletion K) (w.adicCompletion L)
-        (z * algebraMap L (w.adicCompletion L) x) := by
-  have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
-  let _ : Fintype {u : HeightOneSpectrum B // u.asIdeal.LiesOver v.asIdeal} := Fintype.ofFinite _
-  rw [v.trace_eq_sum_trace_adicCompletionSemilocalEquiv (B := B),
-    Finset.sum_eq_single (⟨w, inferInstance⟩ :
-      {u : HeightOneSpectrum B // u.asIdeal.LiesOver v.asIdeal})
-      (fun _ _ hw' ↦ by simp [Pi.single_eq_of_ne hw']) (by simp)]
-  simp [adicCompletionSemilocalEquiv_tmul]
 
 /-- **Local-global trace formula**: `Tr_{L/K}(x) = ∑_{w ∣ v} Tr_{L_w/K_v}(x)` in `K_v`. -/
 theorem algebraMap_trace_eq_sum_trace_adicCompletion

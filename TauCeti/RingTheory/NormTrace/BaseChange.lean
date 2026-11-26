@@ -25,8 +25,9 @@ noncommutative algebras.
 * `TauCeti.Algebra.norm_baseChange_tmul`, `TauCeti.Algebra.trace_baseChange_tmul`, and
   `TauCeti.Algebra.trace_tmul`: the norm and trace of pure tensors in `A ⊗[K] B` over `A` are
   computed from those in `B` over `K`.
-* `TauCeti.Algebra.trace_tmul_mul_smul` and `TauCeti.Algebra.sum_trace_mul_smul_tmul_eq`:
-  trace-pairing scalar multiplication and trace-dual expansions pass from `B / K` to the scalar
+* `TauCeti.Algebra.trace_tmul_mul_smul`, `TauCeti.Algebra.sum_trace_mul_smul_tmul_eq`, and
+  `TauCeti.Algebra.trace_map_tmul_mul`: trace-pairing scalar multiplication, trace-dual
+  expansions, and integral-to-field base-change trace pairings pass from `B / K` to the scalar
   extension `A ⊗[K] B / A`.
 * `TauCeti.Algebra.leftMulMatrix_rTensor`, `TauCeti.Algebra.norm_rTensor`: the matrix of
   multiplication on `P ⊗[K] B` (for a finite `K`-basis of `B`) and the norm of `P ⊗[K] B` over `P`
@@ -217,6 +218,17 @@ theorem Algebra.sum_trace_mul_smul_tmul_eq {ι : Type*} [Fintype ι] (b y : ι �
   | tmul a x =>
     conv_rhs => rw [← h x, TensorProduct.tmul_sum]
     exact Finset.sum_congr rfl fun i _ ↦ Algebra.trace_tmul_mul_smul a x (b i) (y i)
+
+/-- For a map `toField : R' ⊗[R] S → A ⊗[K] B` sending `a ⊗ x` to `a ⊗ x`, the trace pairing of
+`toField (a ⊗ x)` with `1 ⊗ d` is a scalar multiple of the base-changed trace of `x · d`. -/
+theorem Algebra.trace_map_tmul_mul {R R' S F : Type*} [CommRing R] [CommRing R'] [CommRing S]
+    [Algebra R R'] [Algebra R' A] [Algebra R S] [Algebra S B]
+    [FunLike F (R' ⊗[R] S) (A ⊗[K] B)] (toField : F)
+    (ht : ∀ (a : R') (x : S), toField (a ⊗ₜ[R] x) = algebraMap R' A a ⊗ₜ[K] algebraMap S B x)
+    (a : R') (x : S) (d : B) :
+    Algebra.trace A (A ⊗[K] B) (toField (a ⊗ₜ[R] x) * (1 ⊗ₜ[K] d)) =
+      algebraMap R' A a * algebraMap K A (Algebra.trace K B (algebraMap S B x * d)) := by
+  rw [ht, Algebra.TensorProduct.tmul_mul_tmul, mul_one, Algebra.trace_tmul]
 
 end Trace
 
