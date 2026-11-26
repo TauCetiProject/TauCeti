@@ -70,7 +70,8 @@ injective, the orbit projection is an open partial homeomorphism onto its image.
   closed, then every orbit is open and closed in the set.
 * `TauCeti.frontier_smul₀`: `frontier (c • s) = c • frontier s` for `c ≠ 0`.
 * `TauCeti.specializes_iff_orbit_subset_closure_orbit`: in the orbit space of a group acting by
-  homeomorphisms, `q ⤳ q'` exactly when the orbit `q'` lies in the closure of the orbit `q`.
+  homeomorphisms, `q ⤳ q'` exactly when the orbit `q'` lies in the closure of the orbit `q`, with
+  the additive form `TauCeti.specializes_iff_addOrbit_subset_closure_addOrbit`.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
 * `TauCeti.countable_of_properlyDiscontinuousSMul`: a properly discontinuous scalar family on a
@@ -193,6 +194,10 @@ theorem frontier_smul₀ {G₀ X : Type*} [GroupWithZero G₀] [MulAction G₀ X
 /-- **Specialization of orbits.** For a group acting by homeomorphisms, one point of the orbit space
 specializes to another exactly when the second orbit lies in the closure of the first. The orbit
 projection is an open quotient map, so it commutes with taking closures of saturated sets. -/
+@[to_additive specializes_iff_addOrbit_subset_closure_addOrbit
+  /-- **Specialization of orbits.** For an additive group acting by homeomorphisms, one point of
+  the orbit space specializes to another exactly when the second orbit lies in the closure of the
+  first. -/]
 theorem specializes_iff_orbit_subset_closure_orbit {G X : Type*} [Group G] [MulAction G X]
     [TopologicalSpace X] [ContinuousConstSMul G X] {q q' : MulAction.orbitRel.Quotient G X} :
     q ⤳ q' ↔ q'.orbit ⊆ closure q.orbit := by

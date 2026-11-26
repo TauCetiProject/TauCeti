@@ -94,4 +94,12 @@ theorem coneOrderIsoOrbitRelQuotient_apply (σ : Φ.cones) :
       OrderDual.toDual (Specialization.toEquiv (Φ.coneEquivOrbitRelQuotient hΦ σ)) :=
   (rfl)
 
+/-- The inverse order isomorphism sends a torus orbit to its cone. -/
+@[simp]
+theorem coneOrderIsoOrbitRelQuotient_symm_apply (q : (Specialization
+      (MulAction.orbitRel.Quotient (ComplexTorus N) (Φ.analyticRealization hΦ)))ᵒᵈ) :
+    (Φ.coneOrderIsoOrbitRelQuotient hΦ).symm q =
+      (Φ.coneEquivOrbitRelQuotient hΦ).symm (Specialization.ofEquiv (OrderDual.ofDual q)) :=
+  (rfl)
+
 end TauCeti.Toric.Fan
