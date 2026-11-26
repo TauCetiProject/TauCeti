@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Isomorphisms
-public import Mathlib.LinearAlgebra.TensorAlgebra.ToTensorPower
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
+public import TauCeti.LinearAlgebra.TensorAlgebra.ToTensorPower
 public import TauCeti.RingTheory.MilnorK.Basic
 
 /-!
@@ -50,6 +50,8 @@ K-groups of an algebraically closed field are uniquely divisible in degrees at l
 * `TauCeti.MilnorK.steinbergRelations_eq_bot`: `R_0 = R_1 = 0`.
 * `TauCeti.MilnorK.range_ofTensorPower`: the image of `T_n` is `K_nᴹ(R)`.
 * `TauCeti.MilnorK.isInternal_degree`: `K_*ᴹ(R)` is the internal direct sum of the `K_nᴹ(R)`.
+* `TauCeti.MilnorK.coe_decompose_mk`: the degree-`n` component of the class of a tensor is the
+  image of its degree-`n` component.
 
 ## Implementation notes
 
@@ -113,7 +115,7 @@ private abbrev gMulBilin (i j : ℕ) :
 
 private theorem gMulBilin_apply {i j : ℕ} (a : ⨂[ℤ]^i (Additive Rˣ)) (b : ⨂[ℤ]^j (Additive Rˣ)) :
     gMulBilin i j a b = GradedMonoid.GMul.mul (A := fun n ↦ ⨂[ℤ]^n (Additive Rˣ)) a b :=
-  (rfl)
+  (TensorPower.gMul_eq_coe_linearMap a b).symm
 
 private theorem ofMul_toMul_comp {n : ℕ} (g : Fin n → Additive Rˣ) :
     g = fun k ↦ Additive.ofMul (g k).toMul :=
@@ -214,6 +216,11 @@ private def relIdeal : TwoSidedIdeal (TensorAlgebra ℤ (Additive Rˣ)) :=
     (fun {t _} hu ↦ by simpa using mul_mem_relSum_left (toDirectSum t) hu)
     (fun {_ u} ht ↦ by simpa using mul_mem_relSum_right ht (toDirectSum u))
 
+private theorem mem_relIdeal {t : TensorAlgebra ℤ (Additive Rˣ)} :
+    t ∈ relIdeal (R := R) ↔ ∀ n, toDirectSum t n ∈ steinbergRelations R n := by
+  rw [relIdeal, TwoSidedIdeal.mem_mk', SetLike.mem_coe, Submodule.mem_comap,
+    AlgHom.toLinearMap_apply, mem_relSum]
+
 variable (R) in
 /-- The `ℤ`-linear map `(Additive Rˣ)^{⊗ n} → K_*ᴹ(R)` sending `a₁ ⊗ ⋯ ⊗ aₙ` to the Milnor symbol
 `{a₁, …, aₙ}`. Its range is `K_nᴹ(R)` and its kernel is `R_n`. -/
@@ -245,18 +252,6 @@ theorem ofTensorPower_gMul {i j : ℕ} (a : ⨂[ℤ]^i (Additive Rˣ)) (b : ⨂[
       ofTensorPower R i a * ofTensorPower R j b := by
   simp [ofTensorPower_apply]
 
-private theorem toDirectSum_toTensorAlgebra {n : ℕ} (x : ⨂[ℤ]^n (Additive Rˣ)) :
-    toDirectSum (TensorPower.toTensorAlgebra x) = of _ n x := by
-  induction x using PiTensorProduct.induction_on with
-  | smul_tprod r g =>
-    rw [map_smul, map_smul, TensorPower.toTensorAlgebra_tprod, toDirectSum_tensorPower_tprod,
-      of_smul]
-  | add x y hx hy => simp [hx, hy]
-
-private theorem ofDirectSum_of {n : ℕ} (x : ⨂[ℤ]^n (Additive Rˣ)) :
-    ofDirectSum (of _ n x) = TensorPower.toTensorAlgebra x :=
-  DirectSum.toAddMonoid_of (fun _ ↦ LinearMap.toAddMonoidHom TensorPower.toTensorAlgebra) _ _
-
 private theorem ofTensorPower_eq_zero_of_mem {n : ℕ} {x : ⨂[ℤ]^n (Additive Rˣ)}
     (hx : x ∈ steinbergRelations R n) : ofTensorPower R n x = 0 := by
   induction hx using Submodule.span_induction with
@@ -281,17 +276,14 @@ theorem mk_eq_zero_iff {t : TensorAlgebra ℤ (Additive Rˣ)} :
     have hle : ringConGen (milnorRel R) ≤ (relIdeal (R := R)).ringCon :=
       RingCon.ringConGen_le.2 fun x y hxy ↦ by
         obtain ⟨a, b, h, rfl, rfl⟩ := (milnorRel_iff R).1 hxy
-        rw [TwoSidedIdeal.rel_iff, sub_zero, relIdeal, TwoSidedIdeal.mem_mk', SetLike.mem_coe,
-          Submodule.mem_comap, AlgHom.toLinearMap_apply, map_mul, toDirectSum_ι, toDirectSum_ι,
-          of_mul_of]
+        rw [TwoSidedIdeal.rel_iff, sub_zero, mem_relIdeal, map_mul, toDirectSum_ι, toDirectSum_ι,
+          of_mul_of, ← mem_relSum]
         refine of_mem_relSum ?_
         rw [TensorPower.tprod_mul_tprod]
         exact tprod_mem_steinbergRelations (fun k ↦ Fin.append (fun _ ↦ a) (fun _ ↦ b) k) 0
           (by norm_num) (by simpa [Fin.append, Fin.addCases] using h)
     have := hle (mk_eq_mk_iff.1 (ht.trans (map_zero mk).symm))
-    rw [TwoSidedIdeal.rel_iff, sub_zero, relIdeal, TwoSidedIdeal.mem_mk', SetLike.mem_coe,
-      Submodule.mem_comap] at this
-    exact mem_relSum.1 this
+    rwa [TwoSidedIdeal.rel_iff, sub_zero, mem_relIdeal] at this
   · intro ht
     rw [← ofDirectSum_toDirectSum t, ← sum_support_of (toDirectSum t), map_sum, map_sum]
     exact Finset.sum_eq_zero fun n _ ↦ by
@@ -309,35 +301,6 @@ theorem ker_ofTensorPower (n : ℕ) :
     LinearMap.ker (ofTensorPower R n) = steinbergRelations R n :=
   Submodule.ext fun _ ↦ ofTensorPower_eq_zero_iff
 
-/-! ### The grading of the tensor algebra -/
-
-/-- A degree-`n` tensor lies in the `n`-th piece `range ι ^ n` of the grading of the tensor
-algebra. -/
-private theorem toTensorAlgebra_mem {n : ℕ} (x : ⨂[ℤ]^n (Additive Rˣ)) :
-    TensorPower.toTensorAlgebra x ∈
-      LinearMap.range (ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)) ^ n := by
-  induction x using PiTensorProduct.induction_on with
-  | smul_tprod r g =>
-    rw [map_smul, TensorPower.toTensorAlgebra_tprod, TensorAlgebra.tprod_apply]
-    refine Submodule.smul_mem _ r ?_
-    simpa using SetLike.list_prod_ofFn_mem_graded
-      (A := fun n : ℕ ↦ LinearMap.range (ι ℤ : Additive Rˣ →ₗ[ℤ] _) ^ n) (fun _ ↦ 1)
-      (fun k ↦ ι ℤ (g k)) fun k ↦ by simp
-  | add x y hx hy => rw [map_add]; exact add_mem hx hy
-
-/-- The homogeneous components of a tensor for the grading `TensorAlgebra.gradedAlgebra` are the
-components of `TensorAlgebra.toDirectSum`. -/
-private theorem coe_decompose_apply (t : TensorAlgebra ℤ (Additive Rˣ)) (n : ℕ) :
-    (decompose (fun n : ℕ ↦ LinearMap.range (ι ℤ : Additive Rˣ →ₗ[ℤ] _) ^ n) t n :
-      TensorAlgebra ℤ (Additive Rˣ)) = TensorPower.toTensorAlgebra (toDirectSum t n) := by
-  classical
-  conv_lhs => rw [← ofDirectSum_toDirectSum t, ← sum_support_of (toDirectSum t)]
-  rw [map_sum, decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
-  simp_rw [ofDirectSum_of]
-  rw [Finset.sum_eq_single n (fun m _ hmn ↦ decompose_of_mem_ne _ (toTensorAlgebra_mem _) hmn)
-    (fun hn ↦ by simp [DFinsupp.notMem_support_iff.1 hn])]
-  exact decompose_of_mem_same _ (toTensorAlgebra_mem _)
-
 /-- **Homogeneity of the Steinberg ideal.** For the grading `TensorAlgebra.gradedAlgebra` of the
 tensor algebra by the powers `range ι ^ n`, every homogeneous component of an element of the
 kernel of `TauCeti.MilnorK.mk` lies in the kernel. -/
@@ -346,7 +309,8 @@ theorem isHomogeneous_ker_mk :
       (fun n : ℕ ↦ LinearMap.range (ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)) ^ n) :=
   fun n t ht ↦ by
     rw [RingHom.mem_ker] at ht ⊢
-    rw [coe_decompose_apply, ← ofTensorPower_apply, ofTensorPower_eq_zero_iff]
+    rw [coe_decompose_eq_toTensorAlgebra_toDirectSum, ← ofTensorPower_apply,
+      ofTensorPower_eq_zero_iff]
     exact mk_eq_zero_iff.1 ht n
 
 /-! ### The degree-`n` presentation -/
@@ -378,8 +342,8 @@ def degreeEquiv (n : ℕ) :
 /-- `degreeEquiv` sends the class of a degree-`n` tensor to its image in the Milnor K-ring. -/
 @[simp]
 theorem coe_degreeEquiv_mk {n : ℕ} (x : ⨂[ℤ]^n (Additive Rˣ)) :
-    (degreeEquiv R n (Submodule.Quotient.mk x) : MilnorK R) = ofTensorPower R n x :=
-  (rfl)
+    (degreeEquiv R n (Submodule.Quotient.mk x) : MilnorK R) = ofTensorPower R n x := by
+  simp [degreeEquiv, Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivRange_apply_mk]
 
 /-- The inverse of `degreeEquiv` sends a symbol `{a₁, …, aₙ}` to the class of `a₁ ⊗ ⋯ ⊗ aₙ`. -/
 theorem degreeEquiv_symm_symbol {n : ℕ} (f : Fin n → Rˣ) :
@@ -434,6 +398,21 @@ theorem isInternal_degree : IsInternal (degree R) := by
 instance instGradedRingDegree : GradedRing (degree R) where
   __ := instGradedMonoidDegree
   __ := isInternal_degree.chooseDecomposition
+
+/-- The degree-`n` component of the class of a tensor `t` in the grading
+`TauCeti.MilnorK.instGradedRingDegree` is the image in `K_nᴹ(R)` of the degree-`n` component of
+`t`. -/
+@[simp]
+theorem coe_decompose_mk (t : TensorAlgebra ℤ (Additive Rˣ)) (n : ℕ) :
+    (decompose (degree R) (mk t) n : MilnorK R) = ofTensorPower R n (toDirectSum t n) := by
+  -- `coeLinearMap` is inverse to the decomposition.
+  have h (y : ⨁ n, degree R n) : decompose (degree R) (coeLinearMap (degree R) y) = y := by
+    induction y using DirectSum.induction_on with
+    | zero => simp
+    | of i x => rw [coeLinearMap_of, decompose_coe]
+    | add y y' hy hy' => rw [map_add, decompose_add, hy, hy']
+  rw [← coeLinearMap_toDegrees t, h]
+  simp [toDegrees]
 
 end MilnorK
 

@@ -37,6 +37,7 @@ and scalar extension.
   where the polynomial is the product of the factors `1 - α⁻¹ X` alone.
 * `Polynomial.Splits.exists_eq_C_mul_map_of_dvd_map`: descent up to a unit constant of divisors
   of mapped split polynomials whose mapped leading coefficient is a unit.
+* `Units.exists_pow_eq_of_splits`: a unit `a` is an `m`-th power of a unit when `Xᵐ - a` splits.
 -/
 
 public section
@@ -135,3 +136,16 @@ theorem Polynomial.Splits.exists_eq_C_mul_map_of_dvd_map
   · rw [hf]
     exact (Finset.prod_dvd_prod_of_subset t Finset.univ _ (Finset.subset_univ t)).mul_left _
   · simpa only [Polynomial.map_prod, Polynomial.map_sub, map_X, map_C, IsUnit.unit_spec] using hp
+
+/-- **Roots of units from splitting.** If `m ≠ 0` and `Xᵐ - a` splits for a unit `a` of a
+commutative ring, then `a` is the `m`-th power of a unit. -/
+theorem Units.exists_pow_eq_of_splits {R : Type*} [CommRing R] {m : ℕ} (hm : m ≠ 0) {a : Rˣ}
+    (h : (X ^ m - C (a : R)).Splits) : ∃ v : Rˣ, v ^ m = a := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact ⟨1, Subsingleton.elim _ _⟩
+  obtain ⟨c, hc⟩ := h.exists_eval_eq_zero (by
+    rw [degree_X_pow_sub_C (Nat.pos_of_ne_zero hm)]
+    exact_mod_cast hm)
+  rw [eval_sub, eval_pow, eval_X, eval_C, sub_eq_zero] at hc
+  obtain ⟨v, rfl⟩ := (isUnit_pow_iff hm).1 (hc ▸ a.isUnit)
+  exact ⟨v, Units.ext (by simpa using hc)⟩

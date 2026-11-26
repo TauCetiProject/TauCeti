@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import TauCeti.Algebra.Polynomial.Splits
+public import TauCeti.LinearAlgebra.Multilinear.Bilinear
 public import TauCeti.LinearAlgebra.PiTensorProduct.Divisible
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.RingTheory.MilnorK.Homogeneous
@@ -28,12 +30,13 @@ with `cᵢⁿ = a`, and each `1 - cᵢ` divides the unit `b`, so it is a unit wi
 
 `a ⊗ b = ∑ᵢ a ⊗ (1 - cᵢ) = ∑ᵢ cᵢⁿ ⊗ (1 - cᵢ) = n • ∑ᵢ cᵢ ⊗ (1 - cᵢ)`.
 
-Placing this identity in two neighbouring entries of a pure tensor shows that every Steinberg
-relation module `R_m ⊆ U^{⊗ m}` of `TauCeti.MilnorK.steinbergRelations` is `n`-divisible. By
-`TauCeti.MilnorK.degreeEquiv`, `K_mᴹ(F)` is the quotient `U^{⊗ m} / R_m`. For `m ≥ 2` the tensor
-power has at least two `n`-divisible factors, so multiplication by `n` is bijective on it
+Now let `m ≠ 0` be the multiplier and suppose every `Xᵐ - a` splits. Placing the identity above,
+with `m` in place of `n`, in two neighbouring entries of a pure tensor shows that every Steinberg
+relation module `R_n ⊆ U^{⊗ n}` of `TauCeti.MilnorK.steinbergRelations` is `m`-divisible. By
+`TauCeti.MilnorK.degreeEquiv`, `K_nᴹ(R)` is the quotient `U^{⊗ n} / R_n`. For `n ≥ 2` the tensor
+power has at least two `m`-divisible factors, so multiplication by `m` is bijective on it
 (`TauCeti.LinearAlgebra.PiTensorProduct.Divisible`), and it stays bijective on the quotient by
-the `n`-divisible submodule `R_m` (`TauCeti.RingTheory.Regular.IsSMulRegular`). Over a field of
+the `m`-divisible submodule `R_n` (`TauCeti.RingTheory.Regular.IsSMulRegular`). Over a field of
 characteristic `p` the roots of `Xᵖ - a` all coincide, and the argument uses them with their
 multiplicity. Degree one is genuinely excluded: `Fˣ` is divisible but contains the roots of
 unity.
@@ -41,11 +44,12 @@ unity.
 ## Main results
 
 * `TauCeti.exists_ofMul_tmul_ofMul_eq_nsmul_sum`: if `a + b = 1` and `Xⁿ - a` splits, then
-  `a ⊗ b = n • ∑ᵢ cᵢ ⊗ dᵢ` for finitely many unit pairs with `cᵢ + dᵢ = 1` and `cᵢⁿ = a`.
-* `TauCeti.MilnorK.steinbergRelations_le_smul`: if every `Xⁿ - a` splits, the Steinberg relation
-  modules are `n`-divisible.
-* `TauCeti.MilnorK.bijective_nsmul_degree`: if every `Xⁿ - a` splits, multiplication by `n ≠ 0`
-  is bijective on `K_mᴹ(R)` for `m ≥ 2`.
+  `a ⊗ b = n • ∑ᵢ cᵢ ⊗ dᵢ` for finitely many unit pairs with `cᵢ + dᵢ = 1` and `cᵢⁿ = a`; here
+  `n` is the multiplier.
+* `TauCeti.MilnorK.steinbergRelations_le_smul`: if every `Xᵐ - a` splits, the Steinberg relation
+  modules `R_n` are `m`-divisible.
+* `TauCeti.MilnorK.bijective_nsmul_degree`: if every `Xᵐ - a` splits, multiplication by `m ≠ 0`
+  is bijective on `K_nᴹ(R)` for `n ≥ 2`.
 * `TauCeti.MilnorK.bijective_nsmul_degree_of_isAlgClosed`: the Milnor K-groups of an
   algebraically closed field are uniquely divisible in degrees at least two.
 
@@ -111,24 +115,6 @@ namespace MilnorK
 
 open Function
 
-/-- The bilinear map putting `x` and `y` into the neighbouring entries `i` and `i + 1` of the pure
-tensor of `g`. -/
-private noncomputable def insertPair {n : ℕ} (g : Fin n → Additive Rˣ) (i j : Fin n) (hij : i ≠ j) :
-    Additive Rˣ →ₗ[ℤ] Additive Rˣ →ₗ[ℤ] ⨂[ℤ]^n (Additive Rˣ) :=
-  LinearMap.mk₂ ℤ (fun x y ↦ PiTensorProduct.tprod ℤ (update (update g j y) i x))
-    (fun x x' y ↦ by simp) (fun c x y ↦ by simp)
-    (fun x y y' ↦ by
-      rw [update_comm hij.symm, update_comm hij.symm, update_comm hij.symm]
-      simp)
-    (fun c x y ↦ by
-      rw [update_comm hij.symm, update_comm hij.symm]
-      simp)
-
-private theorem insertPair_apply {n : ℕ} (g : Fin n → Additive Rˣ) (i j : Fin n) (hij : i ≠ j)
-    (x y : Additive Rˣ) :
-    insertPair g i j hij x y = PiTensorProduct.tprod ℤ (update (update g j y) i x) := by
-  simp [insertPair]
-
 /-- If `Xᵐ - a` splits for every unit `a`, the Steinberg relation modules are `m`-divisible. -/
 theorem steinbergRelations_le_smul {m : ℕ} (hm : m ≠ 0)
     (hsplit : ∀ a : Rˣ, (X ^ m - C (a : R)).Splits) (n : ℕ) :
@@ -140,13 +126,15 @@ theorem steinbergRelations_le_smul {m : ℕ} (hm : m ≠ 0)
   set j' : Fin n := ⟨i + 1, hi⟩
   have hij : i' ≠ j' := by simp [i', j', Fin.ext_iff]
   obtain ⟨s, hs, hsum⟩ := exists_ofMul_tmul_ofMul_eq_nsmul_sum hm h (hsplit _)
-  have key := congrArg (TensorProduct.lift (insertPair (fun k ↦ Additive.ofMul (f k)) i' j' hij))
-    hsum
-  rw [TensorProduct.lift.tmul, insertPair_apply, update_eq_self, update_eq_self, map_nsmul,
-    map_multiset_sum, Multiset.map_map] at key
+  -- Place both sides of `hsum` into the entries `i` and `i + 1` of the pure tensor of `f`.
+  have key := congrArg (TensorProduct.lift
+    ((PiTensorProduct.tprod ℤ).toLinearMap₂ (fun k ↦ Additive.ofMul (f k)) hij)) hsum
+  rw [TensorProduct.lift.tmul, MultilinearMap.toLinearMap₂_apply, update_eq_self, update_eq_self,
+    map_nsmul, map_multiset_sum, Multiset.map_map] at key
   rw [key, ← natCast_zsmul]
   refine Submodule.smul_mem_pointwise_smul _ _ _ (multiset_sum_mem _ ?_)
-  simp only [Multiset.mem_map, comp_apply, TensorProduct.lift.tmul, insertPair_apply]
+  simp only [Multiset.mem_map, comp_apply, TensorProduct.lift.tmul,
+    MultilinearMap.toLinearMap₂_apply]
   rintro _ ⟨x, hx, rfl⟩
   have e : update (update (fun k ↦ Additive.ofMul (f k)) j' (Additive.ofMul x.2)) i'
       (Additive.ofMul x.1) = fun k ↦ Additive.ofMul (update (update f j' x.2) i' x.1 k) := by
@@ -162,16 +150,8 @@ private theorem surjective_zsmul_of_splits {m : ℕ} (hm : m ≠ 0)
     (hsplit : ∀ a : Rˣ, (X ^ m - C (a : R)).Splits) :
     Function.Surjective fun u : Additive Rˣ ↦ (m : ℤ) • u := by
   intro u
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · exact ⟨u, Subsingleton.elim _ _⟩
-  obtain ⟨c, hc⟩ := (hsplit u.toMul).exists_eval_eq_zero (by
-    rw [degree_X_pow_sub_C (Nat.pos_of_ne_zero hm)]
-    exact_mod_cast hm)
-  rw [eval_sub, eval_pow, eval_X, eval_C, sub_eq_zero] at hc
-  obtain ⟨v, rfl⟩ := (isUnit_pow_iff hm).1 (hc ▸ u.toMul.isUnit)
-  refine ⟨Additive.ofMul v, ?_⟩
-  simp only [natCast_zsmul, ← ofMul_pow]
-  exact (congrArg Additive.ofMul (Units.ext (by simpa using hc))).trans (ofMul_toMul u)
+  obtain ⟨v, hv⟩ := Units.exists_pow_eq_of_splits hm (hsplit u.toMul)
+  exact ⟨Additive.ofMul v, by dsimp only; rw [natCast_zsmul, ← ofMul_pow, hv, ofMul_toMul]⟩
 
 /-- **Unique divisibility of Milnor K-groups.** If every polynomial `Xᵐ - a`, `a` a unit, splits,
 then multiplication by `m ≠ 0` is bijective on the Milnor K-group `K_nᴹ(R)` of every degree
