@@ -217,14 +217,14 @@ private theorem exists_apply_eq_sum_smulLeftCLM_iteratedLineDerivOp {n : ℕ} (b
       Finset.sum_apply, ContMDiffMap.coe_sum]
     refine Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun α hα ↦ ?_
     rw [← (Finset.mem_piAntidiag.1 hα).1]
-    -- Both sides are `(-1) ^ |α|` times `D^{|α|} (d_α φ) (y)` evaluated on the word of `α`.
-    rw [LinearMap.smul_apply, LinearMap.comp_apply, LinearMap.mulLeft_apply,
-      ContMDiffMap.coe_smul, Pi.smul_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
-      smul_eq_mul, TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDeriv,
+    -- Both sides are `(-1) ^ |α|` times `D^{|α|} (d_α φ) (y)` evaluated on the word of `α`; the
+    -- product `d_α φ` appears as `•` on one side and `*` on the other, and `smul_eq_mul` with
+    -- `Pi.mul_def` brings both to the same pointwise product.
+    simp only [LinearMap.smul_apply, LinearMap.comp_apply, LinearMap.mulLeft_apply,
+      ContMDiffMap.coe_smul, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
+      TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDeriv,
       TauCeti.multiIndexDeriv_apply_eq_iteratedFDeriv_multiIndexWord,
-      TestFunction.coe_smulLeftCLM, ContMDiffMap.coe_mul, hf]
-    have hdφ : (⇑(d α) • ⇑φ : E → ℝ) = ⇑(d α) * ⇑φ := funext fun _ ↦ smul_eq_mul _ _
-    simp only [hdφ]
+      TestFunction.coe_smulLeftCLM, ContMDiffMap.coe_mul, hf, Pi.mul_def]
   · simp only [map_sum, map_smul, _root_.sum_apply, one_smul, smulLeftCLM_apply,
       iteratedLineDerivOp_apply_apply, Function.comp_assoc, Fin.rev_involutive.comp_self,
       Function.comp_id]

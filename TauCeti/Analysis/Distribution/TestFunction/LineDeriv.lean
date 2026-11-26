@@ -211,7 +211,8 @@ theorem iteratedLineDerivOp_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 
       lineDerivOp_eq_lineDerivCLM 𝕜, lineDerivOp_eq_lineDerivCLM 𝕜, lineDerivCLM_postcompCLM]
 
 /-- An iterated directional derivative of a test function is its iterated Fréchet derivative
-evaluated on the directions. -/
+evaluated on the directions. This is the test-function counterpart of Mathlib's
+`SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv`, with the same proof. -/
 theorem iteratedLineDerivOp_apply_eq_iteratedFDeriv (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E)
     (x : E) : ∂^{m} φ x = iteratedFDeriv ℝ k φ x m := by
   induction k generalizing x with
