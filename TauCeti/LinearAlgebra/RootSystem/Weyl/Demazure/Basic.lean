@@ -48,7 +48,7 @@ Since `1 - e^{-α}` is not a zero divisor in `ℤ[M]`, the localization identity
   `RootPairing.demazureOperator_single_of_coroot'_eq_neg_one`: the root strings above.
 * `RootPairing.one_sub_single_neg_root_mul_demazureOperator`: the localization identity, and
   `RootPairing.demazureOperator_eq_iff`: it characterizes `Dᵢ`, because multiplication by
-  `1 - e^{-αᵢ}` is injective (`RootPairing.isLeftRegular_one_sub_single_neg_root`).
+  `1 - e^{-αᵢ}` is injective (`RootPairing.isRegular_one_sub_single_neg_root`).
 * `RootPairing.coeff_reflection_demazureOperator`: the coefficients of `Dᵢ f` are constant along
   `sᵢ`.
 * `RootPairing.demazureOperator_eq_self_iff`: `Dᵢ f = f` exactly when `sᵢ f = f`.
@@ -162,11 +162,6 @@ theorem one_sub_single_neg_root_mul_demazureOperator (f : AddMonoidAlgebra ℤ M
       map_zsmul, mul_smul_comm, smul_sub]
     simp
 
-/-- Multiplication by `1 - e^{-αᵢ}` is injective on `ℤ[M]`, since `-αᵢ` has infinite order. -/
-theorem isLeftRegular_one_sub_single_neg_root :
-    IsLeftRegular (1 - single (-P.root i) 1 : AddMonoidAlgebra ℤ M) :=
-  (P.isRegular_one_sub_single_neg_root i).left
-
 /-- The localization identity characterizes the Demazure operator: `Dᵢ f` is the unique `g` with
 `(1 - e^{-αᵢ}) g = f - e^{-αᵢ} sᵢ(f)`. -/
 theorem demazureOperator_eq_iff {f g : AddMonoidAlgebra ℤ M} :
@@ -174,7 +169,7 @@ theorem demazureOperator_eq_iff {f g : AddMonoidAlgebra ℤ M} :
       (1 - single (-P.root i) 1) * g =
         f - single (-P.root i) 1 * mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv f := by
   refine ⟨fun h ↦ h ▸ P.one_sub_single_neg_root_mul_demazureOperator i f, fun h ↦ ?_⟩
-  exact P.isLeftRegular_one_sub_single_neg_root i
+  exact (P.isRegular_one_sub_single_neg_root i).left
     ((P.one_sub_single_neg_root_mul_demazureOperator i f).trans h.symm)
 
 /-! ### Consequences of the localization identity -/
