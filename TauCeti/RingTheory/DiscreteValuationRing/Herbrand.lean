@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.LowerIndex
 public import TauCeti.RingTheory.LocalRing.Herbrand
+import TauCeti.Algebra.Group.Subgroup.Finite
 import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 import TauCeti.RingTheory.LocalRing.RingHom
@@ -187,13 +188,12 @@ theorem natCard_ramificationGroupReal_herbrandFun_mul (u : ℝ) :
         Nat.card (ramificationGroupReal H B u) =
       Nat.card (ramificationGroupReal G B u) := by
   set Gu := ramificationGroupReal G B u
-  rw [← map_mk'_ramificationGroupReal A H u, ← MonoidHom.domRestrict_range,
-    ← subgroupOf_ramificationGroupReal, ← Subgroup.card_subtype H (Gu.subgroupOf H),
-    Subgroup.subgroupOf_map_subtype, inf_comm, ← Subgroup.subgroupOf_map_subtype,
-    Subgroup.card_subtype]
+  -- `G_u H / H` is the range of `G_u → G ⧸ H`, whose kernel is `H ∩ G_u`, read in `G_u`.
   have hker : ((QuotientGroup.mk' H).domRestrict Gu).ker = H.subgroupOf Gu := by
     rw [MonoidHom.ker_domRestrict, QuotientGroup.ker_mk']
-  rw [← hker, mul_comm, Subgroup.card_ker_mul_card_range]
+  rw [← map_mk'_ramificationGroupReal A H u, ← MonoidHom.domRestrict_range,
+    ← subgroupOf_ramificationGroupReal, Subgroup.card_subgroupOf_comm, ← hker, mul_comm,
+    Subgroup.card_ker_mul_card_range]
 
 /-! ### Transitivity of the Herbrand functions -/
 
