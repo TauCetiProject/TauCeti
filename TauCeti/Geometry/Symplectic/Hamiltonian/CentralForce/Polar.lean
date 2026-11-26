@@ -82,7 +82,9 @@ smooth polar canonical coordinates, with the angle in the circle `AddCircle (2 *
   off the collision set is the image of its polar coordinates.
 * `TauCeti.norm_smul_polarRadialUnit`, `TauCeti.polarAngle_smul_polarRadialUnit`,
   `TauCeti.exists_pos_smul_polarRadialUnit_eq`: the point `r e_r(θ)`, `r > 0`, has length `r` and
-  angle `θ`, and every nonzero point is of this form.
+  angle `θ`, and every nonzero point is of this form;
+  `OrthonormalBasis.norm_smul_polarRadialUnit`, `OrthonormalBasis.polarAngle_smul_polarRadialUnit`
+  state the first two in the frame of an orthonormal basis.
 * `TauCeti.fderiv_smul_polarRadialUnit_apply`, `TauCeti.det_fderiv_smul_polarRadialUnit`: the
   derivative of polar coordinates `(r, θ) ↦ r e_r` of the plane, and the area form
   `dx ∧ dy = r dr ∧ dθ`.
@@ -593,6 +595,20 @@ theorem exists_pos_smul_polarRadialUnit_eq {q : V} (hq : q ≠ 0) :
     norm_smul_polarRadialUnit_of_coe_eq_polarAngle b hq
       (Real.Angle.coe_toReal (polarAngle (b 0) (b 1) q))⟩
 
+/-- `TauCeti.norm_smul_polarRadialUnit` in the frame of an orthonormal basis `b`: the point with
+polar coordinates `(r, θ)`, `r ≥ 0`, in the basis `b` has length `r`. -/
+theorem _root_.OrthonormalBasis.norm_smul_polarRadialUnit {r : ℝ} (hr : 0 ≤ r) (θ : ℝ) :
+    ‖r • polarRadialUnit (b 0) (b 1) θ‖ = r :=
+  TauCeti.norm_smul_polarRadialUnit (b.norm_eq_one 0) (b.norm_eq_one 1)
+    (b.inner_eq_zero (by decide)) hr θ
+
+/-- `TauCeti.polarAngle_smul_polarRadialUnit` in the frame of an orthonormal basis `b`: the point
+with polar coordinates `(r, θ)`, `r > 0`, in the basis `b` has angle `θ` modulo `2π`. -/
+theorem _root_.OrthonormalBasis.polarAngle_smul_polarRadialUnit {r : ℝ} (hr : 0 < r) (θ : ℝ) :
+    polarAngle (b 0) (b 1) (r • polarRadialUnit (b 0) (b 1) θ) = θ :=
+  TauCeti.polarAngle_smul_polarRadialUnit (b.norm_eq_one 0) (b.norm_eq_one 1)
+    (b.inner_eq_zero (by decide)) hr θ
+
 /-- **The area form in polar coordinates is `r dr ∧ dθ`.** For an orthonormal basis `b` of a plane,
 the determinant `dx ∧ dy` of `b` evaluates on the images of `δ` and `δ'` under the derivative of
 polar coordinates `(r, θ) ↦ r e_r` at `(r, θ)` to `r (δr δ'θ - δ'r δθ)`. -/
@@ -600,10 +616,14 @@ theorem det_fderiv_smul_polarRadialUnit (x δ δ' : ℝ × ℝ) :
     b.toBasis.det ![fderiv ℝ (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit (b 0) (b 1) x.2) x δ,
         fderiv ℝ (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit (b 0) (b 1) x.2) x δ'] =
       x.1 * (δ.1 * δ'.2 - δ'.1 * δ.2) := by
+  -- In the coordinates of `b`, the determinant is `r (δr δ'θ - δ'r δθ) (sin² θ + cos² θ)`.
+  have h : (δ.1 * cos x.2 - x.1 * δ.2 * sin x.2) * (δ'.1 * sin x.2 + x.1 * δ'.2 * cos x.2) -
+      (δ'.1 * cos x.2 - x.1 * δ'.2 * sin x.2) * (δ.1 * sin x.2 + x.1 * δ.2 * cos x.2) =
+      x.1 * (δ.1 * δ'.2 - δ'.1 * δ.2) := by
+    linear_combination (x.1 * (δ.1 * δ'.2 - δ'.1 * δ.2)) * (sin_sq_add_cos_sq x.2)
   rw [fderiv_smul_polarRadialUnit_apply, fderiv_smul_polarRadialUnit_apply]
-  simp [polarRadialUnit_apply, polarAngularUnit_apply, Module.Basis.det_apply, Matrix.det_fin_two,
-    Module.Basis.toMatrix_apply]
-  linear_combination (x.1 * (δ.1 * δ'.2 - δ'.1 * δ.2)) * (sin_sq_add_cos_sq x.2)
+  simpa [polarRadialUnit_apply, polarAngularUnit_apply, Module.Basis.det_apply, Matrix.det_fin_two,
+    Module.Basis.toMatrix_apply, ← sub_eq_add_neg] using h
 
 /-- Every point off the collision set is the image of its radial projection, its angle and its
 angular momentum under the polar canonical parametrization. -/
