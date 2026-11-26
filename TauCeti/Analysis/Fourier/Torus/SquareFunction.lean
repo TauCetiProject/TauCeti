@@ -14,8 +14,7 @@ import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.Uniqueness
 import TauCeti.Analysis.Fourier.Torus.UnitCube
-import TauCeti.Analysis.MeanInequalities
-import TauCeti.MeasureTheory.Function.Lp.Duality
+import TauCeti.MeasureTheory.Function.Lp.SquareFunction
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
@@ -60,10 +59,11 @@ truncations, which are trigonometric polynomials bounded on `Lᵖ` uniformly in 
 (`TauCeti.UnitAddTorus.eLpNorm_sum_littlewoodPaleyBlock_range_le`); the square sums over `j < N`
 increase to the full square function.
 
-The reverse inequality follows from the first one at the conjugate exponent by duality, as on
-`ℝᵈ`: the blocks are self-adjoint, `Δⱼ Δₖ = 0` for `|j - k|` large
-(`TauCeti.UnitAddTorus.exists_littlewoodPaleyBlock_comp_eq_zero`), and their partial sums converge
-to the identity (`TauCeti.UnitAddTorus.tendsto_sum_littlewoodPaleyBlock`).
+The reverse inequality follows from the first one at the conjugate exponent by the duality
+argument shared with `ℝᵈ` (`TauCeti.eLpNorm_le_mul_eLpNorm_tsum_enorm_sq_rpow_of_card_le`): the
+blocks are self-adjoint (`TauCeti.UnitAddTorus.isSelfAdjoint_littlewoodPaleyBlock`), `Δⱼ Δₖ = 0`
+for `|j - k|` large (`TauCeti.UnitAddTorus.exists_littlewoodPaleyBlock_comp_eq_zero`), and their
+partial sums converge to the identity (`TauCeti.UnitAddTorus.tendsto_sum_littlewoodPaleyBlock`).
 
 As for the blocks, `Lᵖ(𝕋ᵈ)` is taken for the product of the Haar probability measures on the
 circle factors.
@@ -164,20 +164,22 @@ private theorem one_le_norm_sub_of_mem_cube_of_notMem_box {w y : EuclideanSpace 
   · exact (by linarith [(hw i).2] : (1 : ℝ) ≤ -(w i - y i)).trans (neg_le_abs _)
 
 omit [Fintype d] in
-private theorem measurableSet_cube [Countable d] : MeasurableSet (cube (d := d)) := by
-  have : cube (d := d) = WithLp.ofLp ⁻¹' univ.pi fun _ ↦ Icc (0 : ℝ) 1 := by
+/-- A box `{v | ∀ i, v i ∈ I}` with a measurable side `I` is measurable. -/
+private theorem measurableSet_setOf_forall_mem [Countable d] {I : Set ℝ} (hI : MeasurableSet I) :
+    MeasurableSet {v : EuclideanSpace ℝ d | ∀ i, v i ∈ I} := by
+  have : {v : EuclideanSpace ℝ d | ∀ i, v i ∈ I} = WithLp.ofLp ⁻¹' univ.pi fun _ ↦ I := by
     ext v
-    simp only [cube, mem_ofPred_eq, mem_preimage, mem_univ_pi]
+    simp only [mem_ofPred_eq, mem_preimage, mem_univ_pi]
   rw [this]
-  exact (PiLp.continuous_ofLp 2 _).measurable (MeasurableSet.univ_pi fun _ ↦ measurableSet_Icc)
+  exact (PiLp.continuous_ofLp 2 _).measurable (MeasurableSet.univ_pi fun _ ↦ hI)
 
 omit [Fintype d] in
-private theorem measurableSet_box [Countable d] : MeasurableSet (box (d := d)) := by
-  have : box (d := d) = WithLp.ofLp ⁻¹' univ.pi fun _ ↦ Ioc (-1 : ℝ) 2 := by
-    ext v
-    simp only [box, mem_ofPred_eq, mem_preimage, mem_univ_pi]
-  rw [this]
-  exact (PiLp.continuous_ofLp 2 _).measurable (MeasurableSet.univ_pi fun _ ↦ measurableSet_Ioc)
+private theorem measurableSet_cube [Countable d] : MeasurableSet (cube (d := d)) :=
+  measurableSet_setOf_forall_mem measurableSet_Icc
+
+omit [Fintype d] in
+private theorem measurableSet_box [Countable d] : MeasurableSet (box (d := d)) :=
+  measurableSet_setOf_forall_mem measurableSet_Ioc
 
 /-- The part in the box of a bounded continuous function on `ℝᵈ` is in `L²(ℝᵈ)`. -/
 private theorem memLp_box_indicator {G : EuclideanSpace ℝ d → ℂ} (hG : Continuous G) {M : ℝ}
@@ -374,6 +376,14 @@ private theorem ae_fourierMultiplierCLM_lift_eq_integral (σ : ℕ → 𝓢(Eucl
     exact integral_congr_ae (hh.coeFn_toLp.mono fun y hy ↦ by simp [hy])
   exact measurePreserving_lift.quasiMeasurePreserving.ae (ae_restrict_of_ae hV)
 
+/-- The tail `1_{‖z‖ ≥ 1} |𝓕⁻ σ (z)|` of the kernel of the Fourier multiplier with symbol `σ`. -/
+private def kernelTail (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) : EuclideanSpace ℝ d → ℝ≥0∞ :=
+  {z | 1 ≤ ‖z‖}.indicator fun z ↦ ‖𝓕⁻ σ z‖ₑ
+
+private theorem measurable_kernelTail (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
+    Measurable (kernelTail σ) :=
+  (𝓕⁻ σ).continuous.eNorm.measurable.indicator (measurableSet_le measurable_const measurable_norm)
+
 /-- On the unit cube, the convolution of `𝓕⁻ σ` with a bounded continuous `G` differs from the
 convolution with its part in the box `(-1, 2]ᵈ` by at most the convolution of `|G|` with the tail
 `1_{‖z‖ ≥ 1} |𝓕⁻ σ (z)|` of the kernel. -/
@@ -381,8 +391,7 @@ private theorem eNorm_integral_fourierInv_sub_mul_le (σ : 𝓢(EuclideanSpace �
     {G : EuclideanSpace ℝ d → ℂ} (hG : Continuous G) {M : ℝ} (hGM : ∀ y, ‖G y‖ ≤ M)
     {w : EuclideanSpace ℝ d} (hw : w ∈ cube) :
     ‖∫ y, 𝓕⁻ σ (w - y) * G y‖ₑ ≤ ‖∫ y, 𝓕⁻ σ (w - y) * box.indicator G y‖ₑ +
-      ∫⁻ y, {z : EuclideanSpace ℝ d | 1 ≤ ‖z‖}.indicator (fun z ↦ ‖𝓕⁻ σ z‖ₑ) (w - y) *
-        ‖G y‖ₑ := by
+      ∫⁻ y, kernelTail σ (w - y) * ‖G y‖ₑ := by
   have hbound (S : Set (EuclideanSpace ℝ d)) (y : EuclideanSpace ℝ d) : ‖S.indicator G y‖ ≤ M :=
     (norm_indicator_le_norm_self _ _).trans (hGM y)
   have hsplit : ∫ y, 𝓕⁻ σ (w - y) * G y = (∫ y, 𝓕⁻ σ (w - y) * box.indicator G y) +
@@ -401,19 +410,14 @@ private theorem eNorm_integral_fourierInv_sub_mul_le (σ : 𝓢(EuclideanSpace �
   · simp [hy]
   · have h1 : w - y ∈ {z : EuclideanSpace ℝ d | 1 ≤ ‖z‖} :=
       one_le_norm_sub_of_mem_cube_of_notMem_box hw hy
-    rw [indicator_of_mem (mem_compl hy), eNorm_mul, indicator_of_mem h1]
+    rw [indicator_of_mem (mem_compl hy), eNorm_mul, kernelTail, indicator_of_mem h1]
 
 /-- The tails `1_{‖z‖ ≥ 1} |𝓕⁻ ψⱼ (z)|` of the kernels of the Littlewood–Paley blocks have finite
 total integral: the first moments of the kernels are `O(2^{-j})`. -/
-private theorem lintegral_tsum_indicator_eNorm_fourierInv_ne_top
-    (φ : ContDiffBump (0 : EuclideanSpace ℝ d)) :
-    ∫⁻ z, ∑' j, {z : EuclideanSpace ℝ d | 1 ≤ ‖z‖}.indicator
-      (fun z ↦ ‖𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) z‖ₑ) z ≠ ∞ := by
+private theorem lintegral_tsum_kernelTail_ne_top (φ : ContDiffBump (0 : EuclideanSpace ℝ d)) :
+    ∫⁻ z, ∑' j, kernelTail (φ.inhomogeneousLittlewoodPaleySchwartz j) z ≠ ∞ := by
   obtain ⟨C, hC⟩ := φ.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le 1
-  have hmeas : MeasurableSet {z : EuclideanSpace ℝ d | 1 ≤ ‖z‖} :=
-    measurableSet_le measurable_const measurable_norm
-  rw [lintegral_tsum fun j ↦ ((𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).continuous.eNorm
-    |>.measurable.indicator hmeas).aemeasurable]
+  rw [lintegral_tsum fun j ↦ (measurable_kernelTail _).aemeasurable]
   refine ne_top_of_le_ne_top (b := ∑' j : ℕ, (2⁻¹ : ℝ≥0∞) ^ j * C) ?_
     (tsum_le_tsum fun j ↦ ?_)
   · rw [ENNReal.tsum_mul_right, ENNReal.tsum_geometric_two]
@@ -421,8 +425,9 @@ private theorem lintegral_tsum_indicator_eNorm_fourierInv_ne_top
   set k := 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)
   have hk : ⇑k = 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
     rw [SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
-  calc ∫⁻ z, {z : EuclideanSpace ℝ d | 1 ≤ ‖z‖}.indicator (fun z ↦ ‖k z‖ₑ) z
+  calc ∫⁻ z, kernelTail (φ.inhomogeneousLittlewoodPaleySchwartz j) z
       ≤ ∫⁻ z, ENNReal.ofReal (‖z‖ ^ 1 * ‖k z‖) := lintegral_mono fun z ↦ by
+        rw [kernelTail]
         by_cases hz : 1 ≤ ‖z‖
         · rw [indicator_of_mem hz, pow_one, ENNReal.ofReal_mul (norm_nonneg _), ofReal_norm,
             ofReal_norm]
@@ -438,45 +443,35 @@ private theorem lintegral_tsum_indicator_eNorm_fourierInv_ne_top
         rw [hk]
         exact ENNReal.ofReal_le_ofReal (hC j)
     _ = (2⁻¹ : ℝ≥0∞) ^ j * C := by
-        rw [pow_one, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_inv_of_pos (by positivity),
-          ENNReal.ofReal_pow (by norm_num), ENNReal.ofReal_ofNat, ENNReal.ofReal_coe_nnreal,
-          ENNReal.inv_pow]
+        simp [ENNReal.ofReal_mul, ENNReal.ofReal_inv_of_pos, ENNReal.inv_pow]
 
-/-- Pointwise on the torus, the square function of a trigonometric polynomial `g` is at most the
-square function on `ℝᵈ` of the part in the box `(-1, 2]ᵈ` of its periodic lift, plus the
-convolution of the lift with the sum `κ` of the tails `1_{‖z‖ ≥ 1} |𝓕⁻ ψⱼ (z)|` of the kernels. -/
+/-- Pointwise on the torus, the square function of `g` is at most the square function on `ℝᵈ` of
+the part in the box `(-1, 2]ᵈ` of the periodic lift of a bounded continuous `F`, plus the
+convolution of the lift with the sum `κ` of the tails `1_{‖z‖ ≥ 1} |𝓕⁻ ψⱼ (z)|` of the kernels,
+provided the blocks of `g` are the convolutions of the lift of `F` with the kernels `𝓕⁻ ψⱼ`. -/
 private theorem ae_rpow_sum_sq_littlewoodPaleyBlock_le
-    (φ : ContDiffBump (0 : EuclideanSpace ℝ d)) {s : Finset (d → ℤ)} {g : L²(UnitAddTorus d)}
-    (hs : ∀ n ∉ s, mFourierCoeff g n = 0) {F : UnitAddTorus d → ℂ}
-    (hF : F = fun t ↦ ∑ n ∈ s, mFourier n t • mFourierCoeff g n)
+    (φ : ContDiffBump (0 : EuclideanSpace ℝ d)) {g : L²(UnitAddTorus d)}
+    {F : UnitAddTorus d → ℂ} (hF : Continuous F) {M : ℝ} (hFM : ∀ t, ‖F t‖ ≤ M)
+    (hgF : ∀ᵐ t, ∀ j, littlewoodPaleyBlock φ j g t =
+      ∫ y, 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) (lift t - y) * F (proj y))
     (hmem : MemLp (box.indicator fun y ↦ F (proj y)) 2 volume) (u : Finset ℕ) :
     ∀ᵐ t, (∑ j ∈ u, ‖littlewoodPaleyBlock φ j g t‖ₑ ^ 2) ^ (2⁻¹ : ℝ) ≤
       (∑' j, ‖Lp.fourierMultiplierCLM ℂ ((φ.inhomogeneousLittlewoodPaleySchwartz j).toLp ∞)
         (hmem.toLp _) (lift t)‖ₑ ^ 2) ^ (2⁻¹ : ℝ) +
-      ∫⁻ z, (∑' j, {z : EuclideanSpace ℝ d | 1 ≤ ‖z‖}.indicator
-        (fun z ↦ ‖𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) z‖ₑ) z) *
+      ∫⁻ z, (∑' j, kernelTail (φ.inhomogeneousLittlewoodPaleySchwartz j) z) *
           ‖F (proj (lift t - z))‖ₑ := by
-  subst hF
   set σ := φ.inhomogeneousLittlewoodPaleySchwartz
-  set ι : ℕ → EuclideanSpace ℝ d → ℝ≥0∞ := fun j ↦
-    {z : EuclideanSpace ℝ d | 1 ≤ ‖z‖}.indicator fun z ↦ ‖𝓕⁻ (σ j) z‖ₑ
-  have hι : ∀ j, Measurable (ι j) := fun j ↦ (𝓕⁻ (σ j)).continuous.eNorm.measurable.indicator
-    (measurableSet_le measurable_const measurable_norm)
-  set G : EuclideanSpace ℝ d → ℂ := fun y ↦ ∑ n ∈ s, mFourier n (proj y) • mFourierCoeff g n
-  have hG : Continuous G := continuous_finsetSum _ fun n _ ↦
-    ((mFourier n).continuous.comp continuous_proj).smul continuous_const
-  have hGM : ∀ y, ‖G y‖ ≤ ∑ n ∈ s, ‖mFourierCoeff g n‖ := fun y ↦
-    (norm_sum_le _ _).trans (Finset.sum_le_sum fun n _ ↦ by simp [norm_mFourier_apply])
-  filter_upwards [ae_littlewoodPaleyBlock_eq_integral φ hs,
-    ae_fourierMultiplierCLM_lift_eq_integral σ hmem] with t hbt hPt
+  set G : EuclideanSpace ℝ d → ℂ := fun y ↦ F (proj y)
+  have hG : Continuous G := hF.comp continuous_proj
+  filter_upwards [hgF, ae_fourierMultiplierCLM_lift_eq_integral σ hmem] with t hbt hPt
   -- Each block is at most `a j + c j`, the near part plus the tail part.
   have hac (j : ℕ) : ‖littlewoodPaleyBlock φ j g t‖ₑ ≤
       ‖Lp.fourierMultiplierCLM ℂ ((σ j).toLp ∞) (hmem.toLp _) (lift t)‖ₑ +
-        ∫⁻ y, ι j (lift t - y) * ‖G y‖ₑ := by
+        ∫⁻ y, kernelTail (σ j) (lift t - y) * ‖G y‖ₑ := by
     rw [hbt j, hPt j]
-    exact eNorm_integral_fourierInv_sub_mul_le (σ j) hG hGM (lift_mem_cube t)
+    exact eNorm_integral_fourierInv_sub_mul_le (σ j) hG (fun y ↦ hFM _) (lift_mem_cube t)
   set a : ℕ → ℝ≥0∞ := fun j ↦ ‖Lp.fourierMultiplierCLM ℂ ((σ j).toLp ∞) (hmem.toLp _) (lift t)‖ₑ
-  set c : ℕ → ℝ≥0∞ := fun j ↦ ∫⁻ y, ι j (lift t - y) * ‖G y‖ₑ
+  set c : ℕ → ℝ≥0∞ := fun j ↦ ∫⁻ y, kernelTail (σ j) (lift t - y) * ‖G y‖ₑ
   -- So the `ℓ²` sum of the blocks is at most `‖a‖_{ℓ²} + ‖c‖_{ℓ²} ≤ ‖a‖_{ℓ²} + ‖c‖_{ℓ¹}`.
   have hLp := ENNReal.Lp_add_le u a c (p := 2) one_le_two
   simp only [ENNReal.rpow_two, one_div] at hLp
@@ -488,11 +483,12 @@ private theorem ae_rpow_sum_sq_littlewoodPaleyBlock_le
   refine ((ENNReal.rpow_le_rpow (Finset.sum_le_sum fun j _ ↦ pow_le_pow_left₀ zero_le (hac j) 2)
     (by norm_num)).trans hLp).trans (add_le_add (ENNReal.rpow_le_rpow (sum_le_tsum u)
       (by norm_num)) (hc.trans ((sum_le_tsum u).trans (le_of_eq ?_))))
-  · rw [← lintegral_tsum (f := fun j y ↦ ι j (lift t - y) * ‖G y‖ₑ) fun j ↦
-      ((hι j).comp (measurable_const.sub measurable_id)).mul hG.eNorm.measurable |>.aemeasurable]
+  · rw [← lintegral_tsum (f := fun j y ↦ kernelTail (σ j) (lift t - y) * ‖G y‖ₑ) fun j ↦
+      ((measurable_kernelTail (σ j)).comp (measurable_const.sub measurable_id)).mul
+        hG.eNorm.measurable |>.aemeasurable]
     simp_rw [ENNReal.tsum_mul_right]
     have h := lintegral_sub_left_eq_self (μ := volume)
-      (fun z ↦ (∑' j, ι j z) * ‖G (lift t - z)‖ₑ) (lift t)
+      (fun z ↦ (∑' j, kernelTail (σ j) z) * ‖G (lift t - z)‖ₑ) (lift t)
     simp only [sub_sub_cancel] at h
     exact h
 
@@ -507,11 +503,8 @@ private theorem exists_eLpNorm_sum_sq_le_of_mFourierCoeff_eq_zero
           C * eLpNorm g p volume := by
   set σ := φ.inhomogeneousLittlewoodPaleySchwartz
   -- The sum `κ` of the tails of the kernels.
-  set κ : EuclideanSpace ℝ d → ℝ≥0∞ := fun z ↦ ∑' j,
-    {z : EuclideanSpace ℝ d | 1 ≤ ‖z‖}.indicator (fun z ↦ ‖𝓕⁻ (σ j) z‖ₑ) z
-  have hκ : Measurable κ := Measurable.tsum fun j ↦
-    (𝓕⁻ (σ j)).continuous.eNorm.measurable.indicator
-      (measurableSet_le measurable_const measurable_norm)
+  set κ : EuclideanSpace ℝ d → ℝ≥0∞ := fun z ↦ ∑' j, kernelTail (σ j) z
+  have hκ : Measurable κ := Measurable.tsum fun j ↦ measurable_kernelTail (σ j)
   obtain ⟨C₁, hC₁⟩ :=
     exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow_le (F := ℂ) φ hp hp_top
   have hm : ∀ j, ((σ j).toLp ∞ volume : EuclideanSpace ℝ d → ℂ) =ᵐ[volume]
@@ -519,23 +512,21 @@ private theorem exists_eLpNorm_sum_sq_le_of_mFourierCoeff_eq_zero
     ((σ j).coeFn_toLp ∞ volume).trans (.of_eq (φ.coe_inhomogeneousLittlewoodPaleySchwartz j))
   refine ⟨C₁ * (3 ^ Fintype.card d) ^ (1 / p.toReal) + ∫⁻ z, κ z,
     ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.rpow_ne_top_of_nonneg
-      (by positivity) (by simp)), lintegral_tsum_indicator_eNorm_fourierInv_ne_top φ⟩,
+      (by positivity) (by simp)), lintegral_tsum_kernelTail_ne_top φ⟩,
     fun s g hs u ↦ ?_⟩
-  -- The trigonometric polynomial `g` agrees with the continuous function `F`.
-  obtain ⟨F, hF⟩ : ∃ F : UnitAddTorus d → ℂ,
-      F = fun t ↦ ∑ n ∈ s, mFourier n t • mFourierCoeff g n := ⟨_, rfl⟩
-  have hFc : Continuous F := hF ▸
+  -- The trigonometric polynomial `g` agrees with the bounded continuous function `F`.
+  set F : UnitAddTorus d → ℂ := fun t ↦ ∑ n ∈ s, mFourier n t • mFourierCoeff g n
+  have hFc : Continuous F :=
     continuous_finsetSum _ fun n _ ↦ (mFourier n).continuous.smul continuous_const
+  have hFM : ∀ t, ‖F t‖ ≤ ∑ n ∈ s, ‖mFourierCoeff g n‖ := fun t ↦
+    (norm_sum_le _ _).trans (Finset.sum_le_sum fun n _ ↦ by simp [norm_mFourier_apply])
   have hmem : MemLp (box.indicator fun y ↦ F (proj y)) 2 volume :=
-    memLp_box_indicator (hFc.comp continuous_proj) (M := ∑ n ∈ s, ‖mFourierCoeff g n‖)
-      fun y ↦ by
-        subst hF
-        exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun n _ ↦ by simp [norm_mFourier_apply])
+    memLp_box_indicator (hFc.comp continuous_proj) fun y ↦ hFM _
   have hA : AEMeasurable fun w ↦ (∑' j, ‖Lp.fourierMultiplierCLM ℂ ((σ j).toLp ∞)
       (hmem.toLp _) w‖ₑ ^ 2) ^ (2⁻¹ : ℝ) :=
     (AEMeasurable.tsum fun j ↦ (Lp.aestronglyMeasurable _).eNorm.pow_const 2).pow_const _
   have hgF : eLpNorm g p volume = eLpNorm F p volume :=
-    eLpNorm_congr_ae (hF ▸ coeFn_ae_eq_sum_mFourier_smul_mFourierCoeff hs)
+    eLpNorm_congr_ae (coeFn_ae_eq_sum_mFourier_smul_mFourierCoeff hs)
   rw [hgF, add_mul]
   have hS : AEStronglyMeasurable
       (fun t ↦ (∑ j ∈ u, ‖littlewoodPaleyBlock φ j g t‖ₑ ^ 2) ^ (2⁻¹ : ℝ)) volume :=
@@ -543,7 +534,8 @@ private theorem exists_eLpNorm_sum_sq_le_of_mFourierCoeff_eq_zero
       (Lp.aestronglyMeasurable _).eNorm.pow_const 2).pow_const _).aestronglyMeasurable
   calc _ ≤ eLpNorm ((fun t ↦ (∑' j, ‖Lp.fourierMultiplierCLM ℂ ((σ j).toLp ∞) (hmem.toLp _)
           (lift t)‖ₑ ^ 2) ^ (2⁻¹ : ℝ)) + fun t ↦ ∫⁻ z, κ z * ‖F (proj (lift t - z))‖ₑ) p volume :=
-        eLpNorm_mono_eNorm_ae hS ((ae_rpow_sum_sq_littlewoodPaleyBlock_le φ hs hF hmem u).mono
+        eLpNorm_mono_eNorm_ae hS ((ae_rpow_sum_sq_littlewoodPaleyBlock_le φ hFc hFM
+          (ae_littlewoodPaleyBlock_eq_integral φ hs) hmem u).mono
           fun t ht ↦ by simpa only [eNorm_eq_self, Pi.add_apply] using ht)
     _ ≤ _ := (eLpNorm_add_le hp.le).trans (add_le_add ?_ ?_)
   -- The part in the box, by the Littlewood–Paley theorem on `ℝᵈ`.
@@ -638,25 +630,14 @@ theorem exists_eLpNorm_tsum_enorm_littlewoodPaleyBlock_sq_rpow_le
 
 /-! ### The reverse inequality -/
 
-/-- The periodic Littlewood–Paley blocks are self-adjoint: their symbols are real. -/
-private theorem inner_littlewoodPaleyBlock_left (φ : ContDiffBump (0 : EuclideanSpace ℝ d))
-    (j : ℕ) (a b : L²(UnitAddTorus d)) :
-    ⟪littlewoodPaleyBlock φ j a, b⟫_ℂ = ⟪a, littlewoodPaleyBlock φ j b⟫_ℂ := by
-  simp_rw [L2.inner_def, RCLike.inner_apply, mul_comm _ ((starRingEnd ℂ) _)]
-  refine (hasSum_prod_mFourierCoeff (littlewoodPaleyBlock φ j a) b).unique ?_
-  convert hasSum_prod_mFourierCoeff a (littlewoodPaleyBlock φ j b) using 1
-  ext n
-  simp only [mFourierCoeff_littlewoodPaleyBlock, map_mul, conj_ofReal]
-  ring
-
-/-- The block `Δⱼ f` only sees the blocks `Δₖ g` of nearby index:
-`⟪Δⱼ f, g⟫ = ∑_{k ∈ W j} ⟪Δⱼ f, Δₖ g⟫`. -/
-private theorem inner_littlewoodPaleyBlock_eq_sum (φ : ContDiffBump (0 : EuclideanSpace ℝ d))
+/-- The blocks `Δₖ` of nearby index reproduce `Δⱼ`: `∑_{k ∈ W j} Δₖ Δⱼ f = Δⱼ f`. -/
+private theorem sum_littlewoodPaleyBlock_littlewoodPaleyBlock
+    (φ : ContDiffBump (0 : EuclideanSpace ℝ d))
     {L : ℕ} (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : EuclideanSpace ℝ d,
       φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
-    (j : ℕ) (f g : L²(UnitAddTorus d)) :
-    ⟪littlewoodPaleyBlock φ j f, g⟫_ℂ = ∑ k ∈ Finset.Ico (j + 1 - L) (j + L),
-      ⟪littlewoodPaleyBlock φ j f, littlewoodPaleyBlock φ k g⟫_ℂ := by
+    (j : ℕ) (f : L²(UnitAddTorus d)) :
+    ∑ k ∈ Finset.Ico (j + 1 - L) (j + L), littlewoodPaleyBlock φ k (littlewoodPaleyBlock φ j f) =
+      littlewoodPaleyBlock φ j f := by
   have hsym : (∑ k ∈ Finset.Ico (j + 1 - L) (j + L), littlewoodPaleySymbol φ k) *
       littlewoodPaleySymbol φ j = littlewoodPaleySymbol φ j := by
     ext n
@@ -664,53 +645,9 @@ private theorem inner_littlewoodPaleyBlock_eq_sum (φ : ContDiffBump (0 : Euclid
       littlewoodPaleySymbol_apply, ← Complex.ofReal_sum, ← Complex.ofReal_mul,
       ← φ.enlargedLittlewoodPaley_apply,
       φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL]
-  have h : littlewoodPaleyBlock φ j f = ∑ k ∈ Finset.Ico (j + 1 - L) (j + L),
-      littlewoodPaleyBlock φ k (littlewoodPaleyBlock φ j f) := by
-    conv_lhs => rw [littlewoodPaleyBlock_eq_fourierMultiplier, ← hsym, map_mul, map_sum]
-    simp only [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
-      FunLike.coe_sum, Finset.sum_apply, littlewoodPaleyBlock_eq_fourierMultiplier]
-  conv_lhs => rw [h]
-  rw [sum_inner]
-  exact Finset.sum_congr rfl fun k _ ↦ inner_littlewoodPaleyBlock_left φ k _ _
-
-/-- The pairing bound `|⟪∑_{j ∈ t} Δⱼ f, g⟫| ≤ 2L ∫ S f · S g` for the partial sums of `f`, where
-the blocks `Δⱼ` and `Δₖ` are orthogonal once `|j - k| ≥ L`. -/
-private theorem eNorm_inner_sum_littlewoodPaleyBlock_le
-    (φ : ContDiffBump (0 : EuclideanSpace ℝ d))
-    {L : ℕ} (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : EuclideanSpace ℝ d,
-      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
-    (t : Finset ℕ) (f g : L²(UnitAddTorus d)) :
-    ‖⟪∑ j ∈ t, littlewoodPaleyBlock φ j f, g⟫_ℂ‖ₑ ≤
-      ((2 * L : ℕ) : ℝ≥0∞) * ∫⁻ x,
-        (∑' j, ‖littlewoodPaleyBlock φ j f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) *
-          (∑' k, ‖littlewoodPaleyBlock φ k g x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) := by
-  set W : ℕ → Finset ℕ := fun j ↦ Finset.Ico (j + 1 - L) (j + L)
-  have hWL : ∀ j k, k ∈ W j → |(k : ℤ) - j| < L :=
-    fun j k hk ↦ abs_sub_lt_iff.2 (by simp only [W, Finset.mem_Ico] at hk; omega)
-  set M : ℕ → L²(UnitAddTorus d) →L[ℂ] L²(UnitAddTorus d) := littlewoodPaleyBlock φ
-  have hmeas : ∀ j k, AEMeasurable (fun x ↦ ‖M j f x‖ₑ * ‖M k g x‖ₑ) :=
-    fun j k ↦ (Lp.aestronglyMeasurable _).eNorm.mul (Lp.aestronglyMeasurable _).eNorm
-  calc ‖⟪∑ j ∈ t, M j f, g⟫_ℂ‖ₑ
-      = ‖∑ j ∈ t, ∑ k ∈ W j, ∫ x, ⟪M j f x, M k g x⟫_ℂ‖ₑ := by
-        rw [sum_inner]
-        refine congrArg _ (Finset.sum_congr rfl fun j _ ↦ ?_)
-        rw [inner_littlewoodPaleyBlock_eq_sum φ hL]
-        simp only [M, W, L2.inner_def]
-    _ ≤ ∑ j ∈ t, ∑ k ∈ W j, ∫⁻ x, ‖M j f x‖ₑ * ‖M k g x‖ₑ :=
-        (eNorm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ (eNorm_sum_le _ _).trans
-          (Finset.sum_le_sum fun k _ ↦ (eNorm_integral_le_lintegral_eNorm _).trans
-            (lintegral_mono fun x ↦ eNorm_inner_le_eNorm _ _)))
-    _ = ∫⁻ x, ∑ j ∈ t, ∑ k ∈ W j, ‖M j f x‖ₑ * ‖M k g x‖ₑ := by
-        rw [lintegral_finsetSum' _ fun j _ ↦ Finset.aemeasurable_fun_sum _ fun k _ ↦ hmeas j k]
-        exact Finset.sum_congr rfl fun j _ ↦
-          (lintegral_finsetSum' _ fun k _ ↦ hmeas j k).symm
-    _ ≤ ∫⁻ x, ((2 * L : ℕ) : ℝ≥0∞) * ((∑' j, ‖M j f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) *
-          (∑' k, ‖M k g x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)) :=
-        lintegral_mono fun x ↦ (_root_.sum_le_tsum _).trans
-          (ENNReal.tsum_sum_mul_le_of_card_le W
-            (fun j ↦ card_le_two_mul_of_abs_sub_lt Nat.cast_injective (hWL j))
-            (card_filter_mem_le_two_mul_of_abs_sub_lt Nat.cast_injective hWL) _ _)
-    _ = _ := lintegral_const_mul' _ _ (by finiteness)
+  conv_rhs => rw [littlewoodPaleyBlock_eq_fourierMultiplier, ← hsym, map_mul, map_sum]
+  simp only [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
+    FunLike.coe_sum, Finset.sum_apply, littlewoodPaleyBlock_eq_fourierMultiplier]
 
 /-- **The reverse Littlewood–Paley inequality on the torus.** Let `φ` be a smooth bump function
 on `ℝᵈ`, let `Δⱼ` be the periodic Littlewood–Paley blocks built from it, and let `1 < p < ∞`. There
@@ -731,44 +668,13 @@ theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_littlewoodPaleyBlock_sq_rpow
   have hq_top : q ≠ ∞ := (ENNReal.HolderConjugate.ne_top_iff_ne_one q p).2 hp.ne'
   obtain ⟨C, hC⟩ := exists_eLpNorm_tsum_enorm_littlewoodPaleyBlock_sq_rpow_le φ hq hq_top
   obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
-  refine ⟨(2 * L : ℕ) * C, fun f ↦ ?_⟩
-  set S : L²(UnitAddTorus d) → UnitAddTorus d → ℝ≥0∞ := fun f t ↦
-    (∑' j, ‖littlewoodPaleyBlock φ j f t‖ₑ ^ 2) ^ (2⁻¹ : ℝ)
-  have hS : ∀ f, AEMeasurable (S f) := fun f ↦
-    (AEMeasurable.tsum fun j ↦ (Lp.aestronglyMeasurable _).eNorm.pow_const 2).pow_const _
-  -- By duality, it suffices to bound the pairing of `f` with a bounded `g`, an element `G` of `L²`.
-  refine (Lp.aestronglyMeasurable f).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ)
-    (q' := q) fun g s hs hgs hg ↦ ?_
-  have hg2 : MemLp g 2 volume := hg.mono_exponent_of_measure_support_ne_top hgs hs le_top
-  set G := hg2.toLp g
-  have hGg : (G : UnitAddTorus d → ℂ) =ᵐ[volume] g := hg2.coeFn_toLp
-  have hpair : ∫ x, ⟪f x, g x⟫_ℂ = ⟪f, G⟫_ℂ := by
-    rw [L2.inner_def]
-    exact integral_congr_ae (hGg.mono fun x hx ↦ by simp only [hx])
-  -- Hölder's inequality and the square function inequality at the exponent `q` for `G`.
-  have hHolder : ∫⁻ x, S f x * S G x ≤ eLpNorm (S f) p volume * eLpNorm (S G) q volume := by
-    have h := eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm_of_pos (μ := volume) (p := p) (q := q)
-      (r := 1) (fun a b : ℝ≥0∞ ↦ a * b) 1 (f := S f) (g := S G)
-      (fun _ _ ↦ ((hS f).mul (hS G)).aestronglyMeasurable)
-      (ae_of_all _ fun x ↦ by simp) zero_lt_one
-    rw [eLpNorm_one_eq_lintegral_eNorm (f := fun x ↦ S f x * S G x)
-      ((hS f).mul (hS G)).aestronglyMeasurable] at h
-    simpa only [eNorm_eq_self, one_mul] using h
-  have hSG : eLpNorm (S G) q volume ≤ C * eLpNorm g q volume := by
-    rw [← eLpNorm_congr_ae hGg]
-    exact hC G
-  -- The pairing is the limit of the pairings of the partial sums of `f`.
-  have hlim : ‖⟪f, G⟫_ℂ‖ₑ ≤ ((2 * L : ℕ) : ℝ≥0∞) * ∫⁻ x, S f x * S G x :=
-    le_of_tendsto' ((continuous_eNorm.tendsto _).comp
-      ((tendsto_sum_littlewoodPaleyBlock φ f).inner tendsto_const_nhds))
-      fun N ↦ eNorm_inner_sum_littlewoodPaleyBlock_le φ hL (Finset.range N) f G
-  rw [hpair]
-  calc ‖⟪f, G⟫_ℂ‖ₑ ≤ ((2 * L : ℕ) : ℝ≥0∞) * ∫⁻ x, S f x * S G x := hlim
-    _ ≤ ((2 * L : ℕ) : ℝ≥0∞) * (eLpNorm (S f) p volume * (C * eLpNorm g q volume)) := by
-        gcongr
-        exact hHolder.trans (by gcongr)
-    _ = ↑(((2 * L : ℕ) : ℝ≥0) * C) * eLpNorm (S f) p volume * eLpNorm g q volume := by
-        push_cast
-        ring
+  have hWL : ∀ j k, k ∈ Finset.Ico (j + 1 - L) (j + L) → |(k : ℤ) - j| < L :=
+    fun j k hk ↦ abs_sub_lt_iff.2 (by rw [Finset.mem_Ico] at hk; omega)
+  exact ⟨_, fun f ↦ eLpNorm_le_mul_eLpNorm_tsum_enorm_sq_rpow_of_card_le _
+    (isSelfAdjoint_littlewoodPaleyBlock φ) (fun j ↦ Finset.Ico (j + 1 - L) (j + L))
+    (fun j ↦ card_le_two_mul_of_abs_sub_lt Nat.cast_injective (hWL j))
+    (card_filter_mem_le_two_mul_of_abs_sub_lt Nat.cast_injective hWL)
+    (sum_littlewoodPaleyBlock_littlewoodPaleyBlock φ hL) hC
+    (tendsto_sum_littlewoodPaleyBlock φ f)⟩
 
 end TauCeti.UnitAddTorus
