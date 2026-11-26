@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.Determinant.Polarization
 import Mathlib.LinearAlgebra.Matrix.Kronecker
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.Tactic.Ring
-import TauCeti.LinearAlgebra.Matrix.BilinearForm
+import TauCeti.LinearAlgebra.BilinearForm.TensorProduct
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 
 /-!
@@ -62,25 +62,11 @@ private theorem toMatrix_symplecticForm :
 
 /-- The triality form is alternating, including in characteristic two. -/
 theorem isAlt_symplecticForm : (symplecticForm R).IsAlt := by
-  let b := (Matrix.stdBasis R (Fin 2) (Fin 2)).tensorProduct (Pi.basisFun R (Fin 2))
-  let M := (symplecticForm R).toMatrix b
-  have h : M.toBilin'.IsAlt := by
-    rw [Matrix.isAlt_toBilin'_iff]
-    dsimp only [M, b]
-    rw [toMatrix_symplecticForm]
-    -- Skew-symmetry and a zero diagonal ensure alternation over any coefficient ring.
-    constructor
-    · ext ⟨i, k⟩ ⟨j, l⟩
-      simp only [Matrix.transpose_apply, Matrix.neg_apply, Matrix.kronecker_apply,
-        BilinForm.toMatrix_apply]
-      rw [Matrix.isSymm_detFinTwoBilin.eq _ _]
-      fin_cases k <;> fin_cases l <;> simp
-    · rintro ⟨i, k⟩
-      rw [Matrix.kronecker_apply]
-      fin_cases k <;> simp
+  rw [symplecticForm]
+  apply Matrix.isSymm_detFinTwoBilin.tmul_isAlt
   intro x
-  simpa only [Matrix.toBilin'_apply', M, BilinForm.dotProduct_toMatrix_mulVec,
-    LinearEquiv.symm_apply_apply] using h.self_eq_zero (b.equivFun x)
+  simp [Matrix.toBilin'_apply, Fin.sum_univ_two]
+  ring
 
 /-- The triality form identifies the tensor product with its linear dual. -/
 instance instIsPerfPairSymplecticForm : (symplecticForm R).IsPerfPair := by
