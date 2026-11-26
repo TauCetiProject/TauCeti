@@ -16,9 +16,14 @@ complex structure on `V` that is of class `C^ℓ` as a map into `V →L[ℝ] V` 
 map `u : ℝ × ℝ → V` of class `C¹` on an open set `U`, with values in `W`, that solves the
 Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu` on `U`, is of class `C^ℓ` on `U`
 (`TauCeti.contDiffOn_of_isComplexLinearMap_fderiv`). In the complex coordinate
-`Complex.equivRealProdCLM` the equation is `∂ₛu + J(u) ∂ₜu = 0`, so the classical solution is a
-weak one (`TauCeti.isWeakCauchyRiemannOn_of_contDiffOn`), and interior elliptic bootstrapping
-(`TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`) gives the regularity.
+`Complex.equivRealProdCLM` the equation is `∂ₜu = J(u) ∂ₛu` for a map `u : ℂ → V`, which only
+needs `J(u)² = -1` along the image (`TauCeti.contDiffOn_of_fderiv_apply_I_eq`). Then it is
+`∂ₛu + J(u) ∂ₜu = 0`, so the classical solution is a weak one
+(`TauCeti.isWeakCauchyRiemannOn_of_contDiffOn`), and interior elliptic bootstrapping
+(`TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`) gives the regularity. For a structure depending only
+on the target, the bootstrapping applies to any weak solution along whose image `J² = -1`
+(`TauCeti.contDiffOn_of_isWeakCauchyRiemannOn_of_sq_eq_neg_one`). These two statements about maps
+`ℂ → V` live with the bootstrapping in `TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap`.
 
 Limits of rescaled solutions of the Floer equation, the bubbles of Gromov–Floer compactness, are
 `C¹` solutions of this equation for the structure frozen at the bubbling point, and their area is
@@ -54,28 +59,17 @@ theorem contDiffOn_of_isComplexLinearMap_fderiv {J : V → AlmostComplexStructur
     (hCR : ∀ z ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (u z))
       (fderiv ℝ u z : ℝ × ℝ →ₗ[ℝ] V)) :
     ContDiffOn ℝ ℓ u U := by
-  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
-  set Jc : V → V →L[ℝ] V := fun x ↦ (J x).toLinearMap.toContinuousLinearMap
-  set Ω : Opens ℂ := ⟨equivRealProdCLM ⁻¹' U, hU.preimage equivRealProdCLM.continuous⟩
+  set Ω : Set ℂ := equivRealProdCLM ⁻¹' U
   have heΩ : MapsTo equivRealProdCLM Ω U := fun y hy ↦ hy
-  have hu' : ContDiffOn ℝ 1 (u ∘ equivRealProdCLM) Ω :=
-    hu.comp equivRealProdCLM.contDiff.contDiffOn heΩ
-  -- In the complex coordinate the equation reads `∂ₛu + J(u) ∂ₜu = 0`.
-  have hCR' : ∀ y ∈ (Ω : Set ℂ), fderiv ℝ (u ∘ equivRealProdCLM) y 1 +
-      Jc ((u ∘ equivRealProdCLM) y) (fderiv ℝ (u ∘ equivRealProdCLM) y I) = 0 := by
-    intro y hy
+  -- In the complex coordinate the equation reads `∂ₜu = J(u) ∂ₛu`.
+  have hc : ContDiffOn ℝ ℓ (u ∘ equivRealProdCLM) Ω := by
+    refine contDiffOn_of_fderiv_apply_I_eq (hU.preimage equivRealProdCLM.continuous) hW hJ
+      (hu.comp equivRealProdCLM.contDiff.contDiffOn heΩ) (huW.comp heΩ)
+      (fun y _ v ↦ by simp) fun y hy ↦ ?_
     have h := (hCR _ (heΩ hy)).apply_stdComplexLineImag
     simp only [ContinuousLinearMap.coe_coe] at h
     rw [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I, h]
-    simp [Jc]
-  have hweak := isWeakCauchyRiemannOn_of_contDiffOn (p := ⊤) (J := fun _ ↦ Jc)
-    (η := fun _ _ ↦ 0) hu' hCR'
-  have hc : ContDiffOn ℝ ℓ (u ∘ equivRealProdCLM) Ω :=
-    contDiffOn_of_isWeakCauchyRiemannOn (by simp) (isOpen_univ.prod hW)
-      (hJ.comp contDiff_snd.contDiffOn fun q hq ↦ (mem_prod.1 hq).2) contDiffOn_const
-      (fun y hy ↦ ⟨mem_univ _, huW (heΩ hy)⟩)
-      (Filter.Eventually.of_forall fun y ↦ ContinuousLinearMap.ext fun a ↦ by simp [Jc])
-      hweak
+    simp
   have hsymm : MapsTo equivRealProdCLM.symm U Ω := fun z hz ↦ by simpa [Ω] using hz
   simpa [Function.comp_def] using hc.comp equivRealProdCLM.symm.contDiff.contDiffOn hsymm
 

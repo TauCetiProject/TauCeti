@@ -62,7 +62,15 @@ this statement is
 `TauCeti.SymplecticForm.exists_tendstoLocallyUniformly_rescale_of_tendsto_norm_fderiv`.
 
 The bubble is a plane. That it extends to a sphere needs removal of the singularity at infinity,
-which is not treated here. Energy quantization
+which is in `TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Smooth`:
+`TauCeti.SymplecticForm.exists_contMDiff_onePoint_elim_of_finite_energy` extends a solution
+`u : ℂ → V` of `∂ₜu = J(u) ∂ₛu`, for `V` a finite-dimensional real inner product space, to the
+sphere. It needs `J` of class `C^ℓ` with `ℓ ≥ 2` on an open set `W`, `u` of class `C³` with
+image in a compact set `K ⊆ W` on which `J² = -1`, `J(u)` uniformly tamed by a symplectic form
+compatible with the inner product through a linear complex structure, and finite energy. These
+hypotheses are not established here for the bubble, which is moreover a map `ℝ × ℝ → M` rather
+than `ℂ → V` and has to be transported to that setting before the theorem applies. Energy
+quantization
 (`TauCeti.SmoothTwoForm.Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne`) bounds its area
 below only once `v` is `C³` and the frozen structure `J(z₀, ·)` is a smooth almost complex
 structure tamed by `ω`; this file gives only `C¹` regularity of `v` and of `J(z₀, ·)` in charts.
