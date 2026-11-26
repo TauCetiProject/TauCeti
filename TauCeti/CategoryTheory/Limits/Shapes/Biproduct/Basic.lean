@@ -62,12 +62,13 @@ For a functor preserving zero morphisms, the comparison maps
 `biprod.lift (F.map biprod.fst) (F.map biprod.snd)` and
 `biprod.desc (F.map biprod.inl) (F.map biprod.inr)`, the simp normal forms of the two components
 of `Functor.mapBiprod`, carry `F` of the inclusions to the inclusions and the projections to `F` of
-the projections (`CategoryTheory.Limits.biprod.map_inl_comp_lift_map`,
-`CategoryTheory.Limits.biprod.desc_map_comp_map_fst` and their siblings); again no preservation
-hypothesis is needed. When `F` preserves the biproduct and its target is preadditive, an
-automorphism of `F(X ⊞ Y)` which fixes `F` of the first inclusion and induces the identity along
-`F` of the second projection becomes, under `F.mapBiprod X Y`, the unipotent automorphism given by
-its off-diagonal block (`CategoryTheory.Functor.mapBiprod_symm_trans_trans_eq_unipotentLower`).
+the projections (`CategoryTheory.Functor.map_biprod_inl_comp_biprod_lift_map`,
+`CategoryTheory.Functor.biprod_desc_map_comp_map_biprod_fst` and their siblings); again no
+preservation hypothesis is needed. When `F` preserves the biproduct and its target is
+preadditive, an automorphism of `F(X ⊞ Y)` which fixes `F` of the first inclusion and induces the
+identity along `F` of the second projection becomes, under `F.mapBiprod X Y`, the unipotent
+automorphism given by its off-diagonal block
+(`CategoryTheory.Functor.mapBiprod_symm_trans_trans_eq_unipotentLower`).
 For a functor out of `Cᵒᵖ`, the comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)`
 through `biprod.opIso` has inverse given by the images of the projections
 (`CategoryTheory.Functor.mapIso_biprod_opIso_trans_mapBiprod_inv`), and it identifies the lift of
@@ -669,7 +670,7 @@ variable [F.PreservesZeroMorphisms] (X Y : C) [HasBinaryBiproduct X Y]
 /-- `F` of the first inclusion, followed by the comparison `F(X ⊞ Y) ⟶ F(X) ⊞ F(Y)`, is the first
 inclusion. -/
 @[reassoc (attr := simp)]
-theorem _root_.CategoryTheory.Limits.biprod.map_inl_comp_lift_map :
+theorem map_biprod_inl_comp_biprod_lift_map :
     F.map (biprod.inl : X ⟶ X ⊞ Y) ≫ biprod.lift (F.map biprod.fst) (F.map biprod.snd) =
       biprod.inl := by
   ext <;> simp [← F.map_comp]
@@ -677,7 +678,7 @@ theorem _root_.CategoryTheory.Limits.biprod.map_inl_comp_lift_map :
 /-- `F` of the second inclusion, followed by the comparison `F(X ⊞ Y) ⟶ F(X) ⊞ F(Y)`, is the second
 inclusion. -/
 @[reassoc (attr := simp)]
-theorem _root_.CategoryTheory.Limits.biprod.map_inr_comp_lift_map :
+theorem map_biprod_inr_comp_biprod_lift_map :
     F.map (biprod.inr : Y ⟶ X ⊞ Y) ≫ biprod.lift (F.map biprod.fst) (F.map biprod.snd) =
       biprod.inr := by
   ext <;> simp [← F.map_comp]
@@ -685,7 +686,7 @@ theorem _root_.CategoryTheory.Limits.biprod.map_inr_comp_lift_map :
 /-- The comparison `F(X) ⊞ F(Y) ⟶ F(X ⊞ Y)`, followed by `F` of the first projection, is the first
 projection. -/
 @[reassoc (attr := simp)]
-theorem _root_.CategoryTheory.Limits.biprod.desc_map_comp_map_fst :
+theorem biprod_desc_map_comp_map_biprod_fst :
     biprod.desc (F.map (biprod.inl : X ⟶ X ⊞ Y)) (F.map biprod.inr) ≫ F.map biprod.fst =
       biprod.fst := by
   ext <;> simp [← F.map_comp]
@@ -693,7 +694,7 @@ theorem _root_.CategoryTheory.Limits.biprod.desc_map_comp_map_fst :
 /-- The comparison `F(X) ⊞ F(Y) ⟶ F(X ⊞ Y)`, followed by `F` of the second projection, is the
 second projection. -/
 @[reassoc (attr := simp)]
-theorem _root_.CategoryTheory.Limits.biprod.desc_map_comp_map_snd :
+theorem biprod_desc_map_comp_map_biprod_snd :
     biprod.desc (F.map (biprod.inl : X ⟶ X ⊞ Y)) (F.map biprod.inr) ≫ F.map biprod.snd =
       biprod.snd := by
   ext <;> simp [← F.map_comp]
