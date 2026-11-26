@@ -48,8 +48,8 @@ theorem nonsing_inv_mem {S : Subalgebra R (Matrix n n R)} {A : Matrix n n R} (hA
       rw [← one_mul (aeval A q), ← nonsing_inv_mul A h, mul_assoc, hq, mul_smul_comm, mul_one]
     have hinv : A⁻¹ = (↑hc.unit⁻¹ : R) • aeval A q := by
       rw [hQ, smul_smul, hc.val_inv_mul, one_smul]
-    rw [hinv]
-    exact S.smul_mem (coe_aeval_mk_apply (p := q) (h := hA) ▸ (aeval (⟨A, hA⟩ : S) q).property) _
+    rw [hinv, ← coe_aeval_mk_apply (h := hA)]
+    exact S.smul_mem (Subtype.property _) _
   · rw [nonsing_inv_apply_not_isUnit A h]
     exact zero_mem S
 

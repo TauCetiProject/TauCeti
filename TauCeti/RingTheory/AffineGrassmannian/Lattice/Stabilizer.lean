@@ -138,7 +138,7 @@ theorem blockTriangular_map_mk_of_mem_diagonalLatticeSubalgebra {k : n → ℤ} 
     {A : Matrix n n B} (hA : A ∈ diagonalLatticeSubalgebra k ξ) :
     (A.map (Ideal.Quotient.mk (Ideal.span {ξ}))).BlockTriangular k := by
   rw [← mem_blockTriangularSubalgebra (R := B ⧸ Ideal.span {ξ}), ← diagonalLatticeSubalgebra_zero,
-    ← Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton_self ξ)]
+    ← Ideal.Quotient.mk_singleton_self ξ]
   exact map_mem_diagonalLatticeSubalgebra _ hA
 
 /-- **Multiples of a power of a regular `ξ`.** If `ξ` is regular, `ξ ^ m X` lies in the
@@ -177,11 +177,9 @@ theorem map_diagonalLatticeStabilizer {ξ : B} (hξ : ξ ∈ Ring.jacobson B) (k
     (diagonalLatticeStabilizer k ξ).map
         (GeneralLinearGroup.map (Ideal.Quotient.mk (Ideal.span {ξ}))) =
       diagonalLatticeStabilizer k 0 := by
-  have h0 : Ideal.Quotient.mk (Ideal.span {ξ}) ξ = 0 :=
-    Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton_self ξ)
   refine le_antisymm ?_ fun g hg ↦ ?_
   · rintro _ ⟨g, hg, rfl⟩
-    rw [mem_diagonalLatticeStabilizer, ← h0]
+    rw [mem_diagonalLatticeStabilizer, ← Ideal.Quotient.mk_singleton_self ξ]
     exact map_mem_diagonalLatticeSubalgebra _ (mem_diagonalLatticeStabilizer.1 hg)
   · -- Lift `g` entrywise, choosing the lift `0` at the entries forced to vanish.
     rw [mem_diagonalLatticeStabilizer, diagonalLatticeSubalgebra_zero,
