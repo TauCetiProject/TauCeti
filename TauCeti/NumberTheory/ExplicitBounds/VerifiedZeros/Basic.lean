@@ -330,7 +330,8 @@ theorem forall_LFunction_re_eq_half_iff_dirichletGRHUpTo {q : ℕ} [NeZero q] {H
       ((DirichletCharacter.LFunction_changeLevel_eq_zero_iff ψ hfq hre0.ne' (.inr (hne_one hre1))).2
         h0) hre0 hre1 him
   · exact h χ.conductor χ.conductor_dvd_level χ.primitiveCharacter χ.primitiveCharacter_isPrimitive
-      ρ ((χ.LFunction_primitiveCharacter_eq_zero_iff hre0 (.inr (hne_one hre1))).2 h0) hre0 hre1 him
+      ρ ((χ.LFunction_primitiveCharacter_eq_zero_iff hre0.ne' (.inr (hne_one hre1))).2 h0)
+      hre0 hre1 him
 
 /-- At modulus `2`, all zeros of all characters modulo `2` in `0 < Re ρ < 1` with `|Im ρ| ≤ H` lie
 on the critical line if and only if `RiemannHypothesisUpTo H` holds, since the extra Euler factor

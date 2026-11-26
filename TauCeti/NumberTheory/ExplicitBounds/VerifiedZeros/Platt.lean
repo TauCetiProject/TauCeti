@@ -231,7 +231,7 @@ theorem LFunction_ne_zero_of_platt_of_conductor_le (hP : PlattRecord) (hC : Plat
     (s : ℝ) (hs₀ : 0 < s) (hs₁ : s < 1) :
     DirichletCharacter.LFunction χ s ≠ 0 := by
   have hs1' : (s : ℂ) ≠ 1 := by exact_mod_cast hs₁.ne
-  rw [Ne, ← χ.LFunction_primitiveCharacter_eq_zero_iff (by simpa using hs₀) (.inr hs1')]
+  rw [Ne, ← χ.LFunction_primitiveCharacter_eq_zero_iff (by simpa using hs₀.ne') (.inr hs1')]
   exact LFunction_ne_zero_of_platt hP hC hcond χ.primitiveCharacter
     χ.primitiveCharacter_isPrimitive s hs₀ hs₁
 

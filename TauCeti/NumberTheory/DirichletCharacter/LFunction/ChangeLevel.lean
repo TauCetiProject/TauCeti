@@ -144,13 +144,13 @@ At the possible pole `1`, require the original character to be nonprincipal. -/
   simp only [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs, or_false]
 
 /-- A Dirichlet character and its inducing primitive character have the same zeros of the
-continued L-function in the open right half-plane. At the possible pole `1`, require the primitive
+continued L-function off the imaginary axis. At the possible pole `1`, require the primitive
 character to be nonprincipal. -/
 theorem LFunction_primitiveCharacter_eq_zero_iff {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
-    {s : ℂ} (hs : 0 < s.re) (h : χ.primitiveCharacter ≠ 1 ∨ s ≠ 1) :
+    {s : ℂ} (hs : s.re ≠ 0) (h : χ.primitiveCharacter ≠ 1 ∨ s ≠ 1) :
     χ.primitiveCharacter.LFunction s = 0 ↔ χ.LFunction s = 0 := by
   conv_rhs => rw [← χ.changeLevel_primitiveCharacter]
-  exact (LFunction_changeLevel_eq_zero_iff _ χ.conductor_dvd_level hs.ne' h).symm
+  exact (LFunction_changeLevel_eq_zero_iff _ χ.conductor_dvd_level hs h).symm
 
 /-- Raising the level preserves the meromorphic order of the continued L-function at every point of
 the open right half-plane `Re(s) > 0`, including `s = 1` for principal characters. -/
