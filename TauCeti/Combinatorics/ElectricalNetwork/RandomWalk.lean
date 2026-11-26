@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.ElectricalNetwork.Basic
+public import TauCeti.Combinatorics.ElectricalNetwork.Harmonic
 public import TauCeti.Data.ENNReal.Weights
 public import TauCeti.Probability.Kernel.Invariance
 public import TauCeti.Probability.Kernel.Reachability
@@ -111,6 +111,16 @@ theorem toReal_walk_apply_singleton {x : V} (hx : 0 < N.weight x) (y : V) :
 theorem walk_apply_of_weight_eq_zero {x : V} (hx : N.weight x = 0) :
     N.walk x = Measure.dirac x := by
   rw [walk_apply, N.walkPMF_of_weight_eq_zero hx, PMF.toMeasure_pure]
+
+/-- A potential is harmonic at a vertex exactly when it equals its mean after one step of the
+walk. At a vertex of weight zero the walk stays put, so this also holds there. -/
+theorem isHarmonicAt_iff_integral_walk {f : V → ℝ} {x : V} :
+    N.IsHarmonicAt f x ↔ ∫ y, f y ∂N.walk x = f x := by
+  rcases (N.weight_nonneg x).eq_or_lt with hx | hx
+  · simp [N.walk_apply_of_weight_eq_zero hx.symm, N.isHarmonicAt_of_weight_eq_zero hx.symm]
+  rw [N.isHarmonicAt_iff, integral_fintype (Integrable.of_finite (f := f))]
+  simp_rw [smul_eq_mul, measureReal_def, N.toReal_walk_apply_singleton hx, div_mul_eq_mul_div]
+  rw [← Finset.sum_div, div_eq_iff hx.ne', mul_comm (f x)]
 
 /-- The walk steps from `x` to `y` with positive probability when `c x y > 0`. -/
 theorem walk_apply_singleton_pos {x y : V} (hxy : 0 < N.cond x y) : 0 < N.walk x {y} := by
