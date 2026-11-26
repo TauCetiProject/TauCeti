@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 import TauCeti.MeasureTheory.Measure.Restrict
+import TauCeti.Probability.Independence.Basic
 
 /-!
 # Entropy of countable measurable partitions
@@ -43,7 +44,9 @@ of two labels `a`, `b` is the pair label `x ↦ (a x, b x)`.
   measure-preserving map does not change its entropy.
 * `TauCeti.countablePartitionEntropy_pair_of_indepFun`: independent labels have additive entropy.
 * `TauCeti.countablePartitionEntropy_comp_of_injective`: relabeling by an injection, for instance
-  embedding a countable alphabet into `ℕ`, does not change the entropy.
+  embedding a countable alphabet into `ℕ`, does not change the entropy;
+  `TauCeti.conditionalPartitionEntropy_comp_right_of_injective` is the same for the conditioning
+  label.
 * `TauCeti.countablePartitionEntropy_congr_ae`, `TauCeti.conditionalPartitionEntropy_congr_ae`:
   almost-everywhere equal labels have equal entropy and conditional entropy.
 
@@ -132,6 +135,21 @@ theorem countablePartitionEntropy_comp_of_injective (a : X → ι) {e : ι → �
     have : (e ∘ a) ⁻¹' {c} = ∅ :=
       Set.eq_empty_of_forall_notMem fun x hx ↦ hcr ⟨a x, hx⟩
     simp [this] at hc
+
+/-- Relabeling the conditioning label by an injection does not change the conditional entropy. -/
+theorem conditionalPartitionEntropy_comp_right_of_injective (a : X → ι) (b : X → κ)
+    {e : κ → ι'} (he : Function.Injective e) :
+    conditionalPartitionEntropy μ a (e ∘ b) = conditionalPartitionEntropy μ a b := by
+  rw [conditionalPartitionEntropy_def, conditionalPartitionEntropy_def,
+    ← (Function.Injective.prodMap Function.injective_id he).tsum_eq fun p hp ↦ ?_]
+  · refine tsum_congr fun p ↦ ?_
+    simp only [Prod.map_fst, id_eq, Prod.map_snd, Set.preimage_comp,
+      show e ⁻¹' {e p.2} = {p.2} from Set.ext fun _ ↦ he.eq_iff]
+  · -- The cells over labels off the range of `e` are empty.
+    by_contra hpr
+    have : (e ∘ b) ⁻¹' {p.2} = ∅ :=
+      Set.eq_empty_of_forall_notMem fun x hx ↦ hpr ⟨(p.1, b x), Prod.ext rfl hx⟩
+    simp [this] at hp
 
 /-- Almost-everywhere equal labels have equal entropy. No measurability is needed: the atoms
 differ by null sets. -/
@@ -370,35 +388,24 @@ theorem countablePartitionEntropy_pair_of_indepFun {a : X → ι} {b : X → κ}
     (hb : Measurable b) (hab : IndepFun a b μ) :
     countablePartitionEntropy μ (fun x ↦ (a x, b x)) =
       countablePartitionEntropy μ a + countablePartitionEntropy μ b := by
-  have hmul : ∀ s t, MeasurableSet s → MeasurableSet t →
-      μ (a ⁻¹' s ∩ b ⁻¹' t) = μ (a ⁻¹' s) * μ (b ⁻¹' t) := fun s t hs ht ↦
-    hab.measure_inter_preimage_eq_mul s t hs ht
-  have huniv : μ Set.univ = μ Set.univ * μ Set.univ := by
-    simpa using hmul Set.univ Set.univ MeasurableSet.univ MeasurableSet.univ
   rcases eq_or_ne (μ Set.univ) ∞ with htop | htop
-  · -- Every atom and every cell has mass `0` or `∞`, hence real mass zero.
+  · -- Every atom and every cell has real mass zero.
+    have hC : ∀ i j, μ.real (a ⁻¹' {i} ∩ b ⁻¹' {j}) = 0 := fun i j ↦
+      hab.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top htop
+        (measurableSet_singleton i) (measurableSet_singleton j)
     have hA : ∀ i, μ.real (a ⁻¹' {i}) = 0 := fun i ↦ by
-      have := hmul {i} Set.univ (measurableSet_singleton i) MeasurableSet.univ
-      simp only [Set.preimage_univ, Set.inter_univ, htop] at this
-      rw [measureReal_def, this, ENNReal.toReal_mul_top]
+      simpa using hab.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top htop
+        (measurableSet_singleton i) .univ
     have hB : ∀ j, μ.real (b ⁻¹' {j}) = 0 := fun j ↦ by
-      have := hmul Set.univ {j} MeasurableSet.univ (measurableSet_singleton j)
-      simp only [Set.preimage_univ, Set.univ_inter, htop] at this
-      rw [measureReal_def, this, mul_comm, ENNReal.toReal_mul_top]
-    have hC : ∀ i j, μ.real (a ⁻¹' {i} ∩ b ⁻¹' {j}) = 0 := fun i j ↦ by
-      rw [measureReal_def, hmul _ _ (measurableSet_singleton i) (measurableSet_singleton j),
-        ENNReal.toReal_mul, ← measureReal_def, hA, zero_mul]
+      simpa using hab.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top htop
+        .univ (measurableSet_singleton j)
     rw [countablePartitionEntropy_pair]
     simp [countablePartitionEntropy_def, hA, hB, hC]
   have : IsFiniteMeasure μ := ⟨lt_top_iff_ne_top.mpr htop⟩
-  have h01 : μ Set.univ = 0 ∨ μ Set.univ = 1 := by
-    rcases eq_or_ne (μ Set.univ) 0 with h | h
-    · exact Or.inl h
-    · exact Or.inr ((ENNReal.mul_eq_left h htop).mp huniv.symm)
-  rcases h01 with h | h
-  · simp [Measure.measure_univ_eq_zero.mp h]
-  · have : IsProbabilityMeasure μ := ⟨h⟩
-    exact countablePartitionEntropy_pair_of_indepFun_of_isProbabilityMeasure ha hb hab
+  have := hab.isZeroOrProbabilityMeasure
+  obtain rfl | _ := eq_zero_or_isProbabilityMeasure (μ := μ)
+  · simp
+  · exact countablePartitionEntropy_pair_of_indepFun_of_isProbabilityMeasure ha hb hab
 
 end Measurable
 
