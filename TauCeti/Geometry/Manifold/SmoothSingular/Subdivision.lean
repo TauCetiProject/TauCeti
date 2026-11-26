@@ -12,8 +12,8 @@ public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
 # Barycentric subdivision of smooth singular chains
 
 An affine map `A : Δᵏ → Δᵐ` of standard simplices, read on full-dimensional simplices, is the
-restriction of a continuous affine map of the ambient Euclidean spaces
-(`TauCeti.exists_continuousAffineMap_eq_affineMapMk`). So the composite `σ ∘ A` of a smooth singular
+restriction of the continuous affine map `TauCeti.affineMapAmbient` of the ambient Euclidean spaces
+(`TauCeti.affineMapAmbient_coe`). So the composite `σ ∘ A` of a smooth singular
 simplex `σ` of a manifold `M` with `A` is again smooth: the subcomplex of smooth singular simplices
 is affinely stable (`SSet.Subcomplex.IsAffineStable`).
 
@@ -57,15 +57,13 @@ singular simplex with an affine map of standard simplices gives a smooth singula
 barycentric subdivision and its prism operator restrict to smooth singular chains. -/
 instance : (smoothSingularSubcomplex I M).IsAffineStable where
   comp_affineMapMk_mem {m k σ} hσ v := by
-    obtain ⟨A, hA⟩ := exists_continuousAffineMap_eq_affineMapMk v
-    have hst : MapsTo A (fullSimplex k) (fullSimplex m) := fun x hx ↦
-      hA ⟨x, hx⟩ ▸ Subtype.prop _
     rw [mem_smoothSingularSubcomplex_iff] at hσ ⊢
-    convert hσ.comp_contDiff A.contDiff hst using 1
+    convert hσ.comp_contDiff (affineMapAmbient v).contDiff (mapsTo_affineMapAmbient v) using 1
     funext x
-    have hx : hst.restrict A _ _ x = (fullSimplexEquivStdSimplex m).symm
-        (StdSimplex.affineMapMk v (fullSimplexEquivStdSimplex k x)) :=
-      Subtype.ext (hA x)
+    have hx : (mapsTo_affineMapAmbient v).restrict (affineMapAmbient v) _ _ x =
+        (fullSimplexEquivStdSimplex m).symm
+          (StdSimplex.affineMapMk v (fullSimplexEquivStdSimplex k x)) :=
+      Subtype.ext (affineMapAmbient_coe v x)
     simp [hx]
 
 end TauCeti

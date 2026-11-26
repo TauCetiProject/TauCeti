@@ -80,8 +80,9 @@ basis `b` of `U`, and hence by `‖A‖ ^ Module.finrank 𝕜 U`. Equality holds
 * `ContinuousLinearMap.normDet_adjoint_le_norm_pow`: the coarea Jacobian `f.adjoint.normDet` is at
   most `‖f‖ ^ dim F`.
 * `LinearMap.pow_finrank_le_normDet_of_mul_norm_le`, `LinearMap.normDet_le_pow_finrank_of_norm_le`,
-  `LinearMap.normDet_eq_pow_finrank_of_norm_eq`: uniform lower, upper, and exact norm bounds on a
-  linear map control its `normDet` by the `finrank`-th power of the factor.
+  `LinearMap.normDet_eq_pow_finrank_of_norm_eq`, `LinearMap.normDet_comp_le_pow_finrank_mul`,
+  `LinearMap.normDet_comp_of_inner_eq`: uniform lower, upper, and exact norm bounds on a linear map
+  and under norm-bounded or isometric postcomposition.
 * `LinearMap.normDet_eq_mul_normDet_orthogonal`,
   `LinearMap.normDet_eq_div_mul_normDet_orthogonal`,
   `LinearMap.normDet_eq_norm_mul_normDet_orthogonal`: when `f` maps a submodule `K` and `Kᗮ` to
@@ -528,6 +529,32 @@ theorem normDet_eq_pow_finrank_of_norm_eq (f : E →ₗ[𝕜] F) {c : ℝ}
   exact le_antisymm
     (f.normDet_le_pow_finrank_of_norm_le fun v ↦ (hf v).le)
     (f.pow_finrank_le_normDet_of_mul_norm_le hc fun v ↦ (hf v).ge)
+
+/-- **Upper bound on `normDet` under postcomposition with a norm-bounded linear map.** If
+`‖g v‖ ≤ c * ‖v‖` for all `v`, then `(g ∘ₗ f).normDet ≤ c ^ finrank 𝕜 E * f.normDet`. Neither
+intermediate nor target space need be finite dimensional. -/
+theorem normDet_comp_le_pow_finrank_mul {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+    (f : E →ₗ[𝕜] F) (g : F →ₗ[𝕜] G) {c : ℝ} (hg : ∀ v, ‖g v‖ ≤ c * ‖v‖) :
+    (g ∘ₗ f).normDet ≤ c ^ Module.finrank 𝕜 E * f.normDet := by
+  by_cases hker : f.ker = ⊥
+  · rw [f.normDet_comp g]
+    refine mul_le_mul_of_nonneg_right ?_ f.normDet_nonneg
+    rw [← LinearMap.finrank_range_of_inj (LinearMap.ker_eq_bot.mp hker)]
+    exact (g.domRestrict f.range).normDet_le_pow_finrank_of_norm_le fun v ↦ hg v
+  · have hgf : (g ∘ₗ f).ker ≠ ⊥ := by
+      contrapose hker with hbot
+      simpa [hbot] using LinearMap.ker_le_ker_comp f g
+    rw [LinearMap.normDet_eq_zero_iff_ker_ne_bot.mpr hgf,
+      LinearMap.normDet_eq_zero_iff_ker_ne_bot.mpr hker, mul_zero]
+
+/-- **Isometric postcomposition preserves `normDet`.** If `g` preserves inner products, then
+`(g ∘ₗ f).normDet = f.normDet`, without finite-dimensionality assumptions on `F` or `G`. -/
+theorem normDet_comp_of_inner_eq {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+    (f : E →ₗ[𝕜] F) (g : F →ₗ[𝕜] G) (hg : ∀ v w, inner 𝕜 (g v) (g w) = inner 𝕜 v w) :
+    (g ∘ₗ f).normDet = f.normDet := by
+  have hiso : (g.domRestrict f.range).normDet = 1 :=
+    ((g.domRestrict f.range).isometryOfInner fun _ _ ↦ hg _ _).normDet_eq_one
+  rw [f.normDet_comp g, hiso, one_mul]
 
 end Bounds
 
