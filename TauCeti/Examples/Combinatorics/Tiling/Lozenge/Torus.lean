@@ -89,8 +89,8 @@ theorem isTorusTiling_tilingOfHeight_halfSumHeight :
 example : heightChange 2 2 (tilingOfHeight halfSumHeight) = (1, 1) := by
   have hT :=
     isHeightFunction_halfSumHeight.tilingHeight_tilingOfHeight (by simp [halfSumHeight_apply])
-  have h₁ := isTorusTiling_tilingOfHeight_halfSumHeight.heightChange_fst_eq
-  have h₂ := isTorusTiling_tilingOfHeight_halfSumHeight.heightChange_snd_eq
+  have h₁ := isTorusTiling_tilingOfHeight_halfSumHeight.isTiling.heightChange_fst_eq 2 2
+  have h₂ := isTorusTiling_tilingOfHeight_halfSumHeight.isTiling.heightChange_snd_eq 2 2
   rw [hT] at h₁ h₂
   norm_num [halfSumHeight_apply] at h₁ h₂
   exact Prod.ext (by exact_mod_cast h₁) (by exact_mod_cast h₂)

@@ -76,6 +76,28 @@ theorem heightChange_def (n₁ n₂ : ℕ) (M : Set TriEdge) : heightChange n₁
       ((Finset.range n₂).filter fun y : ℕ => (⟨(0, (y : ℤ)), 1⟩ : TriEdge) ∈ M).card) :=
   (rfl)
 
+namespace IsTiling
+
+/-- The first component of the height change of a plane tiling is `H_M(n₁, 0)`. -/
+theorem heightChange_fst_eq (h : IsTiling Set.univ M) (n₁ n₂ : ℕ) :
+    ((heightChange n₁ n₂ M).1 : ℤ) = tilingHeight M (n₁, 0) := by
+  classical
+  have := h.card_filter_range_eq_tilingHeight_add_nsmul_sub 0 (k := 0) (by decide) n₁
+  simp only [zero_add, latticeDir_zero, Prod.smul_mk, nsmul_eq_mul, mul_one, smul_zero,
+    tilingHeight_zero, sub_zero] at this
+  rw [heightChange_def, ← this]
+
+/-- The second component of the height change of a plane tiling is `H_M(0, n₂)`. -/
+theorem heightChange_snd_eq (h : IsTiling Set.univ M) (n₁ n₂ : ℕ) :
+    ((heightChange n₁ n₂ M).2 : ℤ) = tilingHeight M (0, n₂) := by
+  classical
+  have := h.card_filter_range_eq_tilingHeight_add_nsmul_sub 0 (k := 1) (by decide) n₂
+  simp only [zero_add, latticeDir_one, Prod.smul_mk, nsmul_eq_mul, mul_one, smul_zero,
+    tilingHeight_zero, sub_zero] at this
+  rw [heightChange_def, ← this]
+
+end IsTiling
+
 namespace IsTorusTiling
 
 variable (h : IsTorusTiling n₁ n₂ M)
@@ -87,31 +109,15 @@ theorem vadd_fst : ((n₁ : ℤ), (0 : ℤ)) +ᵥ M = M := h.2.1
 
 theorem vadd_snd : ((0 : ℤ), (n₂ : ℤ)) +ᵥ M = M := h.2.2
 
-/-- The first component of the height change is `H_M(n₁, 0)`. -/
-theorem heightChange_fst_eq : ((heightChange n₁ n₂ M).1 : ℤ) = tilingHeight M (n₁, 0) := by
-  classical
-  have := h.isTiling.card_filter_range_eq_tilingHeight_add_nsmul_sub 0 (k := 0) (by decide) n₁
-  simp only [zero_add, latticeDir_zero, Prod.smul_mk, nsmul_eq_mul, mul_one, smul_zero,
-    tilingHeight_zero, sub_zero] at this
-  rw [heightChange_def, ← this]
-
-/-- The second component of the height change is `H_M(0, n₂)`. -/
-theorem heightChange_snd_eq : ((heightChange n₁ n₂ M).2 : ℤ) = tilingHeight M (0, n₂) := by
-  classical
-  have := h.isTiling.card_filter_range_eq_tilingHeight_add_nsmul_sub 0 (k := 1) (by decide) n₂
-  simp only [zero_add, latticeDir_one, Prod.smul_mk, nsmul_eq_mul, mul_one, smul_zero,
-    tilingHeight_zero, sub_zero] at this
-  rw [heightChange_def, ← this]
-
 /-- **The height change by heights**: `H_M(v + (n₁, 0)) − H_M(v) = h₁`. -/
 theorem tilingHeight_add_sub_eq_heightChange_fst (v : ℤ × ℤ) :
     tilingHeight M (v + ((n₁ : ℤ), 0)) - tilingHeight M v = (heightChange n₁ n₂ M).1 := by
-  rw [h.heightChange_fst_eq, h.isTiling.tilingHeight_add_sub_of_vadd_eq h.vadd_fst]
+  rw [h.isTiling.heightChange_fst_eq, h.isTiling.tilingHeight_add_sub_of_vadd_eq h.vadd_fst]
 
 /-- **The height change by heights**: `H_M(v + (0, n₂)) − H_M(v) = h₂`. -/
 theorem tilingHeight_add_sub_eq_heightChange_snd (v : ℤ × ℤ) :
     tilingHeight M (v + (0, (n₂ : ℤ))) - tilingHeight M v = (heightChange n₁ n₂ M).2 := by
-  rw [h.heightChange_snd_eq, h.isTiling.tilingHeight_add_sub_of_vadd_eq h.vadd_snd]
+  rw [h.isTiling.heightChange_snd_eq, h.isTiling.tilingHeight_add_sub_of_vadd_eq h.vadd_snd]
 
 open Classical in
 /-- `h₁` is the number of type-1 lozenges on every horizontal segment of length `n₁`. -/
