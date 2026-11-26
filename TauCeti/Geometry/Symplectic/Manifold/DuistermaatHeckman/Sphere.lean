@@ -12,7 +12,6 @@ import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Angle
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
-import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -20,6 +19,8 @@ import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.Instances.Sphere
+import TauCeti.Geometry.Symplectic.Manifold.Sphere.Area
+import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 
 /-!
 # The Duistermaat–Heckman measure of the two-sphere
@@ -34,10 +35,11 @@ the area measure `|σ|` along `h`:
 
 (`TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_height`). This is Archimedes' theorem that a
 band of the sphere between two heights has the area of the band of the circumscribed cylinder
-between the same heights. In particular the area of the sphere is `4π`
-(`TauCeti.liouvilleMeasure_sphereAreaForm_univ`), and a constant moment map, such as that of the
-trivial circle action, has Duistermaat–Heckman measure `4π δ_c`
-(`TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_const`).
+between the same heights: between the heights `-1 ≤ a ≤ b ≤ 1` it is `2π (b - a)`
+(`TauCeti.liouvilleMeasure_sphereAreaForm_setOf_mem_Icc`). A constant moment map, such as that of
+the trivial circle action, has Duistermaat–Heckman measure `4π δ_c`
+(`TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_const`), since the sphere has area `4π`
+(`Orientation.liouvilleMeasure_sphereVolumeForm_univ`).
 
 The computation uses longitude and height as coordinates. On the strip `(a, a + 2π) × (-1, 1)`
 (`TauCeti.longitudeHeightStrip a`) the parametrization
@@ -71,7 +73,8 @@ Duistermaat–Heckman measure.
   measure on `(0, 2π) × (-1, 1)`.
 * `TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_height`: the Duistermaat–Heckman measure of the
   height is `2π` times Lebesgue measure on `[-1, 1]`.
-* `TauCeti.liouvilleMeasure_sphereAreaForm_univ`: the area of `S²` is `4π`.
+* `TauCeti.liouvilleMeasure_sphereAreaForm_setOf_mem_Icc`: **Archimedes' theorem**, the zone of
+  `S²` between the heights `-1 ≤ a ≤ b ≤ 1` has area `2π (b - a)`.
 * `TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_const`: a constant moment map has
   Duistermaat–Heckman measure `4π δ_c`.
 
@@ -438,13 +441,12 @@ Lebesgue measure on `(-1, 1)`. -/
 private theorem map_restrict_longitudeHeightStrip_zero :
     (volume.restrict (longitudeHeightStrip 0 : Set ℝ²)).map (fun y : ℝ² ↦ y 1) =
       ENNReal.ofReal (2 * π) • volume.restrict (Ioo (-1) 1) := by
-  set e : ℝ² → ℝ × ℝ := fun y ↦ (y 0, y 1)
-  have he : MeasurePreserving e volume volume :=
-    (volume_preserving_finTwoArrow ℝ).comp (PiLp.volume_preserving_ofLp (Fin 2))
+  let e := euclideanPlaneEquivProd
+  have he : MeasurePreserving e volume volume := measurePreserving_euclideanPlaneEquivProd
   have hS : (longitudeHeightStrip 0 : Set ℝ²) = e ⁻¹' (Ioo 0 (0 + 2 * π) ×ˢ Ioo (-1) 1) := by
     ext y
     simp [e, mem_longitudeHeightStrip]
-  have hsnd : (fun y : ℝ² ↦ y 1) = Prod.snd ∘ e := rfl
+  have hsnd : (fun y : ℝ² ↦ y 1) = Prod.snd ∘ e := funext fun y ↦ by simp [e]
   rw [hS, hsnd, ← Measure.map_map measurable_snd he.measurable,
     (he.restrict_preimage (measurableSet_Ioo.prod measurableSet_Ioo)).map_eq,
     Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.map_snd_prod,
@@ -474,15 +476,16 @@ theorem duistermaatHeckmanMeasure_sphereAreaForm_height :
     Subtype.range_coe, map_restrict_longitudeHeightStrip_zero,
     Measure.restrict_congr_set Ioo_ae_eq_Icc]
 
-/-- **The area of the unit sphere is `4π`**, as the total mass of its Liouville measure. -/
-@[simp]
-theorem liouvilleMeasure_sphereAreaForm_univ :
-    sphereAreaForm.liouvilleMeasure 1 univ = ENNReal.ofReal (4 * π) := by
-  rw [← SmoothTwoForm.duistermaatHeckmanMeasure_univ measurable_height,
-    duistermaatHeckmanMeasure_sphereAreaForm_height, smul_apply, Measure.restrict_apply_univ,
+/-- **Archimedes' theorem on zones of the sphere.** The zone of the unit sphere between the heights
+`a` and `b`, with `-1 ≤ a` and `b ≤ 1`, has area `2π (b - a)`. -/
+theorem liouvilleMeasure_sphereAreaForm_setOf_mem_Icc {a b : ℝ} (ha : -1 ≤ a) (hb : b ≤ 1) :
+    sphereAreaForm.liouvilleMeasure 1 {x : S² | (x : ℝ³) 2 ∈ Icc a b} =
+      ENNReal.ofReal (2 * π * (b - a)) := by
+  rw [← preimage_ofPred_eq (f := fun x : S² ↦ (x : ℝ³) 2) (p := (· ∈ Icc a b)), ofPred_mem_eq,
+    ← SmoothTwoForm.duistermaatHeckmanMeasure_apply measurable_height measurableSet_Icc,
+    duistermaatHeckmanMeasure_sphereAreaForm_height, smul_apply,
+    Measure.restrict_apply measurableSet_Icc, inter_eq_left.2 (Icc_subset_Icc ha hb),
     Real.volume_Icc, smul_eq_mul, ← ENNReal.ofReal_mul (by positivity)]
-  congr 1
-  ring
 
 /-- **The Duistermaat–Heckman measure of a constant moment map on `S²`.** A constant map, such as
 the moment map of the trivial circle action, pushes the area measure of the unit sphere forward to
@@ -490,6 +493,7 @@ the point mass `4π δ_c`. -/
 theorem duistermaatHeckmanMeasure_sphereAreaForm_const {F : Type*} [MeasurableSpace F] (c : F) :
     sphereAreaForm.duistermaatHeckmanMeasure 1 (fun _ : S² ↦ c) =
       ENNReal.ofReal (4 * π) • Measure.dirac c := by
-  rw [SmoothTwoForm.duistermaatHeckmanMeasure_const, liouvilleMeasure_sphereAreaForm_univ]
+  rw [SmoothTwoForm.duistermaatHeckmanMeasure_const, sphereAreaForm_eq_sphereVolumeForm,
+    Orientation.liouvilleMeasure_sphereVolumeForm_univ]
 
 end TauCeti

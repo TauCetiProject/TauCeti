@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Toric.Delzant.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import TauCeti.Analysis.Convex.Polyhedron.TangentCone
 public import TauCeti.Geometry.Convex.Cone.Basis
-import Mathlib.LinearAlgebra.Dual.Basis
+import Mathlib.Algebra.Module.Submodule.Union
 
 /-!
 # Tangent cones at smooth vertices
@@ -20,12 +20,16 @@ is exactly their conic hull, and the polyhedron locally agrees with its translat
 In particular, this cone is simplicial. These are the corner coordinates used in local models of
 symplectic toric manifolds.
 
-The results require the point to lie in the polyhedron: the existing `IsSmoothVertex` predicate
-only tests the active normals. No compactness or Delzant hypothesis on the whole presentation is
-needed. Empty bases in rank zero are included.
+The results at a single vertex require the point to lie in the polyhedron: the existing
+`IsSmoothVertex` predicate only tests the active normals. No compactness or Delzant hypothesis on
+the whole presentation is needed for them. Empty bases in rank zero are included.
 
-The edge basis uses Mathlib's `IsBaseChange.basis` and `Module.Basis.dualBasis`, followed by the
-finite-dimensional identification of the algebraic and continuous duals.
+The edge basis is the dual basis `TauCeti.Toric.IsIntegralLattice.dualBasis` of the lattice basis
+formed by the active normals.
+
+A Delzant polytope has finitely many vertices, all smooth, so some `x ∈ V` lies on no edge
+hyperplane: no edge vector at any vertex vanishes on `x`
+(`TauCeti.Toric.IsDelzant.exists_forall_edgeBasis_apply_ne_zero`).
 
 ## References
 
@@ -50,23 +54,20 @@ namespace IsSmoothVertex
 /-- The inward edge basis at a smooth vertex, dual to the real basis of active inward normals.
 The normalization pairs an edge with its corresponding normal to `1`. -/
 def edgeBasis (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i) :
-    Module.Basis (activeSet (facetPairing i u) c x) ℝ (StrongDual ℝ V) := by
-  classical
-  letI := hi.finiteDimensional
-  exact (hi.isBaseChange.basis (Classical.choose (isSmoothVertex_def.1 hx))).dualBasis.map
-    LinearMap.toContinuousLinearMap
+    Module.Basis (activeSet (facetPairing i u) c x) ℝ (StrongDual ℝ V) :=
+  hi.dualBasis hx.basis
+
+/-- The edge basis is the lattice dual basis of the active normals. -/
+theorem edgeBasis_eq_dualBasis (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i) :
+    hx.edgeBasis hi = hi.dualBasis hx.basis := by
+  rw [edgeBasis]
 
 /-- The edge coordinates of a covector are its values on the active normals. -/
 @[simp]
 theorem edgeBasis_repr (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i)
     (v : StrongDual ℝ V) (j : activeSet (facetPairing i u) c x) :
     (hx.edgeBasis hi).repr v j = v (i (u j)) := by
-  classical
-  let := hi.finiteDimensional
-  simp only [edgeBasis, Module.Basis.map_repr, LinearEquiv.trans_apply,
-    LinearMap.coe_toContinuousLinearMap_symm, Module.Basis.dualBasis_repr,
-    hi.isBaseChange.basis_apply, AddMonoidHom.coe_toIntLinearMap,
-    Classical.choose_spec (isSmoothVertex_def.1 hx) j, ContinuousLinearMap.coe_coe]
+  rw [edgeBasis, IsIntegralLattice.dualBasis_repr, hx.basis_apply j]
 
 /-- The covector with prescribed edge coordinates takes the prescribed values on the active
 normals. -/
@@ -83,6 +84,17 @@ theorem edgeBasis_apply (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i)
     hx.edgeBasis hi j (i (u k)) = (if j = k then 1 else 0 : ℝ) := by
   classical
   rw [← hx.edgeBasis_repr hi, Module.Basis.repr_self_apply]
+
+/-- **Edge vectors are determined by their pairings with the active normals**: a covector is the
+edge vector `ε_j` exactly when it takes the value `1` on the active normal of `j` and `0` on the
+other active normals. -/
+theorem eq_edgeBasis_iff (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i)
+    [DecidableEq (activeSet (facetPairing i u) c x)] (j : activeSet (facetPairing i u) c x)
+    (w : StrongDual ℝ V) :
+    w = hx.edgeBasis hi j ↔
+      ∀ k : activeSet (facetPairing i u) c x, w (i (u k)) = if j = k then 1 else 0 := by
+  refine ⟨fun h k ↦ h ▸ hx.edgeBasis_apply hi j k, fun h ↦ (hx.edgeBasis hi).ext_elem fun k ↦ ?_⟩
+  rw [hx.edgeBasis_repr, hx.edgeBasis_repr, h, edgeBasis_apply]
 
 /-- The conic hull of the edge basis is the set of covectors nonnegative on all active normals.
 Thus its coefficients are read directly from the facet inequalities. -/
@@ -118,5 +130,25 @@ theorem eventually_mem_facetPolyhedron_iff (hx : IsSmoothVertex i u c x)
   exact hy.trans (hx.mem_hull_range_edgeBasis_iff hi (y - x)).symm
 
 end IsSmoothVertex
+
+namespace IsDelzant
+
+/-- **Generic directions exist.** Some `x ∈ V` lies on no edge hyperplane: no edge vector at any
+vertex of a Delzant polytope vanishes on `x`. -/
+theorem exists_forall_edgeBasis_apply_ne_zero (hΔ : IsDelzant i u c) (hi : IsIntegralLattice i) :
+    ∃ x : V, ∀ v (hv : v ∈ (facetPolyhedron i u c).extremePoints ℝ) k,
+      (hΔ.isSmoothVertex v hv).edgeBasis hi k x ≠ 0 := by
+  have := finite_extremePoints_facetPolyhedron (i := i) (u := u) (c := c) |>.to_subtype
+  obtain ⟨x, hx⟩ := Module.Dual.exists_forall_ne_zero_of_forall_exists
+    (fun e : Σ v : (facetPolyhedron i u c).extremePoints ℝ,
+        activeSet (facetPairing i u) c v.val ↦
+      ((hΔ.isSmoothVertex e.1.val e.1.property).edgeBasis hi e.2).toLinearMap)
+    fun e ↦ by
+      by_contra! h
+      exact (hΔ.isSmoothVertex e.1.val e.1.property).edgeBasis hi |>.ne_zero e.2 <|
+        ContinuousLinearMap.ext h
+  exact ⟨x, fun v hv k ↦ hx ⟨⟨v, hv⟩, k⟩⟩
+
+end IsDelzant
 
 end TauCeti.Toric

@@ -178,54 +178,49 @@ theorem IsRationalCompletion.of_algEquiv {B' : Type*} [CommRing B'] [Topological
 
 /-- The structure map `A → B` into a rational completion is continuous. -/
 theorem IsRationalCompletion.continuous_algebraMap (h : IsRationalCompletion P T s hT B) :
-    Continuous (algebraMap A B) := by
-  obtain ⟨e, he, -⟩ := h
-  exact (he.comp (continuous_algebraMap_ratLoc P T s _)).congr e.commutes
+    Continuous (algebraMap A B) :=
+  let ⟨e, he, _⟩ := h; (he.comp (continuous_algebraMap_ratLoc P T s _)).congr e.commutes
 
 /-- The denominator `s` becomes a unit in any model of `A⟨T/s⟩`. -/
 theorem IsRationalCompletion.isUnit_algebraMap (h : IsRationalCompletion P T s hT B) :
-    IsUnit (algebraMap A B s) := by
-  obtain ⟨e, -, -⟩ := h
-  simpa [e.commutes s] using (isUnit_algebraMap_ratLoc P T s _).map e.toRingHom
+    IsUnit (algebraMap A B s) :=
+  let ⟨e, _, _⟩ := h
+  by simpa [e.commutes s] using (isUnit_algebraMap_ratLoc P T s _).map e.toRingHom
 
 /-- Any model of `A⟨T/s⟩` is Hausdorff. -/
-theorem IsRationalCompletion.t2Space (h : IsRationalCompletion P T s hT B) : T2Space B := by
-  obtain ⟨e, -, he'⟩ := h
-  exact .of_injective_continuous e.symm.injective he'
+theorem IsRationalCompletion.t2Space (h : IsRationalCompletion P T s hT B) : T2Space B :=
+  let ⟨e, _, he'⟩ := h; .of_injective_continuous e.symm.injective he'
 
 /-- Any model of `A⟨T/s⟩` is a topological ring. -/
 theorem IsRationalCompletion.isTopologicalRing (h : IsRationalCompletion P T s hT B) :
-    IsTopologicalRing B := by
-  obtain ⟨e, he, he'⟩ := h
-  exact _root_.Topology.IsInducing.isTopologicalRing e.symm.toRingHom
+    IsTopologicalRing B :=
+  let ⟨e, he, he'⟩ := h
+  _root_.Topology.IsInducing.isTopologicalRing e.symm.toRingHom
     (Homeomorph.mk e.toEquiv he he').symm.isInducing
 
 /-- Any model of `A⟨T/s⟩` is a Huber ring. -/
 theorem IsRationalCompletion.isHuberRing (h : IsRationalCompletion P T s hT B) :
-    @IsHuberRing B _ _ h.isTopologicalRing := by
-  have := h.isTopologicalRing
-  obtain ⟨e, he, he'⟩ := h
-  exact IsHuberRing.of_isOpenQuotientMap (f := e.toRingHom)
+    @IsHuberRing B _ _ h.isTopologicalRing :=
+  have := h.isTopologicalRing; let ⟨e, he, he'⟩ := h
+  IsHuberRing.of_isOpenQuotientMap (f := e.toRingHom)
     (Homeomorph.mk e.toEquiv he he').isOpenQuotientMap
 
 /-- Over a Tate ring `A`, any model of `A⟨T/s⟩` is a Tate ring. -/
 theorem IsRationalCompletion.isTateRing [IsTateRing A] (h : IsRationalCompletion P T s hT B) :
-    @IsTateRing B _ _ h.isTopologicalRing := by
-  have := h.isTopologicalRing
-  have := h.isHuberRing
-  exact IsTateRing.of_continuous h.continuous_algebraMap
+    @IsTateRing B _ _ h.isTopologicalRing :=
+  have := h.isTopologicalRing; have := h.isHuberRing
+  IsTateRing.of_continuous h.continuous_algebraMap
 
 /-- Any model of `A⟨T/s⟩` equipped with a compatible `IsUniformAddGroup` uniform structure is
 complete. -/
 theorem IsRationalCompletion.completeSpace {B : Type*} [CommRing B] [UniformSpace B]
     [IsUniformAddGroup B] [Algebra A B] (h : IsRationalCompletion P T s hT B) :
-    CompleteSpace B := by
-  have := h.isTopologicalRing
-  obtain ⟨e, he, he'⟩ := h
+    CompleteSpace B :=
+  have := h.isTopologicalRing; let ⟨e, he, he'⟩ := h
   let ue : ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT) ≃ᵤ B :=
     ⟨e.toEquiv, uniformContinuous_of_continuousAt_zero e.toAddMonoidHom he.continuousAt,
       uniformContinuous_of_continuousAt_zero e.symm.toAddMonoidHom he'.continuousAt⟩
-  exact ue.completeSpace_iff.mp inferInstance
+  ue.completeSpace_iff.mp inferInstance
 
 /-- Two continuous ring homomorphisms out of a model of `A⟨T/s⟩` into a Hausdorff semiring that
 agree after `algebraMap A B` are equal. -/
@@ -345,9 +340,9 @@ private theorem IsRationalCompletion.localizationAlgHom_eq_comp_coe
     letI := P.locUniformSpace T s (Localization.Away s) hden
     (h.localizationAlgHom : Localization.Away s → B) = e ∘ Completion.coe' := by
   let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
-  let _ := P.locUniformSpace T s (Localization.Away s) hden
-  have _ := P.isUniformAddGroup_locUniformSpace T s (Localization.Away s) hden
-  have _ := P.isTopologicalRing_locUniformSpace T s (Localization.Away s) hden
+  let _ := P.locUniformSpace _ s _ hden
+  have _ := P.isUniformAddGroup_locUniformSpace _ s _ hden
+  have _ := P.isTopologicalRing_locUniformSpace _ s _ hden
   have heq : h.localizationAlgHom.toRingHom = e.toRingHom.comp Completion.coeRingHom :=
     IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ by
       simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
@@ -365,8 +360,7 @@ theorem IsRationalCompletion.continuous_localizationAlgHom
       (P.hasDenominatorPower_of_isOpen_span T s _ hT)
     Continuous h.localizationAlgHom := by
   let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
-  let _ := P.locUniformSpace T s (Localization.Away s) hden
-  obtain ⟨e, he, -⟩ := id h
+  let _ := P.locUniformSpace _ s _ hden; obtain ⟨e, he, -⟩ := id h
   rw [← P.locUniformSpace_toTopologicalSpace T s (Localization.Away s) hden,
     h.localizationAlgHom_eq_comp_coe e]
   exact he.comp (Completion.continuous_coe (Localization.Away s))
@@ -377,8 +371,7 @@ theorem IsRationalCompletion.denseRange_localizationAlgHom
     (h : IsRationalCompletion P T s hT B) :
     DenseRange h.localizationAlgHom := by
   let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
-  let _ := P.locUniformSpace T s (Localization.Away s) hden
-  obtain ⟨e, he, -⟩ := id h
+  let _ := P.locUniformSpace _ s _ hden; obtain ⟨e, he, -⟩ := id h
   rw [h.localizationAlgHom_eq_comp_coe e]
   exact e.surjective.denseRange.comp Completion.denseRange_coe he
 
@@ -391,11 +384,11 @@ theorem IsRationalCompletion.comp_localizationAlgHom
     {C : Type*} [CommRing C] [TopologicalSpace C] [Algebra A C]
     (hC : IsRationalCompletion P' T' s hT' C)
     {φ : B →+* C} (hφ : φ.comp (algebraMap A B) = algebraMap A C) :
-    φ.comp hB.localizationAlgHom.toRingHom = hC.localizationAlgHom.toRingHom := by
-  refine IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ ?_)
-  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-    localizationAlgHom_algebraMap]
-  exact RingHom.congr_fun hφ a
+    φ.comp hB.localizationAlgHom.toRingHom = hC.localizationAlgHom.toRingHom :=
+  IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ by
+    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      localizationAlgHom_algebraMap]
+    exact RingHom.congr_fun hφ a)
 
 /-- Pointwise form of `IsRationalCompletion.comp_localizationAlgHom`: any ring homomorphism
 compatible with the `A`-algebra maps between two rational completions at the *same* denominator `s`
@@ -422,15 +415,14 @@ theorem IsRationalCompletion.denseRange_of_comp_algebraMap_eq
     {φ : B →+* C} (hφ : φ.comp (algebraMap A B) = algebraMap A C) :
     DenseRange φ :=
   hC.denseRange_localizationAlgHom.mono fun _ hy ↦ by
-    rcases hy with ⟨x, rfl⟩
-    exact ⟨hB.localizationAlgHom x, hB.map_localizationAlgHom hC hφ x⟩
+    rcases hy with ⟨x, rfl⟩; exact ⟨hB.localizationAlgHom x, hB.map_localizationAlgHom hC hφ x⟩
 
 /-- At denominator `0`, any model of `A⟨T/0⟩` is a subsingleton, since `Localization.Away (0 : A)`
 is already trivial. -/
 theorem IsRationalCompletion.subsingleton_of_denom_zero
-    (h : IsRationalCompletion P T 0 hT B) : Subsingleton B := by
-  obtain ⟨u, hu⟩ : IsUnit (0 : B) := by simpa using h.isUnit_algebraMap
-  exact subsingleton_of_zero_eq_one (by rw [← u.mul_inv, hu, zero_mul])
+    (h : IsRationalCompletion P T 0 hT B) : Subsingleton B :=
+  have ⟨u, hu⟩ : IsUnit (0 : B) := by simpa using h.isUnit_algebraMap
+  subsingleton_of_zero_eq_one (by rw [← u.mul_inv, hu, zero_mul])
 
 end ModelProperties
 
@@ -459,17 +451,14 @@ theorem isRationalCompletion_self_denom_one [CompleteSpace A] [T0Space A]
   rw [isRationalCompletion_def]
   let S := Localization.Away (1 : A)
   let hden := P.hasDenominatorPower_of_isOpen_span T 1 S hT
-  let _ := P.locUniformSpace T 1 S hden
-  have _ := P.isUniformAddGroup_locUniformSpace T 1 S hden
-  have _ := P.isTopologicalRing_locUniformSpace T 1 S hden
+  let _ := P.locUniformSpace _ 1 _ hden
+  have _ := P.isUniformAddGroup_locUniformSpace _ 1 _ hden
+  have _ := P.isTopologicalRing_locUniformSpace _ 1 _ hden
   let e := P.toCompletionLocEquivDenomOne T hTpb S
   have he : Continuous e := (P.continuous_toCompletionLoc T 1 S hden).congr fun a ↦
     (P.toCompletionLocEquivDenomOne_apply T hTpb S a).symm
-  refine ⟨e.symm, P.continuous_toCompletionLocEquivDenomOne_symm T hTpb S, he,
-    RingHom.ext fun a ↦ ?_⟩
-  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-    Algebra.algebraMap_self, RingHom.id_apply]
-  rw [← P.toCompletionLocEquivDenomOne_apply T hTpb S a, e.symm_apply_apply]
+  refine ⟨e.symm, P.continuous_toCompletionLocEquivDenomOne_symm T hTpb S, he, RingHom.ext fun a ↦
+    by dsimp; rw [← P.toCompletionLocEquivDenomOne_apply T hTpb S a, e.symm_apply_apply]⟩
 
 end Uniform
 

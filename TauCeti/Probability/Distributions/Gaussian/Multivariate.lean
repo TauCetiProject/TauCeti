@@ -28,6 +28,10 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.covMatrix_multivariateGaussian` recovers the covariance parameter of a
   multivariate
   Gaussian law.
+* `TauCeti.Probability.integral_norm_sub_sq_multivariateGaussian`: `E‖X - m‖² = tr S` for a
+  positive-semidefinite covariance parameter `S`.
+* `TauCeti.Probability.integrable_sub_mul_apply_of_memLp`: under a Gaussian law, a shifted
+  coordinate `x i - θ i`, for any `θ`, times a coordinate of an `L²` vector field is integrable.
 * `TauCeti.Probability.eq_multivariateGaussian_covMatrix` writes every Gaussian measure on a
   Euclidean space as the multivariate Gaussian with its mean and covariance matrix.
 * `TauCeti.Probability.integral_of_hasLaw_multivariateGaussian` gives the Bochner mean of a
@@ -38,7 +42,11 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.multivariateGaussian_zero_right` identifies the zero-covariance law with
   the point mass at its mean.
 * `TauCeti.Probability.multivariateGaussian_eq_dirac_iff` shows that this is the only
-  positive-semidefinite Gaussian law equal to that point mass.
+  positive-semidefinite Gaussian law equal to that point mass, and
+  `TauCeti.Probability.multivariateGaussian_neg_right` that negated positive-semidefinite
+  parameters give it too.
+* `TauCeti.Probability.charFun_multivariateGaussian_smul_one` gives the characteristic function
+  of the isotropic law `multivariateGaussian a (u • 1)`.
 * `TauCeti.Probability.measurable_multivariateGaussian_inv_smul` shows that the family
   `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`.
 * `TauCeti.Probability.measurable_multivariateGaussian_prodMk_left_apply` shows that the Gaussian
@@ -75,6 +83,26 @@ theorem covMatrix_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : Euclid
   classical
   ext i j
   simpa only [covMatrix_apply] using covariance_eval_multivariateGaussian hS i j
+
+/-- The mean squared distance of a multivariate Gaussian law from its mean is the trace of its
+positive-semidefinite covariance parameter: `E‖X - m‖² = tr S`. -/
+@[simp]
+theorem integral_norm_sub_sq_multivariateGaussian [Fintype ι] [DecidableEq ι] {S : Matrix ι ι ℝ}
+    (hS : S.PosSemidef) (m : EuclideanSpace ℝ ι) :
+    ∫ x, ‖x - m‖ ^ 2 ∂multivariateGaussian m S = S.trace := by
+  rw [TauCeti.integral_norm_sub_sq_eq_norm_integral_sub_sq_add_trace_covMatrix _
+    IsGaussian.memLp_two_id m, integral_id_multivariateGaussian,
+    covMatrix_multivariateGaussian m hS, sub_self, norm_zero, zero_pow two_ne_zero, zero_add]
+
+/-- Under a Gaussian law on `EuclideanSpace ℝ ι`, the product of a shifted coordinate
+`x i - θ i`, for any `θ`, with the coordinate `g x i` of an `L²` vector field `g` is
+integrable. -/
+theorem integrable_sub_mul_apply_of_memLp [Fintype ι]
+    {μ : Measure (EuclideanSpace ℝ ι)} [IsGaussian μ]
+    {g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hg : MemLp g 2 μ) (θ : EuclideanSpace ℝ ι)
+    (i : ι) : Integrable (fun x ↦ (x i - θ i) * g x i) μ :=
+  ((IsGaussian.memLp_dual μ (EuclideanSpace.proj i) 2 (by simp)).sub (memLp_const _)).integrable_mul
+    ((EuclideanSpace.proj (𝕜 := ℝ) i).comp_memLp' hg)
 
 /-- A Gaussian measure on a finite-dimensional Euclidean space is the multivariate Gaussian with
 its own mean and covariance matrix. No nondegeneracy is required. -/
@@ -139,6 +167,28 @@ theorem multivariateGaussian_eq_dirac_iff [Fintype ι] [DecidableEq ι] (m : Euc
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ multivariateGaussian_zero_right m⟩
   rw [← covMatrix_multivariateGaussian m hS, h, ← multivariateGaussian_zero_right m,
     covMatrix_multivariateGaussian m Matrix.PosSemidef.zero]
+
+/-- A multivariate Gaussian whose covariance parameter is the negative of a positive-semidefinite
+matrix is the point mass at its mean: either the parameter is not positive semidefinite, or both
+it and its negative are, and then it vanishes. -/
+theorem multivariateGaussian_neg_right [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι)
+    {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
+    multivariateGaussian m (-S) = Measure.dirac m := by
+  by_cases hS' : (-S).PosSemidef
+  · rw [le_antisymm (neg_nonneg.1 hS'.nonneg) hS.nonneg, neg_zero,
+      multivariateGaussian_zero_right]
+  · exact multivariateGaussian_of_not_posSemidef m hS'
+
+/-- The characteristic function of the isotropic Gaussian law `multivariateGaussian a (u • 1)`. -/
+theorem charFun_multivariateGaussian_smul_one [Fintype ι] [DecidableEq ι]
+    (a : EuclideanSpace ℝ ι) {u : ℝ} (hu : 0 ≤ u) (x : EuclideanSpace ℝ ι) :
+    charFun (multivariateGaussian a (u • 1)) x =
+      Complex.exp (⟪x, a⟫ * Complex.I - u * ‖x‖ ^ 2 / 2) := by
+  rw [charFun_multivariateGaussian (Matrix.PosSemidef.one.smul hu)]
+  have hx : x.ofLp ⬝ᵥ x.ofLp = ‖x‖ ^ 2 := by
+    rw [← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct]
+    simp
+  simp [Matrix.smul_mulVec, hx]
 
 /-- The Gaussian family `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`. -/
 theorem measurable_multivariateGaussian_inv_smul [Fintype ι] [DecidableEq ι]

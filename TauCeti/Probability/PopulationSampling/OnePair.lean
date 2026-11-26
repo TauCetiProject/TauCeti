@@ -41,6 +41,10 @@ variation distance.
   `2 ^ r`;
 * `natCard_embedding_update_id_comp_eq_update_id_comp`: the number of embeddings with the same
   word is `1` if `r = 0` and `2` otherwise;
+* `one_sub_descFactorial_div_pow_sub_mul_min_nonneg`: the error `1 - p - t * min p (1 - p)` is
+  nonnegative for every sample and population size;
+* `descFactorial_div_mul_min_pos`: for `2 ≤ m ≤ n` the correction `t * min p (1 - p)` is
+  positive;
 * `sampleWithoutReplacement_dirac_update_id_apply_setOf_card_filter_eq_two`: under
   without-replacement sampling of the one-pair population, the probability of seeing `a` twice
   is `t`;
@@ -168,12 +172,13 @@ private theorem onePairP_nonneg (m n : ℕ) : 0 ≤ onePairP m n := by
   unfold onePairP
   positivity
 
-private theorem onePairP_le_one (m n : ℕ) : onePairP m n ≤ 1 :=
-  div_le_one_of_le₀ (by exact_mod_cast Nat.descFactorial_le_pow n m) (by positivity)
-
 private theorem onePairT_nonneg (m n : ℕ) : 0 ≤ onePairT m n := by
   unfold onePairT
   positivity
+
+private theorem onePairP_le_one (m n : ℕ) : onePairP m n ≤ 1 := by
+  unfold onePairP
+  exact descFactorial_div_pow_le_one m n
 
 private theorem onePairT_le_one {m n : ℕ} (hmn : m ≤ n) : onePairT m n ≤ 1 :=
   div_le_one_of_le₀ (by exact_mod_cast Nat.descFactorial_le 2 hmn) (by positivity)
@@ -201,12 +206,36 @@ private theorem ofReal_one_sub_two_mul_mul_add_eq {p t : ℝ} (hp1 : p ≤ 1) (h
       (mul_nonneg (sub_nonneg.2 hp1) (sub_nonneg.2 ht1)),
     max_one_sub_two_mul_mul_add_eq]
 
-/-- The one-pair error expression `1 - p - t * min p (1 - p)` is nonnegative whenever `m ≤ n`. -/
-private theorem onePair_error_nonneg {m n : ℕ} (hmn : m ≤ n) :
-    0 ≤ 1 - onePairP m n - onePairT m n * min (onePairP m n) (1 - onePairP m n) := by
-  rw [← max_one_sub_two_mul_mul_add_eq]
-  exact add_nonneg (mul_nonneg (le_max_right _ _) (onePairT_nonneg m n))
-    (mul_nonneg (sub_nonneg.2 (onePairP_le_one m n)) (sub_nonneg.2 (onePairT_le_one hmn)))
+/-- The sampling-discrepancy error `1 - p - t * min p (1 - p)`, where
+`p = n.descFactorial m / n ^ m` and `t = m.descFactorial 2 / n.descFactorial 2`, is nonnegative
+for every sample size `m` and population size `n`: for `m ≤ n` both `p` and `t` lie in `[0, 1]`,
+and for `n < m` it equals `1`. -/
+theorem one_sub_descFactorial_div_pow_sub_mul_min_nonneg (m n : ℕ) :
+    0 ≤ 1 - (n.descFactorial m / (n : ℝ) ^ m) -
+      (m.descFactorial 2 / n.descFactorial 2 : ℝ) *
+        min (n.descFactorial m / (n : ℝ) ^ m) (1 - n.descFactorial m / (n : ℝ) ^ m) := by
+  rcases le_or_gt m n with hmn | hnm
+  · rw [← onePairP, ← onePairT, ← max_one_sub_two_mul_mul_add_eq]
+    exact add_nonneg (mul_nonneg (le_max_right _ _) (onePairT_nonneg m n))
+      (mul_nonneg (sub_nonneg.2 (onePairP_le_one m n))
+        (sub_nonneg.2 (onePairT_le_one hmn)))
+  · simp [Nat.descFactorial_eq_zero_iff_lt.2 hnm]
+
+/-- For `2 ≤ m ≤ n`, the correction `t * min p (1 - p)`, where
+`p = n.descFactorial m / n ^ m` and `t = m.descFactorial 2 / n.descFactorial 2`, is positive, so
+the sampling-discrepancy error `1 - p - t * min p (1 - p)` is strictly below `1 - p`. -/
+theorem descFactorial_div_mul_min_pos {m n : ℕ} (hm : 2 ≤ m) (hmn : m ≤ n) :
+    0 < (m.descFactorial 2 / n.descFactorial 2 : ℝ) *
+      min (n.descFactorial m / (n : ℝ) ^ m) (1 - n.descFactorial m / (n : ℝ) ^ m) := by
+  have hn : 0 < n := by omega
+  have hpow : (0 : ℝ) < (n : ℝ) ^ m := by positivity
+  have hd : (0 : ℝ) < n.descFactorial m := by exact_mod_cast Nat.descFactorial_pos.2 hmn
+  have hp1 : (n.descFactorial m / (n : ℝ) ^ m) < 1 :=
+    (div_lt_one hpow).2 (by exact_mod_cast Nat.descFactorial_lt_pow hn.ne' hm)
+  have ht : (0 : ℝ) < m.descFactorial 2 / n.descFactorial 2 :=
+    div_pos (by exact_mod_cast Nat.descFactorial_pos.2 hm)
+      (by exact_mod_cast Nat.descFactorial_pos.2 (hm.trans hmn))
+  exact mul_pos ht (lt_min (div_pos hd hpow) (sub_pos.2 hp1))
 
 variable [Fintype ι] [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ] [DecidableEq κ]
 
@@ -343,8 +372,9 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_
     ite_mul]
   rw [sum_ite, ← mul_sum, ← mul_sum]
   simp only [sum_measure_singleton, coe_filter_univ, ← Set.compl_ofPred]
-  rw [hPE₂, hPE₂c, ofReal_one_sub_two_mul_mul_add_eq (onePairP_le_one _ _) ht0
-    (onePairT_le_one hmn)]
+  rw [hPE₂, hPE₂c,
+    ofReal_one_sub_two_mul_mul_add_eq (onePairP_le_one _ _) ht0
+      (onePairT_le_one hmn)]
 
 /-- **The one-pair formula, total-variation form.** For distinct indices `a b : κ` and
 `|ι| ≤ |κ|`, Mathlib's extended total variation distance between sampling the one-pair population
@@ -380,7 +410,7 @@ theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_update_id_eq
   rw [tvDist, etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_update_id_eq hab hmn,
     ENNReal.toReal_mul, ENNReal.toReal_ofNat]
   dsimp only
-  rw [← onePairP, ← onePairT, ENNReal.toReal_ofReal (onePair_error_nonneg hmn)]
+  rw [ENNReal.toReal_ofReal (one_sub_descFactorial_div_pow_sub_mul_min_nonneg _ _)]
 
 end Discrepancy
 

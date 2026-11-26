@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.RepresentationTheory.Irreducible
 public import TauCeti.RepresentationTheory.Simple.Basic
+public import TauCeti.RepresentationTheory.Subrepresentation.Eigenvector
 
 /-!
 # One-dimensional representations from linear characters
@@ -17,8 +18,9 @@ character `χ : G →* kˣ`. It acts on the one-dimensional `k`-module `k` by sc
 This file packages that action as `Representation.ofLinearCharacter χ`, bundles it as an object
 `FDRep.ofLinearCharacter χ` of `FDRep k G`, and records the facts every consumer of a linear
 character needs: over a field its character is `χ` and it is simple; over a commutative ring it
-has rank one. Restriction along a homomorphism pulls `χ` back, and two of these representations
-are isomorphic exactly when the two characters are equal.
+has rank one and `g` acts with characteristic polynomial `X - χ g`. Restriction along a
+homomorphism pulls `χ` back, and two of these representations are isomorphic exactly when the two
+characters are equal.
 
 The construction is the common core of the linear characters of the Borel subgroup and of
 `GL₂`; keeping it here avoids separate scalar-action implementations for each group. It is also
@@ -31,21 +33,32 @@ representation, and its irreducibility is what the Mackey criterion decides.
 * `Representation.ofLinearCharacter`: the one-dimensional representation associated to a
   unit-valued multiplicative character.
 * `FDRep.ofLinearCharacter`: the same representation as an object of `FDRep k G`.
+* `Representation.ofLinearCharacterEquivOfDistribMulAction`: the line of a character by which `G`
+  acts on `k`, such as the sign character `ℤˣ →* kˣ`, is that action.
 
 ## Main results
 
 * `Representation.ofLinearCharacter_apply`: the action is multiplication by the character value.
 * `Representation.ofLinearCharacter_comp`: restriction of the representation is precomposition of
   the character.
+* `Representation.ofLinearCharacter_unitsMap_intCastRingHom`: the sign character of `ℤˣ` gives
+  the multiplication action of `ℤˣ` on `k`.
 * `Representation.ofLinearCharacter_injective`: the representation remembers its character.
+* `Representation.ofLinearCharacter_apply_eq_one_iff`: `g` acts trivially exactly when
+  `χ g = 1`.
 * `Representation.ofLinearCharacter_one`: the trivial character carries the trivial
   representation.
 * `Representation.char_ofLinearCharacter` and `FDRep.char_ofLinearCharacter`: the trace character
   is the original character, coerced into the coefficient field.
+* `Representation.charpoly_ofLinearCharacter_apply`: over a commutative ring, `g` acts with
+  characteristic polynomial `X - χ g`.
 * `Representation.isIrreducible_ofLinearCharacter`: a line has no room for a proper nonzero
   subrepresentation.
 * `Representation.IsIrreducible.nonempty_equiv_ofLinearCharacter_iff`: an irreducible
   representation is the line of `χ` exactly when each `g` acts by the scalar `χ g`.
+* `Representation.stabilizer_ofLinearCharacter_one` and
+  `Representation.ker_le_stabilizer_ofLinearCharacter`: the stabilizer of `1` is the kernel of
+  `χ`, which fixes every vector.
 * `FDRep.ofLinearCharacter_def`: the bundled representation is the unbundled one, bundled.
 * `FDRep.finrank_ofLinearCharacter`: it is a line.
 * `FDRep.simple_ofLinearCharacter`: it is a simple object of `FDRep k G`, being a line.
@@ -108,12 +121,55 @@ theorem ofLinearCharacter_injective [CommSemiring k] [Monoid G] :
   have := congrArg (fun ρ : Representation k G k => ρ g 1) h
   simpa using this
 
+/-- The one-dimensional representation associated to `χ` is trivial exactly on the kernel
+of `χ`. -/
+@[simp]
+theorem ofLinearCharacter_apply_eq_one_iff [CommSemiring k] [Monoid G] (χ : G →* kˣ) {g : G} :
+    ofLinearCharacter χ g = 1 ↔ χ g = 1 := by
+  refine ⟨fun h ↦ Units.ext ?_, fun h ↦ LinearMap.ext fun x ↦ by simp [h]⟩
+  simpa using LinearMap.congr_fun h 1
+
 /-- **The trivial linear character carries the trivial representation.** This is the sanity check
 that fixes the convention: `χ = 1` acts by the scalar `1`. -/
 @[simp]
 theorem ofLinearCharacter_one [CommSemiring k] [Monoid G] :
     ofLinearCharacter (1 : G →* kˣ) = Representation.trivial k G k :=
   MonoidHom.ext fun _ => LinearMap.ext fun x => by simp
+
+/-- **A linear character by which `G` acts on `k` is that action.** If every `g : G` acts on `k` by
+multiplication by `χ g`, the line of `χ` is the action `g • x` of `G` on `k`
+(`Representation.ofDistribMulAction`), through the identity of `k`. For instance the sign character
+`ℤˣ →* kˣ` induced by `ℤ → k` is the action of `ℤˣ` on `k` by signs, and so is its composite
+`TauCeti.uliftIntUnitsSign` with `MulEquiv.ulift`, for the copy `ULift ℤˣ` of `ℤˣ` acting through
+`ULift.down`. -/
+def ofLinearCharacterEquivOfDistribMulAction [CommSemiring k] [Monoid G] [DistribMulAction G k]
+    [SMulCommClass G k k] (χ : G →* kˣ) (hχ : ∀ g x, (χ g : k) * x = g • x) :
+    (ofLinearCharacter χ).Equiv (ofDistribMulAction k G k) :=
+  .mk (LinearEquiv.refl k k) fun g ↦ LinearMap.ext fun x ↦ hχ g x
+
+/-- The identification `ofLinearCharacterEquivOfDistribMulAction` is the identity of `k`. -/
+@[simp]
+theorem ofLinearCharacterEquivOfDistribMulAction_apply [CommSemiring k] [Monoid G]
+    [DistribMulAction G k] [SMulCommClass G k k] (χ : G →* kˣ)
+    (hχ : ∀ g x, (χ g : k) * x = g • x) (x : k) :
+    ofLinearCharacterEquivOfDistribMulAction χ hχ x = x :=
+  (rfl)
+
+/-- The kernel of the line of a linear character is the kernel of the character. -/
+@[simp]
+theorem ker_ofLinearCharacter [CommSemiring k] [Group G] (χ : G →* kˣ) :
+    (ofLinearCharacter χ).ker = χ.ker := by
+  ext g
+  simpa only [MonoidHom.mem_ker] using ofLinearCharacter_apply_eq_one_iff χ
+
+/-- **The sign character of `ℤˣ` carries the multiplication action of `ℤˣ`.** Over a commutative
+ring `k`, the character `ℤˣ →* kˣ` induced by `ℤ → k` acts on `k` by `u • a`, so its
+one-dimensional representation is the action of `ℤˣ` on `k`. -/
+@[simp]
+theorem ofLinearCharacter_unitsMap_intCastRingHom [CommRing k] :
+    ofLinearCharacter (Units.map (Int.castRingHom k : ℤ →* k)) = ofDistribMulAction k ℤˣ k := by
+  ext u
+  simp [ofLinearCharacter_apply, Units.smul_def]
 
 /-- **The trace character of a one-dimensional representation is its multiplicative character.** -/
 @[simp]
@@ -125,6 +181,14 @@ theorem char_ofLinearCharacter [Field k] [Monoid G] (χ : G →* kˣ) (g : G) :
     intro x
     simp [mul_comm]
   rw [h, LinearMap.trace_smulRight, LinearMap.id_apply]
+
+/-- **The characteristic polynomial of a one-dimensional representation.** The element `g` acts
+on the line `k` with characteristic polynomial `X - χ g`. -/
+@[simp]
+theorem charpoly_ofLinearCharacter_apply [CommRing k] [Monoid G] (χ : G →* kˣ) (g : G) :
+    (ofLinearCharacter χ g).charpoly = Polynomial.X - Polynomial.C (χ g : k) := by
+  rw [← LinearMap.charpoly_toMatrix _ (Module.Basis.singleton Unit k)]
+  simp [Matrix.charpoly, Matrix.det_unique, LinearMap.toMatrix_apply]
 
 /-- A one-dimensional representation is irreducible, having no room for a proper nonzero
 subrepresentation. -/
@@ -150,6 +214,24 @@ theorem IsIrreducible.nonempty_equiv_ofLinearCharacter_iff [Field k] [Monoid G] 
       simpa [h, mul_smul] using smul_comm (χ g : k) c v
   have hf : f ≠ 0 := fun h0 ↦ hv (by simpa [f] using DFunLike.congr_fun h0 1)
   exact ⟨(f.ofBijective ((IsIrreducible.bijective_or_eq_zero f).resolve_right hf)).symm⟩
+
+section Stabilizer
+
+variable [CommSemiring k] [Group G]
+
+/-- The stabilizer of `1` in the representation of a linear character `χ` is the kernel of `χ`. -/
+@[simp]
+theorem stabilizer_ofLinearCharacter_one (χ : G →* kˣ) :
+    (ofLinearCharacter χ).stabilizer 1 = χ.ker := by
+  ext g
+  simp [mem_stabilizer, Units.val_eq_one]
+
+/-- The kernel of a linear character `χ` fixes every vector of its representation. -/
+theorem ker_le_stabilizer_ofLinearCharacter (χ : G →* kˣ) (x : k) :
+    χ.ker ≤ (ofLinearCharacter χ).stabilizer x := by
+  simpa using (ofLinearCharacter χ).le_stabilizer_smul x 1
+
+end Stabilizer
 
 end Representation
 
@@ -228,24 +310,19 @@ theorem exists_character_eq_of_commute [Field k] [IsAlgClosed k] [Group G] (W : 
   choose c hc using fun g => hW.exists_forall_apply_eq_smul (W.ρ g) fun h v => by
     rw [← mul_apply_eq_comp, (hcomm g h).eq, mul_apply_eq_comp]
   obtain ⟨v, hv⟩ := exists_ne (0 : W)
-  have hmul (g h : G) : c (g * h) = c g * c h := by
-    refine smul_left_injective k hv ?_
-    dsimp only
-    rw [← hc, map_mul, mul_apply_eq_comp, hc h, map_smul, hc g, smul_smul, mul_comm]
-  have hone : c 1 = 1 := smul_left_injective k hv (by simp [← hc])
   -- The line through `v` is stable, hence everything: `W` is one-dimensional.
-  let line : Subrepresentation W.ρ :=
-    ⟨k ∙ v, fun g w hw => by
-      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hw
-      rw [map_smul, hc, smul_smul]
-      exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v)⟩
-  have hline : line = ⊤ := (IsSimpleOrder.eq_bot_or_eq_top line).resolve_left fun h => hv <| by
-    have hmem : v ∈ line.toSubmodule := Submodule.mem_span_singleton_self v
-    rw [h] at hmem
-    exact hmem
-  have hfin : Module.finrank k W = 1 :=
-    (finrank_eq_one_iff_of_ne_zero v hv).mpr (congrArg Subrepresentation.toSubmodule hline)
-  let χ : G →* k := { toFun := c, map_one' := hone, map_mul' := hmul }
+  have hev : ∀ g, ∃ a : k, W.ρ g v = a • v := fun g => ⟨c g, hc g v⟩
+  have hline : Representation.lineSubrepresentation W.ρ v hev = ⊤ :=
+    (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left
+      (Representation.isAtom_lineSubrepresentation W.ρ hev hv).1
+  have hfin : Module.finrank k W = 1 := by
+    refine (finrank_eq_one_iff_of_ne_zero v hv).mpr ?_
+    rw [← Representation.toSubmodule_lineSubrepresentation W.ρ v hev, hline,
+      Subrepresentation.toSubmodule_top]
+  let χ : G →* k :=
+    { toFun := c
+      map_one' := Representation.map_one_of_forall_apply_eq_smul W.ρ hc
+      map_mul' := Representation.map_mul_of_forall_apply_eq_smul W.ρ hc }
   refine ⟨χ.toHomUnits, funext fun g => ?_⟩
   have hρ : W.ρ g = c g • LinearMap.id := LinearMap.ext (hc g)
   simp [χ, character, hρ, hfin]

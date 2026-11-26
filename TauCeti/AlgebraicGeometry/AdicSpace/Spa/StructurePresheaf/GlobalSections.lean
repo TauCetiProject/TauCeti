@@ -49,6 +49,8 @@ itself an isomorphism.
 * `TauCeti.ValuationSpectrum.toPresentationLimit_comp_πToPresentation` and
   `TauCeti.ValuationSpectrum.toPresentationLimit_comp_presentationLimitMap` : the canonical map
   projects to the structure maps and commutes with restriction.
+* `TauCeti.ValuationSpectrum.toCompletionLocObjHom_comp_presentationLimitRationalIso_inv` : over a
+  rational open `R(p)`, the canonical map is the structure map `A → A⟨p⟩`.
 * `TauCeti.ValuationSpectrum.presentationLimit_spaBasicOpen_hom_ext` : morphisms out of the
   sections over a rational open are determined by their composites with the canonical map.
 * `TauCeti.ValuationSpectrum.isIso_toPresentationLimit_top` : on the whole spectrum the canonical
@@ -123,10 +125,24 @@ theorem toPresentationLimit_comp_presentationLimitMap {V W : Opens ↥(spa Aplus
   -- the index of `V` obtained by restricting `i` has the same presentation as `i`
   have key {p q : Presentation P} (e : p = q) :
       p.toCompletionLocObjHom ≫ eqToHom (congrArg Presentation.completionLocObj e) =
-        q.toCompletionLocObjHom := by
-    subst e
-    simp
+        q.toCompletionLocObjHom := by subst e; simp
   exact key (presentationIndexRestrict_obj_pres h i)
+
+/-- **The canonical map commutes with transport along an equality of opens.** -/
+theorem toPresentationLimit_comp_eqToHom {V W : Opens ↥(spa Aplus)} (e : V = W) :
+    toPresentationLimit Aplus V ≫
+        eqToHom (congrArg (presentationLimit (P := P) Aplus) e) =
+      toPresentationLimit Aplus W := by subst e; simp
+
+/-- **The canonical map over a rational open is the structure map**: read through
+`presentationLimitRationalIso`, the canonical map from `A` to the sections over `R(p)` is the
+structure map `A → A⟨p⟩`. -/
+@[reassoc]
+theorem toCompletionLocObjHom_comp_presentationLimitRationalIso_inv
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
+    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
+    p.toCompletionLocObjHom ≫ (presentationLimitRationalIso Aplus hAplus p hp).inv =
+      toPresentationLimit Aplus (spaBasicOpen Aplus p.num p.den) := by rw [Iso.comp_inv_eq]; simp
 
 /-- **Morphisms out of the sections over a rational open are determined on `A`**: two morphisms
 out of `presentationLimit (R(p))` into a complete separated topological ring agree once they agree
@@ -141,10 +157,8 @@ theorem presentationLimit_spaBasicOpen_hom_ext (hAplus : ∀ ⦃a⦄, a ∈ Aplu
     ← (presentationLimitRationalIso Aplus hAplus p hp).hom_inv_id_assoc g]
   refine congrArg _ (p.hom_ext ?_)
   -- through `presentationLimitRationalIso`, the canonical map is the structure map `A → A⟨p⟩`
-  have key : toPresentationLimit Aplus _ ≫ (presentationLimitRationalIso Aplus hAplus p hp).hom =
-      p.toCompletionLocObjHom := by simp
-  rw [← Iso.eq_comp_inv] at key
-  rw [key, Category.assoc, Category.assoc] at h
+  rw [← toCompletionLocObjHom_comp_presentationLimitRationalIso_inv Aplus hAplus p hp,
+    Category.assoc, Category.assoc] at h
   have h' := congrArg (·.hom) h
   simp only [ObjectProperty.FullSubcategory.comp_hom, Presentation.toCompletionLocObjHom_hom,
     Category.assoc] at h'
@@ -161,9 +175,8 @@ private theorem isIso_toCompletionLocObjHom_one :
   -- The projection equations identify the presentation for the denominator-one API.
   rw [show Presentation.trivial P =
     ⟨{1}, 1, hasDenominatorPower_denom_one P ({1} : Finset A) _⟩ from by ext <;> simp]
-  have hpb : ∀ t ∈ ({1} : Finset A), IsPowerBounded t := fun t ht ↦ by
-    rw [Finset.mem_singleton.mp ht]
-    exact isPowerBounded_one
+  have hpb : ∀ t ∈ ({1} : Finset A), IsPowerBounded t :=
+    fun _ ht ↦ Finset.mem_singleton.mp ht ▸ isPowerBounded_one
   let _ := locUniformSpace P ({1} : Finset A) 1 (Localization.Away (1 : A))
     (hasDenominatorPower_denom_one P ({1} : Finset A) _)
   let _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) 1 (Localization.Away (1 : A))
@@ -234,8 +247,7 @@ noncomputable def presentationLimitTopIso (hAplus : ∀ ⦃a⦄, a ∈ Aplus →
 /-- The inverse of `presentationLimitTopIso` is the canonical map from `A`. -/
 @[simp]
 theorem presentationLimitTopIso_inv (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) :
-    (presentationLimitTopIso (P := P) Aplus hAplus).inv = toPresentationLimit Aplus ⊤ :=
-  (rfl)
+    (presentationLimitTopIso (P := P) Aplus hAplus).inv = toPresentationLimit Aplus ⊤ := by rfl
 
 /-- Under `presentationLimitRationalIso`, restricting the image of `c : A` over the whole spectrum
 to `R(p)` yields the structure map `toCompletionLoc` applied to `c`. -/
@@ -282,17 +294,15 @@ noncomputable def topSectionRingEquiv (P : PairOfDefinition A) {Aplus : Subring 
 theorem continuous_topSectionRingEquiv (P : PairOfDefinition A) {Aplus : Subring A}
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) :
     Continuous (topSectionRingEquiv P hAplus) :=
-  ((TopCommRingCat.isCompleteSeparated.ι.mapIso
-      (presentationLimitTopIso (P := P) Aplus hAplus)) ≪≫
-    eqToIso (CompleteSeparatedTopCommRingCat.of_obj A)).hom.property
+  ((TopCommRingCat.isCompleteSeparated.ι.mapIso (presentationLimitTopIso (P := P) Aplus hAplus))
+    ≪≫ eqToIso (CompleteSeparatedTopCommRingCat.of_obj A)).hom.property
 
 /-- The inverse of `topSectionRingEquiv` is continuous. -/
 theorem continuous_topSectionRingEquiv_symm (P : PairOfDefinition A) {Aplus : Subring A}
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) :
     Continuous (topSectionRingEquiv P hAplus).symm :=
-  ((TopCommRingCat.isCompleteSeparated.ι.mapIso
-      (presentationLimitTopIso (P := P) Aplus hAplus)) ≪≫
-    eqToIso (CompleteSeparatedTopCommRingCat.of_obj A)).inv.property
+  ((TopCommRingCat.isCompleteSeparated.ι.mapIso (presentationLimitTopIso (P := P) Aplus hAplus))
+    ≪≫ eqToIso (CompleteSeparatedTopCommRingCat.of_obj A)).inv.property
 
 /-- Explicit formula for the inverse of `topSectionRingEquiv`. -/
 theorem topSectionRingEquiv_symm_eq (P : PairOfDefinition A) {Aplus : Subring A}
@@ -300,8 +310,7 @@ theorem topSectionRingEquiv_symm_eq (P : PairOfDefinition A) {Aplus : Subring A}
     (topSectionRingEquiv P hAplus).symm r =
       (toPresentationLimit (P := P) Aplus ⊤).hom.val
         ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r) := by
-  rw [topSectionRingEquiv]
-  rfl
+  rw [topSectionRingEquiv]; rfl
 
 /-- Under `rationalSectionRingEquiv`, the canonical image of `r : A` in the presentation limit over
 `R(T/s)` maps to `algebraMap A B r`. -/
@@ -316,17 +325,9 @@ theorem rationalSectionRingEquiv_toPresentationLimit (P : PairOfDefinition A) {A
           ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r)) =
       algebraMap A B r := by
   let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
-  have hcomp : toPresentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) =
-      p.toCompletionLocObjHom ≫ (presentationLimitRationalIso Aplus hAplus p hT).inv := by
-    rw [Iso.eq_comp_inv, presentationLimitRationalIso_hom, toPresentationLimit_comp_πToPresentation]
-  rw [congrArg (fun g ↦ g.hom.val
-    ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r)) hcomp]
-  change (rationalSectionRingEquiv P hAplus T s hT hB)
-      ((presentationLimitRationalIso Aplus hAplus p hT).inv.hom.val
-        (p.toCompletionLocObjHom.hom.val
-          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r))) =
-    algebraMap A B r
-  rw [← rationalSectionRingEquiv_symm_algebraMap P hAplus T s hT hB r, RingEquiv.apply_symm_apply]
+  rw [← toCompletionLocObjHom_comp_presentationLimitRationalIso_inv Aplus hAplus p hT]
+  exact (congrArg _ (rationalSectionRingEquiv_symm_algebraMap
+    P hAplus T s hT hB r).symm).trans (RingEquiv.apply_symm_apply _ _)
 
 /-- Under `topSectionRingEquiv` and `rationalSectionRingEquiv`, restricting a global section to
 `R(T/s)` is `algebraMap A B`. -/

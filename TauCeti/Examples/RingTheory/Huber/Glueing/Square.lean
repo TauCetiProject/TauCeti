@@ -33,23 +33,20 @@ open Polynomial
 namespace TauCeti.Huber.GlueingSquareChecks
 
 /-- Identity glueing square on `ℚ_[p]`. -/
-example (p : ℕ) [Fact p.Prime] : GlueingSquare ℚ_[p] ℚ_[p] ℚ_[p] ℚ_[p] :=
-  GlueingSquare.id ℚ_[p]
+example (p : ℕ) [Fact p.Prime] : GlueingSquare ℚ_[p] ℚ_[p] ℚ_[p] ℚ_[p] := GlueingSquare.id ℚ_[p]
 
 section Padic
 
 variable (p : ℕ) [Fact p.Prime]
 
 /-- **Degenerate check**: replacing the right-hand branch by `PUnit` yields a glueing square. -/
-example : GlueingSquare ℚ_[p] ℚ_[p] PUnit PUnit :=
-  GlueingSquare.of_subsingleton_right
+example : GlueingSquare ℚ_[p] ℚ_[p] PUnit PUnit := GlueingSquare.of_subsingleton_right
 
 /-- **Non-example (diagonal failure)**: `R₁ = R₂ = ℚ_[p]` mapping diagonally to `ℚ_[p] × ℚ_[p]`
 is not a glueing square, since `surjective_sub` fails outside the diagonal. -/
-example : ¬ GlueingSquare ℚ_[p] ℚ_[p] ℚ_[p] (ℚ_[p] × ℚ_[p]) := by
-  intro h
-  obtain ⟨⟨a, b⟩, hab⟩ := h.surjective_sub (1, 0)
-  exact one_ne_zero ((congrArg Prod.fst hab).symm.trans (congrArg Prod.snd hab))
+example : ¬ GlueingSquare ℚ_[p] ℚ_[p] ℚ_[p] (ℚ_[p] × ℚ_[p]) := fun h ↦
+  let ⟨⟨_, _⟩, hab⟩ := h.surjective_sub (1, 0)
+  one_ne_zero ((congrArg Prod.fst hab).symm.trans (congrArg Prod.snd hab))
 
 /-- **Flat module recovery**: on `GlueingSquare.id ℚ_[p]`, the rank-`2` vector space `ℚ_[p] × ℚ_[p]`
 is canonically isomorphic to the sections of its induced glueing datum. -/
@@ -76,9 +73,8 @@ example :
   let _ : TopologicalSpace ℤ := ⊥
   let _ : TopologicalSpace ℤ[X] := ⊥
   refine ⟨Function.surjective_id.denseRange, fun p ↦ ⟨(p, 0), by simp⟩, fun m hm ↦ ?_, fun h ↦ ?_⟩
-  · have := hm.isPrime
-    let ev : ℤ[X] × ℤ[X] →+* ℤ := (evalRingHom 0).comp (RingHom.fst ℤ[X] ℤ[X])
-    exact ⟨m.comap ev, Ideal.IsPrime.comap ev, by ext a; simp [ev]⟩
+  · let ev : ℤ[X] × ℤ[X] →+* ℤ := (evalRingHom 0).comp (RingHom.fst ℤ[X] ℤ[X])
+    exact ⟨m.comap ev, hm.isPrime.comap ev, by ext a; simp [ev]⟩
   · obtain ⟨a, ha⟩ := (h.exact_sub (X, X)).mp (sub_self _)
     have hcoeff := congrArg (fun p : ℤ[X] ↦ p.coeff 1) (congrArg Prod.fst ha)
     rw [Polynomial.algebraMap_eq, Polynomial.coeff_C] at hcoeff; simp at hcoeff

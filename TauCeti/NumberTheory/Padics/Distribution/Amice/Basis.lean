@@ -67,8 +67,8 @@ and matching `n` with the coordinate `(r, q)`, the matrix of `amiceMap` is thus 
   integral coefficients on every disc.
 * `TauCeti.eval_amicePolynomial`, `TauCeti.eq_amicePolynomial_of_eval`: `amicePolynomial` is the
   unique polynomial with these values.
-* `TauCeti.AnalyticStage.eval_amiceTerm`: `amiceTerm` evaluates to the Mahler term of
-  `m_h(n) • e`.
+* `TauCeti.AnalyticStage.eval_amiceTerm`, `TauCeti.AnalyticStage.compLeft_amiceTerm`: `amiceTerm`
+  evaluates to the Mahler term of `m_h(n) • e` and commutes with bounded coefficient maps.
 * `TauCeti.norm_coeff_amicePolynomial_lt_one_of_div_lt`: modulo `p`, Amice's polynomial on every
   disc has degree at most `⌊n / pʰ⌋`.
 * `TauCeti.norm_coeff_amicePolynomial_lt_one_of_mod_lt`: modulo `p`, it vanishes on the disc of `a`
@@ -453,13 +453,24 @@ theorem amiceTerm_smul (n : ℕ) (s : S) (e : E) :
 
 end Scalars
 
+/-- Applying a bounded continuous linear map compatible with the `ℤ_p`-action coordinatewise sends
+Amice's vector `e_{h,n} • e` to `e_{h,n} • u e`. -/
+@[simp]
+theorem compLeft_amiceTerm {F R : Type*} [NormedAddCommGroup F] [Module ℤ_[p] F]
+    [Semiring R] [Module R E] [ContinuousConstSMul R E] [Module R F] [ContinuousConstSMul R F]
+    [LinearMap.CompatibleSMul E F ℤ_[p] R]
+    (u : E →L[R] F) (hu : ∃ C, ∀ e, ‖u e‖ ≤ C * ‖e‖) (n : ℕ) (e : E) :
+    ZeroAtInftyContinuousMap.compLeft u hu (amiceTerm p h n e) = amiceTerm p h n (u e) := by
+  ext i
+  simp [ContinuousLinearMap.map_smul_of_tower]
+
 variable [IsBoundedSMul ℤ_[p] E]
 
 /-- Amice's vectors have norm at most `‖e‖`: their coefficients are integral multiples of `e`. -/
 theorem norm_amiceTerm_le (n : ℕ) (e : E) : ‖amiceTerm p h n e‖ ≤ ‖e‖ :=
   (ZeroAtInftyContinuousMap.norm_le (norm_nonneg e)).mpr fun i ↦ by
     rw [amiceTerm_apply]
-    exact (norm_smul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg e) (PadicInt.norm_le_one _))
+    exact PadicInt.norm_smul_le_norm _ e
 
 variable [IsUltrametricDist E] [CompleteSpace E]
   (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E]

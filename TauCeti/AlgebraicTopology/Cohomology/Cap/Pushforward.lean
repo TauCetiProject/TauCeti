@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Monoidal.Cap.ChainMap
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Pullback
+import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.Field
+import TauCeti.CategoryTheory.Preadditive.Injective.Basic
 
 /-!
 # The relative cap product followed by push-forward
@@ -30,16 +33,56 @@ bijectivity of `p₀_*(- ⌢ u)` on `K`-homology is equivalent to that of `p₀^
 `K`-cohomology (`TopPair.bijective_pushforwardCap_iff`). Over any commutative ring `K`, when the
 Kronecker maps of `Y` in degree `p` and of `(X, Z)` in degree `m` are bijective, invertibility
 of `p₀_*(- ⌢ u)` yields bijectivity of `TopPair.pullbackCup` for `M`
-(`TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`).
+(`TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`). Conversely, over any commutative ring,
+if `p₀^*(-) ⌣ u` is bijective with coefficients in every injective `K`-module, then `p₀_*(- ⌢ u)` is
+an isomorphism on `K`-homology (`TopPair.isIso_pushforwardCap_of_bijective_pullbackCup`): for
+injective coefficients the Kronecker maps are bijective, so precomposition with `p₀_*(- ⌢ u)` is
+bijective on morphisms into every injective module, and injective modules detect isomorphisms
+(`CategoryTheory.Injective.isCoseparating_isInjective` and
+`CategoryTheory.ObjectProperty.IsCoseparating.isCodetecting`).
+
+At the chain level, a relative cocycle `φ` of degree `n` representing `u` gives a chain map
+`x ↦ (-1)^(n p) p₀_*(x ⌢ φ)` from the relative chains of `(X, Z)` to the chains of `Y` placed `n`
+degrees higher (`TopPair.pushforwardCapChainMap`, an instance of
+`TauCeti.ChainComplex.capChainMap`). It induces `p₀_*(- ⌢ u)` on homology up to sign, so it is a
+quasi-isomorphism when `p₀_*(- ⌢ u)` is an isomorphism in every degree and the relative homology
+vanishes below `n` (`TopPair.quasiIso_pushforwardCapChainMap`), and it is natural in maps of pairs
+(`TopPair.pushforwardCapChainMap_naturality`). This is the form in which the homology Thom
+isomorphism can be compared with chain maps, for instance equivariant ones.
+
+The map `x ↦ p₀_*(x ⌢ u)` is linear over the cohomology ring of `Y` up to sign, the **projection
+formula** `p₀_*((x ⌢ p₀^* ψ) ⌢ u) = (-1)^(n r) p₀_*(x ⌢ u) ⌢ ψ` for `ψ ∈ Hʳ(Y; K)`, where
+`x ⌢ p₀^* ψ` is the cap product of absolute cohomology with relative homology
+(`TopPair.map_singularCap_absoluteSingularCap`, and `TopPair.pushforwardCap_absoluteSingularCap`
+for `pushforwardCap`). Both sides are compared through their Kronecker pairings with classes with
+injective coefficients, which separate homology classes: by
+`TopPair.absoluteSingularCap_comp_singularKronecker` and
+`TopPair.singularCap_comp_singularKronecker` the pairings are those of cup products, which agree
+up to the sign by graded commutativity and associativity of the cup product of absolute and
+relative cohomology (`TopPair.singularCup_cup_alexanderWhitneyDiagonal`). For the Thom pair of a
+vector bundle this is the linearity of the homology Thom map over the cohomology of the base.
 
 ## Main definitions and results
 
 * `TopPair.pushforwardCap`, `TopPair.pushforwardCap_naturality`: `x ↦ p₀_*(x ⌢ u)` and naturality.
+* `TopPair.pushforwardCap_eq_cap`: `pushforwardCap` as a single `TauCeti.ChainComplex.cap`.
 * `TopPair.pushforwardCap_comp_singularKronecker`: Kronecker duality with `TopPair.pullbackCup`.
 * `TopPair.bijective_pushforwardCap_iff`: field duality between `pushforwardCap` and `pullbackCup`.
 * `TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`: duality transferring invertibility of
   `pushforwardCap` to bijectivity of `pullbackCup` when the Kronecker maps in degrees `p` and `m`
   are bijective.
+* `TopPair.isIso_pushforwardCap_of_bijective_pullbackCup`: over any commutative ring, bijectivity
+  of `pullbackCup` for all injective coefficient modules makes `pushforwardCap` an isomorphism.
+* `TopPair.pushforwardCapChainMap`: `x ↦ p₀_*(x ⌢ φ)` for a relative cocycle `φ`, as a chain map
+  to the shifted chains of `Y`, with its naturality `TopPair.pushforwardCapChainMap_naturality`.
+* `TopPair.homologyMap_pushforwardCapChainMap_comp_extendHomologyIso_hom`: on homology it is
+  `pushforwardCap` of the class of `φ`, up to sign.
+* `TopPair.quasiIso_pushforwardCapChainMap`: it is a quasi-isomorphism when `pushforwardCap` of
+  the class is an isomorphism in every degree and the relative homology vanishes below `n`.
+* `TopPair.singularCup_cup_alexanderWhitneyDiagonal`: `a ⌣ (v ⌣ b) = (-1)^(n r) v ⌣ (a ⌣ b)`
+  for a relative class `v` and absolute classes `a` and `b`.
+* `TopPair.map_singularCap_absoluteSingularCap`, `TopPair.pushforwardCap_absoluteSingularCap`:
+  the projection formula `p₀_*((x ⌢ p₀^* ψ) ⌢ u) = (-1)^(n r) p₀_*(x ⌢ u) ⌢ ψ`.
 
 ## References
 
@@ -75,6 +118,28 @@ theorem pushforwardCap_apply {K : Type w} [CommRing K] (P : TopPair.{w}) {Y : To
     (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     P.pushforwardCap p₀ A n p m h u = P.singularCap K (λ_ A).inv (λ_ A).hom n p m h u ≫
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) p).obj A).map p₀ := (rfl)
+
+/-- `TopPair.pushforwardCap` is the cap product `TauCeti.ChainComplex.cap` along the relative
+Alexander–Whitney diagonal, with the pairing of coefficients followed by the push-forward along
+`p₀` as the action. -/
+theorem pushforwardCap_eq_cap {K : Type w} [CommRing K] (P : TopPair.{w}) {Y : TopCat.{w}}
+    (p₀ : P.fst ⟶ Y) (A : ModuleCat.{w} K) {n p m : ℕ} (h : n + p = m)
+    (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    P.pushforwardCap p₀ A n p m h u =
+      TauCeti.ChainComplex.cap K (P.alexanderWhitneyDiagonal (λ_ A).inv)
+        ((TopCat.toSSet.obj P.fst).chainComplexPairing (λ_ A).hom ≫
+          SSet.chainComplexMap (TopCat.toSSet.map p₀) A) n p m h u := by
+  have := TauCeti.ChainComplex.cap_naturality (k := K) (P.alexanderWhitneyDiagonal (λ_ A).inv)
+    ((TopCat.toSSet.obj P.fst).chainComplexPairing (λ_ A).hom ≫
+      SSet.chainComplexMap (TopCat.toSSet.map p₀) A)
+    (P.alexanderWhitneyDiagonal (λ_ A).inv) ((TopCat.toSSet.obj P.fst).chainComplexPairing
+      (λ_ A).hom) (𝟙 _) (𝟙 _) (𝟙 _) (SSet.chainComplexMap (TopCat.toSSet.map p₀) A)
+    (by simp) (by simp) n p m h u
+  simp only [op_id, CategoryTheory.Functor.map_id, TauCeti.ChainComplex.linearYonedaFunctor_obj,
+    HomologicalComplex.homologyMap_id, ModuleCat.hom_id, LinearMap.id_coe, id_eq,
+    Category.id_comp] at this
+  rw [pushforwardCap_apply, singularCap_def]
+  exact this
 
 /-- **Naturality of `x ↦ p₀_*(x ⌢ u)`** in maps of pairs covering maps of targets. -/
 theorem pushforwardCap_naturality {K : Type w} [CommRing K] {P P' : TopPair.{w}}
@@ -160,6 +225,249 @@ theorem bijective_pullbackCup_of_isIso_pushforwardCap {K : Type w} [CommRing K] 
   rw [hcomp]
   exact eP.symm.bijective.comp (((isUnit_neg_one.pow (n * p)).smul_bijective.comp
     (Linear.homCongr K T.symm (Iso.refl M)).bijective).comp eY.bijective)
+
+/-- **Cohomology with injective coefficients detects the homology map** `x ↦ p₀_*(x ⌢ u)`: over a
+commutative ring `K`, if `TopPair.pullbackCup` in degree `p` (`p + n = m`) is bijective with
+coefficients in every injective `K`-module `M`, then `TopPair.pushforwardCap` with coefficients
+in `K` is an isomorphism `Hₘ(X, Z; K) ≅ Hₚ(Y; K)` in `ModuleCat K`. No hypothesis on `K` or on
+the homology is needed, unlike the field case `TopPair.bijective_pushforwardCap_iff`. -/
+theorem isIso_pushforwardCap_of_bijective_pullbackCup {K : Type w} [CommRing K] (P : TopPair.{w})
+    {Y : TopCat.{w}} (p₀ : P.fst ⟶ Y) {n p m : ℕ} (h : n + p = m)
+    (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (hu : ∀ (M : ModuleCat.{w} K) [Injective M],
+      Function.Bijective (P.pullbackCup M p₀ n p m (by omega) u)) :
+    IsIso (P.pushforwardCap p₀ (ModuleCat.of K K) n p m h u) := by
+  refine (Injective.isCoseparating_isInjective (C := ModuleCat.{w} K)).isCodetecting _
+    fun M _ ↦ Function.Bijective.existsUnique ?_
+  -- With injective coefficients both Kronecker maps are bijective.
+  let eY := Y.singularKroneckerEquiv (R := ModuleCat.of K K) (M := M) K p
+  have hP : Function.Bijective (P.singularKronecker (R := ModuleCat.of K K) (M := M) K m) := by
+    rw [TopPair.singularKronecker_def]
+    exact TauCeti.ChainComplex.kronecker_bijective m
+  -- Through them, precomposition with `p₀_*(- ⌢ u)` is `±` the cup map `p₀^*(-) ⌣ u`.
+  have hcomp : CategoryStruct.comp (P.pushforwardCap p₀ (ModuleCat.of K K) n p m h u) =
+      (fun ψ ↦ ((-1 : ℤ) ^ (n * p)) • ψ) ∘ ⇑(P.singularKronecker K m) ∘
+        ⇑(P.pullbackCup M p₀ n p m (by omega) u) ∘ ⇑eY.symm := by
+    funext g
+    obtain ⟨a, rfl⟩ := eY.surjective g
+    simp only [Function.comp_apply, LinearEquiv.symm_apply_apply]
+    rw [TopCat.singularKroneckerEquiv_apply]
+    exact P.pushforwardCap_comp_singularKronecker p₀ h u a
+  rw [hcomp]
+  exact (isUnit_neg_one.pow (n * p)).smul_bijective.comp
+    (hP.comp ((hu M).comp eY.symm.bijective))
+
+section ChainMap
+
+open HomologicalComplex ComplexShape
+
+variable {K : Type w} [CommRing K] (P : TopPair.{w}) {Y : TopCat.{w}} (p₀ : P.fst ⟶ Y)
+  (A : ModuleCat.{w} K) (n : ℕ)
+
+/-- **`x ↦ p₀_*(x ⌢ φ)` as a chain map.** For a relative cocycle `φ` of degree `n` of the pair
+`P = (X, Z)` with coefficients in `K` and a map `p₀ : X ⟶ Y`, the chain map from the relative
+chains of `P` to the chains of `Y` placed `n` degrees higher which sends a relative chain `x` of
+degree `n + p` to `(-1)^(n p) p₀_*(x ⌢ φ)`, with coefficients in any `K`-module `A`: capping with
+`φ` (`TauCeti.ChainComplex.capChainMap`) along the relative Alexander–Whitney diagonal, paired by
+the left unitor `K ⊗ A ≅ A` and followed by the push-forward along `p₀`. On homology it is
+`TopPair.pushforwardCap` of the class of `φ`, up to sign
+(`TopPair.homologyMap_pushforwardCapChainMap_comp_extendHomologyIso_hom`). -/
+def pushforwardCapChainMap (φ : (P.singularChainComplex (ModuleCat.of K K)).X n ⟶ ModuleCat.of K K)
+    (hφ : (P.singularChainComplex (ModuleCat.of K K)).d (n + 1) n ≫ φ = 0) :
+    P.singularChainComplex A ⟶
+      ((TopCat.toSSet.obj Y).chainComplex A).extend (embeddingDownNatAdd n) :=
+  TauCeti.ChainComplex.capChainMap K (P.alexanderWhitneyDiagonal (λ_ A).inv)
+    ((TopCat.toSSet.obj P.fst).chainComplexPairing (λ_ A).hom ≫
+      SSet.chainComplexMap (TopCat.toSSet.map p₀) A) n φ hφ
+
+/-- `TopPair.pushforwardCapChainMap` is capping with the cocycle along the relative
+Alexander–Whitney diagonal, with the pairing of coefficients followed by the push-forward along
+`p₀` as the action. -/
+theorem pushforwardCapChainMap_def
+    (φ : (P.singularChainComplex (ModuleCat.of K K)).X n ⟶ ModuleCat.of K K)
+    (hφ : (P.singularChainComplex (ModuleCat.of K K)).d (n + 1) n ≫ φ = 0) :
+    P.pushforwardCapChainMap p₀ A n φ hφ =
+      TauCeti.ChainComplex.capChainMap K (P.alexanderWhitneyDiagonal (λ_ A).inv)
+        ((TopCat.toSSet.obj P.fst).chainComplexPairing (λ_ A).hom ≫
+          SSet.chainComplexMap (TopCat.toSSet.map p₀) A) n φ hφ :=
+  (rfl)
+
+/-- **Naturality of `x ↦ p₀_*(x ⌢ φ)` as a chain map**, the chain-level projection formula: for a
+map of pairs `f : P' ⟶ P` covering `g : Y' ⟶ Y`, in the sense that `f ≫ p₀ = p₀' ≫ g` on the
+ambient spaces, pushing chains forward along `f` and then capping with `φ` is capping with the
+pull-back `f^*φ` and then pushing forward along `g`. -/
+theorem pushforwardCapChainMap_naturality {P' : TopPair.{w}} {Y' : TopCat.{w}} (f : P' ⟶ P)
+    (p₀' : P'.fst ⟶ Y') (g : Y' ⟶ Y) (hf : Hom.fst f ≫ p₀ = p₀' ≫ g)
+    (φ : (P.singularChainComplex (ModuleCat.of K K)).X n ⟶ ModuleCat.of K K)
+    (hφ : (P.singularChainComplex (ModuleCat.of K K)).d (n + 1) n ≫ φ = 0) :
+    singularChainComplexMap f A ≫ P.pushforwardCapChainMap p₀ A n φ hφ =
+      P'.pushforwardCapChainMap p₀' A n ((singularChainComplexMap f (ModuleCat.of K K)).f n ≫ φ)
+          (by rw [← (singularChainComplexMap f (ModuleCat.of K K)).comm_assoc, hφ,
+            Limits.comp_zero]) ≫
+        extendMap (SSet.chainComplexMap (TopCat.toSSet.map g) A) (embeddingDownNatAdd n) := by
+  -- Pushing forward along `p₀'` and then `g` is pushing forward along `f` and then `p₀`.
+  have hg : SSet.chainComplexMap (TopCat.toSSet.map p₀') A ≫
+      SSet.chainComplexMap (TopCat.toSSet.map g) A =
+        SSet.chainComplexMap (TopCat.toSSet.map (Hom.fst f)) A ≫
+          SSet.chainComplexMap (TopCat.toSSet.map p₀) A := by
+    simp only [← Functor.map_comp, hf]
+  -- The two sides of the action square differ only in writing the unit `𝟙_ (ModuleCat K)` of the
+  -- monoidal structure as `ModuleCat.of K K`, which `rfl` identifies.
+  exact TauCeti.ChainComplex.capChainMap_naturality _ _ _ _ _ _ _ _
+    (alexanderWhitneyDiagonal_naturality f (λ_ A).inv)
+    (by rw [Category.assoc, hg, ← SSet.chainComplexPairing_naturality_assoc]; rfl) hφ
+
+/-- **`x ↦ p₀_*(x ⌢ φ)` as a chain map computes `TopPair.pushforwardCap`**: for a relative cocycle
+`φ` of degree `n`, the map it induces on homology in degree `m = n + p`, read in `Hₚ(Y; A)`, is
+`(-1)^(n p)` times `x ↦ p₀_*(x ⌢ u)` for the class `u` of `φ`. -/
+theorem homologyMap_pushforwardCapChainMap_comp_extendHomologyIso_hom (p m : ℕ) (h : n + p = m)
+    (φ : (P.singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).cycles n) :
+    homologyMap (P.pushforwardCapChainMap p₀ A n
+          ((P.singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).iCycles n φ)
+          (TauCeti.ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) φ)) m ≫
+        (((TopCat.toSSet.obj Y).chainComplex A).extendHomologyIso (embeddingDownNatAdd n)
+          ((embeddingDownNatAdd_f n p).trans (by omega))).hom =
+      ((-1 : ℤ) ^ (n * p)) • P.pushforwardCap p₀ A n p m h
+        ((P.singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).homologyπ n φ) := by
+  -- The cocycle is an element of the module of cochains, so the general statement is applied up
+  -- to unfolding that module and `TopPair.pushforwardCapChainMap` rather than by rewriting.
+  refine (TauCeti.ChainComplex.homologyMap_capChainMap_comp_extendHomologyIso_hom (k := K) _ _ p m
+    h φ).trans ?_
+  exact congrArg (((-1 : ℤ) ^ (n * p)) • ·) (pushforwardCap_eq_cap P p₀ A h _).symm
+
+/-- **`x ↦ p₀_*(x ⌢ φ)` is a quasi-isomorphism** onto the chains of `Y` placed `n` degrees higher
+when the relative homology of `P` with coefficients in `A` vanishes below `n` and
+`x ↦ p₀_*(x ⌢ u)` is an isomorphism `Hₙ₊ₚ(X, Z; A) ≅ Hₚ(Y; A)` in every degree, for the class
+`u` of the relative cocycle `φ`. -/
+theorem quasiIso_pushforwardCapChainMap
+    (φ : (P.singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).cycles n)
+    (hP : ∀ m < n, Limits.IsZero (P.singularHomology A m))
+    (hu : ∀ p m (h : n + p = m), IsIso (P.pushforwardCap p₀ A n p m h
+      ((P.singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).homologyπ n φ))) :
+    QuasiIso (P.pushforwardCapChainMap p₀ A n
+      ((P.singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).iCycles n φ)
+      (TauCeti.ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) φ)) := by
+  refine TauCeti.ChainComplex.quasiIso_capChainMap (k := K) _ _ φ
+    (fun m hm ↦ (exactAt_iff_isZero_homology _ m).2 (hP m hm)) fun p m h ↦ ?_
+  rw [← pushforwardCap_eq_cap]
+  exact hu p m h
+
+end ChainMap
+
+section ProjectionFormula
+
+variable {K : Type w} [CommRing K] (P : TopPair.{w}) {S T I : ModuleCat.{w} K}
+  (u : T ⟶ 𝟙_ (ModuleCat.{w} K) ⊗ S)
+
+/-- **Moving an absolute class past a relative class in a cup product**,
+`a ⌣ (v ⌣ b) = (-1)^(n r) v ⌣ (a ⌣ b)`: for a pair `(X, A)`, a relative class `v ∈ Hⁿ(X, A; K)`
+and absolute classes `a ∈ Hʳ(X; K)` and `b ∈ H^q(X; S, I)`, cupping `a` with the relative product
+`v ⌣ b`, taken along the relative Alexander–Whitney diagonal `P.alexanderWhitneyDiagonal u` with
+the relative factor first, is `(-1)^(n r)` times the relative product of `v` with `a ⌣ b`. -/
+theorem singularCup_cup_alexanderWhitneyDiagonal {n r q m' q' m : ℕ} (h₁ : n + q = m')
+    (h₀ : r + m' = m) (h₂ : n + q' = m) (h₃ : r + q = q')
+    (v : P.singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) n)
+    (a : P.fst.singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) r)
+    (b : P.fst.singularCohomology S K I q) :
+    P.singularCup K (λ_ T).inv (λ_ I).hom r m' m h₀ a
+        (TauCeti.ChainComplex.cup K (P.alexanderWhitneyDiagonal u) (λ_ I).hom n q m' h₁ v b) =
+      ((-1 : ℤ) ^ (n * r)) • TauCeti.ChainComplex.cup K (P.alexanderWhitneyDiagonal u)
+        (λ_ I).hom n q' m h₂ v (P.fst.singularCup K (λ_ S).inv (λ_ I).hom r q q' h₃ a b) := by
+  subst h₁ h₀ h₃
+  -- Put the relative class last in both products, by graded commutativity, and reassociate.
+  have hu : (u ≫ (λ_ S).hom ≫ (ρ_ S).inv) ≫ (β_ S (𝟙_ (ModuleCat.{w} K))).hom = u := by
+    simp [braiding_tensorUnit_right]
+  have hμ := braiding_leftUnitor I
+  have hassoc : (u ≫ (λ_ S).hom ≫ (ρ_ S).inv) ≫ (λ_ S).inv ▷ 𝟙_ (ModuleCat.{w} K) ≫
+      (α_ (𝟙_ (ModuleCat.{w} K)) S (𝟙_ (ModuleCat.{w} K))).hom =
+      (λ_ T).inv ≫ 𝟙_ (ModuleCat.{w} K) ◁ (u ≫ (λ_ S).hom ≫ (ρ_ S).inv) := by
+    rw [← leftUnitor_inv_naturality, leftUnitor_tensor_inv]
+  have hassocμ : (λ_ I).hom ▷ 𝟙_ (ModuleCat.{w} K) ≫ (ρ_ I).hom =
+      (α_ (𝟙_ (ModuleCat.{w} K)) I (𝟙_ (ModuleCat.{w} K))).hom ≫
+        𝟙_ (ModuleCat.{w} K) ◁ (ρ_ I).hom ≫ (λ_ I).hom := by
+    rw [leftUnitor_naturality, leftUnitor_tensor_hom_assoc, Iso.hom_inv_id_assoc]
+  rw [singularCup_gradedComm K P hu hμ (add_comm q n) b v, map_zsmul,
+    singularCup_gradedComm K P hu hμ (by omega) _ v,
+    ← singularCup_assoc K P hassoc hassocμ rfl (by omega) (add_comm q n) (by omega), smul_smul,
+    ← pow_add, show n * r + (r + q) * n = q * n + 2 * (n * r) by ring, pow_add,
+    (even_two_mul _).neg_one_pow, mul_one]
+
+/-- **The projection formula for the relative cap product followed by push-forward**: for a pair
+`(X, Z)`, a map `p₀ : X ⟶ Y`, a relative class `v ∈ Hⁿ(X, Z; K)`, a class `ψ ∈ Hʳ(Y; K)` and a
+relative class `x ∈ Hₘ(X, Z; T)`,
+
+`p₀_*((x ⌢ p₀^* ψ) ⌢ v) = (-1)^(n r) p₀_*(x ⌢ v) ⌢ ψ`
+
+in `H_q(Y; S)`, where `x ⌢ p₀^* ψ` is the cap product of absolute cohomology with relative
+homology (`TopPair.absoluteSingularCap`) and the relative cap products with `v` are taken along a
+coefficient morphism `u : T ⟶ K ⊗ S`. So `x ↦ p₀_*(x ⌢ v)` is linear over the cohomology ring of
+`Y`, up to the sign `(-1)^(n r)`. For `T = S` a module `A` and `u = (λ_ A).inv` this is the
+projection formula for `TopPair.pushforwardCap`; for the Thom pair of a vector bundle it is that
+for the homology Thom map. -/
+theorem map_singularCap_absoluteSingularCap {Y : TopCat.{w}} (p₀ : P.fst ⟶ Y) {n r q m' q' m : ℕ}
+    (h₀ : r + m' = m) (h₁ : n + q = m') (h₂ : n + q' = m) (h₃ : r + q = q')
+    (v : P.singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) n)
+    (ψ : Y.singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) r)
+    (x : (P.singularHomology T m : ModuleCat.{w} K)) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) q).obj S).map p₀
+        (P.singularCap K u (λ_ S).hom n q m' h₁ v
+          (P.absoluteSingularCap K (λ_ T).inv (λ_ T).hom r m' m h₀
+            (TopCat.singularCohomologyMap p₀ r ψ) x)) =
+      ((-1 : ℤ) ^ (n * r)) • Y.singularCap K (λ_ S).inv (λ_ S).hom r q q' h₃ ψ
+        (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) q').obj S).map p₀
+          (P.singularCap K u (λ_ S).hom n q' m h₂ v x)) := by
+  -- Classes of `H_q(Y; S)` are separated by their Kronecker pairings with classes with injective
+  -- coefficients: the inclusion into an injective module is such a pairing.
+  let ι := Injective.ι
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) q).obj S).obj Y)
+  apply (ModuleCat.mono_iff_injective ι).1 inferInstance
+  obtain ⟨c, hc⟩ := (Y.singularKronecker_bijective K (R := S) q).2 ι
+  -- Both sides pair with `c` to `⟨v ⌣ p₀^*(ψ ⌣ c), x⟩`, up to the sign.
+  have hL : Y.singularKronecker K q c
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) q).obj S).map p₀
+        (P.singularCap K u (λ_ S).hom n q m' h₁ v
+          (P.absoluteSingularCap K (λ_ T).inv (λ_ T).hom r m' m h₀
+            (TopCat.singularCohomologyMap p₀ r ψ) x))) =
+      ((-1 : ℤ) ^ (n * r)) • P.singularKronecker K m
+        (TauCeti.ChainComplex.cup K (P.alexanderWhitneyDiagonal u) (λ_ _).hom n q' m h₂ v
+          (TopCat.singularCohomologyMap p₀ q'
+            (Y.singularCup K (λ_ S).inv (λ_ _).hom r q q' h₃ ψ c)))
+        x := by
+    rw [← ConcreteCategory.comp_apply, ← TopCat.singularKronecker_naturality,
+      ← ConcreteCategory.comp_apply, TopPair.singularCap_comp_singularKronecker,
+      ← ConcreteCategory.comp_apply, absoluteSingularCap_comp_singularKronecker, ← singularCup_def,
+      singularCup_cup_alexanderWhitneyDiagonal P u h₁ h₀ h₂ h₃, map_zsmul,
+      TopCat.singularCup_naturality]
+    simp only [ModuleCat.hom_zsmul, LinearMap.smul_apply]
+  have hR : Y.singularKronecker K q c (Y.singularCap K (λ_ S).inv (λ_ S).hom r q q' h₃ ψ
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) q').obj S).map p₀
+        (P.singularCap K u (λ_ S).hom n q' m h₂ v x))) =
+      P.singularKronecker K m
+        (TauCeti.ChainComplex.cup K (P.alexanderWhitneyDiagonal u) (λ_ _).hom n q' m h₂ v
+          (TopCat.singularCohomologyMap p₀ q'
+            (Y.singularCup K (λ_ S).inv (λ_ _).hom r q q' h₃ ψ c)))
+        x := by
+    rw [← ConcreteCategory.comp_apply, TopCat.singularCap_comp_singularKronecker,
+      ← ConcreteCategory.comp_apply, ← TopCat.singularKronecker_naturality,
+      ← ConcreteCategory.comp_apply, TopPair.singularCap_comp_singularKronecker]
+  rw [← hc, map_zsmul, hL, hR]
+
+/-- **The projection formula for `TopPair.pushforwardCap`**: `x ↦ p₀_*(x ⌢ v)` is linear over the
+cohomology ring of `Y` up to sign, `p₀_*((x ⌢ p₀^* ψ) ⌢ v) = (-1)^(n r) p₀_*(x ⌢ v) ⌢ ψ` for
+`v ∈ Hⁿ(X, Z; K)`, `ψ ∈ Hʳ(Y; K)` and `x ∈ Hₘ(X, Z; A)`. -/
+theorem pushforwardCap_absoluteSingularCap {Y : TopCat.{w}} (p₀ : P.fst ⟶ Y) (A : ModuleCat.{w} K)
+    {n r q m' q' m : ℕ} (h₀ : r + m' = m) (h₁ : n + q = m') (h₂ : n + q' = m) (h₃ : r + q = q')
+    (v : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (ψ : Y.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) r)
+    (x : (P.singularHomology A m : ModuleCat.{w} K)) :
+    P.pushforwardCap p₀ A n q m' h₁ v
+        (P.absoluteSingularCap K (λ_ A).inv (λ_ A).hom r m' m h₀
+          (TopCat.singularCohomologyMap p₀ r ψ) x) =
+      ((-1 : ℤ) ^ (n * r)) • Y.singularCap K (λ_ A).inv (λ_ A).hom r q q' h₃ ψ
+        (P.pushforwardCap p₀ A n q' m h₂ v x) :=
+  P.map_singularCap_absoluteSingularCap (λ_ A).inv p₀ h₀ h₁ h₂ h₃ v ψ x
+
+end ProjectionFormula
 
 end TopPair
 

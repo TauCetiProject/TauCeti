@@ -80,6 +80,8 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
   topological ring is a topological ring.
 * `TauCeti.isOpen_span_of_one_mem`: any subset containing `1` generates the unit ideal, which is
   open.
+* `RingEquiv.isOpen_map_ideal`: a ring equivalence whose inverse is continuous maps open ideals
+  to open ideals.
 
 ## References
 
@@ -314,3 +316,14 @@ theorem isOpen_span_of_one_mem {A : Type*} [Semiring A] [TopologicalSpace A] {s 
   exact isOpen_univ
 
 end TauCeti
+
+namespace RingEquiv
+
+/-- A ring equivalence whose inverse is continuous maps open ideals to open ideals. -/
+theorem isOpen_map_ideal {R S : Type*} [Semiring R] [TopologicalSpace R] [Semiring S]
+    [TopologicalSpace S] (e : R ≃+* S) (he' : Continuous e.symm) (J : Ideal R)
+    (hJ : IsOpen (J : Set R)) : IsOpen (Ideal.map (e : R →+* S) J : Set S) := by
+  rw [Ideal.map_eq_image_of_surjective (e : R →+* S) e.surjective]
+  exact (IsOpenMap.of_inverse he' e.apply_symm_apply e.symm_apply_apply) J hJ
+
+end RingEquiv

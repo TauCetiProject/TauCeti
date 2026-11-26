@@ -6,6 +6,7 @@ Authors: Arend Mellendijk, The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
+import Mathlib.Algebra.Order.Ring.Abs
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 
 /-!
@@ -37,6 +38,13 @@ divisor-count inversion equivalences closely adapt the statement pattern and pro
 For squarefree `m`, the Möbius function summed over the divisors of `m` that are multiples
 of `l` vanishes unless `l = m`, when the sum is `μ l` (`ArithmeticFunction.sum_moebius_upper`).
 
+Summing `μ²` over the divisors of `n ≠ 0` counts its squarefree divisors, giving `2 ^ ω(n)`
+(`ArithmeticFunction.sum_divisors_moebius_sq`); this is the convolution identity `μ² * ζ = 2 ^ ω`
+behind the Dirichlet series `ζ(s)² / ζ(2s)` of `2 ^ ω`. Over an interval `L < m ≤ M` the same
+squares sum to at most `M - L` (`ArithmeticFunction.sum_Ioc_moebius_sq_le`), the Möbius coefficient
+energy of bilinear estimates. Since `|μ(n)| ≤ 1`, multiplying by `μ(n)` never increases an
+absolute value (`ArithmeticFunction.abs_moebius_mul_le`).
+
 ## Main results
 
 * `ArithmeticFunction.moebius_mul_moebius_mul_coe_sigma_zero`,
@@ -55,6 +63,12 @@ of `l` vanishes unless `l = m`, when the sum is `μ l` (`ArithmeticFunction.sum_
 * `ArithmeticFunction.eq_sum_divisors_moebius_mul_moebius_smul_of_dvd`,
   `ArithmeticFunction.eq_sum_divisors_moebius_mul_moebius_mul_of_dvd`: specialization to the
   divisors of a fixed nonzero integer `N`.
+* `ArithmeticFunction.sum_divisors_moebius_sq`: `∑_{d ∣ n} μ(d)² = 2 ^ ω(n)` for `n ≠ 0`.
+* `ArithmeticFunction.sum_Ioc_moebius_sq_le`: `∑_{L<m≤M} μ(m)² ≤ M - L`.
+* `ArithmeticFunction.abs_moebius_mul_le`: `|μ(n) a| ≤ |a|` in a ring whose linear order is
+  compatible with addition.
+* `ArithmeticFunction.IsMultiplicative.moebius_sq_mul_nonneg`: `μ(n)² f(n) ≥ 0` for a
+  multiplicative `f` with nonnegative prime values.
 
 ## References
 
@@ -259,5 +273,54 @@ theorem sum_moebius_upper (l m : ℕ) (hm : Squarefree m) :
     rw [ite_eq_right, smul_zero]
     intro h
     exact hl (h ▸ dvd_of_mem_divisors hd)
+
+/-! ### Squares of the Möbius function over divisors -/
+
+open scoped omega in
+/-- The squares of the Möbius function summed over the divisors of a nonzero `n` count its
+squarefree divisors, which are the products of subsets of its distinct prime factors:
+`∑_{d ∣ n} μ(d)² = 2 ^ ω(n)`. -/
+theorem sum_divisors_moebius_sq [Ring R] {n : ℕ} (hn : n ≠ 0) :
+    ∑ d ∈ n.divisors, (μ d : R) ^ 2 = 2 ^ ω n := by
+  have hsq (d : ℕ) : (μ d : R) ^ 2 = if Squarefree d then 1 else 0 := by
+    split_ifs with hd
+    · rw [← Int.cast_pow, moebius_sq_eq_one_of_squarefree hd, Int.cast_one]
+    · simp [moebius_eq_zero_of_not_squarefree hd]
+  simp_rw [hsq, ← sum_filter, sum_divisors_filter_squarefree hn, sum_const, card_powerset,
+    factors_eq]
+  simp [cardDistinctFactors_eq_card_primeFactors]
+
+/-- The squares of the Möbius function over an interval `L < m ≤ M` sum to at most its length
+`M - L`: each `μ(m)²` is `0` or `1`. -/
+theorem sum_Ioc_moebius_sq_le [Ring R] [PartialOrder R] [IsOrderedRing R] (L M : ℕ) :
+    ∑ m ∈ Ioc L M, (μ m : R) ^ 2 ≤ ((M - L : ℕ) : R) := by
+  rw [← Nat.card_Ioc, ← nsmul_one]
+  refine sum_le_card_nsmul _ _ _ fun m _ ↦ ?_
+  rw [← Int.cast_pow, moebius_sq]
+  split_ifs <;> simp
+
+/-! ### Absolute values -/
+
+/-- Multiplying by a value of the Möbius function does not increase the absolute value:
+`|μ(n) a| ≤ |a|`, as `μ(n)` is `0` or `±1`. -/
+theorem abs_moebius_mul_le [NonAssocRing R] [LinearOrder R] [AddLeftMono R] (n : ℕ) (a : R) :
+    |(μ n : R) * a| ≤ |a| := by
+  obtain h | h | h : μ n = 0 ∨ μ n = 1 ∨ μ n = -1 := by
+    have := abs_le.mp (abs_moebius_le_one (n := n))
+    omega
+  all_goals simp [h]
+
+/-! ### Nonnegativity on squarefree integers -/
+
+/-- A multiplicative function with nonnegative prime values is nonnegative on squarefree
+integers, so `μ(n)² f(n) ≥ 0` for every `n`. -/
+theorem IsMultiplicative.moebius_sq_mul_nonneg [CommRing R] [PartialOrder R]
+    [IsOrderedRing R] {f : ArithmeticFunction R} (hf : f.IsMultiplicative)
+    (hf0 : ∀ p : ℕ, p.Prime → 0 ≤ f p) (n : ℕ) : 0 ≤ (μ n : R) ^ 2 * f n := by
+  by_cases hn : Squarefree n
+  · rw [← Int.cast_pow, moebius_sq_eq_one_of_squarefree hn, Int.cast_one, one_mul,
+      ← hf.prod_primeFactors hn]
+    exact prod_nonneg fun p hp ↦ hf0 p (prime_of_mem_primeFactors hp)
+  · simp [moebius_eq_zero_of_not_squarefree hn]
 
 end ArithmeticFunction

@@ -75,37 +75,34 @@ theorem GlueingSquare.of_simpleLaurent [IsTateRing R] (S : Pair R)
     (h₂ : IsRationalCompletion P {1} f hT₂ R₂) (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ R₁₂)
     (hc₁ : Continuous (algebraMap R₁ R₁₂)) (hc₂ : Continuous (algebraMap R₂ R₁₂)) :
     GlueingSquare R R₁ R₂ R₁₂ := by
-  let e₁ := h₁.ratLocEquiv
-  let he₁ := h₁.continuous_ratLocEquiv
-  let he₁' := h₁.continuous_ratLocEquiv_symm
-  let e₂ := h₂.ratLocEquiv
-  let he₂ := h₂.continuous_ratLocEquiv
-  let he₂' := h₂.continuous_ratLocEquiv_symm
-  let e₁₂ := h₁₂.ratLocEquiv
-  let he₁₂ := h₁₂.continuous_ratLocEquiv
-  let he₁₂' := h₁₂.continuous_ratLocEquiv_symm
   let L₁ := ratLoc P {f, 1} 1 (P.hasDenominatorPower_of_isOpen_span _ _ _ hT₁)
   let L₂ := ratLoc P {1} f (P.hasDenominatorPower_of_isOpen_span _ _ _ hT₂)
   let L₁₂ := ratLoc P {f * f, 1} f (P.hasDenominatorPower_of_isOpen_span _ _ _ hT₁₂)
-  let φ₁ : L₁ →+* L₁₂ := e₁₂.symm.toRingHom.comp ((algebraMap R₁ R₁₂).comp e₁.toRingHom)
-  let φ₂ : L₂ →+* L₁₂ := e₁₂.symm.toRingHom.comp ((algebraMap R₂ R₁₂).comp e₂.toRingHom)
+  let φ₁ : L₁ →+* L₁₂ :=
+    h₁₂.ratLocEquiv.symm.toRingHom.comp ((algebraMap R₁ R₁₂).comp h₁.ratLocEquiv.toRingHom)
+  let φ₂ : L₂ →+* L₁₂ :=
+    h₁₂.ratLocEquiv.symm.toRingHom.comp ((algebraMap R₂ R₁₂).comp h₂.ratLocEquiv.toRingHom)
   let _ : Algebra L₁ L₁₂ := φ₁.toAlgebra
   let _ : Algebra L₂ L₁₂ := φ₂.toAlgebra
   have _ : IsScalarTower R L₁ L₁₂ := IsScalarTower.of_algebraMap_eq fun r ↦ by
-    change algebraMap R L₁₂ r = e₁₂.symm (algebraMap R₁ R₁₂ (e₁ (algebraMap R L₁ r)))
-    rw [e₁.commutes, ← IsScalarTower.algebraMap_apply R R₁ R₁₂, ← e₁₂.commutes,
-      AlgEquiv.symm_apply_apply]
+    change algebraMap R L₁₂ r =
+      h₁₂.ratLocEquiv.symm (algebraMap R₁ R₁₂ (h₁.ratLocEquiv (algebraMap R L₁ r)))
+    rw [h₁.ratLocEquiv.commutes, ← IsScalarTower.algebraMap_apply R R₁ R₁₂,
+      ← h₁₂.ratLocEquiv.commutes, AlgEquiv.symm_apply_apply]
   have _ : IsScalarTower R L₂ L₁₂ := IsScalarTower.of_algebraMap_eq fun r ↦ by
-    change algebraMap R L₁₂ r = e₁₂.symm (algebraMap R₂ R₁₂ (e₂ (algebraMap R L₂ r)))
-    rw [e₂.commutes, ← IsScalarTower.algebraMap_apply R R₂ R₁₂, ← e₁₂.commutes,
-      AlgEquiv.symm_apply_apply]
+    change algebraMap R L₁₂ r =
+      h₁₂.ratLocEquiv.symm (algebraMap R₂ R₁₂ (h₂.ratLocEquiv (algebraMap R L₂ r)))
+    rw [h₂.ratLocEquiv.commutes, ← IsScalarTower.algebraMap_apply R R₂ R₁₂,
+      ← h₁₂.ratLocEquiv.commutes, AlgEquiv.symm_apply_apply]
   have hL₁ := isRationalCompletion_ratLoc P {f, 1} 1 hT₁
   have hL₂ := isRationalCompletion_ratLoc P {1} f hT₂
   have hL₁₂ := isRationalCompletion_ratLoc P {f * f, 1} f hT₁₂
   have hcL₁ : Continuous (algebraMap L₁ L₁₂) := by
-    rw [RingHom.algebraMap_toAlgebra]; exact he₁₂'.comp (hc₁.comp he₁)
+    rw [RingHom.algebraMap_toAlgebra]
+    exact h₁₂.continuous_ratLocEquiv_symm.comp (hc₁.comp h₁.continuous_ratLocEquiv)
   have hcL₂ : Continuous (algebraMap L₂ L₁₂) := by
-    rw [RingHom.algebraMap_toAlgebra]; exact he₁₂'.comp (hc₂.comp he₂)
+    rw [RingHom.algebraMap_toAlgebra]
+    exact h₁₂.continuous_ratLocEquiv_symm.comp (hc₂.comp h₂.continuous_ratLocEquiv)
   obtain ⟨hinj, hexact⟩ :=
     laurent_injective_and_exact_of_isSheafyForEveryPresentation S hs hL₁ hL₂ hL₁₂ hcL₁ hcL₂
   obtain ⟨P₀, hP₀, -⟩ := hs.exists_compatible_isSheaf
@@ -115,8 +112,10 @@ theorem GlueingSquare.of_simpleLaurent [IsTateRing R] (S : Pair R)
       (hL₂.denseRange_of_comp_algebraMap_eq hL₁₂
         (RingHom.ext fun x ↦ (IsScalarTower.algebraMap_apply R L₂ L₁₂ x).symm))
       (exists_prime_comap_eq_of_simpleLaurent S.plus S.isRingOfIntegralElements hP₀ f hL₁ hL₂)
-  exact hsqL.congr e₁ he₁ he₁' e₂ he₂ he₂' e₁₂.toRingEquiv he₁₂ he₁₂'
-    (fun _ ↦ e₁₂.apply_symm_apply _) (fun _ ↦ e₁₂.apply_symm_apply _)
+  exact hsqL.congr h₁.ratLocEquiv h₁.continuous_ratLocEquiv h₁.continuous_ratLocEquiv_symm
+    h₂.ratLocEquiv h₂.continuous_ratLocEquiv h₂.continuous_ratLocEquiv_symm
+    h₁₂.ratLocEquiv.toRingEquiv h₁₂.continuous_ratLocEquiv h₁₂.continuous_ratLocEquiv_symm
+    (fun _ ↦ h₁₂.ratLocEquiv.apply_symm_apply _) (fun _ ↦ h₁₂.ratLocEquiv.apply_symm_apply _)
 
 /-- Convenience form of `GlueingSquare.of_simpleLaurent` for any sheafy complete Hausdorff Tate
 ring `R`, using the canonical Huber pair `(R, R°)`. -/

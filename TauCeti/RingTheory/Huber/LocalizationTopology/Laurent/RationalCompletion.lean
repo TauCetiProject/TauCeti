@@ -121,38 +121,35 @@ theorem IsRationalCompletion.surjective_sub_laurent
     Function.Surjective fun x : B₁ × B₂ ↦ ρ₁ x.1 - ρ₂ x.2 := by
   let _ := P.toNonarchimedeanRing
   have _ : T2Space B₁₂ := h₁₂.t2Space
-  let e₁ := h₁.ratLocEquiv
-  let he₁ := h₁.continuous_ratLocEquiv
-  let e₂ := h₂.ratLocEquiv
-  let he₂ := h₂.continuous_ratLocEquiv
-  let e₁₂ := h₁₂.ratLocEquiv
-  let he₁₂ := h₁₂.continuous_ratLocEquiv
   have ht₁ : ∀ i : Fin 1, ![f] i ∈ ({f, 1} : Finset A) := fun i ↦ by fin_cases i; simp
   have ht₂ : ∀ i : Fin 1, ![1] i ∈ ({1} : Finset A) := fun i ↦ by fin_cases i; simp
   have ht₁₂ : ∀ i : Fin 2, ![f * f, 1] i ∈ ({f * f, 1} : Finset A) :=
     Fin.forall_fin_two.mpr ⟨by simp, by simp⟩
-  let π₁ := modelEvalHom P hT₁ e₁ ![f] ht₁
-  let π₂ := modelEvalHom P hT₂ e₂ ![1] ht₂
-  let π₁₂ := modelEvalHom P hT₁₂ e₁₂ ![f * f, 1] ht₁₂
+  let π₁ := modelEvalHom P hT₁ h₁.ratLocEquiv ![f] ht₁
+  let π₂ := modelEvalHom P hT₂ h₂.ratLocEquiv ![1] ht₂
+  let π₁₂ := modelEvalHom P hT₁₂ h₁₂.ratLocEquiv ![f * f, 1] ht₁₂
   have hX₀ : π₁₂ (weightedX _ isWeightFamily_one_weight 0) = algebraMap A B₁₂ f :=
-    modelEvalHom_X_eq_algebraMap_of_mul P hT₁₂ e₁₂ ![f * f, 1] ht₁₂ 0 rfl
+    modelEvalHom_X_eq_algebraMap_of_mul P hT₁₂ h₁₂.ratLocEquiv ![f * f, 1] ht₁₂ 0 rfl
   have hmul₁₂ : algebraMap A B₁₂ f * π₁₂ (weightedX _ isWeightFamily_one_weight 1) = 1 :=
-    modelEvalHom_X_mul_inv P hT₁₂ e₁₂ ![f * f, 1] ht₁₂ 1 rfl
-  have hρ₁ := comp_modelEvalHom_eq_weightedRename P hT₁ hT₁₂ e₁ he₁ e₁₂ he₁₂
-    ![f] ht₁ ![f * f, 1] ht₁₂ ρ₁ hc₁ Fin.castSuccEmb (by
+    modelEvalHom_X_mul_inv P hT₁₂ h₁₂.ratLocEquiv ![f * f, 1] ht₁₂ 1 rfl
+  have hρ₁ := comp_modelEvalHom_eq_weightedRename P hT₁ hT₁₂ h₁.ratLocEquiv
+    h₁.continuous_ratLocEquiv h₁₂.ratLocEquiv h₁₂.continuous_ratLocEquiv ![f] ht₁ ![f * f, 1]
+    ht₁₂ ρ₁ hc₁ Fin.castSuccEmb (by
       rw [Fin.castSuccEmb_apply, Fin.castSucc_zero,
-        modelEvalHom_X_eq_algebraMap_of_mul P hT₁ e₁ ![f] ht₁ 0 (one_mul f).symm, ρ₁.commutes]
+        modelEvalHom_X_eq_algebraMap_of_mul P hT₁ h₁.ratLocEquiv ![f] ht₁ 0 (one_mul f).symm,
+        ρ₁.commutes]
       exact hX₀.symm)
-  have hρ₂ := comp_modelEvalHom_eq_weightedRename P hT₂ hT₁₂ e₂ he₂ e₁₂ he₁₂
-    ![1] ht₂ ![f * f, 1] ht₁₂ ρ₂ hc₂ (Fin.succEmb 1) (by
+  have hρ₂ := comp_modelEvalHom_eq_weightedRename P hT₂ hT₁₂ h₂.ratLocEquiv
+    h₂.continuous_ratLocEquiv h₁₂.ratLocEquiv h₁₂.continuous_ratLocEquiv ![1] ht₂ ![f * f, 1]
+    ht₁₂ ρ₂ hc₂ (Fin.succEmb 1) (by
       have hmul₂ : algebraMap A B₁₂ f *
           ρ₂ (π₂ (weightedX _ isWeightFamily_one_weight 0)) = 1 := by
         rw [← ρ₂.commutes f, ← map_mul,
-          modelEvalHom_X_mul_inv P hT₂ e₂ ![1] ht₂ 0 rfl, map_one]
+          modelEvalHom_X_mul_inv P hT₂ h₂.ratLocEquiv ![1] ht₂ 0 rfl, map_one]
       rw [Fin.coe_succEmb, Fin.succ_zero_eq_one']
       exact left_inv_eq_right_inv (by rw [mul_comm]; exact hmul₂) hmul₁₂)
   intro y
-  obtain ⟨u, rfl⟩ := modelEvalHom_surjective_overlap P f hT₁₂ e₁₂ y
+  obtain ⟨u, rfl⟩ := modelEvalHom_surjective_overlap P f hT₁₂ h₁₂.ratLocEquiv y
   obtain ⟨⟨g, h⟩, hgh⟩ := laurentDiff_surjective A (Ideal.Quotient.mk (laurentIdeal A) u)
   rw [laurentDiff_apply, Ideal.Quotient.eq, mem_laurentIdeal] at hgh
   obtain ⟨w, hw⟩ := hgh
@@ -164,8 +161,7 @@ theorem IsRationalCompletion.surjective_sub_laurent
   rw [map_sub, map_sub, map_mul, hrel, zero_mul, sub_eq_zero] at hsub
   have hρ₁g : ρ₁ (π₁ g) = π₁₂ _ := RingHom.congr_fun hρ₁ g
   have hρ₂h : ρ₂ (π₂ h) = π₁₂ _ := RingHom.congr_fun hρ₂ h
-  dsimp only [π₁, π₂, π₁₂] at hsub hρ₁g hρ₂h ⊢
-  rwa [hρ₁g, hρ₂h]
+  dsimp only [π₁, π₂, π₁₂] at hsub hρ₁g hρ₂h ⊢; rwa [hρ₁g, hρ₂h]
 
 /-- Scalar-tower form of `IsRationalCompletion.surjective_sub_laurent`, for `B₁ → B₁₂` and
 `B₂ → B₁₂` given as `[Algebra B₁ B₁₂]` and `[Algebra B₂ B₁₂]`. -/

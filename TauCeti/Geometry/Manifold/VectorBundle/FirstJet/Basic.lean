@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Analysis.Calculus.Jet.FirstOrder
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Topology.VectorBundle.Trivialization
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -36,7 +37,10 @@ change of charts.
   (`TauCeti.FirstJetBundle.contMDiffVectorBundle`).
 * `TauCeti.FirstJetBundle.localRep`: the local representative of a section in a chart and
   trivialization. Local representatives in two charts are related by the coordinate change of `V`
-  and the change of charts (`TauCeti.FirstJetBundle.localRep_eventuallyEq_fiberCoordChange`).
+  and the change of charts (`TauCeti.FirstJetBundle.localRep_eventuallyEq_fiberCoordChange`), and
+  near the image of the base point it is linear in the section
+  (`TauCeti.FirstJetBundle.localRep_add_eventuallyEq`,
+  `TauCeti.FirstJetBundle.localRep_smul_eventuallyEq`).
 * `TauCeti.FirstJetBundle.jet`: the first jet `j¹s(x)` of a section. For a section differentiable
   at the point, in every chart it is the value and the chart derivative of the local
   representative (`TauCeti.FirstJetBundle.trivializationAt_jet`), and it is a `C^n` section of
@@ -125,13 +129,28 @@ theorem mem_extChartAt_source_of_mem_baseSet {i y : M}
   exact hy.2
 
 /-- Near the image in the extended chart at `j` of a point `y` of the first-jet chart domain at `i`
+and the chart domain at `j`, in the whole model space, the inverse of that extended chart lands in
+the first-jet chart domain at `i`. -/
+theorem eventually_extChartAt_symm_mem_baseSet_nhds {i j y : M}
+    (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ (chartAt H j).source) :
+    ∀ᶠ z in 𝓝 (extChartAt I j y), (extChartAt I j).symm z ∈ baseSet (H := H) F V i :=
+  extChartAt_preimage_mem_nhds' (by rwa [extChartAt_source]) ((isOpen_baseSet F V i).mem_nhds hi)
+
+/-- Near the image in the extended chart at `j` of a point `y` of the first-jet chart domain at `i`
 and the chart domain at `j`, the inverse of that extended chart lands in the first-jet chart domain
 at `i`. -/
 theorem eventually_extChartAt_symm_mem_baseSet {i j y : M}
     (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ (chartAt H j).source) :
     ∀ᶠ z in 𝓝[range I] extChartAt I j y, (extChartAt I j).symm z ∈ baseSet (H := H) F V i :=
-  mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds'
-    (by rwa [extChartAt_source]) ((isOpen_baseSet F V i).mem_nhds hi))
+  mem_nhdsWithin_of_mem_nhds (eventually_extChartAt_symm_mem_baseSet_nhds I hi hj)
+
+/-- On a boundaryless manifold, the change of extended charts from `j` to `i` is `C^n` at the
+image of a point of the first-jet chart domains at `i` and `j` when `M` is. -/
+theorem contDiffAt_ext_coord_change_of_mem_baseSet [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M]
+    {i j y : M} (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j) :
+    ContDiffAt 𝕜 n (extChartAt I i ∘ (extChartAt I j).symm) (extChartAt I j y) :=
+  contDiffAt_ext_coord_change_extChartAt ((mem_baseSet_iff F V).1 hi).2
+    ((mem_baseSet_iff F V).1 hj).2
 
 end FirstJetBundle
 
@@ -186,6 +205,15 @@ theorem hasFDerivWithinAt_fiberCoordChange [IsManifold I 1 M] [ContMDiffVectorBu
       (extChartAt I j y) :=
   ((contDiffWithinAt_fiberCoordChange (n := 1) hi hj).differentiableWithinAt
     one_ne_zero).hasFDerivWithinAt
+
+/-- On a boundaryless manifold, the coordinate change of `V`, written in a chart, is `C^n` at the
+image of a point of the chart domains when `M` and `V` are. -/
+theorem contDiffAt_fiberCoordChange [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M]
+    [ContMDiffVectorBundle n F V I] {i j y : M} (hi : y ∈ (trivializationAt F V i).baseSet)
+    (hj : y ∈ baseSet (H := H) F V j) :
+    ContDiffAt 𝕜 n (fiberCoordChange I F V i j) (extChartAt I j y) := by
+  have h := contDiffWithinAt_fiberCoordChange (I := I) (n := n) hi hj
+  rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
 
 section
 
@@ -528,18 +556,70 @@ theorem contDiffWithinAt_localRep {n : ℕ∞ω} [IsManifold I n M] [ContMDiffVe
   exact contMDiffWithinAt_iff_contDiffWithinAt.1 (h₁.comp_contMDiffWithinAt _
     (contMDiffWithinAt_extChartAt_symm_range i ((extChartAt I i).map_source hy)))
 
+/-- On a boundaryless manifold, the local representative in the chart and trivialization at `i`
+of a section that is `C^n` at a point `y` of the first-jet chart domain at `i` is `C^n` at the
+image of `y`. -/
+theorem contDiffAt_localRep [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M]
+    [ContMDiffVectorBundle n F V I] {s : ∀ x, V x} {i y : M}
+    (hs : ContMDiffAt I (I.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (s x)) y)
+    (hi : y ∈ baseSet (H := H) F V i) :
+    ContDiffAt 𝕜 n (localRep I F s i) (extChartAt I i y) := by
+  have h := contDiffWithinAt_localRep I F hs hi
+  rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
+
+/-- **Transformation law for local representatives**, in the whole model space. Near the image of
+a point `y` of the first-jet chart domains at `i` and `j`, the local representative at `j` is the
+coordinate change of `V` from `i` to `j` applied to the local representative at `i` after the
+change of charts. -/
+theorem localRep_eventuallyEq_fiberCoordChange_nhds (s : ∀ x, V x) {i j y : M}
+    (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j) :
+    localRep I F s j =ᶠ[𝓝 (extChartAt I j y)] fun z ↦ fiberCoordChange I F V i j z
+      (localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) z)) := by
+  filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hi hj.2,
+    eventually_extChartAt_symm_mem_baseSet_nhds I hj hj.2] with z hzi hzj
+  rw [Function.comp_apply, localRep_extChartAt I F s hzi.2, fiberCoordChange_apply,
+    ContinuousLinearEquiv.coe_coe,
+    Trivialization.coordChangeL_apply_snd 𝕜 _ _ (p := ⟨_, s _⟩) hzi.1 hzj.1, localRep_apply]
+
 /-- **Transformation law for local representatives.** Near the image of a point `y` of the
 first-jet chart domains at `i` and `j`, the local representative at `j` is the coordinate change
 of `V` from `i` to `j` applied to the local representative at `i` after the change of charts. -/
 theorem localRep_eventuallyEq_fiberCoordChange (s : ∀ x, V x) {i j y : M}
     (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j) :
     localRep I F s j =ᶠ[𝓝[range I] (extChartAt I j y)] fun z ↦ fiberCoordChange I F V i j z
-      (localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) z)) := by
-  filter_upwards [eventually_extChartAt_symm_mem_baseSet I hi hj.2,
-    eventually_extChartAt_symm_mem_baseSet I hj hj.2] with z hzi hzj
-  rw [Function.comp_apply, localRep_extChartAt I F s hzi.2, fiberCoordChange_apply,
-    ContinuousLinearEquiv.coe_coe,
-    Trivialization.coordChangeL_apply_snd 𝕜 _ _ (p := ⟨_, s _⟩) hzi.1 hzj.1, localRep_apply]
+      (localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) z)) :=
+  (localRep_eventuallyEq_fiberCoordChange_nhds I F s hi hj).filter_mono nhdsWithin_le_nhds
+
+/-- Near the image of a point of the first-jet chart domain at `i`, the local representative at
+`i` of the zero section is zero. -/
+theorem localRep_zero_eventuallyEq {i y : M} (hi : y ∈ baseSet (H := H) F V i) :
+    localRep I F (0 : ∀ x, V x) i =ᶠ[𝓝 (extChartAt I i y)] 0 := by
+  filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hi hi.2] with z hz
+  exact ((trivializationAt F V i).linear 𝕜 hz.1).map_zero
+
+/-- Near the image of a point of the first-jet chart domain at `i`, the local representative at
+`i` of a sum of sections is the sum of the local representatives. -/
+theorem localRep_add_eventuallyEq (s t : ∀ x, V x) {i y : M} (hi : y ∈ baseSet (H := H) F V i) :
+    localRep I F (s + t) i =ᶠ[𝓝 (extChartAt I i y)] localRep I F s i + localRep I F t i := by
+  filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hi hi.2] with z hz
+  exact ((trivializationAt F V i).linear 𝕜 hz.1).map_add _ _
+
+/-- Near the image of a point of the first-jet chart domain at `i`, the local representative at
+`i` of the product of a section with a scalar function `f` is the product of the local
+representative with `f` read in the chart at `i`. -/
+theorem localRep_smul_eventuallyEq (f : M → 𝕜) (s : ∀ x, V x) {i y : M}
+    (hi : y ∈ baseSet (H := H) F V i) :
+    localRep I F (fun x ↦ f x • s x) i =ᶠ[𝓝 (extChartAt I i y)]
+      fun z ↦ f ((extChartAt I i).symm z) • localRep I F s i z := by
+  filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hi hi.2] with z hz
+  exact ((trivializationAt F V i).linear 𝕜 hz.1).map_smul _ _
+
+/-- Near the image of a point of the first-jet chart domain at `i`, the local representative at
+`i` of a constant multiple of a section is the same multiple of the local representative. -/
+theorem localRep_const_smul_eventuallyEq (c : 𝕜) (s : ∀ x, V x) {i y : M}
+    (hi : y ∈ baseSet (H := H) F V i) :
+    localRep I F (c • s) i =ᶠ[𝓝 (extChartAt I i y)] c • localRep I F s i :=
+  localRep_smul_eventuallyEq I F (fun _ ↦ c) s hi
 
 section
 
@@ -576,6 +656,34 @@ at `x`. -/
 @[simp]
 theorem jet_snd (s : ∀ x, V x) (x : M) :
     (jet I F s x).2 = fderivWithin 𝕜 (localRep I F s x) (range I) (extChartAt I x x) := (rfl)
+
+variable {I F} in
+/-- First jets are additive on differentiable sections. -/
+theorem jet_add {s t : ∀ x, V x} {x : M}
+    (hs : MDiffAt (T% s) x) (ht : MDiffAt (T% t) x) :
+    jet I F (s + t) x = jet I F s x + jet I F t x := by
+  have hx := mem_baseSet_self (H := H) F V x
+  have hmem := extChartAt_target_subset_range x (mem_extChartAt_target (I := I) x)
+  apply Prod.ext
+  · simp only [fst_add, jet_fst, Pi.add_apply]
+    exact (trivializationAt F V x).linear 𝕜 hx.1 |>.map_add (s x) (t x)
+  · rw [snd_add, jet_snd, jet_snd, jet_snd,
+      (localRep_add_eventuallyEq I F s t hx).fderivWithin_eq_of_nhds]
+    exact fderivWithin_add (I.uniqueDiffOn _ hmem)
+      (differentiableWithinAt_localRep I F hs hx) (differentiableWithinAt_localRep I F ht hx)
+
+variable {I F} in
+/-- First jets commute with constant scalar multiplication, even for nondifferentiable sections. -/
+theorem jet_const_smul (c : 𝕜) (s : ∀ x, V x) (x : M) :
+    jet I F (c • s) x = c • jet I F s x := by
+  have hx := mem_baseSet_self (H := H) F V x
+  apply Prod.ext
+  · simp only [smul_fst, jet_fst, Pi.smul_apply]
+    exact (trivializationAt F V x).linear 𝕜 hx.1 |>.map_smul c (s x)
+  · have hmem := extChartAt_target_subset_range x (mem_extChartAt_target (I := I) x)
+    rw [smul_snd, jet_snd, jet_snd,
+      (localRep_const_smul_eventuallyEq I F c s hx).fderivWithin_eq_of_nhds]
+    exact fderivWithin_const_smul_field c (I.uniqueDiffOn _ hmem)
 
 /-- **The first jet in an arbitrary chart.** In the chart and trivialization at `i`, the first jet
 of a section differentiable at `y` consists of the value and the chart derivative of the local
@@ -826,6 +934,45 @@ theorem ofDeriv_fst (x : M) (L : TangentSpace I x →L[𝕜] V x) : (ofDeriv I F
 theorem ofDeriv_snd (x : M) (L : TangentSpace I x →L[𝕜] V x) :
     (ofDeriv I F x L).2 = ((trivializationAt F V x).continuousLinearMapAt 𝕜 x).comp L :=
   (rfl)
+
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)] in
+variable {I F} in
+/-- The first-jet Leibniz rule; the derivative term lies in the kernel of the value projection. -/
+theorem jet_smul {f : M → 𝕜} {s : ∀ x, V x} {x : M}
+    (hf : MDiffAt f x) (hs : MDiffAt (T% s) x) :
+    letI := VectorBundle.isTopologicalAddGroup 𝕜 F V
+    letI := VectorBundle.continuousSMul 𝕜 F V
+    jet I F (f • s) x = f x • jet I F s x +
+      ofDeriv I F x ((mvfderiv I f x).smulRight (s x)) := by
+  have hx := mem_baseSet_self (H := H) F V x
+  have hrep : writtenInExtChartAt I 𝓘(𝕜) x f = f ∘ (extChartAt I x).symm := by
+    simp [writtenInExtChartAt]
+  have hf' : DifferentiableWithinAt 𝕜 (f ∘ (extChartAt I x).symm)
+      (range I) (extChartAt I x x) := by
+    rw [← hrep]
+    exact hf.differentiableWithinAt_writtenInExtChartAt
+  have hdf : fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (range I) (extChartAt I x x) =
+      mvfderiv I f x := by
+    rw [hf.mvfderiv, hrep]
+  have hmem := extChartAt_target_subset_range x (mem_extChartAt_target (I := I) x)
+  apply Prod.ext
+  · rw [fst_add, smul_fst, jet_fst, jet_fst, ofDeriv_fst, add_zero]
+    exact (trivializationAt F V x).linear 𝕜 hx.1 |>.map_smul (f x) (s x)
+  · have hrep_smul : localRep I F (f • s) x =ᶠ[𝓝 (extChartAt I x x)]
+        (f ∘ (extChartAt I x).symm) • localRep I F s x :=
+      localRep_smul_eventuallyEq I F f s hx
+    rw [snd_add, smul_snd, jet_snd, jet_snd, ofDeriv_snd, hrep_smul.fderivWithin_eq_of_nhds,
+      fderivWithin_smul (I.uniqueDiffOn _ hmem) hf'
+        (differentiableWithinAt_localRep I F hs hx), hdf,
+      Function.comp_apply, (extChartAt I x).left_inv (mem_extChartAt_source x),
+      localRep_extChartAt I F s hx.2]
+    congr 1
+    ext v
+    -- The domain is the tangent-space type synonym; evaluating both linear maps
+    -- exposes the scalar multiplication in the fibre.
+    change mvfderiv I f x v • (trivializationAt F V x ⟨x, s x⟩).2 =
+      (trivializationAt F V x).continuousLinearMapAt 𝕜 x (mvfderiv I f x v • s x)
+    rw [map_smul, Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hx.1]
 
 /-- The inclusion of `Hom(TₓM, Vₓ)` into the first jets is injective. -/
 theorem ofDeriv_injective (x : M) : Function.Injective (ofDeriv I F (V := V) x) := by

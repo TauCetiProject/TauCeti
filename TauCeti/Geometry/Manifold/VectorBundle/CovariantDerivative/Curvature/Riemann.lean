@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.LinearAlgebra.Multilinear.SectionalPolarization
 
 /-!
@@ -41,6 +41,8 @@ The sign and argument conventions follow J. M. Lee, *Introduction to Riemannian 
 * `CovariantDerivative.ricciTensor_eq_sum_riemannCurvatureTensor` and
   `CovariantDerivative.scalarCurvature_eq_sum_riemannCurvatureTensor`: the Ricci and scalar
   contractions in an orthonormal basis.
+* `CovariantDerivative.scalarCurvature_nonneg_of_riemannCurvatureTensor_nonneg`: nonnegative
+  sectional numerators imply nonnegative scalar curvature.
 -/
 
 public section
@@ -100,6 +102,15 @@ theorem scalarCurvature_eq_sum_riemannCurvatureTensor {i : Type*} [Fintype i] (x
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
   rw [riemannCurvatureTensor_apply, real_inner_comm]
 
+/-- Nonnegative sectional numerators imply nonnegative scalar curvature. Neither metric
+compatibility nor smoothness of the metric is required. -/
+theorem scalarCurvature_nonneg_of_riemannCurvatureTensor_nonneg
+    (x : M) (hpos : ∀ u v, 0 ≤ cov.riemannCurvatureTensor x u v v u) :
+    0 ≤ cov.scalarCurvature x := by
+  rw [cov.scalarCurvature_eq_sum_riemannCurvatureTensor x
+    (stdOrthonormalBasis ℝ (TangentSpace I x))]
+  exact Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ hpos _ _
+
 /-- The Riemann curvature tensor is antisymmetric in its first pair of arguments. -/
 theorem riemannCurvatureTensor_antisymm_first (x : M) (u v w z : TangentSpace I x) :
     cov.riemannCurvatureTensor x u v w z =
@@ -157,11 +168,12 @@ theorem IsMetricCompatible.twentyFour_mul_riemannCurvatureTensor_eq
       (cov.riemannCurvatureTensor x (v + z) (u + w) (u + w) (v + z) -
           cov.riemannCurvatureTensor x (v + z) (u - w) (u - w) (v + z) -
         cov.riemannCurvatureTensor x (v - z) (u + w) (u + w) (v - z) +
-          cov.riemannCurvatureTensor x (v - z) (u - w) (u - w) (v - z)) :=
-  LinearMap.twentyFour_mul_apply_eq_of_cyclic_eq_zero
-    (cov.riemannCurvatureTensor_antisymm_first x)
-    (hcov.riemannCurvatureTensor_antisymm_last cov x)
-    (cov.riemannCurvatureTensor_cyclic_eq_zero ht x) u v w z
+          cov.riemannCurvatureTensor x (v - z) (u - w) (u - w) (v - z)) := by
+  simpa only [nsmul_eq_mul, Nat.cast_ofNat] using
+    (cov.riemannCurvatureTensor x).twentyFour_nsmul_apply_eq_of_cyclic_eq_zero
+      (cov.riemannCurvatureTensor_antisymm_first x)
+      (hcov.riemannCurvatureTensor_antisymm_last cov x)
+      (cov.riemannCurvatureTensor_cyclic_eq_zero ht x) u v w z
 
 variable {cov} in
 /-- For a metric-compatible torsion-free connection, the Riemann curvature tensor at `x` is the
@@ -177,8 +189,8 @@ theorem IsMetricCompatible.riemannCurvatureTensor_eq_of_forall_linearIndependent
     (h₃ : ∀ u v w z, T u v w z + T v w u z + T w u v z = 0)
     (hT : ∀ u v, LinearIndependent ℝ ![u, v] → cov.riemannCurvatureTensor x u v v u = T u v v u) :
     cov.riemannCurvatureTensor x = T :=
-  LinearMap.eq_of_cyclic_eq_zero_of_linearIndependent (by norm_num)
-    (cov.riemannCurvatureTensor_antisymm_first x)
+  (cov.riemannCurvatureTensor x).eq_of_apply_self_eq_of_linearIndependent
+    (fun _ ↦ smul_left_injective ℝ) (by norm_num) (cov.riemannCurvatureTensor_antisymm_first x)
     (IsMetricCompatible.riemannCurvatureTensor_antisymm_last cov hcov x)
     (cov.riemannCurvatureTensor_cyclic_eq_zero ht x) h₁ h₂ h₃ hT
 

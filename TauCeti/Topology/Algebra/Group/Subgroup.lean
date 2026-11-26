@@ -11,9 +11,11 @@ public import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Basic
 public import TauCeti.Topology.Algebra.Group.Neighborhood
+public import TauCeti.Topology.Homeomorph.Pi
 import Mathlib.Algebra.Ring.Int.Parity
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import Mathlib.Topology.UniformSpace.CompleteSeparated
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.Topology.Algebra.IsUniformGroup.Defs
 
 /-!
@@ -48,7 +50,8 @@ series of a profinite group.
 
 ## Main results
 
-* `Subgroup.continuous_inclusion`: the inclusion of a subgroup into a larger one is continuous.
+* `Subgroup.continuous_subtype`, `Subgroup.continuous_inclusion`: the inclusion of a subgroup into
+  the ambient group, and into a larger subgroup, is continuous.
 * `Subgroup.subgroupOfContinuousMulEquivOfLe_smul`: the topological identification of a subgroup
   with its copy inside a larger subgroup respects every restricted ambient action.
 * `Subgroup.continuous_subgroupOf_codRestrict`: the inclusion of `U ⊓ D` into `U`, presented
@@ -87,20 +90,29 @@ series of a profinite group.
   closed.
 * `ContinuousMulEquiv.map_topologicalClosure_normalClosure`: a topological group isomorphism
   carries the closed normal closure of a set onto the closed normal closure of its image.
+* `ContinuousMulEquiv.isCompact_closure_zpowers_iff`: a topological group isomorphism `e` carries
+  the powers of `x` to a relatively compact set exactly when the powers of `x` are relatively
+  compact.
 * `Subgroup.commutator_topologicalClosure_right_le`: a closed subgroup containing `⁅A, B⁆`
   contains `⁅A, B.topologicalClosure⁆`.
+* `Subgroup.topologicalClosure_commutator_topologicalClosure`: the closure of the commutator of
+  the closures of two subgroups is the closure of their commutator.
 * `DenseRange.topologicalClosure_map_commutator`: a homomorphism with dense range maps the
   commutator subgroup onto a dense subgroup of the closed commutator subgroup.
 * `Subgroup.topologicalClosure_commutator_le_of_forall_commutatorElement_mem`: a closed normal
   subgroup containing the commutators of a topological generating set contains the closure of
   the commutator subgroup.
 * `Subgroup.instCompactSpace_of_isClosed`: a closed subgroup of a compact group is compact.
+* `Subgroup.piContinuousMulEquiv`: a product `Subgroup.pi Set.univ H` of subgroups, with the
+  subspace topology of the product group, is the product of the subgroups `H i` with their
+  subspace topologies.
 * `Subgroup.isClosed_of_weaklyLocallyCompactSpace`: a weakly locally compact subgroup of a
   `T0` topological group is closed; the additive version is
   `AddSubgroup.isClosed_of_weaklyLocallyCompactSpace`.
 * `Subgroup.isCompact_sup_of_le_normalizer`: the join of two compact subgroups, the first
   normalizing the second, is compact.
 * `Subgroup.isCompact_conj_smul`: a conjugate of a compact subgroup is compact.
+* `Subgroup.isOpen_map_conj_iff`: a conjugate of a subgroup is open exactly when the subgroup is.
 * `Subgroup.maximal_isCompact_iff_exists_eq_conj_smul`: if every compact subgroup is conjugate
   into a maximal compact subgroup `U`, the maximal compact subgroups are the conjugates of `U`.
 * `Subgroup.isClosed_normalizer`: the normalizer of a closed subset is closed.
@@ -209,24 +221,16 @@ theorem _root_.Dense.denseRange_subgroupOf_codRestrict {D U : Subgroup G}
 /-- **An open subgroup has the same index in a dense subgroup.** If `f : G' →* G` has dense range
 and `U` is an open subgroup of a group `G` with continuous left translations, then the preimage of
 `U` has the same index in `G'` as `U` has in `G`: the range of `f` meets every coset of `U`, since
-the cosets are open.
-
-The proof is adapted from Mathlib's `Subgroup.index_comap_of_surjective`. -/
+the cosets are open, so the coset-space map `TauCeti.QuotientGroup.mapComap` is a bijection. -/
 theorem index_comap_of_denseRange [ContinuousConstSMul G G] {G' : Type*} [Group G'] {f : G' →* G}
     (hf : DenseRange f) {U : Subgroup G} (hU : IsOpen (U : Set G)) :
     (U.comap f).index = U.index := by
-  have key (x y : G') :
-      QuotientGroup.leftRel (U.comap f) x y ↔ QuotientGroup.leftRel U (f x) (f y) := by
-    simp only [QuotientGroup.leftRel_apply, mem_comap, map_mul, map_inv]
-  refine Nat.card_congr (Equiv.ofBijective (Quotient.map' f fun x y ↦ (key x y).1) ⟨?_, ?_⟩)
-  · refine Quotient.ind' fun x ↦ Quotient.ind' fun y h ↦ ?_
-    exact Quotient.sound' ((key x y).2 (Quotient.exact' h))
-  · -- The coset `g U` is open and nonempty, so it meets the dense range of `f`.
-    refine Quotient.ind' fun g ↦ ?_
-    obtain ⟨x, hx⟩ := hf.exists_mem_open (hU.smul g) ⟨g, mem_own_leftCoset U.toSubmonoid g⟩
-    refine ⟨Quotient.mk'' x, Quotient.sound' ?_⟩
-    rw [QuotientGroup.leftRel_apply]
-    simpa [mem_leftCoset_iff] using U.inv_mem ((mem_leftCoset_iff g).1 hx)
+  refine Nat.card_congr (TauCeti.QuotientGroup.congrComapOfSurjectiveMk f U fun q ↦ ?_)
+  -- The coset `g U` is open and nonempty, so it meets the dense range of `f`.
+  induction q using QuotientGroup.induction_on with | H g =>
+  obtain ⟨x, hx⟩ := hf.exists_mem_open (hU.smul g) ⟨g, mem_own_leftCoset U.toSubmonoid g⟩
+  refine ⟨x, QuotientGroup.eq.2 ?_⟩
+  simpa [mem_leftCoset_iff] using U.inv_mem ((mem_leftCoset_iff g).1 hx)
 
 variable [IsTopologicalGroup G]
 
@@ -246,6 +250,15 @@ theorem isClosed_of_weaklyLocallyCompactSpace [T0Space G] (K : Subgroup G)
   have h : IsClosed (Set.range (Subtype.val : K → G)) := by
     simpa only [Subgroup.coe_subtype] using he.isClosedEmbedding.isClosed_range
   exact (Subtype.range_val (s := (K : Set G))) ▸ h
+
+omit [IsTopologicalGroup G] in
+/-- The inclusion of a subgroup into the ambient group, as a group homomorphism, is continuous.
+This is `continuous_subtype_val` stated for `H.subtype`, whose coercion to a function is
+`Subtype.val` only up to unfolding, so that constructions taking a continuous homomorphism can be
+applied to `H.subtype`. -/
+@[fun_prop]
+theorem continuous_subtype (H : Subgroup G) : Continuous H.subtype :=
+  continuous_subtypeVal
 
 omit [IsTopologicalGroup G] in
 /-- The inclusion of a subgroup into a larger subgroup is continuous. -/
@@ -308,6 +321,16 @@ theorem isCompact_conj_smul [ContinuousMul G] (g : G) {H : Subgroup G}
     (hH : IsCompact (H : Set G)) : IsCompact ((MulAut.conj g • H : Subgroup G) : Set G) := by
   rw [coe_pointwise_smul, ← Set.image_smul]
   exact hH.image (by simp only [MulAut.smul_def, MulAut.conj_apply]; fun_prop)
+
+omit [IsTopologicalGroup G] in
+/-- In a group with separately continuous multiplication, a conjugate `g H g⁻¹` of a subgroup `H`
+is open exactly when `H` is, since conjugation by `g` is a homeomorphism. -/
+theorem isOpen_map_conj_iff [SeparatelyContinuousMul G] (g : G) {H : Subgroup G} :
+    IsOpen (H.map (MulAut.conj g : G →* G) : Set G) ↔ IsOpen (H : Set G) := by
+  rw [coe_map]
+  convert (Homeomorph.smul (ConjAct.toConjAct g)).isOpen_image (s := (H : Set G)) using 2
+  ext h
+  simp [ConjAct.toConjAct_smul]
 
 omit [IsTopologicalGroup G] in
 open scoped Pointwise in
@@ -434,6 +457,16 @@ theorem _root_.ContinuousMulEquiv.map_topologicalClosure_normalClosure (α : G �
       rw [map_normalClosure s α.toMulEquiv.toMonoidHom α.surjective]
       congr 2
 
+omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
+/-- The powers of `e x` are relatively compact exactly when the powers of `x` are, for a
+topological group isomorphism `e`. -/
+theorem _root_.ContinuousMulEquiv.isCompact_closure_zpowers_iff (e : G ≃ₜ* H) (x : G) :
+    IsCompact (_root_.closure (zpowers (e x) : Set H)) ↔
+      IsCompact (_root_.closure (zpowers x : Set G)) := by
+  have hs : (zpowers (e x) : Set H) = e.toHomeomorph '' zpowers x :=
+    congrArg SetLike.coe (MonoidHom.map_zpowers (e : G →* H) x).symm
+  rw [hs, ← e.toHomeomorph.image_closure, e.toHomeomorph.isCompact_image]
+
 open scoped commutatorElement in
 /-- A closed subgroup containing the commutators `⁅A, B⁆` contains the commutators
 `⁅A, B.topologicalClosure⁆`. -/
@@ -446,6 +479,20 @@ theorem commutator_topologicalClosure_right_le {A B N : Subgroup G} (hN : IsClos
     fun_prop
   rw [← SetLike.mem_coe, topologicalClosure_coe] at hb
   exact closure_minimal (fun y hy ↦ h a ha y hy) (hN.preimage hcont) hb
+
+/-- **Closing up the factors of a commutator does not change its closure**:
+`closure ⁅closure A, closure B⁆ = closure ⁅A, B⁆`. -/
+theorem topologicalClosure_commutator_topologicalClosure (A B : Subgroup G) :
+    ⁅A.topologicalClosure, B.topologicalClosure⁆.topologicalClosure =
+      ⁅A, B⁆.topologicalClosure := by
+  refine le_antisymm (topologicalClosure_minimal _ ?_ (isClosed_topologicalClosure _))
+    (topologicalClosure_mono (commutator_mono (le_topologicalClosure A) (le_topologicalClosure B)))
+  -- Close up one factor at a time, swapping the factors in between.
+  refine commutator_topologicalClosure_right_le (isClosed_topologicalClosure _) ?_
+  rw [commutator_comm]
+  refine commutator_topologicalClosure_right_le (isClosed_topologicalClosure _) ?_
+  rw [commutator_comm]
+  exact le_topologicalClosure _
 
 /-- **Commutators of a dense image are dense in the commutators.** If `f : M →* H` has dense
 range, the image of the commutator subgroup of `M` is dense in the closed commutator subgroup of
@@ -497,6 +544,40 @@ theorem topologicalClosure_commutator_le_of_forall_commutatorElement_mem {s : Se
   rw [← QuotientGroup.eq_one_iff, ← QuotientGroup.mk'_apply, map_commutatorElement,
     commutatorElement_eq_one_iff_commute]
   exact setLike_mul_comm (mem_top _) (mem_top _)
+
+/-- A product `Subgroup.pi Set.univ H` of subgroups of topological groups, with the subspace
+topology of the product group, is isomorphic as a topological group to the product of the
+subgroups `H i`, each with its subspace topology. -/
+@[to_additive /-- A product `AddSubgroup.pi Set.univ H` of additive subgroups of topological
+additive groups, with the subspace topology of the product group, is isomorphic as a topological
+additive group to the product of the additive subgroups `H i`, each with its subspace topology. -/]
+def piContinuousMulEquiv {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
+    [∀ i, TopologicalSpace (G i)] (H : ∀ i, Subgroup (G i)) :
+    pi Set.univ H ≃ₜ* ∀ i, H i where
+  toHomeomorph := Homeomorph.Set.univPi fun i ↦ (H i : Set (G i))
+  -- both sides are computed coordinatewise by `Homeomorph.Set.coe_univPi_apply`, and
+  -- multiplication in `pi Set.univ H` and in each `H i` is computed in the ambient groups
+  map_mul' x y := funext fun i ↦ Subtype.ext <|
+    (Homeomorph.Set.coe_univPi_apply _ (x * y) i).trans <| congrArg₂ (· * ·)
+      (Homeomorph.Set.coe_univPi_apply _ x i).symm (Homeomorph.Set.coe_univPi_apply _ y i).symm
+
+/-- The `i`-th coordinate of the image of `x` under `Subgroup.piContinuousMulEquiv` is the `i`-th
+coordinate of `x`. -/
+@[to_additive (attr := simp) /-- The `i`-th coordinate of the image of `x` under
+`AddSubgroup.piContinuousAddEquiv` is the `i`-th coordinate of `x`. -/]
+theorem coe_piContinuousMulEquiv_apply {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
+    [∀ i, TopologicalSpace (G i)] (H : ∀ i, Subgroup (G i)) (x : pi Set.univ H) (i : ι) :
+    (piContinuousMulEquiv H x i : G i) = (x : ∀ i, G i) i :=
+  Homeomorph.Set.coe_univPi_apply _ x i
+
+/-- The inverse of `Subgroup.piContinuousMulEquiv` assembles the coordinates into an element of
+the product subgroup. -/
+@[to_additive (attr := simp) /-- The inverse of `AddSubgroup.piContinuousAddEquiv` assembles the
+coordinates into an element of the product additive subgroup. -/]
+theorem coe_piContinuousMulEquiv_symm_apply {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
+    [∀ i, TopologicalSpace (G i)] (H : ∀ i, Subgroup (G i)) (x : ∀ i, H i) :
+    ((piContinuousMulEquiv H).symm x : ∀ i, G i) = fun i ↦ (x i : G i) :=
+  Homeomorph.Set.coe_univPi_symm_apply _ x
 
 end Subgroup
 

@@ -71,10 +71,9 @@ theorem modelEvalHom_apply (x : letI := P.toNonarchimedeanRing
     letI := P.toNonarchimedeanRing
     modelEvalHom P hT e t ht x = e (P.rationalEvalHom T s (Localization.Away s)
       (P.hasDenominatorPower_of_isOpen_span T s _ hT) t ht
-      ((restrictedMvPowerSeriesCompletionEquiv k A).symm x)) := by
+      ((restrictedMvPowerSeriesCompletionEquiv k A).symm x)) :=
   let _ := P.toNonarchimedeanRing
-  simp only [modelEvalHom, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-    AlgEquiv.coe_toRingEquiv]
+  rfl
 
 /-- `modelEvalHom` sends a constant series to its image under `algebraMap A B`. -/
 theorem modelEvalHom_weightedC (a : A) :
@@ -98,11 +97,10 @@ theorem modelEvalHom_X_mul_inv (i : Fin k) (hti : t i = 1) :
     letI := P.toNonarchimedeanRing
     algebraMap A B s * modelEvalHom P hT e t ht (weightedX _ isWeightFamily_one_weight i) = 1 := by
   let _ := P.toNonarchimedeanRing
-  let S := Localization.Away s
-  let hden := P.hasDenominatorPower_of_isOpen_span T s S hT
-  let _ := P.locUniformSpace T s S hden
-  have _ := P.isUniformAddGroup_locUniformSpace T s S hden
-  have _ := P.isTopologicalRing_locUniformSpace T s S hden
+  let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
+  let _ := P.locUniformSpace _ s _ hden
+  have _ := P.isUniformAddGroup_locUniformSpace _ s _ hden
+  have _ := P.isTopologicalRing_locUniformSpace _ s _ hden
   rw [modelEvalHom_apply, restrictedMvPowerSeriesCompletionEquiv_symm_apply,
     P.rationalEvalHom_coe_weightedX, ← e.commutes s, ← map_mul, algebraMap_ratLoc,
     P.toCompletionLoc_apply, ← Completion.coe_mul, hti, divBy_one,

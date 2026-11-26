@@ -42,6 +42,11 @@ The inverse-free computation rule is `inv_smul_mk`.
   action orbits.
 * `TauCeti.UniversalCover.isQuotientCoveringMap`: `proj` is the quotient covering map for
   the fundamental-group action.
+* `TauCeti.UniversalCover.fiberShift`: for a homomorphism `P` from the fundamental group, the
+  value `P g` at the unique `g` relating two points of a fiber, `g • q = p`, and `0` for points of
+  different fibers. It is additive in the action (`TauCeti.UniversalCover.fiberShift_smul_left`)
+  and locally constant along two continuous lifts of the same map
+  (`TauCeti.UniversalCover.eventually_fiberShift_eq`).
 -/
 
 public section
@@ -183,44 +188,68 @@ theorem monodromy_basepointLift [LocallyPathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X] (x₀ : X) (g : FundamentalGroup X x₀) :
     ((isCoveringMap x₀).monodromy g.toPath (basepointLift x₀) : UniversalCover x₀) =
       g⁻¹ • (basepointLift x₀ : UniversalCover x₀) := by
-  obtain ⟨γ, hγ⟩ := Quotient.exists_rep g.toPath
-  have hbase : basepointLift x₀ =
-      (⟨ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀)),
-        Set.mem_singleton_iff.mpr (by
-          rw [proj_ofBasedPath]
-          exact BasedPath.endpoint_ofPath _)⟩ :
-        (proj : UniversalCover x₀ → X) ⁻¹' {x₀}) := by
-    apply Subtype.ext
-    simp only [basepointLift_coe, ofBasedPath_ofPath, Path.Homotopic.Quotient.mk_refl]
-  rw [hbase]
-  rw [← hγ]
-  -- Unfolding monodromy after choosing `γ` exposes the endpoint of its lifted path.
-  change (isCoveringMap x₀).liftPath γ
-      (ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀))) _ 1 = _
-  let δ : Path (BasedPath.endpoint (BasedPath.ofPath (Path.refl x₀))) x₀ :=
-    γ.cast (BasedPath.endpoint_ofPath _) rfl
-  calc
-    _ = (isCoveringMap x₀).liftPath δ
-        (ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀))) _ 1 := by
-      congr 1
-    _ = ofBasedPath x₀ (BasedPath.append (BasedPath.ofPath (Path.refl x₀)) δ) :=
-      liftPath_apply_one_eq_ofBasedPath_append δ
-    _ = g⁻¹ • ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀)) := by
-      rw [ofBasedPath_ofPath, inv_smul_mk]
-      rw [ofBasedPath_def]
-      let hend := BasedPath.endpoint_append (BasedPath.ofPath (Path.refl x₀)) δ
-      apply UniversalCover.ext hend
-      have hcast : HEq
-          (Path.Homotopic.Quotient.mk
-            (BasedPath.append (BasedPath.ofPath (Path.refl x₀)) δ).toPath)
-          (Path.Homotopic.Quotient.mk ((Path.refl x₀).trans γ)) :=
-        Path.Homotopic.hpath_hext (fun _ ↦ rfl)
-      refine hcast.trans (heq_of_eq ?_)
-      -- The `HEq` has aligned the dependent endpoints; only quotient concatenation remains.
-      change Path.Homotopic.Quotient.mk ((Path.refl x₀).trans γ) =
-        g.toPath.trans (Path.Homotopic.Quotient.refl x₀)
-      rw [← hγ, Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_refl,
-        Path.Homotopic.Quotient.refl_trans]
-      exact (Path.Homotopic.Quotient.trans_refl _).symm
+  rw [show basepointLift x₀ = ⟨mk x₀ (.refl x₀), rfl⟩ from Subtype.ext (basepointLift_coe x₀),
+    monodromy_mk, inv_smul_mk, Path.Homotopic.Quotient.refl_trans,
+    Path.Homotopic.Quotient.trans_refl]
+
+/-! ### Fiber shifts -/
+
+section FiberShift
+
+variable {A : Type*} [AddMonoid A]
+
+open Classical in
+/-- The **fiber shift** of two points `p` and `q` of the universal cover, relative to a
+homomorphism `P` from the fundamental group: `P g` for the unique `g` with `g • q = p` when `p` and
+`q` lie over the same point (`TauCeti.UniversalCover.fiberShift_smul_self`), and `0` otherwise
+(`TauCeti.UniversalCover.fiberShift_of_proj_ne`). -/
+def fiberShift (P : Additive (FundamentalGroup X x₀) →+ A) (p q : UniversalCover x₀) : A :=
+  if h : ∃ g : FundamentalGroup X x₀, g • q = p then P (Additive.ofMul h.choose) else 0
+
+variable (P : Additive (FundamentalGroup X x₀) →+ A)
+
+/-- The fiber shift from `q` to `g • q` is `P g`. -/
+@[simp]
+theorem fiberShift_smul_self (g : FundamentalGroup X x₀) (q : UniversalCover x₀) :
+    fiberShift P (g • q) q = P (Additive.ofMul g) := by
+  unfold fiberShift
+  split_ifs with h
+  · rw [IsCancelSMul.right_cancel _ _ _ h.choose_spec]
+  · exact absurd ⟨g, rfl⟩ h
+
+/-- The fiber shift from a point to itself is `0`. -/
+@[simp]
+theorem fiberShift_self (q : UniversalCover x₀) : fiberShift P q q = 0 := by
+  simpa using fiberShift_smul_self P 1 q
+
+/-- The fiber shift of two points over different points of the base is `0`. -/
+theorem fiberShift_of_proj_ne {p q : UniversalCover x₀} (h : p.proj ≠ q.proj) :
+    fiberShift P p q = 0 :=
+  dite_eq_right fun ⟨g, hg⟩ ↦ h (by rw [← hg, proj_smul])
+
+/-- The fiber shift is additive in the action: moving the first point by `g` adds `P g`. -/
+theorem fiberShift_smul_left (g : FundamentalGroup X x₀) {p q : UniversalCover x₀}
+    (h : p.proj = q.proj) :
+    fiberShift P (g • p) q = P (Additive.ofMul g) + fiberShift P p q := by
+  obtain ⟨g', rfl⟩ := proj_eq_iff_mem_orbit.mp h
+  rw [smul_smul, fiberShift_smul_self, fiberShift_smul_self, ofMul_mul, map_add]
+
+/-- The fiber shift of two continuous lifts of the same map is locally constant. -/
+theorem eventually_fiberShift_eq [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+    {Y : Type*} [TopologicalSpace Y] {s t : Y → UniversalCover x₀} {y : Y}
+    (hs : ContinuousAt s y) (ht : ContinuousAt t y)
+    (hst : ∀ᶠ y' in 𝓝 y, (s y').proj = (t y').proj) :
+    ∀ᶠ y' in 𝓝 y, fiberShift P (s y') (t y') = fiberShift P (s y) (t y) := by
+  obtain ⟨g, hg⟩ := proj_eq_iff_mem_orbit.mp hst.self_of_nhds
+  -- `s` and `g • t` are lifts of the same map that agree at `y`; near `s y` the projection is
+  -- injective, so they agree near `y`.
+  obtain ⟨U, hU, hsU, hinj⟩ := (isCoveringMap x₀).isLocalHomeomorph.isLocallyInjective (s y)
+  have hgt : ContinuousAt (fun y' ↦ g • t y') y := (continuous_const_smul g).continuousAt.comp ht
+  have h₁ : ∀ᶠ y' in 𝓝 y, s y' ∈ U := hs (hU.mem_nhds hsU)
+  have h₂ : ∀ᶠ y' in 𝓝 y, g • t y' ∈ U := hgt (by simpa [hg] using hU.mem_nhds hsU)
+  filter_upwards [h₁, h₂, hst] with y' h₁ h₂ h₃
+  rw [← hinj h₂ h₁ (by rw [proj_smul, h₃]), ← hg, fiberShift_smul_self, fiberShift_smul_self]
+
+end FiberShift
 
 end TauCeti.UniversalCover

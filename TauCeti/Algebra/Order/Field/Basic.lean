@@ -29,8 +29,9 @@ regularization.
 It records that for `0 < d`, `0 < a` and `e < a`, the time `d * e / a` lies strictly before `d`;
 this is where a timed piece of duration `d` running across `[0, a]` reaches `e`.
 
-It also records how to remove a term `ε * C` from a bound valid for every `ε ∈ (0, δ₀]`, and how
-to transfer bounds from maximizers of `f + εw` when the barrier `w` is bounded above.
+It also records how to remove a term `ε * C` from a bound valid for every `ε ∈ (0, δ₀]`, that a
+bound `a * r ^ 2 * t ≤ C` for every `r > 0` with `0 < a` forces `t ≤ 0`, and how to transfer
+bounds from maximizers of `f + εw` when the barrier `w` is bounded above.
 
 Finally, it records the rescaling identity `q |q x - m| = q² |x - m / q|` for `q > 0`, which
 converts between the two usual forms of an approximation `x ≈ m / q`.
@@ -76,6 +77,10 @@ zero only at `0`.
   determined by the sign of `a`, including the zero-coefficient case.
 * `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
   `a ≤ m`.
+* `TauCeti.add_le_of_le_affine_sub`: an affine quadratic interpolation bound above its initial
+  value forces the corresponding endpoint lower bound.
+* `TauCeti.nonpos_of_forall_pos_mul_sq_mul_le`: if `0 < a` and `a * r ^ 2 * t ≤ C` for every
+  `r > 0`, then `t ≤ 0`.
 * `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
   `f + εw` to `f` when `w` is bounded above.
 * `TauCeti.one_div_add_one_div_le_two_div`: for `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most
@@ -108,6 +113,8 @@ zero only at `0`.
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.exists_pos_le_mul_and_mul_lt_mul_inv`: choosing a uniform cutoff constant `c > 0`
+  yielding both `δ ≤ cutoff` and `M * L < weight * δ⁻¹` from `δ ≤ c / L`.
 * `TauCeti.ciSup_le_two_mul_of_le_add_mul`: the same absorption for the supremum of a bounded
   nonnegative family `Φ` with `Φ i ≤ X + c * Φ (f i)` and `c ≤ 1 / 2`.
 * `TauCeti.div_one_add_nonneg`, `TauCeti.div_one_add_lt_one`, `TauCeti.div_one_add_le_one`,
@@ -163,11 +170,38 @@ theorem le_of_forall_mem_Ioc_mul_le {α : Type*} [Field α] [LinearOrder α]
   · have hε := h δ₀ ⟨hδ₀, le_rfl⟩
     nlinarith
 
+/-- If a quadratic interpolation bound stays above its initial value `a`, its
+endpoint value `b` is at least `a + D`. -/
+theorem add_le_of_le_affine_sub {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a b D : K}
+    (h : ∀ t ∈ Set.Ioo (0 : K) 1, a ≤ (1 - t) * a + t * b - t * (1 - t) * D) :
+    a + D ≤ b := by
+  apply le_of_forall_mem_Ioc_mul_le (C := D) (δ₀ := 1 / 2) (by positivity)
+  intro t ht
+  have hbound : a + (1 - t) * D ≤ b :=
+    le_of_mul_le_mul_left (by linarith [h t ⟨ht.1, by linarith [ht.2]⟩]) ht.1
+  linarith
+
 /-- If `a ≤ m + ε * C` for every positive `ε`, then `a ≤ m`. No sign assumption on `C` is
 needed. -/
 theorem le_of_forall_pos_mul_le {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
     {a m C : α} (h : ∀ ε : α, 0 < ε → a ≤ m + ε * C) : a ≤ m :=
   le_of_forall_mem_Ioc_mul_le one_pos fun ε hε ↦ h ε hε.1
+
+/-- If `0 < a` and `a * r ^ 2 * t ≤ C` for every `r > 0`, then `t ≤ 0`: for `t > 0` the left side
+is unbounded in `r`. -/
+theorem nonpos_of_forall_pos_mul_sq_mul_le {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a t C : α} (ha : 0 < a) (h : ∀ r : α, 0 < r → a * r ^ 2 * t ≤ C) :
+    t ≤ 0 := by
+  by_contra! ht
+  have hat : 0 < a * t := mul_pos ha ht
+  set r := max 1 ((|C| + 1) / (a * t))
+  have hr1 : 1 ≤ r := le_max_left _ _
+  have hr : |C| + 1 ≤ a * t * r := by
+    rw [← div_le_iff₀' hat]
+    exact le_max_right _ _
+  nlinarith [h r (by linarith), le_abs_self C, mul_nonneg (mul_nonneg hat.le (by linarith : 0 ≤ r))
+    (sub_nonneg.2 hr1)]
 
 /-- For `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most `2 / b`. -/
 theorem one_div_add_one_div_le_two_div {α : Type*} [Field α] [LinearOrder α]
@@ -421,6 +455,27 @@ theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictO
 theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
     {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
+
+/-- Given positive `cutoff`, threshold `L₀`, `weight`, and `M`, there is `c > 0` with
+`c ≤ cutoff * L₀` such that whenever `0 < δ`, `L₀ ≤ L`, and `δ ≤ c / L`, we have both
+`δ ≤ cutoff` and `M * L < weight * δ⁻¹`. -/
+theorem exists_pos_le_mul_and_mul_lt_mul_inv {α : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {cutoff L₀ weight M : α}
+    (hcutoff : 0 < cutoff) (hL₀ : 0 < L₀) (hweight : 0 < weight) (hM : 0 < M) :
+    ∃ c : α, 0 < c ∧ c ≤ cutoff * L₀ ∧
+      ∀ {δ L : α}, 0 < δ → L₀ ≤ L → δ ≤ c / L →
+        δ ≤ cutoff ∧ M * L < weight * δ⁻¹ := by
+  refine ⟨min (cutoff * L₀) (weight / (2 * M)), by positivity, min_le_left _ _,
+    fun {δ L} hδ hL hδc ↦ ?_⟩
+  have hLpos : 0 < L := hL₀.trans_le hL
+  refine ⟨hδc.trans (div_le_of_le_mul₀ hLpos.le hcutoff.le
+    ((min_le_left _ _).trans (mul_le_mul_of_nonneg_left hL hcutoff.le))), ?_⟩
+  rw [lt_mul_inv_iff₀ hδ]
+  calc M * L * δ ≤ M * L * (weight / (2 * M) / L) := by
+        gcongr
+        exact hδc.trans (div_le_div_of_nonneg_right (min_le_right _ _) hLpos.le)
+    _ = weight / 2 := by field_simp
+    _ < weight := half_lt_self hweight
 
 /-- For `0 ≤ t`, the bounded-metric gauge `t / (1 + t)` is nonnegative. -/
 theorem div_one_add_nonneg {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]

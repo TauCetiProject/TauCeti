@@ -62,10 +62,15 @@ defined once the root vectors are.
 * `TauCeti.exists_rootPairRepresentatives`: a set of weights containing exactly one of
   `α` and `-α` for every root `α`.
 * `TauCeti.exists_isSl2System`: such a family exists.
+* `TauCeti.exists_mem_rootSpace_neg_lie_eq_coroot`: a prescribed nonzero root vector `e ∈ Lα` has a
+  partner `f ∈ L₍₋α₎` with `⁅e, f⁆ = α^∨`.
 * `TauCeti.IsSl2System.isSl2Triple`: `(α^∨, x α, x (-α))` is an `sl₂` triple.
 * `TauCeti.IsSl2System.toSubmodule_rootSpace_eq_span`: `x α` spans the root space of `α`.
 * `TauCeti.IsSl2System.killingForm_root_neg_eq`: the Killing pairing of opposite normalized root
   vectors is `2 / α((cartanEquivDual H)⁻¹ α)`.
+* `TauCeti.IsSl2System.killingForm_rootVector_neg_eq_zero_of_ne` and
+  `TauCeti.IsSl2System.killingForm_rootVector_cartan_eq_zero`: root vectors at `α` and `-β` are
+  Killing-orthogonal unless `α = β`, and root vectors are Killing-orthogonal to `H`.
 * `TauCeti.IsSl2System.lie_coroot`: the Cartan relation.
 * `TauCeti.IsSl2System.isNilpotent_ad_rootVector`: every member of the family acts nilpotently in
   the adjoint representation.
@@ -157,6 +162,25 @@ theorem killingForm_root_neg_eq (hα : α.IsNonZero) :
     (hx.mem_rootSpace α) (hx.mem_rootSpace (-α)), hx.lie_neg α hα, coroot]
   rw [← Nat.cast_smul_eq_nsmul K, smul_smul, Submodule.coe_smul_of_tower]
   norm_num
+
+omit [CharZero K] in
+/-- Root vectors at `α` and `-β` are Killing-orthogonal unless `α = β`. -/
+theorem killingForm_rootVector_neg_eq_zero_of_ne {α β : Weight K H L} (hαβ : α ≠ β) :
+    killingForm K L (x α) (x (-β)) = 0 :=
+  killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H
+    (hx.mem_rootSpace α) (hx.mem_rootSpace (-β)) fun h ↦ hαβ <|
+      Weight.ext fun y ↦ by
+        have := congr_fun h y
+        simp only [Pi.add_apply, Weight.coe_neg, Pi.neg_apply, Pi.zero_apply] at this
+        exact add_neg_eq_zero.mp this
+
+omit [CharZero K] in
+/-- A root vector is Killing-orthogonal to the Cartan subalgebra. -/
+theorem killingForm_rootVector_cartan_eq_zero {α : Weight K H L} (hα : α.IsNonZero) (h : H) :
+    killingForm K L (x α) h = 0 :=
+  killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H (β := 0)
+    (hx.mem_rootSpace α) (by rw [rootSpace_zero_eq]; exact h.property)
+    fun h' ↦ hα (by rwa [add_zero] at h')
 
 /-- A root vector of a normalised family spans its root space. -/
 theorem toSubmodule_rootSpace_eq_span (hα : α.IsNonZero) :
@@ -342,5 +366,26 @@ theorem exists_isSl2System : ∃ x : Weight K H L → L, IsSl2System x := by
     · have h' : (-α) ∈ s := (hone α hα).resolve_left h
       rw [ite_eq_right h, ite_eq_left h', ← lie_skew, (hp (-α) hα.neg).lie_e_f, coroot_neg]
       simp
+
+
+/-- **Every nonzero root vector has a partner bracketing to the coroot.** For a root `α` and a
+nonzero `e ∈ Lα` there is `f ∈ L₍₋α₎` with `⁅e, f⁆ = α^∨`, so that `(α^∨, e, f)` is an `sl₂`
+triple. The root vector `e` is prescribed here, whereas
+`LieAlgebra.IsKilling.exists_isSl2Triple_of_weight_isNonZero` chooses it. -/
+theorem exists_mem_rootSpace_neg_lie_eq_coroot {α : Weight K H L} (hα : α.IsNonZero) {e : L}
+    (he : e ∈ rootSpace H α) (he0 : e ≠ 0) :
+    ∃ f ∈ rootSpace H (-α), ⁅e, f⁆ = (coroot α : L) := by
+  obtain ⟨h, e', f', t, he', hf'⟩ := exists_isSl2Triple_of_weight_isNonZero hα
+  obtain rfl := t.h_eq_coroot hα he' hf'
+  -- the root space is the line through `e'`, so `e` is a nonzero multiple of `e'`
+  have hmem : e ∈ K ∙ e' := by
+    rw [← LieAlgebra.IsKilling.toSubmodule_rootSpace_eq_span α hα e' t.e_ne_zero he']
+    exact he
+  obtain ⟨s, rfl⟩ := Submodule.mem_span_singleton.mp hmem
+  have hs : s ≠ 0 := by
+    rintro rfl
+    exact he0 (zero_smul K e')
+  refine ⟨s⁻¹ • f', Submodule.smul_mem _ _ hf', ?_⟩
+  rw [smul_lie, lie_smul, smul_smul, mul_inv_cancel₀ hs, one_smul, t.lie_e_f]
 
 end TauCeti

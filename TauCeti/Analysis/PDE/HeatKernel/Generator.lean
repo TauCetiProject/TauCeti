@@ -130,7 +130,8 @@ theorem heatSemigroup_sub_eq_integral (hp : p ≠ ∞) (hφ : ContDiff ℝ 2 φ)
   have hprod : Integrable (Function.uncurry fun s x => (heatKernel s ⋆ Δ φ) x)
       ((volume.restrict (Ioc 0 t)).prod (volume.restrict A)) := by
     refine (integrable_const C₂).mono'
-      (stronglyMeasurable_heatKernel_convolution hΔ).aestronglyMeasurable ?_
+      (stronglyMeasurable_heatKernel_convolution (f := fun _ => Δ φ) measurable_id
+        (hΔ.stronglyMeasurable.comp_measurable measurable_snd)).aestronglyMeasurable ?_
     rw [Measure.prod_restrict]
     filter_upwards [ae_restrict_mem (measurableSet_Ioc.prod hAm)] with z hz
     exact norm_heatKernel_convolution_le hz.1.1 (ae_of_all _ hC₂) z.2
@@ -284,7 +285,7 @@ private theorem integral_laplacian_smul_eq_of_tendsto (hp : p ≠ ∞)
     ∫ x, Δ (φ : E → ℝ) x • f x = ∫ x, φ x • g x := by
   -- Mollify with the reflected test function `ρ = φ(-·)` and evaluate at `0`.
   let ρ : 𝓓((⊤ : Opens E), ℝ) :=
-    (ContinuousLinearEquiv.neg ℝ).transportTestFunction (fun _ _ => Opens.mem_top _) φ
+    (ContinuousLinearEquiv.neg ℝ).transportTestFunction ℝ (fun _ _ => Opens.mem_top _) φ
   have hρ_apply : (ρ : E → ℝ) = fun z => φ (-z) := funext fun z =>
     (ContinuousLinearEquiv.transportTestFunction_apply _ _ φ z).trans <| by
       rw [ContinuousLinearEquiv.symm_neg, ContinuousLinearEquiv.neg_apply]

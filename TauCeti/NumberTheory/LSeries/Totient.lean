@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.Dirichlet
+import TauCeti.NumberTheory.LSeries.Convergence
 import TauCeti.NumberTheory.LSeries.Twist
 
 /-!
@@ -68,10 +69,9 @@ theorem LSeriesSummable_totient_iff {s : ℂ} :
 
 /-- The abscissa of absolute convergence of the totient Dirichlet series is two. -/
 theorem abscissaOfAbsConv_totient :
-    _root_.LSeries.abscissaOfAbsConv (fun n ↦ (n.totient : ℂ)) = 2 := by
-  have htwo : ((2 : ℝ) : EReal) = (2 : EReal) := EReal.coe_natCast (n := 2)
-  simpa [_root_.LSeries.abscissaOfAbsConv, LSeriesSummable_totient_iff,
-    Set.Ioi_def, EReal.image_coe_Ioi, htwo] using csInf_Ioo (EReal.coe_lt_top (2 : ℝ))
+    _root_.LSeries.abscissaOfAbsConv (fun n ↦ (n.totient : ℂ)) = 2 :=
+  mod_cast LSeries.abscissaOfAbsConv_eq_of_LSeriesSummable_iff fun _ ↦
+    LSeriesSummable_totient_iff
 
 /-- The totient Dirichlet series has sum `ζ(s - 1) / ζ(s)` on `Re s > 2`. -/
 theorem LSeriesHasSum_totient {s : ℂ} (hs : 2 < s.re) :
@@ -92,5 +92,10 @@ theorem LSeriesHasSum_totient {s : ℂ} (hs : 2 < s.re) :
   have heq := hc.LSeries_eq.symm.trans hid_value
   refine LSeriesHasSum_iff.mpr ⟨hf, ?_⟩
   exact (eq_div_iff (riemannZeta_ne_zero_of_one_lt_re hs1)).mpr heq
+
+/-- The totient Dirichlet series is `ζ(s - 1) / ζ(s)` on `Re s > 2`. -/
+theorem LSeries_totient {s : ℂ} (hs : 2 < s.re) :
+    _root_.LSeries (fun n ↦ (n.totient : ℂ)) s = riemannZeta (s - 1) / riemannZeta s :=
+  (LSeriesHasSum_totient hs).LSeries_eq
 
 end TauCeti

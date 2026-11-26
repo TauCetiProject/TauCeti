@@ -43,8 +43,11 @@ power.
   of the wedge of a basis indexed by `Fin n`.
 * `Module.Basis.map_exteriorPower_top_eq_det_smul` gives the degree-`n` action as its determinant
   for a basis indexed by `Fin n`.
+* `Module.Basis.exteriorPowerTopEquiv_map` gives the scalar coordinate formula for every
+  endomorphism in this identification.
 * `LinearMap.map_exteriorPower_finrank_eq_det_smul` gives the action in degree `Module.finrank`
-  as its determinant.
+  as its determinant, and `LinearMap.ιMulti_comp_eq_det_smul` the same on exterior products in the
+  exterior algebra.
 * `Module.Basis.trace_map_exteriorPower_top` gives the degree-`n` trace as the determinant
   for a basis indexed by `Fin n`.
 * `exteriorPower.ιMulti_sum_smul` and `AlternatingMap.map_sum_smul`: replacing a family of `n`
@@ -163,6 +166,14 @@ theorem _root_.LinearMap.map_exteriorPower_finrank_eq_det_smul
       exact (LinearMap.cancel_left (zeroEquiv R M).injective).mp
         (by simpa only [LinearMap.comp_id] using zeroEquiv_naturality f)
 
+/-- An endomorphism `f` of a free module multiplies an exterior product of `Module.finrank R M`
+vectors in the exterior algebra by `det f`. -/
+theorem _root_.LinearMap.ιMulti_comp_eq_det_smul [Module.Free R M] (f : M →ₗ[R] M)
+    (w : Fin (Module.finrank R M) → M) :
+    ExteriorAlgebra.ιMulti R _ (f ∘ w) = LinearMap.det f • ExteriorAlgebra.ιMulti R _ w := by
+  rw [← ιMulti_apply_coe, ← map_apply_ιMulti, f.map_exteriorPower_finrank_eq_det_smul,
+    LinearMap.smul_apply, LinearMap.id_apply, Submodule.coe_smul, ιMulti_apply_coe]
+
 /-- A basis indexed by `Fin n` identifies the degree-`n` exterior power with the scalars by
 sending an exterior product of vectors to their determinant against the basis. -/
 noncomputable def _root_.Module.Basis.exteriorPowerTopEquiv (b : Module.Basis (Fin n) R M) :
@@ -190,6 +201,14 @@ lemma _root_.Module.Basis.exteriorPowerTopEquiv_apply_ιMulti (b : Module.Basis 
 lemma _root_.Module.Basis.exteriorPowerTopEquiv_symm_apply (b : Module.Basis (Fin n) R M) (r : R) :
     b.exteriorPowerTopEquiv.symm r = r • ιMulti R n ⇑b := by
   simp [Module.Basis.exteriorPowerTopEquiv]
+
+/-- In top exterior-power coordinates, every endomorphism acts by its determinant. This includes
+singular maps, rank zero and the zero coefficient ring. -/
+theorem _root_.Module.Basis.exteriorPowerTopEquiv_map (b : Module.Basis (Fin n) R M)
+    (f : M →ₗ[R] M) (x : ⋀[R]^n M) :
+    b.exteriorPowerTopEquiv (map n f x) = LinearMap.det f * b.exteriorPowerTopEquiv x := by
+  rw [b.map_exteriorPower_top_eq_det_smul, LinearMap.smul_apply, LinearMap.id_apply, map_smul,
+    smul_eq_mul]
 
 /-- For a basis indexed by `Fin n`, every element of the degree-`n` exterior power is a multiple
 of the exterior product of the basis. -/

@@ -51,6 +51,10 @@ equivalence of complex vector spaces is real-linear.
   there.
 * `LinearEquiv.restrictScalarsₛₗ`: a star-linear equivalence over `S` is `R`-linear when `R` acts
   on `S` with trivial star.
+* `Units.star_neg`: in a star ring, `star (-u) = -star u` for a unit `u`; in particular `star`
+  fixes the unit `-1`.
+* `RingHom.star_comp_right`: conjugating a ring homomorphism into a star ring commutes with
+  precomposition.
 -/
 
 public section
@@ -175,3 +179,25 @@ theorem restrictScalarsₛₗ_symm (f : V ≃ₗ⋆[S] W) :
   (rfl)
 
 end LinearEquiv
+
+namespace Units
+
+variable {R : Type*} [Ring R] [StarRing R]
+
+/-- The star of the negation of a unit of a star ring is the negation of its star. -/
+@[simp]
+theorem star_neg (u : Rˣ) : star (-u) = -star u :=
+  Units.ext (_root_.star_neg (u : R))
+
+end Units
+
+namespace RingHom
+
+variable {R S T : Type*} [CommSemiring R] [StarRing R] [NonAssocSemiring S] [NonAssocSemiring T]
+
+/-- Conjugating a ring homomorphism precomposed with `f` is precomposing its conjugate with `f`:
+`conj ∘ (ψ ∘ f) = (conj ∘ ψ) ∘ f`. -/
+theorem star_comp_right (ψ : S →+* R) (f : T →+* S) : star (ψ.comp f) = (star ψ).comp f :=
+  (rfl)
+
+end RingHom

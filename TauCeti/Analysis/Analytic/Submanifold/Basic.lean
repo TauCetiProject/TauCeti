@@ -46,6 +46,8 @@ defined without the hypothesis `d ≤ n`, so that charts and analytic functions 
 * `TauCeti.firstCoords 𝕜 m k`: the linear map `𝕜ᵐ → 𝕜ᵏ` copying the first `min m k`
   coordinates. It includes `𝕜ᵈ` in `𝕜ⁿ` as the first `d` coordinates and projects back.
 * `TauCeti.IsAnalyticChart d S e`: `e` is an analytic chart of `S` in dimension `d`.
+* `TauCeti.IsAnalyticChart.isOpenEmbedding_firstCoords`: through the first `d` coordinates of a
+  chart, the part of `S` in its source is homeomorphic to an open subset of `𝕜ᵈ`.
 * `TauCeti.IsAnalyticSubmanifold d S`: `S` is a `d`-dimensional analytic submanifold.
 * `TauCeti.AnalyticOnSubmanifold d f S`: `f` is analytic on `S` in dimension `d`.
 * `TauCeti.AnalyticOnSubmanifold.analyticAt_chart`: independence of the chart.
@@ -218,6 +220,34 @@ theorem eventually_symm_firstCoords_mem :
   rw [e.right_inv hu]
   exact firstCoords_apply_of_le u hi
 
+omit hx hxS in
+/-- Through the first `d` coordinates of an analytic chart of `S` in dimension `d ≤ n`, the part of
+`S` in the source of the chart is homeomorphic to an open subset of `𝕜ᵈ`. -/
+theorem isOpenEmbedding_firstCoords (hd : d ≤ n) :
+    IsOpenEmbedding fun y : ↥(e.source ∩ S) ↦ firstCoords 𝕜 n d (e y) := by
+  -- `firstCoords 𝕜 d n` recovers the chart image of a point of `S` from its first coordinates.
+  have hleft (y : ↥(e.source ∩ S)) : firstCoords 𝕜 d n (firstCoords 𝕜 n d (e y)) = e y :=
+    he.firstCoords_firstCoords_apply y.property.1 y.property.2
+  have hemb : IsEmbedding fun y : ↥(e.source ∩ S) ↦ e y :=
+    e.isOpenEmbedding_restrict.isEmbedding.comp (IsEmbedding.inclusion inter_subset_left)
+  refine ⟨.of_comp ((firstCoords 𝕜 n d).continuous.comp hemb.continuous)
+    (firstCoords 𝕜 d n).continuous (by simpa only [Function.comp_def, hleft] using hemb), ?_⟩
+  -- The image is the open set of `u` with `(u, 0)` in the target of the chart.
+  suffices h : range (fun y : ↥(e.source ∩ S) ↦ firstCoords 𝕜 n d (e y)) =
+      firstCoords 𝕜 d n ⁻¹' e.target by
+    rw [h]
+    exact e.open_target.preimage (firstCoords 𝕜 d n).continuous
+  ext u
+  refine ⟨?_, fun hu ↦ ?_⟩
+  · rintro ⟨y, rfl⟩
+    rw [mem_preimage, hleft]
+    exact e.map_source y.property.1
+  · have hsource := e.map_target hu
+    refine ⟨⟨e.symm (firstCoords 𝕜 d n u), hsource, (he.mem_iff hsource).2 fun i hi ↦ ?_⟩, ?_⟩
+    · rw [e.right_inv hu]
+      exact firstCoords_apply_of_le u hi
+    · simp only [e.right_inv hu, firstCoords_firstCoords_of_le hd]
+
 end IsAnalyticChart
 
 /-- Let `e'` be an analytic chart of `T` in dimension `d'`. If `φ` is analytic at `u₀`, takes
@@ -272,6 +302,15 @@ theorem _root_.IsOpen.isAnalyticSubmanifold (hU : IsOpen U) (hne : U.Nonempty) :
   refine ⟨hne, le_rfl, fun x hx ↦ ⟨(OpenPartialHomeomorph.refl _).restrOpen U hU, ⟨trivial, hx⟩,
     ⟨analyticOnNhd_id, analyticOnNhd_id, fun y hy ↦ ?_⟩⟩⟩
   simpa [fun i : Fin n ↦ i.isLt.not_ge] using hy.2
+
+/-- An analytic submanifold of `𝕜ⁿ` of full dimension `n` is open. -/
+theorem IsAnalyticSubmanifold.isOpen {S : Set (Fin n → 𝕜)} (hS : IsAnalyticSubmanifold n S) :
+    IsOpen S := by
+  -- An analytic chart of a full-dimensional submanifold imposes no condition on its source.
+  refine isOpen_iff_mem_nhds.2 fun x hx ↦ ?_
+  obtain ⟨e, hxe, he⟩ := hS.exists_isAnalyticChart x hx
+  exact mem_of_superset (e.open_source.mem_nhds hxe) fun y hy ↦
+    (he.mem_iff hy).2 fun i hi ↦ absurd i.isLt hi.not_gt
 
 /-- A point of `𝕜ⁿ` is a `0`-dimensional analytic submanifold. -/
 theorem isAnalyticSubmanifold_singleton (a : Fin n → 𝕜) : IsAnalyticSubmanifold 0 {a} := by

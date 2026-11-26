@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.LocalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Chains
 public import TauCeti.Topology.Homotopy.Cube.Basic
 import Mathlib.Data.Fin.Parity
+import TauCeti.Data.Fin.FaceSwap
 
 /-!
 # Unnormalized cubical chains with local coefficients
@@ -107,6 +108,23 @@ theorem ofCube_eq_lof {n : ℕ} (c : SingularCube X n) :
     ofCube L c =
       DirectSum.lof R _ (fun c : SingularCube X n ↦ L.obj (FundamentalGroupoid.mk (c 0))) c := by
   rw [ofCube]
+
+variable {L} in
+open scoped Classical in
+/-- The component of the summand of a cube at another cube vanishes. -/
+theorem ofCube_apply_of_ne {n : ℕ} {c c' : SingularCube X n} (h : c' ≠ c)
+    (a : L.obj (FundamentalGroupoid.mk (c 0))) : ofCube L c a c' = 0 := by
+  rw [ofCube_eq_lof, DirectSum.lof_eq_of]
+  exact DirectSum.of_eq_of_ne _ _ _ h
+
+variable {L} in
+/-- The component of the summand of a cube at that cube is its coefficient. -/
+@[simp]
+theorem ofCube_apply_self {n : ℕ} (c : SingularCube X n)
+    (a : L.obj (FundamentalGroupoid.mk (c 0))) : ofCube L c a c = a := by
+  classical
+  rw [ofCube_eq_lof, DirectSum.lof_eq_of]
+  exact DirectSum.of_eq_same _ _
 
 /-- Equal cubes carrying corresponding coefficients, in the fibres of `L` at their equal origins,
 are equal chains. -/
@@ -237,17 +255,17 @@ private theorem boundary_ofSubcube {m n : ℕ} (c : SingularCube X n)
 /-- The boundary of a boundary vanishes. -/
 theorem boundary_boundary (n : ℕ) : boundary L n ∘ₗ boundary L (n + 1) = 0 := by
   -- As for `TauCeti.CubicalChain.boundary_boundary`: the terms of `∂ ∂ (c, a)` are subcubes of
-  -- `c`, and they cancel in pairs under `faceSwap`, by the cubical identity for the face
+  -- `c`, and they cancel in pairs under `Fin.faceSwap`, by the cubical identity for the face
   -- inclusions.
   refine hom_ext fun c ↦ LinearMap.ext fun a ↦ ?_
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.zero_apply, ← ofSubcube_id,
     boundary_ofSubcube, map_sum, map_zsmul, map_sub, ← Finset.sum_sub_distrib, Finset.smul_sum]
   rw [← Finset.sum_product']
-  refine Finset.sum_involution (fun p _ ↦ CubicalChain.faceSwap p) (fun p _ ↦ ?_)
-    (fun p _ _ ↦ CubicalChain.faceSwap_ne p) (fun _ _ ↦ Finset.mem_univ _)
-    (fun p _ ↦ CubicalChain.faceSwap_faceSwap p)
+  refine Finset.sum_involution (fun p _ ↦ Fin.faceSwap p) (fun p _ ↦ ?_)
+    (fun p _ _ ↦ Fin.faceSwap_ne p) (fun _ _ ↦ Finset.mem_univ _)
+    (fun p _ ↦ Fin.faceSwap_faceSwap p)
   obtain ⟨i, j⟩ := p
-  simp only [CubicalChain.faceSwap_def, ContinuousMap.id_comp,
+  simp only [Fin.faceSwap_def, ContinuousMap.id_comp,
     ← face_id_comp_face_id, smul_sub, smul_smul, ← pow_add,
     Fin.neg_one_pow_succAbove_add_predAbove, neg_smul]
   abel
@@ -312,6 +330,28 @@ theorem map_ofCube {n : ℕ} (c : SingularCube X n)
     (a : ((pullback f).obj L).obj (FundamentalGroupoid.mk (c 0))) :
     map f L n (ofCube _ c a) = ofCube L (f.comp c) a :=
   desc_ofCube _ c a
+
+/-- An injective map of spaces preserves the component of a chain at each cube, at the image
+cube. -/
+theorem map_apply_comp_of_injective (hf : Function.Injective f) {n : ℕ}
+    (x : ((pullback f).obj L).TwistedCubicalChain n) (c : SingularCube X n) :
+    map f L n x (f.comp c) = x c := by
+  -- The summand of a cube `c` for `f⁎L` is definitionally the summand of `f.comp c` for `L`, so
+  -- the two sides live in the same module only up to unfolding the pullback; the cases where both
+  -- sides are built from the same components close by `rfl`.
+  induction x using induction_on with
+  | zero => exact (congrArg (· (f.comp c)) (map_zero (map f L n))).trans rfl
+  | ofCube c' a =>
+    rw [map_ofCube]
+    by_cases h : c' = c
+    · subst h
+      exact (ofCube_apply_self (L := L) (f.comp c') a).trans (ofCube_apply_self c' a).symm
+    · exact (ofCube_apply_of_ne (L := L) (c := f.comp c') (fun h' ↦ h
+        (ContinuousMap.postcomp_injective f hf h').symm) a).trans
+          (ofCube_apply_of_ne (Ne.symm h) a).symm
+  | add y z hy hz =>
+    rw [map_add, DirectSum.add_apply, DirectSum.add_apply, hy, hz]
+    rfl
 
 /-- A continuous map sends a subcube with a coefficient to the image subcube. -/
 theorem map_ofSubcube {m n : ℕ} (c : SingularCube X n) (ι : C(Fin m → I, Fin n → I))

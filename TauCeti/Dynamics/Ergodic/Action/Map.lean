@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Dynamics.Ergodic.Action.Basic
+public import TauCeti.Dynamics.Ergodic.Action.Factor
 
 /-!
 # Ergodic actions along equivariant maps
 
 Let a group act on two measurable spaces `α` and `β`, and let `f : α → β` be equivariant. Then
 ergodicity passes to factors: if the action on `(α, μ)` is ergodic, so is the action on
-`(β, μ.map f)` (`ErgodicSMul.map`). When `f` is a measurable embedding the converse holds as
-well: the pushforward is invariant, respectively ergodic, exactly when `μ` is
+`(β, μ.map f)` (`ErgodicSMul.map`, a special case of `TauCeti.IsFactorMapSMul.ergodicSMul`).
+When `f` is a measurable embedding the converse holds as well: the pushforward is invariant,
+respectively ergodic, exactly when `μ` is
 (`MeasurableEmbedding.smulInvariantMeasure_map_iff`, `MeasurableEmbedding.ergodicSMul_map_iff`).
 This lets ergodicity of a law be checked on whichever of two equivariantly embedded carriers is
 more convenient, for instance a structure and its coordinate array.
@@ -43,24 +44,11 @@ private theorem preimage_smul_preimage (hfg : ∀ (g : G) x, f (g • x) = g •
   ext x
   simp [hfg]
 
-/-- The defining zero-one property of ergodicity passes to the pushforward along a measurable
-equivariant map: an almost invariant measurable set downstairs pulls back to one upstairs. -/
-private theorem eventuallyEmptyOrUniv_map_of_ergodicSMul [ErgodicSMul G α μ] (hf : Measurable f)
-    (hfg : ∀ (g : G) x, f (g • x) = g • f x) {s : Set β} (hs : MeasurableSet s)
-    (hinv : ∀ g : G, (g • ·) ⁻¹' s =ᵐ[μ.map f] s) : EventuallyEmptyOrUniv s (ae (μ.map f)) := by
-  have hmp := hf.measurePreserving μ
-  rw [← hmp.aeconst_preimage hs.nullMeasurableSet]
-  refine aeconst_of_forall_preimage_smul_ae_eq G (hs.preimage hf).nullMeasurableSet fun g => ?_
-  rw [preimage_smul_preimage hfg]
-  exact hmp.quasiMeasurePreserving.preimage_ae_eq (hinv g)
-
 /-- **Ergodicity passes to factors**: the pushforward of an ergodic measure along a measurable
 equivariant map is ergodic. -/
 theorem ErgodicSMul.map [MeasurableConstSMul G β] [ErgodicSMul G α μ] (hf : Measurable f)
-    (hfg : ∀ (g : G) x, f (g • x) = g • f x) : ErgodicSMul G β (μ.map f) where
-  toSMulInvariantMeasure := smulInvariantMeasure_map μ f hfg hf
-  aeconst_of_forall_preimage_smul_ae_eq hs hinv :=
-    eventuallyEmptyOrUniv_map_of_ergodicSMul hf hfg hs hinv
+    (hfg : ∀ (g : G) x, f (g • x) = g • f x) : ErgodicSMul G β (μ.map f) :=
+  (TauCeti.IsFactorMapSMul.of_map_smul (hf.measurePreserving μ) hfg).ergodicSMul
 
 namespace MeasurableEmbedding
 
@@ -95,7 +83,8 @@ theorem ergodicSMul_map_iff (hf : MeasurableEmbedding f)
     rwa [← (hf.measurable.measurePreserving μ).aeconst_preimage
       (hf.measurableSet_image' hs).nullMeasurableSet, hf.injective.preimage_image] at this
   · exact { toSMulInvariantMeasure := (hf.smulInvariantMeasure_map_iff hfg).2 inferInstance
-            aeconst_of_forall_preimage_smul_ae_eq := fun hs hinv =>
-              eventuallyEmptyOrUniv_map_of_ergodicSMul hf.measurable hfg hs hinv }
+            aeconst_of_forall_preimage_smul_ae_eq :=
+              (TauCeti.IsFactorMapSMul.of_map_smul (hf.measurable.measurePreserving μ)
+                hfg).aeconst_of_forall_preimage_smul_ae_eq }
 
 end MeasurableEmbedding

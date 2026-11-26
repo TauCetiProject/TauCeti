@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
+import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.Analysis.Sobolev.Wkp.SmoothCoefficients
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Transfer
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Deriv
 
 /-!
 # Transfer of chart data of Sobolev sections between charts
@@ -32,15 +33,27 @@ coordinate change and then multiplies by the coordinate change of the bundle
 transfer of its chart-`i` data restricted to `Q`
 (`TauCeti.FiniteBundleAtlas.restrictL_eq_transferL`).
 
+For order-one weak derivatives, `TauCeti.FiniteBundleAtlas.chartDerivL_ae_overlap` gives the
+chain and operator Leibniz formula under only the original `C¹` manifold and vector-bundle
+structure, for arbitrary finite-dimensional real inner-product models and `1 ≤ p ≤ ∞`.
+
 ## Main definitions
 
 * `TauCeti.FiniteBundleAtlas.transferL`: the transfer of chart-`i` data to chart-`j` data.
 
 ## Main results
 
+* `TauCeti.FiniteBundleAtlas.chartDerivL_ae_overlap`: native weak chart derivatives obey the
+  chain and Leibniz rules on overlaps for arbitrary real finite-dimensional model spaces.
+
+* `TauCeti.FiniteBundleAtlas.value_transferL_ae_of_coord`: transfer preserves the readings of
+  an actual section, without requiring global Sobolev membership.
+
 * `TauCeti.FiniteBundleAtlas.exists_isChangeOfVariables_chart_symm_trans`: chart coordinate
   changes are changes of variables of every order on relatively compact subsets of the transfer
   domain.
+* `TauCeti.FiniteBundleAtlas.ae_comp_chart_symm_trans`: almost-everywhere statements pull back
+  along chart coordinate changes.
 * `TauCeti.FiniteBundleAtlas.value_transferL_ae`, `TauCeti.FiniteBundleAtlas.eq_transferL_iff`:
   the components of a transfer are those of the bundle coordinate change applied to the
   precomposed input values, and this characterizes the transfer.
@@ -62,6 +75,63 @@ open scoped Manifold ContDiff ENNReal Topology
 universe u
 
 namespace TauCeti
+
+section WeakOverlap
+
+variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+
+variable [MeasurableSpace E] [BorelSpace E]
+
+variable (A : FiniteBundleAtlas E M F V) (μ : Measure E) [μ.IsAddHaarMeasure] (p : ℝ≥0∞)
+  [Fact (1 ≤ p)]
+
+variable [FiniteDimensional ℝ F]
+
+variable [IsManifold 𝓘(ℝ, E) 1 M] [ContMDiffVectorBundle 1 F V 𝓘(ℝ, E)] in
+/-- On the overlap of charts `i` and `i'`, the weak derivative of the chart data in chart `i'` of an
+order-one Sobolev section is that of `y ↦ g y (uᵢ (τ y))`, by the weak chain and Leibniz rules. -/
+theorem FiniteBundleAtlas.chartDerivL_ae_overlap (w : A.sectionChartData.sobolevSections μ p 1)
+    (i i' : Fin A.n) :
+    ∀ᵐ y ∂μ.restrict (A.overlap i i'),
+      A.sectionChartData.chartDerivL μ p i' w y =
+        ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
+          ((A.sectionChartData.chartDerivL μ p i w (A.transition i i' y)).comp
+            (fderiv ℝ (A.transition i i') y)) +
+        (fderiv ℝ (fun z ↦ ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm z) :
+          F →L[ℝ] F)) y).flip
+          (A.sectionChartData.chartValueL μ p 1 i w (A.transition i i' y)) := by
+  let O : Opens E := ⟨A.overlap i i', A.isOpen_overlap i i'⟩
+  have hC := A.aeTransition_sectionChartData μ
+  have hτ := (A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i w).comp_contDiffOn_diffeo
+    (U := O) (A.contDiffOn_transition i i')
+    (fun y hy ↦ by
+      rw [A.fderiv_transition hy]
+      exact ContinuousLinearEquiv.toLinearEquiv _ |>.isUnit_det'.ne_zero)
+    fun y hy ↦ A.overlap_subset_image i' i (A.transition_mem_overlap hy)
+  have hcoord := (A.contDiffOn_coordChangeL_transferDomain (n := 1) i i').mono
+    (A.overlap_subset_transferDomain i i')
+  have hprod := hτ.contDiffOn_clm_apply_of_ne_zero hcoord one_ne_zero
+  have hcompat : ∀ᵐ y ∂μ.restrict O, ((A.triv i).coordChangeL ℝ (A.triv i')
+      ((A.chart i').symm y) : F →L[ℝ] F)
+        (A.sectionChartData.chartValueL μ p 1 i w (A.transition i i' y)) =
+      A.sectionChartData.chartValueL μ p 1 i' w y := by
+    filter_upwards [(A.sectionChartData.compatible_iff μ p 1).1
+      (SectionChartData.compatible_of_mem hC w.property i i'),
+      ae_restrict_mem (A.isOpen_overlap i i').measurableSet] with y h hy
+    rw [A.sectionChartData_coordChange_of_mem hy, A.sectionChartData_transition_of_mem hy] at h
+    exact h.symm
+  -- `O` is the overlap as an open set and `A.sectionChartData.image i'` is the image of chart `i'`
+  -- as an open set; the type ascription states the inclusion of overlap into image as one of
+  -- `Opens E`, which `A.overlap_subset_image` proves for the underlying sets.
+  have hO : O ≤ A.sectionChartData.image i' := A.overlap_subset_image i i'
+  exact ((A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i' w).mono hO).ae_eq
+      (hprod.congr_ae hcompat)
+
+end WeakOverlap
 
 section ChangeOfVariables
 
@@ -91,6 +161,21 @@ theorem exists_isChangeOfVariables_chart_symm_trans (k : ℕ)
     (((A.chart j).symm ≫ₕ A.chart i).injOn.mono (subset_closure.trans hPO))
     (fun x hx ↦ det_fderiv_symm_trans_ne_zero (zero_lt_one.trans_le hn).ne' hj hi (hPO hx))
     hPc hPO hPQ
+
+/-- **Almost-everywhere statements pull back along chart coordinate changes.** On a `C^1`
+manifold, on an open set `P` with compact closure inside the transfer domain, a property holding
+almost everywhere on an open set `Q` containing the image of `P` under the coordinate change
+`(A.chart j).symm ≫ₕ A.chart i` holds almost everywhere on `P` after composing with it. -/
+theorem ae_comp_chart_symm_trans [IsManifold 𝓘(ℝ, E) 1 M] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+    {i j : Fin A.n} {P Q : Opens E}
+    (hPc : IsCompact (closure (P : Set E))) (hPD : closure (P : Set E) ⊆ A.transferDomain i j)
+    (hPQ : MapsTo ((A.chart j).symm ≫ₕ A.chart i) P Q) {R : E → Prop}
+    (hR : ∀ᵐ z ∂μ.restrict Q, R z) :
+    ∀ᵐ y ∂μ.restrict P, R (((A.chart j).symm ≫ₕ A.chart i) y) := by
+  have : IsManifold 𝓘(ℝ, E) (max 0 1 : ℕ) M := by simpa using ‹IsManifold 𝓘(ℝ, E) 1 M›
+  obtain ⟨L, c, h⟩ := A.exists_isChangeOfVariables_chart_symm_trans 0 hPc hPD hPQ
+  exact h.ae_comp hR
 
 end FiniteBundleAtlas
 
@@ -147,6 +232,32 @@ theorem value_transferL_ae (i j : Fin A.n) {P Q : Opens E}
     ae_all_iff.2 fun l ↦ Wkp.value_compL_ae h (u l)] with y hy hl
   rw [transferL, ContinuousLinearMap.comp_apply, hy]
   simp only [ContinuousLinearMap.coe_piMap', Pi.map_apply, hl, ContinuousLinearEquiv.coe_coe]
+
+/-- Transferring components that represent a section in one chart represents that same section
+in the other chart. No global Sobolev membership of the section is assumed. -/
+theorem value_transferL_ae_of_coord {i j : Fin A.n} {P Q : Opens E}
+    (hP : (P : Set E) ⊆ A.overlap i j) (hPc : IsCompact (closure (P : Set E)))
+    (hPD : closure (P : Set E) ⊆ A.transferDomain i j)
+    (hPQ : MapsTo ((A.chart j).symm ≫ₕ A.chart i) P Q)
+    (s : ∀ x, V x) (u : Fin (finrank ℝ F) → Wkp μ Q p k)
+    (hu : ∀ l, (Wkp.value k (u l) : E → ℝ) =ᵐ[μ.restrict Q]
+      fun y ↦ (finBasis ℝ F).repr (A.coord i s y) l) (m : Fin (finrank ℝ F)) :
+    (Wkp.value k (A.transferL μ p k i j hPc hPD hPQ u m) : E → ℝ)
+      =ᵐ[μ.restrict P] fun y ↦ (finBasis ℝ F).repr (A.coord j s y) m := by
+  have hc := (A.exists_isChangeOfVariables_chart_symm_trans k hPc hPD hPQ).choose_spec.choose_spec
+  filter_upwards [A.value_transferL_ae μ p k i j hPc hPD hPQ u m,
+    hc.ae_comp (ae_all_iff.2 hu), ae_restrict_mem P.isOpen.measurableSet] with y hy hu hyP
+  rw [hy]
+  have hsum : ∑ l, Wkp.value k (u l) (((A.chart j).symm ≫ₕ A.chart i) y) •
+      finBasis ℝ F l = A.coord i s (((A.chart j).symm ≫ₕ A.chart i) y) := by
+    simp_rw [hu]
+    exact (finBasis ℝ F).sum_repr _
+  rw [hsum]
+  have htr : A.transition i j y = ((A.chart j).symm ≫ₕ A.chart i) y := by
+    obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 (hP hyP)
+    rw [A.transition_chart hx.2, OpenPartialHomeomorph.coe_trans, Function.comp_apply,
+      (A.chart j).left_inv (A.dom_subset_chart_source j hx.2)]
+  rw [A.coord_eq_coordChange s (hP hyP), htr]
 
 /-- A transfer is characterized by its components: `v` is the transfer of `u` exactly when the
 components of `v` are, almost everywhere on `P`, those described in
@@ -206,33 +317,29 @@ theorem restrictL_eq_transferL {w : A.sectionChartData.SobolevData μ p k}
     (hPQ : MapsTo ((A.chart j).symm ≫ₕ A.chart i) P Q) (m : Fin (finrank ℝ F)) :
     Wkp.restrictL (SetLike.coe_subset_coe.1 (hP.trans (A.overlap_subset_image i j))) k (w j m) =
       A.transferL μ p k i j hPc hPD hPQ (fun l ↦ Wkp.restrictL hQ k (w i l)) m := by
-  set h := (A.exists_isChangeOfVariables_chart_symm_trans k hPc hPD hPQ).choose_spec.choose_spec
   have hPj : P ≤ A.image j := SetLike.coe_subset_coe.1 (hP.trans (A.overlap_subset_image i j))
   refine Wkp.ext k (Lp.ext ?_)
   have hcompat := ae_restrict_of_ae_restrict_of_subset hP
     ((SectionChartData.compatible_iff _ _ _ _).1
       (SectionChartData.compatible_of_mem (A.aeTransition_sectionChartData μ) hw i j))
-  have htr : ∀ y ∈ (P : Set E), A.transition i j y = ((A.chart j).symm ≫ₕ A.chart i) y := by
-    intro y hy
-    obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 (hP hy)
-    rw [A.transition_chart hx.2, OpenPartialHomeomorph.coe_trans, Function.comp_apply,
-      (A.chart j).left_inv (A.dom_subset_chart_source j hx.2)]
   have hj := ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hPj)
     (A.sectionChartData.chartValueL_apply_ae μ p k j w)
   have hi : ∀ᵐ y ∂μ.restrict P,
       A.sectionChartData.chartValueL μ p k i w (((A.chart j).symm ≫ₕ A.chart i) y) =
         ∑ l, Wkp.value k (w i l) (((A.chart j).symm ≫ₕ A.chart i) y) • finBasis ℝ F l :=
-    h.ae_comp (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hQ)
-      (A.sectionChartData.chartValueL_apply_ae μ p k i w))
+    A.ae_comp_chart_symm_trans hPc hPD hPQ (ae_restrict_of_ae_restrict_of_subset
+      (SetLike.coe_subset_coe.2 hQ) (A.sectionChartData.chartValueL_apply_ae μ p k i w))
   have hres : ∀ᵐ y ∂μ.restrict P, ∀ l, Wkp.value k (Wkp.restrictL hQ k (w i l))
       (((A.chart j).symm ≫ₕ A.chart i) y) =
         Wkp.value k (w i l) (((A.chart j).symm ≫ₕ A.chart i) y) :=
-    h.ae_comp (ae_all_iff.2 fun l ↦ Wkp.value_restrictL_ae hQ k (w i l))
+    A.ae_comp_chart_symm_trans hPc hPD hPQ
+      (ae_all_iff.2 fun l ↦ Wkp.value_restrictL_ae hQ k (w i l))
   filter_upwards [Wkp.value_restrictL_ae hPj k (w j m), hcompat, hj, hi, hres,
     A.value_transferL_ae μ p k i j hPc hPD hPQ (fun l ↦ Wkp.restrictL hQ k (w i l)) m,
     ae_restrict_mem P.isOpen.measurableSet] with y hy₁ hy₂ hy₃ hy₄ hy₅ hy₆ hyP
   rw [A.sectionChartData_coordChange_of_mem (hP hyP),
-    A.sectionChartData_transition_of_mem (hP hyP), htr y hyP] at hy₂
+    A.sectionChartData_transition_of_mem (hP hyP),
+    A.transition_eq_symm_trans] at hy₂
   have hval : Wkp.value k (w j m) y =
       (finBasis ℝ F).repr (A.sectionChartData.chartValueL μ p k j w y) m := by
     rw [hy₃, (finBasis ℝ F).repr_sum_self]

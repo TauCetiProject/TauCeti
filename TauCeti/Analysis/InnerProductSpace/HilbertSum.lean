@@ -32,8 +32,11 @@ every summand is. For the ampliation `lp.ampliation ι 2 T` of a single operator
 * `lp.isSelfAdjoint_mapCLM_iff`: `⊕ T i` is self-adjoint iff every `T i` is.
 * `lp.inner_ampliation_apply`, `lp.adjoint_ampliation`: matrix coefficients and adjoints of
   ampliations.
+* `lp.ampliationStarAlgHom`: the ampliation as a star algebra homomorphism.
 * `lp.exists_inner_ampliation_apply_eq_sum`: a finite sum of matrix coefficients of ampliations
   to `ℓ²(ℕ, ·)` is a single matrix coefficient of the ampliation.
+* `lp.summable_inner_prod`, `lp.inner_eq_tsum_prod`: summability and product-sum formula for inner
+  products in iterated `ℓ²` Hilbert sums.
 
 ## References
 
@@ -146,5 +149,22 @@ theorem ampliationStarAlgHom_apply (T : X →L[𝕜] X) :
   (rfl)
 
 end Ampliation
+
+section Iterated
+variable {ι₁ ι₂ 𝕜 : Type*} [RCLike 𝕜] {G : ι₁ → ι₂ → Type*}
+  [∀ i j, NormedAddCommGroup (G i j)] [∀ i j, InnerProductSpace 𝕜 (G i j)]
+
+/-- For `f, g` in an iterated `ℓ²` Hilbert sum, `⟪f p.1 p.2, g p.1 p.2⟫` is summable over
+`ι₁ × ι₂`. -/
+theorem summable_inner_prod (f g : lp (fun i ↦ lp (G i) 2) 2) :
+    Summable fun p : ι₁ × ι₂ ↦ ⟪f p.1 p.2, g p.1 p.2⟫_𝕜 :=
+  lp.summable_inner (G := fun p : ι₁ × ι₂ ↦ G p.1 p.2)
+    ⟨fun p ↦ f p.1 p.2, lp.memℓp_prod f⟩ ⟨fun p ↦ g p.1 p.2, lp.memℓp_prod g⟩
+
+/-- The inner product on an iterated `ℓ²` Hilbert sum is the sum over `ι₁ × ι₂`. -/
+theorem inner_eq_tsum_prod (f g : lp (fun i ↦ lp (G i) 2) 2) :
+    ⟪f, g⟫_𝕜 = ∑' p : ι₁ × ι₂, ⟪f p.1 p.2, g p.1 p.2⟫_𝕜 :=
+  ((summable_inner_prod (𝕜 := 𝕜) f g).tsum_prod' fun i ↦ lp.summable_inner (f i) (g i)).symm
+end Iterated
 
 end lp

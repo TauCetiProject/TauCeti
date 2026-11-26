@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Exchange
 
@@ -19,7 +19,8 @@ recentred at `c`, together with almost complex structures `J_c`, for `c` in the 
 interval `[0, 1]`. The member `c = 0` is the pair-of-pants problem, and the member `c = 1` is the
 problem with exchanged inputs pulled back along `w ↦ 1 - w`. This file proves the interior part of
 Gromov–Floer compactness for the solutions of the whole family, for a symplectic vector space
-target `(V, ω)`.
+target `(V, ω)`, and for a manifold target on the part of the domain mapped into a symplectic
+chart.
 
 The input is the energy bound of the family
 (`TauCeti.SymplecticForm.lintegral_floerEnergyDensity_exchangePerturbation_le`): for period-one
@@ -46,6 +47,27 @@ and which converges locally uniformly on `Ω` off a finite set `Z` of bubbling p
 `#Z * δ ≤ A + B₀ + B₁ + B_∞`. The regularity of the limit, the bubbles at the points of `Z`, and
 breaking along the three ends are not treated here.
 
+**Manifold targets.** For a target manifold `M` with a nondegenerate two-form `ω`, such as a
+closed symplectic manifold, the energy bound of the family (in the namespace
+`TauCeti.SmoothTwoForm.IsNondegenerate`,
+`abs_integral_floerEnergyDensity_exchangePerturbation_sub_le`) says that, uniformly in `c ∈ [0, 1]`,
+the Floer energy over `S` exceeds the topological energy `∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, x_q(t)) dt`,
+the symplectic area plus the Hamiltonian terms at the asymptotic orbits `x_q`, by at most
+`B₀ + B₁ + B_∞`. The data `K_c` are smooth jointly in `c`, the domain point and the target point
+of `M` (`TauCeti.Floer.contMDiffAt_exchangePerturbation`), so the Hamiltonians read in a symplectic
+chart `φ : M ⊇ U → V`, such as a Darboux chart, are `C³` in `(c, z, y)`. The compactness theorem
+over a compact parameter window in a symplectic chart (in the same namespace,
+`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset`) then applies to
+solutions with topological energy at most `A` whose images of `Ω` stay in a compact subset `K` of
+the chart source (in the same namespace,
+`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_exchange`). The structures
+`J_c(z, x)` on the tangent spaces of `M` are any family tamed by `ω` on `S`, read in the chart by a
+family `J'_c(z, y)` with `dφ_x ∘ J_c(z, x) = J'_c(z, φ x) ∘ dφ_x` that is `C²` in `(c, z, y)`. The
+limit is read in `M`: the coordinate maps converge locally uniformly off the bubbling points, and
+the maps themselves converge pointwise. Solutions in a closed manifold with arbitrary images,
+covered by several charts, are treated in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Exchange.Closed`.
+
 ## References
 
 * M. Schwarz, *Cohomology operations from S¹-cobordisms in Floer homology*, PhD thesis,
@@ -58,6 +80,7 @@ breaking along the three ends are not treated here.
 public section
 
 open Complex Filter Function MeasureTheory Metric Set Topology TauCeti.ThricePuncturedSphere
+open scoped Manifold
 
 namespace TauCeti.SymplecticForm
 
@@ -214,3 +237,121 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ex
     (fun c _ z _ x ↦ tames_exchangeAlmostComplex h₀ c _ x) hD hDS hK
 
 end TauCeti.SymplecticForm
+
+namespace TauCeti.SmoothTwoForm.IsNondegenerate
+
+open Floer
+
+variable {E G M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+  [IsManifold I ⊤ M] [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V} {H : Puncture → ℝ → M → ℝ}
+
+/-- **Solutions of the input-exchange family in a symplectic chart of a manifold converge off
+finitely many bubbling points.** Let `ω` be a nondegenerate two-form on `M` and let `H_q` be
+period-one `C³` Hamiltonians on `M` with `|H_q| ≤ B_q`. Let `φ` be a smooth partial
+diffeomorphism from `M` onto an open subset of `V` pulling the symplectic form `ω₀` back to `ω` on
+a compact set `K ⊆ φ.source`, such as a Darboux chart. Let `J_c(z, x)` be structures on the
+tangent spaces of `M`, tamed by `ω` for `c` in a compact window `C ⊆ [0, 1]` of parameters and
+`z ∈ S = ℂ ∖ {0, 1}` (in real coordinates), and let `J'_c(z, y)` be these structures read in the
+chart, `dφ_x ∘ J_c(z, x) = J'_c(z, φ x) ∘ dφ_x` for `c ∈ C`, `z ∈ D` and `x ∈ K`, which are `C²`
+jointly in `(c, z, y)` on an open set `W` containing `C × D × φ(K)`, for a compact `D ⊆ S`.
+There is a threshold `δ > 0` with the following property. Let `uₖ` be `C³` maps from `S` to `M`
+solving the Floer equation `(du - X_{K_{cₖ}})^{0,1} = 0` for the structures `J_{cₖ}(z, u)`, with
+`cₖ ∈ C`, whose input loops `uₖ(φ_q(R + i t))` and recentred output loops
+`uₖ(cₖ + φ_∞(-R + i t))` converge pointwise to loops `xₖ q` as `R → ∞`, whose Floer energy and
+symplectic area densities are integrable over `S`, whose topological energy
+`∫_S uₖ^*ω + ∑ q, ±∫₀¹ H_q(t, xₖ q t) dt` is at most `A`, and with `uₖ(Ω) ⊆ K` for an open
+`Ω ⊆ D`. Then there are a subsequence `ψ`, a limit `c₀ ∈ C` of `c_{ψ n}`, a finite set `Z ⊆ Ω`
+with `#Z * δ ≤ A + B₀ + B₁ + B_∞`, and a map `v`, continuous on `Ω \ Z` with values in `K`, such
+that along `ψ` every disc about a point of `Z` eventually carries Floer energy at least `δ`, the
+differentials of the coordinate maps `φ ∘ u_{ψ n}` are uniformly bounded on every compact subset
+of `Ω \ Z`, the coordinate maps converge to `φ ∘ v` locally uniformly on `Ω \ Z`, and
+`u_{ψ n} → v` pointwise on `Ω \ Z`. -/
+theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_exchange
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
+    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞))
+    {J : ℝ → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    {J' : ℝ → ℝ × ℝ → V → AlmostComplexStructure V} {C : Set ℝ} {D : Set (ℝ × ℝ)} {K : Set M}
+    (hφ : ∀ x ∈ K, ∀ v w : TangentSpace I x,
+      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
+    (hJJ' : ∀ c ∈ C, ∀ z ∈ D, ∀ x ∈ K,
+      IsComplexLinearMap (J c z x) (J' c z (φ x)) (mvfderiv I φ x).toLinearMap)
+    {W : Set (ℝ × ((ℝ × ℝ) × V))} (hW : IsOpen W)
+    (hJ' : ContDiffOn ℝ 2
+      (fun q : ℝ × ((ℝ × ℝ) × V) ↦ (J' q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) W)
+    (hC : IsCompact C) (hC₀₁ : C ⊆ Icc 0 1) (hD : IsCompact D)
+    (hDS : D ⊆ thricePuncturedSphereReal) (hK : IsCompact K) (hKφ : K ⊆ φ.source)
+    (hCDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W)
+    (hJt : ∀ c ∈ C, ∀ z ∈ thricePuncturedSphereReal, ∀ x,
+      (hω.symplecticFormAt x).Tames (J c z x)) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃c : ℕ → ℝ⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃x : ℕ → Puncture → ℝ → M⦄
+      ⦃A : ℝ⦄, IsOpen Ω → Ω ⊆ D → (∀ k, c k ∈ C) →
+      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (u k) thricePuncturedSphereReal) →
+      (∀ k, ∀ z ∈ thricePuncturedSphereReal,
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (c k) z (u k z))
+          (ω.perturbedMFDeriv
+            (fun z x ↦ exchangePerturbation H (c k) (equivRealProdCLM.symm z) x 1)
+            (fun z x ↦ exchangePerturbation H (c k) (equivRealProdCLM.symm z) x Complex.I)
+            (u k) z).toLinearMap) →
+      (∀ k, ∀ q ≠ Puncture.inf, ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u k (equivRealProdCLM
+        (q.cylindricalEndLift (↑R + ↑t * Complex.I)))) atTop (𝓝 (x k q t))) →
+      (∀ k, ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u k (equivRealProdCLM
+        (↑(c k) + Puncture.inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))) atTop
+          (𝓝 (x k Puncture.inf t))) →
+      (∀ k, IntegrableOn (ω.floerEnergyDensity
+        (fun z x ↦ exchangePerturbation H (c k) (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H (c k) (equivRealProdCLM.symm z) x Complex.I) (u k))
+        thricePuncturedSphereReal) →
+      (∀ k, IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u k z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal) →
+      (∀ k, (∫ z in thricePuncturedSphereReal, (SmoothBundleForm.eval₂ ω (u k z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineImag) : ℝ)) +
+          ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x k q t) ≤ A) →
+      (∀ k, MapsTo (u k) Ω K) →
+      ∃ (ψ : ℕ → ℕ) (c₀ : ℝ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → M), StrictMono ψ ∧ c₀ ∈ C ∧
+        Tendsto (fun n ↦ c (ψ n)) atTop (𝓝 c₀) ∧ ↑Z ⊆ Ω ∧ Z.card * δ ≤ A + ∑ q, B q ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity
+          (fun z x ↦ exchangePerturbation H (c (ψ n)) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H (c (ψ n)) (equivRealProdCLM.symm z) x Complex.I)
+          (u (ψ n)) y) ∧
+        (∀ L, IsCompact L → L ⊆ Ω \ ↑Z →
+          ∃ M', ∀ n, ∀ y ∈ L, ‖fderiv ℝ (φ ∘ u (ψ n)) y‖ ≤ M') ∧
+        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
+        TendstoLocallyUniformlyOn (fun n ↦ φ ∘ u (ψ n)) (φ ∘ v) atTop (Ω \ ↑Z) ∧
+        ∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (ψ n) y) atTop (𝓝 (v y)) := by
+  set S := thricePuncturedSphereReal
+  -- Read in the chart, the Hamiltonians are `C³` in `(c, z, y)`.
+  have hK' (w : ℂ) : ContDiffOn ℝ 3 (fun q : ℝ × ((ℝ × ℝ) × V) ↦
+      exchangePerturbation H q.1 (equivRealProdCLM.symm q.2.1) (φ.symm q.2.2) w)
+      (univ ×ˢ (S ×ˢ φ.target)) :=
+    (contDiffOn_comp_prodMap_equivRealProdCLM_symm_symm
+      (F := fun p : ℝ × (ℂ × M) ↦ exchangePerturbation H p.1 p.2.1 p.2.2)
+      (fun c z hz x ↦ contMDiffAt_exchangePerturbation hH hHs c
+        ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x) contDiff_id φ).clm_apply contDiffOn_const
+  have hWt : IsOpen (W ∩ univ ×ˢ (S ×ˢ φ.target)) :=
+    hW.inter (isOpen_univ.prod (isOpen_thricePuncturedSphereReal.prod φ.open_target))
+  have hDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W ∩ univ ×ˢ (S ×ˢ φ.target) :=
+    subset_inter hCDKW (prod_mono (subset_univ _)
+      (prod_mono hDS (φ.toPartialEquiv.mapsTo.mono_left hKφ).image_subset))
+  obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
+    φ (Ks := fun c z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x 1)
+    (Kt := fun c z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x Complex.I) (J := J)
+    hφ hJJ' hWt ((hK' 1).mono inter_subset_right) ((hK' Complex.I).mono inter_subset_right)
+    (hJ'.mono inter_subset_left) hC hD hK hKφ hDKW fun c hc z hz x _ ↦ hJt c hc z (hDS hz) x
+  refine ⟨δ, hδ, fun Ω c u x A hΩ hΩD hcC hu hfl hx hxinf hint harea htop huK ↦ ?_⟩
+  have hΩS : Ω ⊆ S := hΩD.trans hDS
+  -- The Floer energy over `Ω` is at most the energy over `S`, which exceeds the topological energy
+  -- by at most `B₀ + B₁ + B_∞`.
+  exact hconv hΩ hΩD hcC (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huK
+    (fun k ↦ (hint k).mono_set hΩS) fun k ↦
+      hω.setIntegral_floerEnergyDensity_exchangePerturbation_le hH
+        (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀₁ (hcC k)).1 (hC₀₁ (hcC k)).2
+        ((hu k).of_le (by norm_num)) (hx k) (hxinf k) (hint k) (harea k)
+        (fun z hz ↦ hJt _ (hcC k) z hz _) (hfl k) (htop k) hΩS
+
+end TauCeti.SmoothTwoForm.IsNondegenerate

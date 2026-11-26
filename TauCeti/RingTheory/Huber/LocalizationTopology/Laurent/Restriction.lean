@@ -111,19 +111,15 @@ theorem laurentLeftAlgHom_coe (P : PairOfDefinition A) (f : A)
         (P.locUniformSpace ({f * f, 1} : Finset A) f (Localization.Away f) hden₁₂)
         (IsLocalization.Away.lift (1 : A)
           (IsLocalization.Away.isUnit_of_dvd f ⟨f, (one_mul f).symm⟩) x) := by
-  let _ := P.locUniformSpace ({f, 1} : Finset A) 1 (Localization.Away (1 : A)) hden₁
-  have _ := P.isUniformAddGroup_locUniformSpace ({f, 1} : Finset A) 1
-    (Localization.Away (1 : A)) hden₁
-  have _ := P.isTopologicalRing_locUniformSpace ({f, 1} : Finset A) 1
-    (Localization.Away (1 : A)) hden₁
-  let _ := P.locUniformSpace ({f * f, 1} : Finset A) f (Localization.Away f) hden₁₂
-  have _ := P.isUniformAddGroup_locUniformSpace ({f * f, 1} : Finset A) f
-    (Localization.Away f) hden₁₂
-  have _ := P.isTopologicalRing_locUniformSpace ({f * f, 1} : Finset A) f
-    (Localization.Away f) hden₁₂
+  let _ := P.locUniformSpace _ 1 _ hden₁
+  have _ := P.isUniformAddGroup_locUniformSpace _ 1 _ hden₁
+  have _ := P.isTopologicalRing_locUniformSpace _ 1 _ hden₁
+  let _ := P.locUniformSpace _ f _ hden₁₂
+  have _ := P.isUniformAddGroup_locUniformSpace _ f _ hden₁₂
+  have _ := P.isTopologicalRing_locUniformSpace _ f _ hden₁₂
   have h : (laurentLeftAlgHom P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)).toRingHom.comp
-      UniformSpace.Completion.coeRingHom =
-      UniformSpace.Completion.coeRingHom.comp (IsLocalization.Away.lift (1 : A)
+      UniformSpace.Completion.coeRingHom = UniformSpace.Completion.coeRingHom.comp
+      (IsLocalization.Away.lift (1 : A)
         (IsLocalization.Away.isUnit_of_dvd f ⟨f, (one_mul f).symm⟩)) := by
     refine IsLocalization.ringHom_ext (Submonoid.powers (1 : A)) (RingHom.ext fun a ↦ ?_)
     simp only [RingHom.coe_comp, Function.comp_apply, UniformSpace.Completion.coe_coeRingHom,
@@ -222,16 +218,14 @@ theorem algebraMap_laurentLeftAlgebra (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     algebraMap (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) =
-      (laurentLeftAlgHom P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)).toRingHom := by
-  rfl
+      (laurentLeftAlgHom P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)).toRingHom := by rfl
 
 /-- The structure map of `laurentRightAlgebra` is `laurentRightAlgHom`. -/
 theorem algebraMap_laurentRightAlgebra (P : PairOfDefinition A) (f : A)
     {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     algebraMap (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) =
-      (laurentRightAlgHom P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)).toRingHom := by
-  rfl
+      (laurentRightAlgHom P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)).toRingHom := by rfl
 
 /-- The structure map of `laurentLeftAlgebra` is continuous. -/
 theorem continuous_algebraMap_laurentLeftAlgebra (P : PairOfDefinition A) (f : A)

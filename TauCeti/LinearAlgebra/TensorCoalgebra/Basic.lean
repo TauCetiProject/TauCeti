@@ -41,6 +41,9 @@ with `TensorPower.splitAt`.  It is the coalgebra-side input for the suspended ba
 * `TauCeti.ReducedTensorWords.subword_congr`: equal-length blocks in different ambient tuples or
   at different offsets agree when their letters agree.
 * `TauCeti.ReducedTensorWords.subword_tail`: blocks of the tail of a tuple.
+* `TauCeti.ReducedTensorWords.subword_shift_zero_eq`,
+  `TauCeti.ReducedTensorWords.subword_shift_right_eq`: complementary cut blocks of a cyclically
+  shifted tuple.
 * `TauCeti.ReducedTensorWords.prepend_subword`: prepending the preceding letter extends a block.
 * `TauCeti.ReducedTensorWords.map_subword`: mapping a block applies the map to each of its letters.
 * `TauCeti.ReducedTensorWords.deconcatenation_subword`: deconcatenation of a block.
@@ -102,6 +105,32 @@ theorem of_tprod_congr {k l : ℕ} (hk : 0 < k) (hkl : k = l) {u : Fin k → M}
       of R M ⟨l, hkl ▸ hk⟩ (PiTensorProduct.tprod R v) := by
   subst hkl
   exact congrArg _ (congrArg _ (funext h))
+
+/-- A pure tensor word of length two equals the two-letter word on its two entries. -/
+theorem of_two_tprod {hn : 0 < 2} (x : Fin 2 → M) :
+    of R M ⟨2, hn⟩ (PiTensorProduct.tprod R x) =
+      of R M (2 : ℕ+) (PiTensorProduct.tprod R ![x 0, x 1]) :=
+  of_tprod_congr R M hn rfl <| Fin.forall_fin_two.2
+    ⟨(Matrix.cons_val_zero _ _).symm, by simp⟩
+
+/-- Two linear maps out of reduced tensor words agree if they agree on two-letter pure words and
+on pure tensor words of length other than two. -/
+theorem linearMap_ext_two_ne_two {N : Type uN} [AddCommMonoid N] [Module R N]
+    {f g : ReducedTensorWords R M →ₗ[R] N}
+    (h2 : ∀ a b : M,
+      f (of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) =
+        g (of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])))
+    (hne : ∀ (n : {n : ℕ // 0 < n}), n.val ≠ 2 → ∀ x : Fin n.val → M,
+      f (of R M n (PiTensorProduct.tprod R x)) =
+        g (of R M n (PiTensorProduct.tprod R x))) : f = g := by
+  refine linearMap_ext R M fun n x ↦ ?_
+  by_cases hn : n.val = 2
+  · obtain ⟨k, hk⟩ := n
+    simp only at hn
+    subst k
+    rw [of_two_tprod R M x]
+    exact h2 (x 0) (x 1)
+  · exact hne n hn x
 
 /-- Project reduced tensor words to a fixed positive tensor length. -/
 noncomputable def component (n : {n : ℕ // 0 < n}) :
@@ -254,6 +283,26 @@ theorem subword_tail {n : ℕ} (z : Fin (n + 1) → M) (a b : ℕ) :
     subword_congr R _ z hab (by omega) fun j _ ↦ congrArg z (Fin.ext (by simp; omega))
   else by
     rw [subword_eq_zero_of_lt_add R _ (by omega), subword_eq_zero_of_lt_add R z (by omega)]
+
+/-- In a tuple cyclically shifted by `d` steps, the initial block of length `n - d` is the trailing
+block of `x` starting at `d`. -/
+theorem subword_shift_zero_eq {n : ℕ} (x : Fin n → M) (d : Fin n) :
+    subword R (fun i : Fin n ↦ x (i + d)) 0 (n - d) = subword R x d (n - d) :=
+  subword_congr R _ x (by omega) (by omega) fun j hj ↦ congrArg x <| Fin.ext <| by
+    rw [Fin.val_add]
+    dsimp only
+    rw [Nat.zero_add, Nat.mod_eq_of_lt (by omega)]
+    omega
+
+/-- In a tuple cyclically shifted by `d` steps, the trailing block of length `d` starting at `n - d`
+is the initial block of `x` of length `d`. -/
+theorem subword_shift_right_eq {n : ℕ} (x : Fin n → M) (d : Fin n) :
+    subword R (fun i : Fin n ↦ x (i + d)) (n - d) d = subword R x 0 d :=
+  subword_congr R _ x (by omega) (by omega) fun j hj ↦ congrArg x <| Fin.ext <| by
+    have hsum : n - (d : ℕ) + j + d = j + n := by omega
+    rw [Fin.val_add]
+    dsimp only
+    rw [hsum, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega), Nat.zero_add]
 
 /-- Deconcatenating a block cuts it at each of its nontrivial internal positions. -/
 theorem deconcatenation_subword {n : ℕ} (x : Fin n → M) {a b : ℕ} :

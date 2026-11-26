@@ -42,9 +42,11 @@ the boundary values are real.
 `star` operation, whose fixed points play the role of the real values: it is `ξ z` on the closed
 upper half-plane and `star (ξ (conj z))` below it, and it agrees with `schwarzReflection` for
 scalar functions. It is the reflection used by the weak Schwarz reflection principle. It is
-continuous across the real axis when the values there are fixed by `star`, which gives the scalar
-continuity lemma as a special case, and a bound `O((z - z₀)ⁿ)` within the closed upper half-plane
-at a point `z₀` of it passes to the reflection on a full neighbourhood of `z₀`.
+continuous across the real axis when the values there are fixed by `star`, as is every reflection
+twisted by a continuous map fixing the values on the axis (`ContinuousOn.ite_conj`); this gives
+the scalar continuity lemma as a special case, and a bound `O((z - z₀)ⁿ)` within the closed upper
+half-plane at a point `z₀` of it passes to the reflection on a full neighbourhood of `z₀`, as it
+does for every reflection twisted by a continuous linear map (`TauCeti.isBigO_ite_conj_sub_pow`).
 
 The last section turns conjugation symmetry into a statement about limits at a real point: a
 holomorphic function on a punctured disc about a real point which commutes with conjugation has a
@@ -460,6 +462,66 @@ conjugate of the derivative of the original function at the conjugate point. -/
 
 /-! ### Reflection of vector-valued functions -/
 
+/-- **Continuity of a twisted reflection.** Let `Ω` contain the conjugate of each of its points
+below the real axis, and let `L` be continuous. A map continuous up to the real axis on
+`Ω ∩ {0 ≤ im}` whose values on the axis are fixed by `L` has a continuous reflection, equal to
+`f` on the closed upper half-plane and to `L (f (conj z))` below it. -/
+theorem _root_.ContinuousOn.ite_conj {F : Type*} [TopologicalSpace F] {Ω : Set ℂ}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → conj z ∈ Ω) {L : F → F} (hL : Continuous L) {f : ℂ → F}
+    (hf : ContinuousOn f (Ω ∩ {z | 0 ≤ z.im})) (hfL : ∀ x : ℝ, (x : ℂ) ∈ Ω → L (f x) = f x) :
+    ContinuousOn (fun z ↦ if 0 ≤ z.im then f z else L (f (conj z))) Ω := by
+  have hlower : ContinuousOn (fun z ↦ L (f (conj z))) (Ω ∩ {z | z.im ≤ 0}) := by
+    refine hL.comp_continuousOn (hf.comp Complex.continuous_conj.continuousOn fun z hz ↦ ⟨?_,
+      by simpa using hz.2⟩)
+    rcases hz.2.out.lt_or_eq with hz' | hz'
+    · exact hΩ z hz.1 hz'
+    · simpa [Complex.conj_eq_iff_im.2 hz'] using hz.1
+  refine ContinuousOn.if (fun z hz ↦ ?_) ?_ ?_
+  · rw [mem_inter_iff, Complex.frontier_setOfPred_le_im, mem_ofPred_eq] at hz
+    have hzx : z = (z.re : ℂ) := Complex.ext rfl (by simpa using hz.2)
+    rw [Complex.conj_eq_iff_im.2 hz.2, eq_comm, hzx]
+    exact hfL z.re (hzx ▸ hz.1)
+  · rwa [(isClosed_le continuous_const Complex.continuous_im).closure_eq]
+  · simp only [not_le]
+    rwa [Complex.closure_setOfPred_im_lt]
+
+open Asymptotics Topology in
+/-- **Vanishing order transfers to a twisted reflection.** At a point `z₀` of the closed upper
+half-plane, a bound `ξ = O((z - z₀)ⁿ)` within the closed upper half-plane gives the same bound in a
+full neighbourhood of `z₀` for the reflection twisted by a continuous linear map `L`, equal to `ξ`
+on the closed upper half-plane and to `L (ξ (conj z))` below it. -/
+theorem isBigO_ite_conj_sub_pow {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (L : F →L[ℝ] F) {ξ : ℂ → F} {z₀ : ℂ} (hz₀ : 0 ≤ z₀.im) {n : ℕ}
+    (h : ξ =O[𝓝[{z | 0 ≤ z.im}] z₀] fun z ↦ (z - z₀) ^ n) :
+    (fun z ↦ if 0 ≤ z.im then ξ z else L (ξ (conj z))) =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n := by
+  have hup : (fun z ↦ if 0 ≤ z.im then ξ z else L (ξ (conj z))) =O[𝓝[{z | 0 ≤ z.im}] z₀]
+      fun z ↦ (z - z₀) ^ n :=
+    h.congr' (eventually_nhdsWithin_of_forall fun z hz ↦ (ite_eq_left hz.out).symm) EventuallyEq.rfl
+  rcases hz₀.lt_or_eq with hpos | hzero
+  · rwa [nhdsWithin_eq_nhds.2 (mem_of_superset
+      ((isOpen_lt continuous_const Complex.continuous_im).mem_nhds hpos)
+      fun w hw ↦ mem_ofPred.2 hw.out.le)] at hup
+  · have hc : conj z₀ = z₀ := Complex.conj_eq_iff_im.2 hzero.symm
+    have ht : Tendsto (starRingEnd ℂ) (𝓝[{z | z.im < 0}] z₀) (𝓝[{z | 0 ≤ z.im}] z₀) := by
+      refine tendsto_nhdsWithin_iff.2 ⟨?_, eventually_nhdsWithin_of_forall fun z hz ↦ ?_⟩
+      · have := (Complex.continuous_conj.tendsto z₀).mono_left
+          (nhdsWithin_le_nhds (s := {z : ℂ | z.im < 0}))
+        rwa [hc] at this
+      · simpa using hz.out.le
+    have hlow : (fun z ↦ if 0 ≤ z.im then ξ z else L (ξ (conj z))) =O[𝓝[{z | z.im < 0}] z₀]
+        fun z ↦ (z - z₀) ^ n := by
+      refine (((L.isBigO_comp _ _).trans (h.comp_tendsto ht)).trans
+        (isBigO_of_le _ fun z ↦ ?_)).congr'
+        (eventually_nhdsWithin_of_forall fun z hz ↦ (ite_eq_right (not_le.2 hz.out)).symm)
+        EventuallyEq.rfl
+      have hz : conj z - z₀ = conj (z - z₀) := by rw [map_sub, hc]
+      simp only [Function.comp_apply]
+      rw [hz, ← map_pow, Complex.norm_conj]
+    have hU : {z : ℂ | 0 ≤ z.im} ∪ {z | z.im < 0} = univ := by
+      ext z; simp [le_or_gt]
+    have := hup.sup hlow
+    rwa [← nhdsWithin_union, hU, nhdsWithin_univ] at this
+
 section StarSchwarzReflection
 
 variable {F : Type*} [Star F] {ξ : ℂ → F}
@@ -509,18 +571,9 @@ reflection. -/
 theorem continuousOn_starSchwarzReflection_of_symmetric [TopologicalSpace F] [ContinuousStar F]
     {Ω : Set ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hξ : ContinuousOn ξ (Ω ∩ {z | 0 ≤ z.im}))
     (hreal : ∀ x : ℝ, (x : ℂ) ∈ Ω → star (ξ x) = ξ x) :
-    ContinuousOn (starSchwarzReflection ξ) Ω := by
-  have hlower : ContinuousOn (fun z ↦ star (ξ (conj z))) (Ω ∩ {z | z.im ≤ 0}) :=
-    continuous_star.comp_continuousOn (hξ.comp Complex.continuous_conj.continuousOn
-      fun z hz ↦ ⟨hΩ hz.1, by simpa using hz.2⟩)
-  refine (ContinuousOn.if (fun z hz ↦ ?_) ?_ ?_).congr fun z _ ↦ starSchwarzReflection_def ξ z
-  · rw [mem_inter_iff, Complex.frontier_setOfPred_le_im, mem_ofPred_eq] at hz
-    have hzx : z = (z.re : ℂ) := Complex.ext rfl (by simpa using hz.2)
-    rw [Complex.conj_eq_iff_im.2 hz.2, eq_comm, hzx]
-    exact hreal z.re (hzx ▸ hz.1)
-  · rwa [(isClosed_le continuous_const Complex.continuous_im).closure_eq]
-  · simp only [not_le]
-    rwa [Complex.closure_setOfPred_im_lt]
+    ContinuousOn (starSchwarzReflection ξ) Ω :=
+  (ContinuousOn.ite_conj (fun _ hz _ ↦ hΩ hz) continuous_star hξ hreal).congr fun z _ ↦
+    starSchwarzReflection_def ξ z
 
 /--
 If a domain `Ω` is closed under conjugation, `f` is continuous on its closed upper half-plane
@@ -570,34 +623,9 @@ the reflection in a full neighbourhood of `z₀`. -/
 theorem isBigO_starSchwarzReflection_sub_pow {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [StarAddMonoid F] [StarModule ℝ F] [ContinuousStar F] {ξ : ℂ → F} {z₀ : ℂ} (hz₀ : 0 ≤ z₀.im)
     {n : ℕ} (h : ξ =O[𝓝[{z | 0 ≤ z.im}] z₀] fun z ↦ (z - z₀) ^ n) :
-    starSchwarzReflection ξ =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n := by
-  have hup : starSchwarzReflection ξ =O[𝓝[{z | 0 ≤ z.im}] z₀] fun z ↦ (z - z₀) ^ n :=
-    h.congr' (eventually_nhdsWithin_of_forall fun z hz ↦
-      (starSchwarzReflection_of_im_nonneg hz.out).symm) EventuallyEq.rfl
-  rcases hz₀.lt_or_eq with hpos | hzero
-  · rwa [nhdsWithin_eq_nhds.2 (mem_of_superset
-      ((isOpen_lt continuous_const Complex.continuous_im).mem_nhds hpos)
-      fun w hw ↦ mem_ofPred.2 hw.out.le)] at hup
-  · have hc : conj z₀ = z₀ := Complex.conj_eq_iff_im.2 hzero.symm
-    have ht : Tendsto (starRingEnd ℂ) (𝓝[{z | z.im < 0}] z₀) (𝓝[{z | 0 ≤ z.im}] z₀) := by
-      refine tendsto_nhdsWithin_iff.2 ⟨?_, eventually_nhdsWithin_of_forall fun z hz ↦ ?_⟩
-      · have := (Complex.continuous_conj.tendsto z₀).mono_left
-          (nhdsWithin_le_nhds (s := {z : ℂ | z.im < 0}))
-        rwa [hc] at this
-      · simpa using hz.out.le
-    have hlow : starSchwarzReflection ξ =O[𝓝[{z | z.im < 0}] z₀] fun z ↦ (z - z₀) ^ n := by
-      have h2 := ((starL' ℝ : F ≃L[ℝ] F).toContinuousLinearMap.isBigO_comp _ _).trans
-        (h.comp_tendsto ht)
-      simp only [ContinuousLinearEquiv.coe_coe, starL'_apply, Function.comp_def] at h2
-      refine (h2.trans (isBigO_of_le _ fun z ↦ ?_)).congr'
-        (eventually_nhdsWithin_of_forall fun z hz ↦
-          (starSchwarzReflection_of_im_neg hz.out).symm) EventuallyEq.rfl
-      have hz : conj z - z₀ = conj (z - z₀) := by rw [map_sub, hc]
-      rw [hz, ← map_pow, Complex.norm_conj]
-    have hU : {z : ℂ | 0 ≤ z.im} ∪ {z | z.im < 0} = univ := by
-      ext z; simp [le_or_gt]
-    have := hup.sup hlow
-    rwa [← nhdsWithin_union, hU, nhdsWithin_univ] at this
+    starSchwarzReflection ξ =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n :=
+  (isBigO_ite_conj_sub_pow (starL' ℝ : F ≃L[ℝ] F).toContinuousLinearMap hz₀ h).congr_left
+    fun z ↦ (starSchwarzReflection_def ξ z).symm
 
 /-- **Check.** The reflection of the identity, which is real on the real axis, is the identity. -/
 theorem starSchwarzReflection_id : starSchwarzReflection (id : ℂ → ℂ) = id := by

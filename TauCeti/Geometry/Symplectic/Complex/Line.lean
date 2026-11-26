@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Analysis.Real.Sqrt
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Complex.Basic
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
@@ -49,9 +50,17 @@ conjugating the coordinates exchanges them.
   the standard triple is the real inner product.
 * `TauCeti.stdComplexSymplecticForm_smul_sub_smul`: a real-linear map `v ↦ α v - β ⟪z, v⟫ z`
   scales the area form by its determinant.
+* `TauCeti.stdComplexSymplecticForm_mul_mul`: multiplication by `u` scales the area form by
+  `‖u‖²`, so rotations preserve it.
+* `TauCeti.stdComplexSymplecticForm_eq_im_conj_mul`: the area spanned by `u` and `v` is
+  `Im (conj u v)`.
+* `TauCeti.stdComplexSymplecticForm_mul_right`: the area spanned by `u w` and `v w` is
+  `‖w‖² Im (conj u v)`.
 * `TauCeti.stdComplexSymplecticForm_tames_iff_im_pos` and
   `TauCeti.stdComplexSymplecticForm_tames_or_tames_transport_conj`: the orientation criterion
   and coverage of both components by the usual and conjugate real coordinates.
+* `TauCeti.AlmostComplexStructure.transport_conjCLE_apply`: transporting a structure along
+  complex conjugation conjugates it.
 * `TauCeti.exists_frame_of_tame_of_finrank_eq_two`: a complex structure on a real plane, tamed by
   an antisymmetric form, is identified with the complex line by a complex-linear isomorphism
   pulling the form back to `⟪i x, y⟫_ℝ`.
@@ -154,17 +163,8 @@ lemma stdComplexSymplecticForm_compatible :
 /-- Every real one-dimensional subspace of the complex plane is Lagrangian for its
 standard symplectic area form. -/
 theorem isLagrangian_stdComplexSymplecticForm_of_finrank_eq_one {L : Submodule ℝ ℂ}
-    (hL : Module.finrank ℝ L = 1) : stdComplexSymplecticForm.IsLagrangian L := by
-  have hne : L ≠ ⊥ := by
-    intro h
-    have hz : Module.finrank ℝ L = 0 := Submodule.finrank_eq_zero.2 h
-    omega
-  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
-  have hs := eq_span_singleton_of_mem_of_finrank_eq_one hL hv hv0
-  have hi : stdComplexSymplecticForm.IsIsotropic L := by
-    rw [hs, SymplecticForm.isIsotropic_span_iff]
-    simpa only [Set.mem_singleton_iff, forall_eq] using stdComplexSymplecticForm.isAlt v
-  exact hi.isLagrangian_of_finrank (by simp [hL])
+    (hL : Module.finrank ℝ L = 1) : stdComplexSymplecticForm.IsLagrangian L :=
+  (SymplecticForm.isIsotropic_of_finrank_le_one hL.le).isLagrangian_of_finrank (by simp [hL])
 
 /-- The standard area form paired with the standard complex structure is the norm square. -/
 theorem stdComplexSymplecticForm_apply_ofComplexModule (z : ℂ) :
@@ -188,6 +188,28 @@ theorem stdComplexSymplecticForm_smul_sub_smul (α β : ℝ) (z v w : ℂ) :
     Complex.real_smul, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
     Complex.conj_re, Complex.conj_im, Complex.sq_norm, Complex.normSq_apply]
   ring
+
+/-- Multiplication by `u` scales the area form by `‖u‖²`, the determinant of `v ↦ u v`. In
+particular rotations, multiplications by complex numbers of norm one, preserve it. -/
+theorem stdComplexSymplecticForm_mul_mul (u v w : ℂ) :
+    stdComplexSymplecticForm (u * v) (u * w) = ‖u‖ ^ 2 * stdComplexSymplecticForm v w := by
+  simp only [stdComplexSymplecticForm_apply, Complex.mul_re, Complex.mul_im, Complex.sq_norm,
+    Complex.normSq_apply]
+  ring
+
+open scoped ComplexConjugate in
+/-- The area spanned by `u` and `v` is `Im (conj u v)`. -/
+theorem stdComplexSymplecticForm_eq_im_conj_mul (u v : ℂ) :
+    stdComplexSymplecticForm u v = (conj u * v).im := by
+  simp only [stdComplexSymplecticForm_apply, Complex.mul_im, Complex.conj_re, Complex.conj_im]
+  ring
+
+open scoped ComplexConjugate in
+/-- The area spanned by `u w` and `v w` is `‖w‖² Im (conj u v)`. -/
+theorem stdComplexSymplecticForm_mul_right (u v w : ℂ) :
+    stdComplexSymplecticForm (u * w) (v * w) = ‖w‖ ^ 2 * (conj u * v).im := by
+  rw [mul_comm u, mul_comm v, stdComplexSymplecticForm_mul_mul,
+    stdComplexSymplecticForm_eq_im_conj_mul]
 
 private noncomputable def planeBasis (J : AlmostComplexStructure ℂ) : Basis (Fin 2) ℝ ℂ :=
   basisOfLinearIndependentOfCardEqFinrank' ![1, J 1]
@@ -254,6 +276,13 @@ theorem stdComplexSymplecticForm_tames_or_tames_transport_conj (J : AlmostComple
       stdComplexSymplecticForm.Tames (J.transport Complex.conjCLE.toLinearEquiv) := by
   rw [stdComplexSymplecticForm_tames_iff_im_pos, stdComplexSymplecticForm_tames_transport_conj_iff]
   exact (lt_or_gt_of_ne (AlmostComplexStructure.im_apply_one_ne_zero J)).symm
+
+open scoped ComplexConjugate in
+/-- Transporting a structure along complex conjugation conjugates it: `v ↦ conj (J (conj v))`. -/
+theorem AlmostComplexStructure.transport_conjCLE_apply (J : AlmostComplexStructure ℂ) (v : ℂ) :
+    J.transport conjCLE.toLinearEquiv v = conj (J (conj v)) := by
+  rw [AlmostComplexStructure.transport_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+    conjCLE_symm, ContinuousLinearEquiv.coe_toLinearEquiv, conjCLE_apply, conjCLE_apply]
 
 open ContinuousLinearMap in
 open scoped RealInnerProductSpace in

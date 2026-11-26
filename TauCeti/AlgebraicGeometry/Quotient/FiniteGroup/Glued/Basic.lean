@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Cover.Directed
 public import TauCeti.AlgebraicGeometry.GroupAction.InvariantOpen
 public import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.UniversalProperty
+import TauCeti.AlgebraicGeometry.Morphisms.Integral.TargetLocal
 
 /-!
 # Quotients of schemes by finite groups with an invariant affine open cover
@@ -306,7 +307,7 @@ theorem isLocalization_resFixedPoints {U V : X.Opens} (hU : IsAffineOpen U)
       a ∈ Set.range (algebraMap (FixedPoints.subring Γ(X, W) G) Γ(X, W)) ↔
         ∀ g : G, MulSemiringAction.toRingHom G Γ(X, W) g a = a :=
     ⟨fun ⟨b, hb⟩ ↦ hb ▸ b.property, fun ha ↦ ⟨⟨a, ha⟩, rfl⟩⟩
-  exact TauCeti.FixedPoints.isLocalization_of_mem_range_iff _ (MulSemiringAction.toRingHom G _)
+  exact TauCeti.FixedPoints.isLocalization_of_mem_range_iff (MulSemiringAction.toRingHom G _)
     (MulSemiringAction.toRingHom G _) (fun g a ↦ (Scheme.presheaf_map_smul hUσ hVσ h g a).symm)
     Subtype.val_injective (hfix hUσ) Subtype.val_injective (hfix hVσ) fun _ ↦ rfl
 
@@ -711,8 +712,6 @@ theorem projection_of_forall_exists (hσ : HasInvariantAffineCover σ)
 /-- The quotient projection is integral, since sections are integral over invariant sections for
 a finite group. -/
 instance (hσ : HasInvariantAffineCover σ) : IsIntegralHom (projection σ hσ) := by
-  have : IsZariskiLocalAtTarget @IsIntegralHom.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty
   refine (projection_iff hσ (P := @IsIntegralHom)).mpr fun U ↦ ?_
   let := Scheme.sectionsMulSemiringAction σ U.property.2
   infer_instance

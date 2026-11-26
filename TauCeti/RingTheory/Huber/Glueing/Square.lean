@@ -136,9 +136,8 @@ theorem GlueingSquare.range_diagonal (h : GlueingSquare R R₁ R₂ R₁₂) :
 /-- In a glueing square with Hausdorff overlap `R₁₂`, the range of the diagonal inclusion
 `R → R₁ × R₂` is closed. -/
 theorem GlueingSquare.isClosed_range_diagonal [T2Space R₁₂] (h : GlueingSquare R R₁ R₂ R₁₂) :
-    IsClosed (Set.range fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r)) := by
-  rw [h.range_diagonal]
-  exact isClosed_eq (h.continuous_algebraMap₁₂.comp continuous_fst)
+    IsClosed (Set.range fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r)) :=
+  h.range_diagonal.symm ▸ isClosed_eq (h.continuous_algebraMap₁₂.comp continuous_fst)
     (h.continuous_algebraMap₂₁₂.comp continuous_snd)
 
 /-- In a glueing square with Hausdorff overlap `R₁₂`, the diagonal inclusion `R → R₁ × R₂` is a
@@ -216,32 +215,26 @@ theorem GlueingSquare.congr {L₁ L₂ L₁₂ : Type*}
     ext r <;> simp [H₁, H₂]
   have hδ : (fun x : R₁ × R₂ ↦ algebraMap R₁ R₁₂ x.1 - algebraMap R₂ R₁₂ x.2) =
       H₁₂ ∘ (fun y : L₁ × L₂ ↦ algebraMap L₁ L₁₂ y.1 - algebraMap L₂ L₁₂ y.2) ∘
-        (H₁.prodCongr H₂).symm := by
-    ext ⟨x₁, x₂⟩; simp [H₁, H₂, H₁₂, map_sub, hcomp₁, hcomp₂]
+        (H₁.prodCongr H₂).symm := by ext ⟨x₁, x₂⟩; simp [H₁, H₂, H₁₂, map_sub, hcomp₁, hcomp₂]
   have hmap₁ : (algebraMap R₁ R₁₂ : R₁ → R₁₂) = H₁₂ ∘ algebraMap L₁ L₁₂ ∘ H₁.symm := by
     ext x; simp [H₁, H₁₂, hcomp₁]
   have hmap₂ : (algebraMap R₂ R₁₂ : R₂ → R₁₂) = H₁₂ ∘ algebraMap L₂ L₁₂ ∘ H₂.symm := by
     ext x; simp [H₂, H₁₂, hcomp₂]
   have hexact : Function.Exact (fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r))
-      fun x : R₁ × R₂ ↦ algebraMap R₁ R₁₂ x.1 - algebraMap R₂ R₁₂ x.2 := by
-    let ιL : R →+ L₁ × L₂ := ((algebraMap R L₁).prod (algebraMap R L₂)).toAddMonoidHom
-    let ιR : R →+ R₁ × R₂ := ((algebraMap R R₁).prod (algebraMap R R₂)).toAddMonoidHom
-    let δL : L₁ × L₂ →+ L₁₂ :=
-      (algebraMap L₁ L₁₂).toAddMonoidHom.comp (AddMonoidHom.fst L₁ L₂) -
-        (algebraMap L₂ L₁₂).toAddMonoidHom.comp (AddMonoidHom.snd L₁ L₂)
-    let δR : R₁ × R₂ →+ R₁₂ :=
-      (algebraMap R₁ R₁₂).toAddMonoidHom.comp (AddMonoidHom.fst R₁ R₂) -
-        (algebraMap R₂ R₁₂).toAddMonoidHom.comp (AddMonoidHom.snd R₁ R₂)
-    exact (Function.Exact.iff_of_ladder_addEquiv (AddEquiv.refl R)
+      fun x : R₁ × R₂ ↦ algebraMap R₁ R₁₂ x.1 - algebraMap R₂ R₁₂ x.2 :=
+    (Function.Exact.iff_of_ladder_addEquiv (AddEquiv.refl R)
       (e₁.toAddEquiv.prodCongr e₂.toAddEquiv) e₁₂.toAddEquiv
-      (f₁₂ := ιL) (f₂₃ := δL) (g₁₂ := ιR) (g₂₃ := δR)
+      (f₁₂ := ((algebraMap R L₁).prod (algebraMap R L₂)).toAddMonoidHom)
+      (f₂₃ := (algebraMap L₁ L₁₂).toAddMonoidHom.comp (AddMonoidHom.fst L₁ L₂) -
+        (algebraMap L₂ L₁₂).toAddMonoidHom.comp (AddMonoidHom.snd L₁ L₂))
+      (g₁₂ := ((algebraMap R R₁).prod (algebraMap R R₂)).toAddMonoidHom)
+      (g₂₃ := (algebraMap R₁ R₁₂).toAddMonoidHom.comp (AddMonoidHom.fst R₁ R₂) -
+        (algebraMap R₂ R₁₂).toAddMonoidHom.comp (AddMonoidHom.snd R₁ R₂))
       (AddMonoidHom.ext fun r ↦ Prod.ext (e₁.commutes r).symm (e₂.commutes r).symm)
-      (AddMonoidHom.ext fun ⟨x₁, x₂⟩ ↦ by
-        simp [δL, δR, hcomp₁, hcomp₂]; rfl)).mpr h.exact_sub
+      (AddMonoidHom.ext fun ⟨x₁, x₂⟩ ↦ by simp [hcomp₁, hcomp₂]; rfl)).mpr h.exact_sub
   exact ⟨hmap₁ ▸ he₁₂.comp (h.continuous_algebraMap₁₂.comp he₁_symm),
     hmap₂ ▸ he₁₂.comp (h.continuous_algebraMap₂₁₂.comp he₂_symm),
-    hι ▸ (H₁.prodCongr H₂).injective.comp h.injective,
-    hexact,
+    hι ▸ (H₁.prodCongr H₂).injective.comp h.injective, hexact,
     hδ ▸ H₁₂.surjective.comp (h.surjective_sub.comp (H₁.prodCongr H₂).symm.surjective),
     hι ▸ (H₁.prodCongr H₂).isInducing.comp h.isInducing,
     by rw [hδ, Homeomorph.comp_isStrictMap_iff, Homeomorph.isStrictMap_comp_iff]
@@ -250,11 +243,8 @@ theorem GlueingSquare.congr {L₁ L₂ L₁₂ : Type*}
       (h.denseRange.comp H₂.symm.surjective.denseRange h.continuous_algebraMap₂₁₂) he₁₂,
     fun m hm ↦ by
       obtain ⟨p, hp, hpm⟩ := h.exists_prime_comap_eq m hm
-      let ψ := RingHom.prodMap e₁.symm.toRingHom e₂.symm.toRingHom
-      refine ⟨p.comap ψ, hp.comap ψ, ?_⟩
-      rw [Ideal.comap_comap]
-      convert hpm using 2
-      ext r <;> simp [ψ]⟩
+      refine ⟨p.comap (RingHom.prodMap e₁.symm.toRingHom e₂.symm.toRingHom), hp.comap _, ?_⟩
+      rw [Ideal.comap_comap]; convert hpm using 2; ext r <;> simp⟩
 
 end Basic
 
@@ -289,11 +279,10 @@ theorem GlueingSquare.of_exact
     (hprime : ∀ m : Ideal R, m.IsMaximal → ∃ p : Ideal (R₁ × R₂), p.IsPrime ∧
       p.comap ((algebraMap R R₁).prod (algebraMap R R₂)) = m) :
     GlueingSquare R R₁ R₂ R₁₂ := by
-  have : ContinuousSMul R R₁ := continuousSMul_of_algebraMap R R₁ hc₁
-  have : ContinuousSMul R R₂ := continuousSMul_of_algebraMap R R₂ hc₂
-  have hcR₁₂ : Continuous (algebraMap R R₁₂) :=
-    (hc₁₂.comp hc₁).congr fun r ↦ (IsScalarTower.algebraMap_apply R R₁ R₁₂ r).symm
-  have : ContinuousSMul R R₁₂ := continuousSMul_of_algebraMap R R₁₂ hcR₁₂
+  have := continuousSMul_of_algebraMap R R₁ hc₁
+  have := continuousSMul_of_algebraMap R R₂ hc₂
+  have := continuousSMul_of_algebraMap R R₁₂
+    ((hc₁₂.comp hc₁).congr fun r ↦ (IsScalarTower.algebraMap_apply R R₁ R₁₂ r).symm)
   have : (𝓤 R₁).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
   have : (𝓤 R₂).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
   have : (𝓤 R₁₂).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
@@ -303,18 +292,16 @@ theorem GlueingSquare.of_exact
   let δ : (R₁ × R₂) →ₗ[R] R₁₂ :=
     (IsScalarTower.toAlgHom R R₁ R₁₂).toLinearMap.comp (LinearMap.fst R R₁ R₂) -
       (IsScalarTower.toAlgHom R R₂ R₁₂).toLinearMap.comp (LinearMap.snd R R₁ R₂)
-  have hι_cont : Continuous ι := hc₁.prodMk hc₂
-  have hδ_cont : Continuous δ := (hc₁₂.comp continuous_fst).sub (hc₂₁₂.comp continuous_snd)
   have hclosed : IsClosed (ι.range : Set (R₁ × R₂)) := by
-    have hrange : (ι.range : Set (R₁ × R₂)) = {x | algebraMap R₁ R₁₂ x.1 = algebraMap R₂ R₁₂ x.2} :=
-      Set.ext fun x ↦ (hexact x).symm.trans sub_eq_zero
-    rw [hrange]
+    rw [show (ι.range : Set (R₁ × R₂)) = {x | algebraMap R₁ R₁₂ x.1 = algebraMap R₂ R₁₂ x.2} from
+      Set.ext fun x ↦ (hexact x).symm.trans sub_eq_zero]
     exact isClosed_eq (hc₁₂.comp continuous_fst) (hc₂₁₂.comp continuous_snd)
-  have hι_emb : Topology.IsEmbedding ι :=
-    Topology.isEmbedding_iff_isStrictMap_injective.mpr
-      ⟨ι.isStrictMap_of_isClosed_range_of_isTateRing hι_cont.continuousAt hclosed, hinj⟩
+  have hι_emb : Topology.IsEmbedding ι := Topology.isEmbedding_iff_isStrictMap_injective.mpr
+    ⟨ι.isStrictMap_of_isClosed_range_of_isTateRing (hc₁.prodMk hc₂).continuousAt hclosed, hinj⟩
   exact ⟨hc₁₂, hc₂₁₂, hinj, hexact, hsurj, hι_emb.isInducing,
-    (δ.isQuotientMap_of_isTateRing hsurj hδ_cont.continuousAt).isStrictMap, hdense, hprime⟩
+    (δ.isQuotientMap_of_isTateRing hsurj
+      ((hc₁₂.comp continuous_fst).sub (hc₂₁₂.comp continuous_snd)).continuousAt).isStrictMap,
+    hdense, hprime⟩
 
 /-- The identity glueing square `R → R, R → R` on any topological ring `R` with continuous
 subtraction. -/
@@ -331,10 +318,8 @@ theorem GlueingSquare.id (R : Type*) [CommRing R] [TopologicalSpace R] [Continuo
     (Topology.IsQuotientMap.of_inverse (continuous_id.prodMk continuous_const)
       (continuous_fst.sub continuous_snd) fun y : R ↦ sub_zero y).isStrictMap
   denseRange := denseRange_id
-  exists_prime_comap_eq m hm :=
-    have := hm.isPrime
-    ⟨m.comap (RingHom.fst R R), Ideal.IsPrime.comap _,
-      by rw [Ideal.comap_comap]; exact Ideal.comap_id m⟩
+  exists_prime_comap_eq m hm := ⟨m.comap (RingHom.fst R R), hm.isPrime.comap _,
+    by rw [Ideal.comap_comap]; exact Ideal.comap_id m⟩
 
 /-- A degenerate glueing square `R → R, R₂ → R₁₂` in which `R₂` and `R₁₂` are subsingleton rings
 (for instance when one piece of a rational cover has denominator `0`). -/
@@ -357,10 +342,8 @@ theorem GlueingSquare.of_subsingleton_right {R R₂ R₁₂ : Type*} [CommRing R
       (continuous_of_const fun _ _ ↦ Subsingleton.elim _ _)
       fun _ : R₁₂ ↦ Subsingleton.elim _ _).isStrictMap
   denseRange _ := subset_closure ⟨(0 : R₂), Subsingleton.elim _ _⟩
-  exists_prime_comap_eq m hm :=
-    have := hm.isPrime
-    ⟨m.comap (RingHom.fst R R₂), Ideal.IsPrime.comap _,
-      by rw [Ideal.comap_comap]; exact Ideal.comap_id m⟩
+  exists_prime_comap_eq m hm := ⟨m.comap (RingHom.fst R R₂), hm.isPrime.comap _,
+    by rw [Ideal.comap_comap]; exact Ideal.comap_id m⟩
 
 end OfExact
 

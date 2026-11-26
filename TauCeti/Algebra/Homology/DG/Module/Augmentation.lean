@@ -30,11 +30,25 @@ No grading and no square-zero condition is needed, so the statement is about bar
 is the form in which Brown's semi-free resolution of a CW complex is compared with the chains on
 its based path space, both being resolutions of the ground ring over the chains on the loop space.
 
+The same element form of quasi-isomorphisms is stable under composition
+(`TauCeti.exists_differential_eq_and_comp_add_eq`): if the relative cycles of `g : K → M` and of
+`f : M → N` are relative boundaries, so are those of `f ∘ g`. This is how a resolution compared
+quasi-isomorphically with the chains on the based path space becomes, through the augmentation of
+those chains, a resolution of the ground ring. It also cancels
+(`TauCeti.exists_differential_eq_and_add_eq_of_comp`): if the relative cycles of `g` and of
+`f ∘ g` are relative boundaries, so are those of `f`. This is the two-out-of-three property of
+quasi-isomorphisms that lets a map be compared with a known quasi-isomorphism through a
+quasi-isomorphism into its source.
+
 ## Main results
 
 * `TauCeti.exists_differential_eq_and_add_eq_of_augmentation`: a map compatible with the
   differentials and the augmentations between two acyclic augmented complexes has relative cycles
   that are relative boundaries.
+* `TauCeti.exists_differential_eq_and_comp_add_eq`: if the relative cycles of two composable maps
+  of complexes are relative boundaries, so are those of their composite.
+* `TauCeti.exists_differential_eq_and_add_eq_of_comp`: if the relative cycles of `g` and of
+  `f ∘ g` are relative boundaries, so are those of `f`.
 
 ## References
 
@@ -71,5 +85,44 @@ theorem exists_differential_eq_and_add_eq_of_augmentation {dM : M →ₗ[R] M} {
   · simp [hv, hs]
   · rw [hw', map_add, hz]
     abel
+
+
+/-- **Relative cycles compose.** Let `g : K → M` and `f : M → N` commute with the differentials.
+If every relative cycle of `g` and every relative cycle of `f` is a relative boundary, then so is
+every relative cycle `(u, w)` of `f ∘ g`, with `dK u = 0` and `f (g u) = dN w`: when `g` and `f`
+are quasi-isomorphisms, so is their composite. -/
+theorem exists_differential_eq_and_comp_add_eq {K : Type*} [AddCommGroup K] [Module R K]
+    {dK : K →ₗ[R] K} {dM : M →ₗ[R] M} {dN : N →ₗ[R] N} {g : K →ₗ[R] M} {f : M →ₗ[R] N}
+    (hg : ∀ x, g (dK x) = dM (g x)) (hf : ∀ x, f (dM x) = dN (f x))
+    (hgrel : ∀ u w, dK u = 0 → g u = dM w → ∃ u' w', dK u' = u ∧ g u' + dM w' = w)
+    (hfrel : ∀ u w, dM u = 0 → f u = dN w → ∃ u' w', dM u' = u ∧ f u' + dN w' = w)
+    (u : K) (w : N) (hu : dK u = 0) (hw : f (g u) = dN w) :
+    ∃ u' w', dK u' = u ∧ f (g u') + dN w' = w := by
+  -- The cycle `g u` is a relative cycle of `f`: it bounds some `y` up to `f`.
+  obtain ⟨y, v, hy, hv⟩ := hfrel (g u) w (by rw [← hg, hu, map_zero]) hw
+  -- Then `(u, y)` is a relative cycle of `g`.
+  obtain ⟨u', v', hu', hv'⟩ := hgrel u y hu hy.symm
+  refine ⟨u', f v' + v, hu', ?_⟩
+  rw [map_add, ← hf, ← add_assoc, ← map_add, hv', hv]
+
+/-- **Relative cycles cancel.** Let `g : K → M` and `f : M → N` commute with the differentials.
+If every relative cycle of `g` and every relative cycle of `f ∘ g` is a relative boundary, then so
+is every relative cycle `(u, w)` of `f`, with `dM u = 0` and `f u = dN w`: when `g` and `f ∘ g` are
+quasi-isomorphisms, so is `f`. -/
+theorem exists_differential_eq_and_add_eq_of_comp {K : Type*} [AddCommGroup K] [Module R K]
+    {dK : K →ₗ[R] K} {dM : M →ₗ[R] M} {dN : N →ₗ[R] N} {g : K →ₗ[R] M} {f : M →ₗ[R] N}
+    (hg : ∀ x, g (dK x) = dM (g x)) (hf : ∀ x, f (dM x) = dN (f x))
+    (hgrel : ∀ u w, dK u = 0 → g u = dM w → ∃ u' w', dK u' = u ∧ g u' + dM w' = w)
+    (hfgrel : ∀ u w, dK u = 0 → f (g u) = dN w → ∃ u' w', dK u' = u ∧ f (g u') + dN w' = w)
+    (u : M) (w : N) (hu : dM u = 0) (hw : f u = dN w) :
+    ∃ u' w', dM u' = u ∧ f u' + dN w' = w := by
+  -- The cycle `u` is homologous to the image `g v` of a cycle `v`.
+  obtain ⟨v, y, hv, hy⟩ := hgrel 0 u (map_zero dK) (by rw [map_zero, hu])
+  -- Then `(v, w - f y)` is a relative cycle of the composite.
+  obtain ⟨v', y', hv', hy'⟩ := hfgrel v (w - f y) hv
+    (by rw [map_sub, ← hf, ← hw, ← hy, map_add, add_sub_cancel_right])
+  refine ⟨g v' + y, y', ?_, ?_⟩
+  · rw [map_add, ← hg, hv', hy]
+  · rw [map_add, add_right_comm, hy', sub_add_cancel]
 
 end TauCeti

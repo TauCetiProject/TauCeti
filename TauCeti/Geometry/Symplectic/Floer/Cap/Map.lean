@@ -33,7 +33,9 @@ a linear map of the completed capped modules. This file proves:
   (`TauCeti.Floer.novikovMapOfMatrix_coefficientComparison_mem_map_cochain_gradeBy`).
 * **Chain maps.** If the series obey the identity `∑ₖ Φᵢₖ Dₖₖ' = ∑ᵢ' Eᵢᵢ' Φᵢ'ₖ'` with series
   `D` and `E` of differentials, the map intertwines the differentials
-  (`TauCeti.Floer.novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm`).
+  (`TauCeti.Floer.novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm`); when it
+  also preserves the cochain degree, it sends cocycles to cocycles
+  (`TauCeti.Floer.novikovMapOfMatrix_coefficientComparison_mem_cocycles`).
 * **Homotopies.** If the series of two maps `Φ`, `Φ'` and of a map `Y` obey
   `Φᵢₖ - Φ'ᵢₖ = ∑ₘ Yᵢₘ D₀ₘₖ + ∑ₘ D₁ᵢₘ Yₘₖ`, then `Φ - Φ' = D₀ Y + Y D₁` on the completed modules
   (`TauCeti.Floer.novikovMapOfMatrix_coefficientComparison_sub_eq_add`); when `Y` lowers the
@@ -45,12 +47,21 @@ a linear map of the completed capped modules. This file proves:
   once to `(Φ, Ψ)` and once to `(Ψ, Φ)`, each with its own homotopy, this supplies the two
   hypotheses `hgf` and `hfg` under which `LinearMap.cohomologyEquiv` makes a PSS map an
   isomorphism of cohomology.
+* **Change of reference caps.** Moving the reference caps to `q gₗ # rₗ` for lifts `g₁, g₀ ∈ G`
+  changes the class of each counted configuration relative to them by `g₀ - g₁`. With the
+  generating series multiplied by `q^(g₀ - g₁)` accordingly, the kernel, hence the map, is
+  unchanged (`TauCeti.Floer.mapKernelOfMatrix_coefficientComparison_vadd`,
+  `TauCeti.Floer.novikovMapOfMatrix_coefficientComparison_vadd`). This is the Floer form of
+  `TauCeti.NovikovModule.mapKernelOfMatrix_vadd_single_mul`, through `q^A ↦ e^(-q A)`.
 
 The index and boundary-count hypotheses are the ones the geometric moduli spaces are to supply; no
 moduli space, orientation or count is constructed here.
 
 ## References
 
+* H. Hofer and D. A. Salamon, *Floer homology and Novikov rings*, in *The Floer memorial
+  volume*, Progr. Math. 133 (1995), 483–524, for the independence from the choice of reference
+  caps.
 * S. Piunikhin, D. Salamon and M. Schwarz, *Symplectic Floer–Donaldson theory and quantum
   cohomology*, in *Contact and symplectic geometry*, Publ. Newton Inst. 8 (1996), 171–200.
 * D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, the chapter on Floer
@@ -69,7 +80,10 @@ variable {R S : Type*} [AddCommGroup S] {ω : S →+ ℝ} {c : S →+ ℤ}
   {ι₁ ι₀ : Type*} {P₁ : ι₁ → Type*} {P₀ : ι₀ → Type*}
   [∀ i, AddTorsor (PeriodGroup ω c) (P₁ i)] [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)]
   (r₁ : ∀ i, P₁ i) (r₀ : ∀ k, P₀ k)
-  {G : Type*} [AddMonoid G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
+
+section Monoid
+
+variable {G : Type*} [AddMonoid G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
   (hq : ∀ A, area ω c (q A) = ωG A)
 
 section MapKernel
@@ -168,6 +182,19 @@ theorem novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy [Finite ι�
   novikovMapOfMatrix_coefficientComparison_mem_map_cochain_gradeBy r₁ r₀ q hq hμ₁ hμ₀ hF₁ hF₀ hΦ
     (AddMonoidHom.id ℤ) ha
 
+/-- A map of rigid class-indexed counts which preserves the index preserves the cochain degree
+`n - μ`. -/
+theorem novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy_of_eq [Finite ι₁] [Finite ι₀]
+    {F₁ : (Σ i, P₁ i) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+    (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+    (hF₀ : ∀ k γ (D : P₀ k), F₀ ⟨k, γ +ᵥ D⟩ = F₀ ⟨k, D⟩ - (-area ω c) γ)
+    (hΦ : ∀ i k, ∀ A ∈ (Φ i k).support, μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩)
+    {n e : ℤ} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ (fun p => n - μ₁ p) e) :
+    novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (fun i k => coefficientComparison q hq (Φ i k)) a ∈
+      gradeBy R F₀ (fun p => n - μ₀ p) e := by
+  simpa only [add_zero] using novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy r₁ r₀ q
+    hq hμ₁ hμ₀ hF₁ hF₀ (ε := 0) (fun i k A hA => (hΦ i k A hA).trans (sub_zero _).symm) ha
+
 end MapGrading
 
 section ChainMap
@@ -206,6 +233,24 @@ theorem novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm [Fintyp
   have h := congrArg (fun A => novikovMapOfMatrix hF₁ hF₀ r₁ r₀ A a) hm
   simpa only [novikovMapOfMatrix_mul hF₁ hF₀ hF₀ r₁ r₀ r₀,
     novikovMapOfMatrix_mul hF₁ hF₀ hF₁ r₁ r₀ r₁, LinearMap.comp_apply] using h
+
+/-- The map of the comparison of the identity matrix of class-indexed series is the identity:
+the stationary cylinders act as the identity on the completed capped module. -/
+@[simp]
+theorem novikovMapOfMatrix_coefficientComparison_one_apply [Finite ι₁] [DecidableEq ι₁]
+    {F₁ : (Σ i, P₁ i) → ℝ} (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+    (x : NovikovModule R F₁) :
+    letI := module (R := R) hF₁
+    novikovMapOfMatrix hF₁ hF₁ r₁ r₁
+        (fun i i' => coefficientComparison q hq ((1 : Matrix ι₁ ι₁ (NovikovSeries R G ωG)) i i'))
+        x =
+      x := by
+  let := module (R := R) hF₁
+  have h1 : (fun i i' =>
+      coefficientComparison q hq ((1 : Matrix ι₁ ι₁ (NovikovSeries R G ωG)) i i')) =
+      (1 : Matrix ι₁ ι₁ _) :=
+    Matrix.map_one (coefficientComparison q hq) (map_zero _) (map_one _)
+  rw [h1, novikovMapOfMatrix_one, LinearMap.id_apply]
 
 end ChainMap
 
@@ -258,6 +303,44 @@ theorem novikovMapOfMatrix_coefficientComparison_sub_eq_add
 variable {μ₁ : (Σ i, P₁ i) → ℤ} {μ₀ : (Σ k, P₀ k) → ℤ}
   (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
   (hμ₀ : ∀ k γ (D : P₀ k), μ₀ ⟨k, γ +ᵥ D⟩ = degree ω c γ + μ₀ ⟨k, D⟩)
+
+include hμ₁ hμ₀ in
+/-- **Chain maps of rigid class-indexed counts send cocycles to cocycles.** If every class counted
+by `Φ` satisfies the index condition `μ₀(r₀) - 2 c₁(A) = μ₁(r₁)`, so that `Φ` preserves the
+cochain degree `n - μ`, and the series obey the chain-map identity of
+`TauCeti.Floer.novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm`, then `Φ` sends
+every cocycle of `D₁` of cochain degree `e` to a cocycle of `D₀` of cochain degree `e`. The
+endomorphisms are the ground-ring linear maps of their counts, for any potential bounds of their
+kernels. -/
+theorem novikovMapOfMatrix_coefficientComparison_mem_cocycles
+    {Φ : ι₁ → ι₀ → NovikovSeries R G ωG} {D₁ : ι₁ → ι₁ → NovikovSeries R G ωG}
+    {D₀ : ι₀ → ι₀ → NovikovSeries R G ωG}
+    (hΦdeg : ∀ i k, ∀ A ∈ (Φ i k).support, μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩)
+    (hΦ : ∀ i k', ∑ k, Φ i k * D₀ k k' = ∑ i', D₁ i i' * Φ i' k') {C₁ C₀ : ℝ}
+    (hδ₁ : ∀ p p',
+      mapKernelOfMatrix r₁ r₁ (fun i i' => coefficientComparison q hq (D₁ i i')) p p' ≠ 0 →
+        F₁ p' ≤ F₁ p + C₁)
+    (hδ₀ : ∀ p p',
+      mapKernelOfMatrix r₀ r₀ (fun k k' => coefficientComparison q hq (D₀ k k')) p p' ≠ 0 →
+        F₀ p' ≤ F₀ p + C₀)
+    {n e : ℤ} {a : NovikovModule R F₁}
+    (ha : a ∈ (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _)).cocycles
+      (gradeBy R F₁ fun p => n - μ₁ p) e) :
+    novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (fun i k => coefficientComparison q hq (Φ i k)) a ∈
+      (kernelMap hδ₀ (mapKernelOfMatrix_mem hF₀ r₀ r₀ _)).cocycles
+        (gradeBy R F₀ fun p => n - μ₀ p) e := by
+  obtain ⟨_, hm⟩ := exists_potential_le_of_mapKernelOfMatrix_ne_zero hF₁ hF₀ r₁ r₀
+    (fun i k => coefficientComparison q hq (Φ i k))
+  rw [novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hm]
+  refine LinearMap.apply_mem_cocycles_of_mem_cocycles _ (fun {_ b} hb => ?_) (fun {_ b} _ => ?_) ha
+  · rw [← novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hm]
+    exact novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy_of_eq r₁ r₀ q hq hμ₁ hμ₀
+      hF₁ hF₀ hΦdeg hb
+  · simp only [← novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hm,
+      ← novikovMapOfMatrix_eq_kernelMap hF₀ hF₀ r₀ r₀ _ hδ₀,
+      ← novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁]
+    exact novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm r₁ r₀ q hq hF₁ hF₀ Φ D₀
+      D₁ hΦ b
 
 include hμ₁ hμ₀ in
 /-- **Homotopic maps of class-indexed counts agree on cocycles up to coboundaries.** Under the
@@ -361,5 +444,46 @@ theorem novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_sub_mem_cobo
     LinearMap.comp_apply, LinearMap.id_apply] at h
 
 end Homotopy
+
+end Monoid
+
+section Reference
+
+variable {G : Type*} [AddGroup G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
+  (hq : ∀ A, area ω c (q A) = ωG A)
+
+/-- **Change of reference caps.** Moving the reference caps to `q gₗ # rₗ` changes the class of a
+counted configuration relative to the reference caps by `g₀ - g₁`, so the generating series become
+`q^(g₀ - g₁) Φ`. The kernel on capped generators is unchanged. -/
+theorem mapKernelOfMatrix_coefficientComparison_vadd [Semiring R]
+    (Φ : ι₁ → ι₀ → NovikovSeries R G ωG) (g₁ : ι₁ → G) (g₀ : ι₀ → G) :
+    mapKernelOfMatrix (fun i => q (g₁ i) +ᵥ r₁ i) (fun k => q (g₀ k) +ᵥ r₀ k)
+        (fun i k => coefficientComparison q hq (NovikovSeries.single (g₀ k - g₁ i) 1 * Φ i k)) =
+      mapKernelOfMatrix r₁ r₀ (fun i k => coefficientComparison q hq (Φ i k)) := by
+  refine Eq.trans ?_ (mapKernelOfMatrix_vadd_single_mul r₁ r₀
+    (fun i k => coefficientComparison q hq (Φ i k)) (fun i => q (g₁ i)) fun k => q (g₀ k))
+  congr 1
+  ext i k
+  simp [map_sub]
+
+/-- **A map of class-indexed counts does not depend on the reference caps.** Moving the reference
+caps to `q gₗ # rₗ` and the generating series to `q^(g₀ - g₁) Φ` gives the same map on capped
+generators. This applies to the differentials, continuation and PSS maps and the homotopies between
+them. -/
+theorem novikovMapOfMatrix_coefficientComparison_vadd [CommSemiring R] [Finite ι₁] [Finite ι₀]
+    {F₁ : (Σ i, P₁ i) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+    (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+    (hF₀ : ∀ k γ (D : P₀ k), F₀ ⟨k, γ +ᵥ D⟩ = F₀ ⟨k, D⟩ - (-area ω c) γ)
+    (Φ : ι₁ → ι₀ → NovikovSeries R G ωG) (g₁ : ι₁ → G) (g₀ : ι₀ → G) :
+    novikovMapOfMatrix hF₁ hF₀ (fun i => q (g₁ i) +ᵥ r₁ i) (fun k => q (g₀ k) +ᵥ r₀ k)
+        (fun i k => coefficientComparison q hq (NovikovSeries.single (g₀ k - g₁ i) 1 * Φ i k)) =
+      novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (fun i k => coefficientComparison q hq (Φ i k)) := by
+  refine Eq.trans ?_ (novikovMapOfMatrix_vadd_single_mul hF₁ hF₀ r₁ r₀
+    (fun i k => coefficientComparison q hq (Φ i k)) (fun i => q (g₁ i)) fun k => q (g₀ k))
+  congr 1
+  ext i k
+  simp [map_sub]
+
+end Reference
 
 end TauCeti.Floer

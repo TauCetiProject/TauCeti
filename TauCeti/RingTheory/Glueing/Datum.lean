@@ -111,8 +111,7 @@ def GlueingDatum.diff (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
     M₁ × M₂ →ₗ[R] M₁₂ where
   toFun x := D.ψ₁ (1 ⊗ₜ x.1) - D.ψ₂ (1 ⊗ₜ x.2)
   map_add' x y := by
-    simp only [Prod.fst_add, Prod.snd_add, TensorProduct.tmul_add, map_add]
-    abel
+    simp only [Prod.fst_add, Prod.snd_add, TensorProduct.tmul_add, map_add]; abel
   map_smul' r x := by
     simp only [Prod.smul_fst, Prod.smul_snd, RingHom.id_apply]
     rw [← algebraMap_smul R₁ r x.1, ← algebraMap_smul R₂ r x.2, TensorProduct.tmul_smul,
@@ -184,9 +183,7 @@ theorem GlueingDatum.diff_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M�
 /-- The sections submodule is the kernel of the difference map `D.diff R`. -/
 theorem GlueingDatum.sections_eq_ker (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
     [Module R M₁₂] [IsScalarTower R R₁₂ M₁₂] :
-    D.sections R = LinearMap.ker (D.diff R) := by
-  ext x
-  simp [sub_eq_zero]
+    D.sections R = LinearMap.ker (D.diff R) := by ext x; simp [sub_eq_zero]
 
 @[simp]
 theorem GlueingDatum.fst_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
@@ -216,15 +213,13 @@ theorem GlueingDatum.snd_lift {N : Type*} [AddCommMonoid N] [Module R N]
 theorem GlueingDatum.fst_comp_lift {N : Type*} [AddCommMonoid N] [Module R N]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
     (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) :
-    (D.fst R).comp (D.lift f₁ f₂ h) = f₁ := by
-  ext n; rfl
+    (D.fst R).comp (D.lift f₁ f₂ h) = f₁ := by ext n; rfl
 
 @[simp]
 theorem GlueingDatum.snd_comp_lift {N : Type*} [AddCommMonoid N] [Module R N]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
     (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) :
-    (D.snd R).comp (D.lift f₁ f₂ h) = f₂ := by
-  ext n; rfl
+    (D.snd R).comp (D.lift f₁ f₂ h) = f₂ := by ext n; rfl
 
 /-- Two `R`-linear maps into `D.sections R` agree if their compositions with `D.fst R` and
 `D.snd R` agree. -/
@@ -233,9 +228,7 @@ theorem GlueingDatum.sections_hom_ext {N : Type*} [AddCommMonoid N] [Module R N]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) {g₁ g₂ : N →ₗ[R] D.sections R}
     (h₁ : (D.fst R).comp g₁ = (D.fst R).comp g₂)
     (h₂ : (D.snd R).comp g₁ = (D.snd R).comp g₂) : g₁ = g₂ := by
-  ext n
-  · exact LinearMap.congr_fun h₁ n
-  · exact LinearMap.congr_fun h₂ n
+  ext n <;> [exact LinearMap.congr_fun h₁ n; exact LinearMap.congr_fun h₂ n]
 
 /-- Uniqueness of the universal lift into `D.sections R`: any `R`-linear map `g : N →ₗ[R]
 D.sections R` recovering `f₁` and `f₂` under `D.fst R` and `D.snd R` equals `D.lift f₁ f₂ h`. -/
@@ -300,23 +293,19 @@ theorem GlueingDatum.snd_sectionsEquivSymm_symm (D : GlueingDatum R₁ R₂ R₁
 
 @[simp]
 theorem GlueingDatum.fst_comp_sectionsEquivSymm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
-    (D.symm.fst R).comp (D.sectionsEquivSymm R).toLinearMap = D.snd R := by
-  ext x; rfl
+    (D.symm.fst R).comp (D.sectionsEquivSymm R).toLinearMap = D.snd R := by ext x; rfl
 
 @[simp]
 theorem GlueingDatum.snd_comp_sectionsEquivSymm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
-    (D.symm.snd R).comp (D.sectionsEquivSymm R).toLinearMap = D.fst R := by
-  ext x; rfl
+    (D.symm.snd R).comp (D.sectionsEquivSymm R).toLinearMap = D.fst R := by ext x; rfl
 
 @[simp]
 theorem GlueingDatum.fst_comp_sectionsEquivSymm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
-    (D.fst R).comp (D.sectionsEquivSymm R).symm.toLinearMap = D.symm.snd R := by
-  ext x; rfl
+    (D.fst R).comp (D.sectionsEquivSymm R).symm.toLinearMap = D.symm.snd R := by ext x; rfl
 
 @[simp]
 theorem GlueingDatum.snd_comp_sectionsEquivSymm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
-    (D.snd R).comp (D.sectionsEquivSymm R).symm.toLinearMap = D.symm.fst R := by
-  ext x; rfl
+    (D.snd R).comp (D.sectionsEquivSymm R).symm.toLinearMap = D.symm.fst R := by ext x; rfl
 
 end Simps
 
@@ -373,8 +362,7 @@ private theorem ofModule_cocycle_eq_rTensor (z : (R₁ ⊗[R] N) × (R₂ ⊗[R]
   induction w using TensorProduct.inductionOn with
   | tmul r n => rcases r with ⟨r₁, r₂⟩; simp [Algebra.algebraMap_eq_smul_one]
   | add x y hx hy =>
-    rw [map_add, map_add, Prod.fst_add, Prod.snd_add, TensorProduct.tmul_add,
-      TensorProduct.tmul_add, map_add, map_add, hx, hy, add_sub_add_comm]
+    simp only [map_add, Prod.fst_add, Prod.snd_add, TensorProduct.tmul_add, hx, hy]; abel
 
 /-- Whenever `0 → R → R₁ × R₂ → R₁₂` is exact and `N` is a flat `R`-module, the canonical map
 `GlueingDatum.toSectionsOfModule` is bijective: flat base change preserves both injectivity of
@@ -389,19 +377,17 @@ theorem GlueingDatum.bijective_toSectionsOfModule_of_flat [Module.Flat R N]
     (IsScalarTower.toAlgHom R R₁ R₁₂).toLinearMap.comp (LinearMap.fst R R₁ R₂) -
       (IsScalarTower.toAlgHom R R₂ R₁₂).toLinearMap.comp (LinearMap.snd R R₁ R₂)
   let e := TensorProduct.prodLeft R R R₁ R₂ N
-  have hval : ∀ n : N, e (ι.rTensor N ((TensorProduct.lid R N).symm n)) =
-      (GlueingDatum.toSectionsOfModule R₁ R₂ R₁₂ R N n : (R₁ ⊗[R] N) × (R₂ ⊗[R] N)) :=
-    fun n ↦ by simp [e, ι]
-  have hexN : Function.Exact (ι.rTensor N) (δ.rTensor N) := Module.Flat.rTensor_exact N hexact
-  refine ⟨fun n₁ n₂ hn ↦ ?_, fun ⟨z, hz⟩ ↦ ?_⟩
-  · have hsub := congrArg Subtype.val hn
-    rw [← hval n₁, ← hval n₂] at hsub
-    exact (TensorProduct.lid R N).symm.injective
-      (Module.Flat.rTensor_preserves_injective_linearMap ι hinj (e.injective hsub))
-  · obtain ⟨w, hw⟩ := (hexN (e.symm z)).mp
-      (by rw [ofModule_cocycle_eq_rTensor z, sub_eq_zero]; exact hz)
-    refine ⟨TensorProduct.lid R N w, Subtype.ext ?_⟩
-    rw [← hval, LinearEquiv.symm_apply_apply, hw, LinearEquiv.apply_symm_apply]
+  have hval (n : N) : e (ι.rTensor N ((TensorProduct.lid R N).symm n)) =
+      (GlueingDatum.toSectionsOfModule R₁ R₂ R₁₂ R N n : (R₁ ⊗[R] N) × (R₂ ⊗[R] N)) := by
+    simp [e, ι]
+  refine ⟨fun n₁ n₂ hn ↦ (TensorProduct.lid R N).symm.injective <|
+      Module.Flat.rTensor_preserves_injective_linearMap ι hinj <| e.injective <| by
+        simpa only [hval] using congrArg Subtype.val hn,
+    fun ⟨z, hz⟩ ↦ ?_⟩
+  obtain ⟨w, hw⟩ := (Module.Flat.rTensor_exact N (f := ι) (g := δ) hexact (e.symm z)).mp
+    (by rw [ofModule_cocycle_eq_rTensor z, sub_eq_zero]; exact hz)
+  exact ⟨TensorProduct.lid R N w, Subtype.ext <| by
+    rw [← hval, LinearEquiv.symm_apply_apply, hw, LinearEquiv.apply_symm_apply]⟩
 
 /-- For a flat `R`-module `N` over an exact ring diagram `0 → R → R₁ × R₂ → R₁₂`, the sections of
 `GlueingDatum.ofModule R₁ R₂ R₁₂ R N` are canonically `R`-linearly isomorphic to `N`. -/
