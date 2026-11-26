@@ -11,29 +11,25 @@ public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.Topology.Algebra.Group.Matrix
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
-import Mathlib.Topology.Algebra.MvPolynomial
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.Unitary
 import TauCeti.RepresentationTheory.Compact.Haar
+import TauCeti.Topology.Algebra.MvPolynomial.Aeval
 import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
 # Unitary Haar averaging of matrix polynomials
 
-This file uses Zariski density of `Φ → U(n)` (`MvPolynomial.eq_of_eval_eq_on_pi_unitaryGroup`) and
-normalized Haar averaging (`TauCeti.haarProb`) on the compact group `Φ → U(n)` to extract
+This file uses Zariski density of `Φ → U(n)` (`TauCeti.eq_smul_det_pow_of_unitary`) and normalized
+Haar averaging (`TauCeti.haarProb`) on the compact group `Φ → U(n)` to extract
 determinant-character components of linear forms on polynomials in tuples of complex square
 matrices.
 
 ## Main results
 
-* `TauCeti.eq_smul_det_pow_of_unitary`: a polynomial `f : MvPolynomial (Φ × n × n) ℂ` whose value
-  at `xᵀ` equals `a * ∏ τ, det (x τ) ^ c τ` for all `x : Φ → unitaryGroup n ℂ` equals
-  `a • ∏ τ, det (Z τ) ^ c τ`, where `Z τ` is the matrix of variables `(i, j) ↦ X (τ, i, j)`.
 * `TauCeti.exists_forall_map_eq_integral_translate`: averaging the unitary translates `q (uᵀ Z)`
-  against a continuous weight `w` with respect to any finite measure `μ` on `Φ → unitaryGroup n ℂ`
-  produces a polynomial `mean` such that `M mean = ∫ u, w u * M (q (uᵀ Z)) ∂μ` for every
-  `ℂ`-linear functional `M`.
+  against any `μ`-integrable weight `w` on `Φ → unitaryGroup n ℂ` produces a polynomial `mean` such
+  that `M mean = ∫ u, w u * M (q (uᵀ Z)) ∂μ` for every `ℂ`-linear functional `M`.
 * `TauCeti.exists_forall_eq_mul_map_det_pow`: for any polynomial `q : MvPolynomial (Φ × n × n) ℂ`
   and exponents `c : Φ → ℕ`, there is `a : ℂ` such that every `ℂ`-linear functional `M`
   transforming by `M (q (uᵀ Z)) = t * ∏ τ, det (u τ) ^ c τ` on `Φ → unitaryGroup n ℂ` satisfies
@@ -57,45 +53,16 @@ namespace TauCeti
 
 variable {Φ n : Type*} [Fintype n] [DecidableEq n]
 
-/-- A polynomial `f` in square complex matrices indexed by `Φ` whose value at `xᵀ` is
-`a * ∏ τ, det (x τ) ^ c τ` for all unitary `x : Φ → unitaryGroup n ℂ` equals
-`a • ∏ τ, det (Z τ) ^ c τ`, where `Z τ` is the matrix of variables `(i, j) ↦ X (τ, i, j)`. -/
-theorem eq_smul_det_pow_of_unitary [Fintype Φ] (c : Φ → ℕ) {f : MvPolynomial (Φ × n × n) ℂ}
-    {a : ℂ} (hf : ∀ x : Φ → Matrix.unitaryGroup n ℂ,
-      f.eval (fun y ↦ (x y.1 : Matrix n n ℂ) y.2.2 y.2.1) =
-        a * ∏ τ : Φ, (x τ : Matrix n n ℂ).det ^ c τ) :
-    f = a • ∏ τ : Φ, (Matrix.of fun i j : n ↦ X (R := ℂ) (τ, i, j)).det ^ c τ := by
-  let swap : Φ × n × n ≃ Φ × n × n := Equiv.prodCongr (Equiv.refl Φ) (Equiv.prodComm n n)
-  apply (MvPolynomial.renameEquiv ℂ swap).injective
-  refine MvPolynomial.eq_of_eval_eq_on_pi_unitaryGroup fun U hU ↦ ?_
-  let u : Φ → Matrix.unitaryGroup n ℂ := fun τ ↦ ⟨U τ, hU τ⟩
-  have hdet (τ : Φ) :
-      eval (fun y ↦ U y.1 y.2.2 y.2.1)
-        (Matrix.of fun i j : n ↦ X (R := ℂ) (τ, i, j)).det = (U τ).det := by
-    rw [RingHom.map_det]
-    have hmat : (RingHom.mapMatrix (eval (fun y ↦ U y.1 y.2.2 y.2.1)))
-        (Matrix.of fun i j : n ↦ X (R := ℂ) (τ, i, j)) = (U τ)ᵀ := by
-      ext i j
-      simp
-    rw [hmat, det_transpose]
-  have hswap (x : Φ × n × n) : swap x = (x.1, x.2.2, x.2.1) := rfl
-  simp only [renameEquiv_apply, smul_eq_C_mul, map_mul, eval_C, map_prod, map_pow, eval_rename,
-    Function.comp_def, hswap]
-  rw [hf u]
-  congr 1
-  refine Finset.prod_congr rfl fun τ _ ↦ ?_
-  rw [hdet τ]
-
-/-- Averaging the unitary translates `q (uᵀ Z)` of a polynomial `q` in square matrices against a
-continuous weight `w` with respect to a finite measure `μ` on `Φ → unitaryGroup n ℂ` produces a
+/-- Averaging the unitary translates `q (uᵀ Z)` of a polynomial `q` in square matrices against an
+integrable weight `w` with respect to a measure `μ` on `Φ → unitaryGroup n ℂ` produces a
 polynomial `mean` such that `M mean = ∫ u, w u * M (q (uᵀ Z)) ∂μ` for every `ℂ`-linear functional
 `M`. -/
 theorem exists_forall_map_eq_integral_translate
     [MeasurableSpace (Φ → Matrix.unitaryGroup n ℂ)]
     [OpensMeasurableSpace (Φ → Matrix.unitaryGroup n ℂ)]
-    (μ : Measure (Φ → Matrix.unitaryGroup n ℂ)) [IsFiniteMeasure μ]
+    (μ : Measure (Φ → Matrix.unitaryGroup n ℂ))
     (q : MvPolynomial (Φ × n × n) ℂ)
-    {w : (Φ → Matrix.unitaryGroup n ℂ) → ℂ} (hw : Continuous w) :
+    {w : (Φ → Matrix.unitaryGroup n ℂ) → ℂ} (hw : Integrable w μ) :
     ∃ mean : MvPolynomial (Φ × n × n) ℂ, ∀ M : MvPolynomial (Φ × n × n) ℂ →ₗ[ℂ] ℂ,
       M mean = ∫ u : Φ → Matrix.unitaryGroup n ℂ, w u *
         M (aeval (fun y : Φ × n × n ↦
@@ -123,20 +90,19 @@ theorem exists_forall_map_eq_integral_translate
         (u y.1 : Matrix n n ℂ) y.2.1 y.2.2 :=
       continuous_pi fun y ↦ (continuous_apply y.2.2).comp ((continuous_apply y.2.1).comp
         (hval.comp (continuous_apply y.1)))
-    have h_eq : (fun u ↦ φ u p) = (fun x ↦ eval x p) ∘
-        (fun u y ↦ (u y.1 : Matrix n n ℂ) y.2.1 y.2.2) :=
-      funext fun u ↦ congrArg (fun f : MvPolynomial (Φ × n × n) ℂ →+* ℂ ↦ f p)
-        (coe_aeval_eq_eval _)
-    rw [h_eq]
-    exact (MvPolynomial.continuous_eval p).comp h_coord
+    exact (MvPolynomial.continuous_aeval p).comp h_coord
   refine ⟨∑ d ∈ Q.support, (∫ u, w u * φ u (Q.coeff d) ∂μ) • monomial d 1, fun M ↦ ?_⟩
-  have h_cont (d : Φ × n × n →₀ ℕ) :
-      Continuous fun u ↦ w u * φ u (Q.coeff d) * M (monomial d 1) :=
-    (hw.mul (hφ_cont (Q.coeff d))).mul continuous_const
+  have h_int (d : Φ × n × n →₀ ℕ) :
+      Integrable (fun u ↦ w u * φ u (Q.coeff d) * M (monomial d 1)) μ := by
+    obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn
+      (hφ_cont (Q.coeff d)).continuousOn
+    have h_bdd : Integrable (fun u ↦ φ u (Q.coeff d) * w u) μ :=
+      hw.bdd_mul (hφ_cont (Q.coeff d)).aestronglyMeasurable
+        (Filter.Eventually.of_forall fun u ↦ hC u (Set.mem_univ u))
+    simpa only [mul_comm (φ _ _)] using h_bdd.mul_const (M (monomial d 1))
   simp only [h_expand, map_sum, map_smul, smul_eq_mul, Finset.mul_sum, ← mul_assoc,
     ← integral_mul_const]
-  exact (integral_finsetSum Q.support fun d _ ↦
-    (h_cont d).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)).symm
+  exact (integral_finsetSum Q.support fun d _ ↦ h_int d).symm
 
 /-- **Unitary averaging for determinant characters.** Let `q : MvPolynomial (Φ × n × n) ℂ` and
 `c : Φ → ℕ`. There exists `a : ℂ` such that every `ℂ`-linear functional `M` satisfying
@@ -164,8 +130,8 @@ theorem exists_forall_eq_mul_map_det_pow [Fintype Φ] (c : Φ → ℕ)
       unfold χ
       fun_prop
     exact hχ.comp continuous_inv
-  obtain ⟨mean, h_mean⟩ :=
-    exists_forall_map_eq_integral_translate μ q (w := fun u ↦ χ u⁻¹) hχ_cont
+  obtain ⟨mean, h_mean⟩ := exists_forall_map_eq_integral_translate μ q
+    (hχ_cont.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _))
   let value (x : Φ → Matrix.unitaryGroup n ℂ) : MvPolynomial (Φ × n × n) ℂ →ₐ[ℂ] ℂ :=
     aeval fun y : Φ × n × n ↦ (x y.1 : Matrix n n ℂ) y.2.2 y.2.1
   let a : ℂ := ∫ u, χ u⁻¹ * value u q ∂μ
@@ -182,11 +148,17 @@ theorem exists_forall_eq_mul_map_det_pow [Fintype Φ] (c : Φ → ℕ)
           linear_combination -(χ u⁻¹ * value (x * u) q) * hχ_inv x
       _ = a * χ x := by
           rw [integral_mul_const, integral_mul_left_eq_self (fun u ↦ χ u⁻¹ * value u q) x]
+  have h_eval (x : Φ → Matrix.unitaryGroup n ℂ) :
+      mean.eval (fun y ↦ (x y.1 : Matrix n n ℂ) y.2.2 y.2.1) =
+        a * ∏ τ : Φ, (x τ : Matrix n n ℂ).det ^ c τ := by
+    have h_eq := congrArg (fun f : MvPolynomial (Φ × n × n) ℂ →+* ℂ ↦ f mean)
+      (coe_aeval_eq_eval fun y : Φ × n × n ↦ (x y.1 : Matrix n n ℂ) y.2.2 y.2.1)
+    exact h_eq.symm.trans (h_value x)
   refine ⟨a, fun M t hM ↦ ?_⟩
   calc t = ∫ u, χ u⁻¹ * (t * χ u) ∂μ := by simp [mul_left_comm _ t, hχ_inv]
     _ = M mean := by simp only [h_mean, hM, χ]
     _ = a * M (∏ τ : Φ, (Matrix.of fun i j : n ↦ X (R := ℂ) (τ, i, j)).det ^ c τ) := by
-        simp [eq_smul_det_pow_of_unitary c h_value]
+        simp [eq_smul_det_pow_of_unitary c h_eval]
 
 end TauCeti
 

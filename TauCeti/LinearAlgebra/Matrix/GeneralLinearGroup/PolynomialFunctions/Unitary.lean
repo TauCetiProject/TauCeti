@@ -43,6 +43,9 @@ so it is a proper Zariski-closed subset of the real matrices.
 * `MvPolynomial.eq_of_eval_eq_on_unitaryGroup`: two polynomials in the entries of a complex
   matrix that agree on the unitary group are equal. This is the unitary counterpart of Mathlib's
   `MvPolynomial.eq_of_eval_eq_on_gl`.
+* `TauCeti.eq_smul_det_pow_of_unitary`: a polynomial in square complex matrices indexed by `Φ`
+  whose value at `xᵀ` is `a * ∏ τ, det (x τ) ^ c τ` for all unitary `x` equals
+  `a • ∏ τ, det (Z τ) ^ c τ`.
 * `TauCeti.Matrix.GeneralLinearGroup.eq_of_mem_rationalFunctions_of_forall_unitary`: two rational
   functions on `GL n ℂ` that agree on the unitary group are equal.
 
@@ -131,6 +134,42 @@ theorem eq_of_eval_eq_on_unitaryGroup {p q : MvPolynomial (ι × ι) ℂ}
     using h (U ()) (hU ())
 
 end MvPolynomial
+
+namespace TauCeti
+
+open _root_.Matrix MvPolynomial
+
+/-- A polynomial `f` in square complex matrices indexed by `Φ` whose value at `xᵀ` is
+`a * ∏ τ, det (x τ) ^ c τ` for all unitary `x : Φ → unitaryGroup n ℂ` equals
+`a • ∏ τ, det (Z τ) ^ c τ`, where `Z τ` is the matrix of variables `(i, j) ↦ X (τ, i, j)`. -/
+theorem eq_smul_det_pow_of_unitary {Φ n : Type*} [Fintype n] [DecidableEq n] [Fintype Φ]
+    (c : Φ → ℕ) {f : MvPolynomial (Φ × n × n) ℂ} {a : ℂ}
+    (hf : ∀ x : Φ → Matrix.unitaryGroup n ℂ,
+      f.eval (fun y ↦ (x y.1 : Matrix n n ℂ) y.2.2 y.2.1) =
+        a * ∏ τ : Φ, (x τ : Matrix n n ℂ).det ^ c τ) :
+    f = a • ∏ τ : Φ, (Matrix.of fun i j : n ↦ X (R := ℂ) (τ, i, j)).det ^ c τ := by
+  let swap : Φ × n × n ≃ Φ × n × n := Equiv.prodCongr (Equiv.refl Φ) (Equiv.prodComm n n)
+  apply (MvPolynomial.renameEquiv ℂ swap).injective
+  refine MvPolynomial.eq_of_eval_eq_on_pi_unitaryGroup fun U hU ↦ ?_
+  let u : Φ → Matrix.unitaryGroup n ℂ := fun τ ↦ ⟨U τ, hU τ⟩
+  have hdet (τ : Φ) :
+      eval (fun y ↦ U y.1 y.2.2 y.2.1)
+        (Matrix.of fun i j : n ↦ X (R := ℂ) (τ, i, j)).det = (U τ).det := by
+    rw [RingHom.map_det]
+    have hmat : (RingHom.mapMatrix (eval (fun y ↦ U y.1 y.2.2 y.2.1)))
+        (Matrix.of fun i j : n ↦ X (R := ℂ) (τ, i, j)) = (U τ)ᵀ := by
+      ext i j
+      simp
+    rw [hmat, det_transpose]
+  have hswap (x : Φ × n × n) : swap x = (x.1, x.2.2, x.2.1) := rfl
+  simp only [renameEquiv_apply, smul_eq_C_mul, map_mul, eval_C, map_prod, map_pow, eval_rename,
+    Function.comp_def, hswap]
+  rw [hf u]
+  congr 1
+  refine Finset.prod_congr rfl fun τ _ ↦ ?_
+  rw [hdet τ]
+
+end TauCeti
 
 namespace TauCeti.Matrix.GeneralLinearGroup
 
