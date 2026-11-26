@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.Valuation.Center
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 public import TauCeti.RingTheory.Valuation.Surjective
+public import TauCeti.RingTheory.Valuation.LocalizationAtCenter
 -- Proof-only: the ramification comparison of adic valuations.
 import Mathlib.RingTheory.DedekindDomain.AdicValuation.Ramification
 -- Proof-only: the normalization of a valuation, which is how a merely bounded one is brought into
@@ -50,6 +51,9 @@ by the class-group interface and the multiplicative value can be read off from o
   valuation to the additive order of vanishing used by the class-group interface.
 * `IsDedekindDomain.HeightOneSpectrum.mem_valuationSubringAtPrime_iff`: the localization of `R`
   at `v`, as a valuation subring of `K`, consists of the fractions `a / s` with `s ∉ v`.
+* `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_asIdeal`: this localization is
+  `Ideal.valuationSubringAtPrime` at `v.asIdeal`, so the `ValuationSubring.IsCenteredAt` API
+  applies to it.
 * `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_injective`: a place is determined
   by its localization, as a valuation subring of `K`.
 * `IsDedekindDomain.HeightOneSpectrum.algebraMap_mem_maximalIdeal_valuationSubring_iff`: an
@@ -262,6 +266,17 @@ theorem mem_valuationSubringAtPrime_iff {v : HeightOneSpectrum R} {x : K} :
       ∃ a, ∃ s ∈ v.asIdeal.primeCompl, x = algebraMap R K a * (algebraMap R K s)⁻¹ := by
   rw [← ValuationSubring.mem_toSubring, valuationSubringAtPrime_toSubring,
     Subalgebra.mem_toSubring, Localization.subalgebra.mem_ofField_iff]
+
+/-- At a nonzero prime `v` of a Dedekind domain `C` with fraction field `L`, the localization at
+`v.asIdeal` realized inside `L` is Mathlib's `HeightOneSpectrum.valuationSubringAtPrime`. So the
+`Ideal.valuationSubringAtPrime` and `ValuationSubring.IsCenteredAt` API applies to it. -/
+theorem valuationSubringAtPrime_asIdeal {C L : Type*}
+    [CommRing C] [IsDedekindDomain C] [Field L] [Algebra C L] [IsFractionRing C L]
+    (v : HeightOneSpectrum C) :
+    v.asIdeal.valuationSubringAtPrime L = valuationSubringAtPrime L v := by
+  ext x
+  rw [Ideal.mem_valuationSubringAtPrime_iff, mem_valuationSubringAtPrime_iff]
+  simp only [Ideal.mem_primeCompl_iff]
 
 variable (K) in
 /-- A place of `R` is determined by its localization, as a valuation subring of `K`. -/

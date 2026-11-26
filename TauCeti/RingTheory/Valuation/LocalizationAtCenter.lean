@@ -40,7 +40,8 @@ algebraic closure of `ℚ`: its localizations at primes are valuation rings
 (`IsIntegralClosure.preValuationRing_atPrime` in `TauCeti/RingTheory/DedekindDomain/Prufer.lean`).
 For Dedekind `B` itself, at a nonzero prime, the localization is Mathlib's
 `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime`
-(`IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_asIdeal`, in the same file).
+(`IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_asIdeal`, in
+`TauCeti/RingTheory/DedekindDomain/AdicValuation/Basic.lean`).
 
 The predicate `ValuationSubring.IsCenteredAt A P` (`A` contains `B` and `P` is its centre on `B`)
 and its equivariance `ValuationSubring.IsCenteredAt.smul` are in
@@ -178,8 +179,11 @@ instance : IsLocalization P.primeCompl (P.valuationSubringAtPrime L) :=
     (P.primeCompl_le_nonZeroDivisors_of_isFractionRing L)
   have hmem (x : L) : x ∈ Localization.subalgebra.ofField L P.primeCompl
       (P.primeCompl_le_nonZeroDivisors_of_isFractionRing L) ↔ x ∈ P.valuationSubringAtPrime L := by
-    rw [← ValuationSubring.mem_toSubring, valuationSubringAtPrime_toSubring]
-    rfl
+    rw [← ValuationSubring.mem_toSubring, valuationSubringAtPrime_toSubring,
+      Subalgebra.mem_toSubring]
+  -- Both rings are subtypes of `L` with the same carrier and the operations of `L`, and both
+  -- algebra maps are `algebraMap B L` corestricted, so the ring operations and the algebra maps
+  -- agree by definition.
   IsLocalization.isLocalization_of_algEquiv P.primeCompl <| AlgEquiv.ofRingEquiv
     (f := { Equiv.subtypeEquivRight hmem with
       map_mul' := fun _ _ ↦ rfl, map_add' := fun _ _ ↦ rfl }) fun _ ↦ rfl

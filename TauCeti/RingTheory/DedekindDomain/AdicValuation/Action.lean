@@ -8,9 +8,11 @@ module
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.RingTheory.DedekindDomain.HeightOneSpectrumAction
--- Proof-only: the general localization `Ideal.valuationSubringAtPrime`, its equivariance and
--- stabilizer, and its identification with `valuationSubringAtPrime` at a place.
-import TauCeti.RingTheory.DedekindDomain.Prufer
+-- Proof-only: the identification of `valuationSubringAtPrime` at a place with the general
+-- localization `Ideal.valuationSubringAtPrime`, and that localization's equivariance and
+-- stabilizer.
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
+import TauCeti.RingTheory.Valuation.LocalizationAtCenter
 
 /-!
 # Group actions on the valuation subrings at the places of a Dedekind domain
