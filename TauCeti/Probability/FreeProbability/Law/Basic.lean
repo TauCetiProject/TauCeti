@@ -166,6 +166,15 @@ theorem law_compl_spectrum (a : A) : law φ a (spectrum ℝ a)ᶜ = 0 := by
 theorem restrict_spectrum_law (a : A) : (law φ a).restrict (spectrum ℝ a) = law φ a :=
   Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr (law_compl_spectrum φ a))
 
+/-- The support of the law `μ_a` is contained in the spectrum of `a`. -/
+theorem support_law_subset_spectrum (a : A) : (law φ a).support ⊆ spectrum ℝ a :=
+  Measure.support_subset_of_isClosed (spectrum.isClosed ℝ a) (mem_ae_iff.2 (law_compl_spectrum φ a))
+
+/-- The law `μ_a` has compact support. -/
+theorem isCompact_support_law (a : A) : IsCompact (law φ a).support :=
+  (ContinuousFunctionalCalculus.isCompact_spectrum a).of_isClosed_subset Measure.isClosed_support
+    (support_law_subset_spectrum φ a)
+
 /-- Every function continuous on the spectrum of `a` is integrable against the law `μ_a`. -/
 theorem integrable_law (a : A) (f : ℝ → ℝ)
     (hf : ContinuousOn f (spectrum ℝ a) := by cfc_cont_tac) : Integrable f (law φ a) := by
@@ -327,16 +336,7 @@ theorem law_integralPositiveLinearMap_comap_restrict_id {K : Set ℝ} [CompactSp
 
 end Realization
 
-/-! ### Topological support, scalars, homomorphisms, and spectral interval bounds -/
-
-/-- The topological support of the law of `a` is contained in its real spectrum. -/
-theorem support_law_subset_spectrum (a : A) : (law φ a).support ⊆ spectrum ℝ a :=
-  Measure.support_subset_of_isClosed (spectrum.isClosed ℝ a) (law_compl_spectrum φ a)
-
-/-- The law of any element in a unital C⋆-algebra has compact topological support. -/
-theorem isCompact_support_law (a : A) : IsCompact (law φ a).support :=
-  (ContinuousFunctionalCalculus.isCompact_spectrum a).of_isClosed_subset
-    Measure.isClosed_support (support_law_subset_spectrum φ a)
+/-! ### Scalars, homomorphisms, and spectral interval bounds -/
 
 /-- The law of a real scalar `algebraMap ℝ A c` is `(φ 1).re` times the Dirac mass at `c`. -/
 @[simp]

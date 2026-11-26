@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 public import Mathlib.LinearAlgebra.RootSystem.Finite.G2
 import TauCeti.LinearAlgebra.RootSystem.RankTwo
+import TauCeti.LinearAlgebra.RootSystem.Finite.PositiveCombinations
 
 /-!
 # The pinned root systems outside G₂
@@ -17,6 +18,10 @@ integers then have absolute value at most two. Instances for simply-laced types 
 B, C, and F₄ make these root-string bounds available for collecting positive root subgroups
 and for punctured-positive normalization. The proof uses `hasCartanType_G2_of_isG2` and
 uniqueness of valid Cartan types to exclude G₂.
+In particular, outside G₂ no root string has length four,
+`TauCeti.DynkinType.three_nsmul_add_notMem_range_root`, and for linearly independent roots `α`,
+`β` the roots `2α + β` and `α + 2β` do not both occur,
+`TauCeti.DynkinType.add_two_nsmul_notMem_range_root`.
 
 ## References
 
@@ -83,5 +88,58 @@ instance instIsNotG2RationalRootSystemE7 (ht : E7.Valid) :
 instance instIsNotG2RationalRootSystemE8 (ht : E8.Valid) :
     (E8.rationalRootSystem ht).IsNotG2 :=
   isNotG2_rationalRootSystem_of_ne_G2 nofun
+
+/-- **No root strings of length four outside G₂.** If the pinned rational root system is not of
+type G₂ (`IsNotG2`), then `3a + c` is not a root of the integral datum for any roots `a`, `c`: no
+root string has length four. -/
+theorem three_nsmul_add_notMem_range_root {t : DynkinType} {ht : t.Valid}
+    [(t.rationalRootSystem ht).IsNotG2] (a c : Fin t.numRoots) :
+    3 • (t.simplyConnectedRootDatum ht).root a + (t.simplyConnectedRootDatum ht).root c ∉
+      Set.range (t.simplyConnectedRootDatum ht).root := by
+  -- For linearly independent roots this is the bound on root strings; otherwise `c = ±a` and
+  -- `3a + c` is `4a` or `2a`, which are not roots of the reduced datum.
+  by_cases hli : LinearIndependent ℚ
+      ![(t.rationalRootSystem ht).root a, (t.rationalRootSystem ht).root c]
+  · rintro ⟨d, hd⟩
+    have hdQ := (t.root_rationalRootSystem_eq_nsmul_add_iff ht a c d 3).mpr hd
+    have hcoeff := (t.rationalRootSystem ht).coefficients_of_pos_nsmul_add_pos_nsmul_mem hli
+      (by decide : 0 < 3) (by decide : 0 < 1)
+      (by simpa only [one_nsmul] using Set.mem_range.mpr ⟨d, hdQ⟩)
+    omega
+  · -- Dependent roots of the reduced rational system are equal or opposite, and so are the
+    -- integral roots they come from, coordinate by coordinate.
+    have := t.isReduced_simplyConnectedRootDatum ht
+    rcases RootPairing.IsReduced.eq_or_eq_neg (P := t.rationalRootSystem ht) a c hli with h | h
+    · have hac : (t.simplyConnectedRootDatum ht).root a = (t.simplyConnectedRootDatum ht).root c :=
+        funext fun k => Int.cast_injective (α := ℚ) <| by
+          simpa only [root_rationalRootSystem] using congrFun h k
+      rw [← hac, ← succ_nsmul]
+      exact RootPairing.nsmul_notMem_range_root _ (n := 4)
+    · have hac : (t.simplyConnectedRootDatum ht).root c =
+          -(t.simplyConnectedRootDatum ht).root a :=
+        funext fun k => Int.cast_injective (α := ℚ) <| by
+          rw [Pi.neg_apply, Int.cast_neg]
+          exact neg_eq_iff_eq_neg.mp <| by
+            simpa only [root_rationalRootSystem, Pi.neg_apply] using (congrFun h k).symm
+      rw [hac, ← sub_eq_add_neg, show (3 : ℕ) = 2 + 1 from rfl, succ_nsmul, add_sub_cancel_right]
+      exact RootPairing.nsmul_notMem_range_root _ (n := 2)
+
+/-- **Root strings of length three outside G₂.** If the pinned rational root system is not of
+type G₂ (`IsNotG2`), then for linearly independent roots `α`, `β` of the integral datum,
+`2α + β` and `α + 2β` are not both roots. -/
+theorem add_two_nsmul_notMem_range_root {t : DynkinType} {ht : t.Valid}
+    [(t.rationalRootSystem ht).IsNotG2] {α β : Fin t.numRoots}
+    (hlin : LinearIndependent ℚ
+      ![(t.rationalRootSystem ht).root α, (t.rationalRootSystem ht).root β])
+    (hdouble : 2 • (t.simplyConnectedRootDatum ht).root α +
+      (t.simplyConnectedRootDatum ht).root β ∈ Set.range (t.simplyConnectedRootDatum ht).root) :
+    (t.simplyConnectedRootDatum ht).root α + 2 • (t.simplyConnectedRootDatum ht).root β ∉
+      Set.range (t.simplyConnectedRootDatum ht).root := by
+  obtain ⟨δ, hδ⟩ := hdouble
+  rintro ⟨ε, hε⟩
+  refine (t.rationalRootSystem ht).not_double_root_add_and_root_add_double_mem hlin
+    ⟨⟨δ, (t.root_rationalRootSystem_eq_nsmul_add_iff ht α β δ 2).mpr hδ⟩, ⟨ε, ?_⟩⟩
+  rw [(t.root_rationalRootSystem_eq_nsmul_add_iff ht β α ε 2).mpr (by rw [hε, add_comm]),
+    add_comm]
 
 end TauCeti.DynkinType

@@ -136,6 +136,12 @@ theorem coe_homeomorph : ⇑(homeomorph g) = ofWithMetric :=
 theorem coe_homeomorph_symm : ⇑(homeomorph g).symm = toWithMetric g :=
   (rfl)
 
+/-- A set of `M` is compact if and only if its preimage in the copy carrying `g` is compact. -/
+@[simp]
+theorem isCompact_preimage_ofWithMetric {K : Set M} :
+    IsCompact (ofWithMetric ⁻¹' K : Set (WithMetric g)) ↔ IsCompact K :=
+  (homeomorph g).isCompact_preimage
+
 /-- The copy of a nonempty manifold is nonempty. -/
 instance [Nonempty M] : Nonempty (WithMetric g) :=
   (equiv g).nonempty

@@ -266,7 +266,7 @@ theorem IsFreelyIndependent.law_sum {φ : A →ₚ[ℂ] ℂ} {B : ι → Subalge
     (hB : IsFreelyIndependent φ.toLinearMap B) (hφ : φ 1 = 1) (s : Finset ι) {a : ι → A}
     (haB : ∀ i ∈ s, a i ∈ B i) (hasa : ∀ i ∈ s, IsSelfAdjoint (a i)) :
     φ.law (∑ i ∈ s, a i) = s.fold Measure.freeConv (Measure.dirac 0) (fun i => φ.law (a i)) := by
-  have h := ((hB.comp Subtype.val_injective).isFreelyIndependentElements fun i : s =>
+  have h := ((hB.comp Subtype.val_injective).isFreelyIndependentElements_of_mem fun i : s =>
       haB i.val i.property).law_sum hφ univ fun i _ => hasa i.val i.property
   rw [Finset.univ_eq_attach, Finset.sum_attach] at h
   exact h.trans <| (Finset.fold_map (f := fun i => φ.law (a i))
@@ -324,7 +324,7 @@ instance isZeroOrProbabilityMeasure_freeConvPow (μ : Measure ℝ) :
 theorem freeConvPow_undef {μ : Measure ℝ} {n : ℕ} (hn : n ≠ 0)
     (h : ¬μ.IsCompactProbabilityMeasure) : μ.freeConvPow n = 0 := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  exact freeConv_undef fun h' => h h'.2
+  exact freeConv_of_not_right h
 
 /-- Every free convolution power of any measure on `ℝ` has compact topological support. -/
 theorem isCompact_support_freeConvPow (μ : Measure ℝ) :
@@ -362,7 +362,7 @@ probability measure. -/
 
 /-- The first free convolution power of a compactly supported probability measure is itself. -/
 @[simp] theorem freeConvPow_one {μ : Measure ℝ} [IsProbabilityMeasure μ]
-    (hμ : IsCompact μ.support) : μ.freeConvPow 1 = μ := dirac_zero_freeConv hμ
+    (hμ : IsCompact μ.support) : μ.freeConvPow 1 = μ := dirac_zero_freeConv μ hμ
 
 /-- Free convolution powers turn addition of exponents into `freeConv`, unconditionally for all
 measures on `ℝ`. -/
@@ -373,7 +373,7 @@ theorem freeConvPow_add (μ : Measure ℝ) (m n : ℕ) :
   | zero =>
       by_cases h : μ.IsCompactProbabilityMeasure
       · have := h.1; have := isProbabilityMeasure_freeConvPow h.2 m
-        exact (freeConv_dirac_zero (isCompact_support_freeConvPow μ m)).symm
+        exact (freeConv_dirac_zero (μ.freeConvPow m) (isCompact_support_freeConvPow μ m)).symm
       · rcases eq_or_ne m 0 with rfl | hm
         · simp
         · simp [freeConvPow_undef hm h]

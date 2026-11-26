@@ -5,16 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
 public import Mathlib.MeasureTheory.Order.Lattice
 
 /-!
-# Measurability of nonempty finite infima and pointwise suprema
+# Measurability of finite infima and suprema, and of a maximizing index
 
 Mathlib's `Mathlib.MeasureTheory.Order.Lattice` proves `Finset.measurable_sup'` for a nonempty
 finite supremum in the function lattice `δ → α`, but omits the dual nonempty finite infimum lemma
 `Finset.measurable_inf'` and the general pointwise forms `fun x ↦ s.inf' hs fun i ↦ f i x` and
 `fun x ↦ s.sup' hs fun i ↦ f i x`. This file supplies those `fun_prop` lemmas under the minimal
 semilattice measurability classes `MeasurableInf₂` and `MeasurableSup₂`.
+
+With a bottom element, the pointwise supremum `x ↦ s.sup (f · x)` of a possibly empty finite
+family is measurable (`Finset.measurable_sup_apply`). For a linear order and `0 < N`, an index
+`m < N` attaining `max_{m < N} fₘ(x)` can be chosen measurably in `x`
+(`TauCeti.exists_measurable_finsetSup_eq`).
 -/
 
 public section
@@ -59,6 +65,43 @@ theorem measurable_sup'' {ι : Type*} {s : Finset ι} (hs : s.Nonempty) {f : ι 
   ext x
   simp
 
+/-- The pointwise supremum `x ↦ s.sup (f · x)` of finitely many measurable functions is
+measurable. Unlike `Finset.measurable_sup''`, the index set may be empty. -/
+theorem measurable_sup_apply [OrderBot α] {ι : Type*} (s : Finset ι) {f : ι → δ → α}
+    (hf : ∀ i ∈ s, Measurable (f i)) : Measurable fun x ↦ s.sup (f · x) := by
+  convert Finset.sup_induction (p := Measurable) (s := s) (f := f) measurable_const
+    (fun _ h₁ _ h₂ ↦ h₁.sup h₂) hf using 1
+  ext x
+  simp
+
 end SemilatticeSup
 
 end Finset
+
+namespace TauCeti
+
+variable {δ α : Type*} [MeasurableSpace δ] [MeasurableSpace α]
+
+/-- **A measurable maximizing index.** For `0 < N` and measurable `fₘ : δ → α`, `m < N`, with
+values in a linear order, an index `m < N` attaining the maximum `max_{m < N} fₘ(x)` can be chosen
+measurably in `x`. It is the last such index, chosen by `Nat.findGreatest`. -/
+theorem exists_measurable_finsetSup_eq [LinearOrder α] [OrderBot α] [MeasurableSup₂ α]
+    [MeasurableEq α] {N : ℕ} (hN : 0 < N) {f : ℕ → δ → α} (hf : ∀ m < N, Measurable (f m)) :
+    ∃ ψ : δ → Fin N, Measurable ψ ∧ ∀ x, f (ψ x) x = (Finset.range N).sup (f · x) := by
+  set P : δ → ℕ → Prop := fun x m ↦ m < N ∧ f m x = (Finset.range N).sup (f · x)
+  have hP : ∀ x, P x (Nat.findGreatest (P x) N) := fun x ↦ by
+    obtain ⟨m, hm, hmφ⟩ := Finset.exists_mem_eq_sup _ (Finset.nonempty_range_iff.2 hN.ne') (f · x)
+    exact Nat.findGreatest_spec (P := P x) (Finset.mem_range.1 hm).le
+      ⟨Finset.mem_range.1 hm, hmφ.symm⟩
+  have hm : Measurable fun x ↦ Nat.findGreatest (P x) N := by
+    refine measurable_findGreatest fun m hmN ↦ ?_
+    rcases hmN.lt_or_eq with hmN | rfl
+    · exact (MeasurableSet.const _).inter (measurableSet_eq_fun (hf m hmN)
+        ((Finset.range N).measurable_sup_apply fun m hm ↦ hf m (Finset.mem_range.1 hm)))
+    · simp [P]
+  refine ⟨fun x ↦ ⟨_, (hP x).1⟩, measurable_to_countable' fun i ↦ ?_, fun x ↦ (hP x).2⟩
+  convert hm (measurableSet_singleton (i : ℕ)) using 1
+  ext x
+  simp [Fin.ext_iff]
+
+end TauCeti

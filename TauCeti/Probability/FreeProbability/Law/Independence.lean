@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.FreeProbability.Distribution.Free
-public import TauCeti.Probability.FreeProbability.Law.Basic
+public import TauCeti.Probability.FreeProbability.Law.Realization
 import Mathlib.Algebra.Star.BigOperators
 
 /-!
@@ -14,15 +13,14 @@ import Mathlib.Algebra.Star.BigOperators
 
 Freely independent families of selfadjoint elements in possibly different C⋆-probability spaces with
 matching individual scalar laws (`PositiveLinearMap.law`) have the same moments and hence the same
-joint distribution (`TauCeti.jointDistribution`). By compact moment determinacy, any noncommutative
-polynomial whose evaluations on both families are selfadjoint—in particular any finite or binary
-sum—has the same scalar law in both spaces.
+joint distribution (`TauCeti.jointDistribution`). Building on
+`TauCeti.IsFreelyIndependentElements.law_lift_eq_law_lift` from `Law/Realization.lean`, any finite
+or binary sum of freely independent selfadjoint elements has the same scalar law in both spaces.
 
 ## Main results
 
-* `TauCeti.IsFreelyIndependentElements.jointDistribution_eq_of_forall_law_eq`,
-  `TauCeti.IsFreelyIndependentElements.law_lift_eq_of_forall_law_eq`: matching scalar laws determine
-  the joint distribution and every selfadjoint polynomial evaluation `FreeAlgebra.lift ℂ a P`.
+* `TauCeti.IsFreelyIndependentElements.jointDistribution_eq_of_forall_law_eq`: matching scalar laws
+  determine the joint distribution.
 * `TauCeti.IsFreelyIndependentElements.law_sum_eq_of_forall_law_eq`,
   `TauCeti.IsFreelyIndependentElements.law_add_eq_of_law_eq`,
   `TauCeti.IsFreelyIndependent.law_sum_eq_of_forall_law_eq`: realization-independence of finite and
@@ -61,19 +59,6 @@ theorem jointDistribution_eq_of_forall_law_eq {φ : A →ₚ[ℂ] ℂ} {ψ : B �
   ha.jointDistribution_eq_of_forall_pow hb hφ hψ fun i n =>
     (PositiveLinearMap.law_eq_law_iff_forall_apply_pow φ ψ (hasa i) (hbsa i)).mp (hlaw i) n
 
-/-- Any noncommutative polynomial `P` whose evaluations on two freely independent selfadjoint
-families with matching individual laws are selfadjoint has the same scalar law in both spaces. -/
-theorem law_lift_eq_of_forall_law_eq {φ : A →ₚ[ℂ] ℂ} {ψ : B →ₚ[ℂ] ℂ} {a : ι → A} {b : ι → B}
-    (ha : IsFreelyIndependentElements φ.toLinearMap a)
-    (hb : IsFreelyIndependentElements ψ.toLinearMap b) (hφ : φ 1 = 1) (hψ : ψ 1 = 1)
-    (hasa : ∀ i, IsSelfAdjoint (a i)) (hbsa : ∀ i, IsSelfAdjoint (b i))
-    (hlaw : ∀ i, φ.law (a i) = ψ.law (b i)) (P : FreeAlgebra ℂ ι)
-    (hPa : IsSelfAdjoint (FreeAlgebra.lift ℂ a P)) (hPb : IsSelfAdjoint (FreeAlgebra.lift ℂ b P)) :
-    φ.law (FreeAlgebra.lift ℂ a P) = ψ.law (FreeAlgebra.lift ℂ b P) := by
-  have hjd := ha.jointDistribution_eq_of_forall_law_eq hb hφ hψ hasa hbsa hlaw
-  refine (PositiveLinearMap.law_eq_law_iff_forall_apply_pow φ ψ hPa hPb).mpr fun n => ?_
-  simpa using LinearMap.congr_fun hjd (P ^ n)
-
 /-- Finite sums of freely independent selfadjoint elements depend in law only on the individual laws
 of the summands. Only the summands indexed by `s` need be selfadjoint or match in law. -/
 theorem law_sum_eq_of_forall_law_eq {φ : A →ₚ[ℂ] ℂ} {ψ : B →ₚ[ℂ] ℂ} {a : ι → A} {b : ι → B}
@@ -88,9 +73,9 @@ theorem law_sum_eq_of_forall_law_eq {φ : A →ₚ[ℂ] ℂ} {ψ : B →ₚ[ℂ]
   have hPb : FreeAlgebra.lift ℂ (fun i : s => b i.val) P = ∑ i ∈ s, b i := by
     simp [P, Finset.univ_eq_attach, Finset.sum_attach]
   rw [← hPa, ← hPb]
-  exact (ha.comp Subtype.val_injective).law_lift_eq_of_forall_law_eq
+  exact (ha.comp Subtype.val_injective).law_lift_eq_law_lift
     (hb.comp Subtype.val_injective) hφ hψ (fun i => hasa i.val i.property)
-    (fun i => hbsa i.val i.property) (fun i => hlaw i.val i.property) P
+    (fun i => hbsa i.val i.property) (fun i => hlaw i.val i.property)
     (hPa.symm ▸ isSelfAdjoint_sum s hasa) (hPb.symm ▸ isSelfAdjoint_sum s hbsa)
 
 /-- Binary sums of distinct freely independent selfadjoint elements depend in law only on the two
@@ -125,10 +110,10 @@ theorem law_sum_eq_of_forall_law_eq {φ : A →ₚ[ℂ] ℂ} {ψ : B →ₚ[ℂ]
     (hlaw : ∀ i ∈ s, φ.law (a i) = ψ.law (b i)) :
     φ.law (∑ i ∈ s, a i) = ψ.law (∑ i ∈ s, b i) := by
   simpa only [Finset.univ_eq_attach, Finset.sum_attach] using
-    ((hA.comp Subtype.val_injective).isFreelyIndependentElements
+    ((hA.comp Subtype.val_injective).isFreelyIndependentElements_of_mem
         fun i : s => haS i.val i.property)
       |>.law_sum_eq_of_forall_law_eq
-      ((hB.comp Subtype.val_injective).isFreelyIndependentElements
+      ((hB.comp Subtype.val_injective).isFreelyIndependentElements_of_mem
         fun i : s => hbS i.val i.property)
       hφ hψ univ (fun i _ => hasa i.val i.property) (fun i _ => hbsa i.val i.property)
       (fun i _ => hlaw i.val i.property)

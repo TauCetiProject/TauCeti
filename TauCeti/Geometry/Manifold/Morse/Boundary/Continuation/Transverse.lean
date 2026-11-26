@@ -225,11 +225,8 @@ private theorem exists_isMorseSmalePair_and_morseContinuationSlice_eq (hf₁ : I
     (hV.eventually_morseContinuationSlice_eq_preimage_mpullback hVs hX₀ hX₁ hC hσ)
   obtain ⟨a, ha⟩ := h.exists
   obtain ⟨b, hb₁, hb₂⟩ := (ha.1.and ha.2).exists
-  refine ⟨_, continuationTransition C hVs σ a, hb₁, hb₂, fun q ↦ ?_⟩
-  set Φ := continuationTransition C hVs a b
-  have h := (Φ.isLocalDiffeomorph (Φ.symm q)).manifoldMorseIndex_comp (by simp)
-    ((hf₁.contMDiff _).of_le (by simp)) (by rw [Φ.apply_symm_apply]; exact q.property)
-  rwa [Φ.apply_symm_apply] at h
+  exact ⟨_, continuationTransition C hVs σ a, hb₁, hb₂, fun q ↦
+    manifoldMorseIndex_symm_apply_eq_of_comp rfl ((hf₁.contMDiff _).of_le (by simp)) q.property⟩
 
 /-- **A transverse continuation has no trajectories raising the index.** For a transverse smooth
 continuation field at rate `C > 0` between pseudo-gradients adapted to Morse functions, there is no
