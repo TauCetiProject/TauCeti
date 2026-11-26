@@ -58,6 +58,7 @@ results that identify the operator as the derivative of the gradient and prove s
   directional derivative of the function.
 * `TauCeti.hessianOperator_congr_of_eventuallyEq`: the operator depends only on the germ of the
   function at the point.
+* `TauCeti.hessianOperator_neg`: the Hessian operator of `-f` is the negative of that of `f`.
 * `ContDiff.contDiff_hessianOperator`: the Hessian operator of a `C^{m+2}` function is `Cᵐ`.
 * `ContDiffAt.isSelfAdjoint_hessianOperator`: symmetry of the second derivative becomes
   self-adjointness of the Hessian operator.
@@ -173,6 +174,15 @@ theorem hessianOperator_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
     hessianOperator f x = hessianOperator g x := by
   rw [hessianOperator_eq_continuousLinearMapOfBilin, hessianOperator_eq_continuousLinearMapOfBilin,
     hfg.fderiv.fderiv_eq]
+
+/-- The Hessian operator of `-f` is the negative of the Hessian operator of `f`, with no regularity
+assumption: both sides use Mathlib's totalized derivatives. -/
+theorem hessianOperator_neg (f : E → ℝ) (x : E) :
+    hessianOperator (-f) x = -hessianOperator f x := by
+  have h : fderiv ℝ (-f) = -fderiv ℝ f := funext fun _ ↦ fderiv_neg
+  ext v
+  refine ext_inner_right ℝ fun w ↦ ?_
+  simp [h, fderiv_neg]
 
 end TauCeti
 

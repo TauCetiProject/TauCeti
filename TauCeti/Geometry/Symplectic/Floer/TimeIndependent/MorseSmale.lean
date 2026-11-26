@@ -27,9 +27,10 @@ the gradient line in the Morse theory of `-H`, when `‖dX_H‖ ≤ a < 2π` alo
 On the zero Fourier mode `D` is the Morse operator `ζ ↦ ζ' - J dX_H(γ) ζ`
 (`TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Sobolev`), and `J dX_H` is the Hessian of `H`
 (`TauCeti.SymplecticForm.apply_fderiv_hamiltonianVectorField_eq_hessianOperator`), so this is the
-operator `ζ ↦ ζ' + Hess (-H)(γ) ζ` of the Morse theory of `-H`. Let `γ(s)` be the negative gradient
-flow line of `-H` through a point `y` of the unstable set of a nondegenerate critical point `p` and
-of the stable set of a nondegenerate critical point `q`.
+operator `ζ ↦ ζ' + Hess (-H)(γ) ζ` of the Morse theory of `-H`
+(`TauCeti.SymplecticForm.neg_comp_fderiv_hamiltonianVectorField_eq_hessianOperator_neg`). Let
+`γ(s)` be the negative gradient flow line of `-H` through a point `y` of the unstable set of a
+nondegenerate critical point `p` and of the stable set of a nondegenerate critical point `q`.
 
 * **The kernel.** The kernel of `D` along `(s, t) ↦ γ(s)` has the dimension of the intersection of
   the tangent spaces at `y` of the unstable set of `p` and the stable set of `q`
@@ -74,19 +75,6 @@ section Compatible
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {ω : SymplecticForm E} {J : AlmostComplexStructure E}
-
-/-- `-J dX_H(x)` is the Hessian operator of `-H` at `x`, if the inner product of `E` is the metric
-`ω(·, J ·)`: this is `TauCeti.SymplecticForm.apply_fderiv_hamiltonianVectorField_eq_hessianOperator`
-for `-H`, whose Hamiltonian vector field is `-X_H`. -/
-private theorem neg_comp_fderiv_hamiltonianVectorField_eq_hessianOperator_neg
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (H : E → ℝ) (x : E) :
-    -(J.toLinearMap.toContinuousLinearMap ∘L fderiv ℝ (ω.hamiltonianVectorField H) x) =
-      hessianOperator (-H) x := by
-  have hneg : ω.hamiltonianVectorField (-H) = -ω.hamiltonianVectorField H :=
-    funext fun y ↦ ω.hamiltonianVectorField_neg H y
-  ext v
-  rw [← apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg, hneg, fderiv_neg]
-  simp
 
 /-- **The dimension of the kernel along a time-independent Floer cylinder.** Let the inner
 product of `E` be the metric `ω(·, J ·)`, and `H` a `C²` autonomous Hamiltonian such that
