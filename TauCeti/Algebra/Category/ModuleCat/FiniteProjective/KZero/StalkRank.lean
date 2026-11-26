@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Monoidal
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
+public import TauCeti.RingTheory.Idempotents.Product
 public import TauCeti.RingTheory.Idempotents.Projective
 public import TauCeti.Topology.LocallyConstant.ClopenRingHom
 import TauCeti.RingTheory.Spectrum.Prime.FreeLocus

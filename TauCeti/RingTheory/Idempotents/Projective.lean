@@ -24,10 +24,7 @@ kills the annihilator of `e` (`IsIdempotentElem.exists_smul_eq_self_and_mul_eq_z
 
 For an idempotent `e` of a commutative ring `R`, the quotient `R ⧸ (e)` is projective, being a
 direct summand of `R` with complement `R ⧸ (1 - e)`
-(`Module.Projective.quotient_span_singleton_of_isIdempotentElem`). For an idempotent `f` and an
-element `e` commuting with it, the ideals `(1 - e)` and `(1 - f)` generate `(1 - e f)`
-(`IsIdempotentElem.span_one_sub_sup_span_one_sub`); in a commutative ring this identifies
-`R ⧸ (1 - e) ⊗ R ⧸ (1 - f)` with `R ⧸ (1 - e f)`.
+(`Module.Projective.quotient_span_singleton_of_isIdempotentElem`).
 
 ## References
 
@@ -91,19 +88,3 @@ theorem Module.Projective.quotient_span_singleton_of_isIdempotentElem {R : Type*
     he.mul_one_sub_self).toLinearEquiv
   exact .of_split (φ.symm.toLinearMap ∘ₗ LinearMap.inl R _ _) (LinearMap.fst R _ _ ∘ₗ φ.toLinearMap)
     (by ext; simp)
-
-/-- For an idempotent `f` of a ring and an element `e` commuting with it, the left ideals
-`(1 - e)` and `(1 - f)` generate `(1 - e f)`: `1 - e f = (1 - e) + e (1 - f)`,
-`1 - f = (1 - f) (1 - e f)` and `1 - e = (1 - e f) - e (1 - f)`. -/
-theorem IsIdempotentElem.span_one_sub_sup_span_one_sub {R : Type*} [Ring R] {e f : R}
-    (hf : IsIdempotentElem f) (hef : Commute e f) :
-    Ideal.span {1 - e} ⊔ Ideal.span {1 - f} = Ideal.span {1 - e * f} := by
-  have hf' : 1 - f ∈ Ideal.span {1 - e * f} :=
-    Ideal.mem_span_singleton'.mpr ⟨1 - f, by simp [hef.eq, sub_mul, mul_sub, ← mul_assoc, hf.eq]⟩
-  refine le_antisymm (sup_le ?_ ((Ideal.span_singleton_le_iff_mem _).mpr hf'))
-    (Ideal.span_singleton_le_iff_mem _ |>.mpr ?_)
-  · rw [Ideal.span_singleton_le_iff_mem, show 1 - e = (1 - e * f) - e * (1 - f) by simp [mul_sub]]
-    exact sub_mem (Ideal.mem_span_singleton_self _) (Ideal.mul_mem_left _ _ hf')
-  · rw [show 1 - e * f = (1 - e) + e * (1 - f) by simp [mul_sub]]
-    exact add_mem (Ideal.mem_sup_left (Ideal.mem_span_singleton_self _))
-      (Ideal.mem_sup_right (Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)))
