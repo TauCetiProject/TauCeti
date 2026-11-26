@@ -70,7 +70,7 @@ theorem mem_parts_besselPartition {d ℓ i : ℕ} (h : 2 * ℓ + 1 ≤ d) :
 
 /-- Two valid Bessel indices give the same partition exactly when they are equal. -/
 @[simp]
-theorem besselPartition_eq_iff {d ℓ k : ℕ}
+theorem besselPartition_inj {d ℓ k : ℕ}
     (hℓ : 2 * ℓ + 1 ≤ d) (hk : 2 * k + 1 ≤ d) :
     besselPartition d ℓ hℓ = besselPartition d k hk ↔ ℓ = k := by
   constructor
