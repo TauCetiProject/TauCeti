@@ -24,6 +24,8 @@ subsets of `ℂ` are null in `ℍ`.
   `UpperHalfPlane.comap_absolutelyContinuous_volume`: mutual absolute continuity.
 * the `IsOpenPosMeasure` instance for `volume : Measure ℍ`.
 * `UpperHalfPlane.volume_preimage_coe_null`: preimages of Lebesgue-null sets are null.
+* `UpperHalfPlane.integral_eq_setIntegral_inv_im_sq_smul`: the invariant integral of `φ` is the
+  Lebesgue integral of `(Im w)⁻² φ(w)` over the upper half-plane of `ℂ`.
 * the `NullSingletonClass` instance for `volume : Measure ℍ`: points, hence countable sets, are
   null.
 * `UpperHalfPlane.volume_setOf_re_mem_and_lt_im`: for `A > 0`, the region
@@ -82,6 +84,18 @@ instance : NullSingletonClass (volume : Measure ℍ) where
   measure_singleton τ := by
     have h := volume_preimage_coe_null (measure_singleton (τ : ℂ))
     rwa [← image_singleton, isOpenEmbedding_coe.injective.preimage_image] at h
+
+/-- **The invariant integral as a Lebesgue integral.** For every `φ : ℍ → E`, the integral of
+`φ` against the invariant measure `dx dy / y²` is the Lebesgue integral over the open upper
+half-plane of `ℂ` of `φ` read through `UpperHalfPlane.ofComplex`, weighted by `(Im w)⁻²`. -/
+theorem integral_eq_setIntegral_inv_im_sq_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (φ : ℍ → E) :
+    ∫ z, φ z = ∫ w in upperHalfPlaneSet, (w.im ^ 2)⁻¹ • φ (ofComplex w) := by
+  rw [volume_def, integral_withDensity_eq_integral_smul, ← range_coe,
+    ← measurableEmbedding_coe.map_comap, measurableEmbedding_coe.integral_map]
+  · refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
+    simp [ofComplex_apply, NNReal.smul_def]
+  · fun_prop
 
 /-- The region of `ℍ` lying above the height `A > 0` and over a set `S` of real parts has
 invariant measure `volume S * ENNReal.ofReal A⁻¹`. -/

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Stabilizer
 public import TauCeti.Geometry.Lie.Subgroup.Torus.Conjugacy
 public import TauCeti.Geometry.Lie.Subgroup.Weyl.Group
+import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import TauCeti.RepresentationTheory.Continuous.Basic
 
 /-!
@@ -30,6 +31,12 @@ is commutative and `X, Y ∈ 𝔱`. Both are maximal tori of `G`, so they are co
 centralizer `Z_G(Y)` needs to be connected, and the conjugating element `c` is found in the
 identity component of `Z_G(Y)`.
 
+The same arguments run inside the adjoint stabilizer `Z_G(X)` of an element `X ∈ 𝔱`, a closed
+subgroup containing `T`. An element `Y` with `⁅X, Y⁆ = 0` generates a torus fixing `X`; a maximal
+torus of `Z_G(X)` containing it is conjugate in `Z_G(X)` to `T`, so `Ad_c Y ∈ 𝔱` for some
+`c ∈ Z_G(X)`. And a conjugacy in `𝔱` by an element of `Z_G(X)` is realized in `N(T) ∩ Z_G(X)`.
+These describe the critical points of the heights `⟨·, X⟩` on coadjoint orbits.
+
 ## Main results
 
 * `TauCeti.Lie.IsMaximalTorus.exists_mem_connectedComponentIn_stabilizer_mul_mem_normalizer`: if
@@ -40,6 +47,10 @@ identity component of `Z_G(Y)`.
   one adjoint orbit of `G` exactly when they lie in one orbit of the Weyl group.
 * `TauCeti.Lie.IsMaximalTorus.range_Ad_inter_lieSubalgebraOfSubgroup`: the adjoint orbit of
   `X ∈ 𝔱` meets `𝔱` exactly in the `N(T)`-orbit of `X`.
+* `TauCeti.Lie.IsMaximalTorus.exists_mem_stabilizer_Ad_mem_lieSubalgebraOfSubgroup`: if
+  `⁅X, Y⁆ = 0` with `X ∈ 𝔱`, then `Ad_c Y ∈ 𝔱` for some `c ∈ Z_G(X)`.
+* `TauCeti.Lie.IsMaximalTorus.exists_mem_stabilizer_mem_normalizer_Ad_eq`: if `Ad_k Y = Y'` with
+  `X, Y, Y' ∈ 𝔱` and `k ∈ Z_G(X)`, then `Ad_n Y = Y'` for some `n ∈ Z_G(X) ∩ N(T)`.
 
 ## References
 
@@ -138,6 +149,78 @@ theorem IsMaximalTorus.exists_weylAdjointRepresentation_eq_iff {T : Subgroup G}
     obtain ⟨n, hn, hnX⟩ := hT.exists_mem_normalizer_Ad_eq X.property Y.property hg
     refine ⟨((⟨n, hn⟩ : Subgroup.normalizer (T : Set G)) : T.normalizerQuotient), ?_⟩
     exact Subtype.ext ((T.coe_weylAdjointRepresentation_mk_apply ⟨n, hn⟩ X).trans hnX)
+
+/-! ### Conjugacy under the stabilizer of an element of `𝔱` -/
+
+/-- **Elements commuting with `X ∈ 𝔱` are conjugate into `𝔱` under the stabilizer of `X`.** Let
+`T` be a maximal torus of a compact Lie group and `X` in its Lie algebra `𝔱`. If `⁅X, Y⁆ = 0`,
+then `Ad_c Y ∈ 𝔱` for some `c` in the adjoint stabilizer `Z_G(X)`. For `X = 0` this is the
+statement that every adjoint orbit meets `𝔱`. -/
+theorem IsMaximalTorus.exists_mem_stabilizer_Ad_mem_lieSubalgebraOfSubgroup {T : Subgroup G}
+    (hT : IsMaximalTorus T) {X Y : LeftInvariantDerivation I G}
+    (hX : X ∈ lieSubalgebraOfSubgroup (I := I) T) (hXY : ⁅X, Y⁆ = 0) :
+    ∃ c ∈ (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer X,
+      Ad (I := I) c Y ∈ lieSubalgebraOfSubgroup (I := I) T := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let _ : IsMulCommutative T := hT.isTorus.isMulCommutative
+  set K := (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer X
+  have hK : IsClosed (K : Set G) := isClosed_stabilizer_continuousAdjointRepresentation X
+  have hTK : T ≤ K := le_stabilizer_continuousAdjointRepresentation hX
+  -- The closure `S` of the one-parameter subgroup of `Y` is a torus fixing `X`, whose Lie algebra
+  -- contains `Y`.
+  set S := closedOneParameterSubgroup (leftInvariantDerivationEquivGroupLieAlgebra (I := I)
+    (G := G) BoundarylessManifold.isInteriorPoint Y)
+  have hexp (t : ℝ) : lieExp (I := I) (t • Y) ∈ S := by
+    rw [lieExp_eq_mulInvariantExp, map_smul]
+    exact mulInvariantExp_smul_mem_closedOneParameterSubgroup _ t
+  have hYX : ⁅Y, X⁆ = 0 := by rw [← lie_skew, hXY, neg_zero]
+  have hSK : S ≤ K := (closedOneParameterSubgroup_le hK).2 fun t ↦ by
+    rw [← map_smul, ← lieExp_eq_mulInvariantExp]
+    exact mem_stabilizer_continuousAdjointRepresentation_iff.2
+      (Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero hYX t)
+  -- A maximal torus of `K` containing `S` is conjugate in `K` to `T`, so some `c ∈ K` carries `S`
+  -- into `T`.
+  obtain ⟨c, hcK, hle⟩ :=
+    hT.exists_mem_map_conj_le_of_le I hK (isTorus_closedOneParameterSubgroup _) hSK hTK
+  refine ⟨c, hcK, lieSubalgebraOfSubgroup_mono hle ?_⟩
+  rw [lieSubalgebraOfSubgroup_map_conj]
+  exact ⟨Y, mem_lieSubalgebraOfSubgroup_of_forall hexp, rfl⟩
+
+/-- **Conjugacy in `𝔱` under the stabilizer of `X ∈ 𝔱` is realized in the normalizer.** Let `T` be
+a maximal torus of a compact Lie group and `X`, `Y`, `Y'` elements of its Lie algebra `𝔱`. If
+`Ad_k Y = Y'` for some `k` in the adjoint stabilizer `Z_G(X)`, then `Ad_n Y = Y'` for some `n` in
+`Z_G(X)` normalizing `T`. For `X = 0` this is
+`TauCeti.Lie.IsMaximalTorus.exists_mem_normalizer_Ad_eq`. -/
+theorem IsMaximalTorus.exists_mem_stabilizer_mem_normalizer_Ad_eq {T : Subgroup G}
+    (hT : IsMaximalTorus T) {X Y Y' : LeftInvariantDerivation I G}
+    (hX : X ∈ lieSubalgebraOfSubgroup (I := I) T) (hY : Y ∈ lieSubalgebraOfSubgroup (I := I) T)
+    (hY' : Y' ∈ lieSubalgebraOfSubgroup (I := I) T) {k : G}
+    (hk : k ∈ (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer X)
+    (hkY : Ad (I := I) k Y = Y') :
+    ∃ n ∈ (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer X,
+      n ∈ Subgroup.normalizer (T : Set G) ∧ Ad (I := I) n Y = Y' := by
+  let _ : IsMulCommutative T := hT.isTorus.isMulCommutative
+  set ρ := (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation
+  -- `k T k⁻¹` fixes `Ad_k Z` for every `Z ∈ 𝔱`, in particular `Ad_k X = X` and `Ad_k Y = Y'`.
+  have hconj {Z : LeftInvariantDerivation I G} (hZ : Z ∈ lieSubalgebraOfSubgroup (I := I) T) :
+      T.map (MulAut.conj k).toMonoidHom ≤ ρ.stabilizer (Ad (I := I) k Z) := by
+    rw [← continuousAdjointRepresentation_apply, ← ContRepresentation.toRepresentation_apply,
+      Representation.stabilizer_conj]
+    exact Subgroup.map_mono (le_stabilizer_continuousAdjointRepresentation hZ)
+  have hkX : Ad (I := I) k X = X := mem_stabilizer_continuousAdjointRepresentation_iff.mp hk
+  -- Both `T` and `k T k⁻¹` lie in the closed subgroup `Z_G(X) ∩ Z_G(Y')`.
+  have hclosed : IsClosed ((ρ.stabilizer X ⊓ ρ.stabilizer Y' : Subgroup G) : Set G) := by
+    rw [Subgroup.coe_inf]
+    exact (isClosed_stabilizer_continuousAdjointRepresentation X).inter
+      (isClosed_stabilizer_continuousAdjointRepresentation Y')
+  obtain ⟨c, hc, hn⟩ := hT.exists_mem_connectedComponentIn_mul_mem_normalizer_of_le I hclosed
+    (le_inf (le_stabilizer_continuousAdjointRepresentation hX)
+      (le_stabilizer_continuousAdjointRepresentation hY'))
+    (le_inf (hkX ▸ hconj hX) (hkY ▸ hconj hY))
+  have hc' := connectedComponentIn_subset _ _ hc
+  refine ⟨c * k, mul_mem (Subgroup.mem_inf.mp hc').1 hk, hn, ?_⟩
+  rw [Ad_mul, LieEquiv.trans_apply, hkY]
+  exact mem_stabilizer_continuousAdjointRepresentation_iff.mp (Subgroup.mem_inf.mp hc').2
 
 end Compact
 

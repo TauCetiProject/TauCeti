@@ -16,8 +16,7 @@ For a continuous final functor of ringed sites, the canonical pullback tensor co
 `φ^*(M ⊗ N) ⟶ φ^*M ⊗ φ^*N` is invertible whenever either factor has a global presentation
 by free sheaves. The other factor is arbitrary, and the generators and relations of the
 presentation need not be finite. In particular, the comparison is invertible for a free
-sheaf of any rank. These are the free and presented chart computations used to check
-compatibility of pullback with tensor products locally.
+sheaf of any rank.
 
 The comparison is the existing oplax tensorator, rather than a separately chosen isomorphism.
 Its naturality and compatibility with composition therefore follow from the canonical

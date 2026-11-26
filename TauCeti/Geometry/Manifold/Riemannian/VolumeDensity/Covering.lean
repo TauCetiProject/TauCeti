@@ -53,7 +53,9 @@ pullback along `q` multiplies `Lᵖ` norms by `|G| ^ (1/p)`.
 * `IsQuotientCoveringMap.normalizedPullbackLp`: the normalized pullback `|G| ^ (-1/p) q^*` as a
   linear isometry `Lᵖ(N) →ₗᵢ[𝕜] Lᵖ(M)`, with `IsQuotientCoveringMap.coeFn_normalizedPullbackLp`.
 * `IsQuotientCoveringMap.mem_range_normalizedPullbackLp_iff`: its range is the subspace of
-  `G`-invariant elements of `Lᵖ(M)`.
+  `G`-invariant elements of `Lᵖ(M)`, and
+  `IsQuotientCoveringMap.compMeasurePreserving_normalizedPullbackLp` restates the invariance of its
+  values as an identity in `Lᵖ(M)`.
 
 ## References
 
@@ -283,6 +285,19 @@ theorem mem_range_normalizedPullbackLp_iff (hq : IsQuotientCoveringMap q G)
   rw [normalizedPullbackLp]
   exact hq.mem_range_normalizedCompOfMapEqSmul_iff
     (fun g ↦ (hq.measurePreserving_smul_riemannianVolume hinner g).quasiMeasurePreserving) _ _ _ f
+
+/-- **Deck invariance in `Lᵖ`.** The normalized pullback of `f ∈ Lᵖ(N)` is invariant under
+composition with the translation by every `g : G`. -/
+@[simp]
+theorem compMeasurePreserving_normalizedPullbackLp (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ)
+    (f : Lp F p (riemannianVolume I' N)) (g : G) :
+    Lp.compMeasurePreserving (g • ·) (hq.measurePreserving_smul_riemannianVolume hinner g)
+        (normalizedPullbackLp 𝕜 p hq hinner f) =
+      normalizedPullbackLp 𝕜 p hq hinner f :=
+  Lp.ext ((Lp.coeFn_compMeasurePreserving _ _).trans
+    ((hq.mem_range_normalizedPullbackLp_iff hinner _).1 ⟨f, rfl⟩ g))
 
 end Lp
 

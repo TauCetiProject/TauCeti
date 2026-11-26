@@ -15,6 +15,13 @@ is the functor induced on homotopy categories and
 `CategoryTheory.Functor.mapHomotopyCategoryFactors` identifies its composite with the quotient
 functor. This file records computation rules for working with them on the images of complexes.
 
+For additive functors `F₁ : V ⥤ W`, `G₁ : W ⥤ W'` and `H₁ : V ⥤ W'` with `e : F₁ ⋙ G₁ ≅ H₁`,
+Mathlib's `CategoryTheory.Functor.mapHomotopyCategoryCompIso` identifies the induced functors on
+homotopy categories; it is induced from `CategoryTheory.Functor.mapHomologicalComplexCompIso`,
+and the file also records its components on the class of a complex.
+
+## Main results
+
 * `CategoryTheory.Functor.mapHomotopyCategory_obj_quotient_obj`: the induced functor sends the
   image of a complex `K` to the image of `F` applied to `K`, a definitional equality usable with
   `dsimp` to match objects that Mathlib's `CategoryTheory.Functor.mapHomotopyCategory_obj`
@@ -27,6 +34,9 @@ functor. This file records computation rules for working with them on the images
   which it appears in the naturality goals of `CategoryTheory.Quotient.natTransLift`, is its image
   under `HomotopyCategory.quotient`, so that lemmas such as Mathlib's
   `CategoryTheory.Functor.mapHomotopyCategory_map` apply.
+* `CategoryTheory.Functor.mapHomotopyCategoryCompIso_hom_app_quotient_obj`,
+  `CategoryTheory.Functor.mapHomotopyCategoryCompIso_inv_app_quotient_obj`: on the class of a
+  complex, the comparison and its inverse are the classes of the homological-complex comparisons.
 -/
 
 public section
@@ -62,5 +72,30 @@ lemma mapHomotopyCategoryFactors_inv_app (K : HomologicalComplex V c) :
     (F.mapHomotopyCategoryFactors c).inv.app K =
       𝟙 ((HomotopyCategory.quotient W c).obj ((F.mapHomologicalComplex c).obj K)) :=
   rfl
+
+end CategoryTheory.Functor
+
+namespace CategoryTheory.Functor
+
+variable {ι : Type*} (c : ComplexShape ι)
+  {V W W' : Type*} [Category* V] [Category* W] [Category* W'] [Preadditive V]
+  [Preadditive W] [Preadditive W'] {F₁ : V ⥤ W} {G₁ : W ⥤ W'} {H₁ : V ⥤ W'} (e : F₁ ⋙ G₁ ≅ H₁)
+  [F₁.Additive] [G₁.Additive] [H₁.Additive]
+
+/-- On the class of a complex, `mapHomotopyCategoryCompIso` is the class of the
+homological-complex comparison `mapHomologicalComplexCompIso`. -/
+@[simp]
+lemma mapHomotopyCategoryCompIso_hom_app_quotient_obj (K : HomologicalComplex V c) :
+    (mapHomotopyCategoryCompIso e c).hom.app ((HomotopyCategory.quotient V c).obj K) =
+      (HomotopyCategory.quotient W' c).map ((mapHomologicalComplexCompIso e c).hom.app K) :=
+  Quotient.natTransLift_app _ _ _ _ K
+
+/-- On the class of a complex, the inverse of `mapHomotopyCategoryCompIso` is the class of the
+inverse of `mapHomologicalComplexCompIso`. -/
+@[simp]
+lemma mapHomotopyCategoryCompIso_inv_app_quotient_obj (K : HomologicalComplex V c) :
+    (mapHomotopyCategoryCompIso e c).inv.app ((HomotopyCategory.quotient V c).obj K) =
+      (HomotopyCategory.quotient W' c).map ((mapHomologicalComplexCompIso e c).inv.app K) :=
+  Quotient.natTransLift_app _ _ _ _ K
 
 end CategoryTheory.Functor
