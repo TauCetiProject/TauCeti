@@ -37,7 +37,8 @@ nonnegativity of the dissipative contraction uses `0 ≤ μ`.
 Finally, the stress and the traction are covariant under an orthogonal change of frame
 `A ↦ O A Oᵀ`, `n ↦ O n`, with no condition on `det O`, so reflections are included. The
 corresponding facts for the strain rate and the trace pairing are
-`TauCeti.PDE.coefficientSymmetricPart_conj` and `Matrix.trace_transpose_conj_mul_conj`.
+`TauCeti.PDE.coefficientSymmetricPart_mul_mul_transpose` and
+`Matrix.trace_transpose_mul_of_transpose_mul_eq_one`.
 
 ## References
 
@@ -64,6 +65,7 @@ theorem newtonianStress_def (μ p : ℝ) (A : Matrix n n ℝ) :
     newtonianStress μ p A = μ • (A + Aᵀ) - p • 1 := (rfl)
 
 /-- The entries of the Newtonian stress: `σᵢⱼ = μ (Aᵢⱼ + Aⱼᵢ) - p δᵢⱼ`. -/
+@[simp]
 theorem newtonianStress_apply (μ p : ℝ) (A : Matrix n n ℝ) (i j : n) :
     newtonianStress μ p A i j = μ * (A i j + A j i) - if i = j then p else 0 := by
   simp [newtonianStress_def, Matrix.one_apply, mul_ite, mul_add]
@@ -134,8 +136,7 @@ theorem newtonianStress_add_pressure (μ p c : ℝ) (A : Matrix n n ℝ) :
 
 theorem trace_newtonianStress [Fintype n] (μ p : ℝ) (A : Matrix n n ℝ) :
     (newtonianStress μ p A).trace = 2 * μ * A.trace - p * Fintype.card n := by
-  rw [newtonianStress_def, trace_sub, trace_smul, trace_add, trace_transpose, trace_smul,
-    trace_one, smul_eq_mul, smul_eq_mul]
+  simp [newtonianStress_def, trace_sub, trace_add, trace_smul, trace_transpose, trace_one]
   ring
 
 /-! ### Traction -/
@@ -214,10 +215,8 @@ theorem trace_transpose_coefficientSymmetricPart_mul_self_eq_zero_iff [Fintype n
 theorem newtonianStress_conj [Fintype n] {O : Matrix n n ℝ} (hO : O ∈ orthogonalGroup n ℝ)
     (μ p : ℝ) (A : Matrix n n ℝ) :
     newtonianStress μ p (O * A * Oᵀ) = O * newtonianStress μ p A * Oᵀ := by
-  rw [newtonianStress_eq_coefficientSymmetricPart, newtonianStress_eq_coefficientSymmetricPart,
-    coefficientSymmetricPart_conj, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_smul,
-    Matrix.smul_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one,
-    (mem_orthogonalGroup_iff n ℝ).mp hO]
+  simp [newtonianStress_eq_coefficientSymmetricPart, coefficientSymmetricPart_mul_mul_transpose,
+    Matrix.mul_sub, Matrix.sub_mul, (mem_orthogonalGroup_iff n ℝ).mp hO]
 
 /-- The traction is covariant under an orthogonal change of frame: the stress of `O A Oᵀ` on the
 normal `O n` is `O` applied to the traction `σ(A,p) n`. -/

@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.LinearAlgebra.Matrix.Vec
 
 /-!
@@ -31,8 +32,8 @@ Mathlib's `Matrix.trace_transpose_mul` applied to `A` and `Bᵀ`.
   orthogonal for the trace pairing.
 * `Matrix.trace_transpose_mul_self_nonneg`, `Matrix.trace_transpose_mul_self_eq_zero_iff`: over a
   strictly ordered ring the trace pairing is positive definite.
-* `Matrix.trace_transpose_conj_mul_conj`: conjugating both arguments by a matrix with orthonormal
-  columns, in particular by an orthogonal matrix, preserves the trace pairing.
+* `Matrix.trace_transpose_mul_of_transpose_mul_eq_one`: the congruence `A ↦ O A Oᵀ` by a matrix
+  with orthonormal columns, in particular by an orthogonal matrix, preserves the trace pairing.
 -/
 
 public section
@@ -44,8 +45,8 @@ variable {l m n R : Type*} [Fintype m] [Fintype n]
 /-- The trace pairing `tr (Aᵀ * B)` is the sum `∑ i, ∑ j, A i j * B i j` of entrywise products. -/
 theorem trace_transpose_mul_eq_sum [AddCommMonoid R] [Mul R] (A B : Matrix m n R) :
     (Aᵀ * B).trace = ∑ i, ∑ j, A i j * B i j := by
-  rw [← vec_dotProduct_vec, dotProduct, Fintype.sum_prod_type, Finset.sum_comm]
-  rfl
+  simp only [trace, diag, Matrix.mul_apply, transpose_apply]
+  exact Finset.sum_comm
 
 /-- The trace pairing is symmetric: `tr (Aᵀ * B) = tr (Bᵀ * A)`. -/
 theorem trace_transpose_mul_comm [AddCommMonoid R] [CommMagma R] (A B : Matrix m n R) :
@@ -70,18 +71,12 @@ theorem trace_transpose_mul_self_nonneg [Ring R] [LinearOrder R] [IsOrderedRing 
 zero. -/
 theorem trace_transpose_mul_self_eq_zero_iff [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
     {A : Matrix m n R} : (Aᵀ * A).trace = 0 ↔ A = 0 := by
-  refine ⟨fun h => ?_, fun h => by simp [h]⟩
-  rw [trace_transpose_mul_eq_sum, Finset.sum_eq_zero_iff_of_nonneg fun i _ =>
-    Finset.sum_nonneg fun j _ => mul_self_nonneg (A i j)] at h
-  ext i j
-  have hi := h i (Finset.mem_univ i)
-  rw [Finset.sum_eq_zero_iff_of_nonneg fun j _ => mul_self_nonneg (A i j)] at hi
-  exact mul_self_eq_zero.mp (hi j (Finset.mem_univ j))
+  rw [← vec_dotProduct_vec, dotProduct_self_eq_zero, vec_eq_zero_iff]
 
-/-- Conjugating both arguments by a matrix `O` with orthonormal columns, `Oᵀ * O = 1`, preserves the
-trace pairing. This applies to every orthogonal matrix, reflections included, through
-`Matrix.mem_orthogonalGroup_iff'`. -/
-theorem trace_transpose_conj_mul_conj [Fintype l] [DecidableEq n] [CommSemiring R]
+/-- Applying the congruence `A ↦ O A Oᵀ` to both arguments, for a matrix `O` with
+orthonormal columns, `Oᵀ * O = 1`, preserves the trace pairing. This applies to every
+orthogonal matrix, reflections included, through `Matrix.mem_orthogonalGroup_iff'`. -/
+theorem trace_transpose_mul_of_transpose_mul_eq_one [Fintype l] [DecidableEq n] [CommSemiring R]
     {O : Matrix l n R} (hO : Oᵀ * O = 1) (A B : Matrix n n R) :
     ((O * A * Oᵀ)ᵀ * (O * B * Oᵀ)).trace = (Aᵀ * B).trace := by
   have h : (O * A * Oᵀ)ᵀ * (O * B * Oᵀ) = O * (Aᵀ * B) * Oᵀ := by

@@ -134,7 +134,9 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.coefficientSymmetricPart`: the symmetric part `(A + Aᵀ) / 2` of a
   coefficient matrix. It vanishes exactly on skew-symmetric matrices
   (`TauCeti.PDE.coefficientSymmetricPart_eq_zero_iff`) and commutes with congruences
-  `A ↦ O A Oᵀ` (`TauCeti.PDE.coefficientSymmetricPart_conj`).
+  `A ↦ O A Oᵀ` (`TauCeti.PDE.coefficientSymmetricPart_mul_mul_transpose`). It is linear
+  (`TauCeti.PDE.coefficientSymmetricPart_add`, `_smul`, `_neg`, `_sum`) and invariant under
+  transposition (`TauCeti.PDE.coefficientSymmetricPart_transpose`).
 * `TauCeti.PDE.UniformlyEllipticOn.transpose` and
   `TauCeti.PDE.UniformlyEllipticOn.coefficientSymmetricPart`: transposing or replacing a
   coefficient field by its symmetric part preserves uniform ellipticity with the same
@@ -189,6 +191,33 @@ lemma coefficientSymmetricPart_eq_self_of_isSymm {A : Matrix n n ℝ} (hA : A.Is
   rw [coefficientSymmetricPart_apply, hA.apply i j]
   ring
 
+@[simp]
+lemma coefficientSymmetricPart_transpose (A : Matrix n n ℝ) :
+    coefficientSymmetricPart Aᵀ = coefficientSymmetricPart A := by
+  rw [coefficientSymmetricPart_def, coefficientSymmetricPart_def, transpose_transpose, add_comm]
+
+lemma coefficientSymmetricPart_add (A B : Matrix n n ℝ) :
+    coefficientSymmetricPart (A + B) = coefficientSymmetricPart A + coefficientSymmetricPart B := by
+  rw [coefficientSymmetricPart_def, coefficientSymmetricPart_def, coefficientSymmetricPart_def,
+    transpose_add, add_add_add_comm, smul_add]
+
+lemma coefficientSymmetricPart_smul (c : ℝ) (A : Matrix n n ℝ) :
+    coefficientSymmetricPart (c • A) = c • coefficientSymmetricPart A := by
+  rw [coefficientSymmetricPart_def, coefficientSymmetricPart_def, transpose_smul, ← smul_add,
+    smul_comm]
+
+lemma coefficientSymmetricPart_neg (A : Matrix n n ℝ) :
+    coefficientSymmetricPart (-A) = -coefficientSymmetricPart A := by
+  rw [← neg_one_smul ℝ A, coefficientSymmetricPart_smul, neg_one_smul]
+
+lemma coefficientSymmetricPart_sum {ι : Type*} (s : Finset ι) (A : ι → Matrix n n ℝ) :
+    coefficientSymmetricPart (∑ a ∈ s, A a) = ∑ a ∈ s, coefficientSymmetricPart (A a) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    rw [Finset.sum_insert ha, Finset.sum_insert ha, coefficientSymmetricPart_add, ih]
+
 /-- The symmetric part vanishes exactly on skew-symmetric matrices. -/
 lemma coefficientSymmetricPart_eq_zero_iff {A : Matrix n n ℝ} :
     coefficientSymmetricPart A = 0 ↔ Aᵀ = -A := by
@@ -196,7 +225,7 @@ lemma coefficientSymmetricPart_eq_zero_iff {A : Matrix n n ℝ} :
     add_eq_zero_iff_eq_neg']
 
 /-- Taking the symmetric part commutes with every congruence `A ↦ O A Oᵀ`. -/
-lemma coefficientSymmetricPart_conj {m : Type*} [Fintype n] (O : Matrix m n ℝ)
+lemma coefficientSymmetricPart_mul_mul_transpose {m : Type*} [Fintype n] (O : Matrix m n ℝ)
     (A : Matrix n n ℝ) :
     coefficientSymmetricPart (O * A * Oᵀ) = O * coefficientSymmetricPart A * Oᵀ := by
   simp [coefficientSymmetricPart_def, transpose_mul, Matrix.mul_assoc, Matrix.mul_add,
