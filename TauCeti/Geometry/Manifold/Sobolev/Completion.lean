@@ -320,13 +320,9 @@ theorem norm_chartSobolevExtension_apply_le {C : ℝ}
 provides it. -/
 theorem chartSobolevExtension_eq (L : chartSobolevSpace he ψ s →L[ℂ] chartSobolevSpace he' φ t)
     (hL : ∀ u, L (toChartSobolevSpace he ψ s u) = toChartSobolevSpace he' φ t (P u)) :
-    chartSobolevExtension he ψ he' φ P s t = L := by
-  have hP (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-      ‖chartReading he' φ t (P u)‖ ≤ ‖L‖ * ‖chartReading he ψ s u‖ := by
-    have h := L.le_opNorm (toChartSobolevSpace he ψ s u)
-    rwa [hL, norm_toChartSobolevSpace, norm_toChartSobolevSpace] at h
-  refine chartSobolevSpace_ext he ψ fun u ↦ ?_
-  rw [chartSobolevExtension_toChartSobolevSpace ⟨_, hP⟩, hL]
+    chartSobolevExtension he ψ he' φ P s t = L :=
+  LinearMap.extendOfNorm_unique (denseRange_toChartSobolevSpace he ψ s) ‖L‖
+    (fun u ↦ by simpa only [LinearMap.comp_apply, ← hL] using L.le_opNorm _) L (LinearMap.ext hL)
 
 /-- The extension of the identity is the inclusion `H^s(M) ⊆ H^r(M)`. -/
 theorem chartSobolevExtension_id {r : ℝ} (h : r ≤ s) :
