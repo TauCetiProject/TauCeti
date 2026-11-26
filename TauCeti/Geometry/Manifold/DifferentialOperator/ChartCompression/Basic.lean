@@ -19,6 +19,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Square
+import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
@@ -78,9 +79,6 @@ with no continuity assumed) and computes their principal symbols:
 
 ## Main results
 
-* `OpenPartialHomeomorph.exists_testFunction_apply_eq`: a smooth function with compact support in
-  the source of a chart with smooth inverse is read in the chart as a test function on the chart
-  target.
 * `IsCompact.exists_sum_cutoffPullback_eq_one`: a compact set has finitely many cutoffs in preferred
   charts whose pullbacks sum to `1` on it, through which operators on `M` are assembled from
   operators in charts.
@@ -113,41 +111,6 @@ open Set Filter Topology TauCeti
 open scoped ContDiff Manifold Distributions
 
 namespace OpenPartialHomeomorph
-
-section ChartReading
-
-variable {E H X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace X] [ChartedSpace H X]
-
-/-- **Reading a function supported in a chart.** A smooth function `ψ` with compact support in the
-source of a chart `c` with smooth inverse is read in the chart as a test function on the chart
-target, supported in the image of the support of `ψ`. -/
-theorem exists_testFunction_apply_eq {c : OpenPartialHomeomorph X E}
-    (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target) {ψ : C^∞⟮I, X; ℝ⟯}
-    (hψc : HasCompactSupport ψ) (hψ : tsupport ψ ⊆ c.source) :
-    ∃ ψ' : 𝓓(⟨c.target, c.open_target⟩, ℝ), tsupport ψ' ⊆ c '' tsupport ψ ∧
-      ∀ x ∈ c.source, ψ' (c x) = ψ x := by
-  -- A cutoff `θ` equal to `1` near the compact set `c (supp ψ)`, and `ψ' = θ · (ψ ∘ c⁻¹)`.
-  have hC : IsCompact (c '' tsupport ψ) :=
-    hψc.isCompact.image_of_continuousOn (c.continuousOn.mono hψ)
-  obtain ⟨θ, hθ, -⟩ := TestFunction.exists_eventually_eq_one
-    (Ω := ⟨c.target, c.open_target⟩) (n := ⊤) hC
-    (image_subset_iff.2 fun p hp ↦ c.map_source (hψ hp))
-  have hsmooth : ContDiff ℝ ∞ fun z ↦ θ z * ψ (c.symm z) := by
-    have h := ContMDiffOn.contMDiff_smul_of_tsupport_subset
-      (ψ.contMDiff.comp_contMDiffOn hcs) c.open_target θ.contDiff.contMDiff.contMDiffOn
-      θ.tsupport_subset
-    simpa only [smul_eq_mul, Function.comp_apply] using contMDiff_iff_contDiff.1 h
-  refine ⟨⟨fun z ↦ θ z * ψ (c.symm z), hsmooth, θ.hasCompactSupport.mul_right,
-    tsupport_mul_subset_left.trans θ.tsupport_subset⟩, ?_, fun x hx ↦ ?_⟩
-  · refine closure_minimal (fun z hz ↦ ?_) hC.isClosed
-    have hzt : z ∈ c.target := θ.tsupport_subset (subset_tsupport _ (left_ne_zero_of_mul hz))
-    exact ⟨c.symm z, subset_tsupport _ (right_ne_zero_of_mul hz), c.right_inv hzt⟩
-  · rw [TestFunction.coe_mk, c.left_inv hx]
-    exact mul_eq_right_of_ne_zero_imp_eq_one fun hψx ↦
-      hθ.self_of_nhdsSet _ (mem_image_of_mem c (subset_tsupport _ hψx))
-
-end ChartReading
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [T2Space M]

@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import Mathlib.Analysis.Distribution.TestFunction
+import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 
 /-!
 # Native test functions in bundle charts
@@ -23,6 +26,10 @@ These are algebraic chart extension maps for constructing locally convex test-se
 No topology on compactly supported sections is installed here. The chart only needs to be
 smooth in the forward direction; the support and smoothness arguments do not require
 smoothness of its inverse, finite-dimensional fibres, or a countable atlas.
+
+Conversely, a smooth function with compact support in the source of a chart with smooth inverse
+is read in the chart as a test function on the chart target
+(`OpenPartialHomeomorph.exists_testFunction_apply_eq`).
 
 The exact nonzero-locus formula is adapted from Tau Ceti PR #22144
 (commit `8cab1a135d7b2826fcb4508770e82aebf9713614`).
@@ -197,3 +204,38 @@ theorem continuousLinearMapAt_chartTestSection_eq_coordChangeL
     e.coordChangeL_apply e' ⟨hce hx, hx'⟩]
 
 end Bundle.Trivialization
+
+namespace OpenPartialHomeomorph
+
+variable {E H X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace X] [ChartedSpace H X]
+
+/-- **Reading a function supported in a chart.** A smooth function `ψ` with compact support in the
+source of a chart `c` with smooth inverse is read in the chart as a test function on the chart
+target, supported in the image of the support of `ψ`. -/
+theorem exists_testFunction_apply_eq {c : OpenPartialHomeomorph X E}
+    (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target) {ψ : C^∞⟮I, X; ℝ⟯}
+    (hψc : HasCompactSupport ψ) (hψ : tsupport ψ ⊆ c.source) :
+    ∃ ψ' : 𝓓(⟨c.target, c.open_target⟩, ℝ), tsupport ψ' ⊆ c '' tsupport ψ ∧
+      ∀ x ∈ c.source, ψ' (c x) = ψ x := by
+  -- A cutoff `θ` equal to `1` near the compact set `c (supp ψ)`, and `ψ' = θ · (ψ ∘ c⁻¹)`.
+  have hC : IsCompact (c '' tsupport ψ) :=
+    hψc.isCompact.image_of_continuousOn (c.continuousOn.mono hψ)
+  obtain ⟨θ, hθ, -⟩ := TestFunction.exists_eventually_eq_one
+    (Ω := ⟨c.target, c.open_target⟩) (n := ⊤) hC
+    (image_subset_iff.2 fun p hp ↦ c.map_source (hψ hp))
+  have hsmooth : ContDiff ℝ ∞ fun z ↦ θ z * ψ (c.symm z) := by
+    have h := ContMDiffOn.contMDiff_smul_of_tsupport_subset
+      (ψ.contMDiff.comp_contMDiffOn hcs) c.open_target θ.contDiff.contMDiff.contMDiffOn
+      θ.tsupport_subset
+    simpa only [smul_eq_mul, Function.comp_apply] using contMDiff_iff_contDiff.1 h
+  refine ⟨⟨fun z ↦ θ z * ψ (c.symm z), hsmooth, θ.hasCompactSupport.mul_right,
+    tsupport_mul_subset_left.trans θ.tsupport_subset⟩, ?_, fun x hx ↦ ?_⟩
+  · refine closure_minimal (fun z hz ↦ ?_) hC.isClosed
+    have hzt : z ∈ c.target := θ.tsupport_subset (subset_tsupport _ (left_ne_zero_of_mul hz))
+    exact ⟨c.symm z, subset_tsupport _ (right_ne_zero_of_mul hz), c.right_inv hzt⟩
+  · rw [TestFunction.coe_mk, c.left_inv hx]
+    exact TauCeti.mul_eq_right_of_ne_zero_imp_eq_one fun hψx ↦
+      hθ.self_of_nhdsSet _ (mem_image_of_mem c (subset_tsupport _ hψx))
+
+end OpenPartialHomeomorph

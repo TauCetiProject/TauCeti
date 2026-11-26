@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.CutoffPushforward
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartComponent
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.Support
 import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Trivial.Topology
@@ -71,6 +73,10 @@ one cutoff serves all the tests supported in a fixed compact set.
   `TauCeti.BundleTest.pushforward_apply_of_eventuallyEq` and
   `TauCeti.BundleTest.pushforward_apply_eq_cutoffCompCLM`, and
   `TauCeti.BundleTest.pushforward_eq_cutoffPushforwardCLM` for compactly supported `T`.
+* `TauCeti.BundleTest.dsupport_cutoffPushforwardCLM_subset`: `supp f_* (χ T) ⊆ f (supp χ ∩ supp T)`.
+* `TauCeti.BundleTest.chartComponent_cutoffPushforwardCLM`: in charts and trivial frames, the
+  components of `f_* (ψ T)` are the Euclidean pushforwards (`Distribution.cutoffPushforwardCLM`) of
+  the components of `T` along the coordinate expression of `f`.
 * `TauCeti.BundleTest.dsupport_pushforward_subset`: `supp (f_* T) ⊆ f (supp T)`, and
   `TauCeti.BundleTest.IsProperOnSupport.pushforward`.
 * `TauCeti.BundleTest.pushforward_zero`, `TauCeti.BundleTest.pushforward_add`,
@@ -756,6 +762,25 @@ theorem dsupport_pushforward_subset [T2Space Y] (hT : IsProperOnSupport ⇑T f) 
   refine pushforward_apply_eq_zero hT (disjoint_left.2 fun z hz ⟨x, hx, hxz⟩ ↦ (hs hz).2 ?_)
   exact ⟨x, ⟨hx, mem_preimage.2 (hxz ▸ interior_subset (hs hz).1)⟩, hxz⟩
 
+omit [ContinuousSMul ℝ W] [LocallyConvexSpace ℝ W] in
+/-- **The support of a pushforward with a cutoff** lies in the image of the support:
+`supp f_* (χ T) ⊆ f (supp χ ∩ supp T)`. -/
+theorem dsupport_cutoffPushforwardCLM_subset [T2Space Y] [ContinuousConstSMul ℝ W]
+    {χ : C^∞⟮I, X; ℝ⟯} (hχ : HasCompactSupport χ) (f : C^∞⟮I, X; J, Y⟯)
+    (T : BundleTest I G (Trivial X G) →L_c[ℝ] W) :
+    dsupport ⇑(cutoffPushforwardCLM χ hχ f T) ⊆ f '' (_root_.tsupport χ ∩ dsupport ⇑T) := by
+  intro y hy
+  by_contra hyT
+  -- The pushforward vanishes off the compact image `f (supp χ ∩ supp T)`, which misses `y`.
+  have hC : IsCompact (f '' (_root_.tsupport χ ∩ dsupport ⇑T)) :=
+    (hχ.isCompact.inter_right (isClosed_dsupport _)).image f.contMDiff.continuous
+  refine (notMem_dsupport_iff.2 ⟨_, hC.isClosed.isOpen_compl, hyT,
+    isVanishingOn_iff.2 fun s hs ↦ ?_⟩) hy
+  refine cutoffPushforwardCLM_apply_eq_zero_of_disjoint _ f
+    (isVanishingOn_iff.1 (isVanishingOn_compl_dsupport _)) ?_
+  rw [Set.sdiff_compl]
+  exact subset_compl_iff_disjoint_right.1 hs
+
 /-- If `f` is proper on the support of `T` and `g ∘ f` is too, then `g` is proper on the support of
 the pushforward `f_* T`. -/
 theorem IsProperOnSupport.pushforward [T2Space Y] {Z : Type*} [TopologicalSpace Z] {g : Y → Z}
@@ -879,5 +904,56 @@ theorem pushforward_delta (x : X) (ℓ : G →L[ℝ] W)
 
 end Pushforward
 
+end TauCeti.BundleTest
+
+/-! ### The pushforward read in charts -/
+
+namespace TauCeti.BundleTest
+
+open Bundle.Trivialization
+open scoped Distributions
+
+variable {E H X : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace X] [ChartedSpace H X]
+  [T2Space X] [IsManifold I ∞ X]
+  {E' H' Y : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace Y] [ChartedSpace H' Y]
+  [T2Space Y] [IsManifold J ∞ Y]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+
+/-- **The pushforward read in charts.** Let `c` be a smooth chart of `X` and `c'` one of `Y`, and
+let `ψ` be a smooth cutoff with compact support in `c.source ∩ f⁻¹(c'.source)`, read in `c` as the
+test function `ψ'`. In the trivial frames, the component along `v` of `f_* (ψ T)` in the chart
+`c'` is the Euclidean pushforward, along the coordinate expression `c' ∘ f ∘ c⁻¹` of `f` and with
+the cutoff `ψ'`, of the component along `v` of `T` in the chart `c`. -/
+theorem chartComponent_cutoffPushforwardCLM {c : OpenPartialHomeomorph X E}
+    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) {c' : OpenPartialHomeomorph Y E'}
+    (hc' : ContMDiffOn J 𝓘(ℝ, E') ∞ c' c'.source) (t : Trivialization G (π G (Trivial X G)))
+    [MemTrivializationAtlas t] (hct : c.source ⊆ t.baseSet)
+    (t' : Trivialization G (π G (Trivial Y G))) [MemTrivializationAtlas t']
+    (hct' : c'.source ⊆ t'.baseSet) {f : C^∞⟮I, X; J, Y⟯} {ψ : C^∞⟮I, X; ℝ⟯}
+    (hψc : HasCompactSupport ψ) (hψ : tsupport ψ ⊆ c.source ∩ f ⁻¹' c'.source)
+    {ψ' : 𝓓(⟨c.target, c.open_target⟩, ℝ)} (hψ' : ∀ x ∈ c.source, ψ' (c x) = ψ x)
+    (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) (c' ∘ f ∘ c.symm) c.target)
+    (T : BundleTest I G (Trivial X G) →L_c[ℝ] ℝ) (v : G) :
+    t'.chartComponent c' hc' hct' (cutoffPushforwardCLM ψ hψc f T) v =
+      Distribution.cutoffPushforwardCLM ψ' (c' ∘ f ∘ c.symm) hΦ
+        (t.chartComponent c hc hct T v) := by
+  obtain rfl := Trivial.eq_trivialization X G t
+  obtain rfl := Trivial.eq_trivialization Y G t'
+  ext φ
+  rw [Distribution.cutoffPushforwardCLM_apply, chartComponent_apply, chartComponent_apply,
+    cutoffPushforwardCLM_apply]
+  refine congrArg (fun s ↦ ((T s : ℝ) : ℂ)) (BundleTest.ext fun x ↦ ?_)
+  rw [cutoffCompCLM_apply]
+  by_cases hx : x ∈ c.source
+  · rw [chartTestCLM_apply_of_mem _ _ _ _ _ hx]
+    by_cases hψx : ψ x = 0
+    · simp [hψx, hψ' x hx]
+    have hfx : f x ∈ c'.source := (hψ (subset_tsupport _ hψx)).2
+    rw [chartTestCLM_apply_of_mem _ _ _ _ _ hfx]
+    simp [hψ' x hx, c.left_inv hx, smul_smul]
+  · rw [chartTestCLM_apply_of_notMem _ _ _ _ _ hx,
+      image_eq_zero_of_notMem_tsupport fun h ↦ hx (hψ h).1, zero_smul]
 
 end TauCeti.BundleTest

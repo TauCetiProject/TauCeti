@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pushforward
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.Pushforward
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
-import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
@@ -43,12 +42,14 @@ source of `c'` splits the pushforward as
 
 `f_* (χ T) = ∑ᵢ f_* (ρᵢ χ T) + f_* ((1 - ∑ᵢ ρᵢ) χ T)`.
 
-The last term vanishes near `y`, since no point of the support of its cutoff lies over `y`, so it
-is microlocally smooth there (`TauCeti.BundleTest.isMicrolocallySmoothAt_of_notMem_dsupport`). In
-the charts `cᵢ` and `c'`, and the trivial frames, the components of `f_* (ρᵢ χ T)` are the Euclidean
-pushforwards of the components of `T` along the coordinate expression `Φᵢ = c' ∘ f ∘ cᵢ⁻¹` of `f`,
-with the cutoff `ρᵢ χ` read in `cᵢ`. The transpose of the derivative of `Φᵢ` sends `η` read in
-`c'` to the covector `η ∘ df_x` read in `cᵢ`, so the Euclidean bound applies.
+The last term vanishes near `y`, since no point of the support of its cutoff lies over `y`
+(`TauCeti.BundleTest.dsupport_cutoffPushforwardCLM_subset`), so it is microlocally smooth there
+(`TauCeti.BundleTest.isMicrolocallySmoothAt_of_notMem_dsupport`). In the charts `cᵢ` and `c'`, and
+the trivial frames, the components of `f_* (ρᵢ χ T)` are the Euclidean pushforwards of the
+components of `T` along the coordinate expression `Φᵢ = c' ∘ f ∘ cᵢ⁻¹` of `f`, with the cutoff
+`ρᵢ χ` read in `cᵢ` (`TauCeti.BundleTest.chartComponent_cutoffPushforwardCLM`). The transpose of
+the derivative of `Φᵢ` sends `η` read in `c'` to the covector `η ∘ df_x` read in `cᵢ`, so the
+Euclidean bound applies.
 
 ## Main results
 
@@ -80,7 +81,7 @@ open scoped Manifold ContDiff Distributions Topology InnerProduct CompactConverg
 
 namespace TauCeti.BundleTest
 
-/-! ### Reading cutoffs and pushforwards in charts -/
+/-! ### Microlocal smoothness of a pushforward -/
 
 section Pushforward
 
@@ -91,43 +92,6 @@ variable {E H X : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finit
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace Y] [ChartedSpace H' Y]
   [T2Space Y] [IsManifold J ∞ Y]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
-
-/-- **The pushforward read in charts.** Let `c` be a smooth chart of `X` and `c'` one of `Y`, and
-let `ψ` be a smooth cutoff with compact support in `c.source ∩ f⁻¹(c'.source)`, read in `c` as the
-test function `ψ'`. In the trivial frames, the component along `v` of `f_* (ψ T)` in the chart
-`c'` is the Euclidean pushforward, along the coordinate expression `c' ∘ f ∘ c⁻¹` of `f` and with
-the cutoff `ψ'`, of the component along `v` of `T` in the chart `c`. -/
-private theorem chartComponent_cutoffPushforwardCLM {c : OpenPartialHomeomorph X E}
-    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) {c' : OpenPartialHomeomorph Y E'}
-    (hc' : ContMDiffOn J 𝓘(ℝ, E') ∞ c' c'.source) (t : Trivialization G (π G (Trivial X G)))
-    [MemTrivializationAtlas t] (hct : c.source ⊆ t.baseSet)
-    (t' : Trivialization G (π G (Trivial Y G))) [MemTrivializationAtlas t']
-    (hct' : c'.source ⊆ t'.baseSet) {f : C^∞⟮I, X; J, Y⟯} {ψ : C^∞⟮I, X; ℝ⟯}
-    (hψc : HasCompactSupport ψ) (hψ : tsupport ψ ⊆ c.source ∩ f ⁻¹' c'.source)
-    {ψ' : 𝓓(⟨c.target, c.open_target⟩, ℝ)} (hψ' : ∀ x ∈ c.source, ψ' (c x) = ψ x)
-    (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) (c' ∘ f ∘ c.symm) c.target)
-    (T : BundleTest I G (Trivial X G) →L_c[ℝ] ℝ) (v : G) :
-    t'.chartComponent c' hc' hct' (cutoffPushforwardCLM ψ hψc f T) v =
-      Distribution.cutoffPushforwardCLM ψ' (c' ∘ f ∘ c.symm) hΦ
-        (t.chartComponent c hc hct T v) := by
-  obtain rfl := Trivial.eq_trivialization X G t
-  obtain rfl := Trivial.eq_trivialization Y G t'
-  ext φ
-  rw [Distribution.cutoffPushforwardCLM_apply, chartComponent_apply, chartComponent_apply,
-    cutoffPushforwardCLM_apply]
-  refine congrArg (fun s ↦ ((T s : ℝ) : ℂ)) (BundleTest.ext fun x ↦ ?_)
-  rw [cutoffCompCLM_apply]
-  by_cases hx : x ∈ c.source
-  · rw [chartTestCLM_apply_of_mem _ _ _ _ _ hx]
-    by_cases hψx : ψ x = 0
-    · simp [hψx, hψ' x hx]
-    have hfx : f x ∈ c'.source := (hψ (subset_tsupport _ hψx)).2
-    rw [chartTestCLM_apply_of_mem _ _ _ _ _ hfx]
-    simp [hψ' x hx, c.left_inv hx, smul_smul]
-  · rw [chartTestCLM_apply_of_notMem _ _ _ _ _ hx,
-      image_eq_zero_of_notMem_tsupport fun h ↦ hx (hψ h).1, zero_smul]
-
-/-! ### Microlocal smoothness of a pushforward -/
 
 /-- The pushforward with a cutoff `ψ` supported in the source of a chart `c` whose source `f` maps
 into the source of a chart `c'` at `y` is microlocally smooth at `(y, η)`, if `T` is microlocally
@@ -199,16 +163,9 @@ private theorem isMicrolocallySmoothAt_cutoffPushforwardCLM_of_forall_ne {ψ : C
     (hψ : HasCompactSupport ψ) {f : C^∞⟮I, X; J, Y⟯} {T : BundleTest I G (Trivial X G) →L_c[ℝ] ℝ}
     {y : Y} (hy : ∀ x ∈ tsupport ψ ∩ dsupport ⇑T, f x ≠ y) (η : TangentSpace J y →L[ℝ] ℝ) :
     IsMicrolocallySmoothAt (cutoffPushforwardCLM ψ hψ f T) y η := by
-  refine isMicrolocallySmoothAt_of_notMem_dsupport (notMem_dsupport_iff.2 ?_) η
-  -- The pushforward vanishes off the compact image `f (supp ψ ∩ supp T)`, which misses `y`.
-  have hC : IsCompact (f '' (tsupport ψ ∩ dsupport ⇑T)) :=
-    (hψ.isCompact.inter_right (isClosed_dsupport _)).image f.contMDiff.continuous
-  refine ⟨_, hC.isClosed.isOpen_compl, fun ⟨x, hx, hxy⟩ ↦ hy x hx hxy,
-    isVanishingOn_iff.2 fun s hs ↦ ?_⟩
-  refine cutoffPushforwardCLM_apply_eq_zero_of_disjoint _ f
-    (isVanishingOn_iff.1 (isVanishingOn_compl_dsupport _)) ?_
-  rw [sdiff_compl]
-  exact subset_compl_iff_disjoint_right.1 hs
+  refine isMicrolocallySmoothAt_of_notMem_dsupport (fun h ↦ ?_) η
+  obtain ⟨x, hx, hxy⟩ := dsupport_cutoffPushforwardCLM_subset hψ f T h
+  exact hy x hx hxy
 
 /-- **Microlocal smoothness of a pushforward along a smooth map of manifolds.** Let `f : X → Y` be
 a smooth map of manifolds without boundary, `χ` a smooth cutoff with compact support on `X` and
