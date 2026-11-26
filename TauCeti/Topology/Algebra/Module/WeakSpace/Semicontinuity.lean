@@ -33,10 +33,10 @@ theorem isSeqClosed_toWeakSpace_sublevel {β : Type*} [LinearOrder β] {E : V �
       (toWeakSpace 𝕜 V '' S))
     (b : β) : IsSeqClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
   have heq : toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} =
-      toWeakSpace 𝕜 V '' S ∩
-        (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w)) ⁻¹' Iic b := by
-    simp only [(toWeakSpace 𝕜 V).image_eq_preimage_symm]
-    rfl
-  exact heq ▸ hE.isSeqClosed_sublevel hS b
+      {w ∈ toWeakSpace 𝕜 V '' S | E ((toWeakSpace 𝕜 V).symm w) ≤ b} := by
+    ext w
+    simp [(toWeakSpace 𝕜 V).image_eq_preimage_symm]
+  rw [heq]
+  exact hE.isSeqClosed_sublevel hS b
 
 end TauCeti

@@ -331,8 +331,8 @@ theorem isCompact_toWeakSpace_minimizers_of_isSeqClosed
 end SequentialBoundedSublevels
 
 /-- Under bounded sublevels, every minimizing sequence in a sequentially weakly closed set in a
-reflexive normed space is norm-bounded and admits a subsequence converging weakly to a
-minimizer, without assuming an a priori lower bound on `E`. -/
+reflexive normed space admits a subsequence converging weakly to a minimizer, without assuming an
+a priori lower bound on `E`. -/
 theorem exists_subseq_tendsto_toWeakSpace_isMinOn_of_hasBoundedSublevelsOn
     {𝕜 V β : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
     [ConditionallyCompleteLinearOrder β] [TopologicalSpace β] [ClosedIciTopology β]
