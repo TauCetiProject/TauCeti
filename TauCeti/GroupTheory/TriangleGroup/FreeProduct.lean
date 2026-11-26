@@ -32,8 +32,7 @@ From the isomorphism `TauCeti.TriangleGroup.equivCoprod` we deduce for all `a b 
 
 * `TauCeti.TriangleGroup.equivCoprod`: the isomorphism
   `TriangleGroup a b 0 ≃* Multiplicative (ZMod a) ∗ Multiplicative (ZMod b)`.
-* `TauCeti.TriangleGroup.abelianizationMulEquivProd`,
-  `TauCeti.TriangleGroup.abelianizationAddEquivProd`: the abelianization of `TriangleGroup a b 0`
+* `TauCeti.TriangleGroup.abelianizationAddEquivProd`: the abelianization of `TriangleGroup a b 0`
   as `(ZMod a) × (ZMod b)`.
 
 ## Main results

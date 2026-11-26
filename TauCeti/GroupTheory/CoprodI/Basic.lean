@@ -66,6 +66,8 @@ open Monoid
 
 namespace Monoid.CoprodI
 
+section
+
 variable {ι : Type*} (M : ι → Type*) [∀ i, Monoid (M i)]
 
 /-- The free product of a family of trivial monoids is trivial. -/
@@ -77,6 +79,15 @@ instance instUnique [∀ i, Subsingleton (M i)] : Unique (CoprodI M) where
 instance instUniqueOfIsEmpty [IsEmpty ι] : Unique (CoprodI M) :=
   have : ∀ i, Subsingleton (M i) := isEmptyElim
   inferInstance
+
+end
+
+/-- Transporting an element of a summand along an equality of indices commutes with the canonical
+inclusion `Monoid.CoprodI.of`. -/
+@[simp]
+theorem of_cast {ι : Type*} {M : ι → Type*} [∀ i, Monoid (M i)] {i j : ι} (h : i = j) (m : M i) :
+    of (i := j) (cast (congrArg M h) m) = of (i := i) m := by
+  subst h; rfl
 
 end Monoid.CoprodI
 
@@ -101,16 +112,6 @@ theorem coprodICongr_symm (e : ∀ i, M i ≃* N i) :
     (coprodICongr e).symm = coprodICongr fun i => (e i).symm :=
   (rfl)
 
-private theorem of_cast (M : ι → Type*) [∀ i, Monoid (M i)] {i j : ι} (h : i = j) (m : M i) :
-    CoprodI.of (i := j) (MulEquiv.cast (M := M) h m) = CoprodI.of (i := i) m := by
-  subst h; simp
-
-private theorem of_comp_cast {ι' : Type*} (M : ι → Type*) [∀ i, Monoid (M i)]
-    (f : ι' → ι) {a b : ι'} (hab : a = b) (h : f b = f a) (m : M (f b)) :
-    CoprodI.of (M := fun x => M (f x)) (i := a) (MulEquiv.cast (M := M) h m) =
-      CoprodI.of (M := fun x => M (f x)) (i := b) m := by
-  subst hab; simp
-
 /-- Reindexing an indexed free product along an equivalence `e : ι' ≃ ι` of index types. -/
 def coprodICongrLeft (M : ι → Type*) [∀ i, Monoid (M i)] {ι' : Type*} (e : ι' ≃ ι) :
     CoprodI (fun i' => M (e i')) ≃* CoprodI M :=
@@ -118,12 +119,8 @@ def coprodICongrLeft (M : ι → Type*) [∀ i, Monoid (M i)] {ι' : Type*} (e :
     (CoprodI.lift fun i' => CoprodI.of (i := e i'))
     (CoprodI.lift fun i =>
       CoprodI.of.comp (MulEquiv.cast (M := M) (e.apply_symm_apply i).symm).toMonoidHom)
-    (CoprodI.ext_hom _ _ fun i' => MonoidHom.ext fun m => by
-      simp only [MonoidHom.comp_apply, MonoidHom.id_apply, CoprodI.lift_of]
-      exact of_comp_cast M e (e.symm_apply_apply i') _ m)
-    (CoprodI.ext_hom _ _ fun i => MonoidHom.ext fun m => by
-      simp only [MonoidHom.comp_apply, MonoidHom.id_apply, CoprodI.lift_of]
-      exact of_cast M (e.apply_symm_apply i).symm m)
+    (by ext; simp)
+    (by ext; simp)
 
 @[simp]
 theorem coprodICongrLeft_of (M : ι → Type*) [∀ i, Monoid (M i)] {ι' : Type*} (e : ι' ≃ ι)
