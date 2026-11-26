@@ -5,18 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.PolarCoord
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
+public import TauCeti.Analysis.SpecialFunctions.Complex.PolarCoord
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
-import Mathlib.Analysis.Calculus.FDeriv.Add
-import Mathlib.Analysis.Calculus.FDeriv.Comp
-import Mathlib.Analysis.Calculus.FDeriv.Equiv
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Tactic.Module
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Topology.MetricSpace.Annulus
@@ -53,12 +47,6 @@ namespace TauCeti
 
 open Complex
 
-/-- The translated inverse complex polar map is smooth, including at zero radius. -/
-theorem contDiff_add_polarCoord_symm (z₀ : ℂ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (fun p ↦ z₀ + Complex.polarCoord.symm p) := by
-  simp only [Complex.polarCoord_symm_apply, ← Complex.ofRealCLM_apply]
-  fun_prop
-
 /-- A constant-radius slice of the translated polar map is the circle parametrization. -/
 theorem add_polarCoord_symm_eq_circleMap (z₀ : ℂ) (p : ℝ × ℝ) :
     z₀ + Complex.polarCoord.symm p = circleMap z₀ p.1 p.2 := by
@@ -89,30 +77,6 @@ theorem add_polarCoord_symm_mem_openUpperHalfAnnulus (z₀ : ℂ) {a b : ℝ} (h
   rw [mem_ofPred_eq, add_sub_cancel_left, Complex.norm_polarCoord_symm, abs_of_pos hr,
     add_polarCoord_symm_eq_circleMap, circleMap_im, lt_add_iff_pos_right]
   exact ⟨mul_pos hr (Real.sin_pos_of_pos_of_lt_pi hθ₁ hθ₂), hr₁, hr₂⟩
-
-/-- The derivative of the translated inverse complex polar-coordinate map at any `(r, θ)`.
-No restriction to the positive-radius chart is needed for this derivative formula. -/
-theorem hasFDerivAt_add_polarCoord_symm (p : ℝ × ℝ) (z₀ : ℂ) :
-    HasFDerivAt (fun p ↦ z₀ + Complex.polarCoord.symm p)
-      (Complex.equivRealProdCLM.symm.toContinuousLinearMap.comp (fderivPolarCoordSymm p)) p :=
-  (Complex.equivRealProdCLM.symm.hasFDerivAt.comp p (hasFDerivAt_polarCoord_symm p)).const_add z₀
-
-/-- The radial derivative of the inverse polar-coordinate map, expressed as a complex number,
-is the unit vector at the given angle. -/
-theorem equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero (p : ℝ × ℝ) :
-    Complex.equivRealProdCLM.symm (fderivPolarCoordSymm p (1, 0)) =
-      Complex.exp (p.2 * I) := by
-  simp [fderivPolarCoordSymm, Matrix.toLin_finTwoProd_toContinuousLinearMap,
-    Complex.equivRealProdCLM_symm_apply, Complex.exp_mul_I]
-
-/-- The angular derivative of the inverse polar-coordinate map, expressed as a complex number,
-is the tangent vector to the circle with the given radius and angle. -/
-theorem equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one (p : ℝ × ℝ) :
-    Complex.equivRealProdCLM.symm (fderivPolarCoordSymm p (0, 1)) =
-      circleMap 0 p.1 p.2 * I := by
-  apply Complex.ext <;>
-  simp [fderivPolarCoordSymm, Matrix.toLin_finTwoProd_toContinuousLinearMap,
-    Complex.equivRealProdCLM_symm_apply, Complex.exp_mul_I, circleMap]
 
 /-- The alternating part of a bilinear map, after a real-linear map `L`, evaluated
 on the radial and angular polar-coordinate vectors is the radius times its value on `1` and `I`.

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Analysis.SpecialFunctions.Complex.PolarCoord
 public import TauCeti.Geometry.Euclidean.PolarGraph.Basic
 
@@ -29,22 +28,6 @@ open scoped RealInnerProductSpace
 theorem polarCoord_symm_eq_projection (p : PolarPoint) :
     Complex.polarCoord.symm p.val = projection p := by
   apply Complex.ext <;> simp [-Complex.ofReal_cos, -Complex.ofReal_sin, radius_def, angle_def]
-
-/-- Pullback of the Euclidean metric in radius and angle coordinates, at any real radius. -/
-theorem inner_polarCoordSymmDeriv (x v w : ℝ × ℝ) :
-    ⟪polarCoordSymmDeriv x v, polarCoordSymmDeriv x w⟫ =
-      v.1 * w.1 + x.1 ^ 2 * v.2 * w.2 := by
-  simp only [polarCoordSymmDeriv_apply, Complex.inner, Complex.mul_re, Complex.conj_re,
-    Complex.conj_im]
-  linear_combination
-    (v.1 * w.1 + x.1 ^ 2 * v.2 * w.2) * Real.sin_sq_add_cos_sq x.2
-
-/-- Every real angular translation preserves the pullback inner product at any real radius. -/
-theorem inner_polarCoordSymmDeriv_add_angle (x v w : ℝ × ℝ) (t : ℝ) :
-    ⟪polarCoordSymmDeriv (x + (0, t)) v, polarCoordSymmDeriv (x + (0, t)) w⟫ =
-      ⟪polarCoordSymmDeriv x v, polarCoordSymmDeriv x w⟫ := by
-  simp only [inner_polarCoordSymmDeriv]
-  simp
 
 /-- All deck translations preserve the pullback inner product. -/
 theorem inner_polarCoordSymmDeriv_deckShift (k : ℤ) (p : PolarPoint) (v w : ℝ × ℝ) :
