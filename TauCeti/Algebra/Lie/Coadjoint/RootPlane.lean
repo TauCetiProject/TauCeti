@@ -88,6 +88,8 @@ Hessian (`TauCeti.Algebra.Lie.Coadjoint.Height`) and the dimension of the orbit
   positive definite and `x ≠ 0`.
 * `TauCeti.IsRootPlane.mem_lieAnnihilator_iff`: a root plane meets the stabilizer of `B p` only
   in `0` when `α(p) ≠ 0`, and lies in it when `α(p) = 0`.
+* `TauCeti.IsRootPlane.linearIndependent_pair`: over an ordered ring, a nonzero vector `v` of a
+  root plane and `J v` are linearly independent.
 
 ## References
 
@@ -312,6 +314,24 @@ theorem disjoint_lieAnnihilator (h : IsRootPlane B t α E J) (hB : B.lieInvarian
   simpa [hp] using this
 
 end Stabilizer
+
+section LinearIndependent
+
+variable [LinearOrder R] [IsStrictOrderedRing R] [Module.IsTorsionFree R L]
+
+/-- A nonzero vector `v` of a root plane over an ordered ring and its image `J v` are linearly
+independent, since `J² = -1`: applying `J` to `a v + b J v = 0` gives `a J v - b v = 0`, so
+`(a² + b²) v = 0`. -/
+theorem linearIndependent_pair (h : IsRootPlane B t α E J) {v : E} (hv : v ≠ 0) :
+    LinearIndependent R ![v, J v] := by
+  refine LinearIndependent.pair_iff.2 fun a b hab ↦ ?_
+  have hJ : a • J v - b • v = 0 := by
+    simpa [h.apply_apply, sub_eq_add_neg] using congrArg J hab
+  have h₂ : (a ^ 2 + b ^ 2) • v = 0 := by
+    linear_combination (norm := module) a • hab - b • hJ
+  exact sq_add_sq_eq_zero.1 ((smul_eq_zero.1 h₂).resolve_right hv)
+
+end LinearIndependent
 
 end IsRootPlane
 

@@ -115,38 +115,33 @@ theorem Ad_lieExp_apply (h : IsRootPlane B t α V J) (X : t) (v : V) :
   · simp [h.lie_apply, h.apply_apply]
 
 omit [FiniteDimensional ℝ E] [T2Space G] in
-/-- The vectors `re z • v + im z • J v`, for `z ∈ ℂ` and a nonzero `v` in a root plane, are
-pairwise distinct: `v` and `J v` are linearly independent because `J² = -1`. -/
-private theorem re_smul_add_im_smul_injective (h : IsRootPlane B t α V J) {v : V} (hv : v ≠ 0) :
-    Function.Injective fun z : ℂ ↦
-      z.re • (v : LeftInvariantDerivation I G) + z.im • (J v : LeftInvariantDerivation I G) := by
-  intro z w hzw
-  set a := z.re - w.re
-  set b := z.im - w.im
-  -- `a v + b J v = 0`; applying `J` gives `a J v - b v = 0`, so `(a² + b²) v = 0`.
-  have h₁ : a • v + b • J v = 0 := by
-    simp only at hzw
-    apply Subtype.ext
-    simp only [Submodule.coe_add, Submodule.coe_smul, Submodule.coe_zero, a, b]
-    rw [sub_smul, sub_smul, sub_add_sub_comm, hzw, sub_self]
-  have h₂ : a • J v - b • v = 0 := by
-    have := congrArg J h₁
-    rwa [map_add, map_smul, map_smul, h.apply_apply, smul_neg, map_zero, ← sub_eq_add_neg]
-      at this
-  have h₃ : (a ^ 2 + b ^ 2) • v = 0 := by
-    calc (a ^ 2 + b ^ 2) • v = a • (a • v + b • J v) - b • (a • J v - b • v) := by module
-      _ = 0 := by rw [h₁, h₂, smul_zero, smul_zero, sub_zero]
-  have hab : a ^ 2 + b ^ 2 = 0 := (smul_eq_zero.1 h₃).resolve_right hv
-  have ha : a = 0 := by nlinarith [sq_nonneg a, sq_nonneg b]
-  have hb : b = 0 := by nlinarith [sq_nonneg a, sq_nonneg b]
-  exact Complex.ext (sub_eq_zero.1 ha) (sub_eq_zero.1 hb)
+/-- The real-linear map `z ↦ re z • v + im z • J v` from `ℂ` to the Lie algebra, which reads a
+rotation of a root plane in the basis `v, J v`. -/
+private def reImMap (J : Module.End ℝ V) (v : V) : ℂ →ₗ[ℝ] LeftInvariantDerivation I G :=
+  Complex.reLm.smulRight (v : LeftInvariantDerivation I G) +
+    Complex.imLm.smulRight (J v : LeftInvariantDerivation I G)
+
+omit [FiniteDimensional ℝ E] [T2Space G] in
+private theorem reImMap_apply (J : Module.End ℝ V) (v : V) (z : ℂ) :
+    reImMap J v z =
+      z.re • (v : LeftInvariantDerivation I G) + z.im • (J v : LeftInvariantDerivation I G) :=
+  rfl
+
+omit [FiniteDimensional ℝ E] [T2Space G] in
+/-- For a nonzero `v` in a root plane, `z ↦ re z • v + im z • J v` is injective, since `v` and
+`J v` are linearly independent. -/
+private theorem injective_reImMap (h : IsRootPlane B t α V J) {v : V} (hv : v ≠ 0) :
+    Function.Injective (reImMap J v) := by
+  refine (injective_iff_map_eq_zero _).2 fun z hz ↦ ?_
+  have := LinearIndependent.pair_iff.1 (h.linearIndependent_pair hv) z.re z.im
+    (Subtype.ext (by simpa [reImMap_apply] using hz))
+  exact Complex.ext this.1 this.2
 
 /-- The exponential of `X` acts on a root plane by `e^{i α(X)}`, read in the basis `v, J v`. -/
 private theorem Ad_lieExp_apply_eq_circleExp (h : IsRootPlane B t α V J) (X : t) (v : V) :
     Ad (I := I) (lieExp (I := I) (X : LeftInvariantDerivation I G)) v =
-      (Circle.exp (α X) : ℂ).re • (v : LeftInvariantDerivation I G) +
-        (Circle.exp (α X) : ℂ).im • (J v : LeftInvariantDerivation I G) := by
-  rw [h.Ad_lieExp_apply, Circle.coe_exp, Complex.exp_ofReal_mul_I_re,
+      reImMap J v (Circle.exp (α X)) := by
+  rw [reImMap_apply, h.Ad_lieExp_apply, Circle.coe_exp, Complex.exp_ofReal_mul_I_re,
     Complex.exp_ofReal_mul_I_im]
 
 /-- **On a nonzero root plane, `e^{i α(X)}` depends only on `exp X`.** -/
@@ -157,7 +152,7 @@ theorem circleExp_eq_of_lieExp_eq (h : IsRootPlane B t α V J) (hV : V ≠ ⊥) 
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
   have hX := h.Ad_lieExp_apply_eq_circleExp X v
   rw [hXY, h.Ad_lieExp_apply_eq_circleExp] at hX
-  exact Circle.ext (h.re_smul_add_im_smul_injective (v := v) hv hX.symm)
+  exact Circle.ext (h.injective_reImMap hv hX.symm)
 
 /-- **Roots are integral on the kernel of the exponential.** On a nonzero root plane, if
 `exp X = 1` then `α(X) / (2π)` is an integer. -/
@@ -191,13 +186,6 @@ private theorem exists_lieExp_eq [IsMulCommutative T] (hT : IsClosed (T : Set G)
   obtain ⟨X, hX, hXg⟩ := hg
   exact ⟨⟨X, hX⟩, hXg⟩
 
-/-- The exponential of an element of the Lie algebra of a closed subgroup, as an element of the
-subgroup. -/
-private abbrev lieExpMem (hT : IsClosed (T : Set G))
-    (X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) : T :=
-  ⟨lieExp (I := I) (X : LeftInvariantDerivation I G),
-    lieExp_mem_of_mem_lieSubalgebraOfSubgroup hT ((LieSubalgebra.mem_toSubmodule _).1 X.property)⟩
-
 /-- The value `e^{i α(X)}` of the root character at `g = exp X`, for a chosen `X`. -/
 private def rootCharacterFun (α : Dual ℝ (lieSubalgebraOfSubgroup (I := I) T).toSubmodule)
     (hT : IsClosed (T : Set G)) (hconn : IsPreconnected (T : Set G)) (g : T) : Circle :=
@@ -212,6 +200,24 @@ private theorem rootCharacterFun_eq (g : T) (X : (lieSubalgebraOfSubgroup (I := 
     rootCharacterFun α hT hconn g = Circle.exp (α X) :=
   h.circleExp_eq_of_lieExp_eq hV
     (((exists_lieExp_eq (I := I) hT hconn g).choose_spec).trans hX.symm)
+
+include h hV in
+/-- The value of the root character depends continuously on `g`: it is read off from `Ad g v`
+through the injective linear map `reImMap J v`, a closed embedding of `ℂ` into the Lie algebra. -/
+private theorem continuous_rootCharacterFun : Continuous (rootCharacterFun α hT hconn) := by
+  have := Submodule.nontrivial_iff_ne_bot.2 hV
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  have hΦ :=
+    LinearMap.isClosedEmbedding_of_injective (LinearMap.ker_eq_bot.2 (h.injective_reImMap hv))
+  have hAd : Continuous fun g : T ↦ Ad (I := I) (g : G) (v : LeftInvariantDerivation I G) :=
+    (contMDiff_Ad_apply (I := I) (G := G)).continuous.comp
+      (continuous_subtypeVal.prodMk continuous_const)
+  have hval (g : T) : Ad (I := I) (g : G) (v : LeftInvariantDerivation I G) =
+      reImMap J v (rootCharacterFun α hT hconn g) := by
+    obtain ⟨X, hX⟩ := exists_lieExp_eq (I := I) hT hconn g
+    rw [h.rootCharacterFun_eq hT hconn hV g X hX, ← hX]
+    exact h.Ad_lieExp_apply_eq_circleExp X v
+  exact continuous_induced_rng.2 (hΦ.continuous_iff.2 (hAd.congr hval))
 
 /-- **The root character** `χ_α : T → S¹` of a nonzero root plane `V` of the Lie algebra of a closed
 connected commutative subgroup `T`, for instance a torus: the continuous character by which `T`
@@ -232,26 +238,14 @@ def rootCharacter : T →ₜ* Circle where
           ((LieSubalgebra.mem_toSubmodule _).1 Y.property)), hX, hY, Subgroup.coe_mul]
     rw [h.rootCharacterFun_eq hT hconn hV _ _ hXY, h.rootCharacterFun_eq hT hconn hV _ _ hX,
       h.rootCharacterFun_eq hT hconn hV _ _ hY, map_add, Circle.exp_add]
-  continuous_toFun := by
-    have := Submodule.nontrivial_iff_ne_bot.2 hV
-    obtain ⟨v, hv⟩ := exists_ne (0 : V)
-    -- `χ_α g` is read off from `Ad g v` through the injective linear map
-    -- `z ↦ re z • v + im z • J v`, a closed embedding of `ℂ` into the Lie algebra.
-    let Φ : ℂ →ₗ[ℝ] LeftInvariantDerivation I G :=
-      Complex.reLm.smulRight (v : LeftInvariantDerivation I G) +
-        Complex.imLm.smulRight (J v : LeftInvariantDerivation I G)
-    have hinj : Function.Injective Φ := fun z w hzw ↦
-      h.re_smul_add_im_smul_injective (v := v) hv (by simpa [Φ] using hzw)
-    have hΦ := LinearMap.isClosedEmbedding_of_injective (LinearMap.ker_eq_bot.2 hinj)
-    have hAd : Continuous fun g : T ↦ Ad (I := I) (g : G) (v : LeftInvariantDerivation I G) :=
-      (contMDiff_Ad_apply (I := I) (G := G)).continuous.comp
-        (continuous_subtypeVal.prodMk continuous_const)
-    have hval (g : T) : Ad (I := I) (g : G) (v : LeftInvariantDerivation I G) =
-        Φ (rootCharacterFun α hT hconn g) := by
-      obtain ⟨X, hX⟩ := exists_lieExp_eq (I := I) hT hconn g
-      rw [h.rootCharacterFun_eq hT hconn hV g X hX, ← hX]
-      simpa [Φ] using h.Ad_lieExp_apply_eq_circleExp X v
-    exact continuous_induced_rng.2 (hΦ.continuous_iff.2 (hAd.congr hval))
+  continuous_toFun := h.continuous_rootCharacterFun hT hconn hV
+
+/-- The root character at `g = exp X`, for any `X` with `exp X = g`. -/
+private theorem rootCharacter_apply_of_lieExp_eq (g : T)
+    (X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule)
+    (hX : lieExp (I := I) (X : LeftInvariantDerivation I G) = g) :
+    h.rootCharacter hT hconn hV g = Circle.exp (α X) :=
+  h.rootCharacterFun_eq hT hconn hV g X hX
 
 /-- **The root character on exponentials**: `χ_α (exp H) = e^{i α(H)}`, that is, `dχ_α = i α`. -/
 @[simp]
@@ -261,7 +255,7 @@ theorem rootCharacter_lieExp (X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodu
           lieExp_mem_of_mem_lieSubalgebraOfSubgroup hT
             ((LieSubalgebra.mem_toSubmodule _).1 X.property)⟩ =
       Circle.exp (α X) :=
-  h.rootCharacterFun_eq hT hconn hV _ X rfl
+  h.rootCharacter_apply_of_lieExp_eq hT hconn hV _ X rfl
 
 /-- **`T` rotates the root plane by its root character**:
 `Ad g v = Re (χ_α g) • v + Im (χ_α g) • J v`. -/
@@ -270,9 +264,8 @@ theorem Ad_apply (g : T) (v : V) :
       (h.rootCharacter hT hconn hV g : ℂ).re • (v : LeftInvariantDerivation I G) +
         (h.rootCharacter hT hconn hV g : ℂ).im • (J v : LeftInvariantDerivation I G) := by
   obtain ⟨X, hX⟩ := exists_lieExp_eq (I := I) hT hconn g
-  obtain rfl : g = lieExpMem hT X := Subtype.ext hX.symm
-  rw [h.rootCharacter_lieExp]
-  exact h.Ad_lieExp_apply_eq_circleExp _ v
+  rw [h.rootCharacter_apply_of_lieExp_eq hT hconn hV g X hX, ← hX]
+  exact (h.Ad_lieExp_apply_eq_circleExp X v).trans (reImMap_apply J v _)
 
 include h hT hconn hV in
 /-- The adjoint action of `T` preserves each of its nonzero root planes. -/
@@ -291,8 +284,8 @@ theorem eq_rootCharacter_iff {ψ : T → Circle} :
           Circle.exp (α X) := by
   refine ⟨fun hψ X ↦ hψ ▸ h.rootCharacter_lieExp hT hconn hV X, fun hψ ↦ funext fun g ↦ ?_⟩
   obtain ⟨X, hX⟩ := exists_lieExp_eq (I := I) hT hconn g
-  obtain rfl : g = lieExpMem hT X := Subtype.ext hX.symm
-  rw [hψ, h.rootCharacter_lieExp]
+  rw [h.rootCharacter_apply_of_lieExp_eq hT hconn hV g X hX, ← hψ X]
+  exact congrArg ψ (Subtype.ext hX.symm)
 
 /-- **The kernel of the root character** is the subgroup of `T` acting trivially on the root
 plane. -/
@@ -303,8 +296,8 @@ theorem rootCharacter_eq_one_iff (g : T) :
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
   have h₁ := h.Ad_apply hT hconn hV g v
   rw [hg] at h₁
-  refine Circle.ext (h.re_smul_add_im_smul_injective (v := v) hv ?_)
-  simpa using h₁.symm
+  refine Circle.ext (h.injective_reImMap hv ?_)
+  simpa [reImMap_apply] using h₁.symm
 
 end Character
 
