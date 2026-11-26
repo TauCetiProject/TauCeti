@@ -373,12 +373,17 @@ private def invArchFactor (s : ℂ) : ℂ :=
   ((|discr K| : ℤ) : ℂ) ^ (-s / 2) * (Gammaℝ s)⁻¹ ^ nrRealPlaces K *
     (Gammaℂ s)⁻¹ ^ nrComplexPlaces K
 
-/-- The reciprocal of the archimedean factor is entire. -/
-private theorem analyticAt_invArchFactor (s : ℂ) : AnalyticAt ℂ (invArchFactor K) s := by
+/-- The discriminant factor `|d_K| ^ (-s / 2)` is entire. -/
+private theorem analyticAt_discr_inv_cpow (s : ℂ) :
+    AnalyticAt ℂ (fun z : ℂ ↦ ((|discr K| : ℤ) : ℂ) ^ (-z / 2)) s := by
   have hd : ((|discr K| : ℤ) : ℂ) ∈ slitPlane := by
     rw [← ofReal_intCast]
-    exact ofReal_mem_slitPlane.mpr (by exact_mod_cast abs_pos.mpr (discr_ne_zero K))
-  exact ((AnalyticAt.cpow analyticAt_const (by fun_prop) hd).mul
+    exact ofReal_mem_slitPlane.mpr (Int.cast_pos.mpr (abs_discr_pos K))
+  exact AnalyticAt.cpow analyticAt_const (by fun_prop) hd
+
+/-- The reciprocal of the archimedean factor is entire. -/
+private theorem analyticAt_invArchFactor (s : ℂ) : AnalyticAt ℂ (invArchFactor K) s :=
+  ((analyticAt_discr_inv_cpow K s).mul
     ((differentiable_Gammaℝ_inv.analyticAt s).pow _)).mul
     ((differentiable_Gammaℂ_inv.analyticAt s).pow _)
 
@@ -515,13 +520,6 @@ theorem analyticAt_dedekindZetaC_iff {s : ℂ} : AnalyticAt ℂ (dedekindZetaC K
 theorem dedekindZetaC_one : dedekindZetaC K 1 = 0 :=
   (meromorphicNFOn_dedekindZetaC K (mem_univ 1)).apply_eq_zero_of_order_ne_zero
     (by simp [meromorphicOrderAt_dedekindZetaC_one])
-
-private theorem analyticAt_discr_inv_cpow (s : ℂ) :
-    AnalyticAt ℂ (fun z : ℂ ↦ ((|discr K| : ℤ) : ℂ) ^ (-z / 2)) s := by
-  have hd : ((|discr K| : ℤ) : ℂ) ∈ slitPlane := by
-    rw [← ofReal_intCast]
-    exact ofReal_mem_slitPlane.mpr (Int.cast_pos.mpr (abs_discr_pos K))
-  exact AnalyticAt.cpow analyticAt_const (by fun_prop) hd
 
 private theorem dedekindZetaC_eventuallyEq_invArchFactor_mul (s : ℂ) :
     dedekindZetaC K =ᶠ[𝓝[≠] s] fun z ↦ invArchFactor K z * completedDedekindZeta K z := by
