@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.Topology.Algebra.Matrix.Unique
 
@@ -15,16 +14,12 @@ public import TauCeti.Topology.Algebra.Matrix.Unique
 
 For a singleton index type `m`, passing to units in `Matrix.uniqueContinuousMulEquiv` identifies
 `GL m A` with `Aˣ` as topological groups, each with its native units topology
-(`Matrix.GeneralLinearGroup.uniqueContinuousMulEquiv`). When both carry Borel σ-algebras, the
-same map is a measurable equivalence (`Matrix.GeneralLinearGroup.uniqueMeasurableEquiv`). For the
-adele ring of a number field, this says that the topology and the Borel structure of
-`GL₁(𝔸_F)` are those of the ideles.
+(`Matrix.GeneralLinearGroup.uniqueContinuousMulEquiv`). For the adele ring of a number field, this
+says that the topology of `GL₁(𝔸_F)` is that of the ideles.
 
 ## Main definitions
 
 * `Matrix.GeneralLinearGroup.uniqueContinuousMulEquiv`: `GL m A ≃ₜ* Aˣ` for `[Unique m]`.
-* `Matrix.GeneralLinearGroup.uniqueMeasurableEquiv`: the same map as a measurable equivalence of
-  Borel spaces.
 -/
 
 public section
@@ -51,26 +46,6 @@ variable {m A} in
 theorem coe_uniqueContinuousMulEquiv_symm_apply (u : Aˣ) :
     ((uniqueContinuousMulEquiv m A).symm u : Matrix m m A) = of fun _ _ ↦ (u : A) :=
   Matrix.uniqueContinuousMulEquiv_symm_apply _
-
-/-- **`GL₁` and the units have the same Borel structure**: when `GL m A` and `Aˣ` are Borel
-spaces, `Matrix.GeneralLinearGroup.uniqueContinuousMulEquiv` is a measurable equivalence. -/
-def uniqueMeasurableEquiv [MeasurableSpace (GL m A)] [BorelSpace (GL m A)] [MeasurableSpace Aˣ]
-    [BorelSpace Aˣ] : GL m A ≃ᵐ Aˣ :=
-  (uniqueContinuousMulEquiv m A).toHomeomorph.toMeasurableEquiv
-
-variable {m A} in
-@[simp]
-theorem uniqueMeasurableEquiv_apply [MeasurableSpace (GL m A)] [BorelSpace (GL m A)]
-    [MeasurableSpace Aˣ] [BorelSpace Aˣ] (g : GL m A) :
-    uniqueMeasurableEquiv m A g = uniqueContinuousMulEquiv m A g :=
-  (rfl)
-
-variable {m A} in
-@[simp]
-theorem uniqueMeasurableEquiv_symm_apply [MeasurableSpace (GL m A)] [BorelSpace (GL m A)]
-    [MeasurableSpace Aˣ] [BorelSpace Aˣ] (u : Aˣ) :
-    (uniqueMeasurableEquiv m A).symm u = (uniqueContinuousMulEquiv m A).symm u :=
-  (rfl)
 
 end GeneralLinearGroup
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.BorelSpace
-public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Unique
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.Matrix.GeneralLinearGroup
 
 /-!
 # `GL₁` of the adeles and the ideles
