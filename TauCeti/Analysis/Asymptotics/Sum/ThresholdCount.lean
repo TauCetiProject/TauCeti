@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Data.Set.Card
 import Mathlib.Analysis.Asymptotics.Arith
-import TauCeti.Algebra.Order.BigOperators.Finset.Threshold
+import TauCeti.Algebra.Order.BigOperators.Group.Finset
 
 /-!
 # Counting integers detected by large weights
@@ -80,9 +80,10 @@ theorem isBigO_ncard_of_threshold_sums {ι : Type*} [Finite ι] (S : Set ℕ)
     refine hcnt.trans ((le_abs_self _).trans ?_)
     simpa only [Real.norm_eq_abs, abs_of_pos (rpow_pos_of_pos hTx a)] using hbound
   have hrescale : T x ^ (a - b) = Q ^ ((a - b) / 2) * x ^ ((a - b) / 2) := by
+    have hexponent : (1 / 2 : ℝ) * (a - b) = (a - b) / 2 := by ring
     dsimp [T]
-    rw [sqrt_eq_rpow, ← rpow_mul (by positivity), show 1 / 2 * (a - b) = (a - b) / 2 by ring,
-      mul_rpow hQ.le hx₀.le]
+    rw [sqrt_eq_rpow, ← rpow_mul (by positivity)]
+    rw [hexponent, mul_rpow hQ.le hx₀.le]
   simpa only [hrescale, mul_assoc] using hquot
 
 end Set
