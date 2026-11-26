@@ -138,6 +138,38 @@ lemma totalShortComplex_shortExact
 
 end Abelian
 
+section StupidTrunc
+
+variable {C : Type*} [Category* C] [Preadditive C] [HasZeroObject C]
+  {ι I₁ I₂ I₁₂ : Type*} {c : ComplexShape ι} {c₁ : ComplexShape I₁}
+  {c₂ : ComplexShape I₂} {c₁₂ : ComplexShape I₁₂} [TotalComplexShape c₁ c₂ c₁₂]
+  (K : HomologicalComplex₂ C c₁ c₂) (e : c.Embedding c₁) [e.IsRelIff]
+
+/-- A brutal truncation in the outer direction has a direct-sum total if the original
+bicomplex does and idempotents split. -/
+instance hasTotal_stupidTrunc [IsIdempotentComplete C] [K.HasTotal c₁₂] :
+    HasTotal (K.stupidTrunc e) c₁₂ := by
+  classical
+  intro n
+  let inclusion (j : ComplexShape.π c₁ c₂ c₁₂ ⁻¹' {n}) :
+      ((K.stupidTrunc e).X j.val.fst).X j.val.snd ⟶ (K.X j.val.fst).X j.val.snd :=
+    if h : ∃ i, e.f i = j.val.fst then
+      (HomologicalComplex.eval C c₂ j.val.snd).map (K.stupidTruncXIso e h.choose_spec).hom
+    else 0
+  have hsplit (j : ComplexShape.π c₁ c₂ c₁₂ ⁻¹' {n}) : IsSplitMono (inclusion j) := by
+    dsimp only [inclusion]
+    split
+    · infer_instance
+    · rename_i h
+      have hz := (HomologicalComplex.eval C c₂ j.val.snd).map_isZero
+        (K.isZero_stupidTrunc_X e j.val.fst fun i hi ↦ h ⟨i, hi⟩)
+      exact IsSplitMono.mk' ⟨0, hz.eq_of_src _ _⟩
+  have : HasCoproduct (fun j : ComplexShape.π c₁ c₂ c₁₂ ⁻¹' {n} ↦ (K.X j.val.fst).X j.val.snd) :=
+    ‹K.HasTotal c₁₂› n
+  exact TauCeti.hasCoproduct_of_splitMono inclusion
+
+end StupidTrunc
+
 section Int
 
 variable {C : Type*} [Category* C]
