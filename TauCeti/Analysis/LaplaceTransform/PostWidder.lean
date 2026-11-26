@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.LaplaceTransform.Basic
 public import TauCeti.Probability.Distributions.Gamma.Basic
 import TauCeti.Probability.Distributions.Gamma.Lipschitz
-import TauCeti.Probability.Distributions.Gamma.PDF
 
 /-!
 # Approximation by normalized Laplace coefficients
@@ -51,22 +50,19 @@ theorem integral_gammaMeasure_eq_smul_iteratedDeriv {E : Type*} [NormedAddCommGr
   have hk : (0 : ℝ) < (k + 1 : ℕ) := by positivity
   have hcoeff := (hasLaplace_pow_div_factorial_smul_iteratedDeriv hF k).const_smul
     ((a : ℂ) ^ (k + 1))
-  rw [Probability.integral_gammaMeasure_eq hk ha,
-    ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ici (0 : ℝ)),
-    integral_Ici_eq_integral_Ioi, mul_div_assoc, ← smul_smul, ← hcoeff.integral_eq]
-  · apply setIntegral_congr_fun measurableSet_Ioi
-    intro x hx
-    simp only [Pi.smul_apply, smul_smul,
-      Probability.gammaPDFReal_nat_eq (k := k + 1) (by omega) (mem_Ioi.mp hx).le,
-      Nat.add_sub_cancel]
-    rw [← IsScalarTower.algebraMap_smul ℂ, RCLike.algebraMap_eq_ofReal,
-      RCLike.ofReal_eq_complex_ofReal]
-    push_cast [Complex.ofReal_exp]
-    congr 1
-    rw [neg_mul]
-    ring
-  · intro x hx
-    rw [gammaPDFReal, ite_eq_right (fun h ↦ hx (mem_Ici.mpr h)), zero_smul]
+  rw [Probability.integral_gammaMeasure_eq_integral_Ioi hk ha f,
+    mul_div_assoc, ← smul_smul, ← hcoeff.integral_eq]
+  apply setIntegral_congr_fun measurableSet_Ioi
+  intro x _
+  simp only [Pi.smul_apply, smul_smul]
+  rw [Real.rpow_natCast, Nat.cast_succ, add_sub_cancel_right, Real.rpow_natCast,
+    Real.Gamma_nat_eq_factorial]
+  rw [← IsScalarTower.algebraMap_smul ℂ, RCLike.algebraMap_eq_ofReal,
+    RCLike.ofReal_eq_complex_ofReal]
+  push_cast [Complex.ofReal_exp]
+  congr 1
+  rw [neg_mul]
+  ring
 
 /-- The Post–Widder coefficient of degree `k` at a positive rate `a` approximates the original
 function at `(k + 1) / a` with error at most `K * √(k + 1) / a`, where `K` is a Lipschitz
