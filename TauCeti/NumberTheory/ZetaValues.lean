@@ -30,6 +30,8 @@ relates to the Bernoulli polynomial over `ℚ`, and how the even ones compare wi
   `x ∈ [0, 1]`, `|B_k(x)| ≤ π² / 3 · k! / (2π)^k`; equality holds for `k = 2`, `x = 0`.
 * `TauCeti.abs_bernoulliFun_le_four_mul_factorial_div`: the weaker
   `|B_k(x)| ≤ 4 · k! / (2π)^k`.
+* `TauCeti.abs_eval_bernoulli_le_four_mul_factorial_div`: the same bound for the Bernoulli
+  polynomial over `ℚ` at a rational point of `[0, 1]`.
 
 The sign follows from the Fourier series `hasSum_one_div_nat_pow_mul_cos`: up to the positive
 factor `(2π)^(2k) / (2 (2k)!)`, `(-1)^(k+1) (B_{2k} - B_{2k}(x))` is
@@ -140,5 +142,13 @@ theorem abs_bernoulliFun_le_four_mul_factorial_div (k : ℕ) {x : ℝ}
   have : π ^ 2 < 3.15 ^ 2 := by gcongr; exact Real.pi_lt_d2
   gcongr
   linarith
+
+/-- For every `k : ℕ` and rational `x ∈ [0, 1]`, the Bernoulli polynomial over `ℚ` satisfies
+`|B_k(x)| ≤ 4 · k! / (2π)^k`, with the value cast to `ℝ`. -/
+theorem abs_eval_bernoulli_le_four_mul_factorial_div (k : ℕ) {x : ℚ}
+    (hx : x ∈ Set.Icc (0 : ℚ) 1) :
+    |(((Polynomial.bernoulli k).eval x : ℚ) : ℝ)| ≤ 4 * k ! / (2 * π) ^ k := by
+  rw [← bernoulliFun_ratCast]
+  exact abs_bernoulliFun_le_four_mul_factorial_div k ⟨mod_cast hx.1, mod_cast hx.2⟩
 
 end TauCeti

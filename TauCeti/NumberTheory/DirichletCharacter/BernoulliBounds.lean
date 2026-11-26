@@ -81,15 +81,6 @@ private theorem primorial_mul_four_mul_factorial_div_le (k : ℕ) :
     _ ≤ 16 * k ! * 1 := by gcongr; exact (div_le_one hpos).2 h4
     _ = 16 * k ! := mul_one _
 
-/-- `|Bₖ(n / N)| ≤ 4 k! / (2π)ᵏ` for `n ≤ N`, with the Bernoulli polynomial evaluated over `ℚ`. -/
-private theorem abs_bernoulli_eval_natCast_div_le {n N : ℕ} (h : n ≤ N) (k : ℕ) :
-    |(((Polynomial.bernoulli k).eval ((n : ℚ) / N) : ℚ) : ℝ)| ≤ 4 * k ! / (2 * π) ^ k := by
-  have hb := TauCeti.bernoulliFun_ratCast k ((n : ℚ) / N)
-  rw [Rat.cast_div, Rat.cast_natCast, Rat.cast_natCast] at hb
-  rw [← hb]
-  exact TauCeti.abs_bernoulliFun_le_four_mul_factorial_div k
-    ⟨by positivity, div_le_one_of_le₀ (mod_cast h) (Nat.cast_nonneg N)⟩
-
 namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N]
@@ -109,7 +100,8 @@ theorem norm_generalizedBernoulli_le (χ : DirichletCharacter ℂ N) (k : ℕ) :
     rw [norm_mul]
     refine (mul_le_of_le_one_left (norm_nonneg _) (χ.norm_le_one a)).trans ?_
     rw [eq_ratCast, Complex.norm_ratCast]
-    exact abs_bernoulli_eval_natCast_div_le hn k
+    exact TauCeti.abs_eval_bernoulli_le_four_mul_factorial_div k
+      ⟨by positivity, div_le_one_of_le₀ (mod_cast hn) (Nat.cast_nonneg N)⟩
   rw [generalizedBernoulli_def, norm_mul, eq_ratCast, Complex.norm_ratCast]
   calc |(((N : ℚ) ^ ((k : ℤ) - 1) : ℚ) : ℝ)| * ‖∑ a : ZMod N, _‖
       ≤ (N : ℝ) ^ ((k : ℤ) - 1) * ∑ _a : ZMod N, 4 * k ! / (2 * π) ^ k := by
@@ -151,9 +143,10 @@ theorem abs_primorialBernoulli_le (M k : ℕ) (t : ZMod M) :
   set b : ℝ := (((Polynomial.bernoulli k).eval ((t.val : ℚ) / M) : ℚ) : ℝ)
   have h : |b| ≤ 4 * k ! / (2 * π) ^ k := by
     rcases eq_or_ne M 0 with rfl | hM
-    · simpa [b] using abs_bernoulli_eval_natCast_div_le (le_refl 0) k
+    · simpa [b] using abs_eval_bernoulli_le_four_mul_factorial_div k (x := 0) ⟨le_rfl, zero_le_one⟩
     · have : NeZero M := ⟨hM⟩
-      exact abs_bernoulli_eval_natCast_div_le (ZMod.val_lt t).le k
+      exact abs_eval_bernoulli_le_four_mul_factorial_div k
+        ⟨by positivity, div_le_one_of_le₀ (mod_cast (ZMod.val_lt t).le) (Nat.cast_nonneg M)⟩
   have hR : (|primorialBernoulli M k t| : ℝ) ≤ 16 * M ^ k * k ! := by
     rw [hcast, abs_mul, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ _),
       abs_of_nonneg (by positivity : (0 : ℝ) ≤ (M : ℝ) ^ k)]
