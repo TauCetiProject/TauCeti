@@ -46,7 +46,7 @@ theorem map_algHom_comp_map_algebraMap {R A B : Type u} [CommRing R] [CommRing A
 /-- For a scalar tower `R → S → T`, the morphism `Spec T ⟶ Spec S`, followed by
 `Spec S ⟶ Spec R`, is `Spec T ⟶ Spec R`. Applied to fields `K → L → Ω`, this says the geometric
 point `Spec Ω ⟶ Spec L` lies over the geometric point `Spec Ω ⟶ Spec K`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem algebraMap_comp_algebraMap (R S T : Type u) [CommRing R] [CommRing S] [CommRing T]
     [Algebra R S] [Algebra S T] [Algebra R T] [IsScalarTower R S T] :
     Spec.algebraMap S T ≫ Spec.algebraMap R S = Spec.algebraMap R T := by

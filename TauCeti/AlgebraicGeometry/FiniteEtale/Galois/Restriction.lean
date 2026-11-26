@@ -86,7 +86,8 @@ theorem mem_range_mapAutFiber_spec_iff
     refine ⟨toAutContinuousMulEquiv _ Gal(Ω/L) τ, (mapAutFiber_toAutContinuousMulEquiv K Ω L
       (Spec.algebraMap_comp_algebraMap K L Ω) τ).trans ?_⟩
     -- `τ` is `σ` with its scalars extended, so restricting them back to `K` recovers `σ`.
-    exact congrArg _ (AlgEquiv.ext fun _ ↦ rfl)
+    exact congrArg _ (AlgEquiv.ext fun _ ↦ by
+      rw [AlgEquiv.restrictScalars_apply, AlgEquiv.ofRingEquiv_apply, AlgEquiv.coe_toRingEquiv])
 
 /-- **The image of the map of fundamental groups of a field extension is the fixing subgroup of
 `L`**: it is the image in `π₁(Spec K, x)` of the subgroup of `Gal(Ω/K)` fixing `L`, viewed as an
