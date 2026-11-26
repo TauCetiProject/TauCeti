@@ -46,6 +46,13 @@ that level.
   coprime products.
 * `DirichletCharacter.exists_mul_eq_one_iff_conductor_dvd`: a character can be cancelled at a
   prescribed level iff its conductor divides that level.
+* `DirichletCharacter.conductor_mul_eq_mul_of_coprime`,
+  `DirichletCharacter.IsPrimitive.mul_of_coprime`: the same conductor law for the common-level
+  product, and primitivity of that product for primitive characters of coprime levels.
+
+For the latter fact in quadratic twisting, see Davenport, *Multiplicative Number Theory*,
+3rd ed., Chapter 9, and `New.isPrimitive_quadTwist` in `grh-lean`, `Lib/Analytic/QuadraticTwist`
+(revision `72fead1`).
 -/
 
 public section
@@ -161,6 +168,29 @@ theorem conductor_mul_of_coprime {R : Type*} [CommMonoidWithZero R] {N : ℕ}
       (conductor_mul_dvd_lcm_conductor (χ * ψ) ψ⁻¹).trans (Nat.lcm_dvd_mul _ _)
   refine Nat.dvd_antisymm ((conductor_mul_dvd_lcm_conductor χ ψ).trans (Nat.lcm_dvd_mul _ _)) ?_
   exact hcop.mul_dvd_of_dvd_of_dvd (key hcop) (mul_comm ψ χ ▸ key hcop.symm)
+
+/-- The conductor of the common-level product is the product of the conductors when the latter
+are coprime. The ambient levels themselves need not be coprime. -/
+theorem conductor_mul_eq_mul_of_coprime {R : Type*} [CommMonoidWithZero R] {m n : ℕ}
+    (χ : DirichletCharacter R m) (ψ : DirichletCharacter R n)
+    (h : χ.conductor.Coprime ψ.conductor) : (χ.mul ψ).conductor = χ.conductor * ψ.conductor := by
+  obtain rfl | hm := eq_zero_or_neZero m
+  · simp [conductor_eq_zero_iff_level_eq_zero.mpr]
+  obtain rfl | hn := eq_zero_or_neZero n
+  · simp [conductor_eq_zero_iff_level_eq_zero.mpr]
+  have : NeZero (m.lcm n) := ⟨Nat.lcm_ne_zero hm.ne hn.ne⟩
+  have hc : (χ.changeLevel (Nat.dvd_lcm_left m n)).conductor.Coprime
+      (ψ.changeLevel (Nat.dvd_lcm_right m n)).conductor := by
+    simpa only [conductor_changeLevel] using h
+  simpa only [DirichletCharacter.mul, conductor_changeLevel] using conductor_mul_of_coprime hc
+
+/-- Primitive characters of coprime levels have primitive common-level product. -/
+theorem IsPrimitive.mul_of_coprime {R : Type*} [CommMonoidWithZero R] {m n : ℕ}
+    {χ : DirichletCharacter R m} {ψ : DirichletCharacter R n}
+    (hχ : χ.IsPrimitive) (hψ : ψ.IsPrimitive) (h : m.Coprime n) : (χ.mul ψ).IsPrimitive := by
+  rw [isPrimitive_def] at hχ hψ ⊢
+  have hc : χ.conductor.Coprime ψ.conductor := by simpa only [hχ, hψ] using h
+  rw [conductor_mul_eq_mul_of_coprime χ ψ hc, hχ, hψ, h.lcm_eq_mul]
 
 /-- The conductor of a finite product of Dirichlet characters with pairwise coprime conductors is
 the product of their conductors, provided the index set is nonempty or the level is nonzero. -/

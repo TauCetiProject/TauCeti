@@ -109,9 +109,9 @@ theorem dirichletGRH_changeLevel_iff {M N : ℕ} [NeZero M] [NeZero N] (χ : Dir
     (hMN : M ∣ N) : DirichletGRH (changeLevel hMN χ) ↔ DirichletGRH χ := by
   rw [dirichletGRH_iff_mem_Ioo, dirichletGRH_iff_mem_Ioo]
   refine forall_congr' fun s ↦ ⟨fun h h0 hre ↦ h ?_ hre, fun h h0 hre ↦ h ?_ hre⟩
-  · exact (LFunction_changeLevel_eq_zero_iff χ hMN hre.1
+  · exact (LFunction_changeLevel_eq_zero_iff χ hMN hre.1.ne'
       (.inr fun hs1 ↦ by simp [hs1] at hre)).2 h0
-  · exact (LFunction_changeLevel_eq_zero_iff χ hMN hre.1
+  · exact (LFunction_changeLevel_eq_zero_iff χ hMN hre.1.ne'
       (.inr fun hs1 ↦ by simp [hs1] at hre)).1 h0
 
 /-- `DirichletGRH` holds for a character if and only if it holds for its inducing primitive
