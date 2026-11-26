@@ -253,8 +253,9 @@ theorem mpullback_smul_sphereContactForm (hΩ : ∀ v w, Ω v w = (⟪v, w⟫_�
       L.mvfderiv_comp_apply ((contMDiff_coe_sphere (n := d) (m := 1) z).mdifferentiableAt
         one_ne_zero)]
   rw [hv, SmoothForm.mpullback_apply_one, sphereContactForm_apply, sphereContactForm_apply, hd, hL,
-    hΩ, hΩ, Circle.coe_smul_sphere, inner_smul_left, inner_smul_right, ← mul_assoc,
-    Complex.conj_mul', Circle.norm_coe]
+    hΩ, hΩ, Circle.coe_smul_sphere]
+  -- `Im ⟪u z, u w⟫_ℂ = |u|² Im ⟪z, w⟫_ℂ`.
+  simp only [inner_smul_left, inner_smul_right, ← mul_assoc, Complex.mul_conj', Circle.norm_coe]
   simp
 
 /-- **The contact form on the generator of the circle action.** For the Kähler form

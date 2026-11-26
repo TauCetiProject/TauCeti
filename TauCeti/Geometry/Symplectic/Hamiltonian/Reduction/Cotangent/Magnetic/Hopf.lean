@@ -37,18 +37,19 @@ two-form `β_c` on `S²` with `h^* β_c = dα`, and
 `β_c = (c / 2) σ`
 
 (`TauCeti.mpullback_hopfMap_eq_mextDerivₗ_iff`), `c` times the curvature of the Hopf connection.
-This is also the reduced form of the Hopf reduction of `ℂ²` at the level `‖z‖² / 2 = c`
-(`TauCeti.mpullback_hopfMap_eq_iff`). Its integral over `S²` is `2πc`
+For `c > 0`, this is also the reduced form of the Hopf reduction of `ℂ²` at the level
+`‖z‖² / 2 = c` (`TauCeti.mpullback_hopfMap_eq_iff`). Its integral over `S²` is `2πc`
 (`TauCeti.integralTopForm_of_mpullback_hopfMap_eq_mextDerivₗ`), so for `c ≠ 0` the magnetic term is
 not exact (`TauCeti.notMem_exactForms_of_mpullback_hopfMap_eq_mextDerivₗ`): no change of connection,
-which changes `β_c` by an exact form, removes it, and the reduced space `T*S³ //_c S¹` is the
-cotangent bundle `T*S²` with a twisted, not a canonical, symplectic form.
+which changes `β_c` by an exact form, removes it. In the standard picture of cotangent reduction,
+the reduced space `T*S³ //_c S¹` is then `T*S²` with a twisted, not a canonical, symplectic form;
+this file does not construct the reduced space, and proves only the pullback identity below.
 
 Concretely, along a smooth family `f` of covectors `p` at `z` on the level `p(-i z) = c` of the
 cotangent moment map, the magnetic reduction map of `α` along the Hopf map
 (`TauCeti.CotangentBundle.magneticReductionMap`) pulls the twisted form `ω_(S²) + π^* β_c` back to
-the canonical symplectic form of `T*S³`
-(`CotangentBundle.mpullback_magneticReductionMap_hopfMap_comp_symplecticForm_add_mpullback`).
+the canonical symplectic form of `T*S³`. This is
+`TauCeti.CotangentBundle.mpullback_magneticReductionMap_hopfMap_comp_symplecticForm_add_mpullback`.
 
 ## Main results
 
@@ -57,8 +58,8 @@ the canonical symplectic form of `T*S³`
 * `TauCeti.mpullback_hopfMap_eq_mextDerivₗ_iff`: the magnetic term at `c` is `(c / 2) σ`.
 * `TauCeti.integralTopForm_of_mpullback_hopfMap_eq_mextDerivₗ`: it integrates to `2πc`.
 * `TauCeti.notMem_exactForms_of_mpullback_hopfMap_eq_mextDerivₗ`: it is not exact for `c ≠ 0`.
-* `CotangentBundle.mpullback_magneticReductionMap_hopfMap_comp_symplecticForm_add_mpullback`:
-  magnetic reduction of `T*S³` along the Hopf map at `c`.
+* magnetic reduction of `T*S³` along the Hopf map at `c`:
+  `TauCeti.CotangentBundle.mpullback_magneticReductionMap_hopfMap_comp_symplecticForm_add_mpullback`
 
 ## References
 
@@ -161,11 +162,13 @@ theorem add_smul_sphereContactForm_apply_eq_zero_of_mfderiv_hopfMap_eq_zero
   obtain ⟨v₀, hv₀⟩ := exists_mvfderiv_coe_sphere_eq (n := 3) z hz
   have hvt : v = t • v₀ := injective_mvfderiv_subtypeVal_sphere (n := 3) z
     (by rw [map_smul, hv₀, ht])
-  rw [hvt, map_smul, hp v₀ hv₀, ← SmoothForm.degreeOneEquiv_apply_apply_vec, map_smul,
-    SmoothForm.degreeOneEquiv_apply_apply_vec, Submodule.coe_smul, Pi.smul_apply,
-    ContinuousAlternatingMap.smul_apply,
-    SymplecticForm.sphereContactForm_apply_of_mvfderiv_eq_I_smul hΩ hv₀]
-  simp only [smul_eq_mul]
+  -- The one-form is linear in its argument: read it through `degreeOneEquiv` to pull out `t`.
+  have hlin : ((2 * c) • Ω.sphereContactForm 3).val z ![t • v₀] =
+      t * ((2 * c) • Ω.sphereContactForm 3).val z ![v₀] := by
+    rw [← SmoothForm.degreeOneEquiv_apply_apply_vec, map_smul,
+      SmoothForm.degreeOneEquiv_apply_apply_vec, smul_eq_mul]
+  rw [hvt, map_smul, hp v₀ hv₀, hlin]
+  simp [SymplecticForm.sphereContactForm_apply_of_mvfderiv_eq_I_smul hΩ hv₀]
   ring
 
 variable {EX HX : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]

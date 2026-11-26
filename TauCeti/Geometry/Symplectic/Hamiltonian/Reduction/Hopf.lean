@@ -168,17 +168,14 @@ theorem mfderiv_hopfMap_eq_zero_iff (z : S³) (v : TangentSpace (𝓡 3) z) :
       exact (mul_eq_zero.1 hw.symm).resolve_left four_ne_zero
     rw [Submodule.orthogonal_orthogonal, Submodule.mem_span_singleton] at horth
     obtain ⟨s, hs⟩ := horth
-    refine ⟨-s, ?_⟩
-    have h' := congrArg (fun u : ℂ² ↦ (-I) • u) hs
-    simp only [smul_smul, neg_mul, I_mul_I, neg_neg, one_smul] at h'
-    rw [← h', smul_comm, neg_smul, smul_neg, neg_smul]
+    exact ⟨-s, by linear_combination (norm := (match_scalars <;> simp [mul_comm])) I • hs⟩
   · -- The area form pairs `dh v` with every `dh w` to `4 Im ⟪t i z, w⟫_ℂ = -4t ⟪z, w⟫_ℝ = 0`.
     rintro ⟨t, ht⟩
     refine (SmoothTwoForm.isNondegenerate_iff_separatingLeft.1
       isSymplectic_sphereAreaForm.isNondegenerate) (hopfMap z) _ fun u ↦ ?_
     obtain ⟨w, rfl⟩ := mfderiv_hopfMap_surjective z u
-    rw [eval₂_sphereAreaForm_mfderiv_hopfMap, ht, him, smul_comm, real_inner_smul_right,
-      smul_smul, I_mul_I, neg_one_smul, inner_neg_right, real_inner_comm,
+    have hn : I • t • I • (z : ℂ²) = (-t) • (z : ℂ²) := by match_scalars; ring_nf; simp
+    rw [eval₂_sphereAreaForm_mfderiv_hopfMap, ht, him, hn, real_inner_comm, real_inner_smul_left,
       inner_coe_mvfderiv_subtypeVal_sphere]
     simp
 
