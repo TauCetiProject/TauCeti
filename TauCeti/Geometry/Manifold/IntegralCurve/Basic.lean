@@ -29,11 +29,12 @@ the field.
   derivative intertwines the vector fields there sends it to an integral curve of the second field.
 * `IsMIntegralCurveAt.map_of_mfderiv_eq`: the corresponding result for local integral curves.
 * `IsMIntegralCurveOn.congr`: being an integral curve on a set only depends on the values of the
-  curve on that set.
+  curve on that set, and `IsMIntegralCurveOn.of_forall_mem_nhdsWithin`: it is a local property of
+  the set.
 * `isMIntegralCurve_const_iff`: a constant curve is an integral curve exactly at a zero of the
   field.
-* `IsMIntegralCurve.comp_neg`: running an integral curve of `v` backwards gives an integral curve
-  of `-v`.
+* `IsMIntegralCurveOn.comp_neg`, `IsMIntegralCurve.comp_neg`: running an integral curve of `v`
+  backwards gives an integral curve of `-v`.
 * `TauCeti.isMIntegralCurve_congr_vectorField`: being an integral curve only depends on the values
   of the vector field along the curve.
 * `TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn`: in a vector space, integral curves of a
@@ -103,6 +104,28 @@ theorem congr {V : (x : M) → TangentSpace I x} {γ γ' : ℝ → M} {s : Set �
   rw [h ht]
   rfl
 
+/-- **Being an integral curve is local in the set of times.** If every time `t` of `s` has a
+neighbourhood within `s` on which `γ` is an integral curve of `v`, then `γ` is an integral curve
+of `v` on `s`. -/
+theorem of_forall_mem_nhdsWithin {V : (x : M) → TangentSpace I x} {γ : ℝ → M} {s : Set ℝ}
+    (h : ∀ t ∈ s, ∃ u ∈ 𝓝[s] t, t ∈ u ∧ IsMIntegralCurveOn γ V u) :
+    IsMIntegralCurveOn γ V s := fun t ht ↦ by
+  obtain ⟨u, hu, htu, hγ⟩ := h t ht
+  exact (hγ t htu).mono_of_mem_nhdsWithin hu
+
+/-- **Time reversal.** Running an integral curve of `V` on `s` backwards gives an integral curve of
+`-V` on the reflected set of times. -/
+theorem comp_neg {V : (x : M) → TangentSpace I x} {γ : ℝ → M} {s : Set ℝ}
+    (hγ : IsMIntegralCurveOn γ V s) :
+    IsMIntegralCurveOn (fun t ↦ γ (-t)) (-V) {t | -t ∈ s} := by
+  convert hγ.comp_mul (-1) using 1
+  · ext t
+    rw [comp_apply, mul_neg_one]
+  · ext y
+    rw [Pi.neg_apply, Pi.smul_apply, neg_smul, one_smul]
+  · ext t
+    simp only [mem_ofPred_eq, mul_neg_one]
+
 end IsMIntegralCurveOn
 
 /-- **Constant integral curves are the zeros of the field.** The constant curve at `x` is an
@@ -123,11 +146,8 @@ theorem isMIntegralCurve_const_iff {M : Type*} [TopologicalSpace M] [ChartedSpac
 theorem IsMIntegralCurve.comp_neg {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
     {v : (x : M) → TangentSpace I x} {γ : ℝ → M} (hγ : IsMIntegralCurve γ v) :
     IsMIntegralCurve (fun t ↦ γ (-t)) (-v) := by
-  convert hγ.comp_mul (-1) using 1
-  · ext t
-    rw [comp_apply, mul_neg_one]
-  · ext y
-    rw [Pi.neg_apply, Pi.smul_apply, neg_smul, one_smul]
+  rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγ ⊢
+  simpa using hγ.comp_neg
 
 namespace IsMIntegralCurveAt
 
