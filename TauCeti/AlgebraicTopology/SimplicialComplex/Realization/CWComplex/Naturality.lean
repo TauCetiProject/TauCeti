@@ -110,9 +110,8 @@ private theorem cellularChainGroupMap_realization_cellularChainBasis_eq_zero {n 
   refine cellularChainGroupMap_cellularChainBasis_eq_zero _ _ R _ fun z hz ↦ ?_
   rw [openCell_realizationCellEquiv_symm, mem_ofPred_eq] at hz
   rw [skeletonLT_realizationCWComplex, mem_ofPred_eq, ENat.natCast_le_natCast]
-  -- The cellular map is the restriction of `|f|` to `univ`, which is `|f|` on points.
-  change (f.realizationMap z).val.support.card ≤ n
-  rw [TauCeti.PreAbstractSimplicialComplex.SimplicialMap.support_realizationMap, hz]
+  rw [TopCat.ofHom_restrictPreimage_univ_eq, TopCat.ofHom_apply, ContinuousMap.coe_mk,
+    TauCeti.PreAbstractSimplicialComplex.SimplicialMap.support_realizationMap, hz]
   have hlt := Finset.card_image_le (s := c.val.val) (f := f)
   have hne : (c.val.val.image f).card ≠ c.val.val.card := fun h ↦
     hc (by simpa using Finset.card_image_iff.mp h)
@@ -137,9 +136,8 @@ private theorem exists_cellularChainGroupMap_realization_cellularChainBasis_eq_s
   refine ⟨_, cellularChainGroupMap_cellularChainBasis_eq_smul _ _ R _ fun z hz ↦ Or.inr ?_⟩
   rw [openCell_realizationCellEquiv_symm, mem_ofPred_eq] at hz
   rw [openCell_realizationCellEquiv_symm, mem_ofPred_eq]
-  -- The cellular map is the restriction of `|f|` to `univ`, which is `|f|` on points.
-  change (f.realizationMap z).val.support = _
-  rw [TauCeti.PreAbstractSimplicialComplex.SimplicialMap.support_realizationMap, hz,
+  rw [TopCat.ofHom_restrictPreimage_univ_eq, TopCat.ofHom_apply, ContinuousMap.coe_mk,
+    TauCeti.PreAbstractSimplicialComplex.SimplicialMap.support_realizationMap, hz,
     RealizationCell.map_face,
     TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply]
 
@@ -328,13 +326,12 @@ theorem orderedSimplicialHomologyIsoSingularHomology_hom_naturality (n : ℕ) :
   simp only [orderedSimplicialHomologyIsoSingularHomology_hom, cellularSingularHomologyIsoUniv_hom,
     ← HomologicalComplex.homologyMap_comp_assoc, hchain, HomologicalComplex.homologyMap_comp,
     Category.assoc, cellularSingularHomologyIsoOfCWComplex_hom_naturality_assoc,
-    ← Functor.map_comp]
-  -- On `univ` and on the whole realization, the realization of `f` is the same map.
-  rfl
+    ← Functor.map_comp, TopCat.ofHom_restrictPreimage_univ_comp_isoOfHomeo_hom]
 
 /-- **Simplicial approximations compute homology.** If `f` is a simplicial approximation of a
 continuous map `φ : |K| → |L|`, then under the identification of ordered simplicial homology with
 singular homology, the ordered chain map of `f` induces the map `φ_*` of singular homology. -/
+@[reassoc]
 theorem IsSimplicialApproximation.orderedSimplicialHomologyIsoSingularHomology_hom_naturality
     {f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex}
     {φ : C(Realization K, Realization L)} (hf : f.IsSimplicialApproximation φ) (n : ℕ) :
