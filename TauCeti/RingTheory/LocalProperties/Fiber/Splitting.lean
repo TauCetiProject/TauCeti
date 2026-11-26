@@ -6,18 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.LocalProperties.Fiber
-import Mathlib.LinearAlgebra.TensorProduct.Tower
 import Mathlib.RingTheory.LocalProperties.Projective
 import TauCeti.Algebra.Exact.Split
+import TauCeti.LinearAlgebra.Finsupp.Supported
 
 /-!
-# Fibrewise splitting into finite projective modules
+# Fibrewise splitting into projective modules
 
-A map from a finite module into a finite projective module splits as an injection if it is
-injective over every residue field. Consequently a complex `M → N → P` of finite modules with
-`N` and `P` projective which is exact at `M` and `N` on every fibre admits a contracting
-homotopy in those two degrees. In particular,
-it stays exact there after tensoring with any module, including along nonflat base changes.
+A map from a finite module into a projective module splits as an injection if it is injective
+over the residue fields of all maximal ideals. Consequently a complex `M → N → P` with `M`
+finite, `N` finite projective, and `P` projective which is exact at `M` and `N` on these fibres
+admits a contracting homotopy in those two degrees. In particular, it stays exact there after
+tensoring with any module, including along nonflat base changes.
 
 The two-degree criterion is the algebraic step in splitting the constants off a perfect model
 of the cohomology of the structure sheaf. See the Stacks Project, Tags
@@ -34,34 +34,29 @@ namespace LinearMap
 variable {R M N P : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P]
 
-/-- Passing through the localization does not change a residue-field fibre map. -/
-private theorem injective_lTensor_localization_residueField (f : M →ₗ[R] N)
-    (p : PrimeSpectrum R) (hf : Function.Injective (f.lTensor p.asIdeal.ResidueField)) :
-    Function.Injective
-      ((f.baseChange (Localization.AtPrime p.asIdeal)).lTensor p.asIdeal.ResidueField) := by
-  let A := Localization.AtPrime p.asIdeal
-  let k := p.asIdeal.ResidueField
-  let eM := TensorProduct.AlgebraTensorModule.cancelBaseChange R A A k M
-  let eN := TensorProduct.AlgebraTensorModule.cancelBaseChange R A A k N
-  have hcomm (z : k ⊗[A] (A ⊗[R] M)) :
-      f.lTensor k (eM z) = eN ((f.baseChange A).lTensor k z) :=
-    LinearMap.congr_fun
-      (TensorProduct.AlgebraTensorModule.lTensor_comp_cancelBaseChange R A A f) z
-  intro x y hxy
-  exact eM.injective (hf ((hcomm x).trans ((congrArg eN hxy).trans (hcomm y).symm)))
-
-/-- A map from a finite module into a finite projective module has a left inverse if and only if
-it is injective on every residue-field fibre. -/
-theorem exists_leftInverse_iff_forall_injective_lTensor_residueField
+/-- For a finite projective target, descend the splitting by checking injectivity and
+cokernel projectivity at the maximal localizations. -/
+private theorem exists_leftInverse_of_finite_of_residueField
     [Module.Finite R M] [Module.Finite R N] [Module.Projective R N]
-    (f : M →ₗ[R] N) :
-    (∃ r : N →ₗ[R] M, r ∘ₗ f = .id) ↔
-      ∀ p : PrimeSpectrum R, Function.Injective (f.lTensor p.asIdeal.ResidueField) := by
-  refine ⟨fun ⟨r, hr⟩ p ↦ ?_, fun hf ↦ ?_⟩
-  · have h : (r.lTensor p.asIdeal.ResidueField) ∘ₗ (f.lTensor p.asIdeal.ResidueField) = .id := by
-      rw [← lTensor_comp, hr, lTensor_id]
-    exact injective_of_comp_eq_id _ _ h
-  -- The cokernel is finitely presented and is free at every maximal ideal.
+    (f : M →ₗ[R] N)
+    (hf : ∀ (I : Ideal R) [I.IsMaximal], Function.Injective (f.lTensor I.ResidueField)) :
+    ∃ r : N →ₗ[R] M, r ∘ₗ f = .id := by
+  have hlocal (I : Ideal R) [I.IsMaximal] :
+      ∃ r, r ∘ₗ f.baseChange (Localization.AtPrime I) = .id := by
+    let A := Localization.AtPrime I
+    have : Module.Free A (A ⊗[R] N) := Module.free_of_flat_of_isLocalRing
+    exact (IsLocalRing.split_injective_iff_lTensor_residueField_injective (f.baseChange A)).2
+      (f.injective_lTensor_localization_residueField I (hf I))
+  have hinj : Function.Injective f := by
+    intro x y hxy
+    refine Module.eq_of_localization_maximal
+      (fun I _ ↦ Localization.AtPrime I ⊗[R] M)
+      (fun I _ ↦ TensorProduct.mk R (Localization.AtPrime I) M 1) x y fun I _ ↦ ?_
+    obtain ⟨r, hr⟩ := hlocal I
+    apply injective_of_comp_eq_id _ _ hr
+    simpa only [TensorProduct.mk_apply, baseChange_tmul] using
+      congrArg (TensorProduct.mk R (Localization.AtPrime I) N 1) hxy
+  -- The cokernel is finitely presented and locally a direct summand of the target.
   let q := (range f).mkQ
   have : Module.FinitePresentation R N := Module.finitePresentation_of_projective R N
   have : Module.FinitePresentation R (N ⧸ range f) :=
@@ -72,47 +67,63 @@ theorem exists_leftInverse_iff_forall_injective_lTensor_residueField
     apply Module.projective_of_localization_maximal
     intro I hI
     let A := Localization.AtPrime I
-    have : Module.Free A (A ⊗[R] N) := Module.free_of_flat_of_isLocalRing
-    have hinj := injective_lTensor_localization_residueField f ⟨I, hI.isPrime⟩ (hf _)
-    have : Module.Free A (A ⊗[R] (N ⧸ range f)) :=
-      Module.free_of_lTensor_residueField_injective (f.baseChange A) (q.baseChange A)
-        (lTensor_surjective A (Submodule.mkQ_surjective _))
-        (_root_.lTensor_exact A f.exact_map_mkQ_range (Submodule.mkQ_surjective _)) hinj
+    have hq := Submodule.mkQ_surjective (range f)
+    have hex : Function.Exact (f.baseChange A) (q.baseChange A) :=
+      _root_.lTensor_exact A f.exact_map_mkQ_range hq
+    have hsplit : Function.Injective (f.baseChange A) ∧ ∃ s, q.baseChange A ∘ₗ s = .id :=
+      ((hex.split_tfae').out 2 1).mp (And.intro (lTensor_surjective A hq) (hlocal I))
+    obtain ⟨s, hs⟩ := hsplit.2
+    have : Module.Projective A (A ⊗[R] (N ⧸ range f)) := Module.Projective.of_split _ _ hs
     exact Module.Projective.of_equiv
       (IsLocalizedModule.isBaseChange I.primeCompl A
         (LocalizedModule.mkLinearMap I.primeCompl (N ⧸ range f))).equiv
-  -- Splitting off the cokernel makes the range projective, so the fibrewise bijectivity
-  -- criterion identifies the original source with that range.
-  obtain ⟨r, hr⟩ := ((Function.Exact.split_tfae (exact_subtype_mkQ (range f))
-    Subtype.val_injective (Submodule.mkQ_surjective _)).out 1 2).mp
+  exact ((f.exact_map_mkQ_range.split_tfae hinj (Submodule.mkQ_surjective _)).out 1 2).mp
     (Module.projective_lifting_property q LinearMap.id (Submodule.mkQ_surjective _))
-  have : Module.Projective R (range f) := Module.Projective.of_split _ _ hr
-  have hb : Function.Bijective f.rangeRestrict :=
-    (bijective_iff_forall_bijective_lTensor_residueField _).2 fun p ↦ by
-      refine ⟨?_, lTensor_surjective _ f.surjective_rangeRestrict⟩
-      apply Function.Injective.of_comp (f := (range f).subtype.lTensor p.asIdeal.ResidueField)
-      -- Use linear-map composition so tensor functoriality rewrites the composite.
-      change Function.Injective ((range f).subtype.lTensor p.asIdeal.ResidueField ∘ₗ
-        f.rangeRestrict.lTensor p.asIdeal.ResidueField)
-      rw [← lTensor_comp]
-      exact hf p
-  let e := LinearEquiv.ofBijective f.rangeRestrict hb
-  refine ⟨e.symm.toLinearMap ∘ₗ r, ?_⟩
-  ext x
-  -- Expose the range carrier so the retraction equation applies.
-  change e.symm (r ((range f).subtype (e x))) = x
-  rw [← comp_apply, hr, id_apply, e.symm_apply_apply]
 
-/-- If `M → N → P` is a complex of finite modules with `N` and `P` projective, and its first map
-is injective and its middle term exact on every residue-field fibre, it is split exact in those
-two degrees. -/
+/-- A map from a finite module into a projective module has a left inverse if and only if
+it is injective on the residue-field fibres at all maximal ideals. -/
+theorem exists_leftInverse_iff_forall_injective_lTensor_residueField
+    [Module.Finite R M] [Module.Projective R N] (f : M →ₗ[R] N) :
+    (∃ r : N →ₗ[R] M, r ∘ₗ f = .id) ↔
+      ∀ (I : Ideal R) [I.IsMaximal], Function.Injective (f.lTensor I.ResidueField) := by
+  refine ⟨fun ⟨r, hr⟩ I _ ↦ ?_, fun hf ↦ ?_⟩
+  · have h : (r.lTensor I.ResidueField) ∘ₗ (f.lTensor I.ResidueField) = .id := by
+      rw [← lTensor_comp, hr, lTensor_id]
+    exact injective_of_comp_eq_id _ _ h
+  classical
+  -- Factor through the finite free summand supporting the image in the ambient free module.
+  obtain ⟨i, hi⟩ := (Module.projective_def' (R := R) (P := N)).mp inferInstance
+  obtain ⟨S, hS⟩ := (i ∘ₗ f).exists_finset_support_subset
+  let L := Finsupp.supported R R (S : Set N)
+  let e : L ≃ₗ[R] (S →₀ R) := Finsupp.supportedEquivFinsupp (S : Set N)
+  have : Module.Finite R L := Module.Finite.equiv e.symm
+  have : Module.Projective R L := Module.Projective.of_equiv e.symm
+  let a : L →ₗ[R] N := Finsupp.linearCombination R _root_.id ∘ₗ L.subtype
+  let b : N →ₗ[R] L := Finsupp.restrictDom R R (S : Set N) ∘ₗ i
+  let g : M →ₗ[R] L := (i ∘ₗ f).codRestrict L fun x ↦ (Finsupp.mem_supported R _).2 (hS x)
+  have hg : L.subtype ∘ₗ g = i ∘ₗ f := subtype_comp_codRestrict _ _ _
+  have hbg : b ∘ₗ f = g := by
+    dsimp only [b]
+    rw [comp_assoc, ← hg, ← comp_assoc, Finsupp.restrictDom_comp_subtype, id_comp]
+  have hag : a ∘ₗ g = f := by
+    dsimp only [a]
+    rw [comp_assoc, hg, ← comp_assoc, hi, id_comp]
+  obtain ⟨r, hr⟩ := exists_leftInverse_of_finite_of_residueField (N := L) g fun I _ ↦ by
+    apply Function.Injective.of_comp (f := a.lTensor I.ResidueField)
+    rw [← coe_comp, ← lTensor_comp, hag]
+    exact hf I
+  exact ⟨r ∘ₗ b, by rw [comp_assoc, hbg, hr]⟩
+
+/-- If `M → N → P` is a complex with `M` finite, `N` finite projective and `P` projective, and
+its first map is injective and its middle term exact at every maximal residue-field fibre,
+it is split exact in those two degrees. -/
 theorem exists_leftInverse_and_comp_add_comp_eq_id_of_residueField
     [Module.Finite R M] [Module.Finite R N] [Module.Projective R N]
-    [Module.Finite R P] [Module.Projective R P] (f : M →ₗ[R] N) (g : N →ₗ[R] P)
+    [Module.Projective R P] (f : M →ₗ[R] N) (g : N →ₗ[R] P)
     (hfg : g ∘ₗ f = 0)
-    (hf : ∀ p : PrimeSpectrum R, Function.Injective (f.lTensor p.asIdeal.ResidueField))
-    (h : ∀ p : PrimeSpectrum R,
-      Function.Exact (f.lTensor p.asIdeal.ResidueField) (g.lTensor p.asIdeal.ResidueField)) :
+    (hf : ∀ (I : Ideal R) [I.IsMaximal], Function.Injective (f.lTensor I.ResidueField))
+    (h : ∀ (I : Ideal R) [I.IsMaximal],
+      Function.Exact (f.lTensor I.ResidueField) (g.lTensor I.ResidueField)) :
     ∃ (r : N →ₗ[R] M) (s : P →ₗ[R] N),
       r ∘ₗ f = .id ∧ f ∘ₗ r + s ∘ₗ g = .id := by
   obtain ⟨r, hr⟩ := (f.exists_leftInverse_iff_forall_injective_lTensor_residueField).2 hf
@@ -127,15 +138,15 @@ theorem exists_leftInverse_and_comp_add_comp_eq_id_of_residueField
   have he (x : N) : e x = (r x, q x) := by
     simp [e]
   have hei (x : N ⧸ range f) : e (i x) = (0, x) := e.apply_symm_apply (0, x)
-  obtain ⟨s, hs⟩ := (d.exists_leftInverse_iff_forall_injective_lTensor_residueField).2 (fun p ↦ by
-    let k := p.asIdeal.ResidueField
+  obtain ⟨s, hs⟩ := (d.exists_leftInverse_iff_forall_injective_lTensor_residueField).2 (fun I _ ↦ by
+    let k := I.ResidueField
     apply ker_eq_bot.mp
     rw [Submodule.eq_bot_iff]
     intro z hz
     obtain ⟨x, rfl⟩ := lTensor_surjective k (Submodule.mkQ_surjective _) z
     have hx : x ∈ ker (g.lTensor k) := by
       rwa [mem_ker, ← hd, lTensor_comp, comp_apply]
-    obtain ⟨y, rfl⟩ := (h p).linearMap_ker_eq ▸ hx
+    obtain ⟨y, rfl⟩ := (h I).linearMap_ker_eq ▸ hx
     -- Keep the quotient map in its named form so its composite with `f` rewrites.
     change (q.lTensor k) ((f.lTensor k) y) = 0
     rw [← comp_apply, ← lTensor_comp, hq, lTensor_zero, LinearMap.zero_apply])

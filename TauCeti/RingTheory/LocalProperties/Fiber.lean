@@ -17,7 +17,10 @@ import Mathlib.RingTheory.Support
 # Faithfulness, surjectivity and bijectivity on fibres
 
 For a prime `p` of a commutative ring `R`, the fibre of an `R`-module `M` at `p` is
-`κ(p) ⊗[R] M`, with `κ(p)` the residue field. A linear map into a finite module is surjective iff
+`κ(p) ⊗[R] M`, with `κ(p)` the residue field. Fibrewise injectivity at `p` persists after
+localizing at `p` (`LinearMap.injective_lTensor_localization_residueField`).
+
+A linear map into a finite module is surjective iff
 it is surjective on every fibre: the cokernel is finite with zero fibres, so it vanishes by
 Nakayama's lemma (`Module.subsingleton_iff_forall_subsingleton_residueField_tensorProduct`,
 `LinearMap.surjective_iff_forall_surjective_lTensor_residueField`).
@@ -102,6 +105,22 @@ end Module
 namespace LinearMap
 
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- Injectivity on the fibre at a prime is preserved when base change to its residue field
+is performed in two steps, first localizing at the prime. -/
+theorem injective_lTensor_localization_residueField (f : M →ₗ[R] N)
+    (I : Ideal R) [I.IsPrime] (hf : Function.Injective (f.lTensor I.ResidueField)) :
+    Function.Injective ((f.baseChange (Localization.AtPrime I)).lTensor I.ResidueField) := by
+  let A := Localization.AtPrime I
+  let k := I.ResidueField
+  let eM := TensorProduct.AlgebraTensorModule.cancelBaseChange R A A k M
+  let eN := TensorProduct.AlgebraTensorModule.cancelBaseChange R A A k N
+  have hcomm (z : k ⊗[A] (A ⊗[R] M)) :
+      f.lTensor k (eM z) = eN ((f.baseChange A).lTensor k z) :=
+    LinearMap.congr_fun
+      (TensorProduct.AlgebraTensorModule.lTensor_comp_cancelBaseChange R A A f) z
+  intro x y hxy
+  exact eM.injective (hf ((hcomm x).trans ((congrArg eN hxy).trans (hcomm y).symm)))
 
 /-- A linear map into a finite module is surjective iff it is surjective on the fibre at every
 prime. -/

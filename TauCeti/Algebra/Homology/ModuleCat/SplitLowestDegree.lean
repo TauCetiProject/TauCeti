@@ -18,11 +18,11 @@ public import TauCeti.RingTheory.LocalProperties.Fiber.Splitting
 
 Let `C` be a nonnegative cochain complex of finite projective modules and let `u : M[0] ⟶ C`
 be a map from a finite module in degree zero. If `u` induces an isomorphism on
-zeroth cohomology over every residue field, then `C` deformation retracts onto the sum of
-`M[0]` and a complex of finite projective modules supported in strictly positive degrees. The
-inclusion of `M[0]` is the given map `u`, and the complement inherits any upper degree bound
-from `C`. The deformation retract is preserved by arbitrary scalar extension, since it is
-given by cochain maps and a homotopy.
+zeroth cohomology over the residue fields at all maximal ideals, then `C` deformation retracts
+onto the sum of `M[0]` and a complex of finite projective modules supported in strictly positive
+degrees. The inclusion of `M[0]` is the given map `u`, and the complement inherits any upper
+degree bound from `C`. Arbitrary scalar extension preserves the deformation retract, since
+it is given by cochain maps and a homotopy.
 
 This is the constants-splitting argument for a finite projective model of the cohomology of the
 structure sheaf. The certificate in degrees zero and one comes from
@@ -102,14 +102,14 @@ private lemma exists_positive_complement
 private lemma exists_single_retraction_of_residueField
     (C : CochainComplex (ModuleCat.{v} R) ℤ) [C.IsStrictlyGE 0]
     [Module.Finite R (C.X 0)] [Module.Projective R (C.X 0)]
-    [Module.Finite R (C.X 1)] [Module.Projective R (C.X 1)]
+    [Module.Projective R (C.X 1)]
     (M : ModuleCat.{v} R) [Module.Finite R M]
     (u : (single _ (.up ℤ) 0).obj M ⟶ C)
-    (hu : ∀ p : PrimeSpectrum R, Function.Injective
-      (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor p.asIdeal.ResidueField))
-    (he : ∀ p : PrimeSpectrum R, Function.Exact
-      (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor p.asIdeal.ResidueField)
-      ((C.d 0 1).hom.lTensor p.asIdeal.ResidueField)) :
+    (hu : ∀ (I : Ideal R) [I.IsMaximal], Function.Injective
+      (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor I.ResidueField))
+    (he : ∀ (I : Ideal R) [I.IsMaximal], Function.Exact
+      (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor I.ResidueField)
+      ((C.d 0 1).hom.lTensor I.ResidueField)) :
     ∃ (ρ : C ⟶ (single _ (.up ℤ) 0).obj M) (s : C.X 1 ⟶ C.X 0),
       u ≫ ρ = 𝟙 _ ∧ ρ.f 0 ≫ u.f 0 + C.d 0 1 ≫ s = 𝟙 _ := by
   let f := (singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0
@@ -133,19 +133,19 @@ private lemma exists_single_retraction_of_residueField
     ModuleCat.hom_ext hsplit
   exact ⟨ρ, ModuleCat.ofHom s, hρ, by simpa only [hρ₀, f, Category.assoc] using hh⟩
 
-/-- Splitting off a summand in the lowest cohomological degree. The residue-field condition is
-written as exactness of `0 → M ⊗ κ(p) → C⁰ ⊗ κ(p) → C¹ ⊗ κ(p)`. The resulting homotopy
+/-- Splitting off a summand in the lowest cohomological degree. The condition is exactness of
+`0 → M ⊗ κ(I) → C⁰ ⊗ κ(I) → C¹ ⊗ κ(I)` at every maximal ideal `I`. The resulting homotopy
 equivalence includes the specified copy of `M[0]`. -/
 theorem exists_homotopyEquiv_biprod_single_of_residueField
     (C : CochainComplex (ModuleCat.{v} R) ℤ) [C.IsStrictlyGE 0]
     [∀ i, Module.Finite R (C.X i)] [∀ i, Module.Projective R (C.X i)]
     (M : ModuleCat.{v} R) [Module.Finite R M]
     (u : (single _ (.up ℤ) 0).obj M ⟶ C)
-    (hu : ∀ p : PrimeSpectrum R, Function.Injective
-      (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor p.asIdeal.ResidueField))
-    (he : ∀ p : PrimeSpectrum R, Function.Exact
-      (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor p.asIdeal.ResidueField)
-      ((C.d 0 1).hom.lTensor p.asIdeal.ResidueField)) :
+    (hu : ∀ (I : Ideal R) [I.IsMaximal], Function.Injective
+      (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor I.ResidueField))
+    (he : ∀ (I : Ideal R) [I.IsMaximal], Function.Exact
+      (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor I.ResidueField)
+      ((C.d 0 1).hom.lTensor I.ResidueField)) :
     ∃ (Q : CochainComplex (ModuleCat.{v} R) ℤ)
       (e : HomotopyEquiv ((single _ (.up ℤ) 0).obj M ⊞ Q) C),
       Q.IsStrictlyGE 1 ∧ (∀ i, Module.Finite R (Q.X i) ∧ Module.Projective R (Q.X i)) ∧
@@ -187,21 +187,22 @@ theorem exists_homotopyEquiv_biprod_single_of_residueField
   exact exists_positive_complement C hρ hn hp₀ hpp
 
 /-- A map from `M[0]` to a nonnegative complex which induces an isomorphism on degree-zero
-cohomology over every residue field still induces one after applying any additive functor, in
-particular after arbitrary extension of scalars. The source `M` is finite, and only `C⁰` and
-`C¹` need to be finite projective. -/
+cohomology over the residue field at every maximal ideal still induces one after applying any
+additive functor into a category with homology, in particular after arbitrary extension of
+scalars. The source `M` is finite, `C⁰` is finite projective, and `C¹` is projective. -/
 theorem isIso_homologyMap_zero_of_residueField
     {C : CochainComplex (ModuleCat.{v} R) ℤ} [C.IsStrictlyGE 0]
     [Module.Finite R (C.X 0)] [Module.Projective R (C.X 0)]
-    [Module.Finite R (C.X 1)] [Module.Projective R (C.X 1)]
+    [Module.Projective R (C.X 1)]
     {M : ModuleCat.{v} R} [Module.Finite R M]
     (u : (single _ (.up ℤ) 0).obj M ⟶ C)
-    (hu : ∀ p : PrimeSpectrum R, Function.Injective
-      (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor p.asIdeal.ResidueField))
-    (he : ∀ p : PrimeSpectrum R, Function.Exact
-      (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor p.asIdeal.ResidueField)
-      ((C.d 0 1).hom.lTensor p.asIdeal.ResidueField))
-    {D : Type w} [Category.{w'} D] [Abelian D] (F : ModuleCat.{v} R ⥤ D) [F.Additive] :
+    (hu : ∀ (I : Ideal R) [I.IsMaximal], Function.Injective
+      (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor I.ResidueField))
+    (he : ∀ (I : Ideal R) [I.IsMaximal], Function.Exact
+      (((singleObjXSelf (.up ℤ) 0 M).inv ≫ u.f 0).hom.lTensor I.ResidueField)
+      ((C.d 0 1).hom.lTensor I.ResidueField))
+    {D : Type w} [Category.{w'} D] [Preadditive D] [CategoryWithHomology D]
+    (F : ModuleCat.{v} R ⥤ D) [F.Additive] :
     IsIso (homologyMap ((F.mapHomologicalComplex (.up ℤ)).map u) 0) := by
   obtain ⟨ρ, s, hρ, hsplit⟩ := exists_single_retraction_of_residueField C M u hu he
   let G := F.mapHomologicalComplex (.up ℤ)
