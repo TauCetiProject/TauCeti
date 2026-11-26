@@ -647,13 +647,7 @@ theorem tensorIndClassFun_sub_of_index_prime {k G : Type*} [CommRing k] [Group G
       rw [Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, Int.cast_pow, Int.cast_neg,
         Int.cast_one, ← pow_add, hadd, pow_add, pow_mul]
       simp
-    have hind_zero : ∀ f : H → k, H.indClassFun f g = 0 := fun f ↦ by
-      rw [Subgroup.indClassFun_apply]
-      refine Finset.sum_eq_zero fun t _ ↦ (Function.indTerm_apply f g t.out).symm.trans
-        (Function.indTerm_eq_zero_of_smul_mk_ne f fun ht ↦ hg ?_)
-      have hconj := (TauCeti.smul_quotientGroup_mk_eq_self_iff H g t.out).mp ht
-      simpa [mul_assoc] using ‹H.Normal›.conj_mem _ hconj t.out
-    simp only [Pi.sub_apply, hind_zero, mul_zero, Finset.sum_const_zero, add_zero, ← mul_assoc,
-      hpow, neg_one_mul, ← sub_eq_add_neg]
+    simp only [Pi.sub_apply, H.indClassFun_apply_of_notMem _ hg, mul_zero, Finset.sum_const_zero,
+      add_zero, ← mul_assoc, hpow, neg_one_mul, ← sub_eq_add_neg]
 
 end Subgroup
