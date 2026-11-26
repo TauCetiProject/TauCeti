@@ -5,6 +5,7 @@ Authors: Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Abelian.Exact
 public import TauCeti.Condensed.Light.NullSequence.Basic
 public import TauCeti.Condensed.Light.Sequence
 
@@ -13,7 +14,8 @@ public import TauCeti.Condensed.Light.Sequence
 
 Over a commutative ring in any site universe, internal Hom out of the null-sequence module
 preserves epimorphisms. The marked-point splitting exhibits the reduced module as a retract
-of the internally projective free module on the convergent sequence.
+of the internally projective free module on the convergent sequence. As a right adjoint, internal
+Hom out of the null-sequence module also preserves kernels, so it is exact: it preserves homology.
 
 See Rodríguez Camargo, *Notes on Solid Geometry*, Theorem 2.3.3(3) and Definition 3.2.1.
 -/
@@ -34,5 +36,10 @@ theorem internallyProjective_nullSeq : InternallyProjective (nullSeq R) := by
       ((lightProfiniteToLightCondSet ⋙ free R).obj (Under.mk inftyPoint.{u}).right) :=
     internallyProjective_free_liftedSequence R
   exact InternallyProjective.ofRetract (reducedLightFreeRetract R (Under.mk inftyPoint))
+
+/-- Internal Hom out of the null-sequence module is exact. -/
+instance preservesHomology_ihom_nullSeq : (ihom (nullSeq R)).PreservesHomology :=
+  have := internallyProjective_nullSeq R
+  Functor.preservesHomology_of_preservesEpis_and_kernels _
 
 end TauCeti

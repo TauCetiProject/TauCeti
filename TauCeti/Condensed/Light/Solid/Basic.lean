@@ -20,7 +20,9 @@ A light condensed module is solid if the difference of identity and precompositi
 expresses unique summability in every light profinite family. By the tensor–Hom adjunction
 it is equivalent to the same unique summability on maps out of `nullSeq R ⊗ Z` for every light
 condensed module `Z`. So solid modules are the local objects for an explicit family of test maps,
-indexed by light profinite sets, and they are closed under all limits.
+indexed by light profinite sets, and they are closed under all limits. Since every test object
+`nullSeq R ⊗ Z` can be rearranged to absorb a further tensor factor, internal Hom from any light
+condensed module into a solid module is solid.
 
 This is the null-sequence criterion of Rodríguez Camargo, *Notes on Solid Geometry*,
 Definition 3.2.1, over a commutative coefficient ring; see also Wagner, *q-de Rham cohomology and
@@ -67,6 +69,19 @@ lemma lightSolidDifference_naturality {M N : LightCondMod R} (f : M ⟶ N) :
       (ihom (nullSeq R)).map f ≫ lightSolidDifference N := by
   simp only [lightSolidDifference_def, Preadditive.sub_comp, Preadditive.comp_sub,
     id_comp, comp_id, MonoidalClosed.pre_comm_ihom_map]
+
+variable (R) in
+/-- The internal null-sequence difference, as a natural endomorphism of internal Hom out of
+`nullSeq R`. -/
+noncomputable def lightSolidDifferenceNatTrans : ihom (nullSeq R) ⟶ ihom (nullSeq R) where
+  app := lightSolidDifference
+  naturality _ _ f := (lightSolidDifference_naturality f).symm
+
+/-- The components of the natural null-sequence difference are the internal differences. -/
+@[simp]
+lemma lightSolidDifferenceNatTrans_app (M : LightCondMod R) :
+    (lightSolidDifferenceNatTrans R).app M = lightSolidDifference M :=
+  (rfl)
 
 end LightCondMod
 
@@ -183,11 +198,7 @@ instance (J : Type*) [Category* J] : (IsLightSolid (R := R)).IsClosedUnderLimits
   infer_instance
 
 instance : (IsLightSolid (R := R)).IsClosedUnderIsomorphisms where
-  of_iso e hM := by
-    let difference : ihom (nullSeq R) ⟶ ihom (nullSeq R) :=
-      { app := lightSolidDifference
-        naturality _ _ f := (lightSolidDifference_naturality f).symm }
-    exact (NatTrans.isIso_app_iff_of_iso difference e).mp hM
+  of_iso e hM := (NatTrans.isIso_app_iff_of_iso (lightSolidDifferenceNatTrans R) e).mp hM
 
 instance : (IsLightSolid (R := R)).ContainsZero where
   exists_zero := by
@@ -195,5 +206,27 @@ instance : (IsLightSolid (R := R)).ContainsZero where
     apply (isLightSolid_iff _).mpr
     have h := (ihom (nullSeq R)).map_isZero (Limits.isZero_zero (LightCondMod R))
     exact h.isIso h _
+
+/-- Internal Hom from any light condensed module into a solid module is solid. -/
+theorem isLightSolid_ihom_obj (Z : LightCondMod R) {M : LightCondMod R} (hM : IsLightSolid M) :
+    IsLightSolid ((ihom Z).obj M) := by
+  rw [isLightSolid_iff_bijective_tensor] at hM ⊢
+  intro W
+  -- Uncurry `Z`, then move `nullSeq R` to the front of the tensor product.
+  let e : Z ⊗ (nullSeq R ⊗ W) ≅ nullSeq R ⊗ (Z ⊗ W) :=
+    (α_ Z (nullSeq R) W).symm ≪≫ whiskerRightIso (β_ Z (nullSeq R)) W ≪≫ α_ (nullSeq R) Z W
+  have he : e.inv ≫ Z ◁ (nullShift R ▷ W) = nullShift R ▷ (Z ⊗ W) ≫ e.inv := by
+    simp only [e, Iso.trans_inv, Iso.symm_inv, whiskerRightIso_inv, Category.assoc,
+      ← associator_naturality_middle, ← comp_whiskerRight_assoc,
+      ← BraidedCategory.braiding_inv_naturality_left, associator_inv_naturality_left_assoc]
+  let Φ : (nullSeq R ⊗ W ⟶ (ihom Z).obj M) ≃ (nullSeq R ⊗ (Z ⊗ W) ⟶ M) :=
+    ((ihom.adjunction Z).homEquiv _ _).symm.trans (e.homCongr (Iso.refl M))
+  have h : Φ ∘ (fun g ↦ g - (nullShift R ▷ W) ≫ g) =
+      (fun g ↦ g - (nullShift R ▷ (Z ⊗ W)) ≫ g) ∘ Φ := by
+    funext g
+    simp only [Φ, Function.comp_apply, Equiv.trans_apply, Iso.homCongr_apply, Iso.refl_hom,
+      Category.comp_id, MonoidalClosed.homEquiv_symm_apply_eq, uncurry_sub,
+      MonoidalClosed.uncurry_natural_left, Preadditive.comp_sub, reassoc_of% he]
+  exact (Function.Bijective.of_comp_iff' Φ.bijective _).mp (h ▸ (hM _).comp Φ.bijective)
 
 end TauCeti
