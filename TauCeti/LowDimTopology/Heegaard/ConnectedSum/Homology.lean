@@ -399,12 +399,19 @@ theorem iterateSumCircleTimesSphereGeneratorEquiv_apply :
       H.iterateSumCircleTimesSphereGeneratorEquiv r₀ k c =
         H.iterateSumCircleTimesSphereGenerator r₀ c.1 k c.2
   | 0, _ => rfl
-  | k + 1, (x, ε) =>
-    ((H.iterateSumCircleTimesSphere r₀ k).addBasepointGeneratorEquiv_apply _
-      (H.iterateSumCircleTimesSphereGeneratorEquiv r₀ k (x, Fin.init ε), ε (Fin.last k))).trans <|
-        congrArg (fun g => (H.iterateSumCircleTimesSphere r₀ k).addBasepointGenerator
-          (iterateSumCircleTimesSphereRegion r₀ k) g (ε (Fin.last k)))
-          (iterateSumCircleTimesSphereGeneratorEquiv_apply k (x, Fin.init ε))
+  | k + 1, (x, ε) => by
+    have hε : (Fin.snocEquiv fun _ => Fin 2).symm ε = (ε (Fin.last k), Fin.init ε) := by
+      rw [Equiv.symm_apply_eq, Fin.snocEquiv_apply, Fin.snoc_init_self]
+    -- The last factor lands in the generators of the single connected sum, which are those of
+    -- the `(k + 1)`-fold sum only up to unfolding `iterateSumCircleTimesSphere`, so the steps
+    -- `Equiv.trans_apply` and `addBasepointGeneratorEquiv_apply` touching that factor are
+    -- applied by unification rather than by rewriting.
+    rw [iterateSumCircleTimesSphereGeneratorEquiv]
+    refine (Equiv.trans_apply _ _ (x, ε)).trans ?_
+    simp only [Equiv.trans_apply, Equiv.prodCongr_apply, Prod.map_apply, Equiv.refl_apply, hε,
+      Equiv.prodComm_apply, Prod.swap_prod_mk, Equiv.prodAssoc_symm_apply,
+      iterateSumCircleTimesSphereGeneratorEquiv_apply k, iterateSumCircleTimesSphereGenerator_succ]
+    exact addBasepointGeneratorEquiv_apply _ _ _
 
 variable [DecidableEq Region]
 
