@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Pregluing
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 public import TauCeti.Geometry.Symplectic.Floer.Splicing
 import TauCeti.Analysis.Normed.Operator.Surjective
-import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Analysis.Sobolev.Cylinder.GluedIndex
 import TauCeti.Topology.UniformSpace.HeineCantor
 
@@ -416,9 +415,8 @@ theorem eventually_setIntegral_sobolev_le_mul_setIntegral_floerLinearization_pre
     (Eventually.of_forall fun _ _ ↦ hu.differentiable one_ne_zero _) hux hdux
     (Eventually.of_forall fun _ _ ↦ hv.differentiable one_ne_zero _) hvx hdvx hε
   -- Regularity of the data and of the three maps.
-  have hx₁ : ContDiff ℝ 1 x := contDiff_one_of_hasDerivAt
-    (X := fun t ↦ ω.hamiltonianVectorField (H t))
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hx
+  have hx₁ : ContDiff ℝ 1 x :=
+    ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le one_le_two) hx
   have hJ' : ContDiff ℝ 1 (uncurry fun (p : ℝ × ℝ) ↦ J p.2) :=
     hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)
   have hKs : ContDiff ℝ 2 (uncurry fun (_ : ℝ × ℝ) (_ : V) ↦ (0 : ℝ)) := contDiff_const
@@ -591,9 +589,8 @@ theorem eventually_memLp_floerJetCoeff_preglue (ω : SymplecticForm V)
     ∀ᶠ R in atTop, MemLp
       (ω.floerJetCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R)) ∞
         stripMeasure := by
-  have hx₁ : ContDiff ℝ 1 x := contDiff_one_of_hasDerivAt
-    (X := fun t ↦ ω.hamiltonianVectorField (H t))
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hx
+  have hx₁ : ContDiff ℝ 1 x :=
+    ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le one_le_two) hx
   filter_upwards [ω.eventually_forall_norm_floerJetCoeff_preglue_sub_le hJ hH hJp hHp hx hxp
     (Eventually.of_forall fun _ _ ↦ hu.differentiable one_ne_zero _) hux hdux
     (Eventually.of_forall fun _ _ ↦ hv.differentiable one_ne_zero _) hvx hdvx one_pos] with R hR
