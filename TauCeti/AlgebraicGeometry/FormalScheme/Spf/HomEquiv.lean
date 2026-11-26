@@ -7,9 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Morphism
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.SectionsTopology
+public import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 public import TauCeti.Topology.Category.TopCommRingCat.Adic
 
-import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 import TauCeti.Topology.Sheaves.Presheaf
 
 /-!
@@ -391,5 +391,64 @@ theorem continuous_c_app (g : Spf B ⟶ Spf A) (U : Opens (Spf A)) :
   generalize g.toHom = f at heq ⊢; subst heq
   exact continuous_structureSheafMap_quotientSectionsTopology _ (continuous_sectionsHom g)
     (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec B).2.1 U
+
+/-- A map on basic-open sections is determined by its action on global coefficients.
+This identifies the sheaf map with a continuous homomorphism of completed localizations. -/
+theorem map_appLE_basicOpen (φ : A →+* B) (hφ : Continuous φ) (a : A)
+    (hpre : basicOpen (φ a) ≤ (Opens.map (map φ hφ).base).obj (basicOpen a))
+    (g : AdicRing.CompletedAway A a →+* AdicRing.CompletedAway B (φ a))
+    (hg : Continuous g) (hgφ : g.comp (algebraMap A _) = (algebraMap B _).comp φ) :
+    (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 a).inv ≫
+        (map φ hφ).toHom.appLE (basicOpen a) (basicOpen (φ a)) hpre ≫
+        (basicOpenSectionsIso (IsAdicRing.ideal_spec B).2.1
+          (IsAdicRing.ideal_spec B).1 (φ a)).hom = CommRingCat.ofHom g := by
+  let hA := (IsAdicRing.ideal_spec A).2.1
+  let hB := (IsAdicRing.ideal_spec B).2.1
+  let eA := basicOpenSectionsIso hA (IsAdicRing.ideal_spec A).1 a
+  let eB := basicOpenSectionsIso hB (IsAdicRing.ideal_spec B).1 (φ a)
+  let k := map φ hφ
+  let m := k.toHom.appLE (basicOpen a) (basicOpen (φ a)) hpre
+  let _ := quotientSectionsTopology hA (basicOpen a)
+  let _ := quotientSectionsTopology hB (basicOpen (φ a))
+  have hcA : Continuous eA.inv :=
+    (eA.commRingCatIsoToRingEquiv.toEquiv.isHomeomorph_iff.mp
+      (quotientSectionsTopology_basic hA (IsAdicRing.ideal_spec A).1 a)).2
+  have hcB : Continuous eB.hom :=
+    (quotientSectionsTopology_basic hB (IsAdicRing.ideal_spec B).1 (φ a)).continuous
+  let _ := quotientSectionsTopology hB ((Opens.map k.base).obj (basicOpen a))
+  have hcm : @Continuous _ _ (quotientSectionsTopology hA (basicOpen a))
+      (quotientSectionsTopology hB (basicOpen (φ a))) m :=
+    ((quotientSectionsTopology_restrict hB hpre).comp (continuous_c_app k (basicOpen a))).congr
+      fun x ↦ (ConcreteCategory.congr_hom (PresheafedSpace.Hom.appLE_def k.toHom
+        (basicOpen a) (basicOpen (φ a)) hpre) x).symm
+  have hcoeff : CommRingCat.ofHom (algebraMap A _) ≫ eA.inv ≫ m ≫ eB.hom =
+      CommRingCat.ofHom φ ≫ CommRingCat.ofHom (algebraMap B _) := by
+    have hleft := algebraMap_comp_basicOpenSectionsIso_inv_comp_appLE_assoc
+      k a (basicOpen (φ a)) hpre eB.hom
+    have hright : (topSectionsIso B).inv ≫
+        (Spf B).presheaf.map (homOfLE (le_top : basicOpen (φ a) ≤ ⊤)).op ≫ eB.hom =
+        CommRingCat.ofHom (algebraMap B (AdicRing.CompletedAway B (φ a))) := by
+      exact (Category.assoc _ _ _).symm.trans <|
+        (congrArg (· ≫ eB.hom) (algebraMap_comp_basicOpenSectionsIso_inv (φ a)).symm).trans <|
+        (Category.assoc _ _ _).trans (by rw [Iso.inv_hom_id, Category.comp_id])
+    refine hleft.trans ?_
+    have htop := congrArg (fun r ↦ (topSectionsIso A).inv ≫ r ≫ eB.hom)
+      (appLE_top k (basicOpen (φ a)))
+    refine htop.trans ?_
+    have hgbl := topSectionsIso_inv_comp_c_app_top_assoc k
+      ((Spf B).presheaf.map (homOfLE (le_top : basicOpen (φ a) ≤ ⊤)).op ≫ eB.hom)
+    have hassoc := congrArg ((topSectionsIso A).inv ≫ ·)
+      (Category.assoc
+        (k.c.app (op ⊤) : (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤))
+        ((Spf B).presheaf.map (homOfLE (le_top : basicOpen (φ a) ≤ ⊤)).op) eB.hom)
+    exact hassoc.trans <| hgbl.trans <|
+      (Category.assoc (CommRingCat.ofHom (sectionsHom k)) (topSectionsIso B).inv _).trans <|
+      congrArg₂ (fun (m : CommRingCat.of A ⟶ CommRingCat.of B) n ↦ m ≫ n)
+        (congrArg CommRingCat.ofHom (sectionsHom_map φ hφ)) hright
+  apply CommRingCat.hom_ext
+  refine AdicRing.CompletedAway.ringHom_ext A a (hcB.comp (hcm.comp hcA)) hg ?_
+  simpa only [CommRingCat.hom_comp, CommRingCat.hom_ofHom, hgφ] using
+    congrArg CommRingCat.Hom.hom hcoeff
+
 end HomEquiv
 end TauCeti.FormalScheme.Spf
