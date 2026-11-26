@@ -101,6 +101,18 @@ theorem mem_negativeDiscreteSeriesWeights {k : ℕ} {ℓ : ℤ} :
     ℓ ∈ negativeDiscreteSeriesWeights k ↔ ℓ ≤ -(k : ℤ) ∧ ℓ % 2 = (k : ℤ) % 2 :=
   Iff.rfl
 
+/-- Negation maps the weights of the negative ray onto those of the positive ray. -/
+theorem neg_mem_positiveDiscreteSeriesWeights_iff {k : ℕ} {ℓ : ℤ} :
+    -ℓ ∈ positiveDiscreteSeriesWeights k ↔ ℓ ∈ negativeDiscreteSeriesWeights k := by
+  simp only [mem_positiveDiscreteSeriesWeights, mem_negativeDiscreteSeriesWeights]
+  omega
+
+/-- Negation maps the weights of the positive ray onto those of the negative ray. -/
+theorem neg_mem_negativeDiscreteSeriesWeights_iff {k : ℕ} {ℓ : ℤ} :
+    -ℓ ∈ negativeDiscreteSeriesWeights k ↔ ℓ ∈ positiveDiscreteSeriesWeights k := by
+  simp only [mem_positiveDiscreteSeriesWeights, mem_negativeDiscreteSeriesWeights]
+  omega
+
 /-- The weights of `D_k` are those of its two rays. -/
 theorem discreteSeriesWeights_eq_union (k : ℕ) :
     discreteSeriesWeights k =
@@ -181,6 +193,12 @@ theorem mem_discreteSeries_iff {k : ℕ} {v : CompactWeightModule (k : ℂ) μ} 
         Finsupp.supported ℂ ℂ (discreteSeriesWeights k) :=
   CompactWeightModule.mem_weightLieSubmodule
 
+/-- A nonzero coordinate of a vector of `D_k(μ)` sits at a weight of `D_k`. -/
+theorem mem_discreteSeriesWeights_of_equivFinsupp_ne_zero {k : ℕ}
+    {v : CompactWeightModule (k : ℂ) μ} (hv : v ∈ discreteSeries k μ) {j : ℤ}
+    (hj : CompactWeightModule.equivFinsupp (k : ℂ) μ v j ≠ 0) : j ∈ discreteSeriesWeights k :=
+  (Finsupp.mem_supported ℂ _).mp (mem_discreteSeries_iff.mp hv) (Finsupp.mem_support_iff.mpr hj)
+
 /-- Membership in `D_k^+(μ)`: the coordinates are supported on the positive ray. -/
 theorem mem_positiveDiscreteSeries_iff {k : ℕ} {v : CompactWeightModule (k : ℂ) μ} :
     v ∈ positiveDiscreteSeries k μ ↔
@@ -244,16 +262,12 @@ theorem reflection_mem_discreteSeries_iff {k : ℕ} {v : CompactWeightModule (k 
 /-- **The reflection interchanges the two rays** `D_k^+(μ)` and `D_k^-(μ)`. -/
 theorem reflection_mem_negativeDiscreteSeries_iff {k : ℕ} {v : CompactWeightModule (k : ℂ) μ} :
     reflection (k : ℂ) μ v ∈ negativeDiscreteSeries k μ ↔ v ∈ positiveDiscreteSeries k μ :=
-  reflection_mem_weightLieSubmodule_iff fun ℓ ↦ by
-    simp only [mem_negativeDiscreteSeriesWeights, mem_positiveDiscreteSeriesWeights]
-    omega
+  reflection_mem_weightLieSubmodule_iff fun _ ↦ neg_mem_negativeDiscreteSeriesWeights_iff
 
 /-- The reflection maps the negative ray onto the positive ray. -/
 theorem reflection_mem_positiveDiscreteSeries_iff {k : ℕ} {v : CompactWeightModule (k : ℂ) μ} :
     reflection (k : ℂ) μ v ∈ positiveDiscreteSeries k μ ↔ v ∈ negativeDiscreteSeries k μ :=
-  reflection_mem_weightLieSubmodule_iff fun ℓ ↦ by
-    simp only [mem_negativeDiscreteSeriesWeights, mem_positiveDiscreteSeriesWeights]
-    omega
+  reflection_mem_weightLieSubmodule_iff fun _ ↦ neg_mem_positiveDiscreteSeriesWeights_iff
 
 end CompactWeightModule
 
