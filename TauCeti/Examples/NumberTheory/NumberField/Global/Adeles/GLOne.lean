@@ -11,9 +11,8 @@ public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Unique
 /-!
 # `GL₁` of the adeles and the ideles
 
-A Check of the adelic Borel structure (AdelicAlgebraicGroups §0.4, *adelic-borel-structure*): for
-`n = 1`, the matrix-units topology and Borel structure of `GL₁(𝔸_K)` agree with those of the
-ideles `𝔸_Kˣ`, through the entry of a `1 × 1` matrix.
+For `n = 1`, the matrix-units topology and Borel structure of `GL₁(𝔸_F)` agree with those of the
+ideles `𝔸_Fˣ`, through the entry of a `1 × 1` matrix.
 -/
 
 public section
