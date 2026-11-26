@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Bialternant
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Complete
 import Mathlib.LinearAlgebra.Matrix.Block
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # The Jacobi--Trudi identity

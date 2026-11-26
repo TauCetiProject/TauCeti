@@ -50,6 +50,10 @@ meant for locally profinite groups: a group with no compact open subgroup impose
   admissible.
 * `Representation.isAdmissible_iff_finite_of_isTrivial`: for a group with a compact open subgroup,
   a trivial representation is admissible exactly when the module is finitely generated.
+* `Representation.IsAdmissible.of_isNoetherian`: a smooth representation on a noetherian module
+  is admissible.
+* `Representation.IsAdmissible.of_forall_not_isCompact`: for a group with no compact open
+  subgroup, every smooth representation is admissible.
 
 ## References
 
@@ -220,6 +224,18 @@ instance IsAdmissible.of_isTrivial [ρ.IsTrivial] [Module.Finite A V] : IsAdmiss
   ⟨fun U _ ↦ by
     rw [Module.Finite.iff_fg, invariants_eq_top]
     exact Module.finite_def.1 inferInstance⟩
+
+/-- A smooth representation on a noetherian module, such as a finitely generated module over a
+noetherian ring, is admissible: each `V^U` is a submodule of the noetherian module `V`. -/
+instance IsAdmissible.of_isNoetherian [IsNoetherian A V] [IsSmooth ρ] :
+    IsAdmissible ρ :=
+  ⟨fun _ _ ↦ inferInstance⟩
+
+/-- For a group with no compact open subgroup the finiteness condition of admissibility is empty,
+so every smooth representation is admissible. -/
+theorem IsAdmissible.of_forall_not_isCompact [IsSmooth ρ]
+    (hG : ∀ U : OpenSubgroup G, ¬IsCompact (U : Set G)) : IsAdmissible ρ :=
+  ⟨fun U hU ↦ (hG U hU).elim⟩
 
 /-- For a group with a compact open subgroup, a trivial representation is admissible exactly when
 the module is finitely generated. -/

@@ -78,11 +78,15 @@ lemma cohomologyOnPullbackι_resolutionClass {M : X.Modules} (P : InjectiveResol
     W.cohomologyOnPullbackι M n
         (CategoryTheory.Sheaf.H'.resolutionClass
           (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ((toSheaf X).map (P.ι.f 0))
-          (P.map_ι_f_zero_comp_d _) (P.exact₀_map _) (P.exactAt_succ_map _) W s hs) =
+          (CochainComplex.map_augmentation_comp_d _ P.ι_f_zero_comp_complex_d)
+          (CochainComplex.map_augmentation_exact _ P.exact₀)
+          (CochainComplex.map_exactAt_succ _ P.cocomplex_exactAt_succ) W s hs) =
       CategoryTheory.Sheaf.H'.resolutionClass
         (K := ((Scheme.Modules.pullback W.ι ⋙ toSheaf W).mapHomologicalComplex _).obj P.cocomplex)
         ((Scheme.Modules.pullback W.ι ⋙ toSheaf W).map (P.ι.f 0))
-        (P.map_ι_f_zero_comp_d _) (P.exact₀_map _) (P.exactAt_succ_map _) ⊤
+        (CochainComplex.map_augmentation_comp_d _ P.ι_f_zero_comp_complex_d)
+        (CochainComplex.map_augmentation_exact _ P.exact₀)
+        (CochainComplex.map_exactAt_succ _ P.cocomplex_exactAt_succ) ⊤
         (((Scheme.Modules.pullback W.ι).obj (P.cocomplex.X n)).presheaf.map
           (homOfLE W.ι_preimage_self.ge).op (W.ι.pullbackSections (P.cocomplex.X n) W s)) (by
           refine (ConcreteCategory.congr_hom (((Scheme.Modules.pullback W.ι).map
@@ -100,8 +104,11 @@ lemma cohomologyOnPullbackι_resolutionClass {M : X.Modules} (P : InjectiveResol
     (Scheme.Hom.cohomologyOnPullback_resolutionClass W.ι P W s hs)).trans ?_
   exact CategoryTheory.Sheaf.H'.cohomologyPresheaf_map_resolutionClass
     (K := ((Scheme.Modules.pullback W.ι ⋙ toSheaf W).mapHomologicalComplex _).obj P.cocomplex)
-    ((Scheme.Modules.pullback W.ι ⋙ toSheaf W).map (P.ι.f 0)) (P.map_ι_f_zero_comp_d _)
-    (P.exact₀_map _) (P.exactAt_succ_map _) _ (homOfLE W.ι_preimage_self.ge) _ _
+    ((Scheme.Modules.pullback W.ι ⋙ toSheaf W).map (P.ι.f 0))
+    (CochainComplex.map_augmentation_comp_d _ P.ι_f_zero_comp_complex_d)
+    (CochainComplex.map_augmentation_exact _ P.exact₀)
+    (CochainComplex.map_exactAt_succ _ P.cocomplex_exactAt_succ) _ (homOfLE W.ι_preimage_self.ge) _
+    _
 
 /-- **Functions on `W` act through the open subscheme.** Pullback along the inclusion of an open
 `W` sends the class in `Hⁿ(W, M)` of `a • s`, for a function `a` on `W` and a section `s` of a
@@ -112,7 +119,9 @@ lemma cohomologyOnPullbackι_resolutionClass_smul {M : X.Modules} (P : Injective
     W.cohomologyOnPullbackι M n
         (CategoryTheory.Sheaf.H'.resolutionClass
           (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ((toSheaf X).map (P.ι.f 0))
-          (P.map_ι_f_zero_comp_d _) (P.exact₀_map _) (P.exactAt_succ_map _) W (a • s)
+          (CochainComplex.map_augmentation_comp_d _ P.ι_f_zero_comp_complex_d)
+          (CochainComplex.map_augmentation_exact _ P.exact₀)
+          (CochainComplex.map_exactAt_succ _ P.cocomplex_exactAt_succ) W (a • s)
           (by
             -- The differential of the complex of abelian sheaves is, by definition, `Hom.app`
             -- of the module differential, which is linear over functions on `W`.
@@ -121,7 +130,9 @@ lemma cohomologyOnPullbackι_resolutionClass_smul {M : X.Modules} (P : Injective
       W.topIso.inv a • W.cohomologyOnPullbackι M n
         (CategoryTheory.Sheaf.H'.resolutionClass
           (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ((toSheaf X).map (P.ι.f 0))
-          (P.map_ι_f_zero_comp_d _) (P.exact₀_map _) (P.exactAt_succ_map _) W s hs) := by
+          (CochainComplex.map_augmentation_comp_d _ P.ι_f_zero_comp_complex_d)
+          (CochainComplex.map_augmentation_exact _ P.exact₀)
+          (CochainComplex.map_exactAt_succ _ P.cocomplex_exactAt_succ) W s hs) := by
   have hsc : W.toScheme.presheaf.map (homOfLE W.ι_preimage_self.ge).op ((W.ι.app W).hom a) =
       W.toScheme.presheaf.map (⊤ : W.toScheme.Opens).leTop.op (W.topIso.inv a) := by
     simp only [Scheme.Opens.toScheme_presheaf_map, Scheme.Opens.ι_app, Scheme.Opens.topIso_inv]
@@ -148,7 +159,9 @@ theorem cohomologyOnPullbackι_injective (M : X.Modules) (n : ℕ) :
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
   obtain ⟨s, hs, rfl⟩ := CategoryTheory.Sheaf.H'.resolutionClass_surjective
     (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ((toSheaf X).map (P.ι.f 0))
-    (P.map_ι_f_zero_comp_d _) (P.exact₀_map _) (P.exactAt_succ_map _) W
+    (CochainComplex.map_augmentation_comp_d _ P.ι_f_zero_comp_complex_d)
+    (CochainComplex.map_augmentation_exact _ P.exact₀)
+    (CochainComplex.map_exactAt_succ _ P.cocomplex_exactAt_succ) W
     (fun j k ↦ Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque (P.cocomplex.X j) k W) x
   have hQ : ∀ j k, Subsingleton ((((Scheme.Modules.pullback W.ι ⋙ toSheaf W).mapHomologicalComplex
       _).obj P.cocomplex).X j |>.H' (k + 1) ⊤) := fun j k ↦

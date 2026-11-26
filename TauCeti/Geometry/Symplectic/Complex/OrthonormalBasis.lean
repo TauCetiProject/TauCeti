@@ -69,7 +69,6 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
 * `TauCeti.AlmostComplexStructure.orthonormal_of_norm_eq_one_of_inner_eq_zero`: unit vectors
   `ξ`, `η` with `η` orthogonal to `ξ` and `J ξ` give the orthonormal family `(ξ, J ξ, η, J η)`.
 * `TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one`,
-  `TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis`,
   `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one`, and
   `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation`:
   existence of oriented unitary frames and completion of a unit vector in dimension four.
@@ -443,16 +442,6 @@ theorem exists_unitary_orthonormalBasis_of_norm_eq_one {J : AlmostComplexStructu
   · simp [he]
   · simp [he, K]
   · simp [he, hr, hη_norm, K]
-
-/-- Given an orthogonal almost complex structure `J` on a four-dimensional real inner product space
-`V`, there exists a unitary orthonormal basis `e` with `J (e 0) = e 1` and `J (e 2) = e 3`. -/
-theorem exists_unitary_orthonormalBasis {J : AlmostComplexStructure V}
-    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) :
-    ∃ e : OrthonormalBasis (Fin 4) ℝ V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
-  have hv : finrank ℝ V = 4 := Fact.out
-  obtain ⟨e, -, h₀, h₂⟩ := exists_unitary_orthonormalBasis_of_norm_eq_one hJ
-    ((stdOrthonormalBasis ℝ V).orthonormal.1 ⟨0, by omega⟩)
-  exact ⟨e, h₀, h₂⟩
 
 /-- **Every pair `(ω, J)` whose associated bilinear form `ω(·, J ·)` is the inner product induces
 an oriented unitary orthonormal frame extending any given unit vector `ξ`.** -/

@@ -114,11 +114,8 @@ theorem isAdaptedPseudoGradient_neg_mgradient
   mvfderiv_apply_lt_zero y hy := by
     have hg : mgradient 𝓘(ℝ, E) f y ≠ 0 := by
       rwa [ne_eq, mgradient_eq_zero_iff, mvfderiv_eq_zero_iff]
-    have h : mvfderiv 𝓘(ℝ, E) f y (-mgradient 𝓘(ℝ, E) f y) =
-        -inner ℝ (mgradient 𝓘(ℝ, E) f y) (mgradient 𝓘(ℝ, E) f y) :=
-      (map_neg _ _).trans (congrArg Neg.neg mvfderiv_apply_mgradient)
-    rw [h, neg_lt_zero]
-    exact real_inner_self_pos.2 hg
+    rw [mvfderiv_apply_neg_mgradient, neg_lt_zero]
+    exact pow_pos (norm_pos_iff.2 hg) 2
   exists_morseChart x hx := by
     obtain ⟨φ, hφ⟩ := hφ x hx
     exact ⟨φ, fun y hy ↦ by rw [hφ.neg_mgradient_eq_field hy, φ.coord_mfderiv_field hy]⟩

@@ -8,15 +8,18 @@ module
 public import TauCeti.Geometry.Convex.Cone.Alternative
 public import Mathlib.LinearAlgebra.Matrix.Determinant.TotallyUnimodular
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.LinearAlgebra.Matrix.ColumnBasis
 import TauCeti.Analysis.Convex.Cone.Caratheodory
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
+import TauCeti.Logic.Function.Extend
+import TauCeti.LinearAlgebra.Matrix.MaximalMinor
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
 # Nonnegative solutions of linear systems
 
-This file collects two facts about the nonnegative solutions `x ≥ 0` of a linear system
+This file collects three facts about the nonnegative solutions `x ≥ 0` of a linear system
 `A *ᵥ x = b`, the fibres counted by vector partition functions.
 
 * **Integer heights.** The columns of an integer matrix `A` admit a strictly positive integer
@@ -24,14 +27,18 @@ This file collects two facts about the nonnegative solutions `x ≥ 0` of a line
   nonnegative vector in its kernel: over `ℕ`, or equivalently over any linearly ordered ring. This
   is Gordan's theorem with the denominators of the functional cleared, obtained from the integer
   form of Tucker's theorem `TauCeti.exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos`.
+* **Basic solutions.** If an integer matrix `A` has linearly independent rows, then every vector
+  `A *ᵥ x` with `x` nonnegative over a linearly ordered field is a nonnegative combination of the
+  columns of some column basis (`Matrix.ColumnBasis`). Carathéodory's theorem for cones
+  `TauCeti.exists_nonneg_sum_smul_eq_and_linearIndepOn` applied to the columns gives a nonnegative
+  solution with linearly independent support, which extends to a column basis.
 * **Integral basic solutions.** If an integer matrix `A` has linearly independent rows and each
   of its maximal minors is `0`, `1` or `-1`, then every integer right-hand side `b` with a
-  nonnegative solution over a linearly ordered field has a solution in natural numbers. A basic
-  solution, given by Carathéodory's theorem for cones
-  `TauCeti.exists_nonneg_sum_smul_eq_and_linearIndepOn` applied to the columns, extends to a
-  column basis, whose square submatrix has determinant `±1`, so Cramer's rule makes the solution
-  integral. Totally unimodular matrices (`Matrix.IsTotallyUnimodular`) satisfy the minor
-  hypothesis, by `Matrix.isTotallyUnimodular_iff_fintype` applied to the rows `id`.
+  nonnegative solution over a linearly ordered field has a solution in natural numbers: the
+  square submatrix of the column basis of a basic solution has determinant `±1`, so Cramer's rule
+  makes the solution integral. Totally unimodular matrices (`Matrix.IsTotallyUnimodular`)
+  satisfy the minor hypothesis, by `Matrix.isTotallyUnimodular_iff_fintype` applied to the rows
+  `id`.
 
 Both hypotheses of the last result are needed: the `1 × 1` matrix `[2]` has the nonnegative
 solution `1 / 2` for `b = 1`, and the `2 × 1` matrix with rows `[2]` and `[0]`, which has no
@@ -41,6 +48,7 @@ system has an integer solution.
 ## Main results
 
 * `Matrix.exists_pos_vecMul_iff`, `Matrix.exists_pos_vecMul_iff_forall_nonneg`: integer heights.
+* `Matrix.exists_columnBasis_submatrix_mulVec_eq_of_nonneg`: basic solutions.
 * `Matrix.exists_natCast_mulVec_eq_of_nonneg`: integral basic solutions.
 
 ## References
@@ -122,20 +130,28 @@ section Field
 
 variable [Field K] [LinearOrder K] [IsStrictOrderedRing K]
 
-/-- A nonnegative solution over `K` with integer coordinates is a solution in natural numbers. -/
-private theorem exists_natCast_mulVec_eq_of_forall_exists_intCast {A : Matrix κ ι ℤ} {b : κ → ℤ}
-    {y : ι → K} (hy : 0 ≤ y) (hint : ∀ j, ∃ n : ℤ, y j = n)
-    (hyb : A.map (Int.cast : ℤ → K) *ᵥ y = fun i => (b i : K)) :
-    ∃ c : ι → ℕ, A *ᵥ (fun j => (c j : ℤ)) = b := by
-  choose n hn using hint
-  refine ⟨fun j => (n j).toNat, ?_⟩
-  have hn0 : (fun j => ((n j).toNat : ℤ)) = n := funext fun j => by
-    have := hy j
-    rw [Pi.zero_apply, hn j, Int.cast_nonneg_iff] at this
-    exact Int.toNat_of_nonneg this
-  rw [hn0]
-  rw [funext hn, map_intCast_mulVec] at hyb
-  exact funext fun i => Int.cast_injective (congrFun hyb i)
+/-- **Basic solutions.** Let `A` be an integer matrix with linearly independent rows. If `x` is
+nonnegative over a linearly ordered field, then `A *ᵥ x` is a nonnegative combination of the
+columns of some column basis `e` of `A`. -/
+theorem exists_columnBasis_submatrix_mulVec_eq_of_nonneg [Fintype κ] [DecidableEq κ]
+    {A : Matrix κ ι ℤ} (hA : LinearIndependent ℤ A.row) {x : ι → K} (hx : 0 ≤ x) :
+    ∃ (e : A.ColumnBasis) (z : κ → K), 0 ≤ z ∧
+      (A.map (Int.cast : ℤ → K)).submatrix id e *ᵥ z = A.map Int.cast *ᵥ x := by
+  classical
+  -- A nonnegative solution with linearly independent support, by Carathéodory's theorem.
+  obtain ⟨y, hy, -, hsum, hli⟩ :=
+    TauCeti.exists_nonneg_sum_smul_eq_and_linearIndepOn (A.map (Int.cast : ℤ → K)).col hx
+  have hyx : A.map (Int.cast : ℤ → K) *ᵥ y = A.map Int.cast *ᵥ x := by
+    simpa only [mulVec_eq_sum, op_smul_eq_smul, col_def] using hsum
+  have hrow : LinearIndependent K (A.map (Int.cast : ℤ → K)).row := by
+    simpa using (linearIndependent_map_algebraMap_row_iff (S := K)).2 hA
+  -- Its support extends to a column basis `e`, and `y` is `y ∘ e` extended by zero.
+  obtain ⟨f, hyf, hdet⟩ := exists_det_submatrix_ne_zero_of_linearIndepOn hrow hli
+  let e : A.ColumnBasis := ⟨f, det_submatrix_ne_zero_of_map (Int.castRingHom K) hdet⟩
+  have hext : y = extend e (y ∘ e) 0 := (extend_comp_eq_of_forall_notMem_range
+    fun _ hj => by_contra fun hyj => hj (hyf hyj)).symm
+  refine ⟨e, y ∘ e, fun k => hy (e k), ?_⟩
+  rw [← mulVec_extend_zero e.injective, ← hext, hyx]
 
 /-- **Integral basic solutions.** Let `A` be an integer matrix with linearly independent rows all of
 whose maximal minors are `0`, `1` or `-1`. If an integer vector `b` is the image `A *ᵥ x` of a
@@ -147,44 +163,37 @@ theorem exists_natCast_mulVec_eq_of_nonneg [Fintype κ] [DecidableEq κ] (A : Ma
     {b : κ → ℤ} {x : ι → K} (hx : 0 ≤ x)
     (hxb : A.map (Int.cast : ℤ → K) *ᵥ x = fun i => (b i : K)) :
     ∃ c : ι → ℕ, A *ᵥ (fun j => (c j : ℤ)) = b := by
-  classical
-  -- A basic solution `y`, and a column basis `f` containing its support.
-  obtain ⟨y, hy, -, hsum, hli⟩ :=
-    TauCeti.exists_nonneg_sum_smul_eq_and_linearIndepOn (A.map (Int.cast : ℤ → K)).col hx
-  have hyx : A.map (Int.cast : ℤ → K) *ᵥ y = A.map Int.cast *ᵥ x := by
-    simpa only [mulVec_eq_sum, op_smul_eq_smul, col_def] using hsum
-  have hrow : LinearIndependent K (A.map (Int.cast : ℤ → K)).row := by
-    simpa using (linearIndependent_map_algebraMap_row_iff (S := K)).2 hA
-  obtain ⟨f, hyf, hdetK⟩ := exists_det_submatrix_ne_zero_of_linearIndepOn hrow hli
-  -- The integer square submatrix `N` on the columns `f` has determinant `±1`.
-  set N := A.submatrix id f
+  -- A basic solution `z` for a column basis `e`.
+  obtain ⟨e, z, hz, hzb⟩ := exists_columnBasis_submatrix_mulVec_eq_of_nonneg hA hx
+  rw [hxb] at hzb
+  -- The integer square submatrix `N` on the columns `e` has determinant `±1`.
+  set N := A.submatrix id e
   have hdet : IsUnit N.det := by
-    -- `hdetK` is a minor of `A.map (Int.castRingHom K)`, whose coercion is `Int.cast`.
-    have hne : N.det ≠ 0 := det_submatrix_ne_zero_of_map (Int.castRingHom K) hdetK
-    obtain ⟨s, hs⟩ : N.det ∈ Set.range SignType.cast := hunit f f.injective
+    obtain ⟨s, hs⟩ : N.det ∈ Set.range SignType.cast := hunit e e.injective
+    have hne : N.det ≠ 0 := e.det_submatrix_ne_zero
     rw [← hs] at hne ⊢
     rcases s with _ | _ | _
     · exact absurd rfl hne
     · simp
     · simp
-  rw [submatrix_map] at hdetK
-  -- `y` vanishes off the columns `f`, so `y ∘ f` solves the square system: it is `N⁻¹ *ᵥ b`.
-  have hyf' : ∀ j ∉ Set.range f, y j = 0 := fun j hj => by_contra fun hyj => hj (hyf hyj)
-  have hNy : N.map (Int.cast : ℤ → K) *ᵥ (fun k => y (f k)) = fun i => (b i : K) := by
-    rw [← hxb, ← hyx]
-    funext i
-    simp only [mulVec, dotProduct, N, map_apply, submatrix_apply, id_eq]
-    exact Fintype.sum_of_injective f f.injective _ _ (fun j hj => by simp [hyf' j hj]) fun k => rfl
-  have hNz : N.map (Int.cast : ℤ → K) *ᵥ (fun k => ((N⁻¹ *ᵥ b) k : K)) =
-      fun i => (b i : K) := by
-    rw [map_intCast_mulVec, mulVec_mulVec, mul_nonsing_inv _ hdet, one_mulVec]
-  have hint : ∀ j, ∃ n : ℤ, y j = n := fun j => by
-    by_cases hj : j ∈ Set.range f
-    · obtain ⟨k, rfl⟩ := hj
-      exact ⟨(N⁻¹ *ᵥ b) k,
-        congrFun (mulVec_injective_of_det_ne_zero hdetK (hNy.trans hNz.symm)) k⟩
-    · exact ⟨0, by simp [hyf' j hj]⟩
-  exact exists_natCast_mulVec_eq_of_forall_exists_intCast hy hint (hyx.trans hxb)
+  -- By Cramer's rule `z` is the integer vector `N⁻¹ *ᵥ b`, which is therefore nonnegative.
+  have hdetK : ((A.map (Int.cast : ℤ → K)).submatrix id e).det ≠ 0 := by
+    rw [submatrix_map]
+    exact (isUnit_det_map_intCast e.det_submatrix_ne_zero).ne_zero
+  have hzN : z = fun k => ((N⁻¹ *ᵥ b) k : K) := mulVec_injective_of_det_ne_zero hdetK
+    (hzb.trans (e.submatrix_mulVec_intCast_nonsing_inv_mulVec hdet b).symm)
+  have hN : ∀ k, 0 ≤ (N⁻¹ *ᵥ b) k := fun k => by
+    have := hz k
+    rwa [hzN, Pi.zero_apply, Int.cast_nonneg_iff] at this
+  refine ⟨extend e (fun k => ((N⁻¹ *ᵥ b) k).toNat) 0, ?_⟩
+  have hc : (fun j => ((extend e (fun k => ((N⁻¹ *ᵥ b) k).toNat) 0 j : ℕ) : ℤ)) =
+      extend e (N⁻¹ *ᵥ b) 0 := by
+    funext j
+    rw [apply_extend Nat.cast]
+    congr 1
+    funext k
+    exact Int.toNat_of_nonneg (hN k)
+  rw [hc, mulVec_extend_zero_nonsing_inv_mulVec _ e.injective hdet]
 
 end Field
 

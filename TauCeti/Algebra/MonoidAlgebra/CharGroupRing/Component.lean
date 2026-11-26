@@ -182,10 +182,10 @@ noncomputable def componentCornerAlgEquiv (H : Subgroup G) [Fintype H]
     (Ideal.quotientEquivAlgOfEq O
       ((ker_proj_eq_span_one_sub_charIdempotent H hH χ).trans
         ((TauCeti.isIdempotentElem_mapDomainAlgHom_charIdempotent H χ).ker_compressAlgHom
-          O (fun _ ↦ Commute.all _ _)).symm)).trans
+          O (Subsemigroup.mem_center_iff.mpr fun _ ↦ Commute.all _ _)).symm)).trans
       (Ideal.quotientKerAlgEquivOfSurjective
         ((TauCeti.isIdempotentElem_mapDomainAlgHom_charIdempotent H χ).compressAlgHom_surjective
-          O (fun _ ↦ Commute.all _ _)))
+          O (Subsemigroup.mem_center_iff.mpr fun _ ↦ Commute.all _ _)))
 
 /-- `componentCornerAlgEquiv` sends `α_{Ψ_χ}(x)` to the compression of `x` by `e_χ`. -/
 @[simp]
@@ -193,7 +193,7 @@ theorem componentCornerAlgEquiv_proj (H : Subgroup G) [Fintype H]
     (hH : IsUnit (Nat.card H : O)) (χ : H →* Oˣ) (x : MonoidAlgebra O G) :
     componentCornerAlgEquiv H hH χ (proj {ψ : G →* Oˣ | ψ.comp H.subtype = χ} x) =
       (TauCeti.isIdempotentElem_mapDomainAlgHom_charIdempotent H χ).compress x := by
-  simp [componentCornerAlgEquiv]
+  simpa [componentCornerAlgEquiv] using IsIdempotentElem.compressAlgHom_apply _ _ _ _
 
 /-- The inverse of `componentCornerAlgEquiv` projects elements of the idempotent corner
 `e_χ O[G] e_χ` to `R_{Ψ_χ}`. -/

@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation
+public import TauCeti.Geometry.MeasureTheory.Varifold.Euclidean
+public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
@@ -39,6 +40,8 @@ Hence no bound `|δV(X)| ≤ C sup |X|` holds for the fields supported in any cl
 
 ## Main results
 
+* `Euclidean.weight_lineVarifold`: the weight of `Euclidean.lineVarifold a u P` is Lebesgue
+  measure transported by `t ↦ a + t u`.
 * `Euclidean.firstVariation_lineVarifold_apply`: `δV(X) = ∫ tr (P ∘ DX(a + t u)) dt`.
 * `Euclidean.firstVariation_verticalLift_verticalField`: `δV(X_n) = ∫ ψ(a + t u) dt`.
 * `Euclidean.not_exists_abs_firstVariation_verticalLift_le`: the vertical lift does not have
@@ -178,6 +181,24 @@ theorem lineVarifold_apply (a u : E) (P : grassmannian ℝ E k)
     lineVarifold a u P s = volume (lineVarifoldParam a u P ⁻¹' s) := by
   rw [lineVarifold_def, Measure.map_apply (continuous_lineVarifoldParam a u P).measurable hs]
 
+/-- The weight of the image of a measure `μ` on `ℝ` under `t ↦ (a + t u, P)` is the image of `μ`
+under `t ↦ a + t u`, whatever the plane `P`. -/
+@[simp]
+theorem weight_map_lineVarifoldParam (μ : Measure ℝ) (a u : E) (P : grassmannian ℝ E k) :
+    weight (μ.map (lineVarifoldParam a u P)) = μ.map fun t => a + t • u := by
+  have hm : Measurable fun p : (⊤ : Opens E) × grassmannian ℝ E k => (p.1 : E) :=
+    measurable_subtypeVal.comp measurable_fst
+  rw [weight_def, Measure.map_map hm (continuous_lineVarifoldParam a u P).measurable,
+    Function.comp_def]
+  simp only [lineVarifoldParam_apply]
+
+/-- The weight of a line varifold is Lebesgue measure transported to the line, whatever the
+plane it carries. -/
+@[simp]
+theorem weight_lineVarifold (a u : E) (P : grassmannian ℝ E k) :
+    weight (lineVarifold a u P) = (volume : Measure ℝ).map fun t => a + t • u := by
+  rw [lineVarifold_def, weight_map_lineVarifoldParam]
+
 /-- Integrating against the line varifold is integrating along the parametrization
 `t ↦ (a + t u, P)`. -/
 theorem integral_lineVarifold {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] (a u : E)
@@ -186,6 +207,17 @@ theorem integral_lineVarifold {F : Type*} [NormedAddCommGroup F] [NormedSpace �
     ∫ z, f z ∂lineVarifold a u P = ∫ t : ℝ, f (lineVarifoldParam a u P t) := by
   rw [lineVarifold_def] at hf ⊢
   exact integral_map (continuous_lineVarifoldParam a u P).aemeasurable hf
+
+/-- Scaling the direction of a line varifold by `c ≠ 0` reparametrizes the line by `t ↦ c t`,
+which scales the varifold by `|c|⁻¹`. -/
+theorem lineVarifold_smul_direction (a u : E) (P : grassmannian ℝ E k) {c : ℝ} (hc : c ≠ 0) :
+    lineVarifold a (c • u) P = ENNReal.ofReal |c⁻¹| • lineVarifold a u P := by
+  have hparam : lineVarifoldParam a (c • u) P = lineVarifoldParam a u P ∘ (c * ·) := by
+    ext t <;> simp [smul_smul, mul_comm]
+  rw [lineVarifold_def, lineVarifold_def, hparam,
+    ← Measure.map_map (continuous_lineVarifoldParam a u P).measurable (measurable_const_mul c),
+    Real.map_volume_mul_left hc,
+    Measure.map_smul (hf := (continuous_lineVarifoldParam a u P).measurable.aemeasurable)]
 
 /-- The line varifold is finite on compact sets. -/
 theorem isFiniteMeasureOnCompacts_lineVarifold {a u : E} (hu : u ≠ 0) (P : grassmannian ℝ E k) :
@@ -209,14 +241,12 @@ theorem firstVariation_lineVarifold_apply {a u : E} (hu : u ≠ 0) (P : grassman
 /-- The *vertical lift* of the line `a + ℝu` along `w ≠ 0`: the line varifold carrying the
 constant plane `span {w}` at every point. -/
 def verticalLift (a u w : E) (hw : w ≠ 0) : Measure ((⊤ : Opens E) × grassmannian ℝ E 1) :=
-  lineVarifold a u
-    ⟨(ℝ ∙ w).starProjection, grassmannian.starProjection_mem (finrank_span_singleton hw)⟩
+  lineVarifold a u (grassmannian.spanLine ℝ w hw)
 
 omit [BorelSpace E] in
 /-- The defining formula of `Euclidean.verticalLift`. -/
 theorem verticalLift_def (a u w : E) (hw : w ≠ 0) :
-    verticalLift a u w hw = lineVarifold a u
-      ⟨(ℝ ∙ w).starProjection, grassmannian.starProjection_mem (finrank_span_singleton hw)⟩ := by
+    verticalLift a u w hw = lineVarifold a u (grassmannian.spanLine ℝ w hw) := by
   rw [verticalLift]
 
 /-- The vertical lift is finite on compact sets. -/
@@ -233,7 +263,7 @@ theorem firstVariation_verticalLift_verticalField {ψ : E → ℝ} (hψ : ContDi
     {n : ℝ} (hn : n ≠ 0) :
     firstVariation (verticalLift a u w (norm_ne_zero_iff.1 (hw ▸ one_ne_zero)))
       (verticalField hψ hψc a w n) = ∫ t : ℝ, ψ (a + t • u) := by
-  rw [verticalLift_def, firstVariation_lineVarifold_apply hu]
+  rw [verticalLift_def, firstVariation_lineVarifold_apply hu, grassmannian.coe_spanLine]
   exact integral_congr_ae (ae_of_all _ fun t =>
     tangentialDivergence_verticalField hψ hψc huw hw hn t)
 

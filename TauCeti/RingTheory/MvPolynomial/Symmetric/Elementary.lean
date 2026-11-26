@@ -41,8 +41,11 @@ product in elementary symmetric polynomials.
 * `Multiset.esymm_erase`: removing an element `a ∈ s` gives
   `eₙ(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`, and `Multiset.sum_map_mul_esymm_erase` sums it
   over `a ∈ s` against weights `w(a)`.
+* `Multiset.esymm_card_eq_prod` and `Multiset.esymm_map_inv_mul_prod`: `e_{card s}(s) = ∏ s`
+  and the reversal `e_j(s⁻¹) ∏ s = e_{card s - j}(s)` for `0 ∉ s`.
 * `TauCeti.esymmInt`: the elementary symmetric polynomial `e_m` of an integer degree `m`, which
   is `0` for `m < 0`.
+* `TauCeti.symmetricEsymm`: `e_k` as an element of `MvPolynomial.symmetricSubalgebra`.
 * `TauCeti.coeff_prod_one_add_C_mul_X`: the coefficient of `tⁿ` in `∏ᵢ (1 + xᵢ t)`, as a sum
   over the `n`-element subsets of the variables.
 * `TauCeti.mk_esymm_eq_prod_one_add_X`: the generating function of the `eₙ`.
@@ -184,6 +187,43 @@ theorem Multiset.sum_map_mul_esymm_erase {R : Type*} [CommRing R] [DecidableEq R
   rw [← Multiset.sum_map_mul_left]
   exact congrArg Multiset.sum (Multiset.map_congr rfl fun a _ ↦ by ring)
 
+/-- The top elementary symmetric function of a multiset is its product: `e_{card s}(s) = ∏ s`. -/
+@[simp]
+theorem Multiset.esymm_card_eq_prod {R : Type*} [CommSemiring R] (s : Multiset R) :
+    s.esymm (Multiset.card s) = s.prod := by
+  simp [Multiset.esymm, Multiset.powersetCard_self]
+
+/-- Reversal: the elementary symmetric functions of the inverses of a multiset `s` of nonzero
+elements of a semifield are those of `s`, read backwards and divided by `e_{card s}(s) = ∏ s`. -/
+theorem Multiset.esymm_map_inv_mul_prod {K : Type*} [Semifield K] (s : Multiset K)
+    (hs : (0 : K) ∉ s) {j : ℕ} (hj : j ≤ Multiset.card s) :
+    (s.map (·⁻¹)).esymm j * s.prod = s.esymm (Multiset.card s - j) := by
+  induction s using Multiset.induction_on generalizing j with
+  | empty =>
+    obtain rfl : j = 0 := by simpa using hj
+    simp
+  | cons a t ih =>
+    have ha : a ≠ 0 := fun h ↦ hs (h ▸ Multiset.mem_cons_self _ _)
+    have ht : (0 : K) ∉ t := fun h ↦ hs (Multiset.mem_cons_of_mem h)
+    -- The factor `a⁻¹` of the new term cancels against the factor `a` of the new product.
+    have hinv (x : K) : a⁻¹ * x * (a * t.prod) = x * t.prod := by
+      rw [mul_mul_mul_comm, inv_mul_cancel₀ ha, one_mul]
+    rw [Multiset.card_cons] at hj ⊢
+    rcases j with _ | i
+    · rw [Multiset.esymm_zero, one_mul, Nat.sub_zero, ← Multiset.card_cons a t,
+        Multiset.esymm_card_eq_prod]
+    rw [Multiset.map_cons, Multiset.esymm_cons, Multiset.prod_cons, add_mul, hinv,
+      ih ht (j := i) (by omega)]
+    rcases Nat.lt_or_ge i (Multiset.card t) with hlt | hge
+    · -- Both remaining indices are one more than `card t - (i + 1)`; expand by `esymm_cons`.
+      have h1 : Multiset.card t - i = Multiset.card t - (i + 1) + 1 := by omega
+      have h2 : Multiset.card t + 1 - (i + 1) = Multiset.card t - (i + 1) + 1 := by omega
+      rw [h1, h2, Multiset.esymm_cons, ← ih ht hlt]
+      ring
+    · obtain rfl : i = Multiset.card t := by omega
+      rw [Multiset.esymm_of_card_lt (by simp), zero_mul, zero_add, Nat.sub_self, Nat.sub_self,
+        Multiset.esymm_zero, Multiset.esymm_zero]
+
 /-- The elementary symmetric polynomial whose degree is the number of variables is the product of
 all the variables: `e_n(X₁, …, X_n) = X₁ ⋯ X_n`. -/
 theorem MvPolynomial.esymm_card (σ : Type*) [Fintype σ] (R : Type*) [CommSemiring R] :
@@ -238,6 +278,32 @@ theorem rename_esymmInt {τ : Type*} [Fintype τ] (m : ℤ) (e : σ ≃ τ) :
   split_ifs <;> simp [MvPolynomial.rename_esymm]
 
 end esymmInt
+
+section symmetricEsymm
+
+variable (σ : Type*) [Fintype σ] (R : Type*) [CommSemiring R]
+
+/-- The elementary symmetric polynomial `MvPolynomial.esymm σ R k`, as an element of
+`MvPolynomial.symmetricSubalgebra`. -/
+noncomputable def symmetricEsymm (k : ℕ) : MvPolynomial.symmetricSubalgebra σ R :=
+  ⟨MvPolynomial.esymm σ R k, MvPolynomial.esymm_isSymmetric σ R k⟩
+
+variable {σ R}
+
+@[simp, norm_cast]
+theorem coe_symmetricEsymm (k : ℕ) :
+    (symmetricEsymm σ R k : MvPolynomial σ R) = MvPolynomial.esymm σ R k :=
+  (rfl)
+
+/-- The elementary symmetric polynomial `e_k` in the symmetric subalgebra vanishes when `k`
+exceeds the number of variables. -/
+theorem symmetricEsymm_eq_zero_of_lt {k : ℕ} (h : Fintype.card σ < k) :
+    symmetricEsymm σ R k = 0 := by
+  ext1
+  rw [coe_symmetricEsymm, MvPolynomial.esymm_eq_multiset_esymm]
+  exact Multiset.esymm_of_card_lt (by simpa using h)
+
+end symmetricEsymm
 
 section GeneratingFunction
 

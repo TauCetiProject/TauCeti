@@ -11,7 +11,7 @@ import Mathlib.Topology.Maps.Proper.Basic
 import Mathlib.Topology.Order.ProjIcc
 import TauCeti.Topology.Algebra.Module.Complement
 import TauCeti.Topology.Homotopy.AmbientIsotopyConj
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Straightening a graph onto the zero section

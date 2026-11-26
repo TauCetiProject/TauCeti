@@ -9,7 +9,7 @@ public import Mathlib.Probability.UniformOn
 public import TauCeti.MeasureTheory.OptimalTransport.GromovWasserstein.Space
 import TauCeti.MeasureTheory.Constructions.UnitInterval.GridApproximation
 import TauCeti.MeasureTheory.Measure.UnitIntervalMap
-import TauCeti.Probability.Distributions.Uniform.Finite
+import TauCeti.Probability.Distributions.Uniform.Finite.Basic
 
 /-!
 # Finite uniform kernels and separability of the Gromov–Wasserstein space

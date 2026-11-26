@@ -1050,16 +1050,26 @@ theorem imDilation_higherReflectionNode_fin_one_mem {Ω : Set ℂ}
     rw [imDilation_higherReflectionNode_fin_one]
     exact hΩ z hz hneg
 
-/-- Every weak derivative of a half-disc Sobolev map is locally `Lᵖ` up to the real axis: it
-agrees with the one supplied by the definition off the axis, which is a null set. -/
+/-- Every weak derivative on the open upper part of a member of `W^{m+1,p}_loc(Ω ∩ {0 ≤ im})` is in
+`W^{m,p}_loc(Ω ∩ {0 ≤ im})`, not only the one supplied by the definition: the two agree off the
+axis, which is a null set. -/
+theorem MemWkpLoc.memWkpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg {p : ℝ≥0∞} {m : ℕ}
+    {Ω : Opens ℂ} {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (m + 1) u)
+    {D : ℂ → ℂ →L[ℝ] F}
+    (hD : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) u D) :
+    MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) m D := by
+  obtain ⟨-, D', hD', hD'm⟩ := memWkpLoc_succ_iff.1 hu
+  exact hD'm.congr_ae
+    (by rw [Measure.restrict_congr_set (inter_setOf_im_nonneg_ae_eq_interior Ω)]
+        exact hD'.ae_eq hD)
+
+/-- Every weak derivative of a half-disc Sobolev map is locally `Lᵖ` up to the real axis: the
+case `m = 0` of `TauCeti.MemWkpLoc.memWkpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg`. -/
 theorem MemWkpLoc.memLpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg {p : ℝ≥0∞} {Ω : Opens ℂ}
     {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u) {D : ℂ → ℂ →L[ℝ] F}
     (hD : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) u D) :
-    MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) D := by
-  obtain ⟨-, D', hD', hD'p⟩ := memWkpLoc_succ_iff.1 hu
-  exact (memWkpLoc_zero_iff.1 hD'p).congr_ae
-    (by rw [Measure.restrict_congr_set (inter_setOf_im_nonneg_ae_eq_interior Ω)]
-        exact hD'.ae_eq hD)
+    MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) D :=
+  memWkpLoc_zero_iff.1 (hu.memWkpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg hD)
 
 /-- Near a point `w` of the closed upper half-plane in an open set `V`, a member of the half-disc
 class on `V ∩ {0 ≤ im}` agrees on the closed upper half-plane with a member of the class on a

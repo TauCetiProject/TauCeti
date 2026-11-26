@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.GaloisRepresentation.GlobalRamification
-public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Inertia
+public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Inertia.Basic
+import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Inertia.Image
 
 /-!
 # Galois representations with open kernel have finite ramification set
@@ -23,12 +24,21 @@ unramified at every place unramified in `E`, and since only finitely many places
 hypothesis: finite image alone does not suffice, since over an indiscrete coefficient ring the
 kernel of a character with finite image can be dense.
 
+Conversely, the image of `I_Q` in `Gal(E/F)` is the inertia group of the prime of `𝓞 E` below `Q`
+(`TauCeti.GaloisRep.map_inertiaGroup_restrictNormalHom`). So when the kernel of `ρ` is exactly the
+fixing subgroup of `E`, that is, when `E` is the field cut out by `ρ`, `ρ` is unramified at `v`
+exactly when `v` is unramified in `E`, and the ramification set of `ρ` is the set of places
+ramified in `E` (`TauCeti.ContinuousRep.ramificationSet_eq_ramifiedPrimes`).
+
 ## Main results
 
 * `TauCeti.ContinuousRep.ramificationSet_subset_ramifiedPrimes`: if the kernel of `ρ` contains the
   fixing subgroup of a finite normal `E`, then `Ram ρ` lies in the set of places ramified in `E`.
 * `TauCeti.ContinuousRep.finite_ramificationSet_of_isOpen_ker`: the ramification set of a
   representation with open kernel is finite.
+* `TauCeti.ContinuousRep.isUnramifiedAt_iff_notMem_ramifiedPrimes`,
+  `TauCeti.ContinuousRep.ramificationSet_eq_ramifiedPrimes`: if the kernel of `ρ` is the fixing
+  subgroup of a finite normal `E`, then `ρ` is unramified at `v` iff `v` is unramified in `E`.
 -/
 
 public section
@@ -68,5 +78,25 @@ theorem finite_ramificationSet_of_isOpen_ker
   have : NumberField E := NumberField.of_module_finite F E
   exact (Chebotarev.ramifiedPrimes F E).finite_toSet.subset
     (ramificationSet_subset_ramifiedPrimes E hE)
+
+/-- **Ramification of a representation and of its kernel field.** If the kernel of `ρ` is the
+fixing subgroup of a finite normal subextension `E` of `F^alg / F`, then `ρ` is unramified at a
+finite place `v` exactly when `v` is unramified in `E`. -/
+theorem isUnramifiedAt_iff_notMem_ramifiedPrimes (E : IntermediateField F (AlgebraicClosure F))
+    [NumberField E] [Normal F E] (hE : ρ.toRepresentation.ker = E.fixingSubgroup)
+    (v : HeightOneSpectrum (𝓞 F)) :
+    ρ.IsUnramifiedAt v ↔ v ∉ Chebotarev.ramifiedPrimes F E := by
+  rw [← GaloisRep.forall_inertiaGroup_le_fixingSubgroup_iff E v, isUnramifiedAt_iff, ← hE]
+  simp only [IsConcreteLE.le_iff, MonoidHom.mem_ker, coe_toRepresentation]
+
+/-- **The ramification set is that of the kernel field.** If the kernel of `ρ` is the fixing
+subgroup of a finite normal subextension `E` of `F^alg / F`, then the ramification set of `ρ` is
+the set of finite places of `F` ramified in `E`. -/
+theorem ramificationSet_eq_ramifiedPrimes (E : IntermediateField F (AlgebraicClosure F))
+    [NumberField E] [Normal F E] (hE : ρ.toRepresentation.ker = E.fixingSubgroup) :
+    ρ.ramificationSet = (Chebotarev.ramifiedPrimes F E : Set (HeightOneSpectrum (𝓞 F))) := by
+  ext v
+  rw [mem_ramificationSet_iff, isUnramifiedAt_iff_notMem_ramifiedPrimes E hE, not_not,
+    Finset.mem_coe]
 
 end TauCeti.ContinuousRep

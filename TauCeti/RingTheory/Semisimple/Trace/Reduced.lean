@@ -63,6 +63,8 @@ In characteristic `0`, the case of the definition, each `d_c` is invertible in `
   where `d_c > 0` by `TauCeti.Algebra.idealDeg_pos`).
 * `TauCeti.Algebra.semisimpleReducedTrace_eq_trace`: the reduced trace of a field extension
   `E / F` is the field trace `Algebra.trace F E`.
+* `TauCeti.Algebra.semisimpleReducedTrace_matrix`: in characteristic `0`, the reduced trace of
+  `M_n(F)` is the matrix trace.
 
 ## Implementation notes
 
@@ -389,6 +391,20 @@ theorem semisimpleReducedTrace_eq_reducedTrace [CharZero F] (b : B) :
   rw [semisimpleReducedTrace_eq_trace_reducedTrace F, Algebra.trace_self_apply]
 
 end Field
+
+section Matrix
+
+variable {K : Type*} [Field K] [CharZero K] {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- In characteristic `0`, the reduced trace of `M_n(K)` over `K` is the matrix trace. -/
+@[simp]
+theorem semisimpleReducedTrace_matrix (M : Matrix n n K) :
+    semisimpleReducedTrace K (Matrix n n K) M = M.trace := by
+  cases isEmpty_or_nonempty n
+  · simp [Subsingleton.elim M 0]
+  rw [semisimpleReducedTrace_eq_reducedTrace, reducedTrace_matrix]
+
+end Matrix
 
 end Algebra
 

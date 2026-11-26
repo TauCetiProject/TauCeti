@@ -27,6 +27,8 @@ file records consequences of that definition.
 * In a group with zero with continuous inversion away from zero, the coercion `G₀ˣ → G₀` is a
   topological embedding, so a preconnected set of nonzero elements pulls back to a preconnected
   set of units.
+* A homomorphism from a group with continuous inversion into `Mˣ` is continuous exactly when its
+  values in `M` are, since its inverses are its values at inverses.
 
 ## Main results
 
@@ -39,6 +41,7 @@ file records consequences of that definition.
 * `Units.instPolishSpace`: the units of a Polish monoid with continuous multiplication are Polish.
 * `IsPreconnected.preimage_units_val`: preconnected sets of nonzero elements pull back to
   preconnected sets of units.
+* `MonoidHom.continuous_iff_continuous_val`: continuity of a homomorphism into the units.
 -/
 
 public section
@@ -105,6 +108,18 @@ instance instPolishSpace [ContinuousMul M] [PolishSpace M] : PolishSpace Mˣ :=
     isClosedEmbedding_embedProduct |>.polishSpace
 
 end Units
+
+/-- **Continuity into the units of a topological monoid**: a homomorphism from a group with
+continuous inversion into `Mˣ` is continuous for the units topology exactly when its values in `M`
+are continuous, since `ρ(g)⁻¹ = ρ(g⁻¹)`. -/
+@[to_additive /-- **Continuity into the additive units of a topological additive monoid**: a
+homomorphism from an additive group with continuous negation into `AddUnits M` is continuous
+exactly when its values in `M` are continuous, since `-ρ(g) = ρ(-g)`. -/]
+theorem MonoidHom.continuous_iff_continuous_val {G M : Type*} [Group G] [TopologicalSpace G]
+    [ContinuousInv G] [Monoid M] [TopologicalSpace M] (ρ : G →* Mˣ) :
+    Continuous ρ ↔ Continuous fun g => (ρ g : M) := by
+  refine ⟨fun h => Units.continuous_val.comp h, fun h => Units.continuous_iff.2 ⟨h, ?_⟩⟩
+  exact (h.comp continuous_inv).congr fun g => by rw [Function.comp_apply, map_inv]
 
 /-- **Preconnected sets of nonzero elements pull back to preconnected sets of units.**  In a group
 with zero whose inversion is continuous away from zero, the coercion from the units is a

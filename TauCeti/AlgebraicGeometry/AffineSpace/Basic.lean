@@ -18,6 +18,9 @@ For a commutative ring `R`, an `R`-algebra `A`, and a coordinate family `x : n �
 `AlgebraicGeometry.AffineSpace.homOfAlgebra R x` is the canonical `Spec (.of R)`-morphism
 `Spec (.of A) ⟶ 𝔸(n; Spec (.of R))` corresponding to polynomial evaluation `MvPolynomial.aeval x`.
 
+* `exists_eq_isoSpec_hom_comp_homOfAlgebra`: any morphism `Z ⟶ 𝔸(n; Spec (.of R))` from an affine
+  scheme `Z` factors as `Z.isoSpec.hom ≫ homOfAlgebra R x` for an induced `R`-algebra structure on
+  `Γ(Z, ⊤)`.
 * `isClosedImmersion_homOfAlgebra_iff`: `homOfAlgebra R x` is a closed immersion if and only if
   `x` generates `A` as an `R`-algebra (`Algebra.adjoin R (Set.range x) = ⊤`).
 * `isFinite_homOfAlgebra_iff`: `homOfAlgebra R y` is a finite morphism of schemes if and only if
@@ -93,6 +96,26 @@ lemma homOfAlgebra_inj {x y : n → A} :
   refine ⟨fun h ↦ funext fun i ↦ ?_, fun h ↦ h ▸ rfl⟩
   simpa using congrArg (Scheme.ΓSpecIso (.of A)).hom
     (congrArg (fun f ↦ f.appTop (coord (Spec (.of R)) i)) h)
+
+/-- Any morphism from an affine scheme `Z` to `𝔸(n; Spec (.of R))` factors as
+`Z.isoSpec.hom ≫ homOfAlgebra R x` for an induced `R`-algebra structure on `Γ(Z, ⊤)` and
+coordinate family `x : n → Γ(Z, ⊤)`. -/
+lemma exists_eq_isoSpec_hom_comp_homOfAlgebra {Z : Scheme.{u}} [IsAffine Z]
+    (ι : Z ⟶ 𝔸(n; Spec (.of R))) :
+    ∃ (_ : Algebra R Γ(Z, ⊤)) (x : n → Γ(Z, ⊤)), ι = Z.isoSpec.hom ≫ homOfAlgebra R x := by
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective (Z.isoSpec.inv ≫ ι ≫ (SpecIso n (.of R)).hom)
+  let : Algebra R Γ(Z, ⊤) := (φ.hom.comp MvPolynomial.C).toAlgebra
+  let x : n → Γ(Z, ⊤) := fun j ↦ φ.hom (MvPolynomial.X j)
+  have haeval : (MvPolynomial.aeval (R := R) x).toRingHom = φ.hom := by
+    refine MvPolynomial.ringHom_ext' ?_ fun j ↦ ?_
+    · ext c
+      simp [RingHom.algebraMap_toAlgebra]
+    · simp [x]
+  have hφ_eq : CommRingCat.ofHom (MvPolynomial.aeval (R := R) x).toRingHom = φ :=
+    CommRingCat.hom_ext haeval
+  refine ⟨this, x, ?_⟩
+  rw [homOfAlgebra_def, hφ_eq, hφ]
+  simp
 
 /-- Evaluating at the standard indeterminates `MvPolynomial.X` yields `(SpecIso n (.of R)).inv`. -/
 @[simp]

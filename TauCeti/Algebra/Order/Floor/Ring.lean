@@ -20,7 +20,8 @@ A point of `[0, n)` in an ordered ring with a floor operation is the sum of an i
 `Fin n` and a remainder in `[0, 1)`. This describes, for example, time along one of the
 finitely many edges in a polygonal boundary parametrization. In the same way, a `1`-periodic
 function is determined by its values on `[0, 1)`: it takes the same value at `t` and at the
-fractional part of `t`. The integers in `[a, y)` number `max (y - a) 0` up to one.
+fractional part of `t`. The integers in `[a, y)` number `max (y - a) 0` up to one, and for
+`N ≠ 0` only finitely many points `q` of a closed interval have `N q` an integer.
 
 For a step `δ > 0` in a linearly ordered field with an integer floor, the multiples of `δ` cut
 the line into the closed intervals `[δ m, δ (m + 1)]` with `m ∈ ℤ`. Every point `x` lies in the
@@ -38,6 +39,8 @@ only finitely many rounded families have entries in `[-R, R]`.
   its fractional part `Int.fract t`.
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
 * `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
+* `TauCeti.finite_setOf_mem_Icc_natCast_mul_eq_intCast`: for `N ≠ 0`, the points `q` of
+  `[a, b]` with `N q` an integer form a finite set.
 * `TauCeti.fract_inv_two`: `{1/2} = 1/2`.
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
@@ -89,6 +92,23 @@ theorem abs_card_Ico_ceil_sub_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictO
       abs_le]
     exact ⟨(neg_nonpos.2 zero_le_one).trans (sub_nonneg.2 (Int.le_ceil y)),
       (sub_lt_iff_lt_add'.2 (Int.ceil_lt_add_one y)).le⟩
+
+/-- In an ordered ring with an integer floor, the points `q` of `[a, b]` with `N q` an integer
+for a fixed `N ≠ 0` form a finite set. In a field these are the points of `[a, b]` in
+`(1 / N) ℤ`. -/
+theorem finite_setOf_mem_Icc_natCast_mul_eq_intCast {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorRing R] {N : ℕ} (hN : N ≠ 0) (a b : R) :
+    {q : R | q ∈ Set.Icc a b ∧ ∃ m : ℤ, (N : R) * q = m}.Finite := by
+  have hN' : (0 : R) < N := by exact_mod_cast Nat.pos_of_ne_zero hN
+  -- multiplication by `N` is injective and sends the set into the integers of `[N a, N b]`
+  refine (((Set.finite_Icc ⌊(N : R) * a⌋ ⌈(N : R) * b⌉).image ((↑) : ℤ → R)).preimage
+    (strictMono_mul_left_of_pos hN').injective.injOn).subset ?_
+  rintro q ⟨⟨ha, hb⟩, m, hm⟩
+  refine ⟨m, ⟨?_, ?_⟩, hm.symm⟩
+  · rw [← Int.floor_intCast (R := R) m, ← hm]
+    exact Int.floor_mono (mul_le_mul_of_nonneg_left ha hN'.le)
+  · rw [← Int.ceil_intCast (R := R) m, ← hm]
+    exact Int.ceil_mono (mul_le_mul_of_nonneg_left hb hN'.le)
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [FloorRing K] {δ : K}
 

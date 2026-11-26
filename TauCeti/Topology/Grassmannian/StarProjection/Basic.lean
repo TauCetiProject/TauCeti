@@ -44,6 +44,7 @@ This is the Grassmannian `G(E, k)` that carries the varifolds of a Euclidean spa
 
 * `Euclidean.grassmannian 𝕜 E k`: the orthogonal projections of `E` with range of rank `k`.
 * `Euclidean.grassmannian.submoduleEquiv`: the bijection with the `k`-dimensional subspaces.
+* `Euclidean.grassmannian.spanLine 𝕜 w`: the line `span {w}` as a point of `G(E, 1)`.
 * `Euclidean.grassmannian.finiteGrassmannianHomeomorph`: the homeomorphism from
   `TauCeti.finiteGrassmannian 𝕜 k N` induced by a linear isometry
   `E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N)`.
@@ -60,6 +61,8 @@ This is the Grassmannian `G(E, k)` that carries the varifolds of a Euclidean spa
   are those of trace `k`.
 * `Euclidean.isClosed_grassmannian`, `Euclidean.isCompact_grassmannian`: `G(E, k)` is closed and
   compact.
+* `Euclidean.grassmannian.continuous_spanLine`: the line `span {w}` depends continuously on a
+  nonvanishing vector `w`.
 * `Euclidean.grassmannian.norm_trace_comp_le`: the tangential trace satisfies
   `‖tr (P ∘ A)‖ ≤ k ‖A‖` for `P ∈ G(E, k)`, and `Euclidean.grassmannian.continuous_trace_comp`:
   it is continuous in `P`.
@@ -161,6 +164,42 @@ theorem eq_starProjection_range {P : E →L[𝕜] E}
     (hP : P ∈ grassmannian 𝕜 E k) :
     ∃ (_ : P.range.HasOrthogonalProjection), P = P.range.starProjection :=
   isStarProjection_iff_eq_starProjection_range.1 hP.1
+
+variable (𝕜) in
+/-- The line `span {w}`, for `w ≠ 0`, as a point of `G(E, 1)`: the orthogonal projection onto
+it. -/
+noncomputable def spanLine (w : E) (hw : w ≠ 0) : grassmannian 𝕜 E 1 :=
+  ⟨(𝕜 ∙ w).starProjection, starProjection_mem (finrank_span_singleton hw)⟩
+
+/-- The value of `spanLine 𝕜 w hw` is the orthogonal projection onto `span {w}`. -/
+@[simp]
+theorem coe_spanLine (w : E) (hw : w ≠ 0) :
+    (spanLine 𝕜 w hw : E →L[𝕜] E) = (𝕜 ∙ w).starProjection :=
+  (rfl)
+
+/-- The value of `spanLine 𝕜 w hw` is the projection `v ↦ ‖w‖⁻² ⟪w, v⟫ w`. -/
+theorem coe_spanLine_eq_inv_norm_sq_smul (w : E) (hw : w ≠ 0) :
+    (spanLine 𝕜 w hw : E →L[𝕜] E) = (‖w‖ ^ 2 : 𝕜)⁻¹ • InnerProductSpace.rankOne 𝕜 w w := by
+  ext1 v
+  rw [coe_spanLine, Submodule.starProjection_singleton]
+  simp [div_eq_inv_mul, mul_smul]
+
+/-- For a unit vector `w`, the value of `spanLine 𝕜 w hw` is the projection `v ↦ ⟪w, v⟫ w`. -/
+theorem coe_spanLine_of_norm_eq_one {w : E} (hw : w ≠ 0) (h : ‖w‖ = 1) :
+    (spanLine 𝕜 w hw : E →L[𝕜] E) = InnerProductSpace.rankOne 𝕜 w w := by
+  rw [coe_spanLine_eq_inv_norm_sq_smul, h]
+  simp
+
+/-- The line `span {w t}` depends continuously on `t` when `w` is continuous and nonvanishing. -/
+theorem continuous_spanLine {α : Type*} [TopologicalSpace α] {w : α → E} (hw : Continuous w)
+    (hw0 : ∀ t, w t ≠ 0) : Continuous fun t ↦ spanLine 𝕜 (w t) (hw0 t) := by
+  refine continuous_induced_rng.2 ?_
+  simp only [Function.comp_def, coe_spanLine_eq_inv_norm_sq_smul]
+  refine (Continuous.inv₀ (f := fun t ↦ (‖w t‖ ^ 2 : 𝕜)) (by fun_prop) fun t ↦ ?_).smul ?_
+  · simpa using hw0 t
+  · simp only [InnerProductSpace.rankOne_def]
+    exact ((ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 E E).continuous.comp
+      ((innerSL 𝕜 : E →L⋆[𝕜] E →L[𝕜] 𝕜).continuous.comp hw)).clm_apply hw
 
 section FiniteGrassmannian
 

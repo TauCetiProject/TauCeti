@@ -44,6 +44,8 @@ defined in `TauCeti/GroupTheory/Coxeter/Basic.lean`.
   parabolic subgroup of `Set.range f`.
 * `CoxeterSystem.length_parabolicHom`: **it preserves lengths.**
 * `CoxeterSystem.parabolicHom_injective`: **it is injective.**
+* `CoxeterSystem.card_parabolic_range`: so the standard parabolic subgroup of `Set.range f` has the
+  order of `W`.
 * `CoxeterSystem.isReduced_map_iff`: a word is reduced exactly when its image is.
 * `CoxeterSystem.bruhatLE_parabolicHom_iff`: **it embeds the Bruhat order as an induced
   suborder.**
@@ -147,6 +149,13 @@ theorem parabolicHom_injective : Function.Injective (cs.parabolicHom cs' hf) :=
   injective_of_exchange (cs := cs) _ cs'.length
     (fun i j ↦ by rw [parabolicHom_simple, parabolicHom_simple, orderOf_simple_mul_simple, hf])
     (isLeast_length_parabolicHom cs hf) (exchange_parabolicHom cs hf)
+
+include cs hf in
+/-- **The standard parabolic subgroup of `Set.range f` has the order of `W`**: it is the injective
+image of `CoxeterSystem.parabolicHom`. -/
+theorem card_parabolic_range : Nat.card (cs'.parabolic (Set.range f)) = Nat.card W := by
+  rw [← range_parabolicHom cs hf]
+  exact (Nat.card_congr (MonoidHom.ofInjective (parabolicHom_injective cs hf)).toEquiv).symm
 
 include hf in
 /-- A word in `B` is reduced exactly when its image under `f` is reduced in `W'`. -/

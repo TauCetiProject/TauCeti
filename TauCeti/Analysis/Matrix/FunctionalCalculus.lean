@@ -72,6 +72,8 @@ with a measurable random matrix `ω ↦ A ω` gives measurability of `ω ↦ cfc
   eigenvector of `A` with eigenvalue `μ`;
 * `Matrix.IsHermitian.toEuclideanLin_cfc` — the Euclidean operator of `cfc f A` is the symmetric
   functional calculus `LinearMap.IsSymmetric.cfc f` of `A.toEuclideanLin`;
+* `Matrix.IsHermitian.sum_smul_cfc_indicator`: the spectral decomposition
+  `A = ∑ c, c • cfc ({c}.indicator 1) A` over the eigenvalues `c` of `A`;
 * `Matrix.IsHermitian.toEuclideanLin_cfc_indicator` — the Euclidean operator of
   `cfc (Ω.indicator 1) A` is the orthogonal projection onto the point-spectral subspace
   `Module.End.pointSpectralSubspace A.toEuclideanLin Ω`;
@@ -303,6 +305,24 @@ theorem IsHermitian.re_trace_cfc_mul_cfc {B : Matrix n n 𝕜} (hA : A.IsHermiti
     RCLike.re (cfc f A * cfc g B).trace = ∑ i, ∑ j, f (hA.eigenvalues i) *
       g (hB.eigenvalues j) * ‖⟪hA.eigenvectorBasis i, hB.eigenvectorBasis j⟫_𝕜‖ ^ 2 := by
   simp only [hA.trace_cfc_mul_cfc hB, map_sum, RCLike.ofReal_re]
+
+
+/-- **Spectral decomposition.** The spectral projections `cfc ({c}.indicator 1) A` of a Hermitian
+matrix `A`, weighted by the eigenvalues `c`, sum to `A`. -/
+theorem IsHermitian.sum_smul_cfc_indicator (hA : A.IsHermitian) :
+    ∑ c ∈ Finset.univ.image hA.eigenvalues, c • cfc (Set.indicator {c} (1 : ℝ → ℝ)) A = A := by
+  have hspec := hA.spectrum_real_eq_range_eigenvalues
+  have hc (f : ℝ → ℝ) : ContinuousOn f (spectrum ℝ A) :=
+    (hspec ▸ Set.finite_range hA.eigenvalues).continuousOn f
+  calc ∑ c ∈ Finset.univ.image hA.eigenvalues, c • cfc (Set.indicator {c} (1 : ℝ → ℝ)) A
+      = cfc (∑ c ∈ Finset.univ.image hA.eigenvalues,
+          fun x ↦ c * Set.indicator {c} (1 : ℝ → ℝ) x) A := by
+        rw [cfc_sum _ _ _ fun c _ ↦ hc _]
+        exact Finset.sum_congr rfl fun c _ ↦ (cfc_const_mul c _ A (hc _)).symm
+    _ = cfc (fun x : ℝ ↦ x) A := cfc_congr fun x hx ↦ by
+        obtain ⟨i, rfl⟩ := hspec ▸ hx
+        simp [Set.indicator_apply]
+    _ = A := cfc_id' ℝ A hA.isSelfAdjoint
 
 end Matrix
 

@@ -423,6 +423,19 @@ theorem StandardSimplex.lineMap_same {σ : Finset ι} (b : StandardSimplex σ) (
     StandardSimplex.lineMap b b t = b :=
   Subtype.ext (by simp)
 
+/-- The coordinates of a point of a segment in a closed simplex. -/
+theorem StandardSimplex.lineMap_apply {σ : Finset ι} (b x : StandardSimplex σ) (t : unitInterval)
+    (w : ι) : (StandardSimplex.lineMap b x t : ι →₀ ℝ) w = (1 - t) * b.val w + t * x.val w := by
+  simp [AffineMap.lineMap_apply_module]
+
+/-- The segment between two points of a closed coordinate simplex is continuous in its
+parameter. -/
+theorem StandardSimplex.continuous_lineMap {σ : Finset ι} (b x : StandardSimplex σ) :
+    Continuous (StandardSimplex.lineMap b x) := by
+  refine continuous_induced_rng.2 (continuous_pi fun w ↦ ?_)
+  simp only [Function.comp_apply, StandardSimplex.lineMap_apply]
+  fun_prop
+
 /-- The support of a realization point is an abstract face. -/
 theorem support_mem (K : AbstractSimplicialComplex ι) (x : Realization K) : x.val.support ∈ K := by
   obtain ⟨σ, hσ, hx⟩ := mem_realization_iff.1 x.property
