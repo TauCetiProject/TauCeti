@@ -25,8 +25,10 @@ such actions.
   of darts as its vertices and darts; it is connected, and the projection `GTree.quotientMap`
   onto it is surjective with the orbits as fibres.
 * An element is *elliptic* when it fixes a vertex and *hyperbolic* otherwise; a subgroup is
-  elliptic when it fixes a vertex. The vertices fixed by an element or a subgroup form a convex
-  set, and an element is elliptic exactly when its translation length
+  elliptic when it fixes a vertex. The stabilizer of a dart fixes a dart of every `G`-tree in
+  which an equivariant map sends the ends of the dart to distinct vertices
+  (`GTree.exists_stabilizer_le_of_apply_ne`). The vertices fixed by an element or a subgroup form
+  a convex set, and an element is elliptic exactly when its translation length
   `ℓ(g) = min_v d(v, g v)` vanishes. Translation length is invariant under conjugation and
   inversion, it does not increase along an equivariant map that does not increase distances, and
   equivariantly isomorphic trees have the same translation lengths. A vertex `x` is moved by
@@ -456,6 +458,16 @@ theorem exists_src_eq_and_stabilizer_inf_le {v w : T.V} (h : v ≠ w) :
     smul_vertex_def] at hg
   rw [mem_stabilizer_iff, smul_dart_def]
   exact Aut.smul_eq_of_mem_darts T.isTree.isAcyclic _ hg.1 hg.2 hp (List.mem_of_mem_head? he)
+
+/-- If an equivariant map separates the two ends of a dart, the stabilizer of the dart fixes a
+dart of the target. -/
+theorem exists_stabilizer_le_of_apply_ne {T' : GTree.{u', v'} G} (f : T.V →[G] T'.V) {e : T.E}
+    (he : f (T.src e) ≠ f (T.tgt e)) : ∃ e' : T'.E, stabilizer G e ≤ stabilizer G e' :=
+  -- The stabilizer of `e` fixes both ends of `e`, hence their images.
+  let ⟨e', _, he'⟩ := exists_src_eq_and_stabilizer_inf_le he
+  ⟨e', le_trans (le_inf
+    (fun g hg => by rw [mem_stabilizer_iff, ← map_smul, ← src_smul, mem_stabilizer_iff.mp hg])
+    (fun g hg => by rw [mem_stabilizer_iff, ← map_smul, ← tgt_smul, mem_stabilizer_iff.mp hg])) he'⟩
 
 /-- If the vertex stabilizers of a `G`-tree are trivial, only the trivial subgroup is elliptic. -/
 theorem isEllipticSubgroup_iff_eq_bot (h : ∀ v : T.V, stabilizer G v = ⊥) {H : Subgroup G} :
