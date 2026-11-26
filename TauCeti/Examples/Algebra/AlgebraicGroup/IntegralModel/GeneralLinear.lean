@@ -11,41 +11,56 @@ public import TauCeti.Algebra.AlgebraicGroup.IntegralModel.GeneralLinear
 /-!
 # Checks for the standard integral model of `GL_n`
 
-For `ℤ ⊂ ℚ`, the `ℚ`-point of `GL₁` with matrix `(2)` has an integral entry but is not an integral
-point of the standard model `GL_{1,ℤ}`, because its inverse `1/2` is not integral; the criterion
-`TauCeti.IntegralModel.SmoothModel.mem_integralPoints_generalLinear_iff` needs both the matrix and
-its inverse to be integral.
+For a ring `O` with `O → K` injective and a non-unit `ϖ ∈ O` (for example a uniformizer of a
+discrete valuation ring), the `K`-point of `GL₁` with matrix `(ϖ)` has an integral entry but is not
+an integral point of the standard model `GL_{1,O}`, because its inverse is not integral; the
+criterion `TauCeti.IntegralModel.SmoothModel.mem_integralPoints_generalLinear_iff` needs both the
+matrix and its inverse to be integral. For `ℤ ⊂ ℚ` and `ϖ = 2` the inverse is `1/2`.
 -/
 
 public section
 
 namespace TauCeti.Examples
 
+universe u
+
 open CategoryTheory IntegralModel
+
+/-- **An integral entry does not make an integral point** (*SmoothModel.integral_inverse*): over a
+ring `O` with `O → K` injective, the `K`-point of `GL₁` with matrix `(ϖ)` for a non-unit `ϖ ∈ O`
+(for example a uniformizer of a discrete valuation ring) has an integral entry but is not an
+integral point of `GL_{1,O}`, because its inverse is not integral. -/
+theorem not_mem_integralPoints_generalLinear_one {O K : Type u} [CommRing O] [CommRing K]
+    [Algebra O K] (hinj : Function.Injective (algebraMap O K)) {ϖ : O} (hϖ : ¬IsUnit ϖ)
+    (g : GL (Fin 1) K) (hg : (g : Matrix (Fin 1) (Fin 1) K) = !![algebraMap O K ϖ]) :
+    WithConv.toConv ((GeneralLinear.generalLinearToPoint (R := K) 1 g).ofConv.comp
+      (eqToHom (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj K 1)).hom.toAlgHom) ∉
+      (SmoothModel.generalLinear O K 1).integralPoints := by
+  rw [SmoothModel.mem_integralPoints_generalLinear_iff]
+  rintro ⟨M, hM⟩
+  have hcomp : ((GeneralLinear.generalLinearToPoint (R := K) 1 g).ofConv.comp
+      (eqToHom (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj K 1)).hom.toAlgHom).comp
+      (eqToHom (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj K 1).symm).hom.toAlgHom =
+      (GeneralLinear.generalLinearToPoint (R := K) 1 g).ofConv := by
+    ext x
+    simp [← BialgHom.comp_apply, ← _root_.CommHopfAlgCat.hom_comp]
+  rw [hcomp, WithConv.toConv_ofConv, GeneralLinear.pointToGeneralLinear_generalLinearToPoint]
+    at hM
+  have h00 : algebraMap O K ((M : Matrix (Fin 1) (Fin 1) O) 0 0) = algebraMap O K ϖ := by
+    simpa [hg] using congrArg (fun A : GL (Fin 1) K ↦ (A : Matrix (Fin 1) (Fin 1) K) 0 0) hM
+  have hinv : (M : Matrix (Fin 1) (Fin 1) O) * (M⁻¹ : GL (Fin 1) O) = 1 := by
+    rw [← Units.val_mul, mul_inv_cancel, Units.val_one]
+  have h1 := congrFun (congrFun hinv 0) 0
+  rw [Matrix.mul_apply, Fin.sum_univ_one, Matrix.one_apply_eq, hinj h00] at h1
+  exact hϖ (IsUnit.of_mul_eq_one _ h1)
 
 /-- The `ℚ`-point of `GL₁` with matrix `(2)` has an integral entry but is not an integral point
 of `GL_{1,ℤ}`: its inverse `1/2` is not integral. -/
 example (two : GL (Fin 1) ℚ) (htwo : (two : Matrix (Fin 1) (Fin 1) ℚ) = !![2]) :
     WithConv.toConv ((GeneralLinear.generalLinearToPoint (R := ℚ) 1 two).ofConv.comp
       (eqToHom (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj ℚ 1)).hom.toAlgHom) ∉
-      (SmoothModel.generalLinear ℤ ℚ 1).integralPoints := by
-  rw [SmoothModel.mem_integralPoints_generalLinear_iff]
-  rintro ⟨M, hM⟩
-  have hcomp : ((GeneralLinear.generalLinearToPoint (R := ℚ) 1 two).ofConv.comp
-      (eqToHom (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj ℚ 1)).hom.toAlgHom).comp
-      (eqToHom (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj ℚ 1).symm).hom.toAlgHom =
-      (GeneralLinear.generalLinearToPoint (R := ℚ) 1 two).ofConv := by
-    ext x
-    simp [← BialgHom.comp_apply, ← _root_.CommHopfAlgCat.hom_comp]
-  rw [hcomp, WithConv.toConv_ofConv, GeneralLinear.pointToGeneralLinear_generalLinearToPoint]
-    at hM
-  have h00 : ((M : Matrix (Fin 1) (Fin 1) ℤ) 0 0 : ℚ) = 2 := by
-    simpa [htwo] using congrArg (fun A : GL (Fin 1) ℚ ↦ (A : Matrix (Fin 1) (Fin 1) ℚ) 0 0) hM
-  have hinv : (M : Matrix (Fin 1) (Fin 1) ℤ) * (M⁻¹ : GL (Fin 1) ℤ) = 1 := by
-    rw [← Units.val_mul, mul_inv_cancel, Units.val_one]
-  have h1 := congrFun (congrFun hinv 0) 0
-  rw [Matrix.mul_apply, Fin.sum_univ_one, Matrix.one_apply_eq] at h1
-  have h2 : (M : Matrix (Fin 1) (Fin 1) ℤ) 0 0 = 2 := by exact_mod_cast h00
-  rw [h2] at h1
-  omega
+      (SmoothModel.generalLinear ℤ ℚ 1).integralPoints :=
+  not_mem_integralPoints_generalLinear_one (ϖ := 2) (RingHom.injective_int (algebraMap ℤ ℚ))
+    (by decide) two (by rw [htwo, map_ofNat])
+
 end TauCeti.Examples
