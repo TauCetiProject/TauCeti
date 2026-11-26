@@ -54,7 +54,8 @@ element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, t
 `q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of `H`.
 `Subgroup.finite_image_mk_of_inv_mul_mem` passes finiteness of the image of a set in `G ⧸ K` to
 `G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
-`Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`.
+`Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`, and
+`Subgroup.sum_comp_quotientMapOfLE` sums a function on `G / K` along that map.
 `Subgroup.index_eq_of_equiv`, `Subgroup.ne_zero_of_equiv`, and `Subgroup.finiteIndex_of_equiv`
 read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection;
 `Subgroup.finiteIndex_of_surjective` and `Subgroup.index_le_of_surjective` deduce `FiniteIndex`
@@ -174,6 +175,18 @@ theorem card_fiber_quotientMapOfLE {G : Type*} [Group G] {H K : Subgroup G}
     Nat.card_prod, Nat.card_unique, one_mul]
   -- Relative index is the cardinality of the quotient by the subgroup inside `K`.
   rfl
+
+/-- **Summing along the quotient map of a tower.** For `H ≤ K`, a function on `G / K` summed
+along `G / H → G / K` is `[K : H]` times its sum over `G / K`, since each fibre has `[K : H]`
+points (`card_fiber_quotientMapOfLE`). -/
+theorem sum_comp_quotientMapOfLE {G : Type*} [Group G] {H K : Subgroup G} [Fintype (G ⧸ H)]
+    [Fintype (G ⧸ K)] (hHK : H ≤ K) {M : Type*} [AddCommMonoid M] (F : G ⧸ K → M) :
+    ∑ q : G ⧸ H, F (quotientMapOfLE hHK q) = H.relIndex K • ∑ q : G ⧸ K, F q := by
+  classical
+  rw [← Finset.sum_fiberwise Finset.univ (quotientMapOfLE hHK), ← Finset.sum_nsmul]
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  rw [Finset.sum_congr rfl fun p hp ↦ by rw [(Finset.mem_filter.mp hp).2], Finset.sum_const,
+    ← card_fiber_quotientMapOfLE hHK q, Nat.card_eq_fintype_card, Fintype.card_subtype]
 
 /-- **Transversals multiply along a tower.** For subgroups `K ≤ H` of `G`, the products
 `p.out * k.out` of the chosen representatives of the cosets `p ∈ G ⧸ H` and
