@@ -39,9 +39,10 @@ linear map
 
 the **Sobolev embedding** `W^{1,p} ⊂ C⁰_b` of the strip. It sends the jet of a test section to the
 test section (`TauCeti.StripSobolev.continuousValue_toW1p_apply`), and it is the continuous
-representative of every element: the value `ξ` of an `Lᵖ` jet `(ξ, ξ_s, ξ_t) ∈ W^{1,p}` agrees
-almost everywhere on the strip with it (`TauCeti.StripSobolev.fst_ae_eq_continuousValue`), and it
-is the only continuous function on the closed strip doing so
+representative of every element: the value `ξ` of an `Lᵖ` jet `(ξ, ξ_s, ξ_t) ∈ W^{1,p}`, the
+bounded linear map `TauCeti.StripSobolev.valueL F₀ F₁ p` to `Lᵖ(ℝ × [0, 1], V)`, agrees almost
+everywhere on the strip with it (`TauCeti.StripSobolev.valueL_ae_eq_continuousValue`), and it is
+the only continuous function on the closed strip doing so
 (`TauCeti.StripSobolev.continuousValue_apply_eq_of_ae_eq`).
 
 For closed subspaces `F₀` and `F₁`, the continuous representative satisfies the boundary
@@ -178,7 +179,7 @@ variable (F₀ F₁ p) in
 linear map from `W^{1,p}_F(ℝ × [0, 1], V)` to the bounded continuous functions on the closed strip
 extending the restriction of the test sections
 (`TauCeti.StripSobolev.continuousValue_toW1p_apply`). It is the continuous representative of the
-value of an element (`TauCeti.StripSobolev.fst_ae_eq_continuousValue`). For `p ≤ 2` it is `0`, by
+value of an element (`TauCeti.StripSobolev.valueL_ae_eq_continuousValue`). For `p ≤ 2` it is `0`, by
 the convention of `LinearMap.extendOfNorm`. -/
 def continuousValue : W1p F₀ F₁ p →L[ℝ] (ℝ × I →ᵇ V) :=
   testSectionToBCF.extendOfNorm (toW1p F₀ F₁ p)
@@ -207,13 +208,13 @@ private theorem continuous_eval_const_continuousValue (z : ℝ × I) :
   (BoundedContinuousFunction.evalCLM ℝ z).continuous.comp (continuousValue F₀ F₁ p).continuous
 
 /-- **The continuous representative.** For `2 < p < ∞`, the value of an element of
-`W^{1,p}_F(ℝ × [0, 1], V)`, the first component of its `Lᵖ` jet, agrees almost everywhere on the
-strip with its image under the Sobolev embedding, read on the closed strip through the projection
-`Set.projIcc` of `ℝ` onto `[0, 1]`. -/
-theorem fst_ae_eq_continuousValue (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p F₀ F₁ p) :
-    (fun z ↦ ((x : Lp (V × V × V) p stripMeasure) z).1) =ᵐ[stripMeasure]
+`W^{1,p}_F(ℝ × [0, 1], V)` agrees almost everywhere on the strip with its image under the Sobolev
+embedding, read on the closed strip through the projection `Set.projIcc` of `ℝ` onto `[0, 1]`. -/
+theorem valueL_ae_eq_continuousValue (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p F₀ F₁ p) :
+    valueL F₀ F₁ p x =ᵐ[stripMeasure]
       fun z ↦ continuousValue F₀ F₁ p x (z.1, projIcc 0 1 zero_le_one z.2) := by
-  refine fst_ae_eq_of_forall_toJetClosure (continuousValue F₀ F₁ p).continuous (fun ξ ↦ ?_) x
+  refine (coeFn_valueL x).trans
+    (fst_ae_eq_of_forall_toJetClosure (continuousValue F₀ F₁ p).continuous (fun ξ ↦ ?_) x)
   filter_upwards [coeFn_jetLp p ξ, ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)]
     with z hz hzs
   simp only [continuousValue_toW1p_apply hp hpt, projIcc_of_mem zero_le_one hzs.2, coe_toJetClosure,
@@ -224,7 +225,7 @@ closed strip whose restriction agrees almost everywhere with the value of an ele
 `W^{1,p}_F(ℝ × [0, 1], V)` is its image under the Sobolev embedding. -/
 theorem continuousValue_apply_eq_of_ae_eq (hp : 2 < p) (hpt : p ≠ ∞) {x : W1p F₀ F₁ p}
     {u : ℝ × ℝ → V} (hu : ContinuousOn u (univ ×ˢ Icc 0 1))
-    (h : (fun z ↦ ((x : Lp (V × V × V) p stripMeasure) z).1) =ᵐ[stripMeasure] u) (z : ℝ × I) :
+    (h : valueL F₀ F₁ p x =ᵐ[stripMeasure] u) (z : ℝ × I) :
     continuousValue F₀ F₁ p x z = u (z.1, z.2) := by
   have hc : Continuous fun z : ℝ × ℝ ↦
       continuousValue F₀ F₁ p x (z.1, projIcc 0 1 zero_le_one z.2) :=
@@ -233,7 +234,7 @@ theorem continuousValue_apply_eq_of_ae_eq (hp : 2 < p) (hpt : p ≠ ∞) {x : W1
   have hint : (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1 ⊆ closure (interior (univ ×ˢ Icc 0 1)) := by
     rw [interior_prod_eq, interior_univ, interior_Icc, closure_prod_eq, closure_univ,
       closure_Ioo zero_ne_one]
-  have heq := Measure.eqOn_of_ae_eq ((fst_ae_eq_continuousValue hp hpt x).symm.trans h)
+  have heq := Measure.eqOn_of_ae_eq ((valueL_ae_eq_continuousValue hp hpt x).symm.trans h)
     hc.continuousOn hu hint (x := (z.1, (z.2 : ℝ))) ⟨mem_univ _, z.2.property⟩
   simpa only [projIcc_val] using heq
 
@@ -270,7 +271,7 @@ theorem jetLp_mem_W1p_iff (hp : 2 < p) (hpt : p ≠ ∞) (hF₀ : IsClosed (F₀
   -- The continuous representative of the jet is the section itself.
   have hval (z : ℝ × I) : continuousValue F₀ F₁ p ⟨_, h⟩ z = (ξ : ℝ × ℝ → V) (z.1, z.2) :=
     continuousValue_apply_eq_of_ae_eq hp hpt hξ.continuous.continuousOn
-      ((coeFn_jetLp p ξ).mono fun z hz ↦ by simp only [hz, jet_apply]) z
+      ((coeFn_valueL _).trans ((coeFn_jetLp p ξ).mono fun z hz ↦ by simp only [hz, jet_apply])) z
   refine mem_testSection_iff.2 ⟨hξ, fun s ↦ ?_, fun s ↦ ?_, hR⟩
   · simpa [hval] using continuousValue_apply_zero_mem hp hpt hF₀ ⟨_, h⟩ s
   · simpa [hval] using continuousValue_apply_one_mem hp hpt hF₁ ⟨_, h⟩ s

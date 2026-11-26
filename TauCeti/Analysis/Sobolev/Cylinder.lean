@@ -332,7 +332,7 @@ theorem H1_le_strip : H1 V ≤ StripSobolev.H1 (⊤ : Submodule ℝ V) ⊤ := by
 /-- The value of an element of `H1` is its value as an element of `H1` of the strip with no
 boundary conditions. -/
 theorem valueL_eq_strip (x : H1 V) :
-    valueL 2 x = StripSobolev.valueL ⊤ ⊤ (Submodule.inclusion H1_le_strip x) := by
+    valueL 2 x = StripSobolev.valueL ⊤ ⊤ 2 (Submodule.inclusion H1_le_strip x) := by
   refine Lp.ext ((coeFn_valueL x).trans ?_)
   filter_upwards [StripSobolev.coeFn_valueL (Submodule.inclusion H1_le_strip x)] with z hz
   rw [hz, Submodule.coe_inclusion]
