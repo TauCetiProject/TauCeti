@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
+public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -66,6 +67,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   differentiability hypothesis.
 * `TauCeti.mvfderiv_smul_algebra`: the Leibniz rule for multiplication by a function with values in
   a normed algebra acting on the target.
+* `ContMDiffMap.mdifferentiableAt_units_val`: a `C^n` map into the units of a complete normed
+  algebra, `n ≠ 0`, is differentiable when read in the algebra.
 * `TauCeti.mvfderiv_units_inv_apply`: the derivative of the pointwise inverse of a map into the
   units of a normed algebra is `-u⁻¹ (du) u⁻¹`; the manifold counterpart of
   `TauCeti.rightMaurerCartan_ringInverse` on a normed space.
@@ -450,10 +453,18 @@ theorem mvfderiv_smul_algebra {𝕜' : Type*} [NormedRing 𝕜'] [NormedAlgebra 
     Function.id_comp] at h ⊢
   rwa [Function.comp_apply, Function.comp_apply, extChartAt_to_inv] at h
 
+/-- A `C^n` map into the units of a complete normed algebra, with `n ≠ 0`, read as a map into the
+algebra, is differentiable. -/
+theorem _root_.ContMDiffMap.mdifferentiableAt_units_val {𝔄 : Type*} [NormedRing 𝔄]
+    [NormedAlgebra 𝕜 𝔄] [CompleteSpace 𝔄] {n : WithTop ℕ∞} (g : C^n⟮I, M; 𝓘(𝕜, 𝔄), 𝔄ˣ⟯)
+    (hn : n ≠ 0) (x : M) : MDifferentiableAt I 𝓘(𝕜, 𝔄) (fun y ↦ (g y).val) x :=
+  ((Units.contMDiff_val (𝕜 := 𝕜)).comp g.contMDiff).mdifferentiableAt hn
+
 /-- The derivative of the pointwise inverse of a map into the units of a normed algebra, read in
-the algebra: `d(u⁻¹) = -u⁻¹ (du) u⁻¹`. The algebra need not be commutative. This is the
+the algebra: `d(u⁻¹) = -u⁻¹ (du) u⁻¹`. The algebra need not be commutative. The proof
+differentiates `u u⁻¹ = 1` by the Leibniz rule `TauCeti.mvfderiv_smul_algebra`. This is the
 counterpart on a manifold of `TauCeti.rightMaurerCartan_ringInverse`, the rule
-`(O⁻¹);x = -Ad(O⁻¹)(O;x)` for maps on a normed space, built on Mathlib's
+`(O⁻¹);x = -Ad(O⁻¹)(O;x)` for maps on a normed space, which is proved from
 `HasFDerivAt.ringInverse`. -/
 theorem mvfderiv_units_inv_apply {𝔄 : Type*} [NormedRing 𝔄] [NormedAlgebra 𝕜 𝔄] {u : M → 𝔄ˣ}
     {x : M} (hu : MDifferentiableAt I 𝓘(𝕜, 𝔄) (fun y ↦ (u y).val) x)

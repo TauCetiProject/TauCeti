@@ -36,9 +36,11 @@ values in the Lie algebra `𝔲(n)` is not developed here.
   the gauge group on the dual of its Lie algebra `C^∞(M, 𝔄)`
   (`TauCeti.atiyahBottMomentWith_gaugeAction`). This is the group-level form of the infinitesimal
   equivariance `TauCeti.atiyahBottFormWith_neg_gaugeCovariantDeriv_neg_gaugeCovariantDeriv`.
-* **The flat connections form a gauge invariant level.** In particular `μ(g · A) = 0` exactly when
-  `μ(A) = 0` (`TauCeti.atiyahBottMomentWith_gaugeAction_eq_zero_iff`), so the gauge group acts on
-  the zero level, whose quotient is the moduli space of flat connections.
+* **The zero level is gauge invariant.** In particular `μ(g · A) = 0` exactly when `μ(A) = 0`
+  (`TauCeti.atiyahBottMomentWith_gaugeAction_eq_zero_iff`), so the gauge group acts on the zero
+  level. When `B` is moreover nondegenerate, the zero level is the set of flat connections
+  (`TauCeti.atiyahBottMomentWith_eq_zero_iff`), and its quotient is the moduli space of flat
+  connections.
 
 ## Main results
 

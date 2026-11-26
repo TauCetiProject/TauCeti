@@ -38,6 +38,9 @@ curvature by conjugation.
   `b` of the affine space of connections is `b ↦ g b g⁻¹`.
 * Inversion is differentiated by `d(g⁻¹) = -g⁻¹ (dg) g⁻¹`
   (`TauCeti.mvfderiv_units_inv_apply`), from the product rule for `g g⁻¹ = 1`.
+* **Covariant derivative.** For the commutator bracket `[a, b] = a b - b a` of `𝔄`, the covariant
+  derivative `d_A ξ = dξ + [A, ξ]` (`TauCeti.gaugeCovariantDeriv`) is equivariant,
+  `d_(g · A) (g ξ g⁻¹) = g (d_A ξ) g⁻¹` (`TauCeti.gaugeCovariantDeriv_gaugeAction`).
 * **Curvature.** For the commutator bracket `[a, b] = a b - b a` of `𝔄`, the curvature
   `F_A = dA + ½ [A ∧ A]` (`TauCeti.gaugeCurvature`) transforms by conjugation,
   `F_(g · A) = g F_A g⁻¹` (`TauCeti.gaugeCurvature_gaugeAction`). In particular the gauge action
@@ -46,8 +49,9 @@ curvature by conjugation.
 This is the counterpart, for differential forms on a manifold, of the pointwise gauge calculus of
 `TauCeti.Analysis.PDE.YangMills.GaugeIdentities` for connections `E → E →L[𝕜] 𝔸` on a normed
 space, with the same convention: there `TauCeti.gaugeAction` is the gauge action of a map
-`O : E → 𝔸` with invertible values, `TauCeti.gaugeAction_gaugeAction` the action law and
-`TauCeti.connectionCurvature_gaugeAction` the transformation law of the curvature. Here the gauge
+`O : E → 𝔸` with invertible values, `TauCeti.gaugeAction_gaugeAction` the action law,
+`TauCeti.connectionCovariantDerivative_gaugeAction` the transformation law of the covariant
+derivative and `TauCeti.connectionCurvature_gaugeAction` that of the curvature. Here the gauge
 transformations are smooth maps into `𝔄ˣ`, so no invertibility hypotheses appear.
 
 The conventions are those of the Atiyah–Bott description of the infinitesimal gauge action in
@@ -66,6 +70,7 @@ velocity is not formalized here.
 * `TauCeti.SmoothForm.gaugeAction_one`, `TauCeti.SmoothForm.gaugeAction_mul`: the gauge action
   is an action of the gauge group.
 * `TauCeti.SmoothForm.gaugeAction_add`: the gauge action is affine over the conjugation.
+* `TauCeti.gaugeCovariantDeriv_gaugeAction`: `d_(g · A) (g ξ g⁻¹) = g (d_A ξ) g⁻¹`.
 * `TauCeti.gaugeCurvature_gaugeAction`: `F_(g · A) = g F_A g⁻¹`.
 
 ## References
@@ -93,10 +98,17 @@ variable [IsManifold I 1 M] [CompleteSpace 𝔄]
 /-! ### Conjugation of forms -/
 
 omit [IsManifold I 1 M] in
-/-- A gauge transformation, read as an `𝔄`-valued map, is differentiable. -/
-private theorem mdifferentiableAt_units_val (g : C^∞⟮I, M; 𝓘(ℝ, 𝔄), 𝔄ˣ⟯) (x : M) :
-    MDifferentiableAt I 𝓘(ℝ, 𝔄) (fun y ↦ (g y).val) x :=
-  ((Units.contMDiff_val (𝕜 := ℝ)).comp g.contMDiff).mdifferentiableAt (by simp)
+/-- The values of the gauge transformation `g⁻¹` are the inverses of those of `g`. -/
+private theorem units_inv_val_eq (g : C^∞⟮I, M; 𝓘(ℝ, 𝔄), 𝔄ˣ⟯) :
+    (fun y ↦ (g⁻¹ y).val) = fun y ↦ ((g y)⁻¹ : 𝔄ˣ).val := by
+  funext y
+  rw [ContMDiffMap.coe_inv, Pi.inv_apply]
+
+omit [IsManifold I 1 M] in
+/-- The pointwise inverse of a gauge transformation, read in `𝔄`, is differentiable. -/
+private theorem mdifferentiableAt_units_inv_val (g : C^∞⟮I, M; 𝓘(ℝ, 𝔄), 𝔄ˣ⟯) (x : M) :
+    MDifferentiableAt I 𝓘(ℝ, 𝔄) (fun y ↦ ((g y)⁻¹ : 𝔄ˣ).val) x :=
+  units_inv_val_eq g ▸ g⁻¹.mdifferentiableAt_units_val (by simp) x
 
 /-- The `𝔄`-valued `0`-form `x ↦ g x` of a smooth map into the units of `𝔄`. -/
 private def unitsValForm (g : C^∞⟮I, M; 𝓘(ℝ, 𝔄), 𝔄ˣ⟯) : SmoothForm I M 𝔄 0 :=
@@ -179,11 +191,9 @@ private theorem mextDeriv_unitsValForm_inv_apply (g : C^∞⟮I, M; 𝓘(ℝ, �
     (u : TangentSpace I x) :
     mextDeriv (unitsValForm g⁻¹).val x ![u] =
       -(((g x)⁻¹ : 𝔄ˣ).val * mvfderiv I (fun y ↦ (g y).val) x u * ((g x)⁻¹ : 𝔄ˣ).val) := by
-  have hgi : (fun y ↦ (g⁻¹ y).val) = fun y ↦ ((g y)⁻¹ : 𝔄ˣ).val := by
-    funext y
-    rw [ContMDiffMap.coe_inv, Pi.inv_apply]
-  rw [mextDeriv_unitsValForm_apply, ← mvfderiv_units_inv_apply (mdifferentiableAt_units_val g x)
-    (hgi ▸ mdifferentiableAt_units_val g⁻¹ x), hgi]
+  rw [mextDeriv_unitsValForm_apply, ← mvfderiv_units_inv_apply
+    (g.mdifferentiableAt_units_val (by simp) x) (mdifferentiableAt_units_inv_val g x),
+    units_inv_val_eq]
 
 /-- The **gauge action** `g · A = g A g⁻¹ - (dg) g⁻¹` of a gauge transformation
 `g : M → 𝔄ˣ` on the connection `d + A` of the trivial bundle, given by an `𝔄`-valued `1`-form
@@ -226,8 +236,8 @@ theorem SmoothForm.gaugeAction_mul (g h : C^∞⟮I, M; 𝓘(ℝ, 𝔄), 𝔄ˣ�
       funext y
       rw [ContMDiffMap.coe_mul, Pi.mul_apply, Units.val_mul, Pi.smul_apply', smul_eq_mul]
     rw [SmoothForm.gaugeAction_val, SmoothForm.gaugeAction_val, SmoothForm.gaugeAction_val, hgh,
-      mvfderiv_smul_algebra (F := 𝔄) (mdifferentiableAt_units_val g x)
-        (mdifferentiableAt_units_val h x)]
+      mvfderiv_smul_algebra (F := 𝔄) (g.mdifferentiableAt_units_val (by simp) x)
+        (h.mdifferentiableAt_units_val (by simp) x)]
     simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul,
       ContMDiffMap.coe_mul, Pi.mul_apply, mul_inv_rev, Units.val_mul, mul_sub, sub_mul, add_mul,
       mul_assoc, Units.mul_inv_cancel_left]
@@ -238,6 +248,38 @@ theorem SmoothForm.gaugeAction_add (g : C^∞⟮I, M; 𝓘(ℝ, 𝔄), 𝔄ˣ⟯
     SmoothForm.gaugeAction g (A + b) = SmoothForm.gaugeAction g A + gaugeConj g b := by
   rw [SmoothForm.gaugeAction, SmoothForm.gaugeAction, map_add]
   abel
+
+/-! ### The covariant derivative -/
+
+/-- **The covariant derivative transforms by conjugation.** For the commutator bracket
+`[a, b] = a b - b a` of `𝔄`, the covariant derivative of the gauge transformed connection on the
+conjugated function is `d_(g · A) (g ξ g⁻¹) = g (d_A ξ) g⁻¹`. This is the counterpart for forms
+on a manifold of the pointwise `TauCeti.connectionCovariantDerivative_gaugeAction`. -/
+theorem gaugeCovariantDeriv_gaugeAction {β : 𝔄 →L[ℝ] 𝔄 →L[ℝ] 𝔄}
+    (hβ : ∀ a b, β a b = a * b - b * a) (g : C^∞⟮I, M; 𝓘(ℝ, 𝔄), 𝔄ˣ⟯) (A : SmoothForm I M 𝔄 1)
+    (ξ : SmoothForm I M 𝔄 0) :
+    gaugeCovariantDeriv β (SmoothForm.gaugeAction g A) (gaugeConj g ξ) =
+      gaugeConj g (gaugeCovariantDeriv β A ξ) :=
+  SmoothBundleForm.ext_eval₁ fun x v ↦ by
+    have hG := g.mdifferentiableAt_units_val (by simp) x
+    have hGi := mdifferentiableAt_units_inv_val g x
+    have hξ := (SmoothForm.contMDiff_apply_zero ξ).mdifferentiableAt (x := x) (by simp)
+    have hξGi : MDifferentiableAt I 𝓘(ℝ, 𝔄)
+        ((fun y ↦ ξ.val y 0) • fun y ↦ ((g y)⁻¹ : 𝔄ˣ).val) x :=
+      hξ.mul hGi
+    -- The function underlying `g ξ g⁻¹` is a product of three `𝔄`-valued functions.
+    have hfun : (fun y ↦ (gaugeConj g ξ).val y 0) = (fun y ↦ (g y).val) •
+        ((fun y ↦ ξ.val y 0) • fun y ↦ ((g y)⁻¹ : 𝔄ˣ).val) := by
+      funext y
+      simp [mul_assoc]
+    rw [gaugeCovariantDeriv_val, gaugeConj_val g (gaugeCovariantDeriv β A ξ),
+      gaugeCovariantDeriv_val, gaugeConj_val g ξ x 0, SmoothForm.gaugeAction_val,
+      ← mextDerivₗ_apply, mextDerivₗ_zero_apply, ← mextDerivₗ_apply, mextDerivₗ_zero_apply, hfun,
+      mvfderiv_smul_algebra (F := 𝔄) hG hξGi, mvfderiv_smul_algebra (F := 𝔄) hξ hGi]
+    simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul,
+      Pi.smul_apply', mvfderiv_units_inv_apply hG hGi, hβ, mul_add, add_mul, mul_sub, sub_mul,
+      mul_neg, mul_assoc, Units.inv_mul_cancel_left]
+    abel
 
 /-! ### The curvature -/
 
