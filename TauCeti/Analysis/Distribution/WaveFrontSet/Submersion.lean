@@ -389,9 +389,9 @@ covectors of `WF(f^* T)` are exactly the `(x, Df(x)ᵀ η)` with `x ∈ Ω` and 
 No condition on `WF(T)` is needed, since `Df(x)ᵀ η ≠ 0` for every `η ≠ 0`. -/
 theorem waveFrontSet_compCLMOfSubmersion (T : 𝓓'(Ω', ℂ)) :
     (compCLMOfSubmersion μ ν f hf hfΩ hsurj T).waveFrontSet =
-      TauCeti.pullbackCone f Ω T.waveFrontSet := by
+      TauCeti.covectorPullback f Ω T.waveFrontSet := by
   ext ⟨x, ξ⟩
-  simp only [mem_waveFrontSet_iff, TauCeti.mem_pullbackCone]
+  simp only [mem_waveFrontSet_iff, TauCeti.mem_covectorPullback]
   constructor
   · rintro ⟨hx, hξ, hT⟩
     rw [isMicrolocallySmoothAt_compCLMOfSubmersion_iff μ ν hf hfΩ hsurj T hx hξ] at hT

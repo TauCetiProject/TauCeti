@@ -27,7 +27,7 @@ mapped into `Ω` (`Distribution.compCLMOfOpenPartialHomeomorph`), and covectors 
 transpose of the derivative (`Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`). So for a
 fixed set `Γ`, the distributions with wave front set in `Γ` are all sent into the fixed set
 
-`e^* Γ = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ Γ}` (`TauCeti.pullbackCone`)
+`e^* Γ = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ Γ}` (`TauCeti.covectorPullback`)
 
 (`Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph_subset`). This file proves that for a
 closed cone `Γ` of nonzero covectors over `Ω` the pullback is continuous for the normal topologies
@@ -58,7 +58,7 @@ series
 gradient `-(De(x)ᵀ m + ξ)`. When `ψ` is supported where `De(x)ᵀ` is close to `P`, this gradient is
 comparable to `‖m‖ + ‖ξ‖` for `ξ ∈ V` and `-m ∉ A`, and also whenever `‖ξ‖` is large compared with
 `‖m‖`; there `a(ξ, m)` decays faster than every power of `1 + ‖m‖ + ‖ξ‖` by non-stationary
-phase (`TauCeti.exists_one_add_norm_pow_mul_norm_integral_fourierChar_le`). Hence:
+phase (`TauCeti.exists_one_add_norm_add_norm_pow_mul_norm_integral_mul_fourierChar_le`). Hence:
 
 * the terms with `-m ∈ A` are controlled by the seminorms `‖T‖_{χ,A,M}` of the source, since
   `(1 + ‖ξ‖) ^ N ‖a(ξ, m)‖ ≤ C (1 + ‖m‖) ^ N` for all `ξ` and `m`;
@@ -192,82 +192,6 @@ section Coefficient
 
 variable [MeasurableSpace E] [BorelSpace E]
 
-/-- The covector `Λ (z, w) = ⟪m, z⟫ + ⟪ξ, w⟫` of `E × E`, whose composite with `x ↦ (g x, x)` is
-the phase `⟪g x, m⟫ + ⟪x, ξ⟫` of the coefficients. -/
-private def pairCovector (m ξ : E) : E × E →L[ℝ] ℝ :=
-  (innerSL ℝ m).comp (ContinuousLinearMap.fst ℝ E E) +
-    (innerSL ℝ ξ).comp (ContinuousLinearMap.snd ℝ E E)
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem pairCovector_apply (m ξ : E) (p : E × E) :
-    pairCovector m ξ p = ⟪m, p.1⟫ + ⟪ξ, p.2⟫ := by
-  simp [pairCovector]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem norm_pairCovector_le (m ξ : E) : ‖pairCovector m ξ‖ ≤ ‖m‖ + ‖ξ‖ := by
-  refine (norm_add_le ((innerSL ℝ m).comp (ContinuousLinearMap.fst ℝ E E))
-    ((innerSL ℝ ξ).comp (ContinuousLinearMap.snd ℝ E E))).trans (add_le_add ?_ ?_)
-  · calc _ ≤ ‖innerSL ℝ m‖ * ‖ContinuousLinearMap.fst ℝ E E‖ :=
-          ContinuousLinearMap.opNorm_comp_le _ _
-      _ ≤ ‖innerSL ℝ m‖ * 1 := by gcongr; exact ContinuousLinearMap.norm_fst_le ℝ E E
-      _ = ‖m‖ := by rw [mul_one, innerSL_apply_norm]
-  · calc _ ≤ ‖innerSL ℝ ξ‖ * ‖ContinuousLinearMap.snd ℝ E E‖ :=
-          ContinuousLinearMap.opNorm_comp_le _ _
-      _ ≤ ‖innerSL ℝ ξ‖ * 1 := by gcongr; exact ContinuousLinearMap.norm_snd_le ℝ E E
-      _ = ‖ξ‖ := by rw [mul_one, innerSL_apply_norm]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- `‖m‖ + ‖ξ‖ ≤ 2 ‖Λ‖`, testing `Λ` on `(m, 0)` and `(0, ξ)`. -/
-private theorem norm_add_norm_le_two_mul_norm_pairCovector (m ξ : E) :
-    ‖m‖ + ‖ξ‖ ≤ 2 * ‖pairCovector m ξ‖ := by
-  have hfst := (pairCovector m ξ).ratio_le_opNorm (m, 0)
-  have hsnd := (pairCovector m ξ).ratio_le_opNorm (0, ξ)
-  simp only [pairCovector_apply, inner_zero_right, add_zero, zero_add,
-    real_inner_self_eq_norm_mul_norm, Prod.norm_mk, norm_zero, norm_nonneg, max_eq_left,
-    max_eq_right, norm_mul, norm_norm, mul_self_div_self] at hfst hsnd
-  linarith
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- `Λ ∘ DΦ(x)`, for `Φ x = (g x, x)`, is the inner product with the gradient `Dg(x)ᵀ m + ξ`. -/
-private theorem norm_pairCovector_comp_fderiv {g : E → E} (hg : Differentiable ℝ g) (m ξ x : E) :
-    ‖pairCovector m ξ ∘L fderiv ℝ (fun x ↦ (g x, x)) x‖ = ‖((fderiv ℝ g x)†) m + ξ‖ := by
-  have hD : fderiv ℝ (fun x ↦ (g x, x)) x = (fderiv ℝ g x).prod (ContinuousLinearMap.id ℝ E) :=
-    (hg x).fderiv_prodMk differentiableAt_id |>.trans (by rw [fderiv_id])
-  have : pairCovector m ξ ∘L fderiv ℝ (fun x ↦ (g x, x)) x =
-      innerSL ℝ (((fderiv ℝ g x)†) m + ξ) := by
-    ext v
-    simp [hD, pairCovector, ContinuousLinearMap.adjoint_inner_left]
-  rw [this, innerSL_apply_norm]
-
-/-- **Decay of the coefficients.** For a smooth compactly supported `ψ` and a smooth map `g`, the
-oscillatory integral `∫ ψ(x) 𝐞(-(⟪g x, m⟫ + ⟪x, ξ⟫)) dx` decays faster than every power of
-`1 + ‖m‖ + ‖ξ‖`, uniformly over the pairs `(m, ξ)` for which the gradient `Dg(x)ᵀ m + ξ` of the
-phase is at least `c (‖m‖ + ‖ξ‖)` on the support of `ψ`. -/
-private theorem exists_one_add_norm_pow_mul_norm_integral_le {ψ : E → ℂ} (hψ : ContDiff ℝ ∞ ψ)
-    (hψc : HasCompactSupport ψ) {g : E → E} (hg : ContDiff ℝ ∞ g) {c : ℝ} (hc : 0 < c) (M : ℕ) :
-    ∃ C, ∀ m ξ : E, (∀ x ∈ tsupport ψ, c * (‖m‖ + ‖ξ‖) ≤ ‖((fderiv ℝ g x)†) m + ξ‖) →
-      (1 + ‖m‖ + ‖ξ‖) ^ M * ‖∫ x, ψ x * 𝐞 (-(⟪g x, m⟫ + ⟪x, ξ⟫))‖ ≤ C := by
-  obtain ⟨C, hC⟩ := exists_one_add_norm_pow_mul_norm_integral_fourierChar_le volume hψ hψc
-    (Φ := fun x ↦ (g x, x)) (hg.prodMk contDiff_id) hc M
-  refine ⟨2 ^ M * C, fun m ξ hmξ ↦ ?_⟩
-  have hbound := hC (pairCovector m ξ) fun x hx ↦ by
-    rw [norm_pairCovector_comp_fderiv (hg.differentiable (by simp))]
-    exact (mul_le_mul_of_nonneg_left (norm_pairCovector_le m ξ) hc.le).trans (hmξ x hx)
-  have hint : ∫ x, 𝐞 (-(pairCovector m ξ) (g x, x)) • ψ x =
-      ∫ x, ψ x * 𝐞 (-(⟪g x, m⟫ + ⟪x, ξ⟫)) := by
-    refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
-    simp only [pairCovector_apply, Circle.smul_def, smul_eq_mul, real_inner_comm m,
-      real_inner_comm ξ]
-    ring
-  rw [hint] at hbound
-  calc (1 + ‖m‖ + ‖ξ‖) ^ M * ‖∫ x, ψ x * 𝐞 (-(⟪g x, m⟫ + ⟪x, ξ⟫))‖
-      ≤ (2 * (1 + ‖pairCovector m ξ‖)) ^ M * ‖∫ x, ψ x * 𝐞 (-(⟪g x, m⟫ + ⟪x, ξ⟫))‖ := by
-        gcongr
-        linarith [norm_add_norm_le_two_mul_norm_pairCovector m ξ]
-    _ = 2 ^ M * ((1 + ‖pairCovector m ξ‖) ^ M * ‖∫ x, ψ x * 𝐞 (-(⟪g x, m⟫ + ⟪x, ξ⟫))‖) := by
-        rw [mul_pow, mul_assoc]
-    _ ≤ 2 ^ M * C := by gcongr
-
 /-- The coefficient `a(ξ, m) = ∫ ψ(x) 𝐞(-(⟪g x, m⟫ + ⟪x, ξ⟫)) dx` of the lattice series of the
 pullback, for a smooth map `g` agreeing with the change of variables on the support of `ψ`. -/
 private def coeff (ψ : E → ℂ) (g : E → E) (ξ m : E) : ℂ :=
@@ -302,7 +226,8 @@ private theorem exists_one_add_norm_pow_mul_norm_coeff_le {ψ : E → ℂ} (hψ 
       (1 + ‖m‖ + ‖ξ‖) ^ M * ‖coeff ψ g ξ m‖ ≤ C := by
   set c := min (1 / 3) (ε / (2 * (2 * M₁ + ε)))
   have hc : 0 < c := lt_min (by norm_num) (by positivity)
-  obtain ⟨C, hC⟩ := exists_one_add_norm_pow_mul_norm_integral_le hψ hψc hg hc M
+  obtain ⟨C, hC⟩ :=
+    exists_one_add_norm_add_norm_pow_mul_norm_integral_mul_fourierChar_le volume hψ hψc hg hc M
   refine ⟨C, fun m ξ h ↦ hC m ξ fun x hx ↦ ?_⟩
   set D := (fderiv ℝ g x)†
   set s := ‖D m + ξ‖
@@ -621,7 +546,7 @@ private theorem exists_mem_nhds_forall_exists_seminorm_le
     (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0)
     {V : Set E} (hV : IsClosed V) (hV0 : (0 : E) ∈ V)
     (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {x₀ : E} (hx₀ : x₀ ∈ U)
-    (hx₀V : ∀ ξ ∈ V, (x₀, ξ) ∉ pullbackCone e U Γ) (N : ℕ) :
+    (hx₀V : ∀ ξ ∈ V, (x₀, ξ) ∉ covectorPullback e U Γ) (N : ℕ) :
     ∃ O ∈ 𝓝 x₀, ∀ ψ : 𝓓(U, ℂ), tsupport ψ ⊆ O →
       ∃ p : Seminorm ℂ (WaveFrontSpace Ω Γ), Continuous p ∧ ∀ u : WaveFrontSpace Ω Γ, ∀ ξ ∈ V,
         (1 + ‖ξ‖) ^ N * ‖(compCLMOfOpenPartialHomeomorph e he he' hU hUΩ
@@ -631,7 +556,7 @@ private theorem exists_mem_nhds_forall_exists_seminorm_le
   -- No covector of `Γ` near `e x₀` lies in the cone `{η | dist (De(x₀)ᵀ η, V) ≤ ε ‖η‖}`.
   obtain ⟨ε, hε, hεΓ⟩ := exists_forall_notMem_of_infDist_le hΓ hcone hΓ0 hy₀
     ((fderiv ℝ e x₀)†) hV hV0 hVcone fun η hη hΓη ↦
-      hx₀V _ hη (mem_pullbackCone.2 ⟨hx₀, η, hΓη, rfl⟩)
+      hx₀V _ hη (mem_covectorPullback.2 ⟨hx₀, η, hΓη, rfl⟩)
   -- A smooth `g` equal to `e` near `x₀`.
   obtain ⟨g, hg, -, hge⟩ :=
     he.exists_contDiff_eventuallyEq_of_finiteDimensional (e.open_source.mem_nhds hx₀s)
@@ -668,7 +593,7 @@ each supported near a point of `supp φ` where the local estimate holds. -/
 private theorem exists_seminorm_localFourier_le
     (hΓ : IsOpen (((Ω : Set E) ×ˢ {0}ᶜ) \ Γ))
     (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0)
-    (j : WaveFrontSeminormIndex U (pullbackCone e U Γ)) :
+    (j : WaveFrontSeminormIndex U (covectorPullback e U Γ)) :
     ∃ p : Seminorm ℂ (WaveFrontSpace Ω Γ), Continuous p ∧ ∀ u : WaveFrontSpace Ω Γ, ∀ ξ ∈ j.cone,
       (1 + ‖ξ‖) ^ j.order * ‖(compCLMOfOpenPartialHomeomorph e he he' hU hUΩ
         u.toDistribution).localFourier j.cutoff ξ‖ ≤ p u := by
@@ -709,7 +634,7 @@ proved. -/
 private def compCLMOfOpenPartialHomeomorphₗ (e : OpenPartialHomeomorph E E)
     (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
     (hU : (U : Set E) ⊆ e.source) (hUΩ : MapsTo e U Ω) :
-    WaveFrontSpace Ω Γ →ₗ[ℂ] WaveFrontSpace U (pullbackCone e U Γ) where
+    WaveFrontSpace Ω Γ →ₗ[ℂ] WaveFrontSpace U (covectorPullback e U Γ) where
   toFun u := mk (Distribution.compCLMOfOpenPartialHomeomorph e he he' hU hUΩ u.toDistribution)
     (waveFrontSet_compCLMOfOpenPartialHomeomorph_subset u.waveFrontSet_toDistribution_subset)
   map_add' u v := ext (by simp)
@@ -726,14 +651,14 @@ private theorem toDistribution_compCLMOfOpenPartialHomeomorphₗ (e : OpenPartia
 covectors over `Ω`, closed in `Ω × (E \ {0})`. Then the pullback `e^* T` along a smooth change of
 variables `e` (`Distribution.compCLMOfOpenPartialHomeomorph`) is a continuous linear map from
 `𝓓'_Γ(Ω)` to `𝓓'_{e^* Γ}(U)`, where `e^* Γ = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ Γ}`
-(`TauCeti.pullbackCone`). So the normal topology is invariant under changes
+(`TauCeti.covectorPullback`). So the normal topology is invariant under changes
 of coordinates. -/
 def compCLMOfOpenPartialHomeomorph (e : OpenPartialHomeomorph E E)
     (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
     (hU : (U : Set E) ⊆ e.source) (hUΩ : MapsTo e U Ω)
     (hΓ : IsOpen (((Ω : Set E) ×ˢ {0}ᶜ) \ Γ))
     (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0) :
-    WaveFrontSpace Ω Γ →L[ℂ] WaveFrontSpace U (pullbackCone e U Γ) :=
+    WaveFrontSpace Ω Γ →L[ℂ] WaveFrontSpace U (covectorPullback e U Γ) :=
   ⟨compCLMOfOpenPartialHomeomorphₗ e he he' hU hUΩ, by
     borelize E
     refine continuous_linearMap_of_le _ ?_ fun j ↦ ?_

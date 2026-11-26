@@ -14,7 +14,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 Let `f : E → E'` be a map between real inner product spaces, `U` a subset of `E` and `Γ` a set of
 covectors `(y, η) ∈ E' × E'`. The pullback
 
-`f^* Γ = {(x, Df(x)ᵀ η) | x ∈ U, (f x, η) ∈ Γ}` (`TauCeti.pullbackCone f U Γ`)
+`f^* Γ = {(x, Df(x)ᵀ η) | x ∈ U, (f x, η) ∈ Γ}` (`TauCeti.covectorPullback f U Γ`)
 
 pulls the covectors over `f x` back to `x` by the transpose of the derivative of `f` at `x`. It
 bounds the wave front set of the pullback of a distribution along a smooth map
@@ -23,9 +23,10 @@ whenever `Γ` is one.
 
 ## Main declarations
 
-* `TauCeti.pullbackCone`: the pullback `f^* Γ` of a set of covectors.
-* `TauCeti.mem_pullbackCone`, `TauCeti.pullbackCone_mono`, `TauCeti.smul_mem_pullbackCone`: its
-  membership, its monotonicity in `Γ` and its invariance under positive scalings of covectors.
+* `TauCeti.covectorPullback`: the pullback `f^* Γ` of a set of covectors.
+* `TauCeti.mem_covectorPullback`, `TauCeti.covectorPullback_mono`,
+  `TauCeti.smul_mem_covectorPullback`: its membership, its monotonicity in `Γ` and its invariance
+  under positive scalings of covectors.
 
 ## References
 
@@ -45,22 +46,23 @@ variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Comple
 /-- The pullback `f^* Γ = {(x, Df(x)ᵀ η) | x ∈ U, (f x, η) ∈ Γ}` of a set `Γ` of covectors along a
 map `f` over a set `U`: covectors over `f x` pull back by the transpose of the derivative of `f`
 at `x`. -/
-def pullbackCone (f : E → E') (U : Set E) (Γ : Set (E' × E')) : Set (E × E) :=
+def covectorPullback (f : E → E') (U : Set E) (Γ : Set (E' × E')) : Set (E × E) :=
   {p | p.1 ∈ U ∧ ∃ η, (f p.1, η) ∈ Γ ∧ ((fderiv ℝ f p.1)†) η = p.2}
 
 @[simp]
-theorem mem_pullbackCone {f : E → E'} {U : Set E} {Γ : Set (E' × E')} {p : E × E} :
-    p ∈ pullbackCone f U Γ ↔ p.1 ∈ U ∧ ∃ η, (f p.1, η) ∈ Γ ∧ ((fderiv ℝ f p.1)†) η = p.2 :=
+theorem mem_covectorPullback {f : E → E'} {U : Set E} {Γ : Set (E' × E')} {p : E × E} :
+    p ∈ covectorPullback f U Γ ↔ p.1 ∈ U ∧ ∃ η, (f p.1, η) ∈ Γ ∧ ((fderiv ℝ f p.1)†) η = p.2 :=
   Iff.rfl
 
-theorem pullbackCone_mono {f : E → E'} {U : Set E} {Γ Γ' : Set (E' × E')} (h : Γ ⊆ Γ') :
-    pullbackCone f U Γ ⊆ pullbackCone f U Γ' :=
+theorem covectorPullback_mono {f : E → E'} {U : Set E} {Γ Γ' : Set (E' × E')} (h : Γ ⊆ Γ') :
+    covectorPullback f U Γ ⊆ covectorPullback f U Γ' :=
   fun _ ⟨hx, η, hη, hp⟩ ↦ ⟨hx, η, h hη, hp⟩
 
 /-- The pullback of a cone is a cone. -/
-theorem smul_mem_pullbackCone {f : E → E'} {U : Set E} {Γ : Set (E' × E')}
+theorem smul_mem_covectorPullback {f : E → E'} {U : Set E} {Γ : Set (E' × E')}
     (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) {p : E × E}
-    (hp : p ∈ pullbackCone f U Γ) {t : ℝ} (ht : 0 < t) : (p.1, t • p.2) ∈ pullbackCone f U Γ := by
+    (hp : p ∈ covectorPullback f U Γ) {t : ℝ} (ht : 0 < t) :
+    (p.1, t • p.2) ∈ covectorPullback f U Γ := by
   obtain ⟨hx, η, hη, hηp⟩ := hp
   exact ⟨hx, t • η, hcone _ hη t ht, by rw [map_smul, hηp]⟩
 
