@@ -6,13 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.L2OpNorm
-public import TauCeti.Geometry.Lie.Subgroup.Embedded
+public import TauCeti.Geometry.Lie.Subgroup.Transport
 public import TauCeti.Geometry.Manifold.Instances.Unitary
 public import TauCeti.Topology.Algebra.UnitaryGroup
-import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Immersion.Differential
-import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
-import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
@@ -54,6 +51,8 @@ structure, `open scoped Matrix.Norms.L2Operator` and enable
   subgroup `TauCeti.GLSpecialUnitary n 𝕜`.
 * `Matrix.specialUnitaryGroup.instChartedSpace`, `Matrix.specialUnitaryGroup.instIsManifold`,
   `Matrix.specialUnitaryGroup.instLieGroup`: the smooth Lie-group structure.
+* `Matrix.specialUnitaryGroup.isLieGroupAtlas_instChartedSpace`: the chosen atlas makes the group a
+  smooth Lie group with an immersive inclusion into the matrices (`TauCeti.Lie.IsLieGroupAtlas`).
 * `Matrix.specialUnitaryGroup.contMDiff_val`, `Matrix.specialUnitaryGroup.isImmersion_val`,
   `Matrix.specialUnitaryGroup.isSmoothEmbedding_val`: the inclusion into the matrices.
 * `Matrix.specialUnitaryGroup.contMDiffWithinAt_iff`, `Matrix.specialUnitaryGroup.contMDiffAt_iff`,
@@ -108,70 +107,42 @@ abbrev model : ModelWithCorners ℝ 𝔰𝔲 𝔰𝔲 := 𝓘(ℝ, 𝔰𝔲)
 /-- The special unitary group has a smooth real Lie-group atlas for its subspace topology, with an
 immersive inclusion into the matrices. -/
 private theorem exists_nativeStructure :
-    ∃ c : ChartedSpace 𝔰𝔲 (specialUnitaryGroup n 𝕜),
-      let _ := c
-      IsManifold (model n 𝕜) ∞ (specialUnitaryGroup n 𝕜) ∧
-        Manifold.IsImmersion (model n 𝕜) 𝓘(ℝ, Matrix n n 𝕜) ∞
-          (Subtype.val : specialUnitaryGroup n 𝕜 → Matrix n n 𝕜) ∧
-        LieGroup (model n 𝕜) ∞ (specialUnitaryGroup n 𝕜) := by
-  -- Use the closed-subgroup charts of `GLSpecialUnitary` in the units, and pull them back along
-  -- the topological group isomorphism with the matrix special unitary group. The pulled-back
-  -- diffeomorphism transfers the immersion, and the group isomorphism the Lie-group laws.
-  obtain ⟨d⟩ := TauCeti.Lie.nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed
-    (I := 𝓘(ℝ, Matrix n n 𝕜)) (K := 𝕂) (TauCeti.isClosed_GLSpecialUnitary n 𝕜)
-  let _ : ChartedSpace 𝔰𝔲 𝕂 := d.chartedSpace
-  let _ : LieGroup (model n 𝕜) ∞ 𝕂 := d.lieGroup
-  let f := (TauCeti.GLSpecialUnitary.continuousMulEquiv n 𝕜).symm
-  let c := f.toHomeomorph.pullbackChartedSpace (H := 𝔰𝔲)
-  let _ : ChartedSpace 𝔰𝔲 (specialUnitaryGroup n 𝕜) := c
-  have hm : IsManifold (model n 𝕜) ∞ (specialUnitaryGroup n 𝕜) :=
-    f.toHomeomorph.pullback_isManifold (model n 𝕜) ∞
-  let φ := f.toHomeomorph.pullbackDiffeomorph (model n 𝕜) ∞
-  have hphi : (fun A : specialUnitaryGroup n 𝕜 ↦ ((φ A : GL n 𝕜) : Matrix n n 𝕜)) =
-      Subtype.val := by
-    funext A
-    simp only [φ, Homeomorph.coe_pullbackDiffeomorph, f]
-    exact TauCeti.GLSpecialUnitary.coe_continuousMulEquiv_symm_apply A
-  -- The inclusion of the closed subgroup into the units is an immersion; composing with the
-  -- coercion `GL n 𝕜 → Matrix n n 𝕜`, which is the chart of the units at `1`, keeps it one.
-  have hi₀ : Manifold.IsImmersion (model n 𝕜) 𝓘(ℝ, Matrix n n 𝕜) ∞
-      (fun x : 𝕂 ↦ (x : GL n 𝕜)) :=
-    d.contMDiff_subtypeVal.isImmersion_of_injective_mfderiv (by simp)
-      fun x ↦ d.injective_mfderiv_subtypeVal x
-  have hi₁ : Manifold.IsImmersion (model n 𝕜) 𝓘(ℝ, Matrix n n 𝕜) ∞
-      (fun x : 𝕂 ↦ ((x : GL n 𝕜) : Matrix n n 𝕜)) :=
-    TauCeti.isImmersion_isLocalDiffeomorphAt_comp (k := chartAt (Matrix n n 𝕜) (1 : GL n 𝕜))
-      (fun _ ↦ (chartAt (Matrix n n 𝕜) (1 : GL n 𝕜)).isLocalDiffeomorphAt_of_mem_maximalAtlas
-        (IsManifold.chart_mem_maximalAtlas (1 : GL n 𝕜)) (by simp)) hi₀
-  have hi : Manifold.IsImmersion (model n 𝕜) 𝓘(ℝ, Matrix n n 𝕜) ∞
-      (Subtype.val : specialUnitaryGroup n 𝕜 → Matrix n n 𝕜) :=
-    (TauCeti.isImmersion_comp_isLocalDiffeomorph φ.isLocalDiffeomorph hi₁).congr hphi
-  exact ⟨c, hm, hi, f.lieGroup_pullbackChartedSpace (I := model n 𝕜) (n := ∞)⟩
+    ∃ c : ChartedSpace 𝔰𝔲 (specialUnitaryGroup n 𝕜), TauCeti.Lie.IsLieGroupAtlas
+      𝓘(ℝ, Matrix n n 𝕜) (Subtype.val : specialUnitaryGroup n 𝕜 → Matrix n n 𝕜) c :=
+  -- Transport the closed-subgroup structure of `GLSpecialUnitary` in the units along the
+  -- topological group isomorphism with the matrix special unitary group.
+  TauCeti.Lie.exists_isLieGroupAtlas_units_of_isClosed (TauCeti.isClosed_GLSpecialUnitary n 𝕜)
+    (TauCeti.GLSpecialUnitary.continuousMulEquiv n 𝕜).symm
+    TauCeti.GLSpecialUnitary.coe_continuousMulEquiv_symm_apply
 
 /-- The native atlas of the special unitary group, induced by its closed embedding into the units.
 Its public properties are `instIsManifold`, `instLieGroup` and `isSmoothEmbedding_val`; individual
 charts are not specified. -/
 instance instChartedSpace : ChartedSpace 𝔰𝔲 (specialUnitaryGroup n 𝕜) :=
+  -- The instance body is exposed and may not name the private `exists_nativeStructure`; the
+  -- `by exact` moves that reference into an auxiliary proof of the restated proposition.
   Classical.choose (show ∃ c : ChartedSpace 𝔰𝔲 (specialUnitaryGroup n 𝕜),
-      let _ := c
-      IsManifold (model n 𝕜) ∞ (specialUnitaryGroup n 𝕜) ∧
-        Manifold.IsImmersion (model n 𝕜) 𝓘(ℝ, Matrix n n 𝕜) ∞
-          (Subtype.val : specialUnitaryGroup n 𝕜 → Matrix n n 𝕜) ∧
-        LieGroup (model n 𝕜) ∞ (specialUnitaryGroup n 𝕜) from by
+      TauCeti.Lie.IsLieGroupAtlas 𝓘(ℝ, Matrix n n 𝕜) Subtype.val c from by
     exact exists_nativeStructure)
+
+/-- The chosen atlas makes the special unitary group a smooth Lie group with an immersive inclusion
+into the matrices. -/
+theorem isLieGroupAtlas_instChartedSpace : TauCeti.Lie.IsLieGroupAtlas 𝓘(ℝ, Matrix n n 𝕜)
+    (Subtype.val : specialUnitaryGroup n 𝕜 → Matrix n n 𝕜) (instChartedSpace (n := n) (𝕜 := 𝕜)) :=
+  Classical.choose_spec (exists_nativeStructure (n := n) (𝕜 := 𝕜))
 
 /-- The special unitary group is a smooth real manifold. -/
 instance instIsManifold : IsManifold (model n 𝕜) ∞ (specialUnitaryGroup n 𝕜) :=
-  (Classical.choose_spec (exists_nativeStructure (n := n) (𝕜 := 𝕜))).1
+  (isLieGroupAtlas_instChartedSpace (n := n) (𝕜 := 𝕜)).isManifold
 
 /-- The special unitary group is a smooth real Lie group. -/
 instance instLieGroup : LieGroup (model n 𝕜) ∞ (specialUnitaryGroup n 𝕜) :=
-  (Classical.choose_spec (exists_nativeStructure (n := n) (𝕜 := 𝕜))).2.2
+  (isLieGroupAtlas_instChartedSpace (n := n) (𝕜 := 𝕜)).lieGroup
 
 /-- The inclusion of the special unitary group into the matrices is an immersion. -/
 theorem isImmersion_val : Manifold.IsImmersion (model n 𝕜) 𝓘(ℝ, Matrix n n 𝕜) ∞
     (Subtype.val : specialUnitaryGroup n 𝕜 → Matrix n n 𝕜) :=
-  (Classical.choose_spec (exists_nativeStructure (n := n) (𝕜 := 𝕜))).2.1
+  (isLieGroupAtlas_instChartedSpace (n := n) (𝕜 := 𝕜)).isImmersion
 
 /-- The inclusion of the special unitary group into the matrices is a smooth embedding. -/
 theorem isSmoothEmbedding_val : Manifold.IsSmoothEmbedding (model n 𝕜) 𝓘(ℝ, Matrix n n 𝕜) ∞
