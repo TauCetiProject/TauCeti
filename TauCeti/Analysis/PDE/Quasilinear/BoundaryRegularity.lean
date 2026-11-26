@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.BoundaryData
 import TauCeti.Analysis.Holder.Superposition
 import TauCeti.Analysis.PDE.Quasilinear.GlobalHolder
-import TauCeti.Analysis.PDE.Quasilinear.Regularity
 import TauCeti.Analysis.Sobolev.LipschitzDomain.ContDiff
 import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 import TauCeti.Topology.Instances.Matrix
@@ -195,8 +194,8 @@ private theorem forall_testFunction_of_forall_w1p0 {a : EuclideanSpace ℝ (Fin 
 bounded open set with `C^{1,α}` boundary: for every frontier point `x` there are rigid coordinates
 `e` with `e x = 0` and a `C¹` function `ψ` with `ψ 0 = 0` and `α`-Hölder derivative such that,
 inside a normal cylinder, `Ω` is the region above the graph of `ψ`. Let `q ≥ 2` and `λ, Λ` be
-given. There is an exponent `α₀ > 0`, depending only on `Ω`, `n`, `q`, `λ` and `Λ`, with the
-following property.
+given. There is an exponent `α₀ > 0`, depending on `Ω`, its boundary charts, `α`, `n`, `q`, `λ`
+and `Λ`, with the following property.
 
 Let `A(x, s)` be uniformly elliptic with constants `λ, Λ` on `closure Ω` for every `s`,
 `α`-Hölder in `x ∈ closure Ω` uniformly in `s` and Lipschitz in `s` uniformly in `x ∈ closure Ω`.
