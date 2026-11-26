@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
 public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
 public import TauCeti.Combinatorics.SimpleGraph.OddTriangles
+public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.ParityRetract
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Tactic.Linarith
@@ -347,12 +348,8 @@ theorem cost_ofSimpleGraph_complete_ite [Fintype V] [LinearOrder V] (ℓ : Group
   have hedge :
       (Γ ∆ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset =
         Γ.edgeFinset ∆ ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset := by
-    ext e
-    rw [SimpleGraph.mem_edgeFinset, Finset.mem_symmDiff, SimpleGraph.mem_edgeFinset,
-      SimpleGraph.mem_edgeFinset]
-    induction e using Sym2.ind with
-    | _ u v =>
-      simp only [SimpleGraph.mem_edgeSet, symmDiff_def, SimpleGraph.sup_adj, SimpleGraph.sdiff_adj]
+    rw [SimpleGraph.edgeFinset_inj.mpr (symmDiff_def _ _), Finset.symmDiff_def,
+      SimpleGraph.edgeFinset_sup, SimpleGraph.edgeFinset_sdiff, SimpleGraph.edgeFinset_sdiff]
   rw [hcost, smul_ite_ofSimpleGraph_complete, cost_ofSimpleGraph_complete_one, hedge]
 
 end SimpleGraphBridge
