@@ -91,6 +91,17 @@ theorem mem_evaluationConstraints {J : Finset ι} {F : κ → R} :
     F ∈ evaluationConstraints ev V J ↔ ∀ j ∈ J, ev j ∘ F ∈ V j :=
   Iff.rfl
 
+/-- A row satisfies the constraint at a single index `j` exactly when `ev j ∘ F ∈ V j`. -/
+theorem mem_evaluationConstraints_singleton {j : ι} {F : κ → R} :
+    F ∈ evaluationConstraints ev V {j} ↔ ev j ∘ F ∈ V j := by
+  simp
+
+/-- Imposing one more constraint at `j` adds the condition `ev j ∘ F ∈ V j`. -/
+theorem mem_evaluationConstraints_insert [DecidableEq ι] {j : ι} {J : Finset ι} {F : κ → R} :
+    F ∈ evaluationConstraints ev V (insert j J) ↔
+      ev j ∘ F ∈ V j ∧ F ∈ evaluationConstraints ev V J := by
+  simp
+
 variable (ev V)
 
 @[simp]
