@@ -128,7 +128,8 @@ lemma locallyFiniteChainComplexToLimComplexOfInjective_comp_limComplexπ (K : Co
     locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexπ_assoc,
     excisionRelativeChainComplexTowerMap_app]
   -- `(relativeChainComplexTower …).obj (op n)` is definitionally
-  -- `(TopPair.ofSubset _).twistedChainComplex` on both sides.
+  -- `(TopPair.ofSubset _).twistedChainComplex`, so after `excisionRelativeChainComplexTowerMap_app`
+  -- both sides are the same `twistedChainComplexMapOfFstEq` composite.
   rfl
 
 /-- For an open embedding `j : V ⟶ X` and a compact exhaustion `K` with

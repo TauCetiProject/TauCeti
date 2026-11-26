@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Tower.Basic
+public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Tower.Naturality
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Excision
 import TauCeti.Algebra.Category.ModuleCat.Tower.Milnor.QuasiIso
 

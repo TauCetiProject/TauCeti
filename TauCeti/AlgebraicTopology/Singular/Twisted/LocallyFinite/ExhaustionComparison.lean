@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Tower.Basic
+public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Tower.Naturality
 
 /-!
 # Comparing compact exhaustions in the Borel–Moore Milnor sequence
