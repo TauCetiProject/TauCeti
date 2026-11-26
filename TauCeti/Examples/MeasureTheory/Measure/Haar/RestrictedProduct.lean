@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.Basic
+public import TauCeti.MeasureTheory.Measure.Count.Topology
+public import Mathlib.Topology.Instances.ZMod
 
 import TauCeti.Algebra.BigOperators.Finprod
 
@@ -23,13 +25,16 @@ restricted Haar product `restrictedHaar B μ` when the local Haar measures are r
 * rescaling two local factors by `2` and `1 / 2` preserves the restricted product
   (`TauCeti.restrictedHaar_eq_of_mulSingle_two_mul_mulSingle_inv`).
 
-Two instances of the functoriality `TauCeti.map_restrictedProductCongrRight_restrictedHaar`:
+Three instances of the functoriality `TauCeti.map_restrictedProductCongrRight_restrictedHaar`:
 
 * the identity family preserves the restricted Haar product, so every box mass
   (`TauCeti.map_restrictedProductCongrRight_refl_restrictedHaar`);
 * on one copy of the additive group `ℝ` with Lebesgue measure and reference subgroup `ℝ`,
   `x ↦ 2x` sends the restricted Haar product to the one of `(x ↦ 2x)_* vol = vol / 2`: the box
-  `[0, 2]` has pushforward mass `1` (`TauCeti.map_addRestrictedProductCongrRight_two_mul_box`).
+  `[0, 2]` has pushforward mass `1` (`TauCeti.map_addRestrictedProductCongrRight_two_mul_box`);
+* on one copy of `C₄ = ZMod 4` with counting measure and reference subgroup `{0, 2}`, inversion
+  `x ↦ -x` preserves the mass `2` of the box `{0, 2}`
+  (`TauCeti.map_addRestrictedProductCongrRight_neg_box`).
 -/
 
 public section
@@ -124,5 +129,47 @@ theorem map_addRestrictedProductCongrRight_two_mul_box :
   norm_num
 
 end Real
+
+section CyclicFour
+
+/-- Inversion `x ↦ -x` on `C₄ = ZMod 4`, as an isomorphism of topological additive groups. -/
+def zmodFourNeg : ZMod 4 ≃ₜ+ ZMod 4 where
+  toAddEquiv := AddEquiv.neg (ZMod 4)
+  continuous_toFun := continuous_of_discreteTopology
+  continuous_invFun := continuous_of_discreteTopology
+
+/-- The reference subgroup `{0, 2}` of `ZMod 4` is open. -/
+local instance : Fact (∀ _ : Unit, IsOpen
+    ((AddSubgroup.zmultiples (2 : ZMod 4) : AddSubgroup (ZMod 4)) : Set (ZMod 4))) :=
+  ⟨fun _ ↦ isOpen_discrete _⟩
+
+/-- `{0, 2}` has counting measure `2` in `ZMod 4`. -/
+theorem count_zmultiples_two_zmodFour :
+    count (AddSubgroup.zmultiples (2 : ZMod 4) : Set (ZMod 4)) = 2 := by
+  have h : addOrderOf (2 : ZMod 4) = 2 := by
+    simpa using ZMod.addOrderOf_coe (n := 4) 2 four_ne_zero
+  rw [count_apply .of_discrete, ← ENat.card_coe_set_eq]
+  simp [← Nat.card_eq_fintype_card, h]
+
+/-- On one copy of `C₄ = ZMod 4` with counting measure and reference subgroup `{0, 2}`, inversion
+sends the restricted Haar product to one under which the box `{0, 2}` still has mass `2`. -/
+theorem map_addRestrictedProductCongrRight_neg_box :
+    (restrictedAddHaar (fun _ : Unit ↦ AddSubgroup.zmultiples (2 : ZMod 4)) (fun _ ↦ count)
+        (by simp [Filter.cofinite_eq_bot])).map
+      (addRestrictedProductCongrRight (fun _ : Unit ↦ AddSubgroup.zmultiples (2 : ZMod 4))
+        (fun _ ↦ AddSubgroup.zmultiples (2 : ZMod 4)) (fun _ ↦ zmodFourNeg.toAddEquiv)
+        (by simp [Filter.cofinite_eq_bot]))
+      (box fun _ ↦ (AddSubgroup.zmultiples (2 : ZMod 4) : Set (ZMod 4))) = 2 := by
+  rw [map_addRestrictedProductCongrRight_restrictedAddHaar _ _ (fun _ ↦ zmodFourNeg),
+    restrictedAddHaar_box_eq_finprod _ _ _ (by simp [Filter.cofinite_eq_bot]), finprod_unique,
+    map_apply (map_continuous zmodFourNeg).measurable (.of_discrete)]
+  have hpre : (zmodFourNeg : ZMod 4 → ZMod 4) ⁻¹'
+      (AddSubgroup.zmultiples (2 : ZMod 4) : Set (ZMod 4)) =
+      (AddSubgroup.zmultiples (2 : ZMod 4) : Set (ZMod 4)) := by
+    ext x
+    exact (AddSubgroup.zmultiples (2 : ZMod 4)).neg_mem_iff
+  rw [hpre, count_zmultiples_two_zmodFour]
+
+end CyclicFour
 
 end TauCeti
