@@ -34,8 +34,8 @@ In the namespace `CategoryTheory.Pseudofunctor.AbelianBanding`:
 * `coefficientPresheaf`, `actionPresheaf`, `pairPresheaf`: the presheaves `A|_U`,
   `Hom(x, y) × A|_U` and `Hom(x, y) × Hom(x, y)` on `Over U`.
 * `principalPresheafIso`: the principal comparison of presheaves.
-* `pair_isSheaf`, `action_isSheaf`, `pairSheaf`, `actionSheaf`, `principalSheafIso`: the same
-  for sheaves on `J.over U`.
+* `pairPresheaf_isSheaf`, `actionPresheaf_isSheaf`, `pairSheaf`, `actionSheaf`,
+  `principalSheafIso`: the same for sheaves on `J.over U`.
 
 ## References
 
@@ -143,12 +143,12 @@ variable [F.IsPrestack J]
 variable (F J x y) in
 /-- The presheaf of pairs of local morphisms is a sheaf for `J.over U`, as a product of two copies
 of the sheaf of morphisms. -/
-theorem pair_isSheaf : Presheaf.IsSheaf (J.over U) (pairPresheaf F x y) :=
+theorem pairPresheaf_isSheaf : Presheaf.IsSheaf (J.over U) (pairPresheaf F x y) :=
   Sheaf.tensorProd_isSheaf (J.over U) (F.sheafHom J x y) (F.sheafHom J x y)
 
 variable (A x y) in
 /-- The presheaf of local morphisms with a coefficient is a sheaf for `J.over U`. -/
-theorem action_isSheaf : Presheaf.IsSheaf (J.over U) (actionPresheaf A x y) :=
+theorem actionPresheaf_isSheaf : Presheaf.IsSheaf (J.over U) (actionPresheaf A x y) :=
   Sheaf.tensorProd_isSheaf (J.over U) (F.sheafHom J x y)
     ((sheafCompose (J.over U) (forget AddCommGrpCat.{v'})).obj
       ((J.overPullback AddCommGrpCat U).obj A))
@@ -156,12 +156,12 @@ theorem action_isSheaf : Presheaf.IsSheaf (J.over U) (actionPresheaf A x y) :=
 variable (F J x y) in
 /-- The sheaf `Hom(x, y) × Hom(x, y)` on `J.over U`. -/
 abbrev pairSheaf : Sheaf (J.over U) (Type v') :=
-  ⟨pairPresheaf F x y, pair_isSheaf F J x y⟩
+  ⟨pairPresheaf F x y, pairPresheaf_isSheaf F J x y⟩
 
 variable (A x y) in
 /-- The sheaf `Hom(x, y) × A|_U` on `J.over U`. -/
 abbrev actionSheaf : Sheaf (J.over U) (Type v') :=
-  ⟨actionPresheaf A x y, action_isSheaf A x y⟩
+  ⟨actionPresheaf A x y, actionPresheaf_isSheaf A x y⟩
 
 variable (x y) in
 /-- **The principal comparison of sheaves** `Hom(x, y) × A|_U ≅ Hom(x, y) × Hom(x, y)` on
