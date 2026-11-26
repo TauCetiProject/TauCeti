@@ -42,9 +42,9 @@ to the twist of `s` by the inverse of the `U(1)`-bundle of its determinant line,
 conjugate of `s ⊗ E` to `s ⊗ (L⁻¹ ⊗ E⁻¹)`. These equivalences are in
 `TauCeti.Topology.VectorBundle.SpinStructure.Twist.ChargeConjugation`, with `L⁻¹ ⊗ E⁻¹` realised
 as a circle bundle built from `P` and the circle bundle of `E`. On a symplectic four-manifold the
-latter would become `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` once that circle bundle is identified with
-the circle bundle of `K ⊗ E⁻¹`, which is not yet done. The identity
-`c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about determinant classes.
+latter gives `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` after identifying that circle bundle with the
+circle bundle of `K ⊗ E⁻¹`; that identification is not made in `Twist.ChargeConjugation`. The
+identity `c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about determinant classes.
 
 ## Main definitions
 

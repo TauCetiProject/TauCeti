@@ -238,9 +238,9 @@ and determinant line `L`, and a principal `U(1)`-bundle `Q` with line `E`, the c
 `s ⊗ E` is equivalent to the twist of `s` by the principal `U(1)`-bundle `(P ×_X Q) ×_ψ U(1)`,
 which has the transition functions of `L⁻¹ ⊗ E⁻¹`: `conj (s ⊗ E) ≃ s ⊗ (L⁻¹ ⊗ E⁻¹)`, by
 `[[(p, q), 1], h] ↦ [(p, [(p, q), 1]), h]`. For the canonical `Spinᶜ` structure of an almost
-Hermitian four-manifold, where `L = K⁻¹`, this would give `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`
-once `(P ×_X Q) ×_ψ U(1)` is identified with the circle bundle of `K ⊗ E⁻¹`, which is not yet
-done. -/
+Hermitian four-manifold, where `L = K⁻¹`, this gives `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` after
+identifying `(P ×_X Q) ×_ψ U(1)` with the circle bundle of `K ⊗ E⁻¹`; that identification is not
+part of this statement. -/
 def twistChargeConjEquivTwist :
     (s.twist Q).chargeConj.Equiv (s.twist (s.inverseDeterminantTwistBundle Q)) :=
   ((s.fiberProd Circle Q).extendCompEquiv μ hμ hπμ
