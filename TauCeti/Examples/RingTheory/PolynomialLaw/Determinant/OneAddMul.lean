@@ -7,7 +7,6 @@ module
 
 import TauCeti.RingTheory.PolynomialLaw.Determinant.OneAddMul
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-import Mathlib.Tactic.FinCases
 
 /-!
 # Examples: `D(1 + r r') = D(1 + r' r)`
