@@ -96,6 +96,8 @@ mapping a composite class and casting its endpoints composes the cast images of 
 (`Path.Homotopic.Quotient.map_trans_cast`). `Path.refl_trans_eq_reparam`, the left counterpart of
 Mathlib's `Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps
 along a pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
+`Path.Homotopic.of_coe_eq` transfers a homotopy to paths with the same values whose end points are
+written differently.
 `Path.Homotopy.reflTransSymm_apply` evaluates Mathlib's homotopy from the constant path to
 `p.trans p.symm`, which has no `simps` lemmas of its own.
 
@@ -918,6 +920,15 @@ theorem trans_right_cancel {x₀ x₁ x₂ : X} {γ δ : Path x₀ x₁} {e : Pa
   have hδ : ((δ.trans e).trans e.symm).Homotopic δ :=
     (trans_assoc δ e e.symm).trans (trans_right_of_nullhomotopic (trans_symm e))
   exact hγ.symm.trans ((h.hcomp (refl e.symm)).trans hδ)
+
+/-- **Paths with the values of homotopic paths are homotopic.** If `p` and `q` have the same values
+as the homotopic paths `p'` and `q'`, possibly with end points written differently, then `p` and
+`q` are homotopic. -/
+theorem of_coe_eq {a b a' b' : X} {p q : Path a b} {p' q' : Path a' b'} (hp : ⇑p = ⇑p')
+    (hq : ⇑q = ⇑q') (h : p'.Homotopic q') : p.Homotopic q := by
+  obtain rfl : a = a' := p.source.symm.trans ((congrFun hp 0).trans p'.source)
+  obtain rfl : b = b' := p.target.symm.trans ((congrFun hp 1).trans p'.target)
+  rwa [Path.ext hp, Path.ext hq]
 
 /-- Left cancellation in the fundamental groupoid: if `e.trans γ` and `e.trans δ` are homotopic,
 then `γ` and `δ` are homotopic. This is the path-homotopy analogue of `c * a = c * b → a = b`. -/

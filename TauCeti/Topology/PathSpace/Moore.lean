@@ -585,6 +585,12 @@ theorem map_const (y : Y) (γ : MoorePath X) :
 theorem map_symm (f : C(X, Y)) (γ : MoorePath X) : γ.symm.map f = (γ.map f).symm :=
   (rfl)
 
+/-- The image of a rescaled path is the rescaled image. -/
+@[simp]
+theorem map_rescale (f : C(X, Y)) (γ : MoorePath X) (ℓ : ℝ≥0) :
+    (γ.rescale ℓ).map f = (γ.map f).rescale ℓ :=
+  (rfl)
+
 @[fun_prop]
 theorem continuous_map (f : C(X, Y)) : Continuous (map f : MoorePath X → MoorePath Y) :=
   continuous_iff.2 ⟨continuous_length, f.continuous.comp continuous_eval⟩
