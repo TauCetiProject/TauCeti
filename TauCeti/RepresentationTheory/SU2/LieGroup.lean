@@ -282,7 +282,6 @@ theorem ker_le_center_of_lieMap_ne_zero
   -- A trivial composite forces `φ` itself to be trivial, whose differential vanishes.
   have h1 : φ = 1 := DFunLike.ext _ _ fun x ↦ by
     simpa using DFunLike.congr_fun h (GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ x)
-  rw [h1, lieMap_one]
-  rfl
+  rw [h1, lieMap_one, zero_apply]
 
 end ContMDiffMonoidMorphism
