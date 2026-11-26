@@ -52,7 +52,7 @@ applies to the quotients appearing here without any further appeal to defeq.
   `dim_k M = ℓ_B(M) · [κ(B) : k]`.
 
 * `TauCeti.length_quotient_anti`: `M ⧸ Q` is no longer than `M ⧸ P` when `P ≤ Q`.
-* `TauCeti.length_eq_length_ker_add_length_range`: rank-nullity for length.
+* `LinearMap.length_eq_length_ker_add_length_range`: rank-nullity for length.
 * `TauCeti.length_le_add_of_exact`: the middle term of an exact sequence `N ⟶ M ⟶ P` is no longer
   than `N` and `P` together.
 * `TauCeti.length_add_length_add_length_eq_of_exact`: along an exact sequence
@@ -117,6 +117,19 @@ applies to the quotients appearing here without any further appeal to defeq.
 -/
 
 public section
+
+namespace LinearMap
+
+variable {A M N : Type*} [Ring A] [AddCommGroup M] [Module A M] [AddCommGroup N] [Module A N]
+
+/-- **Rank-nullity for length.** The length of `M` is the length of the kernel of a linear map
+out of `M` plus the length of its image. -/
+theorem length_eq_length_ker_add_length_range (f : M →ₗ[A] N) :
+    Module.length A M = Module.length A (ker f) + Module.length A (range f) :=
+  Module.length_eq_add_of_exact _ _ (ker f).injective_subtype f.surjective_rangeRestrict
+    (exact_iff.mpr (by rw [ker_rangeRestrict, Submodule.range_subtype]))
+
+end LinearMap
 
 namespace TauCeti
 
@@ -216,20 +229,12 @@ theorem injective_of_surjective_of_length_eq {N : Type*} [AddCommGroup N] [Modul
     ← Module.length_eq_zero_iff (R := A)]
   exact WithTop.add_right_cancel hN (hlen.symm.trans (zero_add _).symm)
 
-/-- **Rank-nullity for length.** The length of `M` is the length of the kernel of a linear map
-out of `M` plus the length of its image. -/
-theorem length_eq_length_ker_add_length_range {N : Type*} [AddCommGroup N] [Module A N]
-    (f : M →ₗ[A] N) :
-    Module.length A M = Module.length A (LinearMap.ker f) + Module.length A (LinearMap.range f) :=
-  Module.length_eq_add_of_exact _ _ (LinearMap.ker f).injective_subtype f.surjective_rangeRestrict
-    (LinearMap.exact_iff.mpr (by rw [LinearMap.ker_rangeRestrict, Submodule.range_subtype]))
-
 /-- The middle term of an exact sequence `N ⟶ M ⟶ P` is no longer than the two outer terms
 together. -/
 theorem length_le_add_of_exact {N P : Type*} [AddCommGroup N] [Module A N] [AddCommGroup P]
     [Module A P] {f : N →ₗ[A] M} {g : M →ₗ[A] P} (h : Function.Exact f g) :
     Module.length A M ≤ Module.length A N + Module.length A P := by
-  rw [length_eq_length_ker_add_length_range g, h.linearMap_ker_eq]
+  rw [g.length_eq_length_ker_add_length_range, h.linearMap_ker_eq]
   exact add_le_add (Module.length_le_of_surjective _ f.surjective_rangeRestrict)
     (Module.length_le_of_injective _ (LinearMap.range g).injective_subtype)
 
@@ -247,8 +252,8 @@ theorem length_add_length_add_length_eq_of_exact {A₀ B₀ C₀ A₁ B₁ C₁ 
     (h₃ : Function.Exact f₁ g₁) (hg₁ : Function.Surjective g₁) :
     Module.length A A₀ + Module.length A C₀ + Module.length A B₁ =
       Module.length A B₀ + Module.length A A₁ + Module.length A C₁ := by
-  rw [length_eq_length_ker_add_length_range g₀, length_eq_length_ker_add_length_range δ,
-    length_eq_length_ker_add_length_range f₁, length_eq_length_ker_add_length_range g₁,
+  rw [g₀.length_eq_length_ker_add_length_range, δ.length_eq_length_ker_add_length_range,
+    f₁.length_eq_length_ker_add_length_range, g₁.length_eq_length_ker_add_length_range,
     h₀.linearMap_ker_eq, h₁.linearMap_ker_eq, h₂.linearMap_ker_eq, h₃.linearMap_ker_eq,
     (LinearEquiv.ofInjective f₀ hf₀).length_eq.symm, LinearMap.range_eq_top.mpr hg₁,
     (LinearEquiv.ofTop ⊤ rfl).length_eq]
