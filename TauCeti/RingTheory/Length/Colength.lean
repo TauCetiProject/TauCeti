@@ -19,9 +19,9 @@ bounds the colength `length ((cM + Θ) ⧸ Θ)` of `Θ` in `cM + Θ`, the length
 `X ⧸ Y` when `Y ≤ X`. All lengths are `Module.length`, valued in `ℕ∞`; no finiteness is assumed.
 
 The proof filters the image of `cM` by the image of `cM ⊓ U` (the colength identity
-`TauCeti.length_map_mkQ_eq_add_length_quotient`), bounds the latter through a submodule `N`
+`Submodule.length_map_mkQ_eq_add_length_quotient`), bounds the latter through a submodule `N`
 containing `cM ⊓ U` and a linear map `ρ` on `N` (the colength inequality
-`TauCeti.length_map_mkQ_le_length_quotient`, then `TauCeti.length_quotient_sup_le` and
+`TauCeti.length_map_mkQ_le_length_quotient`, then `Submodule.length_quotient_sup_le` and
 `TauCeti.length_quotient_sup_le_of_ker_le`), and bounds the rest by a quotient of `M`
 (`TauCeti.length_quotient_smul_le`).
 
@@ -72,13 +72,13 @@ theorem length_map_mkQ_smul_le_add {M Θ U N N₁ Z Z' : Submodule R V} {c : R} 
       Module.length R (↥A' ⧸ A.comap A'.subtype) +
         Module.length R (↥A ⧸ ((N₁.comap N.subtype).map ρ).comap A.subtype) +
         Module.length R (↥Z' ⧸ Z.comap Z'.subtype) + q := by
-  rw [length_map_mkQ_eq_add_length_quotient Θ (inf_le_left : c • M ⊓ U ≤ c • M)]
+  rw [Submodule.length_map_mkQ_eq_add_length_quotient Θ (inf_le_left : c • M ⊓ U ≤ c • M)]
   calc _ ≤ Module.length R (↥Z' ⧸ Z.comap Z'.subtype) +
         (Module.length R (↥A' ⧸ A.comap A'.subtype) +
           Module.length R (↥A ⧸ ((N₁.comap N.subtype).map ρ).comap A.subtype)) + q := by
         gcongr
         · exact (length_map_mkQ_le_length_quotient (sup_le hN₁ hZ) hU).trans
-            ((length_quotient_sup_le N N₁ Z Z').trans
+            ((Submodule.length_quotient_sup_le N N₁ Z Z').trans
               (add_le_add le_rfl (length_quotient_sup_le_of_ker_le hker hρ)))
         · exact (length_quotient_smul_le c M U Θ).trans hq
     _ = _ := by ring

@@ -61,13 +61,13 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_quotient_eq_length_quotient_comap_subtype_add`: for `P ≤ N`, `M ⧸ P` is filtered
   by `N ⧸ P` and `M ⧸ N`.
 * `TauCeti.length_quotient_comap_subtype_range_map`: an injective `φ` gives `φ(M) ⧸ φ(N) ≃ M ⧸ N`.
-* `TauCeti.length_map_mkQ_eq_add_length_quotient`: for `S ≤ X`, the image of `X` in `M ⧸ P` is
-  filtered by the image of `S` and by `X ⧸ (S + X ⊓ P)`.
-* `TauCeti.length_map_mkQ_le_add_length_quotient`: the image of `X` in `M ⧸ P` is no longer than
-  the image of `S` together with `X ⧸ (X ⊓ S)`.
+* `Submodule.length_map_mkQ_eq_add_length_quotient`: for `S ≤ X`, the image of `X` in `M ⧸ P`
+  is filtered by the image of `S` and by `X ⧸ (S + X ⊓ P)`.
+* `Submodule.length_map_mkQ_le_add_length_quotient`: the image of `X` in `M ⧸ P` is no longer
+  than the image of `S` together with `X ⧸ (X ⊓ S)`.
 * `TauCeti.length_map_mkQ_le_length_quotient`: for `Y ≤ P` and `S ≤ N`, the image of `S` in
   `M ⧸ P` is no longer than `N ⧸ (N ⊓ Y)`.
-* `TauCeti.length_quotient_sup_le`: enlarging `Z` to `Z'` in `N ⧸ (N₁ + Z)` costs at most
+* `Submodule.length_quotient_sup_le`: enlarging `Z` to `Z'` in `N ⧸ (N₁ + Z)` costs at most
   `length (Z' ⧸ Z)`.
 * `TauCeti.length_quotient_sup_le_of_ker_le`: a map `ρ` on `N` with kernel in `Z'` and image in
   `T'` bounds `N ⧸ (N₁ + Z')` by `T' ⧸ T` and `T ⧸ ρ(N₁)`.
@@ -199,15 +199,17 @@ theorem length_quotient_comap_subtype_range_map {M' : Type*} [AddCommGroup M'] [
 /-- **The colength identity.** For submodules `S ≤ X` and `P`, the image of `X` in `M ⧸ P` is
 filtered by the image of `S` and by `X ⧸ (S ⊔ X ⊓ P)`: in `ℕ∞`,
 `length ((X + P) ⧸ P) = length ((S + P) ⧸ P) + length (X ⧸ (S + X ⊓ P))`. -/
-theorem length_map_mkQ_eq_add_length_quotient {S X : Submodule A M} (P : Submodule A M)
-    (h : S ≤ X) :
+theorem _root_.Submodule.length_map_mkQ_eq_add_length_quotient {S X : Submodule A M}
+    (P : Submodule A M) (h : S ≤ X) :
     Module.length A (X.map P.mkQ) = Module.length A (S.map P.mkQ) +
       Module.length A (↥X ⧸ (S ⊔ X ⊓ P).comap X.subtype) := by
   have hsup : P.comap X.subtype ⊔ S.comap X.subtype = (S ⊔ X ⊓ P).comap X.subtype := by
     rw [Submodule.comap_sup_of_injective X.injective_subtype (by simpa using h) (by simp)]
     simp [Submodule.comap_inf, sup_comm]
   rw [length_map_mkQ X P, length_quotient_eq_length_map_add_length_quotient_sup
-    (S.comap X.subtype) (P.comap X.subtype), length_map_mkQ, length_map_mkQ S P, hsup]
+    (S.comap X.subtype) (P.comap X.subtype)]
+  simp only [length_map_mkQ]
+  rw [hsup]
   congr 1
   refine (Submodule.Quotient.equiv _ _ (Submodule.comapSubtypeEquivOfLe h) ?_).length_eq
   ext x
@@ -215,11 +217,11 @@ theorem length_map_mkQ_eq_add_length_quotient {S X : Submodule A M} (P : Submodu
 
 /-- **Subadditivity of colength.** For any submodules `X, S, P`, in `ℕ∞`,
 `length ((X + P) ⧸ P) ≤ length ((S + P) ⧸ P) + length (X ⧸ (X ⊓ S))`. This is
-`TauCeti.length_map_mkQ_eq_add_length_quotient` applied to `X ⊓ S ≤ X`. -/
-theorem length_map_mkQ_le_add_length_quotient (X S P : Submodule A M) :
+`Submodule.length_map_mkQ_eq_add_length_quotient` applied to `X ⊓ S ≤ X`. -/
+theorem _root_.Submodule.length_map_mkQ_le_add_length_quotient (X S P : Submodule A M) :
     Module.length A (X.map P.mkQ) ≤
       Module.length A (S.map P.mkQ) + Module.length A (↥X ⧸ S.comap X.subtype) := by
-  rw [length_map_mkQ_eq_add_length_quotient P (inf_le_left : X ⊓ S ≤ X)]
+  rw [Submodule.length_map_mkQ_eq_add_length_quotient P (inf_le_left : X ⊓ S ≤ X)]
   gcongr
   · exact Module.length_le_of_injective _
       (Submodule.inclusion_injective (Submodule.map_mono inf_le_right))
@@ -236,7 +238,7 @@ theorem length_map_mkQ_le_length_quotient {S P Y N : Submodule A M} (hY : Y ≤ 
 /-- For submodules `N, N₁, Z, Z'`, enlarging `Z` to `Z'` in the quotient `N ⧸ (N₁ + Z)` costs at
 most `length (Z' ⧸ Z)`: `length (N ⧸ (N₁ + Z)) ≤ length (Z' ⧸ Z) + length (N ⧸ (N₁ + Z'))`, each
 quotient `X ⧸ Y` being `X ⧸ (X ⊓ Y)`. -/
-theorem length_quotient_sup_le (N N₁ Z Z' : Submodule A M) :
+theorem _root_.Submodule.length_quotient_sup_le (N N₁ Z Z' : Submodule A M) :
     Module.length A (↥N ⧸ (N₁ ⊔ Z).comap N.subtype) ≤
       Module.length A (↥Z' ⧸ Z.comap Z'.subtype) +
         Module.length A (↥N ⧸ (N₁ ⊔ Z').comap N.subtype) := by
@@ -246,7 +248,8 @@ theorem length_quotient_sup_le (N N₁ Z Z' : Submodule A M) :
     exact (Submodule.map_mono (le_sup_left : N₁ ≤ N₁ ⊔ Z)).trans
       ((Submodule.mkQ_map_self _).le.trans bot_le)
   rw [← length_map_mkQ]
-  refine (length_map_mkQ_le_add_length_quotient N (N₁ ⊔ Z') (N₁ ⊔ Z)).trans (add_le_add ?_ le_rfl)
+  refine (Submodule.length_map_mkQ_le_add_length_quotient N (N₁ ⊔ Z') (N₁ ⊔ Z)).trans
+    (add_le_add ?_ le_rfl)
   rw [hmap]
   exact length_map_mkQ_le_length_quotient le_sup_right le_rfl
 
@@ -274,7 +277,7 @@ theorem length_quotient_sup_le_of_ker_le {W : Type*} [AddCommGroup W] [Module A 
     _ ≤ Module.length A (T'.map B.mkQ) :=
         Module.length_le_of_injective _ (Submodule.inclusion_injective hr)
     _ ≤ Module.length A (T.map B.mkQ) + Module.length A (↥T' ⧸ T.comap T'.subtype) :=
-        length_map_mkQ_le_add_length_quotient T' T B
+        Submodule.length_map_mkQ_le_add_length_quotient T' T B
     _ = _ := by rw [length_map_mkQ, add_comm]
 
 /-- **Length is detected by finitely generated submodules.** -/
@@ -391,11 +394,16 @@ onto `cN ⧸ (cN ⊓ U + cN ⊓ Θ)`, so the latter is no longer. -/
 theorem length_quotient_smul_le (c : A) (N U Θ : Submodule A M) :
     Module.length A (↥(c • N) ⧸ ((c • N) ⊓ U ⊔ (c • N) ⊓ Θ).comap (c • N).subtype) ≤
       Module.length A (↥N ⧸ (N ⊓ U ⊔ N ⊓ Θ).comap N.subtype) := by
-  -- `c • N` is, by `Submodule.pointwise_smul_def`, the image of `N` under multiplication by `c`
-  let g : ↥N →ₗ[A] ↥(c • N) := (DistribSMul.toLinearMap A M c).submoduleMap N
+  -- multiplication by `c` maps `N` onto its image, which is `c • N` by `pointwise_smul_def`
+  let g : ↥N →ₗ[A] ↥(c • N) :=
+    (LinearEquiv.ofEq _ _ Submodule.pointwise_smul_def.symm).toLinearMap ∘ₗ
+      (DistribSMul.toLinearMap A M c).submoduleMap N
   have hgx (x : ↥N) : (g x : M) = c • (x : M) :=
-    (LinearMap.submoduleMap_coe_apply _ x).trans (DistribSMul.toLinearMap_apply ..)
-  have hg : Function.Surjective g := LinearMap.submoduleMap_surjective _ N
+    (LinearEquiv.coe_ofEq_apply Submodule.pointwise_smul_def.symm _).trans
+      ((LinearMap.submoduleMap_coe_apply _ x).trans (DistribSMul.toLinearMap_apply ..))
+  have hg : Function.Surjective g :=
+    (LinearEquiv.ofEq _ _ Submodule.pointwise_smul_def.symm).surjective.comp
+      (LinearMap.submoduleMap_surjective _ N)
   have hK : c • (N ⊓ U ⊔ N ⊓ Θ) ≤ (c • N) ⊓ U ⊔ (c • N) ⊓ Θ := by
     rw [Submodule.smul_sup']
     exact sup_le_sup
