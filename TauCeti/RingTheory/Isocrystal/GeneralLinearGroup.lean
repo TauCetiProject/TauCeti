@@ -72,6 +72,24 @@ isocrystal instances are specified separately, although both use the same coordi
 noncomputable abbrev wittGLIsocrystalEquiv (b c : Matrix.GeneralLinearGroup (Fin n) K(p, k)) :=
   withWittGLIsocrystals(IsocrystalEquiv, p, k, b, c)
 
+/-- The underlying linear equivalence of an isomorphism of matrix isocrystals. Explicit
+matrices specify both isocrystal instances on the common coordinate space. -/
+protected noncomputable abbrev wittGLIsocrystalEquiv.toLinearEquiv
+    (b c : Matrix.GeneralLinearGroup (Fin n) K(p, k))
+    (f : wittGLIsocrystalEquiv p k b c) :
+    (Fin n → K(p, k)) ≃ₗ[K(p, k)] (Fin n → K(p, k)) :=
+  withWittGLIsocrystals(IsocrystalEquiv.toLinearEquiv, p, k, b, c) f
+
+/-- The underlying linear equivalence intertwines the two matrix Frobenius operators. -/
+theorem wittGLIsocrystalEquiv.frob_equivariant
+    (b c : Matrix.GeneralLinearGroup (Fin n) K(p, k))
+    (f : wittGLIsocrystalEquiv p k b c) (x : Fin n → K(p, k)) :
+    (letI := wittGLIsocrystal p k c
+     Φ(p, k) (wittGLIsocrystalEquiv.toLinearEquiv p k b c f x)) =
+      wittGLIsocrystalEquiv.toLinearEquiv p k b c f
+        (letI := wittGLIsocrystal p k b; Φ(p, k) x) :=
+  withWittGLIsocrystals(IsocrystalEquiv.frob_equivariant, p, k, b, c) f x
+
 /-- Isomorphisms between the isocrystals of `b` and `c` are precisely the linear equivalences
 whose matrices twisted-conjugate `b` to `c`. -/
 noncomputable def wittGLConjugatorEquiv (b c : Matrix.GeneralLinearGroup (Fin n) K(p, k)) :
@@ -82,14 +100,11 @@ noncomputable def wittGLConjugatorEquiv (b c : Matrix.GeneralLinearGroup (Fin n)
     simp only [wittGLIsocrystal_frobenius_eq_semilinearEquiv]
     exact (intertwines_semilinearEquiv_iff _ b c g.val).mpr g.property)
   invFun f := by
-    let e := withWittGLIsocrystals(IsocrystalEquiv.toLinearEquiv, p, k, b, c) f
+    let e := wittGLIsocrystalEquiv.toLinearEquiv p k b c f
     let g := matrixLinearEquiv.symm e
     refine ⟨g, (intertwines_semilinearEquiv_iff _ b c g).mp ?_⟩
-    have hf : ∀ x, (letI := wittGLIsocrystal p k c; Φ(p, k) (e x)) =
-        e (letI := wittGLIsocrystal p k b; Φ(p, k) x) :=
-      withWittGLIsocrystals(IsocrystalEquiv.frob_equivariant, p, k, b, c) f
-    have he : matrixLinearEquiv g = e := matrixLinearEquiv.apply_symm_apply e
-    rw [he]
+    rw [matrixLinearEquiv.apply_symm_apply]
+    have hf := wittGLIsocrystalEquiv.frob_equivariant p k b c f
     simp only [wittGLIsocrystal_frobenius_eq_semilinearEquiv] at hf
     exact hf
   left_inv g := Subtype.ext (matrixLinearEquiv.symm_apply_apply g.val)
@@ -103,15 +118,15 @@ theorem wittGLConjugatorEquiv_apply_toLinearEquiv
     (b c : Matrix.GeneralLinearGroup (Fin n) K(p, k))
     (g : {g : Matrix.GeneralLinearGroup (Fin n) K(p, k) //
       c = g * b * (mapEquiv (Fin n) (FractionRing.frobenius p k) g)⁻¹}) :
-    withWittGLIsocrystals(IsocrystalEquiv.toLinearEquiv, p, k, b, c)
-      (wittGLConjugatorEquiv p k b c g) = matrixLinearEquiv g.val := (rfl)
+    wittGLIsocrystalEquiv.toLinearEquiv p k b c (wittGLConjugatorEquiv p k b c g) =
+      matrixLinearEquiv g.val := (rfl)
 
 @[simp]
 theorem wittGLConjugatorEquiv_symm_apply_val
     (b c : Matrix.GeneralLinearGroup (Fin n) K(p, k))
     (f : wittGLIsocrystalEquiv p k b c) :
     ((wittGLConjugatorEquiv p k b c).symm f).val =
-      matrixLinearEquiv.symm (withWittGLIsocrystals(IsocrystalEquiv.toLinearEquiv, p, k, b, c) f) :=
+      matrixLinearEquiv.symm (wittGLIsocrystalEquiv.toLinearEquiv p k b c f) :=
   (rfl)
 
 /-- Two matrix presentations give isomorphic Witt isocrystals precisely when the matrices
@@ -142,7 +157,8 @@ theorem exists_isocrystalEquiv_toLinearEquiv_eq {V : Type*} [AddCommGroup V] [Is
   refine ⟨⟨e, ?_⟩, rfl⟩
   intro x
   rw [wittGLIsocrystal_frobenius_eq_semilinearEquiv, hb]
-  -- Applying the transported Frobenius `φ` sends `x` to `e.symm (Φ(p, k) (e x))`.
+  dsimp only [φ]
+  erw [LinearEquiv.trans_apply, LinearEquiv.trans_apply]
   exact (e.apply_symm_apply _).symm
 
 /-- Every finite-dimensional Witt isocrystal admits a matrix presentation, whose class

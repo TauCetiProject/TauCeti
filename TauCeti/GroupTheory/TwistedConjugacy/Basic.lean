@@ -58,6 +58,7 @@ theorem orbitRel_iff {b c : TwistedConj σ} :
       fun h => TwistedConj.ext ((val_smul g b).trans h.symm)⟩
 
 /-- Stabilizing `b` is the twisted commutation equation. -/
+@[simp high]
 theorem mem_stabilizer_iff {g : G} {b : TwistedConj σ} :
     g ∈ MulAction.stabilizer G b ↔ g * b.val = b.val * σ g := by
   rw [MulAction.mem_stabilizer_iff]
@@ -99,7 +100,7 @@ theorem lift_mk {X : Sort*} (f : G → X) (hf : ∀ g b, f (g * b * (σ g)⁻¹)
     lift (σ := σ) f hf (mk σ b) = f b := (rfl)
 
 /-- Functions on twisted conjugacy classes are determined by their values on representatives. -/
-theorem funext {X : Sort*} {f h : Classes σ → X} (heq : ∀ b, f (mk σ b) = h (mk σ b)) : f = h :=
+theorem ext {X : Sort*} {f h : Classes σ → X} (heq : ∀ b, f (mk σ b) = h (mk σ b)) : f = h :=
   _root_.funext <| (mk_surjective σ).forall.mpr heq
 
 /-- A homomorphism commuting with the two endomorphisms induces a function on classes. -/
@@ -112,12 +113,12 @@ theorem map_mk (f : G →* H) (hf : Function.Semiconj f σ τ) (b : G) :
 
 @[simp]
 theorem map_id : map (MonoidHom.id G) (fun _ => rfl : Function.Semiconj (id : G → G) σ σ) = id :=
-  funext fun _ => rfl
+  ext fun _ => rfl
 
 theorem map_comp (f : G →* H) (h : H →* J)
     (hf : Function.Semiconj f σ τ) (hh : Function.Semiconj h τ υ) :
     map (h.comp f) (fun x => (congrArg h (hf x)).trans (hh (f x))) = map h hh ∘ map f hf :=
-  funext fun _ => rfl
+  ext fun _ => rfl
 
 /-- A group equivalence commuting with the endomorphisms induces an equivalence on classes. -/
 def congr (e : G ≃* H) (he : Function.Semiconj e σ τ) : Classes σ ≃ Classes τ where
