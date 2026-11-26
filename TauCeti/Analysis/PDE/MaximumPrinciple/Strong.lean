@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Harnack
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
+import TauCeti.MeasureTheory.Integral.Average.RpowVanishing
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -91,34 +92,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c : EuclideanSpace ℝ ι → ℝ} {lam Lam beta gamma : ℝ} {u : W1p mu Omega 2} {M : ℝ}
 
-omit [DecidableEq ι] in
-/-- The vanishing step of the strong maximum principle. If `w ≥ 0` on `B(y, 2r)` satisfies the
-weak Harnack bound `(⨍_{B(y, 2r)} w^{p₀})^{1/p₀} ≤ C w(x)` for almost every `x ∈ B(y, r)`, and `w`
-is below every `ε > 0` on a subset of `B(y, r)` of positive measure, then `w = 0` almost
-everywhere on `B(y, r)`. -/
-private theorem ae_eq_zero_of_frequently_lt_of_ae_setAverage_rpow_le {w : EuclideanSpace ℝ ι → ℝ}
-    {y : EuclideanSpace ℝ ι} {r p₀ C : ℝ} (hr : 0 < r) (hp₀ : 0 < p₀) (hp₀2 : p₀ ≤ 2) (hC : 0 < C)
-    (hw : MemLp w 2 (mu.restrict (ball y (2 * r))))
-    (hw0 : ∀ᵐ x ∂mu.restrict (ball y (2 * r)), 0 ≤ w x)
-    (hH : ∀ᵐ x ∂mu.restrict (ball y r), (⨍ z in ball y (2 * r), w z ^ p₀ ∂mu) ^ p₀⁻¹ ≤ C * w x)
-    (hfreq : ∀ ε > 0, ∃ᵐ x ∂mu.restrict (ball y r), w x < ε) :
-    ∀ᵐ x ∂mu.restrict (ball y r), w x = 0 := by
-  have hr2 : ball y r ⊆ ball y (2 * r) := ball_subset_ball (by linarith)
-  have hA0 : 0 ≤ ⨍ x in ball y (2 * r), w x ^ p₀ ∂mu :=
-    average_nonneg_of_ae (hw0.mono fun x hx => Real.rpow_nonneg hx _)
-  -- Since `w` is essentially as small as we like on `B(y, r)`, the average vanishes.
-  have hA : (⨍ x in ball y (2 * r), w x ^ p₀ ∂mu) ^ p₀⁻¹ ≤ 0 := by
-    refine le_of_forall_pos_le_add fun ε hε => ?_
-    obtain ⟨x, hx1, hx2⟩ := ((hfreq (ε / C) (div_pos hε hC)).and_eventually hH).exists
-    calc _ ≤ C * w x := hx2
-      _ ≤ C * (ε / C) := by gcongr
-      _ = 0 + ε := by field_simp; ring
-  have havg : ⨍ x in ball y (2 * r), w x ^ p₀ ∂mu = 0 :=
-    (Real.rpow_eq_zero hA0 (inv_ne_zero hp₀.ne')).1 (hA.antisymm (Real.rpow_nonneg hA0 _))
-  exact ae_restrict_of_ae_restrict_of_subset hr2 (ae_eq_zero_of_setAverage_rpow_eq_zero hp₀
-    ((ENNReal.ofReal_le_ofReal hp₀2).trans_eq (ENNReal.ofReal_ofNat 2))
-    (measure_ball_pos mu y (by linarith)).ne' measure_ball_lt_top.ne hw hw0 havg)
-
 /-- The local step of the strong maximum principle. If `u ≤ M` is a weak subsolution on `Ω` with
 `c M ≥ 0`, `B(y, 8√n r) ⊆ Ω`, `βr ≤ λ` and `γr² ≤ λ`, and `u` exceeds `M - ε` on a subset of
 `B(y, r)` of positive measure for every `ε > 0`, then `u = M` almost everywhere on `B(y, r)`. -/
@@ -138,7 +111,7 @@ private theorem UniformlyEllipticOn.ae_ball_value_eq_of_frequently_sub_lt_lowerO
     (hβ : beta * r ≤ lam) (hγ : gamma * r ^ 2 ≤ lam)
     (hfreq : ∀ ε > 0, ∃ᵐ x ∂mu.restrict (ball y r), M - ε < W1p.value u x) :
     ∀ᵐ x ∂mu.restrict (ball y r), W1p.value u x = M := by
-  obtain ⟨p₀, hp₀, hp₀2, C, hC, hH⟩ :=
+  obtain ⟨p₀, hp₀, hp₀2, C, -, hH⟩ :=
     exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_lowerOrder (ι := ι) (mu := mu)
       (lam := lam) (Lam := Lam) 1
   rcases le_or_gt r 0 with hr | hr
@@ -179,7 +152,8 @@ private theorem UniformlyEllipticOn.ae_ball_value_eq_of_frequently_sub_lt_lowerO
     (hc.mono_measure hUm) (fun x hx => hb_bound x (hball hx)) (fun x hx => hc_bound x (hball hx))
     hsuper hw0 (x₀ := y) (r := r) subset_rfl (by rwa [one_mul]) (by rwa [one_mul])
   have hwv' := ae_restrict_of_ae_restrict_of_subset (hr2.trans h2U) hwv
-  have hzero := ae_eq_zero_of_frequently_lt_of_ae_setAverage_rpow_le hr hp₀ hp₀2 hC
+  have hzero := ae_eq_zero_of_frequently_lt_of_ae_setAverage_rpow_le hr2 measure_ball_lt_top.ne hp₀
+    ((ENNReal.ofReal_le_ofReal hp₀2).trans_eq (ENNReal.ofReal_ofNat 2))
     ((Lp.memLp _).mono_measure (Measure.restrict_mono h2U le_rfl))
     (ae_restrict_of_ae_restrict_of_subset h2U hw0) hHw fun ε hε =>
       ((hfreq ε hε).and_eventually hwv').mono fun x ⟨h1, h2⟩ => by rw [h2]; linarith [h1]
