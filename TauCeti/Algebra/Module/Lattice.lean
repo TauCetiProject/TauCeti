@@ -79,6 +79,10 @@ of `L`.
   of the maximal ideal multiplies a finitely generated submodule into a full lattice.
 * `Submodule.maximalIdeal_smul_eq_units_smul`: over a discrete valuation ring, the maximal ideal
   multiplies submodules as a uniformizer does.
+* `Submodule.exists_units_maximalIdeal_smul_eq`: over a discrete valuation ring, some uniformizer,
+  viewed as a nonzero scalar of the fraction field, multiplies every submodule as `𝔪` does.
+* `Submodule.zpow_smul_le_zpow_smul`: translates of a submodule by powers of the image of a ring
+  element shrink as the exponent grows.
 * `Submodule.exists_smul_eq_zpow_smul`: over a discrete valuation ring, every nonzero scalar of
   the fraction field translates submodules as a power of a uniformizer does.
 * `Submodule.smul_eq_self_of_maximalIdeal_smul_lt`: a homothety placing a submodule `M` between
@@ -788,9 +792,22 @@ theorem _root_.Submodule.maximalIdeal_smul_eq_units_smul {ϖ : R} (hϖ : Irreduc
   rw [hϖ.maximalIdeal_eq, Submodule.ideal_span_singleton_smul,
     Submodule.units_smul_eq_smul_of_val_eq hπ]
 
-omit [IsDomain R] [IsFractionRing R K] in
-/-- Powers of a uniformizer shrink submodules as the exponent grows. -/
-private theorem zpow_smul_le_zpow_smul {ϖ : R} {π : Kˣ} (hπ : (π : K) = algebraMap R K ϖ)
+variable (R K V') in
+/-- Over a discrete valuation ring, the maximal ideal multiplies every submodule as a uniformizer,
+viewed as a nonzero scalar of the fraction field, does. -/
+theorem _root_.Submodule.exists_units_maximalIdeal_smul_eq :
+    ∃ (ϖ : R) (π : Kˣ), Irreducible ϖ ∧ (π : K) = algebraMap R K ϖ ∧
+      ∀ N : Submodule R V', IsLocalRing.maximalIdeal R • N = π • N := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
+  have hϖ0 : algebraMap R K ϖ ≠ 0 :=
+    (map_ne_zero_iff _ (IsFractionRing.injective R K)).2 hϖ.ne_zero
+  exact ⟨ϖ, Units.mk0 _ hϖ0, hϖ, rfl,
+    Submodule.maximalIdeal_smul_eq_units_smul hϖ (Units.val_mk0 hϖ0)⟩
+
+omit [IsDomain R] [IsFractionRing R K] [IsDiscreteValuationRing R] in
+/-- If `π` is the image in `Kˣ` of `ϖ : R`, the translates `πⁿ N` of a submodule `N` shrink as the
+exponent `n` grows: `π ^ n • N ≤ π ^ m • N` for `m ≤ n`. -/
+theorem _root_.Submodule.zpow_smul_le_zpow_smul {ϖ : R} {π : Kˣ} (hπ : (π : K) = algebraMap R K ϖ)
     {m n : ℤ} (h : m ≤ n) (N : Submodule R V') : π ^ n • N ≤ π ^ m • N := by
   obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (sub_nonneg.2 h)
   rw [show n = m + k by omega, zpow_add, mul_smul, zpow_natCast]
@@ -821,23 +838,20 @@ between them fixes `M`. -/
 theorem _root_.Submodule.smul_eq_self_of_maximalIdeal_smul_lt {a : Kˣ} {N M : Submodule R V'}
     (hM : IsLocalRing.maximalIdeal R • N ≤ M) (hMN : M ≤ N)
     (h₁ : IsLocalRing.maximalIdeal R • N < a • M) (h₂ : a • M < N) : a • M = M := by
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
-  set π : Kˣ := Units.mk0 (algebraMap R K ϖ) <|
-    (map_ne_zero_iff _ (IsFractionRing.injective R K)).2 hϖ.ne_zero
-  have hπ : (π : K) = algebraMap R K ϖ := rfl
+  obtain ⟨ϖ, π, hϖ, hπ, h𝔪⟩ := Submodule.exists_units_maximalIdeal_smul_eq R K V'
   obtain ⟨n, ha⟩ := Submodule.exists_smul_eq_zpow_smul (V' := V') hϖ hπ a
-  rw [Submodule.maximalIdeal_smul_eq_units_smul hϖ hπ] at hM h₁
+  rw [h𝔪] at hM h₁
   rw [ha] at h₁ h₂ ⊢
   rcases lt_trichotomy n 0 with hn | rfl | hn
   · -- For `n < 0`, `ϖⁿ M` contains `ϖ⁻¹ M`, which contains `ϖ⁻¹ ϖ N = N`.
     refine absurd h₂ (not_lt_of_ge ?_)
     calc N = π ^ (-1 : ℤ) • π • N := by rw [zpow_neg_one, inv_smul_smul]
       _ ≤ π ^ (-1 : ℤ) • M := Submodule.pointwise_smul_le_pointwise_smul_iff.2 hM
-      _ ≤ π ^ n • M := zpow_smul_le_zpow_smul hπ (by omega) M
+      _ ≤ π ^ n • M := Submodule.zpow_smul_le_zpow_smul hπ (by omega) M
   · rw [zpow_zero, one_smul]
   · -- For `n > 0`, `ϖⁿ M` lies in `ϖ M`, which lies in `ϖ N`.
     refine absurd h₁ (not_lt_of_ge ?_)
-    calc π ^ n • M ≤ π ^ (1 : ℤ) • M := zpow_smul_le_zpow_smul hπ (by omega) M
+    calc π ^ n • M ≤ π ^ (1 : ℤ) • M := Submodule.zpow_smul_le_zpow_smul hπ (by omega) M
       _ ≤ π • N := by
         rw [zpow_one]
         exact Submodule.pointwise_smul_le_pointwise_smul_iff.2 hMN
@@ -849,12 +863,9 @@ theorem _root_.Submodule.IsFullLattice.of_maximalIdeal_smul_le {L M : Submodule 
     [L.IsFullLattice K] (h₁ : IsLocalRing.maximalIdeal R • L ≤ M) (h₂ : M ≤ L) :
     M.IsFullLattice K := by
   have : M.IsLattice K := IsLattice.mono K h₂
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
-  have hϖ0 : algebraMap R K ϖ ≠ 0 :=
-    (map_ne_zero_iff _ (IsFractionRing.injective R K)).2 hϖ.ne_zero
+  obtain ⟨-, π, -, -, h𝔪⟩ := Submodule.exists_units_maximalIdeal_smul_eq R K V'
   -- `𝔪 L = ϖ L` is the translate of `L` by the unit `ϖ` of `K`, hence a full lattice.
-  exact IsFullLattice.of_le K (M := Units.mk0 _ hϖ0 • L)
-    ((Submodule.maximalIdeal_smul_eq_units_smul hϖ (Units.val_mk0 hϖ0) L).symm.le.trans h₁)
+  exact IsFullLattice.of_le K (M := π • L) ((h𝔪 L).symm.le.trans h₁)
 
 end Pointwise
 

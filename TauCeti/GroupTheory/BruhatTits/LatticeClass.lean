@@ -189,12 +189,9 @@ def graph : SimpleGraph (LatticeClass O K V) where
   Adj x y := ∃ L M : fullLattices O K V, mk L = x ∧ mk M = y ∧
     maximalIdeal O • (L : Submodule O V) < M ∧ (M : Submodule O V) < L
   symm := ⟨fun _ _ ⟨L, M, hL, hM, h₁, h₂⟩ => by
-    obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
-    have hϖ0 : algebraMap O K ϖ ≠ 0 :=
-      (map_ne_zero_iff _ (IsFractionRing.injective O K)).2 hϖ.ne_zero
-    have h𝔪 := Submodule.maximalIdeal_smul_eq_units_smul (V' := V) hϖ (Units.val_mk0 hϖ0)
+    obtain ⟨-, π, -, -, h𝔪⟩ := Submodule.exists_units_maximalIdeal_smul_eq O K V
     -- The representatives `M` and `ϖ L` of the two classes are in the opposite position.
-    refine ⟨M, Units.mk0 _ hϖ0 • L, hM, (mk_smul _ _).trans hL, ?_, ?_⟩
+    refine ⟨M, π • L, hM, (mk_smul _ _).trans hL, ?_, ?_⟩
     · rw [h𝔪, SubMulAction.val_smul]
       exact Submodule.pointwise_smul_lt_pointwise_smul_iff.2 h₂
     · rwa [SubMulAction.val_smul, ← h𝔪]⟩
