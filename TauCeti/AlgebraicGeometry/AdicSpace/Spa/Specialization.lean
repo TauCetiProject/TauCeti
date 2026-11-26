@@ -202,8 +202,9 @@ theorem specialization_eq_iff {Aplus : Subring A} {x : spa Aplus} {𝔭 : reduct
 
 /-- **Specialization lifts specializations.** If `sp(x)` specializes to `𝔭` in the reduction
 spectrum, then `x` specializes in `Spa(A, A⁺)` to a point `x'` with `sp(x') = 𝔭`. This holds for
-every topological ring `A` and subring `A⁺`. -/
-theorem specializingMap_specialization [IsTopologicalRing A] (Aplus : Subring A) :
+every subring `A⁺` of a commutative ring `A` with a topology in which addition is separately
+continuous. -/
+theorem specializingMap_specialization [SeparatelyContinuousAdd A] (Aplus : Subring A) :
     SpecializingMap (specialization (Aplus := Aplus)) := by
   intro x 𝔭 h
   have hle : (specialization x : PrimeSpectrum Aplus) ≤ 𝔭 :=
