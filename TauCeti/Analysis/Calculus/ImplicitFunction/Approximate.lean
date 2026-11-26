@@ -133,9 +133,11 @@ theorem isBigO_sub_sub_pow_smul_fderiv {F : ℝ × E → G} {x₀ : E}
     rw [Prod.norm_def, norm_zero, norm_smul]
     exact max_eq_right (by positivity)
   rw [hpa, hpb, hab', hnab] at hrem
-  rw [fderiv_slice_right (hF.differentiableAt (by norm_num)), ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.inr_apply, ← map_smul, Prod.smul_mk, smul_zero]
-  rw [norm_mul, norm_norm, Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ ‖a h‖ + ‖b h‖)]
+  -- The slice derivative applied to `h^(j+1) y` is the full derivative in the direction `(0, ·)`.
+  have hΛ : h ^ (j + 1) • fderiv ℝ (fun x ↦ F (0, x)) x₀ y =
+      fderiv ℝ F (0, x₀) (0, h ^ (j + 1) • y) := by
+    simp [fderiv_slice_right (hF.differentiableAt (by norm_num)), ← map_smul]
+  rw [hΛ, norm_mul, norm_norm, Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ ‖a h‖ + ‖b h‖)]
   calc _ ≤ L * max ‖a h‖ ‖b h‖ * (‖h ^ (j + 1)‖ * ‖y‖) := hrem
     _ ≤ |L| * (‖a h‖ + ‖b h‖) * (‖h ^ (j + 1)‖ * ‖y‖) := by
         gcongr

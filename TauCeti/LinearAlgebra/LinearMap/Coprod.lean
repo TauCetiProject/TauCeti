@@ -69,7 +69,10 @@ theorem surjective_coprod_of_forall_exists_eq {f : M₁ →ₗ[R] M} {g : M₂ �
   obtain ⟨a, ha⟩ := hf y
   obtain ⟨b, hb⟩ := hg (y - f a)
   refine ⟨(a, b), ?_⟩
-  rw [coprod_apply, hb, map_sub, ← add_sub_assoc, add_sub_right_comm, ha, sub_add_cancel]
+  rw [coprod_apply, hb, map_sub]
+  rw [← sub_eq_zero] at ha ⊢
+  convert ha using 1
+  abel
 
 end Coprod
 
