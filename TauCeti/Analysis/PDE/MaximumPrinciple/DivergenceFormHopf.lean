@@ -1008,34 +1008,6 @@ private theorem exists_pos_add_mul_gaussBarrier_le {g : E → ℝ} {y x₀ : E} 
   rw [hΦ, div_mul_cancel₀ _ hm₀.ne']
   linarith [isMinOn_iff.1 hmin₀ z hz]
 
-/-- **Dropping the negative part of the mass coefficient.** Let `u` be a weak supersolution of
-`-div (a ∇u) + c u ≥ 0` in `Ω`, with `a` bounded and `c` essentially bounded on an open `U ⊆ Ω`.
-If `u ≥ 0` almost everywhere on `U`, then the restriction of `u` to `U` is a weak supersolution of
-`-div (a ∇u) + c⁺ u ≥ 0` in `U`, where `c⁺ = max c 0`. -/
-private theorem energyFormH1_restrictL_max_nonneg {Ω U : Opens E} (hU : U ≤ Ω)
-    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {c : E → ℝ}
-    (ha : MemLp (fun x => energyIntegrand (a x) ((0 : E → E) x) ((0 : E → ℝ) x)) ⊤
-      (volume.restrict (U : Set E)))
-    (hc : MemLp c ⊤ (volume.restrict (U : Set E)))
-    (hc' : MemLp (fun x => max (c x) 0) ⊤ (volume.restrict (U : Set E))) {u : W1p volume Ω 2}
-    (hu : ∀ v : W1p0 volume Ω 2, (∀ᵐ x ∂volume.restrict (Ω : Set E),
-      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a 0 c u (v : W1p volume Ω 2))
-    (hu0 : ∀ᵐ x ∂volume.restrict (U : Set E), 0 ≤ W1p.value u x) (v : W1p0 volume U 2)
-    (hv : ∀ᵐ x ∂volume.restrict (U : Set E), 0 ≤ W1p.value (v : W1p volume U 2) x) :
-    0 ≤ energyFormH1 a 0 (fun x => max (c x) 0) (W1p.restrictL hU u) (v : W1p volume U 2) := by
-  have h := energyFormH1_restrictL_nonneg hU hu v hv
-  rw [energyFormH1_eq_energyFormH1_zero_add_setIntegral ha hc] at h
-  rw [energyFormH1_eq_energyFormH1_zero_add_setIntegral ha hc']
-  have hint {f : E → ℝ} (hf : MemLp f ⊤ (volume.restrict (U : Set E))) :
-      Integrable (fun x => f x * W1p.value (W1p.restrictL hU u) x *
-        W1p.value (v : W1p volume U 2) x) (volume.restrict (U : Set E)) :=
-    (show MemLp (fun x => f x * W1p.value (W1p.restrictL hU u) x) 2
-      (volume.restrict (U : Set E)) from hf.fun_mul (Lp.memLp _)).integrable_mul (Lp.memLp _)
-  refine h.trans (add_le_add_right (integral_mono_ae (hint hc) (hint hc') ?_) _)
-  filter_upwards [W1p.value_restrictL_ae hU u, hu0, hv] with x h1 h2 h3
-  rw [h1]
-  exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (le_max_left _ _) h2) h3
-
 /-- **Hopf's lemma with a mass term, under the sign condition `c g(x₀) ≤ 0`.** This is the common
 form of `exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg` (no mass term, no sign condition on
 `g x₀`) and `exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos` (`c ≥ 0` and
@@ -1208,7 +1180,7 @@ theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos {Ω : Open
     le_rfl hell hhol hcm' (fun _ _ => le_max_right _ _)
     (fun x hx => (le_abs_self _).trans ((Real.norm_eq_abs _).symm.trans_le (hcM' x hx)))
     (energyFormH1_restrictL_max_nonneg hU ha
-      (hbd hcm fun x hx => (Real.norm_eq_abs _).trans_le (hcM x hx)) (hbd hcm' hcM') hu hu0) hg
+      (hbd hcm fun x hx => (Real.norm_eq_abs _).trans_le (hcM x hx)) hu hu0) hg
     ((W1p.value_restrictL_ae hU u).trans hug) hmin fun x _ => by rw [hg0, mul_zero]
 
 end PDE
