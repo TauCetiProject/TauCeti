@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.Algebra.Algebra.Subalgebra.Operations
 
+import Mathlib.Algebra.Group.Submonoid.Units
 import TauCeti.GroupTheory.GroupAction.Closure
 
 /-!
@@ -32,6 +33,9 @@ For algebra maps `f g : A →ₐ[R] B` and an element `P : B`, the elements `x` 
 with `f` on it. For `P = 1` this is the equalizer of `g` and `f`
 (`AlgHom.intertwiningSubalgebra_one`). To show that `P` intertwines `g` with `f` on a subalgebra,
 it therefore suffices to check it on generators (`Algebra.adjoin_le`).
+
+An element of the equalizer is a unit of the equalizer exactly when it is a unit of `A`
+(`AlgHom.isUnit_equalizer_mk_iff`), so the inclusion of an equalizer is a local homomorphism.
 -/
 
 public section
@@ -70,6 +74,24 @@ theorem coe_equalizerCongr_symm_apply (eA : A ≃ₐ[R] A') (eB : B ≃ₐ[R] B'
   eA.injective <| by rw [← coe_equalizerCongr_apply eA eB f g, apply_symm_apply, apply_symm_apply]
 
 end AlgEquiv
+
+namespace AlgHom
+
+variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
+
+/-- An element of the equalizer of two algebra maps is a unit of the equalizer exactly when it is
+a unit of `A`: the inverse of an element on which `f` and `g` agree is again such an element. -/
+theorem isUnit_equalizer_mk_iff (f g : A →ₐ[R] B) {a : A} (ha : f a = g a) :
+    IsUnit (⟨a, ha⟩ : equalizer f g) ↔ IsUnit a :=
+  -- The submonoid underlying `equalizer f g` is by definition Mathlib's equalizer `eqLocusM` of
+  -- the underlying monoid maps: both have carrier `{a | f a = g a}` and the induced monoid
+  -- structure, so the statement is the monoid case.
+  MonoidHom.isUnit_eqLocusM_mk_iff (f : A →* B) g ha
+
+instance (f g : A →ₐ[R] B) : IsLocalHom (equalizer f g).val where
+  map_nonunit a := (isUnit_equalizer_mk_iff f g a.prop).2
+
+end AlgHom
 
 namespace TauCeti.FixedPoints
 

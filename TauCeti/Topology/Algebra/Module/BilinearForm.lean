@@ -107,6 +107,8 @@ use.
 * `ContinuousLinearEquiv.mem_setOfPred_symm_pos_isVonNBounded_of_inner`: a form reading as an inner
   product through a continuous linear equivalence satisfies these conditions; this supplies the
   local metrics that are glued.
+* `LinearMap.continuous_apply_self`: the diagonal `v ↦ B v v` of a bilinear map on a
+  finite-dimensional Hausdorff topological vector space over a complete field is continuous.
 -/
 
 public section
@@ -554,6 +556,24 @@ theorem _root_.ContinuousLinearMap.isVonNBounded_setOf_lt_one_of_pos
   refine ⟨Real.sqrt c⁻¹, fun v hv ↦ Real.le_sqrt_of_sq_le ?_⟩
   rw [inv_eq_one_div, le_div_iff₀ hc]
   linarith [hbound () rfl v, show b v v < 1 from hv]
+
+/-- On a finite-dimensional Hausdorff topological vector space over a complete nontrivially normed
+field `𝕜`, the diagonal `v ↦ B v v` of a bilinear map `B : E →ₗ[𝕜] E →ₗ[𝕜] F` is continuous. -/
+theorem _root_.LinearMap.continuous_apply_self {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] {E : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+    [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [FiniteDimensional 𝕜 E] [T2Space E]
+    {F : Type*} [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+    [ContinuousSMul 𝕜 F] (B : E →ₗ[𝕜] E →ₗ[𝕜] F) :
+    Continuous fun v : E ↦ B v v := by
+  -- Expand the first argument in a basis: `B v v = ∑ i, b.equivFun v i • B (b i) v`.
+  let b := Module.finBasis 𝕜 E
+  have hB (v : E) : B v v = ∑ i, b.equivFun v i • B (b i) v := by
+    calc B v v = B (∑ i, b.equivFun v i • b i) v := by rw [b.sum_equivFun]
+      _ = ∑ i, b.equivFun v i • B (b i) v := by
+        simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply]
+  simp only [hB]
+  exact continuous_finsetSum _ fun i _ ↦ ((continuous_apply i).comp
+    (continuous_equivFun_basis b)).smul (B (b i)).continuous_of_finiteDimensional
 
 end TauCeti
 

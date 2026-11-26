@@ -73,9 +73,8 @@ coefficients trivialized by evaluation at `p.orientation`
 representing a Thom class which `δ^*` negates exactly
 (`exists_isThomClass_homologyπ_and_deckThomPairMap_eq_neg`).
 
-The lift of the deck involution is stated for an index type `ι : Type` of the orientations, and
-`TauCeti.thomPairSignLocalSystem` needs the base, the fibres and the ring in the universe of `ι`,
-so they live in `Type` here.
+The orientations are indexed by a type `ι : Type`, and the base, the fibres and the ring lie in any
+common universe.
 
 ## Main definitions and results
 
@@ -116,14 +115,16 @@ noncomputable section
 
 open Bundle CategoryTheory Module
 
+universe w
+
 namespace TauCeti.VectorBundleOrientationCover
 
-variable {B : Type} [TopologicalSpace B] {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
   {ι : Type}
 
-variable [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (R : Type) [Ring R]
+variable [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (R : Type w) [Ring R]
 
 variable (F E) in
 /-- **The orientation system is trivial on the Thom pair of the orientation cover.** The pull-back
@@ -516,7 +517,7 @@ theorem singularChainComplexMap_fiberThomPairMap_comp_thomPairSignChainMap
   congr 3
   exact thomPairSignChainMap_fiber_coefficients hι R q
 
-variable (k : Type*) [Ring k] [Linear k (ModuleCat.{0} R)] (M : ModuleCat.{0} R)
+variable (k : Type*) [Ring k] [Linear k (ModuleCat.{w} R)] (M : ModuleCat.{w} R)
 
 variable (F E) in
 /-- **The lift of orientation-twisted cochains to the Thom pair of the orientation cover**:
@@ -622,10 +623,10 @@ namespace TauCeti.VectorBundleOrientationCover
 
 /-! ### The lift of the Thom class with coefficients in the orientation system -/
 
-variable {B : Type} [TopologicalSpace B] {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] {E : B → Type} [TopologicalSpace (TotalSpace F E)]
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
   [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
-  [VectorBundle ℝ F E] {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) {R : Type}
+  [VectorBundle ℝ F E] {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) {R : Type w}
   [CommRing R] [CompactSpace B] (ω : Orientation ℝ F ι)
 
 /-- **The lifted Thom class on a fibre.** The lift to the Thom pair `(E', E'₀)` of the orientation

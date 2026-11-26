@@ -55,13 +55,6 @@ namespace TauCeti
 
 variable {D : Type*} [DivisionRing D]
 
-private theorem hasStableRangeLE_one (D : Type*) [DivisionRing D] : HasStableRangeLE D 1 :=
-  have : IsLocalRing D := IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun x ↦ by
-    by_cases hx : x = 0
-    · exact Or.inr (by simp [hx])
-    · exact Or.inl (Ne.isUnit hx)
-  hasStableRangeLE_one_of_isLocalRing D
-
 /-- **Gauss–Jordan factorization over a division ring.** Given any coordinate `i : n`, every
 invertible matrix `g ∈ GL n D` factors as an elementary matrix times a diagonal matrix whose only
 possibly non-identity diagonal entry sits at `i`. -/
@@ -70,8 +63,9 @@ theorem exists_mem_elementarySubgroup_mul_diagGL_mulSingle {n : Type*} [Fintype 
     ∃ e ∈ elementarySubgroup n D, ∃ u : Dˣ, g = e * diagGL (Pi.mulSingle i u) := by
   let φ : Unit ⊕ {x : n // x ≠ i} ≃ n :=
     (Equiv.sumComm Unit {x : n // x ≠ i}).trans (Equiv.subtypeNeSumPUnit.{0} i)
-  obtain ⟨h, e, he, hge⟩ := surjective_stability 1 (hasStableRangeLE_one D) Unit {x : n // x ≠ i}
-    le_rfl (φ.symm.reindexGL D g)⁻¹
+  obtain ⟨h, e, he, hge⟩ :=
+    surjective_stability 1 (hasStableRangeLE_one_of_isLocalRing D) Unit {x : n // x ≠ i}
+      le_rfl (φ.symm.reindexGL D g)⁻¹
   have hg_inv : (φ.symm.reindexGL D g)⁻¹ = fromBlocksGL (h, (1 : GL {x : n // x ≠ i} D)) * e :=
     Units.ext (by simpa using hge)
   have hg : φ.symm.reindexGL D g = e⁻¹ * fromBlocksGL (h⁻¹, (1 : GL {x : n // x ≠ i} D)) := by
@@ -109,7 +103,7 @@ size. -/
 instance elementarySubgroup_normal {n : Type*} [Fintype n] [DecidableEq n] :
     (elementarySubgroup n D).Normal := by
   by_cases hn : 2 ≤ Fintype.card n
-  · exact elementarySubgroup_normal_of_hasStableRangeLE (hasStableRangeLE_one D) hn
+  · exact elementarySubgroup_normal_of_hasStableRangeLE (hasStableRangeLE_one_of_isLocalRing D) hn
   · have : Subsingleton n := Fintype.card_le_one_iff_subsingleton.mp (by omega)
     have hbot : elementarySubgroup n D = ⊥ :=
       le_bot_iff.mp (elementarySubgroup_le_iff.2 fun i j hij _ ↦ absurd (Subsingleton.elim i j) hij)

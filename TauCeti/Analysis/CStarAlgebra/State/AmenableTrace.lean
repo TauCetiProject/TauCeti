@@ -368,8 +368,7 @@ variable {n : Type*} [Fintype n]
 /-- The normalized trace of a nonempty matrix algebra is a tracial state. -/
 theorem isTracialState_normalizedTraceMap [Nonempty n] :
     (normalizedTraceMap n).IsTracialState :=
-  isTracialState_iff.2 ⟨norm_normalizedTraceMap n, fun x y => by
-    simpa using normalizedTrace_mul_comm x y⟩
+  isTracialState_iff.2 ⟨norm_normalizedTraceMap n, normalizedTraceMap_mul_comm⟩
 
 /-- On `M_k` the identity map is an exact approximant: it is a contraction, its multiplicativity
 defect is `d k 0`, and it satisfies any recovery clause that holds for it. -/

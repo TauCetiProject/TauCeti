@@ -41,6 +41,11 @@ orthonormal basis taken twice, this is the dimension times `‖A‖`. Every valu
 Young-type bound `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for `c > 0`
 (`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
 
+For a continuous bilinear map `B : G × V → H`, the expression `B(A ∘ D, v)` is linear in each of
+`A`, `D` and `v`; `ContinuousLinearMap.compPrecompL E F B` is the continuous bilinear map
+`(D, v) ↦ (A ↦ B(A ∘ D, v))` that treats `A` as a separate factor
+(`ContinuousLinearMap.compPrecompL_apply`).
+
 Composing a bilinear map `f` with linear maps `g` and `h` gives a bilinear map of norm at most
 `‖f‖ ‖g‖ ‖h‖` (`ContinuousLinearMap.norm_bilinearComp_le`), and the bilinear map
 `(h, k) ↦ B h k • c` has norm at most `‖c‖ ‖B‖`
@@ -114,6 +119,29 @@ theorem bilinearCompL_apply (e : V' →L[𝕜] V) (f : W' →L[𝕜] W)
   simp only [bilinearCompL, comp_apply, compL_apply, flip_apply, bilinearComp_apply]
 
 end BilinearComp
+
+section CompPrecompL
+
+variable {E F H : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+variable (E F) in
+/-- For a continuous bilinear map `B : G × V → H`, the continuous bilinear map
+`(D, v) ↦ (A ↦ B.precompL E (A ∘L D) v)`. It writes the expression `B(A ∘ D, v)`, which is linear
+in each of `A`, `D` and `v`, as `compPrecompL E F B D v` applied to `A`, so that `A` can be
+treated as one factor of a product and `(D, v)` as the other. In the chain rule
+`D B(g ∘ u, v) = B(Dg(u) ∘ Du, v) + B(g ∘ u, Dv)` this separates `Dg(u)` from `Du` and `v`. -/
+def compPrecompL (B : G →L[𝕜] V →L[𝕜] H) :
+    (E →L[𝕜] F) →L[𝕜] V →L[𝕜] (F →L[𝕜] G) →L[𝕜] E →L[𝕜] H :=
+  (((compL 𝕜 (F →L[𝕜] G) (E →L[𝕜] G) (E →L[𝕜] H)).comp (B.precompL E).flip).flip).comp
+    (compL 𝕜 E F G).flip
+
+@[simp]
+theorem compPrecompL_apply (B : G →L[𝕜] V →L[𝕜] H) (D : E →L[𝕜] F) (v : V)
+    (A : F →L[𝕜] G) : compPrecompL E F B D v A = B.precompL E (A.comp D) v :=
+  (rfl)
+
+end CompPrecompL
 
 /-- Pulling a continuous bilinear map back along a continuous linear map `u`,
 `B ↦ B (u ·) (u ·)`, as a continuous linear map in `B`. -/

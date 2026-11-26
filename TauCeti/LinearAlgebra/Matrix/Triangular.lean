@@ -71,6 +71,8 @@ Lie-algebra theory.
 * `Matrix.IsUpperUnitriangular.submatrix` — selecting rows and columns by a strictly increasing
   map preserves upper unitriangularity.
 * `Matrix.IsUpperUnitriangular.det_eq_one` — an upper-unitriangular matrix has determinant one.
+* `Matrix.IsUpperUnitriangular.diagonal_mul_mul_diagonal` — conjugation by an invertible diagonal
+  matrix preserves upper-unitriangular matrices.
 * `Matrix.IsUpperUnitriangular.mul` and `Matrix.IsUpperUnitriangular.pow` — upper-unitriangular
   matrices are closed under products and natural powers.
 * `Matrix.IsUpperUnitriangular.mul_single_zero_last`,
@@ -204,6 +206,15 @@ theorem IsUpperUnitriangular.map {S F : Type*} [LT m] [Zero R] [One R] [Zero S] 
     (M.map f).IsUpperUnitriangular := by
   refine ⟨hM.1.map f, fun i ↦ ?_⟩
   simp [hM.2 i]
+
+/-- Conjugating an upper-unitriangular matrix by a diagonal matrix with inverse diagonal
+`diagonal d * M * diagonal e`, `d i * e i = 1`, gives an upper-unitriangular matrix. -/
+theorem IsUpperUnitriangular.diagonal_mul_mul_diagonal [Fintype m] [DecidableEq m] [LT m]
+    [NonAssocSemiring R] {M : Matrix m m R} (hM : M.IsUpperUnitriangular) {d e : m → R}
+    (hde : ∀ i, d i * e i = 1) : (diagonal d * M * diagonal e).IsUpperUnitriangular := by
+  refine ⟨fun i j hij ↦ ?_, fun i ↦ ?_⟩
+  · simp [mul_diagonal, diagonal_mul, hM.isUpperTriangular hij]
+  · simp [mul_diagonal, diagonal_mul, hM.apply_diag i, hde i]
 
 section Nilpotence
 

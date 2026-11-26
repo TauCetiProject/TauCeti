@@ -8,21 +8,40 @@ module
 public import Mathlib.Topology.Algebra.IsOpenUnits
 
 /-!
-# Rings with open units: the inverse
+# Rings with open units: the inverse and embeddings
 
 A topological monoid `M` has open units (`IsOpenUnits M`) when `Units.val : Mˣ → M` is an open
 embedding: the units are open and inversion is continuous on them for the subspace topology.
 In a monoid with zero with open units, `Ring.inverse` is therefore continuous at every unit.
+The property passes along embeddings: a monoid embedded in one with open units has open units as
+soon as its own units form an open subset.
 
 ## Main declarations
 
 * `IsOpenUnits.continuousAt_ringInverse`: `Ring.inverse` is continuous at every unit of a ring
   with open units.
+* `IsOpenUnits.of_isEmbedding`: a monoid embedding into a monoid with open units whose units
+  form an open subset has open units.
 -/
 
 public section
 
 open Topology
+
+/-- A topological monoid `M` has open units if it embeds, by a monoid homomorphism that is a
+topological embedding, into a monoid with open units, and its units form an open subset of `M`.
+For instance, the valuation ring of a field whose topology is defined by its valuation. -/
+theorem IsOpenUnits.of_isEmbedding {M N : Type*} [Monoid M] [TopologicalSpace M] [Monoid N]
+    [TopologicalSpace N] [IsOpenUnits N] {f : M →* N} (hf : IsEmbedding f)
+    (h : IsOpen {x : M | IsUnit x}) : IsOpenUnits M where
+  isOpenEmbedding_unitsVal := by
+    refine ⟨?_, h⟩
+    have e : (f : M → N) ∘ Units.val = Units.val ∘ Units.map f :=
+      funext fun u ↦ (Units.coe_map f u).symm
+    have : IsEmbedding ((f : M → N) ∘ Units.val) := by
+      rw [e]
+      exact IsOpenUnits.isOpenEmbedding_unitsVal.isEmbedding.comp hf.units_map
+    exact this.of_comp Units.continuous_val hf.continuous
 
 variable {R : Type*} [MonoidWithZero R] [TopologicalSpace R] [IsOpenUnits R]
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Torsion
+public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Torsion.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Stabilizer
 public import TauCeti.Geometry.Lie.Subgroup.Torus
 public import TauCeti.Geometry.Manifold.GroupAction.GermKernel

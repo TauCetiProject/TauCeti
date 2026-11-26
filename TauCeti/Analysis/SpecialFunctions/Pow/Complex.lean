@@ -56,6 +56,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 ## Main results
 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
+* `TauCeti.div_ofReal_cpow` -- a principal power splits across division by a nonnegative real.
 * `TauCeti.ofReal_prod_cpow` -- a principal power splits across a finite product of nonnegative
   reals.
 * `TauCeti.mul_cpow_of_arg_add_mem` -- a principal power splits across a product when the
@@ -94,6 +95,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
 * `TauCeti.ofReal_cpow_mul_inv_mul_inv_cpow` -- for `a > 0` and `w` off the negative real axis,
   `a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`.
+* `Complex.mul_cpow_sub_one` -- `x * x ^ (s - 1) = x ^ s` for `x ≠ 0`.
 * `Complex.exp_log_add_mul` -- split an exponential at a principal logarithm.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
   `Complex.neg_cpow_half_eq_or_eq_neg` -- algebraic identities for principal `±1/2` powers,
@@ -157,6 +159,14 @@ theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
     Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hr'.ne'),
     Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr' hz, add_mul, Complex.exp_add]
   rw [Complex.ofReal_log hr]
+
+/-- A principal complex power splits across division by a nonnegative real scalar:
+`(z / r) ^ w = z ^ w / (r : ℂ) ^ w` for all complex `z` and `w`, without a branch hypothesis on
+`z`.  This generalizes `Complex.div_cpow_ofReal_nonneg` to a complex numerator. -/
+theorem div_ofReal_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
+    (z / r) ^ w = z ^ w / (r : ℂ) ^ w := by
+  rw [div_eq_inv_mul, ← Complex.ofReal_inv, ofReal_mul_cpow (inv_nonneg.mpr hr), Complex.ofReal_inv,
+    Complex.inv_cpow_ofReal_nonneg hr, inv_mul_eq_div]
 
 /-- A principal complex power splits across a finite product of nonnegative reals:
 `((∏ i ∈ s, f i : ℝ) : ℂ) ^ z = ∏ i ∈ s, (f i : ℂ) ^ z`. -/
@@ -636,9 +646,115 @@ theorem ofReal_cpow_mul_inv_mul_inv_cpow {a : ℝ} (ha : 0 < a) {w : ℂ} (hw : 
     inv_cpow_ofReal_nonneg ha.le, inv_cpow _ _ hw, cpow_neg]
   field_simp
 
+/-- Mean-value bound on `(y + 1) ^ (-w) - y ^ (-w)` along `(0, ∞)` when `-1 ≤ w.re`. -/
+theorem norm_ofReal_add_one_cpow_neg_sub_le {w : ℂ} (hw : -1 ≤ w.re) {y : ℝ} (hy : 0 < y) :
+    ‖((y : ℂ) + 1) ^ (-w) - (y : ℂ) ^ (-w)‖ ≤ ‖w‖ * y ^ (-w.re - 1) := by
+  have hderiv : ∀ x ∈ Set.Ici y,
+      HasDerivWithinAt (fun t : ℝ ↦ (t : ℂ) ^ (-w)) (-w * (x : ℂ) ^ (-w - 1)) (Set.Ici y) x :=
+    fun x hx ↦ (((Complex.hasStrictDerivAt_cpow_const (c := -w)
+      (Complex.ofReal_mem_slitPlane.mpr (hy.trans_le hx))).hasDerivAt).comp_ofReal).hasDerivWithinAt
+  have hbound : ∀ x ∈ Set.Ici y, ‖-w * (x : ℂ) ^ (-w - 1)‖ ≤ ‖w‖ * y ^ (-w.re - 1) := by
+    intro x hx
+    have hxpos : 0 < x := hy.trans_le hx
+    rw [norm_mul, norm_neg, Complex.norm_cpow_eq_rpow_re_of_pos hxpos,
+      Complex.sub_re, Complex.neg_re, Complex.one_re]
+    exact mul_le_mul_of_nonneg_left
+      (Real.rpow_le_rpow_of_nonpos hy hx (by linarith)) (norm_nonneg w)
+  have hmvt := (convex_Ici y).norm_image_sub_le_of_norm_hasDerivWithin_le hderiv hbound
+    (le_rfl : y ∈ Set.Ici y) (show y + 1 ∈ Set.Ici y by simp)
+  simpa [Complex.ofReal_add, Complex.ofReal_one] using hmvt
+
+/-- For any `k : ℕ` and `0 ≤ z.re`, the principal power `(k : ℂ) ^ (-z)` has norm at most `1`. -/
+theorem norm_natCast_cpow_neg_le_one {z : ℂ} (hz : 0 ≤ z.re) (k : ℕ) :
+    ‖(k : ℂ) ^ (-z)‖ ≤ 1 := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · rcases eq_or_ne z 0 with rfl | hz0
+    · simp
+    · simp [Complex.zero_cpow (neg_ne_zero.mpr hz0)]
+  · rw [← Complex.ofReal_natCast,
+      Complex.norm_cpow_eq_rpow_re_of_pos (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hk)),
+      Complex.neg_re]
+    exact Real.rpow_le_one_of_one_le_of_nonpos
+      (by exact_mod_cast Nat.pos_of_ne_zero hk) (by linarith)
+
+/-- For `1 ≤ k` and `0 ≤ z.re`, `‖(k + 1) ^ (-z) - k ^ (-z)‖ ≤ ‖z‖`. -/
+theorem norm_natCast_add_one_cpow_neg_sub_le_norm {z : ℂ} (hz : 0 ≤ z.re) {k : ℕ}
+    (hk : 1 ≤ k) : ‖((k + 1 : ℕ) : ℂ) ^ (-z) - (k : ℂ) ^ (-z)‖ ≤ ‖z‖ := by
+  have hk1 : (1 : ℝ) ≤ k := by exact_mod_cast hk
+  have hkpos : (0 : ℝ) < k := zero_lt_one.trans_le hk1
+  have h := norm_ofReal_add_one_cpow_neg_sub_le (w := z) (by linarith) hkpos
+  have hrpow : (k : ℝ) ^ (-z.re - 1) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos hk1 (by linarith)
+  calc ‖((k + 1 : ℕ) : ℂ) ^ (-z) - (k : ℂ) ^ (-z)‖
+      = ‖(((k : ℝ) : ℂ) + 1) ^ (-z) - ((k : ℝ) : ℂ) ^ (-z)‖ := by push_cast; rfl
+    _ ≤ ‖z‖ * (k : ℝ) ^ (-z.re - 1) := h
+    _ ≤ ‖z‖ * 1 := mul_le_mul_of_nonneg_left hrpow (norm_nonneg z)
+    _ = ‖z‖ := mul_one _
+
+/-- Mean-value bound on the second forward difference
+`((k + 2) ^ (-z) - (k + 1) ^ (-z)) - ((k + 1) ^ (-z) - k ^ (-z))` for `1 ≤ k` and `0 ≤ z.re`. -/
+theorem norm_natCast_add_two_cpow_neg_sub_sub_le {z : ℂ} (hz : 0 ≤ z.re) {k : ℕ}
+    (hk : 1 ≤ k) :
+    ‖(((k + 2 : ℕ) : ℂ) ^ (-z) - ((k + 1 : ℕ) : ℂ) ^ (-z)) -
+        (((k + 1 : ℕ) : ℂ) ^ (-z) - (k : ℂ) ^ (-z))‖ ≤
+      ‖z‖ * ‖z + 1‖ / (k : ℝ) ^ 2 := by
+  have hk1 : (1 : ℝ) ≤ k := by exact_mod_cast hk
+  have hkpos : (0 : ℝ) < k := zero_lt_one.trans_le hk1
+  let g : ℝ → ℂ := fun y ↦ ((y : ℂ) + 1) ^ (-z) - (y : ℂ) ^ (-z)
+  have hderiv : ∀ x ∈ Set.Ici (k : ℝ),
+      HasDerivWithinAt g
+        (-z * (((x : ℂ) + 1) ^ (-(z + 1)) - (x : ℂ) ^ (-(z + 1)))) (Set.Ici (k : ℝ)) x := by
+    intro x (hx : (k : ℝ) ≤ x)
+    have hxpos : 0 < x := hkpos.trans_le hx
+    have hslit1 : ((x : ℂ) + 1) ∈ Complex.slitPlane := by
+      rw [← Complex.ofReal_one, ← Complex.ofReal_add]
+      exact Complex.ofReal_mem_slitPlane.mpr (by linarith)
+    have h1 : HasDerivAt (fun w : ℂ ↦ (w + 1) ^ (-z))
+        (-z * ((x : ℂ) + 1) ^ (-(z + 1))) (x : ℂ) :=
+      (((hasDerivAt_id' (x : ℂ)).add_const (1 : ℂ)).cpow_const (c := -z) hslit1).congr_deriv
+        (by ring_nf)
+    have h2 : HasDerivAt (fun w : ℂ ↦ w ^ (-z))
+        (-z * (x : ℂ) ^ (-(z + 1))) (x : ℂ) :=
+      ((hasDerivAt_id' (x : ℂ)).cpow_const (c := -z)
+        (Complex.ofReal_mem_slitPlane.mpr hxpos)).congr_deriv (by ring_nf)
+    exact (((h1.comp_ofReal).sub (h2.comp_ofReal)).congr_deriv (by ring)).hasDerivWithinAt
+  have hbound : ∀ x ∈ Set.Ici (k : ℝ),
+      ‖-z * (((x : ℂ) + 1) ^ (-(z + 1)) - (x : ℂ) ^ (-(z + 1)))‖ ≤
+        ‖z‖ * ‖z + 1‖ / (k : ℝ) ^ 2 := by
+    intro x (hx : (k : ℝ) ≤ x)
+    have hxpos : 0 < x := hkpos.trans_le hx
+    have hdiff := norm_ofReal_add_one_cpow_neg_sub_le (w := z + 1)
+      (by simp [Complex.add_re]; linarith) hxpos
+    have hexp : x ^ (-(z + 1).re - 1) ≤ (k : ℝ) ^ (-2 : ℝ) := by
+      calc x ^ (-(z + 1).re - 1)
+          ≤ x ^ (-2 : ℝ) := Real.rpow_le_rpow_of_exponent_le (hk1.trans hx)
+              (by simp [Complex.add_re]; linarith)
+        _ ≤ (k : ℝ) ^ (-2 : ℝ) := Real.rpow_le_rpow_of_nonpos hkpos hx (by norm_num)
+    have hsq : (k : ℝ) ^ (-2 : ℝ) = ((k : ℝ) ^ 2)⁻¹ := by
+      rw [show (-2 : ℝ) = -((2 : ℕ) : ℝ) by norm_num, Real.rpow_neg hkpos.le, Real.rpow_natCast]
+    rw [norm_mul, norm_neg, div_eq_mul_inv, mul_assoc]
+    exact mul_le_mul_of_nonneg_left
+      (hdiff.trans (by rw [← hsq]; exact mul_le_mul_of_nonneg_left hexp (norm_nonneg _)))
+      (norm_nonneg z)
+  have hmvt := (convex_Ici (k : ℝ)).norm_image_sub_le_of_norm_hasDerivWithin_le hderiv hbound
+    (le_rfl : (k : ℝ) ∈ Set.Ici (k : ℝ)) (show (k : ℝ) + 1 ∈ Set.Ici (k : ℝ) by simp)
+  have heq : g ((k : ℝ) + 1) - g (k : ℝ) =
+      (((k + 2 : ℕ) : ℂ) ^ (-z) - ((k + 1 : ℕ) : ℂ) ^ (-z)) -
+        (((k + 1 : ℕ) : ℂ) ^ (-z) - (k : ℂ) ^ (-z)) := by
+    simp only [g]
+    push_cast
+    ring_nf
+  rw [← heq]
+  simpa using hmvt
+
 end TauCeti
 
 namespace Complex
+
+/-- Multiplying a principal power of a nonzero base by the base raises the exponent by one:
+`x * x ^ (s - 1) = x ^ s`. -/
+theorem mul_cpow_sub_one {x : ℂ} (hx : x ≠ 0) (s : ℂ) : x * x ^ (s - 1) = x ^ s := by
+  rw [cpow_sub _ _ hx, cpow_one, mul_div_cancel₀ _ hx]
 
 /-- An exponential based at a principal logarithm splits into a principal power and the
 exponential of the remaining summand. -/

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Grassmannian.Points
+public import TauCeti.AlgebraicGeometry.Grassmannian.Proper
+public import TauCeti.RingTheory.Grassmannian.Chart.Plucker
 public import TauCeti.RingTheory.Grassmannian.Plucker
+public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 
 /-!
 # The Plücker morphism of the Grassmannian scheme
@@ -23,6 +25,17 @@ the point classifying `N ⊆ A ⊗[R] M` to the point classifying the kernel of
 The point map is natural in `A` (`Module.Grassmannian.pluckerBaseChange_map`), so it is composition
 with a morphism of schemes (`Module.Grassmannian.homOfPoints`).
 
+On the chart of `G(k, M)` at `x : Fin k → M`, the Plücker morphism is `Spec` of the Plücker map on
+charts `Module.Grassmannian.ChartAlgebra.pluckerChartHom R x` followed by the chart of
+`G(1, ⋀ᵏ M)` at `x₁ ∧ ⋯ ∧ xₖ`; since that ring map is surjective, `Spec` of it is a closed
+immersion.
+
+The preimage of the chart at `x₁ ∧ ⋯ ∧ xₖ` is the chart at `x`: a point lies in either chart
+exactly when its residue-field point does, and over a field the images of `x₁, …, xₖ` span the
+universal quotient `Q` exactly when their wedge spans `⋀ᵏ Q`. So the square of charts is cartesian,
+and since the charts at the wedges `x₁ ∧ ⋯ ∧ xₖ` cover `G(1, ⋀ᵏ M)`, the Plücker morphism is a
+closed immersion, for every module `M`.
+
 ## Main definitions
 
 * `Module.Grassmannian.pluckerHom R M k`: the Plücker morphism `G(k, M) ⟶ G(1, ⋀ᵏ M)`.
@@ -32,6 +45,24 @@ with a morphism of schemes (`Module.Grassmannian.homOfPoints`).
 * `Module.Grassmannian.toSchemeHom_comp_pluckerHom`: the characterisation of `pluckerHom` on
   points.
 * `Module.Grassmannian.pluckerHom_toSpec`: `pluckerHom` lies over `Spec R`.
+* `Module.Grassmannian.specMap_pluckerChartHom_chartι`: `pluckerHom` on the standard charts.
+* `Module.Grassmannian.isClosedImmersion_specMap_pluckerChartHom`: `Spec` of the Plücker map on
+  charts `Module.Grassmannian.ChartAlgebra.pluckerChartHom R x` is a closed immersion, since that
+  ring map is surjective.
+* `Module.Grassmannian.pluckerHom_preimage_opensRange_chartι`: the preimage under `pluckerHom` of
+  the chart at `x₁ ∧ ⋯ ∧ xₖ` is the chart at `x`.
+* `Module.Grassmannian.iSup_opensRange_chartι_ιMulti`: the charts at the wedges cover
+  `G(1, ⋀ᵏ M)`.
+* `Module.Grassmannian.isPullback_pluckerHom_chartι`: the square of charts is cartesian.
+* `Module.Grassmannian.isClosedImmersion_pluckerHom`: **the Plücker morphism is a closed
+  immersion.**
+
+## References
+
+* A. Grothendieck, J. Dieudonné, *Éléments de géométrie algébrique I* (Springer, 1971), 9.7, for
+  the Grassmannian and its Plücker embedding.
+* U. Görtz, T. Wedhorn, *Algebraic Geometry I* (Vieweg+Teubner, 2010), Chapter 8, for the
+  standard charts of the Grassmannian and the Plücker embedding.
 -/
 
 public section
@@ -74,5 +105,80 @@ variable (R M k) in
 theorem pluckerHom_toSpec : pluckerHom R M k ≫ toSpec R (⋀[R]^k M) 1 = toSpec R M k := by
   refine scheme_hom_ext fun A _ _ N ↦ ?_
   rw [toSchemeHom_comp_pluckerHom_assoc, toSchemeHom_toSpec, toSchemeHom_toSpec]
+
+open ChartAlgebra
+
+variable (R) in
+/-- **The Plücker morphism on charts.** On the chart of `G(k, M)` at `x`, the Plücker morphism is
+`Spec` of `pluckerChartHom R x` followed by the chart of `G(1, ⋀ᵏ M)` at `x₁ ∧ ⋯ ∧ xₖ`. -/
+@[reassoc]
+theorem specMap_pluckerChartHom_chartι (x : Fin k → M) :
+    Spec.map (CommRingCat.ofHom (pluckerChartHom R x :
+        ChartAlgebra R (fun _ : Fin 1 ↦ exteriorPower.ιMulti R k x) →+* ChartAlgebra R x)) ≫
+      chartι R (fun _ : Fin 1 ↦ exteriorPower.ιMulti R k x) =
+    chartι R x ≫ pluckerHom R M k := by
+  rw [← toSchemeHom_chartHomEquiv_id x, toSchemeHom_comp_pluckerHom,
+    pluckerBaseChange_chartHomEquiv_id, ← toSchemeHom_chartHomEquiv_id, ← toSchemeHom_map,
+    ← chartHomEquiv_comp, AlgHom.comp_id]
+
+variable (R) in
+/-- `Spec` of the Plücker map on charts is a closed immersion. -/
+theorem isClosedImmersion_specMap_pluckerChartHom (x : Fin k → M) :
+    IsClosedImmersion (Spec.map (CommRingCat.ofHom (pluckerChartHom R x :
+      ChartAlgebra R (fun _ : Fin 1 ↦ exteriorPower.ιMulti R k x) →+* ChartAlgebra R x))) :=
+  IsClosedImmersion.spec_of_surjective _ (pluckerChartHom_surjective R x)
+
+/-! ### The Plücker morphism is a closed immersion -/
+
+/-- **The preimage of a Plücker chart.** The preimage under `pluckerHom` of the chart of
+`G(1, ⋀ᵏ M)` at the wedge `x₁ ∧ ⋯ ∧ xₖ` is the chart of `G(k, M)` at `x`. -/
+theorem pluckerHom_preimage_opensRange_chartι (x : Fin k → M) :
+    pluckerHom R M k ⁻¹ᵁ (chartι R (fun _ : Fin 1 ↦ exteriorPower.ιMulti R k x)).opensRange =
+      (chartι R x).opensRange := by
+  ext z
+  obtain ⟨K, _, _, N, p, rfl⟩ := exists_toSchemeHom_apply_eq R M k z
+  rw [SetLike.mem_coe, SetLike.mem_coe, Scheme.Hom.mem_preimage, ← Scheme.Hom.comp_apply,
+    toSchemeHom_comp_pluckerHom, toSchemeHom_apply_mem_opensRange_chartι_iff,
+    toSchemeHom_apply_mem_opensRange_chartι_iff]
+  exact pluckerBaseChange_mem_chart_iff N x
+
+variable (R M k) in
+/-- **The Plücker charts cover `G(1, ⋀ᵏ M)`.** The charts of `G(1, ⋀ᵏ M)` at the wedges
+`x₁ ∧ ⋯ ∧ xₖ`, `x : Fin k → M`, cover it, since these wedges span `⋀ᵏ M`. -/
+theorem iSup_opensRange_chartι_ιMulti :
+    ⨆ x : Fin k → M, (chartι R (fun _ : Fin 1 ↦ exteriorPower.ιMulti R k x)).opensRange = ⊤ := by
+  refine eq_top_iff.2 <| (iSup_opensRange_chartι_comp_eq_top (k := 1) _
+    (exteriorPower.ιMulti_span R k M)).ge.trans <| iSup_le fun y ↦ le_iSup_of_le (y 0) ?_
+  -- a family indexed by `Fin 1` is constant
+  rw [show exteriorPower.ιMulti R k ∘ y = fun _ ↦ exteriorPower.ιMulti R k (y 0) from
+    funext fun j ↦ by rw [Function.comp_apply, Subsingleton.elim j 0]]
+
+/-- **The Plücker map on charts is the base change of the Plücker morphism along the chart at
+`x₁ ∧ ⋯ ∧ xₖ`.** The square formed by `Spec` of `pluckerChartHom R x`, the charts at `x` and at
+`x₁ ∧ ⋯ ∧ xₖ`, and `pluckerHom` is a pullback square: the restriction of `pluckerHom` over the
+chart at `x₁ ∧ ⋯ ∧ xₖ` is `Spec` of `pluckerChartHom R x`. -/
+theorem isPullback_pluckerHom_chartι (x : Fin k → M) :
+    IsPullback
+      (Spec.map (CommRingCat.ofHom (pluckerChartHom R x :
+        ChartAlgebra R (fun _ : Fin 1 ↦ exteriorPower.ιMulti R k x) →+* ChartAlgebra R x)))
+      (chartι R x) (chartι R (fun _ : Fin 1 ↦ exteriorPower.ιMulti R k x)) (pluckerHom R M k) :=
+  IsOpenImmersion.isPullback _ _ _ _ (specMap_pluckerChartHom_chartι R x).symm
+    (pluckerHom_preimage_opensRange_chartι x)
+
+variable (R M k) in
+/-- **The Plücker morphism is a closed immersion.** For every module `M` over `R`, the Plücker
+morphism `G(k, M) ⟶ G(1, ⋀ᵏ M)` is a closed immersion: over the chart of `G(1, ⋀ᵏ M)` at
+`x₁ ∧ ⋯ ∧ xₖ` it is `Spec` of the surjection `pluckerChartHom R x`, and these charts cover
+`G(1, ⋀ᵏ M)`. -/
+instance isClosedImmersion_pluckerHom : IsClosedImmersion (pluckerHom R M k) := by
+  refine IsZariskiLocalAtTarget.of_iSup_eq_top _ (iSup_opensRange_chartι_ιMulti R M k)
+    fun x ↦ ?_
+  have h := (isPullback_pluckerHom_chartι (R := R) x).flip
+  have := isClosedImmersion_specMap_pluckerChartHom R x
+  refine (MorphismProperty.arrow_mk_iso_iff @IsClosedImmersion
+    (morphismRestrictOpensRange _ _)).2 ?_
+  refine (MorphismProperty.arrow_mk_iso_iff @IsClosedImmersion
+    (Arrow.isoMk h.isoPullback (Iso.refl _)
+      (by rw [Iso.refl_hom, Category.comp_id]; exact h.isoPullback_hom_snd))).1 this
 
 end Module.Grassmannian

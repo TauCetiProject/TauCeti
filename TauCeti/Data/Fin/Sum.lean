@@ -143,7 +143,7 @@ theorem unitSumUnitSumUnitEquivFinThree_symm_two :
 
 /-- The equivalence `Fin 1 ⊕ Fin m ≃ Fin (m + 1)` sending `Sum.inl 0` to `0` and `Sum.inr i` to
 `i.succ`. -/
-def finOneSumEquiv (m : ℕ) : Fin 1 ⊕ Fin m ≃ Fin (m + 1) :=
+@[expose] def finOneSumEquiv (m : ℕ) : Fin 1 ⊕ Fin m ≃ Fin (m + 1) :=
   finSumFinEquiv.trans (finCongr (Nat.one_add m))
 
 /-- `TauCeti.finOneSumEquiv` sends the single element of the left summand `Fin 1` to `0`. -/

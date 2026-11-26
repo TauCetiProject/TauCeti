@@ -17,7 +17,8 @@ The real linear coordinate interchange is an involution with determinant `-1`, r
 the reversal of orientation. Any `v` has real coordinates in the real basis `u`, `r * u * I`,
 `u ≠ 0`, `r ≠ 0`, of radial and angular directions at the point `r * u`
 (`Complex.eq_re_mul_add_im_div_mul`). The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is
-linearly independent. A point `c + t * I` of a vertical line with `c ≠ 0` is nonzero.
+linearly independent. A point `c + t * I` of a vertical line with `c ≠ 0` is nonzero, and with
+`c ≠ 1` it is different from `1` (`Complex.ofReal_add_mul_I_sub_one_ne_zero`).
 
 In the frame of a nonzero direction `v`, the point `v (s ± h i)` on either side of the line through
 `v s` with direction `v` has imaginary coordinate `±h`
@@ -97,6 +98,19 @@ theorem linearIndependent_one_zero_I_zero_zero_one :
 `Complex.ne_zero_of_re_pos` covers only the positive-real-part case. -/
 theorem ofReal_add_mul_I_ne_zero {c : ℝ} (hc : c ≠ 0) (t : ℝ) : (c : ℂ) + t * I ≠ 0 :=
   fun h ↦ hc (by simpa using congrArg Complex.re h)
+
+/-- Subtracting `1` from a point `c + t * I` of a vertical line moves it to the line
+`Re z = c - 1` at the same height. -/
+theorem ofReal_add_mul_I_sub_one (c t : ℝ) : (c : ℂ) + t * I - 1 = ((c - 1 : ℝ) : ℂ) + t * I := by
+  push_cast
+  ring
+
+/-- A point `c + t * I` of the vertical line `Re z = c` is different from `1` as soon as `c ≠ 1`,
+in the form `c + t * I - 1 ≠ 0`. -/
+theorem ofReal_add_mul_I_sub_one_ne_zero {c : ℝ} (hc : c ≠ 1) (t : ℝ) :
+    (c : ℂ) + t * I - 1 ≠ 0 := by
+  rw [ofReal_add_mul_I_sub_one]
+  exact ofReal_add_mul_I_ne_zero (sub_ne_zero.mpr hc) t
 
 /-- The point `h` units off the line `s ↦ v * s` in the direction `v * I` is at distance
 `‖v‖ * |h|` from the line point. -/

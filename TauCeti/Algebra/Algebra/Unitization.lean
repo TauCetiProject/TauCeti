@@ -14,6 +14,9 @@ public import Mathlib.Tactic.NoncommRing
 /-!
 # Functoriality of the forced unitization
 
+A nonunital algebra `A` is a left ideal of its forced unitization: `(r, a) * a'` is
+`r • a' + a * a'` in `A`.
+
 A homomorphism of nonunital algebras `f : A →ₙₐ[R] B` induces a unital algebra homomorphism
 `Unitization R A →ₐ[R] Unitization R B`, sending `(r, a)` to `(r, f a)`. This is the non-star
 counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
@@ -28,10 +31,16 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 
 ## Main declarations
 
+* `Unitization.mul_inr`: `A` is a left ideal of `Unitization R A`.
 * `Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
 * `Unitization.map_id`, `Unitization.map_comp`: functoriality.
 * `Unitization.fstHom_comp_map`: the induced map preserves the augmentation.
 * `Unitization.map_surjective`: the induced map of a surjective homomorphism is surjective.
+* `Unitization.mapScalars`: for an algebra `R → S` and an `S`-algebra `A`, the map
+  `Unitization R A → Unitization S A`, `(r, a) ↦ (algebraMap R S r, a)`.
+* `Unitization.fstHom_comp_mapScalars`, `Unitization.mapScalars_map`: change of scalars lies over
+  `algebraMap R S` on the augmentations and commutes with `Unitization.map`.
+* `Unitization.fstStarAlgHom`: the augmentation `(r, a) ↦ r` as a star algebra homomorphism.
 * `Unitization.fstAlgEquivOfSubsingleton`, `Unitization.fstStarAlgEquivOfSubsingleton`: when `A`
   is a subsingleton, the augmentation `Unitization.fstHom` upgrades to an algebra (or `⋆`-algebra)
   equivalence onto `R`.
@@ -46,6 +55,12 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 public section
 
 namespace Unitization
+
+/-- A nonunital algebra `A` is a left ideal of its unitization: `x * a` lies in `A`, with value
+`x.fst • a + x.snd * a`. -/
+theorem mul_inr {R A : Type*} [MulZeroClass R] [NonUnitalNonAssocSemiring A]
+    [SMulWithZero R A] (x : Unitization R A) (a : A) : x * inr a = inr (x.fst • a + x.snd * a) :=
+  Unitization.ext (by simp) (by simp)
 
 section Map
 
@@ -102,6 +117,71 @@ theorem map_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) : map (g.comp f) 
   algHom_ext'' fun _ ↦ by simp
 
 end Map
+
+section MapScalars
+
+variable (R S A : Type*) {B : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [NonUnitalSemiring A] [Module S A] [IsScalarTower S A A] [SMulCommClass S A A] [Module R A]
+  [IsScalarTower R S A] [IsScalarTower R A A] [SMulCommClass R A A]
+
+/-- Change of the scalar ring of a forced unitization: for an algebra `R → S` and an `S`-algebra
+`A`, the unital `R`-algebra homomorphism `Unitization R A → Unitization S A` sending `(r, a)` to
+`(algebraMap R S r, a)`. -/
+def mapScalars : Unitization R A →ₐ[R] Unitization S A :=
+  lift ((inrNonUnitalAlgHom S A).restrictScalars R)
+
+variable {R S A}
+
+/-- Change of scalars of forced unitizations is the identity on `A`. -/
+@[simp]
+theorem mapScalars_inr (a : A) : mapScalars R S A (inr a : Unitization R A) = inr a := by
+  simp [mapScalars]
+
+/-- Change of scalars of forced unitizations applies `algebraMap R S` to the scalar component. -/
+@[simp]
+theorem fst_mapScalars (x : Unitization R A) :
+    (mapScalars R S A x).fst = algebraMap R S x.fst := by
+  simp [mapScalars, Algebra.algebraMap_eq_smul_one]
+
+/-- Change of scalars of forced unitizations leaves the component in `A` unchanged. -/
+@[simp]
+theorem snd_mapScalars (x : Unitization R A) : (mapScalars R S A x).snd = x.snd := by
+  simp [mapScalars, Algebra.algebraMap_eq_smul_one]
+
+/-- Change of scalars of forced unitizations lies over `algebraMap R S` on the augmentations. -/
+@[simp]
+theorem fstHom_comp_mapScalars :
+    (fstHom S A : Unitization S A →+* S).comp
+        (mapScalars R S A : Unitization R A →+* Unitization S A) =
+      (algebraMap R S).comp (fstHom R A : Unitization R A →+* R) :=
+  RingHom.ext fun x ↦ by simp
+
+/-- Change of scalars of forced unitizations commutes with the maps induced by homomorphisms of
+nonunital `S`-algebras. -/
+theorem mapScalars_map [NonUnitalSemiring B] [Module S B] [IsScalarTower S B B]
+    [SMulCommClass S B B] [Module R B] [IsScalarTower R S B] [IsScalarTower R B B]
+    [SMulCommClass R B B] (f : A →ₙₐ[S] B) (x : Unitization R A) :
+    mapScalars R S B (map (f.restrictScalars R) x) = map f (mapScalars R S A x) :=
+  Unitization.ext (by simp) (by simp)
+
+end MapScalars
+
+section Augmentation
+
+variable (R A : Type*) [CommSemiring R] [Star R] [NonUnitalSemiring A] [Star A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A]
+
+/-- The augmentation `Unitization R A → R`, `(r, a) ↦ r`, as a star algebra homomorphism. -/
+def fstStarAlgHom : Unitization R A →⋆ₐ[R] R where
+  toAlgHom := fstHom R A
+  map_star' := fst_star
+
+/-- The augmentation sends `(r, a)` to `r`. -/
+@[simp]
+theorem fstStarAlgHom_apply (x : Unitization R A) : fstStarAlgHom R A x = x.fst :=
+  (rfl)
+
+end Augmentation
 
 section Subsingleton
 

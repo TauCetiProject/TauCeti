@@ -766,7 +766,7 @@ variable {P : TopPair.{u}}
 
 /-- The faces of a cube sending the boundary of the cube into the subspace take values in the
 subspace. -/
-private lemma face_mem_range_map {m : ℕ} {c : SingularCube P.fst (m + 1)}
+theorem face_mem_range_map {m : ℕ} {c : SingularCube P.fst (m + 1)}
     (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) (i : Fin (m + 1))
     {t : unitInterval} (ht : t = 0 ∨ t = 1) (x : Fin m → unitInterval) :
     SingularCube.face i t c x ∈ Set.range P.map := by
