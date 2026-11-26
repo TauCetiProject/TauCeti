@@ -26,6 +26,10 @@ twice the area of a fundamental domain.)
 
 ## Main results
 
+* `Subgroup.isFundamentalDomain_dirichletDomain_map_sl2zToPSL2R`: for any `Γ ≤ SL(2, ℤ)`, the
+  Dirichlet domain of the image of `Γ` in `PSL(2, ℝ)` centred at a point of `𝒟ᵒ` is a measurable
+  fundamental domain.
+* `Subgroup.volume_dirichletDomain_map_sl2zToPSL2R`: its area is the area of `Γ \ ℍ`.
 * `TauCeti.CongruenceSubgroup.isFundamentalDomain_dirichletDomain_gamma0PSL`: the Dirichlet
   domain of `PΓ₀(N)` centred at a point of `𝒟ᵒ` is a measurable fundamental domain.
 * `TauCeti.CongruenceSubgroup.volume_dirichletDomain_gamma0PSL`: its area is
@@ -41,6 +45,27 @@ public section
 
 open MeasureTheory UpperHalfPlane CongruenceSubgroup
 open scoped MatrixGroups
+
+namespace Subgroup
+
+variable (Γ : Subgroup SL(2, ℤ)) {z₀ : ℍ}
+
+/-- **The Dirichlet domain of the image of `Γ ≤ SL(2, ℤ)` in `PSL(2, ℝ)`**, centred at a point of
+`𝒟ᵒ`, is a measurable fundamental domain. -/
+theorem isFundamentalDomain_dirichletDomain_map_sl2zToPSL2R
+    (hz₀ : z₀ ∈ _root_.ModularGroup.fdo) :
+    IsFundamentalDomain (Γ.map sl2zToPSL2R) (TauCeti.dirichletDomain (Γ.map sl2zToPSL2R) z₀) :=
+  isFundamentalDomain_dirichletDomain _ <| TauCeti.ModularGroup.mem_freeLocus_of_mem_fdo
+    Γ.map_sl2zToPSL2R_le_range_psl2zToPSL2R hz₀
+
+/-- **The area of a Dirichlet domain of the image of `Γ ≤ SL(2, ℤ)`** in `PSL(2, ℝ)`, centred at a
+point of `𝒟ᵒ`, is the area of `Γ \ ℍ`. -/
+theorem volume_dirichletDomain_map_sl2zToPSL2R (hz₀ : z₀ ∈ _root_.ModularGroup.fdo) :
+    volume (TauCeti.dirichletDomain (Γ.map sl2zToPSL2R) z₀) = Γ.quotientVolume Set.univ := by
+  rw [← (Γ.isFundamentalDomain_dirichletDomain_map_sl2zToPSL2R hz₀).covolume_eq_volume,
+    quotientVolume_univ]
+
+end Subgroup
 
 namespace TauCeti.CongruenceSubgroup
 
@@ -78,8 +103,7 @@ domain. -/
 theorem isFundamentalDomain_dirichletDomain_gamma0PSL {z₀ : ℍ}
     (hz₀ : z₀ ∈ _root_.ModularGroup.fdo) :
     IsFundamentalDomain (gamma0PSL N) (dirichletDomain (gamma0PSL N) z₀) :=
-  Subgroup.isFundamentalDomain_dirichletDomain _ <| ModularGroup.mem_freeLocus_of_mem_fdo
-    (Subgroup.map_sl2zToPSL2R_le_range_psl2zToPSL2R _) hz₀
+  (Gamma0 N).isFundamentalDomain_dirichletDomain_map_sl2zToPSL2R hz₀
 
 /-- **The area of a Dirichlet domain of `PΓ₀(N)`** centred at a point of `𝒟ᵒ` is the area
 `[SL(2, ℤ) : Γ₀(N)] · π / 3` of `Γ₀(N) \ ℍ`. -/
@@ -87,7 +111,7 @@ theorem volume_dirichletDomain_gamma0PSL [NeZero N] {z₀ : ℍ}
     (hz₀ : z₀ ∈ _root_.ModularGroup.fdo) :
     volume (dirichletDomain (gamma0PSL N) z₀) =
       (Gamma0 N).index * ENNReal.ofReal (Real.pi / 3) := by
-  rw [← (isFundamentalDomain_dirichletDomain_gamma0PSL hz₀).covolume_eq_volume, gamma0PSL,
-    ← Subgroup.quotientVolume_univ, quotientVolume_Gamma0_univ]
+  rw [gamma0PSL, (Gamma0 N).volume_dirichletDomain_map_sl2zToPSL2R hz₀,
+    quotientVolume_Gamma0_univ]
 
 end TauCeti.CongruenceSubgroup
