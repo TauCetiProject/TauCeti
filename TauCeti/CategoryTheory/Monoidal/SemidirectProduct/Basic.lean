@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
-public import Mathlib.GroupTheory.SemidirectProduct
+public import TauCeti.Algebra.Category.Grp.SemidirectProduct
 
 /-!
 # Semidirect products of internal groups
@@ -141,26 +141,9 @@ theorem toMulAutHom_apply {X : C} (g : X ⟶ G) (n : X ⟶ N) :
   by rfl
 
 /-- The presheaf of ordinary semidirect products induced by an internal group action. -/
-private def pointSemidirectProduct : Cᵒᵖ ⥤ GrpCat.{v} where
-  obj X := GrpCat.of ((unop X ⟶ N) ⋊[A.toMulAutHom (unop X)] (unop X ⟶ G))
-  map {X Y} f := GrpCat.ofHom
-    { toFun := fun x ↦ ⟨f.unop ≫ x.left, f.unop ≫ x.right⟩
-      map_one' := by ext <;> simp
-      map_mul' := fun x y ↦ by
-        apply SemidirectProduct.ext
-        · simp only [SemidirectProduct.mul_left, toMulAutHom_apply]
-          rw [MonObj.comp_mul, A.comp_act]
-        · simp only [SemidirectProduct.mul_right, MonObj.comp_mul] }
-  map_id X := by
-    apply GrpCat.hom_ext
-    apply MonoidHom.ext
-    intro x
-    apply SemidirectProduct.ext <;> simp
-  map_comp f g := by
-    apply GrpCat.hom_ext
-    apply MonoidHom.ext
-    intro x
-    apply SemidirectProduct.ext <;> simp [Category.assoc]
+private def pointSemidirectProduct : Cᵒᵖ ⥤ GrpCat.{v} :=
+  GrpCat.semidirectProductFunctor (yonedaGrpObj N) (yonedaGrpObj G)
+    (fun X ↦ A.toMulAutHom (unop X)) (fun _ _ f g n ↦ A.comp_act f.unop g n)
 
 /-- The pointwise semidirect-product presheaf is represented by the product object `N ⊗ G`. -/
 private def pointSemidirectProductRepresentableBy :
@@ -169,11 +152,16 @@ private def pointSemidirectProductRepresentableBy :
     { toFun := fun f ↦ ⟨f ≫ fst N G, f ≫ snd N G⟩
       invFun := fun f ↦ lift f.left f.right
       left_inv := fun f ↦ by simp
-      right_inv := fun f ↦ by apply SemidirectProduct.ext <;> simp }
+      right_inv := fun f ↦ SemidirectProduct.ext (lift_fst _ _) (lift_snd _ _) }
   homEquiv_comp f g := by
-    apply SemidirectProduct.ext
-    · exact Category.assoc _ _ _
-    · exact Category.assoc _ _ _
+    -- The forgetful/Yoneda coercions hide the pair; expose it to use the generic map law.
+    change (⟨(f ≫ g) ≫ fst N G, (f ≫ g) ≫ snd N G⟩ :
+      (_ ⟶ N) ⋊[A.toMulAutHom _] (_ ⟶ G)) =
+        (A.pointSemidirectProduct.map f.op) ⟨g ≫ fst N G, g ≫ snd N G⟩
+    have h := GrpCat.semidirectProductFunctor_map_apply (yonedaGrpObj N) (yonedaGrpObj G)
+      (fun X ↦ A.toMulAutHom (unop X)) (fun _ _ f g n ↦ A.comp_act f.unop g n)
+      f.op ⟨g ≫ fst N G, g ≫ snd N G⟩
+    exact (SemidirectProduct.ext (Category.assoc _ _ _) (Category.assoc _ _ _)).trans h.symm
 
 /-- The group-object structure on `N ⊗ G` representing the pointwise semidirect product. -/
 @[instance_reducible]
@@ -240,7 +228,10 @@ theorem pointMulEquiv_symm_apply {X : C}
 /-- The natural inclusion of the normal factor into the pointwise semidirect product. -/
 private def inlNatTrans : (yonedaGrp (C := C)).obj (Grp.mk N) ⟶
     A.pointSemidirectProduct where
-  app X := GrpCat.ofHom SemidirectProduct.inl
+  app X := by
+    exact GrpCat.ofHom (X := unop X ⟶ N)
+      (Y := (unop X ⟶ N) ⋊[A.toMulAutHom (unop X)] (unop X ⟶ G))
+      SemidirectProduct.inl
   naturality {X Y} f := by
     apply GrpCat.hom_ext
     apply MonoidHom.ext
@@ -256,7 +247,10 @@ private def inlNatTrans : (yonedaGrp (C := C)).obj (Grp.mk N) ⟶
 /-- The natural inclusion of the acting factor into the pointwise semidirect product. -/
 private def inrNatTrans : (yonedaGrp (C := C)).obj (Grp.mk G) ⟶
     A.pointSemidirectProduct where
-  app X := GrpCat.ofHom SemidirectProduct.inr
+  app X := by
+    exact GrpCat.ofHom (X := unop X ⟶ G)
+      (Y := (unop X ⟶ N) ⋊[A.toMulAutHom (unop X)] (unop X ⟶ G))
+      SemidirectProduct.inr
   naturality {X Y} f := by
     apply GrpCat.hom_ext
     apply MonoidHom.ext
@@ -272,7 +266,10 @@ private def inrNatTrans : (yonedaGrp (C := C)).obj (Grp.mk G) ⟶
 /-- The natural projection from the pointwise semidirect product to the acting factor. -/
 private def rightHomNatTrans : A.pointSemidirectProduct ⟶
     (yonedaGrp (C := C)).obj (Grp.mk G) where
-  app X := GrpCat.ofHom SemidirectProduct.rightHom
+  app X := by
+    exact GrpCat.ofHom
+      (X := (unop X ⟶ N) ⋊[A.toMulAutHom (unop X)] (unop X ⟶ G))
+      (Y := unop X ⟶ G) SemidirectProduct.rightHom
   naturality {_ _} f := by
     apply GrpCat.hom_ext
     apply MonoidHom.ext
