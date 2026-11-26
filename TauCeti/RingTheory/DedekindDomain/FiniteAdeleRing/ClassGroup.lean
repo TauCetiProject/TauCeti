@@ -109,6 +109,12 @@ theorem coe_units_apply_ne_zero (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) 
     (x : 𝔸ᶠ[R, K]) v ≠ 0 :=
   (isUnit_iff.mp x.isUnit).1 v
 
+/-- Every component of the inverse of a finite idele is the inverse of the component. -/
+@[simp]
+theorem coe_units_inv_apply (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) :
+    ((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v = ((x : 𝔸ᶠ[R, K]) v)⁻¹ :=
+  eq_inv_of_mul_eq_one_left (by rw [← mul_apply, Units.inv_mul, one_apply])
+
 /-- The valuation of a component of a finite idele is nonzero. -/
 theorem valued_coe_units_apply_ne_zero (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) :
     Valued.v ((x : 𝔸ᶠ[R, K]) v) ≠ 0 := by
@@ -121,11 +127,9 @@ theorem eventually_valued_coe_units_apply_eq_one (x : 𝔸ᶠ[R, K]ˣ) :
   (isUnit_iff.mp x.isUnit).2
 
 /-- The valuations of a finite idele and of its inverse at a place are inverse to each other. -/
-@[simp] theorem valued_coe_units_inv_apply (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) :
-    Valued.v (((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v) = (Valued.v ((x : 𝔸ᶠ[R, K]) v))⁻¹ :=
-  (inv_eq_of_mul_eq_one_right (by
-    rw [← map_mul, ← mul_apply, ← Units.val_mul, mul_inv_cancel, Units.val_one, one_apply,
-      map_one])).symm
+theorem valued_coe_units_inv_apply (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) :
+    Valued.v (((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v) = (Valued.v ((x : 𝔸ᶠ[R, K]) v))⁻¹ := by
+  rw [coe_units_inv_apply, map_inv₀]
 
 /-- The `v`-adic order of a finite idele `x`, that is, the exponent of `v` in the fractional
 ideal that `x` defines.  The sign is chosen so that a uniformizer at `v` has order `1`. -/
