@@ -67,16 +67,10 @@ theorem specialCliffordGroup_eq_top_of_subsingleton : specialCliffordGroup Q = �
     even_eq_top_of_subsingleton]
   exact ⟨Subgroup.mem_top x, Algebra.mem_top⟩
 
-/-- In rank `0` the scalars embed in the Clifford algebra. -/
-theorem algebraMap_injective_of_subsingleton :
-    Function.Injective (algebraMap R (CliffordAlgebra Q)) := fun a b h => by
-  rw [← equivOfSubsingleton_symm_apply, ← equivOfSubsingleton_symm_apply] at h
-  exact (equivOfSubsingleton Q).symm.injective h
-
 /-- In rank `0` the central scalars map bijectively onto the general spin group. -/
 theorem scalarSpecialCliffordGroup_bijective_of_subsingleton :
     Function.Bijective (scalarSpecialCliffordGroup Q) := by
-  refine ⟨fun a b h => Units.ext (algebraMap_injective_of_subsingleton Q ?_), fun x => ?_⟩
+  refine ⟨fun a b h => Units.ext (algebraMap_injective_of_free Q ?_), fun x => ?_⟩
   · simpa using congrArg (fun x : specialCliffordGroup Q => ((x : (CliffordAlgebra Q)ˣ) :
       CliffordAlgebra Q)) h
   · refine ⟨unitsEquivOfSubsingleton Q x, Subtype.ext (Units.ext ?_)⟩
@@ -205,25 +199,13 @@ private theorem exists_eq_smul_add_smul (hV : Module.finrank K V = 2) (he : Q e 
     Set.union_singleton, Set.pair_comm] at htop
   exact Submodule.mem_span_pair.mp (htop ▸ Submodule.mem_top)
 
-/-- For a hyperbolic pair, `e f` and `f e` are orthogonal idempotents. -/
-private theorem hyperbolicPair_relations (he : Q e = 0) (hf : Q f = 0) (hef : polar Q e f = 1) :
-    ι Q e * ι Q f * (ι Q e * ι Q f) = ι Q e * ι Q f ∧
-      ι Q f * ι Q e * (ι Q f * ι Q e) = ι Q f * ι Q e ∧
-      ι Q e * ι Q f * (ι Q f * ι Q e) = 0 ∧ ι Q f * ι Q e * (ι Q e * ι Q f) = 0 := by
-  have hee : ι Q e * ι Q e = 0 := by rw [ι_sq_scalar, he, map_zero]
-  have hff : ι Q f * ι Q f = 0 := by rw [ι_sq_scalar, hf, map_zero]
-  refine ⟨(isIdempotentElem_ι_mul_ι hef (by rw [he, zero_mul])).eq,
-    (isIdempotentElem_ι_mul_ι (by rw [polar_comm, hef]) (by rw [he, mul_zero])).eq, ?_, ?_⟩
-  · rw [mul_assoc, ← mul_assoc (ι Q f), hff, zero_mul, mul_zero]
-  · rw [mul_assoc, ← mul_assoc (ι Q e), hee, zero_mul, mul_zero]
-
 /-- For a hyperbolic pair spanning a plane, every even Clifford element is `b e f + a f e`. -/
 private theorem exists_eq_smul_add_smul_of_mem_even (hV : Module.finrank K V = 2) (he : Q e = 0)
     (hf : Q f = 0) (hef : polar Q e f = 1) {x : CliffordAlgebra Q} (hx : x ∈ even Q) :
     ∃ a b : K, x = b • (ι Q e * ι Q f) + a • (ι Q f * ι Q e) := by
   have hee : ι Q e * ι Q e = 0 := by rw [ι_sq_scalar, he, map_zero]
   have hff : ι Q f * ι Q f = 0 := by rw [ι_sq_scalar, hf, map_zero]
-  obtain ⟨hEE, hFF, hEF, hFE⟩ := hyperbolicPair_relations he hf hef
+  obtain ⟨hEE, hFF, hEF, hFE⟩ := hyperbolic_relations he hef
   induction x, hx using even_induction with
   | algebraMap r =>
     refine ⟨r, r, ?_⟩
@@ -287,7 +269,7 @@ theorem coe_hyperbolicPlaneTorus_eq_smul_add_smul (he : Q e = 0) (hf : Q f = 0)
 theorem hyperbolicPlaneTorus_injective (he : Q e = 0) (hf : Q f = 0) (hef : polar Q e f = 1) :
     Function.Injective (hyperbolicPlaneTorus Q he hf hef) := by
   intro x y hxy
-  obtain ⟨hEE, hFF, hEF, hFE⟩ := hyperbolicPair_relations he hf hef
+  obtain ⟨hEE, hFF, hEF, hFE⟩ := hyperbolic_relations he hef
   have h := congrArg (fun g : specialCliffordGroup Q =>
     ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) hxy
   simp only [coe_hyperbolicPlaneTorus_eq_smul_add_smul] at h
@@ -312,7 +294,7 @@ theorem hyperbolicPlaneTorus_surjective (hV : Module.finrank K V = 2) (he : Q e 
     (hf : Q f = 0) (hef : polar Q e f = 1) :
     Function.Surjective (hyperbolicPlaneTorus Q he hf hef) := by
   intro g
-  obtain ⟨-, -, hEF, hFE⟩ := hyperbolicPair_relations he hf hef
+  obtain ⟨-, -, hEF, hFE⟩ := hyperbolic_relations he hef
   obtain ⟨a, b, hab⟩ := exists_eq_smul_add_smul_of_mem_even hV he hf hef
     (mem_specialCliffordGroup_iff.mp g.property).2
   set x : CliffordAlgebra Q := ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) with hx

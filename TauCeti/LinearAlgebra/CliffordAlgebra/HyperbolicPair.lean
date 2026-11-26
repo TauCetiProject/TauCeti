@@ -101,7 +101,7 @@ theorem isIdempotentElem_ι_mul_ι (hef : polar Q e f = 1) (h : Q e * Q f = 0) :
 
 /-- The four relations among `E = e f` and `F = f e` for `Q e = 0` and `polar Q e f = 1`:
 both are idempotent and they are orthogonal. -/
-private theorem hyperbolic_relations (he : Q e = 0) (hef : polar Q e f = 1) :
+theorem hyperbolic_relations (he : Q e = 0) (hef : polar Q e f = 1) :
     ι Q e * ι Q f * (ι Q e * ι Q f) = ι Q e * ι Q f ∧
       ι Q f * ι Q e * (ι Q f * ι Q e) = ι Q f * ι Q e ∧
       ι Q e * ι Q f * (ι Q f * ι Q e) = 0 ∧ ι Q f * ι Q e * (ι Q e * ι Q f) = 0 := by
