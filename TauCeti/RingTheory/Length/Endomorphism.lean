@@ -55,6 +55,13 @@ Consequently `length (M ⧸ T) ≤ rank M * ord_A a` for a submodule `T ⊇ aM`
 irreducible `ϖ` reads `length (M ⧸ T) ≤ e * rank M` for `T ⊇ ϖ ^ e M`
 (`TauCeti.length_quotient_le_mul_finrank`).
 
+An endomorphism `f` whose kernel need not vanish is compared with the endomorphism `g` it induces
+on a quotient `L` of `M` by a submodule of finite length: when `g` is injective,
+`length (M ⧸ f(M)) = length (ker f) + length (L ⧸ g(L))`
+(`TauCeti.length_quotient_range_eq_length_ker_add_of_comp_eq`). This is the snake lemma for the
+action of `f` on `0 → ker(M → L) → M → L → 0`, together with the equality of the lengths of the
+kernel and cokernel of an endomorphism of a module of finite length.
+
 For a module with a finite basis, the cokernel of an endomorphism is the cokernel of its matrix
 (`Module.Basis.length_quotient_range_eq_length_quotient_range_toMatrix`).
 -/
@@ -184,6 +191,45 @@ theorem length_quotient_range_restrict {φ : M →ₗ[A] M} (hφ : Function.Inje
     length_quotient_comap_subtype_range_map hφ, ← hr] at h₁
   have hfin : Module.length A (M ⧸ N) ≠ ⊤ := Module.length_ne_top_iff.2 hN
   exact (WithTop.add_right_cancel hfin ((add_comm _ _).trans h₁)).symm
+
+/-- **Cokernel length through a quotient.** Let `p : M → L` be surjective with kernel of finite
+length, and let `f` on `M` lie over an injective `g` on `L` (`p ∘ f = g ∘ p`). Then the cokernel of
+`f` has the length of its kernel plus that of the cokernel of `g`. -/
+theorem length_quotient_range_eq_length_ker_add_of_comp_eq {L : Type*} [AddCommGroup L]
+    [Module A L] {f : M →ₗ[A] M} {g : L →ₗ[A] L} {p : M →ₗ[A] L} (hp : Function.Surjective p)
+    (hg : Function.Injective g) (hpf : p ∘ₗ f = g ∘ₗ p)
+    (hker : Module.length A (LinearMap.ker p) ≠ ⊤) :
+    Module.length A (M ⧸ LinearMap.range f) =
+      Module.length A (LinearMap.ker f) + Module.length A (L ⧸ LinearMap.range g) := by
+  -- Since `g` is injective, `f m` lies in `ker p` exactly when `m` does.
+  have hT (m : M) : f m ∈ LinearMap.ker p ↔ m ∈ LinearMap.ker p := by
+    rw [LinearMap.mem_ker, LinearMap.mem_ker, ← LinearMap.comp_apply, hpf, LinearMap.comp_apply,
+      (injective_iff_map_eq_zero' g).1 hg]
+  have hkerf : LinearMap.ker f ≤ LinearMap.ker p := fun m hm ↦
+    (hT m).1 (by rw [LinearMap.mem_ker.1 hm]; exact zero_mem _)
+  have hfT : ∀ m ∈ LinearMap.ker p, f m ∈ LinearMap.ker p := fun m hm ↦ (hT m).2 hm
+  -- Filter `M ⧸ f(M)` by the image of `ker p`, which is `ker p ⧸ f(ker p)`.
+  rw [length_quotient_eq_length_map_add_length_quotient_sup (LinearMap.ker p) (LinearMap.range f),
+    length_map_mkQ]
+  congr 1
+  · have hrange : (LinearMap.range f).comap (LinearMap.ker p).subtype =
+        LinearMap.range (f.restrict hfT) := by
+      rw [LinearMap.range_restrict]
+      ext x
+      simp only [Submodule.mem_comap, Submodule.coe_subtype, LinearMap.mem_range, Submodule.mem_map]
+      exact ⟨fun ⟨m, hm⟩ ↦ ⟨m, (hT m).1 (hm ▸ x.property), hm⟩, fun ⟨m, _, hm⟩ ↦ ⟨m, hm⟩⟩
+    rw [hrange, (f.restrict hfT).length_quotient_range_eq_length_ker hker, LinearMap.ker_restrict]
+    exact (Submodule.comapSubtypeEquivOfLe hkerf).length_eq
+  · -- The rest is `L ⧸ g(L)`, the quotient of `M` by the preimage `f(M) ⊔ ker p` of `g(L)`.
+    have hker' : LinearMap.ker ((LinearMap.range g).mkQ ∘ₗ p) =
+        LinearMap.range f ⊔ LinearMap.ker p := by
+      rw [LinearMap.ker_comp, Submodule.ker_mkQ,
+        ← LinearMap.range_comp_of_range_eq_top g (LinearMap.range_eq_top.2 hp), ← hpf,
+        LinearMap.range_comp, Submodule.comap_map_eq]
+    rw [← hker']
+    refine (LinearMap.quotKerEquivOfSurjective _ ?_).length_eq
+    rw [LinearMap.coe_comp]
+    exact (Submodule.mkQ_surjective _).comp hp
 
 /-- The cokernel of an endomorphism of a module with a finite basis is the cokernel of its
 matrix. -/
