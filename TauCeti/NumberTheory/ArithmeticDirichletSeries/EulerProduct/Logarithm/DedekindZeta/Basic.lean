@@ -33,7 +33,6 @@ positive real number, and that sum is its real logarithm.
   exponential of that real sum.
 * `TauCeti.dedekindZeta_re_eq_exp` and `TauCeti.dedekindZeta_re_pos`: the same for the real part,
   which is therefore positive.
-* `TauCeti.dedekindZeta_ofReal_re`: the Dirichlet series has real value at every real argument.
 * `TauCeti.log_dedekindZeta_re_eq_tsum_neg_log_one_sub`: that real sum is the real logarithm of
   `ζ_K(s)`.
 
@@ -123,15 +122,6 @@ theorem log_dedekindZeta_re_eq_tsum_neg_log_one_sub {s : ℝ} (hs : 1 < s) :
     Real.log (dedekindZeta K s).re = ∑' P : HeightOneSpectrum (𝓞 K),
       -Real.log (1 - (Ideal.absNorm P.asIdeal : ℝ) ^ (-s)) := by
   rw [dedekindZeta_re_eq_exp hs, Real.log_exp]
-
-/-- The Dedekind zeta Dirichlet series is real at every real argument, including its
-zero value when the series does not converge. -/
-theorem dedekindZeta_ofReal_re (s : ℝ) :
-    ((dedekindZeta K s).re : ℂ) = dedekindZeta K s := by
-  apply Complex.conj_eq_iff_re.mp
-  simpa [NumberField.dedekindZeta, Pi.star_def, Complex.star_def] using
-    (LSeries.LSeries_star
-      (fun n ↦ (Nat.card {I : Ideal (𝓞 K) // Ideal.absNorm I = n} : ℂ)) (s : ℂ)).symm
 
 /-- For real `s > 1`, the real part of `ζ_K(s)` is positive. -/
 theorem dedekindZeta_re_pos {s : ℝ} (hs : 1 < s) : 0 < (dedekindZeta K s).re := by

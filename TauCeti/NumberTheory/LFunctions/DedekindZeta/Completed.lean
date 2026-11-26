@@ -447,8 +447,9 @@ theorem eqOn_dedekindZetaC_of_eqOn_dedekindZeta {Z : ℂ → ℂ}
     (hZ : ∀ z ≠ 1, AnalyticAt ℂ Z z)
     (hseries : Set.EqOn Z (dedekindZeta K) {z | 1 < z.re}) :
     Set.EqOn Z (dedekindZetaC K) ({1}ᶜ : Set ℂ) := by
-  refine AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq (fun z hz ↦ hZ z hz)
-    (fun _ hz ↦ analyticAt_dedekindZetaC K hz)
+  refine AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq
+    (fun z hz ↦ hZ z (Set.mem_compl_singleton_iff.mp hz))
+    (fun _ hz ↦ analyticAt_dedekindZetaC K (Set.mem_compl_singleton_iff.mp hz))
     (isConnected_compl_singleton_of_one_lt_rank
       (rank_real_complex ▸ Nat.one_lt_ofNat) 1).isPreconnected
     (z₀ := 2) (by norm_num) ?_

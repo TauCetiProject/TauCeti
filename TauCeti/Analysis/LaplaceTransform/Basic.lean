@@ -33,8 +33,8 @@ the integral to `z`.
   with respect to `μ` and has integral `z`.
 * Congruence, uniqueness, and linearity: `HasLaplace.unique`, `HasLaplace.congr_ae`,
   `hasLaplace_congr_Ioi`, `hasLaplace_restrict_Ici_iff`, `hasLaplace_zero`, `HasLaplace.add`,
-  `HasLaplace.neg`, `HasLaplace.sub`, `hasLaplace_sum`, `HasLaplace.const_smul`, and
-  `ContinuousLinearMap.hasLaplace`.
+  `HasLaplace.neg`, `HasLaplace.sub`, `hasLaplace_sum`, `HasLaplace.const_smul`,
+  `ContinuousLinearMap.hasLaplace`, and `HasLaplace.conj` (complex conjugation).
 * Scaling, shifts, and half-plane convergence: `hasLaplace_cexp_mul_smul_iff` (frequency shift),
   `HasLaplace.comp_mul_left` and `hasLaplace_comp_mul_left_iff` (positive time dilation),
   `HasLaplace.indicator_Ici_comp_sub_right` (right-shift on `[a, ∞)` for `0 ≤ a`),
@@ -264,6 +264,19 @@ theorem _root_.ContinuousLinearMap.hasLaplace {E F : Type*}
   · simpa only [hL] using (L.restrictScalars ℝ).integrable_comp hf.1
   · rw [← hL, (L.restrictScalars ℝ).integral_comp_comm hf.1, hf.2,
       ContinuousLinearMap.coe_restrictScalars']
+
+open scoped ComplexConjugate in
+/-- Complex conjugation of a scalar Laplace integral conjugates its input and parameter. -/
+theorem HasLaplace.conj {f : ℝ → ℂ} {s z : ℂ} {μ : Measure ℝ}
+    (h : HasLaplace f s z μ) : HasLaplace (fun u ↦ conj (f u)) (conj s) (conj z) μ := by
+  have hconj (u : ℝ) :
+      Complex.exp (-conj s * u) • conj (f u) = conj (Complex.exp (-s * u) • f u) := by
+    simp only [smul_eq_mul, map_mul, ← Complex.exp_conj, map_neg, Complex.conj_ofReal]
+  rw [hasLaplace_iff]
+  simp only [hconj]
+  refine ⟨?_, ?_⟩
+  · exact Complex.conjCLE.toContinuousLinearEquiv.integrable_comp_iff.mpr h.integrable
+  · rw [integral_conj, h.integral_eq]
 
 /-- Multiplying `f(t)` by `exp (w * t)` shifts the Laplace parameter from `s` to `s - w`. -/
 theorem hasLaplace_cexp_mul_smul_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

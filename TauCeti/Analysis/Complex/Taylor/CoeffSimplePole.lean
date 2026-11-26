@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
+import TauCeti.Analysis.Complex.Taylor.CauchyEstimate
 import TauCeti.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.SpecificLimits.Basic
 
@@ -114,8 +115,7 @@ theorem exists_forall_norm_iteratedDeriv_div_factorial_sub_le_of_eventuallyEq
     (hzρ : z ≠ ρ) (hr' : 0 < r') (hrr : r' < r) :
     ∃ M, ∀ k : ℕ,
       ‖iteratedDeriv k Φ z / (k ! : ℂ) - (-1) ^ k * c / (z - ρ) ^ (k + 1)‖ ≤ M / r' ^ k := by
-  obtain ⟨C, hC⟩ := (isCompact_sphere z r').exists_bound_of_continuousOn
-    (hg.continuousOn.mono (sphere_subset_closedBall.trans (closedBall_subset_ball hrr)))
+  obtain ⟨C, hC⟩ := hg.exists_norm_iteratedDeriv_div_factorial_le hr' hrr
   refine ⟨C, fun k ↦ ?_⟩
   have hgz : ContDiffAt ℂ k g z :=
     (hg.analyticAt (ball_mem_nhds z (hr'.trans hrr))).contDiffAt
@@ -135,11 +135,8 @@ theorem exists_forall_norm_iteratedDeriv_div_factorial_sub_le_of_eventuallyEq
     rw [hsplit]
     field_simp
     ring
-  rw [hdiff, norm_div, Complex.norm_natCast, div_le_iff₀ (by positivity)]
-  calc ‖iteratedDeriv k g z‖ ≤ k ! * C / r' ^ k :=
-        Complex.norm_iteratedDeriv_le_of_forall_mem_sphere_norm_le k hr'
-          (hg.diffContOnCl_ball (closedBall_subset_ball hrr)) hC
-    _ = C / r' ^ k * k ! := by ring
+  rw [hdiff, norm_div, Complex.norm_natCast]
+  exact hC k
 
 /-- **Taylor coefficients near a simple pole.** Let `Φ` be holomorphic on `ball z r \ {ρ}`, with
 `Φ s = c / (s - ρ) + h s` near `ρ ≠ z` for a function `h` analytic at `ρ`. Then for `0 < r' < r`
