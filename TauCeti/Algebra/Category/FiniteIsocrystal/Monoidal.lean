@@ -259,11 +259,13 @@ instance : MonoidalLinear E (FiniteIsocrystal.{u} σ) where
 /-! ### Rank -/
 
 /-- The rank of a tensor product of finite isocrystals is the product of the ranks. -/
+@[simp]
 theorem finrank_tensorObj (D D' : FiniteIsocrystal.{u} σ) :
     Module.finrank L (D ⊗ D' : FiniteIsocrystal.{u} σ) = Module.finrank L D * Module.finrank L D' :=
   Module.finrank_tensorProduct
 
 /-- The unit finite isocrystal has rank one. -/
+@[simp]
 theorem finrank_tensorUnit : Module.finrank L (𝟙_ (FiniteIsocrystal.{u} σ)) = 1 :=
   Module.finrank_self L
 
