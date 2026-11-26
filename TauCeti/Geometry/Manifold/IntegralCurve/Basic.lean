@@ -30,7 +30,8 @@ the field.
   derivative intertwines the vector fields there sends it to an integral curve of the second field.
 * `IsMIntegralCurveAt.map_of_mfderiv_eq`: the corresponding result for local integral curves.
 * `IsMIntegralCurveOn.congr`: being an integral curve on a set only depends on the values of the
-  curve on that set.
+  curve on that set, and `IsMIntegralCurveOn.of_forall_mem_nhdsWithin`: it is a local property of
+  the set.
 * `IsMIntegralCurveOn.union_of_isClosed`: integral curves on two closed sets of times glue to an
   integral curve on their union.
 * `IsMIntegralCurveOn.comp_neg`: running an integral curve of `v` on `s` backwards gives an
@@ -124,6 +125,15 @@ theorem union_of_isClosed {V : (x : M) → TangentSpace I x} {γ : ℝ → M} {s
   · exact (ht r hrt).mono_of_mem_nhdsWithin
       (mem_nhdsWithin.2 ⟨sᶜ, hsc.isOpen_compl, hrs, fun x hx ↦ hx.2.resolve_left hx.1⟩)
   · exact absurd hr (by simp [hrs, hrt])
+
+/-- **Being an integral curve is local in the set of times.** If every time `t` of `s` has a
+neighbourhood within `s` on which `γ` is an integral curve of `v`, then `γ` is an integral curve
+of `v` on `s`. -/
+theorem of_forall_mem_nhdsWithin {V : (x : M) → TangentSpace I x} {γ : ℝ → M} {s : Set ℝ}
+    (h : ∀ t ∈ s, ∃ u ∈ 𝓝[s] t, t ∈ u ∧ IsMIntegralCurveOn γ V u) :
+    IsMIntegralCurveOn γ V s := fun t ht ↦ by
+  obtain ⟨u, hu, htu, hγ⟩ := h t ht
+  exact (hγ t htu).mono_of_mem_nhdsWithin hu
 
 /-- **Time reversal on a set of times.** Running an integral curve of `v` on `s` backwards gives
 an integral curve of `-v` on `-s`. -/
