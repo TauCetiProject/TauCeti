@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Fourier.Bernstein
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Homogeneous.Basic
-import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 
 /-!
 # The critical homogeneous Besov space `\dot B^{n/2}_{2,1}` lies in `L^∞`
@@ -34,10 +33,9 @@ bound `‖cos(tD) f‖_{L^∞_t L^∞_x} ≤ C ‖f‖_{\dot B^{n/2}_{2,1}}` for
 
 Bernstein's inequality (`ContDiffBump.eLpNorm_dyadicMultiplier_le_of_le`) bounds each block,
 `‖Pⱼ f‖_∞ ≤ C 2^{jn/2} ‖Pⱼ f‖₂`: some dyadic multiplier `Qⱼ` reproduces `Pⱼ`, and its kernel has
-`L²` norm `2^{jn/2}` times that of `Q₀`. The partial sums `∑_{-N < j ≤ N} Pⱼ f` converge to `f` in
-`L²` (`ContDiffBump.tendsto_sum_fourierMultiplierCLM_littlewoodPaley`), hence almost everywhere
-along a subsequence, and their `L^∞` norms are at most `∑ⱼ ‖Pⱼ f‖_∞`. Fatou's lemma for the
-essential supremum (`MeasureTheory.Lp.eLpNorm_lim_le_liminf_eLpNorm`) passes this bound to `f`.
+`L²` norm `2^{jn/2}` times that of `Q₀`. Since the partial sums of the blocks converge to `f` in
+`L²`, `‖f‖_∞ ≤ ∑ⱼ ‖Pⱼ f‖_∞`
+(`ContDiffBump.eLpNorm_apply_le_tsum_eLpNorm_apply_fourierMultiplierCLM`).
 
 ## References
 
@@ -90,25 +88,21 @@ theorem exists_eLpNorm_top_le_tsum_fourierMultiplierCLM_littlewoodPaley [Nontriv
         ← dyadicMultiplier_def, hσ j (m j) (hm j)]
     have h := φ.eLpNorm_dyadicMultiplier_le_of_le σ j (P j) one_le_two le_top
     rw [hQP] at h
-    refine h.trans (le_of_eq ?_)
-    rw [Lp.eNorm_def, ← Real.rpow_intCast, ← Real.rpow_mul zero_le_two]
-    simp only [ENNReal.toReal_ofNat, ENNReal.toReal_top, inv_zero, sub_zero]
-    rw [mul_comm (j : ℝ), mul_comm _ B, mul_assoc, div_eq_mul_inv]
-  -- The partial sums converge to `f` in `L²`, hence almost everywhere along a subsequence.
-  set S : ℕ → Lp F 2 (volume : Measure V) := fun N ↦ ∑ j ∈ Finset.Ioc (-(N : ℤ)) N, P j
-  have hS : Tendsto S atTop (𝓝 f) := φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm f
-  obtain ⟨ns, -, hns⟩ := (tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero
-    ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' S f).1 hS)).exists_seq_tendsto_ae
-  -- Each partial sum is bounded in `L^∞` by the full sum of the block norms.
-  have hSle (N : ℕ) : eLpNorm (S N) ∞ volume ≤ ∑' j, eLpNorm (P j) ∞ volume := by
-    rw [eLpNorm_congr_ae (Lp.coeFn_finsetSum _ _)]
-    exact (eLpNorm_sum_le le_top).trans (sum_le_tsum _)
+    have hexp : ((2 : ℝ) ^ j) ^ ((Module.finrank ℝ V : ℝ) *
+        ((2 : ℝ≥0∞).toReal⁻¹ - (∞ : ℝ≥0∞).toReal⁻¹)) =
+        (2 : ℝ) ^ ((Module.finrank ℝ V : ℝ) / 2 * j) := by
+      rw [← Real.rpow_intCast, ← Real.rpow_mul zero_le_two]
+      congr 1
+      simp only [ENNReal.toReal_ofNat, ENNReal.toReal_top, inv_zero, sub_zero]
+      ring
+    rw [hexp] at h
+    rw [Lp.eNorm_def]
+    exact h.trans_eq (by ring)
+  -- Summing the blocks: `‖f‖_∞ ≤ ∑ⱼ ‖Pⱼ f‖_∞`.
   calc eLpNorm f ∞ volume
-      ≤ atTop.liminf fun i ↦ eLpNorm (S (ns i)) ∞ volume :=
-        Lp.eLpNorm_lim_le_liminf_eLpNorm (fun i ↦ Lp.aestronglyMeasurable _) f
-          (Lp.aestronglyMeasurable f) hns
-    _ ≤ ∑' j, eLpNorm (P j) ∞ volume :=
-        liminf_le_of_frequently_le' (Frequently.of_forall fun i ↦ hSle (ns i))
+      ≤ ∑' j, eLpNorm (P j) ∞ volume :=
+        φ.eLpNorm_apply_le_tsum_eLpNorm_apply_fourierMultiplierCLM hm
+          (ContinuousLinearMap.id ℂ _) f le_top
     _ ≤ ∑' j : ℤ, B * (ENNReal.ofReal ((2 : ℝ) ^ ((Module.finrank ℝ V : ℝ) / 2 * j)) *
           ‖P j‖ₑ) :=
         tsum_le_tsum hblock

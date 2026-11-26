@@ -71,6 +71,16 @@ namespace TauCeti
 disc of radius `2`, which cuts off `TauCeti.logLogInterior`. -/
 def logLogCutoffBump : ContDiffBump (0 : ℂ) := ⟨1, 2, one_pos, one_lt_two⟩
 
+/-- The bump function `TauCeti.logLogCutoffBump` equals `1` on the closed unit disc. -/
+@[simp]
+theorem logLogCutoffBump_rIn : logLogCutoffBump.rIn = 1 :=
+  (rfl)
+
+/-- The bump function `TauCeti.logLogCutoffBump` is supported in the closed disc of radius `2`. -/
+@[simp]
+theorem logLogCutoffBump_rOut : logLogCutoffBump.rOut = 2 :=
+  (rfl)
+
 /-- The function `f(z) = χ(z) log log (4 / ‖z‖)`, with `χ = TauCeti.logLogCutoffBump`: a compactly
 supported function in `H¹(ℝ²)` that is unbounded near the origin. -/
 def logLogCutoff (z : ℂ) : ℝ := logLogCutoffBump z * logLogInterior z
@@ -78,6 +88,15 @@ def logLogCutoff (z : ℂ) : ℝ := logLogCutoffBump z * logLogInterior z
 /-- The defining formula of `TauCeti.logLogCutoff`. -/
 theorem logLogCutoff_def (z : ℂ) : logLogCutoff z = logLogCutoffBump z * logLogInterior z :=
   (rfl)
+
+/-- The function `χ(z) log log (4 / ‖z‖)` is supported in the closed disc of radius `2`. -/
+theorem tsupport_logLogCutoff_subset : tsupport logLogCutoff ⊆ closedBall 0 2 := by
+  have h := tsupport_mul_subset_left (f := (logLogCutoffBump : ℂ → ℝ)) (g := logLogInterior)
+  rwa [logLogCutoffBump.tsupport_eq, logLogCutoffBump_rOut] at h
+
+/-- The function `χ(z) log log (4 / ‖z‖)` is compactly supported. -/
+theorem hasCompactSupport_logLogCutoff : HasCompactSupport logLogCutoff :=
+  (isCompact_closedBall 0 2).of_isClosed_subset (isClosed_tsupport _) tsupport_logLogCutoff_subset
 
 /-- The function `χ(z) log log (4 / ‖z‖)` is measurable. -/
 @[fun_prop]
@@ -102,7 +121,8 @@ private theorem exists_memSobolev_logLogCutoff :
     (hasWeakFDerivOn_logLogInterior.mono fun z hz ↦ ball_subset_ball (by norm_num) hz)
   have hsupp : tsupport logLogCutoffBump ⊆ U := by
     rw [logLogCutoffBump.tsupport_eq]
-    exact closedBall_subset_ball (by norm_num [logLogCutoffBump])
+    rw [logLogCutoffBump_rOut]
+    exact closedBall_subset_ball (by norm_num)
   have h1 : Wkp.value (p := 2) 1 w = W1p.value w := Wkp.value_one w
   have hw1 : (Wkp.value (p := 2) 1 w : ℂ → ℝ) =ᵐ[volume.restrict U] logLogInterior := by
     rw [h1]
