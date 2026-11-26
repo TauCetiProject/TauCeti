@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.RepresentationRing.Restriction
-public import TauCeti.RepresentationTheory.Tensor.External
+public import TauCeti.RepresentationTheory.FDRep.External
 
 /-!
 # The external tensor product of representation rings
@@ -22,8 +22,9 @@ of `G × H` on `V ⊗ W` in which `(g, h)` acts by `ρ_V g ⊗ ρ_W h`
 
 `x ⊠ y = res_{pr₁} x * res_{pr₂} y`, the product in `R(G × H)` of the restrictions along the two
 projections (`TauCeti.repRingRes`). On classes it is the class of the external tensor product of
-representations (`TauCeti.repRingExternalTensor_of_of`). Since restrictions are ring
-homomorphisms, it is compatible with the ring structures,
+representations (`TauCeti.repRingExternalTensor_of_of`), through the comparison
+`FDRep.externalTensorIso` of `TauCeti/RepresentationTheory/FDRep/External.lean`. Since
+restrictions are ring homomorphisms, it is compatible with the ring structures,
 `(x * x') ⊠ (y * y') = (x ⊠ y) * (x' ⊠ y')` and `1 ⊠ 1 = 1`, with restriction along products
 of homomorphisms, `res_{φ × ψ} (x ⊠ y) = res_φ x ⊠ res_ψ y`, and it recovers the product of
 `R(G)` along the diagonal, `res_Δ (x ⊠ y) = x * y`. Its character at `(g, h)` is the product of
@@ -36,8 +37,6 @@ product of their indices in `R(G × H)`.
 
 ## Main definitions
 
-* `FDRep.externalTensorIso`: the external tensor product of `V` and `W` is the tensor
-  product over `G × H` of their restrictions along the two projections.
 * `TauCeti.repRingExternalTensor`: the external tensor product `R(G) →+ R(H) →+ R(G × H)`.
 
 ## Main statements
@@ -68,32 +67,6 @@ namespace TauCeti
 universe u v v' w w'
 
 variable {k : Type u} [Field k] {G : Type v} {H : Type v'} [Monoid G] [Monoid H]
-
-/-- **The external tensor product as a tensor product over `G × H`**: the tensor product of the
-restrictions of `V` and `W` along the two projections of `G × H` is the external tensor product
-`(g, h) ↦ ρ_V g ⊗ ρ_W h` on `V ⊗ W`. The two objects have the same carrier, and the isomorphism is
-the identity of `V ⊗ W`. -/
-noncomputable def _root_.FDRep.externalTensorIso (V : FDRep k G) (W : FDRep k H) :
-    (Action.res (FGModuleCat.{u} k) (MonoidHom.fst G H)).obj V ⊗
-        (Action.res (FGModuleCat.{u} k) (MonoidHom.snd G H)).obj W ≅
-      FDRep.of (Representation.externalTensor V.ρ W.ρ) :=
-  Action.mkIso (Iso.refl _) fun p ↦ FGModuleCat.hom_ext <| LinearMap.ext fun x ↦ by
-    -- `change` reads both sides through the linear maps `FDRep.ρ`: the action on the left is
-    -- stated through `Action.ρ` and the endomorphism ring equivalences of `FGModuleCat`, which
-    -- `simp` does not unfold, and the restrictions act through `p.1` and `p.2` by definition.
-    change TensorProduct.map (V.ρ p.1) (W.ρ p.2) x =
-      (FDRep.of (Representation.externalTensor V.ρ W.ρ)).ρ p x
-    rw [FDRep.of_ρ', Representation.externalTensor_apply]
-
-/-- The isomorphism `FDRep.externalTensorIso` is the identity of `V ⊗ W`. -/
-theorem _root_.FDRep.externalTensorIso_hom_apply (V : FDRep k G) (W : FDRep k H)
-    (x : TensorProduct k V W) : (FDRep.externalTensorIso V W).hom.hom.hom x = x :=
-  (rfl)
-
-/-- The inverse of `FDRep.externalTensorIso` is the identity of `V ⊗ W`. -/
-theorem _root_.FDRep.externalTensorIso_inv_apply (V : FDRep k G) (W : FDRep k H)
-    (x : TensorProduct k V W) : (FDRep.externalTensorIso V W).inv.hom.hom x = x :=
-  (rfl)
 
 variable (k G H) in
 /-- **The external tensor product of representation rings**, the biadditive map

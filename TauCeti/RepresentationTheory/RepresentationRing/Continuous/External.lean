@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.FDRep.Continuous.External
 public import TauCeti.RepresentationTheory.RepresentationRing.Continuous.Restriction
 public import TauCeti.RepresentationTheory.RepresentationRing.External
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Prod
 
 /-!
 # The external tensor product of representation rings of continuous representations
 
 For topological monoids `G` and `H` over a topological field `k`, the external tensor product
 `V ⊠ W` of continuous finite-dimensional representations of `G` and `H`, on which `(g, h)` acts by
-`ρ_V g ⊗ ρ_W h`, is again continuous (`FDRep.isContinuous_externalTensor`). This file builds the
+`ρ_V g ⊗ ρ_W h`, is again continuous (`FDRep.isContinuous_externalTensor` of
+`TauCeti/RepresentationTheory/FDRep/Continuous/External.lean`). This file builds the
 corresponding biadditive map of representation rings of continuous representations,
 
 `TauCeti.contRepRingExternalTensor k G H : R(G) →+ R(H) →+ R(G × H)`,
@@ -37,8 +40,6 @@ indices.
 
 ## Main statements
 
-* `FDRep.isContinuous_externalTensor`: the external tensor product of continuous representations
-  is continuous.
 * `TauCeti.contRepRingExternalTensor_of_of`: `[V] ⊠ [W]` is the class of the external tensor
   product.
 * `TauCeti.contRepRingExternalTensor_mul_mul` and `TauCeti.contRepRingExternalTensor_one_one`:
@@ -62,21 +63,6 @@ public section
 open CategoryTheory MonoidalCategory
 
 universe u v v' w w'
-
-namespace FDRep
-
-variable {k : Type u} [Field k] [TopologicalSpace k] [ContinuousAdd k] [ContinuousMul k]
-  {G : Type v} {H : Type v'} [Monoid G] [TopologicalSpace G] [Monoid H] [TopologicalSpace H]
-
-/-- **The external tensor product of continuous representations is continuous**: it is the tensor
-product over `G × H` of their restrictions along the two continuous projections. -/
-theorem isContinuous_externalTensor {V : FDRep k G} {W : FDRep k H} (hV : isContinuous k G V)
-    (hW : isContinuous k H W) :
-    isContinuous k (G × H) (FDRep.of (Representation.externalTensor V.ρ W.ρ)) :=
-  (isContinuous k (G × H)).prop_of_iso (externalTensorIso V W)
-    (isContinuous_tensor (isContinuous_res continuous_fst hV) (isContinuous_res continuous_snd hW))
-
-end FDRep
 
 namespace TauCeti
 
@@ -110,7 +96,8 @@ theorem contRepRingExternalTensor_of_of (V : ContFDRep k G) (W : ContFDRep k H) 
   rw [contRepRingExternalTensor_apply, contRepRingRes_of, contRepRingRes_of, SplitK0.of_mul_of]
   refine SplitK0.of_congr ((FDRep.isContinuous k (G × H)).isoMk ?_)
   dsimp only [ObjectProperty.tensorObj_obj]
-  rw [ContFDRep.res_obj_obj, ContFDRep.res_obj_obj]
+  rw [ContFDRep.res_obj_obj, ContFDRep.res_obj_obj, ContinuousMonoidHom.coe_toMonoidHom,
+    ContinuousMonoidHom.coe_toMonoidHom, ContinuousMonoidHom.coe_fst, ContinuousMonoidHom.coe_snd]
   exact FDRep.externalTensorIso V.obj W.obj
 
 /-- **The external tensor product is multiplicative** in both variables at once:
@@ -160,9 +147,7 @@ theorem contRepRingToRepRing_contRepRingExternalTensor (x : contRepRing k G)
     contRepRingToRepRing k (G × H) (contRepRingExternalTensor k G H x y) =
       repRingExternalTensor k G H (contRepRingToRepRing k G x) (contRepRingToRepRing k H y) := by
   simp only [contRepRingExternalTensor_apply, repRingExternalTensor_apply, map_mul,
-    contRepRingToRepRing_contRepRingRes]
-  -- The continuous projections `ContinuousMonoidHom.fst` and `ContinuousMonoidHom.snd` have
-  -- `MonoidHom.fst` and `MonoidHom.snd` as underlying homomorphisms by definition.
-  rfl
+    contRepRingToRepRing_contRepRingRes, ContinuousMonoidHom.coe_toMonoidHom,
+    ContinuousMonoidHom.coe_fst, ContinuousMonoidHom.coe_snd]
 
 end TauCeti
