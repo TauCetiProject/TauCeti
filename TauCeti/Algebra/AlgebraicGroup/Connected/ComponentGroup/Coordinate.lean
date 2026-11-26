@@ -264,7 +264,7 @@ theorem componentCoordinateMap_indicator (H : FiniteTypeCommHopfAlgCat.{u, u} k)
 
 omit [IsAlgClosed k] in
 /-- Every idempotent function on the group lies in the image of the component coordinate map: it
-is pulled back from a function on the finite group of connected components. -/
+is pulled back from a function on the finite set of connected components. -/
 theorem mem_range_componentCoordinateMap_of_isIdempotentElem
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) {e : H} (he : IsIdempotentElem e) :
     e ∈ (componentCoordinateMap H).range := by

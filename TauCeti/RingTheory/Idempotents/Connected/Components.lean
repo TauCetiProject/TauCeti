@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Idempotents.Connected.Component
 public import TauCeti.Topology.ConnectedComponents
 
 import TauCeti.RingTheory.Idempotents.Connected.Spectrum
+import TauCeti.RingTheory.Idempotents.Primitive.Central
 import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
@@ -323,20 +324,16 @@ theorem _root_.IsIdempotentElem.exists_eq_sum_connectedComponentsIdempotent
     [DiscreteTopology (ConnectedComponents (PrimeSpectrum R))] {e : R} (he : IsIdempotentElem e) :
     ∃ s : Finset (ConnectedComponents (PrimeSpectrum R)),
       e = ∑ C ∈ s, connectedComponentsIdempotent C := by
-  classical
   have : Finite (ConnectedComponents (PrimeSpectrum R)) := finite_of_compact_of_discrete
   let _ : Fintype (ConnectedComponents (PrimeSpectrum R)) := Fintype.ofFinite _
-  refine ⟨Finset.univ.filter fun C ↦
-    e * connectedComponentsIdempotent C = connectedComponentsIdempotent C, ?_⟩
-  calc e = ∑ C, e * connectedComponentsIdempotent C := by
-        rw [← Finset.mul_sum, completeOrthogonalIdempotents_connectedComponentsIdempotent.complete,
-          mul_one]
-    _ = _ := by
-      rw [Finset.sum_filter]
-      refine Finset.sum_congr rfl fun C _ ↦ ?_
-      split_ifs with h
-      · exact h
-      · exact (he.mul_connectedComponentsIdempotent_eq_zero_or_eq C).resolve_right h
+  -- Each component idempotent is primitive: an idempotent below it is zero or all of it.
+  refine
+    completeOrthogonalIdempotents_connectedComponentsIdempotent.exists_eq_sum_of_isIdempotentElem
+      (fun C ↦ TauCeti.isPrimitiveIdempotent_of_eq_zero_or_eq
+        (isIdempotentElem_connectedComponentsIdempotent C)
+        (connectedComponentsIdempotent_ne_zero C) fun f hf hCf _ ↦ ?_) he
+  rw [mul_comm] at hCf
+  exact (hf.mul_connectedComponentsIdempotent_eq_zero_or_eq C).imp (hCf ▸ ·) (hCf.symm.trans ·)
 
 /-- A ring with finitely many connected components in its prime spectrum is canonically
 isomorphic to the product of its component-indexed quotient rings. -/
