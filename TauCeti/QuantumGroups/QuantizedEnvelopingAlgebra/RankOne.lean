@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.Matrix.Cartan.Datum.Constructions
 public import TauCeti.QuantumGroups.QuantizedEnvelopingAlgebra.Hopf
 public import TauCeti.QuantumGroups.UqSl2.Hopf
 
-import TauCeti.QuantumGroups.UqSl2.Commutator
 import TauCeti.QuantumGroups.UqSl2.Rescale
 
 /-!
@@ -155,11 +154,11 @@ private def toUqSl2Tuple (D : CartanDatum ι X Y) (q q' : ℂ) (hq' : q' = q ^ D
     k_zero := by simp [torusCoord]
     k_mul_k y₁ y₂ := by rw [hadd, zpow_add, Units.val_mul]
     conjugate_e y i := by
-      rw [Unique.eq_default i, hneg, UqSl2.kUnit_zpow_mul_e_mul_zpow_neg, hq', ← zpow_natCast q,
-        ← zpow_mul, hpair y]
+      rw [Unique.eq_default i, hneg, zpow_neg, UqSl2.kUnit_zpow_mul_e_mul_inv, hq',
+        ← zpow_natCast q, ← zpow_mul, hpair y]
     conjugate_f y i := by
-      rw [Unique.eq_default i, hneg, UqSl2.kUnit_zpow_mul_f_mul_zpow_neg, hq', ← zpow_natCast q,
-        ← zpow_mul, mul_neg, hpair y]
+      rw [Unique.eq_default i, hneg, zpow_neg, UqSl2.kUnit_zpow_mul_f_mul_inv, hq',
+        ← zpow_natCast q, ← zpow_mul, mul_neg, hpair y]
     commutator_self i := by
       rw [Unique.eq_default i, ← hq', hneg, torusCoord_simpleTorus, zpow_one, zpow_neg_one,
         UqSl2.val_kUnit, UqSl2.val_inv_kUnit]

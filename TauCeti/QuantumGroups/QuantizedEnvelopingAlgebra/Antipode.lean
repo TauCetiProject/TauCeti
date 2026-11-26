@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.QuantumGroups.QuantizedEnvelopingAlgebra.Basic
+import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Algebra.Basic
 
@@ -355,36 +356,30 @@ private theorem zpow_two_mul_symmetrizer (i : ι) :
     q ^ (2 * (D.symmetrizer i : ℤ)) = (q ^ D.symmetrizer i) ^ 2 := by
   rw [mul_comm (2 : ℤ), zpow_mul, zpow_natCast, zpow_ofNat]
 
-private noncomputable def kConjAlgHom (c : Y) :
-    QuantizedEnvelopingAlgebra D q →ₐ[K] QuantizedEnvelopingAlgebra D q where
-  toFun x := k D q (-c) * x * k D q c
-  map_one' := by simp
-  map_mul' x y := by simp [mul_assoc]
-  map_zero' := by simp
-  map_add' x y := by simp [mul_add, add_mul]
-  commutes' r := by simp [Algebra.algebraMap_eq_smul_one]
-
-@[simp] private theorem kConjAlgHom_apply (c : Y) (x : QuantizedEnvelopingAlgebra D q) :
-    kConjAlgHom D q c x = k D q (-c) * x * k D q c := (rfl)
-
 /-- When `c ∈ Y` pairs with every simple root as `⟨αᵢ, c⟩ = 2 dᵢ` (a coweight playing the role of
 `2ρ∨`), `antipodeSqEquiv` acts as inner conjugation `x ↦ K_(-c) * x * K_c`. -/
 theorem antipodeSqEquiv_apply_of_forall_pairing_root_eq {D : CartanDatum ι X Y} {q : K} {c : Y}
     (hc : ∀ i, D.pairing (D.root i) c = 2 * (D.symmetrizer i : ℤ))
     (x : QuantizedEnvelopingAlgebra D q) :
     antipodeSqEquiv D q x = k D q (-c) * x * k D q c := by
-  have h : (antipodeSqEquiv D q).toAlgHom = kConjAlgHom D q c := by
-    apply hom_ext <;> intro a
-    · rw [AlgEquiv.coe_toAlgHom, antipodeSqEquiv_e, kConjAlgHom_apply]
-      have he := k_mul_e_mul_k_neg D q (-c) a
+  have h : antipodeSqEquiv D q =
+      MulSemiringAction.toAlgAut (ConjAct (QuantizedEnvelopingAlgebra D q)ˣ) K
+        (QuantizedEnvelopingAlgebra D q)
+        (ConjAct.toConjAct (kUnitsHom D q (.ofAdd (-c)))) := by
+    apply AlgEquiv.coe_toAlgHom_injective
+    apply hom_ext <;> intro a <;>
+      simp only [AlgEquiv.coe_toAlgHom, antipodeSqEquiv_e, antipodeSqEquiv_f, antipodeSqEquiv_k,
+        MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply,
+        ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, val_kUnitsHom, val_inv_kUnitsHom,
+        neg_neg]
+    · have he := k_mul_e_mul_k_neg D q (-c) a
       rw [neg_neg, map_neg, hc a, zpow_neg_two_mul_symmetrizer] at he
       exact he.symm
-    · rw [AlgEquiv.coe_toAlgHom, antipodeSqEquiv_f, kConjAlgHom_apply]
-      have hf := k_mul_f_mul_k_neg D q (-c) a
+    · have hf := k_mul_f_mul_k_neg D q (-c) a
       rw [neg_neg, map_neg, neg_neg, hc a, zpow_two_mul_symmetrizer] at hf
       exact hf.symm
-    · simp [neg_add_cancel_comm]
-  simpa only [AlgEquiv.coe_toAlgHom, kConjAlgHom_apply] using AlgHom.congr_fun h x
+    · rw [← k_add, ← k_add, neg_add_cancel_comm]
+  simpa [ConjAct.units_smul_def] using AlgEquiv.congr_fun h x
 
 /-- When `c ∈ Y` satisfies `⟨αᵢ, c⟩ = 2 dᵢ` for every simple root `i`, the squared antipode
 `S(S(x))` equals `K_(-c) * x * K_c`. -/

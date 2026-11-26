@@ -158,15 +158,6 @@ theorem f_mul_kUnit_zpow (b : ℤ) :
           ← zpow_add₀ (Fact.out : q ≠ 0)]
 
 variable (q) in
-/-- Conjugation by an integer power of `K` rescales `F` by `q ^ (-(2 * b))`. -/
-theorem kUnit_zpow_mul_f_mul_zpow_neg (b : ℤ) :
-    ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * f q *
-        ((kUnit q ^ (-b) : (UqSl2 q)ˣ) : UqSl2 q) =
-      q ^ (-(2 * b)) • f q := by
-  rw [mul_assoc, f_mul_kUnit_zpow q (-b), mul_smul_comm]
-  simp [← mul_assoc, ← Units.val_mul]
-
-variable (q) in
 /-- Moving a natural power of `F` past an integer power of `K`. -/
 theorem f_pow_mul_kUnit_zpow (a : ℕ) (b : ℤ) :
     f q ^ a * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
