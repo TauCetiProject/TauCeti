@@ -810,9 +810,7 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall
   have hK (v : ℂ) : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
       (uncurry fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v)
       (univ ×ˢ univ) :=
-    (((contMDiff_negativePlanePerturbation hH hHs).comp
-      ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd)).clm_apply contMDiff_const).contMDiffOn
+    (contMDiff_negativePlanePerturbation_apply hH hHs v).contMDiffOn
   -- The curvature is integrable over the truncation and vanishes on the rest of the disc.
   have hRi : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
       (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)

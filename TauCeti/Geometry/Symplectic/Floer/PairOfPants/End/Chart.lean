@@ -81,6 +81,8 @@ apply to all three ends.
   `TauCeti.Floer.mdifferentiableAt_pairOfPantsPerturbation_target`: for `C¹` Hamiltonians on a
   manifold, the components of the perturbation are differentiable at points of `S` in the domain
   and in the target point separately.
+* `TauCeti.Floer.contMDiffAt_uncurry_pairOfPantsPerturbation`: for `Cⁿ` Hamiltonians on a manifold,
+  the components of the perturbation in real coordinates are `Cⁿ` jointly on `S × M`.
 * `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
   the end chart sends the part `±s > 0` of the end into `S` and preserves the longitudinal
   coordinate.
@@ -521,6 +523,19 @@ theorem mdifferentiableAt_pairOfPantsPerturbation_target {H : Puncture → ℝ �
       (f := fun y : M ↦ (Complex.equivRealProdCLM.symm z, y)) x
       (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply contMDiffAt_const).mdifferentiableAt
     one_ne_zero
+
+/-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are `C^n`
+jointly in the domain point and the target point, for `C^n` Hamiltonians on a manifold. The
+vector-space case is `contDiffAt_uncurry_pairOfPantsPerturbation`. -/
+theorem contMDiffAt_uncurry_pairOfPantsPerturbation {n : ℕ∞} {H : Puncture → ℝ → M → ℝ}
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q))) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
+    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n
+      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v) (z, x) :=
+  ((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp
+    (z, x) ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
+      contMDiff_snd).contMDiffAt).clm_apply contMDiffAt_const
 
 end Manifold
 

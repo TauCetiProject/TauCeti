@@ -313,9 +313,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappi
   have hK (v : ℂ) (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :
       ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
         (uncurry fun z x ↦ pairOfPantsPerturbation Hb (equivRealProdCLM.symm z) x v) (z, x) :=
-    (((contMDiffAt_pairOfPantsPerturbation hHb hHbs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
-      ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd).contMDiffAt).clm_apply contMDiffAt_const).of_le (by norm_num)
+    (contMDiffAt_uncurry_pairOfPantsPerturbation hHb hHbs hz x v).of_le (by norm_num)
   have hX (v : ℂ) : ContinuousOn (fun p : (ℝ × ℝ) × M ↦ (⟨p.2, ω.hamiltonianVectorField
       (fun y ↦ pairOfPantsPerturbation Hb (equivRealProdCLM.symm p.1) y v) p.2⟩ :
         TangentBundle I M)) (thricePuncturedSphereReal ×ˢ univ) := fun p hp ↦
@@ -327,31 +325,18 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappi
     (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK Complex.I)) hJt hc hJc hBs hBt
   refine ⟨δ, hδ, fun Ω L u Jk E₀ hΩ hΩD hLR hu hfl hJΩ hE ↦ ?_⟩
   have hΩS : Ω ⊆ thricePuncturedSphereReal := hΩD.trans hDS
-  -- On the truncation `S_R` the capping datum is the pair-of-pants datum of `Hb`.
-  have hKΩ (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) (v : ℂ) :
-      (fun x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
-        (equivRealProdCLM.symm z) x v) =
-        fun x ↦ pairOfPantsPerturbation Hb (equivRealProdCLM.symm z) x v :=
-    funext fun x ↦ by
-      rw [plumbedPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation (by decide) (by simp)
-        (hLR k) (hDT (hΩD hz))]
-  refine hconv hΩ hΩD (fun k ↦ (hu k).mono fun z hz ↦ (hΩS hz).1) (fun k z hz ↦ ?_)
+  -- On the truncation `S_R` the capping datum is the pair-of-pants datum of `Hb`, so `uₖ` solves
+  -- the Floer equation of the pair-of-pants datum on `Ω`, with energy at most `E` there.
+  refine hconv hΩ hΩD (fun k ↦ (hu k).mono fun z hz ↦ (hΩS hz).1)
+    (fun k z hz ↦ hJΩ k z hz ▸ ω.perturbedMFDeriv_plumbedPerturbation_of_mem_truncation
+      (Ha := Pi.single inf (Hb one)) (Hb := Hb) (q := one) (by decide) (by simp) (hLR k) (u k)
+      (hDT (hΩD hz)) ▸ hfl k z (hΩS hz).1)
     (fun k ↦ (((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal
       (((hu k).mono fun _ (hz : _ ∈ thricePuncturedSphereReal) ↦ hz.1).of_le (by norm_num))
-      (hX 1) (hX Complex.I)).mono hDS).integrableOn_compact hD).mono_set hΩD) fun k ↦ ?_
-  · -- `uₖ` solves the Floer equation of the pair-of-pants datum on `Ω`.
-    have h := hfl k z (hΩS hz).1
-    rwa [hJΩ k z hz, ω.perturbedMFDeriv_congr_perturbation
-      (Ks' := fun z x ↦ pairOfPantsPerturbation Hb (equivRealProdCLM.symm z) x 1)
-      (Kt' := fun z x ↦ pairOfPantsPerturbation Hb (equivRealProdCLM.symm z) x Complex.I) _
-      (hKΩ k hz 1) (hKΩ k hz Complex.I)] at h
-  · -- Its energy over `Ω` is its energy for the capping datum, at most `E`.
-    rw [setIntegral_congr_fun hΩ.measurableSet fun z hz ↦ ω.floerEnergyDensity_congr_perturbation
-      (Ks' := fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
-        (equivRealProdCLM.symm z) x 1)
-      (Kt' := fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
-        (equivRealProdCLM.symm z) x Complex.I) _ (hKΩ k hz 1).symm (hKΩ k hz Complex.I).symm]
-    exact setIntegral_le_of_lintegral_ofReal_le (hE k) _
+      (hX 1) (hX Complex.I)).mono hDS).integrableOn_compact hD).mono_set hΩD) fun k ↦
+    ω.setIntegral_floerEnergyDensity_pairOfPantsPerturbation_le (Ha := Pi.single inf (Hb one))
+      (Hb := Hb) (q := one) (by decide) (by simp) (hLR k) hΩ.measurableSet (hΩD.trans hDT)
+      (hE k)
 
 /-- **Compactness at the long-neck end of the capping family, in a closed manifold.** Combine
 the settings of `exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_capping_pants`,
