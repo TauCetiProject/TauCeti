@@ -170,7 +170,7 @@ theorem ofFn_mem_source_and_symOpenPartialHomeomorph_ofFn_eq {p : Fin n → α}
   have hsum : Sym.ofFn w =
       Sym.sumSubtype V (fun _ => 1) hm fun i => Sym.ofFn fun _ => ⟨w i, hw i⟩ := by
     rw [Sym.sumSubtype_ofFn hm (Equiv.sigmaUnique (Fin n) fun _ => Fin 1)]
-    rfl
+    simp [Equiv.sigmaUnique_symm_apply]
   rw [hsum, symOpenPartialHomeomorph_source, symOpenPartialHomeomorph_apply]
   refine ⟨Set.mem_range_self _, funext fun j => ?_⟩
   rw [piSigmaConstHomeomorph_apply, Equiv.sigmaUnique_symm_apply]

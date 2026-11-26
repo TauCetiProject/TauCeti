@@ -171,7 +171,6 @@ theorem natCard_preimage_fst_mem {Y : Type*} {v : Y → Sym α n} {y : Y}
       right_inv _ := rfl }
   rw [Nat.card_congr (e.trans (Equiv.subtypeEquivRight fun z =>
       (Multiset.mem_toFinset (s := (v y : Multiset α))).symm)),
-    Nat.card_eq_fintype_card, Fintype.card_coe, Multiset.toFinset_card_of_nodup hy]
-  exact (v y).property
+    Nat.card_eq_fintype_card, Fintype.card_coe, Multiset.toFinset_card_of_nodup hy, Sym.card_coe]
 
 end Sym
