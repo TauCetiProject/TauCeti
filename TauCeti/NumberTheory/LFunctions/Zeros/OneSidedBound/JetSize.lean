@@ -32,7 +32,7 @@ public section
 open Finset Real Set
 open scoped Nat
 
-namespace TauCeti
+namespace TauCeti.OneSidedBound
 
 /-- The logarithmic size charged to a derivative of order `j` at scale `exp c`. -/
 noncomputable def jetSize (c : ℝ) (j : ℕ) : ℝ := log (j ! : ℝ) + j * c
@@ -204,4 +204,4 @@ theorem mul_pow_five_le_mul_of_separated_scales {l F x m k : ℝ}
     _ = m * (exp (-2) * x ^ 5) := mul_assoc ..
     _ ≤ m * k := mul_le_mul_of_nonneg_left hk hm
 
-end TauCeti
+end TauCeti.OneSidedBound
