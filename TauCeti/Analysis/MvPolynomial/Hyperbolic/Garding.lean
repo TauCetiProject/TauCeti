@@ -178,9 +178,9 @@ private theorem IsHyperbolic.eval_I_smul_add_smul_ne_zero (hp : IsHyperbolic p m
   rw [hl, ofReal_comp_add_ofReal_smul] at h
   replace h := (map_eq_zero ofRealHom).1 ((map_eval ofRealHom _ p).trans h)
   have hre : (α * I / τ).re < 0 := not_le.1 fun hre ↦ mem_gardingCone.1 hb _ hre h
-  have := congrArg Complex.im (show α * I = (α * I / τ).re * τ by rw [← hl, div_mul_cancel₀ _ hτ0])
-  simp only [mul_im, ofReal_re, I_im, mul_one, ofReal_im, I_re, mul_zero, add_zero,
-    zero_mul] at this
+  have : α = (α * I / τ).re * τ.im := by
+    simpa using congrArg Complex.im (show α * I = (α * I / τ).re * τ by
+      rw [← hl, div_mul_cancel₀ _ hτ0])
   nlinarith
 
 /-- By homogeneity, for `p(b) ≠ 0` the zeros `τ` of `p(s • x + α i • a + τ • b)` are bounded
@@ -230,8 +230,7 @@ private theorem IsHyperbolic.eval_add_smul_ne_zero_of_mem_gardingCone (hp : IsHy
       apply Complex.ext <;> simp [hτ]
     intro h
     have := hp.im_eq_zero_of_eval_eq_zero (s • x + τ.re • b) (hpt ▸ h)
-    rw [mul_im, ofReal_re, ofReal_im, I_re, I_im, mul_one, zero_mul, add_zero] at this
-    exact hα.ne' this
+    simp [hα.ne'] at this
   have hF : Continuous fun z : ℝ × ℂ ↦
       eval ((z.1 • ofReal ∘ x + (α * I) • ofReal ∘ a) + z.2 • ofReal ∘ b) (map ofRealHom p) :=
     (continuous_eval _).comp (by fun_prop)
