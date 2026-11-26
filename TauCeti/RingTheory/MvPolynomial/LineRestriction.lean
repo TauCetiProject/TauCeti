@@ -81,18 +81,15 @@ theorem eval_aeval_C_add_C_mul_X (p : MvPolynomial σ R) (a v : σ → R) (t : R
 
 /-- Evaluation of the affine-line restriction after a change of coefficients `f` is evaluation of
 the polynomial with changed coefficients at the corresponding point. -/
+@[simp]
 theorem eval_map_aeval_C_add_C_mul_X (f : R →+* S) (p : MvPolynomial σ R) (a v : σ → R)
     (t : S) :
     ((aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p).map f).eval t =
       eval ((fun i ↦ f (a i)) + t • fun i ↦ f (v i)) (p.map f) := by
-  induction p using MvPolynomial.induction_on with
-  | C c => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp =>
-    simp only [map_mul, aeval_X, Polynomial.map_mul, Polynomial.eval_mul, hp, map_X, eval_X,
-      Polynomial.map_add, Polynomial.map_C, Polynomial.map_X, Polynomial.eval_add,
-      Polynomial.eval_C, Polynomial.eval_X, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-    ring
+  rw [← Polynomial.coe_mapRingHom, map_aeval_eq_aeval_map f _ (by ext; simp)]
+  simp only [Polynomial.coe_mapRingHom, Polynomial.map_add, Polynomial.map_mul, Polynomial.map_C,
+    Polynomial.map_X]
+  exact eval_aeval_C_add_C_mul_X (p.map f) (fun i ↦ f (a i)) (fun i ↦ f (v i)) t
 
 /-- Restriction to an affine line, after changing coefficients, has degree at most the original
 total degree. -/

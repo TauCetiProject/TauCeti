@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Analysis.Convex.PathConnected
 public import TauCeti.Analysis.Complex.Conformal.Hurwitz
-public import TauCeti.Analysis.MvPolynomial.Complexification
+public import TauCeti.Analysis.MvPolynomial.Complexification.Basic
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic
 public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
@@ -86,8 +86,7 @@ private theorem differentiable_and_not_forall_eq_zero {f : ℂ → ℂ}
     (Set.infinite_of_injective_forall_mem (f := fun n : ℕ ↦ ((n : ℂ) + 1) * I)
       (fun n k hnk ↦ ?_) fun n ↦ h _ ?_)⟩
   · simpa using hnk
-  · simp only [mem_ofPred_eq, mul_im, I_re, mul_zero, I_im, mul_one, add_re, natCast_re, one_re]
-    positivity
+  · simpa using n.cast_add_one_pos
 
 /-- For continuous families `f l z = z ^ m * g l z⁻¹` (`z ≠ 0`) with `g l 0 ≠ 0`, the set of
 parameters `l` for which `f l` has no zero in the closed upper half-plane is open: the closed
@@ -112,16 +111,15 @@ private theorem isOpen_setOf_forall_im_nonneg_ne_zero {m : ℕ} {f g : ℝ → �
       refine hl₀ u⁻¹ ?_ (by
         rw [hfg l₀ (inv_ne_zero hu0), inv_inv]
         exact mul_eq_zero_of_right _ hgu)
-      rw [inv_im, neg_div, le_neg, neg_zero]
-      exact div_nonpos_of_nonpos_of_nonneg hu.1 (normSq_nonneg u)
+      rw [inv_im]
+      exact div_nonneg (neg_nonneg.2 hu.1) (normSq_nonneg u)
   filter_upwards [e₁, e₂] with l h₁ h₂ z hz
   by_cases hz1 : ‖z‖ ≤ 1
   · exact h₁ z ⟨hz, mem_closedBall_zero_iff.2 hz1⟩
   · have hz0 : z ≠ 0 := by rintro rfl; simp at hz1
     rw [hfg l hz0]
     refine mul_ne_zero (pow_ne_zero _ hz0) (h₂ z⁻¹ ⟨?_, ?_⟩)
-    · rw [mem_ofPred_eq, inv_im, neg_div, neg_nonpos]
-      exact div_nonneg hz (normSq_nonneg z)
+    · simpa [inv_im, neg_div] using div_nonneg hz (normSq_nonneg z)
     · rw [mem_closedBall_zero_iff, norm_inv]
       exact inv_le_one_of_one_le₀ (not_le.1 hz1).le
 
@@ -141,9 +139,8 @@ private theorem isClosed_setOf_forall_im_nonneg_ne_zero {f : ℝ → ℂ → ℂ
   exact TauCeti.hurwitz_forall_ne hΩ (convex_halfSpace_im_gt 0).isPreconnected
     (Eventually.of_forall fun l ↦
       (differentiable_and_not_forall_eq_zero (hpoly l)).1.differentiableOn)
-    ((TauCeti.tendstoLocallyUniformly_of_forall_continuousAt (Φ := fun z l ↦ f l z)
-      (fun _ ↦ (hf.comp continuous_swap).continuousAt) (p := id)
-      (tendsto_id.mono_left nhdsWithin_le_nhds)).tendstoLocallyUniformlyOn)
+    (hf.tendstoLocallyUniformly_of_tendsto
+      (tendsto_id'.2 nhdsWithin_le_nhds)).tendstoLocallyUniformlyOn
     ((eventually_mem_nhdsWithin (s := S) (a := l)).mono fun l' (hl' : l' ∈ S) z hz ↦
       hl' z (le_of_lt hz)).frequently
     (differentiable_and_not_forall_eq_zero (hpoly l)).2 z hzpos
@@ -161,9 +158,9 @@ private theorem exists_mem_ball_eq_zero_of_mem_closure {α : Type*} [Topological
     isPreconnected_univ (F := G) (g := G y) (l := 𝓝[s] y)
     (Eventually.of_forall fun w ↦
       (differentiable_and_not_forall_eq_zero (hpoly w)).1.differentiableOn)
-    ((TauCeti.tendstoLocallyUniformly_of_forall_continuousAt (Φ := fun z l ↦ G l z)
-      (fun _ ↦ (hG.comp continuous_swap).continuousAt) (p := id)
-      (tendsto_id.mono_left nhdsWithin_le_nhds)).tendstoLocallyUniformlyOn) (mem_univ z₀) hz₀
+    (hG.tendstoLocallyUniformly_of_tendsto
+      (tendsto_id'.2 nhdsWithin_le_nhds)).tendstoLocallyUniformlyOn
+    (mem_univ z₀) hz₀
     (fun h ↦ (differentiable_and_not_forall_eq_zero (hpoly y)).2 fun z _ ↦ h z (mem_univ z))
     hε
   obtain ⟨w, ⟨z, ⟨-, hz⟩, hGz⟩, hw⟩ := (hev.and self_mem_nhdsWithin).exists
@@ -198,9 +195,7 @@ private theorem eval_map_I_smul_add_smul_ne_zero {z : ℂ} (hz : 0 ≤ z.im) :
   rw [heq, hP.eval_smul]
   refine mul_ne_zero (pow_ne_zero _ hz0) ?_
   by_cases ht : (I / z).im = 0
-  · have hre : 0 ≤ (I / z).re := by
-      rw [div_re, I_re, I_im, zero_mul, one_mul, zero_div, zero_add]
-      exact div_nonneg hz (normSq_nonneg z)
+  · have hre : 0 ≤ (I / z).re := by simpa [div_re] using div_nonneg hz (normSq_nonneg z)
     rw [eval_map_ofReal_add_smul_of_im_eq_zero _ _ _ ht]
     exact_mod_cast (mem_gardingCone.1 hb) _ hre
   · exact hp.eval_map_ofReal_add_smul_ne_zero b ht
@@ -273,9 +268,8 @@ private theorem eval_map_ofReal_add_smul_ne_zero_of_im_pos (x : σ → ℝ) {z :
     (g := F 0) (l := 𝓝[>] (0 : ℝ))
     (Eventually.of_forall fun α ↦ (differentiable_and_not_forall_eq_zero
       (exists_eval_map_add_smul_eq hp hb _)).1.differentiableOn)
-    ((TauCeti.tendstoLocallyUniformly_of_forall_continuousAt (Φ := fun z l ↦ F l z)
-      (fun _ ↦ (hF.comp continuous_swap).continuousAt) (p := id)
-      (tendsto_id.mono_left nhdsWithin_le_nhds)).tendstoLocallyUniformlyOn)
+    (hF.tendstoLocallyUniformly_of_tendsto
+      (tendsto_id'.2 nhdsWithin_le_nhds)).tendstoLocallyUniformlyOn
     (v := 0)
     ((eventually_mem_nhdsWithin (s := Ioi 0) (a := 0)).mono fun α hα ↦ hpos α hα).frequently
     (differentiable_and_not_forall_eq_zero (exists_eval_map_add_smul_eq hp hb _)).2 z hz
