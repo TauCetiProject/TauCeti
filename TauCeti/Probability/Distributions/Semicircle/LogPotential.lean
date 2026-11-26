@@ -382,7 +382,11 @@ private theorem tendsto_primitive_re_boundary {x : ℝ} (hx : x ∈ Icc (-2) 2) 
       (𝓝[>] 0) (𝓝 (x ^ 2 / 4 - 1 / 2)) := by
   let c : ℂ := ((-x / 2 : ℝ) : ℂ) + (Real.sqrt (1 - x ^ 2 / 4) : ℂ) * Complex.I
   have hrad : 0 ≤ 1 - x ^ 2 / 4 := by
-    linarith [sq_le_four_of_mem_Icc hx]
+    have hx2 : x ^ 2 ≤ 4 := by
+      have h := sq_le_sq' hx.1 hx.2
+      norm_num at h
+      exact h
+    linarith
   have hcSq : Complex.normSq c = 1 := by
     rw [Complex.normSq_apply]
     simp [c]

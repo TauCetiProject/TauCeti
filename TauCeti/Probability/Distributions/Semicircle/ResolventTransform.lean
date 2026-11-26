@@ -494,12 +494,6 @@ private theorem standard_boundary_quadratic_bound {a b q x : ℝ}
   rw [hfactor]
   exact mul_le_mul_of_nonneg_left hfactor_le hq
 
-/-- A point in the support of the standard semicircle law has square at most four. -/
-theorem sq_le_four_of_mem_Icc {x : ℝ} (hx : x ∈ Icc (-2) 2) : x ^ 2 ≤ 4 := by
-  have hleft : 0 ≤ 2 + x := by linarith [hx.1]
-  have hright : 0 ≤ 2 - x := by linarith [hx.2]
-  nlinarith [mul_nonneg hleft hright]
-
 private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
     (hx : x ∈ Icc (-2) 2) (hε : 0 < ε) :
     (1 - standardSemicircleResolventNormSq x ε) ^ 2 ≤ 2 * ε := by
@@ -517,7 +511,10 @@ private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
   have hq_lt : q < 1 := by
     have := standard_boundary_normSq_lt_one (x := x) hε
     simpa [q] using this
-  have hx2 : x ^ 2 ≤ 4 := sq_le_four_of_mem_Icc hx
+  have hx2 : x ^ 2 ≤ 4 := by
+    have h := sq_le_sq' hx.1 hx.2
+    norm_num at h
+    exact h
   have hbound_b : q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
     exact standard_boundary_quadratic_bound hqdef hreal hx2
   have himag_sq : b ^ 2 * (1 - q) ^ 2 = ε ^ 2 * q ^ 2 := by
