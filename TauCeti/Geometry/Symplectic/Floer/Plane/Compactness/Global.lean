@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Compactness.Closed
 import TauCeti.Analysis.Complex.EquivRealProd
+import TauCeti.Geometry.Symplectic.Floer.Compactness.EndWindow
 import TauCeti.Data.ENNReal.NatCastDiv
 import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -89,31 +90,12 @@ open Floer Floer.PSSPlane
 
 /-! ### The windows of the plane -/
 
-/-- The end windows `(T + 1, T + 3) × (c - 2/5, c + 2/5)` of the end coordinates, with `c = 0` for
-`b = false` and `c = 1/2` for `b = true`. -/
-private noncomputable def endWindow (T : ℝ) (b : Bool) : Set (ℝ × ℝ) :=
-  Ioo (T + 1) (T + 3) ×ˢ
-    Ioo ((bif b then 1 / 2 else 0) - 2 / 5) ((bif b then 1 / 2 else 0) + 2 / 5)
-
 /-- The windows covering the plane: the disc `‖w‖ < exp (2π (T + 2))`, and the images of the end
 windows under `y ↦ φ(y + (m, 0))`, for `m ∈ ℕ`, where `φ` is the end lift of the positive plane. -/
 private noncomputable def window (T : ℝ) : Option (ℕ × Bool) → Set (ℝ × ℝ)
   | none => {z | ‖equivRealProdCLM.symm z‖ < Real.exp (2 * π * (T + 2))}
   | some (m, b) =>
     (fun y ↦ realChart positive.cylindricalEndLift (y + ((m : ℝ), 0))) '' endWindow T b
-
-/-- The translates by `(m, 0)`, `m ≥ 0`, of the closed end windows lie beyond `T` in a band of
-angular width one. -/
-private theorem add_mem_Ioi_prod_Ioo {T m : ℝ} (hm : 0 ≤ m) {b : Bool} {y : ℝ × ℝ}
-    (hy : y ∈ Icc (T + 1) (T + 3) ×ˢ
-      Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5) ((bif b then 1 / 2 else 0) + 2 / 5)) :
-    y + (m, 0) ∈ Ioi T ×ˢ
-      Ioo ((bif b then 1 / 2 else 0) - 1 / 2) ((bif b then 1 / 2 else 0) - 1 / 2 + 1) := by
-  obtain ⟨⟨hs, -⟩, ht₁, ht₂⟩ := hy
-  refine ⟨?_, ?_, ?_⟩
-  · rw [Prod.fst_add, mem_Ioi]; linarith
-  · rw [Prod.snd_add, add_zero]; linarith
-  · rw [Prod.snd_add, add_zero]; linarith
 
 /-- The translated end lift `y ↦ φ(y + (m, 0))` of the positive plane is an open map. -/
 private theorem isOpenMap_realChart_positive_add (m : ℝ) :
@@ -127,37 +109,20 @@ private theorem exists_mem_image_realChart_positive_add {T : ℝ} {z : ℝ × �
     (hz : Real.exp (2 * π * (T + 2)) ≤ ‖equivRealProdCLM.symm z‖) :
     ∃ (m : ℕ) (b : Bool),
       z ∈ (fun y ↦ realChart positive.cylindricalEndLift (y + ((m : ℝ), 0))) '' endWindow T b := by
-  obtain ⟨⟨s, t⟩, hs, ⟨ht₀, ht₁⟩, hz'⟩ := positive.exists_realChart_cylindricalEndLift_eq
-    (T := T + 3 / 2) ((Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])).trans_le hz)
+  obtain ⟨⟨s, t⟩, hs, -, hz'⟩ := positive.exists_realChart_cylindricalEndLift_eq
+    (T := T + 1) ((Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])).trans_le hz)
   rw [endSign_positive, one_mul] at hs
-  -- Translate by the integer part of `s - (T + 3/2)`.
-  set m := ⌊s - (T + 3 / 2)⌋₊
-  have hm₁ : (m : ℝ) ≤ s - (T + 3 / 2) := Nat.floor_le (by linarith)
-  have hm₂ : s - (T + 3 / 2) < m + 1 := Nat.lt_floor_add_one _
-  -- Shift the angular coordinate by `0` or `1` into one of the two windows.
-  have hy (b : Bool) (k : ℝ) (hk : realChart positive.cylindricalEndLift (s, t - k) = z)
-      (h₁ : (bif b then 1 / 2 else 0) - 2 / 5 < t - k)
-      (h₂ : t - k < (bif b then 1 / 2 else 0) + 2 / 5) : ∃ (m : ℕ) (b : Bool),
-        z ∈ (fun y ↦ realChart positive.cylindricalEndLift (y + ((m : ℝ), 0))) ''
-          endWindow T b :=
-    ⟨m, b, (s - m, t - k), ⟨⟨by linarith, by linarith⟩, h₁, h₂⟩, by simpa using hk⟩
-  have hk₀ : realChart positive.cylindricalEndLift (s, t - 0) = z := by rwa [sub_zero]
-  have hk₁ : realChart positive.cylindricalEndLift (s, t - 1) = z := by
-    rwa [← realChart_positive_add_one, sub_add_cancel]
-  by_cases h₁ : t < 2 / 5
-  · exact hy false 0 hk₀ (by simp only [Bool.cond_false]; linarith)
-      (by simp only [Bool.cond_false]; linarith)
-  by_cases h₂ : t < 9 / 10
-  · exact hy true 0 hk₀ (by simp only [Bool.cond_true]; linarith)
-      (by simp only [Bool.cond_true]; linarith)
-  · exact hy false 1 hk₁ (by simp only [Bool.cond_false]; linarith)
-      (by simp only [Bool.cond_false]; linarith)
+  -- Translate `(s, t)` into an end window, using that `φ` has period one in `t`.
+  obtain ⟨m, k, b, hy⟩ := exists_sub_mem_endWindow hs t
+  have hper : Periodic (fun t ↦ realChart positive.cylindricalEndLift (s, t)) 1 :=
+    realChart_positive_add_one s
+  exact ⟨m, b, (s - m, t - k), hy, by simpa [hz'] using hper.sub_int_mul_eq k (x := t)⟩
 
 /-- The windows are open, since the end lift is an open map. -/
 private theorem isOpen_window (T : ℝ) (i : Option (ℕ × Bool)) : IsOpen (window T i) := by
   rcases i with _ | ⟨m, b⟩
   · exact isOpen_lt (continuous_norm.comp equivRealProdCLM.symm.continuous) continuous_const
-  · exact isOpenMap_realChart_positive_add m _ (isOpen_Ioo.prod isOpen_Ioo)
+  · exact isOpenMap_realChart_positive_add m _ (isOpen_endWindow T b)
 
 /-- The disc window lies in the closed disc `‖w‖ ≤ exp (2π (T + 2))`. -/
 private theorem window_none_subset (T : ℝ) :
@@ -400,18 +365,17 @@ private theorem exists_pos_forall_window (hω : ω.IsNondegenerate) (p : PSSPlan
   · have hEb (k : ℕ) := nonneg_and_lintegral_floerEnergyDensity_le hω p hH hHs₁ hB hJt
       ((hu k).of_le (by norm_num)) (hfl k) (ha k) (hA k)
     have hΩT (y : ℝ × ℝ) (hy : y ∈ endWindow T b) :=
-      add_mem_Ioi_prod_Ioo (T := T) (Nat.cast_nonneg m)
-        (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self hy)
+      add_mem_Ioi_prod_Ioo (T := T) (Nat.cast_nonneg m) (endWindow_subset_Icc_prod_Icc T b hy)
     have hδb : min δc (min (δe false) (δe true)) ≤ δe b :=
       (min_le_right _ _).trans (by cases b; exacts [min_le_left _ _, min_le_right _ _])
     obtain ⟨φ, hφ, Z, hZΩ, -, hcz, -, v, -, hv, -⟩ := hconve b (Ω := endWindow T b)
-      (u := u ∘ ψ) (R := fun _ ↦ (m : ℝ)) (isOpen_Ioo.prod isOpen_Ioo)
-      (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self) (fun _ ↦ Nat.cast_nonneg m)
+      (u := u ∘ ψ) (R := fun _ ↦ (m : ℝ)) (isOpen_endWindow T b)
+      (endWindow_subset_Icc_prod_Icc T b) (fun _ ↦ Nat.cast_nonneg m)
       (fun k ↦ hu _) (fun k ↦ hfl _) (hEb 0).1 fun k ↦ (hEb _).2
     exact ⟨φ, hφ, _, eventually_ofReal_le_withDensity_image_realChart_positive_add p hH hHs₁
-      (fun k ↦ (hu (ψ k)).mdifferentiable (by norm_num)) hT (isOpen_Ioo.prod isOpen_Ioo) hΩT
+      (fun k ↦ (hu (ψ k)).mdifferentiable (by norm_num)) hT (isOpen_endWindow T b) hΩT
       (fun z hz ε hε ↦ (hcz z hz ε hε).mono fun n hn ↦ hδb.trans hn),
-      exists_tendstoLocallyUniformlyOn_image_realChart_positive_add (isOpen_Ioo.prod isOpen_Ioo)
+      exists_tendstoLocallyUniformlyOn_image_realChart_positive_add (isOpen_endWindow T b)
         hΩT hZΩ (f := fun n ↦ e ∘ u (ψ (φ n))) hv⟩
 
 /-! ### The whole plane -/
