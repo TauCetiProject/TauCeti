@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
@@ -45,6 +46,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   most `n` of a `C^n` map are bounded by one constant.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen`: the same for the derivatives of a
   map that is `C^n` on an open set, with a nonnegative constant.
+* `ContDiff.exists_norm_iteratedDeriv_le_of_isCompact`: the same for the iterated derivatives of
+  order at most `n` of a `C^n` function of one variable on a compact set.
 * `IsCompact.exists_norm_fderiv_le`: the derivative of a map that is `C^1` at every point of a
   compact set is bounded on that set.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen`: for a family `f p` that is
@@ -145,6 +148,17 @@ theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen {u : E → F} {s
   refine ⟨max A 0, le_max_right _ _, fun i hi z hz ↦ ?_⟩
   rw [← iteratedFDerivWithin_of_isOpen i hs (hKs hz)]
   exact (hA i hi z hz).trans (le_max_left _ _)
+
+/-- On a compact set `K`, the iterated derivatives of order at most `n` of a `C^n` function of one
+variable are bounded by a single constant. -/
+theorem ContDiff.exists_norm_iteratedDeriv_le_of_isCompact {f : 𝕜 → F} {K : Set 𝕜} {n : ℕ}
+    (hf : ContDiff 𝕜 n f) (hK : IsCompact K) :
+    ∃ M : ℝ≥0, ∀ i ≤ n, ∀ x ∈ K, ‖iteratedDeriv i f x‖ ≤ M := by
+  obtain ⟨A, -, hA⟩ :=
+    hf.contDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen isOpen_univ hK (subset_univ K)
+  refine ⟨A.toNNReal, fun i hi x hx ↦ ?_⟩
+  rw [← norm_iteratedFDeriv_eq_norm_iteratedDeriv]
+  exact (hA i hi x hx).trans (Real.le_coe_toNNReal A)
 
 /-- The derivatives of order at most `n` of a compactly supported `C^n` map are bounded by a
 single constant. Mathlib's `HasCompactSupport.exists_bound_iteratedFDeriv` assumes the map

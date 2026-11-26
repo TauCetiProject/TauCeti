@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Operator
-import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
+import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Holder
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -15,29 +17,29 @@ import TauCeti.Topology.MetricSpace.Holder
 
 Let `α ≤ 1`, `k : ℕ`, and let `g : ℝ → F` be of class `C^{⌊k/2⌋+1}`. The map `(x, t) ↦ g t` on a
 nondegenerate closed time slab `E × [a, b]` lies in the bounded parabolic Hölder space
-`C_{par,b}^{k+α}` (`TauCeti.ParabolicCkHolderSpace.compTime`). Its mixed derivatives are
+`C_{par,b}^{k+α}` (`TauCeti.ParabolicCkHolderSpace.compSlabTime`). Its mixed derivatives are
 `D_t^r D_x^0 = g⁽ʳ⁾` and `D_t^r D_x^(m+1) = 0`, and its norm is at most `9 (k + 1)² M` whenever
-`M` bounds `g, g', …, g⁽⌊k/2⌋⁺¹⁾` on `[a, b]` (`TauCeti.ParabolicCkHolderSpace.norm_compTime_le`),
-independently of the length of the slab. In the parabolic scaling one time derivative counts as
-two spatial ones, which is why `⌊k/2⌋ + 1` derivatives of `g` suffice: the top-order field
-`g^(k/2)` (for even `k`) and the time slices of `g^((k-1)/2)` (for odd `k`) are Lipschitz in time,
-hence Hölder for the parabolic distance.
+`M` bounds `g, g', …, g⁽⌊k/2⌋⁺¹⁾` on `[a, b]`
+(`TauCeti.ParabolicCkHolderSpace.norm_compSlabTime_le`), independently of the length of the slab.
+In the parabolic scaling one time derivative counts as two spatial ones, which is why `⌊k/2⌋ + 1`
+derivatives of `g` suffice: the top-order field `g^(k/2)` (for even `k`) and the time slices of
+`g^((k-1)/2)` (for odd `k`) are Lipschitz in time, hence Hölder for the parabolic distance.
 
 This is the counterpart of the time-independent lift `TauCeti.CkHolderSpace.compSlabSpaceL`. Its
 main use is localization in time: multiplying a solution of a parabolic equation by a cutoff
 `χ(t)` vanishing near the initial time removes the initial values, and the equation for the
 product only changes by the term `χ' u`
-(`TauCeti.ParabolicCkHolderSpace.parabolicOperatorL_compParabolicCkHolder₂_lsmul_compTime_apply`):
+(`ParabolicCkHolderSpace.parabolicOperatorL_compParabolicCkHolder₂_lsmul_compSlabTime_apply`):
 
 `P (χ u) = χ P u + χ' u`.
 
 ## Main declarations
 
-* `TauCeti.ParabolicCkHolderSpace.compTime`: the map `(x, t) ↦ g t` in `C_{par,b}^{k+α}`, with its
-  values `compTime_apply` and fields `mixedDerivL_compTime_zero_apply` and
-  `mixedDerivL_compTime_succ`.
-* `TauCeti.ParabolicCkHolderSpace.norm_compTime_le`: its norm bound.
-* `TauCeti.ParabolicCkHolderSpace.parabolicOperatorL_compParabolicCkHolder₂_lsmul_compTime_apply`:
+* `TauCeti.ParabolicCkHolderSpace.compSlabTime`: the map `(x, t) ↦ g t` in `C_{par,b}^{k+α}`, with
+  its values `compSlabTime_apply` and fields `mixedDerivL_zero_compSlabTime_apply` and
+  `mixedDerivL_succ_compSlabTime`.
+* `TauCeti.ParabolicCkHolderSpace.norm_compSlabTime_le`: its norm bound.
+* `ParabolicCkHolderSpace.parabolicOperatorL_compParabolicCkHolder₂_lsmul_compSlabTime_apply`:
   the parabolic operator applied to the product of a map of time with a map of order `k + 2`.
 
 ## References
@@ -56,39 +58,6 @@ open scoped NNReal BoundedContinuousFunction
 
 variable {k : ℕ} {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {hab : a < b} {g : ℝ → F}
-
-/-! ### Hölder bounds for the derivatives of `g` -/
-
-/-- A `C¹` function whose value and derivative are bounded by `M` on `[a, b]` is `β`-Hölder on
-`[a, b]` with constant `3 M`, for every `β ≤ 1`. -/
-private theorem holderOnWith_iteratedDeriv {r : ℕ} {n : ℕ} (hg : ContDiff ℝ n g) (hr : r < n)
-    {M β : ℝ≥0} (hβ : β ≤ 1)
-    (hM : ∀ t ∈ Icc a b, ‖iteratedDeriv r g t‖ ≤ M ∧ ‖iteratedDeriv (r + 1) g t‖ ≤ M) :
-    HolderOnWith (3 * M) β (iteratedDeriv r g) (Icc a b) := by
-  have hd : ∀ t, HasDerivAt (iteratedDeriv r g) (iteratedDeriv (r + 1) g t) t := fun t ↦ by
-    rw [iteratedDeriv_succ]
-    exact ((hg.differentiable_iteratedDeriv r (by exact_mod_cast hr)) t).hasDerivAt
-  have hL : LipschitzOnWith M (iteratedDeriv r g) (Icc a b) :=
-    (convex_Icc a b).lipschitzOnWith_of_nnNorm_hasDerivWithin_le
-      (fun t _ ↦ (hd t).hasDerivWithinAt) fun t ht ↦ by
-        rw [← NNReal.coe_le_coe, coe_nnNorm]
-        exact (hM t ht).2
-  have h := hL.holderOnWith_of_norm_le (fun t ht ↦ (hM t ht).1) hβ
-  rwa [show M + 2 * M = 3 * M by ring] at h
-
-/-- Bounds on `[a, b]` for the derivatives `g⁽ʳ⁾`, `r ≤ N`, from compactness, for `g` of class
-`C^N`. -/
-private theorem exists_norm_iteratedDeriv_le {N : ℕ} (hg : ContDiff ℝ N g) :
-    ∃ M : ℝ≥0, ∀ r ≤ N, ∀ t ∈ Icc a b, ‖iteratedDeriv r g t‖ ≤ M := by
-  have h : ∀ r ≤ N, ∃ M : ℝ, ∀ t ∈ Icc a b, ‖iteratedDeriv r g t‖ ≤ M := fun r hr ↦
-    isCompact_Icc.exists_bound_of_continuousOn
-      (hg.continuous_iteratedDeriv r (by exact_mod_cast hr)).continuousOn
-  choose! M hM using h
-  refine ⟨∑ r ∈ Finset.range (N + 1), (M r).toNNReal, fun r hr t ht ↦ ?_⟩
-  refine ((hM r hr t ht).trans (Real.le_coe_toNNReal _)).trans ?_
-  push_cast
-  exact Finset.single_le_sum (f := fun r ↦ ((M r).toNNReal : ℝ)) (fun _ _ ↦ by positivity)
-    (Finset.mem_range.2 (Nat.lt_succ_of_le hr))
 
 /-! ### The fields -/
 
@@ -153,15 +122,15 @@ private theorem holderWith_timeField_slabMk (hα : α ≤ 1) (hg : ContDiff ℝ 
       rw [div_le_one (by norm_num)]
       calc 1 + α ≤ 1 + 1 := by gcongr
         _ = 2 := one_add_one_eq_two
-    have hH := holderOnWith_iteratedDeriv hg (by omega) hβ
-      fun t ht ↦ ⟨hM r (by omega) t ht, hM (r + 1) (by omega) t ht⟩
+    have hH := hg.holderOnWith_iteratedDeriv (by exact_mod_cast (by omega : r < k / 2 + 1))
+      (convex_Icc a b) hβ fun t ht ↦ ⟨hM r (by omega) t ht, hM (r + 1) (by omega) t ht⟩
     have h := (continuousMultilinearCurryFin0 ℝ E F).symm.lipschitzWith.comp_holderWith
       hH.holderWith
     rw [one_mul] at h
     convert h using 1
     funext t
-    rw [timeField_zero_apply hg (by omega), time_slabMk]
-    rfl
+    rw [timeField_zero_apply hg (by omega), time_slabMk, Function.comp_apply,
+      Set.domRestrict_apply]
   · simp only [timeField_succ, FunLike.coe_zero, Pi.zero_apply]
     exact HolderWith.const
 
@@ -172,16 +141,15 @@ private theorem holderWith_timeField (hα : α ≤ 1) (hg : ContDiff ℝ (k / 2 
     (hr : 2 * r + m ≤ k) :
     HolderWith (3 * M) α (timeField (E := E) (a := a) (b := b) hg r m) := by
   rcases m with _ | m
-  · have hH := holderOnWith_iteratedDeriv hg (by omega) (β := α / 2)
-      (by rw [div_le_one (by norm_num)]; exact hα.trans one_le_two)
+  · have hH := hg.holderOnWith_iteratedDeriv (by exact_mod_cast (by omega : r < k / 2 + 1))
+      (convex_Icc a b) (β := α / 2) (by rw [div_le_one (by norm_num)]; exact hα.trans one_le_two)
       fun t ht ↦ ⟨hM r (by omega) t ht, hM (r + 1) (by omega) t ht⟩
     have h := (continuousMultilinearCurryFin0 ℝ E F).symm.lipschitzWith.comp_holderWith
       (hH.comp_parabolicTime_slab (E := E))
     rw [one_mul] at h
     convert h using 1
     funext p
-    rw [timeField_zero_apply hg (by omega)]
-    rfl
+    rw [timeField_zero_apply hg (by omega), Function.comp_apply]
   · rw [timeField_succ]
     exact HolderWith.zero
 
@@ -189,9 +157,9 @@ private theorem holderWith_timeField (hα : α ≤ 1) (hg : ContDiff ℝ (k / 2 
 
 /-- **Maps of time alone.** For `α ≤ 1` and `g : ℝ → F` of class `C^{⌊k/2⌋+1}`, the map
 `(x, t) ↦ g t` on the slab `E × [a, b]`, as an element of the bounded parabolic Hölder space
-`C_{par,b}^{k+α}`. Its fields are `D_t^r D_x^0 = g⁽ʳ⁾` (`mixedDerivL_compTime_zero_apply`) and
-`D_t^r D_x^(m+1) = 0` (`mixedDerivL_compTime_succ`). -/
-def compTime (hα : α ≤ 1) (hg : ContDiff ℝ (k / 2 + 1 : ℕ) g) :
+`C_{par,b}^{k+α}`. Its fields are `D_t^r D_x^0 = g⁽ʳ⁾` (`mixedDerivL_zero_compSlabTime_apply`) and
+`D_t^r D_x^(m+1) = 0` (`mixedDerivL_succ_compSlabTime`). -/
+def compSlabTime (hα : α ≤ 1) (hg : ContDiff ℝ (k / 2 + 1 : ℕ) g) :
     ParabolicCkHolderSpace k α E F hab :=
   mk (timeField hg)
     (fun r m _ t x ↦ by
@@ -207,9 +175,8 @@ def compTime (hα : α ≤ 1) (hg : ContDiff ℝ (k / 2 + 1 : ℕ) g) :
       · have hd : HasDerivAt (fun s ↦ (continuousMultilinearCurryFin0 ℝ E F).symm
             (iteratedDeriv r g s)) ((continuousMultilinearCurryFin0 ℝ E F).symm
               (iteratedDeriv (r + 1) g t)) t := by
-          refine (continuousMultilinearCurryFin0 ℝ E F).symm.hasFDerivAt.comp_hasDerivAt _ ?_
-          rw [iteratedDeriv_succ]
-          exact ((hg.differentiable_iteratedDeriv r (by exact_mod_cast (by omega))) t).hasDerivAt
+          exact (continuousMultilinearCurryFin0 ℝ E F).symm.hasFDerivAt.comp_hasDerivAt _
+            (hg.hasDerivAt_iteratedDeriv (by exact_mod_cast (by omega : r < k / 2 + 1)) t)
         refine (hd.hasDerivWithinAt.congr_of_mem (fun s hs ↦ ?_) t.property).congr_deriv ?_
         · simp only [ParabolicC2HolderSpace.timeExtension_def, projIcc_of_mem hab.le hs]
           rw [timeField_zero_apply hg (by omega), time_slabMk]
@@ -220,59 +187,63 @@ def compTime (hα : α ≤ 1) (hg : ContDiff ℝ (k / 2 + 1 : ℕ) g) :
         rw [hconst, timeField_succ, FunLike.coe_zero, Pi.zero_apply]
         exact hasDerivWithinAt_const _ _ _)
     (fun r m h ↦ by
-      obtain ⟨M, hM⟩ := exists_norm_iteratedDeriv_le (a := a) (b := b) hg
+      obtain ⟨M, hM⟩ :=
+        hg.exists_norm_iteratedDeriv_le_of_isCompact (isCompact_Icc (a := a) (b := b))
       exact ⟨3 * M, holderWith_timeField_slabMk hα hg hM (by omega)⟩)
     (fun r m h ↦ by
-      obtain ⟨M, hM⟩ := exists_norm_iteratedDeriv_le (a := a) (b := b) hg
+      obtain ⟨M, hM⟩ :=
+        hg.exists_norm_iteratedDeriv_le_of_isCompact (isCompact_Icc (a := a) (b := b))
       exact (holderWith_timeField hα hg hM h.le).memHolder)
 
 variable (hα : α ≤ 1) (hg : ContDiff ℝ (k / 2 + 1 : ℕ) g)
 
-private theorem mixedDerivL_compTime {r m : ℕ} (h : 2 * r + m ≤ k) :
-    mixedDerivL r m (compTime (E := E) (hab := hab) hα hg) = timeField hg r m :=
+private theorem mixedDerivL_compSlabTime {r m : ℕ} (h : 2 * r + m ≤ k) :
+    mixedDerivL r m (compSlabTime (E := E) (hab := hab) hα hg) = timeField hg r m :=
   mixedDerivL_mk _ _ _ _ h
 
 /-- The map of time alone takes the value `g t` at `(x, t)`. -/
 @[simp]
-theorem compTime_apply (p : slab (E := E) a b) :
-    compTime (hab := hab) hα hg p = g (p : ParabolicSpaceTime E).time := by
-  rw [compTime, mk_apply, timeField_zero_apply hg (by omega)]
+theorem compSlabTime_apply (p : slab (E := E) a b) :
+    compSlabTime (hab := hab) hα hg p = g (p : ParabolicSpaceTime E).time := by
+  rw [compSlabTime, mk_apply, timeField_zero_apply hg (by omega)]
   simp
 
 /-- The purely temporal fields `D_t^r` of the map of time alone are the derivatives `g⁽ʳ⁾`, read
 as `0`-multilinear maps, for `2 r ≤ k`. -/
-theorem mixedDerivL_compTime_zero_apply {r : ℕ} (hr : 2 * r ≤ k) (p : slab (E := E) a b) :
-    mixedDerivL r 0 (compTime (hab := hab) hα hg) p = (continuousMultilinearCurryFin0 ℝ E F).symm
-      (iteratedDeriv r g (p : ParabolicSpaceTime E).time) := by
-  rw [mixedDerivL_compTime hα hg (by omega), timeField_zero_apply hg hr]
+@[simp]
+theorem mixedDerivL_zero_compSlabTime_apply {r : ℕ} (hr : 2 * r ≤ k) (p : slab (E := E) a b) :
+    mixedDerivL r 0 (compSlabTime (hab := hab) hα hg) p =
+      (continuousMultilinearCurryFin0 ℝ E F).symm
+        (iteratedDeriv r g (p : ParabolicSpaceTime E).time) := by
+  rw [mixedDerivL_compSlabTime hα hg (by omega), timeField_zero_apply hg hr]
 
 /-- The map of time alone has no spatial derivatives: every field `D_t^r D_x^(m+1)` vanishes. -/
 @[simp]
-theorem mixedDerivL_compTime_succ (r m : ℕ) :
-    mixedDerivL r (m + 1) (compTime (E := E) (hab := hab) hα hg) = 0 := by
+theorem mixedDerivL_succ_compSlabTime (r m : ℕ) :
+    mixedDerivL r (m + 1) (compSlabTime (E := E) (hab := hab) hα hg) = 0 := by
   by_cases h : 2 * r + (m + 1) ≤ k
-  · rw [mixedDerivL_compTime hα hg h, timeField_succ]
+  · rw [mixedDerivL_compSlabTime hα hg h, timeField_succ]
   · rw [mixedDerivL_of_lt (by omega), zero_apply]
 
 /-- The map of time alone has vanishing spatial derivative. -/
 @[simp]
-theorem spatialFDerivL_compTime {k : ℕ} (hg : ContDiff ℝ ((k + 1) / 2 + 1 : ℕ) g) :
-    spatialFDerivL k α E F hab (compTime hα hg) = 0 :=
+theorem spatialFDerivL_compSlabTime {k : ℕ} (hg : ContDiff ℝ ((k + 1) / 2 + 1 : ℕ) g) :
+    spatialFDerivL k α E F hab (compSlabTime hα hg) = 0 :=
   ext fun p ↦ ContinuousLinearMap.ext fun v ↦ by simp [spatialFDerivL_apply]
 
 /-- **The norm of a map of time alone.** If `M` bounds `g, g', …, g⁽⌊k/2⌋⁺¹⁾` on `[a, b]`, then
 the norm of `(x, t) ↦ g t` in `C_{par,b}^{k+α}(E × [a, b])` is at most `9 (k + 1)² M`, whatever
 the length of `[a, b]`. -/
-theorem norm_compTime_le {M : ℝ≥0}
+theorem norm_compSlabTime_le {M : ℝ≥0}
     (hM : ∀ r ≤ k / 2 + 1, ∀ t ∈ Icc a b, ‖iteratedDeriv r g t‖ ≤ M) :
-    ‖compTime (E := E) (hab := hab) hα hg‖ ≤ 9 * (k + 1) ^ 2 * M := by
-  set u := compTime (E := E) (hab := hab) hα hg
+    ‖compSlabTime (E := E) (hab := hab) hα hg‖ ≤ 9 * (k + 1) ^ 2 * M := by
+  set u := compSlabTime (E := E) (hab := hab) hα hg
   -- Each pair `(r, m)` contributes at most `M + 4 M + 4 M`.
   have hpair : ∀ p ∈ parabolicDerivPairs k, ‖mixedDerivL p.1 p.2 u‖ +
       (‖timeSliceL p.1 p.2 u‖ + ‖mixedDerivHolderL p.1 p.2 u‖) ≤ 9 * M := by
     intro ⟨r, m⟩ hp
     have hp' := mem_parabolicDerivPairs.1 hp
-    have hD : mixedDerivL r m u = timeField hg r m := mixedDerivL_compTime hα hg hp'
+    have hD : mixedDerivL r m u = timeField hg r m := mixedDerivL_compSlabTime hα hg hp'
     have hDM : ‖mixedDerivL r m u‖ ≤ M := hD ▸ norm_timeField_le hg hM r m
     have hS : ‖timeSliceL r m u‖ ≤ 4 * M := by
       by_cases hs : 2 * r + m + 1 = k
@@ -307,11 +278,12 @@ theorem norm_compTime_le {M : ℝ≥0}
 
 /-- The norms of the maps `(x, t) ↦ g t` on all the slabs `E × [a, b]` inside a fixed slab
 `E × [a₀, b₀]` are bounded by one constant. -/
-theorem exists_norm_compTime_le (a₀ b₀ : ℝ) :
+theorem exists_norm_compSlabTime_le (a₀ b₀ : ℝ) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {a b : ℝ} (hab : a < b), a₀ ≤ a → b ≤ b₀ →
-      ‖compTime (E := E) (hab := hab) hα hg‖ ≤ C := by
-  obtain ⟨M, hM⟩ := exists_norm_iteratedDeriv_le (a := a₀) (b := b₀) hg
-  exact ⟨9 * (k + 1) ^ 2 * M, by positivity, fun hab ha hb ↦ norm_compTime_le hα hg
+      ‖compSlabTime (E := E) (hab := hab) hα hg‖ ≤ C := by
+  obtain ⟨M, hM⟩ :=
+    hg.exists_norm_iteratedDeriv_le_of_isCompact (isCompact_Icc (a := a₀) (b := b₀))
+  exact ⟨9 * (k + 1) ^ 2 * M, by positivity, fun hab ha hb ↦ norm_compSlabTime_le hα hg
     fun r hr t ht ↦ hM r hr t ⟨ha.trans ht.1, ht.2.trans hb⟩⟩
 
 /-! ### Multiplication by a map of time -/
@@ -321,26 +293,26 @@ attribute [local instance] instNormedAddCommGroupContinuousLinearMapRealId
   instNormedSpaceRealContinuousLinearMapId
 
 variable {hα} in
-/-- **The parabolic operator on a product with a map of time.** For `g : ℝ → ℝ` of class
-`C^{⌊k/2⌋+2}` and `u ∈ C_{par,b}^{(k+2)+α}`, the product `χ u` of `u` with `χ(x, t) = g t`
+/-- **The parabolic operator on a product with a map of time.** For `χ : ℝ → ℝ` of class
+`C^{⌊k/2⌋+2}` and `u ∈ C_{par,b}^{(k+2)+α}`, the product of `u` with the map `(x, t) ↦ χ t`
 satisfies `P (χ u) = χ P u + χ' u`: at `(x, t)`,
 
-`P (χ u) (x, t) = g t • P u (x, t) + g' t • u (x, t)`,
+`P (χ u) (x, t) = χ t • P u (x, t) + χ' t • u (x, t)`,
 
 for every operator `P u = ∂ₜu - A·D_x²u - B·D_xu - C·u`. -/
-theorem parabolicOperatorL_compParabolicCkHolder₂_lsmul_compTime_apply
+theorem parabolicOperatorL_compParabolicCkHolder₂_lsmul_compSlabTime_apply
     (A : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
     (B : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
     (C : ParabolicCkHolderSpace k α E (F →L[ℝ] F) hab) {χ : ℝ → ℝ}
     (hχ : ContDiff ℝ ((k + 2) / 2 + 1 : ℕ) χ) (u : ParabolicCkHolderSpace (k + 2) α E F hab)
     (p : slab (E := E) a b) :
     parabolicOperatorL hα A B C
-        ((ContinuousLinearMap.lsmul ℝ ℝ).compParabolicCkHolder₂ hα (compTime hα hχ) u) p =
+        ((ContinuousLinearMap.lsmul ℝ ℝ).compParabolicCkHolder₂ hα (compSlabTime hα hχ) u) p =
       χ (p : ParabolicSpaceTime E).time • parabolicOperatorL hα A B C u p +
         deriv χ (p : ParabolicSpaceTime E).time • u p := by
   obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
   set w := (ContinuousLinearMap.lsmul ℝ ℝ).compParabolicCkHolder₂ hα
-    (compTime (E := E) (hab := hab) hα hχ) u
+    (compSlabTime (E := E) (hab := hab) hα hχ) u
   have hw : ∀ y (s : Icc a b), w (slabMk y s) = χ s • u (slabMk y s) := fun y s ↦ by
     simp [w, time_slabMk]
   -- In space, `χ` is the constant `χ t`.
@@ -354,7 +326,9 @@ theorem parabolicOperatorL_compParabolicCkHolder₂_lsmul_compTime_apply
       (hasDerivWithinAt_mixedDerivL u (r := 0) (m := 0) (by omega) x t)
     refine (h.congr_of_mem (fun s hs ↦ ?_) t.property).congr_deriv ?_
     · simp [ParabolicC2HolderSpace.timeExtension_def, projIcc_of_mem hab.le hs]
-    · rfl
+    · simp only [zero_add, ContinuousLinearEquiv.coe_coe,
+        LinearIsometryEquiv.coe_toContinuousLinearEquiv, continuousMultilinearCurryFin0_apply,
+        Matrix.zero_empty]
   have hχd : HasDerivWithinAt χ (deriv χ t) (Icc a b) t :=
     ((hχ.differentiable (by norm_num)) t).hasDerivAt.hasDerivWithinAt
   have hwt : derivWithin (ParabolicC2HolderSpace.timeExtension hab.le w x) (Icc a b) t =

@@ -47,13 +47,14 @@ by `C (‖P u‖_{k+α} + sup |u(·, 0)|)`. The product `θ_s u` vanishes at the
 
 `P (θ_s u) = θ_s P u + θ_s' u`
 
-(`TauCeti.ParabolicCkHolderSpace.parabolicOperatorL_compParabolicCkHolder₂_lsmul_compTime_apply`),
+(`ParabolicCkHolderSpace.parabolicOperatorL_compParabolicCkHolder₂_lsmul_compSlabTime_apply`),
 so the global Schauder estimate bounds `‖θ_s u‖_{k+2+α}` by `‖θ_s P u‖_{k+α} + ‖θ_s' u‖_{k+α}`.
 
 * **Order zero.** The derivative `θ_s'` vanishes before time `s`, so the Hölder norm of
-  `θ_s' u` involves the Hölder norm of `u` on `ℝⁿ × [s, T]` only
-  (`ContinuousLinearMap.norm_compHolder₂_valueHolderL_le_of_eq_zero`), which the positive-time
-  estimate of order two bounds by `‖P u‖` and `sup |u(·, 0)|`.
+  `θ_s' u` is bounded by the Hölder norm of `u` on `ℝⁿ × [s, T]` together with the supremum of
+  `|u|` on the whole slab (`ContinuousLinearMap.norm_compHolder₂_valueHolderL_le_of_eq_zero`).
+  The positive-time estimate of order two bounds the first, and the comparison principle the
+  second, both by `‖P u‖` and `sup |u(·, 0)|`.
 * **From `k` to `k + 1`.** Since `θ_{s/2} = 1` wherever `θ_s' ≠ 0`, the product `θ_s' u` equals
   `θ_s' (θ_{s/2} u)`, whose norm of order `k + 1` is at most a multiple of the norm of order
   `k + 2` of `θ_{s/2} u`, bounded by the induction hypothesis applied to `u` read at order
@@ -135,26 +136,19 @@ private theorem norm_lsmul_le {k : ℕ} {a b : ℝ} {hab : a < b} (hα : α ≤ 
     _ ≤ 21 * (k + 1) ^ 2 * 2 ^ k * 1 * (‖g‖ * ‖v‖) := by gcongr
     _ = _ := by ring
 
-/-- Reading a map one order lower multiplies its norm by at most `8 (n + 1)²`. -/
-private theorem norm_inclusionOfLEL_succ_apply_le {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {n : ℕ} {a b : ℝ} {hab : a < b} (hα : α ≤ 1)
-    (f : ParabolicCkHolderSpace (n + 1) α E F hab) :
-    ‖inclusionOfLEL hα (Nat.le_succ n) f‖ ≤ 8 * (n + 1) ^ 2 * ‖f‖ := by
-  refine (ContinuousLinearMap.le_opNorm _ f).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg f))
-  simpa using norm_inclusionOfLEL_le (E := E) (F := F) (hab := hab) hα (Nat.le_succ n)
-
 /-- **The term `θ_s' u` at order zero.** For `u ∈ C_{par,b}^{2+α}` on `E × [0, T]` and `s < T`,
 the norm in `C_{par,b}^{0+α}` of `θ_s' u` involves `u` only through its norm of order two on
 `E × [s, T]` and its supremum, since `θ_s'` vanishes before time `s`. -/
-private theorem norm_lsmul_compTime_deriv_cutoff_le (hα : α ≤ 1) {T : ℝ} {hT : 0 < T} {s : ℝ}
+private theorem norm_lsmul_compSlabTime_deriv_cutoff_le (hα : α ≤ 1) {T : ℝ} {hT : 0 < T} {s : ℝ}
     (hs : 0 < s) (hsT : s < T) (u : ParabolicCkHolderSpace 2 α E ℝ hT) :
     ‖(ContinuousLinearMap.lsmul ℝ ℝ).compParabolicCkHolder₂ hα
-        (compTime (k := 0) hα (contDiff_deriv_cutoff s)) (inclusionOfLEL hα (Nat.zero_le 2) u)‖ ≤
-      2 * ‖(compTime (k := 0) (E := E) (hab := hT) hα (contDiff_deriv_cutoff s))‖ *
+        (compSlabTime (k := 0) hα (contDiff_deriv_cutoff s))
+        (inclusionOfLEL hα (Nat.zero_le 2) u)‖ ≤
+      2 * ‖(compSlabTime (k := 0) (E := E) (hab := hT) hα (contDiff_deriv_cutoff s))‖ *
         (24 * ‖ParabolicC2HolderSpace.restrictL hs.le le_rfl hsT
             (equivParabolicC2HolderSpace u)‖ +
           ‖ParabolicC2HolderSpace.valueL (equivParabolicC2HolderSpace u)‖) := by
-  set g := compTime (k := 0) (E := E) (hab := hT) hα (contDiff_deriv_cutoff s)
+  set g := compSlabTime (k := 0) (E := E) (hab := hT) hα (contDiff_deriv_cutoff s)
   set v := equivParabolicC2HolderSpace u
   -- At order zero the product is the bounded Hölder product of `g` with the value of `u`.
   have hprod : equivHolderSpace ((ContinuousLinearMap.lsmul ℝ ℝ).compParabolicCkHolder₂ hα g
@@ -165,7 +159,7 @@ private theorem norm_lsmul_compTime_deriv_cutoff_le (hα : α ≤ 1) {T : ℝ} {
         ParabolicC2HolderSpace.valueHolderL_apply]
   have hg : ∀ p : slab (E := E) 0 T, (p : ParabolicSpaceTime E).time < s →
       equivHolderSpace g p = 0 := fun p hp ↦ by
-    rw [equivHolderSpace_apply, compTime_apply, deriv_cutoff_of_lt hs hp]
+    rw [equivHolderSpace_apply, compSlabTime_apply, deriv_cutoff_of_lt hs hp]
   have hB : ‖(ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ)‖ ≤ 1 :=
     ContinuousLinearMap.opNorm_lsmul_le
   have hg₁ : ‖(equivHolderSpace g).toBoundedContinuousFunction‖ ≤ ‖g‖ :=
@@ -200,7 +194,7 @@ attribute [local instance] instNormedAddCommGroupContinuousLinearMapRealId
 private abbrev localize (hα : α ≤ 1) (k : ℕ) {T : ℝ} {hT : 0 < T} (s : ℝ)
     (u : ParabolicCkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ hT) :
     ParabolicCkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ hT :=
-  (ContinuousLinearMap.lsmul ℝ ℝ).compParabolicCkHolder₂ hα (compTime hα (contDiff_cutoff s)) u
+  (ContinuousLinearMap.lsmul ℝ ℝ).compParabolicCkHolder₂ hα (compSlabTime hα (contDiff_cutoff s)) u
 
 private theorem localize_apply (hα : α ≤ 1) (k : ℕ) {T : ℝ} {hT : 0 < T} (s : ℝ)
     (u : ParabolicCkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ hT)
@@ -232,16 +226,13 @@ private theorem parabolicOperatorL_localize (hα : α ≤ 1) (k : ℕ) {T : ℝ}
     parabolicOperatorL hα (euclideanSecondOrderCoeff a) (euclideanFirstOrderCoeff b)
         (euclideanZerothOrderCoeff c) (localize hα k s u) =
       (ContinuousLinearMap.lsmul ℝ ℝ).compParabolicCkHolder₂ hα
-          (compTime hα (contDiff_cutoff s)) (parabolicOperatorL hα (euclideanSecondOrderCoeff a)
+          (compSlabTime hα (contDiff_cutoff s)) (parabolicOperatorL hα (euclideanSecondOrderCoeff a)
             (euclideanFirstOrderCoeff b) (euclideanZerothOrderCoeff c) u) +
         (ContinuousLinearMap.lsmul ℝ ℝ).compParabolicCkHolder₂ hα
-          (compTime hα (contDiff_deriv_cutoff s)) w :=
+          (compSlabTime hα (contDiff_deriv_cutoff s)) w :=
   ext fun p ↦ by
-    rw [localize, parabolicOperatorL_compParabolicCkHolder₂_lsmul_compTime_apply, coe_add,
-      Pi.add_apply, ContinuousLinearMap.compParabolicCkHolder₂_apply,
-      ContinuousLinearMap.compParabolicCkHolder₂_apply, compTime_apply, compTime_apply,
-      ContinuousLinearMap.lsmul_apply, ContinuousLinearMap.lsmul_apply, smul_eq_mul, smul_eq_mul,
-      smul_eq_mul, hw]
+    rw [localize, parabolicOperatorL_compParabolicCkHolder₂_lsmul_compSlabTime_apply]
+    simp [hw]
 
 /-- The statement proved by induction on `k`: the localization at every scale `s` is bounded on
 the whole slab by `‖P u‖` and the initial values. -/
@@ -262,7 +253,7 @@ private def LocalizedBound (hα₁ : α < 1) (lam : ℝ) (k : ℕ) : Prop :=
 /-- **The term `θ_s' u` at order zero, bounded by the data.** For a solution of order two, the
 positive-time estimate of order two and the comparison principle bound `‖θ_s' u‖_{0+α}` by
 `‖P u‖_{0+α}` and the initial values. -/
-private theorem exists_norm_lsmul_compTime_deriv_cutoff_le (hα₀ : 0 < α) (hα₁ : α < 1)
+private theorem exists_norm_lsmul_compSlabTime_deriv_cutoff_le (hα₀ : 0 < α) (hα₁ : α < 1)
     (hlam : 0 < lam) (K T₀ : ℝ≥0) {s : ℝ} (hs : 0 < s) : ∃ C : ℝ, 0 ≤ C ∧
     ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ → s < T →
       ∀ (a : ι → ι → ParabolicCkHolderSpace 0 α (EuclideanSpace ℝ ι) ℝ hT)
@@ -274,13 +265,14 @@ private theorem exists_norm_lsmul_compTime_deriv_cutoff_le (hα₀ : 0 < α) (h�
         ∀ (u : ParabolicCkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ hT) {M : ℝ},
           (∀ x, |u (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩)| ≤ M) →
           ‖(ContinuousLinearMap.lsmul ℝ ℝ).compParabolicCkHolder₂ hα₁.le
-              (compTime hα₁.le (contDiff_deriv_cutoff s)) (inclusionOfLEL hα₁.le (Nat.zero_le 2) u)‖
+              (compSlabTime hα₁.le (contDiff_deriv_cutoff s))
+              (inclusionOfLEL hα₁.le (Nat.zero_le 2) u)‖
             ≤ C * (‖parabolicOperatorL hα₁.le (euclideanSecondOrderCoeff a)
               (euclideanFirstOrderCoeff b) (euclideanZerothOrderCoeff c) u‖ + M) := by
   obtain ⟨C₁, hC₁, hest⟩ :=
     ParabolicC2HolderSpace.exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL (ι := ι)
       hα₀ hα₁ (Lam := ∑ _i : ι, ∑ _j : ι, (K : ℝ)) hlam K T₀
-  obtain ⟨Cθ', hCθ'₀, hCθ'⟩ := exists_norm_compTime_le (k := 0) (E := EuclideanSpace ℝ ι) hα₁.le
+  obtain ⟨Cθ', hCθ'₀, hCθ'⟩ := exists_norm_compSlabTime_le (k := 0) (E := EuclideanSpace ℝ ι) hα₁.le
     (contDiff_deriv_cutoff s) 0 T₀
   set E₀ : ℝ := Real.exp (K * T₀) * (1 + T₀)
   set W : ℝ := s ^ (-(1 + (α : ℝ) / 2))
@@ -309,7 +301,7 @@ private theorem exists_norm_lsmul_compTime_deriv_cutoff_le (hα₀ : 0 < α) (h�
       (fun i j ↦ by simpa only [Matrix.of_apply, Real.norm_eq_abs] using
         (HolderSpace.norm_apply_le (a' i j) p).trans (hak' i j)) ξ) hak'
     (fun i ↦ (norm_equivHolderSpace_le _).trans (hbk i)) hck' v hM' hs hsT
-  have h₂ := norm_lsmul_compTime_deriv_cutoff_le hα₁.le hs hsT u
+  have h₂ := norm_lsmul_compSlabTime_deriv_cutoff_le hα₁.le hs hsT u
   -- Name the restriction, so that unification does not unfold the order-two norm.
   obtain ⟨r, hr⟩ : ∃ r, ParabolicC2HolderSpace.restrictL hs.le le_rfl hsT v = r := ⟨_, rfl⟩
   rw [hr] at hR h₂
@@ -329,13 +321,14 @@ private theorem exists_norm_lsmul_compTime_deriv_cutoff_le (hα₀ : 0 < α) (h�
 
 /-- **Order zero.** The localization of a solution of order two is bounded by the global Schauder
 estimate of order zero, with the term `θ_s' u` bounded by
-`exists_norm_lsmul_compTime_deriv_cutoff_le`. -/
+`exists_norm_lsmul_compSlabTime_deriv_cutoff_le`. -/
 private theorem localizedBound_zero (hα₀ : 0 < α) (hα₁ : α < 1) (hlam : 0 < lam) :
     LocalizedBound (ι := ι) hα₁ lam 0 := by
   intro K T₀ s hs
   obtain ⟨C_S, hC_S, hS⟩ := exists_norm_le_parabolicOperatorL (ι := ι) hα₀ hα₁ hlam 0 K T₀
-  obtain ⟨C₂, hC₂, h₂⟩ := exists_norm_lsmul_compTime_deriv_cutoff_le (ι := ι) hα₀ hα₁ hlam K T₀ hs
-  obtain ⟨Cθ, hCθ₀, hCθ⟩ := exists_norm_compTime_le (k := 0) (E := EuclideanSpace ℝ ι) hα₁.le
+  obtain ⟨C₂, hC₂, h₂⟩ :=
+    exists_norm_lsmul_compSlabTime_deriv_cutoff_le (ι := ι) hα₀ hα₁ hlam K T₀ hs
+  obtain ⟨Cθ, hCθ₀, hCθ⟩ := exists_norm_compSlabTime_le (k := 0) (E := EuclideanSpace ℝ ι) hα₁.le
     (contDiff_cutoff s) 0 T₀
   refine ⟨C_S * (21 * Cθ + C₂), by positivity,
     fun T hT hTT₀ hsT a b c ha hak hbk hck u M hM ↦ ?_⟩
@@ -344,14 +337,16 @@ private theorem localizedBound_zero (hα₀ : 0 < α) (hα₁ : α < 1) (hlam : 
   have hM₀ : 0 ≤ M := (abs_nonneg _).trans (hM 0)
   have hw := parabolicOperatorL_localize hα₁.le 0 s a b c u
     (inclusionOfLEL hα₁.le (Nat.zero_le 2) u) fun p ↦ by rw [inclusionOfLEL_apply]
-  have h₁ := norm_lsmul_le hα₁.le (compTime (k := 0) hα₁.le (contDiff_cutoff s)) P
-  have hθ := hCθ hT le_rfl (by exact_mod_cast hTT₀)
+  set θ := compSlabTime (k := 0) (E := EuclideanSpace ℝ ι) (hab := hT) hα₁.le (contDiff_cutoff s)
+  have h₁ := norm_lsmul_le hα₁.le θ P
+  have hθ : ‖θ‖ ≤ Cθ := hCθ hT le_rfl (by exact_mod_cast hTT₀)
   refine (hS T hT hTT₀ a b c ha hak hbk hck (localize hα₁.le 0 s u)).trans ?_
   rw [spatialTrace_localize hα₁.le 0 hs, norm_zero, add_zero, hw, mul_assoc]
   refine mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans ?_) hC_S
-  have hP₀ := norm_nonneg P
-  norm_num at h₁
-  nlinarith [h₂ T hT hTT₀ hsT a b c ha hak hbk hck u hM]
+  calc _ ≤ 21 * (‖θ‖ * ‖P‖) + C₂ * (‖P‖ + M) :=
+        add_le_add (h₁.trans_eq (by norm_num)) (h₂ T hT hTT₀ hsT a b c ha hak hbk hck u hM)
+    _ ≤ 21 * (Cθ * (‖P‖ + M)) + C₂ * (‖P‖ + M) := by gcongr; linarith
+    _ = _ := by ring
 
 /-- **The induction hypothesis read one order lower.** If the localized bound holds at order `k`,
 then for `u` of order `k + 3` and coefficients of order `k + 1`, the localization at scale `s / 2`
@@ -371,6 +366,8 @@ private theorem exists_norm_localize_inclusionOfLEL_le (hα₁ : α < 1) {k : �
               (Nat.le_succ k) 2) u)‖ ≤
             C * (‖parabolicOperatorL hα₁.le (euclideanSecondOrderCoeff a)
               (euclideanFirstOrderCoeff b) (euclideanZerothOrderCoeff c) u‖ + M) := by
+  -- Name the constant `8 (k + 1)²`, so that the inclusion bound can be rewritten into it after
+  -- `push_cast` and the arithmetic below treats it as one atom.
   obtain ⟨N, hN⟩ : ∃ c : ℝ, c = 8 * ((k : ℝ) + 1) ^ 2 := ⟨_, rfl⟩
   have hN₀ : 0 ≤ N := hN ▸ by positivity
   obtain ⟨C_I, hC_I, hI⟩ := ih ⟨N * K, by positivity⟩ T₀ (half_pos hs)
@@ -390,15 +387,18 @@ private theorem exists_norm_localize_inclusionOfLEL_le (hα₁ : α < 1) {k : �
     (M := M) (by simpa [inclusionOfLEL_apply] using hM)
   rw [← inclusionOfLEL_euclideanSecondOrderCoeff, ← inclusionOfLEL_euclideanFirstOrderCoeff,
     ← inclusionOfLEL_euclideanZerothOrderCoeff, ← inclusionOfLEL_parabolicOperatorL] at hv
-  have hι := norm_inclusionOfLEL_succ_apply_le hα₁.le (parabolicOperatorL hα₁.le
-    (euclideanSecondOrderCoeff a) (euclideanFirstOrderCoeff b) (euclideanZerothOrderCoeff c) u)
+  set P := parabolicOperatorL hα₁.le (euclideanSecondOrderCoeff a) (euclideanFirstOrderCoeff b)
+    (euclideanZerothOrderCoeff c) u
+  have hι := norm_inclusionOfLEL_succ_apply_le hα₁.le P
   rw [← hN] at hι
   have hM₀ : 0 ≤ M := (abs_nonneg _).trans (hM 0)
   refine hv.trans ?_
   rw [mul_assoc]
-  exact mul_le_mul_of_nonneg_left (by nlinarith [norm_nonneg (parabolicOperatorL hα₁.le
-    (euclideanSecondOrderCoeff a) (euclideanFirstOrderCoeff b) (euclideanZerothOrderCoeff c) u)])
-    hC_I
+  refine mul_le_mul_of_nonneg_left ?_ hC_I
+  calc _ ≤ N * ‖P‖ + M := add_le_add_left hι M
+    _ ≤ N * ‖P‖ + M + (‖P‖ + N * M) :=
+        le_add_of_nonneg_right (add_nonneg (norm_nonneg P) (mul_nonneg hN₀ hM₀))
+    _ = (N + 1) * (‖P‖ + M) := by ring
 
 /-- **From order `k` to order `k + 1`.** Since `θ_s' u = θ_s' (θ_{s/2} u)`, the term `θ_s' u` of
 order `k + 1` is bounded by the localization of order `k + 2` at scale `s / 2`, to which the
@@ -408,10 +408,12 @@ private theorem localizedBound_succ (hα₀ : 0 < α) (hα₁ : α < 1) (hlam : 
   intro K T₀ s hs
   obtain ⟨C_S, hC_S, hS⟩ := exists_norm_le_parabolicOperatorL (ι := ι) hα₀ hα₁ hlam (k + 1) K T₀
   obtain ⟨C_I, hC_I, hI⟩ := exists_norm_localize_inclusionOfLEL_le hα₁ ih K T₀ hs
-  obtain ⟨Cθ, hCθ₀, hCθ⟩ := exists_norm_compTime_le (k := k + 1) (E := EuclideanSpace ℝ ι)
+  obtain ⟨Cθ, hCθ₀, hCθ⟩ := exists_norm_compSlabTime_le (k := k + 1) (E := EuclideanSpace ℝ ι)
     hα₁.le (contDiff_cutoff s) 0 T₀
-  obtain ⟨Cθ', hCθ'₀, hCθ'⟩ := exists_norm_compTime_le (k := k + 1) (E := EuclideanSpace ℝ ι)
+  obtain ⟨Cθ', hCθ'₀, hCθ'⟩ := exists_norm_compSlabTime_le (k := k + 1) (E := EuclideanSpace ℝ ι)
     hα₁.le (contDiff_deriv_cutoff s) 0 T₀
+  -- Name the product and inclusion constants, so that the bounds can be rewritten into them after
+  -- `push_cast` and the arithmetic below treats them as atoms.
   obtain ⟨c₁, hc₁⟩ : ∃ c : ℝ, c = 21 * ((k : ℝ) + 1 + 1) ^ 2 * 2 ^ (k + 1) := ⟨_, rfl⟩
   obtain ⟨N', hN'⟩ : ∃ c : ℝ, c = 8 * ((k : ℝ) + 1 + 1) ^ 2 := ⟨_, rfl⟩
   have hc₁₀ : 0 ≤ c₁ := hc₁ ▸ by positivity
@@ -428,8 +430,8 @@ private theorem localizedBound_succ (hα₀ : 0 < α) (hα₁ : α < 1) (hlam : 
     (inclusionOfLEL hα₁.le (Nat.le_succ (k + 1)) v) fun p ↦ by
       rw [inclusionOfLEL_apply, localize_apply, inclusionOfLEL_apply, ← mul_assoc,
         deriv_cutoff_mul_cutoff_half hs]
-  have h₁ := norm_lsmul_le hα₁.le (compTime (k := k + 1) hα₁.le (contDiff_cutoff s)) P
-  have h₂ := norm_lsmul_le hα₁.le (compTime (k := k + 1) hα₁.le (contDiff_deriv_cutoff s))
+  have h₁ := norm_lsmul_le hα₁.le (compSlabTime (k := k + 1) hα₁.le (contDiff_cutoff s)) P
+  have h₂ := norm_lsmul_le hα₁.le (compSlabTime (k := k + 1) hα₁.le (contDiff_deriv_cutoff s))
     (inclusionOfLEL hα₁.le (Nat.le_succ (k + 1)) v)
   have h₃ := norm_inclusionOfLEL_succ_apply_le hα₁.le v
   have hθ := hCθ hT le_rfl (by exact_mod_cast hTT₀)
@@ -441,8 +443,8 @@ private theorem localizedBound_succ (hα₀ : 0 < α) (hα₁ : α < 1) (hlam : 
   push_cast at h₁ h₂ h₃
   rw [← hc₁] at h₁ h₂
   rw [← hN'] at h₃
-  calc _ ≤ c₁ * (‖compTime (k := k + 1) (E := EuclideanSpace ℝ ι) (hab := hT) hα₁.le
-          (contDiff_cutoff s)‖ * ‖P‖) + c₁ * (‖compTime (k := k + 1) (E := EuclideanSpace ℝ ι)
+  calc _ ≤ c₁ * (‖compSlabTime (k := k + 1) (E := EuclideanSpace ℝ ι) (hab := hT) hα₁.le
+          (contDiff_cutoff s)‖ * ‖P‖) + c₁ * (‖compSlabTime (k := k + 1) (E := EuclideanSpace ℝ ι)
           (hab := hT) hα₁.le (contDiff_deriv_cutoff s)‖ * (N' * ‖v‖)) :=
         add_le_add h₁ (h₂.trans (by gcongr))
     _ ≤ c₁ * (Cθ * (‖P‖ + M)) + c₁ * (Cθ' * (N' * (C_I * (‖P‖ + M)))) := by
