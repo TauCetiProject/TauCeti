@@ -325,8 +325,7 @@ theorem pTypicalCoordinate_congr {F G : FormalGroup R} [F.IsComm] [G.IsComm] (h 
 theorem map_pTypicalCoordinate (φ : R →+* S) (p : ℕ)
     (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
     TauCeti.FormalCoordinate.map φ (F.pTypicalCoordinate p hR) =
-      (F.map φ).pTypicalCoordinate p
-        (fun q hq hqp ↦ by simpa only [map_natCast] using (hR q hq hqp).map φ) := by
+      (F.map φ).pTypicalCoordinate p (fun q hq hqp ↦ (hR q hq hqp).natCast_map φ) := by
   rw [pTypicalCoordinate, pTypicalCoordinate, map_inv]
   congr 1
   ext1
@@ -535,8 +534,7 @@ theorem _root_.TauCeti.pTypicalFormalGroup_hazewinkelIntegralFormalGroup (p : �
 theorem map_pTypicalFormalGroup (φ : R →+* S) (p : ℕ)
     (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
     (F.pTypicalFormalGroup p hR).map φ =
-      (F.map φ).pTypicalFormalGroup p
-        (fun q hq hqp ↦ by simpa only [map_natCast] using (hR q hq hqp).map φ) := by
+      (F.map φ).pTypicalFormalGroup p (fun q hq hqp ↦ (hR q hq hqp).natCast_map φ) := by
   rw [pTypicalFormalGroup_def, pTypicalFormalGroup_def, map_smul, F.map_pTypicalCoordinate φ p hR]
 
 /-- Over a `ℚ`-algebra, the logarithm of `F.pTypicalFormalGroup` is the logarithm of `F` evaluated

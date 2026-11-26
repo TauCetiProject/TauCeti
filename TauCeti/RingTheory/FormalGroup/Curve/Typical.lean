@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.Log
+public import TauCeti.Data.Nat.Cast.IsUnit
 public import TauCeti.RingTheory.FormalGroup.Curve.Projector
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Data.Nat.Pow
@@ -735,8 +736,7 @@ theorem X_pow_dvd_toPowerSeries_pTypicalProjectorCurve (p : ℕ)
 theorem map_pTypicalProjectorCurve (φ : R →+* S) (p : ℕ)
     (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (γ : F.Curve) :
     Curve.map φ (F.pTypicalProjectorCurve p hR γ) =
-      (F.map φ).pTypicalProjectorCurve p
-        (fun q hq hqp ↦ by simpa only [map_natCast] using (hR q hq hqp).map φ)
+      (F.map φ).pTypicalProjectorCurve p (fun q hq hqp ↦ (hR q hq hqp).natCast_map φ)
         (Curve.map φ γ) := by
   ext k
   rw [Curve.toPowerSeries_map, PowerSeries.coeff_map,

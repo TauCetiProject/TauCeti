@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.FormalGroup.Typical
 
 For any commutative formal group law `F` over a commutative ring `R` and any scalar `s : R` (unit
 or not, zero divisor or not), `FormalGroup.rescale F s` multiplies each degree-`n` coefficient of
-`F(X, Y)` by `s ^ (n - 1)`. When `s` is not invertible, `F.rescale s` is not isomorphic to `F`, so
+`F(X, Y)` by `s ^ (n - 1)`. When `s` is not a unit, `F.rescale s` need not be isomorphic to `F`, so
 compatibility with `p`-typicality and canonical `p`-typicalization cannot be deduced from unit
 homothety transport (`FormalGroup.isPTypical_homothety_smul_iff` and
 `FormalGroup.pTypicalFormalGroup_homothety_smul`).
@@ -124,7 +124,7 @@ theorem inv_pTypicalCoordinate_rescale_toPowerSeries (p : ℕ)
     ((F.rescale s).pTypicalCoordinate p hunit)⁻¹.toPowerSeries =
       ((F.pTypicalIso p hunit).invHom.rescale s).toPowerSeries := by
   have hPoly : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : Polynomial R) :=
-    fun q hq hqp ↦ Polynomial.C_eq_natCast (R := R) q ▸ Polynomial.isUnit_C.mpr (hunit q hq hqp)
+    fun q hq hqp ↦ (hunit q hq hqp).natCast_map Polynomial.C
   have hgen := inv_pTypicalCoordinate_rescale_toPowerSeries_of_isLeftRegular (F.map Polynomial.C) p
     hPoly Polynomial.isRegular_X.left
   have heval := congrArg (PowerSeries.map (Polynomial.evalRingHom s)) hgen
@@ -161,14 +161,13 @@ theorem pTypicalCoordinate_rescale_toPowerSeries (p : ℕ)
     ((F.rescale s).pTypicalCoordinate p hunit).toPowerSeries =
       ((F.pTypicalIso p hunit).toHom.rescale s).toPowerSeries := by
   let e := (F.pTypicalIso p hunit).rescale s
-  have he_inv : e.toFormalCoordinate⁻¹ = e.symm.toFormalCoordinate :=
-    inv_eq_of_mul_eq_one_right (FormalCoordinate.ext (by simp))
-  have hinv : ((F.rescale s).pTypicalCoordinate p hunit)⁻¹ = e.symm.toFormalCoordinate := by
+  have hinv : ((F.rescale s).pTypicalCoordinate p hunit)⁻¹ = e.toFormalCoordinate⁻¹ := by
+    rw [← e.toFormalCoordinate_symm]
     ext1
     rw [F.inv_pTypicalCoordinate_rescale_toPowerSeries,
       FormalGroupIso.toFormalCoordinate_toPowerSeries, FormalGroupIso.symm_toHom,
       FormalGroupIso.rescale_invHom]
-  rw [congrArg FormalCoordinate.toPowerSeries (inv_injective (hinv.trans he_inv.symm)),
+  rw [congrArg FormalCoordinate.toPowerSeries (inv_injective hinv),
     FormalGroupIso.toFormalCoordinate_toPowerSeries, FormalGroupIso.rescale_toHom]
 
 /-- Degree-`n` coefficients of `F.pTypicalCoordinate` scale by `s ^ (n - 1)` under
