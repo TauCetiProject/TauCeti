@@ -107,6 +107,7 @@ theorem postcomposeActionIso_inv_hom (q : y ≅ z) (p : x ≅ z) :
   simp
 
 /-- Postcomposition with the identity is the identity. -/
+@[simp]
 theorem postcomposeActionIso_refl :
     b.postcomposeActionIso (Iso.refl y) = Iso.refl (b.fiberAction x y) := by
   ext p
@@ -116,6 +117,7 @@ theorem postcomposeActionIso_refl :
 
 /-- Postcomposition with `q ≪≫ r` is postcomposition with `q` followed by postcomposition with
 `r`. -/
+@[simp]
 theorem postcomposeActionIso_trans {w : F.obj (.mk (op U))} (q : y ≅ z) (r : z ≅ w) :
     b.postcomposeActionIso (q ≪≫ r) =
       b.postcomposeActionIso (x := x) q ≪≫ b.postcomposeActionIso r := by
