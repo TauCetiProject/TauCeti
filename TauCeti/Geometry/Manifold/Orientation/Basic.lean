@@ -17,8 +17,11 @@ tangent bundle. This definition includes boundary and corner points.
 Orientability records existence; every model with corners is orientable.
 
 Reindexing along an equivalence of index types (`TauCeti.Manifold.Orientation.reindex`) reindexes
-every tangent orientation. It compares orientations indexed by `Fin (m + n)` and `Fin (n + m)`,
-such as the products of two oriented manifolds taken in either order.
+every tangent orientation, respects identity and composition
+(`TauCeti.Manifold.Orientation.reindex_refl`, `TauCeti.Manifold.Orientation.reindex_trans`,
+`TauCeti.Manifold.Orientation.reindex_finCongr_reindex_finCongr`). It compares orientations indexed
+by `Fin (m + n)` and `Fin (n + m)`, such as the products of two oriented manifolds taken in either
+order.
 
 Orientability records existence; every model with corners is orientable, and
 `TauCeti.Manifold.Orientation.congrModel` casts manifold orientations along an equality of models.
@@ -146,6 +149,26 @@ theorem reindex_refl (o : Orientation I M ι) : o.reindex (Equiv.refl ι) = o :=
     rw [reindex_mk]
     congr 1
     ext α x <;> simp
+
+/-- Reindexing a manifold orientation along a composite of equivalences is the same as reindexing
+along each in turn. -/
+theorem reindex_trans {ι' ι'' : Type*} [Fintype ι'] [Fintype ι'']
+    (e : ι ≃ ι') (e' : ι' ≃ ι'') (o : Orientation I M ι) :
+    o.reindex (e.trans e') = (o.reindex e).reindex e' := by
+  induction o using Orientation.inductionOn with | h l =>
+  rw [reindex_mk, reindex_mk, reindex_mk]
+  exact congrArg mk (OrientationLift.ext (by
+    simp only [OrientationLift.reindex_modelOrientation, _root_.Orientation.reindex_trans])
+    (funext fun α ↦ funext fun x ↦ by simp only [OrientationLift.reindex_sign]))
+
+/-- Reindexing a manifold orientation along two casts `Fin m ≃ Fin n ≃ Fin k` is reindexing along
+their composite cast. -/
+@[simp]
+theorem reindex_finCongr_reindex_finCongr {m n k : ℕ} (h : m = n) (h' : n = k)
+    (o : Orientation I M (Fin m)) :
+    (o.reindex (finCongr h)).reindex (finCongr h') = o.reindex (finCongr (h.trans h')) := by
+  subst h h'
+  rw [finCongr_refl, reindex_refl]
 
 variable [IsManifold I 1 M]
 

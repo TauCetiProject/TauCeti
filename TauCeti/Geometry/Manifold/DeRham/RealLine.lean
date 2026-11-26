@@ -44,6 +44,8 @@ supported. Surjectivity comes from a normalized bump function times `dx`
   `H¹_c(ℝ) → ℝ` is bijective, for either orientation of `ℝ`.
 * `TauCeti.compactlySupportedDeRhamCohomology.integral_mk_funSMulₗ_realLineCoordForm`: for
   compactly supported smooth `g`, the class of `g dx` integrates to `∫ g`.
+* `TauCeti.poincarePairing_real_const_one_mk`: on the oriented real line `ℝ`, the Poincaré pairing
+  `⟨[1], [ψ]⟩` evaluates to `∫ t, ψ t (fun _ ↦ 1)`.
 
 ## References
 
@@ -153,10 +155,24 @@ theorem compactlySupportedDeRhamCohomology.integral_mk_funSMulₗ_realLineCoordF
   rw [compactlySupportedDeRhamCohomology.integral_mk, integralTopForm_real_eq_integral
     (SmoothForm.isSmoothForm _ |>.of_le (by simp)) ((mem_compactlySupportedForms _).mp
       ((mem_compactlySupportedClosedForms _).mp
-        (funSMulₗ_realLineCoordForm_mem_compactlySupportedClosedForms hgc)).1)]
+        (funSMulₗ_realLineCoordForm_mem_compactlySupportedClosedForms hgc)).left)]
   simp only [SmoothForm.coe_funSMulₗ, ContinuousAlternatingMap.coe_smul, Pi.smul_apply,
     SmoothForm.realLineCoordForm_apply]
   -- The value of `g dx` on the unit vector `1` is `g r • 1 = g r`.
   exact congrArg (fun f : ℝ → ℝ ↦ ∫ r, f r) (funext fun r ↦ mul_one (g r))
+
+/-- On the oriented real line `ℝ`, `⟨[1], [ψ]⟩ = ∫ t, ψ t (fun _ ↦ 1)`. -/
+theorem poincarePairing_real_const_one_mk
+    (ψ : compactlySupportedClosedForms 𝓘(ℝ, ℝ) ℝ 1) :
+    poincarePairing 𝓘(ℝ, ℝ) ℝ (Manifold.Orientation.real.reindex (finCongr (zero_add 1).symm))
+        (deRhamCohomology.const 𝓘(ℝ, ℝ) ℝ 1)
+        (compactlySupportedDeRhamCohomology.mk 𝓘(ℝ, ℝ) 1 ψ) =
+      ∫ t : ℝ, ψ.val.val t (fun _ ↦ 1) := by
+  rw [poincarePairing_const_one_left, Manifold.Orientation.reindex_finCongr_reindex_finCongr,
+    finCongr_refl, Manifold.Orientation.reindex_refl,
+    compactlySupportedDeRhamCohomology.integral_mk]
+  exact integralTopForm_real_eq_integral (ψ.val.isSmoothForm.of_le (by simp))
+    ((mem_compactlySupportedForms 𝓘(ℝ, ℝ)).mp
+      ((mem_compactlySupportedClosedForms 𝓘(ℝ, ℝ)).mp ψ.property).left)
 
 end TauCeti

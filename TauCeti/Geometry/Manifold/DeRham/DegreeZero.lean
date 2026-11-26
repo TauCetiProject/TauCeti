@@ -43,6 +43,10 @@ separation or completeness hypotheses on the model.
   finite (both sides are `0` when `M` is infinite).
 * `TauCeti.subsingleton_compactlySupportedDeRhamCohomology_zero`: `H⁰_c(M) = 0` when `M` is
   preconnected and noncompact.
+* `TauCeti.compactlySupportedDeRhamCohomology.const`: on a compact manifold, the compactly
+  supported degree-zero class of a constant real function, compatible with
+  `deRhamCohomology.const` via
+  `TauCeti.compactlySupportedDeRhamCohomology.toDeRhamCohomology_const`.
 
 ## References
 
@@ -234,5 +238,25 @@ theorem subsingleton_compactlySupportedDeRhamCohomology_zero [PreconnectedSpace 
   -- The closed-form representative vanishes because its underlying form does.
   have hφ : φ = 0 := Subtype.ext (eq_zero_of_mem_compactlySupportedClosedForms_zero I φ.property)
   rw [hφ, map_zero]
+
+namespace compactlySupportedDeRhamCohomology
+
+variable {I}
+
+variable (I M) in
+/-- The compactly supported degree-zero cohomology class of a constant `r : ℝ` on a compact
+manifold. -/
+def const [CompactSpace M] : ℝ →ₗ[ℝ] compactlySupportedDeRhamCohomology I M 0 :=
+  (LinearEquiv.ofBijective _ (toDeRhamCohomology_bijective I (M := M) 0)).symm.toLinearMap.comp
+    (deRhamCohomology.const I M)
+
+/-- Forgetting compact support sends `compactlySupportedDeRhamCohomology.const` to
+`deRhamCohomology.const`. -/
+@[simp]
+theorem toDeRhamCohomology_const [CompactSpace M] (r : ℝ) :
+    toDeRhamCohomology I M 0 (const I M r) = deRhamCohomology.const I M r :=
+  (LinearEquiv.ofBijective _ (toDeRhamCohomology_bijective I 0)).apply_symm_apply _
+
+end compactlySupportedDeRhamCohomology
 
 end TauCeti

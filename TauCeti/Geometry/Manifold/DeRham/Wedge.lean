@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
+public import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
+import TauCeti.Geometry.Manifold.DifferentialForm.Opens.Wedge
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import Mathlib.LinearAlgebra.Isomorphisms
 
@@ -48,6 +50,9 @@ dimensionality, separation, or completeness of the model space.
 * `TauCeti.compactlySupportedDeRhamCohomology.wedge`: the wedge of a de Rham class with a
   compactly supported class, with its value on classes
   `TauCeti.compactlySupportedDeRhamCohomology.wedge_mk`.
+* `TauCeti.compactlySupportedDeRhamCohomology.wedge_map` and
+  `TauCeti.compactlySupportedDeRhamCohomology.wedge_extendByZero`: compatibility of the wedge
+  product with smooth proper maps and extension by zero.
 
 ## References
 
@@ -410,6 +415,37 @@ theorem wedge_mk (φ : closedForms I M k) (ψ : compactlySupportedClosedForms I 
           := by
   rw [wedge, LinearMap.equivOfSurjective_apply, LinearMap.flip_apply, wedgeClassRight_mk,
     wedgeClass_apply]
+
+/-- Pullback along a smooth proper map commutes with `wedge`. -/
+theorem wedge_map {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+    [IsManifold J 2 N] (f : M → N) (hf : ContMDiff I J ∞ f) (hp : IsProperMap f)
+    (x : deRhamCohomology J N k) (y : compactlySupportedDeRhamCohomology J N l) :
+    map f hf hp (k + l) (wedge J N k l x y) =
+      wedge I M k l (deRhamCohomology.map f hf k x) (map f hf hp l y) := by
+  obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective J k x
+  obtain ⟨ψ, rfl⟩ := mk_surjective J l y
+  rw [wedge_mk, map_mk, deRhamCohomology.map_mk, map_mk, wedge_mk]
+  exact congrArg (mk I (k + l)) <| Subtype.ext <| by
+    simp only [compactlySupportedClosedForms.coe_mpullback, closedForms.coe_mpullback,
+      SmoothForm.mpullback_wedge]
+
+/-- Extension by zero along `h : U ≤ W` intertwines `wedge` with restriction on `H^k_dR`. -/
+theorem wedge_extendByZero [T2Space M] {U W : TopologicalSpace.Opens M} (h : U ≤ W)
+    (x : deRhamCohomology I W k) (y : compactlySupportedDeRhamCohomology I U l) :
+    extendByZero h (k + l)
+        (wedge I U k l
+          (deRhamCohomology.map (TopologicalSpace.Opens.inclusion h) (contMDiff_inclusion h)
+            k x) y) =
+      wedge I W k l x (extendByZero h l y) := by
+  obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective I k x
+  obtain ⟨ψ, rfl⟩ := mk_surjective I l y
+  rw [deRhamCohomology.map_mk, wedge_mk, extendByZero_mk, extendByZero_mk, wedge_mk]
+  refine congrArg (mk I (k + l)) (Subtype.ext <| Subtype.ext ?_)
+  rw [compactlySupportedClosedForms.coe_extendByZero, SmoothForm.coe_wedge, SmoothForm.coe_wedge,
+    closedForms.coe_mpullback, SmoothForm.coe_mpullback,
+    compactlySupportedClosedForms.coe_extendByZero,
+    RoughForm.extendByZero_mpullback_inclusion_wedge]
 
 end compactlySupportedDeRhamCohomology
 
