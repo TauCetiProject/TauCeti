@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Basic
+public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Schwartz
 import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
@@ -85,23 +86,6 @@ include he
 
 /-! ### The chart quantization -/
 
-/-- The compactly supported smooth function `ψ · (u ∘ e⁻¹)` on `ℝⁿ`, as a Schwartz function. -/
-private def cutoffPushforwardSchwartz (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) : 𝓢(CoordinateSpace n, ℂ) :=
-  HasCompactSupport.toSchwartzMap (f := e.complexCutoffPushforward he ψ u)
-    (by
-      have h : ⇑(e.complexCutoffPushforward he ψ u) = fun y ↦ ψ y • u (e.symm y) :=
-        funext (e.complexCutoffPushforward_apply he ψ u)
-      rw [h]
-      exact ψ.hasCompactSupport.smul_right)
-    (contMDiff_iff_contDiff.1 (e.complexCutoffPushforward he ψ u).contMDiff)
-
-omit [T2Space M] in
-private theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (y : CoordinateSpace n) :
-    cutoffPushforwardSchwartz he ψ u y = ψ y • u (e.symm y) :=
-  e.complexCutoffPushforward_apply he ψ u y
-
 /-- The **quantization of a classical symbol `a` in the chart `e`**, localized by cutoffs `φ` and
 `ψ` with compact supports in the chart target: the operator
 `u ↦ (φ · Op(a) (ψ · (u ∘ e⁻¹))) ∘ e` on the complex-valued smooth functions on `M`, extended by
@@ -121,19 +105,14 @@ def chartQuantization (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (a : Cl
       ContMDiffMap.coe_ofContDiff, ContMDiffMap.coe_ofContDiff,
       ← quantizeSchwartzValue_add_right
         (a.toSymbol.continuous_coefficient_slice x).aestronglyMeasurable hC]
-    congr 1
-    ext y
-    simp [cutoffPushforwardSchwartz_apply, smul_add]
+    rw [map_add]
   map_smul' c u := by
     rw [RingHom.id_apply, ← map_smul]
     congr 1
     ext x
     rw [ContMDiffMap.complex_smul_apply, ContMDiffMap.coe_ofContDiff, ContMDiffMap.coe_ofContDiff,
       ← smul_eq_mul, ← quantizeSchwartzValue_smul_right]
-    congr 1
-    ext y
-    simp [cutoffPushforwardSchwartz_apply, ContMDiffMap.complex_smul_apply]
-    ring
+    rw [map_smul]
 
 /-- On the chart source, the chart quantization of `a` is `φ · Op(a) v` read through the chart,
 for the Schwartz function `v = ψ · (u ∘ e⁻¹)`. -/
@@ -250,58 +229,6 @@ variable {e' : OpenPartialHomeomorph M (CoordinateSpace n)}
   (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
 
 include he'
-
-/-- The cutoff `φ' · (φ ∘ e ∘ e'⁻¹)` on `ℝⁿ`, extended by `0` off the overlap of the charts: the
-product of a cutoff `φ'` in the chart `e'` with a cutoff `φ` in the chart `e` read through `e'`. -/
-private def overlapCutoff (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) : CoordinateSpace n → ℝ :=
-  e'.cutoffPushforward he' φ' (e.cutoffPullback he φ 1)
-
-/-- The overlap cutoff is the coercion of a smooth function on `ℝⁿ`. -/
-private theorem overlapCutoff_eq (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
-    overlapCutoff he he' φ' φ = ⇑(e'.cutoffPushforward he' φ' (e.cutoffPullback he φ 1)) :=
-  rfl
-
-private theorem overlapCutoff_apply (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (x : CoordinateSpace n) :
-    overlapCutoff he he' φ' φ x = φ' x * e.cutoffPullback he φ 1 (e'.symm x) := by
-  rw [overlapCutoff_eq, cutoffPushforward_apply]
-
-private theorem overlapCutoff_apply_of_mem (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {x : CoordinateSpace n}
-    (hx : e'.symm x ∈ e.source) :
-    overlapCutoff he he' φ' φ x = φ' x * φ (e (e'.symm x)) := by
-  rw [overlapCutoff_apply, cutoffPullback_one_apply_of_mem he _ hx]
-
-private theorem overlapCutoff_apply_of_notMem (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {x : CoordinateSpace n}
-    (hx : x ∉ (e'.symm.trans e).source) : overlapCutoff he he' φ' φ x = 0 := by
-  rw [overlapCutoff_apply]
-  by_cases hx' : x ∈ e'.target
-  · rw [cutoffPullback_apply_of_notMem he _ _ (x := e'.symm x) fun h ↦ hx ⟨hx', h⟩, mul_zero]
-  · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx' (φ'.tsupport_subset h), zero_mul]
-
-/-- The overlap cutoff is smooth, compactly supported, and supported in the source of the
-transition map `e ∘ e'⁻¹`. -/
-private theorem overlapCutoff_spec (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
-    ContDiff ℝ ∞ (overlapCutoff he he' φ' φ) ∧ HasCompactSupport (overlapCutoff he he' φ' φ) ∧
-      tsupport (overlapCutoff he he' φ' φ) ⊆ (e'.symm.trans e).source := by
-  have hfun : overlapCutoff he he' φ' φ = fun x ↦ φ' x * e.cutoffPullback he φ 1 (e'.symm x) :=
-    funext (overlapCutoff_apply he he' φ' φ)
-  refine ⟨overlapCutoff_eq he he' φ' φ ▸ e'.contDiff_cutoffPushforward he' φ' _,
-    overlapCutoff_eq he he' φ' φ ▸ e'.hasCompactSupport_cutoffPushforward he' φ' _, ?_⟩
-  -- The support lies in the set of `x ∈ supp φ'` with `e'⁻¹ x ∈ e⁻¹(supp φ)`, which is closed.
-  have hS : IsClosed (tsupport φ' ∩ e'.symm ⁻¹' (e.symm '' tsupport φ)) :=
-    (e'.continuousOn_symm.mono φ'.tsupport_subset).preimage_isClosed_of_isClosed
-      (isClosed_tsupport _) (e.isCompact_symm_image_tsupport φ).isClosed
-  refine (closure_minimal (fun x hx ↦ ?_) hS).trans fun x ⟨hx', y, hy, hyx⟩ ↦ ?_
-  · rw [Function.mem_support, hfun, ne_eq, mul_eq_zero, not_or] at hx
-    exact ⟨subset_tsupport _ hx.1,
-      tsupport_cutoffPullback_subset he φ 1 (subset_tsupport _ hx.2)⟩
-  · rw [trans_source, symm_source]
-    exact ⟨φ'.tsupport_subset hx', mem_preimage.2 (hyx ▸ e.map_target (φ.tsupport_subset hy))⟩
 
 /-- The input of `Op(a)` in the compression of the chart quantization to the chart `e'`: on the
 chart overlap, the Schwartz function `ψ · (((ψ' u) ∘ e') ∘ e⁻¹)` read through the transition map
