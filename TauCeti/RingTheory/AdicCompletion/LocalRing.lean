@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.RegularLocalRing.Flat
 
 import TauCeti.RingTheory.AdicCompletion.Localization
+import TauCeti.RingTheory.LocalRing.Quotient
 
 /-!
 # Dimension and regularity of the completion of a local ring
@@ -34,6 +35,12 @@ an open prime `𝔭`, which have the dimension and regularity of `A_𝔭`.
 * `TauCeti.AdicCompletion.isLocalRing_of_le`: the completion of a local ring along a finitely
   generated ideal `I ⊆ 𝔪` is a local ring.
 * `TauCeti.AdicCompletion.maximalIdeal_eq_map_of_le`: its maximal ideal is `𝔪 R̂`.
+* `TauCeti.AdicCompletion.bijective_quotientMap_maximalIdeal_of_fg`,
+  `TauCeti.AdicCompletion.bijective_quotientMap_maximalIdeal`,
+  `TauCeti.AdicCompletion.radical_map_maximalIdeal_of_fg`,
+  `TauCeti.AdicCompletion.radical_map_maximalIdeal`: for the `𝔪`-adic completion `R̂` of a local
+  ring with finitely generated maximal ideal (in particular a Noetherian local ring),
+  `R ⧸ 𝔪 → R̂ ⧸ 𝔪 R̂` is bijective and `𝔪 R̂` has radical `𝔪_{R̂}`.
 * `TauCeti.AdicCompletion.ringKrullDim_eq`: `R̂` and `R` have the same Krull dimension.
 * `TauCeti.AdicCompletion.isRegularLocalRing_iff`: `R̂` is regular if and only if `R` is.
 * `TauCeti.AdicCompletion.isRegularLocalRing_iff_of_isMaximal`: completing a Noetherian ring `R` at
@@ -80,7 +87,45 @@ theorem maximalIdeal_eq_map_of_le (hI : I ≤ maximalIdeal R) (fg : I.FG) :
   haveI := isLocalRing_of_le hI fg
   (eq_maximalIdeal (AdicCompletion.isMaximal_map_of_le I _ hI fg)).symm
 
+/-- For a local ring `R` with finitely generated maximal ideal `𝔪`, the canonical map to its
+`𝔪`-adic completion `R̂` induces a bijection `R ⧸ 𝔪 → R̂ ⧸ 𝔪 R̂`. -/
+theorem bijective_quotientMap_maximalIdeal_of_fg (fg : (maximalIdeal R).FG) :
+    Function.Bijective (Ideal.quotientMap
+      ((maximalIdeal R).map (algebraMap R (AdicCompletion (maximalIdeal R) R)))
+      (algebraMap R (AdicCompletion (maximalIdeal R) R)) Ideal.le_comap_map) := by
+  have := _root_.AdicCompletion.isLocalRing_of_fg fg
+  have := _root_.AdicCompletion.algebraMap_isLocalHom_of_fg fg
+  rw [
+    TauCeti.IsLocalRing.bijective_quotientMap_iff_map_maximalIdeal_eq_and_bijective_residueFieldMap]
+  exact ⟨(_root_.AdicCompletion.maximalIdeal_eq_map_of_fg fg).symm,
+    _root_.AdicCompletion.residueField_map_bijective_of_fg fg⟩
+
+/-- For a local ring `R` with finitely generated maximal ideal `𝔪`, the extension of `𝔪` to its
+`𝔪`-adic completion `R̂` has radical the maximal ideal of `R̂`. -/
+theorem radical_map_maximalIdeal_of_fg (fg : (maximalIdeal R).FG) :
+    haveI := _root_.AdicCompletion.isLocalRing_of_fg fg
+    ((maximalIdeal R).map (algebraMap R (AdicCompletion (maximalIdeal R) R))).radical =
+      maximalIdeal (AdicCompletion (maximalIdeal R) R) := by
+  have := _root_.AdicCompletion.isLocalRing_of_fg fg
+  exact TauCeti.IsLocalRing.radical_map_maximalIdeal_of_bijective_quotientMap
+    (bijective_quotientMap_maximalIdeal_of_fg fg)
+
 variable [IsNoetherianRing R]
+
+/-- For a Noetherian local ring `R` with maximal ideal `𝔪`, the canonical map to its `𝔪`-adic
+completion `R̂` induces a bijection `R ⧸ 𝔪 → R̂ ⧸ 𝔪 R̂`. -/
+theorem bijective_quotientMap_maximalIdeal :
+    Function.Bijective (Ideal.quotientMap
+      ((maximalIdeal R).map (algebraMap R (AdicCompletion (maximalIdeal R) R)))
+      (algebraMap R (AdicCompletion (maximalIdeal R) R)) Ideal.le_comap_map) :=
+  bijective_quotientMap_maximalIdeal_of_fg (maximalIdeal R).fg_of_isNoetherianRing
+
+/-- For a Noetherian local ring `R` with maximal ideal `𝔪`, the extension of `𝔪` to its `𝔪`-adic
+completion `R̂` has radical the maximal ideal of `R̂`. -/
+theorem radical_map_maximalIdeal :
+    ((maximalIdeal R).map (algebraMap R (AdicCompletion (maximalIdeal R) R))).radical =
+      maximalIdeal (AdicCompletion (maximalIdeal R) R) :=
+  radical_map_maximalIdeal_of_fg (maximalIdeal R).fg_of_isNoetherianRing
 
 /-- The completion of a Noetherian local ring along an ideal contained in the maximal ideal has
 the same Krull dimension as the ring. -/

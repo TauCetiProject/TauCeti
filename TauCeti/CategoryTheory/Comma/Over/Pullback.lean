@@ -170,6 +170,26 @@ theorem pullbackPullbackIsoOfComm_hom_app_left_snd (h : i' ≫ g = t ≫ i) (A :
       pullback.snd (pullback.snd A.hom g) i' :=
   Over.w ((pullbackPullbackIsoOfComm h).hom.app A)
 
+/-- The inverse of `pullbackPullbackIsoOfComm h` at `A` is `pullbackPullbackIsoOfComm h.symm`. -/
+theorem pullbackPullbackIsoOfComm_inv_app (h : i' ≫ g = t ≫ i) (A : Over S) :
+    (pullbackPullbackIsoOfComm h).inv.app A = (pullbackPullbackIsoOfComm h.symm).hom.app A := by
+  simp [pullbackPullbackIsoOfComm, eqToHom_app]
+
+/-- The inverse of `pullbackPullbackIsoOfComm` commutes with the projections to `A`. -/
+@[reassoc (attr := simp)]
+theorem pullbackPullbackIsoOfComm_inv_app_left_fst (h : i' ≫ g = t ≫ i) (A : Over S) :
+    ((pullbackPullbackIsoOfComm h).inv.app A).left ≫ pullback.fst (pullback.snd A.hom g) i' ≫
+        pullback.fst A.hom g =
+      pullback.fst (pullback.snd A.hom i) t ≫ pullback.fst A.hom i := by
+  rw [pullbackPullbackIsoOfComm_inv_app, pullbackPullbackIsoOfComm_hom_app_left_fst]
+
+/-- The inverse of `pullbackPullbackIsoOfComm` commutes with the projections to `s'`. -/
+@[reassoc (attr := simp)]
+theorem pullbackPullbackIsoOfComm_inv_app_left_snd (h : i' ≫ g = t ≫ i) (A : Over S) :
+    ((pullbackPullbackIsoOfComm h).inv.app A).left ≫ pullback.snd (pullback.snd A.hom g) i' =
+      pullback.snd (pullback.snd A.hom i) t :=
+  Over.w ((pullbackPullbackIsoOfComm h).inv.app A)
+
 end CommSquare
 
 section Triangle
