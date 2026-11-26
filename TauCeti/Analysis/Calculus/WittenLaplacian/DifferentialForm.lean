@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import TauCeti.Analysis.Calculus.DifferentialForm.HodgeLaplacian
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
-import TauCeti.Analysis.Calculus.WittenLaplacian.Basic
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 

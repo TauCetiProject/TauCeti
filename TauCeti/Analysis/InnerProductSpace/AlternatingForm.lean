@@ -255,8 +255,10 @@ def wedgeCovectorₗ (k : ℕ) :
 
 @[simp]
 theorem wedgeCovectorₗ_apply (k : ℕ) (u : V) : wedgeCovectorₗ k u = wedgeCovector u k := by
-  rw [wedgeCovectorₗ, LinearMap.comp_apply, LinearMap.comp_apply, ExteriorAlgebra.wedgeLeftₗ_apply]
-  rfl
+  ext α : 1
+  simp only [wedgeCovectorₗ, LinearMap.comp_apply, ExteriorAlgebra.wedgeLeftₗ_apply,
+    LinearEquiv.coe_coe, LinearMap.coe_toContinuousLinearMap', LinearEquiv.arrowCongr_apply,
+    wedgeCovector_apply]
 
 /-- Exterior multiplication by a covector is additive in the covector:
 `ε_{u + w} = ε_u + ε_w`. -/
@@ -270,6 +272,23 @@ theorem wedgeCovector_add (u w : V) (k : ℕ) :
 theorem wedgeCovector_smul (c : ℝ) (u : V) (k : ℕ) :
     wedgeCovector (c • u) k = c • wedgeCovector u k := by
   simpa only [wedgeCovectorₗ_apply] using (wedgeCovectorₗ k).map_smul c u
+
+/-- Exterior multiplication by the zero covector vanishes: `ε_0 = 0`. -/
+@[simp]
+theorem wedgeCovector_zero (k : ℕ) : wedgeCovector (0 : V) k = 0 := by
+  simpa only [wedgeCovectorₗ_apply] using (wedgeCovectorₗ (V := V) k).map_zero
+
+/-- Exterior multiplication by a covector is odd in the covector: `ε_{-u} = -ε_u`. -/
+@[simp]
+theorem wedgeCovector_neg (u : V) (k : ℕ) : wedgeCovector (-u) k = -wedgeCovector u k := by
+  simpa only [wedgeCovectorₗ_apply] using map_neg (wedgeCovectorₗ k) u
+
+/-- Exterior multiplication by a covector is subtractive in the covector:
+`ε_{u - w} = ε_u - ε_w`. -/
+@[simp]
+theorem wedgeCovector_sub (u w : V) (k : ℕ) :
+    wedgeCovector (u - w) k = wedgeCovector u k - wedgeCovector w k := by
+  simpa only [wedgeCovectorₗ_apply] using map_sub (wedgeCovectorₗ k) u w
 
 /-- **Exterior multiplication by a covector in an orthonormal frame**:
 `ε_u = ∑ᵢ ⟪eᵢ, u⟫ ε_{eᵢ}`. -/
