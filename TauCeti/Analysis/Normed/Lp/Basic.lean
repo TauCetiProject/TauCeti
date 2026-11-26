@@ -74,7 +74,10 @@ its coordinate series `T x = ∑ i, xᵢ • T eᵢ` (`ContinuousLinearMap.hasSu
 coordinate vectors (`ContinuousLinearMap.ext_lp_of_ne_top`). On ℓ¹, a uniform bound `C` on the
 norms `‖T eᵢ‖` bounds `‖T‖` (`ContinuousLinearMap.opNorm_lpOne_le`), so the norm of `T` is the
 supremum of the norms `‖T eᵢ‖` (`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`,
-`ContinuousLinearMap.nnnorm_eq_ciSup_nnnorm_lp_single`).
+`ContinuousLinearMap.nnnorm_eq_ciSup_nnnorm_lp_single`). For iterated `ℓᵖ` spaces (`1 ≤ p`), the
+uncurried sequence lies in `ℓᵖ` on the product index type (`lp.memℓp_prod`), and for `1 ≤ p < ∞`
+the `p`-th powers of the doubly indexed coordinate norms are summable
+(`lp.summable_norm_rpow_prod`).
 -/
 
 public section
@@ -138,11 +141,12 @@ theorem hasSum_norm_one (y : lp E 1) : HasSum (fun i ↦ ‖y i‖) ‖y‖ := b
   simpa using lp.hasSum_norm (p := 1) (by simp) y
 
 /-- **The `ℓᵖ` norms decrease in the exponent.** For `0 < p ≤ q`, a sequence `f ∈ ℓᵖ` lies in
-`ℓ^q` (`Memℓp.of_exponent_ge`), and its `ℓ^q` norm is at most its `ℓᵖ` norm. -/
+`ℓ^q` (`Memℓp.of_exponent_ge`), and its `ℓ^q` norm is at most its `ℓᵖ` norm. More generally, the
+`ℓ^q` norm of any `g` dominated coordinatewise by `f` is at most the `ℓᵖ` norm of `f`. -/
 theorem norm_le_norm_of_exponent_le {q : ℝ≥0∞} (hp : p ≠ 0) (hpq : p ≤ q) {f : lp E p}
-    {g : lp E q} (hfg : ∀ i, g i = f i) : ‖g‖ ≤ ‖f‖ := by
+    {g : lp E q} (hfg : ∀ i, ‖g i‖ ≤ ‖f i‖) : ‖g‖ ≤ ‖f‖ := by
   rcases eq_or_ne q ∞ with rfl | hq
-  · exact norm_le_of_forall_le (norm_nonneg' f) fun i ↦ (hfg i).symm ▸ norm_apply_le_norm hp f i
+  · exact norm_le_of_forall_le (norm_nonneg' f) fun i ↦ (hfg i).trans (norm_apply_le_norm hp f i)
   have hpr : 0 < p.toReal := ENNReal.toReal_pos hp (ne_top_of_le_ne_top hq hpq)
   have hpq' : p.toReal ≤ q.toReal := ENNReal.toReal_mono hq hpq
   have hqr : 0 < q.toReal := hpr.trans_le hpq'
@@ -153,7 +157,8 @@ theorem norm_le_norm_of_exponent_le {q : ℝ≥0∞} (hp : p ≠ 0) (hpq : p ≤
   calc ∑ i ∈ s, ‖g i‖ ^ q.toReal
       ≤ ∑ i ∈ s, ‖f‖ ^ (q.toReal - p.toReal) * ‖f i‖ ^ p.toReal := by
         gcongr with i
-        rw [hfg i, hsplit _ (norm_nonneg _)]
+        grw [hfg i]
+        rw [hsplit _ (norm_nonneg _)]
         gcongr
         exact norm_apply_le_norm hp f i
     _ = ‖f‖ ^ (q.toReal - p.toReal) * ∑ i ∈ s, ‖f i‖ ^ p.toReal := (Finset.mul_sum ..).symm
@@ -167,7 +172,7 @@ theorem norm_le_tsum_norm [Fact (1 ≤ p)] (f : lp E p)
     (hf : Summable fun i ↦ ‖f i‖) : ‖f‖ ≤ ∑' i, ‖f i‖ := by
   -- The same sequence, viewed in `ℓ¹`, where its norm is the sum of the norms of its coordinates.
   let g : lp E 1 := ⟨f, memℓp_gen (by simpa using hf)⟩
-  calc ‖f‖ ≤ ‖g‖ := norm_le_norm_of_exponent_le one_ne_zero Fact.out fun _ ↦ rfl
+  calc ‖f‖ ≤ ‖g‖ := norm_le_norm_of_exponent_le one_ne_zero Fact.out fun _ ↦ le_rfl
     _ = ∑' i, ‖f i‖ := (hasSum_norm_one g).tsum_eq.symm
 
 /-- The extended ℓ¹ norm is the sum of the extended norms of the coordinates. -/
@@ -490,6 +495,28 @@ theorem separableSpace_iff_countable [∀ i, Nontrivial (E i)]
     [∀ i, TopologicalSpace.SeparableSpace (E i)] [Fact (1 ≤ p)] (hp : p ≠ ∞) :
     TopologicalSpace.SeparableSpace (lp E p) ↔ Countable ι :=
   ⟨fun _ ↦ countable_of_separableSpace E p, fun _ ↦ separableSpace hp⟩
+
+/-- For an element `ζ` of an iterated `ℓᵖ` space (`1 ≤ p` and `0 < p.toReal`), the `p`-th powers of
+the coordinate norms `‖ζ x.1 x.2‖ ^ p.toReal` are summable over `ι₁ × ι₂`. -/
+theorem summable_norm_rpow_prod {ι₁ ι₂ : Type*} {G : ι₁ → ι₂ → Type*}
+    [∀ i j, NormedAddCommGroup (G i j)] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 0 < p.toReal)
+    (ζ : lp (fun i ↦ lp (G i) p) p) :
+    Summable fun x : ι₁ × ι₂ ↦ ‖ζ x.1 x.2‖ ^ p.toReal :=
+  (summable_prod_of_nonneg fun _ ↦ by positivity).2
+    ⟨fun i ↦ (lp.memℓp (ζ i)).summable hp, ((lp.memℓp ζ).summable hp).congr fun i ↦ by
+      simpa using (lp.hasSum_norm hp (ζ i)).tsum_eq.symm⟩
+
+/-- An element `ζ` of an iterated `ℓᵖ` space (`1 ≤ p`) lies in `ℓᵖ` on `ι₁ × ι₂`. -/
+theorem memℓp_prod {ι₁ ι₂ : Type*} {G : ι₁ → ι₂ → Type*} [∀ i j, NormedAddCommGroup (G i j)]
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (ζ : lp (fun i ↦ lp (G i) p) p) :
+    Memℓp (fun x : ι₁ × ι₂ ↦ ζ x.1 x.2) p := by
+  rcases eq_or_ne p ∞ with rfl | hp
+  · refine memℓp_infty ⟨‖ζ‖, ?_⟩
+    rintro _ ⟨⟨i, j⟩, rfl⟩
+    exact (lp.norm_apply_le_norm ENNReal.top_ne_zero (ζ i) j).trans
+      (lp.norm_apply_le_norm ENNReal.top_ne_zero ζ i)
+  · exact memℓp_gen <| lp.summable_norm_rpow_prod
+      (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hp) ζ
 
 end lp
 

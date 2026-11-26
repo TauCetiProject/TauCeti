@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Torsion.Basic
-public import TauCeti.NumberTheory.LocalField.WildInertia
+public import TauCeti.NumberTheory.LocalField.WildInertia.Basic
 
 /-!
 # Wild inertia on Tate-curve torsion

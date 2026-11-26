@@ -331,9 +331,7 @@ theorem mul_ofHomogeneous (i j : ℕ) :
       eqToHom (by rw [CommMon.toMon_X, ofHomogeneous_obj_X]) ≫ mul i j ≫
         eqToHom (congrFun (ofHomogeneous_obj_X M one mul one_mul mul_one mul_assoc mul_comm)
           (i + j)).symm :=
-  Mon.mul_eq _ _ _ |>.trans
-    ((GradedObject.Monoidal.ιTensorObj_mulOfHomogeneous M mul i j (i + j) rfl).trans
-      (Category.comp_id _))
+  Mon.mul_mk_monObjOfHomogeneous M one mul one_mul mul_one mul_assoc i j
 
 /-- The unit of `ofHomogeneous` is the given one, up to the identification
 `ofHomogeneous_obj_X` of its degree-zero component with `M 0`. -/
@@ -342,9 +340,7 @@ theorem one_ofHomogeneous :
     (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).obj.toMon.one =
       one ≫ eqToHom (congrFun (ofHomogeneous_obj_X M one mul one_mul mul_one mul_assoc mul_comm)
         0).symm :=
-  Mon.one_eq _ |>.trans
-    ((congrArg (GradedObject.Monoidal.tensorUnit₀.inv ≫ ·)
-      (GradedObject.Monoidal.oneOfDegreeZero_zero M one)).trans (Iso.inv_hom_id_assoc _ _))
+  Mon.one_mk_monObjOfHomogeneous M one mul one_mul mul_one mul_assoc
 
 end Homogeneous
 

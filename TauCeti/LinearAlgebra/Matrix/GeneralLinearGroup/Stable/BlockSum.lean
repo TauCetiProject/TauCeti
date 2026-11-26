@@ -22,12 +22,17 @@ and in algebraic `K₁` the class of `g ⊞ h` is the product of the classes of 
 not an operation on stable representatives, since stabilizing the first block shifts the
 second; the class formula is what survives in the limit. Its proof uses that relabelling the
 indices of an invertible matrix, in particular swapping the two blocks, does not change its
-class in `K₁`, because such a relabelling is conjugation by a permutation matrix.
+class in `K₁`, because such a relabelling is conjugation by a permutation matrix. The same holds
+already in `GL_∞(A)` for a matrix indexed by an arbitrary finite type: each enumeration of the
+indices gives an image in `GL_∞(A)`, and two enumerations give images conjugate by the image of a
+permutation matrix.
 
 ## Main definitions
 
 * `TauCeti.blockSumGL`: the block sum homomorphism
   `GL (Fin m) A × GL (Fin n) A →* GL (Fin (m + n)) A`, `(g, h) ↦ g ⊞ h`.
+* `TauCeti.StableGeneralLinearGroup.ofEquiv`: the image `GL ι A →* GL_∞(A)` of invertible
+  matrices indexed by a finite type `ι`, through an enumeration `ι ≃ Fin k`.
 
 ## Main results
 
@@ -49,6 +54,8 @@ class in `K₁`, because such a relabelling is conjugation by a permutation matr
   the block-swap permutation matrix.
 * `TauCeti.blockSumGL_mem_elementarySubgroup`: the block sum of elementary matrices is
   elementary.
+* `TauCeti.StableGeneralLinearGroup.ofEquiv_eq_mul_mul_inv`: two enumerations of the indices of a
+  matrix give images in `GL_∞(A)` conjugate by the image of a permutation matrix.
 * `TauCeti.AlgebraicK1.mk_reindexGL`: relabelling the indices does not change the class in `K₁`.
 * `TauCeti.AlgebraicK1.mk_blockSumGL`: `[g ⊞ h] = [g] [h]` in `K₁(A)`.
 
@@ -231,13 +238,47 @@ theorem blockSumGL_mem_elementarySubgroup {g : GL (Fin m) A} {h : GL (Fin n) A}
   rw [← Equiv.map_reindexGL_elementarySubgroup finAddFlip]
   exact ⟨_, map_stabilizeGL_elementarySubgroup_le _ ⟨h, hh, rfl⟩, rfl⟩
 
+/-! ## Enumerations of the indices -/
+
+namespace StableGeneralLinearGroup
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+variable (A) in
+/-- The image in `GL_∞(A)` of an invertible matrix indexed by a finite type `ι`, through an
+enumeration `e : ι ≃ Fin k` of its indices: the image of its reindexing along `e`. -/
+def ofEquiv {k : ℕ} (e : ι ≃ Fin k) : GL ι A →* StableGeneralLinearGroup A :=
+  (of A k).comp (e.reindexGL A).toMonoidHom
+
+/-- The image through an enumeration `e` is the image of the reindexing along `e`. -/
+@[simp]
+theorem ofEquiv_apply {k : ℕ} (e : ι ≃ Fin k) (u : GL ι A) :
+    ofEquiv A e u = of A k (e.reindexGL A u) :=
+  (rfl)
+
+/-- The image in `GL_∞(A)` through an enumeration of the indices is injective. -/
+theorem ofEquiv_injective {k : ℕ} (e : ι ≃ Fin k) : Function.Injective (ofEquiv A e) :=
+  (of_injective k).comp (e.reindexGL A).injective
+
+/-- Two enumerations `e` and `e'` of the indices give images in `GL_∞(A)` which are conjugate by
+the image of the permutation matrix of `e.symm.trans e'`. -/
+theorem ofEquiv_eq_mul_mul_inv {k : ℕ} (e e' : ι ≃ Fin k) (u : GL ι A) :
+    ofEquiv A e' u =
+      of A k (permutationGL (k := A) (e.symm.trans e')) * ofEquiv A e u *
+        (of A k (permutationGL (k := A) (e.symm.trans e')))⁻¹ := by
+  rw [ofEquiv_apply, ofEquiv_apply, ← map_inv, ← map_mul, ← map_mul, permutationGL_mul_mul_inv]
+  congr 1
+  ext : 1
+  simp [Function.comp_def]
+
+end StableGeneralLinearGroup
+
 /-! ## Block sums in algebraic `K₁` -/
 
 namespace AlgebraicK1
 
 /-- **Relabelling the indices does not change the class in `K₁`**: for `e : Fin m ≃ Fin n`, the
 reindexed matrix is conjugate to the original one by a permutation matrix. -/
-@[simp]
 theorem mk_reindexGL (e : Fin m ≃ Fin n) (u : GL (Fin m) A) :
     mk A n (e.reindexGL A u) = mk A m u := by
   obtain rfl : m = n := by simpa using Fintype.card_congr e

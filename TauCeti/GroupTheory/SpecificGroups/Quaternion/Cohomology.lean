@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupExtension.Cyclic.Inversion
 public import TauCeti.GroupTheory.GroupExtension.Quotient.Cohomology
+public import TauCeti.GroupTheory.GroupExtension.Quotient.Inversion
 public import TauCeti.GroupTheory.GroupExtension.Relabel
 public import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Quaternion.Extension
@@ -25,6 +26,10 @@ Transporting the rotation quotient extension along `quaternionRotationsMulEquiv 
 `quaternionQuotientEquiv n` places its class `TauCeti.quaternionExtensionClass n` inside
 `H²(C₂, C_{2n}^{inv})`, where it maps to `1 : ZMod 2` under
 `Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo n` and is nonzero for `n ≠ 0`.
+Likewise, every element outside the rotations inverts them, so through `Q₄ₙ ⧸ C₂ₙ ≃* C₂` and the
+rotation coordinate `C₂ₙ ≃* ZMod (2 * n)` the rotation cohomology is that of `C₂` acting on
+`ZMod (2 * n)` by negation (`TauCeti.quaternionRotationsGroupCohomologyIsoNeg`), and there too the
+class is nonzero.
 
 This is separated from `TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic` so the elementary
 subgroup and recognition API of `QuaternionGroup` does not pull in group cohomology.
@@ -33,6 +38,9 @@ subgroup and recognition API of `QuaternionGroup` does not pull in group cohomol
 
 * `TauCeti.quaternionExtensionClass`: the cohomology class of
   `1 → C_{2n} → QuaternionGroup n → C₂ → 1` inside `H²(C₂, C_{2n}^{inv})`.
+* `TauCeti.quaternionRotationsGroupCohomologyIsoNeg`: the cohomology of the rotation quotient
+  module of `QuaternionGroup n`, identified with that of `C₂` acting on `ZMod (2 * n)` by
+  negation.
 
 ## Main results
 
@@ -47,9 +55,15 @@ subgroup and recognition API of `QuaternionGroup` does not pull in group cohomol
 * `TauCeti.groupCohomologyTwoInvEquivZModTwo_quaternionExtensionClass`:
   `quaternionExtensionClass n` maps to `1 : ZMod 2` for `n ≠ 0`.
 * `TauCeti.quaternionExtensionClass_ne_zero`: `quaternionExtensionClass n ≠ 0` for `n ≠ 0`.
+* `TauCeti.quaternionRotationsGroupCohomologyIsoNeg_def`: that identification is
+  `Subgroup.quotientGroupCohomologyIsoNeg` for `xa 0` and the rotation coordinate.
+* `TauCeti.quaternionRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_ne_zero`: for nonzero
+  `n`, so is the image of the rotation class in `H²(C₂, ZMod (2 * n))`.
 -/
 
 public section
+
+open CategoryTheory
 
 open scoped IsMulCommutative
 
@@ -135,5 +149,37 @@ theorem quaternionExtensionClass_ne_zero (n : ℕ) [NeZero n] :
   have h1 := congrArg (Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo n) h
   rw [groupCohomologyTwoInvEquivZModTwo_quaternionExtensionClass, map_zero] at h1
   exact one_ne_zero h1
+
+/-- The cohomology of the quotient module of `Q₄ₙ = QuaternionGroup n` on its rotations,
+identified with the cohomology of `C₂` acting on `ZMod (2 * n)` by negation through
+`Q₄ₙ ⧸ C₂ₙ ≃* C₂` and the rotation coordinate `C₂ₙ ≃* ZMod (2 * n)`. -/
+noncomputable def quaternionRotationsGroupCohomologyIsoNeg (n k : ℕ) :
+    groupCohomology (Rep.ofMulDistribMulAction (QuaternionGroup n ⧸ quaternionRotations n)
+        (quaternionRotations n)) k ≅
+      groupCohomology ((AddEquiv.neg (ZMod (2 * n))).cyclicRep (AddEquiv.iterate_neg_two _)) k :=
+  Subgroup.quotientGroupCohomologyIsoNeg (index_quaternionRotations n)
+    (xa_notMem_quaternionRotations 0)
+    (fun _ hx ↦ conj_eq_inv_of_notMem_quaternionRotations (xa_notMem_quaternionRotations 0) hx)
+    (quaternionRotationsMulEquiv n) k
+
+/-- `TauCeti.quaternionRotationsGroupCohomologyIsoNeg` is `Subgroup.quotientGroupCohomologyIsoNeg`
+for the element `xa 0` outside the rotations and the rotation coordinate
+`quaternionRotationsMulEquiv n`. -/
+theorem quaternionRotationsGroupCohomologyIsoNeg_def (n k : ℕ) :
+    quaternionRotationsGroupCohomologyIsoNeg n k =
+      Subgroup.quotientGroupCohomologyIsoNeg (index_quaternionRotations n)
+        (xa_notMem_quaternionRotations 0)
+        (fun _ hx ↦ conj_eq_inv_of_notMem_quaternionRotations (xa_notMem_quaternionRotations 0) hx)
+        (quaternionRotationsMulEquiv n) k :=
+  (rfl)
+
+/-- For `n ≠ 0`, the class of the quaternion extension `C₂ₙ → Q₄ₙ → C₂` is nonzero in
+`H²(C₂, ZMod (2 * n))`. -/
+theorem quaternionRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_ne_zero (n : ℕ) [NeZero n]
+    (σ : (quaternionRotations n).quotientExtension.Section) (hσ : σ 1 = 1) :
+    (quaternionRotationsGroupCohomologyIsoNeg n 2).hom (GroupExtension.factorSet σ hσ
+      (quaternionRotations n).quotientExtension_inducesAction).cohomologyClass ≠ 0 :=
+  (map_ne_zero_iff _ (quaternionRotationsGroupCohomologyIsoNeg n 2).toLinearEquiv.injective).2
+    (cohomologyClass_quaternionRotations_ne_zero n σ hσ)
 
 end TauCeti

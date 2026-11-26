@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Randomized tests and their power
@@ -49,6 +50,9 @@ threshold and interval tests are evaluated by `simp` lemmas such as `thresholdTe
   integrable for every finite measure, as is its product with an integrable function.
 * `TauCeti.IsStatisticalTest.integral_mem_Icc`: the integral of a test under a probability
   measure lies in `[0, 1]`.
+* `TauCeti.isStatisticalTest_indicator_one_iff`, `TauCeti.testPower_indicator_one`: the
+  nonrandomized test rejecting on `s` is a test iff `s` is measurable, and its power at `θ` is
+  the probability of `s` under `P θ`.
 * `TauCeti.IsUniformlyMostPowerfulTest.hasTestLevel`,
   `TauCeti.IsUniformlyMostPowerfulUnbiasedTest.hasTestLevel`: optimal tests have the level.
 * `TauCeti.IsSimilarTest.hasTestLevel`, `TauCeti.isSimilarTest_const`: a similar test has the
@@ -164,6 +168,22 @@ theorem integral_one_sub (hφ : IsStatisticalTest φ) (μ : Measure X) [IsProbab
   simp
 
 end IsStatisticalTest
+
+/-- The nonrandomized test `s.indicator 1`, rejecting exactly on `s`, is a test iff its rejection
+region `s` is measurable. -/
+@[simp]
+theorem isStatisticalTest_indicator_one_iff {s : Set X} :
+    IsStatisticalTest (s.indicator (1 : X → ℝ)) ↔ MeasurableSet s := by
+  rw [isStatisticalTest_iff, Pi.one_def, measurable_indicator_const_iff]
+  exact and_iff_left_of_imp fun _ x ↦ ⟨indicator_nonneg (fun _ _ ↦ zero_le_one) x,
+    indicator_le' (fun _ _ ↦ le_rfl) (fun _ _ ↦ zero_le_one) x⟩
+
+/-- The power at `θ` of the nonrandomized test with measurable rejection region `s` is the
+probability `(P θ).real s` of rejecting. -/
+@[simp]
+theorem testPower_indicator_one {s : Set X} (hs : MeasurableSet s) :
+    testPower P (s.indicator 1) θ = (P θ).real s := by
+  rw [testPower_def, integral_indicator_one hs]
 
 /-! ### Tests of a given level -/
 

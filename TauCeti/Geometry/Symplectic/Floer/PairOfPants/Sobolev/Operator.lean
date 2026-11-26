@@ -36,9 +36,10 @@ the end coordinates.
   operator at `φ'_q(ζ)` is `a D_u - b J D_u` for `(a, b) = dφ'_q (1, 0)`
   (`TauCeti.SymplecticForm.floerLinearization_comp_positiveEndChart`). Applied to constant
   sections, this gives `C_end(ζ) = (a - b J) C(φ'_q ζ)` for the zeroth-order part `C_end` of the
-  linearized operator of the end datum `H'_q(t) dt` along `u ∘ φ'_q`. Since `J² = -1`, `a - b J`
-  is inverted by `(a + b J) / (a² + b²)`, and `a² + b²` is the Jacobian `4π² |φ'_q(ζ) - c_q|²` of
-  the chart, so
+  linearized operator of the end datum `H'_q(t) dt` along `u ∘ φ'_q`
+  (`TauCeti.SymplecticForm.floerLinearizationCoeff_comp_positiveEndChart_apply`). Since
+  `J² = -1`, `a - b J` is inverted by `(a + b J) / (a² + b²)`, and `a² + b²` is the Jacobian
+  `4π² |φ'_q(ζ) - c_q|²` of the chart, so
   `2π |φ'_q(ζ) - c_q| ‖C(φ'_q ζ)‖ ≤ (1 + ‖J‖) ‖C_end(ζ)‖`
   (`TauCeti.SymplecticForm.mul_norm_floerLinearizationCoeff_positiveEndChart_le`).
 * **The weight.** The cylindrical weight is at least `|z - c_q|⁻²` for each center `c_q`
@@ -93,6 +94,46 @@ open Floer ConformalSobolev ContinuousLinearMap
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ}
 
+/-- **The zeroth-order part of the linearized operator in an end chart.** Let `u` solve the Floer
+equation for the pair-of-pants perturbation of period-one Hamiltonians `H_q` at the point
+`w = φ'_q(ζ)` of the end `q`, with `ζ = (s, t)` and `s ≥ 2`, where `φ'_q` is the positive end chart,
+and let each `H_q(t)` be `C²`. Then the zeroth-order part `C_end(ζ)` of the linearized operator of
+the end datum `H'_q(t) dt` along `u ∘ φ'_q` is `(a - b J) C(w)`, where `C(w)` is the zeroth-order
+part of the linearized operator in the coordinate of `ℂ`, `J = J(w, u w)` and
+`(a, b) = dφ'_q (1, 0)`. -/
+theorem floerLinearizationCoeff_comp_positiveEndChart_apply (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} (hHs : ∀ t, ContDiff ℝ 2 (H q t))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V} {ζ : ℝ × ℝ}
+    (hζ : 2 ≤ ζ.1) (hu : DifferentiableAt ℝ u (positiveEndChart q ζ))
+    (hfl : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J (positiveEndChart q ζ) (u (positiveEndChart q ζ)))
+      (ω.perturbedFDeriv
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
+        (positiveEndChart q ζ) : ℝ × ℝ →ₗ[ℝ] V)) (v : V) :
+    ω.floerLinearizationCoeff
+        (fun ζ' y ↦ (J (positiveEndChart q ζ') y).toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun ζ' ↦ positiveEndHamiltonian H q ζ'.2) (u ∘ positiveEndChart q) ζ v =
+      (fderiv ℝ (positiveEndChart q) ζ (1, 0)).1 • ω.floerLinearizationCoeff
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u (positiveEndChart q ζ) v -
+        (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2 • J (positiveEndChart q ζ)
+          (u (positiveEndChart q ζ)) (ω.floerLinearizationCoeff
+            (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+            (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+            (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+            u (positiveEndChart q ζ) v) := by
+  -- On constant sections the two linearized operators are their zeroth-order parts, so the
+  -- chart identity `D_end = a D - b J D` becomes `C_end = (a - b J) C`.
+  have h := ω.floerLinearization_comp_positiveEndChart hH hHs (ξ := fun _ ↦ v) hζ hu
+    (differentiableAt_const v) hfl
+  have hc : (fun _ : ℝ × ℝ ↦ v) ∘ positiveEndChart q = fun _ ↦ v := rfl
+  rw [hc, floerLinearization_eq_add, floerLinearization_eq_add, stdComplexLineReal_eq] at h
+  simpa only [fderiv_const_apply, FunLike.coe_zero, Pi.zero_apply, map_zero, zero_add,
+    Function.comp_apply] using h
+
 /-- **The zeroth-order part of the linearized operator on an end.** Let `u` solve the Floer
 equation for the pair-of-pants perturbation of period-one Hamiltonians `H_q` at the point
 `w = φ'_q(ζ)` of the end `q`, with `ζ = (s, t)` and `s ≥ 2`, where `φ'_q` is the positive end chart,
@@ -129,21 +170,13 @@ theorem mul_norm_floerLinearizationCoeff_positiveEndChart_le (ω : SymplecticFor
     (fun ζ' y ↦ (J (positiveEndChart q ζ') y).toLinearMap.toContinuousLinearMap)
     (fun _ _ ↦ 0) (fun ζ' ↦ positiveEndHamiltonian H q ζ'.2) (u ∘ positiveEndChart q) ζ
   set Jw := J w (u w)
-  set a := (fderiv ℝ (positiveEndChart q) ζ stdComplexLineReal).1
-  set b := (fderiv ℝ (positiveEndChart q) ζ stdComplexLineReal).2
+  set a := (fderiv ℝ (positiveEndChart q) ζ (1, 0)).1
+  set b := (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2
   set r := positiveEndChartScale q ζ
-  -- On constant sections the two linearized operators are their zeroth-order parts, so the
-  -- chart identity `D_end = a D - b J D` becomes `C_end = (a - b J) C`.
-  have hid (v : V) : Ce v = a • C v - b • Jw (C v) := by
-    have h := ω.floerLinearization_comp_positiveEndChart hH hHs (ξ := fun _ ↦ v) hζ hu
-      (differentiableAt_const v) hfl
-    have hc : (fun _ : ℝ × ℝ ↦ v) ∘ positiveEndChart q = fun _ ↦ v := rfl
-    rw [hc, floerLinearization_eq_add, floerLinearization_eq_add] at h
-    simpa only [fderiv_const_apply, FunLike.coe_zero, Pi.zero_apply, map_zero, zero_add,
-      Function.comp_apply] using h
+  have hid (v : V) : Ce v = a • C v - b • Jw (C v) :=
+    ω.floerLinearizationCoeff_comp_positiveEndChart_apply hH hHs hζ hu hfl v
   -- The Jacobian of the positive end chart is `a² + b² = (2π |w - c_q|)²`.
-  have hdet : a ^ 2 + b ^ 2 = r ^ 2 := by
-    rw [sq_positiveEndChartScale_eq_sq_add_sq, ← stdComplexLineReal_eq]
+  have hdet : a ^ 2 + b ^ 2 = r ^ 2 := (sq_positiveEndChartScale_eq_sq_add_sq q ζ).symm
   have hr : 0 < r := positiveEndChartScale_pos q ζ
   exact Jw.mul_opNorm_le_of_eq_smul_sub_smul hid hdet hr
 

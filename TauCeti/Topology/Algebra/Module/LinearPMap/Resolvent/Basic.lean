@@ -234,6 +234,14 @@ theorem eq_zero_of_apply_eq_smul (h : lambda ∈ resolventSet A) (x : A.domain)
   Subtype.ext <| by rw [ZeroMemClass.coe_zero, ← resolvent_smul_sub_apply h x, hx, sub_self,
     ContinuousLinearMap.map_zero]
 
+/-- A point of the resolvent set differs from every eigenvalue: if `A x = c • x` for some
+`x ≠ 0`, then `lambda - c ≠ 0`. -/
+theorem sub_ne_zero_of_apply_eq_smul (h : lambda ∈ resolventSet A) {c : 𝕜} (x : A.domain)
+    (hx0 : (x : X) ≠ 0) (hx : A x = c • (x : X)) : lambda - c ≠ 0 := by
+  intro hc
+  rw [← sub_eq_zero.1 hc] at hx
+  exact hx0 (congrArg Subtype.val (eq_zero_of_apply_eq_smul h x hx))
+
 /-- **An operator has no proper extension sharing a resolvent point.** If `A ≤ B` and some
 `lambda` lies in the resolvent set of both, then `A = B`.
 

@@ -75,10 +75,6 @@ namespace ProjectionKZero
 
 variable {R} {m n m' n' : Type*} [Fintype m] [Fintype n] [Fintype m'] [Fintype n']
 
-/-- Over the zero ring every matrix projection is zero, so `K₀` is trivial. -/
-instance [Subsingleton R] : Subsingleton (ProjectionKZero R) :=
-  (AddLocalization.addMonoidOf _).subsingleton_of_subsingleton
-
 /-- **Generation by differences.** Every element of `K₀(R)` is `[p] - [q]` for matrix
 projections `p` and `q`. -/
 theorem exists_eq_sub (x : ProjectionKZero R) :

@@ -187,6 +187,22 @@ lemma repartitionToPrincipalParts_naturality {D E : SchemeWeilDivisor X} (h : D 
   rw [principalPartsHomOfLE_app_apply, repartitionToPrincipalParts_apply,
     repartitionToPrincipalParts_apply, principalPartMapOfLE_mk]
 
+/-- The principal-parts map of a repartition is compatible with multiplication by a nonzero
+rational function `g`: multiplying the principal parts by `g` multiplies the repartition by `g`. -/
+lemma repartitionToPrincipalParts_principalPartsMul (hF : IsFunctionField k X.functionField)
+    (g : Additive X.functionFieldˣ) (D : SchemeWeilDivisor X)
+    (a : repartitionSpace k X.functionField) :
+    (principalPartsMul g D).app ⊤ (repartitionToPrincipalParts hex hdim D a) =
+      repartitionToPrincipalParts hex hdim _
+        (repartitionMul hF ((Additive.toMul g : X.functionFieldˣ) : X.functionField) a) := by
+  apply (principalPartsSectionsEquiv
+    (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) ⊤).injective
+  apply DFinsupp.ext
+  intro x
+  rw [principalPartsMul_app_apply, repartitionToPrincipalParts_apply,
+    repartitionToPrincipalParts_apply, principalPartMapOfMul_mk, coe_repartitionMul_apply,
+    Pi.smul_apply, smul_eq_mul]
+
 /-- The kernel of the repartition-to-principal-parts map is the step of the repartition
 filtration bounded by the corresponding function-field divisor. -/
 theorem ker_repartitionToPrincipalParts (D : SchemeWeilDivisor X) :

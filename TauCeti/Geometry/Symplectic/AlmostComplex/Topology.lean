@@ -38,6 +38,8 @@ equivalent, it does not depend on the choice of the norm of `V`.
 * `TauCeti.AlmostComplexStructure.mul_opNorm_le_of_eq_smul_sub_smul`: if `B = (a - b J) A` with
   `a² + b² = r² > 0`, then `r ‖A‖ ≤ (1 + ‖J‖) ‖B‖`, inverting `a - b J` through
   `(a + b J) (a - b J) = a² + b²`.
+* `TauCeti.AlmostComplexStructure.isInvertible_smul_id_add_smul`: `a + b J` is invertible
+  whenever `a² + b² ≠ 0`, with inverse `(a² + b²)⁻¹ (a - b J)`.
 * `TauCeti.SymplecticForm.Tames.eventually_of_continuousAt`: tameness is an open condition along
   families that are continuous in the operator norm.
 * `TauCeti.SymplecticForm.tames_of_mul_norm_sq_le`: a uniform lower bound `c ‖v‖² ≤ ω(v, J v)`
@@ -131,6 +133,20 @@ theorem mul_opNorm_le_of_eq_smul_sub_smul (J : AlmostComplexStructure V)
       linarith [hv v]
   calc r * ‖A‖ ≤ r * ((1 + NJ) * ‖B‖ / r) := by gcongr
     _ = (1 + NJ) * ‖B‖ := by field_simp
+
+/-- For an almost complex structure `J`, `a + b J` is invertible whenever `a² + b² ≠ 0`, with
+inverse `(a² + b²)⁻¹ (a - b J)`, since `(a + b J) (a - b J) = (a - b J) (a + b J) = a² + b²`. -/
+theorem isInvertible_smul_id_add_smul (J : AlmostComplexStructure V) {a b : ℝ}
+    (h : a ^ 2 + b ^ 2 ≠ 0) :
+    (a • ContinuousLinearMap.id ℝ V + b • J.toLinearMap.toContinuousLinearMap).IsInvertible := by
+  refine .of_inverse (g := (a ^ 2 + b ^ 2)⁻¹ •
+      (a • ContinuousLinearMap.id ℝ V - b • J.toLinearMap.toContinuousLinearMap))
+    (ContinuousLinearMap.ext fun v ↦ ?_) (ContinuousLinearMap.ext fun v ↦ ?_) <;>
+    conv_rhs => rw [ContinuousLinearMap.id_apply, ← inv_smul_smul₀ h v]
+  all_goals
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, smul_apply, add_apply,
+      sub_apply, LinearMap.coe_toContinuousLinearMap', map_add, map_sub, map_smul, J.apply_apply]
+    module
 
 end AlmostComplexStructure
 

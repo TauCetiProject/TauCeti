@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
+public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.LinearAlgebra.UnitaryGroup
@@ -96,6 +97,13 @@ theorem star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup {n α : Type*} [Fintyp
     (x y : n → α) : star (A *ᵥ x) ⬝ᵥ (A *ᵥ y) = star x ⬝ᵥ y := by
   rw [star_mulVec, dotProduct_mulVec, vecMul_vecMul, ← star_eq_conjTranspose,
     (mem_unitaryGroup_iff' (A := A)).mp hA, vecMul_one]
+
+/-- Unitary conjugation preserves the characteristic polynomial. -/
+theorem charpoly_unitary_conj {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [StarRing R] (A : Matrix n n R) (U : unitaryGroup n R) :
+    (star U.val * A * U.val).charpoly = A.charpoly := by
+  rw [charpoly_mul_comm (star U.val * A) U.val, ← Matrix.mul_assoc,
+    Unitary.mul_star_self_of_mem U.property, Matrix.one_mul]
 
 namespace UnitaryGroup
 

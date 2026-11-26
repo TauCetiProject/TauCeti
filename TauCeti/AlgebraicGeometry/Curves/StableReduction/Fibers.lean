@@ -131,7 +131,10 @@ variable {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [Flat toBase]
 fibre of `X`. Its generic-fibre identification is the canonical comparison of `C` with the chosen
 pullback, so that its generic-fibre inclusion is `j` (`TauCeti.Model.genericι_ofIsPullback`).
 This is the converse of `TauCeti.Model.isPullback_genericι`. -/
-def ofIsPullback (h : IsPullback j toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))) :
+-- The body is exposed so that the total space of the model is `X` by definition, as
+-- constructions comparing morphisms of total spaces require.
+@[expose] def ofIsPullback
+    (h : IsPullback j toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))) :
     Model R K C toK where
   total := X
   toBase := toBase
@@ -181,6 +184,17 @@ theorem range_genericι_eq_setOf_base_ne_closedPoint (M : Model R K C toK) :
         M.genericFiberIso.inv.left.surjective.range_comp _
     _ = {x : M.total | M.toBase x ≠ closedPoint R} :=
         range_genericFiberι_of_isDiscreteValuationRing R K M.toBase
+
+/-- The image of a model's chosen generic fibre in its total space is the basic open of the
+pullback of a nonzero element `π` of the maximal ideal, such as a uniformizer. -/
+theorem range_genericι_eq_basicOpen (M : Model R K C toK) {π : R}
+    (hπ : π ∈ maximalIdeal R) (hπ0 : π ≠ 0) :
+    Set.range M.genericι =
+      M.total.basicOpen (M.toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π)) := by
+  rw [M.range_genericι_eq_setOf_base_ne_closedPoint]
+  ext x
+  refine (not_congr (M.toBase.base_eq_closedPoint_iff_mem_zeroLocus hπ hπ0 x)).trans ?_
+  rw [Scheme.zeroLocus_singleton, Set.mem_compl_iff, not_not]
 
 /-- If the total space of a model `M` is irreducible, then its generic fibre `C` is nonempty. -/
 theorem nonempty_generic (M : Model R K C toK) [IrreducibleSpace M.total] : Nonempty C :=

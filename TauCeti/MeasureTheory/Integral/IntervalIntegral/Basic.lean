@@ -39,6 +39,10 @@ not belong to any particular application.
   uniform `(N + 1)`-subinterval left-endpoint Riemann sums in terms of subinterval oscillation.
 * `TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le`: if `‖F i x‖ ≤ B i` almost
   everywhere on `Ι a b` eventually along `l` and `B i → 0`, then `∫ x in a..b, F i x ∂μ → 0`.
+* `TauCeti.intervalIntegral.eq_zero_of_tendsto_average_const`: a constant whose time averages
+  `T⁻¹ ∫₀ᵀ c dt` tend to `0` vanishes.
+* `TauCeti.intervalIntegral.integral_eq_zero_of_forall_lt`: for `b ≤ a` and a measure vanishing
+  on singletons, the integral over `a..b` of a function vanishing on `(-∞, a)` is zero.
 * `TauCeti.intervalIntegral_sub_intervalAverage`: subtracting its average over `a..b` from a
   function leaves a function of integral zero over `a..b`.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
@@ -70,6 +74,8 @@ not belong to any particular application.
   integral is `0`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
   with interval integrals, with no integrability assumption.
+* `PiLp.ofLp_intervalIntegral`: `WithLp.ofLp` commutes with interval integrals of `PiLp`-valued
+  functions, with no integrability assumption.
 * `MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max`: if `f` is locally integrable
   on `[c, ∞)`, then its constant extension `x ↦ f (max x c)` is interval integrable on every
   interval.
@@ -377,6 +383,26 @@ theorem tendsto_integral_nhds_zero_of_ae_norm_le {ι E : Type*} [NormedAddCommGr
   rw [_root_.intervalIntegral.norm_integral_eq_norm_integral_uIoc]
   exact norm_setIntegral_le_of_norm_le_const_ae' measure_Ioc_lt_top hi
 
+open Filter Topology in
+/-- If the time averages `T⁻¹ ∫₀ᵀ c dt` of a constant `c` tend to `0` as `T → ∞`, then `c = 0`:
+the averages are eventually equal to `c`. -/
+theorem eq_zero_of_tendsto_average_const {c : ℝ}
+    (h : Tendsto (fun T : ℝ ↦ T⁻¹ * ∫ _ in (0 : ℝ)..T, c) atTop (𝓝 0)) : c = 0 := by
+  refine tendsto_nhds_unique (tendsto_const_nhds.congr' ?_) h
+  filter_upwards [eventually_gt_atTop 0] with T hT
+  rw [_root_.intervalIntegral.integral_const, sub_zero, smul_eq_mul, inv_mul_cancel_left₀ hT.ne']
+
+/-- For `b ≤ a` and a measure vanishing on singletons, the integral over `a..b` of a function
+vanishing on `(-∞, a)` is zero. -/
+theorem integral_eq_zero_of_forall_lt {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {μ : Measure ℝ} [NullSingletonClass μ] {F : ℝ → E} {a b : ℝ} (hF : ∀ t < a, F t = 0)
+    (hb : b ≤ a) :
+    ∫ t in a..b, F t ∂μ = 0 := by
+  refine _root_.intervalIntegral.integral_zero_ae ?_
+  filter_upwards [Measure.ae_ne μ a] with t hta ht
+  rw [uIoc_of_ge hb] at ht
+  exact hF t (lt_of_le_of_ne ht.2 hta)
+
 end intervalIntegral
 
 /-- A function vanishing on `(-∞, a]` and on a ball around `a` has zero integral on `a..t` for
@@ -574,6 +600,14 @@ theorem ContinuousLinearEquiv.intervalIntegral_comp_comm {𝕜 E F : Type*} [RCL
     (L : E ≃L[𝕜] F) (f : ℝ → E) :
     ∫ x in a..b, L (f x) ∂μ = L (∫ x in a..b, f x ∂μ) := by
   simp_rw [intervalIntegral, L.integral_comp_comm, map_sub]
+
+/-- `WithLp.ofLp` commutes with interval integrals of arbitrary `PiLp`-valued functions. -/
+@[simp]
+theorem PiLp.ofLp_intervalIntegral {p : ENNReal} [Fact (1 ≤ p)] {ι : Type*} [Fintype ι]
+    {β : ι → Type*} [∀ i, NormedAddCommGroup (β i)] [∀ i, NormedSpace ℝ (β i)]
+    {μ : Measure ℝ} {a b : ℝ} (f : ℝ → PiLp p β) :
+    WithLp.ofLp (∫ x in a..b, f x ∂μ) = ∫ x in a..b, WithLp.ofLp (f x) ∂μ :=
+  ((PiLp.continuousLinearEquiv p ℝ β).intervalIntegral_comp_comm f).symm
 
 /-- If `f` is locally integrable on `[c, ∞)` for a locally finite measure, then its constant
 extension `x ↦ f (max x c)` to all of `ℝ` is interval integrable between any two points. -/

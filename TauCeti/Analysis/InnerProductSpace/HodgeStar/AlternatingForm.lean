@@ -62,6 +62,9 @@ metric this expresses the star through the inverse metric and the volume of the 
 * `Orientation.formHodgeStar_apply_eq_sum`: the star in an arbitrary basis.
 * `Orientation.formHodgeStar_apply_eq_volumeForm_mul_sum`: the star through the inverse Gram
   matrix of an arbitrary basis.
+* `Orientation.contDiffAt_formHodgeStar_comp`, `Orientation.contDiff_formHodgeStar_comp`,
+  `Orientation.differentiableAt_formHodgeStar_comp`: applying the star pointwise preserves the
+  regularity of differential forms.
 * `Orientation.alternatingFormInner_wedge_curryLeft_add_formHodgeStar`: for a unit vector `T` of
   an oriented four-dimensional space, with covector `σ = ⟪T, ·⟫`, a two-form `F` satisfies
   `⟨σ ∧ ι_T F, F + ⋆F⟩ = |ι_T F|² + ⟨F, ⋆F⟩ / 2`.
@@ -349,6 +352,32 @@ theorem formHodgeStar_apply_eq_volumeForm_mul_sum {k l : ℕ} (hkl : k + l = fin
     simp
   rw [hdual, hvol]
   ring
+
+/-! ### Applying the star pointwise -/
+
+section Pointwise
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {k l : ℕ}
+
+/-- Applying the Hodge star pointwise preserves differentiability of forms at a point. -/
+theorem differentiableAt_formHodgeStar_comp (hkl : k + l = finrank ℝ V)
+    {ω : E → V [⋀^Fin k]→L[ℝ] ℝ} {x : E} (hω : DifferentiableAt ℝ ω x) :
+    DifferentiableAt ℝ (fun y ↦ o.formHodgeStar hkl (ω y)) x :=
+  (LinearMap.toContinuousLinearMap (o.formHodgeStar hkl).toLinearMap).differentiableAt.comp x hω
+
+/-- Applying the Hodge star pointwise preserves `C^r` regularity of forms at a point. -/
+theorem contDiffAt_formHodgeStar_comp (hkl : k + l = finrank ℝ V) {r : WithTop ℕ∞}
+    {ω : E → V [⋀^Fin k]→L[ℝ] ℝ} {x : E} (hω : ContDiffAt ℝ r ω x) :
+    ContDiffAt ℝ r (fun y ↦ o.formHodgeStar hkl (ω y)) x :=
+  (LinearMap.toContinuousLinearMap (o.formHodgeStar hkl).toLinearMap).contDiff.contDiffAt.comp x hω
+
+/-- Applying the Hodge star pointwise preserves `C^r` regularity of forms. -/
+theorem contDiff_formHodgeStar_comp (hkl : k + l = finrank ℝ V) {r : WithTop ℕ∞}
+    {ω : E → V [⋀^Fin k]→L[ℝ] ℝ} (hω : ContDiff ℝ r ω) :
+    ContDiff ℝ r (fun y ↦ o.formHodgeStar hkl (ω y)) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦ o.contDiffAt_formHodgeStar_comp hkl hω.contDiffAt
+
+end Pointwise
 
 /-! ### Two-forms split along a unit vector -/
 

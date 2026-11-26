@@ -68,6 +68,7 @@ function.
   `TauCeti.leviForm_smul`: the Levi form is real linear in the function.
 * `TauCeti.imLeviFormCLM_add`, `TauCeti.imLeviFormCLM_neg`, `TauCeti.imLeviFormCLM_smul`: so is
   its imaginary part.
+* `TauCeti.leviForm_const`: the Levi form vanishes on constants.
 * `TauCeti.leviForm_I_smul_I_smul`: the Levi form is invariant under `I • ·` in both arguments.
 * `TauCeti.leviForm_mul_apply`: the product rule
   `L(f g) = f L g + g L f + (conj (∂f) ⊗ ∂g + conj (∂g) ⊗ ∂f)`.
@@ -222,6 +223,12 @@ theorem leviForm_neg (f : V → ℝ) (x : V) : leviForm (-f) x = -leviForm f x :
     rw [hfd, fderiv_neg]
   ext v w
   apply Complex.ext <;> simp [h2] <;> ring
+
+/-- The Levi form of a constant function vanishes. -/
+@[simp]
+theorem leviForm_const (c : ℝ) (x : V) : leviForm (fun _ : V ↦ c) x = 0 := by
+  ext v w
+  apply Complex.ext <;> simp
 
 /-- The Levi form is real homogeneous in the function. -/
 @[simp]

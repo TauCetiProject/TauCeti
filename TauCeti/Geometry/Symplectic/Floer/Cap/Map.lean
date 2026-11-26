@@ -396,7 +396,7 @@ end Monoid
 
 section Reference
 
-variable {G : Type*} [AddCommGroup G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
+variable {G : Type*} [AddGroup G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
   (hq : ∀ A, area ω c (q A) = ωG A)
 
 /-- **Change of reference caps.** Moving the reference caps to `q gₗ # rₗ` changes the class of a

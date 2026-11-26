@@ -27,11 +27,27 @@ subspaces for a real-linear map, is directly available.
 
 ## Main results
 
+* `LinearMap.denseRange_range_subtypeL_iff`: the bundled range inclusion has dense range exactly
+  when the original semilinear map does.
 * `ContinuousLinearMap.denseRange_codRestrict_topologicalClosure`: corestricting a continuous
   semilinear map to the topological closure of its range yields a map with dense range.
 -/
 
 public section
+
+namespace LinearMap
+
+/-- The bundled inclusion of a semilinear map's range has dense range exactly when the map does.
+No topology on the source or continuity of the map or scalar actions is needed. -/
+theorem denseRange_range_subtypeL_iff {R S V E : Type*} [Semiring R] [Semiring S]
+    {σ : R →+* S} [RingHomSurjective σ] [AddCommMonoid V] [Module R V]
+    [AddCommMonoid E] [Module S E] [TopologicalSpace E] (e : V →ₛₗ[σ] E) :
+    DenseRange e.range.subtypeL ↔ DenseRange e := by
+  rw [Submodule.coe_subtypeL]
+  unfold DenseRange
+  rw [← LinearMap.coe_range, Submodule.range_subtype, LinearMap.coe_range]
+
+end LinearMap
 
 namespace ContinuousLinearMap
 

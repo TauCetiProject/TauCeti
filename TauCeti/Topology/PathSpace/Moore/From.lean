@@ -181,6 +181,12 @@ theorem truncateHomotopy_refl (t : I) : truncateHomotopy (t, refl X b) = refl X 
 instance : ContractibleSpace (MoorePathFrom X b) :=
   (contractible_iff_id_nullhomotopic _).2 ⟨refl X b, ⟨truncateHomotopy.symm⟩⟩
 
+/-- The end point of a Moore path from `b` lies in the path component of `b`: the based path space
+is path connected, and the end point of the constant path is `b`. -/
+theorem endpoint_mem_pathComponent (γ : MoorePathFrom X b) : endpoint X b γ ∈ pathComponent b := by
+  simpa [endpoint_apply, mem_pathComponent_iff] using
+    (PathConnectedSpace.joined (refl X b) γ).map (endpoint X b).continuous
+
 end MoorePathFrom
 
 /-! ### The fibres of the end point map -/

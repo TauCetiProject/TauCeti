@@ -30,7 +30,10 @@ product in elementary symmetric polynomials.
   `e_{n+1}(a, s) = e_{n+1}(s) + a eₙ(s)`.
 * `Multiset.esymm_cons_zero`: adjoining a zero gives `e_{n+1}(0, s) = e_{n+1}(s)`, and
   `Multiset.esymm_cons_zero_eq_snoc` lists `e₁, …, e_{n+1}` of `0 ::ₘ s` for `card s ≤ n`.
+* `Multiset.esymm_replicate_zero`: the positive-degree elementary symmetric functions of a
+  multiset of zeros vanish.
 * `Multiset.esymm_one`: `e₁(s)` is the sum of `s`.
+* `MvPolynomial.esymm_card`: `e_n(X₁, …, X_n)` is the product of the variables.
 * `Multiset.esymm_map`: elementary symmetric functions commute with ring homomorphisms.
 * `Multiset.esymm_nonneg`, `Multiset.esymm_eq_zero_of_le`: for a multiset of nonnegative elements
   of an ordered semiring, every `eₙ(s)` is nonnegative, and once one vanishes so do all those of
@@ -79,6 +82,15 @@ values: `e_{n+1}(0, s) = e_{n+1}(s)`. -/
 theorem Multiset.esymm_cons_zero {R : Type*} [CommSemiring R] (s : Multiset R) (n : ℕ) :
     (0 ::ₘ s).esymm (n + 1) = s.esymm (n + 1) := by
   simp [Multiset.esymm_cons]
+
+/-- The positive-degree elementary symmetric functions of `n` zeros vanish:
+`e_{j+1}(0, …, 0) = 0`. -/
+@[simp]
+theorem Multiset.esymm_replicate_zero {R : Type*} [CommSemiring R] (n j : ℕ) :
+    (Multiset.replicate n (0 : R)).esymm (j + 1) = 0 := by
+  induction n with
+  | zero => exact Multiset.esymm_of_card_lt (by simp)
+  | succ n ih => rw [Multiset.replicate_succ, Multiset.esymm_cons_zero, ih]
 
 /-- Adjoining a zero to a multiset `s` of at most `n` elements appends `0` to its elementary
 symmetric values: `e_{j+1}(0, s)` for `j < n + 1` is `e₁(s), …, eₙ(s), 0`. -/
@@ -171,6 +183,12 @@ theorem Multiset.sum_map_mul_esymm_erase {R : Type*} [CommRing R] [DecidableEq R
   refine congrArg Multiset.sum (Multiset.map_congr rfl fun k _ ↦ ?_)
   rw [← Multiset.sum_map_mul_left]
   exact congrArg Multiset.sum (Multiset.map_congr rfl fun a _ ↦ by ring)
+
+/-- The elementary symmetric polynomial whose degree is the number of variables is the product of
+all the variables: `e_n(X₁, …, X_n) = X₁ ⋯ X_n`. -/
+theorem MvPolynomial.esymm_card (σ : Type*) [Fintype σ] (R : Type*) [CommSemiring R] :
+    MvPolynomial.esymm σ R (Fintype.card σ) = ∏ i, MvPolynomial.X i := by
+  rw [MvPolynomial.esymm, ← Finset.card_univ, Finset.powersetCard_self, Finset.sum_singleton]
 
 namespace TauCeti
 

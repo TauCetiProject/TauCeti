@@ -116,8 +116,8 @@ theorem localIndex_complexHomologicalOrientation (f : C(X, Y)) {x : X}
     c'.isOpenEmbedding_comp V.isOpenEmbedding' (by simp [V])
   -- The local index of `f` at `x` is that of `g` at `x'`, for the restricted orientations, which
   -- are the orientations pulled back from `ℂ` along the charts.
-  have h := HomologicalOrientation.localIndex_comap Complex.finrank_real_complex
-    (complexHomologicalOrientation X) (complexHomologicalOrientation Y) U.isOpenEmbedding'
+  have h := (complexHomologicalOrientation X).localIndex_comap
+    (complexHomologicalOrientation Y) Complex.finrank_real_complex U.isOpenEmbedding'
     V.isOpenEmbedding' (f := g) (g := f) (x := x') (.of_forall fun _ ↦ rfl)
   rw [comap_subtypeVal_complexHomologicalOrientation,
     comap_subtypeVal_complexHomologicalOrientation,

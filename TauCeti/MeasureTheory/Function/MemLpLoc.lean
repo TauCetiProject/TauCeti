@@ -93,6 +93,14 @@ theorem _root_.MeasureTheory.MemLp.memLpLoc_of_ae_le {W : Set X}
   memLpLoc_iff.2 fun _ hK _ => hf.mono_measure
     (Measure.restrict_mono_ae ((Filter.EventuallySubset.of_subset hK).trans hUW))
 
+/-- Domination almost everywhere on `U` by a locally `Lᵖ` function preserves local `Lᵖ`
+membership, for a function almost everywhere strongly measurable on `U`. -/
+theorem MemLpLoc.of_le (hg : MemLpLoc p U g μ) {h : X → G}
+    (hh : AEStronglyMeasurable h (μ.restrict U)) (hhg : ∀ᵐ x ∂μ.restrict U, ‖h x‖ ≤ ‖g x‖) :
+    MemLpLoc p U h μ := fun K hK hc =>
+  (hg K hK hc).of_le (hh.mono_measure (Measure.restrict_mono hK le_rfl))
+    (ae_mono (Measure.restrict_mono hK le_rfl) hhg)
+
 /-- Almost-everywhere equality on `U` preserves local `Lᵖ` membership. -/
 theorem MemLpLoc.congr_ae (hf : MemLpLoc p U f μ)
     (hfg : f =ᵐ[μ.restrict U] g) : MemLpLoc p U g μ := by

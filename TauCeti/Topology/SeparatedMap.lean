@@ -30,7 +30,9 @@ A continuous section of a continuous locally injective map over an open set has 
 (`IsLocallyInjective.isOpen_image_of_leftInvOn`).
 For a separated, locally injective map, such as a covering map or any locally injective map with
 Hausdorff total space, two sections over a preconnected set that are continuous on that set and
-agree at one of its points agree on all of it (`IsSeparatedMap.eqOn_of_leftInvOn`).
+agree at one of its points agree on all of it (`IsSeparatedMap.eqOn_of_leftInvOn`). Two lifts of a
+map injective on a preconnected set, different at one of its points, have disjoint images on it
+(`IsSeparatedMap.disjoint_image_of_eqOn_comp`).
 
 ## References
 
@@ -153,5 +155,20 @@ theorem IsSeparatedMap.eqOn_of_leftInvOn [TopologicalSpace B] (sep : IsSeparated
     (hl' : LeftInvOn p s' S) {y : B} (hy : y ∈ S) (hee' : s y = s' y) : EqOn s s' S :=
   sep.eqOn_of_comp_eqOn hinj hS hs hs'
     (fun z hz ↦ by simp only [Function.comp_apply, hl hz, hl' hz]) hy hee'
+
+/-- Two lifts through `p` of a map `f` injective on a preconnected set `S`, continuous on `S` and
+taking different values at one point of `S`, have disjoint images on `S`, when `p` is separated and
+locally injective. Over a simply connected `S`, the lifts are therefore indexed by the fibre of `p`
+over a base point, with pairwise disjoint images. -/
+theorem IsSeparatedMap.disjoint_image_of_eqOn_comp {A : Type*} [TopologicalSpace A]
+    (sep : IsSeparatedMap p) (hinj : IsLocallyInjective p) {S : Set A} {f : A → B}
+    {g₁ g₂ : A → E} (hS : IsPreconnected S) (hf : InjOn f S) (h₁ : ContinuousOn g₁ S)
+    (h₂ : ContinuousOn g₂ S) (he₁ : EqOn (p ∘ g₁) f S) (he₂ : EqOn (p ∘ g₂) f S) {a : A}
+    (ha : a ∈ S) (hne : g₁ a ≠ g₂ a) : Disjoint (g₁ '' S) (g₂ '' S) := by
+  refine disjoint_left.2 ?_
+  rintro _ ⟨b, hb, rfl⟩ ⟨c, hc, hcb⟩
+  -- Both lifts lie over `f b = f c`, so `b = c`, and the lifts agree at `b`, hence everywhere.
+  obtain rfl : c = b := hf hc hb (((he₂ hc).symm.trans (congrArg p hcb)).trans (he₁ hb))
+  exact hne (sep.eqOn_of_comp_eqOn hinj hS h₁ h₂ (he₁.trans he₂.symm) hb hcb.symm ha)
 
 end IsLocallyInjective

@@ -117,6 +117,13 @@ theorem cycleCellCocycle_m_eq_zero_of_le {y z : Unit ⊕ Unit}
   RowFiniteTwistingCocycle.attach_m_eq_zero_of_le _ _ _ (fun _ _ _ ↦ by simp)
     (fun _ _ h ↦ absurd h (by simp)) y z h
 
+/-- The row relation of the cocycle is well-founded, so its free module is semi-free. -/
+theorem wellFounded_mem_support_cycleCellCocycle :
+    WellFounded fun y z ↦ y ∈ ((cycleCellCocycle R n x hx hdx).m z).support :=
+  (cycleCellCocycle R n x hx hdx).wellFounded_mem_support
+    (fun _ _ ↦ cycleCellCocycle_m_eq_zero_of_le hx hdx) (p₀ := 0)
+    (by rintro (_ | _) <;> simp; omega)
+
 /-- The differential of the free module of `TauCeti.cycleCellCocycle R n x` on `α e₀ + β e₁`: the
 coefficient of `e₀` is `dα + κ(β) x`, with `κ` the Koszul sign twist, and the coefficient of `e₁`
 is `dβ`. -/
@@ -181,6 +188,15 @@ theorem cycleCellCocycle_differential_single_inr (β : loopChainAlgebra B b R) :
               (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist 1 β * x) +
         Finsupp.single (Sum.inr ()) (cubicalChainDifferential (MooreLoopSpace B b) R β) := by
   simp [cycleCellCocycle_differential_apply]
+
+/-- The generator `e₀` is a cycle. -/
+theorem cycleCellCocycle_differential_single_inl_one :
+    rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+        (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+        (d := cubicalChainDifferential (MooreLoopSpace B b) R) (cycleCellCocycle R n x hx hdx).m
+        (Finsupp.single (Sum.inl ()) 1) = 0 := by
+  rw [RowFiniteTwistingCocycle.differential_single_one _ (loopChain_isDGAlgebra B b R),
+    cycleCellCocycle_m_inl]
 
 end CycleCell
 
