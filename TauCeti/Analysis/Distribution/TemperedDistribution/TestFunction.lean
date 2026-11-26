@@ -12,7 +12,6 @@ public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
-import TauCeti.Analysis.Distribution.TemperedDistribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
@@ -41,8 +40,6 @@ The density input is Mathlib's `SchwartzMap.dense_hasCompactSupport`.
 * `TemperedDistribution.eq_zero_of_forall_hasCompactSupport_fourier`: dually, a tempered
   distribution vanishing on every Schwartz function whose Fourier transform has compact support is
   zero.
-* `TemperedDistribution.exists_pos_isVanishingOn_fourier_compl_closedBall_of_hasCompactSupport`: a
-  Schwartz function whose Fourier transform has compact support is band-limited.
 * `TemperedDistribution.toDistribution`: the restriction of a tempered distribution to the test
   functions on an open set, as a complex-linear map `𝓢'(E, F) →ₗ[ℂ] 𝓓'(Ω, F)`.
 * `TemperedDistribution.toDistribution_injective`: the restriction to all of `E` is injective.
@@ -111,20 +108,6 @@ theorem eq_zero_of_forall_hasCompactSupport_fourier {u : 𝓢'(E, F)}
     exact hφ.comp_left Complex.ofRealCLM.map_zero
   calc u = 𝓕 (𝓕⁻ u : 𝓢'(E, F)) := (FourierTransform.fourier_fourierInv_eq u).symm
     _ = 0 := by rw [h, FourierTransform.fourier_zero]
-
-/-- **Compactly supported Fourier transforms are band-limited.** If the Fourier transform of a
-Schwartz function `φ` has compact support, then the Fourier transform of `φ` as a tempered
-distribution vanishes outside some closed ball of positive radius centred at `0`. -/
-theorem exists_pos_isVanishingOn_fourier_compl_closedBall_of_hasCompactSupport [CompleteSpace F]
-    {φ : 𝓢(E, F)} (hφ : HasCompactSupport ((𝓕 φ : 𝓢(E, F)) : E → F)) :
-    ∃ R > 0, Distribution.IsVanishingOn (𝓕 (φ : 𝓢'(E, F)) : 𝓢'(E, F))
-      (Metric.closedBall 0 R)ᶜ := by
-  obtain ⟨R₀, hR₀⟩ := hφ.isCompact.isBounded.subset_closedBall 0
-  refine ⟨max R₀ 1, by positivity, ?_⟩
-  rw [fourier_toTemperedDistributionCLM_eq]
-  exact Distribution.IsVanishingOn.mono
-    (Set.compl_subset_compl.2 (hR₀.trans (Metric.closedBall_subset_closedBall (le_max_left _ _))))
-    (SchwartzMap.isVanishingOn_toTemperedDistributionCLM_compl_tsupport _ _)
 
 end Fourier
 
