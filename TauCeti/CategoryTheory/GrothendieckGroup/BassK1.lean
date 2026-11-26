@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
-import Mathlib.CategoryTheory.Adjunction.Limits
 import Mathlib.Algebra.Module.Presentation.Basic
 
 /-!
@@ -15,8 +14,9 @@ import Mathlib.Algebra.Module.Presentation.Basic
 
 The Bass group of an additive category has a generator for each automorphism. Composition and
 binary direct sum give addition, and transport along an isomorphism preserves the class.
-A triangular automorphism has the class of its diagonal. This gives additivity on split short
-exact sequences even when the automorphism does not preserve a chosen complement.
+A triangular automorphism whose diagonal blocks are automorphisms has class equal to the sum of
+their classes. This gives additivity on split short exact sequences even when the automorphism
+moves a chosen complement.
 The presentation uses Mathlib’s integral module presentations, `Module.Relations`.
 
 * `TauCeti.BassK1.of` is the class of an automorphism.
@@ -146,17 +146,17 @@ def lift (f : ∀ {X : C}, (X ≅ X) → G)
   s.fromQuotient.toAddMonoidHom
 
 @[simp] theorem lift_of (f : ∀ {X : C}, (X ≅ X) → G) (hi hc hs) {X : C} (a : X ≅ X) :
-    lift f hi hc hs (of a) = f a := by
-  apply Module.Relations.Solution.π_single
+    lift f hi hc hs (of a) = f a :=
+  (Module.Relations.Solution.fromQuotient_toQuotient _ _).trans
+    (Module.Relations.Solution.π_single _ _)
 
 section Functor
 
 variable {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D] [HasBinaryBiproducts D]
-  (F : C ⥤ D) [F.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair F]
+  (F : C ⥤ D) [F.PreservesZeroMorphisms] [PreservesBinaryBiproducts F]
 
 /-- A functor preserving zero morphisms and binary biproducts induces a map on Bass groups. -/
 def map : BassK1 C →+ BassK1 D :=
-  letI := preservesBinaryBiproducts_of_preservesBiproducts F
   lift (fun a => of (F.mapIso a))
     (fun a b e h => of_congr (F.mapIso e) (by
       simpa only [Functor.mapIso_hom, ← F.map_comp] using congrArg F.map h))
@@ -168,16 +168,20 @@ def map : BassK1 C →+ BassK1 D :=
 @[simp] theorem map_of {X : C} (a : X ≅ X) : map F (of a) = of (F.mapIso a) :=
   lift_of _ _ _ _ _
 
+attribute [local instance] preservesBinaryBiproducts_of_preservesBiproducts
+
 @[simp] theorem map_id : map (𝟭 C) = AddMonoidHom.id _ :=
   hom_ext fun a => by simp [Functor.mapIso]
 
 theorem map_comp {E : Type u''} [Category.{v''} E] [HasZeroMorphisms E] [HasBinaryBiproducts E]
-    (H : D ⥤ E) [H.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair H] :
+    (H : D ⥤ E) [H.PreservesZeroMorphisms] [PreservesBinaryBiproducts H] :
+    letI : PreservesBinaryBiproducts (F ⋙ H) :=
+      ⟨fun {_ _} => ⟨fun hb => ⟨isBinaryBilimitOfPreserves H (isBinaryBilimitOfPreserves F hb)⟩⟩⟩
     map (F ⋙ H) = (map H).comp (map F) :=
   hom_ext fun a => by simp [Functor.mapIso]
 
 /-- Naturally isomorphic functors induce the same homomorphism. -/
-theorem map_congr {H : C ⥤ D} [H.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair H]
+theorem map_congr {H : C ⥤ D} [H.PreservesZeroMorphisms] [PreservesBinaryBiproducts H]
     (e : F ≅ H) : map F = map H :=
   hom_ext fun a => by simpa only [map_of] using of_congr (e.app _) (e.hom.naturality a.hom)
 
@@ -186,6 +190,12 @@ def mapEquiv (e : C ≌ D) : BassK1 C ≃+ BassK1 D :=
   (map e.functor).toAddEquiv (map e.inverse)
     (by rw [← map_comp, ← map_congr _ e.unitIso, map_id])
     (by rw [← map_comp, map_congr _ e.counitIso, map_id])
+
+@[simp] theorem mapEquiv_toAddMonoidHom (e : C ≌ D) :
+    (mapEquiv e : BassK1 C →+ BassK1 D) = map e.functor := (rfl)
+
+@[simp] theorem mapEquiv_symm_toAddMonoidHom (e : C ≌ D) :
+    ((mapEquiv e).symm : BassK1 D →+ BassK1 C) = map e.inverse := (rfl)
 
 @[simp] theorem mapEquiv_of (e : C ≌ D) {X : C} (a : X ≅ X) :
     mapEquiv e (of a) = of (e.functor.mapIso a) := map_of _ _
@@ -213,8 +223,9 @@ variable {A : Type u} [Category.{v} A] [Preadditive A] [HasBinaryBiproducts A] {
   apply add_left_cancel (a := of q + of p)
   simpa [add_assoc, add_comm, add_left_comm] using hc.symm
 
-/-- A block triangular automorphism has the class of its diagonal, independently of the
-off-diagonal morphism. The block indices here follow Mathlib's `Biprod.ofComponents`. -/
+/-- A block triangular automorphism whose diagonal blocks are automorphisms has class equal to the
+sum of their classes, independently of the off-diagonal morphism. The block indices here follow
+Mathlib's `Biprod.ofComponents`. -/
 theorem of_upperTriangular (e : X ⊞ Y ≅ X ⊞ Y) (a : X ≅ X) (b : Y ≅ Y) (r : X ⟶ Y)
     (h : e.hom = Biprod.ofComponents a.hom r 0 b.hom) : of e = of a + of b := by
   have he : e = biprod.mapIso a b ≪≫ Biprod.unipotentUpper (a.inv ≫ r) := by
