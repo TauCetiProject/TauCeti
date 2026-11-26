@@ -258,10 +258,9 @@ private theorem commute_of_diagGL {A B : StableGeneralLinearGroup.elementarySubg
       StableGeneralLinearGroup.of R 3 (diagGL s))
     (hB : (B : StableGeneralLinearGroup R) = StableGeneralLinearGroup.of R 3 (diagGL t))
     (h : ∀ i, Commute (s i) (t i)) : Commute A B := by
-  have hst : Commute s t := funext fun i ↦ (h i).eq
-  refine Subtype.ext ?_
-  rw [Subgroup.coe_mul, Subgroup.coe_mul, hA, hB]
-  exact ((hst.map diagGL).map (StableGeneralLinearGroup.of R 3)).eq
+  refine Commute.of_map (f := Subgroup.subtype _) Subtype.coe_injective ?_
+  rw [Subgroup.coe_subtype, hA, hB]
+  exact ((Pi.commute_iff.2 h).map diagGL).map (StableGeneralLinearGroup.of R 3)
 
 private theorem commute_diagInvOne_diagOneInv {u v : Rˣ} (h : Commute u v) :
     Commute (diagInvOne u) (diagOneInv v) :=
