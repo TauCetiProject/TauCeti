@@ -41,7 +41,8 @@ initial value `(1, 0)`, and its second column `(B, D)` the Dirichlet solution, w
 
 * `TauCeti.diracFundamentalMatrix_mulVec_eq_add_integral`: the integral equation
   `M_q(t, z) v = v + ∫₀ᵗ -Ω (z - Q_q(s)) M_q(s, z) v ds`, with `M_q(0, z) = 1`
-  (`TauCeti.diracFundamentalMatrix_zero`);
+  (`TauCeti.diracFundamentalMatrix_zero`), and its integrand is interval integrable
+  (`TauCeti.intervalIntegrable_diracCoeff_mulVec_diracFundamentalMatrix_mulVec`);
 * `TauCeti.isDiracSolution_diracFundamentalMatrix_mulVec`: for every initial value `v`,
   `t ↦ M_q(t, z) v` solves the Dirac system;
 * `TauCeti.IsDiracSolution.eq_diracFundamentalMatrix_mulVec`: every solution is of this form, so
@@ -201,6 +202,26 @@ theorem diracFundamentalMatrix_mulVec_eq_add_integral (hq : IntegrableOn q (Icc 
   congr 1
   refine intervalIntegral.integral_congr fun s _ ↦ ?_
   simp [diracFundamentalMatrix_mulVec_eq]
+
+/-- The integrand `s ↦ -Ω (z - Q_q(s)) M_q(s, z) v` of the integral equation is interval
+integrable between `0` and `t` when `q` is integrable there, for `t` of either sign. -/
+theorem intervalIntegrable_diracCoeff_mulVec_diracFundamentalMatrix_mulVec
+    (hq : IntegrableOn q (uIcc 0 t)) (z : ℂ) (v : Fin 2 → ℂ) :
+    IntervalIntegrable (fun s ↦ diracCoeff q z s *ᵥ (diracFundamentalMatrix q s z *ᵥ v))
+      volume 0 t := by
+  set P := fun s ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff q z s)
+  have hP : IntegrableOn P (Icc (0 ⊓ t) (0 ⊔ t)) := integrableOn_toEuclideanCLM_diracCoeff hq z
+  have h := hP.intervalIntegrable_clm_comp (continuousOn_propagator_left hP left_mem_uIcc)
+    left_mem_uIcc right_mem_uIcc
+  let L : (EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2)) →L[ℂ] Fin 2 → ℂ :=
+    (PiLp.continuousLinearEquiv 2 ℂ fun _ : Fin 2 ↦ ℂ).toContinuousLinearMap ∘L
+      ContinuousLinearMap.apply ℂ (EuclideanSpace ℂ (Fin 2)) (WithLp.toLp 2 v)
+  have hL (s : ℝ) : L (P s ∘L propagator P s 0) =
+      diracCoeff q z s *ᵥ (diracFundamentalMatrix q s z *ᵥ v) := by
+    simp [L, P, ← toEuclideanCLM_diracFundamentalMatrix, PiLp.coe_continuousLinearEquiv]
+  have hint : IntervalIntegrable (fun s ↦ L (P s ∘L propagator P s 0)) volume 0 t :=
+    ⟨L.integrable_comp h.1, L.integrable_comp h.2⟩
+  simpa only [hL] using hint
 
 /-- **Existence of solutions.** If `q` is locally integrable on `[0, ∞)`, then for every initial
 value `v` the function `t ↦ M_q(t, z) v` solves the Dirac system at `z`. -/
