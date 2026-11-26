@@ -70,6 +70,8 @@ Sobolev norms are those of the coordinates in Mathlib's Bessel-potential spaces 
   `‖exp(c ρ) y‖_(H^(k+1)) ≤ K (‖exp(c ρ) f‖_(H^k) + ‖exp(c ρ) y‖_(L²))` for weak solutions of
   `L_x y = f`, with `K` depending only on the order, the rate and a bound for the derivatives of
   `x`.
+* `exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_of_gaugeFixedOperator`: the
+  same for weak solutions of `L_x* η = g`.
 * `TauCeti.Vortex.exists_forall_norm_exp_mul_smul_le_mul_norm_of_forall_mem_norm_le`: the weighted
   Sobolev estimate for the right inverse, uniformly over the vortices of degree `m` with zeros in
   a fixed disc and derivatives bounded by `B`.
@@ -484,6 +486,56 @@ theorem exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_s
       (hK₁b x (expWeightCoeff c) hx (fun i n hn z ↦ (hxb i n hn z).trans (le_max_left _ _))
         (contDiff_expWeightCoeff c) fun i j n hn z ↦ (hM i j n hn z).trans (le_max_right _ _))
       hf hy hweak hwy hv⟩
+
+/-- **The weighted elliptic estimate for the adjoint, uniformly in the field.** For every order
+`k`, bound `B` and rate `c` there is a constant `K` with the following property, where
+`ρ(z) = √(1 + |z|²)`. Let `x` be a smooth field whose coordinates have derivatives bounded by `B`
+through order `k`, and let `η` be a square-integrable weak solution of `L_x* η = g` with `g ∈ L²`,
+tested against `L_x` on smooth compactly supported fields, such that `exp(c ρ) η` is square
+integrable. If the coordinates of `exp(c ρ) g` are given by `v : Fin 4 → H^k(ℂ)`, then those of
+`exp(c ρ) η` are given by some `u : Fin 4 → H^(k+1)(ℂ)` with
+
+`‖u‖ ≤ K (‖v‖ + ‖exp(c ρ) η‖_(L²))`.
+
+This is the counterpart for `L_x*` of
+`exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul`. -/
+theorem exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_of_gaugeFixedOperator
+    (k : ℕ) (B c : ℝ) :
+    ∃ K ≥ 0, ∀ x : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ x →
+      (∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ B) →
+      ∀ η g : ℂ → EuclideanSpace ℝ (Fin 4), MemLp η 2 volume → MemLp g 2 volume →
+      (∀ w, ContDiff ℝ ∞ w → HasCompactSupport w →
+        ∫ z, ⟪η z, gaugeFixedOperator x w z⟫ = ∫ z, ⟪g z, w z⟫) →
+      MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • η z) 2 volume →
+      ∀ v : Fin 4 → H^{(k : ℝ)}(ℂ),
+      (∀ a, ⇑(inclusionLp (Nat.cast_nonneg k) (v a)) =ᵐ[volume]
+        fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) a : ℂ)) →
+      ∃ u : Fin 4 → H^{(k : ℝ) + 1}(ℂ),
+        (∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume]
+          fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • η z) a : ℂ)) ∧
+        ‖u‖ ≤ K * (‖v‖ +
+          (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • η z) 2 volume).toReal) := by
+  -- `H = exp(c ρ) η` solves `L_x* H = exp(c ρ) g + A H` with `A = -(expWeightCoeff c)ᵀ`, whose
+  -- entries have derivatives bounded by `M`.
+  obtain ⟨M, hM₀, hM⟩ := exists_forall_norm_iteratedFDeriv_expWeightCoeff_le c k
+  obtain ⟨K₁, hK₁, hK₁b⟩ :=
+    exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add k (max B M)
+  refine ⟨K₁, hK₁, fun x hx hxb η g hη hg hweak hwη v hv ↦ ?_⟩
+  have hA (i j : Fin 4) : ContDiff ℝ ∞ (fun z ↦ -expWeightCoeff c j i z) :=
+    (contDiff_expWeightCoeff c j i).neg
+  have hAb (i j : Fin 4) (n : ℕ) (hn : n ≤ k) (z : ℂ) :
+      ‖iteratedFDeriv ℝ n (fun z ↦ -expWeightCoeff c j i z) z‖ ≤ M := by
+    simpa using hM j i n hn z
+  have hwg : (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) ∈ sobolevFields k :=
+    (mem_sobolevFields_iff_exists_inclusionLp_ae_eq (Nat.cast_nonneg k)).2 ⟨v, hv⟩
+  have hHweak (w : ℂ → EuclideanSpace ℝ (Fin 4)) (hw : ContDiff ℝ ∞ w)
+      (hwc : HasCompactSupport w) :=
+    integral_inner_exp_mul_smul_gaugeFixedOperator_eq (c := c) hx.continuous hη hg hweak hw hwc
+  obtain ⟨u, hu⟩ := (mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).1
+    (mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_eq_add k hx
+      (fun i n hn ↦ ⟨B, hxb i n hn⟩) hA (fun i j ↦ ⟨M, hM₀, hAb i j⟩) hwη hwg hHweak)
+  exact ⟨u, hu, hK₁b x _ hx (fun i n hn z ↦ (hxb i n hn z).trans (le_max_left _ _)) hA
+    (fun i j n hn z ↦ (hAb i j n hn z).trans (le_max_right _ _)) _ _ u v hu hv hHweak⟩
 
 /-! ### The weighted estimates over a window of divisors -/
 
