@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DualNumber
+public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.TensorProduct.Maps
 
 /-!
@@ -78,5 +79,14 @@ theorem dualNumberAlgebraTensorAlgEquiv_tmul_eps (a : A) :
 theorem dualNumberAlgebraTensorAlgEquiv_symm_eps :
     (dualNumberAlgebraTensorAlgEquiv R S A).symm ε = 1 ⊗ₜ ε := by
   simp [dualNumberAlgebraTensorAlgEquiv, lift_apply_apply]
+
+/-- The base-change algebra equivalence `S ⊗[R] R[ε] ≃ₐ[S] S[ε]` intertwines the scalar-extended
+functional `Module.Dual.baseChange S (sndHom R R)` with `sndHom S S`. -/
+theorem sndHom_dualNumberAlgebraTensorAlgEquiv (z : S ⊗[R] R[ε]) :
+    sndHom S S (dualNumberAlgebraTensorAlgEquiv R S S z) =
+      Module.Dual.baseChange S (sndHom R R : R[ε] →ₗ[R] R) z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul s x => simp [Algebra.smul_def, mul_comm]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end TauCeti

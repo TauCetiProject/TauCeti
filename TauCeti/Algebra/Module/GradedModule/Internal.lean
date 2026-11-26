@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.Binomial
 public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.DirectSum.Supported
 import TauCeti.Algebra.Module.NatInt
 import TauCeti.Algebra.Module.Submodule.Finite
 
@@ -81,8 +82,10 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
   `TauCeti.InternalGrading.negOnePow_quadraticExponent_cancel` and
   `TauCeti.InternalGrading.negOnePow_quadraticExponent_neg_add`: the quadratic signs differ under
   addition by the Koszul sign.
-* `LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
-  linear equivalence is homogeneous.
+* `LinearMap.IsHomogeneous.linearEquiv_symm` and `LinearMap.IsHomogeneous.algEquiv_symm`: the
+  inverse of a degree-zero homogeneous linear or algebra equivalence is homogeneous.
+* `LinearEquiv.isHomogeneous_of_apply_eq`: a degree-zero homogeneous linear equivalence
+  intertwining two linear maps transports homogeneity of the source map to the target map.
 * `LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff`: a degree-zero homogeneous
   equivalence preserves and reflects membership in each piece.
 * `LinearMap.IsHomogeneous.pieceEquiv`: restriction of a degree-zero homogeneous
@@ -92,6 +95,8 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
   projection, up to the shift of degree.
 * `TauCeti.InternalGrading.mem_piece_of_piece_eq_bot`: when all pieces outside one degree vanish,
   every element lies in that piece.
+* `TauCeti.InternalGrading.mem_piece_iff_decompose_eq_zero`: an element lies in `G.piece i` iff
+  its homogeneous components outside degree `i` vanish.
 * `LinearMap.IsHomogeneous.isHomogeneous_ker` and
   `LinearMap.IsHomogeneous.isHomogeneous_range`: the kernel and the image of a homogeneous
   map are homogeneous submodules.
@@ -413,6 +418,15 @@ theorem InternalGrading.mem_piece_of_piece_eq_bot {R M : Type*} [Semiring R] [Ad
     (hG : ∀ j, j ≠ i → G.piece j = ⊥) (x : M) : x ∈ G.piece i :=
   DirectSum.mem_of_forall_ne_eq_bot hG x
 
+/-- An element lies in `G.piece i` if and only if its homogeneous components outside degree `i`
+vanish. -/
+theorem InternalGrading.mem_piece_iff_decompose_eq_zero {R M : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] {ι : Type*} [DecidableEq ι] (G : InternalGrading R M ι)
+    {i : ι} {x : M} :
+    x ∈ G.piece i ↔ ∀ j, j ≠ i → (DirectSum.decompose G.piece x j : M) = 0 := by
+  simpa only [Set.mem_singleton_iff, iSup_unique, Set.default_coe_singleton] using
+    TauCeti.DirectSum.mem_iSup_iff_decompose_eq_zero G.piece {i} (x := x)
+
 section LinearMapIsHomogeneous
 
 variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S]
@@ -455,6 +469,38 @@ theorem _root_.LinearMap.IsHomogeneous.linearEquiv_symm {ι : Type*} [DecidableE
     rw [← e.symm_apply_apply (x : M)]
     exact congrArg e.symm (congrArg Subtype.val hx).symm
   simpa only [add_zero, LinearEquiv.coe_coe, hxy] using x.property
+
+/-- The inverse of a degree-zero homogeneous algebra equivalence of additive decompositions is
+homogeneous of degree zero. -/
+theorem _root_.LinearMap.IsHomogeneous.algEquiv_symm {R₀ A B ι σA σB : Type*} [CommSemiring R₀]
+    [Semiring A] [Semiring B] [Algebra R₀ A] [Algebra R₀ B] [DecidableEq ι] [AddMonoid ι]
+    [SetLike σA A] [SetLike σB B] [AddSubmonoidClass σA A] [AddSubmonoidClass σB B]
+    {𝒜 : ι → σA} {ℬ : ι → σB} [DirectSum.Decomposition 𝒜] [DirectSum.Decomposition ℬ]
+    {e : A ≃ₐ[R₀] B} (he : LinearMap.IsHomogeneous e.toLinearMap 𝒜 ℬ 0) :
+    LinearMap.IsHomogeneous e.symm.toLinearMap ℬ 𝒜 0 := by
+  rw [← e.symm.toLinearEquiv_toLinearMap, e.toLinearEquiv_symm]
+  rw [← e.toLinearEquiv_toLinearMap] at he
+  exact he.linearEquiv_symm
+
+omit [Semiring R] [Module R M] [Module R N] in
+/-- A degree-zero homogeneous linear equivalence `e : M ≃ₗ[S] N` of additive decompositions
+intertwining `ψ (e x) = φ x` transports homogeneity of `φ` into any target grading `L` to `ψ`. -/
+theorem _root_.LinearEquiv.isHomogeneous_of_apply_eq {ι P σM σN σP : Type*} [DecidableEq ι]
+    [AddMonoid ι] [AddCommMonoid P] [Module S P]
+    [SetLike σM M] [SetLike σN N] [SetLike σP P]
+    [AddSubmonoidClass σM M] [AddSubmonoidClass σN N]
+    (e : M ≃ₗ[S] N) {ℳ : ι → σM} {𝓝 : ι → σN}
+    [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝]
+    {L : ι → σP} {φ : M →ₗ[S] P} {ψ : N →ₗ[S] P}
+    (he : LinearMap.IsHomogeneous e.toLinearMap ℳ 𝓝 0)
+    (hφψ : ∀ x, ψ (e x) = φ x) {d : ι}
+    (hφ : LinearMap.IsHomogeneous φ ℳ L d) :
+    LinearMap.IsHomogeneous ψ 𝓝 L d := by
+  have hψ : ψ = φ.comp e.symm.toLinearMap := by
+    ext y
+    simpa using hφψ (e.symm y)
+  rw [hψ]
+  simpa using hφ.comp he.linearEquiv_symm
 
 /-- A degree-zero equivalence of additive decompositions preserves and reflects each piece.
 The homogeneous pieces need only be additive subobjects. -/

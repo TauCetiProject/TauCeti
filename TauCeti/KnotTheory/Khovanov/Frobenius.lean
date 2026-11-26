@@ -51,10 +51,12 @@ numbers, so it is installed only as scoped instances in `TauCeti.Khovanov`; `ope
   resulting expansion `a = counit (ε * a) • 1 + counit a • ε`.
 * `TauCeti.Khovanov.handleElem_eq`, `TauCeti.Khovanov.counit_handleElem_eq_two`, and
   `TauCeti.Khovanov.handleElem_sq`: the handle element is `2 • ε`, with counit `2` and square `0`.
-* `TauCeti.Khovanov.baseChangeCoalgEquiv` and
-  `TauCeti.Khovanov.toFrobeniusCoalgEquiv_dualNumberAlgebraTensorAlgEquiv`: for a commutative
-  `R`-algebra `S`, the algebra isomorphism `S ⊗[R] R[ε] ≃ S[ε]` is an isomorphism of `S`-coalgebras
-  agreeing with the general Frobenius transport `AlgEquiv.toFrobeniusCoalgEquiv`.
+* `TauCeti.Khovanov.baseChangeCoalgEquiv`,
+  `TauCeti.Khovanov.toFrobeniusCoalgEquiv_dualNumberAlgebraTensorAlgEquiv`, and
+  `TauCeti.Khovanov.frobeniusCoalgebra_dualBaseChange_sndHom`: for a commutative `R`-algebra `S`,
+  the algebra isomorphism `S ⊗[R] R[ε] ≃ S[ε]` is an isomorphism of `S`-coalgebras agreeing with
+  `AlgEquiv.toFrobeniusCoalgEquiv`, and `Module.Dual.baseChange S (sndHom R R)` reconstructs the
+  base-changed Khovanov coalgebra.
 
 ## References
 
@@ -202,6 +204,16 @@ theorem toFrobeniusCoalgEquiv_dualNumberAlgebraTensorAlgEquiv :
         (fun x => by simpa using CoalgHomClass.counit_comp_apply (baseChangeCoalgEquiv R S) x) =
       baseChangeCoalgEquiv R S :=
   CoalgEquiv.ext fun _ => by simp
+
+/-- Reconstructing the `S`-coalgebra on `S ⊗[R] R[ε]` from `Module.Dual.baseChange S (sndHom R R)`
+recovers the base change of the Khovanov coalgebra over `R`. -/
+theorem frobeniusCoalgebra_dualBaseChange_sndHom :
+    LinearMap.frobeniusCoalgebra (R := S) (A := S ⊗[R] R[ε])
+        (Module.Dual.baseChange S (sndHom R R : R[ε] →ₗ[R] R)) =
+      (inferInstance : Coalgebra S (S ⊗[R] R[ε])) :=
+  (LinearMap.frobeniusCoalgebra_dualBaseChange (B := R[ε]) S (sndHom R R : R[ε] →ₗ[R] R)).trans
+    (congrArg (fun c : Coalgebra R R[ε] ↦ (letI := c; (inferInstance : Coalgebra S (S ⊗[R] R[ε]))))
+      (frobeniusCoalgebra_sndHom R))
 
 end BaseChange
 

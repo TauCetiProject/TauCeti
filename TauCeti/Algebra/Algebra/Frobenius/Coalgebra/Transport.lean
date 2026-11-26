@@ -33,7 +33,8 @@ upgrades to `e.toFrobeniusCoalgEquiv : A ≃ₗc[R] B`. For an `R`-algebra `S`, 
 * `AlgEquiv.toFrobeniusCoalgEquiv`, `LinearMap.frobeniusCoalgEquivOfAlgEquiv`,
   `TensorProduct.instIsFrobenius`.
 * `Coalgebra.IsFrobenius.of_surjective`, `Coalgebra.map_handleOp`, `Coalgebra.map_handleElem`,
-  `LinearMap.isPerfPair_mul_compr₂_comp_iff`, `LinearMap.traceDualBasis_map`.
+  `AlgEquiv.isPerfPair_mul_compr₂_iff`, `LinearMap.isPerfPair_mul_compr₂_comp_iff`,
+  `LinearMap.isPerfPair_mul_compr₂_dualCongr`, `LinearMap.traceDualBasis_map`.
 * `Coalgebra.handleOp_tensorProduct_tmul`, `Coalgebra.handleElem_tensorProduct`,
   `Coalgebra.handleElem_baseChange`, `LinearMap.isPerfPair_mul_compr₂_dualDistrib_tmul`,
   `LinearMap.frobeniusCoalgebra_dualDistrib_tmul`, `LinearMap.traceDualBasis_tensorProduct`,
@@ -103,16 +104,42 @@ theorem Coalgebra.map_handleElem {R A B F : Type*} [CommSemiring R]
 
 /-! ### Transport along algebra equivalences -/
 
+section PerfPairTransport
+
+variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
+
+/-- Transporting a perfect multiplication pairing along an algebra equivalence that intertwines the
+functionals gives a perfect multiplication pairing. -/
+theorem AlgEquiv.isPerfPair_mul_compr₂ {εA : A →ₗ[R] R} {εB : B →ₗ[R] R}
+    [((LinearMap.mul R A).compr₂ εA).IsPerfPair] (e : A ≃ₐ[R] B) (he : ∀ a, εB (e a) = εA a) :
+    ((LinearMap.mul R B).compr₂ εB).IsPerfPair :=
+  LinearMap.IsPerfPair.congr ((LinearMap.mul R A).compr₂ εA)
+    e.symm.toLinearEquiv e.symm.toLinearEquiv _ (by ext; simp [← map_mul, he])
+
+/-- An algebra equivalence intertwining two functionals preserves and reflects perfectness of their
+multiplication pairings. -/
+theorem AlgEquiv.isPerfPair_mul_compr₂_iff {εA : A →ₗ[R] R} {εB : B →ₗ[R] R}
+    (e : A ≃ₐ[R] B) (he : ∀ a, εB (e a) = εA a) :
+    ((LinearMap.mul R A).compr₂ εA).IsPerfPair ↔ ((LinearMap.mul R B).compr₂ εB).IsPerfPair :=
+  ⟨fun h => by have := h; exact e.isPerfPair_mul_compr₂ he,
+    fun h => by
+      have := h
+      exact e.symm.isPerfPair_mul_compr₂ fun b => by simpa using (he (e.symm b)).symm⟩
+
 /-- Pulling a functional back along an algebra equivalence preserves perfectness of the associated
 multiplication pairing. -/
-theorem LinearMap.isPerfPair_mul_compr₂_comp_iff {R A B : Type*} [CommSemiring R]
-    [Semiring A] [Semiring B] [Algebra R A] [Algebra R B] (εB : B →ₗ[R] R) (e : A ≃ₐ[R] B) :
-    ((mul R A).compr₂ (εB ∘ₗ e.toLinearMap)).IsPerfPair ↔ ((mul R B).compr₂ εB).IsPerfPair := by
-  have hAB : ((mul R B).compr₂ εB).compl₁₂ e.toLinearEquiv.toLinearMap
-      e.toLinearEquiv.toLinearMap = (mul R A).compr₂ (εB ∘ₗ e.toLinearMap) := by ext; simp
-  have hBA : ((mul R A).compr₂ (εB ∘ₗ e.toLinearMap)).compl₁₂ e.symm.toLinearEquiv.toLinearMap
-      e.symm.toLinearEquiv.toLinearMap = (mul R B).compr₂ εB := by ext; simp
-  exact ⟨fun _ => hBA ▸ inferInstance, fun _ => hAB ▸ inferInstance⟩
+theorem LinearMap.isPerfPair_mul_compr₂_comp_iff (εB : B →ₗ[R] R) (e : A ≃ₐ[R] B) :
+    ((mul R A).compr₂ (εB ∘ₗ e.toLinearMap)).IsPerfPair ↔ ((mul R B).compr₂ εB).IsPerfPair :=
+  e.isPerfPair_mul_compr₂_iff fun _ => rfl
+
+/-- Pushing a functional forward along an algebra equivalence via `Module.Dual.congr` preserves
+perfectness of the multiplication pairing. -/
+instance LinearMap.isPerfPair_mul_compr₂_dualCongr (εA : A →ₗ[R] R)
+    [((LinearMap.mul R A).compr₂ εA).IsPerfPair] (e : A ≃ₐ[R] B) :
+    ((LinearMap.mul R B).compr₂ (Module.Dual.congr e.toLinearEquiv εA)).IsPerfPair :=
+  e.isPerfPair_mul_compr₂ (εA := εA) fun _ => by simp
+
+end PerfPairTransport
 
 namespace AlgEquiv
 

@@ -32,12 +32,16 @@ In particular, over `ℤ` the scaled functional `2 • TrivSqZeroExt.sndHom ℤ 
 * `TauCeti.dualNumberTracePairing_mul_assoc`: the trace pairing is associative.
 * `TauCeti.toMatrix₂_dualNumberTracePairing` and `TauCeti.toMatrix₂_mul_compr₂_smul_sndHom`: Gram
   matrices in the basis `(1, ε)`.
-* `TauCeti.isPerfPair_mul_compr₂_smul_sndHom_iff` and
-  `TauCeti.isFrobeniusFunctional_smul_sndHom_iff`: `r • sndHom` gives a perfect pairing iff `r` is a
-  unit, and a Frobenius functional iff multiplication by `r` has trivial kernel.
-* `TauCeti.isFrobeniusFunctional_two_smul_sndHom_int` and
-  `TauCeti.not_isPerfPair_mul_compr₂_two_smul_sndHom_int`: over `ℤ`, `2 • sndHom` is nondegenerate
-  with determinant `-4` (`TauCeti.det_toMatrix₂_mul_compr₂_two_smul_sndHom_int`) but not perfect.
+* `TauCeti.isPerfPair_mul_compr₂_smul_sndHom_iff`,
+  `TauCeti.isFrobeniusFunctional_smul_sndHom_iff`, and
+  `TauCeti.isSymmetricFrobeniusFunctional_smul_sndHom_iff`: `r • sndHom` gives a perfect pairing
+  iff `r` is a unit, and a (symmetric) Frobenius functional iff multiplication by `r` has trivial
+  kernel.
+* `TauCeti.isFrobeniusFunctional_two_smul_sndHom_int`,
+  `TauCeti.isSymmetricFrobeniusFunctional_two_smul_sndHom_int`, and
+  `TauCeti.not_isPerfPair_mul_compr₂_two_smul_sndHom_int`: over `ℤ`, `2 • sndHom` is a symmetric
+  Frobenius functional with determinant `-4`
+  (`TauCeti.det_toMatrix₂_mul_compr₂_two_smul_sndHom_int`) but not perfect.
 -/
 
 public section
@@ -120,6 +124,11 @@ theorem dualNumberTracePairing_mul_assoc (x y z : DualNumber k) :
   rw [dualNumberTracePairing, LinearMap.compr₂_apply, LinearMap.compr₂_apply,
     LinearMap.mul_apply', LinearMap.mul_apply', mul_assoc]
 
+/-- The multiplication pairing of `sndHom k k` equals `dualNumberTracePairing k`. -/
+theorem mul_compr₂_sndHom_eq_dualNumberTracePairing :
+    (LinearMap.mul k (DualNumber k)).compr₂ (TrivSqZeroExt.sndHom k k) =
+      dualNumberTracePairing k := (rfl)
+
 /-- In the basis `(1, ε)`, the Gram matrix of a scaled infinitesimal-projection pairing
 `r • sndHom` is `!![0, r; r, 0]`. -/
 theorem toMatrix₂_mul_compr₂_smul_sndHom (r : k) :
@@ -168,6 +177,14 @@ theorem isFrobeniusFunctional_smul_sndHom_iff (r : k) :
   · exact TrivSqZeroExt.ext (hr b.fst (by simpa [smul_eq_mul] using hb DualNumber.eps))
       (hr b.snd (by simpa [smul_eq_mul] using hb 1))
 
+/-- Over any commutative semiring `k`, the scaled trace `r • sndHom` is a symmetric Frobenius
+functional on `DualNumber k` if and only if multiplication by `r` on `k` has trivial kernel. -/
+theorem isSymmetricFrobeniusFunctional_smul_sndHom_iff (r : k) :
+    (r • TrivSqZeroExt.sndHom k k).IsSymmetricFrobeniusFunctional ↔
+      ∀ x : k, r * x = 0 → x = 0 :=
+  ⟨fun h => (isFrobeniusFunctional_smul_sndHom_iff k r).mp h.isFrobeniusFunctional,
+    fun hr => ((isFrobeniusFunctional_smul_sndHom_iff k r).mpr hr).isSymmetric⟩
+
 end CommSemiring
 
 section CommRing
@@ -193,6 +210,11 @@ theorem isFrobeniusFunctional_two_smul_sndHom_int :
     ((2 : ℤ) • TrivSqZeroExt.sndHom ℤ ℤ).IsFrobeniusFunctional :=
   (isFrobeniusFunctional_smul_sndHom_iff ℤ 2).mpr fun _ hx =>
     (mul_eq_zero.mp hx).resolve_left (by decide)
+
+/-- Over `ℤ`, the scaled trace `2 • sndHom` is a symmetric Frobenius functional. -/
+theorem isSymmetricFrobeniusFunctional_two_smul_sndHom_int :
+    ((2 : ℤ) • TrivSqZeroExt.sndHom ℤ ℤ).IsSymmetricFrobeniusFunctional :=
+  isFrobeniusFunctional_two_smul_sndHom_int.isSymmetric
 
 /-- Over `ℤ`, the multiplication pairing of `2 • sndHom` is not perfect, even though `2 • sndHom`
 is a Frobenius functional (`TauCeti.isFrobeniusFunctional_two_smul_sndHom_int`). -/

@@ -61,6 +61,17 @@ theorem dualDistrib_tmul_mem_dualPiece (G : InternalGrading R M ℤ) (H : Intern
     · rw [(mem_dualPiece_iff G p φ).mp hφ s x hx hs, zero_mul]
   exact hle hz
 
+/-- Tensoring functionals of degrees `p` and `q` into the trivial grading on `R` produces a
+functional of degree `p + q` on `M ⊗[R] N`. -/
+theorem isHomogeneous_dualDistrib_tmul (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
+    {φ : Module.Dual R M} {ψ : Module.Dual R N} {p q : ℤ}
+    (hφ : LinearMap.IsHomogeneous φ G.piece (trivialGrading R R) p)
+    (hψ : LinearMap.IsHomogeneous ψ H.piece (trivialGrading R R) q) :
+    LinearMap.IsHomogeneous (TensorProduct.dualDistrib R M N (φ ⊗ₜ[R] ψ))
+      (G.tensorProduct H).piece (trivialGrading R R) (p + q) := by
+  rw [← mem_dualPiece_iff_isHomogeneous_trivialGrading] at hφ hψ ⊢
+  exact G.dualDistrib_tmul_mem_dualPiece H hφ hψ
+
 /-- Mathlib's ordinary tensor-dual map preserves the internal total degree. -/
 theorem isHomogeneous_dualDistrib (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     (hG : {p | G.dualPiece p ≠ ⊥}.Finite) (hH : {p | H.dualPiece p ≠ ⊥}.Finite) :

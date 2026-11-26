@@ -22,9 +22,9 @@ the usual ungraded dual-number algebra.
 
 * `TauCeti.dualNumberGrade`: the degree pieces of the dual numbers.
 * `TauCeti.dualNumberGradedAlgebra`: the corresponding graded-algebra structure.
-* `TauCeti.dualNumberIntegerGrade` and `TauCeti.dualNumberIntegerGradedAlgebra`: the same grading
-  extended by zero to integer degrees, the indexing in which internal shifts of graded modules
-  are stated.
+* `TauCeti.dualNumberIntegerGrade`, `TauCeti.dualNumberIntegerGradedAlgebra`, and
+  `TauCeti.dualNumberIntegerInternalGrading`: the same grading extended by zero to integer degrees
+  and packaged as an `InternalGrading`.
 
 ## Main results
 
@@ -37,6 +37,8 @@ the usual ungraded dual-number algebra.
   the two nonzero pieces are linearly equivalent to the base ring.
 * `TauCeti.dualNumberIntegerGrade_zero_eq_span_one`: in the integer grading, degree zero is the
   line through `1`.
+* `TauCeti.parityGrading_dualNumberIntegerGrade_one` and `TauCeti.isHomogeneous_sndHom`:
+  even support of the integer grading and degree `-2` homogeneity of `TrivSqZeroExt.sndHom R R`.
 
 ## Implementation notes
 
@@ -361,5 +363,29 @@ noncomputable def dualNumberIntegerInternalGrading : InternalGrading R (DualNumb
 theorem dualNumberIntegerInternalGrading_piece :
     (dualNumberIntegerInternalGrading R).piece = dualNumberIntegerGrade R :=
   (rfl)
+
+/-- Graded-monoid instance on `(dualNumberIntegerInternalGrading R).piece`. -/
+instance instGradedMonoidDualNumberIntegerInternalGrading :
+    SetLike.GradedMonoid (dualNumberIntegerInternalGrading R).piece where
+  one_mem := by
+    rw [dualNumberIntegerInternalGrading_piece]
+    exact one_mem_dualNumberIntegerGrade_zero R
+  mul_mem _ _ _ _ hx hy := by
+    let := dualNumberIntegerGradedAlgebra R
+    rw [dualNumberIntegerInternalGrading_piece] at hx hy ⊢
+    exact SetLike.mul_mem_graded hx hy
+
+/-- With `deg 1 = 0` and `deg ε = 2`, the trace `sndHom R R` is homogeneous of degree `-2`. -/
+theorem isHomogeneous_sndHom :
+    LinearMap.IsHomogeneous (TrivSqZeroExt.sndHom R R) (dualNumberIntegerGrade R)
+      (trivialGrading R R) (-2) :=
+  LinearMap.isHomogeneous_def.mpr fun p x hx => by
+    by_cases hp2 : p = 2
+    · subst hp2; simp
+    · by_cases hp0 : p = 0
+      · subst hp0
+        rw [← Nat.cast_zero, dualNumberIntegerGrade_ofNat, mem_dualNumberGrade_zero] at hx
+        simp [hx]
+      · rw [dualNumberIntegerGrade_eq_bot R hp0 hp2, Submodule.mem_bot] at hx; simp [hx]
 
 end TauCeti

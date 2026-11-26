@@ -23,7 +23,8 @@ finite basis of size `n` is `n`.
 
 ## Main definitions and results
 
-* `TauCeti.perfPairTraceEquivFrobeniusCoalgebra`, `Coalgebra.handleOp`, `Coalgebra.handleElem`.
+* `TauCeti.frobeniusCoalgebra_counit`, `TauCeti.perfPairTraceEquivFrobeniusCoalgebra`,
+  `Coalgebra.handleOp`, `Coalgebra.handleElem`.
 * `Coalgebra.IsFrobenius.isPerfPair_mul_compr₂_counit`, `Coalgebra.IsFrobenius.instIsCocomm`,
   `Coalgebra.IsFrobenius.comul_eq_sum_traceDualBasis`,
   `Coalgebra.IsFrobenius.comul_one_eq_sum_traceDualBasis`.
@@ -187,6 +188,13 @@ end LinearMap
 
 namespace TauCeti
 
+/-- Reconstructing a Frobenius coalgebra on a commutative algebra from its counit recovers the
+given coalgebra. -/
+@[simp] theorem frobeniusCoalgebra_counit {R A : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] [c : Coalgebra R A] [Coalgebra.IsFrobenius R A] :
+    (Coalgebra.counit (R := R) (A := A)).frobeniusCoalgebra = c :=
+  (Coalgebra.counit (R := R) (A := A)).frobeniusCoalgebra_eq c rfl inferInstance
+
 variable (R A : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A]
   [Module.Finite R A] [Module.Projective R A]
 
@@ -199,8 +207,7 @@ def perfPairTraceEquivFrobeniusCoalgebra :
   toFun ε := letI := ε.property; ⟨ε.val.frobeniusCoalgebra, ε.val.frobeniusCoalgebra_isFrobenius⟩
   invFun c := letI := c.val; letI := c.property; ⟨c.val.counit, inferInstance⟩
   left_inv ε := Subtype.ext <| by let := ε.property; exact ε.val.frobeniusCoalgebra_counit
-  right_inv c := Subtype.ext <| by
-    let := c.val; let := c.property; exact c.val.counit.frobeniusCoalgebra_eq c.val rfl c.property
+  right_inv c := Subtype.ext <| by let := c.val; let := c.property; exact frobeniusCoalgebra_counit
 
 @[simp] theorem perfPairTraceEquivFrobeniusCoalgebra_apply_coe
     (ε : {ε : A →ₗ[R] R // ((LinearMap.mul R A).compr₂ ε).IsPerfPair}) :
@@ -224,7 +231,7 @@ theorem comul_eq_sum_traceDualBasis {ι : Type*} [Fintype ι] (b : Module.Basis 
     Coalgebra.comul (R := R) a =
       ∑ i, b i ⊗ₜ[R] (LinearMap.traceDualBasis Coalgebra.counit b i * a) := by
   have hc := congrArg (fun c : Coalgebra R A => c.comul)
-    ((Coalgebra.counit (R := R) (A := A)).frobeniusCoalgebra_eq ‹_› rfl ‹_›)
+    (TauCeti.frobeniusCoalgebra_counit (R := R) (A := A))
   exact hc ▸ (Coalgebra.counit (R := R) (A := A)).frobeniusCoalgebra_comul_eq_sum b a
 
 /-- Dual-basis formula for `comul 1` in any commutative Frobenius coalgebra: the Casimir /
