@@ -732,6 +732,19 @@ theorem index_coprod [FiniteDimensional 𝕜 D₁.ker]
   rw [index_eq_finrank_sub, index_eq_finrank_sub]
   omega
 
+/-- **The index from a surjective stabilization.** If adjoining finitely many domain variables
+makes `D₁` surjective, the index of `D₁` is the dimension of the kernel of the extension minus the
+number of variables, provided the kernel of `D₁` is finite dimensional. The cokernel of `D₁` is
+then finite dimensional too, spanned by the parameter directions. -/
+theorem index_eq_finrank_ker_coprod_sub_of_surjective [FiniteDimensional 𝕜 D₁.ker]
+    [FiniteDimensional 𝕜 Λ] (h : Function.Surjective (D₁.coprod D₂)) :
+    D₁.index = finrank 𝕜 (D₁.coprod D₂).ker - finrank 𝕜 Λ := by
+  have : FiniteDimensional 𝕜 (F ⧸ D₁.range) := Module.Finite.of_surjective _
+    ((parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).2 h)
+  have hi := index_coprod D₁ D₂
+  rw [index_of_surjective _ h] at hi
+  omega
+
 end Dimension
 
 section OpenMap
