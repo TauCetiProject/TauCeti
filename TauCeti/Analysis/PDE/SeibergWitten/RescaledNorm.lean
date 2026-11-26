@@ -252,38 +252,6 @@ theorem rescaledFieldNormSq_eq_rpow_mul {s : ℕ} {b : V → B} {ζ : V → S} (
 
 /-! ### Equivalence with the fixed-order norms -/
 
-/-- **The rescaled norm below the unit-scale norm.** For `0 ≤ h ≤ 1`,
-`‖(b, ζ)‖_(E_(r,s))² ≤ ∑_{j ≤ s} (‖Dʲ b‖₂² + ‖Dʲ ζ‖₂² / 4)`. -/
-theorem rescaledFieldNormSq_le_rescaledFieldNormSq_one (s : ℕ) {h : ℝ} (hh : 0 ≤ h) (hh₁ : h ≤ 1)
-    (b : V → B) (ζ : V → S) : rescaledFieldNormSq s h b ζ ≤ rescaledFieldNormSq s 1 b ζ := by
-  refine Finset.sum_le_sum fun j _ ↦ ?_
-  rw [one_pow, one_pow, one_mul, one_mul]
-  have h2 : h ^ 2 ≤ 1 := pow_le_one₀ hh hh₁
-  calc h ^ (2 * j) * (h ^ 2 * lpNorm (iteratedFDeriv ℝ j b) 2 volume ^ 2 +
-        lpNorm (iteratedFDeriv ℝ j ζ) 2 volume ^ 2 / 4)
-      ≤ 1 * (1 * lpNorm (iteratedFDeriv ℝ j b) 2 volume ^ 2 +
-        lpNorm (iteratedFDeriv ℝ j ζ) 2 volume ^ 2 / 4) := by
-        gcongr
-        exact pow_le_one₀ hh hh₁
-    _ = _ := by ring
-
-/-- **The unit-scale norm below the rescaled norm.** For `0 ≤ h ≤ 1`, the unit-scale norm loses at
-most `h^(2s+2)`: `h^(2s+2) ∑_{j ≤ s} (‖Dʲ b‖₂² + ‖Dʲ ζ‖₂² / 4) ≤ ‖(b, ζ)‖_(E_(r,s))²`. -/
-theorem pow_mul_rescaledFieldNormSq_one_le (s : ℕ) {h : ℝ} (hh : 0 ≤ h) (hh₁ : h ≤ 1)
-    (b : V → B) (ζ : V → S) :
-    h ^ (2 * s + 2) * rescaledFieldNormSq s 1 b ζ ≤ rescaledFieldNormSq s h b ζ := by
-  rw [rescaledFieldNormSq, Finset.mul_sum]
-  refine Finset.sum_le_sum fun j hj ↦ ?_
-  have hjs : j ≤ s := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
-  rw [one_pow, one_pow, one_mul, one_mul]
-  have hb : h ^ (2 * s + 2) ≤ h ^ (2 * j) * h ^ 2 := by
-    rw [← pow_add]
-    exact pow_le_pow_of_le_one hh hh₁ (by omega)
-  have hζ : h ^ (2 * s + 2) ≤ h ^ (2 * j) := pow_le_pow_of_le_one hh hh₁ (by omega)
-  have hX := sq_nonneg (lpNorm (iteratedFDeriv ℝ j b) 2 volume)
-  have hY := sq_nonneg (lpNorm (iteratedFDeriv ℝ j ζ) 2 volume)
-  nlinarith [mul_le_mul_of_nonneg_right hb hX, mul_le_mul_of_nonneg_right hζ hY]
-
 /-- **The target norm below the unit-scale norm.** For `0 ≤ h ≤ 1`,
 `‖y‖_(F_(r,s-1))² ≤ ∑_{j < s} ‖Dʲ y‖₂²`. -/
 theorem rescaledTargetNormSq_le_rescaledTargetNormSq_one (s : ℕ) {h : ℝ} (hh : 0 ≤ h)
@@ -294,14 +262,42 @@ theorem rescaledTargetNormSq_le_rescaledTargetNormSq_one (s : ℕ) {h : ℝ} (hh
   exact mul_le_of_le_one_left (sq_nonneg _) (pow_le_one₀ hh hh₁)
 
 /-- **The unit-scale target norm below the rescaled one.** For `0 ≤ h ≤ 1`,
-`h^(2s) ∑_{j < s} ‖Dʲ y‖₂² ≤ ‖y‖_(F_(r,s-1))²`. -/
+`h^(2(s-1)) ∑_{j < s} ‖Dʲ y‖₂² ≤ ‖y‖_(F_(r,s-1))²`. -/
 theorem pow_mul_rescaledTargetNormSq_one_le (s : ℕ) {h : ℝ} (hh : 0 ≤ h) (hh₁ : h ≤ 1)
-    (y : V → T) : h ^ (2 * s) * rescaledTargetNormSq s 1 y ≤ rescaledTargetNormSq s h y := by
+    (y : V → T) :
+    h ^ (2 * (s - 1)) * rescaledTargetNormSq s 1 y ≤ rescaledTargetNormSq s h y := by
   rw [rescaledTargetNormSq, Finset.mul_sum]
   refine Finset.sum_le_sum fun j hj ↦ ?_
   rw [one_pow, one_mul]
   exact mul_le_mul_of_nonneg_right
     (pow_le_pow_of_le_one hh hh₁ (by have := Finset.mem_range.1 hj; omega)) (sq_nonneg _)
+
+/-- **The rescaled norm below the unit-scale norm.** For `0 ≤ h ≤ 1`,
+`‖(b, ζ)‖_(E_(r,s))² ≤ ∑_{j ≤ s} (‖Dʲ b‖₂² + ‖Dʲ ζ‖₂² / 4)`. -/
+theorem rescaledFieldNormSq_le_rescaledFieldNormSq_one (s : ℕ) {h : ℝ} (hh : 0 ≤ h) (hh₁ : h ≤ 1)
+    (b : V → B) (ζ : V → S) : rescaledFieldNormSq s h b ζ ≤ rescaledFieldNormSq s 1 b ζ := by
+  rw [rescaledFieldNormSq_eq_rescaledTargetNormSq, rescaledFieldNormSq_eq_rescaledTargetNormSq,
+    one_pow, one_mul]
+  gcongr ?_ + ?_ / 4
+  · exact (mul_le_of_le_one_left (rescaledTargetNormSq_nonneg _ h b) (pow_le_one₀ hh hh₁)).trans
+      (rescaledTargetNormSq_le_rescaledTargetNormSq_one _ hh hh₁ b)
+  · exact rescaledTargetNormSq_le_rescaledTargetNormSq_one _ hh hh₁ ζ
+
+/-- **The unit-scale norm below the rescaled norm.** For `0 ≤ h ≤ 1`, the unit-scale norm loses at
+most `h^(2s+2)`: `h^(2s+2) ∑_{j ≤ s} (‖Dʲ b‖₂² + ‖Dʲ ζ‖₂² / 4) ≤ ‖(b, ζ)‖_(E_(r,s))²`. -/
+theorem pow_mul_rescaledFieldNormSq_one_le (s : ℕ) {h : ℝ} (hh : 0 ≤ h) (hh₁ : h ≤ 1)
+    (b : V → B) (ζ : V → S) :
+    h ^ (2 * s + 2) * rescaledFieldNormSq s 1 b ζ ≤ rescaledFieldNormSq s h b ζ := by
+  rw [rescaledFieldNormSq_eq_rescaledTargetNormSq, rescaledFieldNormSq_eq_rescaledTargetNormSq,
+    one_pow, one_mul]
+  have hb := pow_mul_rescaledTargetNormSq_one_le (s + 1) hh hh₁ b
+  have hζ := pow_mul_rescaledTargetNormSq_one_le (s + 1) hh hh₁ ζ
+  rw [Nat.add_sub_cancel] at hb hζ
+  -- The connection gains the factor `h²`; the spinor loses it, as `h^(2s+2) ≤ h^(2s)`.
+  have hs : h ^ (2 * s + 2) ≤ h ^ (2 * s) := pow_le_pow_of_le_one hh hh₁ (by omega)
+  have h1 := rescaledTargetNormSq_nonneg (s + 1) 1 ζ
+  rw [pow_add, mul_comm (h ^ (2 * s))] at hs ⊢
+  nlinarith [mul_le_mul_of_nonneg_left hb (sq_nonneg h), mul_le_mul_of_nonneg_right hs h1]
 
 /-! ### Comparison with the semiclassical norms -/
 
@@ -481,36 +477,26 @@ theorem sqrt_rescaledFieldNormSq_add_le {s : ℕ} {b b' : V → B} {ζ ζ' : V �
     (hζm : ∀ j ≤ s, MemLp (iteratedFDeriv ℝ j ζ) 2) {h : ℝ} (hh : 0 ≤ h) :
     √(rescaledFieldNormSq s h (b + b') (ζ + ζ')) ≤
       √(rescaledFieldNormSq s h b ζ) + √(rescaledFieldNormSq s h b' ζ') := by
-  -- Index the terms of both components by `(j, true)` for `b` and `(j, false)` for `ζ`.
-  let c : (V → B) → (V → S) → ℕ × Bool → ℝ := fun b ζ p ↦
-    if p.2 then h ^ (p.1 + 1) * lpNorm (iteratedFDeriv ℝ p.1 b) 2 volume
-    else h ^ p.1 * lpNorm (iteratedFDeriv ℝ p.1 ζ) 2 volume / 2
-  have key : ∀ b ζ, rescaledFieldNormSq s h b ζ =
-      ∑ p ∈ Finset.range (s + 1) ×ˢ Finset.univ, c b ζ p ^ 2 := fun b ζ ↦ by
-    rw [Finset.sum_product, rescaledFieldNormSq]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    simp only [c, Fintype.sum_bool, ite_true, Bool.false_eq_true, ite_false]
-    ring
-  have hc : ∀ b ζ p, 0 ≤ c b ζ p := fun b ζ p ↦ by
-    simp only [c]
-    split_ifs
-    · exact mul_nonneg (pow_nonneg hh _) lpNorm_nonneg
-    · exact div_nonneg (mul_nonneg (pow_nonneg hh _) lpNorm_nonneg) zero_le_two
-  rw [key, key, key]
-  -- Minkowski's inequality in `ℓ²`, after bounding each term by the triangle inequality in `L²`.
-  have hM := Real.Lp_add_le (Finset.range (s + 1) ×ˢ Finset.univ) (c b ζ) (c b' ζ') (p := 2)
-    one_le_two
-  simp only [Real.rpow_two, sq_abs, ← Real.sqrt_eq_rpow] at hM
-  refine (Real.sqrt_le_sqrt (Finset.sum_le_sum fun p hp ↦
-    pow_le_pow_left₀ (hc _ _ p) ?_ 2)).trans hM
-  have hjs : p.1 ≤ s := Nat.lt_succ_iff.1 (Finset.mem_range.1 (Finset.mem_product.1 hp).1)
-  have hjs' : (p.1 : WithTop ℕ∞) ≤ s := by exact_mod_cast hjs
-  simp only [c]
-  split_ifs
-  · rw [iteratedFDeriv_add (hb.of_le hjs') (hb'.of_le hjs'), ← mul_add]
-    exact mul_le_mul_of_nonneg_left (lpNorm_add_le (hbm p.1 hjs) one_le_two) (pow_nonneg hh _)
-  · rw [iteratedFDeriv_add (hζ.of_le hjs') (hζ'.of_le hjs'), ← add_div, ← mul_add]
-    gcongr
-    exact lpNorm_add_le (hζm p.1 hjs) one_le_two
+  have hb₁ := sqrt_rescaledTargetNormSq_add_le (s := s + 1) (by simpa using hb)
+    (by simpa using hb') (fun j hj ↦ hbm j (Nat.lt_succ_iff.1 hj)) hh
+  have hζ₁ := sqrt_rescaledTargetNormSq_add_le (s := s + 1) (by simpa using hζ)
+    (by simpa using hζ') (fun j hj ↦ hζm j (Nat.lt_succ_iff.1 hj)) hh
+  simp only [rescaledFieldNormSq_eq_rescaledTargetNormSq]
+  -- Minkowski's inequality in `ℝ²` for the vectors `(h ‖b‖_F, ‖ζ‖_F / 2)` of target norms.
+  have hM := Real.Lp_add_le Finset.univ
+    ![h * √(rescaledTargetNormSq (s + 1) h b), √(rescaledTargetNormSq (s + 1) h ζ) / 2]
+    ![h * √(rescaledTargetNormSq (s + 1) h b'), √(rescaledTargetNormSq (s + 1) h ζ') / 2]
+    (p := 2) one_le_two
+  simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Real.rpow_two, sq_abs,
+    ← Real.sqrt_eq_rpow, mul_pow, div_pow, Real.sq_sqrt (rescaledTargetNormSq_nonneg _ _ _),
+    (by norm_num : (2 : ℝ) ^ 2 = 4)] at hM
+  refine le_trans (Real.sqrt_le_sqrt ?_) hM
+  calc _ ≤ h ^ 2 *
+          (√(rescaledTargetNormSq (s + 1) h b) + √(rescaledTargetNormSq (s + 1) h b')) ^ 2 +
+        (√(rescaledTargetNormSq (s + 1) h ζ) + √(rescaledTargetNormSq (s + 1) h ζ')) ^ 2 / 4 := by
+        gcongr h ^ 2 * ?_ + ?_ / 4
+        · exact (Real.sqrt_le_iff.1 hb₁).2
+        · exact (Real.sqrt_le_iff.1 hζ₁).2
+    _ = _ := by ring
 
 end TauCeti.SeibergWitten
