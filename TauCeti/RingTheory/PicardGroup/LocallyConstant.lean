@@ -53,8 +53,9 @@ functions the action is the usual power.
   `CommRing.Pic.mapRingHom_mulIndicator_of_map_eq_zero`: the base changes of `mulIndicator he L`
   along ring maps sending `e` to `1` and to `0`.
 * `CommRing.Pic.mapRingHom_mulIndicator`: `mulIndicator` commutes with arbitrary base change.
-* `CommRing.Pic.mulIndicator_one`, `CommRing.Pic.mulIndicator_mul` and
-  `CommRing.Pic.mulIndicator_mul_mulIndicator_one_sub`: the Boolean algebra identities.
+* `CommRing.Pic.mulIndicator_isIdempotentElem_one_apply`,
+  `CommRing.Pic.mulIndicator_isIdempotentElem_zero_apply`, `CommRing.Pic.mulIndicator_mulIndicator`
+  and `CommRing.Pic.mulIndicator_mul_mulIndicator_one_sub`: the Boolean algebra identities.
 * `CommRing.Pic.charFn_smul`, `CommRing.Pic.charFn_isIdempotentElemEquivClopens_smul`: the
   characteristic function of a clopen set `U` acts by `mulIndicator` of the idempotent of `U`.
 * `CommRing.Pic.smul_ofMul_eq_prod`: `L ^ f` is the product of the classes `L ^ n` placed on the
@@ -159,21 +160,22 @@ theorem mapRingHom_mulIndicator (he : IsIdempotentElem e) (ψ : R →+* S) (L : 
 
 /-- On the whole spectrum, `mulIndicator` is the identity. -/
 @[simp]
-theorem mulIndicator_one (L : Pic R) : mulIndicator (.one : IsIdempotentElem (1 : R)) L = L := by
+theorem mulIndicator_isIdempotentElem_one_apply (L : Pic R) :
+    mulIndicator (.one : IsIdempotentElem (1 : R)) L = L := by
   simpa [mapRingHom_id_apply] using
     mapRingHom_mulIndicator_of_map_eq_one (ψ := RingHom.id R) .one (map_one _) L
 
 /-- On the empty clopen set, `mulIndicator` is trivial. -/
 @[simp]
-theorem mulIndicator_zero (L : Pic R) :
+theorem mulIndicator_isIdempotentElem_zero_apply (L : Pic R) :
     mulIndicator (.zero : IsIdempotentElem (0 : R)) L = 1 := by
   simpa [mapRingHom_id_apply] using
     mapRingHom_mulIndicator_of_map_eq_zero (ψ := RingHom.id R) .zero (map_zero _) L
 
-/-- `mulIndicator` of a product of idempotents, the indicator of the intersection `D(e f)` of
-`D(e)` and `D(f)`, is the composite of the two indicators. -/
-theorem mulIndicator_mul {f : R} (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
-    (L : Pic R) : mulIndicator (he.mul hf) L = mulIndicator he (mulIndicator hf L) := by
+/-- The composite of the indicators of `e` and `f` is the indicator of the product `e f`, whose
+clopen set `D(e f)` is the intersection of `D(e)` and `D(f)`. -/
+theorem mulIndicator_mulIndicator {f : R} (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
+    (L : Pic R) : mulIndicator he (mulIndicator hf L) = mulIndicator (he.mul hf) L := by
   refine ext_of_isIdempotentElem he ?_ ?_
   · rw [mapRingHom_mulIndicator_of_map_eq_one _ (mk_span_singleton_one_sub_self e),
       mapRingHom_mulIndicator, mapRingHom_mulIndicator]
@@ -208,7 +210,7 @@ private theorem clopenEnd_top : clopenEnd (⊤ : Clopens (PrimeSpectrum R)) = 1 
   refine LinearMap.ext fun x ↦ ?_
   rw [clopenEnd_apply, mulIndicator_congr _ .one
       (congr_arg Subtype.val isIdempotentElemEquivClopens_symm_top),
-    mulIndicator_one, ofMul_toMul, one_apply_eq_self]
+    mulIndicator_isIdempotentElem_one_apply, ofMul_toMul, one_apply_eq_self]
 
 private theorem clopenEnd_inf (U V : Clopens (PrimeSpectrum R)) :
     clopenEnd (U ⊓ V) = clopenEnd U * clopenEnd V := by
@@ -216,7 +218,8 @@ private theorem clopenEnd_inf (U V : Clopens (PrimeSpectrum R)) :
   rw [mul_apply_eq_comp, clopenEnd_apply, clopenEnd_apply, clopenEnd_apply, toMul_ofMul,
     mulIndicator_congr _ ((isIdempotentElemEquivClopens.symm U).prop.mul
       (isIdempotentElemEquivClopens.symm V).prop)
-      (congr_arg Subtype.val (isIdempotentElemEquivClopens_symm_inf U V)), mulIndicator_mul]
+      (congr_arg Subtype.val (isIdempotentElemEquivClopens_symm_inf U V)),
+    ← mulIndicator_mulIndicator]
 
 private theorem clopenEnd_compl (U : Clopens (PrimeSpectrum R)) :
     clopenEnd Uᶜ = 1 - clopenEnd U := by
