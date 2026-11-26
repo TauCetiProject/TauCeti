@@ -480,6 +480,21 @@ theorem limitSectionZeroCharge_of_not_exists {σ : C(𝔻, Y)}
     limitSectionZeroCharge l s Z σ = 0 :=
   limitZeroCharge_of_not_exists (by simpa only [ContinuousMap.id_apply, Set.mem_preimage] using h)
 
+/-- Two integers attached to a disc `σ` agree if both vanish when no radius `ρ₀ < 1` bounds
+`σ⁻¹(Z)`, and if they agree whenever `σ⁻¹(Z)` lies in the open disc of radius `ρ₀ < ρ < 1`. This
+is the case split shared by comparisons of limit zero charges. -/
+private theorem eq_of_forall_cutoff_radius {σ : C(𝔻, Y)} {m n : ℤ}
+    (hm : (¬∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧ ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀) → m = 0)
+    (hn : (¬∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧ ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀) → n = 0)
+    (h : ∀ ⦃ρ₀ ρ : ℝ⦄, 0 ≤ ρ → ρ < 1 → ρ₀ < ρ →
+      (∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀) → m = n) :
+    m = n := by
+  by_cases hex : ∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧ ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀
+  · obtain ⟨ρ₀, hρ₀, hρ₀₁, hσ⟩ := hex
+    obtain ⟨ρ, hρ₀ρ, hρ₁⟩ := exists_between hρ₀₁
+    exact h (hρ₀.trans hρ₀ρ.le) hρ₁ hρ₀ρ hσ
+  · rw [hm hex, hn hex]
+
 /-- A family of continuous maps `s k : Y → E` to the total space of a complex line bundle, along a
 filter `l`, is a **section zero-charge limit with support `Z`** if it eventually has no zero on
 every compact set missing `Z`, and if the zero charges (`ContinuousMap.sectionZeroCharge`) of every
@@ -540,20 +555,16 @@ theorem limitZeroCharge_eq_limitSectionZeroCharge [l.NeBot]
   have hC' (k : ι) (τ' : C(𝔻, 𝔻)) :
       (s k).sectionZeroCharge ((G.comp τ).comp τ') = (C' k).zeroCharge τ' :=
     ((s k).exists_forall_sectionZeroCharge_comp_eq_zeroCharge (G.comp τ)).choose_spec.2 τ'
-  by_cases hex : ∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧ ∀ z : 𝔻, τ z ∈ G ⁻¹' Z → ‖(z : ℂ)‖ < ρ₀
-  · obtain ⟨ρ₀, hρ₀, hρ₀₁, hτ⟩ := hex
-    have hρ : 0 ≤ (ρ₀ + 1) / 2 := by linarith
-    have hρ₁ : (ρ₀ + 1) / 2 < 1 := by linarith
-    have hρ₀ρ : ρ₀ < (ρ₀ + 1) / 2 := by linarith
-    -- Both sides are eventual values of the zero charges of `G ∘ τ` cut off at `(ρ₀ + 1) / 2`.
-    have hCl := h.isZeroChargeLimit hC₀ hC
-    have hC'l := h.isZeroChargeLimit (G := G.comp τ) hC'₀ hC'
-    obtain ⟨k, hk, hk'⟩ := (hCl.eventually_zeroCharge_eq_limitZeroCharge hρ hρ₁ hρ₀ρ hτ).and
-      (hC'l.eventually_zeroCharge_eq_limitZeroCharge (σ := .id 𝔻) hρ hρ₁ hρ₀ρ hτ) |>.exists
-    rw [← hk, limitSectionZeroCharge, ← hk', ← hC, ← hC', ContinuousMap.id_comp,
-      ContinuousMap.comp_assoc]
-  · rw [limitZeroCharge_of_not_exists hex, limitSectionZeroCharge_of_not_exists
-      (by simpa only [ContinuousMap.comp_apply, Set.mem_preimage] using hex)]
+  refine eq_of_forall_cutoff_radius (fun hex ↦ limitZeroCharge_of_not_exists
+    (by simpa only [ContinuousMap.comp_apply, Set.mem_preimage] using hex))
+    limitSectionZeroCharge_of_not_exists fun ρ₀ ρ hρ hρ₁ hρ₀ρ hτ ↦ ?_
+  -- Both sides are eventual values of the zero charges of `G ∘ τ` cut off at `ρ`.
+  have hCl := h.isZeroChargeLimit hC₀ hC
+  have hC'l := h.isZeroChargeLimit (G := G.comp τ) hC'₀ hC'
+  obtain ⟨k, hk, hk'⟩ := (hCl.eventually_zeroCharge_eq_limitZeroCharge hρ hρ₁ hρ₀ρ hτ).and
+    (hC'l.eventually_zeroCharge_eq_limitZeroCharge (σ := .id 𝔻) hρ hρ₁ hρ₀ρ hτ) |>.exists
+  rw [← hk, limitSectionZeroCharge, ← hk', ← hC, ← hC', ContinuousMap.id_comp,
+    ContinuousMap.comp_assoc]
 
 variable [R1Space B] [ParacompactSpace B] [ContractibleSpace B]
 
@@ -673,18 +684,14 @@ theorem limitSectionZeroCharge_eq_of_eq_smul [l.NeBot] {t : ι → C(Y, TotalSpa
     {u : ι → C(Y, ℂ)} (ht : ∀ k y, t k y = TotalSpace.mk' ℂ (s k y).proj (u k y • (s k y).snd))
     (hu : ∀ k y, u k y ≠ 0) (σ : C(𝔻, Y)) :
     limitSectionZeroCharge l t Z σ = limitSectionZeroCharge l s Z σ := by
-  by_cases hex : ∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧ ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀
-  · obtain ⟨ρ₀, hρ₀, hρ₀₁, hσ⟩ := hex
-    have hρ : 0 ≤ (ρ₀ + 1) / 2 := by linarith
-    have hρ₁ : (ρ₀ + 1) / 2 < 1 := by linarith
-    have hρ₀ρ : ρ₀ < (ρ₀ + 1) / 2 := by linarith
-    refine (h.of_eq_smul ht hu).limitSectionZeroCharge_eq_of_eventually hρ hρ₁ hρ₀ρ hσ ?_
-    filter_upwards [h.eventually_sectionZeroCharge_eq_limitSectionZeroCharge hρ hρ₁ hρ₀ρ hσ]
-      with k hk
-    rw [← hk]
-    exact (s k).sectionZeroCharge_eq_of_eq_smul (u := (u k).comp _) (fun _ ↦ ht k _)
-      fun _ ↦ hu k _
-  · rw [limitSectionZeroCharge_of_not_exists hex, limitSectionZeroCharge_of_not_exists hex]
+  refine eq_of_forall_cutoff_radius limitSectionZeroCharge_of_not_exists
+    limitSectionZeroCharge_of_not_exists fun ρ₀ ρ hρ hρ₁ hρ₀ρ hσ ↦ ?_
+  refine (h.of_eq_smul ht hu).limitSectionZeroCharge_eq_of_eventually hρ hρ₁ hρ₀ρ hσ ?_
+  filter_upwards [h.eventually_sectionZeroCharge_eq_limitSectionZeroCharge hρ hρ₁ hρ₀ρ hσ]
+    with k hk
+  rw [← hk]
+  exact (s k).sectionZeroCharge_eq_of_eq_smul (u := (u k).comp _) (fun _ ↦ ht k _)
+    fun _ ↦ hu k _
 
 end IsSectionZeroChargeLimit
 
