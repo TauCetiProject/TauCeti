@@ -85,12 +85,19 @@ theorem continuous_fderiv_hamiltonianVectorField_comp (ω : SymplecticForm V) {H
     ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
   exact (hF.fderiv (contDiff_zero.2 hx) le_rfl).continuous
 
+/-- An orbit `x' = X_{H_t}(x)` of a jointly `C^(n + 1)` time-dependent Hamiltonian `H` is
+`C^(n + 1)`: its right-hand side `X_{H_t}(x)` is jointly `C^n`. -/
+theorem contDiff_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V) {n : ℕ∞}
+    {H : ℝ → V → ℝ} (hH : ContDiff ℝ (n + 1) (Function.uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) : ContDiff ℝ (n + 1) x :=
+  contDiff_succ_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := n) (mod_cast hH)) hx
+
 /-- An orbit `x' = X_{H_t}(x)` of a jointly `C¹` time-dependent Hamiltonian `H` is `C¹`. -/
 theorem contDiff_one_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V)
     {H : ℝ → V → ℝ} (hH : ContDiff ℝ 1 (Function.uncurry H)) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) : ContDiff ℝ 1 x :=
-  contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous hx
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) : ContDiff ℝ 1 x := by
+  simpa using ω.contDiff_of_hasDerivAt_hamiltonianVectorField (n := 0) (by simpa using hH) hx
 
 /-- Differentiating a Hamiltonian vector field in a parameter direction gives the Hamiltonian
 vector field of the actual parameter derivative of the Hamiltonian. -/

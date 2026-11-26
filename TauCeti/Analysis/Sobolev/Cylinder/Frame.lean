@@ -363,9 +363,11 @@ variable [CompleteSpace V] {Φ : ℝ → V →L[ℝ] W} (hΦ : ContDiff ℝ 2 Φ
 
 omit [CompleteSpace V] in
 include hΦi hJ in
-/-- Reading `∂s + J_t (∂t - S)` in a loop of frames `Φ_t` intertwining `J₀_t` with `J_t` gives
-`∂s + J₀_t (∂t - S_Φ)`, with `S_Φ = Φ⁻¹ (S Φ - Φ')` the trivialized coefficient. -/
-private theorem firstOrderJetCoeff_frame_loop_eq (z : ℝ × ℝ) :
+/-- **Cylinder operators in a loop of frames.** Reading `∂s + J_t (∂t - S)` in a loop of frames
+`Φ_t` intertwining `J₀_t` with `J_t` gives `∂s + J₀_t (∂t - S_Φ)`, with `S_Φ = Φ⁻¹ (S Φ - Φ')` the
+trivialized coefficient: the coefficient field of
+`TauCeti.StripSobolev.comp_firstOrderJetCoeff_comp_frameJetCoeff` for the frame `(s, t) ↦ Φ_t`. -/
+theorem firstOrderJetCoeff_frame_loop_eq (z : ℝ × ℝ) :
     firstOrderJetCoeff ((Φ z.2).inverse.comp ((J z.2).comp (Φ z.2)))
         ((Φ z.2).inverse.comp ((-(J z.2).comp (S z)).comp (Φ z.2) +
           fderiv ℝ (fun w : ℝ × ℝ ↦ Φ w.2) z (1, 0) +
