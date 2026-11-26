@@ -164,8 +164,7 @@ theorem contDiffOn_coord_toSection_of_sobolevL_eq_zero (hp : 2 < p)
     (η := fun z x ↦ -(2 : ℝ) • A.chartZeroOrder D i z x 1)
     (((A.chart i).isOpen_inter_preimage_symm (A.triv i).open_baseSet).prod isOpen_univ)
     contDiffOn_const hη
-    (fun z hz ↦ ⟨(A.image_subset_chart_image_closure_dom i).trans
-      (A.chart_image_closure_dom_subset i) hz, mem_univ _⟩)
+    (fun z hz ↦ ⟨A.image_subset_target_inter_preimage_baseSet i hz, mem_univ _⟩)
     (.of_forall fun _ ↦ lsmul_I_mul_lsmul_I)
     (isWeakCauchyRiemannOn_coord_toSection_of_sobolevL_eq_zero A hD hDs hp hw i)
 

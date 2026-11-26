@@ -14,7 +14,8 @@ public import TauCeti.NumberTheory.Padics.Distribution.Polynomial
 `TauCeti.LocallyAnalytic p S E` is Mathlib's native `Module.DirectLimit` of the analytic
 coefficient stages along `AnalyticStage.transitionLE S`. Its canonical maps `ofStage S h`
 identify a vector with each of its re-expansions. Every element has a stage representative
-(`exists_ofStage`, from Mathlib's `Module.DirectLimit.exists_of`). Compatible linear maps extend
+(`exists_ofStage`, from Mathlib's `Module.DirectLimit.exists_of`), and by re-expansion one of
+level at least any prescribed `n` (`exists_ofStage_ge`). Compatible linear maps extend
 uniquely by `Module.DirectLimit.lift` and `Module.DirectLimit.hom_ext`; `lift_ofStage` reads the
 extension on the named stage maps.
 The equation `ofStage_def` connects the named stage maps with this native API without
@@ -90,6 +91,13 @@ theorem lift_ofStage {P : Type*} [AddCommMonoid P] [Module S P]
 theorem ofStage_transitionLE {h k : ℕ} (hhk : h ≤ k) (c : AnalyticStage p h E) :
     ofStage S k (AnalyticStage.transitionLE S hhk c) = ofStage S h c :=
   Module.DirectLimit.of_f
+
+/-- Every locally analytic function comes from a vector of a stage of level at least `n`. -/
+theorem exists_ofStage_ge (n : ℕ) (f : LocallyAnalytic p S E) :
+    ∃ h, n ≤ h ∧ ∃ c : AnalyticStage p h E, ofStage S h c = f := by
+  obtain ⟨h, c, rfl⟩ := exists_ofStage S f
+  exact ⟨max h n, le_max_right h n, AnalyticStage.transitionLE S (le_max_left h n) c,
+    ofStage_transitionLE S _ c⟩
 
 /-- Adjacent re-expansion does not change a direct-limit element. -/
 @[simp]

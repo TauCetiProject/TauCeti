@@ -12,7 +12,7 @@ public import TauCeti.RepresentationTheory.Subrepresentation
 # Subrepresentations of a semisimple representation
 
 A representation is semisimple when every subrepresentation has a complementary subrepresentation
-(`Representation.IsSemisimpleRepresentation`). This file records some consequences.
+(`Representation.IsSemisimpleRepresentation`). This file records consequences and criteria.
 
 A representation that maps injectively and equivariantly into a semisimple one is semisimple
 (`Representation.IntertwiningMap.isSemisimpleRepresentation_of_injective`), and so is the image of
@@ -32,6 +32,12 @@ Every subrepresentation `S` of a semisimple representation has an equivariant pr
 (`Subrepresentation.exists_equivariant_projection`): the first component of the splitting
 `Subrepresentation.equivProdOfIsCompl` along a complement of `S`.
 
+A representation spanned by subrepresentations that carry semisimple representations is semisimple
+(`Representation.isSemisimpleRepresentation_of_iSup_eq_top`). This is Mathlib's statement for the
+modules over the group algebra, carried across the supremum by
+`Subrepresentation.mem_iSup_asSubmodule_iff`. Restriction along a surjective homomorphism does not
+change semisimplicity (`MonoidHom.isSemisimpleRepresentation_comp_surjective_iff`).
+
 ## Main results
 
 * `Representation.IntertwiningMap.isSemisimpleRepresentation_of_injective`: a representation with
@@ -44,9 +50,15 @@ Every subrepresentation `S` of a semisimple representation has an equivariant pr
   semisimple exactly when it is the sum of its irreducible subrepresentations.
 * `Subrepresentation.exists_equivariant_projection`: a subrepresentation of a semisimple
   representation has an equivariant projection onto it.
+* `MonoidHom.isSemisimpleRepresentation_comp_surjective_iff`: restriction along a surjective
+  homomorphism preserves and reflects semisimplicity.
+* `Representation.isSemisimpleRepresentation_of_iSup_eq_top`: a representation spanned by
+  semisimple subrepresentations is semisimple.
 -/
 
 public section
+
+open scoped MonoidAlgebra
 
 variable {k G V W : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V] [AddCommGroup W]
   [Module k W] {ρ : Representation k G W}
@@ -137,3 +149,25 @@ theorem exists_equivariant_projection [ρ.IsSemisimpleRepresentation] (S : Subre
     simp [he, toRepresentation_apply]
 
 end Subrepresentation
+
+/-- **Restriction along a surjective homomorphism preserves and reflects semisimplicity.** For
+surjective `f`, the representation `ρ.comp f` is semisimple if and only if `ρ` is. -/
+@[simp]
+theorem MonoidHom.isSemisimpleRepresentation_comp_surjective_iff {H K : Type*} [Monoid H]
+    [Monoid K] (f : H →* K) (hf : Function.Surjective f) (ρ : Representation k K W) :
+    Representation.IsSemisimpleRepresentation (ρ.comp f) ↔
+      Representation.IsSemisimpleRepresentation ρ :=
+  OrderIso.complementedLattice_iff (f.resSubrepresentationOrderIso hf ρ)
+
+/-- **Semisimplicity from a spanning family.** A representation spanned by a family of
+subrepresentations, each of which carries a semisimple representation, is semisimple. -/
+theorem Representation.isSemisimpleRepresentation_of_iSup_eq_top {ι : Type*}
+    {σ : ι → Subrepresentation ρ} (hσ : ∀ i, (σ i).toRepresentation.IsSemisimpleRepresentation)
+    (hspan : ⨆ i, (σ i).toSubmodule = ⊤) : ρ.IsSemisimpleRepresentation := by
+  rw [isSemisimpleRepresentation_iff_isSemisimpleModule_asModule]
+  refine isSemisimpleModule_of_isSemisimpleModule_submodule' (p := fun i ↦ (σ i).asSubmodule)
+    (fun i ↦ ?_) (Submodule.eq_top_iff'.mpr fun x ↦ ?_)
+  · have := (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule _).mp (hσ i)
+    exact IsSemisimpleModule.congr (σ i).asModuleEquivAsSubmodule.symm
+  · rw [← ρ.asModuleEquiv.symm_apply_apply x, Subrepresentation.mem_iSup_asSubmodule_iff, hspan]
+    exact Submodule.mem_top

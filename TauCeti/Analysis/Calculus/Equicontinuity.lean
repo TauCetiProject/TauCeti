@@ -14,6 +14,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
+import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 /-!
 # Equicontinuity from bounds on derivatives
@@ -36,7 +37,10 @@ Iterating the `C¹` statement gives **Arzelà–Ascoli in `Cᵏ`**
 order at most `k + 1` of the `uₙ` are bounded on each compact subset of `Ω`, uniformly in `n`,
 then along a subsequence the `uₙ` converge to a `Cᵏ` map together with their derivatives of order
 at most `k`, locally uniformly on `Ω`. Locally uniform convergence of the derivatives of order `0`
-is that of the maps themselves (`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff`).
+is that of the maps themselves (`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff`), and
+locally uniform convergence of the derivatives of orders at most `ℓ` of `C^ℓ` maps bounds them on
+compact sets uniformly along the sequence
+(`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_tendstoLocallyUniformly`).
 
 For `1`-periodic curves on `ℝ`, a bound on the velocities over one period suffices: such curves in
 a compact set are uniformly Lipschitz, so a subsequence converges uniformly on `ℝ` to a continuous
@@ -61,6 +65,25 @@ theorem tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff {𝕜 E F ι : Type*}
   simp only [iteratedFDeriv_zero_eq_comp]
   refine ⟨fun h ↦ ?_, e.symm.isometry.uniformContinuous.comp_tendstoLocallyUniformlyOn⟩
   simpa [Function.comp_def, e] using e.isometry.uniformContinuous.comp_tendstoLocallyUniformlyOn h
+
+/-- **Uniform `C^ℓ` bounds from `C^ℓ` convergence.** If maps `u n` of class `C^ℓ` have derivatives
+of orders at most `ℓ` converging locally uniformly, then on every compact set `K` those
+derivatives are bounded uniformly in `n` and in the order. -/
+theorem exists_forall_norm_iteratedFDeriv_le_of_tendstoLocallyUniformly {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {ℓ : ℕ} {u : ℕ → E → F} {v : E → F} (hu : ∀ n, ContDiff 𝕜 ℓ (u n))
+    (h : ∀ i ≤ ℓ, TendstoLocallyUniformly (fun n ↦ iteratedFDeriv 𝕜 i (u n))
+      (iteratedFDeriv 𝕜 i v) atTop)
+    {K : Set E} (hK : IsCompact K) :
+    ∃ B : ℝ, ∀ n, ∀ i ≤ ℓ, ∀ x ∈ K, ‖iteratedFDeriv 𝕜 i (u n) x‖ ≤ B := by
+  have h1 (i : ℕ) (hi : i ≤ ℓ) : ∃ B : ℝ, ∀ n, ∀ x ∈ K, ‖iteratedFDeriv 𝕜 i (u n) x‖ ≤ B :=
+    TendstoUniformlyOn.exists_forall_norm_le_of_isCompact
+      ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact hK).1
+        (h i hi).tendstoLocallyUniformlyOn) hK
+      fun n ↦ ((hu n).continuous_iteratedFDeriv (by exact_mod_cast hi)).continuousOn
+  choose! B hB using h1
+  obtain ⟨M, hM⟩ := ((Set.finite_Iic ℓ).image B).bddAbove
+  exact ⟨M, fun n i hi x hx ↦ (hB i hi n x hx).trans (hM ⟨i, hi, rfl⟩)⟩
 
 variable {E F ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Set E} {u : ι → E → F}
