@@ -204,6 +204,8 @@ Hamiltonian vector fields and Poisson brackets restrict to open submanifolds, fo
 * `TauCeti.SmoothTwoForm.hamiltonianVectorField_comp_subtype_val`,
   `TauCeti.SmoothTwoForm.poissonBracket_comp_subtype_val`: restriction to an open submanifold
   preserves Hamiltonian vector fields and Poisson brackets.
+* `IsMIntegralCurveOn.coe_of_hamiltonianVectorField_mpullback_subtype_val`: integral curves of
+  restricted Hamiltonian vector fields are integral curves of the ambient ones.
 
 ## References
 
@@ -1421,6 +1423,18 @@ theorem poissonBracket_comp_subtype_val (σ : SmoothTwoForm I M)
     Manifold.mfderiv_subtype_val]
   simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
 
+/-- **Integral curves of restricted Hamiltonian vector fields.** For an open set `U`, an integral
+curve in `U` of the Hamiltonian vector field of the restriction of `f` to `U`, for the restriction
+of `σ` to `U`, is, read in `M`, an integral curve of the Hamiltonian vector field of `f`. -/
+theorem _root_.IsMIntegralCurveOn.coe_of_hamiltonianVectorField_mpullback_subtype_val
+    {U : TopologicalSpace.Opens M} {γ : ℝ → U} {s : Set ℝ}
+    (hγ : IsMIntegralCurveOn γ (SmoothTwoForm.hamiltonianVectorField
+      (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ) (f ∘ Subtype.val)) s) :
+    IsMIntegralCurveOn (fun t ↦ (γ t : M)) (σ.hamiltonianVectorField f) s :=
+  hγ.map_of_mfderiv_eq (fun _ _ ↦ contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) fun _ _ ↦ by
+    rw [Manifold.mfderiv_subtype_val_apply, hamiltonianVectorField_comp_subtype_val,
+      Manifold.tangentSpaceOpenEquiv_symm_apply]
+
 end Opens
 
 end SmoothTwoForm
@@ -1463,11 +1477,7 @@ theorem hasDerivAt_coe_of_isMIntegralCurve (omegaForm : SymplecticForm V)
       (f ∘ Subtype.val))) (t : ℝ) :
     HasDerivAt (fun s ↦ (γ s : V)) (omegaForm.hamiltonianVectorField f (γ t)) t := by
   -- The inclusion of `U` carries the restricted Hamiltonian vector field to that of `f`.
-  have h := (hγ.isMIntegralCurveOn Set.univ).map_of_mfderiv_eq (f := (Subtype.val : U → V))
-    (W := fun y ↦ omegaForm.constSmooth.hamiltonianVectorField f y)
-    (fun _ _ ↦ contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) fun s _ ↦ by
-      rw [Manifold.mfderiv_subtype_val, SmoothTwoForm.hamiltonianVectorField_comp_subtype_val,
-        ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
+  have h := (hγ.isMIntegralCurveOn Set.univ).coe_of_hamiltonianVectorField_mpullback_subtype_val
   have h' := (TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn.1 h t (Set.mem_univ t)).hasDerivAt
     Filter.univ_mem
   simpa [Function.comp_def, hamiltonianVectorField_constSmooth] using h'
