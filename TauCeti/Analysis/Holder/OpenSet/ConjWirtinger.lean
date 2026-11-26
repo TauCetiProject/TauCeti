@@ -71,11 +71,9 @@ theorem conjWirtingerDerivL_compLeftL {G : Type*} [NormedAddCommGroup G] [Normed
     conjWirtingerDerivL α Ω G (compLeftL 1 α Ω (L.restrictScalars ℝ) u) =
       HolderSpace.compLeftL (L.restrictScalars ℝ) (conjWirtingerDerivL α Ω F u) := by
   ext z
-  have hd : DifferentiableAt ℝ u.extend z :=
-    (u.contDiffOn_extend.differentiableOn (by simp)).differentiableAt
-      (Ω.isOpen.mem_nhds z.property)
   rw [conjWirtingerDerivL_apply _ z (extend_compLeftL_eventuallyEq _ u z.property),
     HolderSpace.compLeftL_apply, conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_extend]
-  simpa [Function.comp_def] using congrArg (· 1) (L.conjWirtingerDeriv_comp_left hd)
+  simpa [Function.comp_def] using
+    congrArg (· 1) (L.conjWirtingerDeriv_comp_left (u.differentiableAt_extend z.property))
 
 end TauCeti.CkHolderSpaceOn

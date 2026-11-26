@@ -140,12 +140,10 @@ theorem augmentedConjWirtingerDerivL_compLeftL {G : Type*} [NormedAddCommGroup G
         ((L.restrictScalars ℝ).prodMap (L.restrictScalars ℝ)))
         (augmentedConjWirtingerDerivL α F u) := by
   have h0 := extend_compLeftL_eventuallyEq (L.restrictScalars ℝ) u (zero_mem_unitBallOpens ℂ)
-  have hd : DifferentiableAt ℝ u.extend 0 :=
-    (u.contDiffOn_extend.differentiableOn (by simp)).differentiableAt
-      ((unitBallOpens ℂ).isOpen.mem_nhds (zero_mem_unitBallOpens ℂ))
   rw [augmentedConjWirtingerDerivL_apply, augmentedConjWirtingerDerivL_apply,
     conjWirtingerDerivL_compLeftL, h0.eq_of_nhds, h0.fderiv_eq,
-    (L.restrictScalars ℝ).fderiv_comp_left hd]
+    (L.restrictScalars ℝ).fderiv_comp_left
+      (u.differentiableAt_extend (zero_mem_unitBallOpens ℂ))]
   simp
 
 end augmented

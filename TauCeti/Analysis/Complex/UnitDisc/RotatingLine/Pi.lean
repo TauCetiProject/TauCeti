@@ -116,13 +116,6 @@ private abbrev projAugL (i : ι) :
       HolderSpace α (unitBallOpens ℂ) ℂ × ℂ × ℂ :=
   (HolderSpace.compLeftL (projL i)).prodMap ((projL i).prodMap (projL i))
 
-/-- An element of `C^{1,α}(D, ι → ℂ)` is determined by its coordinates. -/
-private theorem eq_of_forall_compLeftL_projL_eq
-    {u v : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)}
-    (h : ∀ i, compLeftL 1 α (unitBallOpens ℂ) (projL i) u =
-      compLeftL 1 α (unitBallOpens ℂ) (projL i) v) : u = v :=
-  ext fun x ↦ funext fun i ↦ by simpa using congrArg (· x) (h i)
-
 /-- A point of the target of the augmented operator is determined by its coordinates. -/
 private theorem eq_of_forall_projAugL_eq
     {y y' : HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℂ) × (ι → ℂ)}
@@ -156,19 +149,9 @@ theorem exists_mem_rotatingLinePiSubspace_augmentedConjWirtingerDerivL_eq (hk : 
   choose U hU hUy using fun i ↦
     exists_mem_rotatingLineSubspace_augmentedConjWirtingerDerivL_eq hk hα0 hα1 (projAugL i y)
   -- Put the scalar solutions in their coordinates.
-  set u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ) := ∑ i, compLeftL 1 α (unitBallOpens ℂ)
-    ((ContinuousLinearMap.single ℂ (fun _ : ι ↦ ℂ) i).restrictScalars ℝ) (U i) with hu_def
-  have hu (i : ι) : compLeftL 1 α (unitBallOpens ℂ) (projL i) u = U i := by
-    ext x
-    have hx := map_sum ((BoundedContinuousFunction.evalCLM ℝ x).comp
-      (toBoundedContinuousFunctionCLM (k := 1) (α := α) (Ω := unitBallOpens ℂ) (F := ι → ℂ)))
-      (fun i ↦ compLeftL 1 α (unitBallOpens ℂ)
-        ((ContinuousLinearMap.single ℂ (fun _ : ι ↦ ℂ) i).restrictScalars ℝ) (U i)) Finset.univ
-    simp only [ContinuousLinearMap.comp_apply, BoundedContinuousFunction.evalCLM_apply,
-      toBoundedContinuousFunctionCLM_apply, coe_toBoundedContinuousFunction, compLeftL_apply,
-      ContinuousLinearMap.coe_restrictScalars'] at hx
-    rw [compLeftL_apply, hu_def, hx]
-    simp [Finset.univ_sum_single]
+  set u := ∑ i, compLeftL 1 α (unitBallOpens ℂ) (.single ℝ (fun _ ↦ ℂ) i) (U i)
+  have hu (i : ι) : compLeftL 1 α (unitBallOpens ℂ) (projL i) u = U i :=
+    compLeftL_proj_sum_compLeftL_single U i
   refine ⟨u, mem_rotatingLinePiSubspace_iff_forall.2 fun i ↦ hu i ▸ hU i,
     eq_of_forall_projAugL_eq fun i ↦ ?_⟩
   rw [← augmentedConjWirtingerDerivL_compLeftL_projL, hu, hUy]
@@ -179,7 +162,9 @@ injective. -/
 theorem injOn_augmentedConjWirtingerDerivL_pi :
     InjOn (augmentedConjWirtingerDerivL α (ι → ℂ)) (rotatingLinePiSubspace 3 α ι) := by
   intro u hu v hv huv
-  refine eq_of_forall_compLeftL_projL_eq fun i ↦ injOn_augmentedConjWirtingerDerivL
+  refine ext_compLeftL_proj fun i ↦ ?_
+  change compLeftL 1 α _ (projL i) u = compLeftL 1 α _ (projL i) v
+  refine injOn_augmentedConjWirtingerDerivL
     (mem_rotatingLinePiSubspace_iff_forall.1 hu i) (mem_rotatingLinePiSubspace_iff_forall.1 hv i) ?_
   rw [augmentedConjWirtingerDerivL_compLeftL_projL, augmentedConjWirtingerDerivL_compLeftL_projL,
     huv]
