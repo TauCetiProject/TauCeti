@@ -11,10 +11,14 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
+import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.RemovableSingularity
+import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import Mathlib.MeasureTheory.Integral.Bochner.Set
-import TauCeti.Analysis.Complex.HolomorphicFunctions.Lp.Estimates
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Decay
 import TauCeti.Analysis.Complex.Conformal.Area
+import TauCeti.MeasureTheory.Measure.InterBall
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.Calculus.Deriv.Inv
 
 /-!
@@ -26,8 +30,9 @@ singularity theorem: the Bergman space of a punctured disc is that of the disc.
 
 The proof reduces to Riemann's theorem in the form
 `Complex.differentiableOn_update_limUnder_of_isLittleO`, which asks for `f(z) = o(|z - c|⁻¹)`. For a
-point `z` at distance `d` from `c`, the disc of radius `d / 2` about `z` avoids `c`, so the `L²`
-mean-value bound `TauCeti.HolomorphicFunctions.sq_norm_le_inv_mul_setIntegral_sq_norm` gives
+point `z` at distance `d` from `c`, the disc of radius `d / 2` about `z` avoids `c`, and `f` is
+harmonic there, so the pointwise `L²` bound for harmonic functions
+`InnerProductSpace.HarmonicOnNhd.measureReal_ball_mul_norm_sq_le_setIntegral` gives
 
 `‖f z‖² ≤ 4 (π d²)⁻¹ ∫_{0 < |y - c| < 3d/2} ‖f y‖²`,
 
@@ -36,12 +41,20 @@ and the integral tends to zero with `d` because `‖f‖²` is integrable
 `‖f‖²` cannot be weakened to that of `‖f‖ ^ p` for a `p < 2`: the function `(z - c)⁻¹` is
 holomorphic off `c` and `‖·‖ ^ p`-integrable near `c` for every `p < 2`, but has a pole there.
 
+At the point at infinity, a function `G` holomorphic on `|w| > T` with `‖G‖²` integrable there is
+read through the holomorphic `1`-form `G dw` in the coordinate `q = w⁻¹`. Since `dw = -q⁻² dq` and
+the inversion distorts area by `|q|⁻⁴`, the coefficient `(q²)⁻¹ • G q⁻¹` is again square-integrable
+on a punctured disc about `0`, so the theorem at a point extends it across `q = 0`
+(`TauCeti.HolomorphicFunctions.exists_differentiableOn_eq_inv_sq_smul_comp_inv`).
+
 ## Main results
 
 * `TauCeti.HolomorphicFunctions.isLittleO_sub_inv_of_integrableOn_sq_norm`: a holomorphic function
   with square-integrable norm on a punctured neighbourhood of `c` is `o(|z - c|⁻¹)` at `c`.
 * `TauCeti.HolomorphicFunctions.differentiableOn_update_limUnder_of_integrableOn_sq_norm`: **the
   `L²` removable singularity theorem.**
+* `TauCeti.HolomorphicFunctions.exists_differentiableOn_eq_inv_sq_smul_comp_inv`: the version at
+  infinity, for the `1`-form `G dw` read in the coordinate `q = w⁻¹`.
 
 ## References
 
@@ -57,29 +70,6 @@ namespace TauCeti.HolomorphicFunctions
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
   {f : ℂ → F} {s : Set ℂ} {c : ℂ}
 
-/-- The integrals of an integrable function over the punctured discs `0 < |y - c| < R / (n + 1)`
-tend to zero. -/
-private theorem tendsto_setIntegral_ball_diff_singleton {g : ℂ → ℝ} {R : ℝ} (hR : 0 < R)
-    (hg : IntegrableOn g (ball c R \ {c})) :
-    Tendsto (fun n : ℕ ↦ ∫ y in ball c (R / (n + 1)) \ {c}, g y) atTop (𝓝 0) := by
-  have hanti : Antitone fun n : ℕ ↦ ball c (R / (n + 1)) \ {c} := fun m n hmn ↦
-    sdiff_subset_sdiff_left (ball_subset_ball
-      (div_le_div_of_nonneg_left hR.le (by positivity) (by gcongr)))
-  have hempty : ⋂ n : ℕ, ball c (R / (n + 1)) \ {c} = ∅ := by
-    refine eq_empty_of_forall_notMem fun y hy ↦ ?_
-    simp only [mem_iInter, Set.mem_sdiff, mem_ball, mem_singleton_iff] at hy
-    have hyc : y ≠ c := (hy 0).2
-    obtain ⟨n, hn⟩ := exists_nat_gt (R / dist y c)
-    have hpos : 0 < dist y c := dist_pos.2 hyc
-    have h₁ := (hy n).1
-    rw [lt_div_iff₀ (by positivity)] at h₁
-    rw [div_lt_iff₀ hpos] at hn
-    nlinarith
-  have h := tendsto_setIntegral_of_antitone (μ := volume) (f := g)
-    (fun n ↦ measurableSet_ball.diff (measurableSet_singleton c)) hanti
-    ⟨0, by simpa using hg⟩
-  rwa [hempty, Measure.restrict_empty, integral_zero_measure] at h
-
 /-- A holomorphic function whose squared norm is integrable on a punctured neighbourhood of `c` is
 `o(|z - c|⁻¹)` at `c`. -/
 theorem isLittleO_sub_inv_of_integrableOn_sq_norm (hs : s ∈ 𝓝 c)
@@ -89,42 +79,41 @@ theorem isLittleO_sub_inv_of_integrableOn_sq_norm (hs : s ∈ 𝓝 c)
   have hiR : IntegrableOn (fun z ↦ ‖f z‖ ^ 2) (ball c R \ {c}) :=
     hi.mono_set (sdiff_subset_sdiff_left hRs)
   refine IsLittleO.of_bound fun ε hε ↦ ?_
-  obtain ⟨n, hn⟩ := ((tendsto_setIntegral_ball_diff_singleton hR hiR).eventually
-    (gt_mem_nhds (show (0 : ℝ) < Real.pi * ε ^ 2 / 4 by positivity))).exists
-  set ρ := R / (n + 1)
-  have hρpos : 0 < ρ := by positivity
-  have hρR : ρ ≤ R := div_le_self hR.le (by linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)])
+  obtain ⟨ρ, hρI, hρpos, hρR⟩ := ((((hiR.tendsto_setIntegral_ball_nhds_zero c).eventually
+    (gt_mem_nhds (show (0 : ℝ) < Real.pi * ε ^ 2 / 4 by positivity))).filter_mono
+    nhdsWithin_le_nhds).and (Ioc_mem_nhdsGT hR)).exists
+  rw [Measure.restrict_restrict measurableSet_ball] at hρI
   filter_upwards [nhdsWithin_le_nhds (ball_mem_nhds c (half_pos hρpos)), self_mem_nhdsWithin]
     with z hzb hzc
   have hd0 : 0 < ‖z - c‖ := norm_pos_iff.2 (sub_ne_zero.2 hzc)
   rw [mem_ball, dist_eq_norm] at hzb
   set d := ‖z - c‖ with hdz
-  let U : TopologicalSpace.Opens ℂ := ⟨ball c ρ \ {c}, isOpen_ball.sdiff isClosed_singleton⟩
-  have hfU : DifferentiableOn ℂ f U :=
-    hd.mono (sdiff_subset_sdiff_left ((ball_subset_ball hρR).trans hRs))
-  have hball : closedBall z (d / 2) ⊆ U := by
+  have hball : closedBall z (d / 2) ⊆ ball c ρ ∩ (ball c R \ {c}) := by
     intro y hy
     rw [mem_closedBall, dist_eq_norm] at hy
-    refine ⟨?_, fun hyc ↦ ?_⟩
-    · rw [mem_ball, dist_eq_norm]
+    have hyρ : y ∈ ball c ρ := by
+      rw [mem_ball, dist_eq_norm]
       calc ‖y - c‖ = ‖(y - z) + (z - c)‖ := by rw [sub_add_sub_cancel]
         _ ≤ ‖y - z‖ + ‖z - c‖ := norm_add_le _ _
         _ < ρ := by linarith
-    · rw [mem_singleton_iff] at hyc
-      rw [hyc, norm_sub_rev] at hy
-      linarith
-  have hmv := sq_norm_le_inv_mul_setIntegral_sq_norm hfU (half_pos hd0) hball
-  have hmono : ∫ y in ball z (d / 2), ‖f y‖ ^ 2 ≤ ∫ y in ball c ρ \ {c}, ‖f y‖ ^ 2 :=
-    setIntegral_mono_set (hiR.mono_set (sdiff_subset_sdiff_left (ball_subset_ball hρR)))
+    refine ⟨hyρ, ball_subset_ball hρR hyρ, fun hyc ↦ ?_⟩
+    rw [mem_singleton_iff] at hyc
+    rw [hyc, norm_sub_rev] at hy
+    linarith
+  have hopen : IsOpen (ball c ρ ∩ (ball c R \ {c})) :=
+    isOpen_ball.inter (isOpen_ball.sdiff isClosed_singleton)
+  have hh : InnerProductSpace.HarmonicOnNhd f (closedBall z (d / 2)) := fun y hy ↦
+    ((hd.mono (inter_subset_right.trans (sdiff_subset_sdiff_left hRs))).analyticAt
+      (hopen.mem_nhds (hball hy))).harmonicAt
+  have hmv := hh.measureReal_ball_mul_norm_sq_le_setIntegral (μ := volume)
+  rw [Complex.volume_real_ball z (by positivity)] at hmv
+  have hmono : ∫ y in ball z (d / 2), ‖f y‖ ^ 2 ≤ ∫ y in ball c ρ ∩ (ball c R \ {c}), ‖f y‖ ^ 2 :=
+    setIntegral_mono_set (hiR.mono_set inter_subset_right)
       (Eventually.of_forall fun _ ↦ sq_nonneg _)
       (Eventually.of_forall (ball_subset_closedBall.trans hball))
   have hsq : ‖f z‖ ^ 2 ≤ (ε * ‖(z - c)⁻¹‖) ^ 2 := by
-    rw [norm_inv, ← hdz]
-    calc ‖f z‖ ^ 2 ≤ (Real.pi * (d / 2) ^ 2)⁻¹ * (Real.pi * ε ^ 2 / 4) :=
-          hmv.trans (mul_le_mul_of_nonneg_left (hmono.trans hn.le) (by positivity))
-      _ = (ε * d⁻¹) ^ 2 := by
-          field_simp
-          norm_num
+    rw [norm_inv, ← hdz, mul_pow, inv_pow, ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
+    nlinarith [hmv.trans (hmono.trans hρI.le), Real.pi_pos]
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hsq
 
 /-- **The `L²` removable singularity theorem.** If `s` is a neighbourhood of `c`, and `f` is
@@ -138,11 +127,12 @@ theorem differentiableOn_update_limUnder_of_integrableOn_sq_norm (hs : s ∈ �
       (IsBoundedUnder.isLittleO_sub_self_inv isBoundedUnder_const)
 
 /-- **The `L²` removable singularity at infinity.** If `G` is holomorphic on `|w| > T` and `‖G‖²`
-is integrable there, then `G` read as a quadratic differential in the coordinate `q = w⁻¹` of the
-point at infinity, `q ↦ (q²)⁻¹ • G q⁻¹`, extends holomorphically across `q = 0`. In particular
-`G(w) = O(|w|⁻²)` as `w → ∞`. The weight `(q²)⁻¹` is the factor by which `dw ⊗ dw` changes under
-`w = q⁻¹`, and it is what turns the integrability of `‖G‖²` near infinity into that of the
-transformed function near `0`: the inversion distorts area by `|q|⁻⁴`
+is integrable there, then the holomorphic `1`-form `G dw` read in the coordinate `q = w⁻¹` of the
+point at infinity has a coefficient, `q ↦ (q²)⁻¹ • G q⁻¹` up to sign, that extends holomorphically
+across `q = 0`. In particular `G(w) = O(|w|⁻²)` as `w → ∞`. The weight `(q²)⁻¹` is, up to sign,
+the factor by which `dw` changes under `w = q⁻¹` (`dw = -q⁻² dq`), and it is what turns the
+integrability of `‖G‖²` near infinity into that of the transformed function near `0`: the
+inversion distorts area by `|q|⁻⁴`
 (`TauCeti.integrableOn_image_iff_integrableOn_norm_deriv_sq_smul`). -/
 theorem exists_differentiableOn_eq_inv_sq_smul_comp_inv {G : ℂ → F} {T : ℝ}
     (hd : DifferentiableOn ℂ G {w | T < ‖w‖})

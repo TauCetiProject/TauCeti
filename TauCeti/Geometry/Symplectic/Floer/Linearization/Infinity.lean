@@ -36,19 +36,18 @@ applying it to cokernel elements, through cutoffs near infinity, needs this regu
 
 The proof complexifies `η`. For a vector `x`, the complex function
 `G_x(w) = η(w) x - i η(w) (J₀ x)` is holomorphic where `D^* η = 0`: the equation says
-`∂s η = -(∂t η) ∘ J₀` (`TauCeti.SymplecticForm.fderiv_apply_eq_neg_fderiv_apply_apply`), which is
-the Cauchy–Riemann equation for `G_x`. The map `θ ↦ θ x - i θ (J₀ x)` is complex linear for the
-action `θ ↦ θ ∘ J₀` of `i` on covectors, so the complexification of `η'` at `x` is
-`-ζ⁻² G_x(ζ⁻¹)`. Since `‖G_x‖ ≤ C ‖η‖` is square-integrable near infinity, the `L²` removable
-singularity theorem at infinity
+`∂s η = -(∂t η) ∘ J₀`
+(`fderiv_apply_eq_neg_fderiv_apply_apply_of_floerLinearizationAdjoint_eq_zero`, in the namespace
+`TauCeti.SymplecticForm`), which is the Cauchy–Riemann equation for `G_x`. The map
+`θ ↦ θ x - i θ (J₀ x)` is complex linear for the action `θ ↦ θ ∘ J₀` of `i` on covectors, so the
+complexification of `η'` at `x` is `-ζ⁻² G_x(ζ⁻¹)`. Since `‖G_x‖ ≤ C ‖η‖` is square-integrable
+near infinity, the `L²` removable singularity theorem at infinity
 (`TauCeti.HolomorphicFunctions.exists_differentiableOn_eq_inv_sq_smul_comp_inv`) extends it
 holomorphically across `ζ = 0`. The real parts at the vectors of a basis then reassemble the
 extension of `η'`.
 
 ## Main results
 
-* `TauCeti.SymplecticForm.fderiv_apply_eq_neg_fderiv_apply_apply`: a covector field annihilated by
-  the formal adjoint of constant data satisfies `∂s η = -(∂t η) ∘ J₀`.
 * `exists_contDiffOn_eq_covectorPullback_inv_of_floerLinearizationAdjoint_eq_zero`, in the
   namespace `TauCeti.SymplecticForm`: square-integrable solutions of the formal adjoint near
   infinity extend smoothly across infinity.
@@ -98,24 +97,6 @@ private theorem covectorComplexify_comp_smul_add_smul (x : V) (θ : V →L[ℝ] 
 
 variable {ω : SymplecticForm V}
 
-/-- **The formal adjoint of constant data as a Cauchy–Riemann equation.** For a constant
-`ω`-invariant structure `J₀` and the zero perturbation, a covector field annihilated by the formal
-adjoint at `z` satisfies `∂s η = -(∂t η) ∘ J₀` there. -/
-theorem fderiv_apply_eq_neg_fderiv_apply_apply (hJ₀ : ω.Invariant J₀) (u : ℝ × ℝ → V)
-    {η : ℝ × ℝ → V →L[ℝ] ℝ} {z : ℝ × ℝ}
-    (hD : ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun _ _ ↦ 0) u η z = 0) (y : V) :
-    fderiv ℝ η z (1, 0) y = -fderiv ℝ η z (0, 1) (J₀ y) := by
-  by_cases hη : DifferentiableAt ℝ η z
-  swap
-  · simp [fderiv_zero_of_not_differentiableAt hη]
-  rw [floerLinearizationAdjoint_const_eq_neg_flatEquiv ω u hη hJ₀, neg_eq_zero] at hD
-  replace hD := ω.flatEquiv.map_eq_zero_iff.1 hD
-  rw [fderiv_flatEquiv_symm_apply, fderiv_flatEquiv_symm_apply, AlmostComplexStructure.neg_apply,
-    ← sub_eq_add_neg, sub_eq_zero, stdComplexLineReal_eq, stdComplexLineImag_eq] at hD
-  rw [← ω.apply_flatEquiv_symm_apply (fderiv ℝ η z (1, 0)) y, hD, hJ₀.apply_apply_eq_neg,
-    ω.apply_flatEquiv_symm_apply]
-
 /-- Where a covector field is annihilated by the formal adjoint of constant data, its
 complexification at any vector is holomorphic. -/
 private theorem differentiableAt_covectorComplexify (hJ₀ : ω.Invariant J₀) (u : ℝ × ℝ → V)
@@ -130,8 +111,9 @@ private theorem differentiableAt_covectorComplexify (hJ₀ : ω.Invariant J₀) 
       (hη.hasFDerivAt.comp w Complex.equivRealProdCLM.hasFDerivAt)
   rw [differentiableAt_complex_iff_differentiableAt_real, hfd.fderiv]
   refine ⟨hfd.differentiableAt, ?_⟩
-  have h₁ := fderiv_apply_eq_neg_fderiv_apply_apply hJ₀ u hD x
-  have h₂ := fderiv_apply_eq_neg_fderiv_apply_apply hJ₀ u hD (J₀ x)
+  have h₁ := fderiv_apply_eq_neg_fderiv_apply_apply_of_floerLinearizationAdjoint_eq_zero hJ₀ u hD x
+  have h₂ :=
+    fderiv_apply_eq_neg_fderiv_apply_apply_of_floerLinearizationAdjoint_eq_zero hJ₀ u hD (J₀ x)
   rw [AlmostComplexStructure.apply_apply, map_neg, neg_neg] at h₂
   have hI : Complex.equivRealProdCLM Complex.I = (0, 1) := by simp
   have hone : Complex.equivRealProdCLM 1 = (1, 0) := by simp
@@ -184,7 +166,8 @@ private theorem covectorComplexify_covectorPullback_inv (u : ℝ × ℝ → V) (
     simp [e, q]
   rw [covectorPullback_apply, hφ, TauCeti.Complex.realChart_apply,
     covectorComplexify_comp_smul_add_smul]
-  congr 1
+  -- The coefficient `⟨a, b⟩` rebuilt from the components of `e (-(q²)⁻¹)` is `-(q²)⁻¹`.
+  rw [Complex.equivRealProdCLM_apply, Complex.eta]
 
 /-- **Square-integrable solutions of the formal adjoint extend across infinity.** Let `J₀` be an
 `ω`-invariant complex structure, and let `η` be a covector field, differentiable on `|w| > T` and
@@ -225,10 +208,12 @@ theorem exists_contDiffOn_eq_covectorPullback_inv_of_floerLinearizationAdjoint_e
       isOpen_ball).restrict_scalars ℝ).comp e.symm.contDiff.contDiffOn hmaps)).neg.smul
       contDiffOn_const
   refine ContinuousLinearMap.coe_injective (b.ext fun k ↦ ?_)
-  rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe,
-    ← re_covectorComplexify (J₀ := J₀) (b k) (covectorPullback _ _ u η ζ),
-    covectorComplexify_covectorPullback_inv u η hζ0, neg_mul,
-    ← smul_eq_mul, ← hgeq (b k) _ (by simpa using hζ) hζ0]
-  simp [Module.Basis.coord_apply, Finsupp.single_apply]
+  -- At each basis vector, `η'` is minus the real part of the extension `g`.
+  have hk : covectorPullback (TauCeti.Complex.realChart (·⁻¹))
+      (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) u η ζ (b k) =
+        -(g (b k) (e.symm ζ)).re := by
+    rw [← re_covectorComplexify (J₀ := J₀), covectorComplexify_covectorPullback_inv u η hζ0]
+    simp only [hgeq (b k) _ (by simpa using hζ) hζ0, smul_eq_mul, neg_mul, Complex.neg_re, e]
+  simp [hk, Module.Basis.coord_apply, Finsupp.single_apply]
 
 end TauCeti.SymplecticForm
