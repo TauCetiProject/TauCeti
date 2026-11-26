@@ -182,8 +182,6 @@ theorem apply_ne_of_mem_morseBrokenTrajectoryRecords_of_mem_morseTrajectoryRecor
     (hw : w ∈ hX.morseBrokenTrajectoryRecords p q c) (hw' : w' ∈ hX.morseTrajectoryRecords p' r c')
     (hrq : f r ≤ f q) (hqr : q ≠ r) (i : ι) (i' : κ) : w i ≠ w' i' := by
   intro h
-  obtain ⟨y, hy, hwy⟩ := hX.mem_morseTrajectoryRecords.1 hw'
-  obtain ⟨-, t, ht⟩ := hwy i'
   obtain ⟨k, x, z, -, rfl, -, hxne, hz, hrec⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
   obtain ⟨-, j, t', ht'⟩ := hrec i
   -- Along the chain `f` decreases strictly, so a point of the chain at which `f` is at most its
@@ -195,9 +193,8 @@ theorem apply_ne_of_mem_morseBrokenTrajectoryRecords_of_mem_morseTrajectoryRecor
   have h₁ : w i ∈ hX.flow.stableSet (x j.succ) := by
     rw [← ht']
     exact (Flow.apply_mem_stableSet_iff _ t').2 (hz j).2
-  have h₂ : w i ∈ hX.flow.stableSet r := by
-    rw [h, ← ht]
-    exact (Flow.apply_mem_stableSet_iff _ t).2 hy.2
+  have h₂ : w i ∈ hX.flow.stableSet r :=
+    h ▸ hX.apply_mem_stableSet_of_mem_morseTrajectoryRecords hw' i'
   exact disjoint_left.1 (Flow.disjoint_stableSet hne) h₁ h₂
 
 /-- **A broken trajectory meets no unbroken trajectory to a lower critical point.** If

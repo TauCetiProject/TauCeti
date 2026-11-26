@@ -147,6 +147,14 @@ theorem mem_morseBrokenTrajectoryRecords {p r : M} {c : ι → ℝ} {w : ι → 
         ∀ i, f (w i) = c i ∧ ∃ j t, hX.flow t (z j) = w i :=
   Iff.rfl
 
+/-- The points of a record of a trajectory from `p` to `r` lie in the stable set of `r`. -/
+theorem apply_mem_stableSet_of_mem_morseTrajectoryRecords {p r : M} {c : ι → ℝ} {w : ι → M}
+    (hw : w ∈ hX.morseTrajectoryRecords p r c) (i : ι) : w i ∈ hX.flow.stableSet r := by
+  obtain ⟨y, hy, hwy⟩ := hX.mem_morseTrajectoryRecords.1 hw
+  obtain ⟨-, t, ht⟩ := hwy i
+  rw [← ht, Flow.apply_mem_stableSet_iff]
+  exact hy.2
+
 /-- **`f` decreases along a chain joined by trajectories.** If each `x j` is joined to `x (j + 1)`
 by a trajectory, then `f (x (j + 1)) ≤ f (x j)` for all `j`. -/
 theorem antitone_apply_of_chain {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M}
