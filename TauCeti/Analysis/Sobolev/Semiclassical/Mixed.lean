@@ -25,20 +25,28 @@ derivatives unscaled, and normalize the volume by the normal volume `h^(dim V)` 
 
 **Mixed derivatives.** The mixed derivative `∂^{a, n - a} f x` of order `(a, n - a)`
 (`Submodule.mixedIteratedFDeriv`) is the `n`-th derivative `Dⁿ f x` with its first `a` arguments
-projected to the horizontal subspace `Vᗮ` and the other `n - a` to the normal subspace `V`. It and
-the **normal dilation** `Submodule.normalDilation V t`, which fixes `Vᗮ` and multiplies `V` by
-`t`, are defined in `TauCeti.Analysis.Calculus.IteratedFDeriv.Mixed`, together with their pointwise
-calculus; this file builds the `L²` norms from them.
+projected to the horizontal subspace `Vᗮ` and the other `n - a` to the normal subspace `V`. It is
+defined in `TauCeti.Analysis.Calculus.IteratedFDeriv.Mixed`, together with its pointwise calculus,
+and the **normal dilation** `Submodule.normalDilation V t`, which fixes `Vᗮ` and multiplies `V` by
+`t`, in `TauCeti.Analysis.InnerProductSpace.Projection.NormalDilation`. This file turns the
+pointwise bounds into `Lᵖ` bounds (`Submodule.memLp_iteratedFDeriv_and_lpNorm_le`,
+`Submodule.lpNorm_mixedIteratedFDeriv_fderiv_apply_le_of_mem`,
+`Submodule.lpNorm_mixedIteratedFDeriv_fderiv_apply_le_of_mem_orthogonal`) and builds the `L²` norms
+from them.
 
 **The mixed norm.** The mixed semiclassical Sobolev norm of order `j` at scale `h` is
 
 `‖f‖_{j,h,V} = h^(-dim V / 2) ∑_{n ≤ j} ∑_{a ≤ n} h^(n - a) ‖∂^{a, n - a} f‖₂`
 
 (`Submodule.mixedSemiclassicalSobolevNorm`): each normal derivative costs a factor `h`, each
-horizontal one none. The normal dilation by `h` reads a field in the rescaled normal coordinate
-`w = y / h`, `y ∈ V`: for `h > 0`, the mixed norm at scale `h` is the mixed norm at scale one of
-the dilated field `f ∘ normalDilation V h`, that is, the unweighted mixed norm
-`∑_{a + b ≤ j} ‖∇^a ∂_w^b v‖₂` of the rescaled field `v` against `dvol dw`
+horizontal one none. It is a seminorm on fields with square-integrable mixed derivatives
+(`Submodule.mixedSemiclassicalSobolevNorm_neg`,
+`Submodule.mixedSemiclassicalSobolevNorm_const_smul`,
+`Submodule.mixedSemiclassicalSobolevNorm_add_le`,
+`Submodule.mixedSemiclassicalSobolevNorm_sum_le`). The normal dilation by `h` reads a field in
+the rescaled normal coordinate `w = y / h`, `y ∈ V`: for `h > 0`, the mixed norm at scale `h` is
+the mixed norm at scale one of the dilated field `f ∘ normalDilation V h`, that is, the
+unweighted mixed norm `∑_{a + b ≤ j} ‖∇^a ∂_w^b v‖₂` of the rescaled field `v` against `dvol dw`
 (`Submodule.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation`).
 
 At scale one the mixed norm is equivalent to the ordinary Sobolev norm
@@ -71,6 +79,7 @@ carry.
 ## Main results
 
 * `Submodule.lpNorm_comp_normalDilation`: the change of variables under the normal dilation.
+* `Submodule.mixedSemiclassicalSobolevNorm_add_le`: the triangle inequality for the mixed norm.
 * `Submodule.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation`: the mixed norm at scale `h` is
   the unscaled mixed norm of the normally dilated field.
 * `Submodule.exists_norm_le_mul_mixedSemiclassicalSobolevNorm`: the Sobolev embedding, uniformly in
@@ -100,39 +109,66 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] (V : Submodule ℝ E)
   [V.HasOrthogonalProjection]
 
-/-! ### The mixed norm -/
+/-! ### `Lᵖ` bounds on mixed derivatives -/
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E] {p : ℝ≥0∞} {μ : Measure E}
 
-/-- If the `n`-th derivative of `f` is square integrable, so is every mixed derivative of total
-order `n`. -/
-theorem memLp_mixedIteratedFDeriv {n : ℕ} {f : E → F} (hD : MemLp (iteratedFDeriv ℝ n f) 2)
-    (a : ℕ) : MemLp (V.mixedIteratedFDeriv n a f) 2 :=
+/-- If the `n`-th derivative of `f` is in `Lᵖ`, so is every mixed derivative of total order `n`. -/
+theorem memLp_mixedIteratedFDeriv {n : ℕ} {f : E → F} (hD : MemLp (iteratedFDeriv ℝ n f) p μ)
+    (a : ℕ) : MemLp (V.mixedIteratedFDeriv n a f) p μ :=
   hD.of_le (((ContinuousMultilinearMap.compContinuousLinearMapL fun i : Fin n ↦
       if (i : ℕ) < a then Vᗮ.starProjection else V.starProjection).continuous
         |>.comp_aestronglyMeasurable hD.aestronglyMeasurable).congr <| .of_forall fun x ↦ by
       simp only [ContinuousMultilinearMap.compContinuousLinearMapL_apply, mixedIteratedFDeriv_def])
     (.of_forall fun x ↦ V.norm_mixedIteratedFDeriv_le n a f x)
 
-/-- **The `L²` norm of the full derivative is bounded by those of the mixed derivatives.** For `f`
-of class `Cⁿ` whose mixed derivatives of total order `n` are square integrable, `Dⁿ f` is square
-integrable and `‖Dⁿ f‖₂ ≤ ∑_{a ≤ n} (n choose a) ‖∂^{a, n - a} f‖₂`. -/
-theorem memLp_iteratedFDeriv_and_lpNorm_le {n : ℕ} {f : E → F} (hf : ContDiff ℝ n f)
-    (hm : ∀ a ≤ n, MemLp (V.mixedIteratedFDeriv n a f) 2) :
-    MemLp (iteratedFDeriv ℝ n f) 2 ∧ lpNorm (iteratedFDeriv ℝ n f) 2 volume ≤
-      ∑ a ∈ range (n + 1), (n.choose a : ℝ) * lpNorm (V.mixedIteratedFDeriv n a f) 2 volume := by
-  have hm' (a : ℕ) (ha : a ∈ range (n + 1)) : MemLp (V.mixedIteratedFDeriv n a f) 2 :=
+/-- The `Lᵖ` norms of the mixed derivatives of a normal derivative:
+`‖∂^{a, n - a} (∂_v f)‖_p ≤ ‖v‖ ‖∂^{a, n + 1 - a} f‖_p` for `a ≤ n`, `f` of class `Cⁿ⁺¹` and
+`v ∈ V`. -/
+theorem lpNorm_mixedIteratedFDeriv_fderiv_apply_le_of_mem {n a : ℕ} (ha : a ≤ n) {f : E → F}
+    (hf : ContDiff ℝ (n + 1) f) (hm : MemLp (V.mixedIteratedFDeriv (n + 1) a f) p μ) {v : E}
+    (hv : v ∈ V) :
+    lpNorm (V.mixedIteratedFDeriv n a (fun y ↦ fderiv ℝ f y v)) p μ ≤
+      ‖v‖ * lpNorm (V.mixedIteratedFDeriv (n + 1) a f) p μ := by
+  refine (lpNorm_mono_real (hm.norm.const_smul ‖v‖) fun x ↦
+    V.norm_mixedIteratedFDeriv_fderiv_apply_le_of_mem ha hf.contDiffAt hv).trans_eq ?_
+  rw [lpNorm_const_smul_of_nonneg (norm_nonneg v), lpNorm_norm hm.aestronglyMeasurable]
+
+/-- The `Lᵖ` norms of the mixed derivatives of a horizontal derivative:
+`‖∂^{a, n - a} (∂_e f)‖_p ≤ ‖e‖ ‖∂^{a + 1, n - a} f‖_p` for `a ≤ n`, `f` of class `Cⁿ⁺¹` and
+`e ∈ Vᗮ`. -/
+theorem lpNorm_mixedIteratedFDeriv_fderiv_apply_le_of_mem_orthogonal {n a : ℕ} (ha : a ≤ n)
+    {f : E → F} (hf : ContDiff ℝ (n + 1) f)
+    (hm : MemLp (V.mixedIteratedFDeriv (n + 1) (a + 1) f) p μ) {e : E} (he : e ∈ Vᗮ) :
+    lpNorm (V.mixedIteratedFDeriv n a (fun y ↦ fderiv ℝ f y e)) p μ ≤
+      ‖e‖ * lpNorm (V.mixedIteratedFDeriv (n + 1) (a + 1) f) p μ := by
+  refine (lpNorm_mono_real (hm.norm.const_smul ‖e‖) fun x ↦
+    V.norm_mixedIteratedFDeriv_fderiv_apply_le_of_mem_orthogonal ha hf.contDiffAt he).trans_eq ?_
+  rw [lpNorm_const_smul_of_nonneg (norm_nonneg e), lpNorm_norm hm.aestronglyMeasurable]
+
+variable [FiniteDimensional ℝ E] [BorelSpace E]
+
+/-- **The `Lᵖ` norm of the full derivative is bounded by those of the mixed derivatives.** For
+`1 ≤ p` and `f` of class `Cⁿ` whose mixed derivatives of total order `n` are in `Lᵖ`, `Dⁿ f` is in
+`Lᵖ` and `‖Dⁿ f‖_p ≤ ∑_{a ≤ n} (n choose a) ‖∂^{a, n - a} f‖_p`. -/
+theorem memLp_iteratedFDeriv_and_lpNorm_le (hp : 1 ≤ p) {n : ℕ} {f : E → F}
+    (hf : ContDiff ℝ n f) (hm : ∀ a ≤ n, MemLp (V.mixedIteratedFDeriv n a f) p μ) :
+    MemLp (iteratedFDeriv ℝ n f) p μ ∧ lpNorm (iteratedFDeriv ℝ n f) p μ ≤
+      ∑ a ∈ range (n + 1), (n.choose a : ℝ) * lpNorm (V.mixedIteratedFDeriv n a f) p μ := by
+  have hm' (a : ℕ) (ha : a ∈ range (n + 1)) : MemLp (V.mixedIteratedFDeriv n a f) p μ :=
     hm a (Nat.lt_succ_iff.1 (mem_range.1 ha))
   set Ψ : E → ℝ := ∑ a ∈ range (n + 1), (n.choose a : ℝ) • fun x ↦ ‖V.mixedIteratedFDeriv n a f x‖
-  have hΨm : MemLp Ψ 2 := memLp_finsetSum' _ fun a ha ↦ (hm' a ha).norm.const_smul _
+  have hΨm : MemLp Ψ p μ := memLp_finsetSum' _ fun a ha ↦ (hm' a ha).norm.const_smul _
   have hle (x : E) : ‖iteratedFDeriv ℝ n f x‖ ≤ Ψ x := by
     simpa [Ψ, Finset.sum_apply] using
       V.norm_iteratedFDeriv_le_sum_choose_mul_norm_mixedIteratedFDeriv hf.contDiffAt
   refine ⟨hΨm.of_le (hf.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable
     (.of_forall fun x ↦ (hle x).trans (le_abs_self _)), (lpNorm_mono_real hΨm hle).trans ?_⟩
-  refine (lpNorm_sum_le (fun a ha ↦ (hm' a ha).norm.const_smul _) one_le_two).trans_eq
+  refine (lpNorm_sum_le (fun a ha ↦ (hm' a ha).norm.const_smul _) hp).trans_eq
     (sum_congr rfl fun a ha ↦ ?_)
   rw [lpNorm_const_smul_of_nonneg (Nat.cast_nonneg _), lpNorm_norm (hm' a ha).aestronglyMeasurable]
+
+/-! ### The mixed norm -/
 
 /-- The **mixed semiclassical Sobolev norm** of order `j` at scale `h` along the normal subspace
 `V`,
@@ -176,6 +212,60 @@ theorem mixedSemiclassicalSobolevNorm_nonneg (j : ℕ) {h : ℝ} (hh : 0 ≤ h) 
   mul_nonneg (Real.rpow_nonneg hh _) (sum_nonneg fun _ _ ↦ sum_nonneg fun _ _ ↦
     mul_nonneg (pow_nonneg hh _) lpNorm_nonneg)
 
+/-- The mixed norm is invariant under negation. -/
+@[simp]
+theorem mixedSemiclassicalSobolevNorm_neg (j : ℕ) (h : ℝ) (f : E → F) :
+    V.mixedSemiclassicalSobolevNorm j h (-f) = V.mixedSemiclassicalSobolevNorm j h f := by
+  simp [mixedSemiclassicalSobolevNorm]
+
+/-- **Homogeneity of the mixed norm.** `‖c f‖_{j,h,V} = |c| ‖f‖_{j,h,V}`. -/
+theorem mixedSemiclassicalSobolevNorm_const_smul (j : ℕ) (h c : ℝ) (f : E → F) :
+    V.mixedSemiclassicalSobolevNorm j h (c • f) =
+      |c| * V.mixedSemiclassicalSobolevNorm j h f := by
+  simp only [mixedSemiclassicalSobolevNorm, mixedIteratedFDeriv_const_smul, lpNorm_const_smul,
+    coe_nnNorm, Real.norm_eq_abs, mul_sum]
+  exact sum_congr rfl fun n _ ↦ sum_congr rfl fun a _ ↦ by ring
+
+/-- **The triangle inequality for the mixed norm.** For `f`, `g` of class `Cʲ`, the mixed
+derivatives of `f` through total order `j` square integrable, and `h ≥ 0`,
+`‖f + g‖_{j,h,V} ≤ ‖f‖_{j,h,V} + ‖g‖_{j,h,V}`. -/
+theorem mixedSemiclassicalSobolevNorm_add_le {j : ℕ} {f g : E → F} (hf : ContDiff ℝ j f)
+    (hg : ContDiff ℝ j g) (hfm : ∀ n ≤ j, ∀ a ≤ n, MemLp (V.mixedIteratedFDeriv n a f) 2)
+    {h : ℝ} (hh : 0 ≤ h) :
+    V.mixedSemiclassicalSobolevNorm j h (f + g) ≤
+      V.mixedSemiclassicalSobolevNorm j h f + V.mixedSemiclassicalSobolevNorm j h g := by
+  rw [mixedSemiclassicalSobolevNorm, mixedSemiclassicalSobolevNorm, mixedSemiclassicalSobolevNorm,
+    ← mul_add, ← sum_add_distrib]
+  refine mul_le_mul_of_nonneg_left (sum_le_sum fun n hn ↦ ?_) (Real.rpow_nonneg hh _)
+  have hn : n ≤ j := Nat.lt_succ_iff.1 (mem_range.1 hn)
+  rw [← sum_add_distrib]
+  refine sum_le_sum fun a ha ↦ ?_
+  rw [← mul_add, V.mixedIteratedFDeriv_add (hf.of_le (by exact_mod_cast hn))
+    (hg.of_le (by exact_mod_cast hn))]
+  exact mul_le_mul_of_nonneg_left
+    (lpNorm_add_le (hfm n hn a (Nat.lt_succ_iff.1 (mem_range.1 ha))) one_le_two) (pow_nonneg hh _)
+
+/-- **The triangle inequality for finite sums.** For functions `f i` of class `Cʲ` whose mixed
+derivatives through total order `j` are square integrable, and `h ≥ 0`,
+`‖∑ i ∈ s, f i‖_{j,h,V} ≤ ∑ i ∈ s, ‖f i‖_{j,h,V}`. -/
+theorem mixedSemiclassicalSobolevNorm_sum_le {ι : Type*} (s : Finset ι) {j : ℕ} {f : ι → E → F}
+    (hf : ∀ i ∈ s, ContDiff ℝ j (f i))
+    (hfm : ∀ i ∈ s, ∀ n ≤ j, ∀ a ≤ n, MemLp (V.mixedIteratedFDeriv n a (f i)) 2) {h : ℝ}
+    (hh : 0 ≤ h) :
+    V.mixedSemiclassicalSobolevNorm j h (fun x ↦ ∑ i ∈ s, f i x) ≤
+      ∑ i ∈ s, V.mixedSemiclassicalSobolevNorm j h (f i) := by
+  simp only [mixedSemiclassicalSobolevNorm, ← mul_sum]
+  refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg hh _)
+  rw [sum_comm]
+  refine sum_le_sum fun n hn ↦ ?_
+  have hn : n ≤ j := Nat.lt_succ_iff.1 (mem_range.1 hn)
+  rw [sum_comm]
+  refine sum_le_sum fun a ha ↦ ?_
+  rw [← mul_sum, V.mixedIteratedFDeriv_sum s fun i hi ↦ (hf i hi).of_le (by exact_mod_cast hn)]
+  exact mul_le_mul_of_nonneg_left
+    (lpNorm_sum_le (fun i hi ↦ hfm i hi n hn a (Nat.lt_succ_iff.1 (mem_range.1 ha))) one_le_two)
+    (pow_nonneg hh _)
+
 /-- **Translation invariance of the mixed norm.** `‖f (· - c)‖_{j,h,V} = ‖f‖_{j,h,V}`. -/
 @[simp]
 theorem mixedSemiclassicalSobolevNorm_comp_sub (j : ℕ) (h : ℝ) (f : E → F) (c : E) :
@@ -188,25 +278,22 @@ theorem mixedSemiclassicalSobolevNorm_comp_sub (j : ℕ) (h : ℝ) (f : E → F)
   rw [(measurableEmbedding_subRight c).eLpNorm_map_measure, Function.comp_def]
 
 /-- **Change of variables under the normal dilation.** Composing with the normal dilation by
-`h > 0` multiplies `L²` norms by `h^(-dim V / 2)`. -/
-theorem lpNorm_comp_normalDilation {G : Type*} [NormedAddCommGroup G] (u : E → G) {h : ℝ}
-    (hh : 0 < h) :
-    lpNorm (u ∘ V.normalDilation h) 2 volume =
-      h ^ (-(finrank ℝ V : ℝ) / 2) * lpNorm u 2 volume := by
-  have hc := Measure.eLpNorm_comp_continuousLinearEquiv volume u (V.normalDilationEquiv hh.ne') 2
+`h > 0` multiplies `Lᵖ` norms against an additive Haar measure by `h^(-dim V / p)`. The exponent
+is `-dim V / p.toReal`, which is `0` at `p = 0` and `p = ∞`, where the factor is thus `1`. -/
+theorem lpNorm_comp_normalDilation {G : Type*} [NormedAddCommGroup G] [μ.IsAddHaarMeasure]
+    (u : E → G) {h : ℝ} (hh : 0 < h) :
+    lpNorm (u ∘ V.normalDilation h) p μ =
+      h ^ (-(finrank ℝ V : ℝ) / p.toReal) * lpNorm u p μ := by
+  have hc := Measure.eLpNorm_comp_continuousLinearEquiv μ u (V.normalDilationEquiv hh.ne') p
   have hdet : LinearMap.det ((V.normalDilationEquiv hh.ne' : E ≃ₗ[ℝ] E) : E →ₗ[ℝ] E) =
       h ^ finrank ℝ V := by
     rw [← V.det_normalDilation h]
     congr 1
     ext x
     simp
-  have hval : |(h ^ finrank ℝ V)⁻¹| ^ (1 / (2 : ℝ≥0∞)).toReal =
-      h ^ (-(finrank ℝ V : ℝ) / 2) := by
+  have hval : |(h ^ finrank ℝ V)⁻¹| ^ (1 / p).toReal = h ^ (-(finrank ℝ V : ℝ) / p.toReal) := by
     rw [abs_of_pos (by positivity), ← Real.rpow_natCast, ← Real.rpow_neg hh.le,
-      ← Real.rpow_mul hh.le]
-    congr 1
-    norm_num
-    ring
+      ← Real.rpow_mul hh.le, one_div, ENNReal.toReal_inv, div_eq_mul_inv]
   rw [← toReal_eLpNorm, ← toReal_eLpNorm]
   rw [hdet] at hc
   rw [← V.coe_normalDilationEquiv hh.ne', ContinuousLinearEquiv.coe_coe, hc,
@@ -226,7 +313,8 @@ theorem mixedSemiclassicalSobolevNorm_eq_comp_normalDilation (j : ℕ) (f : E �
   rw [mul_sum]
   refine sum_congr rfl fun a _ ↦ ?_
   rw [V.mixedIteratedFDeriv_comp_normalDilation_of_ne_zero n a f hh.ne',
-    lpNorm_const_smul_of_nonneg (pow_nonneg hh.le _), V.lpNorm_comp_normalDilation _ hh]
+    lpNorm_const_smul_of_nonneg (pow_nonneg hh.le _), V.lpNorm_comp_normalDilation _ hh,
+    ENNReal.toReal_ofNat]
   ring
 
 /-- **Comparison of scales.** For `0 < h ≤ 1`, multiplying the mixed norm at scale `h` by
@@ -260,7 +348,7 @@ theorem memLp_iteratedFDeriv_and_semiclassicalSobolevNorm_one_le {j : ℕ} {f : 
     (∀ n ≤ j, MemLp (iteratedFDeriv ℝ n f) 2) ∧
       TauCeti.semiclassicalSobolevNorm j 1 f ≤
         2 ^ j * V.mixedSemiclassicalSobolevNorm j 1 f := by
-  have key (n : ℕ) (hn : n ≤ j) := V.memLp_iteratedFDeriv_and_lpNorm_le
+  have key (n : ℕ) (hn : n ≤ j) := V.memLp_iteratedFDeriv_and_lpNorm_le one_le_two
     (hf.of_le (by exact_mod_cast hn)) (hm n hn)
   refine ⟨fun n hn ↦ (key n hn).1, ?_⟩
   rw [TauCeti.semiclassicalSobolevNorm_one, mixedSemiclassicalSobolevNorm_one, mul_sum]
@@ -334,14 +422,11 @@ theorem mixedSemiclassicalSobolevNorm_fderiv_apply_le_of_mem_orthogonal {j : ℕ
           lpNorm (V.mixedIteratedFDeriv (n + 1) (a + 1) f) 2 volume) := by
     have hn : n ≤ j := Nat.lt_succ_iff.1 (mem_range.1 hn)
     have ha : a ≤ n := Nat.lt_succ_iff.1 (mem_range.1 ha)
-    have hmem := (hm (n + 1) (by omega) (a + 1) (by omega)).norm.const_smul ‖e‖
     rw [Nat.add_sub_add_right, mul_left_comm]
-    refine mul_le_mul_of_nonneg_left ?_ (pow_nonneg hh _)
-    refine (lpNorm_mono_real hmem fun x ↦ ?_).trans_eq ?_
-    · exact V.norm_mixedIteratedFDeriv_fderiv_apply_le_of_mem_orthogonal ha
-        ((hf.of_le (by exact_mod_cast Nat.succ_le_succ hn)).contDiffAt) he
-    · rw [lpNorm_const_smul_of_nonneg (norm_nonneg e),
-        lpNorm_norm (hm (n + 1) (by omega) (a + 1) (by omega)).aestronglyMeasurable]
+    exact mul_le_mul_of_nonneg_left
+      (V.lpNorm_mixedIteratedFDeriv_fderiv_apply_le_of_mem_orthogonal ha
+        (hf.of_le (by exact_mod_cast Nat.succ_le_succ hn))
+        (hm (n + 1) (by omega) (a + 1) (by omega)) he) (pow_nonneg hh _)
   rw [mixedSemiclassicalSobolevNorm, mixedSemiclassicalSobolevNorm, mul_left_comm]
   refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg hh _)
   conv_rhs => rw [sum_range_succ', mul_add, mul_sum]
@@ -368,14 +453,10 @@ theorem mul_mixedSemiclassicalSobolevNorm_fderiv_apply_le_of_mem {j : ℕ} {f : 
         ‖v‖ * (h ^ (n + 1 - a) * lpNorm (V.mixedIteratedFDeriv (n + 1) a f) 2 volume) := by
     have hn : n ≤ j := Nat.lt_succ_iff.1 (mem_range.1 hn)
     have ha : a ≤ n := Nat.lt_succ_iff.1 (mem_range.1 ha)
-    have hmem := (hm (n + 1) (by omega) a (by omega)).norm.const_smul ‖v‖
     rw [← mul_assoc, ← pow_succ', Nat.sub_add_comm ha, mul_left_comm]
-    refine mul_le_mul_of_nonneg_left ?_ (pow_nonneg hh _)
-    refine (lpNorm_mono_real hmem fun x ↦ ?_).trans_eq ?_
-    · exact V.norm_mixedIteratedFDeriv_fderiv_apply_le_of_mem ha
-        ((hf.of_le (by exact_mod_cast Nat.succ_le_succ hn)).contDiffAt) hv
-    · rw [lpNorm_const_smul_of_nonneg (norm_nonneg v),
-        lpNorm_norm (hm (n + 1) (by omega) a (by omega)).aestronglyMeasurable]
+    exact mul_le_mul_of_nonneg_left (V.lpNorm_mixedIteratedFDeriv_fderiv_apply_le_of_mem ha
+      (hf.of_le (by exact_mod_cast Nat.succ_le_succ hn)) (hm (n + 1) (by omega) a (by omega)) hv)
+      (pow_nonneg hh _)
   rw [mixedSemiclassicalSobolevNorm, mixedSemiclassicalSobolevNorm, mul_left_comm,
     mul_left_comm ‖v‖]
   refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg hh _)

@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
-public import Mathlib.LinearAlgebra.Determinant
+public import TauCeti.Analysis.InnerProductSpace.Projection.NormalDilation
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Data.Nat.Choose.Sum
-import Mathlib.GroupTheory.Perm.Fin
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.IteratedFDeriv.SymmetricFinite
+import TauCeti.GroupTheory.Perm.Fin
 
 /-!
 # Mixed iterated derivatives along a subspace and its orthogonal complement
@@ -36,12 +36,17 @@ the expansion of each argument into its horizontal and normal parts, the full de
 `‖Dⁿ f x‖ ≤ ∑_{a ≤ n} (n choose a) ‖∂^{a, n - a} f x‖`
 (`Submodule.norm_iteratedFDeriv_le_sum_choose_mul_norm_mixedIteratedFDeriv`).
 
-**The normal dilation.** `Submodule.normalDilation V t` fixes `Vᗮ` and multiplies `V` by `t`;
-composing with it reads a field in the normal coordinate rescaled by `t`. Its determinant is
-`t ^ dim V` (`Submodule.det_normalDilation`), and under it the mixed derivative of order
-`(a, n - a)` gains the factor `t ^ (n - a)`: each normal derivative contributes a factor `t`, each
-horizontal one none (`Submodule.mixedIteratedFDeriv_comp_normalDilation`, and
+**The normal dilation.** Under the normal dilation `Submodule.normalDilation V t`, which fixes
+`Vᗮ` and multiplies `V` by `t` (`TauCeti.Analysis.InnerProductSpace.Projection.NormalDilation`),
+the mixed derivative of order `(a, n - a)` gains the factor `t ^ (n - a)`: each normal derivative
+contributes a factor `t`, each horizontal one none
+(`Submodule.mixedIteratedFDeriv_comp_normalDilation`, and
 `Submodule.mixedIteratedFDeriv_comp_normalDilation_of_ne_zero`, which needs no smoothness).
+
+**Linearity.** Mixed derivatives commute with negation and scalar multiplication, and with sums
+of functions of class `Cⁿ` (`Submodule.mixedIteratedFDeriv_neg`,
+`Submodule.mixedIteratedFDeriv_const_smul`, `Submodule.mixedIteratedFDeriv_add`,
+`Submodule.mixedIteratedFDeriv_sum`).
 
 **Derivatives.** A normal derivative `∂_v f`, `v ∈ V`, raises the normal order of a mixed
 derivative by one (`Submodule.mixedIteratedFDeriv_fderiv_apply_of_mem`), and a horizontal
@@ -50,13 +55,10 @@ derivative `∂_e f`, `e ∈ Vᗮ`, raises the horizontal order by one
 
 ## Main definitions
 
-* `Submodule.normalDilation V t`: the linear map `P_{Vᗮ} + t P_V`.
-* `Submodule.normalDilationEquiv V ht`: the normal dilation by `t ≠ 0` as an automorphism.
 * `Submodule.mixedIteratedFDeriv V n a f x`: the mixed derivative of order `(a, n - a)`.
 
 ## Main results
 
-* `Submodule.det_normalDilation`: `det (normalDilation V t) = t ^ dim V`.
 * `Submodule.mixedIteratedFDeriv_comp_normalDilation`: the mixed derivative of order
   `(a, n - a)` of `f ∘ normalDilation V t` is `t ^ (n - a)` times that of `f`.
 * `Submodule.norm_iteratedFDeriv_le_sum_choose_mul_norm_mixedIteratedFDeriv`: the full derivative is
@@ -77,117 +79,11 @@ noncomputable section
 
 open Finset Module
 
-/-- For `S : Finset (Fin n)`, some permutation of `Fin n` carries the first `#S` indices onto
-`S`. -/
-private theorem Fin.exists_perm_mem_iff_val_lt_card {n : ℕ} (S : Finset (Fin n)) :
-    ∃ σ : Equiv.Perm (Fin n), ∀ i, σ i ∈ S ↔ (i : ℕ) < #S := by
-  classical
-  have h₁ : Fintype.card {i : Fin n // (i : ℕ) < #S} = Fintype.card {i : Fin n // i ∈ S} := by
-    rw [Fintype.card_subtype, Fin.card_filter_val_lt, Fintype.card_coe,
-      min_eq_right (by simpa using S.card_le_univ)]
-  have h₂ : Fintype.card {i : Fin n // ¬(i : ℕ) < #S} = Fintype.card {i : Fin n // i ∉ S} := by
-    rw [Fintype.card_subtype_compl, Fintype.card_subtype_compl, h₁]
-  -- Match the indices below `#S` with `S`, and the others with its complement.
-  set e₁ := Fintype.equivOfCardEq h₁
-  set e₂ := Fintype.equivOfCardEq h₂
-  refine ⟨(Equiv.sumCompl _).symm.trans ((e₁.sumCongr e₂).trans (Equiv.sumCompl _)), fun i ↦ ?_⟩
-  by_cases hi : (i : ℕ) < #S
-  · rw [Equiv.trans_apply, Equiv.trans_apply,
-      Equiv.sumCompl_symm_apply_of_pos (p := fun a : Fin n ↦ (a : ℕ) < #S) hi,
-      Equiv.sumCongr_apply, Sum.map_inl, Equiv.sumCompl_apply_inl]
-    exact iff_of_true (e₁ ⟨i, hi⟩).property hi
-  · rw [Equiv.trans_apply, Equiv.trans_apply,
-      Equiv.sumCompl_symm_apply_of_neg (p := fun a : Fin n ↦ (a : ℕ) < #S) hi,
-      Equiv.sumCongr_apply, Sum.map_inr, Equiv.sumCompl_apply_inr]
-    exact iff_of_false (e₂ ⟨i, hi⟩).property hi
-
 namespace Submodule
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] (V : Submodule ℝ E)
   [V.HasOrthogonalProjection]
-
-/-! ### The normal dilation -/
-
-/-- The **normal dilation** by `t` along the subspace `V`: the linear map `P_{Vᗮ} + t P_V`, which
-fixes the orthogonal complement `Vᗮ` and multiplies `V` by `t`. Composing a field with it reads
-the field in the normal coordinate rescaled by `t`. -/
-def normalDilation (t : ℝ) : E →L[ℝ] E :=
-  Vᗮ.starProjection + t • V.starProjection
-
-@[simp]
-theorem normalDilation_apply (t : ℝ) (x : E) :
-    V.normalDilation t x = Vᗮ.starProjection x + t • V.starProjection x :=
-  (rfl)
-
-/-- The normal dilation fixes the horizontal part of every vector. -/
-theorem normalDilation_starProjection_orthogonal (t : ℝ) (x : E) :
-    V.normalDilation t (Vᗮ.starProjection x) = Vᗮ.starProjection x := by
-  rw [normalDilation_apply, starProjection_eq_self_iff.2 (Vᗮ.starProjection_apply_mem x),
-    (V.starProjection_apply_eq_zero_iff).2 (Vᗮ.starProjection_apply_mem x), smul_zero, add_zero]
-
-/-- The normal dilation by `t` multiplies the normal part of every vector by `t`. -/
-theorem normalDilation_starProjection (t : ℝ) (x : E) :
-    V.normalDilation t (V.starProjection x) = t • V.starProjection x := by
-  rw [normalDilation_apply, starProjection_eq_self_iff.2 (V.starProjection_apply_mem x),
-    (Vᗮ.starProjection_apply_eq_zero_iff).2
-      (le_orthogonal_orthogonal V (V.starProjection_apply_mem x)), zero_add]
-
-@[simp]
-theorem normalDilation_one : V.normalDilation 1 = ContinuousLinearMap.id ℝ E := by
-  ext x
-  rw [ContinuousLinearMap.id_apply, normalDilation_apply, one_smul, add_comm,
-    starProjection_add_starProjection_orthogonal]
-
-/-- Normal dilations compose by multiplying their factors. -/
-theorem normalDilation_mul (s t : ℝ) :
-    V.normalDilation (s * t) = (V.normalDilation s).comp (V.normalDilation t) := by
-  ext x
-  rw [ContinuousLinearMap.comp_apply, normalDilation_apply V t, map_add, map_smul,
-    normalDilation_starProjection_orthogonal, normalDilation_starProjection, smul_smul,
-    normalDilation_apply, mul_comm]
-
-/-- For `t ≠ 0` the normal dilation by `t` is a linear automorphism, with inverse the normal
-dilation by `t⁻¹`. -/
-def normalDilationEquiv {t : ℝ} (ht : t ≠ 0) : E ≃L[ℝ] E :=
-  .ofContinuousLinearMap (V.normalDilation t) (V.normalDilation t⁻¹)
-    (by rw [← normalDilation_mul, mul_inv_cancel₀ ht, normalDilation_one])
-    (by rw [← normalDilation_mul, inv_mul_cancel₀ ht, normalDilation_one])
-
-@[simp]
-theorem coe_normalDilationEquiv {t : ℝ} (ht : t ≠ 0) :
-    (V.normalDilationEquiv ht : E →L[ℝ] E) = V.normalDilation t :=
-  (rfl)
-
-@[simp]
-theorem normalDilationEquiv_apply {t : ℝ} (ht : t ≠ 0) (x : E) :
-    V.normalDilationEquiv ht x = V.normalDilation t x :=
-  (rfl)
-
-/-- The inverse of the normal dilation by `t ≠ 0` is the normal dilation by `t⁻¹`. -/
-@[simp]
-theorem normalDilationEquiv_symm {t : ℝ} (ht : t ≠ 0) :
-    (V.normalDilationEquiv ht).symm = V.normalDilationEquiv (inv_ne_zero ht) := by
-  ext x
-  rw [ContinuousLinearEquiv.symm_apply_eq, normalDilationEquiv_apply, normalDilationEquiv_apply,
-    ← ContinuousLinearMap.comp_apply, ← normalDilation_mul, mul_inv_cancel₀ ht, normalDilation_one,
-    ContinuousLinearMap.id_apply]
-
-/-- **The determinant of the normal dilation** by `t` is `t ^ dim V`. -/
-theorem det_normalDilation [FiniteDimensional ℝ E] (t : ℝ) :
-    LinearMap.det (V.normalDilation t : E →ₗ[ℝ] E) = t ^ finrank ℝ V := by
-  -- Read through the splitting `E ≃ V × Vᗮ`, the dilation is `t • id ⊕ id`.
-  set e := prodEquivOfIsCompl V Vᗮ V.isCompl_orthogonal
-  have hconj : (V.normalDilation t : E →ₗ[ℝ] E) =
-      (e : V × Vᗮ →ₗ[ℝ] E) ∘ₗ (LinearMap.prodMap (t • LinearMap.id) LinearMap.id) ∘ₗ
-        (e.symm : E →ₗ[ℝ] V × Vᗮ) := by
-    refine LinearMap.ext fun x ↦ ?_
-    obtain ⟨y, rfl⟩ := e.surjective x
-    obtain ⟨v, w⟩ := y
-    have hw : V.starProjection (w : E) = 0 := (V.starProjection_apply_eq_zero_iff).2 w.property
-    simp [e, hw, starProjection_eq_self_iff.2 v.property, add_comm]
-  rw [hconj, LinearMap.det_conj, LinearMap.det_prodMap, LinearMap.det_smul, LinearMap.det_id,
-    LinearMap.det_id, mul_one, mul_one]
 
 /-! ### Mixed derivatives -/
 
@@ -237,6 +133,39 @@ theorem mixedIteratedFDeriv_zero_fun (n a : ℕ) :
     V.mixedIteratedFDeriv n a (0 : E → F) = 0 := by
   ext x m
   simp [mixedIteratedFDeriv_apply, iteratedFDeriv_zero]
+
+@[simp]
+theorem mixedIteratedFDeriv_neg (n a : ℕ) (f : E → F) :
+    V.mixedIteratedFDeriv n a (-f) = -V.mixedIteratedFDeriv n a f := by
+  ext x m
+  simp [iteratedFDeriv_neg_apply]
+
+/-- Mixed derivatives are homogeneous: `∂^{a, n - a} (c • f) = c • ∂^{a, n - a} f`, with no
+smoothness assumption on `f`. -/
+theorem mixedIteratedFDeriv_const_smul (n a : ℕ) (c : ℝ) (f : E → F) :
+    V.mixedIteratedFDeriv n a (c • f) = c • V.mixedIteratedFDeriv n a f := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  ext x m
+  have hD : iteratedFDeriv ℝ n (c • f) x = c • iteratedFDeriv ℝ n f x :=
+    (ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (Units.mk0 c hc)).iteratedFDeriv_comp_left
+  simp [hD]
+
+/-- Mixed derivatives are additive on functions of class `Cⁿ`. -/
+theorem mixedIteratedFDeriv_add {n : ℕ} {f g : E → F} (hf : ContDiff ℝ n f)
+    (hg : ContDiff ℝ n g) (a : ℕ) :
+    V.mixedIteratedFDeriv n a (f + g) =
+      V.mixedIteratedFDeriv n a f + V.mixedIteratedFDeriv n a g := by
+  ext x m
+  simp [iteratedFDeriv_add_apply hf.contDiffAt hg.contDiffAt]
+
+/-- Mixed derivatives commute with finite sums of functions of class `Cⁿ`. -/
+theorem mixedIteratedFDeriv_sum {ι : Type*} (s : Finset ι) {n : ℕ} {f : ι → E → F}
+    (hf : ∀ i ∈ s, ContDiff ℝ n (f i)) (a : ℕ) :
+    V.mixedIteratedFDeriv n a (fun x ↦ ∑ i ∈ s, f i x) =
+      ∑ i ∈ s, V.mixedIteratedFDeriv n a (f i) := by
+  ext x m
+  simp [iteratedFDeriv_sum hf]
 
 /-- Mixed derivatives commute with translations. -/
 theorem mixedIteratedFDeriv_comp_sub (n a : ℕ) (f : E → F) (c : E) :
