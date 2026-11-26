@@ -197,20 +197,20 @@ private lemma map_diff_val {T : Over S} (s t : GlueSection ((toSheafDescentData 
     {i i' : ι} (Z : Over (X i)) (Z' : Over (X i')) (h : Z.left ⟶ T.left)
     (h' : Z'.left ⟶ T.left) (hh : h ≫ T.hom = Z.hom ≫ f i) (hh' : h' ≫ T.hom = Z'.hom ≫ f i')
     (c : Z'.left ⟶ Z.left) (hc : c ≫ h = h') :
-    G.obj.map c.op ((torsorObj D i).diff (U := op Z) (s.val i Z h hh) (t.val i Z h hh)) =
-      (torsorObj D i').diff (U := op Z') (s.val i' Z' h' hh') (t.val i' Z' h' hh') := by
+    G.obj.map c.op ((torsorObj D i).diff (U := op Z) (t.val i Z h hh) (s.val i Z h hh)) =
+      (torsorObj D i').diff (U := op Z') (t.val i' Z' h' hh') (s.val i' Z' h' hh') := by
   subst hc
   let W : Over Z'.left := Over.mk (𝟙 _)
   have hA := smul_val_map (b := (Over.homMk c (by simp [W]) : (Over.map (c ≫ Z.hom)).obj W ⟶ Z))
-    h hh _ (Torsor.diff_smul (torsorObj D i) (U := op Z) (s.val i Z h hh) (t.val i Z h hh))
+    h hh _ (Torsor.diff_smul_self (torsorObj D i) (U := op Z) (t.val i Z h hh) (s.val i Z h hh))
   have hB := smul_val_hom (D := D) (s := s) (t := t) ((c ≫ h) ≫ T.hom) (c ≫ Z.hom) Z'.hom
     (by simp [hh]) hh'.symm W (c ≫ h) (by simp [W]) _ hA
   have hC := smul_val_map (b := (Over.homMk (𝟙 Z'.left) (by simp [W]) :
     Z' ⟶ (Over.map Z'.hom).obj W)) (c ≫ h) _ _ hB
   have e : (G.over (X i')).obj.map (Over.homMk (𝟙 Z'.left) (by simp [W]) :
       Z' ⟶ (Over.map Z'.hom).obj W).op
-        (G.obj.map c.op ((torsorObj D i).diff (U := op Z) (s.val i Z h hh) (t.val i Z h hh))) =
-      G.obj.map c.op ((torsorObj D i).diff (U := op Z) (s.val i Z h hh) (t.val i Z h hh)) :=
+        (G.obj.map c.op ((torsorObj D i).diff (U := op Z) (t.val i Z h hh) (s.val i Z h hh))) =
+      G.obj.map c.op ((torsorObj D i).diff (U := op Z) (t.val i Z h hh) (s.val i Z h hh)) :=
     -- The restriction is along a morphism whose underlying morphism of `C` is an identity.
     (over_obj_map_apply G _ _).trans
       ((ConcreteCategory.congr_hom (G.obj.map_id _) _).trans (id_apply _))
@@ -273,8 +273,8 @@ lemma exists_smulGlueSection_eq (hf : Sieve.ofArrows X f ∈ J S) {T : Over S}
   let x : Presieve.FamilyOfElements (G.obj ⋙ forget GrpCat)
       ((Sieve.ofArrows X f).pullback T.hom).arrows := fun Y k hk ↦
     (torsorObj D (idx Y k hk)).diff (U := op (Over.mk (mor Y k hk)))
-      (s.val _ (Over.mk (mor Y k hk)) k (fac Y k hk))
       (t.val _ (Over.mk (mor Y k hk)) k (fac Y k hk))
+      (s.val _ (Over.mk (mor Y k hk)) k (fac Y k hk))
   have hx : x.Compatible := by
     intro Y₁ Y₂ Z g₁ g₂ k₁ k₂ hk₁ hk₂ comm
     have hh : (g₁ ≫ k₁) ≫ T.hom = (Over.mk (g₁ ≫ mor Y₁ k₁ hk₁)).hom ≫ f (idx Y₁ k₁ hk₁) := by
@@ -288,7 +288,7 @@ lemma exists_smulGlueSection_eq (hf : Sieve.ofArrows X f ∈ J S) {T : Over S}
     rw [Sieve.pullback_apply, hh]
     exact Sieve.downward_closed _ (Sieve.ofArrows_mk X f i) _
   have E : G.obj.map h.op (hG.amalgamate x hx) =
-      (torsorObj D i).diff (U := op Z) (s.val i Z h hh) (t.val i Z h hh) := by
+      (torsorObj D i).diff (U := op Z) (t.val i Z h hh) (s.val i Z h hh) := by
     refine (hG.valid_glue hx h hk).trans ?_
     refine Eq.trans ?_ (map_diff_val s t (Over.mk (mor _ h hk)) Z h h (fac _ h hk) hh (𝟙 _)
       (Category.id_comp h))
@@ -296,7 +296,7 @@ lemma exists_smulGlueSection_eq (hf : Sieve.ofArrows X f ∈ J S) {T : Over S}
   exact (smulGlueSection_val D _ s i Z h hh).trans
     ((congrArg (fun y : (G.over (X i)).obj.obj (op Z) ↦
       y • (show (torsorObj D i).sheaf.obj.obj (op Z) from s.val i Z h hh)) E).trans
-        (Torsor.diff_smul _ _ _))
+        (Torsor.diff_smul_self _ _ _))
 
 /-- **The glued torsor** of a descent datum `D` of torsors along a covering family: the glued
 sheaf of the underlying descent datum of sheaves (`pseudofunctorOver.glue`), on which the

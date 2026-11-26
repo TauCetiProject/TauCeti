@@ -202,13 +202,13 @@ namespace Sheaf.Torsor
 variable {F : Sheaf J AddCommGrpCat.{w}} (P : Torsor ((abelianSheafToGrpSheaf J).obj F))
 
 /-- The difference of two sections of a torsor under an abelian sheaf, written additively: the
-difference `Torsor.diff` of `q` and `p`. -/
+difference `Torsor.diff` of `p` and `q`. -/
 private def addDiff {U : Cᵒᵖ} (p q : P.sheaf.obj.obj U) : F.obj.obj U :=
-  ((abelianSheafToGrpSheafObjEquiv F U).symm (P.diff q p)).toAdd
+  ((abelianSheafToGrpSheafObjEquiv F U).symm (P.diff p q)).toAdd
 
 private lemma addDiff_smul {U : Cᵒᵖ} (p q : P.sheaf.obj.obj U) :
     abelianSheafToGrpSheafObjEquiv F U (.ofAdd (addDiff P p q)) • q = p := by
-  rw [addDiff, ofAdd_toAdd, MulEquiv.apply_symm_apply, diff_smul]
+  rw [addDiff, ofAdd_toAdd, MulEquiv.apply_symm_apply, diff_smul_self]
 
 private lemma addDiff_eq_of_smul {U : Cᵒᵖ} {p q : P.sheaf.obj.obj U} {a : F.obj.obj U}
     (h : abelianSheafToGrpSheafObjEquiv F U (.ofAdd a) • q = p) : addDiff P p q = a := by

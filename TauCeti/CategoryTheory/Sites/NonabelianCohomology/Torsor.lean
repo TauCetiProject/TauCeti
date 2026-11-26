@@ -40,7 +40,7 @@ relative to a fixed family of objects; here no covering is chosen.
 * `CategoryTheory.Sheaf.Torsor.trivialHomEquiv`: morphisms from the trivial torsor to `P` are
   the global sections of `P`.
 * `CategoryTheory.Sheaf.Torsor.diff`: the difference of two sections of a torsor, the unique
-  section of `G` taking the first to the second.
+  section of `G` taking the second to the first.
 * `CategoryTheory.Sheaf.Torsor.nonempty_sections_of_isTerminal` and
   `CategoryTheory.Sheaf.Torsor.nonempty_trivial_iso_of_isTerminal`: a torsor with a section over
   a terminal object has a global section, and is trivial.
@@ -114,21 +114,21 @@ lemma smul_left_injective (p : P.sheaf.obj.obj U) :
 
 variable {U} in
 /-- The difference of two sections `p` and `q` of a torsor over `U`: the unique section `g` of
-`G` over `U` with `g • p = q` (`diff_smul`, `eq_diff_of_smul_eq`). -/
+`G` over `U` with `g • q = p` (`diff_smul_self`, `eq_diff_of_smul_eq`). -/
 noncomputable def diff (p q : P.sheaf.obj.obj U) : G.obj.obj U :=
-  (MulAction.exists_smul_eq (G.obj.obj U) p q).choose
+  (MulAction.exists_smul_eq (G.obj.obj U) q p).choose
 
 variable {U} in
-/-- The difference of `p` and `q` takes `p` to `q`. -/
+/-- The difference of `p` and `q` takes `q` to `p`. -/
 @[simp]
-lemma diff_smul (p q : P.sheaf.obj.obj U) : P.diff p q • p = q :=
-  (MulAction.exists_smul_eq (G.obj.obj U) p q).choose_spec
+lemma diff_smul_self (p q : P.sheaf.obj.obj U) : P.diff p q • q = p :=
+  (MulAction.exists_smul_eq (G.obj.obj U) q p).choose_spec
 
 variable {U} in
-/-- A section of `G` taking `p` to `q` is the difference of `p` and `q`. -/
-lemma eq_diff_of_smul_eq {p q : P.sheaf.obj.obj U} {g : G.obj.obj U} (hg : g • p = q) :
+/-- A section of `G` taking `q` to `p` is the difference of `p` and `q`. -/
+lemma eq_diff_of_smul_eq {p q : P.sheaf.obj.obj U} {g : G.obj.obj U} (hg : g • q = p) :
     g = P.diff p q :=
-  P.smul_left_injective p (hg.trans (P.diff_smul p q).symm)
+  P.smul_left_injective q (hg.trans (P.diff_smul_self p q).symm)
 
 end Action
 
