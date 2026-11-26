@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.NumberTheory.LSeries.Dirichlet
 import Mathlib.NumberTheory.Harmonic.ZetaAsymp
+import TauCeti.NumberTheory.LSeries.Positivity
 
 /-!
 # A reference bound for restricted von Mangoldt series
@@ -43,11 +44,9 @@ theorem hasSum_norm_term_vonMangoldt {σ : ℝ} (hσ : 1 < σ) :
   rw [← _root_.LSeries, LSeries_vonMangoldt_eq_deriv_riemannZeta_div hs, neg_div,
     ← logDeriv_apply, neg_re] at h
   refine h.congr_fun fun n ↦ ?_
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  rw [_root_.LSeries.term_of_ne_zero hn, ← ofReal_natCast,
-    ← ofReal_cpow (Nat.cast_nonneg n), ← ofReal_div, ofReal_re, norm_real,
-    Real.norm_of_nonneg (div_nonneg ArithmeticFunction.vonMangoldt_nonneg (by positivity))]
+  simpa only [ofReal_re] using (congrArg Complex.re
+    (term_eq_ofReal_norm_of_nonneg (a := fun k ↦ (Λ k : ℂ)) (n := n)
+      (Complex.zero_le_real.mpr vonMangoldt_nonneg) σ)).symm
 
 /-- At a complex abscissa `s` with `1 < Re s`, the restricted sum of absolute terms with
 coefficients bounded by `Λ` is at most `-Re (ζ′/ζ)(Re s)`. The coefficient bound only needs to
