@@ -59,9 +59,9 @@ functions.
   the lemmas after it), its compatibility with raising the order, with the inclusions
   `H^{s,p} ⊆ H^{r,p}`, with composition and across exponents, and the multiplication operators of
   symbols `f(x)`.
-* `TauCeti.Symbol.IsUniformlySmoothing.exists_quantizeBesselPotentialSpace`: the quantization of a
-  uniformly smoothing symbol extends to a bounded operator `H^{r,p} → H^{σ,p}` for all real `r`
-  and `σ`, the `Lᵖ` form of
+* `TauCeti.Symbol.IsUniformlySmoothing.exists_comp_toBesselPotentialSpaceCLM_eq_quantizeUniformCLM`:
+  the quantization of a uniformly smoothing symbol extends to a bounded operator
+  `H^{r,p} → H^{σ,p}` for all real `r` and `σ`, the `Lᵖ` form of
   `TauCeti.Symbol.IsUniformlySmoothing.hasSobolevExtension_quantizeUniformCLM`.
 * `TauCeti.Symbol.IsUniformlySmoothing.exists_toDistr_quantizeUniformBesselPotentialSpace_eq`,
   `TauCeti.Symbol.IsUniformlySmoothing.memSobolev_toDistr_quantizeUniformBesselPotentialSpace`:
@@ -132,8 +132,8 @@ theorem IsUniform.hasBesselPotentialSpaceExtension (ha : a.IsUniform) (hp : 1 < 
 /-- **Uniformly smoothing symbols gain every number of derivatives on `H^{s,p}`.** Let
 `1 < p < ∞`. The quantization of a uniformly smoothing symbol extends from Schwartz functions to a
 bounded operator `H^{r,p} → H^{σ,p}` for all real `r` and `σ`. -/
-theorem IsUniformlySmoothing.exists_quantizeBesselPotentialSpace {q : Symbol n V W m}
-    (hq : q.IsUniformlySmoothing) (hp : 1 < p) (hp_top : p ≠ ∞) (r σ : ℝ) :
+theorem IsUniformlySmoothing.exists_comp_toBesselPotentialSpaceCLM_eq_quantizeUniformCLM
+    {q : Symbol n V W m} (hq : q.IsUniformlySmoothing) (hp : 1 < p) (hp_top : p ≠ ∞) (r σ : ℝ) :
     ∃ K : H^{r, p}(CoordinateSpace n, V) →L[ℂ] H^{σ, p}(CoordinateSpace n, W),
       K ∘L SchwartzMap.toBesselPotentialSpaceCLM r p =
         SchwartzMap.toBesselPotentialSpaceCLM σ p ∘L quantizeUniformCLM q hq.isUniform := by

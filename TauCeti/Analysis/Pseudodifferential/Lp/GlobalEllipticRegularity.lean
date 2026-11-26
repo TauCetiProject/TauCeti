@@ -33,7 +33,7 @@ the `Lᵖ` elliptic theory of `T` on the whole space, in the namespace `TauCeti.
 
   `‖u‖_{H^{s,p}} ≤ C (‖T u‖_{H^{s - m,p}} + ‖u‖_{H^{r,p}})` for all `u ∈ H^{s,p}(ℝⁿ; V)`.
 
-* `IsUniformlyEllipticAbove.memSobolev_of_memSobolev_quantizeUniformBesselPotentialSpace`:
+* `IsUniformlyEllipticAbove.memSobolev_toDistr_of_memSobolev_quantizeUniformBesselPotentialSpace`:
   **global elliptic regularity.** If `u ∈ H^{t,p}` and `T u ∈ H^{s - m,p}`, then `u ∈ H^{s,p}`, for
   all real `s` and `t`.
 * `IsUniformlyEllipticAbove.map_toDistrCLM_ker_quantizeUniformBesselPotentialSpace`:
@@ -55,8 +55,8 @@ The uniform parametrix
 symbol `b` of order `-m` with `Op(b) Op(a) = 1 + Op(q)` and `Op(a) Op(b) = 1 + Op(q')` on Schwartz
 space, for uniformly smoothing symbols `q` and `q'`. A uniformly smoothing symbol is uniform of
 every order, so `Op(q)` is bounded `H^{r,p} → H^{σ,p}` for all real `r` and `σ`
-(`TauCeti.Symbol.IsUniformlySmoothing.exists_quantizeBesselPotentialSpace`). By density of the
-Schwartz functions in `H^{s,p}`, the two operator identities hold on `H^{s,p}`
+(`TauCeti.Symbol.IsUniformlySmoothing.exists_comp_toBesselPotentialSpaceCLM_eq_quantizeUniformCLM`).
+By density of the Schwartz functions in `H^{s,p}`, the two operator identities hold on `H^{s,p}`
 (`TauCeti.Symbol.toDistr_apply_apply_eq_add_of_comp_eq_id_add`), which gives the parametrix and the
 estimate. For `u ∈ H^{t,p}` with `T u ∈ H^{s - m,p}` the identity
 `u = Op(b) (T u) - Op(q) u` of tempered distributions shows `u ∈ H^{s,p}`: the operators `Op(b)` on
@@ -111,7 +111,7 @@ theorem IsUniformlyEllipticAbove.exists_quantizeUniformBesselPotentialSpace_para
   obtain ⟨b, hb, ⟨q, hq, hbaq⟩, ⟨q', hq', habq⟩⟩ := ha.exists_quantizeUniformCLM_comp_eq_id_add hau
   refine ⟨BesselPotentialSpace.inclusion (by linarith) ∘L
     b.quantizeUniformBesselPotentialSpace hb (s - m) p, fun r hrs ↦ ?_, fun r hrs ↦ ?_⟩
-  · obtain ⟨K, hK⟩ := hq.exists_quantizeBesselPotentialSpace hp hp_top r s
+  · obtain ⟨K, hK⟩ := hq.exists_comp_toBesselPotentialSpaceCLM_eq_quantizeUniformCLM hp hp_top r s
     refine ⟨K, ContinuousLinearMap.ext fun u ↦ BesselPotentialSpace.ext ?_⟩
     simpa using toDistr_apply_apply_eq_add_of_comp_eq_id_add hp_top hbaq
       (ContinuousLinearMap.ext
@@ -120,7 +120,8 @@ theorem IsUniformlyEllipticAbove.exists_quantizeUniformBesselPotentialSpace_para
         (quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM hb _ hp hp_top))
       (R := K ∘L BesselPotentialSpace.inclusion hrs)
       (ContinuousLinearMap.ext fun w ↦ by simpa using congr($hK w)) u
-  · obtain ⟨K', hK'⟩ := hq'.exists_quantizeBesselPotentialSpace hp hp_top r (s - m)
+  · obtain ⟨K', hK'⟩ :=
+      hq'.exists_comp_toBesselPotentialSpaceCLM_eq_quantizeUniformCLM hp hp_top r (s - m)
     have ha' := hau.hasBesselPotentialSpaceExtension hp hp_top
     refine ⟨K', ContinuousLinearMap.ext fun f ↦ BesselPotentialSpace.ext ?_⟩
     -- `Op(a)` on `H^{s,p}` and on `H^{s - m + m,p}` agree on tempered distributions.
@@ -169,17 +170,19 @@ theorem IsUniformlyEllipticAbove.exists_norm_le_quantizeUniformBesselPotentialSp
 
 /-! ### Global elliptic regularity -/
 
+namespace IsUniformlyEllipticAbove
+
 /-- **Global elliptic regularity on `H^{s,p}`.** Let `a` be a symbol of order `m` whose estimates
 hold uniformly in the position and which is uniformly elliptic above some radius, and let
 `1 < p < ∞`. If `u ∈ H^{t,p}(ℝⁿ; V)` and `Op(a) u ∈ H^{s - m,p}`, then `u ∈ H^{s,p}`, for all real
 `s` and `t`. -/
-theorem IsUniformlyEllipticAbove.memSobolev_of_memSobolev_quantizeUniformBesselPotentialSpace
+theorem memSobolev_toDistr_of_memSobolev_quantizeUniformBesselPotentialSpace
     (ha : a.IsUniformlyEllipticAbove R) (hau : a.IsUniform) (hp : 1 < p) (hp_top : p ≠ ∞)
     {s t : ℝ} {u : H^{t, p}(CoordinateSpace n, V)}
     (hu : (a.quantizeUniformBesselPotentialSpace hau t p u).toDistr.MemSobolev (s - m) p) :
     u.toDistr.MemSobolev s p := by
   obtain ⟨b, hb, ⟨q, hq, hbaq⟩, -⟩ := ha.exists_quantizeUniformCLM_comp_eq_id_add hau
-  obtain ⟨K, hK⟩ := hq.exists_quantizeBesselPotentialSpace hp hp_top t s
+  obtain ⟨K, hK⟩ := hq.exists_comp_toBesselPotentialSpaceCLM_eq_quantizeUniformCLM hp hp_top t s
   have hb' := hb.hasBesselPotentialSpaceExtension hp hp_top
   -- `u = Op(b) (Op(a) u) - Op(q) u`, where `Op(b) (Op(a) u)` only depends on the tempered
   -- distribution `Op(a) u ∈ H^{s - m,p}`, and `Op(q) u ∈ H^{s,p}`.
@@ -205,7 +208,7 @@ symbol of order `m` whose estimates hold uniformly in the position and which is 
 above some radius, and let `1 < p < ∞`. The kernels of `Op(a) : H^{s,p} → H^{s - m,p}` and of
 `Op(a) : H^{t,p} → H^{t - m,p}` consist of the same tempered distributions, for all real `s` and
 `t`. -/
-theorem IsUniformlyEllipticAbove.map_toDistrCLM_ker_quantizeUniformBesselPotentialSpace
+theorem map_toDistrCLM_ker_quantizeUniformBesselPotentialSpace
     (ha : a.IsUniformlyEllipticAbove R) (hau : a.IsUniform) (hp : 1 < p) (hp_top : p ≠ ∞)
     (s t : ℝ) :
     (LinearMap.ker (a.quantizeUniformBesselPotentialSpace hau s p :
@@ -223,7 +226,7 @@ theorem IsUniformlyEllipticAbove.map_toDistrCLM_ker_quantizeUniformBesselPotenti
       ∃ v : H^{t, p}(CoordinateSpace n, V),
         a.quantizeUniformBesselPotentialSpace hau t p v = 0 ∧ v.toDistr = u.toDistr := by
     have hmem : u.toDistr.MemSobolev t p :=
-      ha.memSobolev_of_memSobolev_quantizeUniformBesselPotentialSpace hau hp hp_top
+      ha.memSobolev_toDistr_of_memSobolev_quantizeUniformBesselPotentialSpace hau hp hp_top
         (by simp [hu])
     refine ⟨hmem.toBesselPotentialSpace, BesselPotentialSpace.ext ?_,
       hmem.toBesselPotentialSpace_toDistr⟩
@@ -238,6 +241,8 @@ theorem IsUniformlyEllipticAbove.map_toDistrCLM_ker_quantizeUniformBesselPotenti
     exact key s t u hu
   · rintro ⟨u, hu, rfl⟩
     exact key t s u hu
+
+end IsUniformlyEllipticAbove
 
 end Symbol
 
