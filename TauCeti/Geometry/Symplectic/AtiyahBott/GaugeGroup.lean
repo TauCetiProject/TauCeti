@@ -31,6 +31,11 @@ under conjugation by the values of a gauge transformation `g`, as the trace form
   `(Ad*_g ν)(ξ) = ν(Ad_(g⁻¹) ξ)` (`TauCeti.atiyahBottMomentWith_mgaugeAction`). This follows from
   the transformation law `F_(g · A) = g F_A g⁻¹` of the curvature
   (`TauCeti.gaugeCurvature_mgaugeAction`).
+* the zero level of the moment map is gauge invariant: `μ(g · A) = 0` exactly when `μ(A) = 0`
+  (`TauCeti.atiyahBottMomentWith_mgaugeAction_eq_zero_iff`), so the gauge group acts on it. When
+  `B` is moreover nondegenerate, it is the set of flat connections
+  (`TauCeti.atiyahBottMomentWith_eq_zero_iff`), and its quotient is the moduli space of flat
+  connections.
 
 The infinitesimal versions of these statements, for the generators `ξ_A = -d_A ξ` of the gauge
 action (`TauCeti.hasDerivAt_mgaugeAction_gaugeExp_smul_apply`), are the moment map equation and
@@ -41,6 +46,7 @@ the vanishing of the moment cocycle in `TauCeti.Geometry.Symplectic.AtiyahBott.T
 * `TauCeti.atiyahBottFormWith_gaugeConj_gaugeConj`: gauge transformations preserve the
   Atiyah–Bott form.
 * `TauCeti.atiyahBottMomentWith_mgaugeAction`: the curvature moment map is equivariant.
+* `TauCeti.atiyahBottMomentWith_mgaugeAction_eq_zero_iff`: the zero level is gauge invariant.
 
 ## References
 
@@ -104,5 +110,21 @@ theorem atiyahBottMomentWith_mgaugeAction
   rw [gaugeConj_gaugeConj_inv] at h
   rw [atiyahBottMomentWith_apply, atiyahBottMomentWith_apply, ← SmoothForm.coe_wedgeWith,
     ← SmoothForm.coe_wedgeWith, gaugeCurvature_mgaugeAction, h]
+
+/-- **The zero level of the moment map is gauge invariant**: if `B` is invariant under
+conjugation by the values of the gauge transformation `g`, then `μ(g · A) = 0` exactly when
+`μ(A) = 0`. -/
+theorem atiyahBottMomentWith_mgaugeAction_eq_zero_iff
+    (hB : ∀ x a b, B ((g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x * a * (↑g⁻¹ : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x)
+      ((g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x * b * (↑g⁻¹ : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x) = B a b)
+    (A : SmoothForm I M 𝔸 1) :
+    atiyahBottMomentWith (ContinuousLinearMap.mul ℝ 𝔸 - (ContinuousLinearMap.mul ℝ 𝔸).flip) B o
+        (mgaugeAction g A) = 0 ↔
+      atiyahBottMomentWith (ContinuousLinearMap.mul ℝ 𝔸 - (ContinuousLinearMap.mul ℝ 𝔸).flip) B o
+        A = 0 := by
+  refine ⟨fun h ↦ LinearMap.ext fun ξ ↦ ?_, fun h ↦ LinearMap.ext fun ξ ↦ ?_⟩
+  · have hξ := LinearMap.congr_fun h (gaugeConj g ξ)
+    rwa [atiyahBottMomentWith_mgaugeAction B o g hB, gaugeConj_inv_gaugeConj] at hξ
+  · rw [atiyahBottMomentWith_mgaugeAction B o g hB, h, LinearMap.zero_apply, LinearMap.zero_apply]
 
 end TauCeti
