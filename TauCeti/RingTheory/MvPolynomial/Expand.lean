@@ -207,6 +207,13 @@ theorem _root_.MvPolynomial.expand_eq_map_frobeniusEquiv_symm_pow {σ R : Type*}
   rw [← MvPolynomial.map_frobenius_expand, MvPolynomial.map_expand, MvPolynomial.map_map,
     frobenius_comp_frobeniusEquiv_symm, MvPolynomial.map_id]
 
+/-- Over the prime field, expansion by `p ^ m` is the `m`-fold Frobenius. -/
+theorem _root_.MvPolynomial.expand_prime_pow {σ : Type*} {p : ℕ} [Fact p.Prime]
+    (m : ℕ) (f : MvPolynomial σ (ZMod p)) : MvPolynomial.expand (p ^ m) f = f ^ p ^ m := by
+  have h : iterateFrobenius (ZMod p) p m = RingHom.id _ :=
+    RingHom.ext fun c ↦ ZMod.pow_card_pow c
+  simpa only [h, MvPolynomial.map_id] using MvPolynomial.map_iterateFrobenius_expand p f m
+
 namespace MvPolynomial
 
 open _root_.MvPolynomial

@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
-public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import TauCeti.RingTheory.MvPolynomial.Cartier
 import Mathlib.Algebra.CharP.Quotient
-import Mathlib.FieldTheory.Finite.Basic
-import Mathlib.RingTheory.MvPolynomial.Expand
+import Mathlib.Algebra.Algebra.Bilinear
 import TauCeti.Algebra.MvPolynomial.Division
 
 /-!
@@ -23,8 +21,10 @@ The projection trace retains just the monomials whose root exponents are integra
 retracts the inclusion of the base stage and is compatible with the finite-stage inclusions.
 Multiplication followed by this trace identifies each root stage with its linear dual.
 
-The duality calculation uses complementary residues in the existing polynomial Cartier
-decomposition, with the hypersurface relation imposed on the Cartier coefficients.
+The quotient duality proof lifts the functional's values on residue monomials to polynomials
+before applying the complementary-residue formula. It uses the same Cartier calculation as
+the polynomial constructions `TauCeti.MvPolynomial.frobeniusTraceDual` and
+`MvPolynomial.frobeniusTrace_frobeniusTraceDual_mul`.
 
 ## Reference
 
@@ -39,37 +39,39 @@ namespace TauCeti
 open _root_.MvPolynomial
 
 /-- The normal-crossing coordinate ring obtained by setting the product of the variables to zero. -/
-abbrev MonomialRootAlgebra (p : ℕ) (σ : Type*) [Fintype σ] :=
-  MvPolynomial σ (ZMod p) ⧸ Ideal.span {∏ i : σ, (X i : MvPolynomial σ (ZMod p))}
+abbrev MonomialRootAlgebra (R σ : Type*) [CommRing R] [Fintype σ] :=
+  MvPolynomial σ R ⧸ Ideal.span {∏ i : σ, (X i : MvPolynomial σ R)}
 
 namespace MonomialRootAlgebra
 
-variable {p : ℕ} {σ : Type*} [Fintype σ]
+section Quotient
 
-local notation "P" => MvPolynomial σ (ZMod p)
-local notation "A" => MonomialRootAlgebra p σ
+variable {R σ : Type*} [CommRing R] [Fintype σ]
+
+local notation "P" => MvPolynomial σ R
+local notation "A" => MonomialRootAlgebra R σ
 local notation "J" => Ideal.span {∏ i : σ, (X i : P)}
 local notation "π" => Ideal.Quotient.mk J
 
 /-- The image of a coordinate monomial in the normal-crossing quotient. -/
-noncomputable def monomialClass (d : σ →₀ ℕ) (c : ZMod p) : A :=
+noncomputable def monomialClass (d : σ →₀ ℕ) (c : R) : A :=
   π (monomial d c)
 
 /-- The monomial class is the image of the polynomial monomial under the quotient map. -/
-theorem monomialClass_eq_mk (d : σ →₀ ℕ) (c : ZMod p) :
+theorem monomialClass_eq_mk (d : σ →₀ ℕ) (c : R) :
     monomialClass d c = π (monomial d c) :=
   (rfl)
 
 /-- The zero exponent gives the image of the coefficient. -/
 @[simp]
-theorem monomialClass_zero (c : ZMod p) :
-    monomialClass (0 : σ →₀ ℕ) c = algebraMap (ZMod p) A c := by
-  rw [monomialClass_eq_mk, monomial_zero', IsScalarTower.algebraMap_apply (ZMod p) P A,
+theorem monomialClass_zero (c : R) :
+    monomialClass (0 : σ →₀ ℕ) c = algebraMap R A c := by
+  rw [monomialClass_eq_mk, monomial_zero', IsScalarTower.algebraMap_apply R P A,
     MvPolynomial.algebraMap_eq, Ideal.Quotient.algebraMap_eq]
 
 /-- Multiplication of coordinate monomial classes adds exponents and multiplies coefficients. -/
 @[simp]
-theorem monomialClass_mul (d e : σ →₀ ℕ) (c b : ZMod p) :
+theorem monomialClass_mul (d e : σ →₀ ℕ) (c b : R) :
     monomialClass d c * monomialClass e b = monomialClass (d + e) (c * b) := by
   simp only [monomialClass_eq_mk, ← map_mul, monomial_mul_monomial]
 
@@ -78,14 +80,14 @@ is divisible by the product of the variables. -/
 theorem mk_eq_zero_iff (f : P) : π f = 0 ↔ ∀ d ∈ f.support, ∀ i, 0 < d i := by
   have hprod : (∏ i : σ, X i : P) = monomial (Finsupp.equivFunOnFinite.symm (fun _ ↦ 1)) 1 := by
     simpa using (TauCeti.prod_X_pow_eq_monomial_equivFunOnFinite_symm
-      (σ := σ) (R := ZMod p) 1)
+      (σ := σ) (R := R) 1)
   rw [Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton, hprod, monomial_one_dvd_iff]
   simp [Finsupp.le_def, Nat.succ_le_iff]
 
 /-- The defining relation kills exactly those monomials with zero coefficient or with
 positive exponent in every coordinate. -/
 @[simp]
-theorem monomialClass_eq_zero_iff (d : σ →₀ ℕ) (c : ZMod p) :
+theorem monomialClass_eq_zero_iff (d : σ →₀ ℕ) (c : R) :
     monomialClass d c = 0 ↔ c = 0 ∨ ∀ i, 0 < d i := by
   classical
   by_cases hc : c = 0
@@ -94,15 +96,15 @@ theorem monomialClass_eq_zero_iff (d : σ →₀ ℕ) (c : ZMod p) :
 
 /-- The product of the coordinate functions vanishes in the hypersurface. -/
 @[simp]
-theorem prod_mk_X : ∏ i : σ, π (X i) = 0 := by
+theorem prod_mk_X_eq_zero : ∏ i : σ, π (X i) = 0 := by
   rw [← map_prod]
   exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton _))
 
 /-- The normal-crossing relation does not kill any nonzero constants. -/
-instance [Nonempty σ] : CharP A p := by
+instance {p : ℕ} [CharP R p] [Nonempty σ] : CharP A p := by
   apply CharP.quotient' p
   intro a ha
-  have hJ : J ≤ RingHom.ker (constantCoeff : P →+* ZMod p) := by
+  have hJ : J ≤ RingHom.ker (constantCoeff : P →+* R) := by
     apply Ideal.span_le.mpr
     rintro f rfl
     apply RingHom.mem_ker.mpr
@@ -110,25 +112,29 @@ instance [Nonempty σ] : CharP A p := by
     simp
   have h := hJ ha
   rw [RingHom.mem_ker, map_natCast] at h
-  simpa using congrArg (C : ZMod p → P) h
+  simpa using congrArg (C : R → P) h
 
-private theorem cartier_mem (q : ℕ) [NeZero q] {f : P} (hf : f ∈ J) :
-    cartier (ZMod p) q 0 f ∈ J := by
-  simp only [← Ideal.Quotient.eq_zero_iff_mem, mk_eq_zero_iff] at hf ⊢
-  intro d hd i
-  have hqd : q • d ∈ f.support := by
-    simpa [MvPolynomial.mem_support_iff] using hd
-  have hi := hf (q • d) hqd i
-  exact Nat.pos_of_ne_zero fun h ↦ by simp [h] at hi
-
-private noncomputable def projection (q : ℕ) [NeZero q] : A →ₗ[ZMod p] A :=
-  ((J : Ideal P).restrictScalars (ZMod p)).liftQ
-    ((Ideal.Quotient.mkₐ (ZMod p) J).toLinearMap ∘ₗ cartier (ZMod p) q 0)
-    (fun _ hf ↦ Ideal.Quotient.eq_zero_iff_mem.2 (cartier_mem q hf))
+private noncomputable def projection (q : ℕ) [NeZero q] : A →ₗ[R] A :=
+  ((J : Ideal P).restrictScalars R).liftQ
+    ((Ideal.Quotient.mkₐ R J).toLinearMap ∘ₗ cartier R q 0)
+    (fun _ hf ↦ Ideal.Quotient.eq_zero_iff_mem.2 (cartier_zero_mem_span_prod_X hf))
 
 private theorem projection_mk (q : ℕ) [NeZero q] (f : P) :
-    projection q (π f) = π (cartier (ZMod p) q 0 f) :=
-  (rfl)
+    projection q (π f) = π (cartier R q 0 f) := by
+  calc
+    _ = ((Ideal.Quotient.mkₐ R J).toLinearMap ∘ₗ cartier R q 0) f :=
+      Submodule.liftQ_apply _ _ f
+    _ = _ := by
+      simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk]
+
+end Quotient
+
+variable {p : ℕ} {σ : Type*} [Fintype σ]
+
+local notation "P" => MvPolynomial σ (ZMod p)
+local notation "A" => MonomialRootAlgebra (ZMod p) σ
+local notation "J" => Ideal.span {∏ i : σ, (X i : P)}
+local notation "π" => Ideal.Quotient.mk J
 
 section Prime
 
@@ -145,17 +151,65 @@ noncomputable def toRoot (m : ℕ) : A ≃+ rootModule (p := p) (σ := σ) m :=
 /-- Scalars act by the `p ^ m`-th power on the root stage. -/
 @[simp]
 theorem smul_toRoot (m : ℕ) (a b : A) :
-    a • toRoot m b = toRoot m (a ^ p ^ m * b) :=
-  (rfl)
+    a • toRoot m b = toRoot m (a ^ p ^ m * b) := by
+  calc
+    _ = iterateFrobenius A p m a • b :=
+      ModuleCat.restrictScalars.smul_def' _ (M := ModuleCat.of A A) a b
+    _ = _ := by rw [iterateFrobenius_def]; rfl
 
-omit [Nonempty σ] in
-/-- Substituting the `p ^ m`-th powers of the coordinates induces the `m`-fold Frobenius. -/
-theorem mk_expand_prime_pow (m : ℕ) (f : P) :
-    π (expand (p ^ m) f) = (π f) ^ p ^ m := by
-  have h : iterateFrobenius (ZMod p) p m = RingHom.id _ :=
-    RingHom.ext fun c ↦ ZMod.pow_card_pow c
-  have hf := congrArg π (map_iterateFrobenius_expand p f m)
-  simpa only [h, map_id, RingHom.id_apply, map_pow] using hf
+/-- The transition from stage `m` to stage `m + k` applies the `k`-fold Frobenius to the
+underlying classes. -/
+noncomputable def rootTransition (m k : ℕ) :
+    rootModule (p := p) (σ := σ) m →ₗ[A] rootModule (p := p) (σ := σ) (m + k) where
+  toFun x := toRoot (m + k) (iterateFrobenius A p k ((toRoot m).symm x))
+  map_add' x y := by simp
+  map_smul' a x := by
+    obtain ⟨b, rfl⟩ := (toRoot m).surjective x
+    simp only [RingHom.id_apply, smul_toRoot, AddEquiv.symm_apply_apply, map_mul,
+      iterateFrobenius_def, ← pow_mul, ← pow_add]
+
+/-- On quotient classes the stage transition raises to the `p ^ k`-th power. -/
+@[simp]
+theorem rootTransition_toRoot (m k : ℕ) (a : A) :
+    rootTransition m k (toRoot m a) = toRoot (m + k) (a ^ p ^ k) := by
+  simp [rootTransition, iterateFrobenius_def]
+
+/-- The transition with zero increment is the identity. -/
+@[simp]
+theorem rootTransition_zero (m : ℕ) :
+    rootTransition (p := p) (σ := σ) m 0 = LinearMap.id := by
+  ext x
+  obtain ⟨a, rfl⟩ := (toRoot m).surjective x
+  exact (rootTransition_toRoot m 0 a).trans (by simp)
+
+private theorem cast_rootModule_apply {m i j : ℕ} (h : i = j)
+    (L : rootModule (p := p) (σ := σ) m →ₗ[A] rootModule (p := p) (σ := σ) i)
+    (x : rootModule (p := p) (σ := σ) m) :
+    (h ▸ L : _ →ₗ[A] rootModule (p := p) (σ := σ) j) x =
+      toRoot j ((toRoot i).symm (L x)) := by
+  subst j
+  exact (AddEquiv.apply_symm_apply _ _).symm
+
+/-- Successive transitions agree with the transition for the sum of their increments. -/
+theorem rootTransition_comp (m k l : ℕ) :
+    (rootTransition (p := p) (σ := σ) (m + k) l).comp (rootTransition m k) =
+      (Nat.add_assoc m k l).symm ▸ rootTransition m (k + l) := by
+  ext x
+  obtain ⟨a, rfl⟩ := (toRoot m).surjective x
+  rw [LinearMap.comp_apply, rootTransition_toRoot, rootTransition_toRoot, cast_rootModule_apply,
+    rootTransition_toRoot, AddEquiv.symm_apply_apply, ← pow_mul, ← pow_add]
+
+/-- A linear map out of a root stage is determined by its values on the monomial classes. -/
+theorem rootModule_hom_ext {m : ℕ} {M : Type*} [AddCommMonoid M] [Module A M]
+    {L K : rootModule (p := p) (σ := σ) m →ₗ[A] M}
+    (h : ∀ (d : σ →₀ ℕ) (c : ZMod p), L (toRoot m (monomialClass d c)) =
+      K (toRoot m (monomialClass d c))) : L = K := by
+  ext x
+  obtain ⟨a, rfl⟩ := (toRoot m).surjective x
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective a
+  induction f using MvPolynomial.induction_on' with
+  | monomial d c => simpa only [monomialClass_eq_mk] using h d c
+  | add f g hf hg => simp only [map_add, hf, hg]
 
 /-- The root-stage projection onto integral exponents, as a linear map over the base ring. -/
 noncomputable def projectionTrace (m : ℕ) : rootModule (p := p) (σ := σ) m →ₗ[A] A :=
@@ -167,7 +221,7 @@ noncomputable def projectionTrace (m : ℕ) : rootModule (p := p) (σ := σ) m �
       obtain ⟨b, rfl⟩ := (toRoot m).surjective x
       obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective a
       obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective b
-      rw [smul_toRoot, AddEquiv.symm_apply_apply, ← mk_expand_prime_pow, ← map_mul]
+      rw [smul_toRoot, AddEquiv.symm_apply_apply, ← map_pow π, ← expand_prime_pow, ← map_mul]
       simp only [AddEquiv.symm_apply_apply, projection_mk,
         RingHom.id_apply, smul_eq_mul]
       rw [cartier_expand_mul (r := 0) (by simp [Nat.pos_of_neZero]), map_mul] }
@@ -189,20 +243,15 @@ theorem projectionTrace_toRoot_monomialClass (m : ℕ) (d : σ →₀ ℕ) (c : 
   classical
   have : NeZero (p ^ m) := ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
   rw [monomialClass_eq_mk, projectionTrace_toRoot_mk]
-  split_ifs with h
-  · let e := d.mapRange (· / p ^ m) (Nat.zero_div _)
-    have he : p ^ m • e + 0 = d := by
-      ext i
-      simpa [e] using Nat.mul_div_cancel' (h i)
-    simpa only [monomialClass, he] using
-      congrArg π (TauCeti.MvPolynomial.cartier_monomial_nsmul_add_self
-        (n := p ^ m) (r := 0) e c)
-  · suffices cartier (ZMod p) (p ^ m) 0 (monomial d c) = 0 by rw [this, map_zero]
-    ext e
-    have hne : d ≠ p ^ m • e := by
-      rintro rfl
-      exact h fun i ↦ by simp
-    simp [coeff_monomial, hne]
+  let q := p ^ m
+  let r := d.mapRange (· % q) (Nat.zero_mod _)
+  have hr : ∀ i, r i < q := fun i ↦ by simp [r, Nat.mod_lt, Nat.pos_of_neZero q]
+  have hzero : r = 0 ↔ ∀ i, q ∣ d i := by
+    simp [r, Finsupp.ext_iff, Nat.dvd_iff_mod_eq_zero]
+  conv_lhs => rw [← Finsupp.nsmul_mapRange_div_add_mapRange_mod q d]
+  rw [TauCeti.MvPolynomial.cartier_monomial_nsmul_add (r := 0) (s := r)
+    (fun _ ↦ Nat.pos_of_neZero q) hr]
+  simp only [hzero, q, apply_ite π, map_zero, monomialClass_eq_mk]
 
 /-- The projection trace sends the unit to the unit. -/
 @[simp]
@@ -225,16 +274,24 @@ theorem projectionTrace_zero_toRoot (a : A) : projectionTrace 0 (toRoot 0 a) = a
 /-- Restricting the projection at stage `m + k` along the `k`-fold Frobenius
 recovers the stage `m` projection. -/
 @[simp]
-theorem projectionTrace_toRoot_pow_add (m k : ℕ) (a : A) :
+theorem projectionTrace_add_toRoot_pow (m k : ℕ) (a : A) :
     projectionTrace (m + k) (toRoot (m + k) (a ^ p ^ k)) = projectionTrace m (toRoot m a) := by
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective a
   have : NeZero (p ^ m) := ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
   have : NeZero (p ^ (m + k)) := ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
-  rw [← mk_expand_prime_pow, projectionTrace_toRoot_mk, projectionTrace_toRoot_mk]
+  rw [← map_pow π, ← expand_prime_pow, projectionTrace_toRoot_mk, projectionTrace_toRoot_mk]
   congr 1
   ext d
   simp [pow_add, mul_comm (p ^ m), mul_smul,
     coeff_expand_smul _ (pow_ne_zero _ (Fact.out : p.Prime).ne_zero)]
+
+/-- The higher-stage trace composed with the stage transition is the lower-stage trace. -/
+@[simp]
+theorem projectionTrace_comp_rootTransition (m k : ℕ) :
+    (projectionTrace (p := p) (σ := σ) (m + k)).comp (rootTransition m k) = projectionTrace m := by
+  apply rootModule_hom_ext
+  intro d c
+  simp only [LinearMap.comp_apply, rootTransition_toRoot, projectionTrace_add_toRoot_pow]
 
 end Prime
 
@@ -247,71 +304,38 @@ variable (q : ℕ) [NeZero q]
 local notation "topExp[" q "]" => (Finsupp.equivFunOnFinite.symm (fun _ : σ ↦ q - 1))
 local notation "resExp[" q "]" => (fun β : σ →₀ Fin q ↦ β.mapRange Fin.val (Fin.val_zero q))
 
-private theorem mk_cartier_top_mul_complement (β : σ →₀ Fin q) (f : P) :
-    π (cartier (ZMod p) q topExp[q] (monomial (topExp[q] - resExp[q] β) 1 * f)) =
-      π (cartier (ZMod p) q (resExp[q] β) f) := by
-  congr 1
-  ext d
-  have hβ : resExp[q] β ≤ topExp[q] := fun i ↦ by
-    simpa using Nat.le_sub_one_of_lt (β i).isLt
-  have hd : q • d + topExp[q] = (topExp[q] - resExp[q] β) + (q • d + resExp[q] β) := by
-    calc
-      _ = q • d + ((topExp[q] - resExp[q] β) + resExp[q] β) :=
-        congrArg (q • d + ·) (tsub_add_cancel_of_le hβ).symm
-      _ = _ := by ac_rfl
-  rw [coeff_cartier, coeff_cartier, hd, coeff_monomial_mul, one_mul]
-
-private theorem mk_cartier_top_mul_pow (f : P) :
-    π (cartier (ZMod p) q topExp[q] (t ^ (q - 1) * f)) = π (cartier (ZMod p) q 0 f) := by
-  simpa only [Finsupp.mapRange_zero, tsub_zero,
-    ← TauCeti.prod_X_pow_eq_monomial_equivFunOnFinite_symm] using
-    mk_cartier_top_mul_complement q (0 : σ →₀ Fin q) f
-
 private theorem pow_prod_X_dvd_of_cartier_top_mul (f : P)
     (hf : ∀ g : P, π (cartier (ZMod p) q topExp[q] (f * g)) = 0) : t ^ q ∣ f := by
-  classical
   have ht : expand q t = t ^ q := by simp [map_prod, Finset.prod_pow]
-  rw [← ht, ← sum_monomial_mul_expand_cartier (n := q) f, ← Ideal.mem_span_singleton]
-  apply Ideal.sum_mem
-  intro β _
-  apply Ideal.mul_mem_left
-  rw [Ideal.mem_span_singleton]
-  have hβ := hf (monomial (topExp[q] - resExp[q] β) 1)
-  rw [mul_comm, mk_cartier_top_mul_complement] at hβ
-  rw [Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton] at hβ
-  obtain ⟨g, hg⟩ := hβ
-  exact ⟨expand q g, by rw [hg, map_mul]⟩
+  have h := mem_map_expand_of_forall_cartier_mul_mem (n := q) f J
+    (fun g ↦ Ideal.Quotient.eq_zero_iff_mem.mp (hf g))
+  rwa [Ideal.map_span, Set.image_singleton, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ht,
+    Ideal.mem_span_singleton] at h
+
+omit [NeZero q] in
+private theorem pow_prod_X_dvd_pow_mul_iff {k : ℕ} (hk : k ≤ q) (f : P) [Fact p.Prime] :
+    t ^ q ∣ t ^ k * f ↔ t ^ (q - k) ∣ f := by
+  have ht : t ≠ 0 := Finset.prod_ne_zero_iff.mpr fun i _ ↦ X_ne_zero i
+  conv_lhs => rw [← Nat.add_sub_of_le hk, pow_add]
+  exact mul_dvd_mul_iff_left (pow_ne_zero _ ht)
 
 variable [Nonempty σ] [Fact p.Prime]
 
 /-- Multiplication followed by the root-stage projection trace, as a bilinear pairing. -/
 noncomputable def projectionPairing (m : ℕ) :
-    rootModule (p := p) (σ := σ) m →ₗ[A] rootModule (p := p) (σ := σ) m →ₗ[A] A :=
-  LinearMap.mk₂ A
-    (fun (x y : rootModule (p := p) (σ := σ) m) ↦
-      projectionTrace m (toRoot m ((toRoot m).symm x * (toRoot m).symm y)))
-    (by
-      intro x y z
-      simp [add_mul])
-    (by
-      intro a x y
-      obtain ⟨x, rfl⟩ := (toRoot m).surjective x
-      simp only [smul_toRoot, AddEquiv.symm_apply_apply, mul_assoc]
-      rw [← smul_toRoot, LinearMap.map_smul])
-    (by
-      intro x y z
-      simp [mul_add])
-    (by
-      intro a x y
-      obtain ⟨y, rfl⟩ := (toRoot m).surjective y
-      simp only [smul_toRoot, AddEquiv.symm_apply_apply, mul_left_comm _ (a ^ p ^ m)]
-      rw [← smul_toRoot, LinearMap.map_smul])
+    rootModule (p := p) (σ := σ) m →ₗ[A] rootModule (p := p) (σ := σ) m →ₗ[A] A := by
+  have mul : rootModule (p := p) (σ := σ) m →ₗ[A]
+      rootModule (p := p) (σ := σ) m →ₗ[A] rootModule (p := p) (σ := σ) m := by
+    let alg := (iterateFrobenius A p m).toAlgebra
+    exact @LinearMap.mul A A _ _ alg.toModule
+      (@Algebra.to_smulCommClass A A _ _ alg) (@IsScalarTower.right A A _ _ alg)
+  exact mul.compr₂ₛₗ (projectionTrace m)
 
 /-- The value of the pairing on the underlying quotient classes. -/
 @[simp]
 theorem projectionPairing_toRoot (m : ℕ) (a b : A) :
     projectionPairing m (toRoot m a) (toRoot m b) = projectionTrace m (toRoot m (a * b)) := by
-  simp [projectionPairing]
+  rfl
 
 private theorem exists_cartier_top_representer (m : ℕ)
     (φ : rootModule (p := p) (σ := σ) m →ₗ[A] A) :
@@ -322,39 +346,26 @@ private theorem exists_cartier_top_representer (m : ℕ)
   classical
   let q := p ^ m
   have hq : NeZero q := ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
-  have hr : ∀ i : σ, topExp[q] i < q := by
-    intro i
-    simpa using Nat.sub_one_lt (NeZero.ne q)
-  -- Lift the functional on each residue monomial to a polynomial coefficient.
   choose a ha using fun β : σ →₀ Fin q ↦
     Ideal.Quotient.mk_surjective (φ (toRoot m (π (monomial (resExp[q] β) 1))))
-  let f : P := ∑ β, expand q (a β) * monomial (topExp[q] - resExp[q] β) 1
-  have hf (β : σ →₀ Fin q) :
-      π (cartier (ZMod p) q topExp[q] (f * monomial (resExp[q] β) 1)) =
-        φ (toRoot m (π (monomial (resExp[q] β) 1))) := by
-    simp only [f, Finset.sum_mul, map_sum, mul_assoc,
-      cartier_expand_mul hr, map_mul,
-      mk_cartier_top_mul_complement]
-    have hβ (δ : σ →₀ Fin q) : resExp[q] δ = resExp[q] β ↔ δ = β :=
-      ⟨fun h ↦ Finsupp.ext fun i ↦ Fin.ext (DFunLike.congr_fun h i), congrArg _⟩
-    have hcart (δ : σ →₀ Fin q) :
-        cartier (ZMod p) q (resExp[q] δ) (monomial (resExp[q] β) 1) =
-          if δ = β then 1 else 0 := by
-      have h := TauCeti.MvPolynomial.cartier_monomial_nsmul_add (R := ZMod p) (n := q)
-        (r := resExp[q] δ) (s := resExp[q] β) (fun i ↦ (δ i).isLt) (fun i ↦ (β i).isLt) 0 1
-      have hd : resExp[q] β = resExp[q] δ ↔ δ = β := eq_comm.trans (hβ δ)
-      simpa only [smul_zero, zero_add, monomial_zero', C_1, hd] using h
-    simp [hcart, apply_ite π, ha]
-  refine ⟨f, fun g ↦ ?_⟩
-  rw [← sum_monomial_mul_expand_cartier (n := q) g]
-  simp only [Finset.mul_sum, map_sum]
+  refine ⟨TauCeti.MvPolynomial.cartierDual q a, fun g ↦ ?_⟩
+  rw [cartier_cartierDual_mul]
+  conv_rhs => rw [← sum_monomial_mul_expand_cartier (n := q) g]
+  simp only [map_sum, map_mul, ha]
   apply Finset.sum_congr rfl
   intro β _
-  let b := monomial (resExp[q] β) (1 : ZMod p)
-  let c := cartier (ZMod p) q (resExp[q] β) g
-  have hφ : φ (toRoot m (π (b * expand q c))) = π c * φ (toRoot m (π b)) := by
-    rw [mul_comm, map_mul, mk_expand_prime_pow, ← smul_toRoot, LinearMap.map_smul, smul_eq_mul]
-  rw [hφ, mul_comm b, mul_left_comm f, cartier_expand_mul hr, map_mul, hf]
+  conv_rhs => rw [expand_prime_pow, map_pow, mul_comm, ← smul_toRoot,
+    LinearMap.map_smul, smul_eq_mul]
+
+private theorem projectionPairing_toRoot_mk (m : ℕ) (f g : P) :
+    have : NeZero (p ^ m) := ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
+    projectionPairing m (toRoot m (π f)) (toRoot m (π g)) =
+      π (cartier (ZMod p) (p ^ m) topExp[p ^ m] (t ^ (p ^ m - 1) * (f * g))) := by
+  let := (⟨pow_ne_zero m (Fact.out : p.Prime).ne_zero⟩ : NeZero (p ^ m))
+  calc
+    _ = π (cartier (ZMod p) (p ^ m) 0 (f * g)) := by
+      rw [projectionPairing_toRoot, ← map_mul, projectionTrace_toRoot_mk]
+    _ = _ := congrArg π (cartier_prod_X_pow_mul (n := p ^ m) (f * g)).symm
 
 private theorem projectionPairing_injective (m : ℕ) :
     Function.Injective (projectionPairing (p := p) (σ := σ) m) := by
@@ -368,12 +379,9 @@ private theorem projectionPairing_injective (m : ℕ) :
     apply pow_prod_X_dvd_of_cartier_top_mul q
     intro g
     have hg := DFunLike.congr_fun hx (toRoot m (π g))
-    simpa only [projectionPairing_toRoot, ← map_mul, projectionTrace_toRoot_mk,
-      LinearMap.zero_apply, mul_assoc, mk_cartier_top_mul_pow] using hg
-  have ht : t ≠ 0 := Finset.prod_ne_zero_iff.mpr fun i _ ↦ X_ne_zero i
-  have hq : q - 1 + 1 = q := Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr (NeZero.ne q))
-  have htq : t ^ q = t ^ (q - 1) * t := by rw [← pow_succ, hq]
-  rw [htq, mul_dvd_mul_iff_left (pow_ne_zero _ ht)] at h
+    simpa only [projectionPairing_toRoot_mk, LinearMap.zero_apply, mul_assoc] using hg
+  rw [pow_prod_X_dvd_pow_mul_iff q (Nat.sub_le q 1),
+    Nat.sub_sub_self (Nat.pos_of_neZero q), pow_one] at h
   exact (toRoot m).map_eq_zero_iff.mpr
     (Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton.mpr h))
 
@@ -383,25 +391,22 @@ private theorem projectionPairing_surjective (m : ℕ) :
   let q := p ^ m
   have : NeZero q := ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
   obtain ⟨f, hf⟩ := exists_cartier_top_representer m φ
-  have ht : t ≠ 0 := Finset.prod_ne_zero_iff.mpr fun i _ ↦ X_ne_zero i
   -- The functional kills the hypersurface relation, so its representative lies in (t ^ (q - 1)).
   have hz : t ^ q ∣ t * f := by
     apply pow_prod_X_dvd_of_cartier_top_mul q
     intro g
     rw [mul_right_comm t f g, mul_comm (t * g), hf, map_mul]
     simp [Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton t))]
-  have hq : q - 1 + 1 = q := Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr (NeZero.ne q))
-  have htq : t ^ q = t * t ^ (q - 1) := by rw [← pow_succ', hq]
-  rw [htq, mul_dvd_mul_iff_left ht] at hz
+  have hz := (pow_prod_X_dvd_pow_mul_iff q (Nat.pos_of_neZero q) f).mp (by simpa using hz)
   obtain ⟨f', rfl⟩ := hz
   refine ⟨toRoot m (π f'), ?_⟩
   ext x
   obtain ⟨a, rfl⟩ := (toRoot m).surjective x
   obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective a
-  rw [projectionPairing_toRoot, ← map_mul, projectionTrace_toRoot_mk, ← hf, mul_assoc,
-    mk_cartier_top_mul_pow]
+  rw [projectionPairing_toRoot_mk, ← hf, mul_assoc]
 
-/-- The projection trace identifies every finite root stage with its linear dual. -/
+/-- The pairing obtained by multiplying the underlying quotient classes and applying the
+projection trace is perfect on every finite root stage. -/
 instance (m : ℕ) : (projectionPairing (p := p) (σ := σ) m).IsPerfPair where
   bijective_left := ⟨projectionPairing_injective m, projectionPairing_surjective m⟩
   bijective_right := by
