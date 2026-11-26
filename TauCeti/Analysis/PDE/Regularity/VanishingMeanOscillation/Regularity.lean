@@ -7,18 +7,17 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.VanishingMeanOscillation.Basic
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
-import Mathlib.Analysis.Convex.Integral
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Matrix.EuclideanLin.Measurable
 import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.PDE.DirichletProblem.ContinuousDependence
 import TauCeti.Analysis.PDE.EnergyForm.Poincare
+import TauCeti.Analysis.PDE.Ellipticity.Integral
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Basic
 import TauCeti.Analysis.Sobolev.W1p.Convex
 import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Sarason
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
-import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -121,15 +120,6 @@ private theorem toEuclideanCLM_mollifiedCoeff
       (φ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y => toEuclideanCLM (𝕜 := ℝ) (a y)) x :=
   StarAlgEquiv.apply_symm_apply _ _
 
-/-- The operators of a measurable, uniformly elliptic coefficient field are locally integrable. -/
-private theorem locallyIntegrable_toEuclideanCLM (ha : AEStronglyMeasurable a volume)
-    (hell : UniformlyEllipticOn univ a lam Lam) :
-    LocallyIntegrable (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)) volume := by
-  refine (memLp_top_of_bound (Matrix.aestronglyMeasurable_toEuclideanCLM_iff.2 ha) Lam
-    (ae_of_all _ fun x => ?_)).locallyIntegrable le_top
-  rw [← norm_matrixBilinearForm_eq_norm_toEuclideanCLM]
-  exact hell.opNorm_matrixBilinearForm_le (mem_univ x)
-
 /-- Mollification keeps a coefficient field uniformly elliptic with the same constants. -/
 private theorem uniformlyEllipticOn_mollifiedCoeff (ha : AEStronglyMeasurable a volume)
     (hell : UniformlyEllipticOn univ a lam Lam)
@@ -138,16 +128,9 @@ private theorem uniformlyEllipticOn_mollifiedCoeff (ha : AEStronglyMeasurable a 
   uniformlyEllipticOn_of_forall_toEuclideanCLM_mem hell.pos hell.le fun x _ => by
     rw [toEuclideanCLM_mollifiedCoeff]
     exact φ.normed_convolution_mem_of_convex (convex_ellipticCLMSet lam Lam)
-      (isClosed_ellipticCLMSet lam Lam) (locallyIntegrable_toEuclideanCLM ha hell)
+      (isClosed_ellipticCLMSet lam Lam) (hell.locallyIntegrable_toEuclideanCLM ha)
       (fun y => (toEuclideanCLM_mem_ellipticCLMSet_iff _).2
         ((uniformlyEllipticOn_iff.1 hell).2.2 (mem_univ y))) x
-
-/-- The bilinear forms of two matrices are as far apart as their operators, so the two
-coefficient fields have the same Hölder seminorms and mean oscillations. -/
-private theorem norm_matrixBilinearForm_sub_eq (A B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
-    ‖matrixBilinearForm A - matrixBilinearForm B‖ =
-      ‖toEuclideanCLM (𝕜 := ℝ) A - toEuclideanCLM (𝕜 := ℝ) B‖ := by
-  rw [← matrixBilinearForm_sub, ← map_sub, norm_matrixBilinearForm_eq_norm_toEuclideanCLM]
 
 /-- A mollified coefficient field is `α`-Hölder on every bounded set, for every `α ≤ 1`. -/
 private theorem exists_holderOnWith_mollifiedCoeff (ha : AEStronglyMeasurable a volume)
@@ -157,7 +140,7 @@ private theorem exists_holderOnWith_mollifiedCoeff (ha : AEStronglyMeasurable a 
     ∃ K, HolderOnWith K α (fun x => matrixBilinearForm (mollifiedCoeff φ a x)) S := by
   have hsmooth : ContDiff ℝ 1
       (φ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y => toEuclideanCLM (𝕜 := ℝ) (a y)) :=
-    φ.contDiff_normed_convolution (locallyIntegrable_toEuclideanCLM ha hell)
+    φ.contDiff_normed_convolution (hell.locallyIntegrable_toEuclideanCLM ha)
   obtain ⟨K, hK⟩ := LocallyLipschitzOn.exists_holderOnWith_of_isCompact
     (hsmooth.locallyLipschitz.locallyLipschitzOn (s := univ)) hα hS.isCompact_closure
     (subset_univ _)
@@ -165,8 +148,9 @@ private theorem exists_holderOnWith_mollifiedCoeff (ha : AEStronglyMeasurable a 
   calc edist (matrixBilinearForm (mollifiedCoeff φ a x)) (matrixBilinearForm (mollifiedCoeff φ a y))
       = edist ((φ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y => toEuclideanCLM (𝕜 := ℝ) (a y)) x)
           ((φ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y => toEuclideanCLM (𝕜 := ℝ) (a y)) y) := by
-        rw [edist_dist, edist_dist, dist_eq_norm, dist_eq_norm, norm_matrixBilinearForm_sub_eq,
-          toEuclideanCLM_mollifiedCoeff, toEuclideanCLM_mollifiedCoeff]
+        rw [edist_dist, edist_dist, dist_eq_norm, dist_eq_norm,
+          norm_matrixBilinearForm_sub_eq_norm_toEuclideanCLM_sub, toEuclideanCLM_mollifiedCoeff,
+          toEuclideanCLM_mollifiedCoeff]
     _ ≤ _ := hK x (subset_closure hx) y (subset_closure hy)
 
 /-- A mollified coefficient field is measurable. -/
@@ -175,7 +159,7 @@ private theorem aestronglyMeasurable_mollifiedCoeff (ha : AEStronglyMeasurable a
     (φ : ContDiffBump (0 : EuclideanSpace ℝ (Fin (n + 1)))) :
     AEStronglyMeasurable (mollifiedCoeff φ a) volume :=
   Matrix.aestronglyMeasurable_toEuclideanCLM_iff.1
-    ((φ.contDiff_normed_convolution (locallyIntegrable_toEuclideanCLM ha hell)
+    ((φ.contDiff_normed_convolution (hell.locallyIntegrable_toEuclideanCLM ha)
       (n := 0)).continuous.aestronglyMeasurable.congr
         (ae_of_all _ fun x => (toEuclideanCLM_mollifiedCoeff φ x).symm))
 
@@ -187,7 +171,7 @@ private theorem ae_tendsto_mollifiedCoeff (ha : AEStronglyMeasurable a volume)
     (hφ : Tendsto (fun k => (φ k).rOut) atTop (𝓝 0)) (hφ2 : ∀ k, (φ k).rOut ≤ 2 * (φ k).rIn) :
     ∀ᵐ x, Tendsto (fun k => mollifiedCoeff (φ k) a x) atTop (𝓝 (a x)) := by
   filter_upwards [ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable hφ
-    (Eventually.of_forall hφ2) (locallyIntegrable_toEuclideanCLM ha hell)] with x hx
+    (Eventually.of_forall hφ2) (hell.locallyIntegrable_toEuclideanCLM ha)] with x hx
   have hc : Continuous ((toEuclideanCLM (𝕜 := ℝ)).symm :
       (EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) →
         Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :=
@@ -217,12 +201,8 @@ private theorem exists_setAverage_norm_mollifiedCoeff_sub_le (ha : AEStronglyMea
   set d := finrank ℝ (EuclideanSpace ℝ (Fin (n + 1)))
   set β : EuclideanSpace ℝ (Fin (n + 1)) → _ := fun x => e (a x)
   set βφ := φ.normed volume ⋆[lsmul ℝ ℝ, volume] β
-  have hβ := locallyIntegrable_toEuclideanCLM ha hell
+  have hβ := hell.locallyIntegrable_toEuclideanCLM ha
   have hβφc : Continuous βφ := (φ.contDiff_normed_convolution hβ (n := 0)).continuous
-  have hmem (x) : βφ x ∈ ellipticCLMSet lam Lam :=
-    φ.normed_convolution_mem_of_convex (convex_ellipticCLMSet lam Lam)
-      (isClosed_ellipticCLMSet lam Lam) hβ (fun y => (toEuclideanCLM_mem_ellipticCLMSet_iff _).2
-        ((uniformlyEllipticOn_iff.1 hell).2.2 (mem_univ y))) x
   -- The VMO modulus of the mollification at the scale `r₀`.
   have hbmo : bmoSeminorm (β - βφ) volume ≤ (3 + 4 ^ (d + 1) * 2 ^ d) * ENNReal.ofReal δ :=
     (bmoSeminorm_sub_normed_convolution_le φ hφ hβ).trans
@@ -233,31 +213,17 @@ private theorem exists_setAverage_norm_mollifiedCoeff_sub_le (ha : AEStronglyMea
     rw [sub_sub_cancel] at h
     refine h.trans ((add_le_add hη ((vmoModulus_le_bmoSeminorm _ _ _).trans hbmo)).trans_eq ?_)
     ring
-  -- Freeze at the average `κ` of the mollification over the ball, which is elliptic.
-  have hβφB : IntegrableOn βφ (ball c r) volume :=
-    (hβφc.locallyIntegrable.integrableOn_isCompact (isCompact_closedBall c r)).mono_set
-      ball_subset_closedBall
-  set κ := ⨍ y in ball c r, βφ y
-  have hκ : κ ∈ ellipticCLMSet lam Lam := Convex.set_average_mem (convex_ellipticCLMSet lam Lam)
-    (isClosed_ellipticCLMSet lam Lam) (measure_ball_pos volume c hr).ne' measure_ball_lt_top.ne
-    (ae_of_all _ hmem) hβφB
-  refine ⟨e.symm κ, uniformlyEllipticOn_of_forall_toEuclideanCLM_mem hell.pos hell.le
-    fun _ _ => by rwa [StarAlgEquiv.apply_symm_apply], ?_⟩
-  have hint : IntegrableOn (fun x => βφ x - κ) (ball c r) volume :=
-    hβφB.sub (integrableOn_const measure_ball_lt_top.ne)
-  have hle := (setLAverage_enorm_sub_setAverage_le_vmoModulus βφ volume c hrr).trans hvmo
+  -- Freeze at the average of the mollification over the ball, which is elliptic.
   have hD : (4 + 4 ^ (d + 1) * 2 ^ d : ℝ≥0∞) * ENNReal.ofReal δ =
       ENNReal.ofReal ((4 + 4 ^ (d + 1) * 2 ^ d) * δ) := by
     rw [ENNReal.ofReal_mul (by positivity)]
     norm_cast
-  rw [setLAverage_enorm_eq_ofReal_setAverage_norm hint, hD,
-    ENNReal.ofReal_le_ofReal_iff (by positivity)] at hle
-  have heq (x : EuclideanSpace ℝ (Fin (n + 1))) :
-      ‖matrixBilinearForm (mollifiedCoeff φ a x) - matrixBilinearForm (e.symm κ)‖ =
-        ‖βφ x - κ‖ := by
-    rw [norm_matrixBilinearForm_sub_eq, toEuclideanCLM_mollifiedCoeff,
-      StarAlgEquiv.apply_symm_apply]
-  simpa only [heq] using hle
+  refine ((uniformlyEllipticOn_mollifiedCoeff ha hell φ).mono_set (subset_univ _)
+    |>.exists_uniformlyEllipticOn_const_and_setAverage_le measurableSet_ball
+      (aestronglyMeasurable_mollifiedCoeff ha hell φ).restrict (measure_ball_pos volume c hr).ne'
+      measure_ball_lt_top.ne (by positivity) ?_)
+  simpa only [toEuclideanCLM_mollifiedCoeff, hD] using
+    (setLAverage_enorm_sub_setAverage_le_vmoModulus βφ volume c hrr).trans hvmo
 
 end Mollification
 
@@ -428,9 +394,7 @@ private theorem exists_ae_norm_gradient_le_of_holderOnWith {x₀ : EuclideanSpac
   -- The precise representative of `∇w` is Hölder, hence bounded, on `B(x₀, r)`.
   have hP := hC (u := w) (S := ball x₀ r) (hell.mono_set (subset_univ _))
     (hthick ▸ hKb) (hthick ▸ hKH) le_rfl hw (by linarith) hthick.subset
-  obtain ⟨M, hM⟩ := (isBounded_iff_ediam_ne_top.2 (ne_top_of_le_ne_top (ENNReal.mul_ne_top
-    ENNReal.coe_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
-      (isBounded_ball.ediam_ne_top))) hP.ediam_image_le)).exists_norm_le
+  obtain ⟨M, hM⟩ := (hP.isBounded_image isBounded_ball).exists_norm_le
   refine ⟨M, ?_⟩
   filter_upwards [ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hrR.le)
     (MeasureTheory.ae_eq_restrict_preciseRepresentative isOpen_ball
@@ -476,9 +440,7 @@ private theorem memLp_value_and_memLp_gradient_ball_of_holderOnWith
     (M := M.toNNReal) (hthickρ ▸ hgrad.mono fun x hx => hx.trans (Real.le_coe_toNNReal M))
     (γ := 1) le_rfl
   have hCvρ := hCv.mono (self_subset_thickening (half_pos ht) (ball x₀ ρ))
-  obtain ⟨Mv, hMv⟩ := (isBounded_iff_ediam_ne_top.2 (ne_top_of_le_ne_top (ENNReal.mul_ne_top
-    ENNReal.coe_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
-      (isBounded_ball.ediam_ne_top))) hCvρ.ediam_image_le)).exists_norm_le
+  obtain ⟨Mv, hMv⟩ := (hCvρ.isBounded_image isBounded_ball).exists_norm_le
   refine MemLp.of_bound ((Lp.aestronglyMeasurable _).mono_measure
     (Measure.restrict_mono hsubB le_rfl)) Mv ?_
   filter_upwards [ae_restrict_of_ae_restrict_of_subset hsubB
@@ -682,31 +644,6 @@ section Main
 
 variable {lam Lam : ℝ}
 
-/-- For `R / 2 ≤ ρ` and `2 ≤ p`, `|B(x₀, ρ)|^(1/p - 1/2) ≤ 2^d |B(x₀, R)|^(1/p - 1/2)`, where `d`
-is the dimension. -/
-private theorem volume_ball_rpow_le {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {R ρ : ℝ} (hR : 0 < R)
-    (hρ : R / 2 ≤ ρ) {p : ℝ} (hp : 2 ≤ p) :
-    volume (ball x₀ ρ) ^ (p⁻¹ - 2⁻¹) ≤
-      2 ^ finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) * volume (ball x₀ R) ^ (p⁻¹ - 2⁻¹) := by
-  have he0 : p⁻¹ - 2⁻¹ ≤ 0 := by linarith [inv_anti₀ two_pos hp]
-  have he : -1 ≤ p⁻¹ - 2⁻¹ := by linarith [inv_nonneg.2 (zero_le_two.trans hp)]
-  have hpos (r : ℝ) (hr : 0 < r) : 0 < volume.real (ball x₀ r) :=
-    ENNReal.toReal_pos (measure_ball_pos volume x₀ hr).ne' measure_ball_lt_top.ne
-  have hofReal (r : ℝ) : volume (ball x₀ r) = ENNReal.ofReal (volume.real (ball x₀ r)) := by
-    rw [measureReal_def, ENNReal.ofReal_toReal measure_ball_lt_top.ne]
-  calc volume (ball x₀ ρ) ^ (p⁻¹ - 2⁻¹) =
-        ENNReal.ofReal (volume.real (ball x₀ ρ) ^ (p⁻¹ - 2⁻¹)) := by
-        rw [hofReal, ENNReal.ofReal_rpow_of_pos (hpos _ (by linarith))]
-    _ ≤ ENNReal.ofReal (volume.real (ball x₀ (R / 2)) ^ (p⁻¹ - 2⁻¹)) :=
-        ENNReal.ofReal_le_ofReal (Real.rpow_le_rpow_of_nonpos (hpos _ (half_pos hR))
-          (measureReal_mono (ball_subset_ball hρ) measure_ball_lt_top.ne) he0)
-    _ ≤ ENNReal.ofReal (2 ^ finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) *
-          volume.real (ball x₀ R) ^ (p⁻¹ - 2⁻¹)) :=
-        ENNReal.ofReal_le_ofReal (Measure.addHaar_real_ball_half_rpow_le volume x₀ hR he)
-    _ = _ := by
-        rw [ENNReal.ofReal_mul (by positivity), hofReal R, ENNReal.ofReal_rpow_of_pos (hpos _ hR),
-          ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
-
 /-- **Interior `W^{1,p}` regularity for coefficients of small mean oscillation.** Let `2 < p < ∞`
 and `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`, depending only on `n`, `p`, `λ` and `Λ`, with
 the following property. Let `a` be a measurable coefficient matrix on `ℝ^{n+1}`, uniformly elliptic
@@ -781,8 +718,9 @@ theorem exists_memLp_gradient_ball_and_eLpNorm_le_of_vmoModulus_le {p : ℝ≥0�
         ((hGkp k).trans_lt hG))).trans ?_
     gcongr
     · exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans (hGkp k)
-    · exact volume_ball_rpow_le hR hρk.1.le
-        ((ENNReal.ofReal_le_iff_le_toReal hp_top).1 (by simpa using hp.le))
+    · have hp2 : 2 ≤ p.toReal := (ENNReal.ofReal_le_iff_le_toReal hp_top).1 (by simpa using hp.le)
+      exact Measure.addHaar_ball_rpow_le_of_half_le volume x₀ hR hρk.1.le
+        (by linarith [inv_nonneg.2 (zero_le_two.trans hp2)]) (by linarith [inv_anti₀ two_pos hp2])
     · exact hρk.2.le
   exact memLp_gradient_and_eLpNorm_le_of_tendsto hR.le hball u hconv (fun k => (hρ k).2.le)
     hρlim C₀ d hG.ne (ENNReal.rpow_ne_top_of_ne_zero (measure_ball_pos volume x₀ hR).ne'

@@ -64,6 +64,8 @@ gives a set of measure one.
   dimension `n`.
 * `MeasureTheory.Measure.addHaar_real_ball_half_rpow_le`:
   `μ (ball x (R / 2)) ^ e ≤ 2ⁿ μ (ball x R) ^ e` for `e ≥ -1` in dimension `n`.
+* `MeasureTheory.Measure.addHaar_ball_rpow_le_of_half_le`: its extended form
+  `μ (ball x ρ) ^ e ≤ 2ⁿ μ (ball x R) ^ e` for `R / 2 ≤ ρ` and `-1 ≤ e ≤ 0`.
 * `MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball`:
   `(n / r) μ (ball x r) = n rⁿ⁻¹ μ (ball 0 1)` in dimension `n`.
 * `MeasureTheory.Measure.hasDerivAt_measureReal_ball`: `ρ ↦ μ (ball x ρ)` has derivative
@@ -221,6 +223,27 @@ theorem addHaar_real_ball_half_rpow_le
   calc ((2 : ℝ) ^ finrank ℝ E) ^ (-e) ≤ ((2 : ℝ) ^ finrank ℝ E) ^ (1 : ℝ) :=
         Real.rpow_le_rpow_of_exponent_le (one_le_pow₀ one_le_two) (by linarith)
     _ = 2 ^ finrank ℝ E := Real.rpow_one _
+
+/-- For `R / 2 ≤ ρ` and a nonpositive exponent `e ≥ -1`, `μ (ball x ρ) ^ e ≤ 2ⁿ μ (ball x R) ^ e`,
+where `n` is the dimension. -/
+theorem addHaar_ball_rpow_le_of_half_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {R ρ : ℝ} (hR : 0 < R) (hρ : R / 2 ≤ ρ) {e : ℝ} (he : -1 ≤ e) (he0 : e ≤ 0) :
+    mu (ball x ρ) ^ e ≤ 2 ^ finrank ℝ E * mu (ball x R) ^ e := by
+  have hpos (r : ℝ) (hr : 0 < r) : 0 < mu.real (ball x r) := Metric.measureReal_ball_pos mu x hr
+  have hofReal (r : ℝ) : mu (ball x r) = ENNReal.ofReal (mu.real (ball x r)) := by
+    rw [measureReal_def, ENNReal.ofReal_toReal measure_ball_lt_top.ne]
+  calc mu (ball x ρ) ^ e = ENNReal.ofReal (mu.real (ball x ρ) ^ e) := by
+        rw [hofReal, ENNReal.ofReal_rpow_of_pos (hpos _ (by linarith))]
+    _ ≤ ENNReal.ofReal (mu.real (ball x (R / 2)) ^ e) :=
+        ENNReal.ofReal_le_ofReal (Real.rpow_le_rpow_of_nonpos (hpos _ (half_pos hR))
+          (measureReal_mono (ball_subset_ball hρ) measure_ball_lt_top.ne) he0)
+    _ ≤ ENNReal.ofReal (2 ^ finrank ℝ E * mu.real (ball x R) ^ e) :=
+        ENNReal.ofReal_le_ofReal (mu.addHaar_real_ball_half_rpow_le x hR he)
+    _ = _ := by
+        rw [ENNReal.ofReal_mul (by positivity), hofReal R, ENNReal.ofReal_rpow_of_pos (hpos _ hR),
+          ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
 
 /-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
 `L^p` norm times `(Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`, where `n` is the dimension. For `R > 0` this
