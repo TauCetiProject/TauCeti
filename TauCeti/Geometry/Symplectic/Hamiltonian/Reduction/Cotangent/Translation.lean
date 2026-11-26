@@ -117,6 +117,24 @@ variable [FiniteDimensional ℝ V]
   (d : Lie.EmbeddedLieSubgroupData 𝓘(ℝ, W)
     ((Lie.coadjointRepresentation ℝ 𝓘(ℝ, W) (Multiplicative W)).stabilizer 0) F)
 
+/-- The orbit space `V ⧸ W` of translations along `W`, with the charts of the quotient manifold
+theorem, is diffeomorphic to `B` by the map sending the orbit of `x` to `ρ x`, since `ρ` is a
+surjective submersion whose fibres are the `W`-orbits. -/
+private def orbitRelQuotientDiffeomorph (hρ : Surjective ρ) (hker : ρ.ker = W) :
+    letI := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, W) (Multiplicative W) 𝓘(ℝ, V) V
+    MulAction.orbitRel.Quotient (Multiplicative W) V ≃ₘ⟮𝓘(ℝ, ProperSMul.QuotientModelSpace W V),
+      𝓘(ℝ, B)⟯ B :=
+  ProperSMul.diffeomorphOfOrbitSubmersion 𝓘(ℝ, W) le_rfl ρ
+    (ρ.isSubmersion_of_surjective hρ (by simp)) hρ
+    ((ρ : V →ₗ[ℝ] B).apply_eq_apply_iff_exists_smul_eq hker)
+
+/-- `orbitRelQuotientDiffeomorph` composed with the orbit projection is `ρ`. -/
+private theorem orbitRelQuotientDiffeomorph_comp_mk (hρ : Surjective ρ) (hker : ρ.ker = W) :
+    letI := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, W) (Multiplicative W) 𝓘(ℝ, V) V
+    ⇑(orbitRelQuotientDiffeomorph hρ hker) ∘ Quotient.mk (MulAction.orbitRel (Multiplicative W) V) =
+      ρ :=
+  ProperSMul.diffeomorphOfOrbitSubmersion_comp_mk _ _ _ _ _ _
+
 variable (h) in
 /-- **Cotangent reduction by translations.** Let `W ≤ V` act on `V` by translations and let
 `ρ : V →L[ℝ] B` be surjective with kernel `W`. The Marsden–Weinstein–Meyer reduced space
@@ -137,10 +155,7 @@ def translationReducedSpaceDiffeomorph (hρ : Surjective ρ) (hker : ρ.ker = W)
   haveI := properSMul (IG := 𝓘(ℝ, W)) (G := Multiplicative W) (I := 𝓘(ℝ, V)) (M := V)
   letI := h.orbitRelQuotientChartedSpace 0 hreg hn d
   letI := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, W) (Multiplicative W) 𝓘(ℝ, V) V
-  (zeroReducedSpaceDiffeomorph h hreg hn d).trans
-    (ProperSMul.diffeomorphOfOrbitSubmersion 𝓘(ℝ, W) le_rfl ρ
-      (ρ.isSubmersion_of_surjective hρ (by simp)) hρ
-      ((ρ : V →ₗ[ℝ] B).apply_eq_apply_iff_exists_smul_eq hker)).cotangent
+  (zeroReducedSpaceDiffeomorph h hreg hn d).trans (orbitRelQuotientDiffeomorph hρ hker).cotangent
 
 /-- `translationReducedSpaceDiffeomorph` sends the orbit of a covector at `q` to a covector at
 `ρ q`. -/
@@ -156,7 +171,7 @@ theorem proj_translationReducedSpaceDiffeomorph_mk (hρ : Surjective ρ) (hker :
   let := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, W) (Multiplicative W) 𝓘(ℝ, V) V
   rw [translationReducedSpaceDiffeomorph, Diffeomorph.coe_trans, comp_apply,
     Diffeomorph.proj_cotangent,
-    zeroReducedSpaceDiffeomorph_mk, proj_reductionMap,
+    zeroReducedSpaceDiffeomorph_mk, proj_reductionMap, orbitRelQuotientDiffeomorph,
     ProperSMul.diffeomorphOfOrbitSubmersion_mk]
 
 /-- **The reduced covector.** `translationReducedSpaceDiffeomorph` sends the orbit of a covector
@@ -171,9 +186,7 @@ theorem translationReducedSpaceDiffeomorph_mk_snd_apply (hρ : Surjective ρ) (h
   have := properSMul (IG := 𝓘(ℝ, W)) (G := Multiplicative W) (I := 𝓘(ℝ, V)) (M := V)
   let := h.orbitRelQuotientChartedSpace 0 hreg hn d
   let := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, W) (Multiplicative W) 𝓘(ℝ, V) V
-  set e := ProperSMul.diffeomorphOfOrbitSubmersion 𝓘(ℝ, W) le_rfl ρ
-    (ρ.isSubmersion_of_surjective hρ (by simp)) hρ
-    ((ρ : V →ₗ[ℝ] B).apply_eq_apply_iff_exists_smul_eq hker)
+  set e := orbitRelQuotientDiffeomorph hρ hker
   set q := (z : CotangentBundle 𝓘(ℝ, V) V).proj
   have hπ := ProperSMul.isSubmersion_quotientMk (I := 𝓘(ℝ, W)) (G := Multiplicative W)
     (I' := 𝓘(ℝ, V)) (M := V)
@@ -184,7 +197,7 @@ theorem translationReducedSpaceDiffeomorph_mk_snd_apply (hρ : Surjective ρ) (h
   have hρv : ρ v = mfderiv 𝓘(ℝ, ProperSMul.QuotientModelSpace W V) 𝓘(ℝ, B) e (Quotient.mk _ q)
       (mfderiv 𝓘(ℝ, V) 𝓘(ℝ, ProperSMul.QuotientModelSpace W V) (Quotient.mk _) q v) := by
     have hcomp := mfderiv_comp_apply q (e.mdifferentiable (by simp) (Quotient.mk _ q)) hπd v
-    rw [ProperSMul.diffeomorphOfOrbitSubmersion_comp_mk, ContinuousLinearMap.mfderiv_eq] at hcomp
+    rw [orbitRelQuotientDiffeomorph_comp_mk, ContinuousLinearMap.mfderiv_eq] at hcomp
     exact hcomp
   have hz := (momentMap_eq_zero_iff_of_ker_eq (ProperSMul.ker_mfderiv_quotientMk q)).1
     (h.mem_levelSubMulAction.1 z.property)
