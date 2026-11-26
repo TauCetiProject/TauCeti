@@ -6,22 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.DirectLimit
-public import Mathlib.RingTheory.PiTensorProduct
 public import TauCeti.LinearAlgebra.PiTensorProduct.Restricted
+public import TauCeti.RingTheory.PiTensorProduct.Basic
 
 /-!
 # Restricted tensor products of algebras stabilized by idempotents
 
-Let `A i` be algebras over a commutative semiring `R`, indexed by a possibly infinite type `ι`,
-and `e i ∈ A i` idempotents. Adjoining the idempotents at the places of `T \ S` is multiplicative,
-`(x ⊗ e) (y ⊗ e) = x y ⊗ e e = x y ⊗ e`, because the `e i` are idempotent (they need not be units),
-so the transition maps `TauCeti.RestrictedTensor.stageMap R e` of the restricted tensor product
-are morphisms of nonunital algebras between the finite tensor products `⨂_{i ∈ S} A i`. Their
-direct limit `TauCeti.RestrictedTensorAlgebra R A e he` is a nonunital `R`-algebra, the
-**restricted tensor product of the `A i` stabilized by the `e i`**: the product of two elements
-is computed at a common finite stage (`TauCeti.RestrictedTensorAlgebra.ofFinite_mul_ofFinite`). As
-a module it is the restricted tensor product `TauCeti.RestrictedTensor R A e`
-(`TauCeti.RestrictedTensorAlgebra.linearEquiv`).
+Let `A i` be nonunital algebras over a commutative semiring `R`, indexed by a possibly infinite
+type `ι`, and `e i ∈ A i` idempotents. Adjoining the idempotents at the places of `T \ S` is
+multiplicative, `(x ⊗ e) (y ⊗ e) = x y ⊗ e e = x y ⊗ e`, because the `e i` are idempotent (they
+need not be units), so the transition maps `TauCeti.RestrictedTensor.stageMap R e` of the
+restricted tensor product are morphisms of nonunital algebras between the finite tensor products
+`⨂_{i ∈ S} A i`. Their direct limit `TauCeti.RestrictedTensorAlgebra R A e he` is a nonunital
+`R`-algebra, the **restricted tensor product of the `A i` stabilized by the `e i`**: the product of
+two elements is computed at a common finite stage
+(`TauCeti.RestrictedTensorAlgebra.ofFinite_mul_ofFinite`). As a module it is the restricted tensor
+product `TauCeti.RestrictedTensor R A e` (`TauCeti.RestrictedTensorAlgebra.linearEquiv`).
+Morphisms of nonunital algebras out of it correspond to compatible morphisms out of the finite
+stages (`TauCeti.RestrictedTensorAlgebra.lift`).
 
 ## Main definitions
 
@@ -29,6 +31,7 @@ a module it is the restricted tensor product `TauCeti.RestrictedTensor R A e`
   algebras.
 * `TauCeti.RestrictedTensorAlgebra R A e he`: the restricted tensor product algebra.
 * `TauCeti.RestrictedTensorAlgebra.ofFinite`: the inclusion of a finite stage.
+* `TauCeti.RestrictedTensorAlgebra.lift`: the universal property.
 * `TauCeti.RestrictedTensorAlgebra.linearEquiv`: the identification with
   `TauCeti.RestrictedTensor R A e` as modules.
 
@@ -52,7 +55,8 @@ open scoped TensorProduct
 namespace TauCeti
 
 variable {ι : Type*} [DecidableEq ι] (R : Type*) [CommSemiring R] (A : ι → Type*)
-  [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] (e : ∀ i, A i)
+  [∀ i, NonUnitalSemiring (A i)] [∀ i, Module R (A i)] [∀ i, SMulCommClass R (A i) (A i)]
+  [∀ i, IsScalarTower R (A i) (A i)] (e : ∀ i, A i)
 
 namespace RestrictedTensor
 
@@ -67,9 +71,7 @@ theorem stageMap_mul (he : ∀ i, IsIdempotentElem (e i)) {S T : Finset ι} (h :
   | smul_tprod r f =>
     induction y using PiTensorProduct.induction_on with
     | smul_tprod s g =>
-      rw [smul_mul_smul_comm, PiTensorProduct.tprod_mul_tprod, map_smul, map_smul, map_smul,
-        stageMap_tprod, stageMap_tprod, stageMap_tprod, smul_mul_smul_comm,
-        PiTensorProduct.tprod_mul_tprod]
+      simp only [smul_mul_smul_comm, PiTensorProduct.tprod_mul_tprod, map_smul, stageMap_tprod]
       congr 2
       funext i
       by_cases hi : (i : ι) ∈ S
@@ -167,26 +169,50 @@ def linearEquiv : RestrictedTensorAlgebra R A e he ≃ₗ[R] RestrictedTensor R 
       rw [LinearMap.coe_ofClass, LinearMap.coe_ofClass]
       exact ofFinite_stageMap h x)
     (RestrictedTensor.hom_ext fun S ↦ LinearMap.ext fun x ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply,
-        RestrictedTensor.lift_ofFinite (R := R) (W := A) (w := e), LinearMap.coe_ofClass,
-        ofFinite_apply, DirectLimit.Module.lift_of]
-      rfl)
+      simp [ofFinite_apply])
     (DirectLimit.Module.hom_ext fun S ↦ LinearMap.ext fun x ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-        DirectLimit.Module.lift_of, RestrictedTensor.lift_ofFinite (R := R) (W := A) (w := e),
-        LinearMap.coe_ofClass, ofFinite_apply, LinearMap.id_apply])
+      simp [ofFinite_apply])
 
 /-- The identification with the restricted tensor product on finite stages. -/
 @[simp]
 theorem linearEquiv_ofFinite (S : Finset ι) (x : ⨂[R] i : S, A i) :
     linearEquiv he (ofFinite he S x) = RestrictedTensor.ofFinite R A e S x := by
-  rfl
+  rw [linearEquiv, LinearEquiv.coe_ofLinearMap, ofFinite_apply, DirectLimit.Module.lift_of]
 
 /-- The inverse identification on finite stages. -/
 @[simp]
 theorem linearEquiv_symm_ofFinite (S : Finset ι) (x : ⨂[R] i : S, A i) :
-    (linearEquiv he).symm (RestrictedTensor.ofFinite R A e S x) = ofFinite he S x :=
-  RestrictedTensor.lift_ofFinite (R := R) (W := A) (w := e) _ _ S x
+    (linearEquiv he).symm (RestrictedTensor.ofFinite R A e S x) = ofFinite he S x := by
+  rw [linearEquiv, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
+    RestrictedTensor.lift_ofFinite, LinearMap.coe_ofClass]
+
+section lift
+
+variable {P : Type*} [NonUnitalNonAssocSemiring P] [DistribMulAction R P]
+
+/-- Two morphisms of nonunital algebras out of the restricted tensor product algebra agreeing on
+every finite stage are equal. -/
+@[ext]
+theorem hom_ext {g₁ g₂ : RestrictedTensorAlgebra R A e he →ₙₐ[R] P}
+    (h : ∀ S, g₁.comp (ofFinite he S) = g₂.comp (ofFinite he S)) : g₁ = g₂ :=
+  DirectLimit.NonUnitalAlgebra.hom_ext _ h
+
+variable (he) in
+/-- The morphism of nonunital algebras out of the restricted tensor product algebra induced by
+compatible morphisms out of the finite stages. -/
+def lift (g : ∀ S : Finset ι, (⨂[R] i : S, A i) →ₙₐ[R] P)
+    (hg : ∀ (S T : Finset ι) (h : S ⊆ T) x, g T (stageMap R e h x) = g S x) :
+    RestrictedTensorAlgebra R A e he →ₙₐ[R] P :=
+  DirectLimit.NonUnitalAlgebra.lift _ _ P g hg
+
+/-- The induced morphism on a finite stage. -/
+@[simp]
+theorem lift_ofFinite (g : ∀ S : Finset ι, (⨂[R] i : S, A i) →ₙₐ[R] P)
+    (hg : ∀ (S T : Finset ι) (h : S ⊆ T) x, g T (stageMap R e h x) = g S x)
+    (S : Finset ι) (x : ⨂[R] i : S, A i) : lift he g hg (ofFinite he S x) = g S x :=
+  DirectLimit.NonUnitalAlgebra.lift_of _ _ _ _ _
+
+end lift
 
 end RestrictedTensorAlgebra
 
