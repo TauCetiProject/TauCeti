@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Noncompact
 
 import TauCeti.Geometry.Manifold.Riemannian.Invariant
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
 /-!
 # Equivariant tubular neighbourhoods of submanifolds of fixed points
@@ -112,13 +111,8 @@ theorem normalRepresentative_fixedNormalRepresentation (x : M) (hn : n ≠ 0)
   · -- `d(k •)` fixes the tangent space and preserves the metric, so it preserves the complement.
     refine (Submodule.mem_orthogonal _ _).2 fun u hu ↦ ?_
     rw [← f.mfderiv_smul_eq_self_of_mem_tangentRange hf (hd k) hn hu]
-    -- The inner product at `f x` of the two images is that at `k • f x`, by the tangent
-    -- representation of the stabilizer of `f x`.
-    have h := (inner_tangentRepresentation_apply (fun g _ ↦ hd g) ⟨k, hf k x⟩ u
-      (f.normalRepresentative x hn ν)).trans (hK k _ _)
-    rw [tangentRepresentation_apply] at h
-    refine h.trans ?_
-    exact Submodule.inner_right_of_mem_orthogonal hu (f.normalRepresentative_mem_orthogonal x hn ν)
+    exact (inner_mfderiv_smul_of_smul_eq (hf k x) (hK k) _ _).trans
+      (Submodule.inner_right_of_mem_orthogonal hu (f.normalRepresentative_mem_orthogonal x hn ν))
   · rw [← fixedNormalRepresentation_normalClass, normalClass_normalRepresentative]
 
 include hf in
@@ -136,12 +130,7 @@ theorem normalRiemannianMetric_inner_fixedNormalRepresentation (x : M) (hn : n �
   rw [normalRiemannianMetric_inner, normalRiemannianMetric_inner,
     f.normalRepresentative_fixedNormalRepresentation hf x hn hd hK,
     f.normalRepresentative_fixedNormalRepresentation hf x hn hd hK]
-  -- The inner product at `f x` of the two images is that at `k • f x`, by the tangent
-  -- representation of the stabilizer of `f x`.
-  have h := (inner_tangentRepresentation_apply (fun g _ ↦ hd g) ⟨k, hf k x⟩
-    (f.normalRepresentative x hn ν) (f.normalRepresentative x hn μ)).trans (hK k _ _)
-  rw [tangentRepresentation_apply] at h
-  exact h
+  exact inner_mfderiv_smul_of_smul_eq (hf k x) (hK k) _ _
 
 variable [IsManifold J ∞ N] [J.Boundaryless] [T2Space N]
   [IsContMDiffRiemannianBundle J ∞ V (fun y : N ↦ TangentSpace J y)] [ContMDiffConstSMul J ∞ K N]
@@ -295,20 +284,12 @@ theorem exists_partialDiffeomorph_fixedNormalRepresentation_of_compactSpace [Non
   have : ContMDiffConstSMul J ∞ K N := ContMDiffSMul.contMDiffConstSMul IK
   have : LocallyCompactSpace G := J.locallyCompactSpace
   have : LocallyCompactSpace N := ChartedSpace.locallyCompactSpace G N
-  -- Average a smooth metric over `K`; the Haar average needs the action to be `C^(∞ + 1)`.
-  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := J) (n := ⊤) (F := V)
-    (E := fun y : N ↦ TangentSpace J y)
-  have : ContMDiffSMul IK J (∞ + 1) K N := by
-    rwa [ENat.coe_top_add_one]
-  obtain ⟨g', hg'⟩ := exists_contMDiffRiemannianMetric_inner_mfderiv (G := K) (n := ⊤) IK g
-  let : RiemannianBundle (fun y : N ↦ TangentSpace J y) := ⟨g'.toRiemannianMetric⟩
-  let : IsContMDiffRiemannianBundle J ∞ V (fun y : N ↦ TangentSpace J y) :=
-    Bundle.instIsContMDiffRiemannianBundle g'
+  -- Prove it for a `K`-invariant smooth metric, obtained by averaging.
+  refine of_forall_riemannianBundle_inner_mfderiv (I := J) (M := N) IK K fun hK ↦ ?_
   let : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
   let : ∀ x, NormedAddCommGroup (ν x) := fun x ↦ inferInstance
   obtain ⟨Φ, r, hΦ, hr, hsource, htarget, hsrc, htgt, hequiv, hsymm⟩ :=
-    f.exists_partialDiffeomorph_normalExp_fixedNormalRepresentation hf
-      (fun k y u w ↦ hg' k y u w) hdim hO hfO
+    f.exists_partialDiffeomorph_normalExp_fixedNormalRepresentation hf hK hdim hO hfO
   -- The zero section lies in the open disc bundle of positive radius.
   refine ⟨Φ, fun x ↦ ⟨?_, ?_⟩, htarget, hsrc, htgt, hequiv, hsymm⟩
   · rw [hsource]

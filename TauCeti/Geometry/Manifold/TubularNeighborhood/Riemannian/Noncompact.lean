@@ -28,8 +28,8 @@ coordinates around the closed core before selecting the radius.
 Without closedness of the image, the normal exponential is still a partial diffeomorphism whose
 source is exactly an open normal disc bundle of positive smooth radius
 (`SmoothEmbedding.exists_partialDiffeomorph_normalExp_norm_lt_subset`). Since that source is
-described by the normal metric alone, it is preserved by every bundle map acting isometrically on
-the fibres, as in equivariant tubular neighbourhoods.
+described by the normal metric alone, it is preserved by every bundle map over the identity of
+`M` acting isometrically on the fibres, as in equivariant tubular neighbourhoods.
 
 ## References
 
