@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Chart
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
@@ -54,7 +55,10 @@ atlas, which needs no closedness of `ω` and no inner product on `E`, and for a 
   (`TauCeti.SmoothTwoForm.exists_forall_floerEnergyDensity_le_norm_fderiv_extChartAt_comp_sq`).
   Both comparisons hold with constants uniform over a compact window of parameters, for families
   of data continuous jointly in the parameter. With the coordinate Floer equation for `∂ₜv`, a
-  bound on the energy density bounds the whole derivative of `v`
+  bound on the energy density bounds the whole derivative of `v`, uniformly over a compact window
+  of parameters
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_le_parametric`),
+  and for a single datum as its one-point case
   (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_le`).
 * **Compactness in a chart** (in the namespace `TauCeti.SmoothTwoForm`,
   `IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_extChartAt_subseq_off_finset`):
@@ -434,13 +438,73 @@ theorem exists_forall_floerEnergyDensity_le_norm_fderiv_extChartAt_comp_sq {P : 
     _ = 2 * c * ‖fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal‖ ^ 2 + 2 * c * β₃ ^ 2 := by
         ring
 
+/-- **A bound on the energy density bounds the derivative in a chart, uniformly over a compact
+parameter window.** Let the structures `J_p(z, x)` be tamed by `ω` and, read in the chart at `α`,
+continuous on `(C × D) × K`, together with the Hamiltonian vector fields of `K_{s,p}` and `K_{t,p}`,
+for a compact set `C` of parameters, compact `D ⊆ ℝ × ℝ` and a compact set `K` of chart
+coordinates. For every `A` there is a constant `L` such that, for every parameter `p ∈ C`, every
+solution `u` of the Floer equation for `K_p` and `J_p(z, u)` at a point `z ∈ D`, with `u z` in the
+chart source and coordinate in `K`, whose Floer energy density at `z` is at most `A`, satisfies
+`‖d(extChartAt I α ∘ u)(z)‖ ≤ L`. -/
+theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_le_parametric {P : Type*}
+    [TopologicalSpace P] {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    {Ks Kt : P → ℝ × ℝ → M → ℝ} (hω : ω.IsNondegenerate) (α : M) {C : Set P}
+    {D : Set (ℝ × ℝ)} {K : Set E} (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K)
+    (hKα : K ⊆ (extChartAt I α).target)
+    (hJ : ContinuousOn (Floer.almostComplexInChartAt I α (Function.uncurry J)) ((C ×ˢ D) ×ˢ K))
+    (hXs : ContinuousOn (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry Ks))
+      ((C ×ˢ D) ×ˢ K))
+    (hXt : ContinuousOn (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry Kt))
+      ((C ×ˢ D) ×ˢ K))
+    (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ K, (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames
+      (J p z ((extChartAt I α).symm y))) (A : ℝ) :
+    ∃ L, ∀ ⦃p : P⦄ ⦃u : ℝ × ℝ → M⦄ ⦃z : ℝ × ℝ⦄, p ∈ C → z ∈ D →
+      u z ∈ (extChartAt I α).source → extChartAt I α (u z) ∈ K →
+      MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J p z (u z))
+        (ω.perturbedMFDeriv (Ks p) (Kt p) u z).toLinearMap →
+      ω.floerEnergyDensity (Ks p) (Kt p) u z ≤ A → ‖fderiv ℝ (extChartAt I α ∘ u) z‖ ≤ L := by
+  obtain ⟨A₁, hA₁, B₁, -, hpt⟩ :=
+    hω.exists_forall_norm_fderiv_extChartAt_comp_sq_le α hC hD hK hKα hJ hXs hJt
+  have hCDK : IsCompact ((C ×ˢ D) ×ˢ K) := (hC.prod hD).prod hK
+  obtain ⟨βJ, hβJ⟩ := hCDK.exists_bound_of_continuousOn hJ
+  obtain ⟨βs, hβs⟩ := hCDK.exists_bound_of_continuousOn hXs
+  obtain ⟨βt, hβt⟩ := hCDK.exists_bound_of_continuousOn hXt
+  set M₁ := 1 + (A₁ * A + B₁)
+  refine ⟨M₁ + (βJ * (M₁ + βs) + βt), fun p u z hp hz hus huK hu h hρ ↦ ?_⟩
+  have hq : ((p, z), extChartAt I α (u z)) ∈ (C ×ˢ D) ×ˢ K := ⟨⟨hp, hz⟩, huK⟩
+  have hJb : ‖Floer.almostComplexInChartAt I α (J p) (z, extChartAt I α (u z))‖ ≤ βJ := by
+    simpa only [Floer.almostComplexInChartAt_uncurry] using hβJ _ hq
+  have hXsb : ‖ω.hamiltonianVectorFieldInChartAt α (Ks p) (z, extChartAt I α (u z))‖ ≤ βs := by
+    simpa only [hamiltonianVectorFieldInChartAt_uncurry] using hβs _ hq
+  have hXtb : ‖ω.hamiltonianVectorFieldInChartAt α (Kt p) (z, extChartAt I α (u z))‖ ≤ βt := by
+    simpa only [hamiltonianVectorFieldInChartAt_uncurry] using hβt _ hq
+  -- The derivative `∂ₛ` in the chart, from the energy density.
+  have h1 : ‖fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal‖ ≤ M₁ := by
+    have h2 := hpt hp hz hus huK hu h
+    have h3 := mul_le_mul_of_nonneg_left hρ hA₁
+    nlinarith [sq_nonneg (‖fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal‖ - 1)]
+  -- The derivative `∂ₜ` in the chart, from the coordinate Floer equation.
+  have h2 : ‖fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineImag‖ ≤ βJ * (M₁ + βs) + βt := by
+    have heq :=
+      (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
+        hu hus).1 h
+    rw [← sub_add_cancel (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineImag), heq]
+    refine (norm_add_le _ _).trans (add_le_add ((le_opNorm _ _).trans ?_) hXtb)
+    exact mul_le_mul hJb ((norm_sub_le _ _).trans (add_le_add h1 hXsb)) (norm_nonneg _)
+      ((norm_nonneg _).trans hJb)
+  have h := (fderiv ℝ (extChartAt I α ∘ u) z).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one
+  rw [← stdComplexLineReal_eq, ← stdComplexLineImag_eq] at h
+  exact h.trans (add_le_add h1 h2)
+
 /-- **A bound on the energy density bounds the derivative in a chart, uniformly on a compact
 window.** Let the structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on
 `D × K`, together with the Hamiltonian vector fields of `K_s` and `K_t`, for compact `D ⊆ ℝ × ℝ`
 and a compact set `K` of chart coordinates. For every `A` there is a constant `L` such that every
 solution `u` of the Floer equation for `J(z, u)` at a point `z ∈ D`, with `u z` in the chart source
 and coordinate in `K`, whose Floer energy density at `z` is at most `A`, satisfies
-`‖d(extChartAt I α ∘ u)(z)‖ ≤ L`. -/
+`‖d(extChartAt I α ∘ u)(z)‖ ≤ L`. This is the case of a one-point parameter space of
+`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_le_parametric`. -/
 theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_le
     (hω : ω.IsNondegenerate) (α : M) {D : Set (ℝ × ℝ)} {K : Set E} (hD : IsCompact D)
     (hK : IsCompact K) (hKα : K ⊆ (extChartAt I α).target)
@@ -457,34 +521,12 @@ theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_le
   -- The constant family over a one-point parameter space.
   have hπ : MapsTo (fun q : (Unit × (ℝ × ℝ)) × E ↦ (q.1.2, q.2)) ((univ ×ˢ D) ×ˢ K) (D ×ˢ K) :=
     fun q hq ↦ ⟨hq.1.2, hq.2⟩
-  obtain ⟨A₁, hA₁, B₁, -, hpt⟩ :=
-    hω.exists_forall_norm_fderiv_extChartAt_comp_sq_le (J := fun (_ : Unit) ↦ J)
-      (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt) α isCompact_univ hD hK hKα
-      (Floer.continuousOn_almostComplexInChartAt_uncurry_const hJ hπ)
-      (continuousOn_hamiltonianVectorFieldInChartAt_uncurry_const hXs hπ) fun _ _ ↦ hJt
-  obtain ⟨βJ, hβJ⟩ := (hD.prod hK).exists_bound_of_continuousOn hJ
-  obtain ⟨βs, hβs⟩ := (hD.prod hK).exists_bound_of_continuousOn hXs
-  obtain ⟨βt, hβt⟩ := (hD.prod hK).exists_bound_of_continuousOn hXt
-  set M₁ := 1 + (A₁ * A + B₁)
-  refine ⟨M₁ + (βJ * (M₁ + βs) + βt), fun u z hz hus huK hu h hρ ↦ ?_⟩
-  have hp : (z, extChartAt I α (u z)) ∈ D ×ˢ K := ⟨hz, huK⟩
-  -- The derivative `∂ₛ` in the chart, from the energy density.
-  have h1 : ‖fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal‖ ≤ M₁ := by
-    have h2 := hpt (mem_univ ()) hz hus huK hu h
-    have h3 := mul_le_mul_of_nonneg_left hρ hA₁
-    nlinarith [sq_nonneg (‖fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal‖ - 1)]
-  -- The derivative `∂ₜ` in the chart, from the coordinate Floer equation.
-  have h2 : ‖fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineImag‖ ≤ βJ * (M₁ + βs) + βt := by
-    have heq :=
-      (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
-        hu hus).1 h
-    rw [← sub_add_cancel (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineImag), heq]
-    refine (norm_add_le _ _).trans (add_le_add ((le_opNorm _ _).trans ?_) (hβt _ hp))
-    exact mul_le_mul (hβJ _ hp) ((norm_sub_le _ _).trans (add_le_add h1 (hβs _ hp)))
-      (norm_nonneg _) ((norm_nonneg _).trans (hβJ _ hp))
-  have h := (fderiv ℝ (extChartAt I α ∘ u) z).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one
-  rw [← stdComplexLineReal_eq, ← stdComplexLineImag_eq] at h
-  exact h.trans (add_le_add h1 h2)
+  obtain ⟨L, hL⟩ := hω.exists_forall_norm_fderiv_extChartAt_comp_le_parametric
+    (J := fun (_ : Unit) ↦ J) (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt) α isCompact_univ hD hK hKα
+    (Floer.continuousOn_almostComplexInChartAt_uncurry_const hJ hπ)
+    (continuousOn_hamiltonianVectorFieldInChartAt_uncurry_const hXs hπ)
+    (continuousOn_hamiltonianVectorFieldInChartAt_uncurry_const hXt hπ) (fun _ _ ↦ hJt) A
+  exact ⟨L, fun u z hz ↦ hL (mem_univ ()) hz⟩
 
 /-- **Floer solutions in a chart of a manifold converge off finitely many bubbling points.** Let
 `ω` be a nondegenerate two-form on `M` and `α` a point of `M`. Let the structures `J(z, x)` and the
@@ -723,11 +765,8 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
         ∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (ψ n) y) atTop (𝓝 (v y)) := by
   have hφK : IsCompact (φ '' K) := hK.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hKφ)
   -- In the chart, `J'_p` is tamed by `ω₀` over `C × D × φ(K)`.
-  have hJ't : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ φ '' K, ω₀.Tames (J' p z y) := by
-    rintro p hp z hz _ ⟨x, hx, rfl⟩
-    exact tames_of_isComplexLinearMap_mvfderiv hω
-      (φ.bijective_mvfderiv (by simp) (hKφ hx)).surjective (hφ x hx) (hJJ' p hp z hz x hx)
-      (hJt p hp z hz x hx)
+  have hJ't : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ φ '' K, ω₀.Tames (J' p z y) := fun p hp z hz _ ↦
+    hω.tames_of_mem_image φ hφ (hJJ' p hp z hz) hKφ (hJt p hp z hz)
   obtain ⟨δ, hδ, hconv⟩ := ω₀.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     (Ks := fun p z y ↦ Ks p z (φ.symm y)) (Kt := fun p z y ↦ Kt p z (φ.symm y)) hW hKs hKt hJ' hC
     hD hφK hCDKW hJ't
@@ -751,8 +790,8 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
         ∫ y in S, ω.floerEnergyDensity (Ks (p k)) (Kt (p k)) (u k) y :=
     setIntegral_congr_fun hS fun y hy ↦ (hpt k (hSΩ hy)).1
   obtain ⟨ψ, p₀, Z, w, hψ, hp₀, hplim, hZΩ, hcard, hconc, hbd, hwc, hwK, hlim⟩ :=
-    hconv (u := fun k ↦ φ ∘ u k) hΩ hΩD hpC (fun k ↦ contMDiffOn_iff_contDiffOn.1 <|
-      (φ.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).comp (hu k)
+    hconv (u := fun k ↦ φ ∘ u k) hΩ hΩD hpC
+      (fun k ↦ φ.contDiffOn_comp_of_contMDiffOn (WithTop.coe_le_coe.2 le_top) (hu k)
         ((huK k).mono_right hKφ))
     (fun k z hz ↦ (hpt k hz).2) (fun k z hz ↦ ⟨u k z, huK k hz, rfl⟩)
     (fun k ↦ (hint k).congr_fun (fun y hy ↦ ((hpt k hy).1).symm) hΩ.measurableSet)
@@ -858,22 +897,6 @@ private theorem floerEnergyDensity_comp_and_isComplexLinearMap_iff (hω : ω.IsN
     hω.isComplexLinearMap_perturbedFDeriv_comp_iff hu hφx hsurj hφ (hK₁ Ks) (hK₁ Kt) (hK₂ hKs)
       (hK₂ hKt) hJJ'⟩
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
-/-- If `φ` pulls `ω₀` back to `ω` on `C` and `J'` is the family `J` read in the chart, then `J'` is
-tamed by `ω₀` over `D × φ(C)` wherever `J` is tamed by `ω` over `D × C`. -/
-private theorem tames_of_mem_image (hω : ω.IsNondegenerate)
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {D : Set (ℝ × ℝ)} {C : Set M}
-    (hφ : ∀ x ∈ C, ∀ v w : TangentSpace I x,
-      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
-    (hJJ' : ∀ z ∈ D, ∀ x ∈ C,
-      IsComplexLinearMap (J z x) (J' z (φ x)) (mvfderiv I φ x).toLinearMap)
-    (hCφ : C ⊆ φ.source) (hJt : ∀ z ∈ D, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (J z x)) :
-    ∀ z ∈ D, ∀ y ∈ φ '' C, ω₀.Tames (J' z y) := by
-  rintro z hz _ ⟨x, hx, rfl⟩
-  exact tames_of_isComplexLinearMap_mvfderiv hω
-    (φ.bijective_mvfderiv (by simp) (hCφ hx)).surjective (hφ x hx) (hJJ' z hz x hx)
-    (hJt z hz x hx)
-
 /-- **The energy of the bubbling points in a symplectic chart.** Under the hypotheses of
 `IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`, a further
 subsequence `ψ` attaches to every bubbling point `z ∈ Z` a mass `m z ≥ δ`: for every small `ε > 0`
@@ -919,7 +942,8 @@ theorem exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off
             (𝓝 (m z + ∫ y in ball z ε \ {z}, ω.floerEnergyDensity Ks Kt v y))) ∧
         (∫ z in Ω \ ↑Z, ω.floerEnergyDensity Ks Kt v z) + ∑ z ∈ Z, m z ≤ A := by
   have hφC : IsCompact (φ '' C) := hC.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hCφ)
-  have hJ't := tames_of_mem_image hω φ hφ hJJ' hCφ hJt
+  have hJ't : ∀ z ∈ D, ∀ y ∈ φ '' C, ω₀.Tames (J' z y) := fun z hz _ ↦
+    hω.tames_of_mem_image φ hφ (hJJ' z hz) hCφ (hJt z hz)
   obtain ⟨δ, hδ, hconv⟩ :=
     ω₀.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset
       (Ks := fun z y ↦ Ks z (φ.symm y)) (Kt := fun z y ↦ Kt z (φ.symm y)) hW hKs hKt hJ' hD hφC
@@ -935,7 +959,7 @@ theorem exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off
     hpt hz (huC k hz) (((hu k).contMDiffAt (hΩ.mem_nhds hz)).mdifferentiableAt (by simp))
   obtain ⟨ψ, Z, w, m, hψ, hZΩ, hconc, hw1, hwC, hlim, hdlim, hweq, hwint, hm, hmlim, hmE⟩ :=
     hconv (u := fun k ↦ φ ∘ u k) hΩ hΩD
-      (fun k ↦ contMDiffOn_iff_contDiffOn.1 <| φ.contMDiffOn.comp (hu k) ((huC k).mono_right hCφ))
+      (fun k ↦ φ.contDiffOn_comp_of_contMDiffOn le_rfl (hu k) ((huC k).mono_right hCφ))
       (fun k z hz ↦ ((hptu k hz).2).2 (hfl k z hz)) (fun k z hz ↦ ⟨u k z, huC k hz, rfl⟩)
       (fun k ↦ (hint k).congr_fun (fun y hy ↦ ((hptu k hy).1).symm) hΩ.measurableSet)
       (fun k ↦ (setIntegral_congr_fun hΩ.measurableSet fun y hy ↦ (hptu k hy).1).trans_le

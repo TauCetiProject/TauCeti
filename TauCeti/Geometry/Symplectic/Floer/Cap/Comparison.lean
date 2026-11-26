@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Map
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Product
 public import TauCeti.RingTheory.NovikovModule.Comparison
+import TauCeti.Geometry.Symplectic.Floer.Grading
 
 /-!
 # The multiplicative PSS comparison for class-indexed counts on capped generators
@@ -326,11 +327,10 @@ theorem novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_
     rw [novikovMapOfMatrix_eq_kernelMap hG₂ hG₂ s₂ s₂ _ hη₂]
     exact hb.1
   -- The PSS maps preserve the cochain degree.
-  have hΦa := novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy s₁ r₁ q hq hν₁ hμ₁
-    hG₁ hF₁ (ε := 0) (fun s i A hA => by rw [sub_zero]; exact hΦ₁ s i A hA) ha.2
-  have hΦb := novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy s₂ r₂ q hq hν₂ hμ₂
-    hG₂ hF₂ (ε := 0) (fun t j A hA => by rw [sub_zero]; exact hΦ₂ t j A hA) hb.2
-  rw [add_zero] at hΦa hΦb
+  have hΦa := novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy_of_eq s₁ r₁ q hq hν₁
+    hμ₁ hG₁ hF₁ hΦ₁ ha.2
+  have hΦb := novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy_of_eq s₂ r₂ q hq hν₂
+    hμ₂ hG₂ hF₂ hΦ₂ hb.2
   -- The PSS maps send the cocycles `a` and `b` to cocycles of the cylinder differentials.
   have hDΦa := novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm s₁ r₁ q hq hG₁ hF₁
     Φ₁ D₁ E₁ hΦ₁D a
@@ -363,9 +363,8 @@ theorem novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_
       hq hG₁ hG₂ hG₀ hν₁ hν₂ hν₀ K (ε := -1) (fun s t l A hA => by rw [hK s t l A hA]; ring)
       ha.2 hb.2
     rw [← sub_eq_add_neg] at hKab'
-    simpa only [add_zero] using novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy s₀ r₀
-      q hq hν₀ hμ₀ hG₀ hF₀ (ε := 0) (fun l k A hA => by rw [sub_zero]; exact hΦ₀deg l k A hA)
-      hKab'
+    exact novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy_of_eq s₀ r₀ q hq hν₀ hμ₀
+      hG₀ hF₀ hΦ₀deg hKab'
   · -- `T` has cochain degree `e + f`, and `Y₀` lowers it by one.
     have hTdeg := novikovProductOfMatrix_coefficientComparison_mem_cochain_gradeBy r₁ r₂ r₀ q hq
       hF₁ hF₂ hF₀ hμ₁ hμ₂ hμ₀ Q hQ hΦa hΦb

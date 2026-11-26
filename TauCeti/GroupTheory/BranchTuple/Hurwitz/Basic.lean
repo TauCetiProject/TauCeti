@@ -38,6 +38,7 @@ relative to any group of automorphisms.
 
 ## Main results
 
+* `TauCeti.BranchTuple.hurwitzMove_eq_update`: a Hurwitz move as two updates of the tuple.
 * `TauCeti.BranchTuple.hurwitzMove_mul_hurwitzMove_comm` and
   `TauCeti.BranchTuple.hurwitzMove_braid`: the moves satisfy the braid relations.
 * `TauCeti.BranchTuple.hurwitzAction_sigma`: `σ i` acts by the `i`-th move.
@@ -100,12 +101,18 @@ def hurwitzMove (i : Fin (r - 1)) : Equiv.Perm (BranchTuple r G) where
     simp only [update_apply, hne, ↓reduceIte]
     split_ifs with h₁ h₂ <;> subst_vars <;> group
 
+/-- A Hurwitz move updates the adjacent entries at `strand i` and `strandSucc i`. -/
+theorem hurwitzMove_eq_update (i : Fin (r - 1)) (t : BranchTuple r G) :
+    hurwitzMove i t = Function.update
+      (Function.update t (strand i) (t (strand i) * t (strandSucc i) * (t (strand i))⁻¹))
+      (strandSucc i) (t (strand i)) := (rfl)
+
 /-- The value of a Hurwitz move at every position. -/
 theorem hurwitzMove_apply (i : Fin (r - 1)) (t : BranchTuple r G) (k : Fin r) :
     hurwitzMove i t k =
       if k = strandSucc i then t (strand i)
       else if k = strand i then t (strand i) * t (strandSucc i) * (t (strand i))⁻¹ else t k := by
-  simp only [hurwitzMove, Equiv.coe_fn_mk, update_apply]
+  simp only [hurwitzMove_eq_update, update_apply]
 
 /-- The value of an inverse Hurwitz move at every position. -/
 theorem hurwitzMove_symm_apply (i : Fin (r - 1)) (t : BranchTuple r G) (k : Fin r) :

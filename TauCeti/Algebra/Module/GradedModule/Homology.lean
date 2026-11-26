@@ -197,7 +197,7 @@ variable {ι : Type*} [DecidableEq ι] [AddCommGroup ι] {R S M : Type*}
   (hNG : SetLike.IsHomogeneous G.piece N) {h v : M →ₗ[S] M} {N' : Submodule S M}
   (hN' : N' ≤ N'.comap d)
   (hN'G : SetLike.IsHomogeneous G.piece N') (hNN' : N ≤ N') (hvN' : ∀ m, v m ∈ N')
-  (hN'N : ∀ x ∈ N', ∃ u, x - v u ∈ N) (hh : ∀ m ∈ N, h m ∈ N) (hvd : ∀ m, d (v m) = v (d m))
+  (hN'N : ∀ x ∈ N', ∃ u, x - v u ∈ N) (hh : ∀ m ∈ N, h m ∈ N)
   (hreg : ∀ m, v m ∈ N → m ∈ N) (hhom : ∀ m, d (h m) + h (d m) - v m ∈ N) {s : ι}
   (hhG : LinearMap.IsHomogeneous h G.piece G.piece s)
 
@@ -208,7 +208,7 @@ include hhG in
 graded by the shift by `-s`. -/
 theorem isHomogeneous_quotientHomologyProdEquiv :
     LinearMap.IsHomogeneous
-      ((LinearMap.quotientHomologyProdEquiv hd hN hN' hNN' hvN' hN'N hh hvd hreg
+      ((LinearMap.quotientHomologyProdEquiv hd hN hN' hNN' hvN' hN'N hh hreg
         hhom).restrictScalars R).toLinearMap
       ((G.quotientHomology hdG hd hN hNG).prod
         ((G.quotientHomology hdG hd hN hNG).shift (-s))).piece
@@ -222,7 +222,7 @@ theorem isHomogeneous_quotientHomologyProdEquiv :
     simpa only [neg_add_cancel_right] using hhG.map_mem hbp
   rw [add_zero, LinearEquiv.coe_coe, LinearEquiv.restrictScalars_apply,
     LinearMap.quotientHomologyClass_def, LinearMap.quotientHomologyClass_def,
-    LinearMap.quotientHomologyProdEquiv_mk hd hN hN' hNN' hvN' hN'N hh hvd hreg hhom a b ha hb]
+    LinearMap.quotientHomologyProdEquiv_mk hd hN hN' hNN' hvN' hN'N hh hreg hhom a b ha hb]
   have hab : d (a + h b) ∈ N' := by
     rw [map_add]
     exact N'.add_mem (hNN' ha) (LinearMap.map_map_mem_of_homotopy hNN' hvN' hh hhom hb)
@@ -240,7 +240,7 @@ noncomputable def quotientHomologyProdPieceEquiv (p : ι) :
       (G.quotientHomology hdG hd hN' hN'G).piece p :=
   (Submodule.prodEquiv _ _).symm ≪≫ₗ
     LinearEquiv.ofEq _ _ (by rw [prod_piece, shift_piece, sub_eq_add_neg]) ≪≫ₗ
-    (G.isHomogeneous_quotientHomologyProdEquiv hdG hd hN hNG hN' hN'G hNN' hvN' hN'N hh hvd hreg
+    (G.isHomogeneous_quotientHomologyProdEquiv hdG hd hN hNG hN' hN'G hNN' hvN' hN'N hh hreg
       hhom hhG).pieceEquiv p
 
 /-- The graded splitting is the splitting `LinearMap.quotientHomologyProdEquiv` on underlying
@@ -249,9 +249,9 @@ classes. -/
 theorem coe_quotientHomologyProdPieceEquiv_apply (p : ι)
     (x : (G.quotientHomology hdG hd hN hNG).piece p ×
       (G.quotientHomology hdG hd hN hNG).piece (p - s)) :
-    (G.quotientHomologyProdPieceEquiv hdG hd hN hNG hN' hN'G hNN' hvN' hN'N hh hvd hreg hhom hhG
+    (G.quotientHomologyProdPieceEquiv hdG hd hN hNG hN' hN'G hNN' hvN' hN'N hh hreg hhom hhG
         p x : d.quotientHomology hd N' hN') =
-      LinearMap.quotientHomologyProdEquiv hd hN hN' hNN' hvN' hN'N hh hvd hreg hhom
+      LinearMap.quotientHomologyProdEquiv hd hN hN' hNN' hvN' hN'N hh hreg hhom
         ((x.1 : d.quotientHomology hd N hN), (x.2 : d.quotientHomology hd N hN)) := by
   simp [quotientHomologyProdPieceEquiv]
 

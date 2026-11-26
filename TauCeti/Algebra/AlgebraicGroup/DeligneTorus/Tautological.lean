@@ -43,6 +43,8 @@ components with exponents `1` and `0`.
 
 ## Main results
 
+* `TauCeti.DeligneTorus.map_mulLeft_comp_tautologicalComodule_coact`: multiplication by a complex
+  number is an endomorphism of the tautological representation.
 * `TauCeti.DeligneTorus.comm_endOfPoint_tautologicalComodule`: a point `g` of `S` acts on
   `R ⊗[ℝ] ℂ ≃ ℂ ⊗[ℝ] R` by multiplication by its unit `pointsMulEquiv R g`.
 * `TauCeti.DeligneTorus.endOfPoint_real_tautologicalComodule`: a real point `z ∈ ℂˣ` acts on `ℂ`
@@ -121,6 +123,20 @@ theorem tautologicalComodule_coact_apply (v : ℂ) :
   let _ := Comodule.groupLike (R := ℂ) (C := ℂ ⊗[ℝ] S) (M := ℂ) universalGroupLike
   rw [tautologicalComodule, Comodule.restrictScalars_coact, Comodule.restrictScalarsCoact_apply,
     Comodule.groupLike_coact_apply]
+
+/-- **Multiplication by a complex number is an endomorphism of the tautological representation**:
+`v ↦ z * v` commutes with the coaction of `tautologicalComodule`. -/
+theorem map_mulLeft_comp_tautologicalComodule_coact (z : ℂ) :
+    TensorProduct.map (LinearMap.mulLeft ℝ z) LinearMap.id ∘ₗ tautologicalComodule.coact =
+      tautologicalComodule.coact ∘ₗ LinearMap.mulLeft ℝ z := by
+  have hsmul (y : ℂ ⊗[ℝ] S) :
+      TensorProduct.map (LinearMap.mulLeft ℝ z) LinearMap.id y = z • y := by
+    induction y using TensorProduct.inductionOn with
+    | tmul a s => simp [TensorProduct.smul_tmul']
+    | add y y' hy hy' => simp only [map_add, smul_add, hy, hy']
+  ext v
+  simp only [LinearMap.comp_apply, hsmul, LinearMap.mulLeft_apply,
+    tautologicalComodule_coact_apply, ← smul_eq_mul, ← TensorProduct.smul_tmul', map_smul]
 
 /-- The point action of the tautological comodule at a point `g`, on a pure tensor, as a
 computation with an arbitrary element `t` in place of the universal point. -/

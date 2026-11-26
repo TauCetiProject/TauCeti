@@ -14,6 +14,7 @@ public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.OnePoint
 import Mathlib.Algebra.Order.Star.Unitization
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Topology.ContinuousMap.StarOrdered
+import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Topology.Compactness.Compact
 
 /-!
@@ -104,10 +105,9 @@ theorem map_gelfandStarTransform_inrRange :
   · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
     exact gelfandStarTransform_unitization_inr_apply_augmentation a
   · set u : A⁺¹ := (gelfandStarTransform A⁺¹).symm F
-    have hu : Unitization.augmentation ℂ A u = 0 := by
-      rw [Unitization.augmentation_apply, ← u.gelfandStarTransform_apply_augmentation,
-        StarAlgEquiv.apply_symm_apply, hF]
-    exact ⟨u, ⟨u.snd, Unitization.inr_snd_of_augmentation_eq_zero hu⟩,
+    have hu : u.fst = 0 := by
+      rw [← u.gelfandStarTransform_apply_augmentation, StarAlgEquiv.apply_symm_apply, hF]
+    exact ⟨u, ⟨u.snd, Unitization.inr_snd_of_fst_eq_zero hu⟩,
       (gelfandStarTransform A⁺¹).apply_symm_apply F⟩
 
 private theorem bijective_codRestrict_gelfandStarTransform :

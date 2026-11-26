@@ -67,7 +67,7 @@ private theorem inner_representationBorelOperator_indicator (ψ ξ : H) {B : Set
     ⟪ψ, π.representationBorelOperator (BoundedBorelFunction.indicator B hB 1) ξ⟫_ℂ =
       π.representationPolarizedMeasure ψ ξ B := by
   rw [StarAlgHom.inner_representationBorelOperator, BoundedBorelFunction.coe_indicator,
-    BoundedBorelFunction.coe_one, Pi.one_def, VectorMeasure.integral_indicator_const _ hB,
+    FunLike.coe_one, Pi.one_def, VectorMeasure.integral_indicator_const _ hB,
     ContinuousLinearMap.mul_apply', one_mul]
 
 /-- The **projection-valued measure of a representation** `π` of `C(K, ℂ)`: the projection of a

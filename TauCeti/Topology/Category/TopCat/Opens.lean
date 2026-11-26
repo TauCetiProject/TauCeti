@@ -24,6 +24,10 @@ and an open subset of a Hausdorff space is Hausdorff. A compact subset of `X` ly
 `U` is the image of a compact subset of `U`. For an injective open map `f`, the point `f y` lies in
 the image of an open `V` exactly when `y` lies in `V`.
 
+For opens `V ≤ U` of `X`, the opens of `V` can be viewed in the subspace `U` in two ways: by
+direct image along the inclusion of `V` into `U`, or through the open `V` of `U`, which is
+homeomorphic to `V`. The two descriptions agree, as do the resulting image opens in `X`.
+
 ## Main results
 
 * `TopologicalSpace.Opens.map_hom_obj_map_inv_obj`,
@@ -35,8 +39,22 @@ the image of an open `V` exactly when `y` lies in `V`.
   embedding.
 * `TopologicalSpace.Opens.exists_compacts_map_inclusion'_eq`: a compact subset of `X` lying in an
   open set `U` is the image of a compact subset of `U` under its inclusion.
+* `TopologicalSpace.Opens.inclusionSites`, `TopologicalSpace.Opens.inclusionSitesCompIso`: for
+  `V ≤ U`, the opens of `V` viewed in `U`, and the identification of their images in `X`;
+  `TopologicalSpace.Opens.coe_inclusionSites_obj` and
+  `TopologicalSpace.Opens.mem_inclusionSites_obj` describe the carrier in `U` as the image along
+  `Set.inclusion`.
+* `TopologicalSpace.Opens.relativeOpen`, `TopologicalSpace.Opens.relativeOpenIso`,
+  `TopologicalSpace.Opens.relativeSites`: the open `V` of the subspace `U`, its homeomorphism
+  with `V`, and the induced equivalence of opens.
+* `TopologicalSpace.Opens.relativeRestrictionSitesIso`,
+  `TopologicalSpace.Opens.nestedOpen_image_eq`: the two ways of viewing an open of `V` in `U`,
+  and in `X`, agree.
 * `IsOpenMap.apply_mem_functor_obj_iff`: for an injective open map `f`, the point `f y` lies in the
   image of an open `V` exactly when `y` lies in `V`.
+* `Homeomorph.opensCongr_inverse_refl`, `Homeomorph.opensCongr_inverse_trans`,
+  `Homeomorph.opensCongr_inverse_op_trans`: the inverse-opens functors of the order equivalences
+  `Homeomorph.opensCongr`, possibly across base universes, satisfy identity and composition laws.
 -/
 
 public section
@@ -94,6 +112,131 @@ instance t2Space_toTopCat_obj [T2Space X] (V : Opens X) : T2Space ((toTopCat X).
 
 end TopologicalSpace.Opens
 
+/-! ### Nested open subsets -/
+
+namespace TopologicalSpace.Opens
+
+variable {X : TopCat.{u}} {U V : Opens X}
+
+/-- For `V ≤ U`, the opens of `V` viewed as opens of the subspace `U`, by direct image along the
+inclusion `V → U`. -/
+@[expose]
+def inclusionSites (h : V ≤ U) : Opens V ⥤ Opens U :=
+  Topology.IsOpenEmbedding.functor (X := TopCat.of V) (Y := TopCat.of U)
+    (f := (Opens.toTopCat X).map (homOfLE h)) (isOpenEmbedding_of_le h)
+
+/-- The open of `U` underlying an open `D` of `V` is the image of `D` along the inclusion
+`V → U`. -/
+@[simp]
+lemma coe_inclusionSites_obj (h : V ≤ U) (D : Opens V) :
+    ((inclusionSites h).obj D : Set U) = Set.inclusion h '' D :=
+  rfl
+
+/-- A point of `U` lies in the open of `U` underlying an open `D` of `V` exactly when it is the
+inclusion of a point of `D`. -/
+lemma mem_inclusionSites_obj (h : V ≤ U) (D : Opens V) (x : U) :
+    x ∈ (inclusionSites h).obj D ↔ ∃ y ∈ D, Set.inclusion h y = x :=
+  Iff.rfl
+
+/-- Taking an open of `V` to `U` and then to `X` is taking it to `X` directly. -/
+def inclusionSitesCompIso (h : V ≤ U) :
+    inclusionSites h ⋙ U.isOpenEmbedding.functor ≅ V.isOpenEmbedding.functor :=
+  NatIso.ofComponents (fun T ↦ eqToIso (by
+    apply Opens.ext
+    -- The opens functor of `U` has source `Opens ((toTopCat X).obj U)`, so `rw` cannot see the
+    -- composite; state both sides as direct images along the subtype values.
+    change Subtype.val '' ((inclusionSites h).obj T : Set U) = Subtype.val '' (T : Set V)
+    rw [coe_inclusionSites_obj, ← Set.image_comp]
+    rfl)) (by intro T T' f; exact Subsingleton.elim _ _)
+
+/-- The open V viewed as an open of the subspace U. -/
+abbrev relativeOpen (_h : V ≤ U) : Opens U := (Opens.map U.inclusion').obj V
+/-- The relative open in U is canonically the same topological space as V. -/
+def relativeHomeomorph (h : V ≤ U) : (relativeOpen h) ≃ₜ V where
+  toFun w := ⟨w.val.val, w.property⟩
+  invFun v := ⟨⟨v.val, h v.property⟩, v.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+/-- The relative-open homeomorphism forgets the intermediate subtype. -/
+@[simp]
+lemma relativeHomeomorph_apply (h : V ≤ U) (w : relativeOpen h) :
+    relativeHomeomorph h w = ⟨w.val.val, w.property⟩ := by
+  rfl
+
+/-- Its inverse inserts the membership proof in the intermediate open. -/
+@[simp]
+lemma relativeHomeomorph_symm_apply (h : V ≤ U) (v : V) :
+    (relativeHomeomorph h).symm v = ⟨⟨v.val, h v.property⟩, v.property⟩ := by
+  rfl
+
+/-- The canonical isomorphism from the relative open to the direct open subspace. -/
+def relativeOpenIso (h : V ≤ U) :
+    TopCat.of (relativeOpen h) ≅ TopCat.of V :=
+  @TopCat.isoOfHomeo (TopCat.of (relativeOpen h)) (TopCat.of V) (relativeHomeomorph h)
+/-- The relative-open identification forgets the intermediate subtype. -/
+@[simp]
+lemma relativeOpenIso_hom_apply (h : V ≤ U) (w : relativeOpen h) :
+    (relativeOpenIso h).hom w = ⟨w.val.val, w.property⟩ := by
+  rfl
+
+/-- The inverse identification inserts the proof that the point belongs to `U`. -/
+@[simp]
+lemma relativeOpenIso_inv_apply (h : V ≤ U) (v : V) :
+    (relativeOpenIso h).inv v = ⟨⟨v.val, h v.property⟩, v.property⟩ := by
+  rfl
+
+/-- The inverse image open is tested on the same underlying point of `V`. -/
+@[simp]
+lemma mem_map_relativeOpenIso_hom_obj (h : V ≤ U) (D : Opens V) (w : relativeOpen h) :
+    w ∈ (Opens.map (relativeOpenIso h).hom).obj D ↔ (⟨w.val.val, w.property⟩ : V) ∈ D :=
+  Iff.rfl
+
+/-- The site equivalence induced by the relative-open homeomorphism. -/
+abbrev relativeSites (h : V ≤ U) : Opens (relativeOpen h) ≌ Opens V :=
+  (Opens.mapMapIso (relativeOpenIso h)).symm
+
+/-- The direct-image opens functor for the relative open in the intermediate subspace. -/
+abbrev relativeInclusionSites (h : V ≤ U) : Opens (relativeOpen h) ⥤ Opens U :=
+  @Topology.IsOpenEmbedding.functor (TopCat.of (relativeOpen h)) (TopCat.of U)
+    (Opens.inclusion' (X := TopCat.of U) (relativeOpen h))
+    (Opens.isOpenEmbedding (X := TopCat.of U) (relativeOpen h))
+
+/-- Pulling an open of `V` back to the relative open and pushing it into `U` is viewing it in `U`
+directly. -/
+def relativeRestrictionSitesIso (h : V ≤ U) :
+    Opens.map (relativeOpenIso h).hom ⋙ (relativeInclusionSites h) ≅
+      inclusionSites h :=
+  NatIso.ofComponents (fun D ↦ eqToIso (by
+    apply Opens.ext
+    let f : relativeOpen h → V := (relativeHomeomorph h)
+    let g : V → U := fun v ↦ ⟨v.val, h v.property⟩
+    -- `Opens.map` is direct image; the relative homeomorphism supplies its preimage carrier.
+    change Subtype.val '' (f ⁻¹' (D : Set V)) = g '' (D : Set V)
+    calc
+      Subtype.val '' (f ⁻¹' (D : Set V)) = g '' (f '' (f ⁻¹' (D : Set V))) := by
+        rw [← Set.image_comp]
+        rfl
+      _ = g '' (D : Set V) :=
+        congrArg (g '' ·) (Set.image_preimage_eq _ (relativeHomeomorph h).surjective)))
+    (by intro D D' f; exact Subsingleton.elim _ _)
+
+private def totalNestedSitesIso (h : V ≤ U) :
+    (relativeSites h).inverse ⋙ relativeInclusionSites h ⋙ U.isOpenEmbedding.functor ≅
+      V.isOpenEmbedding.functor :=
+  Functor.isoWhiskerRight (relativeRestrictionSitesIso h) U.isOpenEmbedding.functor ≪≫
+    inclusionSitesCompIso h
+/-- The composed image open in X equals the direct image of the open in V. -/
+lemma nestedOpen_image_eq (h : V ≤ U) (D : Opens V) :
+    U.isOpenEmbedding.functor.obj
+      ((relativeInclusionSites h).obj ((relativeSites h).inverse.obj D)) =
+      V.isOpenEmbedding.functor.obj D := by
+  exact le_antisymm (leOfHom ((totalNestedSitesIso h).hom.app D))
+    (leOfHom ((totalNestedSitesIso h).inv.app D))
+
+end TopologicalSpace.Opens
+
 namespace IsOpenMap
 
 /-- For an injective open map `f`, the point `f y` lies in the image of an open set `V` exactly when
@@ -104,5 +247,28 @@ theorem apply_mem_functor_obj_iff {X Y : TopCat.{u}} {f : Y ⟶ X} (hf : IsOpenM
   hf'.mem_set_image
 
 end IsOpenMap
+
+namespace Homeomorph
+
+variable {X : Type*} [TopologicalSpace X] {Y : Type*} [TopologicalSpace Y] (h : X ≃ₜ Y)
+
+/-- The inverse-opens functor of the identity homeomorphism is the native identity functor. -/
+theorem opensCongr_inverse_refl :
+    (Homeomorph.refl X).opensCongr.equivalence.inverse = 𝟭 (TopologicalSpace.Opens X) := by
+  rfl
+
+/-- Inverse-opens transport follows the actual composite in the contravariant order. -/
+theorem opensCongr_inverse_trans {Z : Type*} [TopologicalSpace Z] (k : Y ≃ₜ Z) :
+    (h.trans k).opensCongr.equivalence.inverse =
+      k.opensCongr.equivalence.inverse ⋙ h.opensCongr.equivalence.inverse := by
+  rfl
+
+/-- The actual inverse-opens precomposition functors compose in the same order after `op`. -/
+theorem opensCongr_inverse_op_trans {Z : Type*} [TopologicalSpace Z] (k : Y ≃ₜ Z) :
+    (h.trans k).opensCongr.equivalence.inverse.op =
+      k.opensCongr.equivalence.inverse.op ⋙ h.opensCongr.equivalence.inverse.op := by
+  rfl
+
+end Homeomorph
 
 end
