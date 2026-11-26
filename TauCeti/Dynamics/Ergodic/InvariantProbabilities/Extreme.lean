@@ -59,11 +59,12 @@ theorem UniquelyErgodic.ergodic (h : UniquelyErgodic T) {ν : ProbabilityMeasure
   exact mem_singleton _
 
 /-- The Dirac mass at a fixed point of a measurable map is ergodic. -/
-theorem ergodic_dirac_of_isFixedPt [MeasurableSingletonClass X] (hT : Measurable T) {x : X}
-    (hx : Function.IsFixedPt T x) : Ergodic T (Measure.dirac x) where
+theorem ergodic_dirac_of_isFixedPt (hT : Measurable T) {x : X} (hx : Function.IsFixedPt T x) :
+    Ergodic T (Measure.dirac x) where
   toMeasurePreserving := ⟨hT, by rw [Measure.map_dirac' hT, hx.eq]⟩
-  aeconst_set _ _ _ := by
-    rw [ae_dirac_eq]
-    exact Filter.EventuallyConst.of_tendsto (Filter.tendsto_pure_pure _ _)
+  aeconst_set s hs _ := by
+    refine Filter.EventuallyEmptyOrUniv.congr ?_ hs.toMeasurable_ae_eq
+    refine Filter.eventuallyConst_iff_exists_eventuallyEq.2 ⟨_, (ae_dirac_iff ?_).2 rfl⟩
+    by_cases h : x ∈ toMeasurable (Measure.dirac x) s <;> simp [h, ← compl_ofPred]
 
 end TauCeti
