@@ -14,6 +14,7 @@ import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Analysis.Complex.Parameter.Deriv
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 
@@ -169,32 +170,22 @@ private theorem fderiv_deriv_comm (hH : ContDiffOn ℝ 2 H (W ×ˢ V)) (hW : IsO
     (hx : x ∈ W) {z : ℂ} (hz : z ∈ V) :
     fderiv ℝ (fun y ↦ deriv (fun w ↦ H (y, w)) z) x =
       deriv (fun w ↦ fderiv ℝ (fun y ↦ H (y, w)) x) z := by
-  have hU : IsOpen (W ×ˢ V) := hW.prod hV
-  have hH2 : ContDiffAt ℝ 2 H (x, z) := hH.contDiffAt (hU.mem_nhds ⟨hx, hz⟩)
-  have hDH : DifferentiableAt ℝ (fderiv ℝ H) (x, z) :=
-    (hH2.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  have hd {p : X × ℂ} (hp : p ∈ W ×ˢ V) : DifferentiableAt ℝ H p :=
-    (hH.contDiffAt (hU.mem_nhds hp)).differentiableAt (by norm_num)
-  -- In `y`, the complex derivative is `DH (y, z) (0, 1)`.
-  have hL := ((ContinuousLinearMap.apply ℝ G ((0 : X), (1 : ℂ))).hasFDerivAt.comp x
-    (hDH.hasFDerivAt.comp x (hasFDerivAt_prodMk_left x z))).congr_of_eventuallyEq
+  have hH2 : ContDiffAt ℝ 2 H (x, z) := hH.contDiffAt ((hW.prod hV).mem_nhds ⟨hx, hz⟩)
+  have hholx : ∀ᶠ y in 𝓝 x, DifferentiableAt ℂ (fun w ↦ H (y, w)) z :=
+    eventually_of_mem (hW.mem_nhds hx) fun y hy ↦ (hhol y hy).differentiableAt (hV.mem_nhds hz)
+  -- In `y`, the complex derivative is the real derivative of the slice applied to `1`, whose
+  -- parameter derivative is given by the mixed-derivative identity.
+  have hF : ContDiffAt ℝ (minSmoothness ℝ 2) H (x, z) := by
+    rwa [minSmoothness_of_isRCLikeNormedField]
+  have hD := ((ContinuousLinearMap.apply ℝ G (1 : ℂ)).hasFDerivAt.comp x
+    (hasFDerivAt_spatialFDeriv hF)).congr_of_eventuallyEq
     (f₁ := fun y ↦ deriv (fun w ↦ H (y, w)) z) (by
-      filter_upwards [hW.mem_nhds hx] with y hy
-      exact deriv_slice_right_eq_fderiv_apply_zero_one (hd ⟨hy, hz⟩)
-        ((hhol y hy).differentiableAt (hV.mem_nhds hz)))
-  -- In `w`, the parameter derivative is `DH (x, w)` restricted to `X × {0}`.
-  have hR := (((ContinuousLinearMap.compL ℝ X (X × ℂ) G).flip
-    (ContinuousLinearMap.inl ℝ X ℂ)).hasFDerivAt.comp z
-    (hDH.hasFDerivAt.comp z (hasFDerivAt_prodMk_right x z))).congr_of_eventuallyEq
-    (f₁ := fun w ↦ fderiv ℝ (fun y ↦ H (y, w)) x) (by
-      filter_upwards [hV.mem_nhds hz] with w hw
-      simpa using fderiv_slice_left (hd ⟨hx, hw⟩))
-  have hhol' := differentiableAt_fderiv_slice (h := fun y w ↦ H (y, w)) hH2
-    (eventually_of_mem (hW.mem_nhds hx) fun y hy ↦ (hhol y hy).differentiableAt (hV.mem_nhds hz))
-  rw [hL.fderiv, ← one_smul ℂ (deriv _ z), ← hhol'.fderiv_restrictScalars_eq_smul_deriv ℝ,
-    hR.fderiv]
+      filter_upwards [hholx] with y hy
+      simp [hy.fderiv_restrictScalars_eq_smul_deriv ℝ])
+  rw [hD.fderiv, ← one_smul ℂ (deriv _ z), ← (differentiableAt_fderiv_slice
+    (h := fun y w ↦ H (y, w)) hH2 hholx).fderiv_restrictScalars_eq_smul_deriv ℝ]
   ext v
-  simp [(hH2.isSymmSndFDerivAt (by simp)) (v, 0) (0, 1)]
+  simp
 
 /-- **Commutation of parameter derivatives with the complex derivative.** If `H : X × ℂ → G` is
 `C^n` on an open product `W ×ˢ V` and holomorphic in its complex variable on `V`, then for
