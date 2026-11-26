@@ -19,6 +19,9 @@ the time slices of a homotopy smooth near `s × [0, 1]` are smooth on `s`. Likew
 `J z x` that is smooth near the graph of a map `u` smooth on `s` gives a map `z ↦ J z (u z)`
 smooth on `s` (`TauCeti.contDiffOn_comp_graph`).
 
+A slice `f p` of a family `f : P → E → X` that is jointly `C^n` at `(p, x)` is `C^n` at `x`
+(`ContDiffAt.uncurry_left`).
+
 For a family `F : P × E → X` smooth at `(p, x)`, the spatial differential
 `(q, y) ↦ fderiv (F (q, ·)) y` is smooth jointly (`ContDiffAt.fderiv_slice`), smoothness persists
 along a graph over the parameter (`ContDiffAt.eventually_contDiffAt_graph`), and the vertical part
@@ -76,6 +79,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X] {p : P} {x : E}
+
+/-- A slice `f p` of a family that is jointly `C^n` at `(p, x)` is `C^n` at `x`. -/
+theorem uncurry_left {n : WithTop ℕ∞} {f : P → E → X}
+    (hf : ContDiffAt 𝕜 n (Function.uncurry f) (p, x)) : ContDiffAt 𝕜 n (f p) x :=
+  hf.comp x (contDiffAt_const.prodMk contDiffAt_id)
 
 /-- The spatial differential of a `C^n` family is `C^m` jointly in the parameter and the spatial
 variable, for `m + 1 ≤ n`. -/
