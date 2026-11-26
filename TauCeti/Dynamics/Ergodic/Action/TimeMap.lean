@@ -21,7 +21,7 @@ flow is an invertible system: Mathlib's `MeasurableEquiv.vadd t` has inverse
 (`MeasureTheory.measurePreserving_vadd`).
 
 Conversely, an action in which every element acts as the identity is not ergodic as soon as some
-measurable set and its complement both have positive measure
+null-measurable set and its complement both have positive measure
 (`not_ergodicSMul_of_forall_smul_eq`).
 
 ## Main results
@@ -49,17 +49,17 @@ theorem ErgodicSMul.of_ergodic_smul [SMulInvariantMeasure M X μ] (m : M)
     h.quasiErgodic.aeconst_set hs.nullMeasurableSet (hinv m)
 
 /-- **The trivial action is not ergodic.** If every element of `M` acts as the identity, and some
-measurable set `s` and its complement both have positive measure, then the action is not
+null-measurable set `s` and its complement both have positive measure, then the action is not
 ergodic. -/
 @[to_additive /-- **The trivial action is not ergodic.** If every element of `M` acts as the
-identity, and some measurable set `s` and its complement both have positive measure, then the
-action is not ergodic. -/]
+identity, and some null-measurable set `s` and its complement both have positive measure, then
+the action is not ergodic. -/]
 theorem not_ergodicSMul_of_forall_smul_eq (h : ∀ (m : M) (x : X), m • x = x) {s : Set X}
-    (hs : MeasurableSet s) (hs₀ : μ s ≠ 0) (hsc : μ sᶜ ≠ 0) : ¬ErgodicSMul M X μ := by
+    (hs : NullMeasurableSet s μ) (hs₀ : μ s ≠ 0) (hsc : μ sᶜ ≠ 0) : ¬ErgodicSMul M X μ := by
   intro hμ
   have hinv (m : M) : (m • ·) ⁻¹' s =ᵐ[μ] s := by
     rw [show (m • ·) ⁻¹' s = s by ext x; simp [h]]
-  have hconst := ErgodicSMul.aeconst_of_forall_preimage_smul_ae_eq hs hinv
+  have hconst := aeconst_of_forall_preimage_smul_ae_eq M hs hinv
   rcases eventuallyEmptyOrUniv_iff'.mp hconst with h₀ | h₁
   · exact hs₀ (ae_eq_empty.mp h₀)
   · exact hsc (ae_eq_univ.mp h₁)

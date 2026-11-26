@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Dynamics.Ergodic.AddCircleAdd
 public import Mathlib.NumberTheory.Real.Irrational
-import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
+import TauCeti.Topology.Instances.AddCircle.DenseSubgroup
 
 /-!
 # Ergodicity of the time-`t` maps of the circle flow
@@ -15,14 +15,13 @@ import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
 The real line acts on the circle `AddCircle p = ℝ / pℤ`, `p > 0`, by Mathlib's quotient action
 `t +ᵥ x = ↑t + x`; this is the linear flow of speed `1`. Its time-`t` map is ergodic for the Haar
 measure exactly when `t / p` is irrational (`AddCircle.ergodic_vadd_iff`), by Mathlib's
-characterization of ergodic rotations (`AddCircle.ergodic_add_left`). In particular the time-`p`
+characterization of ergodic rotations (`AddCircle.ergodic_add_left`) and the irrationality
+criterion for infinite order (`AddCircle.addOrderOf_coe_eq_zero_iff`). In particular the time-`p`
 map is the identity, which is not ergodic (`AddCircle.not_ergodic_vadd_self`), while on the unit
 circle every time-`t` map with `t` irrational is ergodic.
 
 ## Main results
 
-* `AddCircle.addOrderOf_coe_eq_zero_iff`: the class of `t` has infinite order exactly when `t / p`
-  is irrational.
 * `AddCircle.ergodic_vadd_iff`: the time-`t` map of the circle flow is ergodic exactly when `t / p`
   is irrational.
 * `AddCircle.not_ergodic_vadd_self`: the time-`p` map is not ergodic.
@@ -35,12 +34,6 @@ open MeasureTheory
 namespace AddCircle
 
 variable {p : ℝ} [Fact (0 < p)]
-
-/-- The class of `t : ℝ` in `AddCircle p` has infinite additive order exactly when `t / p` is
-irrational. -/
-theorem addOrderOf_coe_eq_zero_iff {t : ℝ} :
-    addOrderOf (t : AddCircle p) = 0 ↔ Irrational (t / p) := by
-  rw [← denseRange_zsmul_iff, denseRange_zsmul_coe_iff]
 
 /-- **Ergodic time-`t` maps of the circle flow.** The time-`t` map `x ↦ t +ᵥ x` of the translation
 action of `ℝ` on `AddCircle p` is ergodic for the Haar measure exactly when `t / p` is
