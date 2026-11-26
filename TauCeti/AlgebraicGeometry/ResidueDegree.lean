@@ -166,9 +166,7 @@ theorem toNat_length_residueField_eq_residueDegree (f : X ⟶ Y) {x : X} {y : Y}
     (Module.length (Y.presheaf.stalk y) (ResidueField (X.presheaf.stalk x))).toNat =
       f.residueDegree x := by
   subst h
-  let φ := (Y.presheaf.stalkSpecializes (specializes_of_eq (rfl : f x = f x)) ≫ f.stalkMap x).hom
-  have hφ : φ = (f.stalkMap x).hom := by simp [φ]
-  let _ : Algebra (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := φ.toAlgebra
+  let _ := f.stalkAlgebraOfApplyEq (rfl : f x = f x)
   let _ : Algebra (ResidueField (Y.presheaf.stalk (f x))) (ResidueField (X.presheaf.stalk x)) :=
     (ResidueField.map (f.stalkMap x).hom).toAlgebra
   -- `𝒪_{Y,f x}` acts on `κ(x)` through `κ(f x)`.
@@ -179,12 +177,15 @@ theorem toNat_length_residueField_eq_residueDegree (f : X ⟶ Y) {x : X} {y : Y}
       -- Expand the two scalar actions so that naturality of the residue map applies.
       change ResidueField.map (f.stalkMap x).hom (IsLocalRing.residue _ a) *
         IsLocalRing.residue _ c =
-        IsLocalRing.residue _ (φ a * c)
-      rw [ResidueField.map_residue, hφ, map_mul]
+        IsLocalRing.residue _ (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) a * c)
+      rw [ResidueField.map_residue, algebraMap_stalkAlgebraOfApplyEq_rfl, map_mul]
   rw [Module.length_eq_of_surjective (R := ResidueField (Y.presheaf.stalk (f x)))
-    IsLocalRing.residue_surjective]
-  rw [Module.length_eq_rank, Cardinal.toNat_toENat]
-  -- The residue-field map of a scheme morphism is induced by its stalk map.
-  rfl
+    IsLocalRing.residue_surjective, Module.length_eq_rank, Cardinal.toNat_toENat, residueDegree,
+    Module.finrank]
+  -- The residue-field map of `f` is `ResidueField.map` of its stalk map, and `Scheme.residueField`
+  -- is the residue field of the stalk; only their field instances remain to be identified.
+  unfold Hom.residueFieldMap
+  dsimp only [Scheme.residueField, CommRingCat.hom_ofHom]
+  congr 1
 
 end AlgebraicGeometry.Scheme.Hom

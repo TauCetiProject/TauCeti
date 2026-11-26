@@ -81,9 +81,37 @@ private theorem ord_norm_eq_finsum_of_prod (f : X ⟶ Y) [IsDominant f] {y : Y}
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [hex, nsmul_eq_mul, mul_comm]
 
+-- A point over `y` has codimension one: the restriction `f ∣_ V` is locally quasi-finite, being
+-- finite on affine sections, so coheight one pulls back along it and the two open immersions.
+omit [IsIntegral Y] [IsLocallyNoetherian X] [IsLocallyNoetherian Y] in
+private theorem coheight_eq_one_of_isAffineOpen (f : X ⟶ Y) [IsDominant f] {V : Y.Opens}
+    (hV : IsAffineOpen V) (hU : IsAffineOpen (f ⁻¹ᵁ V))
+    (hfin : (f.appLE V (f ⁻¹ᵁ V) le_rfl).hom.Finite) {y : Y} (hy : y ∈ V)
+    (hy1 : coheight y = 1) {x : X} (hfx : f x = y) :
+    coheight x = 1 := by
+  have : Nonempty V := ⟨⟨y, hy⟩⟩
+  algebraize [(f.appLE V (f ⁻¹ᵁ V) le_rfl).hom]
+  have hxU : x ∈ f ⁻¹ᵁ V := show f x ∈ V from hfx ▸ hy
+  have : LocallyQuasiFinite (f ∣_ V) := by
+    rw [← Scheme.Hom.resLE_eq_morphismRestrict]
+    apply (HasRingHomProperty.resLE_iff @LocallyQuasiFinite hV hU le_rfl).mpr
+    exact RingHom.quasiFinite_algebraMap.mpr
+      (inferInstance : Algebra.QuasiFinite Γ(Y, V) Γ(X, f ⁻¹ᵁ V))
+  have : IsDominant (f ∣_ V) := IsZariskiLocalAtTarget.restrict ‹IsDominant f› V
+  have hmap : (f ∣_ V) ⟨x, hxU⟩ = ⟨y, hy⟩ :=
+    Subtype.ext ((morphismRestrict_base_coe f V _).trans hfx)
+  have hy' := (coheight_eq_of_isOpenImmersion
+    (U := V.toScheme) (x := ⟨y, hy⟩) V.ι).symm.trans hy1
+  have hx' := (f ∣_ V).coheight_eq_one_of_coheight_apply_eq_one ⟨x, hxU⟩ (hmap ▸ hy')
+  exact (coheight_eq_of_isOpenImmersion
+    (U := (f ⁻¹ᵁ V).toScheme) (x := ⟨x, hxU⟩) (f ⁻¹ᵁ V).ι).trans hx'
+
 -- The affine calculation keeps the chosen section, stalk and function-field algebras in one
 -- scope: all the scalar towers passed to the ring-theoretic norm formula must use those same
--- structures. The codimension and multiplicative-to-additive arguments are separate lemmas.
+-- structures. Its stages: (1) the finite extension `Γ(Y, V) → Γ(X, f⁻¹ V)` and the localization
+-- `𝒪_{Y,y}` with its function-field towers; (2) the fibre points `x q` for primes `q` over `y`,
+-- their stalks and stalk towers; (3) Fulton's Appendix A.3, rewritten into orders and residue
+-- degrees. The codimension and multiplicative-to-additive arguments are the two lemmas above.
 private theorem ord_norm_eq_finsum_of_isAffineOpen_of_ne_zero
     (f : X ⟶ Y) [IsDominant f] {V : Y.Opens}
     (hV : IsAffineOpen V) (hU : IsAffineOpen (f ⁻¹ᵁ V))
@@ -153,21 +181,8 @@ private theorem ord_norm_eq_finsum_of_isAffineOpen_of_ne_zero
       rw [← CommRingCat.hom_comp, ← CommRingCat.hom_comp,
         TopCat.Presheaf.germ_stalkSpecializes_assoc, Scheme.Hom.germ_stalkMap,
         Scheme.Hom.appLE_eq_app]
-  have : LocallyQuasiFinite (f ∣_ V) := by
-    rw [← Scheme.Hom.resLE_eq_morphismRestrict]
-    apply (HasRingHomProperty.resLE_iff @LocallyQuasiFinite hV hU le_rfl).mpr
-    exact RingHom.quasiFinite_algebraMap.mpr
-      (inferInstance : Algebra.QuasiFinite Γ(Y, V) Γ(X, f ⁻¹ᵁ V))
-  have : IsDominant (f ∣_ V) := IsZariskiLocalAtTarget.restrict ‹IsDominant f› V
-  have hq1 (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) : coheight (x q) = 1 := by
-    have hmap : (f ∣_ V) ⟨x q, hxU q⟩ = ⟨y, hy⟩ :=
-      Subtype.ext ((morphismRestrict_base_coe f V _).trans (hfx q))
-    have hy' := (coheight_eq_of_isOpenImmersion
-      (U := V.toScheme) (x := ⟨y, hy⟩) V.ι).symm.trans hy1
-    have hx' := (f ∣_ V).coheight_eq_one_of_coheight_apply_eq_one
-      ⟨x q, hxU q⟩ (hmap ▸ hy')
-    exact (coheight_eq_of_isOpenImmersion
-      (U := (f ⁻¹ᵁ V).toScheme) (x := ⟨x q, hxU q⟩) (f ⁻¹ᵁ V).ι).trans hx'
+  have hq1 (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) : coheight (x q) = 1 :=
+    coheight_eq_one_of_isAffineOpen f hV hU hfin hy hy1 (hfx q)
   have (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) : Ring.KrullDimLE 1 (X.presheaf.stalk (x q)) :=
     krullDimLE_of_coheight_le (hq1 q).le
   -- Fulton's Appendix A.3 over the primes above `p`.
