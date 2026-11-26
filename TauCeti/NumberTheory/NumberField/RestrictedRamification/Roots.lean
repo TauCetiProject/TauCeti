@@ -81,6 +81,6 @@ theorem mem_maxUnramifiedOutside_of_pow_eq_of_mem_unit {u : Kˣ} (hu : u ∈ S.u
     (hx : x ^ n = algebraMap K Ω u) (hn : n ≠ 0) :
     x ∈ maxUnramifiedOutside K Ω (S ∪ {v | (n : 𝓞 K) ∈ v.asIdeal}) :=
   mem_maxUnramifiedOutside_of_pow_eq hx hn fun v hv ↦
-    ⟨fun h ↦ hv (Or.inr h), hu v fun h ↦ hv (Or.inl h)⟩
+    ⟨fun h ↦ hv (Or.inr h), S.unit_valuation_eq_one K ⟨u, hu⟩ (v := v) fun h ↦ hv (Or.inl h)⟩
 
 end TauCeti.RestrictedRamification
