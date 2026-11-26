@@ -114,9 +114,7 @@ theorem image_lieExp_ker_lieMap (f : G →ₜ* G') :
   have hcont : Continuous (lieExp (I := I) (G := G)) := by
     have h := continuous_toMul.comp (continuous_lieExpAddMonoidHom (I := I) (G := G))
     rwa [coe_lieExpAddMonoidHom] at h
-  have hK : IsClosed (f.ker : Set G) := by
-    rw [MonoidHom.coe_ker]
-    exact isClosed_singleton.preimage f.continuous
+  have hK : IsClosed (f.ker : Set G) := isClosed_singleton.preimage f.continuous
   -- The kernel is a commutative Lie group by the closed-subgroup theorem.
   let d := EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
   let _ := d.chartedSpace
@@ -142,14 +140,10 @@ theorem image_lieExp_ker_lieMap (f : G →ₜ* G') :
     have hrange := range_lieExp (I := 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) f.ker).toSubmodule))
       (G := f.ker)
     obtain ⟨Y, rfl⟩ : n ∈ Set.range lieExp := by rw [hrange]; exact hn
-    -- The inclusion intertwines the exponentials of `ker f` and `G`.
-    have hexp (Z : LeftInvariantDerivation _ f.ker) :
-        lieExp (d.lieMapSubtypeVal Z) = ((lieExp Z : f.ker) : G) := by
-      rw [d.lieMapSubtypeVal_apply, ← _root_.map_lieExp d.subtypeVal, d.subtypeVal_apply]
-    refine ⟨d.lieMapSubtypeVal Y, ?_, by rw [hexp, Subgroup.coe_subtype]⟩
+    refine ⟨d.lieMapSubtypeVal Y, ?_, by rw [d.lieExp_lieMapSubtypeVal, Subgroup.coe_subtype]⟩
     -- `t ↦ exp(t dι Y)` lies in `ker f`, so `df(dι Y)` vanishes.
     refine lieMap_eq_zero_of_forall_lieExp_smul_mem_ker f fun t ↦ ?_
-    rw [← map_smul, hexp]
+    rw [← map_smul, d.lieExp_lieMapSubtypeVal]
     exact (lieExp (t • Y)).property
 
 variable [IsMulCommutative G'] [PreconnectedSpace G]
@@ -223,12 +217,12 @@ theorem periodLattice_inf_eq_map_lieMapSubtypeVal (d : EmbeddedLieSubgroupData I
     refine ⟨Y, ?_, rfl⟩
     rw [mem_periodLattice] at hX ⊢
     apply Subtype.ext
-    rw [← map_smul, d.lieMapSubtypeVal_apply, ← _root_.map_lieExp, d.subtypeVal_apply] at hX
+    rw [← map_smul, d.lieExp_lieMapSubtypeVal] at hX
     rw [hX, OneMemClass.coe_one]
   · rintro ⟨Y, hY, rfl⟩
     refine ⟨?_, d.range_lieMapSubtypeVal_eq ▸ LieHom.mem_range_self _ _⟩
     rw [mem_periodLattice] at hY ⊢
-    rw [← map_smul, d.lieMapSubtypeVal_apply, ← _root_.map_lieExp, hY, map_one]
+    rw [← map_smul, d.lieExp_lieMapSubtypeVal, hY, OneMemClass.coe_one]
 
 end TauCeti.Lie.EmbeddedLieSubgroupData
 
@@ -272,9 +266,10 @@ private theorem ker_quotientMkContinuousMonoidHom [N.Normal] :
   ext
   simp
 
+omit [IsMulCommutative G] in
 /-- The Lie map of the projection `G → G ⧸ N`, viewed as a continuous homomorphism, is the Lie map
 of the smooth projection. -/
-theorem lieMap_quotientMkContinuousMonoidHom (hN : IsClosed (N : Set G)) :
+theorem lieMap_quotientMkContinuousMonoidHom [N.Normal] (hN : IsClosed (N : Set G)) :
     letI := quotientChartedSpaceOfIsClosed I hN
     haveI := lieGroup_quotientOfIsClosed (I := I) hN
     haveI : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
