@@ -24,8 +24,9 @@ This file collects small API lemmas for Mathlib's `Complex.UnitDisc` and
 * The inclusion of the open unit disc into `ℂ` is an open embedding
   (`Complex.UnitDisc.isOpenEmbedding_coe`), so the open unit disc is Hausdorff; it is connected
   (`Complex.UnitDisc.instConnectedSpace`) and not compact
-  (`Complex.UnitDisc.instNoncompactSpace`). A point outside a set of the disc with closed image in
-  `ℂ` is the centre of a round disc missing that set
+  (`Complex.UnitDisc.instNoncompactSpace`). It is homeomorphic to the subtype
+  `Metric.ball 0 1` it is a type synonym of (`Complex.UnitDisc.homeomorphBall`). A point outside
+  a set of the disc with closed image in `ℂ` is the centre of a round disc missing that set
   (`Complex.UnitDisc.exists_pos_forall_notMem_ball`); in particular every point of the disc is
   isolated from the other points of a finite subset
   (`Complex.UnitDisc.exists_pos_forall_mem_ball_eq`).
@@ -130,6 +131,19 @@ instance instFaithfulSMulCircle : FaithfulSMul Circle 𝔻 where
   eq_of_smul_eq_smul h := by
     obtain ⟨z, hz⟩ := exists_ne (0 : 𝔻)
     exact circle_smul_left_injective hz (h z)
+
+/-- The identity, from the open unit disc to the subtype `ball (0 : ℂ) 1` it is a type synonym
+of. -/
+noncomputable def homeomorphBall : 𝔻 ≃ₜ ball (0 : ℂ) 1 :=
+  Homeomorph.refl _
+
+@[simp]
+theorem coe_homeomorphBall (z : 𝔻) : (homeomorphBall z : ℂ) = z :=
+  (rfl)
+
+@[simp]
+theorem coe_homeomorphBall_symm (z : ball (0 : ℂ) 1) : (homeomorphBall.symm z : ℂ) = z :=
+  (rfl)
 
 end Complex.UnitDisc
 
