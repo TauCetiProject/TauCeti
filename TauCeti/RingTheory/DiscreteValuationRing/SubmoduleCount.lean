@@ -28,8 +28,9 @@ In the notation of a rank `j ≥ 1` this is `[e + j - 1, j - 1]_q`. It is at mos
 `(e + 1) ^ (j - 1) q ^ (e (j - 1))`.
 
 The count is by induction on the rank. In `O × N`, a submodule `L` of index `q ^ e` has a
-projection `ϖ^c O` to `O`, of index `q ^ c`, and an intersection `K` with `N`, of index
-`q ^ (e - c)`, and the submodules with given `c` and `K` are the graphs `O (ϖ^c, x) + K` for
+projection `ϖ^c O` to `O`, of index `q ^ c`
+(`TauCeti.IsDiscreteValuationRing.cardQuot_eq_pow_iff`), and an intersection `K` with `N`, of
+index `q ^ (e - c)`, and the submodules with given `c` and `K` are the graphs `O (ϖ^c, x) + K` for
 the classes `x ∈ N ⧸ K` (`Submodule.prodFiberEquivQuotient`). Writing `s_j(e)` for the number
 of submodules of index `q ^ e` in `O^j`, this gives
 `s_{j+1}(e) = ∑_{k ≤ e} q^k s_j(k)`, the column recursion of the Gaussian binomial coefficients
@@ -37,7 +38,6 @@ of submodules of index `q ^ e` in `O^j`, this gives
 
 ## Main results
 
-* `TauCeti.IsDiscreteValuationRing.cardQuot_eq_pow_iff`: the ideals of index `q ^ c` are `ϖ^c O`.
 * `TauCeti.IsDiscreteValuationRing.card_submodule_prod_cardQuot_eq_sum`: the recursion
   `s_{O × N}(e) = ∑_{k ≤ e} q^k s_N(k)`.
 * `TauCeti.IsDiscreteValuationRing.card_submodule_cardQuot_eq_gaussianBinomial`,
@@ -70,32 +70,7 @@ open IsLocalRing Module Submodule Finset TauCeti
 namespace TauCeti.IsDiscreteValuationRing
 
 variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O] {ϖ : O}
-
-/-- In a discrete valuation ring with uniformizer `ϖ` and residue field of `q` elements, the
-ideal `ϖ^c O` has index `q ^ c`. -/
-theorem cardQuot_span_pow (hϖ : Irreducible ϖ) (c : ℕ) :
-    (Ideal.span {ϖ ^ c}).cardQuot = Nat.card (ResidueField O) ^ c := by
-  rw [← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, cardQuot_apply,
-    TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]
-
-/-- An ideal of finite index in a discrete valuation ring with uniformizer `ϖ` is `ϖ^c O` for
-some `c`. -/
-theorem exists_eq_span_pow_of_cardQuot_ne_zero (hϖ : Irreducible ϖ) {I : Ideal O}
-    (hI : I.cardQuot ≠ 0) : ∃ c : ℕ, I = Ideal.span {ϖ ^ c} :=
-  _root_.IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
-    (fun h ↦ hI (by rw [h, cardQuot_bot])) hϖ
-
-variable [Finite (ResidueField O)]
-
-/-- In a discrete valuation ring with uniformizer `ϖ` and residue field of `q` elements, the
-only ideal of index `q ^ c` is `ϖ^c O`. -/
-theorem cardQuot_eq_pow_iff (hϖ : Irreducible ϖ) {I : Ideal O} {c : ℕ} :
-    I.cardQuot = Nat.card (ResidueField O) ^ c ↔ I = Ideal.span {ϖ ^ c} := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ cardQuot_span_pow hϖ c⟩
-  have hq : 1 < Nat.card (ResidueField O) := Finite.one_lt_card
-  obtain ⟨n, rfl⟩ := exists_eq_span_pow_of_cardQuot_ne_zero hϖ (by rw [h]; positivity)
-  rw [cardQuot_span_pow hϖ] at h
-  rw [Nat.pow_right_injective hq h]
+  [Finite (ResidueField O)]
 
 section Prod
 
@@ -271,7 +246,7 @@ theorem card_submodule_length_quotient_eq_gaussianBinomial (hM : finrank O M = j
       gaussianBinomial (Nat.card (ResidueField O)) (e + j) j := by
   rw [← card_submodule_cardQuot_eq_gaussianBinomial hM e]
   exact Nat.card_congr <| Equiv.subtypeEquivRight fun L ↦ by
-    rw [TauCeti.length_eq_iff_natCard_eq, cardQuot_apply]
+    rw [TauCeti.length_eq_iff_natCard_eq_pow, cardQuot_apply]
 
 /-- The number of submodules of colength `e` of a free module of rank `j + 1` over a discrete
 valuation ring with residue field of `q` elements is at most `q ^ (e (j + 1))`. -/

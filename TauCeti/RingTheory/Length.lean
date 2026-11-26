@@ -81,7 +81,7 @@ applies to the quotients appearing here without any further appeal to defeq.
   over `A`.
 * `TauCeti.natCard_eq_pow_of_length_eq` and `TauCeti.natCard_eq_pow_length_toNat`: a module of
   finite length `ℓ` over a local ring whose residue field has `q` elements has `q ^ ℓ` elements;
-  conversely, by `TauCeti.length_eq_iff_natCard_eq`, it has length `n` iff it has `q ^ n`
+  conversely, by `TauCeti.length_eq_iff_natCard_eq_pow`, it has length `n` iff it has `q ^ n`
   elements.
 * `TauCeti.length_self_eq_top_of_ringKrullDim_pos`: a ring of positive Krull dimension has infinite
   length over itself.
@@ -446,7 +446,7 @@ theorem natCard_eq_pow_length_toNat [Finite M] :
 
 /-- Over a local ring whose residue field is finite with `q` elements, a module has length `n`
 exactly when it has `q ^ n` elements. -/
-theorem length_eq_iff_natCard_eq [Finite (ResidueField A)] (n : ℕ) :
+theorem length_eq_iff_natCard_eq_pow [Finite (ResidueField A)] (n : ℕ) :
     Module.length A M = n ↔ Nat.card M = Nat.card (ResidueField A) ^ n := by
   refine ⟨natCard_eq_pow_of_length_eq, fun h ↦ ?_⟩
   have hq : 1 < Nat.card (ResidueField A) := Finite.one_lt_card
