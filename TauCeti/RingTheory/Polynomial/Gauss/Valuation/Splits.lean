@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Splits
 public import TauCeti.RingTheory.Polynomial.Gauss.Valuation.Basic
+import TauCeti.RingTheory.Valuation.Sum
 
 /-!
 # Gauss valuation of split polynomials
@@ -41,11 +42,6 @@ all roots `α` of `p`. From this we derive:
 public section
 
 namespace Polynomial
-
-private lemma map_sub_eq_max_of_ne {R Γ₀ : Type*} [Ring R]
-    [LinearOrderedCommMonoidWithZero Γ₀] (v : Valuation R Γ₀) {x α : R} (h : v α ≠ v x) :
-    v (x - α) = max (v x) (v α) := by
-  rw [sub_eq_add_neg, v.map_add_of_distinct_val (by simpa [v.map_neg] using h.symm), v.map_neg]
 
 section Monoid
 
@@ -97,7 +93,7 @@ theorem valuation_eval_eq_gaussValuation_of_forall_roots_eq (v : Valuation R Γ�
     Multiset.map_congr rfl fun α hα ↦ by
       rcases eq_or_ne (v α) (v x) with heq | hne
       · rw [hroots α hα heq, max_eq_left heq.le]
-      · exact map_sub_eq_max_of_ne v hne
+      · exact v.map_sub_of_distinct_val hne.symm
   rw [hp.eval_eq_prod_roots x, gaussValuation_eq_mul_prod_roots v p hp (v x)]
   simp only [map_mul, map_multiset_prod, Multiset.map_map, Function.comp_def, hmap]
 
@@ -118,7 +114,8 @@ theorem valuation_eval_eq_gaussValuation_mul_prod_roots_eq (v : Valuation R Γ�
     gaussValuation_eq_mul_prod_roots v p hp (v x)]
   have hne : ((p.roots.filter fun α ↦ ¬ v α = v x).map fun α ↦ v (x - α)) =
       (p.roots.filter fun α ↦ ¬ v α = v x).map fun α ↦ max (v x) (v α) :=
-    Multiset.map_congr rfl fun α hα ↦ map_sub_eq_max_of_ne v (Multiset.mem_filter.mp hα).2
+    Multiset.map_congr rfl fun α hα ↦
+      v.map_sub_of_distinct_val (Ne.symm (Multiset.mem_filter.mp hα).2)
   have heq : ((p.roots.filter fun α ↦ v α = v x).map fun α ↦ v (x - α)).prod =
       ((p.roots.filter fun α ↦ v α = v x).map fun α ↦ max (v x) (v α)).prod *
       ((p.roots.filter fun α ↦ v α = v x).map fun α ↦ v (x - α) / v x).prod := by

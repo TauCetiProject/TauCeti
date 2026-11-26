@@ -14,10 +14,11 @@ import TauCeti.RingTheory.Valuation.Polynomial.Weighted
 # Gauss valuation of polynomials
 
 Given a valuation `v : Valuation R Γ₀` and a radius `r : Γ₀`, `Polynomial.gaussValuation p v r` is
-the maximum of `v (p.coeff i) * r ^ i` over all `i : ℕ`. Unlike `Polynomial.gaussNorm`, which
-targets real-valued absolute values `AbsoluteValue R ℝ`, `Polynomial.gaussValuation` applies to
-arbitrary value monoids and groups `Γ₀`, and bundles into a valuation `Valuation.gauss v r` on
-`R[X]`.
+the maximum of `v (p.coeff i) * r ^ i` over all `i : ℕ`. Unlike Mathlib's real-valued
+`Polynomial.gaussNorm` (defined for arbitrary `v : R → ℝ` and `c : ℝ`, with exact multiplicativity
+proved for real-valued nonarchimedean `AbsoluteValue R ℝ`), `Polynomial.gaussValuation` applies to
+`Valuation R Γ₀` with values in an arbitrary `LinearOrderedCommMonoidWithZero Γ₀`, and bundles into
+a valuation `Valuation.gauss v r` on `R[X]`.
 
 ## Main definitions
 
