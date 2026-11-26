@@ -12,6 +12,7 @@ import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Exponential
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 
 /-!
 # Second variation of energy for piecewise smooth variations
@@ -168,8 +169,10 @@ theorem hasDerivAt_deriv_energy_piecewise_of_fixed_endpoints {n : ℕ} (τ : Fin
   intro A
   refine (hasDerivAt_deriv_energy_piecewise τ hτ hG hFG).congr_deriv ?_
   dsimp only [A]
-  rw [acceleration_fst_eq_zero (eventually_eq_left_of_piecewise hτ hFG ha),
-    acceleration_fst_eq_zero (eventually_eq_right_of_piecewise hτ hFG hb),
+  rw [acceleration_eq_zero_of_eventuallyEq_const (leviCivitaConnection I M)
+      (eventually_eq_left_of_piecewise hτ hFG ha),
+    acceleration_eq_zero_of_eventuallyEq_const (leviCivitaConnection I M)
+      (eventually_eq_right_of_piecewise hτ hFG hb),
     inner_zero_left, inner_zero_left]; ring
 
 /-- **Second variation of energy of a broken geodesic.** When each smooth extension's central curve

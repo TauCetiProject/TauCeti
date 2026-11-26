@@ -598,6 +598,17 @@ variable [I.Boundaryless] {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)}
 
 namespace IsGeodesicCurveOn
 
+private theorem totalSpaceMk_sub_starProjection_singleton_eq {𝕜 B F : Type*} {V : B → Type*}
+    [RCLike 𝕜] [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace 𝕜 (V x)]
+    {x y : B} {u v : V x} {u' v' : V y}
+    (hu : TotalSpace.mk' F x u = TotalSpace.mk' F y u')
+    (hv : TotalSpace.mk' F x v = TotalSpace.mk' F y v') :
+    TotalSpace.mk' F x (u - (𝕜 ∙ v).starProjection u) =
+      TotalSpace.mk' F y (u' - (𝕜 ∙ v').starProjection u') := by
+  cases hu
+  cases hv
+  rfl
+
 /-- **Second variation of length along an exponential variation of a constant-speed geodesic.** For
 a geodesic `γ` on `(a, b)` of constant speed `C > 0` on `(a, b)` (`a ≤ b`) and any field `V` along
 `γ` whose lift to the tangent bundle is `C³` on `[a, b]` (even with moving endpoints),
@@ -618,6 +629,9 @@ theorem hasDerivAt_deriv_toReal_pathELength_exponentialVariation
     exists_contMDiffAt_exponentialVariation_eqOn γ V (by rwa [uIcc_of_le hab])
   have hγEq : EqOn γ' γ (Icc a b) := fun r hr ↦
     congrArg TotalSpace.proj (hEq r (by rwa [uIcc_of_le hab]))
+  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
   have hspeed' := norm_curveVelocity_eq_Icc_of_totalSpaceMk_eq (by norm_num) hlt hV' hEq hspeed
   have hd' : HasDerivAt
       (deriv fun s ↦ (Manifold.pathELength I (exponentialVariation I γ' V' s) a b).toReal)
@@ -639,7 +653,7 @@ theorem hasDerivAt_deriv_toReal_pathELength_exponentialVariation
         TotalSpace.mk' E (γ t) (curveVelocity I γ t) :=
       Bundle.TotalSpace.ext hnear.self_of_nhds
         (heq_of_eq (Filter.EventuallyEq.curveVelocity_eq hnear))
-    exact TauCeti.totalSpaceMk_sub_starProjection_singleton_eq
+    exact totalSpaceMk_sub_starProjection_singleton_eq
       (hEq t (uIoo_subset_uIcc_self ht)) hvel
   rw [congrArg (fun f s ↦ (f s).toReal) (pathELength_exponentialVariation_eq_of_eqOn hExp)]
   exact hd'.congr_deriv (congrArg (· / C) (indexForm_congr_of_totalSpaceMk_eq hVperp hVperp))

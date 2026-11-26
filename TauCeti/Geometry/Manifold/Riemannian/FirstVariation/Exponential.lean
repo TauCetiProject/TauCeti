@@ -18,8 +18,11 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 For a curve `γ` in a smooth Riemannian manifold and a tangent field `V` along `γ` whose lift to
 the tangent bundle is `C²` on the closed interval `uIcc a b` (or continuous piecewise `C²` on
 `Icc a b`), the exponential variation `TauCeti.Manifold.exponentialVariation I γ V` realizes `V` as
-the variation field of a family of curves whose energy and length can be differentiated at `s = 0`.
-Because `TauCeti.Manifold.exists_contMDiffAt_exponentialVariation_eqOn` extends any closed-interval
+the variation field of a family of curves whose energy can be differentiated at `s = 0`. When
+`a ≤ b` and `γ` also has constant positive speed `C > 0` on `(a, b)`,
+`TauCeti.Manifold.hasDerivAt_toReal_pathELength_exponentialVariation` differentiates its length
+at `s = 0` for any field with a `C²` lift on `[a, b]`. Because
+`TauCeti.Manifold.exists_contMDiffAt_exponentialVariation_eqOn` extends any closed-interval
 `C^k` section lift to a two-sided `C^k` lift having the same exponential variation on `uIcc a b`,
 all statements below require only closed-interval (`ContMDiffOn`) or piecewise
 (`IsPiecewiseContMDiffOn` / `PiecewiseContMDiffSectionAlong`) regularity, with endpoint velocities
@@ -35,14 +38,12 @@ read within the closed interval via `curveVelocityWithin`.
   exponential variation for a field with a `C²` lift on `uIcc a b`.
 * `TauCeti.Manifold.eventually_energy_exponentialVariation_eq_sum`: along a piecewise `C¹`
   partition, the energy of an exponential variation eventually equals the sum of piece energies.
-* `TauCeti.Manifold.norm_curveVelocity_eq_Icc_of_totalSpaceMk_eq`: transfers constant speed on
-  `(a, b)` to a `C¹` extension agreeing in the tangent bundle on `uIcc a b`.
 * `TauCeti.Manifold.hasDerivAt_energy_exponentialVariation_of_isPiecewiseContMDiffOn` and
   `TauCeti.Manifold.PiecewiseContMDiffSectionAlong.hasDerivAt_energy_exponentialVariation`:
   first variation of energy along an exponential variation of an unbroken curve for a continuous
   piecewise `C²` field.
 * `TauCeti.Manifold.hasDerivAt_toReal_pathELength_exponentialVariation`: first variation of length
-  along an exponential variation of a constant-speed curve.
+  along an exponential variation of a constant-speed curve (`C > 0` on `(a, b)`).
 
 ## References
 
@@ -152,27 +153,6 @@ private theorem integral_inner_acceleration_eq_of_totalSpaceMk_eq
     eventuallyEq_of_mem (mem_of_superset (isOpen_Ioo.mem_nhds ht) uIoo_subset_uIcc_self) hγEq
   exact TauCeti.inner_eq_of_totalSpaceMk_eq (hEq t (uIoo_subset_uIcc_self ht))
     (hnear.totalSpaceMk_acceleration_eq (leviCivitaConnection I M))
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
-/-- Transfer constant Riemannian speed `C` on `(a, b)` from `(γ, V)` to a `C^k` (`1 ≤ k`)
-extension `(γ', V')` whose tangent-bundle lift agrees with `(γ, V)` on `uIcc a b`. -/
-theorem norm_curveVelocity_eq_Icc_of_totalSpaceMk_eq {k : ℕ∞ω} (hk : 1 ≤ k)
-    {γ' : ℝ → M} {V' : ∀ t, TangentSpace I (γ' t)} {a b C : ℝ} (hab : a < b)
-    (hV' : ∀ t ∈ uIcc a b,
-      ContMDiffAt 𝓘(ℝ, ℝ) I.tangent k (fun r ↦ TotalSpace.mk' E (γ' r) (V' r)) t)
-    (hEq : ∀ r ∈ uIcc a b, TotalSpace.mk' E (γ' r) (V' r) = TotalSpace.mk' E (γ r) (V r))
-    (hspeed : ∀ t ∈ Ioo a b, ‖curveVelocity I γ t‖ = C) :
-    ∀ t ∈ Icc a b, ‖curveVelocity I γ' t‖ = C :=
-  let _ : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
-  let _ := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
-    (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
-  norm_curveVelocity_eq_Icc_of_Ioo hab
-    (fun t ht ↦ ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp t
-      (hV' t (by rwa [uIcc_of_le hab.le]))).of_le hk)
-    fun t ht ↦ by
-      have hγEq : EqOn γ' γ (Icc a b) :=
-        fun r hr ↦ congrArg TotalSpace.proj (hEq r (by rwa [uIcc_of_le hab.le]))
-      rw [(eventuallyEq_of_mem (Icc_mem_nhds ht.1 ht.2) hγEq).norm_curveVelocity_eq, hspeed t ht]
 
 /-- **First variation of energy along an exponential variation.** Let `V` be a tangent field along
 `γ` whose tangent-bundle lift is `C²` on `uIcc a b`. Then the energy of `exp_(γ ·) (s • V ·)`
@@ -350,6 +330,9 @@ theorem hasDerivAt_toReal_pathELength_exponentialVariation {a b : ℝ} (hab : a 
       sub_self, zero_div] using hasDerivAt_const (0 : ℝ) (0 : ℝ)
   obtain ⟨γ', V', hV', hEq, hExp⟩ :=
     exists_contMDiffAt_exponentialVariation_eqOn γ V (by rwa [uIcc_of_le hab])
+  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
   have hspeed' := norm_curveVelocity_eq_Icc_of_totalSpaceMk_eq one_le_two hlt hV' hEq hspeed
   have hderiv' : HasDerivAt
       (fun s ↦ (Manifold.pathELength I (exponentialVariation I γ' V' s) a b).toReal)

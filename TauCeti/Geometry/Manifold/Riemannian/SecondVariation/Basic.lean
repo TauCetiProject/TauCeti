@@ -331,20 +331,12 @@ theorem IsFixedEndpointVariation.hasDerivAt_deriv_energy_of_acceleration_eq_zero
     (hγ : ∀ t ∈ uIoo a b, acceleration (leviCivitaConnection I M) (F 0) t = 0) :
     HasDerivAt (deriv fun s ↦ energy I (F s) a b)
       (indexForm I (F 0) (variationField I F) (variationField I F) a b) 0 := by
-  have hA {t : ℝ} (h : (fun q ↦ F q t) =ᶠ[𝓝 0] fun _ ↦ F 0 t) :
-      acceleration (leviCivitaConnection I M) (fun q ↦ F q t) 0 = 0 := by
-    rw [h.acceleration_eq, acceleration_const]
-  simpa only [hA hF.eventually_apply_left, hA hF.eventually_apply_right, inner_zero_left,
-    add_zero, sub_zero] using
+  simpa only [acceleration_eq_zero_of_eventuallyEq_const (leviCivitaConnection I M)
+      hF.eventually_apply_left,
+    acceleration_eq_zero_of_eventuallyEq_const (leviCivitaConnection I M)
+      hF.eventually_apply_right,
+    inner_zero_left, add_zero, sub_zero] using
     TauCeti.Manifold.hasDerivAt_deriv_energy_of_acceleration_eq_zero hF.contMDiffAt hγ
-
-omit [T2Space M] in
-/-- A transverse curve `s ↦ F s t` which is stationary near `s = 0` has zero covariant
-acceleration at `s = 0`. -/
-theorem acceleration_fst_eq_zero {t : ℝ} (ht : ∀ᶠ s in 𝓝 (0 : ℝ), F s t = F 0 t) :
-    acceleration (leviCivitaConnection I M) (fun s ↦ F s t) 0 = 0 :=
-  (Filter.EventuallyEq.acceleration_eq (leviCivitaConnection I M) ht).trans
-    (acceleration_const _ _ 0)
 
 omit [T2Space M] in
 /-- The transverse acceleration at the stationary left endpoint of a fixed-endpoint variation
@@ -352,7 +344,7 @@ vanishes at `s = 0`. -/
 theorem IsFixedEndpointVariation.acceleration_left_eq_zero {n : WithTop ℕ∞} {a b : ℝ}
     (hF : IsFixedEndpointVariation I n F a b) :
     acceleration (leviCivitaConnection I M) (fun s ↦ F s a) 0 = 0 :=
-  acceleration_fst_eq_zero hF.eventually_apply_left
+  acceleration_eq_zero_of_eventuallyEq_const (leviCivitaConnection I M) hF.eventually_apply_left
 
 omit [T2Space M] in
 /-- The transverse acceleration at the stationary right endpoint of a fixed-endpoint variation
@@ -360,7 +352,7 @@ vanishes at `s = 0`. -/
 theorem IsFixedEndpointVariation.acceleration_right_eq_zero {n : WithTop ℕ∞} {a b : ℝ}
     (hF : IsFixedEndpointVariation I n F a b) :
     acceleration (leviCivitaConnection I M) (fun s ↦ F s b) 0 = 0 :=
-  acceleration_fst_eq_zero hF.eventually_apply_right
+  acceleration_eq_zero_of_eventuallyEq_const (leviCivitaConnection I M) hF.eventually_apply_right
 
 omit [T2Space M] in
 /-- If the transverse curves of `F` at `a` and `b` agree near `s = 0` and the central curve `F 0`
