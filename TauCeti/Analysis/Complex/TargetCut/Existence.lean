@@ -13,7 +13,7 @@ import TauCeti.Analysis.Calculus.FDeriv.CountableLevels
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Topology.Dense
+import TauCeti.Topology.Separation.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
