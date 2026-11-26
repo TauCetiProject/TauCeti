@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Homology.Bigraded.Basic
+public import TauCeti.KnotTheory.Grid.Stabilization.Components
 public import TauCeti.KnotTheory.Grid.Stabilization.Homology
+public import TauCeti.KnotTheory.Grid.Stabilization.Map.Grading
 
 /-!
 # Bigraded stabilization invariance of unblocked grid homology

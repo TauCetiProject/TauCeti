@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.Calculus.FDeriv.Affine
+import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Linear
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
@@ -43,6 +44,8 @@ commutes with `𝕜'`-scalars preserves differentiability over `𝕜'`.
   `𝕜'` is its linear part.
 * `ContinuousLinearMap.comp_differentiableOn_of_map_smul`: a continuous `𝕜`-linear map that
   commutes with `𝕜'`-scalars sends maps differentiable over `𝕜'` to maps differentiable over `𝕜'`.
+* `ContinuousLinearMap.differentiableAt_comp_of_map_smul`: composing with a `𝕜`-linear map that
+  commutes with the scalars of `𝕜'` preserves differentiability over `𝕜'`.
 -/
 
 public section
@@ -102,6 +105,19 @@ theorem _root_.AffineEquiv.hasFDerivAt_restrictScalars [CompleteSpace 𝕜'] [Fi
   rw [ContinuousAffineEquiv.coe_toContinuousAffineMap, AffineEquiv.coe_toContinuousAffineEquiv]
     at h
   exact h.congr_fderiv (by ext; simp [ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap])
+
+/-- A continuous `𝕜`-linear map that commutes with the scalars of a larger field `𝕜'` is
+`𝕜'`-linear, so composing with it preserves differentiability over `𝕜'`. For instance, a
+real-linear map between complex normed spaces commuting with complex scalars preserves
+holomorphy. -/
+theorem _root_.ContinuousLinearMap.differentiableAt_comp_of_map_smul {𝕜 𝕜' V X Y : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NormedAddCommGroup V]
+    [NormedSpace 𝕜' V] [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedSpace 𝕜' X]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedSpace 𝕜' Y] (T : X →L[𝕜] Y)
+    (hT : ∀ (c : 𝕜') (v : X), T (c • v) = c • T v) {f : V → X} {x : V}
+    (hf : DifferentiableAt 𝕜' f x) : DifferentiableAt 𝕜' (fun y ↦ T (f y)) x :=
+  (({ toFun := T, map_add' := T.map_add, map_smul' := hT, cont := T.continuous } :
+    X →L[𝕜'] Y).differentiableAt).comp x hf
 
 end TauCeti
 

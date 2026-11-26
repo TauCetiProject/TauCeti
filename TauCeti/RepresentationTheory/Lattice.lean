@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
+public import Mathlib.RepresentationTheory.Subrepresentation
 public import Mathlib.RingTheory.Localization.BaseChange
+public import TauCeti.Algebra.Module.Lattice
 public import TauCeti.Algebra.Module.LocalizedModule.Lift
 public import TauCeti.RepresentationTheory.BaseChange
+public import TauCeti.RepresentationTheory.RestrictScalars
 
 /-!
 # Lattices with equivalent localizations
@@ -31,6 +34,13 @@ lattice input to the comparison of the reductions modulo a prime `ℓ` of two `�
 with isomorphic rationalizations: the reductions need not be isomorphic, but the finite-index
 embedding forces their classes in the Grothendieck group of `𝔽_ℓ[G]` to agree.
 
+Lattices with equivalent localizations arise inside a single representation. A
+finite-dimensional representation `ρ` of a finite group `G` over the fraction field `K` of `O`
+contains a `G`-stable full `O`-lattice: the `O`-span of the translates of a `K`-basis
+(`TauCeti.exists_isFullLattice_subrepresentation`). A `G`-stable free full lattice `L` recovers
+`ρ` by scalar extension, `K ⊗_O L ≃ ρ` (`Subrepresentation.rationalizationEquiv`, the equivariant
+form of `Submodule.rationalizationEquiv`).
+
 ## Main results
 
 * `Representation.Equiv.exists_intertwiningMap_comp_eq_smul`: representations on `S`-torsion-free
@@ -38,6 +48,10 @@ embedding forces their classes in the Grothendieck group of `𝔽_ℓ[G]` to agr
 * `Representation.Equiv.exists_injective_finite_quotient_range`: two representations on finitely
   generated torsion-free `ℤ`-modules with equivalent rationalizations admit an injective
   intertwining map from one to the other with finite cokernel.
+* `Subrepresentation.rationalizationEquiv`: a `G`-stable free full lattice `L` satisfies
+  `K ⊗_O L ≃ ρ` as representations.
+* `TauCeti.exists_isFullLattice_subrepresentation`: a finite-dimensional representation of a
+  finite group over the fraction field contains a `G`-stable full lattice.
 
 ## References
 
@@ -141,3 +155,67 @@ theorem exists_injective_finite_quotient_range {G : Type*} [Monoid G]
 end Int
 
 end Representation.Equiv
+
+/-! ### Stable lattices in a representation over a fraction field -/
+
+section StableLattice
+
+open _root_.TensorProduct
+
+variable {O G : Type*} [CommRing O] [Monoid G]
+
+section Rationalization
+
+variable {K : Type*} [CommRing K] [Algebra O K] {V : Type*} [AddCommGroup V] [Module K V]
+  [Module O V] [IsScalarTower O K V]
+
+/-- **A stable full lattice recovers the representation.** For a `G`-stable free full lattice
+`L` in a representation `ρ` over `K`, the rationalization `K ⊗_O L ≃ V`, `a ⊗ v ↦ a • v`
+(`Submodule.rationalizationEquiv`), is an equivalence of representations. -/
+noncomputable def Subrepresentation.rationalizationEquiv
+    {ρ : Representation K G V} (L : Subrepresentation (ρ.restrictScalars O))
+    [Module.Free O L.toSubmodule] [L.toSubmodule.IsFullLattice K] :
+    (L.toRepresentation.baseChange K).Equiv ρ :=
+  .mk (Submodule.rationalizationEquiv L.toSubmodule) fun g ↦
+    TensorProduct.AlgebraTensorModule.ext fun a v ↦ by simp [Representation.baseChange_apply]
+
+/-- The rationalization of a stable lattice sends a pure tensor to scalar multiplication of the
+embedded lattice vector. -/
+@[simp]
+theorem Subrepresentation.rationalizationEquiv_tmul
+    {ρ : Representation K G V} (L : Subrepresentation (ρ.restrictScalars O))
+    [Module.Free O L.toSubmodule] [L.toSubmodule.IsFullLattice K] (a : K) (v : L.toSubmodule) :
+    L.rationalizationEquiv (a ⊗ₜ[O] v) = a • (v : V) := by
+  simp [Subrepresentation.rationalizationEquiv]
+
+/-- The inverse rationalization of a stable lattice sends a lattice vector to `1 ⊗ v`. -/
+@[simp]
+theorem Subrepresentation.rationalizationEquiv_symm_coe
+    {ρ : Representation K G V} (L : Subrepresentation (ρ.restrictScalars O))
+    [Module.Free O L.toSubmodule] [L.toSubmodule.IsFullLattice K] (v : L.toSubmodule) :
+    L.rationalizationEquiv.symm (v : V) = 1 ⊗ₜ[O] v :=
+  Submodule.rationalizationEquiv_symm_coe L.toSubmodule v
+
+end Rationalization
+
+/-- **Existence of stable lattices.** A finite-dimensional representation `ρ` of a finite group
+(or monoid) over the fraction field `K` of `O` contains a `G`-stable full `O`-lattice: the
+`O`-span of the translates `ρ g bᵢ` of a `K`-basis `(bᵢ)`. -/
+theorem TauCeti.exists_isFullLattice_subrepresentation (K : Type*) [Field K] [Algebra O K]
+    [IsFractionRing O K] [Finite G] {V : Type*} [AddCommGroup V] [Module K V] [Module O V]
+    [IsScalarTower O K V] [FiniteDimensional K V] (ρ : Representation K G V) :
+    ∃ L : Subrepresentation (ρ.restrictScalars O), L.toSubmodule.IsFullLattice K := by
+  let b := Module.finBasis K V
+  let L : Submodule O V := Submodule.span O (Set.range fun p : G × Fin _ ↦ ρ p.1 (b p.2))
+  have hstab (g : G) : L ≤ L.comap ((ρ g).restrictScalars O) := by
+    refine Submodule.span_le.mpr ?_
+    rintro _ ⟨⟨h, i⟩, rfl⟩
+    refine Submodule.subset_span ⟨(g * h, i), ?_⟩
+    simp
+  refine ⟨⟨L, fun g _ hv ↦ by rw [Representation.restrictScalars_apply]; exact hstab g hv⟩, ?_⟩
+  refine Submodule.isFullLattice_span (Set.finite_range _)
+    (top_le_iff.mp (b.span_eq ▸ Submodule.span_mono ?_))
+  rintro _ ⟨i, rfl⟩
+  exact ⟨(1, i), by simp⟩
+
+end StableLattice
