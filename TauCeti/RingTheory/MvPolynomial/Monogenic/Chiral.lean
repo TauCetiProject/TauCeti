@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.RingTheory.MvPolynomial.Monogenic.Basic
-import Mathlib.Algebra.Algebra.Rat
+import TauCeti.Algebra.Module.Rat
 import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import TauCeti.LinearAlgebra.Eigenspace.Involution
 import TauCeti.LinearAlgebra.End.Basic
@@ -296,7 +296,7 @@ theorem chiralMonogenicSubmodule_sup_map_cliffordMul [Algebra ℚ R] {c : σ →
   · rintro _ ⟨w, hw, rfl⟩
     simpa only [neg_neg] using cliffordMul_mem_chiralHomogeneousSubmodule hγ_anti hw
   · obtain ⟨hu, hγu⟩ := mem_chiralHomogeneousSubmodule.mp hu_chiral
-    have : HasUniqueDiv M := @HasUniqueDiv.of_module_rat M _ (Module.compHom M (algebraMap ℚ R))
+    have := HasUniqueDiv.of_module_algebraRat R M
     obtain ⟨m, hm, _, ⟨w, hw, rfl⟩, rfl⟩ :=
       Submodule.mem_sup.mp (monogenicSubmodule_sup_map_cliffordMul hc_sq hc_anti k ▸ hu)
     set Γ : Module.End R (MvPolynomial σ R ⊗[R] M) := γ.lTensor (MvPolynomial σ R)

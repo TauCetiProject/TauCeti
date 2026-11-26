@@ -145,7 +145,8 @@ variable (M) in
 /-- Tensoring an involutive linear map on the left with a module gives an involution. -/
 theorem lTensor_involutive {f : N →ₗ[R] N} (hf : Function.Involutive f) :
     Function.Involutive (f.lTensor M) := fun x ↦ by
-  rw [← lTensor_comp_apply, show f ∘ₗ f = id from ext hf, lTensor_id_apply]
+  have hff : f ∘ₗ f = id := ext hf
+  rw [← lTensor_comp_apply, hff, lTensor_id_apply]
 
 /-- Apply a linear functional to the right factor of a tensor, linearly in the functional. -/
 noncomputable def tensorComponent : (N →ₗ[R] R) →ₗ[R] M ⊗[R] N →ₗ[R] M :=

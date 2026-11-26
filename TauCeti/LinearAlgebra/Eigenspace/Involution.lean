@@ -95,9 +95,11 @@ omit [Invertible (2 : k)] in
 on `Y` (for instance when `2` and `μ` are units, as for `IsUnit (2 : k)` and `μ * μ = 1`). -/
 theorem disjoint_eigenspace_neg {μ : k} (h : IsSMulRegular Y (2 * μ)) :
     Disjoint (g.eigenspace μ) (g.eigenspace (-μ)) :=
-  Submodule.disjoint_def.mpr fun y hy₁ hy₂ ↦ h <| show (2 * μ) • y = (2 * μ) • 0 by
-    rw [smul_zero, two_mul, add_smul]; nth_rw 1 [← mem_eigenspace_iff.mp hy₁]
-    rw [mem_eigenspace_iff.mp hy₂, neg_smul, neg_add_cancel]
+  Submodule.disjoint_def.mpr fun y hy₁ hy₂ ↦ by
+    have h0 : (2 * μ) • y = (2 * μ) • 0 := by
+      rw [smul_zero, two_mul, add_smul]; nth_rw 1 [← mem_eigenspace_iff.mp hy₁]
+      rw [mem_eigenspace_iff.mp hy₂, neg_smul, neg_add_cancel]
+    exact h h0
 
 omit [Invertible (2 : k)] in
 /-- An invariant submodule of an involution over a commutative ring in which `2` is a unit is the

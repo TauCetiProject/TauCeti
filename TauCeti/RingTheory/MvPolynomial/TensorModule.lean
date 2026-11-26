@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.MvPolynomial.Euler
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.LinearAlgebra.TensorProduct.Decomposition
 import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 /-!
 # Module-valued multivariate polynomials and their homogeneous grading
@@ -31,6 +32,7 @@ kernel `ker (Δ ∘ r²)` under `[Nonempty σ] [HasUniqueDiv M]`.
 ## Main results
 
 * `MvPolynomial.mem_homogeneousTensorSubmodule_iff`,
+  `MvPolynomial.mem_homogeneousTensorSubmodule_iff_coeffTensor`,
   `MvPolynomial.finrank_homogeneousTensorSubmodule`, `MvPolynomial.laplacian_normSq_mul_rTensor`,
   and `MvPolynomial.eq_zero_of_laplacian_normSq_mul_rTensor_eq_zero`.
 -/
@@ -79,6 +81,15 @@ theorem homogeneousComponentTensor_def (k : ℕ) :
 @[simp] theorem homogeneousComponentTensor_tmul (k : ℕ) (p : MvPolynomial σ R) (m : M) :
     homogeneousComponentTensor k (p ⊗ₜ[R] m) = homogeneousComponent k p ⊗ₜ[R] m := (rfl)
 
+/-- Extracting the `s`-coefficient after projecting to degree `k` keeps degree-`k` terms. -/
+@[simp] theorem coeffTensor_homogeneousComponentTensor (s : σ →₀ ℕ) (k : ℕ)
+    (u : MvPolynomial σ R ⊗[R] M) :
+    coeffTensor s (homogeneousComponentTensor k u) =
+      if s.degree = k then coeffTensor s u else 0 := by
+  induction u using TensorProduct.inductionOn with
+  | tmul p m => simp [coeff_homogeneousComponent, ite_smul]
+  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add]; split_ifs <;> simp
+
 variable (σ R M) in
 /-- Degree-`k` `M`-valued homogeneous polynomials in `MvPolynomial σ R ⊗[R] M`. -/
 noncomputable def homogeneousTensorSubmodule (k : ℕ) : Submodule R (MvPolynomial σ R ⊗[R] M) :=
@@ -108,6 +119,18 @@ theorem mem_homogeneousTensorSubmodule_iff {k : ℕ} {u : MvPolynomial σ R ⊗[
   · rw [← hu, homogeneousComponentTensor_def, ← subtype_comp_homogeneousComponentRestrict,
       LinearMap.rTensor_comp_apply]
     exact ⟨(homogeneousComponentRestrict k).rTensor M u, rfl⟩
+
+/-- Coefficientwise membership criterion for `homogeneousTensorSubmodule σ R M k`. -/
+theorem mem_homogeneousTensorSubmodule_iff_coeffTensor {k : ℕ} {u : MvPolynomial σ R ⊗[R] M} :
+    u ∈ homogeneousTensorSubmodule σ R M k ↔
+      ∀ s : σ →₀ ℕ, s.degree ≠ k → coeffTensor s u = 0 := by
+  rw [mem_homogeneousTensorSubmodule_iff]
+  refine ⟨fun hu s hs ↦ ?_, fun h ↦ ext_lid_rTensor_lcoeff fun s ↦ ?_⟩
+  · rw [← hu, coeffTensor_homogeneousComponentTensor, ite_eq_right_iff.mpr fun hk ↦ (hs hk).elim]
+  · rw [← coeffTensor_apply, ← coeffTensor_apply, coeffTensor_homogeneousComponentTensor]
+    split_ifs with hs
+    · rfl
+    · exact (h s hs).symm
 
 theorem tmul_mem_homogeneousTensorSubmodule {p : MvPolynomial σ R} {k : ℕ}
     (hp : p.IsHomogeneous k) (m : M) : p ⊗ₜ[R] m ∈ homogeneousTensorSubmodule σ R M k := by

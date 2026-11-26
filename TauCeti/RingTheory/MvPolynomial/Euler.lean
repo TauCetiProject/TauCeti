@@ -21,7 +21,7 @@ degree-`d` homogeneous polynomials, commutes with `homogeneousComponent`, agrees
 
 ## Main results
 
-* `MvPolynomial.euler_monomial`, `MvPolynomial.IsHomogeneous.euler_eq`,
+* `MvPolynomial.euler_rename`, `MvPolynomial.euler_monomial`, `MvPolynomial.IsHomogeneous.euler_eq`,
   `MvPolynomial.homogeneousComponent_euler`, `MvPolynomial.euler_apply_fintype`, and
   `MvPolynomial.laplacian_euler`.
 
@@ -56,28 +56,40 @@ theorem euler_def :
 theorem euler_mul (p q : MvPolynomial σ R) : euler (p * q) = p * euler q + q * euler p :=
   euler.leibniz p q
 
-/-- The Euler derivation multiplies `monomial s a` by its total degree `s.degree`. -/
-@[simp] theorem euler_monomial (s : σ →₀ ℕ) (a : R) :
-    euler (monomial s a) = s.degree • monomial s a := by
-  classical
-  rw [euler_def, mkDerivation_monomial, Finsupp.degree_apply, Finset.sum_smul]
-  simp only [Finsupp.sum, Finset.smul_sum, smul_eq_mul]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  have h : s - Finsupp.single i 1 + Finsupp.single i 1 = s := tsub_add_cancel_of_le
-    (Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hi)))
-  rw [X, monomial_mul_monomial, mul_one, h, smul_monomial, smul_eq_mul, mul_comm, ← nsmul_eq_mul,
-    ← smul_monomial]
+/-- Renaming variables commutes with the Euler derivation. -/
+theorem euler_rename {τ : Type*} (f : σ → τ) (p : MvPolynomial σ R) :
+    euler (rename f p) = rename f (euler p) := by
+  induction p using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp => simp [hp]
+
+/-- Over a finite variable type, the Euler derivation is `∑ᵢ Xᵢ ∂ᵢ`. -/
+theorem euler_eq_sum [Fintype σ] :
+    (euler : Derivation R (MvPolynomial σ R) (MvPolynomial σ R)) =
+      ∑ i : σ, (X i : MvPolynomial σ R) • pderiv i := by
+  classical ext j; simp [pderiv_X, Pi.single_apply]
+
+/-- Coordinate expansion of the Euler derivation in finitely many variables. -/
+theorem euler_apply_fintype [Fintype σ] (p : MvPolynomial σ R) :
+    euler p = ∑ i : σ, X i * pderiv i p := by
+  rw [euler_eq_sum]; simp
 
 /-- **Euler's homogeneous identity**: if `p` is homogeneous of degree `d`, `euler p = d • p`. -/
 theorem IsHomogeneous.euler_eq {p : MvPolynomial σ R} {d : ℕ} (hp : p.IsHomogeneous d) :
     euler p = d • p := by
   classical
-  conv_lhs => rw [p.as_sum]
-  conv_rhs => rw [p.as_sum]
-  rw [map_sum, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun s hs ↦ ?_
-  rw [euler_monomial, Finsupp.degree_eq_weight_one]
-  exact congrArg (· • _) (hp (mem_support_iff.mp hs))
+  obtain ⟨q, hqp⟩ : p ∈ (rename (Subtype.val : p.vars → σ)).range := by
+    rw [← supported_eq_range_rename]; exact p.mem_supported_vars
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at hqp
+  have hq : q.IsHomogeneous d :=
+    (IsHomogeneous.rename_isHomogeneous_iff Subtype.val_injective).mp (hqp.symm ▸ hp)
+  rw [← hqp, euler_rename, euler_apply_fintype, hq.sum_X_mul_pderiv, map_nsmul]
+
+/-- The Euler derivation multiplies `monomial s a` by its total degree `s.degree`. -/
+@[simp] theorem euler_monomial (s : σ →₀ ℕ) (a : R) :
+    euler (monomial s a) = s.degree • monomial s a :=
+  (isHomogeneous_monomial a (by rw [Finsupp.degree_eq_weight_one])).euler_eq
 
 protected theorem IsHomogeneous.euler {p : MvPolynomial σ R} {d : ℕ} (hp : p.IsHomogeneous d) :
     (euler p).IsHomogeneous d := by
@@ -102,16 +114,6 @@ end General
 section Fintype
 
 variable {σ R : Type*} [CommSemiring R] [Fintype σ]
-
-/-- Over a finite variable type, the Euler derivation is `∑ᵢ Xᵢ ∂ᵢ`. -/
-theorem euler_eq_sum :
-    (euler : Derivation R (MvPolynomial σ R) (MvPolynomial σ R)) =
-      ∑ i : σ, (X i : MvPolynomial σ R) • pderiv i := by
-  classical ext j; simp [pderiv_X, Pi.single_apply]
-
-/-- Coordinate expansion of the Euler derivation in finitely many variables. -/
-theorem euler_apply_fintype (p : MvPolynomial σ R) : euler p = ∑ i : σ, X i * pderiv i p := by
-  rw [euler_eq_sum]; simp
 
 @[simp] theorem euler_normSq : euler (normSq σ R) = 2 • normSq σ R :=
   (isHomogeneous_normSq σ R).euler_eq

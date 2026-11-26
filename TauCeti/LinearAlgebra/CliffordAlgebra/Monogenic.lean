@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.RingTheory.MvPolynomial.Monogenic.Chiral
+import TauCeti.Algebra.Module.Rat
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.End.Basic
@@ -100,7 +101,7 @@ theorem disjoint_monogenicSubmodule_coordAction (k : ℕ)
     (N : Submodule K (MvPolynomial σ K ⊗[K] W)) :
     Disjoint (MvPolynomial.monogenicSubmodule (coordAction ρ b) k)
       (N.map (MvPolynomial.cliffordMul (coordAction ρ b))) := by
-  have : HasUniqueDiv W := @HasUniqueDiv.of_module_rat W _ (Module.compHom W (algebraMap ℚ ℝ))
+  have := HasUniqueDiv.of_module_algebraRat ℝ W
   exact ((MvPolynomial.disjoint_ker_cliffordDirac_range_cliffordMul
     (coordAction_orthonormalBasis_comp_self hQ ρ b)
     (pairwise_coordAction_orthonormalBasis_comp_add hQ ρ b)).mono_left
@@ -188,7 +189,7 @@ theorem disjoint_chiralMonogenicSubmodule_complexCoordAction (ε : ℂ) (k : ℕ
     Disjoint (MvPolynomial.chiralMonogenicSubmodule (complexCoordAction Q E b)
         (Algebra.lsmul ℂ ℂ E (complexVolume Q o)) ε k)
       (N.map (MvPolynomial.cliffordMul (complexCoordAction Q E b))) := by
-  have : HasUniqueDiv E := @HasUniqueDiv.of_module_rat E _ (Module.compHom E (algebraMap ℚ ℂ))
+  have := HasUniqueDiv.of_module_algebraRat ℂ E
   exact MvPolynomial.disjoint_chiralMonogenicSubmodule_map_cliffordMul
     (coordAction_orthonormalBasis_comp_self hQ _ b)
     (pairwise_coordAction_orthonormalBasis_comp_add hQ _ b) _ ε k N

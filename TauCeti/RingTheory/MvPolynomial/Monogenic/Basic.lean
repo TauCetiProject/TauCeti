@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.TensorModule
-import Mathlib.Algebra.Algebra.Rat
+import TauCeti.Algebra.Module.Rat
 import TauCeti.Data.Finsupp.Weight
 import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
@@ -206,9 +206,7 @@ theorem monogenicSubmodule_succ_eq_bot_of_subsingleton [Subsingleton σ] [HasUni
     (Submodule.mem_bot R).mpr (ext_lid_rTensor_lcoeff fun s ↦ ?_)
   rw [← coeffTensor_apply, map_zero, map_zero]
   rcases eq_or_ne s 0 with rfl | hs0
-  · exact homogeneousTensorSubmodule_inductionOn hu
-      (fun hp _ ↦ by rw [coeffTensor_tmul, hp.coeff_eq_zero (by simp), zero_smul])
-      fun hx hy ↦ by simp [hx, hy]
+  · exact mem_homogeneousTensorSubmodule_iff_coeffTensor.mp hu 0 (by simp)
   · have hsi : s i₀ ≠ 0 := fun h ↦ hs0 <| by ext j; rwa [Subsingleton.elim j i₀]
     have hD := congrArg (coeffTensor (s - Finsupp.single i₀ 1)) hDu
     rw [map_zero, coeffTensor_cliffordDirac, huniv, Finset.sum_singleton,
@@ -742,7 +740,7 @@ theorem finrank_monogenicSubmodule_of_bijective
       (Fintype.card σ - 1).multichoose k * Module.finrank K M := by
   by_cases hfin : Module.Finite K M
   · exact finrank_monogenicSubmodule hc.2 k
-  have : HasUniqueDiv M := @HasUniqueDiv.of_module_rat M _ (Module.compHom M (algebraMap ℚ K))
+  have := HasUniqueDiv.of_module_algebraRat K M
   rw [Module.finrank_of_not_finite hfin, mul_zero]
   rcases k with _ | k
   · rw [monogenicSubmodule_zero, ← (homogeneousTensorZeroEquiv σ K M).finrank_eq]
