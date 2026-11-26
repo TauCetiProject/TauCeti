@@ -116,14 +116,17 @@ theorem gradient_ballTorsionFunction (x : EuclideanSpace ℝ ι) :
   rw [ballTorsionFunction_eq]
   exact gradient_mul_norm_sq_add _ _ x
 
+/-- The gradient of the torsion function, as a function: `∇v = fun x => -x / n`. -/
+theorem gradient_ballTorsionFunction_eq :
+    ∇ (ballTorsionFunction ι) = fun x => -(Fintype.card ι : ℝ)⁻¹ • x :=
+  funext gradient_ballTorsionFunction
+
 /-- The Hessian operator of the torsion function is `-1 / n` times the identity. -/
 @[simp]
 theorem hessianOperator_ballTorsionFunction (x : EuclideanSpace ℝ ι) :
     hessianOperator (ballTorsionFunction ι) x =
       -(Fintype.card ι : ℝ)⁻¹ • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι) := by
-  have hgrad : ∇ (ballTorsionFunction ι) = fun y => -(Fintype.card ι : ℝ)⁻¹ • y :=
-    funext gradient_ballTorsionFunction
-  rw [← fderiv_gradient, hgrad]
+  rw [← fderiv_gradient, gradient_ballTorsionFunction_eq]
   exact ((hasFDerivAt_id x).const_smul (-(Fintype.card ι : ℝ)⁻¹)).fderiv
 
 /-- The second derivatives of the torsion function: `D²v(x)(w₁, w₂) = -⟪w₁, w₂⟫ / n`. -/
@@ -148,9 +151,7 @@ theorem sum_fderiv_fderiv_ballTorsionFunction [Nonempty ι] [DecidableEq ι]
 theorem det_hessianOperator_ballTorsionFunction (x : EuclideanSpace ℝ ι) :
     (hessianOperator (ballTorsionFunction ι) x).det =
       (-(Fintype.card ι : ℝ)⁻¹) ^ Fintype.card ι := by
-  rw [hessianOperator_ballTorsionFunction, ContinuousLinearMap.det,
-    ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.coe_id, LinearMap.det_smul,
-    LinearMap.det_id, finrank_euclideanSpace, mul_one]
+  simp [ContinuousLinearMap.det, LinearMap.det_smul, -neg_smul]
 
 /-- The absolute value of the Hessian determinant of the torsion function is `n⁻ⁿ`. -/
 theorem abs_det_hessianOperator_ballTorsionFunction (x : EuclideanSpace ℝ ι) :
@@ -163,9 +164,8 @@ theorem abs_det_hessianOperator_ballTorsionFunction (x : EuclideanSpace ℝ ι) 
 theorem ballTorsionFunction_eq_add_inner_sub (x y : EuclideanSpace ℝ ι) :
     ballTorsionFunction ι x = ballTorsionFunction ι y +
       ⟪∇ (ballTorsionFunction ι) y, x - y⟫_ℝ - ‖x - y‖ ^ 2 / (2 * Fintype.card ι) := by
-  rw [gradient_ballTorsionFunction, ballTorsionFunction_apply, ballTorsionFunction_apply,
-    real_inner_smul_left, @norm_sub_sq_real, inner_sub_right, real_inner_self_eq_norm_sq,
-    real_inner_comm y x]
+  simp only [gradient_ballTorsionFunction, ballTorsionFunction_apply, real_inner_smul_left,
+    norm_sub_sq_real, inner_sub_right, real_inner_self_eq_norm_sq, real_inner_comm y x]
   ring
 
 /-- **The upper contact set of the torsion function is the whole set**: since `v` is concave, the
@@ -185,10 +185,8 @@ theorem image_gradient_ballTorsionFunction_ball [Nonempty ι] :
     ∇ (ballTorsionFunction ι) '' ball 0 1 = ball 0 (Fintype.card ι : ℝ)⁻¹ := by
   have hn : (Fintype.card ι : ℝ)⁻¹ ≠ 0 :=
     inv_ne_zero (Nat.cast_ne_zero.2 Fintype.card_ne_zero)
-  have hgrad : ∇ (ballTorsionFunction ι) = fun y => -(Fintype.card ι : ℝ)⁻¹ • y :=
-    funext gradient_ballTorsionFunction
-  rw [hgrad, image_smul, smul_ball (neg_ne_zero.2 hn), smul_zero, norm_neg, Real.norm_eq_abs,
-    abs_of_nonneg (by positivity), mul_one]
+  rw [gradient_ballTorsionFunction_eq, image_smul, smul_ball (neg_ne_zero.2 hn), smul_zero,
+    norm_neg, Real.norm_eq_abs, abs_of_nonneg (by positivity), mul_one]
 
 variable (μ : Measure (EuclideanSpace ℝ ι)) [μ.IsAddHaarMeasure]
 
@@ -259,17 +257,15 @@ theorem ballTorsionFunction_le_two_div_card {x : EuclideanSpace ℝ ι}
   have hconst : (fun _ : EuclideanSpace ℝ ι => ((-1 : ℝ))⁻ / (1 : Matrix ι ι ℝ).det ^
       (Fintype.card ι : ℝ)⁻¹) = fun _ => 1 := by
     funext; simp
+  have hnorm : (eLpNorm (fun _ : EuclideanSpace ℝ ι => (1 : ℝ)) (Fintype.card ι)
+      (volume.restrict (ball 0 1))).toReal =
+        (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal ^ (Fintype.card ι : ℝ)⁻¹ := by
+    simp [eLpNorm_const, hB0, ENNReal.toReal_rpow]
   have hvol : 0 < (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal ^ (Fintype.card ι : ℝ)⁻¹ :=
     Real.rpow_pos_of_pos (ENNReal.toReal_pos hB0 hBtop) _
-  rw [hconst, upperContactSet_ballTorsionFunction,
-    eLpNorm_const _ (by simp) (by simpa using hB0), Measure.restrict_apply_univ,
-    diam_ball_eq _ zero_le_one, ENNReal.toReal_mul, eNorm_one, ENNReal.toReal_one, one_mul,
-    ENNReal.toReal_natCast, zero_add] at h
-  simp only [← ENNReal.toReal_rpow, one_div] at h
-  generalize (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal ^ (Fintype.card ι : ℝ)⁻¹ = w
-    at h hvol
-  refine h.trans_eq ?_
-  field_simp
+  simp only [hconst, upperContactSet_ballTorsionFunction, hnorm, diam_ball_eq _ zero_le_one,
+    mul_one, zero_add] at h
+  rwa [div_mul_eq_mul_div, mul_div_mul_right _ _ hvol.ne'] at h
 
 end PDE
 
