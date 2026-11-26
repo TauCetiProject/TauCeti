@@ -61,6 +61,12 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_quotient_eq_length_quotient_comap_subtype_add`: for `P ≤ N`, `M ⧸ P` is filtered
   by `N ⧸ P` and `M ⧸ N`.
 * `TauCeti.length_quotient_comap_subtype_range_map`: an injective `φ` gives `φ(M) ⧸ φ(N) ≃ M ⧸ N`.
+* `TauCeti.length_map_mkQ_eq_add_length_quotient`: for `S ≤ X`, the image of `X` in `M ⧸ P` is
+  filtered by the image of `S` and by `X ⧸ (S + X ⊓ P)`.
+* `TauCeti.length_map_mkQ_le_add_length_quotient`: the image of `X` in `M ⧸ P` is no longer than
+  the image of `S` together with `X ⧸ (X ⊓ S)`.
+* `TauCeti.length_map_mkQ_le_length_quotient`: for `Y ≤ P` and `S ≤ N`, the image of `S` in
+  `M ⧸ P` is no longer than `N ⧸ (N ⊓ Y)`.
 * `TauCeti.length_le_of_forall_fg`: a bound on all finitely generated submodules bounds the
   length.
 * `TauCeti.isFiniteLength_of_tower`: finite length over `R` gives finite length over any `A`
@@ -183,6 +189,50 @@ theorem length_quotient_comap_subtype_range_map {M' : Type*} [AddCommGroup M'] [
   ext ⟨x, hx⟩
   simp only [Submodule.mem_map, Submodule.mem_comap, Submodule.subtype_apply,
     LinearEquiv.coe_coe, Subtype.ext_iff, LinearEquiv.ofInjective_apply]
+
+/-- **The colength identity.** For submodules `S ≤ X` and `P`, the image of `X` in `M ⧸ P` is
+filtered by the image of `S` and by `X ⧸ (S ⊔ X ⊓ P)`: in `ℕ∞`,
+`length ((X + P) ⧸ P) = length ((S + P) ⧸ P) + length (X ⧸ (S + X ⊓ P))`. -/
+theorem length_map_mkQ_eq_add_length_quotient {S X : Submodule A M} (P : Submodule A M)
+    (h : S ≤ X) :
+    Module.length A (X.map P.mkQ) = Module.length A (S.map P.mkQ) +
+      Module.length A (↥X ⧸ (S ⊔ X ⊓ P).comap X.subtype) := by
+  have hsup : P.comap X.subtype ⊔ S.comap X.subtype = (S ⊔ X ⊓ P).comap X.subtype := by
+    refine Submodule.map_injective_of_injective X.injective_subtype ?_
+    rw [Submodule.map_sup, Submodule.map_comap_subtype, Submodule.map_comap_subtype,
+      Submodule.map_comap_subtype, inf_eq_right.2 h, inf_eq_right.2 (sup_le h inf_le_left),
+      sup_comm]
+  rw [length_map_mkQ X P, length_quotient_eq_length_map_add_length_quotient_sup
+    (S.comap X.subtype) (P.comap X.subtype), length_map_mkQ, length_map_mkQ S P, hsup]
+  congr 1
+  refine (Submodule.Quotient.equiv _ _ (Submodule.comapSubtypeEquivOfLe h) ?_).length_eq
+  ext ⟨x, hx⟩
+  simp only [Submodule.comapSubtypeEquivOfLe, Submodule.mem_map, Submodule.mem_comap]
+  constructor
+  · rintro ⟨⟨⟨a, haX⟩, haS⟩, ha, he⟩
+    obtain rfl : a = x := congrArg Subtype.val he
+    exact ha
+  · exact fun hP ↦ ⟨⟨⟨x, h hx⟩, hx⟩, hP, rfl⟩
+
+/-- **Subadditivity of colength.** For any submodules `X, S, P`, in `ℕ∞`,
+`length ((X + P) ⧸ P) ≤ length ((S + P) ⧸ P) + length (X ⧸ (X ⊓ S))`. This is
+`TauCeti.length_map_mkQ_eq_add_length_quotient` applied to `X ⊓ S ≤ X`. -/
+theorem length_map_mkQ_le_add_length_quotient (X S P : Submodule A M) :
+    Module.length A (X.map P.mkQ) ≤
+      Module.length A (S.map P.mkQ) + Module.length A (↥X ⧸ S.comap X.subtype) := by
+  rw [length_map_mkQ_eq_add_length_quotient P (inf_le_left : X ⊓ S ≤ X)]
+  gcongr
+  · exact Module.length_le_of_injective _
+      (Submodule.inclusion_injective (Submodule.map_mono inf_le_right))
+  · exact length_quotient_anti fun x hx ↦ Submodule.mem_sup_left ⟨x.property, hx⟩
+
+/-- **The colength inequality.** If `Y ≤ P` and `S ≤ N`, then
+`length ((S + P) ⧸ P) ≤ length (N ⧸ (N ⊓ Y))`: the image of `S` in `M ⧸ P` lies in that of `N`,
+which is a quotient of `N ⧸ (N ⊓ Y)`. -/
+theorem length_map_mkQ_le_length_quotient {S P Y N : Submodule A M} (hY : Y ≤ P) (hS : S ≤ N) :
+    Module.length A (S.map P.mkQ) ≤ Module.length A (↥N ⧸ Y.comap N.subtype) :=
+  (length_map_mkQ S P).trans_le ((length_quotient_comap_subtype_mono hS P).trans
+    (length_quotient_anti (Submodule.comap_mono hY)))
 
 /-- **Length is detected by finitely generated submodules.** -/
 theorem length_le_of_forall_fg {c : ℕ∞} (h : ∀ N : Submodule A M, N.FG → Module.length A N ≤ c) :
