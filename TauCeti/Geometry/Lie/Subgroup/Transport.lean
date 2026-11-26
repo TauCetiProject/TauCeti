@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 
 /-!
 # Lie-group atlases transported from closed subgroups
@@ -33,8 +34,6 @@ with the inclusion `Rˣ → R`, which is the chart of the units at `1`, keeps th
   smooth immersion into a manifold.
 * `TauCeti.Lie.exists_isLieGroupAtlas_of_isClosed`: the atlas transported from a closed subgroup
   along a topological group isomorphism.
-* `Units.isImmersion_val_comp`: an immersion into the units of a complete normed algebra stays an
-  immersion into the algebra.
 * `TauCeti.Lie.exists_isLieGroupAtlas_units_of_isClosed`: the transported atlas for a closed
   subgroup of the units of a normed algebra, with an immersion into the algebra.
 
@@ -48,25 +47,6 @@ public section
 
 open scoped ContDiff Manifold
 noncomputable section
-
-namespace Units
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {R : Type*} [NormedRing R] [NormedAlgebra 𝕜 R] [CompleteSpace R]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : WithTop ℕ∞}
-
-/-- Composing an immersion into the units of a complete normed algebra with the inclusion into the
-algebra gives an immersion, since that inclusion is the chart of the units at `1`. -/
-theorem isImmersion_val_comp {f : M → Rˣ} (hf : Manifold.IsImmersion I 𝓘(𝕜, R) n f) :
-    Manifold.IsImmersion I 𝓘(𝕜, R) n (val ∘ f) :=
-  -- `chartAt R (1 : Rˣ)` is defined to be `Units.val` on `Set.univ`.
-  TauCeti.isImmersion_isLocalDiffeomorphAt_comp (k := chartAt R (1 : Rˣ))
-    (fun _ ↦ (chartAt R (1 : Rˣ)).isLocalDiffeomorphAt_of_mem_maximalAtlas
-      (IsManifold.chart_mem_maximalAtlas (1 : Rˣ)) (by simp)) hf
-
-end Units
 
 namespace TauCeti.Lie
 

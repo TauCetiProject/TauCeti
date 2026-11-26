@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import Mathlib.Topology.Algebra.Star.Unitary
 import TauCeti.Topology.Algebra.Star.Unitary
 public import Mathlib.Geometry.Manifold.Immersion
+import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 import TauCeti.Topology.Algebra.Star.RealModule
 

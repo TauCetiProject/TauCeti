@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Immersion
 public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import Mathlib.Topology.Algebra.Module.Star
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 
 /-!
 # The units of a normed algebra: derivative of the inclusion and smooth star
 
 The inclusion of the units of a complete normed algebra has identity derivative in their native
-open-submanifold charts, at every unit.
+open-submanifold charts, at every unit. Since that inclusion is the chart of the units at `1`,
+composing an immersion into the units with it gives an immersion into the algebra.
 
 For a complete normed star algebra over a field with trivial star, the star operation on the
 group of units is smooth at every regularity order. This applies in particular to conjugate
@@ -23,6 +26,7 @@ transpose on invertible real or complex matrices, viewed as a real smooth map.
 
 * `Units.mvfderiv_val`: the vector-valued derivative of the units inclusion is the identity.
 * `Units.isInvertible_mfderiv_val`: the derivative of the units inclusion is invertible.
+* `Units.isImmersion_val_comp`: an immersion into the units stays an immersion into the algebra.
 * `Units.contMDiff_star`: star is smooth on the group of units.
 
 ## References
@@ -64,6 +68,25 @@ theorem isInvertible_mfderiv_val (u : Rˣ) :
   exact isInvertible_mfderiv_extChartAt (mem_extChartAt_source u)
 
 end Deriv
+
+section Immersion
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {R : Type*} [NormedRing R] [NormedAlgebra 𝕜 R] [CompleteSpace R]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : WithTop ℕ∞}
+
+/-- Composing an immersion into the units of a complete normed algebra with the inclusion into the
+algebra gives an immersion, since that inclusion is the chart of the units at `1`. -/
+theorem isImmersion_val_comp {f : M → Rˣ} (hf : Manifold.IsImmersion I 𝓘(𝕜, R) n f) :
+    Manifold.IsImmersion I 𝓘(𝕜, R) n (val ∘ f) :=
+  -- `chartAt R (1 : Rˣ)` is defined to be `Units.val` on `Set.univ`.
+  TauCeti.isImmersion_isLocalDiffeomorphAt_comp (k := chartAt R (1 : Rˣ))
+    (fun _ ↦ (chartAt R (1 : Rˣ)).isLocalDiffeomorphAt_of_mem_maximalAtlas
+      (IsManifold.chart_mem_maximalAtlas (1 : Rˣ)) (by simp)) hf
+
+end Immersion
 
 section Star
 
