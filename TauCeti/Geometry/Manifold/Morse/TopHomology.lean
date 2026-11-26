@@ -54,7 +54,8 @@ principal ideal ring without zero divisors) for manifolds with a proper Morse fu
 `TauCeti.IsMorse.isZero_singularCohomology_of_manifoldMorseIndex_le`). In degree `d + 1` this uses
 projectivity/freeness of `H_d`, which kills the term `Ext¹(H_d, N)`. None of these statements says
 that the degree-`d` integral cohomology is torsion-free: it contains `Ext¹(H_{d-1}, ℤ)`, which can
-be nonzero.
+be nonzero. For instance `H^N(ℝℙᴺ; ℤ) ≅ ℤ/2` for even `N ≥ 2`
+(`TauCeti.RealProjectiveSpace.not_isAddTorsionFree_singularCohomology_succ_int`).
 
 Projectivity and freeness are proved along Milnor's induction over the critical levels,
 `TauCeti.IsMorse.band_induction`, together with the vanishing of `H_{d+1}`. Across one critical
