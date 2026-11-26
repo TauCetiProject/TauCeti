@@ -264,6 +264,20 @@ theorem symbol_append_cons_cons_of_add_eq_one (l₁ l₂ : List Rˣ) {a b : Rˣ}
 
 /-! ### The universal property -/
 
+/-- Ring homomorphisms out of the Milnor K-ring are determined by their values on the degree-one
+classes. -/
+@[ext]
+theorem ringHom_ext {A : Type*} [Semiring A] {f g : MilnorK R →+* A}
+    (h : ∀ a : Rˣ, f (ofUnit a) = g (ofUnit a)) : f = g := by
+  refine ringHom_ext_mk (RingHom.ext fun t ↦ ?_)
+  induction t using TensorAlgebra.induction with
+  | algebraMap r =>
+    exact RingHom.congr_fun (RingHom.ext_int ((f.comp mk).comp (algebraMap ℤ _))
+      ((g.comp mk).comp (algebraMap ℤ _))) r
+  | ι x => simpa using h x.toMul
+  | mul a b ha hb => simp only [RingHom.comp_apply, map_mul] at *; rw [ha, hb]
+  | add a b ha hb => simp only [RingHom.comp_apply, map_add] at *; rw [ha, hb]
+
 section Lift
 
 variable {A : Type*} [Ring A]
@@ -297,18 +311,6 @@ theorem lift_symbol (f : Additive Rˣ →+ A)
   induction l with
   | nil => simp
   | cons a l ih => simp [ih]
-
-/-- Ring homomorphisms out of the Milnor K-ring are determined by their values on the degree-one
-classes. -/
-@[ext]
-theorem ringHom_ext {f g : MilnorK R →+* A} (h : ∀ a : Rˣ, f (ofUnit a) = g (ofUnit a)) :
-    f = g := by
-  refine ringHom_ext_mk (RingHom.ext fun t ↦ ?_)
-  induction t using TensorAlgebra.induction with
-  | algebraMap r => simp [eq_intCast (algebraMap ℤ (TensorAlgebra ℤ (Additive Rˣ))) r]
-  | ι x => simpa using h x.toMul
-  | mul a b ha hb => simp only [RingHom.comp_apply, map_mul] at *; rw [ha, hb]
-  | add a b ha hb => simp only [RingHom.comp_apply, map_add] at *; rw [ha, hb]
 
 /-- `lift f hf` is the unique ring homomorphism sending each `{a}` to `f a`. -/
 theorem eq_lift_iff (f : Additive Rˣ →+ A)

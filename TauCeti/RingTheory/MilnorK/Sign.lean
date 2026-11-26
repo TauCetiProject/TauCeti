@@ -426,11 +426,19 @@ theorem ModTwo.lift_mk {A : Type*} [Semiring A] (f : MilnorK R →+* A) (hf : f 
   RingQuot.lift_mkRingHom_apply _ _ x
 
 omit [LinearOrder R] [IsStrictOrderedRing R] in
+/-- Two ring homomorphisms out of the Milnor K-ring modulo two agreeing after composition with
+`ModTwo.mk` are equal. -/
+theorem ModTwo.ringHom_ext_mk {A : Type*} [Semiring A] {f g : ModTwo R →+* A}
+    (h : f.comp ModTwo.mk = g.comp ModTwo.mk) : f = g :=
+  RingQuot.ringQuot_ext _ _ h
+
+omit [LinearOrder R] [IsStrictOrderedRing R] in
 /-- Ring homomorphisms out of the Milnor K-ring modulo two agreeing on the classes of degree-one
 symbols are equal. -/
-theorem ModTwo.ringHom_ext {A : Type*} [Ring A] {f g : ModTwo R →+* A}
+@[ext]
+theorem ModTwo.ringHom_ext {A : Type*} [Semiring A] {f g : ModTwo R →+* A}
     (h : ∀ a : Rˣ, f (ModTwo.mk (ofUnit a)) = g (ModTwo.mk (ofUnit a))) : f = g :=
-  RingQuot.ringQuot_ext _ _ (MilnorK.ringHom_ext h)
+  ModTwo.ringHom_ext_mk (MilnorK.ringHom_ext h)
 
 omit [LinearOrder R] [IsStrictOrderedRing R] in
 /-- The Milnor K-ring modulo two has characteristic two: `2 = 0`, and `1 ≠ 0` since the ring
