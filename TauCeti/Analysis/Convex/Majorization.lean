@@ -35,7 +35,10 @@ Without sign invariance, transfers alone reach every antitone tuple `d` with the
 and prefix sums bounded by those of `y` (the *transfer closure*): for antitone `y` this is the
 statement that every tuple majorized by `y` arises from `y` by finitely many Robin Hood transfers.
 It applies to sets that are not known to be convex, such as the diagonals of a symmetric operator
-in all orthonormal bases.
+in all orthonormal bases. Applied to the sublevel sets of `d ↦ ∑ ψ (d i)` for a convex `ψ`, it
+gives the *convex transfer* (Karamata's inequality), and, after appending one coordinate to
+equalize the totals, its form for monotone convex `ψ` under prefix-sum bounds alone; here the
+tuples may take negative values.
 
 Applied to the sublevel sets of a symmetric gauge (a seminorm invariant under permutations and
 sign changes of the coordinates), the descent shows that symmetric gauges are monotone for weak
@@ -56,6 +59,11 @@ compared by their Ky Fan sums, every symmetric gauge of them is compared at once
 ## Main results
 
 * `TauCeti.mem_of_prefixSum_le_of_sum_eq`: transfer closure.
+* `TauCeti.sum_comp_le_of_prefixSum_le_of_sum_eq`: convex transfer (Karamata's inequality for an
+  antitone tuple whose prefix sums are bounded by those of a tuple with the same total).
+* `TauCeti.sum_comp_le_of_prefixSum_le`, `TauCeti.prefixSum_comp_le_of_prefixSum_le`: monotone
+  convex transfer, the same with bounded total and a monotone convex function, for sums and for
+  prefix sums. The tuples may have negative coordinates.
 * `Convex.robinHood_mem`: a convex set containing a tuple and its swap contains the Robin Hood
   transfers between the swapped coordinates.
 * `TauCeti.IsSymmetricConvex.isSolid`: symmetric convex sets are solid.
@@ -356,6 +364,93 @@ theorem mem_of_prefixSum_le_of_sum_eq {K : Set (Fin n → ℝ)}
   · exact hy
   obtain ⟨j, k, δ, hδ, hδ', hcard, hle'⟩ := exists_robinHood_card_lt hd hle hsum hne
   exact ih _ (hm ▸ hcard) (hK y hy j k δ hδ hδ') hle' (by simp [hsum]) rfl
+
+/-! ### Convex transfer -/
+
+/-- **Convex transfer** for majorization (Karamata's inequality in prefix-sum form). Let `a` be
+an antitone real tuple with the same total sum as `b` whose prefix sums are bounded by those of
+`b`, and let `ψ` be convex on a set `s` containing the coordinates of `b`. Then the sum of the
+`ψ`-values of `a` is at most that of `b`. No order condition on `b` is needed. -/
+theorem sum_comp_le_of_prefixSum_le_of_sum_eq {a b : Fin n → ℝ} (ha : Antitone a)
+    (hab : ∀ k, prefixSum k a ≤ prefixSum k b) (hsum : ∑ i, a i = ∑ i, b i) {ψ : ℝ → ℝ}
+    {s : Set ℝ} (hψ : ConvexOn ℝ s ψ) (hb : ∀ i, b i ∈ s) : ∑ i, ψ (a i) ≤ ∑ i, ψ (b i) := by
+  -- The tuples with coordinates in `s` whose sum of `ψ`-values is at most that of `b` form a
+  -- convex set, invariant under swapping two coordinates, hence closed under Robin Hood
+  -- transfers.
+  set K : Set (Fin n → ℝ) := {d | (∀ i, d i ∈ s) ∧ ∑ i, ψ (d i) ≤ ∑ i, ψ (b i)}
+  have hKc : Convex ℝ K := by
+    intro d₁ hd₁ d₂ hd₂ μ ν hμ hν hμν
+    refine ⟨fun i ↦ by simpa using hψ.1 (hd₁.1 i) (hd₂.1 i) hμ hν hμν, ?_⟩
+    calc ∑ i, ψ ((μ • d₁ + ν • d₂) i) ≤ ∑ i, (μ * ψ (d₁ i) + ν * ψ (d₂ i)) :=
+          sum_le_sum fun i _ ↦ by simpa using hψ.2 (hd₁.1 i) (hd₂.1 i) hμ hν hμν
+      _ = μ * ∑ i, ψ (d₁ i) + ν * ∑ i, ψ (d₂ i) := by rw [sum_add_distrib, mul_sum, mul_sum]
+      _ ≤ μ * ∑ i, ψ (b i) + ν * ∑ i, ψ (b i) :=
+        add_le_add (mul_le_mul_of_nonneg_left hd₁.2 hμ) (mul_le_mul_of_nonneg_left hd₂.2 hν)
+      _ = ∑ i, ψ (b i) := by rw [← add_mul, hμν, one_mul]
+  have hK : ∀ d ∈ K, ∀ (i j : Fin n) (δ : ℝ), 0 ≤ δ → δ ≤ d i - d j →
+      robinHood d i j δ ∈ K := fun d hd i j δ hδ hδ' ↦
+    hKc.robinHood_mem hd ⟨fun k ↦ hd.1 _,
+      (Equiv.sum_comp (Equiv.swap i j) (fun k ↦ ψ (d k))).trans_le hd.2⟩ hδ hδ'
+  exact (mem_of_prefixSum_le_of_sum_eq hK ⟨hb, le_rfl⟩ ha hab hsum).2
+
+/-- **Monotone convex transfer** for weak majorization. Let `a` be an antitone real tuple whose
+prefix sums are bounded by those of `b`, and let `ψ` be monotone and convex. Then the sum of the
+`ψ`-values of `a` is at most that of `b`. No sign condition, and no order condition on `b`, is
+needed. -/
+theorem sum_comp_le_of_prefixSum_le {a b : Fin n → ℝ} (ha : Antitone a)
+    (hab : ∀ k, prefixSum k a ≤ prefixSum k b) {ψ : ℝ → ℝ} (hψ : Monotone ψ)
+    (hψc : ConvexOn ℝ Set.univ ψ) : ∑ i, ψ (a i) ≤ ∑ i, ψ (b i) := by
+  -- Append `t + s` to `a` and `t` to `b`, where `s` is the gap between the totals and `t` is
+  -- small enough to keep `a` antitone; the extended `a` then has the total of the extended `b`.
+  set s := ∑ i, b i - ∑ i, a i
+  have hs : 0 ≤ s := by
+    have := hab n
+    rw [prefixSum_of_le le_rfl, prefixSum_of_le le_rfl] at this
+    exact sub_nonneg.2 this
+  set t := -∑ i, |a i| - s
+  set a' : Fin (n + 1) → ℝ := Fin.snoc a (t + s)
+  set b' : Fin (n + 1) → ℝ := Fin.snoc b t
+  have hsum : ∑ i, a' i = ∑ i, b' i := by
+    simp only [a', b', Fin.sum_univ_castSucc, Fin.snoc_castSucc, Fin.snoc_last, s]
+    ring
+  have ha' : Antitone a' := by
+    intro i j hij
+    induction j using Fin.lastCases with
+    | last =>
+      induction i using Fin.lastCases with
+      | last => exact le_rfl
+      | cast i =>
+        simp only [a', Fin.snoc_castSucc, Fin.snoc_last, t, sub_add_cancel]
+        exact (neg_le_neg (single_le_sum (fun j _ ↦ abs_nonneg (a j)) (mem_univ i))).trans
+          (neg_abs_le _)
+    | cast j =>
+      induction i using Fin.lastCases with
+      | last => exact absurd hij (Fin.castSucc_lt_last j).not_ge
+      | cast i =>
+        simpa only [a', Fin.snoc_castSucc] using ha (Fin.castSucc_le_castSucc_iff.1 hij)
+  have hle : ∀ k, prefixSum k a' ≤ prefixSum k b' := by
+    intro k
+    rcases le_or_gt k n with hk | hk
+    · rw [← prefixSum_init hk a', ← prefixSum_init hk b']
+      simpa only [a', b', Fin.init_snoc] using hab k
+    · rw [prefixSum_of_le hk, prefixSum_of_le hk, hsum]
+  have hmem := sum_comp_le_of_prefixSum_le_of_sum_eq ha' hle hsum hψc fun _ ↦ Set.mem_univ _
+  simp only [a', b', Fin.sum_univ_castSucc, Fin.snoc_castSucc, Fin.snoc_last] at hmem
+  linarith [hψ (le_add_of_nonneg_right hs : t ≤ t + s)]
+
+/-- **Monotone convex transfer**, prefix form. Let `a` be an antitone real tuple whose prefix sums
+are bounded by those of `b`, and let `ψ` be monotone and convex. Then every prefix sum of `ψ ∘ a`
+is at most the corresponding prefix sum of `ψ ∘ b`. -/
+theorem prefixSum_comp_le_of_prefixSum_le {a b : Fin n → ℝ} (ha : Antitone a)
+    (hab : ∀ k, prefixSum k a ≤ prefixSum k b) {ψ : ℝ → ℝ} (hψ : Monotone ψ)
+    (hψc : ConvexOn ℝ Set.univ ψ) (k : ℕ) : prefixSum k (ψ ∘ a) ≤ prefixSum k (ψ ∘ b) := by
+  -- Apply the full-sum statement to the first `min k n` coordinates.
+  have hk : min k n ≤ n := min_le_right k n
+  rw [← prefixSum_min k (ψ ∘ a), ← prefixSum_min k (ψ ∘ b), prefixSum_eq_sum_castLE hk,
+    prefixSum_eq_sum_castLE hk]
+  exact sum_comp_le_of_prefixSum_le (a := a ∘ Fin.castLE hk) (b := b ∘ Fin.castLE hk)
+    (ha.comp_monotone (Fin.strictMono_castLE hk).monotone)
+    (fun j ↦ by simpa only [prefixSum_comp_castLE] using hab _) hψ hψc
 
 /-! ### Symmetric convex sets -/
 
