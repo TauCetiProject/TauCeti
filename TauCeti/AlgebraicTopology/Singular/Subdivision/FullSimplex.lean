@@ -235,17 +235,13 @@ theorem iUnion_image_affineMapAmbient_vertex (p : ℕ) :
   rw [mem_image_affineMapAmbient_vertex_iff _ hy]
   exact Tuple.monotone_sort _
 
-private theorem perm_eq_one_of_monotone {α : Type*} [LinearOrder α] [Finite α] {τ : Perm α}
-    (h : Monotone τ) : τ = 1 :=
-  Equiv.ext fun _ ↦ (h.strictMono_of_injective τ.injective).apply_eq
-
 /-- Distinct barycentric subdivision chambers of `Δᵖ` overlap in a set of Lebesgue measure zero. -/
 theorem volume_image_affineMapAmbient_vertex_inter_eq_zero {π₁ π₂ : Perm (Fin (p + 1))}
     (hne : π₁ ≠ π₂) :
     volume ((affineMapAmbient (vertex π₁) '' fullSimplex p) ∩
       (affineMapAmbient (vertex π₂) '' fullSimplex p)) = 0 := by
   have hnotmono : ¬ Monotone (π₁.symm * π₂) := fun hmono ↦
-    hne (inv_mul_eq_one.mp (perm_eq_one_of_monotone hmono))
+    hne (inv_mul_eq_one.mp ((Equiv.Perm.monotone_iff _).mp hmono))
   simp only [Monotone, not_forall, not_le] at hnotmono
   obtain ⟨j₁, j₂, hj, hlt⟩ := hnotmono
   let a := π₂ j₁; let b := π₂ j₂

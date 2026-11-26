@@ -99,13 +99,9 @@ theorem chainMass_sub_le (c d : SmoothSimplex I M p →₀ R) :
 
 /-- Triangle inequality for a finite sum of smooth chains. -/
 theorem chainMass_sum_le {ι : Type*} (s : Finset ι) (c : ι → SmoothSimplex I M p →₀ R) :
-    chainMass (∑ i ∈ s, c i) ≤ ∑ i ∈ s, chainMass (c i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih =>
-    rw [Finset.sum_insert hi, Finset.sum_insert hi]
-    exact (chainMass_add_le _ _).trans (add_le_add le_rfl ih)
+    chainMass (∑ i ∈ s, c i) ≤ ∑ i ∈ s, chainMass (c i) :=
+  Finset.le_sum_of_subadditive (M := SmoothSimplex I M p →₀ R) (N := ℝ) chainMass
+    chainMass_zero.le chainMass_add_le s c
 
 /-- Scaling a smooth chain by `r` under a norm-multiplicative action scales mass by `‖r‖`. -/
 @[simp]
