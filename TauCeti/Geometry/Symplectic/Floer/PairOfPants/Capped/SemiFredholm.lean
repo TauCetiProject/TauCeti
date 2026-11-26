@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capped
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capped
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Sphere
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # The semi-Fredholm property along the capped comparison family
@@ -54,7 +53,7 @@ sphere to `L²`, and it has finite-dimensional kernel
 public section
 
 open Complex Filter Function MeasureTheory Metric Set TauCeti.ThricePuncturedSphere
-open scoped Manifold ENNReal
+open scoped ENNReal
 
 namespace TauCeti.SymplecticForm
 
@@ -85,30 +84,6 @@ private theorem exists_cappedComparison_eq_base {ω : SymplecticForm V} (h₀ : 
     exact (hT hz).1 y
   · rw [cappedComparisonPerturbation_def, (hT hz).2 y, zero_apply]
 
-/-- The almost complex structures of the capped comparison family, read in the plane chart, are
-`C¹` jointly in the domain point and the target point. -/
-private theorem contDiff_cappedComparisonAlmostComplex_comp {ω : SymplecticForm V}
-    (h₀ : ω.Compatible J₀) (hJ : ∀ q t x, ω.Tames (J q t x)) (hJp : ∀ q, Periodic (J q) 1)
-    (hJs : ∀ q, ContDiff ℝ 1 fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (R : ℝ) :
-    ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (cappedComparisonAlmostComplex h₀ J hJ R
-      (equivRealProdCLM.symm p.1) p.2).toLinearMap.toContinuousLinearMap := by
-  have hg : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × V) (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V))) 1
-      fun p : (ℝ × ℝ) × V ↦ (equivRealProdCLM.symm p.1, (R, p.2)) :=
-    (equivRealProdCLM.symm.contDiff.comp contDiff_fst).contMDiff.prodMk
-      (contMDiff_const.prodMk contDiff_snd.contMDiff)
-  exact ((contMDiff_cappedComparisonAlmostComplex h₀ hJp
-    fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJs q).contMDiff).comp hg).contDiff
-
-omit [FiniteDimensional ℝ V] in
-/-- The components of the perturbation of the capped comparison family, read in the plane chart,
-are `C²` jointly in the domain point and the target point. -/
-private theorem contDiff_cappedComparisonPerturbation_comp (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) (R : ℝ) (v : ℂ) :
-    ContDiff ℝ 2 fun p : (ℝ × ℝ) × V ↦
-      cappedComparisonPerturbation H R (equivRealProdCLM.symm p.1) p.2 v :=
-  (contDiff_cappedComparisonPerturbation_apply hH hHs v).comp (contDiff_const.prodMk contDiff_id)
-
 /-- **The semi-Fredholm estimate along the capped comparison family.** Let `J₀` be
 `ω`-compatible, let `J_q(t, x)` be period-one `C¹` families of `ω`-compatible structures on the
 three ends, and let `H_q` be period-one `C²` Hamiltonians. For every member `R` of the comparison
@@ -135,9 +110,10 @@ theorem exists_forall_integral_le_mul_integral_floerLinearization_cappedComparis
   obtain ⟨T, hJ₀, hK₀⟩ := exists_cappedComparison_eq_base (H := H) h₀ hJ R
   exact exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base
     (T := T) hJ₀ (fun z hz y ↦ hK₀ z hz y 1) (fun z hz y ↦ hK₀ z hz y I)
-    (fun z ↦ (contDiff_cappedComparisonAlmostComplex_comp h₀ hJ hJp hJs R).contDiffAt)
-    (fun z ↦ (contDiff_cappedComparisonPerturbation_comp hH hHs R 1).contDiffAt)
-    (fun z ↦ (contDiff_cappedComparisonPerturbation_comp hH hHs R I).contDiffAt) hu fun z ↦ by
+    (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
+    fun z ↦ by
       rw [cappedComparisonAlmostComplex_def]
       exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
 
@@ -163,9 +139,9 @@ theorem memLp_floerConformalJetCoeff_cappedComparison (ω : SymplecticForm V)
   exact ω.memLp_floerConformalJetCoeff_of_eq_base isWeight_sphereWeight
     (J₀ := J₀.toLinearMap.toContinuousLinearMap) (T := T) (fun z hz y ↦ by rw [hJ₀ z hz y])
     (fun z hz y ↦ hK₀ z hz y 1) (fun z hz y ↦ hK₀ z hz y I)
-    (fun z ↦ (contDiff_cappedComparisonAlmostComplex_comp h₀ hJ hJp hJs R).contDiffAt)
-    (fun z ↦ (contDiff_cappedComparisonPerturbation_comp hH hHs R 1).contDiffAt)
-    (fun z ↦ (contDiff_cappedComparisonPerturbation_comp hH hHs R I).contDiffAt) hu
+    (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
 
 /-- **The linearized operator along the capped comparison family has finite-dimensional kernel on
 `W^{1,2}`.** Under the hypotheses of
@@ -186,9 +162,10 @@ theorem finiteDimensional_ker_floerConformalSobolevOperator_cappedComparison
   obtain ⟨T, hJ₀, hK₀⟩ := exists_cappedComparison_eq_base (H := H) h₀ hJ R
   exact ω.finiteDimensional_ker_floerConformalSobolevOperator_sphereWeight_of_eq_base
     (T := T) hJ₀ (fun z hz y ↦ hK₀ z hz y 1) (fun z hz y ↦ hK₀ z hz y I)
-    (fun z ↦ (contDiff_cappedComparisonAlmostComplex_comp h₀ hJ hJp hJs R).contDiffAt)
-    (fun z ↦ (contDiff_cappedComparisonPerturbation_comp hH hHs R 1).contDiffAt)
-    (fun z ↦ (contDiff_cappedComparisonPerturbation_comp hH hHs R I).contDiffAt) hu fun z ↦ by
+    (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
+    fun z ↦ by
       rw [cappedComparisonAlmostComplex_def]
       exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
 
@@ -211,9 +188,10 @@ theorem isClosed_range_floerConformalSobolevOperator_cappedComparison
   obtain ⟨T, hJ₀, hK₀⟩ := exists_cappedComparison_eq_base (H := H) h₀ hJ R
   exact ω.isClosed_range_floerConformalSobolevOperator_sphereWeight_of_eq_base
     (T := T) hJ₀ (fun z hz y ↦ hK₀ z hz y 1) (fun z hz y ↦ hK₀ z hz y I)
-    (fun z ↦ (contDiff_cappedComparisonAlmostComplex_comp h₀ hJ hJp hJs R).contDiffAt)
-    (fun z ↦ (contDiff_cappedComparisonPerturbation_comp hH hHs R 1).contDiffAt)
-    (fun z ↦ (contDiff_cappedComparisonPerturbation_comp hH hHs R I).contDiffAt) hu fun z ↦ by
+    (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
+    fun z ↦ by
       rw [cappedComparisonAlmostComplex_def]
       exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
 
