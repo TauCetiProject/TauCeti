@@ -12,9 +12,9 @@ public import TauCeti.Analysis.CStarAlgebra.Cuntz.Subequivalence
 # Check: `1 ⋠ diag(1, 0)` in `M₂(ℂ)`
 
 A Check of CStarClassification CL4.1: in `M₂(ℂ)` the identity is not Cuntz subequivalent to the
-rank-one projection `diag(1, 0)` (`TauCeti.CuntzMatrixCheck.not_cuntzLE_one_diag`). Every `x⋆ diag(1, 0) x` has
-determinant `0`, and the determinant is continuous, so no norm limit of such elements is
-invertible. (The scalar Checks are `TauCeti.cuntzLE_complex_iff` on main.)
+rank-one projection `diag(1, 0)` (`TauCeti.CuntzMatrixCheck.not_cuntzLE_one_diag`). Every
+`x⋆ diag(1, 0) x` has determinant `0`, and the determinant is continuous, so no norm limit of such
+elements is invertible. The scalar Checks are `TauCeti.cuntzLE_complex_iff`.
 -/
 
 public section
