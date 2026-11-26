@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.Basic
+public import Mathlib.RingTheory.AdicCompletion.Completeness
 
 /-!
 # Limits in adically Hausdorff modules
@@ -28,6 +28,12 @@ every `m ≤ n`.
   class.
 * `AdicCompletion.val_eq_mk_of_le`: a representative of a coordinate of an element of the
   completion represents all its lower coordinates.
+* `IsHausdorff.iInf_pow_smul_top_eq_bot_of_span_singleton`: in an `(r)`-adically Hausdorff
+  module, `⋂ₙ rⁿ M = 0`.
+* `AdicCompletion.ker_of`, `AdicCompletion.ker_of_span_singleton`: the kernel of `M → M̂` is
+  `⋂ₙ Iⁿ M`.
+* `AdicCompletion.range_of_sup_smul_top_eq_top`: for finitely generated `I`, the image of `M` and
+  `I M̂` span `M̂`.
 -/
 
 public section
@@ -57,3 +63,44 @@ also represents its coordinate modulo `I ^ m` for every `m ≤ n`. -/
 theorem AdicCompletion.val_eq_mk_of_le {x : AdicCompletion I M} {m n : ℕ} (hmn : m ≤ n) {a : M}
     (ha : x.val n = Submodule.Quotient.mk a) : x.val m = Submodule.Quotient.mk a := by
   rw [← x.property hmn, ha, AdicCompletion.transitionMap_mk]
+
+open Pointwise
+
+/-- In an `(r)`-adically Hausdorff module, `⋂ₙ rⁿ M = 0`. -/
+theorem IsHausdorff.iInf_pow_smul_top_eq_bot_of_span_singleton {r : R}
+    (h : IsHausdorff (Ideal.span {r}) M) : ⨅ n : ℕ, (r ^ n • ⊤ : Submodule R M) = ⊥ := by
+  simpa only [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul] using h.iInf_pow_smul
+
+namespace AdicCompletion
+
+open Submodule
+
+/-- The kernel of the map from a module to its `I`-adic completion is `⋂ₙ Iⁿ M`. -/
+@[simp]
+theorem ker_of (M : Type*) [AddCommGroup M] [Module R M] :
+    LinearMap.ker (of I M) = ⨅ n : ℕ, I ^ n • (⊤ : Submodule R M) := by
+  ext x
+  simp only [LinearMap.mem_ker, mem_iInf]
+  refine ⟨fun hx n ↦ ?_, fun hx ↦ AdicCompletion.ext fun n ↦ ?_⟩
+  · have := congrArg (fun y ↦ y.val n) hx
+    simpa [of_apply, Submodule.Quotient.mk_eq_zero] using this
+  · simpa [of_apply, Submodule.Quotient.mk_eq_zero] using hx n
+
+/-- For a finitely generated ideal `I`, the image of `M` and `I M̂` span the `I`-adic
+completion `M̂`. -/
+theorem range_of_sup_smul_top_eq_top {I : Ideal R} (hI : I.FG) (M : Type*) [AddCommGroup M]
+    [Module R M] : LinearMap.range (of I M) ⊔ I • ⊤ = ⊤ := by
+  refine eq_top_iff.mpr fun y _ ↦ ?_
+  obtain ⟨m, hm⟩ := Submodule.Quotient.mk_surjective _ (eval I M 1 y)
+  have hy : y - of I M m ∈ I • (⊤ : Submodule R (AdicCompletion I M)) := by
+    have h : (I • ⊤ : Submodule R (AdicCompletion I M)) = LinearMap.ker (eval I M 1) := by
+      simpa using pow_smul_top_eq_ker_eval (M := M) (n := 1) hI
+    rw [h, LinearMap.mem_ker, map_sub, eval_of, ← hm, mkQ_apply, sub_self]
+  simpa using add_mem_sup (LinearMap.mem_range_self (of I M) m) hy
+
+/-- The kernel of the map from a module to its `(r)`-adic completion is `⋂ₙ rⁿ M`. -/
+theorem ker_of_span_singleton (r : R) (M : Type*) [AddCommGroup M] [Module R M] :
+    LinearMap.ker (of (Ideal.span {r}) M) = ⨅ n : ℕ, r ^ n • (⊤ : Submodule R M) := by
+  simp [Ideal.span_singleton_pow, ideal_span_singleton_smul]
+
+end AdicCompletion
