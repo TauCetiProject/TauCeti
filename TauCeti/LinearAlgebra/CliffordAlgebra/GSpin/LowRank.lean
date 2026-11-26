@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.CliffordAlgebra.GSpin.Scalar
 public import TauCeti.LinearAlgebra.CliffordAlgebra.GSpin.Torus
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Zero
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VectorNormalizer.Zero
