@@ -53,7 +53,11 @@ diffeomorphism which preserves the canonical symplectic forms and agrees with th
 through the cotangent inclusions
 (`TauCeti.CotangentBundle.exists_partialDiffeomorph_openInclusion_eq`). This lets a construction
 which needs Hausdorff base manifolds, such as a bump-function extension, be carried out over
-chart domains.
+chart domains. Exact Liouville primitives transfer the same way. Write `ι` for the cotangent
+inclusions, and let `Φ : T*U → T*V` and `Ψ : T*M → T*N`, differentiable at `a` and `ι a`, satisfy
+`Ψ ∘ ι = ι ∘ Φ` near `a`. If `f` is an exact primitive of `Φ` at `a`, then any function `g` on
+`T*M`, differentiable at `ι a`, with `g ∘ ι = f` near `a` is an exact primitive of `Ψ` at `ι a`
+(`TauCeti.CotangentBundle.liouvilleForm_sub_mpullback_apply_openInclusion`).
 
 ## References
 
@@ -467,10 +471,11 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [IsManifold I 2 M] [IsManifold J 2 N]
 
 /-- **Exact primitives through the cotangent inclusions.** Let `U ⊆ M` and `V ⊆ N` be open, and let
-`Φ : T*U → T*V` and `Ψ : T*M → T*N` satisfy `Ψ ∘ ι = ι ∘ Φ` near `a ∈ T*U`, for the cotangent
-inclusions `ι`. If `f` is an exact primitive of `Φ` at `a`, that is `λ_U - Φ^* λ_V = df` there,
-and `g` is a function on `T*M`, differentiable at `ι a`, with `g ∘ ι = f` near `a`, then `g` is
-an exact primitive of `Ψ` at `ι a`: `λ_M - Ψ^* λ_N = dg` there. -/
+`Φ : T*U → T*V` and `Ψ : T*M → T*N`, differentiable at `a ∈ T*U` and at `ι a` respectively,
+satisfy `Ψ ∘ ι = ι ∘ Φ` near `a`, for the cotangent inclusions `ι`. If `f` is an exact primitive
+of `Φ` at `a`, that is `λ_U - Φ^* λ_V = df` there, and `g` is a function on `T*M`, differentiable
+at `ι a`, with `g ∘ ι = f` near `a`, then `g` is an exact primitive of `Ψ` at `ι a`:
+`λ_M - Ψ^* λ_N = dg` there. -/
 theorem liouvilleForm_sub_mpullback_apply_openInclusion {U : Opens M} {V : Opens N}
     {Φ : CotangentBundle I U → CotangentBundle J V}
     {Ψ : CotangentBundle I M → CotangentBundle J N} {f : CotangentBundle I U → ℝ}
