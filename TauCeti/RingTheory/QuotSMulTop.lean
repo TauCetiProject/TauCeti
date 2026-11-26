@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.RingTheory.QuotSMulTop
 public import Mathlib.RingTheory.Regular.IsSMulRegular
+import TauCeti.RingTheory.Regular.IsSMulRegular
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.RingTheory.Ideal.Colon
 import Mathlib.LinearAlgebra.TensorProduct.Pi
@@ -74,10 +75,6 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
   `QuotSMulTop.map_surjective_iff_range_sup_smul_top_eq_top`: the reduction of `f` modulo `r` is
   injective exactly when `f x ∈ r N` forces `x ∈ r M`, and surjective exactly when
   `range f + r N = N`.
-* `Submodule.sup_pow_smul_top_eq_top`: `P + I M = M` implies `P + Iⁿ M = M`.
-* `Submodule.surjective_smul_quotient_of_sup_smul_top_eq_top`: if `P + r M = M`, then `r` acts
-  surjectively on `M ⧸ S` for every `S ≥ P`.
-* `IsSMulRegular.smul_iInf_pow_smul_top`: for regular `r`, `⋂ₙ rⁿ M` is divisible by `r`.
 * `IsSMulRegular.comap_pow_smul_top_le`, `IsSMulRegular.bijective_quotSMulTop_map_pow`: for `r`
   regular on `M`, a map `f : N → M` injective (bijective) modulo `r` is injective (bijective)
   modulo every `rⁿ`.
@@ -180,64 +177,6 @@ theorem quotSMulTopSelfEquiv_symm_mk (I : Ideal R) (r : R) :
   (rfl)
 
 end Ideal
-
-namespace Submodule
-
-/-- If `P` and `I M` together span `M`, then so do `P` and `Iⁿ M`, for every `n`. -/
-theorem sup_pow_smul_top_eq_top {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-    {I : Ideal R} {P : Submodule R M} (h : P ⊔ I • ⊤ = ⊤)
-    (n : ℕ) : P ⊔ I ^ n • ⊤ = ⊤ := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    refine eq_top_iff.mpr ?_
-    calc (⊤ : Submodule R M) = P ⊔ I ^ n • (P ⊔ I • ⊤) := by rw [h, ih]
-      _ ≤ P ⊔ I ^ (n + 1) • ⊤ := by
-        rw [smul_sup, ← sup_assoc, pow_succ, Submodule.mul_smul]
-        exact sup_le_sup_right (sup_le le_rfl smul_le_right) _
-
-/-- If `P` and `r M` together span `M`, then multiplication by `r` is surjective on `M ⧸ S` for
-every `S ≥ P`. -/
-theorem surjective_smul_quotient_of_sup_smul_top_eq_top {R M : Type*} [CommRing R]
-    [AddCommGroup M] [Module R M] {r : R} {P S : Submodule R M} (h : P ⊔ r • ⊤ = ⊤)
-    (hPS : P ≤ S) : Surjective fun x : M ⧸ S ↦ r • x := by
-  intro x
-  obtain ⟨x, rfl⟩ := Quotient.mk_surjective _ x
-  have hx : x ∈ P ⊔ r • ⊤ := by rw [h]; exact mem_top
-  obtain ⟨a, ha, z, hz, rfl⟩ := mem_sup.mp hx
-  obtain ⟨y, -, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).mp hz
-  refine ⟨Quotient.mk y, ?_⟩
-  beta_reduce
-  rw [← Quotient.mk_smul, eq_comm, Quotient.eq, add_sub_cancel_right]
-  exact hPS ha
-
-end Submodule
-
-namespace IsSMulRegular
-
-open Submodule
-
-/-- **`⋂ₙ rⁿ M` is divisible by `r`.** If `r` is regular on `M`, every element of `⋂ₙ rⁿ M` is
-`r` times an element of `⋂ₙ rⁿ M`. -/
-theorem smul_iInf_pow_smul_top {R M : Type*} [CommRing R] [AddCommGroup M]
-    [Module R M] {r : R} (hM : IsSMulRegular M r) :
-    r • ⨅ n : ℕ, (r ^ n • ⊤ : Submodule R M) = ⨅ n : ℕ, r ^ n • ⊤ := by
-  refine le_antisymm (fun x hx ↦ ?_) fun x hx ↦ ?_
-  · obtain ⟨y, hy, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).mp hx
-    refine (mem_iInf _).mpr fun n ↦ ?_
-    obtain ⟨z, -, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).mp ((mem_iInf _).mp hy n)
-    exact (mem_smul_pointwise_iff_exists _ _ _).mpr ⟨r • z, trivial, smul_comm _ _ _⟩
-  · simp only [mem_iInf, mem_smul_pointwise_iff_exists, mem_top, true_and] at hx
-    obtain ⟨y, hy⟩ := hx 1
-    rw [pow_one] at hy
-    refine ⟨y, (mem_iInf _).mpr fun n ↦ ?_, hy⟩
-    -- `x = rⁿ⁺¹ • z`, and cancelling `r` from `r • y = r • (rⁿ • z)` gives `y = rⁿ • z`.
-    obtain ⟨z, hz⟩ := hx (n + 1)
-    refine (mem_smul_pointwise_iff_exists _ _ _).mpr ⟨z, trivial, hM ?_⟩
-    beta_reduce
-    rw [hy, ← hz, pow_succ', mul_smul]
-
-end IsSMulRegular
 
 namespace QuotSMulTop
 

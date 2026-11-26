@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Regular.SMul
 public import TauCeti.GroupTheory.Divisible.MaxDivisible
 
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.Regular.IsSMulRegular
 
 /-!
 # Divisibility of modules over `ℤ_(p)`
