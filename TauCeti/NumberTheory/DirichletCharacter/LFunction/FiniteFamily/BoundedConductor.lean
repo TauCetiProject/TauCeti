@@ -26,7 +26,8 @@ namespace TauCeti.DirichletCharacter
 
 /-- Regularized L-functions are uniformly bounded away from zero near `1` when both the
 conductor and the number of distinct prime divisors of the level are bounded. -/
-theorem exists_pos_eventually_le_norm_regularizedLFunction_of_conductor_le (B k : ℕ) :
+theorem exists_pos_eventually_le_norm_regularizedLFunction_of_card_primeFactors_le_of_conductor_le
+    (B k : ℕ) :
     ∃ c > (0 : ℝ), ∀ᶠ s : ℂ in 𝓝 1, ∀ (N : ℕ) [NeZero N], N.primeFactors.card ≤ k →
       ∀ χ : DirichletCharacter ℂ N, χ.conductor ≤ B → c ≤ ‖χ.regularizedLFunction s‖ := by
   let K := (1 - (2 : ℝ) ^ (-(1 / 2 : ℝ))) ^ k

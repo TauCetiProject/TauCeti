@@ -34,11 +34,13 @@ namespace TauCeti.DirichletCharacter
 whose square is principal and whose level is supported in `S` are uniformly bounded away from
 zero on a common neighbourhood of `1`. In the principal case the regularized function is the
 pole-removed `LFunctionTrivChar₁` divided by `s`; otherwise it is the ordinary L-function. -/
-theorem exists_pos_eventually_le_norm_regularizedLFunction_of_sq_eq_one (S : Finset ℕ) :
+theorem exists_pos_eventually_le_norm_regularizedLFunction_of_primeFactors_subset_of_sq_eq_one
+    (S : Finset ℕ) :
     ∃ c > (0 : ℝ), ∀ᶠ s : ℂ in 𝓝 1, ∀ (N : ℕ) [NeZero N], N.primeFactors ⊆ S →
       ∀ χ : DirichletCharacter ℂ N, χ ^ 2 = 1 → c ≤ ‖χ.regularizedLFunction s‖ := by
-  obtain ⟨c, hc, hnear⟩ := exists_pos_eventually_le_norm_regularizedLFunction_of_conductor_le
-    (∏ p ∈ S.filter Nat.Prime, p ^ 3) S.card
+  obtain ⟨c, hc, hnear⟩ :=
+    exists_pos_eventually_le_norm_regularizedLFunction_of_card_primeFactors_le_of_conductor_le
+      (∏ p ∈ S.filter Nat.Prime, p ^ 3) S.card
   refine ⟨c, hc, ?_⟩
   filter_upwards [hnear] with s hs N inst hS χ hχ
   exact hs N (card_le_card hS) χ (χ.conductor_le_prod_cube_of_sq_eq_one hχ hS)
