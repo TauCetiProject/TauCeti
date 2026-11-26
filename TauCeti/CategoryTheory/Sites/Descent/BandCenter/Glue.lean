@@ -43,7 +43,8 @@ in Definition 8.4.1 (026F).
 
 * `IntrinsicBandSections.center_map_comp`: transport of a central formula along a composite
   pullback.
-* `IntrinsicBandSections.coverCenterAt_compatible`, `IntrinsicBandSections.coverCenterAt_of_mem`.
+* `IntrinsicBandSections.coverCenterAt_unique`, `IntrinsicBandSections.coverCenterAt_compatible`,
+  `IntrinsicBandSections.coverCenterAt_of_mem`.
 * `IntrinsicBandSections.restrict_glue`, `IntrinsicBandSections.glue_unique`,
   `IntrinsicBandSections.glue_restrict`.
 * `IntrinsicBandSections.isSheaf_of_prestack`: `U ↦ Additive ZF(U)` is a sheaf for `J`.
@@ -93,10 +94,16 @@ theorem congr_categoryMk {Y : C} {q q' : Y ⟶ U} (h : q = q') (hq : R.arrows q)
   rfl
 
 /-- The family `h ↦ z_(h ≫ a)` on the pullback of `R` along `a : V ⟶ U`. -/
-@[expose] def pullbackFamily (z : ∀ i : R.arrows.category, IntrinsicBandSections F i.obj.left)
+def pullbackFamily (z : ∀ i : R.arrows.category, IntrinsicBandSections F i.obj.left)
     {V : C} (a : V ⟶ U) (i : (R.pullback a).arrows.category) :
     IntrinsicBandSections F i.obj.left :=
   z (Presieve.categoryMk R.arrows (i.obj.hom ≫ a) i.property)
+
+/-- Unfolding of `IntrinsicBandSections.pullbackFamily`. -/
+@[simp]
+theorem pullbackFamily_apply {V : C} (a : V ⟶ U) (i : (R.pullback a).arrows.category) :
+    pullbackFamily z a i = z (Presieve.categoryMk R.arrows (i.obj.hom ≫ a) i.property) :=
+  (rfl)
 
 /-- The pulled-back family of a compatible family is compatible. -/
 theorem IsCompatible.pullback (hz : IsCompatible z) {V : C} (a : V ⟶ U) :
@@ -120,8 +127,20 @@ theorem map_coverCenterAt_app (hR : R ∈ J U) (hz : IsCompatible z) {V : C} (a 
     (x : F.obj (.mk (op V))) (i : (R.pullback a).arrows.category) :
     (F.map i.obj.hom.op.toLoc).toFunctor.map ((coverCenterAt hR hz a).val.app x) =
       ((z (Presieve.categoryMk R.arrows (i.obj.hom ≫ a) i.property)).val i.obj.left
-        (𝟙 _)).val.app ((F.map i.obj.hom.op.toLoc).toFunctor.obj x) :=
-  map_coverCenter_app _ _ x i
+        (𝟙 _)).val.app ((F.map i.obj.hom.op.toLoc).toFunctor.obj x) := by
+  rw [coverCenterAt, map_coverCenter_app, pullbackFamily_apply]
+
+/-- **Uniqueness of `c_(R, z, a)`.** A unit of the categorical centre over `V` whose pullback along
+every arrow `h` of the pullback sieve at every object `x` is the component of `z_(h ≫ a)` at the
+identity is `c_(R, z, a)`. -/
+theorem coverCenterAt_unique (hR : R ∈ J U) (hz : IsCompatible z) {V : C} (a : V ⟶ U)
+    (c : (CatCenter (F.obj (.mk (op V))))ˣ)
+    (hc : ∀ (x : F.obj (.mk (op V))) (i : (R.pullback a).arrows.category),
+      (F.map i.obj.hom.op.toLoc).toFunctor.map (c.val.app x) =
+        ((z (Presieve.categoryMk R.arrows (i.obj.hom ≫ a) i.property)).val i.obj.left
+          (𝟙 _)).val.app ((F.map i.obj.hom.op.toLoc).toFunctor.obj x)) :
+    c = coverCenterAt hR hz a :=
+  coverCenter_unique _ _ c fun x i ↦ by rw [pullbackFamily_apply]; exact hc x i
 
 /-- The identity family gives the identity centre unit over every `a`. -/
 @[simp]
@@ -147,7 +166,7 @@ theorem coverCenterAt_mul (hR : R ∈ J U) (hz : IsCompatible z) (hw : IsCompati
 theorem coverCenterAt_restrict (hR : R ∈ J U) (s : IntrinsicBandSections F U) {V : C}
     (a : V ⟶ U) :
     coverCenterAt hR (isCompatible_restrict s) a = s.val V a :=
-  (coverCenter_unique _ _ _ fun x i ↦ by simp [pullbackFamily, map_app]).symm
+  (coverCenterAt_unique hR _ a _ fun x i ↦ by simp [map_app]).symm
 
 /-- **Compatibility with pullback along any arrow.** For every `g : W ⟶ V`, whether or not it
 lies in `R`, `g^*` carries `c_(R, z, a)` at `x` to `c_(R, z, g ≫ a)` at `g^* x`. -/
@@ -171,9 +190,8 @@ theorem coverCenterAt_compatible (hR : R ∈ J U) (hz : IsCompatible z) {V W : C
 theorem coverCenterAt_of_mem (hR : R ∈ J U) (hz : IsCompatible z) (i : R.arrows.category)
     {V : C} (a : V ⟶ i.obj.left) :
     coverCenterAt hR hz (a ≫ i.obj.hom) = (z i).val V a := by
-  refine (coverCenter_unique _ _ _ fun x j ↦ ?_).symm
+  refine (coverCenterAt_unique hR hz _ _ fun x j ↦ ?_).symm
   rw [map_app, hz.val_eq (j.obj.hom ≫ a ≫ i.obj.hom) i (j.obj.hom ≫ a) (Category.assoc _ _ _)]
-  rfl
 
 /-- **The glued central section** of a compatible family on a covering sieve of a prestack: its
 component at `a : V ⟶ U` is `c_(R, z, a)`. -/
@@ -238,6 +256,13 @@ def presheaf : Cᵒᵖ ⥤ AddCommGrpCat.{max u v u' v'} where
 of abelian groups for `J`. No groupoid, gerbe or commutativity hypothesis is needed. -/
 theorem isSheaf_of_prestack : Presheaf.IsSheaf J (presheaf F) := by
   refine Presheaf.isSheaf_of_isSheaf_comp J _ (forget AddCommGrpCat) ?_
+  -- The underlying function of `(presheaf F).map f` is `restrict f.unop` conjugated by the
+  -- `Additive` wrapper; this holds by unfolding `presheaf_map`, `AddCommGrpCat.ofHom` and
+  -- `MonoidHom.toAdditive`. Since `Additive.ofMul` and `Additive.toMul` are identities, the
+  -- `congrArg` steps below move equations of sections across the wrapper.
+  have hmap {V W : Cᵒᵖ} (f : V ⟶ W) (s : Additive (IntrinsicBandSections F V.unop)) :
+      (presheaf F ⋙ forget AddCommGrpCat).map f s = Additive.ofMul (restrict f.unop s.toMul) :=
+    rfl
   rw [isSheaf_iff_isSheaf_of_type]
   intro U R hR x hx
   replace hx := hx.to_sieveCompatible
@@ -250,10 +275,11 @@ theorem isSheaf_of_prestack : Presheaf.IsSheaf J (presheaf F) := by
   have hy : IsCompatible y := (isCompatible_iff _).2 fun i j g ↦ by
     have h := hx j.obj.hom g.hom.left j.property
     rw [congr_x (Over.w g.hom) _ i.property] at h
-    exact congrArg Additive.toMul h.symm
+    exact congrArg Additive.toMul (h.trans (hmap _ _)).symm
   refine ⟨Additive.ofMul (glue hR hy), fun V f hf ↦ ?_, fun t ht ↦ ?_⟩
-  · exact congrArg Additive.ofMul (restrict_glue hR hy (Presieve.categoryMk _ f hf))
-  · exact congrArg Additive.ofMul
-      (glue_unique hR hy fun i ↦ congrArg Additive.toMul (ht i.obj.hom i.property))
+  · exact (hmap _ _).trans
+      (congrArg Additive.ofMul (restrict_glue hR hy (Presieve.categoryMk _ f hf)))
+  · exact congrArg Additive.ofMul (glue_unique hR hy fun i ↦
+      congrArg Additive.toMul ((hmap _ _).symm.trans (ht i.obj.hom i.property)))
 
 end CategoryTheory.Pseudofunctor.IntrinsicBandSections
