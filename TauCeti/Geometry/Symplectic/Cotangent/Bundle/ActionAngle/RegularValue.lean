@@ -23,6 +23,7 @@ function of the actions `h ∘ I` are read off from those of `h`.
 
 In the namespace `TauCeti.CotangentBundle`:
 
+* `isSubmersion_torusActions`: the action map is a submersion.
 * `isRegularPoint_comp_torusActions_iff`: `h ∘ I` is regular at a covector exactly when the
   derivative of `h` is surjective at its actions.
 * `isRegularValue_comp_torusActions_iff`: the regular values of `h ∘ I` are those of `h`.
@@ -33,13 +34,21 @@ public section
 noncomputable section
 
 open Bundle Function
-open scoped Manifold
+open scoped Manifold ContDiff
 
 namespace TauCeti
 
 namespace CotangentBundle
 
 variable (p : ℝ) [Fact (0 < p)] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **The action map is a submersion.** It is smooth with surjective derivatives
+(`TauCeti.CotangentBundle.surjective_mfderiv_torusActions`). -/
+theorem isSubmersion_torusActions :
+    Manifold.IsSubmersion ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+      𝓘(ℝ, ι → ℝ) ∞ (torusActions (ι := ι) p) :=
+  ((contMDiff_torusActions (ι := ι) p).isSubmersionOfComplement_of_surjective_mfderiv (by simp)
+    (surjective_mfderiv_torusActions p)).isSubmersion
 
 /-- A function of the actions is regular at a covector exactly when its profile is regular at the
 actions of the covector: the action map is a submersion. Where the profile is not differentiable
@@ -49,34 +58,21 @@ theorem isRegularPoint_comp_torusActions_iff {h : (ι → ℝ) → ℝ}
     IsRegularPoint ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) 𝓘(ℝ)
         (h ∘ torusActions p) z ↔
       Surjective (fderiv ℝ h (torusActions p z)) := by
-  by_cases hh : DifferentiableAt ℝ h (torusActions p z)
-  · rw [← isRegularPoint_iff_surjective_fderiv]
-    exact ⟨fun hz ↦ hz.of_comp hh.mdifferentiableAt
-        ((contMDiff_torusActions p z).mdifferentiableAt (by simp)),
-      fun hz ↦ hz.comp (isRegularPoint_iff.2 (surjective_mfderiv_torusActions p z))⟩
-  · -- Differentiability descends along the submersion `I`, so `h ∘ I` is not differentiable.
-    have hI := ((contMDiff_torusActions (ι := ι) p).isSubmersionOfComplement_of_surjective_mfderiv
-      (by simp) (surjective_mfderiv_torusActions p)).isSubmersion.isSubmersionAt z
-    refine iff_of_false (fun hz ↦ hh (mdifferentiableAt_iff_differentiableAt.1
-      ((hI.mdifferentiableAt_comp_iff (by simp)).1 hz.mdifferentiableAt))) ?_
-    rw [fderiv_zero_of_not_differentiableAt hh]
-    intro h0
-    obtain ⟨v, hv⟩ := h0 1
-    simp at hv
+  rw [((isSubmersion_torusActions p).isSubmersionAt z).isRegularPoint_comp_iff (by simp),
+    isRegularPoint_iff_surjective_fderiv]
 
-/-- **The regular values of a function of the actions are those of its profile.** Every vector of
-actions is the actions of some covector, so `c` is a regular value of `h ∘ I` exactly when the
-derivative of `h` is surjective at every point of `h⁻¹(c)`. -/
+/-- **The regular values of a function of the actions are those of its profile.** The action map
+is a submersion and every vector of actions is the actions of some covector, so `c` is a regular
+value of `h ∘ I` exactly when the derivative of `h` is surjective at every point of `h⁻¹(c)`. -/
 theorem isRegularValue_comp_torusActions_iff {h : (ι → ℝ) → ℝ} {c : ℝ} :
     IsRegularValue ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) 𝓘(ℝ)
         (h ∘ torusActions p) c ↔
       ∀ a, h a = c → Surjective (fderiv ℝ h a) := by
-  rw [isRegularValue_iff]
-  refine ⟨fun hc a ha ↦ ?_,
-    fun hc z hz ↦ (isRegularPoint_comp_torusActions_iff p).2 (hc _ hz)⟩
   -- The covector `κ(0, a)` has the actions `a`.
-  have hz := hc (actionAngleCover p (0, a)) (by simp [ha])
-  rwa [isRegularPoint_comp_torusActions_iff p, torusActions_actionAngleCover] at hz
+  have hsurj : Surjective (torusActions (ι := ι) p) :=
+    fun a ↦ ⟨actionAngleCover p (0, a), torusActions_actionAngleCover p _⟩
+  simp_rw [(isSubmersion_torusActions p).isRegularValue_comp_iff hsurj (by simp),
+    isRegularValue_iff, isRegularPoint_iff_surjective_fderiv]
 
 end CotangentBundle
 
