@@ -522,17 +522,17 @@ namespace OfSquareZero
 equals `I ^ n`. -/
 @[simp]
 theorem pdFiltration_eq_pow [DecidablePred (fun x : R ↦ x ∈ I)] (hI2 : I ^ 2 = 0) (n : ℕ) :
-    (OfSquareZero.dividedPowers hI2).pdFiltration n = I ^ n := by
-  unfold OfSquareZero.dividedPowers
-  exact OfInvertibleFactorial.pdFiltration_eq_pow (by simp) hI2 n
+    (OfSquareZero.dividedPowers hI2).pdFiltration n = I ^ n :=
+  pdFiltration_eq_pow_of_dpow_mem_pow _
+    (fun m hm _ _ ↦ by rw [dpow_of_two_le hI2 hm]; exact zero_mem _) n
 
 /-- For `OfSquareZero.dividedPowers` on a square-zero ideal `I`, the filtration vanishes from
 degree `2` onward. -/
 theorem pdFiltration_eq_bot [DecidablePred (fun x : R ↦ x ∈ I)] (hI2 : I ^ 2 = 0) {n : ℕ}
     (hn : 2 ≤ n) :
     (OfSquareZero.dividedPowers hI2).pdFiltration n = ⊥ := by
-  unfold OfSquareZero.dividedPowers
-  exact OfInvertibleFactorial.pdFiltration_eq_bot (by simp) hI2 hn
+  rw [pdFiltration_eq_pow hI2 n, ← Ideal.zero_eq_bot]
+  exact eq_bot_iff.mpr ((Ideal.pow_le_pow_right hn).trans hI2.le)
 
 end OfSquareZero
 
@@ -544,7 +544,9 @@ theorem pdFiltration_eq_pow {A : Type*} [CommRing A] {p : ℕ} [Fact p.Prime]
     (hp : _root_.IsNilpotent (p : A)) {J : Ideal A} [DecidablePred (fun x ↦ x ∈ J)]
     (hJp : J ^ p = 0) (n : ℕ) :
     (DividedPowers.IsNilpotent.dividedPowers hp hJp).pdFiltration n = J ^ n := by
-  unfold DividedPowers.IsNilpotent.dividedPowers
+  -- Mathlib defines `IsNilpotent.dividedPowers` via `OfInvertibleFactorial.dividedPowers`
+  -- without exposing a `dpow_apply` lemma for degrees `< p`.
+  simp only [DividedPowers.IsNilpotent.dividedPowers]
   exact OfInvertibleFactorial.pdFiltration_eq_pow _ hJp n
 
 end IsNilpotent
@@ -556,7 +558,8 @@ namespace CharP
 theorem pdFiltration_eq_pow (A : Type*) [CommRing A] (p : ℕ) [_root_.CharP A p] [Fact p.Prime]
     {J : Ideal A} [DecidablePred (fun x ↦ x ∈ J)] (hJp : J ^ p = 0) (n : ℕ) :
     (DividedPowers.CharP.dividedPowers A p hJp).pdFiltration n = J ^ n := by
-  unfold DividedPowers.CharP.dividedPowers
+  -- Mathlib defines `CharP.dividedPowers` via `IsNilpotent.dividedPowers`.
+  simp only [DividedPowers.CharP.dividedPowers]
   exact IsNilpotent.pdFiltration_eq_pow _ hJp n
 
 end CharP

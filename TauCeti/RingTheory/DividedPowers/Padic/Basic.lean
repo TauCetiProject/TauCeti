@@ -96,8 +96,9 @@ theorem valuation_dpow_p (n : ℕ) :
   have hfac : (n.factorial : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
   have hpow : (p : ℚ_[p]) ^ n ≠ 0 := pow_ne_zero n (Nat.cast_ne_zero.mpr hp.out.ne_zero)
   apply Int.ofNat.inj
-  rw [Int.ofNat_eq_natCast, ← valuation_coe, coe_dpow_p p n]
-  simp [Padic.valuation_mul, hfac, hpow, Nat.cast_sub hle]
+  rw [Int.ofNat_eq_natCast, Int.ofNat_eq_natCast, ← valuation_coe, coe_dpow_p p n,
+    Padic.valuation_mul (inv_ne_zero hfac) hpow, Padic.valuation_inv, Padic.valuation_natCast,
+    Padic.valuation_pow, Padic.valuation_p, Nat.cast_sub hle]
   ring
 
 /-- Membership of `γₙ(p)` in `(p ^ e) ⊂ ℤ_[p]` in terms of `multiplicity p n.factorial`. -/
