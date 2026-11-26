@@ -104,11 +104,8 @@ example (M : MDP Bool Bool) (htrans : ∀ s a, M.trans s a = PMF.pure a) (d : �
   set μ := (HistoryPolicy.ofMarkov fun k ↦ ofDet (d k)).trajLaw M.transKernel s
   have haction : ∀ᵐ ω ∂μ, (ω (n + 1)).2 = d (n + 1) (ω (n + 1)).1 := by
     have h : ∀ᵐ p ∂(μ.map (fun x ↦ (x (n + 1)).1) ⊗ₘ Kernel.ofPMF (ofDet (d (n + 1)))),
-        p.2 = d (n + 1) p.1 := by
-      refine Measure.ae_compProd_of_ae_ae (Set.to_countable _).measurableSet
-        (Eventually.of_forall fun b ↦ ?_)
-      rw [Kernel.ofPMF_apply, ofDet_apply, PMF.toMeasure_pure, ae_dirac_eq]
-      exact rfl
+        p.2 = d (n + 1) p.1 :=
+      Kernel.ae_compProd_ofPMF_of_eq_pure (ofDet_apply (d (n + 1)))
     rw [← HistoryPolicy.trajLaw_ofMarkov_map_eval_succ] at h
     exact ae_of_ae_map (measurable_pi_apply _).aemeasurable h
   filter_upwards [M.trajLaw_ae_state_succ_of_trans_eq_pure _ s (f := fun _ a ↦ a) htrans,

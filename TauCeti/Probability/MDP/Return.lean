@@ -202,10 +202,15 @@ state-action pair `(s, a)`. -/
 def transKernel : Kernel (S × A) S :=
   Kernel.ofPMF fun sa ↦ M.trans sa.1 sa.2
 
-/-- The row of the transition kernel at `(s, a)` is the measure of `trans s a`. -/
+/-- The row of the transition kernel at `sa = (s, a)` is the measure of `trans s a`. -/
+theorem transKernel_apply (sa : S × A) : M.transKernel sa = (M.trans sa.1 sa.2).toMeasure :=
+  Kernel.ofPMF_apply _ sa
+
+/-- The transition kernel moves from `(s, a)` to `t` with probability `trans s a t`. -/
 @[simp]
-theorem transKernel_apply (s : S) (a : A) : M.transKernel (s, a) = (M.trans s a).toMeasure :=
-  Kernel.ofPMF_apply _ (s, a)
+theorem transKernel_apply_singleton (s : S) (a : A) (t : S) :
+    M.transKernel (s, a) {t} = M.trans s a t :=
+  Kernel.ofPMF_apply_singleton _ (s, a) t
 
 instance : IsMarkovKernel M.transKernel :=
   inferInstanceAs (IsMarkovKernel (Kernel.ofPMF _))
@@ -304,11 +309,8 @@ theorem trajLaw_ae_state_succ_of_trans_eq_pure {f : S → A → S}
   refine ae_all_iff.2 fun n ↦ ?_
   have hmeas : Measurable fun x : ℕ → S × A ↦ (x n, (x (n + 1)).1) := by fun_prop
   have hstep : ∀ᵐ p ∂((π.trajLaw M.transKernel s).map (fun x ↦ x n) ⊗ₘ M.transKernel),
-      p.2 = f p.1.1 p.1.2 := by
-    refine Measure.ae_compProd_of_ae_ae (Set.to_countable _).measurableSet
-      (Eventually.of_forall fun sa ↦ ?_)
-    rw [← Prod.mk.eta (p := sa), transKernel_apply, htrans, PMF.toMeasure_pure, ae_dirac_eq]
-    exact rfl
+      p.2 = f p.1.1 p.1.2 :=
+    Kernel.ae_compProd_ofPMF_of_eq_pure fun sa : S × A ↦ htrans sa.1 sa.2
   rw [← π.trajLaw_map_eval_state_succ M.transKernel s n] at hstep
   exact ae_of_ae_map hmeas.aemeasurable hstep
 
