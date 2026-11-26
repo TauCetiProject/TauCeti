@@ -55,7 +55,8 @@ theorem referenceSubgroup_index_zero_eq_zpowers {n : ℕ} (h : 0 < numTransitive
   | 3, _ => rw [referenceSubgroup_three_zero, Subgroup.zpowers_eq_closure]
   | 4, _ => rw [referenceSubgroup_four_zero, Subgroup.zpowers_eq_closure]
   | 5, _ => rw [referenceSubgroup_five_zero, Subgroup.zpowers_eq_closure]
-  | k + 6, h => exact absurd h (by simp)
+  | 6, _ => rw [referenceSubgroup_six_zero, Subgroup.zpowers_eq_closure]
+  | k + 7, h => exact absurd h (by simp)
 
 /-- The rotation `finRotate n` lies in the reference subgroup of `nT1`. -/
 theorem finRotate_mem_referenceSubgroup_index_zero {n : ℕ} (h : 0 < numTransitiveGroups n) :

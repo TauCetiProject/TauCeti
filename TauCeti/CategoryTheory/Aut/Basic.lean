@@ -24,6 +24,9 @@ This file contains general bookkeeping lemmas for automorphisms of objects in a 
   cardinality.
 * `CategoryTheory.Functor.FullyFaithful.natCard_aut_obj`: a fully faithful functor preserves the
   cardinality of automorphism groups.
+* `TauCeti.small_iso`, `TauCeti.small_aut`: if the morphisms `X ⟶ Y` form a `w`-small type, so do
+  the isomorphisms `X ≅ Y`; in particular `Aut X` is `w`-small when `X ⟶ X` is, for instance in a
+  `w`-locally small category.
 -/
 
 public section
@@ -70,3 +73,22 @@ theorem Functor.FullyFaithful.natCard_aut_obj {F : C ⥤ D} (hF : F.FullyFaithfu
   (Nat.card_congr (hF.autMulEquivOfFullyFaithful x).toEquiv).symm
 
 end CategoryTheory
+
+namespace TauCeti
+
+open CategoryTheory
+
+universe w v u
+
+variable {C : Type u} [Category.{v} C]
+
+/-- If the morphisms `X ⟶ Y` form a `w`-small type, so do the isomorphisms `X ≅ Y`. -/
+instance small_iso (X Y : C) [Small.{w} (X ⟶ Y)] : Small.{w} (X ≅ Y) :=
+  small_of_injective (f := Iso.hom) fun _ _ h ↦ Iso.ext h
+
+/-- If the endomorphisms of `X` form a `w`-small type, so does its automorphism group. In
+particular automorphism groups in a `w`-locally small category are `w`-small. -/
+instance small_aut (X : C) [Small.{w} (X ⟶ X)] : Small.{w} (Aut X) :=
+  small_map Aut.isoEquiv
+
+end TauCeti

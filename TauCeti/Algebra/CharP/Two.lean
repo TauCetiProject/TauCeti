@@ -41,7 +41,9 @@ representations with a sum in the semiring.
 
 A nontrivial semiring that is an algebra over `ZMod 2` has characteristic two
 (`TauCeti.charP_two_of_algebra_zmod_two`). This is the instance-shaped `p = 2` case of Mathlib's
-`charP_of_injective_algebraMap'`, usable as a local instance for `ZMod 2`-algebras.
+`charP_of_injective_algebraMap'`, usable as a local instance for `ZMod 2`-algebras. Without any
+nontriviality, `2 = 0` passes from a commutative semiring to every algebra over it
+(`TauCeti.two_eq_zero_of_algebra`).
 
 -/
 
@@ -113,6 +115,11 @@ from the field `ZMod 2` being injective. -/
 theorem charP_two_of_algebra_zmod_two (k : Type*) [Semiring k] [Nontrivial k]
     [Algebra (ZMod 2) k] : CharP k 2 :=
   charP_of_injective_algebraMap (algebraMap (ZMod 2) k).injective 2
+
+/-- If `2 = 0` in a commutative semiring `R`, then `2 = 0` in every `R`-algebra. -/
+theorem two_eq_zero_of_algebra {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    (h2 : (2 : R) = 0) : (2 : A) = 0 := by
+  rw [← map_ofNat (algebraMap R A) 2, h2, map_zero]
 
 end TauCeti
 

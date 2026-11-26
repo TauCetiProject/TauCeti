@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.MeasureTheory.Measure.Restrict
 public import TauCeti.MeasureTheory.Measure.Subtype
 public import TauCeti.MeasureTheory.Measure.Support
-public import TauCeti.Topology.Grassmannian.StarProjection
+public import TauCeti.Topology.Grassmannian.StarProjection.Basic
 public import TauCeti.Topology.Sets.Opens
 
 /-!
