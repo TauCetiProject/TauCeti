@@ -86,7 +86,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   at most one, `A ⧸ I` has finite length when `I` contains a non-zero-divisor.
 * `TauCeti.isFiniteLength_of_nonZeroDivisor_mem_annihilator`: over a noetherian ring of dimension
   at most one, a finitely generated module killed by a non-zero-divisor has finite length; in
-  particular a finitely generated torsion module does (`Module.IsTorsion.isFiniteLength`).
+  particular a finitely generated torsion module does (`Module.IsTorsion.isFiniteLength`), such as
+  the kernel of a localization at the non-zero-divisors (`IsLocalizedModule.isFiniteLength_ker`).
 * `LinearMap.ker_mkQ_comp_codRestrict` and `LinearMap.length_quotient_sup_comap_ker`: for a
   linear map `e`, the kernel of the induced map `M → eM ⧸ a·eM`, and the length of the quotient
   of `M` by it.
@@ -429,6 +430,16 @@ theorem _root_.Module.IsTorsion.isFiniteLength [IsNoetherianRing A] [Ring.KrullD
   obtain ⟨x, hxM, hx⟩ := Submodule.annihilator_top_inter_nonZeroDivisors hM
   rw [SetLike.mem_coe, Submodule.annihilator_top] at hxM
   exact isFiniteLength_of_nonZeroDivisor_mem_annihilator hxM hx
+
+/-- In a Noetherian ring of Krull dimension at most one, the kernel of a localization `ι : M → V`
+of a finitely generated module at the non-zero-divisors has finite length: it is the torsion of
+`M`. -/
+theorem _root_.IsLocalizedModule.isFiniteLength_ker [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
+    [Module.Finite A M] {V : Type*} [AddCommGroup V] [Module A V] (ι : M →ₗ[A] V)
+    [IsLocalizedModule (nonZeroDivisors A) ι] : IsFiniteLength A (LinearMap.ker ι) := by
+  refine Module.IsTorsion.isFiniteLength fun x ↦ ?_
+  obtain ⟨s, hs⟩ := (IsLocalizedModule.eq_zero_iff (nonZeroDivisors A) ι).1 x.property
+  exact ⟨s, Subtype.ext hs⟩
 
 end CommRing
 

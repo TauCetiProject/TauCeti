@@ -41,8 +41,9 @@ is the conjugate of the one with entry `x` by a diagonal matrix.
 For an endomorphism `f` of a finitely generated `A`-module `M` that need not be free, and that
 is injective on `K ⊗ M` (`K` the fraction field), the kernel of `f` need not vanish, and what the
 determinant of `f ⊗ K` measures is the difference `length (M ⧸ f(M)) - length (ker f)`, Fulton's
-order `e_A(f, M)`. `LinearMap.exists_length_quotient_range_eq_length_ker_add` computes it as the
-order of `det (f ⊗ K)`, both lengths being finite
+order `e_A(f, M)`.
+`LinearMap.exists_length_quotient_range_eq_length_ker_add_and_ordFrac_det_baseChange_eq` computes
+it as the order of `det (f ⊗ K)`, both lengths being finite
 (`LinearMap.length_ker_ne_top_of_injective_baseChange`,
 `LinearMap.length_quotient_range_ne_top_of_injective_baseChange`). Over a discrete valuation ring
 the determinant lies in `A`, and the difference is its valuation `Ring.ord A d`
@@ -241,6 +242,10 @@ theorem _root_.LinearMap.ordFrac_det_eq_coe_of_length_eq (φ : V →ₗ[K] V) (M
 
 end Lattice
 
+end TauCeti
+
+namespace LinearMap
+
 section BaseChange
 
 open TensorProduct
@@ -249,20 +254,11 @@ variable {A K M V : Type*} [CommRing A] [IsDomain A] [IsNoetherianRing A] [Ring.
   [Field K] [Algebra A K] [IsFractionRing A K] [AddCommGroup M] [Module A M] [Module.Finite A M]
   [AddCommGroup V] [Module K V] [Module A V] [IsScalarTower A K V]
 
-omit [IsDomain A] [IsFractionRing A K] in
-/-- The kernel of a localization `ι : M → V` at the non-zero-divisors is the torsion of `M`, which
-has finite length. -/
-private theorem length_ker_ne_top_of_isLocalizedModule (ι : M →ₗ[A] V)
-    [IsLocalizedModule (nonZeroDivisors A) ι] : Module.length A (LinearMap.ker ι) ≠ ⊤ := by
-  refine Module.length_ne_top_iff.2 (Module.IsTorsion.isFiniteLength fun x ↦ ?_)
-  obtain ⟨s, hs⟩ := (IsLocalizedModule.eq_zero_iff (nonZeroDivisors A) ι).1 x.property
-  exact ⟨s, Subtype.ext hs⟩
-
 /-- The order of an endomorphism `f` of `M`, computed on a localization `ι : M → V` of `M` at the
 non-zero-divisors, with `f` lying over the injective `φ` on `V`. The image `L` of `M` in `V` is a
 lattice stable under `φ`; the cokernel of `f` has the length of its kernel plus that of the
 cokernel of `φ` on `L`, and the latter is the order of `det φ`. -/
-private theorem exists_length_quotient_range_eq_length_ker_add_of_isLocalizedModule
+theorem exists_length_quotient_range_eq_length_ker_add_and_ordFrac_det_eq_of_isLocalizedModule
     [FiniteDimensional K V] (ι : M →ₗ[A] V) [IsLocalizedModule (nonZeroDivisors A) ι]
     {f : M →ₗ[A] M} {φ : V →ₗ[K] V} (hφ : Function.Injective φ)
     (hφι : ∀ m, φ (ι m) = ι (f m)) :
@@ -273,10 +269,12 @@ private theorem exists_length_quotient_range_eq_length_ker_add_of_isLocalizedMod
     exact ⟨f m, (hφι m).symm⟩
   set g := (φ.restrictScalars A).restrict hφL
   -- `f` lies over the restriction `g` of `φ` to the image `L` of `M`.
-  have hlen := length_quotient_range_eq_length_ker_add_of_comp_eq ι.surjective_rangeRestrict
+  have hlen := TauCeti.length_quotient_range_eq_length_ker_add_of_comp_eq ι.surjective_rangeRestrict
     (g := g) (fun x y h ↦ Subtype.ext (hφ (congrArg Subtype.val h)))
     (LinearMap.ext fun m ↦ Subtype.ext (hφι m).symm)
-    (by rw [LinearMap.ker_rangeRestrict]; exact length_ker_ne_top_of_isLocalizedModule ι)
+    (by
+      rw [LinearMap.ker_rangeRestrict]
+      exact Module.length_ne_top_iff.2 (IsLocalizedModule.isFiniteLength_ker ι))
   -- Every element of `L ⧸ g(L)` is killed by a non-zero-divisor: clear the denominators of its
   -- preimage under the bijection `φ`.
   have hfin : Module.length A (LinearMap.range ι ⧸ LinearMap.range g) ≠ ⊤ := by
@@ -287,10 +285,8 @@ private theorem exists_length_quotient_range_eq_length_ker_add_of_isLocalizedMod
     have hm' : φ (ι m') = (s : A) • ι m := by
       rw [← hs, Submonoid.smul_def, LinearMap.map_smul_of_tower, hv]
     refine ⟨s, ?_⟩
-    rw [Submonoid.smul_def, ← map_smul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    refine ⟨⟨_, m', rfl⟩, Subtype.ext ?_⟩
-    rw [LinearMap.coe_restrict_apply, LinearMap.restrictScalars_apply, Submodule.coe_smul]
-    exact hm'
+    rw [Submonoid.smul_def, ← map_smul]
+    exact (Submodule.Quotient.mk_eq_zero _).2 ⟨⟨_, m', rfl⟩, Subtype.ext (by simpa [g] using hm')⟩
   obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.1 hfin
   refine ⟨n, hn ▸ hlen, LinearMap.ordFrac_det_eq_coe_of_length_eq _ _
     (Module.Finite.iff_fg.1 inferInstance) ?_ hφL ?_ hn.symm⟩
@@ -309,31 +305,36 @@ Noetherian domain of dimension at most one with fraction field `K`, `M` a finite
 `A`-module and `f` an endomorphism of `M` that is injective on `K ⊗ M`. Then the cokernel of `f`
 exceeds its kernel in length by a natural number `n`, the order of the determinant of `f` on
 `K ⊗ M`. Both lengths are finite (`LinearMap.length_ker_ne_top_of_injective_baseChange`,
-`LinearMap.length_quotient_range_ne_top_of_injective_baseChange`). -/
-theorem _root_.LinearMap.exists_length_quotient_range_eq_length_ker_add (f : M →ₗ[A] M)
-    (hf : Function.Injective (f.baseChange K)) :
+`LinearMap.length_quotient_range_ne_top_of_injective_baseChange`). This is the case
+`ι = 1 ⊗ - : M → K ⊗ M` of
+`LinearMap.exists_length_quotient_range_eq_length_ker_add_and_ordFrac_det_eq_of_isLocalizedModule`.
+-/
+theorem exists_length_quotient_range_eq_length_ker_add_and_ordFrac_det_baseChange_eq
+    (f : M →ₗ[A] M) (hf : Function.Injective (f.baseChange K)) :
     ∃ n : ℕ, Module.length A (M ⧸ LinearMap.range f) = Module.length A (LinearMap.ker f) + n ∧
       Ring.ordFrac A (LinearMap.det (f.baseChange K)) = Multiplicative.ofAdd (n : ℤ) :=
-  exists_length_quotient_range_eq_length_ker_add_of_isLocalizedModule (TensorProduct.mk A K M 1)
-    hf fun m ↦ LinearMap.baseChange_tmul f 1 m
+  LinearMap.exists_length_quotient_range_eq_length_ker_add_and_ordFrac_det_eq_of_isLocalizedModule
+    (TensorProduct.mk A K M 1) hf fun m ↦ LinearMap.baseChange_tmul f 1 m
 
 omit [IsDomain A] in
 /-- An endomorphism of a finitely generated module over a Noetherian domain of dimension at most
 one that is injective after tensoring with the fraction field has a kernel of finite length. -/
-theorem _root_.LinearMap.length_ker_ne_top_of_injective_baseChange {f : M →ₗ[A] M}
+theorem length_ker_ne_top_of_injective_baseChange {f : M →ₗ[A] M}
     (hf : Function.Injective (f.baseChange K)) : Module.length A (LinearMap.ker f) ≠ ⊤ := by
   have hle : LinearMap.ker f ≤ LinearMap.ker (TensorProduct.mk A K M 1) := fun m hm ↦ hf (by
     rw [map_zero, TensorProduct.mk_apply, LinearMap.baseChange_tmul, LinearMap.mem_ker.1 hm,
       tmul_zero])
-  exact ne_top_of_le_ne_top (length_ker_ne_top_of_isLocalizedModule (TensorProduct.mk A K M 1))
+  exact ne_top_of_le_ne_top
+    (Module.length_ne_top_iff.2 (IsLocalizedModule.isFiniteLength_ker (TensorProduct.mk A K M 1)))
     (Module.length_le_of_injective _ (Submodule.inclusion_injective hle))
 
 /-- An endomorphism of a finitely generated module over a Noetherian domain of dimension at most
 one that is injective after tensoring with the fraction field has a cokernel of finite length. -/
-theorem _root_.LinearMap.length_quotient_range_ne_top_of_injective_baseChange {f : M →ₗ[A] M}
+theorem length_quotient_range_ne_top_of_injective_baseChange {f : M →ₗ[A] M}
     (hf : Function.Injective (f.baseChange K)) :
     Module.length A (M ⧸ LinearMap.range f) ≠ ⊤ := by
-  obtain ⟨n, hn, -⟩ := f.exists_length_quotient_range_eq_length_ker_add hf
+  obtain ⟨n, hn, -⟩ :=
+    f.exists_length_quotient_range_eq_length_ker_add_and_ordFrac_det_baseChange_eq hf
   rw [hn]
   exact WithTop.add_ne_top.2 ⟨f.length_ker_ne_top_of_injective_baseChange hf,
     ENat.natCast_ne_top n⟩
@@ -351,24 +352,24 @@ generated `O`-module and `f` an endomorphism of `M` that is injective on `K ⊗ 
 determinant of `f` on `K ⊗ M` is the image of some `d ∈ O`, and
 `length (M ⧸ f(M)) = length (ker f) + ord_O d`: the difference of the two lengths is the valuation
 of the determinant. -/
-theorem _root_.LinearMap.exists_algebraMap_eq_det_baseChange_and_length_quotient_range_eq
+theorem exists_algebraMap_eq_det_baseChange_and_length_quotient_range_eq
     (f : M →ₗ[O] M) (hf : Function.Injective (f.baseChange K)) :
     ∃ d : O, algebraMap O K d = LinearMap.det (f.baseChange K) ∧
       Module.length O (M ⧸ LinearMap.range f) =
         Module.length O (LinearMap.ker f) + Ring.ord O d := by
-  obtain ⟨n, hlen, hord⟩ := f.exists_length_quotient_range_eq_length_ker_add hf
+  obtain ⟨n, hlen, hord⟩ :=
+    f.exists_length_quotient_range_eq_length_ker_add_and_ordFrac_det_baseChange_eq hf
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
   have hϖn : Ring.ordFrac O (algebraMap O K (ϖ ^ n)) = Multiplicative.ofAdd (n : ℤ) := by
-    rw [map_pow, map_pow, Ring.ordFrac_irreducible hϖ, ← WithZero.exp_nsmul, nsmul_one,
-      WithZero.exp_eq_coe_ofAdd]
+    simp [Ring.ordFrac_irreducible hϖ, ← WithZero.exp_eq_coe_ofAdd]
   obtain ⟨u, hu⟩ := Ring.associated_of_ordFrac_eq _ _ (hord.trans hϖn.symm)
   refine ⟨↑u⁻¹ * ϖ ^ n, ?_, ?_⟩
-  · rw [map_mul, ← hu, Units.smul_def, Algebra.smul_def, ← mul_assoc, ← map_mul, Units.inv_mul,
-      map_one, one_mul]
+  · rw [map_mul, ← hu]
+    simp [Units.smul_def, Algebra.smul_def]
   · rw [Ring.ord_mul_of_isUnit_left u⁻¹.isUnit,
       Ring.ord_pow (mem_nonZeroDivisors_of_ne_zero hϖ.ne_zero), Ring.ord_of_irreducible hϖ, hlen,
       nsmul_one]
 
 end DiscreteValuationRing
 
-end TauCeti
+end LinearMap
