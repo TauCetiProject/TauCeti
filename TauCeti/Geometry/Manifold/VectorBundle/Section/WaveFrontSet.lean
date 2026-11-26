@@ -226,6 +226,21 @@ theorem IsMicrolocallySmoothAt.smul {T : BundleTest I F V →L_c[ℝ] ℝ} {x : 
     IsMicrolocallySmoothAt (a • T) x ξ :=
   IsMicrolocallyAt.smul isInvariantMicrolocalRegularity_isMicrolocallySmoothAt h a
 
+/-- On a manifold without boundary, the zero functional is microlocally smooth at every
+covector. -/
+theorem isMicrolocallySmoothAt_zero [I.Boundaryless] (x : M) (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    IsMicrolocallySmoothAt (0 : BundleTest I F V →L_c[ℝ] ℝ) x ξ :=
+  isMicrolocallyAt_zero _ isInvariantMicrolocalRegularity_isMicrolocallySmoothAt x ξ
+
+/-- On a manifold without boundary, a finite sum of functionals microlocally smooth at a covector
+is microlocally smooth there. -/
+theorem IsMicrolocallySmoothAt.sum [I.Boundaryless] {ι : Type*} (s : Finset ι)
+    {T : ι → BundleTest I F V →L_c[ℝ] ℝ} {x : M} {ξ : TangentSpace I x →L[ℝ] ℝ}
+    (h : ∀ i ∈ s, IsMicrolocallySmoothAt (T i) x ξ) :
+    IsMicrolocallySmoothAt (∑ i ∈ s, T i) x ξ :=
+  Finset.sum_induction _ (fun S ↦ IsMicrolocallySmoothAt S x ξ) (fun _ _ ↦ .add)
+    (isMicrolocallySmoothAt_zero x ξ) h
+
 /-- The wave front set of a sum lies in the union of the wave front sets. -/
 theorem waveFrontSet_add_subset (S T : BundleTest I F V →L_c[ℝ] ℝ) :
     waveFrontSet I (S + T) ⊆ waveFrontSet I S ∪ waveFrontSet I T :=
@@ -256,7 +271,7 @@ theorem waveFrontSet_sub_subset (S T : BundleTest I F V →L_c[ℝ] ℝ) :
 omit [T2Space M] [IsManifold I ∞ M] in
 /-- In a smooth chart `c` at `x` with smooth inverse, a covector `ξ` at `x` is read as the zero
 vector of `E` exactly when it is zero. -/
-private theorem toDual_symm_comp_mfderiv_symm_eq_zero_iff {c : OpenPartialHomeomorph M E}
+theorem toDual_symm_comp_mfderiv_symm_eq_zero_iff {c : OpenPartialHomeomorph M E}
     (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
     {x : M} (hx : x ∈ c.source) {ξ : TangentSpace I x →L[ℝ] ℝ} :
     (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) = 0 ↔ ξ = 0 :=

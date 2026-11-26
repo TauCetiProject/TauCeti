@@ -136,11 +136,8 @@ private theorem isMicrolocallySmoothAt_cutoffPushforwardCLM_of_chart {c : OpenPa
       (by simp)
   rw [OpenPartialHomeomorph.adjoint_fderiv_toDual_symm_comp_mfderiv_symm hx (hf hx) hcx
     (f.contMDiff.mdifferentiableAt (by simp)) hc'x hc'sx η]
-  refine ⟨fun h0 ↦ hne ?_, (isMicrolocallySmoothAt_iff T hc hcs hct hx _).1 hT v⟩
-  -- A covector read as the zero vector in the chart `c` is zero.
-  exact ((OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective
-    ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx).1.eq_iff'
-      (zero_comp _)).1 ((toDual ℝ E).symm.map_eq_zero_iff.1 h0)
+  exact ⟨fun h0 ↦ hne ((toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).1 h0),
+    (isMicrolocallySmoothAt_iff T hc hcs hct hx _).1 hT v⟩
 
 omit [T2Space X] [T2Space Y] [FiniteDimensional ℝ G] in
 /-- Splitting a cutoff `χ` along finitely many functions `ρ i`: the pushforward with the cutoff `χ`
@@ -202,12 +199,8 @@ theorem IsMicrolocallySmoothAt.cutoffPushforwardCLM {χ : C^∞⟮I, X; ℝ⟯}
     (U := fun x ↦ (c x).source) fun x hx ↦ (c x).open_source.mem_nhds ⟨hxc₀ x, hLW hx⟩
   set ρ := ρb.toSmoothPartitionOfUnity
   rw [cutoffPushforwardCLM_eq_sum_add ρ hχ f T]
-  refine IsMicrolocallySmoothAt.add (Finset.sum_induction _ (fun S ↦ IsMicrolocallySmoothAt S y η)
-    (fun _ _ ↦ IsMicrolocallySmoothAt.add)
-    (isMicrolocallySmoothAt_def.2
-      (isMicrolocallyAt_zero _ isInvariantMicrolocalRegularity_isMicrolocallySmoothAt y η))
-    fun i _ ↦ ?_) (isMicrolocallySmoothAt_cutoffPushforwardCLM_of_forall_ne _
-      (fun x hx hxy ↦ ?_) η)
+  refine (IsMicrolocallySmoothAt.sum _ fun i _ ↦ ?_).add
+    (isMicrolocallySmoothAt_cutoffPushforwardCLM_of_forall_ne _ (fun x hx hxy ↦ ?_) η)
   · -- A piece `ρ i χ` of the cutoff is supported in a chart.
     refine isMicrolocallySmoothAt_cutoffPushforwardCLM_of_chart (c := c (ρb.c i))
       ((hc₀ _).mono inter_subset_left) ((hcs₀ _).mono inter_subset_left) _
