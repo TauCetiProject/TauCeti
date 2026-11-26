@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Normed.Operator.Surjective
+import TauCeti.MeasureTheory.Function.Holder
 
 /-!
 # First-order operators on `L²` jets
@@ -22,7 +23,11 @@ operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication
 is `0`, so a coefficient field with a nonzero operator is essentially bounded
 (`TauCeti.memLp_of_jetOperator_ne_zero`). It is additive
 in `M` (`TauCeti.jetOperator_add`), and multiplying `M` by an essentially bounded scalar function
-multiplies its values pointwise (`TauCeti.coeFn_jetOperator_smul`). It depends
+multiplies its values pointwise (`TauCeti.coeFn_jetOperator_smul`). The constant identity field
+gives the identity (`TauCeti.jetOperator_id`), the operators of two coefficient fields compose to
+that of the pointwise composite (`TauCeti.jetOperator_comp_jetOperator`), and applying an
+essentially bounded field of maps after a first-order operator is the first-order operator of the
+composite field (`TauCeti.jetOperator_comp_eq_operatorMultiplication_comp`). It depends
 Lipschitz-continuously on `M` in `L^∞` (`TauCeti.norm_jetOperator_sub_le`), hence continuously
 along families of coefficient fields continuous in `L^∞` (`TauCeti.continuousOn_jetOperator`), and
 a bounded right inverse of the operator of `M` on a space of jets survives every change of `M` that
@@ -58,8 +63,8 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup W] [NormedSpace ℝ W]
+variable {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedAddCommGroup U] [NormedSpace ℝ U]
 
 open scoped Classical in
 /-- The first-order operator `f ↦ (z ↦ M z (f z))` on `L²(μ)` jets, for a coefficient field `M`
@@ -106,6 +111,45 @@ theorem jetOperator_add {μ : Measure (ℝ × ℝ)} {M N : ℝ × ℝ → V × V
     coeFn_jetOperator hN f, Lp.coeFn_add (jetOperator μ M f) (jetOperator μ N f)]
     with z h h₁ h₂ h₃
   rw [add_apply, h₃, Pi.add_apply, h, h₁, h₂, Pi.add_apply, add_apply]
+
+/-- The first-order operator of the constant identity coefficient field is the identity of `L²`
+jets. -/
+@[simp]
+theorem jetOperator_id {μ : Measure (ℝ × ℝ)} :
+    jetOperator μ (fun _ ↦ ContinuousLinearMap.id ℝ (V × V × V)) =
+      ContinuousLinearMap.id ℝ (Lp (V × V × V) 2 μ) := by
+  ext1 f
+  refine Lp.ext ?_
+  filter_upwards [coeFn_jetOperator (memLp_top_const (ContinuousLinearMap.id ℝ (V × V × V))) f]
+    with z h
+  rw [h, ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
+
+/-- The first-order operators of two essentially bounded coefficient fields compose to the
+first-order operator of their pointwise composite. -/
+theorem jetOperator_comp_jetOperator {μ : Measure (ℝ × ℝ)}
+    {N : ℝ × ℝ → W × W × W →L[ℝ] U} {M : ℝ × ℝ → V × V × V →L[ℝ] W × W × W}
+    (hN : MemLp N ∞ μ) (hM : MemLp M ∞ μ) :
+    (jetOperator μ N).comp (jetOperator μ M) = jetOperator μ fun z ↦ (N z).comp (M z) := by
+  have hNM : MemLp (fun z ↦ (N z).comp (M z)) ∞ μ := hN.clm_comp ∞ hM
+  ext1 f
+  refine Lp.ext ?_
+  filter_upwards [coeFn_jetOperator hN (jetOperator μ M f), coeFn_jetOperator hM f,
+    coeFn_jetOperator hNM f] with z h₁ h₂ h₃
+  rw [ContinuousLinearMap.comp_apply, h₁, h₂, h₃, ContinuousLinearMap.comp_apply]
+
+/-- Applying an essentially bounded field `G` of maps after a first-order operator is the
+first-order operator of the composite coefficient field. -/
+theorem jetOperator_comp_eq_operatorMultiplication_comp {μ : Measure (ℝ × ℝ)}
+    {G : ℝ × ℝ → W →L[ℝ] U} {N : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hG : MemLp G ∞ μ) (hN : MemLp N ∞ μ) :
+    jetOperator μ (fun z ↦ (G z).comp (N z)) =
+      (Lp.operatorMultiplication 2 (hG.toLp G)).comp (jetOperator μ N) := by
+  ext1 f
+  refine Lp.ext ?_
+  filter_upwards [coeFn_jetOperator (hG.clm_comp ∞ hN) f,
+    Lp.operatorMultiplication_ae (hG.toLp G) (jetOperator μ N f),
+    hG.coeFn_toLp, coeFn_jetOperator hN f] with z h₁ h₂ h₃ h₄
+  rw [h₁, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, h₂, h₃, h₄]
 
 /-- Multiplying the coefficient field by an essentially bounded scalar function `b` multiplies the
 values of the first-order operator by `b`. -/
