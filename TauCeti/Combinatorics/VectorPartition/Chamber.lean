@@ -107,8 +107,10 @@ signs of these functions cut `κ → ℝ` into cells, whose full-dimensional mem
 cone are the chambers of `A`. -/
 noncomputable def chamberArrangement (A : Matrix κ ι ℤ) (p : A.ColumnBasis × κ) :
     (κ → ℝ) →ᴬ[ℝ] ℝ :=
-  (LinearMap.toContinuousLinearMap ((LinearMap.proj p.2).comp
-    ((A.map (Int.cast : ℤ → ℝ)).submatrix id p.1)⁻¹.mulVecLin)).toContinuousAffineMap
+  (LinearMap.toContinuousLinearMap
+    { toFun b := p.1.basisCoordinates b p.2
+      map_add' b b' := by simp
+      map_smul' c b := by simp }).toContinuousAffineMap
 
 @[simp] theorem chamberArrangement_apply (A : Matrix κ ι ℤ) (p : A.ColumnBasis × κ) (b : κ → ℝ) :
     A.chamberArrangement p b = p.1.basisCoordinates b p.2 := (rfl)
@@ -152,8 +154,7 @@ theorem closure_signCell (D : A.Chamber) :
 theorem weakSignCell_injective [Finite ι] :
     Injective fun D : A.Chamber => weakSignCell A.chamberArrangement D.sign := by
   intro D D' h
-  replace h : weakSignCell A.chamberArrangement D.sign =
-    weakSignCell A.chamberArrangement D'.sign := h
+  dsimp only at h
   by_contra hne
   have hσ : D.sign ≠ D'.sign := fun h' => hne (Chamber.ext h')
   obtain ⟨x, hx⟩ := D.nonempty_signCell

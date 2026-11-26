@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.LinearAlgebra.Matrix.ColumnBasis
 import TauCeti.Analysis.Convex.Cone.Caratheodory
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
+import TauCeti.Logic.Function.Extend
 import TauCeti.LinearAlgebra.Matrix.MaximalMinor
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.Rank
@@ -147,13 +148,8 @@ theorem exists_columnBasis_submatrix_mulVec_eq_of_nonneg [Fintype κ] [Decidable
   -- Its support extends to a column basis `e`, and `y` is `y ∘ e` extended by zero.
   obtain ⟨f, hyf, hdet⟩ := exists_det_submatrix_ne_zero_of_linearIndepOn hrow hli
   let e : A.ColumnBasis := ⟨f, det_submatrix_ne_zero_of_map (Int.castRingHom K) hdet⟩
-  have hext : y = extend e (y ∘ e) 0 := by
-    funext j
-    by_cases hj : j ∈ Set.range e
-    · obtain ⟨k, rfl⟩ := hj
-      rw [e.injective.extend_apply, Function.comp_apply]
-    · rw [extend_apply' _ _ _ hj, Pi.zero_apply]
-      exact by_contra fun hyj => hj (hyf hyj)
+  have hext : y = extend e (y ∘ e) 0 := (e.injective.extend_comp_eq_of_forall_notMem_range
+    fun _ hj => by_contra fun hyj => hj (hyf hyj)).symm
   refine ⟨e, y ∘ e, fun k => hy (e k), ?_⟩
   rw [← mulVec_extend_zero e.injective, ← hext, hyx]
 
@@ -193,11 +189,10 @@ theorem exists_natCast_mulVec_eq_of_nonneg [Fintype κ] [DecidableEq κ] (A : Ma
   have hc : (fun j => ((extend e (fun k => ((N⁻¹ *ᵥ b) k).toNat) 0 j : ℕ) : ℤ)) =
       extend e (N⁻¹ *ᵥ b) 0 := by
     funext j
-    by_cases hj : j ∈ Set.range e
-    · obtain ⟨k, rfl⟩ := hj
-      rw [e.injective.extend_apply, e.injective.extend_apply, Int.toNat_of_nonneg (hN k)]
-    · rw [extend_apply' _ _ _ hj, extend_apply' _ _ _ hj, Pi.zero_apply, Pi.zero_apply,
-        Nat.cast_zero]
+    rw [apply_extend Nat.cast]
+    congr 1
+    funext k
+    exact Int.toNat_of_nonneg (hN k)
   rw [hc, mulVec_extend_zero_nonsing_inv_mulVec _ e.injective hdet]
 
 end Field

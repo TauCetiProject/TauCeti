@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Convex.Cone.Basis
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
+import TauCeti.Logic.Function.Extend
 import TauCeti.LinearAlgebra.Matrix.MaximalMinor
 import TauCeti.LinearAlgebra.Matrix.MulVec
 
@@ -104,7 +105,7 @@ theorem submatrix_mulVec_intCast_nonsing_inv_mulVec {K : Type*} [CommRing K] (e 
 /-- The coordinates of a real vector `b` in the basis of `κ → ℝ` formed by the columns of a column
 basis `e`: the unique `t` with `∑ k, t k • A.col (e k) = b`, given by Cramer's rule as
 `(A_e)⁻¹ *ᵥ b` for the square submatrix `A_e` of `A` on the columns of `e`. -/
-@[expose] noncomputable def basisCoordinates (e : A.ColumnBasis) (b : κ → ℝ) : κ → ℝ :=
+noncomputable def basisCoordinates (e : A.ColumnBasis) (b : κ → ℝ) : κ → ℝ :=
   ((A.map (Int.cast : ℤ → ℝ)).submatrix id e)⁻¹ *ᵥ b
 
 theorem basisCoordinates_def (e : A.ColumnBasis) (b : κ → ℝ) :
@@ -209,12 +210,7 @@ theorem eq_basicSolution_iff (e : A.ColumnBasis) {b : κ → ℝ} {x : ι → �
     (hx : ∀ j ∉ Set.range e, x j = 0) :
     x = e.basicSolution b ↔ A.map (Int.cast : ℤ → ℝ) *ᵥ x = b := by
   refine ⟨fun h => h ▸ e.mulVec_basicSolution b, fun h => ?_⟩
-  have hext : x = extend e (x ∘ e) 0 := by
-    funext j
-    by_cases hj : j ∈ Set.range e
-    · obtain ⟨k, rfl⟩ := hj
-      rw [e.injective.extend_apply, Function.comp_apply]
-    · rw [extend_apply' _ _ _ hj, hx j hj, Pi.zero_apply]
+  have hext : x = extend e (x ∘ e) 0 := (e.injective.extend_comp_eq_of_forall_notMem_range hx).symm
   rw [hext, mulVec_extend_zero e.injective, ← basisCoordinates_eq_iff] at h
   rw [basicSolution, h]
   exact hext
