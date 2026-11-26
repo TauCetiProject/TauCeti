@@ -101,8 +101,10 @@ theorem HasWeakDivergenceOn.comp_smul (hu : HasWeakDivergenceOn μ Ω u g)
   have hfield : (r • fun x ↦ e.symm (u (e x))) = fun x ↦ u (r • x) := by
     funext x
     simp [e, Pi.smul_apply, Units.smul_def, smul_inv_smul₀ hr]
-  rw [hfield] at h
-  exact h
+  have hdiv : (r • fun x ↦ g (e x)) = fun x ↦ r * g (r • x) := by
+    funext x
+    simp [e, Pi.smul_apply, smul_eq_mul]
+  simpa only [hfield, hdiv] using h
 
 /-- Pulling a vector field back along a continuous linear equivalence preserves solenoidality. -/
 theorem IsSolenoidalOn.comp_continuousLinearEquiv (hu : IsSolenoidalOn μ Ω u)
