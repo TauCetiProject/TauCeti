@@ -231,7 +231,7 @@ theorem mem_qPochhammerRatioDomain_iff_forall_mem_and_isUnit {j : ℤ}
 
 /-- On the common domain the regular coefficient agrees with the quotient of the
 integer-indexed q-Pochhammer products. -/
-theorem qPochhammerRatio_eq_prod_qPochhammerInt_mul_inverse {j : ℤ}
+theorem qPochhammerRatio_eq_prod_qPochhammerInt_mul_ringInverse {j : ℤ}
     (h : j ∈ A.qPochhammerRatioDomain B q)
     (hB : ∀ b ∈ B, j ∈ qPochhammerIntDomain b q) :
     A.qPochhammerRatio B q j h =
