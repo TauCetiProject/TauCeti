@@ -6,15 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Geometrically.Integral
-public import Mathlib.CategoryTheory.MorphismProperty.Descent
-import TauCeti.AlgebraicGeometry.Geometrically.Descent
-import TauCeti.AlgebraicGeometry.Morphisms.Flat.Integral
 
 /-!
 # Geometrically integral morphisms
 
 Mathlib's `AlgebraicGeometry.GeometricallyIntegral` is stable under base change. This file records
-its compatibility with isomorphisms and Zariski-local and surjective descent on the target:
+its compatibility with isomorphisms and Zariski-local descent on the target:
 
 * `TauCeti.AlgebraicGeometry.geometricallyIntegral_of_isIso`: an isomorphism of schemes is
   geometrically integral.
@@ -24,8 +21,6 @@ its compatibility with isomorphisms and Zariski-local and surjective descent on 
   isomorphisms.
 * `TauCeti.AlgebraicGeometry.isZariskiLocalAtTarget_geometricallyIntegral`: `GeometricallyIntegral`
   is Zariski-local on the target.
-* `TauCeti.AlgebraicGeometry.descendsAlong_surjective_geometricallyIntegral`: surjective descent
-  for geometric integrality.
 -/
 
 public section
@@ -56,14 +51,6 @@ instance respectsIso_geometricallyIntegral : MorphismProperty.RespectsIso @Geome
 instance isZariskiLocalAtTarget_geometricallyIntegral :
     IsZariskiLocalAtTarget @GeometricallyIntegral :=
   GeometricallyIntegral.eq_geometrically ▸ inferInstance
-
-open Limits MorphismProperty
-
-/-- `GeometricallyIntegral` descends along arbitrary surjective morphisms of schemes. -/
-instance descendsAlong_surjective_geometricallyIntegral :
-    DescendsAlong @GeometricallyIntegral.{u} @Surjective.{u} :=
-  GeometricallyIntegral.eq_geometrically ▸ geometrically_descendsAlong_surjective IsIntegral
-    fun f _ _ hX ↦ have := hX; isIntegral_of_flat_of_surjective f
 
 end AlgebraicGeometry
 

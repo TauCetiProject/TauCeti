@@ -8,20 +8,22 @@ module
 public import Mathlib.Algebra.Field.Subfield.Basic
 
 /-!
-# Coercion lemmas for subfield equivalences
+# Equality transport between subfields
 
-This file provides `RingEquiv.coe_subfieldCongr_apply`, showing that coercing
-`RingEquiv.subfieldCongr h y` to the ambient division ring equals coercing `y`.
+`RingEquiv.subfieldCongr` identifies two equal subfields. This file records that it keeps the
+underlying element of the ambient field, the subfield analogue of Mathlib's
+`RingEquiv.coe_subringCongr_apply`.
 -/
 
 public section
 
 namespace RingEquiv
 
-/-- Coercing `RingEquiv.subfieldCongr h` to the ambient division ring preserves the underlying
-element. -/
+variable {K : Type*} [DivisionRing K] {s t : Subfield K}
+
+/-- `RingEquiv.subfieldCongr` keeps the underlying element of the ambient field. -/
 @[simp]
-theorem coe_subfieldCongr_apply {L : Type*} [DivisionRing L] {S T : Subfield L} (h : S = T)
-    (y : S) : (subfieldCongr h y : L) = (y : L) := rfl
+theorem coe_subfieldCongr_apply (h : s = t) (x : s) : (subfieldCongr h x : K) = x :=
+  rfl
 
 end RingEquiv

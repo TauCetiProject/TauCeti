@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.MapAdjunction
 public import Mathlib.CategoryTheory.Sites.Equivalence
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
+public import TauCeti.CategoryTheory.Sites.Preadditive
 
 /-!
 # Sheaf cohomology along an equivalence of sites
@@ -71,12 +72,6 @@ def sheafCongrInverseFreeYonedaIso (V : D) :
 
 variable [HasExt.{v} (Sheaf J AddCommGrpCat.{v})] [HasExt.{v} (Sheaf K AddCommGrpCat.{v})]
 
-local instance : (e.sheafCongr J K AddCommGrpCat.{v}).symm.functor.Additive :=
-  Functor.additive_of_preserves_binary_products _
-
-local instance : (e.sheafCongr J K AddCommGrpCat.{v}).symm.inverse.Additive :=
-  Functor.additive_of_preserves_binary_products _
-
 /-- Sheaf cohomology is invariant under an equivalence of sites: the cohomology at `V : D` of the
 sheaf transported along `e.sheafCongr J K` is the cohomology of the original sheaf at
 `e.inverse.obj V`, naturally in the coefficient sheaf. -/
@@ -87,7 +82,10 @@ def cohomologyPresheafEvaluationIsoSheafCongr (n : ℕ) (V : D) :
       _root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor J n ⋙
         (evaluation Cᵒᵖ AddCommGrpCat.{v}).obj (op (e.inverse.obj V)) := by
   rw [cohomologyPresheafFunctor_eq, cohomologyPresheafFunctor_eq]
-  let adj := (e.sheafCongr J K AddCommGrpCat.{v}).symm.toAdjunction
+  -- These explicit functors expose Mathlib's generic Equivalence.inverse_additive instance.
+  let adj : (e.sheafCongr J K AddCommGrpCat.{v}).inverse ⊣
+      (e.sheafCongr J K AddCommGrpCat.{v}).functor :=
+    (e.sheafCongr J K AddCommGrpCat.{v}).symm.toAdjunction
   exact NatIso.ofComponents (fun F ↦ (adj.extEquiv (n := n)).symm.toAddCommGrpIso)
       (by
         intro F G f

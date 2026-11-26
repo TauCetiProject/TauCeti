@@ -426,7 +426,7 @@ theorem minpoly_map_of_constantCompositum_eq_top_of_linearDisjoint
     (hliE.map_of_injective_injective f.equivFieldRange.symm (AddMonoidHom.id F)
       (by simp) (by simp) fun c y ↦ by
         simp [Algebra.smul_def, show algebraMap E F (f.equivFieldRange.symm c) = c from
-          f.apply_equivFieldRange_symm c])
+          f.apply_equivFieldRange_symm_apply c])
   have hliE' : LinearIndependent E' (fun i : Fin pb.dim ↦ algebraMap F F' x ^ (i : ℕ)) := by
     convert hliC'.map_of_injective_injective (towerAdjoinRingEquiv (k := k) (F := F) hE)
       (AddMonoidHom.id F') (by simp) (by simp)
@@ -465,7 +465,7 @@ theorem finrank_eq_of_constantCompositum_eq_top_of_linearDisjoint
         (by simpa using Module.rank_lt_aleph0 C' F')
     have hfinC : Module.Finite C F := Module.rank_lt_aleph0_iff.mp (by simpa using hlt)
     exact Module.Finite.of_equiv_equiv f.equivFieldRange.symm.toRingEquiv (RingEquiv.refl F) <|
-      RingHom.ext fun c ↦ f.apply_equivFieldRange_symm c
+      RingHom.ext fun c ↦ f.apply_equivFieldRange_symm_apply c
 
 /-- **Linearly disjoint constant extension preserves separability of algebraic relative
 extensions.** Let `F' = F · K` with `K` linearly disjoint from `F` over `k`, and `E' = E · K`

@@ -27,8 +27,8 @@ different embeddings `f` induce different structures, so none can be registered 
 
 ## Main results
 
-* `AlgHom.apply_equivFieldRange_symm`: `f (f.equivFieldRange.symm c) = c`.
 * `AlgHom.finrank_fieldRange`: `[L : f.fieldRange] = [L : K]`.
+* `AlgHom.apply_equivFieldRange_symm_apply`: `f` inverts `f.equivFieldRange.symm`.
 * `AlgHom.finiteDimensional_of_fieldRange`, `AlgHom.isSeparable_of_fieldRange`, and
   `AlgHom.linearIndependent_fieldRange`: finiteness and separability over the range transfer to
   the source, and linear independence over the source transfers to the range.
@@ -44,12 +44,11 @@ namespace AlgHom
 
 variable {F K L : Type*} [Field F] [Field K] [Field L] [Algebra F K] [Algebra F L]
 
-/-- Applying `f` to `f.equivFieldRange.symm c` recovers `c` in `L`. -/
+/-- `f` undoes the inverse of its range restriction `f.equivFieldRange`. -/
 @[simp]
-theorem apply_equivFieldRange_symm (f : K →ₐ[F] L) (c : f.fieldRange) :
-    f (f.equivFieldRange.symm c) = c :=
-  (f.equivFieldRange_apply_coe _).symm.trans
-    (congrArg Subtype.val (f.equivFieldRange.apply_symm_apply c))
+theorem apply_equivFieldRange_symm_apply (f : K →ₐ[F] L) (z : f.fieldRange) :
+    f (f.equivFieldRange.symm z) = z := by
+  rw [← equivFieldRange_apply_coe, AlgEquiv.apply_symm_apply]
 
 /-- **The degree above the range of a field embedding equals the degree above its source.**
 Stated for an arbitrary `K`-algebra structure on `L` whose structure map is `f`, rather than for
