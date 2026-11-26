@@ -18,7 +18,7 @@ import TauCeti.Topology.Order.OrderClosed
 Let `f` be a Morse function on a compact boundaryless manifold `M`, `X` a pseudo-gradient adapted
 to `f` satisfying the Morse–Smale condition, and `p`, `r` critical points with
 `ind p = ind r + 2`. Record the broken trajectories from `p` to `r` on countably many levels `c i`
-that avoid the critical values and are dense between any two of them, and let `L(p, r)` be the
+that avoid the critical values and are dense between `f r` and `f p`, and let `L(p, r)` be the
 space of these records (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpace`), with its
 boundary `∂L(p, r)` of records that are not unbroken
 (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceBoundary`).
@@ -145,6 +145,14 @@ theorem exists_of_mem_morseBrokenTrajectoryRecords_of_notMem (h : hX.IsMorseSmal
 
 variable {c : ι → ℝ} {p r : criticalPoints 𝓘(ℝ, E) f} {j₁ j₂ : c ⁻¹' Ioo (f r) (f p)}
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- Critical points whose Morse indices differ by two are distinct. -/
+private theorem ne_of_manifoldMorseIndex_eq_add_two
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) :
+    (p : M) ≠ r := fun hpr ↦ by
+  have := congrArg (manifoldMorseIndex 𝓘(ℝ, E) f) hpr
+  omega
+
 /-- In index difference two, the trajectory space is the closure of the records of unbroken
 trajectories. -/
 private theorem morseBrokenTrajectorySpace_eq_closure_of_add_two [Countable ι]
@@ -153,9 +161,7 @@ private theorem morseBrokenTrajectorySpace_eq_closure_of_add_two [Countable ι]
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) :
     hX.morseBrokenTrajectorySpace c p r =
       closure (hX.morseTrajectoryRecords p r ((c ⁻¹' Ioo (f r) (f p)).domRestrict c)) := by
-  have hpr : (p : M) ≠ r := fun hpr ↦ by
-    have := congrArg (manifoldMorseIndex 𝓘(ℝ, E) f) hpr
-    omega
+  have hpr := ne_of_manifoldMorseIndex_eq_add_two hind
   rw [h.closure_morseTrajectoryRecords hf hpr (c := (c ⁻¹' Ioo (f r) (f p)).domRestrict c)
     (fun i y hy hy' ↦ hc i ⟨y, mem_criticalPoints.2 (mvfderiv_eq_zero_iff.2 hy')⟩ hy.symm)
     fun i ↦ i.property]
@@ -212,9 +218,7 @@ private theorem morseTrajectoryPairs_subset_range_readings
     hX.morseTrajectoryPairs p r (c j₁) (c j₂) ⊆
       range fun w : hX.morseBrokenTrajectorySpace c p r ↦
         ((w : c ⁻¹' Ioo (f r) (f p) → M) j₁, (w : _ → M) j₂) := by
-  have hpr : (p : M) ≠ r := fun hpr ↦ by
-    have := congrArg (manifoldMorseIndex 𝓘(ℝ, E) f) hpr
-    omega
+  have hpr := ne_of_manifoldMorseIndex_eq_add_two hind
   intro y hy
   obtain ⟨hy₁, hf₁, hf₂, t, ht⟩ := hX.mem_morseTrajectoryPairs.1 hy
   -- The record of the trajectory through `y.1`.
@@ -233,7 +237,7 @@ private theorem morseTrajectoryPairs_subset_range_readings
   obtain rfl : t' = t :=
     (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr hy₁ j₂.property.1
       j₂.property.2).unique
-      (by rw [← hw₁, ht']; exact hX.apply_eq_of_mem_morseBrokenTrajectoryRecords hwB j₂)
+      (by rw [← hw₁, ht']; exact hX.value_apply_eq_of_mem_morseBrokenTrajectoryRecords hwB j₂)
       (by rw [ht, hf₂])
   exact ht'.symm.trans (by rw [hw₁]; exact ht)
 
@@ -291,14 +295,14 @@ theorem exists_homeomorph_closure_morseTrajectoryPairs [Countable ι] (h : hX.Is
 
 /-- **The boundary of an index-two trajectory space is collared.** Let `X` satisfy the Morse–Smale
 condition, and record the broken trajectories on countably many levels `c i` that avoid the
-critical values and are dense between any two of them. If `ind p = ind r + 2`, the boundary of the
+critical values and are dense between `f r` and `f p`. If `ind p = ind r + 2`, the boundary of the
 trajectory space `L(p, r)`, its once-broken trajectories, has a collar: an open embedding
 `∂L(p, r) × [0, 1) → L(p, r)` which is the inclusion at depth `0`. This is the collar hypothesis
 of `TauCeti.TwistingChainSystem.exists_isRepresenting_of_subsingleton_units` for the pairs of
 critical points of index difference two. -/
 theorem isCollared_morseBrokenTrajectorySpaceBoundary [Countable ι] (h : hX.IsMorseSmale)
     (hf : IsMorse 𝓘(ℝ, E) f) (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x)
-    (hdense : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c))
+    (hdense : Ioo (f r) (f p) ⊆ closure (range c))
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) :
     IsCollared (Subtype.val : hX.morseBrokenTrajectorySpaceBoundary c p r →
       hX.morseBrokenTrajectorySpace c p r) := by
@@ -311,9 +315,9 @@ theorem isCollared_morseBrokenTrajectorySpaceBoundary [Countable ι] (h : hX.IsM
   -- Two levels of the family separating the critical values between `f r` and `f p`.
   obtain ⟨c₁, c₂, hr₂, h₂₁, h₁p, hgap⟩ := hf.exists_lt_lt_forall_mem_Ioo hrp
   obtain ⟨i₁, hi₁⟩ := exists_mem_Ioo_of_Ioo_subset_closure_range h₁p
-    ((Ioo_subset_Ioo_left (hr₂.trans h₂₁).le).trans (hdense p r))
+    ((Ioo_subset_Ioo_left (hr₂.trans h₂₁).le).trans hdense)
   obtain ⟨i₂, hi₂⟩ := exists_mem_Ioo_of_Ioo_subset_closure_range hr₂
-    ((Ioo_subset_Ioo_right (h₂₁.trans h₁p).le).trans (hdense p r))
+    ((Ioo_subset_Ioo_right (h₂₁.trans h₁p).le).trans hdense)
   set j₁ : c ⁻¹' Ioo (f r) (f p) := ⟨i₁, (hr₂.trans h₂₁).trans hi₁.1, hi₁.2⟩
   set j₂ : c ⁻¹' Ioo (f r) (f p) := ⟨i₂, hi₂.1, hi₂.2.trans (h₂₁.trans h₁p)⟩
   have hgap' (x) (hx : x ∈ criticalPoints 𝓘(ℝ, E) f) (hxv : f x ∈ Ioo (f r) (f p)) :

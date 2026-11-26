@@ -83,8 +83,6 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   record determines its chain.
 * `apply_eq_apply_of_apply_eq_of_mem`: two records of broken trajectories with the same point on a
   level, lying on a trajectory from `a` to `b`, agree on every level between `f b` and `f a`.
-* `apply_mem_Ioo_of_mem_morseBrokenTrajectoryRecords`: the points of a record of a broken
-  trajectory from `p` to `r` lie strictly between the values at `r` and `p`.
 * `mem_morseTrajectoryRecords_of_apply_mem`: a record of a broken trajectory from `p` to `r` with
   a point on a trajectory from `p` to `r` is unbroken.
 * `eq_of_apply_eq_of_apply_eq`: a once-broken record is determined by its points on one level of
@@ -367,23 +365,6 @@ theorem disjoint_morseBrokenTrajectoryStratum {k k' : ℕ} {x : Fin (k + 1) → 
 
 /-! ### Records determined by one point on each step -/
 
-/-- The points of a record of broken trajectories lie on their levels. -/
-theorem apply_eq_of_mem_morseBrokenTrajectoryRecords {p r : M} {c : ι → ℝ} {w : ι → M}
-    (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c) (i : ι) : f (w i) = c i := by
-  obtain ⟨_, _, _, -, -, -, -, -, hrec⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
-  exact (hrec i).1
-
-/-- The points of a record of a broken trajectory from `p` to `r` lie strictly between the values of
-`f` at `r` and at `p`: each lies on a component of the broken trajectory. -/
-theorem apply_mem_Ioo_of_mem_morseBrokenTrajectoryRecords {p r : M} {c : ι → ℝ} {w : ι → M}
-    (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c) (i : ι) : f (w i) ∈ Ioo (f r) (f p) := by
-  obtain ⟨k, x, z, rfl, rfl, -, hxne, hz, hrec⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
-  obtain ⟨-, j, t, ht⟩ := hrec i
-  have hj := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet (hxne j)
-    (ht ▸ hX.flow.isInvariant_unstableSet_inter_stableSet _ _ t (hz j))
-  exact ⟨(hX.antitone_apply_of_chain hz (Fin.le_last _)).trans_lt hj.1,
-    hj.2.trans_le (hX.antitone_apply_of_chain hz (Fin.zero_le _))⟩
-
 /-- **The points of a broken record on the levels of the step through one of them.** If the point
 of a record of a broken trajectory on the level `c i₀` lies on a trajectory from `a` to `b`, then
 its point on every level strictly between `f b` and `f a` lies on the orbit of that point. -/
@@ -418,8 +399,8 @@ theorem apply_eq_apply_of_apply_eq_of_mem {p r p' r' a b : M} {c : ι → ℝ} {
   have hab : a ≠ b := fun h ↦ (hi.1.trans hi.2).ne (by rw [h])
   obtain rfl : t = t' :=
     (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hab hi₀ hi.1 hi.2).unique
-      (by rw [ht, hX.apply_eq_of_mem_morseBrokenTrajectoryRecords hw])
-      (by rw [h₀, ht', hX.apply_eq_of_mem_morseBrokenTrajectoryRecords hw'])
+      (by rw [ht, hX.value_apply_eq_of_mem_morseBrokenTrajectoryRecords hw])
+      (by rw [h₀, ht', hX.value_apply_eq_of_mem_morseBrokenTrajectoryRecords hw'])
   rw [← ht, ← ht', h₀]
 
 /-- **A broken record through a trajectory from `p` to `r` is unbroken.** A record of a broken
@@ -430,24 +411,24 @@ theorem mem_morseTrajectoryRecords_of_apply_mem {p r : M} {c : ι → ℝ} {w : 
     (hi₀ : w i₀ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r) :
     w ∈ hX.morseTrajectoryRecords p r c :=
   hX.mem_morseTrajectoryRecords.2 ⟨w i₀, hi₀, fun i ↦
-    ⟨hX.apply_eq_of_mem_morseBrokenTrajectoryRecords hw i,
+    ⟨hX.value_apply_eq_of_mem_morseBrokenTrajectoryRecords hw i,
       hX.exists_flow_eq_of_apply_mem_unstableSet_inter_stableSet hw hi₀
-        (hX.apply_eq_of_mem_morseBrokenTrajectoryRecords hw i ▸
-          hX.apply_mem_Ioo_of_mem_morseBrokenTrajectoryRecords hw i)⟩⟩
+        (hX.value_apply_eq_of_mem_morseBrokenTrajectoryRecords hw i ▸
+          hX.value_apply_mem_Ioo_of_mem_morseBrokenTrajectoryRecords hw i)⟩⟩
 
 /-- **A once-broken record is determined by its points on two levels.** Let the levels avoid
 `f q`. A record `w` of a broken trajectory from `p` to `r`, whose point on the level `c i₁` lies on
 a trajectory from `p` to `q` and whose point on the level `c i₂` lies on a trajectory from `q` to
-`r`, is the only record of a broken trajectory from `p` to `r` with these points on these two
-levels. -/
-theorem eq_of_apply_eq_of_apply_eq {p q r : M} {c : ι → ℝ} (hcq : ∀ i, c i ≠ f q) {w w' : ι → M}
-    (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c)
-    (hw' : w' ∈ hX.morseBrokenTrajectoryRecords p r c) {i₁ i₂ : ι} (h₁ : w i₁ = w' i₁)
+`r`, is the only record of a broken trajectory, between any two points, with these points on
+these two levels. -/
+theorem eq_of_apply_eq_of_apply_eq {p q r p' r' : M} {c : ι → ℝ} (hcq : ∀ i, c i ≠ f q)
+    {w w' : ι → M} (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c)
+    (hw' : w' ∈ hX.morseBrokenTrajectoryRecords p' r' c) {i₁ i₂ : ι} (h₁ : w i₁ = w' i₁)
     (h₂ : w i₂ = w' i₂) (hw₁ : w i₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
     (hw₂ : w i₂ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r) : w = w' := by
   funext i
-  have hc := hX.apply_eq_of_mem_morseBrokenTrajectoryRecords hw i ▸
-    hX.apply_mem_Ioo_of_mem_morseBrokenTrajectoryRecords hw i
+  have hc := hX.value_apply_eq_of_mem_morseBrokenTrajectoryRecords hw i ▸
+    hX.value_apply_mem_Ioo_of_mem_morseBrokenTrajectoryRecords hw i
   rcases (hcq i).lt_or_gt with hi | hi
   · exact hX.apply_eq_apply_of_apply_eq_of_mem hw hw' h₂ hw₂ ⟨hc.1, hi⟩
   · exact hX.apply_eq_apply_of_apply_eq_of_mem hw hw' h₁ hw₁ ⟨hi, hc.2⟩
