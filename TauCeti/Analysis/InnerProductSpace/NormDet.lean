@@ -554,7 +554,7 @@ theorem normDet_comp_comp_le_prod_singularValues (C : F →ₗ[𝕜] G) (A : E �
         singularValues_comp_le C _ (by simpa using hC) i
     _ ≤ 1 * (1 * A.singularValues i) := by
         gcongr
-        exact singularValues_comp_le_left A D zero_le_one (by simpa using hD) i
+        exact singularValues_comp_le_right A D zero_le_one (by simpa using hD) i
     _ = A.singularValues i := by ring
 
 end Contraction

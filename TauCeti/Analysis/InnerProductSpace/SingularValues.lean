@@ -90,7 +90,7 @@ Courant–Fischer min–max principle for their source Gram operators.
   `σᵢ(B) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_comp_le`: if `‖C y‖ ≤ c ‖y‖` for every `y`, then
   `σᵢ(C A) ≤ c σᵢ(A)` for every `i`.
-* `LinearMap.singularValues_comp_le_left`: if `‖C x‖ ≤ c ‖x‖` for every `x`, with `c ≥ 0`, then
+* `LinearMap.singularValues_comp_le_right`: if `‖C x‖ ≤ c ‖x‖` for every `x`, with `c ≥ 0`, then
   `σᵢ(A C) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_le_of_norm_apply_le`: if `‖A x‖ ≤ c ‖x‖` for every `x`, with
   `c ≥ 0`, then `σᵢ(A) ≤ c` for every `i`.
@@ -580,7 +580,7 @@ theorem singularValues_comp_le (C : F →ₗ[𝕜] G) (A : E →ₗ[𝕜] F) {c 
 
 /-- **Bounded-factor domination on the right.** If `‖C x‖ ≤ c * ‖x‖` for every `x` and `0 ≤ c`,
 then `σᵢ(A C) ≤ c σᵢ(A)` for every `i`. -/
-theorem singularValues_comp_le_left (A : F →ₗ[𝕜] G) (C : E →ₗ[𝕜] F) {c : ℝ} (hc : 0 ≤ c)
+theorem singularValues_comp_le_right (A : F →ₗ[𝕜] G) (C : E →ₗ[𝕜] F) {c : ℝ} (hc : 0 ≤ c)
     (hC : ∀ x, ‖C x‖ ≤ c * ‖x‖) (i : ℕ) :
     (A ∘ₗ C).singularValues i ≤ c * A.singularValues i := by
   rw [← singularValues_adjoint, adjoint_comp, ← A.singularValues_adjoint]
