@@ -125,11 +125,9 @@ theorem lpNorm_iteratedFDeriv_hyperplane_le {i : ℕ} {u : WithLp 2 (ℝ × E) �
     exact mul_le_of_le_one_right (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) hι)
   have hwcont : Continuous fun y : E ↦ w (WithLp.toLp 2 (a, y)) :=
     hw.continuous.comp (by fun_prop)
-  have hmem : MemLp (fun y : E ↦ ‖w (WithLp.toLp 2 (a, y))‖) 2 volume := by
-    have he : Topology.IsClosedEmbedding fun y : E ↦ WithLp.toLp 2 (a, y) :=
-      (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
-        (.of_isEmbedding_isClosedMap (isEmbedding_prodMkRight a) (isClosedMap_prodMk_left a))
-    exact hwcont.norm.memLp_of_hasCompactSupport (hwc.comp_isClosedEmbedding he).norm
+  have hmem : MemLp (fun y : E ↦ ‖w (WithLp.toLp 2 (a, y))‖) 2 volume :=
+    hwcont.norm.memLp_of_hasCompactSupport
+      (hwc.comp_isClosedEmbedding (isClosedEmbedding_toLp_prodMk_left 2 a)).norm
   refine (lpNorm_mono_real hmem hpt).trans ?_
   rw [lpNorm_norm hwcont.aestronglyMeasurable]
   exact (lpNorm_hyperplane_le hw hwc a).trans_eq (by rw [lpNorm_fderiv_iteratedFDeriv])
