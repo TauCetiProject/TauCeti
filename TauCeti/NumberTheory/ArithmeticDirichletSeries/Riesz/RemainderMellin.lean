@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.Analysis.Meromorphic.LogDeriv
 import Mathlib.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.Calculus.LogDeriv
+import TauCeti.Analysis.Meromorphic.NormalForm
 
 /-!
 # Meromorphic Mellin expression for a first Riesz remainder
@@ -60,6 +61,15 @@ theorem _root_.Meromorphic.rieszRemainderMellin_eventuallyEq {L : ℂ → ℂ}
     have := hL.logDeriv
     fun_prop
   exact (meromorphicOn_univ.mpr hm).toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ z)
+
+/-- The Riesz remainder Mellin expression depends only on the punctured germs
+of the input, including at `1` where the subtracted main term is determined. -/
+theorem rieszRemainderMellin_congr {L M : ℂ → ℂ}
+    (h : ∀ z : ℂ, L =ᶠ[𝓝[≠] z] M) : rieszRemainderMellin L = rieszRemainderMellin M := by
+  unfold rieszRemainderMellin
+  refine toMeromorphicNFOn_univ_congr_nhdsNE fun z ↦ ?_
+  filter_upwards [logDeriv_congr_nhdsNE (h z)] with s hs
+  rw [meromorphicOrderAt_congr (h 1), logDerivFinitePart_congr_nhdsNE (h 1), hs]
 
 /-- At a regular nonzero point of `L` other than `0` or `1`, the Mellin expression is analytic
 and its value is given by the defining quotient. -/
