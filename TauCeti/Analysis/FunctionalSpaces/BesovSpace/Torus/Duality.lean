@@ -110,7 +110,7 @@ attribute [local instance 2000] instMeasureSpaceUnitAddCircle
 
 variable {φ : ContDiffBump (0 : EuclideanSpace ℝ d)}
 
-attribute [local instance] isFiniteMeasure_volume
+attribute [local instance] isProbabilityMeasure_volume
 
 /-! ### The enlarged blocks -/
 

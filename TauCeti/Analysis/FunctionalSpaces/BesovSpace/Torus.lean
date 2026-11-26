@@ -105,8 +105,8 @@ coefficients are recovered from the blocks: `c(n) = ∑_{j ≤ N} (Δⱼ c)^(n)`
   in `s` and `q` (`TauCeti.UnitAddTorus.BesovSpace.exists_norm_inclusionOfExponentLE_le`).
 
 As in `TauCeti.UnitAddTorus.littlewoodPaleyBlock`, `Lᵖ(𝕋ᵈ)` is taken for the product of the Haar
-probability measures on the circle factors; `TauCeti.UnitAddTorus.isFiniteMeasure_volume` records
-that it is a finite measure.
+probability measures on the circle factors; `TauCeti.UnitAddTorus.isProbabilityMeasure_volume`
+records that it is a probability measure.
 
 ## References
 
@@ -135,7 +135,7 @@ variable {d : Type*} [Fintype d]
 -- here so that the Besov spaces are built on that same space.
 attribute [local instance 2000] instMeasureSpaceUnitAddCircle
 
-attribute [local instance] isFiniteMeasure_volume
+attribute [local instance] isProbabilityMeasure_volume
 
 variable (φ : ContDiffBump (0 : EuclideanSpace ℝ d))
 
