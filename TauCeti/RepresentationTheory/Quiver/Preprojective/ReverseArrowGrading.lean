@@ -35,10 +35,12 @@ namespace TauCeti
 open _root_.Quiver PathAlgebra
 open scoped Pointwise
 
-variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q] [Fintype Q]
+variable (k : Type w) (Q : Type u) [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
-private theorem preprojectiveRelator_mem_reverseArrowGrade :
+variable [Ring k] in
+/-- The global preprojective relator has reverse-arrow degree one. -/
+theorem preprojectiveRelator_mem_gradeBy_reverseArrowWeight_one :
     preprojectiveRelator k Q ∈ gradeBy k Symmetrify.reverseArrowWeight 1 := by
   rw [preprojectiveRelator_def]
   refine Submodule.sum_mem _ fun i _ ↦ Submodule.sum_mem _ fun j _ ↦
@@ -54,13 +56,16 @@ private theorem preprojectiveRelator_mem_reverseArrowGrade :
         zero_add, Symmetrify.reverseArrowWeight_of_map,
         Symmetrify.reverseArrowWeight_reverse_of_map, add_zero])
 
-private theorem isHomogeneous_preprojectiveIdeal_reverseArrowGrade :
+variable [CommRing k]
+
+/-- The preprojective relation ideal is homogeneous for the reverse-arrow grading. -/
+theorem isHomogeneous_preprojectiveIdeal_reverseArrowWeight :
     (preprojectiveIdeal k Q).asIdeal.IsHomogeneous
       (gradeBy k (Q := Symmetrify Q) Symmetrify.reverseArrowWeight) := by
   rw [preprojectiveIdeal_eq_span]
   refine TwoSidedIdeal.homogeneous_span _ fun x hx ↦ ?_
   obtain rfl := Set.mem_singleton_iff.mp hx
-  exact ⟨1, preprojectiveRelator_mem_reverseArrowGrade k Q⟩
+  exact ⟨1, preprojectiveRelator_mem_gradeBy_reverseArrowWeight_one k Q⟩
 
 /-- Degree `n` of the reverse-arrow grading is the image of the doubled paths of weight `n`. -/
 noncomputable def preprojectiveReverseArrowGrade (n : ℕ) : Submodule k (preprojectiveAlgebra k Q) :=
@@ -83,6 +88,13 @@ theorem mem_preprojectiveReverseArrowGrade_iff {n : ℕ} {x : preprojectiveAlgeb
   simp only [preprojectiveReverseArrowGrade, TauCeti.GradedAlgebra.mem_quotientPiece_iff,
     preprojectiveMk_apply]
 
+/-- The preprojective algebra is the internal direct sum of its reverse-arrow graded pieces. -/
+theorem isInternal_preprojectiveReverseArrowGrade :
+    DirectSum.IsInternal (preprojectiveReverseArrowGrade k Q) := by
+  unfold preprojectiveReverseArrowGrade
+  exact TauCeti.GradedAlgebra.isInternal_quotientPiece (gradeBy k Symmetrify.reverseArrowWeight)
+    (preprojectiveIdeal k Q).asIdeal (isHomogeneous_preprojectiveIdeal_reverseArrowWeight k Q)
+
 /-- Multiplication adds reverse-arrow degrees, and the pieces form an internal direct sum.
 Introduce this structure locally to use the graded-algebra API. -/
 @[instance_reducible]
@@ -90,7 +102,7 @@ noncomputable def preprojectiveReverseArrowGradedAlgebra :
     GradedAlgebra (preprojectiveReverseArrowGrade k Q) := by
   unfold preprojectiveReverseArrowGrade
   exact TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece (gradeBy k Symmetrify.reverseArrowWeight)
-    (preprojectiveIdeal k Q).asIdeal (isHomogeneous_preprojectiveIdeal_reverseArrowGrade k Q)
+    (preprojectiveIdeal k Q).asIdeal (isHomogeneous_preprojectiveIdeal_reverseArrowWeight k Q)
 
 attribute [local instance] preprojectiveReverseArrowGradedAlgebra
 
