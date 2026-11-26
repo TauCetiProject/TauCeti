@@ -56,21 +56,21 @@ variable {R₀} {T : Type*} [Semiring T] [Algebra R₀ T]
 @[ext high] -- This should have higher precedence than `AlgHom.ext`.
 theorem algHom_ext {φ ψ : OreLocalization S R →ₐ[R₀] T}
     (h : φ.comp (numeratorAlgHom R₀) = ψ.comp (numeratorAlgHom R₀)) : φ = ψ := by
-  have hφψ (r : R) : φ (numeratorHom r) = ψ (numeratorHom r) := AlgHom.congr_fun h r
-  ext x
-  induction x using OreLocalization.ind with | _ r s
-  -- `r /ₒ s` is the inverse of the unit `s /ₒ 1` times `r /ₒ 1`.
-  have hr : r /ₒ s = (((numeratorUnit s)⁻¹ : (OreLocalization S R)ˣ) : OreLocalization S R) *
-      numeratorHom r := by
-    have h1 := OreLocalization.one_div_mul (r := r) (s := 1) (t := s)
-    rw [one_mul] at h1
-    -- The inverse of `numeratorUnit s` is `1 /ₒ s` by definition.
-    exact h1.symm
-  have hs := congrArg (fun v : Tˣ ↦ (v⁻¹ : Tˣ).val)
-    (Units.ext (hφψ s) : Units.map (φ : OreLocalization S R →* T) (numeratorUnit s) =
-      Units.map (ψ : OreLocalization S R →* T) (numeratorUnit s))
-  simp only [Units.coe_map_inv, MonoidHom.coe_ofClass] at hs
-  rw [hr, map_mul, map_mul, hφψ, hs]
+  let n : S →* (OreLocalization S R)ˣ :=
+    Units.liftRight (numeratorHom.comp S.subtype) numeratorUnit (fun _ ↦ rfl)
+  let ψS : S →* Tˣ := (Units.map ψ.toMonoidHom).comp n
+  have hψS : ∀ s : S, (ψ.toRingHom.comp numeratorRingHom) s = ψS s := fun _ ↦ rfl
+  apply AlgHom.toRingHom_injective
+  calc
+    φ.toRingHom = universalHom (ψ.toRingHom.comp numeratorRingHom) ψS hψS := by
+      apply universalHom_unique
+      intro r
+      exact AlgHom.congr_fun h r
+    _ = ψ.toRingHom := by
+      symm
+      apply universalHom_unique
+      intro r
+      rfl
 
 /-- The universal lift of an `R₀`-algebra map `f : R →ₐ[R₀] T` sending `S` to units of `T`
 to an `R₀`-algebra map `OreLocalization S R →ₐ[R₀] T`: the `R₀`-linear form of
