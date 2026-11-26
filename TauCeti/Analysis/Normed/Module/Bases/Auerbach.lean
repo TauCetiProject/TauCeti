@@ -40,21 +40,69 @@ classical Auerbach basis.
 
 ## References
 
+* A. E. Taylor, *A geometric theorem and its application to biorthogonal systems*,
+  Bull. Amer. Math. Soc. 53 (1947), 614--616 (the maximal-determinant proof).
+* S. Banach, *Théorie des opérations linéaires*, Monografie Matematyczne 1, Warszawa, 1932
+  (where the lemma is attributed to H. Auerbach, c. 1930).
+* J. Lindenstrauss and L. Tzafriri, *Classical Banach Spaces I*, Springer, 1977, Prop. 1.c.3.
 * L. Alpöge, Lean formalization of the Riemann hypothesis for Dirichlet `L`-functions,
-  <https://github.com/leanprover-community/riemann-hypothesis>.
+  `New.exists_auerbach` in `src/Lib/General/LinearAlgebra/MatrixNormBounds.lean`,
+  <https://github.com/leanprover-community/riemann-hypothesis/tree/dba5aded4bf7>.
+  `TauCeti.exists_auerbachBasis` generalizes that lemma.
 -/
 
 public section
 
 namespace TauCeti
 
-private lemma exists_evalMatrix_det_ne_zero {K U 𝒜 : Type*} [Field K] [AddCommGroup U]
-    [Module K U] [FiniteDimensional K U] (ℓ : 𝒜 → Module.Dual K U)
+variable {K U 𝒜 : Type*} [Field K] [AddCommGroup U] [Module K U] {n : ℕ}
+
+/-- The matrix `(ℓ (f i) (b j))_{i,j}` of the forms `ℓ ∘ f` evaluated at the vectors `b`. -/
+private def evalMatrix (ℓ : 𝒜 → Module.Dual K U) (b : Fin n → U) (f : Fin n → 𝒜) :
+    Matrix (Fin n) (Fin n) K :=
+  Matrix.of fun i j => ℓ (f i) (b j)
+
+@[simp]
+private lemma evalMatrix_apply (ℓ : 𝒜 → Module.Dual K U) (b : Fin n → U) (f : Fin n → 𝒜)
+    (i j : Fin n) : evalMatrix ℓ b f i j = ℓ (f i) (b j) :=
+  rfl
+
+/-- Right multiplication by `N` replaces the vectors `b` by the combinations `∑ j, N j k • b j`. -/
+private lemma evalMatrix_mul (ℓ : 𝒜 → Module.Dual K U) (b : Fin n → U) (f : Fin n → 𝒜)
+    (N : Matrix (Fin n) (Fin n) K) :
+    evalMatrix ℓ b f * N = evalMatrix ℓ (fun k => ∑ j, N j k • b j) f := by
+  ext i k
+  simp [Matrix.mul_apply, map_sum, mul_comm]
+
+/-- If `evalMatrix ℓ b a` is invertible, the vectors `∑ j, (evalMatrix ℓ b a)⁻¹ j k • b j` are
+dual to the forms `ℓ ∘ a`. -/
+private lemma evalMatrix_inv_eq_one (ℓ : 𝒜 → Module.Dual K U) (b : Fin n → U) (a : Fin n → 𝒜)
+    (ha : (evalMatrix ℓ b a).det ≠ 0) :
+    evalMatrix ℓ (fun k => ∑ j, (evalMatrix ℓ b a)⁻¹ j k • b j) a = 1 := by
+  rw [← evalMatrix_mul, Matrix.mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr ha)]
+
+/-- Replacing the form in row `k` by `ℓ x` replaces row `k` of the evaluation matrix. -/
+private lemma evalMatrix_update (ℓ : 𝒜 → Module.Dual K U) (b : Fin n → U) (a : Fin n → 𝒜)
+    (k : Fin n) (x : 𝒜) :
+    evalMatrix ℓ b (Function.update a k x) =
+      (evalMatrix ℓ b a).updateRow k fun j => ℓ x (b j) := by
+  ext i j
+  by_cases hik : i = k
+  · subst hik
+    simp
+  · simp [hik]
+
+/-- Cramer's rule for one replaced row of the identity matrix. -/
+private lemma det_updateRow_one (k : Fin n) (v : Fin n → K) :
+    ((1 : Matrix (Fin n) (Fin n) K).updateRow k v).det = v k := by
+  rw [← Matrix.cramer_transpose_apply, Matrix.transpose_one, Matrix.cramer_one]
+  rfl
+
+private lemma exists_evalMatrix_det_ne_zero [FiniteDimensional K U] (ℓ : 𝒜 → Module.Dual K U)
     (hsep : ∀ v : U, (∀ a : 𝒜, ℓ a v = 0) → v = 0) :
-    let n := Module.finrank K U
-    let b := Module.finBasis K U
-    ∃ f : Fin n → 𝒜, (Matrix.of fun i j => ℓ (f i) (b j)).det ≠ 0 := by
-  intro n b
+    ∃ f : Fin (Module.finrank K U) → 𝒜, (evalMatrix ℓ (Module.finBasis K U) f).det ≠ 0 := by
+  set n := Module.finrank K U
+  let b := Module.finBasis K U
   have hspan : Submodule.span K (Set.range ℓ) = ⊤ :=
     Submodule.span_eq_top_of_ne_zero fun v hv => by
       by_contra! h
@@ -79,47 +127,30 @@ private lemma exists_evalMatrix_det_ne_zero {K U 𝒜 : Type*} [Field K] [AddCom
   have hunit := b.dualBasis.is_basis_iff_det.mp
     ⟨hli, hli.span_eq_top_of_card_eq_finrank' (by simp [n, Subspace.dual_finrank_eq])⟩
   rw [Module.Basis.det_apply,
-    show b.dualBasis.toMatrix (fun i => ℓ (f i)) = (Matrix.of fun i j => ℓ (f i) (b j)).transpose
+    show b.dualBasis.toMatrix (fun i => ℓ (f i)) = (evalMatrix ℓ b f).transpose
       by ext; simp [Module.Basis.toMatrix_apply],
     Matrix.det_transpose] at hunit
   exact ⟨f, hunit.ne_zero⟩
 
-private lemma norm_eval_le_one_of_isMaxOn {K U 𝒜 L : Type*} [Field K] [AddCommGroup U] [Module K U]
-    [NormedField L] {n : ℕ} (φ : K →+* L) (ℓ : 𝒜 → Module.Dual K U)
-    (b : Module.Basis (Fin n) K U) (a : Fin n → 𝒜)
-    (ha_max : ∀ f : Fin n → 𝒜,
-      ‖φ (Matrix.of fun i j => ℓ (f i) (b j)).det‖ ≤
-      ‖φ (Matrix.of fun i j => ℓ (a i) (b j)).det‖)
-    (ha_det : (Matrix.of fun i j => ℓ (a i) (b j)).det ≠ 0)
-    (z : Module.Basis (Fin n) K U)
-    (hz : ∀ k, z k = ∑ j : Fin n, (Matrix.of fun i r => ℓ (a i) (b r))⁻¹ j k • b j)
+/-- If `a` maximizes `‖φ (det (evalMatrix ℓ b ·))‖`, then every `ℓ x` has image norm at most `1`
+on the vectors `∑ j, (evalMatrix ℓ b a)⁻¹ j k • b j`. -/
+private lemma norm_eval_le_one_of_isMaxOn {L : Type*} [NormedField L] (φ : K →+* L)
+    (ℓ : 𝒜 → Module.Dual K U) (b : Fin n → U) (a : Fin n → 𝒜)
+    (ha_max : ∀ f : Fin n → 𝒜, ‖φ (evalMatrix ℓ b f).det‖ ≤ ‖φ (evalMatrix ℓ b a).det‖)
     (x : 𝒜) (k : Fin n) :
-    ‖φ (ℓ x (z k))‖ ≤ 1 := by
-  classical
-  let M : (Fin n → 𝒜) → Matrix (Fin n) (Fin n) K := fun f => Matrix.of fun i j => ℓ (f i) (b j)
-  let N : Matrix (Fin n) (Fin n) K := (M a)⁻¹
-  have hMN : M a * N = 1 := Matrix.mul_nonsing_inv (M a) (isUnit_iff_ne_zero.mpr ha_det)
-  let a' : Fin n → 𝒜 := Function.update a k x
-  have hprod : M a' * N =
-      Matrix.updateRow (1 : Matrix (Fin n) (Fin n) K) k (fun j => ℓ x (z j)) := by
-    ext i j
-    by_cases hik : i = k
-    · subst hik
-      simp [M, N, a', Matrix.mul_apply, Matrix.updateRow_apply, hz, map_sum, map_smul, mul_comm]
-    · have h := congrFun (congrFun hMN i) j
-      simpa [M, a', hik, Matrix.mul_apply, Matrix.updateRow_apply] using h
-  have hdet_eq : ℓ x (z k) * (M a).det = (M a').det := by
-    have h1 := congrArg Matrix.det hprod
-    rw [Matrix.det_mul, ← Matrix.cramer_transpose_apply, Matrix.transpose_one,
-      Matrix.cramer_one] at h1
-    have h2 := congrArg (· * (M a).det) h1
-    rw [mul_assoc, ← Matrix.det_mul, Matrix.nonsing_inv_mul (M a) (isUnit_iff_ne_zero.mpr ha_det),
-      Matrix.det_one, mul_one] at h2
-    exact h2.symm
-  have hnorm_le : ‖φ (ℓ x (z k))‖ * ‖φ (M a).det‖ ≤ 1 * ‖φ (M a).det‖ := by
-    rw [← norm_mul, ← map_mul, hdet_eq, one_mul]
-    exact ha_max a'
-  exact le_of_mul_le_mul_right hnorm_le (norm_pos_iff.mpr ((map_ne_zero φ).mpr ha_det))
+    ‖φ (ℓ x (∑ j, (evalMatrix ℓ b a)⁻¹ j k • b j))‖ ≤ 1 := by
+  by_cases ha : (evalMatrix ℓ b a).det = 0
+  · simp [Matrix.nonsing_inv_apply_not_isUnit _ (by simp [ha] : ¬IsUnit (evalMatrix ℓ b a).det)]
+  set z : Fin n → U := fun k => ∑ j, (evalMatrix ℓ b a)⁻¹ j k • b j
+  -- `evalMatrix ℓ b (update a k x) * (evalMatrix ℓ b a)⁻¹` is the identity matrix with row `k`
+  -- replaced by `ℓ x ∘ z`, so Cramer's rule computes `ℓ x (z k)` as a ratio of determinants.
+  have hdet : ℓ x (z k) =
+      (evalMatrix ℓ b (Function.update a k x)).det / (evalMatrix ℓ b a).det := by
+    rw [← det_updateRow_one k fun j => ℓ x (z j), ← evalMatrix_inv_eq_one ℓ b a ha,
+      ← evalMatrix_update, ← evalMatrix_mul, Matrix.det_mul, Matrix.det_nonsing_inv,
+      Ring.inverse_eq_inv', div_eq_mul_inv]
+  rw [hdet, map_div₀, norm_div]
+  exact div_le_one_of_le₀ (ha_max _) (norm_nonneg _)
 
 /-- **Auerbach's lemma for a compact family of linear forms.**
 Let `U` be a finite-dimensional vector space over a field `K`, `𝒜` a compact topological space,
@@ -128,15 +159,13 @@ a ring homomorphism into a normed field `L` such that `a ↦ φ (ℓ a v)` is co
 `v : U`. Then there exist `a : Fin (finrank K U) → 𝒜` and a basis
 `z : Module.Basis (Fin (finrank K U)) K U` such that `ℓ (a i) (z j) = if i = j then 1 else 0`
 and `‖φ (ℓ x (z k))‖ ≤ 1` for all `x : 𝒜` and all `k`. -/
-theorem exists_auerbachBasis {K U 𝒜 L : Type*} [Field K] [AddCommGroup U] [Module K U]
-    [FiniteDimensional K U] [TopologicalSpace 𝒜] [CompactSpace 𝒜] [NormedField L]
-    (φ : K →+* L) (ℓ : 𝒜 → Module.Dual K U)
+theorem exists_auerbachBasis {L : Type*} [FiniteDimensional K U] [TopologicalSpace 𝒜]
+    [CompactSpace 𝒜] [NormedField L] (φ : K →+* L) (ℓ : 𝒜 → Module.Dual K U)
     (hcont : ∀ v : U, Continuous fun a : 𝒜 => φ (ℓ a v))
     (hsep : ∀ v : U, (∀ a : 𝒜, ℓ a v = 0) → v = 0) :
     ∃ (a : Fin (Module.finrank K U) → 𝒜) (z : Module.Basis (Fin (Module.finrank K U)) K U),
       (∀ i j, ℓ (a i) (z j) = if i = j then 1 else 0) ∧
       ∀ (x : 𝒜) (k : Fin (Module.finrank K U)), ‖φ (ℓ x (z k))‖ ≤ 1 := by
-  classical
   set n := Module.finrank K U
   let b := Module.finBasis K U
   by_cases hn0 : n = 0
@@ -145,32 +174,30 @@ theorem exists_auerbachBasis {K U 𝒜 L : Type*} [Field K] [AddCommGroup U] [Mo
   have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn0⟩⟩
   obtain ⟨f₀, hf₀⟩ := exists_evalMatrix_det_ne_zero ℓ hsep
   have : Nonempty (Fin n → 𝒜) := ⟨f₀⟩
-  let M : (Fin n → 𝒜) → Matrix (Fin n) (Fin n) K := fun f => Matrix.of fun i j => ℓ (f i) (b j)
-  have hM_cont : Continuous fun f : Fin n → 𝒜 => ‖φ (M f).det‖ := by
-    have hmap : ∀ f : Fin n → 𝒜, φ (M f).det = ((M f).map φ).det := fun f => φ.map_det (M f)
-    simp_rw [hmap]
+  have hM_cont : Continuous fun f : Fin n → 𝒜 => ‖φ (evalMatrix ℓ b f).det‖ := by
+    simp_rw [RingHom.map_det]
     refine continuous_norm.comp (Continuous.matrix_det ?_)
     exact continuous_pi fun i => continuous_pi fun j => (hcont (b j)).comp (continuous_apply i)
   obtain ⟨a, -, ha_max⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty hM_cont.continuousOn
-  have ha_det : (M a).det ≠ 0 := by
+  have ha_det : (evalMatrix ℓ b a).det ≠ 0 := by
     intro h0
-    have hle : ‖φ (M f₀).det‖ ≤ ‖φ (M a).det‖ := ha_max (Set.mem_univ f₀)
+    have hle : ‖φ (evalMatrix ℓ b f₀).det‖ ≤ ‖φ (evalMatrix ℓ b a).det‖ := ha_max (Set.mem_univ f₀)
     rw [h0, map_zero, norm_zero] at hle
     exact (norm_pos_iff.mpr ((map_ne_zero φ).mpr hf₀)).not_ge hle
-  have hMN : M a * (M a)⁻¹ = 1 := Matrix.mul_nonsing_inv (M a) (isUnit_iff_ne_zero.mpr ha_det)
-  let zvec : Fin n → U := fun k => ∑ j : Fin n, (M a)⁻¹ j k • b j
-  have hdual : ∀ i k, ℓ (a i) (zvec k) = if i = k then 1 else 0 := fun i k => by
-    have h := congrFun (congrFun hMN i) k
-    simpa [zvec, M, Matrix.mul_apply, Matrix.one_apply, map_sum, map_smul, mul_comm] using h
+  let zvec : Fin n → U := fun k => ∑ j, (evalMatrix ℓ b a)⁻¹ j k • b j
+  have hdual (i k : Fin n) : ℓ (a i) (zvec k) = if i = k then 1 else 0 := by
+    have h := congrFun (congrFun (evalMatrix_inv_eq_one ℓ b a ha_det) i) k
+    rwa [evalMatrix_apply, Matrix.one_apply] at h
   have hz_li : LinearIndependent K zvec := by
     rw [Fintype.linearIndependent_iff]
     intro c hc i
-    simpa [map_sum, map_smul, hdual] using congrArg (ℓ (a i)) hc
+    simpa [map_sum, hdual] using congrArg (ℓ (a i)) hc
   let z : Module.Basis (Fin n) K U :=
     basisOfLinearIndependentOfCardEqFinrank' zvec hz_li (Fintype.card_fin n)
-  have hz_apply : ∀ k, z k = zvec k := fun k => by
+  have hz_apply (k : Fin n) : z k = zvec k := by
     simp [z, coe_basisOfLinearIndependentOfCardEqFinrank']
-  exact ⟨a, z, fun i j => by rw [hz_apply]; exact hdual i j, fun x k =>
-    norm_eval_le_one_of_isMaxOn φ ℓ b a (fun f => ha_max (Set.mem_univ f)) ha_det z hz_apply x k⟩
+  refine ⟨a, z, fun i j => by rw [hz_apply]; exact hdual i j, fun x k => ?_⟩
+  rw [hz_apply]
+  exact norm_eval_le_one_of_isMaxOn φ ℓ b a (fun f => ha_max (Set.mem_univ f)) x k
 
 end TauCeti
