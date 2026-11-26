@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Idempotents
 public import TauCeti.RingTheory.Idempotents.Connected.Component
 public import TauCeti.Topology.ConnectedComponents
 
+import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
@@ -36,6 +37,8 @@ constructs a `Fintype` internally for the finite sum.
   fibre of the quotient map.
 * `PrimeSpectrum.completeOrthogonalIdempotents_connectedComponentsIdempotent`: the component
   idempotents are complete and pairwise orthogonal.
+* `IsIdempotentElem.exists_eq_sum_connectedComponentsIdempotent`: when the components are
+  discrete, every idempotent is a sum of component idempotents.
 * `PrimeSpectrum.ringEquivPiQuotientConnectedComponentsIdeal`: the canonical product
   decomposition into the component quotient rings.
 
@@ -292,6 +295,48 @@ theorem completeOrthogonalIdempotents_connectedComponentsIdempotent
       (connectedComponentsIdempotent : ConnectedComponents (PrimeSpectrum R) → R) :=
   ⟨orthogonalIdempotents_connectedComponentsIdempotent,
     connectedComponentsIdempotent_sum_eq_one⟩
+
+/-- On a connected component of `Spec R`, an idempotent `e` is either zero or the whole
+component: `e` times the idempotent selecting the component is zero or that idempotent. -/
+theorem _root_.IsIdempotentElem.mul_connectedComponentsIdempotent_eq_zero_or_eq
+    [DiscreteTopology (ConnectedComponents (PrimeSpectrum R))] {e : R} (he : IsIdempotentElem e)
+    (C : ConnectedComponents (PrimeSpectrum R)) :
+    e * connectedComponentsIdempotent C = 0 ∨
+      e * connectedComponentsIdempotent C = connectedComponentsIdempotent C := by
+  have hC := isIdempotentElem_connectedComponentsIdempotent C
+  rcases (he.map (Ideal.Quotient.mk
+    (connectedComponentsIdeal C))).eq_zero_or_eq_one_of_preconnectedSpace with h | h
+  · obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.mp (Ideal.Quotient.eq_zero_iff_mem.mp h)
+    left
+    rw [← hr, mul_assoc, sub_mul, one_mul, hC.eq, sub_self, mul_zero]
+  · rw [← map_one (Ideal.Quotient.mk (connectedComponentsIdeal C)), Ideal.Quotient.eq] at h
+    obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.mp h
+    right
+    have : (e - 1) * connectedComponentsIdempotent C = 0 := by
+      rw [← hr, mul_assoc, sub_mul, one_mul, hC.eq, sub_self, mul_zero]
+    rwa [sub_mul, one_mul, sub_eq_zero] at this
+
+/-- When the connected components of `Spec R` are discrete, hence finite in number, every
+idempotent of `R` is the sum of the idempotents selecting the components of a finite set: the
+components on which it is one. -/
+theorem _root_.IsIdempotentElem.exists_eq_sum_connectedComponentsIdempotent
+    [DiscreteTopology (ConnectedComponents (PrimeSpectrum R))] {e : R} (he : IsIdempotentElem e) :
+    ∃ s : Finset (ConnectedComponents (PrimeSpectrum R)),
+      e = ∑ C ∈ s, connectedComponentsIdempotent C := by
+  classical
+  have : Finite (ConnectedComponents (PrimeSpectrum R)) := finite_of_compact_of_discrete
+  let _ : Fintype (ConnectedComponents (PrimeSpectrum R)) := Fintype.ofFinite _
+  refine ⟨Finset.univ.filter fun C ↦
+    e * connectedComponentsIdempotent C = connectedComponentsIdempotent C, ?_⟩
+  calc e = ∑ C, e * connectedComponentsIdempotent C := by
+        rw [← Finset.mul_sum, completeOrthogonalIdempotents_connectedComponentsIdempotent.complete,
+          mul_one]
+    _ = _ := by
+      rw [Finset.sum_filter]
+      refine Finset.sum_congr rfl fun C _ ↦ ?_
+      split_ifs with h
+      · exact h
+      · exact (he.mul_connectedComponentsIdempotent_eq_zero_or_eq C).resolve_right h
 
 /-- A ring with finitely many connected components in its prime spectrum is canonically
 isomorphic to the product of its component-indexed quotient rings. -/
