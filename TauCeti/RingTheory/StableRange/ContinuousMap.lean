@@ -6,24 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.StableRange
+public import TauCeti.Topology.Dimension.PartitionOfUnity
 public import Mathlib.Analysis.Complex.Tietze
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.Star
 public import Mathlib.Topology.ContinuousMap.Units
 public import Mathlib.Topology.ContinuousMap.Weierstrass
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Stable range of rings of continuous functions
 
 For a topological space `X` and `𝕜 = ℝ` or `ℂ`, this file relates the Bass stable range
-`TauCeti.HasStableRangeLE` of the ring `C(X, 𝕜)` to the topology of `X`, through the
-covering-dimension-free ingredients of Vaserstein's computation of that stable range.
+`TauCeti.HasStableRangeLE` of the ring `C(X, 𝕜)` to the topology of `X`, following Vaserstein's
+computation of that stable range.
 
 * A row `(a₁, …, aₙ)` of `C(X, 𝕜)` is unimodular exactly when its entries have no common zero.
   No compactness is needed: `∑ aᵢ conj aᵢ` is then a nowhere vanishing function, hence a unit.
 * **Upper bounds from density.** For compact `X`, if the unimodular rows are uniformly dense in
   `C(X, 𝕜)ⁿ` (the topological stable rank of `C(X, 𝕜)` is at most `n`), then `C(X, 𝕜)` has Bass
   stable range at most `n`.
+* **Upper bounds from covering dimension.** For compact normal `X` of covering dimension at most
+  `d`, maps `X → 𝕜ⁿ` missing `0`, that is unimodular rows, are dense as soon as
+  `d < n · dim_ℝ 𝕜`. Hence `C(X, ℝ)` has stable range at most `d + 1` and `C(X, ℂ)` at most
+  `⌊d / 2⌋ + 1`.
 * **Lower bounds from extension.** For normal `X`, if `C(X, 𝕜)` has stable range at most `s`, then
   every continuous map from a closed subset of `X` to `𝕜ˢ ∖ {0}` extends to `X`; equivalently,
   maps to the unit sphere of `𝕜ˢ`, a sphere of dimension `s - 1` or `2s - 1`, extend.
@@ -32,8 +38,9 @@ covering-dimension-free ingredients of Vaserstein's computation of that stable r
   `C([a, b], ℂ)` has stable range at most `1` and `C([a, b], ℝ)` at most `2`, while for `a < b` the
   intermediate value theorem shows that `C([a, b], ℝ)` does not have stable range at most `1`.
 
-These are the bounds `sr C([a, b], ℂ) = 1` and `sr C([a, b], ℝ) = 2` of Vaserstein's formulas
-`sr C(X, ℂ) = ⌊dim X / 2⌋ + 1` and `sr C(X, ℝ) = dim X + 1` for the one-dimensional space `[a, b]`.
+The upper bounds are the inequalities `sr C(X, ℂ) ≤ ⌊dim X / 2⌋ + 1` and `sr C(X, ℝ) ≤ dim X + 1`
+in Vaserstein's formulas `sr C(X, ℂ) = ⌊dim X / 2⌋ + 1` and `sr C(X, ℝ) = dim X + 1`. For the
+one-dimensional space `[a, b]` the interval computations give both formulas.
 
 ## Main results
 
@@ -41,6 +48,12 @@ These are the bounds `sr C([a, b], ℂ) = 1` and `sr C([a, b], ℝ) = 2` of Vase
   the rows without common zero.
 * `TauCeti.hasStableRangeLE_continuousMap_of_dense`: dense unimodular `n`-rows give stable range
   at most `n`.
+* `TauCeti.HasCoveringDimensionLE.dense_isUnimodular_continuousMap`: in covering dimension
+  `d < n · dim_ℝ 𝕜` unimodular `n`-rows are dense.
+* `TauCeti.HasCoveringDimensionLE.hasStableRangeLE_continuousMap`,
+  `TauCeti.HasCoveringDimensionLE.hasStableRangeLE_continuousMap_real` and
+  `TauCeti.HasCoveringDimensionLE.hasStableRangeLE_continuousMap_complex`: Vaserstein's upper
+  bounds `sr C(X, ℝ) ≤ d + 1` and `sr C(X, ℂ) ≤ ⌊d / 2⌋ + 1` in covering dimension `d`.
 * `TauCeti.HasStableRangeLE.exists_extension_ne_zero`: stable range at most `s` lets nonvanishing
   maps from closed subsets to `𝕜ˢ` extend.
 * `TauCeti.hasStableRangeLE_one_continuousMap_Icc_complex`,
@@ -207,6 +220,50 @@ theorem HasStableRangeLE.exists_extension_ne_zero [NormalSpace X] {s : ℕ}
   · intro x hx
     obtain ⟨i, hi⟩ := hc x
     exact hi (congr_fun hx i)
+
+/-! ### Upper bounds from covering dimension -/
+
+/-- **Unimodular rows are dense in low dimension.** Let `X` be a compact normal space of covering
+dimension at most `d`. If `d < n · dim_ℝ 𝕜`, the unimodular rows are dense in `C(X, 𝕜)ⁿ`: the
+topological stable rank of `C(X, 𝕜)` is at most `n`. -/
+theorem HasCoveringDimensionLE.dense_isUnimodular_continuousMap [CompactSpace X] [NormalSpace X]
+    {d n : ℕ} (h : HasCoveringDimensionLE X d) (hd : d < n * Module.finrank ℝ 𝕜) :
+    Dense {a : Fin n → C(X, 𝕜) | Module.IsUnimodular C(X, 𝕜) a} := by
+  -- A row is a map `X → 𝕜ⁿ`, unimodular exactly when it misses `0`.
+  have hE : d < Module.finrank ℝ (Fin n → 𝕜) := by
+    simpa [Module.finrank_pi_fintype] using hd
+  refine Metric.dense_iff.2 fun a ε hε ↦ ?_
+  obtain ⟨G, hG, hGa⟩ := (h.dense_setOf_forall_ne_zero hE).exists_dist_lt
+    (ContinuousMap.pi a) hε
+  rw [dist_comm] at hGa
+  refine ⟨fun i ↦ ⟨fun x ↦ G x i, by fun_prop⟩, ?_, ?_⟩
+  · rw [Metric.mem_ball, dist_pi_lt_iff hε]
+    exact fun i ↦ (ContinuousMap.dist_lt_iff hε).2 fun x ↦
+      (dist_le_pi_dist (G x) (ContinuousMap.pi a x) i).trans_lt
+        ((ContinuousMap.dist_apply_le_dist x).trans_lt hGa)
+  · rw [Set.mem_ofPred_eq, isUnimodular_continuousMap_iff_forall_exists_ne_zero]
+    exact fun x ↦ Function.ne_iff.1 (hG x)
+
+/-- **Vaserstein's upper bound.** If a compact normal space `X` has covering dimension at most `d`
+and `d < s · dim_ℝ 𝕜`, then `C(X, 𝕜)` has stable range at most `s`. -/
+theorem HasCoveringDimensionLE.hasStableRangeLE_continuousMap [CompactSpace X] [NormalSpace X]
+    {d s : ℕ} (h : HasCoveringDimensionLE X d) (hd : d < s * Module.finrank ℝ 𝕜) :
+    HasStableRangeLE C(X, 𝕜) s :=
+  hasStableRangeLE_continuousMap_of_dense (h.dense_isUnimodular_continuousMap hd)
+
+/-- If a compact normal space `X` has covering dimension at most `d`, then `C(X, ℝ)` has stable
+range at most `d + 1`. -/
+theorem HasCoveringDimensionLE.hasStableRangeLE_continuousMap_real [CompactSpace X]
+    [NormalSpace X] {d : ℕ} (h : HasCoveringDimensionLE X d) :
+    HasStableRangeLE C(X, ℝ) (d + 1) :=
+  h.hasStableRangeLE_continuousMap (by simp)
+
+/-- If a compact normal space `X` has covering dimension at most `d`, then `C(X, ℂ)` has stable
+range at most `⌊d / 2⌋ + 1`. -/
+theorem HasCoveringDimensionLE.hasStableRangeLE_continuousMap_complex [CompactSpace X]
+    [NormalSpace X] {d : ℕ} (h : HasCoveringDimensionLE X d) :
+    HasStableRangeLE C(X, ℂ) (d / 2 + 1) :=
+  h.hasStableRangeLE_continuousMap (by rw [Complex.finrank_real_complex]; omega)
 
 /-! ### Stable ranges of `C([a, b], ℂ)` and `C([a, b], ℝ)` -/
 
