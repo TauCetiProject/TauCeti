@@ -18,8 +18,12 @@ For a sequence `a`, consider the sum of `a n (n t)^j exp(-π (n t)^2)` over posi
 line `Re s = 2`, truncating the Mellin integral below `r ≥ 0` incurs an error linear in `r`
 for uniformly bounded coefficients.
 
-This is the unscaled theta sum: `Lib/Analytic/DirichletTheta` of lsernau/grh-lean (`72fead1`)
-multiplies it by `t^(1/2)` and shifts the Mellin argument by `-1/2`.
+The theta sum and its Mellin factorization follow `gaussianTheta` and `mellin_gaussianTheta`
+in `grh/src/Lib/Analytic/DirichletTheta.lean` of grh-lean (https://github.com/lsernau/grh-lean,
+Apache 2.0, Copyright 2026 Anthropic, PBC), revision `72fead1`. The cutoff estimate corresponds
+to the omitted-integral bound in `New.norm_mul_mollifier_sub_le` in the adjacent
+`QuadraticTwist.lean`. We use the unscaled theta sum, omitting the factor `t^(1/2)` and the
+corresponding shift by `-1/2` in the Mellin argument.
 -/
 
 public section
@@ -100,22 +104,20 @@ theorem hasMellin_gaussianDirichletTheta (j : ℕ) {a : ℕ → ℂ} {s : ℂ}
 
 /-- At `Re s = 2`, cutting off the integral for the Gaussian theta sum at `r ≥ 0` changes its
 Mellin transform by at most `M j! e r`, uniformly in the imaginary part. -/
-theorem norm_integral_gaussianDirichletTheta_sub (j : ℕ) {a : ℕ → ℂ} {M r : ℝ}
+theorem norm_integral_gaussianDirichletTheta_sub_le (j : ℕ) {a : ℕ → ℂ} {M r : ℝ}
     (ha : ∀ n ≠ 0, ‖a n‖ ≤ M) (hr : 0 ≤ r) {s : ℂ} (hs : s.re = 2) :
     ‖(∫ t : ℝ in Ioi r, (t : ℂ) ^ (s - 1) * gaussianDirichletTheta j a t) -
       LSeries a s * (Gammaℝ (s + j) / 2)‖ ≤ M * (j.factorial : ℝ) * Real.exp 1 * r := by
   obtain ⟨hint, hval⟩ := hasMellin_gaussianDirichletTheta j
     (LSeriesSummable_of_bounded_of_one_lt_re ha (s := s) (by linarith)) (by linarith)
   simp only [MellinConvergent, mellin, smul_eq_mul] at hint hval
-  rw [← hval, ← Ioc_union_Ioi_eq_Ioi hr, setIntegral_union
-    Ioc_disjoint_Ioi_same measurableSet_Ioi
-    (hint.mono_set Ioc_subset_Ioi_self) (hint.mono_set (Ioi_subset_Ioi hr)), add_comm (_ : ℂ),
-    sub_add_eq_sub_sub, sub_self, zero_sub, norm_neg]
+  rw [← hval, norm_sub_rev, ← setIntegral_sdiff measurableSet_Ioi hint (Ioi_subset_Ioi hr),
+    Ioi_sdiff_Ioi]
   have hbound : ∀ᵐ t : ℝ ∂volume.restrict (Ioc 0 r),
       ‖(t : ℂ) ^ (s - 1) * gaussianDirichletTheta j a t‖ ≤ M * (j.factorial : ℝ) * Real.exp 1 := by
     filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-    rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht.1, sub_re, hs, one_re]
-    norm_num
+    have hexp : (2 : ℝ) - 1 = 1 := by norm_num
+    rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht.1, sub_re, hs, one_re, hexp, Real.rpow_one]
     have hden : 0 < Real.exp t - 1 := sub_pos.mpr (Real.one_lt_exp_iff.mpr ht.1)
     have hM : 0 ≤ M := (norm_nonneg _).trans (ha 1 one_ne_zero)
     calc

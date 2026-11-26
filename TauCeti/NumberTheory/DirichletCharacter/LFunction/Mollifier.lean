@@ -18,7 +18,8 @@ approximates `Γℝ(s+j)/(2 L(s,χ))` on `Re s = 2`. Multiplying by the gamma-we
 shows that the error is `O(r)`, uniformly in the character, its modulus and the imaginary part.
 This provides the right boundary estimate in the three-lines argument that detects zeros from
 theta integrals. The estimate corresponds to `New.norm_mul_mollifier_sub_le` in
-`grh/src/Lib/Analytic/QuadraticTwist.lean` of lsernau/grh-lean (`72fead1`).
+`grh/src/Lib/Analytic/QuadraticTwist.lean` of grh-lean (https://github.com/lsernau/grh-lean,
+Apache 2.0, Copyright 2026 Anthropic, PBC), revision `72fead1`.
 -/
 
 public section
@@ -46,7 +47,7 @@ theorem gaussianMollifier_def {N : ℕ} (χ : DirichletCharacter ℂ N)
 /-- On `Re s = 2`, the completed product of a Dirichlet L-function and its Gaussian
 mollifier differs from the square of the half-gamma factor by at most `C r`. The constant
 depends only on the degree `j` of the monomial weight. -/
-theorem norm_LFunction_mul_gaussianMollifier_sub (j : ℕ) :
+theorem exists_norm_LFunction_mul_gaussianMollifier_sub_le (j : ℕ) :
     ∃ C > (0 : ℝ), ∀ {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
       {r : ℝ}, 0 ≤ r → ∀ {s : ℂ}, s.re = 2 →
       ‖(Gammaℝ (s + j) / 2) * χ.LFunction s * χ.gaussianMollifier j r s -
@@ -96,7 +97,7 @@ theorem norm_LFunction_mul_gaussianMollifier_sub (j : ℕ) :
       gcongr
       · exact hχ.trans (by linarith)
       · rw [gaussianMollifier_def]
-        exact norm_integral_gaussianDirichletTheta_sub j hcoeff hr hs
+        exact norm_integral_gaussianDirichletTheta_sub_le j hcoeff hr hs
     _ = _ := by ring
 
 end DirichletCharacter

@@ -48,10 +48,11 @@ theorem hasMellin_tsum_dilate {a : ℕ → ℂ} {f : ℝ → ℂ} {s : ℂ}
           Real.mul_rpow (hd n).le (mem_Ioi.mp ht).le]
         field_simp [(Real.rpow_pos_of_pos (hd n) (s.re - 1)).ne']
       _ = _ := by
-        rw [integral_const_mul, integral_comp_mul_left_Ioi _ _ (hd n), mul_zero, smul_eq_mul,
-          ← mul_assoc, ← div_eq_mul_inv, div_div,
-          ← Real.rpow_add_one (hd n).ne', sub_add_cancel]
-        rw [LSeries.norm_term_eq, ite_eq_right (Nat.succ_ne_zero n)]
+        simp only [integral_const_mul, integral_comp_mul_left_Ioi _ _ (hd n), mul_zero,
+          smul_eq_mul, LSeries.norm_term_eq, ite_eq_right (Nat.succ_ne_zero n)]
+        rw [Real.rpow_sub_one (hd n).ne']
+        field_simp [(hd n).ne', (Real.rpow_pos_of_pos (hd n) s.re).ne']
+        ring
   have hnorm : Summable fun n ↦ ∫ t in Ioi 0, ‖g n t‖ := by
     simp only [hscale]
     exact ((summable_nat_add_iff 1).2 ha.norm).mul_right _
