@@ -8,8 +8,9 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Scheme
+import TauCeti.Data.Nat.Factorial.Prime
+import TauCeti.LinearAlgebra.Matrix.IdealEntries
 import Mathlib.Data.ZMod.Basic
-import Mathlib.NumberTheory.Padics.PadicVal.Basic
 import Mathlib.RingTheory.PrincipalIdealDomain
 
 /-!
@@ -22,8 +23,8 @@ characteristics two and three.
 
 This discharges the operator-faithfulness hypothesis needed for ordered-product uniqueness in
 `TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct` and pointwise root-subgroup injectivity in
-`TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective`, removing full-weight and characteristic
-restrictions without asserting a closed immersion of root subgroup schemes.
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective` for arbitrary weight lattices and
+commutative value rings, without asserting a closed immersion of root subgroup schemes.
 
 ## Main results
 
@@ -48,37 +49,6 @@ attribute [local instance high] Algebra.toModule
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-private theorem integralDividedPower_one_pow {V : Type*} [AddCommGroup V] [Module ℚ V]
-    (x : Module.End ℚ V) (M : AddSubgroup V)
-    (hdiv : ∀ k : ℕ, ∀ v ∈ M, Associative.dividedPower k x • v ∈ M) (k : ℕ) :
-    integralDividedPower x M 1 (hdiv 1) ^ k =
-      k.factorial • integralDividedPower x M k (hdiv k) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [pow_succ', ih, mul_smul_comm,
-      mul_integralDividedPower x M 1 k (hdiv 1) (hdiv k) (hdiv (1 + k)), smul_smul]
-    have hchoose : k.factorial * Nat.choose (1 + k) 1 = (k + 1).factorial := by
-      rw [Nat.add_comm 1 k, Nat.choose_one_right, Nat.factorial_succ, mul_comm]
-    rw [hchoose]
-    congr 2
-    omega
-
-private theorem prime_dvd_of_factorial_mul_eq_pow_mul {p k : ℕ} (hp : p.Prime) (hk : k ≠ 0)
-    {a b : ℤ} (hab : (k.factorial : ℤ) * a = (p : ℤ) ^ k * b) :
-    (p : ℤ) ∣ a := by
-  let : Fact p.Prime := ⟨hp⟩
-  by_contra hpa
-  have hpa_nat : ¬ p ∣ a.natAbs := fun h => hpa (Int.ofNat_dvd_left.mpr h)
-  have hab_nat : k.factorial * a.natAbs = p ^ k * b.natAbs := by
-    simpa only [Int.natAbs_mul, Int.natAbs_pow, Int.natAbs_natCast] using
-      congrArg Int.natAbs hab
-  have hcop : (p ^ k).Coprime a.natAbs := (hp.coprime_iff_not_dvd.mpr hpa_nat).pow_left k
-  have hdvd_fac : p ^ k ∣ k.factorial := hcop.dvd_of_dvd_mul_right ⟨b.natAbs, hab_nat⟩
-  have hle : k ≤ multiplicity p k.factorial :=
-    (Nat.pow_dvd_iff_le_multiplicity hp.ne_one (Nat.factorial_ne_zero k)).mp hdvd_fac
-  exact absurd hle (not_le_of_gt (multiplicity_factorial_lt_of_ne_zero p hk))
-
 private theorem not_forall_prime_dvd_toMatrix_kostantRootOperator
     (γ : Fin t.numRoots) {p : ℕ} (hp : p.Prime) :
     ¬ ∀ r s : Fin D.dim, (p : ℤ) ∣
@@ -91,62 +61,46 @@ private theorem not_forall_prime_dvd_toMatrix_kostantRootOperator
   let : Fact p.Prime := ⟨hp⟩
   let hAll := kostantForm_chevalleySystem_smul_mem D.representation D.lattice
     D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
-  let hnil := isNilpotent_apply_ι_chevalleySystem D.representation
-    D.isNilpotent_representation_rootGenerator
   let eγ := D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ))
-  have hdiv_mem (k : ℕ) : ∀ v ∈ D.lattice, Associative.dividedPower k eγ • v ∈ D.lattice :=
-    fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem
+  have hdiv (k : ℕ) (v : D.carrier) (hv : v ∈ D.lattice) :
+      Associative.dividedPower k eγ • v ∈ D.lattice :=
+    dividedPower_apply_mem_of_kostantForm_apply_mem
       (t.chevalleySystem ht) (t.lieBasis ht).h D.representation hAll γ k hv
-  let Dop : ℕ → Module.End ℤ D.lattice := fun k =>
-    integralDividedPower eγ D.lattice k (hdiv_mem k)
-  let Dmat : ℕ → Matrix (Fin D.dim) (Fin D.dim) ℤ :=
-    fun k => LinearMap.toMatrix D.basis D.basis (Dop k)
-  have hDop1 : Dop 1 = kostantRootOperator (t.chevalleySystem ht) (t.lieBasis ht).h
-      D.representation D.lattice hAll γ := by
-    rw [kostantRootOperator_def]
-  -- Factor `Dmat 1 = p • M'` so `k! • Dmat k = p^k • (M' ^ k)` forces `p ∣ Dmat k r s` for `k ≥ 1`.
-  let M' : Matrix (Fin D.dim) (Fin D.dim) ℤ := Matrix.of fun r s => Dmat 1 r s / (p : ℤ)
-  have hM' : Dmat 1 = (p : ℤ) • M' := by
-    ext r s
-    simpa only [Dmat, M', Matrix.smul_apply, Matrix.of_apply, smul_eq_mul] using
-      (Int.mul_ediv_cancel' (hDop1 ▸ hdvd r s)).symm
+  let Dop (k : ℕ) : Module.End ℤ D.lattice := integralDividedPower eγ D.lattice k (hdiv k)
+  let Dmat (k : ℕ) : Matrix (Fin D.dim) (Fin D.dim) ℤ := LinearMap.toMatrix D.basis D.basis (Dop k)
+  have hpow (k : ℕ) : k.factorial • Dmat k = Dmat 1 ^ k := by
+    dsimp only [Dmat, Dop]
+    rw [← map_nsmul, ← integralDividedPower_one_pow eγ D.lattice hdiv k, LinearMap.toMatrix_pow]
+  have hdvd1 (i j : Fin D.dim) : (p : ℤ) ∣ Dmat 1 i j := by
+    simpa only [Dmat, Dop, kostantRootOperator_def] using hdvd i j
+  -- Entrywise divisibility of `Dmat 1` by `p` puts `Dmat 1 ^ k = k! • Dmat k` in `(p)^k`.
   have hDop_dvd {k : ℕ} (hk : k ≠ 0) (r s : Fin D.dim) : (p : ℤ) ∣ Dmat k r s := by
-    have hmat_eq : k.factorial • Dmat k = ((p : ℤ) ^ k) • (M' ^ k) := by
-      dsimp only [Dmat, Dop]
-      rw [← map_nsmul, ← integralDividedPower_one_pow eγ D.lattice hdiv_mem k,
-        ← LinearMap.toMatrix_pow, show LinearMap.toMatrix D.basis D.basis (Dop 1) = (p : ℤ) • M'
-          from hM', smul_pow]
-    have hab : (k.factorial : ℤ) * Dmat k r s = (p : ℤ) ^ k * (M' ^ k) r s := by
-      simpa only [Matrix.smul_apply, nsmul_eq_mul, smul_eq_mul] using
-        congrFun (congrFun hmat_eq r) s
-    exact prime_dvd_of_factorial_mul_eq_pow_mul hp hk hab
+    have hmem := Matrix.pow_apply_mem_pow
+      (fun i j => Ideal.mem_span_singleton.mpr (hdvd1 i j)) k r s
+    rw [← hpow k, Ideal.span_singleton_pow, Ideal.mem_span_singleton, Matrix.smul_apply,
+      nsmul_eq_mul] at hmem
+    exact hp.intCast_dvd_of_pow_dvd_factorial_mul hk hmem
   -- Consequently `x_γ(1) = 1` over `ZMod p`, contradicting `rootSubgroupPoints_ofAdd_one_ne_one`.
   apply D.rootSubgroupPoints_ofAdd_one_ne_one (ZMod p) γ
-  apply Subtype.ext
-  apply Units.ext
-  rw [D.coe_rootSubgroupPoints]
+  refine Subtype.ext (Units.ext ?_)
   let q := (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := ZMod p)).symm (ofAdd 1)
-  have hq : AdditiveGroup.gaPointsMulEquiv q = ofAdd (1 : ZMod p) :=
-    MulEquiv.apply_symm_apply _ _
-  rw [← hq, ← TauCeti.DynkinType.kostantRootSubgroupMatrix_eq_matrix_chevalleyRootSubgroup
-    D.representation D.lattice D.representation_mem_lattice
-    D.isNilpotent_representation_rootGenerator D.basis γ (ZMod p) q]
-  let N := nilpotencyClass eγ
-  have haction (k : ℕ) (s : Fin D.dim) :
-      Dop k (D.basis s) = ∑ r, Dmat k r s • D.basis r := by
-    simp [Dmat, LinearMap.toMatrix_apply]
-  rw [kostantRootSubgroupMatrix_eq_sum (t.chevalleySystem ht) (t.lieBasis ht).h
-      D.representation D.lattice hAll γ (hnil γ) D.basis (N + 1) Dmat (Nat.le_succ _)
-      (fun k _ s => haction k s),
+  have hq : AdditiveGroup.gaPointsMulEquiv q = ofAdd (1 : ZMod p) := MulEquiv.apply_symm_apply _ _
+  rw [D.coe_rootSubgroupPoints, ← hq,
+    ← TauCeti.DynkinType.kostantRootSubgroupMatrix_eq_matrix_chevalleyRootSubgroup
+      D.representation D.lattice D.representation_mem_lattice
+      D.isNilpotent_representation_rootGenerator D.basis γ (ZMod p) q,
+    kostantRootSubgroupMatrix_eq_sum (t.chevalleySystem ht) (t.lieBasis ht).h
+      D.representation D.lattice hAll γ
+      (isNilpotent_apply_ι_chevalleySystem D.representation
+        D.isNilpotent_representation_rootGenerator γ) D.basis (nilpotencyClass eγ + 1) Dmat
+      (Nat.le_succ _) (fun k _ s => by simp [Dmat, Dop, eγ, LinearMap.toMatrix_apply]),
     hq, toAdd_ofAdd, Finset.sum_range_succ']
   have hD0 : Dmat 0 = 1 := by simp [Dmat, Dop, integralDividedPower_zero, LinearMap.toMatrix_one]
-  have hsum0 : (∑ k ∈ Finset.range N, (1 : ZMod p) ^ (k + 1) •
-      (Dmat (k + 1)).map (Int.cast : ℤ → ZMod p)) = 0 := by
-    refine Finset.sum_eq_zero fun k _ => ?_
-    ext r s
-    simp only [one_pow, one_smul, Matrix.map_apply, Matrix.zero_apply,
-      ZMod.intCast_zmod_eq_zero_iff_dvd]
-    exact hDop_dvd (Nat.succ_ne_zero k) r s
+  have hsum0 : (∑ k ∈ Finset.range (nilpotencyClass eγ), (1 : ZMod p) ^ (k + 1) •
+      (Dmat (k + 1)).map (Int.cast : ℤ → ZMod p)) = 0 :=
+    Finset.sum_eq_zero fun k _ => Matrix.ext fun r s => by
+      simpa only [one_pow, one_smul, Matrix.map_apply, Matrix.zero_apply,
+        ZMod.intCast_zmod_eq_zero_iff_dvd] using hDop_dvd (Nat.succ_ne_zero k) r s
   simp only [Subgroup.coe_one, Units.val_one, pow_zero, one_smul, hD0,
     Matrix.map_one Int.cast Int.cast_zero Int.cast_one, hsum0, zero_add]
 

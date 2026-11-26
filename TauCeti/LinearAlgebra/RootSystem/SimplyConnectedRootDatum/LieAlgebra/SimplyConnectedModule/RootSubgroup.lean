@@ -7,26 +7,21 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Fundamental.Primitive
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.Lattice
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Injective
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 import TauCeti.Algebra.Lie.DirectSum
-public import TauCeti.Algebra.Module.Primitive.TensorProduct
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Primitive
 
 /-!
-# Primitive root operators on the full-weight lattice
+# Primitive simple-root operators on the full-weight lattice
 
-Every positive and negative numbered simple-root map on the full-weight lattice is
-injective over every commutative ring, including nonreduced rings. The fundamental
-summand at node `i` detects the `i`-th root parameter: its highest vector and its first
-lowering form a primitive two-dimensional root string. Consequently the polynomial
-Kostant action cannot lose the parameter after scalar extension.
+Every positive and negative numbered simple-root operator on the full-weight lattice admits a
+primitive two-step root string: the fundamental summand at node `i` has a primitive highest vector
+whose first lowering is again primitive and whose second step vanishes.
 
-The maps here are the existing `kostantRootSubgroupParam` on `scLattice`; no new
-ambient group is introduced. Weyl transport also gives a primitive image for every
-root operator, which remains faithful under scalar multiplication after arbitrary base change.
-This is the integral detection needed for uniqueness of positive-root coordinates. The argument
-uses the integral normalization of the
-fundamental highest vector, rather than nonvanishing of a rational root operator.
+This supplies the primitive root string consumed by
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Immersion` to prove that the simple-root subgroup
+morphisms into the full-weight Chevalley scheme over `ℤ` are closed immersions. Pointwise
+root-subgroup injectivity for arbitrary Chevalley data is established separately in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective`.
 
 ## References
 
@@ -106,42 +101,6 @@ theorem exists_isPrimitive_kostantRootOperator_scLattice (i : Fin t.rank ⊕ Fin
     · exact (congrArg IsPrimitive (e_lowered t ht j)).mpr (primitive_highest t ht j)
   | inr j =>
     exact ⟨highest t ht j, f_lowered t ht j, primitive_lowered t ht j⟩
-
-/-- Every numbered positive or negative simple-root subgroup on the full-weight lattice
-has injective parameter map over every commutative ring. -/
-theorem kostantRootSubgroupParam_scLattice_injective (A : Type*) [CommRing A]
-    (i : Fin t.rank ⊕ Fin t.rank) :
-    Function.Injective (kostantRootSubgroupParam e h ρ M
-      (t.kostantForm_apply_mem_scLattice ht) i
-      (t.isNilpotent_representation_scModule_rootGenerator ht i) (CommAlgCat.of ℤ A)) := by
-  -- Term elimination avoids reverting the large represented-module signature during cases.
-  exact (t.exists_isPrimitive_kostantRootOperator_scLattice ht i).elim fun v hv =>
-    kostantRootSubgroupParam_injective_of_isPrimitive
-      (L := t.lieAlgebra ht) (V := t.scModule ht)
-      (I := Fin t.rank ⊕ Fin t.rank) (κ := Fin t.rank) e h ρ M
-      (t.kostantForm_apply_mem_scLattice ht) i
-      (t.isNilpotent_representation_scModule_rootGenerator ht i) v (rootOp i v)
-      (coe_kostantRootOperator_apply e h ρ M
-        (t.kostantForm_apply_mem_scLattice ht) i v).symm
-      ((coe_kostantRootOperator_apply e h ρ M
-        (t.kostantForm_apply_mem_scLattice ht) i (rootOp i v)).symm.trans
-          (congrArg Subtype.val hv.1)) hv.2 A
-
-/-- Every root vector on the full-weight lattice has a primitive vector in its image.
-Thus its reduction cannot vanish in any characteristic. -/
-theorem exists_isPrimitive_chevalleySystem_apply (γ : Fin t.numRoots) :
-    ∃ v w : M,
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ)) (v : t.scModule ht) =
-        (w : t.scModule ht) ∧ IsPrimitive w := by
-  exact exists_isPrimitive_chevalleySystem_apply_of_simple ρ M
-    (t.kostantForm_apply_mem_scLattice ht)
-    (t.isNilpotent_representation_scModule_rootGenerator ht)
-    (fun i => (t.exists_isPrimitive_kostantRootOperator_scLattice ht (.inl i)).elim fun v hv =>
-      ⟨v, rootOp (.inl i) v,
-        by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
-          (coe_kostantRootOperator_apply e h ρ M
-            (t.kostantForm_apply_mem_scLattice ht) (.inl i) v).symm,
-        hv.2⟩) γ
 
 end
 

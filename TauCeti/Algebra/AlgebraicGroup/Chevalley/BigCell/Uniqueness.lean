@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 
 /-!
@@ -22,7 +22,7 @@ maps. Injectivity supplies uniqueness of factors in its image; no assertion that
 is open, or that Weyl translates cover the group scheme, is made.
 
 The proof uses the opposite-intersection theorems from
-`TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite` and `Subgroup.mul_injective_of_disjoint`.
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite.Basic` and `Subgroup.mul_injective_of_disjoint`.
 Those intersections follow from the triangularity of the root subgroups in a height-ordered
 weight basis. The coordinate weights span the actual character lattice, making its torus
 parametrization faithful even over nonreduced rings, as proved by

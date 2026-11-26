@@ -74,13 +74,8 @@ theorem commutator_range_chevalleyRootSubgroup_le_iSup_height
   classical
   by_cases hαβ : α = β
   · subst β
-    refine Subgroup.commutator_le.mpr ?_
-    rintro _ ⟨u, rfl⟩ _ ⟨w, rfl⟩
-    have hcomm : Commute (chevalleyRootSubgroup ρ M hM hnil α A u)
-        (chevalleyRootSubgroup ρ M hM hnil α A w) := by
-      rw [Commute, SemiconjBy, ← map_mul, ← map_mul, mul_comm]
-    rw [hcomm.commutator_eq]
-    exact Subgroup.one_mem _
+    rw [Subgroup.commutator_self_eq_bot_iff.mpr (by infer_instance)]
+    exact bot_le
   · by_cases hG2 : t = G2
     · subst t
       let α₆ : Fin 6 := ⟨α.val, (mem_posRoots_rational_g2_iff ht α).mp hα⟩
@@ -142,9 +137,8 @@ theorem mem_iSup_le_height_chevalleyRootSubgroup_iff_exists_prod
       ((mem_posRootsFinset _ _ α).mp hα'.1) ((mem_posRootsFinset _ _ β).mp hβ'.1) A).trans ?_
     refine iSup₂_le fun γ hγ => le_iSup₂_of_le γ ?_ le_rfl
     have hγ' := Finset.mem_filter.mp hγ
-    have _ := hα'.2
-    have hlt := hγ'.2
-    exact Finset.mem_filter.mpr ⟨Finset.mem_filter.mpr ⟨hγ'.1, by omega⟩, hlt⟩
+    exact Finset.mem_filter.mpr ⟨Finset.mem_filter.mpr
+      ⟨hγ'.1, hα'.2.trans ((le_max_left _ _).trans hγ'.2.le)⟩, hγ'.2⟩
   have hlS : ∀ γ, γ ∈ l ↔ γ ∈ S := fun γ => by
     simp only [S, Finset.mem_filter, mem_posRootsFinset, hcover]
   exact TauCeti.mem_biSup_range_iff_exists_list_prod_map hcomm hl hlS

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Subsystem.Coordinates
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Coordinates
 import TauCeti.LinearAlgebra.RootSystem.LongestElement
@@ -77,7 +77,8 @@ theorem coe_negativeRootProduct (l : List NegativeRoot) (A : Type v) [CommRing A
     (u : NegativeRoot → A) :
     (D.negativeRootProduct l A u : D.points A) =
       (l.map fun γ => D.rootSubgroupPoints γ.val A (ofAdd (u γ))).prod :=
-  (rfl)
+  D.coe_rootSetProduct (D.negativePoints A)
+    (fun _ hγ a => D.rootSubgroupPoints_mem_negativePoints A hγ a) l u
 
 /-- Changing the value ring applies the ring map to each negative-root coordinate. -/
 theorem map_negativeRootProduct (l : List NegativeRoot)
@@ -103,8 +104,9 @@ theorem negativeRootProduct_zero (l : List NegativeRoot) (A : Type v) [CommRing 
     D.negativeRootProduct l A 0 = 1 :=
   D.rootSetProduct_zero (D.negativePoints A) _ l
 
-/-- Evaluating a duplicate-free `negativeRootProduct` on `Pi.single γ a` recovers the single
-negative root generator. -/
+/-- Evaluating a duplicate-free `negativeRootProduct` on `Pi.single γ a` for `γ ∈ l` recovers the
+single negative root generator. -/
+@[simp]
 theorem negativeRootProduct_single {l : List NegativeRoot} (hl : l.Nodup)
     {γ : NegativeRoot} (hγ : γ ∈ l) (A : Type v) [CommRing A] (a : A) :
     D.negativeRootProduct l A (Pi.single γ a) =
@@ -123,22 +125,25 @@ theorem negativeRootProduct_surjective (l : List NegativeRoot)
   have hneg_eq : negRoots (t.rationalRootSystem ht) (t.rationalBase ht) = negRoots P b := by
     ext γ
     simp only [mem_negRoots, RootPairing.Base.isPos_iff, height_rationalBase, P, b]
+  have hw : ∀ γ, γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht) ↔
+      P.weylGroupToPerm (longestElement P b) γ ∈
+        posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    intro γ
+    rw [hneg_eq, posRoots_rationalRootSystem]
+    exact ⟨fun hneg => mapsTo_negRoots_posRoots_longestElement P b hneg, fun hpos => by
+      have h := mapsTo_posRoots_negRoots_longestElement P b hpos
+      rwa [weylGroupToPerm_longestElement_involutive P b γ] at h⟩
+  let e := (P.weylGroupToPerm (longestElement P b)).subtypeEquiv hw
   refine D.rootSetProduct_surjective_of_weylGroup
     (D.positivePoints A) (fun _ hγ a => D.rootSubgroupPoints_mem_positivePoints A hγ a)
     (D.negativePoints A) (fun _ hγ a => D.rootSubgroupPoints_mem_negativePoints A hγ a)
     (fun Q hQ => D.negativePoints_le_iff.mpr hQ)
-    (longestElement P b)
-    (fun γ => ?_)
-    (fun l₀ hl₀ hcover₀ x => by
-      obtain ⟨u, hu⟩ := D.positiveRootProduct_surjective l₀ hl₀ hcover₀ A x
-      refine ⟨u, Subtype.ext ?_⟩
-      exact (D.coe_rootSetProduct (D.positivePoints A) _ l₀ u).trans
-        ((D.coe_positiveRootProduct l₀ A u).symm.trans (congrArg Subtype.val hu)))
-    l hl hcover
-  rw [hneg_eq, posRoots_rationalRootSystem]
-  exact ⟨fun hneg => mapsTo_negRoots_posRoots_longestElement P b hneg, fun hpos => by
-    have h := mapsTo_posRoots_negRoots_longestElement P b hpos
-    rwa [weylGroupToPerm_longestElement_involutive P b γ] at h⟩
+    (longestElement P b) hw l fun x => ?_
+  obtain ⟨u, hu⟩ := D.positiveRootProduct_surjective (l.map e) (hl.map e.injective)
+    (fun δ => List.mem_map.mpr ⟨e.symm δ, hcover _, e.apply_symm_apply δ⟩) A x
+  refine ⟨u, Subtype.ext ?_⟩
+  exact (D.coe_rootSetProduct (D.positivePoints A) _ (l.map e) u).trans
+    ((D.coe_positiveRootProduct (l.map e) A u).symm.trans (congrArg Subtype.val hu))
 
 /-- A datum point is negative exactly when it is a product of its negative root
 subgroups, in any order containing every negative root exactly once. Existence holds for every
@@ -152,8 +157,9 @@ theorem mem_negativePoints_iff_exists_prod
   constructor
   · intro hg
     obtain ⟨u, hu⟩ := D.negativeRootProduct_surjective l hl hall A ⟨g, hg⟩
-    exact ⟨u, congrArg Subtype.val hu⟩
+    exact ⟨u, (D.coe_negativeRootProduct l A u).symm.trans (congrArg Subtype.val hu)⟩
   · rintro ⟨u, rfl⟩
+    rw [← D.coe_negativeRootProduct l A u]
     exact (D.negativeRootProduct l A u).property
 
 /-- For every Chevalley datum, an ordered enumeration of all negative roots without repetitions
@@ -196,23 +202,28 @@ theorem negativeRootEquiv_apply (l : List NegativeRoot)
     (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A]
     (u : NegativeRoot → A) :
     D.negativeRootEquiv l hl hcover A u = D.negativeRootProduct l A u :=
-  (rfl)
+  D.rootSetEquiv_apply (D.negativePoints A)
+    (fun _ hγ a => D.rootSubgroupPoints_mem_negativePoints A hγ a) l
+    (D.negativeRootProduct_injective l hl hcover A)
+    (D.negativeRootProduct_surjective l hl hcover A) u
 
 /-- Extracting coordinates from an ordered negative-root product recovers its parameters. -/
 @[simp]
 theorem negativeRootEquiv_symm_negativeRootProduct
     (l : List NegativeRoot) (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
     (A : Type v) [CommRing A] (u : NegativeRoot → A) :
-    (D.negativeRootEquiv l hl hcover A).symm (D.negativeRootProduct l A u) = u :=
-  (D.negativeRootEquiv l hl hcover A).symm_apply_apply u
+    (D.negativeRootEquiv l hl hcover A).symm (D.negativeRootProduct l A u) = u := by
+  rw [← D.negativeRootEquiv_apply l hl hcover A u]
+  exact (D.negativeRootEquiv l hl hcover A).symm_apply_apply u
 
 /-- Multiplying the extracted negative-root coordinates reproduces the original negative point. -/
 @[simp]
 theorem negativeRootProduct_negativeRootEquiv_symm
     (l : List NegativeRoot) (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
     (A : Type v) [CommRing A] (g : D.negativePoints A) :
-    D.negativeRootProduct l A ((D.negativeRootEquiv l hl hcover A).symm g) = g :=
-  (D.negativeRootEquiv l hl hcover A).apply_symm_apply g
+    D.negativeRootProduct l A ((D.negativeRootEquiv l hl hcover A).symm g) = g := by
+  rw [← D.negativeRootEquiv_apply l hl hcover A]
+  exact (D.negativeRootEquiv l hl hcover A).apply_symm_apply g
 
 /-- The identity negative point has zero coordinates. -/
 @[simp]
@@ -223,6 +234,7 @@ theorem negativeRootEquiv_symm_one (l : List NegativeRoot)
     (fun _ hγ a => D.rootSubgroupPoints_mem_negativePoints A hγ a) l _ _
 
 /-- Extracting coordinates from a single negative-root generator recovers `Pi.single γ a`. -/
+@[simp]
 theorem negativeRootEquiv_symm_rootSubgroupPoints (l : List NegativeRoot)
     (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A]
     (γ : NegativeRoot) (a : A) :

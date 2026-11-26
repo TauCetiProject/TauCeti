@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Blocks
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 
 /-!
@@ -32,10 +30,11 @@ no ordered-product normal form on `U` or `U⁻` is assumed in this file.
 
 Combining the opposite-intersection theorems with integral root-subgroup injectivity
 (`ChevalleyDatum.rootSubgroupPoints_eq_one_iff`) shows that a negative root element lies in `B`
-(or a positive root element lies in `B⁻`) if and only if its parameter is `1`. Over every
-nontrivial commutative ring, the simple-root element with additive parameter `1` witnesses that
-each pinned simple Weyl representative conjugates some element of `B` outside `B`, supplying the
-noncontainment required by the last Tits-system axiom without assuming a Bruhat decomposition.
+(or a positive root element lies in `B⁻`) if and only if its additive parameter is `0` (the
+identity `1` of `Multiplicative A`). Over every nontrivial commutative ring, the simple-root element
+with additive parameter `1` witnesses that each pinned simple Weyl representative conjugates some
+element of `B` outside `B`, supplying the noncontainment required by the last Tits-system axiom
+without assuming a Bruhat decomposition.
 
 Positive root points are block upper unitriangular in the datum's original weight basis ordered by
 decreasing weight degree, and negative root points are block upper unitriangular for the negated
@@ -105,22 +104,6 @@ open TauCeti.UniversalEnvelopingAlgebra
 
 attribute [local instance high] Algebra.toModule
 
-private theorem blockUnitriangular_rootSubgroupPoints_of_degree_pos
-    (degree : (Fin t.rank → ℤ) →+ ℚ) {γ : Fin t.numRoots}
-    (hdeg : 0 < degree ((t.simplyConnectedRootDatum ht).root γ))
-    (u : Multiplicative A) :
-    ((D.rootSubgroupPoints γ A u : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-      Matrix (Fin D.dim) (Fin D.dim) A).BlockUnitriangular
-        (orderedWeightBlock degree D.weight) := by
-  rw [D.coe_rootSubgroupPoints,
-    ← kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator,
-    basisMatrix_kostantRootSubgroupParam]
-  exact blockUnitriangular_kostantRootSubgroupMatrix
-    (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice _ D.basis D.weight
-    degree γ _ D.isCartanWeightVector_basis
-    (t.lie_lieBasis_h_chevalleySystem ht γ) hdeg _
-
 private theorem blockTriangular_of_mem_subsystemPoints_sup_torus
     (degree : (Fin t.rank → ℤ) →+ ℚ) {S : Set (Fin t.numRoots)}
     (hdeg : ∀ γ ∈ S, 0 < degree ((t.simplyConnectedRootDatum ht).root γ))
@@ -140,36 +123,18 @@ private theorem blockTriangular_of_mem_subsystemPoints_sup_torus
       inv_mem' := fun {g} hg => by
         simpa only [Set.mem_ofPred_eq, Subgroup.coe_inv, Matrix.coe_units_inv] using
           Matrix.blockTriangular_inv_of_blockTriangular hg }
+  have mem_P {x : D.points A} :
+      x ∈ P ↔ ((x : Matrix.GeneralLinearGroup (Fin D.dim) A) :
+        Matrix (Fin D.dim) (Fin D.dim) A).BlockTriangular
+          (orderedWeightBlock degree D.weight) := Iff.rfl
   have hle : D.subsystemPoints S A ⊔ (D.torusPoints A).range ≤ P := by
     apply sup_le
     · exact D.subsystemPoints_le_iff.mpr fun γ hγ u =>
-        (D.blockUnitriangular_rootSubgroupPoints_of_degree_pos A degree
+        mem_P.mpr (D.blockUnitriangular_rootSubgroupPoints_of_degree_pos A degree
           (hdeg γ hγ) u).blockTriangular
     · rintro _ ⟨s, rfl⟩
-      exact D.blockTriangular_torusPoints A _ s
-  exact hle hg
-
-/-- A positive root subgroup is upper unitriangular in the blocks of distinct weights,
-ordered by decreasing height degree. This uses the datum's original weight basis. -/
-theorem blockUnitriangular_rootSubgroupPoints {γ : Fin t.numRoots}
-    (hγ : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (u : Multiplicative A) :
-    ((D.rootSubgroupPoints γ A u : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-      Matrix (Fin D.dim) (Fin D.dim) A).BlockUnitriangular
-        (orderedWeightBlock (t.weightDegree ht) D.weight) :=
-  D.blockUnitriangular_rootSubgroupPoints_of_degree_pos A (t.weightDegree ht)
-    (t.weightDegree_root_pos ht hγ) u
-
-/-- A negative root subgroup is upper unitriangular in the weight-space blocks ordered by negated
-height degree. -/
-theorem blockUnitriangular_rootSubgroupPoints_of_mem_negRoots {γ : Fin t.numRoots}
-    (hγ : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (u : Multiplicative A) :
-    ((D.rootSubgroupPoints γ A u : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-      Matrix (Fin D.dim) (Fin D.dim) A).BlockUnitriangular
-        (orderedWeightBlock (-t.weightDegree ht) D.weight) :=
-  D.blockUnitriangular_rootSubgroupPoints_of_degree_pos A (-t.weightDegree ht)
-    (neg_pos.mpr (t.weightDegree_root_neg ht hγ)) u
+      exact mem_P.mpr (D.blockTriangular_torusPoints A _ s)
+  exact mem_P.mp (hle hg)
 
 /-- The subgroup generated by all positive root groups and the actual torus is upper
 triangular in the weight-space blocks. No point-generation or torus-surjectivity assumption
@@ -443,18 +408,18 @@ theorem weylElement_conj_rootSubgroupPoints_simpleIndex_mem_borelSubgroup_iff
         D.rootSubgroupPoints (t.simpleIndex ht i) A u *
         (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ ∈ D.borelSubgroup A ↔
       u = 1 := by
-  rw [← ofAdd_toAdd u]
   have hneg : (t.simplyConnectedRootDatum ht).reflectionPerm
       (t.simpleIndex ht i) (t.simpleIndex ht i) ∈
       negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
     rw [← t.reflectionPerm_rationalRootSystem ht]
     exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr
       (simpleIndex_mem_posRoots i)
-  rw [D.weylElement_conj_rootSubgroupPoints,
+  let ε : ℤˣ := t.chevalleyWeylSign ht (t.simpleIndex ht i) (t.simpleIndex ht i)
+  have hunit : IsUnit ((ε : ℤ) : A) := by
+    simpa only [Int.coe_castRingHom] using ε.isUnit.map (Int.castRingHom A)
+  rw [← ofAdd_toAdd u, D.weylElement_conj_rootSubgroupPoints,
     D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots A hneg,
-    ← D.rootSubgroupPoints_eq_one_iff (γ := (t.simplyConnectedRootDatum ht).reflectionPerm
-      (t.simpleIndex ht i) (t.simpleIndex ht i)),
-    ← D.weylElement_conj_rootSubgroupPoints, conj_eq_one_iff, D.rootSubgroupPoints_eq_one_iff]
+    ofAdd_eq_one, hunit.mul_right_eq_zero, toAdd_eq_zero, ofAdd_toAdd]
 
 /-- Every pinned simple Weyl representative conjugates some element of the positive Borel
 outside that Borel, for every Chevalley datum over a nontrivial commutative ring. -/

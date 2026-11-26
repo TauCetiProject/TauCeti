@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root

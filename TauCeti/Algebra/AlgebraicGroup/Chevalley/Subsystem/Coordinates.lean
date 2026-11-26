@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Subsystem
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Subsystem.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 
@@ -22,17 +22,14 @@ coordinate map over every commutative ring `A`. Moreover, conjugation by an elem
 ordered-product surjectivity along any Weyl-group element `w`.
 
 `TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Coordinates` and
-`TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite.Coordinates` specialize this shared construction
-to `D.positivePoints A` and `D.negativePoints A`, avoiding parallel coordinate boilerplate while
-respecting the sealed subgroup definitions under Lean's module system. No closure condition on `S`
-is required for the product map or its injectivity, and no scheme-theoretic isomorphism is asserted
-here.
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite.Coordinates` instantiate these constructions for
+`D.positivePoints A` and `D.negativePoints A`. No closure condition on `S` is required for the
+product map or its injectivity, and no scheme-theoretic isomorphism is asserted here.
 
 ## Main declarations
 
 * `TauCeti.DynkinType.ChevalleyDatum.rootSetProduct`: ordered multiplication of `S`-indexed root
-  parameters into a point subgroup `U` containing `{X_γ | γ ∈ S}`, specialized to
-  `D.subsystemPoints S A` as `TauCeti.DynkinType.ChevalleyDatum.subsystemRootProduct`.
+  parameters into a point subgroup `U` containing `{X_γ | γ ∈ S}`.
 * `TauCeti.DynkinType.ChevalleyDatum.rootSetProduct_injective_of_degree_pos`: parameter injectivity
   when an additive functional `degree` is positive on `S`.
 * `TauCeti.DynkinType.ChevalleyDatum.rootSetProduct_surjective_of_weylGroup`: Weyl-conjugation
@@ -56,23 +53,15 @@ universe v w
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-/-- Multiply `S`-indexed root parameters in the order of `l`, landing in any point subgroup `U`
-containing the root subgroups indexed by `S`. Exposed so sealed specializations such as
-`positiveRootProduct` and `negativeRootProduct` inherit its definitional coercion and coordinate
-lemmas directly. -/
-@[expose] noncomputable def rootSetProduct {S : Set (Fin t.numRoots)} {A : Type v} [CommRing A]
+/-- Multiply `S`-indexed root parameters in the order of `l`, landing in a point subgroup `U`
+containing the root subgroups indexed by `S`. -/
+noncomputable def rootSetProduct {S : Set (Fin t.numRoots)} {A : Type v} [CommRing A]
     (U : Subgroup (D.points A)) (hU : ∀ γ ∈ S, ∀ a, D.rootSubgroupPoints γ A a ∈ U)
     (l : List S) (u : S → A) : U :=
   ⟨(l.map fun γ => D.rootSubgroupPoints γ.val A (ofAdd (u γ))).prod,
     Subgroup.list_prod_mem _ fun _ hg => by
       obtain ⟨γ, _, rfl⟩ := List.mem_map.mp hg
       exact hU γ.val γ.property _⟩
-
-/-- The ordered root-set product into `D.subsystemPoints S A`. -/
-@[expose] noncomputable def subsystemRootProduct (S : Set (Fin t.numRoots)) (l : List S)
-    (A : Type v) [CommRing A] (u : S → A) : D.subsystemPoints S A :=
-  D.rootSetProduct (D.subsystemPoints S A)
-    (fun _ hγ a => D.rootSubgroupPoints_mem_subsystemPoints A hγ a) l u
 
 /-- The root-set product has the stated ordered factors in the datum point group. -/
 @[simp]
@@ -107,33 +96,18 @@ theorem rootSetProduct_zero {S : Set (Fin t.numRoots)} {A : Type v} [CommRing A]
     obtain ⟨γ, _, rfl⟩ := List.mem_map.mp hx
     simp
 
-/-- Evaluating a duplicate-free ordered root-set product on a single-coordinate tuple recovers the
+/-- Evaluating a duplicate-free ordered root-set product on `Pi.single γ a` for `γ ∈ l` recovers the
 corresponding root generator. -/
+@[simp]
 theorem rootSetProduct_single {S : Set (Fin t.numRoots)} {A : Type v} [CommRing A]
     (U : Subgroup (D.points A)) (hU : ∀ γ ∈ S, ∀ a, D.rootSubgroupPoints γ A a ∈ U)
     {l : List S} (hl : l.Nodup) {γ : S} (hγ : γ ∈ l) (a : A) :
     D.rootSetProduct U hU l (Pi.single γ a) =
       ⟨D.rootSubgroupPoints γ.val A (ofAdd a), hU γ.val γ.property _⟩ := by
   apply Subtype.ext
-  rw [coe_rootSetProduct]
-  change (l.map fun η : S =>
-    D.rootSubgroupPoints η.val A (ofAdd ((Pi.single γ a : S → A) η))).prod =
-      D.rootSubgroupPoints γ.val A (ofAdd a)
-  induction l with
-  | nil => cases hγ
-  | cons δ l ih =>
-    rw [List.nodup_cons] at hl
-    rcases List.mem_cons.mp hγ with rfl | hγl
-    · have htail : (l.map fun η : S =>
-          D.rootSubgroupPoints η.val A (ofAdd ((Pi.single γ a : S → A) η))).prod = 1 :=
-        List.prod_eq_one fun x hx => by
-          obtain ⟨η, hη, rfl⟩ := List.mem_map.mp hx
-          have hne : η ≠ γ := fun h => hl.1 (h ▸ hη)
-          simp [Pi.single_eq_of_ne hne]
-      rw [List.map_cons, List.prod_cons, Pi.single_eq_same, htail, mul_one]
-    · have hne : δ ≠ γ := fun h => hl.1 (h ▸ hγl)
-      rw [List.map_cons, List.prod_cons, Pi.single_eq_of_ne hne, ofAdd_zero, map_one, one_mul]
-      exact ih hl.2 hγl
+  rw [coe_rootSetProduct, List.prod_map_eq_pow_single γ _ fun η hη _ => by
+    simp [Pi.single_eq_of_ne hη]]
+  rw [@List.count_eq_one_of_mem _ instBEqOfDecidableEq _ _ _ hl hγ, pow_one, Pi.single_eq_same]
 
 /-- If an additive rational weight functional `degree` is strictly positive on `S`, any
 duplicate-free enumeration of `S` defines an injective root-product map over every commutative
@@ -163,8 +137,9 @@ theorem rootSetProduct_injective_of_degree_pos {S : Set (Fin t.numRoots)} {A : T
   simpa only [extend, dite_eq_left γ.property] using
     hparams γ.val (List.mem_map.mpr ⟨γ, hcover γ, rfl⟩)
 
-/-- If `w` in the pinned Weyl group maps a root set `S'` bijectively onto `S`, ordered-product
-surjectivity on `U` transports to ordered-product surjectivity on `U'` over `A`. -/
+/-- If `w` in the pinned Weyl group maps a root set `S'` bijectively onto `S` and `U'` is generated
+by the root subgroups in `S'`, surjectivity of `rootSetProduct` on `U` along the `w`-transported
+list `l'.map (...)` implies surjectivity of `rootSetProduct` on `U'` along `l'`. -/
 theorem rootSetProduct_surjective_of_weylGroup {S S' : Set (Fin t.numRoots)}
     {A : Type v} [CommRing A]
     (U : Subgroup (D.points A)) (hU : ∀ γ ∈ S, ∀ a, D.rootSubgroupPoints γ A a ∈ U)
@@ -172,25 +147,20 @@ theorem rootSetProduct_surjective_of_weylGroup {S S' : Set (Fin t.numRoots)}
     (hU'_le : ∀ P : Subgroup (D.points A), (∀ γ ∈ S', ∀ a, D.rootSubgroupPoints γ A a ∈ P) → U' ≤ P)
     (w : (t.simplyConnectedRootDatum ht).weylGroup)
     (hw : ∀ γ, γ ∈ S' ↔ (t.simplyConnectedRootDatum ht).weylGroupToPerm w γ ∈ S)
-    (hsurj : ∀ (l : List S), l.Nodup → (∀ δ, δ ∈ l) →
-      Function.Surjective (D.rootSetProduct U hU l))
-    (l' : List S') (hl' : l'.Nodup) (hcover' : ∀ γ, γ ∈ l') :
+    (l' : List S')
+    (hsurj : Function.Surjective
+      (D.rootSetProduct U hU
+        (l'.map (((t.simplyConnectedRootDatum ht).weylGroupToPerm w).subtypeEquiv hw)))) :
     Function.Surjective (D.rootSetProduct U' hU' l') := by
   intro g
   let σ := (t.simplyConnectedRootDatum ht).weylGroupToPerm w
+  let e : S' ≃ S := σ.subtypeEquiv hw
   obtain ⟨n, ε, hn⟩ := D.exists_conj_rootSubgroupPoints_eq_of_weylGroup w A
-  let e : S' ≃ S :=
-    { toFun := fun γ => ⟨σ γ.val, (hw γ.val).mp γ.property⟩
-      invFun := fun δ => ⟨σ.symm δ.val, (hw (σ.symm δ.val)).mpr (by simp [σ])⟩
-      left_inv := fun γ => Subtype.ext (σ.symm_apply_apply γ.val)
-      right_inv := fun δ => Subtype.ext (σ.apply_symm_apply δ.val) }
   have hconj_mem : MulAut.conj (n : D.points A) (g : D.points A) ∈ U := by
     refine hU'_le (U.comap (MulAut.conj (n : D.points A)).toMonoidHom) (fun γ hγ a => ?_) g.property
     rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, ← ofAdd_toAdd a, hn γ (toAdd a)]
     exact hU (σ γ) ((hw γ).mp hγ) _
-  obtain ⟨v, hv⟩ := hsurj (l'.map e) (hl'.map e.injective)
-    (fun δ => List.mem_map.mpr ⟨e.symm δ, hcover' _, e.apply_symm_apply δ⟩)
-    ⟨MulAut.conj (n : D.points A) (g : D.points A), hconj_mem⟩
+  obtain ⟨v, hv⟩ := hsurj ⟨MulAut.conj (n : D.points A) (g : D.points A), hconj_mem⟩
   refine ⟨fun γ => ((((ε γ.val)⁻¹ : ℤˣ) : ℤ) : A) * v (e γ), ?_⟩
   apply Subtype.ext
   apply (MulAut.conj (n : D.points A)).injective
@@ -221,13 +191,24 @@ theorem mem_iff_existsUnique_rootSetProduct {S : Set (Fin t.numRoots)} {A : Type
     exact (D.rootSetProduct U hU l u).property
 
 /-- Coordinate bijection `(S → A) ≃ U` attached to a bijective ordered root-set product. -/
-@[expose] noncomputable def rootSetEquiv {S : Set (Fin t.numRoots)} {A : Type v} [CommRing A]
+noncomputable def rootSetEquiv {S : Set (Fin t.numRoots)} {A : Type v} [CommRing A]
     (U : Subgroup (D.points A)) (hU : ∀ γ ∈ S, ∀ a, D.rootSubgroupPoints γ A a ∈ U)
     (l : List S)
     (hinj : Function.Injective (D.rootSetProduct U hU l))
     (hsurj : Function.Surjective (D.rootSetProduct U hU l)) :
     (S → A) ≃ U :=
   Equiv.ofBijective (D.rootSetProduct U hU l) ⟨hinj, hsurj⟩
+
+/-- Applying `rootSetEquiv` multiplies the given root parameters in the order of `l`. -/
+@[simp]
+theorem rootSetEquiv_apply {S : Set (Fin t.numRoots)} {A : Type v} [CommRing A]
+    (U : Subgroup (D.points A)) (hU : ∀ γ ∈ S, ∀ a, D.rootSubgroupPoints γ A a ∈ U)
+    (l : List S)
+    (hinj : Function.Injective (D.rootSetProduct U hU l))
+    (hsurj : Function.Surjective (D.rootSetProduct U hU l))
+    (u : S → A) :
+    D.rootSetEquiv U hU l hinj hsurj u = D.rootSetProduct U hU l u :=
+  (rfl)
 
 /-- The identity point in `U` has zero coordinates. -/
 @[simp]
@@ -237,10 +218,12 @@ theorem rootSetEquiv_symm_one {S : Set (Fin t.numRoots)} {A : Type v} [CommRing 
     (hinj : Function.Injective (D.rootSetProduct U hU l))
     (hsurj : Function.Surjective (D.rootSetProduct U hU l)) :
     (D.rootSetEquiv U hU l hinj hsurj).symm 1 = 0 := by
-  rw [← D.rootSetProduct_zero U hU l]
+  rw [← D.rootSetProduct_zero U hU l, ← D.rootSetEquiv_apply U hU l hinj hsurj 0]
   exact (D.rootSetEquiv U hU l hinj hsurj).symm_apply_apply 0
 
-/-- A single root generator in `S` has single-coordinate tuple `Pi.single γ a`. -/
+/-- For a duplicate-free list `l` (`l.Nodup`) containing `γ` (`γ ∈ l`), the single root generator at
+`γ` has single-coordinate tuple `Pi.single γ a`. -/
+@[simp]
 theorem rootSetEquiv_symm_rootSubgroupPoints {S : Set (Fin t.numRoots)} {A : Type v} [CommRing A]
     (U : Subgroup (D.points A)) (hU : ∀ γ ∈ S, ∀ a, D.rootSubgroupPoints γ A a ∈ U)
     {l : List S} (hl : l.Nodup) {γ : S} (hγ : γ ∈ l)
@@ -249,7 +232,7 @@ theorem rootSetEquiv_symm_rootSubgroupPoints {S : Set (Fin t.numRoots)} {A : Typ
     (D.rootSetEquiv U hU l hinj hsurj).symm
         ⟨D.rootSubgroupPoints γ.val A (ofAdd a), hU γ.val γ.property _⟩ =
       Pi.single γ a := by
-  rw [← D.rootSetProduct_single U hU hl hγ a]
+  rw [← D.rootSetProduct_single U hU hl hγ a, ← D.rootSetEquiv_apply U hU l hinj hsurj]
   exact (D.rootSetEquiv U hU l hinj hsurj).symm_apply_apply _
 
 /-- Extracting coordinates after a subgroup map acting coordinatewise on `rootSetProduct` applies
@@ -269,10 +252,7 @@ theorem rootSetEquiv_symm_map {S : Set (Fin t.numRoots)}
     (D.rootSetEquiv UB hUB l hinjB hsurjB).symm (F g) =
       fun γ => f ((D.rootSetEquiv UA hUA l hinjA hsurjA).symm g γ) := by
   apply (D.rootSetEquiv UB hUB l hinjB hsurjB).injective
-  simp only [Equiv.apply_symm_apply]
-  change F g =
-    D.rootSetProduct UB hUB l (fun γ => f ((D.rootSetEquiv UA hUA l hinjA hsurjA).symm g γ))
-  rw [← hF]
-  exact congrArg F ((D.rootSetEquiv UA hUA l hinjA hsurjA).apply_symm_apply g).symm
+  rw [Equiv.apply_symm_apply, D.rootSetEquiv_apply, ← hF,
+    ← D.rootSetEquiv_apply UA hUA l hinjA hsurjA, Equiv.apply_symm_apply]
 
 end TauCeti.DynkinType.ChevalleyDatum
