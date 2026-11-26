@@ -66,5 +66,5 @@ example {G : Type*} [Monoid G] {d : ℕ} (D : Determinant A (MonoidAlgebra A G) 
 example {G : Type*} [Monoid G] (χ θ : G →* Aˣ) (g : G) :
     (algHomPow (MonoidAlgebra.lift A A G (Units.coeHom A |>.comp χ)) 2).twist θ
       (MonoidAlgebra.of A G g) = (θ g : A) ^ 2 * (χ g : A) ^ 2 := by
-  rw [twist_apply_of, algHomPow_apply, MonoidAlgebra.lift_of]
-  rfl
+  rw [twist_apply_of, algHomPow_apply, MonoidAlgebra.lift_of, MonoidHom.comp_apply,
+    Units.coeHom_apply]
