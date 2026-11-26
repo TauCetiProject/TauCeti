@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.NovikovSeries.Map
 public import TauCeti.RingTheory.NovikovSeries.Multiplication
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import Mathlib.Algebra.Group.Torsion
@@ -69,6 +70,10 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
   values in a torsion-free cancellative monoid and nontrivial coefficients, this happens exactly
   when the period or the degree vanishes, since a nonzero degree `δ` takes the infinitely many
   values `n δ(C)` for a class `C` with `δ(C) ≠ 0`.
+* `TauCeti.NovikovSeries.single_mem_gradeByCoeff_iff_of_mem`: for independent pieces of the
+  coefficient module, a nonzero homogeneous monomial has exactly one degree.
+* `TauCeti.NovikovSeries.map_mem_gradeByCoeff`: a pushforward of Novikov series whose coefficient
+  map and exponent map respect the degrees preserves the degree.
 
 ## References
 
@@ -501,6 +506,40 @@ theorem gradeByCoeff_ite_eq_gradeBy [DecidableEq Γ] (δ : H → Γ) (D : Γ) :
   by_cases hA : D = δ A
   · simp [hA]
   · simp [hA, Ne.symm hA]
+
+/-- The monomial `e^h v` has degree `D` exactly when its coefficient `v` has degree `D - δ h`. -/
+theorem single_mem_gradeByCoeff_iff {𝒱 : Γ → Submodule R V} {δ : H → Γ} {D : Γ} {h : H}
+    {v : V} : (single h v : NovikovSeries V H N) ∈ gradeByCoeff N 𝒱 δ D ↔ v ∈ 𝒱 (D - δ h) := by
+  refine ⟨fun hv => by simpa using hv h, fun hv A => ?_⟩
+  rcases eq_or_ne A h with rfl | hA
+  · simpa using hv
+  · simp [coeff_single_of_ne hA]
+
+/-- **A homogeneous monomial has exactly one degree.** If the pieces `𝒱` are independent and
+`v ≠ 0` has degree `j`, the monomial `e^h v` has degree `D` exactly when `D = j + δ h`. -/
+theorem single_mem_gradeByCoeff_iff_of_mem {𝒱 : Γ → Submodule R V} (h𝒱 : iSupIndep 𝒱)
+    {δ : H → Γ} {D j : Γ} {h : H} {v : V} (hv : v ∈ 𝒱 j) (hv₀ : v ≠ 0) :
+    (single h v : NovikovSeries V H N) ∈ gradeByCoeff N 𝒱 δ D ↔ D = j + δ h := by
+  rw [single_mem_gradeByCoeff_iff, ← sub_eq_iff_eq_add]
+  refine ⟨fun hD => ?_, fun hD => hD ▸ hv⟩
+  by_contra hne
+  exact hv₀ (Submodule.disjoint_def.1 (h𝒱.pairwiseDisjoint hne) v hD hv)
+
+/-- **Pushforwards preserve degrees.** If the coefficient map `ρ : V →+ W` sends each piece
+`𝒱 k` into `𝒲 k`, and the exponent map `φ` carries the degree `δ` to `δ'`, then the pushforward
+`TauCeti.NovikovSeries.map ρ φ hφ` sends the series of degree `D` to series of degree `D`: its
+coefficient at `h'` is a finite sum of images of coefficients at exponents `h` with
+`δ h = δ' h'`. -/
+theorem map_mem_gradeByCoeff {H' W : Type*} [AddZeroClass H'] {N' : H' →+ ℝ} [AddCommMonoid W]
+    [Module R W] {𝒱 : Γ → Submodule R V} {𝒲 : Γ → Submodule R W} {ρ : V →+ W}
+    (hρ : ∀ k, ∀ v ∈ 𝒱 k, ρ v ∈ 𝒲 k) {φ : H →+ H'} (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
+    {δ : H → Γ} {δ' : H' → Γ} (hδ : ∀ h, δ' (φ h) = δ h) {D : Γ} {v : NovikovSeries V H N}
+    (hv : v ∈ gradeByCoeff N 𝒱 δ D) : map ρ φ hφ v ∈ gradeByCoeff N' 𝒲 δ' D := fun h' => by
+  rw [coeff_map]
+  refine finsum_mem_induction (· ∈ 𝒲 (D - δ' h')) (zero_mem _) (fun _ _ => add_mem)
+    fun h hh => ?_
+  rw [← mem_singleton_iff.1 hh, hδ]
+  exact hρ _ _ (hv h)
 
 end GradeByCoeff
 
