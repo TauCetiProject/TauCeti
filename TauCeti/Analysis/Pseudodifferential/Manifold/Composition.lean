@@ -138,21 +138,6 @@ variable {e : OpenPartialHomeomorph M (CoordinateSpace n)}
 
 include he
 
-/-- The symbol of a chart compression by `φ` and `ψ` vanishes at positions outside the support of
-`φ`, since every output of the compression does. -/
-private theorem hasCompactSpatialSupport_of_eq_complexChartCompression {m : ℝ}
-    {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {b : ClassicalSymbol n ℂ ℂ m}
-    (hb : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
-      quantizeSchwartzValue b.toSymbol.coefficient u y =
-        e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y) :
-    b.toSymbol.HasCompactSpatialSupport := by
-  refine Symbol.hasCompactSpatialSupport_iff_exists_tsupport_quantizeSchwartzValue_subset.2
-    ⟨tsupport φ, φ.hasCompactSupport.isCompact, fun u _ ↦ ?_⟩
-  rw [show quantizeSchwartzValue b.toSymbol.coefficient u = fun y ↦ φ y •
-      P (e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))) (e.symm y) from
-    funext fun y ↦ by rw [hb, OpenPartialHomeomorph.complexChartCompression_apply]]
-  exact tsupport_smul_subset_left _ _
-
 /-- For the symbol `b` of the chart compression of `P` by `χ` and `ψ`, the Schwartz function
 `Op(b) u`, pulled back to `M` by a cutoff `χ₂` equal to `1` on the support of `χ`, is
 `(χ ∘ e) · P ((ψ u) ∘ e)` on the chart source. -/
@@ -587,14 +572,9 @@ theorem comp_mem_classicalPseudodifferentialOperators
   refine ⟨∑ i, c i, fun u x ↦ ?_⟩
   set F := e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))
   -- The pieces `ρᵢ Q F` add up to `Q F`, which is supported in `K'`.
-  have hsplit : Q F = ∑ i, LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (ρ i)) (Q F) := by
-    ext y
-    simp only [ContMDiffMap.coe_sum, Finset.sum_apply, LinearMap.mulLeft_apply,
-      ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.ofReal_apply, ← Finset.sum_mul]
-    by_cases hy : y ∈ K'
-    · rw [← Complex.ofReal_sum, hρ1 y hy, Complex.ofReal_one, one_mul]
-    · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hy
-        (hQK' F (OpenPartialHomeomorph.tsupport_complexCutoffPullback_subset he ψ _) h), mul_zero]
+  have hsplit : Q F = ∑ i, LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (ρ i)) (Q F) :=
+    ContMDiffMap.eq_sum_mulLeft_ofReal _ ρ ((subset_tsupport _).trans
+      (hQK' F (OpenPartialHomeomorph.tsupport_complexCutoffPullback_subset he ψ _))) hρ1
   simp only [ClassicalSymbol.toSymbol_sum, Symbol.quantizeSchwartzValue_sum_left, hc,
     OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply]
   rw [← Finset.smul_sum]
