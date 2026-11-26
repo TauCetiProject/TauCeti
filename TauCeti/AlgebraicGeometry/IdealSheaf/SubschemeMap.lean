@@ -64,10 +64,9 @@ theorem ideal_le_comap_ideal_of_le_map (H : J ≤ I.map f) (U : Y.affineOpens)
     (V : X.affineOpens) (hVU : V.val ≤ f ⁻¹ᵁ U.val) :
     J.ideal U ≤ (I.ideal V).comap (f.appLE U V hVU).hom := by
   intro a ha
-  rw [← ker_subschemeι_app] at ha
-  rw [Ideal.mem_comap, ← ker_subschemeι_app, RingHom.mem_ker, ← CommRingCat.comp_apply,
-    ← subschemeι_app_subschemeMap_appLE H, CommRingCat.comp_apply, RingHom.mem_ker.mp ha,
-    map_zero]
+  rw [← ker_subschemeι_app, RingHom.mem_ker] at ha
+  have h := congr($(subschemeι_app_subschemeMap_appLE H U V hVU) a)
+  simpa [← ker_subschemeι_app, ha] using h.symm
 
 /-- **The map of closed subschemes on affine charts.** If `J ≤ I.map f`, then over affine opens
 `U` and `V ⊆ f⁻¹ U`, the section map of `subschemeMap I J f H` is, under the identifications
@@ -82,10 +81,9 @@ theorem subschemeMap_appLE (H : J ≤ I.map f) (U : Y.affineOpens) (V : X.affine
           (ideal_le_comap_ideal_of_le_map H U V hVU)) ≫
         (I.subschemeObjIso V).inv := by
   have := ConcreteCategory.epi_of_surjective _ (J.subschemeι_app_surjective U)
-  rw [← cancel_epi (J.subschemeι.app U), subschemeι_app_subschemeMap_appLE H U V hVU,
-    subschemeι_app, subschemeι_app, Category.assoc, Iso.inv_hom_id_assoc, ← Category.assoc,
-    ← Category.assoc, ← CommRingCat.ofHom_comp, Ideal.quotientMap_comp_mk, CommRingCat.ofHom_comp,
-    CommRingCat.ofHom_hom]
+  rw [← cancel_epi (J.subschemeι.app U), subschemeι_app_subschemeMap_appLE H U V hVU]
+  ext a
+  simp [subschemeι_app]
 
 /-- **The pullback square of a pullback ideal sheaf.** The closed subscheme of `I.comap f` is the
 fibre product of `f` with the closed immersion of `I`, along the maps `(I.comap f).subschemeι`
