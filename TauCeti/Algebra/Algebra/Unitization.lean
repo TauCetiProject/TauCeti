@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Unitization
+public import Mathlib.Algebra.Order.Star.Basic
 public import Mathlib.Algebra.Star.MonoidHom
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Unitary
@@ -33,6 +34,9 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 
 * `Unitization.mul_inr`: `A` is a left ideal of `Unitization R A`.
 * `Unitization.inr_snd_of_fst_eq_zero`: an element with scalar part `0` lies in `A`.
+* `Unitization.conjStar`: the element `u * x * star u` of `A`, for `u` in the unitization and
+  `x : A`, with `Unitization.inr_conjStar`, `Unitization.conjStar_mul` and
+  `Unitization.conjStar_nonneg`.
 * `Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
 * `Unitization.map_id`, `Unitization.map_comp`: functoriality.
 * `Unitization.fstHom_comp_map`: the induced map preserves the augmentation.
@@ -67,6 +71,61 @@ theorem mul_inr {R A : Type*} [MulZeroClass R] [NonUnitalNonAssocSemiring A]
 theorem inr_snd_of_fst_eq_zero {R A : Type*} [Zero R] {w : Unitization R A} (h : w.fst = 0) :
     (inr w.snd : Unitization R A) = w :=
   Unitization.ext (by simp [h]) rfl
+
+section ConjStar
+
+variable {R A : Type*} [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A]
+  [Module R A]
+
+/-- The element `u * x * star u` of `A`, for `u` in the unitization `Unitization R A` and `x : A`:
+the `A`-part of the product computed in the unitization, which lies in the ideal `A`. -/
+def conjStar (u : Unitization R A) (x : A) : A :=
+  (u * (x : Unitization R A) * star u).snd
+
+/-- `u * x * star u` computed in the unitization is the image of `u.conjStar x`. -/
+@[simp]
+theorem inr_conjStar (u : Unitization R A) (x : A) :
+    (inr (u.conjStar x) : Unitization R A) = u * (x : Unitization R A) * star u :=
+  inr_snd_of_fst_eq_zero (by simp)
+
+/-- Conjugation by `1` is the identity. -/
+@[simp]
+theorem conjStar_one [StarModule R A] (x : A) : (1 : Unitization R A).conjStar x = x :=
+  inr_injective (R := R) (by simp)
+
+variable [IsScalarTower R A A] [SMulCommClass R A A]
+
+/-- Conjugation sends `0` to `0`. -/
+@[simp]
+theorem conjStar_zero (u : Unitization R A) : u.conjStar 0 = 0 :=
+  inr_injective (R := R) (by simp)
+
+/-- Conjugation is additive. -/
+theorem conjStar_add (u : Unitization R A) (x y : A) :
+    u.conjStar (x + y) = u.conjStar x + u.conjStar y :=
+  inr_injective (R := R) (by simp [mul_add, add_mul])
+
+variable [StarModule R A]
+
+/-- Conjugation by a product is the composite of the conjugations. -/
+theorem conjStar_mul (u v : Unitization R A) (x : A) :
+    (u * v).conjStar x = u.conjStar (v.conjStar x) :=
+  inr_injective (R := R) (by simp [mul_assoc])
+
+/-- Conjugation by an element of the unitization preserves nonnegativity in a star-ordered `A`:
+it sends `star s * s` to `star w * w` for `w = s * star u ∈ A`. -/
+theorem conjStar_nonneg [PartialOrder A] [StarOrderedRing A] (u : Unitization R A) {x : A}
+    (hx : 0 ≤ x) : 0 ≤ u.conjStar x := by
+  induction hx using StarOrderedRing.induction_on with
+  | star_mul_self s =>
+    set w : A := ((s : Unitization R A) * star u).snd
+    have hw : (w : Unitization R A) = s * star u := inr_snd_of_fst_eq_zero (by simp)
+    convert star_mul_self_nonneg w using 1
+    exact inr_injective (R := R) (by simp [hw, mul_assoc])
+  | zero => simp
+  | add x y _ _ hx hy => simpa [conjStar_add] using add_nonneg hx hy
+
+end ConjStar
 
 section Map
 
@@ -293,10 +352,8 @@ theorem exists_star_mul_self_eq_of_mem_unitary_unitization {R A : Type*} [CommSe
     {u : Unitization R A} (hu : u ∈ unitary (Unitization R A))
     (hupq : u * (p : Unitization R A) * star u = q) :
     ∃ v : A, star v * v = p ∧ v * star v = q := by
-  have hv : ((u * (p : Unitization R A)).snd : Unitization R A) = u * p := by
-    ext
-    · rw [Unitization.fst_inr, Unitization.fst_mul, Unitization.fst_inr, mul_zero]
-    · rw [Unitization.snd_inr]
+  have hv : ((u * (p : Unitization R A)).snd : Unitization R A) = u * p :=
+    Unitization.inr_snd_of_fst_eq_zero (by simp)
   refine ⟨(u * (p : Unitization R A)).snd, Unitization.inr_injective (R := R) ?_,
     Unitization.inr_injective (R := R) ?_⟩
   · rw [Unitization.inr_mul, Unitization.inr_star, hv, star_mul, mul_assoc, ← mul_assoc (star u),

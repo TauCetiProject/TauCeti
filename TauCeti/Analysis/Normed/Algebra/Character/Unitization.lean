@@ -95,7 +95,8 @@ theorem range_inr_eq_ker_augmentation :
     Set.range (inr : A → Unitization 𝕜 A) =
       (RingHom.ker (augmentation 𝕜 A) : Set (Unitization 𝕜 A)) := by
   ext u
-  exact ⟨by rintro ⟨a, rfl⟩; simp, fun hu ↦ ⟨u.snd, inr_snd_of_fst_eq_zero hu⟩⟩
+  exact ⟨by rintro ⟨a, rfl⟩; simp, fun hu ↦ ⟨u.snd, inr_snd_of_fst_eq_zero <| by
+    rwa [SetLike.mem_coe, RingHom.mem_ker, augmentation_apply] at hu⟩⟩
 
 /-- A character of `Unitization 𝕜 A` equals the augmentation character if and only if it vanishes on
 `A`. -/

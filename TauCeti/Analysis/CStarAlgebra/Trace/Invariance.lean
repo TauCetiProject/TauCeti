@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
+public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.Analysis.CStarAlgebra.Trace.Basic
-
-import TauCeti.Algebra.Algebra.Unitization
 
 /-!
 # Unitary invariance of traces
@@ -20,13 +19,11 @@ forced unitization `B^† = Unitization ℂ B`. The product `uxu⋆` lies in `B`
 `B^†`; it is `z⋆z` for `z = x^{1/2}u⋆ ∈ B`, while `zz⋆ = x^{1/2}u⋆ux^{1/2} = x`, so the trace
 identity gives `τ(uxu⋆) = τ(x)`.
 
-## Main definitions
-
-* `Unitization.conjStar`: the element `uxu⋆` of `B`, for `u ∈ B^†` and `x ∈ B`.
+The element `uxu⋆` of `B` is `Unitization.conjStar u x`, from
+`TauCeti.Algebra.Algebra.Unitization`.
 
 ## Main results
 
-* `Unitization.inr_conjStar`: `uxu⋆` computed in `B^†` is the image of `u.conjStar x`.
 * `TauCeti.IsTrace.map_conjStar`: invariance under conjugation by isometries `u⋆u = 1` of `B^†`.
 * `TauCeti.IsTrace.map_conjStar_of_mem_unitary`: unitary invariance.
 -/
@@ -36,21 +33,6 @@ public section
 open scoped ENNReal NNReal
 
 variable {B : Type*} [NonUnitalCStarAlgebra B]
-
-namespace Unitization
-
-/-- The element `uxu⋆` of `B`, for `u` in the unitization `B^†` and `x ∈ B`: the `B`-part of the
-product `uxu⋆` computed in `B^†`, which lies in the ideal `B`. -/
-def conjStar (u : Unitization ℂ B) (x : B) : B :=
-  (u * (x : Unitization ℂ B) * star u).snd
-
-/-- `uxu⋆` computed in `B^†` is the image of `u.conjStar x`. -/
-@[simp]
-theorem inr_conjStar (u : Unitization ℂ B) (x : B) :
-    (inr (u.conjStar x) : Unitization ℂ B) = u * (x : Unitization ℂ B) * star u :=
-  inr_snd_of_fst_eq_zero (by simp)
-
-end Unitization
 
 namespace TauCeti
 
