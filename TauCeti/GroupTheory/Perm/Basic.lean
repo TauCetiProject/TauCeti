@@ -24,8 +24,8 @@ transposition, for arbitrary additive commutative groups.
 
 This file records general-purpose facts about permutations: a map intertwining two permutations
 intertwines their integer powers (`Function.Semiconj.perm_zpow_right`), a transposition
-preserves the complement of a set containing neither of its swapped points, an identity between
-transpositions,
+preserves the complement of a set containing neither of its swapped points, every transposition
+squares to the identity (`Equiv.Perm.IsSwap.mul_self`), an identity between transpositions,
 a permutation transporting two points outside a fixed set to another such pair,
 the values of the three-cycle written as a product of two transpositions sharing a point,
 a characterization of permutations with a unique fixed point, functions constant on a permutation
@@ -780,6 +780,16 @@ theorem sum_sign_smul_comp_eq_sum_insertNth_removeNth {α M : Type*} [AddCommGro
   simp
 
 end TauCeti
+
+namespace Equiv.Perm
+
+/-- Every transposition squares to the identity. -/
+theorem IsSwap.mul_self {α : Type*} [DecidableEq α] {t : Perm α} (ht : t.IsSwap) :
+    t * t = 1 := by
+  obtain ⟨a, b, _, rfl⟩ := ht
+  exact swap_mul_self a b
+
+end Equiv.Perm
 
 /-! ### Removing a transposition from an involution -/
 
