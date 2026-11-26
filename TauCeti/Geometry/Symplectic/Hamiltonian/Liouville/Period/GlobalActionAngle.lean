@@ -88,6 +88,8 @@ All in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFib
 * `bijective_mfderiv_of_actionAngle`: the differential of the actions is invertible.
 * `periodLattice_eq_closure_of_actionAngle`: the period lattice is spanned by the `p • da_j`.
 * `injective_of_actionAngle`: the actions are injective on the base.
+* `isOpen_range_and_exists_contMDiffOn_apply_eq_of_actionAngle`: the actions identify the base
+  with the open set `a(B)`, with smooth inverse `c ↦ π(Φ⁻¹(κ(0, c)))`.
 * `exists_lagrangian_section_of_actionAngle`: the zero angles give a smooth Lagrangian section.
 * `exists_mfderiv_eq_mulVec_of_actionAngle`: the differentials of the actions of two charts differ
   by an element of `GL(ι, ℤ)` at every point.
@@ -326,6 +328,39 @@ theorem injective_of_actionAngle (hΦi : Injective Φ) : Injective a := by
   obtain ⟨y, hy, hyθ⟩ := h.exists_apply_eq_actionAngleCover_of_actionAngle p hΦ hΦσ hΦa b θ
   rw [← hy, hΦi (hyθ.trans hθ.symm), x'.property]
 
+include h hΦ hΦσ hΦa in
+/-- **The actions identify the base with an open set of actions.** For global action–angle
+coordinates `Φ` with actions `a ∘ π`, the set `a(B)` is open and the map `c ↦ π(Φ⁻¹(κ(0, c)))` is
+smooth on `a(B)` and inverts `a`. -/
+theorem isOpen_range_and_exists_contMDiffOn_apply_eq_of_actionAngle [Nonempty M]
+    (hΦi : Injective Φ) :
+    IsOpen (range a) ∧
+      ∃ e : (ι → ℝ) → B, ContMDiffOn 𝓘(ℝ, ι → ℝ) J ∞ e (range a) ∧ ∀ b, e (a b) = b := by
+  set k : (ι → ℝ) → CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p) :=
+    fun c ↦ actionAngleCover p ((0 : ι → ℝ), c)
+  have hk : ContMDiff 𝓘(ℝ, ι → ℝ)
+      ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ k :=
+    (contMDiff_actionAngleCover p).comp (contMDiff_const.prodMk_space contMDiff_id)
+  -- `a(B)` is the set of actions whose zero angles lie in the open image of `Φ`.
+  have hV : range a = k ⁻¹' (Φ '' univ) := by
+    ext c
+    refine ⟨?_, fun ⟨y, _, hy⟩ ↦ ⟨π y, ?_⟩⟩
+    · rintro ⟨b, rfl⟩
+      obtain ⟨y, -, hy⟩ := h.exists_apply_eq_actionAngleCover_of_actionAngle p hΦ hΦσ hΦa b 0
+      exact ⟨y, mem_univ _, hy⟩
+    · rw [← hΦa, hy, torusActions_actionAngleCover]
+  refine ⟨by rw [hV, image_univ]; exact hΦ.isOpenMap.isOpen_range.preimage hk.continuous,
+    π ∘ invFunOn Φ univ ∘ k, ?_, fun b ↦ ?_⟩
+  · refine h.isSubmersion.contMDiff.comp_contMDiffOn
+      ((IsLocalDiffeomorphOn.contMDiffOn_invFunOn (hΦ.isLocalDiffeomorphOn univ) isOpen_univ
+        hΦi.injOn).comp hk.contMDiffOn fun c hc ↦ ?_)
+    rwa [hV] at hc
+  · -- `Φ⁻¹(κ(0, a b))` is the point with zero angles over `b`.
+    obtain ⟨y, hyb, hy⟩ := h.exists_apply_eq_actionAngleCover_of_actionAngle p hΦ hΦσ hΦa b 0
+    have hinv : invFunOn Φ univ (k (a b)) = y :=
+      hΦi ((invFunOn_eq ⟨y, mem_univ _, hy⟩).trans hy.symm)
+    simp only [Function.comp_apply, hinv, hyb]
+
 /-! ### A Lagrangian section -/
 
 include h hΦ hΦσ hΦa in
@@ -411,40 +446,15 @@ theorem exists_mfderiv_eq_mulVec_of_actionAngle (hΦi : Injective Φ) (hΦ'i : I
     (h.bijective_mfderiv_of_actionAngle p hΦ hΦa b).2 hL
 
 include h hΦ hΦσ hΦa hΦ' hΦ'a in
-/-- The actions `a` identify the base with the open set `a(B)`, on which `a' ∘ a⁻¹` is the smooth
-map `c ↦ I(Φ'(Φ⁻¹(κ(0, c))))`. -/
+/-- The actions `a` identify the base with the open set `a(B)`, on which `a' ∘ a⁻¹` is smooth. -/
 private theorem exists_contDiffOn_apply_eq_of_actionAngle [Nonempty M] (hΦi : Injective Φ) :
     IsOpen (range a) ∧
       ∃ A' : (ι → ℝ) → ι → ℝ, ContDiffOn ℝ 1 A' (range a) ∧ ∀ b, A' (a b) = a' b := by
-  have hainj := h.injective_of_actionAngle p hΦ hΦσ hΦa hΦi
-  set k : (ι → ℝ) → CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p) :=
-    fun c ↦ actionAngleCover p ((0 : ι → ℝ), c)
-  have hk : ContMDiff 𝓘(ℝ, ι → ℝ)
-      ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ k :=
-    (contMDiff_actionAngleCover p).comp (contMDiff_const.prodMk_space contMDiff_id)
-  -- `a(B)` is the set of actions whose zero angles lie in the open image of `Φ`.
-  have hV : range a = k ⁻¹' (Φ '' univ) := by
-    ext c
-    refine ⟨?_, fun ⟨y, _, hy⟩ ↦ ⟨π y, ?_⟩⟩
-    · rintro ⟨b, rfl⟩
-      obtain ⟨y, -, hy⟩ := h.exists_apply_eq_actionAngleCover_of_actionAngle p hΦ hΦσ hΦa b 0
-      exact ⟨y, mem_univ _, hy⟩
-    · rw [← hΦa, hy, torusActions_actionAngleCover]
-  refine ⟨by rw [hV, image_univ]; exact hΦ.isOpenMap.isOpen_range.preimage hk.continuous,
-    torusActions p ∘ Φ' ∘ invFunOn Φ univ ∘ k, ?_, fun b ↦ ?_⟩
-  · have hA'm : ContMDiffOn 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) ∞
-        (torusActions p ∘ Φ' ∘ invFunOn Φ univ ∘ k) (range a) := by
-      refine (contMDiff_torusActions p).comp_contMDiffOn (hΦ'.contMDiff.comp_contMDiffOn
-        ((IsLocalDiffeomorphOn.contMDiffOn_invFunOn (hΦ.isLocalDiffeomorphOn univ) isOpen_univ
-          hΦi.injOn).comp hk.contMDiffOn fun c hc ↦ ?_))
-      rwa [hV] at hc
-    exact (contMDiffOn_iff_contDiffOn.1 hA'm).of_le (by simp)
-  · -- `Φ⁻¹(κ(0, a b))` is the point with zero angles over `b`.
-    obtain ⟨y₀, -, hy₀⟩ := h.exists_apply_eq_actionAngleCover_of_actionAngle p hΦ hΦσ hΦa b 0
-    have hy : Φ (invFunOn Φ univ (k (a b))) = k (a b) := invFunOn_eq ⟨y₀, mem_univ _, hy₀⟩
-    have hπ : π (invFunOn Φ univ (k (a b))) = b :=
-      hainj (by rw [← hΦa, hy, torusActions_actionAngleCover])
-    simp only [Function.comp_apply, hΦ'a, hπ]
+  obtain ⟨hVo, e, he, hea⟩ :=
+    h.isOpen_range_and_exists_contMDiffOn_apply_eq_of_actionAngle p hΦ hΦσ hΦa hΦi
+  refine ⟨hVo, a' ∘ e, ?_, fun b ↦ by simp [hea]⟩
+  exact (contMDiffOn_iff_contDiffOn.1
+    ((h.contMDiff_of_actionAngle p hΦ' hΦ'a).comp_contMDiffOn he)).of_le (by simp)
 
 include h hΦ hΦσ hΦa hΦ' hΦ'σ hΦ'a in
 /-- **Global actions are unique up to integral affine changes.** If `Φ` and `Φ'` are global
