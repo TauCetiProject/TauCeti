@@ -85,8 +85,7 @@ map between them is continuous; this is the form in which the Levi forms are a s
 Hom bundle `Hom(D, Hom(D, TM ⧸ D))`. -/
 def distributionLeviFormL (x : M) : D x →L[𝕜] D x →L[𝕜] TangentSpace I x ⧸ D x :=
   haveI : FiniteDimensional 𝕜 (TangentSpace I x) := inferInstanceAs (FiniteDimensional 𝕜 E)
-  LinearMap.toContinuousLinearMap
-    (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ distributionLeviForm D x)
+  (distributionLeviForm D x).toContinuousBilinearMap
 
 /-- The continuous Levi form `TauCeti.distributionLeviFormL` takes the values of the Levi form. -/
 @[simp]
