@@ -24,7 +24,8 @@ public section
 
 namespace Matrix.GeneralLinearGroup
 
-/-- The scalar matrix `u ↦ (u)` in `GL n R` depends continuously on the unit `u`. -/
+/-- The scalar matrix `scalar n u` in `GL n R`, with the unit `u` on the diagonal, depends
+continuously on `u`. -/
 @[continuity, fun_prop]
 theorem continuous_scalar {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R]
     [TopologicalSpace R] : Continuous (scalar n : Rˣ → GL n R) := by
