@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
+public import TauCeti.RingTheory.Valuation.ExpNeg
 
 /-!
 # Places from additive order functions
@@ -15,7 +16,7 @@ meromorphic function at a point is an additive valuation `F → WithTop ℤ`, wi
 A place of `F / k` (`TauCeti.Place`) is stored multiplicatively, as a normalized valuation
 `F → ℤᵐ⁰`. This file converts the first into the second: a surjective additive valuation
 `v : F → WithTop ℤ` vanishing on the nonzero constants of `k` is the place whose valuation is
-`f ↦ exp (-v f)`, sending `⊤` to `0`.
+`f ↦ exp (-v f)`, sending `⊤` to `0` (`AddValuation.expNeg`).
 
 ## Main definitions
 
@@ -39,69 +40,32 @@ namespace Place
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
-/-- The order-reversing translation `⊤ ↦ 0`, `n ↦ exp (-n)` from additive to multiplicative
-values. -/
-private noncomputable def expNeg (a : WithTop ℤ) : ℤᵐ⁰ :=
-  if a = ⊤ then 0 else WithZero.exp (-a.untopD 0)
-
-private theorem expNeg_top : expNeg ⊤ = 0 := by simp [expNeg]
-
-private theorem expNeg_coe (n : ℤ) : expNeg n = WithZero.exp (-n) := by
-  simp [expNeg]
-
-private theorem expNeg_add (a b : WithTop ℤ) : expNeg (a + b) = expNeg a * expNeg b := by
-  induction a using WithTop.recTopCoe <;> induction b using WithTop.recTopCoe <;>
-    simp [expNeg_top, expNeg_coe, ← WithTop.coe_add, ← WithZero.exp_add, add_comm]
-
-private theorem expNeg_antitone : Antitone expNeg := by
-  intro a b hab
-  induction b using WithTop.recTopCoe with
-  | top => simp [expNeg_top]
-  | coe n =>
-    induction a using WithTop.recTopCoe with
-    | top => simp at hab
-    | coe m => simpa [expNeg_coe] using WithTop.coe_le_coe.mp hab
-
-/-- The multiplicative valuation `f ↦ exp (-v f)` of an additive valuation `v : F → WithTop ℤ`. -/
-private noncomputable def expNegValuation (v : AddValuation F (WithTop ℤ)) : Valuation F ℤᵐ⁰ where
-  toFun f := expNeg (v f)
-  map_zero' := by rw [AddValuation.map_zero, expNeg_top]
-  map_one' := by rw [AddValuation.map_one, ← WithTop.coe_zero, expNeg_coe, neg_zero,
-    WithZero.exp_zero]
-  map_mul' f g := by rw [AddValuation.map_mul, expNeg_add]
-  map_add_le_max' f g := by
-    rw [← expNeg_antitone.map_min]
-    exact expNeg_antitone (AddValuation.map_add v f g)
-
-private theorem expNegValuation_apply (v : AddValuation F (WithTop ℤ)) (f : F) :
-    expNegValuation v f = expNeg (v f) := (rfl)
-
 /-- **The place of an additive order function.** A surjective additive valuation
 `v : F → WithTop ℤ` that vanishes on the nonzero constants is a place of `F / k`, whose
 valuation is `f ↦ exp (-v f)`. Its order function is `v` (`TauCeti.Place.ord_ofAddValuation`). -/
 noncomputable def ofAddValuation (v : AddValuation F (WithTop ℤ)) (hv : Function.Surjective v)
     (hk : ∀ c : k, c ≠ 0 → v (algebraMap k F c) = 0) : Place k F where
-  valuation := expNegValuation v
+  valuation := v.expNeg
   valuation_surjective γ := by
     induction γ using WithZero.expRecOn with
     | zero => exact ⟨0, by rw [map_zero]⟩
     | exp n =>
       obtain ⟨f, hf⟩ := hv (-n : ℤ)
-      exact ⟨f, by rw [expNegValuation_apply, hf, expNeg_coe, neg_neg]⟩
-  isTrivialOn := ⟨fun c hc ↦ by
-    rw [expNegValuation_apply, hk c hc, ← WithTop.coe_zero, expNeg_coe, neg_zero,
-      WithZero.exp_zero]⟩
+      exact ⟨f, by rw [AddValuation.expNeg_apply, hf, WithTop.expNeg_coe, neg_neg]⟩
+  isTrivialOn := ⟨fun c hc ↦ by rw [AddValuation.expNeg_apply, hk c hc, WithTop.expNeg_zero]⟩
 
 variable {v : AddValuation F (WithTop ℤ)} {hv : Function.Surjective v}
   {hk : ∀ c : k, c ≠ 0 → v (algebraMap k F c) = 0}
 
-private theorem valuation_ofAddValuation :
-    (ofAddValuation v hv hk).valuation = expNegValuation v := (rfl)
+/-- The valuation of `ofAddValuation v` is `f ↦ exp (-v f)`. -/
+@[simp]
+theorem valuation_ofAddValuation : (ofAddValuation v hv hk).valuation = v.expNeg :=
+  (rfl)
 
 /-- The valuation of `ofAddValuation v` at a function of finite order `n` is `exp (-n)`. -/
 theorem valuation_ofAddValuation_of_eq_coe {f : F} {n : ℤ} (hf : v f = n) :
     (ofAddValuation v hv hk).valuation f = WithZero.exp (-n) := by
-  rw [valuation_ofAddValuation, expNegValuation_apply, hf, expNeg_coe]
+  rw [valuation_ofAddValuation, AddValuation.expNeg_apply, hf, WithTop.expNeg_coe]
 
 /-- **The order function of `ofAddValuation v` is `v`**, read in `ℤ`: the value `⊤`, taken only
 at `0`, becomes the junk value `ord_P 0 = 0`. -/

@@ -28,9 +28,8 @@ onto the places of `M(X) / ℂ`, and that it matches the analytic and the algebr
 of a finite holomorphic map `β : X → ℙ¹`.
 
 * Different points give different places, because meromorphic functions separate points.
-* Every place is rational: a function regular at `x` agrees with its value `f(x)` to first order.
-* `M(X)` is an algebraic function field over `ℂ`: it is finite over the rational functions pulled
-  back along any finite holomorphic map to the sphere.
+* Every place is rational, since `M(X)` is an algebraic function field over the algebraically
+  closed field `ℂ`.
 * Along such a map `β`, with `ℂ(t)` acting on `M(X)` by pullback, the place at `x` lies over the
   place of `ℂ(t)` at `β x`, with ramification index the local multiplicity of `β` at `x`.
 * Every place is the place at a point. On the sphere the places of `ℂ(t)` are known: the finite
@@ -52,8 +51,6 @@ of a finite holomorphic map `β : X → ℙ¹`.
 * `TauCeti.RiemannSurface.MeromorphicFunction.place_injective` and
   `TauCeti.RiemannSurface.MeromorphicFunction.place_surjective`.
 * `TauCeti.RiemannSurface.MeromorphicFunction.degree_place`: every place at a point is rational.
-* `TauCeti.RiemannSurface.MeromorphicFunction.isFunctionField`: `M(X)` is an algebraic function
-  field over `ℂ`.
 * `TauCeti.RiemannSurface.MeromorphicFunction.restrict_place` and
   `TauCeti.RiemannSurface.MeromorphicFunction.ramificationIdx_place`: the place at `x` lies over
   the place at `β x`, with ramification index the local multiplicity of `β` at `x`.
@@ -138,13 +135,9 @@ theorem place_injective : Function.Injective (place (X := X)) :=
 theorem place_inj {x y : X} : place x = place y ↔ x = y :=
   place_injective.eq_iff
 
-/-- **The place at a point is rational.** A meromorphic function `f` regular at `x` agrees with
-the constant `f(x)` to first order, so the residue field of the place at `x` is `ℂ`. -/
-theorem degree_place (x : X) : (place x).degree = 1 := by
-  refine (place x).degree_eq_one_iff_forall_exists_valuation_sub_lt_one.mpr fun f hf ↦ ?_
-  have hfx := coe_finitePart (mem_integers_place_iff.mp hf)
-  refine ⟨f.finitePart x, valuation_place_lt_one_iff.mpr ?_⟩
-  rw [sub_apply_of_eq_coe hfx.symm (by rw [coe_algebraMap]), sub_self]
+/-- **The place at a point is rational**: its residue field is `ℂ`. -/
+theorem degree_place (x : X) : (place x).degree = 1 :=
+  (place x).degree_eq_one_of_isAlgClosed_of_isFunctionField isFunctionField
 
 /-! ### Pullback along a finite holomorphic map to the sphere -/
 
@@ -152,33 +145,6 @@ section RatFunc
 
 variable (β : FiniteHolomorphicMap X (OnePoint ℂ))
   [Algebra (RatFunc ℂ) (MeromorphicFunction X)]
-
-omit [CompactSpace X] [T2Space X] in
-/-- For the `ℂ(t)`-algebra structure on `M(X)` given by pullback along `β`, the constants act
-through `ℂ(t)`. -/
-theorem isScalarTower_ratFunc
-    (h : algebraMap (RatFunc ℂ) (MeromorphicFunction X) =
-      ((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).toRingHom) :
-    IsScalarTower ℂ (RatFunc ℂ) (MeromorphicFunction X) :=
-  .of_algebraMap_eq fun c ↦ by
-    rw [h]
-    exact (((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).commutes c).symm
-
-/-- For the `ℂ(t)`-algebra structure on `M(X)` given by pullback along `β`, the field `M(X)` is
-integral over `ℂ(t)`. -/
-theorem isIntegral_algebra_ratFunc
-    (h : algebraMap (RatFunc ℂ) (MeromorphicFunction X) =
-      ((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).toRingHom) :
-    Algebra.IsIntegral (RatFunc ℂ) (MeromorphicFunction X) :=
-  ⟨fun f ↦ isIntegral_ratFunc β f h⟩
-
-/-- For the `ℂ(t)`-algebra structure on `M(X)` given by pullback along `β`, the field `M(X)` is
-finite-dimensional over `ℂ(t)`. -/
-theorem finiteDimensional_ratFunc
-    (h : algebraMap (RatFunc ℂ) (MeromorphicFunction X) =
-      ((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).toRingHom) :
-    FiniteDimensional (RatFunc ℂ) (MeromorphicFunction X) :=
-  Module.finite_of_finrank_pos (by rw [finrank_ratFunc_eq_degree β h]; exact degree_pos β)
 
 /-- **The order of a pullback at a place.** At the place at `x`, the pullback along `β` of a
 rational function `r` has order the local multiplicity of `β` at `x` times the order of `r` at
@@ -191,12 +157,13 @@ theorem ord_place_algebraMap
       localMultiplicity β x * (place (β x)).ord (ratFuncEquiv r) := by
   rcases eq_or_ne r 0 with rfl | hr
   · simp
-  have hr' : ratFuncEquiv r ≠ 0 := (map_ne_zero ratFuncEquiv).mpr hr
-  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp ((order (β x)).ne_top_iff.mpr hr')
-  rw [h, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.comp_apply, comapₐ_apply,
-    AlgEquiv.coe_toAlgHom, ord_place, ord_place, order_apply,
-    meromorphicOrderAt_finitePart_comap, ← order_apply, ← hn, ← WithTop.coe_natCast,
-    ← WithTop.coe_mul, WithTop.untopD_coe, WithTop.untopD_coe, mul_comm]
+  have hpull : algebraMap (RatFunc ℂ) (MeromorphicFunction X) r =
+      comap β β.holomorphic β.nonconstant (ratFuncEquiv r) := by
+    simp [h, comapₐ_apply]
+  rw [← WithTop.coe_inj, coe_ord_place x ((map_ne_zero _).mpr hr), WithTop.coe_mul,
+    coe_ord_place (β x) ((map_ne_zero ratFuncEquiv).mpr hr), hpull, order_apply, order_apply,
+    meromorphicOrderAt_finitePart_comap, mul_comm]
+  norm_cast
 
 variable [IsScalarTower ℂ (RatFunc ℂ) (MeromorphicFunction X)]
   [Algebra.IsIntegral (RatFunc ℂ) (MeromorphicFunction X)]
@@ -266,22 +233,6 @@ end Sphere
 
 /-! ### Every place is the place at a point -/
 
-/-- The `ℂ(t)`-algebra structure on `M(X)` given by pullback along a finite holomorphic map
-`β : X → ℙ¹`. -/
-private abbrev ratFuncAlgebra (β : FiniteHolomorphicMap X (OnePoint ℂ)) :
-    Algebra (RatFunc ℂ) (MeromorphicFunction X) :=
-  ((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).toRingHom.toAlgebra
-
-/-- **The field of meromorphic functions is an algebraic function field over `ℂ`.** A compact
-connected Riemann surface carries a finite holomorphic map `β` to the sphere, and `M(X)` is finite
-over the rational functions pulled back along `β`. -/
-theorem isFunctionField : IsFunctionField ℂ (MeromorphicFunction X) := by
-  obtain ⟨β, -⟩ := exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one (X := X)
-  let := ratFuncAlgebra β
-  have := isScalarTower_ratFunc β rfl
-  have := finiteDimensional_ratFunc β rfl
-  exact (IsFunctionField.ratFunc ℂ).finite_extension
-
 /-- **Every place of `M(X) / ℂ` is the place at a point.** For a finite holomorphic map
 `β : X → ℙ¹`, a place `P` of `M(X)` lies over the place of `ℂ(t)` at some `y`. The places at the
 points of the fibre `β⁻¹(y)` also lie over it, with ramification indices summing to `deg β`, which
@@ -290,9 +241,8 @@ theorem place_surjective : Function.Surjective (place (X := X)) := by
   classical
   intro P
   obtain ⟨β, -⟩ := exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one (X := X)
-  let := ratFuncAlgebra β
+  let := ((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).toRingHom.toAlgebra
   have := isScalarTower_ratFunc β rfl
-  have := isIntegral_algebra_ratFunc β rfl
   have := finiteDimensional_ratFunc β rfl
   obtain ⟨y, hy⟩ := exists_map_place_eq (P.restrict ℂ (RatFunc ℂ))
   by_contra hP
