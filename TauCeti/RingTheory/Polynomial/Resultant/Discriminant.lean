@@ -68,6 +68,7 @@ depressed specialization of that formula is used to compare a quartic with its c
 * `Polynomial.discr_prod_of_monic`: the same formula for a finite product of monic polynomials,
   with the pairwise resultants as cross terms.
 * `Polynomial.discr_X_pow_sub_C`: the discriminant of a binomial `X ^ n - C a`.
+* `Polynomial.discr_X_pow_add_X`: the discriminant of `X ^ m + X` for `m ≥ 2`.
 * `TauCeti.discr_X_pow_five_add_C_mul_X_add_C`: the discriminant of `X⁵ + aX + b`.
 * `TauCeti.not_isSquare_discr_X_pow_five_sub_C`: the discriminant `3125a⁴` of a pure quintic
   `X ^ 5 - C a` over `ℚ` with `a ≠ 0` is not a square.
@@ -441,6 +442,26 @@ theorem discr_prod_of_monic {ι : Type*} [LinearOrder ι] (s : Finset ι) (f : �
       simp [not_lt.mpr (hm j hj).le]
     rw [hnew, prod_congr rfl hold]
     ring
+
+/-- **The discriminant of `Xᵐ + X`.** Over any commutative ring, for `m ≥ 2`,
+`discr (X ^ m + X) = (-1) ^ ((m - 1) * (m - 2) / 2) * (m - 1) ^ (m - 1)`. -/
+theorem discr_X_pow_add_X {m : ℕ} (hm : 2 ≤ m) :
+    (X ^ m + X : R[X]).discr =
+      (-1 : R) ^ ((m - 1) * (m - 2) / 2) * ((m - 1 : ℕ) : R) ^ (m - 1) := by
+  nontriviality R
+  have hm1 : m - 1 ≠ 0 := by omega
+  have hfac : (X ^ m + X : R[X]) = X * (X ^ (m - 1) - C (-1)) := by
+    rw [map_neg, map_one, sub_neg_eq_add, mul_add, mul_one, ← pow_succ',
+      Nat.sub_add_cancel (by omega)]
+  have hmonX : (X : R[X]).Monic := monic_X
+  have hmonQ : (X ^ (m - 1) - C (-1 : R)).Monic := monic_X_pow_sub_C (-1) hm1
+  have hdiscrX : (X : R[X]).discr = 1 := by simpa using discr_X_pow_sub_C (0 : R) 1
+  have hres : (X : R[X]).resultant (X ^ (m - 1) - C (-1)) = 1 := by
+    rw [natDegree_X, ← sub_zero (X : R[X]), ← C_0, resultant_X_sub_C_left _ _ 0 le_rfl]
+    simp [zero_pow hm1]
+  rw [hfac, hmonX.discr_mul hmonQ, hdiscrX, hres, one_pow, one_mul, mul_one,
+    discr_X_pow_sub_C, show m - 1 - 1 = m - 2 by omega]
+  simp only [neg_neg, one_pow, mul_one]
 
 namespace Monic
 
