@@ -11,7 +11,9 @@ public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 import TauCeti.Algebra.Category.ModuleCat.Algebra
+import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Defect
 import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
+import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.Algebra.Module.AuslanderReiten.TensorCokernel
 import TauCeti.LinearAlgebra.TensorProduct.Balanced.Unit
 import Mathlib.Algebra.Algebra.Opposite
@@ -25,8 +27,9 @@ acts covariantly on `Extⁿ_A(M,A)`. Pushforward along `a ↦ a • y` gives the
 isomorphism when `M` has a resolution of length one by finite projectives. The map itself is
 independent of the resolution.
 
-The comparison uses `LinearMap.auslanderReitenTransposeTensorEquivCokernel` and
-`TauCeti.homCokernelEquivExt`. For finite acyclic quivers this tensor description is used with
+The comparison uses `LinearMap.auslanderReitenTransposeTensorEquivCokernel`,
+`ModuleCat.covariantDefectEquivHomQuotient`, and `TauCeti.homCokernelEquivExt`.
+For finite acyclic quivers this tensor description is used with
 `M = D(kQ)` in the hereditary description of the inverse Auslander–Reiten translate.
 
 ## References
@@ -59,25 +62,19 @@ theorem op_smul_extRegular {M : ModuleCat.{u} A} {n : ℕ} (a : A) (x : Ext M (o
 
 variable {M Y Z : ModuleCat.{u} A} {n : ℕ}
 
-private def regularHom (Y : ModuleCat.{u} A) : Y →ₗ[k] (of A A ⟶ Y) :=
-  (homLinearEquiv (S := k)).symm.toLinearMap.comp
-    (LinearMap.ringLmapEquivSelf A k Y).symm.toLinearMap
-
-@[simp]
-private theorem regularHom_apply (y : Y) :
-    regularHom k Y y = ofHom (LinearMap.toSpanSingleton A Y y) := (rfl)
-
 /-- The canonical balanced evaluation map from extensions by the regular module to extensions
 by `Y`, induced by pushout along `a ↦ a • y` on a simple tensor with `y`. -/
 noncomputable def extRegularTensor (M Y : ModuleCat.{u} A) (n : ℕ) :
     BalancedTensorProduct k A (Ext M (of A A) n) Y →ₗ[k] Ext M Y n :=
   BalancedTensorProduct.lift
     ((Ext.bilinearCompOfLinear k M (of A A) Y n 0 n (add_zero n)).compl₂
-      ((Ext.linearEquiv₀ (R := k)).symm.toLinearMap.comp (regularHom k Y))) (by
+      ((Ext.linearEquiv₀ (R := k)).symm.toLinearMap.comp
+        (homSelfLinearEquiv k Y).symm.toLinearMap)) (by
     intro a x y
     simp only [LinearMap.comp_apply, LinearMap.compl₂_apply, LinearEquiv.coe_coe,
-      Ext.linearEquiv₀_symm_apply, Ext.bilinearCompOfLinear_apply_apply, regularHom_apply,
-      op_smul_extRegular, Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀]
+      Ext.linearEquiv₀_symm_apply, Ext.bilinearCompOfLinear_apply_apply,
+      homSelfLinearEquiv_symm_apply, op_smul_extRegular, Ext.comp_assoc_of_second_deg_zero,
+      Ext.mk₀_comp_mk₀]
     congr 2
     exact hom_ext (LinearMap.toSpanSingleton_comp_toSpanSingleton y a))
 
@@ -108,16 +105,9 @@ variable {S : ShortComplex (ModuleCat.{u} A)} (hS : S.ShortExact)
 variable {W : Type u} [AddCommGroup W] [Module A W] [Module k W] [IsScalarTower k A W]
 
 private noncomputable def transposeTensorEquivExt (eW : W ≃ₗ[A] Y) :
-    BalancedTensorProduct k A (AuslanderReitenTranspose S.f.hom) W ≃ₗ[k] Ext S.X₃ Y 1 := by
-  let e := (homLinearEquivOfLinearEquiv k eW S.X₁).symm
-  have he : (LinearMap.range (S.f.hom.lcomp k W)).map e.toLinearMap =
-      LinearMap.range (CategoryTheory.Linear.leftComp k Y S.f) := by
-    rw [← LinearMap.range_comp]
-    dsimp only [e]
-    rw [homLinearEquivOfLinearEquiv_symm_comp_lcomp, LinearMap.range_comp_of_range_eq_top _
-      (LinearEquiv.range _)]
-  exact (LinearMap.auslanderReitenTransposeTensorEquivCokernel S.f.hom).trans
-    ((Submodule.Quotient.equiv _ _ e he).trans (homCokernelEquivExt k hS Y))
+    BalancedTensorProduct k A (AuslanderReitenTranspose S.f.hom) W ≃ₗ[k] Ext S.X₃ Y 1 :=
+  (LinearMap.auslanderReitenTransposeTensorEquivCokernel S.f.hom).trans
+    ((covariantDefectEquivHomQuotient k eW S.f).trans (homCokernelEquivExt k hS Y))
 
 @[simp]
 private theorem transposeTensorEquivExt_mk (eW : W ≃ₗ[A] Y)
@@ -126,8 +116,8 @@ private theorem transposeTensorEquivExt_mk (eW : W ≃ₗ[A] Y)
         (BalancedTensorProduct.tmul k A (AuslanderReitenTranspose.mk S.f.hom φ) w) =
       hS.extClass.comp (Ext.mk₀ (ofHom (eW.toLinearMap.comp (φ.smulRight w)))) (add_zero 1) := by
   simp only [transposeTensorEquivExt, LinearEquiv.trans_apply,
-    LinearMap.auslanderReitenTransposeTensorEquivCokernel_tmul, Submodule.Quotient.equiv_apply,
-    Submodule.mapQ_apply, homCokernelEquivExt_mk]
+    LinearMap.auslanderReitenTransposeTensorEquivCokernel_tmul, covariantDefectEquivHomQuotient_mk]
+  rw [homCokernelEquivExt_mk k hS Y]
   congr 4
   ext b
   simp
