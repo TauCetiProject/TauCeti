@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Continuation.AlmostComplex
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Cayley.Path
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Cayley.Segment
 
 /-!
 # The continuation homotopy of almost complex structures on a manifold
@@ -47,6 +47,8 @@ compactness of `M` is used.
   compatibility.
 * `TauCeti.SmoothTwoForm.Compatible.continuationAlmostComplex_of_nonpos`,
   `TauCeti.SmoothTwoForm.Compatible.continuationAlmostComplex_of_one_le`: its two ends.
+* `TauCeti.SmoothTwoForm.Compatible.continuationAlmostComplex_eq_cayleySegment`: at each `(s, t)`
+  it is the Cayley segment from `J₁ t` to `J₂ t` at time `s`.
 * `TauCeti.SmoothTwoForm.Compatible.contMDiffAt_continuationAlmostComplex`,
   `TauCeti.SmoothTwoForm.Compatible.contMDiff_continuationAlmostComplex`: joint smoothness.
 
@@ -156,6 +158,13 @@ theorem cayley_continuationAlmostComplex (z : ℝ × ℝ) (x : M) :
         smoothTransition z.1 •
           (J₀.almostComplexStructureAt x).cayley ((J₂ z.2).almostComplexStructureAt x) := by
   rw [almostComplexStructureAt_continuationAlmostComplex, Floer.cayley_continuationAlmostComplex]
+
+/-- The continuation homotopy at `z = (s, t)` is the Cayley segment from `J₁ t` to `J₂ t` at
+time `s`. -/
+theorem continuationAlmostComplex_eq_cayleySegment (z : ℝ × ℝ) :
+    h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ z = h₀.cayleySegment (hJ₁ z.2) (hJ₂ z.2) z.1 :=
+  h₀.eq_cayleySegment_of_cayley_eq _ _ (tames_continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ z)
+    (cayley_continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ z)
 
 /-- The continuation homotopy is `σ`-compatible when the two families are. -/
 theorem compatible_continuationAlmostComplex (hJ₁c : ∀ t, σ.Compatible (J₁ t))
