@@ -26,7 +26,8 @@ inversion (`TauCeti.map_multHaar_inv`), and gives the interval `[1, e]` mass one
 `t ↦ t ^ γ`, `γ ≠ 0`, sends it to `|γ|⁻¹ dt / t` (`TauCeti.map_multHaar_rpow`), so it multiplies
 `L^q(dt / t)` seminorms by `|γ| ^ (-1 / q)` (`TauCeti.eLpNorm_comp_rpow_multHaar`).
 
-The map `t ↦ c / t` for `c > 0` preserves `dt / t` (`TauCeti.measurePreserving_div_multHaar`).
+The map `t ↦ c / t` for `c > 0` preserves `dt / t`
+(`TauCeti.measurePreserving_div_left_multHaar`).
 At a positive cutoff `a`, the reflection `t ↦ a² / t` carries the upper ray to the lower part of
 `(0, ∞)` with their restricted measures (`TauCeti.measurePreserving_sq_div_multHaar_restrict_Ioi`).
 Under reciprocal symmetry, integrability is equivalent to integrability on the upper ray
@@ -152,6 +153,7 @@ theorem ae_pos_multHaar : ∀ᵐ t ∂multHaar, 0 < t :=
   ae_iff.2 (by simp only [not_lt]; exact multHaar_Iic_zero)
 
 /-- Restricting `dt / t` to an upper ray with nonpositive cutoff leaves it unchanged. -/
+@[simp]
 theorem multHaar_restrict_Ioi_of_nonpos {a : ℝ} (ha : a ≤ 0) :
     multHaar.restrict (Ioi a) = multHaar :=
   Measure.restrict_eq_self_of_ae_mem (ae_pos_multHaar.mono fun _ ht ↦ ha.trans_lt ht)
@@ -241,7 +243,7 @@ theorem map_multHaar_inv : multHaar.map Inv.inv = multHaar := by
     ← map_map Real.measurable_exp measurable_neg, map_neg_eq_self]
 
 /-- Division of a positive constant by the variable preserves `dt / t`. -/
-theorem measurePreserving_div_multHaar {c : ℝ} (hc : 0 < c) :
+theorem measurePreserving_div_left_multHaar {c : ℝ} (hc : 0 < c) :
     MeasurePreserving (c / ·) multHaar multHaar := by
   simpa only [Function.comp_def, div_eq_mul_inv] using
     MeasurePreserving.comp ⟨measurable_const_mul c, map_multHaar_mul_left hc⟩
@@ -260,7 +262,8 @@ theorem measurePreserving_sq_div_multHaar_restrict_Ioi {a : ℝ} (ha : 0 < a) :
       inv_Ioo_0_left (div_pos ha hsq)]
     simp only [inv_div, pow_two, mul_div_cancel_left₀ _ ha.ne']
   simpa only [hpre] using
-    (measurePreserving_div_multHaar hsq).restrict_preimage (measurableSet_Ioo (a := 0) (b := a))
+    (measurePreserving_div_left_multHaar hsq).restrict_preimage
+      (measurableSet_Ioo (a := 0) (b := a))
 
 section Fold
 

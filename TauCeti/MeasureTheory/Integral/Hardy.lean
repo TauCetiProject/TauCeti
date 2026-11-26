@@ -92,7 +92,7 @@ private theorem lintegral_hardyKernel_col {θ s : ℝ} (hθ : 0 < θ) (hs : 0 < 
     simp only [hardyKernel, ht, hs, zero_lt_one, div_pos hs ht, true_and, div_one, div_le_one ht]
   have hm : Measurable (hardyKernel θ 1) :=
     (measurable_uncurry_hardyKernel θ).comp (measurable_const.prodMk measurable_id)
-  rw [lintegral_congr_ae hae, (measurePreserving_div_multHaar hs).lintegral_comp hm,
+  rw [lintegral_congr_ae hae, (measurePreserving_div_left_multHaar hs).lintegral_comp hm,
     lintegral_hardyKernel_row hθ one_pos]
 
 /-- **Prefix Hardy inequality** in multiplicative Haar form: for `θ > 0` and `1 ≤ q ≤ ∞`,
