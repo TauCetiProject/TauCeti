@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Variational.NormalCone
+public import TauCeti.Analysis.Convex.NormalCone
 
 /-!
 # Checks: normal cones and constrained minima on the line
@@ -56,27 +56,26 @@ theorem neg_two_smul_mem_normalCone :
 /-- The derivative `2` of `u²` at `1` is a subgradient there. -/
 theorem two_smul_mem_subdifferential_sq :
     (2 : ℝ) • ContinuousLinearMap.id ℝ ℝ ∈
-      subdifferential (dualEvalPairing ℝ) (fun u : ℝ ↦ ((u ^ 2 : ℝ) : EReal)) 1 := by
+      subdifferential (topDualPairing ℝ ℝ).flip (fun u : ℝ ↦ ((u ^ 2 : ℝ) : EReal)) 1 := by
   rw [mem_subdifferential_coe_iff]
   intro v
-  simp only [dualEvalPairing_apply, smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
+  simp only [LinearMap.flip_apply, topDualPairing_apply, smul_apply, ContinuousLinearMap.id_apply,
+    smul_eq_mul]
   nlinarith [sq_nonneg (v - 1)]
 
 /-- `0 = 2 + (-2) ∈ ∂E(1) + N_{[1, 2]}(1)` for `E(u) = u²`, the first-order condition at the
 constrained minimizer `1`. -/
 theorem zero_mem_subdifferential_sq_add_normalCone :
     (0 : StrongDual ℝ ℝ) ∈
-      subdifferential (dualEvalPairing ℝ) (fun u : ℝ ↦ ((u ^ 2 : ℝ) : EReal)) 1 +
+      subdifferential (topDualPairing ℝ ℝ).flip (fun u : ℝ ↦ ((u ^ 2 : ℝ) : EReal)) 1 +
         normalCone (Icc (1 : ℝ) 2) 1 :=
   ⟨_, two_smul_mem_subdifferential_sq, _, neg_two_smul_mem_normalCone, by
-    change (2 : ℝ) • ContinuousLinearMap.id ℝ ℝ + (-2 : ℝ) • ContinuousLinearMap.id ℝ ℝ = 0
-    rw [← add_smul]
-    norm_num⟩
+    simp [← add_smul]⟩
 
 /-- `0 ∈ ∂|·|(0)`. -/
 theorem zero_mem_subdifferential_abs :
     (0 : StrongDual ℝ ℝ) ∈
-      subdifferential (dualEvalPairing ℝ) (fun u : ℝ ↦ ((|u| : ℝ) : EReal)) 0 := by
+      subdifferential (topDualPairing ℝ ℝ).flip (fun u : ℝ ↦ ((|u| : ℝ) : EReal)) 0 := by
   rw [mem_subdifferential_coe_iff]
   intro v
   simp
