@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Covering
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Eigenbasis
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Resolvent
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Intertwining
 import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
@@ -57,10 +58,13 @@ the nonnegative Laplacian `Δ⁺ = -div grad` of `N` into that of `M`.
 * **The Laplacian.** The normalized pullback `J : L²(N) → L²(M)` transports the self-adjoint
   realization `Δ⁺` of the Laplacian on `L²` (`TauCeti.Manifold.SobolevH1.negLaplacian`):
   `(J f, J g)` lies on the graph of `Δ⁺_M` exactly when `(f, g)` lies on that of `Δ⁺_N`
-  (`mem_graph_negLaplacian_normalizedPullbackLp_iff`). Hence `J f` lies in the domain of `Δ⁺_M`
-  exactly when `f` lies in that of `Δ⁺_N`, and then `Δ⁺_M (J f) = J (Δ⁺_N f)`
-  (`negLaplacian_normalizedPullbackLp`). Since the range of `J` is the deck-invariant subspace
-  of `L²(M)`, `J` maps the domain of `Δ⁺_N` onto the deck-invariant part of the domain of `Δ⁺_M`
+  (`mem_graph_negLaplacian_normalizedPullbackLp_iff`). In particular `J` intertwines `Δ⁺_N`
+  and `Δ⁺_M` in the sense of `LinearPMap.Intertwines`
+  (`intertwines_negLaplacian_normalizedPullbackLp`), which follows from the intertwining of
+  the resolvents. Hence `J f` lies in the domain of `Δ⁺_M` exactly when `f` lies in that of
+  `Δ⁺_N`, and then `Δ⁺_M (J f) = J (Δ⁺_N f)` (`negLaplacian_normalizedPullbackLp`). Since
+  the range of `J` is the deck-invariant subspace of `L²(M)`, `J` maps the domain of `Δ⁺_N`
+  onto the deck-invariant part of the domain of `Δ⁺_M`
   (`map_normalizedPullbackLp_domain_negLaplacian`), and identifies `Δ⁺_N` with the restriction
   of `Δ⁺_M` to the deck-invariant subspace. The graph statement follows from the resolvents:
   `Δ⁺ f = g` exactly when `f` is the value of `(Δ⁺ + 1)⁻¹ (g + f)`
@@ -86,6 +90,7 @@ commutes with isometries.
 * `TauCeti.Manifold.SobolevH1.normalizedPullbackLp_starProjection`: the normalized pullback
   intertwines the spectral projections of `Δ⁺`.
 * `TauCeti.Manifold.SobolevH1.mem_graph_negLaplacian_normalizedPullbackLp_iff`,
+  `TauCeti.Manifold.SobolevH1.intertwines_negLaplacian_normalizedPullbackLp`,
   `TauCeti.Manifold.SobolevH1.normalizedPullbackLp_mem_domain_negLaplacian_iff`,
   `TauCeti.Manifold.SobolevH1.negLaplacian_normalizedPullbackLp`: the normalized pullback
   transports the Laplacian `Δ⁺` on `L²`, with its domain.
@@ -318,6 +323,19 @@ theorem mem_graph_negLaplacian_normalizedPullbackLp_iff (hq : IsQuotientCovering
     ← normalizedPullback_resolvent hq hf one_pos, toLp_normalizedPullback]
   exact (hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv).injective.eq_iff
 
+/-- **The normalized pullback intertwines the Laplacians.** For a finite quotient covering map
+`q : M → N` which is a local Riemannian isometry, the normalized pullback `J : L²(N) → L²(M)` maps
+the domain of `Δ⁺_N` into that of `Δ⁺_M`, and `Δ⁺_M (J f) = J (Δ⁺_N f)` there, since it
+intertwines the resolvents. -/
+theorem intertwines_negLaplacian_normalizedPullbackLp (hq : IsQuotientCoveringMap q G)
+    (hf : IsLocalRiemannianIsometry I I' q) :
+    (negLaplacian I' N).Intertwines (negLaplacian I M)
+      (hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv).toContinuousLinearMap :=
+  LinearPMap.intertwines_of_comp_eq_of_isResolventAt (isResolventAt_negLaplacian one_pos)
+    (isResolventAt_negLaplacian one_pos) (by
+      ext f
+      simp [← normalizedPullback_resolvent hq hf, toLp_normalizedPullback])
+
 omit [T2Space N] in
 /-- The Laplacian of a deck-invariant element of the domain of `Δ⁺_M` is deck invariant, hence the
 normalized pullback of an element of `L²(N)`. -/
@@ -344,9 +362,8 @@ theorem normalizedPullbackLp_mem_domain_negLaplacian_iff (hq : IsQuotientCoverin
     (hf : IsLocalRiemannianIsometry I I' q) {f : Lp ℝ 2 (riemannianVolume I' N)} :
     hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv f ∈ (negLaplacian I M).domain ↔
       f ∈ (negLaplacian I' N).domain := by
-  refine ⟨fun h ↦ ?_, fun h ↦ LinearPMap.mem_domain_of_mem_graph
-    ((mem_graph_negLaplacian_normalizedPullbackLp_iff hq hf).2
-      ((negLaplacian I' N).mem_graph ⟨f, h⟩))⟩
+  refine ⟨fun h ↦ ?_, fun h ↦
+    (intertwines_negLaplacian_normalizedPullbackLp hq hf).mem_domain ⟨f, h⟩⟩
   -- `Δ⁺_M (J f)` is deck invariant, hence of the form `J g`, and then `Δ⁺_N f = g`
   obtain ⟨g, hg⟩ := negLaplacian_mem_range_normalizedPullbackLp hq hf f h
   have hgraph := (negLaplacian I M).mem_graph ⟨_, h⟩
@@ -363,9 +380,7 @@ theorem negLaplacian_normalizedPullbackLp (hq : IsQuotientCoveringMap q G)
     negLaplacian I M ⟨hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv f,
         (normalizedPullbackLp_mem_domain_negLaplacian_iff hq hf).2 f.property⟩ =
       hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv (negLaplacian I' N f) :=
-  (negLaplacian I M).mem_graph_snd_inj (LinearPMap.mem_graph _ _)
-    ((mem_graph_negLaplacian_normalizedPullbackLp_iff hq hf).2
-      ((negLaplacian I' N).mem_graph f)) rfl
+  ((intertwines_negLaplacian_normalizedPullbackLp hq hf).apply_eq f).symm
 
 /-- **The transplanted domain.** For a finite quotient covering map `q : M → N` which is a local
 Riemannian isometry, the normalized pullback `J : L²(N) → L²(M)` maps the domain of `Δ⁺_N` onto

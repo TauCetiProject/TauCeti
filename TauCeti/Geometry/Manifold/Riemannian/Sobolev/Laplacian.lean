@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Variational.FormOperator
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Eigenspace
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Resolvent
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic
 import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 import TauCeti.Geometry.Manifold.Riemannian.Poisson
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Rellich
@@ -34,7 +35,8 @@ form `D + ⟪J ·, J ·⟫_{L²}`, which is coercive, so `Δ⁺ + 1` is the inve
 solution operator. More generally, for `t > 0` the value of the resolvent
 `(Δ⁺ + t)⁻¹ : L²(M) → H¹(M)` (`TauCeti.Manifold.SobolevH1.resolvent`) inverts `Δ⁺ + t` on both
 sides: `Δ⁺ f = g` exactly when `f` is the value of `(Δ⁺ + t)⁻¹ (g + t f)`
-(`TauCeti.Manifold.SobolevH1.mem_graph_negLaplacian_iff_toLp_resolvent`).
+(`TauCeti.Manifold.SobolevH1.mem_graph_negLaplacian_iff_toLp_resolvent`), so its negative is the
+resolvent of `Δ⁺` at `-t` (`TauCeti.Manifold.SobolevH1.isResolventAt_negLaplacian`).
 
 * `Δ⁺` is self-adjoint (`TauCeti.Manifold.SobolevH1.isSelfAdjoint_negLaplacian`) and
   nonnegative (`TauCeti.Manifold.SobolevH1.inner_negLaplacian_self_nonneg`), since `D` is
@@ -141,32 +143,19 @@ theorem mem_graph_negLaplacian_iff_toLp_resolvent {t : ℝ} (ht : 0 < t)
     rw [h, inner_add_left, real_inner_smul_left] at hR
     linarith
 
-/-- **The resolvent maps into the domain.** For `t > 0` and `h ∈ L²(M)`, the value of
-`(Δ⁺ + t)⁻¹ h` lies on the graph of `Δ⁺`, with `Δ⁺ (Δ⁺ + t)⁻¹ h = h - t (Δ⁺ + t)⁻¹ h`. -/
-theorem mem_graph_negLaplacian_toLp_resolvent {t : ℝ} (ht : 0 < t)
-    (h : Lp ℝ 2 (riemannianVolume I M)) :
-    (toLp (resolvent I M ht h), h - t • toLp (resolvent I M ht h)) ∈ (negLaplacian I M).graph :=
-  (mem_graph_negLaplacian_iff_toLp_resolvent ht).2 (by rw [sub_add_cancel])
-
-/-- For `t > 0`, the value of `(Δ⁺ + t)⁻¹ h` lies in the domain of `Δ⁺`. -/
-theorem toLp_resolvent_mem_domain_negLaplacian {t : ℝ} (ht : 0 < t)
-    (h : Lp ℝ 2 (riemannianVolume I M)) :
-    toLp (resolvent I M ht h) ∈ (negLaplacian I M).domain :=
-  LinearPMap.mem_domain_of_mem_graph (mem_graph_negLaplacian_toLp_resolvent ht h)
-
-/-- **`(Δ⁺ + t) (Δ⁺ + t)⁻¹ = 1`.** For `t > 0` and `h ∈ L²(M)`,
-`Δ⁺ (Δ⁺ + t)⁻¹ h = h - t (Δ⁺ + t)⁻¹ h`. -/
-theorem negLaplacian_toLp_resolvent {t : ℝ} (ht : 0 < t) (h : Lp ℝ 2 (riemannianVolume I M)) :
-    negLaplacian I M ⟨toLp (resolvent I M ht h), toLp_resolvent_mem_domain_negLaplacian ht h⟩ =
-      h - t • toLp (resolvent I M ht h) :=
-  (negLaplacian I M).mem_graph_snd_inj (LinearPMap.mem_graph _ _)
-    (mem_graph_negLaplacian_toLp_resolvent ht h) rfl
-
-/-- **`(Δ⁺ + t)⁻¹ (Δ⁺ + t) = 1`.** For `t > 0` and `f` in the domain of `Δ⁺`, the value of
-`(Δ⁺ + t)⁻¹ (Δ⁺ f + t f)` is `f`. -/
-theorem toLp_resolvent_negLaplacian_add {t : ℝ} (ht : 0 < t) (f : (negLaplacian I M).domain) :
-    toLp (resolvent I M ht (negLaplacian I M f + t • (f : Lp ℝ 2 (riemannianVolume I M)))) = f :=
-  (mem_graph_negLaplacian_iff_toLp_resolvent ht).1 ((negLaplacian I M).mem_graph f)
+/-- **The resolvent of the Laplacian.** For `t > 0`, `-(Δ⁺ + t)⁻¹`, read in `L²(M)` through the
+value map, is the resolvent of `Δ⁺` at `-t` in the sense of `LinearPMap.IsResolventAt`: it maps
+into the domain of `Δ⁺` and inverts `(-t) • I - Δ⁺` on both sides. -/
+theorem isResolventAt_negLaplacian {t : ℝ} (ht : 0 < t) :
+    (negLaplacian I M).IsResolventAt (-t) (-(toLp ∘L resolvent I M ht)) := by
+  refine LinearPMap.isResolventAt_iff_forall_mem_graph.2 ⟨fun h ↦ ?_, fun ⟨f, g⟩ hp ↦ ?_⟩
+  · refine (mem_graph_negLaplacian_iff_toLp_resolvent ht).2 ?_
+    simp only [neg_apply, ContinuousLinearMap.comp_apply]
+    rw [show (-t) • -toLp (resolvent I M ht h) - h + t • -toLp (resolvent I M ht h) = -h by
+      module, map_neg, map_neg]
+  · simp only [neg_apply, ContinuousLinearMap.comp_apply]
+    rw [show (-t) • f - g = -(g + t • f) by module, map_neg, map_neg, neg_neg]
+    exact (mem_graph_negLaplacian_iff_toLp_resolvent ht).1 hp
 
 /-- Every element `f` of the domain is the value of some `w ∈ H¹(M)` with
 `D(w, v) = ⟪Δ⁺ f, J v⟫_{L²}` for every `v ∈ H¹(M)`. -/
