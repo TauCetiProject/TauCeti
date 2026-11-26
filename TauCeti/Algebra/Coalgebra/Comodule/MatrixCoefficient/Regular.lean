@@ -212,8 +212,8 @@ theorem matrixCoefficientSubmodule_toRegularSubcomodule (D : Subcoalgebra K C) :
     (LinearMap.ker_eq_bot.2 Subtype.val_injective)
   have hφ : φ = (φ ∘ₗ g) ∘ₗ (Subcomodule.subtype D.toRegularSubcomodule).toLinearMap := by
     rw [LinearMap.comp_assoc, Subcomodule.subtype_toLinearMap, hg, LinearMap.comp_id]
-  rw [hφ, ← Comodule.matrixCoefficient_map, Comodule.matrixCoefficient_def,
-    Comodule.instSelf_coact, Subcomodule.subtype_apply]
+  rw [hφ, ← Comodule.matrixCoefficient_map]
+  simp only [Comodule.matrixCoefficient_def, Comodule.instSelf_coact, Subcomodule.subtype_apply]
   obtain ⟨t, ht⟩ := D.comul_mem d.property
   rw [← ht]
   clear ht

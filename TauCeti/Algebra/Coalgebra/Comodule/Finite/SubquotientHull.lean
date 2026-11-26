@@ -150,6 +150,8 @@ private theorem isSumOfUnits_of_coact_eq_tmul_one
     ObjectProperty.homMk (ComoduleCat.ofHom (R := K) (C := H)
       { toLinearMap := b.coord i
         map_coact := by ext x; simp [h] })
+  -- The local maps use `ObjectProperty.homMk (ComoduleCat.ofHom ...)`;
+  -- both wrappers preserve the underlying function definitionally.
   have hι (i) (r : K) : ι i r = r • b i := rfl
   have hπ (i) (x : X) : π i x = b.coord i x := rfl
   let c : Bicone fun _ : Fin (Module.finrank K X) ↦ 𝟙_ (FGComoduleCat.{u, u, u} K H) :=
@@ -167,8 +169,8 @@ private theorem isSumOfUnits_of_coact_eq_tmul_one
   -- Evaluation at a vector is additive in the morphism.
   let ev (x : X) : (X ⟶ X) →+ X :=
     { toFun f := f x
-      map_zero' := rfl
-      map_add' _ _ := rfl }
+      map_zero' := FGComoduleCat.zero_apply x
+      map_add' f g := FGComoduleCat.add_apply f g x }
   have htotal : ∑ j, c.π j ≫ c.ι j = 𝟙 c.pt := by
     refine ConcreteCategory.hom_ext _ _ fun x ↦ ?_
     calc (∑ j, c.π j ≫ c.ι j) x = ∑ j, (c.π j ≫ c.ι j) x := map_sum (ev x) _ _
