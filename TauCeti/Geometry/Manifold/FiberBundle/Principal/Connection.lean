@@ -25,12 +25,14 @@ values in `𝔤` which
 This file proves that **every smooth principal bundle over a Hausdorff σ-compact
 finite-dimensional base has a connection form** (`TauCeti.PrincipalBundle.exists_isConnectionForm`).
 Over the base set of a trivialization `e` of the atlas, write `x = e⁻¹(π x, g_e(x))`. The fibre
-coordinate `g_e` satisfies `g_e(x · g) = g_e(x) g`, so the pullback `g_e^* θ` of the left
-Maurer–Cartan form of `G` (`TauCeti.maurerCartanForm`) is a connection form over that base set: it
-takes the value `ξ` on `ξ♯`, because `ξ♯` is carried to the left-invariant vector field of `ξ`, and
-it transforms by `Ad(g⁻¹)` because `θ` does under right translations
-(`TauCeti.maurerCartanForm_apply_mfderiv_mul_right`). A smooth partition of unity `ρ_e` on the base
-subordinate to the base sets glues these local forms to
+coordinate `g_e` (`TauCeti.PrincipalBundle.fiberCoord`) satisfies `g_e(x · g) = g_e(x) g`, so the
+pullback `g_e^* θ` of the left Maurer–Cartan form of `G` (`TauCeti.leftMaurerCartanForm`) is a
+connection form over that base set: it takes the value `ξ` on `ξ♯`, because `ξ♯` is carried to the
+left-invariant vector field of `ξ`
+(`TauCeti.PrincipalBundle.mfderiv_fiberCoord_rightFundamentalVectorField`), and it transforms by
+`Ad(g⁻¹)` because `θ` does under right translations
+(`TauCeti.leftMaurerCartanForm_apply_mfderiv_mul_right`). A smooth partition of unity `ρ_e` on the
+base subordinate to the base sets glues these local forms to
 
 `A = ∑_e (ρ_e ∘ π) g_e^* θ`.
 
@@ -159,22 +161,14 @@ theorem smul_add_smul (hA : IsConnectionForm A) (hA' : IsConnectionForm A') {c c
 
 end IsConnectionForm
 
-/-! ### Fibre coordinates of trivializations -/
+/-! ### Existence -/
 
 variable [PrincipalBundle G P]
-
-section FiberCoord
 
 variable (G P) in
 /-- The base point of a point of the charted total space. -/
 private abbrev proj (x : ManifoldTotalSpace G P) : B :=
   ((ManifoldTotalSpace.homeomorph G P).symm x).proj
-
-variable (P) in
-/-- The fibre coordinate of a point of the charted total space in the trivialization of the atlas
-at `b₀`. -/
-private def fiberCoord (b₀ : B) (x : ManifoldTotalSpace G P) : G :=
-  (trivializationAt G P b₀ ((ManifoldTotalSpace.homeomorph G P).symm x)).2
 
 omit [TopologicalSpace B] [TopologicalSpace G] [∀ b, TopologicalSpace (P b)] [FiberBundle G P]
   [PrincipalBundle G P] in
@@ -182,80 +176,6 @@ omit [TopologicalSpace B] [TopologicalSpace G] [∀ b, TopologicalSpace (P b)] [
 private theorem proj_op_smul (g : G) (x : ManifoldTotalSpace G P) :
     proj G P (op g • x) = proj G P x := by
   simp [proj]
-
-/-- Over the base set, the fibre coordinate of `x · g` is the fibre coordinate of `x` times `g`. -/
-private theorem fiberCoord_op_smul {b₀ : B} {x : ManifoldTotalSpace G P}
-    (hx : proj G P x ∈ (trivializationAt G P b₀).baseSet) (g : G) :
-    fiberCoord P b₀ (op g • x) = fiberCoord P b₀ x * g := by
-  obtain ⟨⟨b, p⟩, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
-  simp only [proj, Homeomorph.symm_apply_apply] at hx
-  simp only [fiberCoord, ManifoldTotalSpace.smul_homeomorph, Homeomorph.symm_apply_apply]
-  exact (trivializationAt G P b₀).snd_apply_smul hx p g
-
-omit [Group G] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
-/-- The points over the base set of a trivialization form an open set. -/
-private theorem isOpen_setOf_proj_mem (b₀ : B) :
-    IsOpen {x : ManifoldTotalSpace G P | proj G P x ∈ (trivializationAt G P b₀).baseSet} :=
-  (trivializationAt G P b₀).open_baseSet.preimage
-    ((FiberBundle.continuous_proj G P).comp (ManifoldTotalSpace.homeomorph G P).symm.continuous)
-
-omit [Group G] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] [IsManifold IB ∞ B]
-  [LieGroup IG ∞ G] in
-/-- Over the base set, the fibre coordinate is smooth. -/
-private theorem contMDiffAt_fiberCoord {b₀ : B} {x : ManifoldTotalSpace G P}
-    (hx : proj G P x ∈ (trivializationAt G P b₀).baseSet) :
-    ContMDiffAt (IB.prod IG) IG ∞ (fiberCoord P b₀) x :=
-  (ManifoldTotalSpace.contMDiffOn_trivialization_snd_comp (n := ∞) (trivializationAt G P b₀)
-    (s := {y | proj G P y ∈ (trivializationAt G P b₀).baseSet}) contMDiffOn_id
-    fun _ hy ↦ hy).contMDiffAt ((isOpen_setOf_proj_mem b₀).mem_nhds hx)
-
-omit [IsManifold IB ∞ B] in
-/-- Over the base set, the fibre coordinate carries the fundamental vector field of `ξ` to the
-left-invariant vector field of `ξ`. -/
-private theorem mfderiv_fiberCoord_rightFundamentalVectorField {b₀ : B}
-    {x : ManifoldTotalSpace G P} (hx : proj G P x ∈ (trivializationAt G P b₀).baseSet)
-    (ξ : GroupLieAlgebra IG G) :
-    mfderiv (IB.prod IG) IG (fiberCoord P b₀) x (rightFundamentalVectorField (IB.prod IG) ξ x) =
-      mulInvariantVectorField ξ (fiberCoord P b₀ x) := by
-  have hfun : fiberCoord P b₀ ∘ (fun g : G ↦ op g • x) = (fiberCoord P b₀ x * ·) := by
-    funext g
-    exact fiberCoord_op_smul hx g
-  rw [rightFundamentalVectorField_apply, ← mfderiv_comp_apply_of_eq (1 : G)
-    ((contMDiffAt_fiberCoord hx).mdifferentiableAt (by simp))
-    (mdifferentiableAt_orbit (n := ∞) (by simp) x 1) (by simp), hfun]
-  rfl
-
-omit [IsManifold IB ∞ B] in
-/-- Over the base set, the fibre coordinate intertwines the right action with right
-multiplication, also on tangent vectors. -/
-private theorem mfderiv_fiberCoord_mfderiv_op_smul {b₀ : B} {x : ManifoldTotalSpace G P}
-    (hx : proj G P x ∈ (trivializationAt G P b₀).baseSet) (g : G)
-    (v : TangentSpace (IB.prod IG) x) :
-    mfderiv (IB.prod IG) IG (fiberCoord P b₀) (op g • x)
-        (mfderiv (IB.prod IG) (IB.prod IG) (fun y ↦ op g • y) x v) =
-      mfderiv IG IG (· * g) (fiberCoord P b₀ x)
-        (mfderiv (IB.prod IG) IG (fiberCoord P b₀) x v) := by
-  have hx' : proj G P (op g • x) ∈ (trivializationAt G P b₀).baseSet := by
-    rwa [proj_op_smul]
-  -- Near `x`, translating by `g` and then taking the fibre coordinate is right multiplication by
-  -- `g` after the fibre coordinate.
-  have heq : fiberCoord P b₀ ∘ (fun y ↦ op g • y) =ᶠ[𝓝 x] (· * g) ∘ fiberCoord P b₀ :=
-    Filter.eventually_of_mem ((isOpen_setOf_proj_mem b₀).mem_nhds hx)
-      fun y hy ↦ fiberCoord_op_smul hy g
-  have hcomp : HasMFDerivAt (IB.prod IG) IG (fiberCoord P b₀ ∘ fun y ↦ op g • y) x
-      ((mfderiv IG IG (· * g) (fiberCoord P b₀ x)).comp
-        (mfderiv (IB.prod IG) IG (fiberCoord P b₀) x)) :=
-    ((mdifferentiableAt_mul_right (I := IG)).hasMFDerivAt.comp x
-      ((contMDiffAt_fiberCoord hx).mdifferentiableAt (by simp)).hasMFDerivAt).congr_of_eventuallyEq
-      heq
-  rw [← mfderiv_comp_apply_of_eq x ((contMDiffAt_fiberCoord hx').mdifferentiableAt (by simp))
-      ((contMDiff_const_smul (I := IB.prod IG) (n := 1) (op g) x).mdifferentiableAt one_ne_zero)
-      rfl, hcomp.mfderiv]
-  rfl
-
-end FiberCoord
-
-/-! ### Existence -/
 
 /-- **Existence of connection forms.** A smooth principal bundle over a Hausdorff σ-compact
 finite-dimensional manifold has a connection form. -/
@@ -269,33 +189,31 @@ theorem exists_isConnectionForm [FiniteDimensional ℝ EB] [T2Space B] [SigmaCom
     hρ b (subset_tsupport _ ((ρ.mem_finsupport b₀).1 hb))
   have hsmooth := isSmoothForm_sum_finsupport_smul_mpullback (F := EG) hρ
     (fun b ↦ (trivializationAt G P b).open_baseSet) (ManifoldTotalSpace.contMDiff_proj ∞ G P IB IG)
-    (g := fiberCoord P) (fun _ _ hx ↦ contMDiffAt_fiberCoord hx) (maurerCartanForm IG G)
-  refine ⟨⟨_, hsmooth.mem_smoothBundleForms⟩, ⟨fun x ξ ↦ ?_, fun g x v ↦ ?_⟩⟩
-  -- The glued form is a subtype element whose value is the defining sum; `change` exposes that sum,
-  -- which no lemma about the anonymous constructor rewrites to.
-  · change (∑ b ∈ ρ.finsupport (proj G P x), ρ b (proj G P x) •
-      mpullback (F := EG) (IB.prod IG) IG (fiberCoord P b) (maurerCartanForm IG G).val x)
-        ![rightFundamentalVectorField (IB.prod IG) ξ x] = ξ
-    rw [ContinuousAlternatingMap.sum_apply]
+    (g := fiberCoord P) (fun _ _ hx ↦ contMDiffAt_fiberCoord hx) (leftMaurerCartanForm IG G)
+  let A : SmoothForm (IB.prod IG) (ManifoldTotalSpace G P) EG 1 :=
+    ⟨_, hsmooth.mem_smoothBundleForms⟩
+  -- The value of the glued form is the defining sum, by construction of the subtype element.
+  have hA (x : ManifoldTotalSpace G P) : A.val x = ∑ b ∈ ρ.finsupport (proj G P x),
+      ρ b (proj G P x) •
+        mpullback (F := EG) (IB.prod IG) IG (fiberCoord P b) (leftMaurerCartanForm IG G).val x :=
+    rfl
+  refine ⟨A, ⟨fun x ξ ↦ ?_, fun g x v ↦ ?_⟩⟩
+  · rw [hA, ContinuousAlternatingMap.sum_apply]
     have h (b : B) (hb : b ∈ ρ.finsupport (proj G P x)) :
         (ρ b (proj G P x) •
-          mpullback (F := EG) (IB.prod IG) IG (fiberCoord P b) (maurerCartanForm IG G).val x)
+          mpullback (F := EG) (IB.prod IG) IG (fiberCoord P b) (leftMaurerCartanForm IG G).val x)
             ![rightFundamentalVectorField (IB.prod IG) ξ x] = ρ b (proj G P x) • (ξ : EG) := by
       rw [ContinuousAlternatingMap.smul_apply, mpullback_apply_one,
         mfderiv_fiberCoord_rightFundamentalVectorField (hmem hb),
-        maurerCartanForm_apply_mulInvariantVectorField]
+        leftMaurerCartanForm_apply_mulInvariantVectorField]
+      -- The left side scales `ξ` in the Lie algebra, the right side in the model space `EG`, which
+      -- is the Lie algebra by definition.
       rfl
     have hsum (c : EG) : ∑ b ∈ ρ.finsupport (proj G P x), ρ b (proj G P x) • c = c := by
       rw [← Finset.sum_smul, ρ.sum_finsupport _ (mem_univ _), one_smul]
     exact (Finset.sum_congr rfl h).trans (hsum ξ)
-  · change (∑ b ∈ ρ.finsupport (proj G P (op g • x)), ρ b (proj G P (op g • x)) •
-      mpullback (F := EG) (IB.prod IG) IG (fiberCoord P b) (maurerCartanForm IG G).val (op g • x))
-        ![mfderiv (IB.prod IG) (IB.prod IG) (fun y ↦ op g • y) x v] =
-      Lie.adjointContinuousLinearMap (I := IG) g⁻¹ ((∑ b ∈ ρ.finsupport (proj G P x),
-        ρ b (proj G P x) •
-          mpullback (F := EG) (IB.prod IG) IG (fiberCoord P b) (maurerCartanForm IG G).val x)
-            ![v])
-    rw [proj_op_smul, ContinuousAlternatingMap.sum_apply, ContinuousAlternatingMap.sum_apply]
+  · rw [hA, hA, proj_op_smul, ContinuousAlternatingMap.sum_apply,
+      ContinuousAlternatingMap.sum_apply]
     -- The adjoint action is read as a linear map of the model space, where the sum lives.
     refine (Finset.sum_congr rfl fun b hb ↦ ?_).trans
       (map_sum (Lie.adjointContinuousLinearMap (I := IG) g⁻¹ : EG →L[ℝ] EG) _ _).symm
@@ -303,6 +221,6 @@ theorem exists_isConnectionForm [FiniteDimensional ℝ EB] [T2Space B] [SigmaCom
     refine (congrArg (ρ b (proj G P x) • ·) ?_).trans
       ((Lie.adjointContinuousLinearMap (I := IG) g⁻¹ : EG →L[ℝ] EG).map_smul _ _).symm
     rw [mpullback_apply_one, mpullback_apply_one, mfderiv_fiberCoord_mfderiv_op_smul (hmem hb),
-      fiberCoord_op_smul (hmem hb), maurerCartanForm_apply_mfderiv_mul_right]
+      fiberCoord_op_smul (hmem hb), leftMaurerCartanForm_apply_mfderiv_mul_right]
 
 end TauCeti.PrincipalBundle
