@@ -9,7 +9,6 @@ public import Mathlib.Analysis.CStarAlgebra.Hom
 public import Mathlib.Analysis.CStarAlgebra.lpSpace
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Analysis.Normed.Lp.C0Ideal
-public import TauCeti.Analysis.Normed.Lp.Reindex
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 
 /-!

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecificLimits.Basic
 public import TauCeti.Analysis.CStarAlgebra.BoundedProduct
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Analysis.Normed.Lp.C0Ideal
+public import TauCeti.Analysis.Normed.Lp.Reindex
 
 /-!
 # Norm sequence algebras and C⋆-ultrapowers
