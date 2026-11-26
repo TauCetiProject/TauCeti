@@ -5,20 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Nullstellensatz
 public import TauCeti.RingTheory.MvPolynomial.LocalOrder
-import Mathlib.RingTheory.Ideal.Quotient.Operations
-import Mathlib.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.MvPolynomial.FirstJet
+import TauCeti.RingTheory.MvPolynomial.Ideal.Point
 
 /-!
 # Chinese remainder theorem for multivariate polynomial Taylor jets
 
-This file provides two results on powers of point vanishing ideals and Taylor expansions
-(`MvPolynomial.taylor`) of multivariate polynomials:
+This file proves a Chinese remainder theorem for Taylor expansions (`MvPolynomial.taylor`) of
+multivariate polynomials at finitely many rational points.
 
-* `MvPolynomial.aeval_monomial_mem_vanishingIdeal_pow`: substituting polynomials vanishing at `w`
-  into a monomial of degree at least `d` produces an element of `vanishingIdeal K {w} ^ d`.
+## Main results
+
 * `MvPolynomial.exists_forall_coeff_taylor_eq`: Chinese remainder theorem for polynomial jets —
   at finitely many distinct points `z t : ι → K` over a field `K`, the Taylor coefficients
   `(taylor (z t) p).coeff γ` on any finite exponent set `Γ` can be prescribed arbitrarily.
@@ -35,18 +33,6 @@ public section
 open Ideal
 
 namespace MvPolynomial
-
-/-- If every `φ u` vanishes at `w`, then `aeval φ (monomial γ 1)` lies in
-`vanishingIdeal K {w} ^ d` for every `d ≤ γ.degree`. -/
-theorem aeval_monomial_mem_vanishingIdeal_pow {K ι : Type*} [Field K] {w : ι → K}
-    {φ : ι → MvPolynomial ι K} (hφ : ∀ u : ι, eval w (φ u) = 0) {d : ℕ} {γ : ι →₀ ℕ}
-    (hγ : d ≤ γ.degree) : aeval φ (monomial γ (1 : K)) ∈ vanishingIdeal K {w} ^ d := by
-  classical
-  have h_vars : idealOfVars ι K ≤ (vanishingIdeal K {w}).comap (aeval φ) := by
-    simp [Ideal.span_le, hφ, Set.range_subset_iff]
-  have h_mem : monomial γ (1 : K) ∈ idealOfVars ι K ^ d :=
-    (mem_pow_idealOfVars_iff d _).2 (by simpa)
-  exact le_comap_pow (aeval φ) d (pow_right_mono h_vars d h_mem)
 
 /-- Chinese remainder theorem for polynomial Taylor jets: at finitely many distinct points `z t`
 over a field `K`, the Taylor coefficients `(taylor (z t) p).coeff γ` on any finite exponent set

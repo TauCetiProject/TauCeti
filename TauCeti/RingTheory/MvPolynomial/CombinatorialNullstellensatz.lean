@@ -14,8 +14,8 @@ import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.Tactic.Linarith
 import TauCeti.Data.Finsupp.Weight
 import TauCeti.Order.WellQuasiOrder
-import TauCeti.RingTheory.MvPolynomial.Basic
-import TauCeti.RingTheory.MvPolynomial.LocalOrder
+import TauCeti.RingTheory.MvPolynomial.Ideal.Point
+import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 import TauCeti.RingTheory.MvPolynomial.TaylorJet
 
 /-!
@@ -49,7 +49,11 @@ open MvPolynomial Finset Finsupp Submodule Ideal
 
 namespace TauCeti
 
-variable {K ι S : Type*} [Field K]
+variable {K ι S : Type*}
+
+section CommRing
+
+variable [CommRing K]
 
 /-- Basis element `X ^ α * ∏ u, (X u ^ κ u - g u) ^ (γ u)` used in the weighted division argument
 for the Combinatorial Nullstellensatz with multiplicity. -/
@@ -125,12 +129,14 @@ private lemma mem_of_forall_weightedBasis_mem [Finite ι] {κ : ι → ℕ}
   rw [← weightedBasis_zero κ g α]
   exact weightedBasis_mem_of_weight_le hκ hg (hN α hα) α 0 (by simp)
 
+end CommRing
+
 /-- **Weighted Combinatorial Nullstellensatz with multiplicity.** Give each variable `u : ι` the
 weight `1 / κ u`. Take at least `∏ u, κ u` distinct points `z t : ι → K` at which each `X u ^ κ u`
 agrees with a polynomial `g u` whose monomials all have weight strictly less than `1`. Then every
 nonzero polynomial `f : MvPolynomial ι K` that vanishes to order `d` at all points `z t` has a
 monomial of weight at least `d`. -/
-theorem exists_le_weight_of_mem_vanishingIdeal_pow [Fintype ι] [Fintype S] (κ : ι → ℕ)
+theorem exists_le_weight_of_mem_vanishingIdeal_pow [Field K] [Fintype ι] [Fintype S] (κ : ι → ℕ)
     (hκ : ∀ u : ι, 0 < κ u) (z : S → ι → K) (hz_inj : z.Injective)
     (h_card : ∏ u : ι, κ u ≤ Fintype.card S) (g : ι → MvPolynomial ι K)
     (hg_cost : ∀ u : ι, ∀ α ∈ (g u).support, weight (fun u : ι ↦ (κ u : ℝ))⁻¹ α < 1)
@@ -159,10 +165,10 @@ theorem exists_le_weight_of_mem_vanishingIdeal_pow [Fintype ι] [Fintype S] (κ 
     mem_of_forall_weightedBasis_mem hκ hg_cost fun _ _ β γ hβ _ ↦
       (lt_or_ge γ.degree d).elim (fun h ↦ mem_sup_left (b_span β γ hβ h))
         (fun h ↦ mem_sup_right (b_ker β γ h))
-  have h_span : ⊤ ≤ span K (Set.range (J ∘ v)) := fun y _ ↦ by
-    obtain ⟨p, rfl⟩ := J_surj y
-    simpa only [Set.range_comp, span_image, ← Submodule.mem_comap, Submodule.comap_map_eq]
-      using mem_sup p
+  have h_span : ⊤ ≤ span K (Set.range (J ∘ v)) := by
+    rw [Set.range_comp, span_image, top_le_iff,
+      LinearMap.map_eq_top_iff (LinearMap.range_eq_top.2 J_surj)]
+    exact eq_top_iff.2 fun p _ ↦ mem_sup p
   have h_indep : LinearIndependent K (J ∘ v) :=
     linearIndependent_of_top_le_span_of_card_le_finrank h_span
       (by simpa using Nat.mul_le_mul_right Γ.card h_card)

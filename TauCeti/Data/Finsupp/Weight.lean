@@ -190,9 +190,9 @@ theorem weight_le_degree_nsmul_of_monotone [Preorder σ] (f : σ →₀ ℕ) {w 
 theorem weight_mono_of_nonneg {w : σ → M} (hw : ∀ s, 0 ≤ w s) :
     Monotone (weight w : (σ →₀ ℕ) → M) := fun f g hfg ↦ by
   classical
-  rw [weight_apply, weight_apply,
-    Finsupp.sum_of_support_subset f (Finsupp.support_mono hfg) _ (by simp), Finsupp.sum]
-  exact Finset.sum_le_sum fun s _ ↦ nsmul_le_nsmul_left (hw s) (hfg s)
+  have : IsOrderedAddMonoid M := { add_le_add_left := fun _ _ h c ↦ add_le_add_left h c }
+  rw [weight_apply, weight_apply]
+  exact sum_le_sum_index hfg (fun s _ _ _ ↦ nsmul_le_nsmul_left (hw s)) fun _ _ ↦ zero_nsmul _
 
 /-- A weight with nonnegative coordinates takes nonnegative values on `σ →₀ ℕ`. -/
 theorem weight_nonneg {w : σ → M} (hw : ∀ s, 0 ≤ w s) (f : σ →₀ ℕ) :
