@@ -5,7 +5,7 @@ Authors: Jeromie Beasley
 -/
 module
 
-public import TauCeti.Algebra.Lie.GeneralLinear.TraceForm
+public import TauCeti.Algebra.Lie.SpecialLinear.TraceForm
 public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import Mathlib.Algebra.Lie.Classical
@@ -38,6 +38,7 @@ public section
 namespace TauCeti.SLAdjoint
 
 open Matrix
+open LieAlgebra.SpecialLinear (traceForm traceForm_apply traceForm_nondegenerate)
 open scoped TensorProduct
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -125,8 +126,10 @@ variable (K : Type*) [Field K] (n : ℕ)
 
 /-- The trace pairing is an equivariant self-duality of the adjoint representation. -/
 noncomputable def traceDualEquiv [NeZero (n : K)] :
-    (adjointRep K n).Equiv (adjointRep K n).dual :=
-  (isInvariantForm_traceForm K n).equivDual (traceForm_nondegenerate K (Fin n))
+    (adjointRep K n).Equiv (adjointRep K n).dual := by
+  let _ : Invertible (Fintype.card (Fin n) : K) :=
+    invertibleOfNonzero (by simpa using NeZero.ne (n : K))
+  exact (isInvariantForm_traceForm K n).equivDual (traceForm_nondegenerate K (Fin n))
 
 /-- Evaluation of the equivariant self-duality is the trace of the matrix product. -/
 @[simp] theorem traceDualEquiv_apply [NeZero (n : K)]

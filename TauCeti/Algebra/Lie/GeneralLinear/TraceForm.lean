@@ -8,10 +8,6 @@ module
 public import TauCeti.Algebra.Lie.SkewAdjoint
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Basic
 public import Mathlib.LinearAlgebra.Matrix.Trace
-public import Mathlib.Algebra.Lie.Classical
-public import Mathlib.LinearAlgebra.BilinearForm.Properties
-import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
 
 /-!
 # The trace form of `gl n R` and the anticommutation relations it induces
@@ -43,10 +39,6 @@ These are relations in the Clifford algebra of the trace form, and nothing beyon
 them here. Reading them as the relations of a CAR algebra would need a splitting of the generators
 into creation and annihilation operators, an involution, and an identification of this Clifford
 algebra with a CAR algebra; none of that is supplied.
-
-On the special linear Lie algebra, `TauCeti.SLAdjoint.traceForm` restricts this pairing to
-trace-zero matrices. Over a field in which the size is nonzero, the restriction is nondegenerate
-so it identifies this Lie algebra with its linear dual.
 
 ## Main definitions
 
@@ -360,64 +352,3 @@ theorem carGenerator_mul_comm_of_not_paired (i j k l : n) (h : ¬(j = k ∧ l = 
 end CAR
 
 end TauCeti
-
-namespace TauCeti.SLAdjoint
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-open Matrix
-
-section
-
-variable (K : Type*) [CommRing K] (ι : Type*) [Fintype ι] [DecidableEq ι]
-
-/-- The trace pairing on the special linear Lie algebra, the restriction of
-`TauCeti.traceBilinForm`. -/
-def traceForm : LinearMap.BilinForm K (LieAlgebra.SpecialLinear.sl ι K) :=
-  (traceBilinForm K ι).restrict (LieAlgebra.SpecialLinear.sl ι K).toSubmodule
-
-/-- Evaluation is the trace of the product. -/
-@[simp]
-theorem traceForm_apply (X Y : LieAlgebra.SpecialLinear.sl ι K) :
-    traceForm K ι X Y = trace (X.val * Y.val) := by
-  -- `traceBilinForm` is not exposed, so the restriction is not definitionally the trace.
-  unfold traceForm
-  rw [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply, traceBilinForm_apply]
-
-/-- The trace form on the special linear Lie algebra is symmetric. -/
-theorem traceForm_isSymm : (traceForm K ι).IsSymm := by
-  unfold traceForm
-  exact (traceBilinForm_isSymm K ι).restrict (LieAlgebra.SpecialLinear.sl ι K).toSubmodule
-
-/-- Exchanging the two trace-zero matrices leaves their trace pairing unchanged. -/
-theorem traceForm_comm (X Y : LieAlgebra.SpecialLinear.sl ι K) :
-    traceForm K ι X Y = traceForm K ι Y X :=
-  (traceForm_isSymm K ι).eq X Y
-
-end
-
-section
-
-variable (K : Type*) [Field K] (ι : Type*) [Fintype ι] [DecidableEq ι]
-
-private theorem eq_zero_of_forall_trace_mul_eq_zero [NeZero (Fintype.card ι : K)]
-    (X : LieAlgebra.SpecialLinear.sl ι K)
-    (h : ∀ Y : LieAlgebra.SpecialLinear.sl ι K, trace (X.val * Y.val) = 0) : X = 0 := by
-  refine Subtype.ext (Matrix.ext_iff_trace_mul_right.mpr fun Z => ?_)
-  -- The right-hand zero is the zero of `sl`, coerced into the matrices.
-  simp only [Submodule.coe_zero, zero_mul, trace_zero]
-  have hX : trace X.val = 0 := LieAlgebra.SpecialLinear.mem_sl_iff.mp X.property
-  obtain ⟨Y, r, rfl⟩ := exists_sl_add_smul_one_eq
-    (fun _ => (NeZero.ne (Fintype.card ι : K)).isUnit) Z
-  simp only [Matrix.mul_add, Matrix.mul_smul, Matrix.mul_one, trace_add, trace_smul, h Y,
-    hX, smul_zero, add_zero]
-
-/-- Both radicals of the trace pairing vanish when the index cardinality is nonzero in `K`. -/
-theorem traceForm_nondegenerate [NeZero (Fintype.card ι : K)] : (traceForm K ι).Nondegenerate := by
-  apply (traceForm_isSymm K ι).isRefl.nondegenerate_iff_separatingLeft.mpr
-  intro X h
-  exact eq_zero_of_forall_trace_mul_eq_zero K ι X fun Y => by
-    simpa only [traceForm_apply] using h Y
-
-end
-
-end TauCeti.SLAdjoint
