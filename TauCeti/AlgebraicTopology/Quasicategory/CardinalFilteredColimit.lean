@@ -96,7 +96,7 @@ lemma of_le [C.HasCardinalFilteredColimits κ] (h : κ ≤ κ') : C.HasCardinalF
 lemma of_iso [C.HasCardinalFilteredColimits κ] (e : C ≅ D) : D.HasCardinalFilteredColimits κ where
   exists_isColimit _ _ p := by
     obtain ⟨c, hc⟩ := exists_isColimit (C := C) κ (p ≫ e.inv)
-    exact ⟨_, (coslice.isColimit_map_iff_of_isIso e.hom (by simp) c).2 hc⟩
+    exact ⟨_, (coslice.isColimit_map_iff_of_isIso (𝟙 _) e.hom (by simp) c).2 hc⟩
 
 end HasCardinalFilteredColimits
 
@@ -104,7 +104,7 @@ namespace PreservesCardinalFilteredColimits
 
 /-- Isomorphisms preserve `κ`-filtered colimits. -/
 instance of_isIso (f : C ⟶ D) [IsIso f] : PreservesCardinalFilteredColimits f κ where
-  isColimit_map _ _ _ _ h _ hc := (coslice.isColimit_map_iff_of_isIso f h _).2 hc
+  isColimit_map _ _ _ _ h _ hc := (coslice.isColimit_map_iff_of_isIso (𝟙 _) f h _).2 hc
 
 /-- The identity preserves `κ`-filtered colimits. -/
 instance id : PreservesCardinalFilteredColimits (𝟙 C) κ :=

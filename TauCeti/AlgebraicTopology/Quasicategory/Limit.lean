@@ -32,9 +32,9 @@ terminal and the initial objects (`SSet.slice.isLimit_iff_nonempty_isTerminal`,
 `SSet.coslice.isColimit_iff_nonempty_isInitial`). In the nerve of a preorder, a cocone under any
 diagram is a colimit cocone exactly when its cone point is a least upper bound of the vertices of
 the diagram (`SSet.coslice.isColimit_iff_isLUB`), through the identification of the coslice with
-the nerve of the upper bounds (`CategoryTheory.nerve.upperBoundsCosliceIso`). Limit cones are
-invariant under isomorphisms of diagrams (`SSet.slice.isLimit_map_iff_of_isIso`), and colimit
-cocones under isomorphisms of the target (`SSet.coslice.isColimit_map_iff_of_isIso`). In a
+the nerve of the upper bounds (`CategoryTheory.nerve.upperBoundsCosliceIso`). Limit cones and
+colimit cocones are invariant under isomorphisms of diagrams
+(`SSet.slice.isLimit_map_iff_of_isIso`, `SSet.coslice.isColimit_map_iff_of_isIso`). In a
 terminal simplicial set, such as `Δ[0]`, every cone is a limit cone and every cocone a colimit
 cocone (`SSet.slice.isLimit_of_isTerminal`, `SSet.coslice.isColimit_of_isTerminal`).
 
@@ -173,12 +173,13 @@ lemma isColimit_iff_nonempty_isInitial {D : Type u'} [Category.{v} D] {L : SSet.
   obtain ⟨x, rfl⟩ := nerveEquiv.symm.surjective v
   rw [nerve.isInitialVertex_iff, Equiv.apply_symm_apply]
 
-/-- Colimit cocones are invariant under isomorphisms of the target: pushing cocones forward along
-an isomorphism `g` preserves and reflects colimit cocones. -/
-lemma isColimit_map_iff_of_isIso {D : SSet.{u}} {q : K ⟶ D} (g : C ⟶ D) [IsIso g]
-    (h : 𝟙 K ≫ p ≫ g = q) (c : (coslice p) _⦋0⦌) :
-    IsColimit q ((map (𝟙 K) g h).app _ c) ↔ IsColimit p c :=
-  isInitialVertex_iff_of_iso (asIso (map (𝟙 K) g h)) c
+/-- Colimit cocones are invariant under isomorphisms of diagrams: restricting cocones along an
+isomorphism `i` and pushing them forward along an isomorphism `g` preserves and reflects colimit
+cocones. -/
+lemma isColimit_map_iff_of_isIso {L D : SSet.{u}} {q : L ⟶ D} (i : L ⟶ K) [IsIso i] (g : C ⟶ D)
+    [IsIso g] (h : i ≫ p ≫ g = q) (c : (coslice p) _⦋0⦌) :
+    IsColimit q ((map i g h).app _ c) ↔ IsColimit p c :=
+  isInitialVertex_iff_of_iso (asIso (map i g h)) c
 
 /-- In the nerve of a preorder `P`, a cocone under a diagram `q` is a colimit cocone exactly when
 its cone point is a least upper bound of the vertices of `q`. -/
