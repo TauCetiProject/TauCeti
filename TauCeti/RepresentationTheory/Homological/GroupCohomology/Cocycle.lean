@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
 
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Group
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Identities of cocycles
@@ -243,7 +244,8 @@ theorem cocycles₁_apply_mem_coinvariantsKer_of_mem_commutator (f : cocycles₁
 stabiliser.** For a `G`-set `X`, a one-cocycle `f` satisfies `F (g • x) = ρ g (F x) + f g` for some
 function `F : X → A` iff for every `x : X` the restriction of `f` to the stabiliser of `x` is a
 coboundary `g ↦ ρ g v - v`. Given such `v`, the function `F` is built orbitwise from a chosen
-representative `r` of each orbit: `F (g • r) = f g - ρ g v_r`. -/
+representative `r` of each orbit: `F (g • r) = f g - ρ g v_r`. This is the cusp-term argument of
+G. Wiese, *Computational arithmetic of modular forms*, Proposition 4.14. -/
 theorem exists_forall_apply_smul_eq_iff {X : Type*} [MulAction G X] (f : cocycles₁ A) :
     (∃ F : X → A, ∀ (g : G) (x : X), F (g • x) = A.ρ g (F x) + f g) ↔
       ∀ x : X, ∃ v : A, ∀ g ∈ MulAction.stabilizer G x, A.ρ g v - v = f g := by
@@ -266,19 +268,17 @@ theorem exists_forall_apply_smul_eq_iff {X : Type*} [MulAction G X] (f : cocycle
         rw [← cocycles₁_map_mul, mul_inv_cancel_left]
       rw [hb, ← hv y _ hmem, map_sub, ← mul_apply_eq_comp, ← map_mul, mul_inv_cancel_left]
       abel
-    -- A representative `r x` of the orbit of `x`, and an element `γ x` moving it to `x`.
-    obtain ⟨r, hr, hrsmul⟩ : ∃ r : X → X, (∀ x, ∃ g : G, g • r x = x) ∧
-        ∀ (g : G) (x : X), r (g • x) = r x := by
-      refine ⟨fun x ↦ (Quotient.mk (MulAction.orbitRel G X) x).out, fun x ↦ ?_, fun g x ↦
-        congrArg Quotient.out (Quotient.sound (MulAction.mem_orbit x g))⟩
-      obtain ⟨g, hg⟩ := Quotient.mk_out (s := MulAction.orbitRel G X) x
-      exact ⟨g⁻¹, by beta_reduce at hg ⊢; rw [← hg, inv_smul_smul]⟩
-    choose γ hγ using hr
-    refine ⟨fun x ↦ f (γ x) - A.ρ (γ x) (v (r x)), fun g x ↦ ?_⟩
-    have hmove : (g * γ x) • r (g • x) = γ (g • x) • r (g • x) := by
-      rw [hγ, hrsmul, mul_smul, hγ]
+    -- An element `γ x` moving the representative of the orbit of `x` to `x`.
+    choose γ hγ using fun x : X ↦
+      TauCeti.MulAction.exists_smul_out_eq (G := G) (y := x) rfl
+    refine ⟨fun x ↦ f (γ x) - A.ρ (γ x) (v (⟦x⟧ : MulAction.orbitRel.Quotient G X).out),
+      fun g x ↦ ?_⟩
+    have hmove : (g * γ x) • (⟦g • x⟧ : MulAction.orbitRel.Quotient G X).out =
+        γ (g • x) • (⟦g • x⟧ : MulAction.orbitRel.Quotient G X).out := by
+      rw [hγ, MulAction.orbitRel.Quotient.quotient_smul_eq, mul_smul, hγ]
     beta_reduce
-    rw [key hmove, hrsmul, cocycles₁_map_mul, map_mul, mul_apply_eq_comp, map_sub]
+    rw [key hmove, MulAction.orbitRel.Quotient.quotient_smul_eq, cocycles₁_map_mul, map_mul,
+      mul_apply_eq_comp, map_sub]
     abel
 
 end Rep

@@ -200,23 +200,6 @@ theorem mem_cuspStabilizer_iff {c : OnePoint ℚ} {γ : Γ} :
 
 variable {ρ : Representation R Γ V}
 
-/-- A class in `H¹(Γ, V)` restricts to zero on `Γ_c` iff some, hence every, representing cocycle
-is a coboundary `γ ↦ ρ(γ) v - v` on `Γ_c`. -/
-theorem resNatTrans_app_H1π_eq_zero_iff (c : OnePoint ℚ) (f : cocycles₁ (Rep.of ρ)) :
-    (resNatTrans R (cuspStabilizer Γ c).subtype 1).app (Rep.of ρ) (H1π (Rep.of ρ) f) = 0 ↔
-      ∃ v : V, ∀ γ ∈ cuspStabilizer Γ c, ρ γ v - v = f γ := by
-  rw [resNatTrans_app, H1π_comp_map_apply, H1π_eq_zero_iff]
-  constructor
-  · rintro ⟨v, hv⟩
-    refine ⟨v, fun γ hγ ↦ ?_⟩
-    have h := congrFun hv ⟨γ, hγ⟩
-    rw [d₀₁_hom_apply, TauCeti.groupCohomology.mapCocycles₁_apply] at h
-    exact h
-  · rintro ⟨v, hv⟩
-    refine ⟨v, funext fun γ ↦ ?_⟩
-    rw [d₀₁_hom_apply, TauCeti.groupCohomology.mapCocycles₁_apply]
-    exact hv γ γ.property
-
 /-- The class `δ(φ)` restricts to zero on every cusp stabiliser `Γ_c`: with base cusp `c`, the
 cocycle `γ ↦ φ({γ c} - {c})` vanishes on `Γ_c`. -/
 theorem resNatTrans_app_toH1_eq_zero (c : OnePoint ℚ) (φ : symb ρ) :
@@ -239,7 +222,7 @@ theorem mem_range_toH1_iff (y : H1 (Rep.of ρ)) :
   -- stabilisers are the cusp stabilisers `Γ_c`.
   let : MulAction Γ (OnePoint ℚ) := MulAction.compHom _ ((mapGL ℚ).comp Γ.subtype)
   obtain ⟨F, hF⟩ := (exists_forall_apply_smul_eq_iff (X := OnePoint ℚ) f).2 fun c ↦ by
-    obtain ⟨v, hv⟩ := (resNatTrans_app_H1π_eq_zero_iff c f).1 (h c)
+    obtain ⟨v, hv⟩ := (resNatTrans_app_H1π_eq_zero_iff _ f).1 (h c)
     exact ⟨v, fun γ hγ ↦ hv γ (by
       rw [MulAction.mem_stabilizer_iff, MulAction.compHom_smul_def] at hγ
       exact mem_cuspStabilizer_iff.2 hγ)⟩
