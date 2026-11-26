@@ -55,7 +55,8 @@ For `I = (0, T]` and `f ∈ L²(E)`, the function `u(t) = S(t) f - i schrodinger
 is therefore continuous in time with values in `L²`, satisfies
 `sup_t ‖u(t)‖₂ ≤ ‖f‖₂ + C ‖Φ‖_{L^{p₁}((0, T]; L^{r₁'})}` and
 `‖u‖_{L^q([0, T]; L^r)} ≤ C (‖f‖₂ + ‖Φ‖_{L^{p₁}((0, T]; L^{r₁'})})` with `C` independent of `T`,
-and is Duhamel's formula on `[0, T]` whenever `Φ` has an integrable `L²`-valued representative.
+and is Duhamel's formula, with the forcing cut off to `(0, T]`, whenever `Φ` has an integrable
+`L²`-valued representative.
 
 It solves `i ∂ₜu + Δu = Φ`, `u(0) = f`, in the sense of distributions in space: for every Schwartz
 function `φ`, which lies in `L^{r₁}` and so pairs with the values `Φ(s) ∈ L^{r₁'}` of the forcing,
@@ -84,8 +85,8 @@ problem with forcing in the dual Strichartz space is uniquely solvable in `C([0,
   `sup_t ‖schrodingerRetardedL p₁ r₁' I Φ t‖₂ ≤ C ‖Φ‖`, uniformly in `I`.
 * `TauCeti.exists_eLpNorm_eLpNorm_schrodingerRetardedL_le`: the retarded Strichartz estimate in
   `L^q_t L^r_x`, uniformly in `I`.
-* `TauCeti.schrodingerDuhamel_eq_sub_smul_schrodingerRetardedL`: on `[0, T]`, Duhamel's formula is
-  `S(t) f - i schrodingerRetardedL p₁ r₁' (0, T] Φ t`.
+* `TauCeti.schrodingerDuhamel_eq_sub_smul_schrodingerRetardedL`: for `t ≥ 0`, Duhamel's formula
+  with the forcing cut off to `(0, T]` is `S(t) f - i schrodingerRetardedL p₁ r₁' (0, T] Φ t`.
 * `TauCeti.exists_eLpNorm_eLpNorm_schrodingerPropagator_sub_smul_schrodingerRetardedL_le`: the
   Strichartz estimate for this solution on `[0, T]`, uniformly in `T`.
 * `TauCeti.inner_toLp_schrodingerPropagator_sub_smul_schrodingerRetardedL`: this solution solves
@@ -461,8 +462,9 @@ theorem exists_norm_schrodingerRetardedL_le (hq₁ : 2 ≤ q₁)
 
 /-- **Duhamel's formula through the retarded integral on the dual Strichartz space.** Under the
 hypotheses of `TauCeti.schrodingerRetardedL_apply_of_ae_eq`, if `Φ ∈ L^{p₁}((0, T]; L^{r₁'})` is
-represented on `(0, T]` by an `F : ℝ → L²(E)` integrable there, then on `[0, T]` the mild solution
-`u = TauCeti.schrodingerDuhamel f F` of `i ∂ₜu + Δu = F`, `u(0) = f`, is
+represented on `(0, T]` by an `F : ℝ → L²(E)` integrable there, then for every `t ≥ 0` the mild
+solution `u = TauCeti.schrodingerDuhamel f ((Ioc 0 T).indicator F)` of `i ∂ₜu + Δu = F` on `(0, T]`,
+`i ∂ₜu + Δu = 0` after `T`, `u(0) = f`, is
 
 `u(t) = S(t) f - i schrodingerRetardedL p₁ r₁' (0, T] Φ t`.
 
@@ -475,11 +477,12 @@ theorem schrodingerDuhamel_eq_sub_smul_schrodingerRetardedL (hq₁ : 2 ≤ q₁)
     {Φ : Lp (Lp ℂ r₁' (volume : Measure E)) p₁ (volume.restrict (Ioc 0 T))}
     {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : IntegrableOn F (Ioc 0 T))
     (hΦF : ∀ᵐ s ∂volume.restrict (Ioc 0 T), (Φ s : E → ℂ) =ᵐ[volume] F s)
-    (f : Lp ℂ 2 (volume : Measure E)) {t : ℝ} (ht : t ∈ Icc 0 T) :
-    schrodingerDuhamel f F t = schrodingerPropagator ℂ t f -
+    (f : Lp ℂ 2 (volume : Measure E)) {t : ℝ} (ht : 0 ≤ t) :
+    schrodingerDuhamel f ((Ioc 0 T).indicator F) t = schrodingerPropagator ℂ t f -
       Complex.I • schrodingerRetardedL (p₁ : ℝ≥0∞) r₁' (Ioc 0 T) Φ t := by
-  rw [schrodingerDuhamel_eq_sub_setIntegral_Iio f F ht,
-    schrodingerRetardedL_apply_of_ae_eq hq₁ hn₁ hpq₁ hqr₁ measurableSet_Ioc hF hΦF]
+  rw [schrodingerDuhamel_eq_sub_setIntegral_Iio f _ (T := max t T) ⟨ht, le_max_left t T⟩,
+    schrodingerRetardedL_apply_of_ae_eq hq₁ hn₁ hpq₁ hqr₁ measurableSet_Ioc hF hΦF,
+    indicator_indicator, inter_eq_right.2 (Ioc_subset_Ioc_right (le_max_right t T))]
 
 /-- **The Strichartz estimate for the inhomogeneous Schrödinger equation with forcing in a dual
 Strichartz space**, in every dimension `n`, for any two admissible pairs with finite time
@@ -593,22 +596,6 @@ private theorem continuous_setIntegral_integral_inner {r : ℝ≥0∞} [r.Holder
     with s hs
   rw [hs, MemLp.innerLpCLM_apply]
 
-/-- On a forcing with an integrable `L²`-valued representative `F` on `(0, T]`, the solution is
-Duhamel's formula with the forcing `F` cut off to `(0, T]`, at every nonnegative time. -/
-private theorem schrodingerPropagator_sub_smul_schrodingerRetardedL_eq (hq₁ : 2 ≤ q₁)
-    (hn₁ : q₁ = 2 → 2 < Module.finrank ℝ E) (hpq₁ : p₁.HolderConjugate q₁)
-    (hqr₁ : 2 / (q₁ : ℝ) + Module.finrank ℝ E * (r₁⁻¹).toReal = Module.finrank ℝ E / 2) {T : ℝ}
-    {Φ : Lp (Lp ℂ r₁' (volume : Measure E)) p₁ (volume.restrict (Ioc 0 T))}
-    {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : IntegrableOn F (Ioc 0 T))
-    (hΦF : ∀ᵐ s ∂volume.restrict (Ioc 0 T), (Φ s : E → ℂ) =ᵐ[volume] F s)
-    (f : Lp ℂ 2 (volume : Measure E)) {t : ℝ} (ht : 0 ≤ t) :
-    schrodingerPropagator ℂ t f - Complex.I •
-        schrodingerRetardedL (p₁ : ℝ≥0∞) r₁' (Ioc 0 T) Φ t =
-      schrodingerDuhamel f ((Ioc 0 T).indicator F) t := by
-  rw [schrodingerDuhamel_eq_sub_setIntegral_Iio f _ (T := max t T) ⟨ht, le_max_left t T⟩,
-    schrodingerRetardedL_apply_of_ae_eq hq₁ hn₁ hpq₁ hqr₁ measurableSet_Ioc hF hΦF,
-    indicator_indicator, inter_eq_right.2 (Ioc_subset_Ioc_right (le_max_right t T))]
-
 /-- **The solution with forcing in a dual Strichartz space is a weak solution.** Let `p₁` and `r₁'`
 be the Hölder conjugates of an admissible pair `(q₁, r₁)` with a finite time exponent,
 `2 ≤ q₁ < ∞` and `2 / q₁ + n / r₁ = n / 2`, with `n ≥ 3` when `q₁ = 2`. Let `f ∈ L²(E)`, let
@@ -644,8 +631,8 @@ theorem inner_toLp_schrodingerPropagator_sub_smul_schrodingerRetardedL (hq₁ : 
   rw [Submodule.subtype_apply]
   obtain ⟨F, hF : IntegrableOn F (Ioc 0 T) volume, hΨF⟩ :=
     Lp.mem_integrableRepSubmodule_iff.1 Ψ.property
-  have hu (s : ℝ) (hs : 0 ≤ s) := schrodingerPropagator_sub_smul_schrodingerRetardedL_eq hq₁ hn₁
-    hpq₁ hqr₁ hF hΨF f hs
+  have hu (s : ℝ) (hs : 0 ≤ s) :=
+    (schrodingerDuhamel_eq_sub_smul_schrodingerRetardedL hq₁ hn₁ hpq₁ hqr₁ hF hΨF f hs).symm
   rw [hu t ht, inner_toLp_schrodingerDuhamel
     ((hF.integrable_indicator measurableSet_Ioc).locallyIntegrable.locallyIntegrableOn _) φ ht]
   congr 3

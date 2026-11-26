@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Schrodinger.Duhamel
 public import TauCeti.Analysis.Semigroups.CauchyProblem.Unitary
 import Mathlib.Analysis.Distribution.FourierMultiplier
-import TauCeti.Analysis.Fourier.LaplacianSymbol
+import TauCeti.Analysis.PDE.HeatKernel.Core
 
 /-!
 # Weak solutions of the Schrödinger equation

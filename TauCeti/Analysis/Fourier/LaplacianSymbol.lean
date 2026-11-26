@@ -10,8 +10,6 @@ public import Mathlib.Analysis.Fourier.FourierTransformDeriv
 public import Mathlib.Analysis.Fourier.LpSpace
 public import TauCeti.Analysis.Fourier.L2Multiplier
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
-import TauCeti.Analysis.Distribution.SchwartzSpace.LaplacianResolvent
-import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
@@ -50,9 +48,6 @@ symbol identity `(2π ‖ξ‖)² = -(-4π² ‖ξ‖²)` (`TauCeti.sq_sqrtNegLa
   with `Δ`: if `Δ f = h ∈ L²`, then `Δ (T_m f) = T_m h`.
 * `MeasureTheory.Lp.re_inner_nonpos_of_laplacian_toTemperedDistribution_eq`: `-Δ` is nonnegative,
   `re ⟪f, Δ f⟫ ≤ 0` whenever `Δ f ∈ L²`.
-* `TauCeti.exists_tendsto_toLp_and_tendsto_toLp_laplacian`: the Schwartz functions are a core for
-  the Laplacian on `L²`: every `ψ ∈ L²` with `Δψ ∈ L²` is the limit of Schwartz functions `φₙ` with
-  `Δφₙ → Δψ` in `L²`.
 -/
 
 public section
@@ -267,122 +262,5 @@ theorem _root_.MeasureTheory.Lp.re_inner_nonpos_of_laplacian_toTemperedDistribut
   rw [Pi.zero_apply, hξ, inner_smul_right, inner_self_eq_norm_sq_to_K]
   simpa [← Complex.ofReal_pow] using
     mul_nonpos_of_nonpos_of_nonneg hΔ (sq_nonneg ‖(𝓕 f : Lp F 2 (volume : Measure E)) ξ‖)
-
-/-! ### Schwartz functions are a core for the Laplacian on `L²` -/
-
-section Core
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem one_sub_laplacianSymbol (ξ : E) :
-    1 - laplacianSymbol ξ = (2 * π) ^ 2 * ‖ξ‖ ^ 2 + 1 := by
-  rw [laplacianSymbol_apply]
-  ring
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The symbol `((2π)² ‖ξ‖² + 1)⁻¹` of the resolvent `(1 - Δ)⁻¹`, as a complex-valued function, has
-temperate growth. -/
-private theorem hasTemperateGrowth_ofReal_inv_mul_norm_sq_add_one :
-    (fun ξ : E ↦ ((((2 * π) ^ 2 * ‖ξ‖ ^ 2 + 1)⁻¹ : ℝ) : ℂ)).HasTemperateGrowth :=
-  Complex.hasTemperateGrowth_ofReal.comp
-    (TauCeti.hasTemperateGrowth_inv_mul_norm_sq_add (by positivity) one_pos)
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem ofReal_inv_mul_norm_sq_add_one_mul_one_sub (ξ : E) :
-    ((((2 * π) ^ 2 * ‖ξ‖ ^ 2 + 1)⁻¹ : ℝ) : ℂ) * (1 - laplacianSymbol ξ) = 1 := by
-  have h : (2 * π) ^ 2 * ‖ξ‖ ^ 2 + 1 ≠ 0 := by positivity
-  rw [← Complex.ofReal_one, ← Complex.ofReal_sub, ← Complex.ofReal_mul, one_sub_laplacianSymbol,
-    inv_mul_cancel₀ h]
-
-/-- The resolvent symbol is bounded by one. -/
-private theorem memLp_ofReal_inv_mul_norm_sq_add_one :
-    MemLp (fun ξ : E ↦ ((((2 * π) ^ 2 * ‖ξ‖ ^ 2 + 1)⁻¹ : ℝ) : ℂ)) ∞ volume := by
-  refine memLp_top_of_bound
-    hasTemperateGrowth_ofReal_inv_mul_norm_sq_add_one.1.continuous.aestronglyMeasurable 1
-    (ae_of_all _ fun ξ ↦ ?_)
-  rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos (by positivity)]
-  exact inv_le_one_of_one_le₀ (by nlinarith [norm_nonneg ξ, sq_nonneg (2 * π * ‖ξ‖)])
-
-/-- The symbol `-4π² ‖ξ‖² ((2π)² ‖ξ‖² + 1)⁻¹` of `Δ (1 - Δ)⁻¹` is bounded by one. -/
-private theorem memLp_laplacianSymbol_mul_ofReal_inv_mul_norm_sq_add_one :
-    MemLp (fun ξ : E ↦ (laplacianSymbol ξ : ℂ) * ((((2 * π) ^ 2 * ‖ξ‖ ^ 2 + 1)⁻¹ : ℝ) : ℂ)) ∞
-      volume := by
-  refine memLp_top_of_bound ((Complex.continuous_ofReal.comp laplacianSymbol.continuous).mul
-    hasTemperateGrowth_ofReal_inv_mul_norm_sq_add_one.1.continuous).aestronglyMeasurable 1
-    (ae_of_all _ fun ξ ↦ ?_)
-  have h1 : 1 ≤ 1 - laplacianSymbol ξ := by
-    rw [laplacianSymbol_apply, sub_neg_eq_add, le_add_iff_nonneg_right]
-    positivity
-  have h0 : laplacianSymbol ξ ≤ 0 := by
-    rw [laplacianSymbol_apply, neg_nonpos]
-    positivity
-  rw [← one_sub_laplacianSymbol, ← Complex.ofReal_mul, Complex.norm_real, Real.norm_eq_abs, abs_le]
-  constructor
-  · rw [neg_le, ← neg_mul, ← div_eq_mul_inv, div_le_one (zero_lt_one.trans_le h1)]
-    linarith
-  · exact (mul_nonpos_of_nonpos_of_nonneg h0 (inv_nonneg.2 (zero_le_one.trans h1))).trans
-      zero_le_one
-
-/-- For `χ = Δψ` in `L²`, a bounded symbol `k` maps `ψ - χ = (1 - Δ) ψ` to the `L²` function whose
-Fourier transform is `k (1 + 4π² ‖ξ‖²) 𝓕 ψ`. -/
-private theorem fourierMultiplierCLM_sub_eq {ψ χ ζ : Lp F 2 (volume : Measure E)}
-    (h : 𝓕 χ =ᵐ[volume] fun ξ ↦ (laplacianSymbol ξ : ℂ) • 𝓕 ψ ξ) {k : E → ℂ}
-    (hk : MemLp k ∞ volume)
-    (hζ : 𝓕 ζ =ᵐ[volume] fun ξ ↦ (k ξ * (1 - laplacianSymbol ξ)) • 𝓕 ψ ξ) :
-    Lp.fourierMultiplierCLM F (hk.toLp k) (ψ - χ) = ζ := by
-  rw [← FourierTransform.fourierInv_fourier_eq (F := Lp F 2 (volume : Measure E))
-      (Lp.fourierMultiplierCLM F (hk.toLp k) (ψ - χ)),
-    ← FourierTransform.fourierInv_fourier_eq (F := Lp F 2 (volume : Measure E)) ζ]
-  congr 1
-  refine Lp.ext ?_
-  filter_upwards [Lp.coeFn_fourier_fourierMultiplierCLM_toLp (f := ψ - χ) hk, hζ, h,
-    FourierTransform.fourier_sub ψ χ ▸ Lp.coeFn_sub (𝓕 ψ) (𝓕 χ)] with ξ h₁ h₂ h₃ h₄
-  rw [h₁, h₂, h₄, Pi.sub_apply, h₃]
-  module
-
-/-- **Schwartz functions are a core for the Laplacian on `L²`.** If `ψ, χ ∈ L²(E, F)` satisfy
-`𝓕 χ = -4π² ‖ξ‖² 𝓕 ψ` almost everywhere, that is `χ = Δψ` with `ψ` in the domain of the Laplacian
-on `L²`, then there are Schwartz functions `φₙ` with `φₙ → ψ` and `Δφₙ → χ` in `L²`. -/
-theorem exists_tendsto_toLp_and_tendsto_toLp_laplacian {ψ χ : Lp F 2 (volume : Measure E)}
-    (h : 𝓕 χ =ᵐ[volume] fun ξ ↦ (laplacianSymbol ξ : ℂ) • 𝓕 ψ ξ) :
-    ∃ φ : ℕ → 𝓢(E, F), Filter.Tendsto (fun n ↦ (φ n).toLp 2) Filter.atTop (nhds ψ) ∧
-      Filter.Tendsto (fun n ↦ (Δ (φ n)).toLp 2) Filter.atTop (nhds χ) := by
-  -- Approximate `(1 - Δ) ψ = ψ - χ` by Schwartz functions `ηₙ`, and set `φₙ = (1 - Δ)⁻¹ ηₙ`.
-  obtain ⟨u, hu, hlim⟩ := mem_closure_iff_seq_limit.1
-    (SchwartzMap.denseRange_toLpCLM (F := F) (μ := (volume : Measure E))
-      ENNReal.ofNat_ne_top (ψ - χ))
-  choose η hη using hu
-  have hlim' : Filter.Tendsto (fun n ↦ (η n).toLp 2) Filter.atTop (nhds (ψ - χ)) := by
-    refine hlim.congr fun n ↦ ?_
-    rw [← hη n, SchwartzMap.toLpCLM_apply]
-  have hφ := SchwartzMap.fourier_fourierMultiplierCLM_apply (F := F)
-    (hasTemperateGrowth_ofReal_inv_mul_norm_sq_add_one (E := E))
-  refine ⟨fun n ↦ SchwartzMap.fourierMultiplierCLM F
-    (fun ξ : E ↦ ((((2 * π) ^ 2 * ‖ξ‖ ^ 2 + 1)⁻¹ : ℝ) : ℂ)) (η n), ?_, ?_⟩
-  · -- In `L²`, `φₙ = T ηₙ` and `ψ = T (ψ - χ)` for the multiplier `T` with the resolvent symbol.
-    have hψ := fourierMultiplierCLM_sub_eq h memLp_ofReal_inv_mul_norm_sq_add_one
-      (ζ := ψ) (ae_of_all _ fun ξ ↦ by
-        simp only [ofReal_inv_mul_norm_sq_add_one_mul_one_sub, one_smul])
-    simp_rw [SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul _
-      memLp_ofReal_inv_mul_norm_sq_add_one.coeFn_toLp (hφ _)]
-    rw [← hψ]
-    exact ((Lp.fourierMultiplierCLM F _).continuous.tendsto _).comp hlim'
-  · -- In `L²`, `Δφₙ = T' ηₙ` and `χ = T' (ψ - χ)` for the multiplier `T'` with the symbol of
-    -- `Δ (1 - Δ)⁻¹`.
-    have hχ := fourierMultiplierCLM_sub_eq h
-      memLp_laplacianSymbol_mul_ofReal_inv_mul_norm_sq_add_one (ζ := χ) (h.mono fun ξ hξ ↦ by
-        simp only [hξ, mul_assoc, ofReal_inv_mul_norm_sq_add_one_mul_one_sub, mul_one])
-    have hΔ (n : ℕ) : (Δ (SchwartzMap.fourierMultiplierCLM F
-        (fun ξ : E ↦ ((((2 * π) ^ 2 * ‖ξ‖ ^ 2 + 1)⁻¹ : ℝ) : ℂ)) (η n))).toLp 2 =
-        Lp.fourierMultiplierCLM F
-          (memLp_laplacianSymbol_mul_ofReal_inv_mul_norm_sq_add_one.toLp _)
-          ((η n).toLp 2) :=
-      SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul _
-        memLp_laplacianSymbol_mul_ofReal_inv_mul_norm_sq_add_one.coeFn_toLp fun ξ ↦ by
-          rw [SchwartzMap.fourier_laplacian_apply_eq_laplacianSymbol_smul, hφ, smul_smul]
-    simp_rw [hΔ]
-    rw [← hχ]
-    exact ((Lp.fourierMultiplierCLM F _).continuous.tendsto _).comp hlim'
-
-end Core
 
 end TauCeti
