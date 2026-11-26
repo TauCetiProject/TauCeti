@@ -21,11 +21,15 @@ the isotypic components of the restriction are indexed by
 
 `G ⧸ inertia (FDRep.of σ.toRepresentation)`.
 
-The construction combines the single-orbit theorem from
-`TauCeti/RepresentationTheory/Induction/Clifford/Orbit/Basic.lean` with Mathlib's generic
-`MulAction.orbitEquivQuotientStabilizer`. It uses two dictionary bridges: translating `σ` inside
-`ρ` represents the conjugate abstract `N`-representation carried by `σ`, and the module of a
-subrepresentation is canonically equivalent to its associated `k[N]`-submodule.
+Translation by `ρ g` acts on the `k[N]`-submodules of the restriction
+(`Representation.conjSubmoduleHom`) and carries the isotypic component of a constituent `τ` onto
+that of its translate (`Representation.conjSubmoduleHom_isotypicComponent`), so `G` acts on the
+isotypic components (`Representation.isotypicComponentsMulAction`). By the single-orbit theorem
+of `TauCeti/RepresentationTheory/Induction/Clifford/Orbit/Basic.lean` the action is transitive
+(`Representation.isPretransitive_isotypicComponents`), and the stabilizer of the component of `σ`
+is the inertia group of `σ` (`Representation.stabilizer_conjSubrepIsotypicComponent_one`). The
+indexing is then Mathlib's orbit--stabilizer bijection `MulAction.orbitEquivQuotientStabilizer`,
+and it is `G`-equivariant (`Representation.isotypicComponentsEquivQuotientInertia_smul`).
 
 This is the orbit-indexing step of Clifford's theorem. The decomposition of the restriction as
 equal-multiplicity copies of the conjugates indexed by these cosets is `FDRep.clifford_restrict_iso`
@@ -35,6 +39,9 @@ in `TauCeti/RepresentationTheory/Induction/Clifford/Equivalence.lean`.
 
 * `Representation.fdRepIsoConjSubrep`: the finite-dimensional representation carried by a
   translated constituent is isomorphic to the conjugate representation.
+* `Representation.conjSubmoduleHom`: translation of `k[N]`-submodules of the restriction, as an
+  action of `G` by order automorphisms.
+* `Representation.isotypicComponentsMulAction`: the action of `G` on the isotypic components.
 * `Representation.isotypicComponentsEquivQuotientInertia`: the equivalence between the isotypic
   components of the restriction and the inertia cosets.
 
@@ -46,6 +53,12 @@ The indexed component `Representation.conjSubrepIsotypicComponent` is defined in
   conjugating the abstract `N`-representation it carries agree on isomorphism classes.
 * `Representation.mem_inertia_fdRepOf_toRepresentation_iff`: a group element lies in the inertia
   group of a constituent exactly when its translate carries an equivalent `k[N]`-submodule.
+* `Representation.conjSubmoduleHom_isotypicComponent`: translation carries the isotypic component
+  of a constituent onto that of its translate.
+* `Representation.isPretransitive_isotypicComponents` and
+  `Representation.stabilizer_conjSubrepIsotypicComponent_one`: the action on components is
+  transitive, with the inertia group of a constituent as stabilizer of its component.
+* `Representation.isotypicComponentsEquivQuotientInertia_smul`: the indexing is `G`-equivariant.
 * `Representation.isotypicComponentsEquivQuotientInertia_conjSubrepIsotypicComponent`: under the
   equivalence, the component of the translate by `g` corresponds to the coset of `g`.
 * `Representation.isotypicComponentsEquivQuotientInertia_symm_mk`: the inverse computation.
@@ -56,8 +69,8 @@ The indexed component `Representation.conjSubrepIsotypicComponent` is defined in
 
 ## Implementation notes
 
-Isotypic components are handled through `TauCeti.simpleSubmoduleClassesEquiv`, rather than by
-choosing a simple representative. Isomorphism of subrepresentations is expressed as a
+Equality of the isotypic components of two simple submodules is read through
+`TauCeti.simpleSubmoduleClassesEquiv`. Isomorphism of subrepresentations is expressed as a
 `k[N]`-linear equivalence of their associated submodules; the general bridge to equality in
 `Skeleton (FDRep k N)` is `TauCeti.toSkeleton_fdRepOf_toRepresentation_eq_iff`.
 
@@ -117,190 +130,180 @@ theorem mem_inertia_fdRepOf_toRepresentation_iff [FiniteDimensional k V]
       ((toSkeleton_fdRepOf_toRepresentation_eq_iff _ _).mpr h)
     exact ⟨(fdRepIsoConjSubrep ρ g σ).symm ≪≫ i⟩
 
-variable [FiniteDimensional k V]
+/-- **Translation of `k[N]`-submodules of the restriction**: `conjSubrepHom` read across
+`Subrepresentation.subrepresentationSubmoduleOrderIso`. The value at `g` sends the submodule of an
+`N`-subrepresentation `σ` to that of its translate `ρ g '' σ`. -/
+noncomputable def conjSubmoduleHom :
+    G →* (Submodule k[N] (_root_.Representation.asModule (ρ.comp N.subtype)) ≃o
+      Submodule k[N] (_root_.Representation.asModule (ρ.comp N.subtype))) where
+  toFun g := Subrepresentation.subrepresentationSubmoduleOrderIso.symm.trans
+    ((conjSubrepHom ρ g).trans Subrepresentation.subrepresentationSubmoduleOrderIso)
+  map_one' := RelIso.ext fun S ↦ by simp
+  map_mul' g h := RelIso.ext fun S ↦ by
+    simp only [map_mul, RelIso.mul_apply, OrderIso.trans_apply, OrderIso.symm_apply_apply]
 
-/-- Send an isomorphism class of simple submodules to the class of the finite-dimensional
-representation carried by any representative. -/
-private noncomputable def submoduleClassToSkeleton :
-    SimpleSubmoduleClasses k[N]
-        (_root_.Representation.asModule (ρ.comp N.subtype)) →
-      Skeleton (FDRep k N) :=
-  SimpleSubmoduleClasses.lift
-    (fun T _ ↦ toSkeleton (FDRep.of
-      (Subrepresentation.subrepresentationSubmoduleOrderIso.symm T).toRepresentation))
-    (by
-      intro T U _ _ e
-      apply (toSkeleton_fdRepOf_toRepresentation_eq_iff _ _).mpr
-      obtain ⟨e⟩ := e
-      exact ⟨(LinearEquiv.ofEq _ _
-          (OrderIso.apply_symm_apply
-            Subrepresentation.subrepresentationSubmoduleOrderIso T)).trans e
-        |>.trans
-        (LinearEquiv.ofEq _ _
-          (OrderIso.apply_symm_apply
-            Subrepresentation.subrepresentationSubmoduleOrderIso U).symm)⟩)
-
-omit [N.Normal] in
+/-- Translating the submodule of an `N`-subrepresentation gives the submodule of its translate. -/
 @[simp]
-private theorem submoduleClassToSkeleton_mk
-    (T : Submodule k[N] (_root_.Representation.asModule (ρ.comp N.subtype)))
-    [IsSimpleModule k[N] T] :
-    submoduleClassToSkeleton ρ (.mk T) =
-      toSkeleton (FDRep.of
-        (Subrepresentation.subrepresentationSubmoduleOrderIso.symm T).toRepresentation) :=
-  by
-    rw [submoduleClassToSkeleton, SimpleSubmoduleClasses.lift_mk]
-
-omit [N.Normal] in
-private theorem submoduleClassToSkeleton_injective :
-    Function.Injective (submoduleClassToSkeleton (N := N) ρ) := by
-  intro C
-  induction C using SimpleSubmoduleClasses.ind with
-  | mk T hT =>
-    intro D
-    induction D using SimpleSubmoduleClasses.ind with
-    | mk U hU =>
-      intro h
-      rw [SimpleSubmoduleClasses.mk_eq_mk_iff]
-      have h' :
-          toSkeleton (FDRep.of
-              (Subrepresentation.subrepresentationSubmoduleOrderIso.symm T).toRepresentation) =
-            toSkeleton (FDRep.of
-              (Subrepresentation.subrepresentationSubmoduleOrderIso.symm U).toRepresentation) := by
-        simpa only [submoduleClassToSkeleton_mk] using h
-      obtain ⟨e⟩ := (toSkeleton_fdRepOf_toRepresentation_eq_iff _ _).mp h'
-      exact ⟨(LinearEquiv.ofEq _ _
-          (OrderIso.apply_symm_apply
-            Subrepresentation.subrepresentationSubmoduleOrderIso T).symm).trans e
-        |>.trans (LinearEquiv.ofEq _ _
-          (OrderIso.apply_symm_apply
-            Subrepresentation.subrepresentationSubmoduleOrderIso U))⟩
-
-/-- The isomorphism class attached to an isotypic component, obtained through the generic
-equivalence between components and simple-submodule classes. -/
-private noncomputable def componentClassMap
-    (c : isotypicComponents k[N]
-      (_root_.Representation.asModule (ρ.comp N.subtype))) :
-    Skeleton (FDRep k N) :=
-  submoduleClassToSkeleton ρ
-    ((simpleSubmoduleClassesEquiv k[N]
-      (_root_.Representation.asModule (ρ.comp N.subtype))).symm c)
-
-omit [N.Normal] in
-private theorem componentClassMap_injective :
-    Function.Injective (componentClassMap (N := N) ρ) := by
-  intro c d h
-  apply (simpleSubmoduleClassesEquiv k[N]
-    (_root_.Representation.asModule (ρ.comp N.subtype))).symm.injective
-  exact submoduleClassToSkeleton_injective ρ h
-
-private theorem componentClassMap_conjSubrepIsotypicComponent [ρ.IsIrreducible]
-    (σ : Subrepresentation (ρ.comp N.subtype)) (hσ : IsAtom σ) (g : G) :
-    componentClassMap ρ (conjSubrepIsotypicComponent ρ σ hσ g) =
-      g • toSkeleton (FDRep.of σ.toRepresentation) := by
-  let _ : IsSimpleModule k[N] (conjSubrep ρ g σ).asSubmodule :=
-    Subrepresentation.isSimpleModule_asSubmodule_iff.mpr (isAtom_conjSubrep_iff.mpr hσ)
-  let ec := simpleSubmoduleClassesEquiv k[N]
-    (_root_.Representation.asModule (ρ.comp N.subtype))
-  have hclass :
-      ec.symm (conjSubrepIsotypicComponent ρ σ hσ g) =
-        SimpleSubmoduleClasses.mk (conjSubrep ρ g σ).asSubmodule := by
-    apply ec.injective
-    exact (ec.apply_symm_apply _).trans <| by
-      apply Subtype.ext
-      simp only [ec, coe_conjSubrepIsotypicComponent,
-        coe_simpleSubmoduleClassesEquiv_mk]
-  rw [componentClassMap, hclass, submoduleClassToSkeleton_mk]
-  calc
-    _ = toSkeleton (FDRep.of (conjSubrep ρ g σ).toRepresentation) :=
-      (toSkeleton_fdRepOf_toRepresentation_eq_iff _ _).mpr <| by
-        exact ⟨LinearEquiv.ofEq _ _
-          (OrderIso.apply_symm_apply
-            Subrepresentation.subrepresentationSubmoduleOrderIso _)⟩
-    _ = _ := toSkeleton_fdRepOf_conjSubrep ρ g σ
-
-private theorem submoduleClassToSkeleton_mem_orbit [ρ.IsIrreducible]
-    {σ : Subrepresentation (ρ.comp N.subtype)} (hσ : IsAtom σ)
-    (C : SimpleSubmoduleClasses k[N]
-      (_root_.Representation.asModule (ρ.comp N.subtype))) :
-    submoduleClassToSkeleton ρ C ∈
-      MulAction.orbit G (toSkeleton (FDRep.of σ.toRepresentation)) := by
-  induction C using SimpleSubmoduleClasses.ind with
-  | mk T hT =>
-    obtain ⟨g, ⟨e⟩⟩ := exists_nonempty_linearEquiv_asSubmodule_conjSubrep ρ hσ T
-    rw [MulAction.mem_orbit_iff]
-    refine ⟨g, ?_⟩
-    exact (toSkeleton_fdRepOf_conjSubrep ρ g σ).symm.trans <| by
-      rw [submoduleClassToSkeleton_mk]
-      apply (toSkeleton_fdRepOf_toRepresentation_eq_iff _ _).mpr
-      exact ⟨e.symm.trans (LinearEquiv.ofEq _ _
-        (OrderIso.apply_symm_apply
-          Subrepresentation.subrepresentationSubmoduleOrderIso _).symm)⟩
-
-/-- Every component class is in the conjugation orbit of a fixed constituent. -/
-private theorem componentClassMap_mem_orbit [ρ.IsIrreducible]
-    {σ : Subrepresentation (ρ.comp N.subtype)} (hσ : IsAtom σ)
-    (c : isotypicComponents k[N]
-      (_root_.Representation.asModule (ρ.comp N.subtype))) :
-    componentClassMap ρ c ∈
-      MulAction.orbit G (toSkeleton (FDRep.of σ.toRepresentation)) :=
-  submoduleClassToSkeleton_mem_orbit ρ hσ _
-
-private noncomputable def componentOrbitMap [ρ.IsIrreducible]
-    {σ : Subrepresentation (ρ.comp N.subtype)} (hσ : IsAtom σ) :
-    isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype)) →
-      MulAction.orbit G (toSkeleton (FDRep.of σ.toRepresentation)) :=
-  fun c ↦ ⟨componentClassMap ρ c, componentClassMap_mem_orbit ρ hσ c⟩
-
-private theorem componentOrbitMap_injective [ρ.IsIrreducible]
-    {σ : Subrepresentation (ρ.comp N.subtype)} (hσ : IsAtom σ) :
-    Function.Injective (componentOrbitMap ρ hσ) := by
-  intro c d h
-  apply componentClassMap_injective ρ
-  exact congrArg Subtype.val h
-
-private theorem componentOrbitMap_surjective [ρ.IsIrreducible]
-    {σ : Subrepresentation (ρ.comp N.subtype)} (hσ : IsAtom σ) :
-    Function.Surjective (componentOrbitMap ρ hσ) := by
-  rintro ⟨x, hx⟩
-  obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.mp hx
-  refine ⟨conjSubrepIsotypicComponent ρ σ hσ g, Subtype.ext ?_⟩
-  exact (componentClassMap_conjSubrepIsotypicComponent ρ σ hσ g).trans hg
-
-private noncomputable def componentsEquivOrbit [ρ.IsIrreducible]
-    {σ : Subrepresentation (ρ.comp N.subtype)} (hσ : IsAtom σ) :
-    isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype)) ≃
-      MulAction.orbit G (toSkeleton (FDRep.of σ.toRepresentation)) :=
-  Equiv.ofBijective (componentOrbitMap ρ hσ)
-    ⟨componentOrbitMap_injective ρ hσ, componentOrbitMap_surjective ρ hσ⟩
-
-@[simp]
-private theorem componentsEquivOrbit_apply [ρ.IsIrreducible]
-    {σ : Subrepresentation (ρ.comp N.subtype)} (hσ : IsAtom σ)
-    (c : isotypicComponents k[N]
-      (_root_.Representation.asModule (ρ.comp N.subtype))) :
-    componentsEquivOrbit ρ hσ c = componentOrbitMap ρ hσ c := by
+theorem conjSubmoduleHom_asSubmodule (g : G) (σ : Subrepresentation (ρ.comp N.subtype)) :
+    conjSubmoduleHom ρ g σ.asSubmodule = (conjSubrep ρ g σ).asSubmodule := by
+  change Subrepresentation.subrepresentationSubmoduleOrderIso (conjSubrepHom ρ g
+    (Subrepresentation.subrepresentationSubmoduleOrderIso.symm
+      (Subrepresentation.subrepresentationSubmoduleOrderIso σ))) = _
+  rw [OrderIso.symm_apply_apply, conjSubrepHom_apply]
   rfl
 
-private theorem stabilizer_toSkeleton_fdRepOf_eq_inertia
-    (σ : Subrepresentation (ρ.comp N.subtype)) :
-    MulAction.stabilizer G (toSkeleton (FDRep.of σ.toRepresentation)) =
+omit [N.Normal] in
+/-- Every submodule of the restriction is the submodule of an `N`-subrepresentation. -/
+private theorem exists_asSubmodule_eq
+    (S : Submodule k[N] (_root_.Representation.asModule (ρ.comp N.subtype))) :
+    ∃ σ : Subrepresentation (ρ.comp N.subtype), σ.asSubmodule = S :=
+  Subrepresentation.subrepresentationSubmoduleOrderIso.surjective S
+
+variable [FiniteDimensional k V]
+
+/-- Translating two `N`-subrepresentations by the same `g` does not change whether they are
+isomorphic as representations of `N`. -/
+theorem nonempty_linearEquiv_conjSubrep_iff (g : G)
+    (σ τ : Subrepresentation (ρ.comp N.subtype)) :
+    Nonempty ((conjSubrep ρ g σ).asSubmodule ≃ₗ[k[N]] (conjSubrep ρ g τ).asSubmodule) ↔
+      Nonempty (σ.asSubmodule ≃ₗ[k[N]] τ.asSubmodule) := by
+  rw [← toSkeleton_fdRepOf_toRepresentation_eq_iff, ← toSkeleton_fdRepOf_toRepresentation_eq_iff,
+    toSkeleton_fdRepOf_conjSubrep, toSkeleton_fdRepOf_conjSubrep, smul_left_cancel_iff]
+
+/-- **Translation carries isotypic components to isotypic components**: `ρ g` carries the isotypic
+component of `σ` onto that of the translate `conjSubrep ρ g σ`. -/
+theorem conjSubmoduleHom_isotypicComponent (g : G) (σ : Subrepresentation (ρ.comp N.subtype)) :
+    conjSubmoduleHom ρ g
+        (isotypicComponent k[N] (_root_.Representation.asModule (ρ.comp N.subtype))
+          σ.asSubmodule) =
+      isotypicComponent k[N] (_root_.Representation.asModule (ρ.comp N.subtype))
+        (conjSubrep ρ g σ).asSubmodule := by
+  rw [isotypicComponent, isotypicComponent, OrderIso.map_sSup_eq_sSup_symm_preimage]
+  congr 1
+  ext S
+  obtain ⟨τ, rfl⟩ := exists_asSubmodule_eq ρ S
+  have hsymm : (conjSubmoduleHom ρ g).symm τ.asSubmodule = (conjSubrep ρ g⁻¹ τ).asSubmodule := by
+    rw [OrderIso.symm_apply_eq, conjSubmoduleHom_asSubmodule, conjSubrep_conjSubrep,
+      mul_inv_cancel, conjSubrep_one]
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, hsymm]
+  rw [← nonempty_linearEquiv_conjSubrep_iff ρ g, conjSubrep_conjSubrep, mul_inv_cancel,
+    conjSubrep_one]
+
+omit [N.Normal] [FiniteDimensional k V] in
+/-- Two simple submodules have the same isotypic component exactly when they are isomorphic. -/
+private theorem isotypicComponent_eq_iff_nonempty_linearEquiv
+    {S T : Submodule k[N] (_root_.Representation.asModule (ρ.comp N.subtype))}
+    [IsSimpleModule k[N] S] [IsSimpleModule k[N] T] :
+    isotypicComponent k[N] (_root_.Representation.asModule (ρ.comp N.subtype)) S =
+        isotypicComponent k[N] (_root_.Representation.asModule (ρ.comp N.subtype)) T ↔
+      Nonempty (S ≃ₗ[k[N]] T) := by
+  rw [← SimpleSubmoduleClasses.mk_eq_mk_iff,
+    ← (simpleSubmoduleClassesEquiv k[N] _).injective.eq_iff, Subtype.ext_iff,
+    coe_simpleSubmoduleClassesEquiv_mk, coe_simpleSubmoduleClassesEquiv_mk]
+
+/-- Translation sends isotypic components of the restriction to isotypic components. -/
+theorem conjSubmoduleHom_mem_isotypicComponents (g : G)
+    (c : isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype))) :
+    conjSubmoduleHom ρ g c.val ∈
+      isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype)) := by
+  obtain ⟨_, S, hS, rfl⟩ := c
+  obtain ⟨σ, rfl⟩ := exists_asSubmodule_eq ρ S
+  have hσ := Subrepresentation.isSimpleModule_asSubmodule_iff.mp hS
+  refine ⟨_, Subrepresentation.isSimpleModule_asSubmodule_iff.mpr
+    (isAtom_conjSubrep_iff (g := g).mpr hσ), ?_⟩
+  exact conjSubmoduleHom_isotypicComponent ρ g σ
+
+/-- **`G` acts on the isotypic components of the restriction**, by `g · c = ρ(g)(c)`. -/
+noncomputable instance isotypicComponentsMulAction :
+    MulAction G (isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype))) where
+  smul g c := ⟨conjSubmoduleHom ρ g c.val, conjSubmoduleHom_mem_isotypicComponents ρ g c⟩
+  one_smul c := Subtype.ext <| by
+    change conjSubmoduleHom ρ 1 c.val = c.val
+    rw [map_one]
+    rfl
+  mul_smul g h c := Subtype.ext <| by
+    change conjSubmoduleHom ρ (g * h) c.val = conjSubmoduleHom ρ g (conjSubmoduleHom ρ h c.val)
+    rw [map_mul]
+    rfl
+
+/-- The component `g · c` is the translate of `c` by `ρ g`. -/
+@[simp]
+theorem coe_smul_isotypicComponents (g : G)
+    (c : isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype))) :
+    ((g • c : isotypicComponents k[N] _) :
+      Submodule k[N] (_root_.Representation.asModule (ρ.comp N.subtype))) =
+      conjSubmoduleHom ρ g c :=
+  (rfl)
+
+/-- Acting by `g` on the component of the translate by `h` gives the component of the translate
+by `g * h`. -/
+@[simp]
+theorem smul_conjSubrepIsotypicComponent [ρ.IsIrreducible]
+    (σ : Subrepresentation (ρ.comp N.subtype)) (hσ : IsAtom σ) (g h : G) :
+    g • conjSubrepIsotypicComponent ρ σ hσ h = conjSubrepIsotypicComponent ρ σ hσ (g * h) :=
+  Subtype.ext <| by
+    rw [coe_smul_isotypicComponents, coe_conjSubrepIsotypicComponent,
+      coe_conjSubrepIsotypicComponent, conjSubmoduleHom_isotypicComponent, conjSubrep_conjSubrep]
+
+/-- The component of the translate by `g` is `g` acting on the component of `σ`. -/
+theorem conjSubrepIsotypicComponent_eq_smul [ρ.IsIrreducible]
+    (σ : Subrepresentation (ρ.comp N.subtype)) (hσ : IsAtom σ) (g : G) :
+    conjSubrepIsotypicComponent ρ σ hσ g = g • conjSubrepIsotypicComponent ρ σ hσ 1 := by
+  rw [smul_conjSubrepIsotypicComponent, mul_one]
+
+/-- **`G` permutes the isotypic components transitively.** -/
+theorem isPretransitive_isotypicComponents [ρ.IsIrreducible]
+    {σ : Subrepresentation (ρ.comp N.subtype)} (hσ : IsAtom σ) :
+    MulAction.IsPretransitive G
+      (isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype))) := by
+  have hrange : ∀ c : isotypicComponents k[N] _,
+      ∃ g, c = conjSubrepIsotypicComponent ρ σ hσ g := by
+    rintro ⟨c, hc⟩
+    rw [isotypicComponents_eq_range ρ hσ] at hc
+    obtain ⟨g, rfl⟩ := hc
+    exact ⟨g, Subtype.ext (coe_conjSubrepIsotypicComponent ρ σ hσ g).symm⟩
+  refine ⟨fun c d ↦ ?_⟩
+  obtain ⟨g, rfl⟩ := hrange c
+  obtain ⟨h, rfl⟩ := hrange d
+  exact ⟨h * g⁻¹, by rw [smul_conjSubrepIsotypicComponent, inv_mul_cancel_right]⟩
+
+/-- **The stabilizer of the component of a constituent is its inertia group.** -/
+theorem stabilizer_conjSubrepIsotypicComponent_one [ρ.IsIrreducible]
+    (σ : Subrepresentation (ρ.comp N.subtype)) (hσ : IsAtom σ) :
+    MulAction.stabilizer G (conjSubrepIsotypicComponent ρ σ hσ 1) =
       inertia (FDRep.of σ.toRepresentation) := by
   ext g
-  rw [MulAction.mem_stabilizer_iff, mem_inertia_iff, smul_toSkeleton,
-    toSkeleton_eq_toSkeleton_iff]
+  have := Subrepresentation.isSimpleModule_asSubmodule_iff.mpr hσ
+  have := Subrepresentation.isSimpleModule_asSubmodule_iff.mpr
+    (isAtom_conjSubrep_iff (g := g).mpr hσ)
+  rw [MulAction.mem_stabilizer_iff, smul_conjSubrepIsotypicComponent, mul_one, Subtype.ext_iff,
+    coe_conjSubrepIsotypicComponent, coe_conjSubrepIsotypicComponent, conjSubrep_one,
+    isotypicComponent_eq_iff_nonempty_linearEquiv, mem_inertia_fdRepOf_toRepresentation_iff]
 
-/-- **The inertia cosets index the isotypic components in Clifford's theorem.** A component is
-sent to the coset of any `g` whose translated constituent cuts out that component, and generic
-orbit--stabilizer identifies this with the left cosets of the constituent's inertia group. -/
+/-- **The inertia cosets index the isotypic components in Clifford's theorem.** It is the
+orbit--stabilizer bijection `MulAction.orbitEquivQuotientStabilizer` for the transitive action of
+`G` on the components, at the component of `σ`, whose stabilizer is the inertia group of `σ`. -/
 noncomputable def isotypicComponentsEquivQuotientInertia [ρ.IsIrreducible]
     (σ : Subrepresentation (ρ.comp N.subtype)) (hσ : IsAtom σ) :
     isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype)) ≃
       G ⧸ inertia (FDRep.of σ.toRepresentation) :=
-  (componentsEquivOrbit ρ hσ).trans
-    (MulAction.orbitEquivQuotientStabilizer G
-      (toSkeleton (FDRep.of σ.toRepresentation))) |>.trans
-    (Subgroup.quotientEquivOfEq (stabilizer_toSkeleton_fdRepOf_eq_inertia ρ σ))
+  haveI := isPretransitive_isotypicComponents ρ hσ
+  (Equiv.subtypeUnivEquiv fun c ↦ by
+    rw [MulAction.orbit_eq_univ G (conjSubrepIsotypicComponent ρ σ hσ 1)]
+    trivial).symm.trans <|
+    (MulAction.orbitEquivQuotientStabilizer G _).trans
+      (Subgroup.quotientEquivOfEq (stabilizer_conjSubrepIsotypicComponent_one ρ σ hσ))
+
+/-- The coset of `g` is sent back to the component cut out by the translate by `g`. -/
+@[simp]
+theorem isotypicComponentsEquivQuotientInertia_symm_mk [ρ.IsIrreducible]
+    (σ : Subrepresentation (ρ.comp N.subtype)) (hσ : IsAtom σ) (g : G) :
+    (isotypicComponentsEquivQuotientInertia ρ σ hσ).symm (QuotientGroup.mk g) =
+      conjSubrepIsotypicComponent ρ σ hσ g := by
+  rw [conjSubrepIsotypicComponent_eq_smul]
+  simp only [isotypicComponentsEquivQuotientInertia, Equiv.symm_trans_apply, Equiv.symm_symm,
+    Equiv.subtypeUnivEquiv_apply]
+  exact MulAction.orbitEquivQuotientStabilizer_symm_apply G _ g
 
 /-- Under the Clifford orbit equivalence, the component of the translate by `g` corresponds to
 the coset of `g`. -/
@@ -311,32 +314,22 @@ theorem isotypicComponentsEquivQuotientInertia_conjSubrepIsotypicComponent
     isotypicComponentsEquivQuotientInertia ρ σ hσ
         (conjSubrepIsotypicComponent ρ σ hσ g) =
       QuotientGroup.mk g := by
-  let eo := MulAction.orbitEquivQuotientStabilizer G
-    (toSkeleton (FDRep.of σ.toRepresentation))
-  simp only [isotypicComponentsEquivQuotientInertia]
-  have horbit :
-      componentsEquivOrbit ρ hσ (conjSubrepIsotypicComponent ρ σ hσ g) =
-        (MulAction.orbitEquivQuotientStabilizer G
-          (toSkeleton (FDRep.of σ.toRepresentation))).symm (QuotientGroup.mk g) := by
-    apply Subtype.ext
-    rw [componentsEquivOrbit_apply]
-    simpa only [componentOrbitMap,
-      MulAction.orbitEquivQuotientStabilizer_symm_apply] using
-      componentClassMap_conjSubrepIsotypicComponent ρ σ hσ g
-  calc
-    _ = Subgroup.quotientEquivOfEq (stabilizer_toSkeleton_fdRepOf_eq_inertia ρ σ)
-        (QuotientGroup.mk g) := congrArg _ <|
-          (congrArg eo horbit).trans (eo.apply_symm_apply (QuotientGroup.mk g))
-    _ = QuotientGroup.mk g := Subgroup.quotientEquivOfEq_mk _ _
+  exact ((Equiv.symm_apply_eq _).mp (isotypicComponentsEquivQuotientInertia_symm_mk ρ σ hσ g)).symm
 
-/-- The coset of `g` is sent back to the component cut out by the translate by `g`. -/
-@[simp]
-theorem isotypicComponentsEquivQuotientInertia_symm_mk [ρ.IsIrreducible]
-    (σ : Subrepresentation (ρ.comp N.subtype)) (hσ : IsAtom σ) (g : G) :
-    (isotypicComponentsEquivQuotientInertia ρ σ hσ).symm (QuotientGroup.mk g) =
-      conjSubrepIsotypicComponent ρ σ hσ g := by
-  rw [Equiv.symm_apply_eq]
-  exact (isotypicComponentsEquivQuotientInertia_conjSubrepIsotypicComponent ρ σ hσ g).symm
+/-- **The Clifford orbit equivalence is `G`-equivariant**, for left multiplication on the inertia
+cosets. -/
+theorem isotypicComponentsEquivQuotientInertia_smul [ρ.IsIrreducible]
+    (σ : Subrepresentation (ρ.comp N.subtype)) (hσ : IsAtom σ) (g : G)
+    (c : isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype))) :
+    isotypicComponentsEquivQuotientInertia ρ σ hσ (g • c) =
+      g • isotypicComponentsEquivQuotientInertia ρ σ hσ c := by
+  obtain ⟨q, rfl⟩ := (isotypicComponentsEquivQuotientInertia ρ σ hσ).symm.surjective c
+  induction q using QuotientGroup.induction_on with
+  | H h =>
+    rw [isotypicComponentsEquivQuotientInertia_symm_mk, smul_conjSubrepIsotypicComponent,
+      isotypicComponentsEquivQuotientInertia_conjSubrepIsotypicComponent,
+      isotypicComponentsEquivQuotientInertia_conjSubrepIsotypicComponent,
+      MulAction.Quotient.smul_mk, smul_eq_mul]
 
 /-- Two translates cut out the same isotypic component exactly when they determine the same
 inertia coset. -/

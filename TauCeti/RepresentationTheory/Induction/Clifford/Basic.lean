@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Group.End
 public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.Irreducible
 public import TauCeti.RepresentationTheory.Induction.Conjugate
@@ -49,7 +50,8 @@ is proved from is also what **Clifford's theorem** runs on; its single-orbit for
 
 * `Representation.conjSubrep`: the translate `ρ g '' U` of an `N`-subrepresentation `U`.
 * `Representation.conjSubrepOrderIso`: translation as an order isomorphism of the lattice of
-  `N`-subrepresentations.
+  `N`-subrepresentations, and `Representation.conjSubrepHom`: the resulting action of `G` by order
+  automorphisms.
 * `Representation.conjSubrepEquiv`: translation by `ρ g` as an equivalence from `U`, with its action
   of `N` twisted by conjugation, onto the translate.
 
@@ -192,6 +194,21 @@ theorem isAtom_conjSubrep_iff {g : G} {σ : Subrepresentation (ρ.comp N.subtype
     IsAtom (conjSubrep ρ g σ) ↔ IsAtom σ := by
   rw [← conjSubrepOrderIso_apply g σ]
   exact (conjSubrepOrderIso ρ g).isAtom_iff σ
+
+variable (ρ) in
+/-- **`G` acts on the `N`-subrepresentations by translation**, through order automorphisms: the
+value at `g` is `conjSubrepOrderIso ρ g`, and the action laws are `conjSubrep_one` and
+`conjSubrep_conjSubrep`. -/
+def conjSubrepHom :
+    G →* (Subrepresentation (ρ.comp N.subtype) ≃o Subrepresentation (ρ.comp N.subtype)) where
+  toFun := conjSubrepOrderIso ρ
+  map_one' := RelIso.ext conjSubrep_one
+  map_mul' g h := RelIso.ext fun σ ↦ (conjSubrep_conjSubrep g h σ).symm
+
+@[simp]
+theorem conjSubrepHom_apply (g : G) (σ : Subrepresentation (ρ.comp N.subtype)) :
+    conjSubrepHom ρ g σ = conjSubrep ρ g σ :=
+  (rfl)
 
 variable (ρ) in
 /-- Translation by `ρ g` identifies `σ`, with its action of `N` twisted by conjugation by `g`,
