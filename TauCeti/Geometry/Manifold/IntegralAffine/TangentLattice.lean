@@ -41,6 +41,15 @@ theorem tangentLatticeChange_def {e e' : (integralAffineGroupoid h).maximalAtlas
     (hx : x ∈ e.val.source ∩ e'.val.source) :
     tangentLatticeChange (h := h) hx = (chartChangeAt (h := h) hx).latticeEquiv := (rfl)
 
+/-- On integral lattice vectors, the affine chart change acts linearly by the tangent
+frame change. -/
+theorem chartChangeAt_linear_apply_lattice
+    {e e' : (integralAffineGroupoid h).maximalAtlas B} {x : B}
+    (hx : x ∈ e.val.source ∩ e'.val.source) (n : N) :
+    (chartChangeAt (h := h) hx).toAffineEquiv.linear (i n) =
+      i (tangentLatticeChange (h := h) hx n) := by
+  simpa only [← tangentLatticeChange_def] using (chartChangeAt (h := h) hx).map_lattice n
+
 /-- Tangent frame changes are locally constant along the overlap. -/
 theorem eventually_tangentLatticeChange_eq {e e' : (integralAffineGroupoid h).maximalAtlas B}
     {x : B} (hx : x ∈ e.val.source ∩ e'.val.source) :
