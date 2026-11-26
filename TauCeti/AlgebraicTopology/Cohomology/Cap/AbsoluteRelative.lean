@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.Cap.Connecting
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.Cap.Relative
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Pairing
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.RelativeCup
 
@@ -46,12 +47,22 @@ abelian monoidal category.
   `f_*(x ⌢ f^*α) = f_*x ⌢ α`.
 * `TopPair.absoluteSingularCap_comp_singularHomologyδ`: compatibility with the connecting morphism
   `∂` of the pair, `∂(x ⌢ α) = (-1)^p ∂x ⌢ α|_A`.
+* `TopPair.absoluteSingularCap_singularCohomologyπ`: compatibility with the relative cap product,
+  `x ⌢ j^*β = j_*(x ⌢ β)` for `β ∈ Hᵖ(X, A)`, `j^* : Hᵖ(X, A) ⟶ Hᵖ(X)` and
+  `j_* : H_q(X) ⟶ H_q(X, A)`.
+* `TopPair.absoluteSingularCapWith`: for abelian groups, capping with a fixed class
+  `γ ∈ Hₙ(X, A; ℤ)` as a morphism `Hᵖ(X; L) ⟶ H_q(X, A; L)`.
 
 With the absolute cap product on `X` and on `A`, capping with `α` therefore commutes, up to the
 sign `(-1)^p` at the connecting morphisms, with the maps of the long exact sequence of the pair:
 with `i_*` by `TopCat.singularCap_naturality`, with `j_*` by
 `TopPair.singularHomologyπ_comp_absoluteSingularCap`, and with `∂` by
-`TopPair.absoluteSingularCap_comp_singularHomologyδ`.
+`TopPair.absoluteSingularCap_comp_singularHomologyδ`. Capping a fixed relative class with
+relative cohomology classes and with their images in absolute cohomology is compatible in the same
+way (`TopPair.absoluteSingularCap_singularCohomologyπ`): both are the cap product along the descent
+`C(X, A) ⟶ C(X, A) ⊗ C(X, A)` of the Alexander–Whitney diagonal with values in relative chains.
+These are the squares of the comparison of the cohomology and homology sequences of a manifold
+with boundary in Lefschetz duality.
 
 ## References
 
@@ -138,6 +149,75 @@ lemma singularHomologyπ_comp_absoluteSingularCap (P : TopPair.{w}) (k : Type*) 
   rw [TopCat.singularCap_def, absoluteSingularCap_def]
   exact this.symm
 
+/-- The relative Alexander–Whitney diagonal followed by the quotient map on its second factor is
+the right relative one followed by the quotient map on its first factor: both are descents of the
+Alexander–Whitney diagonal of `X` followed by the quotient maps on both factors. -/
+private lemma alexanderWhitneyDiagonal_whiskerLeft_singularChainComplexπ (P : TopPair.{w})
+    (u : T ⟶ R ⊗ S) :
+    P.alexanderWhitneyDiagonal u ≫ (P.singularChainComplex R ◁ P.singularChainComplexπ S) =
+      P.rightAlexanderWhitneyDiagonal u ≫
+        (P.singularChainComplexπ R ▷ P.singularChainComplex S) := by
+  -- The two quotient maps act on different factors, so they commute.
+  have hx : (P.singularChainComplexπ R ▷ (TopCat.toSSet.obj P.fst).chainComplex S) ≫
+      (P.singularChainComplex R ◁ P.singularChainComplexπ S) =
+        ((TopCat.toSSet.obj P.fst).chainComplex R ◁ P.singularChainComplexπ S) ≫
+          (P.singularChainComplexπ R ▷ P.singularChainComplex S) := by
+    -- Both whiskers are totalizations `HomologicalComplex.mapBifunctorMap` with an identity
+    -- factor, so both sides are the totalization of the two quotient maps.
+    refine (HomologicalComplex.mapBifunctorMap_comp _ _ _ _ _ _).symm.trans <|
+      Eq.trans ?_ (HomologicalComplex.mapBifunctorMap_comp _ _ _ _ _ _)
+    congr 1
+    · exact (Category.comp_id (P.singularChainComplexπ R)).trans
+        (Category.id_comp (P.singularChainComplexπ R)).symm
+    · exact (Category.id_comp (P.singularChainComplexπ S)).trans
+        (Category.comp_id (P.singularChainComplexπ S)).symm
+  rw [← cancel_epi (P.singularChainComplexπ T)]
+  -- The subspace chains of `toSSetPair.obj P` agree with those of `P.fst` only up to unfolding, so
+  -- the two descent identities are combined by `Eq.trans` rather than rewritten.
+  have h := (congrArg (· ≫ (P.singularChainComplex R ◁ P.singularChainComplexπ S))
+    (singularChainComplexπ_alexanderWhitneyDiagonal P u)).trans <| (Category.assoc _ _ _).trans <|
+      (congrArg (P.fst.alexanderWhitneyDiagonal u ≫ ·) hx).trans <|
+        (Category.assoc _ _ _).symm.trans <|
+          congrArg (· ≫ (P.singularChainComplexπ R ▷ P.singularChainComplex S))
+            (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u).symm
+  exact (Category.assoc _ _ _).symm.trans (h.trans (Category.assoc _ _ _))
+
+/-- **Compatibility of the cap products with the map from relative to absolute cohomology**: for a
+class `β` of `Hᵖ(X, A)` with image `j^*β` in `Hᵖ(X)` and a class `x` of `Hₙ(X, A)`, capping `x`
+with `j^*β` is the image of the relative cap product `x ⌢ β ∈ H_q(X)` under
+`j_* : H_q(X) ⟶ H_q(X, A)`, that is `x ⌢ j^*β = j_*(x ⌢ β)`. -/
+lemma absoluteSingularCap_singularCohomologyπ (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C]
+    [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ N) (p q n : ℕ) (h : p + q = n)
+    (β : P.singularCohomology R k M p) :
+    P.absoluteSingularCap k u μ p q n h (P.singularCohomologyπ R k M p β) =
+      P.singularCap k u μ p q n h β ≫ P.singularHomologyπ N q := by
+  -- Both sides are the cap product along the diagonal `C(X, A) ⟶ C(X, A) ⊗ C(X, A)` with values
+  -- in the relative chains, by naturality of the cap product along the two quotient maps.
+  have h₁ := TauCeti.ChainComplex.cap_naturality (k := k)
+    (P.rightAlexanderWhitneyDiagonal u ≫ (P.singularChainComplexπ R ▷ P.singularChainComplex S))
+    ((toSSetPair.obj P).chainComplexPairing μ) (P.rightAlexanderWhitneyDiagonal u)
+    ((toSSetPair.obj P).chainComplexPairing μ) (𝟙 _) (P.singularChainComplexπ R) (𝟙 _) (𝟙 _)
+    (Category.id_comp _) (by simp) p q n h β
+  have h₂ := TauCeti.ChainComplex.cap_naturality (k := k)
+    (P.rightAlexanderWhitneyDiagonal u ≫ (P.singularChainComplexπ R ▷ P.singularChainComplex S))
+    ((toSSetPair.obj P).chainComplexPairing μ) (P.alexanderWhitneyDiagonal u)
+    ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) (𝟙 _) (𝟙 _) (P.singularChainComplexπ S)
+    (P.singularChainComplexπ N)
+    ((Category.id_comp _).trans
+      (alexanderWhitneyDiagonal_whiskerLeft_singularChainComplexπ P u).symm)
+    (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n h β
+  have hid : HomologicalComplex.homologyMap
+      (K := (P.singularChainComplex R).linearYonedaObj k M)
+      (L := (P.singularChainComplex R).linearYonedaObj k M)
+      ((TauCeti.ChainComplex.linearYonedaFunctor k M).map (𝟙 _).op) p = 𝟙 _ := by
+    rw [op_id, CategoryTheory.Functor.map_id]
+    exact HomologicalComplex.homologyMap_id _ _
+  rw [hid, ModuleCat.id_apply, HomologicalComplex.homologyMap_id, Category.id_comp] at h₂
+  rw [HomologicalComplex.homologyMap_id, HomologicalComplex.homologyMap_id, Category.comp_id,
+    Category.id_comp] at h₁
+  rw [absoluteSingularCap_def, singularCap_def]
+  exact h₁.trans h₂.symm
+
 /-- **Naturality of the cap product of absolute cohomology with relative homology**, the
 projection formula `f_*(x ⌢ f^*α) = f_*x ⌢ α`: for a map of pairs `f : (X, A) ⟶ (Y, B)`, capping
 with the pull-back of a cohomology class of `Y` and pushing forward along `f` is pushing forward
@@ -175,5 +255,35 @@ theorem absoluteSingularCap_comp_singularHomologyδ (P : TopPair.{w}) (k : Type*
     (SSet.chainComplexPairing_naturality (TopCat.toSSet.map P.map) μ).symm
     (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u)
     (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n q' n' h h' α hq hn
+
+section FixedClass
+
+/-! ### Capping with a fixed integral class -/
+
+attribute [local instance] MonoidalPreadditive.monoidalLinearInt
+
+/-- **Capping absolute cohomology with a fixed relative homology class** `γ ∈ Hₙ(X, A; ℤ)` of a
+pair `P = (X, A)`: the map `Hᵖ(X; L) ⟶ H_q(X, A; L)`, `α ↦ γ ⌢ α`, for `p + q = n`. -/
+def absoluteSingularCapWith (P : TopPair.{0}) (L : ModuleCat.{0} ℤ) {n : ℕ}
+    (γ : P.singularHomology (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n) (p q : ℕ)
+    (h : p + q = n) :
+    P.fst.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p ⟶ P.singularHomology L q :=
+  -- As for `TopPair.singularCapWith`, the `ℤ`-linear structure is that of the objects of
+  -- `ModuleCat ℤ`, not the one `AddMonoidHom.toIntLinearMap` would use.
+  let f := (LinearMap.applyₗ (R := ℤ) γ).toAddMonoidHom.comp <|
+    ModuleCat.homAddEquiv.toAddMonoidHom.comp
+      (P.absoluteSingularCap ℤ (ρ_ _).inv (ρ_ L).hom p q n h).toAddMonoidHom
+  ModuleCat.ofHom { f with map_smul' := map_intCast_smul f ℤ ℤ }
+
+/-- Capping with a fixed class `γ` evaluates the cap product of absolute cohomology with relative
+homology at `γ`. -/
+lemma absoluteSingularCapWith_apply (P : TopPair.{0}) (L : ModuleCat.{0} ℤ) {n : ℕ}
+    (γ : P.singularHomology (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n) (p q : ℕ)
+    (h : p + q = n) (α : P.fst.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
+    P.absoluteSingularCapWith L γ p q h α =
+      (P.absoluteSingularCap ℤ (ρ_ _).inv (ρ_ L).hom p q n h α).hom γ :=
+  (rfl)
+
+end FixedClass
 
 end TopPair

@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cohomology.Cap.AbsoluteRelative
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.Manifold
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Extension
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
 import TauCeti.AlgebraicTopology.Cohomology.Collar
+import TauCeti.AlgebraicTopology.Cohomology.Manifold
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.BoundaryFundamentalClass
+import TauCeti.CategoryTheory.Linear.Int
 import TauCeti.Geometry.Manifold.Boundary.Collar.Retraction
 
 /-!
@@ -45,10 +49,38 @@ The proof is Hatcher's, through Poincaré duality for the interior. For `0 < t`,
   `ι` is a homotopy equivalence, since the collar pushes `X` off its boundary
   (`TauCeti.IsCollar.homotopyEquivOfRangeEq`).
 
+The companion isomorphism caps absolute cohomology with `[X, ∂X]`:
+
+`Hᵖ(X; L) ⟶ H_q(X, ∂X; L)`, `α ↦ [X, ∂X] ⌢ α`, `p + q = n`
+
+(`TauCeti.HomologicalOrientation.absoluteCapFundamentalClassRel`), and it is bijective as soon as
+the boundary is itself a manifold, that is `N` is charted on a real normed space of dimension
+`n - 1` (`TauCeti.HomologicalOrientation.bijective_absoluteCapFundamentalClassRel`). The proof is
+Hatcher's five-lemma argument. The connecting morphism sends `[X, ∂X]` to a fundamental class
+`[∂X]` of the boundary
+(`TauCeti.HomologicalOrientation.isFundamentalClass_singularHomologyδ_fundamentalClassRel`), so
+capping with `[∂X]` is Poincaré duality of the closed manifold `∂X`
+(`TauCeti.IsFundamentalClass.bijective_singularCapAddHom`). Capping with `[X, ∂X]` and with
+`[∂X]` maps the long exact cohomology sequence of `(X, ∂X)` to its long exact homology sequence,
+up to sign:
+
+```
+Hᵖ⁻¹(∂X) ⟶ Hᵖ(X, ∂X) ⟶ Hᵖ(X) ⟶ Hᵖ(∂X) ⟶ Hᵖ⁺¹(X, ∂X)
+    ↓            ↓          ↓         ↓            ↓
+ H_q(∂X)  ⟶   H_q(X)  ⟶ H_q(X, ∂X) ⟶ H_{q-1}(∂X) ⟶ H_{q-1}(X)
+```
+
+(`TopPair.singularCap_singularCohomologyδ`, `TopPair.absoluteSingularCap_singularCohomologyπ` and
+`TopPair.absoluteSingularCap_comp_singularHomologyδ`). The other four vertical maps are
+bijective, by Lefschetz duality and by Poincaré duality of `∂X`; at the ends of the sequences
+`Hₙ(∂X)` and `Hⁿ(∂X)` vanish, above the dimension of `∂X`.
+
 ## Main definitions
 
 * `TauCeti.HomologicalOrientation.capFundamentalClassRel`: capping with the fundamental class
   relative to the boundary, `Hᵖ(X, ∂X; L) ⟶ H_q(X; L)`.
+* `TauCeti.HomologicalOrientation.absoluteCapFundamentalClassRel`: capping absolute cohomology
+  with the fundamental class relative to the boundary, `Hᵖ(X; L) ⟶ H_q(X, ∂X; L)`.
 
 ## Main results
 
@@ -57,11 +89,14 @@ The proof is Hatcher's, through Poincaré duality for the interior. For `0 < t`,
   fundamental class of `M` along `K` after excision, followed by the map induced by `ι`.
 * `TauCeti.HomologicalOrientation.bijective_capFundamentalClassRel`: **Lefschetz duality**, and
   `TauCeti.HomologicalOrientation.isIso_capFundamentalClassRel` as an isomorphism.
+* `TauCeti.HomologicalOrientation.bijective_absoluteCapFundamentalClassRel`: **Lefschetz duality
+  for absolute cohomology**, when the boundary is a manifold, and
+  `TauCeti.HomologicalOrientation.isIso_absoluteCapFundamentalClassRel` as an isomorphism.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.3, Theorem 3.43 and its proof.
+  Section 3.3, Theorem 3.43 and its proof (the five-lemma argument for the absolute form).
 -/
 
 public section
@@ -312,6 +347,270 @@ theorem isIso_capFundamentalClassRel (p q : ℕ) (h : p + q = n) :
     IsIso (o.capFundamentalClassRel hn hι hιf hf L p q h) :=
   (ConcreteCategory.isIso_iff_bijective _).2
     (o.bijective_capFundamentalClassRel hn hι hιf hf L p q h)
+
+/-! ### Lefschetz duality for absolute cohomology -/
+
+/-- **Capping absolute cohomology with the fundamental class relative to the boundary**: the map
+`Hᵖ(X; L) ⟶ H_q(X, ∂X; L)`, `α ↦ [X, ∂X] ⌢ α`, for `p + q = n`, where the boundary
+`∂X = X ∖ ι(M)` is the complement of the interior. -/
+def absoluteCapFundamentalClassRel (p q : ℕ) (h : p + q = n) :
+    (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).fst.singularCohomology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p ⟶
+      (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomology L q :=
+  (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).absoluteSingularCapWith L
+    (o.fundamentalClassRel hn hι hιf hf) p q h
+
+/-- Capping absolute cohomology with the relative fundamental class evaluates the cap product of
+absolute cohomology with relative homology at `[X, ∂X]`. -/
+lemma absoluteCapFundamentalClassRel_apply (p q : ℕ) (h : p + q = n)
+    (α : (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).fst.singularCohomology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
+    o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h α =
+      ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).absoluteSingularCap ℤ (ρ_ _).inv
+        (ρ_ L).hom p q n h α).hom (o.fundamentalClassRel hn hι hιf hf) :=
+  TopPair.absoluteSingularCapWith_apply _ L _ p q h α
+
+section Absolute
+
+/-! The two duality maps of `X`, and capping with the boundary `[∂X] = ∂[X, ∂X]` of the relative
+fundamental class on `∂X`, form a ladder between the long exact sequence of the pair `(X, ∂X)` in
+cohomology and in homology, commuting up to sign (Hatcher, proof of Theorem 3.43). -/
+
+/-- The square of the connecting morphisms: `[X, ∂X] ⌢ δβ = i_*([∂X] ⌢ β)` for `β ∈ Hᵖ(∂X)`. -/
+private lemma capFundamentalClassRel_singularCohomologyδ {m : ℕ} (hm : m + 1 = n) (p q : ℕ)
+    (h : p + q = m)
+    (β : (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).snd.singularCohomology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
+    o.capFundamentalClassRel hn hι hιf hf L (p + 1) q (by omega)
+        ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCohomologyδ _ ℤ L p (p + 1) rfl
+          β) =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
+        (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).map
+        (((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).snd.singularCap ℤ (ρ_ _).inv
+          (ρ_ L).hom p q m h β).hom
+          ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ
+            (ModuleCat.of ℤ (ULift.{0} ℤ)) n m hm
+            (o.fundamentalClassRel hn hι hιf hf))) := by
+  subst hm
+  rw [capFundamentalClassRel_apply]
+  exact ConcreteCategory.congr_hom (TopPair.singularCap_singularCohomologyδ _ ℤ (ρ_ _).inv
+    (ρ_ L).hom p q m h β) (o.fundamentalClassRel hn hι hιf hf)
+
+/-- The square of the restriction to `∂X` and the connecting morphism:
+`∂([X, ∂X] ⌢ α) = (-1)ᵖ [∂X] ⌢ α|_{∂X}` for `α ∈ Hᵖ(X)`. -/
+private lemma singularHomologyδ_absoluteCapFundamentalClassRel {m : ℕ} (hm : m + 1 = n)
+    (p q : ℕ) (h : p + (q + 1) = n) (h' : p + q = m)
+    (α : (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).fst.singularCohomology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
+    (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ L (q + 1) q rfl
+        (o.absoluteCapFundamentalClassRel hn hι hιf hf L p (q + 1) h α) =
+      ((-1 : ℤ) ^ p) •
+        (((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).snd.singularCap ℤ (ρ_ _).inv
+          (ρ_ L).hom p q m h' (TopCat.singularCohomologyMap
+            (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).map p α)).hom
+          ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ
+            (ModuleCat.of ℤ (ULift.{0} ℤ)) n m hm
+            (o.fundamentalClassRel hn hι hιf hf))) := by
+  rw [absoluteCapFundamentalClassRel_apply, ← ConcreteCategory.comp_apply,
+    TopPair.absoluteSingularCap_comp_singularHomologyδ _ ℤ (ρ_ _).inv (ρ_ L).hom p q m (q + 1) n
+      h' h α rfl hm]
+  rfl
+
+/-- The square of the maps from relative to absolute cohomology and from absolute to relative
+homology: `[X, ∂X] ⌢ j^*β = j_*([X, ∂X] ⌢ β)` for `β ∈ Hᵖ(X, ∂X)`. -/
+private lemma absoluteCapFundamentalClassRel_singularCohomologyπ (p q : ℕ) (h : p + q = n)
+    (β : (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCohomology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
+    o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h
+        ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCohomologyπ _ ℤ L p β) =
+      (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyπ L q
+        (o.capFundamentalClassRel hn hι hιf hf L p q h β) := by
+  rw [absoluteCapFundamentalClassRel_apply, capFundamentalClassRel_apply,
+    TopPair.absoluteSingularCap_singularCohomologyπ]
+  rfl
+
+/-- Injectivity in the duality ladder: if capping with `[∂X]` is bijective in every degree and
+`Hₙ(∂X; L)` and `Hⁿ(∂X; L)` vanish, then capping with `[X, ∂X]` is injective on `Hᵖ(X; L)`. -/
+private lemma injective_absoluteCapFundamentalClassRel_of_bijective {m : ℕ} (hm : m + 1 = n)
+    (hPD : ∀ p q (h : p + q = m), Function.Bijective fun β ↦
+      (((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).snd.singularCap ℤ (ρ_ _).inv
+        (ρ_ L).hom p q m h β).hom
+          ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ
+            (ModuleCat.of ℤ (ULift.{0} ℤ)) n m hm (o.fundamentalClassRel hn hι hιf hf))))
+    (hH : Subsingleton (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+      L).obj (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).snd))
+    (hC : Subsingleton ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).snd.singularCohomology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L n))
+    (p q : ℕ) (h : p + q = n) :
+    Function.Injective (o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h) := by
+  refine (injective_iff_map_eq_zero
+    (o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h).hom).2 fun α hα ↦ ?_
+  -- The restriction of `α` to `∂X` vanishes, since capping it with `[∂X]` is `±∂([X, ∂X] ⌢ α)`.
+  have hres : TopCat.singularCohomologyMap
+      (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).map p α = 0 := by
+    rcases q with _ | q
+    · obtain rfl : p = n := by omega
+      exact Subsingleton.elim _ _
+    · have hδ := o.singularHomologyδ_absoluteCapFundamentalClassRel hn hι hιf hf L hm p q h
+        (by omega) α
+      rw [hα, map_zero] at hδ
+      refine (hPD p q (by omega)).1 ?_
+      simp only [map_zero, ModuleCat.hom_zero]
+      rcases neg_one_pow_eq_or ℤ p with hp | hp
+      · rw [hp, one_smul] at hδ
+        exact hδ.symm
+      · rw [hp, neg_one_zsmul] at hδ
+        exact neg_eq_zero.1 hδ.symm
+  obtain ⟨β, rfl⟩ := (ShortComplex.moduleCat_exact_iff _).1
+    ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCohomology_exact_space _ ℤ L p)
+    α hres
+  rw [o.absoluteCapFundamentalClassRel_singularCohomologyπ] at hα
+  -- So `[X, ∂X] ⌢ β` comes from `H_q(∂X)`, which is capping with `[∂X]` followed by the inclusion.
+  obtain ⟨γ, hγ⟩ := (ShortComplex.moduleCat_exact_iff _).1
+    ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomology_exact_space L q) _ hα
+  rcases p with _ | p
+  · obtain rfl : q = n := by omega
+    have hβ : β = 0 := (o.bijective_capFundamentalClassRel hn hι hιf hf L 0 q h).1 <| by
+      rw [map_zero, ← hγ, @Subsingleton.elim _ hH γ 0]
+      exact map_zero _
+    rw [hβ, map_zero]
+  · obtain ⟨ζ, rfl⟩ := (hPD p q (by omega)).2 γ
+    have hβ := (o.bijective_capFundamentalClassRel hn hι hιf hf L (p + 1) q h).1
+      ((o.capFundamentalClassRel_singularCohomologyδ hn hι hιf hf L hm p q (by omega) ζ).trans
+        hγ).symm
+    rw [hβ, TopPair.singularCohomologyδ_comp_singularCohomologyπ_apply _
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p (p + 1) rfl]
+
+/-- In the duality ladder, if capping with `[∂X]` is bijective in every degree, then every
+`∂y ∈ H_q(∂X)` with `y ∈ H_{q+1}(X, ∂X)` is the boundary of some `[X, ∂X] ⌢ α`: write
+`∂y = [∂X] ⌢ ζ`; then `[X, ∂X] ⌢ δζ = i_*∂y = 0`, so `δζ = 0` and `ζ` is the restriction of some
+`α₀ ∈ Hᵖ(X)`, and `α = ±α₀` for the sign `(-1)ᵖ`. -/
+private lemma exists_singularHomologyδ_absoluteCapFundamentalClassRel_eq {m : ℕ}
+    (hm : m + 1 = n)
+    (hPD : ∀ p q (h : p + q = m), Function.Bijective fun β ↦
+      (((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).snd.singularCap ℤ (ρ_ _).inv
+        (ρ_ L).hom p q m h β).hom
+          ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ
+            (ModuleCat.of ℤ (ULift.{0} ℤ)) n m hm (o.fundamentalClassRel hn hι hιf hf))))
+    (p q : ℕ) (h : p + (q + 1) = n)
+    (y : (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomology
+      (C := ModuleCat.{0} ℤ) L (q + 1)) :
+    ∃ α : (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).fst.singularCohomology
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p,
+      (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ L (q + 1) q rfl
+        (o.absoluteCapFundamentalClassRel hn hι hιf hf L p (q + 1) h α) =
+          (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ L (q + 1) q rfl
+            y := by
+  obtain ⟨ζ, hζ⟩ := (hPD p q (by omega)).2
+    ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ L (q + 1) q rfl y)
+  dsimp only at hζ
+  have hδζ : (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCohomologyδ _ ℤ L p
+      (p + 1) rfl ζ = 0 := by
+    refine (o.bijective_capFundamentalClassRel hn hι hιf hf L (p + 1) q (by omega)).1 ?_
+    rw [o.capFundamentalClassRel_singularCohomologyδ hn hι hιf hf L hm p q (by omega) ζ, hζ,
+      map_zero]
+    exact ConcreteCategory.congr_hom
+      ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ_comp L (q + 1) q rfl) y
+  obtain ⟨α₀, hα₀⟩ := (ShortComplex.moduleCat_exact_iff _).1
+    ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCohomology_exact_subspace _ ℤ L p
+      (p + 1) rfl) ζ hδζ
+  dsimp only at hα₀
+  have hcap := o.singularHomologyδ_absoluteCapFundamentalClassRel hn hι hιf hf L hm p q h
+    (by omega)
+  rcases neg_one_pow_eq_or ℤ p with hp | hp
+  · refine ⟨α₀, ?_⟩
+    rw [hcap, hp, one_smul, hα₀]
+    exact hζ
+  · refine ⟨-α₀, ?_⟩
+    rw [hcap, hp, neg_one_zsmul, map_neg, hα₀, map_neg]
+    -- Capping with the negated morphism negates the class.
+    exact (neg_neg _).trans hζ
+
+/-- Surjectivity in the duality ladder: if capping with `[∂X]` is bijective in every degree, then
+capping with `[X, ∂X]` is surjective onto `H_q(X, ∂X; L)`. -/
+private lemma surjective_absoluteCapFundamentalClassRel_of_bijective {m : ℕ} (hm : m + 1 = n)
+    (hPD : ∀ p q (h : p + q = m), Function.Bijective fun β ↦
+      (((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).snd.singularCap ℤ (ρ_ _).inv
+        (ρ_ L).hom p q m h β).hom
+          ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ
+            (ModuleCat.of ℤ (ULift.{0} ℤ)) n m hm (o.fundamentalClassRel hn hι hιf hf))))
+    (p q : ℕ) (h : p + q = n) :
+    Function.Surjective (o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h) := by
+  intro y
+  rcases q with _ | q
+  · -- In degree `0` every relative class comes from `H₀(X)`, which is the image of `Hᵖ(X, ∂X)`.
+    obtain ⟨x, rfl⟩ := (ModuleCat.epi_iff_surjective _).1 (inferInstance : Epi
+      ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyπ L 0)) y
+    obtain ⟨β, rfl⟩ := (o.bijective_capFundamentalClassRel hn hι hιf hf L p 0 h).2 x
+    exact ⟨_, o.absoluteCapFundamentalClassRel_singularCohomologyπ hn hι hιf hf L p 0 h β⟩
+  -- Otherwise `y - [X, ∂X] ⌢ α₁` has no boundary for some `α₁`, so it comes from `H_q(X)`, hence
+  -- from `Hᵖ(X, ∂X)`.
+  obtain ⟨α₁, hα₁⟩ :=
+    o.exists_singularHomologyδ_absoluteCapFundamentalClassRel_eq hn hι hιf hf L hm hPD p q h y
+  obtain ⟨x, hx⟩ := (ShortComplex.moduleCat_exact_iff _).1
+    ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomology_exact_relative L (q + 1) q
+      rfl) (y - o.absoluteCapFundamentalClassRel hn hι hιf hf L p (q + 1) h α₁)
+    (by rw [map_sub, hα₁, sub_self])
+  obtain ⟨β, rfl⟩ := (o.bijective_capFundamentalClassRel hn hι hιf hf L p (q + 1) h).2 x
+  refine ⟨α₁ + (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCohomologyπ _ ℤ L p β,
+    ?_⟩
+  dsimp only at hx
+  rw [map_add, o.absoluteCapFundamentalClassRel_singularCohomologyπ, hx, add_sub_cancel]
+
+end Absolute
+
+/-- **Lefschetz duality for absolute cohomology.** Let `X` be a compact Hausdorff space and
+`ι : M → X` an open embedding of an oriented `n`-manifold without boundary whose complement
+`∂X = X ∖ ι(M)` is collared, the image of a collared map `f : N → X`, such as a compact oriented
+topological manifold with boundary and its interior. Suppose that `N` is a manifold, charted on a
+real normed space of dimension `n - 1`. Then capping with the fundamental class relative to the
+boundary, `α ↦ [X, ∂X] ⌢ α`, is a bijection `Hᵖ(X; L) → H_q(X, ∂X; L)` for `p + q = n`. -/
+theorem bijective_absoluteCapFundamentalClassRel {F : Type} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] [ChartedSpace F N] (hF : finrank ℝ F + 1 = n)
+    (p q : ℕ) (h : p + q = n) :
+    Function.Bijective (o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h) := by
+  obtain ⟨c, hc⟩ := isCollared_iff.1 hf
+  -- The boundary `∂X = f(N)` is a compact manifold modelled on `F`.
+  have hfA : range f = (range ι)ᶜ := by rw [hιf, compl_compl]
+  let : ChartedSpace F ↥((range ι)ᶜ : Set X) :=
+    (hc.isEmbedding.toHomeomorph.trans (Homeomorph.setCongr hfA)).chartedSpace
+  have : CompactSpace ↥((range ι)ᶜ : Set X) :=
+    isCompact_iff_compactSpace.1 hι.isOpen_range.isClosed_compl.isCompact
+  obtain rfl := hF
+  -- `[∂X] = ∂[X, ∂X]` is a fundamental class of the boundary, so capping with it is Poincaré
+  -- duality of `∂X`.
+  have hPD := IsFundamentalClass.bijective_singularCapAddHom (M := ↥((range ι)ᶜ : Set X)) rfl L
+    (o.isFundamentalClass_singularHomologyδ_fundamentalClassRel hn hι hιf hf)
+  have hPD' : ∀ p q (h : p + q = finrank ℝ F), Function.Bijective fun β ↦
+      (((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).snd.singularCap ℤ (ρ_ _).inv
+        (ρ_ L).hom p q _ h β).hom
+          ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ
+            (ModuleCat.of ℤ (ULift.{0} ℤ)) _ _ rfl (o.fundamentalClassRel hn hι hιf hf))) :=
+    fun p q h ↦ (congrArg Function.Bijective (funext fun β ↦ TopCat.singularCapAddHom_apply ℤ
+      (ρ_ _).inv (ρ_ L).hom _ h _ β)).mp (hPD p q h)
+  refine ⟨o.injective_absoluteCapFundamentalClassRel_of_bijective hn hι hιf hf L rfl hPD' ?_ ?_
+    p q h, o.surjective_absoluteCapFundamentalClassRel_of_bijective hn hι hιf hf L rfl hPD' p q h⟩
+  · have := isZero_singularHomology_of_compactSpace (M := ↥((range ι)ᶜ : Set X)) (E := F)
+      (n := finrank ℝ F) (k := finrank ℝ F + 1) L rfl (lt_add_one _)
+    exact ModuleCat.subsingleton_of_isZero this
+  · -- The vanishing above the dimension is stated for the `ℤ`-linear structure of a category of
+    -- modules, the duality maps for that of a preadditive category; they agree by uniqueness.
+    have hZ (_ : Linear ℤ (ModuleCat.{0} ℤ)) :
+        IsZero ((TopCat.of ↥((range ι)ᶜ : Set X)).singularCohomology
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L (finrank ℝ F + 1)) := by
+      obtain rfl := Subsingleton.elim ‹Linear ℤ (ModuleCat.{0} ℤ)› ModuleCat.instLinear
+      exact isZero_singularCohomology_of_compactSpace (E := F) (ModuleCat.of ℤ (ULift.{0} ℤ)) L
+        rfl (lt_add_one _)
+    exact ModuleCat.subsingleton_of_isZero (hZ Linear.preadditiveIntLinear)
+
+/-- **Lefschetz duality for absolute cohomology**, as an isomorphism
+`Hᵖ(X; L) ≅ H_q(X, ∂X; L)`. -/
+theorem isIso_absoluteCapFundamentalClassRel {F : Type} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] [ChartedSpace F N] (hF : finrank ℝ F + 1 = n)
+    (p q : ℕ) (h : p + q = n) :
+    IsIso (o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h) :=
+  (ConcreteCategory.isIso_iff_bijective _).2
+    (o.bijective_absoluteCapFundamentalClassRel hn hι hιf hf L hF p q h)
 
 end HomologicalOrientation
 
