@@ -25,8 +25,9 @@ no continuous integral process or strong SDE solution is asserted here.
 
 `coeFn_l2Integral_smul_toLp_exponentialMartingale` gives the integral equation, including zero
 parameters and zero horizons. `memLp_exponentialMartingale_predictableMeasure` supplies
-its integrand domain. The increment pairing is also available independently of any
-predictable version.
+its integrand domain. For an increment pairing that does not require a predictable version,
+see `IsFilteredPreBrownianReal.setIntegral_exponentialMartingale_mul_sub` in
+`TauCeti.Probability.BrownianMotion.Tilted`.
 
 ## References
 
