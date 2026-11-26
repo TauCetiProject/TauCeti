@@ -16,6 +16,10 @@ at each label depends only on which labels coincide. Consequently an eventually 
 collision relation gives eventually constant multiplicities, without any continuity or
 splitting assumptions on the polynomial family.
 
+Over a domain, the finset `Polynomial.nthRootsFinset n a` has at most `n` elements
+(`TauCeti.Polynomial.card_nthRootsFinset_le`). For `n > 0` it is the set of all solutions of
+`x ^ n = a`; for `n = 0` it is empty by convention, although every `x` solves `x ^ 0 = 1`.
+
 We also count the root zero: it occurs in `f.roots` with multiplicity the order of vanishing
 `f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
 `f.natTrailingDegree` plus the nonzero roots satisfying it. Over any integral domain, summing
@@ -57,6 +61,15 @@ theorem eventually_rootMultiplicity_eq_of_roots_eq_map
   rw [← count_roots, ← count_roots, hxroots, hroots₀,
     Multiset.count_map, Multiset.count_map]
   exact congrArg _ (Multiset.filter_congr fun j hj ↦ hx i hi j (Finset.mem_val.mp hj))
+
+/-- Over a domain, the finset `nthRootsFinset n a` has at most `n` elements. For `n > 0` these
+are all the solutions of `x ^ n = a`; for `n = 0` the finset is empty. Mathlib's
+`Polynomial.card_nthRoots` bounds the multiset of roots counted with multiplicity. -/
+theorem Polynomial.card_nthRootsFinset_le {R : Type*} [CommRing R] [IsDomain R] (n : ℕ)
+    (a : R) : (nthRootsFinset n a).card ≤ n := by
+  classical
+  rw [nthRootsFinset_def]
+  exact (Multiset.toFinset_card_le _).trans (card_nthRoots n a)
 
 end TauCeti
 

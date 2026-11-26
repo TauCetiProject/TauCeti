@@ -215,6 +215,35 @@ theorem ncard_monicSquarefreePolysOfDegree {n : ℕ} (hn : 2 ≤ n) :
   rw [show m + 2 - 1 = m + 1 by omega]
   omega
 
+/-- **Few monic polynomials are not squarefree.** Over a finite field with `q` elements at most
+`q ^ (n - 1)` monic polynomials of degree `n` are not squarefree: they are the `q ^ n` monic
+polynomials of degree `n` minus the `q ^ n - q ^ (n - 1)` squarefree ones for `n ≥ 2`
+(`Polynomial.ncard_monicSquarefreePolysOfDegree`), and there are none for `n ≤ 1`. -/
+theorem ncard_setOf_monic_natDegree_not_squarefree_le (n : ℕ) :
+    {f : K[X] | f.Monic ∧ f.natDegree = n ∧ ¬Squarefree f}.ncard ≤ Nat.card K ^ (n - 1) := by
+  have hsplit := Set.ncard_inter_add_ncard_sdiff_eq_ncard {f : K[X] | f.Monic ∧ f.natDegree = n}
+    {f | Squarefree f} (finite_setOf_monic_natDegree_eq K n)
+  have hsq : {f : K[X] | f.Monic ∧ f.natDegree = n} ∩ {f | Squarefree f} =
+      monicSquarefreePolysOfDegree K n := by
+    ext f
+    simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, mem_monicSquarefreePolysOfDegree_iff]
+    tauto
+  have hnot : {f : K[X] | f.Monic ∧ f.natDegree = n} \ {f | Squarefree f} =
+      {f : K[X] | f.Monic ∧ f.natDegree = n ∧ ¬Squarefree f} := by
+    ext f
+    simp only [Set.mem_sdiff, Set.mem_ofPred_eq, and_assoc]
+  rw [hsq, hnot, ncard_setOf_monic_natDegree_eq] at hsplit
+  rcases lt_or_ge n 2 with hn | hn
+  · -- in degrees `0` and `1` every monic polynomial is squarefree
+    have hall : (monicSquarefreePolysOfDegree K n).ncard = Nat.card K ^ n := by
+      interval_cases n
+      · rw [monicSquarefreePolysOfDegree_zero, Set.ncard_singleton, pow_zero]
+      · rw [ncard_monicSquarefreePolysOfDegree_one, pow_one]
+    omega
+  · have hle : Nat.card K ^ (n - 1) ≤ Nat.card K ^ n := Nat.pow_le_pow_right Nat.card_pos (by omega)
+    rw [ncard_monicSquarefreePolysOfDegree K hn] at hsplit
+    omega
+
 end FiniteField
 
 end Polynomial
