@@ -30,8 +30,9 @@ complex matrices, where `M` is positive definite.
 * `TauCeti.lintegral_norm_det_add_vecMulVec_inv_pow_le`: one-row Hua bound.
 * `TauCeti.lmarginal_norm_det_add_sum_vecMulVec_inv_pow_le`: iterated marginal Hua bound over a
   finite set of rows `s`.
-* `TauCeti.lintegral_norm_det_add_conjTranspose_mul_inv_pow_le`: Hua's bound over `ι → κ → ℂ`
-  matrices for any exponent `r + card ι` (`r ≥ card κ`), invertible `S`, and positive definite `G`.
+* `TauCeti.lintegral_norm_det_add_conjTranspose_mul_inv_pow_le`: two-sided affine Hua bound over
+  `ι → κ → ℂ` matrices for any exponent `r + card ι` (`r ≥ card κ`), invertible `S` and `T`, and
+  positive definite `G`.
 
 ## References
 
@@ -149,7 +150,8 @@ theorem lintegral_norm_det_add_vecMulVec_inv_pow_le {κ : Type*} [Fintype κ] [D
       rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_one_add_sum_norm_sq_inv_pow,
         ← ENNReal.ofReal_mul (by positivity)]
       simp only [B]
-      ring_nf
+      congr 1
+      ring
 
 /-- **Hua's integral bound** (iterated marginal form): for positive definite `M`, invertible `S`,
 `r ≥ card κ`, and a finite set of rows `s`, the iterated lower Lebesgue integral of
@@ -178,17 +180,17 @@ theorem lmarginal_norm_det_add_sum_vecMulVec_inv_pow_le {ι κ : Type*} [Decidab
           (∫⋯∫⁻_s, F (M' v) s ((r + 1) + s.card)) (update x i v) :=
       lintegral_congr fun y ↦ by simp [F, M', updateFinset, hi, add_assoc, add_comm 1]
     have h_meas : Measurable (F M (insert i s) (r + (insert i s).card)) := by
-      have h_entry (p q : κ) : Measurable fun x' : ι → κ → ℂ ↦
-          (M + ∑ j ∈ insert i s, vecMulVec (star (x' j ᵥ* S + a j)) (x' j ᵥ* S + a j)) p q := by
-        simp only [Matrix.add_apply, Matrix.sum_apply, vecMulVec_apply, Pi.star_apply,
-          Pi.add_apply, vecMul, dotProduct]
+      have h_mat : Measurable fun x' : ι → κ → ℂ ↦
+          of.symm (M + ∑ j ∈ insert i s, vecMulVec (star (x' j ᵥ* S + a j)) (x' j ᵥ* S + a j)) := by
+        rw [measurable_pi_iff]
+        intro p
+        rw [measurable_pi_iff]
+        intro q
+        simp only [of_symm_apply, Matrix.add_apply, Matrix.sum_apply, vecMulVec_apply,
+          Pi.star_apply, Pi.add_apply, vecMul, dotProduct]
         fun_prop
-      have h_det : Measurable fun x' : ι → κ → ℂ ↦
-          (M + ∑ j ∈ insert i s, vecMulVec (star (x' j ᵥ* S + a j)) (x' j ᵥ* S + a j)).det := by
-        simp only [Matrix.det_apply']
-        exact Finset.measurable_sum _ fun σ _ ↦
-          measurable_const.mul (Finset.measurable_prod _ fun p _ ↦ h_entry (σ p) p)
-      exact ENNReal.measurable_ofReal.comp (h_det.norm.inv.pow_const _)
+      have h_det : Continuous fun A : κ → κ → ℂ ↦ (of A).det := by fun_prop
+      exact ENNReal.measurable_ofReal.comp ((h_det.measurable.comp h_mat).norm.inv.pow_const _)
     calc
       _ = ∫⁻ v : κ → ℂ, (∫⋯∫⁻_s, F M (insert i s) (r + (insert i s).card)) (update x i v) :=
         lmarginal_insert _ h_meas hi x
@@ -203,50 +205,57 @@ theorem lmarginal_norm_det_add_sum_vecMulVec_inv_pow_le {ι κ : Type*} [Decidab
         gcongr
         exact lintegral_norm_det_add_vecMulVec_inv_pow_le hM hS (a i) hr
       _ = ENNReal.ofReal (K ^ (insert i s).card * ‖M.det‖⁻¹ ^ r) := by
-        rw [← ENNReal.ofReal_mul (by positivity), Finset.card_insert_of_notMem hi]
-        ring_nf
+        rw [← ENNReal.ofReal_mul (by positivity), Finset.card_insert_of_notMem hi, pow_succ]
+        congr 1
+        ring
 
-/-- **Hua's integral bound over matrices**: for invertible `S : Matrix ι ι ℂ`, positive definite
-`G : Matrix κ κ ℂ`, and `r ≥ card κ`, the integral of
-`‖det (G + (S A + c)ᴴ (S A + c))‖⁻¹ ^ (r + #ι)` over `A : ι → κ → ℂ` is at most
-`(π ^ #κ / #κ!) ^ #ι ‖det S‖⁻¹ ^ (2 #κ) ‖det G‖⁻¹ ^ r`. -/
+/-- **Hua's integral bound over matrices** (two-sided affine form): for invertible
+`S : Matrix ι ι ℂ` and `T : Matrix κ κ ℂ`, positive definite `G : Matrix κ κ ℂ`, and `r ≥ card κ`,
+the integral of `‖det (G + (S A T + c)ᴴ (S A T + c))‖⁻¹ ^ (r + #ι)` over `A : ι → κ → ℂ` is at most
+`(π ^ #κ / #κ!) ^ #ι ‖det S‖⁻¹ ^ (2 #κ) ‖det T‖⁻¹ ^ (2 #ι) ‖det G‖⁻¹ ^ r`. -/
 theorem lintegral_norm_det_add_conjTranspose_mul_inv_pow_le {ι κ : Type*} [Fintype ι]
     [DecidableEq ι] [Fintype κ] [DecidableEq κ] {S : Matrix ι ι ℂ} (hS : S.det ≠ 0)
-    (c : Matrix ι κ ℂ) {G : Matrix κ κ ℂ} (hG : G.PosDef) {r : ℕ} (hr : card κ ≤ r) :
+    {T : Matrix κ κ ℂ} (hT : T.det ≠ 0) (c : Matrix ι κ ℂ) {G : Matrix κ κ ℂ} (hG : G.PosDef)
+    {r : ℕ} (hr : card κ ≤ r) :
     ∫⁻ A : ι → κ → ℂ,
-        ENNReal.ofReal (‖(G + (S * of A + c)ᴴ * (S * of A + c)).det‖⁻¹ ^ (r + card ι)) ≤
+        ENNReal.ofReal (‖(G + (S * of A * T + c)ᴴ * (S * of A * T + c)).det‖⁻¹ ^ (r + card ι)) ≤
       ENNReal.ofReal ((π ^ card κ / (card κ).factorial) ^ card ι *
-        (‖S.det‖⁻¹ ^ (2 * card κ) * ‖G.det‖⁻¹ ^ r)) := by
+        (‖S.det‖⁻¹ ^ (2 * card κ) * (‖T.det‖⁻¹ ^ (2 * card ι) * ‖G.det‖⁻¹ ^ r))) := by
   let g (v : ι → κ → ℂ) : ENNReal :=
-    ENNReal.ofReal (‖(G + (of v)ᴴ * of v).det‖⁻¹ ^ (r + card ι))
-  have h_rows (v : ι → κ → ℂ) : (of v)ᴴ * of v = ∑ i, vecMulVec (star (v i)) (v i) := by
+    ENNReal.ofReal (‖(G + (of v * T + c)ᴴ * (of v * T + c)).det‖⁻¹ ^ (r + card ι))
+  have h_rows (v : ι → κ → ℂ) :
+      (of v * T + c)ᴴ * (of v * T + c) =
+        ∑ i, vecMulVec (star (v i ᵥ* T + c i)) (v i ᵥ* T + c i) := by
     ext a b
-    simp [Matrix.mul_apply, Matrix.sum_apply, vecMulVec_apply]
+    simp [Matrix.mul_apply, Matrix.sum_apply, vecMulVec_apply, vecMul, dotProduct, mul_comm]
   have h_integrand (v : ι → κ → ℂ) :
       ENNReal.ofReal (‖(G + ∑ i ∈ (Finset.univ : Finset ι),
-          vecMulVec (star (v i ᵥ* (1 : Matrix κ κ ℂ) + (0 : ι → κ → ℂ) i))
-            (v i ᵥ* (1 : Matrix κ κ ℂ) + (0 : ι → κ → ℂ) i)).det‖⁻¹ ^
+          vecMulVec (star (v i ᵥ* T + c i)) (v i ᵥ* T + c i)).det‖⁻¹ ^
           (r + (Finset.univ : Finset ι).card)) = g v := by
-    simp only [g, h_rows, Pi.zero_apply, vecMul_one, add_zero, Finset.card_univ]
+    simp only [g, h_rows, Finset.card_univ]
   have h_hua : ∫⁻ v, g v ≤
-      ENNReal.ofReal ((π ^ card κ / (card κ).factorial) ^ card ι * ‖G.det‖⁻¹ ^ r) := by
+      ENNReal.ofReal
+        ((π ^ card κ / (card κ).factorial / ‖T.det‖ ^ 2) ^ card ι * ‖G.det‖⁻¹ ^ r) := by
     have h := lmarginal_norm_det_add_sum_vecMulVec_inv_pow_le (ι := ι)
-      (1 : Matrix κ κ ℂ) (by simp) 0 hG Finset.univ hr 0
+      T hT (fun i ↦ c i) hG Finset.univ hr 0
     rw [lmarginal_univ, ← volume_pi, lintegral_congr h_integrand] at h
-    simpa only [det_one, norm_one, one_pow, div_one, Finset.card_univ] using h
+    simpa only [Finset.card_univ] using h
   have h_comp (A : ι → κ → ℂ) :
-      ENNReal.ofReal (‖(G + (S * of A + c)ᴴ * (S * of A + c)).det‖⁻¹ ^ (r + card ι)) =
-        g (of.symm (S * of A + c)) := by
-    simp only [g, Equiv.apply_symm_apply]
-  rw [lintegral_congr h_comp, lintegral_comp_matrix_mul_add hS c g]
+      ENNReal.ofReal (‖(G + (S * of A * T + c)ᴴ * (S * of A * T + c)).det‖⁻¹ ^ (r + card ι)) =
+        g (of.symm (S * of A + 0)) := by
+    simp only [g, add_zero, Equiv.apply_symm_apply]
+  rw [lintegral_congr h_comp, lintegral_comp_matrix_mul_add hS 0 g]
   calc
     ENNReal.ofReal (‖S.det‖⁻¹ ^ (2 * card κ)) * ∫⁻ v, g v
       ≤ ENNReal.ofReal (‖S.det‖⁻¹ ^ (2 * card κ)) *
-          ENNReal.ofReal ((π ^ card κ / (card κ).factorial) ^ card ι * ‖G.det‖⁻¹ ^ r) := by
+          ENNReal.ofReal
+            ((π ^ card κ / (card κ).factorial / ‖T.det‖ ^ 2) ^ card ι * ‖G.det‖⁻¹ ^ r) := by
         gcongr
     _ = ENNReal.ofReal ((π ^ card κ / (card κ).factorial) ^ card ι *
-          (‖S.det‖⁻¹ ^ (2 * card κ) * ‖G.det‖⁻¹ ^ r)) := by
+          (‖S.det‖⁻¹ ^ (2 * card κ) * (‖T.det‖⁻¹ ^ (2 * card ι) * ‖G.det‖⁻¹ ^ r))) := by
         rw [← ENNReal.ofReal_mul (by positivity)]
-        ring_nf
+        congr 1
+        rw [div_pow, div_eq_mul_inv, inv_pow, ← pow_mul, ← inv_pow]
+        ring
 
 end TauCeti

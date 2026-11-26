@@ -16,13 +16,17 @@ import Mathlib.RingTheory.Norm.Transitivity
 /-!
 # Change of variables for complex matrix actions on Lebesgue measure
 
-Provides lower Lebesgue integral change-of-variables formulas for invertible complex matrices
-acting on `κ → ℂ` by `mulVec` and on `ι → κ → ℂ` by left matrix multiplication plus translation.
-Both use `MeasurableEmbedding.lintegral_map`, so no measurability assumption on the integrand is
-needed.
+Provides a general lower Lebesgue integral change-of-variables formula for invertible real linear
+maps on finite-dimensional normed spaces (`MeasureTheory.lintegral_comp_linearMap`), and derives
+from it the complex matrix change-of-variables formulas for `mulVec` on `κ → ℂ` and affine left
+matrix multiplication on `ι → κ → ℂ`. All use `MeasurableEmbedding.lintegral_map`, so no
+measurability assumption on the integrand is needed.
 
 ## Main results
 
+* `MeasureTheory.lintegral_comp_linearMap`: for an invertible real linear map `f : E →ₗ[ℝ] E` on a
+  finite-dimensional real normed space with an additive Haar measure `μ`,
+  `∫⁻ x, g (f x) ∂μ = ENNReal.ofReal |(LinearMap.det f)⁻¹| * ∫⁻ x, g x ∂μ`.
 * `MeasureTheory.lintegral_comp_mulVec`: for an invertible complex matrix `u`,
   `∫⁻ y : κ → ℂ, g (u *ᵥ y) = ENNReal.ofReal (‖u.det‖⁻¹ ^ 2) * ∫⁻ y : κ → ℂ, g y`.
 * `MeasureTheory.lintegral_comp_matrix_mul_add`: for an invertible complex matrix `S` and offset
@@ -37,6 +41,20 @@ open Fintype Matrix
 
 namespace MeasureTheory
 
+/-- Change of variables for an invertible real linear map on a finite-dimensional real normed space
+with an additive Haar measure `μ`. -/
+theorem lintegral_comp_linearMap {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    {f : E →ₗ[ℝ] E} (hf : LinearMap.det f ≠ 0) (g : E → ENNReal) :
+    ∫⁻ x, g (f x) ∂μ = ENNReal.ofReal |(LinearMap.det f)⁻¹| * ∫⁻ x, g x ∂μ := by
+  obtain ⟨u, rfl⟩ := (LinearMap.isUnit_iff_isUnit_det f).2 (isUnit_iff_ne_zero.2 hf)
+  have h_inj : Function.Injective (u : E →ₗ[ℝ] E) := fun x y h ↦ by
+    simpa only [← mul_apply_eq_comp, u.inv_val, one_apply_eq_self] using congrArg u.inv h
+  have h_emb : MeasurableEmbedding (u : E →ₗ[ℝ] E) :=
+    Continuous.measurableEmbedding (u : E →ₗ[ℝ] E).continuous_of_finiteDimensional h_inj
+  rw [← h_emb.lintegral_map g, Measure.map_linearMap_addHaar_eq_smul_addHaar μ hf,
+    lintegral_smul_measure, smul_eq_mul]
+
 /-- Change of variables on `κ → ℂ` for an invertible complex matrix `u`. -/
 theorem lintegral_comp_mulVec {κ : Type*} [Fintype κ] [DecidableEq κ]
     {u : Matrix κ κ ℂ} (hu : u.det ≠ 0) (g : (κ → ℂ) → ENNReal) :
@@ -46,17 +64,9 @@ theorem lintegral_comp_mulVec {κ : Type*} [Fintype κ] [DecidableEq κ]
   have h_det : LinearMap.det f = ‖u.det‖ ^ 2 := by
     simp [f, LinearMap.det_restrictScalars, Algebra.norm_complex_eq, ← Complex.sq_norm]
   have h_pos : 0 < ‖u.det‖ ^ 2 := pow_pos (norm_pos_iff.2 hu) 2
-  have h_inj : Function.Injective f := fun x y hxy ↦
-    mulVec_injective_of_det_ne_zero hu (by simpa only [hf] using hxy)
-  have h_emb : MeasurableEmbedding f :=
-    Continuous.measurableEmbedding f.continuous_of_finiteDimensional h_inj
-  calc
-    ∫⁻ y : κ → ℂ, g (u *ᵥ y) = ∫⁻ y : κ → ℂ, g (f y) := lintegral_congr fun y ↦ by rw [hf]
-    _ = ∫⁻ y : κ → ℂ, g y ∂(Measure.map f volume) := (h_emb.lintegral_map g).symm
-    _ = ENNReal.ofReal (‖u.det‖⁻¹ ^ 2) * ∫⁻ y : κ → ℂ, g y := by
-      rw [Measure.map_linearMap_addHaar_eq_smul_addHaar (volume : Measure (κ → ℂ))
-          (h_det.trans_ne h_pos.ne'),
-        lintegral_smul_measure, h_det, abs_of_pos (inv_pos.2 h_pos), inv_pow, smul_eq_mul]
+  rw [lintegral_congr fun y ↦ by rw [← hf],
+    lintegral_comp_linearMap (volume : Measure (κ → ℂ)) (h_det.trans_ne h_pos.ne') g,
+    h_det, abs_of_pos (inv_pos.2 h_pos), inv_pow]
 
 /-- Change of variables on `ι → κ → ℂ` for the affine matrix substitution `A ↦ S * A + c` with
 invertible `S : Matrix ι ι ℂ`. -/
@@ -75,30 +85,15 @@ theorem lintegral_comp_matrix_mul_add {ι κ : Type*} [Fintype ι] [DecidableEq 
     rw [LinearMap.det_restrictScalars, LinearMap.det_conj]
     simp [det_kronecker, Algebra.norm_complex_apply, Complex.normSq_eq_norm_sq, ← pow_mul, mul_comm]
   have h_pos : 0 < ‖S.det‖ ^ (2 * card κ) := pow_pos (norm_pos_iff.2 hS) _
-  have h_inj : Function.Injective (f.restrictScalars ℝ) := fun A B hAB ↦ by
-    have hmul : S * of A = S * of B := by
-      simpa only [LinearMap.coe_restrictScalars, hf, Equiv.apply_symm_apply] using congrArg of hAB
-    have h_inv : S⁻¹ * (S * of A) = S⁻¹ * (S * of B) := congrArg (S⁻¹ * ·) hmul
-    simpa only [← Matrix.mul_assoc, nonsing_inv_mul _ (isUnit_iff_ne_zero.2 hS),
-      Matrix.one_mul, Equiv.symm_apply_apply] using congrArg of.symm h_inv
-  have h_emb : MeasurableEmbedding (f.restrictScalars ℝ) :=
-    Continuous.measurableEmbedding (f.restrictScalars ℝ).continuous_of_finiteDimensional h_inj
   have h_arg (A : ι → κ → ℂ) : of.symm (S * of A + c) = f.restrictScalars ℝ A + of.symm c := by
     ext i j
     simp [hf]
-  calc
-    ∫⁻ A : ι → κ → ℂ, g (of.symm (S * of A + c))
-      = ∫⁻ A : ι → κ → ℂ, g (f.restrictScalars ℝ A + of.symm c) :=
-        lintegral_congr fun A ↦ by rw [h_arg]
-    _ = ∫⁻ A : ι → κ → ℂ, g (A + of.symm c) ∂(Measure.map (f.restrictScalars ℝ) volume) :=
-        (h_emb.lintegral_map (fun A ↦ g (A + of.symm c))).symm
-    _ = ENNReal.ofReal (‖S.det‖⁻¹ ^ (2 * card κ)) * ∫⁻ A : ι → κ → ℂ, g A := by
-      -- Typeclass search does not chain `IsAddHaarMeasure` across nested `Pi` spaces `ι → κ → ℂ`.
-      have : (volume : Measure (κ → ℂ)).IsAddHaarMeasure := ⟨⟩
-      have : (volume : Measure (ι → κ → ℂ)).IsAddHaarMeasure := ⟨⟩
-      rw [Measure.map_linearMap_addHaar_eq_smul_addHaar (volume : Measure (ι → κ → ℂ))
-          (h_det.trans_ne h_pos.ne'),
-        lintegral_smul_measure, lintegral_add_right_eq_self, h_det,
-        abs_of_pos (inv_pos.2 h_pos), inv_pow, smul_eq_mul]
+  -- Typeclass search does not chain `IsAddHaarMeasure` across nested `Pi` spaces `ι → κ → ℂ`.
+  have : (volume : Measure (κ → ℂ)).IsAddHaarMeasure := ⟨⟩
+  have : (volume : Measure (ι → κ → ℂ)).IsAddHaarMeasure := ⟨⟩
+  rw [lintegral_congr fun A ↦ by rw [h_arg],
+    lintegral_comp_linearMap (volume : Measure (ι → κ → ℂ)) (h_det.trans_ne h_pos.ne')
+      (fun A ↦ g (A + of.symm c)),
+    lintegral_add_right_eq_self, h_det, abs_of_pos (inv_pos.2 h_pos), inv_pow]
 
 end MeasureTheory
