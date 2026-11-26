@@ -36,8 +36,8 @@ This is what makes the exponential `exp (t • B)` of a Metzler matrix entrywise
   `c`.
 * `Matrix.IsQMatrix.apply_self_eq_neg_sum`, `Matrix.IsQMatrix.apply_self_nonpos`: the diagonal
   entry of a Q-matrix is minus the sum of the off-diagonal entries of its row, hence nonpositive.
-* `Matrix.isQMatrix_iff_mulVec_one`: a Metzler matrix is a Q-matrix if and only if it kills the
-  all-ones column vector.
+* `Matrix.isQMatrix_iff_mulVec_one_eq_zero`: a Metzler matrix is a Q-matrix if and only if it
+  kills the all-ones column vector.
 * `Matrix.IsQMatrix.eq_zero`: on at most one state, the only Q-matrix is the zero matrix.
 
 ## References
@@ -105,13 +105,13 @@ theorem isMetzler_add_diagonal_iff [AddZeroClass R] [LE R] [DecidableEq n] {B : 
   refine forall₂_congr fun i j ↦ imp_congr_right fun hij ↦ ?_
   rw [Matrix.add_apply, diagonal_apply_ne d hij, add_zero]
 
+theorem IsMetzler.add [AddZeroClass R] [Preorder R] [AddLeftMono R] {A B : Matrix n n R}
+    (hA : A.IsMetzler) (hB : B.IsMetzler) : (A + B).IsMetzler :=
+  fun _ _ hij ↦ add_nonneg (hA hij) (hB hij)
+
 section OrderedSemiring
 
 variable [Semiring R] [PartialOrder R] [IsOrderedRing R]
-
-theorem IsMetzler.add {A B : Matrix n n R} (hA : A.IsMetzler) (hB : B.IsMetzler) :
-    (A + B).IsMetzler :=
-  fun _ _ hij ↦ add_nonneg (hA hij) (hB hij)
 
 /-- A nonnegative multiple of a Metzler matrix is Metzler. -/
 theorem IsMetzler.smul {B : Matrix n n R} (hB : B.IsMetzler) {c : R} (hc : 0 ≤ c) :
@@ -170,6 +170,11 @@ theorem IsQMatrix.eq_zero [LE R] [Subsingleton n] {Q : Matrix n n R} (hQ : Q.IsQ
   obtain rfl := Subsingleton.elim i j
   rw [Matrix.zero_apply, ← hQ.sum_apply_eq_zero i, Fintype.sum_subsingleton _ i]
 
+theorem IsQMatrix.add [Preorder R] [AddLeftMono R] {P Q : Matrix n n R} (hP : P.IsQMatrix)
+    (hQ : Q.IsQMatrix) : (P + Q).IsQMatrix :=
+  ⟨hP.isMetzler.add hQ.isMetzler, fun i ↦ by
+    simp [sum_add_distrib, hP.sum_apply_eq_zero i, hQ.sum_apply_eq_zero i]⟩
+
 end AddCommMonoid
 
 section NonAssocSemiring
@@ -177,14 +182,14 @@ section NonAssocSemiring
 variable [NonAssocSemiring R] [LE R]
 
 /-- A Q-matrix kills the all-ones column vector. -/
-theorem IsQMatrix.mulVec_one {Q : Matrix n n R} (hQ : Q.IsQMatrix) : Q *ᵥ 1 = 0 := by
+theorem IsQMatrix.mulVec_one_eq_zero {Q : Matrix n n R} (hQ : Q.IsQMatrix) : Q *ᵥ 1 = 0 := by
   ext i
   simpa [mulVec, dotProduct] using hQ.sum_apply_eq_zero i
 
 /-- A Metzler matrix is a Q-matrix if and only if it kills the all-ones column vector. -/
-theorem isQMatrix_iff_mulVec_one {Q : Matrix n n R} :
+theorem isQMatrix_iff_mulVec_one_eq_zero {Q : Matrix n n R} :
     Q.IsQMatrix ↔ Q.IsMetzler ∧ Q *ᵥ 1 = 0 := by
-  refine ⟨fun h ↦ ⟨h.isMetzler, h.mulVec_one⟩, fun ⟨hM, h1⟩ ↦ ⟨hM, fun i ↦ ?_⟩⟩
+  refine ⟨fun h ↦ ⟨h.isMetzler, h.mulVec_one_eq_zero⟩, fun ⟨hM, h1⟩ ↦ ⟨hM, fun i ↦ ?_⟩⟩
   simpa [mulVec, dotProduct] using congrFun h1 i
 
 end NonAssocSemiring
@@ -192,11 +197,6 @@ end NonAssocSemiring
 section OrderedSemiring
 
 variable [Semiring R] [PartialOrder R] [IsOrderedRing R]
-
-theorem IsQMatrix.add {P Q : Matrix n n R} (hP : P.IsQMatrix) (hQ : Q.IsQMatrix) :
-    (P + Q).IsQMatrix :=
-  ⟨hP.isMetzler.add hQ.isMetzler, fun i ↦ by
-    simp [sum_add_distrib, hP.sum_apply_eq_zero i, hQ.sum_apply_eq_zero i]⟩
 
 /-- A nonnegative multiple of a Q-matrix is a Q-matrix. -/
 theorem IsQMatrix.smul {Q : Matrix n n R} (hQ : Q.IsQMatrix) {c : R} (hc : 0 ≤ c) :

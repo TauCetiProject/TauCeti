@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.Metzler
 
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import TauCeti.Analysis.Calculus.DerivativeTest
+import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 
 /-!
@@ -67,6 +68,7 @@ theorem exp_apply_nonneg_of_nonneg {A : Matrix n n ℝ} (hA : ∀ i j, 0 ≤ A i
     rw [Rat.smul_def]
     exact mul_nonneg (by positivity) (pow_apply_nonneg hA k i j)
 
+open scoped Matrix.Norms.Operator in
 /-- The exponential of a Metzler matrix is entrywise nonnegative. -/
 theorem IsMetzler.exp_apply_nonneg {B : Matrix n n ℝ} (hB : B.IsMetzler) (i j : n) :
     0 ≤ exp B i j := by
@@ -75,13 +77,10 @@ theorem IsMetzler.exp_apply_nonneg {B : Matrix n n ℝ} (hB : B.IsMetzler) (i j 
   have hexp : exp B = exp (B + c • 1) * exp ((-c) • (1 : Matrix n n ℝ)) := by
     rw [← exp_add_of_commute _ _ hcomm, add_assoc, ← add_smul, add_neg_cancel, zero_smul,
       add_zero]
-  have hdiag : exp ((-c) • (1 : Matrix n n ℝ)) = diagonal fun _ ↦ Real.exp (-c) := by
-    rw [smul_one_eq_diagonal, exp_diagonal, Real.exp_eq_exp_ℝ]
-    congr 1
-    ext
-    exact Pi.coe_exp _ _
-  rw [hexp, hdiag, mul_diagonal]
-  exact mul_nonneg (exp_apply_nonneg_of_nonneg hc i j) (Real.exp_pos _).le
+  -- This typed specialization pins the operator-norm matrix ring instance.
+  have hscalar : exp ((-c) • (1 : Matrix n n ℝ)) = Real.exp (-c) • 1 := exp_real_smul_one _
+  rw [hexp, hscalar, mul_smul_comm, mul_one, Matrix.smul_apply, smul_eq_mul]
+  exact mul_nonneg (Real.exp_pos _).le (exp_apply_nonneg_of_nonneg hc i j)
 
 /-- **Positivity of the exponential of a Metzler matrix.** The exponential `exp (t • B)` of a
 real square matrix is entrywise nonnegative at every time `t ≥ 0` if and only if `B` is
@@ -101,7 +100,7 @@ theorem exp_smul_nonneg_iff_isMetzler (B : Matrix n n ℝ) :
 theorem IsQMatrix.exp_smul_mem_rowStochastic {Q : Matrix n n ℝ} (hQ : Q.IsQMatrix) {t : ℝ}
     (ht : 0 ≤ t) : exp (t • Q) ∈ rowStochastic ℝ n :=
   mem_rowStochastic.mpr ⟨(hQ.isMetzler.smul ht).exp_apply_nonneg,
-    exp_mulVec_eq_self_of_mulVec_eq_zero (by rw [smul_mulVec, hQ.mulVec_one, smul_zero])⟩
+    exp_mulVec_eq_self_of_mulVec_eq_zero (by rw [smul_mulVec, hQ.mulVec_one_eq_zero, smul_zero])⟩
 
 /-- **The exponential of a Q-matrix is stochastic.** The exponential `exp (t • Q)` of a real square
 matrix is a row-stochastic matrix at every time `t ≥ 0` if and only if `Q` is a Q-matrix. -/
