@@ -402,7 +402,8 @@ private theorem exists_solution_of_tail_bounds {f g u : ℕ → ℂ} {R γ a t C
     (g := fun k ↦ g (k + n₀)) (u := fun k ↦ u (k + n₀)) hu' hg' hQ hK hr'
   -- the tails of the weighted residual decay like `(n + 1 + n₀) ^ e`
   set S := ∑' m : ℕ, ((m + n₀ : ℕ) : ℝ) ^ (-2 : ℝ)
-  have htail := tsum_Ioi_le_of_le_rpow hE ht (fun m ↦ mul_nonneg (hQ m) (norm_nonneg _)) hres
+  have htail := tsum_Ioi_le_of_le_rpow hE ht one_lt_two
+    (fun m ↦ mul_nonneg (hQ m) (norm_nonneg _)) hres
   have hpow_le (n : ℕ) : ((n + 1 + n₀ : ℕ) : ℝ) ^ e ≤ 1 :=
     Real.rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast (by omega)) ht
   have hh (n : ℕ) : ‖h n‖ ≤ E * S * Real.exp (E * S) * ((n + 1 + n₀ : ℕ) : ℝ) ^ e := by
