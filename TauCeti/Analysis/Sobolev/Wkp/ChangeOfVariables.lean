@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.Wkp.Exponent
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
-public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
@@ -21,7 +21,6 @@ import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
-import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -44,10 +43,8 @@ in `TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear`.
    through `k` bounded by `L` and `|det DΦ| ≥ c > 0` on `U` — then precomposition with `Φ` is a
    bounded linear operator `TauCeti.Wkp.compL : Wkp mu V p k →L[ℝ] Wkp mu U p k` of norm at most
    `TauCeti.Wkp.compLBound p k L c`. For a `Cᵏ` diffeomorphism with bounded derivatives in both
-   directions this gives a Banach-space isomorphism `TauCeti.Wkp.compLEquiv`. For `1 ≤ p < ∞` and
-   `k = 2`, the weak Hessian obeys the chain rule
-   `D²(u ∘ Φ)(x) = DΦ(x)† ∘ D²u(Φ x) ∘ DΦ(x) + ⟪∇u(Φ x), D²Φ(x)⟫` almost everywhere on `U`
-   (`TauCeti.Wkp.inner_iteratedGradient_compL_ae`).
+   directions this gives a Banach-space isomorphism `TauCeti.Wkp.compLEquiv`. The chain rule for
+   the weak Hessian of `u ∘ Φ` is in `TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Hessian`.
 2. **Left-invertible `Cᵏ` maps** (`k : ℕ`, `1 ≤ p ≤ ∞`): when `Φ` is `Cᵏ` on `U` mapping `U` into
    `V` with `‖iteratedFDeriv ℝ i Φ x‖ ≤ L` for `1 ≤ i ≤ k` on `U`, and admits a differentiable
    left inverse `Ψ` on `V` with `‖fderiv ℝ Ψ (Φ x)‖ ≤ L'` on `U`, we have
@@ -71,13 +68,6 @@ via `TauCeti.Wkp.ofExponentLEL`, passing `q → ∞` with
 `TauCeti.ae_norm_le_of_eventually_nnreal_eLpNorm_le`, and gluing the local weak derivatives via
 `TauCeti.exists_hasWeakFDerivOn_iSup`.
 
-For the weak Hessian chain rule along a nonlinear change of variables `Φ` of order two
-(`1 ≤ p < ∞`), the weak gradient of `u ∘ Φ` is `DΦ† (∇u ∘ Φ)`, so in an orthonormal basis `(bᵢ)`
-each of its components is `⟪∇(u ∘ Φ), c⟫ = ∑ᵢ ⟪DΦ c, bᵢ⟫ ⟪∇u(Φ ·), bᵢ⟫`, a sum of products of
-the `C¹` coefficients `⟪DΦ c, bᵢ⟫` with functions `⟪∇u(Φ ·), bᵢ⟫` in `W^{1,p}(U)`. Differentiating
-with the product rule (`TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`) and using
-uniqueness of weak derivatives gives the chain rule for the weak Hessian.
-
 ## Main declarations
 
 * `TauCeti.Wkp.IsChangeOfVariables`: bundled `Cᵏ` change-of-variables hypotheses, including
@@ -99,9 +89,6 @@ uniqueness of weak derivatives gives the chain rule for the weak Hessian.
   boundary values move forward along a change of variables.
 * `TauCeti.Wkp.gradient_firstOrder_compL_ae`: the chain rule `∇(u ∘ Φ) = DΦ† ∇u(Φ ·)` for the
   weak gradient.
-* `TauCeti.Wkp.inner_iteratedGradient_compL_ae`: the chain rule
-  `D²(u ∘ Φ) = DΦ† ∘ D²u(Φ ·) ∘ DΦ + ⟪∇u(Φ ·), D²Φ⟫` for the weak Hessian along a change of
-  variables `Φ` of order two.
 
 ## References
 
@@ -1158,124 +1145,6 @@ theorem firstOrder_compL (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p �
   refine W1p.ext_value (Lp.ext ?_)
   filter_upwards [value_compL_ae h u, h.value_w1pCompL_ae hp (firstOrder k u)] with x h1 h2
   rw [h2, value_firstOrder, value_firstOrder, h1]
-
-/-- At almost every point, the weak gradient of `d ∈ W^{1,p}(V)` pairs with every direction `f`
-as `⟪D²u f, c⟫` once it does so with the vectors of an orthonormal basis. -/
-private theorem ae_forall_inner_gradient_eq {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
-    (u : Wkp mu V p 2) (c : E) (d : W1p mu V p)
-    (hd : ∀ i, (fun y => ⟪W1p.gradient d y, b i⟫_ℝ) =ᵐ[mu.restrict V]
-      fun y => ⟪iteratedGradient 1 u y (b i), c⟫_ℝ) :
-    ∀ᵐ y ∂mu.restrict V, ∀ f : E,
-      ⟪W1p.gradient d y, f⟫_ℝ = ⟪iteratedGradient 1 u y f, c⟫_ℝ := by
-  filter_upwards [ae_all_iff.2 hd] with y hy f
-  have hL : (innerSL ℝ (W1p.gradient d y) : E →L[ℝ] ℝ) =
-      (innerSL ℝ c).comp (iteratedGradient 1 u y) :=
-    ContinuousLinearMap.coe_injective (b.toBasis.ext fun i => by
-      simpa [real_inner_comm c] using hy i)
-  simpa [real_inner_comm c] using congrArg (fun T => T f) hL
-
-/-- For `u ∈ W^{2,p}(V)` and a direction `c₀`, the function `⟪∇u(Φ ·), c₀⟫` lies in `W^{1,p}(U)`,
-with weak gradient components `⟪D²u(Φ x) (DΦ(x) f), c₀⟫`. -/
-private theorem exists_w1p_value_eq_inner_gradient_comp (h : IsChangeOfVariables 2 U V Φ L c)
-    (hp : p ≠ ⊤) (u : Wkp mu V p 2) (c₀ : E) :
-    ∃ w : W1p mu U p, ∀ᵐ x ∂mu.restrict U,
-      W1p.value w x = ⟪iteratedGradient 0 (lowerOrder 1 u) (Φ x), c₀⟫_ℝ ∧ ∀ f : E,
-        ⟪W1p.gradient w x, f⟫_ℝ = ⟪iteratedGradient 1 u (Φ x) (fderiv ℝ Φ x f), c₀⟫_ℝ := by
-  obtain ⟨d, hdv, hdg⟩ := exists_w1p_value_eq_inner_gradient u c₀
-  have hdg' := ae_forall_inner_gradient_eq (stdOrthonormalBasis ℝ E) u c₀ d fun i => hdg _
-  refine ⟨W1p.compL Φ hp h.differentiableOn h.injOn h.mapsTo h.norm_fderiv_le h.pos h.le_abs_det d,
-    ?_⟩
-  filter_upwards [W1p.value_compL_ae Φ hp h.differentiableOn h.injOn h.mapsTo h.norm_fderiv_le
-    h.pos h.le_abs_det d, W1p.gradient_compL_ae Φ hp h.differentiableOn h.injOn h.mapsTo
-    h.norm_fderiv_le h.pos h.le_abs_det d, h.ae_comp hdv, h.ae_comp hdg'] with x h1 h2 h3 h4
-  refine ⟨h1.trans h3, fun f => ?_⟩
-  rw [h2, ContinuousLinearMap.adjoint_inner_left, h4]
-
-/-- Each component `⟪∇(u ∘ Φ), c₀⟫` of the weak gradient of `u ∘ Φ` is weakly differentiable in
-every direction `f`, with derivative `⟪D²u(Φ x) (DΦ(x) f), DΦ(x) c₀⟫ + ⟪∇u(Φ x), D²Φ(x) f c₀⟫`. -/
-private theorem hasWeakLineDerivOn_inner_gradient_firstOrder_compL
-    (h : IsChangeOfVariables 2 U V Φ L c) (hp : p ≠ ⊤) (u : Wkp mu V p 2) (c₀ f : E) :
-    HasWeakLineDerivOn mu U (fun x => ⟪W1p.gradient (firstOrder 1 (compL h u)) x, c₀⟫_ℝ)
-      (fun x => ⟪iteratedGradient 1 u (Φ x) (fderiv ℝ Φ x f), fderiv ℝ Φ x c₀⟫_ℝ +
-        ⟪iteratedGradient 0 (lowerOrder 1 u) (Φ x), fderiv ℝ (fderiv ℝ Φ) x f c₀⟫_ℝ) f := by
-  set b := stdOrthonormalBasis ℝ E
-  set G := iteratedGradient 0 (lowerOrder 1 u)
-  have hΦ1 : ContDiffOn ℝ 1 (fderiv ℝ Φ) U := h.contDiffOn_fderiv
-  -- The weak gradient of `u ∘ Φ` is `DΦ(x)† ∇u(Φ x)`.
-  have hgrad : ∀ᵐ x ∂mu.restrict U,
-      W1p.gradient (firstOrder 1 (compL h u)) x = (fderiv ℝ Φ x).adjoint (G (Φ x)) := by
-    filter_upwards [gradient_firstOrder_compL_ae h u] with x hx
-    rw [hx, gradient_firstOrder_one]
-  -- In the basis `(bᵢ)`, `⟪∇(u ∘ Φ), c₀⟫ = ∑ᵢ ⟪bᵢ, DΦ c₀⟫ wᵢ` with `wᵢ = ⟪∇u(Φ ·), bᵢ⟫` in
-  -- `W^{1,p}(U)`, and the coefficients `⟪bᵢ, DΦ c₀⟫` are `C¹` on `U`.
-  choose w hw using fun i => exists_w1p_value_eq_inner_gradient_comp h hp u (b i)
-  have hψ (i : Fin _) : ContDiffOn ℝ 1 (fun x => ⟪b i, fderiv ℝ Φ x c₀⟫_ℝ) U :=
-    contDiffOn_const.inner ℝ (hΦ1.clm_apply contDiffOn_const)
-  have hψd (i : Fin _) : ∀ x ∈ (U : Set E),
-      fderiv ℝ (fun x => ⟪b i, fderiv ℝ Φ x c₀⟫_ℝ) x f =
-        ⟪b i, fderiv ℝ (fderiv ℝ Φ) x f c₀⟫_ℝ := fun x hx => by
-    have hdx : DifferentiableAt ℝ (fderiv ℝ Φ) x :=
-      (hΦ1.differentiableOn one_ne_zero x hx).differentiableAt (U.isOpen.mem_nhds hx)
-    rw [((hasFDerivAt_const (b i) x).inner ℝ
-      (hdx.hasFDerivAt.clm_apply (hasFDerivAt_const c₀ x))).fderiv]
-    simp
-  have hsum := HasWeakLineDerivOn.sum (μ := mu) (Ω := U) Finset.univ fun i _ =>
-    (((W1p.hasWeakFDerivOn (w i)).hasWeakLineDerivOn f).contDiffOn_smul_of_ne_zero
-      (hψ i) one_ne_zero)
-  refine (hsum.congr_ae ?_).congr_ae_deriv ?_
-  · filter_upwards [hgrad, ae_all_iff.2 hw] with x h1 h2
-    rw [h1, ContinuousLinearMap.adjoint_inner_left, ← b.sum_inner_mul_inner]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [(h2 i).1, smul_eq_mul, mul_comm]
-  · filter_upwards [ae_restrict_mem U.isOpen.measurableSet, ae_all_iff.2 hw] with x hx h2
-    simp only [innerSL_apply_apply, smul_eq_mul, hψd _ x hx, (h2 _).1, (h2 _).2,
-      Finset.sum_add_distrib]
-    rw [← b.sum_inner_mul_inner (iteratedGradient 1 u (Φ x) (fderiv ℝ Φ x f)),
-      ← b.sum_inner_mul_inner (G (Φ x))]
-    congr 1 <;> exact Finset.sum_congr rfl fun i _ => by ring
-
-/-- **The chain rule for the weak Hessian.** Let `Φ` be a change of variables of order two from `U`
-into `V`, and `1 ≤ p < ∞`. For `u ∈ W^{2,p}(V)`, the weak Hessian of `u ∘ Φ ∈ W^{2,p}(U)` is
-
-`⟪D²(u ∘ Φ)(x) f, g⟫ = ⟪D²u(Φ x) (DΦ(x) f), DΦ(x) g⟫ + ⟪∇u(Φ x), D²Φ(x) f g⟫`
-
-for almost every `x ∈ U` and all directions `f` and `g`. Here `D²u` is the weak Hessian
-`TauCeti.Wkp.iteratedGradient 1 u` and `∇u` the weak gradient
-`TauCeti.Wkp.iteratedGradient 0 (TauCeti.Wkp.lowerOrder 1 u)`; `DΦ` and `D²Φ` are the classical
-derivatives. For a linear `Φ` the last term vanishes
-(`TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`). -/
-theorem inner_iteratedGradient_compL_ae (h : IsChangeOfVariables 2 U V Φ L c) (hp : p ≠ ⊤)
-    (u : Wkp mu V p 2) :
-    ∀ᵐ x ∂mu.restrict U, ∀ f g : E,
-      ⟪iteratedGradient 1 (compL h u) x f, g⟫_ℝ =
-        ⟪iteratedGradient 1 u (Φ x) (fderiv ℝ Φ x f), fderiv ℝ Φ x g⟫_ℝ +
-          ⟪iteratedGradient 0 (lowerOrder 1 u) (Φ x), fderiv ℝ (fderiv ℝ Φ) x f g⟫_ℝ := by
-  set b := stdOrthonormalBasis ℝ E
-  set G := iteratedGradient 0 (lowerOrder 1 u)
-  -- Uniqueness of weak derivatives identifies the entries `⟪D²(u ∘ Φ) f, c₀⟫`.
-  have hentry (c₀ f : E) : (fun x => ⟪iteratedGradient 1 (compL h u) x f, c₀⟫_ℝ)
-      =ᵐ[mu.restrict U] fun x => ⟪iteratedGradient 1 u (Φ x) (fderiv ℝ Φ x f), fderiv ℝ Φ x c₀⟫_ℝ +
-        ⟪G (Φ x), fderiv ℝ (fderiv ℝ Φ) x f c₀⟫_ℝ := by
-    have h' := ((hasWeakFDerivOn_iteratedGradient 0 (compL h u)).clm_comp
-      (innerSL ℝ c₀)).hasWeakLineDerivOn f
-    rw [← gradient_firstOrder_one] at h'
-    simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm _ c₀] at h'
-    exact h'.ae_eq (hasWeakLineDerivOn_inner_gradient_firstOrder_compL h hp u c₀ f)
-  -- Both sides are bilinear in `(f, g)`, so they agree once they agree on a basis: the right side
-  -- is `⟪N x f, g⟫` for the operator `N x` below.
-  set N : E → E →L[ℝ] E := fun x => (fderiv ℝ Φ x).adjoint ∘L iteratedGradient 1 u (Φ x) ∘L
-    fderiv ℝ Φ x + InnerProductSpace.continuousLinearMapOfBilin
-      ((ContinuousLinearMap.compL ℝ E E ℝ (innerSL ℝ (G (Φ x)))) ∘L fderiv ℝ (fderiv ℝ Φ) x)
-  have hN (x f g : E) : ⟪N x f, g⟫_ℝ =
-      ⟪iteratedGradient 1 u (Φ x) (fderiv ℝ Φ x f), fderiv ℝ Φ x g⟫_ℝ +
-        ⟪G (Φ x), fderiv ℝ (fderiv ℝ Φ) x f g⟫_ℝ := by
-    simp [N, inner_add_left, ContinuousLinearMap.adjoint_inner_left,
-      InnerProductSpace.continuousLinearMapOfBilin_apply]
-  filter_upwards [ae_all_iff.2 fun i => ae_all_iff.2 fun j => hentry (b j) (b i)] with x hx f g
-  have hxN : iteratedGradient 1 (compL h u) x = N x :=
-    ContinuousLinearMap.coe_injective (b.toBasis.ext fun i =>
-      InnerProductSpace.ext_inner_right_basis b.toBasis fun j => by simpa [hN] using hx i j)
-  rw [hxN, hN]
 
 /-- **Functoriality.** Precomposing with `Φ` and then with `Ψ` is precomposing with `Φ ∘ Ψ`. -/
 theorem compL_comp (hΦ : IsChangeOfVariables k V W Φ L c)

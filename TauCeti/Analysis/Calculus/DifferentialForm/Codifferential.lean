@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
+import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 
 /-!
 # The codifferential of differential forms on an oriented inner product space
@@ -26,6 +29,12 @@ It is equivalently characterized by `⋆δω = (-1) ^ (k + 1) d⋆ω`
 The codifferential does not depend on the orientation, since reversing it negates both stars, and
 it squares to zero on forms of class `C²`, since `⋆⋆` is a sign and `d d = 0`.
 
+The codifferential is the formal adjoint of the exterior derivative for the Gram inner product of
+forms integrated against the volume measure: `∫ ⟪dφ, ψ⟫ = ∫ ⟪φ, δψ⟫` for a `C¹` form `φ` and a
+compactly supported `C¹` form `ψ`. Both integrands are top-degree wedges on a positively oriented
+orthonormal basis, `dφ ∧ ⋆ψ` and `φ ∧ ⋆δψ = ± φ ∧ d⋆ψ`, so this is integration by parts for forms,
+`Module.Basis.integral_extDeriv_wedge_eq_integral_wedge_extDeriv`.
+
 This is the Euclidean, chart-level counterpart of the codifferential of smooth forms on an oriented
 Riemannian manifold, `TauCeti.SmoothForm.codifferential`; it acts on the same maps
 `V → V [⋀^Fin j]→L[ℝ] ℝ` as `extDeriv` and the exterior derivative of test forms.
@@ -42,11 +51,13 @@ Riemannian manifold, `TauCeti.SmoothForm.codifferential`; it acts on the same ma
 * `Orientation.codifferential_add`, `Orientation.codifferential_const_smul`: linearity.
 * `Orientation.codifferential_codifferential_apply`, `Orientation.codifferential_codifferential`:
   `δ δ ω = 0` for forms of class `C²`.
+* `Orientation.integral_alternatingFormInner_extDeriv_eq_codifferential`:
+  `∫ ⟪dφ, ψ⟫ = ∫ ⟪φ, δψ⟫` when `ψ` has compact support.
 
 ## References
 
 * D. N. Arnold, R. S. Falk, R. Winther, *Finite element exterior calculus, homological techniques,
-  and applications*, Acta Numerica 15 (2006), §2, (2.7).
+  and applications*, Acta Numerica 15 (2006), §2, (2.7) and (2.8).
 * F. W. Warner, *Foundations of Differentiable Manifolds and Lie Groups*, Graduate Texts in
   Mathematics 94, Springer (1983), §6.1.
 -/
@@ -55,7 +66,7 @@ public section
 
 noncomputable section
 
-open Module
+open Module MeasureTheory TauCeti
 
 namespace Orientation
 
@@ -154,5 +165,53 @@ theorem codifferential_codifferential {l' : ℕ} (hkl : k + 1 + l = finrank ℝ 
     {ω : V → V [⋀^Fin (k + 1 + 1)]→L[ℝ] ℝ} (hω : ContDiff ℝ r ω) (hr : minSmoothness ℝ 2 ≤ r) :
     o.codifferential hkl (o.codifferential hkl' ω) = 0 :=
   funext fun _ ↦ o.codifferential_codifferential_apply hkl hkl' hω.contDiffAt hr
+
+/-! ### Adjointness of the exterior derivative and the codifferential -/
+
+section Adjoint
+
+variable [MeasurableSpace V] [BorelSpace V]
+
+/-- **The codifferential is the formal adjoint of the exterior derivative**:
+`∫ ⟪dφ, ψ⟫ = ∫ ⟪φ, δψ⟫` for a `C¹` form `φ` of degree `k` and a compactly supported `C¹` form `ψ`
+of degree `k + 1`, with the Gram inner product of forms integrated against the volume measure. -/
+theorem integral_alternatingFormInner_extDeriv_eq_codifferential
+    (hkl : k + 1 + l = finrank ℝ V) {φ : V → V [⋀^Fin k]→L[ℝ] ℝ}
+    {ψ : V → V [⋀^Fin (k + 1)]→L[ℝ] ℝ} (hφ : ContDiff ℝ 1 φ) (hψ : ContDiff ℝ 1 ψ)
+    (hc : HasCompactSupport ψ) :
+    ∫ x, alternatingFormInner V (k + 1) (extDeriv φ x) (ψ x) =
+      ∫ x, alternatingFormInner V k (φ x) (o.codifferential hkl ψ x) := by
+  have hn : finrank ℝ V = n := Fact.out
+  have hkl' : k + (l + 1) = finrank ℝ V := by omega
+  -- Evaluate top-degree forms on a positively oriented orthonormal basis, where `vol = 1`.
+  let b := o.finOrthonormalBasis (by omega) hn
+  have hvol (m : ℕ) (h₁ : m = n) (h₂ : n = m) :
+      o.volumeForm ((⇑b.toBasis ∘ Fin.cast h₁) ∘ finCongr h₂) = 1 := by
+    have hb : (⇑b.toBasis ∘ Fin.cast h₁) ∘ finCongr h₂ = b.toBasis := by
+      funext i
+      simp
+    rw [hb, o.volumeForm_robust b (o.finOrthonormalBasis_orientation _ hn), Basis.det_self]
+  -- Integration by parts for `φ ∧ ⋆ψ`.
+  have hparts := b.toBasis.integral_extDeriv_wedge_eq_integral_wedge_extDeriv (k := k) (l := l)
+    (by omega) hφ (o.contDiff_formHodgeStar_comp hkl hψ) (hc.comp_left (map_zero _))
+  rw [b.addHaar_eq_volume] at hparts
+  -- The left side is `∫ dφ ∧ ⋆ψ`.
+  have hleft (x : V) : (extDeriv φ x).wedge (o.formHodgeStar hkl (ψ x))
+      (⇑b.toBasis ∘ Fin.cast (by omega)) = alternatingFormInner V (k + 1) (extDeriv φ x) (ψ x) := by
+    rw [o.wedge_formHodgeStar_apply hkl, hvol, mul_one]
+  -- The right side is `± ∫ φ ∧ d⋆ψ`, since `⋆δψ = (-1) ^ (k + 1) d⋆ψ`.
+  have hright (x : V) : (φ x).wedge (extDeriv (fun y ↦ o.formHodgeStar hkl (ψ y)) x)
+      (⇑b.toBasis ∘ Fin.cast (by omega)) =
+        (-1 : ℝ) ^ (k + 1) * alternatingFormInner V k (φ x) (o.codifferential hkl ψ x) := by
+    have h := o.wedge_formHodgeStar_apply hkl' (φ x) (o.codifferential hkl ψ x)
+      (⇑b.toBasis ∘ Fin.cast (by omega))
+    rw [hvol, mul_one, o.formHodgeStar_codifferential hkl hkl',
+      ContinuousAlternatingMap.wedge_smul_right, ContinuousAlternatingMap.smul_apply,
+      smul_eq_mul] at h
+    simp [← h, ← mul_assoc, ← pow_add]
+  simp_rw [hleft, hright, integral_const_mul] at hparts
+  simp [hparts, ← mul_assoc, ← pow_add]
+
+end Adjoint
 
 end Orientation

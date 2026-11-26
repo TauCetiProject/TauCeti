@@ -220,6 +220,21 @@ theorem edge_mem_edges (f : TriFace) (k : Fin 3) : f.edge k ∈ f.edges :=
 theorem edge_injective (f : TriFace) : Function.Injective f.edge :=
   fun k k' h => by simpa using congrArg TriEdge.k h
 
+/-- A face meets a set of edges in exactly one edge when exactly one of its three edges, indexed by
+direction, lies in the set. -/
+theorem existsUnique_mem_edges_iff (f : TriFace) (M : Set TriEdge) :
+    (∃! e, e ∈ M ∧ e ∈ f.edges) ↔ ∃! k : Fin 3, f.edge k ∈ M := by
+  constructor
+  · rintro ⟨e, ⟨heM, hef⟩, hu⟩
+    rw [mem_edges_iff_edge_eq] at hef
+    refine ⟨e.k, show f.edge e.k ∈ M by rw [hef]; exact heM, fun k hk => ?_⟩
+    have := congrArg TriEdge.k (hu _ ⟨hk, f.edge_mem_edges k⟩)
+    rwa [edge_k] at this
+  · rintro ⟨k, hk, hu⟩
+    refine ⟨f.edge k, ⟨hk, f.edge_mem_edges k⟩, fun e ⟨heM, hef⟩ => ?_⟩
+    rw [mem_edges_iff_edge_eq] at hef
+    rw [← hef, hu e.k (show f.edge e.k ∈ M by rw [hef]; exact heM)]
+
 /-- A face has three edges. -/
 @[simp] theorem card_edges (f : TriFace) : f.edges.card = 3 := by
   have : f.edges = Finset.univ.image f.edge := by

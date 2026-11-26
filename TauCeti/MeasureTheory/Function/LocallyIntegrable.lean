@@ -112,7 +112,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
 * `MeasureTheory.LocallyIntegrableOn.exists_integrable_eqOn_add_of_isCompact`: localization to
   a compact set and its small translates by a globally integrable function.
 * `MeasureTheory.LocallyIntegrableOn.integrableOn_Ioc_of_Ici`: local integrability on `[a, ∞)`
-  gives integrability on every `(a, b]`.
+  gives integrability on every `(a, b]`, and
+  `MeasureTheory.LocallyIntegrableOn.integrableOn_uIcc_of_Ici` on every `uIcc a b` with `a ≤ b`.
 * `MeasureTheory.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by
   relatively compact open subdomains.
 * `MeasureTheory.locallyIntegrableOn_indicator_const`: the indicator of a constant on a
@@ -437,6 +438,20 @@ theorem integrableOn_Ioc_of_Ici (hf : LocallyIntegrableOn f (Ici a) μ) (b : X) 
   (hf.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set Ioc_subset_Icc_self
 
 end OrderIntervals
+
+section LatticeIntervals
+
+variable {X ε : Type*} [MeasurableSpace X] [TopologicalSpace X] [Lattice X] [CompactIccSpace X]
+  [TopologicalSpace ε] [ContinuousENorm ε] [PseudoMetrizableSpace ε] {μ : Measure X} {f : X → ε}
+  {a b : X}
+
+/-- A function locally integrable on `[a, ∞)` is integrable on `uIcc a b` for every `b ≥ a`. -/
+theorem integrableOn_uIcc_of_Ici (hf : LocallyIntegrableOn f (Ici a) μ) (hab : a ≤ b) :
+    IntegrableOn f (uIcc a b) μ := by
+  rw [uIcc_of_le hab]
+  exact hf.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc
+
+end LatticeIntervals
 
 variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
 

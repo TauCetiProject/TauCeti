@@ -15,6 +15,7 @@ public import TauCeti.RingTheory.AdjoinRoot.Basic
 public import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.RingTheory.TensorProduct.Basic
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Symbol algebras
@@ -338,11 +339,6 @@ variable (n ζ a b) in
 /-- The representation space `R[X]/(X ^ n - a) ⊗[R] R[Y]/(Y ^ n - b)`. -/
 private abbrev Rep := AdjoinRoot (X ^ n - C a) ⊗[R] AdjoinRoot (X ^ n - C b)
 
-/-- The `n`-th root of unity `rootsOfUnity.mkOfPowEq ζ hζ` has `n`-th power `1`. -/
-private theorem mkOfPowEq_pow [NeZero n] (hζ : ζ ^ n = 1) :
-    rootsOfUnity.mkOfPowEq ζ hζ ^ n = 1 :=
-  Subtype.ext ((mem_rootsOfUnity _ _).1 (rootsOfUnity.mkOfPowEq ζ hζ).property)
-
 variable (a b) in
 /-- The action of `y` on the representation space: apply the automorphism `X ↦ ζ X` of the first
 factor (`TauCeti.standardTameCoverAut`), then multiply by the class of `Y` in the second. -/
@@ -369,7 +365,7 @@ private theorem repX_pow : LinearMap.mulLeft R (AdjoinRoot.root _ ⊗ₜ 1 : Rep
 
 private theorem repY_pow [NeZero n] (hζ : ζ ^ n = 1) : repY a b hζ ^ n = algebraMap R _ b := by
   refine TensorProduct.ext' fun p q => ?_
-  simp [repY_pow_tmul, mkOfPowEq_pow, ← AdjoinRoot.algebraMap_eq, ← Algebra.smul_def]
+  simp [repY_pow_tmul, ← AdjoinRoot.algebraMap_eq, ← Algebra.smul_def]
 
 private theorem repY_mul_repX [NeZero n] (hζ : ζ ^ n = 1) :
     repY a b hζ * LinearMap.mulLeft R (AdjoinRoot.root _ ⊗ₜ 1 : Rep n a b) =
@@ -425,7 +421,7 @@ noncomputable def toEndAdjoinRoot [NeZero n] (hζ : ζ ^ n = 1) :
     (standardTameCoverAut a (rootsOfUnity.mkOfPowEq ζ hζ)).toLinearMap
     (LinearMap.ext fun q => by
       simp [LinearMap.pow_mulLeft, ← AdjoinRoot.algebraMap_eq, ← Algebra.smul_def])
-    (by rw [← AlgEquiv.pow_toLinearMap, ← map_pow, mkOfPowEq_pow, map_one, map_one,
+    (by rw [← AlgEquiv.pow_toLinearMap, ← map_pow, rootsOfUnity.pow_eq_one, map_one, map_one,
       AlgEquiv.one_toLinearMap])
     (LinearMap.ext fun q => by
       simp [mul_apply_eq_comp, Algebra.smul_def, mul_assoc])

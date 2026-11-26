@@ -25,6 +25,8 @@ weak Nullstellensatz (`IsIdempotentElem.exists_algHom_apply_eq_one`, in
 
 * `TauCeti.IsPrimitiveIdempotent.algHom_ext`: two `k`-algebra homomorphisms `A → k` taking the
   value `1` at a primitive idempotent of the Artinian ring `A` are equal.
+* `TauCeti.IsPrimitiveIdempotent.exists_mul_mul_eq_of_apply_ne_zero`: if `φ(e) = 1` and
+  `φ(w) ≠ 0`, then `w e` is invertible in the corner `eA`.
 
 ## References
 
@@ -56,6 +58,22 @@ theorem IsPrimitiveIdempotent.algHom_ext [IsArtinianRing A] (he : IsPrimitiveIde
     simp at this
   · have := congrArg ψ hz
     rw [map_mul, map_mul, map_sub, map_one, hψw, hψ] at this
+    simp at this
+
+/-- **Elements with nonzero character value are invertible at a primitive idempotent.** Let `e` be
+a primitive idempotent of a commutative Artinian `k`-algebra `A` and `φ : A → k` a `k`-algebra
+homomorphism with `φ(e) = 1`. If `φ(w) ≠ 0`, then `w e` is invertible in the local ring `eA`:
+there is a `z` with `w z e = e`. -/
+theorem IsPrimitiveIdempotent.exists_mul_mul_eq_of_apply_ne_zero [IsArtinianRing A]
+    (he : IsPrimitiveIdempotent e) {φ : A →ₐ[k] k} (hφ : φ e = 1) {w : A} (hw : φ w ≠ 0) :
+    ∃ z, w * z * e = e := by
+  -- Rescale `w` to `w'` with `φ(w') = 1`; then `(1 - w') e` is not invertible in `eA`.
+  set w' := algebraMap k A (φ w)⁻¹ * w
+  have hw' : φ w' = 1 := by simp [w', inv_mul_cancel₀ hw]
+  rcases he.exists_mul_mul_eq_or w' with ⟨z, hz⟩ | ⟨z, hz⟩
+  · exact ⟨algebraMap k A (φ w)⁻¹ * z, Eq.trans (by simp only [w']; ring) hz⟩
+  · have := congrArg φ hz
+    rw [map_mul, map_mul, map_sub, map_one, hw', hφ] at this
     simp at this
 
 end TauCeti
