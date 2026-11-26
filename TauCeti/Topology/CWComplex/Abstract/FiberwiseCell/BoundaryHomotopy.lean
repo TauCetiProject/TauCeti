@@ -25,15 +25,17 @@ the two halves of that remark precise.
   (`TauCeti.fiberwiseCellReattachment_congr`): homotopies of possibly different characteristic maps
   that agree on the boundary spheres give the same map.
 * Its class up to homotopy relative to `P × A` can depend on these boundary homotopies
-  (`TauCeti.exists_not_homotopicRel_fiberwiseCellReattachment`). Take `A` the unit circle in
-  `Y = ℂ`, one `1`-cell attached at both ends to the point `1`, constant characteristic maps and
-  `h` the identity, so that both attachments are the wedge of two circles. The homotopy `K'`
-  constant at `1` gives the identity of the wedge. The homotopy `K` whose boundary restriction
-  winds once around `A` at the end `-1` and stays at `1` at the end `+1` gives a map sending the new
-  circle to the composite of the loop of `A` with the new circle. Collapsing the new cell to the
-  point `1`, the two maps send the new cell to loops of degrees `1` and `0` in `A`; a homotopy
-  relative to `A` would make these loops homotopic relative to their endpoints, which the degree
-  forbids (`Circle.degree_eq_of_homotopic`).
+  (`TauCeti.exists_not_homotopicRel_fiberwiseCellReattachment_fiberwiseCellReattachment`). Take `A`
+  the unit circle in `Y = ℂ`, one `1`-cell attached at both ends to the point `1`, constant
+  characteristic maps and `h` the identity, so that both attachments are the wedge of two circles.
+  The homotopy `K'` constant at `1` gives a map homotopic relative to `A` to the identity of the
+  wedge: it stretches the inner half of the new cell over the whole cell and sends the outer annulus
+  to `1`. The homotopy `K` whose boundary restriction winds once around `A` at the end `-1` and
+  stays at `1` at the end `+1` gives a map that, up to homotopy, sends the new circle to the loop of
+  `A` followed by the new circle. Collapsing the new cell to the point `1` and following its
+  diameter, the loop given by `K` has degree `1` in `A` and the loop given by `K'` has degree `0`; a
+  homotopy relative to `A` would make these loops homotopic relative to their endpoints, which the
+  degree forbids (`Circle.degree_eq_of_homotopic`).
 
 So the independence of the reattachment class from the homotopies
 (`TauCeti.exists_homotopyRel_fiberwiseCellReattachment_fiberwiseCellReattachment`) needs its
@@ -48,9 +50,10 @@ inverse, as in the example, the boundary homotopy is part of the data that deter
 
 * `TauCeti.fiberwiseCellReattachment_congr`: the reattachment map only depends on the restrictions
   of the homotopies to the boundary spheres.
-* `TauCeti.exists_not_homotopicRel_fiberwiseCellReattachment`: two reattachment maps between the
-  same attachments, built from the same characteristic maps and disc self-maps but from homotopies
-  with different boundary restrictions, need not be homotopic relative to the attached base.
+* `TauCeti.exists_not_homotopicRel_fiberwiseCellReattachment_fiberwiseCellReattachment`: two
+  reattachment maps between the same attachments, built from the same characteristic maps and disc
+  self-maps but from homotopies with different boundary restrictions, need not be homotopic
+  relative to the attached base.
 
 ## References
 
@@ -208,18 +211,26 @@ private theorem windingHomotopy_of_diskOneCoord_eq_one (i : PUnit.{1}) (t : I)
   push_cast
   ring
 
-private theorem windingHomotopy_mem (i : PUnit.{1}) (t : I) (p : PUnit.{1})
-    (s : TopCat.diskBoundary.{0} 1) :
-    windingHomotopy i (t, (p, TopCat.diskBoundaryInclusion 1 s)) ∈ sphere (0 : ℂ) 1 := by
+/-- The homotopies of the constant characteristic map `1` to itself on the `1`-disk. -/
+private abbrev LoopHomotopy : Type :=
+  ∀ i, (basepointCharMap i).Homotopy
+    ((basepointCharMap i).comp (ContinuousMap.fst.prodMk (diskOneId i)))
+
+/-- A homotopy in `LoopHomotopy` keeps the ends of the disc on the unit circle. -/
+private abbrev BoundaryOnCircle (K : LoopHomotopy) : Prop :=
+  ∀ (i : PUnit.{1}) (t : I) (p : PUnit.{1}) (s : TopCat.diskBoundary.{0} 1),
+    K i (t, (p, TopCat.diskBoundaryInclusion 1 s)) ∈ sphere (0 : ℂ) 1
+
+private theorem windingHomotopy_mem : BoundaryOnCircle windingHomotopy := by
+  intro i t p s
   rcases eq_sphereMinus_or_eq_spherePlus s with rfl | rfl
   · rw [windingHomotopy_of_diskOneCoord_eq_neg_one i t p sphereMinus_coord]
     exact (Circle.exp _).property
   · rw [windingHomotopy_of_diskOneCoord_eq_one i t p spherePlus_coord]
     simp
 
-private theorem constHomotopy_mem (i : PUnit.{1}) (t : I) (p : PUnit.{1})
-    (s : TopCat.diskBoundary.{0} 1) :
-    constHomotopy i (t, (p, TopCat.diskBoundaryInclusion 1 s)) ∈ sphere (0 : ℂ) 1 := by
+private theorem constHomotopy_mem : BoundaryOnCircle constHomotopy := by
+  intro i t p s
   simp [constHomotopy_apply]
 
 /-- The retraction of the wedge of two circles onto the unit circle collapsing the new cell. -/
@@ -240,80 +251,85 @@ private theorem collapseCell_cell (x : PUnit.{1} × TopCat.disk.{0} 1) :
 private def basepoint : PUnit.{1} × sphere (0 : ℂ) 1 :=
   (PUnit.unit, ⟨1, by simp⟩)
 
-/-- The diameter of the `1`-disk from `-1` to `+1`, the point at time `t` having coordinate
-`2t - 1`. -/
-private def diameterPoint : C(I, TopCat.disk.{0} 1) :=
-  diskSegment.toContinuousMap
-
-private theorem diameterPoint_zero :
-    diameterPoint 0 = TopCat.diskBoundaryInclusion 1 sphereMinus :=
-  diskSegment.source
-
-private theorem diameterPoint_one :
-    diameterPoint 1 = TopCat.diskBoundaryInclusion 1 spherePlus :=
-  diskSegment.target
-
-private theorem diskOneCoord_diameterPoint (t : I) :
-    diskOneCoord (diameterPoint t) = 2 * (t : ℝ) - 1 :=
-  diskSegment_coord t
-
-private theorem norm_diameterPoint (t : I) :
-    ‖(diameterPoint t).down.val‖ = |2 * (t : ℝ) - 1| := by
+private theorem norm_diskSegment (t : I) :
+    ‖(diskSegment.{0} t : TopCat.disk.{0} 1).down.val‖ = |2 * (t : ℝ) - 1| := by
   rw [EuclideanSpace.norm_fin_one]
-  exact congrArg abs (diskOneCoord_diameterPoint t)
+  exact congrArg abs (diskSegment_coord t)
 
-/-- The new cell, run along its diameter from `-1` to `+1`. -/
+/-- The new cell, run along its diameter `TauCeti.diskSegment` from `-1` to `+1`. -/
 private def cellDiameter : C(I, fiberwiseCellAttachment basepointAttachingMap) :=
   (fiberwiseCellAttachmentCell basepointAttachingMap PUnit.unit).hom.comp
-    ((ContinuousMap.const I PUnit.unit).prodMk diameterPoint)
+    ((ContinuousMap.const I PUnit.unit).prodMk diskSegment.toContinuousMap)
 
 private theorem cellDiameter_apply (t : I) :
-    cellDiameter t =
-      fiberwiseCellAttachmentCell basepointAttachingMap PUnit.unit (PUnit.unit, diameterPoint t) :=
+    cellDiameter t = fiberwiseCellAttachmentCell basepointAttachingMap PUnit.unit
+      (PUnit.unit, diskSegment.{0} t) :=
   (rfl)
 
 private theorem cellDiameter_zero :
     cellDiameter 0 = fiberwiseCellAttachmentIncl basepointAttachingMap basepoint := by
-  rw [cellDiameter_apply, diameterPoint_zero]
+  rw [cellDiameter_apply, diskSegment.source]
   exact fiberwiseCellAttachmentCell_diskBoundaryInclusion _ _ _ _
 
 private theorem cellDiameter_one :
     cellDiameter 1 = fiberwiseCellAttachmentIncl basepointAttachingMap basepoint := by
-  rw [cellDiameter_apply, diameterPoint_one]
+  rw [cellDiameter_apply, diskSegment.target]
   exact fiberwiseCellAttachmentCell_diskBoundaryInclusion _ _ _ _
-
-
-/-- The homotopies of the constant characteristic map `1` to itself on the `1`-disk. -/
-private abbrev LoopHomotopy : Type :=
-  ∀ i, (basepointCharMap i).Homotopy
-    ((basepointCharMap i).comp (ContinuousMap.fst.prodMk (diskOneId i)))
 
 /-- The reattachment map of the example for a homotopy `K` keeping the ends of the disc on the unit
 circle. -/
-private def exampleReattachment (K : LoopHomotopy)
-    (hK : ∀ (i : PUnit.{1}) (t : I) (p : PUnit.{1}) (s : TopCat.diskBoundary.{0} 1),
-      K i (t, (p, TopCat.diskBoundaryInclusion 1 s)) ∈ sphere (0 : ℂ) 1) :
+private def exampleReattachment (K : LoopHomotopy) (hK : BoundaryOnCircle K) :
     fiberwiseCellAttachment basepointAttachingMap ⟶ fiberwiseCellAttachment basepointAttachingMap :=
   fiberwiseCellReattachment basepointAttachingMap basepointAttachingMap basepointCharMap
     basepointCharMap basepointCharMap_diskBoundaryInclusion basepointCharMap_diskBoundaryInclusion
     diskOneId mapsTo_diskOneId K hK
 
+/-- The reattachment map of the example fixes the attached circle. -/
+private theorem exampleReattachment_incl (K : LoopHomotopy) (hK : BoundaryOnCircle K)
+    (x : PUnit.{1} × sphere (0 : ℂ) 1) :
+    exampleReattachment K hK (fiberwiseCellAttachmentIncl basepointAttachingMap x) =
+      fiberwiseCellAttachmentIncl basepointAttachingMap x :=
+  fiberwiseCellReattachment_fiberwiseCellAttachmentIncl basepointAttachingMap basepointAttachingMap
+    basepointCharMap basepointCharMap basepointCharMap_diskBoundaryInclusion
+    basepointCharMap_diskBoundaryInclusion diskOneId mapsTo_diskOneId K hK x
+
+/-- On the inner half of the cell the reattachment map of the example stays in the cell. -/
+private theorem exampleReattachment_cell_of_norm_le (K : LoopHomotopy) (hK : BoundaryOnCircle K)
+    {w : TopCat.disk.{0} 1} (hw : ‖w.down.val‖ ≤ 1 / 2) :
+    exampleReattachment K hK (fiberwiseCellAttachmentCell basepointAttachingMap PUnit.unit
+        (PUnit.unit, w)) =
+      fiberwiseCellAttachmentCell basepointAttachingMap PUnit.unit
+        (PUnit.unit, TopCat.reattachmentRadial w) :=
+  fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le basepointAttachingMap
+    basepointAttachingMap basepointCharMap basepointCharMap basepointCharMap_diskBoundaryInclusion
+    basepointCharMap_diskBoundaryInclusion diskOneId mapsTo_diskOneId K hK PUnit.unit PUnit.unit hw
+    (TopCat.coe_reattachmentRadial_of_norm_le hw)
+
+/-- On the outer annulus of the cell the reattachment map of the example reads `K` on the
+boundary. -/
+private theorem exampleReattachment_cell_of_le_norm (K : LoopHomotopy) (hK : BoundaryOnCircle K)
+    {w : TopCat.disk.{0} 1} (hw : 1 / 2 ≤ ‖w.down.val‖) :
+    exampleReattachment K hK (fiberwiseCellAttachmentCell basepointAttachingMap PUnit.unit
+        (PUnit.unit, w)) =
+      fiberwiseCellAttachmentIncl basepointAttachingMap (PUnit.unit,
+        ⟨K PUnit.unit (TopCat.reattachmentTime w, (PUnit.unit, TopCat.diskBoundaryInclusion 1
+          (TopCat.annulusDir (by norm_num : (0 : ℝ) < 1 / 2) ⟨w, hw⟩))), hK _ _ _ _⟩) :=
+  fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm basepointAttachingMap
+    basepointAttachingMap basepointCharMap basepointCharMap basepointCharMap_diskBoundaryInclusion
+    basepointCharMap_diskBoundaryInclusion diskOneId mapsTo_diskOneId K hK PUnit.unit PUnit.unit hw
+    (TopCat.coe_reattachmentTime_of_le_norm hw)
+    (TopCat.coe_annulusDir (by norm_num : (0 : ℝ) < 1 / 2) ⟨w, hw⟩)
+
 /-- The reattachment map fixes the base point of the attachment, which collapses to `1`. -/
-private theorem collapseCell_exampleReattachment_incl (K : LoopHomotopy)
-    (hK : ∀ (i : PUnit.{1}) (t : I) (p : PUnit.{1}) (s : TopCat.diskBoundary.{0} 1),
-      K i (t, (p, TopCat.diskBoundaryInclusion 1 s)) ∈ sphere (0 : ℂ) 1) :
+private theorem collapseCell_exampleReattachment_incl (K : LoopHomotopy) (hK : BoundaryOnCircle K) :
     collapseCell (exampleReattachment K hK
-      (fiberwiseCellAttachmentIncl basepointAttachingMap basepoint)) = (1 : Circle) :=
-  (congrArg collapseCell.hom (fiberwiseCellReattachment_fiberwiseCellAttachmentIncl
-    basepointAttachingMap basepointAttachingMap basepointCharMap basepointCharMap
-    basepointCharMap_diskBoundaryInclusion basepointCharMap_diskBoundaryInclusion diskOneId
-    mapsTo_diskOneId K hK basepoint)).trans (Circle.ext (coe_collapseCell_incl basepoint))
+      (fiberwiseCellAttachmentIncl basepointAttachingMap basepoint)) = (1 : Circle) := by
+  rw [exampleReattachment_incl]
+  exact Circle.ext (coe_collapseCell_incl basepoint)
 
 /-- The loop in the unit circle traced by the collapsed image of the diameter of the new cell under
 the reattachment map of `K`. -/
-private def reattachmentLoop (K : LoopHomotopy)
-    (hK : ∀ (i : PUnit.{1}) (t : I) (p : PUnit.{1}) (s : TopCat.diskBoundary.{0} 1),
-      K i (t, (p, TopCat.diskBoundaryInclusion 1 s)) ∈ sphere (0 : ℂ) 1) :
+private def reattachmentLoop (K : LoopHomotopy) (hK : BoundaryOnCircle K) :
     Path (1 : Circle) 1 where
   toContinuousMap := collapseCell.hom.comp ((exampleReattachment K hK).hom.comp cellDiameter)
   source' := (congrArg (fun y ↦ collapseCell (exampleReattachment K hK y)) cellDiameter_zero).trans
@@ -321,40 +337,36 @@ private def reattachmentLoop (K : LoopHomotopy)
   target' := (congrArg (fun y ↦ collapseCell (exampleReattachment K hK y)) cellDiameter_one).trans
     (collapseCell_exampleReattachment_incl K hK)
 
+private theorem reattachmentLoop_toContinuousMap (K : LoopHomotopy) (hK : BoundaryOnCircle K) :
+    (reattachmentLoop K hK).toContinuousMap =
+      collapseCell.hom.comp ((exampleReattachment K hK).hom.comp cellDiameter) :=
+  (rfl)
+
+private theorem reattachmentLoop_apply (K : LoopHomotopy) (hK : BoundaryOnCircle K) (t : I) :
+    reattachmentLoop K hK t = collapseCell (exampleReattachment K hK (cellDiameter t)) :=
+  (rfl)
+
 /-- On the inner half of the diameter the collapsed reattachment map is `1`. -/
-private theorem reattachmentLoop_of_norm_le (K : LoopHomotopy)
-    (hK : ∀ (i : PUnit.{1}) (t : I) (p : PUnit.{1}) (s : TopCat.diskBoundary.{0} 1),
-      K i (t, (p, TopCat.diskBoundaryInclusion 1 s)) ∈ sphere (0 : ℂ) 1) {t : I}
-    (ht : ‖(diameterPoint t).down.val‖ ≤ 1 / 2) :
-    reattachmentLoop K hK t = 1 :=
-  (congrArg collapseCell.hom (fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le
-    basepointAttachingMap basepointAttachingMap basepointCharMap basepointCharMap
-    basepointCharMap_diskBoundaryInclusion basepointCharMap_diskBoundaryInclusion diskOneId
-    mapsTo_diskOneId K hK PUnit.unit PUnit.unit ht
-    (TopCat.coe_reattachmentRadial_of_norm_le ht))).trans (collapseCell_cell _)
+private theorem reattachmentLoop_of_norm_le (K : LoopHomotopy) (hK : BoundaryOnCircle K) {t : I}
+    (ht : ‖(diskSegment.{0} t : TopCat.disk.{0} 1).down.val‖ ≤ 1 / 2) :
+    reattachmentLoop K hK t = 1 := by
+  rw [reattachmentLoop_apply, cellDiameter_apply, exampleReattachment_cell_of_norm_le K hK ht,
+    collapseCell_cell]
 
 /-- On the outer half of the diameter the collapsed reattachment map reads `K` on the boundary. -/
-private theorem coe_reattachmentLoop_of_le_norm (K : LoopHomotopy)
-    (hK : ∀ (i : PUnit.{1}) (t : I) (p : PUnit.{1}) (s : TopCat.diskBoundary.{0} 1),
-      K i (t, (p, TopCat.diskBoundaryInclusion 1 s)) ∈ sphere (0 : ℂ) 1) {t : I}
-    (ht : 1 / 2 ≤ ‖(diameterPoint t).down.val‖) :
-    (reattachmentLoop K hK t : ℂ) = K PUnit.unit (TopCat.reattachmentTime (diameterPoint t),
+private theorem coe_reattachmentLoop_of_le_norm (K : LoopHomotopy) (hK : BoundaryOnCircle K) {t : I}
+    (ht : 1 / 2 ≤ ‖(diskSegment.{0} t : TopCat.disk.{0} 1).down.val‖) :
+    (reattachmentLoop K hK t : ℂ) = K PUnit.unit (TopCat.reattachmentTime (diskSegment.{0} t),
       (PUnit.unit, TopCat.diskBoundaryInclusion 1
-        (TopCat.annulusDir (by norm_num : (0 : ℝ) < 1 / 2) ⟨diameterPoint t, ht⟩))) :=
-  (congrArg (fun x ↦ ((collapseCell x : Circle) : ℂ))
-    (fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm
-      basepointAttachingMap basepointAttachingMap basepointCharMap basepointCharMap
-      basepointCharMap_diskBoundaryInclusion basepointCharMap_diskBoundaryInclusion diskOneId
-      mapsTo_diskOneId K hK PUnit.unit PUnit.unit ht
-      (TopCat.coe_reattachmentTime_of_le_norm ht)
-      (TopCat.coe_annulusDir (by norm_num : (0 : ℝ) < 1 / 2) ⟨diameterPoint t, ht⟩))).trans
-    (coe_collapseCell_incl _)
+        (TopCat.annulusDir (by norm_num : (0 : ℝ) < 1 / 2) ⟨diskSegment.{0} t, ht⟩))) := by
+  rw [reattachmentLoop_apply, cellDiameter_apply, exampleReattachment_cell_of_le_norm K hK ht]
+  exact coe_collapseCell_incl _
 
 /-- The constant homotopy gives the constant loop. -/
 private theorem degree_reattachmentLoop_constHomotopy :
     Circle.degree (reattachmentLoop constHomotopy constHomotopy_mem) = 0 := by
   refine (Circle.degree_congr _ (Path.refl 1) fun t ↦ ?_).trans (Circle.degree_refl 1)
-  rcases le_total ‖(diameterPoint t).down.val‖ (1 / 2) with ht | ht
+  rcases le_total ‖(diskSegment.{0} t : TopCat.disk.{0} 1).down.val‖ (1 / 2) with ht | ht
   · exact reattachmentLoop_of_norm_le _ _ ht
   · exact Circle.ext ((coe_reattachmentLoop_of_le_norm _ _ ht).trans
       (constHomotopy_apply _ _))
@@ -377,31 +389,32 @@ private theorem degree_reattachmentLoop_windingHomotopy :
     Circle.degree (reattachmentLoop windingHomotopy windingHomotopy_mem) = 1 := by
   refine Circle.degree_eq_of_sub_eq _ (θ := fun t : I ↦ 2 * π * min (4 * (t : ℝ)) 1)
     (by fun_prop) (fun t ↦ ?_) (by simp)
-  have hc : diskOneCoord (diameterPoint t) = 2 * (t : ℝ) - 1 := diskOneCoord_diameterPoint t
+  have hc : diskOneCoord (diskSegment.{0} t) = 2 * (t : ℝ) - 1 := diskSegment_coord t
   rcases le_total (t : ℝ) (1 / 4) with ht | ht
   · -- On the first quarter the diameter is in the outer half on the side of `-1`.
-    have hn : 1 / 2 ≤ ‖(diameterPoint t).down.val‖ := by
-      rw [norm_diameterPoint, abs_of_neg (by linarith)]
+    have hn : 1 / 2 ≤ ‖(diskSegment.{0} t : TopCat.disk.{0} 1).down.val‖ := by
+      rw [norm_diskSegment, abs_of_neg (by linarith)]
       linarith
     refine Circle.ext ((coe_reattachmentLoop_of_le_norm _ _ hn).trans ?_).symm
-    have hneg : diskOneCoord (diameterPoint t) < 0 := by rw [hc]; linarith
+    have hneg : diskOneCoord (diskSegment.{0} t) < 0 := by rw [hc]; linarith
     rw [windingHomotopy_of_diskOneCoord_eq_neg_one (hw := by
-      rw [diskOneCoord_annulusDir, abs_of_neg hneg, inv_neg, neg_mul, inv_mul_cancel₀ hneg.ne]),
+      rw [diskOneCoord_annulusDir hn, abs_of_neg hneg, inv_neg, neg_mul, inv_mul_cancel₀ hneg.ne]),
       min_eq_left (by linarith)]
     congr 3
-    rw [TopCat.coe_reattachmentTime_of_le_norm hn, norm_diameterPoint, abs_of_neg (by linarith)]
+    rw [TopCat.coe_reattachmentTime_of_le_norm hn, norm_diskSegment, abs_of_neg (by linarith)]
     ring
   · rw [min_eq_right (by linarith), mul_one, Circle.exp_two_pi]
-    rcases le_or_gt ‖(diameterPoint t).down.val‖ (1 / 2) with hn | hn
+    rcases le_or_gt ‖(diskSegment.{0} t : TopCat.disk.{0} 1).down.val‖ (1 / 2) with hn | hn
     · exact (reattachmentLoop_of_norm_le _ _ hn).symm
     · -- Past the first quarter, the outer half lies on the side of `+1`.
-      have hpos : 0 < diskOneCoord (diameterPoint t) := by
-        rw [norm_diameterPoint] at hn
+      have hpos : 0 < diskOneCoord (diskSegment.{0} t) := by
+        rw [norm_diskSegment] at hn
         rw [hc]
         rcases abs_cases (2 * (t : ℝ) - 1) with ⟨h, -⟩ | ⟨h, -⟩ <;> linarith
       refine Circle.ext ((coe_reattachmentLoop_of_le_norm _ _ hn.le).trans ?_).symm
       rw [windingHomotopy_of_diskOneCoord_eq_one (hw := by
-        rw [diskOneCoord_annulusDir, abs_of_pos hpos, inv_mul_cancel₀ hpos.ne']), Circle.coe_one]
+        rw [diskOneCoord_annulusDir hn.le, abs_of_pos hpos, inv_mul_cancel₀ hpos.ne']),
+        Circle.coe_one]
 
 /-- **The reattachment class depends on the boundary homotopy.** Attach one `1`-cell at both ends
 to the point `1` of the unit circle `A` in `Y = ℂ`, with constant characteristic maps and the
@@ -412,7 +425,7 @@ homotopies only through their restrictions to the boundary spheres
 (`TauCeti.fiberwiseCellReattachment_congr`), this shows that the homotopy class of a reattachment
 map is not determined by the attaching maps and the disc self-maps: it depends on the boundary
 homotopy. -/
-theorem exists_not_homotopicRel_fiberwiseCellReattachment :
+theorem exists_not_homotopicRel_fiberwiseCellReattachment_fiberwiseCellReattachment :
     ∃ (α : ∀ _ : PUnit.{1}, C(PUnit.{1} × TopCat.diskBoundary.{0} 1, sphere (0 : ℂ) 1))
       (χ : ∀ _ : PUnit.{1}, C(PUnit.{1} × TopCat.disk.{0} 1, ℂ))
       (hχ : ∀ i p s, χ i (p, TopCat.diskBoundaryInclusion 1 s) = α i (p, s))
@@ -434,10 +447,16 @@ theorem exists_not_homotopicRel_fiberwiseCellReattachment :
     rintro t (rfl | rfl)
     · exact ⟨_, cellDiameter_zero.symm⟩
     · exact ⟨_, cellDiameter_one.symm⟩
+  have hrel : (reattachmentLoop windingHomotopy windingHomotopy_mem).toContinuousMap.HomotopicRel
+      (reattachmentLoop constHomotopy constHomotopy_mem).toContinuousMap {0, 1} := by
+    rw [reattachmentLoop_toContinuousMap, reattachmentLoop_toContinuousMap]
+    exact ((ContinuousMap.HomotopicRel.precomp hG cellDiameter).mono hends).comp_continuousMap
+      collapseCell.hom
+  -- A `Path.Homotopy` is by definition a homotopy of the underlying maps relative to `{0, 1}`, so
+  -- a homotopy relative to `{0, 1}` of the underlying maps of two paths makes them homotopic.
   have hloop : (reattachmentLoop windingHomotopy windingHomotopy_mem).Homotopic
       (reattachmentLoop constHomotopy constHomotopy_mem) :=
-    ((ContinuousMap.HomotopicRel.precomp hG cellDiameter).mono hends).comp_continuousMap
-      collapseCell.hom
+    ⟨hrel.some⟩
   have := Circle.degree_eq_of_homotopic hloop
   rw [degree_reattachmentLoop_windingHomotopy, degree_reattachmentLoop_constHomotopy] at this
   exact one_ne_zero this
