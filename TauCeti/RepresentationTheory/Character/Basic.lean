@@ -28,7 +28,9 @@ inclusion of a finite subgroup, the sum `∑ h ∈ H, χ(g f(h)) χ'((g f(h))⁻
 `σ g ∘ S`, where `σ` is the conjugation action on `W →ₗ[k] V` and `S` the sum of `σ ∘ f` over `H`
 (`Representation.sum_character_mul_mul_character_mul_inv_eq_trace`); no finiteness of `V` or `W`
 is needed, as the character of `linHom ρ' ρ` is `g ↦ χ'(g⁻¹) χ(g)` in any dimension
-(`Representation.character_linHom`).
+(`Representation.character_linHom`). Hence, if `G` is finite and its order is zero in `k`,
+`∑ g, χ(g) χ'(g⁻¹) = 0`, as the sum of `σ` over `G` is then nilpotent
+(`Representation.sum_character_mul_character_inv_eq_zero_of_natCard_eq_zero`).
 
 The trace of the action is a class function for a representation over a commutative semiring on
 any additive commutative monoid (`Representation.trace_conj`). `Representation.character` and
@@ -50,6 +52,11 @@ The `n`-th power map is a bijection of a group `G` whenever `n` is coprime to `|
 (`Representation.card_inv_mul_sum_char_eq_finrank`). An irreducible representation has a nonzero
 invariant vector only when it is the trivial line, so the average is `1` for the trivial
 character and `0` otherwise (`Representation.card_inv_mul_sum_char_pow_eq_zero_iff_of_coprime`).
+
+For a right action of a group `H`, written as a representation of `Hᵐᵒᵖ`, the dimension of the
+invariants of a subgroup `S` whose order is finite and nonzero in the field is the average
+`|S|⁻¹ ∑_{u ∈ S} tr(u)` of the character over `S`
+(`Representation.natCast_finrank_invariants_comp_op_subtype`).
 -/
 
 public section
@@ -128,6 +135,24 @@ theorem sum_character_mul_mul_character_mul_inv_eq_trace {k G H V W : Type*} [Fi
   -- Each term is `σ.character (g * f h)`, the trace of `σ (g * f h) = σ g * σ (f h)`.
   rw [mul_comm (ρ.character _), ← character_linHom, character, MonoidHom.comp_apply, map_mul]
 
+/-- **Characters pair to `0` when `|G|` is zero in `k`.** If the order of the finite group `G` is
+zero in `k`, then `∑ g, χ(g) χ'(g⁻¹) = 0` for the characters `χ` and `χ'` of any two
+representations `ρ` and `ρ'` of `G`. The sum is the trace of the group sum `S = ∑ g, σ g` of the
+conjugation action `σ` of `G` on `W →ₗ[k] V`
+(`Representation.sum_character_mul_mul_character_mul_inv_eq_trace`), and `S` is nilpotent:
+`S ∘ S = |G| • S = 0` (`Representation.norm_mul_norm`). -/
+theorem sum_character_mul_character_inv_eq_zero_of_natCard_eq_zero {k G V W : Type*} [Field k]
+    [Group G] [Fintype G] [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
+    (ρ : Representation k G V) (ρ' : Representation k G W) (hG : (Nat.card G : k) = 0) :
+    ∑ g, ρ.character g * ρ'.character g⁻¹ = 0 := by
+  let σ := linHom ρ' ρ
+  have hsum : ∑ g, ρ.character g * ρ'.character g⁻¹ = LinearMap.trace k _ σ.norm := by
+    simpa only [one_mul, MonoidHom.id_apply, map_one, MonoidHom.comp_id] using
+      ρ.sum_character_mul_mul_character_mul_inv_eq_trace ρ' (MonoidHom.id G) 1
+  have hS : σ.norm * σ.norm = 0 := by
+    rw [σ.norm_mul_norm, ← Nat.cast_smul_eq_nsmul k, hG, zero_smul]
+  exact hsum.trans (LinearMap.isNilpotent_trace_of_isNilpotent ⟨2, by rw [pow_two, hS]⟩).eq_zero
+
 /-- The trace of the action is constant on conjugacy classes. This is `Representation.char_conj`
 for a representation on an additive commutative monoid. -/
 theorem trace_conj {R G M : Type*} [CommSemiring R] [Group G] [AddCommMonoid M] [Module R M]
@@ -189,5 +214,23 @@ theorem card_inv_mul_sum_char_pow_eq_zero_iff_of_coprime (ρ : Representation k 
       ‹ρ.IsIrreducible›.finrank_eq_one_of_invariants_ne_bot hne, Nat.cast_one]
 
 end Average
+
+open MulOpposite Module in
+/-- **The dimension of the invariants of a finite subgroup is the average of the character.**
+For a right action of a group `H` on `M`, written as a representation of `Hᵐᵒᵖ`, and a subgroup
+`S` of `H` whose order is finite and nonzero in `K`, `dim M^S = |S|⁻¹ ∑_{u ∈ S} tr(u | M)`. -/
+theorem natCast_finrank_invariants_comp_op_subtype {K M : Type*} [Field K] [AddCommGroup M]
+    [Module K M] [FiniteDimensional K M] {H : Type*} [Group H] (ρ : Representation K Hᵐᵒᵖ M)
+    (S : Subgroup H) (hS : (Nat.card S : K) ≠ 0) :
+    (finrank K (invariants (ρ.comp (MonoidHom.op S.subtype))) : K) =
+      (Nat.card S : K)⁻¹ * ∑ᶠ u : S, ρ.character (op (u : H)) := by
+  have := Nat.finite_of_card_ne_zero fun h ↦ hS (by rw [h, Nat.cast_zero])
+  have := Fintype.ofFinite S
+  have : Fintype Sᵐᵒᵖ := Fintype.ofEquiv S MulOpposite.opEquiv
+  have hS' : Nat.card Sᵐᵒᵖ = Nat.card S := Nat.card_congr MulOpposite.opEquiv.symm
+  have : Invertible (Nat.card Sᵐᵒᵖ : K) := invertibleOfNonzero (by rwa [hS'])
+  rw [← card_inv_mul_sum_char_eq_finrank, hS', finsum_eq_sum_of_fintype, character_comp]
+  congr 1
+  exact (Fintype.sum_equiv MulOpposite.opEquiv _ _ fun _ ↦ rfl).symm
 
 end Representation

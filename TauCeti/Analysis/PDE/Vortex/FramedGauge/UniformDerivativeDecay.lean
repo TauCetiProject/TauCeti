@@ -44,9 +44,11 @@ disc, and so over every compact window of divisors, collisions of zeros included
 These apply to the normalized family of Taubes's vortices. For lower coefficients `a ∈ ℂᵐ` let
 `P_a` be the monic polynomial with these coefficients, `x_a` the plane vortex with zero divisor
 `P_a` (`TauCeti.Vortex.polynomialVortex`) and `g_a` its end-normalizing polynomial gauge
-(`TauCeti.Vortex.polynomialGauge`). Then `g_a · x_a` is a smooth framed vortex in `A_m^s` whose
-section is `|α|` times the winding phase outside a disc that is uniform over bounded sets of
-coefficients, and the roots of `P_a` have norm less than `‖a‖ + 1`
+(`TauCeti.Vortex.polynomialGauge`). Then `g_a · x_a` is a smooth framed vortex in `A_m^s`
+(`TauCeti.Vortex.gaugeTransform_polynomialGauge_polynomialVortex_spec`) whose section is `|α|`
+times the winding phase outside a disc that is uniform over bounded sets of coefficients
+(`TauCeti.Vortex.exists_eventually_sectionValue_eq_norm_mul_windingPhase`), and the roots of
+`P_a` have norm less than `‖a‖ + 1`
 (`TauCeti.Polynomial.norm_lt_of_isRoot_monicOfCoeff`). Hence, in the winding-`m` end
 trivialization, the fields `g_a · x_a` tend to the vacuum with all spatial derivatives bounded by
 `K exp (-c |z|)`, uniformly over a bounded set of coefficients
@@ -167,8 +169,8 @@ theorem
   rw [(heq.iteratedFDeriv ℝ n).self_of_nhds]
   have hR₀ : 0 ≤ R := (Real.sqrt_nonneg _).trans hLR
   exact hend _ z _ (hs.contDiffAt.log (by linarith))
-    (Real.log_nonpos (by positivity)
-      (normSq_le_one_of_tendsto_sectionValue_mul_inv_pow (hx.of_le (by simp)) hsol hframe z))
+    (log_normSq_nonpos (hp.of_le (by simp)) (hq.of_le (by simp)) hsol
+      (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z)
     (Real.exp_pos _).le (Real.exp_le_one_iff.2 (neg_nonpos.2 (mul_nonneg hc₀ (by linarith))))
     fun j hj ↦ h x D hx hsol hframe hD z ρ hR hρ j hj
 
@@ -205,6 +207,48 @@ theorem
 
 /-! ### The normalized polynomial vortices -/
 
+/-- For `m ≥ 1` and lower coefficients `a ∈ ℂᵐ`, the vortex `g_a · x_a` of the monic polynomial
+`P_a` with these coefficients, normalized at its end by the polynomial gauge `g_a`, is a smooth
+solution of the vortex equations with the degree-`m` end framing whose zero divisor is the multiset
+of roots of `P_a`. -/
+theorem gaugeTransform_polynomialGauge_polynomialVortex_spec {m : ℕ} (hm : 0 < m)
+    (a : Fin m → ℂ) :
+    ContDiff ℝ ∞ (gaugeTransform (polynomialGauge a) (polynomialVortex (monicOfCoeff a))) ∧
+      (∀ z, equation (gaugeTransform (polynomialGauge a) (polynomialVortex (monicOfCoeff a)))
+        z = 0) ∧
+      Tendsto (fun z ↦ sectionValue (gaugeTransform (polynomialGauge a)
+        (polynomialVortex (monicOfCoeff a))) z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) ∧
+      IsZeroMultiplicity (sectionValue (gaugeTransform (polynomialGauge a)
+        (polynomialVortex (monicOfCoeff a)))) (fun z ↦ (monicOfCoeff a).roots.count z) := by
+  have hP : (monicOfCoeff a).Monic := monic_monicOfCoeff a
+  have hdeg : (monicOfCoeff a).natDegree = m := natDegree_monicOfCoeff a
+  have hm' : 0 < (monicOfCoeff a).natDegree := by rw [hdeg]; exact hm
+  have hx := contDiff_polynomialVortex (monicOfCoeff a)
+  set g : framedGaugeGroup := ⟨polynomialGauge a, polynomialGauge_mem_framedGaugeGroup a⟩
+  have hframe := tendsto_sectionValue_polynomialVortex hP hm'
+  rw [hdeg] at hframe
+  exact ⟨contDiff_framedGaugeGroup_smul g hx, fun w ↦ (equation_framedGaugeGroup_smul_eq_zero_iff g
+    fun i ↦ (((contDiff_piLp 2).1 hx i).differentiable (by simp)) w).2
+      (equation_polynomialVortex hP hm' w),
+    tendsto_sectionValue_gaugeTransform ((mem_framedGaugeGroup _).1 g.property).2 hframe,
+    isZeroMultiplicity_sectionValue_framedGaugeGroup_smul
+      (isZeroMultiplicity_sectionValue_polynomialVortex hP.ne_zero) g⟩
+
+/-- Outside a disc that is uniform over a bounded set of coefficients, the sections of the
+normalized vortices `g_a · x_a` are `|α|` times the winding phase near every point, since the
+section of `x_a` is a positive multiple of `P_a`. -/
+theorem exists_eventually_sectionValue_eq_norm_mul_windingPhase {m : ℕ} {S : Set (Fin m → ℂ)}
+    (hS : Bornology.IsBounded S) :
+    ∃ R, ∀ a ∈ S, ∀ z : ℂ, R < ‖z‖ → ∀ᶠ w in 𝓝 z,
+      sectionValue (gaugeTransform (polynomialGauge a) (polynomialVortex (monicOfCoeff a))) w =
+        ‖sectionValue (gaugeTransform (polynomialGauge a) (polynomialVortex (monicOfCoeff a))) w‖ *
+          windingPhase m w := by
+  obtain ⟨R, hR⟩ := exists_forall_sectionValue_gaugeTransform_polynomialGauge hS
+  refine ⟨R, fun a ha z hz ↦ ?_⟩
+  filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hz] with w hw
+  exact hR a ha _ w _ (le_of_lt hw) (Real.exp_pos _).le
+    (sectionValue_polynomialVortex (monicOfCoeff a) w)
+
 /-- **Uniform decay of the normalized vortices over a bounded window of coefficients.** Let
 `m ≥ 1`, and for lower coefficients `a ∈ ℂᵐ` let `x_a` be the plane vortex whose zero divisor is
 the monic polynomial `P_a` with these coefficients, normalized at its end by the polynomial gauge
@@ -222,32 +266,13 @@ theorem exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp
   obtain ⟨K, R, hK, h⟩ :=
     exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_forall_mem_norm_le
       m n (r + 1) hc₀ hc
-  obtain ⟨R', hR'⟩ := exists_forall_sectionValue_gaugeTransform_polynomialGauge hS
+  obtain ⟨R', hR'⟩ := exists_eventually_sectionValue_eq_norm_mul_windingPhase hS
   refine ⟨K, max R (R' + 1), hK, fun a ha z hz ↦ ?_⟩
-  have hP : (monicOfCoeff a).Monic := monic_monicOfCoeff a
-  have hdeg : (monicOfCoeff a).natDegree = m := natDegree_monicOfCoeff a
-  have hm' : 0 < (monicOfCoeff a).natDegree := by rw [hdeg]; exact hm
-  have hx := contDiff_polynomialVortex (monicOfCoeff a)
-  set g : framedGaugeGroup := ⟨polynomialGauge a, polynomialGauge_mem_framedGaugeGroup a⟩
-  have hframe := tendsto_sectionValue_polynomialVortex hP hm'
-  rw [hdeg] at hframe
-  refine h (g • polynomialVortex (monicOfCoeff a)) (monicOfCoeff a).roots (windingPhase m)
-    (contDiff_framedGaugeGroup_smul g hx) (fun w ↦ ?_)
-    (tendsto_sectionValue_gaugeTransform ((mem_framedGaugeGroup _).1 g.property).2 hframe)
-    (isZeroMultiplicity_sectionValue_framedGaugeGroup_smul
-      (isZeroMultiplicity_sectionValue_polynomialVortex hP.ne_zero) g)
-    (fun b hb ↦ ?_) z (le_of_max_le_left hz) ?_
-  · exact (equation_framedGaugeGroup_smul_eq_zero_iff g fun i ↦
-      (((contDiff_piLp 2).1 hx i).differentiable (by simp)) w).2
-      (equation_polynomialVortex hP hm' w)
-  · exact (norm_lt_of_isRoot_monicOfCoeff a (_root_.Polynomial.isRoot_of_mem_roots hb)).le.trans
-      (by linarith [hr a ha])
-  · -- Outside the normalization radius the section of `g_a · x_a` is `|α|` times the winding
-    -- phase, since the section of `x_a` is a positive multiple of `P_a`.
-    have hR'z : R' < ‖z‖ := by linarith [le_of_max_le_right hz]
-    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hR'z] with w hw
-    exact hR' a ha _ w _ (le_of_lt hw) (Real.exp_pos _).le
-      (sectionValue_polynomialVortex (monicOfCoeff a) w)
+  obtain ⟨hx, hsol, hframe, hD⟩ := gaugeTransform_polynomialGauge_polynomialVortex_spec hm a
+  refine h _ (monicOfCoeff a).roots (windingPhase m) hx hsol hframe hD (fun b hb ↦ ?_) z
+    (le_of_max_le_left hz) (hR' a ha z (by linarith [le_of_max_le_right hz]))
+  exact (norm_lt_of_isRoot_monicOfCoeff a (_root_.Polynomial.isRoot_of_mem_roots hb)).le.trans
+    (by linarith [hr a ha])
 
 /-- **Uniform decay of the normalized vortices over a compact window of divisors.** Let `m ≥ 1`,
 and for an effective divisor `D` of degree `m` let `x_D` be the plane vortex with zero divisor `D`,

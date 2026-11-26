@@ -22,6 +22,14 @@ characteristic `p`, the converse holds for finite abelian groups.
 This detects connected finite diagonalizable group schemes, including the
 nonreduced groups of roots of unity of prime-power order.
 
+## Main results
+
+* `TauCeti.isNilpotent_sub_algebraMap_counit_of_isPGroup`: for an abelian `p`-group, every
+  element differs from its augmentation by a nilpotent.
+* `TauCeti.connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup`: over a commutative ring with
+  connected spectrum and of prime characteristic `p`, a finite abelian group has connected
+  group-algebra spectrum exactly when it is a `p`-group.
+
 ## References
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
