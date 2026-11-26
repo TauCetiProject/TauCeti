@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.StarProjection
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.NonUnital
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
 public import TauCeti.Analysis.Normed.Algebra.Spectrum
@@ -14,12 +15,13 @@ import TauCeti.Topology.Algebra.Indicator
 /-!
 # Star projections from the continuous functional calculus
 
-If a function `f` takes star projections as values on the spectrum of `a`, for instance a real
-function taking only the values `0` and `1` there, then `cfc f a` is a star projection, for any
-scalar semiring and predicate carrying a continuous functional calculus. When `f` is continuous on
-the spectrum and `a` satisfies the predicate this follows from multiplicativity of the functional
-calculus; otherwise `cfc f a` is the junk value `0`. In particular the spectral projector
-`cfc (Ω.indicator 1) a` is a star projection for every set `Ω` of scalars and every `a`.
+If a function `f` takes star projections as values on the spectrum (or quasispectrum) of `a`, for
+instance a real function taking only the values `0` and `1` there, then `cfc f a` (respectively
+`cfcₙ f a`) is a star projection, for any scalar semiring and predicate carrying a continuous
+functional calculus. When `f` is continuous on the spectrum and `a` satisfies the predicate this
+follows from multiplicativity of the functional calculus; otherwise `cfc f a` is the junk value
+`0`. In particular the spectral projectors `cfc (Ω.indicator 1) a` and `cfcₙ (Ω.indicator 1) a`
+are star projections for every set `Ω` of scalars and every `a`.
 
 When `a` is self-adjoint and invertible, `0` is not in its spectrum, so the spectral projectors
 `P₊ = cfc ((Ioi 0).indicator 1) a` and `P₋ = cfc ((Iio 0).indicator 1) a` onto the positive and
@@ -31,10 +33,11 @@ wherever the spectrum of `a` avoids the frontier of `Ω`.
 
 ## Main results
 
-* `TauCeti.isStarProjection_cfc` — `cfc f a` is a star projection when the values of `f` on the
-  spectrum of `a` are star projections;
-* `TauCeti.isStarProjection_cfc_indicator` — the spectral projector `cfc (Ω.indicator 1) a` is a
-  star projection;
+* `TauCeti.isStarProjection_cfc` and `TauCeti.isStarProjection_cfcₙ` — `cfc f a` and `cfcₙ f a`
+  are star projections when the values of `f` on the spectrum (or quasispectrum) of `a` are star
+  projections;
+* `TauCeti.isStarProjection_cfc_indicator` and `TauCeti.isStarProjection_cfcₙ_indicator` — the
+  spectral projectors `cfc (Ω.indicator 1) a` and `cfcₙ (Ω.indicator 1) a` are star projections;
 * `TauCeti.cfc_indicator_mul_cfc_indicator` — the product of the spectral projectors for two
   sets is the spectral projector for their intersection;
 * `IsUnit.continuousOn_indicator_spectrum` — at an invertible element, the indicator of a set
@@ -86,6 +89,35 @@ theorem cfc_indicator_mul_cfc_indicator (a : A) {Ω Ω' : Set R}
   rfl
 
 end Semiring
+
+section NonUnitalSemiring
+
+variable {R A : Type*} {p : A → Prop} [CommSemiring R] [Nontrivial R] [StarRing R]
+  [MetricSpace R] [IsTopologicalSemiring R] [ContinuousStar R] [NonUnitalRing A] [StarRing A]
+  [TopologicalSpace A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+  [NonUnitalContinuousFunctionalCalculus R A p]
+
+/-- If `f t` is a star projection at every point `t` of the quasispectrum of `a`, then `cfcₙ f a`
+is a star projection. (When `f 0 ≠ 0`, `a` does not satisfy `p`, or `f` is not continuous on the
+quasispectrum, `cfcₙ f a` is the junk value `0`.) -/
+theorem isStarProjection_cfcₙ {f : R → R} {a : A}
+    (hf : ∀ t ∈ quasispectrum R a, IsStarProjection (f t)) : IsStarProjection (cfcₙ f a) := by
+  refine ⟨?_, (cfcₙ_star f a).symm.trans (cfcₙ_congr fun t ht ↦ (hf t ht).isSelfAdjoint)⟩
+  by_cases h : p a ∧ ContinuousOn f (quasispectrum R a) ∧ f 0 = 0
+  · obtain ⟨_, hcont, hf0⟩ := h
+    rw [IsIdempotentElem, ← cfcₙ_mul f f a hcont hf0 hcont hf0]
+    exact cfcₙ_congr fun t ht ↦ (hf t ht).isIdempotentElem
+  · rw [cfcₙ_apply_of_not_and_and a h]
+    exact .zero
+
+/-- The non-unital spectral projector `cfcₙ (Ω.indicator 1) a` is a star projection for every set
+`Ω` of scalars. -/
+theorem isStarProjection_cfcₙ_indicator (a : A) (Ω : Set R) :
+    IsStarProjection (cfcₙ (Ω.indicator (1 : R → R)) a) :=
+  isStarProjection_cfcₙ fun t _ ↦ by
+    by_cases ht : t ∈ Ω <;> simp [ht, IsStarProjection.zero, IsStarProjection.one]
+
+end NonUnitalSemiring
 
 variable {A : Type*} [Ring A] [StarRing A] [TopologicalSpace A] [Algebra ℝ A]
   [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]

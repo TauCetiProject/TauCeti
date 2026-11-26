@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
+public import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Algebra.BigOperators.Group.Finset.Indicator
 import TauCeti.Algebra.BigOperators.Intervals
-import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
 # Reindexing sequences in `ℓᵖ`
@@ -55,7 +55,9 @@ membership without increasing the norm (`Memℓp.comp_injective`, `Memℓp.exten
 a bijection between index types (possibly in different universes), composing with `e` preserves `ℓᵖ`
 membership (`Memℓp.comp_equiv`, `Equiv.memℓp_comp_iff`) and the `ℓᵖ` norm
 (`lp.norm_eq_of_forall_eq_comp_equiv`), and for `1 ≤ p` induces the linear isometric equivalence
-`LinearIsometryEquiv.lpCongrLeft` between `ℓᵖ(ι, G)` and `ℓᵖ(ι', G)`.
+`LinearIsometryEquiv.lpCongrLeft` between `ℓᵖ(ι, G)` and `ℓᵖ(ι', G)`. In `ℓ∞`, precomposition
+along any map `r : ι' → ι` (not necessarily injective) induces contractive `⋆`-algebra homomorphisms
+`lp.reindexNonUnitalStarAlgHom` and `lp.reindexStarAlgHom` fixing constant sequences.
 
 Reading a sequence `b ∈ ℓᵖ(ℤ)` along `k ↦ -k` and weighting it by `2^{(e - s) (-k)}` gives a
 summable series over `k : ℕ` when `s < e`, or `s = e` and `p ≤ 1`
@@ -534,3 +536,89 @@ theorem Memℓp.summable_two_rpow_mul_neg {b : ℤ → ℝ} (hb : Memℓp b p) (
       neg_injective.comp Nat.cast_injective
     refine ((h1.comp_injective hinj).of_norm).congr fun k ↦ ?_
     simp
+
+namespace lp
+
+section ReindexStarAlgHom
+
+section NonUnital
+
+variable {𝕜 ι ι' ι'' A : Type*} [NormedRing 𝕜] [NonUnitalNormedRing A] [StarAddMonoid A]
+  [NormedStarGroup A] [Module 𝕜 A] [IsBoundedSMul 𝕜 A]
+
+/-- Reindexing `a ↦ a ∘ r` as a non-unital `⋆`-algebra homomorphism on bounded sequence spaces. -/
+def reindexNonUnitalStarAlgHom (𝕜 : Type*) {ι ι' : Type*} (A : Type*) [NormedRing 𝕜]
+    [NonUnitalNormedRing A] [StarAddMonoid A] [NormedStarGroup A] [Module 𝕜 A] [IsBoundedSMul 𝕜 A]
+    (r : ι' → ι) : lp (fun _ : ι ↦ A) ∞ →⋆ₙₐ[𝕜] lp (fun _ : ι' ↦ A) ∞ where
+  toFun a := ⟨fun j ↦ a (r j), memℓp_infty
+    ⟨‖a‖, by rintro _ ⟨j, rfl⟩; exact norm_apply_le_norm ENNReal.top_ne_zero a (r j)⟩⟩
+  map_smul' _ _ := by ext; rfl
+  map_zero' := by ext; rfl
+  map_add' _ _ := by ext; rfl
+  map_mul' _ _ := by ext; rfl
+  map_star' _ := by ext; rfl
+
+@[simp]
+theorem reindexNonUnitalStarAlgHom_apply (r : ι' → ι) (a : lp (fun _ : ι ↦ A) ∞) (j : ι') :
+    reindexNonUnitalStarAlgHom 𝕜 A r a j = a (r j) := (rfl)
+
+@[simp]
+theorem reindexNonUnitalStarAlgHom_id :
+    reindexNonUnitalStarAlgHom 𝕜 A (id : ι → ι) =
+      NonUnitalStarAlgHom.id 𝕜 (lp (fun _ : ι ↦ A) ∞) := by ext; rfl
+
+theorem reindexNonUnitalStarAlgHom_comp (s : ι'' → ι') (r : ι' → ι) :
+    (reindexNonUnitalStarAlgHom 𝕜 A s).comp (reindexNonUnitalStarAlgHom 𝕜 A r) =
+      reindexNonUnitalStarAlgHom 𝕜 A (r ∘ s) := by ext; rfl
+
+@[simp]
+theorem reindexNonUnitalStarAlgHom_comp_constNonUnitalStarAlgHom (r : ι' → ι) :
+    (reindexNonUnitalStarAlgHom 𝕜 A r).comp (constNonUnitalStarAlgHom 𝕜 ι A) =
+      constNonUnitalStarAlgHom 𝕜 ι' A := by ext; simp
+
+/-- Reindexing bounded sequences along any map `r : ι' → ι` is contractive. -/
+theorem norm_reindexNonUnitalStarAlgHom_le (r : ι' → ι) (a : lp (fun _ : ι ↦ A) ∞) :
+    ‖reindexNonUnitalStarAlgHom 𝕜 A r a‖ ≤ ‖a‖ :=
+  norm_le_of_forall_le (norm_nonneg a) fun j ↦ norm_apply_le_norm ENNReal.top_ne_zero a (r j)
+
+end NonUnital
+
+section Unital
+
+variable {𝕜 ι ι' ι'' A : Type*} [NormedField 𝕜] [NormedRing A] [StarAddMonoid A]
+  [NormedStarGroup A] [NormOneClass A] [NormedAlgebra 𝕜 A]
+
+/-- Reindexing `a ↦ a ∘ r` as a unital `⋆`-algebra homomorphism on bounded sequence spaces of a
+normed `⋆`-algebra with `‖(1 : A)‖ = 1`. -/
+def reindexStarAlgHom (𝕜 : Type*) {ι ι' : Type*} (A : Type*) [NormedField 𝕜] [NormedRing A]
+    [StarAddMonoid A] [NormedStarGroup A] [NormOneClass A] [NormedAlgebra 𝕜 A] (r : ι' → ι) :
+    lp (fun _ : ι ↦ A) ∞ →⋆ₐ[𝕜] lp (fun _ : ι' ↦ A) ∞ where
+  __ := reindexNonUnitalStarAlgHom 𝕜 A r
+  map_one' := by ext; rfl
+  commutes' _ := by ext; rfl
+
+@[simp]
+theorem reindexStarAlgHom_apply (r : ι' → ι) (a : lp (fun _ : ι ↦ A) ∞) (j : ι') :
+    reindexStarAlgHom 𝕜 A r a j = a (r j) := (rfl)
+
+@[simp]
+theorem toNonUnitalStarAlgHom_reindexStarAlgHom (r : ι' → ι) :
+    (reindexStarAlgHom 𝕜 A r).toNonUnitalStarAlgHom = reindexNonUnitalStarAlgHom 𝕜 A r := (rfl)
+
+@[simp]
+theorem reindexStarAlgHom_id :
+    reindexStarAlgHom 𝕜 A (id : ι → ι) = StarAlgHom.id 𝕜 (lp (fun _ : ι ↦ A) ∞) := by ext; rfl
+
+theorem reindexStarAlgHom_comp (s : ι'' → ι') (r : ι' → ι) :
+    (reindexStarAlgHom 𝕜 A s).comp (reindexStarAlgHom 𝕜 A r) =
+      reindexStarAlgHom 𝕜 A (r ∘ s) := by ext; rfl
+
+@[simp]
+theorem reindexStarAlgHom_comp_constStarAlgHom (r : ι' → ι) :
+    (reindexStarAlgHom 𝕜 A r).comp (constStarAlgHom 𝕜 ι A) = constStarAlgHom 𝕜 ι' A := by ext; simp
+
+end Unital
+
+end ReindexStarAlgHom
+
+end lp

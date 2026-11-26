@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.StarAlgHom
+public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
@@ -47,9 +49,12 @@ along a map `g` evaluate to the corresponding entry at `g j` (`j ∈ s`) when `g
 zeroes out those coordinates (`lp.sub_sum_single_apply`) and does not increase the `ℓᵖ` norm, for
 any `p` (`lp.norm_sub_sum_single_le`); in `ℓ∞`, a family vanishing at infinity is the sum of
 its coordinate vectors (`lp.hasSum_single_of_tendsto_cofinite`). Coordinate vectors commute with
-`star` (`lp.single_star`) and, in `ℓ∞`, with multiplication (`lp.single_mul`). In `ℓ²`, the
-squared norm of a finite sum of single-coordinate vectors is the sum of the squared norms of its
-coordinates
+`star` (`lp.single_star`) and, in `ℓ∞`, with multiplication (`lp.single_mul`); self-adjoint
+elements, idempotents, and star projections are characterized coordinatewise
+(`lp.isSelfAdjoint_iff`, `lp.isIdempotentElem_iff`, `lp.isStarProjection_iff`), and constant
+families form the diagonal `⋆`-homomorphisms `lp.constNonUnitalStarAlgHom` and `lp.constStarAlgHom`.
+In `ℓ²`, the squared norm of a finite sum of single-coordinate vectors is the sum of the squared
+norms of its coordinates
 (`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
 operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely
 many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`,
@@ -705,3 +710,108 @@ theorem nnnorm_eq_ciSup_nnnorm_lp_single (T : lp (fun _ : ι ↦ 𝕜) 1 →L[�
 end Coordinates
 
 end ContinuousLinearMap
+
+namespace lp
+
+section StarElements
+
+variable {ι : Type*} {A : ι → Type*}
+
+/-- An element of `lp A p` is self-adjoint if and only if each coordinate is self-adjoint. -/
+@[simp]
+protected theorem isSelfAdjoint_iff {p : ℝ≥0∞} [∀ i, NormedAddCommGroup (A i)]
+    [∀ i, StarAddMonoid (A i)] [∀ i, NormedStarGroup (A i)] {a : lp A p} :
+    IsSelfAdjoint a ↔ ∀ i, IsSelfAdjoint (a i) :=
+  ⟨fun h i ↦ by
+    simpa only [IsSelfAdjoint, lp.star_apply] using congrArg (fun x : lp A p ↦ x i) h.star_eq,
+   fun h ↦ lp.ext (funext fun i ↦ by simpa only [lp.star_apply] using (h i).star_eq)⟩
+
+/-- An element of `lp A ∞` is idempotent if and only if each coordinate is idempotent. -/
+@[simp]
+protected theorem isIdempotentElem_iff [∀ i, NonUnitalNormedRing (A i)] {a : lp A ∞} :
+    IsIdempotentElem a ↔ ∀ i, IsIdempotentElem (a i) :=
+  ⟨fun h i ↦ by
+    simpa only [IsIdempotentElem, lp.infty_coeFn_mul, Pi.mul_apply] using
+      congrArg (fun x : lp A ∞ ↦ x i) h.eq,
+   fun h ↦ lp.ext (funext fun i ↦ by simpa only [lp.infty_coeFn_mul, Pi.mul_apply] using (h i).eq)⟩
+
+/-- An element of `lp A ∞` is a star projection if and only if each coordinate is a star
+projection. -/
+@[simp]
+protected theorem isStarProjection_iff [∀ i, NonUnitalNormedRing (A i)] [∀ i, StarAddMonoid (A i)]
+    [∀ i, NormedStarGroup (A i)] {a : lp A ∞} :
+    IsStarProjection a ↔ ∀ i, IsStarProjection (a i) :=
+  ⟨fun h i ↦ ⟨lp.isIdempotentElem_iff.mp h.isIdempotentElem i,
+     lp.isSelfAdjoint_iff.mp h.isSelfAdjoint i⟩,
+   fun h ↦ ⟨lp.isIdempotentElem_iff.mpr fun i ↦ (h i).isIdempotentElem,
+     lp.isSelfAdjoint_iff.mpr fun i ↦ (h i).isSelfAdjoint⟩⟩
+
+end StarElements
+
+section ConstStarAlgHom
+
+section NonUnital
+
+variable {𝕜 ι A : Type*} [NormedRing 𝕜] [NonUnitalNormedRing A] [StarAddMonoid A]
+  [NormedStarGroup A] [Module 𝕜 A] [IsBoundedSMul 𝕜 A]
+
+variable (𝕜 ι A) in
+/-- The constant (diagonal) non-unital `⋆`-algebra homomorphism `A →⋆ₙₐ[𝕜] lp (fun _ : ι ↦ A) ∞`
+sending `a` to the constant family `fun _ ↦ a`. -/
+def constNonUnitalStarAlgHom : A →⋆ₙₐ[𝕜] lp (fun _ : ι ↦ A) ∞ where
+  toFun a := ⟨fun _ ↦ a, memℓp_infty ⟨‖a‖, by rintro _ ⟨_, rfl⟩; exact le_rfl⟩⟩
+  map_smul' _ _ := by ext; rfl
+  map_zero' := by ext; rfl
+  map_add' _ _ := by ext; rfl
+  map_mul' _ _ := by ext; rfl
+  map_star' _ := by ext; rfl
+
+@[simp]
+theorem constNonUnitalStarAlgHom_apply (a : A) (i : ι) :
+    constNonUnitalStarAlgHom 𝕜 ι A a i = a := (rfl)
+
+/-- The constant non-unital `⋆`-algebra homomorphism into `lp (fun _ : ι ↦ A) ∞` is contractive. -/
+theorem norm_constNonUnitalStarAlgHom_le (a : A) :
+    ‖constNonUnitalStarAlgHom 𝕜 ι A a‖ ≤ ‖a‖ :=
+  norm_le_of_forall_le (norm_nonneg a) fun _ ↦ le_rfl
+
+/-- Over a nonempty index type, `lp.constNonUnitalStarAlgHom` preserves norms. -/
+@[simp]
+theorem norm_constNonUnitalStarAlgHom [Nonempty ι] (a : A) :
+    ‖constNonUnitalStarAlgHom 𝕜 ι A a‖ = ‖a‖ := by
+  obtain ⟨i₀⟩ := ‹Nonempty ι›
+  exact le_antisymm (norm_constNonUnitalStarAlgHom_le (𝕜 := 𝕜) (ι := ι) a)
+    (norm_apply_le_norm ENNReal.top_ne_zero (constNonUnitalStarAlgHom 𝕜 ι A a) i₀)
+
+/-- Over a nonempty index type, `lp.constNonUnitalStarAlgHom` is an isometry. -/
+theorem isometry_constNonUnitalStarAlgHom [Nonempty ι] :
+    Isometry (constNonUnitalStarAlgHom 𝕜 ι A) :=
+  AddMonoidHomClass.isometry_of_norm _ norm_constNonUnitalStarAlgHom
+
+end NonUnital
+
+section Unital
+
+variable {𝕜 ι A : Type*} [NormedField 𝕜] [NormedRing A] [StarAddMonoid A] [NormedStarGroup A]
+  [NormOneClass A] [NormedAlgebra 𝕜 A]
+
+variable (𝕜 ι A) in
+/-- The constant (diagonal) unital `⋆`-algebra homomorphism `A →⋆ₐ[𝕜] lp (fun _ : ι ↦ A) ∞` on a
+normed `⋆`-algebra with `‖(1 : A)‖ = 1`. -/
+def constStarAlgHom : A →⋆ₐ[𝕜] lp (fun _ : ι ↦ A) ∞ where
+  __ := constNonUnitalStarAlgHom 𝕜 ι A
+  map_one' := by ext; rfl
+  commutes' _ := by ext; rfl
+
+@[simp]
+theorem constStarAlgHom_apply (a : A) (i : ι) : constStarAlgHom 𝕜 ι A a i = a := (rfl)
+
+@[simp]
+theorem toNonUnitalStarAlgHom_constStarAlgHom :
+    (constStarAlgHom 𝕜 ι A).toNonUnitalStarAlgHom = constNonUnitalStarAlgHom 𝕜 ι A := (rfl)
+
+end Unital
+
+end ConstStarAlgHom
+
+end lp

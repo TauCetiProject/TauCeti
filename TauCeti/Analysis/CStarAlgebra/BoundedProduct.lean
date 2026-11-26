@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Hom
 public import Mathlib.Analysis.CStarAlgebra.lpSpace
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Analysis.Normed.Lp.C0Ideal
@@ -15,18 +16,19 @@ import Mathlib.Analysis.CStarAlgebra.Spectrum
 
 For a family of nonzero unital C⋆-algebras `A i`, the bounded product `lp A ∞` is a unital
 C⋆-algebra, `lp.inftyCStarAlgebra`. Mathlib provides the nonunital instance and the unital
-commutative one; nontriviality of the factors makes the unit `(1)ᵢ` have norm one.
+commutative one; nontriviality of the factors makes the unit `(1)ᵢ` have norm one, and the unitary
+group of `lp A ∞` is canonically isomorphic to the product `∀ i, unitary (A i)` (`lp.unitaryEquiv`).
 
-With the closed `c₀` ideal `lp.c0Ideal` of `TauCeti.Analysis.Normed.Lp.C0Ideal`, the quotient
-`lp A ∞ ⧸ lp.c0Ideal A` is then a unital C⋆-algebra by `TwoSidedIdeal.Quotient.cstarAlgebra`.
+With the closed filter-null ideals `lp.nullIdeal` and `lp.c0Ideal` of
+`TauCeti.Analysis.Normed.Lp.C0Ideal`, the quotient `lp A ∞ ⧸ lp.nullIdeal A l` is a C⋆-algebra
+(unital when the factors are nonzero unital C⋆-algebras) by
+`TwoSidedIdeal.Quotient.nonUnitalCStarAlgebra` and `TwoSidedIdeal.Quotient.cstarAlgebra`.
 
 For a family of possibly nonunital C⋆-algebras, `lp A ∞` is the product in the category of
 C⋆-algebras: the coordinate projections `lp.evalNonUnitalStarAlgHom` are star homomorphisms, and
 `lp.liftNonUnitalStarAlgHom` identifies star homomorphisms into `lp A ∞` with families of star
-homomorphisms into the factors. A family of star homomorphisms out of a C⋆-algebra is uniformly
-bounded because each of them is contractive. The underlying construction,
-`lp.piNonUnitalStarAlgHom`, takes any star algebra as source and any pointwise bounded family of
-star homomorphisms into normed star rings.
+homomorphisms into the factors. Coordinatewise families of `⋆`-homomorphisms and `⋆`-isomorphisms
+assemble into `lp.mapNonUnitalStarAlgHom`, `lp.mapStarAlgHom`, and `lp.mapStarAlgEquiv`.
 
 For a concrete family, such as `A n = CStarMatrix (Fin (n + 1)) (Fin (n + 1)) ℂ`, instance search
 does not find the C⋆-structure on `lp A ∞ ⧸ lp.c0Ideal A` within the default limits: matching
@@ -40,9 +42,12 @@ the norm, the star and the `ℂ`-algebra structure, are its projections.
 ## Main definitions
 
 * `lp.inftyCStarAlgebra`: the unital C⋆-algebra `lp A ∞`.
+* `lp.unitaryEquiv`: canonical isomorphism `unitary (lp A ∞) ≃* ∀ i, unitary (A i)`.
 * `lp.evalNonUnitalStarAlgHom`: the coordinate projections, star homomorphisms.
 * `lp.piNonUnitalStarAlgHom`, `lp.liftNonUnitalStarAlgHom`: the star homomorphism into `lp A ∞`
   given by a bounded family of star homomorphisms into the factors.
+* `lp.mapNonUnitalStarAlgHom`, `lp.mapStarAlgHom`, `lp.mapStarAlgEquiv`: coordinatewise functorial
+  `⋆`-homomorphisms and `⋆`-isomorphisms on `lp _ ∞`.
 * `lp.QuotientC0`: the quotient `lp A ∞ ⧸ lp.c0Ideal A`, a unital C⋆-algebra.
 * `lp.QuotientC0.mk`: the quotient map, a unital `⋆`-algebra homomorphism.
 * `lp.QuotientC0.lift`: the unital `⋆`-homomorphism out of `lp.QuotientC0 A` induced by one
@@ -58,6 +63,21 @@ public section
 
 open Filter
 open scoped ENNReal
+
+namespace TauCeti
+
+/-- Any family of unitaries in unital C⋆-rings with `‖(1 : A i)‖ = 1` has coordinate norms bounded
+by `1` and therefore belongs to `ℓ^∞`. -/
+theorem memℓp_infty_unitary {ι : Type*} {A : ι → Type*} [∀ i, NormedRing (A i)]
+    [∀ i, StarRing (A i)] [∀ i, CStarRing (A i)] [∀ i, NormOneClass (A i)]
+    (u : ∀ i, unitary (A i)) : Memℓp (fun i ↦ (u i : A i)) ∞ :=
+  ⟨1, by
+    rintro _ ⟨i, rfl⟩
+    calc ‖(u i : A i)‖ = ‖(u i : A i) * 1‖ := by rw [mul_one]
+      _ = ‖(1 : A i)‖ := CStarRing.norm_coe_unitary_mul (u i) 1
+      _ ≤ 1 := norm_one.le⟩
+
+end TauCeti
 
 namespace lp
 
@@ -180,10 +200,132 @@ theorem liftNonUnitalStarAlgHom_comp {C : Type*} [NonUnitalCStarAlgebra C]
 
 end Product
 
+section CStarAlgebra
+
 variable {ι : Type*} {A : ι → Type*} [∀ i, CStarAlgebra (A i)] [∀ i, Nontrivial (A i)]
 
 /-- The bounded product `lp A ∞` of nonzero unital C⋆-algebras is a unital C⋆-algebra. -/
 noncomputable instance inftyCStarAlgebra : CStarAlgebra (lp A ∞) where
+
+end CStarAlgebra
+
+section Unitary
+
+variable {ι : Type*} {A : ι → Type*} [∀ i, NormedRing (A i)] [∀ i, StarRing (A i)]
+  [∀ i, CStarRing (A i)] [∀ i, NormOneClass (A i)]
+
+/-- The unitary group of `lp A ∞` is canonically isomorphic to the product `∀ i, unitary (A i)` of
+the coordinate unitary groups. -/
+noncomputable def unitaryEquiv : unitary (lp A ∞) ≃* ∀ i, unitary (A i) where
+  toFun U i := ⟨(U : lp A ∞) i, Unitary.mem_iff.mpr
+    ⟨by simpa only [lp.infty_coeFn_one, Pi.one_apply, lp.infty_coeFn_mul, Pi.mul_apply,
+        lp.star_apply] using congrArg (fun x : lp A ∞ ↦ x i) (Unitary.coe_star_mul_self U),
+     by simpa only [Unitary.coe_star, lp.infty_coeFn_one, Pi.one_apply, lp.infty_coeFn_mul,
+        Pi.mul_apply, lp.star_apply] using
+        congrArg (fun x : lp A ∞ ↦ x i) (Unitary.coe_mul_star_self U)⟩⟩
+  invFun u := ⟨⟨fun i ↦ (u i : A i), TauCeti.memℓp_infty_unitary u⟩, Unitary.mem_iff.mpr
+    ⟨by ext i; simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply, lp.infty_coeFn_one,
+        Pi.one_apply] using Unitary.coe_star_mul_self (u i),
+     by ext i; simpa only [Unitary.coe_star, lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply,
+        lp.infty_coeFn_one, Pi.one_apply] using Unitary.coe_mul_star_self (u i)⟩⟩
+  left_inv _ := by ext; rfl
+  right_inv _ := by ext; rfl
+  map_mul' _ _ := by ext; rfl
+
+@[simp]
+theorem coe_unitaryEquiv_apply (U : unitary (lp A ∞)) (i : ι) :
+    (unitaryEquiv U i : A i) = (U : lp A ∞) i := (rfl)
+
+@[simp]
+theorem coe_unitaryEquiv_symm_apply (u : ∀ i, unitary (A i)) (i : ι) :
+    (unitaryEquiv.symm u : lp A ∞) i = (u i : A i) := (rfl)
+
+end Unitary
+
+section Map
+
+section NonUnital
+
+variable {ι : Type*} {A B C : ι → Type*} [∀ i, NonUnitalCStarAlgebra (A i)]
+  [∀ i, NonUnitalCStarAlgebra (B i)]
+
+/-- Coordinatewise application of a family of non-unital `⋆`-homomorphisms between C⋆-algebras on
+bounded products. -/
+noncomputable def mapNonUnitalStarAlgHom (φ : ∀ i, A i →⋆ₙₐ[ℂ] B i) : lp A ∞ →⋆ₙₐ[ℂ] lp B ∞ :=
+  liftNonUnitalStarAlgHom fun i ↦ (φ i).comp (evalNonUnitalStarAlgHom A i)
+
+@[simp]
+theorem mapNonUnitalStarAlgHom_apply (φ : ∀ i, A i →⋆ₙₐ[ℂ] B i) (a : lp A ∞) (i : ι) :
+    mapNonUnitalStarAlgHom φ a i = φ i (a i) := (rfl)
+
+@[simp]
+theorem mapNonUnitalStarAlgHom_id :
+    mapNonUnitalStarAlgHom (fun i ↦ NonUnitalStarAlgHom.id ℂ (A i)) =
+      NonUnitalStarAlgHom.id ℂ (lp A ∞) := by ext; rfl
+
+theorem mapNonUnitalStarAlgHom_comp [∀ i, NonUnitalCStarAlgebra (C i)]
+    (ψ : ∀ i, B i →⋆ₙₐ[ℂ] C i) (φ : ∀ i, A i →⋆ₙₐ[ℂ] B i) :
+    (mapNonUnitalStarAlgHom ψ).comp (mapNonUnitalStarAlgHom φ) =
+      mapNonUnitalStarAlgHom (fun i ↦ (ψ i).comp (φ i)) := by ext; rfl
+
+/-- If each coordinate `⋆`-homomorphism `φ i` is injective, then `lp.mapNonUnitalStarAlgHom φ` is
+an isometry. -/
+theorem isometry_mapNonUnitalStarAlgHom {φ : ∀ i, A i →⋆ₙₐ[ℂ] B i}
+    (hφ : ∀ i, Function.Injective (φ i)) : Isometry (mapNonUnitalStarAlgHom φ) :=
+  NonUnitalStarAlgHom.isometry _ fun _ _ hab ↦
+    lp.ext <| funext fun i ↦ hφ i (congrArg (fun x : lp B ∞ ↦ x i) hab)
+
+/-- Coordinatewise `⋆`-isomorphism of bounded products induced by a family of `⋆`-isomorphisms of
+C⋆-algebras. -/
+noncomputable def mapStarAlgEquiv (e : ∀ i, A i ≃⋆ₐ[ℂ] B i) : lp A ∞ ≃⋆ₐ[ℂ] lp B ∞ :=
+  StarAlgEquiv.ofNonUnitalStarAlgHom
+    (mapNonUnitalStarAlgHom fun i ↦ (e i).toNonUnitalStarAlgHom)
+    (mapNonUnitalStarAlgHom fun i ↦ (e i).symm.toNonUnitalStarAlgHom)
+    (by ext; simp) (by ext; simp)
+
+@[simp]
+theorem mapStarAlgEquiv_apply (e : ∀ i, A i ≃⋆ₐ[ℂ] B i) (a : lp A ∞) (i : ι) :
+    mapStarAlgEquiv e a i = e i (a i) := (rfl)
+
+@[simp]
+theorem mapStarAlgEquiv_symm (e : ∀ i, A i ≃⋆ₐ[ℂ] B i) :
+    (mapStarAlgEquiv e).symm = mapStarAlgEquiv (fun i ↦ (e i).symm) := (rfl)
+
+end NonUnital
+
+section Unital
+
+variable {ι : Type*} {A B C : ι → Type*} [∀ i, CStarAlgebra (A i)] [∀ i, Nontrivial (A i)]
+  [∀ i, CStarAlgebra (B i)] [∀ i, Nontrivial (B i)]
+
+/-- Coordinatewise application of a family of unital `⋆`-homomorphisms between nonzero unital
+C⋆-algebras on bounded products. -/
+noncomputable def mapStarAlgHom (φ : ∀ i, A i →⋆ₐ[ℂ] B i) : lp A ∞ →⋆ₐ[ℂ] lp B ∞ where
+  __ := mapNonUnitalStarAlgHom fun i ↦ (φ i).toNonUnitalStarAlgHom
+  map_one' := by ext i; exact map_one (φ i)
+  commutes' c := by ext i; exact (φ i).commutes c
+
+@[simp]
+theorem mapStarAlgHom_apply (φ : ∀ i, A i →⋆ₐ[ℂ] B i) (a : lp A ∞) (i : ι) :
+    mapStarAlgHom φ a i = φ i (a i) := (rfl)
+
+@[simp]
+theorem toNonUnitalStarAlgHom_mapStarAlgHom (φ : ∀ i, A i →⋆ₐ[ℂ] B i) :
+    (mapStarAlgHom φ).toNonUnitalStarAlgHom =
+      mapNonUnitalStarAlgHom (fun i ↦ (φ i).toNonUnitalStarAlgHom) := (rfl)
+
+@[simp]
+theorem mapStarAlgHom_id :
+    mapStarAlgHom (fun i ↦ StarAlgHom.id ℂ (A i)) = StarAlgHom.id ℂ (lp A ∞) := by ext; rfl
+
+theorem mapStarAlgHom_comp [∀ i, CStarAlgebra (C i)] [∀ i, Nontrivial (C i)]
+    (ψ : ∀ i, B i →⋆ₐ[ℂ] C i) (φ : ∀ i, A i →⋆ₐ[ℂ] B i) :
+    (mapStarAlgHom ψ).comp (mapStarAlgHom φ) = mapStarAlgHom (fun i ↦ (ψ i).comp (φ i)) := by
+  ext; rfl
+
+end Unital
+
+end Map
 
 end lp
 
