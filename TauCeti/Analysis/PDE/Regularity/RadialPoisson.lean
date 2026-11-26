@@ -60,8 +60,7 @@ exponent larger than `2 - d / q`, even for the Laplacian on the unit ball `B`.
 
 The weak equation is the divergence identity `∫ Δφ w = ∫ φ div ∇w` for the radial field
 `x ↦ ‖x‖ ^ (-γ) • x`, whose weak derivative is its classical one across the origin
-(`TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`,
-`TauCeti.hasWeakFDerivOn_norm_rpow_smul_self_of_neg_finrank_lt`) and whose divergence is
+(`TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`) and whose divergence is
 `(d - γ) ‖x‖ ^ (-γ)` (`TauCeti.trace_rpow_smul_id_add_smulRight`).
 
 ## References
@@ -286,7 +285,8 @@ theorem exists_memLp_forall_energyFormH1_eq_and_not_holderOnWith_gradient [Decid
   obtain ⟨u, hu, hgu⟩ := exists_w1p_radialSolution (by linarith) (by linarith) hb
   have hγd : γ ≠ Fintype.card ι := by linarith
   refine ⟨u, fun φ ↦ energyFormH1_eq_of_value_ae_eq (by linarith) hγd
-    (hasWeakFDerivOn_norm_rpow_smul_self (by linarith) Ω) hu φ, ?_⟩
+    (hasWeakFDerivOn_norm_rpow_smul_self
+      (by linarith [le_max_left (1 : ℝ) (Module.finrank ℝ (EuclideanSpace ℝ ι))]) Ω) hu φ, ?_⟩
   intro r hr hball C g hg hH
   -- On the ball, `g` agrees almost everywhere with the continuous radial gradient, hence
   -- everywhere, and the radial gradient is not `β`-Hölder.
@@ -425,8 +425,8 @@ theorem exists_forall_energyFormH1_eq_and_not_continuousAt_gradient [DecidableEq
   refine ⟨u, fun φ ↦ ?_, fun g hg ↦
     not_continuousAt_of_ae_eq_radialGradient_one hd h0 (hg.trans hgu)⟩
   rw [energyFormH1_eq_of_value_ae_eq (by norm_num) hγd
-    (hasWeakFDerivOn_norm_rpow_smul_self_of_neg_finrank_lt
-      (by rw [finrank_euclideanSpace]; linarith) Ω) hu φ]
+    (hasWeakFDerivOn_norm_rpow_smul_self
+      (by rw [finrank_euclideanSpace]; linarith [le_max_right (1 : ℝ) (Fintype.card ι)]) Ω) hu φ]
   simp only [Real.rpow_neg_one]
 
 /-! ### The Hölder exponent of the solution -/
@@ -519,8 +519,8 @@ private theorem exists_mem_w1p0Submodule_ball_one_radialSolution_add [DecidableE
     linarith
   rw [energyFormH1_add_const_left]
   exact energyFormH1_eq_of_value_ae_eq hγ2 (by linarith)
-    (hasWeakFDerivOn_norm_rpow_smul_self_of_neg_finrank_lt
-      (by rw [finrank_euclideanSpace]; linarith) Ω) hu₀ φ
+    (hasWeakFDerivOn_norm_rpow_smul_self
+      (by rw [finrank_euclideanSpace]; linarith [le_max_right (1 : ℝ) (Fintype.card ι)]) Ω) hu₀ φ
 
 /-- **The Hölder exponent `2 - d / q` of the global estimate for the Dirichlet problem is sharp.**
 Let `B` be the unit ball of `ℝᵈ`, `d ≥ 2`, let `0 < q < ∞`, and let `β > 0` with `β > 2 - d / q`.
