@@ -68,11 +68,9 @@ theorem exists_eq_comp_of_le_addWeight {i j : V} (p : Path i j)
     · obtain ⟨l, p₁, p₂, he, hn'⟩ := ih hp
       exact ⟨l, p₁, p₂.cons a, by simp only [Path.comp_cons, ← he], hn'⟩
     · have hn' : (p.cons a).addWeight wt = n := by
-        rw [Path.addWeight_cons]
-        exact Nat.le_antisymm
-          ((Nat.add_le_add_left (hwt a) _).trans
-            (Nat.succ_le_of_lt (Nat.lt_of_not_ge hp)))
-          (by simpa only [Path.addWeight_cons] using hn)
+        have ha := hwt a
+        rw [Path.addWeight_cons] at hn ⊢
+        omega
       exact ⟨_, p.cons a, Path.nil, (Path.comp_nil _).symm, hn'⟩
 
 /-- A monoid homomorphism sends the weight of a path to its weight for the composed arrow

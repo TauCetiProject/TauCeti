@@ -41,27 +41,22 @@ variable (k : Type w) (Q : Type u) [Quiver.{v} Q] [Fintype Q]
 variable [Ring k] in
 /-- The global preprojective relator has reverse-arrow degree one. -/
 theorem preprojectiveRelator_mem_gradeBy_reverseArrowWeight_one :
-    preprojectiveRelator k Q ∈ gradeBy k Symmetrify.reverseArrowWeight 1 := by
+    preprojectiveRelator k Q ∈ gradeBy k reverseArrowWeight 1 := by
   rw [preprojectiveRelator_def]
   refine Submodule.sum_mem _ fun i _ ↦ Submodule.sum_mem _ fun j _ ↦
     Submodule.sum_mem _ fun a _ ↦ Submodule.sub_mem _ ?_ ?_
-  · rw [headBacktrackElem_def]
+  all_goals
+    first | rw [headBacktrackElem_def] | rw [tailBacktrackElem_def]
     exact ofPath_mem_gradeBy_of_addWeight (by
       simp only [Path.addWeight_comp, Quiver.Hom.toPath, Path.addWeight_cons, Path.addWeight_nil,
-        zero_add, Symmetrify.reverseArrowWeight_of_map,
-        Symmetrify.reverseArrowWeight_reverse_of_map, add_zero])
-  · rw [tailBacktrackElem_def]
-    exact ofPath_mem_gradeBy_of_addWeight (by
-      simp only [Path.addWeight_comp, Quiver.Hom.toPath, Path.addWeight_cons, Path.addWeight_nil,
-        zero_add, Symmetrify.reverseArrowWeight_of_map,
-        Symmetrify.reverseArrowWeight_reverse_of_map, add_zero])
+        zero_add, reverseArrowWeight_of_map, reverseArrowWeight_reverse_of_map, add_zero])
 
 variable [CommRing k]
 
 /-- The preprojective relation ideal is homogeneous for the reverse-arrow grading. -/
 theorem isHomogeneous_preprojectiveIdeal_reverseArrowWeight :
     (preprojectiveIdeal k Q).asIdeal.IsHomogeneous
-      (gradeBy k (Q := Symmetrify Q) Symmetrify.reverseArrowWeight) := by
+      (gradeBy k (Q := Symmetrify Q) reverseArrowWeight) := by
   rw [preprojectiveIdeal_eq_span]
   refine TwoSidedIdeal.homogeneous_span _ fun x hx ↦ ?_
   obtain rfl := Set.mem_singleton_iff.mp hx
@@ -69,39 +64,37 @@ theorem isHomogeneous_preprojectiveIdeal_reverseArrowWeight :
 
 /-- Degree `n` of the reverse-arrow grading is the image of the doubled paths of weight `n`. -/
 noncomputable def preprojectiveReverseArrowGrade (n : ℕ) : Submodule k (preprojectiveAlgebra k Q) :=
-  TauCeti.GradedAlgebra.quotientPiece (gradeBy k Symmetrify.reverseArrowWeight)
+  TauCeti.GradedAlgebra.quotientPiece (gradeBy k reverseArrowWeight)
     (preprojectiveIdeal k Q).asIdeal n
 
 /-- A homogeneous element lands in the piece indexed by its reverse-arrow degree. -/
 theorem preprojectiveMk_mem_preprojectiveReverseArrowGrade {n : ℕ}
-    {y : pathAlgebra k (Symmetrify Q)} (hy : y ∈ gradeBy k Symmetrify.reverseArrowWeight n) :
+    {y : pathAlgebra k (Symmetrify Q)} (hy : y ∈ gradeBy k reverseArrowWeight n) :
     preprojectiveMk k Q y ∈ preprojectiveReverseArrowGrade k Q n := by
   rw [preprojectiveReverseArrowGrade, preprojectiveMk_apply]
   exact TauCeti.GradedAlgebra.mk_mem_quotientPiece _ _ hy
 
 /-- Membership in the reverse-arrow piece means being the class of a homogeneous element of
 the doubled path algebra of the same degree. -/
-@[simp]
 theorem mem_preprojectiveReverseArrowGrade_iff {n : ℕ} {x : preprojectiveAlgebra k Q} :
     x ∈ preprojectiveReverseArrowGrade k Q n ↔
-      ∃ y ∈ gradeBy k Symmetrify.reverseArrowWeight n, preprojectiveMk k Q y = x := by
+      ∃ y ∈ gradeBy k reverseArrowWeight n, preprojectiveMk k Q y = x := by
   simp only [preprojectiveReverseArrowGrade, TauCeti.GradedAlgebra.mem_quotientPiece_iff,
     preprojectiveMk_apply]
 
 /-- The preprojective algebra is the internal direct sum of its reverse-arrow graded pieces. -/
 theorem isInternal_preprojectiveReverseArrowGrade :
-    DirectSum.IsInternal (preprojectiveReverseArrowGrade k Q) := by
-  unfold preprojectiveReverseArrowGrade
-  exact TauCeti.GradedAlgebra.isInternal_quotientPiece (gradeBy k Symmetrify.reverseArrowWeight)
+    DirectSum.IsInternal (preprojectiveReverseArrowGrade k Q) :=
+  TauCeti.GradedAlgebra.isInternal_quotientPiece (gradeBy k (Q := Symmetrify Q) reverseArrowWeight)
     (preprojectiveIdeal k Q).asIdeal (isHomogeneous_preprojectiveIdeal_reverseArrowWeight k Q)
 
 /-- Multiplication adds reverse-arrow degrees, and the pieces form an internal direct sum.
 Introduce this structure locally to use the graded-algebra API. -/
 @[instance_reducible]
 noncomputable def preprojectiveReverseArrowGradedAlgebra :
-    GradedAlgebra (preprojectiveReverseArrowGrade k Q) := by
-  unfold preprojectiveReverseArrowGrade
-  exact TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece (gradeBy k Symmetrify.reverseArrowWeight)
+    GradedAlgebra (preprojectiveReverseArrowGrade k Q) :=
+  TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece
+    (gradeBy k (Q := Symmetrify Q) reverseArrowWeight)
     (preprojectiveIdeal k Q).asIdeal (isHomogeneous_preprojectiveIdeal_reverseArrowWeight k Q)
 
 attribute [local instance] preprojectiveReverseArrowGradedAlgebra
@@ -110,27 +103,27 @@ attribute [local instance] preprojectiveReverseArrowGradedAlgebra
 theorem preprojectiveReverseArrowGrade_eq_span_range (n : ℕ) :
     preprojectiveReverseArrowGrade k Q n =
       Submodule.span k (Set.range fun x :
-        {x : Quiver.TotalPath (Symmetrify Q) // x.2.2.addWeight Symmetrify.reverseArrowWeight = n} ↦
+        {x : Quiver.TotalPath (Symmetrify Q) // x.2.2.addWeight reverseArrowWeight = n} ↦
           preprojectiveMk k Q (ofPath x.val)) := by
   rw [preprojectiveReverseArrowGrade, TauCeti.GradedAlgebra.quotientPiece_eq_span_image _ _
-    (gradeBy_eq_span_range k Symmetrify.reverseArrowWeight n)]
+    (gradeBy_eq_span_range k reverseArrowWeight n)]
   simp only [Set.range_comp', preprojectiveMk_apply]
 
 /-- A path class belongs to the graded piece indexed by the number of reverse arrows it uses. -/
 theorem preprojectiveMk_ofPath_mem_preprojectiveReverseArrowGrade
     (x : Quiver.TotalPath (Symmetrify Q)) :
     preprojectiveMk k Q (ofPath x) ∈
-      preprojectiveReverseArrowGrade k Q (x.2.2.addWeight Symmetrify.reverseArrowWeight) :=
+      preprojectiveReverseArrowGrade k Q (x.2.2.addWeight reverseArrowWeight) :=
   preprojectiveMk_mem_preprojectiveReverseArrowGrade k Q
-    (ofPath_mem_gradeBy Symmetrify.reverseArrowWeight x)
+    (ofPath_mem_gradeBy reverseArrowWeight x)
 
 /-- The formal reverse of an original arrow has degree one. -/
 theorem preprojectiveMk_reverse_mem_preprojectiveReverseArrowGrade_one {i j : Q} (a : i ⟶ j) :
     preprojectiveMk k Q (ofArrow (Quiver.reverse (Symmetrify.of.map a))) ∈
       preprojectiveReverseArrowGrade k Q 1 := by
   apply preprojectiveMk_mem_preprojectiveReverseArrowGrade
-  simpa only [Symmetrify.reverseArrowWeight_reverse_of_map] using
-    (ofArrow_mem_gradeBy (k := k) Symmetrify.reverseArrowWeight
+  simpa only [reverseArrowWeight_reverse_of_map] using
+    (ofArrow_mem_gradeBy (k := k) reverseArrowWeight
       (Quiver.reverse (Symmetrify.of.map a)))
 
 /-- Degree zero consists exactly of the image of the original path algebra. -/
@@ -167,7 +160,7 @@ theorem preprojectiveReverseArrowGrade_mul (m n : ℕ) :
   -- The prefix contributes the right factor in the path-algebra product.
   obtain ⟨l, p₁, p₂, rfl, hn⟩ := p.exists_eq_comp_of_le_reverseArrowWeight
     (hp ▸ Nat.le_add_left n m)
-  have hm : p₂.addWeight Symmetrify.reverseArrowWeight = m := by
+  have hm : p₂.addWeight reverseArrowWeight = m := by
     simp only [Path.addWeight_comp, hn] at hp
     omega
   dsimp only
@@ -202,7 +195,7 @@ theorem preprojectiveReverseArrowIdeal_le_iff (I : TwoSidedIdeal (preprojectiveA
     exact h a
 
 private theorem preprojectiveMk_ofPath_mem_reverseArrowIdeal {i j : Symmetrify Q}
-    (p : Path i j) (hp : 0 < p.addWeight Symmetrify.reverseArrowWeight) :
+    (p : Path i j) (hp : 0 < p.addWeight reverseArrowWeight) :
     preprojectiveMk k Q (ofPath ⟨i, j, p⟩) ∈ preprojectiveReverseArrowIdeal k Q := by
   induction p with
   | nil => simp at hp
@@ -210,14 +203,12 @@ private theorem preprojectiveMk_ofPath_mem_reverseArrowIdeal {i j : Symmetrify Q
     rw [← ofArrow_mul_ofPath a p, map_mul]
     rcases a with a | a
     · apply TwoSidedIdeal.mul_mem_left _ _ _ (ih ?_)
-      have ha : Symmetrify.reverseArrowWeight (Q := Q) (Sum.inl a) = 0 :=
-        Symmetrify.reverseArrowWeight_of_map a
-      simpa only [Path.addWeight_cons, ha, add_zero] using hp
+      simpa only [Path.addWeight_cons, reverseArrowWeight_inl, add_zero] using hp
     · exact TwoSidedIdeal.mul_mem_right _ _ _
         (preprojectiveMk_reverse_mem_preprojectiveReverseArrowIdeal k Q a)
 
 /-- The ideal spanned by the formal reverses is the positive part of the reverse-arrow grading. -/
-theorem preprojectiveReverseArrowIdeal_asIdeal :
+theorem preprojectiveReverseArrowIdeal_asIdeal_eq_irrelevant :
     (preprojectiveReverseArrowIdeal k Q).asIdeal =
       (HomogeneousIdeal.irrelevant (preprojectiveReverseArrowGrade k Q)).toIdeal := by
   refine le_antisymm ?_ ((HomogeneousIdeal.toIdeal_irrelevant_le _).mpr fun n hn ↦ ?_)
@@ -258,8 +249,17 @@ theorem pathAlgebraToPreprojective_preprojectiveToPathAlgebra_eq_projZero
         (TwoSidedIdeal.mem_ker _).mpr ?_
       rw [preprojectiveToPathAlgebra_preprojectiveMk, symmetrifyRetraction_ofArrow_reverse_of]
     have hmem : y ∈ (preprojectiveReverseArrowIdeal k Q).asIdeal := by
-      rw [preprojectiveReverseArrowIdeal_asIdeal]
+      rw [preprojectiveReverseArrowIdeal_asIdeal_eq_irrelevant]
       exact HomogeneousIdeal.mem_irrelevant_of_mem _ (Nat.succ_pos n) hy
     rw [(TwoSidedIdeal.mem_ker _).mp (hker (TwoSidedIdeal.mem_asIdeal.mp hmem)), map_zero]
+
+/-- The reverse-arrow ideal is the kernel of the retraction onto the original path algebra. -/
+theorem preprojectiveReverseArrowIdeal_eq_ker :
+    preprojectiveReverseArrowIdeal k Q = TwoSidedIdeal.ker (preprojectiveToPathAlgebra k Q) := by
+  refine TwoSidedIdeal.ext fun x ↦ ?_
+  rw [← TwoSidedIdeal.mem_asIdeal, preprojectiveReverseArrowIdeal_asIdeal_eq_irrelevant,
+    HomogeneousIdeal.toIdeal_irrelevant, RingHom.mem_ker,
+    ← pathAlgebraToPreprojective_preprojectiveToPathAlgebra_eq_projZero, TwoSidedIdeal.mem_ker]
+  exact map_eq_zero_iff _ (pathAlgebraToPreprojective_injective k Q)
 
 end TauCeti

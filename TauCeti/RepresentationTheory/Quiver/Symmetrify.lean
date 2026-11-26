@@ -29,7 +29,7 @@ weight is attained by a prefix.
   has from `i` to `j` and from `j` to `i` together.
 * `TauCeti.symmetrify_of_obj`: the doubling inclusion is the identity on vertices.
 * `TauCeti.symmetrify_of_obj_bijective`: the doubling inclusion is bijective on vertices.
-* `Quiver.Symmetrify.reverseArrowWeight`: original arrows have weight zero, formal reverses one.
+* `TauCeti.reverseArrowWeight`: original arrows have weight zero, formal reverses one.
 * `Quiver.Path.addWeight_reverseArrowWeight_eq_zero_iff`: weight zero characterizes original paths.
 * `Quiver.Path.exists_eq_comp_of_le_reverseArrowWeight`: split a path at any reverse-arrow count.
 -/
@@ -38,7 +38,11 @@ public section
 
 universe u v
 
-namespace Quiver.Symmetrify
+namespace TauCeti
+
+open _root_.Quiver
+
+section ReverseArrowWeight
 
 variable {Q : Type u} [Quiver.{v} Q]
 
@@ -46,27 +50,42 @@ variable {Q : Type u} [Quiver.{v} Q]
 def reverseArrowWeight {i j : Symmetrify Q} (a : i ⟶ j) : ℕ :=
   Sum.elim (fun _ ↦ 0) (fun _ ↦ 1) a
 
--- Simplify the weight before `of.map` is reduced to the sum constructor.
-@[simp↓]
-theorem reverseArrowWeight_of_map {i j : Q} (a : i ⟶ j) :
-    reverseArrowWeight (of.map a) = 0 :=
+/-- The first summand of the doubled arrow type consists of weight-zero arrows. -/
+@[simp]
+theorem reverseArrowWeight_inl {i j : Symmetrify Q} (a : @Quiver.Hom Q _ i j) :
+    reverseArrowWeight (i := i) (j := j) (Sum.inl a) = 0 :=
   (rfl)
 
+/-- The second summand of the doubled arrow type consists of weight-one arrows. -/
+@[simp]
+theorem reverseArrowWeight_inr {i j : Symmetrify Q} (a : @Quiver.Hom Q _ j i) :
+    reverseArrowWeight (i := i) (j := j) (Sum.inr a) = 1 :=
+  (rfl)
+
+/-- An arrow included from the original quiver has weight zero. -/
+@[simp↓]
+theorem reverseArrowWeight_of_map {i j : Q} (a : i ⟶ j) :
+    reverseArrowWeight (Symmetrify.of.map a) = 0 :=
+  (rfl)
+
+/-- The formal reverse of an included arrow has weight one. -/
 @[simp↓]
 theorem reverseArrowWeight_reverse_of_map {i j : Q} (a : i ⟶ j) :
-    reverseArrowWeight (Quiver.reverse (of.map a)) = 1 :=
+    reverseArrowWeight (Quiver.reverse (Symmetrify.of.map a)) = 1 :=
   (rfl)
 
 /-- Every arrow of the doubled quiver has reverse-arrow weight at most one. -/
 theorem reverseArrowWeight_le_one {i j : Symmetrify Q} (a : i ⟶ j) :
     reverseArrowWeight a ≤ 1 := by
-  cases a <;> simp [reverseArrowWeight]
+  cases a <;> simp
 
-end Quiver.Symmetrify
+end ReverseArrowWeight
+
+end TauCeti
 
 namespace Quiver.Path
 
-open Symmetrify
+open Symmetrify TauCeti
 
 variable {Q : Type u} [Quiver.{v} Q]
 
@@ -81,10 +100,10 @@ theorem addWeight_reverseArrowWeight_eq_zero_iff {i j : Symmetrify Q} (p : Path 
       rcases a with a | a
       · intro hp
         have hw : p.addWeight reverseArrowWeight = 0 := by
-          simpa only [Path.addWeight_cons, reverseArrowWeight, Sum.elim_inl, add_zero] using hp
+          simpa only [Path.addWeight_cons, reverseArrowWeight_inl, add_zero] using hp
         obtain ⟨q, rfl⟩ := ih hw
         exact ⟨q.cons a, rfl⟩
-      · simp [reverseArrowWeight]
+      · simp
   · rintro ⟨q, rfl⟩
     refine ((@of Q _).addWeight_mapPath (@reverseArrowWeight Q _) q).trans ?_
     exact (Path.addWeight_const (0 : ℕ) q).trans (nsmul_zero _)
