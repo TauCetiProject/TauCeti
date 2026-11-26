@@ -66,7 +66,7 @@ finishes the proof.
   `[[0, D], [-D, 0]]` and `[[0, D'], [-D', 0]]` in two bases are equal.
 * `LinearMap.BilinForm.IsAlt.polarizationType`: **the type** `(d₁, …, d_g)` of a nondegenerate
   alternating form on a finite free `ℤ`-module of rank `2g`, with `IsAlt.polarizationType_eq`
-  (any positive divisibility chain giving the normal form is the type) and
+  (any nonnegative divisibility chain giving the normal form is the type) and
   `IsAlt.det_toMatrix_eq_prod_polarizationType_sq` (`det B = (d₁ ⋯ d_g)²`).
 
 The uniqueness over `ℤ` reduces to that of the Smith normal form
@@ -419,7 +419,8 @@ on a finite free `ℤ`-module `M` has, in a basis indexed by `Fin (finrank ℤ M
 Fin (finrank ℤ M / 2)`, the matrix `[[0, D], [-D, 0]]` with `D = diag(d₁, …, d_g)`, every `dᵢ > 0`
 and `d₁ ∣ ⋯ ∣ d_g`. This is `IsAlt.exists_basis_toMatrix_eq_fromBlocks_pos_of_nondegenerate` with
 `g` identified as `finrank ℤ M / 2`. -/
-theorem IsAlt.exists_basis_toMatrix_eq_fromBlocks_finrank (hB : B.IsAlt) (hnd : B.Nondegenerate) :
+private theorem IsAlt.exists_basis_toMatrix_eq_fromBlocks_finrank (hB : B.IsAlt)
+    (hnd : B.Nondegenerate) :
     ∃ (b : Basis (Fin (finrank ℤ M / 2) ⊕ Fin (finrank ℤ M / 2)) ℤ M)
       (d : Fin (finrank ℤ M / 2) → ℤ), (∀ i, 0 < d i) ∧ (∀ i j, i ≤ j → d i ∣ d j) ∧
         BilinForm.toMatrix b B = fromBlocks 0 (diagonal d) (-diagonal d) 0 := by
