@@ -216,6 +216,14 @@ theorem coe_frameEquiv (hΨΦ : ∀ z, (Ψ z).comp (Φ z) = ContinuousLinearMap.
     (frameEquiv hΦ hΦp hΦB hΦ'B hΨ hΨB hΨΦ hΦΨ : H1 V →L[ℝ] H1 W) = frameL hΦ hΦp hΦB hΦ'B :=
   (rfl)
 
+/-- As an `L²` jet, `frameEquiv` is the operator of the coefficient field `frameJetCoeff Φ`. -/
+@[simp]
+theorem coe_frameEquiv_apply (hΨΦ : ∀ z, (Ψ z).comp (Φ z) = ContinuousLinearMap.id ℝ V)
+    (hΦΨ : ∀ z, (Φ z).comp (Ψ z) = ContinuousLinearMap.id ℝ W) (x : H1 V) :
+    (frameEquiv hΦ hΦp hΦB hΦ'B hΨ hΨB hΨΦ hΦΨ x : Lp (W × W × W) 2 stripMeasure) =
+      jetOperator stripMeasure (frameJetCoeff Φ) (x : Lp (V × V × V) 2 stripMeasure) :=
+  (rfl)
+
 /-- The inverse of `frameEquiv` is reading sections in the inverse frame `Ψ`: as an `L²` jet, it is
 the operator of the coefficient field `frameJetCoeff Ψ`. -/
 @[simp]
