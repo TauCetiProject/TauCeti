@@ -39,6 +39,7 @@ noncomputable def signedDifferential : Module.End R (⨂[R] i, M i) :=
 
 /-- On a pure tensor, the signed differential applies the Koszul twist in the slots preceding
 the differentiated slot. -/
+@[simp]
 theorem signedDifferential_tprod (x : ∀ i, M i) :
     signedDifferential G d (PiTensorProduct.tprod R x) = ∑ i,
       PiTensorProduct.tprod R

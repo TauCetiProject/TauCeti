@@ -26,7 +26,9 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti
+namespace Subgroup
+
+open TauCeti
 
 universe u v w
 
@@ -45,6 +47,18 @@ noncomputable def smoothTensorInducedGradedResolutionSignedDifferential :
       (⟨A.obj.gradedResolutionPiece, A.obj.isInternal_gradedResolutionPiece⟩ :
         InternalGrading R A.obj.gradedResolutionModule ℤ))
     (fun _ ↦ A.obj.gradedResolutionDifferential)
+
+/-- On a pure tensor, the resolution differential sums over cosets, applying the Koszul twist
+in the slots preceding the differentiated slot. -/
+theorem smoothTensorInducedGradedResolutionSignedDifferential_tprod
+    (x : G ⧸ U → A.obj.gradedResolutionModule) :
+    smoothTensorInducedGradedResolutionSignedDifferential U hU s A
+      (PiTensorProduct.tprod R x) = ∑ i, PiTensorProduct.tprod R
+        (Function.update (fun j ↦ if j < i then
+          (⟨A.obj.gradedResolutionPiece, A.obj.isInternal_gradedResolutionPiece⟩ :
+            InternalGrading R A.obj.gradedResolutionModule ℤ).koszulTwist 1 (x j) else x j) i
+          (A.obj.gradedResolutionDifferential (x i))) :=
+  PiTensorProduct.signedDifferential_tprod _ _ x
 
 /-- The signed differential raises the total degree by one. -/
 theorem isHomogeneous_smoothTensorInducedGradedResolutionSignedDifferential :
@@ -84,4 +98,4 @@ theorem smoothTensorInducedGradedResolutionSignedDifferential_eq_differential
     (M := fun _ ↦ A.obj.gradedResolutionModule) _ _
     (fun _ ↦ A.obj.gradedResolutionModule_add_self_eq_zero hA)) z
 
-end TauCeti
+end Subgroup
