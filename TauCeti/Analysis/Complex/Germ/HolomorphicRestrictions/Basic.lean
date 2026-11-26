@@ -250,6 +250,26 @@ theorem HolomorphicFunctions.comp_inclusion_mem_holomorphicRestrictions {U : Ope
   rw [← holomorphicGerms.toContinuousMap_toGerm hs f]
   exact holomorphicGerms.toContinuousMap_mem_holomorphicRestrictions _
 
+/-- Restriction of holomorphic functions on an open set `U` to the algebra `O(s)` for `s ⊆ U`. -/
+def HolomorphicFunctions.restrictToHolomorphicRestrictions {U : Opens ℂ} (hs : s ⊆ U) :
+    holomorphicFunctions U →ₐ[ℂ] holomorphicRestrictions s :=
+  ((ContinuousMap.compRightAlgHom ℂ ℂ (ContinuousMap.inclusion hs)).comp
+    (holomorphicFunctions U).val).codRestrict _ (comp_inclusion_mem_holomorphicRestrictions hs)
+
+/-- Evaluation of a restricted holomorphic function uses the original value on `U`. -/
+@[simp]
+theorem HolomorphicFunctions.restrictToHolomorphicRestrictions_apply {U : Opens ℂ}
+    (hs : s ⊆ U) (f : holomorphicFunctions U) (x : s) :
+    (restrictToHolomorphicRestrictions hs f).val x = f.val (Set.inclusion hs x) := (rfl)
+
+/-- Restriction into `O(s)` is continuous in the compact-open topologies. -/
+@[fun_prop]
+theorem HolomorphicFunctions.continuous_restrictToHolomorphicRestrictions {U : Opens ℂ}
+    (hs : s ⊆ U) : Continuous (restrictToHolomorphicRestrictions hs) := by
+  unfold restrictToHolomorphicRestrictions
+  exact ((ContinuousMap.continuous_precomp (ContinuousMap.inclusion hs)).comp
+    continuous_subtypeVal).subtype_mk _
+
 /-- On an open set `U`, `O(U)` is the algebra of holomorphic functions on `U`. -/
 @[simp]
 theorem holomorphicRestrictions_coe_opens (U : Opens ℂ) :
