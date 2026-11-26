@@ -38,14 +38,22 @@ def uniqueContinuousMulEquiv : GL m A ≃ₜ* Aˣ :=
 variable {m A} in
 @[simp]
 theorem coe_uniqueContinuousMulEquiv_apply (g : GL m A) :
-    (uniqueContinuousMulEquiv m A g : A) = (g : Matrix m m A) default default :=
-  Matrix.uniqueContinuousMulEquiv_apply _
+    (uniqueContinuousMulEquiv m A g : A) = (g : Matrix m m A) default default := by
+  rw [uniqueContinuousMulEquiv, Units.mapContinuousMulEquiv_apply, Units.coe_map,
+    MonoidHom.coe_ofClass]
+  -- Mathlib has no lemma unfolding the coercion of a `ContinuousMulEquiv` to a `MulEquiv`; the
+  -- coerced map is definitionally the original one, so the matrix-level lemma applies.
+  exact Matrix.uniqueContinuousMulEquiv_apply _
 
 variable {m A} in
 @[simp]
 theorem coe_uniqueContinuousMulEquiv_symm_apply (u : Aˣ) :
-    ((uniqueContinuousMulEquiv m A).symm u : Matrix m m A) = of fun _ _ ↦ (u : A) :=
-  Matrix.uniqueContinuousMulEquiv_symm_apply _
+    ((uniqueContinuousMulEquiv m A).symm u : Matrix m m A) = of fun _ _ ↦ (u : A) := by
+  rw [uniqueContinuousMulEquiv, Units.symm_mapContinuousMulEquiv, Units.mapContinuousMulEquiv_apply,
+    Units.coe_map, MonoidHom.coe_ofClass]
+  -- Mathlib has no lemma unfolding the coercion of a `ContinuousMulEquiv` to a `MulEquiv`; the
+  -- coerced map is definitionally the original one, so the matrix-level lemma applies.
+  exact Matrix.uniqueContinuousMulEquiv_symm_apply _
 
 end GeneralLinearGroup
 

@@ -32,11 +32,7 @@ variable (m A : Type*) [Fintype m] [Unique m] [NonUnitalNonAssocSemiring A] [Top
 and topologically. -/
 def uniqueContinuousMulEquiv : Matrix m m A ≃ₜ* A where
   __ := uniqueEquiv
-  map_mul' M N := by
-    -- `Matrix.uniqueRingEquiv` uses the `Fintype` instance `Unique.fintype`; the given one agrees
-    -- with it up to `Subsingleton`.
-    cases Subsingleton.elim ‹Fintype m› Unique.fintype
-    exact uniqueRingEquiv.map_mul' M N
+  map_mul' M N := by simp [Matrix.mul_apply]
   continuous_toFun := (continuous_apply default).comp (continuous_apply default)
   continuous_invFun := continuous_pi fun _ ↦ continuous_pi fun _ ↦ continuous_id
 
