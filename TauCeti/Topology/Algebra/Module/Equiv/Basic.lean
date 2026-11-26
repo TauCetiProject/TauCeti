@@ -20,6 +20,10 @@ It also evaluates Mathlib's `ContinuousLinearEquiv.ulift : ULift M ≃L[R] M` an
 `ULift.down` and `ULift.up` (`ContinuousLinearEquiv.ulift_apply`,
 `ContinuousLinearEquiv.ulift_symm_apply`), as `ULift.moduleEquiv_apply` and
 `ULift.moduleEquiv_symm_apply` do for the linear equivalence.
+
+Finally, it records that continuous linear equivalences `e` and `e'` intertwine continuous linear
+maps `f` and `g`, `g ∘ e = e' ∘ f`, exactly when their inverses intertwine them the other way
+round, `f ∘ e⁻¹ = e'⁻¹ ∘ g` (`ContinuousLinearEquiv.comp_symm_eq_symm_comp_iff`).
 -/
 
 public section
@@ -56,5 +60,26 @@ variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Modu
   rfl
 
 end ULift
+
+section Intertwine
+
+variable {R N₁ N₂ : Type*} [Semiring R] [TopologicalSpace N₁] [AddCommMonoid N₁]
+  [TopologicalSpace N₂] [AddCommMonoid N₂] [Module R N₁] [Module R N₂]
+  {P₁ P₂ : Type*} [TopologicalSpace P₁] [AddCommMonoid P₁] [TopologicalSpace P₂]
+  [AddCommMonoid P₂] [Module R P₁] [Module R P₂]
+
+/-- Continuous linear equivalences `e : N₁ ≃L[R] N₂` and `e' : P₁ ≃L[R] P₂` intertwine
+`f : N₁ →L[R] P₁` and `g : N₂ →L[R] P₂` the other way round, `f ∘ e⁻¹ = e'⁻¹ ∘ g`, exactly when
+`g ∘ e = e' ∘ f`. -/
+theorem comp_symm_eq_symm_comp_iff (e : N₁ ≃L[R] N₂) (e' : P₁ ≃L[R] P₂) {f : N₁ →L[R] P₁}
+    {g : N₂ →L[R] P₂} :
+    f.comp (e.symm : N₂ →L[R] N₁) = (e'.symm : P₂ →L[R] P₁).comp g ↔
+      g.comp (e : N₁ →L[R] N₂) = (e' : P₁ →L[R] P₂).comp f := by
+  refine ⟨fun h ↦ ContinuousLinearMap.ext fun x ↦ ?_, fun h ↦ ContinuousLinearMap.ext fun y ↦ ?_⟩
+  · simpa using congr(e' ($h (e x))).symm
+  · apply e'.injective
+    simpa using congr($h (e.symm y)).symm
+
+end Intertwine
 
 end ContinuousLinearEquiv
