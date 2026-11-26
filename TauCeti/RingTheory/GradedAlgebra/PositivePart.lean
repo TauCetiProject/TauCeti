@@ -235,6 +235,11 @@ variable {𝒜}
 theorem mk_surjective : Function.Surjective (mk 𝒜) :=
   Submodule.mkQ_surjective _
 
+/-- The projection onto the indecomposables is the quotient map `Submodule.mkQ`. -/
+theorem mk_eq_mkQ :
+    mk 𝒜 = Submodule.mkQ ((positivePart 𝒜 * positivePart 𝒜).comap (positivePart 𝒜).subtype) :=
+  (rfl)
+
 /-- The projection onto the indecomposables is the quotient map. -/
 theorem mk_apply (a : positivePart 𝒜) : mk 𝒜 a = Submodule.Quotient.mk a :=
   (rfl)
@@ -489,7 +494,7 @@ variable (𝒜) in
 private theorem grading_piece (p : ℤ) : (grading 𝒜).piece p = homogeneousSubmodule 𝒜 p := by
   rw [grading, InternalGrading.quotient_piece, InternalGrading.submodule_piece,
     InternalGrading.ofDecomposition_piece, LinearMap.restrictScalars_self,
-    LinearMap.restrictScalars_self, homogeneousSubmodule, mk]
+    LinearMap.restrictScalars_self, homogeneousSubmodule, mk_eq_mkQ]
 
 /-- The indecomposables have no component of degree `p ≤ 0`. -/
 theorem homogeneousSubmodule_eq_bot {p : ℤ} (hp : p ≤ 0) : homogeneousSubmodule 𝒜 p = ⊥ := by
@@ -585,25 +590,29 @@ theorem homogeneousMap_mk (f : 𝒜 →ₐᵍ[R] ℬ) {p : ℤ} {a : positivePar
       mk ℬ ⟨f a, f.map_positivePart_le ⟨a, a.property, rfl⟩⟩ := by
   simp [homogeneousMap]
 
+/-- The map induced on the degree-`p` indecomposables is the restriction of the map induced on
+all indecomposables. -/
+theorem coe_homogeneousMap (f : 𝒜 →ₐᵍ[R] ℬ) (p : ℤ) (x : homogeneousSubmodule 𝒜 p) :
+    (homogeneousMap f p x : Indecomposables ℬ) =
+      map (f : A →ₐ[R] B).toLinearMap f.map_positivePart_le
+        f.map_positivePart_mul_positivePart_le x :=
+  LinearMap.coe_restrict_apply _ x
+
 /-- The identity induces the identity on the degree-`p` indecomposables. -/
 @[simp]
 theorem homogeneousMap_id (p : ℤ) :
     homogeneousMap (GradedAlgHom.id R 𝒜) p = LinearMap.id := by
-  ext ⟨x, hx⟩
-  obtain ⟨a, ha, rfl⟩ := mem_homogeneousSubmodule_iff.1 hx
-  simp [homogeneousMap_mk _ ha]
+  ext x
+  rw [coe_homogeneousMap, LinearMap.id_apply]
+  simp only [GradedAlgHom.id_toAlgHom, AlgHom.toLinearMap_id, map_id, LinearMap.id_apply]
 
 /-- The maps induced on the degree-`p` indecomposables are functorial. -/
 theorem homogeneousMap_comp (g : ℬ →ₐᵍ[R] 𝒞) (f : 𝒜 →ₐᵍ[R] ℬ) (p : ℤ) :
     homogeneousMap (g.comp f) p = homogeneousMap g p ∘ₗ homogeneousMap f p := by
-  ext ⟨x, hx⟩
-  obtain ⟨a, ha, rfl⟩ := mem_homogeneousSubmodule_iff.1 hx
-  have hf : homogeneousMap f p ⟨mk 𝒜 a, hx⟩ =
-      ⟨mk ℬ ⟨f a, f.map_positivePart_le ⟨a, a.property, rfl⟩⟩,
-        mk_mem_homogeneousSubmodule (Graded.map_mem f ha)⟩ :=
-    Subtype.ext (homogeneousMap_mk f ha)
-  rw [LinearMap.comp_apply, hf, homogeneousMap_mk _ ha,
-    homogeneousMap_mk g (a := ⟨f a, _⟩) (Graded.map_mem f ha)]
-  simp only [GradedAlgHom.comp_apply]
+  ext x
+  rw [LinearMap.comp_apply, coe_homogeneousMap, coe_homogeneousMap, coe_homogeneousMap,
+    ← LinearMap.comp_apply (map _ _ _)]
+  simp only [GradedAlgHom.comp_toAlgHom, AlgHom.comp_toLinearMap]
+  rw [Indecomposables.map_comp]
 
 end TauCeti.Indecomposables
