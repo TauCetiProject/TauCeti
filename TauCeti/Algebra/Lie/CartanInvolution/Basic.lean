@@ -40,11 +40,16 @@ derived algebra, the latter semisimple with negative definite Killing form.
   negative definite on `𝔨` and positive definite on `𝔭`.
 * `LieEquiv.IsCartanInvolution.isKilling`, `LieEquiv.IsCartanInvolution.isSemisimple`: a Lie
   algebra with a Cartan involution has nondegenerate Killing form, hence is finite-dimensional
-  (`LieEquiv.IsCartanInvolution.finiteDimensional`) and semisimple.
+  (`LieEquiv.IsCartanInvolution.finiteDimensional`) and semisimple; a nontrivial abelian Lie
+  algebra has none (`LieEquiv.IsCartanInvolution.not_isLieAbelian`).
 * `LieEquiv.IsCartanInvolution.orthogonal_fixedSubalgebra_eq_cartanP`: `𝔭` is the
   Killing-orthogonal complement of `𝔨`.
 * `LieEquiv.IsCartanInvolution.eq_of_fixedSubalgebra_eq`: a Cartan involution is determined by
   `𝔨`.
+* `LieEquiv.IsCartanInvolution.cartanP_eq_bot_iff`: `𝔭 = 0` exactly when the Killing form is
+  negative definite.
+* `LieEquiv.IsCartanInvolution.conj`: the transport `e ∘ θ ∘ e⁻¹` of a Cartan involution along an
+  isomorphism `e` is a Cartan involution.
 * `LieEquiv.IsCartanInvolution.isCompl_center_derivedSeries_fixedSubalgebra`,
   `LieEquiv.IsCartanInvolution.isSemisimple_derivedSeries_fixedSubalgebra`,
   `LieEquiv.IsCartanInvolution.killingForm_derivedSeries_fixedSubalgebra_self_neg`: `𝔨` is the
@@ -107,6 +112,17 @@ namespace IsCartanInvolution
 
 variable {θ : L ≃ₗ⁅K⁆ L}
 
+omit [IsStrictOrderedRing K] in
+/-- A Cartan involution is its own inverse. -/
+@[simp]
+theorem symm_eq (hθ : θ.IsCartanInvolution) : θ.symm = θ :=
+  LieEquiv.ext fun x ↦ θ.symm_apply_eq.mpr (hθ.involutive x).symm
+
+omit [IsStrictOrderedRing K] in
+/-- A Cartan involution is its own inverse, pointwise. -/
+theorem symm_apply (hθ : θ.IsCartanInvolution) (x : L) : θ.symm x = θ x := by
+  rw [hθ.symm_eq]
+
 /-- For a Cartan involution, `B(x, θ x) < 0` for every `x ≠ 0`. -/
 theorem killingForm_apply_apply_neg (hθ : θ.IsCartanInvolution) {x : L} (hx : x ≠ 0) :
     killingForm K L x (θ x) < 0 :=
@@ -163,6 +179,12 @@ theorem isSemisimple (hθ : θ.IsCartanInvolution) : IsSemisimple K L :=
   have := hθ.finiteDimensional
   inferInstance
 
+/-- A nontrivial abelian Lie algebra has no Cartan involution: its Killing form vanishes. -/
+theorem not_isLieAbelian [Nontrivial L] (hθ : θ.IsCartanInvolution) : ¬ IsLieAbelian L :=
+  fun _ ↦
+  have := hθ.isSemisimple
+  not_subsingleton L (LieAlgebra.subsingleton_of_hasTrivialRadical_lie_abelian K L)
+
 /-- The `-1`-eigenspace `𝔭` of a Cartan involution is the Killing-orthogonal complement of its
 fixed subalgebra `𝔨`. -/
 theorem orthogonal_fixedSubalgebra_eq_cartanP (hθ : θ.IsCartanInvolution) :
@@ -195,6 +217,27 @@ theorem eq_of_fixedSubalgebra_eq {θ' : L ≃ₗ⁅K⁆ L} (hθ : θ.IsCartanInv
     (fun k hk ↦ (LieHom.mem_fixedSubalgebra.mp ((LieSubalgebra.mem_toSubmodule _).mp hk)).trans
       (LieHom.mem_fixedSubalgebra.mp (h ▸ (LieSubalgebra.mem_toSubmodule _).mp hk)).symm)
     fun p hp' ↦ (mem_cartanP.mp hp').trans (mem_cartanP.mp (hp ▸ hp')).symm
+
+/-- For a Cartan involution, `𝔭 = 0` exactly when the Killing form is negative definite. -/
+theorem cartanP_eq_bot_iff (hθ : θ.IsCartanInvolution) :
+    θ.cartanP = ⊥ ↔ ∀ x : L, x ≠ 0 → killingForm K L x x < 0 := by
+  refine ⟨fun h x hx ↦ ?_, fun h ↦ eq_bot_iff.mpr fun x hx ↦ ?_⟩
+  · -- `x - θ x ∈ 𝔭 = 0`, so `θ x = x` and `B(x, x) = B(x, θ x) < 0`.
+    have hmem : x - θ x ∈ θ.cartanP := by
+      rw [mem_cartanP, map_sub, hθ.involutive x, neg_sub]
+    rw [h, Submodule.mem_bot, sub_eq_zero] at hmem
+    have := hθ.killingForm_apply_apply_neg hx
+    rwa [← hmem] at this
+  · by_contra hx₀
+    exact (hθ.killingForm_apply_self_pos_of_mem_cartanP hx hx₀).not_gt (h x hx₀)
+
+variable {L' : Type*} [LieRing L'] [LieAlgebra K L'] in
+/-- The transport `e ∘ θ ∘ e⁻¹` of a Cartan involution along an isomorphism `e` is a Cartan
+involution. -/
+theorem conj (hθ : θ.IsCartanInvolution) (e : L ≃ₗ⁅K⁆ L') : (e.conj θ).IsCartanInvolution := by
+  refine isCartanInvolution_iff.mpr ⟨involutive_conj hθ.involutive, fun x hx ↦ ?_⟩
+  rw [conj_apply, ← e.apply_symm_apply x, killingForm_of_equiv_apply, e.symm_apply_apply]
+  exact hθ.killingForm_apply_apply_neg (by simpa using hx)
 
 /-! ### The fixed subalgebra `𝔨` -/
 

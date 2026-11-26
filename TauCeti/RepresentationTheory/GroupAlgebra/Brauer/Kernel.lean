@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GroupAlgebra.Brauer.Projection
+import TauCeti.GroupTheory.PGroup
 
 /-!
 # The kernel of the Brauer homomorphism
@@ -25,12 +26,18 @@ orbit sum of `g` is the relative trace of `g` from its stabilizer `Q = P ⊓ C_G
 of `R[G]^P` whose support misses the orbit of `g`, and induction on the support writes `x` as a sum
 of such traces. This direction uses neither the characteristic nor that `P` is a `p`-group.
 
+Consequently `Br_P` preserves the augmentation of `P`-invariant elements,
+`ε(Br_P(x)) = ε(x)` (`TauCeti.augmentation_brauerProjection`): the part of `x` off `C_G(P)` is a
+`P`-invariant element with vanishing Brauer projection, so a sum of traces `Tr_Q^P(a)` from
+proper subgroups `Q < P`, each of augmentation `|P : Q| ε(a) = 0`.
+
 ## Main results
 
 * `TauCeti.brauerProjection_relTrace_eq_zero_of_not_le`: `Br_P` kills `Tr_Q^P(a)` whenever
   `P ≰ Q`.
 * `TauCeti.brauerProjection_relTrace_eq_zero`: `Br_P` kills `Tr_Q^P(a)` for `Q < P`.
 * `TauCeti.ker_brauerHom`: `ker Br_P = ∑_{Q < P} R[G]^P_Q`.
+* `TauCeti.augmentation_brauerProjection`: `ε(Br_P(x)) = ε(x)` for `x ∈ R[G]^P`.
 
 ## References
 
@@ -54,16 +61,9 @@ theorem brauerProjection_relTrace_eq_zero_of_not_le {p : ℕ} [Fact p.Prime] [Ch
     {Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex] (hP : IsPGroup p P) (hPQ : ¬ P ≤ Q)
     (a : conjInvariants R Q) :
     brauerProjection P (relTrace R Q P a : MonoidAlgebra R G) = 0 := by
-  obtain ⟨n, hn⟩ := hP.index (Q.subgroupOf P)
-  have hn0 : n ≠ 0 := by
-    rintro rfl
-    rw [pow_zero, Subgroup.index_eq_one, Subgroup.subgroupOf_eq_top] at hn
-    exact hPQ hn
-  have hp : ((Q.subgroupOf P).index : R) = 0 := by
-    rw [hn, Nat.cast_pow, CharP.cast_eq_zero, zero_pow hn0]
   ext c
-  rw [coeff_brauerProjection, coeff_relTrace_of_mem_centralizer a c.property, nsmul_eq_mul, hp,
-    zero_mul, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
+  rw [coeff_brauerProjection, coeff_relTrace_of_mem_centralizer a c.property, nsmul_eq_mul,
+    hP.natCast_index_subgroupOf_eq_zero hPQ, zero_mul, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
 
 /-- **The Brauer projection kills traces from proper subgroups.** For a `p`-subgroup `P` in
 characteristic `p` and `Q < P`, `Br_P(Tr_Q^P(a)) = 0`, since `|P : Q|` is a positive power of
@@ -170,5 +170,62 @@ theorem ker_brauerHom [Finite G] {p : ℕ} [Fact p.Prime] [CharP R p] {P : Subgr
     obtain ⟨a, rfl⟩ := (mem_relTraceIdeal_iff hQ.le).1 hy
     rw [RingHom.mem_ker, brauerHom_apply]
     exact brauerProjection_relTrace_eq_zero hP hQ a
+
+/-! ### Augmentations -/
+
+/-- **The Brauer projection preserves augmentations.** For a `p`-subgroup `P` of a finite group in
+characteristic `p` and `x ∈ R[G]^P`, the coefficients of `x` on `C_G(P)` have the same sum as all
+the coefficients of `x`. -/
+theorem augmentation_brauerProjection [Finite G] {p : ℕ} [Fact p.Prime] [CharP R p]
+    {P : Subgroup G} (hP : IsPGroup p P) {x : MonoidAlgebra R G} (hx : x ∈ conjInvariants R P) :
+    augmentation R (Subgroup.centralizer (P : Set G)) (brauerProjection P x) =
+      augmentation R G x := by
+  classical
+  -- Split `x = y + z`, with `y` the part of `x` supported on `C_G(P)` and `z` the rest.
+  set C := Subgroup.centralizer (P : Set G)
+  set y : MonoidAlgebra R G := mapDomainRingHom R C.subtype (brauerProjection P x)
+  set z : MonoidAlgebra R G := ofCoeff (x.coeff.filter (· ∉ C))
+  have hy : augmentation R G y = augmentation R C (brauerProjection P x) :=
+    RingHom.congr_fun (augmentation_comp_mapDomainRingHom R C.subtype) _
+  have hyc (g : G) : y.coeff g = if g ∈ C then x.coeff g else 0 :=
+    coeff_mapDomainRingHom_brauerProjection P x g
+  have hzc (g : G) : z.coeff g = if g ∈ C then 0 else x.coeff g := by
+    rw [coeff_ofCoeff, Finsupp.filter_apply]
+    split_ifs <;> rfl
+  have hxyz : x = y + z := by
+    ext g
+    rw [coeff_add, Finsupp.add_apply, hyc, hzc]
+    split_ifs <;> simp
+  -- `z` is `P`-invariant, since conjugation by `P` preserves `C`, and `Br_P(z) = 0`. Here `P`
+  -- centralizes `C`, hence normalizes it.
+  have hCconj {h : G} (hh : h ∈ P) (g : G) : h * g * h⁻¹ ∈ C ↔ g ∈ C :=
+    (Subgroup.mem_set_normalizer_iff.1
+      (Subgroup.centralizer_le_normalizer _ (Set.subset_centralizer_centralizer hh)) g).symm
+  have hzmem : z ∈ conjInvariants R P := by
+    rw [mem_conjInvariants_iff_coeff]
+    intro h hh g
+    rw [hzc, hzc, hCconj hh, mem_conjInvariants_iff_coeff.1 hx h hh]
+  have hBz : brauerProjection P z = 0 :=
+    brauerProjection_eq_zero_iff.2 fun c hc => by rw [hzc]; exact ite_eq_left hc
+  -- `z` is a sum of traces from proper subgroups, each of augmentation `|P : Q| ε(a) = 0`.
+  have hker := mem_iSup_relTraceIdeal_of_brauerProjection_eq_zero ⟨z, hzmem⟩ hBz
+  rw [iSup_subtype'] at hker
+  have h0 : augmentation R G z = 0 := by
+    refine Submodule.iSup_induction _ (motive := fun w : conjInvariants R P =>
+      augmentation R G (w : MonoidAlgebra R G) = 0) hker (fun Q w hw => ?_) (by simp)
+      (fun w w' hw hw' => by rw [Subalgebra.coe_add, map_add, hw, hw', add_zero])
+    obtain ⟨b, rfl⟩ := (mem_relTraceIdeal_iff _).1 hw
+    rw [augmentation_relTrace, ← Nat.cast_smul_eq_nsmul R,
+      hP.natCast_index_subgroupOf_eq_zero Q.property.not_ge, zero_smul]
+  rw [← hy]
+  conv_rhs => rw [hxyz]
+  rw [map_add, h0, add_zero]
+
+/-- A `P`-invariant element of nonzero augmentation has nonzero Brauer projection at the
+`p`-subgroup `P`. -/
+theorem brauerProjection_ne_zero_of_augmentation_ne_zero [Finite G] {p : ℕ} [Fact p.Prime]
+    [CharP R p] {P : Subgroup G} (hP : IsPGroup p P) {x : MonoidAlgebra R G}
+    (hx : x ∈ conjInvariants R P) (hε : augmentation R G x ≠ 0) : brauerProjection P x ≠ 0 :=
+  fun h => hε <| by rw [← augmentation_brauerProjection hP hx, h, map_zero]
 
 end TauCeti

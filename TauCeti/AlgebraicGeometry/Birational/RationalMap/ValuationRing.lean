@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Birational.RationalMap
 public import Mathlib.AlgebraicGeometry.ValuativeCriterion
+public import TauCeti.AlgebraicGeometry.Birational.RationalMap.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import TauCeti.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.Scheme.Normal
@@ -102,10 +103,6 @@ theorem PartialMap.SpecMap_stalkSpecializes_fromSpecStalkOfMem [IrreducibleSpace
   simp only [PartialMap.fromSpecStalkOfMem, Opens.SpecMap_stalkSpecializes_fromSpecStalkOfMem_assoc]
 
 /-! ### Rational maps defined everywhere -/
-
-/-- The domain of the representative `RationalMap.toPartialMap` is the domain of definition. -/
-theorem RationalMap.toPartialMap_domain [IsReduced X] [Y.IsSeparated] (f : X ⤏ Y) :
-    f.toPartialMap.domain = f.domain := (rfl)
 
 /-- A rational map from a reduced scheme to a separated scheme which is defined everywhere, as a
 morphism: its representative on its domain of definition `⊤`. -/

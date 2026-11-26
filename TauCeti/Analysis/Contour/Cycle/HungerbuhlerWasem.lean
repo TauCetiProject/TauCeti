@@ -102,7 +102,7 @@ theorem hasCauchyPV_analyticRemainder_add_residue_sum (decomp : PolarPartDecompo
             ∑ s ∈ S, TauCeti.Contour.windingNumber (⇑γ) γ.a γ.b s * residue f s) := fun γ hγ ↦
     decomp.hasCauchyPV_analyticRemainder_add_residue_sum_of_conditions hU h_ord hSU (h_imm γ hγ)
       γ.source_eq_target (hbase γ hγ)
-      (fun t ht ↦ isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)) (hA γ hγ)
+      (hCU.mapsTo_of_mem_support hγ) (hA γ hγ)
       (hB γ hγ)
   have hval : (∑ γ ∈ FreeAddCommGroup.support C, FreeAddCommGroup.coeff γ C •
         ((∫ t in γ.a..γ.b, deriv (⇑γ) t • decomp.analyticRemainder (γ t))
@@ -181,8 +181,8 @@ theorem hungerbuhlerWasem_residueTheorem_of_simple_poles (hU : IsOpen U) (S : Fi
     (h_simple : ∀ s ∈ S, s ∈ U → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     HasCauchyPV C f
       (2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s) := by
-  have hγU : ∀ γ ∈ FreeAddCommGroup.support C, ∀ t ∈ uIcc γ.a γ.b, γ t ∈ U := fun γ hγ t ht ↦
-    isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)
+  have hγU : ∀ γ ∈ FreeAddCommGroup.support C, MapsTo γ (uIcc γ.a γ.b) U := fun _ hγ ↦
+    hCU.mapsTo_of_mem_support hγ
   exact hungerbuhlerWasem_residueTheorem hU S hf hmero hCU h_imm hbase hnull
     (fun γ hγ ↦ conditionAprime_of_simple_poles (h_imm γ hγ) (hγU γ hγ) (by
       rcases le_total γ.a γ.b with h | h

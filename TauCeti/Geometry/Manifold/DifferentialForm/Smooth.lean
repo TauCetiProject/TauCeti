@@ -524,6 +524,12 @@ theorem IsSmoothForm.of_le [IsManifold I 1 M] {m n : WithTop ℕ∞} {φ : Rough
     (hφ : IsSmoothForm I n φ) (hmn : m ≤ n) : IsSmoothForm I m φ :=
   (isSmoothForm_def m φ).mpr (hφ.contMDiff.of_le hmn)
 
+/-- Multiplying a `C^n` form by a continuous scalar function gives a continuous (`C^0`) form. -/
+theorem IsSmoothForm.fun_smul_of_continuous [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) {f : M → ℝ} (hf : Continuous f) :
+    IsSmoothForm I 0 (fun x ↦ f x • φ x) :=
+  (hφ.of_le bot_le).fun_smul (contMDiff_zero_iff.2 hf)
+
 /-- **Smoothness of a form read in tangent trivializations**: for a finite-dimensional model
 space, a form is `C^n` exactly when, near each point `x`, its values on the frame
 `e.symmL y ∘ v` of the tangent trivialization `e` at `x`, for each fixed tuple `v` of model

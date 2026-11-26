@@ -135,6 +135,13 @@ def tangentHom (A : DomainDependentHomSection I M IP P n) (q : P × M) :
 theorem tangentHom_apply (A : DomainDependentHomSection I M IP P n) (q : P × M)
     (v : TangentSpace IP q.1) : A.tangentHom q v = A q v := (rfl)
 
+/-- Domain-dependent Hom sections are equal when their readings in the tangent spaces agree. -/
+theorem ext_tangentHom {A B : DomainDependentHomSection I M IP P n}
+    (h : ∀ q, A.tangentHom q = B.tangentHom q) : A = B :=
+  ContMDiffSection.ext fun q ↦ ContinuousLinearMap.ext fun v ↦
+    (tangentHom_apply A q v).symm.trans
+      ((DFunLike.congr_fun (h q) v).trans (tangentHom_apply B q v))
+
 @[simp]
 theorem tangentHom_zero (q : P × M) :
     (0 : DomainDependentHomSection I M IP P n).tangentHom q = 0 := (rfl)

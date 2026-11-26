@@ -8,7 +8,8 @@ module
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
 public import TauCeti.Algebra.Group.Subgroup.FiniteFiltration
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
+import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
 
 /-!
 # The higher ramification groups of a place
@@ -124,12 +125,6 @@ theorem ramificationGroup_def (i : ℕ) :
     ramificationGroup F P i =
       IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers i :=
   (rfl)
-
-/-- Finiteness of a place ramification group transports to the underlying local-ring
-ramification group. -/
-theorem finite_isLocalRing_ramificationGroup (i : ℕ) [Finite (ramificationGroup F P i)] :
-    Finite (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers i) := by
-  simpa [ramificationGroup_def] using ‹Finite (ramificationGroup F P i)›
 
 /-- **Membership in the `i`-th ramification group** (Stichtenoth, Definition 3.8.4): an
 automorphism lies in `G_i(P)` exactly when it moves every function integral at `P` by something of
@@ -347,22 +342,27 @@ theorem commutator_ramificationGroup_le (i : ℕ) :
 
 /-- **In characteristic `p` the successive quotients of the ramification filtration are killed by
 `p`** (Stichtenoth, Proposition 3.8.5): the `p`-th power of an element of `G_{i+1}(P)` lies in
-`G_{i+2}(P)`, so `G_{i+1}(P) / G_{i+2}(P)` is elementary abelian. -/
+`G_{i+2}(P)`, so `G_{i+1}(P) / G_{i+2}(P)` is elementary abelian. This is the case of the
+valuation ring `𝒪_P` of `TauCeti.IsLocalRing.pow_mem_ramificationGroup_of_charP`. -/
 theorem pow_mem_ramificationGroup_of_charP (p : ℕ) [CharP P.ResidueField p] (i : ℕ)
     {g : P.integers.decompositionSubgroup F} (hg : g ∈ ramificationGroup F P (i + 1)) :
     g ^ p ∈ ramificationGroup F P (i + 2) := by
   rw [ramificationGroup_def] at hg ⊢
-  simpa only [Nat.cast_add, Nat.cast_one, Nat.cast_ofNat, add_assoc, one_add_one_eq_two] using
-    IsLocalRing.pow_mem_ramificationGroup_add_one (S := P.integers) p (by push_cast; omega) hg
+  simpa [add_assoc, one_add_one_eq_two] using
+    IsLocalRing.pow_mem_ramificationGroup_of_charP p (by omega) hg
 
 /-- **In characteristic zero a finite first ramification group is trivial** (Stichtenoth,
-Proposition 3.8.5): each successive quotient embeds in a
-torsion-free additive group, so the filtration is constant from `1` on and meets in `1`. -/
+Proposition 3.8.5): each successive quotient is a torsion-free group, so the filtration is
+constant from `1` on and meets in `1`. This is the case of the valuation ring `𝒪_P` of
+`TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_charZero`. -/
 theorem ramificationGroup_one_eq_bot [Finite (ramificationGroup F P 1)]
     [CharZero P.ResidueField] :
     ramificationGroup F P 1 = ⊥ := by
-  rw [ramificationGroup_def] at *
-  exact IsLocalRing.ramificationGroup_one_eq_bot_of_charZero _ P.integers
+  have hfin := ‹Finite (ramificationGroup F P 1)›
+  rw [ramificationGroup_def] at hfin ⊢
+  refine IsLocalRing.ramificationGroup_eq_bot_of_charZero (by norm_num) (eq_bot_iff.mpr ?_)
+  rw [← iInf_ramificationGroup_eq_bot F P]
+  exact le_iInf fun n ↦ iInf_le _ (n : ℤ)
 
 end Structure
 

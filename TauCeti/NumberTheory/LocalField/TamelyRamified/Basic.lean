@@ -109,11 +109,10 @@ theorem natCard_lowerRamificationGroup_one [Module.Finite K L] [IsGalois K L] :
     Nat.card (lowerRamificationGroup K L 1) =
       ringChar 𝓀[K] ^ wildRamificationExponent K L := by
   have : CharP 𝓀[L] (ringChar 𝓀[K]) := Algebra.ringChar_eq 𝓀[K] 𝓀[L] ▸ ringChar.charP 𝓀[L]
-  have : Algebra.IsSeparable 𝓀[K] 𝓀[L] := Algebra.IsAlgebraic.isSeparable_of_perfectField
   rw [wildRamificationExponent_def, ← natCard_lowerRamificationGroup_zero K L,
     lowerRamificationGroup_def,
     lowerRamificationGroup_def]
-  exact IsDiscreteValuationRing.natCard_ramificationGroup_one _ 𝒪[K] 𝒪[L] _
+  exact natCard_ramificationGroup_one _ _
 
 variable (K L) in
 /-- **Wild inertia is trivial exactly in the tame case.** For a finite Galois extension `L/K` of
@@ -126,8 +125,7 @@ theorem lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified [Module.Finite K 
   have : CharP 𝓀[L] (ringChar 𝓀[K]) := Algebra.ringChar_eq 𝓀[K] 𝓀[L] ▸ ringChar.charP 𝓀[L]
   rw [isTamelyRamified_iff, ← natCard_lowerRamificationGroup_zero, lowerRamificationGroup_def,
     lowerRamificationGroup_def]
-  exact ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero_of_localField
-    _ _
+  exact ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero _ _
 
 section Indices
 

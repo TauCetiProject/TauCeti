@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Equivalence
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Over
-public import TauCeti.CategoryTheory.Sites.ExtensionByZero
+public import TauCeti.CategoryTheory.Sites.ExtensionByZero.Basic
 public import TauCeti.Topology.Sheaves.Cohomology.Instances
 public import Mathlib.Topology.Sheaves.Over
 import TauCeti.CategoryTheory.Sites.Over.Basic

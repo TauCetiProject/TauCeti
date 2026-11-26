@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.RamificationGroup
 public import Mathlib.GroupTheory.PGroup
+import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
 
 /-!
 # Positive ramification groups are p-groups
@@ -36,38 +37,54 @@ variable (F)
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- Every positive ramification group of a finite inertia group is a `p`-group in residue
-characteristic `p`. This includes the wild inertia group `G₁`. -/
+characteristic `p`. This includes the wild inertia group `G₁`. It is the case of the valuation ring
+`𝒪_P` of `TauCeti.IsLocalRing.isPGroup_ramificationGroup_of_eq_bot`. -/
 theorem isPGroup_ramificationGroup_succ (P : Place k F') (p i : ℕ)
     [CharP P.ResidueField p] [Finite (ramificationGroup F P 0)] :
     IsPGroup p (ramificationGroup F P (i + 1)) := by
-  have := finite_isLocalRing_ramificationGroup F P 0
-  have : Finite
-      (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers
-        ((i + 1 : ℕ) : ℤ)) :=
-    IsLocalRing.finite_ramificationGroup_of_le _ _ (Int.natCast_nonneg (i + 1))
-  rw [ramificationGroup_def]
-  exact IsLocalRing.isPGroup_ramificationGroup _ P.integers p (by push_cast; omega)
+  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot F P
+  have hN' := hN N le_rfl
+  rw [ramificationGroup_def] at hN' ⊢
+  exact IsLocalRing.isPGroup_ramificationGroup_of_eq_bot p (by omega) hN'
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- If the residue characteristic does not divide the order of inertia, every positive
 ramification group is trivial. In a finite Galois extension with separable residue extension,
 the order of inertia is the ramification index, so this is the tame case. -/
 theorem ramificationGroup_succ_eq_bot_of_not_dvd_card_inertia
-    (P : Place k F') (p i : ℕ) [CharP P.ResidueField p]
+    (P : Place k F') (p i : ℕ) [Fact p.Prime] [CharP P.ResidueField p]
+    [Finite (ramificationGroup F P 0)]
     (hp : ¬ p ∣ Nat.card (ramificationGroup F P 0)) :
     ramificationGroup F P (i + 1) = ⊥ := by
-  rw [ramificationGroup_def] at *
-  exact IsLocalRing.ramificationGroup_eq_bot_of_not_dvd_card_ramificationGroup_zero _ P.integers p
-    (by push_cast; omega) hp
+  let _ : Finite (ramificationGroup F P (i + 1)) :=
+    Finite.of_injective
+      (fun g : ramificationGroup F P (i + 1) ↦
+        (⟨g, ramificationGroup_antitone F P (Nat.zero_le (i + 1)) g.property⟩ :
+          ramificationGroup F P 0))
+      (fun _ _ h ↦ Subtype.ext (congrArg
+        (fun g : ramificationGroup F P 0 ↦ (g : P.integers.decompositionSubgroup F)) h))
+  have hcard := (isPGroup_ramificationGroup_succ F P p i).card_eq_or_dvd
+  have hdvd : Nat.card (ramificationGroup F P (i + 1)) ∣
+      Nat.card (ramificationGroup F P 0) :=
+    Subgroup.card_dvd_of_le (ramificationGroup_antitone F P (Nat.zero_le (i + 1)))
+  rcases hcard with hcard | hpdvd
+  · rw [Subgroup.eq_bot_iff_card]
+    exact hcard
+  · exact (hp (hpdvd.trans hdvd)).elim
 
 /-- Tame ramification has no wild inertia: in a finite Galois extension with separable
 residue extension, if the residue characteristic does not divide the ramification index,
 every positive ramification group is trivial. -/
 theorem ramificationGroup_succ_eq_bot_of_tame (P : Place k F') (p i : ℕ)
-    [CharP P.ResidueField p] [FiniteDimensional F F'] [IsGalois F F']
+    [Fact p.Prime] [CharP P.ResidueField p]
+    [FiniteDimensional F F'] [IsGalois F F']
     [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
     (hp : ¬ p ∣ ramificationIdx F P) :
     ramificationGroup F P (i + 1) = ⊥ := by
+  have : Finite (ramificationGroup F P 0) :=
+    Finite.of_injective
+      (fun g : ramificationGroup F P 0 ↦ (g : F' ≃ₐ[F] F'))
+      (fun _ _ h ↦ Subtype.ext (Subtype.ext h))
   apply ramificationGroup_succ_eq_bot_of_not_dvd_card_inertia F P p i
   rwa [ramificationGroup_zero, card_inertiaSubgroup F P]
 

@@ -38,6 +38,8 @@ structures produced by `almostComplexStructureAt`. Manifold-valued `J`-holomorph
   linear automorphism of the tangent spaces, a `C^n` section of the endomorphism bundle by
   `TauCeti.SmoothAlmostComplexStructure.contMDiff_tangentEquiv`, with inverse the automorphism of
   `-J` (`TauCeti.SmoothAlmostComplexStructure.neg_tangentEquiv`).
+* `TauCeti.SmoothAlmostComplexStructure.trans_symm_I_smul`: the change between two real frames of
+  a tangent space that carry multiplication by `i` to `J` is complex linear.
 * `TauCeti.SmoothAlmostComplexStructure.contMDiff_apply`: applying the structure to a `C^n` vector
   field along a `C^n` map gives a `C^n` vector field along that map.
 * `TauCeti.SmoothAlmostComplexStructure.mdifferentiableAt_apply`: the pointwise differentiable
@@ -229,6 +231,18 @@ theorem contMDiff_tangentEquiv {n : ℕ∞ω} [ENat.LEInfty n] (J : SmoothAlmost
         TotalSpace (E →L[ℝ] E) (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y))) := by
   simp_rw [tangentEquiv_toContinuousLinearMap]
   exact J.toEndomorphism.contMDiff.of_le ENat.LEInfty.out
+
+/-- **The change between two complex frames is complex linear.** Let `φ` and `φ'` be real-linear
+isomorphisms from a complex normed space `G` to the tangent space at `x` which carry
+multiplication by `i` to `J`. Then the change of frame `φ'⁻¹ ∘ φ` commutes with multiplication by
+`i`. -/
+theorem trans_symm_I_smul {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] {x : M}
+    {φ φ' : G ≃L[ℝ] TangentSpace I x} (hφ : ∀ v, φ (Complex.I • v) = J x (φ v))
+    (hφ' : ∀ v, φ' (Complex.I • v) = J x (φ' v)) (v : G) :
+    φ.trans φ'.symm (Complex.I • v) = Complex.I • φ.trans φ'.symm v := by
+  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply, hφ]
+  apply φ'.injective
+  rw [hφ', ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
 
 section ContMDiffApply
 

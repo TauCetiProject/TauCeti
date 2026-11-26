@@ -55,8 +55,8 @@ noncomputable abbrev twistedIndexFiltrationFunctor :
 /-- The step `p` of `twistedIndexFiltrationFunctor` is the subcomplex `F_p`. -/
 noncomputable def twistedIndexFiltrationFunctorObjIso (p : ℤ) :
     (m.twistedIndexFiltrationFunctor dM hM).obj p ≅ m.twistedIndexCochainComplex hM p :=
-  CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (m.twistedIndexCochainComplexι hM)
-    (m.twistedIndexSubobject_eq_mk hM) p
+  CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (m.twistedIndexCochainComplexι hM p)
+    (m.twistedIndexSubobject_eq_mk hM p)
 
 /-- The identification of a step of `twistedIndexFiltrationFunctor` with `F_p` is compatible with
 the inclusions into the twisted complex. -/
@@ -65,8 +65,8 @@ theorem twistedIndexFiltrationFunctorObjIso_hom_comp_indexFiltrationι (p : ℤ)
     (m.twistedIndexFiltrationFunctorObjIso dM hM p).hom ≫ m.twistedIndexCochainComplexι hM p =
       (CochainComplex.filtrationFunctorObjIso _ _ p).hom ≫
         (CochainComplex.filtrationEInt (m.twistedIndexSubobject hM) p).arrow :=
-  CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp _ _ (m.twistedIndexCochainComplexι hM)
-    (m.twistedIndexSubobject_eq_mk hM) p
+  CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp _ _ (m.twistedIndexCochainComplexι hM p)
+    (m.twistedIndexSubobject_eq_mk hM p)
 
 /-- The transition map `F_p ⟶ F_{p+1}` of `twistedIndexFiltrationFunctor` is the inclusion of
 subcomplexes `twistedIndexCochainComplexMap`. -/

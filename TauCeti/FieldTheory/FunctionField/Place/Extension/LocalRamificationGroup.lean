@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.IntegralBasis.TotallyRamified
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.RamificationGroup
-import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
+import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
 
 /-!
 # Function-field and local-ring ramification groups
@@ -112,8 +112,9 @@ theorem mem_ramificationGroup_iff_sub_mem_filtration {t : F'} (ht : P.ord t = 1)
     P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht)
   rw [← ramificationGroup_zero] at hg
   rw [ramificationGroup_def, Nat.cast_zero] at hg
-  rw [ramificationGroup_def, IsDiscreteValuationRing.mem_ramificationGroup_natCast_iff_smul_sub_mem
-    (P.restrict k F).integers htP hg, P.mem_maximalIdeal_pow_iff_coe_mem_filtration,
+  rw [ramificationGroup_def, IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem
+    (P.restrict k F).integers htP.maximalIdeal_eq hg,
+    P.mem_maximalIdeal_pow_iff_coe_mem_filtration,
     AddSubgroupClass.coe_sub, ValuationSubring.coe_decompositionSubgroup_smul,
     Nat.cast_add, Nat.cast_one]
 
