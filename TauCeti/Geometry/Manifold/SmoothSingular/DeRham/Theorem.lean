@@ -23,7 +23,8 @@ Let `M` be a Hausdorff `σ`-compact smooth manifold modelled on a finite-dimensi
 with corners. The de Rham theorem asserts that the de Rham homomorphism
 `TauCeti.deRhamHom I M k : H^k_dR(M) → Hᵏ(M; ℝ)` is bijective in every degree. This file proves
 the cases on which a Mayer–Vietoris induction over open sets starts, and the step of that
-induction for disjoint unions.
+induction for disjoint unions. The induction itself, and with it the de Rham theorem, is
+`TauCeti.bijective_deRhamHom` in `TauCeti.Geometry.Manifold.SmoothSingular.DeRham.Equiv`.
 
 * **Degree zero.** A degree-zero de Rham class is a locally constant function
   (`TauCeti.deRhamCohomologyZeroEquiv`), and a degree-zero singular class is determined by its
