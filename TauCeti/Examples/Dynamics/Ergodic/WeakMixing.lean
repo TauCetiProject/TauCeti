@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Dynamics.Ergodic.Action.WeakMixing
+public import TauCeti.Dynamics.Ergodic.Action.WeakMixing.Basic
 public import Mathlib.Probability.UniformOn
 
 /-!
