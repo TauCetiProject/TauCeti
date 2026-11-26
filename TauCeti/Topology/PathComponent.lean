@@ -24,6 +24,8 @@ gives local path connectedness of the subspace.
 * Instances making `↥(pathComponent x₀)` and `↥Set.univ` path connected, and `↥(pathComponent x₀)`
   locally path connected.
 * `TauCeti.pathComponentSelf`: a point viewed in its own path component.
+* `Homeomorph.pathComponentOfPathConnectedSpace`: a path-connected space is homeomorphic to the
+  path component of any of its points.
 * `ZerothHomotopy.mk_eq_mk_iff`: two points have the same path component exactly when they are
   joined by a path.
 * `Joined.eq_of_totallyDisconnectedSpace` and
@@ -36,6 +38,7 @@ gives local path connectedness of the subspace.
   points of its component (`TauCeti.PathComponentBasepoints.joined_point_mk`).
 * `Continuous.pathComponent_subset_preimage`: the preimage of a union of path components under a
   continuous map is a union of path components.
+* `IsClopen.pathComponent_subset`: a clopen set is a union of path components.
 * `Path.subtypeHomeomorphOfPathComponentSubset`: paths in a subspace containing the path component
   of their source are the paths in the ambient space. In particular the loop space of a path
   component, at any of its points, is the loop space of the ambient space at that point.
@@ -94,6 +97,23 @@ as subspaces. -/
 instance instLocallyPathConnectedSpaceSubtypePathComponent [LocallyPathConnectedSpace X] :
     LocallyPathConnectedSpace (pathComponent x₀) :=
   (IsOpen.pathComponent x₀).locallyPathConnectedSpace
+
+/-- In a path-connected space, the path component of any point is the whole space: the
+inclusion of the path component of `x₀` is a homeomorphism onto `X`, and this is its inverse. -/
+def _root_.Homeomorph.pathComponentOfPathConnectedSpace [PathConnectedSpace X] :
+    X ≃ₜ pathComponent x₀ :=
+  (Homeomorph.Set.univ X).symm.trans <|
+    Homeomorph.setCongr (Set.eq_univ_of_forall (PathConnectedSpace.joined x₀)).symm
+
+@[simp]
+theorem _root_.Homeomorph.coe_pathComponentOfPathConnectedSpace_apply [PathConnectedSpace X]
+    (x : X) : (Homeomorph.pathComponentOfPathConnectedSpace x₀ x : X) = x :=
+  (rfl)
+
+@[simp]
+theorem _root_.Homeomorph.coe_pathComponentOfPathConnectedSpace_symm_apply [PathConnectedSpace X]
+    (y : pathComponent x₀) : ((Homeomorph.pathComponentOfPathConnectedSpace x₀).symm y : X) = y :=
+  (rfl)
 
 /-- The basepoint of `X`, viewed as a point of its own path component. -/
 abbrev pathComponentSelf : (pathComponent x₀ : Set X) :=
@@ -185,6 +205,12 @@ theorem Continuous.pathComponent_subset_preimage {X Y : Type*} [TopologicalSpace
     (ht : ∀ y ∈ t, pathComponent y ⊆ t) {x : X} (hx : x ∈ f ⁻¹' t) :
     pathComponent x ⊆ f ⁻¹' t :=
   fun _ hz ↦ ht _ hx (hf.mapsTo_pathComponent x hz)
+
+/-- **A clopen set is a union of path components.** A clopen set contains the connected component,
+hence the path component, of each of its points. -/
+theorem IsClopen.pathComponent_subset {Y : Type*} [TopologicalSpace Y] {S : Set Y}
+    (hS : IsClopen S) : ∀ y ∈ S, pathComponent y ⊆ S := fun _ hy ↦
+  (pathComponent_subset_component _).trans (hS.connectedComponent_subset hy)
 
 namespace Path
 

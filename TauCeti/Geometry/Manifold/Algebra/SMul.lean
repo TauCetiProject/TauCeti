@@ -46,9 +46,10 @@ underlying real manifold.
 * `ContMDiffConstSMul.mdifferentiable_const_smul`, `ContMDiffSMul.mdifferentiable_const_smul`: the
   translations `y ↦ g • y` of an action by `C^n` maps, with `n ≠ 0`, are differentiable.
 * `ContMDiffConstSMul.mfderiv_const_smul_comp`, `ContMDiffConstSMul.mfderiv_inv_smul_mfderiv_smul`,
+  `ContMDiffConstSMul.mfderiv_smul_mfderiv_inv_smul`,
   `ContMDiffConstSMul.injective_mfderiv_const_smul`: the differentials of these translations
-  satisfy the chain rule `d(g •) ∘ d(h •) = d((g * h) •)`, the differential of the translation by
-  `g⁻¹` inverts that of the translation by `g`, and each of them is injective.
+  satisfy the chain rule `d(g •) ∘ d(h •) = d((g * h) •)`, the differentials of the translations
+  by `g` and `g⁻¹` are inverse to each other, and each of them is injective.
 * `ContMDiffSMul.prod_of_smul_eq`: an action on `M × N` through `C^n` maps to groups acting by
   `C^n` actions on `M` and on `N`, such as the factorwise action of a product group, is `C^n`.
 * `ContMDiffSMul.contMDiffOn_comp_smul_symm`: in the coordinates `(w, g) ↦ e (g • e.symm w)` of
@@ -205,6 +206,26 @@ theorem ContMDiffConstSMul.mfderiv_inv_smul_mfderiv_smul {𝕜 : Type*} [Nontriv
   -- `ContinuousLinearMap.id` is stated in the fibre at `x` but applied in the fibre at `1 • x`;
   -- the two fibres coincide only up to defeq, so `id_apply` closes the goal by `exact`, not `rw`.
   exact ContinuousLinearMap.id_apply v
+
+/-- For an action of a group by `C^n` maps, with `n ≠ 0`, the differential of the translation by
+`g` at `x` inverts the differential of the translation by `g⁻¹` at `y = g • x`. -/
+@[to_additive /-- For an additive action of an additive group by `C^n` maps, with `n ≠ 0`, the
+differential of the translation by `g` at `x` inverts the differential of the translation by `-g`
+at `y = g +ᵥ x`. -/]
+theorem ContMDiffConstSMul.mfderiv_smul_mfderiv_inv_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {G : Type*} [Group G] {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MulAction G M]
+    {n : ℕ∞ω} [ContMDiffConstSMul I n G M] (hn : n ≠ 0) (g : G) (x : M) {y : M}
+    (hy : g • x = y) (w : TangentSpace I y) :
+    mfderiv I I (fun z : M ↦ g • z) x (mfderiv I I (fun z : M ↦ g⁻¹ • z) y w) = w := by
+  subst hy
+  rw [mfderiv_const_smul_comp hn g g⁻¹ (g • x) (inv_smul_smul g x) (mul_inv_cancel g) w]
+  have hid : (fun z : M ↦ (1 : G) • z) = id := funext (one_smul G)
+  rw [hid, mfderiv_id]
+  -- `ContinuousLinearMap.id` is stated in the fibre at `g • x` but applied in the fibre at
+  -- `1 • g • x`; these fibres coincide only up to defeq, so `id_apply` closes it by `exact`.
+  exact ContinuousLinearMap.id_apply w
 
 /-- For an action of a group by `C^n` maps, with `n ≠ 0`, the differential of each translation is
 injective. -/

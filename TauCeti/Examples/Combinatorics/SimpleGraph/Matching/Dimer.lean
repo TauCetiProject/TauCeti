@@ -16,9 +16,11 @@ public import Mathlib.Data.ZMod.Basic
 * **The line.** On the nearest-neighbour graph of `ℤ` there are exactly two dimer
   configurations, the even edges `{2k, 2k + 1}` and the odd edges `{2k + 1, 2k + 2}`
   (`setOf_isDimerConfiguration_int`); with `2ℤ` acting by translations they form the subshift
-  `dimerSubshiftInt`. For `F = ∅` the two completion sets are the two different singletons, while
-  their sets of restrictions to `F` agree: the completion set itself is not determined by `ω` near
-  `F`, only its restrictions to `F` are (`dimerCompletionSet_empty_evenConfig_ne_oddConfig`,
+  `dimerSubshiftInt`, whose only points `evenPt` and `oddPt` (`eq_evenPt_or_eq_oddPt`) are
+  fixed by `2ℤ` (`smul_eq_self_dimerSubshiftInt`). For `F = ∅` the two completion sets are the
+  two different singletons, while their sets of restrictions to `F` agree: the completion set
+  itself is not determined by `ω` near `F`, only its restrictions to `F` are
+  (`dimerCompletionSet_empty_evenConfig_ne_oddConfig`,
   `image_restrict_dimerCompletionSet_empty_eq`).
 * **Local finiteness is needed for closedness.** On the vertices `c, d, x_n, y_n` (`n : ℕ`) with
   edges `c x_n`, `d y_n`, `x_n y_n`, the perfect matchings
@@ -60,6 +62,17 @@ def nnGraph : SimpleGraph R :=
 @[simp]
 theorem nnGraph_adj {a b : R} : (nnGraph R).Adj a b ↔ a ≠ b ∧ (b = a + 1 ∨ a = b + 1) :=
   fromRel_adj _ a b
+
+/-- The nearest-neighbour graph of a ring is locally finite: the neighbours of `v` lie in
+`{v - 1, v + 1}`. -/
+instance : (nnGraph R).LocallyFinite := fun v =>
+  ((toFinite {v - 1, v + 1}).subset fun w hw => by
+    rcases (nnGraph_adj.1 hw).2 with rfl | rfl <;> simp).fintype
+
+/-- Adjacency in the nearest-neighbour graph of a ring with decidable equality is decidable, so
+Mathlib's `SimpleGraph.fintypeEdgeSet` makes the edges of a finite ring a `Fintype`. -/
+instance [DecidableEq R] : DecidableRel (nnGraph R).Adj :=
+  inferInstanceAs (DecidableRel (SimpleGraph.fromRel fun a b : R => b = a + 1).Adj)
 
 variable [Nontrivial R]
 
@@ -110,6 +123,22 @@ theorem edge_injective (h2 : (2 : R) ≠ 0) : Injective (edge (R := R)) := by
   rcases this with ⟨h, -⟩ | ⟨rfl, h⟩
   · exact h
   · exact absurd (by simpa [add_assoc, one_add_one_eq_two] using congrArg (· - b) h) h2
+
+/-- When `2 ≠ 0`, `a ↦ {a, a + 1}` is a bijection onto the edges. -/
+theorem edge_bijective (h2 : (2 : R) ≠ 0) : Bijective (edge (R := R)) :=
+  ⟨edge_injective h2, exists_edge_eq⟩
+
+/-- When `2 ≠ 0`, a product over the edges of a finite ring is the product over `a` of the value
+at the edge `{a, a + 1}`. -/
+theorem prod_edgeSet [Fintype R] [Fintype (nnGraph R).edgeSet] (h2 : (2 : R) ≠ 0)
+    {M : Type*} [CommMonoid M] (f : (nnGraph R).edgeSet → M) :
+    ∏ e, f e = ∏ a, f (edge a) :=
+  (Fintype.prod_bijective _ (edge_bijective h2) _ _ fun _ => rfl).symm
+
+/-- The nearest-neighbour graph of an infinite ring has infinitely many edges. -/
+instance [Infinite R] : Infinite (nnGraph R).edgeSet :=
+  (infinite_edgeSet_iff_infinite_support.2 <| ((nnGraph R).support.eq_univ_of_forall fun a =>
+    ((nnGraph R).mem_support).2 ⟨_, nnGraph_adj_add_one a⟩) ▸ infinite_univ).to_subtype
 
 /-- When `2 ≠ 0`, the point chosen for the edge `{a, a + 1}` is `a`. -/
 theorem choose_exists_edge_eq (h2 : (2 : R) ≠ 0) (a : R) :
@@ -190,10 +219,6 @@ theorem setOf_isDimerConfiguration_int :
     obtain ⟨a, rfl⟩ := exists_edge_eq e
     simp [key a, h0, ← Int.not_odd_iff_even]
 
-instance : (nnGraph ℤ).LocallyFinite := fun v =>
-  ((toFinite {v - 1, v + 1}).subset fun w hw => by
-    rcases (nnGraph_adj.1 hw).2 with rfl | rfl <;> simp).fintype
-
 /-- Translation by `2` as an automorphism of the line. -/
 def shiftTwo : nnGraph ℤ ≃g nnGraph ℤ where
   toEquiv := Equiv.addRight 2
@@ -202,14 +227,47 @@ def shiftTwo : nnGraph ℤ ≃g nnGraph ℤ where
     simp only [Equiv.coe_addRight, nnGraph_adj]
     omega
 
+@[simp]
+theorem shiftTwo_apply (a : ℤ) : shiftTwo a = a + 2 :=
+  (rfl)
+
+/-- The inverse of `shiftTwo` is translation by `-2`. -/
+@[simp]
+theorem shiftTwo_inv_apply (a : ℤ) : shiftTwo⁻¹ a = a - 2 :=
+  (rfl)
+
 /-- The group `2ℤ`, written multiplicatively as `Multiplicative ℤ` with `ofAdd 1` acting as
 translation by `2`, acting on the edges of the line. -/
 instance instMulActionMultiplicativeIntEdgeSetNNGraph :
     MulAction (Multiplicative ℤ) (nnGraph ℤ).edgeSet :=
   MulAction.compHom _ (zpowersHom _ shiftTwo)
 
+/-- The powers of the translation by `2` are the translations by even numbers. -/
+@[simp]
+theorem zpow_shiftTwo_apply (n a : ℤ) : (shiftTwo ^ n) a = a + 2 * n := by
+  induction n using Int.induction_on generalizing a with
+  | zero => simp
+  | succ n ih =>
+    rw [zpow_add_one, RelIso.mul_apply, ih, shiftTwo_apply]
+    ring
+  | pred n ih =>
+    rw [zpow_sub_one, RelIso.mul_apply, ih, shiftTwo_inv_apply]
+    ring
+
+/-- `g : Multiplicative ℤ` moves an edge of the line by the automorphism `shiftTwo ^ toAdd g`. -/
+@[simp]
+theorem coe_smul_edgeSet (g : Multiplicative ℤ) (e : (nnGraph ℤ).edgeSet) :
+    ((g • e : (nnGraph ℤ).edgeSet) : Sym2 ℤ) = Sym2.map ⇑(shiftTwo ^ g.toAdd) e := by
+  rw [MulAction.compHom_smul_def, zpowersHom_apply, Iso.coe_smul_edgeSet]
+
+/-- `ofAdd n` moves the edge `{a, a + 1}` to `{a + 2n, a + 2n + 1}`. -/
+@[simp]
+theorem ofAdd_smul_edge (n a : ℤ) :
+    (Multiplicative.ofAdd n : Multiplicative ℤ) • edge a = edge (a + 2 * n) :=
+  Subtype.ext <| by simp [coe_edge, add_right_comm]
+
 /-- The subshift of dimer configurations of the line, for `2ℤ` acting by translations. -/
-def dimerSubshiftInt : Subshift (Multiplicative ℤ) (nnGraph ℤ).edgeSet Bool :=
+abbrev dimerSubshiftInt : Subshift (Multiplicative ℤ) (nnGraph ℤ).edgeSet Bool :=
   (nnGraph ℤ).dimerSubshift (Multiplicative ℤ)
     (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo))
 
@@ -219,6 +277,44 @@ theorem coe_dimerSubshiftInt :
   rw [← setOf_isDimerConfiguration_int]
   ext ω
   simp only [dimerSubshiftInt, SetLike.mem_coe, mem_dimerSubshift, mem_ofPred_eq]
+
+/-- The even edges as a point of `dimerSubshiftInt`. -/
+def evenPt : dimerSubshiftInt := ⟨evenConfig, mem_dimerSubshift.2 isDimerConfiguration_evenConfig⟩
+
+/-- The odd edges as a point of `dimerSubshiftInt`. -/
+def oddPt : dimerSubshiftInt := ⟨oddConfig, mem_dimerSubshift.2 isDimerConfiguration_oddConfig⟩
+
+/-- The configuration of `evenPt` is `evenConfig`. -/
+@[simp]
+theorem coe_evenPt : (evenPt : (nnGraph ℤ).edgeSet → Bool) = evenConfig :=
+  (rfl)
+
+/-- The configuration of `oddPt` is `oddConfig`. -/
+@[simp]
+theorem coe_oddPt : (oddPt : (nnGraph ℤ).edgeSet → Bool) = oddConfig :=
+  (rfl)
+
+/-- The two points of `dimerSubshiftInt` differ. -/
+theorem evenPt_ne_oddPt : evenPt ≠ oddPt := fun h =>
+  evenConfig_ne_oddConfig (congrArg Subtype.val h)
+
+/-- Every point of `dimerSubshiftInt` is `evenPt` or `oddPt`. -/
+theorem eq_evenPt_or_eq_oddPt (ω : dimerSubshiftInt) : ω = evenPt ∨ ω = oddPt := by
+  have := ω.property
+  rw [← SetLike.mem_coe, coe_dimerSubshiftInt] at this
+  simpa [Subtype.ext_iff] using this
+
+/-- **`2ℤ` fixes both points of `dimerSubshiftInt`**: translations by even numbers preserve
+parity. -/
+@[simp]
+theorem smul_eq_self_dimerSubshiftInt (g : Multiplicative ℤ) (ω : dimerSubshiftInt) :
+    g • ω = ω := by
+  apply Subtype.ext
+  funext e
+  obtain ⟨a, rfl⟩ := exists_edge_eq e
+  rw [Subshift.smul_apply, ← ofAdd_toAdd g⁻¹, ofAdd_smul_edge]
+  rcases eq_evenPt_or_eq_oddPt ω with rfl | rfl <;>
+    simp [Int.even_add, Int.odd_add, parity_simps]
 
 /-- At `F = ∅` the completion set of the even edges is the singleton of it. -/
 theorem dimerCompletionSet_empty_evenConfig :
@@ -389,5 +485,10 @@ theorem setOf_isDimerConfiguration_zmod_six :
   · have hpar : ∀ a : ZMod 6, decide ((a + 1).val % 2 = 1) = !decide (a.val % 2 = 1) := by
       decide
     rintro (rfl | rfl) a <;> simp only [hexConfig_edge, hpar] <;> simp
+
+/-- Both matchings of the hexagon are dimer configurations. -/
+theorem isDimerConfiguration_hexConfig (b : Bool) :
+    (nnGraph (ZMod 6)).IsDimerConfiguration (hexConfig b) :=
+  (Set.ext_iff.1 setOf_isDimerConfiguration_zmod_six _).2 (by cases b <;> simp)
 
 end TauCeti.Examples.DimerConfiguration

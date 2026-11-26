@@ -25,9 +25,13 @@ holds with any localization of `Hⁿ(X, M)` at the powers of `f` in place of `H�
 (`Scheme.Modules.cohomologyWithSupportSuccComplBasicOpenLinearEquivOfIsLocalizedModule`).
 For the structure sheaf on an affine scheme, in degree one, this is
 `H¹_{V(f)}(X, 𝒪) ≅ Γ(X, 𝒪)_f / Γ(X, 𝒪)`
-(`AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv`). For the
+(`AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv`), and for
+`X = Spec A` with any localization `B` of `A` away from `f` in place of `Γ(X, 𝒪)_f` it is `B / A`
+(`AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportOneComplBasicOpenSpecUnitAddEquiv`). For the
 affine line `Spec R[t]` with `Z` the origin this is `R[t, t⁻¹] / R[t]`
-(`TauCeti/Examples/AlgebraicGeometry/Cohomology/Support/DegreeOne.lean`).
+(`TauCeti/Examples/AlgebraicGeometry/Cohomology/Support/DegreeOne.lean`), and for a discrete
+valuation ring `R` with `f` a uniformizer it is `K / R` for the fraction field `K`
+(`TauCeti/Examples/AlgebraicGeometry/Cohomology/Support/DVR.lean`).
 
 ## Main declarations
 
@@ -40,6 +44,8 @@ affine line `Spec R[t]` with `Z` the origin this is `R[t, t⁻¹] / R[t]`
   with the specialization `cohomologyWithSupportSuccComplBasicOpenLinearEquiv` (`N = Hⁿ(X, M)_f`).
 * `AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv`: on an
   affine scheme, `H¹_{V(f)}(X, 𝒪) ≅ Γ(X, 𝒪)_f / Γ(X, 𝒪)`.
+* `AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportOneComplBasicOpenSpecUnitAddEquiv`: for a
+  localization `B` of a commutative ring `A` away from `f`, `H¹_{V(f)}(Spec A, 𝒪) ≅ B / A`.
 
 ## References
 
@@ -245,3 +251,71 @@ lemma cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv_symm_mk (y : Localiz
     LinearEquiv.apply_symm_apply]
 
 end AlgebraicGeometry.Scheme.Modules
+
+namespace AlgebraicGeometry.Scheme
+
+variable {A : Type u} [CommRing A] (f : A) (B : Type*) [CommRing B] [Algebra A B]
+  [IsLocalization.Away f B]
+
+/-- The ring isomorphism `Γ(Spec A, 𝒪) ≅ A` sends the localization of the global functions at `f`
+to any localization `B` of `A` away from `f`. -/
+noncomputable def localizationAwayΓSpecRingEquiv :
+    Localization.Away ((ΓSpecIso (.of A)).inv f) ≃+* B :=
+  IsLocalization.ringEquivOfRingEquiv _ _ (ΓSpecIso (.of A)).commRingCatIsoToRingEquiv
+    (show (Submonoid.powers ((ΓSpecIso (.of A)).inv f)).map _ = Submonoid.powers f by
+      rw [Submonoid.map_powers]
+      exact congrArg Submonoid.powers ((ΓSpecIso (.of A)).inv_hom_id_apply f))
+
+/-- `localizationAwayΓSpecRingEquiv` is compatible with the identification `Γ(Spec A, 𝒪) ≅ A`. -/
+lemma localizationAwayΓSpecRingEquiv_algebraMap (a : Γ(Spec (.of A), ⊤)) :
+    localizationAwayΓSpecRingEquiv f B (algebraMap _ _ a) =
+      algebraMap A B ((ΓSpecIso (.of A)).hom a) :=
+  IsLocalization.ringEquivOfRingEquiv_eq _ a
+
+/-- `localizationAwayΓSpecRingEquiv` carries the image of `Γ(Spec A, 𝒪)` onto the image of `A`. -/
+lemma map_range_localizationAwayΓSpecRingEquiv :
+    (LinearMap.range (Algebra.linearMap Γ(Spec (.of A), ⊤)
+        (Localization.Away ((ΓSpecIso (.of A)).inv f)))).toAddSubgroup.map
+        (localizationAwayΓSpecRingEquiv f B).toAddEquiv.toAddMonoidHom =
+      (algebraMap A B).toAddMonoidHom.range := by
+  ext y
+  simp only [AddSubgroup.mem_map, Submodule.mem_toAddSubgroup, LinearMap.mem_range,
+    Algebra.linearMap_apply, AddMonoidHom.mem_range]
+  constructor
+  · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
+    exact ⟨(ΓSpecIso (.of A)).hom a, (localizationAwayΓSpecRingEquiv_algebraMap f B a).symm⟩
+  · rintro ⟨r, rfl⟩
+    refine ⟨_, ⟨(ΓSpecIso (.of A)).inv r, rfl⟩, ?_⟩
+    refine (localizationAwayΓSpecRingEquiv_algebraMap f B _).trans ?_
+    exact congrArg _ ((ΓSpecIso (.of A)).inv_hom_id_apply r)
+
+namespace Modules
+
+/-- **Local cohomology of the structure sheaf of `Spec A` in degree one along `V(f)`.** For a
+localization `B` of a commutative ring `A` away from `f`, `H¹_{V(f)}(Spec A, 𝒪)` is the quotient
+`B / A` of `B` by the image of `A`. -/
+noncomputable def cohomologyWithSupportOneComplBasicOpenSpecUnitAddEquiv :
+    (unit (Spec (.of A))).cohomologyWithSupport
+        ((Spec (.of A)).basicOpen ((ΓSpecIso (.of A)).inv f)).compl ⊤ 1 ≃+
+      B ⧸ (algebraMap A B).toAddMonoidHom.range :=
+  (cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv _ _).toAddEquiv.trans
+    (QuotientAddGroup.congr _ _ (localizationAwayΓSpecRingEquiv f B).toAddEquiv
+      (map_range_localizationAwayΓSpecRingEquiv f B))
+
+/-- The identification of `H¹_{V(f)}(Spec A, 𝒪)` with `B / A` sends the class of an element of `B`
+back through `localizationAwayΓSpecRingEquiv` to
+`H¹_{V(f)}(Spec A, 𝒪) ≅ Γ(Spec A, 𝒪)_f / Γ(Spec A, 𝒪)`. -/
+lemma cohomologyWithSupportOneComplBasicOpenSpecUnitAddEquiv_symm_mk (y : B) :
+    (cohomologyWithSupportOneComplBasicOpenSpecUnitAddEquiv f B).symm (QuotientAddGroup.mk y) =
+      (cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv _ _).symm
+        (Submodule.Quotient.mk ((localizationAwayΓSpecRingEquiv f B).symm y)) :=
+  -- `rfl` rather than `rw [AddEquiv.symm_trans_apply, QuotientAddGroup.congr_symm,
+  -- QuotientAddGroup.congr_mk]`: the definition composes an equivalence of `Submodule` quotients
+  -- with one of `AddSubgroup` quotients, and the two quotient types (and `Submodule.Quotient.mk`
+  -- and `QuotientAddGroup.mk`) agree only definitionally, so after unfolding the definition the
+  -- goal is not type-correct at the transparency `rw` uses. Every step is an `rfl` lemma.
+  (rfl)
+
+end Modules
+
+end AlgebraicGeometry.Scheme

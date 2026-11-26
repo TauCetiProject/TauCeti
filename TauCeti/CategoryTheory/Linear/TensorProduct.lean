@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.EssentiallySmall
-public import TauCeti.CategoryTheory.Linear.DeligneProduct
+public import TauCeti.CategoryTheory.Linear.DeligneProduct.Basic
 
 /-!
 # Symmetry and opposites of linear tensor products

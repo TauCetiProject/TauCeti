@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Valuation.Basic
+public import Mathlib.RingTheory.Valuation.Integers
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
 import Mathlib.Topology.DiscreteSubset
@@ -45,6 +45,8 @@ Riemann surfaces.
   `TauCeti.RiemannSurface.MeromorphicFunction.order_neg_iff` and
   `TauCeti.RiemannSurface.MeromorphicFunction.order_eq_zero_iff`: the order is positive at the
   zeros, negative at the poles, and zero at the other points.
+* `TauCeti.RiemannSurface.MeromorphicFunction.mem_integer_toValuation_order_iff`: the valuation
+  integers of `ord_x` are the meromorphic functions without a pole at `x`.
 * `TauCeti.RiemannSurface.MeromorphicFunction.order_algebraMap`: nonzero constants have order `0`.
 * `TauCeti.RiemannSurface.MeromorphicFunction.setOf_order_eq_zero_mem_codiscrete`: a nonzero
   meromorphic function has order `0` away from a closed discrete set.
@@ -109,6 +111,12 @@ theorem order_neg_iff : order x f < 0 ↔ f x = ∞ := by
 @[simp]
 theorem order_nonneg_iff : 0 ≤ order x f ↔ f x ≠ ∞ := by
   rw [← not_lt, order_neg_iff]
+
+/-- The integers of the valuation `ord_x`, written multiplicatively, are the meromorphic functions
+without a pole at `x`. -/
+theorem mem_integer_toValuation_order_iff :
+    f ∈ (order x).toValuation.integer ↔ f x ≠ ∞ := by
+  simp [Valuation.mem_integer_iff, ← order_nonneg_iff, ← ofAdd_zero, ← toDual_zero]
 
 /-- The order of a meromorphic function at `x` is positive exactly when `x` is a zero. -/
 @[simp]

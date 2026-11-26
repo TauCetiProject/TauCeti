@@ -167,6 +167,17 @@ theorem _root_.ContMDiffSection.contMDiff_divergence {I : ModelWithCorners ℝ E
   TauCeti.Manifold.contMDiff_divergence (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp)
     (by simpa using X.contMDiff)
 
+/-- The divergence of a `C¹` vector field on a `C²` Riemannian manifold with `C¹` metric is
+continuous. -/
+theorem continuous_divergence {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {X : (x : M) → TangentSpace I x} (hX : ContMDiff I I.tangent 1 (T% X)) :
+    Continuous (divergence I X) :=
+  (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num) (by norm_num)
+    (by simpa using hX)).continuous
+
 /-- The scalar Hessian of `f` at `x` as a continuous bilinear form on the tangent space,
 `(v, w) ↦ ⟪∇_v grad f, w⟫`: the metric lowering of the Levi–Civita covariant derivative of the
 gradient. Its values are `TauCeti.Manifold.hessian` (`ModelWithCorners.hessianForm_apply`). -/

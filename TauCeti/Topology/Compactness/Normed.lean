@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Bounded
+import Mathlib.Analysis.Normed.Group.Real
 import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.UniformSpace.HeineCantor
 
@@ -31,6 +32,8 @@ It also gives a norm-ball version of the tube lemma for properties near a compac
   `V`, the coordinates of the points of `U` outside `V` are bounded.
 * `TauCeti.not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop`: a family whose values at
   one point of `S` have norms tending to infinity has images of `S` in no fixed compact set.
+* `TauCeti.tendsto_comap_fst_cocompact_of_eq_zero`: a map on `ℝ × X` vanishing for `|s| > R`
+  tends to zero as `|s| → ∞`, uniformly in the second coordinate.
 -/
 
 public section
@@ -113,5 +116,17 @@ theorem not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop {ι α E : Type
     ¬ ∃ K : Set E, IsCompact K ∧ ∀ i, MapsTo (u i) S K :=
   not_exists_isCompact_forall_mapsTo_of_tendsto_cocompact hz
     ((tendsto_norm_atTop_iff_cobounded.1 hu).mono_right Metric.cobounded_le_cocompact)
+
+/-- A map on `ℝ × X` vanishing for `|s| > R` tends to zero along both ends `|s| → ∞`, uniformly
+in the second coordinate. -/
+theorem tendsto_comap_fst_cocompact_of_eq_zero {X W : Type*} [Zero W] [TopologicalSpace W]
+    {u : ℝ × X → W} {R : ℝ} (hR : ∀ z, R < |z.1| → u z = 0) :
+    Tendsto u (comap Prod.fst (cocompact ℝ)) (𝓝 0) := by
+  refine tendsto_const_nhds.congr' ?_
+  have hev : ∀ᶠ z : ℝ × X in comap Prod.fst (cocompact ℝ), R < |z.1| :=
+    tendsto_comap.eventually ((tendsto_norm_cocompact_atTop.eventually_gt_atTop R).mono
+      fun s hs ↦ by rwa [Real.norm_eq_abs] at hs)
+  filter_upwards [hev] with z hz
+  exact (hR z hz).symm
 
 end TauCeti

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Basic
+import TauCeti.Geometry.Symplectic.JHolomorphic.Congruence
 
 /-!
 # J-holomorphic maps for varying almost complex structures
@@ -174,6 +175,13 @@ lemma IsJHolomorphicAt.fderiv_apply_commute {J : U → AlmostComplexStructure U}
     {J' : V → AlmostComplexStructure V} {f : U → V} {x v : U} (hf : IsJHolomorphicAt J J' f x) :
     fderiv ℝ f x (J x v) = J' (f x) (fderiv ℝ f x v) :=
   IsConstStructureJHolomorphicAt.fderiv_apply_commute hf
+
+/-- J-holomorphicity at a point only depends on the germ of the map there. -/
+lemma IsJHolomorphicAt.congr_of_eventuallyEq {J : U → AlmostComplexStructure U}
+    {J' : V → AlmostComplexStructure V} {f f₁ : U → V} {x : U} (hf : IsJHolomorphicAt J J' f x)
+    (h : f₁ =ᶠ[nhds x] f) : IsJHolomorphicAt J J' f₁ x := by
+  rw [IsJHolomorphicAt, h.eq_of_nhds]
+  exact IsConstStructureJHolomorphicAt.congr_of_eventuallyEq hf h
 
 /-- Pointwise J-holomorphicity implies J-holomorphicity within any set. -/
 lemma IsJHolomorphicAt.isJHolomorphicWithinAt {J : U → AlmostComplexStructure U}

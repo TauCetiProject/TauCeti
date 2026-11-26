@@ -107,8 +107,7 @@ theorem idempotentEquivalent_iff_exists_mem_elementarySubgroup_conj_fromBlocks_z
   rw [hε] at h
   have hf₀ := (isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff.1 h.isIdempotentElem_right).1
   have hf := (isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff.1 hf₀).2
-  exact h.trans ((hf.idempotentEquivalent_fromBlocks_zero_left ι).symm.trans
-    (hf₀.idempotentEquivalent_fromBlocks_zero_right (ι ⊕ κ)).symm).symm
+  exact h.trans (hf.idempotentEquivalent_fromBlocks_fromBlocks_zero ι (ι ⊕ κ))
 
 omit [DecidableEq ι] [DecidableEq κ] in
 /-- **Aligning an idempotent along a surjection.** Let `φ : A →+* B` be a surjective ring
