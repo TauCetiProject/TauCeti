@@ -399,13 +399,12 @@ theorem setOf_discriminantQuadraticMap_firstLattice_eq_zero :
     {a | firstLattice.discriminantQuadraticMap isEven_firstLattice a = 0} =
       {0, firstDualClass 6, firstDualClass 7} := by
   obtain ⟨h0, -, -, h06, h07, -⟩ := firstDualClass_pairwise_ne
-  have h : firstLattice.discriminantQuadraticMap isEven_firstLattice (firstDualClass 0) ≠ 0 := by
-    intro h
-    have := AddCircle.addOrderOf_period_div (p := (1 : ℚ)) (n := 2) two_pos
-    norm_num [← discriminantQuadraticMap_firstDualClass_zero, h] at this
+  have h : ((2⁻¹ : ℚ) : AddCircle (1 : ℚ)) ≠ 0 := by
+    rw [Ne, AddCircle.coe_eq_zero_iff_of_mem_Ico (by norm_num)]
+    norm_num
   ext a
   obtain ⟨k, rfl⟩ := bijective_vecCons_zero_firstDualClass.2 a
-  fin_cases k <;> simp [h, h0, h06, h07, -discriminantQuadraticMap_firstDualClass_zero]
+  fin_cases k <;> simp [h, h0, h06, h07]
 
 /-- The first ten-curve lattice has exactly three isotropic discriminant classes. -/
 theorem ncard_setOf_discriminantQuadraticMap_firstLattice_eq_zero :
@@ -640,13 +639,12 @@ theorem setOf_discriminantQuadraticMap_secondLattice_eq_zero :
     {a | secondLattice.discriminantQuadraticMap isEven_secondLattice a = 0} =
       {0, secondDualClass 6, secondDualClass 7} := by
   obtain ⟨h0, -, -, h06, h07, -⟩ := secondDualClass_pairwise_ne
-  have h : secondLattice.discriminantQuadraticMap isEven_secondLattice (secondDualClass 0) ≠ 0 := by
-    intro h
-    have := AddCircle.addOrderOf_period_div (p := (1 : ℚ)) (n := 2) two_pos
-    norm_num [← discriminantQuadraticMap_secondDualClass_zero, h] at this
+  have h : ((2⁻¹ : ℚ) : AddCircle (1 : ℚ)) ≠ 0 := by
+    rw [Ne, AddCircle.coe_eq_zero_iff_of_mem_Ico (by norm_num)]
+    norm_num
   ext a
   obtain ⟨k, rfl⟩ := bijective_vecCons_zero_secondDualClass.2 a
-  fin_cases k <;> simp [h, h0, h06, h07, -discriminantQuadraticMap_secondDualClass_zero]
+  fin_cases k <;> simp [h, h0, h06, h07]
 
 /-- The second ten-curve lattice has exactly three isotropic discriminant classes. -/
 theorem ncard_setOf_discriminantQuadraticMap_secondLattice_eq_zero :
