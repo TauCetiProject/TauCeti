@@ -440,28 +440,23 @@ theorem eq_zero_of_dysonSeriesLeft_apply_eq_self (omega : SymplecticForm V)
   simp only [zero_add, sub_zero]
   exact hv
 
-/-- **The return map at a nondegenerate orbit of the reversed Hamiltonian fixes no nonzero
-vector.** Let `x` be a
-one-periodic orbit of the reversed Hamiltonian `-H_{-t}` of a one-periodic, jointly `C²`
-Hamiltonian `H` whose suspended vector field is globally Lipschitz, such that `x(0)` is a
-nondegenerate fixed point of the time-one map of `H`. Then the return map of the linearized
-equation of `-H_{-t}` along `x` fixes no nonzero vector. Its linearization is
-`S'_t = -S_{-t}`, where `S_t` is that of `H` along the orbit `t ↦ x(-t)`, so `t ↦ ζ(-t)` turns a
-periodic solution of `ζ' = S'_t ζ` into one of `ζ' = S_t ζ`. -/
-theorem eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self (omega : SymplecticForm V)
-    {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
-    (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V} (hxp : Periodic x 1)
-    (hx : ∀ t, HasDerivAt x (omega.hamiltonianVectorField (fun y ↦ -H (-t) y) (x t)) t)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (omega.timeDependentHamiltonianFlow H hX 0 1) (x 0))
-    {v : V} (hv : dysonSeriesLeft
+/-- **Fixed vectors of the linearized return map of the reversed Hamiltonian.** For a jointly `C²`,
+one-periodic Hamiltonian `H` and a continuous one-periodic loop `x`, any fixed vector of the
+linearized return map of `-H_{-t}` along `x` is also fixed by the linearized return map of `H`
+along `t ↦ x(-t)`: the linearization is `S'_t = -S_{-t}`, so `t ↦ Ψ'(-t) v` turns a periodic
+solution of `ζ' = S'_t ζ` into one of `ζ' = S_t ζ` starting at `v`. -/
+theorem dysonSeriesLeft_fderiv_hamiltonianVectorField_apply_eq_self_of_reverse
+    (omega : SymplecticForm V) {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (uncurry H))
+    (hHp : Periodic H 1) {x : ℝ → V} (hxc : Continuous x) (hxp : Periodic x 1) {v : V}
+    (hv : dysonSeriesLeft
       (fun t ↦ fderiv ℝ (omega.hamiltonianVectorField (fun y ↦ -H (-t) y)) (x t)) 1 v = v) :
-    v = 0 := by
-  have hy := omega.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse hx
+    dysonSeriesLeft
+      (fun t ↦ fderiv ℝ (omega.hamiltonianVectorField (H t)) (x (-t))) 1 v = v := by
   set S : ℝ → V →L[ℝ] V := fun t ↦ fderiv ℝ (omega.hamiltonianVectorField (H t)) (x (-t))
   set S' : ℝ → V →L[ℝ] V :=
     fun t ↦ fderiv ℝ (omega.hamiltonianVectorField (fun y ↦ -H (-t) y)) (x t)
-  have hSc : Continuous S := omega.continuous_fderiv_hamiltonianVectorField_comp hH
-    (continuous_iff_continuousAt.2 fun t ↦ (hy t).continuousAt)
+  have hSc : Continuous S :=
+    omega.continuous_fderiv_hamiltonianVectorField_comp hH (hxc.comp continuous_neg)
   -- The linearization of the reversed Hamiltonian is `S'_t = -S_{-t}`.
   have hS' (t : ℝ) : S' t = -S (-t) := by
     have hX' : omega.hamiltonianVectorField (fun y ↦ -H (-t) y) =
@@ -478,13 +473,30 @@ theorem eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self (omega : SymplecticForm
   set ζ : ℝ → V := fun t ↦ dysonSeriesLeft S' (-t) v
   have hζ (t : ℝ) : HasDerivAt ζ (S t (ζ t)) t := by
     have h := (hasDerivAt_dysonSeriesLeft_apply hS'c v (-t)).scomp t (hasDerivAt_neg t)
-    rw [hS', neg_neg, neg_one_smul, neg_apply, neg_neg] at h
-    exact h
+    rwa [hS', neg_neg, neg_one_smul, neg_apply, neg_neg] at h
   have hζp : Periodic ζ 1 := ((periodic_dysonSeriesLeft_apply_iff hS'c hS'p v).2 hv).comp_neg
   have hζ0 : ζ 0 = v := by simp [ζ, dysonSeriesLeft_zero]
-  refine omega.eq_zero_of_dysonSeriesLeft_apply_eq_self hX hH hy
-    (by simpa only [neg_zero] using hnd) ?_
   rw [← hζ0, ← eq_dysonSeriesLeft_apply hSc hζ, ← zero_add (1 : ℝ), hζp 0]
+
+/-- **The return map at a nondegenerate orbit of the reversed Hamiltonian fixes no nonzero
+vector.** Let `x` be a
+one-periodic orbit of the reversed Hamiltonian `-H_{-t}` of a one-periodic, jointly `C²`
+Hamiltonian `H` whose suspended vector field is globally Lipschitz, such that `x(0)` is a
+nondegenerate fixed point of the time-one map of `H`. Then the return map of the linearized
+equation of `-H_{-t}` along `x` fixes no nonzero vector. -/
+theorem eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self (omega : SymplecticForm V)
+    {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V} (hxp : Periodic x 1)
+    (hx : ∀ t, HasDerivAt x (omega.hamiltonianVectorField (fun y ↦ -H (-t) y) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (omega.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    {v : V} (hv : dysonSeriesLeft
+      (fun t ↦ fderiv ℝ (omega.hamiltonianVectorField (fun y ↦ -H (-t) y)) (x t)) 1 v = v) :
+    v = 0 :=
+  omega.eq_zero_of_dysonSeriesLeft_apply_eq_self hX hH
+    (omega.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse hx)
+    (by simpa only [neg_zero] using hnd)
+    (omega.dysonSeriesLeft_fderiv_hamiltonianVectorField_apply_eq_self_of_reverse hH hHp
+      (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt) hxp hv)
 
 end Nondegenerate
 

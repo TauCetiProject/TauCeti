@@ -42,10 +42,34 @@ from a jointly `C^n` family `f t` gives a family that is jointly `C^n` in `(t, p
 
 A compactly supported `C³` function on `E × ℝ` has compactly supported spatial first and second
 derivative fields and a time derivative field of lower smoothness, computing its slice derivatives
-at every point (`ContDiff.exists_derivative_fields_of_hasCompactSupport`).
+at every point (`ContDiff.exists_derivative_fields_of_hasCompactSupport`). For a jointly `C^n` map
+`uncurry f`, each fixed-parameter slice `f x` is `C^n` (`ContDiff.of_uncurry_left`), and negating
+the first parameter preserves joint `C^n` regularity (`ContDiff.uncurry_comp_neg`).
 -/
 
 public section
+
+namespace ContDiff
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {n : WithTop ℕ∞}
+
+/-- **Fixed-parameter slice of a jointly `C^n` map**: if `uncurry f` is `C^n`, then each slice
+`f x` is `C^n`. -/
+theorem of_uncurry_left {f : E → G → F} (hf : ContDiff 𝕜 n (Function.uncurry f)) (x : E) :
+    ContDiff 𝕜 n (f x) :=
+  hf.comp (contDiff_prodMk_right x)
+
+/-- **Negating the first parameter of a jointly `C^n` map**: if `uncurry f` is `C^n`, then
+`uncurry (fun x y ↦ f (-x) y)` is `C^n`. -/
+theorem uncurry_comp_neg {f : E → G → F} (hf : ContDiff 𝕜 n (Function.uncurry f)) :
+    ContDiff 𝕜 n (Function.uncurry fun x y ↦ f (-x) y) :=
+  hf.comp (contDiff_fst.neg.prodMk contDiff_snd)
+
+end ContDiff
 
 namespace TauCeti
 

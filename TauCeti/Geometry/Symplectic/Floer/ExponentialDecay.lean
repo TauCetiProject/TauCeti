@@ -220,6 +220,31 @@ theorem exists_forall_norm_sub_le_mul_integral_of_nondegenerate (hH : ContDiff �
     nlinarith
   exact fun t ht ↦ (hmax ht).trans hm
 
+/-- **Isolation of a `1`-periodic orbit from linearized nondegeneracy.** A `1`-periodic orbit `x` of
+a `C²` Hamiltonian `H` whose linearized return map fixes no nonzero vector is isolated among
+`1`-periodic orbits of `H`, without requiring a global flow on `V`. -/
+theorem exists_pos_forall_periodic_eq_of_nondegenerate (hH : ContDiff ℝ 2 (uncurry H))
+    (hxper : Periodic x 1) (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : ∀ v, dysonSeriesLeft (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = v →
+      v = 0) :
+    ∃ δ > 0, ∀ y : ℝ → V, Periodic y 1 →
+      (∀ t, HasDerivAt y (ω.hamiltonianVectorField (H t) (y t)) t) →
+      (∀ t, dist (y t) (x t) < δ) → y = x := by
+  obtain ⟨δ, hδ, C, _, hclose⟩ := exists_forall_norm_sub_le_mul_integral_of_nondegenerate hH hx
+    (by simpa using hxper 0) hnd
+  refine ⟨δ, hδ, fun y hyper hy hyx ↦ funext fun t ↦ ?_⟩
+  have hyc : Continuous y := continuous_iff_continuousAt.2 fun s ↦ (hy s).continuousAt
+  have hγ' : Continuous fun s ↦ ω.hamiltonianVectorField (H s) (y s) :=
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (hH.of_le one_le_two)).continuous.comp
+      (continuous_id.prodMk hyc)
+  have hle := hclose hγ' hy (by simpa using hyper 0)
+    (fun s _ ↦ by rw [← dist_eq_norm]; exact (hyx s).le)
+  simp only [sub_self, norm_zero, intervalIntegral.integral_zero, mul_zero] at hle
+  obtain ⟨t', ht', heq⟩ := (hyper.sub hxper).exists_mem_Ico₀ one_pos t
+  have h0 : y t' - x t' = 0 := norm_le_zero_iff.1 (hle t' (Ico_subset_Icc_self ht'))
+  have heq' : y t - x t = y t' - x t' := by simpa only [Pi.sub_apply] using heq
+  exact sub_eq_zero.1 (heq'.trans h0)
+
 /-- **The action near a nondegenerate orbit.** Let `H` be a `C²` Hamiltonian and let `x` be an
 orbit of its Hamiltonian vector field with `x 1 = x 0`, nondegenerate in the sense that the
 propagator `Ψ` of the linearized equation `ζ' = dX_{H_t}(x(t)) ζ` has no nonzero fixed vector at

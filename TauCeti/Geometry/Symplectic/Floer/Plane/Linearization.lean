@@ -18,6 +18,7 @@ import TauCeti.Topology.Instances.Real.TSupport
 import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Topology.MetricSpace.Pseudo.Basic
@@ -93,7 +94,8 @@ which the counts of PSS planes rest. The target is a symplectic vector space thr
 public section
 
 open Filter Function Set MeasureTheory
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart
+  isOpen_setOf_lt_norm_equivRealProdCLM_symm)
 open scoped Topology NNReal Manifold Real
 
 namespace TauCeti.SymplecticForm
@@ -938,8 +940,6 @@ theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearizat
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u ξ z‖ ^ 2 := by
-  have hΩ : IsOpen {z : ℝ × ℝ | r < ‖Complex.equivRealProdCLM.symm z‖} :=
-    isOpen_lt continuous_const (by fun_prop)
   -- The end converges exponentially fast in `C¹` to the stationary cylinder of an orbit `x`.
   obtain ⟨x, hxper, hx, κ, hκ, A, hdecay⟩ :=
     exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePerturbation
@@ -955,24 +955,25 @@ theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearizat
       (hdecay.mono fun s hs t _ ↦ by
         rw [dist_eq_norm]
         exact (le_add_of_nonneg_right (norm_nonneg _)).trans (hs t))
-  obtain ⟨a, -, hsub⟩ := exists_le_exp_lt_norm_subset 2 r
+  obtain ⟨a, -, hr⟩ := exists_le_and_le_exp_mul Real.two_pi_pos r 2
   -- The orbit stays in `K`, as a limit of loops in `K`.
   have hxK (t : ℝ) : x t ∈ K := by
     refine hK.isClosed.mem_of_tendsto ((hloop {t}).tendsto_at (mem_singleton t)) ?_
     filter_upwards [eventually_gt_atTop a] with s hs
-    exact huK _ (hsub (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2
-      (by simpa [← mul_assoc] using hs)))
+    exact huK _ (p.lt_norm_symm_realChart_cylindricalEndLift_of_le_exp hr
+      (by simpa [← mul_assoc] using hs))
   -- Far out on the end, `J` is `J_t` in end coordinates.
   have hJeq (ζ : ℝ × ℝ) (hζ : a < p.endSign * ζ.1) :
       J (realChart p.cylindricalEndLift ζ) = Jq ζ.2 := by
-    rw [hJ _ (hsub (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hζ)), realChart_apply,
-      ContinuousLinearEquiv.symm_apply_apply, apply_im_endCoord_cylindricalEndLift hJqper,
-      Complex.equivRealProdCLM_symm_apply_im]
+    rw [hJ _ (p.lt_norm_symm_realChart_cylindricalEndLift_of_le_exp hr hζ),
+      TauCeti.Complex.equivRealProdCLM_symm_realChart, apply_im_endCoord_cylindricalEndLift hJqper]
+    simp
   exact ω.exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization
     p hH (hHs.of_le (by norm_num)) hL hx (hnd x hxper hx hxK) (Je := Jq) (hJq.of_le one_le_two)
     (fun t ↦ hJqK t _ (hxK t)) hJeq
-    (fun z hz ↦ (hu.contDiffAt (hΩ.mem_nhds (hsub hz))).of_le (by norm_num))
-    (fun z hz ↦ hF z (hsub hz)) (hloop _)
+    (fun z hz ↦ (hu.contDiffAt ((isOpen_setOf_lt_norm_equivRealProdCLM_symm r).mem_nhds
+      (hr.trans_lt hz))).of_le (by norm_num))
+    (fun z hz ↦ hF z (hr.trans_lt hz)) (hloop _)
     (tendstoUniformlyOn_sliceDefect_of_le_exp ω p hL hκ hdecay _)
 
 end InnerProductSpace

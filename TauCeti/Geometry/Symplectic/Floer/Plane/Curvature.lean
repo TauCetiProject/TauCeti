@@ -90,11 +90,17 @@ discs into the energy of a whole PSS plane.
   hence, for such a perturbation `𝔎` on a symplectic vector space, a solution `u` of the Floer
   equation for `𝔎` read along the end lift `ψ` solves the Floer equation of a cylinder for the
   datum `H(t) dt` there.
-* `TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_eq`
-  and `TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_le`:
+* `TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_eq`,
+  `TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_le`, and
+  `TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_realChart_positive_Ici_eq`:
   the energy of `u ∘ ψ` over a part of `{ε s ≥ T₀}` in a half-open band `t₀ ≤ t < t₀ + 1` is the
-  energy of `u` over its image, and over a band `P × [0, 1]` it is at most the energy of `u` over
-  any set containing the image.
+  energy of `u` over its image (in particular over `{‖w‖ ≥ exp (2πa)}` on the positive plane via
+  `TauCeti.Floer.PSSPlane.image_realChart_positive_Ici_prod_Ico`), and over a band `P × [0, 1]` it
+  is at most the energy of `u` over any set containing the image.
+* `TauCeti.Floer.PSSPlane.realChart_cylindricalEndLift_negative`,
+  `TauCeti.Floer.PSSPlane.fderiv_comp_realChart_cylindricalEndLift_negative`, and
+  `TauCeti.Floer.PSSPlane.fderiv_comp_realChart_cylindricalEndLift_positive`: reflection identities
+  relating the negative and positive end charts and derivatives along them.
 * `TauCeti.SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent`: the curvature in end
   coordinates is `ε β'(ε s - 1) H(t)`.
 * `TauCeti.SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent_eq_zero`: it vanishes outside
@@ -199,6 +205,21 @@ theorem perturbationPullback_realChart_cylindricalEndLift_of_le {X : Type*} (p :
     congrFun (p.apply_im_endCoord_cylindricalEndLift hH _) x]
   simp [mul_comm]
 
+/-- A perturbation `𝔎` equal to `H(t) dt` beyond signed height `T₀` on the negative plane equals
+`(-H(-t)) dt` beyond height `T₀` on the positive plane. -/
+theorem eq_smul_endAngularForm_positive_of_negative {X : Type*} {𝔎 : ℂ → X → ℂ →L[ℝ] ℝ}
+    {H : ℝ → X → ℝ} {T₀ : ℝ}
+    (h𝔎 : ∀ w x, w ≠ 0 → T₀ ≤ negative.endSign * (negative.endCoord w).re →
+      𝔎 w x = H (negative.endCoord w).im x • negative.endAngularForm w)
+    {w : ℂ} (x : X) (hw : w ≠ 0) (hz : T₀ ≤ (positive.endCoord w).re) :
+    𝔎 w x = (fun t y ↦ -H (-t) y) (positive.endCoord w).im x • positive.endAngularForm w := by
+  have hre : negative.endSign * (negative.endCoord w).re = (positive.endCoord w).re := by
+    simpa [endSign_positive] using
+      (negative.endSign_mul_re_endCoord w).trans (positive.endSign_mul_re_endCoord w).symm
+  have hang : negative.endAngularForm w = -positive.endAngularForm w :=
+    ContinuousLinearMap.ext fun v ↦ by simp [endAngularForm_eq_neg_endSign_smul]
+  rw [h𝔎 w x hw (hre ▸ hz), im_endCoord_negative, hang, smul_neg, ← neg_smul]
+
 /-- The end lift preserves orientation in real coordinates: its Jacobian determinant is
 positive. -/
 theorem det_fderiv_realChart_cylindricalEndLift_pos (p : PSSPlane) (z : ℝ × ℝ) :
@@ -230,6 +251,12 @@ theorem exp_lt_norm_symm_realChart_cylindricalEndLift_iff (p : PSSPlane) {R : �
       R < p.endSign * w.1 := by
   rw [norm_symm_realChart_cylindricalEndLift, Real.exp_lt_exp]
   exact mul_lt_mul_iff_right₀ Real.two_pi_pos
+
+/-- If `r ≤ exp (2πa)`, the end lift sends every point with `a < ε s` into `{‖w‖ > r}`. -/
+theorem lt_norm_symm_realChart_cylindricalEndLift_of_le_exp (p : PSSPlane) {r a : ℝ} {w : ℝ × ℝ}
+    (hr : r ≤ Real.exp (2 * π * a)) (hw : a < p.endSign * w.1) :
+    r < ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift w)‖ :=
+  hr.trans_lt (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hw)
 
 /-- The end lift in real coordinates has period one in the angular coordinate. -/
 @[simp]
@@ -272,6 +299,23 @@ theorem exp_lt_norm_realChart_positive {a : ℝ} {z : ℝ × ℝ} (hz : a < z.1)
     Real.exp (2 * π * a) <
       ‖Complex.equivRealProdCLM.symm (realChart positive.cylindricalEndLift z)‖ :=
   positive.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 (by simpa using hz)
+
+/-- The end lift of the positive plane maps the closed half-strip `[a, ∞) × [0, 1)` onto the
+exterior `{‖w‖ ≥ exp (2πa)}`. -/
+theorem image_realChart_positive_Ici_prod_Ico (a : ℝ) :
+    realChart positive.cylindricalEndLift '' (Ici a ×ˢ Ico 0 1) =
+      {z | Real.exp (2 * π * a) ≤ ‖Complex.equivRealProdCLM.symm z‖} := by
+  ext z
+  refine ⟨?_, fun (hz : Real.exp _ ≤ _) ↦ ?_⟩
+  · rintro ⟨w, hw, rfl⟩
+    rw [Set.mem_ofPred_eq, positive.norm_symm_realChart_cylindricalEndLift, endSign_positive,
+      one_mul]
+    exact Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hw.1 Real.two_pi_pos.le)
+  · obtain ⟨ζ, _, hζ₂, rfl⟩ := positive.exists_realChart_cylindricalEndLift_eq
+      ((Real.exp_lt_exp.2 (mul_lt_mul_of_pos_left (sub_one_lt a) Real.two_pi_pos)).trans_le hz)
+    rw [positive.norm_symm_realChart_cylindricalEndLift, endSign_positive, one_mul,
+      Real.exp_le_exp, mul_le_mul_iff_right₀ Real.two_pi_pos] at hz
+    exact ⟨ζ, ⟨hz, hζ₂⟩, rfl⟩
 
 /-- The end lift in real coordinates is injective on every strip `t₀ ≤ t < t₀ + 1` of angular
 width one. -/
@@ -348,6 +392,31 @@ theorem setLIntegral_ofReal_comp_realChart_cylindricalEndLift_le (p : PSSPlane) 
   refine lintegral_mono_set ?_
   rintro _ ⟨ζ, hζ, rfl⟩
   exact hU ζ ⟨hζ.1, Ico_subset_Icc_self hζ.2⟩
+
+/-- In real coordinates, the end lift of the negative plane is that of the positive plane composed
+with the reflection `z ↦ -z`. -/
+theorem realChart_cylindricalEndLift_negative (z : ℝ × ℝ) :
+    realChart negative.cylindricalEndLift z = realChart positive.cylindricalEndLift (-z) := by
+  simp [realChart_apply, cylindricalEndLift_negative]
+
+/-- Composing a map `u` with the end lift of the negative plane negates the derivative of its
+composition with the end lift of the positive plane at `-z`. -/
+theorem fderiv_comp_realChart_cylindricalEndLift_negative {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    fderiv ℝ (u ∘ realChart negative.cylindricalEndLift) z =
+      -fderiv ℝ (u ∘ realChart positive.cylindricalEndLift) (-z) := by
+  have h : u ∘ realChart negative.cylindricalEndLift =
+      fun w ↦ (u ∘ realChart positive.cylindricalEndLift) ((-1 : ℝ) • w) :=
+    funext fun w ↦ by simp [realChart_cylindricalEndLift_negative]
+  rw [h, fderiv_comp_smul, neg_one_smul, neg_one_smul]
+
+/-- Composing a map `u` with the end lift of the positive plane negates the derivative of its
+composition with the end lift of the negative plane at `-z`. -/
+theorem fderiv_comp_realChart_cylindricalEndLift_positive {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    fderiv ℝ (u ∘ realChart positive.cylindricalEndLift) z =
+      -fderiv ℝ (u ∘ realChart negative.cylindricalEndLift) (-z) := by
+  rw [fderiv_comp_realChart_cylindricalEndLift_negative, neg_neg, neg_neg]
 
 /-- The band `R ≤ ε s ≤ N` of the end, in the longitudinal coordinate `s`, is a closed interval
 `[a, b]` whose endpoints lie on the two boundary slices. -/
@@ -1392,6 +1461,33 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_le
     have hζ' : ζ ∈ P ×ˢ Icc 0 1 := ⟨hζ.1, Ico_subset_Icc_self hζ.2⟩
     floerEnergyDensity_comp_realChart_cylindricalEndLift hKH hH (hPT ζ.1 hζ.1) (hu ζ hζ')
       (hHd ζ hζ')
+
+/-- **The exterior energy on `{‖w‖ ≥ exp (2πa)}` of the positive plane.** Where `𝔎` is `H(t) dt`
+on `{s ≥ T₀}` of the positive plane, for `a ≥ T₀` the energy of `u ∘ ψ` over `[a, ∞) × [0, 1]`
+equals the energy of `u` over `{‖w‖ ≥ exp (2πa)}`. -/
+theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_Ici_eq (ω : SymplecticForm V)
+    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ (positive.endCoord w).re →
+      𝔎 w x = H (positive.endCoord w).im x • positive.endAngularForm w)
+    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {a : ℝ} (ha : T₀ ≤ a)
+    (hu : ∀ z, Real.exp (2 * π * a) ≤ ‖Complex.equivRealProdCLM.symm z‖ → DifferentiableAt ℝ u z) :
+    ∫⁻ z in Ici a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) z) =
+      ∫⁻ z in {z | Real.exp (2 * π * a) ≤ ‖Complex.equivRealProdCLM.symm z‖},
+        ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
+  have hae : (Ici a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] Ici a ×ˢ Ico 0 1 := by
+    rw [Measure.volume_eq_prod]
+    exact Measure.set_prod_ae_eq EventuallyEqSet.rfl Ico_ae_eq_Icc.symm
+  rw [setLIntegral_congr hae,
+    setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_eq (p := positive)
+      (fun w x hw hre ↦ hKH w x hw (by simpa using hre)) hH
+      (measurableSet_Ici.prod measurableSet_Ico) (fun ζ hζ ↦ by simpa using ha.trans hζ.1)
+      (t₀ := 0) (fun ζ hζ ↦ by simpa using hζ.2)
+      (fun ζ hζ ↦ hu _ <| by
+        rw [positive.norm_symm_realChart_cylindricalEndLift, endSign_positive, one_mul]
+        exact Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hζ.1 Real.two_pi_pos.le))
+      (fun _ _ ↦ hHd _ _), image_realChart_positive_Ici_prod_Ico]
 
 end SymplecticForm
 

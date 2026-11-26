@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
@@ -68,7 +69,7 @@ convergence of the capped end actions and the energy identity at the orbit `x` a
 public section
 
 open Set Real Function MeasureTheory Filter
-open TauCeti.Complex (realChart contDiff_realChart)
+open TauCeti.Complex (realChart contDiff_realChart isOpen_setOf_lt_norm_equivRealProdCLM_symm)
 open scoped Topology Manifold
 
 namespace TauCeti.SmoothTwoForm
@@ -88,7 +89,7 @@ private theorem mdifferentiableAt_realChart_positive {a : ℝ}
       {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖})
     {z : ℝ × ℝ} (hz : a < z.1) :
     MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (realChart positive.cylindricalEndLift z) :=
-  hu.mdifferentiableAt <| (isOpen_lt continuous_const (by fun_prop)).mem_nhds
+  hu.mdifferentiableAt <| (isOpen_setOf_lt_norm_equivRealProdCLM_symm _).mem_nhds
     (exp_lt_norm_realChart_positive hz)
 
 /-- From `s = 2` on, the pullback of the datum of the positive plane along its end lift is the
@@ -262,10 +263,12 @@ private theorem exists_halfCylinder_comp_realChart_positive (ω : SmoothTwoForm 
       ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
         (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) z) ≠ ⊤ := by
   -- Shrink the end to a part `‖w‖ > exp (2πa)` with `a ≥ 2`, where the datum is cylindrical.
-  obtain ⟨a, ha, hsub⟩ := exists_le_exp_lt_norm_subset 2 r
+  obtain ⟨a, ha, hr⟩ := exists_le_and_le_exp_mul Real.two_pi_pos r 2
+  have hsub : {z : ℝ × ℝ | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
+      {z | r < ‖Complex.equivRealProdCLM.symm z‖} := fun _ hz ↦ hr.trans_lt hz
   have hmem {z : ℝ × ℝ} (hz : a < z.1) :
       r < ‖Complex.equivRealProdCLM.symm (realChart positive.cylindricalEndLift z)‖ :=
-    hsub (exp_lt_norm_realChart_positive hz)
+    positive.lt_norm_symm_realChart_cylindricalEndLift_of_le_exp hr (by simpa using hz)
   have hud := (hu.mono hsub).mdifferentiableOn one_ne_zero
   refine ⟨a, fun z hz ↦ hmem hz, (hu.mono hsub).comp
       (contDiff_realChart positive.contDiff_cylindricalEndLift).contMDiff.contMDiffOn
@@ -543,11 +546,8 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_pssPlanePerturbation
         TauCeti.Complex.realChart_mk, endSign_positive, one_mul] using
           congrArg (fun w ↦ e (u (Complex.equivRealProdCLM w)))
           ((positive.periodic_cylindricalEndLift (positive.endSign * s)).sub_eq t)
-    have h : e ∘ u ∘ realChart positive.cylindricalEndLift =
-        fun w ↦ (e ∘ u ∘ realChart negative.cylindricalEndLift) ((-1 : ℝ) • w) := by
-      funext w
-      simp [TauCeti.Complex.realChart_apply, cylindricalEndLift_negative]
-    rw [← hper, fderiv_comp_add_right, h, fderiv_comp_smul, neg_one_smul, norm_neg]
+    rw [← hper, fderiv_comp_add_right, ← Function.comp_assoc,
+      fderiv_comp_realChart_cylindricalEndLift_positive, norm_neg]
     exact hC _ (by simpa [endSign_negative] using hz) (by simpa using ⟨ht.2, ht.1⟩)
   -- The orbits of `-H(-t)` are those of `H` run backwards, so they are isolated as well.
   have hiso' (y) (hy : y ∈ periodicSolutions

@@ -38,9 +38,9 @@ the real chart of a map injective on a set, on the corresponding set
 of its image (`TauCeti.Complex.image_realChart_preimage`).
 Adding or subtracting a real number `c` is adding or subtracting `(c, 0)` in real coordinates
 (`TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero`,
-`TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero`). In real coordinates, every part
-`‖w‖ > r` of the plane contains a part `‖w‖ > exp (2πa)` with `a` as large as desired
-(`TauCeti.exists_le_exp_lt_norm_subset`).
+`TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero`), and the exterior
+`{z | r < ‖Complex.equivRealProdCLM.symm z‖}` is open
+(`TauCeti.Complex.isOpen_setOf_lt_norm_equivRealProdCLM_symm`).
 -/
 
 public section
@@ -195,18 +195,9 @@ theorem image_realChart_preimage (f : ℂ → ℂ) (s : Set ℂ) :
     Set.image_preimage_eq _ Complex.equivRealProdCLM.symm.surjective,
     Complex.equivRealProdCLM.image_eq_preimage_symm]
 
+/-- In real coordinates, the exterior `{z | r < ‖Complex.equivRealProdCLM.symm z‖}` is open. -/
+theorem isOpen_setOf_lt_norm_equivRealProdCLM_symm (r : ℝ) :
+    IsOpen {z : ℝ × ℝ | r < ‖Complex.equivRealProdCLM.symm z‖} :=
+  isOpen_lt continuous_const (by fun_prop)
+
 end TauCeti.Complex
-
-namespace TauCeti
-
-/-- In the real coordinates of `ℂ`, every part `‖w‖ > r` of the plane contains a part
-`‖w‖ > exp (2πa)` with `a ≥ T₀`. -/
-theorem exists_le_exp_lt_norm_subset (T₀ r : ℝ) :
-    ∃ a : ℝ, T₀ ≤ a ∧
-      {z : ℝ × ℝ | Real.exp (2 * Real.pi * a) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
-        {z | r < ‖Complex.equivRealProdCLM.symm z‖} := by
-  have h := Real.tendsto_exp_atTop.comp (Filter.tendsto_id.const_mul_atTop Real.two_pi_pos)
-  obtain ⟨a, ha, hr⟩ := ((Filter.eventually_ge_atTop T₀).and (h.eventually_ge_atTop r)).exists
-  exact ⟨a, ha, fun _ hz ↦ hr.trans_lt hz⟩
-
-end TauCeti

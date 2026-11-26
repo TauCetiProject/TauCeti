@@ -72,6 +72,9 @@ is bounded on `x ≥ 0`.
   `1 + a x ≤ (1 + a) exp (a (x - 1))` for every real `a` and `x ≥ 1`.
 * `TauCeti.inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq`:
   `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`.
+* `TauCeti.exists_le_and_le_exp_mul`, `TauCeti.exists_le_and_le_exp_mul_and_lt`: existence of
+  `a ≥ T₀` with `r ≤ exp (c * a)` for `0 < c`, and with `a < b` for any `c` when `T₀ < b` and
+  `r < exp (c * b)`.
 -/
 
 public section
@@ -461,5 +464,24 @@ theorem inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq {x t : ℝ} (hx : 0 ≤
   calc (1 - x)⁻¹ = (1 + x) * (1 - x ^ 2)⁻¹ := by field_simp [(by linarith : (1 : ℝ) - x ≠ 0)]; ring
     _ ≤ (1 + x) * (1 - t ^ 2)⁻¹ := by gcongr
     _ ≤ (1 + x) * Real.exp (t ^ 2 / (1 - t ^ 2)) := by gcongr
+
+/-- For `0 < c`, given `r` and `T₀`, there is `a ≥ T₀` with `r ≤ exp (c * a)`. -/
+theorem exists_le_and_le_exp_mul {c : ℝ} (hc : 0 < c) (r T₀ : ℝ) :
+    ∃ a : ℝ, T₀ ≤ a ∧ r ≤ exp (c * a) := by
+  have h := tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop hc)
+  exact ((eventually_ge_atTop T₀).and (h.eventually_ge_atTop r)).exists
+
+/-- Given `T₀ < b` and `r < exp (c * b)`, there is `a` with `T₀ ≤ a`, `r ≤ exp (c * a)`, and
+`a < b`. -/
+theorem exists_le_and_le_exp_mul_and_lt {c r T₀ b : ℝ} (hb : T₀ < b)
+    (hbr : r < exp (c * b)) :
+    ∃ a : ℝ, T₀ ≤ a ∧ r ≤ exp (c * a) ∧ a < b := by
+  have hne : (𝓝[<] b).NeBot := nhdsLT_neBot b
+  have hmem : {a | r < exp (c * a)} ∩ Set.Ico T₀ b ∈ 𝓝[<] b :=
+    inter_mem (nhdsWithin_le_nhds
+      (((continuous_exp.comp (continuous_const.mul continuous_id)).continuousAt).eventually
+        (lt_mem_nhds hbr))) (Ico_mem_nhdsLT hb)
+  obtain ⟨a, har, haT, hab⟩ := hne.nonempty_of_mem hmem
+  exact ⟨a, haT, har.le, hab⟩
 
 end TauCeti
