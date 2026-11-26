@@ -775,6 +775,12 @@ theorem W1p.inner_value_eq_setIntegral (u v : W1p mu Omega 2) :
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [RCLike.inner_apply, mul_comm])
 
+/-- The `L²` pairing of the weak gradients of two Sobolev functions, as an integral over `Ω`. -/
+theorem W1p.inner_gradient_eq_setIntegral (u v : W1p mu Omega 2) :
+    ⟪W1p.gradient u, W1p.gradient v⟫_ℝ =
+      ∫ x in Omega, ⟪W1p.gradient u x, W1p.gradient v x⟫_ℝ ∂mu :=
+  L2.inner_def _ _
+
 /-- Convergence in the first-order Sobolev norm is equivalent to convergence of both the
 value and the weak gradient in `Lᵖ`. -/
 theorem W1p.tendsto_iff_value_gradient {I : Type*} {l : Filter I}
@@ -1276,5 +1282,29 @@ theorem W1p.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow {r : ENNReal} [Fact (1
   exact Lp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow hpr hqr hθ hq _
 
 end Exponent
+
+section Real
+
+variable {mu : Measure ℝ} [mu.IsAddHaarMeasure] {Omega : Opens ℝ}
+
+/-- On a domain in `ℝ`, the Dirichlet form `∫_Ω u' v'` is the `L²` inner product of the weak
+gradients. -/
+theorem W1p.setIntegral_gradient_mul_gradient_eq_inner (u v : W1p mu Omega 2) :
+    ∫ x in Omega, W1p.gradient u x * W1p.gradient v x ∂mu =
+      ⟪W1p.gradient u, W1p.gradient v⟫_ℝ := by
+  rw [W1p.inner_gradient_eq_setIntegral]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun x => by simp [mul_comm])
+
+/-- On a domain in `ℝ`, the Dirichlet form `∫_Ω u' v'` is additive in its left argument up to
+subtraction. -/
+theorem W1p.setIntegral_gradient_sub_mul_gradient (u u' v : W1p mu Omega 2) :
+    ∫ x in Omega, W1p.gradient (u - u') x * W1p.gradient v x ∂mu =
+      (∫ x in Omega, W1p.gradient u x * W1p.gradient v x ∂mu) -
+        ∫ x in Omega, W1p.gradient u' x * W1p.gradient v x ∂mu := by
+  rw [W1p.setIntegral_gradient_mul_gradient_eq_inner,
+    W1p.setIntegral_gradient_mul_gradient_eq_inner, W1p.setIntegral_gradient_mul_gradient_eq_inner,
+    W1p.gradient_sub, inner_sub_left]
+
+end Real
 
 end TauCeti

@@ -136,8 +136,10 @@ theorem forall_setIntegral_gradient_mul_gradient_eq_iff_Ioo (hab : a < b) {f : �
     obtain ⟨u₀, hu₀, hu₀v⟩ :=
       W1p.exists_intervalRepresentativeL_eq_and_forall_setIntegral_gradient_mul_gradient_eq
         (p := 2) (q := 2) hab hf 0 (-h₀)
+    have hsub := W1p.setIntegral_gradient_sub_mul_gradient u u₀ (u - u₀)
+    simp only [Opens.coe_mk] at hsub
     have hw := W1p.intervalRepresentativeL_eq_of_setIntegral_gradient_mul_self_eq_zero hab
-      (w := u - u₀) (by rw [W1p.setIntegral_gradient_sub_mul_gradient, hu, hu₀v, hRHS]; ring)
+      (w := u - u₀) (by rw [hsub, hu, hu₀v, hRHS]; ring)
     refine ⟨(W1p.intervalTraceL hab (u - u₀)).1, fun t => ?_⟩
     have ht := hw t
     rw [map_sub, ContinuousMap.sub_apply, hu₀] at ht

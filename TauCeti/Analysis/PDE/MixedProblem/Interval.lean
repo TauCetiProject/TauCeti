@@ -109,9 +109,10 @@ theorem mem_w1pVanishingOnSubmodule_and_forall_setIntegral_gradient_mul_gradient
     rintro ⟨hu, huv⟩
     have hwmem := (w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ 2 {a}).toSubmodule.sub_mem
       hu hmem
+    have hsub := W1p.setIntegral_gradient_sub_mul_gradient u u₀ (u - u₀)
+    simp only [Opens.coe_mk] at hsub
     have hw := W1p.intervalRepresentativeL_eq_of_setIntegral_gradient_mul_self_eq_zero hab
-      (w := u - u₀) (by rw [W1p.setIntegral_gradient_sub_mul_gradient, huv _ hwmem, hsol _ hwmem,
-        sub_self])
+      (w := u - u₀) (by rw [hsub, huv _ hwmem, hsol _ hwmem, sub_self])
     intro t
     have ht := hw t
     rw [W1p.intervalTraceL_fst_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton hab hwmem,
