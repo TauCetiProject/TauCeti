@@ -292,14 +292,9 @@ theorem map_extendScalars_rankPicRingEquiv_symm {B : Type u} [CommRing B] (f : A
   have hy : (rankPicRingEquiv A).symm y =
       (y.fst - 1 : ℤ) • 1 + SplitK0.of.{u} (of A y.snd.toMul) := by
     rw [RingEquiv.symm_apply_eq, map_add, map_zsmul, map_one, rankPicRingEquiv_of_pic,
-      ofMul_toMul, zsmul_one, ← TrivSqZeroExt.inl_intCast, ← add_assoc, ← TrivSqZeroExt.inl_add,
-      Int.cast_id, sub_add_cancel, TrivSqZeroExt.inl_fst_add_inr_snd_eq]
-  -- Extension of scalars sends `[A]` to `[B]`.
-  have h1 : SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars 1 = 1 := by
-    rw [← splitK0_of_finiteProjectiveModulesRegular, SplitK0.map_of,
-      SplitK0.of_extendScalars_obj_finiteProjectiveModulesRegular,
-      splitK0_of_finiteProjectiveModulesRegular]
-  rw [hy, map_add, map_zsmul, h1, map_extendScalars_of_pic, zsmul_one]
+      ofMul_toMul, zsmul_one]
+    ext <;> simp
+  rw [hy, map_add, map_zsmul, SplitK0.map_extendScalars_one, map_extendScalars_of_pic, zsmul_one]
 
 end Pic
 
@@ -320,9 +315,7 @@ theorem rankPicRingEquiv_map_extendScalars [IsDedekindDomain B]
     rankPicRingEquiv B (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x) =
       TrivSqZeroExt.map (Pic.mapRingHom f).toAdditive.toIntLinearMap (rankPicRingEquiv A x) := by
   conv_lhs => rw [← (rankPicRingEquiv A).symm_apply_apply x]
-  rw [map_extendScalars_rankPicRingEquiv_symm, map_add, map_intCast, rankPicRingEquiv_of_pic,
-    ← TrivSqZeroExt.inl_intCast, ← add_assoc, ← TrivSqZeroExt.inl_add, Int.cast_id,
-    sub_add_cancel]
+  rw [map_extendScalars_rankPicRingEquiv_symm, map_add, map_intCast, rankPicRingEquiv_of_pic]
   ext <;> simp
 
 /-- **Extension of scalars to a ring with trivial Picard group**, such as a residue field of `A`
