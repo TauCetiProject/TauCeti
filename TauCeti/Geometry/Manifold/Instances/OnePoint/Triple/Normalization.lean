@@ -93,16 +93,25 @@ private theorem tripleMatrix_mulVec_one_one (P Q R : Fin 2 → ℂ) :
     tripleMatrix P Q R *ᵥ ![1, 1] = (of ![R, P]).det • Q := by
   ext i; fin_cases i <;> simp [tripleMatrix, det_fin_two] <;> ring
 
+/-- The ordered triple `(0, 1, ∞)` of distinct points of the Riemann sphere, as a point of
+`OnePoint.distinctTriples ℂ`. -/
+private def zeroOneInfty : distinctTriples ℂ :=
+  ⟨zeroOneInftyTriple ℂ, mem_distinctTriples.2 (zeroOneInftyTriple ℂ).property⟩
+
+private theorem coe_zeroOneInfty :
+    (zeroOneInfty : Fin 3 → OnePoint ℂ) = ![((0 : ℂ) : OnePoint ℂ), ((1 : ℂ) : OnePoint ℂ), ∞] :=
+  coe_zeroOneInftyTriple
+
 /-- For homogeneous coordinates `P`, `Q`, `R` of an ordered triple `q` of distinct points, the
 class of any matrix of `SL(2, ℂ)` proportional to the matrix with columns `det(Q, P) R` and
 `det(R, Q) P` is the Möbius transformation carrying `0`, `1`, `∞` to `q`. -/
 private theorem pslHomeomorphDistinctTriples_symm_eq_of_coe_eq_smul
-    (q : {p : Fin 3 → OnePoint ℂ // Injective p}) {P Q R : Fin 2 → ℂ} {hP : P ≠ 0} {hQ : Q ≠ 0}
+    (q : distinctTriples ℂ) {P Q R : Fin 2 → ℂ} {hP : P ≠ 0} {hQ : Q ≠ 0}
     {hR : R ≠ 0} (hPq : equivProjectivization ℂ (q.val 0) = .mk ℂ P hP)
     (hQq : equivProjectivization ℂ (q.val 1) = .mk ℂ Q hQ)
     (hRq : equivProjectivization ℂ (q.val 2) = .mk ℂ R hR) (A : SL(2, ℂ)) {a : ℂ}
     (hA : (A : Matrix (Fin 2) (Fin 2) ℂ) = a • tripleMatrix P Q R) :
-    (pslHomeomorphDistinctTriples (zeroOneInftyTriple ℂ)).symm q = A := by
+    (pslHomeomorphDistinctTriples zeroOneInfty).symm q = A := by
   have h₀ : (A : PSL(2, ℂ)) • ((0 : ℂ) : OnePoint ℂ) = q.val 0 :=
     (equivProjectivization ℂ).injective ((equivProjectivization_pslMk_smul_eq_mk A _ hP
       (equivProjectivization_apply_coe ℂ 0) (a := a * (of ![R, Q]).det)
@@ -115,7 +124,7 @@ private theorem pslHomeomorphDistinctTriples_symm_eq_of_coe_eq_smul
     (equivProjectivization ℂ).injective ((equivProjectivization_pslMk_smul_eq_mk A _ hR
       (equivProjectivization_apply_infinity ℂ) (a := a * (of ![Q, P]).det)
       (by rw [hA, smul_mulVec, tripleMatrix_mulVec_one_zero, smul_smul])).trans hRq.symm)
-  rw [pslHomeomorphDistinctTriples_symm_eq_iff, coe_zeroOneInftyTriple]
+  rw [pslHomeomorphDistinctTriples_symm_eq_iff, coe_zeroOneInfty]
   intro i
   fin_cases i
   exacts [h₀, h₁, h₂]
@@ -148,15 +157,16 @@ triple of distinct points depending on a parameter `x` in a complex manifold. If
 `p x i` is `C^n` at `x₀`, then so is the Möbius transformation carrying `b` to `p x`, as a map into
 the complex Lie group `PSL(2, ℂ)`; for `n = ω` it is holomorphic at `x₀`. -/
 theorem contMDiffAt_pslHomeomorphDistinctTriples_symm {p : M → Fin 3 → OnePoint ℂ}
-    (hp : ∀ x, Injective (p x)) {x₀ : M} (hpx : ∀ i, ContMDiffAt I 𝓘(ℂ) n (fun x ↦ p x i) x₀)
-    (b : {p : Fin 3 → OnePoint ℂ // Injective p}) :
+    (hp : ∀ x, p x ∈ distinctTriples ℂ) {x₀ : M}
+    (hpx : ∀ i, ContMDiffAt I 𝓘(ℂ) n (fun x ↦ p x i) x₀)
+    (b : distinctTriples ℂ) :
     ContMDiffAt I 𝓘(ℂ, SpecialLinearGroup.Model (Fin 2) ℂ) n
       (fun x ↦ (pslHomeomorphDistinctTriples b).symm ⟨p x, hp x⟩) x₀ := by
   -- It suffices to treat the base triple `(0, 1, ∞)`, since changing the base triple multiplies
   -- on the right by a fixed element.
   suffices h : ContMDiffAt I 𝓘(ℂ, SpecialLinearGroup.Model (Fin 2) ℂ) n
-      (fun x ↦ (pslHomeomorphDistinctTriples (zeroOneInftyTriple ℂ)).symm ⟨p x, hp x⟩) x₀ by
-    simp_rw [pslHomeomorphDistinctTriples_symm_eq_mul_inv b (zeroOneInftyTriple ℂ)]
+      (fun x ↦ (pslHomeomorphDistinctTriples zeroOneInfty).symm ⟨p x, hp x⟩) x₀ by
+    simp_rw [pslHomeomorphDistinctTriples_symm_eq_mul_inv b zeroOneInfty]
     exact h.mul contMDiffAt_const
   -- Homogeneous coordinates `P`, `Q`, `R` of the three points, `C^n` at `x₀`.
   obtain ⟨P, hP, hPev⟩ := exists_contMDiffAt_eventually_equivProjectivization_eq_mk (hpx 0)
@@ -173,10 +183,11 @@ theorem contMDiffAt_pslHomeomorphDistinctTriples_symm {p : M → Fin 3 → OnePo
   obtain ⟨_, hQx₀⟩ := hQev.self_of_nhds
   obtain ⟨_, hRx₀⟩ := hRev.self_of_nhds
   have hd₀ : d x₀ ≠ 0 := by
+    have hinj := mem_distinctTriples.1 (hp x₀)
     simp only [d, det_tripleMatrix]
-    exact mul_ne_zero (mul_ne_zero (mt (eq_iff_det_eq_zero hQx₀ hPx₀).2 ((hp x₀).ne (by decide)))
-      (mt (eq_iff_det_eq_zero hRx₀ hQx₀).2 ((hp x₀).ne (by decide))))
-      (mt (eq_iff_det_eq_zero hRx₀ hPx₀).2 ((hp x₀).ne (by decide)))
+    exact mul_ne_zero (mul_ne_zero (mt (eq_iff_det_eq_zero hQx₀ hPx₀).2 (hinj.ne (by decide)))
+      (mt (eq_iff_det_eq_zero hRx₀ hQx₀).2 (hinj.ne (by decide))))
+      (mt (eq_iff_det_eq_zero hRx₀ hPx₀).2 (hinj.ne (by decide)))
   -- A square root `c` of `d` near `x₀`, analytic in `d`, and the normalized matrix `B`.
   obtain ⟨root, hroot, -, hroot_sq⟩ :=
     TauCeti.exists_analyticAt_pow_eq two_ne_zero hd₀ (Complex.cpow_nat_inv_pow (d x₀) two_ne_zero)
@@ -198,7 +209,7 @@ theorem contMDiffAt_pslHomeomorphDistinctTriples_symm {p : M → Fin 3 → OnePo
   have hL : ContMDiffAt I 𝓘(ℂ, SpecialLinearGroup.Model (Fin 2) ℂ) n L x₀ :=
     SpecialLinearGroup.contMDiffAt_iff.2 (hB.congr_of_eventuallyEq (hev.mono fun _ ↦ hLB))
   -- Near `x₀`, the class of `L x` is the transformation carrying `0`, `1`, `∞` to `p x`.
-  have hkey : (fun x ↦ (pslHomeomorphDistinctTriples (zeroOneInftyTriple ℂ)).symm ⟨p x, hp x⟩)
+  have hkey : (fun x ↦ (pslHomeomorphDistinctTriples zeroOneInfty).symm ⟨p x, hp x⟩)
       =ᶠ[𝓝 x₀] fun x ↦ ((L x : SL(2, ℂ)) : PSL(2, ℂ)) := by
     filter_upwards [hPev, hQev, hRev, hev] with x ⟨_, hPx⟩ ⟨_, hQx⟩ ⟨_, hRx⟩ hx
     exact pslHomeomorphDistinctTriples_symm_eq_of_coe_eq_smul ⟨p x, hp x⟩ hPx hQx hRx (L x)
@@ -212,8 +223,8 @@ If three pairwise distinct points of the Riemann sphere depend `C^n` on a parame
 manifold, then so does the Möbius transformation carrying a fixed ordered triple of distinct points
 to them, as a map into the complex Lie group `PSL(2, ℂ)`; for `n = ω` it is holomorphic. -/
 theorem contMDiff_pslHomeomorphDistinctTriples_symm {p : M → Fin 3 → OnePoint ℂ}
-    (hp : ∀ x, Injective (p x)) (hpx : ∀ i, ContMDiff I 𝓘(ℂ) n fun x ↦ p x i)
-    (b : {p : Fin 3 → OnePoint ℂ // Injective p}) :
+    (hp : ∀ x, p x ∈ distinctTriples ℂ) (hpx : ∀ i, ContMDiff I 𝓘(ℂ) n fun x ↦ p x i)
+    (b : distinctTriples ℂ) :
     ContMDiff I 𝓘(ℂ, SpecialLinearGroup.Model (Fin 2) ℂ) n
       fun x ↦ (pslHomeomorphDistinctTriples b).symm ⟨p x, hp x⟩ :=
   fun x₀ ↦ contMDiffAt_pslHomeomorphDistinctTriples_symm hp (fun i ↦ hpx i x₀) b

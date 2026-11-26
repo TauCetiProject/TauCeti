@@ -175,6 +175,14 @@ theorem unitPartResidue_map_algebraMap {E : Type*} [Field E] [Algebra F E]
   exact congrArg (· * _)
     (HasExtension.unitGroupToResidueFieldUnits_map v w (v.unitPart t ht f).property)
 
+/-- A field unit of order zero has reduced unit part `1` exactly when it is a principal unit. -/
+theorem unitPartResidue_eq_one_iff_of_ord_eq_zero (t : Fˣ) (ht : v.ord (t : F) = 1) {f : Fˣ}
+    (hord : v.ord (f : F) = 0) :
+    v.unitPartResidue t ht f = 1 ↔ f ∈ v.valuationSubring.principalUnitGroup := by
+  rw [v.unitPartResidue_of_ord_eq_zero t ht hord, ← MonoidHom.mem_ker,
+    ValuationSubring.ker_unitGroupToResidueFieldUnits, Subgroup.mem_comap]
+  exact Iff.rfl
+
 /-- If `r + s = 1` and `r` has positive order, then `s` has reduced unit part `1`. -/
 theorem unitPartResidue_eq_one_of_add_eq_one (t : Fˣ) (ht : v.ord (t : F) = 1) {r s : Fˣ}
     (h : (r : F) + s = 1) (hr : 0 < v.ord (r : F)) : v.unitPartResidue t ht s = 1 := by

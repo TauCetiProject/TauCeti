@@ -14,7 +14,7 @@ import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.SmoothAbs
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.MeasureTheory.Integral.ContinuousMap
-import TauCeti.Topology.Algebra.Module.WeakSpace
+import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 
 /-!
 # Absolute values in the Sobolev space `H¹`
