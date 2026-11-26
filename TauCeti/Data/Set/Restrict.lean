@@ -16,6 +16,10 @@ preimage of `u` under `f`, and is finite exactly when that preimage is; in parti
 for the fibres over points of `t`. Dually, removing the preimage of a set from the domain does not
 change the fibres over points outside that set.
 
+For a preorder `β` and `b : t`, the points of `f⁻¹(t)` sent by `t.restrictPreimage f` to at most
+`b`, or below `b`, are those sent by `f` to at most `b`, or below `b`
+(`Set.preimage_restrictPreimage_Iic`, `Set.preimage_restrictPreimage_Iio`).
+
 For a domain restriction `u.domRestrict f`, the preimage of `{y}` lies in `{⟨x, hx⟩}` exactly when
 `x` is the only point of `u` sent to `y` (`Set.preimage_domRestrict_singleton_subset_iff`), and
 the preimage of `s` under the inclusion of `(s \ {x})ᶜ` lies in `{x}`
@@ -49,6 +53,28 @@ of `T` in a fiber over a point outside `Z`. -/
 theorem natCard_fiber_sdiff_preimage {T : Set α} {Z : Set β} {y : β} (hy : y ∉ Z) :
     Nat.card {x // f x = y ∧ x ∈ T \ f ⁻¹' Z} = Nat.card {x // f x = y ∧ x ∈ T} :=
   Nat.card_congr <| Equiv.subtypeEquivRight fun x ↦ by grind
+
+section Preorder
+
+variable [Preorder β]
+
+/-- For `b : t`, the points of `f⁻¹(t)` whose image in `t` is at most `b` are the points of
+`f⁻¹(Iic b)`. -/
+@[simp]
+theorem preimage_restrictPreimage_Iic (b : t) :
+    t.restrictPreimage f ⁻¹' Iic b = Subtype.val ⁻¹' (f ⁻¹' Iic (b : β)) := by
+  ext x
+  simp [← Subtype.coe_le_coe]
+
+/-- For `b : t`, the points of `f⁻¹(t)` whose image in `t` is below `b` are the points of
+`f⁻¹(Iio b)`. -/
+@[simp]
+theorem preimage_restrictPreimage_Iio (b : t) :
+    t.restrictPreimage f ⁻¹' Iio b = Subtype.val ⁻¹' (f ⁻¹' Iio (b : β)) := by
+  ext x
+  simp [← Subtype.coe_lt_coe]
+
+end Preorder
 
 /-- The preimage of `{y}` under `u.domRestrict f` is contained in `{⟨x, hx⟩}` if and only if `x` is
 the only point of `u` sent to `y`. -/
