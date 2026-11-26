@@ -31,7 +31,7 @@ pairwise disjoint pairs.
 ## Main results
 
 * `Finset.card_le_two_pow_of_even`: the eventown bound `#F ≤ 2 ^ ⌊n / 2⌋`.
-* `Finset.exists_even_card_even_card_inter_card_eq_two_pow`: a family attaining it.
+* `TauCeti.exists_even_card_even_card_inter_card_eq_two_pow`: a family attaining it.
 
 ## References
 
@@ -88,6 +88,14 @@ theorem card_le_two_pow_of_even (F : Finset (Finset α)) (hsize : ∀ A ∈ F, E
     _ = 2 ^ Module.finrank (ZMod 2) W := by rw [Module.card_eq_pow_finrank (K := ZMod 2), ZMod.card]
     _ ≤ 2 ^ (Fintype.card α / 2) := Nat.pow_le_pow_right two_pos (by omega)
 
+end Finset
+
+namespace TauCeti
+
+open Finset
+
+variable {α : Type*} [Fintype α] [DecidableEq α]
+
 /-- The eventown bound is attained: some family of `2 ^ ⌊n / 2⌋` subsets of an `n`-element set
 has members of even size and distinct members meeting in an even number of elements. The family
 consists of the unions of some of `⌊n / 2⌋` pairwise disjoint pairs. -/
@@ -111,4 +119,4 @@ theorem exists_even_card_even_card_inter_card_eq_two_pow :
     simp [u, ← map_inter, product_inter_product]
   · simp
 
-end Finset
+end TauCeti
