@@ -7,12 +7,15 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.Topology.JacobsonSpace
+public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.RingTheory.RegularLocalRing.Locus
 import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
+import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
+import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
 import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 import TauCeti.RingTheory.Smooth.Regular
 
@@ -52,6 +55,9 @@ for general locally Noetherian schemes (Stacks, Section 15.48).
 * `AlgebraicGeometry.Scheme.Hom.smooth_iff_isRegularLocalRing_closedPoints`: over a perfect field,
   a scheme locally of finite type is smooth exactly when its local rings at closed points are
   regular.
+* `AlgebraicGeometry.IsAffineOpen.mem_regularLocus_of_mem_minimalPrimes`: on an affine open of a
+  normal locally Noetherian scheme, the sections are regular at every minimal prime over a
+  principal ideal.
 -/
 
 public section
@@ -165,3 +171,25 @@ theorem isRegular_iff_regularLocus_eq_univ [IsLocallyNoetherian X] :
   exact and_iff_right ‹_›
 
 end TauCeti.AlgebraicGeometry
+
+namespace AlgebraicGeometry.IsAffineOpen
+
+variable {X : Scheme.{u}}
+
+/-- Over an affine open `U` of a normal locally Noetherian scheme, the sections are regular at
+every minimal prime over a principal ideal: the localization there is an integrally closed local
+domain of dimension at most one. -/
+theorem mem_regularLocus_of_mem_minimalPrimes [IsLocallyNoetherian X] [IsNormalScheme X]
+    {U : X.Opens} (hU : IsAffineOpen U) {a : Γ(X, U)} (q : PrimeSpectrum Γ(X, U))
+    (hq : q.asIdeal ∈ (Ideal.span {a}).minimalPrimes) :
+    q ∈ Excellence.regularLocus Γ(X, U) := by
+  have : IsNoetherianRing Γ(X, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
+  obtain ⟨_, _⟩ := (isNormalScheme_Spec_iff_forall_localization Γ(X, U)).mp
+    (isNormalScheme_iff_forall_affineOpens.mp ‹_› ⟨U, hU⟩) q.asIdeal
+  have : Ring.KrullDimLE 1 (Localization.AtPrime q.asIdeal) := Ring.krullDimLE_iff.mpr <| by
+    rw [IsLocalization.AtPrime.ringKrullDim_eq_height q.asIdeal]
+    exact_mod_cast Ideal.height_le_one_of_isPrincipal_of_mem_minimalPrimes _ _ hq
+  have : IsPrincipalIdealRing (Localization.AtPrime q.asIdeal) := .of_krullDimLE_one
+  exact Excellence.mem_regularLocus.mpr inferInstance
+
+end AlgebraicGeometry.IsAffineOpen

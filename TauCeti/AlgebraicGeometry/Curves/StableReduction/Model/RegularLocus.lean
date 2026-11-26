@@ -14,10 +14,7 @@ import TauCeti.AlgebraicGeometry.Scheme.Normal
 import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.AlgebraicGeometry.SpecialFiber.Components
-import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
-import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 import TauCeti.RingTheory.RegularLocalRing.FiniteNonregularLocus
-import TauCeti.RingTheory.UniversallyJapanese
 
 /-!
 # The singular points of a normal model of a curve
@@ -39,7 +36,7 @@ The proof is affine-local. Over an affine open `Spec A` of `X`, with `π` a unif
 the image of `π` is a nonzerodivisor of `A` since `A` is flat over `R`, the special fibre
 `A ⧸ π A` is of finite type over the residue field, hence Nagata, of dimension at most one, and
 normality makes `A` regular at the minimal primes of `π A`; the ring-level theorem
-`TauCeti.Excellence.finite_zeroLocus_diff_regularLocus` then applies.
+`TauCeti.Excellence.finite_zeroLocus_sdiff_regularLocus` then applies.
 
 ## Main results
 
@@ -83,56 +80,6 @@ theorem range_genericι_subset_regularLocus [IsRegular C] :
 
 variable {M}
 
-/-- Over an affine open `U` of a model, a nonzero element of `R` is a nonzerodivisor on the
-sections, which are flat over `R`. -/
-private lemma algebraMap_mem_nonZeroDivisors_sections {U : M.total.Opens} (hU : IsAffineOpen U)
-    {π : R} (hπ : π ≠ 0) :
-    letI := M.toBase.sectionsAlgebra U
-    algebraMap R Γ(M.total, U) π ∈ nonZeroDivisors Γ(M.total, U) := by
-  let := M.toBase.sectionsAlgebra U
-  have : Module.Flat R Γ(M.total, U) := by
-    refine RingHom.flat_algebraMap_iff.mp ?_
-    rw [M.toBase.algebraMap_sections, CommRingCat.hom_comp]
-    exact (RingHom.Flat.of_bijective (ConcreteCategory.bijective_of_isIso _)).comp
-      (M.toBase.flat_appLE (isAffineOpen_top _) hU _)
-  exact mem_nonZeroDivisors_iff_right.mpr fun z hz ↦
-    Module.Flat.isSMulRegular_of_nonZeroDivisors (M := Γ(M.total, U))
-      (mem_nonZeroDivisors_of_ne_zero hπ)
-      (by dsimp only; rw [smul_zero, Algebra.smul_def, mul_comm, hz])
-
-/-- Over an affine open `U` of a model, the special fibre `Γ(U) ⧸ π Γ(U)` is of finite type over
-the residue field of `R`, hence a Nagata ring. -/
-private lemma isNagata_sections_quotient {U : M.total.Opens} (hU : IsAffineOpen U) {π : R}
-    (hπ : Irreducible π) :
-    letI := M.toBase.sectionsAlgebra U
-    Ring.IsNagata (Γ(M.total, U) ⧸ Ideal.span {algebraMap R Γ(M.total, U) π}) := by
-  let := M.toBase.sectionsAlgebra U
-  have : Algebra.FiniteType R Γ(M.total, U) := RingHom.finiteType_algebraMap.mp <|
-    M.toBase.algebraMap_sections U ▸ M.toBase.finiteType_ΓSpecIso_inv_comp_appLE hU
-  have hmap : (maximalIdeal R).map (algebraMap R Γ(M.total, U)) =
-      Ideal.span {algebraMap R Γ(M.total, U) π} := by
-    rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton]
-  have : Ring.IsNagata ((maximalIdeal R).Fiber Γ(M.total, U)) :=
-    Ring.IsUniversallyJapanese.isNagata_of_finiteType (maximalIdeal R).ResidueField _
-  exact ((Ideal.Fiber.algEquivQuotientMap (maximalIdeal R)).toRingEquiv.trans
-    (Ideal.quotEquivOfEq hmap)).isNagata
-
-/-- Over an affine open `U` of a normal locally Noetherian scheme, the sections are regular at
-every minimal prime over a principal ideal: the localization there is an integrally closed local
-domain of dimension at most one. -/
-private lemma mem_regularLocus_sections_of_mem_minimalPrimes {X : Scheme.{u}}
-    [IsLocallyNoetherian X] [IsNormalScheme X] {U : X.Opens} (hU : IsAffineOpen U) {a : Γ(X, U)}
-    (q : PrimeSpectrum Γ(X, U)) (hq : q.asIdeal ∈ (Ideal.span {a}).minimalPrimes) :
-    q ∈ Excellence.regularLocus Γ(X, U) := by
-  have : IsNoetherianRing Γ(X, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
-  obtain ⟨_, _⟩ := (isNormalScheme_Spec_iff_forall_localization Γ(X, U)).mp
-    (isNormalScheme_iff_forall_affineOpens.mp ‹_› ⟨U, hU⟩) q.asIdeal
-  have : Ring.KrullDimLE 1 (Localization.AtPrime q.asIdeal) := Ring.krullDimLE_iff.mpr <| by
-    rw [IsLocalization.AtPrime.ringKrullDim_eq_height q.asIdeal]
-    exact_mod_cast Ideal.height_le_one_of_isPrincipal_of_mem_minimalPrimes _ _ hq
-  have : IsPrincipalIdealRing (Localization.AtPrime q.asIdeal) := .of_krullDimLE_one
-  exact Excellence.mem_regularLocus.mpr inferInstance
-
 /-- Over an affine open `U` of a normal model, only finitely many points of `U` are not regular. -/
 private lemma finite_compl_regularLocus_inter [IsNormalScheme M.total] [IsRegular C]
     [AlgebraicGeometry.RelativeDimensionLE 1 toK] {U : M.total.Opens} (hU : IsAffineOpen U) :
@@ -144,9 +91,9 @@ private lemma finite_compl_regularLocus_inter [IsNormalScheme M.total] [IsRegula
   have := isNagata_sections_quotient hU hπ
   have := krullDimLE_sections_quotient (M := M) hU hπ
   -- On `Spec Γ(U)`, only finitely many primes containing `π` are not regular.
-  have hfin := Excellence.finite_zeroLocus_diff_regularLocus
+  have hfin := Excellence.finite_zeroLocus_sdiff_regularLocus
     (algebraMap_mem_nonZeroDivisors_sections hU hπ.ne_zero)
-    (mem_regularLocus_sections_of_mem_minimalPrimes hU)
+    hU.mem_regularLocus_of_mem_minimalPrimes
   refine (hfin.image hU.fromSpec).subset ?_
   rintro x ⟨hx, hxU⟩
   set p := hU.primeIdealOf ⟨x, hxU⟩

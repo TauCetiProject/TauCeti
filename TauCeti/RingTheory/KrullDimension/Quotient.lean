@@ -49,6 +49,9 @@ many irreducible components `V(q)` not through `p`. That neighbourhood is covere
 sets `V(q)` with `q ≤ p`, so the local Krull dimension of `Spec R` at `p` is at most the largest
 `dim (R ⧸ q)` over the minimal primes `q ≤ p`.
 
+If `R ⧸ q` is a domain of dimension at most one, every prime containing both `q` and some `f ∉ q`
+is maximal, hence minimal over `q + (f)`; in a noetherian ring there are only finitely many.
+
 ## Main results
 
 * `Ideal.topologicalKrullDim_zeroLocus`: the closed subset `V(I)` of `Spec R` has the Krull
@@ -77,6 +80,8 @@ sets `V(q)` with `q ≤ p`, so the local Krull dimension of `Spec R` at `p` is a
 * `PrimeSpectrum.topologicalKrullDimAt_le_iSup_ringKrullDim_quotient`: in a noetherian ring, the
   local Krull dimension of `Spec R` at `p` is at most the supremum of `dim (R ⧸ q)` over the
   minimal primes `q ≤ p`.
+* `PrimeSpectrum.finite_setOf_le_and_mem`: in a noetherian ring, if `R ⧸ q` is a domain of
+  dimension at most one, only finitely many primes contain `q` and a given `f ∉ q`.
 * `Ideal.height_add_ringKrullDim_quotient_le`: `ht p + dim (R ⧸ p) ≤ dim R` for an ideal `p`.
 -/
 
@@ -398,6 +403,32 @@ theorem topologicalKrullDimAt_le_iSup_ringKrullDim_quotient [IsNoetherianRing R]
     refine ⟨⟨q, hq, ?_⟩, (mem_zeroLocus _ _).2 hqx⟩
     by_contra h
     exact x.property (Set.mem_biUnion (x := q) ⟨hq, h⟩ ((mem_zeroLocus _ _).2 hqx))
+
+/-- In a noetherian ring `R`, if `R ⧸ q` is a domain of dimension at most one, only finitely many
+primes contain both `q` and a given element `f ∉ q`: they are maximal, hence minimal over
+`q + (f)`. -/
+theorem finite_setOf_le_and_mem [IsNoetherianRing R] {q : Ideal R} [q.IsPrime]
+    [Ring.KrullDimLE 1 (R ⧸ q)] {f : R} (hf : f ∉ q) :
+    {p : PrimeSpectrum R | q ≤ p.asIdeal ∧ f ∈ p.asIdeal}.Finite := by
+  set J := q ⊔ Ideal.span {f}
+  -- Every prime containing `J` is maximal, since it gives a nonzero prime of `R ⧸ q`.
+  have hmax (p : Ideal R) [p.IsPrime] (hp : J ≤ p) : p.IsMaximal := by
+    have hqp : q ≤ p := le_sup_left.trans hp
+    have hP : (p.map (Ideal.Quotient.mk q)).IsPrime := Ideal.map_isPrime_of_surjective
+      Ideal.Quotient.mk_surjective (by rwa [Ideal.mk_ker])
+    have hP0 : p.map (Ideal.Quotient.mk q) ≠ ⊥ := fun h ↦ hf <|
+      Ideal.Quotient.eq_zero_iff_mem.mp <| Ideal.mem_bot.mp <|
+        h ▸ Ideal.mem_map_of_mem _ (le_sup_right.trans hp (Ideal.mem_span_singleton_self _))
+    have := Ideal.isMaximal_of_isPrime_of_ne_bot _ hP0
+    simpa [Ideal.comap_map_of_surjective' _ Ideal.Quotient.mk_surjective, Ideal.mk_ker, hqp] using
+      Ideal.comap_isMaximal_of_surjective _ Ideal.Quotient.mk_surjective
+        (K := p.map (Ideal.Quotient.mk q))
+  refine ((J.finite_minimalPrimes_of_isNoetherianRing R).preimage
+    (fun _ _ _ _ h ↦ PrimeSpectrum.ext h : Set.InjOn PrimeSpectrum.asIdeal _)).subset ?_
+  rintro p ⟨hqp, hfp⟩
+  have hJp : J ≤ p.asIdeal := sup_le hqp ((Ideal.span_singleton_le_iff_mem _).mpr hfp)
+  exact ⟨⟨p.isPrime, hJp⟩, fun p' ⟨_, hJp'⟩ hp'p ↦
+    ((hmax p' hJp').eq_of_le p.isPrime.ne_top hp'p).ge⟩
 
 end PrimeSpectrum
 

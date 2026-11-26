@@ -13,13 +13,13 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
 public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
-public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 import TauCeti.AlgebraicGeometry.Normalization.Finite
+import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.RingTheory.IntegralClosure.SeparatingCoordinate
 import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 import TauCeti.RingTheory.Smooth.MinimalPrime
@@ -136,27 +136,6 @@ section Finite
 open _root_.IsLocalRing
 
 variable {M} {U : M.total.Opens}
-
-/-- Over an affine open `U` of the total space of a model of relative dimension at most one, the
-special fibre `Γ(U) ⧸ π Γ(U)` has Krull dimension at most one. -/
-lemma krullDimLE_sections_quotient [AlgebraicGeometry.RelativeDimensionLE 1 M.toBase]
-    (hU : IsAffineOpen U) {π : R} (hπ : Irreducible π) :
-    letI := M.toBase.sectionsAlgebra U
-    Ring.KrullDimLE 1 (Γ(M.total, U) ⧸ Ideal.span {algebraMap R Γ(M.total, U) π}) := by
-  let := M.toBase.sectionsAlgebra U
-  -- `Spec Γ(U) ⟶ Spec R` is the restriction of the structure morphism to `U`.
-  have : AlgebraicGeometry.RelativeDimensionLE 1
-      (Spec.map (CommRingCat.ofHom (algebraMap R Γ(M.total, U)))) :=
-    M.toBase.fromSpec_toSpec hU ▸ inferInstance
-  have hdim :=
-    (AlgebraicGeometry.relativeDimensionLE_SpecMap_iff R Γ(M.total, U)).mp this (maximalIdeal R)
-  -- The fibre over the closed point is `Γ(U) ⧸ 𝔪 Γ(U)`, and `𝔪 = (π)`.
-  have hmap : (maximalIdeal R).map (algebraMap R Γ(M.total, U)) =
-      Ideal.span {algebraMap R Γ(M.total, U) π} := by
-    rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton]
-  rw [← hmap, Ring.krullDimLE_iff, ← ringKrullDim_eq_of_ringEquiv
-    (Ideal.Fiber.algEquivQuotientMap (B := Γ(M.total, U)) (maximalIdeal R)).toRingEquiv]
-  exact_mod_cast hdim
 
 /-- The two maps from `R` to the sections of the generic fibre over `U ∩ C`, through the sections
 of the total space over `U` and through the fraction field, agree. -/
