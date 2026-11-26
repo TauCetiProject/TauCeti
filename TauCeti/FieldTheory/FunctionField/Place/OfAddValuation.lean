@@ -93,6 +93,7 @@ theorem mem_integers_ofAddValuation_iff {f : F} :
     WithTop.coe_zero]
 
 /-- **Two additive valuations give the same place exactly when they are equal.** -/
+@[simp]
 theorem ofAddValuation_inj {w : AddValuation F (WithTop ℤ)} {hw : Function.Surjective w}
     {hk' : ∀ c : k, c ≠ 0 → w (algebraMap k F c) = 0} :
     ofAddValuation v hv hk = ofAddValuation w hw hk' ↔ v = w := by

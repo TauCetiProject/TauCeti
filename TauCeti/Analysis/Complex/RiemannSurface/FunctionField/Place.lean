@@ -119,6 +119,7 @@ theorem ord_place_pos_iff {x : X} {f : MeromorphicFunction X} (hf : f ≠ 0) :
 
 /-- A meromorphic function lies in the maximal ideal of the place at `x` exactly when it
 vanishes at `x`. -/
+@[simp]
 theorem valuation_place_lt_one_iff {x : X} {f : MeromorphicFunction X} :
     (place x).valuation f < 1 ↔ f x = ((0 : ℂ) : OnePoint ℂ) := by
   rcases eq_or_ne f 0 with rfl | hf
@@ -136,6 +137,7 @@ theorem place_inj {x y : X} : place x = place y ↔ x = y :=
   place_injective.eq_iff
 
 /-- **The place at a point is rational**: its residue field is `ℂ`. -/
+@[simp]
 theorem degree_place (x : X) : (place x).degree = 1 :=
   (place x).degree_eq_one_of_isAlgClosed_of_isFunctionField isFunctionField
 

@@ -45,6 +45,8 @@ revision `d87db7956b7510870d514f10da52a0f22a5e54a6`.
   forward along the multiplicative form of `f` pushes `v.addVal` forward along `f`.
 * `AddValuation.addVal_expNeg` and `Valuation.expNeg_addVal`: `AddValuation.expNeg` and
   `Valuation.addVal` are inverse to each other.
+* `AddValuation.expNeg_le_expNeg_iff`: `AddValuation.expNeg` reverses the order, so that `simp`
+  gives `v.expNeg x ≤ 1 ↔ 0 ≤ v x`.
 -/
 
 public section
@@ -134,7 +136,17 @@ def expNeg (v : AddValuation R (WithTop M)) : Valuation R Mᵐ⁰ :=
     (v.map ((orderAddIsoWithTop M).symm : WithTop M →+o (Additive Mᵐ⁰)ᵒᵈ)
       ((orderAddIsoWithTop M).symm.toOrderIso.map_top))
 
-variable {v : AddValuation R (WithTop M)} {x : R}
+/-- The conversion is the inverse of the order-additive isomorphism `WithZero.orderAddIsoWithTop`,
+applied to the values of `v`, read as a multiplicative valuation. -/
+lemma expNeg_def (v : AddValuation R (WithTop M)) :
+    v.expNeg = Valuation.ofAddValuation
+      (v.map ((orderAddIsoWithTop M).symm : WithTop M →+o (Additive Mᵐ⁰)ᵒᵈ)
+        ((orderAddIsoWithTop M).symm.toOrderIso.map_top)) := (rfl)
+
+lemma expNeg_apply (v : AddValuation R (WithTop M)) (x : R) :
+    v.expNeg x = (orderAddIsoWithTop M).symm (v x) := (rfl)
+
+variable {v : AddValuation R (WithTop M)} {x y : R}
 
 @[simp]
 lemma negLog_expNeg (v : AddValuation R (WithTop M)) (x : R) : negLog (v.expNeg x) = v x :=
@@ -150,6 +162,21 @@ lemma expNeg_eq_zero_iff : v.expNeg x = 0 ↔ v x = ⊤ := by
 @[simp]
 lemma expNeg_eq_one_iff : v.expNeg x = 1 ↔ v x = 0 := by
   simpa using expNeg_eq_exp_iff (v := v) (x := x) (m := 0)
+
+/-- `AddValuation.expNeg` reverses the order: a larger additive value means a smaller valuation. -/
+lemma expNeg_le_expNeg_iff : v.expNeg x ≤ v.expNeg y ↔ v y ≤ v x := by
+  rw [← negLog_le_negLog, negLog_expNeg, negLog_expNeg]
+
+lemma expNeg_lt_expNeg_iff : v.expNeg x < v.expNeg y ↔ v y < v x :=
+  lt_iff_lt_of_le_iff_le expNeg_le_expNeg_iff
+
+@[simp]
+lemma expNeg_le_one_iff : v.expNeg x ≤ 1 ↔ 0 ≤ v x := by
+  simpa using expNeg_le_expNeg_iff (v := v) (x := x) (y := 1)
+
+@[simp]
+lemma expNeg_lt_one_iff : v.expNeg x < 1 ↔ 0 < v x := by
+  simpa using expNeg_lt_expNeg_iff (v := v) (x := x) (y := 1)
 
 /-- `AddValuation.expNeg` is a left inverse of `Valuation.addVal`. -/
 @[simp]
