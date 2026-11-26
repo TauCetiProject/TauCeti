@@ -147,9 +147,7 @@ private theorem exists_nonneg_mem_w1p0Submodule_gradient_posPart_neg_smul_deriv
   refine ⟨W1p.posPart hp T₀, W1p.posPart_mem_w1p0Submodule hp
       ((w1p0Submodule mu Omega 2).toSubmodule.neg_mem
         (W1p.testFunctionSMulComp_mem_w1p0Submodule hp φ hdF hM' u)), ?_, ?_⟩
-  · filter_upwards [(W1p.value_posPart hp T₀) ▸ Lp.coeFn_posPart (W1p.value T₀)] with x hx
-    rw [hx]
-    exact le_max_right _ _
+  · exact W1p.value_posPart_nonneg_ae hp T₀
   · filter_upwards [W1p.gradient_posPart_ae hp T₀, hvalT₀, hgradT₀] with x hgT hT₀ hgT₀
     rw [hgT, indicator_apply]
     simp only [mem_ofPred_eq, hT₀, hgT₀]
