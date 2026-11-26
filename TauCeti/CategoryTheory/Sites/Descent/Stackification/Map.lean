@@ -200,14 +200,10 @@ variable (J) in
 def mapFunctor₂ {φ φ' : F ⟶ G} (Γ : φ ⟶ φ') (U : C) :
     mapFunctor.{w} J φ U ⟶ mapFunctor.{w} J φ' U where
   app A := ofDescentDataMap (hf := A.mem) ((mapDescentData₂ A.f Γ).app A.D)
-  naturality {A B} ψ := hom_ext fun T i j a b w ↦ by
-    refine (comp_app (Hom.map φ ψ) (ofDescentDataMap (hf := B.mem)
-      ((mapDescentData₂ B.f Γ).app B.D)) a b b w w rfl).trans
-      (Eq.trans ?_ (comp_app (ofDescentDataMap (hf := A.mem)
-        ((mapDescentData₂ A.f Γ).app A.D)) (Hom.map φ' ψ) a a b w rfl w).symm)
-    rw [Hom.app_map, Hom.app_map, app_ofDescentDataMap_self, app_ofDescentDataMap_self,
-      mapDescentData₂_app_hom, mapDescentData₂_app_hom]
-    exact (map_app_comp_mapPullbackHom Γ _).symm
+  naturality {A B} ψ := comp_ofDescentDataMap_eq_ofDescentDataMap_comp _ _ _ _
+    fun T i j a b w ↦ by
+      rw [Hom.app_map, Hom.app_map, mapDescentData₂_app_hom, mapDescentData₂_app_hom]
+      exact (map_app_comp_mapPullbackHom Γ _).symm
 
 /-- The components of `mapFunctor₂ J Γ U` are the morphisms of descent data along the covering
 families given by the components of `mapDescentData₂`. -/
@@ -250,13 +246,11 @@ functor, through identities. -/
 def mapFunctorIdIso (U : C) : mapFunctor.{w} J (𝟙 F) U ≅ 𝟭 (Obj.{w} J F U) :=
   NatIso.ofComponents
     (fun A ↦ (ofDescentDataFunctor (J := J) A.f A.mem).mapIso ((mapDescentDataId F A.f).app A.D))
-    fun {A B} ψ ↦ hom_ext fun T i j a b w ↦ by
-      refine (comp_app (Hom.map (𝟙 F) ψ) (ofDescentDataMap (hf := B.mem)
-        ((mapDescentDataId F B.f).hom.app B.D)) a b b w w rfl).trans
-        (Eq.trans ?_ (comp_app (ofDescentDataMap (hf := A.mem)
-          ((mapDescentDataId F A.f).hom.app A.D)) ψ a a b w rfl w).symm)
-      rw [Hom.app_map, id_mapPullbackHom, app_ofDescentDataMap_self, app_ofDescentDataMap_self,
-        mapDescentDataId_hom_app_hom, mapDescentDataId_hom_app_hom]
+    fun {A B} ψ ↦ comp_ofDescentDataMap_eq_ofDescentDataMap_comp
+      ((mapDescentDataId F A.f).hom.app A.D) ((mapDescentDataId F B.f).hom.app B.D)
+      (Hom.map (𝟙 F) ψ) ψ fun T i j a b w ↦ by
+      rw [Hom.app_map, id_mapPullbackHom, mapDescentDataId_hom_app_hom,
+        mapDescentDataId_hom_app_hom]
       -- The identities are over objects of the descent data mapped along `𝟙 F`, which are those
       -- of `A` and `B` only up to unfolding the identity strong transformation.
       erw [CategoryTheory.Functor.map_id, CategoryTheory.Functor.map_id]
@@ -282,14 +276,11 @@ def mapFunctorCompIso {H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} [H.IsPre
   NatIso.ofComponents
     (fun A ↦ (ofDescentDataFunctor (J := J) A.f A.mem).mapIso
       ((φ.mapDescentDataComp A.f ψ).app A.D))
-    fun {A B} χ ↦ hom_ext fun T i j a b w ↦ by
-      refine (comp_app (Hom.map (φ ≫ ψ) χ) (ofDescentDataMap (hf := B.mem)
-        ((φ.mapDescentDataComp B.f ψ).hom.app B.D)) a b b w w rfl).trans
-        (Eq.trans ?_ (comp_app (ofDescentDataMap (hf := A.mem)
-          ((φ.mapDescentDataComp A.f ψ).hom.app A.D)) (Hom.map ψ (Hom.map φ χ)) a a b w rfl
-            w).symm)
-      rw [Hom.app_map, Hom.app_map, Hom.app_map, comp_mapPullbackHom, app_ofDescentDataMap_self,
-        app_ofDescentDataMap_self, mapDescentDataComp_hom_app_hom, mapDescentDataComp_hom_app_hom]
+    fun {A B} χ ↦ comp_ofDescentDataMap_eq_ofDescentDataMap_comp
+      ((φ.mapDescentDataComp A.f ψ).hom.app A.D) ((φ.mapDescentDataComp B.f ψ).hom.app B.D)
+      (Hom.map (φ ≫ ψ) χ) (Hom.map ψ (Hom.map φ χ)) fun T i j a b w ↦ by
+      rw [Hom.app_map, Hom.app_map, Hom.app_map, comp_mapPullbackHom,
+        mapDescentDataComp_hom_app_hom, mapDescentDataComp_hom_app_hom]
       simp
 
 /-- The local evaluations of the components of `mapFunctorCompIso` are the descent isomorphisms. -/
@@ -574,7 +565,11 @@ lemma stackificationMap₂_as_app_toNatTrans_app {φ φ' : F ⟶ G} (Γ : φ ⟶
 variable (F G) in
 /-- The stackification of prestacks acts functorially on strong transformations and their
 modifications. -/
-def stackificationMapFunctor :
+-- The body is exposed, as is that of `stackificationMap`, so that the images of strong
+-- transformations and modifications are definitionally `stackificationMap` and
+-- `stackificationMap₂`: the statement of `stackificationMapFunctor_map` does not typecheck
+-- otherwise.
+@[expose] def stackificationMapFunctor :
     (F ⟶ G) ⥤ (stackification.{w} J F ⟶ stackification.{w} J G) where
   obj := stackificationMap.{w} J
   map := stackificationMap₂.{w} J
@@ -584,6 +579,18 @@ def stackificationMapFunctor :
   map_comp Γ Δ := by
     ext a : 2
     exact mapFunctor₂_comp.{w} (J := J) Γ Δ a.as.unop
+
+/-- `stackificationMapFunctor` sends a strong transformation to its stackification. -/
+@[simp]
+lemma stackificationMapFunctor_obj (φ : F ⟶ G) :
+    (stackificationMapFunctor.{w} J F G).obj φ = stackificationMap.{w} J φ :=
+  (rfl)
+
+/-- `stackificationMapFunctor` sends a modification to its stackification. -/
+@[simp]
+lemma stackificationMapFunctor_map {φ φ' : F ⟶ G} (Γ : φ ⟶ φ') :
+    (stackificationMapFunctor.{w} J F G).map Γ = stackificationMap₂.{w} J Γ :=
+  (rfl)
 
 /-- The components of `mapFunctorIdIso` are compatible with the naturality isomorphisms
 `stackificationMapNatIso`. -/
@@ -640,6 +647,14 @@ lemma stackificationMapId_hom_as_app_toNatTrans_app (a : LocallyDiscrete Cᵒᵖ
       (mapFunctorIdIso.{w} J F a.as.unop).hom.app A :=
   (rfl)
 
+/-- The inverse components of `stackificationMapId` are those of `mapFunctorIdIso`. -/
+@[simp]
+lemma stackificationMapId_inv_as_app_toNatTrans_app (a : LocallyDiscrete Cᵒᵖ)
+    (A : Obj.{w} J F a.as.unop) :
+    ((stackificationMapId.{w} J F).inv.as.app a).toNatTrans.app A =
+      (mapFunctorIdIso.{w} J F a.as.unop).inv.app A :=
+  (rfl)
+
 /-- The stackification of a composite of strong transformations is the composite of their
 stackifications, up to the invertible modification with components `mapFunctorCompIso`. -/
 def stackificationMapComp {H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} [H.IsPrestack J]
@@ -659,6 +674,15 @@ lemma stackificationMapComp_hom_as_app_toNatTrans_app {H : LocallyDiscrete Cᵒ�
     (A : Obj.{w} J F a.as.unop) :
     ((stackificationMapComp.{w} J φ ψ).hom.as.app a).toNatTrans.app A =
       (mapFunctorCompIso.{w} J φ ψ a.as.unop).hom.app A :=
+  (rfl)
+
+/-- The inverse components of `stackificationMapComp` are those of `mapFunctorCompIso`. -/
+@[simp]
+lemma stackificationMapComp_inv_as_app_toNatTrans_app {H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
+    [H.IsPrestack J] (φ : F ⟶ G) (ψ : G ⟶ H) (a : LocallyDiscrete Cᵒᵖ)
+    (A : Obj.{w} J F a.as.unop) :
+    ((stackificationMapComp.{w} J φ ψ).inv.as.app a).toNatTrans.app A =
+      (mapFunctorCompIso.{w} J φ ψ a.as.unop).inv.app A :=
   (rfl)
 
 /-- The naturality square of the components `toObjFunctorCompMapFunctorIso` with respect to the

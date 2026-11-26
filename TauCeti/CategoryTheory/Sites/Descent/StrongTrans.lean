@@ -164,6 +164,7 @@ lemma id_mapPullbackHom ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ �
 
 /-- `mapPullbackHom` for a composite of strong transformations is the composite of the
 `mapPullbackHom`. -/
+@[simp]
 lemma comp_mapPullbackHom (φ : F ⟶ G) (ψ : G ⟶ H) ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄
     ⦃M₂ : F.obj (.mk (op X₂))⦄ ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄
     (a : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂) :
@@ -286,6 +287,14 @@ lemma toDescentDataCompMapDescentDataIso_inv_app_hom (M : F.obj (.mk (op S))) (i
       (φ.naturality (f i).op.toLoc).inv.toNatTrans.app M :=
   (rfl)
 
+/-- Composing an equation of morphisms `K₁.obj P ⟶ K₂.obj Q` with images of identities on both
+sides. It is applied by unification to cancel identities over objects that agree with `P` and `Q`
+only up to unfolding. -/
+private lemma map_id_comp_eq_comp_map_id {D₁ D₂ D' : Type*} [Category D₁] [Category D₂]
+    [Category D'] (K₁ : D₁ ⥤ D') (K₂ : D₂ ⥤ D') {P : D₁} {Q : D₂} {x y : K₁.obj P ⟶ K₂.obj Q}
+    (h : x = y) : K₁.map (𝟙 P) ≫ x = y ≫ K₂.map (𝟙 Q) := by
+  simp [h]
+
 variable (F) in
 /-- Descent data mapped along the identity strong transformation are isomorphic to the original
 ones, through identities. -/
@@ -294,12 +303,8 @@ def mapDescentDataId : (𝟙 F : F ⟶ F).mapDescentData f ≅ 𝟭 _ :=
     (fun D ↦ DescentData.isoMk (fun i ↦ Iso.refl _) (fun Y q i₁ i₂ f₁ f₂ hf₁ hf₂ ↦ by
       -- The objects of the mapped descent datum are those of `D` only up to unfolding the
       -- identity strong transformation, so the identities are cancelled by unification.
-      have cancel {D₁ D₂ D' : Type u'} [Category.{v'} D₁] [Category.{v'} D₂] [Category.{v'} D']
-          (K₁ : D₁ ⥤ D') (K₂ : D₂ ⥤ D') {P : D₁} {Q : D₂} {x y : K₁.obj P ⟶ K₂.obj Q} (h : x = y) :
-          K₁.map (𝟙 P) ≫ x = y ≫ K₂.map (𝟙 Q) := by
-        simp [h]
-      exact cancel (F.map f₁.op.toLoc).toFunctor (F.map f₂.op.toLoc).toFunctor
-        (id_mapPullbackHom (D.hom q f₁ f₂ hf₁ hf₂)).symm))
+      exact map_id_comp_eq_comp_map_id (F.map f₁.op.toLoc).toFunctor
+        (F.map f₂.op.toLoc).toFunctor (id_mapPullbackHom (D.hom q f₁ f₂ hf₁ hf₂)).symm))
     (fun ψ ↦ by
       ext i
       -- As above, the components of the identity strong transformation are identities.
@@ -325,13 +330,8 @@ def mapDescentDataComp (ψ : G ⟶ H) :
     (fun D ↦ DescentData.isoMk
       (fun i ↦ Iso.refl _) (fun Y q i₁ i₂ f₁ f₂ hf₁ hf₂ ↦ by
         -- As in `mapDescentDataId`, the identities are cancelled by unification.
-        have cancel {D₁ D₂ D' : Type u'} [Category.{v'} D₁] [Category.{v'} D₂]
-            [Category.{v'} D'] (K₁ : D₁ ⥤ D') (K₂ : D₂ ⥤ D') {P : D₁} {Q : D₂}
-            {x y : K₁.obj P ⟶ K₂.obj Q} (h : x = y) :
-            K₁.map (𝟙 P) ≫ x = y ≫ K₂.map (𝟙 Q) := by
-          simp [h]
-        exact cancel (H.map f₁.op.toLoc).toFunctor (H.map f₂.op.toLoc).toFunctor
-          (comp_mapPullbackHom φ ψ (D.hom q f₁ f₂ hf₁ hf₂)).symm))
+        exact map_id_comp_eq_comp_map_id (H.map f₁.op.toLoc).toFunctor
+          (H.map f₂.op.toLoc).toFunctor (comp_mapPullbackHom φ ψ (D.hom q f₁ f₂ hf₁ hf₂)).symm))
     (fun χ ↦ by
       ext i
       -- The components of `φ ≫ ψ` are the composites of those of `φ` and `ψ`, by definition.
