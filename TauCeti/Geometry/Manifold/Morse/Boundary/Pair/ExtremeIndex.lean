@@ -351,6 +351,7 @@ theorem finsum_fundamentalSign_mul_signedPairCoeff (q : criticalPoints 𝓘(ℝ,
 pseudo-gradients adapted to Morse functions and an orientation `oM` of `M`, the signed pair map
 sends the fundamental chain `[M]` of `f₀` to the fundamental chain of `f₁`, with coefficients in any
 ring. -/
+@[simp]
 theorem signedPairMap_signedMorseFundamentalChain (R : Type*) [Ring R] :
     hX₀.signedPairMap hX₁ 𝔬₀ 𝔬₁ hf₁ R (hX₀.signedMorseFundamentalChain 𝔬₀ oM hf₀ R) =
       hX₁.signedMorseFundamentalChain 𝔬₁ oM hf₁ R := by
