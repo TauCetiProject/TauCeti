@@ -210,10 +210,10 @@ theorem floerSobolevOperator_jetLp_ae_eq (ω : SymplecticForm V) {J : ℝ × ℝ
     {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
     (hM : MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure) (ξ : testSection V) :
     ω.floerSobolevOperator J Ks Kt u
-        ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ =ᵐ[stripMeasure]
+        ⟨jetLp 2 (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ =ᵐ[stripMeasure]
       ω.floerLinearization J Ks Kt u ξ := by
   filter_upwards [coeFn_floerSobolevOperator ω hM
-      ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩, coeFn_jetLp ξ] with z h₁ h₂
+      ⟨jetLp 2 (testSection V) ξ, jetLp_mem_jetClosure ξ⟩, coeFn_jetLp 2 ξ] with z h₁ h₂
   rw [h₁, h₂, floerJetCoeff_jet]
 
 /-- The coefficient field of the linearized Floer operator at `z` depends on the Floer data only
@@ -462,10 +462,10 @@ theorem floerWeightedSobolevOperator_jetLp_ae_eq (ω : SymplecticForm V)
     (hM : MemLp (fun z ↦ ω.floerJetCoeff J Ks Kt u z - c z.1 • fst ℝ V (V × V)) ∞ stripMeasure)
     (ξ : testSection V) :
     ω.floerWeightedSobolevOperator J Ks Kt u c
-        ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ =ᵐ[stripMeasure]
+        ⟨jetLp 2 (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ =ᵐ[stripMeasure]
       fun z ↦ ω.floerLinearization J Ks Kt u ξ z - c z.1 • (ξ : ℝ × ℝ → V) z := by
   filter_upwards [coeFn_floerWeightedSobolevOperator ω hM
-      ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩, coeFn_jetLp ξ] with z h₁ h₂
+      ⟨jetLp 2 (testSection V) ξ, jetLp_mem_jetClosure ξ⟩, coeFn_jetLp 2 ξ] with z h₁ h₂
   rw [h₁, h₂]
   simp only [sub_apply, smul_apply, coe_fst', floerJetCoeff_jet]
   simp only [jet_apply]

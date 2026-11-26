@@ -101,7 +101,7 @@ theorem exists_mem_ker_floerSobolevOperator_valueL_eq (ω : SymplecticForm V) {H
     (hξ : MemLp (fun z ↦ fderiv ℝ u z (1, 0)) 2 stripMeasure) :
     ∃ x ∈ (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun w ↦ H w.2) u).ker,
-      valueL x = hξ.toLp fun z ↦ fderiv ℝ u z (1, 0) := by
+      valueL 2 x = hξ.toLp fun z ↦ fderiv ℝ u z (1, 0) := by
   have hξd : ContDiff ℝ 2 fun z ↦ fderiv ℝ u z (1, 0) :=
     (hu.fderiv_right (m := 2) (by norm_num)).clm_apply contDiff_const
   have hξper (s t : ℝ) : fderiv ℝ u (s, t + 1) (1, 0) = fderiv ℝ u (s, t) (1, 0) := by

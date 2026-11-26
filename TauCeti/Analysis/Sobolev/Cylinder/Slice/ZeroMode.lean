@@ -151,13 +151,13 @@ is the jet of the test section `(s, t) ↦ φ(s)`. -/
 private theorem zeroModeJetL_eq_jetLp {φ : ℝ → V} (hφ : ContDiff ℝ 2 φ)
     (hφc : HasCompactSupport φ)
     (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
-    zeroModeJetL u = jetLp (testSection V) ⟨_, comp_fst_mem_testSection hφ hφc⟩ := by
+    zeroModeJetL u = jetLp 2 (testSection V) ⟨_, comp_fst_mem_testSection hφ hφc⟩ := by
   have hφ1 : ContDiff ℝ 1 φ := hφ.of_le one_le_two
   have hw := ((hasWeakFDerivOn_base_prev _ u).congr_ae hu).ae_eq_fderiv
     ((hφ1.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
     fun s _ ↦ hφ1.differentiable one_ne_zero s
   refine Lp.ext ?_
-  filter_upwards [coeFn_zeroModeJetL u, coeFn_jetLp (S := testSection V)
+  filter_upwards [coeFn_zeroModeJetL u, coeFn_jetLp 2 (S := testSection V)
     ⟨_, comp_fst_mem_testSection hφ hφc⟩, ae_eq_comp_fst hu,
     measurePreserving_fst_stripMeasure.quasiMeasurePreserving.ae_eq_comp hw] with z h₁ h₂ h₃ h₄
   rw [h₁, h₂, jet_comp_fst (hφ1.differentiable one_ne_zero)]
@@ -170,7 +170,7 @@ private theorem zeroModeJetL_mem_H1
       (ContinuousLinearMap.id ℝ (Lp V 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     zeroModeJetL u ∈ H1 V := by
   refine induction_on_contDiff_hasCompactSupport ENNReal.ofNat_ne_top u
-    ((isClosed_jetClosure _).preimage zeroModeJetL.continuous) fun v φ hφ hφc hv ↦ ?_
+    ((isClosed_jetClosure 2 _).preimage zeroModeJetL.continuous) fun v φ hφ hφc hv ↦ ?_
   rw [zeroModeJetL_eq_jetLp (hφ.of_le (by norm_cast)) hφc hv]
   exact jetLp_mem_jetClosure _
 
@@ -198,14 +198,14 @@ private theorem zeroModeL_eq_jetLp {φ : ℝ → V} (hφ : ContDiff ℝ 2 φ)
     (hφc : HasCompactSupport φ)
     (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
     zeroModeL V u =
-      ⟨jetLp (testSection V) ⟨_, comp_fst_mem_testSection hφ hφc⟩, jetLp_mem_jetClosure _⟩ :=
+      ⟨jetLp 2 (testSection V) ⟨_, comp_fst_mem_testSection hφ hφc⟩, jetLp_mem_jetClosure _⟩ :=
   Subtype.ext (zeroModeJetL_eq_jetLp hφ hφc hu)
 
 /-- The value of the zero mode of a path `ζ` is the zero mode of `ζ` in `L²`. -/
 theorem valueL_zeroModeL
     (u : WeakDerivStep volume ⊤ 2
       (ContinuousLinearMap.id ℝ (Lp V 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
-    valueL (zeroModeL V u) = zeroModeLp V (prev _ u) := by
+    valueL 2 (zeroModeL V u) = zeroModeLp V (prev _ u) := by
   refine Lp.ext ?_
   filter_upwards [coeFn_valueL (zeroModeL V u), coeFn_zeroModeL u,
     coeFn_zeroModeLp (prev _ u)] with z h₁ h₂ h₃
@@ -271,7 +271,7 @@ theorem sliceAverageL_mem_range_zeroModeL (x : H1 V) :
     sliceAverageL x ∈ range (zeroModeL V) := by
   have hcl : IsClosed {x : H1 V | sliceAverageL x ∈ range (zeroModeL V)} :=
     isClosed_range_zeroModeL.preimage sliceAverageL.continuous
-  refine (denseRange_codRestrict_jetLp (testSection V)).induction_on x hcl fun ξ ↦ ?_
+  refine (denseRange_codRestrict_jetLp 2 (testSection V)).induction_on x hcl fun ξ ↦ ?_
   -- The slice average of the jet of `ξ` is the jet of the section `(s, t) ↦ φ(s)`.
   obtain ⟨hψ, -, R, hR⟩ := mem_testSection_iff.1 (sliceAverage_mem_testSection ξ.property)
   set φ : ℝ → V := fun s ↦ sliceAverage (ξ : ℝ × ℝ → V) (s, 0)
@@ -289,8 +289,8 @@ theorem sliceAverageL_mem_range_zeroModeL (x : H1 V) :
     (hφ.continuous.memLp_of_hasCompactSupport hφc)
     ((hφ.continuous_fderiv two_ne_zero).memLp_of_hasCompactSupport (hφc.fderiv (𝕜 := ℝ)))
   refine ⟨u, ?_⟩
-  have hξ : (jetLp (testSection V)).codRestrict (H1 V) jetLp_mem_jetClosure ξ =
-      ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ :=
+  have hξ : (jetLp 2 (testSection V)).codRestrict (H1 V) jetLp_mem_jetClosure ξ =
+      ⟨jetLp 2 (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ :=
     Subtype.ext (LinearMap.codRestrict_apply _ _ ξ)
   rw [zeroModeL_eq_jetLp hφ hφc hu, hξ, sliceAverageL_jetLp]
   congr 3

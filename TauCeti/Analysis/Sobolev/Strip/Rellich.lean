@@ -238,14 +238,14 @@ private theorem eLpNorm_sub_smul_sq_le {χ : ℝ × ℝ → ℝ} {T δ : ℝ} (h
 its cut-off by `ξ - χ ξ`. -/
 private theorem restrictValue_sub_ae_eq {F₀ F₁ : Submodule ℝ V} {T : ℝ} {χ : ℝ × ℝ → ℝ}
     (ξ : testSection F₀ F₁) (hmem : MemLp (fun z ↦ χ z • (ξ : ℝ × ℝ → V) z) 2 volume) :
-    (restrictValue T (jetLp (testSection F₀ F₁) ξ) -
+    (restrictValue T (jetLp 2 (testSection F₀ F₁) ξ) -
       (LpToLpRestrictCLM (ℝ × ℝ) V ℝ stripMeasure 2 (Icc (-T) T ×ˢ Icc 0 1)).comp
         (LpToLpRestrictCLM (ℝ × ℝ) V ℝ volume 2 (univ ×ˢ Icc 0 1)) (hmem.toLp _) : Lp V 2 _)
       =ᵐ[stripMeasure.restrict (Icc (-T) T ×ˢ Icc 0 1)]
       fun z ↦ (ξ : ℝ × ℝ → V) z - χ z • (ξ : ℝ × ℝ → V) z := by
   set rect : Set (ℝ × ℝ) := Icc (-T) T ×ˢ Icc 0 1
-  have h₂ : (jetLp (testSection F₀ F₁) ξ : ℝ × ℝ → V × V × V) =ᵐ[stripMeasure.restrict rect]
-      jet (ξ : ℝ × ℝ → V) := ae_restrict_of_ae (coeFn_jetLp ξ)
+  have h₂ : (jetLp 2 (testSection F₀ F₁) ξ : ℝ × ℝ → V × V × V) =ᵐ[stripMeasure.restrict rect]
+      jet (ξ : ℝ × ℝ → V) := ae_restrict_of_ae (coeFn_jetLp 2 ξ)
   have h₃ : (LpToLpRestrictCLM (ℝ × ℝ) V ℝ stripMeasure 2 rect).comp
       (LpToLpRestrictCLM (ℝ × ℝ) V ℝ volume 2 (univ ×ˢ Icc 0 1)) (hmem.toLp _)
         =ᵐ[stripMeasure.restrict rect] hmem.toLp _ :=
@@ -253,10 +253,10 @@ private theorem restrictValue_sub_ae_eq {F₀ F₁ : Submodule ℝ V} {T : ℝ} 
   have h₄ : (hmem.toLp _ : ℝ × ℝ → V) =ᵐ[stripMeasure.restrict rect]
       fun z ↦ χ z • (ξ : ℝ × ℝ → V) z :=
     ae_restrict_of_ae (ae_restrict_of_ae hmem.coeFn_toLp)
-  filter_upwards [Lp.coeFn_sub (restrictValue T (jetLp (testSection F₀ F₁) ξ))
+  filter_upwards [Lp.coeFn_sub (restrictValue T (jetLp 2 (testSection F₀ F₁) ξ))
       ((LpToLpRestrictCLM (ℝ × ℝ) V ℝ stripMeasure 2 rect).comp
         (LpToLpRestrictCLM (ℝ × ℝ) V ℝ volume 2 (univ ×ˢ Icc 0 1)) (hmem.toLp _)),
-      coeFn_restrictValue T (jetLp (testSection F₀ F₁) ξ), h₂, h₃, h₄]
+      coeFn_restrictValue T (jetLp 2 (testSection F₀ F₁) ξ), h₂, h₃, h₄]
     with z h₀ h₁ h₂ h₃ h₄
   rw [h₀, Pi.sub_apply, h₁, h₂, h₃, h₄, jet_apply]
 
@@ -266,7 +266,7 @@ bounded set: up to `ε`, they are the restrictions of the cut-off sections of
 private theorem totallyBounded_image_restrictValue [FiniteDimensional ℝ V]
     (F₀ F₁ : Submodule ℝ V) (T : ℝ) :
     TotallyBounded (restrictValue T ''
-      (jetLp (testSection F₀ F₁) '' {ξ | ‖jetLp (testSection F₀ F₁) ξ‖ < 1})) := by
+      (jetLp 2 (testSection F₀ F₁) '' {ξ | ‖jetLp 2 (testSection F₀ F₁) ξ‖ < 1})) := by
   set rect : Set (ℝ × ℝ) := Icc (-T) T ×ˢ Icc 0 1
   rw [Metric.totallyBounded_iff]
   intro ε hε
@@ -284,8 +284,8 @@ private theorem totallyBounded_image_restrictValue [FiniteDimensional ℝ V]
   rintro _ ⟨_, ⟨ξ, hξ, rfl⟩, rfl⟩
   have hc : ContDiff ℝ 1 (ξ : ℝ × ℝ → V) := contDiff_one_of_mem_testSection ξ.property
   have hξ1 : eLpNorm (jet (ξ : ℝ × ℝ → V)) 2 stripMeasure ≤ 1 := by
-    have h : ‖jetLp (testSection F₀ F₁) ξ‖ ≤ 1 := le_of_lt hξ
-    rw [jetLp_apply, Lp.norm_toLp] at h
+    have h : ‖jetLp 2 (testSection F₀ F₁) ξ‖ ≤ 1 := le_of_lt hξ
+    rw [jetLp_apply 2, Lp.norm_toLp] at h
     simpa using
       (ENNReal.le_ofReal_iff_toReal_le (memLp_jet ξ.property).eLpNorm_ne_top zero_le_one).2 h
   have hmem : MemLp (fun z ↦ χ z • (ξ : ℝ × ℝ → V) z) 2 volume :=
@@ -295,7 +295,7 @@ private theorem totallyBounded_image_restrictValue [FiniteDimensional ℝ V]
   refine mem_iUnion₂.2 ⟨y, hy, ?_⟩
   have hdiff := restrictValue_sub_ae_eq (T := T) ξ hmem
   have hclose :
-      dist (restrictValue T (jetLp (testSection F₀ F₁) ξ)) (Res (hmem.toLp _)) ≤ ε / 2 := by
+      dist (restrictValue T (jetLp 2 (testSection F₀ F₁) ξ)) (Res (hmem.toLp _)) ≤ ε / 2 := by
     rw [dist_eq_norm, Lp.norm_def, eLpNorm_congr_ae hdiff]
     refine ENNReal.toReal_le_of_le_ofReal (by positivity)
       ((ENNReal.pow_le_pow_left_iff two_ne_zero).1 ?_)
@@ -311,7 +311,7 @@ private theorem totallyBounded_image_restrictValue [FiniteDimensional ℝ V]
           have : δ ≤ ε ^ 2 / 64 := min_le_left _ _
           nlinarith
   rw [mem_ball] at hyd ⊢
-  calc _ ≤ dist (restrictValue T (jetLp (testSection F₀ F₁) ξ)) (Res (hmem.toLp _)) +
+  calc _ ≤ dist (restrictValue T (jetLp 2 (testSection F₀ F₁) ξ)) (Res (hmem.toLp _)) +
         dist (Res (hmem.toLp _)) y := dist_triangle _ _ _
     _ < ε / 2 + ε / 2 := add_lt_add_of_le_of_lt hclose hyd
     _ = ε := add_halves ε
@@ -329,11 +329,11 @@ theorem isCompactOperator_restrictValue_comp_subtypeL [FiniteDimensional ℝ V]
   rintro _ ⟨x, hx, rfl⟩
   -- An element of the unit ball of `H1` is a limit of jets of norm less than `1`.
   have hxc : (x : Lp (V × V × V) 2 stripMeasure) ∈
-      closure (jetLp (testSection F₀ F₁) '' {ξ | ‖jetLp (testSection F₀ F₁) ξ‖ < 1}) := by
+      closure (jetLp 2 (testSection F₀ F₁) '' {ξ | ‖jetLp 2 (testSection F₀ F₁) ξ‖ < 1}) := by
     have h : (x : Lp (V × V × V) 2 stripMeasure) ∈
-        ball 0 1 ∩ closure (range (jetLp (testSection F₀ F₁))) := by
+        ball 0 1 ∩ closure (range (jetLp 2 (testSection F₀ F₁))) := by
       refine ⟨by simpa using hx, ?_⟩
-      rw [← coe_jetClosure]
+      rw [← coe_jetClosure 2]
       exact x.property
     refine closure_mono ?_ (isOpen_ball.inter_closure h)
     rintro _ ⟨hb, ξ, rfl⟩

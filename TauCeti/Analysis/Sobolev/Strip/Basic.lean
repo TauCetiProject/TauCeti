@@ -163,15 +163,15 @@ theorem memLp_jet (hξ : ξ ∈ testSection F₀ F₁) : MemLp (jet ξ) 2 stripM
   exact memLp_jet_of_contDiff (contDiff_one_of_mem_testSection hξ) hR
 
 /-- The test sections are differentiable with square integrable jets. -/
-instance : HasL2Jets (testSection F₀ F₁) :=
+instance : HasLpJets 2 (testSection F₀ F₁) :=
   ⟨fun _ hξ ↦ (contDiff_one_of_mem_testSection hξ).differentiable one_ne_zero, fun _ ↦ memLp_jet⟩
 
 /-- The jet of a test section does not depend on the boundary conditions it is considered
 with. -/
 theorem jetLp_inclusion (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (ξ : testSection F₀ F₁) :
-    jetLp (testSection F₀' F₁') (Submodule.inclusion (testSection_mono h₀ h₁) ξ) =
-      jetLp (testSection F₀ F₁) ξ := by
-  rw [jetLp_apply, jetLp_apply]
+    jetLp 2 (testSection F₀' F₁') (Submodule.inclusion (testSection_mono h₀ h₁) ξ) =
+      jetLp 2 (testSection F₀ F₁) ξ := by
+  rw [jetLp_apply 2, jetLp_apply 2]
   rfl
 
 variable (F₀ F₁) in
@@ -181,21 +181,21 @@ completion of the test sections in the `W^{1,2}` norm. An element is an `L²` je
 `(ξ, ξ_s, ξ_t)`. It is the closure `TauCeti.StripSobolev.jetClosure` of the jets of the test
 sections, the construction shared with the cylinder. -/
 abbrev H1 : Submodule ℝ (Lp (V × V × V) 2 stripMeasure) :=
-  jetClosure (testSection F₀ F₁)
+  jetClosure 2 (testSection F₀ F₁)
 
 variable (F₀ F₁) in
 /-- The jet of a test section, as an element of `H1`. -/
 def jetH1 : testSection F₀ F₁ →ₗ[ℝ] H1 F₀ F₁ :=
-  (jetLp (testSection F₀ F₁)).codRestrict (H1 F₀ F₁) jetLp_mem_jetClosure
+  (jetLp 2 (testSection F₀ F₁)).codRestrict (H1 F₀ F₁) jetLp_mem_jetClosure
 
 @[simp]
 theorem coe_jetH1 (ξ : testSection F₀ F₁) : (jetH1 F₀ F₁ ξ : Lp (V × V × V) 2 stripMeasure) =
-    jetLp (testSection F₀ F₁) ξ :=
+    jetLp 2 (testSection F₀ F₁) ξ :=
   (rfl)
 
 /-- The jets of test sections are dense in `H1`. -/
 theorem denseRange_jetH1 : DenseRange (jetH1 F₀ F₁) :=
-  denseRange_codRestrict_jetLp _
+  denseRange_codRestrict_jetLp 2 _
 
 /-- A closed subset of `H1` containing the jets of all test sections is everything. -/
 theorem H1_induction {P : H1 F₀ F₁ → Prop} (hP : IsClosed {x | P x})
@@ -212,7 +212,7 @@ theorem H1_induction₂ {P : H1 F₀ F₁ → H1 F₀ F₁ → Prop}
 
 /-- Weakening the boundary conditions enlarges `H1`. -/
 theorem H1_mono (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') : H1 F₀ F₁ ≤ H1 F₀' F₁' := by
-  rw [H1, H1, jetClosure_def, jetClosure_def]
+  rw [H1, H1, jetClosure_def 2, jetClosure_def 2]
   refine Submodule.topologicalClosure_mono ?_
   rintro _ ⟨ξ, rfl⟩
   exact ⟨Submodule.inclusion (testSection_mono h₀ h₁) ξ, jetLp_inclusion h₀ h₁ ξ⟩
@@ -286,21 +286,21 @@ theorem derivTL_inclusion (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (x : H
 /-- The value of the jet of a test section is the section. -/
 theorem valueL_jetH1 (ξ : testSection F₀ F₁) :
     valueL F₀ F₁ (jetH1 F₀ F₁ ξ) =ᵐ[stripMeasure] (ξ : ℝ × ℝ → V) := by
-  filter_upwards [coeFn_valueL (jetH1 F₀ F₁ ξ), coeFn_jetLp ξ] with z h₁ h₂
+  filter_upwards [coeFn_valueL (jetH1 F₀ F₁ ξ), coeFn_jetLp 2 ξ] with z h₁ h₂
   rw [h₁, coe_jetH1, h₂, jet_apply]
 
 /-- The `s`-derivative of the jet of a test section is `∂s ξ`. -/
 theorem derivSL_jetH1 (ξ : testSection F₀ F₁) :
     derivSL F₀ F₁ (jetH1 F₀ F₁ ξ) =ᵐ[stripMeasure]
       fun z ↦ fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0) := by
-  filter_upwards [coeFn_derivSL (jetH1 F₀ F₁ ξ), coeFn_jetLp ξ] with z h₁ h₂
+  filter_upwards [coeFn_derivSL (jetH1 F₀ F₁ ξ), coeFn_jetLp 2 ξ] with z h₁ h₂
   rw [h₁, coe_jetH1, h₂, jet_apply]
 
 /-- The `t`-derivative of the jet of a test section is `∂t ξ`. -/
 theorem derivTL_jetH1 (ξ : testSection F₀ F₁) :
     derivTL F₀ F₁ (jetH1 F₀ F₁ ξ) =ᵐ[stripMeasure]
       fun z ↦ fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1) := by
-  filter_upwards [coeFn_derivTL (jetH1 F₀ F₁ ξ), coeFn_jetLp ξ] with z h₁ h₂
+  filter_upwards [coeFn_derivTL (jetH1 F₀ F₁ ξ), coeFn_jetLp 2 ξ] with z h₁ h₂
   rw [h₁, coe_jetH1, h₂, jet_apply]
 
 /-! ### Elements of `H1` are determined by their values -/
@@ -390,10 +390,10 @@ private theorem integral_smul_add_eq_zero_of_mem_H1 {x : Lp (V × V × V) 2 stri
         (ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLp f] with z h₁ h₂
       simp [B, h₁, h₂]
   -- `Λ` vanishes on the jets of test sections, hence on their closure `H1`.
-  have hrange : Set.range (jetLp (testSection F₀ F₁)) ⊆ {f | Λ f = 0} := by
+  have hrange : Set.range (jetLp 2 (testSection F₀ F₁)) ⊆ {f | Λ f = 0} := by
     rintro _ ⟨ξ, rfl⟩
     rw [mem_ofPred_eq, hΛ]
-    have hξ := coeFn_jetLp ξ
+    have hξ := coeFn_jetLp 2 ξ
     have hξ2 := (mem_testSection_iff.1 ξ.property).1
     have hint₁ : Integrable (fun z ↦ φ z • fderiv ℝ (ξ : ℝ × ℝ → V) z e) stripMeasure :=
       (hφ.continuous.smul ((hξ2.continuous_fderiv (by norm_num)).clm_apply
@@ -401,10 +401,10 @@ private theorem integral_smul_add_eq_zero_of_mem_H1 {x : Lp (V × V × V) 2 stri
     have hint₂ : Integrable (fun z ↦ fderiv ℝ φ z e • (ξ : ℝ × ℝ → V) z) stripMeasure :=
       (((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const).smul
         hξ2.continuous).integrable_of_hasCompactSupport ((hφs.fderiv_apply (𝕜 := ℝ) e).smul_right)
-    have e₁ : ∫ z, φ z • P (jetLp (testSection F₀ F₁) ξ z) ∂stripMeasure =
+    have e₁ : ∫ z, φ z • P (jetLp 2 (testSection F₀ F₁) ξ z) ∂stripMeasure =
         ∫ z, φ z • fderiv ℝ (ξ : ℝ × ℝ → V) z e ∂stripMeasure :=
       integral_congr_ae (hξ.mono fun z hz ↦ by simp only [hz, hP])
-    have e₂ : ∫ z, fderiv ℝ φ z e • (jetLp (testSection F₀ F₁) ξ z).1 ∂stripMeasure =
+    have e₂ : ∫ z, fderiv ℝ φ z e • (jetLp 2 (testSection F₀ F₁) ξ z).1 ∂stripMeasure =
         ∫ z, fderiv ℝ φ z e • (ξ : ℝ × ℝ → V) z ∂stripMeasure :=
       integral_congr_ae (hξ.mono fun z hz ↦ by simp only [hz, jet_apply])
     rw [e₁, e₂, ← integral_add hint₁ hint₂]
@@ -495,27 +495,27 @@ theorem comp_add_mem_testSection (hξ : ξ ∈ testSection F₀ F₁) (a : ℝ) 
   simpa using hR (s + a) t (by linarith)
 
 /-- The test sections are invariant under translation in the `s` direction, so translation by
-`a`, `TauCeti.StripSobolev.translate (testSection F₀ F₁) a`, is a linear isometric equivalence of
+`a`, `TauCeti.StripSobolev.translate 2 (testSection F₀ F₁) a`, is a linear isometric equivalence of
 `H1 F₀ F₁`. -/
 instance : IsTranslationInvariant (testSection F₀ F₁) :=
   ⟨fun _ hξ a ↦ comp_add_mem_testSection hξ a⟩
 
 /-- Translation of the jet of a test section is the jet of its translate. -/
 theorem translate_jetH1 (a : ℝ) (ξ : testSection F₀ F₁) :
-    translate (testSection F₀ F₁) a (jetH1 F₀ F₁ ξ) =
+    translate 2 (testSection F₀ F₁) a (jetH1 F₀ F₁ ξ) =
       jetH1 F₀ F₁ ⟨_, comp_add_mem_testSection ξ.property a⟩ :=
-  Subtype.ext <| by rw [coe_translate, coe_jetH1, coe_jetH1, translateLp_jetLp]
+  Subtype.ext <| by rw [coe_translate, coe_jetH1, coe_jetH1, translateLp_jetLp 2]
 
 /-- Translation by `0` is the identity. -/
 @[simp]
-theorem translate_zero (x : H1 F₀ F₁) : translate (testSection F₀ F₁) 0 x = x :=
+theorem translate_zero (x : H1 F₀ F₁) : translate 2 (testSection F₀ F₁) 0 x = x :=
   Subtype.ext <| by rw [coe_translate, translateLp_zero]
 
 /-- Translations compose by adding the translation lengths. -/
 @[simp]
 theorem translate_translate (a b : ℝ) (x : H1 F₀ F₁) :
-    translate (testSection F₀ F₁) a (translate (testSection F₀ F₁) b x) =
-      translate (testSection F₀ F₁) (a + b) x :=
+    translate 2 (testSection F₀ F₁) a (translate 2 (testSection F₀ F₁) b x) =
+      translate 2 (testSection F₀ F₁) (a + b) x :=
   Subtype.ext <| by rw [coe_translate, coe_translate, coe_translate, translateLp_translateLp]
 
 end Translate
@@ -610,7 +610,7 @@ theorem norm_traceₗ_le (ξ : testSection F₀ F₁) :
     (hj.integrable_norm_pow two_ne_zero).const_mul 4
   -- Integrate the trace estimate on the segments `{s} × [0, 1]` over `s`.
   have hsq : ‖h0.toLp _‖ ^ 2 + ‖h1.toLp _‖ ^ 2 ≤ 4 * ‖jetH1 F₀ F₁ ξ‖ ^ 2 := by
-    rw [h0.norm_toLp_sq, h1.norm_toLp_sq, ← Submodule.norm_coe, coe_jetH1, jetLp_apply,
+    rw [h0.norm_toLp_sq, h1.norm_toLp_sq, ← Submodule.norm_coe, coe_jetH1, jetLp_apply 2,
       hj.norm_toLp_sq, ← integral_add (h0.integrable_norm_pow two_ne_zero)
         (h1.integrable_norm_pow two_ne_zero), ← integral_const_mul]
     rw [hμ] at hint ⊢
@@ -684,10 +684,10 @@ section lie in `F₀` and `F₁`, that is, when it is a test section for these b
 conditions. -/
 theorem jetLp_mem_H1_iff (hF₀ : IsClosed (F₀ : Set V)) (hF₁ : IsClosed (F₁ : Set V))
     (ξ : testSection (⊤ : Submodule ℝ V) ⊤) :
-    jetLp (testSection ⊤ ⊤) ξ ∈ H1 F₀ F₁ ↔ (ξ : ℝ × ℝ → V) ∈ testSection F₀ F₁ := by
+    jetLp 2 (testSection ⊤ ⊤) ξ ∈ H1 F₀ F₁ ↔ (ξ : ℝ × ℝ → V) ∈ testSection F₀ F₁ := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   swap
-  · have := jetLp_mem_jetClosure (S := testSection F₀ F₁) ⟨ξ, h⟩
+  · have := jetLp_mem_jetClosure (p := 2) (S := testSection F₀ F₁) ⟨ξ, h⟩
     rwa [← jetLp_inclusion le_top le_top] at this
   have htr : traceL F₀ F₁ ⟨_, h⟩ = traceₗ ⊤ ⊤ ξ := by
     rw [← traceL_inclusion le_top le_top, ← traceL_jetH1]
