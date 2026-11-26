@@ -17,6 +17,7 @@ public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import TauCeti.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+import TauCeti.Algebra.Module.Lattice
 import TauCeti.LinearAlgebra.Pi
 
 /-!
@@ -470,6 +471,7 @@ theorem toSubmodule_GL_smul (g : GL ι K) (Λ : ProjectiveLattice B K (ι → K)
   (rfl)
 
 /-- The action of `GL ι K` on lattices preserves inclusions. -/
+@[simp]
 protected theorem smul_le_smul_iff (g : GL ι K) {Λ Λ' : ProjectiveLattice B K (ι → K)} :
     g • Λ ≤ g • Λ' ↔ Λ ≤ Λ' :=
   map_le_map_iff _
@@ -547,31 +549,20 @@ theorem exists_GL_smul_standard_eq_iff (Λ : ProjectiveLattice B K (ι → K)) :
   · intro hfree
     rcases subsingleton_or_nontrivial K with hK | hK
     · exact ⟨1, Subsingleton.elim _ _⟩
-    -- A `B`-basis of `Λ` is a `K`-basis of `ι → K`; send the standard basis to it.
-    let b := Module.Free.chooseBasis B Λ.toSubmodule
-    let v : Module.Free.ChooseBasisIndex B Λ.toSubmodule → ι → K := fun k ↦ b k
-    have hv : Submodule.span B (Set.range v) = Λ.toSubmodule := by
-      rw [show v = Λ.toSubmodule.subtype ∘ b from rfl, Set.range_comp, ← Submodule.map_span,
-        b.span_eq, Submodule.map_top, Submodule.range_subtype]
-    have hli : LinearIndependent K v :=
-      (b.linearIndependent.map' _ (Submodule.ker_subtype _)).localization (Rₛ := K) S
-    have hsp : ⊤ ≤ Submodule.span K (Set.range v) := by
-      rw [← Λ.span_coe_eq_top, Submodule.span_le]
-      intro x hx
-      exact Submodule.span_subset_span B K _
-        (hv.symm ▸ mem_toSubmodule.mpr hx : x ∈ Submodule.span B (Set.range v))
-    let e := (Module.Basis.mk hli hsp).indexEquiv (Pi.basisFun K ι)
-    let f := (Pi.basisFun K ι).equiv ((Module.Basis.mk hli hsp).reindex e) (Equiv.refl ι)
+    -- A `B`-basis of `Λ` extends to a `K`-basis of `ι → K`; send the standard basis to it.
+    have := Λ.isFullLattice S
+    let b := (Module.Free.chooseBasis B Λ.toSubmodule).extendOfIsFullLattice K
+    let e := b.indexEquiv (Pi.basisFun K ι)
+    let f := (Pi.basisFun K ι).equiv (b.reindex e) (Equiv.refl ι)
     refine ⟨GeneralLinearGroup.toLin.symm
       ((LinearMap.GeneralLinearGroup.generalLinearEquiv K _).symm f), ?_⟩
     rw [GL_smul_def, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
     refine toSubmodule_injective ?_
     have hf : (⇑(f.restrictScalars B : (ι → K) →ₗ[B] ι → K) ∘ fun i ↦ Pi.single i (1 : K)) =
-        v ∘ e.symm := funext fun i ↦ by
-      simpa [f] using (Pi.basisFun K ι).equiv_apply i ((Module.Basis.mk hli hsp).reindex e)
-        (Equiv.refl ι)
+        b ∘ e.symm := funext fun i ↦ by
+      simpa [f] using (Pi.basisFun K ι).equiv_apply i (b.reindex e) (Equiv.refl ι)
     rw [toSubmodule_map, toSubmodule_standard_eq_span, Submodule.map_span, ← Set.range_comp, hf,
-      e.symm.surjective.range_comp, hv]
+      e.symm.surjective.range_comp, Module.Basis.span_range_extendOfIsFullLattice]
 
 /-- **Transitivity on lattices over a local ring.** When `B` is local, `K` a localization of `B`
 and `B → K` injective, every lattice in `ι → K` is the image of the standard lattice under some

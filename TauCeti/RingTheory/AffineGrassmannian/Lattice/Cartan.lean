@@ -97,8 +97,8 @@ theorem toSubmodule_diagonal (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) 
 @[simp]
 theorem diagonal_zero (hξ : IsUnit (algebraMap B K ξ)) :
     diagonal (0 : n → ℤ) hξ = standard B K n := by
-  rw [← diagGL_smul_standard, show (fun i ↦ hξ.unit ^ (0 : n → ℤ) i) = 1 from
-    funext fun _ ↦ zpow_zero _, map_one, one_smul]
+  rw [← diagGL_smul_standard]
+  simp
 
 /-- The lattice of a constant cocharacter `m` is `ξ^m` times the standard lattice. -/
 theorem diagonal_const (m : ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
@@ -147,12 +147,14 @@ theorem diagonal_le_diagonal_iff (hξ' : ¬IsUnit ξ) {a b : n → ℤ}
       rw [hc, IsUnit.val_unit_zpow_eq_mul_algebraMap_pow_of_le hξ (h i), mul_assoc, map_mul]⟩
 
 /-- If `ξ` is not a unit of `B`, a diagonal lattice determines its exponent vector. -/
+@[simp]
 theorem diagonal_inj (hξ' : ¬IsUnit ξ) {a b : n → ℤ} (hξ : IsUnit (algebraMap B K ξ)) :
     diagonal a hξ = diagonal b hξ ↔ a = b := by
   rw [le_antisymm_iff, diagonal_le_diagonal_iff hξ', diagonal_le_diagonal_iff hξ', and_comm,
     ← le_antisymm_iff]
 
 /-- A lattice translated by `GLₙ(B)` contains `ξ^m Bⁿ` exactly when the lattice does. -/
+@[simp]
 theorem diagonal_const_le_map_smul_iff (A : GL n B) (m : ℤ) (hξ : IsUnit (algebraMap B K ξ))
     (Λ : ProjectiveLattice B K (n → K)) :
     diagonal (fun _ : n ↦ m) hξ ≤ GeneralLinearGroup.map (algebraMap B K) A • Λ ↔
@@ -161,6 +163,7 @@ theorem diagonal_const_le_map_smul_iff (A : GL n B) (m : ℤ) (hξ : IsUnit (alg
     map_smul_diagonal_const]
 
 /-- A lattice translated by `GLₙ(B)` lies in `ξ^m Bⁿ` exactly when the lattice does. -/
+@[simp]
 theorem map_smul_le_diagonal_const_iff (A : GL n B) (m : ℤ) (hξ : IsUnit (algebraMap B K ξ))
     (Λ : ProjectiveLattice B K (n → K)) :
     GeneralLinearGroup.map (algebraMap B K) A • Λ ≤ diagonal (fun _ : n ↦ m) hξ ↔
