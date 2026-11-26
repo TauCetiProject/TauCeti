@@ -40,6 +40,8 @@ continuous reference inner products on the fibres.
 * `Bundle.Trivialization.continuousAt_norm_symmL`: in a continuous Riemannian bundle, the fiber
   norm of `e.symmL ℝ (b x) (w x)` is continuous at `x₀` when `b` and `w` are continuous at `x₀`
   and `b x₀ ∈ e.baseSet`.
+* `Bundle.Trivialization.continuousOn_innerSL_comp_symmL`: the covectors `⟪η x, ·⟫` of a
+  continuous section, read in a trivialization, are continuous over its base set.
 * `IsOpen.norm_lt_bundle`: the vectors of norm less than `r` over an open set form an open subset
   of the total space.
 * `IsCompact.norm_le_bundle`: the vectors of norm at most `r` over a compact set form a compact
@@ -106,6 +108,22 @@ theorem Bundle.Trivialization.continuousAt_norm_symmL (e : Trivialization F (π 
     simp [e.symmL_apply hx]
   exact (TauCeti.continuous_norm_bundle F E).continuousAt.comp hsec
 
+/-- **Pairing with a continuous section in a trivialization.** For a continuous section `η` of a
+continuous Riemannian bundle with finite-dimensional model fiber, the covectors `⟪η x, ·⟫` read
+in a trivialization `e`, `x ↦ ⟪η x, ·⟫ ∘L e.symmL ℝ x`, depend continuously on `x` over the base
+set of `e`. -/
+theorem Bundle.Trivialization.continuousOn_innerSL_comp_symmL [FiniteDimensional ℝ F]
+    (e : Trivialization F (π F E)) [e.IsLinear ℝ] {η : ∀ x, E x}
+    (hη : Continuous fun x ↦ TotalSpace.mk' F x (η x)) :
+    ContinuousOn (fun x ↦ innerSL ℝ (η x) ∘L e.symmL ℝ x) e.baseSet := by
+  refine continuousOn_clm_apply.2 fun v ↦ ?_
+  -- The section `x ↦ e.symm x v` is continuous on the base set of `e`.
+  have hv : ContinuousOn (fun x ↦ TotalSpace.mk' F x (e.symm x v)) e.baseSet :=
+    e.continuousOn_symm.comp (continuousOn_id.prodMk continuousOn_const) fun x hx ↦
+      ⟨hx, mem_univ v⟩
+  refine (hη.continuousOn.inner_bundle hv).congr fun x hx ↦ ?_
+  rw [ContinuousLinearMap.comp_apply, innerSL_apply_apply, e.symmL_apply hx]
+
 /-- In a continuous Riemannian bundle, the vectors of norm less than `r` lying over an open subset
 of the base form an open subset of the total space. -/
 theorem IsOpen.norm_lt_bundle {U : Set B} (hU : IsOpen U) (r : ℝ) :
@@ -154,10 +172,12 @@ theorem IsCompact.norm_le_bundle_of_continuous
         exact mem_closedBall_zero_iff.2 <| h.trans <|
           (mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)).trans
             (mul_le_mul_of_nonneg_left hzr (abs_nonneg C))
+  -- `hv` is about the second coordinate of `e`, which is `(e z).2` by definition.
   replace hv : Tendsto (fun z ↦ (e z).2) (𝒰 : Filter (TotalSpace F E)) (𝓝 v) := hv
   -- So the vectors converge to the vector with coordinates `(x, v)`.
   have hsource : e.source ∈ 𝒰 := mem_of_superset hU fun z hz ↦ e.mem_source.2 hz.1
   have he : Tendsto e 𝒰 (𝓝 (x, v)) :=
+    -- A pair is determined by its components; the second components agree by `rfl`.
     (hx.prodMk_nhds hv).congr' (mem_of_superset hsource fun z hz ↦
       show (z.proj, (e z).2) = e z from Prod.ext (e.coe_fst hz).symm rfl)
   have hlim : (𝒰 : Filter (TotalSpace F E)) ≤ 𝓝 (e.toOpenPartialHomeomorph.symm (x, v)) :=

@@ -55,21 +55,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
   (A : FiniteBundleAtlas E M F V) {μ : Measure E} [μ.IsAddHaarMeasure] {ν : Measure M}
 
-omit [MeasurableSpace E] [BorelSpace E] [MeasurableSpace M] [BorelSpace M] in
-/-- For the model with corners `𝓘(ℝ, E)` of `E` itself, the extended chart is the chart. -/
-private theorem extChartAt_eq (x : M) :
-    extChartAt 𝓘(ℝ, E) x = (chartAt E x).toPartialEquiv :=
-  PartialEquiv.ext (fun _ ↦ by simp) (fun _ ↦ by simp) (by simp)
-
 variable {A}
 
 /-- A subset of the domain of chart `i` is `ν`-null when its image in chart `i` is `μ`-null. -/
 private theorem measure_eq_zero_of_image (hν : IsPositiveDensityMeasure 𝓘(ℝ, E) ν) {i : Fin A.n}
     {s : Set M} (hs : s ⊆ A.dom i) (h : μ (A.chart i '' s) = 0) : ν s = 0 := by
   have hsub : s ⊆ (extChartAt 𝓘(ℝ, E) (A.center i)).source := by
-    rw [extChartAt_eq]
+    rw [extChartAt_modelWithCornersSelf_eq]
     exact hs.trans (A.dom_subset_chart_source i)
-  rw [hν.measure_eq_zero_iff_image_of_subset hsub μ, extChartAt_eq]
+  rw [hν.measure_eq_zero_iff_image_of_subset hsub μ, extChartAt_modelWithCornersSelf_eq]
   exact h
 
 /-- **Chartwise almost everywhere implies almost everywhere.** If, for every chart `i` of `A`,
@@ -117,12 +111,11 @@ theorem aestronglyMeasurable_of_forall (hν : IsPositiveDensityMeasure 𝓘(ℝ,
 
 /-- On the domain of chart `i`, `ν` reads as `μ` with a continuous density, which is bounded on the
 chart image by some `K`. -/
-private theorem exists_setLIntegral_dom_le [FiniteDimensional ℝ E]
-    (hν : IsPositiveDensityMeasure 𝓘(ℝ, E) ν) (i : Fin A.n) :
+private theorem exists_setLIntegral_dom_le (hν : IsPositiveDensityMeasure 𝓘(ℝ, E) ν) (i : Fin A.n) :
     ∃ K : ℝ, ∀ φ : M → ℝ≥0∞, ∫⁻ x in A.dom i, φ x ∂ν ≤
       ENNReal.ofReal K * ∫⁻ y in A.image i, φ ((A.chart i).symm y) ∂μ := by
-  obtain ⟨w, hwc, -, hw⟩ := (isPositiveDensityMeasure_iff_of_isAddHaarMeasure μ).1 hν (A.center i)
-  rw [extChartAt_eq] at hwc hw
+  obtain ⟨w, hwc, -, hw⟩ := hν.exists_density (A.center i) μ
+  rw [extChartAt_modelWithCornersSelf_eq] at hwc hw
   have himage : (A.image i : Set E) = A.chart i '' A.dom i := Set.ext fun _ ↦ A.mem_image
   have hit : (A.image i : Set E) ⊆ (A.chart i).target := himage ▸
     (image_mono (A.dom_subset_chart_source i)).trans (A.chart i).image_source_eq_target.subset
@@ -133,15 +126,15 @@ private theorem exists_setLIntegral_dom_le [FiniteDimensional ℝ E]
   have hmeas : MeasurableSet (A.image i : Set E) := (A.image i).isOpen.measurableSet
   refine ⟨K, fun φ ↦ ?_⟩
   have hsub : A.dom i ⊆ (extChartAt 𝓘(ℝ, E) (A.center i)).source := by
-    rw [extChartAt_eq]
+    rw [extChartAt_modelWithCornersSelf_eq]
     exact A.dom_subset_chart_source i
-  -- The coercions of a chart and of its partial equivalence agree by definition.
-  have himage' : (chartAt E (A.center i)).toPartialEquiv '' A.dom i = A.image i := himage.symm
   have hwm : AEMeasurable (fun y ↦ ENNReal.ofReal (w y))
       (((μ.restrict (A.chart i).target).restrict (A.image i))) := by
     rw [Measure.restrict_restrict hmeas, inter_eq_left.2 hit]
     exact (ENNReal.continuous_ofReal.comp_continuousOn (hwc.mono hit)).aemeasurable hmeas
-  rw [setLIntegral_eq_setLIntegral_map_extChartAt hsub, extChartAt_eq, hw, himage',
+  rw [setLIntegral_eq_setLIntegral_map_extChartAt hsub, extChartAt_modelWithCornersSelf_eq, hw,
+    OpenPartialHomeomorph.coe_toPartialEquiv, OpenPartialHomeomorph.coe_toPartialEquiv_symm,
+    ← himage,
     setLIntegral_withDensity_eq_setLIntegral_mul_non_measurable₀ _ hwm _ hmeas
       (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
     Measure.restrict_restrict hmeas, inter_eq_left.2 hit, ← lintegral_const_mul' _ _
@@ -149,14 +142,12 @@ private theorem exists_setLIntegral_dom_le [FiniteDimensional ℝ E]
   refine setLIntegral_mono' hmeas fun y hy ↦ ?_
   rw [Pi.mul_apply]
   gcongr
-  · exact (Real.le_norm_self _).trans (hK y (A.image_subset_chart_image_closure_dom i hy))
-  -- The inverses of a chart and of its partial equivalence agree by definition.
-  · exact le_rfl
+  exact (Real.le_norm_self _).trans (hK y (A.image_subset_chart_image_closure_dom i hy))
 
 /-- **Lower integrals in the charts.** There is a finite constant `C` such that every lower
 integral against `ν` is at most `C` times the sum over the charts of `A` of the lower integrals of
 the chart readings over the chart images. -/
-theorem exists_lintegral_le [FiniteDimensional ℝ E] (hν : IsPositiveDensityMeasure 𝓘(ℝ, E) ν) :
+theorem exists_lintegral_le (hν : IsPositiveDensityMeasure 𝓘(ℝ, E) ν) :
     ∃ C : ℝ≥0∞, C ≠ ⊤ ∧ ∀ φ : M → ℝ≥0∞,
       ∫⁻ x, φ x ∂ν ≤ C * ∑ i, ∫⁻ y in A.image i, φ ((A.chart i).symm y) ∂μ := by
   choose K hK using fun i ↦ exists_setLIntegral_dom_le (A := A) (μ := μ) hν i

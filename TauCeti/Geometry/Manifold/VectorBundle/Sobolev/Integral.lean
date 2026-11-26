@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.PositiveDensity
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
-public import Mathlib.Topology.VectorBundle.Riemannian
 
 /-!
 # Integrating Sobolev sections against continuous covector fields
@@ -19,7 +18,7 @@ bundle atlas `A` (so `M` is compact), and let `ν` be a positive continuous dens
 *continuous covector field* is a family `L x : V x →L[ℝ] ℝ` that is continuous in the
 trivializations of `V`: `x ↦ L x ∘L e.symmL ℝ x` is continuous on the base set of every preferred
 trivialization `e`. The pairing `x ↦ ⟪η x, ·⟫` with a continuous section `η` of a bundle with a
-continuous fibre metric is an example (`TauCeti.continuousOn_innerSL_comp_symmL`).
+continuous fibre metric is an example (`Bundle.Trivialization.continuousOn_innerSL_comp_symmL`).
 
 Every element `w` of the Sobolev space `W^{k,p}(V)` (`TauCeti.SobolevSection A μ p k`), for
 `1 ≤ p ≤ ∞`, consists of the chart data of a section `s` of `V`
@@ -63,8 +62,6 @@ times the norm of `w`.
 * `TauCeti.SobolevSection.integralL_apply`: the value of the functional at `w` is
   `∫ L x (s x) dν` for every section `s` with the chart data of `w`.
 * `TauCeti.SobolevSection.integralL_ofContMDiffSection`: its value on a `Cᵏ` section.
-* `TauCeti.continuousOn_innerSL_comp_symmL`: pairing with a continuous section is a continuous
-  covector field.
 
 ## References
 
@@ -181,10 +178,11 @@ private theorem exists_setLIntegral_image_le (i : Fin A.n) :
     · simp
     · exact div_le_one_of_le₀ (ENNReal.toReal_one ▸ ENNReal.toReal_mono hp Fact.out)
         ENNReal.toReal_nonneg
-  refine ⟨ENNReal.ofReal K * ((μ.restrict (A.image i) univ) ^ (1 - 1 / p.toReal) * ‖T‖ₑ),
-    ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.mul_ne_top
-      (ENNReal.rpow_ne_top_of_nonneg (sub_nonneg.2 hp) (measure_ne_top _ _)) eNorm_ne_top),
-    fun w s hs ↦ ?_⟩
+  -- The measure of the chart image, as seen by the chart data.
+  let m := μ.restrict (A.sectionChartData.image i) univ ^ (1 - 1 / p.toReal)
+  refine ⟨ENNReal.ofReal K * (m * ‖T‖ₑ), ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+    (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (sub_nonneg.2 hp) (measure_ne_top _ _))
+      eNorm_ne_top), fun w s hs ↦ ?_⟩
   have hmeas : MeasurableSet (A.image i : Set E) := (A.image i).isOpen.measurableSet
   calc ∫⁻ y in A.image i, ‖L ((A.chart i).symm y) (s ((A.chart i).symm y))‖ₑ ∂μ
       ≤ ∫⁻ y in A.image i, ENNReal.ofReal K * ‖T w y‖ₑ ∂μ := by
@@ -195,20 +193,20 @@ private theorem exists_setLIntegral_image_le (i : Fin A.n) :
         gcongr
         rw [← ofReal_norm]
         exact ENNReal.ofReal_le_ofReal (hK y hyi)
-    _ = ENNReal.ofReal K * eLpNorm (T w) 1 (μ.restrict (A.image i)) := by
-        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-        -- The chart images of `A.sectionChartData` are those of `A` by definition.
-        exact congrArg _ (eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable (T w))).symm
-    _ ≤ ENNReal.ofReal K * (‖T w‖ₑ * μ.restrict (A.image i) univ ^ (1 - 1 / p.toReal)) := by
+    _ = ENNReal.ofReal K * eLpNorm (T w) 1 (μ.restrict (A.sectionChartData.image i)) := by
+        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+          ← FiniteBundleAtlas.sectionChartData_image,
+          eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable (T w))]
+    _ ≤ ENNReal.ofReal K * (‖T w‖ₑ * m) := by
         gcongr
         rw [Lp.eNorm_def]
-        simpa only [ENNReal.toReal_one, div_one, FiniteBundleAtlas.sectionChartData_image] using
+        simpa only [ENNReal.toReal_one, div_one] using
           eLpNorm_le_eLpNorm_mul_rpow_measure_univ (Fact.out : 1 ≤ p)
             (Lp.aestronglyMeasurable (T w))
-    _ ≤ ENNReal.ofReal K * (‖T‖ₑ * ‖w‖ₑ * μ.restrict (A.image i) univ ^ (1 - 1 / p.toReal)) := by
+    _ ≤ ENNReal.ofReal K * (‖T‖ₑ * ‖w‖ₑ * m) := by
         gcongr ENNReal.ofReal K * (?_ * _)
-        -- The norm of `w` is that of its chart data.
-        exact T.le_opENorm_of_le (le_refl ‖(w : A.sectionChartData.SobolevData μ p k)‖ₑ)
+        rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _)]
+        exact ENNReal.ofReal_le_ofReal ((T.le_opNorm _).trans_eq (by rw [Submodule.norm_coe]))
     _ = _ := by ring
 
 /-- **The `L¹` bound.** There is a finite constant `C` such that `∫ |L x (s x)| dν ≤ C ‖w‖` for
@@ -284,38 +282,12 @@ theorem integralL_apply {w : SobolevSection A μ p k} {s : ∀ x, V x}
 
 /-- On `Cᵏ` sections, `TauCeti.SobolevSection.integralL` is the integral of `L` against the
 section. -/
+@[simp]
 theorem integralL_ofContMDiffSection [IsManifold 𝓘(ℝ, E) k M]
     [ContMDiffVectorBundle k F V 𝓘(ℝ, E)] (σ : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) :
     integralL A μ p k hν hL (ofContMDiffSection A μ p k σ) = ∫ x, L x (σ x) ∂ν :=
   integralL_apply hν hL (chartValueL_ofContMDiffSection_ae A μ p k σ)
 
 end SobolevSection
-
-section Inner
-
-variable {M : Type*} [TopologicalSpace M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, NormedAddCommGroup (V x)]
-  [∀ x, InnerProductSpace ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
-  [IsContinuousRiemannianBundle F V]
-
-/-- **Pairing with a continuous section is a continuous covector field.** For a continuous
-section `η` of a bundle with a continuous fibre metric, `x ↦ ⟪η x, ·⟫` is continuous in every
-preferred trivialization, so `TauCeti.SobolevSection.integralL` applies to it and gives the `L²`
-pairing `w ↦ ∫ ⟪η, s⟫ dν` with `η`. -/
-theorem continuousOn_innerSL_comp_symmL {η : ∀ x, V x}
-    (hη : Continuous fun x ↦ TotalSpace.mk' F x (η x)) (x₀ : M) :
-    ContinuousOn (fun x ↦ innerSL ℝ (η x) ∘L (trivializationAt F V x₀).symmL ℝ x)
-      (trivializationAt F V x₀).baseSet := by
-  set e := trivializationAt F V x₀
-  refine continuousOn_clm_apply.2 fun v ↦ ?_
-  -- The section `x ↦ e.symm x v` is continuous on the base set of `e`.
-  have hv : ContinuousOn (fun x ↦ TotalSpace.mk' F x (e.symm x v)) e.baseSet :=
-    e.continuousOn_symm.comp (continuousOn_id.prodMk continuousOn_const) fun x hx ↦
-      ⟨hx, mem_univ v⟩
-  refine (hη.continuousOn.inner_bundle hv).congr fun x hx ↦ ?_
-  rw [ContinuousLinearMap.comp_apply, innerSL_apply_apply, Trivialization.symmL_apply _ hx]
-
-end Inner
 
 end TauCeti

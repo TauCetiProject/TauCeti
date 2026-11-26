@@ -19,6 +19,8 @@ these chart pushforwards, and two estimates for measures on the model seen throu
 
 ## Main results
 
+* `TauCeti.extChartAt_modelWithCornersSelf_eq`: for the model `𝓘(𝕜, E)`, extended charts are
+  charts.
 * `TauCeti.map_restrict_extChartAt_source_apply_image`: the chart pushforward gives the chart
   image of a measurable subset of the source the measure of the subset.
 * `TauCeti.setLIntegral_eq_setLIntegral_map_extChartAt`: lower integrals over a subset of a chart
@@ -41,6 +43,13 @@ open MeasureTheory Set
 open scoped ENNReal NNReal Manifold Topology
 
 namespace TauCeti
+
+/-- For the model with corners `𝓘(𝕜, E)` of a vector space `E` itself, the extended chart at `x`
+is the chart at `x`. -/
+theorem extChartAt_modelWithCornersSelf_eq {𝕜 E M : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace M] [ChartedSpace E M] (x : M) :
+    extChartAt 𝓘(𝕜, E) x = (chartAt E x).toPartialEquiv :=
+  PartialEquiv.ext (fun _ ↦ by simp) (fun _ ↦ by simp) (by simp)
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
@@ -140,10 +149,13 @@ theorem setLIntegral_eq_setLIntegral_map_extChartAt {x : M} {s : Set M}
   have hpre : e.source.domRestrict e ⁻¹' (e '' s) = Subtype.val ⁻¹' s := by
     ext z
     exact e.injOn.mem_image_iff hsub z.property
-  rw [hmap, hR.restrict_map, hR.lintegral_map, hpre, lintegral_congr fun z ↦ hφ z,
-    hval.restrict_comap, ← hval.lintegral_map, hval.map_comap, Subtype.range_coe,
-    Measure.restrict_restrict hsrc, Subtype.image_preimage_coe, inter_eq_right.2 hsub,
-    inter_eq_right.2 hsub]
+  -- Pulled back to the chart source, `μ` restricted to `s` pushes forward to `μ` restricted to `s`.
+  have hleft : ((μ.comap (Subtype.val : e.source → M)).restrict (Subtype.val ⁻¹' s)).map
+      Subtype.val = μ.restrict s := by
+    rw [hval.restrict_comap, hval.map_comap, Subtype.range_coe, Measure.restrict_restrict hsrc,
+      Subtype.image_preimage_coe, inter_eq_right.2 hsub, inter_eq_right.2 hsub]
+  rw [hmap, hR.restrict_map, hR.lintegral_map, hpre, ← hleft, hval.lintegral_map]
+  simp only [hφ]
 
 /-- Two measures with the same pushforward from a chart source agree on that source. -/
 theorem restrict_extChartAt_source_eq_of_map_eq {x : M} {α β : Measure M}
