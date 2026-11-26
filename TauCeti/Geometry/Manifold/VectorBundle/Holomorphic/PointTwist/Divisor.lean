@@ -25,14 +25,16 @@ real bundle is smooth is smoothly isomorphic to some `𝒪(D)`, with `deg D = c�
 C.1.10, step 5:
 
 * `L` has a smooth section `σ` whose finitely many zeros `xᵢ` are transverse, each positive
-  (`εᵢ = false`) or negative (`εᵢ = true`), with `c₁(L)[X] = Σ (if εᵢ then -1 else 1)`
+  (`εᵢ = false`) or negative (`εᵢ = true`) in the sense of `TauCeti.IsSignedTransverseZero`,
+  with `c₁(L)[X] = Σ (if εᵢ then -1 else 1)`
   (`TauCeti.exists_contMDiffSection_complexEulerClass_eq_sum_sign`).
 * Twisting at a zero `x` of sign `ε` by `-x` (positive) or `x` (negative) removes that zero
-  without changing `σ` near the other zeros (`TauCeti.exists_untwist_section_of_finset`, built on
-  `TauCeti.exists_untwist_section`), so their chart readings, hence their signs, are unchanged
+  without changing `σ` near the other zeros (`TauCeti.exists_untwist_section_of_finset`, built
+  on `TauCeti.exists_untwist_section_of_isSignedTransverseZero`), so their chart readings,
+  hence their signs, are unchanged
   (`TauCeti.negPointTwistChartReading_eventuallyEq_of_pointTwistDiv`).
 * After all zeros are removed the section vanishes nowhere, and a line bundle with a nowhere-zero
-  smooth section is isomorphic to the trivial bundle (`TauCeti.fibreEquivOfNeZero`).
+  smooth section is isomorphic to the trivial bundle (`TauCeti.fiberEquivOfNeZero`).
 * Twisting back with the opposite signs, cancellation (`TauCeti.signedPointTwistCancelEquiv`) and
   functoriality (`TauCeti.signedPointTwistEquiv`) of point twists give `L ≅ 𝒪(Σ ±xᵢ)`
   (`TauCeti.exists_contMDiff_divisorCore_equiv_of_section`).
@@ -45,15 +47,13 @@ they are diffeomorphisms of total spaces with smooth inverses.
 
 * `TauCeti.divisorCore`: the coordinate core of the line bundle `𝒪(D)` of a list of signed points.
 * `TauCeti.divisorDegree`: the degree `Σ ±1` of a list of signed points.
-* `TauCeti.fibreEquivOfNeZero`: the coordinate in the basis given by a nonzero vector of a fibre.
-* `TauCeti.IsSignedTransverseZero`: a zero of a section which is positive or negative, in the
-  sense of `TauCeti.exists_contMDiffSection_complexEulerClass_eq_sum_sign`.
+* `TauCeti.fiberEquivOfNeZero`: the coordinate in the basis given by a nonzero vector of a fiber.
 
 ## Main results
 
 * `TauCeti.divisorCore.isContMDiff` and `TauCeti.divisorCore.contMDiffVectorBundle_real`: `𝒪(D)`
   is a holomorphic line bundle whose underlying real bundle is smooth.
-* `TauCeti.contMDiff_fibreEquivOfNeZero`: a line bundle with a nowhere-zero smooth section is
+* `TauCeti.contMDiff_fiberEquivOfNeZero`: a line bundle with a nowhere-zero smooth section is
   isomorphic to the trivial bundle.
 * `TauCeti.exists_untwist_section_of_finset`: untwisting one of finitely many zeros.
 * `TauCeti.exists_contMDiff_divisorCore_equiv_of_section`: a smooth section whose zeros are
@@ -187,37 +187,65 @@ local instance instVectorBundleRealDivisor : VectorBundle ℝ ℂ L :=
 
 /-- The isomorphism of the fibre of a complex line bundle at `z` with `ℂ` defined by a vector
 `σ z ≠ 0`: it sends `v` to its coordinate in the basis `σ z`. Its inverse is `w ↦ w • σ z`
-(`TauCeti.fibreEquivOfNeZero_symm_apply`). -/
-def fibreEquivOfNeZero (σ : ∀ z, L z) (hσ : ∀ z, σ z ≠ 0) (z : X) : L z ≃L[ℂ] ℂ :=
+(`TauCeti.fiberEquivOfNeZero_symm_apply`). -/
+def fiberEquivOfNeZero (σ : ∀ z, L z) (hσ : ∀ z, σ z ≠ 0) (z : X) : L z ≃L[ℂ] ℂ :=
   let t := (trivializationAt ℂ L z).continuousLinearEquivAt ℂ z
     (mem_baseSet_trivializationAt ℂ L z)
   t.trans (ContinuousLinearEquiv.unitsEquivAut ℂ
     (Units.mk0 (t (σ z)) ((map_ne_zero_iff t t.injective).2 (hσ z)))⁻¹)
 
 omit [ChartedSpace ℂ X] [∀ z, Module ℝ (L z)] [∀ z, IsScalarTower ℝ ℂ (L z)] in
-theorem fibreEquivOfNeZero_symm_apply (σ : ∀ z, L z) (hσ : ∀ z, σ z ≠ 0) (z : X) (w : ℂ) :
-    (fibreEquivOfNeZero σ hσ z).symm w = w • σ z := by
-  dsimp only [fibreEquivOfNeZero]
+@[simp] theorem fiberEquivOfNeZero_symm_apply (σ : ∀ z, L z) (hσ : ∀ z, σ z ≠ 0) (z : X)
+    (w : ℂ) : (fiberEquivOfNeZero σ hσ z).symm w = w • σ z := by
+  dsimp only [fiberEquivOfNeZero]
   rw [ContinuousLinearEquiv.symm_trans_apply,
     ContinuousLinearEquiv.unitsEquivAut_apply_symm, inv_inv, Units.val_mk0, ← smul_eq_mul,
     map_smul, ContinuousLinearEquiv.symm_apply_apply]
 
+omit [ChartedSpace ℂ X] [∀ z, Module ℝ (L z)] [∀ z, IsScalarTower ℝ ℂ (L z)] in
+@[simp] theorem fiberEquivOfNeZero_apply_self (σ : ∀ z, L z) (hσ : ∀ z, σ z ≠ 0) (z : X) :
+    fiberEquivOfNeZero σ hσ z (σ z) = 1 := by
+  refine ((ContinuousLinearEquiv.symm_apply_eq _).1 ?_).symm
+  rw [fiberEquivOfNeZero_symm_apply, one_smul]
+
+omit [ChartedSpace ℂ X] [∀ z, Module ℝ (L z)] [∀ z, IsScalarTower ℝ ℂ (L z)] in
+/-- The coordinate of `w • σ z` in the basis `σ z` is `w`. -/
+theorem fiberEquivOfNeZero_apply_smul (σ : ∀ z, L z) (hσ : ∀ z, σ z ≠ 0) (z : X) (w : ℂ) :
+    fiberEquivOfNeZero σ hσ z (w • σ z) = w := by
+  rw [map_smul, fiberEquivOfNeZero_apply_self, smul_eq_mul, mul_one]
+
+omit [IsManifold 𝓘(ℂ) n X] in
+/-- The fibre of `𝒪(0)` at `z` is `ℂ` by definition (`VectorBundleCore.Fiber`), and every chart of
+`𝒪(0)` is the identity on it: the coordinate changes of `divisorCore []` are the identity. -/
+theorem divisorCore_nil_trivializationAt_snd (z₀ : X) (q : TotalSpace ℂ (divisorCore []).Fiber) :
+    (trivializationAt ℂ (divisorCore []).Fiber z₀ q).2 = q.snd :=
+  (rfl)
+
 variable [ContMDiffVectorBundle n ℂ L 𝓘(ℝ, ℂ)]
 
 /-- **A line bundle with a nowhere-zero section is trivial.** If `σ` is a real-`C^n` section of a
-real-`C^n` complex line bundle `L` without zeros, the fibre isomorphisms `fibreEquivOfNeZero σ` of
+real-`C^n` complex line bundle `L` without zeros, the fiber isomorphisms `fiberEquivOfNeZero σ` of
 `L` with the trivial bundle `𝒪(0)` are real `C^n` on total spaces. -/
-theorem contMDiff_fibreEquivOfNeZero {σ : ∀ z, L z}
+theorem contMDiff_fiberEquivOfNeZero {σ : ∀ z, L z}
     (hσ : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n fun z ↦ TotalSpace.mk' ℂ z (σ z))
     (hσ₀ : ∀ z, σ z ≠ 0) :
     ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n
       fun p : TotalSpace ℂ L ↦ TotalSpace.mk' ℂ (E := (divisorCore []).Fiber) p.proj
-        (fibreEquivOfNeZero σ hσ₀ p.proj p.snd) := by
+        (fiberEquivOfNeZero σ hσ₀ p.proj p.snd) := by
   have : IsManifold 𝓘(ℝ, ℂ) n X := IsManifold.restrictScalars ℝ ‹_›
-  -- The inverse `w ↦ w • σ z` is smooth: in a chart of `L` it is `w` times the reading of `σ`.
+  -- The inverse family `w ↦ w • σ z`, from the fibers of `𝒪(0)`, which are `ℂ` by definition.
+  let e : ∀ z, (divisorCore []).Fiber z ≃L[ℝ] L z := fun z ↦
+    ((fiberEquivOfNeZero σ hσ₀ z).restrictScalars' ℝ).symm
+  have he (z : X) (w : ℂ) : e z w = w • σ z :=
+    (congrFun (ContinuousLinearEquiv.coe_restrictScalars'_symm (R := ℝ)
+      (fiberEquivOfNeZero σ hσ₀ z)) w).trans (fiberEquivOfNeZero_symm_apply σ hσ₀ z w)
+  have he' (z : X) (v : L z) : (e z).symm v = fiberEquivOfNeZero σ hσ₀ z v :=
+    congrFun (ContinuousLinearEquiv.coe_restrictScalars' (R := ℝ)
+      (fiberEquivOfNeZero σ hσ₀ z)) v
+  -- It is smooth: in a chart of `L` it is `w` times the reading of `σ`.
   have h : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n
       fun p : TotalSpace ℂ (divisorCore []).Fiber ↦ TotalSpace.mk' ℂ (E := L) p.proj
-        ((show ℂ from p.snd) • σ p.proj) := by
+        (e p.proj p.snd) := by
     intro p
     rw [Bundle.contMDiffAt_totalSpace_iff]
     refine ⟨contMDiffAt_proj _, ?_⟩
@@ -230,45 +258,16 @@ theorem contMDiff_fibreEquivOfNeZero {σ : ∀ z, L z}
     filter_upwards [(FiberBundle.continuous_proj ℂ _).continuousAt.preimage_mem_nhds
       ((trivializationAt ℂ L p.proj).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt ℂ L p.proj))] with q hq
-    rw [Function.comp_apply, ContinuousLinearMap.lsmul_apply,
+    simp only [Function.comp_apply, ContinuousLinearMap.lsmul_apply, id_eq]
+    -- `q.snd` is its own coordinate in `𝒪(0)` (`divisorCore_nil_trivializationAt_snd`).
+    rw [← divisorCore_nil_trivializationAt_snd p.proj q, he,
       (trivializationAt ℂ L p.proj).linear ℂ hq |>.map_smul]
-    rfl
-  refine (contMDiff_bundle_symm (E₁ := (divisorCore []).Fiber)
-    (fun z ↦ ((fibreEquivOfNeZero σ hσ₀ z).restrictScalars' ℝ).symm) (h.congr fun q ↦
-      congrArg (TotalSpace.mk' ℂ q.proj) ((congrFun (ContinuousLinearEquiv.coe_restrictScalars'_symm
-        (R := ℝ) (fibreEquivOfNeZero σ hσ₀ q.proj)) q.snd).trans
-          (fibreEquivOfNeZero_symm_apply σ hσ₀ q.proj q.snd)))).congr fun p ↦
-    congrArg (TotalSpace.mk' ℂ p.proj) ?_
-  exact (congrFun (ContinuousLinearEquiv.coe_restrictScalars' (R := ℝ)
-    (fibreEquivOfNeZero σ hσ₀ p.proj)) p.snd).symm
+  refine (contMDiff_bundle_symm e h).congr fun p ↦ ?_
+  rw [he']
 
 end Trivial
 
 /-! ### Untwisting the zeros one at a time -/
-
-section Untwist
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-  {E : X → Type*} [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)]
-  [∀ z, TopologicalSpace (E z)] [TopologicalSpace (TotalSpace F E)]
-  [FiberBundle F E] [VectorBundle ℂ F E]
-
-/-- Away from `x`, the chart reading at `y` of a section `τ` of the signed point twist `E(±x)` is
-that of its image in `E` under `pointTwistDiv`: if this image is `σ` near `y`, the two readings
-agree near the chart coordinate of `y`. -/
-theorem negPointTwistChartReading_eventuallyEq_of_pointTwistDiv {x y : X} {s : Bool}
-    (hyx : y ≠ x) {τ : ∀ z, (signedPointTwistCore F E x s).Fiber z} {σ : ∀ z, E z}
-    (h : ∀ᶠ z in 𝓝 y, pointTwistDiv F E x z (τ z) = σ z) :
-    negPointTwistChartReading F y τ =ᶠ[𝓝 (chartAt ℂ y y)] negPointTwistChartReading F y σ := by
-  have hb : (signedPointTwistCore F E x s).baseSet (y, false) ∈ 𝓝 y :=
-    ((signedPointTwistCore F E x s).isOpen_baseSet _).mem_nhds
-      (mem_signedPointTwistCore_baseSet.2 ⟨mem_baseSet_trivializationAt F E y, by simpa using hyx⟩)
-  filter_upwards [(chartAt ℂ y).tendsto_symm (mem_chart_source ℂ y) (h.and hb)] with w hw
-  rw [negPointTwistChartReading_apply, negPointTwistChartReading_apply,
-    signedPointTwistCore_trivializationAt_of_ne hyx, ← hw.1]
-  exact (trivializationAt_pointTwistDiv hw.2 _).symm
-
-end Untwist
 
 section Assembly
 
@@ -285,26 +284,6 @@ local instance instVectorBundleRealDivisorAssembly {L : X → Type} [∀ z, AddC
 local instance instVectorBundleRealSignedPointTwistCoreDivisor (x : X) (s : Bool) :
     VectorBundle ℝ ℂ (signedPointTwistCore ℂ L x s).Fiber :=
   VectorBundle.restrictScalars ℝ ℂ ℂ _
-
-/-- A zero `x` of `σ` is *transverse of sign `s`* when the real derivative `D` of the chart reading
-of `σ` at `x` is within `‖c‖` of `u ↦ u c` (`s = false`, a positive zero) or of `u ↦ conj u c`
-(`s = true`, a negative zero), for some `c`. -/
-def IsSignedTransverseZero (σ : ∀ z, L z) (x : X) (s : Bool) : Prop :=
-  ∃ (D : ℂ →L[ℝ] ℂ) (c : ℂ), HasFDerivAt (negPointTwistChartReading ℂ x σ) D (chartAt ℂ x x) ∧
-    ‖D - (if s then Complex.conjCLE.toContinuousLinearMap
-      else ContinuousLinearMap.id ℝ ℂ).smulRight c‖ < ‖c‖
-
-omit [∀ z, AddCommGroup (L z)] [∀ z, Module ℂ (L z)] [∀ z, Module ℝ (L z)]
-  [∀ z, IsScalarTower ℝ ℂ (L z)] [VectorBundle ℂ ℂ L] in
-/-- The sign of a transverse zero depends only on the section near the zero. -/
-theorem IsSignedTransverseZero.congr {L' : X → Type} [∀ z, TopologicalSpace (L' z)]
-    [TopologicalSpace (TotalSpace ℂ L')] [FiberBundle ℂ L']
-    {σ : ∀ z, L z} {σ' : ∀ z, L' z} {x : X} {s : Bool} (h : IsSignedTransverseZero σ x s)
-    (h' : negPointTwistChartReading ℂ x σ =ᶠ[𝓝 (chartAt ℂ x x)]
-      negPointTwistChartReading ℂ x σ') :
-    IsSignedTransverseZero σ' x s := by
-  obtain ⟨D, c, hD, hDc⟩ := h
-  exact ⟨D, c, hD.congr_of_eventuallyEq h'.symm, hDc⟩
 
 variable [T2Space X] [IsManifold 𝓘(ℂ) ∞ X] [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)]
 
@@ -323,16 +302,9 @@ theorem exists_untwist_section_of_finset {x : X} {S : Finset X} (hxS : x ∉ S) 
   obtain ⟨U, W, hU, hW, hxU, hSW, hUW⟩ := SeparatedNhds.of_singleton_finset hxS
   have hxU' : x ∈ U := hxU rfl
   have hUS : ∀ z ∈ U, z ∉ S := fun z hz hzS ↦ hUW.notMem_of_mem_left hz (hSW hzS)
-  obtain ⟨D, c, hD, hDc⟩ := hx
-  have hσx : σ x = 0 := (hZ x).2 (Or.inl rfl)
-  obtain ⟨τ, hτ, hτU, hτσ⟩ := exists_untwist_section hσ (hU.mem_nhds hxU')
-    (fun z hz h0 ↦ ((hZ z).1 h0).resolve_right (hUS z hz)) s (c := c) (by
-      filter_upwards [hD.eventually_norm_sub_sub_apply_lt hDc] with w hw
-      cases s <;>
-      simpa only [negPointTwistChartReading_chartAt_self ℂ hσx, sub_zero,
-        ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
-        ContinuousLinearEquiv.coe_coe, Complex.conjCLE_apply, smul_eq_mul, ite_true, ite_false,
-        Bool.false_eq_true] using hw)
+  obtain ⟨τ, hτ, hτU, hτσ⟩ := exists_untwist_section_of_isSignedTransverseZero hσ
+    ((hZ x).2 (Or.inl rfl)) (hU.mem_nhds hxU')
+    (fun z hz h0 ↦ ((hZ z).1 h0).resolve_right (hUS z hz)) hx
   refine ⟨τ, hτ, fun z ↦ ?_, fun y hy ↦ ?_⟩
   · by_cases hz : z ∈ U
     · exact ⟨fun h ↦ (hτU z hz h).elim, fun h ↦ (hUS z hz h).elim⟩
@@ -360,7 +332,7 @@ theorem exists_contMDiff_divisorCore_equiv_of_section (l : List (X × Bool))
   induction l generalizing L with
   | nil =>
     -- No zeros: `σ` trivializes `L`.
-    exact ⟨_, contMDiff_fibreEquivOfNeZero hσ fun z h ↦ by simpa using (hZ z).1 h⟩
+    exact ⟨_, contMDiff_fiberEquivOfNeZero hσ fun z h ↦ by simpa using (hZ z).1 h⟩
   | cons p l ih =>
     classical
     obtain ⟨x, s⟩ := p

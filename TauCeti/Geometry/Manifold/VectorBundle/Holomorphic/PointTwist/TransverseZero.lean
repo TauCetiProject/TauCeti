@@ -21,8 +21,11 @@ Let `σ` be a section of a complex line bundle `L` with fibre `ℂ` over a Riema
 `D : ℂ →L[ℝ] ℂ` at `φ x`. The zero is *positive* when `D` is close to a complex multiplication,
 `‖D - (u ↦ u c)‖ < ‖c‖`, and *negative* when it is close to a conjugate one,
 `‖D - (u ↦ conj u c)‖ < ‖c‖`. These are the open conditions under which a zero is untwisted in
-`L(-x)`, respectively `L(x)` (`TauCeti.exists_negPointTwist_section_of_hasFDerivAt`,
-`TauCeti.exists_pointTwist_section_of_hasFDerivAt`).
+`L(-x)`, respectively `L(x)`
+(`TauCeti.exists_untwist_section_of_isSignedTransverseZero`). The predicate
+`TauCeti.IsSignedTransverseZero σ x s` records this estimate for the sign `s` (`false` for
+positive, `true` for negative); it constrains only the derivative at `x`, and vanishing at `x` is
+a separate hypothesis.
 
 This file identifies these signs with the local indices for the canonical orientations of `L` and
 `X`: a positive zero has local index `1` and a negative zero local index `-1`
@@ -40,6 +43,10 @@ zero is positive or negative; summing the local indices, the Euler number of `L`
 (`TauCeti.exists_contMDiffSection_complexEulerClass_eq_sum_sign`). This is the input of step 5 of
 the proof of the Riemann–Roch formula for real Cauchy–Riemann operators (McDuff–Salamon,
 Theorem C.1.10), which twists `L` at these zeros.
+
+## Main definitions
+
+* `TauCeti.IsSignedTransverseZero`: the derivative estimate making a zero positive or negative.
 
 ## Main results
 
@@ -67,6 +74,30 @@ open Bundle Module Set Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti
+
+/-- The derivative condition making a zero `x` of a section `σ` of a complex line bundle with fibre
+`ℂ` *transverse of sign `s`*: the real derivative `D` of the chart reading of `σ` at `x` is within
+`‖c‖` of `u ↦ u c` (`s = false`, a positive zero) or of `u ↦ conj u c` (`s = true`, a negative
+zero), for some `c`. The predicate constrains only the derivative at `x`; that `σ` vanishes at `x`
+is a separate hypothesis wherever it is needed. -/
+@[expose] def IsSignedTransverseZero {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
+    {L : X → Type*} [∀ z, TopologicalSpace (L z)] [TopologicalSpace (TotalSpace ℂ L)]
+    [FiberBundle ℂ L] (σ : ∀ z, L z) (x : X) (s : Bool) : Prop :=
+  ∃ (D : ℂ →L[ℝ] ℂ) (c : ℂ), HasFDerivAt (negPointTwistChartReading ℂ x σ) D (chartAt ℂ x x) ∧
+    ‖D - (if s then Complex.conjCLE.toContinuousLinearMap
+      else ContinuousLinearMap.id ℝ ℂ).smulRight c‖ < ‖c‖
+
+/-- The sign condition at `x` depends only on the chart reading of the section near `x`. -/
+theorem IsSignedTransverseZero.congr {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
+    {L L' : X → Type*} [∀ z, TopologicalSpace (L z)] [TopologicalSpace (TotalSpace ℂ L)]
+    [FiberBundle ℂ L] [∀ z, TopologicalSpace (L' z)] [TopologicalSpace (TotalSpace ℂ L')]
+    [FiberBundle ℂ L'] {σ : ∀ z, L z} {σ' : ∀ z, L' z} {x : X} {s : Bool}
+    (h : IsSignedTransverseZero σ x s)
+    (h' : negPointTwistChartReading ℂ x σ =ᶠ[𝓝 (chartAt ℂ x x)]
+      negPointTwistChartReading ℂ x σ') :
+    IsSignedTransverseZero σ' x s := by
+  obtain ⟨D, c, hD, hDc⟩ := h
+  exact ⟨D, c, hD.congr_of_eventuallyEq h'.symm, hDc⟩
 
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [T2Space X]
   {L : X → Type} [∀ z, AddCommGroup (L z)] [∀ z, Module ℂ (L z)] [∀ z, Module ℝ (L z)]
@@ -168,10 +199,7 @@ number of positive zeros minus the number of negative ones. -/
 theorem exists_contMDiffSection_complexEulerClass_eq_sum_sign [CompactSpace X]
     [IsManifold 𝓘(ℂ) ∞ X] [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)] :
     ∃ (σ : ContMDiffSection 𝓘(ℝ, ℂ) ℂ ∞ L) (hZ : {z | σ z = 0}.Finite) (ε : X → Bool),
-      (∀ z, σ z = 0 → ∃ (D : ℂ →L[ℝ] ℂ) (c : ℂ),
-        HasFDerivAt (negPointTwistChartReading ℂ z σ) D (chartAt ℂ z z) ∧
-          ‖D - (if ε z then Complex.conjCLE.toContinuousLinearMap
-            else ContinuousLinearMap.id ℝ ℂ).smulRight c‖ < ‖c‖) ∧
+      (∀ z, σ z = 0 → IsSignedTransverseZero σ z (ε z)) ∧
       ((complexHomologicalOrientation X).evalFundamentalClass Complex.finrank_real_complex
           (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id X)
           (complexEulerClass ℂ L (r := 0) (finrank_self ℂ))).down =
