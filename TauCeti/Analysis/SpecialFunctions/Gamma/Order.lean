@@ -22,8 +22,9 @@ leading Laurent coefficient `(-1)^n / n!` (`Complex.tendsto_add_natCast_mul_Gamm
 `Complex.meromorphicTrailingCoeffAt_Gamma_neg_nat`,
 `Complex.meromorphicTrailingCoeffAt_Gamma_zero`), and has order zero everywhere else. In particular,
 `Complex.Gamma` and the shifted Gamma–power kernel `s ↦ Γ(s - β) * x ^ (β - s)`
-are analytic wherever the Gamma argument avoids the nonpositive integers
-(`Complex.analyticAt_Gamma`, `Complex.analyticAt_Gamma_sub_mul_cpow`). Deligne's
+are analytic wherever the Gamma argument avoids the nonpositive integers. Analyticity of Gamma is
+available as `Complex.analyticAt_Gamma` in `Gamma/Basic.lean`; this file proves the shifted result
+(`Complex.analyticAt_Gamma_sub_mul_cpow`). Deligne's
 factors inherit exactly the pole lattices `-2n` and `-n`. Their meromorphic orders are
 nonpositive: none has a zero as a meromorphic germ. At `1 - n`, `Γ_ℝ` is regular for even `n`
 and has a simple pole for odd `n` (`Complex.meromorphicOrderAt_Gammaℝ_one_sub_nat`).

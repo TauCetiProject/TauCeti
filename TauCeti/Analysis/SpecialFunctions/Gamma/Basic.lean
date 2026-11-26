@@ -52,6 +52,7 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
 
 ## Main results
 
+* `Complex.analyticAt_Gamma` — Gamma is analytic away from the nonpositive integers.
 * `Real.measurable_Gamma` — `Real.Gamma` is measurable.
 * `Real.continuous_inv_Gamma` — `s ↦ (Real.Gamma s)⁻¹` is continuous.
 * `TauCeti.continuous_Gamma_sum_div_prod` — the finite Gamma quotient is jointly continuous on

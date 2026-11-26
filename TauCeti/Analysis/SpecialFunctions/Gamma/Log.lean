@@ -223,9 +223,8 @@ theorem hasDerivAt_im_logGamma_ofReal_add_mul_I {σ t : ℝ} (h : (σ : ℂ) + t
 theorem integral_re_digamma_ofReal_add_mul_I {σ : ℝ} (hσ : 0 < σ) (T : ℝ) :
     ∫ t in (0 : ℝ)..T, (digamma (σ + t * I)).re = (logGamma (σ + T * I)).im := by
   have hψ : Continuous fun t : ℝ ↦ digamma (σ + t * I) :=
-    continuous_iff_continuousAt.mpr fun t ↦ ContinuousAt.comp
-      (analyticAt_digamma (ne_neg_natCast_of_re_pos (by simpa using hσ))).continuousAt
-      (by fun_prop)
+    analyticOnNhd_digamma_re_pos.continuousOn.comp_continuous (by fun_prop) fun t => by
+      simpa using hσ
   have hre : Continuous fun t : ℝ ↦ (digamma (σ + t * I)).re :=
     Complex.continuous_re.comp hψ
   rw [intervalIntegral.integral_eq_sub_of_hasDerivAt

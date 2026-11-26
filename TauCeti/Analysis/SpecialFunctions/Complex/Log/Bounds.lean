@@ -76,7 +76,7 @@ term takes.
   positive vertical strip, including empty and singleton strips.
 * `Complex.abs_log_norm_ofReal_add_mul_I_sub_le`: for `2 ≤ x` and `t : ℝ`,
   `|Real.log ‖(x : ℂ) + t * I‖ - Real.log (1 + |t|)| ≤ Real.log x`.
-* `Complex.abs_log_norm_sub_log_im_le`: off the real axis,
+* `Complex.abs_log_norm_sub_log_abs_im_le`: off the real axis,
   `|Real.log ‖z‖ - Real.log |im z|| ≤ (re z / im z) ^ 2 / 2`.
 -/
 
@@ -276,7 +276,7 @@ theorem abs_log_norm_ofReal_add_mul_I_sub_le {x : ℝ} (hx : 2 ≤ x) (t : ℝ) 
 
 /-- Off the real axis, `Real.log ‖z‖` differs from `Real.log |im z|` by at most
 `(re z / im z) ^ 2 / 2`, since `(‖z‖ / |im z|) ^ 2 = 1 + (re z / im z) ^ 2`. -/
-theorem abs_log_norm_sub_log_im_le {z : ℂ} (hz : z.im ≠ 0) :
+theorem abs_log_norm_sub_log_abs_im_le {z : ℂ} (hz : z.im ≠ 0) :
     abs (Real.log ‖z‖ - Real.log |z.im|) ≤ (z.re / z.im) ^ 2 / 2 := by
   have upper {w : ℂ} (hw : 0 < w.im) :
       Real.log ‖w‖ - Real.log w.im ≤ (w.re / w.im) ^ 2 / 2 := by

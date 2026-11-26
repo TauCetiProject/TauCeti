@@ -57,15 +57,8 @@ open scoped Real
 
 namespace TauCeti
 
-/-- The integrand of `riemannSiegelTheta` is continuous. -/
-private theorem continuous_riemannSiegelTheta_integrand :
-    Continuous fun t : ℝ ↦ ((digamma (1 / 4 + (t : ℂ) / 2 * I)).re - Real.log π) / 2 := by
-  have hψ : Continuous fun t : ℝ ↦ digamma (1 / 4 + (t : ℂ) / 2 * I) :=
-    continuous_iff_continuousAt.mpr fun t ↦ ContinuousAt.comp
-      (analyticAt_digamma (ne_neg_natCast_of_re_pos (by simp))).continuousAt (by fun_prop)
-  fun_prop
-
-/-- The Riemann–Siegel theta function `ϑ(T) = ∫₀^T (Re ψ(1/4 + it/2) - log π) / 2 dt`, where `ψ` is
+/-- The Riemann–Siegel theta function
+  `ϑ(T) = ∫₀^T (Re ψ(1/4 + it/2) - log π) / 2 dt`, where `ψ` is
 the digamma function. It is the continuous argument of `Γℝ(1/2 + iT)` normalized by `ϑ(0) = 0`
 (`TauCeti.Gammaℝ_half_add_mul_I_eq_norm_mul_exp_riemannSiegelTheta`,
 `TauCeti.eq_riemannSiegelTheta_of_continuous_normalized_phase`). -/
@@ -102,12 +95,28 @@ private theorem hasDerivAt_im_logGamma_sub (T : ℝ) :
 `ϑ(T) = Im log Γ(1/4 + iT/2) - (T/2) log π`. -/
 theorem riemannSiegelTheta_eq_im_logGamma_sub (T : ℝ) :
     riemannSiegelTheta T = (logGamma (1 / 4 + (T : ℂ) / 2 * I)).im - T / 2 * Real.log π := by
-  rw [riemannSiegelTheta_def, intervalIntegral.integral_eq_sub_of_hasDerivAt
-    (fun t _ ↦ hasDerivAt_im_logGamma_sub t)
-    (continuous_riemannSiegelTheta_integrand.intervalIntegrable 0 T)]
-  have h0 : (1 / 4 + ((0 : ℝ) : ℂ) / 2 * I) = ((1 / 4 : ℝ) : ℂ) := by push_cast; ring
-  rw [h0, logGamma_ofReal (by norm_num)]
-  simp
+  have hcast (T : ℝ) : ((1 / 4 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I =
+      1 / 4 + (T : ℂ) / 2 * I := by
+    push_cast
+    ring
+  rw [riemannSiegelTheta_def]
+  simp_rw [← hcast]
+  let F : ℝ → ℝ := fun t : ℝ ↦ (digamma (((1 / 4 : ℝ) : ℂ) + (t : ℂ) * I)).re
+  change (∫ t in (0 : ℝ)..T, (F (t / 2) - Real.log π) / 2) =
+    (logGamma (((1 / 4 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I)).im - T / 2 * Real.log π
+  rw [intervalIntegral.integral_comp_div (a := 0) (b := T) (c := 2)
+    (f := fun t : ℝ => (F t - Real.log π) / 2) (by norm_num)]
+  simp only [zero_div, smul_eq_mul, intervalIntegral.integral_div]
+  have hψ : Continuous fun t : ℝ => digamma (((1 / 4 : ℝ) : ℂ) + (t : ℂ) * I) :=
+    analyticOnNhd_digamma_re_pos.continuousOn.comp_continuous (by fun_prop) fun _ ↦ by norm_num
+  have hF : Continuous F := Complex.continuous_re.comp hψ
+  rw [intervalIntegral.integral_sub (hF.intervalIntegrable 0 (T / 2)) intervalIntegrable_const]
+  have hInt := integral_re_digamma_ofReal_add_mul_I (σ := 1 / 4) (by norm_num) (T / 2)
+  change (∫ t in (0 : ℝ)..T / 2, F t) =
+    (logGamma (((1 / 4 : ℝ) : ℂ) + ((T / 2 : ℝ) : ℂ) * I)).im at hInt
+  rw [hInt, intervalIntegral.integral_const]
+  simp only [sub_zero, smul_eq_mul]
+  ring
 
 /-- The derivative of the Riemann–Siegel theta function:
 `ϑ'(T) = (Re ψ(1/4 + iT/2) - log π) / 2`. -/

@@ -17,7 +17,7 @@ Writing `log Γ` at `z = 1/4 + iT/2` as Stirling's main term plus the remainder 
 `ϑ(T) = (T/2) log |z| - (arg z)/4 - T/2 - (T/2) log π + Im R(z)`
 (`TauCeti.riemannSiegelTheta_eq_add_im_stirlingRemainder`). For `T > 0`, the three error terms
 against `(T/2) log (T/(2πe)) - π/8` are at most `1/(16T)` (the modulus, from
-`Complex.abs_log_norm_sub_log_im_le`), and `1/(8T)` (the argument, from
+`Complex.abs_log_norm_sub_log_abs_im_le`), and `1/(8T)` (the argument, from
 `Complex.pi_div_two_sub_arg_le_div`)
 and `1/(2T)` (the remainder, from Nemes's bound `TauCeti.norm_stirlingRemainder_le_of_re_nonneg`).
 
@@ -65,7 +65,7 @@ private theorem log_norm_quarter_add_bounds {T : ℝ} (hT : 0 < T) :
   have him : z.im = T / 2 := by simp [z]
   have hzim : 0 < z.im := him ▸ half_pos hT
   have h0 := Real.log_le_log hzim (im_le_norm z)
-  have h1 := (le_abs_self _).trans (Complex.abs_log_norm_sub_log_im_le hzim.ne')
+  have h1 := (le_abs_self _).trans (Complex.abs_log_norm_sub_log_abs_im_le hzim.ne')
   rw [him] at h0
   simp only [hre, him, abs_of_pos (by positivity : 0 < T / 2), one_div, tsub_le_iff_right] at h1
   have hsq : T / 2 * ((1 / 4 / (T / 2)) ^ 2 / 2) = 1 / (16 * T) := by

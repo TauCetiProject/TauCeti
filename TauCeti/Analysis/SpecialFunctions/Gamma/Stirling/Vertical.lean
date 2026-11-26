@@ -98,7 +98,7 @@ private theorem abs_log_norm_sub_log_im_le {σ t : ℝ} (ht : 0 < t) (hσt : |σ
   have hre : s.re = σ := by simp [s]
   have him : s.im = t := by simp [s]
   have h0 := Real.log_le_log (him ▸ ht) (im_le_norm s)
-  have h1 := (le_abs_self _).trans (Complex.abs_log_norm_sub_log_im_le (z := s) (him ▸ ht.ne'))
+  have h1 := (le_abs_self _).trans (Complex.abs_log_norm_sub_log_abs_im_le (z := s) (him ▸ ht.ne'))
   rw [hre, him, abs_of_pos ht] at h1
   rw [him] at h0
   have hx : |σ / t| ≤ 1 := by
