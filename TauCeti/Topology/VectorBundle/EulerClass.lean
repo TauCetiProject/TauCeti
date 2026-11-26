@@ -12,6 +12,7 @@ public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Category.TopPair.ContinuousLinearEquiv
 public import TauCeti.Topology.FiberBundle.ModelFiber
 public import TauCeti.Topology.VectorBundle.ZeroSection
+import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
@@ -70,7 +71,9 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 
 * `TauCeti.thomPair`: the Thom pair `(E, E₀)`.
 * `TauCeti.thomPairOver`: the Thom pair `(E|_W, E₀|_W)` of the restriction to a subset `W` of the
-  base; over the whole base it is the Thom pair `(E, E₀)` (`TauCeti.thomPairOverUnivIso`).
+  base; over the whole base it is the Thom pair `(E, E₀)` (`TauCeti.thomPairOverUnivIso`), and for
+  any `W ⊆ B` it is isomorphic to the Thom pair of the pullback bundle along `W ↪ B`
+  (`TauCeti.pullbackSubtypeValThomPairMap`, `TauCeti.isIso_pullbackSubtypeValThomPairMap`).
 * `TauCeti.thomPairOverMap`: the restriction map `(E|_W, E₀|_W) ⟶ (E|_{W'}, E₀|_{W'})` for
   `W ⊆ W'`.
 * `TauCeti.fiberThomPairMap`, `TauCeti.fiberThomPairOverMap`: the inclusions of the fibre pair
@@ -627,6 +630,93 @@ theorem IsThomClass.pullback {u : (thomPair F E).singularCohomology R k M (finra
     (fiberThomPairMap_comp_pullbackThomPairMap F E f b').trans (Category.id_comp _).symm
 
 end Pullback
+
+section PullbackSubtypeVal
+
+variable {B : Type w} [TopologicalSpace B] (F : Type*)
+  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)]
+
+attribute [local instance] pullbackFiberZero
+
+/-- The canonical map `(i^* E, (i^* E)₀) ⟶ (E|_W, E₀|_W)` from the Thom pair of the pullback bundle
+along `i = ContinuousMap.subtypeVal W` to `thomPairOver F E W`. -/
+def pullbackSubtypeValThomPairMap (W : Set B) :
+    thomPair F ((⇑(ContinuousMap.subtypeVal W)) *ᵖ E) ⟶ thomPairOver F E W :=
+  TopPair.ofHom
+    (TopCat.ofHom ⟨fun z ↦ ⟨Pullback.lift (ContinuousMap.subtypeVal W) z, z.proj.property⟩,
+      (Pullback.continuous_lift F E _).subtype_mk _⟩)
+    (TopCat.ofHom ⟨fun z ↦ ⟨Pullback.lift (ContinuousMap.subtypeVal W) z.val, z.val.proj.property,
+        (mem_zeroSectionCompl (E := E)).2
+          ((mem_zeroSectionCompl (E := (⇑(ContinuousMap.subtypeVal W)) *ᵖ E)).1 z.property)⟩,
+      ((Pullback.continuous_lift F E _).comp continuous_subtypeVal).subtype_mk _⟩)
+    (by ext; rfl)
+
+@[simp]
+theorem pullbackSubtypeValThomPairMap_fst_apply (W : Set B)
+    (z : TotalSpace F ((⇑(ContinuousMap.subtypeVal W)) *ᵖ E)) :
+    TopPair.Hom.fst (pullbackSubtypeValThomPairMap F E W) z =
+      ⟨Pullback.lift (ContinuousMap.subtypeVal W) z, z.proj.property⟩ :=
+  (rfl)
+
+@[simp]
+theorem pullbackSubtypeValThomPairMap_snd_apply (W : Set B)
+    (z : (thomPair F ((⇑(ContinuousMap.subtypeVal W)) *ᵖ E)).snd) :
+    TopPair.Hom.snd (pullbackSubtypeValThomPairMap F E W) z =
+      ⟨Pullback.lift (ContinuousMap.subtypeVal W) z.val, z.val.proj.property,
+        (mem_zeroSectionCompl (E := E)).2
+          ((mem_zeroSectionCompl (E := (⇑(ContinuousMap.subtypeVal W)) *ᵖ E)).1 z.property)⟩ :=
+  (rfl)
+
+/-- `pullbackSubtypeValThomPairMap` followed by the subspace inclusion `(E|_W, E₀|_W) ⟶ (E, E₀)` is
+`pullbackThomPairMap` along `ContinuousMap.subtypeVal W`. -/
+@[reassoc (attr := simp)]
+theorem pullbackSubtypeValThomPairMap_comp_restrictPreimagePairMap (W : Set B) :
+    pullbackSubtypeValThomPairMap F E W ≫
+        TopCat.restrictPreimagePairMap (X := TopCat.of (TotalSpace F E))
+          (π F E) (zeroSectionCompl F E) W =
+      pullbackThomPairMap F E (ContinuousMap.subtypeVal W) :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun z ↦
+    (TopCat.restrictPreimagePairMap_fst_apply _ _ _ _).trans
+      (pullbackThomPairMap_fst_apply F E _ z).symm)
+
+variable [TopologicalSpace F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+
+/-- On the fibre over `b ∈ W`, `pullbackSubtypeValThomPairMap` identifies the fibre inclusion of
+the pullback bundle along `W ↪ B` with `fiberThomPairOverMap` into `thomPairOver F E W`. -/
+@[reassoc (attr := simp)]
+theorem fiberThomPairMap_comp_pullbackSubtypeValThomPairMap (W : Set B) (b : W) :
+    fiberThomPairMap F ((⇑(ContinuousMap.subtypeVal W)) *ᵖ E) b ≫
+        pullbackSubtypeValThomPairMap F E W =
+      fiberThomPairOverMap F E b.property :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ Subtype.ext
+    (congrArg (fun v ↦ Pullback.lift (ContinuousMap.subtypeVal W) v)
+      (fiberThomPairMap_fst_apply F ((⇑(ContinuousMap.subtypeVal W)) *ᵖ E) b x)))
+
+/-- `pullbackSubtypeValThomPairMap` commutes on total spaces with `thomPairOverProj` and
+`thomPairProj` of the pullback bundle. -/
+@[reassoc (attr := simp)]
+theorem pullbackSubtypeValThomPairMap_fst_comp_thomPairOverProj (W : Set B) :
+    TopPair.Hom.fst (pullbackSubtypeValThomPairMap F E W) ≫ thomPairOverProj F E W =
+      thomPairProj F ((⇑(ContinuousMap.subtypeVal W)) *ᵖ E) :=
+  TopCat.ext fun v ↦ Subtype.ext (congrArg Subtype.val (thomPairProj_apply F _ v).symm)
+
+/-- For any subset `W ⊆ B`, `pullbackSubtypeValThomPairMap F E W` is an isomorphism of Thom pairs
+`(i^* E, (i^* E)₀) ≅ (E|_W, E₀|_W)`. -/
+instance isIso_pullbackSubtypeValThomPairMap (W : Set B) :
+    IsIso (pullbackSubtypeValThomPairMap F E W) := by
+  let g : C(↥(π F E ⁻¹' W), TotalSpace F ((⇑(ContinuousMap.subtypeVal W)) *ᵖ E)) :=
+    ⟨fun v ↦ TotalSpace.mk' F (⟨v.val.proj, v.property⟩ : W) v.val.snd,
+      Bundle.Pullback.continuous_iff.2
+        ⟨((FiberBundle.continuous_proj F E).comp continuous_subtypeVal).subtype_mk _,
+          continuous_subtypeVal⟩⟩
+  have : IsIso (TopPair.Hom.fst (pullbackSubtypeValThomPairMap F E W)) :=
+    ⟨TopCat.ofHom g, TopCat.ext fun ⟨⟨_, _⟩, _⟩ ↦ rfl, TopCat.ext fun ⟨⟨_, _⟩, _⟩ ↦ rfl⟩
+  exact TopPair.isIso_of_isIso_fst_of_surjective_snd _ fun ⟨⟨b, x⟩, hb, hx⟩ ↦
+    ⟨⟨TotalSpace.mk' F (⟨b, hb⟩ : W) x,
+      (mem_zeroSectionCompl (E := (⇑(ContinuousMap.subtypeVal W)) *ᵖ E)).2
+        ((mem_zeroSectionCompl (E := E)).1 hx)⟩, rfl⟩
+
+end PullbackSubtypeVal
 
 section EulerClass
 
