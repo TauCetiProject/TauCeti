@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.PrincipalSymbol
 import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
+import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Topology.Compactness.Compact
 
@@ -59,6 +60,9 @@ manifold such cutoffs exist. This is the converse of
   symbols.
 * `TauCeti.classicalPrincipalSymbol_eq_zero_of_mem_smoothingPseudodifferentialOperators`: the
   principal symbol of an operator of order `-∞` vanishes in every order.
+* `TauCeti.comp_mem_smoothingPseudodifferentialOperators_of_left`,
+  `TauCeti.comp_mem_smoothingPseudodifferentialOperators_of_right`: the operators of order `-∞`
+  form a two-sided ideal in the classical pseudodifferential operators of all orders.
 * `TauCeti.mulLeft_comp_comp_mulLeft_mem_smoothingPseudodifferentialOperators`: pseudolocality.
 * `TauCeti.sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`: a classical
   pseudodifferential operator is a sum of chart quantizations modulo an operator of order `-∞`,
@@ -167,6 +171,33 @@ theorem comp_mulLeft_mem_smoothingPseudodifferentialOperators
   mem_smoothingPseudodifferentialOperators_iff.2 fun m ↦
     comp_mulLeft_mem_classicalPseudodifferentialOperators
       (mem_smoothingPseudodifferentialOperators_iff.1 hP m) g
+
+/-- **Operators of order `-∞` absorb composition on the right.** If `P` has order `-∞` and `Q` is
+a classical pseudodifferential operator of some order `m`, then `P ∘ Q` has order `-∞`. -/
+theorem comp_mem_smoothingPseudodifferentialOperators_of_left
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℝ}
+    {Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : P ∈ smoothingPseudodifferentialOperators)
+    (hQ : Q ∈ classicalPseudodifferentialOperators m) :
+    P ∘ₗ Q ∈ smoothingPseudodifferentialOperators :=
+  mem_smoothingPseudodifferentialOperators_iff.2 fun m' ↦ sub_add_cancel m' m ▸
+    comp_mem_classicalPseudodifferentialOperators
+      (mem_smoothingPseudodifferentialOperators_iff.1 hP (m' - m)) hQ
+
+/-- **Operators of order `-∞` absorb composition on the left.** If `Q` is a classical
+pseudodifferential operator of some order `m` and `P` has order `-∞`, then `Q ∘ P` has order
+`-∞`. -/
+theorem comp_mem_smoothingPseudodifferentialOperators_of_right
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℝ}
+    {Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hQ : Q ∈ classicalPseudodifferentialOperators m)
+    (hP : P ∈ smoothingPseudodifferentialOperators) :
+    Q ∘ₗ P ∈ smoothingPseudodifferentialOperators :=
+  mem_smoothingPseudodifferentialOperators_iff.2 fun m' ↦ add_sub_cancel m m' ▸
+    comp_mem_classicalPseudodifferentialOperators hQ
+      (mem_smoothingPseudodifferentialOperators_iff.1 hP (m' - m))
 
 /-! ### Pseudolocality -/
 
