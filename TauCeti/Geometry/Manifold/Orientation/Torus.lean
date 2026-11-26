@@ -35,8 +35,16 @@ positive orientation of the circle (`AddCircle.orientation`)
 (`TauCeti.isOrientationPreservingAt_piSnoc_torusOrientation`), and the one-factor torus is its
 circle (`TauCeti.isOrientationPreservingAt_piUnique_torusOrientation`). So, by induction on `n`,
 `torusOrientation p` is the iterated product orientation
-`((S¹_(p 0) × S¹_(p 1)) × ⋯) × S¹_(p (n - 1))`. The empty torus is a point, whose orientation is
-the positive orientation of the zero-dimensional tangent space
+`((S¹_(p 0) × S¹_(p 1)) × ⋯) × S¹_(p (n - 1))`. Grouping the other way, the association map
+`x ↦ (x 0, Fin.tail x)` from `T^(m + 1)` to `AddCircle (p 0) × T^m` (the inverse of
+`Diffeomorph.piCons`) preserves orientation from the torus orientation to the product of the
+positive orientation of the first circle with the torus orientation of the remaining factors
+(`TauCeti.isOrientationPreservingAt_piCons_symm_torusOrientation`). The product orientation has
+degree `1 + m`, and is read in degree `m + 1` through `TauCeti.Manifold.Orientation.reindex`. By
+induction, `torusOrientation p` is also the iterated product orientation
+`S¹_(p 0) × (S¹_(p 1) × ⋯ × (S¹_(p (n - 1)) × T^0))`, ending in the point factor. The empty
+torus is a point, whose orientation is the positive orientation of the zero-dimensional tangent
+space
 (`TauCeti.orientationAt_torusOrientation_fin_zero`); with `k = 0` or `m = 0` the concatenation
 theorem says that inserting or deleting this point factor does not change the orientation.
 
@@ -63,6 +71,12 @@ pulls the volume form back to a positive multiple of itself, so it preserves the
   preserves orientation from the product orientation.
 * `TauCeti.isOrientationPreservingAt_piSnoc_torusOrientation`: appending a circle preserves
   orientation from the product of the torus orientation with `AddCircle.orientation`.
+* `TauCeti.isOrientationPreservingAt_piCons_torusOrientation`: prepending a circle preserves
+  orientation from the product of `AddCircle.orientation` with the torus orientation, read in
+  degree `m + 1`, to the torus orientation.
+* `TauCeti.isOrientationPreservingAt_piCons_symm_torusOrientation`: the association map
+  splitting off the first circle preserves orientation from the torus orientation to that
+  product.
 * `TauCeti.isOrientationPreservingAt_piUnique_torusOrientation`: the one-factor torus is its
   circle.
 * `TauCeti.orientationAt_torusOrientation_fin_zero`: the empty torus carries the positive
@@ -219,6 +233,53 @@ theorem isOrientationPreservingAt_piSnoc_torusOrientation (p : Fin (m + 1) → �
     (iff_of_true ((orientation_eq_orientationAt_prod_iff _ _ (Pi.basisFun ℝ (Fin m))
       (Module.Basis.singleton (Fin 1) ℝ)).2 (iff_of_true (orientationAt_torusOrientation _ _).symm
         (AddCircle.orientationAt_orientation _ _).symm)) (orientationAt_torusOrientation p _).symm)
+
+/-- **Splitting off the first circle.** The map `(t, x) ↦ Fin.cons t x` from
+`AddCircle (p 0) × T^m` to `T^(m + 1)`, inverse to the association map splitting off the first
+circle, preserves orientation from the product of the positive orientation of the circle with the
+torus orientation, read in degree `m + 1`, to the torus orientation. -/
+theorem isOrientationPreservingAt_piCons_torusOrientation (p : Fin (m + 1) → ℝ)
+    [∀ i, Fact (0 < p i)] (n : ℕ∞ω) (x : AddCircle (p 0) × ∀ i : Fin m, AddCircle (p i.succ)) :
+    IsOrientationPreservingAt
+      (((AddCircle.orientation (p 0)).prod (torusOrientation fun i : Fin m ↦ p i.succ)).reindex
+        (finCongr (add_comm 1 m)))
+      (torusOrientation p)
+      (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) n) x := by
+  -- The product of the unit vector of the circle and the coordinate basis, the circle first.
+  let b₀ := ((Module.Basis.singleton (Fin 1) ℝ).prod (Pi.basisFun ℝ (Fin m))).reindex
+    finSumFinEquiv
+  -- The differential prepends the circle component, so it sends `b₀`, read in degree `m + 1`, to
+  -- the coordinate basis.
+  have hb (i : Fin (m + 1)) :
+      Fin.cons (α := fun _ ↦ ℝ) (b₀.reindex (finCongr (add_comm 1 m)) i).1
+        (b₀.reindex (finCongr (add_comm 1 m)) i).2 = Pi.basisFun ℝ (Fin (m + 1)) i := by
+    simpa only [b₀, Module.Basis.reindex_apply, Equiv.symm_trans_apply] using
+      Module.Basis.cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr (R := ℝ) i
+  -- The tangent spaces are the model spaces `ℝ`, `Fin m → ℝ` and `Fin (m + 1) → ℝ`, so these
+  -- bases are tangent bases; both are positive, by the coordinate description of the orientations.
+  refine (isOrientationPreservingAt_iff_of_basis (b₀.reindex (finCongr (add_comm 1 m)))
+    (Pi.basisFun ℝ (Fin (m + 1)))
+    fun i ↦ (Diffeomorph.mfderiv_piCons_apply (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) n x
+      _ _).trans (hb i)).2
+    (iff_of_true ?_ (orientationAt_torusOrientation p _).symm)
+  refine (Module.Basis.orientation_reindex b₀ _).trans ?_
+  rw [orientationAt_reindex]
+  exact congrArg _ ((orientation_eq_orientationAt_prod_iff _ _
+    (Module.Basis.singleton (Fin 1) ℝ) (Pi.basisFun ℝ (Fin m))).2
+    (iff_of_true (AddCircle.orientationAt_orientation _ _).symm
+      (orientationAt_torusOrientation _ _).symm))
+
+/-- **The association map preserves orientation.** The association map
+`x ↦ (x 0, Fin.tail x)` from `T^(m + 1)` to `AddCircle (p 0) × T^m`, splitting off the first
+circle, preserves orientation from the torus orientation to the product of the positive orientation
+of the circle with the torus orientation of the remaining factors, read in degree `m + 1`. -/
+theorem isOrientationPreservingAt_piCons_symm_torusOrientation (p : Fin (m + 1) → ℝ)
+    [∀ i, Fact (0 < p i)] {n : ℕ∞ω} (hn : n ≠ 0) (x : ∀ i, AddCircle (p i)) :
+    IsOrientationPreservingAt (torusOrientation p)
+      (((AddCircle.orientation (p 0)).prod (torusOrientation fun i : Fin m ↦ p i.succ)).reindex
+        (finCongr (add_comm 1 m)))
+      (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) n).symm x :=
+  (isOrientationPreservingAt_piCons_torusOrientation p n _).diffeomorph_symm hn
 
 /-- **The one-factor torus is its circle.** Evaluation at the single index, from the torus
 `∀ i : Fin 1, AddCircle (p i)` to the circle `AddCircle (p 0)`, preserves orientation from the
