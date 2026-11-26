@@ -233,7 +233,7 @@ theorem exists_continuousLinearMap_integral_mul_neg_laplacian_add_mul_eq [Nontri
         _ = _ := by
             -- Green's identity `∫ φ (-Δφ) = ∫ ‖Dφ‖²`.
             have hG := integral_inner_gradient_eq_neg_integral_mul_laplacian (μ := volume)
-              φ.contDiff (φ.contDiff.of_le (by norm_num)) φ.hasCompactSupport
+              (fun _ _ ↦ φ.contDiff.contDiffAt) (φ.contDiff.of_le (by norm_num)) φ.hasCompactSupport
             simp only [real_inner_self_eq_norm_sq, norm_gradient_eq_norm_fderiv] at hG
             rw [integral_add hΔφ hPφ]
             simp only [mul_neg, integral_neg, hG]

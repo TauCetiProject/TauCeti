@@ -43,24 +43,30 @@ The main results are:
 
 * the power law `Δ_k y^s = s (1 - k - s) y^s` for every complex `s`, in particular
   `Δ y^s = s (1 - s) y^s`;
-* the invariance of `Δ` under every orientation-preserving isometry `τ ↦ g • τ` of `ℍ`,
-  `Δ (f ∘ g) = (Δ f) ∘ g` for `g ∈ GL(2, ℝ)` with positive determinant;
-* for an integral weight `k` and the same `g`, the commutation of `Δ_k` with the weight-`k`
-  slash action `f ↦ f ∣[k] g`.
+* the invariance of `Δ` under every isometry `τ ↦ g • τ` of `ℍ`, `Δ (f ∘ g) = (Δ f) ∘ g` for
+  `g ∈ GL(2, ℝ)`, including the orientation-reversing reflection `τ ↦ -conj τ`;
+* for an integral weight `k` and `g` with `det g > 0`, the commutation of `Δ_k` with the
+  weight-`k` slash action `f ↦ f ∣[k] g`.
 
-The commutation follows from the conformal covariance of the planar Laplacian under the
-holomorphic map `τ ↦ g • τ`, whose derivative is `det g / (cτ + d)²`, together with
+For `det g > 0` the commutation follows from the conformal covariance of the planar Laplacian
+under the holomorphic map `τ ↦ g • τ`, whose derivative is `det g / (cτ + d)²`, together with
 `Im (g • τ) = det g · Im τ / |cτ + d|²` and the product rule for the holomorphic automorphy
-factor `(cτ + d)^(-k)`.
+factor `(cτ + d)^(-k)`. The invariance of `Δ` for `det g < 0` reduces to that case through the
+reflection `J • τ = -conj τ`, which commutes with `Δ`.
 
 ## Main declarations
 
 * `TauCeti.UpperHalfPlane.hyperbolicLaplacian`: the hyperbolic Laplacian `Δ`.
 * `TauCeti.UpperHalfPlane.weightLaplacian`: the weight-`k` Laplacian `Δ_k`.
+* `TauCeti.UpperHalfPlane.hyperbolicLaplacian_congr_nhds`: `Δ f` at `z` only depends on `f`
+  near `z`, so `Δ` does not enlarge supports
+  (`TauCeti.UpperHalfPlane.tsupport_hyperbolicLaplacian_subset`).
 * `TauCeti.UpperHalfPlane.weightLaplacian_im_cpow`: `Δ_k y^s = s (1 - k - s) y^s`.
 * `TauCeti.UpperHalfPlane.hyperbolicLaplacian_im_cpow`: `Δ y^s = s (1 - s) y^s`.
-* `TauCeti.UpperHalfPlane.hyperbolicLaplacian_comp_smul`: `Δ (f ∘ g) = (Δ f) ∘ g` for
-  `det g > 0`.
+* `TauCeti.UpperHalfPlane.hyperbolicLaplacian_comp_J_smul`: `Δ (f ∘ J) = (Δ f) ∘ J` for the
+  reflection `J • τ = -conj τ`.
+* `TauCeti.UpperHalfPlane.hyperbolicLaplacian_comp_smul`: `Δ (f ∘ g) = (Δ f) ∘ g` for every
+  `g ∈ GL(2, ℝ)`.
 * `TauCeti.UpperHalfPlane.weightLaplacian_slash`: `Δ_k (f ∣[k] g) = (Δ_k f) ∣[k] g` for
   `det g > 0`.
 
@@ -134,6 +140,32 @@ theorem hyperbolicLaplacian_const (c : ℂ) : hyperbolicLaplacian (fun _ ↦ c) 
 theorem weightLaplacian_const (k : ℝ) (c : ℂ) : weightLaplacian k (fun _ ↦ c) = 0 := by
   ext z
   simp [weightLaplacian_apply, Function.comp_def]
+
+section Local
+
+variable {f f₀ : ℍ → ℂ} {z : ℍ}
+
+/-- **Locality of the hyperbolic Laplacian**: `Δ f` at `z` only depends on `f` near `z`. -/
+theorem hyperbolicLaplacian_congr_nhds (h : f ∘ ofComplex =ᶠ[𝓝 (z : ℂ)] f₀ ∘ ofComplex) :
+    hyperbolicLaplacian f z = hyperbolicLaplacian f₀ z := by
+  rw [hyperbolicLaplacian_apply, hyperbolicLaplacian_apply, (laplacian_congr_nhds h).self_of_nhds]
+
+/-- The hyperbolic Laplacian of `f` vanishes off the topological support of `f`. -/
+theorem hyperbolicLaplacian_eq_zero_of_notMem_tsupport (hz : z ∉ tsupport f) :
+    hyperbolicLaplacian f z = 0 := by
+  have h : f ∘ ofComplex =ᶠ[𝓝 (z : ℂ)] (fun _ : ℍ ↦ (0 : ℂ)) ∘ ofComplex := by
+    rw [← isOpenEmbedding_coe.map_nhds_eq, eventuallyEq_map]
+    simpa [Function.comp_def, ofComplex_apply, Pi.zero_def] using
+      notMem_tsupport_iff_eventuallyEq.1 hz
+  rw [hyperbolicLaplacian_congr_nhds h, hyperbolicLaplacian_const, Pi.zero_apply]
+
+/-- The hyperbolic Laplacian does not enlarge topological supports. -/
+theorem tsupport_hyperbolicLaplacian_subset (f : ℍ → ℂ) :
+    tsupport (hyperbolicLaplacian f) ⊆ tsupport f :=
+  closure_minimal (Function.support_subset_iff'.2 fun _ ↦
+    hyperbolicLaplacian_eq_zero_of_notMem_tsupport) (isClosed_tsupport f)
+
+end Local
 
 section Linear
 
@@ -254,9 +286,10 @@ private theorem norm_deriv_coe_smul_ofComplex_sq (hg : 0 < (g : Matrix (Fin 2) (
   rw [deriv_smul hg z, norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg hg.le,
     ← Complex.normSq_eq_norm_sq]
 
-/-- **Möbius invariance of the hyperbolic Laplacian**: for `g ∈ GL(2, ℝ)` with positive
-determinant, `Δ (f ∘ g) = (Δ f) ∘ g` at every point where `f` is `C²`. -/
-theorem hyperbolicLaplacian_comp_smul (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det)
+/-- Möbius invariance of the hyperbolic Laplacian for `g ∈ GL(2, ℝ)` with positive determinant,
+from the conformal covariance of the planar Laplacian under the holomorphic map `τ ↦ g • τ`. -/
+private theorem hyperbolicLaplacian_comp_smul_of_det_pos
+    (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det)
     {f : ℍ → ℂ} {z : ℍ} (hf : ContDiffAt ℝ 2 (f ∘ ofComplex) (g • z : ℍ)) :
     hyperbolicLaplacian (fun τ ↦ f (g • τ)) z = hyperbolicLaplacian f (g • z) := by
   rw [hyperbolicLaplacian_apply, hyperbolicLaplacian_apply,
@@ -268,6 +301,48 @@ theorem hyperbolicLaplacian_comp_smul (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ)
   rw [Complex.real_smul, Matrix.GeneralLinearGroup.val_det_apply]
   push_cast
   field_simp
+
+/-- Read through `ofComplex`, the reflection `τ ↦ J • τ = -conj τ` is the linear isometry
+`w ↦ -conj w` of `ℂ` near every point of `ℍ`. -/
+private theorem comp_J_smul_comp_ofComplex_eventuallyEq (f : ℍ → ℂ) (z : ℍ) :
+    (fun τ ↦ f (J • τ)) ∘ ofComplex =ᶠ[𝓝 (z : ℂ)]
+      (f ∘ ofComplex) ∘ (conjLIE.trans (LinearIsometryEquiv.neg ℝ)) := by
+  rw [← isOpenEmbedding_coe.map_nhds_eq, eventuallyEq_map]
+  filter_upwards with τ
+  simp [ofComplex_apply, ← J_smul]
+
+/-- **The reflection commutes with the hyperbolic Laplacian**: for the orientation-reversing
+isometry `τ ↦ J • τ = -conj τ` of `ℍ`, `Δ (f ∘ J) = (Δ f) ∘ J` for every `f : ℍ → ℂ`. In
+coordinates `τ = x + iy` the reflection is `x ↦ -x`, which fixes `y` and the Euclidean
+Laplacian. -/
+@[simp]
+theorem hyperbolicLaplacian_comp_J_smul (f : ℍ → ℂ) (z : ℍ) :
+    hyperbolicLaplacian (fun τ ↦ f (J • τ)) z = hyperbolicLaplacian f (J • z) := by
+  rw [hyperbolicLaplacian_apply, hyperbolicLaplacian_apply,
+    (laplacian_congr_nhds (comp_J_smul_comp_ofComplex_eventuallyEq f z)).self_of_nhds,
+    laplacian_comp_linearIsometryEquiv_right, Function.comp_apply, coe_J_smul, J_smul_im]
+  simp
+
+/-- **Isometry invariance of the hyperbolic Laplacian**: for every `g ∈ GL(2, ℝ)`,
+`Δ (f ∘ g) = (Δ f) ∘ g` at every point where `f` is `C²`. For `det g > 0` this is Möbius
+invariance; for `det g < 0` the map `τ ↦ g • τ` is the orientation-preserving `g J` composed with
+the reflection `J` (`TauCeti.UpperHalfPlane.hyperbolicLaplacian_comp_J_smul`). -/
+theorem hyperbolicLaplacian_comp_smul {f : ℍ → ℂ} {z : ℍ}
+    (hf : ContDiffAt ℝ 2 (f ∘ ofComplex) (g • z : ℍ)) :
+    hyperbolicLaplacian (fun τ ↦ f (g • τ)) z = hyperbolicLaplacian f (g • z) := by
+  rcases lt_or_gt_of_ne (show (g : Matrix (Fin 2) (Fin 2) ℝ).det ≠ 0 from g.det_ne_zero) with
+    hg | hg
+  · -- `g • τ = (g J) • (J • τ)`, and `g J` has positive determinant.
+    have hgJ : 0 < ((g * J : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ).det := by
+      have hJ : (J : Matrix (Fin 2) (Fin 2) ℝ).det = -1 := by simp
+      rw [Units.val_mul, Matrix.det_mul, hJ]
+      linarith
+    have hJJ (τ : ℍ) : (g * J) • J • τ = g • τ := by
+      rw [smul_smul, mul_assoc, ← sq, J_sq, mul_one]
+    simp_rw [← hJJ] at hf ⊢
+    rw [hyperbolicLaplacian_comp_J_smul (fun τ ↦ f ((g * J) • τ)) z,
+      hyperbolicLaplacian_comp_smul_of_det_pos hgJ hf]
+  · exact hyperbolicLaplacian_comp_smul_of_det_pos hg hf
 
 /-- The first-order coefficients in `Δ_k (f ∣[k] g)` match those of `(Δ_k f) ∣[k] g`: with
 `D = cz + d`, the derivative `det g / D²` of the Möbius transformation and the derivative
@@ -349,3 +424,9 @@ theorem weightLaplacian_slash (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) (k
 end Slash
 
 end TauCeti.UpperHalfPlane
+
+/-- The hyperbolic Laplacian of a compactly supported function on `ℍ` is compactly supported. -/
+theorem HasCompactSupport.hyperbolicLaplacian {f : ℍ → ℂ} (hf : HasCompactSupport f) :
+    HasCompactSupport (TauCeti.UpperHalfPlane.hyperbolicLaplacian f) :=
+  hf.mono' <|
+    (subset_tsupport _).trans (TauCeti.UpperHalfPlane.tsupport_hyperbolicLaplacian_subset f)
