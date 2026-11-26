@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Analysis.Normed.Lp.PiLp
 public import TauCeti.Geometry.Sphere.LinearIsometry
@@ -23,7 +24,8 @@ transformation of the underlying vector.
 
 The rank of a matrix is the rank of the linear map it induces, in both the `ℕ`-valued and the
 `Cardinal`-valued sense; this is what lets a matrix-rank statement be read off an operator-rank
-one.
+one. The kernel of the map of the conjugate transpose is the orthogonal complement of the span of
+the columns.
 
 Normal square matrices induce normal operators on Euclidean space.
 The instance `Matrix.isStarNormal_toEuclideanLin` supplies this normality automatically
@@ -42,41 +44,43 @@ and a unitary matrix acts as a linear isometry equivalence of Euclidean space; e
 isometry equivalence arises in this way.
 The rows of a unitary matrix form an orthonormal basis, so the values of the quadratic form of a
 matrix `A` on an orthonormal basis are the diagonal entries of a unitary conjugate of `A`; for a
-diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
+diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
 
 ## Main results
 
 * `Matrix.inner_toEuclideanLin_toEuclideanLin` — the quadratic form of `B` at `A x` is the
   quadratic form of `Aᴴ * B * A` at `x`;
-* `Matrix.inner_toEuclideanLin_piLpExtendByZero` — the quadratic form of `A` at a vector extended
-  by zero is the quadratic form of the principal submatrix at the original vector;
-
-* `Matrix.re_inner_toEuclideanLin_diagonal_apply_self` — the quadratic form of `diag(w)` is
-  `x ↦ ∑ᵢ |xᵢ|² wᵢ`;
-* `Matrix.dotProduct_mulVec_eq_inner_toEuclideanLin` — over the reals, the coordinate quadratic
-  form `xᵀ A x` is `⟪x, A x⟫`;
+* `Matrix.inner_toEuclideanLin_piLpExtendByZero` — the form `y ↦ ⟪A y, y⟫` (the conjugate of the
+  quadratic form `⟪y, A y⟫`) at a vector extended by zero is the same form of the principal
+  submatrix at the original vector;
+* `TauCeti.inner_self_toEuclideanLin_diagonal_apply` — the quadratic form `⟪x, diag(w) x⟫` of
+  `diag(w)` is `∑ᵢ |xᵢ|² wᵢ`; for real weights the real part of `⟪diag(w) x, x⟫` is the same sum
+  (`Matrix.re_inner_toEuclideanLin_diagonal_apply_self`);
 * `Matrix.exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner` — the values of the quadratic
   form of `A` on an orthonormal basis are the diagonal entries of a unitary conjugate `U A Uᴴ`;
 * `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
   rank is the dimension of the range of the induced map, and the `LinearMap.rank` of the induced
   continuous linear map;
+* `Matrix.ker_toEuclideanLin_conjTranspose` — the kernel of the map of `Aᴴ` is the orthogonal
+  complement of the span of the columns of `A`;
 * `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM` — a matrix is unitary exactly when its
   Euclidean operator preserves the inner product;
-* `Matrix.adjoint_toEuclideanCLM`, `Matrix.det_toEuclideanCLM`: the adjoint and the determinant
-  of the induced continuous linear map are those of the conjugate transpose and of the matrix;
+* `Matrix.adjoint_toEuclideanCLM`, `Matrix.det_toEuclideanCLM`, `Matrix.trace_toEuclideanCLM`:
+  the adjoint, the determinant and the trace of the induced continuous linear map are those of
+  the conjugate transpose and of the matrix;
 * `Matrix.inner_toEuclideanCLM_mul_mul_conjTranspose` — the sesquilinear form of `A * B * Aᴴ`
   at `x, y` is that of `B` at `Aᴴ x, Aᴴ y`;
-* `Matrix.UnitaryGroup.toLinearIsometryEquiv` — the group homomorphism from the unitary group to
+* `Matrix.UnitaryGroup.toLinearIsometryEquiv` — the group isomorphism from the unitary group to
   the linear isometry group of Euclidean space, acting as the matrix does
-  (`Matrix.UnitaryGroup.toLinearIsometryEquiv_apply`); it is bijective
-  (`Matrix.UnitaryGroup.toLinearIsometryEquiv_injective`,
-  `Matrix.UnitaryGroup.toLinearIsometryEquiv_surjective`), preserves determinants
+  (`Matrix.UnitaryGroup.toLinearIsometryEquiv_apply`); it preserves determinants
   (`Matrix.UnitaryGroup.det_toLinearIsometryEquiv`) and is continuous for the operator-norm
   topology (`Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv`), and its action on the unit
   sphere is jointly continuous
   (`Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere`);
 * `Matrix.UnitaryGroup.ofLinearIsometryEquiv` — the inverse group isomorphism, taking a linear
-  isometry to its unitary matrix, continuous in families
+  isometry of Euclidean space to its unitary matrix
+  (`Matrix.UnitaryGroup.symm_toLinearIsometryEquiv`), with entries
+  `Matrix.UnitaryGroup.ofLinearIsometryEquiv_apply`, continuous in families
   (`Matrix.UnitaryGroup.continuous_ofLinearIsometryEquiv`);
 * the actions of the unitary and special unitary groups on the unit sphere of Euclidean space by
   matrix-vector multiplication (`Matrix.UnitaryGroup.coe_smul_unitSphere`,
@@ -115,6 +119,13 @@ theorem toEuclideanCLM_symm_eq_toMatrix {ι 𝕜 : Type*} [RCLike 𝕜] [Fintype
   rw [← Matrix.coe_toEuclideanCLM_eq_toEuclideanLin, StarAlgEquiv.apply_symm_apply,
     Matrix.toEuclideanLin_eq_toLin_orthonormal, Matrix.toLin_toMatrix]
 
+/-- The matrix of a continuous linear map has entries given by its action on coordinate units. -/
+@[simp] theorem toEuclideanCLM_symm_apply_single {ι 𝕜 : Type*} [RCLike 𝕜] [Fintype ι]
+    [DecidableEq ι] (T : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) (i j : ι) :
+    (Matrix.toEuclideanCLM (𝕜 := 𝕜)).symm T i j = T (EuclideanSpace.single j 1) i := by
+  rw [toEuclideanCLM_symm_eq_toMatrix, LinearMap.toMatrix_apply]
+  simp
+
 end ContinuousLinearMap
 
 namespace Matrix
@@ -131,40 +142,40 @@ theorem inner_toEuclideanLin_toEuclideanLin (A : Matrix κ ι 𝕜) (B : Matrix 
   rw [← LinearMap.adjoint_inner_right, ← toEuclideanLin_conjTranspose_eq_adjoint]
   simp only [toEuclideanLin, toLpLin_mul_same, LinearMap.comp_apply]
 
-/-- The quadratic form of `A` at a vector extended by zero along `f` is the quadratic form of the
-principal submatrix `A.submatrix f f` at the original vector. -/
+/-- The form `y ↦ ⟪A y, y⟫`, the conjugate of the quadratic form `⟪y, A y⟫`, at a vector extended
+by zero along `f` is the same form of the principal submatrix `A.submatrix f f` at the original
+vector. -/
 theorem inner_toEuclideanLin_piLpExtendByZero (A : Matrix κ κ 𝕜) (f : ι ↪ κ)
     (x : EuclideanSpace 𝕜 ι) :
     ⟪A.toEuclideanLin (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x),
         LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x⟫_𝕜 =
       ⟪(A.submatrix f f).toEuclideanLin x, x⟫_𝕜 := by
-  have hmul : ∀ b, (A.mulVec (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x).ofLp) b =
-      ∑ c, A b (f c) * x c := fun b => by
-    simpa [mulVec, dotProduct] using LinearIsometry.sum_mul_piLpExtendByZero f x (A b)
-  simp only [PiLp.inner_apply, toLpLin_apply, RCLike.inner_apply]
-  conv_lhs => enter [2, b]; rw [mul_comm]
-  rw [LinearIsometry.sum_mul_piLpExtendByZero f x (fun b => (starRingEnd 𝕜)
-    (A.mulVec (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x).ofLp b))]
-  refine Finset.sum_congr rfl fun a _ => ?_
-  rw [mul_comm, hmul (f a)]
-  simp [mulVec, dotProduct]
+  simp only [PiLp.inner_apply, toLpLin_apply, RCLike.inner_apply',
+    LinearIsometry.sum_mul_piLpExtendByZero]
+  rw [funext (LinearIsometry.piLpExtendByZero_apply_ofLp 2 𝕜 𝕜 f x),
+    mulVec_extend_zero f.injective]
+  have h := submatrix_mulVec_equiv (A.submatrix id f) x.ofLp f (Equiv.refl ι)
+  simp only [submatrix_submatrix, Function.id_comp, Equiv.coe_refl, Function.comp_id,
+    Equiv.refl_symm] at h
+  simp only [h, Function.comp_apply]
 
-/-- The quadratic form of the diagonal operator `diag(w)` on Euclidean space is
-`x ↦ ∑ᵢ |xᵢ|² wᵢ`. -/
+/-- The quadratic form `x ↦ ⟪x, diag(w) x⟫` of the diagonal operator `diag(w)` on Euclidean space
+is `x ↦ ∑ᵢ |xᵢ|² wᵢ`. -/
+theorem _root_.TauCeti.inner_self_toEuclideanLin_diagonal_apply (w : ι → 𝕜)
+    (x : EuclideanSpace 𝕜 ι) :
+    ⟪x, toEuclideanLin (diagonal w) x⟫_𝕜 = ∑ i, (‖x i‖ : 𝕜) ^ 2 * w i := by
+  simp only [toLpLin_apply, PiLp.inner_apply, mulVec_diagonal, RCLike.inner_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [mul_assoc, RCLike.mul_conj, mul_comm]
+
+/-- For real weights `w`, the real part of `⟪diag(w) x, x⟫`, with the operator in the first slot
+of the inner product, is `∑ᵢ |xᵢ|² wᵢ`. It agrees with the real part of the quadratic form
+`⟪x, diag(w) x⟫`, since the two inner products are complex conjugates. -/
 theorem re_inner_toEuclideanLin_diagonal_apply_self (w : ι → ℝ) (x : EuclideanSpace 𝕜 ι) :
     RCLike.re ⟪toEuclideanLin (diagonal fun i ↦ (w i : 𝕜)) x, x⟫_𝕜 = ∑ i, ‖x i‖ ^ 2 * w i := by
-  simp only [toLpLin_apply, PiLp.inner_apply, mulVec_diagonal, map_sum, RCLike.inner_apply',
-    map_mul, RCLike.conj_ofReal]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [mul_assoc, RCLike.conj_mul]
-  norm_cast
-  simp [mul_comm]
-
-/-- Over the reals, the coordinate quadratic form `xᵀ A x` is the inner product `⟪x, A x⟫` on
-Euclidean space. -/
-theorem dotProduct_mulVec_eq_inner_toEuclideanLin (A : Matrix ι ι ℝ) (x : EuclideanSpace ℝ ι) :
-    WithLp.ofLp x ⬝ᵥ (A *ᵥ WithLp.ofLp x) = ⟪x, toEuclideanLin A x⟫_ℝ := by
-  simp [EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm]
+  rw [inner_re_symm]
+  simp only [TauCeti.inner_self_toEuclideanLin_diagonal_apply, ← RCLike.ofReal_pow,
+    ← RCLike.ofReal_mul, ← RCLike.ofReal_sum, RCLike.ofReal_re]
 
 /-- An orthonormal basis `e` of `EuclideanSpace 𝕜 ι` gives a unitary matrix `U`, whose rows are
 the conjugates of the vectors `e k`, such that the diagonal entries of `U A Uᴴ` are the values
@@ -196,6 +207,20 @@ theorem rank_eq_finrank_range_toEuclideanLin (A : Matrix κ ι 𝕜) :
   rw [h, LinearMap.range_comp, LinearEquiv.range_comp, LinearEquiv.finrank_map_eq,
     Matrix.finrank_range_mulVecLin]
 
+omit [Fintype ι] [DecidableEq ι] in
+/-- The kernel of the map of the conjugate transpose of a matrix is the orthogonal complement of
+the span of the columns of the matrix. -/
+theorem ker_toEuclideanLin_conjTranspose (A : Matrix κ ι 𝕜) :
+    LinearMap.ker (toEuclideanLin Aᴴ) =
+      (Submodule.span 𝕜 (Set.range fun j ↦ WithLp.toLp 2 fun i ↦ A i j))ᗮ := by
+  ext x
+  -- A vector is orthogonal to a span exactly when it is orthogonal to each spanning column.
+  rw [LinearMap.mem_ker, ← Submodule.span_singleton_le_iff_mem, ← Submodule.isOrtho_iff_le,
+    Submodule.isOrtho_comm, Submodule.isOrtho_span]
+  simp only [Set.forall_mem_range, Set.mem_singleton_iff, forall_eq]
+  simp [WithLp.ext_iff, funext_iff, EuclideanSpace.inner_eq_star_dotProduct, mulVec, dotProduct,
+    mul_comm]
+
 /-- The `Cardinal`-valued rank of the continuous linear map of a square matrix is its matrix rank.
 This is the bridge that turns an operator-rank statement into a matrix-rank one. -/
 theorem rank_coe_toEuclideanCLM (A : Matrix ι ι 𝕜) :
@@ -215,6 +240,13 @@ theorem toEuclideanCLM_apply (A : Matrix ι ι 𝕜) (x : EuclideanSpace 𝕜 ι
 theorem toEuclideanCLM_apply_apply (A : Matrix ι ι 𝕜) (x : EuclideanSpace 𝕜 ι) (i : ι) :
     toEuclideanCLM (𝕜 := 𝕜) A x i = ∑ j, A i j * x j := by
   simp [mulVec, dotProduct]
+
+/-- A matrix operator sends a coordinate unit vector to the corresponding column. -/
+theorem toEuclideanCLM_apply_single (A : Matrix ι ι 𝕜) (j : ι) :
+    toEuclideanCLM (𝕜 := 𝕜) A (EuclideanSpace.single j 1) =
+      WithLp.toLp 2 (fun i => A i j) := by
+  rw [toEuclideanCLM_apply, toLpLin_apply, PiLp.ofLp_single,
+    Matrix.mulVec_single_one, Matrix.col_apply']
 
 /-- The continuous linear map of a matrix depends continuously on the matrix. -/
 theorem continuous_toEuclideanCLM :
@@ -258,14 +290,23 @@ theorem inner_toEuclideanCLM_mul_mul_conjTranspose (A B : Matrix ι ι 𝕜)
   rw [map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp, ← adjoint_toEuclideanCLM,
     ContinuousLinearMap.adjoint_inner_left]
 
+/-- The operator `toEuclideanLin A` of a normal matrix `A` on `EuclideanSpace 𝕜 ι` is normal.
+The underlying linear equivalence of the inverse of the star algebra equivalence
+`LinearMap.toMatrixOrthonormal` of the standard orthonormal basis is `toEuclideanLin`, and star
+algebra equivalences preserve normality. -/
+instance isStarNormal_toEuclideanLin (A : Matrix ι ι 𝕜) [IsStarNormal A] :
+    IsStarNormal (toEuclideanLin A) := by
+  rw [toEuclideanLin_eq_toLin_orthonormal, ← LinearMap.toMatrix_symm, ← LinearEquiv.invFun_eq_symm,
+    ← LinearMap.toMatrixOrthonormal_symm_apply]
+  exact IsStarNormal.map (LinearMap.toMatrixOrthonormal (EuclideanSpace.basisFun ι 𝕜)).symm A
 
 /-- A unitary matrix acts on `EuclideanSpace 𝕜 ι` as a linear isometry equivalence, and this is a
-group homomorphism from the unitary group to the linear isometry group: the continuous linear map
-of a unitary matrix is a unitary operator. -/
+group isomorphism from the unitary group to the linear isometry group: the continuous linear map
+of a unitary matrix is a unitary operator, and every unitary operator arises this way. -/
 noncomputable def UnitaryGroup.toLinearIsometryEquiv :
-    unitaryGroup ι 𝕜 →* (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :=
-  Unitary.linearIsometryEquiv.toMonoidHom.comp
-    (Unitary.map (.ofClass (toEuclideanCLM (n := ι) (𝕜 := 𝕜)))).toMonoidHom
+    unitaryGroup ι 𝕜 ≃* (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :=
+  (Unitary.mapEquiv (.ofClass (toEuclideanCLM (n := ι) (𝕜 := 𝕜)))).toMulEquiv.trans
+    Unitary.linearIsometryEquiv
 
 /-- The linear isometry of a unitary matrix acts by matrix-vector multiplication in Euclidean
 coordinates. -/
@@ -298,31 +339,6 @@ theorem UnitaryGroup.toLinearIsometryEquiv_inv_apply (A : unitaryGroup ι 𝕜)
     UnitaryGroup.toLinearIsometryEquiv A⁻¹ x = (UnitaryGroup.toLinearIsometryEquiv A).symm x := by
   rw [map_inv, LinearIsometryEquiv.coe_inv]
 
-/-- The conversion from unitary matrices to linear isometries of Euclidean space is injective. -/
-theorem UnitaryGroup.toLinearIsometryEquiv_injective :
-    Function.Injective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) := by
-  intro A B h
-  apply Subtype.ext
-  apply toEuclideanLin.injective
-  exact LinearMap.ext fun x ↦ by
-    simpa only [UnitaryGroup.toLinearIsometryEquiv_apply, toLpLin_apply] using
-      LinearIsometryEquiv.congr_fun h x
-
-/-- Every linear isometry of Euclidean space is the action of a unitary matrix, namely its matrix
-in the standard basis. -/
-theorem UnitaryGroup.toLinearIsometryEquiv_surjective :
-    Function.Surjective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) := by
-  intro g
-  set B := toEuclideanLin.symm g.toLinearIsometry.toLinearMap with hBdef
-  have hB : toEuclideanLin B = g.toLinearIsometry.toLinearMap :=
-    toEuclideanLin.apply_symm_apply _
-  have hmem : B ∈ unitaryGroup ι 𝕜 := by
-    rw [hBdef, toEuclideanLin_eq_toLin_orthonormal]
-    exact g.toMatrix_mem_unitaryGroup (EuclideanSpace.basisFun ι 𝕜) (EuclideanSpace.basisFun ι 𝕜)
-  refine ⟨⟨B, hmem⟩, LinearIsometryEquiv.ext fun x ↦ ?_⟩
-  rw [UnitaryGroup.toLinearIsometryEquiv_apply]
-  exact LinearMap.congr_fun hB x
-
 /-- The linear isometry of a unitary matrix has the determinant of the matrix. -/
 @[simp]
 theorem UnitaryGroup.det_toLinearIsometryEquiv (A : unitaryGroup ι 𝕜) :
@@ -354,20 +370,26 @@ theorem UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere :
       (continuous_subtypeVal.comp continuous_snd))).congr fun p ↦ ?_
   simp [toLpLin_apply]
 
-/-- **The unitary matrix of a linear isometry** of `EuclideanSpace 𝕜 ι`, its matrix in the
-standard basis, as a group isomorphism. Its inverse is `Matrix.UnitaryGroup.toLinearIsometryEquiv`
-(`Matrix.UnitaryGroup.ofLinearIsometryEquiv_symm_apply`). -/
+/-- **The unitary matrix of a linear isometry** of `EuclideanSpace 𝕜 ι`, its matrix in the standard
+basis, as a group isomorphism: the inverse of `Matrix.UnitaryGroup.toLinearIsometryEquiv`. -/
 noncomputable def UnitaryGroup.ofLinearIsometryEquiv :
     (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) ≃* unitaryGroup ι 𝕜 :=
-  (MulEquiv.ofBijective UnitaryGroup.toLinearIsometryEquiv
-    ⟨UnitaryGroup.toLinearIsometryEquiv_injective,
-      UnitaryGroup.toLinearIsometryEquiv_surjective⟩).symm
+  UnitaryGroup.toLinearIsometryEquiv.symm
 
-/-- The inverse of `Matrix.UnitaryGroup.ofLinearIsometryEquiv` is the linear isometry of a
-unitary matrix. -/
+/-- The inverse of `Matrix.UnitaryGroup.toLinearIsometryEquiv` is
+`Matrix.UnitaryGroup.ofLinearIsometryEquiv`. -/
 @[simp]
-theorem UnitaryGroup.ofLinearIsometryEquiv_symm_apply (A : unitaryGroup ι 𝕜) :
-    UnitaryGroup.ofLinearIsometryEquiv.symm A = UnitaryGroup.toLinearIsometryEquiv A :=
+theorem UnitaryGroup.symm_toLinearIsometryEquiv :
+    (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)).symm =
+      UnitaryGroup.ofLinearIsometryEquiv :=
+  (rfl)
+
+/-- The inverse of `Matrix.UnitaryGroup.ofLinearIsometryEquiv` is
+`Matrix.UnitaryGroup.toLinearIsometryEquiv`. -/
+@[simp]
+theorem UnitaryGroup.symm_ofLinearIsometryEquiv :
+    (UnitaryGroup.ofLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)).symm =
+      UnitaryGroup.toLinearIsometryEquiv :=
   (rfl)
 
 /-- The linear isometry of the unitary matrix of a linear isometry is the linear isometry. -/
@@ -375,13 +397,23 @@ theorem UnitaryGroup.ofLinearIsometryEquiv_symm_apply (A : unitaryGroup ι 𝕜)
 theorem UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv
     (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :
     UnitaryGroup.toLinearIsometryEquiv (UnitaryGroup.ofLinearIsometryEquiv g) = g :=
-  UnitaryGroup.ofLinearIsometryEquiv.symm_apply_apply g
+  UnitaryGroup.toLinearIsometryEquiv.apply_symm_apply g
 
 /-- The unitary matrix of the linear isometry of a unitary matrix is the matrix. -/
 @[simp]
 theorem UnitaryGroup.ofLinearIsometryEquiv_toLinearIsometryEquiv (A : unitaryGroup ι 𝕜) :
     UnitaryGroup.ofLinearIsometryEquiv (UnitaryGroup.toLinearIsometryEquiv A) = A :=
-  UnitaryGroup.ofLinearIsometryEquiv.apply_symm_apply A
+  UnitaryGroup.toLinearIsometryEquiv.symm_apply_apply A
+
+/-- The entry `(i, j)` of the unitary matrix of a linear isometry `g` is the coordinate `i` of the
+image under `g` of the standard basis vector `e_j`. -/
+@[simp]
+theorem UnitaryGroup.ofLinearIsometryEquiv_apply
+    (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) (i j : ι) :
+    (UnitaryGroup.ofLinearIsometryEquiv g : Matrix ι ι 𝕜) i j =
+      g (EuclideanSpace.single j 1) i := by
+  conv_rhs => rw [← UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv g]
+  rw [UnitaryGroup.toLinearIsometryEquiv_single, PiLp.toLp_apply, col_apply]
 
 /-- The unitary matrix of a linear isometry acts on `EuclideanSpace 𝕜 ι` as the linear
 isometry. -/
@@ -417,7 +449,7 @@ theorem UnitaryGroup.continuous_ofLinearIsometryEquiv {X : Type*} [TopologicalSp
 isometries of its matrices. -/
 noncomputable instance UnitaryGroup.instMulActionUnitSphere :
     MulAction (unitaryGroup ι 𝕜) (Metric.sphere (0 : EuclideanSpace 𝕜 ι) 1) :=
-  MulAction.compHom _ UnitaryGroup.toLinearIsometryEquiv
+  MulAction.compHom _ UnitaryGroup.toLinearIsometryEquiv.toMonoidHom
 
 /-- A unitary matrix acts on the unit sphere through its linear isometry. -/
 theorem UnitaryGroup.smul_unitSphere_def (A : unitaryGroup ι 𝕜)
@@ -479,6 +511,12 @@ theorem det_toEuclideanCLM (A : Matrix ι ι 𝕜) : (toEuclideanCLM (𝕜 := �
 theorem det_toEuclideanCLM_diagonal (d : ι → 𝕜) :
     (toEuclideanCLM (𝕜 := 𝕜) (diagonal d)).det = ∏ i, d i := by
   rw [det_toEuclideanCLM, det_diagonal]
+
+/-- The trace of the continuous linear map of a square matrix is the trace of the matrix. -/
+@[simp]
+theorem trace_toEuclideanCLM (A : Matrix ι ι 𝕜) :
+    LinearMap.trace 𝕜 _ (toEuclideanCLM (𝕜 := 𝕜) A).toLinearMap = A.trace := by
+  rw [coe_toEuclideanCLM_eq_toEuclideanLin, toEuclideanLin_eq_toLin_orthonormal, trace_toLin_eq]
 
 section Invertible
 
@@ -589,20 +627,6 @@ theorem GeneralLinearGroup.continuous_toEuclideanCLE {X : Type*} [TopologicalSpa
   exact continuous_toEuclideanCLM.comp (Units.continuous_val.comp hA)
 
 end Invertible
-
-end Matrix
-
-namespace Matrix
-
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- The operator of a normal matrix on `EuclideanSpace 𝕜 n` is normal. -/
-instance isStarNormal_toEuclideanLin {𝕜 : Type*} [RCLike 𝕜] (A : Matrix n n 𝕜) [IsStarNormal A] :
-    IsStarNormal (toEuclideanLin A) where
-  star_comm_self := by
-    have h : Aᴴ * A = A * Aᴴ := star_comm_self' A
-    rw [commute_iff_eq, LinearMap.star_eq_adjoint, ← toEuclideanLin_conjTranspose_eq_adjoint,
-      Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← toLpLin_mul_same, ← toLpLin_mul_same, h]
 
 end Matrix
 

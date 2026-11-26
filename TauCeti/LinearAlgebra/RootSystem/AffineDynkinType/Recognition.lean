@@ -78,7 +78,8 @@ theorem Connected.exists_sum_eq_two_mul_iff_existsUnique_affineDynkinType_iso
       hG.exists_isContained_affineDynkinType_of_not_exists_dynkinType_iso hD
     -- The marks are a positive additive function on that graph, so the copy is all of `G`.
     obtain ⟨e, -⟩ := f.exists_iso_of_sum_le_two_mul hG.preconnected AffineDynkinType.marks_pos
-      (AffineDynkinType.sum_marks_neighborFinset_eq_two_mul ht hg) (a := fun i ↦ (a i : ℤ))
+      (fun i ↦ (AffineDynkinType.sum_marks_neighborFinset_eq_two_mul ht hg i).ge)
+      (a := fun i ↦ (a i : ℤ))
       (fun i ↦ by simp)
       (fun h ↦ ha (funext fun i ↦ by simpa using congrFun h i))
       (fun i ↦ by exact_mod_cast (hsum i).le)

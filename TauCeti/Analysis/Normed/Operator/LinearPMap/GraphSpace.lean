@@ -19,10 +19,12 @@ graph map `x ↦ (x, f x)` identifies the domain of `f` with it (`LinearPMap.toG
 transports the graph norm `(‖x‖² + ‖f x‖²)^(1/2)` (`LinearPMap.norm_toGraphSpace_sq`). When `E`
 and `F` are inner product spaces, this is the norm of the graph inner product
 (`LinearPMap.inner_toGraphSpace`, in `TauCeti.Analysis.InnerProductSpace.LinearPMap.GraphSpace`).
-When `f` is closed and `E`, `F` are complete the graph space is complete
-(`LinearPMap.IsClosed.completeSpace_graphSpace`): the domain of a closed operator with its graph
-norm is a Banach space, a Hilbert space when `E` and `F` are, and `f` becomes a bounded operator on
-it (`LinearPMap.graphSnd`), of norm at most one.
+The graph norm of `x` is at least `‖x‖` and `‖f x‖` and at most `‖x‖ + ‖f x‖`; convergence in it is
+convergence of the vectors together with their images (`LinearPMap.tendsto_toGraphSpace_iff`).
+When `E` and `F` are complete, `f` is closed exactly when the graph space is complete
+(`LinearPMap.isClosed_iff_completeSpace_graphSpace`): the domain of a closed operator with its
+graph norm is a Banach space, a Hilbert space when `E` and `F` are, and `f` becomes a bounded
+operator on it (`LinearPMap.graphSnd`), of norm at most one.
 
 This is how an unbounded operator, such as an elliptic differential operator on `L²` with its
 Sobolev domain, is made into a bounded operator between fixed Hilbert spaces, to which the theory
@@ -35,20 +37,32 @@ of bounded Fredholm operators applies. The bounded operator has the same range a
 * `LinearPMap.graphSpace`: the graph of `f` in `WithLp 2 (E × F)`.
 * `LinearPMap.toGraphSpace`: the linear equivalence `x ↦ (x, f x)` from the domain of `f`.
 * `LinearPMap.norm_toGraphSpace_sq`: the graph norm.
+* `LinearPMap.norm_le_norm_toGraphSpace`, `LinearPMap.norm_apply_le_norm_toGraphSpace`,
+  `LinearPMap.norm_toGraphSpace_le_norm_add_norm`: comparison of the graph norm with `‖x‖` and
+  `‖f x‖`.
+* `LinearPMap.norm_toGraphSpace_le_sqrt_one_add_sq_mul_norm`: if `‖f x‖ ≤ C ‖x‖`, the graph norm
+  of `x` is at most `√(1 + C²) ‖x‖`; `ContinuousLinearMap.norm_toGraphSpace_toPMap_le` is the case
+  of the restriction of a continuous linear map to a submodule.
+* `LinearPMap.tendsto_toGraphSpace_iff`: convergence in the graph norm.
 * `LinearPMap.graphFst` and `LinearPMap.graphSnd`: the inclusion of the graph space into `E` and
   the operator `f` itself, as continuous linear maps of norm at most one.
 * `LinearPMap.isClosed_graphSpace_iff`: the graph space is closed exactly when `f` is.
 * `LinearPMap.IsClosed.completeSpace_graphSpace`: the graph space of a closed operator between
   complete spaces is complete; between Hilbert spaces it is a Hilbert space.
+* `LinearPMap.isClosed_iff_completeSpace_graphSpace`: between Banach spaces, `f` is closed exactly
+  when its graph space is complete.
 * `LinearPMap.kerGraphSndEquiv`: the kernel of `f.graphSnd` is isometric to the kernel of `f`.
 
 ## References
 
 * K. Schmüdgen, *Unbounded Self-adjoint Operators on Hilbert Space*, Graduate Texts in
   Mathematics 265, Springer (2012), §1.1 (the graph scalar product of a closed operator).
+* T. Kato, *Perturbation Theory for Linear Operators*, Springer (1995), Section III.5.2.
 -/
 
 public section
+
+open Filter Topology
 
 namespace LinearPMap
 
@@ -172,6 +186,49 @@ theorem norm_graphSnd_le : ‖f.graphSnd‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun z ↦ by
     simpa only [one_mul] using f.norm_graphSnd_apply_le z
 
+/-! ### Graph norm estimates -/
+
+/-- The norm of a vector of the domain is at most its graph norm. -/
+theorem norm_le_norm_toGraphSpace (x : f.domain) : ‖(x : E)‖ ≤ ‖f.toGraphSpace x‖ :=
+  f.norm_graphFst_apply_le (f.toGraphSpace x)
+
+/-- The norm of `f x` is at most the graph norm of `x`. -/
+theorem norm_apply_le_norm_toGraphSpace (x : f.domain) : ‖f x‖ ≤ ‖f.toGraphSpace x‖ :=
+  f.norm_graphSnd_apply_le (f.toGraphSpace x)
+
+/-- The graph norm of `x` is at most `‖x‖ + ‖f x‖`. -/
+theorem norm_toGraphSpace_le_norm_add_norm (x : f.domain) :
+    ‖f.toGraphSpace x‖ ≤ ‖(x : E)‖ + ‖f x‖ := by
+  rw [← sq_le_sq₀ (norm_nonneg _) (by positivity), norm_toGraphSpace_sq]
+  nlinarith [norm_nonneg (x : E), norm_nonneg (f x)]
+
+variable {f} in
+/-- If `‖f x‖ ≤ C ‖x‖`, then the graph norm of `x` is at most `√(1 + C²) ‖x‖`. When this holds on
+the whole domain, the graph norm is equivalent to the norm of `E` there. -/
+theorem norm_toGraphSpace_le_sqrt_one_add_sq_mul_norm {C : ℝ} {x : f.domain}
+    (h : ‖f x‖ ≤ C * ‖(x : E)‖) : ‖f.toGraphSpace x‖ ≤ √(1 + C ^ 2) * ‖(x : E)‖ := by
+  rw [← sq_le_sq₀ (norm_nonneg _) (by positivity), norm_toGraphSpace_sq, mul_pow,
+    Real.sq_sqrt (by positivity)]
+  nlinarith [pow_le_pow_left₀ (norm_nonneg _) h 2]
+
+variable {f} in
+/-- An extension `g` of `f` has the same graph norm as `f` on the domain of `f`. -/
+theorem norm_toGraphSpace_eq_of_le {g : E →ₗ.[𝕜] F} (h : f ≤ g) {x : f.domain} {y : g.domain}
+    (hxy : (x : E) = y) : ‖g.toGraphSpace y‖ = ‖f.toGraphSpace x‖ := by
+  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_toGraphSpace_sq, norm_toGraphSpace_sq,
+    ← hxy, ← h.2 hxy]
+
+variable {f} in
+/-- **Convergence in the graph norm.** Domain vectors `u i` converge to `x` in the graph norm
+exactly when `u i → x` and `f (u i) → f x`. -/
+theorem tendsto_toGraphSpace_iff {ι : Type*} {l : Filter ι} {u : ι → f.domain} {x : f.domain} :
+    Tendsto (fun i ↦ f.toGraphSpace (u i)) l (𝓝 (f.toGraphSpace x)) ↔
+      Tendsto (fun i ↦ (u i : E)) l (𝓝 (x : E)) ∧ Tendsto (fun i ↦ f (u i)) l (𝓝 (f x)) := by
+  rw [Topology.IsInducing.subtypeVal.tendsto_nhds_iff,
+    (WithLp.homeomorphProd 2 E F).isInducing.tendsto_nhds_iff, Prod.tendsto_iff]
+  simp only [Function.comp_def, ← Homeomorph.coe_toEquiv, WithLp.toEquiv_homeomorphProd,
+    WithLp.equiv_apply, coe_toGraphSpace]
+
 /-- A vector of the graph space is determined by its first coordinate. -/
 theorem graphFst_injective : Function.Injective f.graphFst := fun _ _ h ↦
   f.toGraphSpace.symm.injective (Subtype.ext h)
@@ -248,4 +305,30 @@ theorem IsClosed.completeSpace_graphSpace [CompleteSpace E] [CompleteSpace F] {f
     (hf : f.IsClosed) : CompleteSpace f.graphSpace :=
   ((f.isClosed_graphSpace_iff.2 hf)).completeSpace_coe
 
+/-- A partial linear map whose domain is complete for the graph norm is closed. -/
+theorem isClosed_of_completeSpace_graphSpace (h : CompleteSpace f.graphSpace) : f.IsClosed :=
+  f.isClosed_graphSpace_iff.1 (completeSpace_coe_iff_isComplete.1 h).isClosed
+
+/-- **Closed operators are those with a complete graph space.** A partial linear map between
+Banach spaces is closed exactly when its domain is complete for the graph norm. -/
+theorem isClosed_iff_completeSpace_graphSpace [CompleteSpace E] [CompleteSpace F] :
+    f.IsClosed ↔ CompleteSpace f.graphSpace :=
+  ⟨IsClosed.completeSpace_graphSpace, f.isClosed_of_completeSpace_graphSpace⟩
+
 end LinearPMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- **Graph norm of a bounded operator.** The restriction of a continuous linear map `T` to a
+submodule `p` has graph norm at most `√(1 + ‖T‖²) ‖x‖`; together with
+`LinearPMap.norm_le_norm_toGraphSpace` this makes it equivalent to the norm of `E` on `p`. -/
+theorem norm_toGraphSpace_toPMap_le (T : E →L[𝕜] F) {p : Submodule 𝕜 E}
+    (x : (T.toLinearMap.toPMap p).domain) :
+    ‖(T.toLinearMap.toPMap p).toGraphSpace x‖ ≤ √(1 + ‖T‖ ^ 2) * ‖(x : E)‖ :=
+  LinearPMap.norm_toGraphSpace_le_sqrt_one_add_sq_mul_norm
+    ((congrArg norm ((T : E →ₗ[𝕜] F).toPMap_apply p x)).trans_le (T.le_opNorm x))
+
+end ContinuousLinearMap

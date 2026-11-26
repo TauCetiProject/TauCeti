@@ -9,11 +9,15 @@ public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Field.Subfield.Basic
 
 /-!
-# Subfield algebra structures from scalar image containment
+# Subfield algebra structures and equality transport
 
 When `k` is an `R`-algebra and `S` is a subfield of `k` containing the image of
 `algebraMap R k`, codomain restriction equips `S` with an `R`-algebra structure forming a
 scalar tower `R → S → k`.
+
+`RingEquiv.subfieldCongr` identifies two equal subfields. This file also records that it keeps
+the underlying element of the ambient field, the subfield analogue of Mathlib's
+`RingEquiv.coe_subringCongr_apply`.
 
 ## Main definitions
 
@@ -24,6 +28,8 @@ scalar tower `R → S → k`.
 
 * `Subfield.isScalarTower_restrictAlgebra`: the scalar tower `IsScalarTower R S k` for
   `S.restrictAlgebra`.
+* `RingEquiv.coe_subfieldCongr_apply`: `RingEquiv.subfieldCongr` keeps the underlying element
+  of the ambient field.
 -/
 
 public section
@@ -50,3 +56,14 @@ theorem isScalarTower_restrictAlgebra (S : Subfield k)
     RingHom.codRestrict_apply]
 
 end Subfield
+
+namespace RingEquiv
+
+variable {K : Type*} [DivisionRing K] {s t : Subfield K}
+
+/-- `RingEquiv.subfieldCongr` keeps the underlying element of the ambient field. -/
+@[simp]
+theorem coe_subfieldCongr_apply (h : s = t) (x : s) : (subfieldCongr h x : K) = x :=
+  rfl
+
+end RingEquiv

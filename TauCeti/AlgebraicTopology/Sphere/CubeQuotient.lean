@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Product
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
 import TauCeti.Geometry.Sphere.LinearIsometry
 
@@ -64,8 +65,8 @@ kernel of the induced map on `πₙ` (`TopCat.Hom.nullhomotopic_comp_of_ker_le`)
 * `TauCeti.cubeQuotientHomeomorphSphere`: the pointed homeomorphism `Iⁿ / ∂Iⁿ ≃ₜ Sⁿ`.
 * `TauCeti.sphereGenLoop`: `TauCeti.cubeToSphere` as a generalized loop of the sphere.
 * `GenLoop.toSphere` and `GenLoop.sphereEquiv`: generalized loops are pointed maps out of the
-  sphere; `p` is the image of `TauCeti.sphereGenLoop` under `GenLoop.toSphere p`
-  (`GenLoop.map_toSphere_sphereGenLoop`).
+  sphere, compatible with products (`GenLoop.toSphere_prod`); `p` is the image of
+  `TauCeti.sphereGenLoop` under `GenLoop.toSphere p` (`GenLoop.map_toSphere_sphereGenLoop`).
 * `GenLoop.injective_toSphere_iff` and `GenLoop.surjective_toSphere_iff`: `GenLoop.toSphere p` is
   injective exactly when `p` identifies only boundary points, and surjective exactly when `p` is.
 * `TauCeti.exists_cubeToSphere_eq_of_ne`: `TauCeti.cubeToSphere` covers the sphere off the north
@@ -89,6 +90,8 @@ kernel of the induced map on `πₙ` (`TopCat.Hom.nullhomotopic_comp_of_ker_le`)
   is a free homotopy of the corresponding maps out of the sphere.
 * `HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`: a class is trivial exactly when the
   corresponding map `Sⁿ → X` is freely null-homotopic.
+* `HomotopyGroup.nontrivial_of_not_nullhomotopic`: so a map `Sⁿ → X` that is not null-homotopic
+  makes `πₙ` nontrivial at the image of the north pole.
 * `GenLoop.exists_diskBoundaryMap_eq`: every map `TopCat.diskBoundary (n + 1) ⟶ X` is the
   attaching map of a generalized loop.
 * `TopCat.Hom.nullhomotopic_comp_of_ker_le`: if every class of `πₙ(X, x)` killed by `f` is killed
@@ -554,6 +557,15 @@ theorem toSphere_const : toSphere (const : Ω^ (Fin n) X x) = ContinuousMap.cons
   obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
   simp [const_apply]
 
+/-- The coordinatewise product of two generalized loops corresponds to the pairing of the maps out
+of the sphere. -/
+@[simp]
+theorem toSphere_prod (p : Ω^ (Fin n) X x) (q : Ω^ (Fin n) Y y) :
+    toSphere (GenLoop.prod p q) = (toSphere p).prodMk (toSphere q) := by
+  refine ContinuousMap.ext fun s ↦ ?_
+  obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
+  simp
+
 /-- The pointed map `GenLoop.toSphere p` out of the sphere is injective exactly when the generalized
 loop `p` identifies only points of the boundary of the cube. -/
 theorem injective_toSphere_iff (p : Ω^ (Fin n) X x) :
@@ -816,6 +828,15 @@ theorem mk_eq_one_iff_nullhomotopic_toSphere (p : Ω^ (Fin n) X x) :
       GenLoop.ext _ _ fun z ↦ by simp
     rw [← hp, ← map_mk]
     exact map_eq_one_of_nullhomotopic h _ _
+
+/-- **A map out of the sphere that is not null-homotopic gives a nontrivial homotopy group** at the
+image of the north pole: its class there is not the identity. -/
+theorem nontrivial_of_not_nullhomotopic (f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, X))
+    (hf : ¬f.Nullhomotopic) : Nontrivial (HomotopyGroup (Fin n) X (f (sphereNorthPole n))) := by
+  let p := (GenLoop.sphereEquiv n X _).symm ⟨f, rfl⟩
+  have hp : GenLoop.toSphere p = f := by
+    rw [← GenLoop.coe_sphereEquiv_apply, Equiv.apply_symm_apply]
+  exact ⟨⟦p⟧, 1, fun h ↦ hf (hp ▸ (mk_eq_one_iff_nullhomotopic_toSphere p).1 h)⟩
 
 /-- **A homotopy class is trivial exactly when its attaching map is null-homotopic.** The class of
 a generalized loop `p` is the identity of `πₙ(X, x)` if and only if the map
