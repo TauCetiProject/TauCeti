@@ -51,6 +51,8 @@ real under a complex embedding, so it is `±1`.
   complex embedding it is `φ x * star (φ x)`.
 * `NumberField.comap_subtype_maximalRealSubfield`: if `K` is algebraic over a subfield `E`, the
   maximal real subfield of `E` is `E ∩ K⁺`.
+* `NumberField.map_maximalRealSubfield`: an isomorphism of fields `K ≃+* K'` carries `K⁺` onto
+  `K'⁺`.
 * `NumberField.CMExtension.maximalRealSubfield_eq_fieldRange`: for a CM extension `K / F`, `K⁺`
   is the image of `F` in `K`.
 * `NumberField.CMExtension.mem_range_algebraMap_iff_star_eq`: for a CM extension `K / F`, an
@@ -149,6 +151,17 @@ theorem comap_subtype_maximalRealSubfield {K : Type*} [Field K] (E : Subfield K)
   refine ⟨fun h ψ ↦ ?_, fun h φ ↦ by simpa only [RingHom.comp_apply] using h (φ.comp E.subtype)⟩
   rw [← ComplexEmbedding.lift_algebraMap_apply K ψ x]
   exact h (ComplexEmbedding.lift K ψ)
+
+/-- **An isomorphism of fields carries the maximal real subfield onto the maximal real
+subfield.** -/
+theorem map_maximalRealSubfield {K K' : Type*} [Field K] [Field K'] (σ : K ≃+* K') :
+    (maximalRealSubfield K).map (σ : K →+* K') = maximalRealSubfield K' := by
+  ext y
+  refine ⟨?_, fun hy ↦ ⟨σ.symm y, fun φ ↦ ?_, σ.apply_symm_apply y⟩⟩
+  · rintro ⟨x, hx, rfl⟩ ψ
+    exact hx (ψ.comp (σ : K →+* K'))
+  · have := hy (φ.comp (σ.symm : K' →+* K))
+    simpa using this
 
 end NumberField
 

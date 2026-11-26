@@ -102,11 +102,6 @@ theorem inertiaDeg_map_algEquiv {R S T : Type*} [CommRing R] [CommRing S] [CommR
     exact hP (hP' ▸ comap_isPrime e (P.map e))
   have : (P.map e).IsPrime := map_isPrime_of_equiv e
   let p := P.under R
-  have : (P.map e).LiesOver p := ⟨by
-    ext x
-    simp only [p, under_def, mem_comap]
-    nth_rewrite 1 [hP']
-    simp⟩
   let := Localization.AtPrime.algebraOfLiesOver p P
   let := Localization.AtPrime.algebraOfLiesOver p (P.map e)
   rw [inertiaDeg_eq p P, inertiaDeg_eq p (P.map e)]
