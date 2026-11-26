@@ -716,7 +716,7 @@ theorem symmL_christoffelMap_eq_sum [Fintype ι]
   rw [smul_apply, e.localFrameCoeff_eq_coeff (s := fun y ↦ e.symmL 𝕜 y v) hx]
   dsimp only
   rw [e.symmL_apply hx, e.apply_mk_symm hx]
-  rfl
+  rw [Module.Basis.coord_apply]
 
 /-- A covariant derivative on the tangent bundle differentiates the vector field with constant
 coordinates `v` in the trivialization `e`, in the direction with coordinates `u`, by the Christoffel

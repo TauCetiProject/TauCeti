@@ -59,9 +59,7 @@ theorem alongMap_apply_of_mem_baseSet
   dsimp only
   have hp := Bundle.contMDiffAt_proj (IB := J) (F := F) (n := 1) (TangentSpace J)
     (p := TotalSpace.mk' F (f x) (V x))
-  have hf : MDifferentiableAt I J f x := by
-    have h := (hp.mdifferentiableAt one_ne_zero).comp x hV
-    exact h
+  have hf := (hp.mdifferentiableAt one_ne_zero).comp x hV
   let e := trivializationAt F (TangentSpace J) a
   let b := Module.finBasis ℝ F
   let g := sectionCoord ℝ (F := F) f V a
@@ -89,12 +87,12 @@ theorem alongMap_apply_of_mem_baseSet
       dsimp only [c, X]
       rw [(b.coord i).toContinuousLinearMap.mvfderiv_comp_apply hg v, map_smul,
         symmL_basis_eq_localFrame b ha]
-      rfl
+      simp only [LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply, e]
   let hcov := cov.isCovariantDerivativeOn (s := e.baseSet)
   have hΓ : e.symmL ℝ (f x) (christoffelMap b hcov (f x) (g x) u) =
       ∑ i, c i x • cov (X i) (f x) w := by
     rw [symmL_christoffelMap_eq_sum b hcov ha, e.symmL_continuousLinearMapAt ha w]
-    rfl
+    simp only [c, X, Function.comp_apply, LinearMap.coe_toContinuousLinearMap']
   have hcoord (i) := mdifferentiableAt_sectionCoord f (fun y ↦ X i (f y)) ((hX i).comp x hf)
     (mem_baseSet_trivializationAt F (TangentSpace J) (f x))
   rw [cov.alongMap_congr f V hVeq, cov.alongMap_fun_sum, sum_apply,
