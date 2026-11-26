@@ -157,8 +157,9 @@ map `ι₊`, to the class of `momentumTest ℏ φ`. -/
 private theorem halfLineMomentum_ambientToLp (φ : 𝓓(Ω₊, ℂ)) :
     halfLineMomentum ℏ ⟨ι₊ φ, ambientToLp_mem_domain_halfLineMomentum φ⟩ =
       ι₊ (momentumTest ℏ φ) := by
-  -- This lemma is where the definition of `halfLineMomentum` as a `LinearMap.domainOperator` is
-  -- unfolded; the rest of the file uses it and `mem_domain_halfLineMomentum_iff` instead.
+  -- This lemma and `mem_domain_halfLineMomentum_iff` are the two places where the definition of
+  -- `halfLineMomentum` as a `LinearMap.domainOperator` is unfolded; the rest of the file uses
+  -- these two lemmas instead.
   exact (LinearMap.domainOperator_apply_mk ι₊ (ι₊ ∘ₗ momentumTest ℏ)
     TestFunction.ambientToLp_restrict_injective φ _).trans (LinearMap.comp_apply _ _ φ)
 
@@ -369,7 +370,9 @@ theorem mem_ker_subScalar_neg_I_adjoint_halfLineMomentum_iff (hℏ : 0 < ℏ) {u
     have hcond : ∀ x : (halfLineMomentum ℏ).domain,
         ⟪(-I) • u, (x : L²₊)⟫_ℂ = ⟪u, halfLineMomentum ℏ x⟫_ℂ := by
       rintro ⟨_, hφ⟩
-      obtain ⟨φ, rfl⟩ : ∃ φ, ι₊ φ = _ := mem_domain_halfLineMomentum_iff.mp hφ
+      obtain ⟨φ, hφu⟩ := mem_domain_halfLineMomentum_iff.mp hφ
+      rw [← ContinuousLinearMap.coe_coe] at hφu
+      subst hφu
       rw [Submodule.coe_mk, halfLineMomentum_ambientToLp, ← inner_conj_symm,
         ← inner_ambientToLp_Ioi_momentumTest_of_ae_eq hℏ.ne' hv, inner_conj_symm]
     have hdom : u ∈ (halfLineMomentum ℏ)†.domain :=
