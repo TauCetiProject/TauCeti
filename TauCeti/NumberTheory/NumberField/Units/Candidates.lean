@@ -156,10 +156,16 @@ theorem minpoly_mem_unitCandidates (hr : rank K = 1) {w : InfinitePlace K} (hw :
     (v : (𝓞 K)ˣ) {B : ℝ}
     (hlo : 1 < w.embedding_of_isReal hw (v : K))
     (hhi : w.embedding_of_isReal hw (v : K) ≤ B) :
-    minpoly ℤ (v : 𝓞 K) ∈ unitCandidates K B :=
-  minpoly_mem_unitCandidates_of_adjoin_eq_top hr hw v
-    (adjoin_eq_top_of_finrank_prime (finrank_prime_of_rank_eq_one_of_isReal hr hw)
-      (notMem_torsion_of_one_lt_embedding_of_isReal hw hlo))
+    minpoly ℤ (v : 𝓞 K) ∈ unitCandidates K B := by
+  have hnot : v ∉ torsion K := by
+    intro hv
+    have hvone := (NumberField.Units.mem_torsion (x := v)).mp hv w
+    have hval : w v = w.embedding_of_isReal hw (v : K) := by
+      rw [← InfinitePlace.norm_embedding_of_isReal hw, Real.norm_eq_abs,
+        abs_of_pos (lt_trans zero_lt_one hlo)]
+    exact (ne_of_gt hlo) (hval ▸ hvone)
+  exact minpoly_mem_unitCandidates_of_adjoin_eq_top hr hw v
+    (adjoin_eq_top_of_finrank_prime (finrank_prime_of_rank_eq_one_of_isReal hr hw) hnot)
     hlo hhi
 
 end TauCeti.NumberField.Units

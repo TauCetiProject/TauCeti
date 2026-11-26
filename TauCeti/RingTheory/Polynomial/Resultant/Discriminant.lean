@@ -103,9 +103,7 @@ depressed specialization of that formula is used to compare a quartic with its c
 * `Polynomial.Monic.resultant_deriv_eq_zero_iff`: over a field, the resultant of a monic
   polynomial and its derivative vanishes exactly when the polynomial is not separable.
 * `Polynomial.discr_eq_discrim_of_degree_eq_two`: the discriminant of a quadratic is Mathlib's
-  `discrim` of its coefficients, `b ^ 2 - 4ac`, and
-  `Polynomial.Monic.discr_eq_sub_coeff_zero_div_sq_of_isRoot` writes it as
-  `(x - f.coeff 0 / x) ^ 2` at any nonzero root `x` over a field.
+  `discrim` of its coefficients, `b ^ 2 - 4ac`.
 * `Cubic.toPoly_discr`: the two discriminants of a cubic with nonzero leading coefficient agree,
   so that `Cubic.discr` and `Polynomial.discr` may be used interchangeably in degree three.
 * `Polynomial.Monic.discr_of_natDegree_eq_four`, `TauCeti.discr_depressedQuartic`: the
@@ -962,26 +960,6 @@ theorem discr_eq_discrim_of_degree_eq_two {f : R[X]} (hf : f.degree = 2) :
     f.discr = discrim (f.coeff 2) (f.coeff 1) (f.coeff 0) := by
   rw [discr_of_degree_eq_two hf, discrim]
   ring
-
-/-- For a monic quadratic `f` over a field `F` and a nonzero root `x` of `f`, the discriminant of
-`f` is `(x - f.coeff 0 / x) ^ 2`. -/
-theorem Monic.discr_eq_sub_coeff_zero_div_sq_of_isRoot {F : Type*} [Field F] {f : F[X]}
-    (hf : f.Monic) (hdeg : f.natDegree = 2) {x : F} (hx : x ≠ 0) (hroot : f.IsRoot x) :
-    f.discr = (x - f.coeff 0 / x) ^ 2 := by
-  have hdeg2 : f.degree = 2 := (degree_eq_iff_natDegree_eq hf.ne_zero).mpr hdeg
-  have hc2 : f.coeff 2 = 1 := hdeg ▸ hf.coeff_natDegree
-  have heval : 1 * (x * x) + f.coeff 1 * x + f.coeff 0 = 0 := by
-    have hr : eval x f = 0 := hroot.eq_zero
-    rw [eval_eq_sum_range, hdeg] at hr
-    simp only [Finset.sum_range_succ, Finset.sum_range_zero, hc2, pow_zero, pow_one, zero_add] at hr
-    linear_combination hr
-  rw [discr_eq_discrim_of_degree_eq_two hdeg2, hc2, discrim_eq_sq_of_quadratic_eq_zero heval]
-  congr 1
-  apply mul_right_cancel₀ hx
-  calc
-    (2 * 1 * x + f.coeff 1) * x = x * x + (1 * (x * x) + f.coeff 1 * x) := by ring
-    _ = x * x - f.coeff 0 := by linear_combination heval
-    _ = (x - f.coeff 0 / x) * x := by rw [sub_mul, div_mul_cancel₀ _ hx]
 
 end Polynomial
 

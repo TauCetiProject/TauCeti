@@ -88,20 +88,30 @@ theorem no_unit_between_real {B : ℝ} (h : UnitCandidateEliminationCertificate 
   · apply hroot _ ⟨hlo, hhi⟩
     exact minpoly.aeval_algHom ℤ
       ((w.embedding_of_isReal hw).comp (algebraMap (𝓞 K) K)).toIntAlgHom (v : 𝓞 K)
-  · exact hfield ⟨v, adjoin_eq_top_of_finrank_prime
-      (finrank_prime_of_rank_eq_one_of_isReal hr hw)
-      (notMem_torsion_of_one_lt_embedding_of_isReal hw hlo)⟩ rfl
+  · have hnot : v ∉ torsion K := by
+      intro hv
+      have hone := (NumberField.Units.mem_torsion (x := v)).mp hv w
+      have hval : w v = w.embedding_of_isReal hw (v : K) := by
+        rw [← norm_embedding_of_isReal hw, Real.norm_eq_abs,
+          abs_of_pos (zero_lt_one.trans hlo)]
+      exact (ne_of_gt hlo) (hval ▸ hone)
+    exact hfield ⟨v, adjoin_eq_top_of_finrank_prime
+      (finrank_prime_of_rank_eq_one_of_isReal hr hw) hnot⟩ rfl
 
 /-- In unit rank one with a real infinite place, an elimination certificate at `B > 0` implies
 `log B ≤ regulator K`. -/
 theorem log_le_regulator {B : ℝ} (h : UnitCandidateEliminationCertificate K B)
     (hr : rank K = 1) {w : InfinitePlace K} (hw : w.IsReal) (hB : 0 < B) :
     Real.log B ≤ regulator K := by
-  obtain ⟨u, hu, hreg⟩ := exists_one_lt_embedding_of_isReal_and_regulator_eq_log hr hw
+  obtain ⟨u, hu⟩ := exists_closure_sup_torsion_eq_top_of_rank_eq_one hr
+  have hreg := regulator_eq_mult_abs_log_of_rank_eq_one hr u hu w
+  rw [hw.mult_eq_one, Nat.cast_one, one_mul] at hreg
   rw [hreg]
   by_contra! hlt
-  exact h.no_unit_between_real hr hw
-    ⟨u, hu, (Real.log_lt_log_iff (zero_lt_one.trans hu) hB).mp hlt⟩
+  have hpos : 0 < |Real.log (w u)| := hreg ▸ regulator_pos K
+  have hne : w u ≠ 1 := fun h1 ↦ by simp [h1] at hpos
+  obtain ⟨ε, δ, -, hlo, hhi⟩ := exists_normalized_unit_between B u w hw hB hne hlt
+  exact h.no_unit_between_real hr hw ⟨ε.val * δ, hlo, hhi⟩
 
 /-- **Soundness of unit-candidate elimination.** A unit expanding at a real place generates
 modulo torsion if every candidate below its absolute value has been eliminated. -/

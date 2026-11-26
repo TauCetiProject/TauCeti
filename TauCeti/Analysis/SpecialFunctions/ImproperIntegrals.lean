@@ -54,10 +54,9 @@ zero and one.
 * `TauCeti.tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero`: if `g t → L` as `t → ∞`, then
   `ε ∫_1^∞ t ^ (-ε - 1) g t → L` as `ε → 0⁺`. Through Mathlib's `LSeries_eq_mul_integral` this
   is the Abelian theorem for Dirichlet series.
-* `TauCeti.integrableOn_Ioi_rpow_mul_log_of_lt`, `TauCeti.integrableOn_Ioi_rpow_mul_log_iff`,
-  and `TauCeti.integral_Ioi_rpow_mul_log_of_lt`: integrability characterization (`a < -1`) and
-  closed form `∫ t in Ioi c, t ^ a * log t = c ^ (a + 1) * (1 - (a + 1) * log c) / (a + 1) ^ 2`
-  for `0 < c`.
+* `TauCeti.integrableOn_Ioi_rpow_mul_log_of_lt` and `TauCeti.integral_Ioi_rpow_mul_log_of_lt`:
+  integrability and the closed form `∫ t in Ioi c, t ^ a * log t =
+  c ^ (a + 1) * (1 - (a + 1) * log c) / (a + 1) ^ 2` for `a < -1` and `0 < c`.
 -/
 
 public section
@@ -439,29 +438,6 @@ theorem integrableOn_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < 
       (integrableOn_rpow_mul_log (η := -1 - a) (by linarith)).mono_set (Ioi_subset_Ioi hM1)
   rw [← Ioc_union_Ioi_eq_Ioi (le_max_left c 1)]
   exact h_cpt.union h_tail
-
-/-- For `0 < c`, `t ↦ t ^ a * log t` is integrable on `(c, ∞)` if and only if `a < -1`. -/
-theorem integrableOn_Ioi_rpow_mul_log_iff {a c : ℝ} (hc : 0 < c) :
-    IntegrableOn (fun t : ℝ ↦ t ^ a * Real.log t) (Ioi c) ↔ a < -1 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ integrableOn_Ioi_rpow_mul_log_of_lt h hc⟩
-  by_contra! ha
-  set M : ℝ := max c (Real.exp 1)
-  have hM_ge : c ≤ M := le_max_left c (Real.exp 1)
-  have hM_exp : Real.exp 1 ≤ M := le_max_right c (Real.exp 1)
-  have hM_pos : 0 < M := (Real.exp_pos 1).trans_le hM_exp
-  have hrpow : IntegrableOn (fun t : ℝ ↦ t ^ a) (Ioi M) := by
-    refine (h.mono_set (Ioi_subset_Ioi hM_ge)).mono' ?_ ?_
-    · refine ContinuousOn.aestronglyMeasurable (fun t ht ↦ ?_) measurableSet_Ioi
-      exact (Real.continuousAt_rpow_const t a (Or.inl (hM_pos.trans ht).ne')).continuousWithinAt
-    · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-      have ht_pos : 0 < t := hM_pos.trans ht
-      have hlog_ge : 1 ≤ Real.log t := by
-        rw [← Real.log_exp 1]
-        exact Real.log_le_log (Real.exp_pos 1) (hM_exp.trans ht.le)
-      have hpow_nonneg : 0 ≤ t ^ a := Real.rpow_nonneg ht_pos.le a
-      rw [Real.norm_of_nonneg hpow_nonneg]
-      exact le_mul_of_one_le_right hpow_nonneg hlog_ge
-  exact not_integrableOn_Ioi_rpow_of_neg_one_le ha hrpow
 
 /-- **The improper integral `∫_c^∞ t ^ a * log t dt`** for `a < -1` and `0 < c`. -/
 theorem integral_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :

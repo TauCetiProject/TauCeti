@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Discriminant
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.NumberTheory.NumberField.Index.Basic
 import Mathlib.RingTheory.Adjoin.PowerBasis
-import Mathlib.RingTheory.Norm.Basic
 import TauCeti.NumberTheory.NumberField.Minpoly
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
@@ -31,8 +30,6 @@ polynomial of `θ` over `ℤ`, cast to `ℚ`.
 * `TauCeti.NumberField.IntegralPrimitiveElement.discr_powerBasis_eq_minpoly_discr`: the
   discriminant of the power basis of `θ` is the polynomial discriminant of `minpoly ℤ θ`, cast to
   `ℚ`.
-* `TauCeti.NumberField.IntegralPrimitiveElement.norm_eq_coeff_zero_minpoly`:
-  `Algebra.norm ℚ θ = (-1) ^ [K : ℚ] * (minpoly ℤ θ).coeff 0`.
 
 ## References
 
@@ -64,13 +61,5 @@ theorem discr_powerBasis_eq_minpoly_discr (θ : IntegralPrimitiveElement K) :
   rw [Algebra.discr_powerBasis_eq_minpoly_discr, powerBasis_gen,
     _root_.NumberField.RingOfIntegers.minpoly_rat_coe,
     (minpoly.monic θ.val.isIntegral).discr_map]
-
-/-- **The norm of an integral primitive element from its minimal polynomial.** For an integral
-primitive element `θ` of `K`, `Algebra.norm ℚ θ = (-1) ^ [K : ℚ] * (minpoly ℤ θ).coeff 0`. -/
-theorem norm_eq_coeff_zero_minpoly (θ : IntegralPrimitiveElement K) :
-    Algebra.norm ℚ (θ.val : K) = (-1) ^ Module.finrank ℚ K * ((minpoly ℤ θ.val).coeff 0 : ℚ) := by
-  have h := Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly θ.powerBasis
-  rwa [θ.powerBasis_gen, ← θ.powerBasis.finrank,
-    _root_.NumberField.RingOfIntegers.minpoly_rat_coe, Polynomial.coeff_map, eq_intCast] at h
 
 end TauCeti.NumberField.IntegralPrimitiveElement

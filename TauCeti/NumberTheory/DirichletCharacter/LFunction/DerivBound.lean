@@ -14,6 +14,7 @@ import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.NumberTheory.AbelSummation
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.IntervalSum
 import TauCeti.NumberTheory.Harmonic.Bounds
 
 /-!
@@ -29,7 +30,7 @@ right half-plane `Re(s) > 0`:
 `L'(s, χ) = ∫_{t > 1} S(t) (1 - s log t) t ^ (-(s + 1))`.
 
 Splitting the integral at the level `N` and integrating by parts over `[1, N]` — where period
-cancellation `S(N) = 0` (`DirichletCharacter.sum_Icc_one_level_eq_zero`) eliminates the boundary
+cancellation `S(N) = 0` (`DirichletCharacter.intervalSum_level_eq_zero`) eliminates the boundary
 term at `N` — decomposes both `L(s, χ)` and `L'(s, χ)` on `Re(s) > 0` into a finite Dirichlet
 polynomial of length `N` plus a tail integral over `(N, ∞)`:
 
@@ -133,7 +134,8 @@ private theorem integral_Ioc_one_level_sum_mul_eq (hχ : χ ≠ 1) {g g' : ℝ �
   have hint : IntegrableOn (deriv g) (Set.Icc (1 : ℝ) N) :=
     (hcont.mono Set.Icc_subset_Ici_self).integrableOn_Icc.congr_fun hderiv_eq.symm measurableSet_Icc
   have habel := sum_mul_eq_sub_integral_mul₀' c rfl N hdiff hint
-  rw [hsum, hsum1, χ.sum_Icc_one_level_eq_zero hχ, mul_zero, zero_sub] at habel
+  rw [hsum, hsum1, ← χ.intervalSum_zero_eq_sum_Icc, χ.intervalSum_level_eq_zero hχ, mul_zero,
+    zero_sub] at habel
   refine (setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_).trans
     (neg_eq_iff_eq_neg.mp habel.symm)
   rw [(hg t ht.1.le).deriv, hsum1, mul_comm]

@@ -22,13 +22,8 @@ both the inversion and the sign that are invisible in the absolute-value criteri
 
 ## Main results
 
-* `exists_torsion_mul_one_lt_embedding_of_isReal_and_log_eq_abs`: any unit with `w v ≠ 1` at a real
-  place `w` can be inverted if necessary and multiplied by a torsion unit so that its real image
-  exceeds `1` and has logarithm `|log (w v)|`.
 * `exists_normalized_unit_between`: a unit detected by the chosen place, with sufficiently
   small logarithmic absolute value, yields a unit whose real embedding lies in the search interval.
-* `exists_one_lt_embedding_of_isReal_and_regulator_eq_log`: at unit rank one and any real place `w`,
-  there exists a unit with real image exceeding `1` whose logarithm equals `regulator K`.
 * `generates_mod_torsion_iff_no_unit_between_real`: at rank one, a unit expanding at a real
   place generates modulo torsion exactly when that interval contains no unit.
 -/
@@ -44,26 +39,7 @@ variable {K : Type*} [Field K] [NumberField K]
 namespace TauCeti.NumberField.Units
 
 omit [NumberField K] in
-/-- Any unit `v` with `w v ≠ 1` at a real place `w` can be inverted if necessary and multiplied by
-a torsion unit so that its real image exceeds `1` and has logarithm `|log (w v)|`. -/
-theorem exists_torsion_mul_one_lt_embedding_of_isReal_and_log_eq_abs (v : (𝓞 K)ˣ)
-    (w : InfinitePlace K) (hw : w.IsReal) (hv : w v ≠ 1) :
-    ∃ (ε : torsion K) (δ : (𝓞 K)ˣ),
-      (δ = v ∨ δ = v⁻¹) ∧
-      1 < embedding_of_isReal hw ((ε.val * δ : (𝓞 K)ˣ) : K) ∧
-      Real.log (embedding_of_isReal hw ((ε.val * δ : (𝓞 K)ˣ) : K)) = |Real.log (w v)| := by
-  have hvpos : 0 < w v := Units.pos_at_place v w
-  rcases lt_trichotomy 1 (w v) with h | h | h
-  · obtain ⟨ε, hε⟩ := w.exists_torsion_mul_embedding_eq_abs hw v
-    exact ⟨ε, v, Or.inl rfl, hε.symm ▸ h, by rw [hε, abs_of_pos (Real.log_pos h)]⟩
-  · exact absurd h.symm hv
-  · have hwInv : w (v⁻¹ : (𝓞 K)ˣ) = (w v)⁻¹ := by simp
-    have hinv : 1 < w (v⁻¹ : (𝓞 K)ˣ) := hwInv.symm ▸ (one_lt_inv₀ hvpos).mpr h
-    obtain ⟨ε, hε⟩ := w.exists_torsion_mul_embedding_eq_abs hw v⁻¹
-    refine ⟨ε, v⁻¹, Or.inr rfl, hε.symm ▸ hinv, ?_⟩
-    rw [hε, hwInv, Real.log_inv, abs_of_neg (Real.log_neg hvpos h)]
-
-omit [NumberField K] in
+open scoped Classical in
 /-- A unit with `w v ≠ 1` whose logarithmic absolute value is below `log B` can be inverted and
 multiplied by a torsion unit so that its real image lies in the open interval from `1` to `B`. -/
 theorem exists_normalized_unit_between (B : ℝ) (v : (𝓞 K)ˣ)
@@ -73,25 +49,37 @@ theorem exists_normalized_unit_between (B : ℝ) (v : (𝓞 K)ˣ)
       (δ = v ∨ δ = v⁻¹) ∧
       1 < embedding_of_isReal hw ((ε.val * δ : (𝓞 K)ˣ) : K) ∧
       embedding_of_isReal hw ((ε.val * δ : (𝓞 K)ˣ) : K) < B := by
-  obtain ⟨ε, δ, hδ, hgt, hlog⟩ :=
-    exists_torsion_mul_one_lt_embedding_of_isReal_and_log_eq_abs v w hw hv
-  exact ⟨ε, δ, hδ, hgt,
-    (Real.log_lt_log_iff (zero_lt_one.trans hgt) hBpos).mp (hlog.trans_lt hvbound)⟩
-
-/-- **Normalized fundamental unit in unit rank one.** At any real infinite place `w` of a number
-field `K` of unit rank one, there exists a unit `u` whose real image exceeds `1` and whose
-logarithm equals `regulator K`. -/
-theorem exists_one_lt_embedding_of_isReal_and_regulator_eq_log (hr : rank K = 1)
-    {w : InfinitePlace K} (hw : w.IsReal) :
-    ∃ u : (𝓞 K)ˣ, 1 < embedding_of_isReal hw (u : K) ∧
-      regulator K = Real.log (embedding_of_isReal hw (u : K)) := by
-  obtain ⟨g, hg⟩ := exists_closure_sup_torsion_eq_top_of_rank_eq_one hr
-  have hreg : regulator K = |Real.log (w g)| := by
-    rw [regulator_eq_mult_abs_log_of_rank_eq_one hr g hg w, hw.mult_eq_one, Nat.cast_one, one_mul]
-  have hg1 : w g ≠ 1 := fun h1 ↦ (regulator_pos K).ne' (by simp [hreg, h1])
-  obtain ⟨ε, δ, -, hgt, hlog⟩ :=
-    exists_torsion_mul_one_lt_embedding_of_isReal_and_log_eq_abs g w hw hg1
-  exact ⟨ε.val * δ, hgt, hreg.trans hlog.symm⟩
+  have hvlog : 0 < |Real.log (w v)| := by
+    exact abs_pos.mpr (Real.log_ne_zero_of_pos_of_ne_one (Units.pos_at_place v w) hv)
+  have hB : 1 < B :=
+    (Real.log_pos_iff hBpos.le).mp (lt_of_le_of_lt (abs_nonneg _) hvbound)
+  have hvpos : 0 < w v := Units.pos_at_place v w
+  by_cases h : 1 < w v
+  · obtain ⟨ε, hε⟩ := w.exists_torsion_mul_embedding_eq_abs hw v
+    refine ⟨ε, v, Or.inl rfl, ?_, ?_⟩
+    · rwa [hε]
+    · rw [hε]
+      apply (Real.log_lt_log_iff hvpos (zero_lt_one.trans hB)).mp
+      exact (abs_of_pos (Real.log_pos h) ▸ hvbound)
+  · have hlt : w v < 1 := by
+      have hne : w v ≠ 1 := by
+        intro heq
+        simp [heq] at hvlog
+      exact lt_of_le_of_ne (le_of_not_gt h) hne
+    have hwInv : w (v⁻¹) = (w v)⁻¹ := by simp
+    have hinv : 1 < w (v⁻¹) := by
+      rw [hwInv]
+      exact (one_lt_inv₀ hvpos).mpr hlt
+    have hlogInv : Real.log (w (v⁻¹)) = -Real.log (w v) := by
+      rw [hwInv, Real.log_inv]
+    obtain ⟨ε, hε⟩ := w.exists_torsion_mul_embedding_eq_abs hw (v⁻¹)
+    refine ⟨ε, v⁻¹, Or.inr rfl, ?_, ?_⟩
+    · rw [hε]
+      simpa using hinv
+    · rw [hε]
+      apply (Real.log_lt_log_iff (Units.pos_at_place (v⁻¹) w)
+        (zero_lt_one.trans hB)).mp
+      simpa [hlogInv, abs_of_neg (Real.log_neg hvpos hlt)] using hvbound
 
 open scoped Classical in
 /-- At unit rank one, a unit expanding at a real place generates the units modulo torsion if

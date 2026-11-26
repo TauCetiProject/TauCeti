@@ -43,9 +43,8 @@ and deduces the analytic class number formulas of imaginary and real quadratic f
 
 `h(D) = w_D √|D| L(1, χ_D) / (2π)` and `h(D) R_D = √|D| L(1, χ_D) / 2`,
 
-where `w_D` is the number of units of `𝓞 K` and `R_D` is the regulator, together with the upper
-bound `h(D) R_D ≤ √D (1 + log D) / 2` in the real case and the sharp uniform lower bound
-`2 log φ / √|D| ≤ Re L(1, χ_D)` across all quadratic fields.
+where `w_D` is the number of units of `𝓞 K` and `R_D` is the regulator, together with the sharp
+uniform lower bound `2 log φ / √|D| ≤ Re L(1, χ_D)` across all quadratic fields.
 
 The factorization is an identity of Dirichlet coefficients: the number of integral ideals of `𝓞 K`
 of norm `n` is `∑_{d ∣ n} χ_D(d)`. Both sides are multiplicative in `n`, so it suffices to compare
@@ -94,11 +93,9 @@ ratio bound holds uniformly for every quadratic field `K`.
   `h ≤ w √|D| (1 + log |D|) / (2π)`, from `‖L(1, χ_D)‖ ≤ 1 + log |D|`
   (`DirichletCharacter.norm_LFunction_one_le_one_add_log`), with the specialization
   `TauCeti.NumberField.classNumber_le_sqrt_mul_one_add_log_of_discr_ne`.
-* `TauCeti.NumberField.classNumber_mul_regulator_eq_LFunction_one`,
-  `TauCeti.NumberField.LFunction_one_eq_two_mul_classNumber_mul_regulator_div`, and
-  `TauCeti.NumberField.classNumber_mul_regulator_le_sqrt_mul_one_add_log`:
-  for a real quadratic field, `h R = √|D| L(1, χ_D) / 2`, `L(1, χ_D) = 2 h R / √|D|`, and
-  `h R ≤ √D (1 + log D) / 2`.
+* `TauCeti.NumberField.classNumber_mul_regulator_eq_LFunction_one` and
+  `TauCeti.NumberField.LFunction_one_eq_two_mul_classNumber_mul_regulator_div`:
+  for a real quadratic field, `h R = √|D| L(1, χ_D) / 2` and `L(1, χ_D) = 2 h R / √|D|`.
 * `TauCeti.NumberField.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re`: uniform sharp lower
   bound `2 log φ / √|D| ≤ Re L(1, χ_D)` for every quadratic number field `K`.
 
@@ -106,8 +103,6 @@ ratio bound holds uniformly for every quadratic field `K`.
 
 * H. Davenport, *Multiplicative Number Theory*, Chapter 6.
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII, §5.
-* P. Koymans and C. Pagano, *A sharp upper bound for the 2-torsion of class groups of
-  multiquadratic fields*, Mathematika **68** (2022), §7.2.
 -/
 
 public section
@@ -509,23 +504,6 @@ theorem LFunction_one_eq_two_mul_classNumber_mul_regulator_div :
   push_cast
   rw [mul_assoc (2 : ℂ), classNumber_mul_regulator_eq_LFunction_one hK]
   field_simp
-
-/-- **An upper bound for `h R` in a real quadratic field.** If `K` is real quadratic of
-discriminant `D`, then `h R ≤ √D (1 + log D) / 2`. -/
-theorem classNumber_mul_regulator_le_sqrt_mul_one_add_log :
-    (classNumber K : ℝ) * NumberField.Units.regulator K ≤
-      √(discr K : ℝ) * (1 + Real.log (discr K : ℝ)) / 2 := by
-  have hDpos : (0 : ℝ) < discr K :=
-    by exact_mod_cast (by linarith [five_le_discr_of_isTotallyReal hK] : 0 < discr K)
-  have hL := DirichletCharacter.norm_LFunction_one_le_one_add_log _
-    (ringHomComp_fundamentalDiscriminantChar_discr_ne_one hK)
-  rw [Nat.cast_natAbs, Int.cast_abs, abs_of_pos hDpos] at hL
-  have h := congrArg norm (classNumber_mul_regulator_eq_LFunction_one hK)
-  simp only [norm_mul, Complex.norm_natCast, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_pos (NumberField.Units.regulator_pos K), norm_div, abs_of_nonneg (Real.sqrt_nonneg _),
-    abs_of_pos hDpos, Complex.norm_ofNat] at h
-  rw [h]
-  gcongr
 
 end RealQuadratic
 

@@ -16,11 +16,10 @@ import TauCeti.Data.ZMod.FinEquiv
 /-!
 # Partial sums of nonprincipal Dirichlet characters
 
-The sum of a nonprincipal character over a full period vanishes (both on `0 ≤ k < N` and on
-`1 ≤ k ≤ N`). Consequently its partial sums depend only on the endpoint modulo the level, and for
-characters valued in a normed field their norms are bounded by the level, hence are `O(1)` at
-infinity. This cancellation is the input to partial summation estimates for continued Dirichlet
-L-functions.
+The sum of a nonprincipal character over a full period vanishes. Consequently its partial
+sums depend only on the endpoint modulo the level, and for characters valued in a normed
+field their norms are bounded by the level, hence are `O(1)` at infinity. This cancellation is
+the input to partial summation estimates for continued Dirichlet L-functions.
 
 Bounds on partial sums survive sieving: if every partial sum `∑ n ∈ Icc 1 K, χ n` has norm at
 most `B`, then every partial sum over the `n` prime to `m` has norm at most `2 ^ ω m * B`
@@ -47,21 +46,6 @@ theorem sum_range_level_eq_zero {R : Type*} [CommRing R] [IsDomain R]
   rw [← Fin.sum_univ_eq_sum_range]
   simpa only [RingEquiv.toEquiv_eq_coe, RingEquiv.coe_toEquiv, ZMod.finEquiv_apply] using
     ((ZMod.finEquiv N).toEquiv.sum_comp χ).trans (MulChar.sum_eq_zero_of_ne_one hχ)
-
-omit [NeZero N] in
-/-- A nonprincipal Dirichlet character sums to zero over `1 ≤ k ≤ N`. -/
-theorem sum_Icc_one_level_eq_zero {R : Type*} [CommRing R] [IsDomain R]
-    (χ : DirichletCharacter R N) (hχ : χ ≠ 1) :
-    ∑ k ∈ Icc 1 N, χ k = 0 := by
-  rcases N.eq_zero_or_pos with rfl | hN
-  · simp
-  have : NeZero N := ⟨hN.ne'⟩
-  have h1 : ∑ k ∈ Icc 1 N, χ k = χ (0 : ZMod N) + ∑ k ∈ Ico 1 N, χ k := by
-    rw [← insert_right_Ico hN, sum_insert right_notMem_Ico, ZMod.natCast_self]
-  have h2 : ∑ k ∈ range N, χ k = χ (0 : ZMod N) + ∑ k ∈ Ico 1 N, χ k := by
-    rw [range_eq_Ico, ← insert_Ico_add_one_left_eq_Ico hN, zero_add,
-      sum_insert (by simp), Nat.cast_zero]
-  exact h1.trans (h2.symm.trans (χ.sum_range_level_eq_zero hχ))
 
 /-- The partial sum of a nonprincipal character depends only on the endpoint modulo its level. -/
 theorem sum_range_eq_sum_range_mod {R : Type*} [CommRing R] [IsDomain R]

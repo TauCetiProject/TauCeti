@@ -35,24 +35,18 @@ the place of either of its two complex embeddings `σ`. Hence its norm and trace
   complex exactly when `d < 0`.
 * `NumberField.exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top_of_isTotallyComplex`: an imaginary
   quadratic field has a presentation with negative squarefree radicand.
-* `NumberField.isTotallyReal_of_finrank_eq_two_of_isReal`: a quadratic field admitting a real
-  infinite place is totally real.
+* `QuadraticAlgebra.isTotallyComplex_iff`: `QuadraticAlgebra ℚ a 0` is totally complex exactly
+  when `a < 0`.
 * `TauCeti.NumberField.infinitePlace_eq_mk_of_finrank_eq_two`: an imaginary quadratic field has a
   single infinite place.
 * `TauCeti.NumberField.abs_norm_eq_norm_sq_of_finrank_eq_two`,
   `TauCeti.NumberField.trace_eq_two_mul_re_of_finrank_eq_two`: the norm and the trace of an
   imaginary quadratic field through a complex embedding.
-* `QuadraticAlgebra.isTotallyComplex_iff`: `QuadraticAlgebra ℚ a 0` is totally complex exactly
-  when `a < 0`.
-
-## References
-
-* H. Cohen, *A Course in Computational Algebraic Number Theory*, Springer, 1993, §5.1.
 -/
 
 public section
 
-open Polynomial NumberField NumberField.InfinitePlace
+open Polynomial NumberField
 
 namespace NumberField
 
@@ -92,15 +86,9 @@ theorem exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top_of_isTotallyComplex [IsTo
   exact ⟨θ, d, hmin, hgen, hd,
     (isTotallyComplex_iff_neg_of_minpoly_eq_X_sq_sub_C hmin hgen).mp inferInstance⟩
 
-/-- A quadratic number field admitting a real infinite place is totally real. -/
-theorem isTotallyReal_of_finrank_eq_two_of_isReal (hK : Module.finrank ℚ K = 2)
-    {w : InfinitePlace K} (hw : w.IsReal) : IsTotallyReal K := by
-  classical
-  have hdeg := InfinitePlace.card_add_two_mul_card_eq_rank K
-  have hnr : 0 < nrRealPlaces K := Fintype.card_pos_iff.mpr ⟨⟨w, hw⟩⟩
-  exact nrComplexPlaces_eq_zero_iff.mp (by omega)
-
 end NumberField
+
+open NumberField.InfinitePlace
 
 namespace TauCeti.NumberField
 
