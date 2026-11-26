@@ -7,7 +7,7 @@ module
 
 public import TauCeti.SetTheory.Cardinal.Partition.EndHomogeneous
 public import TauCeti.SetTheory.Cardinal.Partition.Pigeonhole
-public import Mathlib.SetTheory.Cardinal.Aleph
+public import TauCeti.SetTheory.Cardinal.Beth
 import TauCeti.Order.Fin.Tuple
 import TauCeti.Order.Hom.Basic
 
@@ -15,23 +15,19 @@ import TauCeti.Order.Hom.Basic
 # The Erdős–Rado theorem
 
 For an infinite cardinal `κ`, write `ℶₙ(κ)` for the `n`-fold iterated exponential,
-`ℶ₀(κ) = κ` and `ℶₙ₊₁(κ) = 2 ^ ℶₙ(κ)` (`Cardinal.iteratedTwoPow`). The Erdős–Rado theorem is the
-partition relation `ℶₙ(κ)⁺ → (κ⁺)ⁿ⁺¹_κ`: every colouring of the increasing `(n + 1)`-tuples of a
+`ℶ₀(κ) = κ` and `ℶₙ₊₁(κ) = 2 ^ ℶₙ(κ)` (`Cardinal.iteratedTwoPow`, from
+`TauCeti.SetTheory.Cardinal.Beth`). The Erdős–Rado theorem is the partition relation
+`ℶₙ(κ)⁺ → (κ⁺)ⁿ⁺¹_κ`: every colouring of the increasing `(n + 1)`-tuples of a
 linear order of cardinality `ℶₙ(κ)⁺` by at most `κ` colours has a homogeneous set of cardinality
 `κ⁺`. At `n = 1` it is `(2 ^ κ)⁺ → (κ⁺)²_κ`.
 
-Indexed by beth numbers, `ℶ_ (α + n) = ℶₙ(ℶ_ α)`, the theorem reads
-`ℶ_ (α + n)⁺ → (ℶ_ α⁺)ⁿ⁺¹_ℶ_α`; since `ℶ_ (α + n)⁺ ≤ ℶ_ (α + n + 1)`, it then also holds from
+Indexed by beth numbers, `ℶ_ (α + n) = ℶₙ(ℶ_ α)` (`Cardinal.iteratedTwoPow_beth`), the theorem
+reads `ℶ_ (α + n)⁺ → (ℶ_ α⁺)ⁿ⁺¹_ℶ_α`; since `ℶ_ (α + n)⁺ ≤ ℶ_ (α + n + 1)`, it then also holds from
 `ℶ_ (α + n + 1)` (`Cardinal.erdos_rado_beth_add_one`). This is the form in which Morley's proof
 of the Hanf number bound for `Lω₁ω` applies it at every level `α`.
 
-## Main definitions
-
-* `Cardinal.iteratedTwoPow κ n`: the iterated exponential `ℶₙ(κ)`.
-
 ## Main results
 
-* `Cardinal.iteratedTwoPow_beth`: `ℶₙ(ℶ_ α) = ℶ_ (α + n)`.
 * `Cardinal.erdos_rado`: `ℶₙ(κ)⁺ → (κ⁺)ⁿ⁺¹_κ` for infinite `κ`.
 * `Cardinal.erdos_rado_beth`: `ℶ_ (α + n)⁺ → (ℶ_ α⁺)ⁿ⁺¹_ℶ_α`.
 * `Cardinal.erdos_rado_beth_add_one`: `ℶ_ (α + n + 1) → (ℶ_ α⁺)ⁿ⁺¹_ℶ_α`.
@@ -59,32 +55,6 @@ universe u
 open Cardinal Set TauCeti
 
 namespace Cardinal
-
-/-- The iterated exponential `ℶₙ(κ)`: `ℶ₀(κ) = κ` and `ℶₙ₊₁(κ) = 2 ^ ℶₙ(κ)`. -/
-noncomputable def iteratedTwoPow (κ : Cardinal.{u}) : ℕ → Cardinal.{u}
-  | 0 => κ
-  | n + 1 => 2 ^ iteratedTwoPow κ n
-
-@[simp]
-theorem iteratedTwoPow_zero (κ : Cardinal.{u}) : iteratedTwoPow κ 0 = κ :=
-  (rfl)
-
-@[simp]
-theorem iteratedTwoPow_succ (κ : Cardinal.{u}) (n : ℕ) :
-    iteratedTwoPow κ (n + 1) = 2 ^ iteratedTwoPow κ n :=
-  (rfl)
-
-/-- The iterated exponential `ℶₙ(κ)` is at least `κ`. -/
-theorem le_iteratedTwoPow (κ : Cardinal.{u}) (n : ℕ) : κ ≤ iteratedTwoPow κ n := by
-  induction n with
-  | zero => simp
-  | succ n ih => exact ih.trans (by simpa using (cantor _).le)
-
-/-- Iterating the exponential `n` times from `ℶ_ o` gives `ℶ_ (o + n)`. -/
-theorem iteratedTwoPow_beth (o : Ordinal.{u}) (n : ℕ) : iteratedTwoPow (ℶ_ o) n = ℶ_ (o + n) := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [iteratedTwoPow_succ, ih, Nat.cast_succ, ← add_assoc, beth_add_one]
 
 /-- **From end-homogeneous to homogeneous sets.** Let `H` be end-homogeneous for a colouring `c`
 of increasing `(n + 2)`-tuples, and `H'` the points of `H` below some other point of `H`. On `H'`
