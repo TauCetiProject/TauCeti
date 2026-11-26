@@ -83,6 +83,13 @@ private theorem mem_augmentationKernel (y : BigWittVector S (Unitization ℤ R))
 noncomputable def toBigWitt : NonUnitalBigWittVector S R →ₙ+* BigWittVector S (Unitization ℤ R) :=
   NonUnitalSubringClass.subtype _
 
+/-- Composing a unital ring homomorphism with the kernel inclusion applies it to the
+included vector. -/
+theorem toNonUnitalRingHom_comp_toBigWitt_apply {D : Type*} [NonAssocSemiring D]
+    (x : NonUnitalBigWittVector S R) (f : BigWittVector S (Unitization ℤ R) →+* D) :
+    (f.toNonUnitalRingHom.comp toBigWitt) x = f (toBigWitt x) :=
+  rfl
+
 /-- The kernel inclusion is injective. -/
 theorem toBigWitt_injective :
     Function.Injective
@@ -298,11 +305,8 @@ noncomputable def restrict (h : T ≤ S) :
   codRestrict
     ((BigWittVector.restrict (R := Unitization ℤ R) h).toNonUnitalRingHom.comp toBigWitt)
     fun x ↦ by
-      rw [NonUnitalRingHom.comp_apply]
-      -- Reinterpret the restricted unital homomorphism as its underlying function.
-      change BigWittVector.map _
-        (BigWittVector.restrict (R := Unitization ℤ R) h (toBigWitt x)) = 0
-      rw [BigWittVector.map_restrict, map_fst_toBigWitt, map_zero]
+      rw [toNonUnitalRingHom_comp_toBigWitt_apply, BigWittVector.map_restrict, map_fst_toBigWitt,
+        map_zero]
 
 /-- The kernel inclusion commutes with restriction of truncation sets. -/
 @[simp]
@@ -339,10 +343,7 @@ noncomputable def map (f : R →ₙ+* A) :
     ((BigWittVector.map (R := Unitization ℤ R) (R' := Unitization ℤ A)
       (Unitization.map f.toIntNonUnitalAlgHom).toRingHom).toNonUnitalRingHom.comp toBigWitt)
     fun x ↦ by
-      rw [NonUnitalRingHom.comp_apply]
-      -- Reinterpret the coefficient homomorphism as its underlying function.
-      change BigWittVector.map _ (BigWittVector.map (R := Unitization ℤ R) (R' := Unitization ℤ A)
-        (Unitization.map f.toIntNonUnitalAlgHom).toRingHom (toBigWitt x)) = 0
+      rw [toNonUnitalRingHom_comp_toBigWitt_apply]
       apply BigWittVector.ext
       intro n
       have hx := congrArg (fun y : BigWittVector S ℤ ↦ y.coeff n)

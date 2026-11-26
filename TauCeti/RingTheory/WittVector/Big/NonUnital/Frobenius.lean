@@ -36,11 +36,8 @@ noncomputable def frobenius (n : ℕ) :
   codRestrict
     ((BigWittVector.frobenius (R := Unitization ℤ R) n).toNonUnitalRingHom.comp toBigWitt)
     fun x ↦ by
-      rw [NonUnitalRingHom.comp_apply]
-      -- Reinterpret the unital Frobenius homomorphism as its underlying function.
-      change BigWittVector.map _
-        (BigWittVector.frobenius (R := Unitization ℤ R) n (toBigWitt x)) = 0
-      rw [← BigWittVector.frobenius_map, map_fst_toBigWitt, map_zero]
+      rw [toNonUnitalRingHom_comp_toBigWitt_apply, ← BigWittVector.frobenius_map, map_fst_toBigWitt,
+        map_zero]
 
 /-- The kernel inclusion intertwines nonunital Frobenius with the unital Frobenius. -/
 @[simp]
