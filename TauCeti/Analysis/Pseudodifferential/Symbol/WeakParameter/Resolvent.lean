@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Symbol.WeakParameter.Basic
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.IteratedDeriv.Indicator
