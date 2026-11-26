@@ -29,11 +29,11 @@ operator for small coefficients. This gives:
   `∂u/∂(conj z) + A ∂u/∂z + B u = f`, `u 0 = a`, `∂ₛu(0) = b`, `u ∈ X_3`
   has exactly one solution for every forcing `f ∈ C^{0,α}` and all `a`, `b`, with the Schauder
   estimate `‖u‖_{C^{1,α}} ≤ C (‖f‖_{C^α} + |a| + |b|)`, where `C` does not depend on `A`, `B`
-  (`TauCeti.exists_pos_forall_existsUnique_perturbedAugmentedConjWirtingerDerivL_eq`);
+  (`TauCeti.exists_pos_existsUnique_perturbedAugmentedConjWirtingerDerivL_eq_and_norm_le`);
 * the coefficients for which the operator is invertible form an open set, on which the inverse,
   and hence the solution, is a `C^n` function of the coefficients for every `n`, including
   `n = ω` (`TauCeti.contDiffOn_inverse_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL`).
-  This holds for any target space `F` in place of `ℂ^ι` and any closed subspace in place of
+  This holds for any target space `F` in place of `ℂ^ι` and any complete subspace in place of
   `X_3`.
 
 The forcing is an arbitrary Hölder function, so this is the local Hölder boundary problem of the
@@ -42,13 +42,13 @@ linear theory of holomorphic discs, which does not require the forcing to be Sob
 ## Main declarations
 
 * `TauCeti.perturbedAugmentedConjWirtingerDerivL`: the perturbed augmented operator.
-* `TauCeti.exists_pos_forall_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL`:
+* `exists_pos_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL_and_norm_inverse_le`:
   invertibility on `X_3` for small coefficients, with a uniform bound on the inverse.
-* `TauCeti.exists_pos_forall_existsUnique_perturbedAugmentedConjWirtingerDerivL_eq`: unique
+* `TauCeti.exists_pos_existsUnique_perturbedAugmentedConjWirtingerDerivL_eq_and_norm_le`: unique
   solvability with the uniform Schauder estimate.
 * `TauCeti.isOpen_setOf_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL` and
   `TauCeti.contDiffOn_inverse_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL`: parameter
-  dependence on any closed subspace of `C^{1,α}(D, F)`.
+  dependence on any complete subspace of `C^{1,α}(D, F)`.
 
 ## References
 
@@ -114,7 +114,7 @@ theorem contDiff_perturbedAugmentedConjWirtingerDerivL (hα : α ≤ 1) {n : Wit
     (contDiff_wirtingerPerturbationL (Ω := unitBallOpens ℂ) (F := F) (convex_unitBallOpens ℂ) hα))
 
 /-- The coefficients `(A, B)` for which the perturbed augmented operator is invertible on a
-closed subspace `V` of `C^{1,α}(D, F)` form an open set. -/
+complete subspace `V` of `C^{1,α}(D, F)` form an open set. -/
 theorem isOpen_setOf_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL
     (hα : α ≤ 1) (V : Submodule ℝ (CkHolderSpaceOn 1 α (unitBallOpens ℂ) F)) [CompleteSpace V] :
     IsOpen {p : HolderSpace α (unitBallOpens ℂ) (F →L[ℝ] F) ×
@@ -125,10 +125,12 @@ theorem isOpen_setOf_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_sub
       continuous_const)
 
 /-- **Parameter dependence of the perturbed disc problem.** On the open set of coefficients
-`(A, B)` for which the perturbed augmented operator is invertible on a closed subspace `V` of
-`C^{1,α}(D, F)`, its inverse is a `C^n` function of `(A, B)` for every `n`, including `n = ω`. For
-`F = ℂ^ι`, `V = X_3` and `0 < α < 1` this set contains every pair of coefficients of small norm
-(`TauCeti.exists_pos_forall_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL`). -/
+`(A, B)` for which the perturbed augmented operator is invertible on a complete subspace `V`
+of `C^{1,α}(D, F)`, its inverse is a `C^n` function of `(A, B)` for every `n`, including
+`n = ω`. For `F = ℂ^ι`, `V = X_3` and `0 < α < 1` this set contains every pair of coefficients of
+small norm
+(`exists_pos_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL_and_norm_inverse_le`).
+-/
 theorem contDiffOn_inverse_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL
     (hα : α ≤ 1) (V : Submodule ℝ (CkHolderSpaceOn 1 α (unitBallOpens ℂ) F)) [CompleteSpace V]
     {n : WithTop ℕ∞} :
@@ -172,7 +174,8 @@ such that for all coefficients `A, B ∈ C^{0,α}(D, ℂ^ι →L[ℝ] ℂ^ι)` o
 operator `u ↦ (∂u/∂(conj z) + A ∂u/∂z + B u, u 0, ∂ₛu(0))` is a Banach isomorphism from the
 elements of `C^{1,α}(D, ℂ^ι)` with boundary values in `e^{3iθ/2} ℝ^ι` onto
 `C^{0,α}(D, ℂ^ι) × ℂ^ι × ℂ^ι`, and its inverse has norm at most `C`. -/
-theorem exists_pos_forall_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL
+theorem
+    exists_pos_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL_and_norm_inverse_le
     (hα0 : 0 < α) (hα1 : α < 1) :
     ∃ ε > 0, ∃ C, ∀ A B : HolderSpace α (unitBallOpens ℂ) ((ι → ℂ) →L[ℝ] (ι → ℂ)),
       ‖A‖ < ε → ‖B‖ < ε →
@@ -214,7 +217,7 @@ for every forcing `f ∈ C^{0,α}(D, ℂ^ι)` and all `a, b ∈ ℂ^ι` exactly 
 `C^{1,α}(D, ℂ^ι)` with boundary values in `e^{3iθ/2} ℝ^ι` solves
 `∂u/∂(conj z) + A ∂u/∂z + B u = f`, `u 0 = a`, `∂ₛu(0) = b`; and every such `u` satisfies
 `‖u‖ ≤ C ‖(∂u/∂(conj z) + A ∂u/∂z + B u, u 0, ∂ₛu(0))‖`. -/
-theorem exists_pos_forall_existsUnique_perturbedAugmentedConjWirtingerDerivL_eq
+theorem exists_pos_existsUnique_perturbedAugmentedConjWirtingerDerivL_eq_and_norm_le
     (hα0 : 0 < α) (hα1 : α < 1) :
     ∃ ε > 0, ∃ C, ∀ A B : HolderSpace α (unitBallOpens ℂ) ((ι → ℂ) →L[ℝ] (ι → ℂ)),
       ‖A‖ < ε → ‖B‖ < ε →
@@ -224,7 +227,7 @@ theorem exists_pos_forall_existsUnique_perturbedAugmentedConjWirtingerDerivL_eq
         ∀ u ∈ rotatingLinePiSubspace ι 3 α,
           ‖u‖ ≤ C * ‖perturbedAugmentedConjWirtingerDerivL (ι → ℂ) hα1.le A B u‖ := by
   obtain ⟨ε, hε, C, h⟩ :=
-    exists_pos_forall_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL
+    exists_pos_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL_and_norm_inverse_le
       (ι := ι) hα0 hα1
   refine ⟨ε, hε, C, fun A B hA hB ↦ ?_⟩
   obtain ⟨hinv, hC⟩ := h A B hA hB
