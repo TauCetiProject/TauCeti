@@ -69,7 +69,7 @@ planar theory.
 ## References
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Theorem C.1.10 (iii) and Theorem C.2.3, and Appendix B.4.
+  Theorem C.1.10 (i) and its proof, Theorem C.2.3, and Appendix B.4.
 -/
 
 public section
@@ -179,10 +179,10 @@ theorem exists_contDiffOn_ae_eq_chartValueL_of_sobolevL_eq_zero (hp : 1 < p)
   linear_combination (norm := module) (-2 : ℝ) • h1
 
 include hD hDs in
-/-- **Kernel regularity on closed surfaces** (McDuff–Salamon, Theorem C.1.10 (iii), for smooth
-operators). For `1 < p ≤ ∞`, an element `w` of the kernel of the realization
-`W^{1,p}(Σ, V) → Lᵖ(Σ, Λ^{0,1} ⊗ V)` of a smooth real Cauchy–Riemann operator `D` is the Sobolev
-section of a smooth section `s` with `D s = 0`. -/
+/-- **Kernel regularity on closed surfaces** (McDuff–Salamon, Theorem C.1.10 (i), proved as
+Theorem C.2.3, for smooth operators). For `1 < p ≤ ∞`, an element `w` of the kernel of the
+realization `W^{1,p}(Σ, V) → Lᵖ(Σ, Λ^{0,1} ⊗ V)` of a smooth real Cauchy–Riemann operator `D` is
+the Sobolev section of a smooth section `s` with `D s = 0`. -/
 theorem exists_contMDiff_of_sobolevL_eq_zero (hp : 1 < p) {w : SobolevSection A volume p 1}
     (hw : hD.sobolevL A hDs volume p w = 0) :
     ∃ (s : Π x : M, V x) (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (T% s)),
@@ -250,8 +250,8 @@ private theorem coe_kerSobolevLEquivComap_apply (hp : 1 < p)
 
 variable {p' : ℝ≥0∞} [Fact (1 ≤ p')]
 
-/-- **The kernel does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (iii), for
-smooth operators). For `1 < p, p' ≤ ∞`, the kernels of the realizations
+/-- **The kernel does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (i), proved as
+Theorem C.2.3, for smooth operators). For `1 < p, p' ≤ ∞`, the kernels of the realizations
 `W^{1,p}(Σ, V) → Lᵖ(Σ, Λ^{0,1} ⊗ V)` and `W^{1,p'}(Σ, V) → L^{p'}(Σ, Λ^{0,1} ⊗ V)` of a smooth
 real Cauchy–Riemann operator are linearly equivalent: both consist of the Sobolev sections of the
 smooth sections `s` with `D s = 0`, and the equivalence keeps `s`
