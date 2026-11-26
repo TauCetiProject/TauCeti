@@ -116,13 +116,12 @@ theorem Continuous.eventually_norm_sub_lt_of_mem_edgewiseSubdivision
   have hmem (w : StandardSimplex ρ) (s : StandardSimplex σ)
       (hs : ∀ i : σ, s.val i = ∑ a : ρ, w.val a • (p a).val i) :
       (e s).val ∈ convexHull ℝ (Set.range v) := by
-    have hweights : ∑ a : ρ, w.val a = 1 := by
-      simpa [Finsupp.sum_fintype] using (Finset.standardSimplexHomeomorph ρ w).total
     have hs' : (e s).val = ∑ a : ρ, w.val a • v a := by
       ext i
       simpa only [Finset.sum_apply, Pi.smul_apply, he, v] using hs i
     rw [hs']
-    exact (convex_convexHull ℝ _).sum_mem (fun a _ => StandardSimplex.nonneg w a) hweights
+    exact (convex_convexHull ℝ _).sum_mem (fun a _ => StandardSimplex.nonneg w a)
+      (Finset.sum_standardSimplex_eq_one w)
       fun a _ => subset_convexHull ℝ _ (Set.mem_range_self a)
   have hdist : dist (e q) (e r) < η := by
     rw [Subtype.dist_eq]
