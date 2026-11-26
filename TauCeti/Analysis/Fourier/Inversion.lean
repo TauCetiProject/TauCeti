@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Fourier.Inversion
 
 import TauCeti.Analysis.Contour.WorkedExamples.HalfDisc.SineIntegral
 import TauCeti.Analysis.Fourier.RiemannLebesgue
+import TauCeti.Analysis.Fourier.SincKernel
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
@@ -202,37 +203,26 @@ private theorem error_integrable {F : Type*} [SeminormedAddCommGroup F] [NormedS
 private theorem window_mass {R : ℝ} (hR : 0 < R) :
     Tendsto (fun T : ℝ ↦ ∫ u in -R..R, Real.sin (2 * π * T * u) / (π * u))
       atTop (nhds 1) := by
-  have H := (TauCeti.Contour.tendsto_integral_sin_mul_div_neg_self_atTop (a := 1) zero_lt_one).comp
-    ((tendsto_id.const_mul_atTop (by positivity : 0 < 2 * π * R)))
-  have H' := H.const_mul π⁻¹
-  simp only [one_mul, inv_mul_cancel₀ Real.pi_ne_zero] at H'
-  apply H'.congr'
-  filter_upwards [eventually_gt_atTop (0 : ℝ)] with T hT
-  dsimp only [Function.comp_apply, id_eq]
-  -- Put both endpoints in the scaled form required by the interval substitution theorem.
-  rw [show 2 * π * R * T = R * (2 * π * T) by ring,
-    show -(R * (2 * π * T)) = (-R) * (2 * π * T) by ring,
-    ← intervalIntegral.smul_integral_comp_mul_right]
-  simp only [smul_eq_mul]
-  rw [← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_const_mul]
+  have H := (TauCeti.tendsto_intervalIntegral_sincKernel hR).const_mul 2
+  norm_num at H
+  refine H.congr (fun T ↦ ?_)
+  have hsym : (∫ u in -R..R, TauCeti.sincKernel T u) =
+      2 * ∫ u in 0..R, TauCeti.sincKernel T u := by
+    simp only [TauCeti.intervalIntegral_sincKernel, mul_zero, Real.sineIntegral_zero,
+      sub_zero, mul_neg, Real.sineIntegral_neg]
+    ring
+  rw [← hsym]
+  rw [TauCeti.intervalIntegral_sincKernel_eq_sin_div, ← intervalIntegral.integral_const_mul]
   apply intervalIntegral.integral_congr
   intro u _
-  dsimp only
-  field_simp
-
-private theorem kernel_eq {u : ℝ} (hu : u ≠ 0) (T : ℝ) :
-    2 * T * Real.sinc (2 * π * T * u) = Real.sin (2 * π * T * u) / (π * u) := by
-  by_cases hT : T = 0
-  · simp [hT]
-  · rw [Real.sinc_of_ne_zero (mul_ne_zero
-      (mul_ne_zero (mul_ne_zero two_ne_zero Real.pi_ne_zero) hT) hu)]
-    field_simp
+  ring
 
 private theorem sinc_kernel_ae_eq (T : ℝ) :
     (fun u : ℝ ↦ (2 * T * Real.sinc (2 * π * T * u) : ℂ)) =ᵐ[volume]
       fun u ↦ (Real.sin (2 * π * T * u) / (π * u) : ℂ) := by
-  filter_upwards [compl_mem_ae_iff.mpr (measure_singleton (0 : ℝ))] with u hu
-  exact_mod_cast kernel_eq (by simpa using hu) T
+  filter_upwards [TauCeti.sincKernel_ae_eq_sin_div T] with u hu
+  rw [TauCeti.sincKernel_apply] at hu
+  exact_mod_cast hu
 
 private theorem integrable_window_kernel (R T : ℝ) :
     Integrable ((Set.Ioc (-R) R).indicator
@@ -269,19 +259,10 @@ private theorem sine_quotient_split {F : Type*} [AddCommGroup F] [Module ℂ F]
 private theorem integrable_raw_kernel {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℂ F]
     {f : ℝ → F} (hf : Integrable f) (x T : ℝ) :
     Integrable (fun u : ℝ ↦ (Real.sin (2 * π * T * u) / (π * u) : ℂ) • f (x - u)) := by
-  have hn : Integrable (fun u ↦ ‖f u‖) :=
-    hf.mono_eNorm hf.aestronglyMeasurable.norm (.of_forall fun _ ↦ by simp)
-  have H : Integrable (fun u : ℝ ↦ (2 * T * Real.sinc (2 * π * T * u) : ℂ) • f (x - u)) := by
-    refine ((hn.comp_sub_left x).const_mul (2 * |T|)).mono_eNorm ?_ ?_
-    · exact (by fun_prop : Continuous (fun u : ℝ ↦
-        (2 * T * Real.sinc (2 * π * T * u) : ℂ))).aestronglyMeasurable.smul
-          (hf.1.comp_measurePreserving (volume.measurePreserving_sub_left x))
-    · filter_upwards with u
-      rw [eNorm_le_iff_norm_le, norm_smul, Real.norm_of_nonneg
-        (mul_nonneg (by positivity) (norm_nonneg _))]
-      apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
-      simp only [norm_mul, Complex.norm_ofNat, norm_real, Real.norm_eq_abs]
-      exact mul_le_of_le_one_right (by positivity) (Real.abs_sinc_le_one _)
+  have H : Integrable (fun u ↦ (2 * T * Real.sinc (2 * π * T * u) : ℂ) • f (x - u)) := by
+    simp_rw [← Complex.ofReal_ofNat, ← Complex.ofReal_mul, Complex.coe_smul]
+    have hi := (volume.measurePreserving_sub_left x).integrable_comp_of_integrable hf
+    simpa only [Function.comp_apply, TauCeti.sincKernel_apply] using hi.sincKernel_smul T
   apply H.congr
   filter_upwards [sinc_kernel_ae_eq T] with u hk
   rw [hk]
@@ -375,9 +356,6 @@ private theorem integral_kernel_eq {f : ℝ → E} (hfd : Differentiable ℝ f)
     simpa only [V, V', Function.comp_def, neg_one_smul] using!
       (hfd (x - u)).hasDerivAt.scomp u ((hasDerivAt_id u).const_sub x)
   have hU (u : ℝ) : ‖U u‖ ≤ M / π := norm_sinc_primitive_le hM T u
-  have hK (u : ℝ) : ‖U' u‖ ≤ 2 * |T| := by
-    simp only [U', norm_mul, Complex.norm_ofNat, norm_real, Real.norm_eq_abs]
-    exact mul_le_of_le_one_right (by positivity) (Real.abs_sinc_le_one _)
   have hVi : Integrable V := hf.comp_sub_left x
   have hV'i : Integrable V' := (hd.comp_sub_left x).neg
   have hUi : Integrable (fun u ↦ U u • V u) := hVi.bdd_smul (φ := U) (M / π)
@@ -386,8 +364,9 @@ private theorem integral_kernel_eq {f : ℝ → E} (hfd : Differentiable ℝ f)
   have hUV' : Integrable (fun u ↦ U u • V' u) := hV'i.bdd_smul (φ := U) (M / π)
     ((continuous_sinc_primitive T).aestronglyMeasurable)
     (Eventually.of_forall hU)
-  have hU'V : Integrable (fun u ↦ U' u • V u) := hVi.bdd_smul (φ := U') (2 * |T|) (by fun_prop)
-    (Eventually.of_forall hK)
+  have hU'V : Integrable (fun u ↦ U' u • V u) := by
+    simp_rw [U', ← Complex.ofReal_ofNat, ← Complex.ofReal_mul, Complex.coe_smul]
+    simpa only [TauCeti.sincKernel_apply] using hVi.sincKernel_smul T
   have heq := integral_bilinear_hasDerivAt_right_eq_neg_left_of_integrable
     (L := ContinuousLinearMap.lsmul ℝ ℂ) (fun u _ ↦ hu u) (fun u _ ↦ hv u) hUV' hU'V hUi
   simp only [ContinuousLinearMap.lsmul_apply] at heq

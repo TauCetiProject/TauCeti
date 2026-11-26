@@ -57,6 +57,42 @@ theorem ContinuousMap.lowerSemicontinuous_eVariationOn
 open Filter Set
 open scoped ENNReal
 
+/-- Bounded variation on a left neighbourhood gives convergence from the left. -/
+theorem BoundedVariationOn.tendsto_leftLim_of_mem_nhdsLT
+    {α E : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
+    [PseudoEMetricSpace E] [CompleteSpace E] {f : α → E} {s : Set α} {x : α}
+    (hf : BoundedVariationOn f s) (hs : s ∈ nhdsWithin x (Iio x)) :
+    Tendsto f (nhdsWithin x (Iio x)) (nhds (f.leftLim x)) := by
+  apply tendsto_leftLim_of_tendsto
+  simpa only [nhdsWithin_inter_of_mem hs] using hf.exists_tendsto_left x
+
+/-- Bounded variation on a right neighbourhood gives convergence from the right. -/
+theorem BoundedVariationOn.tendsto_rightLim_of_mem_nhdsGT
+    {α E : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
+    [PseudoEMetricSpace E] [CompleteSpace E] {f : α → E} {s : Set α} {x : α}
+    (hf : BoundedVariationOn f s) (hs : s ∈ nhdsWithin x (Ioi x)) :
+    Tendsto f (nhdsWithin x (Ioi x)) (nhds (f.rightLim x)) := by
+  apply tendsto_rightLim_of_tendsto
+  simpa only [nhdsWithin_inter_of_mem hs] using hf.exists_tendsto_right x
+
+/-- A function of bounded variation has arbitrarily small variation on sufficiently small
+half-open intervals to the right of a point. -/
+theorem BoundedVariationOn.exists_eVariationOn_Ioc_lt
+    {α E : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α]
+    [TopologicalSpace E] [WeakPseudoEMetricSpace E] {f : α → E} {a b : α} {η : ℝ≥0∞}
+    (hf : BoundedVariationOn f (Ioc a b)) (hab : a < b) (hη : 0 < η) :
+    ∃ d ∈ Ioo a b, eVariationOn f (Ioc a d) < η := by
+  have hne : (nhdsWithin a (Ioi a)).NeBot := nhdsGT_neBot_of_exists_gt ⟨b, hab⟩
+  have hmem : Ioc a b ∈ nhdsWithin a (Ioi a) :=
+    mem_of_superset (Ioo_mem_nhdsGT hab) Ioo_subset_Ioc_self
+  have hle : nhdsWithin a (Ioi a) ≤ nhdsWithin a (Ioc a b) :=
+    le_inf nhdsWithin_le_nhds (le_principal_iff.mpr hmem)
+  have hsmall := hle ((hf.tendsto_eVariationOn_Ioc_zero a).eventually (gt_mem_nhds hη))
+  apply Eventually.exists (f := nhdsWithin a (Ioi a))
+  filter_upwards [hsmall, Ioo_mem_nhdsGT hab] with d hd hdr
+  have heq : Ioc a b ∩ Ioc a d = Ioc a d := by grind
+  exact ⟨hdr, by simpa only [heq] using hd⟩
+
 namespace TauCeti
 
 variable {α : Type*} [LinearOrder α] {X : Type*}

@@ -8,18 +8,25 @@ module
 public import Mathlib.Analysis.MellinTransform
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
 
-import Mathlib.Analysis.BoundedVariation
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import TauCeti.Analysis.BoundedVariation.OneDimensional.Reparam
 import TauCeti.Analysis.Fourier.DirichletJordan
 import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.MellinTransform.TruncatedInversion
+import TauCeti.Topology.EMetricSpace.BoundedVariation
 
 /-!
 # Principal-value Mellin inversion
 
-At a positive point where the input has locally bounded variation, symmetric truncations of
-the inverse Mellin integral converge to the mean of the left and right limits. In logarithmic
-coordinates, this is Dirichlet–Jordan Fourier inversion for an exponentially weighted function.
+Assume the Mellin integral converges absolutely on the vertical line of inversion. At a positive
+point where the input has locally bounded variation, symmetric truncations of the inverse Mellin
+integral converge to the mean of the left and right limits. In logarithmic coordinates, this is
+Dirichlet–Jordan Fourier inversion for an exponentially weighted function, using
+`TauCeti.intervalIntegral_cpow_smul_mellin_eq` for the finite truncations.
+
+## References
+
+* H. L. Montgomery and R. C. Vaughan, *Multiplicative Number Theory I*, §5.1.
 -/
 
 public section
@@ -29,78 +36,43 @@ open scoped FourierTransform
 
 namespace MellinConvergent
 
-private theorem exists_boundedVariationOn_exp_neg_smul
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : ℝ → E} {σ x δ : ℝ} (hx : 0 < x) (hδ : 0 < δ)
-    (hv : BoundedVariationOn f (Icc (x - δ) (x + δ))) :
-    ∃ r > 0, BoundedVariationOn (fun u : ℝ ↦ Real.exp (-σ * u) • f (Real.exp (-u)))
-      (Icc (-Real.log x - r) (-Real.log x + r)) := by
-  let u₀ := -Real.log x
-  let φ := fun u : ℝ ↦ Real.exp (-u)
-  let w := fun u : ℝ ↦ Real.exp (-σ * u)
-  have hφ : φ u₀ = x := by simp [φ, u₀, Real.exp_log hx]
-  have hφc : Continuous φ := by fun_prop
-  have hφa : StrictAnti φ := fun _ _ hab ↦ Real.exp_lt_exp.mpr (neg_lt_neg hab)
-  have hpre : u₀ ∈ φ ⁻¹' Ioo (x - δ) (x + δ) := by
-    rw [mem_preimage, hφ]
-    constructor <;> linarith
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp (isOpen_Ioo.preimage hφc) u₀ hpre
-  let S := Icc (u₀ - r / 2) (u₀ + r / 2)
-  have hmaps : MapsTo φ S (Icc (x - δ) (x + δ)) := by
-    intro u hu
-    apply Ioo_subset_Icc_self (hball ?_)
-    rw [Metric.mem_ball, Real.dist_eq, abs_lt]
-    exact ⟨by linarith [hu.1], by linarith [hu.2]⟩
-  have hcomp : BoundedVariationOn (f ∘ φ) S :=
-    ne_top_of_le_ne_top hv
-      (eVariationOn.comp_le_of_antitoneOn f φ (hφa.antitone.antitoneOn _) hmaps)
-  have hwc : ContDiffOn ℝ 1 w S := (by fun_prop : ContDiff ℝ 1 w).contDiffOn
-  obtain ⟨C, hC⟩ := hwc.exists_lipschitzOnWith one_ne_zero (convex_Icc _ _) isCompact_Icc
-  have hwv := hC.comp_boundedVariationOn (mapsTo_id _) (BoundedVariationOn.id_Icc _ _)
-  exact ⟨r / 2, by positivity, hwv.fun_smul hcomp⟩
-
-private theorem oneSidedLimits_exp_neg_smul
+private theorem tendsto_oneSided_exp_neg_smul
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
     {f : ℝ → E} {σ x δ : ℝ} (hx : 0 < x) (hδ : 0 < δ)
     (hv : BoundedVariationOn f (Icc (x - δ) (x + δ))) :
     let g := fun u : ℝ ↦ Real.exp (-σ * u) • f (Real.exp (-u))
-    g.leftLim (-Real.log x) = Real.exp (σ * Real.log x) • f.rightLim x ∧
-      g.rightLim (-Real.log x) = Real.exp (σ * Real.log x) • f.leftLim x := by
+    Tendsto g (𝓝[<] (-Real.log x)) (𝓝 (Real.exp (σ * Real.log x) • f.rightLim x)) ∧
+      Tendsto g (𝓝[>] (-Real.log x)) (𝓝 (Real.exp (σ * Real.log x) • f.leftLim x)) := by
   let u₀ := -Real.log x
   let φ := fun u : ℝ ↦ Real.exp (-u)
   let w := fun u : ℝ ↦ Real.exp (-σ * u)
   have hφ : φ u₀ = x := by simp [φ, u₀, Real.exp_log hx]
-  have hφc : Continuous φ := by fun_prop
+  have hφc : ContinuousAt φ u₀ := by fun_prop
   have hφa : StrictAnti φ := fun _ _ hab ↦ Real.exp_lt_exp.mpr (neg_lt_neg hab)
   let g := fun u : ℝ ↦ w u • f (φ u)
-  have hφL : Tendsto φ (𝓝[<] u₀) (𝓝[>] x) := tendsto_nhdsWithin_iff.mpr
-    ⟨hφ ▸ hφc.continuousAt.continuousWithinAt,
-      Filter.Eventually.mono self_mem_nhdsWithin (fun _ hu ↦ hφ ▸ hφa hu)⟩
-  have hφR : Tendsto φ (𝓝[>] u₀) (𝓝[<] x) := tendsto_nhdsWithin_iff.mpr
-    ⟨hφ ▸ hφc.continuousAt.continuousWithinAt,
-      Filter.Eventually.mono self_mem_nhdsWithin (fun _ hu ↦ hφ ▸ hφa hu)⟩
-  have hGL : g.leftLim u₀ = w u₀ • f.rightLim x := by
-    obtain ⟨l, hl⟩ := hv.exists_tendsto_right x
-    rw [show Icc (x - δ) (x + δ) ∩ Ioi x = Ioc x (x + δ) by grind,
-      nhdsWithin_Ioc_eq_nhdsGT (by linarith)] at hl
-    rw [rightLim_eq_of_tendsto hl]
-    have hw : Tendsto w (𝓝[<] u₀) (𝓝 (w u₀)) :=
-      (by fun_prop : Continuous w).continuousAt.tendsto.mono_left nhdsWithin_le_nhds
-    exact leftLim_eq_of_tendsto (hw.smul (hl.comp hφL))
-  have hGR : g.rightLim u₀ = w u₀ • f.leftLim x := by
-    obtain ⟨l, hl⟩ := hv.exists_tendsto_left x
-    rw [show Icc (x - δ) (x + δ) ∩ Iio x = Ico (x - δ) x by grind,
-      nhdsWithin_Ico_eq_nhdsLT (by linarith)] at hl
-    rw [leftLim_eq_of_tendsto hl]
-    have hw : Tendsto w (𝓝[>] u₀) (𝓝 (w u₀)) :=
-      (by fun_prop : Continuous w).continuousAt.tendsto.mono_left nhdsWithin_le_nhds
-    exact rightLim_eq_of_tendsto (hw.smul (hl.comp hφR))
+  have hφL : Tendsto φ (𝓝[<] u₀) (𝓝[>] x) := by
+    rw [← hφ]
+    exact hφc.continuousWithinAt.tendsto_nhdsWithin hφa.mapsTo_Iio
+  have hφR : Tendsto φ (𝓝[>] u₀) (𝓝[<] x) := by
+    rw [← hφ]
+    exact hφc.continuousWithinAt.tendsto_nhdsWithin hφa.mapsTo_Ioi
+  have hmem : Icc (x - δ) (x + δ) ∈ 𝓝 x :=
+    Icc_mem_nhds (by linarith) (by linarith)
+  have hl := hv.tendsto_leftLim_of_mem_nhdsLT (mem_nhdsWithin_of_mem_nhds hmem)
+  have hr := hv.tendsto_rightLim_of_mem_nhdsGT (mem_nhdsWithin_of_mem_nhds hmem)
+  have hw : ContinuousAt w u₀ := by fun_prop
+  have hGL : Tendsto g (𝓝[<] u₀) (𝓝 (w u₀ • f.rightLim x)) :=
+    (hw.tendsto.mono_left nhdsWithin_le_nhds).smul (hr.comp hφL)
+  have hGR : Tendsto g (𝓝[>] u₀) (𝓝 (w u₀ • f.leftLim x)) :=
+    (hw.tendsto.mono_left nhdsWithin_le_nhds).smul (hl.comp hφR)
   simpa only [g, φ, w, u₀, neg_mul_neg] using And.intro hGL hGR
 
 /-- **Principal-value Mellin inversion.** If the Mellin integral of `f` converges absolutely
 on the line `Re s = σ` and `f` has bounded variation near `x > 0`, truncating the inverse integral
-symmetrically in height recovers the mean of the one-sided limits at `x`. -/
-theorem tendsto_truncated_mellinInv
+symmetrically in height recovers the mean of the one-sided limits at `x`. The proof transfers
+Dirichlet–Jordan inversion via `TauCeti.intervalIntegral_cpow_smul_mellin_eq`. For the analytic
+argument, see Montgomery and Vaughan, *Multiplicative Number Theory I*, §5.1. -/
+theorem tendsto_truncated_mellinInv_mellin
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
     {f : ℝ → E} {σ x δ : ℝ} (hf : MellinConvergent f σ) (hx : 0 < x) (hδ : 0 < δ)
     (hv : BoundedVariationOn f (Icc (x - δ) (x + δ))) :
@@ -117,16 +89,25 @@ theorem tendsto_truncated_mellinInv
   have hgi : Integrable g := by
     simpa only [g, φ, hw, Complex.coe_smul] using
       (TauCeti.mellinConvergent_iff_integrable_exp_smul f σ).mp hf
-  obtain ⟨r, hr, hgv⟩ := exists_boundedVariationOn_exp_neg_smul hx hδ hv
+  have hφ : φ u₀ = x := by simp [φ, u₀, Real.exp_log hx]
+  have hmem : Icc (x - δ) (x + δ) ∈ 𝓝 (φ u₀) := by
+    rw [hφ]
+    exact Icc_mem_nhds (by linarith) (by linarith)
+  have hφa : StrictAnti φ := fun _ _ hab ↦ Real.exp_lt_exp.mpr (neg_lt_neg hab)
+  obtain ⟨r, hr, hgv⟩ := hv.exists_Icc_smul_comp hmem
+    (t := univ) univ_mem (by fun_prop : ContinuousAt φ u₀)
+    (Or.inr (hφa.antitone.antitoneOn _)) (by fun_prop : ContDiffOn ℝ 1 w univ)
   have H := hgi.tendsto_intervalIntegral_fourierInv_fourier_of_boundedVariationOn
     (x := u₀) hr hgv
-  obtain ⟨hGL, hGR⟩ := oneSidedLimits_exp_neg_smul (σ := σ) hx hδ hv
-  have hGL' : g.leftLim u₀ = w u₀ • f.rightLim x := by simpa [g, φ, w, u₀] using hGL
-  have hGR' : g.rightLim u₀ = w u₀ • f.leftLim x := by simpa [g, φ, w, u₀] using hGR
+  obtain ⟨hGL, hGR⟩ := tendsto_oneSided_exp_neg_smul (σ := σ) hx hδ hv
+  have hGL' : g.leftLim u₀ = w u₀ • f.rightLim x := by
+    simpa [g, φ, w, u₀] using leftLim_eq_of_tendsto hGL
+  have hGR' : g.rightLim u₀ = w u₀ • f.leftLim x := by
+    simpa [g, φ, w, u₀] using rightLim_eq_of_tendsto hGR
   rw [hGL', hGR', ← smul_add, add_comm (f.rightLim x)] at H
-  have hheight : Tendsto (fun T : ℝ ↦ T / (2 * Real.pi)) atTop atTop :=
-    (tendsto_id.const_mul_atTop (by positivity : 0 < (2 * Real.pi)⁻¹)).congr
-      (fun T ↦ by rw [div_eq_mul_inv, mul_comm]; rfl)
+  have hheight : Tendsto (fun T : ℝ ↦ T / (2 * Real.pi)) atTop atTop := by
+    simpa only [div_eq_mul_inv, mul_comm, id_eq] using
+      tendsto_id.const_mul_atTop (by positivity : 0 < (2 * Real.pi)⁻¹)
   have H' := (H.comp hheight).const_smul ((x : ℂ) ^ (-σ : ℂ))
   have hw₀ : (x : ℂ) ^ (-σ : ℂ) * (w u₀ : ℂ) = 1 := by
     rw [Complex.cpow_def_of_ne_zero (ofReal_ne_zero.mpr hx.ne'), ← ofReal_log hx.le,
