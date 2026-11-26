@@ -180,6 +180,7 @@ private lemma exists_min_eq_gaussValuation {p : R[X]} (hp : p ≠ 0) :
 
 /-- **Gauss's lemma for valuations**: the Gauss valuation of a product of polynomials is the
 product of their Gauss valuations. -/
+@[simp]
 theorem gaussValuation_mul (p q : R[X]) :
     (p * q).gaussValuation v r = p.gaussValuation v r * q.gaussValuation v r := by
   have hterm (x : ℕ × ℕ) : v (p.coeff x.1 * q.coeff x.2) * r ^ (x.1 + x.2) =
@@ -218,7 +219,9 @@ theorem gaussValuation_mul (p q : R[X]) :
       = v ((p * q).coeff (i₀ + j₀)) * r ^ (i₀ + j₀) := by rw [hcoeff, hlead]
     _ ≤ (p * q).gaussValuation v r := le_gaussValuation v r (p * q) (i₀ + j₀)
 
-/-- Scaling by a constant scales the Gauss valuation by `v a`. -/
+/-- Scaling by a constant scales the Gauss valuation by `v a`. Not tagged `@[simp]` because
+`gaussValuation_mul` and `gaussValuation_C` already simplify `(C a * p).gaussValuation v r`
+(`simpNF`). -/
 theorem gaussValuation_C_mul (a : R) (p : R[X]) :
     (C a * p).gaussValuation v r = v a * p.gaussValuation v r := by
   rw [gaussValuation_mul, gaussValuation_C]
