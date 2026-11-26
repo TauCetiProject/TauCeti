@@ -68,19 +68,13 @@ namespace Matrix
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
-/-- If `|det A| = 1`, then `A Aᴴ` has determinant one. -/
-private theorem det_mul_star_eq_one {A : Matrix (Fin 2) (Fin 2) 𝕜} (hA : ‖A.det‖ = 1) :
-    (A * star A).det = 1 := by
-  rw [det_mul, star_eq_conjTranspose, det_conjTranspose, RCLike.star_def, RCLike.mul_conj, hA]
-  simp
-
 /-- **The left positive factor of a matrix of determinant of norm one.** If `|det A| = 1`, as for
 `A ∈ SL(2, 𝕜)`, then `√(A Aᴴ) = (A Aᴴ + 1) / √(tr (A Aᴴ) + 2)`. -/
 theorem sqrt_mul_star_fin_two_of_norm_det_eq_one {A : Matrix (Fin 2) (Fin 2) 𝕜}
     (hA : ‖A.det‖ = 1) :
     CFC.sqrt (A * star A) = (√(RCLike.re (A * star A).trace + 2))⁻¹ • (A * star A + 1) :=
   (nonneg_iff_posSemidef.1 (mul_star_self_nonneg A)).sqrt_fin_two_of_det_eq_one
-    (det_mul_star_eq_one hA)
+    (by rw [det_mul_star, hA, RCLike.ofReal_one, one_pow])
 
 /-- **The right positive factor of a matrix of determinant of norm one.** If `|det A| = 1`, as for
 `A ∈ SL(2, 𝕜)`, then `√(Aᴴ A) = (Aᴴ A + 1) / √(tr (Aᴴ A) + 2)`. -/
@@ -111,16 +105,17 @@ private theorem mul_star_add_one_mul_add_star_inv (g : SpecialLinearGroup (Fin 2
   have hstar : star A * star B = 1 := by
     rw [← star_mul, ← coe_mul, inv_mul_cancel, coe_one, star_one]
   have h := sq_eq_trace_smul_sub_det_smul_one_fin_two (A * star A)
-  rw [det_mul_star_eq_one (by rw [g.property, norm_one]), one_smul, sq] at h
+  rw [det_mul_star, g.norm_det_eq_one, RCLike.ofReal_one, one_pow, one_smul, sq] at h
   -- `A Aᴴ A = (A Aᴴ) (A Aᴴ) Bᴴ = tr (A Aᴴ) A - Bᴴ`.
-  have hCH : A * star A * A = (A * star A).trace • A - star B := by
-    calc A * star A * A = A * star A * A * (star A * star B) := by rw [hstar, mul_one]
-      _ = (A * star A) * (A * star A) * star B := by simp only [Matrix.mul_assoc]
+  have hCH : A * (star A * A) = (A * star A).trace • A - star B := by
+    calc A * (star A * A) = A * star A * (A * star A) * star B := by
+          simp only [Matrix.mul_assoc, hstar, Matrix.mul_one]
       _ = (A * star A).trace • A - star B := by
-        rw [h, Matrix.sub_mul, Matrix.one_mul, smul_mul_assoc, Matrix.mul_assoc, hstar,
-          Matrix.mul_one]
-  rw [Matrix.add_mul, Matrix.mul_add, Matrix.mul_add, hCH, Matrix.mul_assoc, hstar,
-    Matrix.one_mul, Matrix.one_mul, Matrix.mul_one]
+        rw [h]
+        simp only [Matrix.sub_mul, smul_mul_assoc, Matrix.mul_assoc, hstar, Matrix.mul_one,
+          Matrix.one_mul]
+  simp only [Matrix.add_mul, Matrix.mul_add, Matrix.mul_assoc, hCH, hstar, Matrix.mul_one,
+    Matrix.one_mul]
   module
 
 /-- **The unitary factor of `g ∈ SL(2, 𝕜)`.** The polar retraction `SL(2, 𝕜) → SU(2)` sends `g` to
@@ -132,7 +127,7 @@ theorem coe_polarRetraction_fin_two (g : SpecialLinearGroup (Fin 2) 𝕜) :
         ((g : Matrix (Fin 2) (Fin 2) 𝕜) + star ((g⁻¹ : SpecialLinearGroup (Fin 2) 𝕜) :
           Matrix (Fin 2) (Fin 2) 𝕜)) := by
   set A : Matrix (Fin 2) (Fin 2) 𝕜 := (g : Matrix (Fin 2) (Fin 2) 𝕜)
-  have hP := Matrix.sqrt_mul_star_fin_two_of_norm_det_eq_one (A := A) (by rw [g.property, norm_one])
+  have hP := Matrix.sqrt_mul_star_fin_two_of_norm_det_eq_one (A := A) g.norm_det_eq_one
   have hid := mul_star_add_one_mul_add_star_inv g
   obtain ⟨t, ht0, ht⟩ := RCLike.nonneg_iff_exists_ofReal.mp
     (nonneg_iff_posSemidef.1 (mul_star_self_nonneg A)).trace_nonneg

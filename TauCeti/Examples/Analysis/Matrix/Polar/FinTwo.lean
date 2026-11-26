@@ -76,8 +76,7 @@ theorem sqrt_trace_diagTwoHalf_add_two :
 theorem sqrt_mul_star_diagTwoHalf :
     CFC.sqrt ((diagTwoHalf 𝕜 : Matrix (Fin 2) (Fin 2) 𝕜) *
       star (diagTwoHalf 𝕜 : Matrix (Fin 2) (Fin 2) 𝕜)) = !![2, 0; 0, 1 / 2] := by
-  rw [sqrt_mul_star_fin_two_of_norm_det_eq_one
-    (by rw [(diagTwoHalf 𝕜).property, norm_one]),
+  rw [sqrt_mul_star_fin_two_of_norm_det_eq_one (diagTwoHalf 𝕜).norm_det_eq_one,
     sqrt_trace_diagTwoHalf_add_two, diagTwoHalf_mul_star]
   ext i j
   fin_cases i <;> fin_cases j <;> norm_num [RCLike.real_smul_eq_coe_mul,
