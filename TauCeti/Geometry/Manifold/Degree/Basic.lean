@@ -260,6 +260,32 @@ theorem degree_eq_zero_of_not_exists (h : ¬∃ y, IsRegularValue I J f y) :
     degree o o' f = 0 :=
   dite_eq_right h
 
+/-- Two maps with the same regular values and the same `degreeAtRegularValue` at every regular
+value have the same `degree`. -/
+theorem degree_congr {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [FiniteDimensional ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+    [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M']
+    {o₀ : Manifold.Orientation I' M' ι} {g : M' → N}
+    (hr : ∀ y, IsRegularValue I' J g y ↔ IsRegularValue I J f y)
+    (hd : ∀ y, IsRegularValue I J f y →
+      degreeAtRegularValue o₀ o' g y = degreeAtRegularValue o o' f y) :
+    degree o₀ o' g = degree o o' f := by
+  classical
+  have hp : (fun y ↦ IsRegularValue I' J g y) = fun y ↦ IsRegularValue I J f y :=
+    funext fun _ ↦ propext (hr _)
+  by_cases h : ∃ y, IsRegularValue I J f y
+  · have h' : ∃ y, IsRegularValue I' J g y := hp ▸ h
+    have hchoose :
+        (if h₁ : ∃ y, IsRegularValue I' J g y then some h₁.choose else none) =
+          (if h₂ : ∃ y, IsRegularValue I J f y then some h₂.choose else none) :=
+      congrArg (fun P : N → Prop ↦ if h : ∃ y, P y then some h.choose else none) hp
+    rw [dite_eq_left h', dite_eq_left h] at hchoose
+    rw [degree_eq_degreeAtRegularValue_choose h', degree_eq_degreeAtRegularValue_choose h,
+      Option.some.inj hchoose]
+    exact hd h.choose h.choose_spec
+  · have h' : ¬∃ y, IsRegularValue I' J g y := fun ⟨y, hy⟩ ↦ h ⟨y, (hr y).1 hy⟩
+    rw [degree_eq_zero_of_not_exists h', degree_eq_zero_of_not_exists h]
+
 /-- A map to an empty manifold has degree `0`, since it has no regular value. -/
 @[simp]
 theorem degree_of_isEmpty [IsEmpty N] : degree o o' f = 0 :=

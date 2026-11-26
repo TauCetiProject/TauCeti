@@ -232,13 +232,8 @@ private theorem localIndex_toHomologicalOrientation_of_map_orientationAt_eq (f :
   set χ := (chartAt H' (f x)).transHomeomorph J.toHomeomorph
   set φ' := (chartAt H x).transHomeomorph (I.toHomeomorph.trans L_E.toHomeomorph)
   set χ' := (chartAt H' (f x)).transHomeomorph (J.toHomeomorph.trans L_F.toHomeomorph)
-  have hfd : HasFDerivAt (χ ∘ f ∘ φ.symm) f' (φ x) := by
-    have h := (mdifferentiableAt_of_isInvertible_mfderiv hf).hasMFDerivAt.2
-    have hext : writtenInExtChartAt I J x f = χ ∘ f ∘ φ.symm := by
-      ext z
-      simp [writtenInExtChartAt, φ, χ]
-    have hx : extChartAt I x x = φ x := by simp [φ]
-    rwa [hext, I.range_eq_univ, hasFDerivWithinAt_univ, hx] at h
+  have hfd : HasFDerivAt (χ ∘ f ∘ φ.symm) f' (φ x) :=
+    (mdifferentiableAt_of_isInvertible_mfderiv hf).hasMFDerivAt.hasFDerivAt_chartAt_transHomeomorph
   have hgfd : HasFDerivAt (χ' ∘ f ∘ φ'.symm)
       (L_F.toContinuousLinearMap ∘L f' ∘L L_E.symm.toContinuousLinearMap) (φ' x) := by
     have h := (φ.hasFDerivAt_transHomeomorph_iff χ L_E L_F (f := f) (x := x) (f' := f')).2 hfd

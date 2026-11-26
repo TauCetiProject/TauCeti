@@ -98,21 +98,9 @@ theorem degree_comp_diffeomorph_of_isOrientationPreservingAt
     {o' : Manifold.Orientation I' M' ι} {o : Manifold.Orientation I M ι}
     (oN : Manifold.Orientation J N ι) (ho : ∀ x, IsOrientationPreservingAt o' o Φ x)
     (f : M → N) :
-    degree o' oN (f ∘ Φ) = degree o oN f := by
-  have hp : (fun y ↦ IsRegularValue I' J (f ∘ Φ) y) = fun y ↦ IsRegularValue I J f y :=
-    funext fun _ ↦ propext (Φ.isRegularValue_comp_iff hn)
-  by_cases h : ∃ y, IsRegularValue I J f y
-  · have h' : ∃ y, IsRegularValue I' J (f ∘ Φ) y := hp ▸ h
-    have hchoose {P Q : N → Prop} (hPQ : P = Q) (hP : ∃ y, P y) (hQ : ∃ y, Q y) :
-        hP.choose = hQ.choose := by
-      subst hPQ
-      rfl
-    rw [degree_eq_degreeAtRegularValue_choose h', degree_eq_degreeAtRegularValue_choose h,
-      Φ.degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt hn oN ho,
-      hchoose hp h' h]
-  · have h' : ¬∃ y, IsRegularValue I' J (f ∘ Φ) y := fun ⟨y, hy⟩ ↦
-      h ⟨y, (Φ.isRegularValue_comp_iff hn).1 hy⟩
-    rw [degree_eq_zero_of_not_exists h', degree_eq_zero_of_not_exists h]
+    degree o' oN (f ∘ Φ) = degree o oN f :=
+  degree_congr (fun _ ↦ Φ.isRegularValue_comp_iff hn)
+    fun y _ ↦ Φ.degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt hn oN ho f y
 
 /-- Precomposing with an orientation-reversing `C^n` diffeomorphism (`n ≠ 0`) negates `degree`. -/
 theorem degree_comp_diffeomorph_of_isOrientationReversingAt

@@ -497,8 +497,8 @@ theorem _root_.OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign
     {f' : E →L[ℝ] E} (hf : HasFDerivAt (χ ∘ φ.symm) f' (φ a)) (hdet : f'.det ≠ 0) :
     (χ.localOrientationOfOrientedChart haχ ω hE).val =
       (SignType.sign f'.det : ℤ) • (φ.localOrientationOfOrientedChart haφ ω hE).val := by
-  have hm := (localHomologyMap_id (ModuleCat.of ℤ (ULift.{w} ℤ)) (S := {a}) (T := {a})
-      subset_rfl (n + 1)).trans (localHomologyRestriction_refl _ {a} (n + 1))
+  have hm := localHomologyMap_eq_id (ModuleCat.of ℤ (ULift.{w} ℤ)) (j := .id M) rfl (S := {a})
+    subset_rfl (n + 1)
   have h : (φ.localOrientationOfOrientedChart haφ ω hE).val =
       (SignType.sign f'.det : ℤ) • (χ.localOrientationOfOrientedChart haχ ω hE).val := by
     have h1 := (ConcreteCategory.congr_hom hm _).symm.trans
@@ -1099,18 +1099,8 @@ theorem comap_toHomologicalOrientation
   have hcard : Fintype.card (Fin (n + 1)) = finrank ℝ E := by simp [hE]
   have hmd : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) j x :=
     mdifferentiableAt_of_isInvertible_mfderiv (hj' x).isInvertible_mfderiv
-  have hdiff : DifferentiableAt ℝ (chartAt E (j x) ∘ j ∘ (chartAt E x).symm) (chartAt E x x) := by
-    have h := hmd.hasMFDerivAt.right.differentiableWithinAt
-    simpa only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm,
-      modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.id_comp, Function.comp_id,
-      range_id, differentiableWithinAt_univ] using h
-  have hmf : f' = fderiv ℝ (chartAt E (j x) ∘ j ∘ (chartAt E x).symm) (chartAt E x x) := by
-    have h := hmd.mfderiv_eq_fderiv_extChartAt_conj rfl
-    simp only [extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
-      modelWithCornersSelf_coe_symm, Function.id_comp, Function.comp_id] at h
-    exact h
   have hfd : HasFDerivAt (chartAt E (j x) ∘ j ∘ (chartAt E x).symm) f' (chartAt E x x) :=
-    hmf ▸ hdiff.hasFDerivAt
+    hmd.hasMFDerivAt.hasFDerivAt_chartAt
   have hdet : f'.det ≠ 0 := by
     rw [← he']
     exact (LinearEquiv.isUnit_det' e'.toLinearEquiv).ne_zero

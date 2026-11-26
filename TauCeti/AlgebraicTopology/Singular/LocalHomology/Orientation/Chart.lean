@@ -320,6 +320,25 @@ section LinearIsometry
 variable {E F : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
+private theorem snd_ofSubsetMap_comp_complSingletonHomotopyEquivSphere_of_eq
+    (e : E ≃ₗᵢ[ℝ] F) (g : C(E, F)) (hg : ∀ x, g x = e x) (p : E) (q : F) (hq : e p = q)
+    (hB : Set.MapsTo (TopCat.ofHom g) ({p}ᶜ : Set (TopCat.of E)) ({q}ᶜ : Set (TopCat.of F))) :
+    TopPair.Hom.snd (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of F)
+        (TopCat.ofHom g) (B := {p}ᶜ) (B' := {q}ᶜ) hB) ≫
+      TopCat.ofHom (complSingletonHomotopyEquivSphere q).toFun =
+    TopCat.ofHom (complSingletonHomotopyEquivSphere p).toFun ≫
+      TopCat.ofHom ⟨e.toLinearIsometry.unitSphereMap,
+        e.toLinearIsometry.continuous_unitSphereMap⟩ := by
+  subst q
+  ext z
+  refine (congrArg Subtype.val (ConcreteCategory.comp_apply _ _ z)).trans ?_
+  refine (coe_complSingletonHomotopyEquivSphere_apply (e p) _).trans ?_
+  refine Eq.trans ?_ (congrArg Subtype.val (ConcreteCategory.comp_apply _ _ z)).symm
+  simp only [TopPair.ofSubsetMap_snd_apply, TopCat.hom_ofHom, ContinuousMap.coe_mk, hg,
+    LinearIsometry.coe_unitSphereMap_apply, LinearIsometryEquiv.coe_toLinearIsometry,
+    ← map_sub, e.norm_map, ← map_smul]
+  exact (congrArg e (coe_complSingletonHomotopyEquivSphere_apply p z)).symm
+
 /-- Applying a linear isometry equivalence followed by radial projection about `e p` is radial
 projection about `p` followed by the restriction of `e` to the unit spheres. -/
 theorem
@@ -331,17 +350,9 @@ theorem
       TopCat.ofHom (complSingletonHomotopyEquivSphere q).toFun =
     TopCat.ofHom (complSingletonHomotopyEquivSphere p).toFun ≫
       TopCat.ofHom ⟨e.toLinearIsometry.unitSphereMap,
-        e.toLinearIsometry.continuous_unitSphereMap⟩ := by
-  subst q
-  ext z
-  -- The subspace of `TopPair.ofSubset` is the subtype only after unfolding the pair.
-  erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
-  refine (coe_complSingletonHomotopyEquivSphere_apply (e p) _).trans ?_
-  -- Unfold `TopPair.ofSubset` on the subspace component to apply `TopPair.ofSubsetMap_snd_apply`.
-  erw [TopPair.ofSubsetMap_snd_apply]
-  simp only [TopCat.hom_ofHom, ContinuousMap.coe_mk, LinearIsometry.coe_unitSphereMap_apply,
-    LinearIsometryEquiv.coe_toLinearIsometry, ← map_sub, e.norm_map, ← map_smul]
-  exact (congrArg e (coe_complSingletonHomotopyEquivSphere_apply p z)).symm
+        e.toLinearIsometry.continuous_unitSphereMap⟩ :=
+  snd_ofSubsetMap_comp_complSingletonHomotopyEquivSphere_of_eq e ⟨e, e.continuous⟩
+    (fun _ ↦ rfl) p q hq _
 
 /-- A linear isometry `f : E ≃ₗᵢ[ℝ] F` intertwines the oriented local homology isomorphisms of
 the identity charts. -/
@@ -365,10 +376,12 @@ theorem singularHomologyComplSingletonIsoOfOrientation_refl_hom_naturality
     singularHomologyComplSingletonIsoOfOrientation_refl_hom,
     localHomologyMap_def, ← TopPair.reducedSingularHomologyδ_naturality_assoc]
   congr 1
-  -- The composite is only type-correct after unfolding the subspace of the pair and `toHomeomorph`.
-  erw [← Functor.map_comp_assoc,
-    f.snd_ofSubsetMap_comp_complSingletonHomotopyEquivSphere p (f p) rfl,
-    Functor.map_comp_assoc]
+  refine (Category.assoc _ _ _).symm.trans ?_
+  refine (congrArg (· ≫ _) ((Functor.map_comp _ _ _).symm.trans
+    ((congrArg ((reducedSingularHomologyFunctor R n).map ·)
+      (snd_ofSubsetMap_comp_complSingletonHomotopyEquivSphere_of_eq f (f.toHomeomorph : C(E, F))
+        (fun _ ↦ rfl) p (f p) rfl _)).trans (Functor.map_comp _ _ _)))).trans ?_
+  refine (Category.assoc _ _ _).trans ?_
   congr 1
   exact reducedSingularHomologySphereIsoOfOrientation_hom_naturality R oE oF f ho hE
 

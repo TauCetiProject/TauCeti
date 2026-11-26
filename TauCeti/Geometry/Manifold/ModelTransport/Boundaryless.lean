@@ -93,6 +93,44 @@ theorem _root_.OpenPartialHomeomorph.symm_trans_mem_contDiffGroupoid_iff_of_exte
   -- An extended transition is I ∘ (d ∘ c.symm) ∘ I.symm, in both directions.
   rfl
 
+/-- On boundaryless manifolds, if `f : M → N` has manifold derivative `f'` at `x`, then its
+coordinate expression in the preferred charts composed with `I.toHomeomorph` and `J.toHomeomorph`
+has Fréchet derivative `f'` at the chart image of `x`. -/
+theorem _root_.HasMFDerivAt.hasFDerivAt_chartAt_transHomeomorph
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} [I.Boundaryless] [J.Boundaryless]
+    [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace H' N] {f : M → N} {x : M}
+    {f' : TangentSpace I x →L[𝕜] TangentSpace J (f x)} (hf : HasMFDerivAt I J f x f') :
+    HasFDerivAt
+      (((chartAt H' (f x)).transHomeomorph J.toHomeomorph) ∘ f ∘
+        ((chartAt H x).transHomeomorph I.toHomeomorph).symm)
+      f' (((chartAt H x).transHomeomorph I.toHomeomorph) x) := by
+  have h := hf.2
+  have hext : writtenInExtChartAt I J x f =
+      ((chartAt H' (f x)).transHomeomorph J.toHomeomorph) ∘ f ∘
+        ((chartAt H x).transHomeomorph I.toHomeomorph).symm := by
+    ext z
+    simp [writtenInExtChartAt]
+  have hx : extChartAt I x x = ((chartAt H x).transHomeomorph I.toHomeomorph) x := by simp
+  rwa [hext, I.range_eq_univ, hasFDerivWithinAt_univ, hx] at h
+
+/-- On manifolds modelled on normed spaces `E` and `E'`, if `f : M → N` has manifold derivative
+`f'` at `x`, then `chartAt E' (f x) ∘ f ∘ (chartAt E x).symm` has Fréchet derivative `f'` at
+`chartAt E x x`. -/
+theorem _root_.HasMFDerivAt.hasFDerivAt_chartAt
+    {E' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [TopologicalSpace N] [ChartedSpace E' N] [ChartedSpace E M] {f : M → N} {x : M}
+    {f' : TangentSpace 𝓘(𝕜, E) x →L[𝕜] TangentSpace 𝓘(𝕜, E') (f x)}
+    (hf : HasMFDerivAt 𝓘(𝕜, E) 𝓘(𝕜, E') f x f') :
+    HasFDerivAt (chartAt E' (f x) ∘ f ∘ (chartAt E x).symm) f' (chartAt E x x) := by
+  have h := hf.2
+  have hext : writtenInExtChartAt 𝓘(𝕜, E) 𝓘(𝕜, E') x f =
+      chartAt E' (f x) ∘ f ∘ (chartAt E x).symm := by
+    ext z
+    simp [writtenInExtChartAt]
+  have hx : extChartAt 𝓘(𝕜, E) x x = chartAt E x x := by simp
+  rwa [hext, (𝓘(𝕜, E)).range_eq_univ, hasFDerivWithinAt_univ, hx] at h
+
 end ExtendedCharts
 
 /-- A copy of a manifold with inherited topology and vector-space-valued atlas constructors.

@@ -389,6 +389,15 @@ lemma localHomologyMap_id {S T : Set M} (h : ContinuousMap.id M ⁻¹' T ⊆ S) 
   rw [localHomologyMap, localHomologyRestriction_def]
   exact congrArg (TopPair.singularHomologyMap · R k) (TopPair.hom_ext_of_fst _ (rfl))
 
+/-- A continuous map equal to the identity induces the identity on local homology over the same
+set. -/
+lemma localHomologyMap_eq_id {j : C(M, M)} (hj : j = ContinuousMap.id M) {S : Set M}
+    (h : j ⁻¹' S ⊆ S) (k : ℕ) :
+    localHomologyMap R j h k = 𝟙 _ :=
+  (localHomologyMap_congr R hj h k).trans
+    ((localHomologyMap_id R (S := S) (T := S) subset_rfl k).trans
+      (localHomologyRestriction_refl R S k))
+
 /-- The maps of local homology are functorial. -/
 @[reassoc (attr := simp)]
 lemma localHomologyMap_comp (j' : C(N, P)) {S : Set M} {T : Set N} {W : Set P}
@@ -443,6 +452,18 @@ theorem localHomologyMap_eq_of_homotopy {j₀ j₁ : C(M, N)} (F : j₀.Homotopy
     (B := (Sᶜ : Set (TopCat.of M))) (B' := (Tᶜ : Set (TopCat.of N))) F
     fun τ y hy ↦ hF τ y hy).congr_singularHomologyMap R k
 
+private lemma hom_fst_ofSubsetIso_comp_excisionMap_apply
+    {X : Type w} [TopologicalSpace X] {A B : Set (TopCat.of X)}
+    {S : Type w} [TopologicalSpace S] (e : S ≃ₜ A) {C : Set (TopCat.of S)}
+    (h : ∀ x, x ∈ C ↔ e x ∈ (Subtype.val ⁻¹' B : Set (TopCat.of A)))
+    (z : (TopPair.ofSubset C).fst) :
+    TopPair.Hom.fst ((TopPair.ofSubsetIso (X := TopCat.of S) (Y := TopCat.of A) e h).hom ≫
+      TopPair.excisionMap (X := TopCat.of X) A B) z = (e z).val := by
+  rw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply, TopPair.excisionMap_fst_apply,
+    TopPair.ofSubsetIso_hom]
+  exact congrArg Subtype.val
+    (TopPair.ofSubsetMap_fst_apply (X := TopCat.of S) (Y := TopCat.of A) (TopCat.ofHom e) _ z)
+
 private theorem interPairMap_comp_ofSubsetIso_chart
     {E F : Type w} [TopologicalSpace E] [TopologicalSpace F]
     (f : C(E, F)) (φ : OpenPartialHomeomorph M E) (ψ : OpenPartialHomeomorph N F)
@@ -464,18 +485,16 @@ private theorem interPairMap_comp_ofSubsetIso_chart
         ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 hf)) := by
   apply TopPair.hom_ext_of_fst
   ext z
-  simp only [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply]
-  -- `TopPair.ofSubset` and `TopPair.interPair` expose their ambient spaces only after unfolding.
-  erw [TopPair.excisionMap_fst_apply, TopPair.excisionMap_fst_apply,
-    TopPair.ofSubsetIso_hom, TopPair.ofSubsetIso_hom,
-    TopPair.ofSubsetMap_fst_apply, TopPair.ofSubsetMap_fst_apply,
-    TopPair.ofSubsetMap_fst_apply]
-  simp only [TopCat.hom_ofHom, ContinuousMap.coe_ofClass]
-  erw [OpenPartialHomeomorph.toHomeomorphSourceTarget_apply_coe,
-    OpenPartialHomeomorph.toHomeomorphSourceTarget_apply_coe,
-    TopPair.interPairMap_fst_apply]
-  simp only [TopCat.hom_ofHom]
-  exact hφψ z.val z.property
+  conv_lhs => rw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply]
+  conv_rhs =>
+    rw [← Category.assoc, TopPair.Hom.fst_comp, ConcreteCategory.comp_apply,
+      TopPair.ofSubsetMap_fst_apply]
+  refine (hom_fst_ofSubsetIso_comp_excisionMap_apply ψ.toHomeomorphSourceTarget _ _).trans ?_
+  refine Eq.trans ?_
+    (congrArg f (hom_fst_ofSubsetIso_comp_excisionMap_apply φ.toHomeomorphSourceTarget _ _)).symm
+  refine ((ψ.toHomeomorphSourceTarget_apply_coe _).trans ?_).trans
+    ((hφψ z.val z.property).trans (congrArg f (φ.toHomeomorphSourceTarget_apply_coe z).symm))
+  exact congrArg ψ (TopPair.interPairMap_fst_apply (TopCat.ofHom j) _ _ z)
 
 /-- Naturality of `TauCeti.singularHomologyComplSingletonIsoOfChart` under continuous maps
 `j : C(M, N)` and `f : C(E, F)` intertwining charts `φ` and `ψ` on `φ.source`. -/

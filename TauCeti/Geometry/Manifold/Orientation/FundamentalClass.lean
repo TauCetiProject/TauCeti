@@ -298,13 +298,8 @@ private theorem fundamentalClassSelf_eq_toHomologicalOrientation
       (Φ.toHomeomorph : C(M, BoundarylessModel I' M)) = ContinuousMap.id M := by
     ext z
     simp
-  have hmap : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
-      ((Φ.symm.toHomeomorph : C(BoundarylessModel I' M, M)).comp
-        (Φ.toHomeomorph : C(M, BoundarylessModel I' M))) (S := {x}) (T := {x})
-      (by rw [hid]; exact subset_rfl) (n + 1) = 𝟙 _ :=
-    (localHomologyMap_congr _ hid _ _).trans
-      ((localHomologyMap_id _ (S := {x}) (T := {x}) subset_rfl _).trans
-        (localHomologyRestriction_refl _ {x} (n + 1)))
+  have hmap := localHomologyMap_eq_id (ModuleCat.of ℤ (ULift.{0} ℤ)) hid (S := {x})
+    (by rw [hid]; exact subset_rfl) (n + 1)
   exact (ConcreteCategory.congr_hom hmap _).trans (ModuleCat.id_apply _ _)
 
 end SelfModelInnerProduct
