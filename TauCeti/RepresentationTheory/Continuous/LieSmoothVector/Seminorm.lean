@@ -36,7 +36,7 @@ The word seminorms and these properties are the case of the norm on the smooth v
 `D i = dπ(X_i)` of the word seminorms `P^D_k(x) = ∑_{|w| ≤ k} p(D_w x)` of a seminorm `p` along a
 family `D` of operators on a module (`Seminorm.endWordSeminorm`, in
 `TauCeti.Analysis.Normed.Module.Seminorm.Word`). Likewise the Sobolev seminorms are the Sobolev
-seminorms `Seminorm.endSobolevSeminorm` along the operators `dπ(X_i)` (in
+seminorms `LinearMap.endSobolevSeminorm` along the operators `dπ(X_i)` (in
 `TauCeti.Analysis.Normed.Module.Seminorm.Sobolev`).
 
 ## Main definitions
@@ -260,13 +260,13 @@ variable (I π) in
 the ordered monomials `X^α = X₁^{α₁} ⋯ X_m^{α_m}` of degree at most `k`. -/
 def sobolevSeminorm (X : Fin m → LeftInvariantDerivation I G) (k : ℕ) :
     Seminorm 𝕜 (lieSmoothVectors I π) :=
-  Seminorm.endSobolevSeminorm (lieSmoothVectors I π).subtype
+  LinearMap.endSobolevSeminorm (lieSmoothVectors I π).subtype
     (fun i ↦ lieSmoothVectorsDerivative I π (X i)) k
 
 /-- The Sobolev seminorm along `X` is the Sobolev seminorm along the operators `dπ(X_i)`. -/
 theorem sobolevSeminorm_eq_endSobolevSeminorm (X : Fin m → LeftInvariantDerivation I G) (k : ℕ) :
     sobolevSeminorm I π X k =
-      Seminorm.endSobolevSeminorm (lieSmoothVectors I π).subtype
+      LinearMap.endSobolevSeminorm (lieSmoothVectors I π).subtype
         (fun i ↦ lieSmoothVectorsDerivative I π (X i)) k :=
   (rfl)
 
@@ -275,7 +275,7 @@ theorem sobolevSeminorm_apply (X : Fin m → LeftInvariantDerivation I G) (k : �
     (v : lieSmoothVectors I π) :
     sobolevSeminorm I π X k v =
       √(∑ α : SobolevIndex m k, ‖(wordAction I π X (monomialWord α.exponent) v : V)‖ ^ 2) :=
-  Seminorm.endSobolevSeminorm_apply _ _ k v
+  LinearMap.endSobolevSeminorm_apply _ _ k v
 
 /-- **The Sobolev seminorms of the trivial representation are the norm**: `Q_k(v) = ‖v‖` for every
 `k`, since only the constant monomial acts nontrivially. -/
@@ -298,6 +298,6 @@ theorem sobolevSeminorm_trivial (X : Fin m → LeftInvariantDerivation I G) (k :
 the `ℓ²` norm of a finite family is at most its `ℓ¹` norm. -/
 theorem sobolevSeminorm_le_wordSeminorm (X : Fin m → LeftInvariantDerivation I G) (k : ℕ)
     (v : lieSmoothVectors I π) : sobolevSeminorm I π X k v ≤ wordSeminorm I π X k v :=
-  Seminorm.endSobolevSeminorm_le_endWordSeminorm _ _ k v
+  LinearMap.endSobolevSeminorm_le_endWordSeminorm _ _ k v
 
 end ContRepresentation

@@ -31,7 +31,7 @@ in any algebra receiving `U(L)`, the image of a word of length at most `k` is a 
 images of the ordered monomials of degree at most `k`
 (`TauCeti.UniversalEnvelopingAlgebra.prod_map_mem_span_monomialWord`). For the operators
 `dπ(X_i)` the comparison of the word and Sobolev seminorms along a family of operators
-(`Seminorm.exists_endWordSeminorm_le_mul_endSobolevSeminorm`) then gives the bound.
+(`LinearMap.exists_endWordSeminorm_le_mul_endSobolevSeminorm`) then gives the bound.
 
 ## Main results
 
@@ -138,7 +138,7 @@ theorem exists_wordSeminorm_le_mul_sobolevSeminorm (X : Fin m → LeftInvariantD
     ∃ C : ℝ, ∀ v : lieSmoothVectors I π,
       wordSeminorm I π X k v ≤ C * sobolevSeminorm I π X k v := by
   simp only [wordSeminorm_eq_endWordSeminorm, sobolevSeminorm_eq_endSobolevSeminorm]
-  refine Seminorm.exists_endWordSeminorm_le_mul_endSobolevSeminorm _ _ fun _ hw ↦
+  refine LinearMap.exists_endWordSeminorm_le_mul_endSobolevSeminorm _ _ fun _ hw ↦
     Submodule.span_le_restrictScalars ℝ 𝕜 _ ?_
   simpa only [lieSmoothVectorsEnvelopingAction_ι] using
     UniversalEnvelopingAlgebra.prod_map_mem_span_monomialWord ℝ

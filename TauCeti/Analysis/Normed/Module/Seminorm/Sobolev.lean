@@ -32,16 +32,16 @@ the spanning half of the Poincaré–Birkhoff–Witt theorem.
 ## Main definitions
 
 * `TauCeti.SobolevIndex m k`: the exponent vectors `α : Fin m → ℕ` with `|α| ≤ k`.
-* `Seminorm.endSobolevSeminorm f D k`: the Sobolev seminorm `Q^D_k`.
+* `LinearMap.endSobolevSeminorm f D k`: the Sobolev seminorm `Q^D_k`.
 
 ## Main results
 
 * `TauCeti.exists_sobolevIndex_monomialWord_eq`: a sorted word of length at most `k` is the
   ordered monomial word `TauCeti.monomialWord α` of an index `α` in `SobolevIndex m k`.
-* `Seminorm.endSobolevSeminorm_apply`: the Sobolev seminorm as a square root of a sum of squares.
-* `Seminorm.norm_apply_le_endSobolevSeminorm`: `‖f(D^α x)‖ ≤ Q^D_k(x)` for `|α| ≤ k`.
-* `Seminorm.endSobolevSeminorm_le_endWordSeminorm`: `Q^D_k ≤ P^D_k`.
-* `Seminorm.exists_endWordSeminorm_le_mul_endSobolevSeminorm`: `P^D_k ≤ C_k Q^D_k` when the
+* `LinearMap.endSobolevSeminorm_apply`: the Sobolev seminorm as a square root of a sum of squares.
+* `LinearMap.norm_apply_le_endSobolevSeminorm`: `‖f(D^α x)‖ ≤ Q^D_k(x)` for `|α| ≤ k`.
+* `LinearMap.endSobolevSeminorm_le_endWordSeminorm`: `Q^D_k ≤ P^D_k`.
+* `LinearMap.exists_endWordSeminorm_le_mul_endSobolevSeminorm`: `P^D_k ≤ C_k Q^D_k` when the
   operators of words of length at most `k` lie in the span of the ordered monomials.
 
 ## References
@@ -114,7 +114,7 @@ theorem exists_sobolevIndex_monomialWord_eq {k : ℕ} {w : List (Fin m)}
 
 end TauCeti
 
-namespace Seminorm
+namespace LinearMap
 
 open TauCeti
 
@@ -163,7 +163,7 @@ theorem endSobolevSeminorm_le_endWordSeminorm (f : M →ₗ[𝕜] F) (D : Fin m 
     Finset.sum_le_sum_of_injOn SobolevIndex.toBoundedWord
       SobolevIndex.toBoundedWord_injective.injOn (Finset.subset_univ _) (fun _ _ ↦ le_rfl)
       fun _ _ _ ↦ norm_nonneg _
-  rw [endSobolevSeminorm_apply, endWordSeminorm_apply, Real.sqrt_le_iff]
+  rw [endSobolevSeminorm_apply, Seminorm.endWordSeminorm_apply, Real.sqrt_le_iff]
   refine ⟨Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _, ?_⟩
   simp_rw [hb]
   calc ∑ α : SobolevIndex m k, b α.toBoundedWord ^ 2
@@ -185,11 +185,11 @@ theorem exists_endWordSeminorm_le_mul_endSobolevSeminorm (f : M →ₗ[𝕜] F)
     (Submodule.mem_span_range_iff_exists_fun 𝕜).1
       (hD (List.ofFn w.2) ((List.length_ofFn).trans_le (Nat.lt_succ_iff.1 w.1.isLt)))
   refine ⟨∑ w, ∑ α, ‖c w α‖, fun x ↦ ?_⟩
-  rw [endWordSeminorm_apply, Finset.sum_mul]
+  rw [Seminorm.endWordSeminorm_apply, Finset.sum_mul]
   refine Finset.sum_le_sum fun w _ ↦ ?_
-  rw [← hc w, Finset.sum_mul, comp_apply, coe_normSeminorm, LinearMap.sum_apply, map_sum]
+  rw [← hc w, Finset.sum_mul, Seminorm.comp_apply, coe_normSeminorm, LinearMap.sum_apply, map_sum]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun α _ ↦ ?_)
   rw [LinearMap.smul_apply, map_smul, norm_smul]
   exact mul_le_mul_of_nonneg_left (norm_apply_le_endSobolevSeminorm f D α x) (norm_nonneg _)
 
-end Seminorm
+end LinearMap
