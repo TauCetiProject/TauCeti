@@ -48,8 +48,10 @@ reversed flow.
 * `TauCeti.IsAdaptedPseudoGradient.isOpen_stableSet_of_manifoldMorseIndex_eq_zero` and
   `TauCeti.IsAdaptedPseudoGradient.isOpen_unstableSet_of_manifoldMorseIndex_eq_finrank`: `W^s(x)`
   is open when `x` has index `0`, and `W^u(x)` when `x` has index `n`.
-* `TauCeti.IsAdaptedPseudoGradient.unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero`: for a
-  Morse function, the unstable manifold of a critical point of index `0` is the point itself.
+* `TauCeti.IsAdaptedPseudoGradient.unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero` and
+  `TauCeti.IsAdaptedPseudoGradient.stableSet_eq_singleton_of_manifoldMorseIndex_eq_finrank`: for a
+  Morse function, the unstable manifold of a critical point of index `0` and the stable manifold of
+  a critical point of index `n` are the point itself.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableSet_isManifold` and
   `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_isManifold`: the manifold structures, of
   dimensions `n - k` and `k`.
@@ -426,6 +428,19 @@ theorem unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero (hX : IsAdaptedPs
   have hpt := hloc _ ht ((Flow.apply_mem_unstableSet_iff _ t).2 hp)
   rw [mem_singleton_iff, ← hX.flow.map_neg_apply_map t p, hpt,
     hX.flow_apply_of_mfderiv_eq_zero hx]
+
+/-- **The stable manifold of a critical point of top index is a point.** For a critical point `x`
+of index `n = dim M` of a Morse function, no other trajectory converges to `x` in forward time:
+`x` has index `0` for `-f`, and the stable set of `x` is its unstable set for `-X`. -/
+theorem stableSet_eq_singleton_of_manifoldMorseIndex_eq_finrank
+    (hX : IsAdaptedPseudoGradient f X) (hf : IsMorse 𝓘(ℝ, E) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E) :
+    hX.flow.stableSet x = {x} := by
+  have hidx := (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
+    ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  rw [hX.stableSet_eq_unstableSet_neg hf]
+  exact (hX.neg hf).unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero hf.neg
+    (mfderiv_neg_eq_zero_iff.2 hx) (by omega)
 
 /-- **The stable set is a manifold of dimension `n - k`.** For a critical point `x` of index
 `k`, the stable set `W^s(x)` of the flow of an adapted pseudo-gradient carries a smooth

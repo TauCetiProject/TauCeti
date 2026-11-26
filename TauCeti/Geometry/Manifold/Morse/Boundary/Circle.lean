@@ -614,24 +614,6 @@ section Homology
 variable {R : Type*} [Ring R] {hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X}
   {𝔬 : MorseOrientation (circleCosTwo δ r) X} {hf : IsMorse 𝓘(ℝ) (circleCosTwo δ r)}
 
-/-- The fundamental sign `ε_j = ±1` of the maximum `p_j` squares to `1`. -/
-private theorem fundamentalSign_mul_self_circleCosTwo (hδ : 0 < δ) (j : Fin 2) :
-    (hX.fundamentalSign 𝔬 ((AddCircle.orientation (2 * π)).reindex
-        (finCongr (finrank_self ℝ).symm)) (circleCosTwoMaxCrit δ r j) : R) *
-      (hX.fundamentalSign 𝔬 ((AddCircle.orientation (2 * π)).reindex
-        (finCongr (finrank_self ℝ).symm)) (circleCosTwoMaxCrit δ r j) : R) = 1 := by
-  rcases fundamentalSign_eq_one_or_eq_neg_one (hX := hX) (𝔬 := 𝔬)
-    (oM := (AddCircle.orientation (2 * π)).reindex (finCongr (finrank_self ℝ).symm))
-    ((manifoldMorseIndex_circleCosTwoMaxCrit hδ r j).trans (finrank_self ℝ).symm) with h | h <;>
-    simp [h]
-
-/-- The augmentation sign `η_i = ±1` of the minimum `q_i` squares to `1`. -/
-private theorem augmentationSign_mul_self_circleCosTwo (hδ : 0 < δ) (i : Fin 2) :
-    (𝔬.augmentationSign (circleCosTwoMinCrit δ r i) : R) *
-      (𝔬.augmentationSign (circleCosTwoMinCrit δ r i) : R) = 1 := by
-  rcases 𝔬.augmentationSign_eq_one_or_eq_neg_one
-    (manifoldMorseIndex_circleCosTwoMinCrit hδ r i) with h | h <;> simp [h]
-
 private theorem circleCosTwoMaxEquiv_apply (hδ : 0 < δ) (j : Fin 2) :
     circleCosTwoMaxEquiv hδ r j =
       ⟨circleCosTwoMaxCrit δ r j, manifoldMorseIndex_circleCosTwoMaxCrit hδ r j⟩ :=
@@ -711,8 +693,8 @@ theorem signedMorseBoundaryAt_zero_circleCosTwo_eq_zero_iff (hδ : 0 < δ)
   -- The sign `η_i = ±1` is a unit, so it cancels from `(∂ c)(q_i) = (⋯) η_i = 0`.
   have hcancel (i : Fin 2) (x : R) :
       x * (𝔬.augmentationSign (circleCosTwoMinCrit δ r i) : R) = 0 ↔ x = 0 :=
-    (Units.mk _ _ (augmentationSign_mul_self_circleCosTwo hδ i)
-      (augmentationSign_mul_self_circleCosTwo hδ i)).isUnit.mul_left_eq_zero
+    have hη := 𝔬.augmentationSign_mul_self (R := R) (manifoldMorseIndex_circleCosTwoMinCrit hδ r i)
+    (Units.mk _ _ hη hη).isUnit.mul_left_eq_zero
   -- The chain `∂ c` vanishes exactly when it vanishes at both minima.
   have hzero : hX.signedMorseBoundaryAt 𝔬 hf R 0 c = 0 ↔
       ∀ i, hX.signedMorseBoundaryAt 𝔬 hf R 0 c (circleCosTwoMinEquiv hδ r i) = 0 :=
@@ -731,7 +713,9 @@ theorem nonempty_linearEquiv_homology_one_signedMorseComplex_circleCosTwo (hδ :
   set oM := (AddCircle.orientation (2 * π)).reindex (finCongr (finrank_self ℝ).symm)
   set K := hX.signedMorseComplex 𝔬 hf R hsq
   set ε : Fin 2 → R := fun j ↦ (hX.fundamentalSign 𝔬 oM (circleCosTwoMaxCrit δ r j) : R)
-  have hε (j : Fin 2) : ε j * ε j = 1 := fundamentalSign_mul_self_circleCosTwo hδ j
+  have hε (j : Fin 2) : ε j * ε j = 1 :=
+    fundamentalSign_mul_self ((manifoldMorseIndex_circleCosTwoMaxCrit hδ r j).trans
+      (finrank_self ℝ).symm)
   -- The fundamental cycle `z = ε₀ p₀ + ε₁ p₁` spans the cycles, freely.
   set z := Finsupp.single (circleCosTwoMaxEquiv hδ r 0) (ε 0) +
     Finsupp.single (circleCosTwoMaxEquiv hδ r 1) (ε 1)
@@ -791,8 +775,11 @@ theorem mem_range_signedMorseBoundaryAt_zero_circleCosTwo_iff (hδ : 0 < δ)
   set oM := (AddCircle.orientation (2 * π)).reindex (finCongr (finrank_self ℝ).symm)
   set ε : Fin 2 → R := fun j ↦ (hX.fundamentalSign 𝔬 oM (circleCosTwoMaxCrit δ r j) : R)
   set η : Fin 2 → R := fun i ↦ (𝔬.augmentationSign (circleCosTwoMinCrit δ r i) : R)
-  have hε (j : Fin 2) : ε j * ε j = 1 := fundamentalSign_mul_self_circleCosTwo hδ j
-  have hη (i : Fin 2) : η i * η i = 1 := augmentationSign_mul_self_circleCosTwo hδ i
+  have hε (j : Fin 2) : ε j * ε j = 1 :=
+    fundamentalSign_mul_self ((manifoldMorseIndex_circleCosTwoMaxCrit hδ r j).trans
+      (finrank_self ℝ).symm)
+  have hη (i : Fin 2) : η i * η i = 1 :=
+    𝔬.augmentationSign_mul_self (manifoldMorseIndex_circleCosTwoMinCrit hδ r i)
   have hD (b) (i : Fin 2) : hX.signedMorseBoundaryAt 𝔬 hf R 0 b (circleCosTwoMinEquiv hδ r i) =
       (b (circleCosTwoMaxEquiv hδ r (i + 1)) * ε (i + 1) -
         b (circleCosTwoMaxEquiv hδ r i) * ε i) * η i :=
@@ -835,7 +822,8 @@ theorem nonempty_linearEquiv_homology_zero_signedMorseComplex_circleCosTwo (hδ 
     Nonempty ((hX.signedMorseComplex 𝔬 hf R hsq).homology 0 ≃ₗ[R] R) := by
   set K := hX.signedMorseComplex 𝔬 hf R hsq
   set η : Fin 2 → R := fun i ↦ (𝔬.augmentationSign (circleCosTwoMinCrit δ r i) : R)
-  have hη (i : Fin 2) : η i * η i = 1 := augmentationSign_mul_self_circleCosTwo hδ i
+  have hη (i : Fin 2) : η i * η i = 1 :=
+    𝔬.augmentationSign_mul_self (manifoldMorseIndex_circleCosTwoMinCrit hδ r i)
   -- The augmentation `ψ c = c(q₀) η₀ + c(q₁) η₁` is onto, with kernel the boundaries.
   let ψ : ({p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) //
       manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) p = 0} →₀ R) →ₗ[R] R :=

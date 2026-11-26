@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
+public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedAugmentation
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Diffeomorph
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
@@ -69,6 +69,11 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `trajectorySign_apply_eq_mul_mul_trajectorySign`: a symmetry fixing `p` and `q`, acting on the
   orientations of the unstable manifolds at `p` and `q` by signs `up` and `uq`, multiplies the
   sign of each trajectory from `p` to `q` by `up * uq`.
+
+In the namespace `TauCeti.MorseOrientation`:
+
+* `augmentationSign_pullback`, `signedMorseAugmentation_comp_domLCongr`: the diffeomorphism
+  intertwines the augmentations.
 
 ## References
 
@@ -182,6 +187,39 @@ theorem pullback_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f')) [DecidablePr
     by_cases hp : criticalPointsEquivOfComp hf p ∈ S <;> simp only [hp, ↓reduceIte]
     · exact Orientation.reindex_neg (R := ℝ) _ _
     · congr 1
+
+/-- **Augmentation signs pull back**: the augmentation sign of the pulled-back orientation data at
+a critical point `p` of `f` is the augmentation sign of `𝔬'` at `σ p`. -/
+@[simp]
+theorem augmentationSign_pullback (p : criticalPoints 𝓘(ℝ, E) f) :
+    (𝔬'.pullback hf hσX).augmentationSign p =
+      𝔬'.augmentationSign (criticalPointsEquivOfComp hf p) := by
+  have hind := (𝔬'.chart (criticalPointsEquivOfComp hf p)).manifoldMorseIndex_eq_of_comp hf
+  by_cases h0 : manifoldMorseIndex 𝓘(ℝ, E) f p = 0
+  · rw [augmentationSign_of_morseIndex_eq_zero _ h0,
+      augmentationSign_of_morseIndex_eq_zero _ (hind ▸ h0), pullback_orientation]
+    -- Both bases are indexed by `Fin 0`, so they agree up to the cast of the index type. The
+    -- pulled-back chart has the weights of the original one (`MorseChart.pullback_weight`).
+    have hb : Module.finBasisOfFinrankEq ℝ _
+        ((𝔬'.pullback hf hσX).chart p).finrank_negativeWeight_fun =
+        (Module.finBasisOfFinrankEq ℝ _
+          (𝔬'.chart (criticalPointsEquivOfComp hf p)).finrank_negativeWeight_fun).reindex
+          (finCongr hind.symm) :=
+      Module.Basis.eq_of_apply_eq fun i ↦ (finCongr h0 i).elim0
+    rw [hb]
+    exact congrArg Units.val (Orientation.signBasis_reindex _ _ _)
+  · rw [augmentationSign_of_morseIndex_ne_zero _ h0,
+      augmentationSign_of_morseIndex_ne_zero _ (hind ▸ h0)]
+
+/-- **The augmentations are natural**: the bijection between the critical points of `f` and of
+`f'` induced by `σ` intertwines the augmentation of the pulled-back orientation data with that of
+`𝔬'`, over every ring of coefficients. -/
+theorem signedMorseAugmentation_comp_domLCongr (R : Type*) [Ring R] :
+    𝔬'.signedMorseAugmentation R ∘ₗ
+        (Finsupp.domLCongr (criticalPointsEquivOfComp hf)).toLinearMap =
+      (𝔬'.pullback hf hσX).signedMorseAugmentation R :=
+  Finsupp.lhom_ext fun p a ↦ by
+    simp [augmentationSign_pullback]
 
 end MorseOrientation
 
