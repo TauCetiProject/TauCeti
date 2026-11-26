@@ -49,14 +49,13 @@ noncomputable def reduction (n : ℕ) :
 @[simp]
 theorem reduction_algebraMap (n : ℕ) (a : ℤ_[p]) :
     reduction p Ω n (algebraMap ℤ_[p] _ a) = PadicInt.toZMod a := by
-  rw [reduction, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, AlgHom.commutes,
-    RingHom.algebraMap_toAlgebra]
+  simp [reduction, RingHom.algebraMap_toAlgebra (PadicInt.toZMod (p := p))]
 
 /-- The chosen cyclotomic difference reduces to zero. -/
 theorem reduction_integralRoot_sub_one (n : ℕ) :
     reduction p Ω n (integralRoot p Ω n - 1) = 0 := by
-  rw [reduction, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, ← integralPowerBasis_gen]
-  exact PowerBasis.lift_gen _ _ _
+  rw [← integralPowerBasis_gen]
+  simp [reduction, -integralPowerBasis_gen]
 
 /-- The chosen integral root reduces to one. -/
 @[simp]
@@ -137,10 +136,13 @@ noncomputable def residueFieldEquiv (n : ℕ) :
 theorem residueFieldEquiv_residue (n : ℕ)
     (x : integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) :
     residueFieldEquiv p Ω n (residue _ x) = reduction p Ω n x := by
-  -- Use the ideal quotient carrier to match the coercion in RingEquiv.trans_apply.
-  change ((Ideal.quotEquivOfEq (maximalIdeal_eq_span_integralRoot_sub_one p Ω n)).trans
-    (quotientSpanEquivZMod p Ω n)) (Ideal.Quotient.mk _ x) = _
-  simp only [RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk, quotientSpanEquivZMod_mk]
+  rw [IsLocalRing.residue_def]
+  unfold residueFieldEquiv
+  calc
+    _ = quotientSpanEquivZMod p Ω n
+        (Ideal.quotEquivOfEq (maximalIdeal_eq_span_integralRoot_sub_one p Ω n)
+          (Ideal.Quotient.mk _ x)) := RingEquiv.trans_apply _ _ _
+    _ = _ := by rw [Ideal.quotEquivOfEq_mk, quotientSpanEquivZMod_mk]
 
 /-- The inverse equivalence recovers the canonical residue class from cyclotomic reduction. -/
 @[simp]
