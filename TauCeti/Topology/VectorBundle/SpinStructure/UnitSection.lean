@@ -28,16 +28,19 @@ stabilizer `CliffordAlgebra.realCliffordSpinCLastStabilizer n`, the image of
 `Spinᶜ(n) ⊆ Spinᶜ(n + 1)` (`CliffordAlgebra.range_realCliffordSpinCInclusion`).
 
 For a continuous section of unit vectors, the adapted points are locally trivial with fibre this
-stabilizer, equivariantly (`TauCeti.SpinCStructure.exists_trivialization_sectionPoints`). Near a
-point `x`, a trivialization of `P` gives a continuous local section `p`; the section `σ` read in
-the frames of `p` is a continuous family `u` of unit vectors of `ℝⁿ⁺¹`; a continuous family `g` of
+stabilizer, equivariantly: they are a locally trivial reduction of `P` to the stabilizer
+(`TauCeti.SpinCStructure.isLocallyTrivialReduction_sectionPoints`). Near a point `x`, a
+trivialization of `P` gives a continuous local section `p`; the section `σ` read in the frames of
+`p` is a continuous family `u` of unit vectors of `ℝⁿ⁺¹`; a continuous family `g` of
 elements of `Spinᶜ(n + 1)` whose rotations carry `e_{n+1}` to `u`
 (`CliffordAlgebra.exists_continuousOn_realCliffordSpinCGroupZero_toSpecialOrthogonal_last`)
 corrects `p` to the adapted local section `p • g`; and the adapted points are then trivial near
-`x` (`TauCeti.PrincipalBundle.exists_trivialization_of_continuousOn_section_mem`).
+`x` (`TauCeti.PrincipalBundle.isLocallyTrivialReduction_of_forall_exists_section`).
 
-The adapted points as a principal bundle, and the frames of `W` they carry, are not constructed
-here.
+So the fibres of the adapted points form a principal bundle with that structure group
+(`TauCeti.SpinCStructure.principalBundle_sectionPoints`, by
+`TauCeti.IsLocallyTrivialReduction.principalBundle`). The frames of `W` they carry are not
+constructed here.
 
 ## Main definitions
 
@@ -48,8 +51,10 @@ here.
 
 * `TauCeti.SpinCStructure.smul_mem_sectionPoints_iff`: `Spinᶜ(n + 1)` keeps an adapted point
   adapted exactly through the last-vector stabilizer.
-* `TauCeti.SpinCStructure.exists_trivialization_sectionPoints`: for a continuous unit section the
-  adapted points are locally trivial with fibre the stabilizer, equivariantly.
+* `TauCeti.SpinCStructure.isLocallyTrivialReduction_sectionPoints`: for a continuous unit section
+  the adapted points are locally trivial with fibre the stabilizer, equivariantly.
+* `TauCeti.SpinCStructure.principalBundle_sectionPoints`: the adapted points form a principal
+  bundle with structure group the stabilizer.
 
 ## References
 
@@ -114,6 +119,12 @@ theorem smul_mem_sectionPoints_iff {p : TotalSpace (realCliffordSpinCGroupZero (
   rw [TotalSpace.smul_mk, smul_mk_mem_sectionPoints_iff, ← hp, (s.frameAt p).injective.eq_iff,
     (WithLp.toLp_injective 2).eq_iff, mem_realCliffordSpinCLastStabilizer_iff]
 
+/-- The last-vector stabilizer keeps the points adapted to `σ` adapted. -/
+theorem smul_mem_sectionPoints :
+    ∀ p ∈ s.sectionPoints σ, ∀ g ∈ realCliffordSpinCLastStabilizer n,
+      op g • p ∈ s.sectionPoints σ :=
+  fun _ hp g ↦ (smul_mem_sectionPoints_iff hp g).mpr
+
 /-! ### Local triviality -/
 
 section Trivialization
@@ -155,20 +166,17 @@ private theorem frameAt_coords {x : X} (p : s.P x) :
 
 variable [NeZero n]
 
-/-- **The points adapted to a continuous unit section are locally trivial.** For a `Spinᶜ` structure
-of rank `n + 1 ≥ 2` and a continuous section `σ` of unit vectors, the points whose frames send the
-last coordinate vector to `σ` are locally trivial with fibre the last-vector stabilizer
-`Spinᶜ(n) ⊆ Spinᶜ(n + 1)`, by trivializations equivariant for its right action. -/
-theorem exists_trivialization_sectionPoints
-    (hσ : Continuous fun y ↦ (⟨y, σ y⟩ : TotalSpace F E)) (hσ₁ : ∀ y, ‖σ y‖ = 1) (x : X) :
-    ∃ t : Trivialization (realCliffordSpinCLastStabilizer n)
-        (fun p : s.sectionPoints σ ↦
-          (p : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P).proj),
-      x ∈ t.baseSet ∧ ∀ (g : realCliffordSpinCLastStabilizer n) (p : s.sectionPoints σ)
-        (hgp : op (g : realCliffordSpinCGroupZero (n + 1)) •
-          (p : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P) ∈ s.sectionPoints σ),
-        (p : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P).proj ∈ t.baseSet →
-          t ⟨_, hgp⟩ = ((t p).1, (t p).2 * g) := by
+/-- **The adapted points are a locally trivial reduction** of the principal `Spinᶜ(n + 1)`-bundle
+to the last-vector stabilizer `Spinᶜ(n) ⊆ Spinᶜ(n + 1)`, for a `Spinᶜ` structure of rank
+`n + 1 ≥ 2` and a continuous section `σ` of unit vectors: they are locally trivial with fibre the
+stabilizer, by trivializations equivariant for its right action. -/
+theorem isLocallyTrivialReduction_sectionPoints
+    (hσ : Continuous fun y ↦ (⟨y, σ y⟩ : TotalSpace F E)) (hσ₁ : ∀ y, ‖σ y‖ = 1) :
+    IsLocallyTrivialReduction
+      (TotalSpace.proj : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P → X)
+      (realCliffordSpinCLastStabilizer n) (s.sectionPoints σ) :=
+  PrincipalBundle.isLocallyTrivialReduction_of_forall_exists_section
+    (fun _ hp g ↦ smul_mem_sectionPoints_iff hp g) fun x ↦ by
   let t₀ := trivializationAt (realCliffordSpinCGroupZero (n + 1)) s.P x
   have hx : x ∈ t₀.baseSet := mem_baseSet_trivializationAt _ _ x
   -- The local section of `P` given by `t₀`.
@@ -197,10 +205,25 @@ theorem exists_trivialization_sectionPoints
       (⟨y, op (g (u y)) • τ₀ y⟩ : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P) ∈
         s.sectionPoints σ := by
     rw [smul_mk_mem_sectionPoints_iff, hgu (u y) hy.2, frameAt_coords]
-  obtain ⟨t, ht, hteq⟩ := TauCeti.PrincipalBundle.exists_trivialization_of_continuousOn_section_mem
-    (H := realCliffordSpinCLastStabilizer n) (fun p hp g ↦ smul_mem_sectionPoints_iff hp g) hτS
-    hV hτ (b := x) ⟨hx, hxU⟩
-  exact ⟨t, ht ▸ ⟨hx, hxU⟩, fun g p hgp hp ↦ hteq g p hgp (ht ▸ hp)⟩
+  exact ⟨V, hV, ⟨hx, hxU⟩, _, hτS, hτ⟩
+
+/-- **The adapted points form a principal `Spinᶜ(n)`-bundle.** For a continuous section of unit
+vectors, the fibres of the points of `s` adapted to `σ` form a principal bundle with structure group
+the last-vector stabilizer, the image of `Spinᶜ(n) ⊆ Spinᶜ(n + 1)`. -/
+theorem principalBundle_sectionPoints (hσ : Continuous fun y ↦ (⟨y, σ y⟩ : TotalSpace F E))
+    (hσ₁ : ∀ y, ‖σ y‖ = 1) :
+    letI := (isLocallyTrivialReduction_sectionPoints (s := s) hσ hσ₁).fiberBundle
+    letI := reductionMulAction (smul_mem_sectionPoints (s := s) (σ := σ))
+    letI := MapFiber.mulAction
+      (proj := fun p : s.sectionPoints σ ↦
+        (p : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P).proj)
+      (M := (realCliffordSpinCLastStabilizer n)ᵐᵒᵖ)
+      (proj_reductionMulAction_smul (fun _ _ ↦ rfl) smul_mem_sectionPoints)
+    PrincipalBundle (realCliffordSpinCLastStabilizer n)
+      (MapFiber fun p : s.sectionPoints σ ↦
+        (p : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P).proj) :=
+  (isLocallyTrivialReduction_sectionPoints (s := s) hσ hσ₁).principalBundle (fun _ _ ↦ rfl)
+    smul_mem_sectionPoints
 
 end Trivialization
 

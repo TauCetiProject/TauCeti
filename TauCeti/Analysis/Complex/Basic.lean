@@ -97,7 +97,8 @@ On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at l
 
 At height `1 ≤ |Im s|`, a point `s` is at distance at least `1` from `1`
 (`Complex.one_le_norm_sub_one`), so `s ≠ 1` (`Complex.ne_one_of_one_le_abs_im`) and
-`‖(s - 1)⁻¹‖ ≤ 1` (`Complex.norm_inv_sub_one_le_one`).
+`‖(s - 1)⁻¹‖ ≤ 1` (`Complex.norm_inv_sub_one_le_one`). For real `1 ≤ r`,
+`‖(r : ℂ) - 1‖ = r - 1` (`Complex.norm_ofReal_sub_one`).
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 
@@ -106,10 +107,6 @@ ordered ring (`Complex.instIsEmptyRingHom`).
 
 An `n`-th root (`n ≠ 0`) of a complex number `w` with `w * conj w = 1` has its inverse as
 conjugate (`Complex.conj_eq_inv_of_pow_eq`).
-
-For a finite set on one side of a vertical line, the distances from a point `⟨σ, t⟩` of the line
-separate the points of the set for all but finitely many heights `t`
-(`Set.Finite.finite_setOf_not_injOn_dist_complex_mk`).
 -/
 
 public section
@@ -143,29 +140,6 @@ theorem Complex.norm_one_add_sub_conj_mul_inv_ofReal_sub (z : ℂ) (r : ℝ) :
   have hnorm : ‖(r : ℂ) - conj z‖ = ‖(r : ℂ) - z‖ := by
     simpa using Complex.norm_conj ((r : ℂ) - z)
   rw [heq, norm_div, hnorm, div_self (norm_ne_zero_iff.mpr hne)]
-
-open Complex Set in
-/-- For a finite set on one side of a vertical line, distances to a point on the line distinguish
-all members of the set except at finitely many heights. -/
-theorem Set.Finite.finite_setOf_not_injOn_dist_complex_mk {T : Set ℂ} (hT : T.Finite) {σ : ℝ}
-    (hleft : ∀ p ∈ T, p.re ≤ σ) :
-    {t : ℝ | ¬ InjOn (fun p : ℂ ↦ dist (⟨σ, t⟩ : ℂ) p) T}.Finite := by
-  -- Equate squared distances and solve for the height of the centre.
-  let height (p q : ℂ) := ((σ - p.re) ^ 2 + p.im ^ 2 - ((σ - q.re) ^ 2 + q.im ^ 2)) /
-    (2 * (p.im - q.im))
-  refine ((hT.prod hT).image fun pq : ℂ × ℂ ↦ height pq.1 pq.2).subset ?_
-  intro t ht
-  simp only [mem_ofPred_eq, InjOn, not_forall] at ht
-  obtain ⟨p, hp, q, hq, heq, hne⟩ := ht
-  have hs := congrArg (fun d : ℝ ↦ d ^ 2) heq
-  simp only [Complex.dist_eq, Complex.sq_norm, normSq_apply, sub_re, sub_im] at hs
-  have him : p.im ≠ q.im := by
-    intro hi
-    have hre : (σ - p.re) ^ 2 = (σ - q.re) ^ 2 := by rw [hi] at hs; linarith
-    have hr := (sq_eq_sq₀ (sub_nonneg.mpr (hleft p hp)) (sub_nonneg.mpr (hleft q hq))).mp hre
-    exact hne (Complex.ext (by linarith) hi)
-  refine ⟨(p, q), ⟨hp, hq⟩, ?_⟩
-  exact (div_eq_iff (mul_ne_zero two_ne_zero (sub_ne_zero.mpr him))).2 (by nlinarith only [hs])
 
 namespace TauCeti
 
@@ -598,6 +572,10 @@ theorem ne_one_of_one_le_abs_im {s : ℂ} (ht : 1 ≤ |s.im|) : s ≠ 1 := by
 theorem norm_inv_sub_one_le_one {s : ℂ} (ht : 1 ≤ |s.im|) : ‖(s - 1)⁻¹‖ ≤ 1 := by
   rw [norm_inv]
   exact inv_le_one_of_one_le₀ (one_le_norm_sub_one ht)
+
+/-- For real `1 ≤ r`, the norm of `(r : ℂ) - 1` is `r - 1`. -/
+theorem norm_ofReal_sub_one {r : ℝ} (h : 1 ≤ r) : ‖(r : ℂ) - 1‖ = r - 1 := by
+  rw [← ofReal_one, ← ofReal_sub, norm_real, Real.norm_of_nonneg (sub_nonneg.mpr h)]
 
 /-- A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`. -/
 theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + μ).im ≠ 0 :=
