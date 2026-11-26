@@ -21,7 +21,7 @@ homomorphism `CliffordAlgebra.vectorNormalizerAction`. The map `ι` is injective
 in every characteristic (`CliffordAlgebra.ι_injective_of_free`) and whenever `2` is invertible
 (`CliffordAlgebra.ι_injective`); the action of the Lipschitz group
 `CliffordAlgebra.lipschitzVectorAction` and the vector action of the Clifford group
-`CliffordAlgebra.gpinToOrthogonal` are both restrictions of this one.
+`CliffordAlgebra.cliffordGroupToOrthogonal` are both restrictions of this one.
 
 The Lipschitz group lies in the vector normalizer whenever `Q(m)` is a unit for every invertible
 vector `ι(m)` (`CliffordAlgebra.lipschitzGroup_le_vectorNormalizer_of_isUnit`), in particular
