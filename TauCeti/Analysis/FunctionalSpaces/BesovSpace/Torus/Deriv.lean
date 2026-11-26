@@ -156,11 +156,15 @@ theorem exists_norm_littlewoodPaleyBlockLp_partialDeriv_le :
       simp
   rw [volume_eq_pi_haarAddCircle] at h
   have hv : ‖(Pi.single i 1 : d → ℝ)‖ = 1 := by simp [Pi.norm_single]
-  norm_num [hv] at h
+  -- The specialised bound, stated for the product of the Haar measures (the file-local `volume`).
+  have h' : eLpNorm g p (Measure.pi fun _ ↦ AddCircle.haarAddCircle) ≤
+      ENNReal.ofReal (C₀ ^ 2 * (2 ^ j * M)) *
+        eLpNorm f p (Measure.pi fun _ ↦ AddCircle.haarAddCircle) := by
+    simpa [hv] using h
   rw [Lp.norm_def, Lp.norm_def]
   calc (eLpNorm g p volume).toReal
       ≤ (ENNReal.ofReal (C₀ ^ 2 * (2 ^ j * M)) * eLpNorm f p volume).toReal :=
-        ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (Lp.eLpNorm_ne_top f)) h
+        ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (Lp.eLpNorm_ne_top f)) h'
     _ = C₀ ^ 2 * M * 2 ^ j * (eLpNorm f p volume).toReal := by
         rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
         ring
