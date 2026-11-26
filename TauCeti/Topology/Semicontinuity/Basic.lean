@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Topology.Semicontinuity.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
-# Basic properties of semicontinuous functions
+# Semicontinuity of suprema, series, locally constant sums, and locally finite images
 
 This file collects general results about upper and lower semicontinuous functions:
 
@@ -24,6 +25,10 @@ This file collects general results about upper and lower semicontinuous function
   set.
 * In the same way, a bound `g (u i) ≤ c + ε i` along a family `u`, with errors `ε i` tending to
   `0`, passes to every cluster point of `u` (`MapClusterPt.le_of_eventually_le_add`).
+* Two upper semicontinuous functions with values in `ℕ` whose sum is locally constant are each
+  locally constant (`UpperSemicontinuous.isLocallyConstant_of_isLocallyConstant_add`): near a point
+  neither can increase, so neither can decrease. This is how constancy of a sum of fibre dimensions
+  forces constancy of each summand.
 * For a product-valued function `f : α → ∀ i, β i` into linearly ordered codomains that locally
   takes finitely many values, coordinatewise upper semicontinuity forces `f x' ≤ f x` eventually
   near `x` without any ordering on the index type `ι`
@@ -105,6 +110,22 @@ theorem le_of_eventually_le_add {l : Filter ι} {u : ι → X} {x : X} (hx : Map
   exact hi.trans (add_le_add_right hεi c)
 
 end MapClusterPt
+
+namespace UpperSemicontinuous
+
+variable {X : Type*} [TopologicalSpace X] {u v : X → ℕ}
+
+/-- If two upper semicontinuous functions with values in `ℕ` have a locally constant sum, then the
+first is locally constant. -/
+theorem isLocallyConstant_of_isLocallyConstant_add (hu : UpperSemicontinuous u)
+    (hv : UpperSemicontinuous v) (h : IsLocallyConstant fun x ↦ u x + v x) :
+    IsLocallyConstant u := by
+  refine (IsLocallyConstant.iff_eventually_eq u).2 fun x ↦ ?_
+  filter_upwards [hu x _ (Nat.lt_succ_self _), hv x _ (Nat.lt_succ_self _), h.eventually_eq x]
+    with y hux hvx hx
+  omega
+
+end UpperSemicontinuous
 
 section FiniteRange
 

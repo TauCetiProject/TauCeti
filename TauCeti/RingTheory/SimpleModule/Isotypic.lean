@@ -60,6 +60,9 @@ finitely many of a family of pairwise non-isomorphic simple modules
 
 * `IsIsotypic.isotypicComponents_eq_singleton_top`: a nonzero isotypic semisimple module is its
   only isotypic component.
+
+* `IsSemisimpleModule.smul_eq_ite_of_injective`: such an element acts in the same way on every
+  simple module embedded in the semisimple module.
 -/
 
 public section
@@ -294,6 +297,25 @@ theorem exists_forall_smul_eq_ite [IsSemisimpleModule R M] [Module.Finite (Modul
   split_ifs with h
   · exact Submodule.projection_apply_of_mem_left hcompl ((hle T hT).1 h hx)
   · exact Submodule.projection_apply_of_mem_right hcompl ((hle T hT).2 h hx)
+
+open scoped Classical in
+/-- An element acting as in `IsSemisimpleModule.exists_forall_smul_eq_ite` on the simple
+submodules of `X` acts in the same way on every simple module embedded in `X`. -/
+theorem smul_eq_ite_of_injective {X : Type*} [AddCommGroup X] [Module R X]
+    {S : Type*} [AddCommGroup S] [Module R S] {a : R}
+    (ha : ∀ T : Submodule R X, IsSimpleModule R T → ∀ x ∈ T,
+      a • x = if Nonempty (T ≃ₗ[R] S) then x else 0)
+    {Y : Type*} [AddCommGroup Y] [Module R Y] [IsSimpleModule R Y]
+    (f : Y →ₗ[R] X) (hf : Function.Injective f) (y : Y) :
+    a • y = if Nonempty (S ≃ₗ[R] Y) then y else 0 := by
+  let e := LinearEquiv.ofInjective f hf
+  have hT : IsSimpleModule R (LinearMap.range f) := IsSimpleModule.congr e.symm
+  have hiff : Nonempty (LinearMap.range f ≃ₗ[R] S) ↔ Nonempty (S ≃ₗ[R] Y) :=
+    ⟨fun ⟨e'⟩ => ⟨e'.symm.trans e.symm⟩, fun ⟨e'⟩ => ⟨(e'.trans e).symm⟩⟩
+  have hy := ha _ hT (f y) (LinearMap.mem_range_self f y)
+  rw [← map_smul, hiff] at hy
+  apply hf
+  split_ifs at hy ⊢ <;> simpa using hy
 
 end Projection
 

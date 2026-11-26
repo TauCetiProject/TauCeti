@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Algebra.Order.GroupWithZero.Basic
 import TauCeti.Analysis.Asymptotics.Sum.Rpow
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
@@ -60,19 +61,6 @@ public section
 open Complex
 
 namespace TauCeti
-
-private lemma one_le_norm_sub_one {s : ℂ} (ht : 1 ≤ |s.im|) : 1 ≤ ‖s - 1‖ := by
-  have h := abs_im_le_norm (s - 1)
-  simp only [sub_im, one_im, sub_zero] at h
-  exact ht.trans h
-
-private lemma ne_one_of_one_le_abs_im {s : ℂ} (ht : 1 ≤ |s.im|) : s ≠ 1 := by
-  rintro rfl
-  norm_num at ht
-
-private lemma norm_inv_sub_one_le_one {s : ℂ} (ht : 1 ≤ |s.im|) : ‖(s - 1)⁻¹‖ ≤ 1 := by
-  rw [norm_inv]
-  exact inv_le_one_of_one_le₀ (one_le_norm_sub_one ht)
 
 private lemma one_le_log_abs_im_add_two {s : ℂ} (ht : 1 ≤ |s.im|) :
     1 ≤ Real.log (|s.im| + 2) := by

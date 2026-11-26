@@ -43,11 +43,6 @@ theorem laplacian_norm_starProjection_sq (K : Submodule ℝ E) (x : E) :
     Δ (fun y ↦ ‖K.starProjection y‖ ^ 2) x = 2 * (Module.finrank ℝ K : ℝ) := by
   set P := K.starProjection
   set b := stdOrthonormalBasis ℝ E
-  -- `P` is linear, so its own Laplacian vanishes and its derivative is `P`.
-  have hΔP : Δ (P : E → E) x = 0 := by
-    have hd : fderiv ℝ (P : E → E) = fun _ ↦ P := funext fun _ ↦ P.fderiv
-    rw [TauCeti.laplacian_eq_traceL, hd]
-    simp
   -- `‖P v‖² = ⟪v, P v⟫`, since `v - P v` is orthogonal to `P v ∈ K`.
   have hsq (v : E) : ‖P v‖ ^ 2 = ⟪v, P v⟫ := by
     have h0 := K.starProjection_inner_eq_zero v (P v) (K.starProjection_apply_mem v)
@@ -57,7 +52,9 @@ theorem laplacian_norm_starProjection_sq (K : Submodule ℝ E) (x : E) :
   -- The trace of the projection is its rank.
   have hproj : LinearMap.IsProj K (P : E →ₗ[ℝ] E) :=
     ⟨fun v ↦ K.starProjection_apply_mem v, fun v hv ↦ K.starProjection_eq_self_iff.2 hv⟩
-  rw [P.contDiff.contDiffAt.laplacian_norm_sq b, hΔP, inner_zero_right, mul_zero, add_zero,
+  -- `P` is linear, so its own Laplacian vanishes and its derivative is `P`.
+  rw [P.contDiff.contDiffAt.laplacian_norm_sq b, P.laplacian,
+    Pi.zero_apply, inner_zero_right, mul_zero, add_zero,
     P.fderiv]
   have htr := LinearMap.trace_eq_sum_inner (P : E →ₗ[ℝ] E) b
   simp only [ContinuousLinearMap.coe_coe] at htr
