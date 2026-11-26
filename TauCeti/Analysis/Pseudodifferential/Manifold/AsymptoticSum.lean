@@ -32,12 +32,12 @@ only depends on the full symbol, additively
 (`OpenPartialHomeomorph.chartQuantization_eq_add`), so `Q - ∑_{k < N} Pₖ` is a sum of chart
 quantizations of the remainders, of order `m - N`, plus operators of order `-∞`.
 
-The main application is the **Neumann series**: if `R` has order `-1`, the asymptotic sum `S` of
-the powers `Rᵏ` (`TauCeti.pow_mem_classicalPseudodifferentialOperators`) is an inverse of `1 - R`
+The main application is the **Neumann series**: if `R` has order `-1`, then `1 - R` has an inverse
 modulo operators of order `-∞` on both sides
-(`TauCeti.exists_one_sub_mul_sub_one_mem_smoothingPseudodifferentialOperators`). This is the step
-that turns a parametrix modulo order `-1`, obtained by quantizing the inverse of the principal
-symbol of an elliptic operator, into a parametrix modulo operators of order `-∞`.
+(`TauCeti.exists_one_sub_mul_sub_one_mem_smoothingPseudodifferentialOperators`), constructed as an
+asymptotic sum of the powers `Rᵏ` (`TauCeti.pow_mem_classicalPseudodifferentialOperators`). This
+is the step that turns a parametrix modulo order `-1`, obtained by quantizing the inverse of the
+principal symbol of an elliptic operator, into a parametrix modulo operators of order `-∞`.
 
 ## Main results
 
@@ -135,8 +135,8 @@ theorem exists_forall_sub_sum_mem_classicalPseudodifferentialOperators [CompactS
 
 /-- **The Neumann series modulo order `-∞`.** On a compact manifold, if `R` is a classical
 pseudodifferential operator of order `-1`, then `1 - R` is invertible modulo operators of order
-`-∞`: there is a classical pseudodifferential operator `S` of order `0`, an asymptotic sum of the
-powers `Rᵏ`, such that `(1 - R) S - 1` and `S (1 - R) - 1` have order `-∞`. -/
+`-∞`: there is a classical pseudodifferential operator `S` of order `0` such that `(1 - R) S - 1`
+and `S (1 - R) - 1` have order `-∞`. -/
 theorem exists_one_sub_mul_sub_one_mem_smoothingPseudodifferentialOperators [CompactSpace M]
     (hR : R ∈ classicalPseudodifferentialOperators (-1)) :
     ∃ S ∈ classicalPseudodifferentialOperators 0,

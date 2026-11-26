@@ -144,8 +144,7 @@ theorem mem_smoothingPseudodifferentialOperators_iff_isSmoothing (m : ℝ) :
 
 /-- **Operators of order `-∞` through the orders `m - N`.** For any real `m`, an operator has order
 `-∞` exactly when it is a classical pseudodifferential operator of order `m - N` for every natural
-number `N`. Orders differing from `m` by a non-integer are not comparable with these, but the chart
-symbols of orders `m - N` share one full symbol, which is then smoothing. -/
+number `N`. -/
 theorem mem_smoothingPseudodifferentialOperators_iff_forall_mem (m : ℝ) :
     P ∈ smoothingPseudodifferentialOperators ↔
       ∀ N : ℕ, P ∈ classicalPseudodifferentialOperators (m - N) := by

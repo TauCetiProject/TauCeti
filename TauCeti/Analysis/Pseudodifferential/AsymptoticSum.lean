@@ -1127,9 +1127,7 @@ theorem coefficient_principal_ofIsAsymptoticSum
 
 /-- **Asymptotic summation of classical symbols** (Borel). Classical symbols `cₖ` of orders
 `m - k` have an asymptotic sum `b ∼ ∑ₖ cₖ` which is a classical symbol of order `m` and whose
-remainders `b - ∑_{k < N} cₖ` are classical symbols of order `m - N`: each remainder is the
-asymptotic sum of the shifted sequence `c_N, c_{N+1}, …`, classical by
-`TauCeti.ClassicalSymbol.ofIsAsymptoticSum`. -/
+remainders `b - ∑_{k < N} cₖ` are classical symbols of order `m - N`. -/
 theorem exists_asymptoticSum :
     ∃ b : ClassicalSymbol n V W m, ∀ N : ℕ, ∃ r : ClassicalSymbol n V W (m - N),
       r.toSymbol.coefficient =
@@ -1138,7 +1136,7 @@ theorem exists_asymptoticSum :
   choose R hR using hB
   simp only [Symbol.coefficient_inclusion] at hR
   -- The remainder `R N` of `B` after `N` terms is an asymptotic sum of `c_N, c_{N+1}, …`, so it is
-  -- a classical symbol of order `m - N`.
+  -- a classical symbol of order `m - N` (`ofIsAsymptoticSum`).
   have hRN (N : ℕ) : (Symbol.inclusion (le_of_eq (by simp)) (R N) :
       Symbol n V W (m - N - ((0 : ℕ) : ℝ))).IsAsymptoticSum
         fun j ↦ (inclusion 0 (by push_cast; ring) (c (N + j)) :
@@ -1146,9 +1144,10 @@ theorem exists_asymptoticSum :
     ⟨Symbol.inclusion (le_of_eq (by push_cast; ring)) (R (N + M)), by
       simp only [Symbol.coefficient_inclusion, toSymbol_inclusion, ← hR, Finset.sum_range_add]
       abel⟩
-  refine ⟨ofIsAsymptoticSum c (b := B) fun N ↦ ⟨R N, by simp [hR]⟩, fun N ↦
-    ⟨ofIsAsymptoticSum _ (hRN N), ?_⟩⟩
-  -- Both full symbols are the given ones, `R N` and `B` (`toSymbol_ofIsAsymptoticSum`, by `rfl`).
+  have hB : (Symbol.inclusion (by simp) B : Symbol n V W (m - ((0 : ℕ) : ℝ))).IsAsymptoticSum
+      fun k ↦ (c k).toSymbol := fun N ↦ ⟨R N, by simp [hR]⟩
+  refine ⟨ofIsAsymptoticSum c hB, fun N ↦ ⟨ofIsAsymptoticSum _ (hRN N), ?_⟩⟩
+  rw [toSymbol_ofIsAsymptoticSum, toSymbol_ofIsAsymptoticSum]
   exact (hR N).symm
 
 end OfIsAsymptoticSum
