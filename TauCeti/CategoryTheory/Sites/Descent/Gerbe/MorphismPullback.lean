@@ -124,26 +124,26 @@ theorem mapIso_inv
 @[simp]
 theorem mapIso_restrict (p : x ≅ y) :
     mapIso η f ((F.map f.op.toLoc).toFunctor.mapIso p) =
-      (G.map f.op.toLoc).toFunctor.mapIso ((η.app (.mk (op U))).toFunctor.mapIso p) :=
-  Iso.ext (homMap_restrict η f p.hom)
+      (G.map f.op.toLoc).toFunctor.mapIso ((η.app (.mk (op U))).toFunctor.mapIso p) := by
+  ext; simp
 
 @[simp]
 theorem mapIso_refl (x : F.obj (.mk (op U))) :
-    mapIso η f (Iso.refl ((F.map f.op.toLoc).toFunctor.obj x)) = Iso.refl _ :=
-  Iso.ext (homMap_id η f x)
+    mapIso η f (Iso.refl ((F.map f.op.toLoc).toFunctor.obj x)) = Iso.refl _ := by
+  ext; simp
 
 @[simp]
 theorem mapIso_trans
     (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)
     (q : (F.map f.op.toLoc).toFunctor.obj y ≅ (F.map f.op.toLoc).toFunctor.obj z) :
-    mapIso η f (p ≪≫ q) = mapIso η f p ≪≫ mapIso η f q :=
-  Iso.ext (homMap_comp η f p.hom q.hom)
+    mapIso η f (p ≪≫ q) = mapIso η f p ≪≫ mapIso η f q := by
+  ext; simp
 
 @[simp]
 theorem mapIso_symm
     (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
-    mapIso η f p.symm = (mapIso η f p).symm :=
-  Iso.ext (mapIso_inv η f p).symm
+    mapIso η f p.symm = (mapIso η f p).symm := by
+  ext; simp
 
 /-- For the identity transformation, the transport of a local morphism is the morphism itself. -/
 @[simp]
@@ -158,7 +158,7 @@ itself. -/
 theorem id_mapIso
     (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
     mapIso (StrongTrans.id F) f p = p :=
-  Iso.ext (id_homMap f p.hom)
+  Iso.ext ((mapIso_hom _ f p).trans (id_homMap f p.hom))
 
 /-! ### Compatibility with the bands -/
 
