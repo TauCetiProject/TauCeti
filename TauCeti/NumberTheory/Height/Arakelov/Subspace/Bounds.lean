@@ -155,8 +155,8 @@ theorem subspaceHeight_span_range_le_prod_arakelovMulHeight_rpow {m : Type*} [Fi
   exact Finset.prod_congr rfl fun i _ ↦
     (Real.rpow_inv_natCast_pow (arakelovMulHeight_nonneg _) finrank_pos.ne').symm
 
-/-- Extracting a maximal linearly independent subfamily bounds the subspace height of the span of
-any finite family of nonzero vectors by the product of their Euclidean heights. -/
+/-- The absolute Euclidean height of the span of a finite family of nonzero vectors is at most
+the product of their Euclidean heights. -/
 theorem subspaceHeight_span_range_le_prod {m : Type*} [Fintype m] {v : m → ι → K}
     (hv : ∀ i, v i ≠ 0) :
     subspaceHeight (span K (range v)) ≤ ∏ i, height2 (v i) := by
