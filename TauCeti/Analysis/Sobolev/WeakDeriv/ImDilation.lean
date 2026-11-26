@@ -16,8 +16,8 @@ isomorphism that multiplies Lebesgue measure by `|c|`. If `g` has weak derivativ
 set `V`, then `g ∘ imDilation c` has weak derivative `z ↦ Dg (imDilation c z) ∘L imDilation c` on
 every open set that `imDilation c` maps into `V`.
 
-The proof applies `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv` to the continuous linear
-equivalence `TauCeti.imDilationEquiv`.
+The proof applies `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_of_isAddHaarMeasure` to the
+continuous linear equivalence `TauCeti.imDilationEquiv`.
 
 ## Main declarations
 
@@ -45,7 +45,7 @@ theorem HasWeakFDerivOn.comp_imDilation {c : ℝ} (hc : c ≠ 0) {U V : Opens �
   have he : ((imDilationEquiv hc : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) = imDilation c :=
     ContinuousLinearMap.ext fun z => congrFun (coe_imDilationEquiv hc) z
   simpa only [Function.comp_def, coe_imDilationEquiv, he] using
-    hg.comp_continuousLinearEquiv (μ := volume) (imDilationEquiv hc)
+    hg.comp_continuousLinearEquiv_of_isAddHaarMeasure (μ := volume) (imDilationEquiv hc)
       (by simpa only [coe_imDilationEquiv] using hUV)
 
 end TauCeti

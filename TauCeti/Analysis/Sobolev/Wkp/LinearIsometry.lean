@@ -130,8 +130,8 @@ private def compSpec (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻
   | k + 1 => ⟨fun u => mk k ((compSpec he hUW k).val (lowerOrder (k + 1) u))
       (pullbackLp he hUW (k + 1) (iteratedGradient (k + 1) u)) (by
         rw [(compSpec he hUW k).property]
-        have h := ((hasWeakFDerivOn_iteratedGradient k u).comp_continuousLinearEquiv (μ := μ)
-          e.toContinuousLinearEquiv (hUW ▸ mapsTo_preimage e W)).clm_comp
+        have h := ((hasWeakFDerivOn_iteratedGradient k u).comp_continuousLinearEquiv
+          e.toContinuousLinearEquiv he (hUW ▸ mapsTo_preimage e W)).clm_comp
           ((e.iteratedGradientCongr k).symm : IteratedGradient E' k →L[ℝ] IteratedGradient E k)
         refine (h.congr_ae (pullbackLp_ae he hUW k _).symm).congr_ae_deriv ?_
         filter_upwards [pullbackLp_ae he hUW (k + 1) (iteratedGradient (k + 1) u)] with x hx
@@ -288,7 +288,7 @@ theorem lowerOrder_compLinearIsometryEquiv (he : MeasurePreserving e μ ν)
 theorem compLinearIsometryEquiv_ofTestFunctionₗ (he : MeasurePreserving e μ ν)
     (hUW : (U : Set E) = e ⁻¹' W) (hWU : MapsTo e.symm W U) (k : ℕ) (φ : 𝓓(W, ℝ)) :
     compLinearIsometryEquiv he hUW k (ofTestFunctionₗ (mu := ν) (p := p) k φ) =
-      ofTestFunctionₗ k (e.symm.toContinuousLinearEquiv.transportTestFunction hWU φ) := by
+      ofTestFunctionₗ k (e.symm.toContinuousLinearEquiv.transportTestFunction ℝ hWU φ) := by
   refine ext k (Lp.ext ?_)
   rw [compLinearIsometryEquiv_apply, value_compₗ, value_ofTestFunctionₗ, value_ofTestFunctionₗ]
   filter_upwards [Lp.coeFn_compMeasurePreserving (testFunctionLp (mu := ν) p φ)
@@ -296,7 +296,7 @@ theorem compLinearIsometryEquiv_ofTestFunctionₗ (he : MeasurePreserving e μ �
     (hUW ▸ he.restrict_preimage W.isOpen.measurableSet).quasiMeasurePreserving.ae
       (testFunctionLp_apply_ae (mu := ν) p φ),
     testFunctionLp_apply_ae (mu := μ) p
-      (e.symm.toContinuousLinearEquiv.transportTestFunction hWU φ)] with x h1 h2 h3
+      (e.symm.toContinuousLinearEquiv.transportTestFunction ℝ hWU φ)] with x h1 h2 h3
   rw [h1, Function.comp_apply, h2, h3]
   exact (ContinuousLinearEquiv.transportTestFunction_apply e.symm.toContinuousLinearEquiv hWU φ
     x).symm

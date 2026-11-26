@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Complex.OperatorNorm
 
@@ -13,10 +14,10 @@ import TauCeti.Analysis.Complex.OperatorNorm
 # Coordinates of local Sobolev maps
 
 A map into a finite-dimensional real normed space is locally Sobolev of order `k` if and
-only if all its coordinates in a finite basis are (`Module.Basis.memWkpLoc_iff`). The same
-criterion holds for local `Lᵖ` membership on any topological measurable space
-(`Module.Basis.memLpLoc_iff`). These criteria allow scalar local estimates to be applied to
-vector-valued maps without choosing compatible representatives of their iterated weak derivatives.
+only if all its coordinates in a finite basis are (the local `Lᵖ` criterion
+`Module.Basis.memLpLoc_iff` lives in `TauCeti.MeasureTheory.Function.MemLpLoc`). These
+criteria allow scalar local estimates to be applied to vector-valued maps without choosing
+compatible representatives of their iterated weak derivatives.
 
 The criteria include the zero-dimensional codomain, order zero, and the exponent infinity.
 They also show that testing one basis is equivalent to testing every basis.
@@ -46,31 +47,6 @@ open TauCeti MeasureTheory
 open scoped ENNReal
 
 namespace Module.Basis
-
-section MemLpLoc
-
-variable {α F : Type*} [TopologicalSpace α] [MeasurableSpace α]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Finite ι]
-  {μ : Measure α} {p : ℝ≥0∞} {U : Set α} {f : α → F}
-
-/-- Local `Lᵖ` membership can be tested in any finite basis of the codomain, on any topological
-measurable space and with respect to any measure. No completeness assumption on the codomain is
-needed beyond finite dimensionality. -/
-theorem memLpLoc_iff (b : Module.Basis ι ℝ F) :
-    MemLpLoc p U f μ ↔ ∀ i, MemLpLoc p U (fun z => b.repr (f z) i) μ := by
-  classical
-  let : Fintype ι := Fintype.ofFinite ι
-  let : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
-  constructor
-  · intro h i
-    exact h.clm_comp ((ContinuousLinearMap.proj i).comp b.equivFunL.toContinuousLinearMap)
-  · intro h
-    have hs : MemLpLoc p U (fun z => ∑ i, b.repr (f z) i • b i) μ :=
-      MemLpLoc.sum Finset.univ fun i _ =>
-        (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
-    simpa only [b.sum_repr] using hs
-
-end MemLpLoc
 
 section MemWkpLoc
 

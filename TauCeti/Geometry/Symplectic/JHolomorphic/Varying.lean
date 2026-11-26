@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Basic
+import TauCeti.Geometry.Symplectic.JHolomorphic.Congruence
 
 /-!
 # J-holomorphic maps for varying almost complex structures
@@ -34,7 +35,8 @@ need it. The constant-structure API is recovered by specializing both functions 
 The within-set predicate carries the same two structural lemmas as the constant-structure one:
 `IsJHolomorphicWithinAt.mono` shrinks the set and `isJHolomorphicWithinAt_univ` identifies the
 `Set.univ` case with `IsJHolomorphicAt`. `IsJHolomorphicOn.mono` and `isJHolomorphicOn_univ`
-follow from them pointwise.
+follow from them pointwise, and `IsOpen.isJHolomorphicOn_iff` reduces the setwise predicate on an
+open set to the pointwise one.
 
 The convention follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1.
@@ -174,6 +176,13 @@ lemma IsJHolomorphicAt.fderiv_apply_commute {J : U → AlmostComplexStructure U}
     fderiv ℝ f x (J x v) = J' (f x) (fderiv ℝ f x v) :=
   IsConstStructureJHolomorphicAt.fderiv_apply_commute hf
 
+/-- J-holomorphicity at a point only depends on the germ of the map there. -/
+lemma IsJHolomorphicAt.congr_of_eventuallyEq {J : U → AlmostComplexStructure U}
+    {J' : V → AlmostComplexStructure V} {f f₁ : U → V} {x : U} (hf : IsJHolomorphicAt J J' f x)
+    (h : f₁ =ᶠ[nhds x] f) : IsJHolomorphicAt J J' f₁ x := by
+  rw [IsJHolomorphicAt, h.eq_of_nhds]
+  exact IsConstStructureJHolomorphicAt.congr_of_eventuallyEq hf h
+
 /-- Pointwise J-holomorphicity implies J-holomorphicity within any set. -/
 lemma IsJHolomorphicAt.isJHolomorphicWithinAt {J : U → AlmostComplexStructure U}
     {J' : V → AlmostComplexStructure V} {f : U → V} {s : Set U} {x : U}
@@ -251,6 +260,13 @@ lemma IsJHolomorphicOn.continuousOn {J : U → AlmostComplexStructure U}
     {J' : V → AlmostComplexStructure V} {f : U → V} {s : Set U}
     (hf : IsJHolomorphicOn J J' f s) : ContinuousOn f s :=
   fun x hx ↦ (hf x hx).continuousWithinAt
+
+/-- On an open set, setwise J-holomorphicity is J-holomorphicity at every point of the set. -/
+lemma _root_.IsOpen.isJHolomorphicOn_iff {J : U → AlmostComplexStructure U}
+    {J' : V → AlmostComplexStructure V} {f : U → V} {s : Set U} (hs : IsOpen s) :
+    IsJHolomorphicOn J J' f s ↔ ∀ x ∈ s, IsJHolomorphicAt J J' f x :=
+  ⟨fun hf x hx ↦ (hf x hx).isJHolomorphicAt_of_mem_nhds (hs.mem_nhds hx),
+    fun hf x hx ↦ (hf x hx).isJHolomorphicWithinAt⟩
 
 /-- A globally J-holomorphic map is J-holomorphic on every set. -/
 lemma IsJHolomorphic.isJHolomorphicOn {J : U → AlmostComplexStructure U}

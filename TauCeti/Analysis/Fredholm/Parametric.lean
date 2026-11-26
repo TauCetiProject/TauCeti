@@ -121,6 +121,9 @@ spaces or of the scalar field is required.
   projection is surjective exactly when `D₁` is.
 * `ContinuousLinearMap.index_parameterProj`: for a surjective total linearization, the
   projection has the same index as `D₁`.
+* `ContinuousLinearMap.finrank_ker_add_finrank_range_parameterProj` and
+  `ContinuousLinearMap.finrank_range_parameterProj_add_finrank_quotient_range`: the dimension
+  counts of the kernel of the total linearization and, when it is onto, of the parameters.
 * `ContinuousLinearMap.isOpenMap_rangeFactorization_parameterProj`: the projection is open onto
   its range when `D₁` is.
 * `ContinuousLinearMap.isFredholm_parameterProj`: when `E` has continuous addition and `Λ`
@@ -708,6 +711,22 @@ theorem finrank_ker_coprod_add_finrank_range_parameterToCoker
   rw [finrank_ker_parameterProj] at hproj
   rw [ker_parameterToCoker] at hparam
   omega
+
+/-- The kernel of the total linearization splits into a copy of the kernel of `D₁` and the range
+of the parameter projection. -/
+theorem finrank_ker_add_finrank_range_parameterProj [FiniteDimensional 𝕜 (D₁.coprod D₂).ker] :
+    finrank 𝕜 D₁.ker + finrank 𝕜 (parameterProj D₁ D₂).range =
+      finrank 𝕜 (D₁.coprod D₂).ker := by
+  rw [← finrank_ker_parameterProj D₁ D₂, add_comm]
+  exact (parameterProj D₁ D₂).toLinearMap.finrank_range_add_finrank_ker
+
+/-- For a surjective total linearization, the parameters split into the range of the parameter
+projection and a copy of the cokernel of `D₁`. -/
+theorem finrank_range_parameterProj_add_finrank_quotient_range [FiniteDimensional 𝕜 Λ]
+    (hD : Function.Surjective (D₁.coprod D₂)) :
+    finrank 𝕜 (parameterProj D₁ D₂).range + finrank 𝕜 (F ⧸ D₁.range) = finrank 𝕜 Λ := by
+  rw [← finrank_quotient_range_parameterProj D₁ D₂ hD, add_comm]
+  exact Submodule.finrank_quotient_add_finrank _
 
 /-- The extended cokernel is smaller by the rank of the parameter map
 into the old cokernel. No finiteness of the parameter space is needed. -/

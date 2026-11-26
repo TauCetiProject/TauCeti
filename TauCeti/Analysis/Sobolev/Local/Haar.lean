@@ -31,7 +31,8 @@ This file establishes two invariance properties of the local Sobolev classes `Ta
 2. **Linear transport.** Any continuous linear equivalence `e : E ≃L[ℝ] E'` between
    finite-dimensional real normed spaces pushes an additive Haar measure `μ` on `E` forward to an
    additive Haar measure `μ.map e` on `E'`. Combining Haar independence with the weak chain rule
-   `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv` carries `MemLpLoc` (via `MapsTo`) and
+   `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_of_isAddHaarMeasure` carries `MemLpLoc` (via
+   `MapsTo`) and
    `MemWkpLoc` of every order `k` across `e` for arbitrary additive Haar measures `μ` on `E` and `ν`
    on `E'` (`TauCeti.MemLpLoc.comp_continuousLinearEquiv`,
    `TauCeti.MemWkpLoc.comp_continuousLinearEquiv`,
@@ -196,7 +197,7 @@ private theorem memWkpLoc_comp_continuousLinearEquiv_max {F : Type max u₁ u₂
     have : CompleteSpace F := hD.completeSpace
     refine memWkpLoc_succ_iff.2 ⟨hLp.comp_continuousLinearEquiv e hUV,
       fun x => (D (e x)).comp (e : E →L[ℝ] E'),
-      hD.comp_continuousLinearEquiv (μ := μ) e hUV_int, ?_⟩
+      hD.comp_continuousLinearEquiv_of_isAddHaarMeasure (μ := μ) e hUV_int, ?_⟩
     exact (ih hDk).clm_comp ((ContinuousLinearMap.compL ℝ E E' F).flip (e : E →L[ℝ] E'))
 
 /-- **Linear transport of local Sobolev classes.** Precomposing with a continuous linear equivalence

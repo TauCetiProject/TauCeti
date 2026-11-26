@@ -649,6 +649,13 @@ theorem W1p.ext {u v : W1p mu Omega p}
 theorem W1p.norm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ ≤ ‖u‖ :=
   Sobolev1JetLp.norm_value_le u.val
 
+/-- The value projection `W1p.valueL` has operator norm at most one. -/
+theorem W1p.norm_valueL_le :
+    ‖(W1p.valueL : W1p mu Omega p →L[ℝ] Lp ℝ p (mu.restrict Omega))‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by
+    rw [one_mul, W1p.valueL_apply]
+    exact W1p.norm_value_le u
+
 /-- The extended norm of a Sobolev function controls the extended norm of its value component. -/
 theorem W1p.enorm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ₑ ≤ ‖u‖ₑ :=
   eNorm_le_iff_norm_le.2 (W1p.norm_value_le u)
@@ -701,6 +708,19 @@ theorem W1p.toReal_eLpNorm_gradient_le_norm (u : W1p mu Omega p) {s : Set E}
     (eLpNorm (W1p.gradient u) p (mu.restrict s)).toReal ≤ ‖W1p.gradient u‖ :=
   (ENNReal.toReal_mono (Lp.eLpNorm_ne_top _)
     (eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl))).trans_eq (Lp.norm_def _).symm
+
+/-- A Sobolev inequality `‖u‖_{Lˢ} ≤ S ‖∇u‖_{Lᵖ}` puts the value of `u` in `Lˢ`. -/
+theorem W1p.memLp_value_of_eLpNorm_le {u : W1p mu Omega p} {s : ENNReal} {S : NNReal}
+    (hS : eLpNorm (W1p.value u) s (mu.restrict Omega) ≤ S * ‖W1p.gradient u‖ₑ) :
+    MemLp (W1p.value u) s (mu.restrict Omega) :=
+  memLp_iff.2 (hS.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top eNorm_lt_top))
+
+/-- A Sobolev inequality `‖u‖_{Lˢ} ≤ S ‖∇u‖_{Lᵖ}` in real form. -/
+theorem W1p.toReal_eLpNorm_value_le_mul_norm_gradient {u : W1p mu Omega p} {s : ENNReal}
+    {S : NNReal} (hS : eLpNorm (W1p.value u) s (mu.restrict Omega) ≤ S * ‖W1p.gradient u‖ₑ) :
+    (eLpNorm (W1p.value u) s (mu.restrict Omega)).toReal ≤ S * ‖W1p.gradient u‖ := by
+  have := ENNReal.toReal_mono (by finiteness) hS
+  rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_eNorm] at this
 
 /-- The norm of a Sobolev function is at most the sum of the norms of its value and its weak
 gradient. -/
@@ -1288,5 +1308,29 @@ theorem W1p.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow {r : ENNReal} [Fact (1
   exact Lp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow hpr hqr hθ hq _
 
 end Exponent
+
+section Real
+
+variable {mu : Measure ℝ} [mu.IsAddHaarMeasure] {Omega : Opens ℝ}
+
+/-- On a domain in `ℝ`, the Dirichlet form `∫_Ω u' v'` is the `L²` inner product of the weak
+gradients. -/
+theorem W1p.setIntegral_gradient_mul_gradient_eq_inner (u v : W1p mu Omega 2) :
+    ∫ x in Omega, W1p.gradient u x * W1p.gradient v x ∂mu =
+      ⟪W1p.gradient u, W1p.gradient v⟫_ℝ := by
+  rw [L2.inner_def]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun x => by simp [mul_comm])
+
+/-- On a domain in `ℝ`, the Dirichlet form `∫_Ω u' v'` is additive in its left argument up to
+subtraction. -/
+theorem W1p.setIntegral_gradient_sub_mul_gradient (u u' v : W1p mu Omega 2) :
+    ∫ x in Omega, W1p.gradient (u - u') x * W1p.gradient v x ∂mu =
+      (∫ x in Omega, W1p.gradient u x * W1p.gradient v x ∂mu) -
+        ∫ x in Omega, W1p.gradient u' x * W1p.gradient v x ∂mu := by
+  rw [W1p.setIntegral_gradient_mul_gradient_eq_inner,
+    W1p.setIntegral_gradient_mul_gradient_eq_inner, W1p.setIntegral_gradient_mul_gradient_eq_inner,
+    W1p.gradient_sub, inner_sub_left]
+
+end Real
 
 end TauCeti

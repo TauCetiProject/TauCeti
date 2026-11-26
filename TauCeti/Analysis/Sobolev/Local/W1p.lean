@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.Analysis.Sobolev.Local.FirstOrder
 public import TauCeti.Analysis.Sobolev.Local.Norm
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -15,8 +16,8 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 # Order-one local Sobolev functions, `W1p`, and `WeakDerivStep`
 
 Let `Ω` be an open subset of a finite-dimensional real normed space `E` with its Borel σ-algebra.
-This file compares the order-one local Sobolev class `TauCeti.MemWkpLoc p Ω 1` with two global
-quotient carriers:
+This file compares the order-one local Sobolev class `TauCeti.MemWkpLoc p Ω 1` and the first-order
+class `TauCeti.MemW1pLoc p Ω` with two global quotient carriers:
 
 1. For any locally finite measure `μ` on `E`, any Banach codomain `F`, and `1 ≤ p`, a function
    `u : E → F` lies in `MemWkpLoc p Ω 1 u μ` exactly when its restriction to every open `W` with
@@ -26,12 +27,14 @@ quotient carriers:
    No inner product on `E`, Haar assumption on `μ`, or basis/separability of `F` is used.
 
 2. For an inner product space `E`, an additive Haar measure `μ` on `E`, and real-valued functions,
-   `MemWkpLoc p Ω 1 u μ` agrees with `TauCeti.W1p μ W p` on every open `W` with compact closure
-   contained in `Ω` (`TauCeti.MemWkpLoc.exists_w1p`, `TauCeti.memWkpLoc_one_iff_forall_w1p`).
-   The weak gradient of that element is dual, through `InnerProductSpace.toDual`, to the weak
-   derivative of `u` on `Ω`. A real function of finite `W^{1,p}(Ω)` norm `TauCeti.eLpNormWkp p Ω 1`
-   is represented by an element of `W1p μ Ω p` whose norm is at most that size
-   (`TauCeti.exists_w1p_enorm_le_eLpNormWkp`).
+   both `MemWkpLoc p Ω 1 u μ` and `MemW1pLoc p Ω u μ` agree with `TauCeti.W1p μ W p` on every open
+   `W` with compact closure contained in `Ω` (`TauCeti.MemWkpLoc.exists_w1p`,
+   `TauCeti.memWkpLoc_one_iff_forall_w1p`, `TauCeti.MemW1pLoc.exists_w1p`,
+   `TauCeti.memW1pLoc_iff_forall_w1p`). The weak gradient of that element is dual, through
+   `InnerProductSpace.toDual`, to the weak derivative of `u` on `Ω`. On open sets,
+   `MemWkpLoc p Ω 1` agrees with `MemW1pLoc p Ω` (`TauCeti.memWkpLoc_one_iff_memW1pLoc`), and a
+   real function of finite `W^{1,p}(Ω)` norm `TauCeti.eLpNormWkp p Ω 1` is represented by an element
+   of `W1p μ Ω p` whose norm is at most that size (`TauCeti.exists_w1p_enorm_le_eLpNormWkp`).
 
 ## Main declarations
 
@@ -42,14 +45,19 @@ quotient carriers:
   `WeakDerivStep`.
 * `TauCeti.WeakDerivStep.tendsto_iff_eLpNorm_of_ae_eq`: convergence in `WeakDerivStep` over the
   identity of `Lp F p` in terms of the extended Bochner `Lᵖ` norms of arbitrary representatives.
-* `TauCeti.MemWkpLoc.exists_w1p`: a real member of `MemWkpLoc p Ω 1` is represented by an element
-  of `W1p` on every relatively compact open subset of `Ω`, with the dual weak gradient.
+* `TauCeti.MemW1pLoc.exists_w1p`, `TauCeti.memW1pLoc_iff_forall_w1p`: comparison of real-valued
+  `MemW1pLoc p Ω` with `W1p μ W p` on relatively compact open subsets `W` of `Ω`.
+* `TauCeti.MemWkpLoc.exists_w1p`, `TauCeti.memWkpLoc_one_iff_forall_w1p`: comparison of real-valued
+  `MemWkpLoc p Ω 1` with `W1p μ W p`.
+* `TauCeti.memWkpLoc_one_iff_memW1pLoc`: on open sets, `MemWkpLoc p Ω 1` agrees with
+  `MemW1pLoc p Ω`.
 * `TauCeti.exists_w1p_enorm_le_eLpNormWkp`: a real function of finite `W^{1,p}(Ω)` norm is
   represented in `W1p μ Ω p` with no larger norm.
-* `TauCeti.memWkpLoc_one_iff_forall_w1p`: the order-one comparison with `W1p`.
 
 ## References
 
+* W. P. Ziemer, *Weakly Differentiable Functions*, Graduate Texts in Mathematics 120, Springer,
+  1989, §2.1.
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
   Appendix B.1 (local Sobolev spaces).
 * W. Arendt and M. Kreuter, *Mapping theorems for Sobolev spaces of vector-valued functions*,
@@ -159,11 +167,73 @@ theorem WeakDerivStep.tendsto_iff_eLpNorm_of_ae_eq {I : Type*} {l : Filter I}
 
 end WeakDerivStep
 
-section W1p
+section FirstOrderEquiv
+
+/-- On open sets, the order-one class `MemWkpLoc p Ω 1` agrees with `MemW1pLoc p Ω`. -/
+@[simp]
+theorem memWkpLoc_one_iff_memW1pLoc {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} {Ω : Opens E}
+    {u : E → F} {μ : Measure E} :
+    MemWkpLoc p Ω 1 u μ ↔ MemW1pLoc p Ω u μ := by
+  simp only [memWkpLoc_succ_iff_of_isOpen, memWkpLoc_zero_iff, memW1pLoc_iff]
+
+end FirstOrderEquiv
+
+section InnerProduct
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Opens E}
+
+/-- **Local Sobolev functions are Sobolev on relatively compact subdomains.** Let
+`u ∈ MemW1pLoc p Ω` be real-valued, with weak derivative `D` on `Ω`. On every open `W` whose
+closure is compact and contained in `Ω`, `u` is represented by an element of `W1p μ W p`
+whose weak gradient is dual to `D`. -/
+theorem MemW1pLoc.exists_w1p {u : E → ℝ} (hu : MemW1pLoc p Ω u μ)
+    {D : E → E →L[ℝ] ℝ} (hD : HasWeakFDerivOn μ Ω u D) {W : Opens E}
+    (hWc : IsCompact (closure (W : Set E))) (hWΩ : closure (W : Set E) ⊆ Ω) :
+    ∃ v : W1p μ W p, W1p.value v =ᵐ[μ.restrict W] u ∧
+      W1p.gradient v =ᵐ[μ.restrict W]
+        fun x => (InnerProductSpace.toDual ℝ E).symm (D x) :=
+  W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn
+    (hu.memLpLoc.memLp_restrict_of_isCompact_closure hWc hWΩ)
+    ((hu.memLpLoc_of_hasWeakFDerivOn hD).memLp_restrict_of_isCompact_closure hWc hWΩ)
+    (hD.mono (SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ)))
+
+/-- **Comparison of `MemW1pLoc` with `W1p`.** A real-valued function on `Ω ⊆ E` lies in
+`MemW1pLoc p Ω` if and only if its restriction to every open `W` with compact closure contained in
+`Ω` is represented by an element of `W1p μ W p`. The weak gradients then correspond to the
+weak derivative of `u` on `Ω` through `InnerProductSpace.toDual`, by
+`TauCeti.MemW1pLoc.exists_w1p`. -/
+theorem memW1pLoc_iff_forall_w1p {u : E → ℝ} :
+    MemW1pLoc p Ω u μ ↔ ∀ W : Opens E, IsCompact (closure (W : Set E)) →
+      closure (W : Set E) ⊆ Ω → ∃ v : W1p μ W p, W1p.value v =ᵐ[μ.restrict W] u := by
+  constructor
+  · intro hu W hWc hWΩ
+    obtain ⟨D, hD, -⟩ := hu.exists_hasWeakFDerivOn
+    obtain ⟨v, hv, -⟩ := hu.exists_w1p hD hWc hWΩ
+    exact ⟨v, hv⟩
+  · intro h
+    have hcover : ∀ K : Set E, IsCompact K → K ⊆ Ω → ∃ W : Opens E, K ⊆ W ∧ W ≤ Ω ∧
+        ∃ v : W1p μ W p, W1p.value v =ᵐ[μ.restrict W] u := by
+      intro K hK hKΩ
+      obtain ⟨W, hKW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
+      exact ⟨W, hKW, SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ), h W hWc hWΩ⟩
+    obtain ⟨D, hD⟩ : ∃ D : E → E →L[ℝ] ℝ, HasWeakFDerivOn μ Ω u D := by
+      refine exists_hasWeakFDerivOn_iff_locally.2 fun x hx => ?_
+      obtain ⟨W, hxW, -, v, hv⟩ := hcover {x} isCompact_singleton (singleton_subset_iff.2 hx)
+      exact ⟨W, hxW rfl, _, (W1p.hasWeakFDerivOn v).congr_ae hv⟩
+    refine memW1pLoc_iff.2
+      ⟨memLpLoc_iff.2 fun K hKΩ hK => ?_, D, hD, memLpLoc_iff.2 fun K hKΩ hK => ?_⟩
+    · obtain ⟨W, hKW, -, v, hv⟩ := hcover K hK hKΩ
+      have hmono : μ.restrict K ≤ μ.restrict (W : Set E) := Measure.restrict_mono hKW le_rfl
+      exact ((Lp.memLp (W1p.value v)).mono_measure hmono).ae_eq (ae_mono hmono hv)
+    · obtain ⟨W, hKW, hWΩ, v, hv⟩ := hcover K hK hKΩ
+      have hmono : μ.restrict K ≤ μ.restrict (W : Set E) := Measure.restrict_mono hKW le_rfl
+      have hae : (fun x => innerSL ℝ (W1p.gradient v x)) =ᵐ[μ.restrict W] D :=
+        ((W1p.hasWeakFDerivOn v).congr_ae hv).ae_eq (hD.mono hWΩ)
+      exact (((innerSL ℝ).comp_memLp' (Lp.memLp (W1p.gradient v))).mono_measure hmono).ae_eq
+        (ae_mono hmono hae)
 
 /-- **Local Sobolev functions are Sobolev on relatively compact subdomains.** Let
 `u ∈ MemWkpLoc p Ω 1` be real-valued, with weak derivative `D` on `Ω`. On every open `W` whose
@@ -174,13 +244,8 @@ theorem MemWkpLoc.exists_w1p {u : E → ℝ} (hu : MemWkpLoc p Ω 1 u μ)
     (hWc : IsCompact (closure (W : Set E))) (hWΩ : closure (W : Set E) ⊆ Ω) :
     ∃ v : W1p μ W p, W1p.value v =ᵐ[μ.restrict W] u ∧
       W1p.gradient v =ᵐ[μ.restrict W]
-        fun z => (InnerProductSpace.toDual ℝ E).symm (D z) := by
-  have hmono : μ.restrict (W : Set E) ≤ μ.restrict (closure (W : Set E)) :=
-    Measure.restrict_mono subset_closure le_rfl
-  exact W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn
-    ((memLpLoc_iff.1 hu.memLpLoc _ hWΩ hWc).mono_measure hmono)
-    ((memLpLoc_iff.1 (hu.memLpLoc_of_hasWeakFDerivOn hD) _ hWΩ hWc).mono_measure hmono)
-    (hD.mono (SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ)))
+        fun z => (InnerProductSpace.toDual ℝ E).symm (D z) :=
+  (memWkpLoc_one_iff_memW1pLoc.1 hu).exists_w1p hD hWc hWΩ
 
 /-- **The `W1p` norm is bounded by the `W^{1,p}` norm.** A real function `u` whose `W^{1,p}(Ω)`
 norm `TauCeti.eLpNormWkp p Ω 1 u μ` is finite is represented by an element of `W1p μ Ω p` whose
@@ -204,33 +269,8 @@ through `InnerProductSpace.toDual`, by `TauCeti.MemWkpLoc.exists_w1p`. -/
 theorem memWkpLoc_one_iff_forall_w1p {u : E → ℝ} :
     MemWkpLoc p Ω 1 u μ ↔ ∀ W : Opens E, IsCompact (closure (W : Set E)) →
       closure (W : Set E) ⊆ Ω → ∃ v : W1p μ W p, W1p.value v =ᵐ[μ.restrict W] u := by
-  constructor
-  · intro hu W hWc hWΩ
-    obtain ⟨D, hD, -⟩ := hu.exists_weakFDeriv_of_isOpen
-    obtain ⟨v, hv, -⟩ := hu.exists_w1p hD hWc hWΩ
-    exact ⟨v, hv⟩
-  · intro h
-    have hcover : ∀ K : Set E, IsCompact K → K ⊆ Ω → ∃ W : Opens E, K ⊆ W ∧ W ≤ Ω ∧
-        ∃ v : W1p μ W p, W1p.value v =ᵐ[μ.restrict W] u := by
-      intro K hK hKΩ
-      obtain ⟨W, hKW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
-      exact ⟨W, hKW, SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ), h W hWc hWΩ⟩
-    obtain ⟨D, hD⟩ : ∃ D : E → E →L[ℝ] ℝ, HasWeakFDerivOn μ Ω u D := by
-      refine exists_hasWeakFDerivOn_iff_locally.2 fun x hx => ?_
-      obtain ⟨W, hxW, -, v, hv⟩ := hcover {x} isCompact_singleton (singleton_subset_iff.2 hx)
-      exact ⟨W, hxW rfl, _, (W1p.hasWeakFDerivOn v).congr_ae hv⟩
-    refine memWkpLoc_succ_iff_of_isOpen.2 ⟨memLpLoc_iff.2 fun K hKΩ hK => ?_, D, hD,
-      memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hKΩ hK => ?_)⟩
-    · obtain ⟨W, hKW, -, v, hv⟩ := hcover K hK hKΩ
-      have hmono : μ.restrict K ≤ μ.restrict (W : Set E) := Measure.restrict_mono hKW le_rfl
-      exact ((Lp.memLp (W1p.value v)).mono_measure hmono).ae_eq (ae_mono hmono hv)
-    · obtain ⟨W, hKW, hWΩ, v, hv⟩ := hcover K hK hKΩ
-      have hmono : μ.restrict K ≤ μ.restrict (W : Set E) := Measure.restrict_mono hKW le_rfl
-      have hae : (fun z => innerSL ℝ (W1p.gradient v z)) =ᵐ[μ.restrict W] D :=
-        ((W1p.hasWeakFDerivOn v).congr_ae hv).ae_eq (hD.mono hWΩ)
-      exact (((innerSL ℝ).comp_memLp' (Lp.memLp (W1p.gradient v))).mono_measure hmono).ae_eq
-        (ae_mono hmono hae)
+  rw [memWkpLoc_one_iff_memW1pLoc, memW1pLoc_iff_forall_w1p]
 
-end W1p
+end InnerProduct
 
 end TauCeti

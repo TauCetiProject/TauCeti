@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
 import TauCeti.Analysis.Pseudodifferential.MicrolocalCutoff
+import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Elliptic
 import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 
 /-!
@@ -24,6 +25,16 @@ open cone `Γ` containing `ξ₀` and a radius `R`, the value `a(x, ξ)` is inve
 compact sets (`TauCeti.Symbol.IsEllipticOn`). The other points `(x₀, ξ₀)` with `ξ₀ ≠ 0` form the
 **characteristic set** `Char(a)` (`TauCeti.Symbol.characteristicSet`). It is conic, and empty for a
 symbol elliptic above some radius.
+
+For a classical symbol `a` the characteristic set is read off the principal symbol: it consists of
+the points `(x, ξ)`, `ξ ≠ 0`, at which `a_m(x, ξ)` is not invertible
+(`TauCeti.ClassicalSymbol.mem_characteristicSet_toSymbol_iff`). If `a_m(x₀, ξ₀)` is invertible,
+then `a` is elliptic on the cone over a neighbourhood of `ξ₀` at large frequencies
+(`TauCeti.ClassicalSymbol.exists_isEllipticOn_of_isInvertible_coefficient_principal`). Conversely,
+if `a` is elliptic along the ray of `ξ`, then `a_m(x, ξ)` is invertible
+(`TauCeti.ClassicalSymbol.isInvertible_coefficient_principal_of_isEllipticOn`). In particular a
+classical symbol has empty characteristic set exactly when it is elliptic
+(`TauCeti.ClassicalSymbol.characteristicSet_toSymbol_eq_empty_iff`).
 
 This file proves **microlocal elliptic regularity** for a scalar symbol `a` with compact spatial
 support acting on a Bessel-potential space `H^t`: the operator `Op(a)` recovers every singularity of
@@ -88,6 +99,11 @@ enlarge wave front sets, and `Op(e) v` lies in every `H^s`, so its wave front se
   some `c` of order `0`, not characteristic at `(x₀, ξ₀)`, gives `WF(Op(c) v) = ∅`.
 * `TauCeti.Symbol.waveFrontSet_toDistribution_eq_iInter_characteristicSet`: the wave front set is
   the intersection of the characteristic sets of the test operators `c` with `WF(Op(c) v) = ∅`.
+* `TauCeti.ClassicalSymbol.mem_characteristicSet_toSymbol_iff`,
+  `TauCeti.ClassicalSymbol.characteristicSet_toSymbol`: the characteristic set of a classical
+  symbol is the set of points at which its principal symbol is not invertible, and
+  `TauCeti.ClassicalSymbol.characteristicSet_toSymbol_eq_empty_iff`: it is empty exactly when the
+  symbol is elliptic.
 
 ## References
 
@@ -378,5 +394,38 @@ theorem waveFrontSet_toDistribution_eq_iInter_characteristicSet (t : ℝ)
 end TestOperators
 
 end Symbol
+
+/-! ### The characteristic set of a classical symbol -/
+
+namespace ClassicalSymbol
+
+variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] {a : ClassicalSymbol n V W m}
+
+/-- **The characteristic set of a classical symbol** consists of the points `(x, ξ)`, `ξ ≠ 0`, at
+which its principal symbol `a_m(x, ξ)` is not invertible. -/
+@[simp]
+theorem mem_characteristicSet_toSymbol_iff {p : CoordinateSpace n × CoordinateSpace n} :
+    p ∈ a.toSymbol.characteristicSet ↔
+      p.2 ≠ 0 ∧ ¬ (a.principal.coefficient p).IsInvertible := by
+  obtain ⟨x, ξ⟩ := p
+  exact and_congr_right fun hξ ↦ not_congr ⟨fun ⟨_, hU, _, _, hξΓ, hcone, _, hR⟩ ↦
+    isInvertible_coefficient_principal_of_isEllipticOn hξ (mem_of_mem_nhds hU)
+      (fun t ht ↦ hcone t ht ξ hξΓ) hR,
+    exists_isEllipticOn_of_isInvertible_coefficient_principal hξ⟩
+
+/-- The characteristic set of a classical symbol is the set of points `(x, ξ)`, `ξ ≠ 0`, at which
+its principal symbol is not invertible. -/
+theorem characteristicSet_toSymbol :
+    a.toSymbol.characteristicSet = {p | p.2 ≠ 0 ∧ ¬ (a.principal.coefficient p).IsInvertible} :=
+  Set.ext fun _ ↦ mem_characteristicSet_toSymbol_iff
+
+/-- A classical symbol has no characteristic points exactly when it is elliptic. -/
+@[simp]
+theorem characteristicSet_toSymbol_eq_empty_iff :
+    a.toSymbol.characteristicSet = ∅ ↔ a.IsElliptic := by
+  simp [eq_empty_iff_forall_notMem, isElliptic_iff]
+
+end ClassicalSymbol
 
 end TauCeti

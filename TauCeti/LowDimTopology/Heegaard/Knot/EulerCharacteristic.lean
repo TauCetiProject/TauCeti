@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.Algebra.Ring.NegOnePow
 public import TauCeti.LowDimTopology.Heegaard.AlexanderGrading
+public import TauCeti.LowDimTopology.Heegaard.Grading
 import TauCeti.Algebra.Polynomial.Laurent.Coeff
 
 /-!
@@ -26,7 +27,9 @@ manifold, so only `w` enters it. For the abstract region incidence data
 identities for every domain is a *knot grading* (`TauCeti.HeegaardRegionSystem.IsKnotGrading`).
 Such a pair exists only when `μ(P) - 2 n_w(P)` and `n_z(P) - n_w(P)` vanish for every domain `P`
 from a generator to itself, as for a knot in `S³`: there these domains are the multiples of the
-whole surface, which has `μ = 2` and `n_w = n_z = 1`.
+whole surface, which has `μ = 2` and `n_w = n_z = 1`. The Maslov grading `M` of a knot grading is
+a Maslov grading of the diagram pointed at `w` alone
+(`TauCeti.HeegaardRegionSystem.IsKnotGrading.isMaslovGrading`).
 
 Knot gradings are determined by the domains up to an overall shift: adding constants to `M` and
 `A` gives a knot grading (`TauCeti.HeegaardRegionSystem.IsKnotGrading.add_const`), and when every
@@ -67,6 +70,8 @@ formalized here.
 
 ## Main results
 
+* `TauCeti.HeegaardRegionSystem.IsKnotGrading.isMaslovGrading`: the Maslov component of a knot
+  grading is a Maslov grading of the singly pointed diagram.
 * `TauCeti.HeegaardRegionSystem.IsKnotGrading.exists_eq_add`: knot gradings are unique up to an
   overall shift when the generators are joined by domains.
 * `TauCeti.HeegaardRegionSystem.IsKnotGrading.maslov_eq_add_one_of_hatCoefficient_ne_zero` and
@@ -130,6 +135,14 @@ theorem add_const (h : H.IsKnotGrading χ w z M A) (m a : ℤ) :
   alexander_sub_alexander hD := by
     rw [← h.alexander_sub_alexander hD]
     ring
+
+/-- The Maslov component of a knot grading is a Maslov grading of the diagram pointed at `w`
+alone. -/
+theorem isMaslovGrading (h : H.IsKnotGrading χ w z M A) :
+    (H.withBasepoints fun _ : Unit => H.basepoint w).IsMaslovGrading χ fun x => (M x : ℚ) where
+  sub_eq hD := by
+    have hD' : H.IsDomainBetween _ _ _ := (isDomainBetween_withBasepoints _).mp hD
+    simpa [maslovIndex_withBasepoints] using h.maslov_sub_maslov hD'
 
 /-- **Knot gradings are unique up to an overall shift.** When every two generators are joined by
 a domain, two knot gradings differ by constants. -/
