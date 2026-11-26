@@ -22,7 +22,8 @@ Hamiltonian (`TauCeti.centralForceHamiltonian`). Away from the collision set `q 
 momentum bivector `q ∧ p`. In the plane `ℓ²` is the square of the angular momentum
 `L = q₁p₂ - q₂p₁` (`TauCeti.sq_angularMomentum`).
 
-The kinetic energy splits as `‖p‖² = p_r² + ℓ² / r²`, so
+The kinetic energy splits as `‖p‖² = p_r² + ℓ² / r²`; in particular `ℓ² = 0` exactly when the
+momentum is radial, `p = p_r (q / ‖q‖)` (`TauCeti.sq_sub_inner_sq_eq_zero_iff`). So
 
 `H(q, p) = p_r² / (2m) + U_ℓ(r)`, with the *effective potential* `U_ℓ(r) = ℓ² / (2 m r²) + U(r)`
 
@@ -63,6 +64,7 @@ Two consequences describe the qualitative radial motion:
 
 ## Main results
 
+* `TauCeti.sq_sub_inner_sq_eq_zero_iff`: zero angular momentum means radial momentum.
 * `TauCeti.centralForceHamiltonian_radialProjection`: `H(q, p) = H_ℓ(r, p_r)`.
 * `TauCeti.centralForceHamiltonian_eq_radialMomentum_sq_div_add_effectivePotential`:
   `H(q, p) = p_r² / (2m) + U_ℓ(‖q‖)`.
@@ -216,6 +218,26 @@ theorem norm_snd_sq_eq_radialMomentum_sq_add {x : V × V} (hq : x.1 ≠ 0) :
   rw [radialMomentum]
   field_simp
   ring
+
+/-- **Zero angular momentum means radial momentum.** Away from the collision set, the squared
+angular momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` vanishes exactly when the momentum is the radial
+momentum times the unit vector `q / ‖q‖`, `p = p_r (q / ‖q‖)`. -/
+theorem sq_sub_inner_sq_eq_zero_iff {x : V × V} (hq : x.1 ≠ 0) :
+    ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 = 0 ↔
+      x.2 = radialMomentum x • ‖x.1‖⁻¹ • x.1 := by
+  have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
+  -- The tangential part `p - p_r (q / ‖q‖)` has squared length `‖p‖² - p_r² = ℓ² / ‖q‖²`.
+  have h : ‖x.2 - radialMomentum x • ‖x.1‖⁻¹ • x.1‖ ^ 2 =
+      (‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) / ‖x.1‖ ^ 2 := by
+    rw [← sub_eq_iff_eq_add'.2 (norm_snd_sq_eq_radialMomentum_sq_add hq), norm_sub_sq_real]
+    simp only [norm_smul, norm_inv, Real.norm_eq_abs, abs_norm, mul_pow, sq_abs,
+      real_inner_smul_right, real_inner_comm, radialMomentum]
+    field_simp
+    ring
+  have h' : x.2 = radialMomentum x • ‖x.1‖⁻¹ • x.1 ↔
+      ‖x.2 - radialMomentum x • ‖x.1‖⁻¹ • x.1‖ ^ 2 = 0 := by
+    rw [pow_eq_zero_iff two_ne_zero, norm_eq_zero, sub_eq_zero]
+  rw [h', h, div_eq_zero_iff, or_iff_left (pow_ne_zero 2 hr)]
 
 /-- **The energy in radial form.** Away from the collision set, a central-force Hamiltonian is the
 reduced Hamiltonian `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)` of the radial projection, for `ℓ²` the
