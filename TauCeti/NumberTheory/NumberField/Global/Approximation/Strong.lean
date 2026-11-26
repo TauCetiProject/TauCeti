@@ -15,6 +15,7 @@ import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SmallInteger
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 import TauCeti.RingTheory.DedekindDomain.SInteger.Localization
+import TauCeti.Topology.Constructions.Pi
 
 /-!
 # Strong approximation away from one place
@@ -269,45 +270,24 @@ theorem denseRange_algebraMap_integer_pi (w : Place K) (S : Set (HeightOneSpectr
     (T : Set (Place K)) (hwT : w ∉ T) (hwS : ∀ v, Sum.inl v = w → v ∈ S)
     (hTS : ∀ v, Sum.inl v ∈ T → v ∈ S) :
     DenseRange fun x : S.integer K ↦ fun p : T ↦ algebraMap K p.val.Completion x := by
-  classical
-  rw [DenseRange, dense_iff_inter_open]
-  rintro U hU ⟨g, hg⟩
-  -- `U` contains a basic open set, a product of opens `u p` over a finite set `I` of places.
-  obtain ⟨I, u, hu, hIU⟩ := isOpen_pi_iff.1 hU g hg
-  set J := I.map (Function.Embedding.subtype (· ∈ T))
-  have hJ (p : Place K) : p ∈ J ↔ ∃ h : p ∈ T, ⟨p, h⟩ ∈ I := by simp [J]
-  -- Approximate at the finite and the infinite places of `I`, with no condition elsewhere.
-  let U' (v : HeightOneSpectrum (𝓞 K)) : Set (v.adicCompletion K) :=
-    if h : Sum.inl v ∈ T then u ⟨Sum.inl v, h⟩ else Set.univ
-  let V' (v : InfinitePlace K) : Set v.Completion :=
-    if h : Sum.inr v ∈ T then u ⟨Sum.inr v, h⟩ else Set.univ
-  have hJT {p : Place K} (hp : p ∈ J) : p ∈ T := ((hJ p).1 hp).1
+  refine denseRange_pi_subtype_of_forall_finset fun J hJT u hu ↦ ?_
+  -- Approximate at the finite and the infinite places of `J`, with no condition elsewhere.
   obtain ⟨x, hxU, hxV, hxint⟩ := exists_forall_algebraMap_mem_and_forall_norm_le_one w
     (J.preimage Sum.inl Sum.inl_injective.injOn) (J.preimage Sum.inr Sum.inr_injective.injOn)
     (fun v hv h ↦ hwT (h ▸ hJT (Finset.mem_preimage.1 hv)))
-    (fun v hv h ↦ hwT (h ▸ hJT (Finset.mem_preimage.1 hv))) U' V'
-    (fun v hv ↦ by
-      obtain ⟨h, hI⟩ := (hJ _).1 (Finset.mem_preimage.1 hv)
-      simp only [U', h, ↓reduceDIte]
-      exact ⟨(hu _ hI).1, _, (hu _ hI).2⟩)
-    (fun v hv ↦ by
-      obtain ⟨h, hI⟩ := (hJ _).1 (Finset.mem_preimage.1 hv)
-      simp only [V', h, ↓reduceDIte]
-      exact ⟨(hu _ hI).1, _, (hu _ hI).2⟩)
+    (fun v hv h ↦ hwT (h ▸ hJT (Finset.mem_preimage.1 hv))) (fun v ↦ u (Sum.inl v))
+    (fun v ↦ u (Sum.inr v)) (fun v hv ↦ hu _ (Finset.mem_preimage.1 hv))
+    (fun v hv ↦ hu _ (Finset.mem_preimage.1 hv))
   -- `x` is integral at every finite place outside `S`, since such a place is neither `w` nor in
-  -- `I`.
+  -- `J`.
   have hxS : x ∈ S.integer K := fun v hv ↦ by
     rw [← FinitePlace.mk_apply_le_one_iff, ← FinitePlace.norm_algebraMap_adicCompletion]
     exact hxint v (fun h ↦ hv (hTS v (hJT (Finset.mem_preimage.1 h))))
       fun h ↦ hv (hwS v h)
-  refine ⟨_, hIU fun p hp ↦ ?_, ⟨⟨x, hxS⟩, rfl⟩⟩
-  obtain ⟨p | p, hpT⟩ := p
-  · have := hxU p (Finset.mem_preimage.2 ((hJ _).2 ⟨hpT, hp⟩))
-    simp only [U', hpT, ↓reduceDIte] at this
-    exact this
-  · have := hxV p (Finset.mem_preimage.2 ((hJ _).2 ⟨hpT, hp⟩))
-    simp only [V', hpT, ↓reduceDIte] at this
-    exact this
+  refine ⟨⟨x, hxS⟩, ?_⟩
+  rintro ⟨p | p, _⟩ hp
+  · exact hxU p (Finset.mem_preimage.2 hp)
+  · exact hxV p (Finset.mem_preimage.2 hp)
 
 /-- **Strong approximation for finite modules over `S`-integers.** Let `w` be a place of `K`, `S`
 a set of finite places of `K` containing `w` if `w` is finite, and `T` a set of places which

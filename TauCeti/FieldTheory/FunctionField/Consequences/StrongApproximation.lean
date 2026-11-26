@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.Repartition.IndexOfSpecialty
 public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Basic
 public import TauCeti.Topology.Algebra.Module.DenseBaseChange
+import TauCeti.Topology.Constructions.Pi
 
 /-!
 # Strong approximation for an algebraic function field
@@ -189,25 +190,20 @@ theorem denseRange_completionEmbedding_holomorphyRing_pi {S T : Set (Place k F)}
     (hST : Disjoint S T) (hSTu : S ∪ T ≠ Set.univ) :
     DenseRange fun x : holomorphyRing S ↦ fun P : T ↦ P.val.completionEmbedding x := by
   classical
-  rw [DenseRange, dense_iff_inter_open]
-  rintro U hU ⟨g, hg⟩
-  -- `U` contains a basic open set, a product of opens `u P` over a finite set `I` of places.
-  obtain ⟨I, u, hu, hIU⟩ := isOpen_pi_iff.1 hU g hg
-  -- Around each `g P` with `P ∈ I`, a filtration coset of order `b P` lies in `u P`; choose
-  -- `z P ∈ F` within that order of `g P`.
-  have hb (P : T) : ∃ b : ℤ, P ∈ I →
-      ∀ y, y - g P ∈ P.val.completionPlace.filtration b → y ∈ u P := by
-    by_cases hP : P ∈ I
-    · obtain ⟨b, hb⟩ := P.val.exists_forall_sub_mem_completionPlace_filtration_mem
-        ((hu P hP).1.mem_nhds (hu P hP).2)
-      exact ⟨b, fun _ ↦ hb⟩
-    · exact ⟨0, fun h ↦ (hP h).elim⟩
-  choose b hb using hb
+  refine denseRange_pi_subtype_of_forall_finset fun J hJT u hu ↦ ?_
+  -- Each `u P` with `P ∈ J` contains a filtration coset of some order `b P` around some point
+  -- `g P`; choose `z P ∈ F` within that order of `g P`.
+  have hb (P : T) : ∃ (g : P.val.Completion) (b : ℤ), P.val ∈ J →
+      ∀ y, y - g ∈ P.val.completionPlace.filtration b → y ∈ u P := by
+    by_cases hP : P.val ∈ J
+    · obtain ⟨g, hg⟩ := (hu P hP).2
+      obtain ⟨b, hb⟩ := P.val.exists_forall_sub_mem_completionPlace_filtration_mem
+        ((hu P hP).1.mem_nhds hg)
+      exact ⟨g, b, fun _ ↦ hb⟩
+    · exact ⟨0, 0, fun h ↦ (hP h).elim⟩
+  choose g b hb using hb
   choose z hz using fun P : T ↦ P.val.exists_sub_completionEmbedding_mem_filtration (g P) (b P)
-  -- Strong approximation of the `z P` to order `b P` on `I`, regular on `S`.
-  set J := I.map (Function.Embedding.subtype (· ∈ T))
-  have hJ (Q : Place k F) : Q ∈ J ↔ ∃ h : Q ∈ T, ⟨Q, h⟩ ∈ I := by simp [J]
-  have hJT : (J : Set (Place k F)) ⊆ T := fun Q hQ ↦ ((hJ Q).1 hQ).1
+  -- Strong approximation of the `z P` to order `b P` on `J`, regular on `S`.
   have hSJ : S ∪ J ≠ Set.univ := fun h ↦
     hSTu (Set.eq_univ_of_univ_subset (h ▸ Set.union_subset_union_right S hJT))
   obtain ⟨x, hxJ, hxS⟩ := exists_forall_mem_valuation_sub_le_and_forall_mem_integers hF hex hSJ
@@ -215,9 +211,9 @@ theorem denseRange_completionEmbedding_holomorphyRing_pi {S T : Set (Place k F)}
     (fun Q ↦ if h : Q ∈ T then b ⟨Q, h⟩ else 0)
   have hxO : x ∈ holomorphyRing S := mem_holomorphyRing_iff.2 fun Q hQ ↦
     hxS Q (Or.inl hQ) fun h ↦ hST.notMem_of_mem_left hQ (hJT h)
-  refine ⟨_, hIU fun P hP ↦ hb P hP _ ?_, ⟨⟨x, hxO⟩, rfl⟩⟩
+  refine ⟨⟨x, hxO⟩, fun P hP ↦ hb P hP _ ?_⟩
   -- `x - z P` and `z P - g P` both have order at least `b P` at `P`.
-  have hxz := hxJ P.val ((hJ P.val).2 ⟨P.property, hP⟩)
+  have hxz := hxJ P.val hP
   simp only [P.property, ↓reduceDIte] at hxz
   have hxz' : P.val.completionEmbedding (x - z P) ∈ P.val.completionPlace.filtration (b P) :=
     P.val.completionEmbedding_mem_filtration_iff.2 (P.val.mem_filtration_iff.2 hxz)

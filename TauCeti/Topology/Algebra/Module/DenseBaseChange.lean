@@ -19,9 +19,10 @@ image of `M` is dense in `∏ i, A i ⊗[R] M`, where each `A i ⊗[R] M` carrie
 topology (`DenseRange.pi_one_tmul`).
 
 This is how approximation statements pass from a ring to its finite modules: in strong
-approximation, a ring of `S`-integers of a global field is dense in the product of the completions
-at places outside `S`, and the same then holds for every finite projective module over it, as
-needed to approximate global sections of a vector bundle on an affine curve.
+approximation, the `S`-integers of a global field are dense in the product of the completions at a
+set of places that, together with the places where they are integral, omits at least one place,
+and the same then holds for every finite projective module over them, as needed to approximate
+global sections of a vector bundle on an affine curve.
 
 The proof chooses a surjection `Rⁿ → M`. The free module `Rⁿ` is dense in `∏ i, (A i)ⁿ`
 coordinatewise, and the base change of the surjection is a continuous surjection
@@ -79,11 +80,9 @@ theorem DenseRange.pi_one_tmul (h : DenseRange fun r : R ↦ fun i ↦ algebraMa
     funext r i
     simp only [Function.comp_apply, Pi.map_apply, Ψ, Φ, LinearMap.coe_comp,
       LinearEquiv.coe_coe]
-    have hr : (TensorProduct.piScalarRight R (A i) (A i) (Fin n)).symm
-        (fun j ↦ algebraMap R (A i) (r j)) = 1 ⊗ₜ[R] r := by
-      rw [LinearEquiv.symm_apply_eq]
-      ext
-      simp [Algebra.algebraMap_eq_smul_one]
-    rw [hr, LinearMap.baseChange_tmul]
+    -- `algebraMap (Fin n → R) (Fin n → A i)` is `algebraMap R (A i)` pointwise by definition.
+    exact (congrArg (π.baseChange (A i))
+      (TensorProduct.piScalarRight_symm_algebraMap R (A i) (Fin n) r)).trans
+      (LinearMap.baseChange_tmul ..) |>.symm
   rw [DenseRange, ← hπ.range_comp, ← DenseRange, heq]
   exact hdense
