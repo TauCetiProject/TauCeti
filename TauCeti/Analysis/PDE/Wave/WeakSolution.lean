@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Wave.Energy
+import TauCeti.Analysis.Calculus.Taylor.OrderOne
 
 /-!
 # Weak solutions of the forced wave equation on `L²`
@@ -52,6 +53,14 @@ with
 with `ψ = Δφ`, so `u` solves the wave equation in the sense of distributions in space
 (`TauCeti.hasDerivAt_deriv_inner_toLp_waveDuhamelSolution`).
 
+Integrating twice in time, Taylor's formula of order one gives the **weak formulation**: for all
+such `φ, ψ` and every time `t`,
+
+`⟪φ, u(t)⟫ = ⟪φ, f⟫ + t ⟪φ, g⟫ + ∫₀ᵗ (t - s) (⟪ψ, u(s)⟫ + ⟪φ, G(s)⟫) ds`
+
+(`TauCeti.inner_waveDuhamelSolution`, and `TauCeti.inner_toLp_waveDuhamelSolution` for Schwartz
+`φ`), which makes sense for every `u` continuous in time with values in `L²`.
+
 By the subtraction formula `TauCeti.waveSinPropagator_sub`, for continuous forcing `G` the
 retarded term is
 
@@ -72,6 +81,8 @@ they are differentiated by `TauCeti.hasDerivAt_waveSinPropagator_apply`,
   `TauCeti.waveDuhamelSolution_smul` and `TauCeti.waveDuhamelSolution_eq_setIntegral_Iio`;
 * `TauCeti.hasDerivAt_inner_waveDuhamelSolution`,
   `TauCeti.hasDerivAt_deriv_inner_waveDuhamelSolution`: the weak wave equation.
+* `TauCeti.inner_waveDuhamelSolution`, `TauCeti.inner_toLp_waveDuhamelSolution`: Duhamel's formula
+  satisfies the weak formulation, integrated twice in time.
 
 ## References
 
@@ -360,6 +371,33 @@ theorem hasDerivAt_deriv_inner_toLp_waveDuhamelSolution (φ : 𝓢(E, F))
     HasDerivAt (deriv fun t ↦ ⟪φ.toLp 2, waveDuhamelSolution F f g G t⟫)
       (⟪(Δ φ).toLp 2, waveDuhamelSolution F f g G t⟫ + ⟪φ.toLp 2, G t⟫) t :=
   hasDerivAt_deriv_inner_waveDuhamelSolution (by simp) f g hG t
+
+/-- **Duhamel's formula is a weak solution** of the wave equation `∂ₜ²u - Δu = G`, `u(0) = f`,
+`∂ₜu(0) = g`, for continuous forcing `G`: for all `φ, ψ ∈ L²` with `Δφ = ψ` and every time `t`,
+
+`⟪φ, u t⟫ = ⟪φ, f⟫ + t ⟪φ, g⟫ + ∫₀ᵗ (t - r) (⟪ψ, u r⟫ + ⟪φ, G r⟫) dr`. -/
+theorem inner_waveDuhamelSolution (hφψ : Δ (φ : 𝓢'(E, F)) = (ψ : 𝓢'(E, F)))
+    (f g : Lp F 2 (volume : Measure E)) (hG : Continuous G) (t : ℝ) :
+    ⟪φ, waveDuhamelSolution F f g G t⟫ = ⟪φ, f⟫ + t • ⟪φ, g⟫ +
+      ∫ r in (0 : ℝ)..t, (t - r) • (⟪ψ, waveDuhamelSolution F f g G r⟫ + ⟪φ, G r⟫) := by
+  have hc : Continuous fun r ↦ ⟪ψ, waveDuhamelSolution F f g G r⟫ + ⟪φ, G r⟫ :=
+    (continuous_const.inner (continuous_waveDuhamelSolution f g hG)).add
+      (continuous_const.inner hG)
+  rw [intervalIntegral.eq_add_sub_smul_add_integral_sub_smul
+    (fun τ _ ↦ (hasDerivAt_inner_waveDuhamelSolution hφψ f g hG τ).differentiableAt.hasDerivAt)
+    (fun τ _ ↦ hasDerivAt_deriv_inner_waveDuhamelSolution hφψ f g hG τ) hc.continuousOn,
+    (hasDerivAt_inner_waveDuhamelSolution_zero hφψ f g hG).deriv, waveDuhamelSolution_zero,
+    sub_zero]
+
+/-- **The wave equation in the sense of distributions, integrated in time.** Duhamel's formula
+satisfies the weak formulation against every Schwartz function `φ`:
+`⟪φ, u t⟫ = ⟪φ, f⟫ + t ⟪φ, g⟫ + ∫₀ᵗ (t - r) (⟪Δφ, u r⟫ + ⟪φ, G r⟫) dr`. -/
+theorem inner_toLp_waveDuhamelSolution (φ : 𝓢(E, F)) (f g : Lp F 2 (volume : Measure E))
+    (hG : Continuous G) (t : ℝ) :
+    ⟪φ.toLp 2, waveDuhamelSolution F f g G t⟫ = ⟪φ.toLp 2, f⟫ + t • ⟪φ.toLp 2, g⟫ +
+      ∫ r in (0 : ℝ)..t,
+        (t - r) • (⟪(Δ φ).toLp 2, waveDuhamelSolution F f g G r⟫ + ⟪φ.toLp 2, G r⟫) :=
+  inner_waveDuhamelSolution (by simp) f g hG t
 
 end Duhamel
 
