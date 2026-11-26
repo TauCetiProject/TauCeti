@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Tiling
 public import Mathlib.Algebra.BigOperators.Finprod
-public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 import Mathlib.Algebra.BigOperators.Field
 
