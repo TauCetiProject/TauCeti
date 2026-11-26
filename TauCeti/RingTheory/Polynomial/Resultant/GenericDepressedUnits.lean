@@ -40,8 +40,6 @@ This is the graded ring behind Mumford's computation `Pic M_{1,1} ≅ ℤ/12`.
   `R[a₂, …, aₘ]_Δ` are the multiples of `m (m - 1)`.
 * `TauCeti.shiftClassGroupAwayGradingDepressedDiscrEquiv`: the shift classes of `R[a₂, …, aₘ]_Δ`
   form `ZMod (m (m - 1))`.
-* `TauCeti.depressedDiscr_three_mem_four_six`: `-4 a³ - 27 b²` has weight `12` for the weights
-  `4, 6`.
 * `TauCeti.homogeneousUnitDegrees_awayGrading_depressedDiscr_three_four_six`,
   `TauCeti.shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv`: for the weights `4, 6`, the
   homogeneous unit degrees of `R[a, b]_Δ` are the multiples of `12`, and its shift classes form
@@ -92,20 +90,6 @@ theorem shiftClassGroupAwayGradingDepressedDiscrEquiv_mk [IsDomain R] {m : ℕ} 
     (hm : IsUnit (m : R)) (hm2 : 2 ≤ m) (c : ℤ) :
     shiftClassGroupAwayGradingDepressedDiscrEquiv h2 hm hm2 c = c := by
   simp [shiftClassGroupAwayGradingDepressedDiscrEquiv]
-
-variable (R) in
-/-- The discriminant `-4 a³ - 27 b²` of `X³ + a X + b` is weighted homogeneous of weight `12` for
-the weights `4, 6` of `a, b`, those of the short Weierstrass equation `y² = x³ + a x + b`. -/
-theorem depressedDiscr_three_mem_four_six :
-    depressedDiscr R 3 ∈ weightedHomogeneousSubmodule R (![4, 6] : Fin 2 → ℤ) 12 := by
-  -- Doubling the weights `2, 3` of `depressedWeight 3` doubles the weight `6` of the discriminant.
-  have h := ((mem_weightedHomogeneousSubmodule _ _ _ _).mp (depressedDiscr_mem R 3)).comp_weight
-    (AddMonoidHom.mulLeft (2 : ℤ))
-  rw [mem_weightedHomogeneousSubmodule]
-  convert h using 1
-  · ext j
-    fin_cases j <;> simp
-  · simp
 
 /-- **Homogeneous units away from the discriminant of the short Weierstrass equation.** Over a
 domain in which `2 ≠ 0` and `3` is invertible, the degrees of the homogeneous units of `R[a, b]_Δ`,
