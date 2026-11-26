@@ -12,7 +12,7 @@ import Mathlib.Tactic.FinCases
 /-!
 # Checks: torus tilings and height changes
 
-* `n₁ = n₂ = 1`: the torus tilings are exactly the three tilings `typeTiling j = {e | e.k = j}` by
+* `n₁ = n₂ = 1`: the torus tilings are exactly the three tilings `edgesOfDir j = {e | e.k = j}` by
   lozenges of a single type, with height changes `(1, 0)`, `(0, 1)`, `(0, 0)`.
 * `n₁ = n₂ = 2`, `(a, b) = (1, 1)`: the floor tiling of `H(x, y) = ⌊(x + y)/2⌋` is a torus tiling
   with height change `(1, 1)`. It has no type-3 lozenge (shown in the `Height` Checks), matching
@@ -50,14 +50,14 @@ theorem mem_iff_of_vadd_eq {M : Set TriEdge} (h₁ : ((1 : ℤ), (0 : ℤ)) +ᵥ
       simpa [add_comm] using step _ h₂ ⟨(0, y), k⟩) y, Prod.mk_zero_zero]
 
 /-- The tilings by lozenges of a single type are `1 × 1` torus tilings. -/
-theorem isTorusTiling_typeTiling (j : Fin 3) : IsTorusTiling 1 1 (typeTiling j) := by
-  refine isTorusTiling_def.2 ⟨isTiling_typeTiling j, ?_, ?_⟩ <;>
+theorem isTorusTiling_edgesOfDir (j : Fin 3) : IsTorusTiling 1 1 (edgesOfDir j) := by
+  refine isTorusTiling_def.2 ⟨isTiling_edgesOfDir j, ?_, ?_⟩ <;>
   · ext e
     simp [Set.mem_vadd_set_iff_neg_vadd_mem]
 
 /-- **The `1 × 1` torus has exactly three tilings**, one of each type. -/
-example (M : Set TriEdge) : IsTorusTiling 1 1 M ↔ ∃ j : Fin 3, M = typeTiling j := by
-  refine ⟨fun h => ?_, fun ⟨j, hj⟩ => hj ▸ isTorusTiling_typeTiling j⟩
+example (M : Set TriEdge) : IsTorusTiling 1 1 M ↔ ∃ j : Fin 3, M = edgesOfDir j := by
+  refine ⟨fun h => ?_, fun ⟨j, hj⟩ => hj ▸ isTorusTiling_edgesOfDir j⟩
   have hM := isTorusTiling_def.1 h
   have hmem := mem_iff_of_vadd_eq (by exact_mod_cast hM.2.1) (by exact_mod_cast hM.2.2)
   obtain ⟨j, hj, hu⟩ := (TriFace.existsUnique_mem_edges_iff ⟨0, true⟩ M).1
@@ -66,13 +66,13 @@ example (M : Set TriEdge) : IsTorusTiling 1 1 M ↔ ∃ j : Fin 3, M = typeTilin
     rw [TriFace.edge_mk_true]
     exact (hmem _ k).symm
   refine ⟨j, Set.ext fun ⟨v, k⟩ => ?_⟩
-  simp only [mem_typeTiling]
+  simp only [mem_edgesOfDir]
   rw [hmem, hk]
   exact ⟨fun hk' => hu k hk', fun hkj => hkj ▸ hj⟩
 
 /-- The height changes of the three `1 × 1` torus tilings are `(1, 0)`, `(0, 1)`, `(0, 0)`. -/
-example : heightChange 1 1 (typeTiling 0) = (1, 0) ∧ heightChange 1 1 (typeTiling 1) = (0, 1) ∧
-    heightChange 1 1 (typeTiling 2) = (0, 0) := by
+example : heightChange 1 1 (edgesOfDir 0) = (1, 0) ∧ heightChange 1 1 (edgesOfDir 1) = (0, 1) ∧
+    heightChange 1 1 (edgesOfDir 2) = (0, 0) := by
   simp [heightChange_def, Finset.filter_singleton]
 
 /-! ### The floor tiling of `⌊(x + y)/2⌋` on the `2 × 2` torus -/
