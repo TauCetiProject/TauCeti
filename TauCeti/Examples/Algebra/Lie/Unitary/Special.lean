@@ -13,10 +13,12 @@ public import TauCeti.Algebra.Lie.Unitary.Special
 A homomorphism `f : SU(2) → K` attached to a root of a compact semisimple group `K` is detected on
 `π₃` by the Cartan three-form `ω(X, Y, Z) = B(X, ⁅Y, Z⁆)` of the Killing form `B` of `𝔨`: on a
 basis `e₁, e₂, e₃` of `𝔰𝔲(2)` with `⁅e₂, e₃⁆ = e₁`, the pulled-back form takes the value
-`f^*ω(e₁, e₂, e₃) = B(df e₁, df e₁) < 0`. This file checks it for `K = SU(3)`, with matrices
-indexed by `Fin 2 ⊕ Fin 1`, its diagonal torus and the root `α = ε₁ - ε₂`, where the rank-one
-representative is the block inclusion of `SU(2)` onto the upper-left `2 × 2` block, with
-differential `TauCeti.specialUnitaryBlockInclusion`.
+`f^*ω(e₁, e₂, e₃) = B(df e₁, df e₁) < 0`. This file checks the Lie-algebra content of this for
+`K = SU(3)`, with matrices indexed by `Fin 2 ⊕ Fin 1`, its diagonal torus and the root
+`α = ε₁ - ε₂`, where the rank-one representative is the block inclusion of `SU(2)` onto the
+upper-left `2 × 2` block. The Checks are stated for the Lie algebra block inclusion
+`df = TauCeti.specialUnitaryBlockInclusion` and the Lie algebras only: the group homomorphism
+`SU(2) → SU(3)` and the identification of its differential with `df` are not formalized here.
 
 * The differential sends `diag(i, -i)` to the coroot `α^∨ = diag(i, -i, 0)`, and `α(α^∨) = 2`.
 * With `B(X, Y) = 6 Re tr(X Y)` on `𝔰𝔲(3)` and `e₁ = ½ diag(i, -i)`,
@@ -84,7 +86,8 @@ theorem lie_suTwoE₂_suTwoE₃ : ⁅suTwoE₂, suTwoE₃⁆ = suTwoE₁ := by
   fin_cases i <;> fin_cases j <;>
     simp [suTwoE₂, suTwoE₃] <;> ring
 
-/-- The differential of the block inclusion `SU(2) → SU(3)`. -/
+/-- The Lie algebra block inclusion `𝔰𝔲(2) → 𝔰𝔲(3)`, standing in for the differential of the
+block inclusion `SU(2) → SU(3)` (that identification is not formalized here). -/
 private abbrev df :
     specialUnitaryLieAlgebra (Fin 2) →ₗ⁅ℝ⁆ specialUnitaryLieAlgebra (Fin 2 ⊕ Fin 1) :=
   specialUnitaryBlockInclusion (Fin 2) (Fin 1)
@@ -105,9 +108,7 @@ example : (df suTwoCoroot : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℂ) =
 `(α^∨₁₁ - α^∨₂₂) / i`. -/
 example : ((df suTwoCoroot : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℂ) (.inl 0) (.inl 0) -
     (df suTwoCoroot : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℂ) (.inl 1) (.inl 1)) / I = 2 := by
-  simp [suTwoCoroot]
-  ring_nf
-  simp
+  norm_num [suTwoCoroot, ← two_mul, mul_div_assoc]
 
 /-! ### The value of the pulled-back Cartan three-form -/
 
@@ -117,8 +118,7 @@ theorem killingForm_specialUnitaryBlockInclusion_suTwoE₁ :
       (specialUnitaryBlockInclusion (Fin 2) (Fin 1) suTwoE₁)
       (specialUnitaryBlockInclusion (Fin 2) (Fin 1) suTwoE₁) = -3 := by
   rw [killingForm_specialUnitaryBlockInclusion_apply, coe_suTwoE₁]
-  simp [trace_fin_two]
-  norm_num
+  norm_num [trace_fin_two]
 
 /-- **`f^*ω(e₁, e₂, e₃) = B(df e₁, df e₁) = -3`** for the Cartan three-form of the Killing form
 `B(X, Y) = 6 Re tr(X Y)` of `𝔰𝔲(3)`. -/
@@ -134,8 +134,7 @@ example : (killingForm ℝ (specialUnitaryLieAlgebra (Fin 2))).cartanThreeForm
       ![suTwoE₁, suTwoE₂, suTwoE₃] = -2 := by
   rw [LinearMap.BilinMap.cartanThreeForm_apply_of_lie_eq lie_suTwoE₂_suTwoE₃,
     killingForm_specialUnitaryLieAlgebra_apply, coe_suTwoE₁]
-  simp [trace_fin_two]
-  norm_num
+  norm_num [trace_fin_two]
 
 /-! ### The other representative -/
 

@@ -12,6 +12,7 @@ import Mathlib.Algebra.Lie.Classical
 import TauCeti.Algebra.Lie.Killing.Subalgebra
 import TauCeti.Data.Matrix.Block
 import TauCeti.Algebra.Lie.Unitary.Killing
+import TauCeti.Analysis.Matrix.Frobenius
 
 /-!
 # The special unitary Lie algebra, its Killing form and its block inclusions
@@ -31,7 +32,7 @@ indexed by `ι`.
 The Killing form of `𝔰𝔲(n)` is `κ(X, Y) = 2 n Re tr(X Y)`
 (`TauCeti.killingForm_specialUnitaryLieAlgebra_apply`), the restriction of the Killing form of
 `𝔲(n)`, whose trace correction `-2 tr X tr Y` vanishes on trace-free matrices. It is negative
-definite (`TauCeti.killingForm_specialUnitaryLieAlgebra_self_neg`): `κ(X, X) = -2 n Re tr(Xᴴ X)` is
+definite (`TauCeti.killingForm_specialUnitaryLieAlgebra_self_neg`): `κ(X, X) = -2 n Re tr(X Xᴴ)` is
 `-2 n` times the sum of the squared absolute values of the entries of `X`.
 
 Placing a matrix in the top-left block, `X ↦ diag(X, 0)`, is an injective homomorphism
@@ -45,9 +46,11 @@ the Cartan three-form of a compact group on a subalgebra `𝔰𝔲(2) ⊆ 𝔰�
 signs do not. These Cartan three-forms are how a homomorphism `SU(2) → G` attached to a root of a
 compact group is shown to be essential on `π₃`.
 
-The unitary group acts on `𝔰𝔲(n)` by conjugation, `X ↦ U X Uᴴ`, through Lie algebra automorphisms
-(`TauCeti.specialUnitaryAdjoint`); for `SU(2)` and `U` a Weyl element this exchanges the two
-coroots `±diag(i, -i)` of the diagonal torus.
+The unitary group acts on `𝔰𝔲(n)` by conjugation, `X ↦ U X Uᴴ`, through Lie algebra endomorphisms
+(`TauCeti.specialUnitaryAdjoint`) that compose as the group multiplies
+(`TauCeti.specialUnitaryAdjoint_one`, `TauCeti.specialUnitaryAdjoint_mul`), hence are automorphisms;
+for `SU(2)` and `U` a Weyl element this exchanges the two coroots `±diag(i, -i)` of the diagonal
+torus.
 
 ## Main definitions
 
@@ -87,6 +90,13 @@ variable (ι κ : Type*) [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq
 
 /-! ### The special unitary Lie algebra -/
 
+/-- The bracket of two skew-Hermitian matrices is skew-Hermitian and trace-free. -/
+private theorem lie_mem_specialUnitaryLieAlgebra_aux {X Y : Matrix ι ι ℂ}
+    (hX : X ∈ unitaryLieAlgebra ι) (hY : Y ∈ unitaryLieAlgebra ι) :
+    ⁅X, Y⁆ᴴ = -⁅X, Y⁆ ∧ ⁅X, Y⁆.trace = 0 :=
+  ⟨mem_unitaryLieAlgebra_iff.mp <| LieSubalgebra.lie_mem _ hX hY,
+    matrix_trace_commutator_zero _ _ X Y⟩
+
 /-- The **special unitary Lie algebra** `𝔰𝔲(n)`: the real Lie subalgebra of `Matrix ι ι ℂ`
 consisting of the trace-free skew-Hermitian matrices, `Xᴴ = -X` and `tr X = 0`. It is the Lie
 algebra of the special unitary group. -/
@@ -97,9 +107,8 @@ def specialUnitaryLieAlgebra : LieSubalgebra ℝ (Matrix ι ι ℂ) where
   zero_mem' := ⟨by rw [conjTranspose_zero, neg_zero], trace_zero _ _⟩
   smul_mem' r X hX := ⟨by rw [conjTranspose_smul, star_trivial, hX.1, smul_neg], by
     rw [trace_smul, hX.2, smul_zero]⟩
-  lie_mem' {X Y} hX hY := ⟨mem_unitaryLieAlgebra_iff.mp <| LieSubalgebra.lie_mem _
-      (mem_unitaryLieAlgebra_iff.mpr hX.1) (mem_unitaryLieAlgebra_iff.mpr hY.1),
-    matrix_trace_commutator_zero _ _ X Y⟩
+  lie_mem' hX hY := lie_mem_specialUnitaryLieAlgebra_aux ι
+    (mem_unitaryLieAlgebra_iff.mpr hX.1) (mem_unitaryLieAlgebra_iff.mpr hY.1)
 
 variable {ι κ}
 
@@ -124,6 +133,13 @@ theorem specialUnitaryLieAlgebra_le_unitaryLieAlgebra :
     specialUnitaryLieAlgebra ι ≤ unitaryLieAlgebra ι :=
   fun _ hX ↦ mem_unitaryLieAlgebra_iff.mpr hX.1
 
+/-- **`𝔰𝔲(n)` is an ideal of `𝔲(n)`**, and indeed contains every bracket of `𝔲(n)`: the
+bracket of two skew-Hermitian matrices is trace-free. -/
+theorem lie_mem_specialUnitaryLieAlgebra_of_mem_unitaryLieAlgebra {X Y : Matrix ι ι ℂ}
+    (hX : X ∈ unitaryLieAlgebra ι) (hY : Y ∈ unitaryLieAlgebra ι) :
+    ⁅X, Y⁆ ∈ specialUnitaryLieAlgebra ι :=
+  lie_mem_specialUnitaryLieAlgebra_aux ι hX hY
+
 instance : FiniteDimensional ℝ (specialUnitaryLieAlgebra ι) :=
   Module.Finite.of_injective (LieSubalgebra.inclusion
     (specialUnitaryLieAlgebra_le_unitaryLieAlgebra ι)).toLinearMap
@@ -136,16 +152,15 @@ theorem killingForm_specialUnitaryLieAlgebra_apply (X Y : specialUnitaryLieAlgeb
     killingForm ℝ (specialUnitaryLieAlgebra ι) X Y =
       2 * Fintype.card ι * ((X : Matrix ι ι ℂ) * Y).trace.re := by
   rw [LieSubalgebra.killingForm_inclusion_eq (specialUnitaryLieAlgebra_le_unitaryLieAlgebra ι)
-      (fun X hX Y hY ↦ ⟨mem_unitaryLieAlgebra_iff.mp <| LieSubalgebra.lie_mem _
-        (specialUnitaryLieAlgebra_le_unitaryLieAlgebra ι hX) hY,
-        matrix_trace_commutator_zero _ _ X Y⟩),
+      (fun _ hX _ hY ↦ lie_mem_specialUnitaryLieAlgebra_of_mem_unitaryLieAlgebra
+        (specialUnitaryLieAlgebra_le_unitaryLieAlgebra ι hX) hY),
     killingForm_unitaryLieAlgebra_apply]
   simp only [LieSubalgebra.coe_inclusion, trace_coe_specialUnitaryLieAlgebra, mul_zero,
     sub_zero]
   norm_cast
   simp [Complex.mul_re]
 
-/-- **The Killing form of `𝔰𝔲(n)` is negative definite**: `κ(X, X) = -2 n Re tr(Xᴴ X) < 0` for
+/-- **The Killing form of `𝔰𝔲(n)` is negative definite**: `κ(X, X) = -2 n Re tr(X Xᴴ) < 0` for
 `X ≠ 0`. -/
 theorem killingForm_specialUnitaryLieAlgebra_self_neg {X : specialUnitaryLieAlgebra ι}
     (hX : X ≠ 0) : killingForm ℝ (specialUnitaryLieAlgebra ι) X X < 0 := by
@@ -153,14 +168,10 @@ theorem killingForm_specialUnitaryLieAlgebra_self_neg {X : specialUnitaryLieAlge
   have hι : Nonempty ι := by
     by_contra h
     exact hne (Matrix.ext fun i ↦ (not_nonempty_iff.mp h).elim i)
-  -- `Re tr(Xᴴ X)` is the sum of the squared absolute values of the entries of `X`.
-  have hpos : 0 < ((X : Matrix ι ι ℂ)ᴴ * X).trace.re := by
-    have h0 := Complex.nonneg_iff.mp (posSemidef_conjTranspose_mul_self
-      (X : Matrix ι ι ℂ)).trace_nonneg
-    refine h0.1.lt_of_ne fun h ↦ hne (trace_conjTranspose_mul_self_eq_zero_iff.mp ?_)
-    exact Complex.ext (by simpa using h.symm) (by simpa using h0.2.symm)
-  have hsq : (X : Matrix ι ι ℂ) * X = -((X : Matrix ι ι ℂ)ᴴ * X) := by
-    rw [conjTranspose_coe_specialUnitaryLieAlgebra, neg_mul, neg_neg]
+  have hpos : 0 < ((X : Matrix ι ι ℂ) * (X : Matrix ι ι ℂ)ᴴ).trace.re := by
+    simpa using posDef_reTraceForm ℂ ι ι _ hne
+  have hsq : (X : Matrix ι ι ℂ) * X = -((X : Matrix ι ι ℂ) * (X : Matrix ι ι ℂ)ᴴ) := by
+    rw [conjTranspose_coe_specialUnitaryLieAlgebra, mul_neg, neg_neg]
   rw [killingForm_specialUnitaryLieAlgebra_apply, hsq, trace_neg, neg_re, mul_neg,
     neg_neg_iff_pos]
   exact mul_pos (by positivity) hpos
@@ -169,8 +180,9 @@ theorem killingForm_specialUnitaryLieAlgebra_self_neg {X : specialUnitaryLieAlge
 
 variable (ι κ) in
 /-- The **block inclusion** `𝔰𝔲(m) → 𝔰𝔲(m + k)`, `X ↦ diag(X, 0)`: the matrix `X` placed in the
-top-left block of a matrix indexed by `ι ⊕ κ`. It is the differential of the block inclusion
-`SU(m) → SU(m + k)`, `g ↦ diag(g, 1)`. -/
+top-left block of a matrix indexed by `ι ⊕ κ`. As mathematical background, this is the
+differential of the group block inclusion `SU(m) → SU(m + k)`, `g ↦ diag(g, 1)`; that group map and
+the identification of its differential are not formalized here. -/
 def specialUnitaryBlockInclusion :
     specialUnitaryLieAlgebra ι →ₗ⁅ℝ⁆ specialUnitaryLieAlgebra (ι ⊕ κ) where
   toFun X := ⟨fromBlocks₁₁NonUnitalStarAlgHom ℝ ℂ ι κ X, by
@@ -252,5 +264,18 @@ def specialUnitaryAdjoint (U : unitaryGroup ι ℂ) :
 theorem coe_specialUnitaryAdjoint_apply (U : unitaryGroup ι ℂ) (X : specialUnitaryLieAlgebra ι) :
     (specialUnitaryAdjoint U X : Matrix ι ι ℂ) = U * X * star (U : Matrix ι ι ℂ) :=
   (rfl)
+
+/-- Conjugation by the identity is the identity. -/
+@[simp]
+theorem specialUnitaryAdjoint_one :
+    specialUnitaryAdjoint (1 : unitaryGroup ι ℂ) = LieHom.id := by
+  ext X : 2
+  simp
+
+/-- Conjugation by `U V` is conjugation by `V` followed by conjugation by `U`. -/
+theorem specialUnitaryAdjoint_mul (U V : unitaryGroup ι ℂ) :
+    specialUnitaryAdjoint (U * V) = (specialUnitaryAdjoint U).comp (specialUnitaryAdjoint V) := by
+  ext X : 2
+  simp [Matrix.mul_assoc]
 
 end TauCeti
