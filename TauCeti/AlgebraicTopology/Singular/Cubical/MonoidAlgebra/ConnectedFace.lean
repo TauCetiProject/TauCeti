@@ -139,11 +139,9 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces_of_connectedComponent
             (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 hc))))) m).hom v =
       (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k (ρ c hc)) m).hom
         ((HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
-          (TopPair.ofSubsetMap _ (hUA x z y hyz hzx))) m).hom v) := by
-    rw [← TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq (g' := 𝟙 (TopCat.of (A x y)))
-      (hUA x z y hyz hzx) (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 hc)) _
-      (Category.comp_id _), TopPair.cubicalChainComplexMap_comp,
-      HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply]
+          (TopPair.ofSubsetMap _ (hUA x z y hyz hzx))) m).hom v) :=
+    (TopPair.homologyMap_cubicalChainComplexMap_ofSubsetMap_apply_of_comp_eq _ _ _
+      (Category.comp_id _) m v).symm
   have hR (c : A x y) (hc : (c : M x y) ∈ U x z y) :
       (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
           (TopPair.ofSubset ({c}ᶜ : Set (A x y))).map)) m).hom
@@ -152,24 +150,19 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces_of_connectedComponent
         ((HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
           (TopPair.ofSubset (X := TopCat.of (A x y)) (Subtype.val ⁻¹' U x z y)ᶜ).map)) m).hom
           (((TopPair.ofSubset (A x y)).cubicalHomologyδ k _ _).hom (μ x y))) := by
-    have e (v) := congr(($(congrArg (HomologicalComplex.homologyMap · m)
-      (TopPair.π_cubicalChainComplexMap k (ρ c hc)))).hom v)
-    -- The map of ambient spaces underlying `ρ c hc` is the identity of `A x y`.
-    have hid : HomologicalComplex.homologyMap
-        ((normalizedCubicalChainComplex k).map (TopPair.Hom.fst (ρ c hc))) m = 𝟙 _ :=
-      (congrArg (fun f ↦ HomologicalComplex.homologyMap ((normalizedCubicalChainComplex k).map f) m)
-        (TopPair.ofSubsetMap_fst (𝟙 (TopCat.of (A x y)))
-          (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 hc)))).trans
-        ((congrArg (HomologicalComplex.homologyMap · m)
-          ((normalizedCubicalChainComplex k).map_id _)).trans
-          (HomologicalComplex.homologyMap_id _ _))
-    simp only [HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply,
-      hid] at e
+    -- Restricting along `ρ c hc` turns the class relative to the face interior into the class
+    -- relative to the complement of `c`.
+    have e (v) := congr((HomologicalComplex.homologyMap
+      $(TopPair.π_cubicalChainComplexMap_ofSubsetMap_id k (X := TopCat.of (A x y))
+        (B := (Subtype.val ⁻¹' U x z y)ᶜ) (B' := {c}ᶜ)
+        (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 hc))) m).hom v)
+    simp only [HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply] at e
     exact (e _).symm
   -- So the face condition at `c` is the vanishing at `c` of the local class of one class along the
   -- face interior, the difference of the two sides.
-  rw [hL a ha, hR a ha, Units.smul_def, ← map_zsmul, ← sub_eq_zero, ← map_sub]
-  rw [hL b hb, hR b hb, Units.smul_def, ← map_zsmul, ← sub_eq_zero, ← map_sub] at hcond
+  rw [hL a ha, hR a ha]
+  rw [hL b hb, hR b hb] at hcond
+  rw [Units.smul_def, ← map_zsmul, ← sub_eq_zero, ← map_sub] at hcond ⊢
   exact homologyMap_cubicalChainComplexMap_eq_zero_of_isPreconnected (E := E x y) (hUo x z y)
     isPreconnected_connectedComponentIn (connectedComponentIn_subset _ _) hbC
     (mem_connectedComponentIn ha) hcond

@@ -372,6 +372,31 @@ theorem cubicalChainComplexMap_comp {P P' P'' : TopPair.{u}} (f : P ⟶ P') (g :
     cubicalChainComplexMap k (f ≫ g) = cubicalChainComplexMap k f ≫ cubicalChainComplexMap k g :=
   coequalizer.hom_ext (by simp)
 
+/-- Enlarging the subspace of `X` from `B` to `B'` sends the class of a chain of `X` relative to
+`B` to its class relative to `B'`. -/
+@[reassoc]
+theorem π_cubicalChainComplexMap_ofSubsetMap_id {X : TopCat.{u}} {B B' : Set X}
+    (h : Set.MapsTo (𝟙 X) B B') :
+    cokernel.π ((normalizedCubicalChainComplex k).map (ofSubset B).map) ≫
+        cubicalChainComplexMap k (ofSubsetMap (𝟙 X) h) =
+      cokernel.π ((normalizedCubicalChainComplex k).map (ofSubset B').map) := by
+  have hid : Hom.fst (ofSubsetMap (𝟙 X) h) = 𝟙 (ofSubset B).fst := ofSubsetMap_fst _ h
+  rw [π_cubicalChainComplexMap, hid]
+  exact ((normalizedCubicalChainComplex k).map_id _ =≫ _).trans (Category.id_comp _)
+
+variable {k} in
+/-- In relative cubical homology, two maps of pairs induced by continuous maps compose to the map
+induced by any continuous map equal to their composite. -/
+theorem homologyMap_cubicalChainComplexMap_ofSubsetMap_apply_of_comp_eq {X Y Z : TopCat.{u}}
+    {B : Set X} {B' : Set Y} {B'' : Set Z} {g : X ⟶ Y} {g' : Y ⟶ Z} {g'' : X ⟶ Z}
+    (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'') (h : Set.MapsTo g'' B B'')
+    (hg : g ≫ g' = g'') (n : ℕ) (v : ((ofSubset B).cubicalChainComplex k).homology n) :
+    (HomologicalComplex.homologyMap (cubicalChainComplexMap k (ofSubsetMap g' hB')) n).hom
+        ((HomologicalComplex.homologyMap (cubicalChainComplexMap k (ofSubsetMap g hB)) n).hom v) =
+      (HomologicalComplex.homologyMap (cubicalChainComplexMap k (ofSubsetMap g'' h)) n).hom v := by
+  rw [← ofSubsetMap_comp_ofSubsetMap_of_comp_eq hB hB' h hg, cubicalChainComplexMap_comp,
+    HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply]
+
 /-- An isomorphism of pairs induces an isomorphism of relative normalized cubical chains. -/
 instance isIso_cubicalChainComplexMap {P P' : TopPair.{u}} (f : P ⟶ P') [IsIso f] :
     IsIso (cubicalChainComplexMap k f) :=
