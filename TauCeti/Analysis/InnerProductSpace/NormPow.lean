@@ -55,9 +55,10 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 * `hasFDerivAt_norm_rpow_smul_self`: for `r ≥ 0` the map `y ↦ ‖y‖ ^ r • y` is differentiable
   everywhere, including at the origin.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
-* `hasFDerivAt_norm_rpow_smul_self_of_ne`, `norm_rpow_smul_id_add_smulRight_le`,
-  `trace_rpow_smul_id_add_smulRight`: the derivative of the radial field `x ↦ ‖x‖ ^ p • x` away
-  from zero, its size `O(‖x‖ ^ p)`, and its trace `(dim E + p) ‖x‖ ^ p`.
+* `hasFDerivAt_norm_rpow_smul_self_of_ne`, `fderiv_norm_rpow_smul_self_of_ne`,
+  `norm_rpow_smul_id_add_smulRight_le`, `trace_rpow_smul_id_add_smulRight`: the derivative of the
+  radial field `x ↦ ‖x‖ ^ p • x` away from zero, its size `O(‖x‖ ^ p)`, and its trace
+  `(dim E + p) ‖x‖ ^ p`.
 * `continuous_norm_rpow_smul_self`: for `p > -1` the radial field is continuous at the origin.
 * `norm_norm_rpow_smul_sub_le`: for `p ≤ 0` the radial field changes by `O(‖a - b‖ ‖b‖ ^ p)`
   between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.
@@ -214,6 +215,13 @@ theorem hasFDerivAt_norm_rpow_smul_self_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
       (‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
         ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x) x :=
   (hasFDerivAt_norm_rpow_of_ne p hx).smul (hasFDerivAt_id x)
+
+/-- Away from the origin, the Fréchet derivative of the radial field `x ↦ ‖x‖ ^ p • x` is
+`‖x‖ ^ p id + p ‖x‖ ^ (p - 2) ⟪x, ·⟫ x`. -/
+theorem fderiv_norm_rpow_smul_self_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
+    fderiv ℝ (fun y : E ↦ ‖y‖ ^ p • y) x =
+      ‖x‖ ^ p • ContinuousLinearMap.id ℝ E + ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x :=
+  (hasFDerivAt_norm_rpow_smul_self_of_ne p hx).fderiv
 
 /-- For `p > -1` the radial field `x ↦ ‖x‖ ^ p • x` is continuous, also at the origin, where it
 vanishes. -/

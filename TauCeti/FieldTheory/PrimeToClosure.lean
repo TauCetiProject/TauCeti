@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import TauCeti.FieldTheory.PExtension
+public import TauCeti.FieldTheory.PExtension.Basic
 import Mathlib.FieldTheory.Galois.Sylow
 import Mathlib.FieldTheory.PurelyInseparable.Basic
 import TauCeti.FieldTheory.Normal.FixedField

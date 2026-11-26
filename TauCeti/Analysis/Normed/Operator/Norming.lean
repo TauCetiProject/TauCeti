@@ -16,6 +16,9 @@ import TauCeti.Analysis.Normed.Operator.Basic
 Finite-dimensional subspaces of continuous linear maps admit finite norming sets in the
 domain unit ball, with any prescribed loss greater than one. Norm-separable sets
 of maps admit countable sets in that ball which recover their norms exactly.
+Dually, on a separable normed space every norming set of functionals, and every set of
+functionals separating points, contains a countable subset with the same property
+(`TauCeti.exists_countable_norming_subset`, `TauCeti.exists_countable_separating_subset`).
 Tests uniformly norming an increasing sequence of operator subspaces separate points
 in the closure of their union.
 
@@ -26,9 +29,10 @@ evaluations at elements of the original dual. Unlike arbitrary functionals on th
 bidual, these evaluations are weak-star continuous. Such norming sets are used in
 separable reductions for weak compactness.
 
-The proofs use Mathlib's operator-norm supremum formulas and compactness of the
+The operator results use Mathlib's operator-norm supremum formulas and compactness of the
 finite-dimensional unit sphere; no separability or completeness of the domain
-is required.
+is required. The countable subsets of functionals are extracted from a dense sequence and
+from the Lindelöf property of the separable space.
 
 ## References
 
@@ -152,6 +156,60 @@ theorem TopologicalSpace.IsSeparable.exists_countable_norming
     exact f.unit_le_opNorm x (htunit x hx)))
 
 end Countable
+
+namespace TauCeti
+
+section CountableDual
+
+variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  [SeparableSpace X]
+
+/-- On a separable normed space, a norming set `T` of functionals, in the sense that `‖x‖` is the
+supremum of `‖x' x‖` over the members of `T` of norm at most one, contains a countable norming
+subset all of whose members have norm at most one. -/
+theorem exists_countable_norming_subset {T : Set (StrongDual 𝕜 X)}
+    (hT : ∀ x : X, ∀ r < ‖x‖, ∃ x' ∈ T, ‖x'‖ ≤ 1 ∧ r < ‖x' x‖) :
+    ∃ T₀ ⊆ T, T₀.Countable ∧ (∀ x' ∈ T₀, ‖x'‖ ≤ 1) ∧ ∀ x : X, ∀ r < ‖x‖, ∃ x' ∈ T₀, r < ‖x' x‖ := by
+  obtain ⟨d, hd⟩ := exists_dense_seq X
+  -- Countably many tests nearly attain the norms of the points of a dense sequence.
+  have hchoice (p : ℕ × ℕ) : ∃ x' ∈ T, ‖x'‖ ≤ 1 ∧ ‖d p.1‖ - 1 / (p.2 + 1) < ‖x' (d p.1)‖ :=
+    hT (d p.1) _ (sub_lt_self _ Nat.one_div_pos_of_nat)
+  choose g hgT hg1 hgd using hchoice
+  refine ⟨range g, range_subset_iff.2 hgT, countable_range g, forall_mem_range.2 hg1,
+    fun x r hr ↦ ?_⟩
+  -- These tests recover the norm of every point, up to three small errors.
+  obtain ⟨n, hn⟩ := hd.exists_dist_lt x (by linarith : 0 < (‖x‖ - r) / 3)
+  obtain ⟨k, hk⟩ := exists_nat_one_div_lt (by linarith : 0 < (‖x‖ - r) / 3)
+  refine ⟨g (n, k), mem_range_self _, ?_⟩
+  have h1 : ‖g (n, k) (x - d n)‖ ≤ ‖x - d n‖ :=
+    (g (n, k)).le_of_opNorm_le (hg1 _) _ |>.trans_eq (one_mul _)
+  have h2 : ‖g (n, k) (d n)‖ ≤ ‖g (n, k) x‖ + ‖g (n, k) (x - d n)‖ := by
+    rw [map_sub, norm_sub_rev]
+    exact norm_le_insert' _ _
+  have h3 : ‖x‖ ≤ ‖d n‖ + ‖x - d n‖ := norm_le_insert' _ _
+  rw [dist_eq_norm] at hn
+  linarith [hgd (n, k)]
+
+/-- On a separable normed space, a set `T` of functionals separating points contains a countable
+subset that still separates points. -/
+theorem exists_countable_separating_subset {T : Set (StrongDual 𝕜 X)}
+    (hT : ∀ x : X, (∀ x' ∈ T, x' x = 0) → x = 0) :
+    ∃ T₀ ⊆ T, T₀.Countable ∧ ∀ x : X, (∀ x' ∈ T₀, x' x = 0) → x = 0 := by
+  -- The sets `{x | x' x ≠ 0}`, `x' ∈ T`, cover `{x | x ≠ 0}`; extract a countable subcover.
+  obtain ⟨T₀, hT₀T, hT₀c, hT₀⟩ := isOpen_biUnion_countable T (fun x' ↦ {x : X | x' x ≠ 0})
+    fun x' _ ↦ isOpen_ne_fun x'.continuous continuous_const
+  refine ⟨T₀, hT₀T, hT₀c, fun x hx ↦ by_contra fun hne ↦ ?_⟩
+  obtain ⟨x', hx'T, hx'⟩ : ∃ x' ∈ T, x' x ≠ 0 := by
+    by_contra! h
+    exact hne (hT x h)
+  have hmem : x ∈ ⋃ x' ∈ T, {x : X | x' x ≠ 0} := mem_biUnion hx'T hx'
+  rw [← hT₀] at hmem
+  obtain ⟨i, hi, hix⟩ := mem_iUnion₂.1 hmem
+  exact hix (hx i hi)
+
+end CountableDual
+
+end TauCeti
 
 /-- Tests uniformly norming an increasing sequence of operator subspaces separate points
 in the closure of their union. -/

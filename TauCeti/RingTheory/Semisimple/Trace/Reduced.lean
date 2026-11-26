@@ -54,6 +54,8 @@ In characteristic `0`, the case of the definition, each `d_c` is invertible in `
   (`TauCeti.Algebra.semisimpleReducedTrace_eq_trace_reducedTrace_of_ne_zero` when `deg_Z B` is
   nonzero in `F`). In particular on a central simple algebra it is
   `TauCeti.Algebra.reducedTrace F B` (`TauCeti.Algebra.semisimpleReducedTrace_eq_reducedTrace`).
+* `TauCeti.Algebra.semisimpleReducedTrace_algebraMap`: on such `B`, in every characteristic,
+  `Trd_{B/F}(c) = deg_Z B • Tr_{Z/F}(c)` for `c ∈ Z`.
 * `TauCeti.Algebra.semisimpleReducedTrace_eq_inv_deg_mul_trace`: on a central simple algebra `A`,
   `Trd_{A/F}(a) = (deg A)⁻¹ · tr_F(L_a)`.
 * `TauCeti.Algebra.trace_mulLeft_eq_idealDeg_mul_semisimpleReducedTrace_of_ne_zero`: on a
@@ -375,6 +377,19 @@ theorem semisimpleReducedTrace_eq_trace_reducedTrace [CharZero F] (Z : Type*) [F
     semisimpleReducedTrace F B b = Algebra.trace F Z (reducedTrace Z B b) :=
   semisimpleReducedTrace_eq_trace_reducedTrace_of_ne_zero Z
     (Nat.cast_ne_zero.mpr (deg_ne_zero Z B)) b
+
+/-- **The reduced trace on the centre.** On a simple algebra `B` central over a field `Z` finite
+over `F`, `Trd_{B/F}(c) = deg_Z B • Tr_{Z/F}(c)` for `c ∈ Z`. -/
+theorem semisimpleReducedTrace_algebraMap (Z : Type*) [Field Z] [Algebra F Z] [Algebra Z B]
+    [IsScalarTower F Z B] [Algebra.IsCentral Z B] [IsSimpleRing B] [FiniteDimensional F Z]
+    [FiniteDimensional Z B] (c : Z) :
+    semisimpleReducedTrace F B (algebraMap Z B c) = deg Z B • Algebra.trace F Z c := by
+  by_cases hdeg : (deg Z B : F) = 0
+  · -- Both sides vanish: the definition inverts `deg_Z B`, and `0⁻¹ = 0` in `F`.
+    rw [semisimpleReducedTrace_eq_inv_deg_mul_trace_of_isScalarTower Z, nsmul_eq_mul, hdeg,
+      inv_zero, zero_mul, zero_mul]
+  · rw [semisimpleReducedTrace_eq_trace_reducedTrace_of_ne_zero Z hdeg, reducedTrace_algebraMap,
+      ← nsmul_eq_mul, map_nsmul]
 
 variable [Algebra.IsCentral F B] [IsSimpleRing B] [FiniteDimensional F B]
 

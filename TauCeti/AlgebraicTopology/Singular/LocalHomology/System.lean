@@ -391,6 +391,14 @@ lemma localHomologyMap_id {S T : Set M} (h : ContinuousMap.id M ⁻¹' T ⊆ S) 
   rw [localHomologyMap, localHomologyRestriction_def]
   exact congrArg (TopPair.singularHomologyMap · R k) (TopPair.hom_ext_of_fst _ (rfl))
 
+/-- A continuous self-map equal to the identity induces the identity on the local homology at any
+set whose preimage it keeps inside the set. -/
+lemma localHomologyMap_eq_id {j : C(M, M)} (hj : j = ContinuousMap.id M) {S : Set M}
+    (h : j ⁻¹' S ⊆ S) (k : ℕ) : localHomologyMap R j h k = 𝟙 _ := by
+  subst hj
+  rw [localHomologyMap_id]
+  exact localHomologyRestriction_refl R S k
+
 /-- The maps of local homology are functorial. -/
 @[reassoc (attr := simp)]
 lemma localHomologyMap_comp (j' : C(N, P)) {S : Set M} {T : Set N} {W : Set P}

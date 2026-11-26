@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Log
 
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 import TauCeti.RingTheory.PowerSeries.Log
 
 /-!

@@ -233,8 +233,8 @@ theorem isFredholm_floerSobolevOperator_continuationHomotopy (ω : SymplecticFor
       (hHp.of_le (by norm_num)) u)
     (contDiff_continuationAlmostComplex h₀ hJm hJp) contDiff_const
     (contDiff_uncurry_continuationHomotopy (hHm.of_le (by norm_num)) (hHp.of_le (by norm_num)))
-    (compatible_continuationAlmostComplex h₀ hJmc hJpc) hu hXm hHm hHmper hxm hxmper hndm huxm
-    hδm hXp hHp hHpper hxp hxpper hndp huxp hδp
+    (fun _ _ ↦ compatible_continuationAlmostComplex h₀ (hJmc _ _) (hJpc _ _)) hu hXm hHm hHmper
+    hxm hxmper hndm huxm hδm hXp hHp hHpper hxp hxpper hndp huxp hδp
 
 end Unitary
 

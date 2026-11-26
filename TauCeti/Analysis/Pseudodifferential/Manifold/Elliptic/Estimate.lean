@@ -8,10 +8,9 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Parametrix
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Sobolev
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
-import TauCeti.Geometry.Manifold.Sobolev.ChartReading
 
 /-!
-# The elliptic estimate on a compact manifold and finiteness of the kernel
+# The elliptic estimate on a compact manifold
 
 Let `P` be a classical pseudodifferential operator of order `m` on a manifold `M` modelled on
 `ℝⁿ` (`TauCeti.classicalPseudodifferentialOperators`) which is elliptic
@@ -37,25 +36,19 @@ such that `R = Q ∘ P - 1` has order `-N`
 bounds `Q (P u)` in `H^{s + m}` by `P u` in `H^s`, and `R u` in `H^{r + N}` by `u` in `H^r`. For
 `N ≥ s + m - r` the space `H^{r + N}` embeds continuously into `H^{s + m}`.
 
-As a consequence, **the kernel of an elliptic operator on a compact manifold is
-finite-dimensional** (`TauCeti.IsClassicalElliptic.finiteDimensional_ker`). On the kernel, the
-estimate with `s = 0` and `r = m - 1` bounds the `H^m` partition norm by the `H^{m - 1}` partition
-norm, and by the Rellich theorem a space of smooth functions with such a reverse estimate is
-finite-dimensional (`TauCeti.finiteDimensional_of_forall_sum_norm_toBesselPotentialSpaceCLM_le`).
+The estimate is the a priori half of the regularity theory of an elliptic operator on a compact
+manifold. Finiteness of its smooth kernel is proved separately, from Rellich's theorem
+(`TauCeti.IsClassicalElliptic.finiteDimensional_ker`).
 
 ## Main results
 
 * `TauCeti.IsClassicalElliptic.exists_sum_norm_le_add`: the elliptic estimate
   `‖u‖_{H^{s + m}} ≤ C (‖P u‖_{H^s} + ‖u‖_{H^r})` for smooth `u`, in chart-partition norms.
-* `TauCeti.IsClassicalElliptic.finiteDimensional_ker`: on a compact manifold, the smooth functions
-  killed by an elliptic classical pseudodifferential operator form a finite-dimensional space.
 
 ## References
 
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §4,
   (4.6)–(4.11) (elliptic estimates from a parametrix).
-* M. F. Atiyah and I. M. Singer, *The index of elliptic operators I*, Ann. of Math. 87 (1968),
-  §6 (finiteness of the kernel of an elliptic operator on a compact manifold).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §19.2.
 -/
 
@@ -142,25 +135,5 @@ theorem IsClassicalElliptic.exists_sum_norm_le_add
         have := mul_nonneg (abs_nonneg A) hY
         have := mul_nonneg (mul_nonneg (norm_nonneg _ : 0 ≤ c) (abs_nonneg B)) hX
         nlinarith
-
-/-- **The kernel of an elliptic operator is finite-dimensional.** On a compact manifold `M`, the
-smooth functions `u` with `P u = 0`, for an elliptic classical pseudodifferential operator `P`, form
-a finite-dimensional complex vector space. -/
-theorem IsClassicalElliptic.finiteDimensional_ker [CompactSpace M]
-    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P) :
-    FiniteDimensional ℂ (LinearMap.ker P) := by
-  -- On the kernel, the elliptic estimate for a chart partition `ρᵢ` of `M` with `s = 0` and
-  -- `r = m - 1` bounds the `H^m` readings by the `H^{m - 1}` readings.
-  obtain ⟨N, c, ρ, hρ⟩ :=
-    (isCompact_univ (X := M)).exists_sum_cutoffPullback_eq_one (E := CoordinateSpace n)
-  have he (i : Fin N) :
-      chartAt (CoordinateSpace n) (c i) ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
-    IsManifold.chart_mem_maximalAtlas (c i)
-  have hρ' (x : M) : ∑ i, (chartAt (CoordinateSpace n) (c i)).cutoffPullback (he i) (ρ i) 1 x = 1 :=
-    hρ x (mem_univ x)
-  obtain ⟨C, hC⟩ := hPe.exists_sum_norm_le_add hP he ρ he ρ hρ' 0 (m - 1)
-  rw [zero_add] at hC
-  exact finiteDimensional_of_forall_sum_norm_toBesselPotentialSpaceCLM_le he ρ hρ'
-    (show m - 1 < m by linarith) fun u hu ↦ by simpa [LinearMap.mem_ker.1 hu] using hC u
 
 end TauCeti

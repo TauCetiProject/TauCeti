@@ -55,8 +55,9 @@ the pairing of `[θ]` with the class of the curve, a de Rham comparison not prov
 If `θ` tames `J` strictly along `u`, that is `θ(v, J v) > 0` for every nonzero tangent vector `v`
 at a point of the image, the pairing also detects whether `u` is constant: the integrand
 `θ(du e, J du e)` is positive wherever `du` is nonzero, so `∫_C u^* θ = 0` forces `du = 0`
-(`TauCeti.mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero`). When `C` is closed and connected
-and `u^* θ` is exact, Stokes' theorem gives `∫_C u^* θ = 0`, so `u` is constant
+(`TauCeti.mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero`), so for compact connected `C`
+the curve is constant (`TauCeti.apply_eq_of_integralTopForm_mpullback_eq_zero`). When `C` is closed
+and connected and `u^* θ` is exact, Stokes' theorem gives `∫_C u^* θ = 0`, so `u` is constant
 (`TauCeti.apply_eq_of_mpullback_mem_exactForms`). This applies when `θ` itself is exact
 (`TauCeti.apply_eq_of_mem_exactForms`), and so, by the Poincaré lemma, to every closed taming form
 on a real normed space (`TauCeti.apply_eq_of_mem_closedForms_normedSpace`). In particular a closed
@@ -199,6 +200,20 @@ theorem mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero [CompactSpace C]
     ((SmoothForm.isSmoothForm _).of_le (by simp))
     (isClosed_tsupport _).isCompact hnn hpos).ne' h
 
+/-- **Closed pseudoholomorphic curves of zero pairing are constant.** Let `u` be a smooth
+pseudoholomorphic map from a compact connected surface `C`, oriented so that the frames `(e, j e)`
+are positive, and let `θ` tame `J` along `u`. If `∫_C u^* θ = 0`, then `u` is constant. -/
+theorem apply_eq_of_integralTopForm_mpullback_eq_zero [CompactSpace C] [PreconnectedSpace C]
+    (hu : ContMDiff I' I ∞ u)
+    (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j J u c) {θ : SmoothTwoForm I X}
+    (hθ : ∀ c (v : TangentSpace I (u c)), v ≠ 0 →
+      0 < SmoothBundleForm.eval₂ θ (u c) v (J (u c) v))
+    (h : integralTopForm o (SmoothForm.mpullback u hu θ).val = 0) (c c' : C) : u c = u c' :=
+  (hu.mdifferentiable (by simp)).apply_eq_of_mfderiv_eq_zero
+    (mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero hu ho hhol hθ h) c c'
+
 variable [BoundarylessManifold I' C] [T2Space C] [CompactSpace C] [PreconnectedSpace C]
 
 /-- **Closed pseudoholomorphic curves with exact pairing are constant.** Let `u` be a smooth
@@ -212,11 +227,9 @@ theorem apply_eq_of_mpullback_mem_exactForms (hu : ContMDiff I' I ∞ u)
     (hhol : ∀ c, IsPseudoholomorphicAt j J u c) {θ : SmoothTwoForm I X}
     (hθ : ∀ c (v : TangentSpace I (u c)), v ≠ 0 →
       0 < SmoothBundleForm.eval₂ θ (u c) v (J (u c) v))
-    (hex : SmoothForm.mpullback u hu θ ∈ exactForms I' C 2) (c c' : C) : u c = u c' := by
-  have hint : integralTopForm o (SmoothForm.mpullback u hu θ).val = 0 :=
-    integralTopForm_eq_zero_of_mem_exactForms o hex
-  exact hu.mdifferentiable (by simp) |>.apply_eq_of_mfderiv_eq_zero
-    (mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero hu ho hhol hθ hint) c c'
+    (hex : SmoothForm.mpullback u hu θ ∈ exactForms I' C 2) (c c' : C) : u c = u c' :=
+  apply_eq_of_integralTopForm_mpullback_eq_zero hu ho hhol hθ
+    (integralTopForm_eq_zero_of_mem_exactForms o hex) c c'
 
 /-- **Pseudoholomorphic curves are constant for exact taming forms.** A smooth pseudoholomorphic
 map from a closed connected surface into an almost complex manifold tamed along the map by an

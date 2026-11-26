@@ -52,6 +52,7 @@ on bounded uniformly continuous functions with invariant means on `L∞` of a Ha
 * `MeasureTheory.Lp.castLpₗᵢ_leftTranslation`: transporting along an equality of measures commutes
   with left translation.
 * `MeasureTheory.Lp.continuous_leftTranslation_apply`: for `p < ∞`, `g ↦ L_g f` is continuous.
+* `MeasureTheory.Lp.tendsto_leftTranslation_apply_nhds_one`: for `p < ∞`, `L_g f → f` as `g → 1`.
 * `MeasureTheory.Lp.leftTranslation_toLpTop`: the class in `L∞` of a bounded continuous
   function commutes with left translation.
 -/
@@ -174,6 +175,14 @@ theorem continuous_leftTranslation_apply [TopologicalSpace G] [IsTopologicalGrou
   have : Fact (p ≠ ∞) := ⟨hp⟩
   simp_rw [leftTranslation_apply]
   exact (DomMulAct.continuous_mk.comp continuous_inv).smul continuous_const
+
+open Topology in
+/-- For `p < ∞`, the left translates `L_g f` tend to `f` in `Lᵖ` as `g → 1`. -/
+theorem tendsto_leftTranslation_apply_nhds_one [TopologicalSpace G] [IsTopologicalGroup G]
+    [BorelSpace G] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] (hp : p ≠ ∞)
+    (f : Lp E p μ) : Tendsto (fun g : G => leftTranslation μ p 𝕜 g f) (𝓝 1) (𝓝 f) := by
+  simpa only [map_one, LinearIsometryEquiv.coe_one, id_eq]
+    using (continuous_leftTranslation_apply (𝕜 := 𝕜) hp f).tendsto 1
 
 end MeasureTheory.Lp
 

@@ -102,6 +102,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   family `v` is a non-zero-divisor.
 * `Module.Basis.det_eq_det_of_det_eq_one`: a basis `b'` with `b.det b' = 1` has the same
   determinant form as `b`.
+* `Module.Basis.eq_zero_of_forall_det_eq_zero`: the determinant form of a rank-two basis is
+  nondegenerate.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 * `LinearMap.injective_of_det_mem_nonZeroDivisors`: an endomorphism of a free module of finite
   rank whose determinant is a non-zero-divisor is injective.
@@ -289,6 +291,16 @@ determinant form. -/
 theorem det_eq_det_of_det_eq_one {b b' : Basis ι R M} (h : b.det b' = 1) : b'.det = b.det := by
   rw [AlternatingMap.eq_smul_basis_det b b'.det, ← mul_one (b'.det b), ← h, det_mul_det, det_self,
     one_smul]
+
+/-- **The determinant form of a rank-two basis is nondegenerate.** A vector `u` with
+`e.det ![u, v] = 0` for every `v` is zero. -/
+theorem eq_zero_of_forall_det_eq_zero (e : Basis (Fin 2) R M) {u : M}
+    (h : ∀ v, e.det ![u, v] = 0) : u = 0 := by
+  refine e.forall_coord_eq_zero_iff.1 fun i ↦ ?_
+  rw [coord_apply]
+  fin_cases i
+  · simpa [det_apply, Matrix.det_fin_two, toMatrix_apply] using h (e 1)
+  · simpa [det_apply, Matrix.det_fin_two, toMatrix_apply] using h (e 0)
 
 end Module.Basis
 
