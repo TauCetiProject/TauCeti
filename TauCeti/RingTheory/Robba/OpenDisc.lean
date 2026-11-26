@@ -41,6 +41,7 @@ converges on an annulus `r < |t| < 1` converges on the whole disc `|t| < 1`.
   inclusion is injective and lands in every annular subalgebra.
 * `TauCeti.RobbaRing.mem_range_ofOnOpenDisc`: its image is the set of elements with no terms of
   negative degree.
+* `TauCeti.RobbaRing.ofOnOpenDisc_polynomialHom`: a polynomial `P` maps to `P(t)`.
 * `TauCeti.RobbaRing.coe_one_add_monomial_pow_natCast`: the binomial theorem, the coefficient of
   `tⁿ` in `(1 + t) ^ N` is `C(N, n)`.
 -/
@@ -172,7 +173,6 @@ theorem coe_ofOnOpenDisc_of_neg (f : PowerSeries.OnOpenDisc.subring R 1) {n : �
   simp [coe_ofOnOpenDisc, PowerSeries.coeff_coe, hn]
 
 /-- The variable `X` maps to the variable `t` of the Robba ring. -/
-@[simp]
 theorem ofOnOpenDisc_polynomialHom_X :
     ofOnOpenDisc R (PowerSeries.OnOpenDisc.polynomialHom Polynomial.X) = monomial 1 1 := by
   ext n
@@ -182,6 +182,16 @@ theorem ofOnOpenDisc_polynomialHom_X :
     rw [coe_ofOnOpenDisc_natCast, PowerSeries.OnOpenDisc.coe_polynomialHom, Polynomial.coeff_coe,
       Polynomial.coeff_X, coe_monomial, Pi.single_apply]
     grind
+
+/-- **The inclusion on polynomials**: a polynomial `P` maps to its evaluation `P(t)` at the
+variable `t` of the Robba ring. -/
+@[simp]
+theorem ofOnOpenDisc_polynomialHom (P : Polynomial R) :
+    ofOnOpenDisc R (PowerSeries.OnOpenDisc.polynomialHom P) =
+      Polynomial.aeval (monomial 1 1) P := by
+  rw [← PowerSeries.OnOpenDisc.polynomialAlgHom_apply, ← AlgHom.comp_apply]
+  congr 1
+  exact Polynomial.algHom_ext (by simpa using ofOnOpenDisc_polynomialHom_X R)
 
 /-- `(1 + t) ^ N` is the image of the polynomial `(1 + X) ^ N`, whose coefficients are binomial
 coefficients. -/

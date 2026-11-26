@@ -8,10 +8,12 @@ module
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import TauCeti.RingTheory.PowerSeries.Log
+public import TauCeti.RingTheory.PowerSeries.OpenDisc.Topology
 public import TauCeti.RingTheory.Robba.OpenDisc
 import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.Choose
+import TauCeti.RingTheory.PowerSeries.TateAlgebra
 
 /-!
 # The logarithm `log (1 + t)` in the Robba ring
@@ -51,6 +53,8 @@ binomial estimate `‖C(N - 1, j) - (-1)ʲ‖ ≤ (j + 1) ‖N‖` of `TauCeti.N
   integer has norm less than `1`.
 * `TauCeti.RobbaRing.tendsto_laurentGaussNorm_one_add_pow_sub_log`: over a normed `ℚ_p`-algebra,
   `((1 + t) ^ (p ^ m) - 1) / p ^ m → log (1 + t)` in every Gauss norm `|·|_ρ`, `0 ≤ ρ < 1`.
+* `TauCeti.RobbaRing.tendsto_onOpenDisc_one_add_pow_sub_log`: the same limit in the topology of
+  the power series on the open unit disc.
 
 ## References
 
@@ -182,6 +186,24 @@ theorem tendsto_laurentGaussNorm_one_add_pow_sub_log {ρ : ℝ} (hρ₀ : 0 ≤ 
     · have h0 : (((1 + monomial 1 1) ^ p ^ m : RobbaRing K) : ℤ → K) 0 = 1 := by
         simpa using coe_one_add_monomial_pow_natCast K (p ^ m) 0
       simp [h0, hCp]
+
+/-- **`log (1 + X) = lim ((1 + X) ^ (p ^ m) - 1) / p ^ m` on the open unit disc.** Over a complete
+normed `ℚ_p`-algebra `K`, the polynomials `((1 + X) ^ (p ^ m) - 1) / p ^ m` converge to the power
+series `log (1 + X)` in the topology of the open unit disc. This is
+`TauCeti.RobbaRing.tendsto_laurentGaussNorm_one_add_pow_sub_log` transported along the Gauss-norm
+preserving inclusion `TauCeti.RobbaRing.ofOnOpenDisc`. -/
+theorem tendsto_onOpenDisc_one_add_pow_sub_log :
+    Tendsto (fun m : ℕ ↦ ((p : K) ^ m)⁻¹ •
+        PowerSeries.OnOpenDisc.polynomialHom (R₀ := 1) ((1 + Polynomial.X) ^ p ^ m - 1)) atTop
+      (𝓝 ⟨PowerSeries.log K, PowerSeries.OnOpenDisc.mem_subring.2 PowerSeries.onOpenDisc_log⟩) := by
+  refine PowerSeries.OnOpenDisc.tendsto_iff.2 fun r ↦ ?_
+  have : Fact (0 < (r : ℝ)) := ⟨r.property.1⟩
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  refine (tendsto_laurentGaussNorm_one_add_pow_sub_log (p := p) K r.property.1.le
+    r.property.2).congr fun m ↦ ?_
+  rw [← map_sub, PowerSeries.norm_eq_gaussNorm, PowerSeries.OnOpenDisc.coe_restrict,
+    ← laurentGaussNorm_ofOnOpenDisc, map_sub, map_smul, ofOnOpenDisc_polynomialHom, ← log_def]
+  simp
 
 end RobbaRing
 
