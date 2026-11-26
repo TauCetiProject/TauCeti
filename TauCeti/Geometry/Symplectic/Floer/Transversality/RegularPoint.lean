@@ -40,11 +40,12 @@ a Floer cylinder, and for `T = (0, 1)` the open strip on which a Floer strip bet
 Lagrangians solves the equation. The boundary conditions of a strip play no role. The proof has
 three parts.
 
-* **Openness.** If `u` is `C¹` and converges uniformly on `T` to loops `xm` and `xp` continuous on
-  `T`, the regular points in the band form an open set
+* **Openness.** If `u` is `C¹` on the band and converges uniformly on `T` to loops `xm` and `xp`
+  continuous on `T`, the regular points in the band form an open set
   (`TauCeti.Floer.isOpen_univ_prod_inter_regularPoints`, and `TauCeti.Floer.isOpen_regularPoints`
   for `T = ℝ`). The topological core (`TauCeti.eventually_forall_slice_eq_imp_eq_of_tendsto`)
-  needs only a continuous map into a Hausdorff space with limits along the ends, and injectivity
+  needs only a map into a Hausdorff space continuous along the slice, with limits along the ends,
+  and injectivity
   of `(s, t) ↦ (u(s, t), t)` near the point, which `∂ₛu ≠ 0` provides
   (`TauCeti.Floer.exists_mem_nhds_injOn_of_fderiv_apply_ne_zero`, from the injectivity of its
   derivative). The limits confine the competitors `s'` to a compact interval, and a compactness
@@ -135,10 +136,11 @@ theorem mem_regularPoints {z : ℝ × ℝ} :
       u z ≠ xp z.2 ∧ ∀ s, u (s, z.2) = u z → s = z.1 :=
   Iff.rfl
 
-/-- **The regular points in a band form an open set.** Let `T ⊆ ℝ` be open. If `u` is `C¹` and
-converges, uniformly for `t ∈ T`, to loops `xm` and `xp` continuous on `T` as `s → -∞` and
-`s → +∞`, then its regular points in the band `ℝ × T` form an open subset of `ℝ × ℝ`. -/
-theorem isOpen_univ_prod_inter_regularPoints {T : Set ℝ} (hT : IsOpen T) (hu : ContDiff ℝ 1 u)
+/-- **The regular points in a band form an open set.** Let `T ⊆ ℝ` be open. If `u` is `C¹` on the
+band `ℝ × T` and converges, uniformly for `t ∈ T`, to loops `xm` and `xp` continuous on `T` as
+`s → -∞` and `s → +∞`, then its regular points in the band form an open subset of `ℝ × ℝ`. -/
+theorem isOpen_univ_prod_inter_regularPoints {T : Set ℝ} (hT : IsOpen T)
+    (hu : ContDiffOn ℝ 1 u (univ ×ˢ T))
     (hxm : ContinuousOn xm T) (hxp : ContinuousOn xp T)
     (hm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot T)
     (hp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop T) :
@@ -150,18 +152,22 @@ theorem isOpen_univ_prod_inter_regularPoints {T : Set ℝ} (hT : IsOpen T) (hu :
       fun U hU ↦ tendsto_fst.eventually (h U hU)
     exact h'.tendsto_comp (hx.continuousWithinAt ht₀)
       (tendsto_nhdsWithin_iff.2 ⟨tendsto_snd, tendsto_snd.eventually (hT.mem_nhds ht₀)⟩)
-  have hcont : Continuous u := hu.continuous
+  have hB : IsOpen (univ ×ˢ T : Set (ℝ × ℝ)) := isOpen_univ.prod hT
   refine isOpen_iff_mem_nhds.2 fun z hz ↦ ?_
   obtain ⟨⟨-, hzT⟩, hd, hmz, hpz, hinj⟩ := hz
+  -- `u` is continuous along the slice through `z`, which lies in the band.
+  have hcont (s : ℝ) : ContinuousAt u (s, z.2) :=
+    hu.continuousOn.continuousAt (hB.mem_nhds ⟨mem_univ s, hzT⟩)
+  have hzB : univ ×ˢ T ∈ 𝓝 z := hB.mem_nhds ⟨mem_univ _, hzT⟩
   have hx {x : ℝ → V} (hx : ContinuousOn x T) : ContinuousAt (fun w : ℝ × ℝ ↦ x w.2) z :=
     (hx.continuousAt (hT.mem_nhds hzT)).comp continuous_snd.continuousAt
   filter_upwards [continuous_snd.continuousAt.eventually_mem (hT.mem_nhds hzT),
-    ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const).continuousAt
+    ((hu.continuousOn_fderiv_of_isOpen hB le_rfl).continuousAt hzB).clm_apply continuousAt_const
       |>.eventually_ne hd,
-    (hcont.continuousAt.ne_iff_eventually_ne (hx hxm)).1 hmz,
-    (hcont.continuousAt.ne_iff_eventually_ne (hx hxp)).1 hpz,
+    ((hcont z.1).ne_iff_eventually_ne (hx hxm)).1 hmz,
+    ((hcont z.1).ne_iff_eventually_ne (hx hxp)).1 hpz,
     eventually_forall_slice_eq_imp_eq_of_tendsto hcont (hlim hm hxm hzT) (hlim hp hxp hzT)
-      (exists_mem_nhds_injOn_of_fderiv_apply_ne_zero hu.contDiffAt hd) hmz hpz hinj]
+      (exists_mem_nhds_injOn_of_fderiv_apply_ne_zero (hu.contDiffAt hzB) hd) hmz hpz hinj]
     with w h₀ h₁ h₂ h₃ h₄
   exact ⟨⟨mem_univ _, h₀⟩, h₁, h₂, h₃, h₄⟩
 
@@ -172,7 +178,7 @@ theorem isOpen_regularPoints (hu : ContDiff ℝ 1 u) (hxm : Continuous xm) (hxp 
     (hm : TendstoUniformly (fun s t ↦ u (s, t)) xm atBot)
     (hp : TendstoUniformly (fun s t ↦ u (s, t)) xp atTop) :
     IsOpen (regularPoints u xm xp) := by
-  simpa using isOpen_univ_prod_inter_regularPoints isOpen_univ hu hxm.continuousOn
+  simpa using isOpen_univ_prod_inter_regularPoints isOpen_univ hu.contDiffOn hxm.continuousOn
     hxp.continuousOn hm.tendstoUniformlyOn hp.tendstoUniformlyOn
 
 /-- **`∂ₛu` vanishes where `u` follows a loop.** On the interior of the set of points where
@@ -191,19 +197,21 @@ theorem interior_setOf_eq_subset_setOf_fderiv_apply_eq_zero :
   · simp [fderiv_zero_of_not_differentiableAt hd]
 
 omit [NormedSpace ℝ V] in
-/-- The points of a band `ℝ × T`, for an open `T`, at which a continuous `u` differs from a loop
-continuous on `T` form an open set. -/
-private theorem isOpen_univ_prod_inter_setOf_ne {T : Set ℝ} (hT : IsOpen T) (hu : Continuous u)
-    (hx : ContinuousOn x T) : IsOpen (univ ×ˢ T ∩ {z | u z ≠ x z.2}) :=
-  (hu.continuousOn.prodMk (hx.comp continuousOn_snd mapsTo_snd_prod)).isOpen_inter_preimage
+/-- The points of a band `ℝ × T`, for an open `T`, at which a map `u` continuous on the band differs
+from a loop continuous on `T` form an open set. -/
+private theorem isOpen_univ_prod_inter_setOf_ne {T : Set ℝ} (hT : IsOpen T)
+    (hu : ContinuousOn u (univ ×ˢ T)) (hx : ContinuousOn x T) :
+    IsOpen (univ ×ˢ T ∩ {z | u z ≠ x z.2}) :=
+  (hu.prodMk (hx.comp continuousOn_snd mapsTo_snd_prod)).isOpen_inter_preimage
     (isOpen_univ.prod hT) (isOpen_ne_fun continuous_fst continuous_snd)
 
 /-- **Points away from the critical points of `s ↦ u` and from two loops are dense in a band.**
-Let `T ⊆ ℝ` be open, let `u` be continuous, with `∂ₛu ≠ 0` on a dense subset of the band `ℝ × T`,
+Let `T ⊆ ℝ` be open, let `u` be continuous on the band `ℝ × T`, with `∂ₛu ≠ 0` on a dense subset
+of the band,
 and let `xm` and `xp` be loops continuous on `T`. Then the points of the band where `∂ₛu ≠ 0`,
 `u(s, t) ≠ xm(t)` and `u(s, t) ≠ xp(t)` are dense in the band. -/
 theorem subset_closure_inter_setOf_fderiv_apply_ne_zero_and_ne_and_ne {T : Set ℝ} (hT : IsOpen T)
-    (hu : Continuous u) (hxm : ContinuousOn xm T) (hxp : ContinuousOn xp T)
+    (hu : ContinuousOn u (univ ×ˢ T)) (hxm : ContinuousOn xm T) (hxp : ContinuousOn xp T)
     (h : univ ×ˢ T ⊆ closure (univ ×ˢ T ∩ {z | fderiv ℝ u z stdComplexLineReal ≠ 0})) :
     univ ×ˢ T ⊆ closure (univ ×ˢ T ∩
       {z | fderiv ℝ u z stdComplexLineReal ≠ 0 ∧ u z ≠ xm z.2 ∧ u z ≠ xp z.2}) := by
@@ -233,12 +241,13 @@ theorem subset_closure_inter_setOf_fderiv_apply_ne_zero_and_ne_and_ne {T : Set �
   exact ⟨w, hwo, hwT, hw, hwm, hwp⟩
 
 /-- **Separation from the asymptotic orbits.** Let `T ⊆ ℝ` be open and preconnected, and let `u`
-be a `C²` map solving the Floer equation `∂ₛu - X_{K_s}(u) + J(u)(∂ₜu - X_{K_t}(u)) = 0` on the
-band `ℝ × T`, whose data `J`, `K_s`, `K_t` are invariant under small translations in `s`, as for
-a Floer trajectory, with `J` of class `C¹`, the Hamiltonians of class `C²` near the graph of `u`
-and `J(z, u z)² = -1` on the band. If `u` is not stationary on the band, that is `∂ₛu` does not
-vanish identically there, then for loops `xm` and `xp` continuous on `T` the points of the band
-where `∂ₛu ≠ 0`, `u(s, t) ≠ xm(t)` and `u(s, t) ≠ xp(t)` are dense in the band. -/
+be a map, `C²` on the band `ℝ × T`, solving the Floer equation
+`∂ₛu - X_{K_s}(u) + J(u)(∂ₜu - X_{K_t}(u)) = 0` there, whose data `J`, `K_s`, `K_t` are invariant
+under small translations in `s`, as for a Floer trajectory, with `J` of class `C¹`, the
+Hamiltonians of class `C²` near the graph of `u` and `J(z, u z)² = -1` on the band. If `u` is not
+stationary on the band, that is `∂ₛu` does not vanish identically there, then for loops `xm` and
+`xp` continuous on `T` the points of the band where `∂ₛu ≠ 0`, `u(s, t) ≠ xm(t)` and
+`u(s, t) ≠ xp(t)` are dense in the band. -/
 theorem subset_closure_inter_setOf_fderiv_apply_ne_zero_and_ne_and_ne_of_floerOperator_eq_zero
     {ω : SymplecticForm V} [FiniteDimensional ℝ V] {J : ℝ × ℝ → V → V →L[ℝ] V}
     {Ks Kt : ℝ × ℝ → V → ℝ} {T : Set ℝ} (hT : IsOpen T) (hTc : IsPreconnected T)
@@ -248,8 +257,8 @@ theorem subset_closure_inter_setOf_fderiv_apply_ne_zero_and_ne_and_ne_of_floerOp
     (hJ : ∀ z ∈ univ ×ˢ T, ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z, u z))
     (hJJ : ∀ z ∈ univ ×ˢ T, J z (u z) ∘L J z (u z) = -ContinuousLinearMap.id ℝ V)
     (hKs : ∀ z ∈ univ ×ˢ T, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
-    (hKt : ∀ z ∈ univ ×ˢ T, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 2 u)
-    (hF : ∀ z ∈ univ ×ˢ T, ω.floerOperator J Ks Kt u z = 0)
+    (hKt : ∀ z ∈ univ ×ˢ T, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ContDiffOn ℝ 2 u (univ ×ˢ T)) (hF : ∀ z ∈ univ ×ˢ T, ω.floerOperator J Ks Kt u z = 0)
     (hne : ∃ z ∈ univ ×ˢ T, fderiv ℝ u z stdComplexLineReal ≠ 0) (hxm : ContinuousOn xm T)
     (hxp : ContinuousOn xp T) :
     univ ×ˢ T ⊆ closure (univ ×ˢ T ∩
@@ -258,8 +267,8 @@ theorem subset_closure_inter_setOf_fderiv_apply_ne_zero_and_ne_and_ne_of_floerOp
   -- The zeros of `∂ₛu` are isolated in the band, so its nonzeros are dense there.
   have hcod :=
     SymplecticForm.setOf_fderiv_apply_ne_zero_mem_codiscreteWithin_of_floerOperator_eq_zero
-      hB ((isPreconnected_univ (α := ℝ)).prod hTc) hJs hKss hKts hJ hJJ hKs hKt hu.contDiffOn hF hne
-  refine subset_closure_inter_setOf_fderiv_apply_ne_zero_and_ne_and_ne hT hu.continuous hxm hxp
+      hB ((isPreconnected_univ (α := ℝ)).prod hTc) hJs hKss hKts hJ hJJ hKs hKt hu hF hne
+  refine subset_closure_inter_setOf_fderiv_apply_ne_zero_and_ne_and_ne hT hu.continuousOn hxm hxp
     fun z hz ↦ mem_closure_iff_frequently.2 ?_
   have h : univ ×ˢ T ∩ {z | fderiv ℝ u z stdComplexLineReal ≠ 0} ∈ 𝓝[≠] z := by
     filter_upwards [mem_codiscreteWithin_iff_forall_mem_nhdsNE.1 hcod z hz,
@@ -357,17 +366,17 @@ theorem hasFDerivAt_fst_of_floerOperator_eq_zero {ω : SymplecticForm V} [Finite
   simp only [map_add, map_smul, hl', hm']
   simp [stdComplexLineReal_eq, stdComplexLineImag_eq]
 
-/-- **A continuous competitor on the slices of a Floer solution is a translate.** Let `u` be a
-differentiable map solving the Floer equation `∂ₛu - X_{K_s}(u) + J_t(u)(∂ₜu - X_{K_t}(u)) = 0` on
-a band `ℝ × T`, for data depending only on `t`, with `J_t(u)² = -1` along `u` on the band. Let `φ`
-be continuous on an open subset `W` of the band, with `u(φ(z), z.2) = u(z)` and
-`∂ₛu(φ(z), z.2) ≠ 0` for every `z ∈ W`. Then near every point of `W`, `φ(s, t) = s + c` for a
-constant `c`. -/
+/-- **A continuous competitor on the slices of a Floer solution is a translate.** Let `u` be a map,
+differentiable at every point of a band `ℝ × T`, solving the Floer equation
+`∂ₛu - X_{K_s}(u) + J_t(u)(∂ₜu - X_{K_t}(u)) = 0` there, for data depending only on `t`, with
+`J_t(u)² = -1` along `u` on the band. Let `φ` be continuous on an open subset `W` of the band,
+with `u(φ(z), z.2) = u(z)` and `∂ₛu(φ(z), z.2) ≠ 0` for every `z ∈ W`. Then near every point of
+`W`, `φ(s, t) = s + c` for a constant `c`. -/
 theorem exists_eventually_eq_add_of_floerOperator_eq_zero {ω : SymplecticForm V}
     [FiniteDimensional ℝ V] {J : ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ → V → ℝ} {φ : ℝ × ℝ → ℝ}
     {T : Set ℝ} {W : Set (ℝ × ℝ)}
     (hJJ : ∀ z ∈ univ ×ˢ T, J z.2 (u z) ∘L J z.2 (u z) = -ContinuousLinearMap.id ℝ V)
-    (hu : Differentiable ℝ u)
+    (hu : ∀ z ∈ univ ×ˢ T, DifferentiableAt ℝ u z)
     (hF : ∀ z ∈ univ ×ˢ T,
       ω.floerOperator (fun p ↦ J p.2) (fun p ↦ Ks p.2) (fun p ↦ Kt p.2) u z = 0)
     (hW : IsOpen W) (hWT : W ⊆ univ ×ˢ T) (hφc : ContinuousOn φ W)
@@ -376,8 +385,9 @@ theorem exists_eventually_eq_add_of_floerOperator_eq_zero {ω : SymplecticForm V
     ∃ c, ∀ᶠ z in 𝓝 z₀, φ z = z.1 + c := by
   -- `φ - fst` has derivative zero on `W`, so it is constant on a ball around `z₀`.
   have hd (z) (hz : z ∈ W) : HasFDerivAt (fun w ↦ φ w - w.1) (0 : ℝ × ℝ →L[ℝ] ℝ) z := by
-    have h := (hasFDerivAt_fst_of_floerOperator_eq_zero (hJJ z (hWT hz)) (hu z) (hu (φ z, z.2))
-      (hF z (hWT hz)) (hF (φ z, z.2) ⟨mem_univ _, (hWT hz).2⟩)
+    have hφz : (φ z, z.2) ∈ univ ×ˢ T := ⟨mem_univ _, (hWT hz).2⟩
+    have h := (hasFDerivAt_fst_of_floerOperator_eq_zero (hJJ z (hWT hz)) (hu z (hWT hz))
+      (hu _ hφz) (hF z (hWT hz)) (hF _ hφz)
       ((hφc z hz).continuousAt (hW.mem_nhds hz)) (Filter.eventually_of_mem (hW.mem_nhds hz) hφu)
         (hφd z hz)).sub (hasFDerivAt_fst (p := z))
     rwa [sub_self] at h
@@ -416,27 +426,36 @@ theorem countable_inter_setOf_fderiv_apply_eq_zero_of_floerOperator_eq_zero
   rw [inter_comm]
   exact (HereditarilyLindelofSpace.isLindelof _).countable_of_isDiscrete hdisc
 
+/-- The points of a band `ℝ × T`, for an open `T`, where `∂ₛu ≠ 0` form an open set, for a map `u`
+that is `C¹` on the band. -/
+private theorem isOpen_univ_prod_inter_setOf_fderiv_apply_ne_zero {T : Set ℝ} (hT : IsOpen T)
+    (hu : ContDiffOn ℝ 1 u (univ ×ˢ T)) :
+    IsOpen (univ ×ˢ T ∩ {z | fderiv ℝ u z stdComplexLineReal ≠ 0}) :=
+  ((hu.continuousOn_fderiv_of_isOpen (isOpen_univ.prod hT) le_rfl).clm_apply
+    continuousOn_const).isOpen_inter_preimage (isOpen_univ.prod hT) isOpen_ne
+
 /-- The points of a band `ℝ × T`, for an open `T`, where `∂ₛu ≠ 0` and `u` differs from two loops
-continuous on `T` form an open set, for a `C¹` map `u`. -/
+continuous on `T` form an open set, for a map `u` that is `C¹` on the band. -/
 private theorem isOpen_univ_prod_inter_setOf_fderiv_apply_ne_zero_and_ne_and_ne {T : Set ℝ}
-    (hT : IsOpen T) (hu : ContDiff ℝ 1 u) (hxm : ContinuousOn xm T) (hxp : ContinuousOn xp T) :
+    (hT : IsOpen T) (hu : ContDiffOn ℝ 1 u (univ ×ˢ T)) (hxm : ContinuousOn xm T)
+    (hxp : ContinuousOn xp T) :
     IsOpen (univ ×ˢ T ∩
       {z | fderiv ℝ u z stdComplexLineReal ≠ 0 ∧ u z ≠ xm z.2 ∧ u z ≠ xp z.2}) := by
   have he : univ ×ˢ T ∩
       {z | fderiv ℝ u z stdComplexLineReal ≠ 0 ∧ u z ≠ xm z.2 ∧ u z ≠ xp z.2} =
-      {z | fderiv ℝ u z stdComplexLineReal ≠ 0} ∩
+      (univ ×ˢ T ∩ {z | fderiv ℝ u z stdComplexLineReal ≠ 0}) ∩
         ((univ ×ˢ T ∩ {z | u z ≠ xm z.2}) ∩ (univ ×ˢ T ∩ {z | u z ≠ xp z.2})) := by
     ext z
     simp only [mem_inter_iff, mem_ofPred_eq]
     tauto
   rw [he]
-  exact (isOpen_ne_fun ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const)
-    continuous_const).inter ((isOpen_univ_prod_inter_setOf_ne hT hu.continuous hxm).inter
-      (isOpen_univ_prod_inter_setOf_ne hT hu.continuous hxp))
+  exact (isOpen_univ_prod_inter_setOf_fderiv_apply_ne_zero hT hu).inter
+    ((isOpen_univ_prod_inter_setOf_ne hT hu.continuousOn hxm).inter
+      (isOpen_univ_prod_inter_setOf_ne hT hu.continuousOn hxp))
 
 /-- **A Floer solution agreeing with a translate takes only asymptotic values.** Let `T ⊆ ℝ` be
-open and preconnected, and let `u` be a `C¹` map solving the Floer equation
-`∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` on the band `ℝ × T`, for a `C¹` family `J_t` with
+open and preconnected, and let `u` be a map, `C¹` on the band `ℝ × T`, solving the Floer equation
+`∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` there, for a `C¹` family `J_t` with
 `J_t(u)² = -1` along `u` on the band and a `C²` Hamiltonian `H`, with `u(s, t) → xm(t)` as
 `s → -∞` and `u(s, t) → xp(t)` as `s → +∞` for every `t ∈ T`. If `u(s + c, t) = u(s, t)` on a
 nonempty open subset of the band, for some `c ≠ 0`, then `u(s, t)` is `xm(t)` or `xp(t)` at every
@@ -445,7 +464,7 @@ theorem eq_or_eq_of_eqOn_comp_add_of_floerOperator_eq_zero {ω : SymplecticForm 
     [FiniteDimensional ℝ V] {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} {T : Set ℝ} (hT : IsOpen T)
     (hTc : IsPreconnected T) (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2))
     (hJJ : ∀ z ∈ univ ×ˢ T, J z.2 (u z) ∘L J z.2 (u z) = -ContinuousLinearMap.id ℝ V)
-    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiff ℝ 1 u)
+    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiffOn ℝ 1 u (univ ×ˢ T))
     (hF : ∀ z ∈ univ ×ˢ T,
       ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
     (hm : ∀ t ∈ T, Tendsto (fun s ↦ u (s, t)) atBot (𝓝 (xm t)))
@@ -462,19 +481,19 @@ theorem eq_or_eq_of_eqOn_comp_add_of_floerOperator_eq_zero {ω : SymplecticForm 
   exact hslice.eq_or_eq_of_tendsto hc (hm _ hz.2) (hp _ hz.2) z.1
 
 /-- **The regular points of a nonstationary Floer solution are dense in its band** (Floer, Hofer
-and Salamon). Let `T ⊆ ℝ` be open and preconnected, and let `u` be a `C²` map solving the Floer
-equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` on the band `ℝ × T`, for a `C¹` family `J_t` with
-`J_t(u)² = -1` along `u` on the band and a `C²` Hamiltonian `H`. Suppose `u(s, t)` tends to
-`xm(t)` as `s → -∞` and to `xp(t)` as `s → +∞` for every `t ∈ T`, for loops `xm` and `xp`
-continuous on `T`. If `u` is not stationary on the band, that is `∂ₛu` does not vanish
+and Salamon). Let `T ⊆ ℝ` be open and preconnected, and let `u` be a map, `C²` on the band
+`ℝ × T`, solving the Floer equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` there, for a `C¹` family
+`J_t` with `J_t(u)² = -1` along `u` on the band and a `C²` Hamiltonian `H`. Suppose `u(s, t)`
+tends to `xm(t)` as `s → -∞` and to `xp(t)` as `s → +∞` for every `t ∈ T`, for loops `xm` and
+`xp` continuous on `T`. If `u` is not stationary on the band, that is `∂ₛu` does not vanish
 identically there, then its regular points in the band are dense in the band. For `T = (0, 1)`
-this is the density of the regular points of a Floer strip between two Lagrangians, which solves
-the equation on the open strip; no boundary condition enters. -/
+this is the density of the regular points of a Floer strip between two Lagrangians, which need
+only be `C²` on the open strip and solve the equation there; no boundary condition enters. -/
 theorem subset_closure_inter_regularPoints {ω : SymplecticForm V} [FiniteDimensional ℝ V]
     {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} {T : Set ℝ} (hT : IsOpen T) (hTc : IsPreconnected T)
     (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2))
     (hJJ : ∀ z ∈ univ ×ˢ T, J z.2 (u z) ∘L J z.2 (u z) = -ContinuousLinearMap.id ℝ V)
-    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiff ℝ 2 u)
+    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiffOn ℝ 2 u (univ ×ˢ T))
     (hF : ∀ z ∈ univ ×ˢ T,
       ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
     (hne : ∃ z ∈ univ ×ˢ T, fderiv ℝ u z stdComplexLineReal ≠ 0) (hxm : ContinuousOn xm T)
@@ -483,9 +502,8 @@ theorem subset_closure_inter_regularPoints {ω : SymplecticForm V} [FiniteDimens
     univ ×ˢ T ⊆ closure (univ ×ˢ T ∩ regularPoints u xm xp) := by
   have hB : IsOpen (univ ×ˢ T : Set (ℝ × ℝ)) := isOpen_univ.prod hT
   have hBc : IsPreconnected (univ ×ˢ T : Set (ℝ × ℝ)) := (isPreconnected_univ (α := ℝ)).prod hTc
-  have hG : IsOpen {z | fderiv ℝ u z stdComplexLineReal ≠ 0} :=
-    isOpen_ne_fun ((hu.continuous_fderiv (by norm_num)).clm_apply continuous_const)
-      continuous_const
+  have hu1 : ContDiffOn ℝ 1 u (univ ×ˢ T) := hu.of_le one_le_two
+  have hG := isOpen_univ_prod_inter_setOf_fderiv_apply_ne_zero hT hu1
   -- The data `J_t`, `0` and `H_t`, seen on `ℝ × ℝ`, are invariant in `s` and regular along `u`.
   have hinv {α : Type _} (f : ℝ → α) (z : ℝ × ℝ) (_ : z ∈ univ ×ˢ T) : ∀ᶠ c : ℝ in 𝓝 0,
       (fun p : ℝ × ℝ ↦ f p.2) (z + c • stdComplexLineReal) = (fun p ↦ f p.2) z :=
@@ -506,17 +524,17 @@ theorem subset_closure_inter_regularPoints {ω : SymplecticForm V} [FiniteDimens
   -- Suppose an open set `U` meeting the band has no regular point in the band. The competitors of
   -- the points of `U ∩ D` lie in the band, so they are chosen continuously on an open `W`, away
   -- from the countably many critical points in the band.
-  have hGc : (univ ×ˢ T \ {z | fderiv ℝ u z stdComplexLineReal ≠ 0}).Countable := by
+  have hGc : (univ ×ˢ T \ (univ ×ˢ T ∩ {z | fderiv ℝ u z stdComplexLineReal ≠ 0})).Countable := by
     refine (countable_inter_setOf_fderiv_apply_eq_zero_of_floerOperator_eq_zero hB hBc (hinv J)
-      (hinv fun _ _ ↦ (0 : ℝ)) (hinv H) hJ' hJJ hK₀ hH' hu.contDiffOn hF hne).mono fun w hw ↦ ?_
-    exact ⟨hw.1, not_not.1 hw.2⟩
+      (hinv fun _ _ ↦ (0 : ℝ)) (hinv H) hJ' hJJ hK₀ hH' hu hF hne).mono fun w hw ↦ ?_
+    exact ⟨hw.1, not_not.1 fun h ↦ hw.2 ⟨hw.1, h⟩⟩
   intro z hz
   refine mem_closure_iff.2 fun U hU hzU ↦ not_not.1 fun hR ↦ ?_
   obtain ⟨W, hWU, hWo, ⟨z₀, hz₀⟩, φ, hφc, hφ⟩ := exists_continuousOn_slice_eq_of_forall_exists_ne
-    hu.continuous hG (fun p hp ↦
-      exists_mem_nhds_injOn_of_fderiv_apply_ne_zero (hu.of_le (by norm_num)).contDiffAt hp) hGc
-    (hU.inter (isOpen_univ_prod_inter_setOf_fderiv_apply_ne_zero_and_ne_and_ne hT
-      (hu.of_le (by norm_num)) hxm hxp)) (mem_closure_iff.1 (hD hz) U hU hzU) fun w hw ↦ by
+    hu.continuousOn hB hG inter_subset_left (fun p hp ↦
+      exists_mem_nhds_injOn_of_fderiv_apply_ne_zero (hu1.contDiffAt (hB.mem_nhds hp.1)) hp.2) hGc
+    (hU.inter (isOpen_univ_prod_inter_setOf_fderiv_apply_ne_zero_and_ne_and_ne hT hu1 hxm hxp))
+    (fun w hw ↦ hw.2.1) (mem_closure_iff.1 (hD hz) U hU hzU) fun w hw ↦ by
       have hwR : w ∉ regularPoints u xm xp := fun h ↦ hR ⟨w, hw.1, hw.2.1, h⟩
       simp only [mem_regularPoints, not_and, not_forall] at hwR
       obtain ⟨s, hs, hsw⟩ := hwR hw.2.2.1 hw.2.2.2.1 hw.2.2.2.2
@@ -524,14 +542,15 @@ theorem subset_closure_inter_regularPoints {ω : SymplecticForm V} [FiniteDimens
   -- By the Floer equation `φ(z) = z.1 + c` near `z₀`, with `c ≠ 0`; so `u(s + c, t) = u(s, t)`
   -- near `z₀`, hence on the band, by unique continuation.
   obtain ⟨c, hc⟩ := exists_eventually_eq_add_of_floerOperator_eq_zero (Ks := fun _ _ ↦ 0)
-    (Kt := H) hJJ (hu.differentiable (by norm_num)) hF hWo (fun w hw ↦ (hWU hw).2.1) hφc
-    (fun w hw ↦ (hφ w hw).2.1) (fun w hw ↦ (hφ w hw).2.2) hz₀
+    (Kt := H) hJJ (fun w hw ↦ (hu1.differentiableOn one_ne_zero).differentiableAt (hB.mem_nhds hw))
+    hF hWo (fun w hw ↦ (hWU hw).2.1) hφc (fun w hw ↦ (hφ w hw).2.1) (fun w hw ↦ (hφ w hw).2.2.2)
+    hz₀
   have hc₀ : c ≠ 0 := fun h ↦ (hφ z₀ hz₀).1 (by simpa [h] using hc.self_of_nhds)
   obtain ⟨N, hN, hNo, hz₀N⟩ := _root_.mem_nhds_iff.1 (inter_mem hc (hWo.mem_nhds hz₀))
   -- So `u(z₀)` is the value of an asymptotic orbit, contrary to `z₀ ∈ D`.
   obtain ⟨hz₀B, -, hzm, hzp⟩ := (hWU hz₀).2
-  exact (eq_or_eq_of_eqOn_comp_add_of_floerOperator_eq_zero hT hTc hJ hJJ hH
-    (hu.of_le (by norm_num)) hF hm hp hc₀ hNo ⟨z₀, hz₀N⟩ (fun w hw ↦ (hWU (hN hw).2).2.1)
+  exact (eq_or_eq_of_eqOn_comp_add_of_floerOperator_eq_zero hT hTc hJ hJJ hH hu1 hF hm hp hc₀ hNo
+    ⟨z₀, hz₀N⟩ (fun w hw ↦ (hWU (hN hw).2).2.1)
     (fun w hw ↦
       (hφ w (hN hw).2).2.1.symm.trans (congrArg u (Prod.ext (hN hw).1 (add_zero _).symm)))
     hz₀B).elim hzm hzp
@@ -553,7 +572,8 @@ theorem dense_regularPoints {ω : SymplecticForm V} [FiniteDimensional ℝ V]
     Dense (regularPoints u xm xp) := by
   obtain ⟨z, hz⟩ := hne
   have h := subset_closure_inter_regularPoints isOpen_univ isPreconnected_univ hJ
-    (fun z _ ↦ hJJ z) hH hu (fun z _ ↦ hF z) ⟨z, by simp, hz⟩ hxm.continuousOn hxp.continuousOn
+    (fun z _ ↦ hJJ z) hH hu.contDiffOn (fun z _ ↦ hF z) ⟨z, by simp, hz⟩ hxm.continuousOn
+    hxp.continuousOn
     (fun t _ ↦ hm t) (fun t _ ↦ hp t)
   rw [dense_iff_closure_eq, ← univ_subset_iff]
   simpa using h

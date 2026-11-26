@@ -511,8 +511,8 @@ end Solutions
 /-! ### Translates of Floer trajectories -/
 
 /-- **A Floer solution on a band agreeing with a translate on an open set agrees with it on the
-band.** Let `T ⊆ ℝ` be open and preconnected, and let `u` be a `C¹` map solving the Floer equation
-`∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` on the band `ℝ × T`, for a `C¹` family `J_t` with
+band.** Let `T ⊆ ℝ` be open and preconnected, and let `u` be a map, `C¹` on the band `ℝ × T`,
+solving the Floer equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` there, for a `C¹` family `J_t` with
 `J_t(u)² = -1` along `u` on the band and a `C²` Hamiltonian `H`. If `u(s + c, t) = u(s, t)` on a
 nonempty open subset of the band, then `u(s + c, t) = u(s, t)` on the whole band. For `T = (0, 1)`
 the band is the strip of Floer trajectories between two Lagrangians. -/
@@ -520,7 +520,7 @@ theorem eqOn_comp_add_of_floerOperator_eq_zero_of_eqOn {J : ℝ → V → V →L
     {T : Set ℝ} (hT : IsOpen T) (hTc : IsPreconnected T)
     (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2))
     (hJJ : ∀ z ∈ univ ×ˢ T, J z.2 (u z) ∘L J z.2 (u z) = -ContinuousLinearMap.id ℝ V)
-    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiff ℝ 1 u)
+    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiffOn ℝ 1 u (univ ×ˢ T))
     (hF : ∀ z ∈ univ ×ˢ T, ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
     {c : ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hUne : U.Nonempty) (hUT : U ⊆ univ ×ˢ T)
     (hUc : EqOn u (fun z ↦ u (z + (c, 0))) U) : EqOn u (fun z ↦ u (z + (c, 0))) (univ ×ˢ T) := by
@@ -541,7 +541,9 @@ theorem eqOn_comp_add_of_floerOperator_eq_zero_of_eqOn {J : ℝ → V → V →L
     hH.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
   exact eqOn_of_floerOperator_eq_zero_of_eqOn (isOpen_univ.prod hT)
     (isPreconnected_univ.prod hTc) (fun _ _ ↦ hJ'.contDiffAt) hJJ (fun _ _ ↦ hKs.contDiffAt)
-    (fun _ _ ↦ hKt.contDiffAt) hu.contDiffOn (hu.comp (contDiff_id.add contDiff_const)).contDiffOn
+    (fun _ _ ↦ hKt.contDiffAt) hu
+    (hu.comp (contDiff_id.add contDiff_const).contDiffOn fun z hz ↦
+      ⟨mem_univ _, by simpa using hz.2⟩)
     hF hFc hU hUne hUT hUc
 
 /-- **A Floer trajectory agreeing with a translate on an open set is periodic.** Let `u` be a
@@ -556,6 +558,6 @@ theorem periodic_of_floerOperator_eq_zero_of_eqOn {J : ℝ → V → V →L[ℝ]
     {c : ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hUne : U.Nonempty)
     (hUc : EqOn u (fun z ↦ u (z + (c, 0))) U) : Periodic u (c, 0) := fun z ↦
   (eqOn_comp_add_of_floerOperator_eq_zero_of_eqOn isOpen_univ isPreconnected_univ hJ
-    (fun z _ ↦ hJJ z) hH hu (fun z _ ↦ hF z) hU hUne (by simp) hUc (by simp)).symm
+    (fun z _ ↦ hJJ z) hH hu.contDiffOn (fun z _ ↦ hF z) hU hUne (by simp) hUc (by simp)).symm
 
 end TauCeti.SymplecticForm

@@ -405,20 +405,20 @@ theorem ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOper
 /-- **Variations of `J_t` kill the weak cokernel of the universal operator along a Floer strip.**
 Let `T ⊆ ℝ` be open and preconnected, such as the interval `(0, 1)` of a strip. Let `J (t, x)` be a
 `Cⁿ` family of complex structures preserving `ω`, with `2 ≤ n`, tamed by `ω` along `u` over the band
-`ℝ × T`, and let `u` be a `C²` map solving the Floer equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0`
-on the band, for a `C³` Hamiltonian `H`, and not stationary there, with limits `xm` and `xp`
-continuous on `T` along its ends. Let `η` be a locally `L^q` covector field on the band, `q > 1`,
-annihilating `D_u ξ` for every smooth test map `ξ` compactly supported in the band, and annihilating
-over the band the derivative of the Floer operator along `J + τ Y` for every compactly supported
-`Cⁿ` field `Y` supported in `T × V` and tangent to the compatible structures. Then `η = 0` almost
-everywhere on the band. This is the weak form of
+`ℝ × T`, and let `u` be a map, `C²` on the band, solving the Floer equation
+`∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` there, for a `C³` Hamiltonian `H`, and not stationary there,
+with limits `xm` and `xp` continuous on `T` along its ends. Let `η` be a locally `L^q` covector
+field on the band, `q > 1`, annihilating `D_u ξ` for every smooth test map `ξ` compactly supported
+in the band, and annihilating over the band the derivative of the Floer operator along `J + τ Y`
+for every compactly supported `Cⁿ` field `Y` supported in `T × V` and tangent to the compatible
+structures. Then `η = 0` almost everywhere on the band. This is the weak form of
 `SymplecticForm.eqOn_zero_of_setIntegral_apply_deriv_floerOperator_timeDependent_eq_zero`. -/
 theorem ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator_timeDependent
     {n : ℕ∞} {J : ℝ × V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ n fun p ↦ LinearMap.toContinuousLinearMap (J p).toLinearMap) (hn : 2 ≤ n)
     (hJω : ∀ p, ω.Invariant (J p)) {T : Set ℝ} (hT : IsOpen T) (hTc : IsPreconnected T)
     (hJ₀ : ∀ z ∈ univ ×ˢ T, ω.Tames (J (z.2, u z))) {H : ℝ → V → ℝ}
-    (hH : ContDiff ℝ 3 (uncurry H)) (hu : ContDiff ℝ 2 u)
+    (hH : ContDiff ℝ 3 (uncurry H)) (hu : ContDiffOn ℝ 2 u (univ ×ˢ T))
     (hF : ∀ z ∈ univ ×ˢ T, ω.floerOperator
       (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap) (fun _ _ ↦ 0)
         (fun z ↦ H z.2) u z = 0)
@@ -449,7 +449,8 @@ theorem ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOper
     exists_contDiffOn_ae_eq_of_forall_integral_apply_floerLinearization_eq_zero hB
       (k := 1) (fun _ _ ↦ (one_add_one_eq_two' ▸ hJ2).contDiffAt) (fun _ _ ↦ contDiffAt_const)
       (fun _ _ ↦ (one_add_two_eq_three' ▸ hH').contDiffAt)
-      (fun _ _ ↦ (one_add_one_eq_two' ▸ hu).contDiffAt) (fun z _ ↦ by ext v; simp) hq hη hD
+      (fun _ hz ↦ (one_add_one_eq_two' ▸ hu).contDiffAt (hB.mem_nhds hz))
+      (fun z _ ↦ by ext v; simp) hq hη hD
   have h0 := eqOn_zero_of_setIntegral_apply_deriv_floerOperator_timeDependent_eq_zero hJ
     (one_le_two.trans hn) hJω hT hTc hJ₀ (hH.of_le (by norm_num)) hu hF hne hxm hxp hm hp
     hη'.continuousOn

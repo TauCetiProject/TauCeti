@@ -187,12 +187,13 @@ theorem eqOn_zero_of_integral_floerLinearization_of_integral_deriv_floerOperator
     (hev.mono fun z hz ↦ (hη.contDiffAt (hΩ.mem_nhds hz)).continuousAt) (hinj z₀ hz₀)
     (hξ₀ z₀ hz₀) (hW z₀ hz₀) hY
 
-/-- At a regular point `z` of a map `u` solving the Floer equation
-`∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` at `z`, the point `z` is an injective point of
+/-- At a regular point `z` of a map `u`, continuous along the slice through `z`, solving the Floer
+equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` at `z`, the point `z` is an injective point of
 `(s, t) ↦ (t, u(s, t))`, and `∂ₜu - X_{H_t} = J_t ∂ₛu` does not vanish there. These are the
 conditions under which variations of `J_t` detect cokernel elements at `z`. -/
 private theorem comap_nhds_le_nhds_and_ne_zero_of_mem_regularPoints
-    {J : ℝ × V → AlmostComplexStructure V} {H : ℝ → V → ℝ} (hu : Continuous u) {z : ℝ × ℝ}
+    {J : ℝ × V → AlmostComplexStructure V} {H : ℝ → V → ℝ} {z : ℝ × ℝ}
+    (hu : ∀ s, ContinuousAt u (s, z.2))
     (hF : ω.floerOperator
       (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap) (fun _ _ ↦ 0)
         (fun z ↦ H z.2) u z = 0)
@@ -205,18 +206,20 @@ private theorem comap_nhds_le_nhds_and_ne_zero_of_mem_regularPoints
   refine ⟨comap_nhds_le_nhds_of_forall_slice_eq_imp_eq hu hm hp hzm hzp hzs, fun h ↦ hd ?_⟩
   simpa [floerOperator_def, h] using hF
 
-/-- Along a `C¹` map `u`, the vector field `∂ₜu - X_{H_t}(u)` of a `C²` Hamiltonian `H` is
-continuous. -/
-private theorem continuous_fderiv_apply_sub_hamiltonianVectorField {H : ℝ → V → ℝ}
-    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiff ℝ 1 u) :
-    Continuous fun w ↦
-      fderiv ℝ u w stdComplexLineImag - ω.hamiltonianVectorField (H w.2) (u w) := by
-  refine continuous_iff_continuousAt.2 fun w ↦ ?_
+/-- Along a map `u` that is `C¹` on an open set `O`, the vector field `∂ₜu - X_{H_t}(u)` of a `C²`
+Hamiltonian `H` is continuous on `O`. -/
+private theorem continuousOn_fderiv_apply_sub_hamiltonianVectorField {H : ℝ → V → ℝ}
+    {O : Set (ℝ × ℝ)} (hH : ContDiff ℝ 2 (uncurry H)) (hO : IsOpen O) (hu : ContDiffOn ℝ 1 u O) :
+    ContinuousOn (fun w ↦
+      fderiv ℝ u w stdComplexLineImag - ω.hamiltonianVectorField (H w.2) (u w)) O := by
+  intro w hw
+  have hwO := hO.mem_nhds hw
   have hKt : ContDiffAt ℝ 2 (uncurry fun w : ℝ × ℝ ↦ H w.2) (w, u w) :=
     (hH.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)).contDiffAt
   have hX := (ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) hKt).continuousAt.comp
-    (x := w) (continuousAt_id.prodMk hu.continuous.continuousAt)
-  exact ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const).continuousAt.sub hX
+    (x := w) (continuousAt_id.prodMk (hu.continuousOn.continuousAt hwO))
+  exact ((((hu.continuousOn_fderiv_of_isOpen hO le_rfl).continuousAt hwO).clm_apply
+    continuousAt_const).sub hX).continuousWithinAt
 
 /-- **Periodic variations of `J_t` kill the cokernel of the universal operator along a Floer
 trajectory** (Floer, Hofer and Salamon). Let `J (t, x)` be a `Cⁿ` family of complex structures
@@ -272,14 +275,15 @@ theorem eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperato
   -- `η` vanishes at the regular points of `u` in the strip `S = ℝ × (0, 1)`.
   set S : Set (ℝ × ℝ) := univ ×ˢ Ioo 0 1
   have hS : IsOpen S := isOpen_univ.prod isOpen_Ioo
-  have hξ := continuous_fderiv_apply_sub_hamiltonianVectorField (ω := ω) hH hu1
+  have hξ := continuousOn_fderiv_apply_sub_hamiltonianVectorField (ω := ω) hH isOpen_univ
+    hu1.contDiffOn
   have hreg : EqOn η 0 (S ∩ Floer.regularPoints u xm xp) := fun z hz ↦ by
     obtain ⟨hinj, hξ₀⟩ := comap_nhds_le_nhds_and_ne_zero_of_mem_regularPoints (J := J)
-      hu1.continuous (hF z) (hm z.2) (hp z.2) hz.2
+      (fun _ ↦ hu1.continuous.continuousAt) (hF z) (hm z.2) (hp z.2) hz.2
     exact eq_zero_of_setIntegral_apply_deriv_floerOperator_periodic_eq_zero (μ := volume)
       (Ks := fun _ _ ↦ 0) hJ hJω hJper hz.1.2 (hJ₀ z)
       (Eventually.of_forall fun _ ↦ hu1.continuous.continuousAt)
-      (Eventually.of_forall fun _ ↦ hξ.continuousAt)
+      (Eventually.of_forall fun _ ↦ hξ.continuousAt univ_mem)
       (Eventually.of_forall fun _ ↦ hη.continuous.continuousAt) hinj hξ₀ hY
   -- The regular points are dense, so `η` vanishes on the strip, and by unique continuation for
   -- the adjoint equation everywhere.
@@ -298,21 +302,21 @@ theorem eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperato
 /-- **Time-dependent variations of `J_t` kill the cokernel of the universal operator along a
 Floer strip** (Floer, Hofer and Salamon). Let `T ⊆ ℝ` be open and preconnected, such as the
 interval `(0, 1)` of a strip. Let `J (t, x)` be a `Cⁿ` family of complex structures preserving
-`ω`, with `1 ≤ n`, tamed by `ω` along `u` over the band `ℝ × T`, and let `u` be a `C²` map solving
-the Floer equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` on the band, for a `C²` Hamiltonian `H`,
-and not stationary there. Suppose that `u(s, t)` tends to `xm(t₀)` and `xp(t₀)`, for loops `xm`
-and `xp` continuous on `T`, as `s → -∞` and `s → +∞` and `t → t₀ ∈ T`. Let `η` be a covector
-field continuous on the band annihilating, over the band, the derivative of the Floer operator
-along `J + q Y` for every compactly supported `Cⁿ` field `Y` supported in `T × V`, with `Y (t, x)`
-in the compatible tangent space of `J (t, x)`. Then `η = 0` on the band. No boundary condition and
-no adjoint equation enter: the regular points of `u` are dense in the band, and `η` vanishes at
-each of them. -/
+`ω`, with `1 ≤ n`, tamed by `ω` along `u` over the band `ℝ × T`, and let `u` be a map, `C²` on the
+band, solving the Floer equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` there, for a `C²`
+Hamiltonian `H`, and not stationary there. Suppose that `u(s, t)` tends to `xm(t₀)` and
+`xp(t₀)`, for loops `xm` and `xp` continuous on `T`, as `s → -∞` and `s → +∞` and `t → t₀ ∈ T`.
+Let `η` be a covector field continuous on the band annihilating, over the band, the derivative of
+the Floer operator along `J + q Y` for every compactly supported `Cⁿ` field `Y` supported in
+`T × V`, with `Y (t, x)` in the compatible tangent space of `J (t, x)`. Then `η = 0` on the band.
+No boundary condition and no adjoint equation enter: the regular points of `u` are dense in the
+band, and `η` vanishes at each of them. -/
 theorem eqOn_zero_of_setIntegral_apply_deriv_floerOperator_timeDependent_eq_zero {n : ℕ∞}
     {J : ℝ × V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ n fun p ↦ LinearMap.toContinuousLinearMap (J p).toLinearMap) (hn : 1 ≤ n)
     (hJω : ∀ p, ω.Invariant (J p)) {T : Set ℝ} (hT : IsOpen T) (hTc : IsPreconnected T)
     (hJ₀ : ∀ z ∈ univ ×ˢ T, ω.Tames (J (z.2, u z))) {H : ℝ → V → ℝ}
-    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiff ℝ 2 u)
+    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiffOn ℝ 2 u (univ ×ˢ T))
     (hF : ∀ z ∈ univ ×ˢ T, ω.floerOperator
       (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap) (fun _ _ ↦ 0)
         (fun z ↦ H z.2) u z = 0)
@@ -328,20 +332,22 @@ theorem eqOn_zero_of_setIntegral_apply_deriv_floerOperator_timeDependent_eq_zero
     EqOn η 0 (univ ×ˢ T) := by
   have hJ1 : ContDiff ℝ 1 fun p ↦ LinearMap.toContinuousLinearMap (J p).toLinearMap :=
     hJ.of_le (mod_cast hn)
-  have hu1 : ContDiff ℝ 1 u := hu.of_le one_le_two
+  have hu1 : ContDiffOn ℝ 1 u (univ ×ˢ T) := hu.of_le one_le_two
   have hB : IsOpen (univ ×ˢ T : Set (ℝ × ℝ)) := isOpen_univ.prod hT
-  have hξ := continuous_fderiv_apply_sub_hamiltonianVectorField (ω := ω) hH hu1
+  have hξ := continuousOn_fderiv_apply_sub_hamiltonianVectorField (ω := ω) hH hB hu1
   -- `η` vanishes at the regular points of `u` in the band, which are injective points of
   -- `(s, t) ↦ (t, u(s, t))` where `∂ₜu - X_{H_t} ≠ 0`.
   have hreg : EqOn η 0 (univ ×ˢ T ∩ Floer.regularPoints u xm xp) := fun z hz ↦ by
     obtain ⟨hzB, hzR⟩ := hz
     obtain ⟨hinj, hξ₀⟩ := comap_nhds_le_nhds_and_ne_zero_of_mem_regularPoints (J := J)
-      hu1.continuous (hF z hzB) (hm z.2 hzB.2) (hp z.2 hzB.2) hzR
+      (fun s ↦ hu1.continuousOn.continuousAt (hB.mem_nhds ⟨mem_univ s, hzB.2⟩)) (hF z hzB)
+      (hm z.2 hzB.2) (hp z.2 hzB.2) hzR
+    have hev := hB.mem_nhds hzB
     refine eq_zero_of_integral_apply_deriv_floerOperator_timeDependent_eq_zero (μ := volume)
       (Ks := fun _ _ ↦ 0) (Kt := fun z ↦ H z.2) hJ hJω (hJ₀ z hzB)
-      (Eventually.of_forall fun _ ↦ hu1.continuous.continuousAt)
-      (Eventually.of_forall fun _ ↦ hξ.continuousAt)
-      (eventually_of_mem (hB.mem_nhds hzB) fun w hw ↦ hη.continuousAt (hB.mem_nhds hw)) hinj hξ₀
+      (eventually_of_mem hev fun w hw ↦ hu1.continuousOn.continuousAt (hB.mem_nhds hw))
+      (eventually_of_mem hev fun w hw ↦ hξ.continuousAt (hB.mem_nhds hw))
+      (eventually_of_mem hev fun w hw ↦ hη.continuousAt (hB.mem_nhds hw)) hinj hξ₀
       (prod_mem_nhds (hT.mem_nhds hzB.2) univ_mem) fun Y hYd hYc hYT hYJ ↦ ?_
     -- The integrand vanishes off the band, where `Y` vanishes along `u`.
     have hint := hY Y hYd hYc hYT hYJ
