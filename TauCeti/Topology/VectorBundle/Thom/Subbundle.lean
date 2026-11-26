@@ -69,8 +69,9 @@ theorem continuous_subbundle_mk'_refl :
       TotalSpace.mk' F₂ (E := fun b ↦ V b) v.proj (ContinuousLinearEquiv.refl ℝ (V v.proj) v.snd) :=
   letI := subbundleTopology F (F' := F₁) V
   letI := subbundleTopology F (F' := F₂) V
-  (isEmbedding_totalSpace_subbundle F F₂ V).continuous_iff.2
-    (isEmbedding_totalSpace_subbundle F F₁ V).continuous
+  (isEmbedding_totalSpace_subbundle F F₂ V).continuous_iff.2 <| by
+    simpa only [Function.comp_def, ContinuousLinearEquiv.coe_refl', id] using
+      (isEmbedding_totalSpace_subbundle F F₁ V).continuous
 
 /-- **The Thom pair of a family of subspaces does not depend on the model fibre.** For a family `V`
 of subspaces of the fibres of `E`, the total spaces for two model-fibre parameters `F₁` and `F₂`
@@ -88,12 +89,20 @@ def subbundleThomPairIso :
       (φ := fun b ↦ ContinuousLinearEquiv.refl ℝ (V b)) h₁₂
     inv := thomPairMapOfFiberwise (g := ContinuousMap.id B)
       (φ := fun b ↦ ContinuousLinearEquiv.refl ℝ (V b)) h₂₁
+    -- Each composite sends `v` to `⟨v.proj, refl (refl v.snd)⟩`, which is `v` by
+    -- `ContinuousLinearEquiv.refl_apply` and `TotalSpace.eta`.
     hom_inv_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦
-      (congrArg _ (thomPairMapOfFiberwise_fst_apply h₁₂ v)).trans
-        (thomPairMapOfFiberwise_fst_apply h₂₁ _))
+      ((congrArg _ (thomPairMapOfFiberwise_fst_apply h₁₂ v)).trans
+        (thomPairMapOfFiberwise_fst_apply h₂₁ _)).trans <|
+        (congrArg (TotalSpace.mk' F₁ v.proj)
+          ((ContinuousLinearEquiv.refl_apply ℝ (V v.proj) _).trans
+            (ContinuousLinearEquiv.refl_apply ℝ (V v.proj) _))).trans (TotalSpace.eta v))
     inv_hom_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦
-      (congrArg _ (thomPairMapOfFiberwise_fst_apply h₂₁ v)).trans
-        (thomPairMapOfFiberwise_fst_apply h₁₂ _)) }
+      ((congrArg _ (thomPairMapOfFiberwise_fst_apply h₂₁ v)).trans
+        (thomPairMapOfFiberwise_fst_apply h₁₂ _)).trans <|
+        (congrArg (TotalSpace.mk' F₂ v.proj)
+          ((ContinuousLinearEquiv.refl_apply ℝ (V v.proj) _).trans
+            (ContinuousLinearEquiv.refl_apply ℝ (V v.proj) _))).trans (TotalSpace.eta v)) }
 
 /-- The isomorphism `subbundleThomPairIso` is the identity on vectors. -/
 @[simp]
