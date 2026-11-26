@@ -41,6 +41,8 @@ equivalence and is compatible with identities, composition and inverses.
 
 * `LinearEquiv.extendScalarsPi`: the scalar extension of a linear equivalence between coordinate
   spaces.
+* `Module.Basis.tensorPiEquiv`: for a basis `e` of an `A`-module `W`, the identification
+  `A ⊗[R] (ι → R) ≃ W` of the base change of the coordinate space with `W`.
 
 ## Main results
 
@@ -57,8 +59,7 @@ equivalence and is compatible with identities, composition and inverses.
   identification `A ⊗[R] (ι → R) ≃ (ι → A)` sends `a ⊗ v` to `a • (algebraMap R A ∘ v)`.
 * `TensorProduct.piScalarRight_symm_algebraMap_comp`: conversely, `algebraMap R N ∘ v`
   corresponds to the pure tensor `1 ⊗ v`.
-* `TensorProduct.piScalarRight_rTensor_apply`: along an `R`-algebra map `φ : A → B`, the
-  coordinates of `φ ⊗ id` applied to a vector are the images under `φ` of its coordinates.
+* `TensorProduct.piScalarRight_rTensor`: `piScalarRight` is natural in the module.
 * `TensorProduct.one_tmul_single_ne_zero`: the basis vector `1 ⊗ eᵢ` of `A ⊗[R] (ι → R)` is
   nonzero over a nontrivial `A`.
 
@@ -121,14 +122,17 @@ theorem piScalarRight_symm_algebraMap_comp {S N : Type*} [CommSemiring S] [Algeb
     (piScalarRight R S N ι).symm (algebraMap R N ∘ v) = 1 ⊗ₜ v :=
   piScalarRight_symm_algebraMap R S ι v
 
-/-- Along an `R`-algebra map `φ : A → B`, the coordinates of `φ ⊗ id` applied to `v` are the
-images under `φ` of the coordinates of `v`. -/
-theorem piScalarRight_rTensor_apply {B : Type*} [CommSemiring B] [Algebra R B] (φ : A →ₐ[R] B)
-    (v : A ⊗[R] (ι → R)) (i : ι) :
-    piScalarRight R B B ι (φ.toLinearMap.rTensor _ v) i = φ (piScalarRight R A A ι v i) := by
-  induction v using TensorProduct.inductionOn with
-  | tmul a x => simp [_root_.Algebra.smul_def]
-  | add v w hv hw => simp_all
+/-- `TensorProduct.piScalarRight` is natural in the module: a linear map `φ : N → N'` acting on
+the left factor of `N ⊗ (ι → R)` acts coordinatewise on `ι → N`. The scalar ring `S` of the
+right-hand side does not occur on the left, so it is explicit. -/
+theorem piScalarRight_rTensor (S : Type*) {S' N N' : Type*} [CommSemiring S] [Algebra R S]
+    [CommSemiring S'] [Algebra R S'] [AddCommMonoid N] [Module R N] [Module S N]
+    [IsScalarTower R S N] [AddCommMonoid N'] [Module R N'] [Module S' N'] [IsScalarTower R S' N']
+    (φ : N →ₗ[R] N') (x : N ⊗[R] (ι → R)) :
+    piScalarRight R S' N' ι (LinearMap.rTensor (ι → R) φ x) = φ ∘ piScalarRight R S N ι x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a f => ext i; simp
+  | add x y hx hy => ext i; simp only [map_add, hx, hy, Pi.add_apply, Function.comp_apply]
 
 omit [Fintype ι] in
 /-- The basis vector `1 ⊗ eᵢ` of `A ⊗[R] (ι → R)` is nonzero over a nontrivial `A`. -/
@@ -238,3 +242,29 @@ theorem extendScalarsPi_symm (e : (ι → R) ≃ₗ[R] (κ → R)) :
   simp only [extendScalarsPi, baseChange_symm, trans_apply, symm_trans_apply, symm_symm]
 
 end LinearEquiv
+
+namespace Module.Basis
+
+variable (R : Type*) {A W ι : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid W] [Module A W] [Fintype ι] [DecidableEq ι]
+
+/-- For a basis `e` of an `A`-module `W` and an `R`-algebra `A`, the identification
+`A ⊗[R] (ι → R) ≃ W` of the base change of `ι → R` with `W`, sending `a ⊗ x` to
+`a • ∑ i, algebraMap R A (x i) • e i`. -/
+noncomputable def tensorPiEquiv (e : Basis ι A W) : A ⊗[R] (ι → R) ≃ₗ[A] W :=
+  (TensorProduct.piScalarRight R A A ι).trans e.equivFun.symm
+
+/-- The pure tensor `a ⊗ x` corresponds to `a • ∑ i, algebraMap R A (x i) • e i`. -/
+@[simp]
+theorem tensorPiEquiv_tmul (e : Basis ι A W) (a : A) (x : ι → R) :
+    e.tensorPiEquiv R (a ⊗ₜ x) = a • ∑ i, algebraMap R A (x i) • e i := by
+  simp [tensorPiEquiv, Finset.smul_sum, smul_smul, Algebra.smul_def, mul_comm]
+
+/-- The inverse of `e.tensorPiEquiv R` takes a vector to its coordinates in `e`, read in
+`A ⊗[R] (ι → R)`. -/
+@[simp]
+theorem tensorPiEquiv_symm_apply (e : Basis ι A W) (v : W) :
+    (e.tensorPiEquiv R).symm v = (TensorProduct.piScalarRight R A A ι).symm (e.repr v) := by
+  simp [tensorPiEquiv]
+
+end Module.Basis

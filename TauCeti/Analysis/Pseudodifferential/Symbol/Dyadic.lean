@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Littlewood–Paley decomposition of symbols
@@ -48,6 +49,14 @@ the pieces with constants independent of `j`.
   scale-invariant form in which they control the kernels of the pieces.
 * `TauCeti.Symbol.IsUniform.exists_integral_norm_coefficient_littlewoodPaleyPiece_le`: the case
   `α = β = []`, `∫ ‖aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m + n)`.
+* `TauCeti.Symbol.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow`: the dyadic estimates for
+  positions in a compact set, for any symbol.
+* `TauCeti.Symbol.hasSum_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece`: the frequency
+  Laplacian powers `Δ_ξ^N aⱼ` of the pieces sum to `Δ_ξ^N a`.
+* `TauCeti.Symbol.exists_integral_norm_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece_le`:
+  the integrated estimates `∫ ‖Δ_ξ^N aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m - 2N + n)` on compact sets of
+  positions. Together these give the Littlewood–Paley decomposition of the kernel of a symbol off
+  the diagonal, where it is computed from `Δ_ξ^N a`.
 
 `ContDiffBump.littlewoodPaleyPiece` is the analogous decomposition of a Fourier multiplier
 satisfying Mihlin's condition, with the homogeneous partition of `ℝⁿ \ {0}`.
@@ -231,6 +240,27 @@ theorem IsUniform.littlewoodPaleyPieceOfOrder {a : Symbol n V W m} (ha : a.IsUni
 
 /-! ### Dyadic estimates -/
 
+/-- Symbol estimates of the pieces, uniform in `j` for positions in a set `S`, give the dyadic
+estimates `‖∂ₓ^α ∂_ξ^β aⱼ(x, ξ)‖ ≤ C (2^j) ^ (m - |β|)` for positions in `S`, since `⟨ξ⟩` is
+comparable to `2^j` on the support of `ψⱼ`. -/
+private theorem exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow_of_le (a : Symbol n V W m)
+    {S : Set (CoordinateSpace n)} (α β : List (Fin n)) {C : ℝ} (hC0 : 0 ≤ C)
+    (hC : ∀ (j : ℕ), ∀ x ∈ S, ∀ ξ, ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) :
+    ∃ C', 0 ≤ C' ∧ ∀ (j : ℕ), ∀ x ∈ S, ∀ ξ,
+      ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖ ≤
+        C' * ((2 : ℝ) ^ j) ^ (m - β.length) := by
+  obtain ⟨c, hc0, hc⟩ :=
+    φ.exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPaley (m - β.length)
+  refine ⟨C * c, by positivity, fun j x hx ξ => ?_⟩
+  by_cases hξ : ξ ∈ tsupport (φ.inhomogeneousLittlewoodPaley j)
+  · calc ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖
+        ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := hC j x hx ξ
+      _ ≤ C * (c * ((2 : ℝ) ^ j) ^ (m - β.length)) := by gcongr; exact hc j ξ hξ
+      _ = C * c * ((2 : ℝ) ^ j) ^ (m - β.length) := by ring
+  · rw [a.mixedDeriv_littlewoodPaleyPiece_eq_zero_of_notMem_tsupport φ α β x hξ, norm_zero]
+    positivity
+
 /-- **Dyadic estimates.** For a uniform symbol of order `m`, the `j`-th piece and its mixed
 derivatives satisfy `‖∂ₓ^α ∂_ξ^β aⱼ(x, ξ)‖ ≤ C (2^j) ^ (m - |β|)` uniformly in `x`, `ξ` and `j`:
 each frequency derivative gains a factor `2^{-j}`. -/
@@ -240,16 +270,9 @@ theorem IsUniform.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow {a : Sy
       ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖ ≤
         C * ((2 : ℝ) ^ j) ^ (m - β.length) := by
   obtain ⟨C, hC0, hC⟩ := ha.exists_norm_mixedDeriv_littlewoodPaleyPiece_le φ α β
-  obtain ⟨c, hc0, hc⟩ :=
-    φ.exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPaley (m - β.length)
-  refine ⟨C * c, by positivity, fun j x ξ => ?_⟩
-  by_cases hξ : ξ ∈ tsupport (φ.inhomogeneousLittlewoodPaley j)
-  · calc ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖
-        ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := hC j x ξ
-      _ ≤ C * (c * ((2 : ℝ) ^ j) ^ (m - β.length)) := by gcongr; exact hc j ξ hξ
-      _ = C * c * ((2 : ℝ) ^ j) ^ (m - β.length) := by ring
-  · rw [a.mixedDeriv_littlewoodPaleyPiece_eq_zero_of_notMem_tsupport φ α β x hξ, norm_zero]
-    positivity
+  obtain ⟨C', hC', h⟩ := a.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow_of_le φ
+    (S := univ) α β hC0 fun j x _ ξ => hC j x ξ
+  exact ⟨C', hC', fun j x ξ => h j x (mem_univ x) ξ⟩
 
 /-- **Integrated dyadic estimates.** For a uniform symbol of order `m` on `ℝⁿ`, the frequency
 integrals of the mixed derivatives of the `j`-th piece satisfy
@@ -262,35 +285,96 @@ theorem IsUniform.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le {a : S
       ∫ ξ, ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖ ≤
         C * ((2 : ℝ) ^ j) ^ (m - β.length + n) := by
   obtain ⟨C, hC0, hC⟩ := ha.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow φ α β
-  set v := (volume : Measure (CoordinateSpace n)).real (ball 0 1)
-  refine ⟨C * φ.rOut ^ n * v, by have := φ.rOut_pos; positivity, fun j x => ?_⟩
-  set R := (2 : ℝ) ^ j * φ.rOut
-  have hR : 0 ≤ R := by have := φ.rOut_pos; positivity
-  -- the integrand is dominated by a constant on the ball of radius `2^j φ.rOut`
-  have hle : ∀ ξ, ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖ ≤
-      (closedBall (0 : CoordinateSpace n) R).indicator
-        (fun _ => C * ((2 : ℝ) ^ j) ^ (m - β.length)) ξ := fun ξ => by
-    by_cases hξ : ξ ∈ closedBall (0 : CoordinateSpace n) R
-    · rw [indicator_of_mem hξ]
-      exact hC j x ξ
-    · rw [indicator_of_notMem hξ,
-        a.mixedDeriv_littlewoodPaleyPiece_eq_zero_of_notMem_tsupport φ α β x
-          fun h => hξ (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j h), norm_zero]
-  have hint : Integrable ((closedBall (0 : CoordinateSpace n) R).indicator
-      fun _ => C * ((2 : ℝ) ^ j) ^ (m - β.length)) :=
-    (integrableOn_const (measure_closedBall_lt_top (x := (0 : CoordinateSpace n))).ne
-      ).integrable_indicator measurableSet_closedBall
-  calc ∫ ξ, ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖
-      ≤ ∫ ξ, (closedBall (0 : CoordinateSpace n) R).indicator
-          (fun _ => C * ((2 : ℝ) ^ j) ^ (m - β.length)) ξ :=
-        integral_mono_of_nonneg (Eventually.of_forall fun _ => norm_nonneg _) hint
-          (Eventually.of_forall hle)
-    _ = R ^ n * v * (C * ((2 : ℝ) ^ j) ^ (m - β.length)) := by
-        rw [integral_indicator_const _ measurableSet_closedBall,
-          Measure.addHaar_real_closedBall _ _ hR, finrank_euclideanSpace_fin, smul_eq_mul]
-    _ = C * φ.rOut ^ n * v * ((2 : ℝ) ^ j) ^ (m - β.length + n) := by
-        rw [Real.rpow_add (by positivity), Real.rpow_natCast, mul_pow]
-        ring
+  have := φ.rOut_pos
+  refine ⟨C * φ.rOut ^ n * (volume : Measure (CoordinateSpace n)).real (ball 0 1),
+    by positivity, fun j x => ?_⟩
+  refine (integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall (by positivity) φ.rOut_pos.le
+    (mu := volume) (fun ξ _ => hC j x ξ) fun ξ hξ =>
+      a.mixedDeriv_littlewoodPaleyPiece_eq_zero_of_notMem_tsupport φ α β x
+        fun h => hξ (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j h)).trans_eq ?_
+  rw [finrank_euclideanSpace_fin]
+
+/-- **Dyadic estimates on compact sets.** For a symbol of order `m` and a compact set `K` of
+positions, the `j`-th piece and its mixed derivatives satisfy
+`‖∂ₓ^α ∂_ξ^β aⱼ(x, ξ)‖ ≤ C (2^j) ^ (m - |β|)` for `x ∈ K`, uniformly in `ξ` and `j`. -/
+theorem exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow (a : Symbol n V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ (j : ℕ), ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖ ≤
+        C * ((2 : ℝ) ^ j) ^ (m - β.length) := by
+  obtain ⟨C, hC0, hC⟩ := a.exists_norm_mixedDeriv_littlewoodPaleyPiece_le φ hK α β
+  exact a.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow_of_le φ α β hC0 hC
+
+/-! ### Frequency Laplacians of the pieces -/
+
+/-- **The frequency Laplacian powers of the pieces sum to that of the symbol.** At every point
+`∑ⱼ Δ_ξ^N aⱼ = Δ_ξ^N a`, with only finitely many nonzero terms. -/
+theorem hasSum_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece (a : Symbol n V W m)
+    (N : ℕ) (x ξ : CoordinateSpace n) :
+    HasSum (fun j => (frequencyLaplacianPow N (a.littlewoodPaleyPiece φ j)).coefficient (x, ξ))
+      ((frequencyLaplacianPow N a).coefficient (x, ξ)) := by
+  obtain ⟨J, hJ⟩ := pow_unbounded_of_one_lt (‖ξ‖ / φ.rIn) (one_lt_two (α := ℝ))
+  -- On the ball of radius `2^J φ.rIn`, a neighbourhood of `ξ`, the partition is finite.
+  have hξ : ξ ∈ ball (0 : CoordinateSpace n) (2 ^ J * φ.rIn) :=
+    mem_ball_zero_iff.2 ((div_lt_iff₀ φ.rIn_pos).1 hJ)
+  have hsum := Filter.EventuallyEq.coefficient_frequencyLaplacianPow
+    (a := ∑ j ∈ Finset.range (J + 1), a.littlewoodPaleyPiece φ j) (b := a) (x := x) (ξ := ξ) ?_ N
+  · rw [← hsum.eq_of_nhds, map_sum, coefficient_sum, Finset.sum_apply]
+    refine hasSum_sum_of_ne_finset_zero fun j hj =>
+      (a.littlewoodPaleyPiece φ j).coefficient_frequencyLaplacianPow_eq_zero_of_isOpen isOpen_ball x
+        (fun η hη => ?_) N hξ
+    rw [coefficient_littlewoodPaleyPiece, φ.inhomogeneousLittlewoodPaley_eq_zero_of_lt_of_norm_le
+      (by simpa using hj) (mem_ball_zero_iff.1 hη).le, zero_smul]
+  · filter_upwards [isOpen_ball.mem_nhds hξ] with η hη
+    simp only [coefficient_sum, Finset.sum_apply, coefficient_littlewoodPaleyPiece,
+      ← Finset.sum_smul,
+      φ.sum_inhomogeneousLittlewoodPaley_range_eq_one_of_norm_le (mem_ball_zero_iff.1 hη).le,
+      one_smul]
+
+/-- Dyadic estimates `‖∂_ξ^β bⱼ(x, ξ)‖ ≤ C (2^j) ^ (μ - |β|)` of a family of symbols, for positions
+in a set `S`, persist for their frequency Laplacian powers, with `μ` lowered by `2N`. -/
+private theorem exists_norm_mixedDeriv_frequencyLaplacianPow_le {μ : ℝ} (b : ℕ → Symbol n V W μ)
+    {S : Set (CoordinateSpace n)}
+    (hb : ∀ β : List (Fin n), ∃ C, 0 ≤ C ∧ ∀ (j : ℕ), ∀ x ∈ S, ∀ ξ,
+      ‖mixedDeriv [] β (b j).coefficient x ξ‖ ≤ C * ((2 : ℝ) ^ j) ^ (μ - β.length))
+    (N : ℕ) (β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ (j : ℕ), ∀ x ∈ S, ∀ ξ,
+      ‖mixedDeriv [] β (frequencyLaplacianPow N (b j)).coefficient x ξ‖ ≤
+        C * ((2 : ℝ) ^ j) ^ (μ - 2 * N - β.length) := by
+  induction N generalizing β with
+  | zero => simpa using hb β
+  | succ N ih =>
+    choose C hC0 hC using fun k : Fin n => ih (β ++ [k, k])
+    refine ⟨∑ k, C k, Finset.sum_nonneg fun k _ => hC0 k, fun j x hx ξ => ?_⟩
+    rw [coefficient_frequencyLaplacianPow_succ', mixedDeriv_frequencyLaplacian, Finset.sum_mul]
+    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ => (hC k j x hx ξ).trans_eq ?_)
+    simp only [List.length_append, List.length_cons, List.length_nil]
+    push_cast
+    ring_nf
+
+/-- **Integrated dyadic estimates for the frequency Laplacians of the pieces.** For a symbol of
+order `m` and a compact set `K` of positions, `∫ ‖Δ_ξ^N aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m - 2N + n)` for
+`x ∈ K`, uniformly in `j`. -/
+theorem exists_integral_norm_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece_le
+    (a : Symbol n V W m) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (N : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ (j : ℕ), ∀ x ∈ K,
+      ∫ ξ, ‖(frequencyLaplacianPow N (a.littlewoodPaleyPiece φ j)).coefficient (x, ξ)‖ ≤
+        C * ((2 : ℝ) ^ j) ^ (m - 2 * N + n) := by
+  obtain ⟨C, hC0, hC⟩ := exists_norm_mixedDeriv_frequencyLaplacianPow_le
+    (a.littlewoodPaleyPiece φ) (a.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow φ hK [])
+    N []
+  have := φ.rOut_pos
+  refine ⟨C * φ.rOut ^ n * (volume : Measure (CoordinateSpace n)).real (ball 0 1),
+    by positivity, fun j x hx => ?_⟩
+  -- The piece and all its frequency derivatives vanish outside the ball of radius `2^j φ.rOut`.
+  refine (integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall (by positivity) φ.rOut_pos.le
+    (mu := volume) (s := 2 ^ j) (μ := m - 2 * N) (fun ξ _ => by simpa using hC j x hx ξ)
+    fun ξ hξ =>
+      (a.littlewoodPaleyPiece φ j).coefficient_frequencyLaplacianPow_eq_zero_of_isOpen
+        (U := {η | 2 ^ j * φ.rOut < ‖η‖}) (isOpen_lt continuous_const continuous_norm) x
+        (fun ξ' hξ' => a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x (le_of_lt hξ'))
+        N (by simpa using hξ)).trans_eq ?_
+  rw [finrank_euclideanSpace_fin]
 
 /-- **Integrated size of the pieces.** For a uniform symbol of order `m` on `ℝⁿ`, the pieces
 satisfy `∫ ‖aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m + n)` uniformly in `x` and `j`: the case `α = β = []` of

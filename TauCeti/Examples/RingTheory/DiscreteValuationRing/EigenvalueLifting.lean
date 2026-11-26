@@ -110,8 +110,9 @@ example {A B : Type*} [CommRing A] [IsDomain A] [Algebra O A] [CommRing B] [Nont
   refine ⟨?_, by simp [he₁]⟩
   rintro ⟨c, v, hv, hred⟩
   have := congr_arg (fun w ↦ piScalarRight O B B (Fin 2) w 1) hred
-  simp [piScalarRight_rTensor_apply,
+  rw [piScalarRight_rTensor A, Function.comp_apply,
     piScalarRight_one_eq_zero_of_nilpotent_baseChange_eq_smul ϖ hϖ hv] at this
+  simp at this
 
 /-- The lifting lemma applied to the residual eigenvector `e₂` of `[[0, ϖ], [0, 0]]`, for a
 uniformizer `ϖ` of a DVR: the lifted eigenvalue reduces to the residual eigenvalue `0`, but the

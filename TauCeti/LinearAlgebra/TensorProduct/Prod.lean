@@ -16,13 +16,16 @@ second factor of the product is the base ring `R` itself, composing with the rig
 `M₁ ⊗[R] (M₂ × R) ≃ (M₁ ⊗[R] M₂) × M₁`, `m₁ ⊗ (m₂, r) ↦ (m₁ ⊗ m₂, r • m₁)`. It is linear over
 any `R`-algebra `S` acting on `M₁`. For `M₁ = S` this describes the scalar extension of `M₂ × R`
 to `S`: adjoining one direction to `M₂` and then extending scalars adjoins one direction to the
-scalar extension of `M₂`.
+scalar extension of `M₂`. Applying the right unitor to both factors identifies
+`M₁ ⊗[R] (R × R)` with `M₁ × M₁`, `m₁ ⊗ (a, b) ↦ (a • m₁, b • m₁)`.
 
 ## Main declarations
 
 * `TensorProduct.prodRightRid`: the identification `M₁ ⊗[R] (M₂ × R) ≃ (M₁ ⊗[R] M₂) × M₁`.
 * `TensorProduct.prodRightRid_tmul` and `TensorProduct.prodRightRid_symm_apply`: its values on
   pure tensors and its inverse.
+* `TensorProduct.prodScalarRight`: the identification `M₁ ⊗[R] (R × R) ≃ M₁ × M₁`, with
+  `TensorProduct.prodScalarRight_tmul` and `TensorProduct.prodScalarRight_symm_apply`.
 -/
 
 public section
@@ -56,5 +59,24 @@ theorem prodRightRid_symm_apply (x : M₁ ⊗[R] M₂) (m₁ : M₁) :
     (prodRightRid R S M₁ M₂).symm (x, m₁) =
       (LinearMap.inl R M₂ R).lTensor M₁ x + m₁ ⊗ₜ (0, 1) := by
   simp [prodRightRid, prodRight]
+
+variable (R S M₁) in
+/-- The `S`-linear equivalence `M₁ ⊗[R] (R × R) ≃ M₁ × M₁`, `m₁ ⊗ (a, b) ↦ (a • m₁, b • m₁)`,
+obtained from `TensorProduct.prodRight` and the right unitor on both factors. -/
+noncomputable def prodScalarRight : M₁ ⊗[R] (R × R) ≃ₗ[S] M₁ × M₁ :=
+  prodRight R S M₁ R R ≪≫ₗ
+    (AlgebraTensorModule.rid R S M₁).prodCongr (AlgebraTensorModule.rid R S M₁)
+
+/-- `TensorProduct.prodScalarRight` sends `m₁ ⊗ (a, b)` to `(a • m₁, b • m₁)`. -/
+@[simp]
+theorem prodScalarRight_tmul (m₁ : M₁) (r : R × R) :
+    prodScalarRight R S M₁ (m₁ ⊗ₜ r) = (r.1 • m₁, r.2 • m₁) := by
+  simp [prodScalarRight]
+
+/-- The inverse of `TensorProduct.prodScalarRight` sends `(m, m')` to `m ⊗ (1, 0) + m' ⊗ (0, 1)`. -/
+@[simp]
+theorem prodScalarRight_symm_apply (m : M₁ × M₁) :
+    (prodScalarRight R S M₁).symm m = m.1 ⊗ₜ (1, 0) + m.2 ⊗ₜ (0, 1) := by
+  simp [prodScalarRight, prodRight]
 
 end TensorProduct
