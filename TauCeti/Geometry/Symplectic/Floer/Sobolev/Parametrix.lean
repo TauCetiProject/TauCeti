@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Cylinder.Parametrix
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.UnitaryFrame
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
@@ -46,6 +47,25 @@ are uniformly close far out because `u(s, ·) → x±` uniformly and `dX_{H±_t}
 continuous on compact sets. For the same reason the coefficient field of `D_u` is bounded for any
 continuous `u` with these asymptotics; no condition on the derivatives of `u` is needed.
 
+The same argument applies on Sobolev spaces with an exponential weight `e^{κ(s)}` whose slope
+`c = κ'` is continuous and equal to constants `δ±` near `±∞`, where `D_u` becomes the operator
+`D_u - c(s)` on the unweighted spaces (`TauCeti.SymplecticForm.floerWeightedSobolevOperator`). At
+the stationary cylinder over a loop `x`, with constant slope `δ`, its coefficient field is that of
+the stationary cylinder operator `∂s + i (∂t - (S_t - δ i))`, `S_t = dX_{H_t}(x(t))`
+(`TauCeti.SymplecticForm.floerJetCoeff_sub_smul_fst_eq_stationaryJetCoeff`), because
+`-δ = i (δ i)`. The shift `δ i` is infinitesimally symplectic for `Im ⟪·, ·⟫`, so this operator is
+invertible as soon as the shifted field has a nondegenerate return map
+(`TauCeti.SymplecticForm.isInvertible_floerWeightedSobolevOperator_comp_snd`); along an orbit of
+`H` this says that `δ` is not an eigenvalue of the asymptotic operator. These are the models at
+the ends of `D_u - c(s)`, which is therefore Fredholm
+(`TauCeti.SymplecticForm.isFredholm_floerWeightedSobolevOperator_of_cylindrical`). This completes
+the finite-dimensional kernel and closed range of
+`TauCeti.SymplecticForm.finiteDimensional_ker_floerWeightedSobolevOperator_of_cylindrical` and
+`TauCeti.SymplecticForm.isClosed_range_floerWeightedSobolevOperator_of_cylindrical` with the
+finiteness of the cokernel, in a unitary trivialization. Here the asymptotic loops need only be
+one-periodic and `C¹`; the nondegeneracy condition is on the shifted fields at the ends. The index
+of the weighted operator is not computed here.
+
 ## Main results
 
 * `TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical`: for data `(i, K_s, K_t)`
@@ -53,12 +73,23 @@ continuous `u` with these asymptotics; no condition on the derivatives of `u` is
   nondegenerate orbits at both ends.
 * `TauCeti.SymplecticForm.isFredholm_floerSobolevOperator`: the case of a Floer trajectory, with
   data `(i, 0, H_t)`, between nondegenerate orbits of `H`.
+* `TauCeti.SymplecticForm.isInvertible_floerWeightedSobolevOperator_comp_snd`: at a stationary
+  cylinder, `D_u - δ` is invertible when the shifted field `dX_{H_t}(x(t)) - δ i` has a
+  nondegenerate return map.
+* `TauCeti.SymplecticForm.isFredholm_floerWeightedSobolevOperator_of_cylindrical`: for data
+  `(i, K_s, K_t)` cylindrical near the ends and a weight slope equal to `δ±` near `±∞`, `D_u - c(s)`
+  is Fredholm along any continuous map asymptotic to loops at which the shifted fields have
+  nondegenerate return maps; `TauCeti.SymplecticForm.isFredholm_floerWeightedSobolevOperator` is
+  the case of a Floer trajectory.
 
 ## References
 
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
   Math. Ser. 7 (1999), Lecture 2, on the Fredholm property of `∂s + J₀ ∂t + S(s, t)` along a Floer
   trajectory between nondegenerate orbits.
+* R. B. Lockhart and R. C. McOwen, *Elliptic differential operators on noncompact manifolds*,
+  Ann. Scuola Norm. Sup. Pisa Cl. Sci. (4) 12 (1985), 409–447, on the Fredholm property on
+  exponentially weighted spaces when the weights avoid the spectra of the asymptotic operators.
 -/
 
 public section
@@ -130,6 +161,26 @@ private theorem eventually_norm_floerJetCoeff_sub_lt (ω : SymplecticForm V) (J�
   refine (norm_firstOrderJetCoeff_sub_firstOrderJetCoeff_le _ _ _).trans_lt ?_
   rw [neg_sub_neg, ← dist_eq_norm]
   exact hs t ht
+
+/-- Far out on the negative end, Floer data cylindrical near the ends are those `(0, H₋_t)` of a
+Floer trajectory. -/
+private theorem eventually_atBot_hamiltonian_eq {J : ℝ × ℝ → V → AlmostComplexStructure V}
+    {Ks Kt : ℝ × ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {Hm Hp : ℝ → V → ℝ}
+    {R : ℝ} {u : ℝ × ℝ → V} (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u) :
+    ∀ᶠ s in atBot, ∀ t, Ks (s, t) = 0 ∧ Kt (s, t) = Hm t := by
+  filter_upwards [eventually_le_atBot (-R)] with s hs t
+  exact ⟨hcyl.hamiltonianS_eq_zero (s, t) fun h ↦ (lt_irrefl _ (hs.trans_lt h.1)),
+    hcyl.hamiltonianT_eq_of_le_neg (s, t) hs⟩
+
+/-- Far out on the positive end, Floer data cylindrical near the ends are those `(0, H₊_t)` of a
+Floer trajectory. -/
+private theorem eventually_atTop_hamiltonian_eq {J : ℝ × ℝ → V → AlmostComplexStructure V}
+    {Ks Kt : ℝ × ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {Hm Hp : ℝ → V → ℝ}
+    {R : ℝ} {u : ℝ × ℝ → V} (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u) :
+    ∀ᶠ s in atTop, ∀ t, Ks (s, t) = 0 ∧ Kt (s, t) = Hp t := by
+  filter_upwards [eventually_ge_atTop R] with s hs t
+  exact ⟨hcyl.hamiltonianS_eq_zero (s, t) fun h ↦ (lt_irrefl _ (h.2.trans_le hs)),
+    hcyl.hamiltonianT_eq_of_le (s, t) hs⟩
 
 /-- For a constant complex structure `J₀`, the coefficient field of the linearized Floer operator
 along a continuous map `u` is essentially bounded on the cylinder when the data are `C²` along the
@@ -236,14 +287,8 @@ theorem isFredholm_floerSobolevOperator_of_cylindrical (ω : SymplecticForm F)
   have hxmc : Continuous xm := continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt
   have hxpc : Continuous xp := continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt
   -- Far out on the ends the data are those of the Floer trajectories of `H₋` and `H₊`.
-  have hm : ∀ᶠ s in atBot, ∀ t, Ks (s, t) = 0 ∧ Kt (s, t) = Hm t := by
-    filter_upwards [eventually_le_atBot (-R)] with s hs t
-    exact ⟨hcyl.hamiltonianS_eq_zero (s, t) fun h ↦ (lt_irrefl _ (hs.trans_lt h.1)),
-      hcyl.hamiltonianT_eq_of_le_neg (s, t) hs⟩
-  have hp : ∀ᶠ s in atTop, ∀ t, Ks (s, t) = 0 ∧ Kt (s, t) = Hp t := by
-    filter_upwards [eventually_ge_atTop R] with s hs t
-    exact ⟨hcyl.hamiltonianS_eq_zero (s, t) fun h ↦ (lt_irrefl _ (h.2.trans_le hs)),
-      hcyl.hamiltonianT_eq_of_le (s, t) hs⟩
+  have hm := eventually_atBot_hamiltonian_eq hcyl
+  have hp := eventually_atTop_hamiltonian_eq hcyl
   -- The models: the linearized operators at the stationary cylinders over `x₋` and `x₊`.
   have hDm := ω.isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt hXm hHm hHmper hxm
     hxmper hω hndm
@@ -301,5 +346,212 @@ theorem isFredholm_floerSobolevOperator (ω : SymplecticForm F)
     hHper hxm hxmper hndm huxm hX hH hHper hxp hxpper hndp huxp
 
 end Unitary
+
+section Weighted
+
+/-! ### The weighted operator in a unitary trivialization -/
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+
+/-- **The weighted operator at a stationary cylinder is a stationary cylinder operator.** For the
+complex structure `i` of `F`, the coefficient field of `D_u - δ` at the stationary cylinder
+`u(s, t) = x(t)`, with Floer data `(i, 0, H_t)`, is that of the stationary cylinder operator
+`∂s + i (∂t - (S_t - δ i))` with `S_t = dX_{H_t}(x(t))`. The loop `x` need not be an orbit of
+`H`. -/
+theorem floerJetCoeff_sub_smul_fst_eq_stationaryJetCoeff (ω : SymplecticForm F) (H : ℝ → F → ℝ)
+    (x : ℝ → F) (δ : ℝ) (z : ℝ × ℝ) :
+    ω.floerJetCoeff
+        (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z - δ • fst ℝ F (F × F) =
+      Floer.stationaryJetCoeff (fun _ ↦ AlmostComplexStructure.ofComplexModule F)
+        (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
+          δ • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap) z := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  rw [floerJetCoeff_const_of_eq ω _ (fun w ↦ x w.2) (H := H) rfl rfl]
+  simp [Floer.stationaryJetCoeff_apply, AlmostComplexStructure.ofComplexModule_apply, smul_smul,
+    sub_eq_add_neg, add_assoc]
+  abel
+
+/-- Along a one-periodic `C¹` loop `x` and for a one-periodic, jointly `C³` Hamiltonian `H`, the
+shifted field `S_t - δ i`, with `S_t = dX_{H_t}(x(t))`, descends to a `C¹` loop on the circle,
+infinitesimally symplectic for `ω = Im ⟪·, ·⟫`. -/
+private theorem exists_loop_eq_fderiv_hamiltonianVectorField_sub_smul (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : ℝ → F → ℝ} (hH : ContDiff ℝ 3 (uncurry H))
+    (hHp : Periodic H 1) {x : ℝ → F} (hx : ContDiff ℝ 1 x) (hxp : Periodic x 1) (δ : ℝ) :
+    ∃ S : C(AddCircle (1 : ℝ), F →L[ℝ] F),
+      (∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
+        δ • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap) ∧
+      ContDiff ℝ 1 (fun t : ℝ ↦ S t) ∧
+      ∀ θ v w, (inner ℂ (S θ v) w).im + (inner ℂ v (S θ w)).im = 0 := by
+  set f : ℝ → F →L[ℝ] F := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
+    δ • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap
+  have hf : ContDiff ℝ 1 f :=
+    (ContDiff.fderiv (f := fun t ↦ ω.hamiltonianVectorField (H t))
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 2) (hH.of_le (by norm_num))) hx
+      (by norm_num)).sub contDiff_const
+  have hper : Periodic f 1 := fun t ↦ by simp only [f, hHp t, hxp t]
+  refine ⟨⟨hper.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hf.continuous⟩,
+    fun t ↦ hper.lift_coe t, by simpa only [ContinuousMap.coe_mk, hper.lift_coe] using hf, ?_⟩
+  -- `dX_{H_t}(x(t))` is infinitesimally symplectic, and so is `i` for `Im ⟪·, ·⟫`.
+  intro θ
+  induction θ using QuotientAddGroup.induction_on with | H t => ?_
+  intro v w
+  have hS := ω.apply_fderiv_hamiltonianVectorField_add (H := H t) (x := x t)
+    ((hH.of_le (by norm_num : (2 : WithTop ℕ∞) ≤ 3)).comp (contDiff_prodMk_right t)).contDiffAt
+    v w
+  simp only [hω] at hS
+  simp only [ContinuousMap.coe_mk, hper.lift_coe, f, sub_apply, smul_apply, inner_sub_left,
+    inner_sub_right, Complex.sub_im, LinearMap.coe_toContinuousLinearMap',
+    AlmostComplexStructure.ofComplexModule_apply, ← Complex.coe_smul, smul_smul, inner_smul_left,
+    inner_smul_right]
+  rw [← hS]
+  simp [Complex.mul_im]
+
+/-- **The weighted operator at a stationary cylinder is invertible away from the spectrum.** Let
+`F` be a finite-dimensional complex inner product space whose symplectic form `ω` is
+`Im ⟪·, ·⟫`, let `H` be a one-periodic, jointly `C³` time-dependent Hamiltonian and `x` a
+one-periodic `C¹` loop, and let `δ` be a real number such that the shifted field
+`dX_{H_t}(x(t)) - δ i` has a nondegenerate return map, `det (1 - Ψ(1)) ≠ 0`; for an orbit `x` of
+`H` this says that `δ` is not an eigenvalue of the asymptotic operator at `x`. Then at the
+stationary cylinder `u(s, t) = x(t)`, with Floer data `(i, 0, H_t)`, the realization
+`D_u - δ : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator with the constant
+weight slope `δ` is an isomorphism of Banach spaces. -/
+theorem isInvertible_floerWeightedSobolevOperator_comp_snd (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : ℝ → F → ℝ} (hH : ContDiff ℝ 3 (uncurry H))
+    (hHp : Periodic H 1) {x : ℝ → F} (hx : ContDiff ℝ 1 x) (hxp : Periodic x 1) {δ : ℝ}
+    (hdet : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
+        δ • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap) 1 :
+          F →L[ℝ] F) : F →ₗ[ℝ] F) ≠ 0) :
+    (ω.floerWeightedSobolevOperator
+      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) fun _ ↦ δ).IsInvertible := by
+  obtain ⟨S, hS, hS₁, hSω⟩ := exists_loop_eq_fderiv_hamiltonianVectorField_sub_smul ω hω hH hHp hx
+    hxp δ
+  have hSf : (fun t : ℝ ↦ S t) = fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
+      δ • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap :=
+    funext hS
+  rw [← hSf] at hdet
+  simp only [floerWeightedSobolevOperator_def, floerJetCoeff_sub_smul_fst_eq_stationaryJetCoeff,
+    ← hSf, ← Floer.stationarySobolevOperator_def]
+  exact ⟨Floer.stationarySobolevEquiv hS₁ hSω hdet, Floer.coe_stationarySobolevEquiv ..⟩
+
+/-- **The weighted linearized Floer operator on the cylinder is Fredholm in a unitary
+trivialization.** Let `F` be a finite-dimensional complex inner product space whose symplectic
+form `ω` is `Im ⟪·, ·⟫`, and let the Floer data `(i, K_s, K_t)`, with the complex structure `i`
+of `F`, be cylindrical near the ends: equal to `(i, 0, H₋_t)` for `s ≤ -R` and to `(i, 0, H₊_t)`
+for `s ≥ R`, with `K_s`, `K_t` of class `C²` along the graph of `u`. Let `H±` be one-periodic,
+jointly `C³` time-dependent Hamiltonians and `x±` one-periodic `C¹` loops, and let the slope `c`
+of the weight be continuous and equal to `δ₋` for `s ≤ -R` and to `δ₊` for `s ≥ R`, where the
+shifted fields `dX_{H±_t}(x±(t)) - δ± i` have nondegenerate return maps; for orbits `x±` of `H±`
+this says that `δ±` are not eigenvalues of the asymptotic operators at `x±`. If `u` is a
+continuous map whose loops `u(s, ·)` converge uniformly on `[0, 1]` to `x₋` as `s → -∞` and to
+`x₊` as `s → +∞`, then the realization `D_u - c(s) : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the
+linearized Floer operator conjugated by the weight `e^{κ(s)}`, `κ' = c`, is Fredholm. -/
+theorem isFredholm_floerWeightedSobolevOperator_of_cylindrical (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {Ks Kt : ℝ × ℝ → F → ℝ} {Hm Hp : ℝ → F → ℝ} {R : ℝ}
+    {u : ℝ × ℝ → F}
+    (hcyl : Floer.IsCylindricalNearEnds (fun _ _ ↦ AlmostComplexStructure.ofComplexModule F) Ks
+      Kt (fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
+      (fun _ _ ↦ AlmostComplexStructure.ofComplexModule F) Hm Hp R u)
+    (hu : Continuous u) {c : ℝ → ℝ} (hc : Continuous c) {δm δp : ℝ} (hcm : ∀ s ≤ -R, c s = δm)
+    (hcp : ∀ s, R ≤ s → c s = δp)
+    (hHm : ContDiff ℝ 3 (uncurry Hm)) (hHmper : Periodic Hm 1) {xm : ℝ → F}
+    (hxm : ContDiff ℝ 1 xm) (hxmper : Periodic xm 1)
+    (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hm t)) (xm t) -
+        δm • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap) 1 :
+          F →L[ℝ] F) : F →ₗ[ℝ] F) ≠ 0)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hHp : ContDiff ℝ 3 (uncurry Hp)) (hHpper : Periodic Hp 1) {xp : ℝ → F}
+    (hxp : ContDiff ℝ 1 xp) (hxpper : Periodic xp 1)
+    (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hp t)) (xp t) -
+        δp • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap) 1 :
+          F →L[ℝ] F) : F →ₗ[ℝ] F) ≠ 0)
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1)) :
+    (ω.floerWeightedSobolevOperator
+      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+        Ks Kt u c).IsFredholm := by
+  set J₀ := (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap
+  have hHm₂ : ContDiff ℝ 2 (uncurry Hm) := hHm.of_le (by norm_num)
+  have hHp₂ : ContDiff ℝ 2 (uncurry Hp) := hHp.of_le (by norm_num)
+  -- Far out on the ends the data are those of the Floer trajectories of `H₋` and `H₊`.
+  have hm := eventually_atBot_hamiltonian_eq hcyl
+  have hp := eventually_atTop_hamiltonian_eq hcyl
+  -- The models: the weighted operators at the stationary cylinders over `x₋` and `x₊`, with the
+  -- constant slopes `δ₋` and `δ₊`.
+  have hDm := ω.isInvertible_floerWeightedSobolevOperator_comp_snd hω hHm hHmper hxm hxmper hdetm
+  have hDp := ω.isInvertible_floerWeightedSobolevOperator_comp_snd hω hHp hHpper hxp hxpper hdetp
+  simp only [floerWeightedSobolevOperator_def] at hDm hDp ⊢
+  -- The model coefficients are those of stationary cylinder operators, so they are bounded.
+  have hmodel {H : ℝ → F → ℝ} (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → F} (hx : Continuous x)
+      (δ : ℝ) : MemLp (fun z ↦ ω.floerJetCoeff (fun _ _ ↦ J₀) (fun _ _ ↦ 0) (fun w ↦ H w.2)
+        (fun w ↦ x w.2) z - δ • fst ℝ F (F × F)) ∞ stripMeasure := by
+    simp only [J₀, floerJetCoeff_sub_smul_fst_eq_stationaryJetCoeff]
+    exact Floer.memLp_stationaryJetCoeff continuous_const
+      ((ω.continuous_fderiv_hamiltonianVectorField_comp hH hx).sub continuous_const)
+  obtain ⟨B, hB⟩ := exists_forall_norm_le_of_eventually_eq hc
+    (eventually_atBot.2 ⟨-R, hcm⟩) (eventually_atTop.2 ⟨R, hcp⟩)
+  -- All three operators have the principal part `∂s + i ∂t`.
+  have hprin {Ks' Kt' : ℝ × ℝ → F → ℝ} {u' : ℝ × ℝ → F} (z : ℝ × ℝ) (r : ℝ) (a b : F) :
+      (ω.floerJetCoeff (fun _ _ ↦ J₀) Ks' Kt' u' z - r • fst ℝ F (F × F)) (0, a, b) =
+        a + J₀ b := by
+    simp [floerJetCoeff_apply]
+  refine isFredholm_jetOperator_comp_subtypeL_of_isInvertible
+    (memLp_floerJetCoeff_sub_smul_fst ω (memLp_floerJetCoeff_const ω J₀ hu
+      hcyl.contDiffAt_hamiltonianS hcyl.contDiffAt_hamiltonianT hHm₂ hxm.continuous huxm hm hHp₂
+      hxp.continuous huxp hp) hc.measurable hB)
+    (hmodel hHm₂ hxm.continuous δm) (hmodel hHp₂ hxp.continuous δp) hDm hDp
+    (.of_forall fun z a b ↦ by rw [hprin, hprin]) (.of_forall fun z a b ↦ by rw [hprin, hprin])
+    (fun ε hε ↦ ?_) (fun ε hε ↦ ?_)
+  -- Where the slope is constant, the coefficient field is asymptotic to the models at the ends.
+  · obtain ⟨S, hS⟩ := eventually_atBot.1
+      (eventually_norm_floerJetCoeff_sub_lt ω J₀ hHm₂ hxm.continuous huxm hm hε)
+    refine ⟨max (-S) R, ?_⟩
+    filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz hzS
+    rw [hcm z.1 (by linarith [le_max_right (-S) R]), sub_sub_sub_cancel_right]
+    exact (hS z.1 (by linarith [le_max_left (-S) R]) z.2 hz.2).le
+  · obtain ⟨S, hS⟩ := eventually_atTop.1
+      (eventually_norm_floerJetCoeff_sub_lt ω J₀ hHp₂ hxp.continuous huxp hp hε)
+    refine ⟨max S R, ?_⟩
+    filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz hzS
+    rw [hcp z.1 (by linarith [le_max_right S R]), sub_sub_sub_cancel_right]
+    exact (hS z.1 (by linarith [le_max_left S R]) z.2 hz.2).le
+
+/-- **The weighted linearized Floer operator along a Floer trajectory is Fredholm in a unitary
+trivialization.** Let `F` be a finite-dimensional complex inner product space whose symplectic
+form `ω` is `Im ⟪·, ·⟫`, let `H` be a one-periodic, jointly `C³` time-dependent Hamiltonian and
+`x±` one-periodic `C¹` loops, and let the slope `c` of the weight be continuous and equal to `δ₋`
+for `s ≤ -R` and to `δ₊` for `s ≥ R`, where the shifted fields `dX_{H_t}(x±(t)) - δ± i` have
+nondegenerate return maps. For the `s`-independent Floer data `(i, 0, H_t)` and a continuous map
+`u` whose loops converge uniformly on `[0, 1]` to `x₋` as `s → -∞` and to `x₊` as `s → +∞`, the
+realization `D_u - c(s) : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator
+conjugated by the weight `e^{κ(s)}`, `κ' = c`, is Fredholm. -/
+theorem isFredholm_floerWeightedSobolevOperator (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : ℝ → F → ℝ} (hH : ContDiff ℝ 3 (uncurry H))
+    (hHper : Periodic H 1) {xm xp : ℝ → F} (hxm : ContDiff ℝ 1 xm) (hxmper : Periodic xm 1)
+    (hxp : ContDiff ℝ 1 xp) (hxpper : Periodic xp 1) {u : ℝ × ℝ → F} (hu : Continuous u)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    {c : ℝ → ℝ} (hc : Continuous c) {R δm δp : ℝ} (hcm : ∀ s ≤ -R, c s = δm)
+    (hcp : ∀ s, R ≤ s → c s = δp)
+    (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (H t)) (xm t) -
+        δm • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap) 1 :
+          F →L[ℝ] F) : F →ₗ[ℝ] F) ≠ 0)
+    (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (H t)) (xp t) -
+        δp • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap) 1 :
+          F →L[ℝ] F) : F →ₗ[ℝ] F) ≠ 0) :
+    (ω.floerWeightedSobolevOperator
+      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun w ↦ H w.2) u c).IsFredholm :=
+  ω.isFredholm_floerWeightedSobolevOperator_of_cylindrical hω
+    (Floer.isCylindricalNearEnds_comp_snd (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
+      contDiff_const (hH.of_le (by norm_num)) (R := R) u) hu hc hcm hcp hH hHper hxm hxmper hdetm
+    huxm hH hHper hxp hxpper hdetp huxp
+
+end Weighted
 
 end TauCeti.SymplecticForm
