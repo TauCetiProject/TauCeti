@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+public import Mathlib.GroupTheory.NoncommCoprod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
@@ -49,6 +50,8 @@ Taubes's identification `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` at the l
   `CliffordAlgebra.spinCGroup.lift`: the descent of homomorphisms trivial on `(-1, -1)`.
 * `CliffordAlgebra.spinCGroup.ofSpin Q hQ` and `CliffordAlgebra.spinCGroup.ofCircle Q hQ`: the
   injective homomorphisms `s ↦ [s, 1]` and `z ↦ [1, z]`.
+* `CliffordAlgebra.spinCGroup.mulCircle Q hQ`: multiplication by the central circle
+  `Spinᶜ(Q) × U(1) → Spinᶜ(Q)`, `(a, w) ↦ a [1, w]`.
 * `CliffordAlgebra.spinCGroup.det Q hQ`: the determinant character `[s, z] ↦ z²`.
 * `CliffordAlgebra.spinCGroup.toSpecialOrthogonal Q hQ`: the rotation homomorphism
   `[s, z] ↦ π(s)`.
@@ -314,6 +317,43 @@ theorem toSpecialOrthogonal_ofSpin (s : spinGroup Q) :
 theorem toSpecialOrthogonal_ofCircle (z : Circle) :
     toSpecialOrthogonal Q hQ (ofCircle Q hQ z) = 1 := by
   simp [ofCircle_apply]
+
+/-- **Multiplication by the central circle**, `Spinᶜ(Q) × U(1) → Spinᶜ(Q)`, `(a, w) ↦ a [1, w]`;
+on classes, `([s, z], w) ↦ [s, z w]`. It is a homomorphism because the circle `[1, w]` is
+central (`CliffordAlgebra.spinCGroup.ofCircle_mem_center`). -/
+def mulCircle : spinCGroup Q hQ × Circle →* spinCGroup Q hQ :=
+  (MonoidHom.id _).noncommCoprod (ofCircle Q hQ) fun a w ↦
+    Subgroup.mem_center_iff.1 (ofCircle_mem_center Q hQ w) a
+
+@[simp]
+theorem mulCircle_apply (a : spinCGroup Q hQ) (w : Circle) :
+    mulCircle Q hQ (a, w) = a * ofCircle Q hQ w :=
+  (rfl)
+
+/-- Multiplication by the central circle sends `([s, z], w)` to `[s, z w]`. -/
+theorem mulCircle_mk (s : spinGroup Q) (z w : Circle) :
+    mulCircle Q hQ (mk Q hQ (s, z), w) = mk Q hQ (s, z * w) := by
+  rw [mulCircle_apply, ofCircle_apply, ← map_mul, Prod.mk_mul_mk, mul_one]
+
+/-- Multiplying `a [1, w]` on the left by the central element `[1, z]` gives `a [1, z w]`. -/
+theorem ofCircle_mul_mulCircle (z : Circle) (a : spinCGroup Q hQ) (w : Circle) :
+    ofCircle Q hQ z * mulCircle Q hQ (a, w) = mulCircle Q hQ (a, z * w) := by
+  rw [mulCircle_apply, mulCircle_apply, ← mul_assoc,
+    ← Subgroup.mem_center_iff.1 (ofCircle_mem_center Q hQ z) a, mul_assoc, map_mul]
+
+/-- Multiplication by the central circle does not change the rotation. -/
+@[simp]
+theorem toSpecialOrthogonal_mulCircle (g : spinCGroup Q hQ × Circle) :
+    toSpecialOrthogonal Q hQ (mulCircle Q hQ g) = toSpecialOrthogonal Q hQ g.1 := by
+  obtain ⟨a, w⟩ := g
+  rw [mulCircle_apply, map_mul, toSpecialOrthogonal_ofCircle, mul_one]
+
+/-- Multiplication by the central circle lifts the first projection along the rotation
+homomorphism. -/
+theorem toSpecialOrthogonal_comp_mulCircle :
+    (toSpecialOrthogonal Q hQ).comp (mulCircle Q hQ) =
+      (toSpecialOrthogonal Q hQ).comp (MonoidHom.fst _ _) :=
+  MonoidHom.ext (toSpecialOrthogonal_mulCircle Q hQ)
 
 /-- **The kernel of the rotation homomorphism `Spinᶜ(Q) → SO(Q)` is the central circle**
 `{[1, z]}`, for a finite-dimensional nondegenerate quadratic form. -/

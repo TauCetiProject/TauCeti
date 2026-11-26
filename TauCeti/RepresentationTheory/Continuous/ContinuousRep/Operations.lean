@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
 public import TauCeti.RepresentationTheory.LinHom.Basic
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Operations on jointly continuous representations
@@ -34,10 +35,12 @@ isomorphism `M ≅ M^∨∨`, the isomorphism `M^∨ ⊗ N ≅ Hom_A(M, N)` (Mat
 `dualTensorHomEquiv`, as the equivalence of representations
 `Representation.Equiv.dualTensorHomOfProjective`), and the
 identification of the twist `M(χ)` with the tensor product `M ⊗ A(χ)`. Twisting by `1` does
-nothing and twisting twice multiplies the characters. The invariants of the Hom representation are
-the morphisms of continuous representations. Evaluation `M^∨ ⊗ M → A` is a morphism to the trivial
-representation, and the scalar map `A → Hom_A(M, M)`, `a ↦ a • id`, and coevaluation
-`A → M ⊗ M^∨` are morphisms from it.
+nothing and twisting twice multiplies the characters. The contragredient of a twist is the twist
+of the contragredient by the inverse character, `M(χ)^∨ = M^∨(χ⁻¹)`, and evaluation at `1`,
+`Hom_A(A, A) ≅ A`, identifies the contragredient of the line of `χ` with the line of `χ⁻¹`.
+The invariants of the Hom representation are the morphisms of continuous representations.
+Evaluation `M^∨ ⊗ M → A` is a morphism to the trivial representation, and the scalar map
+`A → Hom_A(M, M)`, `a ↦ a • id`, and coevaluation `A → M ⊗ M^∨` are morphisms from it.
 Restriction is functorial and commutes with products, tensor products, Hom, the contragredient,
 twists and character lines.
 
@@ -53,6 +56,7 @@ twists and character lines.
 * `TauCeti.ContinuousRep.dualDualIso`: `M ≅ M^∨∨` for finite projective `M`.
 * `TauCeti.ContinuousRep.dualTensorIsoHom`: `M^∨ ⊗ N ≅ Hom_A(M, N)` for finite projective `M`.
 * `TauCeti.ContinuousRep.tprodOfCharacterIsoTwist`: `M ⊗ A(χ) ≅ M(χ)`.
+* `TauCeti.ContinuousRep.dualOfCharacterIso`: `A(χ)^∨ ≅ A(χ⁻¹)`.
 * `TauCeti.ContinuousRep.invariantsLinHomEquiv`: the invariants of `Hom_A(M, N)` are the morphisms
   `ρ ⟶ σ` of continuous representations.
 * `TauCeti.ContinuousRep.evaluation` and `TauCeti.ContinuousRep.scalarToLinHom`: the evaluation
@@ -65,6 +69,7 @@ twists and character lines.
   identity is the identity, and restriction composes.
 * `TauCeti.ContinuousRep.twist_one` and `TauCeti.ContinuousRep.twist_twist`: `M(1) = M` and
   `M(ψ)(χ) = M(χψ)`.
+* `TauCeti.ContinuousRep.dual_twist`: `M(χ)^∨ = M^∨(χ⁻¹)`.
 * `TauCeti.ContinuousRep.res_prod`, `TauCeti.ContinuousRep.res_tprod`,
   `TauCeti.ContinuousRep.res_linHom`, `TauCeti.ContinuousRep.res_dual`,
   `TauCeti.ContinuousRep.res_twist` and `TauCeti.ContinuousRep.res_ofCharacter`: restriction
@@ -441,6 +446,17 @@ theorem res_dual {Γ' : Type*} [Group Γ'] [TopologicalSpace Γ'] [ContinuousInv
     (ρ : ContinuousRep Γ A M) (φ : Γ' →ₜ* Γ) : ρ.dual.res φ = (ρ.res φ).dual :=
   ext fun g ψ => LinearMap.ext fun x => by simp
 
+/-- **The contragredient of a twist** is the twist of the contragredient by the inverse character:
+`M(χ)^∨ = M^∨(χ⁻¹)`. -/
+@[simp]
+theorem dual_twist (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) :
+    haveI := IsModuleTopology.toContinuousSMul A M
+    haveI := IsModuleTopology.toContinuousSMul A (Module.Dual A M)
+    (ρ.twist χ).dual = ρ.dual.twist χ⁻¹ :=
+  haveI := IsModuleTopology.toContinuousSMul A M
+  haveI := IsModuleTopology.toContinuousSMul A (Module.Dual A M)
+  ext fun g ψ => LinearMap.ext fun x => by simp
+
 section DualDual
 
 variable [TopologicalSpace (Module.Dual A (Module.Dual A M))]
@@ -481,6 +497,33 @@ theorem dualTensorIsoHom_tmul_apply (ρ : ContinuousRep Γ A M) (σ : Continuous
   simp [dualTensorIsoHom]
 
 end Dual
+
+section DualOfCharacter
+
+variable {Γ A : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
+  [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+  [TopologicalSpace (Module.Dual A A)] [IsModuleTopology A (Module.Dual A A)]
+
+/-- **The contragredient of a character line is the line of the inverse character**:
+evaluation at `1` is an isomorphism `A(χ)^∨ ≅ A(χ⁻¹)`. A dual defined by the transpose without
+the inverse would return `χ` instead. -/
+noncomputable def dualOfCharacterIso (χ : Γ →ₜ* Aˣ) : Iso (ofCharacter χ).dual (ofCharacter χ⁻¹) :=
+  Iso.ofEquiv (.mk (LinearMap.ringLmapEquivSelf A A A) fun g => LinearMap.ext fun ψ => by
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.ringLmapEquivSelf_apply,
+      coe_toRepresentation, dual_apply_apply, ofCharacter_apply, ContinuousMonoidHom.inv_apply,
+      map_inv, ← smul_eq_mul, map_smul])
+
+@[simp]
+theorem dualOfCharacterIso_apply (χ : Γ →ₜ* Aˣ) (ψ : Module.Dual A A) :
+    dualOfCharacterIso χ ψ = ψ 1 :=
+  Iso.ofEquiv_apply _ _
+
+@[simp]
+theorem dualOfCharacterIso_symm_apply_apply (χ : Γ →ₜ* Aˣ) (a x : A) :
+    (dualOfCharacterIso χ).symm a x = x * a := by
+  simp [dualOfCharacterIso]
+
+end DualOfCharacter
 
 section Evaluation
 

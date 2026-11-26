@@ -10,8 +10,8 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Calculus.IteratedDeriv.ReciprocalPower
+import TauCeti.Analysis.Complex.Taylor.CauchyEstimate
 import TauCeti.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.Contour.MeromorphicLaurent
 import TauCeti.Analysis.SpecialFunctions.Choose
@@ -55,6 +55,42 @@ private theorem one_le_cast_choose_add (k m : ℕ) : (1 : ℝ) ≤ ((k + m).choo
 private theorem cast_choose_add_ne_zero (k m : ℕ) : (((k + m).choose m : ℕ) : ℂ) ≠ 0 :=
   Nat.cast_ne_zero.mpr (Nat.choose_pos (m.le_add_left k)).ne'
 
+/-- Each term of a Laurent principal part is analytic away from its pole. -/
+private theorem analyticAt_laurent_term (c ρ s : ℂ) (j : ℕ) (hs : s ≠ ρ) :
+    AnalyticAt ℂ (fun w ↦ c / (w - ρ) ^ (j + 1)) s :=
+  analyticAt_const.div ((analyticAt_id.sub analyticAt_const).pow _)
+    (pow_ne_zero _ (sub_ne_zero.mpr hs))
+
+/-- If `f` agrees near the Taylor centre with a finite principal part plus a function holomorphic
+on the whole disc, subtracting the polar coefficients leaves an error bounded by `M / r' ^ k`
+on any smaller circle of radius `r'`. The local equality at the centre suffices. -/
+theorem exists_norm_neg_one_pow_mul_iteratedDeriv_div_factorial_sub_laurent_le_of_eventuallyEq
+    {f g : ℂ → ℂ} {z ρ : ℂ} {r r' : ℝ} {n : ℕ} {c : Fin n → ℂ}
+    (hg : DifferentiableOn ℂ g (ball z r))
+    (heq : f =ᶠ[𝓝 z] fun s ↦ g s + ∑ i, c i / (s - ρ) ^ (i.val + 1))
+    (hzρ : z ≠ ρ) (hr' : 0 < r') (hrr : r' < r) :
+    ∃ M : ℝ, ∀ k : ℕ,
+      ‖(-1) ^ k * (iteratedDeriv k f z / (k.factorial : ℂ)) -
+        ∑ i, (↑((k + i.val).choose i.val) : ℂ) * c i / (z - ρ) ^ (k + i.val + 1)‖ ≤ M / r' ^ k := by
+  obtain ⟨M, hM⟩ := hg.exists_norm_iteratedDeriv_div_factorial_le hr' hrr
+  refine ⟨M, fun k ↦ ?_⟩
+  let P (s : ℂ) := ∑ i, c i / (s - ρ) ^ (i.val + 1)
+  have hterm (i : Fin n) := analyticAt_laurent_term (c i) ρ z i.val hzρ
+  have hP : AnalyticAt ℂ P z := Finset.analyticAt_fun_sum _ fun i _ ↦ hterm i
+  have hgz := hg.analyticAt (ball_mem_nhds z (hr'.trans hrr))
+  have hcoeff : (-1 : ℂ) ^ k * (iteratedDeriv k P z / k.factorial) =
+      ∑ i, (↑((k + i.val).choose i.val) : ℂ) * c i / (z - ρ) ^ (k + i.val + 1) := by
+    rw [iteratedDeriv_fun_sum (fun i _ ↦ (hterm i).contDiffAt), Finset.sum_div, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ ↦
+      neg_one_pow_mul_iteratedDeriv_div_factorial_const_div_sub_pow i.val k (c i) z ρ
+  have hdiff : (-1) ^ k * (iteratedDeriv k f z / (k.factorial : ℂ)) -
+      ∑ i, (↑((k + i.val).choose i.val) : ℂ) * c i / (z - ρ) ^ (k + i.val + 1) =
+        (-1) ^ k * (iteratedDeriv k g z / (k.factorial : ℂ)) := by
+    rw [heq.iteratedDeriv_eq k, iteratedDeriv_fun_add hgz.contDiffAt hP.contDiffAt, ← hcoeff]
+    ring
+  simpa only [hdiff, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_div,
+    Complex.norm_natCast] using hM k
+
 /-- Subtracting the contribution of a finite principal part leaves Taylor coefficients bounded
 by `M / r' ^ k` on any smaller circle of radius `r'`. The coefficient `c i` multiplies the
 pole term of order `i + 1`. Continuity of the remainder `g` at `ρ` suffices: off `ρ` it agrees
@@ -68,12 +104,8 @@ theorem exists_norm_neg_one_pow_mul_iteratedDeriv_div_factorial_sub_laurent_le
       ‖(-1) ^ k * (iteratedDeriv k f z / (k.factorial : ℂ)) -
         ∑ i, (↑((k + i.val).choose i.val) : ℂ) * c i / (z - ρ) ^ (k + i.val + 1)‖ ≤ M / r' ^ k := by
   let P (s : ℂ) := ∑ i, c i / (s - ρ) ^ (i.val + 1)
-  have hterm {s : ℂ} (hs : s ≠ ρ) (i : Fin n) :
-      AnalyticAt ℂ (fun w : ℂ ↦ c i / (w - ρ) ^ (i.val + 1)) s :=
-    analyticAt_const.div ((analyticAt_id.sub analyticAt_const).pow _) (by positivity :
-      (s - ρ) ^ (i.val + 1) ≠ 0)
   have hP {s : ℂ} (hs : s ≠ ρ) : AnalyticAt ℂ P s :=
-    Finset.analyticAt_fun_sum _ fun i _ ↦ hterm hs i
+    Finset.analyticAt_fun_sum _ fun i _ ↦ analyticAt_laurent_term (c i) ρ s i.val hs
   have hfP : DifferentiableOn ℂ (fun s ↦ f s - P s) (ball z r \ {ρ}) :=
     hf.sub fun s hs ↦ (hP hs.2).differentiableAt.differentiableWithinAt
   obtain ⟨G, hG, hGeq⟩ := exists_differentiableOn_eqOn_of_analyticAt_nhdsNE
@@ -87,35 +119,11 @@ theorem exists_norm_neg_one_pow_mul_iteratedDeriv_div_factorial_sub_laurent_le
       rw [isOpen_compl_singleton.nhdsWithin_eq hsρ] at hs
       exact (hfP s ⟨hsU, hsρ⟩).differentiableAt ((isOpen_ball.sdiff isClosed_singleton).mem_nhds
         ⟨hsU, hsρ⟩) |>.congr_of_eventuallyEq (hs.mono fun _ h ↦ h.symm))
-  have hloc : f =ᶠ[𝓝 z] fun s ↦ G s + P s := by
-    filter_upwards [(isOpen_ball.sdiff isClosed_singleton).mem_nhds
-      ⟨mem_ball_self (hr'.trans hrr), hzρ⟩] with s hs
-    exact sub_eq_iff_eq_add.mp (hGeq hs)
-  obtain ⟨M, hM⟩ := (isCompact_sphere z r').exists_bound_of_continuousOn
-    (hG.continuousOn.mono (sphere_subset_closedBall.trans (closedBall_subset_ball hrr)))
-  refine ⟨M, fun k ↦ ?_⟩
-  have hGz := hG.analyticAt (ball_mem_nhds z (hr'.trans hrr))
-  have hcoeff : (-1 : ℂ) ^ k * (iteratedDeriv k P z / k.factorial) =
-      ∑ i, (↑((k + i.val).choose i.val) : ℂ) * c i / (z - ρ) ^ (k + i.val + 1) := by
-    rw [iteratedDeriv_fun_sum (fun i _ ↦ (hterm hzρ i).contDiffAt), Finset.sum_div, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ ↦
-      neg_one_pow_mul_iteratedDeriv_div_factorial_const_div_sub_pow i.val k (c i) z ρ
-  -- Subtracting the principal part leaves the coefficient of the holomorphic patch `G`.
-  have hdiff : (-1) ^ k * (iteratedDeriv k f z / (k.factorial : ℂ)) -
-      ∑ i, (↑((k + i.val).choose i.val) : ℂ) * c i / (z - ρ) ^ (k + i.val + 1) =
-        (-1) ^ k * (iteratedDeriv k G z / (k.factorial : ℂ)) := by
-    rw [hloc.iteratedDeriv_eq k, iteratedDeriv_fun_add hGz.contDiffAt (hP hzρ).contDiffAt,
-      ← hcoeff]
-    ring
-  -- Cauchy's estimate on the circle of radius `r'` bounds that coefficient.
-  have hC := _root_.Complex.norm_iteratedDeriv_le_of_forall_mem_sphere_norm_le k hr'
-    (hG.diffContOnCl_ball (closedBall_subset_ball hrr)) hM
-  have hk : (0 : ℝ) < k.factorial := by positivity
-  rw [hdiff]
-  simp only [norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_div,
-    Complex.norm_natCast]
-  rw [div_le_iff₀ hk]
-  exact hC.trans_eq (by ring)
+  refine exists_norm_neg_one_pow_mul_iteratedDeriv_div_factorial_sub_laurent_le_of_eventuallyEq
+    hG ?_ hzρ hr' hrr
+  filter_upwards [(isOpen_ball.sdiff isClosed_singleton).mem_nhds
+    ⟨mem_ball_self (hr'.trans hrr), hzρ⟩] with s hs
+  exact sub_eq_iff_eq_add.mp (hGeq hs)
 
 /-- The lower pole terms vanish relative to the leading term under the Taylor coefficient
 normalization for an order-`m + 1` pole. -/

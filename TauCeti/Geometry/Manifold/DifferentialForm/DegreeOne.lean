@@ -356,6 +356,16 @@ theorem degreeOneEquiv_coe_eq_zero_iff {φ : SmoothForm I M F 1} {x : M} :
   · rw [degreeOneEquiv_coe_apply, h, LinearMap.zero_apply,
       ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
 
+/-- The section of a smooth one-form is nonzero at `x` when the form does not vanish at `x`. -/
+theorem degreeOneEquiv_ne_zero {φ : SmoothForm I M F 1} {x : M} (h : φ.val x ≠ 0) :
+    degreeOneEquiv φ x ≠ 0 := fun h' ↦
+  h (degreeOneEquiv_coe_eq_zero_iff.1 (congrArg ContinuousLinearMap.toLinearMap h'))
+
+/-- If `ψ = c φ` at `x`, the sections of `ψ` and `φ` at `x` differ by the factor `c`. -/
+theorem degreeOneEquiv_eq_smul {φ ψ : SmoothForm I M F 1} {x : M} {c : ℝ}
+    (h : ψ.val x = c • φ.val x) : degreeOneEquiv ψ x = c • degreeOneEquiv φ x :=
+  ContinuousLinearMap.ext fun v ↦ by simp [h]
+
 /-- The linear functional `RoughForm.eval` of a smooth real one-form at `x` is its section, read as
 a linear map. -/
 theorem eval_val (φ : SmoothForm I M ℝ 1) (x : M) :
