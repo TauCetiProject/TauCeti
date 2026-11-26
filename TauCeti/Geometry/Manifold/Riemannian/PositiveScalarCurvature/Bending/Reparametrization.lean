@@ -25,15 +25,24 @@ reparametrised by an increasing diffeomorphism of `ℝ` fixing `0` into one whos
 `h(u) / r(0)` for `u ≥ 0`. With speed equal to the radius, the hypersurface swept out by the curve
 has the rotationally symmetric induced metric `r² (g_(S^(q - 1)) + du²)`.
 
+Likewise every bending curve can be parametrised by arc length
+(`TauCeti.IsGromovLawsonBendingCurve.exists_orderIso_speed_eq_one`): the arc length `∫₀ᵘ v` tends
+to `-∞` along the initial horizontal part, where it is at most `r(0) - r(u)`, and to `+∞` along the
+final vertical part, where it is at least `h(u)`. With unit speed, the hypersurface swept out by the
+curve in the product of a metric `dr² + g r` with `ℝ` has the induced metric `du² + g (r u)`.
+
 ## Main results
 
 * `TauCeti.IsGromovLawsonBendingCurve.comp`: an increasing reparametrisation of a bending curve
   fixing `0` is a bending curve for the same constants.
 * `TauCeti.IsGromovLawsonBendingCurve.exists_orderIso_speed_eq_radius`: every bending curve has
   such a reparametrisation with speed equal to its radius.
+* `TauCeti.IsGromovLawsonBendingCurve.exists_orderIso_speed_eq_one`: every bending curve has
+  such a reparametrisation with unit speed.
 * `TauCeti.exists_isGromovLawsonBendingCurve_speed_eq_radius`: bending curves with speed equal to
   their radius exist for every codimension `q ≥ 3`, lower bound `R₀ > 0`, error constant `C` and
   tube radius `r₀ > 0`.
+* `TauCeti.exists_isGromovLawsonBendingCurve_speed_eq_one`: so do bending curves with unit speed.
 
 ## References
 
@@ -153,18 +162,18 @@ private theorem tendsto_integral_speed_div_radius_atTop
     sub_zero] at this
   linarith
 
-/-- **Speed equal to the radius.** Every bending curve has an increasing reparametrisation `ψ`
-fixing `0` whose speed is its radius, so that it sweeps out the same hypersurface with induced
-metric the rotationally symmetric metric with profile `log (r ∘ ψ)`. The inverse of `ψ` is
-`u ↦ ∫₀ᵘ v / r`. -/
-theorem exists_orderIso_speed_eq_radius (hγ : IsGromovLawsonBendingCurve q R₀ C r₀ r h θ v) :
+/-- **Reparametrising by a weight.** Let `a` be a smooth positive function on `ℝ` whose integral
+`s u = ∫₀ᵘ a` tends to `-∞` at `-∞` and to `+∞` at `+∞`. The inverse `ψ` of `s` is an increasing
+smooth reparametrisation fixing `0`, and the reparametrised bending curve has speed
+`(v ∘ ψ) / (a ∘ ψ)`. -/
+private theorem exists_orderIso_speed_eq_div (hγ : IsGromovLawsonBendingCurve q R₀ C r₀ r h θ v)
+    {a : ℝ → ℝ} (ha : ContDiff ℝ ∞ a) (ha_pos : ∀ u, 0 < a u)
+    (h_bot : Tendsto (fun u ↦ ∫ t in (0 : ℝ)..u, a t) atBot atBot)
+    (h_top : Tendsto (fun u ↦ ∫ t in (0 : ℝ)..u, a t) atTop atTop) :
     ∃ ψ : ℝ ≃o ℝ, ContDiff ℝ ∞ ψ ∧ ψ 0 = 0 ∧
-      IsGromovLawsonBendingCurve q R₀ C r₀ (r ∘ ψ) (h ∘ ψ) (θ ∘ ψ) (r ∘ ψ) := by
-  -- The new parameter `s u = ∫₀ᵘ v / r` has derivative `v / r > 0`.
-  set a : ℝ → ℝ := fun u ↦ v u / r u
-  have ha : ContDiff ℝ ∞ a :=
-    hγ.contDiff_speed.div hγ.contDiff_radius fun u ↦ (hγ.radius_pos u).ne'
-  have ha_pos (u : ℝ) : 0 < a u := div_pos (hγ.speed_pos u) (hγ.radius_pos u)
+      IsGromovLawsonBendingCurve q R₀ C r₀ (r ∘ ψ) (h ∘ ψ) (θ ∘ ψ)
+        (fun σ ↦ v (ψ σ) / a (ψ σ)) := by
+  -- The new parameter `s u = ∫₀ᵘ a` has derivative `a > 0`.
   set s : ℝ → ℝ := fun u ↦ ∫ t in (0 : ℝ)..u, a t
   have hs' (u : ℝ) : HasDerivAt s (a u) u :=
     (ha.continuous.integral_hasStrictDerivAt 0 u).hasDerivAt
@@ -172,8 +181,7 @@ theorem exists_orderIso_speed_eq_radius (hγ : IsGromovLawsonBendingCurve q R₀
     ⟨fun u ↦ (hs' u).differentiableAt, (funext fun u ↦ (hs' u).deriv : deriv s = a) ▸ ha⟩
   have hs_mono : StrictMono s := strictMono_of_deriv_pos fun u ↦ (hs' u).deriv ▸ ha_pos u
   -- `s` is an increasing smooth bijection of `ℝ`; its inverse `ψ` is the reparametrisation.
-  set e : ℝ ≃o ℝ := hs_mono.orderIsoOfSurjective s (hs.continuous.surjective
-    hγ.tendsto_integral_speed_div_radius_atTop hγ.tendsto_integral_speed_div_radius_atBot)
+  set e : ℝ ≃o ℝ := hs_mono.orderIsoOfSurjective s (hs.continuous.surjective h_top h_bot)
   have he : (e.toHomeomorph : ℝ → ℝ) = s := by
     rw [OrderIso.coe_toHomeomorph, StrictMono.coe_orderIsoOfSurjective]
   have hψ : ContDiff ℝ ∞ e.symm := by
@@ -188,7 +196,76 @@ theorem exists_orderIso_speed_eq_radius (hγ : IsGromovLawsonBendingCurve q R₀
   refine ⟨e.symm, hψ, hψ₀, ?_⟩
   convert hγ' using 1
   funext σ
-  rw [(hψ' σ).deriv, Function.comp_apply, inv_div, mul_div_cancel₀ _ (hγ.speed_pos _).ne']
+  rw [(hψ' σ).deriv, div_eq_mul_inv]
+
+/-- **Speed equal to the radius.** Every bending curve has an increasing reparametrisation `ψ`
+fixing `0` whose speed is its radius, so that it sweeps out the same hypersurface with induced
+metric the rotationally symmetric metric with profile `log (r ∘ ψ)`. The inverse of `ψ` is
+`u ↦ ∫₀ᵘ v / r`. -/
+theorem exists_orderIso_speed_eq_radius (hγ : IsGromovLawsonBendingCurve q R₀ C r₀ r h θ v) :
+    ∃ ψ : ℝ ≃o ℝ, ContDiff ℝ ∞ ψ ∧ ψ 0 = 0 ∧
+      IsGromovLawsonBendingCurve q R₀ C r₀ (r ∘ ψ) (h ∘ ψ) (θ ∘ ψ) (r ∘ ψ) := by
+  obtain ⟨ψ, hψ, hψ₀, hγ'⟩ := hγ.exists_orderIso_speed_eq_div
+    (hγ.contDiff_speed.div hγ.contDiff_radius fun u ↦ (hγ.radius_pos u).ne')
+    (fun u ↦ div_pos (hγ.speed_pos u) (hγ.radius_pos u))
+    hγ.tendsto_integral_speed_div_radius_atBot hγ.tendsto_integral_speed_div_radius_atTop
+  refine ⟨ψ, hψ, hψ₀, ?_⟩
+  convert hγ' using 1
+  funext σ
+  rw [Function.comp_apply, Pi.div_apply, div_div_cancel₀ (hγ.speed_pos _).ne']
+
+/-- Along the initial horizontal part of a bending curve, the arc length `∫₀ᵘ v` is at most
+`r(0) - r(u)`, since `u ↦ ∫₀ᵘ v + r(u)` has derivative `v (1 - cos θ) ≥ 0`; so it tends to `-∞`
+at `-∞`. -/
+private theorem tendsto_integral_speed_atBot
+    (hγ : IsGromovLawsonBendingCurve q R₀ C r₀ r h θ v) :
+    Tendsto (fun u ↦ ∫ t in (0 : ℝ)..u, v t) atBot atBot := by
+  have hF' (u : ℝ) : HasDerivAt (fun u ↦ (∫ t in (0 : ℝ)..u, v t) + r u)
+      (v u + -(v u * cos (θ u))) u :=
+    (hγ.contDiff_speed.continuous.integral_hasStrictDerivAt 0 u).hasDerivAt.add
+      (hγ.hasDerivAt_radius u)
+  have hF : Monotone fun u ↦ (∫ t in (0 : ℝ)..u, v t) + r u := by
+    refine monotone_of_deriv_nonneg (fun u ↦ (hF' u).differentiableAt) fun u ↦ ?_
+    rw [(hF' u).deriv]
+    linarith [mul_le_of_le_one_right (hγ.speed_pos u).le (cos_le_one (θ u))]
+  refine tendsto_atBot_mono' _ ?_
+    (tendsto_atBot_add_const_left _ (r 0) (tendsto_neg_atTop_atBot.comp hγ.tendsto_radius_atBot))
+  filter_upwards [eventually_le_atBot 0] with u hu
+  have := hF hu
+  simp only [intervalIntegral.integral_same, zero_add] at this
+  simp only [Function.comp_apply]
+  linarith
+
+/-- For `u ≥ 0`, the arc length `∫₀ᵘ v` is at least the height `h(u)`, since
+`u ↦ ∫₀ᵘ v - h(u)` has derivative `v (1 - sin θ) ≥ 0`; so it tends to `+∞` at `+∞`. -/
+private theorem tendsto_integral_speed_atTop
+    (hγ : IsGromovLawsonBendingCurve q R₀ C r₀ r h θ v) :
+    Tendsto (fun u ↦ ∫ t in (0 : ℝ)..u, v t) atTop atTop := by
+  have hF' (u : ℝ) : HasDerivAt (fun u ↦ (∫ t in (0 : ℝ)..u, v t) - h u)
+      (v u - v u * sin (θ u)) u :=
+    (hγ.contDiff_speed.continuous.integral_hasStrictDerivAt 0 u).hasDerivAt.sub
+      (hγ.hasDerivAt_height u)
+  have hF : Monotone fun u ↦ (∫ t in (0 : ℝ)..u, v t) - h u := by
+    refine monotone_of_deriv_nonneg (fun u ↦ (hF' u).differentiableAt) fun u ↦ ?_
+    rw [(hF' u).deriv]
+    linarith [mul_le_of_le_one_right (hγ.speed_pos u).le (sin_le_one (θ u))]
+  refine tendsto_atTop_mono' _ ?_ hγ.tendsto_height_atTop
+  filter_upwards [eventually_ge_atTop 0] with u hu
+  have := hF hu
+  simp only [intervalIntegral.integral_same, hγ.height_of_nonpos le_rfl, sub_zero] at this
+  linarith
+
+/-- **Unit speed.** Every bending curve has an increasing reparametrisation `ψ` fixing `0` with
+unit speed, the parametrisation by arc length. The inverse of `ψ` is `u ↦ ∫₀ᵘ v`. -/
+theorem exists_orderIso_speed_eq_one (hγ : IsGromovLawsonBendingCurve q R₀ C r₀ r h θ v) :
+    ∃ ψ : ℝ ≃o ℝ, ContDiff ℝ ∞ ψ ∧ ψ 0 = 0 ∧
+      IsGromovLawsonBendingCurve q R₀ C r₀ (r ∘ ψ) (h ∘ ψ) (θ ∘ ψ) 1 := by
+  obtain ⟨ψ, hψ, hψ₀, hγ'⟩ := hγ.exists_orderIso_speed_eq_div hγ.contDiff_speed hγ.speed_pos
+    hγ.tendsto_integral_speed_atBot hγ.tendsto_integral_speed_atTop
+  refine ⟨ψ, hψ, hψ₀, ?_⟩
+  convert hγ' using 1
+  funext σ
+  rw [Pi.one_apply, div_self (hγ.speed_pos _).ne']
 
 end IsGromovLawsonBendingCurve
 
@@ -200,6 +277,15 @@ theorem exists_isGromovLawsonBendingCurve_speed_eq_radius {q : ℕ} (hq : 3 ≤ 
     ∃ r h θ : ℝ → ℝ, IsGromovLawsonBendingCurve q R₀ C r₀ r h θ r := by
   obtain ⟨r, h, θ, v, hγ⟩ := exists_isGromovLawsonBendingCurve hq hR₀ C hr₀
   obtain ⟨ψ, -, -, hγ'⟩ := hγ.exists_orderIso_speed_eq_radius
+  exact ⟨r ∘ ψ, h ∘ ψ, θ ∘ ψ, hγ'⟩
+
+/-- **Bending curves with unit speed.** For every codimension `q ≥ 3`, lower bound `R₀ > 0`, error
+constant `C` and tube radius `r₀ > 0` there is a bending curve with unit speed. -/
+theorem exists_isGromovLawsonBendingCurve_speed_eq_one {q : ℕ} (hq : 3 ≤ q) {R₀ r₀ : ℝ}
+    (hR₀ : 0 < R₀) (C : ℝ) (hr₀ : 0 < r₀) :
+    ∃ r h θ : ℝ → ℝ, IsGromovLawsonBendingCurve q R₀ C r₀ r h θ 1 := by
+  obtain ⟨r, h, θ, v, hγ⟩ := exists_isGromovLawsonBendingCurve hq hR₀ C hr₀
+  obtain ⟨ψ, -, -, hγ'⟩ := hγ.exists_orderIso_speed_eq_one
   exact ⟨r ∘ ψ, h ∘ ψ, θ ∘ ψ, hγ'⟩
 
 end TauCeti
