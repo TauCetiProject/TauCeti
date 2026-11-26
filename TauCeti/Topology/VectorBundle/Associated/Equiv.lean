@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.FiberBundle.Associated.Principal
 public import TauCeti.Topology.FiberBundle.Principal.Equiv
 public import TauCeti.Topology.VectorBundle.Associated.Metric
 
@@ -28,6 +29,8 @@ induce composites. For an isometric action it preserves the fibre norms
 
 ## Main results
 
+* `TauCeti.PrincipalBundle.Equiv.coe_associatedContinuousLinearEquiv`: as a bijection it is
+  `TauCeti.AssociatedBundle.equivOfEquivariant` along the identity of `G`.
 * `TauCeti.PrincipalBundle.Equiv.associatedContinuousLinearEquiv_mk`: `[p, v] ↦ [ψ p, v]`.
 * `TauCeti.PrincipalBundle.Equiv.continuous_associatedContinuousLinearEquiv`: it is continuous on
   total spaces.
@@ -60,40 +63,80 @@ variable {𝕜 B G F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [DistribMulAction G F] [SMulCommClass G 𝕜 F]
   [ContinuousSMul G F]
 
+/-- In the frames `p` and `ψ p`, the bijection `TauCeti.AssociatedBundle.equivOfEquivariant` along
+`ψ` is the identity of the model `F`. -/
+private theorem equivOfEquivariant_eq (ψ : Equiv G P Q) {b : B} (p : P b)
+    (z : AssociatedBundle G P F b) :
+    AssociatedBundle.equivOfEquivariant (MonoidHom.id G) (fun b ↦ ψ.toEquiv b)
+        (fun b p g ↦ ψ.map_smul b p g) (fun _ _ ↦ rfl) b z =
+      AssociatedBundle.mkContinuousLinearEquiv 𝕜 G (ψ.toEquiv b p)
+        ((AssociatedBundle.mkContinuousLinearEquiv 𝕜 G p).symm z) := by
+  obtain ⟨v, rfl⟩ := (AssociatedBundle.mkContinuousLinearEquiv 𝕜 G p).surjective z
+  rw [ContinuousLinearEquiv.symm_apply_apply, AssociatedBundle.mkContinuousLinearEquiv_apply,
+    AssociatedBundle.mkContinuousLinearEquiv_apply, AssociatedBundle.equivOfEquivariant_mk]
+
 variable (𝕜 F) in
 /-- **The associated bundles of equivalent principal bundles are equivalent**: an equivalence
 `ψ : P ≃ Q` of principal `G`-bundles induces the fibrewise continuous linear equivalence
 `P ×_G F ≃ Q ×_G F`, `[p, v] ↦ [ψ p, v]`
 (`TauCeti.PrincipalBundle.Equiv.associatedContinuousLinearEquiv_mk`), for a continuous linear
 action of `G` on `F`. As a bijection it is `TauCeti.AssociatedBundle.equivOfEquivariant` along the
-identity of `G`; here it is continuous linear. For an isometric action it preserves norms
-(`TauCeti.PrincipalBundle.Equiv.norm_associatedContinuousLinearEquiv`). It is defined through
-the frame of `P` with coordinate `1` in the chart at `b`; it does not depend on that choice because
-`ψ` is equivariant. -/
+identity of `G` (`TauCeti.PrincipalBundle.Equiv.coe_associatedContinuousLinearEquiv`); here it is
+continuous linear. For an isometric action it preserves norms
+(`TauCeti.PrincipalBundle.Equiv.norm_associatedContinuousLinearEquiv`). -/
 def associatedContinuousLinearEquiv (ψ : Equiv G P Q) (b : B) :
     AssociatedBundle G P F b ≃L[𝕜] AssociatedBundle G Q F b :=
-  (AssociatedBundle.mkContinuousLinearEquiv 𝕜 G
-      ((FiberBundle.homeomorphAt G P b).symm 1)).symm.trans
-    (AssociatedBundle.mkContinuousLinearEquiv 𝕜 G
-      (ψ.toEquiv b ((FiberBundle.homeomorphAt G P b).symm 1)))
+  have : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
+  { AssociatedBundle.equivOfEquivariant (MonoidHom.id G) (fun b ↦ ψ.toEquiv b)
+      (fun b p g ↦ ψ.map_smul b p g) (fun _ _ ↦ rfl) b with
+    map_add' z w := by
+      simp only [_root_.Equiv.toFun_as_coe,
+        equivOfEquivariant_eq (𝕜 := 𝕜) ψ (Classical.arbitrary (P b)), map_add]
+    map_smul' c z := by
+      simp only [_root_.Equiv.toFun_as_coe,
+        equivOfEquivariant_eq (𝕜 := 𝕜) ψ (Classical.arbitrary (P b)),
+        _root_.map_smul, RingHom.id_apply]
+    continuous_toFun :=
+      ((AssociatedBundle.mkContinuousLinearEquiv 𝕜 G
+          (ψ.toEquiv b (Classical.arbitrary (P b)))).continuous.comp
+        (AssociatedBundle.mkContinuousLinearEquiv 𝕜 G
+          (Classical.arbitrary (P b))).symm.continuous).congr fun z ↦
+        (equivOfEquivariant_eq ψ _ z).symm
+    continuous_invFun := by
+      refine ((AssociatedBundle.mkContinuousLinearEquiv 𝕜 G
+          (Classical.arbitrary (P b))).continuous.comp
+        (AssociatedBundle.mkContinuousLinearEquiv 𝕜 G
+          (ψ.toEquiv b (Classical.arbitrary (P b)))).symm.continuous).congr fun z ↦ ?_
+      rw [Function.comp_apply, eq_comm, _root_.Equiv.invFun_as_coe,
+        _root_.Equiv.symm_apply_eq,
+        equivOfEquivariant_eq (𝕜 := 𝕜) ψ (Classical.arbitrary (P b)),
+        ContinuousLinearEquiv.symm_apply_apply,
+        ContinuousLinearEquiv.apply_symm_apply] }
+
+/-- As a bijection, the induced equivalence is `TauCeti.AssociatedBundle.equivOfEquivariant` along
+the identity of `G`. -/
+theorem coe_associatedContinuousLinearEquiv (ψ : Equiv G P Q) (b : B) :
+    ⇑(ψ.associatedContinuousLinearEquiv 𝕜 F b) =
+      AssociatedBundle.equivOfEquivariant (MonoidHom.id G) (fun b ↦ ψ.toEquiv b)
+        (fun b p g ↦ ψ.map_smul b p g) (fun _ _ ↦ rfl) b :=
+  (rfl)
 
 /-- **The induced equivalence in a frame**: `[p, v] ↦ [ψ p, v]` for every point `p` of the fibre
 of `P` over `b`. -/
 @[simp]
 theorem associatedContinuousLinearEquiv_mk (ψ : Equiv G P Q) {b : B} (p : P b) (v : F) :
     ψ.associatedContinuousLinearEquiv 𝕜 F b (AssociatedBundle.mk G p v) =
-      AssociatedBundle.mk G (ψ.toEquiv b p) v := by
-  rw [associatedContinuousLinearEquiv, ContinuousLinearEquiv.trans_apply,
-    AssociatedBundle.mkContinuousLinearEquiv_symm_apply_mk,
-    AssociatedBundle.mkContinuousLinearEquiv_apply, ← AssociatedBundle.mk_smul, ← ψ.map_smul,
-    PrincipalBundle.smul_division]
+      AssociatedBundle.mk G (ψ.toEquiv b p) v :=
+  AssociatedBundle.equivOfEquivariant_mk (MonoidHom.id G) (fun b ↦ ψ.toEquiv b)
+    (fun b p g ↦ ψ.map_smul b p g) (fun _ _ ↦ rfl) p v
 
 /-- **The inverse of the induced equivalence in a frame**: `[ψ p, v] ↦ [p, v]`. -/
 @[simp]
 theorem associatedContinuousLinearEquiv_symm_mk (ψ : Equiv G P Q) {b : B} (p : P b) (v : F) :
     (ψ.associatedContinuousLinearEquiv 𝕜 F b).symm (AssociatedBundle.mk G (ψ.toEquiv b p) v) =
       AssociatedBundle.mk G p v :=
-  (ContinuousLinearEquiv.symm_apply_eq _).2 (associatedContinuousLinearEquiv_mk ψ p v).symm
+  AssociatedBundle.equivOfEquivariant_symm_mk (MonoidHom.id G) (fun b ↦ ψ.toEquiv b)
+    (fun b p g ↦ ψ.map_smul b p g) (fun _ _ ↦ rfl) p v
 
 /-- The identity equivalence of a principal bundle induces the identity of its associated
 bundles. -/
