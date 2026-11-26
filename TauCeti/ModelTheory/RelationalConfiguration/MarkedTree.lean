@@ -37,9 +37,10 @@ codes.
 
 On `treeClass` the cover graph is a tree (`TauCeti.IsTreeOrder.isTree_fromRel_relCovBy`) with its
 least element as the only marked vertex, and the order is recovered from it as the relation of
-lying on the path from the marked vertex (`TauCeti.IsTreeOrder.rel_iff_of_iso`). So isomorphic
-cover graphs come from isomorphic coded trees, and with `borelComplete_treeClass` the marked trees
-are Borel complete. The map is Borel, not continuous, even on `treeClass`.
+lying on the path from the marked vertex (`TauCeti.IsTreeOrder.mem_support_iff_rel`). So
+isomorphic cover graphs come from isomorphic coded trees (`TauCeti.IsTreeOrder.rel_iff_of_iso`),
+and with `borelComplete_treeClass` the marked trees are Borel complete. The map is Borel, not
+continuous, even on `treeClass`.
 
 ## Main definitions
 

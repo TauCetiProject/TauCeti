@@ -81,9 +81,7 @@ theorem connected_fromRel_relCovBy : (SimpleGraph.fromRel (RelCovBy r)).Connecte
     ⟨p⟩
   exact (connected_iff_exists_forall_reachable _).2 ⟨a, hreach⟩
 
-/-- The cover graph of a tree order is acyclic, by the height criterion
-`SimpleGraph.isAcyclic_of_forall_adj_le_eq` with height the number of predecessors: a neighbour
-of `v` of height at most that of `v` is covered by `v`, and `v` covers at most one element. -/
+/-- The cover graph of a tree order is acyclic. -/
 theorem isAcyclic_fromRel_relCovBy : (SimpleGraph.fromRel (RelCovBy r)).IsAcyclic := by
   have := h.isPartialOrder
   have hcov {v u : V} (hvu : (SimpleGraph.fromRel (RelCovBy r)).Adj v u)
