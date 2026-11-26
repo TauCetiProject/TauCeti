@@ -252,7 +252,9 @@ theorem toSubfield_adjoin_add_inv_le_maximalRealSubfield {k K : Type*} [Field k]
   have : IsTotallyReal (algebraMap k K).fieldRange :=
     .ofRingEquiv (algebraMap k K).rangeRestrictFieldEquiv
   have hk := IsTotallyReal.le_maximalRealSubfield (algebraMap k K).fieldRange
-  exact (IntermediateField.adjoin_simple_le_iff (K := (maximalRealSubfield K).toIntermediateField
-    fun c ↦ hk ⟨c, rfl⟩)).2 (add_inv_mem_maximalRealSubfield_of_pow_eq_one hn hx)
+  rw [IntermediateField.adjoin_toSubfield, Subfield.closure_le, Set.union_subset_iff,
+    Set.range_subset_iff, Set.singleton_subset_iff]
+  exact ⟨fun c ↦ hk (RingHom.mem_fieldRange_self _ c),
+    add_inv_mem_maximalRealSubfield_of_pow_eq_one hn hx⟩
 
 end NumberField

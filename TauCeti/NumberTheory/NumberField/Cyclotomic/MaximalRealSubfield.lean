@@ -304,6 +304,12 @@ open Module
 variable {n : ℕ} {k K : Type*} [Field k] [Field K] [Algebra k K]
   [_root_.IsCyclotomicExtension {n} k K] {ζ : K}
 
+/-- An element of `K` lying in the bottom intermediate field over `F` lies in `F`. -/
+private theorem mem_of_mem_bot {F : IntermediateField k K} {x : K}
+    (hx : x ∈ (⊥ : IntermediateField F K)) : x ∈ F := by
+  rw [← restrictScalars_bot_eq_self F, mem_restrictScalars]
+  exact hx
+
 /-- If `k(ζ + ζ⁻¹)` contains the generator `ζ` of `K = k(μₙ)`, it is all of `K`. -/
 private theorem adjoin_add_inv_eq_top_of_mem [NeZero n] (hζ : IsPrimitiveRoot ζ n)
     (h : ζ ∈ k⟮ζ + ζ⁻¹⟯) : k⟮ζ + ζ⁻¹⟯ = ⊤ := by
@@ -322,8 +328,9 @@ private theorem finrank_adjoin_add_inv_eq_two_of_notMem [NeZero n] (hζ : IsPrim
   refine le_antisymm (TauCeti.IntermediateField.finrank_adjoin_add_inv_le_two hgen) ?_
   have : Module.Finite k⟮ζ + ζ⁻¹⟯ K := .of_restrictScalars_finite ℚ _ K
   have hpos : 0 < finrank k⟮ζ + ζ⁻¹⟯ K := finrank_pos
-  have hne : finrank k⟮ζ + ζ⁻¹⟯ K ≠ 1 := fun h1 ↦ h <| (restrictScalars_bot_eq_self _).le
-    (bot_eq_top_iff_finrank_eq_one.2 h1 ▸ mem_top : ζ ∈ (⊥ : IntermediateField k⟮ζ + ζ⁻¹⟯ K))
+  have hne : finrank k⟮ζ + ζ⁻¹⟯ K ≠ 1 := fun h1 ↦ h <| mem_of_mem_bot <| by
+    rw [bot_eq_top_iff_finrank_eq_one.2 h1]
+    exact mem_top
   omega
 
 variable [IsTotallyReal k]
@@ -333,7 +340,8 @@ theorem finrank_adjoin_add_inv_eq_two (hn : 2 < n) (hζ : IsPrimitiveRoot ζ n) 
     finrank k⟮ζ + ζ⁻¹⟯ K = 2 := by
   have : NeZero n := ⟨by omega⟩
   exact finrank_adjoin_add_inv_eq_two_of_notMem hζ fun h ↦ hζ.notMem_maximalRealSubfield hn
-    (toSubfield_adjoin_add_inv_le_maximalRealSubfield (NeZero.ne n) hζ.pow_eq_one h)
+    (toSubfield_adjoin_add_inv_le_maximalRealSubfield (NeZero.ne n) hζ.pow_eq_one
+      ((mem_toSubfield _ _).2 h))
 
 /-- For `n > 2`, `K = k(ζₙ)` is a CM extension of `k(ζ + ζ⁻¹)`: `K` is totally complex, and
 `k(ζ + ζ⁻¹)` is a totally real subfield over which `K` is quadratic. -/
@@ -383,14 +391,16 @@ theorem adjoin_adjoin_add_inv_eq_top [NeZero n] (hζ : IsPrimitiveRoot ζ n) {m 
     {η : K} (hη : IsPrimitiveRoot η m) : adjoin k⟮ζ + ζ⁻¹⟯ {η} = ⊤ := by
   have hle := toSubfield_adjoin_add_inv_le_maximalRealSubfield (k := k) (NeZero.ne n)
     hζ.pow_eq_one
-  have hη : η ∉ k⟮ζ + ζ⁻¹⟯ := fun h ↦ hη.notMem_maximalRealSubfield hm (hle h)
+  have hη : η ∉ k⟮ζ + ζ⁻¹⟯ := fun h ↦
+    hη.notMem_maximalRealSubfield hm (hle ((mem_toSubfield _ _).2 h))
   -- Hence `k(ζ + ζ⁻¹) ≠ K`, so `ζ ∉ k(ζ + ζ⁻¹)` and `K` is quadratic over `k(ζ + ζ⁻¹)`.
   have hζ' : ζ ∉ k⟮ζ + ζ⁻¹⟯ := fun h ↦ hη <| by
     rw [adjoin_add_inv_eq_top_of_mem hζ h]
     exact mem_top
   have := isSimpleOrder_of_finrank_prime k⟮ζ + ζ⁻¹⟯ K
     (finrank_adjoin_add_inv_eq_two_of_notMem hζ hζ' ▸ Nat.prime_two)
-  refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦ hη ?_
-  exact (restrictScalars_bot_eq_self _).le (hbot ▸ mem_adjoin_simple_self _ η)
+  refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦ hη (mem_of_mem_bot ?_)
+  rw [← hbot]
+  exact mem_adjoin_simple_self _ η
 
 end IsPrimitiveRoot
