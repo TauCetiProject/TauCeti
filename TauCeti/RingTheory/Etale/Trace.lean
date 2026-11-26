@@ -14,6 +14,7 @@ import TauCeti.Algebra.Algebra.Pi
 import TauCeti.RingTheory.Etale.Discriminant
 import TauCeti.RingTheory.FiniteType.PointSeparation
 import TauCeti.RingTheory.NormTrace.Pi
+import TauCeti.RingTheory.Trace.Idempotent
 
 /-!
 # Traces on étale algebras over a field
@@ -37,37 +38,11 @@ containing the reflex field.
 * `TauCeti.Algebra.Etale.algebraMap_trace_eq_finsum`: `Tr_{A/K} x = ∑_{φ : A → Ω} φ x`.
 * `TauCeti.Algebra.Etale.exists_isIdempotentElem_algHom_apply_eq_indicator`: a set of geometric
   points with `K`-valued partial trace is cut out by an idempotent.
-* `IsIdempotentElem.trace_lsmul_span_singleton`: the trace of `x` on the ideal `c A` of an
-  idempotent `c` is `Tr_{A/K} (c x)`.
 * `TauCeti.Algebra.Etale.exists_trace_eq_finsum`: a representation of `A` on some `Kⁿ` with a
   prescribed `K`-valued partial trace.
 -/
 
 public section
-
-open Module
-
-/-- **The trace on the ideal of an idempotent.** For an idempotent `c` of a finite-dimensional
-commutative algebra `A` over a field `K`, the trace of multiplication by `x` on the ideal `c A` is
-`Tr_{A/K} (c x)`. -/
-theorem IsIdempotentElem.trace_lsmul_span_singleton {K A : Type*} [Field K] [CommRing A]
-    [Algebra K A] [FiniteDimensional K A] {c : A} (hc : IsIdempotentElem c) (x : A) :
-    LinearMap.trace K (Ideal.span {c}) (Algebra.lsmul K K (Ideal.span {c}) x) =
-      Algebra.trace K A (c * x) := by
-  set V := Ideal.span {c}
-  -- Multiplication by `c x` maps `A` onto `V`, and `c` acts as the identity on `V`.
-  let g : A →ₗ[K] V := (LinearMap.toSpanSingleton A V
-    ⟨c * x, Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self c)⟩).restrictScalars K
-  have hcV (v : V) : c * (v : A) = v := by
-    obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp v.prop
-    rw [← ha, mul_left_comm, hc.eq]
-  have h : Algebra.lsmul K K V x = g ∘ₗ V.subtype.restrictScalars K := by
-    refine LinearMap.ext fun v ↦ Subtype.ext ?_
-    simp [g, ← mul_assoc, mul_comm _ c, hcV, mul_comm x]
-  rw [h, LinearMap.trace_comp_comm', Algebra.trace_apply]
-  congr 1
-  ext y
-  simp [g, mul_comm y]
 
 namespace TauCeti
 
@@ -86,12 +61,11 @@ theorem algebraMap_trace_eq_finsum (x : A) :
   have := Fintype.ofFinite I
   have (i : I) : Module.Finite K (L i) := (hL i).1
   have (i : I) : Algebra.IsSeparable K (L i) := (hL i).2
-  -- Write `A` as the product `∏ᵢ Lᵢ`, and each geometric point as a point of one factor.
-  rw [← Algebra.trace_eq_of_algEquiv e, Algebra.trace_pi, map_sum]
-  simp_rw [trace_eq_sum_embeddings Ω]
-  rw [← finsum_comp_equiv ((AlgEquiv.arrowCongr e AlgEquiv.refl).symm),
-    ← finsum_comp_equiv (AlgHom.sigmaEquivPi L Ω), finsum_eq_sum_of_fintype, Fintype.sum_sigma]
-  simp [AlgEquiv.arrowCongr]
+  -- Transport along `A ≃ ∏ᵢ Lᵢ`, then split the geometric points along the factors.
+  rw [← finsum_comp_equiv (AlgEquiv.arrowCongr e AlgEquiv.refl).symm]
+  simp [← Algebra.trace_eq_of_algEquiv e, Algebra.trace_pi, AlgHom.finsum_apply_pi,
+    trace_eq_sum_embeddings Ω]
+  simp [finsum_eq_sum_of_fintype]
 
 variable {Ω} in
 /-- **Sets of geometric points with rational trace are cut out by idempotents.** Let `A` be an
@@ -148,7 +122,7 @@ variable {Ω} in
 an étale algebra over a field `K` and `S` a set of `K`-algebra maps `A → Ω` to an algebraically
 closed field, whose partial trace `x ↦ ∑_{φ ∈ S} φ x` takes values in `K`. Then `A` has a
 representation on some `Kⁿ` with trace `∑_{φ ∈ S} φ x`: the ideal `c A` of the idempotent `c`
-cutting out `S`. -/
+cutting out `S`, whose trace is computed by `IsIdempotentElem.trace_lsmul_span_singleton`. -/
 theorem exists_trace_eq_finsum (S : Set (A →ₐ[K] Ω))
     (hS : ∀ x, ∑ᶠ φ ∈ S, φ x ∈ Set.range (algebraMap K Ω)) :
     ∃ (n : ℕ) (ρ : A →ₐ[K] Module.End K (Fin n → K)),
@@ -160,12 +134,13 @@ theorem exists_trace_eq_finsum (S : Set (A →ₐ[K] Ω))
   let V := Ideal.span {c}
   let b := Module.finBasis K V
   refine ⟨_, (b.equivFun.conjAlgEquiv K).toAlgHom.comp (Algebra.lsmul K K V), fun x ↦ ?_⟩
-  rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
-    ← LinearMap.comp_assoc, ← LinearEquiv.conj_apply, LinearMap.trace_conj',
-    hc.trace_lsmul_span_singleton, algebraMap_trace_eq_finsum Ω, finsum_mem_def,
-    finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype]
-  refine Finset.sum_congr rfl fun φ _ ↦ ?_
-  by_cases hφ : φ ∈ S <;> simp [hcφ, hφ]
+  -- The trace is invariant under conjugation by `b.equivFun : V ≃ Kⁿ`.
+  have htr : LinearMap.trace K _ (b.equivFun.conjAlgEquiv K (Algebra.lsmul K K V x)) =
+      LinearMap.trace K V (Algebra.lsmul K K V x) :=
+    LinearMap.trace_conj' _ b.equivFun
+  rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, htr, hc.trace_lsmul_span_singleton,
+    algebraMap_trace_eq_finsum Ω]
+  simp [finsum_mem_def, hcφ, Set.indicator_apply]
 
 end Algebra.Etale
 

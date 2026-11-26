@@ -25,7 +25,9 @@ type trace, `Tr_k(a | V) = typeTrace_Φ(a)`. Such a representation exists exactl
 contains the reflex field `E*`, and it is then unique up to isomorphism (Milne, *Complex
 Multiplication*, Proposition 1.21, p.15).
 
-This file proves that statement.
+This file proves that statement when `E` is a finite-dimensional formally unramified `ℚ`-algebra,
+such as a finite product of CM fields. Necessity holds for every `E` with finitely many complex
+embeddings.
 
 * **Necessity.** If such a representation exists over `k`, then every type trace lies in `k`, so
   `E* ⊆ k` (`TauCeti.CMType.reflexField_le_of_trace_eq`).
