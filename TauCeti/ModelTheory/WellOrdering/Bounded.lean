@@ -159,6 +159,7 @@ theorem realize_wellOrderTypeSentence_iff_nonempty_relIso (lt : L.Relations 2)
 /-- **Semantics of `wellOrderTypeSentence`.** A structure `M` of any cardinality, in any universe,
 satisfies `wellOrderTypeSentence lt α hα` if and only if `lt` well-orders `M` with order type `α`
 (after lifting both ordinals to `max o w`). -/
+@[simp]
 theorem realize_wellOrderTypeSentence_iff (lt : L.Relations 2) {α : Ordinal.{o}} (hα : α < ω₁)
     (M : Type w) [L.Structure M] :
     SentenceInf.Realize (wellOrderTypeSentence lt α hα) M ↔
@@ -237,7 +238,6 @@ theorem relationsIn_boundedWellOrderSentence_subset (lt : L.Relations 2) {α : O
 /-- A structure `M` of any cardinality, in any universe, satisfies
 `boundedWellOrderSentence lt α hα` if and only if it satisfies `wellOrderTypeSentence lt β` for
 some ordinal `β < α`. -/
-@[simp]
 theorem realize_boundedWellOrderSentence_iff_exists (lt : L.Relations 2)
     {α : Ordinal.{o}} (hα : α < ω₁) (M : Type w) [L.Structure M] :
     SentenceInf.Realize (boundedWellOrderSentence lt α hα) M ↔
@@ -249,6 +249,7 @@ theorem realize_boundedWellOrderSentence_iff_exists (lt : L.Relations 2)
 /-- **Semantics of `boundedWellOrderSentence`.** A structure `M` of any cardinality, in any
 universe, satisfies `boundedWellOrderSentence lt α hα` if and only if `lt` well-orders `M` with
 order type strictly below `α` (after lifting both ordinals to `max o w`). -/
+@[simp]
 theorem realize_boundedWellOrderSentence_iff (lt : L.Relations 2) {α : Ordinal.{o}} (hα : α < ω₁)
     (M : Type w) [L.Structure M] :
     SentenceInf.Realize (boundedWellOrderSentence lt α hα) M ↔
