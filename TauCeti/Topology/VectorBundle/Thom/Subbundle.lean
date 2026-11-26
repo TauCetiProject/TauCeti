@@ -73,6 +73,31 @@ theorem continuous_subbundle_mk'_refl :
     simpa only [Function.comp_def, ContinuousLinearEquiv.coe_refl', id] using
       (isEmbedding_totalSpace_subbundle F F₁ V).continuous
 
+/-- The maps of Thom pairs given by the identity of the fibres of `V`, from the model-fibre
+parameter `F₁` to `F₂` and back, compose to the identity. -/
+private theorem thomPairMapOfFiberwise_refl_comp_refl :
+    letI := subbundleTopology F (F' := F₁) V
+    letI := subbundleTopology F (F' := F₂) V
+    thomPairMapOfFiberwise (E := fun b ↦ V b) (E' := fun b ↦ V b) (g := ContinuousMap.id B)
+        (φ := fun b ↦ ContinuousLinearEquiv.refl ℝ (V b))
+        (continuous_subbundle_mk'_refl F V F₁ F₂) ≫
+      thomPairMapOfFiberwise (E := fun b ↦ V b) (E' := fun b ↦ V b) (g := ContinuousMap.id B)
+        (φ := fun b ↦ ContinuousLinearEquiv.refl ℝ (V b))
+        (continuous_subbundle_mk'_refl F V F₂ F₁) =
+      𝟙 _ :=
+  letI := subbundleTopology F (F' := F₁) V
+  letI := subbundleTopology F (F' := F₂) V
+  -- The composite sends `v` to `⟨v.proj, refl (refl v.snd)⟩`, which is `v` by
+  -- `ContinuousLinearEquiv.refl_apply` and `TotalSpace.eta`. The rewrite is done by `congrArg`
+  -- rather than `simp`, since the statement mentions `ContinuousMap.id B b`, which is `b` only
+  -- after unfolding `ContinuousMap.id`.
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦
+    ((congrArg _ (thomPairMapOfFiberwise_fst_apply _ v)).trans
+      (thomPairMapOfFiberwise_fst_apply _ _)).trans <|
+      (congrArg (TotalSpace.mk' F₁ v.proj)
+        ((ContinuousLinearEquiv.refl_apply ℝ (V v.proj) _).trans
+          (ContinuousLinearEquiv.refl_apply ℝ (V v.proj) _))).trans (TotalSpace.eta v))
+
 /-- **The Thom pair of a family of subspaces does not depend on the model fibre.** For a family `V`
 of subspaces of the fibres of `E`, the total spaces for two model-fibre parameters `F₁` and `F₂`
 both carry the topology induced from the total space of `E` (`TauCeti.subbundleTopology`), so the
@@ -83,26 +108,12 @@ def subbundleThomPairIso :
     thomPair F₁ (fun b ↦ V b) ≅ thomPair F₂ (fun b ↦ V b) :=
   letI := subbundleTopology F (F' := F₁) V
   letI := subbundleTopology F (F' := F₂) V
-  have h₁₂ := continuous_subbundle_mk'_refl F V F₁ F₂
-  have h₂₁ := continuous_subbundle_mk'_refl F V F₂ F₁
   { hom := thomPairMapOfFiberwise (g := ContinuousMap.id B)
-      (φ := fun b ↦ ContinuousLinearEquiv.refl ℝ (V b)) h₁₂
+      (φ := fun b ↦ ContinuousLinearEquiv.refl ℝ (V b)) (continuous_subbundle_mk'_refl F V F₁ F₂)
     inv := thomPairMapOfFiberwise (g := ContinuousMap.id B)
-      (φ := fun b ↦ ContinuousLinearEquiv.refl ℝ (V b)) h₂₁
-    -- Each composite sends `v` to `⟨v.proj, refl (refl v.snd)⟩`, which is `v` by
-    -- `ContinuousLinearEquiv.refl_apply` and `TotalSpace.eta`.
-    hom_inv_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦
-      ((congrArg _ (thomPairMapOfFiberwise_fst_apply h₁₂ v)).trans
-        (thomPairMapOfFiberwise_fst_apply h₂₁ _)).trans <|
-        (congrArg (TotalSpace.mk' F₁ v.proj)
-          ((ContinuousLinearEquiv.refl_apply ℝ (V v.proj) _).trans
-            (ContinuousLinearEquiv.refl_apply ℝ (V v.proj) _))).trans (TotalSpace.eta v))
-    inv_hom_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦
-      ((congrArg _ (thomPairMapOfFiberwise_fst_apply h₂₁ v)).trans
-        (thomPairMapOfFiberwise_fst_apply h₁₂ _)).trans <|
-        (congrArg (TotalSpace.mk' F₂ v.proj)
-          ((ContinuousLinearEquiv.refl_apply ℝ (V v.proj) _).trans
-            (ContinuousLinearEquiv.refl_apply ℝ (V v.proj) _))).trans (TotalSpace.eta v)) }
+      (φ := fun b ↦ ContinuousLinearEquiv.refl ℝ (V b)) (continuous_subbundle_mk'_refl F V F₂ F₁)
+    hom_inv_id := thomPairMapOfFiberwise_refl_comp_refl F V F₁ F₂
+    inv_hom_id := thomPairMapOfFiberwise_refl_comp_refl F V F₂ F₁ }
 
 /-- The isomorphism `subbundleThomPairIso` is the identity on vectors. -/
 @[simp]
