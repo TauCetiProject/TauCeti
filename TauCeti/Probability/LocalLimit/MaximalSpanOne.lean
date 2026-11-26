@@ -38,8 +38,8 @@ have a support generating `ℤ`. What does characterize it is the group generate
   span one is not a point mass; `MeasureTheory.Measure.not_hasMaximalSpanOne_dirac`.
 * `MeasureTheory.Measure.HasMaximalSpanOne.variance_pos`: an integer random variable whose law
   has maximal span one and which has a finite second moment has positive variance.
-* `MeasureTheory.Measure.hasMaximalSpanOne_of_measure_singleton_ne_zero`: a measure with atoms at
-  two consecutive integers has maximal span one;
+* `Measure.hasMaximalSpanOne_of_measure_singleton_ne_zero_of_measure_singleton_add_one_ne_zero`:
+  a measure with atoms at two consecutive integers has maximal span one;
   `MeasureTheory.Measure.hasMaximalSpanOne_bernoulliMeasure_iff`: the Bernoulli law
   `Ber(x, y, p)` has maximal span one if and only if `|x - y| = 1` and `0 < p < 1`.
 
@@ -83,7 +83,7 @@ theorem hasMaximalSpanOne_iff_exists_measure_singleton_ne_zero :
 /-- The zero measure does not have maximal span one. -/
 theorem HasMaximalSpanOne.ne_zero (hμ : μ.HasMaximalSpanOne) : μ ≠ 0 := by
   rintro rfl
-  exact hμ 0 2 le_rfl rfl
+  exact hμ 0 2 le_rfl (by simp)
 
 /-- A measure of maximal span one is not a point mass: it gives positive mass to the complement
 of every singleton. -/
@@ -97,24 +97,6 @@ theorem HasMaximalSpanOne.measure_compl_singleton_ne_zero (hμ : μ.HasMaximalSp
 @[simp]
 theorem not_hasMaximalSpanOne_dirac (b : ℤ) : ¬ (dirac b).HasMaximalSpanOne := fun h ↦
   h.measure_compl_singleton_ne_zero b (by simp)
-
-/-- A measure with atoms at two consecutive integers has maximal span one: a coset `b + hℤ`
-containing both `k` and `k + 1` has `h ∣ 1`. -/
-theorem hasMaximalSpanOne_of_measure_singleton_ne_zero {k : ℤ} (hk : μ {k} ≠ 0)
-    (hk₁ : μ {k + 1} ≠ 0) : μ.HasMaximalSpanOne := by
-  refine hasMaximalSpanOne_iff_exists_measure_singleton_ne_zero.2 fun b h hh ↦ ?_
-  by_contra! hdvd
-  have h1 : (h : ℤ) ∣ 1 := by
-    simpa using dvd_sub (hdvd (k + 1) hk₁) (hdvd k hk)
-  have : h = 1 := by exact_mod_cast Int.eq_one_of_dvd_one (by positivity) h1
-  omega
-
-/-- An integer that is not a unit has a divisor `h ≥ 2` among the natural numbers (for `0`, any
-such `h`). -/
-private theorem exists_two_le_natCast_dvd {i : ℤ} (hi : i.natAbs ≠ 1) :
-    ∃ h : ℕ, 2 ≤ h ∧ (h : ℤ) ∣ i := by
-  obtain ⟨p, hp, hpi⟩ := Nat.exists_prime_and_dvd hi
-  exact ⟨p, hp.two_le, Int.natCast_dvd.2 hpi⟩
 
 /-- A measure on `ℤ` has maximal span one if and only if the differences `k - l` of its atoms
 generate `ℤ` as an additive group. -/
@@ -130,10 +112,10 @@ theorem hasMaximalSpanOne_iff_closure_sub_eq_top :
     rw [smul_eq_mul, mul_one] at hi
     by_cases h1 : i.natAbs = 1
     · rw [← hi, ← Int.zmultiples_natAbs, h1, Nat.cast_one, Int.zmultiples_one]
-    obtain ⟨h, hh, hhi⟩ := exists_two_le_natCast_dvd h1
+    obtain ⟨h, hh, hhi⟩ := Nat.exists_prime_and_dvd h1
     obtain ⟨b, hb, -⟩ := hμ 0 2 le_rfl
-    obtain ⟨k, hk, hkb⟩ := hμ b h hh
-    refine absurd (hhi.trans ?_) hkb
+    obtain ⟨k, hk, hkb⟩ := hμ b h hh.two_le
+    refine absurd ((Int.natCast_dvd.2 hhi).trans ?_) hkb
     rw [← Int.mem_zmultiples_iff, hi]
     exact AddSubgroup.subset_closure (Set.sub_mem_sub hk hb)
   · intro htop b h hh
@@ -148,6 +130,14 @@ theorem hasMaximalSpanOne_iff_closure_sub_eq_top :
       exact hle (htop ▸ AddSubgroup.mem_top 1)
     have : h = 1 := by exact_mod_cast Int.eq_one_of_dvd_one (by positivity) h1
     omega
+
+/-- A measure with atoms at two consecutive integers has maximal span one: the difference
+`(k + 1) - k = 1` of two atoms generates `ℤ`. -/
+theorem hasMaximalSpanOne_of_measure_singleton_ne_zero_of_measure_singleton_add_one_ne_zero
+    {k : ℤ} (hk : μ {k} ≠ 0) (hk₁ : μ {k + 1} ≠ 0) : μ.HasMaximalSpanOne := by
+  rw [hasMaximalSpanOne_iff_closure_sub_eq_top, eq_top_iff, ← Int.zmultiples_one,
+    AddSubgroup.zmultiples_le]
+  exact AddSubgroup.subset_closure ⟨k + 1, hk₁, k, hk, add_sub_cancel_left k 1⟩
 
 /-- The Bernoulli law `Ber(x, y, p)` on `ℤ`, with mass `p` at `x` and `1 - p` at `y`, has maximal
 span one if and only if `x` and `y` are consecutive integers and `0 < p < 1`. -/
@@ -165,9 +155,9 @@ theorem hasMaximalSpanOne_bernoulliMeasure_iff {x y : ℤ} {p : I} :
       simp [this] at hμ
     refine ⟨?_, hp₀, hp₁⟩
     by_contra hxy
-    obtain ⟨h, hh, hdvd⟩ := exists_two_le_natCast_dvd hxy
-    refine hμ y h hh (bernoulliMeasure_apply_of_notMem_of_notMem p (MeasurableSet.of_discrete)
-      ?_ ?_) <;> simp [hdvd]
+    obtain ⟨h, hh, hdvd⟩ := Nat.exists_prime_and_dvd hxy
+    refine hμ y h hh.two_le (bernoulliMeasure_apply_of_notMem_of_notMem p
+      (MeasurableSet.of_discrete) ?_ ?_) <;> simp [Int.natCast_dvd.2 hdvd]
   · rintro ⟨hxy, hp₀, hp₁⟩
     have hx : Ber(x, y, p) {x} ≠ 0 := by
       by_cases h : x = y
@@ -182,9 +172,10 @@ theorem hasMaximalSpanOne_bernoulliMeasure_iff {x y : ℤ} {p : I} :
           (by simpa [eq_comm] using h) rfl]
         simpa [← NNReal.coe_eq_zero, sub_eq_zero] using hp₁.ne'
     rcases Int.natAbs_eq_iff.1 hxy with h | h
-    · exact hasMaximalSpanOne_of_measure_singleton_ne_zero (k := y) hy
-        (by rwa [show y + 1 = x by push_cast at h; omega])
-    · exact hasMaximalSpanOne_of_measure_singleton_ne_zero (k := x) hx
+    · exact hasMaximalSpanOne_of_measure_singleton_ne_zero_of_measure_singleton_add_one_ne_zero
+        (k := y) hy (by rwa [show y + 1 = x by push_cast at h; omega])
+    · exact hasMaximalSpanOne_of_measure_singleton_ne_zero_of_measure_singleton_add_one_ne_zero
+        (k := x) hx
         (by rwa [show x + 1 = y by push_cast at h; omega])
 
 /-- An integer random variable whose law has maximal span one and which has a finite second
@@ -198,11 +189,11 @@ theorem HasMaximalSpanOne.variance_pos {Ω : Type*} [MeasurableSpace Ω] {P : Me
   have hnull := ae_iff.1 (ae_eq_integral_of_variance_eq_zero hX h0)
   set m := P[fun ω ↦ (X ω : ℝ)]
   have hXm : AEMeasurable X P := by
-    by_contra hX
+    by_contra hXnm
     have hP : P ≠ 0 := by
       rintro rfl
       exact hspan.ne_zero (by simp)
-    exact not_hasMaximalSpanOne_dirac _ (map_of_not_aemeasurable_of_ne_zero hX hP ▸ hspan)
+    exact not_hasMaximalSpanOne_dirac _ (map_of_not_aemeasurable_of_ne_zero hXnm hP ▸ hspan)
   obtain ⟨k, hk, -⟩ := hasMaximalSpanOne_iff_exists_measure_singleton_ne_zero.1 hspan 0 2 le_rfl
   rw [map_apply_of_aemeasurable hXm (measurableSet_singleton k)] at hk
   have hkm : (k : ℝ) = m := by

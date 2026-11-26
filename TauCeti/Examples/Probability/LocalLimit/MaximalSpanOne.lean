@@ -29,7 +29,7 @@ namespace TauCeti.Examples.MaximalSpanOne
 
 /-- The uniform law on `{0, 2, 3}` has maximal span one. -/
 example : (uniformOn ({0, 2, 3} : Set ℤ)).HasMaximalSpanOne :=
-  hasMaximalSpanOne_of_measure_singleton_ne_zero (k := 2)
+  hasMaximalSpanOne_of_measure_singleton_ne_zero_of_measure_singleton_add_one_ne_zero (k := 2)
     (by simp [uniformOn_eq_zero_iff (Set.toFinite _)])
     (by norm_num [uniformOn_eq_zero_iff (Set.toFinite _)])
 
