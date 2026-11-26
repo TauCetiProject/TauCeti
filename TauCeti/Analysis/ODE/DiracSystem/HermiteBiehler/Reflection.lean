@@ -144,19 +144,23 @@ theorem diracHermiteBiehlerDirichlet_eq_neg_I_add_integral_conj
 `E_{-q}(t, z) = i E~_q(t, z)`. -/
 theorem diracHermiteBiehler_neg_potential (hq : LocallyIntegrableOn q (Ici 0)) (ht : 0 ≤ t)
     (z : ℂ) : diracHermiteBiehler (-q) t z = I * diracHermiteBiehlerDirichlet q t z := by
-  rw [diracHermiteBiehler_def, diracFundamentalMatrix_neg_potential hq ht,
-    diracHermiteBiehlerDirichlet_def]
-  simp
-  linear_combination diracFundamentalMatrix q t z 1 1 * I_sq
+  have h00 : diracFundamentalMatrix (-q) t z 0 0 = diracFundamentalMatrix q t z 1 1 := by
+    simp [diracFundamentalMatrix_neg_potential hq ht]
+  have h10 : diracFundamentalMatrix (-q) t z 1 0 = -diracFundamentalMatrix q t z 0 1 := by
+    simp [diracFundamentalMatrix_neg_potential hq ht]
+  rw [diracHermiteBiehler_def, diracHermiteBiehlerDirichlet_def]
+  linear_combination h00 - I * h10 + diracFundamentalMatrix q t z 1 1 * I_sq
 
 /-- **The sign of the potential for `E~`.** For `q` locally integrable on `[0, ∞)` and `t ≥ 0`,
 `E~_{-q}(t, z) = -i E_q(t, z)`. -/
 theorem diracHermiteBiehlerDirichlet_neg_potential (hq : LocallyIntegrableOn q (Ici 0))
     (ht : 0 ≤ t) (z : ℂ) :
     diracHermiteBiehlerDirichlet (-q) t z = -I * diracHermiteBiehler q t z := by
-  rw [diracHermiteBiehlerDirichlet_def, diracFundamentalMatrix_neg_potential hq ht,
-    diracHermiteBiehler_def]
-  simp
-  linear_combination (-diracFundamentalMatrix q t z 1 0) * I_sq
+  have h01 : diracFundamentalMatrix (-q) t z 0 1 = -diracFundamentalMatrix q t z 1 0 := by
+    simp [diracFundamentalMatrix_neg_potential hq ht]
+  have h11 : diracFundamentalMatrix (-q) t z 1 1 = diracFundamentalMatrix q t z 0 0 := by
+    simp [diracFundamentalMatrix_neg_potential hq ht]
+  rw [diracHermiteBiehlerDirichlet_def, diracHermiteBiehler_def]
+  linear_combination h01 - I * h11 - diracFundamentalMatrix q t z 1 0 * I_sq
 
 end TauCeti
