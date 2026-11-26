@@ -28,8 +28,10 @@ which may be larger than `Γ`, and, formally (for solutions and boundaries regul
 conormal derivative to make sense), the natural (conormal) condition on the remaining boundary
 `∂Ω \ closure Γ`, where the test functions `v` are not constrained. For `Γ = ∂Ω` it is the
 Dirichlet eigenvalue problem (`TauCeti.PDE.isMixedEigenvalue_frontier_iff`). For `Γ = ∅` it is
-the Neumann eigenvalue problem whenever `H¹_∅(Ω) = H¹(Ω)`, as on bounded Lipschitz domains
-(`TauCeti.w1pVanishingOnSubmodule_empty_of_isLipschitzDomainWith`).
+the Neumann eigenvalue problem whenever `H¹_∅(Ω) = H¹(Ω)`. This identity is currently proved
+only for bounded Lipschitz domains in the model coordinates `ℝ × E` with Lebesgue measure
+`volume` (`TauCeti.w1pVanishingOnSubmodule_empty_of_isLipschitzDomainWith`), not for this file's
+domains in `EuclideanSpace ℝ ι` with a general Haar measure.
 
 Unlike the Dirichlet case, the energy form need not be coercive on `H¹_Γ(Ω)`: for `-Δ` and
 `Γ = ∅` the constants have zero energy. It is coercive after a shift by the `L²` inner product,
