@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.SeibergWitten.RadialGauge.Connection
 public import TauCeti.Analysis.PDE.SeibergWitten.Rescaling
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.ContDiff.TendstoAt
-import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Compactness modulo gauge of blown-up large-parameter Seiberg–Witten fields
@@ -29,21 +28,19 @@ This file proves the resulting compactness theorem. Given, on every ball about t
 bounds on finitely many derivatives of the blown-up curvatures and on finitely many iterated
 covariant derivatives of the blown-up spinor coefficients, a subsequence of the blown-up fields
 converges, after the radial gauge transformation centred at the origin
-(`TauCeti.Analysis.PDE.SeibergWitten.RadialGauge.Connection`), in `Cᵏ_loc` on the whole of `V`,
-and its limit solves the unforced flat limiting equations
+(`TauCeti.Analysis.PDE.SeibergWitten.RadialGauge.Connection`), the connections in `Cᵏ_loc` and the
+spinor coefficients in `Cˡ_loc` on the whole of `V`, and its limit solves the unforced flat
+limiting equations
 (`TauCeti.SeibergWitten.exists_strictMono_tendstoLocallyUniformly_radialGauge_rescale`). This is
 how the solutions of the flat limiting equations, among them the pulled-back plane vortices,
 arise from sequences of Seiberg–Witten solutions with `r → ∞`.
 
-The identification of the limit rests on two facts. The flat limiting equations are invariant under
-unit gauge transformations `(b, α) ↦ (b - Im (u⁻¹ du), u α)`: the Dirac expression is multiplied by
-`u` and the curvature and `q(χ)` are unchanged
-(`sum_sum_covariantDeriv_sub_phaseForm_mul_smul_eq_zero_and_add_hodgeStar_eq_iff`).
-And the flat limiting equations pass to limits of `1`-jets
-(`TauCeti.SeibergWitten.sum_sum_covariantDeriv_smul_eq_zero_and_add_hodgeStar_eq_of_tendsto`), so
-a limit of gauge transforms of blown-up solutions, converging with first derivatives at a point,
+The identification of the limit rests on the gauge invariance of the flat limiting equations and
+their passage to limits of `1`-jets, proved in `TauCeti.Analysis.PDE.SeibergWitten.Rescaling`: a
+limit of gauge transforms of blown-up solutions, converging with first derivatives at a point,
 solves the unforced flat limiting equations there
-(`sum_sum_covariantDeriv_smul_eq_zero_and_add_hodgeStar_eq_of_tendsto_rescale_sub_phaseForm`).
+(`sum_sum_covariantDeriv_smul_eq_zero_and_add_hodgeStar_eq_of_tendsto_rescale_sub_phaseForm`, in
+the namespace `TauCeti.SeibergWitten`).
 
 The bounds on the blown-up fields are hypotheses here: for actual solutions they are the
 rescaled derivative estimates that come from the equations by elliptic regularity. The fields are
@@ -53,13 +50,6 @@ blown-up radii tend to infinity, extended arbitrarily outside them.
 
 ## Main results
 
-* `TauCeti.SeibergWitten.sum_sum_covariantDeriv_sub_phaseForm_mul_smul`: a unit gauge multiplies
-  the Dirac expression by `u`.
-* `sum_sum_covariantDeriv_sub_phaseForm_mul_smul_eq_zero_and_add_hodgeStar_eq_iff`, in the namespace
-  `TauCeti.SeibergWitten`: gauge invariance of the flat limiting equations.
-* `sum_sum_covariantDeriv_smul_eq_zero_and_add_hodgeStar_eq_of_tendsto_rescale_sub_phaseForm`, in
-  the namespace `TauCeti.SeibergWitten`: limits of gauge transforms of blown-up solutions solve
-  the flat limiting equations.
 * `TauCeti.SeibergWitten.exists_strictMono_tendstoLocallyUniformly_radialGauge_rescale`: Taubes's
   compactness modulo gauge for blown-up large-parameter solutions.
 
@@ -87,117 +77,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
 /-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
 local instance instFiniteDimensionalRealRescalingCompactness : FiniteDimensional ℝ V :=
   .of_fact_finrank_eq_succ 3
-
-/-! ### Gauge invariance of the flat limiting equations -/
-
-omit [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] in
-/-- **The Dirac expression under a unit gauge.** If `|u| = 1` near `y`, the gauge transformation
-`(b, α) ↦ (b - Im (u⁻¹ du), u α)` multiplies the Dirac expression
-`∑ₖ ∑ⱼ (∇_b αⱼ)(eₖ) c(eₖ) wⱼ` at `y` by `u y`. -/
-theorem sum_sum_covariantDeriv_sub_phaseForm_mul_smul (e : ν → V) (w : κ → W)
-    {b : V → V [⋀^Fin 1]→L[ℝ] ℝ} {α : κ → V → ℂ} {u : V → ℂ} {y : V}
-    (hu : ∀ᶠ z in 𝓝 y, ‖u z‖ = 1) (hud : DifferentiableAt ℝ u y)
-    (hα : ∀ j, DifferentiableAt ℝ (α j) y) :
-    ∑ i, ∑ j, covariantDeriv (b - phaseForm u) (u * α j) y (e i) • ρ (ι Q (e i)) (w j) =
-      u y • ∑ i, ∑ j, covariantDeriv b (α j) y (e i) • ρ (ι Q (e i)) (w j) := by
-  simp only [covariantDeriv_sub_phaseForm_mul hu hud (hα _), Finset.smul_sum,
-    smul_apply, smul_eq_mul, mul_smul]
-
-/-- **Gauge invariance of the flat limiting equations.** For a gauge `u` of class `C²` near `y`
-with `|u| = 1` near `y`, the gauge transform `(b - Im (u⁻¹ du), u α)` solves the flat limiting
-equations `∑ₖ ∑ⱼ (∇_b αⱼ)(eₖ) c(eₖ) wⱼ = 0`, `F + ⋆F = ω / 8 - q(∑ⱼ αⱼ wⱼ) / 2 - η` at `y`
-exactly when `(b, α)` does. -/
-theorem sum_sum_covariantDeriv_sub_phaseForm_mul_smul_eq_zero_and_add_hodgeStar_eq_iff
-    (e : ν → V) (w : κ → positiveHalfSpinors o ρ) (ω η : ⋀[ℝ]^2 V)
-    {b : V → V [⋀^Fin 1]→L[ℝ] ℝ} {α : κ → V → ℂ} {u : V → ℂ} {y : V}
-    (hu : ∀ᶠ z in 𝓝 y, ‖u z‖ = 1) (hu₂ : ContDiffAt ℝ 2 u y) (hb : DifferentiableAt ℝ b y)
-    (hα : ∀ j, DifferentiableAt ℝ (α j) y) :
-    (∑ i, ∑ j, covariantDeriv (b - phaseForm u) (u * α j) y (e i) •
-          ρ (ι Q (e i)) (w j : W) = 0 ∧
-        (alternatingFormEquiv V 2).symm (-extDeriv (b - phaseForm u) y) +
-            o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv (b - phaseForm u) y)) =
-          (8⁻¹ : ℝ) • ω -
-            (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (∑ j, (u * α j) y • w j) : ⋀[ℝ]^2 V) - η) ↔
-      (∑ i, ∑ j, covariantDeriv b (α j) y (e i) • ρ (ι Q (e i)) (w j : W) = 0 ∧
-        (alternatingFormEquiv V 2).symm (-extDeriv b y) +
-            o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b y)) =
-          (8⁻¹ : ℝ) • ω -
-            (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (∑ j, α j y • w j) : ⋀[ℝ]^2 V) - η) := by
-  have hu₁ : ‖u y‖ = 1 := hu.self_of_nhds
-  have hu₀ : u y ≠ 0 := norm_ne_zero_iff.1 (by rw [hu₁]; exact one_ne_zero)
-  have hφ : DifferentiableAt ℝ (phaseForm u) y :=
-    (contDiffAt_phaseForm hu₂ hu₀ (by norm_num : ((1 : ℕ) : WithTop ℕ∞) + 1 ≤ 2)).differentiableAt
-      one_ne_zero
-  have hψ : ∑ j, (u * α j) y • w j = u y • ∑ j, α j y • w j := by
-    simp only [Pi.mul_apply, mul_smul, Finset.smul_sum]
-  rw [sum_sum_covariantDeriv_sub_phaseForm_mul_smul e (fun j ↦ (w j : W)) hu
-      (hu₂.differentiableAt two_ne_zero) hα, smul_eq_zero_iff_right hu₀,
-    extDeriv_sub hb hφ, extDeriv_phaseForm hu₂ hu₀, sub_zero, hψ,
-    quadraticTwoForm_smul_of_norm_eq_one o ρ hkl hu₁]
-
-/-! ### Limits of blown-up solutions -/
-
-/-- **Limits of gauge transforms of blown-up solutions solve the flat limiting equations.** Let
-`(b i, ∑ⱼ αᵢⱼ wⱼ)` solve the large-parameter Seiberg–Witten equations
-
-`∑ₖ ∑ⱼ (∇_{b i} αᵢⱼ)(eₖ) c(eₖ) wⱼ = 0`,  `F + ⋆F = (r i / 4) ω - q(√(r i) ∑ⱼ αᵢⱼ wⱼ) - η i`
-
-at the points `x i + h i • y`, where `h i ^ 2 * r i = 1 / 2` and `h i ^ 2 • η i → 0`. Let `u i`
-be gauges of class `C²` near `y` with `|u i| = 1` near `y`, and suppose that the gauge transforms
-`(Bᵢ - Im (uᵢ⁻¹ duᵢ), uᵢ Aᵢⱼ)` of the blown-up fields `Bᵢ z = h i • b i (x i + h i • z)` and
-`Aᵢⱼ z = αᵢⱼ (x i + h i • z)` converge at `y`, together with their first derivatives, to
-`(b₀, α₀)`. Then `(b₀, α₀)` solves the unforced flat limiting equations at `y`. -/
-theorem sum_sum_covariantDeriv_smul_eq_zero_and_add_hodgeStar_eq_of_tendsto_rescale_sub_phaseForm
-    {τ : Type*} {l : Filter τ} [l.NeBot] (e : ν → V) (w : κ → positiveHalfSpinors o ρ)
-    (ω : ⋀[ℝ]^2 V) {h r : τ → ℝ} {x : τ → V} {b : τ → V → V [⋀^Fin 1]→L[ℝ] ℝ}
-    {α : τ → κ → V → ℂ} {η : τ → ⋀[ℝ]^2 V} {u : τ → V → ℂ} {b₀ : V → V [⋀^Fin 1]→L[ℝ] ℝ}
-    {α₀ : κ → V → ℂ} {y : V} (hr : ∀ i, h i ^ 2 * r i = 1 / 2)
-    (hb : ∀ i, DifferentiableAt ℝ (b i) (x i + h i • y))
-    (hα : ∀ i j, DifferentiableAt ℝ (α i j) (x i + h i • y)) (hu : ∀ i, ∀ᶠ z in 𝓝 y, ‖u i z‖ = 1)
-    (hu₂ : ∀ i, ContDiffAt ℝ 2 (u i) y)
-    (hb₀ : Tendsto
-      (fun i ↦ ((fun z ↦ h i • b i (x i + h i • z)) - phaseForm (u i)) y) l (𝓝 (b₀ y)))
-    (hdb₀ : Tendsto (fun i ↦ fderiv ℝ ((fun z ↦ h i • b i (x i + h i • z)) - phaseForm (u i)) y)
-      l (𝓝 (fderiv ℝ b₀ y)))
-    (hα₀ : ∀ j, Tendsto (fun i ↦ (u i * fun z ↦ α i j (x i + h i • z)) y) l (𝓝 (α₀ j y)))
-    (hdα₀ : ∀ j, Tendsto (fun i ↦ fderiv ℝ (u i * fun z ↦ α i j (x i + h i • z)) y) l
-      (𝓝 (fderiv ℝ (α₀ j) y)))
-    (hη : Tendsto (fun i ↦ h i ^ 2 • η i) l (𝓝 0))
-    (hD : ∀ᶠ i in l, ∑ k, ∑ j,
-      covariantDeriv (b i) (α i j) (x i + h i • y) (e k) • ρ (ι Q (e k)) (w j : W) = 0)
-    (hF : ∀ᶠ i in l,
-      (alternatingFormEquiv V 2).symm (-extDeriv (b i) (x i + h i • y)) +
-          o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv (b i) (x i + h i • y))) =
-        (r i / 4) • ω - (quadraticTwoForm o ρ hkl
-          (((√(r i) : ℝ) : ℂ) • ∑ j, α i j (x i + h i • y) • w j) : ⋀[ℝ]^2 V) - η i) :
-    ∑ k, ∑ j, covariantDeriv b₀ (α₀ j) y (e k) • ρ (ι Q (e k)) (w j : W) = 0 ∧
-      (alternatingFormEquiv V 2).symm (-extDeriv b₀ y) +
-          o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b₀ y)) =
-        (8⁻¹ : ℝ) • ω -
-          (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (∑ j, α₀ j y • w j) : ⋀[ℝ]^2 V) := by
-  have hh (i : τ) : h i ≠ 0 := by
-    rintro h0
-    have := hr i
-    rw [h0] at this
-    norm_num at this
-  -- The blown-up fields are differentiable, and solve the flat limiting equations at `y`.
-  have hBd (i : τ) : DifferentiableAt ℝ (fun z ↦ h i • b i (x i + h i • z)) y :=
-    (DifferentiableAt.fun_comp' (f := fun z ↦ x i + h i • z) y (hb i) (by fun_prop)).fun_const_smul
-      (h i)
-  have hAd (i : τ) (j : κ) : DifferentiableAt ℝ (fun z ↦ α i j (x i + h i • z)) y :=
-    DifferentiableAt.fun_comp' (f := fun z ↦ x i + h i • z) y (hα i j) (by fun_prop)
-  refine sum_sum_covariantDeriv_smul_eq_zero_and_add_hodgeStar_eq_of_tendsto hkl e w ω
-    (b := fun i ↦ (fun z ↦ h i • b i (x i + h i • z)) - phaseForm (u i))
-    (α := fun i j ↦ u i * fun z ↦ α i j (x i + h i • z)) hb₀ hdb₀ hα₀ hdα₀ hη ?_ ?_
-  all_goals
-    filter_upwards [hD, hF] with i hDi hFi
-    have hflat := (sum_sum_covariantDeriv_sub_phaseForm_mul_smul_eq_zero_and_add_hodgeStar_eq_iff
-      hkl e w ω (h i ^ 2 • η i) (hu i) (hu₂ i) (hBd i) (hAd i)).2
-      ⟨(sum_sum_covariantDeriv_comp_add_smul_eq_zero_iff (hh i) e (fun j ↦ (w j : W)) (b i)
-        (α i) (x i) y).2 hDi,
-        (add_hodgeStar_extDeriv_comp_add_smul_eq_iff hkl (hr i) ω (η i) _ (b i) (x i) y).2 hFi⟩
-  · exact hflat.1
-  · exact hflat.2
 
 /-- The step of `exists_strictMono_tendstoLocallyUniformly_radialGauge_rescale` at one point: if
 the blown-up fields in radial gauge centred at the origin converge in `C¹` at `y` and the original

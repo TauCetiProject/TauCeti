@@ -21,9 +21,9 @@ transition maps of product charts of finitely many manifolds are `C^n`.
 * `ContDiff.piSingle_apply`, `ContDiff.uncurry_piSingle_apply`: the family which is a `C^n` map
   `f` at one index and zero at the others is `C^n` at every index, and so is its uncurried form
   when `f` is a two-variable map with `C^n` uncurried form.
-* `iteratedFDeriv_pi_apply`, `norm_iteratedFDeriv_pi_le`: the iterated derivatives of a map into a
-  finite product are computed componentwise, and are bounded by a common bound on those of the
-  components.
+* `TauCeti.iteratedFDeriv_pi_apply`, `TauCeti.norm_iteratedFDeriv_pi_le`: the iterated derivatives
+  of a map into a finite product are computed componentwise, and are bounded by a common bound on
+  those of the components.
 
 Replacing one coordinate by a function of the whole argument also preserves smoothness
 (`ContDiff.update_self`). This extends the coordinate-replacement argument in
@@ -80,7 +80,7 @@ theorem ContDiff.uncurry_piSingle_apply {𝕜 : Type*} [NontriviallyNormedField 
   rw [Pi.apply_single (fun _ ↦ Function.uncurry) (fun _ ↦ rfl) i f j]
   exact hf.piSingle_apply i j
 
-section IteratedFDeriv
+namespace TauCeti
 
 variable {𝕜 G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {ι : Type*} [Fintype ι] {F : ι → Type*} [∀ i, NormedAddCommGroup (F i)]
@@ -105,4 +105,4 @@ theorem norm_iteratedFDeriv_pi_le {C : ℝ} (hC : 0 ≤ C) (hf : ∀ i, ContDiff
   exact ((iteratedFDeriv 𝕜 n (f i) x).le_opNorm m).trans
     (mul_le_mul_of_nonneg_right (h i) (by positivity))
 
-end IteratedFDeriv
+end TauCeti
