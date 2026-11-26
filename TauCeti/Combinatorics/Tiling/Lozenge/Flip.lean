@@ -36,7 +36,6 @@ one of each type.
   edges at `v` named in the definition.
 * `TauCeti.IsFlipAt.isTiling`, `TauCeti.IsFlip.isTiling`: a flip of a tiling of a region is a
   tiling of the region.
-* `TauCeti.IsTiling.sdiff_union`: replacing a tiling of a subregion by another tiling of it.
 
 ## References
 
@@ -168,46 +167,6 @@ theorem isTiling_lowFlipEdges (v : ℤ × ℤ) :
     IsTiling (vertexFaces v : Set TriFace) (lowFlipEdges v) :=
   isTiling_def.2 ⟨fun _ he _ hf => mem_vertexFaces_of_mem_lowFlipEdges he hf,
     fun _ hf => existsUnique_mem_lowFlipEdges hf⟩
-
-/-! ### Replacing a tiling of a subregion -/
-
-/-- If `M` contains at most one edge of each face of `S` and contains a tiling `A` of `S`, then it
-contains no edge of a tiling `B` of `S` disjoint from `A`. -/
-theorem disjoint_of_isTiling_of_subset {S : Set TriFace} (hA : IsTiling S A) (hB : IsTiling S B)
-    (hAB : Disjoint A B) (hM : ∀ f ∈ S, ∀ e ∈ M, ∀ e' ∈ M, e ∈ f.edges → e' ∈ f.edges → e = e')
-    (hAM : A ⊆ M) : Disjoint M B := by
-  rw [Set.disjoint_right]
-  intro b hb hbM
-  have hf : b.whiteFace ∈ S := hB.whiteFace_mem hb
-  obtain ⟨a, ⟨ha, haf⟩, -⟩ := hA.existsUnique hf
-  have := hM _ hf a (hAM ha) b hbM haf b.mem_whiteFace_edges
-  exact Set.disjoint_left.1 hAB ha (this ▸ hb)
-
-/-- Replacing a tiling `A` of a subregion `S` by another tiling `B` of `S`, inside a tiling `M` of
-`R` containing `A`, gives a tiling of `R`. -/
-theorem IsTiling.sdiff_union {S : Set TriFace} (hM : IsTiling R M) (hA : IsTiling S A)
-    (hB : IsTiling S B) (hAM : A ⊆ M) : IsTiling R (M \ A ∪ B) := by
-  have hSR : S ⊆ R := fun f hf => by
-    obtain ⟨a, ⟨ha, haf⟩, -⟩ := hA.existsUnique hf
-    exact hM.mem_of_mem_edges (hAM ha) haf
-  refine isTiling_def.2 ⟨?_, fun f hf => ?_⟩
-  · rintro e (⟨heM, -⟩ | heB) f hef
-    · exact hM.mem_of_mem_edges heM hef
-    · exact hSR (hB.mem_of_mem_edges heB hef)
-  by_cases hfS : f ∈ S
-  · obtain ⟨b, ⟨hb, hbf⟩, hbu⟩ := hB.existsUnique hfS
-    refine ⟨b, ⟨Or.inr hb, hbf⟩, fun e ⟨he, hef⟩ => ?_⟩
-    rcases he with ⟨heM, heA⟩ | heB
-    · obtain ⟨a, ⟨ha, haf⟩, -⟩ := hA.existsUnique hfS
-      exact absurd (hM.eq_of_mem_edges heM (hAM ha) hef haf ▸ ha) heA
-    · exact hbu e ⟨heB, hef⟩
-  · have hAf : ∀ e ∈ A, e ∉ f.edges := fun e he hef => hfS (hA.mem_of_mem_edges he hef)
-    have hBf : ∀ e ∈ B, e ∉ f.edges := fun e he hef => hfS (hB.mem_of_mem_edges he hef)
-    obtain ⟨e, ⟨heM, hef⟩, heu⟩ := hM.existsUnique hf
-    refine ⟨e, ⟨Or.inl ⟨heM, fun heA => hAf e heA hef⟩, hef⟩, fun e' ⟨he', he'f⟩ => ?_⟩
-    rcases he' with ⟨he'M, -⟩ | he'B
-    · exact heu e' ⟨he'M, he'f⟩
-    · exact absurd he'f (hBf e' he'B)
 
 /-! ### Flips -/
 
