@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 public import Mathlib.Algebra.Ring.NegOnePow
 import Mathlib.Algebra.Module.Basic
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finprod
 
 /-!
 # Powers of negative one in a ground ring
@@ -90,8 +91,7 @@ theorem negOnePowCast_mul_self (e : ℤ) : negOnePowCast R e * negOnePowCast R e
 support, since multiplication by it is injective. -/
 theorem negOnePowCast_mul_finsum {ι : Type uI} (e : ℤ) (f : ι → R) :
     negOnePowCast R e * ∑ᶠ i, f i = ∑ᶠ i, negOnePowCast R e * f i :=
-  (AddMonoidHom.mulLeft _).map_finsum_of_injective
-    (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self e)) f
+  (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self e)).mul_finsum f
 
 theorem negOnePowCast_even {e : ℤ} (he : Even e) : negOnePowCast R e = 1 := by
   simp [negOnePowCast, Int.negOnePow_even _ he]
