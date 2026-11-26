@@ -47,7 +47,7 @@ a `FiniteOrderInfinityType`: signs at the real places and nothing else.
 
 * `TauCeti.GlobalNumberFields.HeckeCharacter.infinityType_eq_iff`: the infinity type is the
   unique continuous infinity type whose parameters describe every real and complex component.
-* `HeckeCharacter.prod_infiniteComponent_mul_ofFiniteIdele_unitEmbedding`:
+* `HeckeCharacter.prod_infiniteComponent_mul_ofFiniteIdele_unitEmbedding_eq_one`:
   product formula for a Hecke character on a principal idele.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.infiniteComponent_neg_one_eq_one_iff`: a Hecke
   character is trivial on the sign `-1` at a real place exactly when its real parity there is zero.
@@ -138,7 +138,8 @@ theorem infiniteComponent_pow (χ : HeckeCharacter K) (n : ℕ) (w : InfinitePla
 /-- **Product formula for a Hecke character on a principal idele.** For `x : Kˣ`, the product of
 the infinite components of `χ` at `x` times `χ` evaluated on the diagonal finite idele of `x` is
 `1`. -/
-theorem prod_infiniteComponent_mul_ofFiniteIdele_unitEmbedding (χ : HeckeCharacter K) (x : Kˣ) :
+theorem prod_infiniteComponent_mul_ofFiniteIdele_unitEmbedding_eq_one
+    (χ : HeckeCharacter K) (x : Kˣ) :
     (∏ w : InfinitePlace K,
         χ.infiniteComponent w (Units.map (algebraMap K w.Completion).toMonoidHom x)) *
       χ (QuotientGroup.mk

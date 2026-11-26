@@ -358,7 +358,8 @@ theorem residueCharacter_eq_one_of_finitePart_eq_top (χ : Grossencharacter K �
 
 /-- Two presentations of the same Hecke character at moduli with `𝔪.finitePart ∣ 𝔫.finitePart`
 have compatible residue characters along `finiteUnitsMap`. -/
-theorem residueCharacter_comp_finiteUnitsMap {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪}
+theorem residueCharacter_eq_residueCharacter_finiteUnitsMap
+    {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪}
     {ψ : Grossencharacter K 𝔫} (h : χ.toHeckeCharacter = ψ.toHeckeCharacter)
     (hdvd : 𝔪.finitePart ∣ 𝔫.finitePart) (u : (𝓞 K ⧸ 𝔫.finitePart)ˣ) :
     ψ.residueCharacter u = χ.residueCharacter (finiteUnitsMap hdvd u) := by
