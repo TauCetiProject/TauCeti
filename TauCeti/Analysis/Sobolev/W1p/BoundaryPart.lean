@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 public import TauCeti.Analysis.Sobolev.W1p.Multiplication
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Calculus.ContDiff.Indicator
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # Sobolev functions vanishing on a part of the boundary
@@ -40,6 +41,8 @@ motions is in `TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables`.
 * `TauCeti.W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule` and
   `TauCeti.w1pVanishingOnSubmodule_subset_of_isClosed`: the generators lie in it, and a closed set
   containing them contains all of it.
+* `TauCeti.W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`: every trace operator, a
+  continuous linear map sending each generator to its boundary values, vanishes on `Γ` on it.
 * `TauCeti.mem_w1pVanishingOnSubmodule_iff_exists_seq_tendsto`: its elements are the limits of
   sequences of generators.
 * `TauCeti.w1pVanishingOnSubmodule_antitone` and `TauCeti.w1pVanishingOnSubmodule_closure`: it is
@@ -67,10 +70,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open Filter MeasureTheory Set TopologicalSpace
 open scoped Distributions ENNReal Topology Gradient ContDiff
+
+namespace TauCeti
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -132,6 +135,30 @@ theorem w1pVanishingOnSubmodule_subset_of_isClosed {s : Set (W1p mu Omega p)} (h
     (w1pVanishingOnSubmodule mu Omega p Γ : Set (W1p mu Omega p)) ⊆ s := by
   rw [coe_w1pVanishingOnSubmodule]
   exact closure_minimal (by rintro _ ⟨φ, hφ, rfl⟩; exact h φ hφ) hs
+
+/-- **Functions vanishing on `Γ` have zero boundary values on `Γ`, for any trace operator.** Let
+`T : W^{1,p}(Ω) → Lᵖ(σ)` be a continuous linear map that sends the restriction to `Ω` of every test
+function `φ` on the whole space to `φ` itself, `σ`-almost everywhere. Then `T u` vanishes
+`σ`-almost everywhere on `Γ` for every `u ∈ W^{1,p}_Γ(Ω)`. No regularity of `Ω` or of `Γ` is
+assumed; the traces on a Lipschitz domain are the main examples. -/
+theorem W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule {σ : Measure E}
+    {T : W1p mu Omega p →L[ℝ] Lp ℝ p σ}
+    (hT : ∀ φ : 𝓓((⊤ : Opens E), ℝ),
+      T (W1p.restrictL (le_top : Omega ≤ ⊤) (W1p.ofTestFunctionₗ mu ⊤ p φ)) =ᵐ[σ] φ)
+    {u : W1p mu Omega p} (hu : u ∈ w1pVanishingOnSubmodule mu Omega p Γ) :
+    T u =ᵐ[σ.restrict Γ] 0 := by
+  -- Vanishing on `Γ` is the kernel of a continuous linear map, hence a closed condition.
+  let R := (LpToLpRestrictCLM E ℝ ℝ σ p Γ).comp T
+  have hclosed : IsClosed {v : W1p mu Omega p | R v = 0} := isClosed_eq R.continuous
+    continuous_const
+  have h := w1pVanishingOnSubmodule_subset_of_isClosed hclosed (fun φ hφ => ?_) hu
+  · exact (LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ) Γ _).1 h
+  -- The boundary values of a generator are the generator itself, which is zero on `closure Γ`.
+  rw [mem_ofPred, ContinuousLinearMap.comp_apply, LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ)]
+  filter_upwards [ae_restrict_of_ae (hT φ), ae_restrict_of_ae_restrict_of_subset subset_closure
+      (ae_restrict_mem (μ := σ) isClosed_closure.measurableSet)] with x hx hxΓ
+  rw [hx, Pi.zero_apply]
+  exact image_eq_zero_of_notMem_tsupport (hφ.notMem_of_mem_right hxΓ)
 
 /-- **The Sobolev space `W^{1,p}_Γ(Ω)`** as a type: the subspace `w1pVanishingOnSubmodule`, with
 the normed structure inherited from `W^{1,p}(Ω)`. For `p = 2` it is a Hilbert space, the test

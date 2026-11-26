@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import TauCeti.Analysis.InnerProductSpace.OfLinearIsometry
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables
-import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # Boundary parts of a Lipschitz domain and the Poincaré–Friedrichs inequality
@@ -41,11 +40,12 @@ nonzero norm. Neither can connectedness: on two disjoint balls with `Γ` on the 
 first, the function equal to `0` on the first ball and `1` on the second is a counterexample.
 
 The last two facts also hold on a bounded Lipschitz domain `U` of a finite-dimensional inner
-product space such as `EuclideanSpace ℝ ι`, where boundary-value problems are stated, with the
-trace `TauCeti.W1p.frontierTraceOfIsLipschitzDomain` and `(dim U - 1)`-dimensional surface measure.
-The vanishing of the trace on `Γ` is proved as on the model space, for every additive Haar
-measure. The Poincaré–Friedrichs inequality is transported from the model space along a boundary
-chart of `U`, an affine isometry onto a Lipschitz domain of `ℝ × E`.
+product space `F` such as `EuclideanSpace ℝ ι`, where boundary-value problems are stated, with the
+trace `TauCeti.W1p.frontierTraceOfIsLipschitzDomain` and `(dim F - 1)`-dimensional surface measure.
+Both traces vanish on `Γ` by `TauCeti.W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`, the
+intrinsic one for every additive Haar measure. The Poincaré–Friedrichs inequality is transported
+from the model space along a boundary chart of `U`, an affine isometry onto a Lipschitz domain of
+`ℝ × E`.
 
 ## Main declarations
 
@@ -104,24 +104,10 @@ theorem W1p.frontierTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule (hp : p ≠ 
     (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {u : W1p volume Ω p}
     (hu : u ∈ w1pVanishingOnSubmodule volume Ω p Γ) :
     W1p.frontierTrace hp hΩ hb u =ᵐ[((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
-      (frontier (Ω : Set (WithLp 2 (ℝ × E))))).restrict Γ] 0 := by
-  set σ := (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
-    (frontier (Ω : Set (WithLp 2 (ℝ × E))))
-  -- Vanishing on `Γ` is the kernel of a continuous linear map, hence a closed condition.
-  let R := (LpToLpRestrictCLM (WithLp 2 (ℝ × E)) ℝ ℝ σ p Γ).comp (W1p.frontierTrace hp hΩ hb)
-  have hclosed : IsClosed {v : W1p volume Ω p | R v = 0} := isClosed_eq R.continuous
-    continuous_const
-  have h := w1pVanishingOnSubmodule_subset_of_isClosed hclosed (fun φ hφ => ?_) hu
-  · exact (LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ) Γ _).1 h
-  -- A generator is continuous up to the boundary, so its trace is itself, which is zero on
-  -- `closure Γ`.
-  rw [mem_ofPred, ContinuousLinearMap.comp_apply, LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ)]
-  filter_upwards [ae_restrict_of_ae (W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb
-      φ.continuous.continuousOn (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)),
-    ae_restrict_of_ae_restrict_of_subset subset_closure
-      (ae_restrict_mem (μ := σ) isClosed_closure.measurableSet)] with x hx hxΓ
-  rw [hx, Pi.zero_apply]
-  exact image_eq_zero_of_notMem_tsupport (hφ.notMem_of_mem_right hxΓ)
+      (frontier (Ω : Set (WithLp 2 (ℝ × E))))).restrict Γ] 0 :=
+  W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule (fun φ =>
+    W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb φ.continuous.continuousOn
+      (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)) hu
 
 /-- On a connected domain, a function of `W^{1,p}_Γ(Ω)` with zero gradient vanishes when `Γ`
 charges the frontier: it is a constant, which is its trace, and the trace vanishes on `Γ`. -/
@@ -225,25 +211,10 @@ theorem W1p.frontierTraceOfIsLipschitzDomain_ae_eq_zero_of_mem_w1pVanishingOnSub
     (hU : (U : Set F).IsLipschitzDomain E') (hb : Bornology.IsBounded (U : Set F))
     {u : W1p mu U p} (hu : u ∈ w1pVanishingOnSubmodule mu U p Γ') :
     W1p.frontierTraceOfIsLipschitzDomain (mu := mu) hp hU hb u =ᵐ[((μHE[finrank ℝ F - 1] :
-      Measure F).restrict (frontier (U : Set F))).restrict Γ'] 0 := by
-  set σ := (μHE[finrank ℝ F - 1] : Measure F).restrict (frontier (U : Set F))
-  -- Vanishing on `Γ'` is the kernel of a continuous linear map, hence a closed condition.
-  let R := (LpToLpRestrictCLM F ℝ ℝ σ p Γ').comp
-    (W1p.frontierTraceOfIsLipschitzDomain (mu := mu) hp hU hb)
-  have hclosed : IsClosed {v : W1p mu U p | R v = 0} := isClosed_eq R.continuous
-    continuous_const
-  have h := w1pVanishingOnSubmodule_subset_of_isClosed hclosed (fun φ hφ => ?_) hu
-  · exact (LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ) Γ' _).1 h
-  -- A generator is continuous up to the boundary, so its trace is itself, which is zero on
-  -- `closure Γ'`.
-  rw [mem_ofPred, ContinuousLinearMap.comp_apply, LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ)]
-  filter_upwards [ae_restrict_of_ae (W1p.frontierTraceOfIsLipschitzDomain_ae_eq_of_continuousOn hp
-      hU hb φ.continuous.continuousOn
-      (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) le_top φ)),
-    ae_restrict_of_ae_restrict_of_subset subset_closure
-      (ae_restrict_mem (μ := σ) isClosed_closure.measurableSet)] with x hx hxΓ
-  rw [hx, Pi.zero_apply]
-  exact image_eq_zero_of_notMem_tsupport (hφ.notMem_of_mem_right hxΓ)
+      Measure F).restrict (frontier (U : Set F))).restrict Γ'] 0 :=
+  W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule (fun φ =>
+    W1p.frontierTraceOfIsLipschitzDomain_ae_eq_of_continuousOn hp hU hb φ.continuous.continuousOn
+      (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) le_top φ)) hu
 
 /-- **Functions agreeing modulo `W^{1,p}_Γ` have the same trace on `Γ`.** On a bounded Lipschitz
 domain `U` of a Euclidean space and for `p < ∞`, if `u - g ∈ W^{1,p}_{Γ'}(U)` then `T u = T g`
