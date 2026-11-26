@@ -35,7 +35,7 @@ arbitrary universe must lie in that universe.
   `u = 1` or `2 = 0` in `R`.
 * `Int.exists_apply_eq_and_apply_eq`: two `ℤ`-valued functions that take all four pairs of signs at
   four points take every pair of signs.
-* `Int.lt_units_mul_iff`: `(d : ℤ) < (u * v : ℤˣ) * y` holds iff `(d : ℤ) < |y|` and `u * v`
+* `Int.lt_units_mul_iff`: `(d : ℤ) < w * y` holds iff `(d : ℤ) < |y|` and `w`
   matches the sign of `y`.
 * `TauCeti.uliftIntUnitsSign_apply`: the sign character sends `g` to the image of `g.down` in `k`.
 -/
@@ -92,22 +92,11 @@ theorem exists_apply_eq_and_apply_eq {α : Type*} {f g : α → ℤ} {a₁ a₂ 
   · exact ⟨a₃, by simpa using h₃.1, by simpa using h₃.2⟩
   · exact ⟨a₄, by simpa using h₄.1, by simpa using h₄.2⟩
 
-/-- `(u * v) * y > d` holds iff `|y| > d` and `u * v` agrees with the sign of `y`. -/
-theorem lt_units_mul_iff {d : ℕ} {u v : ℤˣ} {y : ℤ} :
-    (d : ℤ) < (u * v : ℤˣ) * y ↔
-      (d : ℤ) < |y| ∧ (0 < y → v = u) ∧ (y < 0 → v = -u) := by
-  have heq : (u * v = 1 ↔ v = u) ∧ (u * v = -1 ↔ v = -u) := by
-    rcases Int.units_eq_one_or u with rfl | rfl <;> rcases Int.units_eq_one_or v with rfl | rfl <;>
-      decide
-  rcases Int.units_eq_one_or (u * v) with h | h
-  · rw [h, ← heq.1, ← heq.2, h]
-    exact ⟨fun h1 ↦ ⟨lt_abs.2 (.inl (by simpa using h1)), fun _ ↦ rfl,
-      fun hy ↦ by simp at h1; omega⟩, fun ⟨h1, _, h2⟩ ↦ (lt_abs.1 h1).elim (by simpa using ·)
-      fun hneg ↦ absurd (h2 (by omega)) (by decide)⟩
-  · rw [h, ← heq.1, ← heq.2, h]
-    exact ⟨fun h1 ↦ ⟨lt_abs.2 (.inr (by simpa using h1)), fun hy ↦ by simp at h1; omega,
-      fun _ ↦ rfl⟩, fun ⟨h1, h2, _⟩ ↦ (lt_abs.1 h1).elim
-      (fun hpos ↦ absurd (h2 (by omega)) (by decide)) (by simpa using ·)⟩
+/-- `w * y > d` holds iff `|y| > d` and `w` agrees with the sign of `y`. -/
+theorem lt_units_mul_iff {d : ℕ} {w : ℤˣ} {y : ℤ} :
+    (d : ℤ) < w * y ↔
+      (d : ℤ) < |y| ∧ (0 < y → w = 1) ∧ (y < 0 → w = -1) := by
+  rcases Int.units_eq_one_or w with rfl | rfl <;> simp [lt_abs, Units.ext_iff] <;> omega
 
 end Int
 

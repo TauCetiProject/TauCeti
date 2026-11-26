@@ -37,9 +37,10 @@ entries. Doubling all entries turns half-integers into integers of fixed parity.
   Duke Math. J. 61 (1990), 913–937.
 * A. Paul, *First occurrence for the dual pairs `(U(p,q), U(r,s))`*,
   Canad. J. Math. 51 (1999), 636–657.
-* L. Alpöge, `New.IsBlockRule` and `New.isBlockRule_iff_of_offsets` in
-  `src/Lib/DiscreteSeries/Theta/BlockRule.lean`,
-  <https://github.com/leanprover-community/riemann-hypothesis/tree/dba5aded4bf7>.
+* The shorter formal proof, `grh/src/Lib/DiscreteSeries/Theta/BlockRule.lean`:
+  `New.IsBlockRule`, `New.isBlockRule_iff_isMatch`, `New.IsBlockRule.symm`, `.neg`, `.shift`,
+  `New.isBlockRule_iff_of_offsets`, and `New.isBlockRule_iff_of_character`, at
+  <https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207>.
 -/
 
 public section
@@ -156,8 +157,11 @@ theorem exists_matched_of_entries_eq {C R : Type*} [Fintype C] [Fintype R] {s : 
     have hnot : b r ∉ doubledBlock d :=
       heq ▸ Finset.disjoint_left.1 hdisjoint (Finset.mem_image_of_mem a (mem_univ c))
     have houtside : (d : ℤ) < |b r| := by grind [mem_doubledBlock, hparity r, lt_abs, abs_lt]
-    exact ⟨heq.symm, Int.lt_units_mul_iff.2 ⟨houtside, fun h ↦ hpos c r heq (h.trans_eq heq.symm),
-      fun h ↦ hneg c r heq (heq.trans_lt h)⟩⟩
+    refine ⟨heq.symm, Int.lt_units_mul_iff.2 ⟨houtside, ?_, ?_⟩⟩
+    · intro h
+      simp [hpos c r heq (h.trans_eq heq.symm)]
+    · intro h
+      simp [hneg c r heq (heq.trans_lt h)]
   refine ⟨fun r ↦ ?_, fun c ↦ ?_⟩
   · have hr := hentries.subset (Finset.mem_image_of_mem b (mem_univ r))
     simp only [mem_union, Finset.mem_image, mem_univ, true_and, mem_doubledBlock] at hr
@@ -200,7 +204,8 @@ theorem entries_eq_of_exists_matched {C R : Type*} [Fintype C] [Fintype R] {s : 
         (mem_doubledBlock.2 ⟨hlt, hparity r⟩)
     obtain ⟨c', hc', hlt⟩ := (hrows r).resolve_right hnot
     obtain rfl : c' = c := ha (hc'.symm.trans heq.symm)
-    exact (Int.lt_units_mul_iff.1 hlt).2
+    simpa only [← eq_inv_mul_iff_mul_eq, Int.units_inv_eq_self, mul_one, mul_neg_one]
+      using (Int.lt_units_mul_iff.1 hlt).2
   exact ⟨hentries, fun c r heq h ↦ (hsign c r heq).1 (h.trans_eq heq),
     fun c r heq h ↦ (hsign c r heq).2 (heq.symm.trans_lt h)⟩
 
@@ -289,48 +294,33 @@ theorem IsMatching.exists_right_of_le (h : IsMatching gap s t γ γ' l l') (hle 
   (h.left_matched c).resolve_right ((by omega : (card ι₁ : ℤ) - card ι₂ ≤ 0).trans
     (abs_nonneg _)).not_gt
 
+private theorem isBlockRule_iff_isMatching_of_le (hle : card ι₁ ≤ card ι₂) :
+    IsBlockRule gap s t γ γ' l l' ↔ IsMatching gap s t γ γ' l l' := by
+  obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le hle
+  have hdiff : (card ι₂ : ℤ) - card ι₁ = d := by omega
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨hrows, hcols⟩ := exists_matched_of_entries_eq hd
+      (shiftedEntry_injective h.injective_right)
+      (even_shiftedEntry_add_sub_one h.parity_right hd)
+      (by simpa [hd] using h.entries_of_le hle) h.sign_of_pos h.sign_of_neg
+    exact ⟨h.injective_left, h.injective_right, h.parity_left, h.parity_right, h.gap_left,
+      h.gap_right, fun r ↦ by simpa [hdiff] using hrows r,
+      fun c ↦ Or.inl (by simpa [hdiff] using hcols c)⟩
+  · obtain ⟨hentries, hpos, hneg⟩ := entries_eq_of_exists_matched hd
+      (shiftedEntry_injective h.injective_right) (even_shiftedEntry_add_sub_one h.parity_right hd)
+      (fun r ↦ by simpa [hdiff] using h.right_matched r)
+    exact ⟨h.injective_left, h.injective_right, h.parity_left, h.parity_right, h.gap_left,
+      h.gap_right, fun _ ↦ by simpa [hd] using hentries, fun hge ↦ by
+        have hzero : d = 0 := by omega
+        simpa [hzero, Nat.sub_eq_zero_of_le hle] using hentries.symm, hpos, hneg⟩
+
 /-- The block rule holds if and only if the signed matching condition holds. -/
 theorem isBlockRule_iff_isMatching :
     IsBlockRule gap s t γ γ' l l' ↔ IsMatching gap s t γ γ' l l' := by
   rcases le_total (card ι₁) (card ι₂) with hle | hge
-  · obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le hle
-    have hdiff : (card ι₂ : ℤ) - card ι₁ = d := by omega
-    refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-    · obtain ⟨hrows, hcols⟩ := exists_matched_of_entries_eq hd
-        (shiftedEntry_injective h.injective_right)
-        (even_shiftedEntry_add_sub_one h.parity_right hd)
-        (by simpa [hd] using h.entries_of_le hle) h.sign_of_pos h.sign_of_neg
-      exact ⟨h.injective_left, h.injective_right, h.parity_left, h.parity_right, h.gap_left,
-        h.gap_right, fun r ↦ by simpa [hdiff] using hrows r,
-        fun c ↦ Or.inl (by simpa [hdiff] using hcols c)⟩
-    · obtain ⟨hentries, hpos, hneg⟩ := entries_eq_of_exists_matched hd
-        (shiftedEntry_injective h.injective_right) (even_shiftedEntry_add_sub_one h.parity_right hd)
-        (fun r ↦ by simpa [hdiff] using h.right_matched r)
-      exact ⟨h.injective_left, h.injective_right, h.parity_left, h.parity_right, h.gap_left,
-        h.gap_right, fun _ ↦ by simpa [hd] using hentries, fun hge ↦ by
-          have hzero : d = 0 := by omega
-          simpa [hzero, Nat.sub_eq_zero_of_le hle] using hentries.symm, hpos, hneg⟩
-  · obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le hge
-    have hdiff : (card ι₁ : ℤ) - card ι₂ = d := by omega
-    refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-    · have h' := h.symm
-      obtain ⟨hrows, hcols⟩ := exists_matched_of_entries_eq hd
-        (shiftedEntry_injective h'.injective_right)
-        (even_shiftedEntry_add_sub_one h'.parity_right hd)
-        (by simpa [hd] using h'.entries_of_le hge) h'.sign_of_pos h'.sign_of_neg
-      exact (⟨h'.injective_left, h'.injective_right, h'.parity_left, h'.parity_right, h'.gap_left,
-        h'.gap_right, fun r ↦ by simpa [hdiff] using hrows r,
-        fun c ↦ Or.inl (by simpa [hdiff] using hcols c)⟩ : IsMatching gap t s γ' γ l' l).symm
-    · have h' := h.symm
-      obtain ⟨hentries, hpos, hneg⟩ := entries_eq_of_exists_matched hd
-        (shiftedEntry_injective h'.injective_right)
-        (even_shiftedEntry_add_sub_one h'.parity_right hd)
-        (fun r ↦ by simpa [hdiff] using h'.right_matched r)
-      exact (⟨h'.injective_left, h'.injective_right, h'.parity_left, h'.parity_right, h'.gap_left,
-        h'.gap_right, fun _ ↦ by simpa [hd] using hentries, fun hle ↦ by
-          have hzero : d = 0 := by omega
-          simpa [hzero, Nat.sub_eq_zero_of_le hge] using hentries.symm, hpos, hneg⟩ :
-        IsBlockRule gap t s γ' γ l' l).symm
+  · exact isBlockRule_iff_isMatching_of_le hle
+  · exact ⟨fun h ↦ ((isBlockRule_iff_isMatching_of_le hge).1 h.symm).symm,
+      fun h ↦ ((isBlockRule_iff_isMatching_of_le hge).2 h.symm).symm⟩
 
 /-- Negating both parameters while replacing `γ, γ'` by `card ι₁ - γ, card ι₂ - γ'` and negating
 the signs `s` preserves the block rule. -/
