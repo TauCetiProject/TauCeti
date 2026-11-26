@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Schwartz
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Sobolev.BesselPotential.LocalizedChangeOfVariables
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
@@ -32,6 +34,8 @@ and such localized changes of variables are bounded on `H^s`
 
 * `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le`: changing
   the chart of a reading costs a constant in the `H^s` norm.
+* `TauCeti.exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz`: the readings
+  through a cutoff are fixed in every `H^t` by multiplication by one Schwartz function.
 
 ## References
 
@@ -86,5 +90,33 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_
     · rw [hψ₁.self_of_nhdsSet _ (subset_tsupport _ hψ), mul_one, ← Complex.real_smul]
   · rw [overlapCutoff_apply he' he, cutoffPullback_apply_of_notMem he' _ _ hy]
     simp [cutoffPullback_apply_of_notMem he' _ _ hy]
+
+omit [T2Space M] in
+/-- **A reading is fixed by a Schwartz cutoff.** For a cutoff `φ` in a chart `e`, there is a
+Schwartz function `χ`, independent of the function `u` on `M` and of `t`, such that multiplication
+by `χ` fixes the reading `φ · (u ∘ e⁻¹)` in every `H^t`. (The proof takes `χ` equal to `1` near the
+support of `φ`.) -/
+theorem exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
+    ∃ χ : 𝓢(CoordinateSpace n, ℂ), ∀ (t : ℝ) (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯),
+      BesselPotentialSpace.smulLeftCLM t χ
+          (SchwartzMap.toBesselPotentialSpaceCLM t 2 (e.cutoffPushforwardSchwartz he φ u)) =
+        SchwartzMap.toBesselPotentialSpaceCLM t 2 (e.cutoffPushforwardSchwartz he φ u) := by
+  obtain ⟨θ, hθ, -⟩ := TestFunction.exists_eventually_eq_one
+    (Ω := ⟨e.target, e.open_target⟩) (n := ⊤) φ.hasCompactSupport.isCompact φ.tsupport_subset
+  obtain ⟨χ, hχ⟩ : ∃ χ : 𝓢(CoordinateSpace n, ℂ), ∀ y, χ y = θ y :=
+    ⟨(θ.hasCompactSupport.comp_left Complex.ofReal_zero).toSchwartzMap
+      (Complex.ofRealCLM.contDiff.comp θ.contDiff), HasCompactSupport.toSchwartzMap_toFun _ _⟩
+  refine ⟨χ, fun t u ↦ BesselPotentialSpace.ext ?_⟩
+  rw [BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+    TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]
+  congr 1
+  ext y
+  rw [SchwartzMap.smulLeftCLM_apply_apply χ.hasTemperateGrowth, cutoffPushforwardSchwartz_apply,
+    hχ]
+  by_cases hy : y ∈ tsupport φ
+  · simp [hθ.self_of_nhdsSet y hy]
+  · simp [image_eq_zero_of_notMem_tsupport hy]
 
 end TauCeti
