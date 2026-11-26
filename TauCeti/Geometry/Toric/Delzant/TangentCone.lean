@@ -80,6 +80,17 @@ theorem edgeBasis_apply (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i)
   classical
   rw [← hx.edgeBasis_repr hi, Module.Basis.repr_self_apply]
 
+/-- **Edge vectors are determined by their pairings with the active normals**: a covector is the
+edge vector `ε_j` exactly when it takes the value `1` on the active normal of `j` and `0` on the
+other active normals. -/
+theorem eq_edgeBasis_iff (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i)
+    [DecidableEq (activeSet (facetPairing i u) c x)] (j : activeSet (facetPairing i u) c x)
+    (w : StrongDual ℝ V) :
+    w = hx.edgeBasis hi j ↔
+      ∀ k : activeSet (facetPairing i u) c x, w (i (u k)) = if j = k then 1 else 0 := by
+  refine ⟨fun h k ↦ h ▸ hx.edgeBasis_apply hi j k, fun h ↦ (hx.edgeBasis hi).ext_elem fun k ↦ ?_⟩
+  rw [hx.edgeBasis_repr, hx.edgeBasis_repr, h, edgeBasis_apply]
+
 /-- The conic hull of the edge basis is the set of covectors nonnegative on all active normals.
 Thus its coefficients are read directly from the facet inequalities. -/
 theorem mem_hull_range_edgeBasis_iff (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i)
