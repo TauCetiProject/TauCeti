@@ -453,6 +453,20 @@ instance instCategory {α : Type u} : Category (StallingsGraph.{u, v, w} α) whe
   comp_id := Hom.id_comp
   assoc := Hom.comp_assoc
 
+open CategoryTheory in
+/-- The categorical identity of a based labelled graph is `StallingsGraph.Hom.id`. -/
+@[simp]
+theorem Hom.categoryId_eq (S : StallingsGraph α) : 𝟙 S = Hom.id S :=
+  (rfl)
+
+open CategoryTheory in
+/-- Categorical composition of based labelled-graph morphisms is `StallingsGraph.Hom.comp`, in
+the opposite order. -/
+@[simp]
+theorem Hom.categoryComp_eq {R S T : StallingsGraph α} (f : R ⟶ S) (g : S ⟶ T) :
+    f ≫ g = g.comp f :=
+  (rfl)
+
 /-- The rose with one petal for each generator, labelled by those generators. -/
 @[expose] def rose (α : Type*) : StallingsGraph α where
   graph := SerreGraph.rose α
