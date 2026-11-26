@@ -437,7 +437,7 @@ theorem harmonicOnNhd_newtonianKernel_sub (n : ℕ)
 theorem newtonianKernel_one (x : EuclideanSpace ℝ (Fin 1)) :
     newtonianKernel 1 x = -‖x‖ / 2 := by
   have hvol : volume.real (ball (0 : EuclideanSpace ℝ (Fin 1)) 1) = 2 := by
-    rw [Measure.real_def, InnerProductSpace.volume_ball_of_dim_odd (k := 0) (by simp)]
+    rw [Measure.real_def, EuclideanSpace.volume_ball_fin_one]
     norm_num
   rw [newtonianKernel_def, hvol]
   norm_num
