@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints.Submanifold
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Hessian
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson
 import TauCeti.Analysis.Calculus.Deriv.OperatorCurve
+import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.Riemannian.Invariant
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
@@ -59,6 +61,14 @@ in `sp(T_p M, σ_p)` and is complex linear for `J_p`, so it rotates the planes o
 and its quadratic Hamiltonian has indices of inertia twice the numbers of its negative and
 positive rotation frequencies (`TauCeti.SymplecticForm.even_sigNeg_hamiltonianEndEquiv_symm`).
 
+The critical submanifolds `M^{T_ξ}_d` can be refined by a symmetry. A closed subgroup `Z` of a
+compact `G` commuting with `T_ξ` maps each `M^{T_ξ}_d` to itself
+(`TauCeti.smul_mem_fixedPointsOfFinrank_iff`), and its orbits are compact. If it has finitely many
+orbits on the critical set, each of them is therefore open in the part `M^{T_ξ}_d` containing it,
+so it is again a Morse–Bott critical submanifold of `μ^ξ`
+(`exists_isNondegenerateCriticalSubmanifold_orbit`). On a coadjoint orbit this applies to the
+adjoint stabilizer of `ξ` and the orbits of critical points of a height.
+
 Neither closedness of `σ`, equivariance of `μ` nor compactness of `M` is used.
 
 ## Main results
@@ -75,6 +85,9 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
   spaces the fixed tangent subspaces.
 * `exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank_of_compactSpace`: the same for
   a compact group acting on a σ-compact manifold, without a metric.
+* `exists_isNondegenerateCriticalSubmanifold_orbit`: if a closed subgroup commuting with `T_ξ` has
+  finitely many orbits on the critical set of `μ^ξ`, each of these orbits is a Morse–Bott critical
+  submanifold of `μ^ξ`.
 * `even_manifoldMorseIndex`, `even_manifoldMorseIndex_neg`: for a compact group acting by
   symplectomorphisms on a σ-compact manifold, the index and the coindex of `μ^ξ` at every critical
   point are even.
@@ -336,6 +349,82 @@ theorem exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank_of_compac
     Bundle.instIsContMDiffRiemannianBundle g'
   exact h.exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank hσ
     (fun a _ x u w ↦ hg' a x u w) hL
+
+/-- **Orbits of a centralizing subgroup on the critical set are Morse–Bott.** Let a compact Lie
+group `G` act smoothly on a σ-compact manifold with a nondegenerate two-form `σ` and moment map
+`μ`, let `ξ` be in the Lie algebra, and let `Z` be a closed subgroup commuting with the closure
+`T_ξ` of `{exp (t ξ) | t ∈ ℝ}` and having finitely many orbits on the critical set of `μ^ξ`. Let `p`
+be a critical point, `d` the dimension of the space of tangent vectors at `p` fixed by `T_ξ`, and
+`L` a subspace of the model of dimension `d`. Then `M^{T_ξ}_d` is a smooth manifold modelled on `L`
+whose inclusion into `M` is a smooth embedding, the `Z`-orbit of `p` is an open subset `U` of
+`M^{T_ξ}_d`, and the inclusion of `U` into `M` is a nondegenerate critical submanifold of `μ^ξ`,
+whose tangent space at each point is the space of tangent vectors fixed by `T_ξ`. -/
+theorem exists_isNondegenerateCriticalSubmanifold_orbit [CompactSpace G] [SigmaCompactSpace M]
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G 𝓘(ℝ, E') M) μ)
+    (hσ : σ.IsNondegenerate) {Z : Subgroup G} (hZc : IsClosed (Z : Set G))
+    (hZ : Z ≤ Subgroup.centralizer (Lie.closedOneParameterSubgroup ξ : Set G))
+    (hfin : (MulAction.orbit Z '' criticalPoints 𝓘(ℝ, E') fun y ↦ μ y ξ).Finite) {p : M}
+    (hp : p ∈ criticalPoints 𝓘(ℝ, E') fun y ↦ μ y ξ) {d : ℕ}
+    (hd : Module.finrank ℝ
+      (fixedTangentSubspace 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) p) = d)
+    {L : Submodule ℝ E'} (hL : Module.finrank ℝ L = d) :
+    ∃ (_ : ChartedSpace L
+        (fixedPointsOfFinrank 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) M d))
+      (_ : IsManifold 𝓘(ℝ, L) ∞
+        (fixedPointsOfFinrank 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) M d))
+      (hi : IsSmoothEmbedding 𝓘(ℝ, L) 𝓘(ℝ, E') ∞
+        (Subtype.val : fixedPointsOfFinrank 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) M d → M))
+      (U : TopologicalSpace.Opens
+        (fixedPointsOfFinrank 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) M d)),
+      range (Subtype.val ∘ (Subtype.val : U → _)) = MulAction.orbit Z p ∧
+        SmoothEmbedding.IsNondegenerateCriticalSubmanifold
+          ((SmoothEmbedding.ofIsSmoothEmbedding _ hi).compLocalDiffeomorph (Subtype.val : U → _)
+            isLocalDiffeomorph_subtype_val Topology.IsEmbedding.subtypeVal)
+          (fun y ↦ μ y ξ) ∧
+        ∀ y : U, LinearMap.range
+            (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E') (Subtype.val ∘ (Subtype.val : U → _)) y).toLinearMap =
+          fixedTangentSubspace 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ)
+            ((Subtype.val ∘ (Subtype.val : U → _)) y) := by
+  obtain ⟨C, hman, hi, hMB, hrange⟩ :=
+    h.exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank_of_compactSpace hσ (ξ := ξ) hL
+  let := C
+  have := hman
+  have hcrit := h.criticalPoints_eq_fixedPoints hσ ξ
+  have : ContMDiffConstSMul 𝓘(ℝ, E') ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
+  have : ContinuousSMul G M := ContMDiffSMul.continuousSMul (I := I) (I' := 𝓘(ℝ, E')) ∞
+  have : CompactSpace Z := isCompact_iff_compactSpace.mp hZc.isCompact
+  -- The `Z`-orbits are compact, hence closed, and `Z` preserves `M^{T_ξ}_d`.
+  have hclosed (q : M) : IsClosed (MulAction.orbit Z q) :=
+    (isCompact_range (continuous_subtypeVal.smul continuous_const)).isClosed
+  have hsub : MulAction.orbit Z p ⊆
+      fixedPointsOfFinrank 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) M d := by
+    rintro _ ⟨k, rfl⟩
+    exact (smul_mem_fixedPointsOfFinrank_iff (n := ∞) (by simp) (hZ k.property)).2
+      (mem_fixedPointsOfFinrank.2 ⟨hcrit ▸ hp, hd⟩)
+  -- The union `D` of the finitely many critical orbits other than that of `p` is closed, and the
+  -- orbit of `p` is the part of the critical set outside `D`.
+  set D := ⋃ O ∈ MulAction.orbit Z '' (criticalPoints 𝓘(ℝ, E') fun y ↦ μ y ξ) \
+    {MulAction.orbit Z p}, O
+  have hD : IsClosed D := hfin.sdiff.isClosed_biUnion fun _ hO ↦ by
+    obtain ⟨q, -, rfl⟩ := hO.1
+    exact hclosed q
+  refine ⟨C, hman, hi, ⟨Subtype.val ⁻¹' Dᶜ, hD.isOpen_compl.preimage continuous_subtypeVal⟩, ?_,
+    hMB.compLocalDiffeomorph (by simp) _ _, fun y ↦ ?_⟩
+  · ext x
+    constructor
+    · rintro ⟨⟨y, hyD⟩, rfl⟩
+      by_contra hyp
+      have hyc : (y : M) ∈ criticalPoints 𝓘(ℝ, E') fun y ↦ μ y ξ :=
+        hcrit ▸ fixedPointsOfFinrank_subset_fixedPoints d y.property
+      exact hyD (mem_biUnion ⟨mem_image_of_mem _ hyc, fun h' ↦
+        hyp (mem_singleton_iff.mp h' ▸ MulAction.mem_orbit_self (y : M))⟩
+        (MulAction.mem_orbit_self (y : M)))
+    · intro hx
+      refine ⟨⟨⟨x, hsub hx⟩, fun hxD ↦ ?_⟩, rfl⟩
+      obtain ⟨_, ⟨⟨q, -, rfl⟩, hne⟩, hxq⟩ := mem_iUnion₂.mp hxD
+      exact hne (by rw [mem_singleton_iff, ← MulAction.orbit_eq_iff.mpr hxq,
+        MulAction.orbit_eq_iff.mpr hx])
+  · rw [Manifold.range_mfderiv_comp_subtype_val, hrange, Function.comp_apply]
 
 end Model
 
