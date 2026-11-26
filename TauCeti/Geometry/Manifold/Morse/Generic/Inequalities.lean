@@ -38,8 +38,11 @@ for regular values `a ≤ b` of `f`:
 
 Applied to the constant function `0` on a compact manifold, whose sublevels at the regular values
 `-1` and `1` are `∅` and `M`, the first statement shows that the homology `Hₙ(M; V)` of a compact
-boundaryless manifold is finitely generated (`TauCeti.finite_singularHomology_of_compactSpace`).
-In particular its integral homology `Hₙ(M; ℤ)` is a finitely generated abelian group.
+boundaryless manifold is finite-dimensional over a division ring
+(`TauCeti.finite_singularHomology_of_compactSpace`). Over a noetherian ring, finite generation of
+`Hₙ(M; V)` follows from the finite CW type of `M` (`TauCeti.FiniteCWType.of_isManifold` and
+`TauCeti.finite_singularHomology_of_finiteCWType`); for integral homology see
+`TauCeti.finite_singularHomology_int_of_isManifold`.
 
 Over a division ring, these are the hypotheses of the Morse inequalities of a filtration
 (`TauCeti.AlgebraicTopology.Singular.Sublevel`). Let `M` be compact, so that every smooth `f` is
@@ -71,8 +74,8 @@ every field.
   `TauCeti.finite_singularHomology_sublevelPair_of_criticalValue` and
   `TauCeti.isZero_singularHomology_sublevelPair_of_contMDiff`: finiteness of the relative
   homology of regular sublevels, and its vanishing above the dimension.
-* `TauCeti.finite_singularHomology_of_compactSpace`: finite generation of the homology of a
-  compact boundaryless manifold.
+* `TauCeti.finite_singularHomology_of_compactSpace`: finiteness of the homology of a compact
+  boundaryless manifold.
 * `TauCeti.finrank_singularHomology_le_sum_sublevelPair_of_contMDiff`,
   `TauCeti.sum_range_neg_one_pow_mul_finrank_singularHomology_le_sum_sublevelPair_of_contMDiff`,
   `TauCeti.sum_range_neg_one_pow_mul_finrank_singularHomology_eq_sum_sublevelPair_of_contMDiff`,
@@ -203,11 +206,10 @@ theorem finite_singularHomology_sublevelPair_of_contMDiff {k : Type u} [Ring k]
 variable (I M) in
 include I in
 /-- **Finiteness of the homology of a compact manifold.** The singular homology of a compact
-boundaryless manifold, with coefficients in a finitely generated module `V` over a noetherian ring,
-is finitely generated in every degree. For `V = ℤ` this says that the integral homology groups of
-a compact boundaryless manifold are finitely generated. -/
-theorem finite_singularHomology_of_compactSpace [CompactSpace M] {k : Type u} [Ring k]
-    [IsNoetherianRing k] (V : ModuleCat.{u} k) [Module.Finite k V] (n : ℕ) :
+boundaryless manifold, with coefficients in a finite-dimensional module `V` over a division ring,
+is finite-dimensional in every degree. -/
+theorem finite_singularHomology_of_compactSpace [CompactSpace M] {k : Type u} [DivisionRing k]
+    (V : ModuleCat.{u} k) [Module.Finite k V] (n : ℕ) :
     Module.Finite k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj V).obj
       (TopCat.of M)) :=
   -- Apply the finiteness of the homology of regular sublevels to the constant function `0`,

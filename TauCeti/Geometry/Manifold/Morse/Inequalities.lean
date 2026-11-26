@@ -52,9 +52,10 @@ finite-dimensional in every degree.
 
 The finiteness needs no division ring: for a finitely generated module `V` over a noetherian ring
 `k`, such as `ℤ`, the relative homology `Hₙ(M_b, M_a; V)` is finitely generated
-(`TauCeti.IsMorse.finite_singularHomology_sublevelPair`), and so are the homology of the cobordism
-relative to either boundary and, for compact `M`, the homology `Hₙ(M; V)`
-(`TauCeti.IsMorse.finite_singularHomology`).
+(`TauCeti.IsMorse.finite_singularHomology_sublevelPair`), and so is the homology of the cobordism
+relative to either boundary. For compact `M`, finite generation of `Hₙ(M; V)` over a noetherian
+ring follows from the finite CW type of `M` (`TauCeti.IsMorse.finiteCWType` and
+`TauCeti.finite_singularHomology_of_finiteCWType`).
 
 The proof is Milnor's. Across a single critical level the sublevel pair has the relative homology
 of a finite CW pair with one `i`-cell for each critical point of index `i`
@@ -86,10 +87,9 @@ maps `Hₙ₊₁(M_{s (j + 2)}, M_{s (j + 1)}) ⟶ Hₙ(M_{s (j + 1)}, M_{s 0})`
 
 * `TauCeti.IsMorse.finite_singularHomology_sublevelPair`,
   `TauCeti.IsMorse.finite_singularHomology_bandPair`,
-  `TauCeti.IsMorse.finite_singularHomology_upperBandPair` and
-  `TauCeti.IsMorse.finite_singularHomology`: finite generation of the relative homology of a
-  compact band, of the cobordism relative to either boundary and of a compact manifold, with
-  coefficients in a finitely generated module over a noetherian ring.
+  `TauCeti.IsMorse.finite_singularHomology_upperBandPair`: finite generation of the relative
+  homology of a compact band and of the cobordism relative to either boundary, with coefficients
+  in a finitely generated module over a noetherian ring.
 * `TauCeti.IsMorse.finrank_singularHomology_sublevelPair_le`,
   `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_le`,
   `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_eq` and
@@ -426,6 +426,18 @@ section Noetherian
 
 variable {k : Type u} [Ring k] [IsNoetherianRing k] (V : ModuleCat.{u} k) [Module.Finite k V]
 
+/-- Over a noetherian ring, a pair whose homology receives an isomorphism from the homology of a
+finite relative CW complex `(C, D)` has finitely generated homology. -/
+private theorem finite_singularHomology_of_isIso_complexBasePair {C D : Set M}
+    [Topology.RelCWComplex C D] [Topology.RelCWComplex.Finite C] {P : TopPair.{u}}
+    {φ : TopPair.ofInclusion (X := TopCat.of M) (base_subset_complex (C := C)) ⟶ P} {n : ℕ}
+    (hiso : IsIso (TopPair.singularHomologyMap φ V n)) :
+    Module.Finite k (P.singularHomology V n : ModuleCat k) := by
+  have : _root_.Finite (cell C n) := FiniteType.finite_cell n
+  have h := finite_singularHomology_complexBasePair C V n
+  rw [complexBasePair_eq_ofInclusion] at h
+  exact Module.Finite.equiv (asIso (TopPair.singularHomologyMap φ V n)).toLinearEquiv
+
 namespace IsMorse
 
 /-- **Finiteness of relative homology for a band.** Let `f` be a Morse function, and `a ≤ b`
@@ -448,11 +460,7 @@ theorem finite_singularHomology_sublevelPair (hf : IsMorse I f) {a b : ℝ} (hab
   · -- Across one critical level it is the relative homology of a finite CW pair.
     obtain ⟨ε, hε, hεδ, C, _, _, hC, -, hiso⟩ :=
       hf.exists_relCWComplex_isIso_singularHomologyMap_sublevelPair hδ hcompact
-    refine ⟨ε, hε, hεδ, fun n ↦ ?_⟩
-    have : _root_.Finite (cell C n) := FiniteType.finite_cell n
-    have h := finite_singularHomology_complexBasePair C V n
-    rw [complexBasePair_eq_ofInclusion] at h
-    exact Module.Finite.equiv (@asIso _ _ _ _ _ (hiso V n)).toLinearEquiv
+    exact ⟨ε, hε, hεδ, fun n ↦ finite_singularHomology_of_isIso_complexBasePair V (hiso V n)⟩
   · -- Along a triple of sublevels, finiteness passes through the long exact sequence.
     let T := TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f hsm) (sublevel_mono f hmt)
     have : Module.Finite k ((TopTriple.innerPair.obj T).singularHomology V n : ModuleCat k) :=
@@ -484,18 +492,6 @@ theorem finite_singularHomology_upperBandPair (hf : IsMorse I f) {a b : ℝ} (ha
   obtain ⟨h₁, h₂, h₃, h₄⟩ := hf.neg_band hcompact ha hb
   rw [← bandPair_neg]
   exact h₁.finite_singularHomology_bandPair V (neg_le_neg hab) h₂ h₃ h₄ n
-
-/-- **Finiteness of homology.** The singular homology of a compact boundaryless manifold carrying
-a Morse function, with coefficients in a finitely generated module `V` over a noetherian ring, is
-finitely generated in every degree. -/
-theorem finite_singularHomology [CompactSpace M] (hf : IsMorse I f) (n : ℕ) :
-    Module.Finite k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj V).obj
-      (TopCat.of M)) := by
-  obtain ⟨a, b, hab, hcompact, ha, hb, hf'⟩ :=
-    exists_isRegularValue_forall_mem_Ioc (I := I) hf.contMDiff.continuous
-  have := hf.finite_singularHomology_sublevelPair V hab hcompact ha hb n
-  exact Module.Finite.equiv (singularHomologyIsoSublevelPair hab (fun x ↦ (hf' x).1)
-    (fun x ↦ (hf' x).2) V n).symm.toLinearEquiv
 
 end IsMorse
 
@@ -532,14 +528,10 @@ private theorem exists_morseInequalities_level (hf : IsMorse I f) {c δ : ℝ} (
         ModuleCat k) := by
     rw [complexBasePair_eq_ofInclusion]
     exact (@asIso _ _ _ _ _ (hiso V i)).toLinearEquiv.finrank_eq
-  have : _root_.Finite (cell C n) := FiniteType.finite_cell n
-  refine ⟨?_, ?_⟩
-  · have h := finite_singularHomology_complexBasePair C V n
-    rw [complexBasePair_eq_ofInclusion] at h
-    exact Module.Finite.equiv (@asIso _ _ _ _ _ (hiso V n)).toLinearEquiv
-  · have h := sum_range_neg_one_pow_mul_finrank_singularHomology_complexBasePair_le C V
-      (n := n) fun i _ ↦ FiniteType.finite_cell i
-    simpa only [hrank, hcount] using h
+  refine ⟨finite_singularHomology_of_isIso_complexBasePair V (hiso V n), ?_⟩
+  have h := sum_range_neg_one_pow_mul_finrank_singularHomology_complexBasePair_le C V
+    (n := n) fun i _ ↦ FiniteType.finite_cell i
+  simpa only [hrank, hcount] using h
 
 /-- **The Morse inequalities across a compact band between regular values**, by induction over its
 critical levels. -/
@@ -1016,6 +1008,16 @@ private theorem exists_morseInequalities_univ (hf : IsMorse I f) :
   refine ⟨a, b, hab, hf.morseInequalities V hab hcompact ha hb,
     fun n ↦ ⟨singularHomologyIsoSublevelPair hab (fun x ↦ (hf' x).1)
       (fun x ↦ (hf' x).2) V n⟩, ncard_eq_toNat_criticalCount hf', hf'⟩
+
+/-- **Finiteness of homology.** The singular homology of a compact boundaryless manifold carrying
+a Morse function, with coefficients in a finite-dimensional module `V`, is finite-dimensional in
+every degree. -/
+theorem finite_singularHomology (hf : IsMorse I f) (n : ℕ) :
+    Module.Finite k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj V).obj
+      (TopCat.of M)) := by
+  obtain ⟨a, b, hab, h, he, -, -⟩ := hf.exists_morseInequalities_univ V
+  have := (h n).1
+  exact Module.Finite.equiv (he n).some.symm.toLinearEquiv
 
 /-- On a compact boundaryless manifold carrying a Morse function, the singular homology with
 coefficients in a finite-dimensional module `V` has rank in `ℕ∞` equal to its `finrank`. -/

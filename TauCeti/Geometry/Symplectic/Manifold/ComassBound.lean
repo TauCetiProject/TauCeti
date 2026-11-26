@@ -65,9 +65,9 @@ extension. Given both, only finitely many curve classes have area at most `R`, t
 included (`TauCeti.IsComassBounded.finite_setOf_area_le`), their areas are bounded below by a
 positive constant, and the total multiplicity of a cycle of curve classes in a given class is
 bounded. Both inputs hold for compact `X`. The integral homology of a compact boundaryless
-manifold is finitely generated (`TauCeti.finite_singularHomology_of_compactSpace`, with
-coefficients `ℤ`), and by de Rham's theorem the periods of closed two-forms whose classes span
-`H²(X; ℝ)` have injective real extension; the second is not available here.
+manifold is finitely generated (`TauCeti.finite_singularHomology_int_of_isManifold`), and by
+de Rham's theorem the periods of closed two-forms whose classes span `H²(X; ℝ)` have injective
+real extension; the second is not available here.
 
 ## References
 
