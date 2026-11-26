@@ -27,7 +27,7 @@ differential. This file passes to homology and adds the relative gradings:
   change (`TauCeti.HeegaardRegionSystem.periodicMaslovIndices_sumCircleTimesSphere`), and the
   generators `(x, i)` and `(y, j)` have relative grading `gr(x, y) + j - i`
   (`TauCeti.HeegaardRegionSystem.IsDomainBetween.relativeGrading_sumCircleTimesSphere`): the
-  factor `W` is graded like `H_*(S¹)`, with `q` one above `p`.
+  factor `W` is graded like `H_*(S¹)`, with `p` one above `q`.
 
 Iterating the move in the old region `r₀` gives the `k`-fold connected sum
 `Y # (S¹ × S²) # ⋯ # (S¹ × S²)` (`TauCeti.HeegaardRegionSystem.iterateSumCircleTimesSphere`). Its
@@ -37,8 +37,8 @@ of a new point on each new `α`-curve
 dimension `2 ^ k` times that of the original diagram, and the generators `(x, ε)` and `(y, δ)` have
 relative grading `gr(x, y) + ∑ᵢ (δ i - ε i)`. Starting from the genus-one diagram of `S³`, the lens
 space diagram with `p = 1`, this is the diagram of `#ᵏ (S¹ × S²)`: its hat complex has zero
-differential and `2 ^ k` generators `ε`, and the grading of `ε` above the bottom generator is the
-number of `i` with `ε i = 1`
+differential and `2 ^ k` generators `ε`, the generator `0` is the top one, and `ε` lies as many
+degrees below it as there are `i` with `ε i = 1`
 (`TauCeti.HeegaardRegionSystem.relativeGrading_iterateSumCircleTimesSphere_lensSpace`). These are
 the degrees of the exterior algebra `Λ^* H¹(#ᵏ (S¹ × S²))` on `k` generators of degree one, which
 `HF̂(#ᵏ (S¹ × S²))` is as a relatively graded group.
@@ -63,9 +63,10 @@ the degrees of the exterior algebra `Λ^* H¹(#ᵏ (S¹ × S²))` on `k` generat
   `maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_sumCircleTimesSphere`
   and `TauCeti.HeegaardRegionSystem.IsDomainBetween.relativeGrading_sumCircleTimesSphere`: the
   relative grading of the connected sum.
-* `TauCeti.HeegaardRegionSystem.finrank_hatHomology_iterateSumCircleTimesSphere` and
-  `TauCeti.HeegaardRegionSystem.IsDomainBetween.relativeGrading_iterateSumCircleTimesSphere`: the
-  hat homology and the relative grading of the `k`-fold connected sum.
+* `TauCeti.HeegaardRegionSystem.finrank_hatHomology_iterateSumCircleTimesSphere`,
+  `TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_relativeGrading_iterateSumCircleTimesSphere`
+  and `TauCeti.HeegaardRegionSystem.IsDomainBetween.relativeGrading_iterateSumCircleTimesSphere`:
+  the hat homology and the relative grading of the `k`-fold connected sum.
 * `TauCeti.HeegaardRegionSystem.finrank_hatHomology_iterateSumCircleTimesSphere_lensSpace` and
   `TauCeti.HeegaardRegionSystem.relativeGrading_iterateSumCircleTimesSphere_lensSpace`: the hat
   homology of `#ᵏ (S¹ × S²)` has dimension `2 ^ k`, with the gradings of an exterior algebra.
@@ -223,28 +224,6 @@ section HatHomology
 variable [Fintype Point] [DecidableEq Region] [Fintype Region] {r₀ : Region} {χ : Region → ℤ}
   {H}
 
-/-- Under `TauCeti.HeegaardRegionSystem.addBasepointProdEquiv`, the hat differential of the
-connected sum with `S¹ × S²` in a region containing a basepoint is `∂ ⊗ 1`. -/
-theorem addBasepointProdEquiv_comp_hatDifferential_sumCircleTimesSphere
-    (hr₀ : r₀ ∈ Set.range H.basepoint) :
-    (H.addBasepointProdEquiv r₀).toLinearMap ∘ₗ
-        (H.sumCircleTimesSphere r₀).hatDifferential (sumCircleTimesSphereEuler χ r₀) =
-      (H.hatDifferential χ).rTensor (ZMod 2 × ZMod 2) ∘ₗ
-        (H.addBasepointProdEquiv r₀).toLinearMap := by
-  rw [H.hatDifferential_sumCircleTimesSphere_eq_hatDifferential_addBasepoint r₀ hr₀]
-  exact addBasepointProdEquiv_comp_hatDifferential hr₀
-
-/-- The inverse of `TauCeti.HeegaardRegionSystem.addBasepointProdEquiv` carries `∂ ⊗ 1` to the
-hat differential of the connected sum with `S¹ × S²` in a region containing a basepoint. -/
-theorem hatDifferential_sumCircleTimesSphere_comp_addBasepointProdEquiv_symm
-    (hr₀ : r₀ ∈ Set.range H.basepoint) :
-    (H.sumCircleTimesSphere r₀).hatDifferential (sumCircleTimesSphereEuler χ r₀) ∘ₗ
-        (H.addBasepointProdEquiv r₀).symm.toLinearMap =
-      (H.addBasepointProdEquiv r₀).symm.toLinearMap ∘ₗ
-        (H.hatDifferential χ).rTensor (ZMod 2 × ZMod 2) := by
-  rw [H.hatDifferential_sumCircleTimesSphere_eq_hatDifferential_addBasepoint r₀ hr₀]
-  exact hatDifferential_comp_addBasepointProdEquiv_symm hr₀
-
 /-- The hat differential of the connected sum with `S¹ × S²` in a region containing a basepoint
 squares to zero when that of the original diagram does. -/
 theorem hatDifferential_sumCircleTimesSphere_comp_self_eq_zero (hr₀ : r₀ ∈ Set.range H.basepoint)
@@ -262,24 +241,14 @@ noncomputable def hatHomologySumCircleTimesSphereEquiv (hr₀ : r₀ ∈ Set.ran
     (H.sumCircleTimesSphere r₀).hatHomology (sumCircleTimesSphereEuler χ r₀)
         (hatDifferential_sumCircleTimesSphere_comp_self_eq_zero hr₀ hd) ≃ₗ[ZMod 2]
       H.hatHomology χ hd ⊗[ZMod 2] (ZMod 2 × ZMod 2) :=
-  ((H.addBasepointProdEquiv r₀).homologyEquiv _ _
-      (addBasepointProdEquiv_comp_hatDifferential_sumCircleTimesSphere hr₀)).trans
-    ((H.hatDifferential χ).homologyRTensorProdEquiv hd)
-
-/-- The inverse of `TauCeti.HeegaardRegionSystem.hatHomologySumCircleTimesSphereEquiv` sends the
-class of a cycle `z` tensored with `w` to the class of the cycle
-`(TauCeti.HeegaardRegionSystem.addBasepointProdEquiv r₀).symm (z ⊗ w)`. -/
-@[simp]
-theorem hatHomologySumCircleTimesSphereEquiv_symm_mk_tmul (hr₀ : r₀ ∈ Set.range H.basepoint)
-    (hd : H.hatDifferential χ ∘ₗ H.hatDifferential χ = 0) (z : LinearMap.ker (H.hatDifferential χ))
-    (w : ZMod 2 × ZMod 2) :
-    (hatHomologySumCircleTimesSphereEquiv hr₀ hd).symm (Submodule.Quotient.mk z ⊗ₜ w) =
-      Submodule.Quotient.mk ⟨(H.addBasepointProdEquiv r₀).symm ((z : H.Generator →₀ ZMod 2) ⊗ₜ w),
-        LinearMap.map_mem_ker_of_comp_eq (H.addBasepointProdEquiv r₀).symm.toLinearMap
-          (hatDifferential_sumCircleTimesSphere_comp_addBasepointProdEquiv_symm hr₀).symm
-          (LinearMap.tmul_mem_ker_rTensor z.property w)⟩ := by
-  simp [hatHomologySumCircleTimesSphereEquiv, LinearEquiv.symm_apply_eq,
-    -addBasepointProdEquiv_symm_tmul]
+  -- The two hat complexes are equal, so transport the hat homology of the added basepoint.
+  ((LinearEquiv.refl (ZMod 2) _).homologyEquiv
+      (hatDifferential_sumCircleTimesSphere_comp_self_eq_zero hr₀ hd)
+      (H.hatDifferential_addBasepoint_comp_self_eq_zero hr₀ hd)
+      (by
+        rw [H.hatDifferential_sumCircleTimesSphere_eq_hatDifferential_addBasepoint r₀ hr₀]
+        rfl)).trans
+    (H.hatHomologyAddBasepointEquiv hr₀ hd)
 
 /-- The hat homology doubles in dimension under the connected sum with `S¹ × S²` in a region
 containing a basepoint. -/
@@ -287,9 +256,10 @@ theorem finrank_hatHomology_sumCircleTimesSphere (hr₀ : r₀ ∈ Set.range H.b
     (hd : H.hatDifferential χ ∘ₗ H.hatDifferential χ = 0) :
     finrank (ZMod 2) ((H.sumCircleTimesSphere r₀).hatHomology (sumCircleTimesSphereEuler χ r₀)
         (hatDifferential_sumCircleTimesSphere_comp_self_eq_zero hr₀ hd)) =
-      2 * finrank (ZMod 2) (H.hatHomology χ hd) := by
-  rw [(hatHomologySumCircleTimesSphereEquiv hr₀ hd).finrank_eq, finrank_tensorProduct,
-    finrank_prod, finrank_self, mul_comm]
+      2 * finrank (ZMod 2) (H.hatHomology χ hd) :=
+  (hatHomologySumCircleTimesSphereEquiv hr₀ hd).finrank_eq.trans
+    ((H.hatHomologyAddBasepointEquiv hr₀ hd).finrank_eq.symm.trans
+      (H.finrank_hatHomology_addBasepoint hr₀ hd))
 
 /-- **The stable hat invariant doubles under the connected sum with `S¹ × S²`**: the hat homology
 is tensored with `W` while the number of basepoints stays the same, so
@@ -408,47 +378,32 @@ theorem iterateSumCircleTimesSphereGenerator_succ (x : H.Generator) (k : ℕ)
   (rfl)
 
 /-- The generators of the `k`-fold connected sum are the pairs `(x, ε)` of a generator `x` of the
-original diagram and a choice `ε : Fin k → Fin 2` of a new point on each new `α`-curve. -/
-theorem iterateSumCircleTimesSphereGenerator_bijective :
-    ∀ k, Function.Bijective
-      fun c : H.Generator × (Fin k → Fin 2) => H.iterateSumCircleTimesSphereGenerator r₀ c.1 k c.2
-  | 0 => ⟨fun c d h => Prod.ext h (funext fun i => Fin.elim0 i), fun x => ⟨(x, Fin.elim0), rfl⟩⟩
-  | k + 1 => by
-    -- Split `ε` into `Fin.init ε` and `ε (Fin.last k)`, then use the case `k` and the generators
-    -- of a single connected sum.
-    have ih := iterateSumCircleTimesSphereGenerator_bijective k
-    refine ⟨fun c d h => ?_, fun g => ?_⟩
-    · simp only [iterateSumCircleTimesSphereGenerator_succ] at h
-      obtain ⟨h₁, h₂⟩ := Prod.ext_iff.mp
-        ((H.iterateSumCircleTimesSphere r₀ k).addBasepointGenerator_injective
-          (iterateSumCircleTimesSphereRegion r₀ k) (a₁ := (_, c.2 (Fin.last k)))
-          (a₂ := (_, d.2 (Fin.last k))) h)
-      obtain ⟨h₃, h₄⟩ := Prod.ext_iff.mp (ih.1 (a₁ := (c.1, Fin.init c.2))
-        (a₂ := (d.1, Fin.init d.2)) h₁)
-      refine Prod.ext h₃ ?_
-      rw [← Fin.snoc_init_self c.2, ← Fin.snoc_init_self d.2]
-      exact congrArg₂ _ h₄ h₂
-    · obtain ⟨⟨a, i⟩, rfl⟩ := ((H.iterateSumCircleTimesSphere r₀ k).addBasepointGenerator_surjective
-        (iterateSumCircleTimesSphereRegion r₀ k)) g
-      obtain ⟨⟨x, η⟩, rfl⟩ := ih.2 a
-      refine ⟨(x, Fin.snoc η i), ?_⟩
-      beta_reduce
-      rw [iterateSumCircleTimesSphereGenerator_succ, Fin.init_snoc]
-      exact congrArg _ (Fin.snoc_last (α := fun _ => Fin 2) (p := η) i)
-
-/-- The generators of the `k`-fold connected sum are the pairs `(x, ε)` of a generator `x` of the
-original diagram and a choice `ε : Fin k → Fin 2` of a new point on each new `α`-curve. -/
-noncomputable def iterateSumCircleTimesSphereGeneratorEquiv (k : ℕ) :
-    H.Generator × (Fin k → Fin 2) ≃ (H.iterateSumCircleTimesSphere r₀ k).Generator :=
-  Equiv.ofBijective _ (H.iterateSumCircleTimesSphereGenerator_bijective r₀ k)
+original diagram and a choice `ε : Fin k → Fin 2` of a new point on each new `α`-curve: split off
+the last entry of `ε` (`Fin.snocEquiv`) and use the generators of a single connected sum
+(`TauCeti.HeegaardRegionSystem.addBasepointGeneratorEquiv`). -/
+noncomputable def iterateSumCircleTimesSphereGeneratorEquiv :
+    ∀ k, H.Generator × (Fin k → Fin 2) ≃ (H.iterateSumCircleTimesSphere r₀ k).Generator
+  | 0 => Equiv.prodUnique _ _
+  | k + 1 => ((Equiv.prodCongr (Equiv.refl _)
+      ((Fin.snocEquiv fun _ => Fin 2).symm.trans (Equiv.prodComm _ _))).trans
+    ((Equiv.prodAssoc _ _ _).symm.trans
+      (Equiv.prodCongr (iterateSumCircleTimesSphereGeneratorEquiv k) (Equiv.refl _)))).trans
+    ((H.iterateSumCircleTimesSphere r₀ k).addBasepointGeneratorEquiv
+      (iterateSumCircleTimesSphereRegion r₀ k))
 
 /-- The equivalence sends `(x, ε)` to the generator `(x, ε)`. -/
 @[simp]
-theorem iterateSumCircleTimesSphereGeneratorEquiv_apply (k : ℕ)
-    (c : H.Generator × (Fin k → Fin 2)) :
-    H.iterateSumCircleTimesSphereGeneratorEquiv r₀ k c =
-      H.iterateSumCircleTimesSphereGenerator r₀ c.1 k c.2 :=
-  (rfl)
+theorem iterateSumCircleTimesSphereGeneratorEquiv_apply :
+    ∀ k (c : H.Generator × (Fin k → Fin 2)),
+      H.iterateSumCircleTimesSphereGeneratorEquiv r₀ k c =
+        H.iterateSumCircleTimesSphereGenerator r₀ c.1 k c.2
+  | 0, _ => rfl
+  | k + 1, (x, ε) =>
+    ((H.iterateSumCircleTimesSphere r₀ k).addBasepointGeneratorEquiv_apply _
+      (H.iterateSumCircleTimesSphereGeneratorEquiv r₀ k (x, Fin.init ε), ε (Fin.last k))).trans <|
+        congrArg (fun g => (H.iterateSumCircleTimesSphere r₀ k).addBasepointGenerator
+          (iterateSumCircleTimesSphereRegion r₀ k) g (ε (Fin.last k)))
+          (iterateSumCircleTimesSphereGeneratorEquiv_apply k (x, Fin.init ε))
 
 variable [DecidableEq Region]
 
@@ -573,37 +528,46 @@ variable (hself : ∀ (x : H.Generator) (E : Region → ℤ), H.IsDomainBetween 
 
 include hself
 
+/-- **The relative grading of the `k`-fold connected sum with `S¹ × S²`**, modulo the periodic
+Maslov indices: when the original diagram satisfies the relative-grading normalization `hself` and
+a domain joins `x` to `y`, the generators `(x, ε)` and `(y, δ)` have relative grading
+`gr(x, y) + ∑ᵢ (δ i - ε i)`. -/
+theorem IsDomainBetween.coe_relativeGrading_iterateSumCircleTimesSphere {x y : H.Generator}
+    {D : Region → ℤ} (hD : H.IsDomainBetween x y D) :
+    ∀ k (ε δ : Fin k → Fin 2),
+      ((H.iterateSumCircleTimesSphere r₀ k).relativeGrading
+          (iterateSumCircleTimesSphereEuler χ r₀ k)
+          (H.iterateSumCircleTimesSphereGenerator r₀ x k ε)
+          (H.iterateSumCircleTimesSphereGenerator r₀ y k δ) : ℚ ⧸ H.periodicMaslovIndices χ x) =
+        ((H.relativeGrading χ x y + ∑ i, ((δ i : ℚ) - ε i) : ℚ) : ℚ ⧸ H.periodicMaslovIndices χ x)
+  | 0, _, _ => by rw [Fin.sum_univ_zero]; exact congrArg _ (add_zero _).symm
+  | k + 1, ε, δ => by
+    obtain ⟨E, hE⟩ := hD.exists_isDomainBetween_iterateSumCircleTimesSphere (r₀ := r₀) k
+      (Fin.init ε) (Fin.init δ)
+    have h := hE.coe_relativeGrading_sumCircleTimesSphere
+      (r₀ := iterateSumCircleTimesSphereRegion r₀ k)
+      (H.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_iterateSumCircleTimesSphere r₀ χ
+        hself k) (ε (Fin.last k)) (δ (Fin.last k))
+    rw [periodicMaslovIndices_iterateSumCircleTimesSphere] at h
+    refine h.trans ?_
+    rw [QuotientAddGroup.mk_add, hD.coe_relativeGrading_iterateSumCircleTimesSphere k,
+      ← QuotientAddGroup.mk_add, Fin.sum_univ_castSucc, add_assoc]
+    simp only [Fin.init_def]
+
 /-- **The relative grading of the `k`-fold connected sum with `S¹ × S²`**: when the original
 diagram satisfies the relative-grading normalization `hself`, its periodic domains have Maslov
 index zero at `x` and a domain joins `x` to `y`, the generators `(x, ε)` and `(y, δ)` have relative
 grading `gr(x, y) + ∑ᵢ (δ i - ε i)`. -/
 theorem IsDomainBetween.relativeGrading_iterateSumCircleTimesSphere {x y : H.Generator}
     {D : Region → ℤ} (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0)
-    (hD : H.IsDomainBetween x y D) :
-    ∀ k (ε δ : Fin k → Fin 2),
-      (H.iterateSumCircleTimesSphere r₀ k).relativeGrading (iterateSumCircleTimesSphereEuler χ r₀ k)
-          (H.iterateSumCircleTimesSphereGenerator r₀ x k ε)
-          (H.iterateSumCircleTimesSphereGenerator r₀ y k δ) =
-        H.relativeGrading χ x y + ∑ i, ((δ i : ℚ) - ε i)
-  | 0, _, _ => by rw [Fin.sum_univ_zero]; exact (add_zero _).symm
-  | k + 1, ε, δ => by
-    obtain ⟨E, hE⟩ := hD.exists_isDomainBetween_iterateSumCircleTimesSphere (r₀ := r₀) k
-      (Fin.init ε) (Fin.init δ)
-    have hPk : ∀ P ∈ (H.iterateSumCircleTimesSphere r₀ k).periodicDomains,
-        (H.iterateSumCircleTimesSphere r₀ k).maslovIndex (iterateSumCircleTimesSphereEuler χ r₀ k)
-          (H.iterateSumCircleTimesSphereGenerator r₀ x k (Fin.init ε))
-          (H.iterateSumCircleTimesSphereGenerator r₀ x k (Fin.init ε)) P = 0 := by
-      rw [← periodicMaslovIndices_eq_bot_iff, periodicMaslovIndices_iterateSumCircleTimesSphere,
-        periodicMaslovIndices_eq_bot_iff]
-      exact hP
-    have h := hE.relativeGrading_sumCircleTimesSphere (r₀ := iterateSumCircleTimesSphereRegion r₀ k)
-      (H.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_iterateSumCircleTimesSphere r₀ χ
-        hself k) hPk (ε (Fin.last k)) (δ (Fin.last k))
-    rw [hD.relativeGrading_iterateSumCircleTimesSphere hP k] at h
-    refine h.trans ?_
-    rw [Fin.sum_univ_castSucc]
-    simp only [Fin.init]
-    ring
+    (hD : H.IsDomainBetween x y D) (k : ℕ) (ε δ : Fin k → Fin 2) :
+    (H.iterateSumCircleTimesSphere r₀ k).relativeGrading (iterateSumCircleTimesSphereEuler χ r₀ k)
+        (H.iterateSumCircleTimesSphereGenerator r₀ x k ε)
+        (H.iterateSumCircleTimesSphereGenerator r₀ y k δ) =
+      H.relativeGrading χ x y + ∑ i, ((δ i : ℚ) - ε i) := by
+  have h := QuotientAddGroup.eq_iff_sub_mem.mp
+    (hD.coe_relativeGrading_iterateSumCircleTimesSphere (r₀ := r₀) hself k ε δ)
+  rwa [periodicMaslovIndices_eq_bot_iff.mpr hP, AddSubgroup.mem_bot, sub_eq_zero] at h
 
 /-- The generators `(x, ε)` and `(x, δ)` of the `k`-fold connected sum with `S¹ × S²` have relative
 grading `∑ᵢ (δ i - ε i)` when the original diagram satisfies the relative-grading normalization
@@ -640,9 +604,9 @@ theorem finrank_hatHomology_iterateSumCircleTimesSphere_lensSpace (k : ℕ) :
 
 /-- **The relative grading of `#ᵏ (S¹ × S²)`.** In the `k`-fold connected sum of the genus-one
 diagram of `S³` with `S¹ × S²`, the generators `ε` and `δ`, choices of a new point on each new
-`α`-curve, have relative grading `∑ᵢ (δ i - ε i)`. So the grading of `ε` above the bottom
-generator `0` is the number of `i` with `ε i = 1`: these are the degrees of the exterior algebra
-on `k` generators of degree one. -/
+`α`-curve, have relative grading `∑ᵢ (δ i - ε i)`. So `0` is the top generator, and `ε` lies as
+many degrees below it as there are `i` with `ε i = 1`: these are the degrees of the exterior
+algebra on `k` generators of degree one. -/
 theorem relativeGrading_iterateSumCircleTimesSphere_lensSpace (k : ℕ) (ε δ : Fin k → Fin 2) :
     ((lensSpace 1 1 0).iterateSumCircleTimesSphere 0 k).relativeGrading
         (iterateSumCircleTimesSphereEuler 1 0 k)
