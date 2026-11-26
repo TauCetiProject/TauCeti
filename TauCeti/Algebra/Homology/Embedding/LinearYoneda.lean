@@ -37,7 +37,8 @@ of a Thom isomorphism, computes cohomology with values in any `Y`.
   `Hom(X.extend e, Y) ≅ Hom(X, Y).extend e.op`.
 * `ChainComplex.linearYonedaObjExtendHomologyIso`: for the embedding `i ↦ i + n` of
   `ComplexShape.down ℕ` (`ComplexShape.embeddingDownNatAdd n`), the isomorphism
-  `H^{q + n}(Hom(X.extend e, Y)) ≅ H^q(Hom(X, Y))`.
+  `H^{q + n}(Hom(X.extend e, Y)) ≅ H^q(Hom(X, Y))`, natural in `X`
+  (`ChainComplex.linearYonedaObjExtendHomologyIso_hom_naturality`).
 -/
 
 public section
@@ -186,5 +187,37 @@ def linearYonedaObjExtendHomologyIso (X : ChainComplex C ℕ) (n q : ℕ) :
       (linearYonedaObjExtendIso Y X (ComplexShape.embeddingDownNatAdd n)) ≪≫
     (X.linearYonedaObj k Y).extendHomologyIso (ComplexShape.embeddingDownNatAdd n).op
       (j := q) (ComplexShape.embeddingDownNatAdd_f n q)
+
+/-- `linearYonedaObjExtendHomologyIso` is the map in cohomology of `linearYonedaObjExtendIso`,
+followed by Mathlib's identification `HomologicalComplex.extendHomologyIso` of the cohomology of an
+extension. -/
+lemma linearYonedaObjExtendHomologyIso_hom (X : ChainComplex C ℕ) (n q : ℕ) :
+    (linearYonedaObjExtendHomologyIso (k := k) Y X n q).hom =
+      HomologicalComplex.homologyMap
+          (linearYonedaObjExtendIso Y X (ComplexShape.embeddingDownNatAdd n)).hom (q + n) ≫
+        ((X.linearYonedaObj k Y).extendHomologyIso (ComplexShape.embeddingDownNatAdd n).op
+          (j := q) (ComplexShape.embeddingDownNatAdd_f n q)).hom := (rfl)
+
+/-- **Naturality of `linearYonedaObjExtendHomologyIso` in the chain complex.** For a chain map
+`φ : X ⟶ X'`, the map in cohomology of precomposition with the shifted `φ` corresponds to the map
+in cohomology of precomposition with `φ`. -/
+@[reassoc]
+lemma linearYonedaObjExtendHomologyIso_hom_naturality {X X' : ChainComplex C ℕ} (φ : X ⟶ X')
+    (n q : ℕ) :
+    HomologicalComplex.homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map
+        (HomologicalComplex.extendMap φ (ComplexShape.embeddingDownNatAdd n)).op) (q + n) ≫
+        (linearYonedaObjExtendHomologyIso Y X n q).hom =
+      (linearYonedaObjExtendHomologyIso Y X' n q).hom ≫
+        HomologicalComplex.homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map φ.op)
+          q := by
+  -- the map in cohomology of `linearYonedaObjExtendIso_hom_naturality`
+  have h := (HomologicalComplex.homologyMap_comp _ _ _).symm.trans
+    ((congrArg (HomologicalComplex.homologyMap · (q + n))
+      (linearYonedaObjExtendIso_hom_naturality (k := k) Y φ
+        (ComplexShape.embeddingDownNatAdd n))).trans (HomologicalComplex.homologyMap_comp _ _ _))
+  rw [linearYonedaObjExtendHomologyIso_hom, linearYonedaObjExtendHomologyIso_hom]
+  -- followed by the naturality of Mathlib's `extendHomologyIso`
+  exact (Category.assoc _ _ _).symm.trans ((h =≫ _).trans ((Category.assoc _ _ _).trans
+    (_ ≫= HomologicalComplex.extendHomologyIso_hom_naturality _ _ _)))
 
 end ChainComplex
