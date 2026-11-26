@@ -49,8 +49,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- The standard Gaussian measure of the translated half-space is `Φ(s + t)`. -/
 theorem measureReal_stdGaussian_smul_vadd_setOf_inner_lt {ν : E} (hν : ‖ν‖ = 1) (s t : ℝ) :
     (stdGaussian E).real ((t • ν) +ᵥ {x : E | ⟪x, ν⟫ < s}) = cdf (gaussianReal 0 1) (s + t) := by
-  rw [vadd_setOf_inner_lt, real_inner_smul_left, real_inner_self_eq_norm_sq, hν, one_pow, mul_one,
-    measureReal_stdGaussian_setOf_inner_lt hν]
+  simp [vadd_setOf_inner_lt, real_inner_smul_left, hν, measureReal_stdGaussian_setOf_inner_lt hν]
 
 /-- For a unit vector `ν`, `t ↦ γ((t • ν) +ᵥ {x | ⟪x, ν⟫ < s})` has derivative `φ(s)` at `0`. -/
 theorem hasDerivAt_measureReal_stdGaussian_smul_vadd_setOf_inner_lt {ν : E} (hν : ‖ν‖ = 1)
