@@ -46,8 +46,13 @@ theorem not_cuntzLE_one_diag : ¬ CuntzLE oneMatrix diagOneZero := by
   -- Every `xₙ⋆ diag(1, 0) xₙ` has determinant `0`, the determinant is continuous, and `det 1 = 1`.
   let det : CStarMatrix (Fin 2) (Fin 2) ℂ → ℂ := fun M ↦
     (CStarMatrix.ofMatrixStarAlgEquiv.symm M).det
-  have hdet : Continuous det :=
-    (continuous_id.matrix_det).comp CStarMatrix.ofMatrixL.symm.continuous
+  -- The star algebra equivalence and the continuous linear equivalence have the same inverse.
+  have hsymm : (CStarMatrix.ofMatrixStarAlgEquiv.symm : CStarMatrix (Fin 2) (Fin 2) ℂ → _) =
+      CStarMatrix.ofMatrixL.symm := funext fun M ↦ CStarMatrix.ofMatrixL.injective <| by
+    rw [ContinuousLinearEquiv.apply_symm_apply, ← CStarMatrix.ofMatrix_eq_ofMatrixL,
+      CStarMatrix.ofMatrix_eq_ofMatrixStarAlgEquiv, StarAlgEquiv.apply_symm_apply]
+  have hdet : Continuous det := by
+    simpa only [det, hsymm] using CStarMatrix.ofMatrixL.symm.continuous.matrix_det
   have h0 (n : ℕ) : det (star (x n) * (diagOneZero : CStarMatrix (Fin 2) (Fin 2) ℂ) * x n) = 0 := by
     simp only [det, diagOneZero, CStarMatrix.ofMatrix_eq_ofMatrixStarAlgEquiv, map_mul,
       map_star, StarAlgEquiv.symm_apply_apply, Matrix.det_mul]
