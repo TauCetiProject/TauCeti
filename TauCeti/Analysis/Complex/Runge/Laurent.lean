@@ -58,9 +58,7 @@ theorem IsFilledIn.exists_differentiableOn_norm_eval_inv_sub_lt (hfill : IsFille
     ∃ g : ℂ → ℂ, DifferentiableOn ℂ g Ω ∧ ∀ z ∈ K, ‖P.eval (z - a)⁻¹ - g z‖ < ε := by
   let : CompactSpace K := isCompact_iff_compactSpace.mp hK
   let U : TopologicalSpace.Opens ℂ := ⟨Ω, hΩ⟩
-  let ρ := ContinuousMap.compRightAlgHom ℂ ℂ
-    (⟨Set.inclusion hKΩ, continuous_inclusion hKΩ⟩ : C(K, U))
-  let φ := ρ.comp (holomorphicFunctions U).val
+  let φ := HolomorphicFunctions.restrictContinuousMap (U := U) hKΩ
   let S := φ.range.topologicalClosure
   let w : C(K, ℂ) := ⟨fun z : K => ((z : ℂ) - a)⁻¹,
     (continuous_subtypeVal.sub continuous_const).inv₀ fun z =>
@@ -70,7 +68,7 @@ theorem IsFilledIn.exists_differentiableOn_norm_eval_inv_sub_lt (hfill : IsFille
     refine ⟨φ (HolomorphicFunctions.of U g₀ hg₀), ⟨_, rfl⟩, ?_⟩
     rw [dist_eq_norm, ContinuousMap.norm_lt_iff _ hδ]
     intro z
-    simpa [w, φ, ρ, HolomorphicFunctions.of_apply] using hbound z.val z.property
+    simpa [w, φ, HolomorphicFunctions.of_apply] using hbound z.val z.property
   let q : S := Polynomial.aeval (⟨w, hw⟩ : S) P
   obtain ⟨g, hg, hdist⟩ := Metric.mem_closure_iff.mp q.property ε hε
   obtain ⟨g', rfl⟩ := hg
@@ -79,7 +77,8 @@ theorem IsFilledIn.exists_differentiableOn_norm_eval_inv_sub_lt (hfill : IsFille
   have hqz : (q : C(K, ℂ)) ⟨z, hz⟩ = P.eval (z - a)⁻¹ := by
     simp only [q, Polynomial.coe_aeval_mk_apply, Polynomial.aeval_continuousMap_apply, w,
       ContinuousMap.coe_mk]
-  rw [HolomorphicFunctions.extend_apply g' ⟨z, hKΩ hz⟩, ← hqz]
+  rw [← HolomorphicFunctions.restrictContinuousMap_apply_eq_extend (U := U) hKΩ g' ⟨z, hz⟩,
+    ← hqz, ← ContinuousMap.sub_apply]
   exact lt_of_le_of_lt ((q.val - φ g').norm_coe_le_norm ⟨z, hz⟩)
     (by simpa [dist_eq_norm] using hdist)
 

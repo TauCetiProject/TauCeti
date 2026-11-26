@@ -232,29 +232,20 @@ theorem continuous_holomorphicCalculusOn (a : A) (U : Opens ℂ)
     (ha : spectrum ℂ a ⊆ U) : Continuous (holomorphicCalculusOn a U ha) := by
   obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha
   let := isCompact_iff_compactSpace.mp (Cycle.isCompact_trace Γ)
-  let j : C(Cycle.trace Γ, U) :=
-    ⟨fun z => ⟨z, (Cycle.isIn_iff.mp hΓ z.property).1⟩,
-      continuous_subtypeVal.subtype_mk _⟩
-  let ρ : holomorphicFunctions U →ₐ[ℂ] C(Cycle.trace Γ, ℂ) :=
-    (ContinuousMap.compRightAlgHom ℂ ℂ j).comp (holomorphicFunctions U).val
-  have hρ : Continuous ρ :=
-    (ContinuousMap.compRightAlgHom_continuous ℂ ℂ j).comp continuous_subtypeVal
-  have hρ_apply (f : holomorphicFunctions U) (z : Cycle.trace Γ) :
-      ρ f z = f.val ⟨z, (Cycle.isIn_iff.mp hΓ z.property).1⟩ := rfl
+  have hΓU : Cycle.trace Γ ⊆ U := fun _ hz => (Cycle.isIn_iff.mp hΓ hz).1
+  let ρ := restrictContinuousMap hΓU
+  have hρ : Continuous ρ := continuous_restrictContinuousMap hΓU
   have hres := Cycle.continuousOn_resolvent (isIn_resolventSet hΓ)
   obtain ⟨R, hR⟩ := (Cycle.isCompact_trace Γ).exists_bound_of_continuousOn hres
   let C := ‖(2 * π * I)⁻¹‖ *
     (∑ γ ∈ FreeAddCommGroup.support Γ, |(FreeAddCommGroup.coeff γ Γ : ℝ)| *
       ∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * R
-  let : IsTopologicalAddGroup (holomorphicFunctions U) :=
-    IsInducing.subtypeVal.isTopologicalAddGroup
-      (holomorphicFunctions U).val.toLinearMap.toAddMonoidHom
   apply continuous_of_tendsto_nhds_zero (holomorphicCalculusOn a U ha).toLinearMap.toAddMonoidHom
   apply squeeze_zero_norm (a := fun f => C * ‖ρ f‖)
   · intro f
     have hM : ∀ z ∈ Cycle.trace Γ, ‖extend f z‖ ≤ ‖ρ f‖ := by
       intro z hz
-      rw [extend_apply f ⟨z, (Cycle.isIn_iff.mp hΓ hz).1⟩, ← hρ_apply f ⟨z, hz⟩]
+      rw [← restrictContinuousMap_apply_eq_extend hΓU f ⟨z, hz⟩]
       exact (ρ f).norm_coe_le_norm ⟨z, hz⟩
     convert norm_holomorphicCalculusOn_le a U ha f Γ hΓ hn hw hM hR using 1 <;>
       dsimp [C]

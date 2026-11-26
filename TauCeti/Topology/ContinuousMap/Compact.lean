@@ -45,6 +45,10 @@ uniform positive distance from every point outside its range.
 * `ContinuousMap.exists_pos_le_dist_of_notMem_range`: a continuous map from a compact space into a
   metric space has `dist (f x) y` bounded below by a positive constant when `y ∉ Set.range f`.
 * `ContinuousMap.exists_pos_le_norm_sub_of_notMem_range`: the normed-group form `δ ≤ ‖f x - y‖`.
+* `ContinuousMap.dist_const`: on a nonempty compact space, constant continuous maps have the
+  distance between their values.
+* `ContinuousMap.dist_restrict_le_of_subset`: restricting to a smaller compact subset does not
+  increase the supremum distance.
 * `ContinuousMap.norm_evalCLM_le_one`, `ContinuousMap.norm_evalCLM`: point evaluation on `C(K, E)`
   for compact `K` has operator norm at most `1`, and exactly `1` when `E` has nontrivial topology.
 * `LinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a linear functional on `C(X, 𝕜)` that
@@ -110,6 +114,23 @@ theorem exists_pos_le_norm_sub_of_notMem_range {E : Type*} [CompactSpace X] [Nor
     ∃ δ > 0, ∀ x, δ ≤ ‖f x - y‖ := by
   simpa only [dist_eq_norm] using f.exists_pos_le_dist_of_notMem_range hy
 
+/-- On a nonempty compact space, the supremum distance between two constant continuous maps equals
+the distance between their values. -/
+@[simp]
+theorem dist_const {Y : Type*} [CompactSpace X] [Nonempty X] [PseudoMetricSpace Y] (a b : Y) :
+    dist (const X a) (const X b) = dist a b := by
+  refine le_antisymm ((dist_le dist_nonneg).mpr fun _ ↦ le_rfl) ?_
+  obtain ⟨x⟩ := ‹Nonempty X›
+  simpa only [const_apply] using dist_apply_le_dist (f := const X a) (g := const X b) x
+
+/-- Restricting continuous maps to a smaller compact subset gives at most the supremum distance on
+the larger compact subset. -/
+theorem dist_restrict_le_of_subset {X Y : Type*} [TopologicalSpace X] [PseudoMetricSpace Y]
+    (f g : C(X, Y)) {s t : Set X} [CompactSpace s] [CompactSpace t] (hst : s ⊆ t) :
+    dist (f.restrict s) (g.restrict s) ≤ dist (f.restrict t) (g.restrict t) :=
+  (ContinuousMap.dist_le dist_nonneg).mpr fun x ↦
+    ContinuousMap.dist_apply_le_dist (f := f.restrict t) (g := g.restrict t) ⟨x.val, hst x.property⟩
+
 /-- Point evaluation on `C(K, E)` has operator norm at most `1`. -/
 theorem norm_evalCLM_le_one {K 𝕜 E : Type*} [TopologicalSpace K] [CompactSpace K]
     [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] (x : K) :
@@ -126,8 +147,9 @@ theorem norm_evalCLM {K 𝕜 E : Type*} [TopologicalSpace K] [CompactSpace K]
   refine le_antisymm (norm_evalCLM_le_one x) ?_
   obtain ⟨v, hv⟩ := exists_norm_ne_zero E
   -- The constant function `v` has the same norm as `v`, and evaluates to `v` at `x`.
-  have hc : ‖const K v‖ = ‖v‖ :=
-    ((norm_le _ (norm_nonneg v)).2 fun _ ↦ le_rfl).antisymm ((const K v).norm_coe_le_norm x)
+  have : Nonempty K := ⟨x⟩
+  have hc : ‖const K v‖ = ‖v‖ := by
+    simpa only [const_zero, dist_zero_right] using dist_const (X := K) v 0
   simpa only [evalCLM_apply, const_apply, hc, div_self hv] using
     (evalCLM 𝕜 (M := E) x).ratio_le_opNorm (const K v)
 

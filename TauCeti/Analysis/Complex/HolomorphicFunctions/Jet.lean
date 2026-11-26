@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.HolomorphicFunctions.Basic
+public import TauCeti.Analysis.Complex.HolomorphicFunctions.Deriv
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Isomorphisms
@@ -13,10 +13,10 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 /-!
 # Finite jets of holomorphic functions
 
-The first `n` derivatives at a point give a linear map from holomorphic functions on an
-open domain to `Fin n → ℂ`. Its kernel consists of functions vanishing to order at least
-`n`, and has finite codimension. These kernels let one impose finitely many local conditions
-before estimating restriction to a smaller domain.
+The first `n` derivatives at a point give a continuous linear map from holomorphic functions on an
+open domain to `Fin n → ℂ`. Its kernel consists of functions vanishing to order at least `n`, is
+closed for the compact-open topology, and has finite codimension. These kernels let one impose
+finitely many local conditions before estimating restriction to a smaller domain.
 
 The derivative criterion for vanishing order is Mathlib's
 `natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero`.
@@ -66,6 +66,35 @@ theorem jet_of (ha : a ∈ U) (n : ℕ) (f : ℂ → ℂ) (hf : DifferentiableOn
 /-- The components of a jet are the iterated derivatives of the zero extension. -/
 theorem jet_apply (ha : a ∈ U) (n : ℕ) (f : holomorphicFunctions U) (i : Fin n) :
     jet ha n f i = iteratedDeriv i (extend f) a := (rfl)
+
+/-- Each coordinate of the finite jet `jet ha n` is point evaluation of an iterated derivative. -/
+theorem jet_apply_eq_eval_iterate_deriv (ha : a ∈ U) (n : ℕ)
+    (f : holomorphicFunctions U) (i : Fin n) :
+    jet ha n f i = eval a ha (deriv^[i] f) := by
+  rw [jet_apply, eval_apply, iterate_deriv_apply]
+
+/-- Differentiating shifts the finite jet coordinates by one order. -/
+@[simp]
+theorem jet_deriv (ha : a ∈ U) (n : ℕ) (f : holomorphicFunctions U) (i : Fin n) :
+    jet ha n (deriv f) i = jet ha (n + 1) f i.succ := by
+  rw [jet_apply_eq_eval_iterate_deriv, jet_apply_eq_eval_iterate_deriv, Fin.val_succ,
+    Function.iterate_succ_apply]
+
+/-- The finite jet map `jet ha n : holomorphicFunctions U →ₗ[ℂ] (Fin n → ℂ)` is continuous for the
+compact-open topology. -/
+@[continuity, fun_prop]
+theorem continuous_jet (ha : a ∈ U) (n : ℕ) : Continuous (jet ha n) := by
+  refine continuous_pi fun i ↦ ?_
+  have heq : (fun f ↦ jet ha n f i) = fun f ↦ eval a ha (deriv^[i] f) :=
+    funext fun f ↦ jet_apply_eq_eval_iterate_deriv ha n f i
+  rw [heq]
+  exact (continuous_eval a ha).comp ((deriv (U := U)).continuous.iterate i)
+
+/-- The kernel of a finite jet `jet ha n` is closed in `holomorphicFunctions U`. -/
+theorem isClosed_ker_jet (ha : a ∈ U) (n : ℕ) :
+    IsClosed ((jet ha n).ker : Set (holomorphicFunctions U)) := by
+  rw [LinearMap.ker, Submodule.comap_coe, Submodule.bot_coe]
+  exact isClosed_singleton.preimage (continuous_jet ha n)
 
 /-- The `n`-jet vanishes exactly when the function has vanishing order at least `n`. -/
 @[simp]

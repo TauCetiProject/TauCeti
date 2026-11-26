@@ -15,6 +15,8 @@ import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Frontier
+import TauCeti.Topology.MetricSpace.ProperSpace
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Filled compact exhaustions of open sets
@@ -122,11 +124,8 @@ theorem le_dist_of_mem_filledExhaustion {Ω : Set E} {n : ℕ} {x y : E}
   exact (ENNReal.ofReal_le_ofReal_iff dist_nonneg).mp h
 
 /-- Every stage `filledExhaustion Ω n` lies in `Ω`. -/
-theorem filledExhaustion_subset (Ω : Set E) (n : ℕ) : filledExhaustion Ω n ⊆ Ω := fun x hx ↦ by
-  by_contra hxΩ
-  have h := le_dist_of_mem_filledExhaustion hx hxΩ
-  rw [dist_self] at h
-  exact h.not_gt (by positivity)
+theorem filledExhaustion_subset (Ω : Set E) (n : ℕ) : filledExhaustion Ω n ⊆ Ω :=
+  sdiff_thickening_compl_subset _ _ (by positivity)
 
 @[simp]
 theorem filledExhaustion_empty (n : ℕ) : filledExhaustion (∅ : Set E) n = ∅ :=
@@ -161,18 +160,11 @@ theorem isBounded_filledExhaustion (Ω : Set E) (n : ℕ) : IsBounded (filledExh
 `filledExhaustion Ω (n + 1)`. -/
 theorem filledExhaustion_subset_interior_succ (Ω : Set E) (n : ℕ) :
     filledExhaustion Ω n ⊆ interior (filledExhaustion Ω (n + 1)) := by
-  -- `K n` lies in the open set `ball 0 (n + 2) \ cthickening (n + 2)⁻¹ Ωᶜ ⊆ K (n + 1)`.
-  have hopen : IsOpen (ball (0 : E) (n + 1 + 1) \ cthickening (n + 1 + 1 : ℝ)⁻¹ Ωᶜ) :=
-    isOpen_ball.sdiff isClosed_cthickening
-  refine Subset.trans ?_ (hopen.subset_interior_iff.mpr ?_)
-  · intro x hx
-    rw [filledExhaustion_def] at hx
-    refine ⟨mem_ball_zero_iff.mpr ((mem_closedBall_zero_iff.mp hx.1).trans_lt (by linarith)),
-      fun h ↦ hx.2 (cthickening_subset_thickening' (by positivity) ?_ _ h)⟩
-    gcongr
-    linarith
-  · simp only [filledExhaustion_def, Nat.cast_add, Nat.cast_one]
-    exact sdiff_subset_sdiff ball_subset_closedBall (thickening_subset_cthickening _ _)
+  simpa only [filledExhaustion_def, Nat.cast_add, Nat.cast_one] using
+    closedBall_sdiff_thickening_subset_interior (0 : E) Ωᶜ
+      (r₁ := (n : ℝ) + 1) (r₂ := (n : ℝ) + 1 + 1)
+      (δ₁ := ((n : ℝ) + 1)⁻¹) (δ₂ := ((n : ℝ) + 1 + 1)⁻¹)
+      (by linarith) (by positivity) (inv_strictAnti₀ (by positivity) (by linarith))
 
 /-- The stages `filledExhaustion Ω n` increase with `n`. -/
 theorem filledExhaustion_monotone (Ω : Set E) : Monotone (filledExhaustion Ω) :=
@@ -198,20 +190,8 @@ theorem filledExhaustion_mono_left {Ω₁ Ω₂ : Set E} (h : Ω₁ ⊆ Ω₂) (
   exact sdiff_subset_sdiff Subset.rfl (thickening_subset_of_subset _ (compl_subset_compl.mpr h))
 
 /-- For any set `Ω`, the union of the stages `filledExhaustion Ω n` is `interior Ω`. -/
-theorem iUnion_filledExhaustion (Ω : Set E) : ⋃ n, filledExhaustion Ω n = interior Ω := by
-  refine Subset.antisymm (iUnion_subset fun n ↦ (filledExhaustion_subset_interior_succ Ω n).trans
-    (interior_mono (filledExhaustion_subset Ω (n + 1)))) fun x hx ↦ ?_
-  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp (mem_interior_iff_mem_nhds.mp hx)
-  obtain ⟨n, hn⟩ := exists_nat_ge (max ‖x‖ ε⁻¹)
-  have hn₁ : ‖x‖ ≤ n := (le_max_left _ _).trans hn
-  have hn₂ : ε⁻¹ < n + 1 := ((le_max_right _ _).trans hn).trans_lt (by linarith)
-  refine mem_iUnion.mpr ⟨n, ?_⟩
-  rw [filledExhaustion_def]
-  refine ⟨mem_closedBall_zero_iff.mpr (by linarith), fun h ↦ ?_⟩
-  obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.mp h
-  refine hy (hball ?_)
-  rw [mem_ball, dist_comm]
-  exact hxy.trans (inv_lt_of_inv_lt₀ hε hn₂)
+theorem iUnion_filledExhaustion (Ω : Set E) : ⋃ n, filledExhaustion Ω n = interior Ω :=
+  Metric.iUnion_closedBall_sdiff_thickening_compl 0 Ω
 
 /-- For an open set `Ω`, the stages `filledExhaustion Ω n` have union `Ω`. -/
 theorem _root_.IsOpen.iUnion_filledExhaustion {Ω : Set E} (hΩ : IsOpen Ω) :
@@ -262,9 +242,8 @@ section Compact
 variable {E : Type*} [SeminormedAddCommGroup E] [ProperSpace E]
 
 /-- In a proper space, each stage `filledExhaustion Ω n` is compact. -/
-theorem isCompact_filledExhaustion (Ω : Set E) (n : ℕ) : IsCompact (filledExhaustion Ω n) := by
-  rw [filledExhaustion_def]
-  exact (isCompact_closedBall _ _).diff isOpen_thickening
+theorem isCompact_filledExhaustion (Ω : Set E) (n : ℕ) : IsCompact (filledExhaustion Ω n) :=
+  isCompact_closedBall_sdiff_thickening 0 (n + 1) (n + 1 : ℝ)⁻¹ Ωᶜ
 
 end Compact
 

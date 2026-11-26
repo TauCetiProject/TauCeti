@@ -10,10 +10,14 @@ public import Mathlib.Topology.Compactness.SigmaCompact
 public import TauCeti.Topology.Sets.Opens
 
 /-!
-# Compact exhaustions of open sets
+# Compact exhaustions and local/σ-compactness
 
-A sigma-compact open subset of a locally compact space has a monotone sequence of compact
-subsets that exhausts it in the sense that every compact subset lies in one of them
+Every stage of a `CompactExhaustion` is a compact subspace (`CompactExhaustion.instCompactSpace`),
+and any space admitting a `CompactExhaustion` is both weakly locally compact
+(`CompactExhaustion.weaklyLocallyCompactSpace`) and σ-compact
+(`CompactExhaustion.sigmaCompactSpace`). Conversely, a sigma-compact open subset of a locally
+compact space has a monotone sequence of compact subsets that exhausts it in the sense that every
+compact subset lies in one of them
 (`IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset`).
 
 Conversely, compact subsets `Kₙ ⊆ U` of the ambient space with `Kₙ ⊆ interior Kₙ₊₁` that cover
@@ -37,6 +41,27 @@ lets Lean find both there.
 public section
 
 open Set
+
+namespace CompactExhaustion
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- Every stage of a `CompactExhaustion` is a compact subspace. -/
+instance instCompactSpace (K : CompactExhaustion X) (n : ℕ) : CompactSpace (K n) :=
+  isCompact_iff_compactSpace.mp (K.isCompact n)
+
+/-- Any space admitting a `CompactExhaustion` is weakly locally compact. -/
+protected theorem weaklyLocallyCompactSpace (K : CompactExhaustion X) :
+    WeaklyLocallyCompactSpace X where
+  exists_compact_mem_nhds x :=
+    let ⟨n, hn⟩ := K.exists_mem_nhds x
+    ⟨K n, K.isCompact n, hn⟩
+
+/-- Any space admitting a `CompactExhaustion` is σ-compact. -/
+protected theorem sigmaCompactSpace (K : CompactExhaustion X) : SigmaCompactSpace X :=
+  ⟨⟨K, K.isCompact, K.iUnion_eq⟩⟩
+
+end CompactExhaustion
 
 /-- A sigma-compact open subset `Ω` of a locally compact space has a monotone sequence of
 compact subsets of `Ω` such that every compact subset of `Ω` lies in one of them. -/

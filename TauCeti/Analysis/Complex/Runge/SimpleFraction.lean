@@ -69,16 +69,14 @@ theorem IsFilledIn.exists_differentiableOn_norm_inv_sub_lt (hfill : IsFilledIn K
   -- Work in the uniform closure of the restriction algebra; the coordinate has ambient spectrum K.
   let : CompactSpace K := isCompact_iff_compactSpace.mp hK
   let U : TopologicalSpace.Opens ℂ := ⟨Ω, hΩ⟩
-  let ρ := ContinuousMap.compRightAlgHom ℂ ℂ
-    (⟨Set.inclusion hKΩ, continuous_inclusion hKΩ⟩ : C(K, U))
-  let φ := ρ.comp (holomorphicFunctions U).val
+  let φ := HolomorphicFunctions.restrictContinuousMap (U := U) hKΩ
   let R := φ.range
   let S := R.topologicalClosure
   let : IsClosed (S : Set C(K, ℂ)) := R.isClosed_topologicalClosure
   let x : S := ⟨φ (HolomorphicFunctions.of U id differentiable_id.differentiableOn),
     R.le_topologicalClosure ⟨_, rfl⟩⟩
   have hxval (z : K) : (x : C(K, ℂ)) z = z := by
-    simp [x, φ, ρ]
+    simp [x, φ]
   have hx : spectrum ℂ (x : C(K, ℂ)) = K := by
     rw [ContinuousMap.spectrum_eq_range]
     have hxmap : (x : C(K, ℂ)) = ⟨Subtype.val, continuous_subtypeVal⟩ :=
@@ -98,7 +96,7 @@ theorem IsFilledIn.exists_differentiableOn_norm_inv_sub_lt (hfill : IsFilledIn K
     apply Subtype.ext
     apply ContinuousMap.ext
     intro z
-    simpa [y, φ, ρ, hxval] using
+    simpa [y, φ, hxval] using
       mul_inv_cancel₀ (sub_ne_zero.mpr fun h : b = (z : ℂ) ↦ hb (h ▸ hKΩ z.property))
   have hspec : a ∉ spectrum ℂ x := by
     intro haspec
@@ -127,7 +125,8 @@ theorem IsFilledIn.exists_differentiableOn_norm_inv_sub_lt (hfill : IsFilledIn K
   obtain ⟨g', rfl⟩ := hg
   refine ⟨HolomorphicFunctions.extend g', HolomorphicFunctions.differentiableOn_extend g',
     fun z hz ↦ ?_⟩
-  rw [HolomorphicFunctions.extend_apply g' ⟨z, hKΩ hz⟩, ← hv ⟨z, hz⟩]
+  rw [← HolomorphicFunctions.restrictContinuousMap_apply_eq_extend (U := U) hKΩ g' ⟨z, hz⟩,
+    ← hv ⟨z, hz⟩, ← ContinuousMap.sub_apply]
   exact lt_of_le_of_lt ((v.val - φ g').norm_coe_le_norm ⟨z, hz⟩)
     (by simpa [dist_eq_norm] using hdist)
 
