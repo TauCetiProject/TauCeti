@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.AbsolutelyContinuous
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # The absolutely continuous characterization of interval Sobolev classes
@@ -26,7 +27,12 @@ by endpoint projection is absolutely continuous and has derivative in `Lᵖ(a,b)
 particular the characterization retains derivative integrability at `p = 2`; absolute
 continuity alone does not characterize `H¹`. A constant plus the primitive of an `Lᵖ` function is
 such a representative, with weak gradient that function
-(`TauCeti.W1p.exists_intervalRepresentativeL_eq_and_gradient_ae_eq`).
+(`TauCeti.W1p.exists_intervalRepresentativeL_eq_and_gradient_ae_eq`). Integrating by parts
+against the flux `F(x) = c - ∫_a^x f` of an integrable `f` gives
+`∫_a^b F v' = F(b) v(b) - F(a) v(a) + ∫_a^b f v` for every Sobolev class `v`
+(`TauCeti.W1p.setIntegral_sub_intervalIntegral_mul_gradient_eq`), so the class with
+representative `C + ∫_a^x F` satisfies this identity with `u'` in place of `F`
+(`TauCeti.W1p.exists_intervalRepresentativeL_eq_and_forall_setIntegral_gradient_mul_gradient_eq`).
 
 ## References
 
@@ -170,5 +176,64 @@ theorem exists_intervalRepresentativeL_eq_and_gradient_ae_eq (hab : a < b) {t₀
   filter_upwards [Ioo_mem_nhds htI.1 htI.2] with s hs
   rw [projIcc_of_mem hab.le (Ioo_subset_Icc_self hs)]
   exact hu ⟨s, Ioo_subset_Icc_self hs⟩
+
+/-- **Integration by parts against a flux.** For `f ∈ L¹(a, b)`, a constant `c` and
+`v ∈ W^{1,p}(a, b)`, the flux `F(x) = c - ∫_a^x f` satisfies
+`∫_a^b F v' = F(b) v(b) - F(a) v(a) + ∫_a^b f v`. -/
+theorem setIntegral_sub_intervalIntegral_mul_gradient_eq (hab : a < b) {f : ℝ → ℝ}
+    (hf : IntegrableOn f (Ioo a b)) (c : ℝ) (v : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) :
+    ∫ t in Ioo a b, (c - ∫ s in a..t, f s) * gradient v t =
+      (c - ∫ t in Ioo a b, f t) * (intervalTraceL hab v).2 -
+        c * (intervalTraceL hab v).1 + ∫ t in Ioo a b, f t * value v t := by
+  -- The flux is the representative of a `W^{1,1}` class with weak gradient `-f`.
+  obtain ⟨w, hw, hgw⟩ := exists_intervalRepresentativeL_eq_and_gradient_ae_eq (p := 1) hab
+    (left_mem_Icc.2 hab.le) c (memLp_one_iff_integrable.2 hf).neg
+  have hrep (t : Icc a b) : intervalRepresentativeL hab w t = c - ∫ s in a..(t : ℝ), f s := by
+    rw [hw]
+    simp only [Pi.neg_apply, intervalIntegral.integral_neg, sub_eq_add_neg]
+  have h := integral_intervalRepresentativeL_mul_gradient_eq_sub hab w v
+  rw [intervalIntegral.integral_of_le hab.le, intervalIntegral.integral_of_le hab.le,
+    integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo] at h
+  have h1 : ∫ t in Ioo a b, intervalRepresentativeL hab w (projIcc a b hab.le t) *
+      gradient v t = ∫ t in Ioo a b, (c - ∫ s in a..t, f s) * gradient v t := by
+    refine setIntegral_congr_fun measurableSet_Ioo fun t ht => ?_
+    rw [projIcc_of_mem hab.le (Ioo_subset_Icc_self ht), hrep]
+  have h2 : ∫ t in Ioo a b, gradient w t *
+      intervalRepresentativeL hab v (projIcc a b hab.le t) =
+        -∫ t in Ioo a b, f t * value v t := by
+    rw [← integral_neg]
+    refine integral_congr_ae ?_
+    filter_upwards [hgw, value_ae_eq_intervalRepresentativeL hab v] with t hgt hvt
+    rw [hgt, ← hvt, Pi.neg_apply, neg_mul]
+  have hb : ∫ s in a..b, f s = ∫ t in Ioo a b, f t := by
+    rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo]
+  rw [h1, h2, intervalTraceL_apply, intervalTraceL_apply, hrep, hrep] at h
+  simp only [intervalIntegral.integral_same, sub_zero, hb] at h
+  rw [h, intervalTraceL_apply]
+  ring
+
+/-- **The class with a prescribed flux.** For `f ∈ L¹(a, b)` and constants `C` and `c`, the
+function `C + ∫_a^x (c - ∫_a^s f) ds` is the representative of a class `u ∈ W^{1,p}(a, b)` with
+flux `u' = c - ∫_a^x f`, so that `∫_a^b u' v' = (c - ∫_a^b f) v(b) - c v(a) + ∫_a^b f v` for every
+`v ∈ W^{1,q}(a, b)`. -/
+theorem exists_intervalRepresentativeL_eq_and_forall_setIntegral_gradient_mul_gradient_eq
+    {q : ℝ≥0∞} [Fact (1 ≤ q)] (hab : a < b) {f : ℝ → ℝ} (hf : IntegrableOn f (Ioo a b))
+    (C c : ℝ) :
+    ∃ u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p,
+      (∀ t : Icc a b, intervalRepresentativeL hab u t =
+        C + ∫ s in a..(t : ℝ), (c - ∫ r in a..s, f r)) ∧
+      ∀ v : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ q,
+        ∫ t in Ioo a b, gradient u t * gradient v t =
+          (c - ∫ t in Ioo a b, f t) * (intervalTraceL hab v).2 -
+            c * (intervalTraceL hab v).1 + ∫ t in Ioo a b, f t * value v t := by
+  obtain ⟨u, hu, hgu⟩ := exists_intervalRepresentativeL_eq_and_gradient_ae_eq (p := p) hab
+    (left_mem_Icc.2 hab.le) C
+    ((memLp_const c).sub (TauCeti.intervalIntegral.memLp_primitive hf (left_mem_Icc.2 hab.le)))
+  refine ⟨u, hu, fun v => ?_⟩
+  rw [← setIntegral_sub_intervalIntegral_mul_gradient_eq hab hf c v]
+  refine integral_congr_ae ?_
+  filter_upwards [hgu] with t ht
+  rw [ht]
+  rfl
 
 end TauCeti.W1p
