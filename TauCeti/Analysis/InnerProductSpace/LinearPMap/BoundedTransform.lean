@@ -176,6 +176,9 @@ private theorem bjShift_pos (r : ℝ) : 0 < bjShift r :=
 private theorem sq_bjShift (r : ℝ) : bjShift r ^ 2 = 1 + max r 0 :=
   Real.sq_sqrt (by linarith [le_max_right r 0])
 
+private theorem sq_bjShift_of_nonneg {r : ℝ} (hr : 0 ≤ r) : bjShift r ^ 2 = 1 + r := by
+  rw [sq_bjShift, max_eq_left hr]
+
 private theorem continuous_bjShift : Continuous bjShift :=
   Real.continuous_sqrt.comp (continuous_const.add (continuous_id.max continuous_const))
 
@@ -217,7 +220,7 @@ private theorem bjMulRes_apply_basis (hA : IsSelfAdjoint A) {ι : Type*} {b : Hi
   congr 1
   set s : ℝ := bjShift r
   have hs0 : s ≠ 0 := (bjShift_pos r).ne'
-  have hs2 : s ^ 2 = 1 + r := by rw [sq_bjShift, max_eq_left hr]
+  have hs2 : s ^ 2 = 1 + r := sq_bjShift_of_nonneg hr
   have hpos1 : Complex.I * (s : ℂ) - (lam k : ℂ) ≠ 0 :=
     fun heq ↦ hs0 (by simpa using congrArg Complex.im heq)
   have hpos2 : -Complex.I * (s : ℂ) - (lam k : ℂ) ≠ 0 :=
@@ -263,7 +266,7 @@ private theorem norm_bjMulRes_commutator_le (hA : IsSelfAdjoint A) {T C : H →L
       hTC.resolvent_mul_sub_mul_resolvent (mem_resolventSet_I_bjShift hA r),
       hTC.resolvent_mul_sub_mul_resolvent (mem_resolventSet_neg_I_bjShift hA r)]
   have hs0 : bjShift r ≠ 0 := (bjShift_pos r).ne'
-  have hs2 : bjShift r ^ 2 = 1 + r := by rw [sq_bjShift, max_eq_left hr]
+  have hs2 : bjShift r ^ 2 = 1 + r := sq_bjShift_of_nonneg hr
   have hn_pos : ‖A.resolvent (Complex.I * bjShift r)‖ ≤ (bjShift r)⁻¹ := by
     simpa only [abs_of_pos (bjShift_pos r)] using hA.norm_resolvent_I_mul_le hs0
   have hn_neg : ‖A.resolvent (-Complex.I * bjShift r)‖ ≤ (bjShift r)⁻¹ := by

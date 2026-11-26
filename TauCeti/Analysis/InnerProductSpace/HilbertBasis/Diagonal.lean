@@ -10,7 +10,6 @@ public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
 public import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 import Mathlib.Analysis.Normed.Group.Tannery
-import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 
 /-!

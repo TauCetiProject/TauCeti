@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
-public import Mathlib.Order.Northcott
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.CompactResolvent
 public import TauCeti.LinearAlgebra.LinearPMap.Restrict
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Dimension

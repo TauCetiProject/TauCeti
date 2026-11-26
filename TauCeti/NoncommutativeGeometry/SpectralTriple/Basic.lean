@@ -354,11 +354,21 @@ theorem ofFiniteDimensional_operator [FiniteDimensional ℂ H] (π : A →⋆ₐ
     (D : H →L[ℂ] H) (hD : IsSelfAdjoint D) :
     (ofFiniteDimensional π D hD).operator = (D : H →ₗ[ℂ] H).toPMap ⊤ := by rfl
 
+private theorem ofFiniteDimensional_operator_apply [FiniteDimensional ℂ H]
+    (π : A →⋆ₐ[ℂ] H →L[ℂ] H) (D : H →L[ℂ] H) (hD : IsSelfAdjoint D)
+    (x : (ofFiniteDimensional π D hD).operator.domain) :
+    (ofFiniteDimensional π D hD).operator x = D x :=
+  ((LinearPMap.ext_iff.mp (ofFiniteDimensional_operator π D hD)).2
+      (hf := x.property) (hg := Submodule.mem_top)).trans
+    ((LinearMap.toPMap_apply (D : H →ₗ[ℂ] H) ⊤ ⟨x, Submodule.mem_top⟩).trans
+      (congrFun (ContinuousLinearMap.coe_coe D) (x : H)))
+
 @[simp]
 theorem ofFiniteDimensional_commutator [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H)
     (D : H →L[ℂ] H) (hD : IsSelfAdjoint D) (a : A) :
     (ofFiniteDimensional π D hD).commutator a = D * π a - π a * D :=
-  ((ofFiniteDimensional π D hD).eq_commutator_of_domain fun _ ↦ rfl).symm
+  ((ofFiniteDimensional π D hD).eq_commutator_of_domain fun _ ↦ by
+    simp [ofFiniteDimensional_operator_apply, ContinuousLinearMap.mul_def]).symm
 
 end SpectralTriple
 
@@ -507,10 +517,8 @@ def ofFiniteDimensional [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[
   commute_grading_rep := hγπ
   grading_mem_domain _ := Submodule.mem_top
   grading_apply_operator x := by
-    have h1 : (SpectralTriple.ofFiniteDimensional π D hD).operator x = D x := rfl
-    have h2 : (SpectralTriple.ofFiniteDimensional π D hD).operator ⟨γ ↑x, Submodule.mem_top⟩ =
-        D (γ ↑x) := rfl
-    rw [h1, h2]
+    rw [SpectralTriple.ofFiniteDimensional_operator_apply,
+      SpectralTriple.ofFiniteDimensional_operator_apply]
     simpa [ContinuousLinearMap.mul_def] using congrArg (fun T : H →L[ℂ] H ↦ T (x : H)) hγD
 
 @[simp]

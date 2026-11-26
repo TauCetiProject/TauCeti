@@ -55,13 +55,13 @@ private theorem spectralPVM_diag_eq_smul_dirac (hA : IsSelfAdjoint A) (x : A.dom
     MeasureTheory.resolventTransform ((A.spectralPVM hA).diag (x : H)) z
       = -⟪(x : H), A.resolvent z x⟫_ℂ := by
         rw [hkernel, hA.inner_resolvent_apply_eq_integral hzA (x : H)]
-    _ = -((z - r)⁻¹ * ((RCLike.ofReal ‖(x : H)‖) ^ 2)) := by
+    _ = -((z - r)⁻¹ * ((‖(x : H)‖ : ℂ) ^ 2)) := by
         rw [resolvent_apply_of_apply_eq_smul hzA x hx, inner_smul_right,
           inner_self_eq_norm_sq_to_K]
+        simp
     _ = MeasureTheory.resolventTransform (ENNReal.ofReal (‖(x : H)‖ ^ 2) • Measure.dirac r) z := by
         rw [hkernel, MeasureTheory.integral_smul_measure, ENNReal.toReal_ofReal (sq_nonneg _),
           Complex.real_smul, MeasureTheory.integral_dirac _ r, mul_comm, Complex.ofReal_pow]
-        rfl
 
 /-- On an eigenvector of `A` with real eigenvalue `r`, `(A.spectralPVM hA).integral g` acts as
 scalar multiplication by `g r`. -/
