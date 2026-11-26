@@ -359,8 +359,7 @@ private theorem coeff_add_two_formalCoordinate (n : ℕ) (C : VariableChange R)
         PowerSeries.C C.t * (X ^ 3 * (ψ * formalU (C • W))) := by
     have h := C.formalCoordinate_mul_formalDenom W
     rw [formalDenom_def, ← map_pow, ← map_pow] at h
-    nth_rw 1 [formalW_eq_X_pow_mul_formalU] at h
-    linear_combination h
+    linear_combination h + ψ * PowerSeries.C C.t * formalW_eq_X_pow_mul_formalU (C • W)
   have hc := congrArg (coeff (n + 2)) hp
   simp only [map_add, coeff_C_mul, coeff_X, Nat.reduceEqDiff, ↓reduceIte, mul_zero,
     zero_add, coeff_succ_X_mul, coeff_formalW] at hc
@@ -731,12 +730,16 @@ theorem formalW_mk_smul (W : WeierstrassCurve R) (u : Rˣ) :
     formalW ((⟨u, 0, 0, 0⟩ : VariableChange R) • W) =
       (u : R) ^ 3 • PowerSeries.rescale (↑u⁻¹ : R) (formalW W) := by
   let C : VariableChange R := ⟨u, 0, 0, 0⟩
-  have h := congrArg (· * C.formalDenom W) (C.subst_formalCoordinate_formalW W)
-  have hd : C.formalDenom W = PowerSeries.C (u : R) ^ 3 := by
+  have hs : PowerSeries.rescale (↑u⁻¹ : R) (formalW W) =
+      formalW (C • W) * invOfUnit (C.formalDenom W) (C.u ^ 3) := by
+    simpa only [C, VariableChange.formalCoordinate_mk,
+      TauCeti.FormalCoordinate.toPowerSeries_homothety, ← PowerSeries.rescale_eq_subst] using
+      C.subst_formalCoordinate_formalW W
+  have hd : C.formalDenom W = PowerSeries.C ((u : R) ^ 3) := by
     simp [VariableChange.formalDenom_def, C]
-  rw [mul_assoc, invOfUnit_mul _ _ (C.constantCoeff_formalDenom W), mul_one,
-    VariableChange.formalCoordinate_mk, TauCeti.FormalCoordinate.toPowerSeries_homothety,
-    ← PowerSeries.rescale_eq_subst, hd, mul_comm, ← map_pow, ← PowerSeries.smul_eq_C_mul] at h
-  exact h.symm
+  have hinv : invOfUnit (C.formalDenom W) (C.u ^ 3) * PowerSeries.C ((u : R) ^ 3) = 1 :=
+    hd ▸ invOfUnit_mul _ _ (C.constantCoeff_formalDenom W)
+  rw [PowerSeries.smul_eq_C_mul]
+  linear_combination -formalW (C • W) * hinv - PowerSeries.C ((u : R) ^ 3) * hs
 
 end WeierstrassCurve

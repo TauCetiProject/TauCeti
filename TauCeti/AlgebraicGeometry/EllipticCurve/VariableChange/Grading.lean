@@ -33,8 +33,8 @@ homogeneity.
   `strictArrowGrading`, `strictPairGrading`, and odd-degree vanishing (`*_eq_bot_of_odd`).
 * `TauCeti.WeierstrassHopfAlgebroid.strictLeftUnit_mem_strictArrowGrading_iff`,
   `strictRightUnit_mem_strictArrowGrading_iff`, `strictCounit_mem_baseGrading`,
-  `strictCoproduct_mem_strictPairGrading_iff`, `strictConjugation_mem_strictArrowGrading_iff`, and
-  `WeierstrassCurve.isIntegralModularForm_iff_mem_baseGrading_and_strictRightUnit`.
+  `strictCounitLeft_mem_strictArrowGrading`, `strictCounitRight_mem_strictArrowGrading`,
+  `strictCoproduct_mem_strictPairGrading_iff`, and `strictConjugation_mem_strictArrowGrading_iff`.
 
 ## References
 
@@ -62,13 +62,10 @@ theorem map_toLaurent_toPolynomial_eq_scaling {B σ : Type*} [CommRing B] [SetLi
       (VariableChange.scaling _
         (unitOfInvertible (LaurentPolynomial.T (w : ℤ) : LaurentPolynomial B))⁻¹ •
           W.map LaurentPolynomial.C).specialize := by
-    refine MvPolynomial.ringHom_ext' (RingHom.ext fun _ ↦ by simp) fun i ↦ ?_
-    rw [specialize_map, RingHom.comp_apply, RingHom.comp_apply, toPolynomial_of_mem (hW i),
-      Polynomial.toLaurent_C_mul_T, VariableChange.scaling_apply, specialize_mk_smul,
-      MvPolynomial.aeval_X, specialize_map, RingHom.comp_apply]
-    simp only [inv_inv, val_unitOfInvertible, LaurentPolynomial.T_pow,
-      mul_comm (LaurentPolynomial.C _)]
-    congr 2; push_cast; ring
+    refine MvPolynomial.ringHom_ext' (RingHom.ext fun _ ↦ by simp) fun i ↦ by
+      simp [-specialize_X, specialize_map, toPolynomial_of_mem (hW i), Polynomial.toLaurent_C_mul_T,
+        specialize_mk_smul, LaurentPolynomial.T_pow, mul_comm (w : ℤ),
+        mul_comm (LaurentPolynomial.T _) (LaurentPolynomial.C _)]
   rw [← map_specialize (W.map _), hspec, map_specialize]
 
 /-- Applying `toLaurent ∘ toPolynomial 𝒜` to a Weierstrass change of variables `C = (u, r, s, t)`
@@ -309,7 +306,8 @@ theorem strictPairGrading_map_mem_iff {C₀ σ ι : Type*} [CommRing C₀] [SetL
       ∀ i : Coeff ⊕ (Fin 3 ⊕ Fin 3), f (X i) ∈ 𝒜 (e (strictPairDegree i)) :=
   WeightedHomogeneousSubmodule.map_mem_iff strictPairDegree 𝒜 e f
 
-private theorem strictCounitLeft_mem_strictArrowGrading {n : ℕ} {x : StrictPairRing}
+/-- The left-factor counit `strictCounitLeft` preserves homological degrees. -/
+theorem strictCounitLeft_mem_strictArrowGrading {n : ℕ} {x : StrictPairRing}
     (hx : x ∈ strictPairGrading n) : strictCounitLeft x ∈ strictArrowGrading n := by
   refine (strictPairGrading_map_mem_iff strictArrowGrading (.id ℕ) strictCounitLeft).mpr
     (fun i ↦ ?_) hx
@@ -318,7 +316,8 @@ private theorem strictCounitLeft_mem_strictArrowGrading {n : ℕ} {x : StrictPai
   · simp [zero_mem]
   · simpa using X_mem_strictArrowGrading (.inr j)
 
-private theorem strictCounitRight_mem_strictArrowGrading {n : ℕ} {x : StrictPairRing}
+/-- The right-factor counit `strictCounitRight` preserves homological degrees. -/
+theorem strictCounitRight_mem_strictArrowGrading {n : ℕ} {x : StrictPairRing}
     (hx : x ∈ strictPairGrading n) : strictCounitRight x ∈ strictArrowGrading n := by
   refine (strictPairGrading_map_mem_iff strictArrowGrading (.id ℕ) strictCounitRight).mpr
     (fun i ↦ ?_) hx
@@ -372,17 +371,3 @@ theorem strictCoproduct_mem_strictPairGrading {n : ℕ} {x : StrictArrowRing}
     strictCoproduct_mem_strictPairGrading⟩
 
 end TauCeti.WeierstrassHopfAlgebroid
-
-namespace WeierstrassCurve
-
-open MvPolynomial TauCeti.WeierstrassHopfAlgebroid
-
-/-- Integral modular forms of weight `k` are the elements of `baseGrading (2 * k)` fixed by
-`strictRightUnit`. -/
-theorem isIntegralModularForm_iff_mem_baseGrading_and_strictRightUnit
-    {k : ℕ} {f : MvPolynomial Coeff ℤ} :
-    IsIntegralModularForm k f ↔
-      f ∈ baseGrading (2 * k) ∧ strictRightUnit f = strictLeftUnit f := by
-  rw [mem_baseGrading_two_mul_iff, isIntegralModularForm_iff_strictRightUnit]
-
-end WeierstrassCurve

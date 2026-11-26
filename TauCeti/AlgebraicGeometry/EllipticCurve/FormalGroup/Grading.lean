@@ -16,14 +16,15 @@ public import TauCeti.RingTheory.PowerSeries.Coordinate.Graded
 Building on the formal-group weight theorems in `FormalGroup.Weight` and the pure-scaling laws in
 `FormalGroup.VariableChange` (`formalCoordinate_scaling_mul_mul_inv`,
 `formalInvariantDifferentialDenom_mk_smul`, `formalW_mk_smul`), this file records `baseGrading`
-membership for the universal Weierstrass formal expansions, proves weighted and graded homogeneity
+membership for the universal Weierstrass formal group law, proves weighted and graded homogeneity
 of `formalW` and `formalInvariantDifferentialDenom`, and proves gradedness of Weierstrass formal
 coordinate transitions (`VariableChange.formalCoordinate_mem_gradedSubgroup`,
 `strictFormalCoordinate_mem_gradedSubgroup`).
 
 ## Main definitions and results
 
-* `WeierstrassCurve.Universal.coeff_*_mem_baseGrading`, `isWeightedHomogeneous_coeff_formalW`,
+* `WeierstrassCurve.Universal.coeff_formalGroup_mem_baseGrading`,
+  `isWeightedHomogeneous_coeff_formalW`,
   `isWeightedHomogeneous_coeff_formalInvariantDifferentialDenom`,
   `WeierstrassCurve.coeff_formalW_mem`, and
   `WeierstrassCurve.coeff_formalInvariantDifferentialDenom_mem`.
@@ -56,20 +57,6 @@ theorem coeff_formalGroup_mem_baseGrading (d : Fin 2 →₀ ℕ) :
       baseGrading (2 * (d.degree - 1)) :=
   mem_baseGrading_two_mul_iff.mpr (isWeightedHomogeneous_coeff_formalGroup d)
 
-/-- The coefficient of `zᵐ` in `[k](z)` on `Universal.curve` lies in
-`baseGrading (2 * (m - 1))`. -/
-theorem coeff_nsmulSeries_formalGroup_mem_baseGrading (k m : ℕ) :
-    PowerSeries.coeff m ((formalGroup Universal.curve).nsmulSeries k) ∈
-      baseGrading (2 * (m - 1)) :=
-  mem_baseGrading_two_mul_iff.mpr (isWeightedHomogeneous_coeff_nsmulSeries k m)
-
-/-- The coefficient of `zⁿ` in `(formalGroup Universal.curve).invariantDifferential` lies in
-`baseGrading (2 * n)`. -/
-theorem coeff_invariantDifferential_formalGroup_mem_baseGrading (n : ℕ) :
-    PowerSeries.coeff n (formalGroup Universal.curve).invariantDifferential ∈
-      baseGrading (2 * n) :=
-  mem_baseGrading_two_mul_iff.mpr (isWeightedHomogeneous_coeff_invariantDifferential n)
-
 /-- The coefficient of `zⁿ` in `formalW Universal.curve` is weighted homogeneous of modular weight
 `n - 3` (vanishing for `n < 3`). -/
 theorem isWeightedHomogeneous_coeff_formalW (n : ℕ) :
@@ -82,15 +69,9 @@ theorem isWeightedHomogeneous_coeff_formalW (n : ℕ) :
     rw [Nat.add_sub_cancel]
     refine isWeightedHomogeneous_iff_forall_specialize_mk_smul.2 fun R _ W u ↦ ?_
     simp only [← PowerSeries.coeff_map, ← map_formalW, map_specialize, formalW_mk_smul,
-      PowerSeries.coeff_smul, PowerSeries.coeff_rescale, smul_eq_mul, ← mul_assoc]
-    congr 1
-    rw [pow_add, ← mul_assoc, mul_comm ((u : R) ^ 3), mul_assoc, ← mul_pow, Units.mul_inv,
-      one_pow, mul_one]
-
-/-- The coefficient of `zⁿ` in `formalW Universal.curve` lies in `baseGrading (2 * (n - 3))`. -/
-theorem coeff_formalW_mem_baseGrading (n : ℕ) :
-    PowerSeries.coeff n (formalW Universal.curve) ∈ baseGrading (2 * (n - 3)) :=
-  mem_baseGrading_two_mul_iff.mpr (isWeightedHomogeneous_coeff_formalW n)
+      PowerSeries.coeff_smul, PowerSeries.coeff_rescale, smul_eq_mul, pow_add]
+    linear_combination PowerSeries.coeff (m + 3) (formalW W) * (↑u⁻¹ : R) ^ m *
+      pow_mul_pow_eq_one 3 u.mul_inv
 
 /-- The coefficient of `zⁿ` in `Universal.curve.formalInvariantDifferentialDenom` is weighted
 homogeneous of modular weight `n`. -/
@@ -100,12 +81,6 @@ theorem isWeightedHomogeneous_coeff_formalInvariantDifferentialDenom (n : ℕ) :
   isWeightedHomogeneous_iff_forall_specialize_mk_smul.2 fun _ _ W u ↦ by
     simp only [← PowerSeries.coeff_map, ← map_formalInvariantDifferentialDenom, map_specialize,
       formalInvariantDifferentialDenom_mk_smul, PowerSeries.coeff_rescale]
-
-/-- The coefficient of `zⁿ` in `Universal.curve.formalInvariantDifferentialDenom` lies in
-`baseGrading (2 * n)`. -/
-theorem coeff_formalInvariantDifferentialDenom_mem_baseGrading (n : ℕ) :
-    PowerSeries.coeff n Universal.curve.formalInvariantDifferentialDenom ∈ baseGrading (2 * n) :=
-  mem_baseGrading_two_mul_iff.mpr (isWeightedHomogeneous_coeff_formalInvariantDifferentialDenom n)
 
 end Universal
 

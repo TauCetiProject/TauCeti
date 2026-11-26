@@ -63,13 +63,6 @@ def lazardBaseHom : LazardRing →+* MvPolynomial Coeff ℤ := gradedLazardBaseH
 theorem lazardBaseHom_mem_baseGrading {n : ℕ} {x : LazardRing} (hx : x ∈ LazardRing.grading n) :
     lazardBaseHom x ∈ baseGrading n := gradedLazardBaseHom.map_mem hx
 
-/-- Elements of `LazardRing.grading (2 * k)` map to weighted homogeneous polynomials of modular
-weight `k`. -/
-theorem isWeightedHomogeneous_lazardBaseHom {k : ℕ} {x : LazardRing}
-    (hx : x ∈ LazardRing.grading (2 * k)) :
-    (lazardBaseHom x).IsWeightedHomogeneous coefficientWeight k :=
-  mem_baseGrading_two_mul_iff.mp (lazardBaseHom_mem_baseGrading hx)
-
 /-- `lazardBaseHom` pushes `LazardRing.formalGroup` forward to `formalGroup Universal.curve`. -/
 @[simp] theorem map_lazardBaseHom_formalGroup :
     LazardRing.formalGroup.map lazardBaseHom = formalGroup Universal.curve := by

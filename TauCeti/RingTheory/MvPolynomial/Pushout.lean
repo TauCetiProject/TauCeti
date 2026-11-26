@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Eval
+import Mathlib.RingTheory.TensorProduct.MvPolynomial
+import TauCeti.RingTheory.IsTensorProduct.Pushout
 
 /-!
 # Pushout universal property of multivariate polynomial rings
@@ -24,16 +26,26 @@ namespace MvPolynomial
 
 variable {σ B B' R : Type*} [CommSemiring B] [CommSemiring B'] [CommSemiring R]
 
+attribute [local instance] MvPolynomial.algebraMvPolynomial in
 /-- **Universal property of `MvPolynomial σ B'` as the pushout `B' ⊗_B MvPolynomial σ B`** of
 `f : B →+* B'` and `C`, via restriction along `C` and along `map f`. -/
 def pushoutLift (f : B →+* B') :
     {p : (B' →+* R) × (MvPolynomial σ B →+* R) // p.1.comp f = p.2.comp C} ≃
       (MvPolynomial σ B' →+* R) where
-  toFun p := eval₂Hom p.val.1 (p.val.2 ∘ X)
+  toFun p :=
+    letI := f.toAlgebra
+    Algebra.IsPushout.liftRingHom (R := B) (MvPolynomial σ B') p.val.1 p.val.2 p.property
   invFun k := ⟨(k.comp C, k.comp (map f)), RingHom.ext fun _ ↦ by simp⟩
-  left_inv p := Subtype.ext <| Prod.ext (RingHom.ext (eval₂Hom_C _ _)) <|
-    ringHom_ext' (RingHom.ext fun b ↦ by simpa using RingHom.congr_fun p.property b) fun _ ↦ by simp
-  right_inv _ := ringHom_ext' (RingHom.ext fun _ ↦ by simp) fun _ ↦ by simp
+  left_inv p := by
+    let := f.toAlgebra
+    exact Subtype.ext <| Prod.ext
+      (RingHom.ext (Algebra.IsPushout.liftRingHom_algebraMap_left _ _ _))
+      (RingHom.ext (Algebra.IsPushout.liftRingHom_algebraMap_right _ _ _))
+  right_inv k := by
+    let := f.toAlgebra
+    exact Algebra.IsPushout.ringHom_ext (R := B) (S := B') (R' := MvPolynomial σ B)
+      (RingHom.ext (Algebra.IsPushout.liftRingHom_algebraMap_left _ _ _))
+      (RingHom.ext (Algebra.IsPushout.liftRingHom_algebraMap_right _ _ _))
 
 /-- The left component classified by `k : MvPolynomial σ B' →+* R` is `k.comp C`. -/
 @[simp] theorem pushoutLift_symm_apply_fst (f : B →+* B') (k : MvPolynomial σ B' →+* R) :
@@ -61,11 +73,5 @@ variable (f : B →+* B') (p : {p : (B' →+* R) × (MvPolynomial σ B →+* R) 
 @[simp] theorem pushoutLift_X (i : σ) : pushoutLift f p (X i) = p.val.2 (X i) := by
   simpa using pushoutLift_map f p (X i)
 end
-
-/-- A ring homomorphism out of `MvPolynomial σ B'` is determined by its restrictions along `C` and
-`map f`. -/
-theorem pushout_ringHom_ext (f : B →+* B') {k k' : MvPolynomial σ B' →+* R}
-    (h₁ : k.comp C = k'.comp C) (h₂ : k.comp (map f) = k'.comp (map f)) : k = k' :=
-  (pushoutLift f).symm.injective (Subtype.ext (Prod.ext h₁ h₂))
 
 end MvPolynomial

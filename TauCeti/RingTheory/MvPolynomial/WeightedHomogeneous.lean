@@ -115,6 +115,10 @@ polynomial of weight `m` that lies in the square of `idealOfVars σ R` has weigh
 * `MvPolynomial.vars_weight_lt_of_isWeightedHomogeneous_of_mem_pow_idealOfVars`: for positive
   weights in `ℕ`, every variable occurring in a weighted homogeneous polynomial of weight `m`
   in `idealOfVars σ R ^ 2` has weight strictly less than `m`.
+* `MvPolynomial.WeightedHomogeneousSubmodule.extensionEquiv`,
+  `MvPolynomial.WeightedHomogeneousSubmodule.extensionGrading`: combined weighted `GradedAlgebra`
+  structure on `MvPolynomial τ B` induced by outer weights on `τ` and a polynomial presentation of
+  `B`, with coefficient compatibility, odd-degree vanishing, and graded-map characterizations.
 
 ## References
 
@@ -650,16 +654,21 @@ noncomputable def extensionEquiv (R τ α : Type*) {B : Type*} [CommSemiring R] 
     MvPolynomial (τ ⊕ α) R ≃ₐ[R] MvPolynomial τ B :=
   (sumAlgEquiv R τ α).trans (mapAlgEquiv τ e)
 
+/-- `extensionEquiv` maps `.inl i` to the outer variable `X i` and `.inr j` to the constant
+`C (e (X j))`. -/
 @[simp] theorem extensionEquiv_X (e : MvPolynomial α R ≃ₐ[R] B) (i : τ ⊕ α) :
     extensionEquiv R τ α e (X i) = Sum.elim X (fun j ↦ C (e (X j))) i := by
   cases i <;> simp [extensionEquiv, mapAlgEquiv_apply]
 
+/-- `extensionEquiv` evaluates polynomials in `τ ⊕ α` at the outer variables `X` and coefficient
+generators `C (e (X j))`. -/
 theorem extensionEquiv_apply (e : MvPolynomial α R ≃ₐ[R] B) (p : MvPolynomial (τ ⊕ α) R) :
     extensionEquiv R τ α e p = aeval (Sum.elim X (fun j ↦ C (e (X j)))) p := by
   simpa only [Function.comp_def, AlgEquiv.coe_toAlgHom, extensionEquiv_X] using
     DFunLike.congr_fun (aeval_unique (extensionEquiv R τ α e).toAlgHom) p
 
-theorem extensionEquiv_rename_inr (e : MvPolynomial α R ≃ₐ[R] B) (p : MvPolynomial α R) :
+/-- `extensionEquiv` carries polynomials in the base variables `α` to constants via `C ∘ e`. -/
+@[simp] theorem extensionEquiv_rename_inr (e : MvPolynomial α R ≃ₐ[R] B) (p : MvPolynomial α R) :
     extensionEquiv R τ α e (rename Sum.inr p) = C (e p) := by
   simpa [extensionEquiv, mapAlgEquiv_apply] using
     congrArg (mapAlgEquiv τ e) (DFunLike.congr_fun (sumAlgEquiv_comp_rename_inr R τ α) p)
@@ -694,20 +703,25 @@ theorem mem_extensionGrading_extensionEquiv_iff_aeval {τ' : Type*} [AddCommMono
     ext k; cases k <;> simp
   rw [mem_extensionGrading_iff_aeval, hev]
 
+/-- `extensionEquiv` preserves and reflects weighted homogeneity for `Sum.elim w v`. -/
 @[simp] theorem extensionEquiv_mem_extensionGrading_iff [AddCommMonoid M] {w : τ → M} {v : α → M}
     {e : MvPolynomial α R ≃ₐ[R] B} {n : M} {p : MvPolynomial (τ ⊕ α) R} :
     extensionEquiv R τ α e p ∈ extensionGrading w v e n ↔
       p.IsWeightedHomogeneous (Sum.elim w v) n :=
   ⟨fun ⟨_, hq, hqe⟩ ↦ (extensionEquiv R τ α e).injective hqe ▸ hq, fun hp ↦ ⟨p, hp, rfl⟩⟩
 
+/-- Multiplication in `MvPolynomial τ B` adds degrees in `extensionGrading`. -/
 instance [AddCommMonoid M] (w : τ → M) (v : α → M)
     (e : MvPolynomial α R ≃ₐ[R] B) : SetLike.GradedMonoid (extensionGrading w v e) :=
   gradedMonoid_map _ (extensionEquiv R τ α e)
 
-theorem X_mem_extensionGrading [AddCommMonoid M] (w : τ → M) (v : α → M)
+/-- Each outer variable `X i` has degree `w i` in `extensionGrading w v e`. -/
+@[simp] theorem X_mem_extensionGrading [AddCommMonoid M] (w : τ → M) (v : α → M)
     (e : MvPolynomial α R ≃ₐ[R] B) (i : τ) : X i ∈ extensionGrading w v e (w i) :=
   ⟨X (.inl i), isWeightedHomogeneous_X _ _ _, extensionEquiv_X _ _⟩
 
+/-- Inclusion of coefficients `C : B →+* MvPolynomial τ B` preserves degrees from a grading `ℬ` on
+`B` that corresponds under the presentation `e` to `v`-weighted homogeneity (`he`). -/
 theorem C_mem_extensionGrading {S₀ : Type*} [AddCommMonoid M] [SetLike S₀ B] {w : τ → M}
     {v : α → M} {e : MvPolynomial α R ≃ₐ[R] B} {ℬ : M → S₀}
     (he : ∀ {n p}, e p ∈ ℬ n ↔ p.IsWeightedHomogeneous v n) {n : M} {b : B} (hb : b ∈ ℬ n) :
@@ -717,6 +731,8 @@ theorem C_mem_extensionGrading {S₀ : Type*} [AddCommMonoid M] [SetLike S₀ B]
   rw [rename_eq_aeval]
   exact (he.mp hb).aeval fun i ↦ isWeightedHomogeneous_X _ _ (Sum.inr i)
 
+/-- Every odd-degree piece of `extensionGrading w v e` vanishes when both the outer weights `w` and
+the base weights `v` are even. -/
 theorem extensionGrading_eq_bot_of_odd {w : τ → ℕ} {v : α → ℕ} (hw : ∀ i, Even (w i))
     (hv : ∀ j, Even (v j)) (e : MvPolynomial α R ≃ₐ[R] B) {n : ℕ} (hn : Odd n) :
     extensionGrading w v e n = ⊥ := by
@@ -724,11 +740,14 @@ theorem extensionGrading_eq_bot_of_odd {w : τ → ℕ} {v : α → ℕ} (hw : �
 
 end Extension
 
+/-- `MvPolynomial τ B` decomposes as the internal direct sum of the graded pieces
+`extensionGrading w v e n`. -/
 theorem isInternal_extensionGrading {M α B : Type*} [AddCommMonoid M] [DecidableEq M]
     [CommRing R] [CommRing B] [Algebra R B] (w : τ → M) (v : α → M)
     (e : MvPolynomial α R ≃ₐ[R] B) : DirectSum.IsInternal (extensionGrading w v e) :=
   isInternal_map _ (extensionEquiv R τ α e)
 
+/-- `extensionGrading w v e` equips `MvPolynomial τ B` with a `GradedAlgebra` structure over `R`. -/
 noncomputable instance {M α B : Type*} [AddCommMonoid M] [DecidableEq M]
     [CommRing R] [CommRing B] [Algebra R B] (w : τ → M) (v : α → M)
     (e : MvPolynomial α R ≃ₐ[R] B) : GradedAlgebra (extensionGrading w v e) :=
@@ -752,6 +771,9 @@ theorem extensionGrading_map_mem_iff {M α B A S₀ S ι : Type*} [AddCommMonoid
   · simpa using hX i
   · simpa using hC (he.mpr (isWeightedHomogeneous_X ℤ v j))
 
+/-- Over `ℤ`, a constant polynomial `C b` lies in `extensionGrading w v e n` if and only if `b`
+lies in `ℬ n`, provided `ℬ` corresponds under the presentation `e` to `v`-weighted homogeneity
+(`he`). -/
 theorem C_mem_extensionGrading_iff {M α B S₀ : Type*} [AddCommMonoid M] [CommRing B]
     [SetLike S₀ B] [AddSubgroupClass S₀ B] (w : τ → M) (v : α → M)
     (e : MvPolynomial α ℤ ≃ₐ[ℤ] B) (ℬ : M → S₀) [SetLike.GradedMonoid ℬ]
