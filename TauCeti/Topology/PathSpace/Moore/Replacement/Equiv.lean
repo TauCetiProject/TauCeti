@@ -271,6 +271,11 @@ def homeomorphPathsFrom (A : Set X) :
     continuous_subtypeVal).subtype_mk _) continuous_subtypeVal _
 
 @[simp]
+theorem coe_homeomorphPathsFrom (A : Set X) (x : MooreReplacement (ContinuousMap.subtypeVal A)) :
+    (homeomorphPathsFrom A x : MoorePath X) = x.path :=
+  (rfl)
+
+@[simp]
 theorem path_homeomorphPathsFrom_symm (A : Set X) (γ : {γ : MoorePath X // γ.source ∈ A}) :
     ((homeomorphPathsFrom A).symm γ).path = γ.val :=
   path_mk _ _ _

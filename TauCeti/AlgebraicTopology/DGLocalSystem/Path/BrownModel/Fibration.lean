@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BrownModel.BasepointChange
-public import TauCeti.Topology.PathSpace.Moore.Replacement.Const
+public import TauCeti.Topology.PathSpace.Moore.Replacement.Point
 
 /-!
 # The fibration comparison of a Brown model
@@ -40,13 +40,13 @@ fibres, the map of DG local systems `TauCeti.fibrationLocalSystemMap`, and on `E
 Brown's theorem, the form of the fibration theorem of Barraud, Damian, Humilière and Oancea for a
 Brown model, says that for path-connected `B` this comparison is a quasi-isomorphism, so that the
 homology of `B` with coefficients in `C_*(F'_b)` is the homology of `E`. This file proves it for
-the inclusion of a point `a` joined to `b` by a path
-(`TauCeti.BrownModel.exists_coefficientDifferential_eq_and_fibrationComparison_const_add_eq`), not
-for a general map. There the fibre over `b` consists of the Moore paths from `a` to `b`
-(`TauCeti.MooreReplacement.Fiber.constHomeomorph`) and the total space of the Moore paths from `a`
-(`TauCeti.MooreReplacement.constHomeomorph`), and read on these paths the comparison is the change
-of basepoint of `M` from `b` to `a` (`TauCeti.BrownModel.basepointChangeComparison`), which is a
-quasi-isomorphism
+the inclusion `ContinuousMap.subtypeVal {a}` of a point `a` joined to `b` by a path
+(`TauCeti.BrownModel.exists_coefficientDifferential_eq_and_fibrationComparison_subtypeVal_add_eq`),
+not for a general map. There the fibre over `b` consists of the Moore paths from `a` to `b`
+(`TauCeti.MooreReplacement.Fiber.homeomorphPathsBetween`) and the total space of the Moore paths
+from `a` (`TauCeti.MooreReplacement.homeomorphPathsFrom`), and read on these paths the comparison
+is the change of basepoint of `M` from `b` to `a` (`TauCeti.BrownModel.basepointChangeComparison`),
+which is a quasi-isomorphism
 (`TauCeti.BrownModel.exists_coefficientDifferential_eq_and_basepointChangeComparison_add_eq`).
 Both comparisons pair the coefficients with the chains `g(x)` along a balanced map
 (`TauCeti.coefficientPairing`).
@@ -62,8 +62,8 @@ Both comparisons pair the coefficients with the chains `g(x)` along a balanced m
   differentials.
 * `TauCeti.BrownModel.cubicalChainModuleLinearMap_proj_fibrationComparison_mapRange`: followed by
   the projection to `E`, it is natural in maps over `B`.
-* `TauCeti.BrownModel.exists_coefficientDifferential_eq_and_fibrationComparison_const_add_eq`: for
-  the inclusion of a point joined to `b` by a path, it is a quasi-isomorphism.
+* `TauCeti.BrownModel.exists_coefficientDifferential_eq_and_fibrationComparison_subtypeVal_add_eq`:
+  for the inclusion of a point joined to `b` by a path, it is a quasi-isomorphism.
 
 ## References
 
@@ -154,18 +154,25 @@ section Point
 open MooreReplacement in
 /-- For the inclusion of a point `a`, the fibration comparison, read on Moore paths, is the change
 of basepoint of the Brown model from `b` to `a`. -/
-private theorem constHomeomorph_fibrationComparison (M : BrownModel B b H R P ind) {a : B}
-    (u : P →₀ cubicalChainModule (Fiber (.const PUnit.{u + 1} a) b) (MooreLoopSpace B b) R) :
-    cubicalChainModuleLinearMap R (constHomeomorph PUnit.{u + 1} a : C(_, MoorePathFrom B a))
-        (M.fibrationComparison (.const PUnit.{u + 1} a) u) =
+private theorem homeomorphPathsFrom_fibrationComparison (M : BrownModel B b H R P ind) {a : B}
+    (u : P →₀ cubicalChainModule (Fiber (ContinuousMap.subtypeVal {a}) b) (MooreLoopSpace B b) R) :
+    cubicalChainModuleLinearMap R
+        (ContinuousMap.ofClass (homeomorphPathsFrom {a}) : C(_, MoorePathFrom B a))
+        (M.fibrationComparison (ContinuousMap.subtypeVal {a}) u) =
       M.basepointChangeComparison a (Finsupp.mapRange.linearMap
-        (cubicalChainModuleLinearMap R (Fiber.constHomeomorph PUnit.{u + 1} a b :
+        (cubicalChainModuleLinearMap R (Fiber.homeomorphPathsBetween a b :
           C(_, MoorePathBetween B a b))) u) := by
-  have hcomp : (constHomeomorph PUnit.{u + 1} a : C(_, MoorePathFrom B a)).comp
-      (Fiber.appendFromMap (.const PUnit.{u + 1} a) b) = (MoorePathBetween.transFrom a b).comp
-        ((Fiber.constHomeomorph PUnit.{u + 1} a b : C(_, MoorePathBetween B a b)).prodMap
+  have hcomp :
+      (ContinuousMap.ofClass (homeomorphPathsFrom {a}) : C(_, MoorePathFrom B a)).comp
+        (Fiber.appendFromMap (ContinuousMap.subtypeVal {a}) b) =
+      (MoorePathBetween.transFrom a b).comp
+        ((Fiber.homeomorphPathsBetween a b : C(_, MoorePathBetween B a b)).prodMap
           (.id (MoorePathFrom B b))) :=
-    ContinuousMap.ext fun q ↦ by simp [Fiber.constHomeomorph_appendFrom, Prod.map_apply']
+    -- `simp` does not see through `MoorePathFrom B a = {γ // γ.source ∈ {a}}`, `exact` does.
+    ContinuousMap.ext fun q ↦ by
+      simp only [ContinuousMap.comp_apply, Fiber.appendFromMap_apply, ContinuousMap.coe_mk,
+        ContinuousMap.prodMap_apply, ContinuousMap.coe_id, Prod.map_apply', id_eq]
+      exact Fiber.homeomorphPathsFrom_appendFrom q.1 q.2
   induction u using Finsupp.induction_linear with
   | zero => simp
   | add u u' hu hu' => simp only [map_add, hu, hu']
@@ -183,29 +190,36 @@ DG local system at `b` is the chain module of the Moore paths from `a` to `b` an
 of the replacement is the space of Moore paths from `a`, which is contractible. Every relative
 cycle `(u, w)` of the fibration comparison, with `D u = 0` and `Ψ u = ∂ w`, is a relative boundary
 `(D u', Ψ u' + ∂ w')`. -/
-theorem exists_coefficientDifferential_eq_and_fibrationComparison_const_add_eq
+theorem exists_coefficientDifferential_eq_and_fibrationComparison_subtypeVal_add_eq
     {B R : Type u} [TopologicalSpace B] {b : B} [CommRing R] {H P : Type*} {ind : P → ℤ}
     (M : BrownModel B b H R P ind) {a : B} (hab : Nonempty (MoorePathBetween B a b))
-    (u : P →₀ cubicalChainModule (Fiber (.const PUnit.{u + 1} a) b) (MooreLoopSpace B b) R)
-    (w : cubicalChainModule (MooreReplacement (.const PUnit.{u + 1} a)) H R)
+    (u : P →₀ cubicalChainModule (Fiber (ContinuousMap.subtypeVal {a}) b) (MooreLoopSpace B b) R)
+    (w : cubicalChainModule (MooreReplacement (ContinuousMap.subtypeVal {a})) H R)
     (hu : M.cocycle.coefficientDifferential (cubicalChainModule_isDGRightModule
-      (Fiber (.const PUnit.{u + 1} a) b) (MooreLoopSpace B b) R) u = 0)
-    (hw : M.fibrationComparison (.const PUnit.{u + 1} a) u =
-      cubicalChainModuleDifferential (MooreReplacement (.const PUnit.{u + 1} a)) H R w) :
+      (Fiber (ContinuousMap.subtypeVal {a}) b) (MooreLoopSpace B b) R) u = 0)
+    (hw : M.fibrationComparison (ContinuousMap.subtypeVal {a}) u =
+      cubicalChainModuleDifferential (MooreReplacement (ContinuousMap.subtypeVal {a})) H R w) :
     ∃ u' w', M.cocycle.coefficientDifferential (cubicalChainModule_isDGRightModule
-        (Fiber (.const PUnit.{u + 1} a) b) (MooreLoopSpace B b) R) u' = u ∧
-      M.fibrationComparison (.const PUnit.{u + 1} a) u' +
-        cubicalChainModuleDifferential (MooreReplacement (.const PUnit.{u + 1} a)) H R w' = w := by
+        (Fiber (ContinuousMap.subtypeVal {a}) b) (MooreLoopSpace B b) R) u' = u ∧
+      M.fibrationComparison (ContinuousMap.subtypeVal {a}) u' +
+        cubicalChainModuleDifferential (MooreReplacement (ContinuousMap.subtypeVal {a})) H R w' =
+          w := by
   -- Transport the relative cycle to the Moore paths from `a` to `b` and from `a`, where the
   -- comparison is the change of basepoint, and transport the relative boundary back.
-  let e := Fiber.constHomeomorph PUnit.{u + 1} a b
-  let e' := constHomeomorph PUnit.{u + 1} a (B := B)
+  let e := Fiber.homeomorphPathsBetween a b
+  -- `homeomorphPathsFrom {a}` lands in `{γ // γ.source ∈ {a}}`, which is `MoorePathFrom B a`.
+  let f : C(MooreReplacement (ContinuousMap.subtypeVal {a}), MoorePathFrom B a) :=
+    ContinuousMap.ofClass (homeomorphPathsFrom {a})
+  let g : C(MoorePathFrom B a, MooreReplacement (ContinuousMap.subtypeVal {a})) :=
+    ContinuousMap.ofClass (homeomorphPathsFrom {a}).symm
+  have hgf : g.comp f = .id _ :=
+    ContinuousMap.ext fun x ↦ (homeomorphPathsFrom {a}).symm_apply_apply x
   let φ := cubicalChainModuleMap R
-    (e : C(Fiber (.const PUnit.{u + 1} a) b, MoorePathBetween B a b))
-    (Fiber.constHomeomorph_op_smul (E := PUnit.{u + 1}) (a := a) (b := b))
+    (e : C(Fiber (ContinuousMap.subtypeVal {a}) b, MoorePathBetween B a b))
+    (Fiber.homeomorphPathsBetween_op_smul (a := a) (b := b))
   let ψ := cubicalChainModuleMap R
-    (e.symm : C(MoorePathBetween B a b, Fiber (.const PUnit.{u + 1} a) b))
-    (Fiber.constHomeomorph_symm_op_smul (E := PUnit.{u + 1}) (a := a) (b := b))
+    (e.symm : C(MoorePathBetween B a b, Fiber (ContinuousMap.subtypeVal {a}) b))
+    (Fiber.homeomorphPathsBetween_symm_op_smul (a := a) (b := b))
   have hφl : φ.toLinearMap.restrictScalars R = cubicalChainModuleLinearMap R (e : C(_, _)) :=
     LinearMap.ext fun x ↦ cubicalChainModuleMap_apply _ _ x
   have hψl : ψ.toLinearMap.restrictScalars R = cubicalChainModuleLinearMap R (e.symm : C(_, _)) :=
@@ -217,21 +231,20 @@ theorem exists_coefficientDifferential_eq_and_fibrationComparison_const_add_eq
   obtain ⟨u₁, w₁, hu₁, hw₁⟩ :=
     M.exists_coefficientDifferential_eq_and_basepointChangeComparison_add_eq hab
       (Finsupp.mapRange.linearMap (cubicalChainModuleLinearMap R (e : C(_, _))) u)
-      (cubicalChainModuleLinearMap R (e' : C(_, _)) w)
+      (cubicalChainModuleLinearMap R f w)
       (by rw [hφ, hu, map_zero])
       (by
         rw [cubicalChainModuleDifferential_linearMap, ← hw]
-        exact (constHomeomorph_fibrationComparison M u).symm)
+        exact (homeomorphPathsFrom_fibrationComparison M u).symm)
   refine ⟨Finsupp.mapRange.linearMap (cubicalChainModuleLinearMap R (e.symm : C(_, _))) u₁,
-    cubicalChainModuleLinearMap R (e'.symm : C(_, _)) w₁, ?_, ?_⟩
+    cubicalChainModuleLinearMap R g w₁, ?_, ?_⟩
   · rw [hψ, hu₁, mapRange_cubicalChainModuleLinearMap_mapRange_of_comp_eq_id
       e.symm_comp_toContinuousMap]
   · rw [cubicalChainModuleDifferential_linearMap,
-      ← cubicalChainModuleLinearMap_linearMap_of_comp_eq_id e'.symm_comp_toContinuousMap
-        (M.fibrationComparison _ _),
-      ← map_add, constHomeomorph_fibrationComparison,
+      ← cubicalChainModuleLinearMap_linearMap_of_comp_eq_id hgf (M.fibrationComparison _ _),
+      ← map_add, homeomorphPathsFrom_fibrationComparison,
       mapRange_cubicalChainModuleLinearMap_mapRange_of_comp_eq_id e.toContinuousMap_comp_symm, hw₁,
-      cubicalChainModuleLinearMap_linearMap_of_comp_eq_id e'.symm_comp_toContinuousMap]
+      cubicalChainModuleLinearMap_linearMap_of_comp_eq_id hgf]
 
 end BrownModel
 
