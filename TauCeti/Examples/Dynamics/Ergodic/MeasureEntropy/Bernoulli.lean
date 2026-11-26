@@ -100,7 +100,7 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_fairBernoulli (n : ℕ)
 /-- **Check.** For the fair Bernoulli shift the coordinate label has entropy rate `log 2`. -/
 theorem partitionEntropyRate_fairBernoulli :
     partitionEntropyRate fairBernoulli (shift Bool) coordZero = ENNReal.ofReal (log 2) :=
-  partitionEntropyRate_eq_of_countablePartitionEntropy_eq_mul fun n ↦ by
+  partitionEntropyRate_eq_of_countablePartitionEntropy_eq_mul fun n _ ↦ by
     rw [countablePartitionEntropy_iteratedPartitionLabel_fairBernoulli,
       ENNReal.ofReal_mul n.cast_nonneg, ENNReal.ofReal_natCast]
 
@@ -151,7 +151,7 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_fairBernoulliTwoSided (
 theorem partitionEntropyRate_fairBernoulliTwoSided :
     partitionEntropyRate fairBernoulliTwoSided (SymbolicDynamics.FullShift.shift (1 : ℤ))
       coordZeroTwoSided = ENNReal.ofReal (log 2) :=
-  partitionEntropyRate_eq_of_countablePartitionEntropy_eq_mul fun n ↦ by
+  partitionEntropyRate_eq_of_countablePartitionEntropy_eq_mul fun n _ ↦ by
     rw [countablePartitionEntropy_iteratedPartitionLabel_fairBernoulliTwoSided,
       ENNReal.ofReal_mul n.cast_nonneg, ENNReal.ofReal_natCast]
 
