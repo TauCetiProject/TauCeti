@@ -66,7 +66,9 @@ For a real function `φ` on the base, the gauge transformation `Φ(z, w) = (z, e
 model of `A` to that of `A - dφ`: it is holomorphic for the two normal model structures
 (`TauCeti.isJHolomorphicAt_normalModelGauge`), and, where the two connections have the same
 curvature, it pulls the coupling form of `A - dφ` back to that of `A`
-(`TauCeti.normalCouplingForm_normalModelGauge_apply`). A flat `C¹` connection has local potentials
+(`TauCeti.normalCouplingForm_normalModelGauge_apply`). The covariant derivative, the gauge
+transformation and this comparison of coupling forms use no complex structure on the base, and are
+stated over any real normed base `E`. A flat `C¹` connection has local potentials
 (`TauCeti.hasLocalPotentials_of_extDeriv_eq_zero`), so over a disc around every point of the base
 it is gauge equivalent to the trivial connection. The normal model structure of the trivial
 connection is the standard complex structure of `ℂ × ℂ`
@@ -92,7 +94,11 @@ namespace TauCeti
 
 open Complex ComplexConjugate
 
+variable {E : Type*}
+
 /-! ### The normal model structure of a connection -/
+
+section NormalModelStructure
 
 variable (A : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ)
 
@@ -157,15 +163,44 @@ theorem isJHolomorphicAt_graph_normalModelStructure_normalModelConnectionCoeff_i
   · linear_combination (I / 2) * h + (fderiv ℝ s z 1 / 2 - A z (fun _ ↦ I) * s z / 2 +
       I * A z (fun _ ↦ 1) * s z / 2) * I_sq
 
+end NormalModelStructure
+
+/-! ### The covariant derivative -/
+
+section CovariantDeriv
+
+variable [NormedAddCommGroup E] [NormedSpace ℝ E]
+
 /-- The **covariant derivative** `∇_X w = η + i A(z)(ξ) w` of the fibre coordinate along a tangent
-vector `X = (ξ, η)` at `p = (z, w)`, for the connection `d + i A`: the vertical part of `X`, which
-is `X` minus the horizontal lift `(ξ, -i A(z)(ξ) w)` of `ξ`. -/
-noncomputable def normalCovariantDeriv (p X : ℂ × ℂ) : ℂ :=
+vector `X = (ξ, η)` at `p = (z, w)` of `E × ℂ`, for the connection `d + i A`: the vertical part of
+`X`, which is `X` minus the horizontal lift `(ξ, -i A(z)(ξ) w)` of `ξ`. -/
+noncomputable def normalCovariantDeriv (A : E → E [⋀^Fin 1]→L[ℝ] ℝ) (p X : E × ℂ) : ℂ :=
   X.2 + I * A p.1 (fun _ ↦ X.1) * p.2
 
-theorem normalCovariantDeriv_def (p X : ℂ × ℂ) :
+theorem normalCovariantDeriv_def (A : E → E [⋀^Fin 1]→L[ℝ] ℝ) (p X : E × ℂ) :
     normalCovariantDeriv A p X = X.2 + I * A p.1 (fun _ ↦ X.1) * p.2 :=
   (rfl)
+
+/-- **The coupling form in terms of the covariant derivative** of the fibre coordinate: at
+`p = (z, w)`, `ω_N(X, Y) = ω(ξ, ξ') + ω_ℂ(∇_X w, ∇_Y w) + (|w|² / 2) dA(ξ, ξ')`, with `ω_ℂ` the
+area form of the fibre. -/
+theorem normalCouplingForm_apply_eq_normalCovariantDeriv {ω : E → E [⋀^Fin 2]→L[ℝ] ℝ}
+    {A : E → E [⋀^Fin 1]→L[ℝ] ℝ} {p : E × ℂ} (hA : DifferentiableAt ℝ A p.1) (X Y : E × ℂ) :
+    normalCouplingForm ω A p ![X, Y] =
+      ω p.1 ![X.1, Y.1] +
+        stdComplexSymplecticForm (normalCovariantDeriv A p X) (normalCovariantDeriv A p Y) +
+          normSq p.2 / 2 * extDeriv A p.1 ![X.1, Y.1] := by
+  rw [normalCouplingForm_apply_pair (w := p.2) hA X.1 Y.1 X.2 Y.2, stdComplexSymplecticForm_apply,
+    normalCovariantDeriv_def, normalCovariantDeriv_def, mul_im, conj_re, conj_im]
+  ring
+
+end CovariantDeriv
+
+/-! ### Compatibility of the coupling form -/
+
+section Compatibility
+
+variable (A : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ)
 
 /-- `J_N` acts on vertical parts as multiplication by `I`: `∇_{J_N X} w = I ∇_X w`. So `J_N`
 preserves the horizontal distribution of the connection. -/
@@ -176,22 +211,7 @@ theorem normalCovariantDeriv_normalModelStructure (p X : ℂ × ℂ) :
     normalCovariantDeriv_def]
   linear_combination -(A p.1 (fun _ ↦ X.1) : ℂ) * p.2 * I_sq
 
-/-! ### Compatibility of the coupling form -/
-
 variable {ω : ℂ → ℂ [⋀^Fin 2]→L[ℝ] ℝ} {A} {p : ℂ × ℂ}
-
-/-- **The coupling form in terms of the covariant derivative** of the fibre coordinate: at
-`p = (z, w)`, `ω_N(X, Y) = ω(ξ, ξ') + ω_ℂ(∇_X w, ∇_Y w) + (|w|² / 2) dA(ξ, ξ')`, with `ω_ℂ` the
-area form of the fibre. -/
-theorem normalCouplingForm_apply_eq_normalCovariantDeriv (hA : DifferentiableAt ℝ A p.1)
-    (X Y : ℂ × ℂ) :
-    normalCouplingForm ω A p ![X, Y] =
-      ω p.1 ![X.1, Y.1] +
-        stdComplexSymplecticForm (normalCovariantDeriv A p X) (normalCovariantDeriv A p Y) +
-          normSq p.2 / 2 * extDeriv A p.1 ![X.1, Y.1] := by
-  rw [normalCouplingForm_apply_pair (w := p.2) hA X.1 Y.1 X.2 Y.2, stdComplexSymplecticForm_apply,
-    normalCovariantDeriv_def, normalCovariantDeriv_def, mul_im, conj_re, conj_im]
-  ring
 
 /-- **The coupling form is `J_N`-invariant**: `ω_N(J_N X, J_N Y) = ω_N(X, Y)`. -/
 theorem normalCouplingForm_apply_normalModelStructure_normalModelStructure
@@ -256,31 +276,35 @@ theorem forall_normalCouplingForm_apply_normalModelStructure_pos_iff
     · have := norm_pos_iff.2 h₁
       positivity
 
+end Compatibility
+
 /-! ### Gauge transformations -/
 
-/-- The **gauge transformation** `(z, w) ↦ (z, exp (i φ(z)) w)` of the trivial line over `ℂ`, for
+section Gauge
+
+/-- The **gauge transformation** `(z, w) ↦ (z, exp (i φ(z)) w)` of the trivial line over `E`, for
 a real function `φ` on the base. -/
-noncomputable def normalModelGauge (φ : ℂ → ℝ) (p : ℂ × ℂ) : ℂ × ℂ :=
+noncomputable def normalModelGauge (φ : E → ℝ) (p : E × ℂ) : E × ℂ :=
   (p.1, exp (φ p.1 * I) * p.2)
 
 @[simp]
-theorem normalModelGauge_fst (φ : ℂ → ℝ) (p : ℂ × ℂ) : (normalModelGauge φ p).1 = p.1 :=
+theorem normalModelGauge_fst (φ : E → ℝ) (p : E × ℂ) : (normalModelGauge φ p).1 = p.1 :=
   (rfl)
 
 @[simp]
-theorem normalModelGauge_snd (φ : ℂ → ℝ) (p : ℂ × ℂ) :
+theorem normalModelGauge_snd (φ : E → ℝ) (p : E × ℂ) :
     (normalModelGauge φ p).2 = exp (φ p.1 * I) * p.2 :=
   (rfl)
 
 /-- The gauge transformation of the zero function is the identity. -/
 @[simp]
-theorem normalModelGauge_zero : normalModelGauge 0 = id := by
+theorem normalModelGauge_zero : normalModelGauge (0 : E → ℝ) = id := by
   funext p
   ext <;> simp [normalModelGauge]
 
 /-- Composing gauge transformations adds their phase functions. -/
 @[simp]
-theorem normalModelGauge_normalModelGauge (φ ψ : ℂ → ℝ) (p : ℂ × ℂ) :
+theorem normalModelGauge_normalModelGauge (φ ψ : E → ℝ) (p : E × ℂ) :
     normalModelGauge φ (normalModelGauge ψ p) = normalModelGauge (φ + ψ) p := by
   ext
   · rfl
@@ -288,24 +312,25 @@ theorem normalModelGauge_normalModelGauge (φ ψ : ℂ → ℝ) (p : ℂ × ℂ)
       Complex.exp_add, mul_assoc]
 
 /-- The gauge transformation of `-φ` inverts that of `φ`. -/
-theorem normalModelGauge_neg_normalModelGauge (φ : ℂ → ℝ) (p : ℂ × ℂ) :
+theorem normalModelGauge_neg_normalModelGauge (φ : E → ℝ) (p : E × ℂ) :
     normalModelGauge (-φ) (normalModelGauge φ p) = p := by
   simp
 
 /-- The gauge transformation of `φ` inverts that of `-φ`. -/
-theorem normalModelGauge_normalModelGauge_neg (φ : ℂ → ℝ) (p : ℂ × ℂ) :
+theorem normalModelGauge_normalModelGauge_neg (φ : E → ℝ) (p : E × ℂ) :
     normalModelGauge φ (normalModelGauge (-φ) p) = p := by
   simp
 
-variable {φ : ℂ → ℝ}
+variable [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {ω : E → E [⋀^Fin 2]→L[ℝ] ℝ} {A A' : E → E [⋀^Fin 1]→L[ℝ] ℝ} {φ : E → ℝ} {p : E × ℂ}
 
 /-- The derivative of the phase `exp (i φ(z))`. -/
 private theorem hasFDerivAt_exp_ofReal_mul_I (hφ : DifferentiableAt ℝ φ p.1) :
-    HasFDerivAt (fun q : ℂ × ℂ ↦ exp (φ q.1 * I))
+    HasFDerivAt (fun q : E × ℂ ↦ exp (φ q.1 * I))
       (exp (φ p.1 * I) • (I • (Complex.ofRealCLM.comp ((fderiv ℝ φ p.1).comp
-        (ContinuousLinearMap.fst ℝ ℂ ℂ))))) p := by
-  have h₁ : HasFDerivAt (fun q : ℂ × ℂ ↦ (φ q.1 : ℂ))
-      (Complex.ofRealCLM.comp ((fderiv ℝ φ p.1).comp (ContinuousLinearMap.fst ℝ ℂ ℂ))) p :=
+        (ContinuousLinearMap.fst ℝ E ℂ))))) p := by
+  have h₁ : HasFDerivAt (fun q : E × ℂ ↦ (φ q.1 : ℂ))
+      (Complex.ofRealCLM.comp ((fderiv ℝ φ p.1).comp (ContinuousLinearMap.fst ℝ E ℂ))) p :=
     Complex.ofRealCLM.hasFDerivAt.comp p (hφ.hasFDerivAt.comp p hasFDerivAt_fst)
   have h₂ := (h₁.mul_const I).cexp
   convert h₂ using 2
@@ -318,10 +343,10 @@ theorem differentiableAt_normalModelGauge (hφ : DifferentiableAt ℝ φ p.1) :
 
 /-- The derivative of the gauge transformation:
 `D(z, w)(ξ, η) = (ξ, exp (i φ(z)) (η + i dφ(z)(ξ) w))`. -/
-theorem fderiv_normalModelGauge_apply (hφ : DifferentiableAt ℝ φ p.1) (X : ℂ × ℂ) :
+theorem fderiv_normalModelGauge_apply (hφ : DifferentiableAt ℝ φ p.1) (X : E × ℂ) :
     fderiv ℝ (normalModelGauge φ) p X =
       (X.1, exp (φ p.1 * I) * (X.2 + I * fderiv ℝ φ p.1 X.1 * p.2)) := by
-  have h : HasFDerivAt (normalModelGauge φ) ((ContinuousLinearMap.fst ℝ ℂ ℂ).prod _) p :=
+  have h : HasFDerivAt (normalModelGauge φ) ((ContinuousLinearMap.fst ℝ E ℂ).prod _) p :=
     hasFDerivAt_fst.prodMk ((hasFDerivAt_exp_ofReal_mul_I hφ).mul hasFDerivAt_snd)
   rw [h.fderiv]
   simp only [ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_fst',
@@ -330,19 +355,41 @@ theorem fderiv_normalModelGauge_apply (hφ : DifferentiableAt ℝ φ p.1) (X : �
     Prod.mk.injEq, true_and]
   ring
 
-
-variable {A' : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ}
-
 /-- The gauge transformation of `φ` carries the covariant derivative of `A` to that of `A - dφ`,
 multiplied by the phase `exp (i φ)`. -/
 theorem normalCovariantDeriv_normalModelGauge (hφ : DifferentiableAt ℝ φ p.1)
-    (hA' : ∀ v, A' p.1 (fun _ ↦ v) = A p.1 (fun _ ↦ v) - fderiv ℝ φ p.1 v) (X : ℂ × ℂ) :
+    (hA' : ∀ v, A' p.1 (fun _ ↦ v) = A p.1 (fun _ ↦ v) - fderiv ℝ φ p.1 v) (X : E × ℂ) :
     normalCovariantDeriv A' (normalModelGauge φ p) (fderiv ℝ (normalModelGauge φ) p X) =
       exp (φ p.1 * I) * normalCovariantDeriv A p X := by
   rw [fderiv_normalModelGauge_apply hφ, normalCovariantDeriv_def, normalCovariantDeriv_def,
     normalModelGauge_fst, normalModelGauge_snd, hA' X.1]
   push_cast
   ring
+
+/-- **Gauge transformations preserve the coupling form.** If `A' = A - dφ` at `z` and `A'` has the
+same curvature as `A` there, as when `φ` is `C²`, the gauge transformation of `φ` pulls the
+coupling form of `A'` back to that of `A` at every point over `z`. -/
+theorem normalCouplingForm_normalModelGauge_apply (hφ : DifferentiableAt ℝ φ p.1)
+    (hA : DifferentiableAt ℝ A p.1) (hA'd : DifferentiableAt ℝ A' p.1)
+    (hA' : ∀ v, A' p.1 (fun _ ↦ v) = A p.1 (fun _ ↦ v) - fderiv ℝ φ p.1 v)
+    (hdA : extDeriv A' p.1 = extDeriv A p.1) (X Y : E × ℂ) :
+    normalCouplingForm ω A' (normalModelGauge φ p)
+        ![fderiv ℝ (normalModelGauge φ) p X, fderiv ℝ (normalModelGauge φ) p Y] =
+      normalCouplingForm ω A p ![X, Y] := by
+  rw [normalCouplingForm_apply_eq_normalCovariantDeriv (p := normalModelGauge φ p) hA'd,
+    normalCouplingForm_apply_eq_normalCovariantDeriv hA,
+    normalCovariantDeriv_normalModelGauge hφ hA', normalCovariantDeriv_normalModelGauge hφ hA',
+    stdComplexSymplecticForm_mul_mul, norm_exp_ofReal_mul_I, one_pow, one_mul]
+  simp only [normalModelGauge_fst, normalModelGauge_snd, fderiv_normalModelGauge_apply hφ, hdA,
+    normSq_mul, normSq_eq_norm_sq (exp _), norm_exp_ofReal_mul_I, one_pow, one_mul]
+
+end Gauge
+
+/-! ### Holomorphy of gauge transformations and flat connections -/
+
+section Flat
+
+variable {ω : ℂ → ℂ [⋀^Fin 2]→L[ℝ] ℝ} {A A' : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ} {φ : ℂ → ℝ} {p : ℂ × ℂ}
 
 /-- **Gauge transformations are holomorphic.** If `A' = A - dφ` at `z`, the gauge transformation
 of `φ` is holomorphic, at every point over `z`, from the normal model structure of `A` to that of
@@ -361,23 +408,6 @@ theorem isJHolomorphicAt_normalModelGauge (hφ : DifferentiableAt ℝ φ p.1)
   · rfl
   · simp only [ofReal_sub]
     linear_combination -exp (φ p.1 * I) * (fderiv ℝ φ p.1 X.1 : ℂ) * p.2 * I_sq
-
-/-- **Gauge transformations preserve the coupling form.** If `A' = A - dφ` at `z` and `A'` has the
-same curvature as `A` there, as when `φ` is `C²`, the gauge transformation of `φ` pulls the
-coupling form of `A'` back to that of `A` at every point over `z`. -/
-theorem normalCouplingForm_normalModelGauge_apply (hφ : DifferentiableAt ℝ φ p.1)
-    (hA : DifferentiableAt ℝ A p.1) (hA'd : DifferentiableAt ℝ A' p.1)
-    (hA' : ∀ v, A' p.1 (fun _ ↦ v) = A p.1 (fun _ ↦ v) - fderiv ℝ φ p.1 v)
-    (hdA : extDeriv A' p.1 = extDeriv A p.1) (X Y : ℂ × ℂ) :
-    normalCouplingForm ω A' (normalModelGauge φ p)
-        ![fderiv ℝ (normalModelGauge φ) p X, fderiv ℝ (normalModelGauge φ) p Y] =
-      normalCouplingForm ω A p ![X, Y] := by
-  rw [normalCouplingForm_apply_eq_normalCovariantDeriv (p := normalModelGauge φ p) hA'd,
-    normalCouplingForm_apply_eq_normalCovariantDeriv hA,
-    normalCovariantDeriv_normalModelGauge hφ hA', normalCovariantDeriv_normalModelGauge hφ hA',
-    stdComplexSymplecticForm_mul_mul, norm_exp_ofReal_mul_I, one_pow, one_mul]
-  simp only [normalModelGauge_fst, normalModelGauge_snd, fderiv_normalModelGauge_apply hφ, hdA,
-    normSq_mul, normSq_eq_norm_sq (exp _), norm_exp_ofReal_mul_I, one_pow, one_mul]
 
 /-- **Flat connections are locally trivial.** Let `A` be a `C¹` connection with vanishing
 curvature `dA = 0` on an open set `s` of the base. Every point of `s` has a disc in `s` and a gauge
@@ -414,6 +444,8 @@ theorem exists_normalModelGauge_of_extDeriv_eq_zero {s : Set ℂ} (hs : IsOpen s
   · simpa using isJHolomorphicAt_normalModelGauge (A' := 0) hφp.differentiableAt hA'
   · rw [hdA p.1 (hrs hp)]
     exact congrFun (ContinuousAlternatingMap.extDeriv_const 0) p.1
+
+end Flat
 
 end TauCeti
 
