@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Basic
 public import TauCeti.Algebra.Lie.SpecialLinear.SymmetricProduct
 public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.Data.Fintype.Fin
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
 /-!
