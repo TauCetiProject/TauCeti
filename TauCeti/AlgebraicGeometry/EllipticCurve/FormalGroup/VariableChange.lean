@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDifferential
+public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.SemidirectProduct
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
+public import TauCeti.RingTheory.FormalGroup.Rescale.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.VariableChange
@@ -50,9 +52,13 @@ characteristics two and three and rings with nilpotents.
 ## Main results
 
 * `WeierstrassCurve.VariableChange.formalCoordinate`: the transition `ψ`, with
-  `formalCoordinate_mul` (the cocycle identity) and `map_formalCoordinate` (base change).
-* `WeierstrassCurve.VariableChange.formalCoordinate_mk`: for the scaling `(u, 0, 0, 0)` the
-  transition is the homothety `z ↦ u⁻¹ z`.
+  `formalCoordinate_mul` (the cocycle identity), `map_formalCoordinate` (base change), the
+  low-degree coefficients `coeff_two_formalCoordinate`, `coeff_three_formalCoordinate`,
+  `coeff_four_formalCoordinate`, and faithfulness `formalCoordinate_injective`.
+* `WeierstrassCurve.VariableChange.formalCoordinate_mk` and
+  `WeierstrassCurve.VariableChange.formalCoordinate_scaling_mul_mul_inv`: for the scaling
+  `(u, 0, 0, 0)` the transition is the homothety `z ↦ u⁻¹ z`, so conjugating a change of
+  variables by `scaling R u` conjugates its formal coordinate transition by `homothety u`.
 * `WeierstrassCurve.VariableChange.subst_formalCoordinate_formalInvariantDifferentialDenom`:
   `G_W(ψ(z)) = u ψ'(z) G_{C • W}(z)` for the denominators `G` of the invariant differentials.
 * `WeierstrassCurve.VariableChange.subst_formalCoordinate_invariantDifferential_formalGroup`:
@@ -65,6 +71,9 @@ characteristics two and three and rings with nilpotents.
 * `WeierstrassCurve.VariableChange.heightIdeal_formalGroup_variableChange` and
   `WeierstrassCurve.VariableChange.height_formalGroup_variableChange`: the height ideals, and over
   a field the height, are unchanged by a change of variables.
+* `WeierstrassCurve.formalInvariantDifferentialDenom_mk_smul` and
+  `WeierstrassCurve.formalW_mk_smul`: the scaling `(u, 0, 0, 0)` rescales the
+  invariant-differential denominator and `w`-expansion.
 
 ## Implementation notes
 
@@ -332,6 +341,101 @@ theorem map_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) (f 
   simp [formalCoordinate_toPowerSeries, TauCeti.FormalCoordinate.toPowerSeries_map,
     map_variableChange, map_formalW]
 
+/-- Recursive formula for the coefficients of `formalCoordinate` from degree `2` onwards, obtained
+by reading the coefficient of `X ^ (n + 2)` in `formalCoordinate_mul_formalDenom` and cancelling
+`u ^ 3`. -/
+private theorem coeff_add_two_formalCoordinate (n : ℕ) (C : VariableChange R)
+    (W : WeierstrassCurve R) :
+    coeff (n + 2) (C.formalCoordinate W).toPowerSeries =
+      (C.s * (C.u : R) ^ 2 * coeff (n + 1) (C.formalCoordinate W).toPowerSeries +
+        C.r * formalWCoeff (C • W) (n + 2) +
+        C.t * coeff (n + 2) (X ^ 3 * ((C.formalCoordinate W).toPowerSeries * formalU (C • W)))) *
+        ↑C.u⁻¹ ^ 3 := by
+  set ψ := (C.formalCoordinate W).toPowerSeries
+  have hp : PowerSeries.C ((C.u : R) ^ 3) * ψ =
+      PowerSeries.C ((C.u : R) ^ 2) * X +
+        PowerSeries.C (C.s * (C.u : R) ^ 2) * (X * ψ) +
+        PowerSeries.C C.r * formalW (C • W) +
+        PowerSeries.C C.t * (X ^ 3 * (ψ * formalU (C • W))) := by
+    have h := C.formalCoordinate_mul_formalDenom W
+    rw [formalDenom_def, ← map_pow, ← map_pow] at h
+    linear_combination h + ψ * PowerSeries.C C.t * formalW_eq_X_pow_mul_formalU (C • W)
+  have hc := congrArg (coeff (n + 2)) hp
+  simp only [map_add, coeff_C_mul, coeff_X, Nat.reduceEqDiff, ↓reduceIte, mul_zero,
+    zero_add, coeff_succ_X_mul, coeff_formalW] at hc
+  have hu : (C.u : R) * ↑C.u⁻¹ = 1 := C.u.mul_inv
+  apply (C.u ^ 3).isUnit.mul_left_cancel
+  rw [Units.val_pow_eq_pow_val, hc]
+  linear_combination -(C.s * (C.u : R) ^ 2 * coeff (n + 1) ψ + C.r * formalWCoeff (C • W) (n + 2) +
+    C.t * coeff (n + 2) (X ^ 3 * (ψ * formalU (C • W)))) * pow_mul_pow_eq_one 3 hu
+
+/-- The quadratic coefficient of the formal coordinate transition is `s u⁻²`. -/
+@[simp]
+theorem coeff_two_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) :
+    coeff 2 (C.formalCoordinate W).toPowerSeries = C.s * ↑C.u⁻¹ ^ 2 := by
+  have hu : (C.u : R) * ↑C.u⁻¹ = 1 := C.u.mul_inv
+  rw [coeff_add_two_formalCoordinate 0 C W]
+  simp only [zero_add, coeff_one_formalCoordinate, formalWCoeff_two, mul_zero, add_zero,
+    coeff_X_pow_mul', Nat.reduceLeDiff, ↓reduceIte]
+  linear_combination C.s * (↑C.u⁻¹ : R) ^ 2 * pow_mul_pow_eq_one 2 hu
+
+/-- The cubic coefficient of the formal coordinate transition is `(r + s²) u⁻³`. -/
+@[simp]
+theorem coeff_three_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) :
+    coeff 3 (C.formalCoordinate W).toPowerSeries = (C.r + C.s ^ 2) * ↑C.u⁻¹ ^ 3 := by
+  have hu : (C.u : R) * ↑C.u⁻¹ = 1 := C.u.mul_inv
+  rw [coeff_add_two_formalCoordinate 1 C W]
+  simp only [Nat.reduceAdd, coeff_two_formalCoordinate, formalWCoeff_three, mul_one,
+    coeff_X_pow_mul', le_refl, ↓reduceIte, Nat.sub_self, coeff_zero_eq_constantCoeff, map_mul,
+    TauCeti.FormalCoordinate.constantCoeff_toPowerSeries, zero_mul]
+  linear_combination C.s ^ 2 * (↑C.u⁻¹ : R) ^ 3 * pow_mul_pow_eq_one 2 hu
+
+/-- The quartic coefficient of the formal coordinate transition is `(t + s³ + 3rs + a₁r) u⁻⁴`. -/
+@[simp]
+theorem coeff_four_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) :
+    coeff 4 (C.formalCoordinate W).toPowerSeries =
+      (C.t + C.s ^ 3 + 3 * C.r * C.s + W.a₁ * C.r) * ↑C.u⁻¹ ^ 4 := by
+  have hu : (C.u : R) * ↑C.u⁻¹ = 1 := C.u.mul_inv
+  rw [coeff_add_two_formalCoordinate 2 C W]
+  simp only [Nat.reduceAdd, coeff_three_formalCoordinate, formalWCoeff_four, variableChange_a₁,
+    coeff_X_pow_mul', Nat.reduceLeDiff, ↓reduceIte, Nat.reduceSub, coeff_one_mul,
+    TauCeti.FormalCoordinate.constantCoeff_toPowerSeries, coeff_one_formalCoordinate,
+    constantCoeff_formalU, mul_one]
+  linear_combination C.s * (C.r + C.s ^ 2) * (↑C.u⁻¹ : R) ^ 4 * pow_mul_pow_eq_one 2 hu
+
+/-- A Weierstrass change of variables is determined by the `4`-jet of its formal coordinate
+transition, over every commutative ring and without any nonsingularity hypothesis. -/
+theorem ext_of_coeff_formalCoordinate_eq {C₁ C₂ : VariableChange R} {W : WeierstrassCurve R}
+    (h₁ : coeff 1 (C₁.formalCoordinate W).toPowerSeries =
+      coeff 1 (C₂.formalCoordinate W).toPowerSeries)
+    (h₂ : coeff 2 (C₁.formalCoordinate W).toPowerSeries =
+      coeff 2 (C₂.formalCoordinate W).toPowerSeries)
+    (h₃ : coeff 3 (C₁.formalCoordinate W).toPowerSeries =
+      coeff 3 (C₂.formalCoordinate W).toPowerSeries)
+    (h₄ : coeff 4 (C₁.formalCoordinate W).toPowerSeries =
+      coeff 4 (C₂.formalCoordinate W).toPowerSeries) : C₁ = C₂ := by
+  have hu : C₁.u = C₂.u := by
+    apply inv_injective
+    apply Units.ext
+    simpa using h₁
+  simp only [coeff_two_formalCoordinate, hu, ← Units.val_pow_eq_pow_val] at h₂
+  have hs : C₁.s = C₂.s := (C₂.u⁻¹ ^ 2).isUnit.mul_right_cancel h₂
+  simp only [coeff_three_formalCoordinate, hu, hs, ← Units.val_pow_eq_pow_val] at h₃
+  have hr : C₁.r = C₂.r := add_right_cancel ((C₂.u⁻¹ ^ 3).isUnit.mul_right_cancel h₃)
+  simp only [coeff_four_formalCoordinate, hu, hs, hr, ← Units.val_pow_eq_pow_val] at h₄
+  have ht : C₁.t = C₂.t := by
+    have h4 := (C₂.u⁻¹ ^ 4).isUnit.mul_right_cancel h₄
+    linear_combination h4
+  exact VariableChange.ext hu hr hs ht
+
+/-- **Faithfulness on the formal neighbourhood**: two Weierstrass changes of variables of `W` that
+induce the same formal coordinate transition are equal, over every commutative ring. -/
+theorem formalCoordinate_injective (W : WeierstrassCurve R) :
+    Function.Injective fun C : VariableChange R ↦ C.formalCoordinate W := fun _ _ h ↦
+  have hp := congrArg TauCeti.FormalCoordinate.toPowerSeries h
+  ext_of_coeff_formalCoordinate_eq (congrArg (coeff 1) hp) (congrArg (coeff 2) hp)
+    (congrArg (coeff 3) hp) (congrArg (coeff 4) hp)
+
 end WeierstrassCurve.VariableChange
 
 /-! ### Compatibility with the invariant differential and the formal group law -/
@@ -578,3 +682,64 @@ theorem height_formalGroup_variableChange {K : Type*} [Field K] (C : VariableCha
   rw [formalGroup_smul, FormalGroup.height_smul]
 
 end WeierstrassCurve.VariableChange
+
+/-! ### Pure scalings on the Weierstrass formal neighbourhood -/
+
+namespace WeierstrassCurve.VariableChange
+
+variable {R : Type*} [CommRing R]
+
+/-- Conjugating any Weierstrass change `C` by `scaling R u` conjugates its formal coordinate
+transition by `homothety u`. -/
+theorem formalCoordinate_scaling_mul_mul_inv (u : Rˣ) (C : VariableChange R)
+    (W : WeierstrassCurve R) :
+    (scaling R u * C * (scaling R u)⁻¹).formalCoordinate (scaling R u • W) =
+      TauCeti.FormalCoordinate.homothety u * C.formalCoordinate W *
+        TauCeti.FormalCoordinate.homothety u⁻¹ := by
+  rw [formalCoordinate_mul, inv_smul_smul, ← _root_.map_inv, formalCoordinate_mul]
+  simp [mul_assoc]
+
+end WeierstrassCurve.VariableChange
+
+namespace WeierstrassCurve
+
+open PowerSeries
+
+variable {R : Type*} [CommRing R]
+
+/-- **The invariant-differential denominator under a scaling**:
+`G_{(u, 0, 0, 0) • W}(z) = G_W(u⁻¹ z)`. -/
+@[simp]
+theorem formalInvariantDifferentialDenom_mk_smul (W : WeierstrassCurve R) (u : Rˣ) :
+    ((⟨u, 0, 0, 0⟩ : VariableChange R) • W).formalInvariantDifferentialDenom =
+      PowerSeries.rescale (↑u⁻¹ : R) W.formalInvariantDifferentialDenom := by
+  have h :=
+    (⟨u, 0, 0, 0⟩ : VariableChange R).subst_formalCoordinate_formalInvariantDifferentialDenom W
+  rw [VariableChange.formalCoordinate_mk, TauCeti.FormalCoordinate.toPowerSeries_homothety,
+    ← PowerSeries.rescale_eq_subst] at h
+  have hd : d⁄dX ((↑u⁻¹ : R) • (PowerSeries.X : PowerSeries R)) = PowerSeries.C (↑u⁻¹ : R) := by
+    simp [PowerSeries.smul_eq_C_mul]
+  have hu : PowerSeries.C (u : R) * PowerSeries.C (↑u⁻¹ : R) = 1 := by
+    rw [← map_mul, Units.mul_inv, map_one]
+  rw [hd, hu, one_mul] at h
+  exact h.symm
+
+/-- **The `w`-expansion under a scaling**: `w_{(u, 0, 0, 0) • W}(z) = u³ w_W(u⁻¹ z)`. -/
+@[simp]
+theorem formalW_mk_smul (W : WeierstrassCurve R) (u : Rˣ) :
+    formalW ((⟨u, 0, 0, 0⟩ : VariableChange R) • W) =
+      (u : R) ^ 3 • PowerSeries.rescale (↑u⁻¹ : R) (formalW W) := by
+  let C : VariableChange R := ⟨u, 0, 0, 0⟩
+  have hs : PowerSeries.rescale (↑u⁻¹ : R) (formalW W) =
+      formalW (C • W) * invOfUnit (C.formalDenom W) (C.u ^ 3) := by
+    simpa only [C, VariableChange.formalCoordinate_mk,
+      TauCeti.FormalCoordinate.toPowerSeries_homothety, ← PowerSeries.rescale_eq_subst] using
+      C.subst_formalCoordinate_formalW W
+  have hd : C.formalDenom W = PowerSeries.C ((u : R) ^ 3) := by
+    simp [VariableChange.formalDenom_def, C]
+  have hinv : invOfUnit (C.formalDenom W) (C.u ^ 3) * PowerSeries.C ((u : R) ^ 3) = 1 :=
+    hd ▸ invOfUnit_mul _ _ (C.constantCoeff_formalDenom W)
+  rw [PowerSeries.smul_eq_C_mul]
+  linear_combination -formalW (C • W) * hinv - PowerSeries.C ((u : R) ^ 3) * hs
+
+end WeierstrassCurve

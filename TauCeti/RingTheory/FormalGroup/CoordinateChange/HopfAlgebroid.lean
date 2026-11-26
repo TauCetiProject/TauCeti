@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Lazard
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
+public import TauCeti.RingTheory.MvPolynomial.Pushout
 import Mathlib.Algebra.MvPolynomial.Monad
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 
@@ -26,7 +27,7 @@ formal group laws and their strict isomorphisms.
 Composable pairs `F → φ • F → ψ • (φ • F)` are classified by the pushout `Γ ⊗_L Γ` of `η_R` on the
 left factor and `η_L` on the right factor. As `Γ` is a polynomial ring over `L` through `η_L`, this
 pushout is the polynomial ring `Γ[b₁', b₂', …] = MvPolynomial ℕ+ Γ`, with left factor `C` and right
-factor `MvPolynomial.map η_R`; `TauCeti.LazardRing.tensorLift` is its universal property. The
+factor `MvPolynomial.map η_R`; `MvPolynomial.pushoutLift` is its universal property. The
 **coproduct** `Δ : Γ → Γ ⊗_L Γ` classifies the composite `ψ * φ = ψ ∘ φ`, and the
 **conjugation** `c : Γ → Γ` classifies the inverse `φ⁻¹ : φ • F → F`.
 
@@ -34,12 +35,11 @@ The equations are proved by comparing classified data: a ring homomorphism out o
 determined by its restriction to `L` and by its base change of the universal strict coordinate
 (`TauCeti.FormalCoordinate.ringHom_ext_universalStrictCoordinate`), and then each equation is a
 groupoid law in the group of strict coordinates. In the tensor model, the composite
-`μ ∘ (f ⊗ g) : Γ ⊗_L Γ → R` of a tensor product of maps with multiplication is `tensorLift (f, g)`.
+`μ ∘ (f ⊗ g) : Γ ⊗_L Γ → R` of a tensor product of maps with multiplication is
+`pushoutLift rightUnit (f, g)`.
 
 ## Main definitions
 
-* `TauCeti.LazardRing.tensorLift`: the universal property of `Γ ⊗_L Γ = MvPolynomial ℕ+ Γ` as the
-  pushout of `η_R` and `η_L`.
 * `TauCeti.LazardRing.coproduct`: the coproduct `Δ : Γ →+* Γ ⊗_L Γ`.
 * `TauCeti.LazardRing.conjugation`: the conjugation `c : Γ →+* Γ`.
 
@@ -50,14 +50,14 @@ groupoid law in the group of strict coordinates. In the tensor model, the compos
   composable pair of strict isomorphisms.
 * `TauCeti.LazardRing.coproduct_comp_C`, `TauCeti.LazardRing.coproduct_comp_rightUnit`:
   `Δ η_L = (η_L ⊗ 1) η_L` and `Δ η_R = (1 ⊗ η_R) η_R`.
-* `TauCeti.LazardRing.tensorLift_counit_id_comp_coproduct`,
-  `TauCeti.LazardRing.tensorLift_id_counit_comp_coproduct`: `(ε ⊗ id) Δ = id = (id ⊗ ε) Δ`.
+* `TauCeti.LazardRing.pushoutLift_counit_id_comp_coproduct`,
+  `TauCeti.LazardRing.pushoutLift_id_counit_comp_coproduct`: `(ε ⊗ id) Δ = id = (id ⊗ ε) Δ`.
 * `TauCeti.LazardRing.coproduct_coassoc`: coassociativity, `(Δ ⊗ id) Δ = (id ⊗ Δ) Δ`.
 * `TauCeti.LazardRing.conjugation_comp_C`, `TauCeti.LazardRing.conjugation_comp_rightUnit`,
   `TauCeti.LazardRing.conjugation_comp_conjugation`: `c η_L = η_R`, `c η_R = η_L` and `c c = id`.
 * `TauCeti.LazardRing.counit_comp_conjugation`: `ε c = ε`.
-* `TauCeti.LazardRing.tensorLift_conjugation_id_comp_coproduct`,
-  `TauCeti.LazardRing.tensorLift_id_conjugation_comp_coproduct`: the antipode equations
+* `TauCeti.LazardRing.pushoutLift_conjugation_id_comp_coproduct`,
+  `TauCeti.LazardRing.pushoutLift_id_conjugation_comp_coproduct`: the antipode equations
   `μ (c ⊗ id) Δ = η_R ε` and `μ (id ⊗ c) Δ = η_L ε`.
 * `TauCeti.LazardRing.map_rightUnit_heightIdeal`: the height ideals `I_n` of the Lazard ring
   (`FormalGroup.heightIdeal`) are invariant ideals: `η_R(I_n) Γ = η_L(I_n) Γ`.
@@ -84,87 +84,6 @@ variable {R : Type*} [CommRing R]
 open MvPolynomial
 open FormalCoordinate (universalStrictCoordinate map_universalStrictCoordinate_mem_ker
   ringHom_ext_universalStrictCoordinate)
-
-/-! ### The tensor square `Γ ⊗_L Γ` -/
-
-/-- **The universal property of `Γ ⊗_L Γ`**, for `Γ = L[b₁, b₂, …]`: ring homomorphisms out of
-`Γ[b₁', b₂', …] = MvPolynomial ℕ+ Γ` correspond to pairs `(f, g)` of ring homomorphisms out of `Γ`
-with `f ∘ η_R = g ∘ η_L`, by restriction along the left factor `C` and the right factor
-`MvPolynomial.map η_R`. Thus `MvPolynomial ℕ+ Γ` is the pushout `Γ ⊗_L Γ` of the right unit on the
-left factor and the left unit on the right factor, and its homomorphisms to `R` classify
-composable pairs `F → φ • F → ψ • (φ • F)` of strict isomorphisms. -/
-def tensorLift :
-    {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
-      p.1.comp rightUnit = p.2.comp C} ≃ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) where
-  toFun p := eval₂Hom p.val.1 (p.val.2 ∘ X)
-  invFun k := ⟨(k.comp C, k.comp (map rightUnit)), by
-    rw [RingHom.comp_assoc, RingHom.comp_assoc, map_comp_C]⟩
-  left_inv p := by
-    refine Subtype.ext (Prod.ext (RingHom.ext (eval₂Hom_C _ _)) ?_)
-    refine ringHom_ext' ?_ fun i ↦ by simp
-    ext r
-    simpa using RingHom.congr_fun p.property r
-  right_inv k := ringHom_ext' (RingHom.ext fun r ↦ by simp) fun i ↦ by simp
-
-/-- The left component of the pair classified by `k : Γ ⊗_L Γ →+* R` is its restriction along the
-left factor `C`. -/
-@[simp]
-theorem tensorLift_symm_apply_fst (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) :
-    (tensorLift.symm k).val.1 = k.comp C :=
-  (rfl)
-
-/-- The right component of the pair classified by `k : Γ ⊗_L Γ →+* R` is its restriction along the
-right factor `MvPolynomial.map η_R`. -/
-@[simp]
-theorem tensorLift_symm_apply_snd (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) :
-    (tensorLift.symm k).val.2 = k.comp (map rightUnit) :=
-  (rfl)
-
-/-- `tensorLift (f, g)` restricts to `f` on the left factor. -/
-@[simp]
-theorem tensorLift_comp_C
-    (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
-      p.1.comp rightUnit = p.2.comp C}) :
-    (tensorLift p).comp C = p.val.1 :=
-  congrArg (fun q ↦ q.val.1) (tensorLift.left_inv p)
-
-/-- `tensorLift (f, g)` restricts to `g` on the right factor. -/
-@[simp]
-theorem tensorLift_comp_map_rightUnit
-    (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
-      p.1.comp rightUnit = p.2.comp C}) :
-    (tensorLift p).comp (map rightUnit) = p.val.2 :=
-  congrArg (fun q ↦ q.val.2) (tensorLift.left_inv p)
-
-/-- `tensorLift (f, g)` agrees with `f` on the left factor. -/
-@[simp]
-theorem tensorLift_C
-    (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
-      p.1.comp rightUnit = p.2.comp C}) (x : MvPolynomial ℕ+ LazardRing) :
-    tensorLift p (C x) = p.val.1 x :=
-  RingHom.congr_fun (tensorLift_comp_C p) x
-
-/-- `tensorLift (f, g)` agrees with `g` on the right factor. -/
-@[simp]
-theorem tensorLift_map_rightUnit
-    (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
-      p.1.comp rightUnit = p.2.comp C}) (x : MvPolynomial ℕ+ LazardRing) :
-    tensorLift p (map rightUnit x) = p.val.2 x :=
-  RingHom.congr_fun (tensorLift_comp_map_rightUnit p) x
-
-/-- `tensorLift (f, g)` agrees with `g` on the generators of the right factor. -/
-@[simp]
-theorem tensorLift_X
-    (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
-      p.1.comp rightUnit = p.2.comp C}) (i : ℕ+) :
-    tensorLift p (X i) = p.val.2 (X i) := by
-  simpa using tensorLift_map_rightUnit p (X i)
-
-/-- A ring homomorphism out of `Γ ⊗_L Γ` is determined by its restrictions to both factors. -/
-theorem tensor_ringHom_ext {k k' : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R}
-    (h₁ : k.comp C = k'.comp C) (h₂ : k.comp (map rightUnit) = k'.comp (map rightUnit)) :
-    k = k' :=
-  tensorLift.symm.injective (Subtype.ext (Prod.ext h₁ h₂))
 
 /-! ### The coproduct -/
 
@@ -227,56 +146,57 @@ theorem coproduct_rightUnit (r : LazardRing) :
   RingHom.congr_fun coproduct_comp_rightUnit r
 
 /-- **The left counit law** `(ε ⊗ id) Δ = id`: composing with an identity on the left does
-nothing. Here `ε ⊗ id` is `tensorLift (η_L ε, id)`. -/
-theorem tensorLift_counit_id_comp_coproduct :
-    (tensorLift ⟨(C.comp counit, RingHom.id _), by
+nothing. Here `ε ⊗ id` is `pushoutLift rightUnit (η_L ε, id)`. -/
+theorem pushoutLift_counit_id_comp_coproduct :
+    (pushoutLift rightUnit ⟨(C.comp counit, RingHom.id _), by
         rw [RingHom.comp_assoc, counit_comp_rightUnit, RingHom.comp_id, RingHom.id_comp]⟩).comp
           coproduct =
       RingHom.id (MvPolynomial ℕ+ LazardRing) := by
   refine ringHom_ext_universalStrictCoordinate ?_ ?_
-  · rw [comp_coproduct_comp_C, tensorLift_comp_C, RingHom.comp_assoc, counit_comp_C,
+  · rw [comp_coproduct_comp_C, pushoutLift_comp_C, RingHom.comp_assoc, counit_comp_C,
       RingHom.comp_id, RingHom.id_comp]
-  · rw [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
-      tensorLift_comp_C]
+  · rw [map_comp_coproduct_universalStrictCoordinate, pushoutLift_comp_map, pushoutLift_comp_C]
     simp [FormalCoordinate.map_comp]
 
 /-- **The right counit law** `(id ⊗ ε) Δ = id`: composing with an identity on the right does
-nothing. Here `id ⊗ ε` is `tensorLift (id, η_R ε)`. -/
-theorem tensorLift_id_counit_comp_coproduct :
-    (tensorLift ⟨(RingHom.id _, rightUnit.comp counit), by
+nothing. Here `id ⊗ ε` is `pushoutLift rightUnit (id, η_R ε)`. -/
+theorem pushoutLift_id_counit_comp_coproduct :
+    (pushoutLift rightUnit ⟨(RingHom.id _, rightUnit.comp counit), by
         rw [RingHom.comp_assoc, counit_comp_C, RingHom.comp_id, RingHom.id_comp]⟩).comp
           coproduct =
       RingHom.id (MvPolynomial ℕ+ LazardRing) := by
   refine ringHom_ext_universalStrictCoordinate ?_ ?_
-  · rw [comp_coproduct_comp_C, tensorLift_comp_C]
-  · rw [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
-      tensorLift_comp_C]
+  · rw [comp_coproduct_comp_C, pushoutLift_comp_C]
+  · rw [map_comp_coproduct_universalStrictCoordinate, pushoutLift_comp_map, pushoutLift_comp_C]
     simp [FormalCoordinate.map_comp]
 
 /-- **Coassociativity** `(Δ ⊗ id) Δ = (id ⊗ Δ) Δ` of the coproduct: composition of strict
 isomorphisms is associative. Both sides take values in the triple tensor product
 `Γ ⊗_L Γ ⊗_L Γ = MvPolynomial ℕ+ (Γ ⊗_L Γ)`, the pushout of `Γ ⊗_L Γ` along the target of its right
 factor and of `Γ` along `η_L`, whose three factors are `C ∘ C`, `C ∘ MvPolynomial.map η_R` and
-`MvPolynomial.map (MvPolynomial.map η_R ∘ η_R)`. In it, `Δ ⊗ id` is `tensorLift (C ∘ Δ, ι₃)` with
-`ι₃` the third factor, and `id ⊗ Δ` is `tensorLift (C ∘ C, ι₂₃ ∘ Δ)` with
-`ι₂₃ = MvPolynomial.map (MvPolynomial.map η_R)` the inclusion of the last two factors. -/
+`MvPolynomial.map (MvPolynomial.map η_R ∘ η_R)`. In it, `Δ ⊗ id` is
+`pushoutLift rightUnit (C ∘ Δ, ι₃)` with `ι₃` the third factor, and `id ⊗ Δ` is
+`pushoutLift rightUnit (C ∘ C, ι₂₃ ∘ Δ)` with `ι₂₃ = MvPolynomial.map (MvPolynomial.map η_R)` the
+inclusion of the last two factors. -/
 theorem coproduct_coassoc :
-    (tensorLift (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing)))
-        ⟨(C.comp coproduct, map ((map (σ := ℕ+) rightUnit).comp rightUnit)),
+    (pushoutLift (σ := ℕ+) (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing)))
+        rightUnit ⟨(C.comp coproduct, map ((map (σ := ℕ+) rightUnit).comp rightUnit)),
           RingHom.ext fun r ↦ by simp⟩).comp coproduct =
-      (tensorLift (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing)))
-        ⟨((C : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* _).comp C,
+      (pushoutLift (σ := ℕ+) (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing)))
+        rightUnit ⟨((C : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* _).comp C,
           (map (map (σ := ℕ+) rightUnit)).comp coproduct), RingHom.ext fun r ↦ by simp⟩).comp
           coproduct := by
-  refine ringHom_ext_universalStrictCoordinate ?_ ?_
-  · rw [comp_coproduct_comp_C, comp_coproduct_comp_C, tensorLift_comp_C, tensorLift_comp_C,
-      RingHom.comp_assoc, coproduct_comp_C, RingHom.comp_assoc]
+  let T₃ := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing))
+  refine ringHom_ext_universalStrictCoordinate (R := T₃) ?_ ?_
+  · rw [comp_coproduct_comp_C (R := T₃), comp_coproduct_comp_C (R := T₃), pushoutLift_comp_C,
+      pushoutLift_comp_C, RingHom.comp_assoc, coproduct_comp_C, RingHom.comp_assoc]
   · -- Both sides are the triple composite `χ₃ * χ₂ * χ₁` of the strict coordinates of the three
     -- factors.
     have h : (map (map (σ := ℕ+) rightUnit)).comp (map (σ := ℕ+) rightUnit) =
         map ((map rightUnit).comp rightUnit) :=
       RingHom.ext fun p ↦ map_map rightUnit (map rightUnit) p
-    simp [map_comp_coproduct_universalStrictCoordinate, mul_assoc, h]
+    simp [map_comp_coproduct_universalStrictCoordinate, map_comp_C (map (σ := ℕ+) rightUnit),
+      mul_assoc, h]
 
 /-! ### The conjugation -/
 
@@ -348,29 +268,30 @@ theorem counit_conjugation (x : MvPolynomial ℕ+ LazardRing) :
 
 /-- **The left antipode equation** `μ (c ⊗ id) Δ = η_R ε`: composing the inverse of a strict
 isomorphism with it gives the identity of its target. Here `μ (c ⊗ id)` is
-`tensorLift (c, id)`. -/
-theorem tensorLift_conjugation_id_comp_coproduct :
-    (tensorLift ⟨(conjugation, RingHom.id _), by
+`pushoutLift rightUnit (c, id)`. -/
+theorem pushoutLift_conjugation_id_comp_coproduct :
+    (pushoutLift rightUnit ⟨(conjugation, RingHom.id _), by
         rw [conjugation_comp_rightUnit, RingHom.id_comp]⟩).comp coproduct =
       rightUnit.comp counit := by
   refine ringHom_ext_universalStrictCoordinate ?_ ?_
-  · rw [comp_coproduct_comp_C, tensorLift_comp_C, conjugation_comp_C, RingHom.comp_assoc,
+  · rw [comp_coproduct_comp_C, pushoutLift_comp_C, conjugation_comp_C, RingHom.comp_assoc,
       counit_comp_C, RingHom.comp_id]
-  · rw [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
-      tensorLift_comp_C, map_conjugation_universalStrictCoordinate, FormalCoordinate.map_comp,
+  · rw [map_comp_coproduct_universalStrictCoordinate, pushoutLift_comp_map,
+      pushoutLift_comp_C, map_conjugation_universalStrictCoordinate, FormalCoordinate.map_comp,
       map_counit_universalStrictCoordinate, map_one]
     simp
 
 /-- **The right antipode equation** `μ (id ⊗ c) Δ = η_L ε`: composing a strict isomorphism with
-its inverse gives the identity of its source. Here `μ (id ⊗ c)` is `tensorLift (id, c)`. -/
-theorem tensorLift_id_conjugation_comp_coproduct :
-    (tensorLift ⟨(RingHom.id _, conjugation), by
+its inverse gives the identity of its source. Here `μ (id ⊗ c)` is
+`pushoutLift rightUnit (id, c)`. -/
+theorem pushoutLift_id_conjugation_comp_coproduct :
+    (pushoutLift rightUnit ⟨(RingHom.id _, conjugation), by
         rw [conjugation_comp_C, RingHom.id_comp]⟩).comp coproduct = C.comp counit := by
   refine ringHom_ext_universalStrictCoordinate ?_ ?_
-  · rw [comp_coproduct_comp_C, tensorLift_comp_C, RingHom.comp_assoc, counit_comp_C,
+  · rw [comp_coproduct_comp_C, pushoutLift_comp_C, RingHom.comp_assoc, counit_comp_C,
       RingHom.comp_id, RingHom.id_comp]
-  · rw [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
-      tensorLift_comp_C, map_conjugation_universalStrictCoordinate, FormalCoordinate.map_comp,
+  · rw [map_comp_coproduct_universalStrictCoordinate, pushoutLift_comp_map,
+      pushoutLift_comp_C, map_conjugation_universalStrictCoordinate, FormalCoordinate.map_comp,
       map_counit_universalStrictCoordinate, map_one]
     simp
 
