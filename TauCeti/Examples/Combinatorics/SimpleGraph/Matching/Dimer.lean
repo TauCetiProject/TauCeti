@@ -225,6 +225,10 @@ def shiftTwo : nnGraph ℤ ≃g nnGraph ℤ where
     simp only [Equiv.coe_addRight, nnGraph_adj]
     omega
 
+@[simp]
+theorem shiftTwo_apply (a : ℤ) : shiftTwo a = a + 2 :=
+  (rfl)
+
 /-- The group `2ℤ`, written multiplicatively as `Multiplicative ℤ` with `ofAdd 1` acting as
 translation by `2`, acting on the edges of the line. -/
 instance instMulActionMultiplicativeIntEdgeSetNNGraph :
