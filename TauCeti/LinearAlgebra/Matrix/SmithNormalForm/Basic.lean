@@ -34,11 +34,11 @@ factors by minors is in `TauCeti.LinearAlgebra.Matrix.InvariantFactor`.
 
 ## Main results
 
-* `Matrix.exists_smith_normal_form_of_valuationRing`: over a commutative ring with total
+* `Matrix.exists_smith_normal_form_of_preValuationRing`: over a commutative ring with total
   divisibility, a square matrix is equivalent to a diagonal matrix whose entries form a
   divisibility chain.
-* `Matrix.exists_mul_mul_eq_diagonal_of_valuationRing`: the same for matrices indexed by any finite
-  type, without the divisibility chain.
+* `Matrix.exists_mul_mul_eq_diagonal_of_preValuationRing`: the same for matrices indexed by any
+  finite type, without the divisibility chain.
 
 ## References
 
@@ -116,7 +116,7 @@ private theorem exists_mul_mul_eq_cornerBlockSucc {n : ℕ}
 which divisibility is total, for instance a valuation domain such as a discrete valuation ring, has
 a Smith normal form: there are `L`, `Q` of unit determinant and a divisibility chain
 `s₀ ∣ s₁ ∣ ⋯` with `L * A * Q = diagonal s`. Zero diagonal entries are allowed. -/
-theorem exists_smith_normal_form_of_valuationRing [PreValuationRing R] :
+theorem exists_smith_normal_form_of_preValuationRing [PreValuationRing R] :
     ∀ {n : ℕ} (A : Matrix (Fin n) (Fin n) R),
       ∃ (L Q : Matrix (Fin n) (Fin n) R) (s : Fin n → R), IsUnit L.det ∧ IsUnit Q.det ∧
         (∀ ⦃i j : Fin n⦄, i ≤ j → s i ∣ s j) ∧ L * A * Q = diagonal s
@@ -130,7 +130,7 @@ theorem exists_smith_normal_form_of_valuationRing [PreValuationRing R] :
     choose w hw using hdvd
     obtain ⟨L₁, Q₁, hL₁, hQ₁, h₁⟩ := exists_mul_mul_eq_cornerBlockSucc w hw
     -- a Smith normal form of the remaining block, scaled by the corner entry
-    obtain ⟨L', Q', s', hL', hQ', hs', h'⟩ := exists_smith_normal_form_of_valuationRing
+    obtain ⟨L', Q', s', hL', hQ', hs', h'⟩ := exists_smith_normal_form_of_preValuationRing
       (of fun k l : Fin n ↦ w k.succ l.succ - w k.succ 0 * w 0 l.succ)
     refine exists_mul_mul_submatrix_eq (Equiv.swap 0 i) (Equiv.swap 0 j)
       (L := cornerBlockSucc 1 L' * L₁) (Q := Q₁ * cornerBlockSucc 1 Q')
@@ -157,12 +157,12 @@ theorem exists_smith_normal_form_of_valuationRing [PreValuationRing R] :
 /-- Over a commutative ring in which divisibility is total, for instance a valuation domain, every
 square matrix indexed by a finite type is equivalent to a diagonal matrix by transformations of
 unit determinant. Zero diagonal entries are allowed. -/
-theorem exists_mul_mul_eq_diagonal_of_valuationRing [PreValuationRing R] {ι : Type*}
+theorem exists_mul_mul_eq_diagonal_of_preValuationRing [PreValuationRing R] {ι : Type*}
     [Fintype ι] [DecidableEq ι] (A : Matrix ι ι R) :
     ∃ (L Q : Matrix ι ι R) (d : ι → R), IsUnit L.det ∧ IsUnit Q.det ∧
       L * A * Q = diagonal d := by
   let e := Fintype.equivFin ι
-  obtain ⟨L, Q, s, hL, hQ, -, h⟩ := exists_smith_normal_form_of_valuationRing (reindex e e A)
+  obtain ⟨L, Q, s, hL, hQ, -, h⟩ := exists_smith_normal_form_of_preValuationRing (reindex e e A)
   refine ⟨L.submatrix e e, Q.submatrix e e, s ∘ e, by simpa using hL, by simpa using hQ, ?_⟩
   have := congrArg (submatrix · e e) h
   simp only [reindex_apply, submatrix_diagonal_equiv] at this

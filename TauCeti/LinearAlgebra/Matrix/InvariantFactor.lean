@@ -27,7 +27,7 @@ valuation ring, the least valuation of a `k × k` minor of `A` is therefore
 are needed here; the principal minors alone need not attain the minimum.
 
 Over a valuation domain, such as a discrete valuation ring, every square matrix has such a Smith
-normal form: `Matrix.exists_smith_normal_form_of_valuationRing` in
+normal form: `Matrix.exists_smith_normal_form_of_preValuationRing` in
 `TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic`. Comparing these least valuations shows that
 a Smith normal form `diagonal (ϖ ^ α)` by powers of a uniformizer `ϖ`, with monotone exponents
 `α`, is unique.

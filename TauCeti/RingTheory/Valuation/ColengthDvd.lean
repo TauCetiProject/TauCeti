@@ -27,7 +27,7 @@ isomorphism `ι : ℂ ≃ PadicAlgCl ℓ`.
 
 * `Submodule.ColengthDvd.of_det_dvd`: if `det A ∣ z` and `L` contains the image of `A`, then
   `O ^ ι ⊸_z L`. This rests on the Smith normal form over such a ring,
-  `Matrix.exists_mul_mul_eq_diagonal_of_valuationRing`.
+  `Matrix.exists_mul_mul_eq_diagonal_of_preValuationRing`.
 * `Submodule.colengthDvd_inf_comap_span`: for a linear form `f`, `M ⊸_a {v ∈ M : a ∣ f v}`.
 * `Submodule.colengthDvd_top_smul_top`: `O ^ ι ⊸_{a ^ #ι} a • O ^ ι`.
 * `Submodule.colengthDvd_sup_span`: `(N + span S) ⊸_{z ^ #S} (N + z • V)` for a finite set `S`.
@@ -82,7 +82,7 @@ The proof writes `A` in diagonal form `L₀ * A * Q₀ = diagonal d` and imposes
 theorem ColengthDvd.of_det_dvd [Fintype ι] [DecidableEq ι] {A : Matrix ι ι O}
     {L : Submodule O (ι → O)} (h_dvd : A.det ∣ z) (h_le : LinearMap.range A.mulVecLin ≤ L) :
     ColengthDvd ⊤ L z := by
-  obtain ⟨L₀, Q₀, d, hL₀, hQ₀, h⟩ := exists_mul_mul_eq_diagonal_of_valuationRing A
+  obtain ⟨L₀, Q₀, d, hL₀, hQ₀, h⟩ := exists_mul_mul_eq_diagonal_of_preValuationRing A
   let f (j : ι) : (ι → O) →ₗ[O] O := .proj j ∘ₗ L₀.mulVecLin
   let S (s : Finset ι) : Submodule O (ι → O) := ⨅ j ∈ s, Submodule.comap (f j) (Ideal.span {d j})
   -- each further coordinate condition costs `d j`
@@ -98,14 +98,16 @@ theorem ColengthDvd.of_det_dvd [Fintype ι] [DecidableEq ι] {A : Matrix ι ι O
     simp only [S, mem_iInf, mem_univ, forall_const] at hx
     choose w hw using fun j ↦ Ideal.mem_span_singleton.1 (hx j)
     have hA : A = L₀⁻¹ * diagonal d * Q₀⁻¹ := by
-      rw [← h, ← Matrix.mul_assoc, ← Matrix.mul_assoc, nonsing_inv_mul _ hL₀, Matrix.one_mul,
-        Matrix.mul_assoc, mul_nonsing_inv _ hQ₀, Matrix.mul_one]
-    refine ⟨Q₀ *ᵥ w, ?_⟩
+      rw [← h]
+      simp [Matrix.mul_assoc, nonsing_inv_mul_cancel_left _ _ hL₀, mul_nonsing_inv _ hQ₀]
     have h_diag : diagonal d *ᵥ w = L₀ *ᵥ x :=
       funext fun j ↦ by simpa [f, mulVec_diagonal] using (hw j).symm
-    rw [hA, mulVecLin_apply, ← mulVec_mulVec, ← mulVec_mulVec, mulVec_mulVec w,
-      nonsing_inv_mul _ hQ₀, one_mulVec,
-      h_diag, mulVec_mulVec, nonsing_inv_mul _ hL₀, one_mulVec]
+    refine ⟨Q₀ *ᵥ w, ?_⟩
+    calc A *ᵥ (Q₀ *ᵥ w) = L₀⁻¹ *ᵥ (diagonal d *ᵥ w) := by
+          simp only [hA, mulVec_mulVec, Matrix.mul_assoc, nonsing_inv_mul _ hQ₀, Matrix.mul_one]
+      _ = x := by
+          rw [h_diag]
+          simp [mulVec_mulVec, nonsing_inv_mul _ hL₀]
   have h_assoc : Associated A.det (∏ j, d j) := by
     rw [← det_diagonal, ← h, det_mul, det_mul, mul_comm L₀.det, mul_assoc]
     exact associated_mul_unit_right _ _ (hL₀.mul hQ₀)
