@@ -169,7 +169,12 @@ theorem signLocalSystemFiberEquiv_signLocalSystemIso_hom_app_apply (R : Type*) [
         (Orientation.map ι (Riemannian.Tensor.rieszDual (I := I) x).toLinearEquiv o) f := by
   rw [signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_apply, signLocalSystemIso,
     signLocalSystemObjEquiv_signLocalSystemIsoOfFiberwise_hom_app_apply]
-  rfl
+  -- The Riesz isomorphism as a continuous linear equivalence has the same underlying linear
+  -- equivalence.
+  have h : (Riemannian.Tensor.rieszDual (I := I) x).toContinuousLinearEquiv.toLinearEquiv =
+      (Riemannian.Tensor.rieszDual (I := I) x).toLinearEquiv :=
+    LinearEquiv.ext fun _ ↦ by simp
+  rw [h]
 
 end CotangentBundle
 

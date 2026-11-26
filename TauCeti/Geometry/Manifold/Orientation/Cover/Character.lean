@@ -109,6 +109,14 @@ def coverLocalOrientation (p : OrientationCover 𝓘(ℝ, E) M) :
   (isCoveringMap_proj 𝓘(ℝ, E) M).isLocalHomeomorph.localOrientationEquiv p (n + 1)
     (homologicalOrientation hE p)
 
+/-- The local orientation read from a point `p` of the orientation cover is the canonical
+homological orientation of the cover at `p`, read in `M` through the covering map. -/
+theorem coverLocalOrientation_def (p : OrientationCover 𝓘(ℝ, E) M) :
+    coverLocalOrientation hE p =
+      (isCoveringMap_proj 𝓘(ℝ, E) M).isLocalHomeomorph.localOrientationEquiv p (n + 1)
+        (homologicalOrientation hE p) :=
+  (rfl)
+
 /-- **The local orientations read from the two points of a fibre are opposite**: reversing the
 orientation of `TₓM` reverses the local orientation of `M` at `x` read from the cover. -/
 theorem coverLocalOrientation_neg (p : OrientationCover 𝓘(ℝ, E) M) :
@@ -322,7 +330,9 @@ private theorem fiberLinearEquiv_eq (p : OrientationCover 𝓘(ℝ, E) M)
   · rw [h, signLocalSystemFiberEquiv_apply]
   · -- Both the evaluation and the local orientation change sign with the orientation.
     rw [h, signLocalSystemFiberEquiv_neg, coverLocalOrientation_neg hE ⟨x, o⟩,
-      LocalOrientation.coe_neg, signLocalSystemFiberEquiv_apply, zsmul_neg, neg_zsmul, neg_neg]
+      LocalOrientation.coe_neg, signLocalSystemFiberEquiv_apply]
+    -- The two signs cancel: `(-a) • -v = a • v`.
+    rw [zsmul_neg', neg_neg]
 
 /-- **Naturality of the fibre maps.** Transport along a path class `γ` from `x` to `y` in the
 orientation local system of the tangent bundle and in the local homology system is intertwined by
