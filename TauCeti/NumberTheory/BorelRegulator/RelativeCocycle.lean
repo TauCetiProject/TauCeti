@@ -15,6 +15,7 @@ import TauCeti.Data.Matrix.Block
 import TauCeti.Data.Nat.Choose.Basic
 import TauCeti.GroupTheory.Perm.Inversion
 import TauCeti.LinearAlgebra.Matrix.Trace.Alternating
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # The relative trace representative of the Borel class
@@ -78,7 +79,7 @@ private theorem hermitianSum_lie {Y : Matrix ι ι ℂ} (hY : Y ∈ unitaryLieAl
   noncomm_ring
 
 /-- Complex conjugation multiplies the relative form by the Tate sign `(-1)^k`. -/
-theorem borelRelativeForm_star (k : ℕ) (v : Fin (2 * k + 1) → Matrix ι ι ℂ) :
+theorem star_borelRelativeForm (k : ℕ) (v : Fin (2 * k + 1) → Matrix ι ι ℂ) :
     star (borelRelativeForm ι k v) = (-1 : ℝ) ^ k • borelRelativeForm ι k v := by
   have hsign : Equiv.Perm.sign (Fin.revPerm : Equiv.Perm (Fin (2 * k + 1))) =
       (-1 : ℤˣ) ^ k := by
@@ -89,7 +90,7 @@ theorem borelRelativeForm_star (k : ℕ) (v : Fin (2 * k + 1) → Matrix ι ι �
     ext i
     simp [hermitianSum_apply, add_comm]
   simp only [borelRelativeForm, AlternatingMap.compLinearMap_apply, smul_apply,
-    star_smul, star_trivial, Matrix.alternatingTrace_star, hsign, hherm]
+    star_smul, star_trivial, Matrix.star_alternatingTrace, hsign, hherm]
   rw [smul_comm]
   simp only [Units.smul_def, Units.val_pow_eq_pow_val, Units.coe_neg_one,
     ← Int.cast_smul_eq_zsmul ℝ, Int.cast_pow, Int.cast_neg, Int.cast_one]
@@ -98,7 +99,7 @@ theorem borelRelativeForm_star (k : ℕ) (v : Fin (2 * k + 1) → Matrix ι ι �
 theorem borelRelativeForm_mem_tateLine (k : ℕ) (v : Fin (2 * k + 1) → Matrix ι ι ℂ) :
     borelRelativeForm ι k v ∈ Complex.realTateLine k := by
   rw [Complex.mem_realTateLine_iff_conj_eq]
-  simpa [Complex.real_smul] using borelRelativeForm_star ι k v
+  simpa [Complex.real_smul] using star_borelRelativeForm ι k v
 
 /-- The relative trace form with coefficients in the native trivial Lie module used by the
 Chevalley–Eilenberg complex. -/
@@ -133,9 +134,9 @@ theorem lie_borelRelativeCochain (k : ℕ) {Y : Matrix ι ι ℂ}
   have hupdate (i : Fin (2 * k + 1)) :
       (fun j ↦ hermitianSum ι (Function.update v i ⁅Y, v i⁆ j)) =
         Function.update (fun j ↦ hermitianSum ι (v j)) i ⁅Y, hermitianSum ι (v i)⁆ := by
-    ext j
-    by_cases h : j = i <;> simp [h, hermitianSum_lie ι hY]
-  simp only [hupdate, Matrix.alternatingTrace_sum_update_lie, smul_zero]
+    simpa only [Function.comp_def, hermitianSum_lie ι hY] using
+      Function.comp_update (hermitianSum ι) v i ⁅Y, v i⁆
+  simp only [hupdate, Matrix.sum_alternatingTrace_update_lie, smul_zero]
 
 /-- The exact Borel cochain belongs to the relative Chevalley–Eilenberg cochains of
 `(𝔤𝔩(ℂ), 𝔲)`, with both horizontality and infinitesimal invariance proved. -/
@@ -178,20 +179,6 @@ theorem d_borelRelativeCochain (k : ℕ) :
   exact LieModule.Cohomology.d_eq_zero_of_mem_relativeCochains hsup hbracket
     (borelRelativeCochain_mem ι k)
 
-/-- Unitary conjugation on the ambient real matrix Lie algebra. -/
-def unitaryConjugation (U : unitaryGroup ι ℂ) :
-    Matrix ι ι ℂ →ₗ⁅ℝ⁆ Matrix ι ι ℂ :=
-  (Unitary.conjStarAlgAut ℝ (Matrix ι ι ℂ) U).toAlgEquiv.toAlgHom.toLieHom
-
-@[simp]
-theorem unitaryConjugation_apply (U : unitaryGroup ι ℂ) (X : Matrix ι ι ℂ) :
-    unitaryConjugation ι U X = U * X * star (U : Matrix ι ι ℂ) := by rfl
-
-private theorem trace_unitaryConjugation (U : unitaryGroup ι ℂ) (X : Matrix ι ι ℂ) :
-    Matrix.trace (unitaryConjugation ι U X) = Matrix.trace X := by
-  have hU := Unitary.star_mul_self_of_mem U.property
-  rw [unitaryConjugation_apply, Matrix.trace_mul_cycle, hU, Matrix.one_mul]
-
 /-- Taking the Hermitian sum commutes with unitary conjugation. -/
 private theorem hermitianSum_unitaryConjugation (U : unitaryGroup ι ℂ) (X : Matrix ι ι ℂ) :
     hermitianSum ι (unitaryConjugation ι U X) =
@@ -212,12 +199,10 @@ theorem borelRelativeForm_unitaryConjugation (k : ℕ) (U : unitaryGroup ι ℂ)
   congr 1
   have hprod := map_list_prod (Unitary.conjStarAlgAut ℝ (Matrix ι ι ℂ) U)
     (List.ofFn fun i ↦ hermitianSum ι (v (σ i)))
-  simp only [List.map_ofFn, Function.comp_def] at hprod
-  -- The ordered-product law uses the star algebra automorphism underlying the Lie map.
-  change Matrix.trace (List.ofFn fun i ↦
-      (Unitary.conjStarAlgAut ℝ (Matrix ι ι ℂ) U) (hermitianSum ι (v (σ i)))).prod = _
-  rw [← hprod]
-  exact trace_unitaryConjugation ι U _
+  simp only [List.map_ofFn, Function.comp_def, Unitary.conjStarAlgAut_apply] at hprod
+  simp only [unitaryConjugation_apply, ← hprod]
+  simpa only [unitaryConjugation_apply] using
+    trace_unitaryConjugation U (List.ofFn fun i ↦ hermitianSum ι (v (σ i))).prod
 
 /-- The representative lies in the native relative cochain space with the unitary group
 equivariance condition, using trivial coefficients. -/
@@ -247,22 +232,15 @@ theorem borelRelativeForm_conj (k : ℕ) (v : Fin (2 * k + 1) → Matrix ι ι �
     simp
   rw [hsign]
   congr 1
-  have hprod := map_list_prod ((starRingEnd ℂ).mapMatrix :
-    Matrix ι ι ℂ →+* Matrix ι ι ℂ)
-    (List.ofFn fun i ↦ v (σ i) + (v (σ i))ᴴ)
-  simp only [List.map_ofFn, Function.comp_def] at hprod
   have hsum (X : Matrix ι ι ℂ) :
       X.map (starRingEnd ℂ) + (X.map (starRingEnd ℂ))ᴴ =
         (X + Xᴴ).map (starRingEnd ℂ) := by
     ext a b
     simp
-  simp only [hsum]
-  simp only [← RingHom.mapMatrix_apply]
-  rw [← hprod]
-  simp only [Matrix.trace, RingHom.mapMatrix_apply, star_sum]
-  apply Finset.sum_congr rfl
-  intro i _
-  rfl
+  simpa only [hsum, List.map_ofFn, Function.comp_def, RingHom.mapMatrix_apply,
+    starRingEnd_apply] using
+    Matrix.trace_list_prod_map_mapMatrix (starRingEnd ℂ)
+      (List.ofFn fun i ↦ v (σ i) + (v (σ i))ᴴ)
 
 /-- A zero block in the additional coordinates preserves the positive-degree Borel
 representative. This is the derivative of the trailing-identity group inclusion. -/
