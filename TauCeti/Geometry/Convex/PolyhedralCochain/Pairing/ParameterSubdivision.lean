@@ -7,14 +7,16 @@ module
 
 public import TauCeti.Geometry.Convex.PolyhedralCochain.Pairing.Basic
 import TauCeti.Analysis.Convex.Between
+import TauCeti.LinearAlgebra.Alternating.Conormal
 
 /-!
 # Subdivision of one-dimensional intersection tests
 
-Splitting a segment at a point outside a wall preserves its intersection
-index and hence its coefficient-valued pairing. An interior cut on a wall can count a
-nonzero intersection twice. Stationary tests have zero index and pairing, and the
-subdivision theorem allows real offsets, unbounded cells and lineality.
+When the cut avoids a cell, the intersection index of a segment is the sum of the indices
+of its two pieces. The same additivity holds for the coefficient-valued pairing when the
+cut avoids every cell with nonzero coefficient. An interior cut on a cell can count a
+nonzero intersection twice. The subdivision theorems allow real offsets, unbounded cells
+and lineality.
 
 Adapted from `yuma-mizuno-lean/Mei`, commit
 `bf3986029ff4d3eb4025d4067489511b0724374e`,
@@ -33,11 +35,6 @@ namespace TauCeti.OrientedCell
 
 variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
-
-private theorem evalSign_fin_one_smul_of_pos
-    (o : Module.Ray ℝ (V [⋀^Fin 1]→ₗ[ℝ] ℝ)) (v : Fin 1 → V) {c : ℝ} (hc : 0 < c) :
-    o.evalSign (fun j => c • v j) = o.evalSign v := by
-  simp only [Module.Ray.evalSign_smul, Fin.prod_univ_one, sign_pos hc, one_mul]
 
 private theorem intersectionIndex_subdivide_lineMap (σ : OrientedCell h 1) {x y : V} {t : ℝ}
     (ht : t ∈ Ioo (0 : ℝ) 1) (hmiss : AffineMap.lineMap x y t ∉ σ.carrier) :
@@ -68,14 +65,14 @@ private theorem intersectionIndex_subdivide_lineMap (σ : OrientedCell h 1) {x y
       rw [hz]
       simpa only [vsub_eq_sub] using AffineMap.lineMap_vsub_left x y t
     rw [hdiff]
-    exact evalSign_fin_one_smul_of_pos _ _ ht.1
+    exact σ.orientation.evalSign_smul_of_pos _ ht.1
   have hsignright : σ.orientation.evalSign (fun _ : Fin 1 => y - z) =
       σ.orientation.evalSign (fun _ : Fin 1 => y - x) := by
     have hdiff : y - z = (1 - t) • (y - x) := by
       rw [hz]
       simpa only [vsub_eq_sub] using AffineMap.right_vsub_lineMap x y t
     rw [hdiff]
-    exact evalSign_fin_one_smul_of_pos _ _ (sub_pos.mpr ht.2)
+    exact σ.orientation.evalSign_smul_of_pos _ (sub_pos.mpr ht.2)
   rw [intersectionIndex_pair, intersectionIndex_pair, intersectionIndex_pair,
     hsignleft, hsignright, hpartition]
   by_cases hleft : (segment ℝ x z ∩ σ.carrier).Nonempty
