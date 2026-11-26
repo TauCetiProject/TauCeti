@@ -427,6 +427,22 @@ theorem exteriorPower_symm (e : M ≃ₗ[R] N) (n : ℕ) :
     (e.exteriorPower n).symm = e.symm.exteriorPower n :=
   (rfl)
 
+/-- The map induced by a linear equivalence `e` inverts the map induced by `e.symm`: the inverse
+law of `LinearEquiv.exteriorPower`, stated for the underlying maps. -/
+@[simp]
+theorem _root_.exteriorPower.map_map_symm {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n N) :
+    _root_.exteriorPower.map n e.toLinearMap (_root_.exteriorPower.map n e.symm.toLinearMap x) =
+      x :=
+  (e.exteriorPower n).apply_symm_apply x
+
+/-- The map induced by `e.symm` inverts the map induced by a linear equivalence `e`: the inverse
+law of `LinearEquiv.exteriorPower`, stated for the underlying maps. -/
+@[simp]
+theorem _root_.exteriorPower.map_symm_map {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n M) :
+    _root_.exteriorPower.map n e.symm.toLinearMap (_root_.exteriorPower.map n e.toLinearMap x) =
+      x :=
+  (e.exteriorPower n).symm_apply_apply x
+
 @[simp]
 theorem exteriorPower_refl (n : ℕ) :
     (LinearEquiv.refl R M).exteriorPower n = LinearEquiv.refl R _ :=
