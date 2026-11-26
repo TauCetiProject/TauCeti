@@ -57,6 +57,11 @@ theorem reverseArrowWeight_reverse_of_map {i j : Q} (a : i ⟶ j) :
     reverseArrowWeight (Quiver.reverse (of.map a)) = 1 :=
   (rfl)
 
+/-- Every arrow of the doubled quiver has reverse-arrow weight at most one. -/
+theorem reverseArrowWeight_le_one {i j : Symmetrify Q} (a : i ⟶ j) :
+    reverseArrowWeight a ≤ 1 := by
+  cases a <;> simp [reverseArrowWeight]
+
 end Quiver.Symmetrify
 
 namespace Quiver.Path
@@ -88,9 +93,8 @@ theorem addWeight_reverseArrowWeight_eq_zero_iff {i j : Symmetrify Q} (p : Path 
 theorem exists_eq_comp_of_le_reverseArrowWeight {i j : Symmetrify Q} (p : Path i j) {n : ℕ}
     (hn : n ≤ p.addWeight reverseArrowWeight) :
     ∃ (l : Symmetrify Q) (p₁ : Path i l) (p₂ : Path l j),
-      p = p₁.comp p₂ ∧ p₁.addWeight reverseArrowWeight = n := by
-  exact p.exists_eq_comp_of_le_addWeight reverseArrowWeight (fun a ↦ by
-    cases a <;> simp [reverseArrowWeight]) hn
+      p = p₁.comp p₂ ∧ p₁.addWeight reverseArrowWeight = n :=
+  p.exists_eq_comp_of_le_addWeight reverseArrowWeight reverseArrowWeight_le_one hn
 
 end Quiver.Path
 
