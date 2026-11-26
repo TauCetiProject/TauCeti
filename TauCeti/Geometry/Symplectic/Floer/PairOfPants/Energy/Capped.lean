@@ -63,13 +63,21 @@ structures it gives the lower area bound `-2 (B₀ + B₁ + B_∞) ≤ ∫ u^* �
 These statements retain explicit integrability hypotheses on the energy and curvature. For a
 vector space target and a solution of the Floer equation of the comparison family, with area at
 most `A`, the energy over every region is at most `A + 2 (B₀ + B₁ + B_∞)`
-(`SymplecticForm.setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le`). This is the
-energy bound, uniform in `R` for a fixed area, from which compactness of the comparison family
-over compact windows of `R` in the plane chart follows (in the namespace `SymplecticForm`,
+(`SymplecticForm.setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le`), and the same
+holds for a manifold target when the curvature term is integrable as well
+(`SmoothTwoForm.IsNondegenerate.setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le`).
+This is the energy bound, uniform in `R` for a fixed area, from which compactness of the comparison
+family over compact windows of `R` in the plane chart follows (in the namespace `SymplecticForm`,
 `exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison`), and
 interior compactness at the long-neck end `R → ∞` on the pair of pants and the caps of the PSS
-planes (`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck`). Compactness near
-the pole `∞` is still to be proved.
+planes (`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck`, and in a closed
+manifold `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck.Closed`).
+Compactness near the pole `∞`, in the chart `y ↦ y⁻¹`, is proved in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Capped`
+(in the namespace `SymplecticForm`,
+`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison_inv`,
+and in a closed manifold, in the namespace `SmoothTwoForm.IsNondegenerate`,
+`exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappedComparison_inv`).
 
 ## Main results
 

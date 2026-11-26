@@ -87,6 +87,10 @@ The fibre of the first pullback projection has the same `Set.ncard` as the origi
 (`Function.Pullback.ncard_preimage_fst_singleton`). An equivalence onto the preimage of a subset
 transfers `Set.ncard` of fibres over that subset (`Equiv.ncard_fiber_eq_of_preimage`). These
 identities transfer sheet counts from local models; `Set.ncard` is zero on infinite fibres.
+
+For finite sets, equality and inequality of `Set.encard` are equivalent to equality and
+inequality of `Set.ncard` (`Set.encard_eq_encard_iff_ncard_eq_ncard`,
+`Set.encard_le_encard_iff_ncard_le_ncard`).
 -/
 
 public section
@@ -405,6 +409,18 @@ theorem encard_setOf_sigma_fst_eq {α : Type*} (Y : α → Type*) (x : α) :
     {p : Σ y : α, Y y | p.1 = x}.encard = ENat.card (Y x) := by
   rw [← preimage_singleton Sigma.fst x, ← range_sigmaMk,
     sigma_mk_injective.encard_range]
+
+/-- For finite sets, equality of `Set.encard` is equivalent to equality of `Set.ncard`. -/
+theorem encard_eq_encard_iff_ncard_eq_ncard {α β : Type*} {s : Set α} {t : Set β}
+    (hs : s.Finite) (ht : t.Finite) :
+    s.encard = t.encard ↔ s.ncard = t.ncard := by
+  rw [← hs.cast_ncard_eq, ← ht.cast_ncard_eq, Nat.cast_inj]
+
+/-- For finite sets, inequality of `Set.encard` is equivalent to inequality of `Set.ncard`. -/
+theorem encard_le_encard_iff_ncard_le_ncard {α β : Type*} {s : Set α} {t : Set β}
+    (hs : s.Finite) (ht : t.Finite) :
+    s.encard ≤ t.encard ↔ s.ncard ≤ t.ncard := by
+  rw [← hs.cast_ncard_eq, ← ht.cast_ncard_eq, Nat.cast_le]
 
 end Set
 

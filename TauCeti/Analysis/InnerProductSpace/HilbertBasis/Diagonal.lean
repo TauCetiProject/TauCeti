@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
 public import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
@@ -19,7 +20,9 @@ on `E`, which multiplies the `i`-th coordinate by `m i`: it is the diagonal oper
 `lp.diagonalCLM m` transported along `b.repr`. The map `m ↦ b.diagonal m` is a unital algebra
 homomorphism from `ℓ^∞(ι, 𝕜)` to the bounded operators on `E`, so any two diagonal operators
 commute. The operator norm of `b.diagonal m` is the supremum norm of `m`, the operator determines
-`m`, and it acts on the basis vectors by `b.diagonal m (b i) = m i • b i`.
+`m`, and it acts on the basis vectors by `b.diagonal m (b i) = m i • b i`. The adjoint of
+`b.diagonal m` is the diagonal operator with the conjugate entries `star m`, so a diagonal operator
+with real entries is self-adjoint.
 
 Diagonal operators are continuous in their entries for the strong operator topology on bounded
 sets: if `m_a → m` pointwise on `ι` and `‖m_a‖ ≤ C`, then `b.diagonal m_a x → b.diagonal m x` for
@@ -39,6 +42,8 @@ which tend to zero for a compact operator.
 * `HilbertBasis.hasSum_diagonal`: the expansion of `b.diagonal m x` in the basis.
 * `HilbertBasis.norm_diagonal`: `‖b.diagonal m‖ = ‖m‖`.
 * `HilbertBasis.diagonal_injective`: the entries are determined by the operator.
+* `HilbertBasis.adjoint_diagonal`, `HilbertBasis.isSelfAdjoint_diagonal`: the adjoint of
+  `b.diagonal m` is `b.diagonal (star m)`.
 * `HilbertBasis.tendsto_diagonal_apply`: strong continuity in the entries.
 * `HilbertBasis.isCompactOperator_diagonal_iff`: compactness of a diagonal operator.
 -/
@@ -138,6 +143,21 @@ theorem diagonal_inj {m₁ m₂ : ℓ^∞(ι, 𝕜)} : b.diagonal m₁ = b.diago
 /-- Any two diagonal operators in the same basis commute. -/
 theorem commute_diagonal (m₁ m₂ : ℓ^∞(ι, 𝕜)) : Commute (b.diagonal m₁) (b.diagonal m₂) :=
   (Commute.all m₁ m₂).map b.diagonal
+
+/-- The adjoint of a diagonal operator is the diagonal operator with the conjugate entries. -/
+theorem adjoint_diagonal [CompleteSpace E] (m : ℓ^∞(ι, 𝕜)) :
+    ContinuousLinearMap.adjoint (b.diagonal m) = b.diagonal (star m) := by
+  refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun x y ↦ ?_).symm
+  rw [← b.repr.inner_map_map, ← b.repr.inner_map_map x, lp.inner_eq_tsum, lp.inner_eq_tsum]
+  refine tsum_congr fun i ↦ ?_
+  simp only [repr_diagonal, lp.star_apply, RCLike.inner_apply, map_mul, RCLike.star_def,
+    RCLike.conj_conj]
+  ring
+
+/-- A diagonal operator with self-adjoint, that is real, entries is self-adjoint. -/
+theorem isSelfAdjoint_diagonal [CompleteSpace E] {m : ℓ^∞(ι, 𝕜)} (hm : IsSelfAdjoint m) :
+    IsSelfAdjoint (b.diagonal m) := by
+  rw [ContinuousLinearMap.isSelfAdjoint_iff', adjoint_diagonal, hm.star_eq]
 
 /-- **Strong continuity of diagonal operators in the entries.** If the entries `m a` are bounded
 uniformly by `C` and converge pointwise on `ι` to `m₀`, then `b.diagonal (m a) x → b.diagonal m₀ x`
