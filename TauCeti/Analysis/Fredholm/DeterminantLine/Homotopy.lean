@@ -46,8 +46,9 @@ Small rectangles are combined by the concatenation and reversal laws of transpor
 * `TauCeti.detLineOrientationTransport_map_detLineCongrOfEq`: transport along pointwise equal paths
   commutes with the identifications of the determinant lines of equal operators.
 * `TauCeti.detLineOrientationTransport_comm`: transport around a rectangle commutes.
-* `TauCeti.detLineOrientationTransport_eq_of_homotopy`: transport is invariant under homotopies
-  relative to the endpoints.
+* `TauCeti.detLineOrientationTransport_eq_of_homotopy`,
+  `TauCeti.detLineOrientationTransport_eq_of_homotopy_of_eq`: transport is invariant under
+  homotopies relative to the endpoints.
 
 ## References
 
@@ -406,6 +407,27 @@ theorem detLineOrientationTransport_eq_of_homotopy (hH : ContinuousOn H (uIcc s�
     (fun _ hs ↦ hF _ ⟨hs, right_mem_uIcc⟩) hb
   rw [← hbot, ← htop]
   exact (detLineOrientationTransport_comm hH hF o).symm
+
+/-- **Homotopy invariance of orientation transport, for given paths.** Let `T₁` and `T₂` be paths
+of operators, continuous and Fredholm between `a` and `b`, and let `H` be continuous and Fredholm
+on the rectangle `[[s₀, s₁]] ×ˢ [[a, b]]`, equal to `T₁` along the edge `s = s₀` and to `T₂` along
+the edge `s = s₁`, and constant along its bottom and top edges. Then transport from `a` to `b`
+along `T₁` and along `T₂` agree, once the determinant lines of the equal operators at the
+endpoints are identified by `LinearMap.detLineCongrOfEq`. -/
+theorem detLineOrientationTransport_eq_of_homotopy_of_eq {T₁ T₂ : ℝ → E →L[ℝ] F}
+    (hH : ContinuousOn H (uIcc s₀ s₁ ×ˢ uIcc a b))
+    (hF : ∀ x ∈ uIcc s₀ s₁ ×ˢ uIcc a b, IsFredholm (H x)) (h₁ : ∀ t, H (s₀, t) = T₁ t)
+    (h₂ : ∀ t, H (s₁, t) = T₂ t) (ha : ∀ s ∈ uIcc s₀ s₁, H (s, a) = H (s₀, a))
+    (hb : ∀ s ∈ uIcc s₀ s₁, H (s, b) = H (s₀, b)) (hT₁ : ContinuousOn T₁ (uIcc a b))
+    (hF₁ : ∀ t ∈ uIcc a b, IsFredholm (T₁ t)) (hT₂ : ContinuousOn T₂ (uIcc a b))
+    (hF₂ : ∀ t ∈ uIcc a b, IsFredholm (T₂ t)) (hTa : (T₁ a : E →ₗ[ℝ] F) = T₂ a)
+    (hTb : (T₁ b : E →ₗ[ℝ] F) = T₂ b) (o : Module.Ray ℝ (T₁ a : E →ₗ[ℝ] F).detLine) :
+    detLineOrientationTransport a b hT₂ hF₂ (Module.Ray.map (LinearMap.detLineCongrOfEq hTa) o) =
+      Module.Ray.map (LinearMap.detLineCongrOfEq hTb)
+        (detLineOrientationTransport a b hT₁ hF₁ o) := by
+  obtain rfl : T₁ = fun t ↦ H (s₀, t) := funext fun t ↦ (h₁ t).symm
+  obtain rfl : T₂ = fun t ↦ H (s₁, t) := funext fun t ↦ (h₂ t).symm
+  exact detLineOrientationTransport_eq_of_homotopy hH hF ha hb o
 
 end Square
 
