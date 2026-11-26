@@ -27,17 +27,19 @@ theorem rat_pos (x : ℚ) (hx : x ≠ 0) : 0 < semisimpleReducedTrace ℚ ℚ (x
   simpa [Algebra.trace_self_apply] using mul_self_pos.2 hx
 
 /-- Its real extension is positive on `ℝ ⊗[ℚ] ℚ`. -/
-example (v : ℝ ⊗[ℚ] ℚ) (hv : v ≠ 0) : 0 < semisimpleReducedTraceReal ℚ (v * star v) :=
+example (v : ℝ ⊗[ℚ] ℚ) (hv : v ≠ 0) :
+    0 < Module.Dual.baseChange ℝ (semisimpleReducedTrace ℚ ℚ) (v * star v) :=
   PositiveInvolution.iff_real.1 rat_pos v hv
 
 /-- At `√2 ⊗ 1` the real extension takes the value `2`. -/
-example : semisimpleReducedTraceReal ℚ ((√2 ⊗ₜ[ℚ] (1 : ℚ)) * star (√2 ⊗ₜ[ℚ] (1 : ℚ))) = 2 := by
+example : Module.Dual.baseChange ℝ (semisimpleReducedTrace ℚ ℚ)
+    ((√2 ⊗ₜ[ℚ] (1 : ℚ)) * star (√2 ⊗ₜ[ℚ] (1 : ℚ))) = 2 := by
   simp
 
 /-- `√2 ⊗ 1` is nonzero, so the value `2` is an instance of the positivity. -/
 example : (√2 ⊗ₜ[ℚ] (1 : ℚ)) ≠ 0 := by
   intro h
-  have := congrArg (semisimpleReducedTraceReal ℚ) h
+  have := congrArg (Module.Dual.baseChange ℝ (semisimpleReducedTrace ℚ ℚ)) h
   simp at this
 
 end TauCeti.PositiveInvolutionRealExamples

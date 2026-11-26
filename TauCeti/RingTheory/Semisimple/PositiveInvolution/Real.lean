@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Module.Rat
 public import Mathlib.Algebra.Star.TensorProduct
 public import Mathlib.Basic.Real.Star
+public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 public import TauCeti.RingTheory.Semisimple.PositiveInvolution
 
@@ -17,8 +18,8 @@ public import TauCeti.RingTheory.Semisimple.PositiveInvolution
 Let `B` be a finite-dimensional `ℚ`-algebra with an involution `x ↦ x*` (a `StarRing` structure).
 The involution extends `ℝ`-linearly to `B_ℝ = ℝ ⊗[ℚ] B` (`r ⊗ x ↦ r ⊗ x*`, Mathlib's `StarRing`
 instance on tensor products of algebras), and the reduced trace `Trd_{B/ℚ}` extends to the
-`ℝ`-linear functional `Trd_ℝ (r ⊗ x) = r Trd(x)` on `B_ℝ`
-(`TauCeti.Algebra.semisimpleReducedTraceReal`).
+`ℝ`-linear functional `Trd_ℝ (r ⊗ x) = r Trd(x)` on `B_ℝ`, Mathlib's
+`Module.Dual.baseChange ℝ (semisimpleReducedTrace ℚ B)`.
 
 The involution is positive, `Trd(x x*) > 0` for every nonzero `x ∈ B`, exactly when its
 extension is positive on `B_ℝ`: `Trd_ℝ(v v*) > 0` for every nonzero `v ∈ B_ℝ`
@@ -31,12 +32,11 @@ rational form is preserved and reflected by extension of scalars to `ℝ`
 ## Main declarations
 
 * `TauCeti.Algebra.semisimpleReducedTraceStarForm`: the `ℚ`-bilinear form `(x, y) ↦ Trd(x y*)`.
-* `TauCeti.Algebra.semisimpleReducedTraceReal`: the real extension `Trd_ℝ : B_ℝ →ₗ[ℝ] ℝ`.
 * `TauCeti.Algebra.semisimpleReducedTraceStarForm_baseChange_apply`: the real extension of the form
   is `(v, w) ↦ Trd_ℝ(v w*)`.
 * `TauCeti.PositiveInvolution.iff_real`: positivity of the involution is positivity of its real
   extension.
-* `TauCeti.PositiveInvolution.semisimpleReducedTraceReal_mul_star_pos`,
+* `TauCeti.PositiveInvolution.baseChange_semisimpleReducedTrace_mul_star_pos`,
   `TauCeti.PositiveInvolution.ofReal`: the two directions for bundled positive involutions.
 
 ## References
@@ -54,18 +54,7 @@ variable (B : Type*) [Ring B] [Algebra ℚ B]
 
 namespace Algebra
 
-/-- The real extension `Trd_ℝ : ℝ ⊗[ℚ] B →ₗ[ℝ] ℝ` of the reduced trace, `r ⊗ x ↦ r Trd(x)`. -/
-noncomputable def semisimpleReducedTraceReal : ℝ ⊗[ℚ] B →ₗ[ℝ] ℝ :=
-  (AlgebraTensorModule.rid ℚ ℝ ℝ).toLinearMap ∘ₗ (semisimpleReducedTrace ℚ B).baseChange ℝ
-
-variable {B}
-
-@[simp]
-theorem semisimpleReducedTraceReal_tmul (r : ℝ) (x : B) :
-    semisimpleReducedTraceReal B (r ⊗ₜ x) = r * semisimpleReducedTrace ℚ B x := by
-  simp [semisimpleReducedTraceReal, Rat.smul_def, mul_comm]
-
-variable (B) [StarRing B]
+variable [StarRing B]
 
 /-- The `ℚ`-bilinear trace form `(x, y) ↦ Trd(x y*)` of an involution. -/
 noncomputable def semisimpleReducedTraceStarForm : LinearMap.BilinForm ℚ B :=
@@ -87,14 +76,14 @@ involution. -/
 @[simp]
 theorem semisimpleReducedTraceStarForm_baseChange_apply (v w : ℝ ⊗[ℚ] B) :
     (semisimpleReducedTraceStarForm B).baseChange ℝ v w =
-      semisimpleReducedTraceReal B (v * star w) := by
+      Module.Dual.baseChange ℝ (semisimpleReducedTrace ℚ B) (v * star w) := by
   induction v using TensorProduct.inductionOn with
   | add v v' hv hv' => simp [hv, hv', add_mul]
   | tmul r x =>
     induction w using TensorProduct.inductionOn with
     | add w w' hw hw' => simp [hw, hw', mul_add]
     | tmul s y =>
-      simp [LinearMap.BilinForm.baseChange_tmul, Rat.smul_def, mul_comm]
+      simp [LinearMap.BilinForm.baseChange_tmul, Rat.smul_def]
 
 end Algebra
 
@@ -107,7 +96,8 @@ positive, `Trd(x x*) > 0` for every nonzero `x ∈ B`, exactly when its `ℝ`-li
 positive on `ℝ ⊗[ℚ] B`: `Trd_ℝ(v v*) > 0` for every nonzero `v`. -/
 theorem iff_real :
     (∀ x : B, x ≠ 0 → 0 < Algebra.semisimpleReducedTrace ℚ B (x * star x)) ↔
-      ∀ v : ℝ ⊗[ℚ] B, v ≠ 0 → 0 < Algebra.semisimpleReducedTraceReal B (v * star v) := by
+      ∀ v : ℝ ⊗[ℚ] B, v ≠ 0 →
+        0 < Module.Dual.baseChange ℝ (Algebra.semisimpleReducedTrace ℚ B) (v * star v) := by
   have h := (Algebra.semisimpleReducedTraceStarForm B).posDef_toQuadraticMap_baseChange_iff (K := ℝ)
   simp only [QuadraticMap.PosDef, LinearMap.BilinMap.toQuadraticMap_apply,
     Algebra.semisimpleReducedTraceStarForm_baseChange_apply,
@@ -119,22 +109,24 @@ end PositiveInvolution
 variable {B} [FiniteDimensional ℚ B]
 
 /-- **A positive involution is positive on `ℝ ⊗[ℚ] B`.** -/
-theorem PositiveInvolution.semisimpleReducedTraceReal_mul_star_pos (P : PositiveInvolution B)
+theorem PositiveInvolution.baseChange_semisimpleReducedTrace_mul_star_pos (P : PositiveInvolution B)
     {v : ℝ ⊗[ℚ] B} (hv : v ≠ 0) :
     letI := P.toStarRing
-    0 < Algebra.semisimpleReducedTraceReal B (v * star v) := by
+    0 < Module.Dual.baseChange ℝ (Algebra.semisimpleReducedTrace ℚ B) (v * star v) := by
   let := P.toStarRing
   exact iff_real.1 P.semisimpleReducedTrace_mul_star_pos v hv
 
 /-- **An involution positive on `ℝ ⊗[ℚ] B` is a positive involution.** -/
 def PositiveInvolution.ofReal [StarRing B]
-    (h : ∀ v : ℝ ⊗[ℚ] B, v ≠ 0 → 0 < Algebra.semisimpleReducedTraceReal B (v * star v)) :
+    (h : ∀ v : ℝ ⊗[ℚ] B, v ≠ 0 →
+      0 < Module.Dual.baseChange ℝ (Algebra.semisimpleReducedTrace ℚ B) (v * star v)) :
     PositiveInvolution B :=
   .ofStarRing (iff_real.2 h)
 
 @[simp]
 theorem PositiveInvolution.ofReal_toStarRing [inst : StarRing B]
-    (h : ∀ v : ℝ ⊗[ℚ] B, v ≠ 0 → 0 < Algebra.semisimpleReducedTraceReal B (v * star v)) :
+    (h : ∀ v : ℝ ⊗[ℚ] B, v ≠ 0 →
+      0 < Module.Dual.baseChange ℝ (Algebra.semisimpleReducedTrace ℚ B) (v * star v)) :
     (PositiveInvolution.ofReal h).toStarRing = inst :=
   (rfl)
 
