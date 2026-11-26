@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Patching.PatchedModule
 
 import Mathlib.RingTheory.Finiteness.Prod
+import TauCeti.Algebra.Ring.SquareZero
 import TauCeti.Logic.Function.Basic
 
 /-!
@@ -139,10 +140,9 @@ theorem baseChangeFst_map_map (g₁ : P₁ →ₗ[A₁] P₁') (g₂ : P₂ →�
     (hg : ∀ x, α' (BalancedExtension.map π₁ g₁ x) = BalancedExtension.map π₂ g₂ (α x))
     (x : BalancedExtension p₁ (PatchedModule h α)) :
     baseChangeFst h α' (BalancedExtension.map p₁ (PatchedModule.map g₁ g₂ hg) x) =
-      g₁ (baseChangeFst h α x) := by
-  induction x using BalancedExtension.induction_on with
-  | tmul s m => simp
-  | add x y hx hy => simp only [_root_.map_add, hx, hy]
+      g₁ (baseChangeFst h α x) :=
+  LinearMap.congr_fun (BalancedExtension.hom_ext fun m ↦ by simp : baseChangeFst h α' ∘ₗ
+    BalancedExtension.map p₁ (PatchedModule.map g₁ g₂ hg) = g₁ ∘ₗ baseChangeFst h α) x
 
 /-- The second base-change map is natural in morphisms of patching triples. -/
 @[simp]
@@ -150,10 +150,9 @@ theorem baseChangeSnd_map_map (g₁ : P₁ →ₗ[A₁] P₁') (g₂ : P₂ →�
     (hg : ∀ x, α' (BalancedExtension.map π₁ g₁ x) = BalancedExtension.map π₂ g₂ (α x))
     (x : BalancedExtension p₂ (PatchedModule h α)) :
     baseChangeSnd h α' (BalancedExtension.map p₂ (PatchedModule.map g₁ g₂ hg) x) =
-      g₂ (baseChangeSnd h α x) := by
-  induction x using BalancedExtension.induction_on with
-  | tmul s m => simp
-  | add x y hx hy => simp only [_root_.map_add, hx, hy]
+      g₂ (baseChangeSnd h α x) :=
+  LinearMap.congr_fun (BalancedExtension.hom_ext fun m ↦ by simp : baseChangeSnd h α' ∘ₗ
+    BalancedExtension.map p₂ (PatchedModule.map g₁ g₂ hg) = g₂ ∘ₗ baseChangeSnd h α) x
 
 end BaseChange
 
@@ -165,19 +164,17 @@ variable (h : π₁.comp p₁ = π₂.comp p₂) {P : Type*} [AddCommGroup P] [M
 `p ↦ (1 ⊗ p, 1 ⊗ p)`. -/
 @[simp]
 theorem baseChangeFst_map_toPatchedModule (x : BalancedExtension p₁ P) :
-    baseChangeFst h _ (BalancedExtension.map p₁ (toPatchedModule h P) x) = x := by
-  induction x using BalancedExtension.induction_on with
-  | tmul s m => simp
-  | add x y hx hy => simp only [_root_.map_add, hx, hy]
+    baseChangeFst h _ (BalancedExtension.map p₁ (toPatchedModule h P) x) = x :=
+  LinearMap.congr_fun (BalancedExtension.hom_ext fun m ↦ by simp : baseChangeFst h _ ∘ₗ
+    BalancedExtension.map p₁ (toPatchedModule h P) = LinearMap.id) x
 
 /-- On the patching triple of a `D`-module `P`, the second base-change map undoes the extension of
 `p ↦ (1 ⊗ p, 1 ⊗ p)`. -/
 @[simp]
 theorem baseChangeSnd_map_toPatchedModule (x : BalancedExtension p₂ P) :
-    baseChangeSnd h _ (BalancedExtension.map p₂ (toPatchedModule h P) x) = x := by
-  induction x using BalancedExtension.induction_on with
-  | tmul s m => simp
-  | add x y hx hy => simp only [_root_.map_add, hx, hy]
+    baseChangeSnd h _ (BalancedExtension.map p₂ (toPatchedModule h P) x) = x :=
+  LinearMap.congr_fun (BalancedExtension.hom_ext fun m ↦ by simp : baseChangeSnd h _ ∘ₗ
+    BalancedExtension.map p₂ (toPatchedModule h P) = LinearMap.id) x
 
 end Triple
 
@@ -278,20 +275,6 @@ private theorem lowerBlock_mul_self (y : BalancedExtension p₁ G₁ →ₗ[A₁
     lowerBlock y * lowerBlock y = 0 :=
   LinearMap.ext fun w ↦ by simp [lowerBlock]
 
-/-- `1 - N` is a left inverse of `1 + N` when `N * N = 0`, in the form used to cancel adjacent
-factors of a product. -/
-private theorem one_sub_mul_one_add_mul {R : Type*} [Ring R] {N : R} (hN : N * N = 0) (z : R) :
-    (1 - N) * ((1 + N) * z) = z := by
-  rw [← mul_assoc, ← (Commute.one_left N).mul_self_sub_mul_self_eq', one_mul, hN, sub_zero,
-    one_mul]
-
-/-- `1 - N` is a right inverse of `1 + N` when `N * N = 0`, in the form used to cancel adjacent
-factors of a product. -/
-private theorem one_add_mul_one_sub_mul {R : Type*} [Ring R] {N : R} (hN : N * N = 0) (z : R) :
-    (1 + N) * ((1 - N) * z) = z := by
-  rw [← mul_assoc, ← (Commute.one_left N).mul_self_sub_mul_self_eq, one_mul, hN, sub_zero,
-    one_mul]
-
 variable (x : BalancedExtension p₁ G₂ →ₗ[A₁] BalancedExtension p₁ G₁)
   (y : BalancedExtension p₁ G₁ →ₗ[A₁] BalancedExtension p₁ G₂)
 
@@ -304,14 +287,20 @@ private def whiteheadAutInv : Module.End A₁ (BalancedExtension p₁ (G₁ × G
   (1 - upperBlock x) * (1 - lowerBlock y) * (1 - upperBlock x)
 
 private theorem whiteheadAutInv_mul_whiteheadAut : whiteheadAutInv x y * whiteheadAut x y = 1 := by
-  simp only [whiteheadAutInv, whiteheadAut, mul_assoc, one_sub_mul_one_add_mul
-    (upperBlock_mul_self x), one_sub_mul_one_add_mul (lowerBlock_mul_self y)]
-  simpa using one_sub_mul_one_add_mul (upperBlock_mul_self x) 1
+  have hX := one_sub_mul_one_add_of_mul_self_eq_zero (upperBlock_mul_self x)
+  simp only [whiteheadAutInv, whiteheadAut, mul_assoc]
+  -- Cancel the middle pair `(1 - X) (1 + X)`, then `(1 - Y) (1 + Y)`, then the outer pair.
+  rw [← mul_assoc (1 - upperBlock x) (1 + upperBlock x), hX, one_mul,
+    ← mul_assoc (1 - lowerBlock y),
+    one_sub_mul_one_add_of_mul_self_eq_zero (lowerBlock_mul_self y), one_mul, hX]
 
 private theorem whiteheadAut_mul_whiteheadAutInv : whiteheadAut x y * whiteheadAutInv x y = 1 := by
-  simp only [whiteheadAutInv, whiteheadAut, mul_assoc, one_add_mul_one_sub_mul
-    (upperBlock_mul_self x), one_add_mul_one_sub_mul (lowerBlock_mul_self y)]
-  simpa using one_add_mul_one_sub_mul (upperBlock_mul_self x) 1
+  have hX := one_add_mul_one_sub_of_mul_self_eq_zero (upperBlock_mul_self x)
+  simp only [whiteheadAutInv, whiteheadAut, mul_assoc]
+  -- Cancel the middle pair `(1 + X) (1 - X)`, then `(1 + Y) (1 - Y)`, then the outer pair.
+  rw [← mul_assoc (1 + upperBlock x) (1 - upperBlock x), hX, one_mul,
+    ← mul_assoc (1 + lowerBlock y),
+    one_add_mul_one_sub_of_mul_self_eq_zero (lowerBlock_mul_self y), one_mul, hX]
 
 /-- `(1 + X) (1 + Y) (1 + X) (u, 0) = (u + x (y u), y u)`. -/
 private theorem whiteheadAut_comp_inl :
