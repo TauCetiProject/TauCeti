@@ -25,7 +25,9 @@ raised to the power `n ∈ ℤ`. The **Tate twist** `M(n)` of a continuous repre
 The twists satisfy `M(0) = M`, `M(m)(n) = M(m + n)`, `det M(n) = det M · χ_ℓ ^ (n · rank M)` for
 `M` of constant rank, and commute with restriction to `G_{F'}` for a field extension `F'/F`, along
 which `ℤ_ℓ(1)` restricts to `ℤ_ℓ(1)`. For `M` finite projective with the module topology the
-contragredient of `M(n)` is `M^∨(−n)`, and `ℤ_ℓ(1)^∨` is the line `ℤ_ℓ(−1)` of `χ_ℓ⁻¹`.
+contragredient of `M(n)` is `M^∨(−n)`. Over `ℤ_ℓ`, `ℤ_ℓ(−1)` is the line of `χ_ℓ⁻¹`
+(`TauCeti.ContinuousRep.tateTwist_trivial_neg_one`), so `TauCeti.ContinuousRep.dualOfCharacterIso`
+gives `ℤ_ℓ(1)^∨ ≅ ℤ_ℓ(−1)`.
 Extending coefficients from `A` to an `A`-algebra `B` sends `χ_ℓ ^ n` with values in `Aˣ` to
 `χ_ℓ ^ n` with values in `Bˣ`, so it commutes with Tate twists.
 
