@@ -101,8 +101,8 @@ theorem norm_ogd_succ_sub_sq_le (hc : IsComplete K) (hK : Convex ℝ K) (η : �
   have hexp : ‖ogd K η g x₀ t - η t • g t - u‖ ^ 2 =
       ‖ogd K η g x₀ t - u‖ ^ 2 - 2 * η t * ⟪g t, ogd K η g x₀ t - u⟫ +
         η t ^ 2 * ‖g t‖ ^ 2 := by
-    rw [sub_right_comm, norm_sub_sq_real, real_inner_smul_right, real_inner_comm, norm_smul,
-      Real.norm_eq_abs, mul_pow, sq_abs]
+    rw [sub_right_comm, norm_sub_sq_real]
+    simp only [real_inner_smul_left, real_inner_comm, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
     ring
   rw [ogd_succ, ← hexp]
   linarith [sq_nonneg ‖ogd K η g x₀ t - η t • g t - metricProj K (ogd K η g x₀ t - η t • g t)‖]
@@ -183,11 +183,11 @@ theorem regret_ogd_le_mul_sqrt (hc : IsComplete K) (hK : Convex ℝ K) (x₀ : E
           sum_le_sum fun t ht ↦ pow_le_pow_left₀ (norm_nonneg _) (hg t (mem_range.1 ht)) 2
       _ = T * G ^ 2 := by simp
   have hsq : ‖u - x₀‖ ^ 2 ≤ D ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hD 2
+  have hT2 : √(T : ℝ) ^ 2 = T := Real.sq_sqrt (Nat.cast_nonneg T)
   calc ‖u - x₀‖ ^ 2 / (2 * (D / (G * √T))) + D / (G * √T) / 2 * ∑ t ∈ range T, ‖g t‖ ^ 2
       ≤ D ^ 2 / (2 * (D / (G * √T))) + D / (G * √T) / 2 * (T * G ^ 2) := by gcongr
     _ = D * G * √T := by
       field_simp
-      rw [Real.sq_sqrt (Nat.cast_nonneg T)]
-      ring
+      linear_combination -hT2
 
 end TauCeti.OnlineConvexOptimization
