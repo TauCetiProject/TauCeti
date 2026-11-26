@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ModelSpace
-public import TauCeti.Geometry.Manifold.DifferentialForm.Opens.ModelSpace
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Restriction
+import TauCeti.Geometry.Manifold.DifferentialForm.Interior
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Dolbeault calculus on open model domains
 
 The Dolbeault differential on open subsets of complex normed spaces agrees with that of any
 ambient smooth representative near the point. In finite dimensions smooth germs extend to
-ambient forms, preserving pure type. This file also provides constant-vector holomorphic
-contraction and the comparison with coordinate differentiation on open subsets.
+ambient forms, preserving pure type. Constant-vector holomorphic contraction and its
+anticommutation with `∂bar` work in arbitrary dimension. The final comparison identifies
+coordinate differentiation on open subsets of finite-dimensional coordinate spaces.
 -/
 
 public section
@@ -27,7 +30,7 @@ open scoped Manifold ContDiff TauCeti.ComplexManifold
 namespace TauCeti.SmoothForm
 
 open SmoothAlmostComplexStructure
-open ContinuousAlternatingMap (holCurry)
+open ContinuousAlternatingMap (holCurry holCurry_apply)
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -59,6 +62,8 @@ theorem delBar_val_eq_of_eventuallyEq {U : Opens E} {η : SmoothForm 𝓘(ℝ, E
     ← mpullback_delBar _ _ (isPseudoholomorphic_ofComplexManifold_subtype_val V)] at h
   rwa [coe_mpullback, mpullback_inclusion_apply, coe_mpullback_subtype_val_apply] at h
 
+section FiniteDimensional
+
 variable [FiniteDimensional ℂ E]
 
 /-- Near a point of an open subset `U` of a finite-dimensional complex vector space `E`, a form of
@@ -68,9 +73,10 @@ the point. -/
 theorem IsOfType.exists_isOfType_eventuallyEq_of_opens {U : Opens E} {p q : ℕ}
     {η : SmoothForm 𝓘(ℝ, E) U F k} (hη : η.IsOfType (ofComplexManifold E U) p q)
     {η₀ : E → E [⋀^Fin k]→L[ℝ] F} (hη₀ : ∀ x : U, η.val x = η₀ x)
-    (hc : ContDiffOn ℝ ∞ η₀ U) (z : U) :
+    (z : U) :
     ∃ G : SmoothForm 𝓘(ℝ, E) E F k,
       G.IsOfType (ofComplexManifold E E) p q ∧ G.val =ᶠ[𝓝 (z : E)] η₀ := by
+  have hc := (isSmoothForm_opens_iff hη₀).1 η.isSmoothForm
   obtain ⟨G, hG⟩ := exists_eventuallyEq_of_opens hc z
   refine ⟨(ofComplexManifold E E).typeProjection p q G,
     (ofComplexManifold E E).isOfType_typeProjection hη.add_eq G, ?_⟩
@@ -80,25 +86,57 @@ theorem IsOfType.exists_isOfType_eventuallyEq_of_opens {U : Opens E} {p q : ℕ}
   simp only [coe_typeProjection, toEndomorphism_ofComplexManifold, hy]
   exact h.typeProjection_self
 
-omit [FiniteDimensional ℂ E] in
-/-- Holomorphic contraction by a constant ambient vector on an open model domain. -/
-def holInteriorOpens {U : Opens E} (v : E) (η : SmoothForm 𝓘(ℝ, E) U F (k + 1)) :
+end FiniteDimensional
+
+/-- The holomorphic contraction of a smooth form by a constant vector, before bundling. -/
+private def holInteriorOpensFun {U : Opens E} (v : E) (η : SmoothForm 𝓘(ℝ, E) U F (k + 1)) :
     SmoothForm 𝓘(ℝ, E) U F k := by
-  refine ⟨fun z ↦ holCurry v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F), ?_⟩
-  obtain ⟨η₀, hη₀c, hη₀⟩ := η.isSmoothForm.exists_contDiffOn_opens
-  let C := (holCurry (k := k) (F := F) v).restrictScalars ℝ
-  exact ((isSmoothForm_opens_iff (fun z ↦ congrArg C (hη₀ z))).2
-    (C.contDiff.comp_contDiffOn hη₀c)).mem_smoothBundleForms
+  let insert (w : E) : SmoothForm 𝓘(ℝ, E) U F k :=
+    ⟨_,
+      (η.isSmoothForm.interior fun z ↦
+        Manifold.contMDiffAt_tangentBundle_opens_iff.2
+          ((contMDiff_tangentBundleModelSpaceHomeomorph_symm_prodMk_const
+            𝓘(ℝ, E) w ∞).contMDiffAt.comp z contMDiff_subtypeVal.contMDiffAt)
+        ).mem_smoothBundleForms⟩
+  exact insert v - I • insert (I • v)
 
-omit [FiniteDimensional ℂ E] in
-/-- The value of contraction on an open model domain is the fibrewise contraction. -/
-@[simp]
-theorem holInteriorOpens_val {U : Opens E} (v : E)
+private theorem holInteriorOpensFun_val {U : Opens E} (v : E)
     (η : SmoothForm 𝓘(ℝ, E) U F (k + 1)) (z : U) :
-    (holInteriorOpens v η).val z = holCurry v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F) := by
-  rfl
+    (holInteriorOpensFun v η).val z = holCurry v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F) := by
+  unfold holInteriorOpensFun
+  simp only [sub_eq_add_neg, add_toRoughForm, neg_toRoughForm, smul_toRoughForm,
+    Pi.add_apply, Pi.neg_apply, Pi.smul_apply]
+  exact (congrArg₂ (fun a b : E [⋀^Fin k]→L[ℝ] F ↦ a + -(I • b))
+    (RoughForm.interior_apply_eq_curryLeft (I := 𝓘(ℝ, E)) (F := F) (fun _ ↦ v) η.val z)
+    (RoughForm.interior_apply_eq_curryLeft (I := 𝓘(ℝ, E)) (F := F) (fun _ ↦ I • v) η.val z)).trans
+      (by simpa only [sub_eq_add_neg] using
+        (holCurry_apply (E := E) (F := F) v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F)).symm)
 
-omit [FiniteDimensional ℂ E] in
+/-- The holomorphic contraction of smooth forms by constant vectors: the combination
+`ι_v - I • ι_{I • v}`, with `I` acting on the output and no factor of `1/2`, as a
+complex-bilinear map in the vector and the form on an open model domain. -/
+def holInteriorOpens {U : Opens E} :
+    E →ₗ[ℂ] SmoothForm 𝓘(ℝ, E) U F (k + 1) →ₗ[ℂ] SmoothForm 𝓘(ℝ, E) U F k :=
+  LinearMap.mk₂ ℂ holInteriorOpensFun
+    (fun v w η ↦ Subtype.ext <| funext fun z ↦ by
+      simp only [add_toRoughForm, Pi.add_apply, holInteriorOpensFun_val]
+      exact congrArg (fun L ↦ L (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F)) (map_add holCurry v w))
+    (fun c v η ↦ Subtype.ext <| funext fun z ↦ by
+      simp only [smul_toRoughForm, Pi.smul_apply, holInteriorOpensFun_val]
+      exact congrArg (fun L ↦ L (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F)) (map_smul holCurry c v))
+    (fun v η θ ↦ Subtype.ext <| funext fun z ↦ by
+      simp only [add_toRoughForm, Pi.add_apply, holInteriorOpensFun_val]
+      exact map_add (holCurry v) (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F) (θ.val z))
+    (fun c v η ↦ Subtype.ext <| funext fun z ↦ by
+      simp only [smul_toRoughForm, Pi.smul_apply, holInteriorOpensFun_val]
+      exact map_smul (holCurry v) c (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F))
+
+/-- The value of a holomorphic contraction is the pointwise contraction. -/
+@[simp]
+theorem holInteriorOpens_val {U : Opens E} (v : E) (η : SmoothForm 𝓘(ℝ, E) U F (k + 1)) (z : U) :
+    (holInteriorOpens v η).val z = holCurry v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F) :=
+  holInteriorOpensFun_val v η z
+
 /-- Holomorphic contraction lowers the holomorphic degree on an open model domain. -/
 theorem isOfType_holInteriorOpens {U : Opens E} {p q : ℕ}
     {η : SmoothForm 𝓘(ℝ, E) U F (k + 1)}
@@ -107,23 +145,30 @@ theorem isOfType_holInteriorOpens {U : Opens E} {p q : ℕ}
   refine isOfType_iff_forall.2 ⟨by have := hη.add_eq; omega, fun z ↦ ?_⟩
   have h := hη.apply z
   rw [toEndomorphism_ofComplexManifold] at h ⊢
+  rw [holInteriorOpens_val]
   exact ContinuousAlternatingMap.IsOfType.holCurry (E := E) h v
 
-/-- Constant-vector holomorphic contraction anticommutes with `∂bar` on an open model domain. -/
+/-- Constant-vector holomorphic contraction anticommutes with `∂bar` on an open subset of any
+complex normed space, without a finite-dimensionality assumption. -/
 theorem delBar_holInteriorOpens {U : Opens E} (v : E)
     (η : SmoothForm 𝓘(ℝ, E) U F (k + 1)) :
     (ofComplexManifold E U).delBar (holInteriorOpens v η) =
       -holInteriorOpens v ((ofComplexManifold E U).delBar η) := by
   obtain ⟨η₀, hη₀c, hη₀⟩ := η.isSmoothForm.exists_contDiffOn_opens
   refine Subtype.ext (funext fun z ↦ ?_)
-  obtain ⟨G, hG⟩ := exists_eventuallyEq_of_opens hη₀c z
-  have hC : (holInterior v G).val =ᶠ[𝓝 (z : E)] (fun x ↦ holCurry v (η₀ x)) := by
-    filter_upwards [hG] with y hy
-    rw [holInterior_val, hy]
-  rw [delBar_val_eq_of_eventuallyEq (fun x ↦ congrArg (holCurry v) (hη₀ x)) hC,
-    delBar_holInterior, neg_toRoughForm, Pi.neg_apply, holInterior_val,
-    ← delBar_val_eq_of_eventuallyEq hη₀ hG]
-  rfl
+  let C := (holCurry (k := k) (F := F) v).restrictScalars ℝ
+  have hd : DifferentiableAt ℝ η₀ (z : E) :=
+    (hη₀c.contDiffAt (U.isOpen.mem_nhds z.property)).differentiableAt (by simp)
+  have hC (y : U) : (holInteriorOpens v η).val y = (C ∘ η₀) y :=
+    (holInteriorOpens_val v η y).trans (congrArg C (hη₀ y))
+  rw [neg_toRoughForm, Pi.neg_apply, holInteriorOpens_val,
+    delBar_eq_alternatizeUncurryFin_of_opens _ hC,
+    delBar_eq_alternatizeUncurryFin_of_opens η hη₀,
+    C.fderiv_comp_left hd,
+    ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp]
+  exact ContinuousAlternatingMap.alternatizeUncurryFin_holCurry_comp _
+    (fun u ↦ (ContinuousLinearMap.complexAntilinearPartL_apply_I_smul _ u).trans
+      (neg_smul I _).symm) v
 
 end Opens
 
@@ -140,22 +185,18 @@ representative. For forms of type `(0,k)`, these evaluations are the antiholomor
 coefficients. -/
 theorem delBar_val_apply_orderEmbOfFin_of_opens [LinearOrder ι] {U : Opens (ι → ℂ)}
     {k : ℕ} {φ : SmoothForm 𝓘(ℝ, ι → ℂ) U F k} {φ₀ : (ι → ℂ) → (ι → ℂ) [⋀^Fin k]→L[ℝ] F}
-    (hφ₀ : ∀ x : U, φ.val x = φ₀ x) (hc : ContDiffOn ℝ ∞ φ₀ U) {a : Finset ι → (ι → ℂ) → F}
+    (hφ₀ : ∀ x : U, φ.val x = φ₀ x) {a : Finset ι → (ι → ℂ) → F}
     (ha : ∀ J (hJ : #J = k), ∀ y ∈ U, a J y = φ₀ y fun i ↦ Pi.single (J.orderEmbOfFin hJ i) 1)
     (z : U) {I : Finset ι} (hI : #I = k + 1) :
     ((ofComplexManifold (ι → ℂ) U).delBar φ).val z
       (fun i ↦ Pi.single (I.orderEmbOfFin hI i) 1) = delBarCoeff a I z := by
-  obtain ⟨G, hG⟩ := exists_eventuallyEq_of_opens hc z
-  have hcoeff (j : ι) (hj : j ∈ I) : a (I.erase j) =ᶠ[𝓝 (z : ι → ℂ)] G.conjCoeff (I.erase j) := by
-    have hcard : #(I.erase j) = k := by rw [Finset.card_erase_of_mem hj, hI, Nat.add_sub_cancel]
-    filter_upwards [hG, U.isOpen.mem_nhds z.property] with y hy hyU
-    rw [ha _ hcard y hyU, conjCoeff_of_card_eq _ hcard, hy]
-    -- Both sides evaluate `φ₀ y` on the same coordinate vectors, read in the tangent space.
-    rfl
-  rw [delBarCoeff_congr hcoeff, ← conjCoeff_delBar, conjCoeff_of_card_eq _ hI,
-    delBar_val_eq_of_eventuallyEq hφ₀ hG]
-  -- Both sides evaluate on the same coordinate vectors, read in the tangent space.
-  rfl
+  have hc := (isSmoothForm_opens_iff hφ₀).1 φ.isSmoothForm
+  rw [delBar_eq_alternatizeUncurryFin_of_opens φ hφ₀]
+  exact (delBarCoeff_eq_alternatizeUncurryFin
+    ((hc.contDiffAt (U.isOpen.mem_nhds z.property)).differentiableAt (by simp)) hI
+    fun J hJ ↦ by
+      filter_upwards [U.isOpen.mem_nhds z.property] with y hy
+      rw [ha J hJ y hy, ContinuousAlternatingMap.conjCoeff_of_card_eq _ hJ]).symm
 
 end Coordinates
 

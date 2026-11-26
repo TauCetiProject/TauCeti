@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Complex.Polydisc.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Polydisc
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Leibniz
-import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ModelSpace
 import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Opens
 
 /-!
@@ -86,29 +85,6 @@ open ContinuousAlternatingMap (holCurry)
 section Coordinates
 
 variable {ι : Type*} [DecidableEq ι] [Fintype ι]
-
-/-- The coordinate Euler identity at a point, for forms on any complex manifold modelled on
-`ι → ℂ`, given the values of the coordinate covectors and holomorphic contractions there. -/
-private theorem sum_wedgeWith_dz_apply {M : Type*} [TopologicalSpace M]
-    [ChartedSpace (ι → ℂ) M] [IsManifold 𝓘(ℂ, ι → ℂ) ∞ M] {k p q : ℕ}
-    {η : SmoothForm 𝓘(ℝ, ι → ℂ) M F (k + 1)}
-    (hη : η.IsOfType (ofComplexManifold (ι → ℂ) M) p q)
-    (w : ι → SmoothForm 𝓘(ℝ, ι → ℂ) M ℂ 1) {z : M}
-    (hw : ∀ i, (w i).val z = ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℂ) ℂ
-      (0 : Fin 1) (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i))
-    (β : ι → SmoothForm 𝓘(ℝ, ι → ℂ) M F k)
-    (hβ : ∀ i, (β i).val z = holCurry (Pi.single i 1)
-      (η.val z : (ι → ℂ) [⋀^Fin (k + 1)]→L[ℝ] F)) :
-    (∑ i, LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm 𝓘(ℝ, ι → ℂ) M F n)
-      (Nat.add_comm 1 k) (wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ) (w i) (β i))).val z =
-        (2 * p : ℂ) • η.val z := by
-  have h := hη.apply z
-  rw [toEndomorphism_ofComplexManifold] at h
-  ext v
-  simp only [Submodule.coe_sum, Finset.sum_apply, ContinuousAlternatingMap.sum_apply,
-    cast_apply, coe_wedgeWith, RoughForm.wedgeWith_apply', hw, hβ,
-    ContinuousAlternatingMap.smul_apply]
-  exact h.sum_wedgeWith_holCurry v
 
 omit [DecidableEq ι] in
 /-- **The inductive step.** On a complex manifold, let `w_i` be `∂bar`-closed forms of type `(1,0)`
@@ -303,7 +279,7 @@ private theorem IsOfType.exists_delBar_eq_of_polydisc_zero {c : ι → ℂ} {r :
       rw [funext (ha hI), ← coe_polydisc]
       exact (ContinuousAlternatingMap.apply ℝ (ι → ℂ) F _).contDiff.comp_contDiffOn hη₀c)
     fun z hz I hI ↦ by
-      rw [← delBar_val_apply_orderEmbOfFin_of_opens hη₀ hη₀c (fun J hJ y _ ↦ ha hJ y)
+      rw [← delBar_val_apply_orderEmbOfFin_of_opens hη₀ (fun J hJ y _ ↦ ha hJ y)
         ⟨z, hmem.1 hz⟩ hI, hclosed]
       -- The value of the zero form is zero.
       rfl
@@ -328,12 +304,11 @@ private theorem IsOfType.exists_delBar_eq_of_polydisc_zero {c : ι → ℂ} {r :
   let A : (ι → ℂ) [⋀^Fin (q + 1)]→L[ℝ] F :=
     ((ofComplexManifold (ι → ℂ) (polydisc c r)).delBar f).val z
   let B : (ι → ℂ) [⋀^Fin (q + 1)]→L[ℝ] F := η.val z
-  change A = B
   refine ContinuousAlternatingMap.IsOfType.eq_of_conjCoeff_eq (φ := A) (ψ := B) h₁ h₂
     fun I hI ↦ ?_
   rw [ContinuousAlternatingMap.conjCoeff_of_card_eq _ hI,
     ContinuousAlternatingMap.conjCoeff_of_card_eq _ hI]
-  refine (delBar_val_apply_orderEmbOfFin_of_opens (φ := f) hfval hf₀ (a := u)
+  refine (delBar_val_apply_orderEmbOfFin_of_opens (φ := f) hfval (a := u)
     (fun J hJ y _ ↦ (conjCoeffForm_apply_orderEmbOfFin (fun J ↦ u J y) hJ).symm) z hI).trans ?_
   rw [hua z (hmem.2 z.property) I hI, ha hI, ← hη₀]
 
@@ -360,9 +335,7 @@ theorem IsOfType.exists_delBar_eq_of_polydisc {c : ι → ℂ} {r : ι → ℝ} 
     have hβc (i : ι) : (ofComplexManifold (ι → ℂ) (polydisc c r)).delBar (β i) = 0 := by
       dsimp only [β]
       rw [delBar_holInteriorOpens, hclosed]
-      refine Subtype.ext (funext fun z ↦ ?_)
-      rw [neg_toRoughForm, Pi.neg_apply, holInteriorOpens_val]
-      exact neg_eq_zero.2 (map_zero (holCurry (Pi.single i 1)))
+      rw [map_zero, neg_zero]
     choose g hg hgβ using fun i ↦ ih (isOfType_holInteriorOpens hη (Pi.single i 1)) (hβc i)
     -- The holomorphic coordinate one-forms, restricted to the polydisc.
     have hval := isPseudoholomorphic_ofComplexManifold_subtype_val (E := ι → ℂ) (polydisc c r)

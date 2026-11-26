@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.AlmostComplexType
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Uncurry

@@ -5,12 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ComplexManifold
+public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Opens.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Forms
-import TauCeti.Analysis.Calculus.FDeriv.AlmostComplexType
-import TauCeti.Data.Finset.Sort
-public import TauCeti.Analysis.Normed.Module.Alternating.Complex
-public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Uncurry
 import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -109,41 +105,6 @@ section ModelSpace
 
 variable {k : ℕ}
 
-/-- On a form of pure type, `∂bar` is the alternation of the conjugate-linear part of the
-real derivative of its coefficient field. -/
-private theorem delBar_eq_alternatizeUncurryFin_of_isOfType {p q : ℕ}
-    {η : SmoothForm 𝓘(ℝ, E) E F k} (hη : η.IsOfType (ofComplexManifold E E) p q) (z : E) :
-    ((ofComplexManifold E E).delBar η).val z =
-      ContinuousAlternatingMap.alternatizeUncurryFin (E := E) (F := F)
-        (ContinuousLinearMap.complexAntilinearPartL
-          (fderiv ℝ (η.val : E → E [⋀^Fin k]→L[ℝ] F) z)) := by
-  let Θ : E → E [⋀^Fin k]→L[ℝ] F := η.val
-  let Jm : E →L[ℝ] E := I • ContinuousLinearMap.id ℝ E
-  let L : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F := fderiv ℝ Θ z
-  have hJm (w : E) : Jm (Jm w) = -w := by simp [Jm, smul_smul]
-  -- The derivative of a family of forms of type `(p,q)` still has that type.
-  have htype (w : E) : (L w).IsOfType Jm p q := by
-    simpa only [fderivWithin_univ] using ContinuousAlternatingMap.isOfType_fderivWithin (Θ := Θ)
-      (J := Jm) uniqueDiffWithinAt_univ (mem_univ z) (Eventually.of_forall hη.apply_modelSpace) w
-  have hflat : (mextDerivₗ 𝓘(ℝ, E) k η).val z = extDeriv Θ z := by
-    have h := mextDeriv_eq_extDeriv η.val z
-    rw [← mextDerivₗ_apply] at h
-    -- Only the model tangent and trivial coefficient fibres differ in this comparison.
-    convert h using 1
-  -- `∂bar η` is the alternation of the conjugate-linear part of the derivative of `Θ`.
-  have hδ : ((ofComplexManifold E E).delBar η).val z =
-      ContinuousAlternatingMap.alternatizeUncurryFin ((2 : ℂ)⁻¹ • (L + I • L ∘L Jm)) := by
-    rw [hη.delBar_eq, coe_typeProjection]
-    refine (congrArg (fun A : E →L[ℝ] E ↦ A.typeProjection p (q + 1)
-      ((mextDerivₗ 𝓘(ℝ, E) k η).val z)) (toEndomorphism_ofComplexManifold (E := E) z)).trans ?_
-    rw [hflat]
-    exact ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_succ_right hJm htype
-  refine hδ.trans (congrArg ContinuousAlternatingMap.alternatizeUncurryFin ?_)
-  ext v : 1
-  simp only [L, Θ, Jm, ContinuousLinearMap.complexAntilinearPartL_apply_apply,
-    _root_.smul_apply, _root_.add_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.id_apply, ← ofReal_ofNat, ← ofReal_inv, Complex.coe_smul]
-
 /-- **The Dolbeault differential on a complex vector space.** On any smooth form, `∂bar` is
 obtained by alternatizing the conjugate-linear part of the real derivative of its coefficient
 field. No purity-of-type assumption is required. -/
@@ -152,32 +113,14 @@ theorem delBar_eq_alternatizeUncurryFin (η : SmoothForm 𝓘(ℝ, E) E F k) (z 
       ContinuousAlternatingMap.alternatizeUncurryFin (E := E) (F := F)
         (ContinuousLinearMap.complexAntilinearPartL
           (fderiv ℝ (η.val : E → E [⋀^Fin k]→L[ℝ] F) z)) := by
-  let field : SmoothForm 𝓘(ℝ, E) E F k → E → E [⋀^Fin k]→L[ℝ] F := fun φ y ↦ φ.val y
-  let C (Φ : E → E [⋀^Fin k]→L[ℝ] F) :=
-    ContinuousAlternatingMap.alternatizeUncurryFin
-      (ContinuousLinearMap.complexAntilinearPartL (fderiv ℝ Φ z))
-  let A : SmoothForm 𝓘(ℝ, E) E F k →+ E [⋀^Fin (k + 1)]→L[ℝ] F :=
-    { toFun φ := ((ofComplexManifold E E).delBar φ).val z
-      -- `∂bar` is additive; the final `rfl` identifies the zero and addition of the fibre at `z`
-      -- with those of its model space `E [⋀^Fin (k + 1)]→L[ℝ] F`.
-      map_zero' := by rw [map_zero, ZeroMemClass.coe_zero, Pi.zero_apply]; rfl
-      map_add' φ ψ := by rw [map_add, AddMemClass.coe_add, Pi.add_apply]; rfl }
-  let B : SmoothForm 𝓘(ℝ, E) E F k →+ E [⋀^Fin (k + 1)]→L[ℝ] F :=
-    { toFun φ := C (field φ)
-      map_zero' := by
-        have hzero : field 0 = fun _ ↦ 0 := rfl
-        simp only [hzero, C, fderiv_const_apply, map_zero,
-          ← ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply]
-      map_add' φ ψ := by
-        have hφ : DifferentiableAt ℝ (field φ) z :=
-          (isSmoothForm_modelSpace_iff.1 φ.isSmoothForm).differentiable (by simp) z
-        have hψ : DifferentiableAt ℝ (field ψ) z :=
-          (isSmoothForm_modelSpace_iff.1 ψ.isSmoothForm).differentiable (by simp) z
-        have hadd : field (φ + ψ) = field φ + field ψ := rfl
-        simp only [hadd, C, fderiv_add hφ hψ, map_add,
-          ContinuousAlternatingMap.alternatizeUncurryFin_add] }
-  exact (ofComplexManifold E E).map_eq_of_forall_isOfType (f := A) (g := B)
-    (fun _ _ _ _ hφ ↦ delBar_eq_alternatizeUncurryFin_of_isOfType hφ z) η
+  let U : TopologicalSpace.Opens E := ⊤
+  let ηU := mpullback (Subtype.val : U → E) contMDiff_subtypeVal η
+  have hval (y : U) : ηU.val y = η.val y := by
+    rw [coe_mpullback_subtype_val_apply]
+  have h := delBar_eq_alternatizeUncurryFin_of_opens ηU hval ⟨z, mem_univ z⟩
+  rw [← mpullback_delBar _ _ (isPseudoholomorphic_ofComplexManifold_subtype_val U),
+    coe_mpullback_subtype_val_apply] at h
+  exact h
 
 /-- **Evaluation of `∂bar` on a complex vector space.** For an arbitrary smooth `k`-form `η`,
 `∂bar η(v₀, …, v_k) = ∑ i, (-1)^i ∂bar(η(v₀, …, v_k without vᵢ))(vᵢ)`, using evaluations on
@@ -186,23 +129,9 @@ theorem delBar_apply (η : SmoothForm 𝓘(ℝ, E) E F k) (z : E) (v : Fin (k + 
     ((ofComplexManifold E E).delBar η).val z v =
       ∑ i : Fin (k + 1), (-1 : ℂ) ^ (i : ℕ) •
         conjWirtingerDeriv (fun y ↦ η.val y (i.removeNth v)) z (v i) := by
-  let Θ : E → E [⋀^Fin k]→L[ℝ] F := η.val
-  have hdz : DifferentiableAt ℝ Θ z :=
-    (isSmoothForm_modelSpace_iff.1 η.isSmoothForm).differentiable (by simp) z
   rw [delBar_eq_alternatizeUncurryFin]
-  -- Evaluate in the model fibre `E`; the tangent-space synonym prevents rewriting otherwise.
-  change (ContinuousAlternatingMap.alternatizeUncurryFin
-    (ContinuousLinearMap.complexAntilinearPartL (fderiv ℝ Θ z)) :
-      E [⋀^Fin (k + 1)]→L[ℝ] F) v =
-    ∑ i : Fin (k + 1), (-1 : ℂ) ^ (i : ℕ) •
-      conjWirtingerDeriv (fun y ↦ Θ y (i.removeNth v)) z (v i)
-  rw [ContinuousAlternatingMap.alternatizeUncurryFin_apply]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [conjWirtingerDeriv_apply_eq_complexAntilinearPartL]
-  simp only [ContinuousLinearMap.complexAntilinearPartL_apply_apply,
-    fderiv_continuousAlternatingMap_apply_const_apply hdz,
-    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.add_apply]
-  norm_cast
+  exact alternatizeUncurryFin_complexAntilinearPartL_fderiv_apply
+    ((isSmoothForm_modelSpace_iff.1 η.isSmoothForm).differentiable (by simp) z) v
 
 /-- On a smooth one-form the Dolbeault differential is the alternating conjugate Wirtinger
 derivative of its evaluations on constant tangent vectors. -/
@@ -279,26 +208,10 @@ theorem conjCoeff_delBar {q : ℕ} (η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι �
     ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).conjCoeff = delBarCoeff η.conjCoeff := by
   ext I z
   by_cases hI : #I = q + 1
-  · let e := I.orderEmbOfFin hI
-    rw [conjCoeff_of_card_eq _ hI, delBar_apply, delBarCoeff_def]
-    conv_rhs => rw [← Finset.sum_coe_sort I, ← (I.orderIsoOfFin hI).toEquiv.sum_comp]
-    refine Finset.sum_congr rfl fun a _ ↦ ?_
-    have hcard : #(I.erase (e a)) = q := by
-      rw [card_erase_of_mem (I.orderEmbOfFin_mem hI a), hI, Nat.add_sub_cancel]
-    -- Removing the `a`-th coordinate vector leaves the increasing enumeration of `I \ {e a}`.
-    have herase := removeNth_orderEmbOfFin_symm_eq (e a) I (I.orderEmbOfFin_mem hI a) hI hcard
-    -- `herase` is phrased via the order isomorphism `I ≃o Fin (q + 1)`, whose argument is the
-    -- subtype element `⟨e a, _⟩`; identify it with the image of `a` to cancel the inverse.
-    have hea : (⟨e a, I.orderEmbOfFin_mem hI a⟩ : I) = I.orderIsoOfFin hI a :=
-      Subtype.ext (coe_orderIsoOfFin_apply ..).symm
-    rw [hea, OrderIso.symm_apply_apply] at herase
-    have hcoeff : η.conjCoeff (I.erase (e a)) =
-        fun y ↦ η.val y (a.removeNth fun b ↦ (Pi.single (e b) 1 : ι → ℂ)) := by
-      funext y
-      rw [conjCoeff_of_card_eq _ hcard, ← herase]
-      exact congrArg _ (funext fun b ↦
-        (Fin.removeNth_apply a (fun b ↦ (Pi.single (e b) 1 : ι → ℂ)) b).symm)
-    rw [RelIso.coe_fn_toEquiv, coe_orderIsoOfFin_apply, card_filter_lt_orderEmbOfFin, hcoeff]
+  · rw [conjCoeff_of_card_eq _ hI, delBar_eq_alternatizeUncurryFin]
+    exact (delBarCoeff_eq_alternatizeUncurryFin
+      ((isSmoothForm_modelSpace_iff.1 η.isSmoothForm).differentiable (by simp) z)
+      hI (fun _ _ ↦ Filter.EventuallyEq.rfl)).symm
   · rw [conjCoeff_of_card_ne _ hI, Pi.zero_apply, delBarCoeff_def]
     refine (Finset.sum_eq_zero fun j hj ↦ ?_).symm
     have hcard : #(I.erase j) ≠ q := by
@@ -458,6 +371,29 @@ theorem delBar_dz (i : ι) : (ofComplexManifold (ι → ℂ) (ι → ℂ)).delBa
   rw [(isOfType_dz i).delBar_eq, (isClosed_iff_mextDerivₗ_eq_zero (dz i)).1 (isClosed_const _),
     map_zero]
 
+/-- The coordinate Euler identity at a point, for forms on any complex manifold modelled on
+`ι → ℂ`, given the values of the coordinate covectors and holomorphic contractions there. -/
+theorem sum_wedgeWith_dz_apply {M : Type*} [TopologicalSpace M]
+    [ChartedSpace (ι → ℂ) M] [IsManifold 𝓘(ℂ, ι → ℂ) ∞ M] {k p q : ℕ}
+    {η : SmoothForm 𝓘(ℝ, ι → ℂ) M F (k + 1)}
+    (hη : η.IsOfType (ofComplexManifold (ι → ℂ) M) p q)
+    (w : ι → SmoothForm 𝓘(ℝ, ι → ℂ) M ℂ 1) {z : M}
+    (hw : ∀ i, (w i).val z = ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℂ) ℂ
+      (0 : Fin 1) (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i))
+    (β : ι → SmoothForm 𝓘(ℝ, ι → ℂ) M F k)
+    (hβ : ∀ i, (β i).val z = holCurry (Pi.single i 1)
+      (η.val z : (ι → ℂ) [⋀^Fin (k + 1)]→L[ℝ] F)) :
+    (∑ i, LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm 𝓘(ℝ, ι → ℂ) M F n)
+      (Nat.add_comm 1 k) (wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ) (w i) (β i))).val z =
+        (2 * p : ℂ) • η.val z := by
+  have h := hη.apply z
+  rw [toEndomorphism_ofComplexManifold] at h
+  ext v
+  simp only [Submodule.coe_sum, Finset.sum_apply, ContinuousAlternatingMap.sum_apply,
+    cast_apply, coe_wedgeWith, RoughForm.wedgeWith_apply', hw, hβ,
+    ContinuousAlternatingMap.smul_apply]
+  exact h.sum_wedgeWith_holCurry v
+
 /-- The coordinate wedges of the holomorphic contractions of a form of type `(p,q)`
 sum to `2 p` times the form. -/
 theorem sum_wedgeWith_dz_holInterior_apply {k p q : ℕ}
@@ -468,11 +404,8 @@ theorem sum_wedgeWith_dz_holInterior_apply {k p q : ℕ}
       (Nat.add_comm 1 k) (wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ) (dz i)
         (holInterior (Pi.single i 1) η))).val z =
       (2 * p : ℂ) • η.val z := by
-  ext v
-  simp only [Submodule.coe_sum, Finset.sum_apply, ContinuousAlternatingMap.sum_apply, cast_apply,
-    coe_wedgeWith, RoughForm.wedgeWith_apply', dz_val, holInterior_val,
-    ContinuousAlternatingMap.smul_apply]
-  exact (hη.apply_modelSpace z).sum_wedgeWith_holCurry v
+  exact sum_wedgeWith_dz_apply hη dz (fun i ↦ dz_val i z)
+    (fun i ↦ holInterior (Pi.single i 1) η) (fun i ↦ holInterior_val _ _ _)
 
 end Coordinates
 
