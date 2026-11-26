@@ -49,6 +49,8 @@ For `n = 2` and `𝕜 = ℂ` this deforms the Möbius group of the Riemann spher
 * `Matrix.SpecialLinearGroup.polarRetraction_toSL_mul`,
   `Matrix.SpecialLinearGroup.polarHomotopy_toSL_mul`: the retraction and the deformation of
   `SL(n, 𝕜)` commute with left multiplication by `SU(n)`.
+* `Matrix.SpecialLinearGroup.coe_polarRetraction_neg`: the retraction is odd when `n` has even
+  cardinality.
 * `Matrix.ProjectiveSpecialLinearGroup.polarHomotopy_mk`: the deformation of `PSL(n, 𝕜)` is induced
   by that of `SL(n, 𝕜)`.
 
@@ -73,6 +75,11 @@ open Matrix.specialUnitaryGroup GeneralLinearGroup
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
 attribute [local instance] Matrix.l2OpNormedAlgebraReal
+
+/-- The determinant of a matrix of `SL(n, R)` has norm one. -/
+theorem norm_det_eq_one {R : Type*} [CommRing R] [Norm R] [NormOneClass R]
+    (g : SpecialLinearGroup n R) : ‖(g : Matrix n n R).det‖ = 1 := by
+  rw [g.property, norm_one]
 
 variable (n 𝕜) in
 /-- **The polar retraction** `SL(n, 𝕜) → SU(n)`, for `𝕜 = ℝ` or `ℂ`: the unitary factor `U` of the
@@ -108,6 +115,13 @@ theorem polarRetraction_toSL_mul (k : specialUnitaryGroup n 𝕜) (g : SpecialLi
   rw [map_one, mul_one, mul_one, ← toGL_toSL, ← map_mul] at h
   rw [coe_polarRetraction_apply, h, Submonoid.coe_mul, Submonoid.coe_mul, Submonoid.coe_inclusion,
     coe_polarRetraction_apply]
+
+/-- The polar retraction is odd: when `n` has even cardinality, so that `-g ∈ SL(n, 𝕜)`, the
+unitary factor of `-g = √(g gᴴ) (-U)` is minus the unitary factor `U` of `g`. -/
+theorem coe_polarRetraction_neg [Fact (Even (Fintype.card n))] (g : SpecialLinearGroup n 𝕜) :
+    (polarRetraction n 𝕜 (-g) : Matrix n n 𝕜) = -(polarRetraction n 𝕜 g : Matrix n n 𝕜) := by
+  rw [coe_polarRetraction_apply, coe_polarRetraction_apply, toGL_neg, Units.polarUnitary_neg,
+    Unitary.coe_neg]
 
 variable (n 𝕜) in
 /-- **`SL(n, 𝕜)` deformation retracts onto `SU(n)`**, for `𝕜 = ℝ` or `ℂ`. The polar deformation
