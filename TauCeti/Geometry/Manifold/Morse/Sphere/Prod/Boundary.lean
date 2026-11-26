@@ -62,10 +62,11 @@ the product model `(𝓡 n).prod (𝓡 m)`. This file reads the same charts on t
 Mathlib's `modelWithCornersSelf_prod`. For the torus these differ from the charts
 `TauCeti.torusChartedSpace` on `Circle × Circle`, which take values in `EuclideanSpace ℝ (Fin 2)`.
 
-## Main declarations
+The Morse hypothesis `hf` of the Morse complexes, for the model of these charts, is
+`(isMorse_sphereHeight v).comp_fst_add_comp_snd_chartedSpaceProd (isMorse_sphereHeight w)`
+(`TauCeti.IsMorse.comp_fst_add_comp_snd_chartedSpaceProd`).
 
-* `TauCeti.isMorse_sphereHeight_comp_fst_add_comp_snd_modelWithCornersSelf`: the sum of two height
-  functions is a Morse function for the model of these charts, as the Morse complexes require.
+## Main declarations
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
@@ -104,19 +105,6 @@ attribute [local instance low] chartedSpaceProd
 
 attribute [local instance] isManifold_chartedSpaceProd
 
-/-- **The sum of two height functions is a Morse function for the product charts on the normed
-space.** This is `TauCeti.isMorse_sphereHeight_comp_fst_add_comp_snd` read along
-`modelWithCornersSelf_prod`, for the model
-`𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m))` of the charts
-`TauCeti.chartedSpaceProd`, in which the Morse complexes below are defined. It supplies their Morse
-hypothesis `hf`. -/
-theorem isMorse_sphereHeight_comp_fst_add_comp_snd_modelWithCornersSelf (v : sphere (0 : E) 1)
-    (w : sphere (0 : E') 1) :
-    IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m))
-      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) := by
-  rw [modelWithCornersSelf_prod]
-  exact isMorse_sphereHeight_comp_fst_add_comp_snd v w
-
 namespace IsAdaptedPseudoGradient
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] {v : sphere (0 : E) 1}
@@ -139,10 +127,11 @@ private theorem eq_and_value_eq_zero_of_mfderiv_eq_zero (hn : n ≠ 0) (hm : m �
   rw [← mvfderiv_eq_zero_iff, modelWithCornersSelf_prod,
     mvfderiv_sphereHeight_comp_fst_add_comp_snd_eq_zero_iff] at hz
   rw [modelWithCornersSelf_prod, manifoldMorseIndex_sphereHeight_comp_fst_add_comp_snd] at hk
+  -- The index `0` of the minimum `(-v, -w)` is not `n + m`.
+  have h0 : 0 ≠ n + m := by omega
   rcases hz with ⟨rfl | rfl, rfl | rfl⟩ <;>
     simp only [manifoldMorseIndex_sphereHeight_self, manifoldMorseIndex_sphereHeight_neg] at hk <;>
-    subst hk <;> simp [hn, hm]
-  omega
+    subst hk <;> simp [hn, hm, h0]
 
 /-- **The sum of two height functions is Morse–Smale for every pseudo-gradient.** On a product
 `Sⁿ × Sᵐ` of spheres of positive dimensions, every pseudo-gradient adapted to the sum of two height
@@ -152,7 +141,9 @@ joins them. -/
 theorem isMorseSmale_sphereHeight_comp_fst_add_comp_snd (hn : n ≠ 0) (hm : m ≠ 0)
     (hX : IsAdaptedPseudoGradient (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) X) :
     hX.IsMorseSmale := by
-  have hf := isMorse_sphereHeight_comp_fst_add_comp_snd_modelWithCornersSelf (n := n) (m := m) v w
+  have hf : IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m))
+      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) :=
+    (isMorse_sphereHeight v).comp_fst_add_comp_snd_chartedSpaceProd (isMorse_sphereHeight w)
   have hfin : finrank ℝ (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m)) = n + m := by simp
   refine IsMorseSmale.of_forall_ne_of_manifoldMorseIndex_ne hf
     fun a b y ha hb hab ha0 han hb0 hbn hy ↦ ?_
@@ -179,38 +170,30 @@ theorem signedMorseBoundaryCoeff_sphereHeight_comp_fst_add_comp_snd (hn : n ≠ 
   have := orientable_chartedSpaceProd (E := EuclideanSpace ℝ (Fin n))
     (E' := EuclideanSpace ℝ (Fin m)) (N := sphere (0 : E) 1) (N' := sphere (0 : E') 1)
   have h := isMorseSmale_sphereHeight_comp_fst_add_comp_snd hn hm hX
-  have hf := isMorse_sphereHeight_comp_fst_add_comp_snd_modelWithCornersSelf (n := n) (m := m) v w
-  by_cases hind : manifoldMorseIndex 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m))
-      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd)
-        (p : sphere (0 : E) 1 × sphere (0 : E') 1) =
-    manifoldMorseIndex 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m))
-      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd)
-        (q : sphere (0 : E) 1 × sphere (0 : E') 1) + 1
+  have hf : IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m))
+      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) :=
+    (isMorse_sphereHeight v).comp_fst_add_comp_snd_chartedSpaceProd (isMorse_sphereHeight w)
+  set ι := manifoldMorseIndex 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m))
+    (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd)
+  by_cases hind : ι p = ι q + 1
   swap
   · exact signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hind
-  have hp := eq_and_value_eq_zero_of_mfderiv_eq_zero hn hm
+  have hp := eq_and_value_eq_zero_of_mfderiv_eq_zero (k := ι p) hn hm
     (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property) rfl
-  have hq := eq_and_value_eq_zero_of_mfderiv_eq_zero hn hm
+  have hq := eq_and_value_eq_zero_of_mfderiv_eq_zero (k := ι q) hn hm
     (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.property) rfl
   have hfin : finrank ℝ (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m)) = n + m := by simp
-  by_cases hpmax : manifoldMorseIndex 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m))
-      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd)
-        (p : sphere (0 : E) 1 × sphere (0 : E') 1) = n + m
+  by_cases hpmax : ι p = n + m
   · -- The maximum is the only critical point of index `n + m`.
     refine h.signedMorseBoundaryCoeff_eq_zero_of_unique_index_finrank hf 𝔬 (hfin ▸ hpmax)
       (fun y hy hyk ↦ ?_) q
     rw [(eq_and_value_eq_zero_of_mfderiv_eq_zero hn hm hy (hyk.trans hfin)).1 rfl, hp.1 hpmax]
-  by_cases hqmin : manifoldMorseIndex 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m))
-      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd)
-        (q : sphere (0 : E) 1 × sphere (0 : E') 1) = 0
+  by_cases hqmin : ι q = 0
   · -- The minimum is the only critical point of index `0`.
     refine h.signedMorseBoundaryCoeff_eq_zero_of_unique_index_zero hf 𝔬 (fun y hy hy0 ↦ ?_) p
     rw [(eq_and_value_eq_zero_of_mfderiv_eq_zero hn hm hy hy0).2.1 rfl, hq.2.1 hqmin]
   -- Otherwise `p` and `q` are the two middle critical points, both of value `0`.
-  have hle : manifoldMorseIndex 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m))
-      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd)
-        (p : sphere (0 : E) 1 × sphere (0 : E') 1) ≤ n + m :=
-    hfin ▸ manifoldMorseIndex_le_finrank
+  have hle : ι p ≤ n + m := hfin ▸ manifoldMorseIndex_le_finrank
   refine signedMorseBoundaryCoeff_eq_zero_of_value_le (le_of_eq ?_)
   simp only [Pi.add_apply, Function.comp_apply]
   rw [hp.2.2 hpmax (by omega), hq.2.2 (by omega) hqmin]
@@ -266,7 +249,8 @@ zero.** For every pseudo-gradient adapted to the sum of two height functions on 
 `Sⁿ × Sᵐ` of spheres of positive dimensions, such as the torus `S¹ × S¹`, the mod-two Morse complex
 is the free `ZMod 2`-module on the four pairs of poles with zero differential. The Morse–Smale
 hypothesis `h` holds by `isMorseSmale_sphereHeight_comp_fst_add_comp_snd`, and the Morse
-hypothesis `hf` by `TauCeti.isMorse_sphereHeight_comp_fst_add_comp_snd_modelWithCornersSelf`. -/
+hypothesis `hf` by `TauCeti.IsMorse.comp_fst_add_comp_snd_chartedSpaceProd` applied to
+`isMorse_sphereHeight`. -/
 @[simp]
 theorem IsMorseSmale.morseBoundary_sphereHeight_comp_fst_add_comp_snd (h : hX.IsMorseSmale)
     (hf : IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m))
