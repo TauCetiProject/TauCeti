@@ -38,6 +38,8 @@ complexes with the maps which are weak homotopy equivalences.
 * `SSet.rlp_monomorphisms_of_homotopy_inverse`: a Kan fibration with source a Kan complex which
   is a simplicial homotopy equivalence is a trivial fibration.
 * `SSet.rlp_monomorphisms_iff_exists_homotopy_inverse`: the corresponding characterization.
+* `SSet.isWeakHomotopyEquivalence_of_rlp_monomorphisms`: a trivial fibration is a weak homotopy
+  equivalence.
 * `SSet.rlp_monomorphisms_iff_isWeakHomotopyEquivalence`: a Kan fibration with target a Kan
   complex is a trivial fibration exactly when it is a weak homotopy equivalence.
 * `SSet.anodyneExtensions_iff_isWeakHomotopyEquivalence`: a monomorphism into a Kan complex is
@@ -92,11 +94,16 @@ equivalence. -/
 theorem rlp_monomorphisms_iff_exists_homotopy_inverse (p : X ⟶ Y) [Fibration p] [KanComplex X] :
     (monomorphisms SSet.{u}).rlp p ↔
       ∃ g : Y ⟶ X, Nonempty (Homotopy (p ≫ g) (𝟙 X)) ∧ Nonempty (Homotopy (g ≫ p) (𝟙 Y)) := by
-  refine ⟨fun hp ↦ ?_,
+  exact ⟨exists_homotopy_inverse_of_rlp_monomorphisms,
     fun ⟨g, ⟨H₁⟩, ⟨H₂⟩⟩ ↦ rlp_monomorphisms_of_homotopy_inverse p g H₁ H₂⟩
-  have := isSplitEpi_of_rlp_monomorphisms hp
-  let h := Shrinking.ofRLP hp (section_ p) (IsSplitEpi.id p)
-  exact ⟨h.section_, ⟨h.homotopy⟩, ⟨.ofEq (congrArg _ h.section_comp)⟩⟩
+
+/-- A morphism with the right lifting property with respect to all monomorphisms (a trivial
+fibration) is a weak homotopy equivalence: a section of it, together with a homotopy from the
+composite of the morphism and the section to the identity, is a homotopy inverse. -/
+theorem isWeakHomotopyEquivalence_of_rlp_monomorphisms {p : X ⟶ Y}
+    (hp : (monomorphisms SSet.{u}).rlp p) : IsWeakHomotopyEquivalence p := by
+  obtain ⟨g, ⟨H₁⟩, ⟨H₂⟩⟩ := exists_homotopy_inverse_of_rlp_monomorphisms hp
+  exact .of_homotopy p H₁ H₂
 
 /-- A Kan fibration whose target is a Kan complex has the right lifting property with respect to
 all monomorphisms (it is a trivial fibration) exactly when it is a weak homotopy equivalence. -/

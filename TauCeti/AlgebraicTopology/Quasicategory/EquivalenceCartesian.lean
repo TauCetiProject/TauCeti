@@ -179,7 +179,9 @@ private lemma hornFilling_of_hasLiftingProperty (s : X _⦋1⦌)
   have hΛ : Λ[1, 1].ι = t ≫ stdSimplex.δ 0 := by
     rw [horn_one_ι_eq_const, stdSimplex.δ_zero_eq_const, comp_const]
   have hte : t ≫ e = 𝟙 _ := by
-    rw [← cancel_mono Λ[1, 1].ι, Category.assoc, horn.ι_ι, Category.id_comp, hΛ]
+    have := horn.isIso_ι_one (1 : Fin 2) 0 (by decide)
+    rw [stdSimplex.isTerminalObj₀.hom_ext t (inv e)]
+    exact IsIso.inv_hom_id e
   have hpush := Subcomplex.unionJoin.isPushout ∂Δ[n] Λ[1, 1]
   -- Read on the pushout-join, `σ₀` consists of maps `A : ∂Δ[n] ⋆ Δ[1] ⟶ X` and
   -- `B : Δ[n] ⋆ Δ[0] ⟶ X`, cones over the edge `s` and over its target.
