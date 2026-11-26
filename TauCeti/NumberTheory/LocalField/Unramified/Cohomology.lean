@@ -198,11 +198,9 @@ theorem mk_mem_unramifiedH1_of_forall_mem_separableClosureInertiaSubgroup
     {f : Z1 (AbsoluteGaloisGroup K) M}
     (hf : ∀ ⦃τ : AbsoluteGaloisGroup K⦄, τ ∈ separableClosureInertiaSubgroup K → f.val τ = 0) :
     (f : H1 (AbsoluteGaloisGroup K) M) ∈ unramifiedH1 K M := by
-  rw [mem_unramifiedH1_iff, explicitRes1_mk, H1pi_eq_zero_iff, mem_B1_iff]
-  refine ⟨0, fun τ ↦ ?_⟩
-  rw [smul_zero, sub_zero, cocyclesMap1_apply, AddMonoidHom.id_apply,
-    ContinuousMonoidHom.subgroupSubtype_apply]
-  exact (hf τ.property).symm
+  rw [mem_unramifiedH1_iff]
+  exact (separableClosureInertiaSubgroup K).explicitRes1_mk_eq_zero_of_forall_eq_zero f
+    (fun τ ↦ hf τ.property)
 
 /-- A continuous `1`-cocycle of `AbsoluteGaloisGroup K` that vanishes on the restriction of
 `inertiaSubgroup K` represents an unramified cohomology class. -/
@@ -232,6 +230,7 @@ theorem _root_.DistribMulActionHom.explicitCoeff1_mem_unramifiedH1 {N : Type w} 
 injective equivariant coefficient map whose target has trivial inertia action, the inverse image
 of the target unramified subgroup is exactly the source unramified subgroup. Equivariance and
 injectivity also force inertia to act trivially on the source. -/
+@[simp]
 theorem _root_.DistribMulActionHom.comap_unramifiedH1_of_injective_of_smul_eq_self
     {N : Type w} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
     [DistribMulAction (AbsoluteGaloisGroup K) N] [ContinuousSMul (AbsoluteGaloisGroup K) N]

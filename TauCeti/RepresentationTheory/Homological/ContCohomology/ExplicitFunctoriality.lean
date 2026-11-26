@@ -1071,15 +1071,28 @@ variable {G : Type uG} [Group G] [TopologicalSpace G]
   {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M] [ContinuousSMul G M]
 
+/-- A continuous `1`-cocycle vanishing on a subgroup has zero restriction to that subgroup,
+without any assumption on the subgroup action. -/
+theorem _root_.Subgroup.explicitRes1_mk_eq_zero_of_forall_eq_zero (I : Subgroup G)
+    (z : Z1 G M) (hz : ∀ g : I, (z : G → M) (g : G) = 0) :
+    explicitRes1 G M I (z : H1 G M) = 0 := by
+  rw [explicitRes1_mk, H1pi_eq_zero_iff, mem_B1_iff]
+  refine ⟨0, fun g ↦ ?_⟩
+  rw [smul_zero, sub_zero, cocyclesMap1_apply, AddMonoidHom.id_apply,
+    ContinuousMonoidHom.subgroupSubtype_apply]
+  exact (hz g).symm
+
 /-- If `I` acts trivially, a cocycle has unramified class if and only if it vanishes on `I`.
 In particular, this condition is independent of the choice of cocycle representative. -/
 -- Not a simp lemma: `explicitRes1_mk` already simplifies restriction of a cocycle class.
 theorem _root_.Subgroup.explicitRes1_mk_eq_zero_iff_of_smul_eq_self (I : Subgroup G)
     (hI : ∀ (g : I) (m : M), (g : G) • m = m) (z : Z1 G M) :
     explicitRes1 G M I (z : H1 G M) = 0 ↔ ∀ g : I, (z : G → M) (g : G) = 0 := by
-  rw [explicitRes1_mk, H1pi_eq_zero_iff, B1_eq_bot_of_smul_eq_self hI]
-  simp only [AddSubgroup.mem_bot, funext_iff, cocyclesMap1_apply,
-    ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply, Pi.zero_apply]
+  refine ⟨?_, I.explicitRes1_mk_eq_zero_of_forall_eq_zero z⟩
+  intro hz
+  rw [explicitRes1_mk, H1pi_eq_zero_iff, B1_eq_bot_of_smul_eq_self hI] at hz
+  simpa only [AddSubgroup.mem_bot, funext_iff, cocyclesMap1_apply,
+    ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply, Pi.zero_apply] using hz
 
 variable {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
   [DistribMulAction G N] [ContinuousSMul G N]
@@ -1108,12 +1121,14 @@ theorem _root_.Subgroup.explicitRes1_explicitCoeff1_eq_zero_iff (I : Subgroup G)
 
 /-- The unramified local condition is cartesian under injective coefficient maps between
 unramified modules: it is the inverse image of the target condition. -/
+@[simp]
 theorem _root_.Subgroup.comap_ker_explicitRes1_of_injective_of_smul_eq_self (I : Subgroup G)
     (f : M →+[G] N) (hf : Continuous f) (hinj : Function.Injective f)
     (hI : ∀ (g : I) (n : N), (g : G) • n = n) :
     ((explicitRes1 G N I).ker).comap (explicitCoeff1 G M f hf) =
       (explicitRes1 G M I).ker := by
   ext x
+  simp only [AddSubgroup.mem_comap, AddMonoidHom.mem_ker]
   exact I.explicitRes1_explicitCoeff1_eq_zero_iff f hf hinj hI x
 
 end RestrictionKernels
