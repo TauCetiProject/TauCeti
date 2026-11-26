@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 import TauCeti.Analysis.Complex.Taylor.CauchyEstimate
 import TauCeti.Analysis.Complex.Taylor.Laurent
+import TauCeti.Analysis.Contour.MeromorphicLaurent
 import TauCeti.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.SpecificLimits.Window
 
@@ -41,14 +42,15 @@ namespace DifferentiableOn
 `‖z - ρ‖` is holomorphic, a window bound on the sum of the coefficient norm at `z` and the
 reflected coefficient's real part at `w` can only hold with `R ≤ ‖z - ρ‖`. -/
 theorem le_norm_sub_of_window_taylor_bound_of_pole {F : ℂ → ℂ} {z w ρ : ℂ}
-    {rz rw R : ℝ} {m : ℕ} (hz : DifferentiableOn ℂ F (ball z rz \ {ρ}))
+    {rz rw R : ℝ} (hz : DifferentiableOn ℂ F (ball z rz \ {ρ}))
     (hw : DifferentiableOn ℂ F (ball w rw)) (hd : ‖z - ρ‖ < min rz rw) (hzρ : z ≠ ρ)
-    (hp : meromorphicOrderAt F ρ = (-(↑(m + 1) : ℤ) : WithTop ℤ))
+    (hp : meromorphicOrderAt F ρ < 0)
     (hupper : ∀ η : ℝ, 0 < η → ∃ C : ℝ, ∀ U₀ : ℝ, ∃ U ≥ U₀, ∃ k : ℕ,
       U ≤ (k : ℝ) ∧
         ‖iteratedDeriv k F z / (k ! : ℂ)‖ + ((-1) ^ k * (iteratedDeriv k F w / (k ! : ℂ))).re ≤
           C * Real.exp (η * U) / R ^ k) :
     R ≤ ‖z - ρ‖ := by
+  obtain ⟨m, hp⟩ := Contour.exists_meromorphicOrderAt_eq_neg_succ_of_lt_zero hp
   obtain ⟨hdz, hdw⟩ := lt_min_iff.1 hd
   let d := ‖z - ρ‖
   have hd₀ : 0 < d := norm_pos_iff.2 (sub_ne_zero.2 hzρ)
@@ -81,13 +83,14 @@ theorem le_norm_sub_of_window_taylor_bound_of_pole {F : ℂ → ℂ} {z w ρ : �
 the window bound, cannot have a leading Laurent coefficient of positive real part. The real
 parts of the reflected coefficients suffice; no reality assumption is needed. -/
 theorem meromorphicTrailingCoeffAt_re_nonpos_of_window_taylor_bound {F : ℂ → ℂ}
-    {x β r R : ℝ} {m : ℕ} (hF : DifferentiableOn ℂ F (ball (x : ℂ) r \ {(β : ℂ)}))
+    {x β r R : ℝ} (hF : DifferentiableOn ℂ F (ball (x : ℂ) r \ {(β : ℂ)}))
     (hβ : β < x) (hd : x - β < min r R)
-    (hp : meromorphicOrderAt F (β : ℂ) = (-(↑(m + 1) : ℤ) : WithTop ℤ))
+    (hp : meromorphicOrderAt F (β : ℂ) < 0)
     (hupper : ∀ η : ℝ, 0 < η → ∃ C : ℝ, ∀ U₀ : ℝ, ∃ U ≥ U₀, ∃ k : ℕ,
       U ≤ (k : ℝ) ∧
         ((-1) ^ k * (iteratedDeriv k F x / (k ! : ℂ))).re ≤ C * Real.exp (η * U) / R ^ k) :
     (meromorphicTrailingCoeffAt F β).re ≤ 0 := by
+  obtain ⟨m, hp⟩ := Contour.exists_meromorphicOrderAt_eq_neg_succ_of_lt_zero hp
   by_contra! hc
   obtain ⟨hdr, hdR⟩ := lt_min_iff.1 hd
   have hd₀ := sub_pos.mpr hβ
@@ -95,7 +98,9 @@ theorem meromorphicTrailingCoeffAt_re_nonpos_of_window_taylor_bound {F : ℂ →
   refine hdR.not_ge (le_of_window_exp_div_pow_bound ha hd₀ ?_ hupper)
   filter_upwards [Complex.eventually_le_re_neg_one_pow_mul_iteratedDeriv_div_factorial_of_pole
     hF hp hc hβ hdr] with k hk
-  rw [div_div (_ / 2), ← pow_add, show m + (k + 1) = k + m + 1 by omega]
-  exact hk
+  have hscale : (meromorphicTrailingCoeffAt F β).re / 2 / (x - β) ^ m / (x - β) ^ (k + 1) =
+      (meromorphicTrailingCoeffAt F β).re / 2 / (x - β) ^ (k + m + 1) := by
+    rw [show k + m + 1 = m + (k + 1) by omega, pow_add (x - β) m (k + 1), div_div]
+  exact hscale.trans_le hk
 
 end DifferentiableOn

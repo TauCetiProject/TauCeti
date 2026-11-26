@@ -46,24 +46,16 @@ theorem MeromorphicNFOn.exists_rightmost_real_pole_of_window_taylor_bound {F : �
     ∃ β : ℝ, θ < β ∧ meromorphicOrderAt F (β : ℂ) < 0 ∧
       (∀ z : ℂ, meromorphicOrderAt F z < 0 → z.re ≤ β) ∧
       (meromorphicTrailingCoeffAt F β).re ≤ 0 := by
-  have horder {z : ℂ} (hz : meromorphicOrderAt F z < 0) :
-      ∃ m : ℕ, meromorphicOrderAt F z = (-(↑(m + 1) : ℤ) : WithTop ℤ) := by
-    obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp hz.ne_top
-    have hn' : n < 0 := WithTop.coe_lt_coe.mp (hn ▸ hz)
-    obtain ⟨m, rfl⟩ := Int.eq_negSucc_of_lt_zero hn'
-    exact ⟨m, by simpa [Int.negSucc_eq] using hn.symm⟩
   rcases hF.exists_analytic_discs_or_rightmost_real_pole hσ hp with
     ⟨γ, ρ, r, hd, hdr, hr, hpole, hz, hw⟩ | ⟨β, r, hθ, hd, hdr, hr, hpole, hmax, hz⟩
   · rw [dist_eq_norm] at hd hdr
-    obtain ⟨m, hm⟩ := horder hpole
     have hne := sub_ne_zero.mp (norm_pos_iff.mp hd)
     have hle := hz.differentiableOn.le_norm_sub_of_window_taylor_bound_of_pole hw.differentiableOn
-      (lt_min hdr hdr) hne hm (hupper γ)
+      (lt_min hdr hdr) hne hpole (hupper γ)
     exact (hdr.not_ge (hr.trans hle)).elim
   · refine ⟨β, hθ, hpole, hmax, ?_⟩
-    obtain ⟨m, hm⟩ := horder hpole
     refine hz.differentiableOn.meromorphicTrailingCoeffAt_re_nonpos_of_window_taylor_bound
-      (sub_pos.mp hd) (lt_min hdr (hdr.trans_le hr)) hm fun η hη ↦ ?_
+      (sub_pos.mp hd) (lt_min hdr (hdr.trans_le hr)) hpole fun η hη ↦ ?_
     obtain ⟨C, hC⟩ := hupper 0 η hη
     refine ⟨C, fun U₀ ↦ ?_⟩
     obtain ⟨U, hU, k, hk, hb⟩ := hC U₀

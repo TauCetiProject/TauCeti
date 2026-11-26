@@ -34,6 +34,8 @@ generalized residue theorem be discharged at simple poles by flatness of order o
   pinned to the canonical order.
 * `Contour.exists_laurent_data_of_meromorphicOrderAt_eq_neg_succ` — at a pole of given order,
   the top coefficient in the Laurent decomposition is the meromorphic trailing coefficient.
+* `Contour.exists_meromorphicOrderAt_eq_neg_succ_of_lt_zero` — a negative meromorphic order is
+  `-(m + 1)` for some `m : ℕ`.
 * `Contour.eventuallyEq_meromorphicAnalyticPartAt_add_meromorphicPolarPartAt` — `f` equals
   analytic part plus polar part near `s`.
 * `Contour.meromorphicPolarPartAt_eq_sum` — the polar part as its explicit Laurent sum.
@@ -323,6 +325,17 @@ theorem exists_laurent_data_of_meromorphicOrderAt_eq_neg_succ {f : ℂ → ℂ} 
     rw [congrArg (fun n : ℕ ↦ (z - s) ^ n) hm, pow_add]
     field_simp [pow_ne_zero _ (sub_ne_zero.mpr hzs)]
   exact hGs.symm.trans (tendsto_nhds_unique hlim' hlim)
+
+/-- A negative meromorphic order is `-(m + 1)` for some `m : ℕ`: this is the form of the pole
+order taken by `exists_laurent_data_of_meromorphicOrderAt_eq_neg_succ`. -/
+theorem exists_meromorphicOrderAt_eq_neg_succ_of_lt_zero {𝕜 E : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {s : 𝕜}
+    (h : meromorphicOrderAt f s < 0) :
+    ∃ m : ℕ, meromorphicOrderAt f s = (-(↑(m + 1) : ℤ) : WithTop ℤ) := by
+  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp h.ne_top
+  have hn' : n < 0 := WithTop.coe_lt_coe.mp (hn ▸ h)
+  obtain ⟨m, rfl⟩ := Int.eq_negSucc_of_lt_zero hn'
+  exact ⟨m, by simpa [Int.negSucc_eq] using hn.symm⟩
 
 /-- The `k`-th canonical Laurent coefficient of `f` at `s`. -/
 def meromorphicPolarCoeffAt {f : ℂ → ℂ} {s : ℂ} (hMero : MeromorphicAt f s)
