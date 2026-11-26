@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Prod
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LyapunovSchmidt
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.SchurComplement
 
 /-!
@@ -94,8 +94,7 @@ theorem isFredholm_coprod_iff_of_isInvertible_comp (h : (P ∘L L).IsInvertible)
       (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
         B).IsFredholm := by
   obtain ⟨A, hA⟩ := id h
-  have hr : Function.RightInverse (L ∘L (P ∘L L).inverse) P := fun u ↦ by
-    simpa using h.self_apply_inverse u
+  have hr := rightInverse_comp_inverse_of_isInvertible_comp h
   have hblock : (ContinuousLinearEquiv.equivOfRightInverse P _ hr).toContinuousLinearMap ∘L
       L.coprod B =
       ((A : E →L[K] Y).coprod (P ∘L B)).prod ((0 : E →L[K] P.ker).coprod

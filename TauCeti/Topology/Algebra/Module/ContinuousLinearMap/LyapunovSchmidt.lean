@@ -26,15 +26,16 @@ This file studies an operator `[L B] : E × G → F`, `(x, σ) ↦ L x + B σ`, 
 a second block `B : G →L[R] F`, in which `L` acts on fast variables `x` and `B` on slow variables
 `σ`. Solving for the fast variables reduces `[L B]` to the **reduced operator**
 `Π ∘ B : G →L[R] W`, the slow block followed by the projection onto the complement of the range
-of `L`. The reduction loses nothing:
+of `L`. The reduction loses nothing. The map `i : σ ↦ (-K (B σ), σ)` and the inclusion `j` of
+`ker P` satisfy `[L B] (i σ) = j (Π (B σ))`, and this commutative square has the regularity
+property of Tau Ceti's API `LinearMap.kerEquivOfRegularity`, `LinearMap.cokerEquivOfRegularity`:
 
 * `L x + B σ = 0` exactly when `x = -K (B σ)` and `Π (B σ) = 0`
-  (`ContinuousLinearMap.coprod_apply_eq_zero_iff_of_isInvertible_comp`), so the kernel of `[L B]`
-  is the kernel of the reduced operator, through `(x, σ) ↦ σ` with inverse
-  `σ ↦ (-K (B σ), σ)` (`ContinuousLinearMap.kerCoprodEquivOfIsInvertibleComp`);
+  (`ContinuousLinearMap.coprod_apply_eq_zero_iff_of_isInvertible_comp`), so `i` identifies the
+  kernel of the reduced operator with that of `[L B]`;
 * `y` lies in the range of `[L B]` exactly when `Π y` lies in the range of the reduced operator
-  (`ContinuousLinearMap.mem_range_coprod_iff_of_isInvertible_comp`), so `Π` identifies the
-  cokernels (`ContinuousLinearMap.quotientRangeCoprodEquivOfIsInvertibleComp`);
+  (`ContinuousLinearMap.mem_range_coprod_iff_of_isInvertible_comp`), and `j` identifies the
+  cokernels;
 * consequently `[L B]` and the reduced operator have the same index
   (`ContinuousLinearMap.index_coprod_of_isInvertible_comp`);
 * hence `[L B]` is injective, respectively surjective, exactly when the reduced operator is
@@ -74,7 +75,7 @@ variable {R E F G Y : Type*} [Ring R]
   [AddCommGroup Y] [TopologicalSpace Y] [Module R Y]
   {L : E →L[R] F} {P : F →L[R] Y}
 
-/-! ### Kernel and range of `[L B]` -/
+/-! ### Kernel, range, cokernel and index of `[L B]` -/
 
 variable {B : G →L[R] F}
 
@@ -89,46 +90,29 @@ theorem coprod_apply_eq_zero_iff_of_isInvertible_comp (h : (P ∘L L).IsInvertib
   rw [coprod_apply, apply_add_eq_zero_iff h, ← Submodule.coe_projectionOntoL_apply,
     ZeroMemClass.coe_eq_zero]
 
-/-- **The kernel of `[L B]` is that of the reduced operator.** If `P ∘ L` is invertible, the
-kernel of `(x, σ) ↦ L x + B σ` is identified with the kernel of `Π ∘ B`, for the projection `Π`
-onto `ker P` along the range of `L`, by `(x, σ) ↦ σ`; the inverse is `σ ↦ (-(P ∘ L)⁻¹ P (B σ), σ)`.
--/
-noncomputable def kerCoprodEquivOfIsInvertibleComp (h : (P ∘L L).IsInvertible) :
-    (L.coprod B).ker ≃L[R]
-      (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
-        B).ker :=
-  .ofContinuousLinearMap
-    ((snd R E G ∘L (L.coprod B).ker.subtypeL).codRestrict _ fun v ↦
-      LinearMap.mem_ker.2 ((coprod_apply_eq_zero_iff_of_isInvertible_comp h).1
-        (LinearMap.mem_ker.1 v.property)).2)
-    ((((leftInverseAlong L P ∘L (-B)).prod (.id R G)) ∘L
-        (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
-          B).ker.subtypeL).codRestrict _ fun σ ↦
-      LinearMap.mem_ker.2 ((coprod_apply_eq_zero_iff_of_isInvertible_comp h).2
-        ⟨map_neg (leftInverseAlong L P) _, LinearMap.mem_ker.1 σ.property⟩))
-    (ContinuousLinearMap.ext fun σ ↦ Subtype.ext (by
-      simp only [comp_apply, coe_codRestrict_apply, Submodule.subtypeL_apply, prod_apply,
-        coe_snd', id_apply]))
-    (ContinuousLinearMap.ext fun v ↦ Subtype.ext (by
-      simp only [comp_apply, coe_codRestrict_apply, Submodule.subtypeL_apply, prod_apply,
-        coe_snd', id_apply, neg_apply, map_neg]
-      exact Prod.ext ((coprod_apply_eq_zero_iff_of_isInvertible_comp h).1
-        (LinearMap.mem_ker.1 v.property)).1.symm rfl))
-
-theorem coe_kerCoprodEquivOfIsInvertibleComp_apply (h : (P ∘L L).IsInvertible)
-    (v : (L.coprod B).ker) :
-    (kerCoprodEquivOfIsInvertibleComp h v : G) = (v : E × G).2 := by
-  rw [kerCoprodEquivOfIsInvertibleComp, ContinuousLinearEquiv.coe_ofContinuousLinearMap,
-    coe_codRestrict_apply, comp_apply, Submodule.subtypeL_apply, coe_snd']
-
-theorem coe_kerCoprodEquivOfIsInvertibleComp_symm_apply (h : (P ∘L L).IsInvertible)
-    (σ : (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
-      B).ker) :
-    ((kerCoprodEquivOfIsInvertibleComp h).symm σ : E × G) =
-      (-leftInverseAlong L P (B σ), (σ : G)) := by
-  rw [kerCoprodEquivOfIsInvertibleComp, ContinuousLinearEquiv.symm_ofContinuousLinearMap,
-    ContinuousLinearEquiv.coe_ofContinuousLinearMap, coe_codRestrict_apply, comp_apply,
-    Submodule.subtypeL_apply, prod_apply, comp_apply, neg_apply, map_neg, id_apply]
+/-- The commutative square `[L B] (i σ) = j (Π (B σ))`, with `i σ = (-(P ∘ L)⁻¹ P (B σ), σ)` and
+`j` the inclusion of `ker P`, fed to Tau Ceti's regularity API (`LinearMap.kerEquivOfRegularity`,
+`LinearMap.cokerEquivOfRegularity`): it commutes, `i` is injective, it has the regularity
+property, and the ranges of `[L B]` and `j` span `F`. -/
+private theorem regularity_coprod_of_isInvertible_comp (h : (P ∘L L).IsInvertible) :
+    (∀ σ, (L.coprod B : E × G →ₗ[R] F)
+        ((leftInverseAlong L P ∘L (-B)).prod (.id R G) σ) =
+      P.ker.subtype ((P.ker.projectionOntoL L.range
+        (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L B : G →ₗ[R] P.ker) σ)) ∧
+    Injective ((leftInverseAlong L P ∘L (-B)).prod (.id R G) : G →ₗ[R] E × G) ∧
+    (∀ v w, (L.coprod B : E × G →ₗ[R] F) v = P.ker.subtype w →
+      ∃ σ, ((leftInverseAlong L P ∘L (-B)).prod (.id R G) : G →ₗ[R] E × G) σ = v) ∧
+    LinearMap.range (L.coprod B : E × G →ₗ[R] F) ⊔ LinearMap.range P.ker.subtype = ⊤ := by
+  refine ⟨fun σ ↦ ?_, fun σ τ hστ ↦ congr_arg Prod.snd hστ, fun ⟨x, σ⟩ w hw ↦ ⟨σ, ?_⟩, ?_⟩
+  · simpa using apply_neg_leftInverseAlong_add_eq_projectionL h (B σ)
+  · have hx := w.property
+    rw [← Submodule.subtype_apply, ← hw, coe_coe, coprod_apply] at hx
+    simp [(apply_add_mem_ker_iff (x := x) (S := B σ) h).1 hx]
+  · rw [Submodule.range_subtype, eq_top_iff,
+      ← (isTopCompl_range_ker_of_isInvertible_comp h).isCompl.sup_eq_top]
+    refine sup_le_sup_right ?_ _
+    rintro _ ⟨x, rfl⟩
+    exact ⟨(x, 0), by simp⟩
 
 /-- **The range of `[L B]`.** If `P ∘ L` is invertible, `y` lies in the range of
 `(x, σ) ↦ L x + B σ` exactly when its projection onto `ker P` along the range of `L` lies in the
@@ -138,68 +122,36 @@ theorem mem_range_coprod_iff_of_isInvertible_comp (h : (P ∘L L).IsInvertible) 
       P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm y ∈
         (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
           B).range := by
-  constructor
-  · rintro ⟨⟨x, σ⟩, rfl⟩
-    exact ⟨σ, by simp⟩
-  · rintro ⟨σ, hσ⟩
-    refine ⟨(leftInverseAlong L P (y - B σ), σ), ?_⟩
-    have hy : P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm
-        (y - B σ) = 0 := by
-      rw [map_sub, sub_eq_zero]
-      exact hσ.symm
-    rw [coe_coe, coprod_apply, apply_leftInverseAlong_eq_self_of_projectionOntoL_eq_zero h hy,
-      sub_add_cancel]
-
-/-- **The cokernel of `[L B]` is that of the reduced operator.** If `P ∘ L` is invertible, the
-projection `Π` onto `ker P` along the range of `L` induces a linear equivalence between the
-cokernel of `(x, σ) ↦ L x + B σ` and the cokernel of `Π ∘ B`. -/
-noncomputable def quotientRangeCoprodEquivOfIsInvertibleComp (h : (P ∘L L).IsInvertible) :
-    (F ⧸ (L.coprod B).range) ≃ₗ[R]
-      P.ker ⧸ (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
-        B).range :=
-  (Submodule.quotEquivOfEq (L.coprod B).range
-      (LinearMap.ker ((P.ker.projectionOntoL L.range
-          (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L B).range.mkQ ∘ₗ
-        (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm :
-          F →ₗ[R] P.ker))) (by
-      ext y
-      simp only [LinearMap.mem_ker, LinearMap.coe_comp, Function.comp_apply,
-        Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, coe_coe]
-      exact mem_range_coprod_iff_of_isInvertible_comp h)).trans
-    (LinearMap.quotKerEquivOfSurjective
-      ((P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
-        B).range.mkQ ∘ₗ
-          (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm :
-            F →ₗ[R] P.ker))
-      ((Submodule.mkQ_surjective _).comp (Submodule.projectionOntoL_surjective _)))
-
-theorem quotientRangeCoprodEquivOfIsInvertibleComp_mk (h : (P ∘L L).IsInvertible) (y : F) :
-    quotientRangeCoprodEquivOfIsInvertibleComp (B := B) h (Submodule.Quotient.mk y) =
-      Submodule.Quotient.mk
-        (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm y) := by
-  rw [quotientRangeCoprodEquivOfIsInvertibleComp, LinearEquiv.trans_apply,
-    Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk, LinearMap.comp_apply,
-    Submodule.mkQ_apply, coe_coe]
+  obtain ⟨hcomm, -, hreg, -⟩ := regularity_coprod_of_isInvertible_comp (B := B) h
+  have hL : L (leftInverseAlong L P y) ∈ (L.coprod B).range :=
+    ⟨(leftInverseAlong L P y, 0), by simp⟩
+  rw [← LinearMap.comap_range_eq_range_of_regularity hcomm P.ker.injective_subtype hreg,
+    Submodule.mem_comap, Submodule.subtype_apply]
+  conv_lhs => rw [← apply_leftInverseAlong_add_projectionOntoL h y]
+  exact Submodule.add_mem_iff_right _ hL
 
 /-- **The index of `[L B]` is that of the reduced operator.** If `P ∘ L` is invertible, the
 operator `(x, σ) ↦ L x + B σ` and the reduced operator `Π ∘ B` have isomorphic kernels and
-cokernels, so they have the same index. No finiteness is assumed: when a kernel or cokernel is
-infinite-dimensional, both indices take the same junk value. -/
+cokernels (`LinearMap.kerEquivOfRegularity`, `LinearMap.cokerEquivOfRegularity`), so they have
+the same index. No finiteness is assumed: when a kernel or cokernel is infinite-dimensional,
+both indices take the same junk value. -/
 theorem index_coprod_of_isInvertible_comp (h : (P ∘L L).IsInvertible) :
     (L.coprod B).index =
       (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
         B).index := by
-  rw [index_eq_finrank_sub, index_eq_finrank_sub,
-    (kerCoprodEquivOfIsInvertibleComp h).toLinearEquiv.finrank_eq,
-    (quotientRangeCoprodEquivOfIsInvertibleComp h).finrank_eq]
+  obtain ⟨hcomm, hi, hreg, hsup⟩ := regularity_coprod_of_isInvertible_comp (B := B) h
+  rw [index_def, index_def]
+  exact (LinearMap.index_eq_of_regularity hcomm hi P.ker.injective_subtype hreg hsup).symm
 
 /-- `[L B]` is injective exactly when the reduced operator `Π ∘ B` is. -/
 theorem injective_coprod_iff_of_isInvertible_comp (h : (P ∘L L).IsInvertible) :
     Injective (L.coprod B) ↔
       Injective (P.ker.projectionOntoL L.range
         (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L B) := by
+  obtain ⟨hcomm, hi, hreg, -⟩ := regularity_coprod_of_isInvertible_comp (B := B) h
   simp only [← coe_coe, ← LinearMap.ker_eq_bot, ← Submodule.subsingleton_iff_eq_bot]
-  exact (kerCoprodEquivOfIsInvertibleComp h).toEquiv.subsingleton_congr
+  exact (LinearMap.kerEquivOfRegularity hcomm hi P.ker.injective_subtype
+    hreg).toEquiv.subsingleton_congr.symm
 
 /-- `[L B]` is surjective exactly when the reduced operator `Π ∘ B` is. -/
 theorem surjective_coprod_iff_of_isInvertible_comp (h : (P ∘L L).IsInvertible) :
@@ -207,8 +159,7 @@ theorem surjective_coprod_iff_of_isInvertible_comp (h : (P ∘L L).IsInvertible)
       Surjective (P.ker.projectionOntoL L.range
         (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L B) := by
   refine ⟨fun hs w ↦ ?_, fun hs y ↦ ?_⟩
-  · obtain ⟨σ, hσ⟩ := (mem_range_coprod_iff_of_isInvertible_comp (B := B) h).1
-      (LinearMap.range_eq_top.2 hs ▸ Submodule.mem_top (x := (w : F)))
+  · obtain ⟨σ, hσ⟩ := (mem_range_coprod_iff_of_isInvertible_comp (B := B) h).1 (hs w)
     exact ⟨σ, hσ.trans (Submodule.projectionOntoL_apply_left _ w)⟩
   · exact (mem_range_coprod_iff_of_isInvertible_comp h).2 (hs _)
 

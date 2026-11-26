@@ -182,6 +182,11 @@ theorem leftInverseAlong_congr {Y' : Type*} [AddCommGroup Y'] [TopologicalSpace 
     (hker : P.ker = P'.ker) : leftInverseAlong L P = leftInverseAlong L P' :=
   eq_leftInverseAlong h' (leftInverseAlong_comp_self h) (by rw [← hker, ker_leftInverseAlong h])
 
+/-- If `P ∘ L` is invertible, `L ∘ (P ∘ L)⁻¹` is a right inverse of `P`. -/
+theorem rightInverse_comp_inverse_of_isInvertible_comp (h : (P ∘L L).IsInvertible) :
+    RightInverse (L ∘L (P ∘L L).inverse) P := fun y ↦ by
+  simpa using h.self_apply_inverse y
+
 /-- If `P ∘ L` is invertible, the kernel of `P` is a topological complement of the range of
 `L`. -/
 theorem isTopCompl_range_ker_of_isInvertible_comp (h : (P ∘L L).IsInvertible) :
@@ -189,9 +194,8 @@ theorem isTopCompl_range_ker_of_isInvertible_comp (h : (P ∘L L).IsInvertible) 
   have hrange : (L ∘L (P ∘L L).inverse).range = L.range := by
     simpa using LinearMap.range_comp_of_range_eq_top (L : E →ₗ[R] F)
       (LinearMap.range_eq_top.mpr h.inverse.surjective)
-  have hleft : LeftInverse P (L ∘L (P ∘L L).inverse) := fun y ↦ by
-    simpa using h.self_apply_inverse y
-  exact hrange ▸ isTopCompl_range_ker_of_leftInverse _ _ hleft
+  exact hrange ▸ isTopCompl_range_ker_of_leftInverse _ _
+    (rightInverse_comp_inverse_of_isInvertible_comp h)
 
 /-- As a linear map, the left inverse along `ker P` is Mathlib's left inverse
 `LinearMap.linearProjOfIsCompl` of the injection `L` along the complement `ker P` of its range.
