@@ -42,7 +42,8 @@ the `n`-th cyclotomic field it is the subgroup attached to the maximal real subf
 * `DirichletCharacter.two_mul_sum_even_apply`, `DirichletCharacter.sum_even_apply`: orthogonality
   for the even characters, which detect `a = ±1` rather than `a = 1`.
 * `DirichletCharacter.two_mul_card_even`, `DirichletCharacter.card_even_ne_one`: above level
-  two half of the `φ(n)` characters are even, and `φ(n) / 2 - 1` are even and nontrivial.
+  two half of the `φ(n)` characters are even, and `φ(n) / 2 - 1` are even and nontrivial, when
+  the values have enough roots of unity.
 * `DirichletCharacter.sum_even_ne_one_apply`: at an odd prime level `q`, the sum of `χ a` over
   the even nontrivial characters is `0` at `a = 0`, `(q - 1) / 2 - 1` at `a = ±1` and `-1`
   otherwise.
@@ -209,7 +210,8 @@ theorem sum_even_eq_totient_div_two_mul (hn : 2 < n) {f : DirichletCharacter R n
   rw [h, ← mul_assoc, h2]
 
 open scoped Classical in
-/-- Above level two exactly half of the `φ(n)` Dirichlet characters of level `n` are even. -/
+/-- Above level two exactly half of the `φ(n)` Dirichlet characters of level `n` are even, when
+the values have enough roots of unity. -/
 theorem two_mul_card_even (hn : 2 < n) :
     2 * #{χ : DirichletCharacter R n | χ.Even} = n.totient := by
   -- Count the pairs of even product parity at the levels `n` and `1`, whose only character is
@@ -229,8 +231,9 @@ theorem two_mul_card_even (hn : 2 < n) :
   rfl
 
 open scoped Classical in
-/-- There are `φ(n) / 2 - 1` even nontrivial Dirichlet characters of level `n`. At the levels
-`0`, `1` and `2` every unit is `±1`, so the trivial character is the only even one. -/
+/-- There are `φ(n) / 2 - 1` even nontrivial Dirichlet characters of level `n`, when the values
+have enough roots of unity. At the levels `0`, `1` and `2` every unit is `±1`, so the trivial
+character is the only even one. -/
 theorem card_even_ne_one :
     #{χ : DirichletCharacter R n | χ.Even ∧ χ ≠ 1} = n.totient / 2 - 1 := by
   rcases le_or_gt n 2 with hn | hn
