@@ -127,6 +127,16 @@ theorem twistSumCore_trivializationAt_apply_snd (x₀ x : ℙ 𝕜 (Fin (n + 1) 
       twistTransition (k l) ((twistSumCore k).indexAt x) ((twistSumCore k).indexAt x₀) x * v l :=
   (rfl)
 
+/-- In the trivializations at `x₀`, the coordinate `l` of a vector `v` of `⨁ₗ 𝒪(k l)` at `x` is
+the coordinate of its component `v l` in `𝒪(k l)`: both read the frame of the preferred chart at
+`x` in that of the preferred chart at `x₀`. -/
+theorem twistSumCore_trivializationAt_apply_snd_eq_twistCore (x₀ x : ℙ 𝕜 (Fin (n + 1) → 𝕜))
+    (v : κ → 𝕜) (l : κ) :
+    (trivializationAt (κ → 𝕜) (twistSumCore k).Fiber x₀ ⟨x, v⟩).2 l =
+      (trivializationAt 𝕜 (twistCore (k l)).Fiber x₀ ⟨x, v l⟩).2 := by
+  rw [twistSumCore_trivializationAt_apply_snd, twistCore_trivializationAt_apply_snd,
+    twistSumCore_indexAt, twistSumCore_indexAt, twistCore_indexAt, twistCore_indexAt]
+
 /-- **`⨁ₗ 𝒪(k l)` is an analytic vector bundle.** Its transition functions are analytic, so for
 `𝕜 = ℂ` it is a holomorphic vector bundle on `ℂℙⁿ`. -/
 instance isContMDiff_twistSumCore :
@@ -152,10 +162,7 @@ theorem contMDiff_twistSumCore_apply (l : κ) {r : ℕ∞ω} :
   -- In the frames of the preferred chart at `p.proj`, the projection is the coordinate `l`.
   refine (((contDiff_apply 𝕜 (fun _ : κ ↦ 𝕜) l).contMDiff.contMDiffAt).comp p
     hid.2).congr_of_eventuallyEq (Filter.Eventually.of_forall fun ⟨x, v⟩ ↦ ?_)
-  have h := twistSumCore_trivializationAt_apply_snd k p.proj x v l
-  rw [twistSumCore_indexAt, twistSumCore_indexAt, ← twistCore_indexAt (k l),
-    ← twistCore_indexAt (k l)] at h
-  exact (twistCore_trivializationAt_apply_snd (k l) p.proj x (v l)).trans h.symm
+  exact (twistSumCore_trivializationAt_apply_snd_eq_twistCore k p.proj x v l).symm
 
 /-- **The inclusion of a summand is analytic.** The map of total spaces from `𝒪(k l)` to
 `⨁ₗ 𝒪(k l)` placing a vector in the summand `l` is analytic, and so `C^r` for every `r`. -/
@@ -173,15 +180,14 @@ theorem contMDiff_twistSumCore_single [DecidableEq κ] (l : κ) {r : ℕ∞ω} :
   refine (((ContinuousLinearMap.single 𝕜 (fun _ : κ ↦ 𝕜) l).contMDiff.contMDiffAt).comp p
     hid.2).congr_of_eventuallyEq (Filter.Eventually.of_forall fun ⟨x, c⟩ ↦ ?_)
   ext l'
-  refine (twistSumCore_trivializationAt_apply_snd k p.proj x (Pi.single l c) l').trans ?_
+  refine (twistSumCore_trivializationAt_apply_snd_eq_twistCore k p.proj x (Pi.single l c) l').trans
+    ?_
   simp only [Function.comp_apply, ContinuousLinearMap.single_apply, Pi.single_apply]
+  -- The fibres of `twistCore` are `𝕜` only up to unfolding, so `Pi.single` is evaluated by `erw`.
   split_ifs with h
   · subst h
-    -- The fibre `(twistCore (k l')).Fiber x` is `𝕜` only up to unfolding, hence `erw`.
     erw [Pi.single_eq_same]
-    rw [twistSumCore_indexAt, twistSumCore_indexAt, ← twistCore_indexAt (k l'),
-      ← twistCore_indexAt (k l')]
-    exact (twistCore_trivializationAt_apply_snd (k l') p.proj x c).symm
-  · erw [Pi.single_eq_of_ne h, mul_zero]
+  · rw [twistCore_trivializationAt_apply_snd]
+    erw [Pi.single_eq_of_ne h, mul_zero]
 
 end Projectivization
