@@ -45,7 +45,8 @@ has norm exactly `1`.
 * `TauCeti.CalkinAlgebra.subsingleton_iff`, `TauCeti.CalkinAlgebra.nontrivial_iff`: the Calkin
   algebra is zero exactly for finite-dimensional `E`.
 * `TauCeti.CalkinAlgebra.norm_one`: for infinite-dimensional complete `E`, `‖mk 1‖ = 1`.
-* `TauCeti.CalkinAlgebra.mk_adjoint`: on a Hilbert space, `mk T† = star (mk T)`.
+* `TauCeti.CalkinAlgebra.mk_star`, `TauCeti.CalkinAlgebra.mk_adjoint`: on a Hilbert space,
+  `mk T† = star (mk T)`.
 
 ## References
 
@@ -127,6 +128,11 @@ operator. -/
 theorem mk_eq_mk_iff {S T : E →L[𝕜] E} : mk 𝕜 E S = mk 𝕜 E T ↔ IsCompactOperator (S - T) := by
   rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff]
 
+/-- The quotient map sends composition of operators to multiplication in the Calkin algebra. -/
+@[simp]
+theorem mk_comp (S T : E →L[𝕜] E) : mk 𝕜 E (S.comp T) = mk 𝕜 E S * mk 𝕜 E T :=
+  map_mul (mk 𝕜 E) S T
+
 /-! ### The essential norm -/
 
 /-- The quotient map to the Calkin algebra does not increase norms. -/
@@ -207,12 +213,17 @@ section Hilbert
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
+/-- On a complex Hilbert space, the quotient map to the Calkin algebra commutes with `star`. -/
+@[simp]
+theorem mk_star (T : H →L[ℂ] H) : mk ℂ H (star T) = star (mk ℂ H T) := by
+  rw [mk_apply, mk_apply, TwoSidedIdeal.Quotient.mk_star]
+
 /-- On a complex Hilbert space, the image of the adjoint in the Calkin algebra is the star of the
 image. -/
 @[simp]
 theorem mk_adjoint (T : H →L[ℂ] H) :
-    mk ℂ H (ContinuousLinearMap.adjoint T) = star (mk ℂ H T) := by
-  rw [← ContinuousLinearMap.star_eq_adjoint, mk_apply, mk_apply, TwoSidedIdeal.Quotient.mk_star]
+    mk ℂ H (ContinuousLinearMap.adjoint T) = star (mk ℂ H T) :=
+  mk_star T
 
 noncomputable example : CStarAlgebra (CalkinAlgebra ℂ H) := inferInstance
 

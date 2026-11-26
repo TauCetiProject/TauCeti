@@ -25,8 +25,8 @@ satisfies `S† S = 1` exactly, and `S S† = 1` holds modulo compact operators.
 ## Main results
 
 * `TauCeti.CalkinAlgebra.isUnit_mk_iff`: Atkinson's theorem in the Calkin algebra.
-* `TauCeti.CalkinAlgebra.not_isFredholm_of_isCompactOperator`: a compact operator on an
-  infinite-dimensional Banach space is not Fredholm.
+* `IsCompactOperator.not_isFredholm`: a compact operator on an infinite-dimensional Banach space
+  is not Fredholm.
 * `TauCeti.CalkinAlgebra.mk_mem_unitary_of_isometry`: the Calkin class of a Fredholm isometry of
   a complex Hilbert space is unitary.
 
@@ -48,25 +48,20 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField �
 
 /-- **Atkinson's theorem** in the Calkin algebra: an operator on a Banach space is Fredholm if and
 only if its image in the Calkin algebra is invertible. -/
+@[simp]
 theorem isUnit_mk_iff {T : E →L[𝕜] E} : IsUnit (mk 𝕜 E T) ↔ T.IsFredholm := by
   rw [isFredholm_iff_exists_isCompactOperator_comp_sub_one, isUnit_iff_exists]
   constructor
   · rintro ⟨x, hTS, hST⟩
     obtain ⟨S, rfl⟩ := mk_surjective x
-    refine ⟨S, mk_eq_mk_iff.mp ?_, mk_eq_mk_iff.mp ?_⟩
-    · rw [← ContinuousLinearMap.mul_def, map_mul, map_one, hST]
-    · rw [← ContinuousLinearMap.mul_def, map_mul, map_one, hTS]
+    exact ⟨S, mk_eq_mk_iff.mp (by simp [hST]), mk_eq_mk_iff.mp (by simp [hTS])⟩
   · rintro ⟨S, hST, hTS⟩
-    refine ⟨mk 𝕜 E S, ?_, ?_⟩
-    · rw [← map_mul, ContinuousLinearMap.mul_def, ← map_one (mk 𝕜 E), mk_eq_mk_iff]
-      exact hTS
-    · rw [← map_mul, ContinuousLinearMap.mul_def, ← map_one (mk 𝕜 E), mk_eq_mk_iff]
-      exact hST
+    refine ⟨mk 𝕜 E S, ?_, ?_⟩ <;> rw [← mk_comp, ← map_one (mk 𝕜 E), mk_eq_mk_iff] <;> assumption
 
 /-- A compact operator on an infinite-dimensional Banach space is not Fredholm: its class in the
 nontrivial Calkin algebra is `0`, which is not a unit. -/
-theorem not_isFredholm_of_isCompactOperator (hE : ¬ FiniteDimensional 𝕜 E) {K : E →L[𝕜] E}
-    (hK : IsCompactOperator K) : ¬ K.IsFredholm := by
+theorem _root_.IsCompactOperator.not_isFredholm {K : E →L[𝕜] E} (hK : IsCompactOperator K)
+    (hE : ¬ FiniteDimensional 𝕜 E) : ¬ K.IsFredholm := by
   have := nontrivial hE
   rw [← isUnit_mk_iff, mk_eq_zero_iff.mpr hK]
   exact not_isUnit_zero
@@ -81,8 +76,8 @@ rank. -/
 theorem mk_mem_unitary_of_isometry {S : H →L[ℂ] H} (hS : S.IsFredholm) (hi : Isometry S) :
     mk ℂ H S ∈ unitary (CalkinAlgebra ℂ H) := by
   refine (isUnit_mk_iff.mpr hS).mem_unitary_of_star_mul_self ?_
-  rw [← mk_adjoint, ← map_mul, ContinuousLinearMap.mul_def,
-    (ContinuousLinearMap.isometry_iff_adjoint_comp_self S).mp hi, map_one]
+  rw [← mk_adjoint, ← mk_comp, (ContinuousLinearMap.isometry_iff_adjoint_comp_self S).mp hi,
+    map_one]
 
 end Hilbert
 
