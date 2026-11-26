@@ -57,6 +57,8 @@ Perturbing one entry `a s` by a series `e` of order at least `n ≥ 1` changes `
 `e` by a series `q` scales it by the constant coefficient of `q`
 (`MvPowerSeries.coeff_mul_eq_coeff_mul_constantCoeff_of_le_order`).
 
+A series with order at least some `n ≠ 0` has zero constant coefficient
+(`MvPowerSeries.constantCoeff_eq_zero_of_le_order`).
 A common lower bound on the orders of two series bounds the orders of their sum and difference
 (`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`), and one on finitely many series
 bounds the order of their sum (`MvPowerSeries.le_order_sum`). A sequence whose `n`-th and
@@ -91,6 +93,11 @@ less than `n` vanish. -/
 theorem le_order_iff [Semiring R] {f : MvPowerSeries σ R} :
     n ≤ f.order ↔ ∀ d : σ →₀ ℕ, (d.degree : ℕ∞) < n → coeff d f = 0 :=
   ⟨fun h _ hd ↦ coeff_of_lt_order (lt_of_lt_of_le hd h), le_order⟩
+
+/-- A series of order at least some `n ≠ 0` has zero constant coefficient. -/
+theorem constantCoeff_eq_zero_of_le_order [Semiring R] {f : MvPowerSeries σ R} (hn : n ≠ 0)
+    (h : n ≤ f.order) : constantCoeff f = 0 :=
+  one_le_order_iff_constCoeff_eq_zero.mp (h.trans' (Order.one_le_iff_ne_zero.mpr hn))
 
 /-- A lower bound on the orders of two series bounds the order of their sum. -/
 theorem le_order_add [Semiring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)

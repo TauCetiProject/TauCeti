@@ -18,6 +18,9 @@ maximal ideal (`TauCeti.IsLocalRing.mem_maximalIdeal_of_not_dvd`), and every irr
 lies in `IsLocalRing.maximalIdeal R` (`Irreducible.mem_maximalIdeal`) and is never a product of two
 elements of `IsLocalRing.maximalIdeal R` (`Irreducible.ne_mul_of_mem_maximalIdeal`).
 
+In a commutative local ring, `1 - xⁿ` is a unit for every `x` in the maximal ideal and every
+`n ≠ 0` (`TauCeti.IsLocalRing.isUnit_one_sub_pow_of_mem_maximalIdeal`).
+
 In a commutative local ring, a minimal nonzero ideal is annihilated by the maximal ideal
 (`IsAtom.maximalIdeal_mul_eq_bot`).
 
@@ -35,6 +38,14 @@ ideal. -/
 theorem mem_maximalIdeal_of_not_dvd {R : Type*} [CommSemiring R] [IsLocalRing R] {f a : R}
     (hfa : ¬ f ∣ a) : f ∈ _root_.IsLocalRing.maximalIdeal R :=
   of_not_not fun h ↦ hfa (_root_.IsLocalRing.notMem_maximalIdeal.mp h).dvd
+
+/-- In a commutative local ring, `1 - xⁿ` is a unit for every `x` in the maximal ideal and every
+`n ≠ 0`. -/
+theorem isUnit_one_sub_pow_of_mem_maximalIdeal {R : Type*} [CommRing R] [IsLocalRing R] {x : R}
+    (hx : x ∈ _root_.IsLocalRing.maximalIdeal R) {n : ℕ} (hn : n ≠ 0) : IsUnit (1 - x ^ n) :=
+  _root_.IsLocalRing.isUnit_one_sub_self_of_mem_nonunits _
+    ((_root_.IsLocalRing.mem_maximalIdeal _).mp
+      (Ideal.pow_mem_of_mem _ hx _ (Nat.pos_of_ne_zero hn)))
 
 end TauCeti.IsLocalRing
 
