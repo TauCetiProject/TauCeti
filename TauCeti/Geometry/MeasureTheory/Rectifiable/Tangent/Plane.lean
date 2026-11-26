@@ -35,7 +35,7 @@ modifications.
 
 For inverse-Lipschitz parametrizations `f : U → V` differentiable within `s` at a Lebesgue
 density-one point `x₀ ∈ s` (without assuming `f` is Lipschitz on `s` or separately assuming
-`Injective A`, since `HasFDerivWithinAt.injective_of_tendsto_inter_closedBall_div` deduces
+`Injective A`, since `HasFDerivWithinAt.injective_of_tendsto_inter_closedBall_div_zero` deduces
 injectivity automatically), any closed subspace with cone-density zero contains `range A`
 (`HasFDerivWithinAt.range_le_of_densityZeroOutsideCones`), identifying `approximateTangentPlane`
 on both general patches and differentiable normal graphs. The canonical plane and projection
@@ -70,8 +70,7 @@ theorem range_le_of_densityZeroOutsideCones (hf : HasFDerivWithinAt f A s x₀)
     (hdens : Tendsto (fun r => volume (s ∩ cb x₀ r) / volume (cb (0 : U) r)) 𝓝₊ (𝓝 1))
     (hQ : DensityZeroOutsideCones (finrank ℝ U) E (f x₀) Q) :
     LinearMap.range A.toLinearMap ≤ Q :=
-  hf.range_le_of_tendsto_euclideanHausdorffMeasure_outside_cone_div hi
-    (hdens.congr fun _ => by rw [addHaar_closedBall_center volume x₀]) hsub
+  hf.range_le_of_tendsto_euclideanHausdorffMeasure_outside_cone_div hi hdens hsub
     Q.isClosed_of_finiteDimensional (densityZeroOutsideCones_iff.mp hQ)
 
 /-- Patchwise uniqueness `Q = range A` when `A` is injective and `finrank ℝ Q ≤ finrank ℝ U`. -/
@@ -147,23 +146,17 @@ theorem of_tendsto_diff {x : V} {P : Submodule ℝ V} (h : IsApproximateTangentP
   finrank_eq := h.finrank_eq
   limsup_pos := h.limsup_pos.trans_le <| (limsup_measure_inter_div_le_of_tendsto_diff h12).trans
     (limsup_le_limsup (Eventually.of_forall fun _ => by gcongr; exact inter_subset_right))
-  densityZeroOutsideCones := densityZeroOutsideCones_iff.mpr fun ε hε => by
-    classical
-    exact tendsto_measure_div_of_subset_union
+  densityZeroOutsideCones := densityZeroOutsideCones_iff.mpr fun ε hε =>
+    tendsto_measure_sep_inter_div_of_sdiff
       (densityZeroOutsideCones_iff.mp h.densityZeroOutsideCones ε hε) h21
-      fun _ z ⟨⟨hzE₂, hzr⟩, hzc⟩ =>
-        if hzE₁ : z ∈ E₁ then Or.inl ⟨⟨hzE₁, hzr⟩, hzc⟩ else Or.inr ⟨⟨hzE₂, hzE₁⟩, hzr⟩
 
 omit [FiniteDimensional ℝ V] in
 /-- Approximate tangency depends on `E` only up to `k`-density-zero symmetric differences at `x`. -/
 theorem congr_of_tendsto_symmDiff_div {x : V} {P : Submodule ℝ V}
     (hsym : Tendsto (fun r => μHE[k] ((E₁ ∆ E₂) ∩ cb x r) / ω[k](r)) 𝓝₊ (𝓝 0)) :
     IsApproximateTangentPlane k E₁ x P ↔ IsApproximateTangentPlane k E₂ x P :=
-  have hle {A : Set V} (hA : A ⊆ E₁ ∆ E₂) :
-      Tendsto (fun r => μHE[k] (A ∩ cb x r) / ω[k](r)) 𝓝₊ (𝓝 0) :=
-    tendsto_measure_div_of_subset hsym fun _ => inter_subset_inter_left _ hA
-  ⟨fun h => h.of_tendsto_diff (hle subset_union_left) (hle subset_union_right),
-    fun h => h.of_tendsto_diff (hle subset_union_right) (hle subset_union_left)⟩
+  let ⟨h12, h21⟩ := tendsto_measure_symmDiff_inter_div_iff.mp hsym
+  ⟨fun h => h.of_tendsto_diff h12 h21, fun h => h.of_tendsto_diff h21 h12⟩
 
 omit [FiniteDimensional ℝ V] in
 /-- Modifying `E` by a `μHE[k]`-null set preserves approximate tangent planes at `x`. -/
@@ -347,8 +340,7 @@ include hsub hdens hdiff
 without separately assuming `Injective A`. -/
 theorem isApproximateTangentPlane_iff :
     IsApproximateTangentPlane (finrank ℝ U) E (f x₀) Q ↔ Q = LinearMap.range A.toLinearMap := by
-  have hinj : Injective A := hf.injective_of_tendsto_inter_closedBall_div volume hx₀ hi
-    (hdens.congr fun _ => by rw [addHaar_closedBall_center volume x₀])
+  have hinj : Injective A := hf.injective_of_tendsto_inter_closedBall_div_zero volume hx₀ hi hdens
   exact ⟨fun hQ => hf.eq_range_of_densityZeroOutsideCones hinj hi hsub hdens hQ.finrank_eq.le
       hQ.densityZeroOutsideCones,
     fun h => h ▸ ⟨LinearMap.finrank_range_of_inj hinj,

@@ -44,11 +44,14 @@ theorem posTangentConeAt_eq_univ_of_tendsto_inter_closedBall_div (μ : Measure E
   -- Rescaled closed balls around `v` meet `s - {x}` at arbitrarily small positive scales `r n`.
   have hex (n : ℕ) : ∃ r : ℝ, 0 < r ∧ r < ((n : ℝ) + 1)⁻¹ ∧
       ∃ a ∈ closedBall v ((n : ℝ) + 1)⁻¹, x + r • a ∈ s := by
-    obtain ⟨r, ⟨y, hys, x', hx', _, ⟨a, ha, rfl⟩, rfl⟩, hr0, hrε⟩ :=
+    obtain ⟨r, ⟨y, hys, hyB⟩, hr0, hrε⟩ :=
       ((eventually_nonempty_inter_smul_of_density_one μ s x hs (closedBall v ((n : ℝ) + 1)⁻¹)
         measurableSet_closedBall (measure_closedBall_pos μ v (by positivity)).ne').and
         (Ioo_mem_nhdsGT (by positivity : 0 < ((n : ℝ) + 1)⁻¹))).exists
-    exact ⟨r, hr0, hrε, a, ha, mem_singleton_iff.1 hx' ▸ hys⟩
+    rw [singleton_add, mem_image] at hyB
+    obtain ⟨_, hz, rfl⟩ := hyB
+    obtain ⟨a, ha, rfl⟩ := mem_smul_set.1 hz
+    exact ⟨r, hr0, hrε, a, ha, hys⟩
   choose r hr0 hrε a ha hxs using hex
   have hinv : Tendsto (fun n : ℕ => ((n : ℝ) + 1)⁻¹) atTop (𝓝 0) := by
     simpa only [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
@@ -104,5 +107,13 @@ theorem injective_of_tendsto_inter_closedBall_div (μ : Measure U) [μ.IsAddHaar
     (hs : Tendsto (fun r => μ (s ∩ closedBall x₀ r) / μ (closedBall x₀ r)) (𝓝[>] 0) (𝓝 1)) :
     Injective A :=
   (hf.antilipschitzWith_of_tendsto_inter_closedBall_div μ hx₀ hi hs).injective
+
+/-- Origin-centered Haar-ball variant of `injective_of_tendsto_inter_closedBall_div`. -/
+theorem injective_of_tendsto_inter_closedBall_div_zero (μ : Measure U) [μ.IsAddHaarMeasure]
+    (hf : HasFDerivWithinAt f A s x₀) (hx₀ : x₀ ∈ s) (hi : AntilipschitzWith L (s.domRestrict f))
+    (hs : Tendsto (fun r => μ (s ∩ closedBall x₀ r) / μ (closedBall 0 r)) (𝓝[>] 0) (𝓝 1)) :
+    Injective A :=
+  hf.injective_of_tendsto_inter_closedBall_div μ hx₀ hi
+    (hs.congr fun _ => by rw [μ.addHaar_closedBall_center x₀])
 
 end HasFDerivWithinAt

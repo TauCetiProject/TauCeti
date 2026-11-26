@@ -224,11 +224,6 @@ theorem ae_norm_tangentialFDeriv_le [NormedSpace ℝ W] :
 /-- Almost-everywhere tangential differentiability for `LipschitzOnWith`. -/
 theorem ae_hasTangentialFDerivAt [NormedSpace ℝ W] [FiniteDimensional ℝ W] : ∀ᵐ x ∂μHE[k], x ∈ E →
     HasTangentialFDerivAt k E g (D x) x := hg.locallyLipschitzOn.ae_hasTangentialFDerivAt hE hEm
-/-- Tangential Rademacher theorem with sharp norm bound `≤ K` for `LipschitzOnWith`. -/
-theorem ae_hasTangentialFDerivAt_and_norm_le [NormedSpace ℝ W] [FiniteDimensional ℝ W] :
-    ∀ᵐ x ∂μHE[k], x ∈ E → HasTangentialFDerivAt k E g (D x) x ∧ ‖D x‖ ≤ K := by
-  filter_upwards [hg.ae_hasTangentialFDerivAt hE hEm,
-    hg.ae_norm_tangentialFDeriv_le hE hEm] with x h1 h2 hxE using ⟨h1 hxE, h2 hxE⟩
 /-- Measurability of `tangentialFDeriv` for `LipschitzOnWith`. -/
 theorem aemeasurable_tangentialFDeriv [NormedSpace ℝ W] [FiniteDimensional ℝ W] :
     AEMeasurable (D) (μHE[k].restrict E) :=

@@ -13,6 +13,8 @@ import Mathlib.Topology.Instances.ENNReal.Lemmas
 
 Comparison lemmas for vanishing quotients `μ (S r) / d r → 0` along a filter `l`
 (`TauCeti.tendsto_measure_div_of_subset`, `TauCeti.tendsto_measure_div_of_subset_union`,
+`TauCeti.tendsto_measure_sep_inter_div_of_sdiff`,
+`TauCeti.tendsto_measure_symmDiff_inter_div_iff`,
 `TauCeti.tendsto_measure_inter_div_of_measure_eq_zero`,
 `TauCeti.tendsto_measure_inter_div_of_eventually_notMem`, and
 `TauCeti.tendsto_measure_symmDiff_inter_div_of_eventuallyEq`), stated for `OuterMeasureClass`.
@@ -46,6 +48,31 @@ theorem tendsto_measure_div_of_subset_union {S T₁ T₂ : α → Set X} {d : α
     (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall fun r => ?_)
   rw [← ENNReal.add_div]
   exact ENNReal.div_le_div_right ((measure_mono (hsub r)).trans (measure_union_le _ _)) _
+
+/-- Replacing `E₁` by `E₂` in `{z ∈ E₁ ∩ t r | p z}` preserves vanishing density quotients when
+`E₂ \ E₁` has vanishing density quotients against `t`. -/
+theorem tendsto_measure_sep_inter_div_of_sdiff {E₁ E₂ : Set X} {t : α → Set X} {p : X → Prop}
+    {d : α → ℝ≥0∞} {l : Filter α}
+    (h₁ : Tendsto (fun r => μ {z ∈ E₁ ∩ t r | p z} / d r) l (𝓝 0))
+    (hdiff : Tendsto (fun r => μ ((E₂ \ E₁) ∩ t r) / d r) l (𝓝 0)) :
+    Tendsto (fun r => μ {z ∈ E₂ ∩ t r | p z} / d r) l (𝓝 0) := by
+  classical
+  exact tendsto_measure_div_of_subset_union h₁ hdiff fun _ z ⟨⟨hzE₂, hzt⟩, hzp⟩ =>
+    if hzE₁ : z ∈ E₁ then Or.inl ⟨⟨hzE₁, hzt⟩, hzp⟩ else Or.inr ⟨⟨hzE₂, hzE₁⟩, hzt⟩
+
+/-- Symmetric-difference density quotients vanish if and only if both one-sided set-difference
+density quotients vanish. -/
+theorem tendsto_measure_symmDiff_inter_div_iff {E₁ E₂ : Set X} {t : α → Set X}
+    {d : α → ℝ≥0∞} {l : Filter α} :
+    Tendsto (fun r => μ ((E₁ ∆ E₂) ∩ t r) / d r) l (𝓝 0) ↔
+      Tendsto (fun r => μ ((E₁ \ E₂) ∩ t r) / d r) l (𝓝 0) ∧
+        Tendsto (fun r => μ ((E₂ \ E₁) ∩ t r) / d r) l (𝓝 0) :=
+  ⟨fun hsym =>
+    ⟨tendsto_measure_div_of_subset hsym fun _ => inter_subset_inter_left _ subset_union_left,
+      tendsto_measure_div_of_subset hsym fun _ => inter_subset_inter_left _ subset_union_right⟩,
+    fun ⟨h12, h21⟩ =>
+      tendsto_measure_div_of_subset_union h12 h21 fun _ _ ⟨hzsym, hzt⟩ =>
+        hzsym.elim (fun h1 => Or.inl ⟨h1, hzt⟩) (fun h2 => Or.inr ⟨h2, hzt⟩)⟩
 
 /-- Any subset `T` of a `μ`-null set `S` has vanishing density quotients against arbitrary test
 sets. -/

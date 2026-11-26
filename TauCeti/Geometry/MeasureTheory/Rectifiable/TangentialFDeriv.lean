@@ -166,29 +166,20 @@ theorem unique (h₁ : HasTangentialFDerivAt k E g L₁ x) (h₂ : HasTangential
 theorem of_tendsto_diff (h : HasTangentialFDerivAt k E₁ g L x)
     (h12 : Tendsto (fun r => μHE[k] ((E₁ \ E₂) ∩ cb x r) / ω[k](r)) 𝓝₊ (𝓝 0))
     (h21 : Tendsto (fun r => μHE[k] ((E₂ \ E₁) ∩ cb x r) / ω[k](r)) 𝓝₊ (𝓝 0)) :
-    HasTangentialFDerivAt k E₂ g L x := by
-  have hsym : Tendsto (fun r => μHE[k] ((E₁ ∆ E₂) ∩ cb x r) / ω[k](r)) 𝓝₊ (𝓝 0) :=
-    tendsto_measure_div_of_subset_union h12 h21 fun _ z ⟨hzsym, hzr⟩ =>
-      hzsym.elim (fun h1 => Or.inl ⟨h1, hzr⟩) (fun h2 => Or.inr ⟨h2, hzr⟩)
-  refine ⟨(existsUnique_congr fun P =>
+    HasTangentialFDerivAt k E₂ g L x :=
+  have hsym := tendsto_measure_symmDiff_inter_div_iff.mpr ⟨h12, h21⟩
+  ⟨(existsUnique_congr fun P =>
       IsApproximateTangentPlane.congr_of_tendsto_symmDiff_div (P := P) hsym).mp
         h.existsUnique_plane,
     approximateTangentProjection_congr_of_tendsto_symmDiff_div (k := k) hsym ▸ h.comp_projection,
-    fun ε hε => ?_⟩
-  classical
-  exact tendsto_measure_div_of_subset_union (h.tendsto_outside_error ε hε) h21
-    fun _ z ⟨⟨hzE₂, hzr⟩, hzerr⟩ =>
-      if hzE₁ : z ∈ E₁ then Or.inl ⟨⟨hzE₁, hzr⟩, hzerr⟩ else Or.inr ⟨⟨hzE₂, hzE₁⟩, hzr⟩
+    fun ε hε => tendsto_measure_sep_inter_div_of_sdiff (h.tendsto_outside_error ε hε) h21⟩
 
 /-- `HasTangentialFDerivAt` depends on `E` only up to `k`-density-zero symmetric differences. -/
 theorem congr_of_tendsto_symmDiff_div
     (hsym : Tendsto (fun r => μHE[k] ((E₁ ∆ E₂) ∩ cb x r) / ω[k](r)) 𝓝₊ (𝓝 0)) :
     HasTangentialFDerivAt k E₁ g L x ↔ HasTangentialFDerivAt k E₂ g L x :=
-  have hle {A : Set V} (hA : A ⊆ E₁ ∆ E₂) :
-      Tendsto (fun r => μHE[k] (A ∩ cb x r) / ω[k](r)) 𝓝₊ (𝓝 0) :=
-    tendsto_measure_div_of_subset hsym fun _ => inter_subset_inter_left _ hA
-  ⟨fun h => h.of_tendsto_diff (hle subset_union_left) (hle subset_union_right),
-    fun h => h.of_tendsto_diff (hle subset_union_right) (hle subset_union_left)⟩
+  let ⟨h12, h21⟩ := tendsto_measure_symmDiff_inter_div_iff.mp hsym
+  ⟨fun h => h.of_tendsto_diff h12 h21, fun h => h.of_tendsto_diff h21 h12⟩
 
 /-- Null-set invariance of `HasTangentialFDerivAt` in the domain set `E`. -/
 theorem congr_ae_set (h : E₁ =ᵐ[μHE[k]] E₂) :
@@ -609,8 +600,7 @@ theorem hasFDerivWithinAt_image_gramLeftInverse [CompleteSpace V]
     (hdens : Tendsto (fun r => volume (s ∩ cb u₀ r) / volume (cb (0 : U) r)) 𝓝₊ (𝓝 1))
     (hgf : HasFDerivWithinAt (g ∘ f) B s u₀) :
     HasFDerivWithinAt g (B ∘L A.gramLeftInverse) (f '' s) (f u₀) := by
-  have hinj : Injective A := hf.injective_of_tendsto_inter_closedBall_div volume hu₀ hi
-    (hdens.congr fun _ => by rw [addHaar_closedBall_center volume u₀])
+  have hinj : Injective A := hf.injective_of_tendsto_inter_closedBall_div_zero volume hu₀ hi hdens
   have hU := (ContinuousLinearMap.isUnit_adjoint_comp_self_iff A).2 hinj
   exact hf.of_comp_antilipschitzWith hu₀ hi hgf fun u => by
     rw [ContinuousLinearMap.comp_apply, A.gramLeftInverse_apply_apply hU]
@@ -630,8 +620,7 @@ variable [NormedAddCommGroup W] [NormedSpace ℝ W] {g : V → W} {B : U →L[�
 separately assuming `Injective A`. -/
 theorem hasTangentialFDerivAt_of_comp (hgf : HasFDerivWithinAt (g ∘ f) B s u₀) :
     HasTangentialFDerivAt (finrank ℝ U) E g (B ∘L A.gramLeftInverse) (f u₀) := by
-  have hinj : Injective A := hf.injective_of_tendsto_inter_closedBall_div volume hu₀ hi
-    (hdens.congr fun _ => by rw [addHaar_closedBall_center volume u₀])
+  have hinj : Injective A := hf.injective_of_tendsto_inter_closedBall_div_zero volume hu₀ hi hdens
   have hU := (ContinuousLinearMap.isUnit_adjoint_comp_self_iff A).2 hinj
   have himg_iff (Q) := hf.isApproximateTangentPlane_image_iff hi hu₀ hdens (Q := Q)
   have hproj :
@@ -649,8 +638,7 @@ theorem hasTangentialFDerivAt_of_comp (hgf : HasFDerivWithinAt (g ∘ f) B s u�
 /-- Composing `tangentialFDeriv` at `f u₀` with `A` recovers the parameter derivative `B`. -/
 theorem tangentialFDeriv_comp_eq (hgf : HasFDerivWithinAt (g ∘ f) B s u₀) :
     TFD[(finrank ℝ U), E, g, (f u₀)] ∘L A = B := by
-  have hinj : Injective A := hf.injective_of_tendsto_inter_closedBall_div volume hu₀ hi
-    (hdens.congr fun _ => by rw [addHaar_closedBall_center volume u₀])
+  have hinj : Injective A := hf.injective_of_tendsto_inter_closedBall_div_zero volume hu₀ hi hdens
   rw [(hf.hasTangentialFDerivAt_of_comp hi hu₀ hsub hdens hdiff hgf).tangentialFDeriv_eq,
     ContinuousLinearMap.comp_assoc,
     A.gramLeftInverse_comp_self ((ContinuousLinearMap.isUnit_adjoint_comp_self_iff A).2 hinj),
@@ -665,8 +653,9 @@ private theorem norm_apply_le_of_hasTangentialFDerivAt {L : V →L[ℝ] W}
   set M : ℝ := (K : ℝ) + ‖L‖ + 1
   have hM : 0 < M := by positivity
   set η : ℝ := δ / (3 * M)
-  have hlow := hf.liminf_euclideanHausdorffMeasure_directional_closedBall_pos hi
-    (hdens.congr fun _ => by rw [addHaar_closedBall_center volume u₀]) hsub
+  -- Pick `z ∈ E ∩ cb (f u₀) r` in the directional cone around `A u` outside the tangential-error
+  -- exceptional set (positive lower density vs. zero density).
+  have hlow := hf.liminf_euclideanHausdorffMeasure_directional_closedBall_pos hi hdens hsub
     (by linarith : ‖A u‖ < 1) (show 0 < η by positivity)
   have herr := (hL.tendsto_outside_error (δ / 3) (by positivity)).liminf_eq
   obtain ⟨r, hr, z, ⟨hzE, hzr⟩, hzd, hzerr⟩ : ∃ r > (0 : ℝ), ∃ z ∈ E ∩ cb (f u₀) r,
@@ -677,6 +666,7 @@ private theorem norm_apply_le_of_hasTangentialFDerivAt {L : V →L[ℝ] W}
     filter_upwards [self_mem_nhdsWithin] with r (_ : 0 < r)
     refine ENNReal.div_le_div_right (measure_mono ?_) _; rintro z ⟨hzE, hzd⟩
     exact ⟨hzE, not_le.1 fun hle => hall ⟨r, ‹_›, z, hzE, hzd, hle⟩⟩
+  -- Bound `r * ‖L (A u)‖` via the Lipschitz increment, tangential remainder, and directional step.
   have hdist_le : dist z (f u₀) ≤ r * (1 / 2 + η) := by
     rw [dist_eq_norm, show z - f u₀ = (z - f u₀ - r • A u) + r • A u by abel]
     refine (norm_add_le _ _).trans ?_
@@ -694,6 +684,7 @@ private theorem norm_apply_le_of_hasTangentialFDerivAt {L : V →L[ℝ] W}
       ‖L (z - f u₀ - r • A u)‖ :=
     calc r * ‖L (A u)‖ = ‖r • L (A u)‖ := by rw [norm_smul, Real.norm_eq_abs, abs_of_pos hr]
       _ ≤ _ := by rw [heq]; exact (norm_sub_le _ _).trans (by gcongr; exact norm_sub_le _ _)
+  -- Cancel `r > 0` after absorbing the `η` and remainder terms into `δ`.
   have hKL_η : ((K : ℝ) + ‖L‖) * η < δ / 3 :=
     (mul_lt_mul_of_pos_right (show (K : ℝ) + ‖L‖ < M by simp [M]) (by positivity)).trans_eq
       (by simp only [η]; field_simp)
@@ -714,20 +705,21 @@ or finite-dimensionality of `W`. -/
 theorem opNorm_le_of_hasTangentialFDerivAt {L : V →L[ℝ] W}
     (hg : LipschitzOnWith K g E)
     (hL : HasTangentialFDerivAt (finrank ℝ U) E g L (f u₀)) : ‖L‖ ≤ K := by
-  have hinj : Injective A := hf.injective_of_tendsto_inter_closedBall_div volume hu₀ hi
-    (hdens.congr fun _ => by rw [addHaar_closedBall_center volume u₀])
-  let P := T[(finrank ℝ U), E, (f u₀)]
+  have hinj : Injective A := hf.injective_of_tendsto_inter_closedBall_div_zero volume hu₀ hi hdens
+  set P := T[(finrank ℝ U), E, (f u₀)] with hP_def
   have hPeq : P = LinearMap.range A.toLinearMap :=
     hf.eq_range_of_densityZeroOutsideCones hinj hi hsub hdens
       hL.isApproximateTangentPlane.finrank_eq.le
       hL.isApproximateTangentPlane.densityZeroOutsideCones
   refine L.opNorm_le_bound K.coe_nonneg fun z => ?_
-  set p : V := P.starProjection z
-  have hLp : L z = L p := by
-    have := congrArg (· z) hL.comp_projection
-    simpa [approximateTangentProjection_eq, P, p] using this.symm
-  rw [hLp]
+  -- Project `z` onto `P = range A`, where `L z = L p` by `L ∘L π = L`.
+  set p : V := P.starProjection z with hp_def
+  have hLp : L p = L z := by
+    rw [hp_def, hP_def, ← approximateTangentProjection_eq, ← ContinuousLinearMap.comp_apply,
+      hL.comp_projection]
+  rw [← hLp]
   by_cases hp : p = 0; · rw [hp, map_zero, norm_zero]; positivity
+  -- Rescale a preimage `u` of `p` to `w` with `‖A w‖ = 1 / 2`, then apply the directional bound.
   have : 0 < ‖p‖ := norm_pos_iff.2 hp
   obtain ⟨u, hu⟩ : p ∈ LinearMap.range A.toLinearMap := hPeq ▸ P.starProjection_apply_mem z
   set w : U := (2 * ‖p‖)⁻¹ • u
