@@ -360,6 +360,15 @@ def homotopyGroupSphereQuaternionMulEquiv (x : sphere (0 : ℍ) 1) :
   AddEquiv.toMultiplicativeRight (homotopyGroupSphereAddEquiv (n := 1)
     ((stdOrthonormalBasis ℝ ℍ).reindex (finCongr Quaternion.finrank_eq_four)) x)
 
+/-- The isomorphism `π₃(S³) ≅ ℤ` for the unit quaternions is
+`TauCeti.homotopyGroupSphereAddEquiv` for the standard orthonormal basis of `ℍ`. -/
+theorem homotopyGroupSphereQuaternionMulEquiv_apply (x : sphere (0 : ℍ) 1)
+    (a : π_ 3 (sphere (0 : ℍ) 1) x) :
+    homotopyGroupSphereQuaternionMulEquiv x a =
+      Multiplicative.ofAdd (homotopyGroupSphereAddEquiv (n := 1)
+        ((stdOrthonormalBasis ℝ ℍ).reindex (finCongr Quaternion.finrank_eq_four)) x a) :=
+  (rfl)
+
 end Quaternion
 
 end TauCeti

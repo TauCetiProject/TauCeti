@@ -40,6 +40,17 @@ noncomputable def specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt
   (HomotopyGroup.homeomorphMulEquiv specialUnitaryGroupTwoHomeomorphSphere g).trans
     (homotopyGroupSphereQuaternionMulEquiv _)
 
+/-- The isomorphism `π₃(SU(2)) ≅ ℤ` transports a class to the unit quaternions along
+`TauCeti.specialUnitaryGroupTwoHomeomorphSphere` and applies
+`TauCeti.homotopyGroupSphereQuaternionMulEquiv`. -/
+theorem specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt_apply
+    (g : Matrix.specialUnitaryGroup (Fin 2) ℂ)
+    (a : π_ 3 (Matrix.specialUnitaryGroup (Fin 2) ℂ) g) :
+    specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt g a =
+      homotopyGroupSphereQuaternionMulEquiv _
+        (HomotopyGroup.homeomorphMulEquiv specialUnitaryGroupTwoHomeomorphSphere g a) :=
+  (rfl)
+
 /-- **`π₃(SU(2) × SU(2)) ≅ ℤ²`**, at every base point: the homotopy groups of a product are the
 products of the homotopy groups of the factors (`HomotopyGroup.prodMulEquiv`), and each factor is
 identified with `ℤ` by `TauCeti.specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt`. -/
@@ -50,5 +61,19 @@ noncomputable def specialUnitaryGroupTwoProdHomotopyGroupThreeMulEquiv
   (HomotopyGroup.prodMulEquiv g h).trans
     ((specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt g).prodCongr
       (specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt h))
+
+/-- The isomorphism `π₃(SU(2) × SU(2)) ≅ ℤ²` is computed componentwise: split a class with
+`HomotopyGroup.prodMulEquiv` and apply
+`TauCeti.specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt` to each component. -/
+theorem specialUnitaryGroupTwoProdHomotopyGroupThreeMulEquiv_apply
+    (g h : Matrix.specialUnitaryGroup (Fin 2) ℂ)
+    (a : π_ 3 (Matrix.specialUnitaryGroup (Fin 2) ℂ × Matrix.specialUnitaryGroup (Fin 2) ℂ)
+      (g, h)) :
+    specialUnitaryGroupTwoProdHomotopyGroupThreeMulEquiv g h a =
+      (specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt g
+          (HomotopyGroup.prodMulEquiv g h a).1,
+        specialUnitaryGroupTwoHomotopyGroupThreeMulEquivInt h
+          (HomotopyGroup.prodMulEquiv g h a).2) :=
+  (rfl)
 
 end TauCeti

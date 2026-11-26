@@ -189,6 +189,18 @@ def specialOrthogonalGroupThreeHomotopyGroupThreeMulEquivInt
     specialOrthogonalGroupThreeHomotopyGroupMulEquivSphere.trans <|
       homotopyGroupSphereQuaternionMulEquiv 1
 
+/-- The isomorphism `π₃(SO(3)) ≅ ℤ` translates the basepoint to `1` by left multiplication, then
+applies `TauCeti.specialOrthogonalGroupThreeHomotopyGroupMulEquivSphere` and
+`TauCeti.homotopyGroupSphereQuaternionMulEquiv`. -/
+theorem specialOrthogonalGroupThreeHomotopyGroupThreeMulEquivInt_apply
+    (S : Matrix.specialOrthogonalGroup (Fin 3) ℝ)
+    (a : HomotopyGroup (Fin 3) (Matrix.specialOrthogonalGroup (Fin 3) ℝ) S) :
+    specialOrthogonalGroupThreeHomotopyGroupThreeMulEquivInt S a =
+      homotopyGroupSphereQuaternionMulEquiv 1
+        (specialOrthogonalGroupThreeHomotopyGroupMulEquivSphere
+          ((HomotopyGroup.homeomorphMulEquivOfEq (Homeomorph.mulLeft S) (mul_one S)).symm a)) :=
+  (rfl)
+
 /-- **`SO(3)` is not aspherical**, at any basepoint, since `π₃(SO(3)) ≅ ℤ` is nontrivial. -/
 theorem not_isAspherical_specialOrthogonalGroup_three
     (S : Matrix.specialOrthogonalGroup (Fin 3) ℝ) :
