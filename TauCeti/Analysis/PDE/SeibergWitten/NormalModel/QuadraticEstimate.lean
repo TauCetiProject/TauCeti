@@ -8,13 +8,15 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Expansion
 public import TauCeti.Analysis.PDE.SeibergWitten.RescaledNorm
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.Alternating.FiniteDimensional
 
 /-!
 # The quadratic estimate for the flat Seiberg–Witten equations in the rescaled norms
 
 The flat limiting Seiberg–Witten equations have no terms beyond the quadratic ones
 (`TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Expansion`): at a pair `(b, ψ)`, the nonlinear
-part `N(b', ζ)` of each row, the row at `(b + b', ψ + ζ)` minus its linearization, is
+part `N(b', ζ)` of each row, the row at `(b + b', ψ + ζ)` minus its value at `(b, ψ)` and minus
+its linearization, is
 
 * `i c(b') ζ` for the Dirac row, the Clifford multiplication of the spinor variation by the
   connection variation (`TauCeti.SeibergWitten.flatDirac_add_eq_add_flatDeformationDirac_add`);
@@ -42,12 +44,13 @@ the contraction mapping argument of the gluing construction needs, with the cons
   of `(b, ζ)` at `y = h w`. The estimate is for `h (N(b₁, ζ₁) - N(b₂, ζ₂))`
   (`TauCeti.SeibergWitten.exists_sqrt_rescaledTargetNormSq_smul_flatDirac_const_sub_le`, and for
   the nonlinear parts written through the flat Dirac operator and its linearization,
-  `TauCeti.SeibergWitten.exists_sqrt_rescaledTargetNormSq_smul_flatDirac_sub_le`).
+  `exists_sqrt_rescaledTargetNormSq_smul_flatDirac_sub_flatDeformationDirac_sub_le`).
 * **Curvature row.** The nonlinear part `q(ζ) / 2` does not involve the connection, and its
   differences are `q'(ζ₁ - ζ₂, ζ₁ + ζ₂) / 4` with the real polarization `q'` of `q`
-  (`TauCeti.SeibergWitten.exists_sqrt_rescaledTargetNormSq_quadraticTwoForm_sub_le`, and
-  `TauCeti.SeibergWitten.exists_sqrt_rescaledTargetNormSq_flatCurvature_sub_le` for the nonlinear
-  parts written through the curvature side and its linearization).
+  (`TauCeti.SeibergWitten.exists_sqrt_rescaledTargetNormSq_quadraticTwoForm_sub_le`, in the target
+  norms of the spinors alone, and
+  `exists_sqrt_rescaledTargetNormSq_flatCurvature_sub_flatDeformationCurvature_sub_le`
+  for the nonlinear parts written through the curvature side and its linearization).
 
 The proofs combine the pointwise identities of the expansion with the algebra estimate for the
 target norm (`TauCeti.SeibergWitten.exists_sqrt_rescaledTargetNormSq_bilinear_le`), applied to
@@ -61,12 +64,12 @@ form or on the adjoints of the Clifford generators is needed, only finite dimens
 
 * `TauCeti.SeibergWitten.exists_sqrt_rescaledTargetNormSq_smul_flatDirac_const_sub_le`: the
   quadratic estimate for the Clifford multiplication `i c(b) ζ`.
-* `TauCeti.SeibergWitten.exists_sqrt_rescaledTargetNormSq_smul_flatDirac_sub_le`: the quadratic
-  estimate for the nonlinear part of the flat Dirac operator.
+* `exists_sqrt_rescaledTargetNormSq_smul_flatDirac_sub_flatDeformationDirac_sub_le`:
+  the quadratic estimate for the nonlinear part of the flat Dirac operator.
 * `TauCeti.SeibergWitten.exists_sqrt_rescaledTargetNormSq_quadraticTwoForm_sub_le`: the quadratic
   estimate for the quadratic two-form `q`.
-* `TauCeti.SeibergWitten.exists_sqrt_rescaledTargetNormSq_flatCurvature_sub_le`: the quadratic
-  estimate for the nonlinear part of the flat curvature equation.
+* `exists_sqrt_rescaledTargetNormSq_flatCurvature_sub_flatDeformationCurvature_sub_le`:
+  the quadratic estimate for the nonlinear part of the flat curvature equation.
 
 ## References
 
@@ -89,13 +92,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 attribute [local instance] finiteDimensional_of_finrank_four
 
 variable [Fact (finrank ℝ V = 4)]
-
-/-- The covectors of `V` form a finite-dimensional space. -/
-private theorem finiteDimensional_covector : FiniteDimensional ℝ (V [⋀^Fin 1]→L[ℝ] ℝ) :=
-  (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
-    (0 : Fin 1)).toLinearEquiv.finiteDimensional
-
-attribute [local instance] finiteDimensional_covector
 
 /-- `h^(-n/2) = h⁻²` on the four-space. -/
 private theorem rpow_neg_finrank_div_two {h : ℝ} (hh : 0 < h) :
@@ -128,21 +124,6 @@ private theorem exists_clm_flatDirac_const :
   rw [flatDirac_const_eq_smul_ι, flatDirac_const_eq_smul_ι]
 
 variable [MeasurableSpace V] [BorelSpace V]
-
-/-- The iterated derivatives of `f ± g` are square integrable through order `s` when those of
-`f` and `g` are. -/
-private theorem memLp_iteratedFDeriv_add_sub {T : Type*} [NormedAddCommGroup T] [NormedSpace ℝ T]
-    {s : ℕ} {f g : V → T} (hf : ContDiff ℝ s f) (hg : ContDiff ℝ s g)
-    (hfm : ∀ i ≤ s, MemLp (iteratedFDeriv ℝ i f) 2)
-    (hgm : ∀ i ≤ s, MemLp (iteratedFDeriv ℝ i g) 2) :
-    (∀ i ≤ s, MemLp (iteratedFDeriv ℝ i (f + g)) 2) ∧
-      ∀ i ≤ s, MemLp (iteratedFDeriv ℝ i (f - g)) 2 :=
-  ⟨fun i hi ↦ by
-    rw [iteratedFDeriv_add (hf.of_le (by exact_mod_cast hi)) (hg.of_le (by exact_mod_cast hi))]
-    exact (hfm i hi).add (hgm i hi),
-  fun i hi ↦ by
-    rw [iteratedFDeriv_sub (hf.of_le (by exact_mod_cast hi)) (hg.of_le (by exact_mod_cast hi))]
-    exact (hfm i hi).sub (hgm i hi)⟩
 
 /-- The algebra estimate of the target norm on the four-space for one continuous bilinear map
 `L`: `‖L (f, g)‖_F ≤ C h⁻² ‖f‖_F ‖g‖_F` for `s ≥ 3`, with `C` independent of `h`. -/
@@ -201,8 +182,8 @@ theorem exists_sqrt_rescaledTargetNormSq_smul_flatDirac_const_sub_le {s : ℕ} (
     simp only [hL, Pi.smul_apply, Pi.add_apply, Pi.sub_apply, map_sub, sub_apply]
     congr 1
     abel
-  obtain ⟨-, hdbm⟩ := memLp_iteratedFDeriv_add_sub hb₁ hb₂ hb₁m hb₂m
-  obtain ⟨-, hdζm⟩ := memLp_iteratedFDeriv_add_sub hζ₁ hζ₂ hζ₁m hζ₂m
+  have hdbm := memLp_iteratedFDeriv_sub hb₁ hb₂ hb₁m hb₂m
+  have hdζm := memLp_iteratedFDeriv_sub hζ₁ hζ₂ hζ₁m hζ₂m
   obtain ⟨h₁m, h₁⟩ := hB h hh (b₁ - b₂) ζ₁ (hb₁.sub hb₂) hζ₁ hdbm hζ₁m
   obtain ⟨-, h₂⟩ := hB h hh b₂ (ζ₁ - ζ₂) hb₂ (hζ₁.sub hζ₂) hb₂m hdζm
   have hadd := sqrt_rescaledTargetNormSq_add_le (s := s + 1)
@@ -243,14 +224,17 @@ variable (e : OrthonormalBasis (Fin 4) ℝ V)
 /-- **The quadratic estimate for the nonlinear part of the flat Dirac operator.** For `s ≥ 3`
 there is a constant `K ≥ 0` such that for every scale `h > 0`, every pair `(b, ψ)` with `ψ`
 differentiable, and all variations `(b₁, ζ₁)` and `(b₂, ζ₂)` of class `Cˢ` with
-square-integrable derivatives through order `s`, the nonlinear parts
-`N(bₖ, ζₖ) = D_{b + bₖ} (ψ + ζₖ) - D'_{(b, ψ)}(bₖ, ζₖ)` of the flat Dirac operator, weighted by
-`h`, satisfy
+square-integrable derivatives through order `s`, the expressions
+`M(bₖ, ζₖ) = D_{b + bₖ} (ψ + ζₖ) - D'_{(b, ψ)}(bₖ, ζₖ)`, weighted by `h`, satisfy
 
-`‖h (N(b₁, ζ₁) - N(b₂, ζ₂))‖_F ≤ K h⁻² (‖(b₁, ζ₁)‖_E + ‖(b₂, ζ₂)‖_E) ‖(b₁ - b₂, ζ₁ - ζ₂)‖_E`.
+`‖h (M(b₁, ζ₁) - M(b₂, ζ₂))‖_F ≤ K h⁻² (‖(b₁, ζ₁)‖_E + ‖(b₂, ζ₂)‖_E) ‖(b₁ - b₂, ζ₁ - ζ₂)‖_E`.
 
-The constant does not depend on `h` or on `(b, ψ)`. -/
-theorem exists_sqrt_rescaledTargetNormSq_smul_flatDirac_sub_le {s : ℕ} (hs : 2 < s) :
+Each `M(bₖ, ζₖ)` is the nonlinear part `i c(bₖ) ζₖ` of the flat Dirac operator plus the base-point
+value `D_b ψ` (`TauCeti.SeibergWitten.flatDirac_add_eq_add_flatDeformationDirac_add`); that common
+term cancels, so `M(b₁, ζ₁) - M(b₂, ζ₂)` is the difference of the nonlinear parts. The constant
+does not depend on `h` or on `(b, ψ)`. -/
+theorem exists_sqrt_rescaledTargetNormSq_smul_flatDirac_sub_flatDeformationDirac_sub_le {s : ℕ}
+    (hs : 2 < s) :
     ∃ K, 0 ≤ K ∧ ∀ h : ℝ, 0 < h → ∀ (b b₁ b₂ : V → V [⋀^Fin 1]→L[ℝ] ℝ)
       (ψ ζ₁ ζ₂ : V → positiveHalfSpinors o ρ), Differentiable ℝ (fun y ↦ (ψ y : W)) →
       ContDiff ℝ s b₁ → ContDiff ℝ s b₂ → ContDiff ℝ s ζ₁ → ContDiff ℝ s ζ₂ →
@@ -295,29 +279,30 @@ section Curvature
 variable (hkl : 2 + 2 = finrank ℝ V)
 
 /-- **The quadratic estimate for `q` in the rescaled norms.** For `s ≥ 3` there is a constant
-`K ≥ 0` such that for every scale `h > 0`, all connection forms `b₁`, `b₂`, and all positive spinor
-fields `ζ₁`, `ζ₂` of class `Cˢ` with square-integrable derivatives through order `s`,
+`K ≥ 0` such that for every scale `h > 0` and all positive spinor fields `ζ₁`, `ζ₂` of class `Cˢ`
+with square-integrable derivatives through order `s`,
 
-`‖(q(ζ₁) - q(ζ₂)) / 2‖_F ≤ K h⁻² (‖(b₁, ζ₁)‖_E + ‖(b₂, ζ₂)‖_E) ‖(b₁ - b₂, ζ₁ - ζ₂)‖_E`,
+`‖(q(ζ₁) - q(ζ₂)) / 2‖_F ≤ K h⁻² (‖ζ₁‖_F + ‖ζ₂‖_F) ‖ζ₁ - ζ₂‖_F`,
 
 where `q` is the quadratic two-form (`TauCeti.SeibergWitten.quadraticTwoForm`), read as a
-two-vector. The connection forms enter only through the norms, which they increase. -/
+two-vector, and `‖·‖_F` is the target norm through order `s`. -/
 theorem exists_sqrt_rescaledTargetNormSq_quadraticTwoForm_sub_le {s : ℕ} (hs : 2 < s) :
-    ∃ K, 0 ≤ K ∧ ∀ h : ℝ, 0 < h → ∀ (b₁ b₂ : V → V [⋀^Fin 1]→L[ℝ] ℝ)
-      (ζ₁ ζ₂ : V → positiveHalfSpinors o ρ), ContDiff ℝ s ζ₁ → ContDiff ℝ s ζ₂ →
+    ∃ K, 0 ≤ K ∧ ∀ h : ℝ, 0 < h → ∀ ζ₁ ζ₂ : V → positiveHalfSpinors o ρ,
+      ContDiff ℝ s ζ₁ → ContDiff ℝ s ζ₂ →
       (∀ i ≤ s, MemLp (iteratedFDeriv ℝ i ζ₁) 2) → (∀ i ≤ s, MemLp (iteratedFDeriv ℝ i ζ₂) 2) →
       √(rescaledTargetNormSq (s + 1) h fun y ↦
           (2⁻¹ : ℝ) • ((quadraticTwoForm o ρ hkl (ζ₁ y) : ⋀[ℝ]^2 V) -
             quadraticTwoForm o ρ hkl (ζ₂ y))) ≤
-        K * (h ^ 2)⁻¹ * (√(rescaledFieldNormSq s h b₁ ζ₁) + √(rescaledFieldNormSq s h b₂ ζ₂)) *
-          √(rescaledFieldNormSq s h (b₁ - b₂) (ζ₁ - ζ₂)) := by
+        K * (h ^ 2)⁻¹ *
+          (√(rescaledTargetNormSq (s + 1) h ζ₁) + √(rescaledTargetNormSq (s + 1) h ζ₂)) *
+          √(rescaledTargetNormSq (s + 1) h (ζ₁ - ζ₂)) := by
   -- The bilinear map `(φ, φ') ↦ q'(φ, φ') / 4`, with values read as two-vectors.
   obtain ⟨L, hL⟩ : ∃ L : positiveHalfSpinors o ρ →L[ℝ] positiveHalfSpinors o ρ →L[ℝ] ⋀[ℝ]^2 V,
       ∀ φ φ', L φ φ' = (4⁻¹ : ℝ) • (quadraticTwoFormPolar o ρ hkl φ φ' : ⋀[ℝ]^2 V) :=
     ⟨(4⁻¹ : ℝ) • (ContinuousLinearMap.compL ℝ _ _ _ (Submodule.subtypeL _)).comp
       (quadraticTwoFormPolar o ρ hkl), fun _ _ ↦ rfl⟩
   obtain ⟨C, hC, hB⟩ := exists_sqrt_rescaledTargetNormSq_apply_apply_le (V := V) hs L
-  refine ⟨4 * C, by positivity, fun h hh b₁ b₂ ζ₁ ζ₂ hζ₁ hζ₂ hζ₁m hζ₂m ↦ ?_⟩
+  refine ⟨C, hC, fun h hh ζ₁ ζ₂ hζ₁ hζ₂ hζ₁m hζ₂m ↦ ?_⟩
   -- `(q(ζ₁) - q(ζ₂)) / 2 = q'(ζ₁ - ζ₂, ζ₁ + ζ₂) / 4`.
   have hdec : (fun y ↦ (2⁻¹ : ℝ) • ((quadraticTwoForm o ρ hkl (ζ₁ y) : ⋀[ℝ]^2 V) -
       quadraticTwoForm o ρ hkl (ζ₂ y))) = fun y ↦ L ((ζ₁ - ζ₂) y) ((ζ₁ + ζ₂) y) := by
@@ -325,36 +310,34 @@ theorem exists_sqrt_rescaledTargetNormSq_quadraticTwoForm_sub_le {s : ℕ} (hs :
     rw [hL, Pi.sub_apply, Pi.add_apply, quadraticTwoFormPolar_sub_add, Submodule.coe_smul,
       Submodule.coe_sub, smul_smul]
     norm_num
-  obtain ⟨hσm, hdm⟩ := memLp_iteratedFDeriv_add_sub hζ₁ hζ₂ hζ₁m hζ₂m
-  obtain ⟨-, hq⟩ := hB h hh (ζ₁ - ζ₂) (ζ₁ + ζ₂) (hζ₁.sub hζ₂) (hζ₁.add hζ₂) hdm hσm
+  obtain ⟨-, hq⟩ := hB h hh (ζ₁ - ζ₂) (ζ₁ + ζ₂) (hζ₁.sub hζ₂) (hζ₁.add hζ₂)
+    (memLp_iteratedFDeriv_sub hζ₁ hζ₂ hζ₁m hζ₂m) (memLp_iteratedFDeriv_add hζ₁ hζ₂ hζ₁m hζ₂m)
   rw [hdec]
-  -- `‖ζ₁ - ζ₂‖_F ≤ 2 ‖x₁ - x₂‖_E` and `‖ζ₁ + ζ₂‖_F ≤ ‖ζ₁‖_F + ‖ζ₂‖_F ≤ 2 (‖x₁‖_E + ‖x₂‖_E)`.
-  have hEd := sqrt_rescaledTargetNormSq_le_two_mul_sqrt_rescaledFieldNormSq s h (b₁ - b₂)
-    (ζ₁ - ζ₂)
-  have hE₁ := sqrt_rescaledTargetNormSq_le_two_mul_sqrt_rescaledFieldNormSq s h b₁ ζ₁
-  have hE₂ := sqrt_rescaledTargetNormSq_le_two_mul_sqrt_rescaledFieldNormSq s h b₂ ζ₂
+  -- `‖ζ₁ + ζ₂‖_F ≤ ‖ζ₁‖_F + ‖ζ₂‖_F`.
   have hσ := sqrt_rescaledTargetNormSq_add_le (s := s + 1) (by simpa using hζ₁)
     (by simpa using hζ₂) (fun j hj ↦ hζ₁m j (Nat.lt_succ_iff.1 hj)) hh.le
   have hc : 0 ≤ C * (h ^ 2)⁻¹ := by positivity
   calc _ ≤ C * (h ^ 2)⁻¹ * √(rescaledTargetNormSq (s + 1) h (ζ₁ - ζ₂)) *
         √(rescaledTargetNormSq (s + 1) h (ζ₁ + ζ₂)) := hq
-    _ ≤ C * (h ^ 2)⁻¹ * (2 * √(rescaledFieldNormSq s h (b₁ - b₂) (ζ₁ - ζ₂))) *
-        (2 * √(rescaledFieldNormSq s h b₁ ζ₁) + 2 * √(rescaledFieldNormSq s h b₂ ζ₂)) :=
-      mul_le_mul (mul_le_mul_of_nonneg_left hEd hc) (hσ.trans (add_le_add hE₁ hE₂))
-        (Real.sqrt_nonneg _) (mul_nonneg hc (by positivity))
+    _ ≤ C * (h ^ 2)⁻¹ * √(rescaledTargetNormSq (s + 1) h (ζ₁ - ζ₂)) *
+        (√(rescaledTargetNormSq (s + 1) h ζ₁) + √(rescaledTargetNormSq (s + 1) h ζ₂)) :=
+      mul_le_mul_of_nonneg_left hσ (mul_nonneg hc (Real.sqrt_nonneg _))
     _ = _ := by ring
 
 /-- **The quadratic estimate for the nonlinear part of the flat curvature equation.** For `s ≥ 3`
 there is a constant `K ≥ 0` such that for every scale `h > 0`, every pair `(b, ψ)` with `b`
 differentiable, and all variations `(b₁, ζ₁)` and `(b₂, ζ₂)` with `b₁`, `b₂` differentiable and
-`ζ₁`, `ζ₂` of class `Cˢ` with square-integrable derivatives through order `s`, the nonlinear
-parts `N(bₖ, ζₖ) = flatCurvature (b + bₖ) (ψ + ζₖ) - F'_ψ(bₖ, ζₖ)` of the flat curvature equation
-satisfy
+`ζ₁`, `ζ₂` of class `Cˢ` with square-integrable derivatives through order `s`, the expressions
+`M(bₖ, ζₖ) = flatCurvature (b + bₖ) (ψ + ζₖ) - F'_ψ(bₖ, ζₖ)` satisfy
 
-`‖N(b₁, ζ₁) - N(b₂, ζ₂)‖_F ≤ K h⁻² (‖(b₁, ζ₁)‖_E + ‖(b₂, ζ₂)‖_E) ‖(b₁ - b₂, ζ₁ - ζ₂)‖_E`.
+`‖M(b₁, ζ₁) - M(b₂, ζ₂)‖_F ≤ K h⁻² (‖(b₁, ζ₁)‖_E + ‖(b₂, ζ₂)‖_E) ‖(b₁ - b₂, ζ₁ - ζ₂)‖_E`.
 
-The constant does not depend on `h` or on `(b, ψ)`. -/
-theorem exists_sqrt_rescaledTargetNormSq_flatCurvature_sub_le {s : ℕ} (hs : 2 < s) :
+Each `M(bₖ, ζₖ)` is the nonlinear part `q(ζₖ) / 2` of the flat curvature equation plus the
+base-point value `flatCurvature b ψ` (`TauCeti.SeibergWitten.flatCurvature_add`); that common term
+cancels, so `M(b₁, ζ₁) - M(b₂, ζ₂)` is the difference of the nonlinear parts. The constant does
+not depend on `h` or on `(b, ψ)`. -/
+theorem exists_sqrt_rescaledTargetNormSq_flatCurvature_sub_flatDeformationCurvature_sub_le
+    {s : ℕ} (hs : 2 < s) :
     ∃ K, 0 ≤ K ∧ ∀ h : ℝ, 0 < h → ∀ (b b₁ b₂ : V → V [⋀^Fin 1]→L[ℝ] ℝ)
       (ψ ζ₁ ζ₂ : V → positiveHalfSpinors o ρ), Differentiable ℝ b → Differentiable ℝ b₁ →
       Differentiable ℝ b₂ → ContDiff ℝ s ζ₁ → ContDiff ℝ s ζ₂ →
@@ -368,7 +351,7 @@ theorem exists_sqrt_rescaledTargetNormSq_flatCurvature_sub_le {s : ℕ} (hs : 2 
           √(rescaledFieldNormSq s h (b₁ - b₂) (ζ₁ - ζ₂)) := by
   obtain ⟨K, hK, hq⟩ :=
     exists_sqrt_rescaledTargetNormSq_quadraticTwoForm_sub_le (o := o) (ρ := ρ) hkl hs
-  refine ⟨K, hK, fun h hh b b₁ b₂ ψ ζ₁ ζ₂ hb hb₁ hb₂ hζ₁ hζ₂ hζ₁m hζ₂m ↦ ?_⟩
+  refine ⟨4 * K, by positivity, fun h hh b b₁ b₂ ψ ζ₁ ζ₂ hb hb₁ hb₂ hζ₁ hζ₂ hζ₁m hζ₂m ↦ ?_⟩
   -- The nonlinear parts differ by `(q(ζ₁) - q(ζ₂)) / 2`.
   have hN : (fun y ↦ (flatCurvature o ρ hkl (b + b₁) (ψ + ζ₁) y -
         flatDeformationCurvature o ρ hkl b₁ ψ ζ₁ y) -
@@ -379,7 +362,21 @@ theorem exists_sqrt_rescaledTargetNormSq_flatCurvature_sub_le {s : ℕ} (hs : 2 
     rw [flatCurvature_add hkl (hb y) (hb₁ y), flatCurvature_add hkl (hb y) (hb₂ y), smul_sub]
     abel
   rw [hN]
-  exact hq h hh b₁ b₂ ζ₁ ζ₂ hζ₁ hζ₂ hζ₁m hζ₂m
+  -- `‖ζₖ‖_F ≤ 2 ‖(bₖ, ζₖ)‖_E` and `‖ζ₁ - ζ₂‖_F ≤ 2 ‖(b₁ - b₂, ζ₁ - ζ₂)‖_E`.
+  have hE₁ := sqrt_rescaledTargetNormSq_le_two_mul_sqrt_rescaledFieldNormSq s h b₁ ζ₁
+  have hE₂ := sqrt_rescaledTargetNormSq_le_two_mul_sqrt_rescaledFieldNormSq s h b₂ ζ₂
+  have hEd := sqrt_rescaledTargetNormSq_le_two_mul_sqrt_rescaledFieldNormSq s h (b₁ - b₂)
+    (ζ₁ - ζ₂)
+  have hc : 0 ≤ K * (h ^ 2)⁻¹ := by positivity
+  calc _ ≤ K * (h ^ 2)⁻¹ *
+        (√(rescaledTargetNormSq (s + 1) h ζ₁) + √(rescaledTargetNormSq (s + 1) h ζ₂)) *
+        √(rescaledTargetNormSq (s + 1) h (ζ₁ - ζ₂)) := hq h hh ζ₁ ζ₂ hζ₁ hζ₂ hζ₁m hζ₂m
+    _ ≤ K * (h ^ 2)⁻¹ *
+        (2 * √(rescaledFieldNormSq s h b₁ ζ₁) + 2 * √(rescaledFieldNormSq s h b₂ ζ₂)) *
+        (2 * √(rescaledFieldNormSq s h (b₁ - b₂) (ζ₁ - ζ₂))) :=
+      mul_le_mul (mul_le_mul_of_nonneg_left (add_le_add hE₁ hE₂) hc) hEd (Real.sqrt_nonneg _)
+        (mul_nonneg hc (by positivity))
+    _ = _ := by ring
 
 end Curvature
 
