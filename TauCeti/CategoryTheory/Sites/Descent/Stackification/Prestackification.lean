@@ -26,7 +26,9 @@ The pullback of a morphism along `f : V ⟶ U` restricts the corresponding secti
 `Over.mk f`, identifies the sections of the restriction of a sheafification along `Over.map f`
 with those of the sheafification of the restriction
 (`CategoryTheory.Functor.sheafPushforwardContinuousPresheafToSheafIso`, which needs that the
-morphisms inverted by sheafification are the locally bijective ones, on every slice site), and
+morphisms inverted by sheafification are the locally bijective ones, on the slice sites involved:
+the restriction and pullback constructions assume this only on those slices, and the
+pseudofunctor on every slice site), and
 identifies the restricted presheaf of morphisms with that of the pullbacks (Mathlib's
 `Pseudofunctor.overMapCompPresheafHomIso`). This pullback is functorial
 (`Fiber.pullbackHom_comp`) because the restriction of sections is a natural transformation between
@@ -79,21 +81,36 @@ namespace TauCeti.Stack.Prestackification
 
 variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
 
+variable {J} in
+/-- Sheafification on the slice site over `(Over.mk f).left`, which is the slice site over the
+source `Y` of `f`. -/
+local instance hasSheafify_over_mk_left {X Y : C} (f : Y ⟶ X) [HasSheafify (J.over Y) (Type v')] :
+    HasSheafify (J.over (Over.mk f).left) (Type v') :=
+  inferInstanceAs (HasSheafify (J.over Y) (Type v'))
+
+variable {J} in
+/-- On the slice site over `(Over.mk f).left`, which is the slice site over the source `Y` of `f`,
+the morphisms inverted by sheafification are the locally bijective ones. -/
+local instance wEqualsLocallyBijective_over_mk_left {X Y : C} (f : Y ⟶ X)
+    [(J.over Y).WEqualsLocallyBijective (Type v')] :
+    (J.over (Over.mk f).left).WEqualsLocallyBijective (Type v') :=
+  inferInstanceAs ((J.over Y).WEqualsLocallyBijective (Type v'))
+
 section restrictSections
 
-variable [∀ U : C, HasSheafify (J.over U) (Type v')]
-  [∀ U : C, (J.over U).WEqualsLocallyBijective (Type v')]
+variable {U : C} [HasSheafify (J.over U) (Type v')] [(J.over U).WEqualsLocallyBijective (Type v')]
 
 /-- The morphism `(Over.map T.hom).obj (Over.mk (𝟙 T.left)) ⟶ T` of `Over U` whose underlying
 morphism is the identity of `T.left`. -/
-abbrev overMapMkIdHom {U : C} (T : Over U) : (Over.map T.hom).obj (Over.mk (𝟙 T.left)) ⟶ T :=
+abbrev overMapMkIdHom (T : Over U) : (Over.map T.hom).obj (Over.mk (𝟙 T.left)) ⟶ T :=
   Over.homMk (𝟙 T.left)
 
 /-- The sections over `T : Over U` of the sheafification of a presheaf `P` on `Over U`, as
 sections over the terminal object of the sheafification of the restriction of `P` to
 `Over T.left`. This is the restriction of sheafifications along `Over.map T.hom`
 (`Functor.sheafPushforwardContinuousPresheafToSheafIso`), evaluated at the terminal object. -/
-def restrictSectionsOver {U : C} (T : Over U) :
+def restrictSectionsOver (T : Over U) [HasSheafify (J.over T.left) (Type v')]
+    [(J.over T.left).WEqualsLocallyBijective (Type v')] :
     sheafification (J.over U) (Type v') ⋙ (evaluation _ _).obj (op T) ⟶
       (Functor.whiskeringLeft _ _ (Type v')).obj (Over.map T.hom).op ⋙
         sheafifySections J T.left where
@@ -114,7 +131,8 @@ def restrictSectionsOver {U : C} (T : Over U) :
 
 /-- `restrictSectionsOver` sends the image of a section of `P` over `T` to the image of its
 restriction. -/
-lemma restrictSectionsOver_app_toSheafify {U : C} (T : Over U) (P : (Over U)ᵒᵖ ⥤ Type v')
+lemma restrictSectionsOver_app_toSheafify (T : Over U) [HasSheafify (J.over T.left) (Type v')]
+    [(J.over T.left).WEqualsLocallyBijective (Type v')] (P : (Over U)ᵒᵖ ⥤ Type v')
     (x : P.obj (op T)) :
     (restrictSectionsOver J T).app P ((toSheafify (J.over U) P).app (op T) x) =
       (toSheafifySections J T.left).app ((Over.map T.hom).op ⋙ P)
@@ -130,14 +148,16 @@ lemma restrictSectionsOver_app_toSheafify {U : C} (T : Over U) (P : (Over U)ᵒ�
       (ConcreteCategory.congr_hom ((toSheafify (J.over U) P).naturality
         (overMapMkIdHom T).op) x).symm).trans h
 
-lemma bijective_restrictSectionsOver_app {U : C} (T : Over U) (P : (Over U)ᵒᵖ ⥤ Type v') :
+lemma bijective_restrictSectionsOver_app (T : Over U) [HasSheafify (J.over T.left) (Type v')]
+    [(J.over T.left).WEqualsLocallyBijective (Type v')] (P : (Over U)ᵒᵖ ⥤ Type v') :
     Function.Bijective ((restrictSectionsOver J T).app P) :=
   ((sheafify (J.over U) P).mapIso
       (Over.isoMk (Iso.refl T.left) : (Over.map T.hom).obj (Over.mk (𝟙 T.left)) ≅ T).op ≪≫
     ((sheafToPresheaf _ _).mapIso ((Over.map T.hom).sheafPushforwardContinuousPresheafToSheafIso
       (J.over T.left) (J.over U) P)).app (op (Over.mk (𝟙 T.left)))).toEquiv.bijective
 
-variable {U V : C} (f : V ⟶ U)
+variable {V : C} [HasSheafify (J.over V) (Type v')] [(J.over V).WEqualsLocallyBijective (Type v')]
+  (f : V ⟶ U)
 
 /-- Restricting the sections over the terminal object of the sheafification of a presheaf on
 `Over U` along `f : V ⟶ U`: the sections over `Over.mk (𝟙 V)` of the sheafification of the
@@ -172,14 +192,16 @@ lemma restrictSections_app_toSheafifySections (P : (Over U)ᵒᵖ ⥤ Type v')
 
 /-- For `p : T' ⟶ T` in `Over U`, the identification of `Over.map T'.hom` with the composite of
 `Over.map p.left` and `Over.map T.hom`. -/
-abbrev overMapCompIso {U : C} {T T' : Over U} (p : T' ⟶ T) :
+abbrev overMapCompIso {T T' : Over U} (p : T' ⟶ T) :
     Over.map T'.hom ≅ Over.map p.left ⋙ Over.map T.hom :=
   Over.mapCongr T'.hom (p.left ≫ T.hom) (Over.w p).symm ≪≫ Over.mapComp p.left T.hom
 
 /-- Restricting sections over `T` to the terminal object and then along `p.left` is restricting
 them along `p : T' ⟶ T` and then to the terminal object, up to the identification
 `overMapCompIso p` of the restrictions of `P`. -/
-lemma restrictSectionsOver_comp {U : C} {T T' : Over U} (p : T' ⟶ T) (P : (Over U)ᵒᵖ ⥤ Type v')
+lemma restrictSectionsOver_comp {T T' : Over U} [HasSheafify (J.over T.left) (Type v')]
+    [(J.over T.left).WEqualsLocallyBijective (Type v')] [HasSheafify (J.over T'.left) (Type v')]
+    [(J.over T'.left).WEqualsLocallyBijective (Type v')] (p : T' ⟶ T) (P : (Over U)ᵒᵖ ⥤ Type v')
     (t : (sheafify (J.over U) P).obj (op T)) :
     (sheafifySections J T'.left).map (Functor.whiskerRight (NatTrans.op (overMapCompIso p).hom) P)
         ((restrictSections J p.left).app _ ((restrictSectionsOver J T).app P t)) =
@@ -238,7 +260,7 @@ lemma restrictSectionsOver_comp {U : C} {T T' : Over U} (p : T' ⟶ T) (P : (Ove
 
 /-- Restricting sections over the terminal object of `Over U` to the terminal object gives them
 back, up to the identification `Over.mapId U` of `Over.map (𝟙 U)` with the identity. -/
-lemma restrictSectionsOver_mkId {U : C} (P : (Over U)ᵒᵖ ⥤ Type v')
+lemma restrictSectionsOver_mkId (P : (Over U)ᵒᵖ ⥤ Type v')
     (s : (sheafifySections J U).obj P) :
     (sheafifySections J U).map (Functor.whiskerRight (NatTrans.op (Over.mapId U).inv) P)
         ((restrictSectionsOver J (Over.mk (𝟙 U))).app P s) = s := by
@@ -257,9 +279,9 @@ end restrictSections
 
 section pullback
 
-variable {J} [∀ U : C, HasSheafify (J.over U) (Type v')]
-  [∀ U : C, (J.over U).WEqualsLocallyBijective (Type v')] {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
-  {U V : C}
+variable {J} {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} {U V : C} [HasSheafify (J.over U) (Type v')]
+  [(J.over U).WEqualsLocallyBijective (Type v')] [HasSheafify (J.over V) (Type v')]
+  [(J.over V).WEqualsLocallyBijective (Type v')]
 
 /-- The pullback along `f : V ⟶ U` of a morphism of the fibre over `U` of the Hom-sheafification
 of `F`: the restriction of the corresponding section of the sheafified presheaf of morphisms
@@ -390,67 +412,12 @@ lemma Fiber.pullback_obj (f : V ⟶ U) (M : Fiber J F U) :
 lemma Fiber.pullback_map (f : V ⟶ U) {M N : Fiber J F U} (s : M ⟶ N) :
     (Fiber.pullback J F f).map s = Fiber.pullbackHom f s := (rfl)
 
-/-- The coherence of the comparison isomorphisms of `F` behind
-`toFiber_map_comp_pullbackHom_sheafifyPresheafHomEquiv_comp`: conjugating a local morphism `w`
-over `y` by the comparison isomorphisms along `x`, `z ≫ q` and along `q`, `z`, and then by the
-pullback along `z` of the comparison along `x`, `q`, is conjugating its pullback along `g = 𝟙`
-by the comparison along `x'`, `z`. -/
-private lemma mapComp'_conj_eq {X₀ X₁ X₂ Y : C} (x : X₁ ⟶ X₀) (q : X₂ ⟶ X₁) (x' : X₂ ⟶ X₀)
-    (hx' : q ≫ x = x') (z : Y ⟶ X₂) (y₁ y₂ : Y ⟶ X₀) (h₁ : (z ≫ q) ≫ x = y₁)
-    (h₂ : z ≫ x' = y₂) (g : Y ⟶ Y) (hg : g = 𝟙 Y) (hgy : g ≫ y₁ = y₂)
-    (M N : F.obj (.mk (op X₀)))
-    (w : (F.map y₁.op.toLoc).toFunctor.obj M ⟶ (F.map y₁.op.toLoc).toFunctor.obj N) :
-    (F.map z.op.toLoc).toFunctor.map ((F.mapComp' x.op.toLoc q.op.toLoc x'.op.toLoc
-        (by rw [← hx']; rfl)).hom.toNatTrans.app M) ≫
-      ((F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).inv.toNatTrans.app _ ≫
-        ((F.mapComp' x.op.toLoc (z ≫ q).op.toLoc y₁.op.toLoc
-          (by rw [← h₁]; rfl)).inv.toNatTrans.app M ≫ w ≫
-            (F.mapComp' x.op.toLoc (z ≫ q).op.toLoc y₁.op.toLoc
-              (by rw [← h₁]; rfl)).hom.toNatTrans.app N) ≫
-        (F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).hom.toNatTrans.app _) ≫
-      (F.map z.op.toLoc).toFunctor.map ((F.mapComp' x.op.toLoc q.op.toLoc x'.op.toLoc
-        (by rw [← hx']; rfl)).inv.toNatTrans.app N) =
-    (F.mapComp' x'.op.toLoc z.op.toLoc y₂.op.toLoc (by rw [← h₂]; rfl)).inv.toNatTrans.app M ≫
-      pullHom w g y₂ y₂ hgy hgy ≫
-        (F.mapComp' x'.op.toLoc z.op.toLoc y₂.op.toLoc
-          (by rw [← h₂]; rfl)).hom.toNatTrans.app N := by
-  subst hg hx'
-  obtain rfl : y₂ = y₁ := by rw [← hgy, Category.id_comp]
-  rw [pullHom_id]
-  have hM := mapComp'_hom_app_comp_map_mapComp'_hom_app F x.op.toLoc q.op.toLoc z.op.toLoc
-    (q ≫ x).op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc rfl rfl (by rw [← h₂]; rfl)
-    (by rw [← h₁]; rfl) M
-  have hN := mapComp'_hom_app_comp_map_mapComp'_hom_app F x.op.toLoc q.op.toLoc z.op.toLoc
-    (q ≫ x).op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc rfl rfl (by rw [← h₂]; rfl)
-    (by rw [← h₁]; rfl) N
-  have hM' : (F.map z.op.toLoc).toFunctor.map
-      ((F.mapComp' x.op.toLoc q.op.toLoc (q ≫ x).op.toLoc).hom.toNatTrans.app M) ≫
-      (F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).inv.toNatTrans.app _ ≫
-        (F.mapComp' x.op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc
-          (by rw [← h₁]; rfl)).inv.toNatTrans.app M =
-      (F.mapComp' (q ≫ x).op.toLoc z.op.toLoc y₂.op.toLoc
-        (by rw [← h₂]; rfl)).inv.toNatTrans.app M := by
-    rw [← cancel_epi ((F.mapComp' (q ≫ x).op.toLoc z.op.toLoc y₂.op.toLoc
-      (by rw [← h₂]; rfl)).hom.toNatTrans.app M), reassoc_of% hM]
-    simp
-  have hN' : (F.mapComp' x.op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc
-        (by rw [← h₁]; rfl)).hom.toNatTrans.app N ≫
-      (F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).hom.toNatTrans.app _ ≫
-        (F.map z.op.toLoc).toFunctor.map
-          ((F.mapComp' x.op.toLoc q.op.toLoc (q ≫ x).op.toLoc).inv.toNatTrans.app N) =
-      (F.mapComp' (q ≫ x).op.toLoc z.op.toLoc y₂.op.toLoc
-        (by rw [← h₂]; rfl)).hom.toNatTrans.app N := by
-    rw [← reassoc_of% hN, ← Functor.map_comp, Cat.Hom.hom_inv_id_toNatTrans_app,
-      CategoryTheory.Functor.map_id]
-    exact Category.comp_id _
-  simp only [Category.assoc]
-  rw [reassoc_of% hM', hN']
-
 variable (J) in
 /-- The sections over `T : Over U` of the sheafification of the presheaf of morphisms from `M` to
 `N` are the morphisms between the pullbacks of `M` and `N` to `T.left` in the fibre of the
 Hom-sheafification. -/
-def sheafifyPresheafHomEquiv (M N : F.obj (.mk (op U))) (T : Over U) :
+def sheafifyPresheafHomEquiv (M N : F.obj (.mk (op U))) (T : Over U)
+    [HasSheafify (J.over T.left) (Type v')] [(J.over T.left).WEqualsLocallyBijective (Type v')] :
     (sheafify (J.over U) (F.presheafHom M N)).obj (op T) ≃
       (Fiber.mk (J := J) ((F.map T.hom.op.toLoc).toFunctor.obj M) ⟶
         Fiber.mk ((F.map T.hom.op.toLoc).toFunctor.obj N)) :=
@@ -462,6 +429,7 @@ def sheafifyPresheafHomEquiv (M N : F.obj (.mk (op U))) (T : Over U) :
           (bijective_restrictSectionsOver_app J T _)))
 
 lemma Fiber.homEquiv_sheafifyPresheafHomEquiv (M N : F.obj (.mk (op U))) (T : Over U)
+    [HasSheafify (J.over T.left) (Type v')] [(J.over T.left).WEqualsLocallyBijective (Type v')]
     (t : (sheafify (J.over U) (F.presheafHom M N)).obj (op T)) :
     Fiber.homEquiv _ _ (sheafifyPresheafHomEquiv J M N T t) = (sheafifySections J T.left).map
       (F.overMapCompPresheafHomIso M N T.hom).hom ((restrictSectionsOver J T).app _ t) :=
@@ -470,6 +438,7 @@ lemma Fiber.homEquiv_sheafifyPresheafHomEquiv (M N : F.obj (.mk (op U))) (T : Ov
 /-- The morphism corresponding to the image of a local morphism `x` in the sheafification is the
 image of `x` under the comparison functor `toFiber`. -/
 lemma sheafifyPresheafHomEquiv_toSheafify (M N : F.obj (.mk (op U))) (T : Over U)
+    [HasSheafify (J.over T.left) (Type v')] [(J.over T.left).WEqualsLocallyBijective (Type v')]
     (x : (F.presheafHom M N).obj (op T)) :
     sheafifyPresheafHomEquiv J M N T ((toSheafify (J.over U) (F.presheafHom M N)).app (op T) x) =
       (toFiber J F T.left).map x := by
@@ -502,7 +471,10 @@ lemma Fiber.pullbackHom_eq_sheafifyPresheafHomEquiv (f : V ⟶ U) {M N : Fiber J
 along `p.left`, for `p : T' ⟶ T` in `Over U`, gives the morphism corresponding to the restricted
 section over `T'`, up to the comparison isomorphisms of `F`. -/
 lemma toFiber_map_comp_pullbackHom_sheafifyPresheafHomEquiv_comp (M N : F.obj (.mk (op U)))
-    {T T' : Over U} (p : T' ⟶ T) (t : (sheafify (J.over U) (F.presheafHom M N)).obj (op T)) :
+    {T T' : Over U} [HasSheafify (J.over T.left) (Type v')]
+    [(J.over T.left).WEqualsLocallyBijective (Type v')] [HasSheafify (J.over T'.left) (Type v')]
+    [(J.over T'.left).WEqualsLocallyBijective (Type v')] (p : T' ⟶ T)
+    (t : (sheafify (J.over U) (F.presheafHom M N)).obj (op T)) :
     (toFiber J F T'.left).map ((F.mapComp' T.hom.op.toLoc p.left.op.toLoc T'.hom.op.toLoc
         (by rw [← Over.w p]; rfl)).hom.toNatTrans.app M) ≫
       Fiber.pullbackHom p.left (sheafifyPresheafHomEquiv J M N T t) ≫
@@ -520,7 +492,7 @@ lemma toFiber_map_comp_pullbackHom_sheafifyPresheafHomEquiv_comp (M N : F.obj (.
       Functor.whiskerRight (NatTrans.op (overMapCompIso p).hom) (F.presheafHom M N) ≫
         (F.overMapCompPresheafHomIso M N T'.hom).hom := by
     refine NatTrans.ext (funext fun Z ↦ ConcreteCategory.hom_ext _ _ fun w ↦ ?_)
-    have h := mapComp'_conj_eq T.hom p.left T'.hom (Over.w p) Z.unop.hom _ _ rfl rfl
+    have h := mapComp'_conj_eq_pullHom T.hom p.left T'.hom (Over.w p) Z.unop.hom _ _ rfl rfl
       ((overMapCompIso p).hom.app Z.unop).left (by simp) (Over.w _) M N w
     simp only [Category.assoc] at h
     simp only [NatTrans.comp_app, ConcreteCategory.comp_apply, Functor.whiskerLeft_app,
@@ -544,39 +516,6 @@ lemma toFiber_map_comp_pullbackHom_sheafifyPresheafHomEquiv_comp (M N : F.obj (.
   erw [hθ]
   exact ConcreteCategory.congr_hom key' _
 
-/-- The coherence of the comparison isomorphisms of `F` behind
-`sheafifyPresheafHomEquiv_mkId`. -/
-private lemma mapComp'_conj_mapId'_eq {X₀ Y : C} (z : Y ⟶ X₀) (y₁ : Y ⟶ X₀) (h₁ : z ≫ 𝟙 X₀ = y₁)
-    (g : Y ⟶ Y) (hg : g = 𝟙 Y) (hgy : g ≫ y₁ = z) (M N : F.obj (.mk (op X₀)))
-    (w : (F.map y₁.op.toLoc).toFunctor.obj M ⟶ (F.map y₁.op.toLoc).toFunctor.obj N) :
-    (F.mapComp' (𝟙 X₀).op.toLoc z.op.toLoc y₁.op.toLoc (by rw [← h₁]; rfl)).inv.toNatTrans.app M ≫
-        w ≫ (F.mapComp' (𝟙 X₀).op.toLoc z.op.toLoc y₁.op.toLoc
-          (by rw [← h₁]; rfl)).hom.toNatTrans.app N =
-      (F.map z.op.toLoc).toFunctor.map
-          ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).hom.toNatTrans.app M) ≫
-        pullHom w g z z hgy hgy ≫ (F.map z.op.toLoc).toFunctor.map
-          ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).inv.toNatTrans.app N) := by
-  subst hg
-  obtain rfl : y₁ = z := by rw [← hgy, Category.id_comp]
-  rw [pullHom_id]
-  have hM := mapComp'_hom_app_comp_map_mapId'_hom_app F (𝟙 X₀).op.toLoc (by simp) y₁.op.toLoc
-    (by simp) M
-  have hN := mapComp'_hom_app_comp_map_mapId'_hom_app F (𝟙 X₀).op.toLoc (by simp) y₁.op.toLoc
-    (by simp) N
-  have hM' : (F.mapComp' (𝟙 X₀).op.toLoc y₁.op.toLoc y₁.op.toLoc
-      (by simp)).inv.toNatTrans.app M = (F.map y₁.op.toLoc).toFunctor.map
-        ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).hom.toNatTrans.app M) := by
-    rw [← cancel_epi ((F.mapComp' (𝟙 X₀).op.toLoc y₁.op.toLoc y₁.op.toLoc
-      (by simp)).hom.toNatTrans.app M), hM, Cat.Hom.hom_inv_id_toNatTrans_app]
-  have hN' : (F.mapComp' (𝟙 X₀).op.toLoc y₁.op.toLoc y₁.op.toLoc
-      (by simp)).hom.toNatTrans.app N = (F.map y₁.op.toLoc).toFunctor.map
-        ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).inv.toNatTrans.app N) := by
-    rw [← cancel_mono ((F.map y₁.op.toLoc).toFunctor.map
-      ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).hom.toNatTrans.app N)), hN, ← Functor.map_comp,
-      Cat.Hom.inv_hom_id_toNatTrans_app, CategoryTheory.Functor.map_id]
-    rfl
-  rw [hM', hN']
-
 variable (J) in
 /-- The morphism of the fibre over `U` corresponding to a section over the terminal object
 `Over.mk (𝟙 U)` is the morphism given by that section, up to the unit isomorphisms of `F`. -/
@@ -591,8 +530,8 @@ lemma sheafifyPresheafHomEquiv_mkId (M N : F.obj (.mk (op U)))
         presheafHomPostcomp ((F.mapId' (𝟙 U).op.toLoc (by simp)).inv.toNatTrans.app N) ≫
           presheafHomPrecomp ((F.mapId' (𝟙 U).op.toLoc (by simp)).hom.toNatTrans.app M) := by
     refine NatTrans.ext (funext fun Z ↦ ConcreteCategory.hom_ext _ _ fun w ↦ ?_)
-    have h := mapComp'_conj_mapId'_eq Z.unop.hom _ rfl ((Over.mapId U).inv.app Z.unop).left
-      (by simp) (Over.w _) M N w
+    have h := mapComp'_conj_eq_mapId'_conj_pullHom Z.unop.hom _ rfl
+      ((Over.mapId U).inv.app Z.unop).left (by simp) (Over.w _) M N w
     simp only [NatTrans.comp_app, ConcreteCategory.comp_apply, Functor.whiskerRight_app,
       presheafHomPrecomp_app_apply, overMapCompPresheafHomIso_hom_app_apply]
     -- As in `toFiber_map_comp_pullbackHom_sheafifyPresheafHomEquiv_comp`, the remaining component
@@ -630,7 +569,8 @@ lemma Fiber.pullbackHom_toFiber_map (f : V ⟶ U) {M N : F.obj (.mk (op U))} (φ
 variable (J F) in
 /-- The unit isomorphisms of the pullback functors of the Hom-sheafification, given by the unit
 isomorphisms of `F`. -/
-def Fiber.pullbackId (U : C) : Fiber.pullback J F (𝟙 U) ≅ 𝟭 (Fiber J F U) :=
+def Fiber.pullbackId (U : C) [HasSheafify (J.over U) (Type v')]
+    [(J.over U).WEqualsLocallyBijective (Type v')] : Fiber.pullback J F (𝟙 U) ≅ 𝟭 (Fiber J F U) :=
   NatIso.ofComponents (fun M ↦ (toFiber J F U).mapIso
       ((Cat.Hom.toNatIso (F.mapId' (𝟙 U).op.toLoc (by simp))).app M.obj)) fun {M N} s ↦ by
     -- The pullback of `s` along `𝟙 U` is `s` conjugated by the unit isomorphisms of `F`.
@@ -642,25 +582,26 @@ def Fiber.pullbackId (U : C) : Fiber.pullback J F (𝟙 U) ≅ 𝟭 (Fiber J F U
     have h := (Fiber.pullbackHom_eq_sheafifyPresheafHomEquiv (𝟙 U) s).trans
       ((congrArg _ hs).trans (sheafifyPresheafHomEquiv_mkId J M.obj N.obj _))
     erw [Equiv.symm_apply_apply] at h
-    exact (congrArg (· ≫ _) h).trans ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
-      ((Category.assoc _ _ _).trans ((congrArg (s ≫ ·) ((toFiber J F U).mapIso
-        ((Cat.Hom.toNatIso (F.mapId' (𝟙 U).op.toLoc (by simp))).app N.obj)).inv_hom_id).trans
-          (Category.comp_id s)))))
+    exact (Iso.eq_comp_inv _).1 (h.trans (Category.assoc _ _ _).symm)
 
 @[simp]
-lemma Fiber.pullbackId_hom_app (U : C) (M : Fiber J F U) :
+lemma Fiber.pullbackId_hom_app (U : C) [HasSheafify (J.over U) (Type v')]
+    [(J.over U).WEqualsLocallyBijective (Type v')] (M : Fiber J F U) :
     (Fiber.pullbackId J F U).hom.app M =
       (toFiber J F U).map ((F.mapId' (𝟙 U).op.toLoc (by simp)).hom.toNatTrans.app M.obj) := (rfl)
 
 @[simp]
-lemma Fiber.pullbackId_inv_app (U : C) (M : Fiber J F U) :
+lemma Fiber.pullbackId_inv_app (U : C) [HasSheafify (J.over U) (Type v')]
+    [(J.over U).WEqualsLocallyBijective (Type v')] (M : Fiber J F U) :
     (Fiber.pullbackId J F U).inv.app M =
       (toFiber J F U).map ((F.mapId' (𝟙 U).op.toLoc (by simp)).inv.toNatTrans.app M.obj) := (rfl)
 
 variable (J F) in
 /-- The composition isomorphisms of the pullback functors of the Hom-sheafification, given by the
 composition isomorphisms of `F`. -/
-def Fiber.pullbackComp {W : C} (f : V ⟶ U) (g : W ⟶ V) (gf : W ⟶ U) (h : g ≫ f = gf) :
+def Fiber.pullbackComp {W : C} [HasSheafify (J.over W) (Type v')]
+    [(J.over W).WEqualsLocallyBijective (Type v')] (f : V ⟶ U) (g : W ⟶ V) (gf : W ⟶ U)
+    (h : g ≫ f = gf) :
     Fiber.pullback J F gf ≅ Fiber.pullback J F f ⋙ Fiber.pullback J F g :=
   NatIso.ofComponents (fun M ↦ (toFiber J F W).mapIso
       ((Cat.Hom.toNatIso (F.mapComp' f.op.toLoc g.op.toLoc gf.op.toLoc
@@ -684,21 +625,20 @@ def Fiber.pullbackComp {W : C} (f : V ⟶ U) (g : W ⟶ V) (gf : W ⟶ U) (h : g
           (Over.mkIdTerminal.from (Over.mk f)).op (Fiber.homEquiv M N s))
     rw [ht, ← Fiber.pullbackHom_eq_sheafifyPresheafHomEquiv,
       ← Fiber.pullbackHom_eq_sheafifyPresheafHomEquiv] at hK
-    exact (congrArg (· ≫ _) hK.symm).trans ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
-      ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) ((toFiber J F W).mapIso
-        ((Cat.Hom.toNatIso (F.mapComp' f.op.toLoc g.op.toLoc gf.op.toLoc
-          (by rw [← h]; rfl))).app N.obj)).inv_hom_id).trans (Category.comp_id _)))))
+    exact (Iso.eq_comp_inv _).1 (hK.symm.trans (Category.assoc _ _ _).symm)
 
 @[simp]
-lemma Fiber.pullbackComp_hom_app {W : C} (f : V ⟶ U) (g : W ⟶ V) (gf : W ⟶ U) (h : g ≫ f = gf)
-    (M : Fiber J F U) :
+lemma Fiber.pullbackComp_hom_app {W : C} [HasSheafify (J.over W) (Type v')]
+    [(J.over W).WEqualsLocallyBijective (Type v')] (f : V ⟶ U) (g : W ⟶ V) (gf : W ⟶ U)
+    (h : g ≫ f = gf) (M : Fiber J F U) :
     (Fiber.pullbackComp J F f g gf h).hom.app M =
       (toFiber J F W).map ((F.mapComp' f.op.toLoc g.op.toLoc gf.op.toLoc
         (by rw [← h]; rfl)).hom.toNatTrans.app M.obj) := (rfl)
 
 @[simp]
-lemma Fiber.pullbackComp_inv_app {W : C} (f : V ⟶ U) (g : W ⟶ V) (gf : W ⟶ U) (h : g ≫ f = gf)
-    (M : Fiber J F U) :
+lemma Fiber.pullbackComp_inv_app {W : C} [HasSheafify (J.over W) (Type v')]
+    [(J.over W).WEqualsLocallyBijective (Type v')] (f : V ⟶ U) (g : W ⟶ V) (gf : W ⟶ U)
+    (h : g ≫ f = gf) (M : Fiber J F U) :
     (Fiber.pullbackComp J F f g gf h).inv.app M =
       (toFiber J F W).map ((F.mapComp' f.op.toLoc g.op.toLoc gf.op.toLoc
         (by rw [← h]; rfl)).inv.toNatTrans.app M.obj) := (rfl)

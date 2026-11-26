@@ -38,6 +38,10 @@ Mathlib's identification `Pseudofunctor.overMapCompPresheafHomIso` of the restri
 of morphisms with the presheaf of morphisms between pullbacks conjugates by the comparison
 isomorphisms of `F` (`CategoryTheory.Pseudofunctor.overMapCompPresheafHomIso_hom_app_apply`), so it
 is compatible with composition and identities.
+Conjugating a local morphism by composites of comparison isomorphisms of `F` is conjugating its
+pullback along an identity by a single comparison isomorphism
+(`CategoryTheory.Pseudofunctor.mapComp'_conj_eq_pullHom`,
+`CategoryTheory.Pseudofunctor.mapComp'_conj_eq_mapId'_conj_pullHom`).
 
 It also shows that pulling back morphisms between pullbacks commutes with restricting `F` along a
 functor `p : D ⥤ C`: for the pseudofunctor `p.op.toPseudofunctor.comp F`, pulling back along `g`
@@ -298,6 +302,95 @@ lemma pullHom_mapComp'_hom ⦃Z X : C⦄ (p : X ⟶ Z) (N : F.obj (.mk (op Z))) 
     (f₀₂ := (f ≫ p).op.toLoc) (f₁₃ := (g ≫ f).op.toLoc) (h₀₂ := rfl) (h₁₃ := rfl)
     (hf := by simp [← Quiver.Hom.comp_toLoc, ← op_comp])]
   simp [pullHom]
+
+/-- Conjugating a local morphism `w : y₁^* M ⟶ y₁^* N`, for `y₁ = (z ≫ q) ≫ x`, by the comparison
+isomorphisms of `F` along `x` and `z ≫ q`, then along `q` and `z`, and then by the pullback along
+`z` of the comparison isomorphism along `x` and `q` (with `q ≫ x = x'`), is conjugating its
+pullback `pullHom w g` along `g = 𝟙` by the comparison isomorphism along `x'` and `z`. -/
+lemma mapComp'_conj_eq_pullHom {X₀ X₁ X₂ Y : C} (x : X₁ ⟶ X₀) (q : X₂ ⟶ X₁) (x' : X₂ ⟶ X₀)
+    (hx' : q ≫ x = x') (z : Y ⟶ X₂) (y₁ y₂ : Y ⟶ X₀) (h₁ : (z ≫ q) ≫ x = y₁)
+    (h₂ : z ≫ x' = y₂) (g : Y ⟶ Y) (hg : g = 𝟙 Y) (hgy : g ≫ y₁ = y₂)
+    (M N : F.obj (.mk (op X₀)))
+    (w : (F.map y₁.op.toLoc).toFunctor.obj M ⟶ (F.map y₁.op.toLoc).toFunctor.obj N) :
+    (F.map z.op.toLoc).toFunctor.map ((F.mapComp' x.op.toLoc q.op.toLoc x'.op.toLoc
+        (by rw [← hx']; rfl)).hom.toNatTrans.app M) ≫
+      ((F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).inv.toNatTrans.app _ ≫
+        ((F.mapComp' x.op.toLoc (z ≫ q).op.toLoc y₁.op.toLoc
+          (by rw [← h₁]; rfl)).inv.toNatTrans.app M ≫ w ≫
+            (F.mapComp' x.op.toLoc (z ≫ q).op.toLoc y₁.op.toLoc
+              (by rw [← h₁]; rfl)).hom.toNatTrans.app N) ≫
+        (F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).hom.toNatTrans.app _) ≫
+      (F.map z.op.toLoc).toFunctor.map ((F.mapComp' x.op.toLoc q.op.toLoc x'.op.toLoc
+        (by rw [← hx']; rfl)).inv.toNatTrans.app N) =
+    (F.mapComp' x'.op.toLoc z.op.toLoc y₂.op.toLoc (by rw [← h₂]; rfl)).inv.toNatTrans.app M ≫
+      pullHom w g y₂ y₂ hgy hgy ≫
+        (F.mapComp' x'.op.toLoc z.op.toLoc y₂.op.toLoc
+          (by rw [← h₂]; rfl)).hom.toNatTrans.app N := by
+  subst hg hx'
+  obtain rfl : y₂ = y₁ := by rw [← hgy, Category.id_comp]
+  rw [pullHom_id]
+  have hM := mapComp'_hom_app_comp_map_mapComp'_hom_app F x.op.toLoc q.op.toLoc z.op.toLoc
+    (q ≫ x).op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc rfl rfl (by rw [← h₂]; rfl)
+    (by rw [← h₁]; rfl) M
+  have hN := mapComp'_hom_app_comp_map_mapComp'_hom_app F x.op.toLoc q.op.toLoc z.op.toLoc
+    (q ≫ x).op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc rfl rfl (by rw [← h₂]; rfl)
+    (by rw [← h₁]; rfl) N
+  have hM' : (F.map z.op.toLoc).toFunctor.map
+      ((F.mapComp' x.op.toLoc q.op.toLoc (q ≫ x).op.toLoc).hom.toNatTrans.app M) ≫
+      (F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).inv.toNatTrans.app _ ≫
+        (F.mapComp' x.op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc
+          (by rw [← h₁]; rfl)).inv.toNatTrans.app M =
+      (F.mapComp' (q ≫ x).op.toLoc z.op.toLoc y₂.op.toLoc
+        (by rw [← h₂]; rfl)).inv.toNatTrans.app M := by
+    rw [← cancel_epi ((F.mapComp' (q ≫ x).op.toLoc z.op.toLoc y₂.op.toLoc
+      (by rw [← h₂]; rfl)).hom.toNatTrans.app M), reassoc_of% hM]
+    simp
+  have hN' : (F.mapComp' x.op.toLoc (z ≫ q).op.toLoc y₂.op.toLoc
+        (by rw [← h₁]; rfl)).hom.toNatTrans.app N ≫
+      (F.mapComp' q.op.toLoc z.op.toLoc (z ≫ q).op.toLoc).hom.toNatTrans.app _ ≫
+        (F.map z.op.toLoc).toFunctor.map
+          ((F.mapComp' x.op.toLoc q.op.toLoc (q ≫ x).op.toLoc).inv.toNatTrans.app N) =
+      (F.mapComp' (q ≫ x).op.toLoc z.op.toLoc y₂.op.toLoc
+        (by rw [← h₂]; rfl)).hom.toNatTrans.app N := by
+    rw [← reassoc_of% hN, ← Functor.map_comp, Cat.Hom.hom_inv_id_toNatTrans_app,
+      CategoryTheory.Functor.map_id]
+    exact Category.comp_id _
+  simp only [Category.assoc]
+  rw [reassoc_of% hM', hN']
+
+/-- Conjugating a local morphism `w : y₁^* M ⟶ y₁^* N`, for `y₁ = z ≫ 𝟙`, by the comparison
+isomorphism of `F` along `𝟙` and `z` is conjugating its pullback `pullHom w g` along `g = 𝟙` by the
+pullback along `z` of the unit isomorphism of `F`. -/
+lemma mapComp'_conj_eq_mapId'_conj_pullHom {X₀ Y : C} (z : Y ⟶ X₀) (y₁ : Y ⟶ X₀)
+    (h₁ : z ≫ 𝟙 X₀ = y₁) (g : Y ⟶ Y) (hg : g = 𝟙 Y) (hgy : g ≫ y₁ = z) (M N : F.obj (.mk (op X₀)))
+    (w : (F.map y₁.op.toLoc).toFunctor.obj M ⟶ (F.map y₁.op.toLoc).toFunctor.obj N) :
+    (F.mapComp' (𝟙 X₀).op.toLoc z.op.toLoc y₁.op.toLoc (by rw [← h₁]; rfl)).inv.toNatTrans.app M ≫
+        w ≫ (F.mapComp' (𝟙 X₀).op.toLoc z.op.toLoc y₁.op.toLoc
+          (by rw [← h₁]; rfl)).hom.toNatTrans.app N =
+      (F.map z.op.toLoc).toFunctor.map
+          ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).hom.toNatTrans.app M) ≫
+        pullHom w g z z hgy hgy ≫ (F.map z.op.toLoc).toFunctor.map
+          ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).inv.toNatTrans.app N) := by
+  subst hg
+  obtain rfl : y₁ = z := by rw [← hgy, Category.id_comp]
+  rw [pullHom_id]
+  have hM := mapComp'_hom_app_comp_map_mapId'_hom_app F (𝟙 X₀).op.toLoc (by simp) y₁.op.toLoc
+    (by simp) M
+  have hN := mapComp'_hom_app_comp_map_mapId'_hom_app F (𝟙 X₀).op.toLoc (by simp) y₁.op.toLoc
+    (by simp) N
+  have hM' : (F.mapComp' (𝟙 X₀).op.toLoc y₁.op.toLoc y₁.op.toLoc
+      (by simp)).inv.toNatTrans.app M = (F.map y₁.op.toLoc).toFunctor.map
+        ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).hom.toNatTrans.app M) := by
+    rw [← cancel_epi ((F.mapComp' (𝟙 X₀).op.toLoc y₁.op.toLoc y₁.op.toLoc
+      (by simp)).hom.toNatTrans.app M), hM, Cat.Hom.hom_inv_id_toNatTrans_app]
+  have hN' : (F.mapComp' (𝟙 X₀).op.toLoc y₁.op.toLoc y₁.op.toLoc
+      (by simp)).hom.toNatTrans.app N = (F.map y₁.op.toLoc).toFunctor.map
+        ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).inv.toNatTrans.app N) := by
+    rw [← cancel_mono ((F.map y₁.op.toLoc).toFunctor.map
+      ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).hom.toNatTrans.app N)), hN, ← Functor.map_comp,
+      Cat.Hom.inv_hom_id_toNatTrans_app, CategoryTheory.Functor.map_id]
+    rfl
+  rw [hM', hN']
 
 namespace LocallyDiscreteOpToCat
 
