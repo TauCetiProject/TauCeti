@@ -9,12 +9,10 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
-public import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.MeasureTheory.Group.MeasurableEquiv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
-import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 import TauCeti.MeasureTheory.Integral.Lebesgue.Exhaustion
@@ -64,10 +62,6 @@ outside every band (`TauCeti.eventually_Icc_add_prod_subset_inter`). The transla
 For a function on `α × ℝ` of period `c` in the second variable, as the energy density of a Floer
 cylinder is, the integrals over all horizontal strips `α × [τ, τ + c]` of width `c` agree
 (`TauCeti.setLIntegral_univ_prod_Icc_add_eq_of_periodic`).
-
-The reflection `(s, t) ↦ (-s, t)` exchanging the two ends of the strip preserves Lebesgue measure
-(`LinearIsometryEquiv.measurePreserving_negFst`), so it transports integrals over one end to
-integrals over the other.
 -/
 
 public section
@@ -344,11 +338,3 @@ theorem tendsto_setLIntegral_of_eventually_subset {ι β : Type*} [MeasurableSpa
     _ ≤ ε := hn n le_rfl
 
 end TauCeti
-
-open MeasureTheory in
-/-- The reflection `(s, t) ↦ (-s, t)` of the plane preserves Lebesgue measure. -/
-theorem LinearIsometryEquiv.measurePreserving_negFst :
-    MeasurePreserving (LinearIsometryEquiv.negFst ℝ ℝ ℝ) := by
-  rw [LinearIsometryEquiv.coe_negFst, Measure.volume_eq_prod]
-  exact (Measure.measurePreserving_neg (volume : Measure ℝ)).prod
-    (MeasurePreserving.id (volume : Measure ℝ))

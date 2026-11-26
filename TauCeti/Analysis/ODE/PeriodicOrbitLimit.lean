@@ -28,6 +28,7 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Topology.Connected.MetricSpace
 import TauCeti.Topology.Connected.TotallyDisconnected
 import TauCeti.Topology.ContinuousMap.Ascoli
