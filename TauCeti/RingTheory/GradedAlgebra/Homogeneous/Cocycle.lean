@@ -293,11 +293,7 @@ theorem exists_linearEquiv_iff_exists_mul_eq {u u' : A[T;T⁻¹]} (hu : IsGradin
       rw [← mem_cocycleGrading_iff, ← hφx, hφ]
       exact (D n).property
     have hu1 : u = ∑ n ∈ D.support, C (D n : A) * T n := by
-      calc u = decomposeLaurent (cocycleGrading 𝒜 u) (∑ n ∈ D.support, (D n : A)) := by
-            rw [sum_support_decompose, decomposeLaurent_one_cocycleGrading]
-        _ = ∑ n ∈ D.support, C (D n : A) * T n := by
-            rw [map_sum]
-            exact Finset.sum_congr rfl fun n _ ↦ decomposeLaurent_of_mem _ (D n).property
+      rw [← decomposeLaurent_eq_sum, decomposeLaurent_one_cocycleGrading]
     calc decomposeLaurent 𝒜 (hunit.unit : A) * u'
         = decomposeLaurent 𝒜 ((∑ n ∈ D.support, (D n : A)) * φ 1) * u' := by
           rw [sum_support_decompose, one_mul, IsUnit.unit_spec]

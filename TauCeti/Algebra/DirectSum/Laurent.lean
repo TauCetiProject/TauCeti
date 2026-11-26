@@ -42,6 +42,15 @@ theorem decomposeLaurent_of_mem {x : A} {i : ℤ} (hx : x ∈ ℳ i) :
     decomposeLaurent ℳ x = LaurentPolynomial.C x * LaurentPolynomial.T i := by
   simp [decomposeLaurent, decompose_of_mem ℳ hx]
 
+/-- The decomposition Laurent polynomial is the sum of the homogeneous components, each times the
+monomial of its degree. -/
+theorem decomposeLaurent_eq_sum [∀ (i) (x : ℳ i), Decidable (x ≠ 0)] (x : A) :
+    decomposeLaurent ℳ x = ∑ n ∈ (decompose ℳ x).support,
+      LaurentPolynomial.C (decompose ℳ x n : A) * LaurentPolynomial.T n := by
+  conv_lhs => rw [← sum_support_decompose ℳ x]
+  rw [map_sum]
+  exact Finset.sum_congr rfl fun n _ ↦ decomposeLaurent_of_mem ℳ (decompose ℳ x n).property
+
 /-- The coefficients of the decomposition Laurent polynomial are the homogeneous components. -/
 @[simp]
 theorem coeff_decomposeLaurent (x : A) (i : ℤ) :
