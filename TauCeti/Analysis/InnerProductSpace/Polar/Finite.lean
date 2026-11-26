@@ -136,6 +136,18 @@ theorem range_polarFactor (A : E →ₗ[𝕜] F) : A.polarFactor.range = A.range
   · rintro _ ⟨x, rfl⟩
     exact ⟨A.operatorAbs x, A.polarFactor_operatorAbs_apply x⟩
 
+/-- Factoring a map through its modulus is equivalent to agreeing with its polar factor
+on the orthogonal complement of its kernel. -/
+theorem comp_operatorAbs_eq_iff_eqOn_polarFactor (A : E →ₗ[𝕜] F) (D : E →ₗ[𝕜] F) :
+    D ∘ₗ A.operatorAbs = A ↔ Set.EqOn D A.polarFactor A.kerᗮ := by
+  rw [← A.range_operatorAbs]
+  constructor
+  · rintro h _ ⟨x, rfl⟩
+    rw [A.polarFactor_operatorAbs_apply, ← comp_apply, h]
+  · intro h
+    ext x
+    exact (h (mem_range_self _ x)).trans (A.polarFactor_operatorAbs_apply x)
+
 /-- The factorization through the modulus and vanishing on `ker A` characterize the canonical
 polar factor, without assuming that the competing factor is a partial isometry. -/
 theorem eq_polarFactor (A : E →ₗ[𝕜] F) {V : E →ₗ[𝕜] F}
