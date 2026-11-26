@@ -115,8 +115,7 @@ theorem mem_kerFst_iff {z : SteinbergGroup I.double} :
 /-- The generator `x_{ij}(0, v)` of `St(R ⊕ I)`, for `v ∈ I`, lies in `St'(R, I)`. -/
 theorem x_doubleInr_mem_kerFst {i j : ℕ} (hij : i ≠ j) {v : R} (hv : v ∈ I) :
     IndexedSteinbergGroup.x hij (doubleInr hv) ∈ kerFst I := by
-  rw [mem_kerFst_iff, IndexedSteinbergGroup.map_x, doubleFst_doubleInr,
-    IndexedSteinbergGroup.x_zero]
+  simp
 
 /-- **`St'(R, I)` is the normal closure of the generators `x_{ij}(0, v)`, `v ∈ I`.** -/
 theorem kerFst_eq_normalClosure :
@@ -283,20 +282,17 @@ theorem kerFst_bot : kerFst (⊥ : TwoSidedIdeal R) = ⊥ := by
       RingHom.id _ :=
     RingHom.ext fun p ↦ hinj (by simp)
   refine (eq_bot_iff_forall _).2 fun z hz ↦ ?_
-  calc z = IndexedSteinbergGroup.map (RingHom.id _) z := by
-        rw [IndexedSteinbergGroup.map_id, MonoidHom.id_apply]
-    _ = IndexedSteinbergGroup.map (doubleDiag ⊥)
-        (IndexedSteinbergGroup.map (doubleFst ⊥) z) := by
-        rw [← hid, IndexedSteinbergGroup.map_map]
-    _ = 1 := by rw [mem_kerFst_iff.1 hz, map_one]
+  simpa [IndexedSteinbergGroup.map_map, hid] using
+    congrArg (IndexedSteinbergGroup.map (doubleDiag ⊥)) (mem_kerFst_iff.1 hz)
 
-instance : Subsingleton (IdealSteinbergGroup (⊥ : TwoSidedIdeal R)) := by
-  refine ⟨fun a b ↦ ?_⟩
-  obtain ⟨y, rfl⟩ := mk_surjective _ a
-  obtain ⟨y', rfl⟩ := mk_surjective _ b
-  have hy : y = 1 := Subtype.ext (Subgroup.mem_bot.1 (kerFst_bot (R := R) ▸ y.property))
-  have hy' : y' = 1 := Subtype.ext (Subgroup.mem_bot.1 (kerFst_bot (R := R) ▸ y'.property))
-  rw [hy, hy']
+/-- `St'(R, 0)` is trivial (`TauCeti.IdealSteinbergGroup.kerFst_bot`). -/
+instance : Subsingleton (kerFst (⊥ : TwoSidedIdeal R)) := by
+  rw [kerFst_bot]
+  infer_instance
+
+/-- The relative Steinberg group of the zero ideal is trivial, being a quotient of `St'(R, 0)`. -/
+instance : Subsingleton (IdealSteinbergGroup (⊥ : TwoSidedIdeal R)) :=
+  (mk_surjective _).subsingleton
 
 end IdealSteinbergGroup
 
@@ -365,8 +361,7 @@ variable {I} in
 /-- An element of `K₂'(R, I)` lies in `St'(R, I)`. -/
 theorem coe_mem_kerFst (x : kerFst I) :
     ((x : AlgebraicK2 I.double) : SteinbergGroup I.double) ∈ IdealSteinbergGroup.kerFst I := by
-  rw [IdealSteinbergGroup.mem_kerFst_iff, ← AlgebraicK2.coe_map_apply,
-    (MonoidHom.mem_ker).1 x.property, OneMemClass.coe_one]
+  simpa using congrArg Subtype.val (MonoidHom.mem_ker.1 x.property)
 
 /-- The homomorphism `K₂'(R, I) →* K₂(R, I)` sending an element of `K₂(R ⊕ I)` killed by the
 projection to its class in `St(R, I)`. It is surjective with kernel the cross commutators
@@ -387,8 +382,7 @@ theorem ofKerFst_surjective : Function.Surjective (ofKerFst I) := by
   obtain ⟨y, rfl⟩ := IdealSteinbergGroup.mk_surjective I w
   have hy := IdealSteinbergGroup.mk_mem_idealAlgebraicK2_iff.1 hw
   refine ⟨⟨⟨y, hy⟩, ?_⟩, Subtype.ext (coe_ofKerFst_apply I _)⟩
-  rw [kerFst, MonoidHom.mem_ker, ← OneMemClass.coe_eq_one, AlgebraicK2.coe_map_apply]
-  exact IdealSteinbergGroup.mem_kerFst_iff.1 y.property
+  simpa [kerFst, ← OneMemClass.coe_eq_one] using IdealSteinbergGroup.mem_kerFst_iff.1 y.property
 
 /-- The kernel of `K₂'(R, I) →* K₂(R, I)` consists of the cross commutators. -/
 theorem ker_ofKerFst :
@@ -415,8 +409,7 @@ homomorphism `K₂(R ⊕ I) →* K₂(R)` of the addition map. -/
 theorem toAlgebraicK2_quotientEquiv_mk (x : kerFst I) :
     toAlgebraicK2 I (quotientEquiv I (QuotientGroup.mk x)) = AlgebraicK2.map I.doubleSnd x := by
   ext
-  rw [quotientEquiv_mk, coe_toAlgebraicK2_apply, coe_ofKerFst_apply,
-    IdealSteinbergGroup.toSteinbergGroup_mk, AlgebraicK2.coe_map_apply]
+  simp
 
 end idealAlgebraicK2
 
@@ -438,9 +431,8 @@ theorem map_cross_le (f : R →+* S) (h : I ≤ comap f J) :
     (cross I).map (IndexedSteinbergGroup.map (doubleMap f h)) ≤ cross J := by
   rw [cross, MonoidHom.map_closure, closure_le]
   rintro _ ⟨_, ⟨i, j, k, l, hij, hkl, u, v, hu, hv, rfl⟩, rfl⟩
-  rw [SetLike.mem_coe, map_commutatorElement, IndexedSteinbergGroup.map_x,
-    IndexedSteinbergGroup.map_x, doubleMap_doubleInr, doubleMap_doubleInl]
-  exact commutatorElement_mem_cross J _ _ _ _
+  simpa using
+    commutatorElement_mem_cross J hij hkl ((mem_comap f).1 (h hu)) ((mem_comap f).1 (h hv))
 
 /-- The restriction `St'(R, I) →* St'(S, J)` of the homomorphism induced by a morphism of pairs. -/
 private def kerFstMap (f : R →+* S) (h : I ≤ comap f J) : kerFst I →* kerFst J :=
@@ -472,18 +464,13 @@ variable (I) in
 theorem map_id :
     map (RingHom.id R) (fun _ hx ↦ (mem_comap _).2 hx) = MonoidHom.id (IdealSteinbergGroup I) := by
   refine hom_ext (MonoidHom.ext fun y ↦ ?_)
-  rw [MonoidHom.comp_apply, map_mk, MonoidHom.comp_apply, MonoidHom.id_apply]
-  congr 1
-  ext
   simp
 
 theorem map_comp (f : R →+* S) (g : S →+* T) (hf : I ≤ comap f J) (hg : J ≤ comap g K) :
     map (g.comp f) (fun _ hx ↦ (mem_comap _).2 ((mem_comap g).1 (hg ((mem_comap f).1 (hf hx))))) =
       (map g hg).comp (map f hf) := by
   refine hom_ext (MonoidHom.ext fun y ↦ ?_)
-  rw [MonoidHom.comp_apply, map_mk, MonoidHom.comp_apply, MonoidHom.comp_apply, map_mk, map_mk]
-  congr 1
-  simp only [IndexedSteinbergGroup.map_map, ← doubleMap_comp]
+  simp [IndexedSteinbergGroup.map_map, ← doubleMap_comp]
 
 end IdealSteinbergGroup
 
