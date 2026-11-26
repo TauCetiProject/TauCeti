@@ -14,7 +14,6 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.InnerProductSpace.Laplacian.DerivativeDecay
 import TauCeti.Analysis.Normed.Group.Prod
 import TauCeti.Analysis.PDE.Vortex.ScalarEquation
-import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.PDE.Vortex.Divisor.JointSmooth
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.DerivativeDecay
