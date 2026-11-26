@@ -427,12 +427,7 @@ theorem exists_orthonormalFrameBundle_lift_of_contractibleSpace
   obtain ⟨e, he, hbase⟩ :=
     exists_trivialization_baseSet_eq_univ_of_contractibleSpace 𝕜 F ((g : Y → B) *ᵖ E)
   have hY (y : Y) : y ∈ e.baseSet := hbase ▸ mem_univ y
-  -- Its Gram–Schmidt orthonormal frame, read as a frame of `E` along `g`. Gram–Schmidt reads the
-  -- pullback fibres with the topology of their norms, which agrees with the pullback fibre topology
-  -- only after unfolding instances, so the fibre and vector bundle structures of the pullback are
-  -- restated for it.
-  let := Pullback.normedFiberBundle F E g
-  let := Pullback.normedVectorBundle F E 𝕜 g
+  -- Its Gram–Schmidt orthonormal frame, read as a frame of `E` along `g`.
   let c := Module.finBasisOfFinrankEq 𝕜 F h.symm
   let o := stdOrthonormalBasis 𝕜 V
   exact ⟨⟨fun y ↦ OrthonormalFrameBundle.pullbackLift g ⟨y, e.orthonormalFrame c o ⟨y, hY y⟩⟩,

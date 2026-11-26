@@ -198,6 +198,14 @@ theorem immersionNormalConnection_mem (ν : Π x : M, TangentSpace J (f x))
     immersionNormalConnection cov f ν X x ∈ orthogonalNormalSpace I J f x :=
   Submodule.starProjection_apply_mem _ _
 
+/-- The normal connection pairs with a normal vector like the covariant derivative of `ν`. -/
+theorem inner_immersionNormalConnection_of_mem (ν : Π x : M, TangentSpace J (f x))
+    (X : Π x : M, TangentSpace I x) {x : M} {w : TangentSpace J (f x)}
+    (hw : w ∈ orthogonalNormalSpace I J f x) :
+    inner ℝ (immersionNormalConnection cov f ν X x) w = inner ℝ (cov.alongMap I f ν x (X x)) w := by
+  rw [immersionNormalConnection_def, Submodule.inner_starProjection_left_eq_right,
+    Submodule.starProjection_eq_self_iff.2 hw]
+
 /-- The shape operator takes values in the range of the differential. -/
 theorem immersionShapeOperator_mem (ν : Π x : M, TangentSpace J (f x))
     (X : Π x : M, TangentSpace I x) (x : M) :
