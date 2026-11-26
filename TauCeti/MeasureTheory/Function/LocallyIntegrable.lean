@@ -57,7 +57,9 @@ A function locally integrable on `s` stays so after multiplication by a measurab
 bounded where the function does not vanish
 (`MeasureTheory.LocallyIntegrableOn.bdd_mul_of_ne_zero`), and an integer-valued function locally
 integrable on `s` has support of finite measure in the compact subsets of `s`
-(`MeasureTheory.LocallyIntegrableOn.measure_setOf_intCast_ne_zero_inter_ne_top`).
+(`MeasureTheory.LocallyIntegrableOn.measure_setOf_intCast_ne_zero_inter_ne_top`). For `f` locally
+integrable on a measurable set `s`, the measure `‖f‖ μ` pulled back to the subtype `s` is locally
+finite (`MeasureTheory.LocallyIntegrableOn.isLocallyFiniteMeasure_comap_withDensity`).
 
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
@@ -141,6 +143,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   preserves local integrability.
 * `MeasureTheory.LocallyIntegrableOn.measure_setOf_intCast_ne_zero_inter_ne_top`: an integer-valued
   locally integrable function has support of finite measure in compact subsets.
+* `MeasureTheory.LocallyIntegrableOn.isLocallyFiniteMeasure_comap_withDensity`: the measure
+  `‖f‖ μ` on the subtype `s` is locally finite.
 * `MeasureTheory.Lp.locallyIntegrableOn`: an `Lᵖ` function on a set, with `1 ≤ p`, is locally
   integrable on it.
 * `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
@@ -554,6 +558,20 @@ theorem measure_setOf_intCast_ne_zero_inter_ne_top {θ : X → ℤ}
     ((hθ.integrableOn_compact_subset hKs hK).measure_norm_ge_lt_top one_pos) |>.ne
   intro x (hx : θ x ≠ 0)
   simpa [Real.norm_eq_abs] using (Int.cast_le (R := ℝ)).2 (Int.one_le_abs hx)
+
+variable [OpensMeasurableSpace X] in
+/-- For `f` locally integrable on a measurable set `s`, the measure `‖f‖ μ`, pulled back to the
+subtype `s`, is locally finite. -/
+theorem isLocallyFiniteMeasure_comap_withDensity {ε : Type*} [TopologicalSpace ε]
+    [ContinuousENorm ε] {f : X → ε} (hf : LocallyIntegrableOn f s μ) (hs : MeasurableSet s) :
+    IsLocallyFiniteMeasure ((μ.withDensity fun x ↦ ‖f x‖ₑ).comap ((↑) : s → X)) := by
+  refine ⟨fun x ↦ ?_⟩
+  obtain ⟨t, ht, hint⟩ := hf x x.property
+  obtain ⟨u, hu, hxu, hut⟩ := mem_nhdsWithin.1 ht
+  refine ⟨(↑) ⁻¹' u, (hu.preimage continuous_subtypeVal).mem_nhds hxu, ?_⟩
+  rw [comap_subtypeVal_apply hs, Subtype.image_preimage_coe,
+    withDensity_apply _ (hs.inter hu.measurableSet)]
+  exact (lintegral_mono_set (s := s ∩ u) fun y hy ↦ hut ⟨hy.2, hy.1⟩).trans_lt hint.2
 
 end MeasureTheory.LocallyIntegrableOn
 
