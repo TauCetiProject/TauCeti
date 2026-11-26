@@ -254,6 +254,7 @@ lemma BandCompatible.map_mulEquiv_hom (φ : A ⟶ B) (η : StrongTrans F G)
 
 /-- A transformation is compatible with the identity of `A` if and only if it preserves the
 bands. -/
+@[simp]
 lemma bandCompatible_id_iff {bG : G.AbelianBanding J A} (η : StrongTrans F G) :
     BandCompatible (𝟙 A) bF bG η ↔ BandPreserving bF bG η :=
   ⟨fun h ↦ ⟨h.mapAut_mulEquiv⟩, fun h ↦ ⟨h.mapAut_mulEquiv⟩⟩

@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Pi.Basic
-public import TauCeti.CategoryTheory.Sites.CoversTop
 public import TauCeti.CategoryTheory.Sites.Descent.Banding
 public import TauCeti.CategoryTheory.Sites.Descent.IsGerbe
 public import TauCeti.CategoryTheory.Sites.Descent.Pi
+public import TauCeti.CategoryTheory.Sites.Grothendieck
 public import TauCeti.CategoryTheory.Sites.Limits
 
 /-!
@@ -197,14 +197,11 @@ theorem bandCompatible_piMap {A' : I → Sheaf J AddCommGrpCat.{max w t}}
 /-- The product of band-preserving transformations preserves the product bands. -/
 instance bandPreserving_piMap (bG : ∀ i, (G i).AbelianBanding J (A i)) (η : ∀ i, F i ⟶ G i)
     [∀ i, BandPreserving (b i) (bG i) (η i)] :
-    BandPreserving (AbelianBanding.pi b hc) (AbelianBanding.pi bG hc) (piMap η) where
-  mapAut_mulEquiv U x a := Aut.ext <| Iso.ext <| funext fun i ↦ by
-    rw [Functor.mapAut_apply_asIso]
-    simp only [Functor.mapIso_hom, piMap_app_map_apply, AbelianBanding.pi_mulEquiv_asIso_hom,
-      BandPreserving.map_mulEquiv_hom (bG i) (η i)]
-    -- The objects at which the band automorphisms are taken agree by definition of `piMap`; this
-    -- cannot be rewritten since the band automorphisms depend on them.
-    rfl
+    BandPreserving (AbelianBanding.pi b hc) (AbelianBanding.pi bG hc) (piMap η) := by
+  have h := bandCompatible_piMap b hc bG hc (fun i ↦ 𝟙 (A i)) η
+  rwa [Fan.IsLimit.hom_ext hc (Fan.IsLimit.lift hc fun i ↦ c.proj i ≫ 𝟙 (A i)) (𝟙 c.pt)
+    fun i ↦ by simp [Fan.IsLimit.fac],
+    bandCompatible_id_iff] at h
 
 end TauCeti.Stack.pi
 
