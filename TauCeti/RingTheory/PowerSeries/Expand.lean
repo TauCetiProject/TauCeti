@@ -9,6 +9,7 @@ public import Mathlib.Data.Finset.Finsupp
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import Mathlib.RingTheory.PowerSeries.Expand
+public import TauCeti.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.PiTopology
 import TauCeti.RingTheory.PowerSeries.Geometric
 
@@ -30,6 +31,8 @@ field with `q` elements, the iterates of `expand q` are the `q ^ j`-th power map
 * `PowerSeries.expand_injective`: expansion `f ↦ f (X ^ p)` is injective.
 * `PowerSeries.rescale_expand`: rescaling `f (X ^ p)` by `a` rescales `f` by `a ^ p`.
 * `PowerSeries.subst_expand`: substituting into `f(X ^ p)` substitutes the `p`-th power.
+* `PowerSeries.logOf_expand`, `PowerSeries.logOf_one_sub_C_mul_X_pow`: `log` commutes with
+  exponent expansion, and the logarithm of `1 - c X ^ j`.
 * `PowerSeries.toMvPowerSeries_expand`: embedding in one coordinate commutes with expansion.
 * `PowerSeries.expand_mk_pow_mul_one_sub_C_mul_X_pow_eq_one`: the geometric series `∑ aⁿ Xᵖⁿ`
   inverts `1 - a Xᵖ`.
@@ -131,6 +134,19 @@ theorem subst_expand {σ : Type*} (p : ℕ) (hp : p ≠ 0) {a : MvPowerSeries σ
     subst a (expand p hp f) = subst (a ^ p) f := by
   rw [expand_apply, subst_comp_subst_apply (HasSubst.X_pow hp) ha, subst_pow ha,
     subst_X ha]
+
+/-- The formal logarithm commutes with expansion when the constant coefficient is one. -/
+theorem logOf_expand [Algebra ℚ R] (p : ℕ) (hp : p ≠ 0) {f : R⟦X⟧} (hf : constantCoeff f = 1) :
+    logOf (expand p hp f) = expand p hp (logOf f) := by
+  have hsub : HasSubst (f - 1) := HasSubst.sub_one hf
+  rw [logOf_eq, logOf_eq, ← (by rw [map_sub, map_one] : expand p hp (f - 1) = expand p hp f - 1)]
+  exact (PowerSeries.expand_subst p hp hsub (log R)).symm
+
+/-- The logarithm of `1 - c X ^ j` (`j ≠ 0`) is the `j`-fold expansion of `-∑ cⁿ Xⁿ / n`. -/
+theorem logOf_one_sub_C_mul_X_pow [Algebra ℚ R] (c : R) {j : ℕ} (hj : j ≠ 0) :
+    logOf (1 - C c * X ^ j) = expand j hj (mk fun n ↦ (n : ℚ)⁻¹ • -c ^ n) := by
+  rw [show (1 - C c * X ^ j : R⟦X⟧) = expand j hj (1 - C c * X) by simp [expand_C],
+    logOf_expand j hj (by simp), logOf_one_sub_C_mul_X]
 
 /-- Embedding a series in one coordinate commutes with expansion. -/
 theorem toMvPowerSeries_expand {σ : Type*} (p : ℕ) (hp : p ≠ 0) (i : σ) (f : R⟦X⟧) :
