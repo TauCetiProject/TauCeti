@@ -60,8 +60,10 @@ points of `f` of index `j`, and these lie one over each vertex.
 For instance, along the direction `(1, 2, …, n)` the standard `n`-simplex, the polytope of `ℂPⁿ`,
 has no descending edge at the vertex `0` and `p + 1` descending edges at the vertex `a e p*`. So
 `ℂPⁿ` has Betti number `1` in each even degree `0, 2, …, 2n` and `0` otherwise
-(`TauCeti.Toric.bettiNumber_delzantQuotient_simplex`). The edge vectors are identified by their
-pairings with the active normals (`TauCeti.Toric.IsSmoothVertex.eq_edgeBasis_iff`).
+(`TauCeti.Toric.bettiNumber_delzantQuotient_simplex`). The edge vectors of the simplex
+(`TauCeti.Toric.edgeBasis_simplex_zero`, `TauCeti.Toric.edgeBasis_simplex_smul_proj_none`,
+`TauCeti.Toric.edgeBasis_simplex_smul_proj_some`) are identified by their pairings with the active
+normals (`TauCeti.Toric.IsSmoothVertex.eq_edgeBasis_iff`).
 
 ## Main results
 
@@ -126,6 +128,13 @@ private theorem reducedMomentMap_apply_eq_weightMomentMap (x : V) :
     rw [← add_weightMomentMap_vertexChart hv hi hvP hq, add_apply,
       ← coe_vertexDarbouxChart hΔ hi hv hvP]
 
+/-- The point over a smooth vertex `v` lies in the Darboux chart at `v`. -/
+private theorem vertexChart_symm_zero_mem_vertexDarbouxChart_source :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    (vertexChart hv hi hvP).symm 0 ∈ (hΔ.vertexDarbouxChart hi hv hvP).source := by
+  rw [vertexDarbouxChart_source]
+  exact (vertexChart hv hi hvP).map_target (zero_mem_vertexChart_target hv hi hvP)
+
 /-- The point over a smooth vertex `v` is a critical point of every component `⟨μ_Δ, x⟩` of the
 moment map. -/
 theorem vertexChart_symm_zero_mem_criticalPoints (x : V) :
@@ -135,9 +144,7 @@ theorem vertexChart_symm_zero_mem_criticalPoints (x : V) :
         (Fin (Fintype.card ι + finrank ℝ V) → ℝ))
       (fun q : DelzantQuotient i u c ↦ reducedMomentMap hβ q x) := by
   let _ := hΔ.delzantQuotientChartedSpace hi
-  have h0 : (vertexChart hv hi hvP).symm 0 ∈ (hΔ.vertexDarbouxChart hi hv hvP).source := by
-    rw [vertexDarbouxChart_source]
-    exact (vertexChart hv hi hvP).map_target (zero_mem_vertexChart_target hv hi hvP)
+  have h0 := hΔ.vertexChart_symm_zero_mem_vertexDarbouxChart_source hi hv hvP
   rw [mem_criticalPoints_iff_weightGenerator_eq_zero
       (hΔ.reducedMomentMap_apply_eq_weightMomentMap hi hv hvP hβ x) h0, coe_vertexDarbouxChart,
     (vertexChart hv hi hvP).right_inv (zero_mem_vertexChart_target hv hi hvP), map_zero]
@@ -152,9 +159,7 @@ theorem manifoldMorseIndex_vertexChart_symm_zero (x : V) :
       (fun q : DelzantQuotient i u c ↦ reducedMomentMap hβ q x) ((vertexChart hv hi hvP).symm 0) =
       2 * {k | hv.edgeBasis hi k x < 0}.ncard := by
   let _ := hΔ.delzantQuotientChartedSpace hi
-  have h0 : (vertexChart hv hi hvP).symm 0 ∈ (hΔ.vertexDarbouxChart hi hv hvP).source := by
-    rw [vertexDarbouxChart_source]
-    exact (vertexChart hv hi hvP).map_target (zero_mem_vertexChart_target hv hi hvP)
+  have h0 := hΔ.vertexChart_symm_zero_mem_vertexDarbouxChart_source hi hv hvP
   rw [manifoldMorseIndex_eq_two_mul_ncard_pos_of_weightMomentMap
     (hΔ.reducedMomentMap_apply_eq_weightMomentMap hi hv hvP hβ x) h0
     (hΔ.vertexChart_symm_zero_mem_criticalPoints hi hv hvP hβ x)]
@@ -185,11 +190,13 @@ theorem eq_vertexChart_symm_zero_and_isManifoldNondegenerateCriticalPoint {x : V
     hcrit).2 hne⟩
   -- In the chart, the model generator vanishes only at the origin.
   have hgen := (mem_criticalPoints_iff_weightGenerator_eq_zero hf hq').1 hcrit
-  rw [weightGenerator_apply_eq_zero_iff] at hgen
+  rw [weightGenerator_apply_eq_zero_iff, coe_vertexDarbouxChart] at hgen
   have hw : vertexChart hv hi hvP q = 0 := by
-    refine Prod.ext (PiLp.ext fun k ↦ ?_) (PiLp.ext fun k ↦ ?_) <;>
+    refine Prod.ext (PiLp.ext fun k ↦ ?_) (PiLp.ext fun k ↦ ?_)
     · by_contra hk
-      exact hne k (hgen k (by simp_all))
+      exact hne k (hgen k (.inl hk))
+    · by_contra hk
+      exact hne k (hgen k (.inr hk))
   rw [← hw, (vertexChart hv hi hvP).left_inv hq]
 
 end Vertex
@@ -368,64 +375,6 @@ section Simplex
 
 variable {n : ℕ} {a : ℝ}
 
-/-- At the vertex `0` of the standard simplex, the edge vector along the facet `x(e k) ≥ 0` is the
-coordinate functional `e k*`. -/
-private theorem edgeBasis_simplex_zero (ha : 0 < a)
-    (hv : IsSmoothVertex ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n))
-      (simplexSupport a) 0)
-    (e : activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n)))
-      (simplexSupport a) 0) {k : Fin n} (he : e.val = some k) :
-    hv.edgeBasis (isIntegralLattice_intCast n) e = ContinuousLinearMap.proj k := by
-  classical
-  refine ((hv.eq_edgeBasis_iff _ e _).2 fun ⟨j, hj⟩ ↦ ?_).symm
-  cases j with
-  | none => exact absurd (none_mem_activeSet_simplex_iff.1 hj) (by simpa using ha.ne)
-  | some l => simp [Subtype.ext_iff, he, simplexNormal_some, Pi.single_apply]
-
-/-- At the vertex `a e p*` of the standard simplex, the facet `x(e p) ≥ 0` is not active: an
-active facet `x(e l) ≥ 0` has `l ≠ p`. -/
-private theorem ne_of_some_mem_activeSet_simplex (ha : 0 < a) {p l : Fin n}
-    (hl : some l ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin n))
-      (simplexNormal (Fin n))) (simplexSupport a) (a • ContinuousLinearMap.proj p)) :
-    l ≠ p := by
-  have := some_mem_activeSet_simplex_iff.1 hl
-  simp only [smul_apply, ContinuousLinearMap.proj_apply, Pi.single_apply, smul_eq_mul] at this
-  rintro rfl
-  simp [ha.ne'] at this
-
-/-- At the vertex `a e p*` of the standard simplex, the edge vector along the slanted facet is
-`-e p*`. -/
-private theorem edgeBasis_simplex_smul_proj_none (ha : 0 < a) {p : Fin n}
-    (hv : IsSmoothVertex ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n))
-      (simplexSupport a) (a • ContinuousLinearMap.proj p))
-    (e : activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n)))
-      (simplexSupport a) (a • ContinuousLinearMap.proj p)) (he : e.val = none) :
-    hv.edgeBasis (isIntegralLattice_intCast n) e = -ContinuousLinearMap.proj p := by
-  classical
-  refine ((hv.eq_edgeBasis_iff _ e _).2 fun ⟨j, hj⟩ ↦ ?_).symm
-  cases j with
-  | none => simp [Subtype.ext_iff, he, simplexNormal_none]
-  | some l =>
-    simp [Subtype.ext_iff, he, simplexNormal_some, (ne_of_some_mem_activeSet_simplex ha hj).symm]
-
-/-- At the vertex `a e p*` of the standard simplex, the edge vector along the facet
-`x(e k) ≥ 0`, `k ≠ p`, is `e k* - e p*`. -/
-private theorem edgeBasis_simplex_smul_proj_some (ha : 0 < a) {p : Fin n}
-    (hv : IsSmoothVertex ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n))
-      (simplexSupport a) (a • ContinuousLinearMap.proj p))
-    (e : activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n)))
-      (simplexSupport a) (a • ContinuousLinearMap.proj p)) {k : Fin n} (he : e.val = some k) :
-    hv.edgeBasis (isIntegralLattice_intCast n) e =
-      ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin n ↦ ℝ) k -
-        ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin n ↦ ℝ) p := by
-  classical
-  refine ((hv.eq_edgeBasis_iff _ e _).2 fun ⟨j, hj⟩ ↦ ?_).symm
-  cases j with
-  | none => simp [Subtype.ext_iff, he, simplexNormal_none]
-  | some l =>
-    simp [Subtype.ext_iff, he, simplexNormal_some, (ne_of_some_mem_activeSet_simplex ha hj).symm,
-      Pi.single_apply]
-
 /-- The generic direction `x = (1, 2, …, n)` used for the standard simplex. -/
 private def simplexDirection (n : ℕ) : Fin n → ℝ := fun k ↦ (k : ℝ) + 1
 
@@ -437,9 +386,9 @@ private theorem ncard_edgeBasis_simplexDirection_zero (ha : 0 < a)
   rw [ncard_eq_zero, eq_empty_iff_forall_notMem]
   rintro ⟨j, hj⟩ he
   cases j with
-  | none => exact absurd (none_mem_activeSet_simplex_iff.1 hj) (by simpa using ha.ne)
+  | none => exact absurd hj (none_notMem_activeSet_simplex_zero ha.ne')
   | some k =>
-    rw [mem_ofPred_eq, edgeBasis_simplex_zero ha hv _ rfl] at he
+    rw [mem_ofPred_eq, edgeBasis_simplex_zero ha.ne' _ hv _ rfl] at he
     simp only [ContinuousLinearMap.proj_apply, simplexDirection] at he
     linarith [(k : ℕ).cast_nonneg (α := ℝ)]
 
@@ -461,25 +410,25 @@ private theorem ncard_edgeBasis_simplexDirection_smul_proj (ha : 0 < a) {p : Fin
       cases j with
       | none => exact mem_insert _ _
       | some k =>
-        rw [mem_ofPred_eq, edgeBasis_simplex_smul_proj_some ha hv _ rfl] at he
+        rw [mem_ofPred_eq, edgeBasis_simplex_smul_proj_some ha.ne' _ hv _ rfl] at he
         simp only [sub_apply, ContinuousLinearMap.proj_apply,
           simplexDirection, sub_neg, add_lt_add_iff_right, Nat.cast_lt] at he
         exact mem_insert_of_mem _ ⟨k, Fin.lt_def.2 he, rfl⟩
     · rintro (rfl | ⟨k, hk, rfl⟩)
       · have hj : none ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin n))
             (simplexNormal (Fin n))) (simplexSupport a) (a • ContinuousLinearMap.proj p) :=
-          none_mem_activeSet_simplex_iff.2 (by simp [Pi.single_apply])
+          (mem_activeSet_simplex_smul_proj_iff ha.ne').2 (Option.some_ne_none p).symm
         refine ⟨⟨none, hj⟩, ?_, rfl⟩
-        rw [mem_ofPred_eq, edgeBasis_simplex_smul_proj_none ha hv _ rfl]
+        rw [mem_ofPred_eq, edgeBasis_simplex_smul_proj_none ha.ne' _ hv _ rfl]
         simp only [neg_apply, ContinuousLinearMap.proj_apply,
           simplexDirection, neg_neg_iff_pos]
         positivity
       · have hkp : k ≠ p := (Fin.lt_def.1 hk).ne ∘ congrArg Fin.val
         have hj : some k ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin n))
             (simplexNormal (Fin n))) (simplexSupport a) (a • ContinuousLinearMap.proj p) :=
-          some_mem_activeSet_simplex_iff.2 (by simp [hkp])
+          (mem_activeSet_simplex_smul_proj_iff ha.ne').2 (Option.some_injective _ |>.ne hkp)
         refine ⟨⟨some k, hj⟩, ?_, rfl⟩
-        rw [mem_ofPred_eq, edgeBasis_simplex_smul_proj_some ha hv _ rfl]
+        rw [mem_ofPred_eq, edgeBasis_simplex_smul_proj_some ha.ne' _ hv _ rfl]
         simp only [sub_apply, ContinuousLinearMap.proj_apply,
           simplexDirection, sub_neg, add_lt_add_iff_right, Nat.cast_lt]
         exact Fin.lt_def.1 hk
@@ -498,21 +447,21 @@ private theorem edgeBasis_simplexDirection_ne_zero (ha : 0 < a)
   obtain ⟨e, he⟩ := e
   rcases (mem_extremePoints_facetPolyhedron_simplex_iff ha).1 hv with rfl | ⟨p, rfl⟩
   · cases e with
-    | none => exact absurd (none_mem_activeSet_simplex_iff.1 he) (by simpa using ha.ne)
+    | none => exact absurd he (none_notMem_activeSet_simplex_zero ha.ne')
     | some l =>
-      rw [edgeBasis_simplex_zero ha _ _ rfl]
+      rw [edgeBasis_simplex_zero ha.ne' _ _ _ rfl]
       simp only [ContinuousLinearMap.proj_apply, simplexDirection]
       positivity
   · cases e with
     | none =>
-      rw [edgeBasis_simplex_smul_proj_none ha _ _ rfl]
+      rw [edgeBasis_simplex_smul_proj_none ha.ne' _ _ _ rfl]
       simp only [neg_apply, ContinuousLinearMap.proj_apply, simplexDirection, neg_ne_zero]
       positivity
     | some l =>
-      rw [edgeBasis_simplex_smul_proj_some ha _ _ rfl]
+      rw [edgeBasis_simplex_smul_proj_some ha.ne' _ _ _ rfl]
       simp only [sub_apply, ContinuousLinearMap.proj_apply, simplexDirection, ne_eq, sub_eq_zero,
         add_left_inj, Nat.cast_inj]
-      exact fun h ↦ ne_of_some_mem_activeSet_simplex ha he (Fin.ext h)
+      exact fun h ↦ (mem_activeSet_simplex_smul_proj_iff ha.ne').1 he (congrArg some (Fin.ext h))
 
 /-- The vertices of the standard simplex with their numbers of edges descending along
 `(1, 2, …, n)`: none at the vertex `0` and `p + 1` at the vertex `a e p*`. -/
