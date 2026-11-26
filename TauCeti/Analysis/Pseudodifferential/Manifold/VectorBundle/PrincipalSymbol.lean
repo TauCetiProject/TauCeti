@@ -371,6 +371,22 @@ theorem sectionClassicalPrincipalSymbol_eq_iff
   exact mul_left_cancel₀ hc
     ((classicalPrincipalSymbol_sectionEntry hP t ψ hψ v t' χ hχ ℓ x ξ).symm.trans (h v ℓ))
 
+omit [T2Space M] [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [∀ x, Module ℝ (E x)]
+  [VectorBundle ℝ V E] [∀ x, Module ℝ (F x)] [VectorBundle ℝ W F] in
+variable (V W) in
+/-- Two linear maps `E_x → F_x` are equal when every functional `ℓ` takes the same value on their
+readings `t₀'ₓ (A (t₀⁻¹ₓ v))` in the preferred trivializations at `x`. -/
+private theorem linearMap_ext_trivializationAt {x : M} {A B : E x →ₗ[ℂ] F x}
+    (h : ∀ (v : V) (ℓ : W →L[ℂ] ℂ),
+      ℓ ((trivializationAt W F x).continuousLinearMapAt ℂ x
+          (A ((trivializationAt V E x).symm x v))) =
+        ℓ ((trivializationAt W F x).continuousLinearMapAt ℂ x
+          (B ((trivializationAt V E x).symm x v)))) :
+    A = B :=
+  (trivializationAt V E x).linearMap_ext ℂ (trivializationAt W F x)
+    (FiberBundle.mem_baseSet_trivializationAt' x) (FiberBundle.mem_baseSet_trivializationAt' x)
+      fun v ↦ (SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2 (h v)
+
 /-- In the preferred frames at `x`, the coordinates of the principal symbol are the principal
 symbols of the entries of `P`. -/
 private theorem coord_sectionClassicalPrincipalSymbol
@@ -397,9 +413,7 @@ theorem sectionClassicalPrincipalSymbol_add
       sectionClassicalPrincipalSymbol m P x ξ + sectionClassicalPrincipalSymbol m Q x ξ := by
   have hmem := (mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).2
   have hmem' := (mem_sectionClassicalPseudodifferentialOperators_iff.1 hQ).2
-  refine (trivializationAt V E x).linearMap_ext ℂ (trivializationAt W F x)
-    (FiberBundle.mem_baseSet_trivializationAt' x) (FiberBundle.mem_baseSet_trivializationAt' x)
-      fun v ↦ (SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2 fun ℓ ↦ ?_
+  refine linearMap_ext_trivializationAt V W fun v ℓ ↦ ?_
   rw [coord_sectionClassicalPrincipalSymbol (add_mem hP hQ), map_add,
     classicalPrincipalSymbol_add (hmem _ _ _ _ _ _ _ _) (hmem' _ _ _ _ _ _ _ _),
     ← coord_sectionClassicalPrincipalSymbol hP, ← coord_sectionClassicalPrincipalSymbol hQ,
@@ -412,9 +426,7 @@ theorem sectionClassicalPrincipalSymbol_smul
     sectionClassicalPrincipalSymbol m (c • P) x ξ =
       c • sectionClassicalPrincipalSymbol m P x ξ := by
   have hmem := (mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).2
-  refine (trivializationAt V E x).linearMap_ext ℂ (trivializationAt W F x)
-    (FiberBundle.mem_baseSet_trivializationAt' x) (FiberBundle.mem_baseSet_trivializationAt' x)
-      fun v ↦ (SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2 fun ℓ ↦ ?_
+  refine linearMap_ext_trivializationAt V W fun v ℓ ↦ ?_
   rw [coord_sectionClassicalPrincipalSymbol (Submodule.smul_mem _ c hP), map_smul,
     classicalPrincipalSymbol_smul (hmem _ _ _ _ _ _ _ _),
     ← coord_sectionClassicalPrincipalSymbol hP,
@@ -456,9 +468,7 @@ theorem sectionClassicalPrincipalSymbol_eq_zero_of_mem_sub_one
     (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
     sectionClassicalPrincipalSymbol m P x ξ = 0 := by
   have hPm := sectionClassicalPseudodifferentialOperators_le (m := m) 1 (by norm_num) hP
-  refine (trivializationAt V E x).linearMap_ext ℂ (trivializationAt W F x)
-    (FiberBundle.mem_baseSet_trivializationAt' x) (FiberBundle.mem_baseSet_trivializationAt' x)
-      fun v ↦ (SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2 fun ℓ ↦ ?_
+  refine linearMap_ext_trivializationAt V W fun v ℓ ↦ ?_
   rw [coord_sectionClassicalPrincipalSymbol hPm, classicalPrincipalSymbol_eq_zero_of_mem_sub_one
     ((mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).2 _ _ _ _ _ _ _ _)]
   simp
@@ -510,9 +520,7 @@ theorem sectionClassicalPrincipalSymbol_id (x : M)
     {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
     sectionClassicalPrincipalSymbol 0 (LinearMap.id : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ]
       Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) x ξ = LinearMap.id := by
-  refine (trivializationAt V E x).linearMap_ext ℂ (trivializationAt V E x)
-    (FiberBundle.mem_baseSet_trivializationAt' x) (FiberBundle.mem_baseSet_trivializationAt' x)
-      fun v ↦ (SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2 fun ℓ ↦ ?_
+  refine linearMap_ext_trivializationAt V V fun v ℓ ↦ ?_
   rw [coord_sectionClassicalPrincipalSymbol id_mem_sectionClassicalPseudodifferentialOperators]
   -- Each entry of the identity is the multiplication by its value on the constant function `1`.
   set T := sectionEntry (trivializationAt V E x) (frameCutoff (V := V) (W := V) n E E x)
@@ -536,9 +544,7 @@ theorem sectionClassicalPrincipalSymbol_id (x : M)
 theorem sectionClassicalPrincipalSymbol_zero_covector (x : M) :
     sectionClassicalPrincipalSymbol m P x 0 = 0 := by
   by_cases hP : P ∈ sectionClassicalPseudodifferentialOperators m
-  · refine (trivializationAt V E x).linearMap_ext ℂ (trivializationAt W F x)
-      (FiberBundle.mem_baseSet_trivializationAt' x) (FiberBundle.mem_baseSet_trivializationAt' x)
-        fun v ↦ (SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2 fun ℓ ↦ ?_
+  · refine linearMap_ext_trivializationAt V W fun v ℓ ↦ ?_
     rw [coord_sectionClassicalPrincipalSymbol hP, classicalPrincipalSymbol_zero_covector]
     simp
   · exact sectionClassicalPrincipalSymbol_of_notMem hP x 0
@@ -550,9 +556,7 @@ theorem sectionClassicalPrincipalSymbol_smul_covector (x : M)
     sectionClassicalPrincipalSymbol m P x (t • ξ) =
       ((t ^ m : ℝ) : ℂ) • sectionClassicalPrincipalSymbol m P x ξ := by
   by_cases hP : P ∈ sectionClassicalPseudodifferentialOperators m
-  · refine (trivializationAt V E x).linearMap_ext ℂ (trivializationAt W F x)
-      (FiberBundle.mem_baseSet_trivializationAt' x) (FiberBundle.mem_baseSet_trivializationAt' x)
-        fun v ↦ (SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2 fun ℓ ↦ ?_
+  · refine linearMap_ext_trivializationAt V W fun v ℓ ↦ ?_
     rw [coord_sectionClassicalPrincipalSymbol hP, classicalPrincipalSymbol_smul_covector x ξ ht,
       ← coord_sectionClassicalPrincipalSymbol hP, LinearMap.smul_apply, map_smul, map_smul,
       smul_eq_mul]
