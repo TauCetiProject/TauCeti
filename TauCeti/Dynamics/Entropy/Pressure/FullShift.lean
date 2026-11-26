@@ -94,7 +94,8 @@ private lemma pressureNetSum_agreeOn_Iio_le (f : α → ℝ) (c n : ℕ) :
       (SetRel.mem_ball.mpr (SetRel.mem_inv.mpr hyy))
   calc ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum (shift (1 : ℕ)) (fun y ↦ f (y 0)) n x))
       = ∑ x ∈ s, ∏ k : Fin n, ENNReal.ofReal (Real.exp (f (r x (Fin.castAdd c k)))) :=
-        Finset.sum_congr rfl fun x _ ↦ ofReal_exp_birkhoffSum_shift f n x
+        Finset.sum_congr rfl fun x _ ↦ by
+          simpa only [r, Fin.val_castAdd] using ofReal_exp_birkhoffSum_shift f n x
     _ = ∑ w ∈ s.image r, ∏ k : Fin n, ENNReal.ofReal (Real.exp (f (w (Fin.castAdd c k)))) :=
         (Finset.sum_image (f := fun w : Fin (n + c) → α ↦
           ∏ k : Fin n, ENNReal.ofReal (Real.exp (f (w (Fin.castAdd c k)))))
