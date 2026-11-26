@@ -171,15 +171,18 @@ theorem exists_sub_nonneg_mem (I : OrderIdeal G) {x : G} (hx : x ∈ I) :
   obtain ⟨y, hy, hy0, hxy⟩ := I.exists_nonneg_le hx
   exact ⟨y, y - x, hy, hy0, sub_mem hy hx, sub_nonneg.2 hxy, sub_sub_cancel y x⟩
 
+/-- An order ideal `I` is contained in `J` if every nonnegative element of `I` lies in `J`. -/
+theorem le_of_forall_nonneg {I J : OrderIdeal G} (h : ∀ x : G, 0 ≤ x → x ∈ I → x ∈ J) :
+    I ≤ J := by
+  intro x hx
+  obtain ⟨a, b, ha, ha0, hb, hb0, rfl⟩ := I.exists_sub_nonneg_mem hx
+  exact sub_mem (h a ha0 ha) (h b hb0 hb)
+
 /-- Two order ideals are equal iff they have the same nonnegative elements. -/
 theorem ext_nonneg {I J : OrderIdeal G} (h : ∀ x : G, 0 ≤ x → (x ∈ I ↔ x ∈ J)) :
-    I = J := by
-  ext x
-  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
-  · obtain ⟨a, b, ha, ha0, hb, hb0, rfl⟩ := I.exists_sub_nonneg_mem hx
-    exact sub_mem ((h a ha0).1 ha) ((h b hb0).1 hb)
-  · obtain ⟨a, b, ha, ha0, hb, hb0, rfl⟩ := J.exists_sub_nonneg_mem hx
-    exact sub_mem ((h a ha0).2 ha) ((h b hb0).2 hb)
+    I = J :=
+  le_antisymm (le_of_forall_nonneg fun x hx ↦ (h x hx).1)
+    (le_of_forall_nonneg fun x hx ↦ (h x hx).2)
 
 /-- Construct an order ideal from an additive subgroup that is hereditary and bounds every element
 above by a nonnegative member. -/
@@ -277,9 +280,7 @@ theorem top_toAddSubgroup [Preorder G] [IsOrderedAddMonoid G] :
     | neg _ _ ih => exact neg_mem ih
 
 instance [Preorder G] [IsOrderedAddMonoid G] : OrderTop (OrderIdeal G) where
-  le_top I _ hx := by
-    obtain ⟨a, b, _, ha0, _, hb0, hab⟩ := I.exists_sub_nonneg_mem hx
-    exact ⟨a, b, ha0, hb0, hab⟩
+  le_top _ := le_of_forall_nonneg fun g hg _ ↦ mem_top_iff.2 ⟨g, 0, hg, le_rfl, sub_zero g⟩
 
 /-- In an upward-directed ordered abelian group, every element belongs to `⊤`. -/
 @[simp]
@@ -492,11 +493,7 @@ private theorem sup_le' (h : HasRieszInterpolation G) {I J K : OrderIdeal G}
 
 private theorem inf_sup_le (h : HasRieszInterpolation G) (I J K : OrderIdeal G) :
     inf h I (sup h J K) ≤ sup h (inf h I J) (inf h I K) := by
-  intro x hx
-  suffices hpos : ∀ g ∈ inf h I (sup h J K), 0 ≤ g → g ∈ sup h (inf h I J) (inf h I K) by
-    obtain ⟨a, b, ha, ha0, hb, hb0, rfl⟩ := (inf h I (sup h J K)).exists_sub_nonneg_mem hx
-    exact sub_mem (hpos a ha ha0) (hpos b hb hb0)
-  intro g ⟨hgI, hgJK⟩ hg0
+  refine le_of_forall_nonneg fun g hg0 ⟨hgI, hgJK⟩ ↦ ?_
   obtain ⟨g₁, hg₁J, g₂, hg₂K, hg₁0, hg₂0, rfl⟩ :=
     exists_decomposition_of_le_mem_sup h hg0 le_rfl hgJK
   have hg₁I : g₁ ∈ I :=

@@ -243,11 +243,37 @@ theorem lift_mk (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x = 0) (
     lift I f hf (mk I x) = f x := by
   rfl
 
-theorem hom_ext {I : OrderIdeal G} {f g : (G ⧸ I) →+o H}
+/-- Two monotone homomorphisms out of `G ⧸ I` agree when their compositions with `mk I` agree. -/
+@[ext 1100]
+theorem hom_ext {I : OrderIdeal G} ⦃f g : (G ⧸ I) →+o H⦄
     (h : f.comp (mk I) = g.comp (mk I)) : f = g := by
   ext q
   induction q using induction_on with | _ x =>
   exact congrArg (fun φ : G →+o H ↦ φ x) h
+
+/-- `Quotient.lift` is injective whenever nonnegative elements in the image of `f` lift to
+nonnegative elements in the corresponding coset modulo `I`. -/
+theorem lift_injective (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x = 0)
+    (hlift : ∀ g : G, 0 ≤ f g → ∃ h ∈ I, 0 ≤ g + h) :
+    Function.Injective (lift I f hf) := by
+  rw [injective_iff_map_eq_zero]
+  intro q hq
+  induction q using induction_on with | _ x =>
+  rw [lift_mk] at hq
+  have h0le : 0 ≤ mk I x := mk_nonneg_iff.2 (hlift x (hq ▸ le_rfl))
+  have hfnx : f (-x) = 0 := by
+    simpa [hq] using (map_add f x (-x)).symm.trans (by rw [add_neg_cancel, map_zero])
+  have hle0 : mk I x ≤ 0 := by
+    rw [← neg_nonneg, ← map_neg]
+    exact mk_nonneg_iff.2 (hlift (-x) (hfnx ▸ le_rfl))
+  exact le_antisymm hle0 h0le
+
+/-- `Quotient.lift` is surjective when `f` is surjective. -/
+theorem lift_surjective (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x = 0)
+    (hsurj : Function.Surjective f) : Function.Surjective (lift I f hf) := by
+  intro y
+  obtain ⟨x, rfl⟩ := hsurj y
+  exact ⟨mk I x, lift_mk I f hf x⟩
 
 /-- Canonical map between quotients `G ⧸ I →+o G ⧸ J` for `I ≤ J`. -/
 def factor {I J : OrderIdeal G} (hIJ : I ≤ J) : (G ⧸ I) →+o (G ⧸ J) :=
@@ -279,33 +305,19 @@ noncomputable def liftOrderAddMonoidIso (I : OrderIdeal G) (f : G →+o H)
     (hf : ∀ x ∈ I, f x = 0) (hsurj : Function.Surjective f)
     (hlift : ∀ g : G, 0 ≤ f g → ∃ h ∈ I, 0 ≤ g + h) :
     (G ⧸ I) ≃+o H :=
-  have hinj : Function.Injective (lift I f hf) := by
-    rw [injective_iff_map_eq_zero]
-    intro q hq
-    induction q using induction_on with | _ x =>
-    rw [lift_mk] at hq
-    have h0le : 0 ≤ mk I x := mk_nonneg_iff.2 (hlift x (hq ▸ le_rfl))
-    have hle0 : mk I x ≤ 0 := by
-      rw [← neg_nonneg, ← map_neg]
-      exact mk_nonneg_iff.2 (hlift (-x) (by simp [hq]))
-    exact le_antisymm hle0 h0le
-  have hsurj' : Function.Surjective (lift I f hf) := by
-    intro y
-    obtain ⟨x, rfl⟩ := hsurj y
-    exact ⟨mk I x, lift_mk I f hf x⟩
-  let e := AddEquiv.ofBijective (lift I f hf).toAddMonoidHom ⟨hinj, hsurj'⟩
-  have he_mk (z : G) : e (mk I z) = f z :=
+  let e := AddEquiv.ofBijective (lift I f hf).toAddMonoidHom
+    ⟨lift_injective I f hf hlift, lift_surjective I f hf hsurj⟩
+  have he_mk (z : G) : e.toFun (mk I z) = f z :=
     (AddEquiv.ofBijective_apply _ _ _).trans (lift_mk I f hf z)
-  { e with
-    map_le_map_iff' {a b} := by
-      induction a using induction_on with | _ x =>
-      induction b using induction_on with | _ y =>
-      refine ⟨fun hle ↦ ?_, fun hle ↦ OrderHomClass.mono (lift I f hf) hle⟩
-      simp only [Equiv.toFun_as_coe, AddEquiv.toEquiv_eq_coe, AddEquiv.coe_toEquiv, he_mk] at hle
-      obtain ⟨h, hhI, hpos⟩ := hlift (y - x) (map_sub f y x ▸ sub_nonneg.2 hle)
-      exact mk_le_mk_iff.2 ⟨h, hhI, by
-        rw [← sub_nonneg]
-        exact hpos.trans_eq (by abel)⟩ }
+  OrderAddMonoidIso.mk e fun {a b} ↦ by
+    induction a using induction_on with | _ x =>
+    induction b using induction_on with | _ y =>
+    refine ⟨fun hle ↦ ?_, fun hle ↦ OrderHomClass.mono (lift I f hf) hle⟩
+    rw [he_mk, he_mk] at hle
+    obtain ⟨h, hhI, hpos⟩ := hlift (y - x) (map_sub f y x ▸ sub_nonneg.2 hle)
+    exact mk_le_mk_iff.2 ⟨h, hhI, by
+      rw [← sub_nonneg]
+      exact hpos.trans_eq (by abel)⟩
 
 theorem liftOrderAddMonoidIso_apply (I : OrderIdeal G) (f : G →+o H)
     (hf : ∀ x ∈ I, f x = 0) (hsurj : Function.Surjective f)
