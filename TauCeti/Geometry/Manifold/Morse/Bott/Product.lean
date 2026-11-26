@@ -311,6 +311,10 @@ the trajectory count `c C D`. It is the product `morseProd` with a point. -/
 def ofMorse : BottChainData R ι fun _ ↦ R :=
   morseProd rank c hc hcc 0 0 (LinearMap.zero_comp 0)
 
+theorem ofMorse_def :
+    ofMorse rank c hc hcc = morseProd rank c hc hcc 0 0 (LinearMap.zero_comp 0) :=
+  (rfl)
+
 @[simp]
 theorem ofMorse_rank : (ofMorse rank c hc hcc).rank = rank :=
   (rfl)
@@ -328,13 +332,18 @@ theorem ofMorse_pushforward (C D : ι) :
     (ofMorse rank c hc hcc).pushforward C D = c C D • LinearMap.id :=
   (rfl)
 
+@[simp]
+theorem correspondence_ofMorse (C D : ι) :
+    (ofMorse rank c hc hcc).correspondence C D = c C D • LinearMap.id := by
+  simp [ofMorse_def]
+
 /-- **The Bott differential of a Morse function is its Morse differential** `x ↦ x ᵥ* c`, which
 sends the critical point `C` to `∑_D c_CD D`. -/
 theorem differential_ofMorse :
     (ofMorse rank c hc hcc).differential = Matrix.vecMulLinear (Matrix.of c) := by
   ext x : 1
   funext D
-  simp [ofMorse, differential_apply, correspondence_morseProd, Matrix.vecMul_eq_sum, mul_comm]
+  simp [differential_apply, Matrix.vecMul_eq_sum, mul_comm]
 
 /-- **The total-degree pieces of the Morse complex.** When the chains `R` on each critical point
 sit in degree `0`, the piece of total degree `k` of the Bott complex of a Morse function consists

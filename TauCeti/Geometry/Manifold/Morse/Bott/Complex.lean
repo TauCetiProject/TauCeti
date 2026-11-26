@@ -564,16 +564,10 @@ private theorem coe_reorientTotalDegreeEquiv_apply {k : ℤ} (x : B.totalDegree 
 
 private theorem coe_reorientTotalDegreeEquiv_symm_apply {k : ℤ}
     (x : (B.reorient ε).totalDegree S k) :
-    ((B.reorientTotalDegreeEquiv ε k).symm x : ∀ C, M C) = fun C ↦ ε C • (x : ∀ C, M C) C := by
-  have hx : (fun C ↦ ε C • (x : ∀ C, M C) C) ∈ B.totalDegree S k := by
-    have h := (mem_totalDegree_iff _ _).1 x.property
-    exact (mem_totalDegree_iff _ _).2 fun C ↦ (S C _).smul_of_tower_mem _ (h C)
-  have h : (B.reorientTotalDegreeEquiv ε k).symm x = ⟨_, hx⟩ :=
-    (B.reorientTotalDegreeEquiv ε k).symm_apply_eq.2 <| Subtype.ext <| by
-      rw [coe_reorientTotalDegreeEquiv_apply]
-      funext C
-      simp [smul_smul]
-  rw [h]
+    ((B.reorientTotalDegreeEquiv ε k).symm x : ∀ C, M C) = fun C ↦ ε C • (x : ∀ C, M C) C :=
+  funext fun C ↦ by
+    simp [reorientTotalDegreeEquiv, LinearEquiv.ofSubmodules_symm_apply,
+      LinearEquiv.piCongrRight_symm, Int.units_inv_eq_self]
 
 variable (hboundary : ∀ C j, ∀ x ∈ S C j, B.boundary C x ∈ S C (j - 1))
   (hpushforward : ∀ C D j, ∀ x ∈ S C j,
@@ -604,6 +598,7 @@ noncomputable def chainComplexReorientIso :
     exact (congrFun (B.coe_reorientTotalDegreeEquiv_apply ε _) D).symm
 
 /-- The orientation-change isomorphism negates the chains on the components with `ε C = -1`. -/
+@[simp]
 theorem chainComplexReorientIso_hom_f_apply (k : ℤ) (x : B.totalDegree S k) :
     (((B.chainComplexReorientIso ε hboundary hpushforward).hom.f k).hom x :
         (B.reorient ε).totalDegree S k).val = fun C ↦ ε C • x.val C :=
@@ -611,6 +606,7 @@ theorem chainComplexReorientIso_hom_f_apply (k : ℤ) (x : B.totalDegree S k) :
 
 /-- The inverse of the orientation-change isomorphism also negates the chains on the components
 with `ε C = -1`. -/
+@[simp]
 theorem chainComplexReorientIso_inv_f_apply (k : ℤ) (x : (B.reorient ε).totalDegree S k) :
     (((B.chainComplexReorientIso ε hboundary hpushforward).inv.f k).hom x :
         B.totalDegree S k).val = fun C ↦ ε C • x.val C :=
