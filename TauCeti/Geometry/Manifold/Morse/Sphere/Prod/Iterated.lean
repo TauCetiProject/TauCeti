@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Prod.Iterated
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Boundary
+public import TauCeti.Geometry.Manifold.Morse.Sphere.Prod.Basic
 
 /-!
 # The integral Morse homology of powers of spheres and of tori
@@ -37,8 +38,6 @@ Künneth theorem; the comparison of Morse and singular homology is not made here
 
 ## Main results
 
-* `TauCeti.criticalCount_iteratedProdSum_sphereHeight`: the critical counts of the sum of height
-  functions on `(Sⁿ)ʳ⁺¹` are the coefficients of `(1 + tⁿ)ʳ⁺¹`.
 * `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_iteratedProd_sphereHeight`: its integral
   Morse boundary vanishes, for every adapted pseudo-gradient of the factor and every choice of
   orientation data.
@@ -68,26 +67,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 section Sphere
 
 variable {n : ℕ} [Fact (finrank ℝ E = n + 1)]
-
-/-- **The critical counts of a sum of height functions on a power of a sphere.** The sum of the
-height functions on the product `(Sⁿ)ʳ⁺¹` of `r + 1` copies of the sphere `Sⁿ` has as many
-critical points of index `k` as the coefficient of `tᵏ` in `(1 + tⁿ)ʳ⁺¹`: a critical point is a
-tuple of poles, of index `n` times its number of north poles. -/
-theorem criticalCount_iteratedProdSum_sphereHeight (v : sphere (0 : E) 1) (r k : ℕ) :
-    criticalCount 𝓘(ℝ, IteratedProdModel (EuclideanSpace ℝ (Fin n)) r)
-        (iteratedProdSum (sphereHeight v) r) k =
-      (((1 + X ^ n) ^ (r + 1) : ℕ[X]).coeff k : ℕ∞) := by
-  -- The critical counts of the height function are the coefficients of `1 + tⁿ`.
-  have hcount (j : ℕ) :
-      criticalCount (𝓡 n) (sphereHeight v) j = ((1 + X ^ n : ℕ[X]).coeff j : ℕ∞) := by
-    rw [criticalCount_sphereHeight, coeff_add, coeff_one, coeff_X_pow]
-    split_ifs <;> simp [one_add_one_eq_two]
-  induction r generalizing k with
-  | zero => rw [criticalCount_iteratedProdSum_zero, hcount, zero_add, pow_one]
-  | succ r ih =>
-    rw [criticalCount_iteratedProdSum_succ (contMDiff_sphereHeight v), pow_succ, coeff_mul,
-      Nat.cast_sum]
-    exact Finset.sum_congr rfl fun ij _ ↦ by rw [ih, hcount, Nat.cast_mul]
 
 namespace IsAdaptedPseudoGradient
 
