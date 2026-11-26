@@ -25,12 +25,13 @@ of its *slow* Schur complement.
 **The Lyapunov–Schmidt form.** An operator `[L B] : E × G → F`, `(x, σ) ↦ L x + B σ`, whose fast
 block `L` is injective with a complement `ker P` of its range, for some `P : F →L[K] Y` with
 `P ∘ L` invertible, becomes such a block operator once its target is split as `F ≃ Y × ker P`
-by `y ↦ (P y, Π y)` (`ContinuousLinearMap.equivProdKerOfIsInvertibleComp`), with `Π` the
-projection onto `ker P` along the range of `L`: its blocks are `P ∘ L`, `P ∘ B`, `0` and `Π ∘ B`,
-and its Schur complement is the reduced operator `Π ∘ B`. Hence `[L B]` is Fredholm exactly when
-the reduced operator is (`ContinuousLinearMap.isFredholm_coprod_iff_of_isInvertible_comp`). The
-two have the same index whether or not they are Fredholm
-(`ContinuousLinearMap.index_coprod_of_isInvertible_comp`).
+by `y ↦ (P y, Π y)`, with `Π` the projection onto `ker P` along the range of `L`. This is
+`ContinuousLinearEquiv.equivOfRightInverse` for `P` and its right inverse `L ∘ (P ∘ L)⁻¹`
+(`ContinuousLinearMap.snd_equivOfRightInverse_eq_projectionOntoL`). The blocks are then
+`P ∘ L`, `P ∘ B`, `0` and `Π ∘ B`, and the Schur complement is the reduced operator `Π ∘ B`.
+Hence `[L B]` is Fredholm exactly when the reduced operator is
+(`ContinuousLinearMap.isFredholm_coprod_iff_of_isInvertible_comp`). The two have the same index
+whether or not they are Fredholm (`ContinuousLinearMap.index_coprod_of_isInvertible_comp`).
 -/
 
 public section
@@ -93,16 +94,19 @@ theorem isFredholm_coprod_iff_of_isInvertible_comp (h : (P ∘L L).IsInvertible)
       (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
         B).IsFredholm := by
   obtain ⟨A, hA⟩ := id h
-  have hblock : (equivProdKerOfIsInvertibleComp h).toContinuousLinearMap ∘L L.coprod B =
+  have hr : Function.RightInverse (L ∘L (P ∘L L).inverse) P := fun u ↦ by
+    simpa using h.self_apply_inverse u
+  have hblock : (ContinuousLinearEquiv.equivOfRightInverse P _ hr).toContinuousLinearMap ∘L
+      L.coprod B =
       ((A : E →L[K] Y).coprod (P ∘L B)).prod ((0 : E →L[K] P.ker).coprod
         (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
           B)) := by
-    ext x <;> simp [hA]
+    ext x <;> simp [hA, snd_equivOfRightInverse_eq_projectionOntoL h]
   have hschur : A.schurComplement (P ∘L B) 0
       (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L B) =
       P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L B := by
     simp [ContinuousLinearEquiv.schurComplement_def]
-  rw [isFredholm_iff_of_comp_eq (.refl K (E × G)) (equivProdKerOfIsInvertibleComp h)
+  rw [isFredholm_iff_of_comp_eq (.refl K (E × G)) (.equivOfRightInverse P _ hr)
     (hblock.trans (comp_id _).symm), ContinuousLinearEquiv.isFredholm_coprod_prod_coprod_iff,
     hschur]
 
