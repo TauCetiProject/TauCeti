@@ -245,12 +245,10 @@ private theorem exists_rotation_of_mul_eq {a b a' b' : ℂ} (hab : a * b = a' * 
   have hnu : ‖u‖ = 1 := by rw [Complex.norm_def, hu, Real.sqrt_one]
   have hcos : (cos (Complex.arg u) : ℂ) + sin (Complex.arg u) * Complex.I = u := by
     simpa [hnu] using Complex.norm_mul_cos_add_sin_mul_I u
-  have hinv : u⁻¹ = conj u := by
-    rw [Complex.inv_def, hu, inv_one, Complex.ofReal_one, mul_one]
+  -- Its inverse is its conjugate `cos ξ - i sin ξ`.
   have hcos' : (cos (Complex.arg u) : ℂ) - sin (Complex.arg u) * Complex.I = u⁻¹ := by
-    rw [hinv]
-    conv_rhs => rw [← hcos]
-    rw [map_add, map_mul, Complex.conj_ofReal, Complex.conj_ofReal, Complex.conj_I]
+    rw [Complex.inv_eq_conj hnu, ← congrArg conj hcos]
+    simp only [map_add, map_mul, Complex.conj_ofReal, Complex.conj_I]
     ring
   refine ⟨Complex.arg u, ?_, ?_⟩
   · rw [hcos, hu_def, div_mul_cancel₀ _ ha]
