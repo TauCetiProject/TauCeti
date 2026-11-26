@@ -64,7 +64,9 @@ Floer strip under variations of `J_t` alone.
   `(t, u(s, t))` detect `η` at each of them
   (`TauCeti.SymplecticForm.eq_zero_of_integral_apply_deriv_floerOperator_timeDependent_eq_zero`).
   Since the variations are available at every time of the band, neither the range of `D_u` nor
-  unique continuation enters, and the Lagrangian boundary conditions play no role.
+  unique continuation for the adjoint equation `D_u^* η = 0` enters (unique continuation for `u`
+  is used only in the density of regular points), and the Lagrangian boundary conditions play no
+  role.
 
 In each of the first three cases the first hypothesis says that `η` solves the adjoint equation
 `D_u^* η = 0` on `Ω`
