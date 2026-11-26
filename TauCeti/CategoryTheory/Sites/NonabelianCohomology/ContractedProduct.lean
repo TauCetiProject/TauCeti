@@ -53,6 +53,8 @@ factor, and `p ↦ [p, 1]` is a `φ`-equivariant morphism `P → P ×^G G'` whic
   `X(U) ≃ (P ×^G X)(U)`, `x ↦ [p, x]`, for a section `p` of `P` over `U`.
 * `CategoryTheory.Sheaf.Torsor.contractedProductMk_eq_contractedProductMk_iff`: equality of
   classes.
+* `CategoryTheory.Sheaf.Torsor.contractedProductCompIsoOfSection`: compatible sections of `P`
+  along a functor `u` identify the restrictions of `X` and of `P ×^G X` along `u`.
 * `CategoryTheory.Sheaf.Torsor.contractedProductIsoOfSection`,
   `CategoryTheory.Sheaf.Torsor.contractedProductTrivialIso`,
   `CategoryTheory.Sheaf.Torsor.contractedProductIsoOfSMulEqSelf` and
@@ -445,6 +447,29 @@ lemma contractedProductIsoOfSection_hom_hom_app (s : P.sheaf.obj.sections) {U : 
     (x : X.sheaf.obj.obj U) :
     (P.contractedProductIsoOfSection X s).hom.hom.app U x =
       contractedProductMk (s.val U) x :=
+  (rfl)
+
+variable (X) in
+/-- Compatible sections `s` of `P` along a functor `u : D ⥤ C` identify the restrictions of `X` and
+of the contracted product along `u`, by `x ↦ [s d, x]` over `u d`. This is the form, relative to
+`u`, of `contractedProductIsoOfSection`: for instance, a section of `P` over an object `T` of a
+big site identifies `X` and `P ×^G X` over every object over `T`. -/
+def contractedProductCompIsoOfSection {D : Type*} [Category D] (u : D ⥤ C)
+    (s : ∀ d : D, P.sheaf.obj.obj (op (u.obj d)))
+    (hs : ∀ ⦃d d' : D⦄ (f : d ⟶ d'), P.sheaf.obj.map (u.map f).op (s d') = s d) :
+    u.op ⋙ X.sheaf.obj ≅ u.op ⋙ (P.contractedProduct X).obj :=
+  NatIso.ofComponents (fun d ↦ (contractedProductObjEquiv (X := X) (s d.unop)).toIso)
+    fun {d d'} f ↦ by
+      ext x
+      exact (congrArg (contractedProductMk · _) (hs f.unop)).symm.trans
+        (contractedProduct_map_contractedProductMk _ _ _).symm
+
+/-- The isomorphism `contractedProductCompIsoOfSection` sends `x` over `u d` to `[s d, x]`. -/
+lemma contractedProductCompIsoOfSection_hom_app_apply {D : Type*} [Category D] (u : D ⥤ C)
+    (s : ∀ d : D, P.sheaf.obj.obj (op (u.obj d)))
+    (hs : ∀ ⦃d d' : D⦄ (f : d ⟶ d'), P.sheaf.obj.map (u.map f).op (s d') = s d) (d : Dᵒᵖ)
+    (x : X.sheaf.obj.obj (op (u.obj d.unop))) :
+    (P.contractedProductCompIsoOfSection X u s hs).hom.app d x = contractedProductMk (s d.unop) x :=
   (rfl)
 
 variable (X) in

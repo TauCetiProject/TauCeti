@@ -13,7 +13,9 @@ public import Mathlib.AlgebraicGeometry.Pullbacks
 # Affine morphisms and base-changed projection composites
 
 Affineness of an over-morphism after base change is compared with affineness of its
-composite with the projection to the original target.
+composite with the projection to the original target. The base change `Over.pullback p` of an
+object affine over the base is affine over the new base
+(`AlgebraicGeometry.isAffineHom_pullback_obj_hom`).
 -/
 
 public section
@@ -90,3 +92,12 @@ theorem overPullbackMap_of_snd_comp
   exact this
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry
+
+/-- The base change of a scheme affine over `S` along `p : S' ⟶ S` is affine over `S'`. -/
+instance isAffineHom_pullback_obj_hom {S S' : Scheme.{u}} (p : S' ⟶ S) (X : Over S)
+    [IsAffineHom X.hom] : IsAffineHom ((Over.pullback p).obj X).hom :=
+  isAffineHom_isStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback _ _) ‹_›
+
+end AlgebraicGeometry
