@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Decay
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
-import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
@@ -110,12 +109,7 @@ private theorem integral_sum_smul_fderiv_fderiv_smul_value_eq (u : Wkp mu Omega 
   set ψ₂ : ι → ι → 𝓓(Omega, ℝ) := fun i j =>
     TestFunction.lineDerivCLM ℝ (e i) (TestFunction.lineDerivCLM ℝ (e j) ψ)
   have hψ₂ : ∀ i j x, ψ₂ i j x = fderiv ℝ (fderiv ℝ (ψ : EuclideanSpace ℝ ι → ℝ)) x (e i) (e j) :=
-    fun i j x => by
-      have hd : DifferentiableAt ℝ (fderiv ℝ (ψ : EuclideanSpace ℝ ι → ℝ)) x :=
-        (ψ.contDiff.fderiv_right (m := 1) (by simp)).differentiable (by simp) x
-      rw [TestFunction.coe_lineDerivCLM, TestFunction.coe_lineDerivCLM]
-      dsimp only
-      rw [TestFunction.lineDeriv_lineDeriv_eq_fderiv_fderiv, fderiv_clm_apply_const_apply hd]
+    fun i j x => TestFunction.lineDerivCLM_lineDerivCLM_apply ψ (e i) (e j) x
   have hval : LocallyIntegrableOn (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) Omega mu :=
     Wkp.locallyIntegrableOn_value 2 u
   have hH : ∀ i j, LocallyIntegrableOn
@@ -169,8 +163,7 @@ private theorem weaklyHarmonicOn_value_comp {e : EuclideanSpace ℝ ι ≃L[ℝ]
   set f : EuclideanSpace ℝ ι → ℝ := (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ)
   set Omega' : Opens (EuclideanSpace ℝ ι) := ⟨e ⁻¹' Omega, Omega.isOpen.preimage e.continuous⟩
   have hmaps : Set.MapsTo e Omega' Omega := fun _ hy => hy
-  have hmp : MeasurePreserving e (mu.map e.symm) mu := by
-    simpa using e.symm.toHomeomorph.toMeasurableEquiv.measurePreserving_symm mu
+  have hmp : MeasurePreserving e (mu.map e.symm) mu := e.measurePreserving_map_symm mu
   have hemb : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
   have hf : LocallyIntegrableOn f Omega mu := Wkp.locallyIntegrableOn_value 2 u
   refine weaklyHarmonicOn_iff.2 ⟨?_, fun φ => ?_⟩
@@ -223,8 +216,7 @@ theorem exists_contDiffOn_ae_eq_and_sum_smul_fderiv_fderiv_eq_zero (hlam : 0 < l
       rw [← matrixBilinearForm_apply, ← Real.norm_eq_abs]
       exact (matrixBilinearForm A).le_opNorm₂ η ζ) ξ)
   obtain ⟨e, -, -, -, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
-  have hmp : MeasurePreserving e (mu.map e.symm) mu := by
-    simpa using e.symm.toHomeomorph.toMeasurableEquiv.measurePreserving_symm mu
+  have hmp : MeasurePreserving e (mu.map e.symm) mu := e.measurePreserving_map_symm mu
   have hemb : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
   -- Weyl's lemma gives a harmonic `h` with `u ∘ e = h` almost everywhere; then `g = h ∘ e⁻¹`.
   obtain ⟨h, hh, hfh⟩ := (weaklyHarmonicOn_value_comp he u heq).exists_harmonicOnNhd_ae_eq

@@ -11,8 +11,6 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.Sobolev.Wkp.Zero
 import TauCeti.Topology.Algebra.Module.Trace
-import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
@@ -105,20 +103,17 @@ theorem integral_fderiv_fderiv_smul_value_eq_inner_iteratedGradient (u : Wkp mu 
       (fun x => ⟪iteratedGradient 1 u x v, w⟫_ℝ) v := by
     simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm w] using
       ((hasWeakFDerivOn_iteratedGradient 0 u).clm_comp (innerSL ℝ w)).hasWeakLineDerivOn v
-  have e1 := hval.integral_lineDeriv_smul_eq_neg_integral_smul (TestFunction.lineDerivCLM ℝ v φ)
+  -- `∂_w (∂_v φ) = ∂_v (∂_w φ)`, whose value at `x` is `D²φ(x) v w`.
+  have e1 := hval.integral_lineDeriv_smul_eq_neg_integral_smul (LineDeriv.lineDerivOp v φ)
   have e2 := hcomp.integral_lineDeriv_smul_eq_neg_integral_smul φ
-  rw [TestFunction.coe_lineDerivCLM] at e1
-  simp_rw [TestFunction.lineDeriv_lineDeriv_eq_fderiv_fderiv, TestFunction.lineDeriv_eq_fderiv]
-    at e1 e2
+  simp_rw [TestFunction.lineDerivOp_apply_eq_fderiv, TestFunction.lineDeriv_lineDerivOp_comm φ v w]
+    at e1
+  simp_rw [TestFunction.lineDeriv_eq_fderiv] at e2
   rw [value_succ, ← neg_neg (∫ x, (φ : E → ℝ) x • _ ∂mu), ← e2, ← e1]
   refine integral_congr_ae (ae_of_all _ fun x => ?_)
-  -- `∂_w (∂_v φ) = D²φ(w, v)`, and the second derivative of `φ` is symmetric.
-  have hd : DifferentiableAt ℝ (fderiv ℝ (φ : E → ℝ)) x :=
-    (φ.contDiff.fderiv_right (m := 1) (by simp)).differentiable (by simp) x
-  have hsym : IsSymmSndFDerivAt ℝ (φ : E → ℝ) x :=
-    φ.contDiff.contDiffAt.isSymmSndFDerivAt (by simp)
   dsimp only
-  rw [fderiv_clm_apply_const_apply hd, hsym v w]
+  rw [← TestFunction.lineDerivCLM_lineDerivCLM_apply, TestFunction.coe_lineDerivCLM]
+  rfl
 
 /-- **Weak and strong solutions of `Δu = f` agree in `W^{2,p}(Ω)`.** For `u ∈ W^{2,p}(Ω)` and `f`
 locally integrable on `Ω`, `∫ Δφ • u = ∫ φ • f` holds for every test function `φ` on `Ω` if and
