@@ -71,25 +71,16 @@ theorem IsImmersedLieSubgroup.normal_iff_forall_Ad_mem {K : Subgroup G}
     (hK : IsImmersedLieSubgroup (I := I) K) :
     K.Normal ↔ ∀ g : G, ∀ X ∈ lieSubalgebraOfSubgroup (I := I) K,
       Ad (I := I) g X ∈ lieSubalgebraOfSubgroup (I := I) K := by
-  refine ⟨fun _ g _ hX => Ad_mem_lieSubalgebraOfSubgroup_of_normal g hX,
-    fun h => ⟨fun n hn g => ?_⟩⟩
+  refine ⟨fun _ g _ hX => Ad_mem_lieSubalgebraOfSubgroup_of_normal g hX, fun h => ?_⟩
   have hcl : K = Subgroup.closure
       (lieExp '' (lieSubalgebraOfSubgroup (I := I) K : Set (LeftInvariantDerivation I G))) := by
     conv_lhs => rw [← hK.integralLeafSubgroup_lieSubalgebraOfSubgroup]
     exact LieSubalgebra.integralLeafSubgroup_eq_closure_lieExp_image _
-  rw [hcl] at hn ⊢
-  induction hn using Subgroup.closure_induction with
-  | mem x hx =>
-    obtain ⟨X, hX, rfl⟩ := hx
-    rw [conj_lieExp]
-    exact Subgroup.subset_closure ⟨_, h g X hX, rfl⟩
-  | one => simp
-  | mul x y _ _ hx hy =>
-    rw [show g * (x * y) * g⁻¹ = g * x * g⁻¹ * (g * y * g⁻¹) by group]
-    exact mul_mem hx hy
-  | inv x _ hx =>
-    rw [show g * x⁻¹ * g⁻¹ = (g * x * g⁻¹)⁻¹ by group]
-    exact inv_mem hx
+  rw [← Subgroup.normalizer_eq_top_iff, eq_top_iff, hcl]
+  refine Subgroup.le_normalizer_closure_iff.mpr ?_
+  rintro g - _ ⟨X, hX, rfl⟩
+  rw [conj_lieExp]
+  exact Subgroup.subset_closure ⟨_, h g X hX, rfl⟩
 
 /-- **Normal subgroups and ideals** (Kirillov, Theorem 3.19(2)). In a connected Lie group, a
 connected immersed Lie subgroup is normal exactly when its Lie algebra is a Lie ideal. The forward
