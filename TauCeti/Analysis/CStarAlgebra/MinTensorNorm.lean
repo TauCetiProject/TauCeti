@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Norm
+import TauCeti.Analysis.CStarAlgebra.SpatialNorm.Independence
 
 /-!
 # The minimal C*-norm on an algebraic tensor product of abstract C*-algebras
@@ -30,15 +31,29 @@ has injective spatial tensor homomorphism), and it is a cross norm, `‖a ⊗ b�
 norm of the given representations (`NonUnitalStarSubalgebra.spatialNorm_le_minTensorNorm`), hence
 so does the maximal norm (`NonUnitalStarSubalgebra.spatialNorm_le_maxTensorNorm`).
 
-Representation independence of the spatial norm (Takesaki I, Theorem IV.4.9) says that a pair of
-faithful representations attains the supremum, so that the minimal norm is the spatial norm
-through any faithful pair. That identification, the completion `A ⊗min B`, and the fact that
-every C*-norm on `A ⊗[ℂ] B` dominates the minimal norm are not in this file.
+By representation independence of the spatial norm (Takesaki I, Theorem IV.4.9;
+`TauCeti.norm_spatialTensorLinearMap_map_le`), a pair of faithful representations attains the
+supremum: the minimal norm is the norm of `(π ⊗ ρ) x` for **every** pair of faithful
+representations, on Hilbert spaces in any universes
+(`TauCeti.minTensorNorm_eq_norm_spatialTensorHom`), and it bounds `‖(π ⊗ ρ) x‖` for every pair of
+representations (`TauCeti.norm_spatialTensorHom_le_minTensorNorm`). For closed concrete operator
+algebras it is the spatial norm (`NonUnitalStarSubalgebra.minTensorNorm_eq_spatialNorm`). Hence
+the minimal norm is **functorial**: star homomorphisms `φ : A → A'` and `ψ : B → B'` give
+`‖(φ ⊗ ψ) x‖_min ≤ ‖x‖_min` (`TauCeti.minTensorNorm_mapNonUnitalStarAlgHom_le`), with equality for
+injective `φ` and `ψ` (`TauCeti.minTensorNorm_mapNonUnitalStarAlgHom`), and it is invariant under
+the flip `A ⊗[ℂ] B ≃ B ⊗[ℂ] A` (`TauCeti.minTensorNorm_comm`).
+
+The completion `A ⊗min B` is `TauCeti.MinTensorProduct`. That every C*-norm on `A ⊗[ℂ] B`
+dominates the minimal norm is not in this file.
 
 ## Main declarations
 
 * `TauCeti.minTensorNorm A B`: the minimal C*-norm on `A ⊗[ℂ] B`, with
   `TauCeti.norm_spatialTensorHom_le_minTensorNorm` and `TauCeti.minTensorNorm_le_maxTensorNorm`.
+* `TauCeti.minTensorNorm_eq_norm_spatialTensorHom`: the minimal norm is the spatial norm through
+  any pair of faithful representations.
+* `TauCeti.minTensorNorm_mapNonUnitalStarAlgHom_le`, `TauCeti.minTensorNorm_mapNonUnitalStarAlgHom`,
+  `TauCeti.minTensorNorm_comm`: functoriality and flip invariance.
 
 ## References
 
@@ -76,13 +91,21 @@ theorem minTensorNorm_def (x : A ⊗[ℂ] B) :
 
 variable {A B}
 
-/-- The minimal norm dominates the spatial norm of every pair of representations. -/
-theorem norm_spatialTensorHom_le_minTensorNorm {E : Type u} {F : Type v} [NormedAddCommGroup E]
+/-- The minimal norm dominates the spatial norm of every pair of representations, on Hilbert
+spaces in any universes. -/
+theorem norm_spatialTensorHom_le_minTensorNorm {E F : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℂ E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
     [CompleteSpace F] (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) (x : A ⊗[ℂ] B) :
     ‖π.spatialTensorHom ρ x‖ ≤ minTensorNorm A B x := by
-  rw [← CommutingRepresentationPair.tensorHom_spatial]
-  exact norm_tensorHom_le_supTensorNorm RepresentationPair.spatial ⟨E, F, π, ρ⟩ x
+  obtain ⟨E', _, _, _, σ, hσ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation A
+  obtain ⟨F', _, _, _, τ, hτ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation B
+  calc ‖π.spatialTensorHom ρ x‖ ≤ ‖σ.spatialTensorHom τ x‖ := by
+        rw [NonUnitalStarAlgHom.spatialTensorHom_apply,
+          NonUnitalStarAlgHom.spatialTensorHom_apply]
+        exact norm_spatialTensorLinearMap_map_le π ρ σ τ hσ hτ x
+    _ ≤ minTensorNorm A B x := by
+        rw [← CommutingRepresentationPair.tensorHom_spatial]
+        exact norm_tensorHom_le_supTensorNorm RepresentationPair.spatial ⟨E', F', σ, τ⟩ x
 
 /-- To bound the minimal norm it suffices to bound every pair of representations. -/
 theorem minTensorNorm_le_of_forall {x : A ⊗[ℂ] B} {c : ℝ}
@@ -148,6 +171,70 @@ theorem minTensorNorm_tmul (a : A) (b : B) : minTensorNorm A B (a ⊗ₜ b) = �
   supTensorNorm_tmul _
     ((exists_tensorHom_spatial_injective_and_norm_tensorHom_spatial_tmul A B).imp fun _ h ↦ h.2 a b)
 
+/-- **The minimal norm is the spatial norm through any faithful pair** (representation
+independence, Takesaki I, Theorem IV.4.9): for injective star homomorphisms `π : A → B(E)` and
+`ρ : B → B(F)`, on Hilbert spaces in any universes, `‖x‖_min = ‖(π ⊗ ρ) x‖`. -/
+theorem minTensorNorm_eq_norm_spatialTensorHom {E F : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℂ E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+    [CompleteSpace F] {π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)} {ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)}
+    (hπ : Function.Injective π) (hρ : Function.Injective ρ) (x : A ⊗[ℂ] B) :
+    minTensorNorm A B x = ‖π.spatialTensorHom ρ x‖ := by
+  refine le_antisymm (minTensorNorm_le_of_forall fun p ↦ ?_)
+    (norm_spatialTensorHom_le_minTensorNorm π ρ x)
+  rw [NonUnitalStarAlgHom.spatialTensorHom_apply, NonUnitalStarAlgHom.spatialTensorHom_apply]
+  exact norm_spatialTensorLinearMap_map_le p.left p.right π ρ hπ hρ x
+
+/-- The spatial tensor homomorphism of composites is that of the factors composed with
+`φ ⊗ ψ`. -/
+theorem spatialTensorHom_comp_mapNonUnitalStarAlgHom {A' B' E F : Type*}
+    [NonUnitalCStarAlgebra A'] [NonUnitalCStarAlgebra B'] [NormedAddCommGroup E]
+    [InnerProductSpace ℂ E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+    [CompleteSpace F] (π : A' →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B' →⋆ₙₐ[ℂ] (F →L[ℂ] F))
+    (φ : A →⋆ₙₐ[ℂ] A') (ψ : B →⋆ₙₐ[ℂ] B') (x : A ⊗[ℂ] B) :
+    (π.comp φ).spatialTensorHom (ρ.comp ψ) x =
+      π.spatialTensorHom ρ (Algebra.TensorProduct.mapNonUnitalStarAlgHom φ ψ x) := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy =>
+    rw [Algebra.TensorProduct.coe_mapNonUnitalStarAlgHom] at hx hy ⊢
+    rw [map_add, map_add, map_add, hx, hy]
+  | tmul a b => simp
+
+/-- **Functoriality of the minimal norm**: star homomorphisms `φ : A → A'` and `ψ : B → B'` give
+`‖(φ ⊗ ψ) x‖_min ≤ ‖x‖_min`. -/
+theorem minTensorNorm_mapNonUnitalStarAlgHom_le {A' B' : Type*} [NonUnitalCStarAlgebra A']
+    [NonUnitalCStarAlgebra B'] (φ : A →⋆ₙₐ[ℂ] A') (ψ : B →⋆ₙₐ[ℂ] B') (x : A ⊗[ℂ] B) :
+    minTensorNorm A' B' (Algebra.TensorProduct.mapNonUnitalStarAlgHom φ ψ x) ≤
+      minTensorNorm A B x := by
+  obtain ⟨E, _, _, _, π, hπ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation A'
+  obtain ⟨F, _, _, _, ρ, hρ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation B'
+  rw [minTensorNorm_eq_norm_spatialTensorHom hπ hρ,
+    ← spatialTensorHom_comp_mapNonUnitalStarAlgHom]
+  exact norm_spatialTensorHom_le_minTensorNorm _ _ x
+
+/-- **Injective star homomorphisms are isometric for the minimal norm**: for injective
+`φ : A → A'` and `ψ : B → B'`, `‖(φ ⊗ ψ) x‖_min = ‖x‖_min`. -/
+theorem minTensorNorm_mapNonUnitalStarAlgHom {A' B' : Type*} [NonUnitalCStarAlgebra A']
+    [NonUnitalCStarAlgebra B'] {φ : A →⋆ₙₐ[ℂ] A'} {ψ : B →⋆ₙₐ[ℂ] B'}
+    (hφ : Function.Injective φ) (hψ : Function.Injective ψ) (x : A ⊗[ℂ] B) :
+    minTensorNorm A' B' (Algebra.TensorProduct.mapNonUnitalStarAlgHom φ ψ x) =
+      minTensorNorm A B x := by
+  obtain ⟨E, _, _, _, π, hπ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation A'
+  obtain ⟨F, _, _, _, ρ, hρ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation B'
+  rw [minTensorNorm_eq_norm_spatialTensorHom hπ hρ,
+    minTensorNorm_eq_norm_spatialTensorHom (π := π.comp φ) (ρ := ρ.comp ψ) (hπ.comp hφ)
+      (hρ.comp hψ), spatialTensorHom_comp_mapNonUnitalStarAlgHom]
+
+/-- **Flip invariance of the minimal norm**: `‖τ(x)‖_min = ‖x‖_min` for the flip
+`τ : A ⊗[ℂ] B ≃ B ⊗[ℂ] A`. -/
+@[simp]
+theorem minTensorNorm_comm (x : A ⊗[ℂ] B) :
+    minTensorNorm B A (TensorProduct.comm ℂ A B x) = minTensorNorm A B x := by
+  obtain ⟨E, _, _, _, π, hπ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation A
+  obtain ⟨F, _, _, _, ρ, hρ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation B
+  rw [minTensorNorm_eq_norm_spatialTensorHom hρ hπ, minTensorNorm_eq_norm_spatialTensorHom hπ hρ,
+    NonUnitalStarAlgHom.spatialTensorHom_apply, NonUnitalStarAlgHom.spatialTensorHom_apply,
+    TensorProduct.map_comm, norm_spatialTensorLinearMap_comm]
+
 end TauCeti
 
 namespace NonUnitalStarSubalgebra
@@ -159,11 +246,16 @@ variable {E : Type u} {F : Type v} [NormedAddCommGroup E] [InnerProductSpace ℂ
   (A : NonUnitalStarSubalgebra ℂ (E →L[ℂ] E)) (B : NonUnitalStarSubalgebra ℂ (F →L[ℂ] F))
   [IsClosed (A : Set (E →L[ℂ] E))] [IsClosed (B : Set (F →L[ℂ] F))]
 
+/-- For closed concrete operator algebras `A ⊆ B(E)` and `B ⊆ B(F)`, the minimal norm is the
+spatial norm relative to the given representations. -/
+theorem minTensorNorm_eq_spatialNorm (x : A ⊗[ℂ] B) : minTensorNorm A B x = A.spatialNorm B x := by
+  rw [spatialNorm_def, spatialTensorHom_def]
+  exact minTensorNorm_eq_norm_spatialTensorHom Subtype.val_injective Subtype.val_injective x
+
 /-- For closed concrete operator algebras `A ⊆ B(E)` and `B ⊆ B(F)`, the minimal norm dominates
 the spatial norm relative to the given representations. -/
-theorem spatialNorm_le_minTensorNorm (x : A ⊗[ℂ] B) : A.spatialNorm B x ≤ minTensorNorm A B x := by
-  rw [spatialNorm_def, spatialTensorHom_def]
-  exact norm_spatialTensorHom_le_minTensorNorm _ _ x
+theorem spatialNorm_le_minTensorNorm (x : A ⊗[ℂ] B) : A.spatialNorm B x ≤ minTensorNorm A B x :=
+  (minTensorNorm_eq_spatialNorm A B x).ge
 
 /-- **The spatial norm is at most the maximal norm**: for closed concrete operator algebras
 `A ⊆ B(E)` and `B ⊆ B(F)`, the spatial norm `A.spatialNorm B x` is at most `‖x‖_max`. -/
