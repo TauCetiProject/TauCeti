@@ -28,7 +28,7 @@ triangular, acting by some `a` on `W / D ≅ A`, by some `d` on `D`, with an off
 * the **Levi subgroup** `L ≤ P`, the similitudes stabilizing both `A` and `D`, consists of the
   block-diagonal maps `m(a, d)` (`TauCeti.siegelLeviHom`) with multiplier `c` such that
   `B (a x) (d y) = c • B x y` and `B (d x) (a y) = c • B x y`. For a nondegenerate hermitian
-  form this says `a = c (d*)⁻¹`, so `L ≅ GL(V) × F^×` through `(d, c)`;
+  form this says `a = c (d*)⁻¹`, so the Levi elements are the `m(c (d*)⁻¹, d)`;
 * the **unipotent radical** `N ≤ P`, the similitudes of multiplier `1` acting trivially on `D`
   and on `W / D`, consists of the maps `n(X)` (`TauCeti.siegelUnipotentHom`) for the
   skew-adjoint `X : A → D`, `B (X x) y = -B x (X y)`; and `n(X) n(Y) = n(X + Y)`;
@@ -36,10 +36,13 @@ triangular, acting by some `a` on `W / D ≅ A`, by some `d` on `D`, with an off
   `m(a, d) n(X) m(a, d)⁻¹ = n(d X a⁻¹)`.
 
 The restriction of an element of `P` to `D` is a group morphism `Δ : P → GL(M)`
-(`LinearMap.siegelDiagHom`). Its product with the multiplier is injective on `L` when `B` is
-left-separating (`LinearMap.eq_of_mem_siegelLevi`), and on a finite-dimensional signed hermitian
-space over a field every pair `(d, c)` with `c` fixed by the involution comes from `L`
-(`TauCeti.SignedHermitianSpace.exists_siegelLeviHom_mem_siegelLevi`).
+(`LinearMap.siegelDiagHom`). Its product `(Δ, ν)` with the multiplier is injective on `L` when
+`B` is left-separating (`LinearMap.eq_of_mem_siegelLevi`). On a signed hermitian space, `m(a, d)`
+with multiplier `c` fixed by the involution lies in `L` as soon as `h (a x) (d y) = c h x y`
+(`TauCeti.SignedHermitianSpace.siegelLeviHom_mem_siegelLevi`); this needs no field, so it covers
+split algebras such as `F × F`. On a finite-dimensional space over a field the adjoint provides
+such an `a` for every `d`, so the image of `(Δ, ν)` on `L` contains every pair `(d, c)` with `c`
+fixed by the involution (`TauCeti.SignedHermitianSpace.exists_siegelLeviHom_mem_siegelLevi`).
 
 ## Main definitions
 
@@ -47,7 +50,6 @@ space over a field every pair `(d, c)` with `c` fixed by the involution comes fr
 * `LinearMap.siegelLevi`: the elements of the Siegel parabolic stabilizing the antidiagonal.
 * `LinearMap.siegelRadical`: the similitudes of multiplier `1` fixing the diagonal pointwise and
   acting trivially modulo it.
-* `LinearMap.skewAdjointAddSubgroup`: the endomorphisms `X` with `B (X x) y = -B x (X y)`.
 * `TauCeti.siegelLeviHom`, `TauCeti.siegelUnipotentHom`: the block-diagonal and the unipotent
   automorphisms of `M × M` in polarization coordinates.
 * `LinearMap.siegelDiagHom`: the restriction of the Siegel parabolic to the diagonal.
@@ -60,7 +62,8 @@ space over a field every pair `(d, c)` with `c` fixed by the involution comes fr
 * `LinearMap.mem_siegelParabolic_iff_exists_siegelLeviHom_mul_siegelUnipotentHom`: the Siegel
   parabolic in coordinates.
 * `LinearMap.isComplement'_siegelLevi_siegelRadical`,
-  `LinearMap.normal_siegelRadical_subgroupOf`: the Levi decomposition `P = L ⋉ N`.
+  `LinearMap.normal_siegelRadical_subgroupOf` (an instance): the Levi decomposition
+  `P = L ⋉ N`.
 * `TauCeti.siegelLeviHom_mul_siegelUnipotentHom_mul_inv`: the conjugation action of the Levi
   subgroup on the unipotent radical.
 
@@ -100,14 +103,18 @@ def siegelUnipotentHom : Multiplicative (M →ₗ[R] M) →* (M × M) ≃ₗ[R] 
     { toFun := fun X ↦ (LinearEquiv.refl R M).skewProd (LinearEquiv.refl R M) X.toAdd
       map_one' := LinearEquiv.ext fun _ ↦ by simp [LinearEquiv.skewProd_apply]
       map_mul' := fun _ _ ↦ LinearEquiv.ext fun _ ↦ Prod.ext (by simp [LinearEquiv.skewProd_apply])
-        (by simp only [LinearEquiv.skewProd_apply]; simp; abel) }
+        (by simp only [LinearEquiv.skewProd_apply, LinearEquiv.refl_apply, toAdd_mul,
+          LinearMap.add_apply, mul_apply_eq_comp]; abel) }
 
 variable {R M}
 
-private theorem siegelLeviHom_eq (a d : M ≃ₗ[R] M) :
+/-- `m(a, d)` is the conjugate of `a.prodCongr d` by the polarization coordinates. -/
+theorem siegelLeviHom_def (a d : M ≃ₗ[R] M) :
     siegelLeviHom R M (a, d) = MulAut.conj (antidiagDiagEquiv R M) (a.prodCongr d) := (rfl)
 
-private theorem siegelUnipotentHom_eq (X : M →ₗ[R] M) :
+/-- `n(X)` is the conjugate of the shear `(u, v) ↦ (u, v + X u)` by the polarization
+coordinates. -/
+theorem siegelUnipotentHom_def (X : M →ₗ[R] M) :
     siegelUnipotentHom R M (.ofAdd X) = MulAut.conj (antidiagDiagEquiv R M)
       ((LinearEquiv.refl R M).skewProd (LinearEquiv.refl R M) X) := (rfl)
 
@@ -127,34 +134,34 @@ private theorem diag_eq (y : M) : ((y, y) : M × M) = antidiagDiagEquiv R M (0, 
 @[simp]
 theorem siegelLeviHom_apply_antidiag (a d : M ≃ₗ[R] M) (x : M) :
     siegelLeviHom R M (a, d) (x, -x) = (a x, -a x) := by
-  rw [antidiag_eq (R := R), siegelLeviHom_eq, conj_antidiagDiagEquiv_apply]
+  rw [antidiag_eq (R := R), siegelLeviHom_def, conj_antidiagDiagEquiv_apply]
   simp
 
 /-- `m(a, d)` acts by `d` on the diagonal. -/
 @[simp]
 theorem siegelLeviHom_apply_diag (a d : M ≃ₗ[R] M) (y : M) :
     siegelLeviHom R M (a, d) (y, y) = (d y, d y) := by
-  rw [diag_eq (R := R), siegelLeviHom_eq, conj_antidiagDiagEquiv_apply]
+  rw [diag_eq (R := R), siegelLeviHom_def, conj_antidiagDiagEquiv_apply]
   simp
 
 /-- `n(X)` sends `(x, -x)` to `(x, -x) + (X x, X x)`. -/
 @[simp]
 theorem siegelUnipotentHom_apply_antidiag (X : M →ₗ[R] M) (x : M) :
     siegelUnipotentHom R M (.ofAdd X) (x, -x) = (x + X x, -x + X x) := by
-  rw [antidiag_eq (R := R), siegelUnipotentHom_eq, conj_antidiagDiagEquiv_apply]
+  rw [antidiag_eq (R := R), siegelUnipotentHom_def, conj_antidiagDiagEquiv_apply]
   simp [LinearEquiv.skewProd_apply, sub_eq_neg_add]
 
 /-- `n(X)` fixes the diagonal pointwise. -/
 @[simp]
 theorem siegelUnipotentHom_apply_diag (X : M →ₗ[R] M) (y : M) :
     siegelUnipotentHom R M (.ofAdd X) (y, y) = (y, y) := by
-  rw [diag_eq (R := R), siegelUnipotentHom_eq, conj_antidiagDiagEquiv_apply]
+  rw [diag_eq (R := R), siegelUnipotentHom_def, conj_antidiagDiagEquiv_apply]
   simp [LinearEquiv.skewProd_apply]
 
 /-- The block-diagonal map `m(a, d)` determines `a` and `d`. -/
 theorem siegelLeviHom_injective : Function.Injective (siegelLeviHom R M) := by
   rintro ⟨a, d⟩ ⟨a', d'⟩ h
-  rw [siegelLeviHom_eq, siegelLeviHom_eq] at h
+  rw [siegelLeviHom_def, siegelLeviHom_def] at h
   have := (MulAut.conj (antidiagDiagEquiv R M)).injective h
   rw [LinearEquiv.prodCongr_inj] at this
   rw [this.1, this.2]
@@ -164,7 +171,7 @@ theorem siegelUnipotentHom_injective : Function.Injective (siegelUnipotentHom R 
   intro X Y h
   obtain ⟨X, rfl⟩ := Multiplicative.ofAdd.surjective X
   obtain ⟨Y, rfl⟩ := Multiplicative.ofAdd.surjective Y
-  rw [siegelUnipotentHom_eq, siegelUnipotentHom_eq] at h
+  rw [siegelUnipotentHom_def, siegelUnipotentHom_def] at h
   have h := (MulAut.conj (antidiagDiagEquiv R M)).injective h
   refine congrArg Multiplicative.ofAdd (LinearMap.ext fun x ↦ ?_)
   simpa [LinearEquiv.skewProd_apply] using congrArg Prod.snd (DFunLike.congr_fun h (x, 0))
@@ -174,8 +181,8 @@ theorem siegelUnipotentHom_injective : Function.Injective (siegelUnipotentHom R 
 theorem siegelLeviHom_mul_siegelUnipotentHom_mul_inv (a d : M ≃ₗ[R] M) (X : M →ₗ[R] M) :
     siegelLeviHom R M (a, d) * siegelUnipotentHom R M (.ofAdd X) * (siegelLeviHom R M (a, d))⁻¹ =
       siegelUnipotentHom R M (.ofAdd ((d : M →ₗ[R] M) ∘ₗ X ∘ₗ (a.symm : M →ₗ[R] M))) := by
-  rw [← map_inv, siegelLeviHom_eq, siegelLeviHom_eq, siegelUnipotentHom_eq,
-    siegelUnipotentHom_eq, ← map_mul, ← map_mul]
+  rw [← map_inv, siegelLeviHom_def, siegelLeviHom_def, siegelUnipotentHom_def,
+    siegelUnipotentHom_def, ← map_mul, ← map_mul]
   congr 1
   ext ⟨x, y⟩ <;> simp [LinearEquiv.skewProd_apply, mul_apply_eq_comp]
 
@@ -188,23 +195,6 @@ open TauCeti
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] {I₁ I₂ : R →+* R} (B : M →ₛₗ[I₁] M →ₛₗ[I₂] N)
   (S : Type*) [Monoid S] [DistribMulAction S N]
-
-/-! ### Skew-adjoint endomorphisms of a sesquilinear form -/
-
-/-- The endomorphisms `X` of `M` that are skew-adjoint for a sesquilinear form `B`:
-`B (X x) y = -B x (X y)`. For a bilinear form this is the carrier of Mathlib's
-`LinearMap.skewAdjointSubmodule`; for a form semilinear in its arguments, such as a hermitian
-form, it is in general only an additive subgroup. -/
-def skewAdjointAddSubgroup : AddSubgroup (M →ₗ[R] M) where
-  carrier := {X | ∀ x y, B (X x) y = -B x (X y)}
-  zero_mem' _ _ := by simp
-  add_mem' {X Y} hX hY x y := by simp [hX x y, hY x y, add_comm]
-  neg_mem' {X} hX x y := by simp [hX x y]
-
-variable {B} in
-@[simp]
-theorem mem_skewAdjointAddSubgroup_iff {X : M →ₗ[R] M} :
-    X ∈ B.skewAdjointAddSubgroup ↔ ∀ x y, B (X x) y = -B x (X y) := Iff.rfl
 
 /-! ### The Siegel parabolic, its Levi subgroup and its unipotent radical -/
 
@@ -364,7 +354,7 @@ form the first condition says `a = c (d*)⁻¹`. -/
 theorem siegelLeviHom_mem_similitudeGroup_iff (a d : M ≃ₗ[R] M) (c : Sˣ) :
     (siegelLeviHom R M (a, d), c) ∈ B.doubled.similitudeGroup S ↔
       (∀ x y, B (a x) (d y) = c • B x y) ∧ ∀ x y, B (d x) (a y) = c • B x y := by
-  rw [siegelLeviHom_eq, conj_mem_similitudeGroup_doubled_iff]
+  rw [siegelLeviHom_def, conj_mem_similitudeGroup_doubled_iff]
   refine ⟨fun h ↦ ⟨fun x y ↦ by simpa using h (x, 0) (0, y),
     fun x y ↦ by simpa using h (0, x) (y, 0)⟩, fun ⟨h₁, h₂⟩ p q ↦ ?_⟩
   simp [h₁, h₂, smul_add]
@@ -374,7 +364,7 @@ theorem siegelLeviHom_mem_similitudeGroup_iff (a d : M ≃ₗ[R] M) (c : Sˣ) :
 theorem siegelUnipotentHom_mem_similitudeGroup_iff (X : M →ₗ[R] M) :
     (siegelUnipotentHom R M (.ofAdd X), (1 : Sˣ)) ∈ B.doubled.similitudeGroup S ↔
       X ∈ B.skewAdjointAddSubgroup := by
-  rw [siegelUnipotentHom_eq, conj_mem_similitudeGroup_doubled_iff,
+  rw [siegelUnipotentHom_def, conj_mem_similitudeGroup_doubled_iff,
     mem_skewAdjointAddSubgroup_iff]
   refine ⟨fun h x y ↦ ?_, fun h p q ↦ ?_⟩
   · have := h (x, 0) (y, 0)
@@ -409,20 +399,6 @@ private theorem map_graph_neg_id_conj_eq_iff (g : (M × M) ≃ₗ[R] M × M) :
   rw [← map_antidiagDiagEquiv_range_inl, map_map_conj]
   exact (Submodule.map_injective_of_injective (antidiagDiagEquiv R M).injective).eq_iff
 
-omit [Invertible (2 : R)] in
-private theorem map_range_inl_prodCongr (a d : M ≃ₗ[R] M) :
-    (range (inl R M M)).map (a.prodCongr d : (M × M) →ₗ[R] M × M) = range (inl R M M) := by
-  ext ⟨u, w⟩
-  simp only [Submodule.mem_map, mem_range, inl_apply, exists_exists_eq_and, LinearEquiv.coe_coe,
-    LinearEquiv.prodCongr_apply, map_zero, Prod.mk.injEq]
-  exact ⟨fun ⟨x, hx, hw⟩ ↦ ⟨a x, hx, hw⟩, fun ⟨x, hx, hw⟩ ↦ ⟨a.symm x, by simp [hx], hw⟩⟩
-
-omit [Invertible (2 : R)] in
-private theorem map_range_inr_prodCongr (a d : M ≃ₗ[R] M) :
-    (range (inr R M M)).map (a.prodCongr d : (M × M) →ₗ[R] M × M) = range (inr R M M) :=
-  LinearEquiv.exists_skewProd_eq_iff.1 ⟨a, d, 0, LinearEquiv.ext fun _ ↦ by
-    simp [LinearEquiv.skewProd_apply]⟩
-
 variable {B S}
 
 /-- **The Levi subgroup in coordinates.** An element of the Levi subgroup is a block-diagonal
@@ -441,24 +417,22 @@ theorem mem_siegelLevi_iff_exists_siegelLeviHom {g : ((M × M) ≃ₗ[R] M × M)
       ⟨fun x ↦ by
         obtain ⟨y, hy⟩ : g' (x, 0) ∈ range (inl R M M) :=
           hA ▸ Submodule.mem_map_of_mem (mem_range_self (inl R M M) x)
-        rw [← hy]
-        rfl,
+        rw [← hy, inl_apply],
       fun y ↦ by
         obtain ⟨x, hx⟩ : g' (0, y) ∈ range (inr R M M) :=
           hD ▸ Submodule.mem_map_of_mem (mem_range_self (inr R M M) y)
-        rw [← hx]
-        rfl⟩
-    rw [← siegelLeviHom_eq] at hg'
+        rw [← hx, inr_apply]⟩
+    rw [← siegelLeviHom_def] at hg'
     refine ⟨a, d, hg', (siegelLeviHom_mem_similitudeGroup_iff B S a d g.2).1 ?_⟩
     rwa [hg']
   · rintro ⟨a, d, hg, h₁, h₂⟩
     have hsim := (siegelLeviHom_mem_similitudeGroup_iff B S a d g.2).2 ⟨h₁, h₂⟩
     rw [hg] at hsim
     refine mem_siegelLevi_iff.2 ⟨mem_siegelParabolic_iff.2 ⟨hsim, ?_⟩, ?_⟩
-    · rw [← hg, siegelLeviHom_eq, map_graph_id_conj_eq_iff]
-      exact map_range_inr_prodCongr a d
-    · rw [← hg, siegelLeviHom_eq, map_graph_neg_id_conj_eq_iff]
-      exact map_range_inl_prodCongr a d
+    · rw [← hg, siegelLeviHom_def, map_graph_id_conj_eq_iff]
+      exact LinearEquiv.map_range_inr_prodCongr a d
+    · rw [← hg, siegelLeviHom_def, map_graph_neg_id_conj_eq_iff]
+      exact LinearEquiv.map_range_inl_prodCongr a d
 
 /-- **The unipotent radical in coordinates.** The unipotent radical consists of the maps `n(X)`,
 `(x, -x) ↦ (x, -x) + (X x, X x)` fixing the diagonal, for the endomorphisms `X` skew-adjoint
@@ -480,11 +454,12 @@ theorem mem_siegelRadical_iff_exists_siegelUnipotentHom {g : ((M × M) ≃ₗ[R]
       refine sub_eq_zero.1 ((isUnit_of_invertible (2 : R)).smul_left_cancel.1 ?_)
       calc (2 : R) • ((g' (x, 0)).1 - x)
           = (g' (x, 0) - (x, 0)).1 + (g' (x, 0) - (x, 0)).2 -
-            ((g' (x, 0) - (x, 0)).2 - (g' (x, 0) - (x, 0)).1) := by simp [two_smul]; abel
+            ((g' (x, 0) - (x, 0)).2 - (g' (x, 0) - (x, 0)).1) := by
+            simp only [Prod.fst_sub, Prod.snd_sub, sub_zero, two_smul]; abel
         _ = (2 : R) • 0 := by rw [this, sub_self, smul_zero]
     let X : M →ₗ[R] M := snd R M M ∘ₗ (g' : (M × M) →ₗ[R] M × M) ∘ₗ inl R M M
     have hX : siegelUnipotentHom R M (.ofAdd X) = g.1 := by
-      rw [siegelUnipotentHom_eq, ← hg']
+      rw [siegelUnipotentHom_def, ← hg']
       congr 1
       ext ⟨x, y⟩ <;>
         rw [show ((x, y) : M × M) = (x, 0) + (0, y) by simp, map_add, map_add] <;>
@@ -497,7 +472,7 @@ theorem mem_siegelRadical_iff_exists_siegelUnipotentHom {g : ((M × M) ≃ₗ[R]
     rw [hg, ← hc] at hsim
     refine ⟨hsim, hc, fun y ↦ by rw [← hg, siegelUnipotentHom_apply_diag], fun v ↦ ?_⟩
     obtain ⟨p, rfl⟩ := (antidiagDiagEquiv R M).surjective v
-    rw [← hg, siegelUnipotentHom_eq, conj_antidiagDiagEquiv_apply, ← map_sub]
+    rw [← hg, siegelUnipotentHom_def, conj_antidiagDiagEquiv_apply, ← map_sub]
     simp [LinearEquiv.skewProd_apply]
 
 /-- **The Siegel parabolic in coordinates.** Every element of the Siegel parabolic is
@@ -517,7 +492,7 @@ theorem mem_siegelParabolic_iff_exists_siegelLeviHom_mul_siegelUnipotentHom
     obtain ⟨a, d, f, rfl⟩ := LinearEquiv.exists_skewProd_eq_iff.2 hD
     let X : M →ₗ[R] M := (d.symm : M →ₗ[R] M) ∘ₗ f
     have hX : siegelLeviHom R M (a, d) * siegelUnipotentHom R M (.ofAdd X) = g.1 := by
-      rw [siegelLeviHom_eq, siegelUnipotentHom_eq, ← map_mul, ← hg']
+      rw [siegelLeviHom_def, siegelUnipotentHom_def, ← map_mul, ← hg']
       congr 1
       ext ⟨x, y⟩ <;> simp [LinearEquiv.skewProd_apply, mul_apply_eq_comp, X]
     have hsim' := (conj_mem_similitudeGroup_doubled_iff B S (a.skewProd d f) g.2).1
@@ -572,7 +547,7 @@ theorem disjoint_siegelLevi_siegelRadical : Disjoint (B.siegelLevi S) (B.siegelR
   obtain ⟨a, d, hgad, -⟩ := mem_siegelLevi_iff_exists_siegelLeviHom.1 hL
   obtain ⟨hc, X, -, hgX⟩ := mem_siegelRadical_iff_exists_siegelUnipotentHom.1 hN
   have h := hgad.trans hgX.symm
-  rw [siegelLeviHom_eq, siegelUnipotentHom_eq] at h
+  rw [siegelLeviHom_def, siegelUnipotentHom_def] at h
   have h := (MulAut.conj (antidiagDiagEquiv R M)).injective h
   have hX : X = 0 := LinearMap.ext fun x ↦ by
     simpa [LinearEquiv.skewProd_apply] using (congrArg Prod.snd (DFunLike.congr_fun h (x, 0))).symm
@@ -611,7 +586,7 @@ theorem isComplement'_siegelLevi_siegelRadical :
 end Polarization
 
 /-- The unipotent radical is normal in the Siegel parabolic. -/
-theorem normal_siegelRadical_subgroupOf :
+instance normal_siegelRadical_subgroupOf :
     ((B.siegelRadical S).subgroupOf (B.siegelParabolic S)).Normal := by
   refine ⟨fun n hn p ↦ ?_⟩
   rw [Subgroup.mem_subgroupOf] at hn ⊢
@@ -637,21 +612,44 @@ end LinearMap
 
 namespace TauCeti.SignedHermitianSpace
 
+section CommRing
+
+variable {K V : Type*} [CommRing K] [Invertible (2 : K)] [AddCommGroup V] [Module K V]
+  {σ : K →+* K} {ε : ℤˣ}
+
+/-- On a signed hermitian space `(V, h)`, a block-diagonal map `m(a, d)` with multiplier `c` fixed
+by the involution lies in the Levi subgroup of the Siegel parabolic of `V ⊕ (-V)` as soon as
+`h (a x) (d y) = c h x y`, that is `a = c (d*)⁻¹`: the second similitude condition follows by
+`ε`-hermitian symmetry. No field is needed, so this covers split algebras such as `F × F`. -/
+theorem siegelLeviHom_mem_siegelLevi (H : SignedHermitianSpace K V σ ε) (S : Type*)
+    [CommSemiring S] [Algebra S K] (a d : V ≃ₗ[K] V) (c : Sˣ)
+    (hc : σ (algebraMap S K c) = algebraMap S K c)
+    (h : ∀ x y, H.form (a x) (d y) = c • H.form x y) :
+    (siegelLeviHom K V (a, d), c) ∈ H.form.siegelLevi S := by
+  have hsmul (z : K) : c • z = algebraMap S K c * z := by
+    rw [Units.smul_def, Algebra.smul_def]
+  refine LinearMap.mem_siegelLevi_iff_exists_siegelLeviHom.2 ⟨a, d, rfl, h, fun x y ↦ ?_⟩
+  rw [H.form_swap (a y), h, hsmul, map_mul, hc, hsmul, H.form_swap y x, mul_smul_comm]
+
+end CommRing
+
+section Field
+
 variable {K V : Type*} [Field K] [Invertible (2 : K)] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] {σ : K →+* K} {ε : ℤˣ}
 
 /-- **Surjectivity of the Levi coordinates.** On a finite-dimensional signed hermitian space
 `(V, h)` over a field, for every automorphism `d` of `V` and every multiplier `c` fixed by the
 involution there is a block-diagonal element `m(a, d)` of multiplier `c` in the Levi subgroup of
-the Siegel parabolic of `V ⊕ (-V)`: take `a = c (d*)⁻¹`. With
-`LinearMap.eq_of_mem_siegelLevi` this identifies the Levi subgroup with `GL(V) × F^×`, `F` the
-fixed field of the involution. -/
+the Siegel parabolic of `V ⊕ (-V)`: take `a = c (d*)⁻¹`. So the image of the Levi subgroup under
+`(Δ, ν)`, which is injective on it by `LinearMap.eq_of_mem_siegelLevi`, contains every pair
+`(d, c)` with `c` fixed by the involution. -/
 theorem exists_siegelLeviHom_mem_siegelLevi (H : SignedHermitianSpace K V σ ε) (S : Type*)
     [CommSemiring S] [Algebra S K] (d : V ≃ₗ[K] V) (c : Sˣ)
     (hc : σ (algebraMap S K c) = algebraMap S K c) :
     ∃ a : V ≃ₗ[K] V, (siegelLeviHom K V (a, d), c) ∈ H.form.siegelLevi S := by
   set k : Kˣ := Units.map (algebraMap S K : S →* K) c
-  have hk : σ k = k := hc
+  have hk : σ k = k := by simpa [k] using hc
   have hsmul (z : K) : c • z = k * z := by
     simp [k, Units.smul_def, Algebra.smul_def]
   -- The adjoints of `d⁻¹` and of `d` are mutually inverse.
@@ -672,9 +670,8 @@ theorem exists_siegelLeviHom_mem_siegelLevi (H : SignedHermitianSpace K V σ ε)
       simpa [smul_smul, k.ne_zero, mul_apply_eq_comp] using LinearMap.congr_fun h₁ x)
     (LinearMap.ext fun x ↦ by
       simpa [smul_smul, k.ne_zero, mul_apply_eq_comp] using LinearMap.congr_fun h₂ x)
-  refine ⟨a, LinearMap.mem_siegelLevi_iff_exists_siegelLeviHom.2 ⟨a, d, rfl, fun x y ↦ ?_,
-    fun x y ↦ ?_⟩⟩
-  · simp [a, hsmul, hk]
-  · simp [a, hsmul]
+  exact ⟨a, H.siegelLeviHom_mem_siegelLevi S a d c hc fun x y ↦ by simp [a, hsmul, hk]⟩
+
+end Field
 
 end TauCeti.SignedHermitianSpace
