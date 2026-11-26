@@ -27,6 +27,8 @@ it commutes with the `(0,1)`-projection, and that it has dense range when `V` is
 ## Main results
 
 * `TauCeti.zeroOneOfExponentLEL_injective`: the inclusion is injective.
+* `TauCeti.zeroOneOfExponentLEL_self`, `TauCeti.zeroOneOfExponentLEL_zeroOneOfExponentLEL`: the
+  identity at `p = q` and transitivity.
 * `TauCeti.zeroOnePartSobolevL_ofExponentLEL`: lowering the exponent commutes with the
   `(0,1)`-projection.
 * `TauCeti.denseRange_zeroOneOfExponentLEL`: the inclusion has dense range.
@@ -65,7 +67,7 @@ def zeroOneOfExponentLEL (hpq : p ≤ q) :
     (zeroOneSobolevSections A μ q k).subtypeL).codRestrict _ fun w ↦
       mem_zeroOneSobolevSections_iff.2 fun i ↦ by
         simpa only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
-          SectionChartData.chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL] using
+          SectionChartData.coeFn_chartValueL_ofExponentLEL] using
           mem_zeroOneSobolevSections_iff.1 w.property i
 
 variable {A μ k}
@@ -83,18 +85,33 @@ theorem zeroOneOfExponentLEL_injective (hpq : p ≤ q) :
   Subtype.ext <| SectionChartData.ofExponentLEL_injective hpq <| by
     rw [← coe_zeroOneOfExponentLEL, ← coe_zeroOneOfExponentLEL, h]
 
+/-- Lowering the exponent of `(0,1)`-forms from `p` to itself is the identity. -/
+@[simp]
+theorem zeroOneOfExponentLEL_self (w : zeroOneSobolevSections A μ p k) :
+    zeroOneOfExponentLEL A μ k le_rfl w = w :=
+  Subtype.ext <| by rw [coe_zeroOneOfExponentLEL, SectionChartData.ofExponentLEL_self]
+
+/-- Lowering the exponent of `(0,1)`-forms is transitive. -/
+@[simp]
+theorem zeroOneOfExponentLEL_zeroOneOfExponentLEL {r : ℝ≥0∞} [Fact (1 ≤ r)] (hpq : p ≤ q)
+    (hqr : q ≤ r) (w : zeroOneSobolevSections A μ r k) :
+    zeroOneOfExponentLEL A μ k hpq (zeroOneOfExponentLEL A μ k hqr w) =
+      zeroOneOfExponentLEL A μ k (hpq.trans hqr) w :=
+  Subtype.ext <| by
+    rw [coe_zeroOneOfExponentLEL, coe_zeroOneOfExponentLEL, coe_zeroOneOfExponentLEL,
+      SectionChartData.ofExponentLEL_ofExponentLEL]
+
 /-- **Lowering the exponent commutes with the `(0,1)`-projection.** Both act on chart data, by
 `ContinuousLinearMap.complexAntilinearPartL` and by forgetting integrability. -/
 theorem zeroOnePartSobolevL_ofExponentLEL (hpq : p ≤ q) (w : SobolevSection A.tangentHom μ q k) :
     zeroOnePartSobolevL A μ p k (A.tangentHom.sectionChartData.ofExponentLEL μ k hpq w) =
       zeroOneOfExponentLEL A μ k hpq (zeroOnePartSobolevL A μ q k w) := by
   refine Subtype.ext (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦ ?_)
-  rw [coe_zeroOneOfExponentLEL, SectionChartData.chartValueL_ofExponentLEL,
-    Lp.coeFn_ofExponentLEL]
+  rw [coe_zeroOneOfExponentLEL, SectionChartData.coeFn_chartValueL_ofExponentLEL]
   filter_upwards [chartValueL_zeroOnePartSobolevL_ae
       (A.tangentHom.sectionChartData.ofExponentLEL μ k hpq w) i,
     chartValueL_zeroOnePartSobolevL_ae w i] with y h₁ h₂
-  rw [h₁, h₂, SectionChartData.chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL]
+  rw [h₁, h₂, SectionChartData.coeFn_chartValueL_ofExponentLEL]
 
 variable [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
 

@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Fredholm
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm.Exponent
-import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.PartitionOfUnity
 import TauCeti.Analysis.Fredholm.Regularity
 import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Density
@@ -31,8 +31,9 @@ comparison `ContinuousLinearMap.IsFredholm.index_eq_of_regularity` and
 `LinearMap.cokerEquivOfRegularity` then show that `ι` identifies the cokernels
 (`TauCeti.IsRealCauchyRiemannOperator.cokerSobolevLEquiv`) and that the index of `D_p` does not
 depend on `p` (`TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_eq`). This is the cokernel half
-of McDuff–Salamon, Theorem C.1.10 (iii), for smooth operators on closed surfaces; the kernel half
-is `TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEquiv`.
+of McDuff–Salamon, Theorem C.1.10 (i) (regularity of kernel and cokernel), proved as
+Theorem C.2.3, for smooth operators on closed surfaces; the kernel half is
+`TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEquiv`.
 
 ## The argument
 
@@ -67,7 +68,7 @@ which consists of smooth sections.
 ## References
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Theorem C.1.10 (iii) and Theorem C.2.3.
+  Theorem C.1.10 (i) and Theorem C.2.3.
 -/
 
 public section
@@ -112,19 +113,15 @@ theorem sobolevL_ofExponentLEL (hpp' : p ≤ p') (w : SobolevSection A volume p'
   -- Lowering the exponent keeps the chart data, as functions.
   have hw : (A.sectionChartData.chartValueL volume p 1 i
       (A.sectionChartData.ofExponentLEL volume 1 hpp' w) : ℂ → F) =
-        A.sectionChartData.chartValueL volume p' 1 i w := by
-    have h := congrArg (⇑) (SectionChartData.chartValueL_ofExponentLEL (C := A.sectionChartData)
-      (μ := volume) hpp' w i)
-    rwa [Lp.coeFn_ofExponentLEL] at h
+        A.sectionChartData.chartValueL volume p' 1 i w :=
+    SectionChartData.coeFn_chartValueL_ofExponentLEL (C := A.sectionChartData) hpp' w i
   have hDw : (A.tangentHom.sectionChartData.chartValueL volume p 0 i
       (A.tangentHom.sectionChartData.ofExponentLEL volume 0 hpp'
         (hD.sobolevL A hDs volume p' w)) : ℂ → ℂ →L[ℝ] F) =
         A.tangentHom.sectionChartData.chartValueL volume p' 0 i
-          (hD.sobolevL A hDs volume p' w : SobolevSection A.tangentHom volume p' 0) := by
-    have h := congrArg (⇑) (SectionChartData.chartValueL_ofExponentLEL
-      (C := A.tangentHom.sectionChartData) (μ := volume) hpp'
-      (hD.sobolevL A hDs volume p' w : SobolevSection A.tangentHom volume p' 0) i)
-    rwa [Lp.coeFn_ofExponentLEL] at h
+          (hD.sobolevL A hDs volume p' w : SobolevSection A.tangentHom volume p' 0) :=
+    SectionChartData.coeFn_chartValueL_ofExponentLEL (C := A.tangentHom.sectionChartData) hpp'
+      _ i
   have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL volume p' i w
   rw [coe_zeroOneOfExponentLEL, hDw]
   filter_upwards [chartValueL_sobolevL_ae A hD hDs volume p _ (hw ▸ hDu),
@@ -190,10 +187,8 @@ private theorem norm_apply_zeroOnePartSobolevL_le {i : Fin A.n} {Q₀ Q₁ : Ope
   set u := A.tangentHom.sectionChartData.chartValueL volume 1 0 i
     (A.tangentHom.sectionChartData.ofExponentLEL volume 0 (Fact.out : 1 ≤ p') w :
       A.tangentHom.sectionChartData.SobolevData volume 1 0)
-  have hu : (u : ℂ → ℂ →L[ℝ] F) = v := by
-    have h := congrArg (⇑) (SectionChartData.chartValueL_ofExponentLEL
-      (C := A.tangentHom.sectionChartData) (μ := volume) (Fact.out : 1 ≤ p') w i)
-    rwa [Lp.coeFn_ofExponentLEL] at h
+  have hu : (u : ℂ → ℂ →L[ℝ] F) = v :=
+    SectionChartData.coeFn_chartValueL_ofExponentLEL (C := A.tangentHom.sectionChartData) _ w i
   have hQ₁t : (Q₁ : Set ℂ) ⊆ A.tangentHom.sectionChartData.image i := by
     rwa [sectionChartData_image_tangentHom]
   have hmem := SobolevSection.aeZeroOff_mono (hχ.trans (image_mono hQ₀₁))
@@ -350,9 +345,9 @@ theorem mem_range_sobolevL_of_zeroOneOfExponentLEL_mem (hp' : 1 < p') (hp'_top :
   exact hΛ'D ξ
 
 include hD hDs in
-/-- **Regularity for the exponent** (McDuff–Salamon, Theorem C.1.10 (iii), for smooth operators on
-closed surfaces). For `1 < p ≤ p' < ∞`, a `W^{1,p}` section `ξ` with `D ξ ∈ L^{p'}` is a
-`W^{1,p'}` section. By
+/-- **Regularity for the exponent** (McDuff–Salamon, Theorem C.1.10 (i), regularity of kernel and
+cokernel, proved as Theorem C.2.3, for smooth operators on closed surfaces). For
+`1 < p ≤ p' < ∞`, a `W^{1,p}` section `ξ` with `D ξ ∈ L^{p'}` is a `W^{1,p'}` section. By
 `TauCeti.IsRealCauchyRiemannOperator.mem_range_sobolevL_of_zeroOneOfExponentLEL_mem`,
 `D ξ = D ξ'` for some `W^{1,p'}` section `ξ'`, and `ξ - ξ'` is in the kernel, which consists of
 smooth sections. -/
@@ -389,8 +384,9 @@ private theorem regularity_toLinearMap (hp : 1 < p) (hp'_top : p' ≠ ⊤) (hpp'
     ∃ ξ', (A.sectionChartData.ofExponentLEL volume 1 hpp').toLinearMap ξ' = ξ :=
   exists_ofExponentLEL_eq_of_sobolevL_eq A hD hDs hp hp'_top hpp' hξ
 
-/-- **The cokernel does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (iii), for
-smooth operators on closed surfaces). For `1 < p ≤ p' < ∞`, lowering the exponent induces a linear
+/-- **The cokernel does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (i),
+regularity of kernel and cokernel, proved as Theorem C.2.3, for smooth operators on closed
+surfaces). For `1 < p ≤ p' < ∞`, lowering the exponent induces a linear
 equivalence from the cokernel of the realization `W^{1,p'}(M, V) → L^{p'}(M, Λ^{0,1} ⊗ V)` of a
 smooth real Cauchy–Riemann operator to the cokernel of its realization
 `W^{1,p}(M, V) → Lᵖ(M, Λ^{0,1} ⊗ V)`
@@ -431,8 +427,9 @@ private theorem index_sobolevL_eq_of_le (hp : 1 < p) (hp'_top : p' ≠ ⊤) (hpp
     (regularity_toLinearMap A hD hDs hp hp'_top hpp')
 
 include hD hDs in
-/-- **The index does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (iii), for
-smooth operators on closed surfaces). For `1 < p, p' < ∞`, the realizations
+/-- **The index does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (i),
+regularity of kernel and cokernel, proved as Theorem C.2.3, for smooth operators on closed
+surfaces). For `1 < p, p' < ∞`, the realizations
 `W^{1,p}(M, V) → Lᵖ(M, Λ^{0,1} ⊗ V)` and `W^{1,p'}(M, V) → L^{p'}(M, Λ^{0,1} ⊗ V)` of a smooth real
 Cauchy–Riemann operator have the same Fredholm index. -/
 theorem index_sobolevL_eq (hp : 1 < p) (hp_top : p ≠ ⊤) (hp' : 1 < p') (hp'_top : p' ≠ ⊤) :

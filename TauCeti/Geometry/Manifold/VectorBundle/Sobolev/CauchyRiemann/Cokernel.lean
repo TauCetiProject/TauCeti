@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.SemiFredholm
 public import TauCeti.Analysis.Normed.Module.Annihilator
+public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.PartitionOfUnity
+import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator.Estimate
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Sobolev.Wkp.Local.Compactness
@@ -329,49 +330,6 @@ private theorem exists_norm_sub_le_sum (χ : SmoothPartitionOfUnity (Fin A.n) �
             exact Finset.single_le_sum (fun j _ ↦ hk0 j) (Finset.mem_univ i)
     _ = (∑ i, k i) * (∑ i, ∑ c, e i c) * ‖w‖ := by
         rw [← Finset.mul_sum, ← Finset.sum_mul, mul_assoc]
-
-end IsRealCauchyRiemannOperator
-
-namespace FiniteBundleAtlas
-
-omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [NormedSpace ℝ F]
-  [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [FiniteDimensional ℝ F]
-  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [VectorBundle ℂ F V] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
-/-- **Nested chart sets.** There are a smooth partition of unity `χ` indexed by the charts and, in
-every chart `i`, open sets `Q₀ ⋐ Q₁ ⋐ Q₂ ⋐ Q₃ ⋐ Aᵢ` of the chart image `Aᵢ`, the first two with
-compact closure, with the support of `χᵢ` read in chart `i` inside `Q₀`. -/
-theorem exists_nested_chart_sets :
-    ∃ (χ : SmoothPartitionOfUnity (Fin A.n) 𝓘(ℝ, ℂ) M univ) (Q₀ Q₁ Q₂ Q₃ : Fin A.n → Opens ℂ),
-      (∀ i, tsupport (χ i) ⊆ (A.chart i).symm '' Q₀ i) ∧
-      (∀ i, IsCompact (closure (Q₀ i : Set ℂ)) ∧ closure (Q₀ i : Set ℂ) ⊆ Q₁ i) ∧
-      (∀ i, IsCompact (closure (Q₁ i : Set ℂ)) ∧ closure (Q₁ i : Set ℂ) ⊆ Q₂ i) ∧
-      (∀ i, closure (Q₂ i : Set ℂ) ⊆ Q₃ i) ∧ (∀ i, closure (Q₃ i : Set ℂ) ⊆ A.image i) ∧
-      ∀ i, Q₀ i ≤ Q₃ i := by
-  have := A.compactSpace
-  obtain ⟨χ, hχ⟩ := SmoothPartitionOfUnity.exists_isSubordinate 𝓘(ℝ, ℂ) isClosed_univ A.dom
-    A.isOpen_dom (by rw [A.iUnion_dom])
-  -- The support of `χᵢ` read in chart `i` is a compact subset of the chart image.
-  have hK (i : Fin A.n) : IsCompact (A.chart i '' tsupport (χ i)) :=
-    (isClosed_tsupport _).isCompact.image_of_continuousOn
-      ((A.chart i).continuousOn.mono ((hχ i).trans (A.dom_subset_chart_source i)))
-  have step {K U : Set ℂ} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
-      ∃ W : Opens ℂ, K ⊆ W ∧ closure (W : Set ℂ) ⊆ U ∧ IsCompact (closure (W : Set ℂ)) :=
-    let ⟨W, hW, hKW, hWU, hWc⟩ := exists_open_between_and_isCompact_closure hK hU hKU
-    ⟨⟨W, hW⟩, hKW, hWU, hWc⟩
-  choose Q₃ hK₃ hQ₃ _ using fun i ↦ step (hK i) (A.image i).isOpen
-    fun _ hy ↦ A.mem_image.2 (image_mono (hχ i) hy)
-  choose Q₂ hK₂ hQ₂ _ using fun i ↦ step (hK i) (Q₃ i).isOpen (hK₃ i)
-  choose Q₁ hK₁ hQ₁ hQ₁c using fun i ↦ step (hK i) (Q₂ i).isOpen (hK₂ i)
-  choose Q₀ hK₀ hQ₀ hQ₀c using fun i ↦ step (hK i) (Q₁ i).isOpen (hK₁ i)
-  refine ⟨χ, Q₀, Q₁, Q₂, Q₃, fun i x hx ↦ ⟨A.chart i x, hK₀ i (mem_image_of_mem _ hx),
-    (A.chart i).left_inv (A.dom_subset_chart_source i (hχ i hx))⟩, fun i ↦ ⟨hQ₀c i, hQ₀ i⟩,
-    fun i ↦ ⟨hQ₁c i, hQ₁ i⟩, hQ₂, hQ₃, fun i ↦ subset_closure.trans ((hQ₀ i).trans
-      (subset_closure.trans ((hQ₁ i).trans (subset_closure.trans (hQ₂ i)))))⟩
-
-end FiniteBundleAtlas
-
-namespace IsRealCauchyRiemannOperator
 
 /-! ### Finite dimension of the cokernel -/
 
