@@ -241,7 +241,8 @@ theorem isLocalDiffeomorphAt_flowOut_boundary (v : (x : M) → TangentSpace (�
     have hle := (hmono (L q.1) (interior_subset hq.1)).le_iff_le ⟨neg_lt_zero.2 hε, hε⟩ hq.2
     simp only [hΨ0, euclideanHalfSpaceBoundaryParam_apply_zero, L] at hle
     simp only [range_modelWithCornersEuclideanHalfSpace, ModelWithCorners.range_prod,
-      modelWithCornersSelf_coe, range_id, mem_prod, mem_univ, true_and, mem_ofPred_eq]
+      modelWithCornersSelf_coe, range_id, mem_prod, mem_univ, true_and, mem_ofPred_eq,
+      comp_apply, hπ]
     exact hle
   · simp only [comp_apply, hp₀, hπ, PiLp.zero_apply, hLa, hΦa]
     exact hΨ0 _

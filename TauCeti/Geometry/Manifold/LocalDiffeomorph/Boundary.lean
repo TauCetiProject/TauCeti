@@ -118,9 +118,10 @@ theorem PartialDiffeomorph.coe_ofOpenPartialHomeomorphOfMemRangeIff :
 
 /-- The inverse of `PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff Θ` is the inverse of
 `Θ` read in the model spaces. -/
-theorem PartialDiffeomorph.coe_ofOpenPartialHomeomorphOfMemRangeIff_symm :
-    ⇑(PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff Θ hΘ hΘsymm hrange).symm =
-      I.symm ∘ Θ.symm ∘ J :=
+@[simp]
+theorem PartialDiffeomorph.coe_ofOpenPartialHomeomorphOfMemRangeIff_toPartialEquiv_symm :
+    ⇑(PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff Θ hΘ hΘsymm
+        hrange).toPartialEquiv.symm = I.symm ∘ Θ.symm ∘ J :=
   (rfl)
 
 /-- The source of `PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff Θ` is the preimage of
