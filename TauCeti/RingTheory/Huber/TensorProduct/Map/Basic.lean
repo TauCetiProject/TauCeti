@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.TensorProduct.Pair
+public import TauCeti.RingTheory.Huber.TensorProduct.Completion
 public import Mathlib.Topology.Algebra.Algebra.Equiv
 
 /-!
-# Functoriality of completed tensor products
+# Functoriality of completed tensor rings
 
 Let `A → B`, `A → C`, `A' → B'` and `A' → C'` be adic homomorphisms of Huber rings, and let
 `α : A → A'`, `φ : B → B'` and `ψ : C → C'` be ring homomorphisms forming commutative squares
@@ -18,10 +18,8 @@ homomorphism `B ⊗̂_A C → B' ⊗̂_{A'} C'` of separated completed tensor ri
 values on the two coprojections. The construction is functorial: it preserves identities and
 composites. No continuity of `α` is needed, since it only enters through the two squares.
 
-For Huber pairs, morphisms `(B, B⁺) → (B', B'⁺)` and `(C, C⁺) → (C', C'⁺)` over `α` induce a
-morphism of completed tensor products of Huber pairs `(B, B⁺) ⊗̂_A (C, C⁺) → (B', B'⁺) ⊗̂_{A'}
-(C', C'⁺)`, again functorially. Both constructions are instances of the universal property of the
-completed tensor product, applied to the composites of `φ` and `ψ` with the target coprojections.
+Only the topological ring maps are constructed here; functoriality on completed tensor products of
+Huber pairs is in `TauCeti.RingTheory.Huber.TensorProduct.Map.Pair`.
 
 Continuous `A`-algebra isomorphisms `B ≃A[A] B'` and `C ≃A[A] C'` induce a continuous
 `A`-algebra isomorphism `B ⊗̂_A C ≃A[A] B' ⊗̂_A C'` of completed tensor rings.
@@ -30,8 +28,6 @@ Continuous `A`-algebra isomorphisms `B ≃A[A] B'` and `C ≃A[A] C'` induce a c
 
 * `TauCeti.Huber.CompletedTensor.map`: the continuous ring homomorphism of completed tensor rings
   induced by compatible continuous ring homomorphisms of the factors.
-* `TauCeti.Huber.Pair.completedTensor.map`: the induced morphism of completed tensor products of
-  Huber pairs.
 * `TauCeti.Huber.CompletedTensor.congr`: the continuous `A`-algebra isomorphism of completed
   tensor rings induced by continuous `A`-algebra isomorphisms of the factors.
 
@@ -40,9 +36,7 @@ Continuous `A`-algebra isomorphisms `B ≃A[A] B'` and `C ≃A[A] C'` induce a c
 * `TauCeti.Huber.CompletedTensor.map_toCompletion`: on the dense image of the algebraic tensor
   product, `map` is Mathlib's heterobasic tensor product `Algebra.TensorProduct.mapRingHom` of
   the given maps.
-* `TauCeti.Huber.CompletedTensor.map_id`, `TauCeti.Huber.CompletedTensor.map_comp`,
-  `TauCeti.Huber.Pair.completedTensor.map_id`, `TauCeti.Huber.Pair.completedTensor.map_comp`:
-  functoriality.
+* `TauCeti.Huber.CompletedTensor.map_id`, `TauCeti.Huber.CompletedTensor.map_comp`: functoriality.
 
 ## References
 
@@ -78,7 +72,7 @@ omit [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C] [IsTopologic
   [IsTopologicalRing B] [IsTopologicalRing C] [IsAdicHom (algebraMap A B)]
   [IsAdicHom (algebraMap A C)] in
 /-- The composites of `φ` and `ψ` with the target coprojections agree on `A`. -/
-private theorem inl_comp_comp_algebraMap (α : A →+* A') (φ : B →+* B') (ψ : C →+* C')
+theorem inl_comp_comp_algebraMap (α : A →+* A') (φ : B →+* B') (ψ : C →+* C')
     (hφ : φ.comp (algebraMap A B) = (algebraMap A' B').comp α)
     (hψ : ψ.comp (algebraMap A C) = (algebraMap A' C').comp α) :
     ((inl A' B' C').comp φ).comp (algebraMap A B) =
@@ -213,64 +207,6 @@ noncomputable def congr : CompletedTensor A B C ≃A[A] CompletedTensor A B' C' 
 end Congr
 
 end CompletedTensor
-
-namespace Pair.completedTensor
-
-variable [IsHuberRing B] [IsHuberRing C] [IsHuberRing B'] [IsHuberRing C'] [IsHuberRing B'']
-  [IsHuberRing C''] {S : Pair B} {T : Pair C} {S' : Pair B'} {T' : Pair C'} {S'' : Pair B''}
-  {T'' : Pair C''} (α : A →+* A') (f : Hom S S') (g : Hom T T')
-  (hf : f.toRingHom.comp (algebraMap A B) = (algebraMap A' B').comp α)
-  (hg : g.toRingHom.comp (algebraMap A C) = (algebraMap A' C').comp α)
-
-/-- The morphism of completed tensor products of Huber pairs
-`(B, B⁺) ⊗̂_A (C, C⁺) → (B', B'⁺) ⊗̂_{A'} (C', C'⁺)` induced by morphisms of Huber pairs
-`(B, B⁺) → (B', B'⁺)` and `(C, C⁺) → (C', C'⁺)` lying over `α : A → A'`. -/
-noncomputable def map : Hom (S.completedTensor A T) (S'.completedTensor A' T') :=
-  lift ((inl A' S' T').comp f) ((inr A' S' T').comp g) (by
-    simpa using CompletedTensor.inl_comp_comp_algebraMap α f.toRingHom g.toRingHom hf hg)
-
-/-- The underlying ring homomorphism of the induced morphism of Huber pairs is the induced map of
-completed tensor rings. -/
-@[simp] theorem toRingHom_map :
-    (map α f g hf hg).toRingHom = CompletedTensor.map α f.toRingHom g.toRingHom hf hg
-      f.continuous_toRingHom g.continuous_toRingHom := by
-  simp only [map, toRingHom_lift, Hom.toRingHom_comp, toRingHom_inl, toRingHom_inr]
-  rfl
-
-/-- The induced morphism restricts to `f` on the left factor. -/
-@[simp] theorem map_comp_inl : (map α f g hf hg).comp (inl A S T) = (inl A' S' T').comp f := by
-  ext1
-  simp
-
-/-- The induced morphism restricts to `g` on the right factor. -/
-@[simp] theorem map_comp_inr : (map α f g hf hg).comp (inr A S T) = (inr A' S' T').comp g := by
-  ext1
-  simp
-
-variable (A S T) in
-/-- The identity morphisms induce the identity of the completed tensor product. -/
-@[simp] theorem map_id :
-    map (RingHom.id A) (Hom.id S) (Hom.id T) (by simp) (by simp) =
-      Hom.id (S.completedTensor A T) := by
-  ext1
-  simp
-
-/-- The morphism induced by composites is the composite of the induced morphisms. -/
-theorem map_comp (α' : A' →+* A'') (f' : Hom S' S'') (g' : Hom T' T'')
-    (hf' : f'.toRingHom.comp (algebraMap A' B') = (algebraMap A'' B'').comp α')
-    (hg' : g'.toRingHom.comp (algebraMap A' C') = (algebraMap A'' C'').comp α') :
-    map (α'.comp α) (f'.comp f) (g'.comp g)
-        (by rw [Hom.toRingHom_comp, RingHom.comp_assoc, hf, ← RingHom.comp_assoc, hf',
-          RingHom.comp_assoc])
-        (by rw [Hom.toRingHom_comp, RingHom.comp_assoc, hg, ← RingHom.comp_assoc, hg',
-          RingHom.comp_assoc]) =
-      (map α' f' g' hf' hg').comp (map α f g hf hg) := by
-  ext1
-  simpa using CompletedTensor.map_comp α f.toRingHom g.toRingHom hf hg f.continuous_toRingHom
-    g.continuous_toRingHom α' f'.toRingHom g'.toRingHom hf' hg' f'.continuous_toRingHom
-    g'.continuous_toRingHom
-
-end Pair.completedTensor
 
 end TauCeti.Huber
 
