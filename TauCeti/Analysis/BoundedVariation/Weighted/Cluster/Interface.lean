@@ -222,18 +222,6 @@ theorem weightedPerimeter_cell_eq_sum_interfaceArea (hW : ContDiff ℝ 1 W)
     weightedPerimeter W ⊤ (Ω.cell i) = ∑ j ∈ {i}ᶜ, Ω.interfaceArea i j := by
   simpa using Ω.weightedPerimeter_biUnion_cell_eq_sum_interfaceArea hW hn {i}
 
-/-- Half of a symmetric double sum over the off-diagonal pairs is its sum over the increasing
-pairs. -/
-private theorem sum_sum_erase_div_two {ι : Type*} [Fintype ι] [LinearOrder ι]
-    [LocallyFiniteOrderBot ι] [LocallyFiniteOrderTop ι] (B : ι → ι → ℝ≥0∞)
-    (hB : ∀ i j, B i j = B j i) :
-    (∑ i, ∑ j ∈ Finset.univ.erase i, B i j) / 2 = ∑ i, ∑ j ∈ Finset.Ioi i, B i j := by
-  simp_rw [Finset.sum_erase_univ_eq_sum_Ioi_add_sum_Iio, Finset.sum_add_distrib,
-    Finset.sum_sum_Iio_eq_sum_sum_Ioi]
-  rw [Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => hB j i, ← two_mul,
-    mul_comm]
-  exact ENNReal.mul_div_cancel_right two_ne_zero ENNReal.ofNat_ne_top
-
 /-- **The total perimeter of a cluster is the total area of its interfaces.** For a `C¹` weight,
 in dimension `n ≥ 2`, `P_μ(Ω) = Σ_{i < j} A_ij`. -/
 theorem perimeter_eq_sum_interfaceArea (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E)
@@ -241,7 +229,9 @@ theorem perimeter_eq_sum_interfaceArea (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finra
     Ω.perimeter = ∑ i, ∑ j ∈ Finset.Ioi i, Ω.interfaceArea i j := by
   rw [perimeter_def]
   simp_rw [weightedPerimeter_cell_eq_sum_interfaceArea hW hn, Finset.compl_singleton]
-  exact sum_sum_erase_div_two _ (interfaceArea_comm Ω)
+  rw [Finset.sum_sum_erase_univ_eq_two_nsmul_sum_sum_Ioi _ (interfaceArea_comm Ω), nsmul_eq_mul,
+    Nat.cast_ofNat, mul_comm]
+  exact ENNReal.mul_div_cancel_right two_ne_zero ENNReal.ofNat_ne_top
 
 /-! ### Equivalent clusters and grouped cells -/
 
@@ -302,7 +292,9 @@ theorem perimeter_coarsen_eq_sum_interfaceArea (hW : ContDiff ℝ 1 W) (hn : 2 �
     rw [← Finset.add_sum_erase _ _ (Finset.mem_univ i)]
     simp [B]
   simp_rw [hrow]
-  refine sum_sum_erase_div_two B fun i j => ?_
+  rw [Finset.sum_sum_erase_univ_eq_two_nsmul_sum_sum_Ioi B fun i j => ?_, nsmul_eq_mul,
+    Nat.cast_ofNat, mul_comm]
+  · exact ENNReal.mul_div_cancel_right two_ne_zero ENNReal.ofNat_ne_top
   by_cases h : f i = f j
   · simp [B, h]
   · simp only [B]
