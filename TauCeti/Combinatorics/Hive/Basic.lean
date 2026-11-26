@@ -1381,31 +1381,33 @@ variable {R : Type*} [AddCommGroup R] [Preorder R]
     (equivOne.symm (b, c)).boundary = ![fun _ => b, fun _ => c - b, fun _ => -c] := by
   ext s i; fin_cases i; fin_cases s <;> simp [boundary_apply]
 
+private theorem apply_eq_of_boundary_eq {n : ℕ} {h₁ h₂ : Hive n R}
+    (hb : h₁.boundary = h₂.boundary) {p : Vertex n} (hp : p.z = 0 ∨ p.x = 0 ∨ p.y = 0) :
+    h₁ p = h₂ p := by
+  have := p.sum_eq
+  rcases hp with hz | hx | hy
+  · have hp' : p = Vertex.edgePoint n 0 ⟨p.y, by omega⟩ := by ext <;> simp [hz]; omega
+    rw [hp', apply_edgePoint_zero, apply_edgePoint_zero, hb]
+  · have hp' : p = Vertex.edgePoint n 1 ⟨p.z, by omega⟩ := by ext <;> simp [hx]; omega
+    rw [hp', apply_edgePoint_one, apply_edgePoint_one, hb]
+  · have hp' : p = Vertex.edgePoint n 2 ⟨p.x, by omega⟩ := by ext <;> simp [hy]; omega
+    rw [hp', apply_edgePoint_two, apply_edgePoint_two, hb]
+
 /-- At size `2`, `Δ₂` has no strictly interior vertices, so `boundary` is injective. -/
 theorem boundary_injective_two : Function.Injective (boundary (n := 2) (R := R)) := by
   intro h₁ h₂ hb; ext p; have := p.sum_eq
-  rcases (by omega : p.z = 0 ∨ p.x = 0 ∨ p.y = 0) with hz | hx | hy
-  · rw [show p = Vertex.edgePoint 2 0 ⟨p.y, by omega⟩ by ext <;> simp [hz]; omega,
-      apply_edgePoint_zero, apply_edgePoint_zero, hb]
-  · rw [show p = Vertex.edgePoint 2 1 ⟨p.z, by omega⟩ by ext <;> simp [hx]; omega,
-      apply_edgePoint_one, apply_edgePoint_one, hb]
-  · rw [show p = Vertex.edgePoint 2 2 ⟨p.x, by omega⟩ by ext <;> simp [hy]; omega,
-      apply_edgePoint_two, apply_edgePoint_two, hb]
+  exact apply_eq_of_boundary_eq hb (by omega)
 
 /-- At size `3`, `(1, 1, 1)` is the unique strictly interior vertex of `Δ₃`, so a hive is
 determined by its boundary and its value at `(1, 1, 1)`. -/
 theorem eq_of_boundary_eq_of_interior_eq_three {h₁ h₂ : Hive 3 R}
     (hb : h₁.boundary = h₂.boundary) (hm : h₁ ⟨1, 1, 1, rfl⟩ = h₂ ⟨1, 1, 1, rfl⟩) : h₁ = h₂ := by
   refine ext fun p => ?_; have := p.sum_eq
-  rcases (by omega : p.z = 0 ∨ p.x = 0 ∨ p.y = 0 ∨ p.x = 1 ∧ p.y = 1 ∧ p.z = 1) with
-    hz | hx | hy | ⟨hx, hy, hz⟩
-  · rw [show p = Vertex.edgePoint 3 0 ⟨p.y, by omega⟩ by ext <;> simp [hz]; omega,
-      apply_edgePoint_zero, apply_edgePoint_zero, hb]
-  · rw [show p = Vertex.edgePoint 3 1 ⟨p.z, by omega⟩ by ext <;> simp [hx]; omega,
-      apply_edgePoint_one, apply_edgePoint_one, hb]
-  · rw [show p = Vertex.edgePoint 3 2 ⟨p.x, by omega⟩ by ext <;> simp [hy]; omega,
-      apply_edgePoint_two, apply_edgePoint_two, hb]
-  · rw [show p = ⟨1, 1, 1, rfl⟩ by ext <;> simp [hx, hy, hz], hm]
+  rcases (by omega : (p.z = 0 ∨ p.x = 0 ∨ p.y = 0) ∨ p.x = 1 ∧ p.y = 1 ∧ p.z = 1) with
+    hp | ⟨hx, hy, hz⟩
+  · exact apply_eq_of_boundary_eq hb hp
+  · have hp : p = ⟨1, 1, 1, rfl⟩ := by ext <;> simp [hx, hy, hz]
+    rw [hp, hm]
 
 /-- Chirality check at size `2`: `isRhombus_at_cornerA` has slack `-(λ₂ + μ₁ + ν₂)`. -/
 theorem rhombusSlack_at_cornerA_two (h : Hive 2 R) :

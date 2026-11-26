@@ -49,11 +49,14 @@ skew tableau is recovered from its row counts by sorting each row
   `TauCeti.Hive.fixedIntegerHiveEquivLRTableauShift`,
   `TauCeti.Hive.fixedIntegerHiveEquivLRTableauDetShift`: the hive–tableau bijections for
   Young diagrams, polynomial weights, arbitrary shifted weights, and canonical determinant shifts.
-* `TauCeti.Hive.lrTableauShiftEquiv`: canonical transport between Littlewood–Richardson tableaux
-  attached to two admissible determinant-shift pairs for the same dominant weights.
+  Transport between two admissible determinant-shift pairs `(a₁, b₁)` and `(a₂, b₂)` is the
+  composition of two `TauCeti.Hive.fixedIntegerHiveEquivLRTableauShift` equivalences
+  (`to₂ ∘ to₁.symm`).
 
 ## Main results
 
+* `TauCeti.Hive.eq_fixedIntegerHiveEquivLRTableauShift_apply_symm_apply_iff`: row-count
+  characterization of tableau transport across two admissible determinant-shift pairs.
 * `TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau`: the hive count of `(λ, μ, γ*)`
   is the Littlewood–Richardson coefficient `c^γ_{λ μ}`.
 * `TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau_shape`,
@@ -582,7 +585,8 @@ private theorem rowCount_fixedIntegerHiveEquivLRTableauShift_of_ne {a b : ℤ}
 
 /-- Transporting a shifted Littlewood–Richardson tableau from `(a₁, b₁)` to `(a₂, b₂)` via
 `fixedIntegerHiveEquivLRTableauShift` preserves all off-diagonal row counts (`r ≠ k`). -/
-@[simp] theorem rowCount_fixedIntegerHiveEquivLRTableauShift_symm_of_ne {a₁ b₁ a₂ b₂ : ℤ}
+@[simp] theorem rowCount_fixedIntegerHiveEquivLRTableauShift_apply_symm_apply_of_ne
+    {a₁ b₁ a₂ b₂ : ℤ}
     (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
     (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
     (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
@@ -603,7 +607,7 @@ private theorem rowCount_fixedIntegerHiveEquivLRTableauShift_of_ne {a b : ℤ}
 /-- On the diagonal (`r < n`), transporting a shifted Littlewood–Richardson tableau from `(a₁, b₁)`
 to `(a₂, b₂)` via `fixedIntegerHiveEquivLRTableauShift` shifts the multiplicity of letter `r` in
 row `r` by `b₂ - b₁`. -/
-theorem rowCount_fixedIntegerHiveEquivLRTableauShift_symm_diag {a₁ b₁ a₂ b₂ : ℤ}
+theorem rowCount_fixedIntegerHiveEquivLRTableauShift_apply_symm_apply_diag {a₁ b₁ a₂ b₂ : ℤ}
     (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
     (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
     (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
@@ -630,7 +634,7 @@ theorem rowCount_fixedIntegerHiveEquivLRTableauShift_symm_diag {a₁ b₁ a₂ b
 /-- Characterization of shift transport across admissible pairs `(a₁, b₁)` and `(a₂, b₂)`: a
 shifted tableau `T₂` equals the transport of `T₁` iff its off-diagonal row counts match `T₁` and
 its diagonal row counts for `r < n` shift by `b₂ - b₁`. -/
-theorem eq_fixedIntegerHiveEquivLRTableauShift_symm_iff {a₁ b₁ a₂ b₂ : ℤ}
+theorem eq_fixedIntegerHiveEquivLRTableauShift_apply_symm_apply_iff {a₁ b₁ a₂ b₂ : ℤ}
     (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
     (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
     (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
@@ -644,9 +648,11 @@ theorem eq_fixedIntegerHiveEquivLRTableauShift_symm_iff {a₁ b₁ a₂ b₂ : �
   refine ⟨?_, ?_⟩
   · rintro rfl
     exact ⟨fun _ _ hrk =>
-        rowCount_fixedIntegerHiveEquivLRTableauShift_symm_of_ne hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ hrk,
+        rowCount_fixedIntegerHiveEquivLRTableauShift_apply_symm_apply_of_ne
+          hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ hrk,
       fun _ hr =>
-        rowCount_fixedIntegerHiveEquivLRTableauShift_symm_diag hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ hr⟩
+        rowCount_fixedIntegerHiveEquivLRTableauShift_apply_symm_apply_diag
+          hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ hr⟩
   · rintro ⟨hne, hdiag⟩
     refine Subtype.ext (SkewSemistandardYoungTableau.eq_of_rowCount_eq fun r k => ?_)
     by_cases hrk : r = k
@@ -654,14 +660,16 @@ theorem eq_fixedIntegerHiveEquivLRTableauShift_symm_iff {a₁ b₁ a₂ b₂ : �
       by_cases hr : r < n
       · have h1 := hdiag r hr
         have h2 :=
-          rowCount_fixedIntegerHiveEquivLRTableauShift_symm_diag hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ hr
+          rowCount_fixedIntegerHiveEquivLRTableauShift_apply_symm_apply_diag
+            hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ hr
         omega
       · have hnr : n ≤ r := Nat.le_of_not_lt hr
         rw [T₂.val.rowCount_eq_zero_of_colLen_le
             ((DominantWeight.colLen_zero_shape_le _).trans hnr),
           rowCount_fixedIntegerHiveEquivLRTableauShift_of_le hlam₂ hμ₂ hγ₂ _ hnr]
     · rw [hne r k hrk,
-        rowCount_fixedIntegerHiveEquivLRTableauShift_symm_of_ne hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ hrk]
+        rowCount_fixedIntegerHiveEquivLRTableauShift_apply_symm_apply_of_ne
+          hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ hrk]
 
 /-- Canonical determinant-shift bijection for arbitrary signed dominant weights `λ, μ, γ`
 satisfying the necessary lower-coordinate condition `λ.detShift + μ.detShift ≤ γ.detShift`. -/
@@ -695,32 +703,6 @@ theorem fixedIntegerHiveEquivLRTableauDetShift_symm_apply_ofChart
   simp only [fixedIntegerHiveEquivLRTableauDetShift, Equiv.symm_trans_apply,
     LRTableau.congr_symm, fixedIntegerHiveEquivLRTableauShift_symm_apply_ofChart,
     LRTableau.rowCount_congr, mul_neg, sub_neg_eq_add]
-
-/-- Every cell entry of `fixedIntegerHiveEquivLRTableauDetShift hshift h` agrees with the shifted
-tableau under `fixedIntegerHiveEquivLRTableauShift` with no shape-cast overhead. -/
-@[simp]
-theorem fixedIntegerHiveEquivLRTableauDetShift_apply_entry
-    (hshift : lam.detShift + μ.detShift ≤ γ.detShift)
-    (h : FixedIntegerHive (productBoundary lam μ γ)) (i j : ℕ) :
-    (fixedIntegerHiveEquivLRTableauDetShift hshift h).val i j =
-      (fixedIntegerHiveEquivLRTableauShift (lam := lam) (μ := μ) (γ := γ)
-        (a := -lam.detShift) (b := -μ.detShift)
-        lam.isPolynomial_shift_neg_detShift μ.isPolynomial_shift_neg_detShift
-        (γ.isPolynomial_shift_of_zero_le_detShift_add (by omega)) h).val i j := by
-  simp [fixedIntegerHiveEquivLRTableauDetShift]
-
-/-- The row counts of `fixedIntegerHiveEquivLRTableauDetShift hshift h` agree with those of the
-shifted tableau under `fixedIntegerHiveEquivLRTableauShift`. -/
-@[simp]
-theorem rowCount_fixedIntegerHiveEquivLRTableauDetShift
-    (hshift : lam.detShift + μ.detShift ≤ γ.detShift)
-    (h : FixedIntegerHive (productBoundary lam μ γ)) (i k : ℕ) :
-    (fixedIntegerHiveEquivLRTableauDetShift hshift h).val.rowCount i k =
-      (fixedIntegerHiveEquivLRTableauShift (lam := lam) (μ := μ) (γ := γ)
-        (a := -lam.detShift) (b := -μ.detShift)
-        lam.isPolynomial_shift_neg_detShift μ.isPolynomial_shift_neg_detShift
-        (γ.isPolynomial_shift_of_zero_le_detShift_add (by omega)) h).val.rowCount i k := by
-  simp [fixedIntegerHiveEquivLRTableauDetShift]
 
 /-- **Signed hive–Littlewood–Richardson count**: for arbitrary dominant weights `λ, μ, γ`,
 `hiveCount (productBoundary λ μ γ)` equals the Littlewood–Richardson coefficient for the

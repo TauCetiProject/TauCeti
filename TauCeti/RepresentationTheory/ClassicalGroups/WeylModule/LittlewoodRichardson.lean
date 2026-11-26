@@ -236,7 +236,8 @@ private theorem finrank_hom_tprod_rationalWeylFDRep_eq_sum (l m γ : DominantWei
   let e₁ := FDRep.homLinearEquiv (rationalWeylFDRep ℂ n γ)
     (rationalWeylFDRep ℂ n l ⊗ rationalWeylFDRep ℂ n m)
   let e₂ := Representation.Equiv.intertwiningMapCongr
-    (Representation.Equiv.refl (rationalWeylRep ℂ n γ)) e
+    (Representation.Equiv.refl (rationalWeylFDRep ℂ n γ).ρ)
+    ((FDRep.tensorEquivTprod (rationalWeylFDRep ℂ n l) (rationalWeylFDRep ℂ n m)).trans e)
   let e₃ := Representation.IntertwiningMap.directSumLinearEquiv
     (rationalWeylRep ℂ n γ) (fun p : ι => rationalWeylRep ℂ n (w p))
   let e₄ : (∀ p : ι, Representation.IntertwiningMap (rationalWeylRep ℂ n γ)

@@ -75,6 +75,8 @@ onto the full weight-`(γ - λ)` fibre over `μ` (`fixedIntegerHiveEquivGTPatter
   `TauCeti.Hive.gt_completion_of_uniform_input_gap`, `TauCeti.Hive.exists_stable_gt_equiv`:
   automatic completion and full fibre equivalence in the stable range.
 * `TauCeti.Hive.isGTCompletable_two_iff`, `TauCeti.Hive.hiveCount_two_productBoundary`,
+  `TauCeti.Hive.hiveCount_two_std_dual_trivial`, `TauCeti.Hive.hiveCount_two_std_dual_adjoint`,
+  `TauCeti.Hive.hiveCount_two_std_dual_two_neg_two`,
   `TauCeti.Hive.hiveCount_three_zero_adjoint_zero`: low-rank classifications and concrete counts.
 
 ## References
@@ -1058,6 +1060,42 @@ theorem hiveCount_three_zero_adjoint_zero :
   simp only [gtCompletion_zero_dominantWeight, Nat.reduceAdd, Finset.sum_range_zero,
     Finset.sum_range_one, zero_add, h03, hP01] at h00 h01
   omega
+
+/-- Rank-`2` signed check: `productBoundary (1, 0) (0, -1) (0, 0)` has hive count `1`. -/
+theorem hiveCount_two_std_dual_trivial :
+    hiveCount
+      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩) = 1 := by
+  have hshift :
+      productBoundary (DominantWeight.shift ⟨![1, 0], by decide⟩ 0)
+        (DominantWeight.shift ⟨![0, -1], by decide⟩ 1)
+        (DominantWeight.shift ⟨![0, 0], by decide⟩ (0 + 1)) =
+      productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![1, 1], by decide⟩ := by
+    ext s i; fin_cases s <;> fin_cases i <;> simp [DominantWeight.dual_apply]
+  rw [← hiveCount_productBoundary_shift _ _ _ 0 1, hshift, hiveCount_two_std_std_det]
+
+/-- Rank-`2` signed check: `productBoundary (1, 0) (0, -1) (1, -1)` has hive count `1`. -/
+theorem hiveCount_two_std_dual_adjoint :
+    hiveCount
+      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![1, -1], by decide⟩) = 1 := by
+  have hshift :
+      productBoundary (DominantWeight.shift ⟨![1, 0], by decide⟩ 0)
+        (DominantWeight.shift ⟨![0, -1], by decide⟩ 1)
+        (DominantWeight.shift ⟨![1, -1], by decide⟩ (0 + 1)) =
+      productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![2, 0], by decide⟩ := by
+    ext s i; fin_cases s <;> fin_cases i <;> simp [DominantWeight.dual_apply]
+  rw [← hiveCount_productBoundary_shift _ _ _ 0 1, hshift, hiveCount_two_std_std_sym]
+
+/-- Rank-`2` signed exclusion check: `productBoundary (1, 0) (0, -1) (2, -2)` has hive count `0`. -/
+theorem hiveCount_two_std_dual_two_neg_two :
+    hiveCount
+      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![2, -2], by decide⟩) = 0 := by
+  have hshift :
+      productBoundary (DominantWeight.shift ⟨![1, 0], by decide⟩ 0)
+        (DominantWeight.shift ⟨![0, -1], by decide⟩ 1)
+        (DominantWeight.shift ⟨![2, -2], by decide⟩ (0 + 1)) =
+      productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![3, -1], by decide⟩ := by
+    ext s i; fin_cases s <;> fin_cases i <;> simp [DominantWeight.dual_apply]
+  rw [← hiveCount_productBoundary_shift _ _ _ 0 1, hshift, hiveCount_two_std_std_three_neg_one]
 
 end LowRankAndChecks
 

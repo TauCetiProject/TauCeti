@@ -61,8 +61,10 @@ theorem hiveCount_productBoundary_comm {n : ℕ} (lam μ γ : DominantWeight n) 
   let e₁ := FDRep.homLinearEquiv (rationalWeylFDRep ℂ n γ)
     (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ)
   let e₂ := Representation.Equiv.intertwiningMapCongr
-    (Representation.Equiv.refl (rationalWeylRep ℂ n γ))
-    (Representation.TensorProduct.comm (rationalWeylRep ℂ n lam) (rationalWeylRep ℂ n μ))
+    (Representation.Equiv.refl (rationalWeylFDRep ℂ n γ).ρ)
+    ((FDRep.tensorEquivTprod (rationalWeylFDRep ℂ n lam) (rationalWeylFDRep ℂ n μ)).trans
+      ((Representation.TensorProduct.comm (rationalWeylRep ℂ n lam) (rationalWeylRep ℂ n μ)).trans
+        (FDRep.tensorEquivTprod (rationalWeylFDRep ℂ n μ) (rationalWeylFDRep ℂ n lam)).symm))
   let e₃ := (FDRep.homLinearEquiv (rationalWeylFDRep ℂ n γ)
     (rationalWeylFDRep ℂ n μ ⊗ rationalWeylFDRep ℂ n lam)).symm
   exact (e₁ ≪≫ₗ e₂ ≪≫ₗ e₃).finrank_eq
@@ -79,7 +81,8 @@ theorem finrank_hom_rationalWeylFDRep_rank_zero (lam μ γ : DominantWeight 0) :
         (rationalWeylFDRep ℂ 0 γ ⟶ rationalWeylFDRep ℂ 0 lam ⊗ rationalWeylFDRep ℂ 0 μ) = 1 := by
   rw [finrank_hom_eq_hiveCount, hiveCount_rank_zero]
 
-/-- Rank-`1` `GL₁(ℂ)` tensor-product check via `finrank_hom_eq_hiveCount`. -/
+/-- Rank-`1` `GL₁(ℂ)` tensor-product multiplicity: `V_γ` occurs in `V_λ ⊗ V_μ` with multiplicity
+`1` if `λ₀ + μ₀ = γ₀`, and `0` otherwise. -/
 theorem finrank_hom_rationalWeylFDRep_rank_one (lam μ γ : DominantWeight 1) :
     Module.finrank ℂ
         (rationalWeylFDRep ℂ 1 γ ⟶ rationalWeylFDRep ℂ 1 lam ⊗ rationalWeylFDRep ℂ 1 μ) =

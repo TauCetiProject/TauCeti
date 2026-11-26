@@ -62,6 +62,8 @@ of `Representation.Equiv` apply to isomorphic objects.
 
 * `FDRep.homLinearEquiv`: linear equivalence identifying morphisms `X ⟶ Y` in `FDRep R G` with
   intertwining maps `Representation.IntertwiningMap X.ρ Y.ρ`.
+* `FDRep.tensorEquivTprod`: equivalence identifying the representation carried by `X ⊗ Y` in
+  `FDRep R G` with the unbundled tensor product `Representation.tprod X.ρ Y.ρ`.
 * `FDRep.ofShrink`: a module-finite representation on a carrier in an arbitrary universe, as an
   object of `FDRep k G`.
 * `LinearEquiv.toFDRepIso`: an isomorphism in `FDRep R G` from an equivariant linear
@@ -373,6 +375,30 @@ maps: this is `CategoryTheory.Action.tensor_ρ` stated for `FDRep.ρ` rather tha
 the `FDRep` counterpart of Mathlib's `Rep.tensor_ρ`. -/
 theorem tensor_ρ {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G) (g : G) :
     (X ⊗ Y).ρ g = TensorProduct.map (X.ρ g) (Y.ρ g) := (rfl)
+
+open MonoidalCategory in
+/-- Equivalence between the representation carried by a categorical tensor product `X ⊗ Y` in
+`FDRep R G` and the unbundled tensor product `Representation.tprod X.ρ Y.ρ`, constructed from
+`FDRep.tensor_ρ`. -/
+noncomputable def tensorEquivTprod {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) :
+    Representation.Equiv (X ⊗ Y).ρ (Representation.tprod X.ρ Y.ρ) :=
+  Representation.Equiv.mk (LinearEquiv.refl R _) fun g => by
+    rw [tensor_ρ, Representation.tprod_apply]
+    rfl
+
+open MonoidalCategory in
+/-- Applying `FDRep.tensorEquivTprod` leaves elements unchanged on the underlying tensor product. -/
+theorem tensorEquivTprod_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) (x : (X ⊗ Y : FDRep R G)) :
+    tensorEquivTprod X Y x = x := (rfl)
+
+open MonoidalCategory in
+/-- Applying the inverse of `FDRep.tensorEquivTprod` leaves elements unchanged on the underlying
+tensor product. -/
+theorem tensorEquivTprod_symm_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) (x : TensorProduct R X.V Y.V) :
+    (tensorEquivTprod X Y).symm x = x := (rfl)
 
 section Shrink
 
