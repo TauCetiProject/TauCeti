@@ -23,7 +23,8 @@ The algorithms use descending coefficient lists. Mathlib's `Polynomial.ofCoeffLi
 reads the constant coefficient first, so a descending list `l` represents
 `Polynomial.ofCoeffList l.reverse`. This inverts `Polynomial.coeffList` via
 `Polynomial.ofCoeffList_reverse_coeffList`; the converse for normalized lists is
-`TauCeti.Polynomial.coeffList_ofCoeffList_reverse`. Appending a coefficient to a descending list
+`TauCeti.Polynomial.coeffList_ofCoeffList_reverse`, and `TauCeti.Polynomial.getElem_coeffList`
+reads the coefficients off `Polynomial.coeffList`. Appending a coefficient to a descending list
 is Horner's recursion (`TauCeti.Polynomial.ofCoeffList_reverse_concat`). The polynomial is a
 `noncomputable` specification: the *lists* are what compute.
 
@@ -195,6 +196,16 @@ theorem coeffList_ofCoeffList_reverse {l : List R} (h : l.head? ≠ some 0) :
     exact h
   rw [length_coeffList_eq_ite, ite_eq_right hne, natDegree_ofCoeffList_reverse (.inr h),
     List.length_cons, Nat.add_sub_cancel]
+
+/-- The entry of `coeffList P` at position `k` is the coefficient of `X ^ (P.natDegree - k)`:
+the list descends from the leading coefficient. -/
+@[simp]
+theorem getElem_coeffList {P : R[X]} {k : ℕ} (hk : k < P.coeffList.length) :
+    P.coeffList[k] = P.coeff (P.natDegree - k) := by
+  have hP : P ≠ 0 := by
+    rintro rfl
+    simp at hk
+  simp [List.getElem_of_eq (coeffList_of_ne_zero hP)]
 
 /-- Multiplication of descending coefficient lists, by convolving them in ascending degree order.
 The output has the usual `l.length + m.length - 1` slots; if either input is empty, all of those
