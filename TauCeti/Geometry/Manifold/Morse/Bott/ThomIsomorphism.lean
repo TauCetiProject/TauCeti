@@ -47,9 +47,11 @@ closed subset of the compact set `{x ∈ W | s x + 2 t x ≤ 2ε}`
 (`TauCeti.compactSpace_of_isClosedEmbedding_gaugeDiscBundle`), so the twisted Thom isomorphism over
 a compact base applies (`nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`,
 in the namespace `TauCeti.VectorBundleOrientationCover`). That isomorphism needs the base, the
-fibres and the ring in one universe, while the model fibre may lie in any universe. In an arbitrary
-universe the twisted identification is proved here for rings in which `2` is invertible, for
-instance `ℚ`
+fibres and the ring in one universe, while the model fibre may lie in any universe. The statement
+over every commutative ring (section `Integral`) still takes the manifold, the base, the model fibre
+and the ring in `Type`: it was written for the earlier form of that isomorphism, which needed them
+there, and has not yet been widened. In an arbitrary universe the twisted identification is proved
+here for rings in which `2` is invertible, for instance `ℚ`
 (`nonempty_singularHomology_sublevelPair_iso_twistedHomology_signLocalSystem_of_invertible_two`),
 through the transfer form of the twisted Thom isomorphism
 (`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEquivTwistedHomology`), which holds

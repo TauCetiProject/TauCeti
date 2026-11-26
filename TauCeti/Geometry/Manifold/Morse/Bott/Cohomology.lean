@@ -59,7 +59,9 @@ compact base (`TauCeti.thomEquivOfCompactSpace`), and so is its twisted form
 (`nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`, in the namespace
 `TauCeti.VectorBundleOrientationCover`). The twisted form needs the base, the fibres and the ring in
 one universe, while the model fibre may lie in any universe, and is computed with injective values
-only, through the universal coefficient theorem.
+only, through the universal coefficient theorem. The twisted statement here (section `Twisted`)
+still takes the manifold, the base, the model fibre and the ring in `Type`: it was written for the
+earlier form of the twisted Thom isomorphism, which needed them there, and has not yet been widened.
 
 ## References
 

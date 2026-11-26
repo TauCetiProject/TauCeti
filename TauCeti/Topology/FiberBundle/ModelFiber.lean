@@ -13,9 +13,9 @@ public import Mathlib.Topology.FiberBundle.Basic
 The model fibre `F` of a bundle `E → B` enters only through its local trivializations: for any two
 types `F` and `F'`, the total spaces `TotalSpace F E` and `TotalSpace F' E` have the same points
 `⟨b, v⟩` with `v : E b`. Give `TotalSpace F' E` the topology induced along the identity of points
-`TotalSpace F' E → TotalSpace F E`. Then the identity of points is a homeomorphism over `B`
-(`TauCeti.totalSpaceModelFiberHomeomorph`), a homeomorphism `F ≃ₜ F'` turns each local
-trivialization with model fibre `F` into one with model fibre `F'`
+`TotalSpace F' E → TotalSpace F E` (`TauCeti.totalSpaceModelFiberInduced`). Then the identity of
+points is a homeomorphism over `B` (`TauCeti.totalSpaceModelFiberHomeomorph`), a homeomorphism
+`F ≃ₜ F'` turns each local trivialization with model fibre `F` into one with model fibre `F'`
 (`Bundle.Trivialization.transModelFiber`), and so it transports a fibre bundle structure with model
 fibre `F` to one with model fibre `F'` (`FiberBundle.ofModelFiberHomeomorph`).
 
@@ -32,6 +32,21 @@ noncomputable section
 open Bundle Set Topology
 
 namespace TauCeti
+
+/-- The topology on `TotalSpace F' E` induced from `TotalSpace F E` along the identity of points
+`⟨b, v⟩`. -/
+@[instance_reducible]
+def totalSpaceModelFiberInduced {B : Type*} (F F' : Type*) (E : B → Type*)
+    [TopologicalSpace (TotalSpace F E)] : TopologicalSpace (TotalSpace F' E) :=
+  TopologicalSpace.induced (fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd) inferInstance
+
+/-- Equipping `TotalSpace F' E` with `TauCeti.totalSpaceModelFiberInduced F F' E` makes the identity
+of points `TotalSpace F' E → TotalSpace F E` inducing. -/
+theorem isInducing_totalSpaceModelFiberInduced {B : Type*} (F F' : Type*) (E : B → Type*)
+    [TopologicalSpace (TotalSpace F E)] :
+    letI := totalSpaceModelFiberInduced F F' E
+    IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd :=
+  letI := totalSpaceModelFiberInduced F F' E; ⟨rfl⟩
 
 variable {B : Type*} (F : Type*) {F' : Type*} (E : B → Type*) [TopologicalSpace (TotalSpace F E)]
   [TopologicalSpace (TotalSpace F' E)]

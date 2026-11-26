@@ -41,8 +41,8 @@ Morse–Bott function with the twisted homology of its critical submanifolds
 (`nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology`, in the namespace
 `TauCeti.IsMorseBottFamily`, in `TauCeti.Geometry.Manifold.Morse.Bott.SpectralSequence`).
 
-The manifold, the model space of `M`, the submanifolds and the coefficient ring lie in one
-universe `u`; the model fibre `Fin (r j) → ℝ` of `ν⁻ j` lies in `Type`.
+The manifold, the model vector space `E` of `M`, the submanifolds and the coefficient ring lie in
+one universe `u`; the model fibre `Fin (r j) → ℝ` of `ν⁻ j` lies in `Type`.
 
 ## Main results
 

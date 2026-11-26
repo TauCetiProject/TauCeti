@@ -105,8 +105,11 @@ theorem VectorBundle.ofModelFiberContinuousLinearEquiv {𝕜 : Type*} [Nontrivia
     simp [ContinuousLinearEquiv.arrowCongr_apply]
 
 /-- A vector bundle with model fibre `F` is a vector bundle with any model fibre `F'` continuously
-linearly equivalent to `F`, for a topology on `TotalSpace F' E` induced along the identity of points
-(`FiberBundle.ofModelFiberHomeomorph`, `VectorBundle.ofModelFiberContinuousLinearEquiv`). -/
+linearly equivalent to `F`, for a topology on `TotalSpace F' E` induced along the identity of
+points. This packages `TauCeti.totalSpaceModelFiberInduced F F' E`,
+`FiberBundle.ofModelFiberHomeomorph` and `VectorBundle.ofModelFiberContinuousLinearEquiv` for
+callers that need none of their trivializations; use those directly to work with the
+trivializations. -/
 theorem VectorBundle.exists_modelFiber_of_continuousLinearEquiv {𝕜 : Type*}
     [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup F']
     [NormedSpace 𝕜 F'] [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [FiberBundle F E]
@@ -114,9 +117,8 @@ theorem VectorBundle.exists_modelFiber_of_continuousLinearEquiv {𝕜 : Type*}
     ∃ (_ : TopologicalSpace (TotalSpace F' E))
       (_ : IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd)
       (_ : FiberBundle F' E), VectorBundle 𝕜 F' E := by
-  let _ : TopologicalSpace (TotalSpace F' E) :=
-    .induced (fun p ↦ TotalSpace.mk' F p.proj p.snd) inferInstance
-  have h_ind : IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd := ⟨rfl⟩
+  let := TauCeti.totalSpaceModelFiberInduced F F' E
+  have h_ind := TauCeti.isInducing_totalSpaceModelFiberInduced F F' E
   exact ⟨_, h_ind, _, VectorBundle.ofModelFiberContinuousLinearEquiv F L h_ind⟩
 
 end Transport
