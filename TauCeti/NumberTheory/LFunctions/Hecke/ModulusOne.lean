@@ -33,11 +33,12 @@ open GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- A nonprincipal ray class character at the unit modulus has an entire continuation
-which agrees with the defining L-series on `Re s > 1`. -/
-private theorem exists_analytic_hecke_modulusOne {χ : RayClassCharacter (Modulus.one K)}
-    (hχ : χ ≠ 1) : ∃ F : ℂ → ℂ, (∀ s, AnalyticAt ℂ F s) ∧
-      ∀ s : ℂ, 1 < s.re → F s =
+/-- The continued Hecke L-function of a nonprincipal character at the unit modulus is entire
+and agrees with the defining L-series on `Re s > 1`. -/
+private theorem analyticAt_and_eq_LSeries_heckeLFunctionC_of_modulus_one
+    {χ : RayClassCharacter (Modulus.one K)} (hχ : χ ≠ 1) :
+    (∀ s, AnalyticAt ℂ (heckeLFunctionC χ) s) ∧
+      ∀ s : ℂ, 1 < s.re → heckeLFunctionC χ s =
         LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction) s := by
   classical
   let _ := Fintype.ofFinite (RayClassGroup (Modulus.one K))
@@ -47,28 +48,31 @@ private theorem exists_analytic_hecke_modulusOne {χ : RayClassCharacter (Modulu
   have hI (c : RayClassGroup (Modulus.one K)) :
       oneEquivClassGroup.symm (ClassGroup.mk K (I c))⁻¹ = c := by
     simp [I, ClassGroup.mk_mk0, hJ]
-  have hsum : ∑ c : RayClassGroup (Modulus.one K), (χ c : ℂ) = 0 := by
-    apply sum_hom_units_eq_zero ((Units.coeHom ℂ).comp χ)
-    intro h
-    apply hχ
-    apply DFunLike.ext
-    intro c
-    exact Units.val_injective (by simpa using DFunLike.congr_fun h c)
+  have hsum : ∑ c : RayClassGroup (Modulus.one K), (χ c : ℂ) = 0 :=
+    sum_hom_units_eq_zero ((Units.coeHom ℂ).comp χ) (by
+      rwa [← MonoidHom.comp_one (Units.coeHom ℂ), ne_eq,
+        MonoidHom.cancel_left Units.coeHom_injective])
   let g (z : ℂ) := ∑ c, (χ c : ℂ) * completedPartialZeta (I c) z
-  refine ⟨invArchFactor K * toMeromorphicNFOn g univ, fun s ↦
-    (analyticAt_invArchFactor K s).mul
-      (analyticAt_toMeromorphicNFOn_sum_mul_completedPartialZeta univ I _ hsum s), ?_⟩
-  intro s hs
-  have hs₀ : s ≠ 0 := by rintro rfl; norm_num at hs
-  have hs₁ : s ≠ 1 := by rintro rfl; norm_num at hs
-  have hg : Meromorphic g := by dsimp only [g]; fun_prop
-  have hga : AnalyticAt ℂ g s := Finset.analyticAt_fun_sum _ fun c _ ↦
-    analyticAt_const.mul (analyticAt_completedPartialZeta (I c) hs₀ hs₁)
-  rw [Pi.mul_apply, toMeromorphicNFOn_apply_of_analyticAt hg hga]
-  simp_rw [g, completedPartialZeta_eq_mul_LSeries_rayClassCoeff_one _ hs, hI,
-    mul_left_comm (χ _ : ℂ)]
-  rw [← Finset.mul_sum, ← mul_assoc, invArchFactor_mul K (zero_lt_one.trans hs), one_mul,
-    sum_mul_LSeries_rayClassCoeff _ hs]
+  let F := invDedekindZetaCompletionFactor K * toMeromorphicNFOn g univ
+  have hF (s : ℂ) : AnalyticAt ℂ F s :=
+    (analyticAt_invDedekindZetaCompletionFactor K s).mul
+      (analyticAt_toMeromorphicNFOn_sum_mul_completedPartialZeta univ I _ hsum s)
+  have hagree (s : ℂ) (hs : 1 < s.re) : F s =
+      LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction) s := by
+    have hs₀ : s ≠ 0 := by rintro rfl; norm_num at hs
+    have hs₁ : s ≠ 1 := by rintro rfl; norm_num at hs
+    have hg : Meromorphic g := by dsimp only [g]; fun_prop
+    have hga : AnalyticAt ℂ g s := Finset.analyticAt_fun_sum _ fun c _ ↦
+      analyticAt_const.mul (analyticAt_completedPartialZeta (I c) hs₀ hs₁)
+    dsimp only [F]
+    rw [Pi.mul_apply, toMeromorphicNFOn_apply_of_analyticAt hg hga]
+    simp_rw [g, completedPartialZeta_eq_mul_LSeries_rayClassCoeff_one _ hs, hI,
+      mul_left_comm (χ _ : ℂ)]
+    rw [← Finset.mul_sum, ← mul_assoc,
+      invDedekindZetaCompletionFactor_mul_eq_one K (zero_lt_one.trans hs), one_mul,
+      sum_mul_LSeries_rayClassCoeff _ hs]
+  rw [heckeLFunctionC_def, meromorphicContinuation_eq (fun z _ ↦ (hF z).meromorphicNFAt) hagree]
+  exact ⟨hF, hagree⟩
 
 /-- For every character of the ordinary ideal class group, the continued Hecke L-function
 agrees with its Dirichlet series on the half-plane of absolute convergence. -/
@@ -79,17 +83,13 @@ theorem heckeLFunctionC_eq_LSeries_of_modulus_one (χ : RayClassCharacter (Modul
   · rw [heckeLFunctionC_one_modulus_one, dedekindZetaC_eq_dedekindZeta K hs,
       RayClassCharacter.toUnitaryIdealWeight_one, UnitaryIdealWeight.toIdealArithmeticFunction_one,
       dedekindZeta_eq_LSeries_normCoeff_one]
-  · obtain ⟨F, hF, hagree⟩ := exists_analytic_hecke_modulusOne hχ
-    rw [heckeLFunctionC_def, meromorphicContinuation_eq (fun z _ ↦ (hF z).meromorphicNFAt) hagree]
-    exact hagree s hs
+  · exact (analyticAt_and_eq_LSeries_heckeLFunctionC_of_modulus_one hχ).2 s hs
 
 /-- The Hecke L-function of a nonprincipal character of the ordinary ideal class group
 is entire. -/
 theorem analyticAt_heckeLFunctionC_of_modulus_one {χ : RayClassCharacter (Modulus.one K)}
-    (hχ : χ ≠ 1) (s : ℂ) : AnalyticAt ℂ (heckeLFunctionC χ) s := by
-  obtain ⟨F, hF, hagree⟩ := exists_analytic_hecke_modulusOne hχ
-  rw [heckeLFunctionC_def, meromorphicContinuation_eq (fun z _ ↦ (hF z).meromorphicNFAt) hagree]
-  exact hF s
+    (hχ : χ ≠ 1) (s : ℂ) : AnalyticAt ℂ (heckeLFunctionC χ) s :=
+  (analyticAt_and_eq_LSeries_heckeLFunctionC_of_modulus_one hχ).1 s
 
 /-- On the larger half-plane supplied by cancellation, the entire Hecke L-function of a
 nonprincipal ideal class character agrees with the partial-summation continuation. -/
