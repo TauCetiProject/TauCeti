@@ -34,6 +34,7 @@ exponential of the Hamiltonian frozen at the start of the step.
 * `TauCeti.hasDerivAt_hamiltonianPropagator`, `TauCeti.eq_hamiltonianPropagator`: `U` solves the
   Schrödinger equation, and it is the only solution with `U 0 = 1`.
 * `TauCeti.hamiltonianPropagator_mem_unitary`: `U s` is unitary for a self-adjoint family.
+* `TauCeti.isUnit_hamiltonianPropagator`: `U s` is invertible for a continuous family.
 * `TauCeti.hamiltonianPropagator_const`: for a constant Hamiltonian `h`, `U s = exp (-iTs h)`.
 * `TauCeti.hamiltonianPropagator_add`, `TauCeti.hamiltonianPropagator_comp_const_add`:
   `U (a + s) = Uₐ s U a` for the propagator `Uₐ` of the translated family `r ↦ H (a + r)`, so
@@ -110,6 +111,11 @@ theorem hamiltonianPropagator_const (h : B) (T s : ℝ) :
   congr 2
   ring
 
+/-- The Schrödinger propagator of a continuous family is invertible. -/
+theorem isUnit_hamiltonianPropagator (hH : Continuous H) (T s : ℝ) :
+    IsUnit (hamiltonianPropagator H T s) :=
+  isUnit_dysonSeriesLeft (hH.const_smul _) s
+
 /-- The propagator of the translated family `r ↦ H (a + r)` composed with the propagator up to
 time `a` is the propagator up to time `a + s`: `U (a + s) = Uₐ s * U a`. -/
 theorem hamiltonianPropagator_add (hH : Continuous H) (T a s : ℝ) :
@@ -122,8 +128,7 @@ theorem hamiltonianPropagator_comp_const_add (hH : Continuous H) (T a s : ℝ) :
     hamiltonianPropagator (fun r => H (a + r)) T s =
       hamiltonianPropagator H T (a + s) * Ring.inverse (hamiltonianPropagator H T a) := by
   rw [hamiltonianPropagator_add hH,
-    Ring.mul_inverse_cancel_right (hamiltonianPropagator H T a) _
-      (isUnit_dysonSeriesLeft (hH.const_smul _) a)]
+    Ring.mul_inverse_cancel_right _ _ (isUnit_hamiltonianPropagator hH T a)]
 
 section Star
 
