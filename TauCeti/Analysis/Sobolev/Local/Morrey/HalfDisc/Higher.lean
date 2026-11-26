@@ -8,10 +8,12 @@ module
 public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.Local.Morrey.HalfDisc
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Holder.CompLinear
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Planar
 import TauCeti.Analysis.Sobolev.Local.Reflection
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.Local.Wkp.HalfDisc
+import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -28,6 +30,8 @@ derivative through order `j` of a `W^{j+1,q}` map on a half-disc. A representati
 times the Sobolev norm on the open half-disc. The bounds pass to the real segment by continuity.
 The open `Cʲ` representative is supplied by
 `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq_inter_setOf_im_nonneg` in the half-disc Morrey theory.
+For values in a finite-dimensional space the same bounds hold by the Sobolev norms of the
+coordinates in a finite basis, applying the real-valued bounds to each coordinate.
 
 ## Main declarations
 
@@ -36,6 +40,9 @@ The open `Cʲ` representative is supplied by
 * `TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf_im_nonneg`:
   local derivative and Hölder bounds through the real axis, with constants controlled by the
   open-half-disc Sobolev norm.
+* The same bounds for values in a finite-dimensional space, by the open-half-disc Sobolev norms
+  of the coordinates in a finite basis:
+`TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf_im_nonneg_basis`.
 
 ## References
 
@@ -47,7 +54,7 @@ public section
 
 noncomputable section
 
-open Metric Set MeasureTheory TopologicalSpace
+open Metric Set MeasureTheory Module TopologicalSpace
 open scoped ENNReal NNReal
 
 namespace TauCeti
@@ -139,5 +146,51 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf
       (fun z hz => (hcont hi z hz).continuousWithinAt)
     rw [heq i ha, heq i hb']
     exact (hb i hi).2 a ha b hb'
+
+omit [FiniteDimensional ℝ F] in
+/-- **Local `C^{j,1-2/q}` bounds on a half-disc, for finite-dimensional values.** For `2 < q < ∞`,
+a finite basis `b` of `F`, a real centre `x` and a radius `s` there is a constant `K` such that,
+for every open `Ω` containing the closure of `ball x s`, every
+`u ∈ MemWkpLoc q (Ω ∩ {0 ≤ im}) (j + 1)` with values in `F` has coordinates in `b` represented on
+the open half-disc `ball x s ∩ {0 < im}` by elements `v l` of `W^{j+1,q}` of it, and agrees almost
+everywhere on the half-disc `ball x s ∩ {0 ≤ im}` with a map `g` that is `Cʲ` on an open
+neighbourhood of it, whose derivatives of order `i ≤ j` are bounded by `K ∑ₗ ‖v l‖` and Hölder of
+exponent `1 - 2 / q` with constant `K ∑ₗ ‖v l‖` on `ball x s ∩ {0 ≤ im}`, including its segment of
+the real axis. This is
+`TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf_im_nonneg`
+applied to each coordinate. -/
+theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf_im_nonneg_basis
+    (hq : 2 < q) {ι : Type*} [Fintype ι] (b : Basis ι ℝ F) (x s : ℝ) (j : ℕ) :
+    ∃ K : ℝ≥0, ∀ {Ω : Opens ℂ} (u : ℂ → F), closure (ball (x : ℂ) s) ⊆ Ω →
+      MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (j + 1) u →
+      ∃ v : ι → Wkp volume (Opens.upperHalf ⟨ball (x : ℂ) s, isOpen_ball⟩) q (j + 1),
+        (∀ l, Wkp.value (j + 1) (v l) =ᵐ[volume.restrict (ball (x : ℂ) s ∩ {z | 0 < z.im})]
+          fun z => b.coord l (u z)) ∧
+        ∃ V : Opens ℂ, ball (x : ℂ) s ∩ {z | 0 ≤ z.im} ⊆ V ∧ ∃ g : ℂ → F, ContDiffOn ℝ j g V ∧
+          u =ᵐ[volume.restrict (ball (x : ℂ) s ∩ {z | 0 ≤ z.im})] g ∧ ∀ i ≤ j,
+            (∀ z ∈ ball (x : ℂ) s ∩ {z | 0 ≤ z.im}, ‖iteratedFDeriv ℝ i g z‖ ≤ K * ∑ l, ‖v l‖) ∧
+              HolderOnWith (K * ∑ l, ‖v l‖₊) (1 - 2 / q) (iteratedFDeriv ℝ i g)
+                (ball (x : ℂ) s ∩ {z | 0 ≤ z.im}) := by
+  obtain ⟨K, hK⟩ := exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf_im_nonneg
+    hq x s j
+  have : FiniteDimensional ℝ F := .of_basis b
+  -- Coordinates `ℓ l` and the inverse maps `A l : t ↦ t • b l`.
+  set ℓ : ι → F →L[ℝ] ℝ := fun l => (b.coord l).toContinuousLinearMap
+  set A : ι → ℝ →L[ℝ] F := fun l => (ContinuousLinearMap.id ℝ ℝ).smulRight (b l)
+  refine ⟨(∑ l, ‖A l‖₊) * K, fun {Ω} u hsub hu => ?_⟩
+  set T := ball (x : ℂ) s ∩ {z | 0 ≤ z.im}
+  choose v hv V hTV g hg hug hb using fun l =>
+    hK (Ω := Ω) (fun z => ℓ l (u z)) hsub (hu.clm_comp (ℓ l))
+  -- Each coordinate `g l` is `Cʲ` near every point of the closed half-disc `T`.
+  have hgT (l : ι) {i : ℕ} (hi : i ≤ j) (z : ℂ) (hz : z ∈ T) : ContDiffAt ℝ i (g l) z :=
+    ((hg l).contDiffAt ((V l).isOpen.mem_nhds (hTV l hz))).of_le (by exact_mod_cast hi)
+  refine ⟨v, hv, ⟨⋂ l, V l, isOpen_iInter_of_finite fun l => (V l).isOpen⟩,
+    subset_iInter hTV, fun z => ∑ l, A l (g l z), ContDiffOn.sum fun l _ =>
+      (A l).contDiff.comp_contDiffOn ((hg l).mono (iInter_subset _ l)), ?_, fun i hi => ?_⟩
+  · exact (b.ae_eq_sum_smul_of_coord_ae_eq hug).trans
+      (Filter.Eventually.of_forall fun z => by simp [A])
+  · have h := norm_iteratedFDeriv_le_and_holderOnWith_sum_comp_left A (c := fun l => ‖v l‖₊)
+      (fun l => hgT l hi) fun l => ⟨fun z hz => by simpa using (hb l i hi).1 z hz, (hb l i hi).2⟩
+    exact ⟨fun z hz => by simpa using h.1 z hz, h.2⟩
 
 end TauCeti

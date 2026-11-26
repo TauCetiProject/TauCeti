@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 public import TauCeti.MeasureTheory.Function.BoundedBorel.Basic
 public import TauCeti.MeasureTheory.Measure.Regular
 import Mathlib.MeasureTheory.Integral.IntegrableOn
+import Mathlib.Topology.UrysohnsLemma
 
 /-!
 # Simultaneous continuous approximation for finitely many measures
@@ -25,7 +26,9 @@ If moreover `‖f x‖ ≤ M` everywhere, the approximant can be chosen with the
 `g` with the radial retraction onto the closed ball of radius `M` keeps it continuous and
 integrable, does not move the values of `f`, and at most doubles the distance from them, so it
 costs only a factor of two in each `L¹` error. A sequence of such approximants then has `L¹`
-errors tending to zero for every `μ i`.
+errors tending to zero for every `μ i`. When `f` vanishes outside a closed set `K`, multiplying
+the approximant by an Urysohn function cuts it off outside a given neighbourhood of `K` without
+increasing the error.
 
 This is the approximation step that extends a representation of the continuous functions on a
 compact Hausdorff space to bounded Borel functions: the scalar measures of the representation are
@@ -40,6 +43,9 @@ operators bounded.
   bounded by `M` is approximated in this way by a continuous function bounded by `M`.
 * `MeasureTheory.exists_seq_continuous_norm_le_tendsto_integral_norm_sub`: a sequence of
   continuous functions bounded by `M` whose `L¹(μ i)` distances to `f` tend to zero for all `i`.
+* `MeasureTheory.exists_continuous_norm_le_support_subset_integral_norm_sub_le`: a function bounded
+  by `M` and vanishing outside a closed set `K` is approximated in `L¹(ν)` by continuous functions
+  bounded by `M` vanishing outside a given neighbourhood of `K`.
 * `TauCeti.BoundedBorelFunction.eq_of_forall_ofContinuousMap_eq`: on a compact normal space, two
   maps on bounded Borel symbols that are Lipschitz for `L¹` distances against finite weakly
   regular measures and agree on continuous symbols are equal.
@@ -128,6 +134,37 @@ theorem exists_seq_continuous_norm_le_tendsto_integral_norm_sub {f : α → E}
   refine ⟨g, hgM, fun n i ↦ (hg n i).1, fun i ↦ ?_⟩
   exact squeeze_zero (fun _ ↦ integral_nonneg fun _ ↦ norm_nonneg _) (fun n ↦ (hg n i).2)
     tendsto_one_div_add_atTop_nhds_zero_nat
+
+/-- **Bounded continuous approximation with a cutoff.** On a normal Borel space, a function bounded
+by `M`, integrable for a weakly regular measure `ν` and vanishing outside a closed set `K`, is
+approximated in `L¹(ν)` by continuous functions bounded by `M` that vanish outside any given open
+neighbourhood `U` of `K`. -/
+theorem exists_continuous_norm_le_support_subset_integral_norm_sub_le {ν : Measure α}
+    [ν.WeaklyRegular] {f : α → E} (hf : Integrable f ν) {M : ℝ} (hfM : ∀ x, ‖f x‖ ≤ M)
+    {K U : Set α} (hK : IsClosed K) (hU : IsOpen U) (hKU : K ⊆ U)
+    (hfK : Function.support f ⊆ K) {ε : ℝ} (hε : 0 < ε) :
+    ∃ g : C(α, E), (∀ x, ‖g x‖ ≤ M) ∧ Function.support g ⊆ U ∧ Integrable g ν ∧
+      ∫ x, ‖f x - g x‖ ∂ν ≤ ε := by
+  obtain ⟨g, hgM, hg⟩ := exists_continuous_norm_le_forall_integral_norm_sub_le
+    (μ := fun _ : Unit ↦ ν) (fun _ ↦ hf) hfM hε
+  obtain ⟨hgi, hgε⟩ := hg ()
+  -- Cut `g` off with an Urysohn function equal to `1` on `K` and to `0` outside `U`.
+  obtain ⟨χ, hχU, hχK, hχ01⟩ := exists_continuous_zero_one_of_isClosed hU.isClosed_compl hK
+    (Set.disjoint_compl_left_iff_subset.2 hKU)
+  have hχg (x : α) : ‖χ x • g x‖ ≤ ‖g x‖ := by
+    rw [norm_smul, Real.norm_of_nonneg (hχ01 x).1]
+    exact mul_le_of_le_one_left (norm_nonneg _) (hχ01 x).2
+  have hfχ (x : α) : ‖f x - χ x • g x‖ ≤ ‖f x - g x‖ := by
+    by_cases hx : x ∈ K
+    · simp [hχK hx]
+    · simpa [Function.notMem_support.1 fun h ↦ hx (hfK h)] using hχg x
+  refine ⟨⟨fun x ↦ χ x • g x, χ.continuous.smul g.continuous⟩, fun x ↦ (hχg x).trans (hgM x),
+    fun x hx ↦ ?_, hgi.mono (χ.continuous.aestronglyMeasurable.smul hgi.1)
+      (.of_forall hχg), ?_⟩
+  · by_contra hxU
+    exact hx (by simp [hχU hxU])
+  · exact (integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _) (hf.sub hgi).norm
+      (.of_forall hfχ)).trans hgε
 
 end MeasureTheory
 

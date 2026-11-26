@@ -130,12 +130,11 @@ theorem existsUnique_firstOrder_mem_w1p0Submodule_and_neg_mul_iteratedGradient_e
   refine ⟨u, ⟨hu0, hu⟩, fun v ⟨hv0, hv⟩ => ?_⟩
   -- Uniqueness: the difference of two solutions solves the problem with `f = 0`.
   have hd0 : Wkp.firstOrder 1 (v - u) ∈ w1p0Submodule volume ⟨Ioo a b, isOpen_Ioo⟩ p := by
-    rw [← Wkp.firstOrderL_apply, map_sub, Wkp.firstOrderL_apply, Wkp.firstOrderL_apply]
+    rw [Wkp.firstOrder_sub]
     exact (w1p0Submodule _ _ p).toSubmodule.sub_mem hv0 hu0
   have hd : ∀ᵐ x ∂volume.restrict (Ioo a b),
       -(σ x * Wkp.iteratedGradient 1 (v - u) x 1) = (0 : Lp ℝ p (volume.restrict (Ioo a b))) x := by
-    rw [← Wkp.iteratedGradientL_apply, map_sub, Wkp.iteratedGradientL_apply,
-      Wkp.iteratedGradientL_apply]
+    rw [Wkp.iteratedGradient_sub]
     filter_upwards [Lp.coeFn_sub (Wkp.iteratedGradient 1 v) (Wkp.iteratedGradient 1 u),
       Lp.coeFn_zero ℝ p (volume.restrict (Ioo a b)), hv, hu] with x hx hx0 hvx hux
     rw [hx, hx0, Pi.sub_apply, sub_apply, Pi.zero_apply]

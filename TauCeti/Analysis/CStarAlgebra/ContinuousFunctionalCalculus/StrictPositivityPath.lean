@@ -63,15 +63,21 @@ variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A] [Complete
   [PartialOrder A] [StarOrderedRing A] [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
   [NonnegSpectrumClass ℝ A]
 
+omit [CompleteSpace A] in
+private theorem isStrictlyPositive_line {p : A} (hp : IsStrictlyPositive p) (t : I) :
+    IsStrictlyPositive ((1 - (t : ℝ)) • (1 : A) + (t : ℝ) • p) :=
+  TauCeti.convex_setOf_isStrictlyPositive isStrictlyPositive_one hp (sub_nonneg.2 t.property.2)
+    t.property.1 (sub_add_cancel (1 : ℝ) t)
+
 /-- The straight-line path `t ↦ (1 - t) • 1 + t • p` in `Aˣ` from `1` to `hp.isUnit.unit` for a
 strictly positive element `p : A`. -/
 def IsStrictlyPositive.linePathToOne {p : A} (hp : IsStrictlyPositive p) :
     Path (1 : Aˣ) hp.isUnit.unit where
-  toFun t := (hp.one_sub_smul_add_smul t.property).isUnit.unit
+  toFun t := (isStrictlyPositive_line hp t).isUnit.unit
   continuous_toFun := by
     rw [(Units.isOpenEmbedding_val (R := A)).isEmbedding.continuous_iff]
     have hEq :
-        ((Units.val : Aˣ → A) ∘ fun t : I ↦ (hp.one_sub_smul_add_smul t.property).isUnit.unit) =
+        ((Units.val : Aˣ → A) ∘ fun t : I ↦ (isStrictlyPositive_line hp t).isUnit.unit) =
         fun t : I ↦ (1 - (t : ℝ)) • (1 : A) + (t : ℝ) • p := by
       ext t
       exact IsUnit.unit_spec _
@@ -91,6 +97,6 @@ theorem IsStrictlyPositive.isStrictlyPositive_linePathToOne_apply {p : A}
     (hp : IsStrictlyPositive p) (t : I) :
     IsStrictlyPositive (hp.linePathToOne t : A) := by
   rw [hp.val_linePathToOne_apply]
-  exact hp.one_sub_smul_add_smul t.property
+  exact isStrictlyPositive_line hp t
 
 end LinePath

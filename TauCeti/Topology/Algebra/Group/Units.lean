@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Connected.PathConnected
+public import Mathlib.Topology.MetricSpace.Polish
 
 /-!
 # Separation, neighbourhoods, σ-compactness, countability and connectedness in a group of units
@@ -21,7 +22,7 @@ file records consequences of that definition.
   neighbourhood of `u` in `Mˣ` exactly when it contains every unit `v` with `v` in a prescribed
   neighbourhood of `u` and `v⁻¹` in a prescribed neighbourhood of `u⁻¹`.
 * In a `T₁` monoid with continuous multiplication, `u ↦ (u, u⁻¹)` is a closed embedding, so the
-  units of a σ-compact monoid are σ-compact.
+  units of a σ-compact monoid are σ-compact and the units of a Polish monoid are Polish.
 * Since `u ↦ (u, u⁻¹)` is an embedding, the units of a second-countable monoid are second
   countable.
 * In a group with zero with continuous inversion away from zero, the coercion `G₀ˣ → G₀` is a
@@ -38,6 +39,7 @@ file records consequences of that definition.
 * `Units.instSigmaCompactSpace`: the units of a σ-compact monoid are σ-compact.
 * `Units.instSecondCountableTopology`: the units of a second-countable monoid are second
   countable.
+* `Units.instPolishSpace`: the units of a Polish monoid with continuous multiplication are Polish.
 * `IsPreconnected.preimage_units_val`: preconnected sets of nonzero elements pull back to
   preconnected sets of units.
 * `Topology.IsEmbedding.isPathConnected_isUnit_iff`: when `Units.val : Mˣ → M` is an embedding,
@@ -98,6 +100,14 @@ countable. -/]
 instance instSecondCountableTopology [SecondCountableTopology M] : SecondCountableTopology Mˣ :=
   ((Homeomorph.refl M).prodCongr MulOpposite.opHomeomorph.symm).isEmbedding.comp
     isEmbedding_embedProduct |>.secondCountableTopology
+
+/-- **The units of a Polish monoid form a Polish space.** In a Polish monoid with continuous
+multiplication, `u ↦ (u, u⁻¹)` is a closed embedding of `Mˣ` into the Polish space `M × M`. -/
+@[to_additive /-- The additive units of a Polish additive monoid with continuous addition form a
+Polish space. -/]
+instance instPolishSpace [ContinuousMul M] [PolishSpace M] : PolishSpace Mˣ :=
+  ((Homeomorph.refl M).prodCongr MulOpposite.opHomeomorph.symm).isClosedEmbedding.comp
+    isClosedEmbedding_embedProduct |>.polishSpace
 
 end Units
 

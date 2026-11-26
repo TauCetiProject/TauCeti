@@ -27,7 +27,8 @@ form is also used to construct measurable tangent projections in `Rectifiable.Ta
 The measure-theoretic counterpart, used for approximate tangent planes of rectifiable sets, is the
 cone-density condition `TauCeti.DensityZeroOutsideCones`: the part of a set `S` outside every cone
 about the affine subspace `x + P` has `k`-dimensional density zero at `x`. It passes to subsets,
-depends only on the set near `x`, and holds trivially for the whole space `P = ⊤`.
+enlarges with the subspace, depends only on the set near `x`, and holds trivially for the whole
+space `P = ⊤`.
 
 ## References
 
@@ -137,6 +138,15 @@ theorem DensityZeroOutsideCones.mono {S T : Set V} {x : V} {P : Submodule ℝ V}
   fun ε hε ↦ tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h ε hε)
     (fun _ ↦ zero_le) fun _ ↦ ENNReal.div_le_div_right (measure_mono fun _ hz ↦ by
       exact ⟨⟨hST hz.1.1, hz.1.2⟩, hz.2⟩) _
+
+/-- Enlarging the subspace preserves the cone-density condition. -/
+theorem DensityZeroOutsideCones.mono_submodule {S : Set V} {x : V} {P Q : Submodule ℝ V}
+    (h : DensityZeroOutsideCones k S x P) (hPQ : P ≤ Q) :
+    DensityZeroOutsideCones k S x Q :=
+  fun ε hε ↦ tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h ε hε)
+    (fun _ ↦ zero_le) fun _ ↦ ENNReal.div_le_div_right (measure_mono fun _ hz ↦ by
+      exact ⟨hz.1, hz.2.trans_le (infDist_le_infDist_of_subset
+        (SetLike.coe_subset_coe.mpr hPQ) ⟨0, P.zero_mem⟩)⟩) _
 
 /-- The cone-density condition at `x` only depends on the set near `x`. -/
 theorem densityZeroOutsideCones_inter_iff {S B : Set V} {x : V} {P : Submodule ℝ V} {δ : ℝ}

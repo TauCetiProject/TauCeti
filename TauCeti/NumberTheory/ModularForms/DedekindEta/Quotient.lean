@@ -29,7 +29,7 @@ with `C ≠ 0`, `e(x) = exp(2 π i x)`, the principal square root, and
 quotient a modular form or a cusp form.
 
 For a cusp with denominator `d ∣ N`, of width `w = N / gcd(N, d²)` for `Γ₀(N)`
-(`TauCeti.conj_T_zpow_mem_Gamma0_iff_width_dvd`), the file proves the arithmetic identity
+(`TauCeti.conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd`), the file proves the arithmetic identity
 
   `w L = (N / 24) ∑_{δ ∣ N} gcd(d, δ)² r_δ / (gcd(d, N / d) d δ)`,
 
@@ -73,6 +73,9 @@ Newman, Gordon–Hughes and Ligozat, whose cusp conditions are the orders above.
   `TauCeti.ModularForm.isZeroAtImInfty_etaQuotient_slash_iff`: `f ∣[k] σ` is bounded at `i ∞`
   exactly when `0 ≤ L`, and tends to zero exactly when `0 < L`.
 * `TauCeti.ModularForm.natCast_div_gcd_mul_etaQuotientOrder`: `w L` equals Ligozat's expression.
+* `TauCeti.ModularForm.etaQuotientOrder_gcd`: `L` depends on `c` only through `gcd(N, c)`, so
+  `TauCeti.ModularForm.forall_etaQuotientOrder_iff` reduces a condition at every cusp to the
+  divisors of `N`.
 * `TauCeti.ModularForm.etaQuotient_add_intCast`: the translation law
   `f(τ + n) = e^{π i n (∑_δ δ r_δ) / 12} f(τ)`.
 * `TauCeti.ModularForm.etaQuotient_smul`: the transformation of `f` under `γ ∈ Γ₀(N)`.
@@ -301,14 +304,30 @@ theorem etaQuotientOrder_zero (N : ℕ) (r : ℕ → ℤ) :
   rw [Int.natAbs_zero, Nat.gcd_zero_right]
   field_simp
 
+/-- The order of an eta quotient at a cusp depends on its denominator `c` only through
+`gcd(N, c)`, a divisor of `N` when `N ≠ 0`. -/
+theorem etaQuotientOrder_gcd (N : ℕ) (r : ℕ → ℤ) (c : ℤ) :
+    etaQuotientOrder N r (N.gcd c.natAbs) = etaQuotientOrder N r c := by
+  simp only [etaQuotientOrder_def, Int.natAbs_natCast]
+  refine Finset.sum_congr rfl fun δ hδ ↦ ?_
+  rw [← Nat.gcd_assoc, Nat.gcd_eq_left (Nat.dvd_of_mem_divisors hδ)]
+
+/-- A property of the order of an eta quotient holds at every cusp exactly when it holds at the
+divisors of `N`, since the order at `c` is the order at `gcd(N, c)` (`etaQuotientOrder_gcd`). -/
+theorem forall_etaQuotientOrder_iff (N : ℕ) [NeZero N] (r : ℕ → ℤ) {p : ℚ → Prop} :
+    (∀ c : ℤ, p (etaQuotientOrder N r c)) ↔ ∀ d ∈ N.divisors, p (etaQuotientOrder N r d) := by
+  refine ⟨fun h d _ ↦ h d, fun h c ↦ ?_⟩
+  rw [← etaQuotientOrder_gcd]
+  exact h _ (Nat.mem_divisors.mpr ⟨Nat.gcd_dvd_left _ _, NeZero.ne N⟩)
+
 /-- **Ligozat's formula**, as an identity in `ℚ`. For `d ∣ N` and `w = N / gcd(N, d²)`,
 `w · etaQuotientOrder N r d = (N / 24) ∑_{δ ∣ N} gcd(d, δ)² r δ / (gcd(d, N / d) d δ)`.
 
 Interpretation (not formalized here): `etaQuotientOrder N r d` is the order of
 `∏_{δ ∣ N} η(δ τ) ^ r δ` in the parameter `e(τ)` at a cusp `a / d`
 (`orderAtInfty_etaQuotient_slash`), and `w` is the width of that cusp of `Γ₀(N)`
-(`TauCeti.conj_T_zpow_mem_Gamma0_iff_width_dvd`), so the left side is read as the order in the
-local parameter `e(τ / w)`. -/
+(`TauCeti.conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd`), so the left side is read as the order
+in the local parameter `e(τ / w)`. -/
 theorem natCast_div_gcd_mul_etaQuotientOrder (N : ℕ) (r : ℕ → ℤ) {d : ℕ} (hd : d ∣ N) :
     ((N / Nat.gcd N (d ^ 2) : ℕ) : ℚ) * etaQuotientOrder N r d = N / 24 *
       ∑ δ ∈ N.divisors, (Nat.gcd d δ ^ 2 * r δ : ℚ) / (Nat.gcd d (N / d) * d * δ) := by

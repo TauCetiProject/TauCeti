@@ -33,8 +33,6 @@ algebras with a real continuous functional calculus (`IsStrictlyPositive.add_non
   nonnegative element to a strictly positive element (on either side) yields a strictly positive
   element in any real-CFC star-ordered algebra.
 * `TauCeti.convex_setOf_isStrictlyPositive`: `{p : A | IsStrictlyPositive p}` is convex over `ℝ`.
-* `IsStrictlyPositive.one_sub_smul_add_smul`: `(1 - t) • 1 + t • p` is strictly positive for
-  `t ∈ [0, 1]`.
 -/
 
 public section
@@ -108,13 +106,5 @@ theorem TauCeti.convex_setOf_isStrictlyPositive : Convex ℝ {p : A | IsStrictly
   rw [convex_iff_forall_pos]
   intro p hp q hq u v hu hv _
   exact (hp.smul hu).add_nonneg_of_cfc (smul_nonneg hv.le hq.nonneg)
-
-/-- Affine interpolation `(1 - t) • 1 + t • p` between `1` and a strictly positive element `p`
-remains strictly positive for every `t ∈ [0, 1]`. -/
-theorem IsStrictlyPositive.one_sub_smul_add_smul {p : A} (hp : IsStrictlyPositive p) {t : ℝ}
-    (ht : t ∈ Set.Icc (0 : ℝ) 1) :
-    IsStrictlyPositive ((1 - t) • (1 : A) + t • p) :=
-  TauCeti.convex_setOf_isStrictlyPositive isStrictlyPositive_one hp (sub_nonneg.2 ht.2) ht.1
-    (sub_add_cancel 1 t)
 
 end StrictPositivity
