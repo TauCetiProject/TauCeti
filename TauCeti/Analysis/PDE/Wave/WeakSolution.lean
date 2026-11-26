@@ -451,8 +451,8 @@ theorem integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_waveDuhamelSolutio
     refine tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub
       (p := q.conjExponent) (r := r.conjExponent) (hϑ.memLp_of_hasCompactSupport hϑc)
       (χ.memLp _) (ae_of_all _ fun t ↦ Lp.memLp (U t))
-      (fun i t ↦ MemLp.integrable_inner_of_holderConjugate (q := 2) (q' := 2) (χ.memLp 2)
-        (Lp.memLp _)) (fun i ↦ ?_) (fun i ↦ ?_) hae hlim
+      (ae_of_all _ fun t i ↦ MemLp.integrable_inner_of_holderConjugate (q := 2) (q' := 2)
+        (χ.memLp 2) (Lp.memLp _)) (fun i ↦ ?_) (fun i ↦ ?_) hae hlim
     · simp_rw [hpair χ]
       exact (hcont i).aestronglyMeasurable
     · simp_rw [hpair χ]

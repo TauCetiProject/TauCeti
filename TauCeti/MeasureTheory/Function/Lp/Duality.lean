@@ -177,7 +177,7 @@ theorem tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub {𝕜
     {ρ : Measure β} {p q r s : ℝ≥0∞} [p.HolderConjugate q] [r.HolderConjugate s] {l : Filter ι}
     [l.IsCountablyGenerated] {θ : β → 𝕜} {χ : α → H} {U : β → α → H} {u : ι → β → α → H}
     (hθ : MemLp θ p ρ) (hχ : MemLp χ r μ) (hU : ∀ᵐ b ∂ρ, MemLp (U b) s μ)
-    (hu : ∀ i b, Integrable (fun x ↦ ⟪χ x, u i b x⟫_𝕜) μ)
+    (hu : ∀ᵐ b ∂ρ, ∀ i, Integrable (fun x ↦ ⟪χ x, u i b x⟫_𝕜) μ)
     (hum : ∀ i, AEStronglyMeasurable (fun b ↦ ∫ x, ⟪χ x, u i b x⟫_𝕜 ∂μ) ρ)
     (hθu : ∀ i, Integrable (fun b ↦ θ b * ∫ x, ⟪χ x, u i b x⟫_𝕜 ∂μ) ρ)
     (hae : ∀ᵐ b ∂ρ, Tendsto (fun i ↦ eLpNorm (U b - u i b) s μ) l (𝓝 0))
@@ -191,8 +191,8 @@ theorem tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub {𝕜
   have hχ' : eLpNorm χ r μ ≠ ⊤ := hχ.eLpNorm_ne_top
   -- Hölder's inequality in `x` bounds the pairings with `U(b) - uᵢ(b)`.
   have hle : ∀ᵐ b ∂ρ, ∀ i, ‖P b - w i b‖ₑ ≤ eLpNorm χ r μ * eLpNorm (U b - u i b) s μ := by
-    filter_upwards [hU] with b hb i
-    rw [← integral_sub (hχ.integrable_inner_of_holderConjugate hb) (hu i b)]
+    filter_upwards [hU, hu] with b hb hb' i
+    rw [← integral_sub (hχ.integrable_inner_of_holderConjugate hb) (hb' i)]
     simp_rw [← inner_sub_right]
     exact enorm_integral_inner_le (u := χ) (v := U b - u i b)
   have hP : AEStronglyMeasurable P ρ := by
