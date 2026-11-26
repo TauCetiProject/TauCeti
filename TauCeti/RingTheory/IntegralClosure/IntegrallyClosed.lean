@@ -61,6 +61,8 @@ of `u`.
   integrally closed subring containing its kernel to an integrally closed subring.
 * `Subring.mem_of_pow_mem_of_isIntegrallyClosedIn`: a subring integrally closed in `A` contains
   every element some positive power of which it contains.
+* `IsIntegrallyClosed.dvd_of_eval_scaleRoots_eq_zero`: in an integrally closed domain, if `a / b`
+  is a root of a monic polynomial `p`, in the form `(p.scaleRoots b)(a) = 0`, then `b ∣ a`.
 * `TauCeti.exists_eq_mul_of_pow_eq_mul_pow`: in an integrally closed domain, an `e`-th root `b`
   of `u ϖ ^ e` gives an `e`-th root `b / ϖ` of `u`.
 * `Subring.perfectRing_of_isIntegrallyClosedIn`: a subring integrally closed in a perfect ring is
@@ -302,9 +304,30 @@ theorem Function.LeftInverse.isIntegrallyClosed {R A : Type*} [CommRing R] [Comm
   h.isIntegrallyClosed_of_nonZeroDivisors_le
     (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective i h.injective)
 
-namespace TauCeti
-
 variable {R : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
+
+open Polynomial in
+/-- **Rational root test in an integrally closed domain.** If `a / b` is a root of a monic
+polynomial `p`, in the denominator-free form `(p.scaleRoots b)(a) = 0`, then `b` divides `a`.
+For `b = 0` the equation reads `a ^ n = 0`, so `a = 0`. -/
+theorem IsIntegrallyClosed.dvd_of_eval_scaleRoots_eq_zero {p : R[X]} (hp : p.Monic) {a b : R}
+    (h : (p.scaleRoots b).eval a = 0) : b ∣ a := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp only [scaleRoots_zero, hp.leadingCoeff, one_smul, eval_pow, eval_X] at h
+    simp [eq_zero_of_pow_eq_zero h]
+  -- Otherwise `a / b` is integral over `R` in the fraction field, hence lies in `R`.
+  let f := algebraMap R (FractionRing R)
+  have hfb : f b ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective R _)).mpr hb
+  have hint : IsIntegral R (f a / f b) := by
+    refine ⟨p, hp, ?_⟩
+    have h' := scaleRoots_eval₂_mul (p := p) f (f a / f b) b
+    rw [mul_div_cancel₀ _ hfb, eval₂_at_apply, h, map_zero, eq_comm, mul_eq_zero] at h'
+    exact h'.resolve_left (pow_ne_zero _ hfb)
+  obtain ⟨c, hc⟩ := IsIntegrallyClosed.isIntegral_iff.mp hint
+  exact ⟨c, IsFractionRing.injective R (FractionRing R) <| by
+    rw [map_mul, hc, mul_div_cancel₀ _ hfb]⟩
+
+namespace TauCeti
 
 /-- In an integrally closed domain, an `e`-th root `b` of `u ϖ ^ e` with `ϖ ≠ 0` and `e ≠ 0`
 gives an `e`-th root `b / ϖ` of `u`: the element `b` is divisible by `ϖ`, since `ϖ ^ e` divides
