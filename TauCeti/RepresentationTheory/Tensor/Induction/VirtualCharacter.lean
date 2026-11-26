@@ -60,7 +60,7 @@ of `Fin l`.
   a finite-index subgroup is a virtual character of `G`.
 * `Subgroup.tensorIndClassFun_sub_of_index_prime`: prime-index decomposition of
   `H.tensorIndClassFun (ψ₁ - ψ₂)` for conjugation-invariant functions `ψ₁, ψ₂`; for characters
-  `ψ₁, ψ₂` each term is a signed induced character.
+  `ψ₁, ψ₂` each term of the orbit sum is a signed induced character.
 
 ## References
 
