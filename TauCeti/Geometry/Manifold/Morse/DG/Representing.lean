@@ -87,18 +87,10 @@ theorem nonempty_dgMorseComplex_iso [Fintype (criticalPoints 𝓘(ℝ, E) f)]
         ((manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) - manifoldMorseIndex 𝓘(ℝ, E) f y - 1).toNat}
     (hμ : ∀ x y : criticalPoints 𝓘(ℝ, E) f,
       manifoldMorseIndex 𝓘(ℝ, E) f y < manifoldMorseIndex 𝓘(ℝ, E) f x →
-      ∀ r (hr : r ∉ hX.morseBrokenTrajectorySpaceBoundary c x y),
-        (k ∙ (TopPair.singularHomologyMap
-          (TopPair.ofSubsetMap (𝟙 (TopCat.of (hX.morseBrokenTrajectorySpace c x y)))
-            (subset_compl_singleton_iff.2 hr)) (ModuleCat.of k k) _).hom
-          ((TopPair.singularCubicalHomologyIso k _ _).inv.hom (μ x y))) = ⊤)
+        hX.IsFundamentalClassRel c k (μ x y))
     (hμ' : ∀ x y : criticalPoints 𝓘(ℝ, E) f,
       manifoldMorseIndex 𝓘(ℝ, E) f y < manifoldMorseIndex 𝓘(ℝ, E) f x →
-      ∀ r (hr : r ∉ hX.morseBrokenTrajectorySpaceBoundary c x y),
-        (k ∙ (TopPair.singularHomologyMap
-          (TopPair.ofSubsetMap (𝟙 (TopCat.of (hX.morseBrokenTrajectorySpace c x y)))
-            (subset_compl_singleton_iff.2 hr)) (ModuleCat.of k k) _).hom
-          ((TopPair.singularCubicalHomologyIso k _ _).inv.hom (μ' x y))) = ⊤)
+        hX.IsFundamentalClassRel c k (μ' x y))
     {S S' : TwistingChainSystem
       (M := fun x y : criticalPoints 𝓘(ℝ, E) f ↦ TopCat.of (hX.morseBrokenTrajectorySpace c x y))
       (fun x : criticalPoints 𝓘(ℝ, E) f ↦ (manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ))
