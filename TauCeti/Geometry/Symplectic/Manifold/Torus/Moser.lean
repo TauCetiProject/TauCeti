@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Symplectic.Manifold.Torus.Basic
-import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype.Cutoff
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
+import TauCeti.Geometry.Manifold.Instances.AddCircle.Angle
 import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure
 import TauCeti.Geometry.Symplectic.Manifold.Moser
+import TauCeti.Topology.Circle.AddCircle
 
 /-!
 # Moser's theorem on the torus: an exact path and a path of changing area
@@ -55,7 +56,7 @@ in their de Rham classes: the classes of the second path are constant, those of 
 ## Main definitions
 
 * `TauCeti.twoTorusSin`, `TauCeti.twoTorusCos`: the functions `sin θ` and `cos θ` on the
-  two-torus.
+  two-torus, the angle functions `TauCeti.torusAngleSin` and `TauCeti.torusAngleCos` of `θ`.
 * `TauCeti.twoTorusSinForm`: the one-form `sin θ dφ` on the two-torus.
 
 ## Main results
@@ -138,47 +139,47 @@ section TwoTorus
 local instance twoTorusTwoPiPos : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
 
 /-- The function `sin θ` on the two-torus `∀ _ : Unit ⊕ Unit, AddCircle (2 * π)`, where
-`θ = x (inl ())` is the first angle. -/
+`θ = x (inl ())` is the first angle (`TauCeti.torusAngleSin`). -/
 def twoTorusSin :
     C^∞⟮ModelWithCorners.pi fun _ : Unit ⊕ Unit ↦ 𝓘(ℝ), ∀ _ : Unit ⊕ Unit, AddCircle (2 * π); ℝ⟯ :=
-  ⟨fun x ↦ Real.sin_periodic.lift (x (.inl ())),
-    (Real.sin_periodic.contMDiff_lift Real.contDiff_sin).comp contMDiff_apply⟩
+  torusAngleSin (Unit ⊕ Unit) (.inl ())
 
 /-- The function `cos θ` on the two-torus `∀ _ : Unit ⊕ Unit, AddCircle (2 * π)`, where
-`θ = x (inl ())` is the first angle. -/
+`θ = x (inl ())` is the first angle (`TauCeti.torusAngleCos`). -/
 def twoTorusCos :
     C^∞⟮ModelWithCorners.pi fun _ : Unit ⊕ Unit ↦ 𝓘(ℝ), ∀ _ : Unit ⊕ Unit, AddCircle (2 * π); ℝ⟯ :=
-  ⟨fun x ↦ Real.cos_periodic.lift (x (.inl ())),
-    (Real.cos_periodic.contMDiff_lift Real.contDiff_cos).comp contMDiff_apply⟩
-
-/-- `sin θ` is `sin` lifted to the circle of the first angle `θ = x (inl ())`. -/
-@[simp]
-theorem twoTorusSin_apply (x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)) :
-    twoTorusSin x = Real.sin_periodic.lift (x (.inl ())) :=
-  (rfl)
-
-/-- `cos θ` is `cos` lifted to the circle of the first angle `θ = x (inl ())`. -/
-@[simp]
-theorem twoTorusCos_apply (x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)) :
-    twoTorusCos x = Real.cos_periodic.lift (x (.inl ())) :=
-  (rfl)
+  torusAngleCos (Unit ⊕ Unit) (.inl ())
 
 /-- `sin θ` at a point whose first angle is the class of `t` is `sin t`. -/
 theorem twoTorusSin_apply_of_eq {x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)} {t : ℝ}
     (ht : x (.inl ()) = t) : twoTorusSin x = Real.sin t := by
-  simp [ht]
+  rw [twoTorusSin, torusAngleSin_apply, ht, AddCircle.im_toCircle_coe,
+    div_self Real.two_pi_pos.ne', one_mul]
 
 /-- `cos θ` at a point whose first angle is the class of `t` is `cos t`. -/
 theorem twoTorusCos_apply_of_eq {x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)} {t : ℝ}
     (ht : x (.inl ()) = t) : twoTorusCos x = Real.cos t := by
-  simp [ht]
+  rw [twoTorusCos, torusAngleCos_apply, ht, AddCircle.re_toCircle_coe,
+    div_self Real.two_pi_pos.ne', one_mul]
+
+/-- `sin θ` is `sin` lifted to the circle of the first angle `θ = x (inl ())`. -/
+@[simp]
+theorem twoTorusSin_apply (x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)) :
+    twoTorusSin x = Real.sin_periodic.lift (x (.inl ())) := by
+  obtain ⟨t, ht⟩ := QuotientAddGroup.mk_surjective (x (.inl ()))
+  rw [twoTorusSin_apply_of_eq ht.symm, ← ht, Real.sin_periodic.lift_coe]
+
+/-- `cos θ` is `cos` lifted to the circle of the first angle `θ = x (inl ())`. -/
+@[simp]
+theorem twoTorusCos_apply (x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)) :
+    twoTorusCos x = Real.cos_periodic.lift (x (.inl ())) := by
+  obtain ⟨t, ht⟩ := QuotientAddGroup.mk_surjective (x (.inl ()))
+  rw [twoTorusCos_apply_of_eq ht.symm, ← ht, Real.cos_periodic.lift_coe]
 
 /-- The values of `cos θ` lie in `[-1, 1]`. -/
 theorem abs_twoTorusCos_le_one (x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)) :
-    |twoTorusCos x| ≤ 1 := by
-  obtain ⟨t, ht⟩ := QuotientAddGroup.mk_surjective (x (.inl ()))
-  rw [twoTorusCos_apply_of_eq ht.symm]
-  exact Real.abs_cos_le_one t
+    |twoTorusCos x| ≤ 1 :=
+  abs_torusAngleCos_le_one _ x
 
 /-- The differential of `sin θ` is `cos θ dθ`: on a tangent vector `v` of the two-torus it is
 `cos θ * v (inl ())`. -/
@@ -187,26 +188,9 @@ theorem mfderiv_twoTorusSin (x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π))
     (v : TangentSpace (ModelWithCorners.pi fun _ : Unit ⊕ Unit ↦ 𝓘(ℝ)) x) :
     mfderiv (ModelWithCorners.pi fun _ : Unit ⊕ Unit ↦ 𝓘(ℝ)) 𝓘(ℝ, ℝ) twoTorusSin x v =
       twoTorusCos x * v (.inl ()) := by
-  obtain ⟨t, ht⟩ := QuotientAddGroup.mk_surjective (x (.inl ()))
-  -- `sin θ` is the lift of `sin` to the first circle, composed with the first coordinate.
-  have hlift : HasDerivAt (Real.sin_periodic.lift ∘ ((↑) : ℝ → AddCircle (2 * π)))
-      (Real.cos t) t := by
-    rw [Real.sin_periodic.lift_comp_coe]
-    exact Real.hasDerivAt_sin t
-  have hcomp : mfderiv (ModelWithCorners.pi fun _ : Unit ⊕ Unit ↦ 𝓘(ℝ)) 𝓘(ℝ, ℝ) twoTorusSin x =
-      (mfderiv 𝓘(ℝ) 𝓘(ℝ, ℝ) Real.sin_periodic.lift (x (.inl ()))).comp
-        (mfderiv (ModelWithCorners.pi fun _ : Unit ⊕ Unit ↦ 𝓘(ℝ)) 𝓘(ℝ)
-          (fun y : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π) ↦ y (.inl ())) x) :=
-    mfderiv_comp x ((Real.sin_periodic.contMDiff_lift Real.contDiff_sin (n := 1)).mdifferentiableAt
-      one_ne_zero) (contMDiff_apply.mdifferentiableAt (n := 1) one_ne_zero)
-  -- `erw`: the tangent spaces at `sin θ` and at `Real.sin_periodic.lift (x (inl ()))` are the same
-  -- type `ℝ` only up to unfolding `twoTorusSin`.
-  erw [hcomp, ContinuousLinearMap.comp_apply, mfderiv_apply]
-  have hval := congrArg (fun L ↦ L (v (.inl ())))
-    (AddCircle.mvfderiv_eq_smulRight_of_hasDerivAt hlift)
-  rw [twoTorusCos_apply_of_eq ht.symm, ← ht]
-  -- `mvfderiv` into `ℝ` is `mfderiv` read in the model, and `smulRight 1 c` multiplies by `c`.
-  exact hval.trans (mul_comm _ _)
+  unfold twoTorusSin twoTorusCos
+  -- `mvfderiv` into `ℝ` is `mfderiv` read in the model.
+  exact mvfderiv_torusAngleSin (ι := Unit ⊕ Unit) (.inl ()) x v
 
 /-- The one-form `sin θ dφ` on the two-torus `∀ _ : Unit ⊕ Unit, AddCircle (2 * π)`, where
 `θ = x (inl ())` and `φ = x (inr ())` are the two angles. -/

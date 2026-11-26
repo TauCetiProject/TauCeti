@@ -87,7 +87,8 @@ volume form is the constant `1`, so a point factor `T^0` does not contribute to 
   `TauCeti.mpullback_generalLinearGroup_smul_sum_smul_torusTimeForm` pulls `∑ j, b j • dt_j` back
   to `∑ k, (Aᵀ b)_k • dt_k`.
 * `TauCeti.torusVolumeForm_apply`, `TauCeti.torusVolumeForm_apply_ne_zero`: the determinant
-  formula for the volume form, which vanishes nowhere;
+  formula for the volume form, which vanishes nowhere, and its two-dimensional case
+  `TauCeti.torusVolumeForm_fin_two_apply`, `dt₀ ∧ dt₁ (v, w) = v₀ w₁ - w₀ v₁`;
   `TauCeti.torusVolumeForm_apply_eq_apply_zero`: its coefficients are constant.
 * `TauCeti.mpullback_reindex_torusVolumeForm`,
   `TauCeti.mpullback_piMap_diffeomorphAddCircle_torusVolumeForm`: the permutation sign law and the
@@ -357,6 +358,14 @@ theorem torusVolumeForm_apply (x : ∀ i, AddCircle (p i))
     (torusVolumeForm p).val x v = (Matrix.of fun i j ↦ v j i).det := by
   rw [torusVolumeForm, SmoothForm.wedgeFamily_apply]
   simp only [torusTimeForm_apply, Matrix.cons_val_fin_one]
+
+/-- On a two-torus the volume form `dt₀ ∧ dt₁` sends tangent vectors `v` and `w` to
+`v₀ w₁ - w₀ v₁`. -/
+theorem torusVolumeForm_fin_two_apply (p : Fin 2 → ℝ) [∀ i, Fact (0 < p i)]
+    (x : ∀ i, AddCircle (p i)) (v w : TangentSpace (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) x) :
+    (torusVolumeForm p).val x ![v, w] = v 0 * w 1 - w 0 * v 1 := by
+  rw [torusVolumeForm_apply, Matrix.det_fin_two]
+  simp
 
 /-- The volume form of the torus has constant coefficients in the product charts: at every point
 it is the same alternating map of `Fin n → ℝ` as at `0`. -/
