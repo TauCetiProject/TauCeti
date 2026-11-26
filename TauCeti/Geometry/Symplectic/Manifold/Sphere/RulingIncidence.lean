@@ -40,8 +40,8 @@ values of the two spheres at `0`, `1` and `∞`, through the homeomorphism
 `OnePoint.pslHomeomorphDistinctTriples` of `PSL(2, ℂ)` with the ordered triples of distinct
 points. Since `PSL(2, ℂ)` deformation retracts onto its rotation subgroup `PSU(2) ≅ SO(3)`
 (`TauCeti.pslHomotopyEquivSO3`), the fibre is homotopy equivalent to `SO(3) × SO(3)`
-(`TauCeti.rulingIncidenceHomotopyEquiv`), whose homotopy inverse sends a pair of rotations to the
-pair of rotated leaves.
+(`TauCeti.rulingIncidenceProdHomotopyEquiv`), whose homotopy inverse sends a pair of rotations to
+the pair of rotated leaves.
 
 Two actions of `PSL(2, ℂ) × PSL(2, ℂ)` are visible in this parametrization. The product
 `k₁ × k₂` of two Möbius transformations is a biholomorphism of `S² × S²`, and composing both
@@ -61,7 +61,7 @@ through the stabilizers of the base point.
 * `TauCeti.rulingLeafPair p₀ (a, b)`: the pair `(z ↦ (a • z, b • p₀), w ↦ (a • p₀, b • w))`.
 * `TauCeti.pslProdHomeomorphRulingIncidence p₀`: for the product structure, the homeomorphism
   `PSL(2, ℂ) × PSL(2, ℂ) ≃ₜ rulingIncidence J₀ p₀` given by `rulingLeafPair`.
-* `TauCeti.rulingIncidenceHomotopyEquiv p₀`: for the product structure, the homotopy equivalence
+* `TauCeti.rulingIncidenceProdHomotopyEquiv p₀`: for the product structure, the homotopy equivalence
   of the fibre with `SO(3) × SO(3)`.
 
 ## Main results
@@ -321,37 +321,50 @@ theorem comp_smul_mem_rulingIncidence_prod_iff {p₀ : OnePoint ℂ}
 
 /-! ### The fibre is homeomorphic to `PSL(2, ℂ) × PSL(2, ℂ)` -/
 
-/-- **A continuous inverse of the parametrization.** The Möbius transformations `a` and `b` are
-recovered continuously from an incident pair, through the values of its two spheres at `0`, `1`
-and `∞`: these are ordered triples of distinct points, which determine an element of `PSL(2, ℂ)`
-continuously (`OnePoint.pslHomeomorphDistinctTriples`). -/
-private theorem exists_continuous_leftInverse_rulingLeafPair (p₀ : OnePoint ℂ) :
-    ∃ F : rulingIncidence ((SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ)).prod
-        (SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ))) p₀ →
-        PSL(2, ℂ) × PSL(2, ℂ),
-      Continuous F ∧ ∀ g, F ⟨rulingLeafPair p₀ g, rulingLeafPair_mem_rulingIncidence p₀ g⟩ = g := by
-  set t := (OnePoint.zeroOneInftyTriple ℂ : Fin 3 → OnePoint ℂ)
-  -- On an incident pair `rulingLeafPair p₀ g`, the two triples of values are `g₁ • t` and
-  -- `g₂ • t`, which consist of distinct points.
-  have hinj (e : rulingIncidence ((SmoothAlmostComplexStructure.ofComplexManifold ℂ
-      (OnePoint ℂ)).prod (SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ))) p₀) :
-      Injective (fun i ↦ (e.val.1 (t i)).1) ∧ Injective (fun i ↦ (e.val.2 (t i)).2) := by
-    obtain ⟨g, hg⟩ := (rulingIncidence_prod_eq_range p₀).le e.property
-    rw [← hg]
-    exact ⟨(MulAction.injective g.1).comp (OnePoint.zeroOneInftyTriple ℂ).property,
-      (MulAction.injective g.2).comp (OnePoint.zeroOneInftyTriple ℂ).property⟩
-  let T := (OnePoint.pslHomeomorphDistinctTriples
-    ⟨t, OnePoint.mem_distinctTriples.2 (OnePoint.zeroOneInftyTriple ℂ).property⟩).symm
-  refine ⟨fun e ↦ (T ⟨_, OnePoint.mem_distinctTriples.2 (hinj e).1⟩,
-    T ⟨_, OnePoint.mem_distinctTriples.2 (hinj e).2⟩), ?_, fun g ↦ ?_⟩
-  · refine (T.continuous.comp (Continuous.subtype_mk (continuous_pi fun i ↦ ?_) _)).prodMk
-      (T.continuous.comp (Continuous.subtype_mk (continuous_pi fun i ↦ ?_) _))
-    · exact continuous_fst.comp ((continuous_eval_const (t i)).comp
-        (continuous_fst.comp continuous_subtypeVal))
-    · exact continuous_snd.comp ((continuous_eval_const (t i)).comp
-        (continuous_snd.comp continuous_subtypeVal))
-  · exact Prod.ext ((OnePoint.pslHomeomorphDistinctTriples_symm_eq_iff _ _ _).2 fun _ ↦ rfl)
-      ((OnePoint.pslHomeomorphDistinctTriples_symm_eq_iff _ _ _).2 fun _ ↦ rfl)
+/-- On an incident pair of ruling spheres of the product structure, the values of the two spheres
+at `0`, `1` and `∞` are ordered triples of distinct points: for `rulingLeafPair p₀ g` they are the
+images of `(0, 1, ∞)` under `g₁` and `g₂`. -/
+private theorem injective_rulingIncidence_prod_zeroOneInfty (p₀ : OnePoint ℂ)
+    (e : rulingIncidence ((SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ)).prod
+      (SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ))) p₀) :
+    Injective (fun i ↦ (e.val.1 ((OnePoint.zeroOneInftyTriple ℂ : Fin 3 → OnePoint ℂ) i)).1) ∧
+      Injective (fun i ↦ (e.val.2 ((OnePoint.zeroOneInftyTriple ℂ : Fin 3 → OnePoint ℂ) i)).2) := by
+  obtain ⟨g, hg⟩ := (rulingIncidence_prod_eq_range p₀).le e.property
+  rw [← hg]
+  exact ⟨(MulAction.injective g.1).comp (OnePoint.zeroOneInftyTriple ℂ).property,
+    (MulAction.injective g.2).comp (OnePoint.zeroOneInftyTriple ℂ).property⟩
+
+/-- **The inverse of the parametrization.** The Möbius transformations `a` and `b` of an incident
+pair are the elements of `PSL(2, ℂ)` carrying `(0, 1, ∞)` to the values at `0`, `1` and `∞` of the
+first coordinate of the first sphere and of the second coordinate of the second sphere
+(`OnePoint.pslHomeomorphDistinctTriples`). -/
+private def rulingLeafPairInv (p₀ : OnePoint ℂ)
+    (e : rulingIncidence ((SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ)).prod
+      (SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ))) p₀) :
+    PSL(2, ℂ) × PSL(2, ℂ) :=
+  ((OnePoint.pslHomeomorphDistinctTriples ⟨_, OnePoint.mem_distinctTriples.2
+      (OnePoint.zeroOneInftyTriple ℂ).property⟩).symm
+      ⟨_, OnePoint.mem_distinctTriples.2 (injective_rulingIncidence_prod_zeroOneInfty p₀ e).1⟩,
+    (OnePoint.pslHomeomorphDistinctTriples ⟨_, OnePoint.mem_distinctTriples.2
+      (OnePoint.zeroOneInftyTriple ℂ).property⟩).symm
+      ⟨_, OnePoint.mem_distinctTriples.2 (injective_rulingIncidence_prod_zeroOneInfty p₀ e).2⟩)
+
+/-- The inverse of the parametrization is continuous, since the values of the spheres at `0`, `1`
+and `∞` depend continuously on the spheres in the compact-open topology. -/
+private theorem continuous_rulingLeafPairInv (p₀ : OnePoint ℂ) :
+    Continuous (rulingLeafPairInv p₀) := by
+  refine ((Homeomorph.continuous _).comp (.subtype_mk (continuous_pi fun i ↦ ?_) _)).prodMk
+    ((Homeomorph.continuous _).comp (.subtype_mk (continuous_pi fun i ↦ ?_) _))
+  · exact continuous_fst.comp ((continuous_eval_const _).comp
+      (continuous_fst.comp continuous_subtypeVal))
+  · exact continuous_snd.comp ((continuous_eval_const _).comp
+      (continuous_snd.comp continuous_subtypeVal))
+
+/-- The inverse of the parametrization recovers `g` from `rulingLeafPair p₀ g`. -/
+private theorem rulingLeafPairInv_rulingLeafPair (p₀ : OnePoint ℂ) (g : PSL(2, ℂ) × PSL(2, ℂ)) :
+    rulingLeafPairInv p₀ ⟨rulingLeafPair p₀ g, rulingLeafPair_mem_rulingIncidence p₀ g⟩ = g :=
+  Prod.ext ((OnePoint.pslHomeomorphDistinctTriples_symm_eq_iff _ _ _).2 fun _ ↦ rfl)
+    ((OnePoint.pslHomeomorphDistinctTriples_symm_eq_iff _ _ _).2 fun _ ↦ rfl)
 
 /-- **The fibre of the incidence space for the product structure is `PSL(2, ℂ) × PSL(2, ℂ)`.** For
 the product `J₀ = i × i`, the map `(a, b) ↦ (z ↦ (a • z, b • p₀), w ↦ (a • p₀, b • w))` is a
@@ -363,17 +376,14 @@ def pslProdHomeomorphRulingIncidence (p₀ : OnePoint ℂ) :
       rulingIncidence ((SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ)).prod
         (SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ))) p₀ where
   toFun g := ⟨rulingLeafPair p₀ g, rulingLeafPair_mem_rulingIncidence p₀ g⟩
-  invFun := (exists_continuous_leftInverse_rulingLeafPair p₀).choose
-  left_inv := (exists_continuous_leftInverse_rulingLeafPair p₀).choose_spec.2
+  invFun := rulingLeafPairInv p₀
+  left_inv := rulingLeafPairInv_rulingLeafPair p₀
   right_inv := by
     rintro ⟨e, he⟩
     obtain ⟨g, rfl⟩ := (rulingIncidence_prod_eq_range p₀).le he
-    exact congrArg (fun g ↦ (⟨rulingLeafPair p₀ g, rulingLeafPair_mem_rulingIncidence p₀ g⟩ :
-      rulingIncidence ((SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ)).prod
-        (SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ))) p₀))
-      ((exists_continuous_leftInverse_rulingLeafPair p₀).choose_spec.2 g)
+    exact Subtype.ext (congrArg (rulingLeafPair p₀) (rulingLeafPairInv_rulingLeafPair p₀ g))
   continuous_toFun := (continuous_rulingLeafPair p₀).subtype_mk _
-  continuous_invFun := (exists_continuous_leftInverse_rulingLeafPair p₀).choose_spec.1
+  continuous_invFun := continuous_rulingLeafPairInv p₀
 
 @[simp]
 theorem coe_pslProdHomeomorphRulingIncidence_apply (p₀ : OnePoint ℂ) (g : PSL(2, ℂ) × PSL(2, ℂ)) :
@@ -393,27 +403,36 @@ theorem rulingLeafPair_pslProdHomeomorphRulingIncidence_symm_apply (p₀ : OnePo
 /-- **The fibre of the incidence space for the product structure is homotopy equivalent to
 `SO(3) × SO(3)`**, since `PSL(2, ℂ)` deformation retracts onto its rotation subgroup
 `PSU(2) ≅ SO(3)`. -/
-def rulingIncidenceHomotopyEquiv (p₀ : OnePoint ℂ) :
+def rulingIncidenceProdHomotopyEquiv (p₀ : OnePoint ℂ) :
     rulingIncidence ((SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ)).prod
         (SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ))) p₀ ≃ₕ
       specialOrthogonalGroup (Fin 3) ℝ × specialOrthogonalGroup (Fin 3) ℝ :=
   (pslProdHomeomorphRulingIncidence p₀).symm.toHomotopyEquiv.trans
     (pslHomotopyEquivSO3.prodCongr pslHomotopyEquivSO3)
 
-/-- The homotopy inverse of `TauCeti.rulingIncidenceHomotopyEquiv p₀` sends a pair of rotations
-`(R, S)` to the pair of leaves parametrized by the corresponding rotations of the Riemann sphere,
-the elements of `PSU(2) ⊆ PSL(2, ℂ)` lifting `R` and `S`. -/
+/-- `TauCeti.rulingIncidenceProdHomotopyEquiv p₀` sends an incident pair to the pair of rotations
+of its two Möbius parameters under `PSL(2, ℂ) ≃ₕ SO(3)`. -/
 @[simp]
-theorem coe_rulingIncidenceHomotopyEquiv_symm_apply (p₀ : OnePoint ℂ)
+theorem rulingIncidenceProdHomotopyEquiv_apply (p₀ : OnePoint ℂ)
+    (e : rulingIncidence ((SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ)).prod
+      (SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ))) p₀) :
+    rulingIncidenceProdHomotopyEquiv p₀ e =
+      (pslHomotopyEquivSO3 ((pslProdHomeomorphRulingIncidence p₀).symm e).1,
+        pslHomotopyEquivSO3 ((pslProdHomeomorphRulingIncidence p₀).symm e).2) := by
+  rw [rulingIncidenceProdHomotopyEquiv, ContinuousMap.HomotopyEquiv.trans_apply,
+    ContinuousMap.HomotopyEquiv.prodCongr_apply, Homeomorph.coe_toHomotopyEquiv]
+
+/-- The homotopy inverse of `TauCeti.rulingIncidenceProdHomotopyEquiv p₀` sends a pair of
+rotations `(R, S)` to the pair of leaves parametrized by the corresponding rotations of the Riemann
+sphere, the elements of `PSU(2) ⊆ PSL(2, ℂ)` lifting `R` and `S`. -/
+@[simp]
+theorem coe_rulingIncidenceProdHomotopyEquiv_symm_apply (p₀ : OnePoint ℂ)
     (R S : specialOrthogonalGroup (Fin 3) ℝ) :
-    ((rulingIncidenceHomotopyEquiv p₀).symm (R, S) : C(OnePoint ℂ, OnePoint ℂ × OnePoint ℂ) ×
+    ((rulingIncidenceProdHomotopyEquiv p₀).symm (R, S) : C(OnePoint ℂ, OnePoint ℂ × OnePoint ℂ) ×
         C(OnePoint ℂ, OnePoint ℂ × OnePoint ℂ)) =
       rulingLeafPair p₀ ((SU2.psuEquivSO3.symm R : PSL(2, ℂ)),
         (SU2.psuEquivSO3.symm S : PSL(2, ℂ))) := by
-  -- The homotopy inverse of a product of homotopy equivalences is the product of their inverses.
-  have h : (pslHomotopyEquivSO3.prodCongr pslHomotopyEquivSO3).symm.toFun (R, S) =
-      (pslHomotopyEquivSO3.symm R, pslHomotopyEquivSO3.symm S) :=
-    (rfl)
-  simp [rulingIncidenceHomotopyEquiv, h]
+  simp [rulingIncidenceProdHomotopyEquiv, ContinuousMap.HomotopyEquiv.symm_trans,
+    ← Homeomorph.symm_toHomotopyEquiv]
 
 end TauCeti
