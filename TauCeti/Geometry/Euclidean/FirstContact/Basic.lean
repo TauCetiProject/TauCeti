@@ -212,9 +212,9 @@ theorem exists_firstContact (hf : IsProperMap f) (he : ‖e‖ = 1) (hΩ : IsClo
 section Tangency
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [ChartedSpace H M] [I.Boundaryless]
+  {I : ModelWithCorners ℝ E H} [ChartedSpace H M]
 
-omit [ProperSpace F] [I.Boundaryless] in
+omit [ProperSpace F] in
 /-- **Tangency at a one-sided contact.** If the height of `f` above the graph of `g` has a local
 extremum at an interior point `x` of the source manifold, `f` is differentiable at `x` and `g`
 is differentiable at `P(f(x))`, then `df_x`
@@ -240,7 +240,6 @@ theorem inner_mvfderiv_eq_fderiv_of_isLocalExtr {x : M} (hx : I.IsInteriorPoint 
   simp only [sub_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply] at h
   exact sub_eq_zero.mp h.symm
 
-omit [I.Boundaryless] in
 /-- **First contact away from the source boundary.** Under the barrier and contact hypotheses
 of `TauCeti.exists_firstContact`, closed image suffices in place of properness of `f`. Suppose
 also that the translated graphs avoid `f(∂Σ)`, and that `f` and `g` are differentiable at every
@@ -276,11 +275,11 @@ theorem _root_.IsClosed.exists_firstContact_tangent_of_disjoint_boundary
   have hxI : I.IsInteriorPoint x := by
     rw [I.isInteriorPoint_iff_not_isBoundaryPoint]
     exact fun hb ↦ (hbdryM t₀ ht₀').ne_of_mem hx (mem_image_of_mem f hb) rfl
-  obtain ⟨hint, hev⟩ := hside (rangeFactorization f x) hx
+  obtain ⟨hint, hev⟩ := hside (rangeFactorization f x) (by rwa [rangeFactorization_coe])
   have hfx := hfd t₀ ht₀' x hx hxI
   have hcont : ContinuousAt (rangeFactorization f) x := hfx.continuousAt.codRestrict _
-  have hev' : ∀ᶠ y in 𝓝 x, heightAboveGraph e g (f y) ≤ t₀ :=
-    hcont.eventually (hev.mono fun _ hy ↦ hy.2)
+  have hev' : ∀ᶠ y in 𝓝 x, heightAboveGraph e g (f y) ≤ t₀ := by
+    simpa only [rangeFactorization_coe] using hcont.eventually (hev.mono fun _ hy ↦ hy.2)
   have hxt : heightAboveGraph e g (f x) = t₀ := ((mem_translatedGraph_iff he).1 hx).2
   have hlocal : IsLocalMax (fun y ↦ heightAboveGraph e g (f y)) x := by
     simpa only [IsLocalMax, IsMaxFilter, hxt] using hev'
@@ -292,7 +291,7 @@ theorem _root_.IsClosed.exists_firstContact_tangent_of_disjoint_boundary
 `Σ` is a manifold without boundary and `f` and `g` are differentiable at every possible contact
 in `t ∈ [0, T]` and its projection, respectively, then at every contact point `x` at the largest
 contact time `t₀`, `f` lies below `S_{t₀}` near `x` and `df_x` takes values in its tangent space. -/
-theorem _root_.IsClosed.exists_firstContact_tangent
+theorem _root_.IsClosed.exists_firstContact_tangent [BoundarylessManifold I M]
     (hf : IsClosed (range f)) (he : ‖e‖ = 1) (hΩ : IsClosed Ω)
     (hg : ContinuousOn g Ω) (hT₀ : 0 ≤ T) (hT : Disjoint (translatedGraph e Ω g T) (range f))
     (h0 : (translatedGraph e Ω g 0 ∩ range f).Nonempty)
