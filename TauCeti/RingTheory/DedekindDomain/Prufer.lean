@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
 public import Mathlib.RingTheory.DedekindDomain.Basic
 public import Mathlib.RingTheory.Valuation.ValuationRing
 public import Mathlib.FieldTheory.Separable
+public import TauCeti.RingTheory.Valuation.LocalizationAtCenter
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 import TauCeti.RingTheory.Localization.AsSubring
-import TauCeti.RingTheory.Valuation.LocalizationAtCenter
 
 /-!
 # Localizations of integral closures of Dedekind domains are valuation rings
@@ -39,6 +39,8 @@ decomposition and inertia groups, and Frobenius elements.
 
 * `IsDedekindDomain.preValuationRing_atPrime`: the localizations of a Dedekind domain at its
   primes are valuation rings.
+* `Ideal.valuationSubringAtPrime_asIdeal`: at a nonzero prime, the localization as a valuation
+  subring is Mathlib's `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime`.
 * `IsIntegralClosure.preValuationRing_atPrime`: the same for the integral closure of a Dedekind
   domain in a separable algebraic extension of its fraction field.
 
@@ -69,6 +71,18 @@ instance IsDedekindDomain.preValuationRing_atPrime {C : Type*} [CommRing C] [IsD
     exact ((HeightOneSpectrum.valuationSubringAtPrime (FractionRing C) w).mem_or_inv_mem x).imp
       HeightOneSpectrum.mem_valuationSubringAtPrime_iff.mp
       HeightOneSpectrum.mem_valuationSubringAtPrime_iff.mp
+
+/-- At a nonzero prime `v` of a Dedekind domain `C` with fraction field `L`, the localization at
+`v.asIdeal` realized inside `L` is Mathlib's `HeightOneSpectrum.valuationSubringAtPrime`. So the
+`Ideal.valuationSubringAtPrime` and `ValuationSubring.IsCenteredAt` API applies to it. -/
+theorem Ideal.valuationSubringAtPrime_asIdeal {C L : Type*} [CommRing C] [IsDedekindDomain C]
+    [Field L] [Algebra C L] [IsFractionRing C L] (v : IsDedekindDomain.HeightOneSpectrum C) :
+    v.asIdeal.valuationSubringAtPrime L =
+      IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime L v := by
+  ext x
+  rw [Ideal.mem_valuationSubringAtPrime_iff,
+    IsDedekindDomain.HeightOneSpectrum.mem_valuationSubringAtPrime_iff]
+  simp only [Ideal.mem_primeCompl_iff]
 
 namespace IsIntegralClosure
 

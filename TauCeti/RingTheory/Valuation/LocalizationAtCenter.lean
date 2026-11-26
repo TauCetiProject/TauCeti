@@ -40,7 +40,8 @@ separable extension of its fraction field, for instance the ring of all algebrai
 algebraic closure of `ℚ`: its localizations at primes are valuation rings
 (`IsIntegralClosure.preValuationRing_atPrime` in `TauCeti/RingTheory/DedekindDomain/Prufer.lean`).
 For Dedekind `B` itself, at a nonzero prime, the localization is Mathlib's
-`IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime`.
+`IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime`
+(`Ideal.valuationSubringAtPrime_asIdeal`, in the same file).
 
 ## Main definitions
 
