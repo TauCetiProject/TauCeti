@@ -214,8 +214,9 @@ end Laurent
 /-- **The generator is the class of a projective line.** On `CPⁿ⁺¹`, with the base point
 `[e₁] = [0 : 1 : 0 : ⋯ : 0]`, the generator `ℓ` is the class of the coordinate line
 `TauCeti.ComplexProjectiveSpace.lineSquare n`, the sphere `[1 : z : 0 : ⋯ : 0]`
-(`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_symm_ofAdd_one`). So its periods are the area
-and the first Chern number of that line. -/
+(`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_symm_ofAdd_one`). So its periods are the values
+of `ω` and `c` on the class of that line; for the Fubini–Study form and the first Chern class
+these are its area and its first Chern number. -/
 theorem projectiveSpaceGenerator_eq_ofHomotopyGroup_lineSquare
     {ω : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
       (TopCat.of (ComplexProjectiveSpace (n + 1))) →+ ℝ}
@@ -223,16 +224,8 @@ theorem projectiveSpaceGenerator_eq_ofHomotopyGroup_lineSquare
       (TopCat.of (ComplexProjectiveSpace (n + 1))) →+ ℤ} :
     projectiveSpaceGenerator ω c (affineUnitVector 1 0) n.add_one_ne_zero =
       ofHomotopyGroup ω c (affineParam 1 0) (Additive.ofMul ⟦lineSquare n⟧) := by
-  rw [projectiveSpaceGenerator_def, pi2MulEquivInt_symm_ofAdd_one]
-  -- Transport the class along the identity, from `affineParam 1 0` to `[e₁]`.
-  have key : ∀ {x y : ComplexProjectiveSpace (n + 1)} (h : ContinuousMap.id _ x = y)
-      (a : HomotopyGroup (Fin 2) (ComplexProjectiveSpace (n + 1)) x),
-      ofHomotopyGroup ω c y (Additive.ofMul (HomotopyGroup.map (ContinuousMap.id _) h a)) =
-        ofHomotopyGroup ω c x (Additive.ofMul a) := by
-    rintro x y h a
-    obtain rfl : x = y := h
-    exact congrArg _ (congrArg _ (HomotopyGroup.map_id_apply a))
-  exact key _ _
+  rw [projectiveSpaceGenerator_def, pi2MulEquivInt_symm_ofAdd_one, lineClass_def]
+  exact ofHomotopyGroup_map_id _ _
 
 end SphericalPeriodGroup
 

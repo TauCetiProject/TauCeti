@@ -17,8 +17,9 @@ import TauCeti.Topology.Circle.Degree.Square
 The boundary map of the Hopf fibration `S¹ → S²ⁿ⁺³ → CPⁿ⁺¹` identifies `π₂(CPⁿ⁺¹)` with
 `π₁(S¹) ≅ ℤ` (`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt`). This file evaluates that
 identification on the coordinate line `[1 : z : 0 : ⋯ : 0]`, read as a sphere through the standard
-sphere of the Riemann sphere (`TauCeti.ComplexProjectiveSpace.lineSquare`): its value is `1`
-(`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_map_lineSquare`). So the generator of `π₂(CPⁿ⁺¹)`
+sphere of the Riemann sphere (`TauCeti.ComplexProjectiveSpace.lineSquare`) and based at `[e₁]`
+(`TauCeti.ComplexProjectiveSpace.lineClass`): its value is `1`
+(`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_lineClass`). So the generator of `π₂(CPⁿ⁺¹)`
 is the class of a projective line with its complex orientation
 (`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_symm_ofAdd_one`), the line class `L` of the
 quantum relation `x^(n+2) = q^L` and of the period group of `CPⁿ⁺¹`.
@@ -45,11 +46,13 @@ the degree of the end loop.
 **Base points.** The line is based at `affineParam 1 0`, and `pi2MulEquivInt` at the class
 `mk (n + 1) e₁` of the unit vector `e₁ = affineUnitVector 1 0`. These points are equal
 (`TauCeti.ComplexProjectiveSpace.affineParam_def`), and the class of the line is carried from one
-to the other by `HomotopyGroup.map` of the identity.
+to the other by `HomotopyGroup.map` of the identity (`TauCeti.ComplexProjectiveSpace.lineClass`).
 
 ## Main results
 
-* `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_map_lineSquare`: the coordinate line is sent to
+* `TauCeti.ComplexProjectiveSpace.lineClass`: the class of the coordinate line in `π₂(CPⁿ⁺¹)`
+  at the base point `[e₁]`.
+* `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_lineClass`: the coordinate line is sent to
   `1` by `π₂(CPⁿ⁺¹) ≃* ℤ`.
 * `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_symm_ofAdd_one`: the generator of `π₂(CPⁿ⁺¹)`
   is the class of the coordinate line.
@@ -138,7 +141,7 @@ private theorem continuous_squarePhaseAngle : Continuous squarePhaseAngle := by
     · simpa [squarePhaseWeight_eq_zero hy] using
         (continuous_squarePhaseWeight.tendsto y).const_mul (2 * Real.pi)
 
-/-- The phase `exp (-χ (arg (-c) + π))`, a circle-valued map continuous on the whole square. -/
+/-- The phase `exp (-i χ (arg (-c) + π))`, a circle-valued map continuous on the whole square. -/
 private def squarePhase (y : Fin 2 → I) : Circle :=
   Circle.exp (-squarePhaseAngle y)
 
@@ -156,8 +159,7 @@ private theorem squareTwist_eq_one {y : Fin 2 → I} (hy : IsPhaseEdge y) : squa
   have key : squareCenterDirection y =
       Circle.exp (Complex.arg (-squareCenterOffset y) + Real.pi) := by
     refine Circle.ext ?_
-    rw [coe_squareCenterDirection hc, Circle.coe_exp, Complex.ofReal_add, add_mul,
-      Complex.exp_add, Complex.exp_arg_mul_I (neg_ne_zero.2 hc), Complex.exp_pi_mul_I, norm_neg]
+    simp [coe_squareCenterDirection hc, Complex.exp_arg_mul_I (neg_ne_zero.2 hc)]
     ring
   rw [squareTwist, Pi.mul_apply, squarePhase, squarePhaseAngle, squarePhaseWeight_eq_one hy,
     one_mul, key, ← Circle.exp_add, add_neg_cancel, Circle.exp_zero]
@@ -208,30 +210,13 @@ private theorem lineLiftVector_ne_zero (y : Fin 2 → I) : lineLiftVector n y �
 private def lineLiftUnit : C(Fin 2 → I, sphere (0 : EuclideanSpace ℂ (Fin (n + 2))) 1) :=
   normalizeToSphere (lineLiftVector n) (continuous_lineLiftVector n) (lineLiftVector_ne_zero n)
 
-/-- The base point `[0 : 1 : 0 : ⋯ : 0]` of the coordinate line is represented by the unit vector
-`e₁`. -/
-private theorem coe_affineUnitVector_one_zero :
-    (affineUnitVector (n := n + 1) 1 0 : EuclideanSpace ℂ (Fin (n + 2))) =
-      EuclideanSpace.single 1 1 := by
-  have h : affineVector (n := n + 1) 1 0 = EuclideanSpace.single 1 1 := by
-    ext i
-    rcases eq_or_ne i 1 with rfl | hi
-    · simp
-    · obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq hi
-      simp [hi]
-  rw [coe_affineUnitVector_apply, h, PiLp.norm_single, norm_one, inv_one, one_smul]
-
 /-- On the boundary of the square the lift is `c / ‖c‖ e₁`. -/
 private theorem coe_lineLiftUnit_of_mem {y : Fin 2 → I} (hy : y ∈ Cube.boundary (Fin 2)) :
     (lineLiftUnit n y : EuclideanSpace ℂ (Fin (n + 2))) =
       (squareCenterDirection y : ℂ) • EuclideanSpace.single 1 1 := by
   have hc := squareCenterOffset_ne_zero_of_mem hy
-  rw [lineLiftUnit, coe_normalizeToSphere_apply, lineLiftVector,
-    (cubeRadius_eq_one_iff y).2 hy, one_pow, sub_self, Real.sqrt_zero, Complex.ofReal_zero,
-    zero_smul, zero_add, NormedSpace.normalize, norm_smul, PiLp.norm_single, norm_one, mul_one,
-    ← Complex.coe_smul, smul_smul, coe_squareCenterDirection hc, norm_mul, Complex.norm_ofNat]
-  congr 1
-  push_cast
+  simp [lineLiftUnit, lineLiftVector, (cubeRadius_eq_one_iff y).2 hy, NormedSpace.normalize,
+    norm_smul, ← Complex.coe_smul, smul_smul, coe_squareCenterDirection hc]
   field_simp
 
 /-- Away from the boundary of the square the lift is the unit representative of
@@ -264,8 +249,26 @@ private theorem mk_lineLiftUnit (y : Fin 2 → I) :
   by_cases hy : y ∈ Cube.boundary (Fin 2)
   · rw [lineSquare_apply_of_mem hy, affineParam_def, mk_eq_mk_iff_exists_circle_smul]
     refine ⟨squareCenterDirection y, Subtype.ext ?_⟩
-    rw [Circle.coe_smul_sphere, coe_lineLiftUnit_of_mem n hy, coe_affineUnitVector_one_zero]
+    rw [Circle.coe_smul_sphere, coe_lineLiftUnit_of_mem n hy, coe_affineUnitVector_zero]
   · rw [lineSquare_apply_of_notMem hy, affineParam_def, lineLiftUnit_of_notMem n hy]
+
+/-! ### The class of the coordinate line -/
+
+/-- The class of the coordinate line `lineSquare n` in `π₂(CPⁿ⁺¹)` at the base point
+`[e₁] = mk (n + 1) (affineUnitVector 1 0)` of `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt`,
+carried there by `HomotopyGroup.map` of the identity from its own base point `affineParam 1 0`,
+which is the same point (`affineParam_def`). -/
+def lineClass :
+    HomotopyGroup (Fin 2) (ComplexProjectiveSpace (n + 1)) (mk (n + 1) (affineUnitVector 1 0)) :=
+  HomotopyGroup.map (ContinuousMap.id _) ((ContinuousMap.id_apply _).trans (affineParam_def 1 0))
+    ⟦lineSquare n⟧
+
+/-- `lineClass n` is the class of `lineSquare n` carried to `[e₁]` by `HomotopyGroup.map` of the
+identity. -/
+theorem lineClass_def :
+    lineClass n = HomotopyGroup.map (ContinuousMap.id _)
+      ((ContinuousMap.id_apply _).trans (affineParam_def 1 0)) ⟦lineSquare n⟧ :=
+  (rfl)
 
 /-! ### The boundary of the coordinate line -/
 
@@ -321,7 +324,7 @@ private theorem lineLift_of_isPhaseEdge {p : I × (Fin 1 → I)} (hp : IsPhaseEd
     lineLift n p = affineUnitVector 1 0 :=
   Subtype.ext <| by
     rw [coe_lineLift_of_mem n hp.mem_boundary, squareTwist_eq_one hp, Circle.coe_one, one_smul,
-      coe_affineUnitVector_one_zero]
+      coe_affineUnitVector_zero]
 
 /-- `lineLift` is a boundary lift of the coordinate line, read in `I^(Option (Fin 1))`. -/
 private theorem isBoundaryLift_lineLift :
@@ -358,10 +361,8 @@ private theorem exp_rightEdgeAngle (t : I) :
   have hc : squareCenterOffset ![1, t] ≠ 0 :=
     squareCenterOffset_ne_zero_of_mem ⟨0, .inr rfl⟩
   refine Circle.ext ?_
-  rw [Circle.coe_exp, squareTwist, Pi.mul_apply, Circle.coe_mul, coe_squareCenterDirection hc,
-    squarePhase,
-    Circle.coe_exp, rightEdgeAngle, Complex.ofReal_sub, sub_mul, Complex.exp_sub,
-    Complex.exp_arg_mul_I hc, Complex.ofReal_neg, neg_mul, Complex.exp_neg, div_eq_mul_inv]
+  simp [squareTwist, squarePhase, rightEdgeAngle, coe_squareCenterDirection hc,
+    Complex.exp_arg_mul_I hc, div_eq_mul_inv]
 
 /-- Along the right edge the angle increases by one full turn. -/
 private theorem rightEdgeAngle_one_sub_rightEdgeAngle_zero :
@@ -390,20 +391,17 @@ private theorem degree_rightEdgeLoop : Circle.degree rightEdgeLoop = 1 :=
 `rightEdgeLoop` of the fibre circle over `[e₁]`. -/
 private theorem hopfBoundary_lineSquare :
     hopfBoundary (affineUnitVector 1 0) (Fin 1)
-        (HomotopyGroup.congrEquiv (finSuccEquiv 1) (HomotopyGroup.map (ContinuousMap.id _)
-          ((ContinuousMap.id_apply _).trans (affineParam_def 1 0)) ⟦lineSquare n⟧)) =
+        (HomotopyGroup.congrEquiv (finSuccEquiv 1) (lineClass n)) =
       HomotopyGroup.map ⟨Circle.homeomorphSphere, Homeomorph.continuous _⟩ (by ext; simp)
         ⟦(genLoopEquivOfUnique (Fin 1)).symm rightEdgeLoop⟧ := by
   -- Reindexing the cube puts the homotopy parameter of `lineLift` first.
-  have hγ : HomotopyGroup.congrEquiv (finSuccEquiv 1)
-      (HomotopyGroup.map (ContinuousMap.id _)
-        ((ContinuousMap.id_apply _).trans (affineParam_def 1 0)) ⟦lineSquare n⟧) =
+  have hγ : HomotopyGroup.congrEquiv (finSuccEquiv 1) (lineClass n) =
       (⟦GenLoop.congr (mk (n + 1) (affineUnitVector 1 0)) (finSuccEquiv 1)
         (GenLoop.map (ContinuousMap.id _) ((ContinuousMap.id_apply _).trans (affineParam_def 1 0))
           (lineSquare n))⟧ :
         HomotopyGroup (Option (Fin 1)) (ComplexProjectiveSpace (n + 1))
           (mk (n + 1) (affineUnitVector 1 0))) := by
-    rw [HomotopyGroup.map_mk, HomotopyGroup.congrEquiv_mk]
+    rw [lineClass_def, HomotopyGroup.map_mk, HomotopyGroup.congrEquiv_mk]
   -- The boundary is the class of the end of the boundary lift `lineLift`.
   refine (congrArg _ hγ).trans <| (hopfBoundary_apply _ _).trans <|
     (congrArg _ (TopCat.fibrationBoundary_mk (mk_mem_serreFibrations (n + 1))
@@ -421,16 +419,14 @@ private theorem hopfBoundary_lineSquare :
   change _ = ((Circle.homeomorphSphere (squareTwist ![1, t 0]) : ℂ)) •
     ((affineUnitVector 1 0 : sphere (0 : EuclideanSpace ℂ (Fin (n + 2))) 1) :
       EuclideanSpace ℂ (Fin (n + 2)))
-  rw [Circle.coe_homeomorphSphere_apply, coe_affineUnitVector_one_zero]
+  rw [Circle.coe_homeomorphSphere_apply, coe_affineUnitVector_zero]
   rfl
 
 /-- **The coordinate line generates `π₂(CPⁿ⁺¹)`.** The isomorphism `π₂(CPⁿ⁺¹) ≃* ℤ` of the Hopf
-fibration sends the class of the coordinate line `[1 : z : 0 : ⋯ : 0]`, read as a sphere through
-the standard sphere of the Riemann sphere, to `1`. -/
-theorem pi2MulEquivInt_map_lineSquare :
-    pi2MulEquivInt (affineUnitVector 1 0) n.add_one_ne_zero
-        (HomotopyGroup.map (ContinuousMap.id _)
-          ((ContinuousMap.id_apply _).trans (affineParam_def 1 0)) ⟦lineSquare n⟧) =
+fibration sends the class `lineClass n` of the coordinate line `[1 : z : 0 : ⋯ : 0]`, read as a
+sphere through the standard sphere of the Riemann sphere, to `1`. -/
+theorem pi2MulEquivInt_lineClass :
+    pi2MulEquivInt (affineUnitVector 1 0) n.add_one_ne_zero (lineClass n) =
       Multiplicative.ofAdd 1 := by
   have h1 : Circle.homeomorphSphere (1 : Circle) = 1 := by ext; simp
   -- The circle reads the boundary loop as `rightEdgeLoop`, of degree one.
@@ -454,12 +450,11 @@ theorem pi2MulEquivInt_map_lineSquare :
   rw [MulEquiv.apply_symm_apply, Circle.fundamentalGroupMulEquiv_fromPath, degree_rightEdgeLoop]
 
 /-- **The generator of `π₂(CPⁿ⁺¹)` is the coordinate line**: the element of `π₂(CPⁿ⁺¹)` sent to `1`
-by `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt` is the class of `lineSquare n`, carried to the
-base point `[e₁]` along `affineParam 1 0 = [e₁]`. -/
+by `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt` is the class `lineClass n` of `lineSquare n`,
+carried to the base point `[e₁]` along `affineParam 1 0 = [e₁]`. -/
 theorem pi2MulEquivInt_symm_ofAdd_one :
     (pi2MulEquivInt (affineUnitVector 1 0) n.add_one_ne_zero).symm (Multiplicative.ofAdd 1) =
-      HomotopyGroup.map (ContinuousMap.id _)
-        ((ContinuousMap.id_apply _).trans (affineParam_def 1 0)) ⟦lineSquare n⟧ :=
-  (MulEquiv.symm_apply_eq _).2 (pi2MulEquivInt_map_lineSquare n).symm
+      lineClass n :=
+  (MulEquiv.symm_apply_eq _).2 (pi2MulEquivInt_lineClass n).symm
 
 end TauCeti.ComplexProjectiveSpace
