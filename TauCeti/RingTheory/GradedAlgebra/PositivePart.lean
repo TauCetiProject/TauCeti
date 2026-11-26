@@ -24,10 +24,13 @@ classes of the generators, and a Sullivan algebra `(ΛV, d)` is minimal exactly 
 induces on `Q(ΛV)` vanishes.
 
 In a graded algebra the decomposables `A⁺ · A⁺` form a homogeneous submodule, so `Q(A)` is graded
-in turn: its degree-`p` part `Qᵖ(A)` is `Aᵖ` modulo the span of the products `Aⁱ · Aʲ` with
-`i, j > 0` and `i + j = p`, and a graded algebra map induces a linear map on each `Qᵖ`. For the
-cohomology algebra of a compact Lie group or of an arithmetic group, `Qᵖ` is the space of
-primitive classes of degree `p` whose determinant lines Borel compares through invariant forms.
+in turn: for `p > 0` its degree-`p` part `Qᵖ(A)` is `Aᵖ` modulo the span of the products
+`Aⁱ · Aʲ` with `i, j > 0` and `i + j = p`, while `Qᵖ(A) = 0` for `p ≤ 0`, and a graded algebra
+map induces a linear map on each `Qᵖ`. For the real cohomology of a compact connected Lie group,
+an exterior algebra on primitive generators by Hopf's theorem, and likewise in Borel's stable
+range for arithmetic groups, `Qᵖ` is identified with the primitive classes of degree `p`, and
+Borel compares the determinant lines of these spaces through invariant forms; that Hopf-algebra
+identification is not formalized here.
 
 Mathlib's irrelevant ideal `HomogeneousIdeal.irrelevant` is the same construction for gradings by
 a canonically ordered monoid such as `ℕ`, and its cotangent space `Ideal.Cotangent` the analogue of
@@ -425,8 +428,9 @@ variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] (𝒜 : ℤ → Submo
 namespace Indecomposables
 
 /-- The degree-`p` indecomposables `Qᵖ(A)`: the classes in `Q(A)` of the elements of `A⁺` of
-degree `p`. For `p > 0` this is `Aᵖ` modulo the decomposables of degree `p`
-(`TauCeti.Indecomposables.homogeneousSubmoduleEquiv`), and for `p ≤ 0` it is zero. -/
+degree `p`. When `𝒜` is a grading of `A` (`GradedAlgebra 𝒜`), for `p > 0` this is `Aᵖ` modulo
+the decomposables of degree `p` (`TauCeti.Indecomposables.homogeneousSubmoduleEquiv`), and for
+`p ≤ 0` it is zero (`TauCeti.Indecomposables.homogeneousSubmodule_eq_bot`). -/
 def homogeneousSubmodule (p : ℤ) : Submodule R (Indecomposables 𝒜) :=
   ((𝒜 p).comap (positivePart 𝒜).subtype).map (mk 𝒜)
 
