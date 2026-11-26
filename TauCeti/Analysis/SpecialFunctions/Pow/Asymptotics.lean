@@ -78,6 +78,11 @@ larger exponent outgrows every constant multiple of a smaller one. Symmetrically
 `t ^ a ≤ C t ^ b` for every `t ∈ (0, T]`, `T > 0`, then `b ≤ a`: near zero a power with a smaller
 exponent dominates every constant multiple of a larger one.
 
+## Logarithmic comparisons
+
+At positive infinity, `(1 + r) log (2 + r)` is `o(r ^ p)` for every `p > 1`, and any negative real
+power `x ^ r` (`r < 0`) is `o((log x)⁻¹)`.
+
 ## Powers outgrowing geometric sequences
 
 For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`: the
@@ -425,6 +430,16 @@ theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
     _ ≤ (M * (1 + r)) * ((2 * M + 1) * log (2 + r)) :=
       mul_le_mul h1 hlog' (log_nonneg (by linarith)) (by positivity)
     _ = _ := by dsimp [M]; ring
+
+/-- Any negative real power `x ^ r` (`r < 0`) is negligible compared with `(log x)⁻¹` as
+`x → ∞`. -/
+theorem isLittleO_rpow_inv_log_atTop {r : ℝ} (hr : r < 0) :
+    (fun x : ℝ ↦ x ^ r) =o[atTop] fun x ↦ (log x)⁻¹ := by
+  refine ((isLittleO_log_rpow_atTop (neg_pos.mpr hr)).inv_rev ?_).congr' ?_ .rfl
+  · filter_upwards [eventually_gt_atTop (1 : ℝ)] with x hx h
+    exact absurd h (log_pos hx).ne'
+  · filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
+    rw [← rpow_neg hx, neg_neg]
 
 /-- For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`. -/
 theorem pow_mul_rpow_lt_one_of_four_mul_sq_le (C : ℝ) {r : ℕ} (hCr : 4 * C ^ 2 ≤ r) :
