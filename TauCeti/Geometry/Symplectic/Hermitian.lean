@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Defs
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+public import TauCeti.Topology.Algebra.Module.Alternating.HermitianForm
 
 /-!
 # The Hermitian inner product of a compatible pair
@@ -51,6 +52,10 @@ structure `J.complexModule`.
   vectors.
 * `TauCeti.SymplecticForm.Compatible.hermitianCore`: the Hermitian inner product of a compatible
   pair as an `InnerProductSpace.Core ℂ V`.
+* `TauCeti.SymplecticForm.complexAssociatedForm_eq_hermitianForm`: on a complex vector space `E`
+  with `J` multiplication by `i`, `h` is the Hermitian form
+  `ContinuousAlternatingMap.hermitianForm` of a continuous real two-form agreeing with `ω`; that
+  form also accepts degenerate two-forms.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: a compatible pair `(ω, J)` gives the Hermitian form `⟨v, w⟩ = g(v, w) + i ω(v, w)`.
@@ -279,6 +284,16 @@ lemma hermitianCore_inner (h : ω.Compatible J) (v w : V) :
   rw [complexAssociatedForm_apply]
 
 end Compatible
+
+/-- **`H_α` is the complex associated form of a symplectic form.** If a symplectic form `σ` on the
+real space underlying `E` agrees with the two-form `α`, and `J` is multiplication by `i`, then
+`σ.complexAssociatedForm J` is `H_α`. -/
+theorem complexAssociatedForm_eq_hermitianForm {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {α : E [⋀^Fin 2]→L[ℝ] ℝ} (σ : SymplecticForm E)
+    (J : AlmostComplexStructure E) (hJ : ∀ v, J v = Complex.I • v)
+    (hσ : ∀ u v, σ u v = α ![u, v]) (u v : E) :
+    σ.complexAssociatedForm J u v = α.hermitianForm u v := by
+  apply Complex.ext <;> simp [hJ, hσ]
 
 end SymplecticForm
 

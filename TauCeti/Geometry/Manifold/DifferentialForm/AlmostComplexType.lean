@@ -71,6 +71,9 @@ and it holds at boundary and corner points as well.
 * `TauCeti.SmoothAlmostComplexStructure.mapCoeff_typeProjection_of_map_smul_conj`: conjugation.
 * `TauCeti.SmoothAlmostComplexStructure.mpullback_typeProjection`: pullback along
   pseudoholomorphic maps.
+* `TauCeti.SmoothAlmostComplexStructure.mpullbackType`: pullback along a pseudoholomorphic map as
+  a complex-linear map between the forms of type `(p,q)`, with `mpullbackType_id` and
+  `mpullbackType_comp`.
 * `TauCeti.SmoothForm.IsOfType.alternatingDerivation_fderivWithin_inChartAt`: the derivative of
   the type equation in a chart.
 * `TauCeti.SmoothForm.IsOfType.typeProjection_mextDerivₗ_eq_zero`,
@@ -575,6 +578,51 @@ theorem SmoothForm.IsOfType.mpullback {φ : SmoothForm I' M' F k} (hu : ContMDif
       ContinuousAlternatingMap.compContinuousLinearMapCLM_apply]
     exact (h.apply (u x)).compContinuousLinearMap fun w ↦
       ((isPseudoholomorphic_iff.1 hJ x).mfderiv_apply_commute w).symm⟩
+
+namespace SmoothAlmostComplexStructure
+
+/-- Pullback along a smooth pseudoholomorphic map, as a complex-linear map between the
+submodules of forms of type `(p,q)`. -/
+def mpullbackType (hu : ContMDiff I I' ∞ u) (hJ : IsPseudoholomorphic J J' u) (p q : ℕ) :
+    J'.typeForms (F := F) p q →ₗ[ℂ] J.typeForms (F := F) p q where
+  toFun φ := ⟨SmoothForm.mpullback u hu φ.val,
+    (J.mem_typeForms p q _).2 (((J'.mem_typeForms p q _).1 φ.property).mpullback hu hJ)⟩
+  map_add' φ ψ := Subtype.ext <| map_add _ φ.val ψ.val
+  map_smul' c φ := Subtype.ext <| SmoothForm.mpullback_smul u hu c φ.val
+
+/-- The underlying smooth form of the pullback of a type form is its pullback. -/
+@[simp]
+theorem coe_mpullbackType (hu : ContMDiff I I' ∞ u) (hJ : IsPseudoholomorphic J J' u)
+    (p q : ℕ) (φ : J'.typeForms (F := F) p q) :
+    (mpullbackType hu hJ p q φ : SmoothForm I M F (p + q)) = SmoothForm.mpullback u hu φ.val :=
+  (rfl)
+
+/-- Pullback of type forms along the identity is the identity. -/
+@[simp]
+theorem mpullbackType_id (J : SmoothAlmostComplexStructure I M) (p q : ℕ) :
+    mpullbackType (F := F) contMDiff_id (isPseudoholomorphic_id J) p q = LinearMap.id :=
+  LinearMap.ext fun φ ↦ Subtype.ext <| LinearMap.congr_fun SmoothForm.mpullback_id φ.val
+
+/-- Pullback of type forms reverses composition. -/
+theorem mpullbackType_comp {E'' H'' M'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''} [TopologicalSpace M'']
+    [ChartedSpace H'' M''] [IsManifold I'' ∞ M''] {J'' : SmoothAlmostComplexStructure I'' M''}
+    {v : M' → M''} (hu : ContMDiff I I' ∞ u) (hJ : IsPseudoholomorphic J J' u)
+    (hv : ContMDiff I' I'' ∞ v) (hJ' : IsPseudoholomorphic J' J'' v) (p q : ℕ) :
+    mpullbackType (F := F) (hv.comp hu) (hJ'.comp hJ) p q =
+      mpullbackType hu hJ p q ∘ₗ mpullbackType hv hJ' p q :=
+  LinearMap.ext fun φ ↦ Subtype.ext <|
+    LinearMap.congr_fun (SmoothForm.mpullback_comp u v hu hv) φ.val
+
+/-- Pullback of type forms depends only on the map. -/
+theorem mpullbackType_congr {u' : M → M'} (h : u = u') (hu : ContMDiff I I' ∞ u)
+    (hJ : IsPseudoholomorphic J J' u) (hu' : ContMDiff I I' ∞ u')
+    (hJ' : IsPseudoholomorphic J J' u') (p q : ℕ) :
+    mpullbackType (F := F) hu hJ p q = mpullbackType hu' hJ' p q := by
+  subst h
+  rfl
+
+end SmoothAlmostComplexStructure
 
 /-! ### The four bidegrees of the exterior derivative -/
 

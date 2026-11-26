@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.Geometry.Manifold.Morse.Cell.Adjunction
 public import TauCeti.Topology.CWComplex.Classical.AdjunctionModel
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
@@ -18,7 +19,8 @@ Let `f` be a Morse function on a compact boundaryless manifold `M`. Then `M` is 
 equivalent to a finite CW complex whose `λ`-cells are labelled by the critical points of `f` of
 index `λ` (`TauCeti.IsMorse.exists_finite_cwComplex_homotopyEquiv`). In particular every compact
 smooth boundaryless manifold, which carries a Morse function by `TauCeti.exists_isMorse`, has
-finite CW type (`TauCeti.FiniteCWType.of_isManifold`).
+finite CW type (`TauCeti.FiniteCWType.of_isManifold`), so its integral homology is finitely
+generated (`TauCeti.finite_singularHomology_int_of_isManifold`).
 
 The model is built one critical level at a time, along the sublevels `M_a = {f ≤ a}`. Across a
 compact band without critical points the sublevel keeps its homotopy type
@@ -80,6 +82,8 @@ compactness of `M` is needed.
   `λ`.
 * `TauCeti.IsMorse.finiteCWType` and `TauCeti.FiniteCWType.of_isManifold`: compact boundaryless
   smooth manifolds have finite CW type.
+* `TauCeti.finite_singularHomology_int_of_isManifold`: the integral homology of a compact
+  boundaryless manifold is finitely generated.
 
 ## References
 
@@ -377,25 +381,37 @@ theorem IsMorse.exists_finite_cwComplex_homotopyEquiv [CompactSpace M] (hf : IsM
     tauto
   -- Above the maximum of `f` the sublevel is all of `M`.
   have hM : {x | f x ≤ b} = univ := eq_univ_of_forall fun x ↦ (hf' x).2
-  have : Finite (criticalPoints I f) := hf.finite_criticalPoints.to_subtype
-  refine ⟨W, _, ‹_›, ‹_›, RelCWComplex.finite_of_finite_cells (.of_equiv _
-      ((Equiv.sigmaFiberEquiv fun x : criticalPoints I f ↦ manifoldMorseIndex I f x).symm.trans
-        (Equiv.sigmaCongrRight fun m ↦ ?_))),
+  have := finite_sigma_criticalPoints (I := I) hf.finite_criticalPoints
+  exact ⟨W, _, ‹_›, ‹_›, RelCWComplex.finite_of_finite_cells (.of_equiv _
+      (Equiv.sigmaCongrRight fun m ↦ (hcell m).symm)),
     ⟨e.trans ((Homeomorph.setCongr hM).trans (Homeomorph.Set.univ M)).toHomotopyEquiv⟩,
     fun m ↦ ⟨hcell m⟩⟩
-  exact (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ criticalPoints I f)
-    (manifoldMorseIndex I f · = m)).trans (hcell m).symm
 
 /-- A compact boundaryless manifold carrying a Morse function has finite CW type. -/
 theorem IsMorse.finiteCWType [CompactSpace M] (hf : IsMorse I f) : FiniteCWType M := by
   obtain ⟨W, _, _, _, _, ⟨e⟩, -⟩ := hf.exists_finite_cwComplex_homotopyEquiv
   exact (e.symm.trans (Homeomorph.Set.univ W).symm.toHomotopyEquiv).finiteCWType
 
+omit [FiniteDimensional ℝ E] in
 variable (I M) in
 include I in
-/-- **Compact manifolds have finite CW type.** A compact boundaryless smooth manifold with a
-finite-dimensional model is homotopy equivalent to a finite CW complex. -/
-theorem FiniteCWType.of_isManifold [CompactSpace M] : FiniteCWType M :=
-  (exists_isMorse (I := I) (M := M)).choose_spec.finiteCWType
+/-- **Compact manifolds have finite CW type.** A compact boundaryless smooth manifold is homotopy
+equivalent to a finite CW complex. -/
+theorem FiniteCWType.of_isManifold [CompactSpace M] : FiniteCWType M := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact FiniteCWType.of_discreteTopology M
+  · have := FiniteDimensional.of_locallyCompact_manifold M I
+    exact (exists_isMorse (I := I) (M := M)).choose_spec.finiteCWType
+
+omit [FiniteDimensional ℝ E] in
+variable (I M) in
+include I in
+/-- **The integral homology of a compact manifold is finitely generated.** A compact boundaryless
+smooth manifold `M` has finitely generated integral homology `Hⱼ(M; ℤ)` in every degree. -/
+theorem finite_singularHomology_int_of_isManifold [CompactSpace M] (j : ℕ) :
+    Module.Finite ℤ (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} ℤ) j).obj
+      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M)) := by
+  have := FiniteCWType.of_isManifold M I
+  exact finite_singularHomology_int_of_finiteCWType M j
 
 end TauCeti

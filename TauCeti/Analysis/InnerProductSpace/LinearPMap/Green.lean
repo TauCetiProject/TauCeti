@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedRange
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Eigenbasis
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SpectralCutoff
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Spectral.Cutoff
 
 /-!
 # The Green operator of a self-adjoint operator with compact resolvent
@@ -84,31 +85,9 @@ theorem _root_.IsSelfAdjoint.exists_pos_mul_norm_le_norm_apply_of_mem_orthogonal
 /-- **Closed range.** A self-adjoint operator with compact resolvent has closed range. -/
 theorem _root_.IsSelfAdjoint.isClosed_range (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent) :
     _root_.IsClosed (LinearMap.range A.toFun : Set H) := by
-  have := h.hasOrthogonalProjection_ker
   obtain ⟨c, hc, hbound⟩ := hA.exists_pos_mul_norm_le_norm_apply_of_mem_orthogonal_ker h
-  refine isClosed_of_closure_subset fun f hf ↦ ?_
-  obtain ⟨g, hg, hgf⟩ := mem_closure_iff_seq_limit.1 hf
-  -- Choose preimages `v n` of `g n` orthogonal to the kernel.
-  have hpre : ∀ n, ∃ v : A.domain, (v : H) ∈ A.kerᗮ ∧ A v = g n := fun n ↦ by
-    obtain ⟨u, hu⟩ := LinearMap.mem_range.1 (hg n)
-    obtain ⟨v, hv, hAv⟩ := exists_coe_eq_sub_starProjection u
-    exact ⟨v, hv ▸ A.ker.sub_starProjection_mem_orthogonal (u : H), hAv.trans hu⟩
-  choose v hv hAv using hpre
-  -- By the lower bound, `v` is a Cauchy sequence, since `g` is.
-  have hcauchy : CauchySeq fun n ↦ (v n : H) := by
-    refine Metric.cauchySeq_iff.2 fun ε hε ↦ ?_
-    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hgf.cauchySeq (c * ε) (by positivity)
-    refine ⟨N, fun m hm n hn ↦ ?_⟩
-    have hmn := hbound (v m - v n) (sub_mem (hv m) (hv n))
-    rw [map_sub, hAv, hAv, Submodule.coe_sub, ← dist_eq_norm, ← dist_eq_norm] at hmn
-    exact lt_of_mul_lt_mul_left (hmn.trans_lt (hN m hm n hn)) hc.le
-  -- Its limit `w` satisfies `A w = f`, since `A` is closed.
-  obtain ⟨w, hw⟩ := cauchySeq_tendsto_of_complete hcauchy
-  have hcl : _root_.IsClosed (A.graph : Set (H × H)) := hA.isClosed
-  have hmem : (w, f) ∈ A.graph := hcl.mem_of_tendsto (hw.prodMk_nhds hgf)
-    (Filter.Eventually.of_forall fun n ↦ by rw [← hAv n]; exact A.mem_graph (v n))
-  obtain ⟨y, -, hy⟩ := (mem_graph_iff A).1 hmem
-  exact ⟨y, hy⟩
+  exact isClosed_range_of_norm_le_mul_norm hA.isClosed fun u hu ↦
+    (le_inv_mul_iff₀ hc).2 (hbound u hu)
 
 /-- **Fredholm alternative.** The range of a self-adjoint operator with compact resolvent is the
 orthogonal complement of its kernel. -/

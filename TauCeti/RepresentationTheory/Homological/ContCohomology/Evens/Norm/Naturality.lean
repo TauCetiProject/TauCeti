@@ -60,9 +60,13 @@ universe u
 -- tensor induction is formed with.
 attribute [local instance 1100] DiscreteRep.module
 
-variable {G H : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
-  {U : OpenSubgroup G} {V : OpenSubgroup H}
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {U : OpenSubgroup G}
+
+section Pullback
+
+variable {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  {V : OpenSubgroup H}
   (φ : H →ₜ* G) (ψ : V.toSubgroup →ₜ* U.toSubgroup) (hψ : ∀ v, (ψ v : G) = φ v)
   {e : H ⧸ V.toSubgroup ≃ G ⧸ U.toSubgroup} (he : ∀ h : H, e h = (φ h : G ⧸ U.toSubgroup))
   (s : V.toSubgroup.LeftTransversal)
@@ -143,6 +147,71 @@ private theorem coeffPullback_apply (a : (DiscreteRep.trivialF2 U.toSubgroup).V)
     trivialF2Equiv V.toSubgroup (coeffPullback ψ a) = trivialF2Equiv U.toSubgroup a :=
   (trivialF2Equiv V.toSubgroup).apply_symm_apply _
 
+section
+
+variable [U.toSubgroup.FiniteIndex] [V.toSubgroup.FiniteIndex]
+
+/-- The comparison of the tensor-induced coefficients lies over the identity of `𝔽₂`: both
+identifications with the trivial coefficients multiply the tensor factors, and relabelling the
+factors along `e` does not change their product. -/
+private theorem coeffComparison_trivialF2Iso :
+    (TopRep.resFunctor (φ : H →* G)).map
+        (smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen'
+          (s.map (φ : H →* G) e he)).hom.hom ≫
+      eqToHom (res_trivialF2_hom (φ : H →* G)) =
+    tensorComparisonHom φ ψ hψ he s (coeffPullback ψ) ≫
+      (smoothTensorInducedTrivialF2Iso H V.toSubgroup V.isOpen' s).hom.hom := by
+  classical
+  -- Instance search would pick `AddCommGroup.toIntModule` on the target carrier, which is not
+  -- the module structure of the topological representation.
+  let : Module ℤ (trivialF2 H).V := TopRep.hV2 _
+  refine TopRep.hom_ext (ContIntertwiningMap.ext (ContinuousLinearMap.ext fun x ↦ ?_))
+  -- Composition in `TopRep` evaluates to composition of the underlying maps.
+  change (eqToHom (res_trivialF2_hom (φ : H →* G))).hom
+      ((smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen'
+        (s.map (φ : H →* G) e he)).hom.hom.hom x) =
+    (smoothTensorInducedTrivialF2Iso H V.toSubgroup V.isOpen' s).hom.hom.hom
+      ((tensorComparisonHom φ ψ hψ he s (coeffPullback ψ)).hom x)
+  apply (trivialF2Equiv H).injective
+  refine ((congrArg (trivialF2Equiv H) (TopRep.eqToHom_hom_apply
+    (res_trivialF2_hom (φ : H →* G)) _)).trans (trivialF2Equiv_cast G _ _)).trans ?_
+  -- Both sides are additive in `x`; on a pure tensor both multiply the factors.
+  have htprod (m : G ⧸ U.toSubgroup → (DiscreteRep.trivialF2 U.toSubgroup).V) :
+      trivialF2Equiv G ((smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen'
+          (s.map (φ : H →* G) e he)).hom.hom.hom (PiTensorProduct.tprod ℤ m)) =
+        trivialF2Equiv H ((smoothTensorInducedTrivialF2Iso H V.toSubgroup V.isOpen' s).hom.hom.hom
+          ((tensorComparisonHom φ ψ hψ he s (coeffPullback ψ)).hom
+            (PiTensorProduct.tprod ℤ m))) := by
+    have hm : (tensorComparisonHom φ ψ hψ he s (coeffPullback ψ)).hom
+        (PiTensorProduct.tprod ℤ m) = PiTensorProduct.tprod ℤ fun j ↦ coeffPullback ψ (m (e j)) :=
+      (tensorComparisonHom_apply φ ψ hψ he s _ _).trans
+        ((congrArg _ (PiTensorProduct.reindex_tprod _ m)).trans (PiTensorProduct.map_tprod _ _))
+    rw [hm, smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod,
+      smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod]
+    -- The identification of the coefficients of `G` multiplies over its own enumeration of the
+    -- cosets, which `convert` identifies with ours.
+    convert (Fintype.prod_equiv e
+      (fun j ↦ trivialF2Equiv V.toSubgroup (coeffPullback ψ (m (e j))))
+      (fun i ↦ trivialF2Equiv U.toSubgroup (m i)) fun j ↦ coeffPullback_apply ψ (m (e j))).symm
+      using 3
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r m =>
+    -- Absorb the scalar into one factor, so that the pure-tensor case applies.
+    obtain ⟨i⟩ := (inferInstance : Nonempty (G ⧸ U.toSubgroup))
+    have hr := (PiTensorProduct.tprod ℤ).map_update_smul m i r (m i)
+    rw [Function.update_eq_self, RingHom.id_apply] at hr
+    rw [← hr]
+    exact htprod _
+  | add x y hx hy =>
+    -- The carrier of `x + y` is the tensor power only after unfolding `DiscreteRep.tensorInduced`,
+    -- so `simp` and `rw` cannot use `map_add` here and additivity is applied as terms.
+    refine ((congrArg (trivialF2Equiv G) (map_add _ x y)).trans (map_add _ _ _)).trans ?_
+    refine Eq.trans ?_ ((congrArg (trivialF2Equiv H) ((congrArg _ (map_add _ x y)).trans
+      (map_add _ _ _))).trans (map_add _ _ _)).symm
+    exact congrArg₂ (· + ·) hx hy
+
+end
+
 variable [CompactSpace U.toSubgroup] [CompactSpace V.toSubgroup]
 
 /-- Pulling back along `ψ`, as an intertwining map of the total resolutions. -/
@@ -195,7 +264,7 @@ variable [Fintype (G ⧸ U.toSubgroup)] [Fintype (H ⧸ V.toSubgroup)]
 
 /-- The comparison of the tensor-induced total resolutions preserves the total degree. -/
 private theorem isHomogeneous_resolutionComparison :
-    TauCeti.LinearMap.IsHomogeneous
+    LinearMap.IsHomogeneous
       (tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom.toLinearMap
       (smoothTensorInducedGradedResolutionPiece U.toSubgroup U.isOpen' (s.map (φ : H →* G) e he)
         (coeffs U.toSubgroup))
@@ -212,7 +281,7 @@ private theorem isHomogeneous_resolutionComparison :
   rw [Finset.sum_const_zero] at h2
   have h := h2.comp h1
   rw [add_zero] at h
-  exact TauCeti.LinearMap.isHomogeneous_def.2 fun p x hx ↦
+  exact LinearMap.isHomogeneous_def.2 fun p x hx ↦
     (congrArg (· ∈ _) (tensorComparisonHom_apply φ ψ hψ he s _ x)).mpr (h.map_mem hx)
 
 /-- The comparison of the tensor-induced total resolutions commutes with the differentials: both
@@ -298,67 +367,6 @@ private theorem resolutionComparison_ι [LinearOrder (G ⧸ U.toSubgroup)]
   exact (tensorComparisonHom_apply φ ψ hψ he s _ _).trans ((LinearMap.congr_fun key x).trans
     (congrArg _ (tensorComparisonHom_apply φ ψ hψ he s _ x).symm))
 
-omit [CompactSpace U.toSubgroup] [CompactSpace V.toSubgroup] [Fintype (G ⧸ U.toSubgroup)]
-  [Fintype (H ⧸ V.toSubgroup)] in
-/-- The comparison of the tensor-induced coefficients lies over the identity of `𝔽₂`: both
-identifications with the trivial coefficients multiply the tensor factors, and relabelling the
-factors along `e` does not change their product. -/
-private theorem coeffComparison_trivialF2Iso :
-    (TopRep.resFunctor (φ : H →* G)).map
-        (smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen'
-          (s.map (φ : H →* G) e he)).hom.hom ≫
-      eqToHom (res_trivialF2_hom (φ : H →* G)) =
-    tensorComparisonHom φ ψ hψ he s (coeffPullback ψ) ≫
-      (smoothTensorInducedTrivialF2Iso H V.toSubgroup V.isOpen' s).hom.hom := by
-  classical
-  -- Instance search would pick `AddCommGroup.toIntModule` on the target carrier, which is not
-  -- the module structure of the topological representation.
-  let : Module ℤ (trivialF2 H).V := TopRep.hV2 _
-  refine TopRep.hom_ext (ContIntertwiningMap.ext (ContinuousLinearMap.ext fun x ↦ ?_))
-  -- Composition in `TopRep` evaluates to composition of the underlying maps.
-  change (eqToHom (res_trivialF2_hom (φ : H →* G))).hom
-      ((smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen'
-        (s.map (φ : H →* G) e he)).hom.hom.hom x) =
-    (smoothTensorInducedTrivialF2Iso H V.toSubgroup V.isOpen' s).hom.hom.hom
-      ((tensorComparisonHom φ ψ hψ he s (coeffPullback ψ)).hom x)
-  apply (trivialF2Equiv H).injective
-  refine ((congrArg (trivialF2Equiv H) (TopRep.eqToHom_hom_apply
-    (res_trivialF2_hom (φ : H →* G)) _)).trans (trivialF2Equiv_cast G _ _)).trans ?_
-  -- Both sides are additive in `x`; on a pure tensor both multiply the factors.
-  have htprod (m : G ⧸ U.toSubgroup → (DiscreteRep.trivialF2 U.toSubgroup).V) :
-      trivialF2Equiv G ((smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen'
-          (s.map (φ : H →* G) e he)).hom.hom.hom (PiTensorProduct.tprod ℤ m)) =
-        trivialF2Equiv H ((smoothTensorInducedTrivialF2Iso H V.toSubgroup V.isOpen' s).hom.hom.hom
-          ((tensorComparisonHom φ ψ hψ he s (coeffPullback ψ)).hom
-            (PiTensorProduct.tprod ℤ m))) := by
-    have hm : (tensorComparisonHom φ ψ hψ he s (coeffPullback ψ)).hom
-        (PiTensorProduct.tprod ℤ m) = PiTensorProduct.tprod ℤ fun j ↦ coeffPullback ψ (m (e j)) :=
-      (tensorComparisonHom_apply φ ψ hψ he s _ _).trans
-        ((congrArg _ (PiTensorProduct.reindex_tprod _ m)).trans (PiTensorProduct.map_tprod _ _))
-    rw [hm, smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod,
-      smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod]
-    -- The identification of the coefficients of `G` multiplies over its own enumeration of the
-    -- cosets, which `convert` identifies with ours.
-    convert (Fintype.prod_equiv e
-      (fun j ↦ trivialF2Equiv V.toSubgroup (coeffPullback ψ (m (e j))))
-      (fun i ↦ trivialF2Equiv U.toSubgroup (m i)) fun j ↦ coeffPullback_apply ψ (m (e j))).symm
-      using 3
-  induction x using PiTensorProduct.induction_on with
-  | smul_tprod r m =>
-    -- Absorb the scalar into one factor, so that the pure-tensor case applies.
-    obtain ⟨i⟩ := (inferInstance : Nonempty (G ⧸ U.toSubgroup))
-    have hr := (PiTensorProduct.tprod ℤ).map_update_smul m i r (m i)
-    rw [Function.update_eq_self, RingHom.id_apply] at hr
-    rw [← hr]
-    exact htprod _
-  | add x y hx hy =>
-    -- The carrier of `x + y` is the tensor power only after unfolding `DiscreteRep.tensorInduced`,
-    -- so `simp` and `rw` cannot use `map_add` here and additivity is applied as terms.
-    refine ((congrArg (trivialF2Equiv G) (map_add _ x y)).trans (map_add _ _ _)).trans ?_
-    refine Eq.trans ?_ ((congrArg (trivialF2Equiv H) ((congrArg _ (map_add _ x y)).trans
-      (map_add _ _ _))).trans (map_add _ _ _)).symm
-    exact congrArg₂ (· + ·) hx hy
-
 end Resolution
 
 variable [U.toSubgroup.FiniteIndex] [CompactSpace U.toSubgroup] [Fintype (G ⧸ U.toSubgroup)]
@@ -411,7 +419,10 @@ theorem trivialF2Map_evensNorm {n : ℕ} (x : continuousCohomology n (trivialF2 
     (by rw [Fintype.card_congr e])
     (resolutionComparison_tprod φ ψ hψ he s z) _ _ _ _ _ _
 
-omit [V.toSubgroup.FiniteIndex] [CompactSpace V.toSubgroup] [Fintype (H ⧸ V.toSubgroup)] in
+end Pullback
+
+variable [U.toSubgroup.FiniteIndex] [CompactSpace U.toSubgroup] [Fintype (G ⧸ U.toSubgroup)]
+
 /-- **The Evens norm commutes with inflation.** For a normal subgroup `N` contained in `U`,
 inflating to `G` the norm from the image `U / N` of `U` in `G ⧸ N` gives the norm from `U` of the
 inflated class: `infl (N_{U/N}^{G/N} x) = N_U^G (infl x)`, after transporting the degree along

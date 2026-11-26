@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CompactOpen
+public import Mathlib.Topology.Connected.LocallyPathConnected
 public import Mathlib.Topology.Connected.PathConnected
 public import Mathlib.Topology.Homotopy.Contractible
+public import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
 # The wedge sum of a family of pointed spaces
@@ -32,14 +34,23 @@ the universal property `TauCeti.WedgeSum.lift`.
   `TauCeti.WedgeSum.base` and the inclusions `TauCeti.WedgeSum.incl` of the summands.
 * `TauCeti.WedgeSum.isOpen_iff`, `TauCeti.WedgeSum.isClosed_iff`: a set is open (closed)
   exactly when its preimage in every summand is.
+* `TauCeti.WedgeSum.isOpen_image_incl`: an open subset of a summand avoiding its base point is
+  open in the wedge sum.
+* `TauCeti.WedgeSum.isClosedEmbedding_incl`: when the base points are closed, every summand is a
+  closed subspace of the wedge sum.
 * `TauCeti.WedgeSum.lift`: the universal property, with `TauCeti.WedgeSum.hom_ext`, and
   `TauCeti.WedgeSum.liftProd`, its form for maps out of `Z × ⋁ᵢ Xᵢ`, which builds homotopies out
   of a wedge sum.
+* `TauCeti.WedgeSum.homotopyRelOfIncl` and `TauCeti.WedgeSum.homotopicRel_iff`: two maps out of a
+  wedge sum are homotopic relative to the wedge point exactly when they agree there and their
+  restrictions to every summand are homotopic relative to its base point.
 * `TauCeti.WedgeSum.subtypeVal` and `TauCeti.WedgeSum.isOpenEmbedding_subtypeVal`: the wedge sum
   of open neighbourhoods of the base points is an open subspace of the whole wedge sum.
 * `TauCeti.WedgeSum.proj`: the retraction of a wedge sum onto one summand, collapsing the others
   to the base point. The retractions separate points, so a wedge sum of Hausdorff spaces is
   Hausdorff.
+* `TauCeti.WedgeSum.locallyPathConnectedSpace`: a wedge sum of locally path-connected spaces is
+  locally path-connected.
 * `TauCeti.WedgeSum.contractibleSpace`: a wedge sum of spaces which deformation retract onto their
   base points is contractible.
 
@@ -188,6 +199,43 @@ theorem isOpen_iff {S : Set (WedgeSum x)} : IsOpen S ↔ ∀ i, IsOpen (incl x i
 theorem isClosed_iff {S : Set (WedgeSum x)} : IsClosed S ↔ ∀ i, IsClosed (incl x i ⁻¹' S) := by
   simp only [← isOpen_compl_iff, isOpen_iff, preimage_compl]
 
+/-- **Open sets of a summand away from its base point are open in the wedge sum.**  The image of an
+open subset of the `i`-th summand which does not contain the base point `x i` is open: it meets no
+other summand, and in the `i`-th summand it is the set itself. -/
+theorem isOpen_image_incl {i : ι} {S : Set (X i)} (hS : IsOpen S) (hx : x i ∉ S) :
+    IsOpen (incl x i '' S) := by
+  refine isOpen_iff.2 fun j => ?_
+  by_cases hji : j = i
+  · subst hji
+    rwa [(incl_injective j).preimage_image]
+  · convert isOpen_empty
+    refine eq_empty_of_forall_notMem fun z ⟨s, hs, hsz⟩ => ?_
+    obtain ⟨rfl, -⟩ | h := incl_eq_incl_iff.1 hsz
+    · exact hx hs
+    · exact hji (congrArg Sigma.fst h).symm
+
+/-- **The summands are closed in the wedge sum.**  When every base point is closed, each inclusion
+of a summand is a closed embedding. -/
+theorem isClosedEmbedding_incl (hx : ∀ i, IsClosed {x i}) (i : ι) :
+    IsClosedEmbedding (incl x i) := by
+  refine .of_continuous_injective_isClosedMap (incl x i).continuous (incl_injective i)
+    fun F hF => isClosed_iff.2 fun j => ?_
+  by_cases hij : j = i
+  · subst hij
+    rwa [(incl_injective j).preimage_image]
+  · -- A point of another summand lies in the image of `F` only when both are base points.
+    have h : incl x j ⁻¹' (incl x i '' F) = {z | x i ∈ F ∧ z = x j} := by
+      ext z
+      simp only [mem_preimage, mem_image, mem_ofPred_eq, incl_eq_incl_iff, Sigma.mk.injEq]
+      constructor
+      · rintro ⟨y, hy, (⟨rfl, rfl⟩ | ⟨rfl, -⟩)⟩
+        exacts [⟨hy, rfl⟩, absurd rfl hij]
+      · rintro ⟨hF, rfl⟩
+        exact ⟨x i, hF, .inl ⟨rfl, rfl⟩⟩
+    by_cases hxF : x i ∈ F
+    · simpa [h, hxF] using hx j
+    · simp [h, hxF]
+
 section Lift
 
 variable {Y : Type w} [TopologicalSpace Y]
@@ -246,6 +294,50 @@ lemma liftProd_incl {Z : Type*} [TopologicalSpace Z] [LocallyCompactSpace Z]
 lemma liftProd_base {Z : Type*} [TopologicalSpace Z] [LocallyCompactSpace Z]
     (f : ∀ i, C(Z × X i, Y)) (g : C(Z, Y)) (hf : ∀ i z, f i (z, x i) = g z) (z : Z) :
     liftProd f g hf (z, base x) = g z := (rfl)
+
+/-- **Gluing pointed homotopies over a wedge sum.**  Homotopies, relative to the base points, of
+the restrictions of two maps `f g : ⋁ᵢ Xᵢ → Y` to the summands glue to a homotopy of `f` and `g`
+relative to the wedge point.  The maps must agree at the wedge point, which is not implied by the
+homotopies when the family is empty. -/
+def homotopyRelOfIncl {f g : C(WedgeSum x, Y)} (hbase : f (base x) = g (base x))
+    (H : ∀ i, (f.comp (incl x i)).HomotopyRel (g.comp (incl x i)) {x i}) :
+    f.HomotopyRel g {base x} where
+  toContinuousMap := liftProd (fun i => (H i).toContinuousMap) (.const _ (f (base x)))
+    fun i t => by simpa using (H i).eq_fst t (Set.mem_singleton (x i))
+  map_zero_left w := by
+    induction w using ind with
+    | base => simp
+    | incl i y => simp
+  map_one_left w := by
+    induction w using ind with
+    | base => simpa using hbase
+    | incl i y => simp
+  prop' t w hw := by
+    rw [Set.mem_singleton_iff.1 hw]
+    simp
+
+@[simp]
+lemma homotopyRelOfIncl_apply_incl {f g : C(WedgeSum x, Y)} (hbase : f (base x) = g (base x))
+    (H : ∀ i, (f.comp (incl x i)).HomotopyRel (g.comp (incl x i)) {x i}) (t : unitInterval)
+    (i : ι) (y : X i) : homotopyRelOfIncl hbase H (t, incl x i y) = H i (t, y) := (rfl)
+
+@[simp]
+lemma homotopyRelOfIncl_apply_base {f g : C(WedgeSum x, Y)} (hbase : f (base x) = g (base x))
+    (H : ∀ i, (f.comp (incl x i)).HomotopyRel (g.comp (incl x i)) {x i}) (t : unitInterval) :
+    homotopyRelOfIncl hbase H (t, base x) = f (base x) := (rfl)
+
+/-- **Pointed homotopy of maps out of a wedge sum is detected on the summands.**  Two maps out of a
+wedge sum are homotopic relative to the wedge point exactly when they agree at the wedge point and
+their restrictions to every summand are homotopic relative to its base point. -/
+theorem homotopicRel_iff {f g : C(WedgeSum x, Y)} :
+    f.HomotopicRel g {base x} ↔
+      f (base x) = g (base x) ∧
+        ∀ i, (f.comp (incl x i)).HomotopicRel (g.comp (incl x i)) {x i} := by
+  refine ⟨fun h => ⟨h.fst_eq_snd (Set.mem_singleton _), fun i => ?_⟩,
+    fun ⟨hbase, h⟩ => ⟨homotopyRelOfIncl hbase fun i => (h i).some⟩⟩
+  refine (h.precomp (incl x i)).mono fun y hy => ?_
+  rw [Set.mem_singleton_iff.1 hy]
+  exact incl_apply_self i
 
 end Lift
 
@@ -409,6 +501,12 @@ instance [∀ i, PathConnectedSpace (X i)] : PathConnectedSpace (WedgeSum x) := 
       rw [← incl_apply_self (x := x) i]
       exact (PathConnectedSpace.joined (x i) y).map (incl x i).continuous
   exact ⟨⟨base x⟩, fun v w => (h v).symm.trans (h w)⟩
+
+/-- **A wedge sum of locally path-connected spaces is locally path-connected**, as a quotient of
+the disjoint union of a point and the summands. -/
+instance locallyPathConnectedSpace [∀ i, LocallyPathConnectedSpace (X i)] :
+    LocallyPathConnectedSpace (WedgeSum x) :=
+  isQuotientMap_sumElim.locallyPathConnectedSpace
 
 /-- **A wedge sum of spaces which deformation retract onto their base points is contractible.**
 The contraction moves each summand `X i` by a deformation retraction onto `x i` relative to `x i`;

@@ -22,8 +22,13 @@ The free product of a family of two monoids indexed by `Bool` is the binary free
 the homomorphisms induced by a pair of homomorphisms on the two members correspond, so one of them
 is injective exactly when the other is.
 
-The free product of an empty family is trivial, and the free product of a family indexed by a
-type with a unique element is that single monoid.
+A free product of trivial monoids is trivial; in particular, so is the free product of an empty
+family. The free product of a family indexed by a type with a unique element is that single
+monoid. A trivial member of a family indexed by `Option ι`, at the index `none`, can be dropped
+from the free product; more generally, so can all the members outside a predicate when they are
+trivial. Dropping them does not change whether homomorphisms on the factors, together with a
+homomorphism on one more monoid, induce a bijection from the free product, which is how free product
+decompositions with trivial factors are trimmed to their nontrivial factors.
 
 ## Main declarations
 
@@ -33,9 +38,16 @@ type with a unique element is that single monoid.
 * `Monoid.CoprodI.coprodLift_injective_iff`: for a family `M` indexed by `Bool`, homomorphisms
   `f i : M i →* N` induce an injective homomorphism `Coprod (M false) (M true) →* N` if and only
   if they induce an injective homomorphism `CoprodI M →* N`.
+* `Monoid.CoprodI.instUnique`: the free product of a family of trivial monoids is trivial.
 * `Monoid.CoprodI.instUniqueOfIsEmpty`: the free product of an empty family is trivial.
 * `MulEquiv.coprodIUnique`: the free product of a family indexed by a type with a unique element
   is isomorphic to the monoid at the single index.
+* `Monoid.CoprodI.optionEquivOfSubsingleton`: `CoprodI M ≃* CoprodI fun i => M (some i)` for a
+  family `M` indexed by `Option ι` whose member at `none` is trivial.
+* `Monoid.CoprodI.subtypeEquivOfSubsingleton`: `CoprodI M ≃* CoprodI fun i : {i // p i} => M i`
+  for a family `M` whose members outside `p` are trivial.
+* `Monoid.Coprod.lift_coprodI_lift_subtype_bijective_iff`: such trivial members can be dropped from
+  a bijective homomorphism `(∗ᵢ Mᵢ) ∗ H → N`.
 -/
 
 public section
@@ -46,10 +58,15 @@ namespace Monoid.CoprodI
 
 variable {ι : Type*} (M : ι → Type*) [∀ i, Monoid (M i)]
 
-/-- The free product of an empty family of monoids is trivial. -/
-instance instUniqueOfIsEmpty [IsEmpty ι] : Unique (CoprodI M) where
+/-- The free product of a family of trivial monoids is trivial. -/
+instance instUnique [∀ i, Subsingleton (M i)] : Unique (CoprodI M) where
   default := 1
-  uniq x := DFunLike.congr_fun (ext_hom (.id _) 1 isEmptyElim) x
+  uniq x := DFunLike.congr_fun (ext_hom (.id _) 1 fun _ ↦ Subsingleton.elim _ _) x
+
+/-- The free product of an empty family of monoids is trivial. -/
+instance instUniqueOfIsEmpty [IsEmpty ι] : Unique (CoprodI M) :=
+  have : ∀ i, Subsingleton (M i) := isEmptyElim
+  inferInstance
 
 end Monoid.CoprodI
 
@@ -149,3 +166,120 @@ theorem coprodLift_injective_iff :
   exact EquivLike.injective_comp _ _
 
 end Monoid.CoprodI
+
+namespace Monoid.CoprodI
+
+variable {ι : Type*} (M : Option ι → Type*) [∀ o, Monoid (M o)] [Subsingleton (M none)]
+
+/-- The free product of a family of monoids indexed by `Option ι` whose member at `none` is
+trivial is the free product of its members at `some i`: the factor at `none` goes to `1` and the
+factor at `some i` to the factor at `i`. -/
+def optionEquivOfSubsingleton : CoprodI M ≃* CoprodI fun i => M (some i) :=
+  MonoidHom.toMulEquiv
+    (lift fun
+      | none => 1
+      | some i => of (M := fun j => M (some j)) (i := i))
+    (lift fun i => of (i := some i))
+    (by
+      ext (_ | _) m
+      · simp [Subsingleton.elim m 1]
+      · simp)
+    (by ext; simp)
+
+variable {M}
+
+@[simp]
+theorem optionEquivOfSubsingleton_of_none (m : M none) :
+    optionEquivOfSubsingleton M (of m) = 1 := by
+  simp [Subsingleton.elim m 1]
+
+@[simp]
+theorem optionEquivOfSubsingleton_of_some {i : ι} (m : M (some i)) :
+    optionEquivOfSubsingleton M (of m) = of (i := i) m :=
+  lift_of ..
+
+@[simp]
+theorem optionEquivOfSubsingleton_symm_of {i : ι} (m : M (some i)) :
+    (optionEquivOfSubsingleton M).symm (of (i := i) m) = of m :=
+  lift_of ..
+
+end Monoid.CoprodI
+
+namespace Monoid.CoprodI
+
+variable {ι : Type*} (M : ι → Type*) [∀ i, Monoid (M i)] (p : ι → Prop)
+
+open scoped Classical in
+/-- The free product of a family of monoids whose members outside a predicate `p` are trivial is
+the free product of its members satisfying `p`: a factor outside `p` goes to `1` and the factor at
+`i` with `p i` to the factor at `⟨i, _⟩`. -/
+noncomputable def subtypeEquivOfSubsingleton (h : ∀ i, ¬p i → Subsingleton (M i)) :
+    CoprodI M ≃* CoprodI fun i : {i // p i} => M i :=
+  MonoidHom.toMulEquiv
+    (lift fun i => if hi : p i then of (M := fun i : {i // p i} => M i) (i := ⟨i, hi⟩) else 1)
+    (lift fun i => of (i := i.val))
+    (by
+      ext i m
+      by_cases hi : p i
+      · simp [hi]
+      · have := h i hi
+        simp [Subsingleton.elim m 1])
+    (by ext i m; simp [i.property])
+
+variable {M p} {h : ∀ i, ¬p i → Subsingleton (M i)}
+
+@[simp]
+theorem subtypeEquivOfSubsingleton_of {i : ι} (hi : p i) (m : M i) :
+    subtypeEquivOfSubsingleton M p h (of m) =
+      of (M := fun i : {i // p i} => M i) (i := ⟨i, hi⟩) m := by
+  simp [subtypeEquivOfSubsingleton, hi]
+
+@[simp]
+theorem subtypeEquivOfSubsingleton_of_not {i : ι} (hi : ¬p i) (m : M i) :
+    subtypeEquivOfSubsingleton M p h (of m) = 1 := by
+  have := h i hi
+  simp [Subsingleton.elim m 1]
+
+@[simp]
+theorem subtypeEquivOfSubsingleton_symm_of {i : {i // p i}} (m : M i) :
+    (subtypeEquivOfSubsingleton M p h).symm (of m) = of (i := i.val) m := by
+  simp [subtypeEquivOfSubsingleton]
+
+variable (h) in
+/-- Under `subtypeEquivOfSubsingleton`, the homomorphism `CoprodI M →* N` induced by homomorphisms
+`f i` on the factors is induced by the `f i` with `p i`. -/
+@[simp]
+theorem lift_comp_subtypeEquivOfSubsingleton {N : Type*} [Monoid N] (f : ∀ i, M i →* N) :
+    (lift fun i : {i // p i} => f i).comp (subtypeEquivOfSubsingleton M p h : _ →* _) = lift f := by
+  ext i m
+  by_cases hi : p i
+  · simp [hi]
+  · have := h i hi
+    simp [Subsingleton.elim m 1]
+
+end Monoid.CoprodI
+
+namespace Monoid.Coprod
+
+variable {ι : Type*} {M : ι → Type*} [∀ i, Monoid (M i)] {p : ι → Prop} {H N : Type*} [Monoid H]
+  [Monoid N]
+
+/-- If the members of a family of monoids outside a predicate `p` are trivial, then homomorphisms
+`f i : M i →* N` and `F : H →* N` induce a bijection `(∗ᵢ Mᵢ) ∗ H → N` exactly when the `f i` with
+`p i` and `F` do. -/
+theorem lift_coprodI_lift_subtype_bijective_iff (h : ∀ i, ¬p i → Subsingleton (M i))
+    (f : ∀ i, M i →* N) (F : H →* N) :
+    Function.Bijective (lift (CoprodI.lift fun i : {i // p i} => f i) F) ↔
+      Function.Bijective (lift (CoprodI.lift f) F) := by
+  let ψ := CoprodI.subtypeEquivOfSubsingleton M p h
+  have key : lift (CoprodI.lift f) F = (lift (CoprodI.lift fun i : {i // p i} => f i) F).comp
+      (MulEquiv.coprodCongr ψ (MulEquiv.refl H)).toMonoidHom := by
+    ext i m
+    · simp only [MonoidHom.comp_apply, lift_apply_inl, MulEquiv.coe_toMonoidHom,
+        MulEquiv.coprodCongr_apply, map_apply_inl]
+      exact (DFunLike.congr_fun (CoprodI.lift_comp_subtypeEquivOfSubsingleton h f) _).symm
+    · simp
+  rw [key, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom,
+    Function.Bijective.of_comp_iff _ (MulEquiv.bijective _)]
+
+end Monoid.Coprod

@@ -75,3 +75,39 @@ theorem locallyOfFinitePresentation_iff_exists_fg :
     exact ⟨U, hy, locallyOfFinitePresentation_morphismRestrict_iff.mpr hU⟩
 
 end AlgebraicGeometry.IsClosedImmersion
+
+namespace AlgebraicGeometry.Scheme.IdealSheafData
+
+variable {X : Scheme.{u}}
+
+/-- An ideal sheaf with locally finitely presented closed inclusion has finitely generated
+section ideals on every affine open. -/
+theorem fg_ideal (I : X.IdealSheafData) [LocallyOfFinitePresentation I.subschemeι]
+    (U : X.affineOpens) : (I.ideal U).FG := by
+  simpa only [I.ker_subschemeι] using
+    (IsClosedImmersion.locallyOfFinitePresentation_iff (f := I.subschemeι)).mp inferInstance U
+
+/-- Finite generation of section ideals on affine neighborhoods implies finite generation
+on every affine open. -/
+theorem fg_ideal_of_forall_exists_fg (I : X.IdealSheafData)
+    (hI : ∀ x : X, ∃ U : X.affineOpens, x ∈ U.val ∧ (I.ideal U).FG)
+    (U : X.affineOpens) : (I.ideal U).FG := by
+  have : LocallyOfFinitePresentation I.subschemeι :=
+    IsClosedImmersion.locallyOfFinitePresentation_iff_exists_fg.mpr (by
+      simpa only [I.ker_subschemeι] using hI)
+  exact I.fg_ideal U
+
+/-- A locally principal ideal sheaf has a locally finitely presented closed inclusion;
+the generators need not be regular. -/
+theorem locallyOfFinitePresentation_subschemeι_of_locallyPrincipal (I : X.IdealSheafData)
+    (hI : ∀ x : X, ∃ U : X.affineOpens, x ∈ U.val ∧
+      ∃ a : Γ(X, U), I.ideal U = Ideal.span {a}) :
+    LocallyOfFinitePresentation I.subschemeι := by
+  apply IsClosedImmersion.locallyOfFinitePresentation_iff_exists_fg.mpr
+  intro x
+  obtain ⟨U, hx, a, hUa⟩ := hI x
+  refine ⟨U, hx, ?_⟩
+  rw [I.ker_subschemeι, hUa]
+  exact Submodule.fg_span_singleton a
+
+end AlgebraicGeometry.Scheme.IdealSheafData

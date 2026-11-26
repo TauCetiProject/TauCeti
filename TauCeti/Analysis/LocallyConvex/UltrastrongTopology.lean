@@ -179,6 +179,19 @@ theorem isEmbedding_inducingFn : IsEmbedding (inducingFn 𝕜 E F) := by
   ext x
   simpa using congr($hAB (lp.single 2 0 x) 0)
 
+/-- The ultrastrong topology is the strong operator topology of the ampliation: it is induced by
+`A ↦ ⊕ₙ A` into Mathlib's pointwise-convergence copy of the operators on `ℓ²(ℕ, E)`. -/
+theorem isInducing_toPointwiseConvergenceCLM_ampliation :
+    IsInducing fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) ℓ²(ℕ, E) ℓ²(ℕ, F)
+        (lp.ampliation ℕ 2 A.toCLM) := by
+  refine ((PointwiseConvergenceCLM.isEmbedding_coeFn (RingHom.id 𝕜) ℓ²(ℕ, E)
+    ℓ²(ℕ, F)).isInducing.of_comp_iff).1 ?_
+  convert isInducing_inducingFn (𝕜 := 𝕜) (E := E) (F := F) using 1
+  ext A ξ : 2
+  -- `ℓ²(ℕ, E) →Lₚₜ[𝕜] ℓ²(ℕ, F)` reuses the `FunLike` instance of `ℓ²(ℕ, E) →L[𝕜] ℓ²(ℕ, F)`.
+  rfl
+
 @[fun_prop]
 theorem continuous_ampliation_apply (ξ : ℓ²(ℕ, E)) :
     Continuous fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦ lp.ampliation ℕ 2 A.toCLM ξ :=

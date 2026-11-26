@@ -55,6 +55,8 @@ preserving the Cartan matrix extends uniquely to a based automorphism
 * `RootPairing.Base.mem_basedAut_iff`, `RootPairing.Base.mem_basedAut_iff_forall_mem_support`
   and `RootPairing.Base.mem_basedAut_iff_map_eq`: an automorphism is based exactly when it carries
   the simple roots onto, or into, themselves, and exactly when it fixes the base.
+* `RootPairing.Base.autCongr_mem_basedAut_map_iff`: conjugation by an equivalence `e` carries the
+  based automorphisms of `b` onto those of `b.map e`.
 * `RootPairing.Base.mem_basedAut_iff_image_posRoots`: an automorphism is based exactly when it
   carries the positive roots onto themselves.
 * `RootPairing.Base.mem_basedAut_iff_smul_openDominantChamber`: over a linearly ordered
@@ -123,6 +125,19 @@ theorem mem_basedAut_iff_forall_mem_support :
   refine ⟨fun h i hi ↦ ?_, fun h ↦ mem_basedAut_iff_map_eq.mpr (map_eq_of_forall_mem_support h)⟩
   rw [← Finset.mem_coe, ← mem_basedAut_iff.mp h]
   exact Set.mem_image_of_mem _ hi
+
+/-- **Based automorphisms are transported along equivalences**: conjugation by an equivalence `e`
+carries the based automorphisms of `b` onto those of the transported base `b.map e`. -/
+theorem autCongr_mem_basedAut_map_iff {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N₂] [Module R N₂] {Q : RootPairing ι₂ R M₂ N₂} (e : P.Equiv Q) :
+    e.autCongr g ∈ (b.map e).basedAut ↔ g ∈ b.basedAut := by
+  classical
+  have h : (e.autCongr g).indexEquiv '' (b.map e).support =
+      e.indexEquiv '' (g.indexEquiv '' b.support) := by
+    simp only [support_map_eq, Finset.coe_image, image_image,
+      RootPairing.Equiv.indexEquiv_autCongr_apply, _root_.Equiv.symm_apply_apply]
+  rw [mem_basedAut_iff, mem_basedAut_iff, h, support_map_eq, Finset.coe_image,
+    (image_injective.mpr e.indexEquiv.injective).eq_iff]
 
 /-- A based automorphism carries the positive roots onto themselves. -/
 theorem image_posRoots_of_mem_basedAut [CharZero R] (h : g ∈ b.basedAut) :

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 import Mathlib.MeasureTheory.Function.LpSeminorm.Count
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 
 /-!
@@ -151,46 +152,6 @@ theorem setLIntegral_compl_closedBall_enorm_le_of_hormander {K : X → X → E �
     _ = B * ∫⁻ y, ‖b y‖ₑ ∂μ := by rw [lintegral_mul_const'' _ hb.1.eNorm, mul_comm]
 
 end Kernel
-
-section WeakType
-
-variable {ι : Type*} [Fintype ι] {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- The closed ball around the centre of a dyadic cube of level `k` whose radius is `c` times half
-the side of the cube has at most `cⁿ` times the volume of the cube. -/
-private theorem volume_closedBall_dyadicCube_le (c : ℝ) (k : ℤ) (m : ι → ℤ) :
-    volume (closedBall (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (c * (2 ^ k / 2))) ≤
-      ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube k m) := by
-  rcases lt_or_ge c 0 with hc | hc
-  · rw [closedBall_eq_empty.2 (mul_neg_of_neg_of_pos hc (by positivity)), measure_empty]
-    exact zero_le
-  have hr : (2 : ℝ) * (c * (2 ^ k / 2)) = c * 2 ^ k := by ring
-  rw [Real.volume_pi_closedBall _ (by positivity), volume_dyadicCube, hr, mul_pow,
-    ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hc]
-
-/-- The union of the balls `c B_Q` around the Calderón–Zygmund cubes `Q` of `g` at height `t` has
-measure at most `cⁿ / t` times the integral of `g`. -/
-private theorem mul_volume_biUnion_closedBall_le (c : ℝ) (g : (ι → ℝ) → ℝ≥0∞) (t : ℝ≥0∞) :
-    t * volume (⋃ q ∈ calderonZygmundCubes g t,
-        closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))) ≤
-      ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x := by
-  calc _ ≤ t * ∑' q : calderonZygmundCubes g t, volume
-        (closedBall (fun i => ((q.val.2 i : ℝ) + 2⁻¹) * 2 ^ q.val.1) (c * (2 ^ q.val.1 / 2))) :=
-        mul_le_mul_right (measure_biUnion_le _ (to_countable _) _) _
-    _ ≤ t * ∑' q : calderonZygmundCubes g t,
-          ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube q.val.1 q.val.2) :=
-        mul_le_mul_right (tsum_le_tsum fun q => volume_closedBall_dyadicCube_le c _ _) _
-    _ = ENNReal.ofReal c ^ Fintype.card ι *
-          (t * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2)) := by
-        rw [ENNReal.tsum_mul_left, measure_biUnion (to_countable _)
-          pairwiseDisjoint_calderonZygmundCubes fun q _ => measurableSet_dyadicCube q.1 q.2]
-        ring
-    _ ≤ ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x :=
-        mul_le_mul_right (mul_volume_biUnion_calderonZygmundCubes_le.trans
-          (setLIntegral_le_lintegral _ _)) _
-
-end WeakType
 
 end TauCeti
 
@@ -445,7 +406,7 @@ theorem mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le
     _ ≤ 4 * 2 ^ Fintype.card ι * ‖T‖ₑ ^ 2 * (∫⁻ x, ‖f x‖ₑ) +
           ENNReal.ofReal c ^ Fintype.card ι * (∫⁻ x, ‖f x‖ₑ) + 4 * B * ∫⁻ x, ‖f x‖ₑ := by
         exact add_le_add (add_le_add (mul_volume_lt_enorm_calderonZygmundGood_le T hf ht ht')
-          (mul_volume_biUnion_closedBall_le c (fun x => ‖f x‖ₑ) t))
+          (mul_volume_biUnion_closedBall_calderonZygmundCubes_le (g := fun x => ‖f x‖ₑ) c))
           (mul_volume_lt_enorm_inter_compl_calderonZygmundBad_le T hT f hf ht ht')
     _ = (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2) + ENNReal.ofReal c ^ Fintype.card ι + 4 * B) *
           ∫⁻ x, ‖f x‖ₑ := by ring
@@ -466,10 +427,8 @@ theorem setLIntegral_compl_closedBall_enorm_apply_le_of_hormander [CompleteSpace
     (hsupp : ∀ᵐ x, x ∉ closedBall y r → b x = 0) (hmean : ∫ x, b x = 0) :
     ∫⁻ x in (closedBall y (2 * r))ᶜ, ‖T b x‖ₑ ≤ B * ∫⁻ x, ‖b x‖ₑ := by
   -- A function in `L²` vanishing off a ball is integrable.
-  have : IsFiniteMeasure (volume.restrict (closedBall y r)) :=
-    isFiniteMeasure_restrict.2 measure_closedBall_lt_top.ne
-  have hb : Integrable b := IntegrableOn.integrable_of_ae_notMem_eq_zero
-    (((Lp.memLp b).restrict _).integrable one_le_two) hsupp
+  have hb : Integrable b :=
+    (Lp.memLp b).integrable_of_ae_notMem_eq_zero one_le_two measure_closedBall_lt_top.ne hsupp
   exact setLIntegral_compl_closedBall_enorm_le_of_hormander hK hB hb hsupp hmean
     (hrep b y r hsupp)
 

@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Variables
+public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Independence
--- Proof-only: maps out of a polynomial ring lift along surjections.
+-- Proof-only: maps out of a polynomial ring lift along surjections, and `ker_constantCoeff`.
 import TauCeti.Algebra.MvPolynomial.Lift
+import TauCeti.RingTheory.MvPolynomial.Ideal
 -- Proof-only: injective graded ring homomorphisms reflect homogeneity.
 import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 -- Proof-only: the graded Nakayama lemma for generators.
@@ -28,7 +31,15 @@ irrelevant ideal `⨁_{n > 0} Lₙ`, and the classes of the `xₙ` form a basis 
 (`TauCeti.GradedAlgebra.adjoin_eq_top_of_irrelevant_le`), homogeneous elements of positive degree
 whose classes generate `I ⧸ I²` generate `L` over `L₀ = ℤ`.
 
-The resulting isomorphism `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L` is graded when `xₙ` is given degree `2n`.
+The resulting isomorphism `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L` is graded when `xₖ` is given degree `2k`, and
+identifies the augmentation ideal and its powers with the ideal of variables and its powers. In
+particular `L` is an integral domain, and any homogeneous element of degree `m` in `I²` involves
+only variables `X k` with `2k < m`, so a degree-`2n` element congruent to `c • xₙ` modulo `I²`
+corresponds to `c • X n` plus a polynomial in variables of index strictly below `n`.
+
+A ring homomorphism `L →+* R`, and hence a commutative formal group law over `R`, is therefore the
+same as a family `(vₙ)` of elements of `R`, the values of the generators
+(`TauCeti.LazardRing.homEquiv`). We call them the Lazard coordinates of the law.
 
 Since `L` is a polynomial ring, ring homomorphisms out of `L` lift along surjective ring
 homomorphisms (`MvPolynomial.exists_comp_eq_of_surjective`). By the universal property of `L`,
@@ -41,10 +52,14 @@ formal group law exist over every ring surjecting onto its coefficient ring.
 
 * `TauCeti.LazardRing.mvPolynomialEquiv`: the isomorphism `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L` sending `xₙ` to
   the generator `xₙ`.
+* `TauCeti.LazardRing.homEquiv`: ring homomorphisms `L →+* R` are families `ℕ+ → R`, by their
+  values on the generators (the Lazard coordinates).
 
 ## Main results
 
 * `TauCeti.LazardRing.adjoin_range_generator`: the generators `xₙ` generate `L` as a ring.
+* `TauCeti.LazardRing.ringHom_ext`: a ring homomorphism out of `L` is determined by its values on
+  the generators.
 * `TauCeti.LazardRing.augmentation_mvPolynomialEquiv` and
   `TauCeti.LazardRing.augmentationIdeal_eq_span_generator`: under `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L`, the
   augmentation is `constantCoeff`, `L` is an integral domain, and the augmentation ideal is
@@ -53,6 +68,12 @@ formal group law exist over every ring surjecting onto its coefficient ring.
   injective.
 * `TauCeti.LazardRing.mvPolynomialEquiv_mem_grading_iff`: the isomorphism carries the polynomials
   that are homogeneous of degree `n`, for `xₖ` of degree `2k`, onto `Lₙ`.
+* `TauCeti.LazardRing.mvPolynomialEquiv_mem_pow_augmentationIdeal_iff`: the isomorphism carries the
+  powers of the ideal of variables onto the powers of the augmentation ideal.
+* `TauCeti.LazardRing.two_mul_lt_of_mem_vars_mvPolynomialEquiv_symm` and
+  `TauCeti.LazardRing.lt_of_mem_vars_mvPolynomialEquiv_symm_sub_smul_X`: homogeneous decomposable
+  elements in degree `m` involve only variables `X k` with `2k < m`, so lifts of `c • xₙ` modulo
+  `I²` in `L₂ₙ` differ from `c • X n` by polynomials in variables below `n`.
 * `TauCeti.LazardRing.exists_comp_eq_of_surjective`: a ring homomorphism `L →+* S` factors
   through any surjective ring homomorphism `R →+* S`.
 * `FormalGroup.exists_map_eq_of_surjective`: a commutative formal group law over `S` is the base
@@ -132,6 +153,53 @@ theorem mvPolynomialEquiv_symm_generator (n : ℕ+) :
     mvPolynomialEquiv.symm (generator n) = MvPolynomial.X n := by
   rw [AlgEquiv.symm_apply_eq, mvPolynomialEquiv_X]
 
+section homEquiv
+
+variable {R : Type*} [CommRing R]
+
+/-- **Lazard coordinates.** Ring homomorphisms out of the Lazard ring `L = ℤ[x₁, x₂, …]` are the
+same as families of elements indexed by the generators: `φ` corresponds to `n ↦ φ xₙ`. -/
+def homEquiv : (LazardRing →+* R) ≃ (ℕ+ → R) where
+  toFun φ n := φ (generator n)
+  invFun v := (MvPolynomial.eval₂Hom (Int.castRingHom R) v).comp
+    (mvPolynomialEquiv.symm : LazardRing →+* MvPolynomial ℕ+ ℤ)
+  left_inv φ := by
+    have h : MvPolynomial.eval₂Hom (Int.castRingHom R) (fun n ↦ φ (generator n)) =
+        φ.comp (mvPolynomialEquiv : MvPolynomial ℕ+ ℤ →+* LazardRing) :=
+      MvPolynomial.ringHom_ext (fun _ ↦ by simp) (fun _ ↦ by simp)
+    ext x
+    simp [h]
+  right_inv v := funext fun n ↦ by simp
+
+@[simp]
+theorem homEquiv_apply (φ : LazardRing →+* R) (n : ℕ+) : homEquiv φ n = φ (generator n) :=
+  (rfl)
+
+/-- The homomorphism with Lazard coordinates `v` evaluates a polynomial in the generators at `v`. -/
+theorem homEquiv_symm_apply (v : ℕ+ → R) (x : LazardRing) :
+    homEquiv.symm v x =
+      MvPolynomial.eval₂Hom (Int.castRingHom R) v (mvPolynomialEquiv.symm x) :=
+  (rfl)
+
+/-- The homomorphism with Lazard coordinates `v` sends the generator `xₙ` to `v n`. -/
+@[simp]
+theorem homEquiv_symm_apply_generator (v : ℕ+ → R) (n : ℕ+) :
+    homEquiv.symm v (generator n) = v n := by
+  simp [homEquiv_symm_apply]
+
+/-- A ring homomorphism out of the Lazard ring is determined by its values on the generators. -/
+@[ext]
+theorem ringHom_ext {φ ψ : LazardRing →+* R} (h : ∀ n, φ (generator n) = ψ (generator n)) :
+    φ = ψ :=
+  homEquiv.injective (funext h)
+
+/-- The Lazard coordinates of a base change are the images of the Lazard coordinates. -/
+theorem comp_homEquiv_symm {S : Type*} [CommRing S] (g : R →+* S) (v : ℕ+ → R) :
+    g.comp (homEquiv.symm v) = homEquiv.symm (g ∘ v) :=
+  ringHom_ext fun n ↦ by simp
+
+end homEquiv
+
 /-- The Lazard ring is an integral domain, transferred from `ℤ[x₁, x₂, …]` via Lazard's polynomial
 presentation (`TauCeti.LazardRing.mvPolynomialEquiv`). -/
 instance : IsDomain LazardRing :=
@@ -205,6 +273,47 @@ theorem mvPolynomialEquiv_mem_grading_iff {p : MvPolynomial ℕ+ ℤ} {n : ℕ} 
   -- homogeneity; `φ p` unfolds to `mvPolynomialEquiv p` by construction of `φ`.
   exact (MvPolynomial.mem_weightedHomogeneousSubmodule ℤ w n p).1
     ((Graded.map_mem_iff_of_injective φ mvPolynomialEquiv.injective).1 hp)
+
+/-- `TauCeti.LazardRing.mvPolynomialEquiv` carries the ideal of variables onto the augmentation
+ideal. -/
+theorem mvPolynomialEquiv_mem_augmentationIdeal_iff {p : MvPolynomial ℕ+ ℤ} :
+    mvPolynomialEquiv p ∈ augmentationIdeal ↔ p ∈ MvPolynomial.idealOfVars ℕ+ ℤ := by
+  rw [mem_augmentationIdeal, augmentation_mvPolynomialEquiv, ← RingHom.mem_ker,
+    MvPolynomial.ker_constantCoeff]
+
+/-- `TauCeti.LazardRing.mvPolynomialEquiv` carries the `k`-th power of the ideal of variables onto
+the `k`-th power of the augmentation ideal. -/
+@[simp]
+theorem mvPolynomialEquiv_mem_pow_augmentationIdeal_iff {p : MvPolynomial ℕ+ ℤ} {k : ℕ} :
+    mvPolynomialEquiv p ∈ augmentationIdeal ^ k ↔ p ∈ MvPolynomial.idealOfVars ℕ+ ℤ ^ k := by
+  have hcomap : augmentationIdeal.comap mvPolynomialEquiv.toRingEquiv =
+      MvPolynomial.idealOfVars ℕ+ ℤ :=
+    Ideal.ext fun _ ↦ mvPolynomialEquiv_mem_augmentationIdeal_iff
+  rw [← AlgEquiv.coe_toRingEquiv, ← Ideal.mem_comap (f := mvPolynomialEquiv.toRingEquiv),
+    ← Ideal.map_symm, Ideal.map_pow, Ideal.map_symm, hcomap]
+
+/-- Any homogeneous element `z ∈ Lₘ` in the square of the augmentation ideal involves only
+variables `X k` with `2k < m` under `mvPolynomialEquiv.symm`. -/
+theorem two_mul_lt_of_mem_vars_mvPolynomialEquiv_symm {m : ℕ} {z : LazardRing}
+    (hz : z ∈ grading m) (hz2 : z ∈ augmentationIdeal ^ 2) {k : ℕ+}
+    (hk : k ∈ (mvPolynomialEquiv.symm z).vars) : 2 * (k : ℕ) < m := by
+  have hhom : (mvPolynomialEquiv.symm z).IsWeightedHomogeneous (fun j : ℕ+ ↦ 2 * (j : ℕ)) m := by
+    rwa [← mvPolynomialEquiv_mem_grading_iff, AlgEquiv.apply_symm_apply]
+  have hdeg : mvPolynomialEquiv.symm z ∈ MvPolynomial.idealOfVars ℕ+ ℤ ^ 2 := by
+    rwa [← mvPolynomialEquiv_mem_pow_augmentationIdeal_iff, AlgEquiv.apply_symm_apply]
+  exact hhom.apply_lt_of_mem_sq_idealOfVars (fun j ↦ Nat.mul_pos Nat.zero_lt_two j.pos) hdeg hk
+
+/-- **Triangularity of homogeneous lifts of `c • xₙ`.** If `y ∈ L₂ₙ` satisfies
+`y ≡ c • xₙ (mod I²)`, then `mvPolynomialEquiv.symm y - c • X n` involves only variables `X k` with
+`k < n`. -/
+theorem lt_of_mem_vars_mvPolynomialEquiv_symm_sub_smul_X {n : ℕ+} {y : LazardRing} {c : ℤ}
+    (hy : y ∈ grading (2 * (n : ℕ))) (hyc : y - c • generator n ∈ augmentationIdeal ^ 2)
+    {k : ℕ+} (hk : k ∈ (mvPolynomialEquiv.symm y - c • MvPolynomial.X n).vars) : k < n := by
+  have hsymm : mvPolynomialEquiv.symm (y - c • generator n) =
+      mvPolynomialEquiv.symm y - c • MvPolynomial.X n := by simp
+  have hlt := two_mul_lt_of_mem_vars_mvPolynomialEquiv_symm
+    (sub_mem hy (zsmul_mem (generator_mem_grading n) c)) hyc (hsymm ▸ hk)
+  exact (PNat.coe_lt_coe k n).1 (Nat.lt_of_mul_lt_mul_left hlt)
 
 /-- Ring homomorphisms out of the Lazard ring lift along surjective ring homomorphisms: every
 `g : L →+* S` factors as `f.comp g'` through any surjection `f : R →+* S`. -/

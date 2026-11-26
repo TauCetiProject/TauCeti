@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Uniform
+public import Mathlib.Analysis.InnerProductSpace.Convex
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Module.Dual.Basic
@@ -23,7 +24,8 @@ the canonical image is norm dense in the bidual. For a Banach space this image i
 closed, because the canonical map is an isometry, and so the canonical map is onto.
 
 Uniform convexity passes to every subspace with the induced norm, so the Milman–Pettis theorem
-applies to every closed subspace of a uniformly convex Banach space.
+applies to every closed subspace of a uniformly convex Banach space. Inner-product spaces over
+`ℝ` or `ℂ` are uniformly convex, so every complete inner-product space is reflexive.
 
 ## Main results
 
@@ -32,6 +34,8 @@ applies to every closed subspace of a uniformly convex Banach space.
 * `TauCeti.denseRange_inclusionInDoubleDual_of_uniformConvexSpace`: the canonical image of a
   uniformly convex space is norm dense in its bidual.
 * `TauCeti.surjective_inclusionInDoubleDual_of_uniformConvexSpace`: the Milman–Pettis theorem.
+* `TauCeti.surjective_inclusionInDoubleDual_of_innerProductSpace`: a complete inner-product space
+  is reflexive.
 * `Submodule.uniformConvexSpace`: a subspace of a uniformly convex space is uniformly convex.
 
 ## Implementation notes
@@ -82,8 +86,8 @@ theorem exists_norm_le_norm_sub_inclusionInDoubleDual_le_of_uniformConvexSpace
   -- A functional of norm at most one on which the real part of `φ` is almost its norm.
   obtain ⟨f, hf, hφf⟩ : ∃ f : StrongDual 𝕜 E, ‖f‖ ≤ 1 ∧ r - δ / 2 < re (φ f) := by
     by_contra! h
-    have hbound := StrongDual.re_apply_add_mul_norm_le (f := φ) (x := 0)
-      (r := 1) zero_le_one (fun f hf ↦ h f
+    have hbound := (StrongDual.re_apply_add_mul_norm_le_iff (f := φ) (x := 0)
+      (r := 1) zero_le_one).2 (fun f hf ↦ h f
         ((mem_closedBall_zero_iff (E := StrongDual 𝕜 E)).mp hf))
     simp only [map_zero, zero_add, one_mul] at hbound
     linarith
@@ -150,5 +154,17 @@ theorem surjective_inclusionInDoubleDual_of_uniformConvexSpace [CompleteSpace E]
     (inclusionInDoubleDualLi 𝕜 (E := E)).isometry.isUniformInducing.isComplete_range.isClosed
   rw [← range_eq_univ, ← hclosed.closure_eq]
   exact denseRange_inclusionInDoubleDual_of_uniformConvexSpace.closure_range
+
+omit [UniformConvexSpace E] in
+/-- A complete inner-product space over `ℝ` or `ℂ` is reflexive: its canonical map into the
+continuous bidual is surjective. It is uniformly convex, so the Milman–Pettis theorem applies. -/
+theorem surjective_inclusionInDoubleDual_of_innerProductSpace {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] [CompleteSpace F] :
+    Surjective (inclusionInDoubleDual 𝕜 F) := by
+  -- Uniform convexity is a property of the norm, so it can be read off the real inner product.
+  have : UniformConvexSpace F := by
+    let := InnerProductSpace.rclikeToReal 𝕜 F
+    infer_instance
+  exact surjective_inclusionInDoubleDual_of_uniformConvexSpace
 
 end TauCeti

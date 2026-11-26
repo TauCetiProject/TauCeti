@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Artinian
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.FinitePresentation
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 
 /-!

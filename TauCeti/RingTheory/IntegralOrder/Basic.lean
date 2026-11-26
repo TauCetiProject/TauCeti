@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Matrix
 public import Mathlib.Algebra.Algebra.Subalgebra.MulOpposite
 public import Mathlib.Algebra.Module.Lattice.Full
 public import Mathlib.Algebra.MonoidAlgebra.Module
+public import Mathlib.Data.Matrix.Basis
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 public import TauCeti.LinearAlgebra.BilinearForm.Dual.Lattice
 public import TauCeti.RingTheory.Trace.Regular
@@ -43,6 +45,7 @@ whose regular trace form vanishes, although the conclusion holds there via the r
 * `TauCeti.IntegralOrder.isOrder_iff`: `Λ` is an order iff it is finite over `R` and spans `E`.
 * `TauCeti.IntegralOrder.isOrder_op_iff`: `Λᵒᵖ` is an order in `Eᵐᵒᵖ` iff `Λ` is an order in `E`.
 * `TauCeti.IntegralOrder.IsOrder.isIntegral`: every element of an order is integral over `R`.
+* `TauCeti.IntegralOrder.not_isOrder_top_rat`: `ℚ` is not a `ℤ`-order in itself.
 * `TauCeti.IntegralOrder.IsOrder.le_integralClosure`: in a commutative algebra, every order lies in
   the integral closure of `R`.
 * `TauCeti.IntegralOrder.toSubmodule_le_dualSubmodule_regularTraceForm`: over an integrally closed
@@ -54,6 +57,8 @@ whose regular trace form vanishes, although the conclusion holds there via the r
 * `TauCeti.IntegralOrder.mem_groupRingSubalgebra`: `x ∈ F[G]` lies in `R[G]` iff all its
   coefficients come from `R`.
 * `TauCeti.IntegralOrder.groupRing_isOrder`: `R[G]` is an order in `F[G]` for a finite monoid `G`.
+* `TauCeti.IntegralOrder.IsOrder.matrix`: if `Λ` is an order in `E`, the matrices with entries in
+  `Λ` form an order in `Matrix n n E`; in particular `M_n(R)` is an order in `M_n(F)`.
 * `TauCeti.IntegralOrder.integralClosure_isOrder`: the integral closure of an integrally closed
   noetherian `R` in a finite separable extension of `F` is an order.
 
@@ -160,6 +165,15 @@ theorem isOrder_iff_isFullLattice {Λ : Subalgebra R E} :
     fun h => ⟨IsLattice.fg F _, h.span_eq_top⟩⟩
 
 end Lattice
+
+/-- The subring `ℚ ⊆ ℚ` spans `ℚ`, but it is not finitely generated over `ℤ`, so it is not an
+order: `1 / 2` would be integral over `ℤ`, hence an integer. -/
+theorem not_isOrder_top_rat : ¬IsOrder ℚ (⊤ : Subalgebra ℤ ℚ) := fun h => by
+  obtain ⟨n, hn⟩ :=
+    IsIntegrallyClosed.isIntegral_iff.1 (h.isIntegral (x := (1 / 2 : ℚ)) Algebra.mem_top)
+  have hden := congrArg Rat.den hn
+  rw [eq_intCast, Rat.den_intCast] at hden
+  norm_num at hden
 
 section Integral
 
@@ -275,5 +289,44 @@ theorem groupRing_isOrder [Finite G] : IsOrder F (groupRingSubalgebra R F G) := 
       simpa using single_one_mem_groupRingSubalgebra (R := R) g
 
 end GroupRing
+
+section Matrix
+
+/-- The matrices with entries in a subalgebra `S` are the image of the matrices over `S` under
+`S.val.mapMatrix`. -/
+theorem _root_.Subalgebra.toSubmodule_matrix_eq_range_mapMatrix {R A n : Type*} [CommSemiring R]
+    [Semiring A] [Algebra R A] [Fintype n] [DecidableEq n] (S : Subalgebra R A) :
+    Subalgebra.toSubmodule (S.matrix : Subalgebra R (Matrix n n A)) =
+      LinearMap.range (S.val.mapMatrix : Matrix n n S →ₐ[R] Matrix n n A).toLinearMap :=
+  le_antisymm (fun M hM => ⟨fun i j => ⟨M i j, hM i j⟩, rfl⟩) <| by
+    rintro _ ⟨N, rfl⟩ i j
+    exact (N i j).property
+
+variable {R F E : Type*} [CommRing R] [CommRing F] [Ring E] [Algebra F E] [Algebra R E]
+  {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- **Matrix orders.** If `Λ` is an `R`-order in `E`, then the matrices with entries in `Λ` form an
+`R`-order in the matrix algebra `Matrix n n E`. For `Λ = R` in `E = F` this is the order `M_n(R)`
+in `M_n(F)`. -/
+theorem IsOrder.matrix {Λ : Subalgebra R E} (h : IsOrder F Λ) :
+    IsOrder F (Λ.matrix : Subalgebra R (Matrix n n E)) := by
+  have := h.finite
+  refine ⟨?_, eq_top_iff.2 fun M _ => ?_⟩
+  · -- the matrices over `Λ` are the image of the finite module `Matrix n n Λ = n → n → Λ`
+    have : Module.Finite R (Matrix n n Λ) := inferInstanceAs (Module.Finite R (n → n → Λ))
+    rw [Subalgebra.toSubmodule_matrix_eq_range_mapMatrix]
+    exact Submodule.fg_range _
+  -- every matrix is a sum of matrix units `single i j x` with `x` in the `F`-span of `Λ`
+  rw [Matrix.matrix_eq_sum_single M]
+  refine sum_mem fun i _ => sum_mem fun j _ => ?_
+  have hx : M i j ∈ span F (Λ : Set E) := h.span_eq_top ▸ mem_top
+  generalize M i j = x at hx
+  induction hx using Submodule.span_induction with
+  | mem x hx => exact subset_span (Matrix.single_mem_matrix Λ.zero_mem |>.2 hx)
+  | zero => simp
+  | add x y _ _ hx hy => rw [Matrix.single_add]; exact add_mem hx hy
+  | smul c x _ hx => rw [← Matrix.smul_single]; exact smul_mem _ c hx
+
+end Matrix
 
 end TauCeti.IntegralOrder

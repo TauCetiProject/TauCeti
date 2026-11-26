@@ -8,16 +8,17 @@ module
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import TauCeti.Topology.Algebra.Module.Complement
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Analysis.Normed.Group.Quotient
 import Mathlib.Topology.MetricSpace.Sequences
-import TauCeti.Analysis.Normed.Module.RieszLemma
 
 /-!
 # Closed-range operators and their a priori estimate
 
 A continuous linear map `T : E →L[𝕜] F` between normed spaces has closed range as soon as every
 bounded sequence whose `T`-images converge has a convergent subsequence. This sequential criterion
-needs no completeness and no complement of the kernel: it chooses preimages almost as far from
-`ker T` as their norm by the translated Riesz lemma `TauCeti.riesz_lemma_translate`.
+needs no completeness and no complement of the kernel. Applied only to sequences whose images tend
+to zero, the same hypothesis bounds the quotient norm modulo `ker T` by a multiple of `‖T x‖`; the
+closed-range criterion follows by choosing preimages of almost minimal norm.
 
 Conversely, a closed-range operator `T` between Banach spaces fails to be bounded below only in
 the direction of its kernel. When that kernel is complemented, this file makes the failure
@@ -31,6 +32,8 @@ such as `ℝ` or `ℂ`, the finite-rank projection `P` is a compact operator.
 
 ## Main declarations
 
+* `ContinuousLinearMap.exists_norm_quotientMk_ker_le_of_exists_subseq_tendsto`: the quotient
+  estimate `‖[x]‖ ≤ C * ‖T x‖` modulo `ker T` from the sequential criterion.
 * `ContinuousLinearMap.isClosed_range_of_exists_subseq_tendsto`: the sequential closed-range
   criterion, over any nontrivially normed field and without completeness.
 * `ContinuousLinearMap.exists_norm_le_mul_norm_of_mem`: a closed-range operator is bounded below
@@ -42,6 +45,8 @@ such as `ℝ` or `ℂ`, the finite-rank projection `P` is a compact operator.
   kernel.
 * `ContinuousLinearMap.tendsto_subseq_of_cauchySeq_comp`: when the kernel is moreover
   finite-dimensional, a bounded sequence whose image is Cauchy has a convergent subsequence.
+* `ContinuousLinearMap.not_cauchySeq_comp_of_le_dist`: consequently, such an operator is not
+  Cauchy along a bounded sequence whose terms stay a fixed distance apart under a continuous map.
 
 `TauCeti.Analysis.Fredholm.Proper` uses the estimate below to prove
 that a map with Fredholm derivative is proper near a point (Smale, *An infinite dimensional version
@@ -62,6 +67,53 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 variable {X₁ : Submodule 𝕜 E}
 
 open Filter Topology in
+/-- **Quotient estimate from the sequential criterion.** If every bounded sequence whose `T`-images
+tend to zero has a convergent subsequence, then the quotient norm of `x` modulo `ker T`, that is
+the distance from `x` to `ker T`, is at most a constant multiple of `‖T x‖`. Neither space needs
+to be complete. -/
+theorem exists_norm_quotientMk_ker_le_of_exists_subseq_tendsto (T : E →L[𝕜] F)
+    (hT : ∀ {R : ℝ} {v : ℕ → E}, (∀ n, ‖v n‖ ≤ R) → Tendsto (fun n ↦ T (v n)) atTop (𝓝 0) →
+      ∃ (x : E) (ψ : ℕ → ℕ), StrictMono ψ ∧ Tendsto (fun n ↦ v (ψ n)) atTop (𝓝 x)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x, ‖(Submodule.Quotient.mk x : E ⧸ T.ker)‖ ≤ C * ‖T x‖ := by
+  by_contra! hcon
+  obtain ⟨a, ha⟩ := NormedField.exists_one_lt_norm 𝕜
+  -- Counterexamples, normalized to quotient norm in a fixed shell, with bounded representatives.
+  have hshell : ∀ n : ℕ, ∃ x : E, ‖x‖ ≤ 2 ∧
+      ‖a‖⁻¹ ≤ ‖(Submodule.Quotient.mk x : E ⧸ T.ker)‖ ∧ ‖T x‖ ≤ 1 / (n + 1) := by
+    intro n
+    obtain ⟨y, hy⟩ := hcon (n + 1) (by positivity)
+    set q : E ⧸ T.ker := Submodule.Quotient.mk y
+    obtain ⟨d, -, hdlt, hdge, -⟩ :=
+      rescale_to_shell_semi_normed ha one_pos
+        ((by positivity : (0 : ℝ) ≤ (n + 1) * ‖T y‖).trans_lt hy).ne'
+    obtain ⟨x, hx, hxlt⟩ := Submodule.Quotient.norm_mk_lt (d • q) one_pos
+    have hmem : x - d • y ∈ T.ker :=
+      (Submodule.Quotient.eq _).1 (by rw [hx, Submodule.Quotient.mk_smul])
+    have hTx : T x = d • T y := by
+      rw [← map_smul, ← sub_eq_zero, ← map_sub]
+      exact LinearMap.mem_ker.1 hmem
+    refine ⟨x, by linarith, by simpa [hx] using hdge, ?_⟩
+    rw [hTx, norm_smul, le_div_iff₀ (by positivity)]
+    calc ‖d‖ * ‖T y‖ * (n + 1) = ‖d‖ * ((n + 1) * ‖T y‖) := by ring
+      _ ≤ ‖d‖ * ‖q‖ := by gcongr
+      _ = ‖d • q‖ := (norm_smul d q).symm
+      _ ≤ 1 := hdlt.le
+  choose v hvbound hvge hTv using hshell
+  have hTv0 := squeeze_zero_norm hTv tendsto_one_div_add_atTop_nhds_zero_nat
+  obtain ⟨x, ψ, hψ, hx⟩ := hT hvbound hTv0
+  have hxker : x ∈ T.ker := LinearMap.mem_ker.mpr <|
+    tendsto_nhds_unique ((T.continuous.tendsto x).comp hx) (hTv0.comp hψ.tendsto_atTop)
+  -- The classes of the subsequence converge to the class of `x ∈ ker T`, which is zero.
+  have hmk : Tendsto (fun n ↦ (Submodule.Quotient.mk (v (ψ n)) : E ⧸ T.ker)) atTop (𝓝 0) := by
+    have hx0 : (Submodule.Quotient.mk x : E ⧸ T.ker) = 0 :=
+      (Submodule.Quotient.mk_eq_zero _).2 hxker
+    simpa only [Function.comp_def, Submodule.coe_mkQL, Submodule.mkQ_apply, hx0] using
+      (T.ker.mkQL.continuous.tendsto x).comp hx
+  have hge : ‖a‖⁻¹ ≤ 0 := by
+    simpa using ge_of_tendsto' hmk.norm fun n ↦ hvge (ψ n)
+  exact hge.not_gt (by positivity)
+
+open Filter Topology in
 /-- **Sequential closed-range criterion.** If every bounded sequence whose `T`-images converge
 has a convergent subsequence, then `T` has closed range. Neither space needs to be complete. -/
 theorem isClosed_range_of_exists_subseq_tendsto (T : E →L[𝕜] F)
@@ -69,54 +121,24 @@ theorem isClosed_range_of_exists_subseq_tendsto (T : E →L[𝕜] F)
       Tendsto (fun n ↦ T (v n)) atTop (𝓝 y) →
       ∃ (x : E) (ψ : ℕ → ℕ), StrictMono ψ ∧ Tendsto (fun n ↦ v (ψ n)) atTop (𝓝 x)) :
     IsClosed (T.range : Set F) := by
-  -- Each point of the range has a preimage almost as far from `ker T` as its norm, by
-  -- `TauCeti.riesz_lemma_translate`; the subsequence hypothesis bounds the norms of such
-  -- preimages by a multiple of the norms of their images, so the preimages of a convergent
-  -- sequence are bounded.
-  -- `T` is bounded below on vectors almost as far from `ker T` as their norm.
-  obtain ⟨C, hC0, hC⟩ : ∃ C : ℝ, 0 ≤ C ∧
-      ∀ w : E, (∀ z ∈ T.ker, 2⁻¹ * ‖w‖ ≤ ‖w - z‖) → ‖w‖ ≤ C * ‖T w‖ := by
-    by_contra! hcon
-    obtain ⟨a, ha⟩ := NormedField.exists_one_lt_norm 𝕜
-    have hshell : ∀ n : ℕ, ∃ u : E, (∀ z ∈ T.ker, 2⁻¹ * ‖u‖ ≤ ‖u - z‖) ∧ ‖u‖ ≤ 1 ∧
-        ‖a‖⁻¹ ≤ ‖u‖ ∧ ‖T u‖ ≤ 1 / (n + 1) := by
-      intro n
-      obtain ⟨w, hw, hlt⟩ := hcon (n + 1) (by positivity)
-      have hw0 : w ≠ 0 := by rintro rfl; simp at hlt
-      obtain ⟨d, hd0, hdlt, hdge, _⟩ := rescale_to_shell ha one_pos hw0
-      refine ⟨d • w, fun z hz ↦ ?_, hdlt.le, by simpa using hdge, ?_⟩
-      · calc 2⁻¹ * ‖d • w‖ = ‖d‖ * (2⁻¹ * ‖w‖) := by rw [norm_smul]; ring
-          _ ≤ ‖d‖ * ‖w - d⁻¹ • z‖ := by gcongr; exact hw _ (T.ker.smul_mem _ hz)
-          _ = ‖d • w - z‖ := by rw [← norm_smul, smul_sub, smul_inv_smul₀ hd0]
-      · calc ‖T (d • w)‖ = ‖d‖ * ‖T w‖ := by rw [map_smul, norm_smul]
-          _ ≤ ‖d‖ * (‖w‖ / (n + 1)) := by
-            gcongr
-            rw [le_div_iff₀ (by positivity), mul_comm]
-            exact hlt.le
-          _ = 1 / (n + 1) * ‖d • w‖ := by rw [norm_smul]; ring
-          _ ≤ 1 / (n + 1) := mul_le_of_le_one_right (by positivity) hdlt.le
-    choose u hu hule huge hTu using hshell
-    have hTu0 := squeeze_zero_norm hTu tendsto_one_div_add_atTop_nhds_zero_nat
-    obtain ⟨x, ψ, hψ, hx⟩ := hT hule hTu0
-    have hxker : x ∈ T.ker := LinearMap.mem_ker.mpr <|
-      tendsto_nhds_unique ((T.continuous.tendsto x).comp hx) (hTu0.comp hψ.tendsto_atTop)
-    -- `‖u (ψ n)‖ ≤ 2 * ‖u (ψ n) - x‖ → 0`, although `‖u (ψ n)‖ ≥ ‖a‖⁻¹`.
-    have hlim : Tendsto (fun n ↦ 2 * ‖u (ψ n) - x‖) atTop (𝓝 0) := by
-      simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hx).const_mul 2
-    have hge : ‖a‖⁻¹ ≤ 0 := ge_of_tendsto' hlim fun n ↦
-      (huge (ψ n)).trans (by linarith [hu (ψ n) x hxker])
-    exact hge.not_gt (by positivity)
+  -- The quotient estimate gives preimages whose norms are bounded by a multiple of the norms of
+  -- their images, so the preimages of a convergent sequence are bounded.
+  obtain ⟨C, hC0, hC⟩ := T.exists_norm_quotientMk_ker_le_of_exists_subseq_tendsto hT
   refine isSeqClosed_iff_isClosed.mp fun y z hy hyz ↦ ?_
-  -- Replace arbitrary preimages by preimages almost as far from `ker T` as their norm.
-  have hpre : ∀ n, ∃ w : E, T w = y n ∧ ∀ z ∈ T.ker, 2⁻¹ * ‖w‖ ≤ ‖w - z‖ := fun n ↦ by
+  -- Replace arbitrary preimages by preimages of almost minimal norm.
+  have hpre : ∀ n, ∃ w : E, T w = y n ∧ ‖w‖ ≤ C * ‖y n‖ + 1 := fun n ↦ by
     obtain ⟨x, hx⟩ := hy n
-    obtain ⟨k, hk, hk'⟩ := TauCeti.riesz_lemma_translate T.isClosed_ker x (r := 2⁻¹) (by norm_num)
-    have hk0 : T k = 0 := hk
-    exact ⟨x - k, by rw [map_sub, hk0, sub_zero]; exact hx, hk'⟩
+    have hx' : T x = y n := hx
+    obtain ⟨w, hw, hwlt⟩ :=
+      Submodule.Quotient.norm_mk_lt (Submodule.Quotient.mk x : E ⧸ T.ker) one_pos
+    have hmem : w - x ∈ T.ker := (Submodule.Quotient.eq _).1 hw
+    refine ⟨w, ?_, by linarith [hx' ▸ hC x]⟩
+    rw [← hx', ← sub_eq_zero, ← map_sub]
+    exact LinearMap.mem_ker.1 hmem
   choose w hTw hw using hpre
   obtain ⟨R, hR⟩ := hyz.norm.bddAbove_range
-  have hwle (n : ℕ) : ‖w n‖ ≤ C * R :=
-    (hC _ (hw n)).trans (by rw [hTw]; exact mul_le_mul_of_nonneg_left (hR ⟨n, rfl⟩) hC0)
+  have hwle (n : ℕ) : ‖w n‖ ≤ C * R + 1 :=
+    (hw n).trans (by gcongr; exact hR ⟨n, rfl⟩)
   obtain ⟨x, ψ, hψ, hx⟩ := hT hwle (by simpa only [hTw] using hyz)
   exact ⟨x, tendsto_nhds_unique ((T.continuous.tendsto x).comp hx)
     (by simpa only [Function.comp_def, hTw] using hyz.comp hψ.tendsto_atTop)⟩
@@ -209,5 +231,20 @@ theorem tendsto_subseq_of_cauchySeq_comp [ProperSpace 𝕜] (T : E →L[𝕜] F)
       gcongr
       simpa using h₂
     _ = ε := by field_simp
+
+open Filter in
+/-- **A closed-range operator with finite-dimensional complemented kernel has no separated
+approximate kernel.** If `x` is a bounded sequence whose images under a continuous map `P` stay at
+least `δ > 0` apart, then `T ∘ x` is not Cauchy; in particular `T (x n)` does not tend to `0`. -/
+theorem not_cauchySeq_comp_of_le_dist [ProperSpace 𝕜] (T : E →L[𝕜] F)
+    (hclosed : IsClosed (T.range : Set F)) (hfinite : FiniteDimensional 𝕜 T.ker)
+    (hcompl : T.ker.ClosedComplemented) {G : Type*} [PseudoMetricSpace G] {P : E → G}
+    (hP : Continuous P) {x : ℕ → E} (hx : Bornology.IsBounded (Set.range x)) {δ : ℝ}
+    (hδ : 0 < δ) (hsep : ∀ m n, m ≠ n → δ ≤ dist (P (x m)) (P (x n))) :
+    ¬ CauchySeq (T ∘ x) := by
+  intro hTx
+  obtain ⟨a, φ, hφ, hlim⟩ := T.tendsto_subseq_of_cauchySeq_comp hclosed hfinite hcompl hx hTx
+  obtain ⟨N, hN⟩ := Metric.cauchySeq_iff'.1 ((hP.tendsto a).comp hlim).cauchySeq δ hδ
+  exact (hN (N + 1) N.le_succ).not_ge (hsep _ _ (hφ N.lt_succ_self).ne')
 
 end ContinuousLinearMap

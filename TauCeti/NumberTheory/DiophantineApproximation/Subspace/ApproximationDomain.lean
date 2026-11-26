@@ -11,7 +11,8 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
 
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.LinearAlgebra.Dual.AbsoluteValue
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
@@ -202,16 +203,10 @@ private theorem exists_forall_mem_approxModule_apply_le [Finite ι] [NumberField
     (hL : LinearIndependent K (L v.val)) :
     ∃ R : ℝ, 0 ≤ R ∧ ∀ x ∈ approxModule S₀ L c Q, ∀ j, v (x j) ≤ R := by
   have : Fintype ι := Fintype.ofFinite ι
-  obtain ⟨a, ha⟩ := hL.exists_sum_smul_eq_proj
-  refine ⟨∑ j, ∑ i, v (a j i) * |Q| ^ c v.val i, by positivity, fun x hx j ↦ ?_⟩
-  have hxj : x j = ∑ i, a j i * L v.val i x := by
-    simpa using (LinearMap.congr_fun (ha j) x).symm
-  rw [hxj]
-  refine (AbsoluteValue.sum_le _ _ _).trans <| le_trans ?_ <| Finset.single_le_sum
-    (f := fun j ↦ ∑ i, v (a j i) * |Q| ^ c v.val i) (fun _ _ ↦ by positivity) (Finset.mem_univ j)
-  refine Finset.sum_le_sum fun i _ ↦ ?_
-  rw [map_mul]
-  exact mul_le_mul_of_nonneg_left ((mem_approxModule.1 hx).1 v hv i) (apply_nonneg _ _)
+  obtain ⟨D, hD0, hD⟩ := hL.exists_forall_abv_apply_le_mul v.val
+  refine ⟨D * ∑ i, |Q| ^ c v.val i, by positivity, fun x hx j ↦ hD x _ (fun i ↦ ?_) j⟩
+  exact ((mem_approxModule.1 hx).1 v hv i).trans <| Finset.single_le_sum
+    (f := fun i ↦ |Q| ^ c v.val i) (fun _ _ ↦ by positivity) (Finset.mem_univ i)
 
 /-- The body of an approximation domain is convex. -/
 theorem convex_approxBody (L : AbsoluteValue K ℝ → ι → Dual K (ι → K))
@@ -458,7 +453,7 @@ theorem approxDomain_subset_abs {S₀ : Finset (FinitePlace K)}
     approxDomain S₀ L c Q ⊆
       approxDomain S₀ L (fun v i ↦ |c v i|) (max Q₂ Q₁⁻¹) := by
   have hpow (a : ℝ) : Q ^ a ≤ max Q₂ Q₁⁻¹ ^ |a| :=
-    Real.rpow_le_rpow_abs (hQ₁.trans_le hQ.1) (hQ.2.trans (le_max_left _ _))
+    Real.rpow_le_rpow_abs (hQ₁.trans_le hQ.1).le (hQ.2.trans (le_max_left _ _))
       (((inv_le_inv₀ (hQ₁.trans_le hQ.1) hQ₁).mpr hQ.1).trans (le_max_right _ _)) a
   intro x hx
   obtain ⟨hinf, hfin, hout⟩ := mem_approxDomain.mp hx

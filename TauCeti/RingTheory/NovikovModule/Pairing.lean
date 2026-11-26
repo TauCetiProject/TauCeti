@@ -36,14 +36,19 @@ coordinates by `⟨a, b⟩ = ∑ᵢ ∑ⱼ aᵢ bⱼ Gᵢⱼ`.
   bilinear map `Matrix.toLinearMap₂` of `G` in the reference bases
   (`TauCeti.NovikovModule.novikovPairingOfMatrix_eq_toLinearMap₂`), and through the coordinates it
   is the bilinear form `(v, w) ↦ v ⬝ᵥ (G *ᵥ w)` of Mathlib's `Matrix.toLinearMap₂'`
-  (`TauCeti.NovikovModule.novikovPairingOfMatrix_eq_compl₁₂`).
+  (`TauCeti.NovikovModule.novikovPairingOfMatrix_eq_compl₁₂`). For a constant Gram matrix `g`,
+  on generators `⟨e_i e^h, f_j e^h'⟩ = g i j e^(h + h')`
+  (`TauCeti.NovikovModule.novikovPairingOfMatrix_map_algebraMap_single_single`), and the flipped
+  pairing is the pairing of the transposed matrix
+  (`TauCeti.NovikovModule.flip_novikovPairingOfMatrix`).
 * **Perfectness.** For a commutative ring `R` and a square matrix `G` (`ι₁ = ι₂ = ι`), the pairing
   of `G` is perfect, that is, both maps `M₁ → Dual Λ M₂` and `M₂ → Dual Λ M₁` are bijective,
   exactly when `det G` is a unit of `Λ`
   (`TauCeti.NovikovModule.isPerfPair_novikovPairingOfMatrix_iff`). In particular the pairing of a
-  constant Gram matrix `g : Matrix ι ι R` with unit determinant, such as the invertible rational
-  Gram matrix of a perfect pairing of graded rational vector spaces in a basis, is perfect
-  (`TauCeti.NovikovModule.isPerfPair_novikovPairingOfMatrix_map_algebraMap`).
+  constant Gram matrix `g : Matrix ι ι R` is perfect exactly when `det g` is a unit of `R`
+  (`TauCeti.NovikovModule.isPerfPair_novikovPairingOfMatrix_map_algebraMap_iff`), so the invertible
+  rational Gram matrix of a perfect pairing of graded rational vector spaces in a basis stays
+  perfect over the Novikov ring.
 * **Filtration shift and continuity.** If every entry `G i j` lies in the period filtration at level
   `c - F₁ (r₁ i) - F₂ (r₂ j)`, the pairing sends combinations vanishing above the potentials `D₁`
   and `D₂` to series vanishing below the period `c - D₁ - D₂`
@@ -228,6 +233,42 @@ theorem novikovPairingOfMatrix_injective :
   simpa only [toMatrix₂_novikovPairingOfMatrix] using
     congrArg (LinearMap.toMatrix₂ (basis hF₁ r₁) (basis hF₂ r₂)) h
 
+/-- **The Novikov pairing on generators.** The pairing of the point masses `x` at a generator `p`
+of the orbit `i` and `y` at a generator `q` of the orbit `j` is the monomial
+`x y e^((p -ᵥ r₁ i) + (q -ᵥ r₂ j))` times the entry `G i j`. -/
+theorem novikovPairingOfMatrix_single_single [DecidableEq (Σ i, P₁ i)] [DecidableEq (Σ j, P₂ j)]
+    (G : Matrix ι₁ ι₂ (NovikovSeries R H N))
+    (i : ι₁) (p : P₁ i) (j : ι₂) (q : P₂ j) (x y : R) :
+    novikovPairingOfMatrix hF₁ hF₂ r₁ r₂ G (single ⟨i, p⟩ x) (single ⟨j, q⟩ y) =
+      NovikovSeries.single ((p -ᵥ r₁ i) + (q -ᵥ r₂ j)) (x * y) * G i j := by
+  classical
+  simp [novikovPairingOfMatrix_apply, Pi.single_apply, NovikovSeries.single_mul_single]
+
+/-- **The pairing of a constant Gram matrix on generators.** For the matrix of constant series
+`g i j`, the pairing of the point masses `x` at a generator `p` of the orbit `i` and `y` at a
+generator `q` of the orbit `j` is the monomial `x y g i j e^((p -ᵥ r₁ i) + (q -ᵥ r₂ j))`: on
+generators, `⟨e_i e^h, f_j e^h'⟩ = g i j e^(h + h')`. -/
+theorem novikovPairingOfMatrix_map_algebraMap_single_single [DecidableEq (Σ i, P₁ i)]
+    [DecidableEq (Σ j, P₂ j)] (g : Matrix ι₁ ι₂ R)
+    (i : ι₁) (p : P₁ i) (j : ι₂) (q : P₂ j) (x y : R) :
+    novikovPairingOfMatrix hF₁ hF₂ r₁ r₂ (g.map (algebraMap R (NovikovSeries R H N)))
+        (single ⟨i, p⟩ x) (single ⟨j, q⟩ y) =
+      NovikovSeries.single ((p -ᵥ r₁ i) + (q -ᵥ r₂ j)) (x * y * g i j) := by
+  rw [novikovPairingOfMatrix_single_single, Matrix.map_apply, NovikovSeries.algebraMap_self_apply,
+    NovikovSeries.single_mul_single, add_zero]
+
+/-- The flipped Novikov pairing of a matrix is the Novikov pairing of the transposed matrix. -/
+theorem flip_novikovPairingOfMatrix (G : Matrix ι₁ ι₂ (NovikovSeries R H N)) :
+    letI := module (R := R) hF₁
+    letI := module (R := R) hF₂
+    (novikovPairingOfMatrix hF₁ hF₂ r₁ r₂ G).flip =
+      novikovPairingOfMatrix hF₂ hF₁ r₂ r₁ G.transpose := by
+  let := module (R := R) hF₁
+  let := module (R := R) hF₂
+  refine (basis hF₂ r₂).ext fun j => (basis hF₁ r₁).ext fun i => ?_
+  rw [LinearMap.flip_apply, novikovPairingOfMatrix_basis, novikovPairingOfMatrix_basis,
+    Matrix.transpose_apply]
+
 end CommSemiring
 
 section Filtration
@@ -366,18 +407,19 @@ theorem isPerfPair_novikovPairingOfMatrix_iff (G : Matrix ι ι (NovikovSeries R
       (basis hF₁ r₁).isUnit_det_of_isPerfPair (basis hF₂ r₂) _ h
   · rwa [LinearMap.toMatrix₂_toLinearMap₂]
 
-/-- **The pairing of a constant invertible Gram matrix is perfect.** For a matrix `g` over the
-coefficient ring whose determinant is a unit, the Novikov pairing of the matrix of constant series
-`g i j` is a perfect pairing over the Novikov ring. Over a field, such as `ℚ`, the condition is
-`det g ≠ 0`. -/
-theorem isPerfPair_novikovPairingOfMatrix_map_algebraMap (g : Matrix ι ι R) (hg : IsUnit g.det) :
+/-- **The pairing of a constant Gram matrix is perfect exactly when the Gram matrix is
+invertible.** For a matrix `g` over the coefficient ring, the Novikov pairing of the matrix of
+constant series `g i j` is a perfect pairing over the Novikov ring exactly when `det g` is a unit
+of `R`, although the Novikov ring need not be a field or a domain. Over a field, such as `ℚ`, the
+condition is `det g ≠ 0`. -/
+theorem isPerfPair_novikovPairingOfMatrix_map_algebraMap_iff (g : Matrix ι ι R) :
     letI := module (R := R) hF₁
     letI := module (R := R) hF₂
     (novikovPairingOfMatrix hF₁ hF₂ r₁ r₂
-      (g.map (algebraMap R (NovikovSeries R H N)))).IsPerfPair :=
-  (isPerfPair_novikovPairingOfMatrix_iff hF₁ hF₂ r₁ r₂ _).2 <| by
-    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
-    exact hg.map _
+      (g.map (algebraMap R (NovikovSeries R H N)))).IsPerfPair ↔ IsUnit g.det :=
+  (isPerfPair_novikovPairingOfMatrix_iff hF₁ hF₂ r₁ r₂ _).trans <| by
+    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, NovikovSeries.algebraMap_self_apply,
+      NovikovSeries.isUnit_single_zero_iff]
 
 end Perfect
 

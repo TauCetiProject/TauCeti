@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import Mathlib.GroupTheory.Torsion
 import Mathlib.Data.Nat.Factorization.Basic
+import TauCeti.GroupTheory.Torsion
 
 /-!
 # Primary components of finite bilinear and quadratic modules
@@ -20,7 +21,9 @@ For a bilinear module, orthogonality follows because the value of the pairing on
 a `q`-primary element is annihilated by powers of both `p` and `q`.  Those powers are coprime when
 the primes are distinct.  The quadratic statements then follow from the polar identity.  Finite-sum
 versions record that both raw forms split as sums of their restrictions whenever the summands lie
-in pairwise distinct primary components.
+in pairwise distinct primary components. Primary components are also functorial: an isometry
+restricts to them, and the `p`-primary component of an orthogonal product is the orthogonal product
+of the `p`-primary components.
 
 ## Main results
 
@@ -34,6 +37,11 @@ in pairwise distinct primary components.
   pairing of primary decompositions is the sum of the component pairings.
 * `TauCeti.FiniteQuadraticModule.quadratic_sum_of_mem_primaryComponent`: a quadratic value on a
   sum of primary components is the sum of the component values.
+* `TauCeti.FiniteBilinearModule.Isometry.restrictPrimaryComponent` and
+  `TauCeti.FiniteQuadraticModule.Isometry.restrictPrimaryComponent`: an isometry restricts to an
+  isometry of `p`-primary components.
+* `TauCeti.FiniteQuadraticModule.restrictPrimaryComponentProdIsometry`: the `p`-primary component
+  of an orthogonal product is the orthogonal product of the `p`-primary components.
 
 ## References
 
@@ -157,6 +165,25 @@ theorem pairing_sum_eq_sum_pairing_of_mem_primaryComponent {ι : Type*}
       (hdistinct i hi j hj hji.symm) (hx i hi) (hy j hj)
   rw [Finset.sum_eq_single i hoff (fun hnot ↦ (hnot hi).elim), A.toBilin_apply]
 
+/-! ## Primary components under isometries -/
+
+variable {A} in
+/-- An isometry carries `p`-primary components onto `p`-primary components, so it restricts to an
+isometry between them. -/
+def Isometry.restrictPrimaryComponent {B : FiniteBilinearModule} (f : Isometry A B) (p : ℕ) :
+    Isometry (A.restrict (AddCommGroup.primaryComponent A p))
+      (B.restrict (AddCommGroup.primaryComponent B p)) :=
+  f.restrict fun x ↦ by
+    simp only [AddCommGroup.mem_primaryComponent, ← map_nsmul, EmbeddingLike.map_eq_zero_iff]
+
+variable {A} in
+/-- The restriction of an isometry to primary components acts as the isometry. -/
+@[simp]
+theorem Isometry.restrictHom_restrictPrimaryComponent_apply {B : FiniteBilinearModule}
+    (f : Isometry A B) (p : ℕ) (x : A.restrict (AddCommGroup.primaryComponent A p)) :
+    B.restrictHom _ (f.restrictPrimaryComponent p x) = f (A.restrictHom _ x) :=
+  f.restrictHom_restrict_apply _ x
+
 end FiniteBilinearModule
 
 namespace FiniteQuadraticModule
@@ -210,6 +237,52 @@ theorem quadratic_sum_of_mem_primaryComponent {ι : Type*}
         (fun j hj k hk hjk ↦ hdistinct j (Finset.mem_insert_of_mem hj) k
           (Finset.mem_insert_of_mem hk) hjk)
         (fun j hj ↦ hx j (Finset.mem_insert_of_mem hj))
+
+/-! ## Primary components under isometries and orthogonal products -/
+
+variable {A} in
+/-- An isometry carries `p`-primary components onto `p`-primary components, so it restricts to an
+isometry between them. -/
+def Isometry.restrictPrimaryComponent {B : FiniteQuadraticModule} (f : Isometry A B) (p : ℕ) :
+    Isometry (A.restrict (AddCommGroup.primaryComponent A p))
+      (B.restrict (AddCommGroup.primaryComponent B p)) :=
+  f.restrict fun x ↦ by
+    simp only [AddCommGroup.mem_primaryComponent, ← map_nsmul, EmbeddingLike.map_eq_zero_iff]
+
+variable {A} in
+/-- The restriction of an isometry to primary components acts as the isometry. -/
+@[simp]
+theorem Isometry.restrictHom_restrictPrimaryComponent_apply {B : FiniteQuadraticModule}
+    (f : Isometry A B) (p : ℕ) (x : A.restrict (AddCommGroup.primaryComponent A p)) :
+    B.restrictHom _ (f.restrictPrimaryComponent p x) = f (A.restrictHom _ x) :=
+  f.restrictHom_restrict_apply _ x
+
+/-- **The `p`-primary component of an orthogonal product** is the orthogonal product of the
+`p`-primary components (`AddCommGroup.primaryComponent_prod`). -/
+def restrictPrimaryComponentProdIsometry (B : FiniteQuadraticModule) (p : ℕ) :
+    Isometry ((A.prod B).restrict (AddCommGroup.primaryComponent (A.prod B) p))
+      ((A.restrict (AddCommGroup.primaryComponent A p)).prod
+        (B.restrict (AddCommGroup.primaryComponent B p))) :=
+  ((A.prod B).restrictCongr (AddCommGroup.primaryComponent_prod A B p)).trans
+    (A.restrictProdIsometry _ _)
+
+/-- The first component of `restrictPrimaryComponentProdIsometry` is the first coordinate. -/
+@[simp]
+theorem restrictHom_restrictPrimaryComponentProdIsometry_apply_fst (B : FiniteQuadraticModule)
+    (p : ℕ) (x : (A.prod B).restrict (AddCommGroup.primaryComponent (A.prod B) p)) :
+    A.restrictHom _ (A.restrictPrimaryComponentProdIsometry B p x).1 =
+      ((A.prod B).restrictHom _ x).1 := by
+  rw [restrictPrimaryComponentProdIsometry, Isometry.trans_apply,
+    restrictHom_restrictProdIsometry_apply_fst, restrictHom_restrictCongr_apply]
+
+/-- The second component of `restrictPrimaryComponentProdIsometry` is the second coordinate. -/
+@[simp]
+theorem restrictHom_restrictPrimaryComponentProdIsometry_apply_snd (B : FiniteQuadraticModule)
+    (p : ℕ) (x : (A.prod B).restrict (AddCommGroup.primaryComponent (A.prod B) p)) :
+    B.restrictHom _ (A.restrictPrimaryComponentProdIsometry B p x).2 =
+      ((A.prod B).restrictHom _ x).2 := by
+  rw [restrictPrimaryComponentProdIsometry, Isometry.trans_apply,
+    restrictHom_restrictProdIsometry_apply_snd, restrictHom_restrictCongr_apply]
 
 end FiniteQuadraticModule
 

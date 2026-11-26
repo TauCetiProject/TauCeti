@@ -14,7 +14,7 @@ public import TauCeti.RingTheory.MvPolynomial.BinaryMonomial
 # Symmetric powers of the standard representation as homogeneous polynomials
 
 Multiplying out a pure symmetric tensor identifies the symmetric power `Symᵈ(Rⁿ)` with the forms
-of degree `d` in `n` variables (`TauCeti.SymmetricPower.equivHomogeneous` followed by
+of degree `d` in `n` variables (`SymmetricPower.equivHomogeneous` followed by
 `TauCeti.SymmetricAlgebra.homogeneousSubmoduleEquivMvPolynomial`). This file proves that this
 dictionary intertwines the symmetric power `TauCeti.symPowerRep` of the standard representation
 with the substitution of standard vectors `TauCeti.polynomialRep`
@@ -81,7 +81,7 @@ noncomputable def symPowerRepEquivPolynomialRep :
       coe_symmetricPowerHomogeneous_tprod, map_prod, polynomialAction_sum_C_mul_X]
 
 /-- The underlying linear equivalence of `TauCeti.symPowerRepEquivPolynomialRep` is the dictionary
-`TauCeti.SymmetricPower.equivHomogeneous` followed by
+`SymmetricPower.equivHomogeneous` followed by
 `TauCeti.SymmetricAlgebra.homogeneousSubmoduleEquivMvPolynomial`. -/
 @[simp]
 theorem symPowerRepEquivPolynomialRep_toLinearEquiv :

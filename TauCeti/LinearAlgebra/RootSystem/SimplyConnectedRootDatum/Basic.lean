@@ -16,7 +16,7 @@ The pinned simply connected root data are integral root data, one per valid Dynk
 the lattices `Fin n → ℤ` with the dot product as pairing, and each carrying a base whose support is
 the image of an injective *simple index* map `e` naming the simple roots in Bourbaki order. This
 file holds the part of that construction which carries no information about the type: only the
-per-type files, such as `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A` and
+per-type files, such as `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic` and
 `...SimplyConnectedRootDatum.D.Basic`, supply the mathematics of their own root system.
 
 ## Main definitions
@@ -63,6 +63,11 @@ theorem mem_simpleSupport {k : ι} : k ∈ simpleSupport he ↔ ∃ i, e i = k :
 
 @[simp, norm_cast]
 theorem coe_simpleSupport : (simpleSupport he : Set ι) = range e := by
+  simp [simpleSupport]
+
+/-- A pinned support has one member for each simple index. -/
+@[simp]
+theorem card_simpleSupport : (simpleSupport he).card = Fintype.card κ := by
   simp [simpleSupport]
 
 /-- The image of a pinned support under a family indexed by the root indices is the range of the

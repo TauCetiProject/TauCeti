@@ -58,6 +58,8 @@ is replaced by Mathlib's `IsHeckeTriple`.
   subgroups of `SL_n(ℤ)` consists of integral matrices; `mem_intEntries_of_rightCoset_eq`,
   `mem_intEntries_of_cover` and `mem_intEntries_of_mem_doubleCoset_mul_doubleCoset` read this off
   a right coset, a family covering the double coset, and a product of two double cosets.
+* `posDetInt_le_commensurator_map` and the `IsHeckeTriple` instance for the images of any two
+  finite-index subgroups of `SL_n(ℤ)`;
 * the `IsHeckeTriple (posDetInt n) (SLnZ n) (SLnZ n)` instance, and the
   Hecke ring `IntegralHeckeRing n` it founds.
 
@@ -772,6 +774,25 @@ lemma posDetInt_le_commensurator :
 underlying the classical Hecke operators, following Shimura §3.2. -/
 instance : IsHeckeTriple (posDetInt n) (SLnZ n) (SLnZ n) :=
   IsHeckeTriple.of_diagonal (SLnZ_le_posDetInt n) (posDetInt_le_commensurator n)
+
+/-- `Δ` lies in the commensurator of the image of any finite-index subgroup of `SL_n(ℤ)`: that
+image is commensurable with `SL_n(ℤ)` (`commensurable_map_SLnZ`), so the two commensurators
+agree. -/
+lemma posDetInt_le_commensurator_map (Γ : Subgroup (SpecialLinearGroup (Fin n) ℤ))
+    [Γ.FiniteIndex] : posDetInt n ≤ (commensurator (Γ.map (mapGL ℚ))).toSubmonoid := by
+  rw [Subgroup.Commensurable.eq (commensurable_map_SLnZ n Γ)]
+  exact posDetInt_le_commensurator n
+
+/-- **Any two finite-index subgroups of `SL_n(ℤ)` form a Hecke triple with `Δ`.** Their images
+in `GL_n(ℚ)` lie in `SL_n(ℤ) ≤ Δ`, are commensurable with `SL_n(ℤ)` and hence with each other,
+and `Δ` lies in their commensurator (`posDetInt_le_commensurator_map`). The two subgroups may
+differ, as for the degeneracy maps between two levels. -/
+instance (Γ₁ Γ₂ : Subgroup (SpecialLinearGroup (Fin n) ℤ)) [Γ₁.FiniteIndex] [Γ₂.FiniteIndex] :
+    IsHeckeTriple (posDetInt n) (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ)) where
+  left_le _ hx := SLnZ_le_posDetInt n (Subgroup.map_le_range _ _ hx)
+  right_le _ hx := SLnZ_le_posDetInt n (Subgroup.map_le_range _ _ hx)
+  commensurable := (commensurable_map_SLnZ n Γ₁).trans (commensurable_map_SLnZ n Γ₂).symm
+  le_commensurator_right := posDetInt_le_commensurator_map n Γ₂
 
 end Pair
 

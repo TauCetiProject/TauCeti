@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Homology
 public import TauCeti.Algebra.Homology.ModuleCat.HomotopyCofiber
 public import TauCeti.Algebra.Homology.ModuleCat.Shift.Basic
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
-import TauCeti.LinearAlgebra.Alternating.Append
 
 /-!
 # Torsion of shifted complexes and of mapping cones
@@ -114,28 +113,9 @@ private theorem torsionBracket_of_shift {j : ℤ} (h : D.ExactAt (j + 1 + 1))
       b₀.map (boundaryEquivOfShift e he j) k) :
     torsionBracket c (by simp) (by simp) h' (b₁.map (boundaryEquivOfShift e he (j + 1)))
         (b₀.map (boundaryEquivOfShift e he j)) (fun k ↦ -e (j + 1) (s k)) hs' =
-      (-1) ^ q * torsionBracket d (by simp) (by simp) h b₁ b₀ s hs := by
-  have : Module.Finite F (D.X (j + 1 + 1)) := .of_basis (d _)
-  have hn : m (j + 1 + 1) = p + q := by
-    have := (exactAt_iff_finrank_add_finrank D (i := j + 1 + 1 + 1) (k := j + 1) (by simp)
-      (by simp)).1 h
-    rwa [finrank_eq_card_basis b₁, finrank_eq_card_basis b₀, finrank_eq_card_basis (d _),
-      Fintype.card_fin, Fintype.card_fin, Fintype.card_fin, eq_comm] at this
-  -- The basis of `C.X (j + 1)` is the transport along `e` of the basis of `D.X (j + 1 + 1)`.
-  have hc : c (j + 1) = ((d (j + 1 + 1)).map (e (j + 1))).reindex (finCongr (hm (j + 1))) :=
-    Basis.eq_of_apply_eq fun k ↦ by simp [hd]
-  rw [torsionBracket_eq_det_append c _ _ h' _ _ _ hs' ((hm (j + 1)).symm.trans hn),
-    torsionBracket_eq_det_append d _ _ h _ _ _ hs hn, hc, Basis.det_reindex, Basis.det_map]
-  have hneg := ((d (j + 1 + 1)).det.domDomCongr (finCongr hn)).map_append_neg
-    (fun k ↦ (b₁ k : D.X (j + 1 + 1))) s
-  have hcast : (finCongr hn : Fin (m (j + 1 + 1)) → Fin (p + q)) = Fin.cast hn := rfl
-  rw [AlternatingMap.domDomCongr_apply, AlternatingMap.domDomCongr_apply, hcast,
-    smul_eq_mul] at hneg
-  rw [← hneg]
-  congr 1
-  ext k
-  obtain ⟨l, rfl⟩ := (finCongr hn.symm).surjective k
-  induction l using Fin.addCases <;> simp
+      (-1) ^ q * torsionBracket d (by simp) (by simp) h b₁ b₀ s hs :=
+  torsionBracket_eq_pow_mul d _ _ h b₁ b₀ s hs _ _ h' _ _ _ hs' (e (j + 1)) (hm (j + 1)).symm
+    (fun k ↦ by simp [hd]) (fun k ↦ by simp) (-1) fun k ↦ by simp
 
 include he hd in
 /-- **The torsion of a shifted complex.** Let `D` be the complex `C` shifted up by one degree with
@@ -364,7 +344,8 @@ private theorem torsionBracket_coneBoundaryBasis {n : ℤ → ℕ}
     torsionBracket (basis ζ g c) (by simp) (by simp) hj
         (coneBoundaryBasis ζ hG g h y hy hζ c (j + 1)) (coneBoundaryBasis ζ hG g h y hy hζ c j)
         (coneLift ζ g c j) (coneLift_spec ζ hG g h y hy hζ c j) =
-      torsionBracketWithHomology c (chosenBoundaryBasis C c (j + 1 + 1) (j + 1)) (h (j + 1))
+      torsionBracketWithHomology c (by simp) (by simp)
+        (chosenBoundaryBasis C c (j + 1 + 1) (j + 1)) (h (j + 1))
         (y (j + 1)) (hy (j + 1)) (chosenBoundaryBasis C c (j + 1) j)
         (chosenBoundaryLift C c (j + 1) j) (chosenBoundaryLift_spec C c (j + 1) j) := by
   have hn₁ := eq_add_of_exactAt (basis ζ g c) (by simp) (by simp) hj
@@ -376,7 +357,7 @@ private theorem torsionBracket_coneBoundaryBasis {n : ℤ → ℕ}
     C.X (j + 1))) fun k ↦ C.iCycles (j + 1) (y (j + 1) k)) (chosenBoundaryLift C c (j + 1) j) ∘
       Fin.cast hn₂ with hu
   rw [torsionBracket_eq_det_append (basis ζ g c) _ _ hj _ _ _ _ hn₁,
-    torsionBracketWithHomology_eq_det_append c _ _ _ _ _ _ _ hn₂, ← hu,
+    torsionBracketWithHomology_eq_det_append c _ _ _ _ _ _ _ _ _ hn₂, ← hu,
     basis_det_eq_mul ζ g c (j + 1) _ u (g (j + 1 - 1)), Basis.det_self, mul_one]
   · intro k
     obtain ⟨k, rfl⟩ := (finCongr hn₂).symm.surjective k

@@ -509,7 +509,7 @@ private theorem HasProperInputSupport.fourier_slice_apply [CompleteSpace V] [Com
     a.contDiff_coefficient.comp (by fun_prop)
   have hb := (Symbol.hasCompactSpatialSupport_ofSpatial_iff hf).2 (ha.hasCompactSupport_slice x η)
   have hc : (Symbol.ofSpatial _ hf).coefficient = fun p ↦ a.coefficient (x, p.1, η) :=
-    funext (Symbol.coefficient_ofSpatial _ hf)
+    Symbol.coefficient_ofSpatial_eq _ hf
   have h := hb.fourier_quantizeSchwartzValue u ζ
   have hq : quantizeSchwartzValue (fun p ↦ a.coefficient (x, p.1, η)) u =
       fun y ↦ a.coefficient (x, y, η) (u y) :=
@@ -606,17 +606,15 @@ theorem leftSymbol_ofRight_ofSpatial [CompleteSpace V] [CompleteSpace W]
       Symbol.ofSpatial f hf := by
   refine Symbol.ext (coefficient_eq_coefficient_leftSymbol_of_forall_quantizeSchwartzValue_eq _
     fun u _ ↦ funext fun x ↦ ?_).symm
-  have hc : (Symbol.ofSpatial f hf).coefficient = fun p ↦ f p.1 :=
-    funext (Symbol.coefficient_ofSpatial f hf)
   have hg : HasCompactSupport fun y ↦ f y (u y) :=
     hfs.mono fun y hy h ↦ hy (by simp [h])
   have hsm : ContDiff ℝ ∞ fun y ↦ f y (u y) := by
     have h := (Symbol.ofSpatial f hf).contDiff_quantizeSchwartzValue u
-    rwa [hc, funext (quantizeSchwartzValue_comp_fst f u)] at h
+    rwa [funext (Symbol.quantizeSchwartzValue_ofSpatial f hf u)] at h
   set g := hg.toSchwartzMap hsm
   have hgu : ⇑g = fun y ↦ f y (u y) := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  rw [hc, quantizeSchwartzValue_comp_fst, quantizeAmplitudeValue_def]
-  simp only [coefficient_ofRight, hc]
+  rw [Symbol.quantizeSchwartzValue_ofSpatial, quantizeAmplitudeValue_def]
+  simp only [coefficient_ofRight, Symbol.coefficient_ofSpatial]
   rw [← hgu, ← SchwartzMap.fourier_coe, ← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe,
     fourierInv_fourier_eq, hgu]
 

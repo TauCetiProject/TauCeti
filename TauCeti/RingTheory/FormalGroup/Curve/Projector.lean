@@ -16,8 +16,8 @@ public import Mathlib.Algebra.Group.Idempotent
 For a commutative formal group law `F`, when `n` is invertible in the coefficient ring,
 multiplication by `n` on the group of curves is an automorphism. The elementary Cartier projector
 `γ ↦ γ - V_n ([n]⁻¹ (f_n γ))` projects onto the kernel of `f_n`, along the image of `V_n`.
-It preserves coefficients below degree `n`. Over a rational algebra, its effect on the formal
-logarithm is to delete precisely the degrees divisible by `n`.
+It preserves coefficients below degree `n`. On the additive formal group law, and over a rational
+algebra on the formal logarithm, its effect is to delete precisely the degrees divisible by `n`.
 
 These are the individual factors in Cartier's prime-to-`p` projection onto typical curves;
 this file constructs individual factors, without taking an infinite product.
@@ -296,6 +296,17 @@ theorem toPowerSeries_cartierProjectorCurve_𝔾ₐ (n : ℕ) (hn : n ≠ 0)
     Curve.additiveToPowerSeriesHom_apply, Curve.additiveToPowerSeriesHom_apply,
     toPowerSeries_verschiebungCurve, hnorm]
 
+/-- On the additive formal group, the elementary Cartier projector deletes precisely the
+coefficients whose degrees are divisible by its index. -/
+theorem coeff_toPowerSeries_cartierProjectorCurve_𝔾ₐ (n : ℕ) (hn : n ≠ 0)
+    (hunit : IsUnit (n : R)) (k : ℕ) (γ : (𝔾ₐ (R := R)).Curve) :
+    PowerSeries.coeff k ((𝔾ₐ (R := R)).cartierProjectorCurve n hn hunit γ).toPowerSeries =
+      if n ∣ k then 0 else PowerSeries.coeff k γ.toPowerSeries := by
+  rw [toPowerSeries_cartierProjectorCurve_𝔾ₐ, map_sub, PowerSeries.coeff_expand]
+  split_ifs with hdvd
+  · rw [PowerSeries.coeff_cartier, Nat.add_zero, Nat.mul_div_cancel' hdvd, sub_self]
+  · rw [sub_zero]
+
 /-- The logarithm of a projected curve is obtained by subtracting the part supported in degrees
 divisible by `n`. -/
 theorem subst_cartierProjectorCurve_log [Algebra ℚ R] (n : ℕ) (hn : n ≠ 0)
@@ -315,10 +326,10 @@ theorem coeff_subst_cartierProjectorCurve_log [Algebra ℚ R] (n : ℕ) (hn : n 
     PowerSeries.coeff k (PowerSeries.subst
       (F.cartierProjectorCurve n hn hunit γ).toPowerSeries F.log) =
       if n ∣ k then 0 else PowerSeries.coeff k (PowerSeries.subst γ.toPowerSeries F.log) := by
-  rw [subst_cartierProjectorCurve_log, map_sub, PowerSeries.coeff_expand]
-  split_ifs with hdvd
-  · rw [PowerSeries.coeff_cartier, Nat.add_zero, Nat.mul_div_cancel' hdvd, sub_self]
-  · rw [sub_zero]
+  have h := congrArg (fun δ ↦ PowerSeries.coeff k δ.toPowerSeries)
+    (F.logHom.mapCurve_cartierProjectorCurve n hn hunit γ)
+  simpa only [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logHom_toPowerSeries,
+    coeff_toPowerSeries_cartierProjectorCurve_𝔾ₐ] using h
 
 /-- Elementary Cartier projectors commute at arbitrary nonzero invertible indices. -/
 theorem cartierProjectorCurve_comm {m n : ℕ} (hm : m ≠ 0) (hn : n ≠ 0)

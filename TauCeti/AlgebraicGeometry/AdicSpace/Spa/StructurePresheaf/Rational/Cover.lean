@@ -61,8 +61,6 @@ presheaf of sets; neither the topology on the sections nor higher Čech cohomolo
   satisfying a predicate with `LaurentGluing`.
 * `TauCeti.ValuationSpectrum.isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq` : the same over a
   strongly noetherian Tate ring.
-* `TauCeti.ValuationSpectrum.isSheaf_rational_comp_of_isSheafFor_ofArrows` : gluing along rational
-  covers of rational opens is the sheaf condition on the basis of rational opens.
 * `TauCeti.ValuationSpectrum.isSheaf_underlying_presentationLimitPresheaf_of_laurentGluing` : over
   a Tate ring satisfying a predicate with `LaurentGluing`, the presheaf of sets underlying the
   presentation-limit presheaf is a sheaf.
@@ -79,7 +77,7 @@ public section
 
 open CategoryTheory TopologicalSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition
 
-universe v w
+universe v
 
 namespace TauCeti.ValuationSpectrum
 
@@ -189,55 +187,6 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing
     exact SetLike.ext fun v ↦ by simp [Opens.mem_iSup]
 
 /-! ### The sheaf condition on all opens -/
-
-/-- **The sheaf condition on the rational basis.** Let `G` be a functor from complete separated
-topological rings into types. If the presentation-limit presheaf followed by `G` satisfies the
-sheaf condition for every cover of a rational open by rational opens, then its restriction to the
-rational opens is a sheaf for the topology restricted from `Spa(A, A⁺)`. Intersections of
-rational opens are rational, which is what lets compatibility on the basis stand in for
-compatibility on pairwise intersections. -/
-theorem isSheaf_rational_comp_of_isSheafFor_ofArrows
-    (G : TopCommRingCat.isCompleteSeparated.{v}.FullSubcategory ⥤ Type w)
-    (hrat : ∀ {W : Opens ↥(spa Aplus)} {ι : Type v} {U : ι → Opens ↥(spa Aplus)},
-      W ∈ spaRationalOpens Aplus → (∀ i, U i ∈ spaRationalOpens Aplus) → ∀ hcov : ⨆ i, U i = W,
-      (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor
-        (presentationLimitPresheaf P Aplus ⋙ G)) :
-    Presieve.IsSheaf
-      ((rationalOpensFunctor Aplus).restrictedTopology (Opens.grothendieckTopology ↥(spa Aplus)))
-      ((rationalOpensFunctor Aplus).op ⋙ presentationLimitPresheaf P Aplus ⋙ G) := by
-  intro W S hS
-  obtain ⟨ι, U, π, rfl⟩ := S.exists_eq_ofArrows
-  rw [Functor.mem_restrictedTopology_iff, Sieve.functorPushforward_ofArrows] at hS
-  have hcov : ⨆ i, (U i).val = W.val := by
-    apply le_antisymm (iSup_le fun i ↦ (π i).hom.le)
-    intro x hx
-    obtain ⟨V, f, hf, hxV⟩ := hS x hx
-    obtain ⟨V', g, f', hf', rfl⟩ := hf
-    obtain ⟨i⟩ := hf'
-    exact Opens.mem_iSup.mpr ⟨i, g.le hxV⟩
-  have hrat := hrat W.property (fun i ↦ (U i).property) hcov
-  have hπ (i : ι) : (rationalOpensFunctor Aplus).map (π i) =
-      homOfLE ((le_iSup (fun i ↦ (U i).val) i).trans_eq hcov) := Subsingleton.elim _ _
-  rw [← Presieve.isSheafFor_iff_generate, Presieve.isSheafFor_arrows_iff]
-  rw [Presieve.isSheafFor_arrows_iff] at hrat
-  intro x hx
-  -- Intersections of rational opens are rational, so compatibility on the basis supplies the
-  -- pairwise-intersection compatibility required in the ambient category of opens.
-  have hcompat : Presieve.Arrows.Compatible (presentationLimitPresheaf P Aplus ⋙ G)
-      (fun i ↦ homOfLE ((le_iSup (fun i ↦ (U i).val) i).trans_eq hcov)) x := by
-    apply (Presieve.Arrows.compatible_homOfLE_iff _ _).mpr
-    intro i j
-    let V : spaRationalOpens Aplus :=
-      ⟨(U i).val ⊓ (U j).val, inf_mem_spaRationalOpens (U i).property (U j).property⟩
-    exact hx i j V (InducedCategory.homMk (homOfLE inf_le_left))
-      (InducedCategory.homMk (homOfLE inf_le_right)) (Subsingleton.elim _ _)
-  obtain ⟨a, ha, hu⟩ := hrat x hcompat
-  refine ⟨a, ?_, ?_⟩
-  · intro i
-    simpa only [Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, hπ] using ha i
-  · intro b hb
-    exact hu b fun i ↦ by
-      simpa only [Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, hπ] using hb i
 
 /-- **The structure presheaf of sets is a sheaf under Laurent gluing.** Let `C` be a predicate on
 Tate rings satisfying `LaurentGluing`, and `A` a Tate ring satisfying `C`. If the ring of

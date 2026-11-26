@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Smooth curves joining points of a manifold
@@ -134,12 +135,8 @@ variable {n : ℕ∞}
 theorem eventually_exists_contMDiff_curve [IsManifold I n M] {x : M} {U : Set M} (hU : U ∈ 𝓝 x) :
     ∀ᶠ y in 𝓝 x, ∃ γ : ℝ → M, ContMDiff 𝓘(ℝ, ℝ) I n γ ∧ (∀ t ≤ 0, γ t = x) ∧
       (∀ t, 1 ≤ t → γ t = y) ∧ ∀ t, γ t ∈ U := by
-  obtain ⟨ε, hε, hsub⟩ : ∃ ε > 0, ball (extChartAt I x x) ε ∩ range I ⊆
-      (extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' U := by
-    rw [← Metric.mem_nhdsWithin_iff]
-    refine inter_mem (extChartAt_target_mem_nhdsWithin x) ?_
-    rw [← map_extChartAt_symm_nhdsWithin_range (I := I) x] at hU
-    exact hU
+  obtain ⟨ε, hε, hsub⟩ := exists_ball_inter_range_subset_extChartAt (I := I) hU
+  obtain ⟨hconv, -, hx⟩ := convex_uniqueDiffOn_ball_inter_range_extChartAt (I := I) x hε
   filter_upwards [extChartAt_source_mem_nhds (I := I) x,
     (continuousAt_extChartAt (I := I) x).preimage_mem_nhds (ball_mem_nhds _ hε)]
     with y hys hyb
@@ -147,8 +144,7 @@ theorem eventually_exists_contMDiff_curve [IsManifold I n M] {x : M} {U : Set M}
   set c : ℝ → E := fun t ↦ extChartAt I x x +
     Real.smoothTransition t • (extChartAt I x y - extChartAt I x x) with hc_def
   have hmem (t : ℝ) : c t ∈ ball (extChartAt I x x) ε ∩ range I :=
-    ((convex_ball _ _).inter I.convex_range).add_smul_sub_mem
-      ⟨mem_ball_self hε, extChartAt_target_subset_range x (mem_extChartAt_target x)⟩
+    hconv.add_smul_sub_mem hx
       ⟨hyb, extChartAt_target_subset_range x ((extChartAt I x).map_source hys)⟩
       ⟨Real.smoothTransition.nonneg t, Real.smoothTransition.le_one t⟩
   have hc : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, E) n c :=

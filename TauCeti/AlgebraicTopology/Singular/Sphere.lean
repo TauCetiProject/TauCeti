@@ -18,9 +18,12 @@ public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalLast
 public import TauCeti.Geometry.Sphere.LinearIsometry
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+public import TauCeti.AlgebraicTopology.Singular.BettiNumber
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
+import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
 # The homology of spheres
@@ -113,6 +116,9 @@ Coefficients are an object `R` of an abelian category with coproducts.
   it.
 * `TauCeti.reducedSingularHomologyFunctor_map_sphere_neg`: the antipodal map acts on `H_redₙ(S)`
   by `(-1) ^ (n + 1)`.
+* `TauCeti.singularHomologyFunctor_map_sphere_neg` and
+  `TauCeti.singularHomologyMap_sphere_neg_apply`: the antipodal map acts on the ordinary homology
+  `Hₙ₊₁(S)` of the unit sphere of an `(n + 2)`-dimensional space by `(-1) ^ (n + 2)`.
 * `TauCeti.isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne`,
   `TauCeti.reducedSingularHomologyTopCatSphereIso` and
   `TauCeti.reducedSingularHomologyFunctor_map_diskBoundaryNeg`: the same for Mathlib's
@@ -138,6 +144,10 @@ Coefficients are an object `R` of an abelian category with coproducts.
   `ContinuousMap.HomotopyEquiv.isZero_singularHomology_of_sphere_of_ne`: reduced and ordinary
   singular homology of a space homotopy equivalent to the unit sphere of a real normed space of
   dimension `n + 1` (in any universe).
+* `TauCeti.bettiNumber_sphere` and `TauCeti.bettiNumber_compl_singleton`: over a ring with the
+  strong rank condition, the unit sphere of a real normed space `E` of dimension `n + 1`, and the
+  complement `E ∖ {y}` of a point in `E`, have Betti number `1` in degrees `0` and `n` (`2` in
+  degree `0` when `n = 0`) and `0` in every other degree.
 
 ## References
 
@@ -618,12 +628,8 @@ theorem reducedSingularHomologyFunctor_map_reflection_unitSphereMap {n : ℕ}
           (ℝ ∙ v)ᗮ.reflection.toLinearIsometry.continuous_unitSphereMap⟩) = -𝟙 _ := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   -- Extend the unit vector `‖v‖⁻¹ • v` to an orthonormal basis `b` with `b 0 = ‖v‖⁻¹ • v`.
-  obtain ⟨b, hb⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq (𝕜 := ℝ)
-    (ι := Fin (n + 1)) (by simpa using hE) (v := fun _ ↦ ‖v‖⁻¹ • v) (s := {0})
-    (orthonormal_iff_ite.2 fun i j ↦ by
-      rw [Subsingleton.elim i j]
-      simp [hv])
-  have hb₀ : b 0 = ‖v‖⁻¹ • v := hb 0 rfl
+  obtain ⟨b, hb₀⟩ := exists_orthonormalBasis_fin_apply_zero_eq hE
+    (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hv)
   rw [← cancel_mono (reducedSingularHomologySphereIso R b).hom, Preadditive.neg_comp,
     Category.id_comp]
   refine reducedSingularHomologySphereIso_hom_neg_zero R b _ ?_ fun i hi ↦ ?_
@@ -761,6 +767,38 @@ theorem reducedSingularHomologyFunctor_map_sphere_neg {n : ℕ} (hE : finrank �
     ext; simp
   rw [h, reducedSingularHomologyFunctor_map_unitSphereMap R hE, hdet, LinearMap.det_smul]
   simp [hE, sign_pow]
+
+/-- **The antipodal map acts by `(-1) ^ (n + 2)` on the top homology of a sphere.** For a real
+inner product space `E` of dimension `n + 2`, the antipodal map `x ↦ -x` of the unit sphere `S`
+of `E` induces multiplication by `(-1) ^ (n + 2)` on `Hₙ₊₁(S)`. -/
+theorem singularHomologyFunctor_map_sphere_neg {n : ℕ} (hE : finrank ℝ E = n + 2) :
+    ((AlgebraicTopology.singularHomologyFunctor C (n + 1)).obj R).map
+        (TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ : TopCat.of (sphere (0 : E) 1) ⟶ _) =
+      (-1 : ℤ) ^ (n + 2) • 𝟙 _ := by
+  -- In positive degrees ordinary and reduced homology agree naturally.
+  have h := (reducedSingularHomologySuccIso R n).hom.naturality
+    (TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ : TopCat.of (sphere (0 : E) 1) ⟶ _)
+  rw [reducedSingularHomologyFunctor_map_sphere_neg R hE] at h
+  rw [← cancel_epi ((reducedSingularHomologySuccIso R n).hom.app _), ← h]
+  simp
+
+/-- **The antipodal map acts by `(-1) ^ (n + 2)` on the top ordinary homology of a sphere.**  For a
+real inner product space `E` of dimension `n + 2` and a ring `k`, the antipodal map `x ↦ -x` of the
+unit sphere `S` of `E` acts on `Hₙ₊₁(S; k)` by `(-1) ^ (n + 2)`: the elementwise form of
+`TauCeti.singularHomologyFunctor_map_sphere_neg`. -/
+theorem singularHomologyMap_sphere_neg_apply (k : Type w) [Ring k] {n : ℕ}
+    (hE : finrank ℝ E = n + 2)
+    (y : ((singularChains k).obj (TopCat.of (sphere (0 : E) 1))).homology (n + 1)) :
+    ContinuousMap.singularHomologyMap k (n + 1) ⟨Neg.neg, continuous_neg⟩ y =
+      (-1 : ℤ) ^ (n + 2) • y := by
+  rw [ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map,
+    singularHomologyFunctor_map_sphere_neg (ModuleCat.of k k) hE, ModuleCat.hom_zsmul,
+    ModuleCat.hom_id]
+  -- The homology of `singularChains k`, where `y` lies, is by definition the object of the
+  -- singular homology functor (`TauCeti.singularHomologyFunctor_obj_obj`), so `rw` cannot apply
+  -- `LinearMap.smul_apply` and `LinearMap.id_apply` across the two types; they close the goal by
+  -- definition.
+  rfl
 
 end Orientation
 
@@ -1140,3 +1178,31 @@ theorem isZero_singularHomology_of_sphere_of_ne {n k : ℕ} (e : X ≃ₕ Metric
       ((TauCeti.reducedSingularHomologySuccIso R q).app (TopCat.of X)).symm
 
 end ContinuousMap.HomotopyEquiv
+
+namespace TauCeti
+
+section BettiNumber
+
+variable (k : Type w) [Ring k] [StrongRankCondition k] {E : Type w} [NormedAddCommGroup E]
+  [NormedSpace ℝ E] {n : ℕ}
+
+/-- **The Betti numbers of a sphere.** Over a ring with the strong rank condition, such as a
+division ring or a nontrivial commutative ring, the unit sphere of a real normed space of dimension
+`n + 1` has Betti number `1` in degree `n`, plus `1` in degree `0`, and `0` in every other degree.
+For `n = 0` the sphere is two points, with Betti number `2` in degree `0`. -/
+theorem bettiNumber_sphere (hE : finrank ℝ E = n + 1) (j : ℕ) :
+    bettiNumber k (sphere (0 : E) 1) j = (if j = n then 1 else 0) + if j = 0 then 1 else 0 := by
+  simp [bettiNumber_def, ModuleCat.finrank_singularHomology_sphere_of_finrank_eq_succ _ hE]
+
+/-- **The Betti numbers of a punctured space.** Over a ring with the strong rank condition, the
+complement of a point in a real normed space of dimension `n + 1` has the Betti numbers of the
+sphere `Sⁿ`, to which it is homotopy equivalent: `1` in degree `n`, plus `1` in degree `0`, and `0`
+in every other degree. For instance `ℝ² ∖ {0}`, like the circle, has Betti number `1` in
+degree `1`. -/
+theorem bettiNumber_compl_singleton (hE : finrank ℝ E = n + 1) (y : E) (j : ℕ) :
+    bettiNumber k ({y}ᶜ : Set E) j = (if j = n then 1 else 0) + if j = 0 then 1 else 0 := by
+  rw [(complSingletonHomotopyEquivSphere y).bettiNumber_eq k j, bettiNumber_sphere k hE]
+
+end BettiNumber
+
+end TauCeti

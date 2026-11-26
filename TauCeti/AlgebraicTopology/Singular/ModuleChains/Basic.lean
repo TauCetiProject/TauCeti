@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
@@ -17,11 +18,12 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 For a ring `k`, the simplicial singular chain complex with coefficients in `k` is the complex of
 `k`-modules whose `n`-chains are the formal `k`-combinations of singular `n`-simplices.  This file
 gives the element-level interface to it: the chain `simplexChain σ a` of a simplex with a
-coefficient, the extensionality of linear maps out of the chains (and, for integer coefficients,
-of additive maps), the linear map with prescribed values on simplices, the push-forward and the
-boundary of a simplex, the chains of points and paths (`TauCeti.pointChain`,
-`TauCeti.pathChain`), and the augmentation, the sum of the coefficients of a `0`-chain, natural
-and vanishing on boundaries.
+coefficient, the extensionality of linear maps out of the chains (and, for coefficients in a ring
+isomorphic to `ℤ`, of additive maps), the linear map with prescribed values on simplices, the
+push-forward and the boundary of a simplex, the inclusion of the chains of a subcomplex of the
+singular simplicial set, the chains of points, paths and maps from standard simplices
+(`TauCeti.pointChain`, `TauCeti.pathChain`, `TauCeti.simplexMapChain`), and the augmentation, the
+sum of the coefficients of a `0`-chain, natural and vanishing on boundaries.
 
 ## Main definitions
 
@@ -38,15 +40,25 @@ and vanishing on boundaries.
 
 * `TauCeti.singularHomologyFunctor_obj_obj`: singular homology with coefficients in `k` is the
   homology of `singularChains k`.
+* `ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map`: the induced linear map is
+  the map of the singular homology functor.
 * `TauCeti.subsingleton_singularChains_homology_iff_of_isIso`: a homology isomorphism identifies
   the vanishing of the homology of the chains of its source and target.
 * `TauCeti.singularChains_linearMap_ext`, `TauCeti.singularChains_addMonoidHom_ext`: linear maps,
-  and additive maps out of the chains with integer coefficients, are determined on simplices.
+  and additive maps out of the chains with coefficients in a ring isomorphic to `ℤ`, are
+  determined on simplices.
 * `TauCeti.singularChains_d_simplexChain`: the boundary of a simplex.
 * `TauCeti.singularAugment_map`, `TauCeti.singularAugment_d`: the augmentation is natural and
   vanishes on boundaries.
+* `ContinuousMap.singularHomologyMap_eq_homologyMap_toSSet_map`: singular homology maps are the
+  homology maps of the singular simplicial sets.
 * `ContinuousMap.singularHomologyMap_iterate`: the iterates of a self-map act on singular homology
   by the powers of its action.
+* `Homeomorph.singularHomologyMap_symm_apply_apply`,
+  `Homeomorph.singularHomologyMap_apply_symm_apply`: the maps induced by a homeomorphism and by its
+  inverse are mutually inverse.
+* `Homeomorph.isOfFinAddOrder_singularHomologyMap_iff`: a homeomorphism preserves and reflects
+  finite order of singular homology classes.
 -/
 
 public section
@@ -148,20 +160,28 @@ theorem chainsDesc_simplexChain_one {X : TopCat.{u}} {n : ℕ} {V : Type u} [Add
 
 end Singular
 
-/-- Additive maps out of the singular chains with integer coefficients agree when they agree on
-simplices. -/
-theorem singularChains_addMonoidHom_ext {X : TopCat.{0}} {n : ℕ} {V : Type} [AddCommGroup V]
-    {f g : ((singularChains ℤ).obj X).X n →+ V}
-    (h : ∀ s, f (simplexChain s 1) = g (simplexChain s 1)) : f = g :=
-  -- An additive map is linear for the module structure of the chains, which is only
-  -- propositionally equal to `AddCommGroup.toIntModule` (so `AddMonoidHom.toIntLinearMap` does
-  -- not apply).
-  let lin (φ : ((singularChains ℤ).obj X).X n →+ V) : ((singularChains ℤ).obj X).X n →ₗ[ℤ] V :=
-    { toFun := φ
-      map_add' := φ.map_add
-      map_smul' a c := (congrArg φ (int_smul_eq_zsmul _ a c)).trans (map_zsmul φ a c) }
-  AddMonoidHom.ext fun c ↦ LinearMap.congr_fun
-    (singularChains_linearMap_ext (L := lin f) (L' := lin g) h) c
+/-- Additive maps out of the singular chains with coefficients in a ring `R` isomorphic to `ℤ`
+agree when they agree on simplices. -/
+theorem singularChains_addMonoidHom_ext {R : Type u} [Ring R] (e : R ≃+* ℤ) {X : TopCat.{u}}
+    {n : ℕ} {V : Type*} [AddCommGroup V] {f g : ((singularChains R).obj X).X n →+ V}
+    (h : ∀ s, f (simplexChain s 1) = g (simplexChain s 1)) : f = g := by
+  -- Scalars of `R` act on the chains as the integers `e r`.
+  have hsmul (r : R) (c : ((singularChains R).obj X).X n) : r • c = e r • c := by
+    rw [← Int.cast_smul_eq_zsmul R, ← map_intCast e.symm, Int.cast_id, RingEquiv.symm_apply_apply]
+  -- So the chains on which `f` and `g` agree form an `R`-submodule, which contains the simplices.
+  let S : Submodule R (((singularChains R).obj X).X n) :=
+    { carrier := {c | f c = g c}
+      add_mem' := fun ha hb ↦ by
+        simp only [Set.mem_ofPred_eq, map_add] at ha hb ⊢
+        rw [ha, hb]
+      zero_mem' := by simp
+      smul_mem' := fun r {c} hc ↦ by
+        simp only [Set.mem_ofPred_eq] at hc ⊢
+        rw [hsmul, map_zsmul, map_zsmul, hc] }
+  have : S.mkQ = 0 := singularChains_linearMap_ext fun s ↦ by
+    rw [Submodule.mkQ_apply, LinearMap.zero_apply, Submodule.Quotient.mk_eq_zero]
+    exact h s
+  exact AddMonoidHom.ext fun c ↦ (Submodule.Quotient.mk_eq_zero S).1 (LinearMap.congr_fun this c)
 
 /-- The augmentation of the simplicial singular chains: the sum of the coefficients. -/
 def singularAugment (X : TopCat.{u}) : ((singularChains k).obj X).X 0 →ₗ[k] k :=
@@ -187,6 +207,18 @@ theorem singularAugment_map {X Y : TopCat.{u}} (f : X ⟶ Y) (x : ((singularChai
       simp only [LinearMap.coe_comp, Function.comp_apply, singularChains_map_f_simplexChain,
         singularAugment_simplexChain]
   exact LinearMap.congr_fun this x
+
+/-- The inclusion of the chains of a subcomplex of the singular simplicial set sends the chain of
+a simplex of the subcomplex to the chain of the same singular simplex. -/
+theorem chainComplexMap_ι_f_ιChainComplex {X : TopCat.{u}} (A : (TopCat.toSSet.obj X).Subcomplex)
+    {n : ℕ} (σ : (A : SSet.{u}) _⦋n⦌) (a : k) :
+    ((SSet.chainComplexMap A.ι (ModuleCat.of k k)).f n).hom
+        (((A : SSet.{u}).ιChainComplex (R := ModuleCat.of k k) σ).hom a) =
+      simplexChain σ.val a := by
+  rw [← ConcreteCategory.comp_apply, SSet.ι_chainComplexMap_f]
+  -- `simplexChain` is `ιChainComplex` of the singular simplicial set, and the inclusion of the
+  -- subcomplex sends `σ` to `σ.val`.
+  rfl
 
 /-- The boundary of a singular simplex is the alternating sum of its faces. -/
 @[simp]
@@ -240,6 +272,11 @@ abbrev pointChain {X : TopCat.{u}} (p : X) : ((singularChains k).obj X).X 0 :=
 abbrev pathChain {X : TopCat.{u}} (g : C(I, X)) : ((singularChains k).obj X).X 1 :=
   simplexChain (TopCat.simplex₁ g) 1
 
+/-- The chain of the singular `n`-simplex of a map from the standard `n`-simplex. -/
+abbrev simplexMapChain {X : TopCat.{u}} {n : ℕ} (f : C(Convexity.StdSimplex ℝ (Fin (n + 1)), X)) :
+    ((singularChains k).obj X).X n :=
+  simplexChain ((X.toSSetObjEquiv (.op ⦋n⦌)).symm f) 1
+
 variable {k}
 
 /-- The boundary of the chain of a path is the difference of the chains of its endpoints. -/
@@ -275,6 +312,26 @@ abbrev singularHomologyMap {Y Z : Type u} [TopologicalSpace Y] [TopologicalSpace
     ((singularChains k).obj (TopCat.of Y)).homology n →ₗ[k]
       ((singularChains k).obj (TopCat.of Z)).homology n :=
   (HomologicalComplex.homologyMap ((singularChains k).map (TopCat.ofHom g)) n).hom
+
+/-- The map induced on singular homology by a continuous map `g` is the map of the singular
+homology functor on `TopCat.ofHom g`. -/
+theorem singularHomologyMap_eq_singularHomologyFunctor_map {Y Z : Type u} [TopologicalSpace Y]
+    [TopologicalSpace Z] (g : C(Y, Z)) :
+    singularHomologyMap k n g =
+      (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).map
+        (TopCat.ofHom g)).hom :=
+  rfl
+
+variable {k n} in
+/-- The map induced on singular homology by a continuous map is the map induced on the homology of
+the singular simplicial sets: `singularChains k` is by definition the simplicial chain complex of
+`TopCat.toSSet`. This identifies results stated for the homology of `TopCat.toSSet` with
+singular homology. -/
+theorem singularHomologyMap_eq_homologyMap_toSSet_map {Y Z : Type u} [TopologicalSpace Y]
+    [TopologicalSpace Z] (g : C(Y, Z)) :
+    singularHomologyMap k n g =
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) (ModuleCat.of k k) n).hom :=
+  rfl
 
 variable {k n} in
 /-- The identity map induces the identity on singular homology. -/
@@ -324,3 +381,41 @@ theorem singularHomologyMap_iterate {Y : Type u} [TopologicalSpace Y] (f : C(Y, 
     rw [h, singularHomologyMap_comp', ih, pow_succ, Module.End.mul_eq_comp]
 
 end ContinuousMap
+
+namespace Homeomorph
+
+open TauCeti
+
+variable {k : Type u} [Ring k] {n : ℕ} {Y Z : Type u} [TopologicalSpace Y] [TopologicalSpace Z]
+
+/-- The map induced on singular homology by the inverse of a homeomorphism `e` undoes the map
+induced by `e`. -/
+@[simp]
+theorem singularHomologyMap_symm_apply_apply (e : Y ≃ₜ Z)
+    (x : ((singularChains k).obj (TopCat.of Y)).homology n) :
+    ContinuousMap.singularHomologyMap k n (e.symm : C(Z, Y))
+      (ContinuousMap.singularHomologyMap k n (e : C(Y, Z)) x) = x := by
+  rw [← ContinuousMap.singularHomologyMap_comp, symm_comp_toContinuousMap,
+    ContinuousMap.singularHomologyMap_id]
+
+/-- The map induced on singular homology by a homeomorphism `e` undoes the map induced by its
+inverse. -/
+@[simp]
+theorem singularHomologyMap_apply_symm_apply (e : Y ≃ₜ Z)
+    (z : ((singularChains k).obj (TopCat.of Z)).homology n) :
+    ContinuousMap.singularHomologyMap k n (e : C(Y, Z))
+      (ContinuousMap.singularHomologyMap k n (e.symm : C(Z, Y)) z) = z := by
+  rw [← ContinuousMap.singularHomologyMap_comp, toContinuousMap_comp_symm,
+    ContinuousMap.singularHomologyMap_id]
+
+/-- A class of singular homology has finite order exactly when its image under a homeomorphism
+does. -/
+theorem isOfFinAddOrder_singularHomologyMap_iff (e : Y ≃ₜ Z)
+    {x : ((singularChains k).obj (TopCat.of Y)).homology n} :
+    IsOfFinAddOrder (ContinuousMap.singularHomologyMap k n (e : C(Y, Z)) x) ↔
+      IsOfFinAddOrder x :=
+  Function.Injective.isOfFinAddOrder_iff
+    (f := (ContinuousMap.singularHomologyMap k n (e : C(Y, Z))).toAddMonoidHom)
+    (Function.LeftInverse.injective e.singularHomologyMap_symm_apply_apply)
+
+end Homeomorph

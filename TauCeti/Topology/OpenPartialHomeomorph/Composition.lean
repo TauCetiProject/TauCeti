@@ -19,6 +19,10 @@ This file supplements `Mathlib.Topology.OpenPartialHomeomorph.Composition`:
   `OpenPartialHomeomorph.image_restrOpen_symm_trans_source_inter`: equational image-transport
   formulas for compositions `e.trans e'`, open restrictions `e.restrOpen u hu`, and chart
   transitions `e.symm.trans e'`.
+* `OpenPartialHomeomorph.mem_target_and_mem_source_of_mem_symm_trans_source`: a point of the
+  source of a chart transition `e.symm.trans e'` lies in the target of `e`, and `e.symm` sends it
+  into the source of `e'`; the open-partial-homeomorphism form of
+  `PartialEquiv.mem_target_and_mem_source_of_mem_symm_trans_source`.
 * `Homeomorph.refl_transOpenPartialHomeomorph`: precomposing an open partial homeomorphism with
   `Homeomorph.refl` changes nothing; together with `Homeomorph.trans_transOpenPartialHomeomorph`
   this makes `Homeomorph.transOpenPartialHomeomorph` an action of homeomorphisms.
@@ -72,6 +76,15 @@ theorem image_restrOpen_symm_trans_source_inter (e : OpenPartialHomeomorph X Y)
       ((e.symm.trans e').restrOpen u hu).target ∩ e' '' (e'.source ∩ s) :=
   e.toPartialEquiv.image_restr_symm_trans_source_inter e'.toPartialEquiv u s
 
+/-- A point of the source of a chart transition `e.symm.trans e'` lies in the target of `e`, and
+`e.symm` sends it into the source of `e'`. This is a converse of
+`PartialEquiv.mem_symm_trans_source`, specialising
+`PartialEquiv.mem_target_and_mem_source_of_mem_symm_trans_source`. -/
+theorem mem_target_and_mem_source_of_mem_symm_trans_source {e : OpenPartialHomeomorph X Y}
+    {e' : OpenPartialHomeomorph X Z} {y : Y} (hy : y ∈ (e.symm.trans e').source) :
+    y ∈ e.target ∧ e.symm y ∈ e'.source :=
+  PartialEquiv.mem_target_and_mem_source_of_mem_symm_trans_source hy
+
 end OpenPartialHomeomorph
 
 namespace Homeomorph
@@ -107,17 +120,15 @@ theorem transOpenPartialHomeomorph_symm_transOpenPartialHomeomorph (h : X ≃ₜ
 inverse of `e` after `h.transOpenPartialHomeomorph e`. -/
 theorem eventuallyEq_symm_comp_transOpenPartialHomeomorph (h : X ≃ₜ Y)
     {e : OpenPartialHomeomorph Y Z} {x : X} (hx : h x ∈ e.source) :
-    h =ᶠ[𝓝 x] e.symm ∘ h.transOpenPartialHomeomorph e := by
-  filter_upwards [(h.transOpenPartialHomeomorph e).open_source.mem_nhds
-    (by simpa using hx)] with x' hx'
-  simp [e.left_inv (by simpa using hx')]
+    h =ᶠ[𝓝 x] e.symm ∘ h.transOpenPartialHomeomorph e :=
+  (h.continuous.tendsto x).eventually (e.eventually_left_inverse hx) |>.mono fun _ hx' ↦ by
+    simp [hx']
 
 /-- Near a point of the source of `e`, the inverse of the homeomorphism `h` is the inverse of
 `h.transOpenPartialHomeomorph e` after `e`. -/
 theorem symm_eventuallyEq_symm_transOpenPartialHomeomorph_comp (h : X ≃ₜ Y)
     {e : OpenPartialHomeomorph Y Z} {y : Y} (hy : y ∈ e.source) :
-    h.symm =ᶠ[𝓝 y] (h.transOpenPartialHomeomorph e).symm ∘ e := by
-  filter_upwards [e.open_source.mem_nhds hy] with y' hy'
-  simp [e.left_inv hy']
+    h.symm =ᶠ[𝓝 y] (h.transOpenPartialHomeomorph e).symm ∘ e :=
+  (e.eventually_left_inverse hy).mono fun _ hy' ↦ by simp [hy']
 
 end Homeomorph

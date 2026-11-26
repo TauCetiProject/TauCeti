@@ -12,6 +12,7 @@ import TauCeti.Analysis.Complex.Poisson.Integral
 import TauCeti.Analysis.Complex.Poisson.Series
 import TauCeti.MeasureTheory.Integral.Circle.Haar
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Fourier
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Density of the wrapped Cauchy law
@@ -318,7 +319,7 @@ theorem wrappedCauchyMeasure_eq_withDensity (m : AddCircle (2 * π)) {γ : ℝ�
     intro n
     rw [Measure.coe_toProbabilityMeasure, Measure.coe_toProbabilityMeasure,
       integral_fourier_wrappedCauchyMeasure, hpdf]
-    rw [Probability.integral_withDensity_ofReal
+    rw [MeasureTheory.integral_withDensity_ofReal
       hcont.measurable.aemeasurable (ae_of_all _ hnonneg)]
     rw [integral_wrappedCauchyPDFReal_smul_fourier m hγ n]
     congr 1

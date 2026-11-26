@@ -64,8 +64,8 @@ duality on oriented manifolds, which proceed by Mayer–Vietoris arguments over 
   `k ≠ dim E`.
 * `TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace`: `H^n_c(E)` is one-dimensional
   for `n = dim E`.
-* `TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace_eq_ite`: `H^k_c(E)` is
-  one-dimensional for `k = dim E` and zero otherwise.
+* `TauCeti.rank_compactlySupportedDeRhamCohomology_normedSpace_eq_ite`: `H^k_c(E)` has rank one
+  for `k = dim E` and rank zero, so vanishes, otherwise.
 
 ## References
 
@@ -327,13 +327,15 @@ theorem finrank_compactlySupportedDeRhamCohomology_normedSpace {k : ℕ} (hk : f
       (by rw [finrank_euclideanSpace_fin, hk])
 
 /-- **The compactly supported de Rham cohomology of `ℝⁿ`.** On a finite-dimensional real normed
-space `E`, `H^k_c(E)` is one-dimensional in degree `k = dim E` and zero in every other degree. -/
-theorem finrank_compactlySupportedDeRhamCohomology_normedSpace_eq_ite (k : ℕ) :
-    finrank ℝ (compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E k) =
+space `E`, `H^k_c(E)` has rank one in degree `k = dim E` and rank zero in every other degree: it is
+a line in degree `dim E` and vanishes in every other degree. -/
+theorem rank_compactlySupportedDeRhamCohomology_normedSpace_eq_ite (k : ℕ) :
+    Module.rank ℝ (compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E k) =
       if k = finrank ℝ E then 1 else 0 := by
   split_ifs with h
-  · exact finrank_compactlySupportedDeRhamCohomology_normedSpace E h.symm
+  · exact rank_eq_one_iff_finrank_eq_one.mpr
+      (finrank_compactlySupportedDeRhamCohomology_normedSpace E h.symm)
   · have := subsingleton_compactlySupportedDeRhamCohomology_normedSpace E h
-    exact finrank_zero_of_subsingleton
+    exact rank_subsingleton' ℝ _
 
 end TauCeti

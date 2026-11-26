@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Ratio
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Differential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.AdicCompletion
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.ObstructionExponent
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Tamagawa.Product
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ResidueField
 
@@ -62,6 +63,11 @@ formulas for `TauCeti.Isogeny.finiteKummerRatio` in terms of `WeierstrassCurve.t
   `TauCeti.Isogeny.finiteKummerRatio_eq_of_isGlobalMinimal_smul`: in characteristic zero, the
   characteristic and degree hypotheses hold automatically at every finite place, including at `2`
   and at primes dividing `deg φ`.
+* `TauCeti.Isogeny.finiteKummerRatio_eq_zpow_mul_tamagawaNumberAt_div` and
+  `TauCeti.Isogeny.finiteKummerRatio_eq_zpow_obstructionExponentAt_mul_tamagawaNumberAt_div`: the
+  finite-place formula as a power of `#(R ⧸ v)`, either through changes of variables to `v`-minimal
+  equations or, choice-free, through the local obstruction exponents `f_v(Eᵢ)`:
+  `φ.finiteKummerRatio v = (#(R ⧸ v)) ^ (ord_v c + f_v(E₂) - f_v(E₁)) · c_v(E₂) / c_v(E₁)`.
 
 ## References
 
@@ -431,6 +437,92 @@ theorem finiteKummerRatio_eq_of_isGlobalMinimal_smul (φ : Isogeny E₁.toAffine
     (two_ne_zero_adicCompletion (K := K) v) (degree_ne_zero_ring (K := K) φ)
 
 end CharZero
+
+section ObstructionExponent
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Ring.HasFiniteQuotients R]
+  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+  {E₁ E₂ : WeierstrassCurve K} [E₁.IsElliptic] [E₂.IsElliptic]
+
+/-- The normalized absolute value at `v` of a nonzero `c : K` is `(#(R ⧸ v)) ^ log (v c)`. -/
+private theorem normalizedAbsoluteValue_algebraMap_eq_zpow (v : HeightOneSpectrum R) {c : K}
+    (hc0 : c ≠ 0) :
+    (TauCeti.normalizedAbsoluteValue (v.adicCompletion K)
+        (algebraMap K (v.adicCompletion K) c) : ℚ) =
+      (Nat.card (R ⧸ v.asIdeal) : ℚ) ^ WithZero.log (v.valuation K c) := by
+  have hc0' : algebraMap K (v.adicCompletion K) c ≠ 0 :=
+    (map_ne_zero_iff _ (algebraMap K (v.adicCompletion K)).injective).mpr hc0
+  have hval : Valued.v (algebraMap K (v.adicCompletion K) c) = v.valuation K c := by
+    rw [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
+      HeightOneSpectrum.valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
+  have hcard : Nat.card (ResidueField (v.adicCompletionIntegers K)) = Nat.card (R ⧸ v.asIdeal) :=
+    Nat.card_congr (v.residueFieldEquivAdicCompletionIntegers (K := K)).symm.toEquiv
+  rw [normalizedAbsoluteValue_adicCompletion_eq_zpow_log v hc0', hval, hcard]
+  push_cast
+  rfl
+
+/-- **The finite local Kummer ratio as a power of `#(R ⧸ v)`.** If `φ^*ω₂ = c ω₁`, with `2 ≠ 0` in
+`K` and `deg φ ≠ 0` in `R`, and `C₁` and `C₂` carry `E₁` and `E₂` to equations minimal at `v`, then
+`φ.finiteKummerRatio v = (#(R ⧸ v)) ^ (-log (v (c · C₂.u / C₁.u))) · c_v(E₂) / c_v(E₁)`. -/
+theorem finiteKummerRatio_eq_zpow_mul_tamagawaNumberAt_div
+    (φ : Isogeny E₁.toAffine E₂.toAffine) (v : HeightOneSpectrum R) {c : K}
+    (hc : φ.pullbackDifferential (Affine.invariantDifferential E₂.toAffine) =
+      c • Affine.invariantDifferential E₁.toAffine)
+    (C₁ C₂ : VariableChange K)
+    [IsMinimal (Localization.AtPrime v.asIdeal) (C₁ • E₁)]
+    [IsMinimal (Localization.AtPrime v.asIdeal) (C₂ • E₂)]
+    (h2 : (2 : K) ≠ 0) (hφ : (φ.degree : R) ≠ 0) :
+    φ.finiteKummerRatio v =
+      (Nat.card (R ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation K (c * C₂.u / C₁.u))) *
+        E₂.tamagawaNumberAt v / E₁.tamagawaNumberAt v := by
+  have hφK : (φ.degree : K) ≠ 0 := by simpa using (IsFractionRing.injective R K).ne hφ
+  have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hc hφK
+  have hd : c * C₂.u / C₁.u ≠ 0 := div_ne_zero (mul_ne_zero hc0 C₂.u.ne_zero) C₁.u.ne_zero
+  have h2v : (2 : v.adicCompletion K) ≠ 0 := by
+    rw [← map_ofNat (algebraMap K (v.adicCompletion K)) 2]
+    exact (map_ne_zero_iff _ (algebraMap K (v.adicCompletion K)).injective).mpr h2
+  rw [finiteKummerRatio_eq_of_isMinimal_smul (C₁ := C₁) (C₂ := C₂) φ hc v h2v hφ,
+    normalizedAbsoluteValue_algebraMap_eq_zpow v hd, ← zpow_neg]
+
+omit [Ring.HasFiniteQuotients R] in
+private theorem neg_log_valuation_mul_div_eq_ord_add_obstructionExponentAt
+    (E₁ E₂ : WeierstrassCurve K) [E₁.IsElliptic] [E₂.IsElliptic]
+    (v : HeightOneSpectrum R) {c : K} (hc0 : c ≠ 0) (C₁ C₂ : VariableChange K)
+    [IsMinimal (Localization.AtPrime v.asIdeal) (C₁ • E₁)]
+    [IsMinimal (Localization.AtPrime v.asIdeal) (C₂ • E₂)] :
+    -WithZero.log (v.valuation K (c * C₂.u / C₁.u)) =
+      (v.valuation K).ord c + obstructionExponentAt R v E₂ - obstructionExponentAt R v E₁ := by
+  have hf₁ : obstructionExponentAt R v (C₁ • E₁) = 0 :=
+    (obstructionExponentAt_eq_zero_iff_isMinimal R v (C₁ • E₁)).mpr inferInstance
+  have hf₂ : obstructionExponentAt R v (C₂ • E₂) = 0 :=
+    (obstructionExponentAt_eq_zero_iff_isMinimal R v (C₂ • E₂)).mpr inferInstance
+  rw [obstructionExponentAt_smul] at hf₁ hf₂
+  rw [← Valuation.ord_def, Valuation.ord_div _ (mul_ne_zero hc0 C₂.u.ne_zero) C₁.u.ne_zero,
+    Valuation.ord_mul _ ((v.valuation K).ne_zero_iff.mpr hc0)
+      ((v.valuation K).ne_zero_iff.mpr C₂.u.ne_zero)]
+  omega
+
+/-- **Choice-free local Kummer/Tamagawa formula at a finite place.** If `φ^*ω₂ = c ω₁`, with
+`2 ≠ 0` in `K` and `deg φ ≠ 0` in `R`, then
+`φ.finiteKummerRatio v = (#(R ⧸ v)) ^ (ord_v c + f_v(E₂) - f_v(E₁)) · c_v(E₂) / c_v(E₁)`,
+where `f_v(Eᵢ) = obstructionExponentAt R v Eᵢ`. -/
+theorem finiteKummerRatio_eq_zpow_obstructionExponentAt_mul_tamagawaNumberAt_div
+    (φ : Isogeny E₁.toAffine E₂.toAffine) (v : HeightOneSpectrum R) {c : K}
+    (hc : φ.pullbackDifferential (Affine.invariantDifferential E₂.toAffine) =
+      c • Affine.invariantDifferential E₁.toAffine)
+    (h2 : (2 : K) ≠ 0) (hφ : (φ.degree : R) ≠ 0) :
+    φ.finiteKummerRatio v =
+      (Nat.card (R ⧸ v.asIdeal) : ℚ) ^
+        ((v.valuation K).ord c + obstructionExponentAt R v E₂ - obstructionExponentAt R v E₁) *
+        E₂.tamagawaNumberAt v / E₁.tamagawaNumberAt v := by
+  have hφK : (φ.degree : K) ≠ 0 := by simpa using (IsFractionRing.injective R K).ne hφ
+  have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hc hφK
+  obtain ⟨C₁, hC₁⟩ := exists_isMinimal (Localization.AtPrime v.asIdeal) E₁
+  obtain ⟨C₂, hC₂⟩ := exists_isMinimal (Localization.AtPrime v.asIdeal) E₂
+  rw [finiteKummerRatio_eq_zpow_mul_tamagawaNumberAt_div φ v hc C₁ C₂ h2 hφ,
+    neg_log_valuation_mul_div_eq_ord_add_obstructionExponentAt E₁ E₂ v hc0 C₁ C₂]
+
+end ObstructionExponent
 
 end TauCeti.Isogeny
 

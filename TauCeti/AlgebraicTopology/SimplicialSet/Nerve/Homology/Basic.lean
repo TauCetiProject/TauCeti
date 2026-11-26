@@ -13,6 +13,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 public import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
+public import TauCeti.AlgebraicTopology.SimplexCategory.Basic
 import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 import Mathlib.CategoryTheory.Limits.FunctorCategory.Basic
 import TauCeti.Algebra.Homology.ShortComplex.FunctorCategory
@@ -114,12 +115,12 @@ def ιCategorySimplicial (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C n) :
   Limits.Sigma.ι (fun (τ : ComposableArrows C n) ↦ M.obj (τ.obj 0)) σ
 
 lemma ιCategorySimplicial_congr (M : C ⥤ A) {n : ℕ} {σ₁ σ₂ : ComposableArrows C n} (h : σ₁ = σ₂)
-    (h0 : σ₁.obj 0 = σ₂.obj 0 := by exact congrArg (fun τ ↦ τ.obj 0) h) :
+    (h0 : σ₁.obj 0 = σ₂.obj 0 := by rw [h]) :
     ιCategorySimplicial M σ₁ = eqToHom (congrArg M.obj h0) ≫ ιCategorySimplicial M σ₂ := by
   subst h; simp
 
 /-- The cofan presenting `(categorySimplicialObject M) _⦋n⦌` as a coproduct over `n`-simplices. -/
-def categorySimplicialObjectXCofan (M : C ⥤ A) (n : ℕ) :
+@[expose] def categorySimplicialObjectXCofan (M : C ⥤ A) (n : ℕ) :
     Cofan (fun (σ : ComposableArrows C n) ↦ M.obj (σ.obj 0)) :=
   Cofan.mk ((categorySimplicialObject M) _⦋n⦌) (ιCategorySimplicial M)
 
@@ -146,6 +147,17 @@ def descCategorySimplicial (M : C ⥤ A) {n : ℕ} {T : A}
     (σ : ComposableArrows C n) : ιCategorySimplicial M σ ≫ (categorySimplicialObject M).map θ.op =
       M.map (σ.map (homOfLE (Fin.zero_le (θ.toOrderHom 0)))) ≫
         ιCategorySimplicial M ((nerve C).map θ.op σ) := Limits.Sigma.ι_comp_map' _ _ σ
+
+/-- An epimorphism `θ : ⦋n⦌ ⟶ ⦋m⦌` fixes vertex `0`, so it sends the `σ`-summand to the
+`(nerve C).map θ.op σ`-summand by an identity transported along `eqToHom`. -/
+@[reassoc] lemma ιCategorySimplicial_map_of_epi (M : C ⥤ A) {m n : ℕ} (θ : ⦋n⦌ ⟶ ⦋m⦌) [Epi θ]
+    (σ : ComposableArrows C m) :
+    ιCategorySimplicial M σ ≫ (categorySimplicialObject M).map θ.op =
+      eqToHom (congrArg (fun k ↦ M.obj (σ.obj k)) (SimplexCategory.toOrderHom_zero_of_epi θ).symm) ≫
+        ιCategorySimplicial M ((nerve C).map θ.op σ) := by
+  refine (ιCategorySimplicial_map M θ σ).trans ?_
+  rw [Subsingleton.elim (homOfLE (Fin.zero_le _))
+    (eqToHom (SimplexCategory.toOrderHom_zero_of_epi θ).symm), eqToHom_map, eqToHom_map]
 
 /-- Face `δ 0` transports along `σ.obj 0 ⟶ σ.obj (Fin.succ 0)` and drops vertex `0`. -/
 @[reassoc (attr := simp)] lemma ιCategorySimplicial_δ_zero (M : C ⥤ A) {n : ℕ}
@@ -267,7 +279,7 @@ lemma ιCategoryChainComplex_eq (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C
     ιCategoryChainComplex M σ = ιCategorySimplicial M σ := (rfl)
 
 lemma ιCategoryChainComplex_congr (M : C ⥤ A) {n : ℕ} {σ₁ σ₂ : ComposableArrows C n}
-    (h : σ₁ = σ₂) (h0 : σ₁.obj 0 = σ₂.obj 0 := by exact congrArg (fun τ ↦ τ.obj 0) h) :
+    (h : σ₁ = σ₂) (h0 : σ₁.obj 0 = σ₂.obj 0 := by rw [h]) :
     ιCategoryChainComplex M σ₁ = eqToHom (congrArg M.obj h0) ≫ ιCategoryChainComplex M σ₂ :=
   ιCategorySimplicial_congr M h h0
 
@@ -395,6 +407,13 @@ instance {M N : C ⥤ A} (α : M ⟶ N) [∀ X, Epi (α.app X)] (n : ℕ) :
 
 instance {M N : C ⥤ A} (α : M ⟶ N) [∀ X, Epi (α.app X)] : Epi (categoryChainComplexMap α) :=
   HomologicalComplex.epi_of_epi_f _ fun _ ↦ inferInstance
+
+/-- For an empty category `C`, `categoryChainComplex M` is a zero chain complex. -/
+lemma isZero_categoryChainComplex_of_isEmpty [IsEmpty C] (M : C ⥤ A) :
+    IsZero (categoryChainComplex M) := by
+  rw [IsZero.iff_id_eq_zero]
+  exact HomologicalComplex.Hom.ext (funext fun _ ↦ categoryChainComplex_hom_ext fun σ ↦
+    (IsEmpty.false (σ.obj 0)).elim)
 
 private def isColimitCategoryChainComplexCocone (M : C ⥤ A) (n : ℕ) :
     IsColimit (Cocone.mk ((categoryChainComplex M).X n)
@@ -525,6 +544,13 @@ end Pushforward
     categoryHomologyPushforward (𝟭 C) M n = 𝟙 (categoryHomology M n) :=
   (congrArg (fun φ ↦ HomologicalComplex.homologyMap φ n)
     (categoryChainComplexPushforward_id M)).trans (HomologicalComplex.homologyMap_id _ n)
+
+/-- For an empty category `C`, `categoryHomology M n` is zero in every degree `n`. -/
+lemma isZero_categoryHomology_of_isEmpty [IsEmpty C] (M : C ⥤ A) (n : ℕ) :
+    IsZero (categoryHomology M n) := by
+  rw [IsZero.iff_id_eq_zero, ← HomologicalComplex.homologyMap_id,
+    (isZero_categoryChainComplex_of_isEmpty M).eq_of_src (𝟙 _) 0,
+    HomologicalComplex.homologyMap_zero]
 
 instance {M N : C ⥤ A} (α : M ⟶ N) [∀ X, Epi (α.app X)] : Epi (categoryHomologyMap α 0) :=
   HomologicalComplex.epi_homologyMap_of_epi_of_not_rel (categoryChainComplexMap α) 0 (by simp)

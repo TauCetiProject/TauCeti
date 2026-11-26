@@ -37,12 +37,19 @@ reversed flow.
 * `TauCeti.MorseChart.negativeCoord` and `TauCeti.MorseChart.negativeExtend`: the coordinates of
   negative weight of a vector, and the vector with given coordinates of negative weight and zero
   coordinates of positive weight.
+* `TauCeti.MorseChart.exp_neg_smul_coord_symm_linearFlow`: the linear flow, rescaled by `e^{-s}`,
+  is the projection onto the coordinates of negative weight plus `e^{-2s}` times its complement.
 * `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_stableSet_flow`: the slice charts of `W^s(x)`
   given by a Morse chart composed with the time-`T` maps of the flow.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableSet_chart`: slice charts for `W^s(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_stableSet` and
   `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_unstableSet`: slice charts for `W^s(x)` and,
   for a Morse function, `W^u(x)`, onto subspaces of dimensions `n - k` and `k`.
+* `TauCeti.IsAdaptedPseudoGradient.isOpen_stableSet_of_manifoldMorseIndex_eq_zero` and
+  `TauCeti.IsAdaptedPseudoGradient.isOpen_unstableSet_of_manifoldMorseIndex_eq_finrank`: `W^s(x)`
+  is open when `x` has index `0`, and `W^u(x)` when `x` has index `n`.
+* `TauCeti.IsAdaptedPseudoGradient.unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero`: for a
+  Morse function, the unstable manifold of a critical point of index `0` is the point itself.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableSet_isManifold` and
   `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_isManifold`: the manifold structures, of
   dimensions `n - k` and `k`.
@@ -193,8 +200,30 @@ theorem linearFlow_coord_negativeExtend (t : ℝ) (c : {i // φ.weight i < 0} �
   rw [Pi.smul_apply, smul_eq_mul]
   rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
   · rw [φ.linearFlow_of_weight_eq_neg_one hi]
-  · rw [linearFlow_apply, φ.coord_negativeExtend_of_not_weight_neg c (by rw [hi]; norm_num),
-      mul_zero, mul_zero]
+  · rw [MorseBottChart.linearFlow_apply,
+      φ.coord_negativeExtend_of_not_weight_neg c (by rw [hi]; norm_num), mul_zero, mul_zero]
+
+/-- **The rescaled linear flow.** Read in the coordinates of a Morse chart, the linear flow for the
+time `s`, multiplied by `e^{-s}`, keeps the coordinates of negative weight and multiplies those of
+positive weight by `e^{-2s}`: it is the projection `v ↦ φ.negativeExtend (φ.negativeCoord v)`
+plus `e^{-2s}` times the complementary projection. -/
+theorem exp_neg_smul_coord_symm_linearFlow (s : ℝ) (v : E) :
+    Real.exp (-s) • φ.coord.symm (φ.linearFlow s (φ.coord v)) =
+      φ.negativeExtend (φ.negativeCoord v) +
+        Real.exp (-(2 * s)) • (v - φ.negativeExtend (φ.negativeCoord v)) := by
+  refine φ.coord.injective (funext fun i ↦ ?_)
+  simp only [map_smul, map_add, map_sub, LinearEquiv.apply_symm_apply, Pi.smul_apply,
+    Pi.add_apply, Pi.sub_apply, smul_eq_mul]
+  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
+  · have hneg : φ.weight i < 0 := by rw [hi]; norm_num
+    rw [φ.linearFlow_of_weight_eq_neg_one hi,
+      φ.coord_negativeExtend_of_weight_neg _ ⟨i, hneg⟩, negativeCoord_apply, ← mul_assoc,
+      ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_mul, sub_self, mul_zero, add_zero]
+  · have hpos : ¬φ.weight i < 0 := by rw [hi]; norm_num
+    rw [φ.linearFlow_of_weight_eq_one hi, φ.coord_negativeExtend_of_not_weight_neg _ hpos,
+      ← mul_assoc, ← Real.exp_add, sub_zero, zero_add]
+    congr 2
+    ring
 
 /-- If the coordinates of `a` are those of `b` moved by the linear flow for the time `s`, the
 coordinates of negative weight of `a` are `e^{s}` times those of `b`. -/
@@ -311,7 +340,7 @@ theorem exists_stableSet_chart (hX : IsAdaptedPseudoGradient f X)
   obtain ⟨D, hD, hxD, hDs, hslice⟩ := hX.exists_isSliceChart_stableSet_flow φ hφ
   obtain ⟨T, hT⟩ := ((Flow.mem_stableSet.1 hp).eventually (hD.mem_nhds hxD)).exists
   refine ⟨(hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph (φ.toChart.restr D),
-    ?_, (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas
+    ?_, (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
       (restr_mem_maximalAtlas _ φ.mem_maximalAtlas hD), isSliceChart_iff.1 (hslice T)⟩
   rw [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
     hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply]
@@ -349,6 +378,54 @@ theorem exists_isSliceChart_unstableSet (hX : IsAdaptedPseudoGradient f X)
   have hidx := (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
     ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   exact ⟨L, q, by omega, hpq, hq, hs⟩
+
+/-- **The stable manifold of a critical point of index `0` is open.** Its slice charts flatten it
+onto a subspace of full dimension, so it contains the source of a chart around each of its
+points. -/
+theorem isOpen_stableSet_of_manifoldMorseIndex_eq_zero (hX : IsAdaptedPseudoGradient f X)
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = 0) :
+    IsOpen (hX.flow.stableSet x) := by
+  refine isOpen_iff_mem_nhds.2 fun p hp ↦ ?_
+  obtain ⟨L, q, hL, hpq, -, hs⟩ := hX.exists_isSliceChart_stableSet hx hp
+  have hLtop : L = ⊤ := Submodule.eq_top_of_finrank_eq (by omega)
+  exact Filter.mem_of_superset (q.open_source.mem_nhds hpq) fun z hz ↦
+    (isSliceChart_iff.1 hs z hz).2 (by simp [hLtop])
+
+/-- **The unstable manifold of a critical point of top index is open.** Its slice charts flatten
+it onto a subspace of full dimension, so it contains the source of a chart around each of its
+points. -/
+theorem isOpen_unstableSet_of_manifoldMorseIndex_eq_finrank (hX : IsAdaptedPseudoGradient f X)
+    (hf : IsMorse 𝓘(ℝ, E) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E) :
+    IsOpen (hX.flow.unstableSet x) := by
+  refine isOpen_iff_mem_nhds.2 fun p hp ↦ ?_
+  obtain ⟨L, q, hL, hpq, -, hs⟩ := hX.exists_isSliceChart_unstableSet hf hx hp
+  have hLtop : L = ⊤ := Submodule.eq_top_of_finrank_eq (by omega)
+  exact Filter.mem_of_superset (q.open_source.mem_nhds hpq) fun z hz ↦
+    (isSliceChart_iff.1 hs z hz).2 (by simp [hLtop])
+
+/-- **The unstable manifold of a critical point of index zero is a point.** For a critical point
+`x` of index `0` of a Morse function, no other trajectory converges to `x` in backward time: near
+`x` the slice charts flatten `W^u(x)` onto the zero subspace, and every trajectory converging to
+`x` in backward time enters such a chart. -/
+theorem unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero (hX : IsAdaptedPseudoGradient f X)
+    (hf : IsMorse 𝓘(ℝ, E) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = 0) :
+    hX.flow.unstableSet x = {x} := by
+  have hxu : x ∈ hX.flow.unstableSet x := (hX.mem_unstableSet_inter_stableSet_self hx).1
+  obtain ⟨L, φ, hL, hxφ, -, hs⟩ := hX.exists_isSliceChart_unstableSet hf hx hxu
+  obtain rfl : L = ⊥ := Submodule.finrank_eq_zero.1 (hL.trans hind)
+  -- In the slice chart at `x`, the only point of `W^u(x)` is `x` itself.
+  have hloc (z : M) (hz : z ∈ φ.source) (hzu : z ∈ hX.flow.unstableSet x) : z = x := by
+    have hz0 : φ z = 0 := by simpa using (isSliceChart_iff.1 hs z hz).1 hzu
+    have hx0 : φ x = 0 := by simpa using (isSliceChart_iff.1 hs x hxφ).1 hxu
+    exact φ.injOn hz hxφ (hz0.trans hx0.symm)
+  refine subset_antisymm (fun p hp ↦ ?_) (singleton_subset_iff.2 hxu)
+  obtain ⟨t, ht⟩ := ((Flow.mem_unstableSet.1 hp).eventually
+    (φ.open_source.mem_nhds hxφ)).exists
+  have hpt := hloc _ ht ((Flow.apply_mem_unstableSet_iff _ t).2 hp)
+  rw [mem_singleton_iff, ← hX.flow.map_neg_apply_map t p, hpt,
+    hX.flow_apply_of_mfderiv_eq_zero hx]
 
 /-- **The stable set is a manifold of dimension `n - k`.** For a critical point `x` of index
 `k`, the stable set `W^s(x)` of the flow of an adapted pseudo-gradient carries a smooth

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.Family
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Basic
 public import TauCeti.AlgebraicGeometry.Fibers.SchematicDensity
+public import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 
 /-!
 # Generic fibres of models over a discrete valuation ring
@@ -21,7 +22,10 @@ Conversely, a flat finitely presented scheme over the discrete valuation ring to
 pullback square exhibiting a prescribed scheme over the fraction field as its generic fibre is a
 model (`TauCeti.Model.ofIsPullback`).
 
-When the model is a family of curves, so is its generic fibre.
+When the model is a family of curves, so is its generic fibre. Conversely, since a model is flat
+over the discrete valuation ring, its special fibre is no larger than its generic fibre: if `C`
+has dimension at most `d` over `K`, the model has relative dimension at most `d` over `R`
+(`TauCeti.Model.relativeDimensionLE_toBase`).
 -/
 
 public section
@@ -130,7 +134,10 @@ variable {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [Flat toBase]
 fibre of `X`. Its generic-fibre identification is the canonical comparison of `C` with the chosen
 pullback, so that its generic-fibre inclusion is `j` (`TauCeti.Model.genericι_ofIsPullback`).
 This is the converse of `TauCeti.Model.isPullback_genericι`. -/
-def ofIsPullback (h : IsPullback j toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))) :
+-- The body is exposed so that the total space of the model is `X` by definition, as
+-- constructions comparing morphisms of total spaces require.
+@[expose] def ofIsPullback
+    (h : IsPullback j toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))) :
     Model R K C toK where
   total := X
   toBase := toBase
@@ -165,6 +172,56 @@ lemma genericι_ofIsPullback :
   exact (h.isoPullback_hom_fst).trans (Category.comp_id j).symm
 
 end OfIsPullback
+
+/-- The set-theoretic image of a model's chosen generic fibre in its total space is the fibre of
+the structure morphism over the generic point of `Spec R`. -/
+theorem range_genericι_eq_preimage_genericPoint (M : Model R K C toK) :
+    Set.range M.genericι = M.toBase ⁻¹' {genericPoint (Spec (.of R))} := by
+  have : IsIso M.genericFiberIso.inv.left :=
+    inferInstanceAs (IsIso ((Over.forget _).map M.genericFiberIso.inv))
+  rw [M.genericι_def]
+  calc Set.range (M.genericFiberIso.inv.left ≫ genericFiberι R K M.toBase)
+      = Set.range (genericFiberι R K M.toBase ∘ M.genericFiberIso.inv.left) :=
+        congrArg Set.range (funext fun x ↦ Scheme.Hom.comp_apply _ _ x)
+    _ = Set.range (genericFiberι R K M.toBase) :=
+        M.genericFiberIso.inv.left.surjective.range_comp _
+    _ = M.toBase ⁻¹' {genericPoint (Spec (.of R))} := range_genericFiberι R K M.toBase
+
+/-- The set-theoretic image of a model's chosen generic fibre in its total space is the complement
+of the special fibre. -/
+theorem range_genericι_eq_setOf_base_ne_closedPoint (M : Model R K C toK) :
+    Set.range M.genericι = {x : M.total | M.toBase x ≠ closedPoint R} := by
+  rw [M.range_genericι_eq_preimage_genericPoint, ← range_genericFiberι R K,
+    range_genericFiberι_of_isDiscreteValuationRing]
+
+/-- **The special fibre of a model is no larger than its generic fibre.** If the generic fibre
+`C` has dimension at most `d`, then the model has relative dimension at most `d` over the discrete
+valuation ring: its special fibre also has dimension at most `d`. -/
+instance relativeDimensionLE_toBase {d : ℕ} (M : Model R K C toK)
+    [AlgebraicGeometry.RelativeDimensionLE d toK] :
+    AlgebraicGeometry.RelativeDimensionLE d M.toBase := by
+  have := M.isOpenImmersion_genericι
+  rw [AlgebraicGeometry.relativeDimensionLE_iff_topologicalKrullDim_preimage_genericPoint_le,
+    ← M.range_genericι_eq_preimage_genericPoint,
+    AlgebraicGeometry.topologicalKrullDim_range_of_isPreimmersion]
+  exact (AlgebraicGeometry.relativeDimensionLE_iff_of_field toK).mp inferInstance
+
+/-- The image of a model's chosen generic fibre in its total space is the basic open of the
+pullback of a nonzero element `π` of the maximal ideal, such as a uniformizer. -/
+theorem range_genericι_eq_basicOpen (M : Model R K C toK) {π : R}
+    (hπ : π ∈ maximalIdeal R) (hπ0 : π ≠ 0) :
+    Set.range M.genericι =
+      M.total.basicOpen (M.toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π)) := by
+  rw [M.range_genericι_eq_setOf_base_ne_closedPoint]
+  ext x
+  refine (not_congr (M.toBase.base_eq_closedPoint_iff_mem_zeroLocus hπ hπ0 x)).trans ?_
+  rw [Scheme.zeroLocus_singleton, Set.mem_compl_iff, not_not]
+
+/-- If the total space of a model `M` is irreducible, then its generic fibre `C` is nonempty. -/
+theorem nonempty_generic (M : Model R K C toK) [IrreducibleSpace M.total] : Nonempty C :=
+  (M.toBase.nonempty_genericFiber_of_base_ne_closedPoint K
+    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))).map
+    M.genericFiberIso.hom.left
 
 /-- A morphism of total spaces over the base respects the chosen identifications of generic fibres
 as soon as it carries the chosen generic fibre of `M` to that of `N`. This is the converse of

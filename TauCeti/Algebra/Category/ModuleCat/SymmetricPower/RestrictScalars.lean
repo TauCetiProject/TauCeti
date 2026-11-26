@@ -19,6 +19,7 @@ by the identity of `M`, viewed as an `f`-semilinear map. It is an isomorphism wh
 bijective, although this need not hold for a general ring map. This
 supplies the sectionwise maps for symmetric powers of pushforwards of module presheaves, in the
 same way as `TauCeti.ModuleCat.restrictScalarsExteriorPowerComparison` does for exterior powers.
+In degree zero it is `f` itself, read through the identifications `Sym⁰ ≅` the coefficient ring.
 -/
 
 public section
@@ -130,5 +131,25 @@ theorem isIso_restrictScalarsSymmetricPowerComparison_app_of_bijective
     ⟨Function.LeftInverse.injective hleft, Function.RightInverse.surjective hright⟩
 
 end
+
+section DegreeZero
+
+variable {S R : Type u} [CommRing S] [CommRing R] (f : S →+* R)
+
+/-- In degree zero the restriction-of-scalars comparison is the ring map `f`, read through the
+identifications `Sym⁰ ≅ S` and `Sym⁰ ≅ R` of `ModuleCat.symmetricPower.iso₀`. -/
+theorem iso₀_hom_restrictScalarsSymmetricPowerComparison_app_apply (M : ModuleCat.{u} R)
+    (x : ((ModuleCat.restrictScalars f).obj M).symmetricPower 0) :
+    (ModuleCat.symmetricPower.iso₀ M).hom
+        ((restrictScalarsSymmetricPowerComparison.{u, u, u} f 0).app M x) =
+      f ((ModuleCat.symmetricPower.iso₀ ((ModuleCat.restrictScalars f).obj M)).hom x) := by
+  -- Degree-zero elements are scalars in the symmetric algebra, where the comparison is `f`.
+  apply (SymmetricAlgebra.algebraMap_leftInverse (R := R) M).injective
+  exact (ModuleCat.symmetricPower.algebraMap_iso₀_hom_apply M _).trans
+    ((coe_restrictScalarsSymmetricPowerComparison_app_apply f 0 M x).trans
+      ((congrArg _ (ModuleCat.symmetricPower.algebraMap_iso₀_hom_apply _ x).symm).trans
+        (SymmetricAlgebra.mapₛₗ_algebraMap _ _)))
+
+end DegreeZero
 
 end TauCeti.ModuleCat

@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Sobolev.FiniteMeasure
 import TauCeti.Analysis.Sobolev.W1p.HolderEmbedding
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Exponent
 
 /-!
 # Whole-space and interior Sobolev embeddings
@@ -151,8 +151,11 @@ theorem W1p.exists_eLpNorm_value_le_of_ae_eq [Fact (1 ≤ pstar)] {V : Set E} (h
     {q : ℝ≥0∞} (hq : q ≤ pstar) (S : W1p mu Omega p →L[ℝ] Lp ℝ pstar (mu.restrict V))
     (hS : ∀ u, S u =ᵐ[mu.restrict V] W1p.value u) :
     ∃ C : ℝ≥0, ∀ u : W1p mu Omega p,
-      eLpNorm (W1p.value u) q (mu.restrict V) ≤ C * ‖u‖ₑ :=
-  exists_eLpNorm_le_mul_enorm_of_ae_eq (by rwa [Measure.restrict_apply_univ]) hq S hS
+      eLpNorm (W1p.value u) q (mu.restrict V) ≤ C * ‖u‖ₑ := by
+  refine exists_eLpNorm_le_mul_enorm_of_eLpNorm_le (by rwa [Measure.restrict_apply_univ]) hq
+    (K := ‖S‖₊) fun u ↦ ?_
+  rw [← eLpNorm_congr_ae (hS u), ← Lp.eNorm_def, ← eNorm_eq_nnNorm]
+  exact S.le_opENorm u
 
 omit [FiniteDimensional ℝ E] in
 /-- **Inclusions from value bounds.** A uniform estimate `‖u‖_{L^r(V)} ≤ C ‖u‖_{W^{1,p}(Ω)}` on a
@@ -284,14 +287,6 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
     {V : Set E} (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω) :
     ∃ C : ℝ≥0, ∀ u : W1p μ Ω (q : ℝ≥0∞),
       eLpNorm (W1p.value u) s (μ.restrict V) ≤ C * ‖u‖ₑ := by
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · -- In a trivial space `finrank = 0`, so the gap condition is impossible.
-    have h0 : (0 : ℝ) ≤ (q : ℝ)⁻¹ - (s : ℝ)⁻¹ := by
-      rw [sub_nonneg]
-      have hq : (1 : ℝ≥0) ≤ q := by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ q)
-      exact inv_anti₀ (by positivity) (by exact_mod_cast hqs)
-    simp [Module.finrank_zero_of_subsingleton] at hgap
-    linarith
   obtain ⟨U, hUf, hVU, T, hTrep⟩ :=
     W1p.exists_zeroBoundaryLocalization (μ := μ) (Ω := Ω) (p := (q : ℝ≥0∞))
       ENNReal.coe_ne_top hVc hVΩ
@@ -310,7 +305,7 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
       eLpNorm_mono_measure _ (Measure.restrict_mono_set μ hVU)
     _ ≤ A * ‖W1p.gradient (T u).val‖ₑ := by
       exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt
-        ENNReal.coe_ne_top hUf (by exact_mod_cast hqs)
+        hUf (by exact_mod_cast hqs)
         (by simp) hgap (T u).property
     _ ≤ A * ‖T u‖ₑ := by
       gcongr

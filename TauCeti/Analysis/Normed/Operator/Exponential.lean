@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Analysis.CStarAlgebra.Matrix
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
@@ -18,6 +19,7 @@ import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Algebra.Exponential.Polynomial
 import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Exponentials of bounded operators
@@ -36,11 +38,15 @@ space. The norm bounds for exponentials in a general normed algebra live in
   `exp (-B)`.
 * `ContinuousLinearMap.exp_apply_of_apply_eq_smul`: the exponential of an operator acts on an
   eigenvector by the scalar exponential of the eigenvalue.
+* `ContinuousLinearMap.exp_apply_eq_cos_smul_add_sin_smul`: the exponential of a real operator
+  acting on a pair of vectors `x, y` by `x ↦ a y`, `y ↦ -a x` rotates `x` by the angle `a`.
 * `ContinuousLinearMap.exp_apply_of_apply_eq_zero`: the exponential of an operator fixes its kernel.
 * `ContinuousLinearMap.exp_apply_eq_self_iff`: if `‖B‖ < log 2`, the fixed vectors of `exp B` are
   the kernel of `B`.
 * `ContinuousLinearMap.spectrum_exp`: in finite dimension, the spectrum of `exp N` is the image of
   the spectrum of `N` under the exponential.
+* `ContinuousLinearMap.toMatrix_exp`: in a basis of a finite-dimensional space, the matrix of
+  `exp L` is the matrix exponential of the matrix of `L`.
 * `ContinuousLinearMap.exp_smul_apply_sub_eq_intervalIntegral`: the Duhamel identity
   `exp (t • B) x - x = ∫₀ᵗ exp (u • B) (B x) du` for the orbits of a real bounded operator.
 * `ContinuousLinearMap.eq_exp_smul_apply_of_hasDerivWithinAt`: a continuous function on `[0, ∞)`
@@ -175,9 +181,56 @@ theorem spectrum_exp (N : V →L[ℂ] V) :
 
 end FiniteDimensional
 
+section Matrix
+
+variable {𝕜 : Type*} [RCLike 𝕜] {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  [FiniteDimensional 𝕜 X] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+open scoped Matrix.Norms.L2Operator in
+/-- In a basis of a finite-dimensional space, the matrix of the exponential of an operator is the
+matrix exponential of its matrix: taking matrices is a continuous ring homomorphism. -/
+theorem toMatrix_exp (b : Module.Basis ι 𝕜 X) (L : X →L[𝕜] X) :
+    LinearMap.toMatrix b b (exp L : X →L[𝕜] X) = exp (LinearMap.toMatrix b b L) := by
+  let f : (X →L[𝕜] X) →+* Matrix ι ι 𝕜 :=
+    (LinearMap.toMatrixAlgEquiv b).toRingHom.comp ContinuousLinearMap.toLinearMapRingHom
+  have hfg (L : X →L[𝕜] X) : f L = LinearMap.toMatrix b b L := by
+    ext i j
+    simp [f, LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
+  have hf : Continuous f :=
+    (ContinuousLinearMap.toMatrixCLM b).continuous.congr fun L ↦ by simp [hfg]
+  have : CompleteSpace X := FiniteDimensional.completeSpace 𝕜 X
+  let +nondep : NormedAlgebra ℚ (X →L[𝕜] X) := .restrictScalars ℚ 𝕜 _
+  rw [← hfg, NormedSpace.map_exp f hf, hfg]
+
+end Matrix
+
 section Real
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+
+/-- **The exponential of an operator rotating a pair of vectors.** If `B x = a • y` and
+`B y = -(a • x)`, so that `B` acts on the span of `x` and `y` as `a` times a quarter turn, then
+`exp B x = cos a • x + sin a • y`. -/
+theorem exp_apply_eq_cos_smul_add_sin_smul (B : X →L[ℝ] X) {x y : X} {a : ℝ}
+    (hx : B x = a • y) (hy : B y = -(a • x)) :
+    exp B x = Real.cos a • x + Real.sin a • y := by
+  -- The real-linear map `z ↦ re z • x + im z • y` intertwines multiplication by `a i` with `B`.
+  let Φ : ℂ →L[ℝ] X := Complex.reCLM.smulRight x + Complex.imCLM.smulRight y
+  have hΦ (z : ℂ) : B (Φ z) = Φ (a * Complex.I * z) := by
+    simp only [Φ, add_apply, smulRight_apply, Complex.reCLM_apply, Complex.imCLM_apply, map_add,
+      map_smul, hx, hy, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
+      Complex.I_re, Complex.I_im]
+    module
+  have hpow (n : ℕ) : (B ^ n) x = Φ ((a * Complex.I) ^ n) := by
+    induction n with
+    | zero => simp [Φ]
+    | succ n hn => rw [pow_succ', mul_apply_eq_comp, hn, hΦ, ← pow_succ']
+  have hop := (exp_series_hasSum_exp' (𝕂 := ℝ) B).mapL (ContinuousLinearMap.apply ℝ X x)
+  simp only [ContinuousLinearMap.apply_apply, smul_apply, hpow] at hop
+  have hscalar := (exp_series_hasSum_exp' (𝕂 := ℝ) ((a : ℂ) * Complex.I)).mapL Φ
+  simp only [map_smul] at hscalar
+  rw [hop.unique hscalar, ← Complex.exp_eq_exp_ℂ]
+  simp [Φ, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
 
 /-- **The Duhamel identity for the exponential of a bounded operator.** For `B : X →L[ℝ] X`,
 `exp (t B) x - x = ∫₀ᵗ exp (u B) (B x) du`.

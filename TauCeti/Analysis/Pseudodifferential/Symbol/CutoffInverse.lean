@@ -45,6 +45,11 @@ the products `r(x, ξ) a(x, ξ)⁻¹` and `a(x, ξ)⁻¹ r(x, ξ)` are symbols o
 `a (a⁻¹ r) = r` at every point. These are the inverses used for microlocal parametrices, where `a`
 is only elliptic on a conic set of frequencies.
 
+If `a(x, ξ)` is invertible at every point, with the same inverse bound at large frequencies, no
+cutoff is needed: the inverse bound extends to the remaining compact set of frequencies by
+continuity, and the same estimates make the pointwise inverse `a(x, ξ)⁻¹` itself a symbol of order
+`-m` (`TauCeti.Symbol.inverse`), such as `(1 + ⟨ξ⟩)⁻¹` of order `-1`.
+
 ## Implementation notes
 
 The derivative estimates rest on the formula `∂(a⁻¹) = -a⁻¹ (∂a) a⁻¹`
@@ -491,6 +496,89 @@ theorem IsUniform.cutoffInverse {a : Symbol n V W m} (ha : a.IsUniform)
     (hC.imp fun _ h x _ ξ hξ => h x ξ hξ) α β
   exact ⟨C, hC0, fun x ξ => hC' x (mem_univ x) ξ⟩
 
+/-! ### The inverse of a symbol that is invertible everywhere -/
+
+section Inverse
+
+private theorem contDiff_inverse (a : Symbol n V W m) (hinv : ∀ p, (a.coefficient p).IsInvertible) :
+    ContDiff ℝ ∞ fun p => (a.coefficient p).inverse :=
+  contDiff_iff_contDiffAt.2 fun p => a.contDiff_coefficient.contDiffAt.clm_inverse (hinv p)
+
+/-- The estimates of the pointwise inverse of a symbol that is invertible at every point, at the
+positions of a compact set. On the compact set `K × closedBall 0 |R|` the continuous inverse is
+bounded, so the inverse bound at frequencies `|R| ≤ ‖ξ‖` extends to all frequencies. -/
+private theorem exists_bound_inverse (a : Symbol n V W m)
+    (hinv : ∀ p, (a.coefficient p).IsInvertible) (R : ℝ) {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K)
+    (hC : ∃ C, ∀ x ∈ K, ∀ ξ, |R| ≤ ‖ξ‖ →
+      ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2))
+    (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (fun p => (a.coefficient p).inverse) x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((-m - β.length) / 2) := by
+  obtain ⟨C, hC⟩ := hC
+  have hw : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
+      (1 + ‖p.2‖ ^ 2) ^ (-m / 2) :=
+    (continuous_const.add ((continuous_norm.comp continuous_snd).pow 2)).rpow_const
+      fun p => Or.inl (by positivity : (0 : ℝ) < 1 + ‖p.2‖ ^ 2).ne'
+  obtain ⟨M, hM⟩ := (hK.prod (isCompact_closedBall 0 |R|)).exists_bound_of_continuousOn
+    ((contDiff_inverse a hinv).continuous.norm.div hw fun p => (by positivity : 0 <
+      (1 + ‖p.2‖ ^ 2) ^ (-m / 2)).ne').continuousOn
+  have hC' : ∃ C, ∀ p ∈ (univ : Set (CoordinateSpace n × CoordinateSpace n)), p.1 ∈ K →
+      ‖(a.coefficient p).inverse‖ ≤ C * (1 + ‖p.2‖ ^ 2) ^ (-m / 2) := by
+    refine ⟨max C M, fun ⟨x, ξ⟩ _ hx => ?_⟩
+    have hw0 : 0 < (1 + ‖ξ‖ ^ 2) ^ (-m / 2) := by positivity
+    rcases le_total |R| ‖ξ‖ with hξ | hξ
+    · exact (hC x hx ξ hξ).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hw0.le)
+    · have h := hM (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩
+      rw [Pi.div_apply, Real.norm_of_nonneg (by positivity), div_le_iff₀ hw0] at h
+      exact h.trans (mul_le_mul_of_nonneg_right (le_max_right _ _) hw0.le)
+  let e : Symbol n W W 0 := const (.id ℂ W)
+  simpa only [e, coefficient_const, ContinuousLinearMap.flip_apply,
+    ContinuousLinearMap.bilinearRestrictScalars_apply_apply, ContinuousLinearMap.compL_apply,
+    ContinuousLinearMap.comp_id, zero_add] using
+    exists_bound_bilinear_inverse (compR W W V).flip a e.contDiff_coefficient
+      isClosed_univ (fun p hp => absurd (mem_univ p) hp) (fun p _ => hinv p)
+      (fun α β => (e.exists_bound K hK α β).imp fun _ h => h.2)
+      (fun α β => (a.exists_bound K hK α β).imp fun _ h => h.2) hC' α β
+
+/-- The pointwise inverse `a(x, ξ)⁻¹` of a symbol `a` of order `m` that is invertible at every
+point, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` at the frequencies `|R| ≤ ‖ξ‖` for a constant `C` depending
+on a compact set of positions. It is a symbol of order `-m`, a two-sided inverse of `a` at every
+point (`TauCeti.Symbol.coefficient_comp_coefficient_inverse`,
+`TauCeti.Symbol.coefficient_inverse_comp_coefficient`). Its hypotheses are those of
+`TauCeti.Symbol.cutoffInverse` together with invertibility at low frequencies, and it involves no
+cutoff. -/
+def inverse (a : Symbol n V W m) (hinv : ∀ p, (a.coefficient p).IsInvertible) (R : ℝ)
+    (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ, |R| ≤ ‖ξ‖ →
+      ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) :
+    Symbol n W V (-m) where
+  coefficient p := (a.coefficient p).inverse
+  contDiff_coefficient := contDiff_inverse a hinv
+  exists_bound _ hK := exists_bound_inverse a hinv R hK (hbound _ hK)
+
+variable (a : Symbol n V W m) (hinv : ∀ p, (a.coefficient p).IsInvertible) (R : ℝ)
+  (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ, |R| ≤ ‖ξ‖ →
+    ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2))
+
+@[simp]
+theorem coefficient_inverse (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.inverse hinv R hbound).coefficient p = (a.coefficient p).inverse := (rfl)
+
+/-- The symbol composed with its inverse is the identity at every point. -/
+theorem coefficient_comp_coefficient_inverse (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.coefficient p).comp ((a.inverse hinv R hbound).coefficient p) =
+      ContinuousLinearMap.id ℂ W :=
+  (hinv p).self_comp_inverse
+
+/-- The inverse composed with the symbol is the identity at every point. -/
+theorem coefficient_inverse_comp_coefficient (p : CoordinateSpace n × CoordinateSpace n) :
+    ((a.inverse hinv R hbound).coefficient p).comp (a.coefficient p) =
+      ContinuousLinearMap.id ℂ V :=
+  (hinv p).inverse_comp_self
+
+end Inverse
+
 /-! ### Inverses on a set of points
 
 A symbol `a` need not be invertible at all large frequencies to be inverted where it matters. If
@@ -531,6 +619,15 @@ omit [CompleteSpace V] in
 theorem IsEllipticOn.mono {a : Symbol n V W m} (ha : a.IsEllipticOn S)
     {S' : Set (CoordinateSpace n × CoordinateSpace n)} (h : S' ⊆ S) : a.IsEllipticOn S' :=
   fun K hK => (ha K hK).imp fun _ hC p hp hpK => hC p (h hp) hpK
+
+omit [CompleteSpace V] in
+/-- A symbol of the same order which agrees on `S` with a symbol elliptic on `S` is elliptic on
+`S`. -/
+theorem IsEllipticOn.congr {a : Symbol n V W m} (ha : a.IsEllipticOn S) {m' : ℝ}
+    {b : Symbol n V W m'} (hm : m' = m) (h : ∀ p ∈ S, b.coefficient p = a.coefficient p) :
+    b.IsEllipticOn S := by
+  subst hm
+  exact fun K hK => (ha K hK).imp fun _ hC p hp hpK => h p hp ▸ hC p hp hpK
 
 /-- **Ellipticity passes to the closure.** A symbol elliptic on a set `S` is elliptic on its
 closure: near a limit point `p` of `S`, the values of `a` are invertible with inverses bounded by a
