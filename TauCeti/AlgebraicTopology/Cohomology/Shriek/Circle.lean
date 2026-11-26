@@ -46,7 +46,7 @@ top degree `f_![S¹] = [S¹]`, as for every map
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Morse homology with differential graded
   coefficients*, Progress in Mathematics 360, Birkhäuser, 2025, Proposition 10.6.1.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.3 (Poincaré duality and the transfer of a covering).
+  Section 3.3 (Poincaré duality) and Section 3.G (transfer homomorphisms).
 -/
 
 public section

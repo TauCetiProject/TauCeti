@@ -228,8 +228,7 @@ variable {X Y : TopCat.{w}} {m n : ℕ}
 
 /-- **The shriek map sends `z_Y` to `z_X`**: if the coefficient morphisms make the class of the
 constant `0`-cocycle with value `e` a unit for the cap product, `u ≫ e ▷ S ≫ μ = 𝟙`, then
-`z_Y = z_Y ⌢ 1`, its pullback is `1`, and `f_!(z_Y) = z_X ⌢ 1 = z_X`. For fundamental classes this
-is `f_![Y] = [X]`. -/
+`f_!(z_Y) = z_X`. For fundamental classes this is `f_![Y] = [X]`. -/
 theorem shriek_apply_self (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ T) (e : R ⟶ M)
     (he : u ≫ e ▷ S ≫ μ = 𝟙 T) (f : X ⟶ Y) (hX : 0 + m = m) (hY : 0 + n = n)
     (zX : ((singularHomologyFunctor (ModuleCat.{w} R₀) m).obj T).obj X)
@@ -249,8 +248,7 @@ theorem shriek_apply_self (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ T) (e : R ⟶ M)
 
 /-- **The shriek map in degree zero**: for classes `z_X`, `z_Y` of the same degree `n` with
 `f_* z_X = d • z_Y`, the augmentation of `f_!(y)` is `d` times that of `y`, for every
-`y ∈ H₀(Y; M)`. Writing `y = z_Y ⌢ α`, both sides are Kronecker pairings,
-`ε(z_X ⌢ f^*α) = ⟨f^*α, z_X⟩ = ⟨α, f_* z_X⟩ = d ⟨α, z_Y⟩`. -/
+`y ∈ H₀(Y; M)`. -/
 theorem singularHomology₀ε_shriek (f : X ⟶ Y) (hn : n + 0 = n)
     (zX : ((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj R).obj X)
     (zY : ((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj R).obj Y)
@@ -260,10 +258,12 @@ theorem singularHomology₀ε_shriek (f : X ⟶ Y) (hn : n + 0 = n)
     (X.singularHomology₀ε M).hom (shriek k (ρ_ R).inv (ρ_ M).hom f hn hn zX zY hzY y) =
       d • (Y.singularHomology₀ε M).hom y := by
   obtain ⟨α, rfl⟩ := hzY.2 y
-  rw [shriek_singularCapAddHom, singularCapAddHom_apply, singularCapAddHom_apply,
-    ← ModuleCat.comp_apply, singularCap_comp_singularHomology₀ε, ← ModuleCat.comp_apply,
-    singularCap_comp_singularHomology₀ε, singularKronecker_naturality, ModuleCat.comp_apply, hd,
-    map_zsmul]
+  -- Both augmentations are Kronecker pairings: `ε(z_X ⌢ f^*α) = ⟨f^*α, z_X⟩` and
+  -- `ε(z_Y ⌢ α) = ⟨α, z_Y⟩`.
+  rw [shriek_singularCapAddHom]
+  simp only [singularCapAddHom_apply, ← ModuleCat.comp_apply, singularCap_comp_singularHomology₀ε]
+  -- Then `⟨f^*α, z_X⟩ = ⟨α, f_* z_X⟩ = d • ⟨α, z_Y⟩`.
+  rw [singularKronecker_naturality, ModuleCat.comp_apply, hd, map_zsmul]
 
 end Unit
 
