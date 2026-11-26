@@ -15,10 +15,10 @@ Let `G` be a compact Lie group, `ν ∈ 𝔤*` and `O = G ⧸ G_ν` its coadjoin
 `f_X = ⟨μ, X⟩` on `O` has even Morse indices
 (`Module.Dual.even_manifoldMorseIndex_orbitMap_coadjointRepresentation_apply`), and `O` carries a
 Morse height (`Module.Dual.exists_isMorse_orbitMap_coadjointRepresentation_apply`). A compact
-manifold carrying a Morse function with only even indices has finitely generated free integral
-homology, vanishing in odd degrees (`TauCeti.IsMorse.finite_singularHomology_int`,
-`TauCeti.IsMorse.free_singularHomology_int`, `TauCeti.IsMorse.isZero_singularHomology_int_of_odd`).
-So:
+manifold carrying a Morse function with only even indices has free integral homology, vanishing in
+odd degrees (`TauCeti.IsMorse.free_singularHomology_int`,
+`TauCeti.IsMorse.isZero_singularHomology_int_of_odd`), and the integral homology of any compact
+manifold is finitely generated (`TauCeti.finite_singularHomology_int_of_isManifold`). So:
 
 * the integral homology `Hⱼ(O; ℤ)` vanishes in odd degrees
   (`Module.Dual.isZero_singularHomology_int_quotient_stabilizer_coadjointRepresentation_of_odd`);
@@ -70,8 +70,8 @@ theorem finite_singularHomology_int_quotient_stabilizer_coadjointRepresentation 
     Module.Finite ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) j).obj
       (ModuleCat.of ℤ (ULift.{u} ℤ))).obj
         (TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν))) := by
-  obtain ⟨X, hX⟩ := ν.exists_isMorse_orbitMap_coadjointRepresentation_apply
-  exact hX.finite_singularHomology_int j
+  exact finite_singularHomology_int_of_isManifold _
+    𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν)) j
 
 /-- **Odd integral homology of coadjoint orbits vanishes.** For a coadjoint orbit `O` of a compact
 Lie group, `Hⱼ(O; ℤ) = 0` for every odd `j`. -/

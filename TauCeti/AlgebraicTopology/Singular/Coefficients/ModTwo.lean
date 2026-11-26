@@ -34,7 +34,7 @@ that the reduction is onto in degree `n + 1` exactly when multiplication by two 
 `Hₙ(X; ℤ)` (`TopCat.surjective_singularHomologyReductionMod_succ_iff`).
 
 The zeroth integral homology is a free abelian group, so the reduction is onto in degree one
-(`TopCat.surjective_singularHomologyReductionModTwo_one`), and it identifies the first mod-two
+(`TopCat.surjective_singularHomologyReductionMod_two_one`), and it identifies the first mod-two
 homology with the first integral homology modulo two
 (`TopCat.singularHomologyOneModTwoAddEquiv`):
 
@@ -118,7 +118,7 @@ theorem isZero_singularHomology_modTwo_iff (X : TopCat.{u}) (n : ℕ) :
 
 /-- The reduction modulo two is onto in degree one: the zeroth integral homology is a free abelian
 group, so multiplication by two is injective on it. -/
-theorem surjective_singularHomologyReductionModTwo_one (X : TopCat.{u}) :
+theorem surjective_singularHomologyReductionMod_two_one (X : TopCat.{u}) :
     Function.Surjective (X.singularHomologyReductionMod 2 1) := by
   -- the zeroth integral homology is free (`ModuleCat.free_singularHomology_zero`)
   exact (X.surjective_singularHomologyReductionMod_succ_iff 2 0).2
@@ -135,7 +135,7 @@ def singularHomologyOneModTwoAddEquiv (X : TopCat.{u}) :
   ((Submodule.quotEquivOfEq _ _
       (by rw [X.ker_singularHomologyReductionMod 2 1, Nat.cast_ofNat])).trans
     ((X.singularHomologyReductionMod 2 1).hom.quotKerEquivOfSurjective
-      X.surjective_singularHomologyReductionModTwo_one) : _ ≃+ _)
+      X.surjective_singularHomologyReductionMod_two_one) : _ ≃+ _)
 
 /-- The identification `H₁(X; ℤ) ⧸ 2 H₁(X; ℤ) ≃ H₁(X; ℤ/2)` sends the class of an integral class to
 its reduction modulo two. -/
