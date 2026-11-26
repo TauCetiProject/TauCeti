@@ -180,7 +180,7 @@ private theorem index_floerSobolevOperator_comparisonHamiltonian
     (ham : ‖fderiv ℝ (ω.hamiltonianVectorField Hm) pm‖ < 2 * Real.pi)
     (hap : ‖fderiv ℝ (ω.hamiltonianVectorField Hp) pp‖ < 2 * Real.pi)
     (hpm : IsNondegenerateCriticalPoint Hm pm) (hpp : IsNondegenerateCriticalPoint Hp pp) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun z ↦ comparisonHamiltonian Hm Hp pm pp z.1)
         (fun z ↦ smoothSegmentPath pm pp z.1)).index =
@@ -250,7 +250,7 @@ theorem index_floerSobolevOperator_eq_morseIndex_sub_morseIndex
     (hup : TendstoUniformlyOn (fun s t ↦ u (s, t)) (fun _ ↦ pp) atTop (Icc 0 1))
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun _ ↦ ω.hamiltonianVectorField Hp) u (s, t)) 0 atTop (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
       u).index = (morseIndex Hp pp : ℤ) - morseIndex Hm pm := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   have hHm₂ : ContDiff ℝ 2 Hm := hHm.of_le (by norm_num)

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.BesselPotential
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
-import TauCeti.Analysis.Normed.Operator.Compact.Pi
 import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
 
 /-!
@@ -32,7 +31,7 @@ inclusion is the operator `u ↦ φ u` from `H^s(E, ℂ)` to `H^r(E, ℂ)`, whic
 Rellich theorem for a common compact support
 (`BesselPotentialSpace.isCompactOperator_inclusion_comp_smulLeftCLM`). A map into the finite
 Hilbert sum `⨁ᵢⱼ H^r(E, ℂ)` with compact components is compact, and so is its corestriction to
-the closed subspace `H^r`.
+the closed subspace `H^r` (`BesselPotentialSpace.isCompactOperator_piLp_of_smulLeftCLM_eq`).
 
 With Ehrling's lemma this gives **Ehrling's inequality**: for `t ≤ r < s` and every `ε > 0` there
 is `C` with `‖u‖_{H^r} ≤ ε ‖u‖_{H^s} + C ‖u‖_{H^t}` for all `u ∈ H^s`
@@ -101,22 +100,10 @@ theorem isCompactOperator_inclusion {r s : ℝ} (h : r < s) :
       (subset_univ _)
   have hφ (i : ι) : EqOn φ 1 (A.chartSupport i) := fun y hy ↦
     hφ1.self_of_nhdsSet y (mem_iUnion_of_mem i hy)
-  -- In every component, the inclusion is `u ↦ φ u`, which is compact from `H^s` to `H^r`.
-  let g (v : PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)) :
-      PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{r}(E, ℂ) :=
-    WithLp.toLp 2 (fun k ↦ (BesselPotentialSpace.inclusion h.le ∘L
-      BesselPotentialSpace.smulLeftCLM s φ) (v k))
-  have hg : IsCompactOperator g :=
-    (IsCompactOperator.pi fun k ↦
-      (BesselPotentialSpace.isCompactOperator_inclusion_comp_smulLeftCLM φ h).comp_clm
-        (PiLp.proj (𝕜 := ℂ) 2 (fun _ ↦ H^{s}(E, ℂ)) k)).continuous_comp (PiLp.continuous_toLp 2 _)
-  have hgA (u : A.sobolevSpace s) : g u = A.inclusion h.le u := PiLp.ext fun k ↦ by
-    simp [g, A.smulLeftCLM_apply_of_eqOn_one (hφ k.1)]
-  have hcod := (hg.comp_clm (A.sobolevSpace s).subtypeL).codRestrict
-    (fun u ↦ by simp [hgA]) (A.isClosed_sobolevSpace r)
-  convert hcod using 1
-  ext u : 2
-  exact (hgA u).symm
+  exact BesselPotentialSpace.isCompactOperator_piLp_of_smulLeftCLM_eq φ h
+    (i := Subtype.val) continuous_subtypeVal rfl
+    (A.isClosed_sobolevSpace r).isClosedEmbedding_subtypeVal
+    (fun u k ↦ A.smulLeftCLM_apply_of_eqOn_one (hφ k.1) u k.2) (A.inclusion_apply h.le)
 
 /-- **Ehrling's inequality.** For real orders `t ≤ r < s` and `ε > 0` there is `C ≥ 0` with
 `‖u‖_{H^r} ≤ ε ‖u‖_{H^s} + C ‖u‖_{H^t}` for every `u` in the Sobolev space `H^s` of a square chart

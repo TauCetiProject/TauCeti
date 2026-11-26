@@ -93,24 +93,16 @@ theorem singularCohomologyEquiv_apply {i : ℕ} (hi : i ≤ n)
 /-- **The odd-degree cohomology of complex projective space vanishes.** `Hᵐ(CPⁿ; R, M) = 0` for
 odd `m`, for every projective coefficient module `R` and every module `M`. -/
 theorem isZero_singularCohomology_of_odd {m : ℕ} (hm : Odd m) :
-    IsZero ((TopCat.of (ComplexProjectiveSpace n)).singularCohomology R k M m) := by
-  have : Subsingleton (((singularHomologyFunctor (ModuleCat.{0} k) m).obj R).obj
-      (TopCat.of (ComplexProjectiveSpace n)) ⟶ M) :=
-    ⟨(isZero_singularHomology_of_odd R hm).eq_of_src⟩
-  exact (ModuleCat.isZero_of_subsingleton _).of_iso
-    ((TopCat.of (ComplexProjectiveSpace n)).singularKroneckerEquivOfProjectiveHomology
-      R M m).toModuleIso
+    IsZero ((TopCat.of (ComplexProjectiveSpace n)).singularCohomology R k M m) :=
+  TopCat.isZero_singularCohomology_of_projective_homology_lt _ M (fun _ _ ↦ inferInstance)
+    (isZero_singularHomology_of_odd R hm)
 
 /-- The singular cohomology of `CPⁿ` vanishes above degree `2n`, for every projective coefficient
 module `R` and every module `M`. -/
 theorem isZero_singularCohomology_of_lt {m : ℕ} (hm : 2 * n < m) :
-    IsZero ((TopCat.of (ComplexProjectiveSpace n)).singularCohomology R k M m) := by
-  have : Subsingleton (((singularHomologyFunctor (ModuleCat.{0} k) m).obj R).obj
-      (TopCat.of (ComplexProjectiveSpace n)) ⟶ M) :=
-    ⟨(isZero_singularHomology_of_lt R hm).eq_of_src⟩
-  exact (ModuleCat.isZero_of_subsingleton _).of_iso
-    ((TopCat.of (ComplexProjectiveSpace n)).singularKroneckerEquivOfProjectiveHomology
-      R M m).toModuleIso
+    IsZero ((TopCat.of (ComplexProjectiveSpace n)).singularCohomology R k M m) :=
+  TopCat.isZero_singularCohomology_of_projective_homology_lt _ M (fun _ _ ↦ inferInstance)
+    (isZero_singularHomology_of_lt R hm)
 
 variable (k) in
 /-- **The even-degree cohomology of complex projective space with ring coefficients.** For

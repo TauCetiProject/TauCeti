@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
+public import Mathlib.Topology.Sequences
 import Mathlib.Analysis.LocallyConvex.WeakSpace
 import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Module.DoubleDual
-import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
+import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
 
 /-!
 # Reflexivity and weak compactness
@@ -30,9 +31,10 @@ the reverse direction uses Goldstine's theorem.
 
 With Šmulian's theorem (`TauCeti.tendsto_subseq_toWeakSpace_of_isCompact_closure`), every bounded
 sequence in a reflexive real or complex normed space has a weakly convergent subsequence
-(`TauCeti.tendsto_subseq_toWeakSpace_of_isBounded`). Consequently a bounded operator from a
-reflexive normed space maps closed balls to norm-closed sets
-(`ContinuousLinearMap.isClosed_image_closedBall`).
+(`TauCeti.tendsto_subseq_toWeakSpace_of_isBounded`), and every norm-bounded, sequentially weakly
+closed subset is weakly compact (`TauCeti.isCompact_toWeakSpace_of_isBounded_of_isSeqClosed`).
+Consequently a bounded operator from a reflexive normed space maps closed balls to norm-closed
+sets (`ContinuousLinearMap.isClosed_image_closedBall`).
 
 ## References
 
@@ -111,6 +113,15 @@ theorem tendsto_subseq_toWeakSpace_of_isBounded (hF : Surjective (inclusionInDou
       Tendsto (fun n ↦ toWeakSpace 𝕜 F (u (φ n))) atTop (𝓝 (toWeakSpace 𝕜 F x)) :=
   tendsto_subseq_toWeakSpace_of_isCompact_closure (isCompact_closure_toWeakSpace_of_isBounded hF hu)
     mem_range_self
+
+/-- In a reflexive real or complex normed space, every norm-bounded, sequentially weakly closed
+subset is weakly compact. -/
+theorem isCompact_toWeakSpace_of_isBounded_of_isSeqClosed
+    (hF : Surjective (inclusionInDoubleDual 𝕜 F)) {s : Set F}
+    (hb : IsBounded s) (hseq : IsSeqClosed (toWeakSpace 𝕜 F '' s)) :
+    IsCompact (toWeakSpace 𝕜 F '' s) := by
+  have hc := isCompact_closure_toWeakSpace_of_isBounded hF hb
+  exact ((isClosed_weakSpace_iff_isSeqClosed hc).2 hseq).closure_eq ▸ hc
 
 /-- **A bounded operator on a reflexive space maps closed balls to closed sets.** If `F` is a
 reflexive real or complex normed space and `T : F →L[𝕜] G` is bounded, then `T '' closedBall x r`

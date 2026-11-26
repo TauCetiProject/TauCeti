@@ -39,28 +39,6 @@ namespace ContinuousAlternatingMap
 
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
 
-/-- Inserting `q` into `ω ^ (m + 1)` and wedging with `α`: when `ω(q, p) = 1` and `ω(q, ·)` kills
-the vectors of `R`, the value on `(p, R)` is `(m + 1) (ω ^ m ∧ α)(R)`. -/
-private theorem pairedWedge_curry_wedgePow_succ_apply (ω α : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ)
-    (q p : E) (R : Fin (2 * (m + 1)) → E) (hqp : ω ![q, p] = 1) (hqR : ∀ i, ω ![q, R i] = 0) :
-    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (curryLeftTopological (n := 2 * m + 1) (wedgePow ω (m + 1)) q) α
-        (Matrix.vecCons p R ∘ Fin.cast (by omega) : Fin (2 * m + 1 + 2) → E) =
-      (m + 1) * pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (wedgePow ω m) α R := by
-  rw [pairedWedge_apply_of_left_eq_smul_cast _ _ (Nat.add_comm 1 (2 * m)) ((m : ℝ) + 1)
-    (fun w ↦ by rw [curryLeftTopological_apply_apply, wedgePow_succ_apply_vecCons, smul_eq_mul]),
-    smul_eq_mul]
-  congr 1
-  rw [pairedWedge_assoc _ _ _ _ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (fun a b c ↦ by simp [mul_assoc])]
-  have h := pairedWedge_apply_vecCons_of_forall (ContinuousLinearMap.mul ℝ ℝ)
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (curryLeftTopological (n := 1) ω q)
-    (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-      (wedgePow ω m) α) p R (fun i ↦ by rw [curryLeftTopological_apply_apply]; simpa using hqR i)
-  simpa [curryLeftTopological_apply_apply, hqp] using h
-
 /-- Inserting `q` into `α` and wedging with `ω ^ (m + 1)`: when `ω(p, ·)` kills the vectors of
 `R`, the value on `(p, R)` is `α(q, p) ω ^ (m + 1)(R)`. -/
 private theorem pairedWedge_wedgePow_succ_curry_apply (ω α : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ)
@@ -114,11 +92,8 @@ theorem pairedWedge_wedgePow_apply_finProdFinEquiv (ω α : E [⋀^Fin 2]→L[�
     set R : Fin (2 * (m + 1)) → E :=
       fun r ↦ b' (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r)) with hR
     -- The one-forms `ω(q₀, ·)` and `ω(p₀, ·)` kill the later pairs.
-    have hq (jk : Fin (m + 1) × Fin 2) : ω ![b (0, 0), b' jk] = 0 := by
-      obtain ⟨j, k⟩ := jk
-      fin_cases k
-      · exact h₀₀ 0 j.succ
-      · simpa [hb', (Fin.succ_ne_zero j).symm] using h₀₁ 0 j.succ
+    have hq (jk : Fin (m + 1) × Fin 2) : ω ![b (0, 0), b' jk] = 0 :=
+      apply_zero_comp_succ_eq_zero ω b 1 h₀₀ h₀₁ jk
     have hp (jk : Fin (m + 1) × Fin 2) : ω ![b (0, 1), b' jk] = 0 := by
       obtain ⟨j, k⟩ := jk
       fin_cases k
@@ -130,8 +105,11 @@ theorem pairedWedge_wedgePow_apply_finProdFinEquiv (ω α : E [⋀^Fin 2]→L[�
       fun i j ↦ by simpa [hb'] using h₀₁ i.succ j.succ
     have h₁₁' : ∀ i j, ω ![b' (i, 1), b' (j, 1)] = 0 := fun i j ↦ h₁₁ _ _
     -- Inserting `q₀` into `ω ^ (m + 1)`, then into `α`.
-    have hω := pairedWedge_curry_wedgePow_succ_apply ω α m (b (0, 0)) (b (0, 1)) R
-      (by simpa using h₀₁ 0 0) fun r ↦ hq _
+    have hω := pairedWedge_curryLeftTopological_wedgePow_succ_apply ω m α (b (0, 0)) (b (0, 1)) R
+      (by omega) fun r ↦ hq _
+    rw [show ω ![b (0, 0), b (0, 1)] = 1 by simpa using h₀₁ 0 0, one_mul] at hω
+    -- The cast `Fin (2 * m + 2) → Fin (2 * (m + 1))` on the right is the identity.
+    conv at hω => rhs; rw [Fin.cast_refl, Function.comp_id]
     have hα := pairedWedge_wedgePow_succ_curry_apply ω α m (b (0, 0)) (b (0, 1)) R fun r ↦ hp _
     -- The values on the later pairs.
     have hih := ih b' h₀₀' h₀₁' h₁₁'

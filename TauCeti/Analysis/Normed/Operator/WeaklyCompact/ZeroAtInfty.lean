@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.WeaklyCompact.Basic
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
-import TauCeti.Topology.Algebra.Module.WeakSpace
+import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Dual
 
 /-!
