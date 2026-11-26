@@ -776,6 +776,13 @@ theorem toIdealArithmeticFunction_apply (χ : MultiplicativeIdealWeight K) (I : 
     χ.toIdealArithmeticFunction I = χ I :=
   IdealArithmeticFunction.restrict_apply _ I
 
+/-- The ideal arithmetic function of a conjugate weight is the pointwise conjugate. -/
+@[simp]
+theorem toIdealArithmeticFunction_conj (χ : MultiplicativeIdealWeight K) :
+    χ.conj.toIdealArithmeticFunction = star χ.toIdealArithmeticFunction := by
+  funext I
+  simp [toIdealArithmeticFunction_apply]
+
 /-- The ideal arithmetic function underlying a norm twist multiplies by `N(I) ^ (-z)`. -/
 theorem toIdealArithmeticFunction_normTwist (z : ℂ) (χ : MultiplicativeIdealWeight K) :
     (normTwist z χ).toIdealArithmeticFunction =

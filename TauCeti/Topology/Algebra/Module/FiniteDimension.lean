@@ -93,6 +93,11 @@ over a stably finite semiring, a right inverse of a continuous endomorphism is a
 A composition `S ∘ T` of continuous linear maps expands in the products `b l ∘ a k` of finite
 bases `b` and `a` of the spaces of continuous linear maps containing `S` and `T`, with the products
 of their coordinates as coefficients: `ContinuousLinearMap.comp_eq_sum_coord`.
+Every continuous linear map `L : E →L[𝕜] G` out of a finite-dimensional space is the finite sum
+of the rank-one maps `eᵏ ⊗ L(eₖ)`, `w ↦ eᵏ(w) L(eₖ)` (`ContinuousLinearMap.smulRight`), over a
+basis `(eₖ)` of `E` with coordinate functionals `(eᵏ)` (`Module.Basis.sum_coord_smulRight`). So a
+linear map out of `E →L[𝕜] G` is determined by its values on the rank-one maps `ξ ⊗ v`
+(`LinearMap.ext_smulRight`).
 
 A closed subspace `S` of finite codimension has a topological complement inside every dense
 subspace `D`: `Submodule.exists_le_isTopCompl_of_dense`. Consequently `S ⊔ D` is the whole space
@@ -465,6 +470,35 @@ theorem comp_eq_sum_coord {ι κ : Type*} [Fintype ι] [Fintype κ]
   exact Finset.sum_congr rfl fun l _ ↦ Finset.sum_congr rfl fun k _ ↦ by rw [mul_comm]
 
 end ContinuousLinearMap
+
+section SmulRight
+
+variable {𝕜 E G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+  [ContinuousSMul 𝕜 E] [FiniteDimensional 𝕜 E] [T2Space E]
+  [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+  [ContinuousSMul 𝕜 G]
+
+/-- A continuous linear map out of a finite-dimensional space is the sum of the rank-one maps
+`eᵏ ⊗ L(eₖ)` over a basis `(eₖ)` and its coordinate functionals `(eᵏ)`. -/
+theorem Module.Basis.sum_coord_smulRight {ι : Type*} [Fintype ι] (b : Module.Basis ι 𝕜 E)
+    (L : E →L[𝕜] G) :
+    ∑ k, (LinearMap.toContinuousLinearMap (b.coord k)).smulRight (L (b k)) = L := by
+  ext w
+  simp only [FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.smulRight_apply,
+    LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
+  simp_rw [← map_smul, ← map_sum, b.sum_repr]
+
+/-- Linear maps out of the continuous linear maps `E →L[𝕜] G`, for a finite-dimensional `E`,
+agree as soon as they agree on the rank-one maps `ξ ⊗ v`. -/
+theorem LinearMap.ext_smulRight {W : Type*} [AddCommGroup W] [Module 𝕜 W]
+    {T T' : (E →L[𝕜] G) →ₗ[𝕜] W}
+    (h : ∀ (ξ : E →L[𝕜] 𝕜) (v : G), T (ξ.smulRight v) = T' (ξ.smulRight v)) : T = T' := by
+  refine LinearMap.ext fun L ↦ ?_
+  rw [← (Module.finBasis 𝕜 E).sum_coord_smulRight L]
+  simp only [map_sum, h]
+
+end SmulRight
 
 namespace Submodule
 
