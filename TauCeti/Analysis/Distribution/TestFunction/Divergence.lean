@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
-public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 public import TauCeti.Topology.Algebra.Module.Trace
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2

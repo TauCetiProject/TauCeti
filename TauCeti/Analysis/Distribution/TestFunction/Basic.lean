@@ -39,6 +39,9 @@ function on `M` vanishing off the source of `e` and wherever `φ ∘ e` vanishes
   open set is the extension by zero of a test function on that set.
 * `TestFunction.exists_coe_eq_smul_of_contDiffOn`: the product of a `C^n` test function on `Ω`
   with a function `C^n` on `Ω` is a `C^n` test function on `Ω`.
+* `TestFunction.bilinOfContDiffOn`, `TestFunction.smulOfContDiffOn`: pairing a `C^n` test
+  function with a function `C^n` near its support via a continuous bilinear map or scalar
+  multiplication.
 * `TestFunction.tsupport_subset_inter_of_apply_eq_smul`: a test function with values `g x • φ x`
   is supported in the supports of `g` and of `φ`.
 * `TestFunction.eq_zero_of_not_finiteDimensional`: on an infinite-dimensional space every test
@@ -109,6 +112,91 @@ theorem exists_coe_eq_smul_of_contDiffOn {𝕜 : Type*} [NontriviallyNormedField
   ⟨⟨fun x => g x • φ x, (lsmul ℝ 𝕜 : 𝕜 →L[ℝ] F →L[ℝ] F).contDiff_of_tsupport_subset_right hg
       φ.contDiff.contDiffOn Ω.isOpen φ.tsupport_subset, φ.hasCompactSupport.smul_left,
     (tsupport_smul_subset_right _ _).trans φ.tsupport_subset⟩, rfl⟩
+
+/-- **Pairing a test function with a function `Cⁿ` near its support.** Given a test function
+`φ ∈ 𝓓^{n}(Ω, F₁)`, a continuous bilinear map `B : F₁ →L[ℝ] F₂ →L[ℝ] F₃`, and a function
+`g : E → F₂` that is `Cⁿ` on an open neighbourhood `W` of `tsupport φ` (with no regularity
+requirement outside `W`), the pointwise product `x ↦ B (φ x) (g x)` is a test function in
+`𝓓^{n}(Ω, F₃)` supported in `tsupport φ`. -/
+def bilinOfContDiffOn {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+    [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+    (φ : 𝓓^{n}(Ω, F₁)) (B : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {W : Set E} (hW : IsOpen W)
+    (hφW : tsupport (φ : E → F₁) ⊆ W) {g : E → F₂} (hg : ContDiffOn ℝ n g W) :
+    𝓓^{n}(Ω, F₃) where
+  toFun x := B (φ x) (g x)
+  contDiff' := B.flip.contDiff_of_tsupport_subset_right hg φ.contDiff.contDiffOn hW hφW
+  hasCompactSupport' :=
+    HasCompactSupport.of_support_subset_isCompact φ.hasCompactSupport fun _ hx ↦
+      subset_tsupport _ fun h0 ↦ Function.mem_support.1 hx (by simp [h0])
+  tsupport_subset' :=
+    (closure_minimal
+      (fun _ hx ↦ subset_tsupport _ fun h0 ↦ Function.mem_support.1 hx (by simp [h0]))
+      (isClosed_tsupport (φ : E → F₁))).trans φ.tsupport_subset
+
+@[simp]
+theorem bilinOfContDiffOn_apply {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+    [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+    (φ : 𝓓^{n}(Ω, F₁)) (B : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {W : Set E} (hW : IsOpen W)
+    (hφW : tsupport (φ : E → F₁) ⊆ W) {g : E → F₂} (hg : ContDiffOn ℝ n g W) (x : E) :
+    φ.bilinOfContDiffOn B hW hφW hg x = B (φ x) (g x) := by rfl
+
+/-- The support of `φ.bilinOfContDiffOn B hW hφW hg` is contained in `tsupport φ`. -/
+theorem tsupport_bilinOfContDiffOn_subset {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁]
+    [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃]
+    [NormedSpace ℝ F₃] (φ : 𝓓^{n}(Ω, F₁)) (B : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {W : Set E}
+    (hW : IsOpen W) (hφW : tsupport (φ : E → F₁) ⊆ W) {g : E → F₂} (hg : ContDiffOn ℝ n g W) :
+    tsupport (φ.bilinOfContDiffOn B hW hφW hg : E → F₃) ⊆ tsupport (φ : E → F₁) :=
+  closure_minimal (fun _ hx ↦ subset_tsupport _ fun h0 ↦ Function.mem_support.1 hx (by simp [h0]))
+    (isClosed_tsupport (φ : E → F₁))
+
+/-- **Multiplying a scalar cutoff by a function `Cⁿ` near its support.** Given a scalar test
+function `χ ∈ 𝓓^{n}(Ω, ℝ)` and a function `g : E → F` that is `Cⁿ` on an open neighbourhood `W` of
+`tsupport χ`, the pointwise product `x ↦ χ x • g x` is a test function in `𝓓^{n}(Ω, F)`. -/
+noncomputable def smulOfContDiffOn (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
+    (hχW : tsupport (χ : E → ℝ) ⊆ W) {g : E → F} (hg : ContDiffOn ℝ n g W) : 𝓓^{n}(Ω, F) :=
+  χ.bilinOfContDiffOn (lsmul ℝ ℝ) hW hχW hg
+
+@[simp]
+theorem smulOfContDiffOn_apply (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
+    (hχW : tsupport (χ : E → ℝ) ⊆ W) {g : E → F} (hg : ContDiffOn ℝ n g W) (x : E) :
+    χ.smulOfContDiffOn hW hχW hg x = χ x • g x := by rfl
+
+/-- The support of `χ.smulOfContDiffOn hW hχW hg` is contained in `tsupport χ`. -/
+theorem tsupport_smulOfContDiffOn_subset (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
+    (hχW : tsupport (χ : E → ℝ) ⊆ W) {g : E → F} (hg : ContDiffOn ℝ n g W) :
+    tsupport (χ.smulOfContDiffOn hW hχW hg : E → F) ⊆ tsupport (χ : E → ℝ) :=
+  χ.tsupport_bilinOfContDiffOn_subset (lsmul ℝ ℝ) hW hχW hg
+
+@[simp]
+theorem smulOfContDiffOn_zero (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
+    (hχW : tsupport (χ : E → ℝ) ⊆ W) (hg : ContDiffOn ℝ n (0 : E → F) W) :
+    χ.smulOfContDiffOn hW hχW hg = 0 := by ext x; simp
+
+@[simp]
+theorem smulOfContDiffOn_add (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
+    (hχW : tsupport (χ : E → ℝ) ⊆ W) {g₁ g₂ : E → F} (hg₁ : ContDiffOn ℝ n g₁ W)
+    (hg₂ : ContDiffOn ℝ n g₂ W) :
+    χ.smulOfContDiffOn hW hχW (hg₁.add hg₂) =
+      χ.smulOfContDiffOn hW hχW hg₁ + χ.smulOfContDiffOn hW hχW hg₂ := by ext x; simp [smul_add]
+
+@[simp]
+theorem smulOfContDiffOn_neg (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
+    (hχW : tsupport (χ : E → ℝ) ⊆ W) {g : E → F} (hg : ContDiffOn ℝ n g W) :
+    χ.smulOfContDiffOn hW hχW hg.neg = -χ.smulOfContDiffOn hW hχW hg := by ext x; simp
+
+@[simp]
+theorem smulOfContDiffOn_sub (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
+    (hχW : tsupport (χ : E → ℝ) ⊆ W) {g₁ g₂ : E → F} (hg₁ : ContDiffOn ℝ n g₁ W)
+    (hg₂ : ContDiffOn ℝ n g₂ W) :
+    χ.smulOfContDiffOn hW hχW (hg₁.sub hg₂) =
+      χ.smulOfContDiffOn hW hχW hg₁ - χ.smulOfContDiffOn hW hχW hg₂ := by ext x; simp [smul_sub]
+
+@[simp]
+theorem smulOfContDiffOn_smul (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
+    (hχW : tsupport (χ : E → ℝ) ⊆ W) (c : ℝ) {g : E → F} (hg : ContDiffOn ℝ n g W) :
+    χ.smulOfContDiffOn hW hχW (hg.const_smul c : ContDiffOn ℝ n (c • g) W) =
+      c • χ.smulOfContDiffOn hW hχW hg := by
+  ext x; rw [smulOfContDiffOn_apply, smul_apply, smulOfContDiffOn_apply, smul_comm]
 
 /-- A test function with values `g x • φ x` is supported both in the support of `g` and in the
 support of `φ`. This bounds the support of every multiple of a test function, whatever operator
