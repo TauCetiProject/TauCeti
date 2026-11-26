@@ -182,13 +182,21 @@ theorem linearIndependent_pow_of_fixedField_eq_bot (p : ℕ) [ExpChar E p]
     rw [h, IntermediateField.mem_bot] at hy
     obtain ⟨x, hx⟩ := hy
     exact ⟨x, Subtype.ext hx⟩
-  have hc : ∀ (r : k) (m : E), r • m = i r • m := fun r m ↦ by
-    simp only [Algebra.smul_def, FixedPoints.coe_algebraMap, Subfield.subtype_apply, i]
-  have hv' := FixedPoints.linearIndependent_pow_of_linearIndependent _ p
-    (hv.map_of_surjective_injective i (AddMonoidHom.id E) hi (fun _ ↦ id) hc)
-  exact hv'.map_of_injective_injective i (AddMonoidHom.id E)
-    (fun r hr ↦ by simpa [i] using congrArg Subtype.val hr)
-    (fun _ ↦ id) fun r m ↦ (hc r m).symm
+  -- The scalar actions of `k` and of the fixed points on `E` agree along `i`.
+  have hc : ∀ (r : k) (m : E), AddMonoidHom.id E (r • m) = i r • AddMonoidHom.id E m :=
+    fun r m ↦ by
+      simp only [AddMonoidHom.id_apply, Algebra.smul_def, FixedPoints.coe_algebraMap,
+        Subfield.subtype_apply, i]
+  have hj : ∀ m : E, AddMonoidHom.id E m = 0 → m = 0 := fun m hm ↦ by
+    simpa only [AddMonoidHom.id_apply] using hm
+  -- Transfer independence to the fixed points, apply Rosenlicht's lemma there, and transfer back.
+  have hv₁ : LinearIndependent (FixedPoints.subfield (E ≃ₐ[k] E) E) v := by
+    simpa only [AddMonoidHom.coe_id, Function.id_comp] using
+      hv.map_of_surjective_injective i (AddMonoidHom.id E) hi hj hc
+  have hv₂ := FixedPoints.linearIndependent_pow_of_linearIndependent _ p hv₁
+  simpa only [AddMonoidHom.coe_id, Function.id_comp] using
+    hv₂.map_of_injective_injective i (AddMonoidHom.id E)
+      (fun r hr ↦ by simpa [i] using congrArg Subtype.val hr) hj fun r m ↦ (hc r m).symm
 
 /-- **A finitely generated extension whose automorphisms fix only the base field is separably
 generated** (Rosenlicht): if `E / k` is finitely generated and the fixed field of all
