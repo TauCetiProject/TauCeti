@@ -20,7 +20,8 @@ error on every mesh with steps in `[0, hmax]`:
   `‖y (t_n) - Y n‖ ≤ gronwallBound ‖y t₀ - y₀‖ L (C hmax ^ p) (t_n - t₀)`.
 
 The curve `y` need not solve a differential equation: the theorem compares `y` with the method
-through the defect alone. For `p ≥ 1` the error therefore tends to `0` with the largest step.
+through the defect alone. For `p ≥ 1` and `y₀ = y t₀` the bound therefore tends to `0` with
+`hmax`; on uniform meshes this is `TauCeti.exists_forall_norm_sub_oneStepSeq_uniform_le`.
 
 ## Main results
 
@@ -122,7 +123,9 @@ theorem norm_sub_oneStepSeq_uniform_le {Φ : ℝ → E → ℝ → E} {y : ℝ �
   have hN' : (N : ℝ) ≠ 0 := by positivity
   have hη0 : 0 ≤ η := div_nonneg (sub_nonneg.2 htb) N.cast_nonneg
   have hNη : N * η = b - t₀ := by rw [hη, mul_div_cancel₀ _ hN']
-  have hnη : n * η ≤ b - t₀ := hNη ▸ mul_le_mul_of_nonneg_right (Nat.cast_le.2 hn) hη0
+  have hnη : n * η ≤ b - t₀ := by
+    rw [← hNη]
+    gcongr
   have herr := norm_sub_oneStepSeq_le (y₀ := y t₀) (h := fun _ ↦ η) (hmax := η) (b := b)
     (fun _ _ ↦ ⟨hη0, le_rfl⟩) (by simp [hNη]) (by simpa using hΦ) hdef hn
   simp only [meshNode_const, sub_self, norm_zero, add_sub_cancel_left] at herr
@@ -130,9 +133,13 @@ theorem norm_sub_oneStepSeq_uniform_le {Φ : ℝ → E → ℝ → E} {y : ℝ �
   -- The bound is monotone in time as soon as its rate `C η ^ p` is nonnegative, which the
   -- defect hypothesis forces when `η > 0`.
   rcases hη0.eq_or_lt with h0 | hpos
-  · rw [← h0, ← hNη, ← h0, mul_zero, mul_zero]
+  · -- If `η = 0`, both times `n η` and `b - t₀ = N η` vanish.
+    rw [← hNη, ← h0]
+    simp
   · have hηb : t₀ + η ≤ b := by
-      have : η ≤ b - t₀ := hη ▸ div_le_self (sub_nonneg.2 htb) (Nat.one_le_cast.2 hN)
+      have : η ≤ b - t₀ := by
+        rw [hη]
+        exact div_le_self (sub_nonneg.2 htb) (Nat.one_le_cast.2 hN)
       linarith
     have hC : 0 ≤ C := nonneg_of_mul_nonneg_left
       ((norm_nonneg _).trans (hdef t₀ η le_rfl hη0 le_rfl hηb)) (by positivity)

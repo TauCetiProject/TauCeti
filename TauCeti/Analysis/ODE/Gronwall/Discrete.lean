@@ -56,8 +56,8 @@ theorem gronwallBound_mono_δ (K ε x : ℝ) : Monotone fun δ ↦ gronwallBound
   rw [← add_sub_cancel δ δ', gronwallBound_add_δ]
   exact le_add_of_nonneg_right <| mul_nonneg (sub_nonneg.2 hδ) (exp_pos _).le
 
-/-- One explicit Euler step of `G' = K G + ε` of any size `h` stays below the solution
-`gronwallBound δ K ε`: `(1 + h K) G(x) + h ε ≤ G(x + h)`, with equality when `K = 0`. -/
+/-- For `δ, K, ε ≥ 0`, one explicit Euler step of `G' = K G + ε` of any size `h` stays below the
+solution `gronwallBound δ K ε`: `(1 + h K) G(x) + h ε ≤ G(x + h)`, with equality when `K = 0`. -/
 theorem one_add_mul_mul_gronwallBound_add_le {δ K ε : ℝ} (hδ : 0 ≤ δ) (hK : 0 ≤ K)
     (hε : 0 ≤ ε) (x h : ℝ) :
     (1 + h * K) * gronwallBound δ K ε x + h * ε ≤ gronwallBound δ K ε (x + h) := by
@@ -78,8 +78,9 @@ theorem one_add_mul_mul_gronwallBound_add_le {δ K ε : ℝ} (hδ : 0 ≤ δ) (h
       ring
     nlinarith [mul_nonneg hc hexp]
 
-/-- **One step of the discrete Grönwall inequality.** If `u ≤ gronwallBound δ K ε x` and
-`v ≤ (1 + h K) u + h ε + ρ` with `h, ρ ≥ 0`, then `v ≤ gronwallBound (δ + ρ) K ε (x + h)`. -/
+/-- **One step of the discrete Grönwall inequality.** Let `δ, K, ε, x, h, ρ ≥ 0`. If
+`u ≤ gronwallBound δ K ε x` and `v ≤ (1 + h K) u + h ε + ρ`, then
+`v ≤ gronwallBound (δ + ρ) K ε (x + h)`. -/
 theorem le_gronwallBound_add_of_le_one_add_mul_add {u v δ K ε h ρ x : ℝ} (hδ : 0 ≤ δ)
     (hK : 0 ≤ K) (hε : 0 ≤ ε) (hh : 0 ≤ h) (hρ : 0 ≤ ρ) (hx : 0 ≤ x)
     (hu : u ≤ gronwallBound δ K ε x) (hv : v ≤ (1 + h * K) * u + h * ε + ρ) :

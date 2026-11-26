@@ -67,11 +67,11 @@ private theorem norm_sub_le_one_add_mul_mul_add {φ : E → E} {z z' y y' : E} {
   have hsmul : ‖s • (φ z - φ y)‖ ≤ s * (L * ‖z - y‖) := by
     rw [norm_smul, Real.norm_of_nonneg hs]
     exact mul_le_mul_of_nonneg_left hφ hs
+  have h₁ := norm_add_le (z' - z - s • φ z - (y' - y - s • φ y) + (z - y)) (s • (φ z - φ y))
+  have h₂ := norm_add_le (z' - z - s • φ z - (y' - y - s • φ y)) (z - y)
+  have h₃ := norm_sub_le (z' - z - s • φ z) (y' - y - s • φ y)
   rw [hsplit]
-  calc _ ≤ ‖z' - z - s • φ z‖ + ‖y' - y - s • φ y‖ + ‖z - y‖ + ‖s • (φ z - φ y)‖ :=
-        (norm_add_le _ _).trans <| add_le_add_left
-          ((norm_add_le _ _).trans <| add_le_add_left (norm_sub_le _ _) _) _
-    _ ≤ (1 + s * L) * ‖z - y‖ + s * τ + ρ := by linarith
+  linarith
 
 /-- **Discrete stability, local form.** Let the steps be nonnegative and `τ ≥ 0`. If
 `u ↦ Φ (t_n) u (h n)` is `L`-Lipschitz on the closed ball of radius `r` around `z n` for each
@@ -170,7 +170,7 @@ theorem norm_sub_le_gronwallBound_of_perturbed_oneStep {Φ : ℝ → E → ℝ �
       gronwallBound (‖y t₀ - Y 0‖ + n * ε) L τ (meshNode t₀ h n - t₀) := by
   have := norm_sub_le_gronwallBound_of_oneStep (z := fun n ↦ y (meshNode t₀ h n))
     (Y := Y) (ρ := fun _ ↦ ε) hh hΦ (fun n hn ↦ by rw [← oneStepDefect_meshNode]; exact hy n hn)
-    (fun n hn ↦ by rw [hY n hn, add_assoc, add_sub_cancel_left, add_sub_cancel_left]; exact hr n hn)
+    (fun n hn ↦ by rw [hY n hn]; convert hr n hn using 2; abel)
     hn
   simpa using this
 
@@ -186,6 +186,7 @@ theorem norm_oneStepSeq_sub_oneStepSeq_le {Φ : ℝ → E → ℝ → E} {t₀ :
   have := norm_sub_le_gronwallBound_of_oneStep (z := oneStepSeq Φ t₀ h y₀)
     (Y := oneStepSeq Φ t₀ h y₀') (τ := 0) (ρ := fun _ ↦ 0) hh hΦ
     (fun n _ ↦ by simp) (fun n _ ↦ by simp) hn
-  simpa [gronwallBound_ε0, mul_comm] using this
+  rw [sum_const_zero, add_zero, gronwallBound_ε0, oneStepSeq_zero, oneStepSeq_zero] at this
+  exact this.trans_eq (mul_comm _ _)
 
 end TauCeti
