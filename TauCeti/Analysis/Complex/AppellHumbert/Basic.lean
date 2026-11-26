@@ -31,8 +31,10 @@ the period lattice). An Appell–Humbert datum `D` for `L` (`TauCeti.AppellHumbe
 
 Its factor of automorphy is `e_l (z) = χ (l) exp (B (l, z) + B (l, l) / 2)`, and its theta functions
 (`TauCeti.AppellHumbertData.thetaSpace`) are the entire functions `f` with
-`f (z + l) = e_l (z) f (z)` for `l ∈ L`, that is, the holomorphic sections of the line bundle on
-`V ⧸ L` that `e` defines.
+`f (z + l) = e_l (z) f (z)` for `l ∈ L`. When `V` is finite-dimensional and `L` is a full lattice,
+these identify with the holomorphic sections of the line bundle on the complex torus `V ⧸ L`
+that `e` defines. The geometric interpretations below assume these classical hypotheses;
+the analytic definitions and results do not require them.
 
 The semicharacter law forces `E` to be integral on `L`
 (`TauCeti.AppellHumbertData.exists_riemannForm_eq_intCast`), so it reads

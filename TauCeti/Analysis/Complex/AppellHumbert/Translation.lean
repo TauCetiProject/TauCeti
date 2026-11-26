@@ -21,7 +21,9 @@ Riemann form `E` (`TauCeti.AppellHumbertData`). The **twisted translation** by `
 
 `(T_a f) (z) = exp (-(B (a, z) + B (a, a) / 2)) f (z + a)`.
 
-It is the analytic form of the pull-back along the translation `t_a` of the torus `V ⧸ L`: it maps
+When `V` is finite-dimensional and `L` is a full lattice, it is the analytic form of the pull-back
+along the translation `t_a` of the torus `V ⧸ L`. The geometric interpretations below assume
+these classical hypotheses; the analytic definitions and results do not require them. It maps
 the theta functions of `D` to those of the datum whose semicharacter is twisted by the unitary
 character `exp (2πi E (a, ·))` of `L`
 (`TauCeti.AppellHumbertData.twistedTranslate_mem_thetaSpace`). This
@@ -135,7 +137,9 @@ theorem ofAddChar_one : ofAddChar (1 : AddChar L Circle) = 0 :=
 theorem ofAddChar_mul (ψ φ : AddChar L Circle) :
     ofAddChar (ψ * φ) = ofAddChar ψ + ofAddChar φ := by
   apply AppellHumbertData.ext
-  · ext _ _
+  · simp only [form_add, form_ofAddChar]
+    ext u v
+    simp only [_root_.add_apply, _root_.zero_apply]
     exact (add_zero (0 : ℂ)).symm
   · ext l
     rfl
@@ -237,8 +241,9 @@ theorem twistedTranslate_mul (u : V) (f g : V → ℂ) :
     (D + D').twistedTranslate u (f * g) = D.twistedTranslate u f * D'.twistedTranslate u g := by
   ext z
   simp only [twistedTranslate_apply, form_add, _root_.add_apply, Pi.mul_apply, add_div]
-  rw [show -(D.form u z + D'.form u z + (D.form u u / 2 + D'.form u u / 2)) =
-    -(D.form u z + D.form u u / 2) + -(D'.form u z + D'.form u u / 2) by ring, exp_add]
+  have h_exp : -(D.form u z + D'.form u z + (D.form u u / 2 + D'.form u u / 2)) =
+      -(D.form u z + D.form u u / 2) + -(D'.form u z + D'.form u u / 2) := by ring
+  rw [h_exp, exp_add]
   ring
 
 /-- Twisted translation is compatible with powers: the translate of `f ^ n` for `n • D` is the
