@@ -63,26 +63,29 @@ private theorem lie_quantumMinor_summand (E : Matrix ι ι A) {p q : ι}
   let f := fun k ↦ T k (a (σ k)) (b k)
   let l := if q = a (σ j) then T j p (b j) else 0
   let r := if p = b j then T j (a (σ j)) q else 0
+  have hupdate_ite (c : Prop) [Decidable c] (x : A) :
+      P (update f j (if c then x else 0)) = if c then P (update f j x) else 0 := by
+    split_ifs
+    · rfl
+    · simpa only [P, MultilinearMap.mkPiAlgebraFin_apply] using
+        (MultilinearMap.mkPiAlgebraFin ℤ n A).map_update_zero f j
   have hl : P (update f j l) =
       if q = a (σ j) then P (fun k ↦ T k (update a (σ j) p (σ k)) (b k)) else 0 := by
-    split_ifs with h
-    · congr 1
-      funext k
-      by_cases hk : k = j <;> simp [l, f, h, hk]
-    · simpa only [l, h, ite_false, P, MultilinearMap.mkPiAlgebraFin_apply] using
-        (MultilinearMap.mkPiAlgebraFin ℤ n A).map_update_zero f j
+    simp only [l, hupdate_ite]
+    congr 2
+    funext k
+    by_cases hk : k = j <;> simp [f, hk]
   have hr : P (update f j r) =
       if p = b j then P (fun k ↦ T k (a (σ k)) (update b j q k)) else 0 := by
-    split_ifs with h
-    · congr 1
-      funext k
-      by_cases hk : k = j <;> simp [r, f, h, hk]
-    · simpa only [r, h, ite_false, P, MultilinearMap.mkPiAlgebraFin_apply] using
-        (MultilinearMap.mkPiAlgebraFin ℤ n A).map_update_zero f j
+    simp only [r, hupdate_ite]
+    congr 2
+    funext k
+    by_cases hk : k = j <;> simp [f, hk]
   have hbracket : ⁅E p q, T j (a (σ j)) (b j)⁆ = l - r := by
     simpa only [T, l, r] using lie_shifted_entry E hE (u - (j.val : K))
   rw [hbracket, ← hl, ← hr]
-  exact (MultilinearMap.mkPiAlgebraFin ℤ n A).map_update_sub f j l r
+  simpa only [P, MultilinearMap.mkPiAlgebraFin_apply] using
+    (MultilinearMap.mkPiAlgebraFin ℤ n A).map_update_sub f j l r
 
 /-- The commutator of a matrix unit with a quantum minor is the sum of the row-index
 replacements minus the sum of the column-index replacements. Repeated indices are allowed,
