@@ -81,7 +81,8 @@ noncomputable def shiftClassGroupAwayGradingDepressedDiscrEquiv [IsDomain R] {m 
     ShiftClassGroup (GradedAlgebra.awayGrading
         (weightedHomogeneousSubmodule R (depressedWeight m)) (depressedDiscr_mem R m)) ≃+
       ZMod (m * (m - 1)) :=
-  (ShiftClassGroup.equivZMod (homogeneousUnitDegrees_awayGrading_depressedDiscr h2 hm hm2)).trans
+  (shiftClassGroupAwayGradingWeightedEquiv _ (depressedDiscr_mem R m)
+    (depressedDiscr_prime h2 hm hm2)).trans
     (ZMod.ringEquivCongr (by rw [Int.natAbs_mul, Int.natAbs_natCast]; congr 1; omega)).toAddEquiv
 
 /-- The identification of the shift classes of `R[a₂, …, aₘ]_Δ` with `ZMod (m (m - 1))` sends the
@@ -126,8 +127,9 @@ noncomputable def shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv [IsD
         (weightedHomogeneousSubmodule R (![4, 6] : Fin 2 → ℤ))
         (depressedDiscr_three_mem_four_six R)) ≃+
       ZMod 12 :=
-  -- The index `(12 : ℤ).natAbs` of `ShiftClassGroup.equivZMod` reduces to `12`.
-  ShiftClassGroup.equivZMod (homogeneousUnitDegrees_awayGrading_depressedDiscr_three_four_six h2 h3)
+  -- The index `(12 : ℤ).natAbs` of `shiftClassGroupAwayGradingWeightedEquiv` reduces to `12`.
+  shiftClassGroupAwayGradingWeightedEquiv _ _ (depressedDiscr_prime h2 (by exact_mod_cast h3)
+    (by norm_num))
 
 /-- The identification of the shift classes of `R[a, b]_Δ` with `ZMod 12` sends the class of a
 shift `c` to `c mod 12`. -/
@@ -135,6 +137,6 @@ shift `c` to `c mod 12`. -/
 theorem shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv_mk [IsDomain R]
     (h2 : (2 : R) ≠ 0) (h3 : IsUnit (3 : R)) (c : ℤ) :
     shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv h2 h3 c = c :=
-  ShiftClassGroup.equivZMod_mk _ c
+  shiftClassGroupAwayGradingWeightedEquiv_mk _ _ _ c
 
 end TauCeti
