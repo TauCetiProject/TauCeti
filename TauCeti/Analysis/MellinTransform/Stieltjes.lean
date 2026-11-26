@@ -142,9 +142,9 @@ private theorem integrableOn_pow_mul_inv_add_smul_sub_sum (hα₀ : 0 < α) (hα
         (Ioi_subset_Ioi zero_le_one)).aestronglyMeasurable) ?_
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 1 < t)
     have ht0 : 0 < t := one_pos.trans ht
-    rw [norm_smul, norm_smul, norm_mul, norm_pow, norm_real, Real.norm_of_nonneg ht0.le,
-      norm_cpow_eq_rpow_re_of_pos ht0, sub_re, natCast_re, one_re, Real.rpow_sub_one ht0.ne',
-      Real.rpow_natCast, ← mul_assoc]
+    simp only [norm_smul, norm_mul, norm_pow, norm_real, Real.norm_of_nonneg ht0.le,
+      norm_cpow_eq_rpow_re_of_pos ht0, sub_re, natCast_re, one_re]
+    rw [Real.rpow_sub_one ht0.ne', Real.rpow_natCast, ← mul_assoc]
     refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
     calc t ^ m * ‖((t : ℂ) + z)⁻¹‖ ≤ t ^ m * (c⁻¹ * (1 + t)⁻¹) := by gcongr; exact hinv ht0
       _ ≤ t ^ m * (c⁻¹ * t⁻¹) := by gcongr; linarith
@@ -366,8 +366,9 @@ private theorem norm_pow_mul_inv_add_smul_le {g : ℝ → E} {n : ℕ} {C T δ :
   have hs0 : 0 < Real.sin (δ / 2) :=
     Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith [abs_nonneg z.arg, Real.pi_pos])
   have hψt : ‖((t : ℂ) ^ n * ((t : ℂ) + ((1 : ℝ) : ℂ))⁻¹) • g t‖ = t ^ n * ‖g t‖ / (t + 1) := by
-    rw [norm_smul, norm_mul, norm_inv, norm_pow, norm_real, Real.norm_of_nonneg ht.le,
-      ← ofReal_add, norm_real, Real.norm_of_nonneg (by linarith)]
+    rw [← ofReal_add]
+    simp only [norm_smul, norm_mul, norm_inv, norm_pow, norm_real, Real.norm_of_nonneg ht.le,
+      Real.norm_of_nonneg (by linarith : 0 ≤ t + 1)]
     ring
   have hX : 0 ≤ t ^ n * ‖g t‖ := by positivity
   -- `‖t + z‖ ≥ sin (δ / 2) (t + ‖z‖)` on the sector
@@ -434,17 +435,14 @@ theorem isBigO_stieltjes_remainder (hα₀ : 0 < α) (hα₁ : α < 1)
   have hs0 : 0 ≤ (Real.sin (δ / 2))⁻¹ := inv_nonneg.mpr
     (Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith [abs_nonneg z.arg, Real.pi_pos])).le
   -- integrate the pointwise bound, with the real model integral `∫₀^∞ t^{-α} / (t + ‖z‖) dt`
-  have hmodel := integrableOn_rpow_div_add (1 - α) ‖z‖ (by linarith) (by linarith) hr0
-  have hvalue := integral_rpow_div_add (1 - α) ‖z‖ (by linarith) (by linarith) hr0
-  rw [show 1 - α - 1 = -α by ring] at hmodel hvalue
-  rw [show Real.pi * (1 - α) = Real.pi - Real.pi * α by ring, Real.sin_pi_sub, mul_comm] at hvalue
+  have hmodel := integrableOn_rpow_neg_div_add α ‖z‖ hα₀ hα₁ hr0
   have hI := norm_integral_le_of_norm_le (((hψ.const_mul _).add (hmodel.const_mul C)).const_mul _)
     ((ae_restrict_mem measurableSet_Ioi).mono fun t ht ↦
       norm_pow_mul_inv_add_smul_le (fun t ht ↦ (hT t ht).1) (hT T le_rfl).2 hC0 hδ hz hr ht)
   rw [integral_const_mul] at hI
   simp only [Pi.add_apply] at hI
   rw [integral_add (hψ.const_mul _) (hmodel.const_mul C), integral_const_mul,
-    integral_const_mul, hvalue] at hI
+    integral_const_mul, integral_rpow_neg_div_add α ‖z‖ hα₀ hα₁ hr0] at hI
   -- `‖z‖⁻¹ ≤ ‖z‖^{-α}` for `‖z‖ ≥ 1`
   have hrα : ‖z‖⁻¹ ≤ ‖z‖ ^ (-α) := by
     rw [← Real.rpow_neg_one]
@@ -453,9 +451,9 @@ theorem isBigO_stieltjes_remainder (hα₀ : 0 < α) (hα₁ : α < 1)
       (T + 1) * (∫ t in Ioi (0 : ℝ), ψ t) * ‖z‖ ^ (-α) := by
     rw [div_mul_eq_mul_div, div_eq_mul_inv]
     exact mul_le_mul_of_nonneg_left hrα (mul_nonneg (by linarith [(hT T le_rfl).2]) hΨ)
-  rw [norm_smul, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_pow, norm_inv,
-    Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _), neg_add, Real.rpow_add hr0,
-    Real.rpow_neg (norm_nonneg _), Real.rpow_natCast, ← inv_pow]
+  simp only [norm_smul, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_inv,
+    Real.norm_rpow_of_nonneg (norm_nonneg _), norm_norm]
+  rw [neg_add, Real.rpow_add hr0, Real.rpow_neg (norm_nonneg _), Real.rpow_natCast, ← inv_pow]
   calc ‖z‖⁻¹ ^ n * ‖∫ t in Ioi (0 : ℝ), ((t : ℂ) ^ n * ((t : ℂ) + z)⁻¹) • R t‖
       ≤ ‖z‖⁻¹ ^ n * ((Real.sin (δ / 2))⁻¹ * ((T + 1) / ‖z‖ * (∫ t in Ioi (0 : ℝ), ψ t) +
           C * (Real.pi / Real.sin (Real.pi * α) * ‖z‖ ^ (-α)))) := by gcongr

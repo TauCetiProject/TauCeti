@@ -18,7 +18,9 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
 For parameters `a`, `b` with positive real parts and a positive real shift `x`, the
 kernel `t ^ (a - 1) * (x + t) ^ (-(a + b))` is absolutely integrable on the positive
 half-line. Its integral is `Gamma a * Gamma b / Gamma (a + b) * x ^ (-b)`.
-All complex powers use the principal branch; their bases here are positive real numbers.
+All complex powers use the principal branch. In the beta integrals their bases are positive
+real numbers; the Stieltjes section below also takes the principal power `z ^ (-α)` of a
+complex `z` in the slit plane.
 
 The unit-shift case is already supplied by `Complex.hasMellin_one_add_cpow_neg`.
 Scaling gives the arbitrary positive shift. These formulas supply the model integrals
@@ -126,13 +128,11 @@ theorem integrableOn_cpow_neg_mul_inv_add (hα₀ : 0 < α) (hα₁ : α < 1) {z
     (hz : z ∈ slitPlane) :
     IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (-(α : ℂ)) * ((t : ℂ) + z)⁻¹) (Ioi 0) := by
   obtain ⟨c, hc, hcz⟩ := TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add hz
-  refine ((TauCeti.integrableOn_rpow_div_add (1 - α) 1 (by linarith) (by linarith)
-    one_pos).const_mul c⁻¹).mono' ?_ ?_
+  refine ((TauCeti.integrableOn_rpow_neg_div_add α 1 hα₀ hα₁ one_pos).const_mul c⁻¹).mono' ?_ ?_
   · exact (by fun_prop : Measurable fun t : ℝ ↦
       (t : ℂ) ^ (-(α : ℂ)) * ((t : ℂ) + z)⁻¹).aestronglyMeasurable
   · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
-    rw [norm_mul, norm_inv, norm_cpow_eq_rpow_re_of_pos ht, neg_re, ofReal_re,
-      show 1 - α - 1 = -α by ring]
+    rw [norm_mul, norm_inv, norm_cpow_eq_rpow_re_of_pos ht, neg_re, ofReal_re]
     calc t ^ (-α) * ‖(t : ℂ) + z‖⁻¹ ≤ t ^ (-α) * (c * (1 + t))⁻¹ := by
           gcongr
           exact hcz t ht.le
@@ -156,18 +156,17 @@ private theorem differentiableOn_integral_cpow_neg_mul_inv_add (hα₀ : 0 < α)
   refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le (μ := volume.restrict (Ioi 0))
     (F := fun w t ↦ (t : ℂ) ^ (-(α : ℂ)) * ((t : ℂ) + w)⁻¹)
     (F' := fun w t ↦ (t : ℂ) ^ (-(α : ℂ)) * -(((t : ℂ) + w) ^ 2)⁻¹)
-    (bound := fun t ↦ (c ^ 2)⁻¹ * (t ^ (1 - α - 1) / (t + 1)))
+    (bound := fun t ↦ (c ^ 2)⁻¹ * (t ^ (-α) / (t + 1)))
     (Metric.ball_mem_nhds z₀ hc) ?_ (integrableOn_cpow_neg_mul_inv_add hα₀ hα₁ hz₀) ?_ ?_
-    ((TauCeti.integrableOn_rpow_div_add (1 - α) 1 (by linarith) (by linarith)
-      one_pos).const_mul _) ?_).2.differentiableAt.differentiableWithinAt
+    ((TauCeti.integrableOn_rpow_neg_div_add α 1 hα₀ hα₁ one_pos).const_mul _)
+    ?_).2.differentiableAt.differentiableWithinAt
   · exact Eventually.of_forall fun w ↦ (by fun_prop : Measurable fun t : ℝ ↦
       (t : ℂ) ^ (-(α : ℂ)) * ((t : ℂ) + w)⁻¹).aestronglyMeasurable
   · exact (by fun_prop : Measurable fun t : ℝ ↦
       (t : ℂ) ^ (-(α : ℂ)) * -(((t : ℂ) + z₀) ^ 2)⁻¹).aestronglyMeasurable
   · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t) w hw
     have hl := hlow hw ht
-    rw [norm_mul, norm_neg, norm_inv, norm_pow, norm_cpow_eq_rpow_re_of_pos ht, neg_re, ofReal_re,
-      show 1 - α - 1 = -α by ring]
+    rw [norm_mul, norm_neg, norm_inv, norm_pow, norm_cpow_eq_rpow_re_of_pos ht, neg_re, ofReal_re]
     have h1 : ((1 + t) ^ 2)⁻¹ ≤ (t + 1)⁻¹ := by
       rw [inv_le_inv₀ (by positivity) (by positivity)]
       nlinarith
@@ -191,11 +190,8 @@ theorem integral_cpow_neg_mul_inv_add (hα₀ : 0 < α) (hα₁ : α < 1) {z : �
   have hreal {x : ℝ} (hx : 0 < x) :
       ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (-(α : ℂ)) * ((t : ℂ) + x)⁻¹ =
         ((Real.pi / Real.sin (Real.pi * α) : ℝ) : ℂ) * (x : ℂ) ^ (-(α : ℂ)) := by
-    have h := TauCeti.integral_rpow_div_add (1 - α) x (by linarith) (by linarith) hx
-    rw [show 1 - α - 1 = -α by ring, show Real.pi * (1 - α) = Real.pi - Real.pi * α by ring,
-      Real.sin_pi_sub] at h
-    rw [← ofReal_neg, ← ofReal_cpow hx.le, ← ofReal_mul, mul_comm, ← h,
-      ← integral_complex_ofReal]
+    rw [← ofReal_neg, ← ofReal_cpow hx.le, ← ofReal_mul,
+      ← TauCeti.integral_rpow_neg_div_add α x hα₀ hα₁ hx, ← integral_complex_ofReal]
     refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
     rw [div_eq_mul_inv, ofReal_mul, ofReal_inv, ofReal_add, ofReal_cpow ht.le]
   have hG : DifferentiableOn ℂ
