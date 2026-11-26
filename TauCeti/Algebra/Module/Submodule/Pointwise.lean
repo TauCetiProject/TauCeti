@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Span
+import TauCeti.Algebra.Module.Submodule.Map
 import Mathlib.Algebra.Ring.Action.Pointwise.Set
 import TauCeti.GroupTheory.Index.Exact
 
@@ -27,7 +28,8 @@ when multiplication by the unit and by its inverse both preserve it.
 
 Membership in a pointwise translate under a group action is tested by the inverse action.
 For a subalgebra `C`, two translates `s C` and `t C` by ambient units agree exactly when
-`s⁻¹ t` is a unit of `C`.
+`s⁻¹ t` is a unit of `C`. In a scalar tower, an `M`-regular scalar restricts to an injective
+self-map of any finite submodule `N`, hence surjects onto `N` and satisfies `a • N = N`.
 
 Let `S` be a subring of a commutative ring `A`, `M` an `A`-module and `M₀` an `S`-submodule of
 `M`. This file collects the elementary facts about the family `rⁿ • M₀`, for `r : S`, in
@@ -44,6 +46,8 @@ this file to restate both.
   membership of `g⁻¹ • x` in `N`.
 * `Submodule.finite_pointwise_smul_of_finite_quotient`: if `M ⧸ I` and `a • (I ⊓ D)` are finite,
   then `a • D` is finite.
+* `Submodule.smul_eq_self_of_finite`: an `M`-regular scalar in a tower fixes any finite submodule
+  `N`, `a • N = N`.
 * `Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff`: translates `s C` and `t C` by ambient
   units agree exactly when `s⁻¹ t` is a unit of `C`.
 * `Submodule.pow_smul_mem_pow_smul`: the ambient-scalar bridge — an element of `M₀` scaled by
@@ -99,6 +103,17 @@ theorem finite_pointwise_smul_of_finite_quotient {α R M : Type*} [Monoid α] [R
       (LinearMap.range_eq_top.mp ((Submodule.range_liftQ K π₀ hK_le).trans
         (LinearMap.range_eq_top.mpr hπ₀_surj)))
   exact (LinearMap.exact_subtype_mkQ U).finite
+
+/-- If scalar multiplication by `a` is injective on `M` and `N` is a finite submodule of `M`, then
+`a • N = N`: an injective self-map of the finite type `N` is surjective. -/
+theorem smul_eq_self_of_finite {α R M : Type*} [Monoid α] [Semiring R] [AddCommMonoid M]
+    [Module R M] [SMul α R] [DistribMulAction α M] [SMulCommClass α R M] [IsScalarTower α R M]
+    (N : Submodule R M) [Finite N] {a : α} (ha : IsSMulRegular M a) : a • N = N := by
+  have hle : N.map (DistribSMul.toLinearMap R M a) ≤ N := by
+    rw [← pointwise_smul_def]
+    exact N.smul_le_self_of_tower a
+  rw [pointwise_smul_def]
+  exact N.map_eq_self_of_finite (fun _ _ h ↦ ha h) hle
 
 variable {A : Type*} [CommRing A] {M : Type*} [AddCommMonoid M] [Module A M]
 
