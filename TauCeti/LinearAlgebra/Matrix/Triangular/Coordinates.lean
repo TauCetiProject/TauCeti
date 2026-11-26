@@ -111,9 +111,10 @@ section CommRing
 
 variable [Fintype ι] {S : Type*} [CommRing S]
 
-/-- Fill the upper entries, including the diagonal, of `K` with zeros and read the strict lower
-entries of `K * T - T * K`. When `T` is upper triangular, the result is independent of the upper
-entries of `K` by `Matrix.IsUpperTriangular.schurLowerCommutator_eq`. -/
+/-- For any matrix `T`, extend the strict lower entries `x` by zero on the upper triangle to form
+`K = schurMatrixEquiv (0, x)`, then read the strict lower entries of `K * T - T * K`.
+When `T` is upper triangular, any matrix with strict lower entries `x` gives the same result by
+`Matrix.IsUpperTriangular.schurLowerCommutator_eq`. -/
 def _root_.Matrix.schurLowerCommutator (T : Matrix ι ι S) :
     (SchurLowerIndex ι → S) →ₗ[S] (SchurLowerIndex ι → S) :=
   let L := schurMatrixEquiv.toLinearMap.comp (LinearMap.inr S _ _)

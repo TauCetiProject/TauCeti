@@ -118,7 +118,7 @@ def schurMatrixMeasurableEquiv :
   rwa [MeasurableEquiv.symm_apply_apply, eq_comm] at he
 
 /-- Reading the entries with the measurable equivalence agrees with the linear split. -/
-private theorem schurMatrixMeasurableEquiv_symm_apply [Semiring R] (A : Matrix ι ι R) :
+theorem _root_.Matrix.schurMatrixMeasurableEquiv_symm_apply [Semiring R] (A : Matrix ι ι R) :
     schurMatrixMeasurableEquiv.symm A = schurMatrixEquiv.symm A := by
   apply Prod.ext <;> funext ij <;> simp
 
@@ -126,7 +126,7 @@ private theorem schurMatrixMeasurableEquiv_symm_apply [Semiring R] (A : Matrix �
 theorem schurMatrixMeasurableEquiv_apply [Semiring R] (x : SchurCoordinates ι R) :
     schurMatrixMeasurableEquiv x = schurMatrixEquiv x := by
   apply schurMatrixMeasurableEquiv.symm.injective
-  rw [MeasurableEquiv.symm_apply_apply, schurMatrixMeasurableEquiv_symm_apply,
+  rw [MeasurableEquiv.symm_apply_apply, Matrix.schurMatrixMeasurableEquiv_symm_apply,
     LinearEquiv.symm_apply_apply]
 
 end Triangular

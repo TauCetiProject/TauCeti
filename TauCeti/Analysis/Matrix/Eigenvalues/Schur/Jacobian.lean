@@ -114,19 +114,14 @@ private theorem schurConj_apply (U : unitaryGroup (Fin n) ℂ) (x : SchurCoordin
 
 private theorem det_schurConj (U : unitaryGroup (Fin n) ℂ) : (schurConj U).det = 1 := by
   calc
-    (schurConj U).det = (matrixUnitaryConj U).toContinuousLinearMap.det :=
-      ContinuousLinearMap.det_conj _ schurMatrixCLE.symm
-    _ = 1 := ?_
-  let C := (Unitary.conjStarAlgAut ℂ _ U).toAlgEquiv.toLinearMap
-  have hC : C = (LinearMap.mulLeft ℂ (U : Matrix (Fin n) (Fin n) ℂ)).comp
-      (LinearMap.mulRight ℂ (star (U : Matrix (Fin n) (Fin n) ℂ))) := by
-    apply LinearMap.ext
-    intro M
-    simp [C, mul_assoc]
-  have hdet : C.det = 1 := by
-    rw [hC, Matrix.det_mulLeft_comp_mulRight_of_mul_eq_one _ _
-      (Unitary.mul_star_self_of_mem U.property)]
-  exact (LinearMap.det_restrictScalars_eq_normSq C).trans (by rw [hdet, Complex.normSq_one])
+    (schurConj U).det = (matrixUnitaryConj U).toContinuousLinearMap.det := by
+      simpa only [schurConj, ContinuousLinearEquiv.symm_symm] using
+        ContinuousLinearMap.det_conj (matrixUnitaryConj U).toContinuousLinearMap schurMatrixCLE.symm
+    _ = 1 := by
+      rw [matrixUnitaryConj, ContinuousLinearMap.det,
+        ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+        LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, LinearEquiv.restrictScalars_toLinearMap]
+      exact det_conjStarAlgAut_restrictScalars U
 
 /-- Schur coordinates depend smoothly on both the triangular entries and the angles. -/
 theorem _root_.Matrix.UnitaryGroup.contDiff_schurCoordinates (U : unitaryGroup (Fin n) ℂ)

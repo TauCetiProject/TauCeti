@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Unitary
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Normed.Operator.Mul
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Star
 
@@ -63,14 +61,5 @@ theorem _root_.HasFDerivAt.unitary_conj_of_eq_one {F D : E → 𝔸} {F' D' : E 
     rw [← hF.fderiv]
     exact star_fderiv_apply_eq_neg_of_mem_unitary hU h1 v
   simp [h1, hstar, sub_eq_add_neg, add_comm, add_assoc]
-
-/-- Multiplying a smooth family on the left by a smooth frame and on the right by the
-star of that frame preserves smoothness. -/
-theorem _root_.ContDiff.mul_mul_star {F D : E → 𝔸} {k : WithTop ℕ∞}
-    (hF : ContDiff 𝕜 k F) (hD : ContDiff 𝕜 k D) :
-    ContDiff 𝕜 k (fun x ↦ F x * D x * star (F x)) := by
-  have hstar := (starL' 𝕜 : 𝔸 ≃L[𝕜] 𝔸).toContinuousLinearMap.contDiff.comp hF
-  simpa only [Function.comp_apply, ContinuousLinearEquiv.coe_coe, starL'_apply] using
-    (hF.mul hD).mul hstar
 
 end TauCeti
