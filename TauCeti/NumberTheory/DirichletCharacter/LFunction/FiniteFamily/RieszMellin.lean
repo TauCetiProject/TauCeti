@@ -222,10 +222,11 @@ theorem dirichletFamilyRieszRemainderMellin_simplePole
   obtain ⟨m, hm⟩ := WithTop.ne_top_iff_exists.mp hp.ne_top
   have hlo := neg_one_le_meromorphicOrderAt_dirichletFamilyRieszRemainderMellin w h₀
   rw [← hm] at hp hlo ⊢
-  have hm₀ : m < 0 := WithTop.coe_lt_coe.mp hp
-  have hm₁ : (-1 : ℤ) ≤ m := WithTop.coe_le_coe.mp hlo
-  have hm' : m = -1 := by omega
-  exact congrArg ((↑) : ℤ → WithTop ℤ) hm'
+  rw [← WithTop.coe_zero, WithTop.coe_lt_coe] at hp
+  rw [← WithTop.coe_one, ← WithTop.LinearOrderedAddCommGroup.coe_neg] at hlo ⊢
+  rw [WithTop.coe_le_coe] at hlo
+  rw [WithTop.coe_eq_coe]
+  omega
 
 /-- Every pole of the family expression lies strictly left of `Re s = 1`. -/
 theorem re_lt_one_of_dirichletFamilyRieszRemainderMellin_pole
