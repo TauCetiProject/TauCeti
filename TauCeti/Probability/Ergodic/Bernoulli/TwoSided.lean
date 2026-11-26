@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.Ergodic.Ergodic
 public import Mathlib.Dynamics.SymbolicDynamics.Basic
 public import Mathlib.Probability.ProductMeasure
+import TauCeti.Dynamics.SymbolicDynamics.Shift
 import TauCeti.MeasureTheory.Constructions.FullShift.Shift
 import TauCeti.Probability.Ergodic.Bernoulli.Action
 
@@ -25,7 +26,7 @@ The two-sided Bernoulli shift is ergodic
 (`MeasureTheory.Measure.ergodic_shift_one_infinitePi_const`): a set invariant under `shift 1` is
 invariant under every `shift k`, `k ∈ ℤ`
 (`SymbolicDynamics.FullShift.preimage_shift_eq_of_preimage_shift_one_eq`, in
-`TauCeti.MeasureTheory.Constructions.FullShift.Shift`). The shifts `shift k` form the Bernoulli
+`TauCeti.Dynamics.SymbolicDynamics.Shift`). The shifts `shift k` form the Bernoulli
 action of `Multiplicative ℤ` on `ℤ → A`, with `ℤ` acting on itself by translation
 (`TauCeti.Probability.arrowAction_multiplicative_smul_eq_shift`), which is ergodic as the Bernoulli
 action of a countable infinite group

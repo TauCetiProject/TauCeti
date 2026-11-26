@@ -125,11 +125,8 @@ theorem arrowAction_smul_eq_mulShift (g : Γ) (x : Γ → S) :
 ergodic for the Bernoulli measure `ν^{⊗Γ}`. -/
 theorem ergodicSMul_arrowAction_self_infinitePi_const [Countable Γ] [Infinite Γ] :
     letI := arrowAction (G := Γ) (A := Γ) (B := S)
-    ErgodicSMul Γ (Γ → S) (Measure.infinitePi fun _ => ν) := by
-  refine ergodicSMul_arrowAction_infinitePi_const_of_proper fun F F' ↦ ?_
-  refine ((F'.finite_toSet.image2 (fun j i ↦ j * i⁻¹) F.finite_toSet)).subset ?_
-  rintro g ⟨i, hi, hg⟩
-  exact ⟨g • i, hg, i, hi, by simp⟩
+    ErgodicSMul Γ (Γ → S) (Measure.infinitePi fun _ => ν) :=
+  ergodicSMul_arrowAction_infinitePi_const exists_forall_smul_notMem_self
 
 /-- **The Bernoulli action of a countable infinite additive group is ergodic.** For an additive
 group `Λ` acting on itself by translation, and a probability measure `ν` on `S`, the action
@@ -140,13 +137,10 @@ theorem ergodicSMul_arrowAction_multiplicative_infinitePi_const {Λ : Type*} [Ad
     letI := arrowAction (G := Multiplicative Λ) (A := Λ) (B := S)
     ErgodicSMul (Multiplicative Λ) (Λ → S) (Measure.infinitePi fun _ => ν) := by
   have : Infinite (Multiplicative Λ) := inferInstanceAs (Infinite Λ)
-  refine ergodicSMul_arrowAction_infinitePi_const_of_proper fun F F' ↦ ?_
-  refine ((F'.finite_toSet.image2 (fun j i ↦ Multiplicative.ofAdd (j - i)) F.finite_toSet)).subset
-    ?_
-  rintro g ⟨i, hi, hg⟩
-  obtain ⟨k, rfl⟩ := Multiplicative.ofAdd.surjective g
-  rw [ofAdd_smul, vadd_eq_add] at hg
-  exact ⟨k + i, hg, i, hi, congrArg Multiplicative.ofAdd (add_sub_cancel_right k i)⟩
+  -- `Multiplicative Λ` acts freely: `g • i = toAdd g + i` is injective in `g`.
+  exact ergodicSMul_arrowAction_infinitePi_const_of_proper
+    (finite_setOf_exists_smul_mem_of_injective fun i =>
+      (add_left_injective i).comp Multiplicative.toAdd.injective)
 
 omit [MeasurableSpace S] in
 /-- The Bernoulli action of `Multiplicative Λ` on `Λ → S` (Mathlib's `arrowAction`, with `Λ` acting

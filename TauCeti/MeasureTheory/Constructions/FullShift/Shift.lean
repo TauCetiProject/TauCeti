@@ -20,9 +20,7 @@ with inverse `mulShift g⁻¹` (`SymbolicDynamics.FullShift.mulShiftEquiv`). The
 left-cancellative monoid the shift reindexes coordinates injectively, so it preserves every
 Bernoulli measure `p^{⊗G}` (`SymbolicDynamics.FullShift.measurePreserving_mulShift`). For
 `G = ℤ`, the shift `shift 1`, `x ↦ (n ↦ x (n + 1))`, is invertible with inverse the right shift
-`x ↦ (n ↦ x (n - 1))` (`SymbolicDynamics.FullShift.shiftEquiv_one_symm_apply`), and a set invariant
-under `shift 1` is invariant under every `shift k`
-(`SymbolicDynamics.FullShift.preimage_shift_eq_of_preimage_shift_one_eq`).
+`x ↦ (n ↦ x (n - 1))` (`SymbolicDynamics.FullShift.shiftEquiv_one_symm_apply`).
 
 ## Main results
 
@@ -34,13 +32,11 @@ under `shift 1` is invariant under every `shift k`
   preserves `p^{⊗G}`, so it is an invertible measure-preserving system
   (additively `SymbolicDynamics.FullShift.measurePreserving_shiftEquiv`).
 * `SymbolicDynamics.FullShift.shiftEquiv_one_symm_apply`: the inverse of the two-sided shift.
-* `SymbolicDynamics.FullShift.preimage_shift_eq_of_preimage_shift_one_eq`: a set invariant under
-  `shift 1` is invariant under every `shift k`.
 -/
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory
 
 namespace SymbolicDynamics.FullShift
 
@@ -102,22 +98,8 @@ automorphism `mulShiftEquiv g` preserves the product `p^{⊗G}`. -/
 theorem measurePreserving_mulShiftEquiv [Group G] (p : Measure A) [IsProbabilityMeasure p]
     (g : G) :
     MeasurePreserving (mulShiftEquiv (A := A) g) (Measure.infinitePi fun _ : G ↦ p)
-      (Measure.infinitePi fun _ : G ↦ p) :=
-  measurePreserving_mulShift p g
-
-omit [MeasurableSpace A] in
-/-- A set invariant under the two-sided shift is invariant under every shift `shift k`,
-`k ∈ ℤ`. -/
-theorem preimage_shift_eq_of_preimage_shift_one_eq {s : Set (ℤ → A)}
-    (hs : shift (1 : ℤ) ⁻¹' s = s) (k : ℤ) : shift k ⁻¹' s = s := by
-  have hstep (k : ℤ) : shift (k + 1) = shift (1 : ℤ) ∘ shift (A := A) k :=
-    funext fun x ↦ shift_add k 1 x
-  induction k using Int.induction_on with
-  | zero => rw [show shift (0 : ℤ) = (id : (ℤ → A) → ℤ → A) from funext shift_zero, preimage_id]
-  | succ k ih => rw [hstep, preimage_comp, hs, ih]
-  | pred k ih =>
-    have h := hstep (-k - 1)
-    rw [sub_add_cancel] at h
-    rwa [h, preimage_comp, hs] at ih
+      (Measure.infinitePi fun _ : G ↦ p) := by
+  rw [coe_mulShiftEquiv]
+  exact measurePreserving_mulShift p g
 
 end SymbolicDynamics.FullShift
