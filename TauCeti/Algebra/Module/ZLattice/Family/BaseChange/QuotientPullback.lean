@@ -80,24 +80,6 @@ noncomputable abbrev torusFamilyBaseChangeQuotientFiberHomeomorph (f : C(Y', Y))
     (fun g' ↦ continuous_torusFamilyBaseChangeTranslation P hcont f.continuous σ hf b hb
       (continuous_const_smul g') (hbc (σ g'))) β' hβ' y' hy'
 
-/-- `torusFamilyBaseChangeQuotientFiberHomeomorph` sends a point in the `y'`-fiber to its
-`Γ'`-orbit.
-
-This is intentionally not a simp lemma: `torusFamilyBaseChangeQuotientFiberHomeomorph` is an
-`abbrev`, so `simp` already simplifies it via `torusFamilyAffineQuotientFiberHomeomorph_coe`. -/
-theorem torusFamilyBaseChangeQuotientFiberHomeomorph_coe (f : C(Y', Y))
-    (hf : ∀ g' y', f (g' • y') = σ g' • f y') {z' : Z'} (y' : Y') (hy' : β' y' = z')
-    (u : letI := periodAddAction (P ∘ f); torusFamilyProjection (P ∘ f) ⁻¹' {y'}) :
-    letI := periodAddAction (P ∘ f)
-    letI := torusFamilyBaseChangeAffineMulAction P b hb R ρ hequiv hone hmul hbmul σ f hf
-    (torusFamilyBaseChangeQuotientFiberHomeomorph P hcont R ρ hequiv b hb hone hmul hbmul hR hbc
-        β' hβ' σ f hf y' hy' u :
-      MulAction.orbitRel.Quotient Γ' (AddAction.orbitRel.Quotient Λ (Y' × E))) =
-      Quotient.mk _ u.val := by
-  let _ := periodAddAction (P ∘ f)
-  let _ := torusFamilyBaseChangeAffineMulAction P b hb R ρ hequiv hone hmul hbmul σ f hf
-  simp only [torusFamilyAffineQuotientFiberHomeomorph_coe]
-
 end Topology
 
 section CommSq
