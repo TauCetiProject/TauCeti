@@ -40,8 +40,8 @@ separately over `(0, ∞)`.
 
 * `Asymptotics.hasAsymptoticExpansion_fourier`: the expansion.
 
-The improper integral exists under the same hypotheses
-(`Asymptotics.eventually_exists_tendsto_integral_cexp_mul_of_isBigO`, in
+The improper integral exists under the same hypotheses, at every large `x`
+(`Asymptotics.exists_tendsto_integral_cexp_smul_of_isBigO`, in
 `TauCeti.Analysis.Asymptotics.Fourier.Endpoint`).
 
 ## Implementation notes
@@ -243,17 +243,21 @@ end Remainder
 
 section Expansion
 
-/-- The part beyond `b > 0` of the Fourier integral: `F'(x) = ∫_b^∞ e^{ixt} q(t) dt` minus its
-first `n` endpoint terms at `b` is `O(x^{-β})` for `β ≤ n + 1`, by DLMF 2.3.5. -/
-private theorem isBigO_sub_sum_of_tendsto_integral_Ioi {q : ℝ → ℂ} {F' : ℝ → ℂ}
+/-- The part beyond `b > 0` of the Fourier integral: if `F(x) = ∫₀^∞ e^{ixt} q(t) dt` for all
+large `x` and `e^{ixt} q(t)` is integrable on `(0, b)`, then
+`F(x) - ∫₀^b e^{ixt} q(t) dt = ∫_b^∞ e^{ixt} q(t) dt` minus its first `n` endpoint terms at `b`
+is `O(x^{-β})` for `β ≤ n + 1`, by DLMF 2.3.5. -/
+private theorem isBigO_sub_sum_of_tendsto_integral_Ioi {q : ℝ → ℂ} {F : ℝ → ℂ}
     (hq : ContDiffOn ℝ ∞ q (Ioi 0)) {b : ℝ} (hb : 0 < b)
     (hunif : ∀ k : ℕ, ∃ x₀ : ℝ, ∀ ε > 0, ∃ T₀ : ℝ, ∀ x ≥ x₀, ∀ T ≥ T₀, ∀ T' ≥ T,
       ‖∫ t in T..T', cexp (((x * t : ℝ) : ℂ) * I) * iteratedDerivWithin k q (Ioi 0) t‖ ≤ ε)
-    (hF' : ∀ᶠ x : ℝ in atTop, Tendsto
-      (fun T : ℝ => ∫ t in b..T, cexp (((x * t : ℝ) : ℂ) * I) * q t) atTop (𝓝 (F' x)))
+    (hint : ∀ x : ℝ, IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * q t) volume 0 b)
+    (hF : ∀ᶠ x : ℝ in atTop, Tendsto
+      (fun T : ℝ => ∫ t in (0 : ℝ)..T, cexp (((x * t : ℝ) : ℂ) * I) * q t) atTop (𝓝 (F x)))
     (n : ℕ) {β : ℝ} (hβ : β ≤ n + 1) :
-    (fun x : ℝ => F' x - ∑ k ∈ range n, (I / x) ^ (k + 1) *
-      (cexp (((x * b : ℝ) : ℂ) * I) * iteratedDerivWithin k q (Ioi 0) b))
+    (fun x : ℝ => (F x - ∫ t in (0 : ℝ)..b, cexp (((x * t : ℝ) : ℂ) * I) * q t) -
+      ∑ k ∈ range n, (I / x) ^ (k + 1) *
+        (cexp (((x * b : ℝ) : ℂ) * I) * iteratedDerivWithin k q (Ioi 0) b))
       =O[atTop] fun x => x ^ (-β) := by
   have hqb : ContDiffOn ℝ ∞ q (Ici b) := hq.mono fun t (ht : b ≤ t) => hb.trans_le ht
   have hder : ∀ k : ℕ, ∀ t ∈ Ici b,
@@ -271,8 +275,14 @@ private theorem isBigO_sub_sum_of_tendsto_integral_Ioi {q : ℝ → ℂ} {F' : �
       · exact hT₀ x hx T (le_of_max_le_left hT) T' hT'
       · rw [uIcc_of_le hT'] at ht
         simp only [smul_eq_mul, hder k t ((le_of_max_le_right hT).trans ht.1)]
-  have h := (hasAsymptoticExpansion_of_tendsto_integral_cexp_smul hqb hunif'
-    (by simpa only [smul_eq_mul] using hF')).isBigO n
+  -- the integral over `(b, ∞)`
+  have hF' : ∀ᶠ x : ℝ in atTop, Tendsto
+      (fun T : ℝ => ∫ t in b..T, cexp (((x * t : ℝ) : ℂ) * I) • q t) atTop
+      (𝓝 (F x - ∫ t in (0 : ℝ)..b, cexp (((x * t : ℝ) : ℂ) * I) * q t)) := by
+    filter_upwards [hF] with x hx
+    simpa only [smul_eq_mul] using tendsto_integral_cexp_smul_sub hqb.continuousOn
+      (by simpa only [smul_eq_mul] using hint x) (by simpa only [smul_eq_mul] using hx)
+  have h := (hasAsymptoticExpansion_of_tendsto_integral_cexp_smul hqb hunif' hF').isBigO n
   refine (h.congr_left fun x => ?_).trans <| IsBigO.trans ?_
     (isBigO_const_div_pow_rpow_neg_atTop I (n := n + 1)
       (by push_cast; linarith))
@@ -410,8 +420,8 @@ let `q` be smooth on `(0, ∞)` with, for all `k` and `N`,
 `q^{(k)}(t) - ∑_{s<N} c_s (α_s - 1)⋯(α_s - k) t^{α_s - 1 - k} = O(t^{Re α_N - 1 - k})` as
 `t → 0+`, the derivatives taken within `(0, ∞)`. Suppose each `∫ e^{ixt} q^{(k)}(t) dt` converges
 at `∞` uniformly for all large `x`. If `F x` is the improper integral `∫₀^∞ e^{ixt} q(t) dt` for
-all large `x` (it exists under these hypotheses by
-`Asymptotics.eventually_exists_tendsto_integral_cexp_mul_of_isBigO`), then
+all large `x` (under these hypotheses it exists at every large `x` by
+`Asymptotics.exists_tendsto_integral_cexp_smul_of_isBigO`), then
 `F x ∼ ∑ e^{iπα_s/2} Γ(α_s) c_s x^{-α_s}` as `x → +∞`, in the sense of `HasAsymptoticExpansion`:
 for every `N` the remainder after `N` terms is `O(x^{-Re α_N})`. -/
 theorem hasAsymptoticExpansion_fourier {q : ℝ → ℂ} {α c : ℕ → ℂ} {F : ℝ → ℂ}
@@ -450,9 +460,6 @@ theorem hasAsymptoticExpansion_fourier {q : ℝ → ℂ} {α c : ℕ → ℂ} {F
       c s * ((descPochhammer ℂ k).eval (α s - 1) * (t : ℂ) ^ (α s - 1 - k)) := fun k t =>
     (sub_add_cancel _ _).symm
   have hαN : ∀ s < N, 0 < (α s).re ∧ (α s).re < n := fun s hs => ⟨hα s, hαn s hs.le⟩
-  -- the part of the integral beyond `b`
-  have hF' := eventually_tendsto_integral_cexp_mul_sub hq.continuousOn hb
-    (fun x => intervalIntegrable_cexp_mul_of_eq_add_sum hαN hg hb.le (hR0 x)) hF
   -- the decomposition, and the bound `O(x^{-β})` on each part
   have hdec : ∀ᶠ x : ℝ in atTop, F x - ∑ s ∈ range N,
       (x : ℂ) ^ (-α s) • (cexp (π * I * α s / 2) * Gamma (α s) * c s) =
@@ -466,7 +473,9 @@ theorem hasAsymptoticExpansion_fourier {q : ℝ → ℂ} {α c : ℕ → ℂ} {F
     ring
   have hT := IsBigO.fun_sum fun s hs => (isBigO_tail (hαn s (mem_range.1 hs).le) hb
     (hαn N le_rfl).le ((descPochhammer ℂ n).eval (α s - 1))).const_mul_left (c s)
-  have hE := isBigO_sub_sum_of_tendsto_integral_Ioi hq hb hunif hF' n (β := β)
+  -- the part of the integral beyond `b`
+  have hE := isBigO_sub_sum_of_tendsto_integral_Ioi hq hb hunif
+    (fun x => intervalIntegrable_cexp_mul_of_eq_add_sum hαN hg hb.le (hR0 x)) hF n (β := β)
     (by linarith [hαn N le_rfl])
   have hnorm : (fun x : ℝ => x ^ (-β)) =ᶠ[atTop] fun x => ‖(x : ℂ) ^ (-α N)‖ := by
     filter_upwards [eventually_gt_atTop 0] with x hx
