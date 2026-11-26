@@ -55,47 +55,11 @@ noncomputable def totalColumnFiltration (p : ℤ) : Subobject (K.total (.up ℤ)
 lemma totalColumnFiltration_eq_mk (p : ℤ) :
     K.totalColumnFiltration p = Subobject.mk (K.totalColumnFiltrationι p) := (rfl)
 
-omit [K.HasTotal (.up ℤ)] in
-private lemma isIso_stupidTruncMap_ιStupidTrunc {p q : ℤ} (h : p ≤ q) :
-    IsIso (stupidTruncMap (K.ιStupidTrunc (embeddingUpIntGE p)) (embeddingUpIntGE q)) := by
-  refine @Hom.isIso_of_components _ _ _ _ _ _ _ _ (fun i ↦ ?_)
-  by_cases hi : q ≤ i
-  · let T := K.stupidTrunc (embeddingUpIntGE p)
-    have h₁ : IsIso ((T.ιStupidTrunc (embeddingUpIntGE q)).f i) :=
-      T.isIso_ιStupidTrunc_f _ (i := (i - q).toNat) (by simp; omega)
-    have h₂ : IsIso ((K.ιStupidTrunc (embeddingUpIntGE p)).f i) :=
-      K.isIso_ιStupidTrunc_f _ (i := (i - p).toNat) (by simp; omega)
-    have h₃ : IsIso ((K.ιStupidTrunc (embeddingUpIntGE q)).f i) :=
-      K.isIso_ιStupidTrunc_f _ (i := (i - q).toNat) (by simp; omega)
-    have : IsIso ((T.ιStupidTrunc (embeddingUpIntGE q)).f i ≫
-        (K.ιStupidTrunc (embeddingUpIntGE p)).f i) := inferInstance
-    exact IsIso.of_isIso_fac_right (ιStupidTrunc_f_naturality _ _ i)
-  · have hi' : i < q := lt_of_not_ge hi
-    exact IsZero.isIso
-      (CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X
-        (K.stupidTrunc (embeddingUpIntGE p)) q hi')
-      (CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X K q hi') _
-
-/-- The inclusion of the truncation at `q` factors through the truncation at `p ≤ q`. -/
-private noncomputable def columnTruncationMap {p q : ℤ} (h : p ≤ q) :
-    K.stupidTrunc (embeddingUpIntGE q) ⟶ K.stupidTrunc (embeddingUpIntGE p) :=
-  haveI := K.isIso_stupidTruncMap_ιStupidTrunc h
-  inv (stupidTruncMap (K.ιStupidTrunc (embeddingUpIntGE p)) (embeddingUpIntGE q)) ≫
-    (K.stupidTrunc (embeddingUpIntGE p)).ιStupidTrunc (embeddingUpIntGE q)
-
-omit [K.HasTotal (.up ℤ)] in
-@[reassoc]
-private lemma columnTruncationMap_comp {p q : ℤ} (h : p ≤ q) :
-    K.columnTruncationMap h ≫ K.ιStupidTrunc (embeddingUpIntGE p) =
-      K.ιStupidTrunc (embeddingUpIntGE q) := by
-  have := K.isIso_stupidTruncMap_ιStupidTrunc h
-  rw [columnTruncationMap, Category.assoc, ← ιStupidTrunc_naturality, IsIso.inv_hom_id_assoc]
-
 /-- The column filtration decreases as the column index increases. -/
 lemma antitone_totalColumnFiltration : Antitone K.totalColumnFiltration := by
   intro p q h
-  apply Subobject.mk_le_mk_of_comm (total.map (K.columnTruncationMap h) (.up ℤ))
-  rw [← total.map_comp, K.columnTruncationMap_comp]
+  apply Subobject.mk_le_mk_of_comm (total.map (CochainComplex.stupidTruncGEMap K h) (.up ℤ))
+  rw [← total.map_comp, CochainComplex.stupidTruncGEMap_comp_ιStupidTrunc]
 
 variable {K} {L : HomologicalComplex₂ C (.up ℤ) (.up ℤ)} [L.HasTotal (.up ℤ)]
 
@@ -143,7 +107,7 @@ lemma totalColumnFiltrationStageIso_hom_comp_ι (p : ℤ) :
 private noncomputable def totalColumnTruncationIso {p q : ℤ} (h : p ≤ q) :
     total ((K.stupidTrunc (embeddingUpIntGE p)).stupidTrunc (embeddingUpIntGE q)) (.up ℤ) ≅
       total (K.stupidTrunc (embeddingUpIntGE q)) (.up ℤ) :=
-  haveI := K.isIso_stupidTruncMap_ιStupidTrunc h
+  haveI := CochainComplex.isIso_stupidTruncMap_ιStupidTruncGE K h
   total.mapIso (asIso (stupidTruncMap (K.ιStupidTrunc (embeddingUpIntGE p))
     (embeddingUpIntGE q))) (.up ℤ)
 
@@ -151,10 +115,13 @@ private lemma totalColumnTruncationIso_inv_comp_ι {p q : ℤ} (h : p ≤ q) :
     (K.totalColumnTruncationIso h).inv ≫
       total.map ((K.stupidTrunc (embeddingUpIntGE p)).ιStupidTrunc
         (embeddingUpIntGE q)) (.up ℤ) =
-      total.map (K.columnTruncationMap h) (.up ℤ) := by
-  have := K.isIso_stupidTruncMap_ιStupidTrunc h
-  rw [totalColumnTruncationIso, total.mapIso_inv, asIso_inv, ← total.map_comp,
-    columnTruncationMap]
+      total.map (CochainComplex.stupidTruncGEMap K h) (.up ℤ) := by
+  have := CochainComplex.isIso_stupidTruncMap_ιStupidTruncGE K h
+  rw [totalColumnTruncationIso, total.mapIso_inv, asIso_inv, ← total.map_comp]
+  congr 1
+  apply (cancel_mono (K.ιStupidTrunc (embeddingUpIntGE p))).1
+  rw [Category.assoc, ← ιStupidTrunc_naturality, IsIso.inv_hom_id_assoc,
+    CochainComplex.stupidTruncGEMap_comp_ιStupidTrunc]
 
 private noncomputable abbrev totalColumnGradedShortComplex (p : ℤ) :=
   totalShortComplex (.up ℤ)
@@ -176,7 +143,8 @@ private noncomputable def totalColumnGradedCokernelIso (p : ℤ) :
       e, Iso.trans_hom, Iso.symm_hom]
     have hf : S.f = total.map (T.ιStupidTrunc (embeddingUpIntGE (p + 1))) (.up ℤ) := rfl
     rw [hf, ← Category.assoc (K.totalColumnTruncationIso _).inv,
-      K.totalColumnTruncationIso_inv_comp_ι, ← total.map_comp, K.columnTruncationMap_comp]
+      K.totalColumnTruncationIso_inv_comp_ι, ← total.map_comp,
+      CochainComplex.stupidTruncGEMap_comp_ιStupidTrunc]
     simpa only [totalColumnFiltrationStageIso_hom_comp_ι] using
       CochainComplex.filtrationFunctor_map_comp_arrow _ _
         (TauCeti.eIntHomOfLE (show -(p + 1) ≤ -p by omega))
@@ -185,15 +153,6 @@ private noncomputable def totalColumnGradedCokernelIso (p : ℤ) :
       (fun i j ↦ (CochainComplex.stupidTruncShortComplexSplitting T p i).map (eval C (.up ℤ) j))
   exact cokernel.mapIso _ S.f e t w ≪≫
     (colimit.isColimit _).coconePointUniqueUpToIso hS.gIsCokernel
-
-omit [K.HasTotal (.up ℤ)] in
-private lemma isZero_totalColumnGraded_X_of_ne (p i : ℤ) (hi : i ≠ p) :
-    IsZero (((K.stupidTrunc (embeddingUpIntGE p)).stupidTrunc (embeddingUpIntLE p)).X i) := by
-  let T := K.stupidTrunc (embeddingUpIntGE p)
-  rcases lt_or_gt_of_ne hi with hi | hi
-  · exact T.isZero_stupidTrunc_X_of_isZero _
-      (CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X K p hi)
-  · exact CochainComplex.isZero_stupidTrunc_embeddingUpIntLE_X T p hi
 
 private noncomputable def totalColumnGradedShortComplexX₃Iso (p : ℤ) :
     (K.totalColumnGradedShortComplex p).X₃ ≅ (K.X p)⟦-p⟧ := by
@@ -206,7 +165,8 @@ private noncomputable def totalColumnGradedShortComplexX₃Iso (p : ℤ) :
   let e : Q.X p ≅ K.X p :=
     (asIso ((T.πStupidTrunc (embeddingUpIntLE p)).f p)).symm ≪≫
       asIso ((K.ιStupidTrunc (embeddingUpIntGE p)).f p)
-  exact (Q.shiftIsoTotalOfIsZero p (K.isZero_totalColumnGraded_X_of_ne p)).symm ≪≫
+  exact (Q.shiftIsoTotalOfIsZero p
+      (CochainComplex.isZero_stupidTruncGE_stupidTruncLE_X_of_ne K p)).symm ≪≫
     (CategoryTheory.shiftFunctor (CochainComplex C ℤ) (-p)).mapIso e
 
 /-- The graded piece of the column filtration in degree `p` is the column `p` shifted by
@@ -230,7 +190,8 @@ lemma ιTotal_totalColumnFiltrationGradedπ_f_self (p n : ℤ) :
       ((K.ιStupidTrunc (embeddingUpIntGE p)).f p).f (n + -p) := by
   let T := K.stupidTrunc (embeddingUpIntGE p)
   let Q : HomologicalComplex₂ C (.up ℤ) (.up ℤ) := T.stupidTrunc (embeddingUpIntLE p)
-  let e := Q.shiftIsoTotalOfIsZero p (K.isZero_totalColumnGraded_X_of_ne p)
+  let e := Q.shiftIsoTotalOfIsZero p
+    (CochainComplex.isZero_stupidTruncGE_stupidTruncLE_X_of_ne K p)
   have hshift : e.hom.f n ≫ e.inv.f n = 𝟙 _ := by
     rw [← comp_f, Iso.hom_inv_id, id_f]
   have : IsIso ((T.πStupidTrunc (embeddingUpIntLE p)).f p) :=
@@ -241,7 +202,8 @@ lemma ιTotal_totalColumnFiltrationGradedπ_f_self (p n : ℤ) :
   simp only [totalColumnFiltrationGradedπ, comp_f, ιTotal_map_assoc,
     totalColumnGradedShortComplexX₃Iso, Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom,
     CochainComplex.shiftFunctor_map_f', asIso_hom, asIso_inv]
-  rw [← shiftIsoTotalOfIsZero_hom_f Q p (K.isZero_totalColumnGraded_X_of_ne p)]
+  rw [← shiftIsoTotalOfIsZero_hom_f Q p
+    (CochainComplex.isZero_stupidTruncGE_stupidTruncLE_X_of_ne K p)]
   dsimp only [e, Q, T] at hshift hπ
   rw [reassoc_of% hshift, reassoc_of% hπ]
 

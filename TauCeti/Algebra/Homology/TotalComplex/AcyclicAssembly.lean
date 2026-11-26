@@ -153,13 +153,13 @@ instance hasTotal_stupidTrunc [IsIdempotentComplete C] [K.HasTotal c₁₂] :
   intro n
   let inclusion (j : ComplexShape.π c₁ c₂ c₁₂ ⁻¹' {n}) :
       ((K.stupidTrunc e).X j.val.fst).X j.val.snd ⟶ (K.X j.val.fst).X j.val.snd :=
-    if h : ∃ i, e.f i = j.val.fst then
-      (HomologicalComplex.eval C c₂ j.val.snd).map (K.stupidTruncXIso e h.choose_spec).hom
-    else 0
+    (K.ιStupidTruncf e j.val.fst).f j.val.snd
   have hsplit (j : ComplexShape.π c₁ c₂ c₁₂ ⁻¹' {n}) : IsSplitMono (inclusion j) := by
-    dsimp only [inclusion]
+    dsimp only [inclusion, HomologicalComplex.ιStupidTruncf]
     split
-    · infer_instance
+    · rename_i h
+      exact inferInstanceAs (IsSplitMono ((HomologicalComplex.eval C c₂ j.val.snd).map
+        (K.stupidTruncXIso e h.choose_spec).hom))
     · rename_i h
       have hz := (HomologicalComplex.eval C c₂ j.val.snd).map_isZero
         (K.isZero_stupidTrunc_X e j.val.fst fun i hi ↦ h ⟨i, hi⟩)

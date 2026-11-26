@@ -169,6 +169,52 @@ lemma isZero_stupidTrunc_embeddingUpIntGE_X {i : ℤ} (hi : i < n) :
     IsZero ((K.stupidTrunc (ComplexShape.embeddingUpIntGE n)).X i) :=
   K.isZero_stupidTrunc_X _ i ((ComplexShape.notMem_range_embeddingUpIntGE_iff n i).2 hi)
 
+/-- Truncating the inclusion of `σ^{≥ p} K` in degrees `≥ q` gives an isomorphism when
+`p ≤ q`. -/
+lemma isIso_stupidTruncMap_ιStupidTruncGE {p q : ℤ} (h : p ≤ q) :
+    IsIso (stupidTruncMap (K.ιStupidTrunc (ComplexShape.embeddingUpIntGE p))
+      (ComplexShape.embeddingUpIntGE q)) := by
+  refine @Hom.isIso_of_components _ _ _ _ _ _ _ _ (fun i ↦ ?_)
+  let T : CochainComplex C ℤ := K.stupidTrunc (ComplexShape.embeddingUpIntGE p)
+  by_cases hi : q ≤ i
+  · have hq : (ComplexShape.embeddingUpIntGE q).f (i - q).toNat = i := by simp; omega
+    have hp : (ComplexShape.embeddingUpIntGE p).f (i - p).toNat = i := by simp; omega
+    have := T.isIso_ιStupidTrunc_f _ hq
+    have := K.isIso_ιStupidTrunc_f _ hp
+    have := K.isIso_ιStupidTrunc_f _ hq
+    exact IsIso.of_isIso_fac_right (ιStupidTrunc_f_naturality _ _ i)
+  · exact IsZero.isIso (T.isZero_stupidTrunc_embeddingUpIntGE_X q (lt_of_not_ge hi))
+      (K.isZero_stupidTrunc_embeddingUpIntGE_X q (lt_of_not_ge hi)) _
+
+/-- The comparison from the brutal truncation in degrees `≥ q` to the one in degrees `≥ p`,
+for `p ≤ q`. -/
+noncomputable def stupidTruncGEMap {p q : ℤ} (h : p ≤ q) :
+    K.stupidTrunc (ComplexShape.embeddingUpIntGE q) ⟶
+      K.stupidTrunc (ComplexShape.embeddingUpIntGE p) :=
+  haveI := K.isIso_stupidTruncMap_ιStupidTruncGE h
+  inv (stupidTruncMap (K.ιStupidTrunc (ComplexShape.embeddingUpIntGE p))
+    (ComplexShape.embeddingUpIntGE q)) ≫
+      (K.stupidTrunc (ComplexShape.embeddingUpIntGE p)).ιStupidTrunc
+        (ComplexShape.embeddingUpIntGE q)
+
+/-- The comparison of brutal truncations factors the inclusion of the higher truncation
+into the original complex. -/
+@[reassoc (attr := simp)]
+lemma stupidTruncGEMap_comp_ιStupidTrunc {p q : ℤ} (h : p ≤ q) :
+    K.stupidTruncGEMap h ≫ K.ιStupidTrunc (ComplexShape.embeddingUpIntGE p) =
+      K.ιStupidTrunc (ComplexShape.embeddingUpIntGE q) := by
+  have := K.isIso_stupidTruncMap_ιStupidTruncGE h
+  rw [stupidTruncGEMap, Category.assoc, ← ιStupidTrunc_naturality, IsIso.inv_hom_id_assoc]
+
+/-- Truncating both below and above the same degree leaves zero terms in every other degree. -/
+lemma isZero_stupidTruncGE_stupidTruncLE_X_of_ne (i : ℤ) (hi : i ≠ n) :
+    IsZero (((K.stupidTrunc (ComplexShape.embeddingUpIntGE n)).stupidTrunc
+      (ComplexShape.embeddingUpIntLE n)).X i) := by
+  let T : CochainComplex C ℤ := K.stupidTrunc (ComplexShape.embeddingUpIntGE n)
+  rcases lt_or_gt_of_ne hi with hi | hi
+  · exact T.isZero_stupidTrunc_X_of_isZero _ (K.isZero_stupidTrunc_embeddingUpIntGE_X n hi)
+  · exact T.isZero_stupidTrunc_embeddingUpIntLE_X n hi
+
 /-- The inclusion of the brutal truncation in degrees `≥ n + 1` followed by the projection onto
 the brutal truncation in degrees `≤ n` is zero. -/
 @[reassoc (attr := simp)]
