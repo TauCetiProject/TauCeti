@@ -37,7 +37,7 @@ affine line `Spec R[t]` with `Z` the origin this is `R[t, t⁻¹] / R[t]`
 * `Scheme.Modules.cohomologyWithSupportSuccComplBasicOpenLinearEquivOfIsLocalizedModule`:
   on a quasi-compact quasi-separated scheme with `H^{n+1}(X, M) = 0`,
   `H^{n+1}_{V(f)}(X, M) ≅ N / Hⁿ(X, M)` for a localization `Hⁿ(X, M) → N` at the powers of `f`,
-  with the instance `cohomologyWithSupportSuccComplBasicOpenLinearEquiv` (`N = Hⁿ(X, M)_f`).
+  with the specialization `cohomologyWithSupportSuccComplBasicOpenLinearEquiv` (`N = Hⁿ(X, M)_f`).
 * `AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv`: on an
   affine scheme, `H¹_{V(f)}(X, 𝒪) ≅ Γ(X, 𝒪)_f / Γ(X, 𝒪)`.
 
@@ -137,8 +137,8 @@ lemma cohomologyWithSupportSuccComplBasicOpenLinearEquivOfIsLocalizedModule_coho
         (M.cohomologyWithSupportδ (X.basicOpen f).compl ⊤ (add_comm 1 n) x) =
       Submodule.Quotient.mk (M.cohomologyOnComplComplBasicOpenLinearEquiv f g x) := by
   rw [cohomologyWithSupportSuccComplBasicOpenLinearEquivOfIsLocalizedModule,
-    LinearEquiv.trans_apply, cohomologyWithSupportSuccLinearEquiv_symm_cohomologyWithSupportδ]
-  rfl
+    LinearEquiv.trans_apply, cohomologyWithSupportSuccLinearEquiv_symm_cohomologyWithSupportδ,
+    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe]
 
 /-- The identification of `H^{n+1}_{V(f)}(X, M)` with `N / g(Hⁿ(X, M))` sends the class of an
 element of `N` back to the image under the connecting map of the corresponding class on `D(f)`. -/
@@ -216,8 +216,8 @@ lemma cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv_cohomologyWithSuppor
         (Algebra.linearMap Γ(X, ⊤) (Localization.Away f) ∘ₗ
           (cohomologyOnZeroTopUnitLinearEquiv X).toLinearMap) x) := by
   rw [cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv, LinearEquiv.trans_apply,
-    cohomologyWithSupportSuccComplBasicOpenLinearEquivOfIsLocalizedModule_cohomologyWithSupportδ]
-  rfl
+    cohomologyWithSupportSuccComplBasicOpenLinearEquivOfIsLocalizedModule_cohomologyWithSupportδ,
+    Submodule.quotEquivOfEq_mk]
 
 /-- The identification of `H¹_{V(f)}(X, 𝒪)` with `Γ(X, 𝒪)_f / Γ(X, 𝒪)` sends the class of an
 element of the localization back to the image under the connecting map of the corresponding class
