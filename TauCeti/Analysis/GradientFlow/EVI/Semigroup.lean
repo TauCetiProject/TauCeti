@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Ring.Real
 public import TauCeti.Analysis.GradientFlow.EVI.Basic
 import TauCeti.Analysis.GradientFlow.EVI.Stability
 import TauCeti.Topology.MetricSpace.Pseudo.Basic
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 import TauCeti.Topology.UniformSpace.UniformConvergence.Complete
 
 /-!

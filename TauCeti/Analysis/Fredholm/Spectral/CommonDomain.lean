@@ -10,7 +10,7 @@ import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Spectrum
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.LocallyConstant.Preconnected
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The spectral flow of a path of operators on a compactly embedded common domain

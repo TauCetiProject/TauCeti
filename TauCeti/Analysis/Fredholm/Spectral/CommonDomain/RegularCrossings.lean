@@ -13,8 +13,8 @@ import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Spectrum
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
-import TauCeti.Topology.Order.Interval
-import TauCeti.Topology.Order.IntervalJumps
+import TauCeti.Topology.Order.Interval.Basic
+import TauCeti.Topology.Order.Interval.Jumps
 
 /-!
 # The regular-crossing formula on a compactly embedded common domain
@@ -311,25 +311,18 @@ theorem finite_setOf_ker_ne_bot_of_domainCrossingForm (hι : IsCompactOperator �
     (hb : (A b).ker = ⊥) (hderiv : ∀ t ∈ Ioo a b, (A t).ker ≠ ⊥ → HasDerivAt A (A' t) t)
     (hreg : ∀ t ∈ Ioo a b, (A t).ker ≠ ⊥ → (ι.domainCrossingForm (A t) (A' t)).Nondegenerate) :
     {t ∈ Icc a b | (A t).ker ≠ ⊥}.Finite := by
-  rw [← inter_ofPred_eq_sep, ← compl_ofPred, ← sdiff_eq]
-  -- The injective times are codiscrete in the compact interval `[a, b]`.
-  refine isCompact_Icc.finite_sdiff_of_mem_codiscreteWithin <|
-    mem_codiscreteWithin_iff_forall_mem_nhdsNE.2 fun z hz ↦ ?_
-  suffices h : ∀ᶠ t in 𝓝[≠] z, t ∈ Icc a b → (A t).ker = ⊥ from
-    mem_of_superset h fun t ht ↦ (em (t ∈ Icc a b)).imp ht id
-  by_cases hnz : (A z).ker = ⊥
+  refine finite_setOf_not_of_eventually (p := fun t ↦ (A t).ker = ⊥) ha hb (fun z hz hnz ↦ ?_)
+    fun z hz' hnz ↦ ?_
   · -- `A z` is invertible, and so is `A t` for every `t ∈ [a, b]` near `z`.
     obtain ⟨c₀, hc₀⟩ := h₀ z hz
     have hinv := (isInvertible_iff_injective_of_isInvertible_smul_sub hι hc₀).2
       (LinearMap.ker_eq_bot.1 hnz)
-    have hopen := eventually_nhdsWithin_iff.1 <| (hA z hz).eventually hinv.eventually_nhds
-    filter_upwards [nhdsWithin_le_nhds hopen] with t ht htI
-    exact LinearMap.ker_eq_bot.2 (ht htI).injective
-  · -- A crossing lies in `(a, b)`, and regular crossings are isolated.
-    have hz' : z ∈ Ioo a b := mem_Ioo_of_mem_Icc_of_not (fun t ↦ (A t).ker = ⊥) ha hb hz hnz
+    exact ((hA z hz).eventually hinv.eventually_nhds).mono fun t ht ↦
+      LinearMap.ker_eq_bot.2 ht.injective
+  · -- Regular crossings are isolated.
     obtain ⟨hcont, hsymm'⟩ := hA.eventually_continuousAt_and_eventually_of_mem_Ioo hsymm hz'
-    filter_upwards [eventually_ker_eq_bot_of_domainCrossingForm_nondegenerate hι hcont hsymm'
-      (h₀ z hz) (hderiv z hz' hnz) (hreg z hz' hnz)] with t ht _ using ht
+    exact eventually_ker_eq_bot_of_domainCrossingForm_nondegenerate hι hcont hsymm'
+      (h₀ z (Ioo_subset_Icc_self hz')) (hderiv z hz' hnz) (hreg z hz' hnz)
 
 /-- **The regular-crossing formula for the spectral flow on a common domain** (Robbin–Salamon).
 Let `ι : D →L H` be a compact operator from a real Banach space into a real Hilbert space, and

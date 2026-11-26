@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Topology.Order.DenselyOrdered
-import TauCeti.Topology.Order.Interval
+public import Mathlib.Topology.Order.Compact
+import Mathlib.Topology.DiscreteSubset
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Additive interval functions as sums of jumps
@@ -18,12 +20,18 @@ subinterval avoiding a set of exceptional points. If at each exceptional point `
 `F t₁ t₂` equals a fixed jump `g s` for all `t₁` just below and `t₂` just above `s`, then `F a b` is
 the sum of the jumps, provided the exceptional points are finitely many and lie in `(a, b)`.
 
+The exceptional points are indeed finitely many when the property `p` defining the ordinary
+points holds at `a` and `b`, holds near each point of `[a, b]` where it holds, and holds on a
+punctured neighbourhood of each point of `(a, b)` where it fails.
+
 This is the combinatorial step of the regular-crossing formula for the spectral flow, where `F` is
 the spectral flow, the exceptional points are the crossings and the jumps are the signatures of the
 crossing forms.
 
 ## Main results
 
+* `TauCeti.finite_setOf_not_of_eventually`: the points of `[a, b]` at which a property fails are
+  finitely many if they are isolated and the property is open in `[a, b]` where it holds.
 * `TauCeti.eq_sum_of_eventually_eq_of_add`: `F a b` is the sum of the jumps over a finite set of
   exceptional points in `(a, b)`.
 * `TauCeti.eq_finsum_of_eventually_eq_of_add`: `F a b` is the sum of the jumps over `(a, b)`, for
@@ -35,6 +43,25 @@ public section
 open Filter Set Topology
 
 namespace TauCeti
+
+/-- **Isolated failures of an open property in `[a, b]` are finitely many.** Let `p` hold at `a`
+and `b`, hold near each point of `[a, b]` (within `[a, b]`) at which it holds, and hold on a
+punctured neighbourhood of each point of `(a, b)` at which it fails. Then `p` fails at only
+finitely many points of `[a, b]`. -/
+theorem finite_setOf_not_of_eventually {α : Type*} [PartialOrder α] [TopologicalSpace α]
+    [CompactIccSpace α] {p : α → Prop} {a b : α} (ha : p a) (hb : p b)
+    (hopen : ∀ z ∈ Icc a b, p z → ∀ᶠ t in 𝓝[Icc a b] z, p t)
+    (hiso : ∀ z ∈ Ioo a b, ¬p z → ∀ᶠ t in 𝓝[≠] z, p t) :
+    {t ∈ Icc a b | ¬p t}.Finite := by
+  rw [← inter_ofPred_eq_sep, ← compl_ofPred, ← sdiff_eq]
+  -- The points of `[a, b]` at which `p` holds are codiscrete in the compact interval `[a, b]`.
+  refine isCompact_Icc.finite_sdiff_of_mem_codiscreteWithin <|
+    mem_codiscreteWithin_iff_forall_mem_nhdsNE.2 fun z hz ↦ ?_
+  suffices h : ∀ᶠ t in 𝓝[≠] z, t ∈ Icc a b → p t from
+    mem_of_superset h fun t ht ↦ (em (t ∈ Icc a b)).imp ht id
+  by_cases hpz : p z
+  · exact nhdsWithin_le_nhds (eventually_nhdsWithin_iff.1 (hopen z hz hpz))
+  · exact (hiso z (mem_Ioo_of_mem_Icc_of_not p ha hb hz hpz) hpz).mono fun _ ht _ ↦ ht
 
 variable {α M : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α]
   [AddCommMonoid M] {F : α → α → M} {g : α → M} {a b : α}

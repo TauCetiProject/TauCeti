@@ -9,8 +9,8 @@ public import TauCeti.Analysis.Fredholm.Spectral.Crossing
 import TauCeti.Analysis.Fredholm.SelfAdjoint
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
-import TauCeti.Topology.Order.Interval
-import TauCeti.Topology.Order.IntervalJumps
+import TauCeti.Topology.Order.Interval.Basic
+import TauCeti.Topology.Order.Interval.Jumps
 
 /-!
 # The regular-crossing formula for the spectral flow
@@ -97,24 +97,18 @@ theorem finite_setOf_ker_ne_bot (hA : ContinuousOn A (Icc a b))
     (hreg : ∀ t ∈ Ioo a b, (A t).ker ≠ ⊥ →
       (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t))).Nondegenerate) :
     {t ∈ Icc a b | (A t).ker ≠ ⊥}.Finite := by
-  rw [← inter_ofPred_eq_sep, ← compl_ofPred, ← sdiff_eq]
-  -- The injective times are codiscrete in the compact interval `[a, b]`.
-  refine isCompact_Icc.finite_sdiff_of_mem_codiscreteWithin <|
-    mem_codiscreteWithin_iff_forall_mem_nhdsNE.2 fun z hz ↦ ?_
-  suffices h : ∀ᶠ t in 𝓝[≠] z, t ∈ Icc a b → (A t).ker = ⊥ from
-    mem_of_superset h fun t ht ↦ (em (t ∈ Icc a b)).imp ht id
-  by_cases hnz : (A z).ker = ⊥
+  refine finite_setOf_not_of_eventually (p := fun t ↦ (A t).ker = ⊥) ha hb (fun z hz hnz ↦ ?_)
+    fun z hz' hnz ↦ ?_
   · -- `A z` is invertible, and so is `A t` for every `t ∈ [a, b]` near `z`.
     have hunit : IsUnit (A z) :=
       (hF z hz).isUnit_of_injective_of_isSelfAdjoint (hsa z hz) (LinearMap.ker_eq_bot.1 hnz)
-    have hopen := eventually_nhdsWithin_iff.1 <| (hA z hz).eventually (Units.isOpen.mem_nhds hunit)
-    filter_upwards [nhdsWithin_le_nhds hopen] with t ht htI
-    exact LinearMap.ker_eq_bot.2 (isInvertible_iff_isUnit.2 (ht htI)).injective
-  · -- A crossing lies in `(a, b)`, and regular crossings are isolated.
-    have hz' : z ∈ Ioo a b := mem_Ioo_of_mem_Icc_of_not (fun t ↦ (A t).ker = ⊥) ha hb hz hnz
+    exact ((hA z hz).eventually (Units.isOpen.mem_nhds hunit)).mono fun t ht ↦
+      LinearMap.ker_eq_bot.2 (isInvertible_iff_isUnit.2 ht).injective
+  · -- Regular crossings are isolated.
+    have hz := Ioo_subset_Icc_self hz'
     obtain ⟨hcont, hsa'⟩ := hA.eventually_continuousAt_and_eventually_of_mem_Ioo hsa hz'
-    filter_upwards [eventually_ker_eq_bot_of_crossingForm_nondegenerate hcont hsa' (hF z hz)
-      (hderiv z hz' hnz) (hreg z hz' hnz)] with t ht _ using ht
+    exact eventually_ker_eq_bot_of_crossingForm_nondegenerate hcont hsa' (hF z hz)
+      (hderiv z hz' hnz) (hreg z hz' hnz)
 
 /-- **The regular-crossing formula for the spectral flow** (Robbin–Salamon). Let `A` be a continuous
 path of self-adjoint Fredholm operators on a real Hilbert space over `[a, b]`, injective (hence
