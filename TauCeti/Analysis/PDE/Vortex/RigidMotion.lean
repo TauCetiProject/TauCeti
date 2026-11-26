@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Realization
 public import TauCeti.Analysis.PDE.Vortex.Symmetry
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
