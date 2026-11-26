@@ -34,9 +34,9 @@ def pair (a b : ℕ) (h : a < b) : Fin 2 ↪o ℕ :=
     fin_cases i
     simpa using h
 
-@[simp] theorem pair_zero (a b : ℕ) (h : a < b) : pair a b h 0 = a := (rfl)
+@[simp] theorem pair_zero (a b : ℕ) (h : a < b) : pair a b h 0 = a := by simp [pair]
 
-@[simp] theorem pair_one (a b : ℕ) (h : a < b) : pair a b h 1 = b := (rfl)
+@[simp] theorem pair_one (a b : ℕ) (h : a < b) : pair a b h 1 = b := by simp [pair]
 
 theorem pair_mem {a b : ℕ} (h : a < b) {H : Set ℕ} (ha : a ∈ H) (hb : b ∈ H) :
     ∀ k, pair a b h k ∈ H := by

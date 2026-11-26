@@ -12,20 +12,24 @@ import Mathlib.SetTheory.Cardinal.Pigeonhole
 /-!
 # Pigeonhole principles as partition relations
 
-The infinite pigeonhole principle says that a map from a set of regular cardinality `κ` to a set
-of smaller cardinality has a fibre of cardinality `κ`. In the language of the partition calculus
-this is the relation `κ → (κ)¹_μ` for `μ < κ`. It is the exponent-one case of the Erdős–Rado
-theorem `ℶₙ(κ)⁺ → (κ⁺)ⁿ⁺¹_κ`, whose induction starts from the successor-cardinal instance
-`κ⁺ → (κ⁺)¹_κ`.
+The infinite pigeonhole principle says that a map from a set of infinite cardinality `κ` to a
+set of cardinality less than the cofinality of `κ` has a fibre of cardinality `κ`. In the language
+of the partition calculus this is the relation `κ → (κ)¹_μ` for `μ < cf κ`; for regular `κ` the
+condition is `μ < κ`. Its successor-cardinal instance `κ⁺ → (κ⁺)¹_κ` is the exponent-one case of
+the Erdős–Rado theorem `ℶₙ(κ)⁺ → (κ⁺)ⁿ⁺¹_κ` and the base of its induction.
 
-A second form concerns unboundedness rather than size: a map from the countable ordinals to a
-countable type takes some value at a cofinal set of countable ordinals. This is the form used to
-make countably many choices coherently along `ω₁`.
+A second form concerns unboundedness rather than size: a map from a linear order to a type of
+cardinality less than the cofinality of the order takes some value on a cofinal set. For the
+countable ordinals and a countable type, this is the form used to make countably many choices
+coherently along `ω₁`.
 
 ## Main results
 
+* `Cardinal.partitionRel_one_of_lt_cof`: `κ → (κ)¹_μ` for infinite `κ` and `μ < cf κ`.
 * `Cardinal.partitionRel_one_of_isRegular`: `κ → (κ)¹_μ` for regular `κ` and `μ < κ`.
 * `Cardinal.partitionRel_succ_one`: `κ⁺ → (κ⁺)¹_κ` for infinite `κ`.
+* `TauCeti.exists_isCofinal_fiber`: a map from a linear order to a type of cardinality less than
+  its cofinality has a cofinal fibre.
 * `TauCeti.exists_isCofinal_fiber_Iio_omega_one`: a map from `Set.Iio ω₁` to a countable type has a
   cofinal fibre.
 
@@ -43,16 +47,22 @@ open Cardinal Ordinal Set
 
 namespace Cardinal
 
+/-- **The pigeonhole principle for an infinite cardinal.** If `κ` is infinite and `μ < cf κ`,
+then `κ → (κ)¹_μ`: every map from a set of cardinality `κ` to a set of cardinality at most `μ` has
+a fibre of cardinality `κ`. -/
+theorem partitionRel_one_of_lt_cof {κ μ : Cardinal.{u}} (hκ : ℵ₀ ≤ κ) (hμ : μ < κ.ord.cof) :
+    PartitionRel κ κ 1 μ := by
+  rw [partitionRel_one_iff]
+  intro X D hX hD f
+  obtain ⟨d, hd⟩ := infinite_pigeonhole_card f κ hX.ge hκ (hD.trans_lt hμ)
+  exact ⟨f ⁻¹' {d}, hd, fun x hx y hy ↦ hx.trans hy.symm⟩
+
 /-- **The pigeonhole principle for a regular cardinal.** If `κ` is regular and `μ < κ`, then
 `κ → (κ)¹_μ`: every map from a set of cardinality `κ` to a set of cardinality at most `μ` has a
 fibre of cardinality `κ`. -/
 theorem partitionRel_one_of_isRegular {κ μ : Cardinal.{u}} (hκ : κ.IsRegular) (hμ : μ < κ) :
-    PartitionRel κ κ 1 μ := by
-  rw [partitionRel_one_iff]
-  intro X D hX hD f
-  obtain ⟨d, hd⟩ := infinite_pigeonhole_card f κ hX.ge hκ.aleph0_le
-    (by rw [hκ.cof_ord]; exact hD.trans_lt hμ)
-  exact ⟨f ⁻¹' {d}, hd, fun x hx y hy ↦ hx.trans hy.symm⟩
+    PartitionRel κ κ 1 μ :=
+  partitionRel_one_of_lt_cof hκ.aleph0_le (by rwa [hκ.cof_ord])
 
 /-- **The pigeonhole principle for a successor cardinal**, `κ⁺ → (κ⁺)¹_κ` for infinite `κ`: every
 map from a set of cardinality `κ⁺` to a set of cardinality at most `κ` has a fibre of cardinality
@@ -65,19 +75,21 @@ end Cardinal
 
 namespace TauCeti
 
+/-- **The pigeonhole principle for cofinal sets.** A map from a linear order to a type of
+cardinality less than the cofinality of the order takes some value on a cofinal set. -/
+theorem exists_isCofinal_fiber {α : Type u} [LinearOrder α] {D : Type v} (f : α → D)
+    (h : lift.{u} #D < lift.{v} (Order.cof α)) : ∃ d, IsCofinal (f ⁻¹' {d}) := by
+  have hunion : IsCofinal (⋃₀ range fun d ↦ f ⁻¹' {d}) := by
+    simp [← preimage_iUnion, iUnion_of_singleton]
+  obtain ⟨_, ⟨d, rfl⟩, hd⟩ := isCofinal_of_isCofinal_sUnion hunion
+    (lift_lt.1 (mk_range_le_lift.trans_lt h))
+  exact ⟨d, hd⟩
+
 /-- **The `ω₁`-pigeonhole principle.** A map from the countable ordinals to a countable type takes
 some value on a cofinal set of countable ordinals: there is `d` such that every `β < ω₁` lies below
 some `α < ω₁` with `f α = d`. -/
 theorem exists_isCofinal_fiber_Iio_omega_one {D : Type v} [Countable D]
-    (f : Iio (ω₁ : Ordinal.{u}) → D) : ∃ d, IsCofinal (f ⁻¹' {d}) := by
-  have hcount : (range fun d ↦ f ⁻¹' {d}).Countable := countable_range _
-  have hcof : #(range fun d ↦ f ⁻¹' {d}) < Order.cof (Iio (ω₁ : Ordinal.{u})) := by
-    rw [cof_Iio, ← lift_cof, cof_omega_one, lift_aleph, Ordinal.lift_one]
-    exact (mk_le_aleph0_iff.2 hcount.to_subtype).trans_lt aleph0_lt_aleph_one
-  have hunion : IsCofinal (⋃₀ range fun d ↦ f ⁻¹' {d}) := by
-    rw [sUnion_range, ← preimage_iUnion, iUnion_of_singleton, preimage_univ]
-    exact IsCofinal.univ
-  obtain ⟨_, ⟨d, rfl⟩, hd⟩ := isCofinal_of_isCofinal_sUnion hunion hcof
-  exact ⟨d, hd⟩
+    (f : Iio (ω₁ : Ordinal.{u}) → D) : ∃ d, IsCofinal (f ⁻¹' {d}) :=
+  exists_isCofinal_fiber f <| by simp
 
 end TauCeti
