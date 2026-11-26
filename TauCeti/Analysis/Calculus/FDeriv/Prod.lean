@@ -94,6 +94,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   variables has derivative `(s, t) ↦ s • a - t • b`.
 * `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right`: the derivative of a function
   on a product is the sum of the derivatives of its two slices.
+* `TauCeti.fderiv_uncurry_apply`: the derivative of `(s, y) ↦ f s y` for a family with a scalar
+  parameter, in terms of `deriv` in the parameter and the derivative of `f s`.
 * `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
   a function in a scalar first or second variable are its derivative applied to `(1, 0)` and
   `(0, 1)`.
@@ -200,6 +202,16 @@ theorem fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right {f : E × F →
   rw [fderiv_slice_left hf, fderiv_slice_right hf]
   simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.inl_apply,
     ContinuousLinearMap.inr_apply, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
+
+/-- The derivative of `(s, y) ↦ f s y`, for a family `f` with a scalar parameter, sends `(τ, ξ)`
+to `τ • ∂ₛ f + D(f s) ξ`: the parameter slice contributes through its derivative `deriv`. -/
+theorem fderiv_uncurry_apply {f : 𝕜 → F → G} {p : 𝕜 × F}
+    (hf : DifferentiableAt 𝕜 (Function.uncurry f) p) (w : 𝕜 × F) :
+    fderiv 𝕜 (Function.uncurry f) p w =
+      w.1 • deriv (fun r ↦ f r p.2) p.1 + fderiv 𝕜 (f p.1) p.2 w.2 := by
+  obtain ⟨s, y⟩ := p
+  rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right hf]
+  simp only [Function.uncurry_apply_pair, fderiv_eq_smul_deriv]
 
 /-- A function of the second variable alone is differentiable at `z` exactly when the function is
 differentiable at `z.2`. -/
