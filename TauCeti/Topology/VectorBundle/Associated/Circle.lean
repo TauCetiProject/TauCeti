@@ -257,13 +257,13 @@ theorem continuous_tensorLineEquiv :
   exact hc.congr fun y ↦ congrArg (TotalSpace.mk _) (tensorLineEquiv_mk ..).symm
 
 variable (P Q) in
-/-- **The tensor identification is continuous** on total spaces: the inverse of a continuous
-fibrewise linear equivalence of finite-rank bundles is continuous. -/
+/-- **The inverse tensor identification is continuous** on total spaces. -/
 theorem continuous_tensorLineEquiv_symm :
     Continuous fun v : TotalSpace (ProjectiveTensor ℂ ℂ ℂ)
         (fun b ↦ AssociatedBundle Circle P ℂ b ⊗[ℂ] AssociatedBundle Circle Q ℂ b) ↦
       TotalSpace.mk' ℂ (E := AssociatedBundle Circle (Tensor Circle P Q) ℂ) v.proj
         ((tensorLineEquiv P Q v.proj).symm v.snd) :=
+  -- The inverse of a continuous fibrewise linear equivalence of finite-rank bundles.
   continuous_bundle_symm (tensorLineEquiv P Q) (continuous_tensorLineEquiv P Q)
 
 end Tensor
