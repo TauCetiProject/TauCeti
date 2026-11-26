@@ -210,10 +210,9 @@ theorem isFormalAdjoint_alongVectorField_circleRotationField_withDensity_exp
         Algebra.lsmul ℝ ℝ Cₛ^∞⟮𝓡 1; ℝ, Bundle.Trivial (sphere (0 : ℂ) 1) ℝ⟯ ψ)
       ((riemannianVolume (𝓡 1) (sphere (0 : ℂ) 1)).withDensity
         fun z ↦ ENNReal.ofReal (Real.exp (φ z))) := by
-  have hcov : (trivial (I := 𝓡 1) (M := sphere (0 : ℂ) 1) ℝ).IsMetricCompatible := by
-    rw [← trivialAddInner_zero, isMetricCompatible_trivialAddInner_iff]
   -- The rotation field is divergence free and `∂ₓ φ = ψ`.
-  refine hcov.isFormalAdjoint_alongVectorField_withDensity_exp _ φ fun τ z ↦ ?_
+  refine isMetricCompatible_trivial.isFormalAdjoint_alongVectorField_withDensity_exp _ φ
+    fun τ z ↦ ?_
   rw [hφ, mvfderiv_im_circleRotationField, divergence_circleRotationField, zero_add]
   simp [hψ]
 

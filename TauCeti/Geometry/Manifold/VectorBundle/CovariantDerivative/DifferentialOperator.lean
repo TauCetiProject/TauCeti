@@ -120,9 +120,8 @@ theorem isDiracType_alongVectorField
   refine isDiracType_iff.2 fun x hx ξ v w ↦ ?_
   -- With `u = ξ♯`, the hypothesis `u = ⟪X, u⟫ X` gives `‖ξ‖² = ⟪u, u⟫ = ⟪u, X⟫² = ξ(X)²`.
   have hξ : ‖ξ‖ ^ 2 = ξ (X x) ^ 2 := by
-    rw [← (rieszDual (I := I) x).norm_map ξ, ← real_inner_self_eq_norm_sq]
-    nth_rw 2 [hX x hx (rieszDual (I := I) x ξ)]
-    rw [real_inner_smul_right, real_inner_comm (rieszDual (I := I) x ξ), inner_rieszDual, sq]
+    rw [norm_sq_eq_apply_rieszDual, hX x hx (rieszDual (I := I) x ξ), map_smul, smul_eq_mul,
+      real_inner_comm, inner_rieszDual, sq]
   simp only [sectionPrincipalSymbol_alongVectorField, LinearMap.smul_apply, LinearMap.id_apply,
     real_inner_smul_left, real_inner_smul_right, hξ]
   ring

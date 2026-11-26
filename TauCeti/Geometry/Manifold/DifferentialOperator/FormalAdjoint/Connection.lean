@@ -9,8 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.DifferentialOperator
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Exp
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 
@@ -187,9 +186,8 @@ theorem IsMetricCompatible.isFormalAdjoint_alongVectorField_withDensity_exp
   -- The chain rule `X (e^φ) = e^φ X φ`.
   have hXρ (x : M) : mvfderiv I ρ x (X x) = ρ x * mvfderiv I φ x (X x) := by
     have hφ : MDifferentiableAt I 𝓘(ℝ) φ x := φ.contMDiff.mdifferentiableAt (by simp)
-    rw [show (ρ : M → ℝ) = Real.exp ∘ φ from ContMDiffMap.coeFn_mk _ _,
-      mvfderiv_scalar_comp hφ Real.differentiable_exp.differentiableAt, Real.deriv_exp,
-      _root_.smul_apply, smul_eq_mul, Function.comp_apply]
+    rw [show (ρ : M → ℝ) = fun y ↦ Real.exp (φ y) from ContMDiffMap.coeFn_mk _ _,
+      mvfderiv_exp hφ, _root_.smul_apply, smul_eq_mul]
   -- Change the density of the unweighted formal adjoint `-∇_X - div X`.
   refine (hcov.isFormalAdjoint_alongVectorField X
     (Q := -cov.alongVectorField X - Algebra.lsmul ℝ ℝ Cₛ^∞⟮I; F, V⟯ d) fun τ x ↦ by

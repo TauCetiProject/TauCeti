@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Transpose.Existence
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.Exp
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 
@@ -227,9 +228,8 @@ theorem isFormalTranspose_vectorFieldDerivation_withDensity_exp
     have hφ : MDifferentiableAt I 𝓘(ℝ) φ x := φ.contMDiff.mdifferentiableAt (by simp)
     simp only [ContMDiffSection.vectorFieldDerivation_apply_apply, ContMDiffMap.coe_mul,
       Pi.mul_apply]
-    rw [show (ρ : M → ℝ) = Real.exp ∘ φ from ContMDiffMap.coeFn_mk _ _,
-      mvfderiv_scalar_comp hφ Real.differentiable_exp.differentiableAt, Real.deriv_exp,
-      _root_.smul_apply, smul_eq_mul, Function.comp_apply]
+    rw [show (ρ : M → ℝ) = fun y ↦ Real.exp (φ y) from ContMDiffMap.coeFn_mk _ _,
+      mvfderiv_exp hφ, _root_.smul_apply, smul_eq_mul]
   refine (isFormalTranspose_vectorFieldDerivation X).withDensity (ρ := ρ)
     (fun x ↦ (Real.exp_pos _).le) fun g ↦ ?_
   ext x
