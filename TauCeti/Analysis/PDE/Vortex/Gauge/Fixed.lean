@@ -37,6 +37,9 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 * `gaugeFixedOperator_eq_gaugeFixedFirstOrder_add`: `L_x y` splits as its constant-coefficient
   first-order part `gaugeFixedFirstOrder`, applied to the gradients of the coordinates of `y`, plus
   its zeroth-order part `gaugeFixedZerothOrder`, bilinear in the values of `x` and `y`.
+* `gaugeFixedAdjoint_eq_gaugeFixedAdjointFirstOrder_add`: likewise `L_x* η` splits as
+  `gaugeFixedAdjointFirstOrder` of the gradients plus `gaugeFixedAdjointZerothOrder`, the
+  transpose of the zeroth-order part of `L_x` (`inner_gaugeFixedAdjointZerothOrder`).
 * `gaugeAdjoint_gaugeDirection`: `d₀* d₀ f = -Δ f + (|α|² / 4) f` pointwise, at every field.
 * `gaugeFixedOperator_fun_smul` and `gaugeFixedAdjoint_fun_smul`: the Leibniz rules of `L_x` and
   `L_x*` for a real weight, whose commutators are the principal symbols
@@ -353,6 +356,69 @@ theorem gaugeFixedOperator_eq_gaugeFixedFirstOrder_add (x y : ℂ → EuclideanS
   fin_cases i <;>
     simp [gaugeFixedFirstOrder_apply, gaugeFixedZerothOrder_apply, gaugeFixedZerothOrderMatrix,
       Fin.sum_univ_four, inner_gradient_left] <;> ring
+
+/-- The first-order part of the formal adjoint `L_x*`, as a linear map of the gradients
+`g j = ∇η_j` of the four coordinates of the test field. Along the frame `(∂₁, ∂₂) = (1, i)`,
+`∂_k η_j = ⟪g j, e_k⟫`, and the rows are `-∂₁η₀ - ∂₂η₁`, `∂₁η₁ - ∂₂η₀`, `-∂₁η₂ - ∂₂η₃` and
+`∂₂η₂ - ∂₁η₃`. -/
+def gaugeFixedAdjointFirstOrder : (Fin 4 → ℂ) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun g ↦ !₂[-⟪g 0, 1⟫_ℝ - ⟪g 1, I⟫_ℝ, ⟪g 1, 1⟫_ℝ - ⟪g 0, I⟫_ℝ,
+        -⟪g 2, 1⟫_ℝ - ⟪g 3, I⟫_ℝ, ⟪g 2, I⟫_ℝ - ⟪g 3, 1⟫_ℝ]
+      map_add' := fun _ _ ↦ by ext i; fin_cases i <;> simp [inner_add_left] <;> ring
+      map_smul' := fun _ _ ↦ by ext i; fin_cases i <;> simp <;> ring }
+
+/-- The defining formula of `gaugeFixedAdjointFirstOrder`. -/
+@[simp] theorem gaugeFixedAdjointFirstOrder_apply (g : Fin 4 → ℂ) :
+    gaugeFixedAdjointFirstOrder g = !₂[-⟪g 0, 1⟫_ℝ - ⟪g 1, I⟫_ℝ, ⟪g 1, 1⟫_ℝ - ⟪g 0, I⟫_ℝ,
+        -⟪g 2, 1⟫_ℝ - ⟪g 3, I⟫_ℝ, ⟪g 2, I⟫_ℝ - ⟪g 3, 1⟫_ℝ] :=
+  (rfl)
+
+/-- The zeroth-order part of the formal adjoint `L_x*`, as a bilinear map of the value `w` of the
+field and the value `v` of the test field: the transpose of `gaugeFixedZerothOrderMatrix w`
+applied to `v` (`inner_gaugeFixedAdjointZerothOrder`). -/
+def gaugeFixedAdjointZerothOrder :
+    EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
+  LinearMap.toContinuousLinearMap <|
+    (LinearMap.toContinuousLinearMap :
+        (EuclideanSpace ℝ (Fin 4) →ₗ[ℝ] EuclideanSpace ℝ (Fin 4)) ≃ₗ[ℝ]
+          (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))).toLinearMap ∘ₗ
+      LinearMap.mk₂ ℝ (fun w v : EuclideanSpace ℝ (Fin 4) ↦
+        WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w j i * v j)
+        (fun _ _ _ ↦ by
+          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
+        (fun _ _ _ ↦ by
+          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
+        (fun _ _ _ ↦ by
+          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
+        (fun _ _ _ ↦ by
+          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
+
+/-- The defining formula of `gaugeFixedAdjointZerothOrder`. -/
+@[simp] theorem gaugeFixedAdjointZerothOrder_apply (w v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointZerothOrder w v =
+      WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w j i * v j :=
+  (rfl)
+
+/-- The zeroth-order part of `L_x*` is the transpose of the zeroth-order part of `L_x`. -/
+theorem inner_gaugeFixedAdjointZerothOrder (w u v : EuclideanSpace ℝ (Fin 4)) :
+    ⟪gaugeFixedAdjointZerothOrder w u, v⟫ = ⟪u, gaugeFixedZerothOrder w v⟫ := by
+  simp only [gaugeFixedAdjointZerothOrder_apply, gaugeFixedZerothOrder_apply, PiLp.inner_apply,
+    RCLike.inner_apply, conj_trivial, Fin.sum_univ_four, gaugeFixedZerothOrderMatrix]
+  simp
+  ring
+
+/-- The formal adjoint is the sum of its first-order part, applied to the gradients of the
+coordinates of the test field, and its zeroth-order part. -/
+theorem gaugeFixedAdjoint_eq_gaugeFixedAdjointFirstOrder_add (x η : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) :
+    gaugeFixedAdjoint x η z =
+      gaugeFixedAdjointFirstOrder (fun j ↦ ∇ (fun w ↦ η w j) z) +
+        gaugeFixedAdjointZerothOrder (x z) (η z) := by
+  ext i
+  fin_cases i <;>
+    simp [gaugeFixedAdjointFirstOrder_apply, gaugeFixedAdjointZerothOrder_apply,
+      gaugeFixedZerothOrderMatrix, Fin.sum_univ_four, inner_gradient_left] <;> ring
 
 /-- The principal symbol of the gauge-fixed vortex adjoint, acting on a real covector
 and a target field value. It is independent of the vortex coefficients. -/

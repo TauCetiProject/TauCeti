@@ -371,9 +371,9 @@ private theorem norm_discValues_apply_sq (R : ℝ) (y : Fin 4 → W1p (volume : 
     ContinuousLinearMap.proj_apply, W1p.valueL_apply, Real.norm_eq_abs, sq_abs]
   exact congrArg (· ^ 2) hz
 
-/-- The `H¹` norm of a field of test functions is controlled by the integrals of its squared
-values and gradients. -/
-private theorem norm_sq_le_integral_testField (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
+/-- The squared `H¹(ℂ)⁴` norm of a field of test functions is at most the integral of its
+squared values plus the squared gradients of its coordinates. -/
+theorem norm_sq_le_integral_testField (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
     ‖fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)‖ ^ 2 ≤
       ∫ z, (‖(WithLp.toLp 2 fun j ↦ φ j z : EuclideanSpace ℝ (Fin 4))‖ ^ 2 +
         ∑ j : Fin 4, ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2) := by

@@ -47,6 +47,11 @@ the vortex equation holds the potential simplifies
 (`TauCeti.Vortex.gaugeFixedPotential_eq_of_equation_eq_zero`), which gives the energy identity
 `TauCeti.Vortex.integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero`.
 
+At the zero field the potential vanishes, and changing the sign of the last coordinate turns the
+formal adjoint into the operator, so `∫ ∑ⱼ |∇ηⱼ|² = ∫ |L₀* η|²` for the adjoint `L₀*` at the zero
+field (`TauCeti.Vortex.integral_sum_norm_gradient_sq_eq_integral_norm_sq_gaugeFixedAdjoint_zero`):
+the first-order part of `L_x*` controls the gradient.
+
 At a vortex `κ = -(1 - |α|²) / 8` and `∂bar_a α = 0`, so the potential is
 `|φ|² |b|² + ((12 |φ|² - 1) / 8) |ψ|²` up to a cross term bounded by `|∇₁ α| |y|²`. When
 `|α| → 1` and `∇₁ α → 0` at infinity, the potential therefore tends to the vacuum mass `1 / 4`.
@@ -390,6 +395,50 @@ private theorem min_sub_mul_le_potential {s cr ci n v₀ v₁ v₂ v₃ : ℝ} (
   have hBP : v₀ ^ 2 + v₁ ^ 2 + v₂ ^ 2 + v₃ ^ 2 = B + P := by ring
   rw [hBP]
   nlinarith
+
+/-- **The first-order part of `L_x*` controls the gradient.** For a compactly supported `C²`
+field `η`, `∫ ∑ⱼ |∇ηⱼ|² = ∫ |L₀* η|²`, where `L₀*` is the formal adjoint at the zero field, which
+has no zeroth-order part. -/
+theorem integral_sum_norm_gradient_sq_eq_integral_norm_sq_gaugeFixedAdjoint_zero
+    {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
+    ∫ z, ∑ j : Fin 4, ‖∇ (fun w ↦ η w j) z‖ ^ 2 ∂μ = ∫ z, ‖gaugeFixedAdjoint 0 η z‖ ^ 2 ∂μ := by
+  -- Changing the sign of the last coordinate of `η` turns `L₀* η` into `L₀` of the changed field,
+  -- up to the signs of the coordinates, and the Weitzenböck formula for `L₀` at the zero field
+  -- has no potential.
+  set T : EuclideanSpace ℝ (Fin 4) → EuclideanSpace ℝ (Fin 4) :=
+    fun v ↦ WithLp.toLp 2 ![v 0, v 1, v 2, -v 3]
+  set y : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ T (η z)
+  have hη' (j : Fin 4) : ContDiff ℝ 2 fun z ↦ η z j := (contDiff_piLp 2).1 hη j
+  have hy : ContDiff ℝ 2 y := (contDiff_piLp 2).2 fun j ↦ by
+    fin_cases j
+    exacts [hη' 0, hη' 1, hη' 2, (hη' 3).neg]
+  have hyc : HasCompactSupport y := hηc.comp_left (g := T) (by ext j; fin_cases j <;> simp [T])
+  have hy3 : (fun w ↦ y w 3) = fun w ↦ -η w 3 := funext fun w ↦ by simp [y, T]
+  have hy0 : (fun w ↦ y w 0) = fun w ↦ η w 0 := funext fun w ↦ by simp [y, T]
+  have hy1 : (fun w ↦ y w 1) = fun w ↦ η w 1 := funext fun w ↦ by simp [y, T]
+  have hy2 : (fun w ↦ y w 2) = fun w ↦ η w 2 := funext fun w ↦ by simp [y, T]
+  have h := integral_norm_sq_gaugeFixedOperator (μ := μ) (x := 0) contDiff_const hy hyc
+  have hs : sectionValue (0 : ℂ → EuclideanSpace ℝ (Fin 4)) = 0 :=
+    funext fun z ↦ by simp [sectionValue_apply]
+  have hP (z : ℂ) : gaugeFixedPotential 0 z (y z) = 0 := by
+    have hk : curvature 0 z = 0 := by simp [curvature_apply]
+    have hc (v : ℂ) : covariantDerivative 0 z v = 0 := by simp [covariantDerivative_apply, hs]
+    simp [gaugeFixedPotential_def, hk, hc]
+  have hG (z : ℂ) : gaugeFixedGradientDensity 0 y z = ∑ j : Fin 4, ‖∇ (fun w ↦ η w j) z‖ ^ 2 := by
+    simp only [gaugeFixedGradientDensity_def, Fin.sum_univ_four,
+      norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq, Pi.zero_apply, PiLp.zero_apply,
+      zero_mul, sub_zero, add_zero, hy0, hy1, hy2, hy3, fderiv_fun_neg, neg_apply, neg_sq]
+    ring
+  have hL (z : ℂ) : ‖gaugeFixedOperator 0 y z‖ ^ 2 = ‖gaugeFixedAdjoint 0 η z‖ ^ 2 := by
+    simp only [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four, gaugeFixedOperator_apply_zero,
+      gaugeFixedOperator_apply_one, gaugeFixedOperator_apply_two, gaugeFixedOperator_apply_three,
+      gaugeAdjoint_def, linearizedEquation_apply_zero, linearizedEquation_apply_one,
+      linearizedEquation_apply_two, gaugeFixedAdjoint_apply_zero, gaugeFixedAdjoint_apply_one,
+      gaugeFixedAdjoint_apply_two, gaugeFixedAdjoint_apply_three, Pi.zero_apply, PiLp.zero_apply,
+      zero_mul, mul_zero, add_zero, sub_zero, hy0, hy1, hy2, hy3, fderiv_fun_neg, neg_apply]
+    ring
+  simp only [hP, integral_zero, add_zero, hG, hL] at h
+  exact h.symm
 
 /-- The coefficient `min (|φ|², (12 |φ|² - 1) / 8) - |∇₁ α|` bounding the potential from below
 at a vortex (`vortexMass_mul_norm_sq_le_gaugeFixedPotential`). -/
