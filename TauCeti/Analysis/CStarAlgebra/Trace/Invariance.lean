@@ -48,9 +48,9 @@ theorem map_conjStar (hτ : IsTrace τ) {u : Unitization ℂ B} (hu : star u * u
   set s := CFC.sqrt x
   have hs : star s = s := (CFC.sqrt_nonneg x).isSelfAdjoint.star_eq
   have hss : s * s = x := CFC.sqrt_mul_sqrt_self x hx
-  set z : B := ((s : Unitization ℂ B) * star u).snd
+  set z : B := (star u).fst • s + s * (star u).snd
   have hz : (z : Unitization ℂ B) = (s : Unitization ℂ B) * star u :=
-    Unitization.inr_snd_of_fst_eq_zero (by simp)
+    (Unitization.inr_mul_eq_inr s (star u)).symm
   have hsu : star (s : Unitization ℂ B) = s := by rw [← Unitization.inr_star, hs]
   have h₁ : star z * z = u.conjStar x := Unitization.inr_injective (R := ℂ) <| by
     simp [hz, ← hss, hsu, mul_assoc]

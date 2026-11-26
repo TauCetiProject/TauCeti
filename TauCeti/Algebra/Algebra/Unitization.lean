@@ -15,8 +15,8 @@ public import Mathlib.Tactic.NoncommRing
 /-!
 # Functoriality of the forced unitization
 
-A nonunital algebra `A` is a left ideal of its forced unitization: `(r, a) * a'` is
-`r • a' + a * a'` in `A`.
+A nonunital algebra `A` is a two-sided ideal of its forced unitization: `(r, a) * a'` is
+`r • a' + a * a'` in `A`, and `a' * (r, a)` is `r • a' + a' * a`.
 
 A homomorphism of nonunital algebras `f : A →ₙₐ[R] B` induces a unital algebra homomorphism
 `Unitization R A →ₐ[R] Unitization R B`, sending `(r, a)` to `(r, f a)`. This is the non-star
@@ -32,10 +32,12 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 
 ## Main declarations
 
-* `Unitization.mul_inr`: `A` is a left ideal of `Unitization R A`.
+* `Unitization.mul_inr`, `Unitization.inr_mul_eq_inr`: `A` is a two-sided ideal of
+  `Unitization R A`.
 * `Unitization.inr_snd_of_fst_eq_zero`: an element with scalar part `0` lies in `A`.
 * `Unitization.conjStar`: the element `u * x * star u` of `A`, for `u` in the unitization and
-  `x : A`, with `Unitization.inr_conjStar`, `Unitization.conjStar_mul` and
+  `x : A`, with `Unitization.inr_conjStar`, `Unitization.conjStar_mul`,
+  `Unitization.conjStar_smul`, `Unitization.star_conjStar`, `IsSelfAdjoint.conjStar` and
   `Unitization.conjStar_nonneg`.
 * `Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
 * `Unitization.map_id`, `Unitization.map_comp`: functoriality.
@@ -65,6 +67,14 @@ namespace Unitization
 `x.fst • a + x.snd * a`. -/
 theorem mul_inr {R A : Type*} [MulZeroClass R] [NonUnitalNonAssocSemiring A]
     [SMulWithZero R A] (x : Unitization R A) (a : A) : x * inr a = inr (x.fst • a + x.snd * a) :=
+  Unitization.ext (by simp) (by simp)
+
+/-- A nonunital algebra `A` is a right ideal of its unitization: `a * x` lies in `A`, with value
+`x.fst • a + a * x.snd`. This mirrors `Unitization.mul_inr`; the name `Unitization.inr_mul` is
+Mathlib's statement that `inr` is multiplicative. -/
+theorem inr_mul_eq_inr {R A : Type*} [MulZeroClass R] [NonUnitalNonAssocSemiring A]
+    [SMulWithZero R A] (a : A) (x : Unitization R A) :
+    (inr a : Unitization R A) * x = inr (x.fst • a + a * x.snd) :=
   Unitization.ext (by simp) (by simp)
 
 /-- An element of the unitization with scalar part `0` is the image of its `A`-part. -/
@@ -105,7 +115,22 @@ theorem conjStar_add (u : Unitization R A) (x y : A) :
     u.conjStar (x + y) = u.conjStar x + u.conjStar y :=
   inr_injective (R := R) (by simp [mul_add, add_mul])
 
+/-- Conjugation commutes with scalar multiplication. -/
+theorem conjStar_smul (u : Unitization R A) (r : R) (x : A) :
+    u.conjStar (r • x) = r • u.conjStar x :=
+  inr_injective (R := R) (by simp [inr_smul])
+
 variable [StarModule R A]
+
+/-- Conjugation commutes with `star`. -/
+theorem star_conjStar (u : Unitization R A) (x : A) :
+    star (u.conjStar x) = u.conjStar (star x) :=
+  inr_injective (R := R) (by simp [inr_star, mul_assoc])
+
+/-- Conjugation by an element of the unitization preserves self-adjointness. -/
+theorem _root_.IsSelfAdjoint.conjStar {x : A} (hx : IsSelfAdjoint x) (u : Unitization R A) :
+    IsSelfAdjoint (u.conjStar x) := by
+  rw [IsSelfAdjoint, star_conjStar, hx.star_eq]
 
 /-- Conjugation by a product is the composite of the conjugations. -/
 theorem conjStar_mul (u v : Unitization R A) (x : A) :
@@ -118,8 +143,8 @@ theorem conjStar_nonneg [PartialOrder A] [StarOrderedRing A] (u : Unitization R 
     (hx : 0 ≤ x) : 0 ≤ u.conjStar x := by
   induction hx using StarOrderedRing.induction_on with
   | star_mul_self s =>
-    set w : A := ((s : Unitization R A) * star u).snd
-    have hw : (w : Unitization R A) = s * star u := inr_snd_of_fst_eq_zero (by simp)
+    obtain ⟨w, hw⟩ : ∃ w : A, (w : Unitization R A) = s * star u :=
+      ⟨_, (inr_mul_eq_inr s (star u)).symm⟩
     convert star_mul_self_nonneg w using 1
     exact inr_injective (R := R) (by simp [hw, mul_assoc])
   | zero => simp
@@ -352,9 +377,8 @@ theorem exists_star_mul_self_eq_of_mem_unitary_unitization {R A : Type*} [CommSe
     {u : Unitization R A} (hu : u ∈ unitary (Unitization R A))
     (hupq : u * (p : Unitization R A) * star u = q) :
     ∃ v : A, star v * v = p ∧ v * star v = q := by
-  have hv : ((u * (p : Unitization R A)).snd : Unitization R A) = u * p :=
-    Unitization.inr_snd_of_fst_eq_zero (by simp)
-  refine ⟨(u * (p : Unitization R A)).snd, Unitization.inr_injective (R := R) ?_,
+  have hv := (Unitization.mul_inr u p).symm
+  refine ⟨u.fst • p + u.snd * p, Unitization.inr_injective (R := R) ?_,
     Unitization.inr_injective (R := R) ?_⟩
   · rw [Unitization.inr_mul, Unitization.inr_star, hv, star_mul, mul_assoc, ← mul_assoc (star u),
       Unitary.star_mul_self_of_mem hu, one_mul, ← Unitization.inr_star, ← Unitization.inr_mul,
