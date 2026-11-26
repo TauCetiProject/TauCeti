@@ -153,6 +153,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.eq_zero_of_forall_rpow_le`: `e = 0` when `c ^ e ≤ K` for all `c > 0`.
 * `Real.eq_zero_of_forall_zpow_rpow_le`: `e = 0` when `(b ^ k) ^ e ≤ K` for all `k ∈ ℤ` and some
   `b > 1`.
+* `Real.rpow_sub_le_div_of_ofReal_rpow_mul_le`: `x ^ (a - b) ≤ C B / Φ` in `ℝ` from
+  `x ^ a Φ ≤ C (x ^ b B)` in `ℝ≥0∞`, for `x > 0`, `Φ ≠ 0` and `B < ∞`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
@@ -447,6 +449,29 @@ theorem eq_zero_of_forall_zpow_rpow_le {b e K : ℝ} (hb : 1 < b) (h : ∀ k : �
     have := h n
     rw [hk, zpow_natCast] at this
     linarith
+
+open scoped ENNReal NNReal in
+/-- **A scaling estimate in real terms.** If `x ^ a Φ ≤ C (x ^ b B)` in `ℝ≥0∞` for some `x > 0`,
+with `Φ ≠ 0` and `B < ∞`, then `Φ` is finite and `x ^ (a - b) ≤ C B / Φ` in `ℝ`. Applied to every
+scale `x`, this turns a scaling estimate, whose two sides are powers of the scale times fixed
+quantities, into a bound on `x ^ (a - b)` that pins the exponent `a - b`
+(`Real.eq_zero_of_forall_rpow_le`, `Real.eq_zero_of_forall_zpow_rpow_le`). -/
+theorem rpow_sub_le_div_of_ofReal_rpow_mul_le {x a b : ℝ} (hx : 0 < x) {Φ B : ℝ≥0∞} {C : ℝ≥0}
+    (hΦ : Φ ≠ 0) (hB : B ≠ ∞) (h : ENNReal.ofReal (x ^ a) * Φ ≤ C * (ENNReal.ofReal (x ^ b) * B)) :
+    x ^ (a - b) ≤ C * B.toReal / Φ.toReal := by
+  have hR : (C : ℝ≥0∞) * (ENNReal.ofReal (x ^ b) * B) ≠ ∞ :=
+    ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hB)
+  have hΦt : Φ ≠ ∞ := fun hΦt ↦ hR <| top_le_iff.1 <| h.trans_eq' <| by
+    rw [hΦt, ENNReal.mul_top (ENNReal.ofReal_pos.2 (rpow_pos_of_pos hx a)).ne']
+  have hreal := ENNReal.toReal_mono hR h
+  simp only [ENNReal.toReal_mul, ENNReal.coe_toReal, ENNReal.toReal_ofReal (rpow_nonneg hx.le _)]
+    at hreal
+  rw [le_div_iff₀ (ENNReal.toReal_pos hΦ hΦt)]
+  refine le_of_mul_le_mul_left ?_ (rpow_pos_of_pos hx b)
+  calc x ^ b * (x ^ (a - b) * Φ.toReal) = x ^ a * Φ.toReal := by
+        rw [← mul_assoc, ← rpow_add hx, add_sub_cancel]
+    _ ≤ C * (x ^ b * B.toReal) := hreal
+    _ = x ^ b * (C * B.toReal) := mul_left_comm _ _ _
 
 /-- If `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. -/
 theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) (hc : 0 ≤ c) :

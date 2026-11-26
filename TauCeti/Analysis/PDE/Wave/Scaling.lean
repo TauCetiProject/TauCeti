@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fourier.LittlewoodPaley
+public import TauCeti.Analysis.Fourier.LittlewoodPaley.Dilation
 public import TauCeti.Analysis.PDE.Wave.Propagator
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Scaling of the wave equation and the scaling-critical regularity
@@ -41,10 +40,11 @@ So a homogeneous Strichartz estimate `‖W₊(t) f‖_{L^q_t L^r_x} ≤ C ‖f�
 `s = s(q, r)` (`ContDiffBump.eq_of_eLpNorm_eLpNorm_halfWavePropagator_le_tsum`,
 `ContDiffBump.eq_of_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow`). The general form, for
 the dyadic dilates of one nonzero datum, is
-`TauCeti.eq_of_eLpNorm_eLpNorm_halfWavePropagator_dilateLp_le`. This is the regularity at which the
-estimates of `TauCeti.Analysis.PDE.Wave.HomogeneousStrichartz` and
-`TauCeti.Analysis.PDE.Wave.SobolevStrichartz` are stated. No admissibility condition on `(q, r)`
-is assumed or derived here: scaling fixes the regularity, not the pair.
+`TauCeti.eq_of_eLpNorm_eLpNorm_halfWavePropagator_dilateLp_le`, the case `k = 1` of
+`TauCeti.eq_of_eLpNorm_eLpNorm_phasePropagator_dilateLp_le` for phases homogeneous of degree `k`.
+This is the regularity at which the estimates of `TauCeti.Analysis.PDE.Wave.HomogeneousStrichartz`
+and `TauCeti.Analysis.PDE.Wave.SobolevStrichartz` are stated. No admissibility condition on
+`(q, r)` is assumed or derived here: scaling fixes the regularity, not the pair.
 
 ## The argument
 
@@ -53,8 +53,9 @@ is finite. The left side is `2^{k(n/r - n/2 + 1/q)}` times a positive number, si
 unitary, and the right side is `2^{-ks}` times a finite number, so `2^{k(n/r - n/2 + 1/q + s)}` is
 bounded over all `k ∈ ℤ` and the exponent vanishes (`Real.eq_zero_of_forall_zpow_rpow_le`).
 For the Littlewood–Paley norms, a single block `f₀ = P_{j₀} g ≠ 0` has only finitely many nonzero
-blocks: cutoffs whose indices differ by at least a fixed `L` have disjoint supports, so
-`Pⱼ P_{j₀} = 0` for `|j - j₀| ≥ L`.
+blocks (`ContDiffBump.exists_ne_zero_forall_notMem_fourierMultiplierCLM_eq_zero`): cutoffs whose
+indices differ by at least a fixed `L` have disjoint supports, so `Pⱼ P_{j₀} = 0` for
+`|j - j₀| ≥ L` (`ContDiffBump.fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley_eq_zero`).
 
 ## References
 
@@ -136,8 +137,9 @@ theorem waveSinPropagator_dilateLp {r : ℝ} (hr : 0 < r) (t : ℝ)
       Lp.coeFn_smul (r : ℂ) ((memLp_waveSinSymbol (E := E) (t / r)).toLp _),
       (memLp_waveSinSymbol (t / r)).coeFn_toLp] with ξ h₁ h₂ h₃
     rw [h₁, h₂, Pi.smul_apply, h₃, waveSinSymbol_apply, waveSinSymbol_apply,
-      sqrtNegLaplacianSymbol_smul, abs_of_pos (inv_pos.2 hr), ← mul_assoc, ← div_eq_mul_inv,
-      smul_eq_mul, ← mul_assoc, Complex.ofReal_div, mul_div_cancel₀ _ (by exact_mod_cast hr.ne')]
+      sqrtNegLaplacianSymbol_smul, abs_of_pos (inv_pos.2 hr), smul_eq_mul]
+    push_cast
+    field_simp [Complex.ofReal_ne_zero.2 hr.ne']
   rw [waveSinPropagator_def, waveSinPropagator_def, Lp.fourierMultiplierCLM_dilateLp, hsym,
     Lp.fourierMultiplierCLM_smul, _root_.smul_apply, Complex.coe_smul, map_smul]
 
@@ -163,7 +165,8 @@ on the whole time line for every `k ∈ ℤ`, then `s` is the scaling-critical r
 homogeneous estimate `‖W₊(t) f‖_{L^q_t L^r_x} ≤ C N f` constrains `s` when `N` is homogeneous of
 degree `-s` under the dyadic dilations, `N (D_{2^k} f) = 2^{-ks} N f`, and `N f₀ = B`: the left side
 scales like `2^{k(n/r - n/2 + 1/q)}` and is positive, since `W₊(t)` is unitary, so the two powers
-must agree. -/
+must agree. This is the case `k = 1` of
+`TauCeti.eq_of_eLpNorm_eLpNorm_phasePropagator_dilateLp_le`. -/
 theorem eq_of_eLpNorm_eLpNorm_halfWavePropagator_dilateLp_le {q r : ℝ≥0∞} (hq : q ≠ 0)
     (hr : r ≠ 0) {s : ℝ} {f₀ : Lp ℂ 2 (volume : Measure E)} (hf₀ : f₀ ≠ 0) {B : ℝ≥0∞}
     (hB : B ≠ ∞) {C : ℝ≥0}
@@ -171,49 +174,8 @@ theorem eq_of_eLpNorm_eLpNorm_halfWavePropagator_dilateLp_le {q r : ℝ≥0∞} 
         (dilateLp volume ℝ 2 _ (zpow_pos two_pos k) f₀)) r volume) q volume ≤
       C * (ENNReal.ofReal (((2 : ℝ) ^ k) ^ (-s)) * B)) :
     s = finrank ℝ E / 2 - finrank ℝ E * (r⁻¹).toReal - (q⁻¹).toReal := by
-  set n : ℝ := (finrank ℝ E : ℝ)
-  set a : ℝ := n / r.toReal - n / 2 + 1 / q.toReal
-  set Φ : ℝ≥0∞ := eLpNorm (fun t ↦ eLpNorm (halfWavePropagator ℂ t f₀) r volume) q volume
-  -- `W₊(t)` is unitary, so `W₊(t) f₀ ≠ 0` at every time and the mixed norm of `f₀` is positive.
-  have hΦ0 : Φ ≠ 0 := by
-    rw [Ne, eLpNorm_eq_zero_iff hq]
-    intro h0
-    obtain ⟨t, ht⟩ := h0.exists
-    rw [Pi.zero_apply, eLpNorm_eq_zero_iff hr, ← Lp.eq_zero_iff_ae_eq_zero] at ht
-    refine hf₀ (norm_eq_zero.1 ?_)
-    rw [← norm_phasePropagator_apply sqrtNegLaplacianSymbol t f₀, ← halfWavePropagator_def, ht,
-      norm_zero]
-  -- The estimate for `D_{2^k} f₀`, as powers of `2^k` times `Φ` and `B`.
-  have hscale : ∀ k : ℤ, ENNReal.ofReal (((2 : ℝ) ^ k) ^ a) * Φ ≤
-      C * (ENNReal.ofReal (((2 : ℝ) ^ k) ^ (-s)) * B) := fun k ↦ by
-    simpa only [eLpNorm_eLpNorm_halfWavePropagator_dilateLp _ _ hq] using h k
-  have hΦ : Φ ≠ ∞ := by
-    intro hΦt
-    have h0 := hscale 0
-    simp only [zpow_zero, Real.one_rpow, ENNReal.ofReal_one, one_mul, hΦt] at h0
-    exact (ENNReal.mul_ne_top ENNReal.coe_ne_top hB) (top_le_iff.1 h0)
-  have hΦr : 0 < Φ.toReal := ENNReal.toReal_pos hΦ0 hΦ
-  -- In real terms: `(2^k) ^ (a + s) ≤ C B / Φ` for every `k ∈ ℤ`, so `a + s = 0`.
-  have he := Real.eq_zero_of_forall_zpow_rpow_le one_lt_two (K := C * B.toReal / Φ.toReal)
-    (e := a + s) fun k ↦ by
-    have hreal := ENNReal.toReal_mono
-      (ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hB))
-      (hscale k)
-    have h2 : (0 : ℝ) < (2 : ℝ) ^ k := zpow_pos two_pos k
-    have h1 : 0 ≤ ((2 : ℝ) ^ k) ^ a := by positivity
-    have h3 : 0 ≤ ((2 : ℝ) ^ k) ^ (-s) := by positivity
-    simp only [ENNReal.toReal_mul, ENNReal.coe_toReal, ENNReal.toReal_ofReal h1,
-      ENNReal.toReal_ofReal h3] at hreal
-    have hsplit : ((2 : ℝ) ^ k) ^ a = ((2 : ℝ) ^ k) ^ (-s) * ((2 : ℝ) ^ k) ^ (a + s) := by
-      rw [← Real.rpow_add h2]
-      congr 1
-      ring
-    rw [hsplit, mul_assoc, mul_left_comm (C : ℝ)] at hreal
-    rw [le_div_iff₀ hΦr]
-    exact le_of_mul_le_mul_left hreal (by positivity)
-  rw [ENNReal.toReal_inv, ENNReal.toReal_inv]
-  simp only [a, div_eq_mul_inv n r.toReal, one_div] at he
-  linarith
+  simpa only [Nat.cast_one, one_mul] using eq_of_eLpNorm_eLpNorm_phasePropagator_dilateLp_le
+    sqrtNegLaplacianSymbol_smul_of_pos hq hr hf₀ hB h
 
 end TauCeti
 
@@ -223,47 +185,6 @@ open TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (φ : ContDiffBump (0 : E))
-
-/-- On a nontrivial space some nonzero `f₀ ∈ L²` has only finitely many nonzero homogeneous
-Littlewood–Paley blocks: a nonzero block `f₀ = P_{j₀} g`, whose blocks `Pⱼ f₀ = Pⱼ P_{j₀} g` vanish
-once `|j - j₀|` reaches the overlap length of the cutoffs. -/
-private theorem exists_ne_zero_forall_notMem_fourierMultiplierCLM_eq_zero [Nontrivial E]
-    {m : ℤ → Lp ℂ ∞ (volume : Measure E)}
-    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
-    ∃ f₀ : Lp ℂ 2 (volume : Measure E), f₀ ≠ 0 ∧
-      ∃ S : Finset ℤ, ∀ j ∉ S, Lp.fourierMultiplierCLM ℂ (m j) f₀ = 0 := by
-  -- The indicator of the unit ball is a nonzero element of `L²`.
-  set g : Lp ℂ 2 (volume : Measure E) := indicatorConstLp 2 Metric.isOpen_ball.measurableSet
-    measure_ball_lt_top.ne (1 : ℂ) with hg_def
-  have hg : g ≠ 0 := by
-    rw [← norm_ne_zero_iff, hg_def, norm_indicatorConstLp' two_ne_zero
-      (Metric.measure_ball_pos volume (0 : E) one_pos).ne', norm_one, one_mul]
-    rw [measureReal_def]
-    exact (Real.rpow_pos_of_pos (ENNReal.toReal_pos
-      (Metric.measure_ball_pos volume (0 : E) one_pos).ne' measure_ball_lt_top.ne) _).ne'
-  -- Some block of `g` is nonzero, since the blocks reconstruct `g`.
-  obtain ⟨j₀, hj₀⟩ : ∃ j₀, Lp.fourierMultiplierCLM ℂ (m j₀) g ≠ 0 := by
-    by_contra! hall
-    have hlim := φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm g
-    simp only [hall, Finset.sum_const_zero] at hlim
-    exact hg (tendsto_nhds_unique hlim tendsto_const_nhds)
-  obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
-  refine ⟨_, hj₀, Finset.Ioo (j₀ - L) (j₀ + L), fun j hj ↦ ?_⟩
-  -- Far from `j₀` the symbols `ψⱼ` and `ψ_{j₀}` have disjoint supports.
-  have hzero : ∀ ξ, φ.littlewoodPaley j ξ * φ.littlewoodPaley j₀ ξ = 0 := fun ξ ↦ by
-    rw [Finset.mem_Ioo, not_and_or, not_lt, not_lt] at hj
-    rcases hj with hj | hj
-    · exact hL j j₀ (by omega) ξ
-    · rw [mul_comm]
-      exact hL j₀ j (by omega) ξ
-  have hsym : (m j • m j₀ : Lp ℂ ∞ (volume : Measure E)) = 0 := by
-    refine Lp.ext ?_
-    filter_upwards [Lp.coeFn_lpSMul (r := ∞) (m j) (m j₀), hm j, hm j₀,
-      Lp.coeFn_zero ℂ ∞ (volume : Measure E)] with ξ h₁ h₂ h₃ h₄
-    rw [h₁, Pi.smul_apply', h₂, h₃, h₄, Pi.zero_apply, smul_eq_mul, ← Complex.ofReal_mul,
-      hzero ξ, Complex.ofReal_zero]
-  rw [Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply, hsym, Lp.fourierMultiplierCLM_zero,
-    zero_apply]
 
 /-- **The regularity of a Strichartz estimate with `\dot B^s_{2,1}` data is scaling-critical.**
 Let `E` be nontrivial of dimension `n`, let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`,
@@ -284,7 +205,7 @@ theorem eq_of_eLpNorm_eLpNorm_halfWavePropagator_le_tsum [Nontrivial E]
       eLpNorm (fun t ↦ eLpNorm (halfWavePropagator ℂ t f) r volume) q volume ≤
         C * ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ s) * ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ) :
     s = finrank ℝ E / 2 - finrank ℝ E * (r⁻¹).toReal - (q⁻¹).toReal := by
-  obtain ⟨f₀, hf₀, S, hS⟩ := φ.exists_ne_zero_forall_notMem_fourierMultiplierCLM_eq_zero hm
+  obtain ⟨f₀, hf₀, S, hS⟩ := φ.exists_ne_zero_forall_notMem_fourierMultiplierCLM_eq_zero (F := ℂ) hm
   refine eq_of_eLpNorm_eLpNorm_halfWavePropagator_dilateLp_le hq hr hf₀ ?_ fun k ↦ (h _).trans_eq
     (by rw [φ.tsum_enorm_fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow hm s k f₀])
   rw [tsum_eq_sum (s := S) fun j hj ↦ by rw [hS j hj, eNorm_zero, mul_zero]]
@@ -308,7 +229,7 @@ theorem eq_of_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow [Nontrivial E]
         C * (∑' j : ℤ, (ENNReal.ofReal (((2 : ℝ) ^ j) ^ s) *
           ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ) ^ 2) ^ (2⁻¹ : ℝ)) :
     s = finrank ℝ E / 2 - finrank ℝ E * (r⁻¹).toReal - (q⁻¹).toReal := by
-  obtain ⟨f₀, hf₀, S, hS⟩ := φ.exists_ne_zero_forall_notMem_fourierMultiplierCLM_eq_zero hm
+  obtain ⟨f₀, hf₀, S, hS⟩ := φ.exists_ne_zero_forall_notMem_fourierMultiplierCLM_eq_zero (F := ℂ) hm
   refine eq_of_eLpNorm_eLpNorm_halfWavePropagator_dilateLp_le hq hr hf₀ ?_ fun k ↦ (h _).trans_eq
     (by rw [φ.tsum_sq_rpow_enorm_fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow hm s k f₀])
   rw [tsum_eq_sum (s := S) fun j hj ↦ by rw [hS j hj, eNorm_zero, mul_zero, zero_pow two_ne_zero]]

@@ -18,6 +18,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Duality
+import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
@@ -124,13 +125,11 @@ is lower semicontinuous on `L²`, the reconstruction also gives `‖A f‖_r ≤
 every bounded operator `A` on `L²` and `1 ≤ r ≤ ∞`
 (`ContDiffBump.eLpNorm_apply_le_tsum_eLpNorm_apply_fourierMultiplierCLM`).
 
-The normalized dilation `D_{2^k} f = 2^{-kn/2} f (2^{-k} ·)` of `L²` shifts the blocks by `k`,
-`Pⱼ (D_{2^k} f) = D_{2^k} (P_{j+k} f)`
-(`ContDiffBump.fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow`), so the dyadic `ℓ¹` and
-`ℓ²` sums `∑ⱼ 2^{js} ‖Pⱼ f‖₂` and `(∑ⱼ 2^{2js} ‖Pⱼ f‖₂²)^{1/2}`, the norms of `\dot B^s_{2,1}` and
-`\dot H^s`, are multiplied by `2^{-ks}`
-(`ContDiffBump.tsum_enorm_fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow`,
-`ContDiffBump.tsum_sq_rpow_enorm_fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow`).
+Blocks `L` or more apart, for the overlap length `L` of the cutoffs, compose to zero
+(`ContDiffBump.fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley_eq_zero`), so a nonzero
+block is a nonzero datum with finitely many nonzero blocks
+(`ContDiffBump.exists_ne_zero_forall_notMem_fourierMultiplierCLM_eq_zero`). The blocks under the
+dyadic dilations of `L²` are in `TauCeti.Analysis.Fourier.LittlewoodPaley.Dilation`.
 
 ## Dyadic multipliers and squared blocks
 
@@ -1066,6 +1065,53 @@ theorem sum_fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley {L : ℕ}
   conv_rhs => rw [← hsym]
   rw [Lp.fourierMultiplierCLM_sum, FunLike.coe_sum, Finset.sum_apply]
 
+/-- **Far blocks compose to zero.** If the cutoffs whose indices differ by at least `L` have
+disjoint supports, as for the `L` of `ContDiffBump.exists_littlewoodPaley_mul_eq_zero φ`, then
+`Pⱼ Pₖ f = 0` for every `f ∈ L²(V, F)` once `|j - k| ≥ L`, where `Pⱼ` is the `L²` Fourier
+multiplier with any symbol in `L^∞` almost everywhere equal to `ψⱼ`. -/
+theorem fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley_eq_zero {L : ℕ}
+    (hL : ∀ j k : ℤ, j + L ≤ k → ∀ ξ : V, φ.littlewoodPaley j ξ * φ.littlewoodPaley k ξ = 0)
+    {m : ℤ → Lp ℂ ∞ (volume : Measure V)}
+    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) {j k : ℤ} (hjk : L ≤ |j - k|)
+    (f : Lp F 2 (volume : Measure V)) :
+    Lp.fourierMultiplierCLM F (m j) (Lp.fourierMultiplierCLM F (m k) f) = 0 := by
+  -- The symbol `ψⱼ ψₖ` of `Pⱼ Pₖ` vanishes.
+  rw [Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply,
+    Lp.fourierMultiplierCLM_of_ae_eq_const (c := 0), _root_.smul_apply, zero_smul]
+  filter_upwards [Lp.coeFn_lpSMul (r := ∞) (m j) (m k), hm j, hm k] with ξ h₁ h₂ h₃
+  rw [h₁, Pi.smul_apply', h₂, h₃, smul_eq_mul, ← Complex.ofReal_mul, Complex.ofReal_eq_zero]
+  rcases le_abs'.1 hjk with hjk | hjk
+  · exact hL j k (by omega) ξ
+  · exact mul_comm (φ.littlewoodPaley j ξ) _ ▸ hL k j (by omega) ξ
+
+/-- **A nonzero datum with finitely many nonzero blocks.** On a nontrivial space, some nonzero
+`f₀ ∈ L²(V, F)` has only finitely many nonzero homogeneous Littlewood–Paley blocks: a nonzero block
+`f₀ = P_{j₀} g`, whose blocks `Pⱼ P_{j₀} g` vanish for `|j - j₀|` large. Each symbol enters as any
+element of `L^∞` almost everywhere equal to `ψⱼ`. -/
+theorem exists_ne_zero_forall_notMem_fourierMultiplierCLM_eq_zero [Nontrivial V] [Nontrivial F]
+    {m : ℤ → Lp ℂ ∞ (volume : Measure V)}
+    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
+    ∃ f₀ : Lp F 2 (volume : Measure V), f₀ ≠ 0 ∧
+      ∃ S : Finset ℤ, ∀ j ∉ S, Lp.fourierMultiplierCLM F (m j) f₀ = 0 := by
+  -- A nonzero vector on the unit ball is a nonzero element of `L²`.
+  obtain ⟨v, hv⟩ := exists_ne (0 : F)
+  obtain ⟨g, hg⟩ : ∃ g : Lp F 2 (volume : Measure V), g ≠ 0 :=
+    ⟨indicatorConstLp 2 (Metric.isOpen_ball (x := (0 : V)) (ε := 1)).measurableSet
+      measure_ball_lt_top.ne v, fun h ↦ (TauCeti.indicatorConstLp_eq_zero_iff.1 h).elim
+        (Metric.measure_ball_pos volume (0 : V) one_pos).ne' hv⟩
+  -- Some block of `g` is nonzero, since the blocks reconstruct `g`.
+  obtain ⟨j₀, hj₀⟩ : ∃ j₀, Lp.fourierMultiplierCLM F (m j₀) g ≠ 0 := by
+    by_contra! hall
+    have hlim := φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm g
+    simp only [hall, Finset.sum_const_zero] at hlim
+    exact hg (tendsto_nhds_unique hlim tendsto_const_nhds)
+  obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
+  refine ⟨_, hj₀, Finset.Ioo (j₀ - L) (j₀ + L), fun j hj ↦
+    φ.fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley_eq_zero hL hm ?_ g⟩
+  rw [Finset.mem_Ioo] at hj
+  rw [le_abs']
+  omega
+
 /-- **Duality of the dyadic `ℓ¹` and `ℓ^∞` norms on `L²`.** On a nontrivial space, for every
 `γ ∈ ℝ` there is `K` such that for all `f, g ∈ L²(V, F)`, if the homogeneous Littlewood–Paley
 blocks of `g` satisfy `‖Pₖ g‖₂ ≤ A 2^{kγ}` for every `k ∈ ℤ`, then
@@ -1128,101 +1174,6 @@ theorem exists_enorm_inner_le_mul_tsum [Nontrivial V] (γ : ℝ) :
     fun N ↦ ?_
   rw [Function.comp_apply, inner_sum, mul_comm _ A, mul_assoc, ← hsum, ← ENNReal.tsum_mul_left]
   exact (eNorm_sum_le _ _).trans ((sum_le_tsum _).trans (tsum_le_tsum hk))
-
-/-- **The homogeneous blocks under dyadic dilations.** Dilating by `2^k` shifts the homogeneous
-Littlewood–Paley blocks by `k`: for the normalized dilation `D_r f = r ^ (-n/2) • f (r⁻¹ • ·)` of
-`L²(V, F)`,
-
-`Pⱼ (D_{2^k} f) = D_{2^k} (P_{j+k} f)`,
-
-since `ψⱼ (2^{-k} ·) = ψ_{j+k}`. Each symbol enters as any element of `L^∞` almost everywhere equal
-to `ψⱼ`. -/
-theorem fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow
-    {m : ℤ → Lp ℂ ∞ (volume : Measure V)}
-    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) (j k : ℤ)
-    (f : Lp F 2 (volume : Measure V)) :
-    Lp.fourierMultiplierCLM F (m j) (Measure.dilateLp volume ℝ 2 _ (zpow_pos two_pos k) f) =
-      Measure.dilateLp volume ℝ 2 _ (zpow_pos two_pos k)
-        (Lp.fourierMultiplierCLM F (m (j + k)) f) := by
-  have hsym : Measure.dilateLp volume ℝ ∞ _ (zpow_pos two_pos k) (m j) = m (j + k) := by
-    refine Lp.ext ?_
-    filter_upwards [Measure.coeFn_dilateLp_top_of_ae_eq (𝕜 := ℝ) (zpow_pos two_pos k) (hm j),
-      hm (j + k)] with ξ h₁ h₂
-    rw [h₁, h₂, φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply j,
-      φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply (j + k), smul_smul, ← mul_inv,
-      ← zpow_add₀ two_ne_zero]
-  rw [Lp.fourierMultiplierCLM_dilateLp, hsym]
-
-/-- The weight `2^{js}` of the block `Pⱼ` is `2^{-ks}` times the weight `2^{(j+k)s}` of the block
-`P_{j+k}` onto which the dilation `D_{2^k}` moves it. -/
-private theorem ofReal_two_zpow_rpow_eq (s : ℝ) (j k : ℤ) :
-    ENNReal.ofReal (((2 : ℝ) ^ j) ^ s) =
-      ENNReal.ofReal (((2 : ℝ) ^ k) ^ (-s)) * ENNReal.ofReal (((2 : ℝ) ^ (j + k)) ^ s) := by
-  rw [← ENNReal.ofReal_mul (by positivity), zpow_add₀ two_ne_zero,
-    Real.mul_rpow (by positivity) (by positivity), Real.rpow_neg (by positivity), mul_comm,
-    mul_assoc, mul_inv_cancel₀ (by positivity), mul_one]
-
-/-- Each weighted block `2^{js} ‖Pⱼ (D_{2^k} f)‖₂` is `2^{-ks}` times the weighted block
-`2^{(j+k)s} ‖P_{j+k} f‖₂`. -/
-private theorem ofReal_mul_enorm_fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow
-    {m : ℤ → Lp ℂ ∞ (volume : Measure V)}
-    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) (s : ℝ) (j k : ℤ)
-    (f : Lp F 2 (volume : Measure V)) :
-    ENNReal.ofReal (((2 : ℝ) ^ j) ^ s) *
-        ‖Lp.fourierMultiplierCLM F (m j) (Measure.dilateLp volume ℝ 2 _ (zpow_pos two_pos k) f)‖ₑ =
-      ENNReal.ofReal (((2 : ℝ) ^ k) ^ (-s)) * (ENNReal.ofReal (((2 : ℝ) ^ (j + k)) ^ s) *
-        ‖Lp.fourierMultiplierCLM F (m (j + k)) f‖ₑ) := by
-  rw [φ.fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow hm, LinearIsometryEquiv.eNorm_map,
-    ofReal_two_zpow_rpow_eq s j k, mul_assoc]
-
-/-- **The dyadic `ℓ¹` sums under dyadic dilations.** For the normalized dilation `D_{2^k}` of
-`L²(V, F)` and every `s ∈ ℝ`,
-
-`∑ⱼ 2^{js} ‖Pⱼ (D_{2^k} f)‖₂ = 2^{-ks} ∑ⱼ 2^{js} ‖Pⱼ f‖₂`,
-
-so the norm of the homogeneous Besov space `\dot B^s_{2,1}`, written through the blocks, is
-homogeneous of degree `-s` under these dilations. Each symbol enters as any element of `L^∞` almost
-everywhere equal to `ψⱼ`. -/
-theorem tsum_enorm_fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow
-    {m : ℤ → Lp ℂ ∞ (volume : Measure V)}
-    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) (s : ℝ) (k : ℤ)
-    (f : Lp F 2 (volume : Measure V)) :
-    ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ s) *
-        ‖Lp.fourierMultiplierCLM F (m j) (Measure.dilateLp volume ℝ 2 _ (zpow_pos two_pos k) f)‖ₑ =
-      ENNReal.ofReal (((2 : ℝ) ^ k) ^ (-s)) *
-        ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ s) * ‖Lp.fourierMultiplierCLM F (m j) f‖ₑ := by
-  simp_rw [φ.ofReal_mul_enorm_fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow hm s _ k f]
-  rw [ENNReal.tsum_mul_left]
-  exact congrArg _ ((Equiv.addRight k).tsum_eq fun j ↦
-    ENNReal.ofReal (((2 : ℝ) ^ j) ^ s) * ‖Lp.fourierMultiplierCLM F (m j) f‖ₑ)
-
-/-- **The dyadic `ℓ²` sums under dyadic dilations.** For the normalized dilation `D_{2^k}` of
-`L²(V, F)` and every `s ∈ ℝ`,
-
-`(∑ⱼ 2^{2js} ‖Pⱼ (D_{2^k} f)‖₂²)^{1/2} = 2^{-ks} (∑ⱼ 2^{2js} ‖Pⱼ f‖₂²)^{1/2}`,
-
-so the norm of the homogeneous Sobolev space `\dot H^s`, in its Littlewood–Paley form, is
-homogeneous of degree `-s` under these dilations. Each symbol enters as any element of `L^∞` almost
-everywhere equal to `ψⱼ`. -/
-theorem tsum_sq_rpow_enorm_fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow
-    {m : ℤ → Lp ℂ ∞ (volume : Measure V)}
-    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) (s : ℝ) (k : ℤ)
-    (f : Lp F 2 (volume : Measure V)) :
-    (∑' j : ℤ, (ENNReal.ofReal (((2 : ℝ) ^ j) ^ s) *
-        ‖Lp.fourierMultiplierCLM F (m j)
-          (Measure.dilateLp volume ℝ 2 _ (zpow_pos two_pos k) f)‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) =
-      ENNReal.ofReal (((2 : ℝ) ^ k) ^ (-s)) * (∑' j : ℤ, (ENNReal.ofReal (((2 : ℝ) ^ j) ^ s) *
-        ‖Lp.fourierMultiplierCLM F (m j) f‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) := by
-  have hshift : ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ (j + k)) ^ s) ^ 2 *
-        ‖Lp.fourierMultiplierCLM F (m (j + k)) f‖ₑ ^ 2 =
-      ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ s) ^ 2 * ‖Lp.fourierMultiplierCLM F (m j) f‖ₑ ^ 2 :=
-    (Equiv.addRight k).tsum_eq fun j ↦
-      ENNReal.ofReal (((2 : ℝ) ^ j) ^ s) ^ 2 * ‖Lp.fourierMultiplierCLM F (m j) f‖ₑ ^ 2
-  simp_rw [φ.ofReal_mul_enorm_fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow hm s _ k f,
-    mul_pow]
-  rw [ENNReal.tsum_mul_left, hshift, ENNReal.mul_rpow_of_nonneg _ _ (by norm_num),
-    ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
-  norm_num
 
 end ContDiffBump
 
