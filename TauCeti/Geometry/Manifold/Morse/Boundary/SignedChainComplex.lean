@@ -30,7 +30,9 @@ function on the torus. This file proves it under the Morse–Smale condition on 
 dimension at most two with a unique minimum
 (`IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_two`): there the
 differential into degree `0` vanishes, and no critical point has index `3` or more. This covers the
-moment function on `ℝℙ²` and the sphere `S²` with two maxima.
+moment function on `ℝℙ²` and the sphere `S²` with two maxima. Once it holds over `ℤ`, it holds
+with coefficients in every ring
+(`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_int`).
 
 With coefficients in `ZMod 2` and under the Morse–Smale condition, the integral boundary squares to
 zero and the complex is the mod-two Morse complex
@@ -50,6 +52,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `signedMorseComplex`: the integral Morse chain complex, with coefficients in a ring `R`.
 * `signedMorseComplex_X`, `signedMorseComplex_d_apply`: its terms and differentials.
+* `signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_int`: `∂² = 0` over `ℤ` gives `∂² = 0`
+  with coefficients in every ring.
 * `IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_zmod_two`,
   `IsMorseSmale.signedMorseComplex_zmod_two`: modulo two it is the mod-two Morse complex.
 * `IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_two`: `∂² = 0`
@@ -226,6 +230,22 @@ theorem nonempty_linearEquiv_homology_zero_signedMorseComplex
       exact signedMorseComplex_d_eq_zero_of_signedMorseBoundaryAt_eq_zero hsq 0 h0)
     ((hX.signedMorseComplex 𝔬 hf R hsq).shape _ _ (by simp))).toLinearEquiv.symm.trans
     (Finsupp.uniqueLinearEquiv R R p)⟩
+
+/-- **`∂² = 0` over `ℤ` gives `∂² = 0` with any coefficients.** If the integral Morse boundary
+squares to zero, so does the Morse boundary with coefficients in any ring `R'`: the boundary with
+coefficients in `R'` is the integral boundary with its coefficients cast into `R'`
+(`TauCeti.IsAdaptedPseudoGradient.mapRange_signedMorseBoundary`). -/
+theorem signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_int
+    (hsq : hX.signedMorseBoundary 𝔬 hf ℤ ∘ₗ hX.signedMorseBoundary 𝔬 hf ℤ = 0)
+    (R' : Type*) [Ring R'] :
+    hX.signedMorseBoundary 𝔬 hf R' ∘ₗ hX.signedMorseBoundary 𝔬 hf R' = 0 := by
+  refine Finsupp.lhom_ext fun p a ↦ ?_
+  have hc : Finsupp.single p a =
+      a • Finsupp.mapRange (Int.castAddHom R') (map_zero _) (Finsupp.single p 1) := by
+    simp
+  rw [hc, map_smul, LinearMap.comp_apply, ← mapRange_signedMorseBoundary,
+    ← mapRange_signedMorseBoundary, ← LinearMap.comp_apply, hsq]
+  simp
 
 namespace IsMorseSmale
 
