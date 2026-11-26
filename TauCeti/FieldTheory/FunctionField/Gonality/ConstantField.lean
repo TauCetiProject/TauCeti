@@ -33,7 +33,8 @@ component. This is why gonality tables record the `K`-gonality of a component ra
   algebraic extension `K / k` inside `F`.
 * `TauCeti.gonality_eq_finrank_mul_gonality_algebraicClosure`: the case of the field of
   constants `K = algebraicClosure k F`.
-* `TauCeti.gonality_ratFunc_of_isAlgebraic`: `K(t)` has gonality `[K : k]` over `k`.
+* `TauCeti.gonality_ratFunc_of_isAlgebraic`: `gonality k K(t) = [K : k]`, the genuine gonality of
+  `K(t)` over `k` when `K / k` is finite; for infinite `K / k` both sides are the junk value `0`.
 
 ## References
 
@@ -51,10 +52,8 @@ variable {k K F : Type*} [Field k] [Field K] [Field F] [Algebra k K] [Algebra K 
   [IsScalarTower k K F]
 
 /-- **Gonality over an algebraic extension of the constants**: if `K / k` is algebraic and `F` is
-an extension of `K`, then `gonality k F = [K : k] · gonality K F`. A rational subfield `k(x)` of
-`F` and its compositum `K(x)` with `K` have the same transcendental generators, and
-`[F : k(x)] = [K : k] · [F : K(x)]`. No finiteness is assumed: when `K / k` is infinite both
-sides are the junk value `0`. -/
+an extension of `K`, then `gonality k F = [K : k] · gonality K F`. No finiteness is assumed: when
+`K / k` is infinite both sides are the junk value `0`. -/
 theorem gonality_eq_finrank_mul_gonality [Algebra.IsAlgebraic k K] :
     gonality k F = Module.finrank k K * gonality K F := by
   by_cases halg : Algebra.IsAlgebraic K F
@@ -85,8 +84,9 @@ theorem gonality_eq_finrank_mul_gonality_algebraicClosure :
   gonality_eq_finrank_mul_gonality
 
 omit [Algebra K F] [Algebra k F] [IsScalarTower k K F] in
-/-- The rational function field `K(t)` over an algebraic extension `K / k` has gonality `[K : k]`
-over `k`; for instance `ℂ(t)` has gonality two over `ℝ`. -/
+/-- For an algebraic extension `K / k`, `gonality k K(t) = [K : k]`. When `K / k` is finite this is
+the genuine gonality of `K(t)` over `k`; for instance `ℂ(t)` has gonality two over `ℝ`. When
+`K / k` is infinite both sides are the junk value `0`. -/
 theorem gonality_ratFunc_of_isAlgebraic [Algebra.IsAlgebraic k K] :
     gonality k (RatFunc K) = Module.finrank k K := by
   rw [gonality_eq_finrank_mul_gonality (K := K), gonality_ratFunc, mul_one]
