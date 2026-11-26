@@ -16,7 +16,10 @@ underlying spaces. Such maps are surjective, universally injective and universal
 Conversely, these three properties suffice. Equivalently, a universal homeomorphism is an
 integral, universally injective, surjective morphism.
 
-This criterion applies to Frobenius without imposing finiteness or reducedness assumptions.
+This criterion applies to Frobenius without imposing finiteness or reducedness assumptions. It
+also shows that being a universal homeomorphism descends along surjections: if `f ≫ g` is a
+universal homeomorphism and `f` is surjective, so is `g`
+(`AlgebraicGeometry.IsUniversalHomeomorphism.of_comp_surjective`).
 
 For a ring map `B → R` with `Spec R → Spec B` a universal homeomorphism and any `B`-algebra `C`,
 contraction along `C → R ⊗[B] C` is a homeomorphism of prime spectra
@@ -223,6 +226,14 @@ instance isUniversalHomeomorphism_isStableUnderComposition :
 instance (f : X ⟶ Y) (g : Y ⟶ Z) [IsUniversalHomeomorphism f]
     [IsUniversalHomeomorphism g] : IsUniversalHomeomorphism (f ≫ g) :=
   MorphismProperty.comp_mem @IsUniversalHomeomorphism f g inferInstance inferInstance
+
+/-- **Being a universal homeomorphism descends along surjections**: if `f ≫ g` is a universal
+homeomorphism and `f` is surjective, then `g` is a universal homeomorphism, since universal
+closedness, universal injectivity and surjectivity each descend along `f`. -/
+theorem IsUniversalHomeomorphism.of_comp_surjective (f : X ⟶ Y) (g : Y ⟶ Z)
+    [IsUniversalHomeomorphism (f ≫ g)] [Surjective f] : IsUniversalHomeomorphism g :=
+  (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective g).mpr
+    ⟨.of_comp_surjective f g, .of_comp_surjective f g, .of_comp f g⟩
 
 /-- Every isomorphism of schemes is a universal homeomorphism. -/
 instance IsUniversalHomeomorphism.of_isIso (f : X ⟶ Y) [IsIso f] :
