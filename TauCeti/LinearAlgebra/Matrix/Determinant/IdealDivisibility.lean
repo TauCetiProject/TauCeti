@@ -139,4 +139,23 @@ theorem pow_card_dvd_det_submatrix (A : Matrix m n R) {r : R} (h : ∀ i j, r �
     (c : m → n) : r ^ Fintype.card m ∣ (A.submatrix id c).det :=
   pow_card_dvd_det _ fun i j ↦ h i (c j)
 
+/-- **Determinant of a linear combination of matrices in an ideal.** If every matrix assembled by
+choosing column `j` from `G (f j)` has determinant in an ideal `P`, then the determinant of any
+`R`-linear combination `∑ i, s i • G i` also lies in `P`. -/
+theorem det_sum_smul_mem_of_forall_det_mem {ι : Type*} [Fintype ι] {P : Ideal R} {s : ι → R}
+    {G : ι → Matrix m m R} (hcol : ∀ f : m → ι, (of fun i j ↦ G (f j) i j).det ∈ P) :
+    (∑ i : ι, s i • G i).det ∈ P := by
+  rw [← det_transpose]
+  have h_rows : (∑ i : ι, s i • G i)ᵀ = fun j : m ↦ ∑ i : ι, s i • (G i)ᵀ j :=
+    funext₂ fun j l ↦ by simp [Matrix.sum_apply, Finset.sum_apply]
+  rw [h_rows]
+  -- `Matrix.det` is definitionally `detRowAlternating` applied to the rows of the matrix.
+  change detRowAlternating (fun j : m ↦ ∑ i : ι, s i • (G i)ᵀ j) ∈ P
+  rw [← AlternatingMap.coe_multilinearMap, MultilinearMap.map_sum]
+  refine sum_mem fun f _ ↦ ?_
+  rw [MultilinearMap.map_smul_univ]
+  refine P.smul_mem _ ?_
+  have h_mem := hcol f
+  rwa [← det_transpose] at h_mem
+
 end Matrix

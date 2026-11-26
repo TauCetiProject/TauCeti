@@ -21,6 +21,8 @@ norm** `MonoidHom.twistedNorm τ p δ` is the ordered product
 
 * `MonoidHom.twistedNorm`: the `p`-th twisted norm of `δ` under `τ : M →* M`.
 * `MonoidHom.twistedNorm_zero` and `MonoidHom.twistedNorm_succ`: defining recurrence.
+* `MonoidHom.map_twistedNorm`: a monoid homomorphism intertwining `τ` and `τ'` carries
+  `twistedNorm τ` to `twistedNorm τ'`.
 * `MonoidHom.twistedNorm_eq_prod_iterate`: in a commutative monoid, `twistedNorm τ p δ` equals
   `∏ i ∈ Finset.range p, τ^[i] δ`.
 * `MonoidHom.twistedNorm_ringHom_eq_prod_pow`: for a ring endomorphism `σ : R →+* R` of a
@@ -33,7 +35,7 @@ open Finset
 
 namespace MonoidHom
 
-variable {M : Type*} [Monoid M]
+variable {M N : Type*} [Monoid M] [Monoid N]
 
 /-- The **twisted norm** `δ * τ δ * τ² δ * ... * τ^(p - 1) δ` of an element `δ` of a monoid `M`
 under an endomorphism `τ : M →* M`. -/
@@ -51,6 +53,15 @@ theorem twistedNorm_zero (τ : M →* M) (δ : M) : twistedNorm τ 0 δ = 1 :=
 theorem twistedNorm_succ (τ : M →* M) (p : ℕ) (δ : M) :
     twistedNorm τ (p + 1) δ = δ * τ (twistedNorm τ p δ) :=
   (rfl)
+
+/-- A monoid homomorphism `f : M →* N` intertwining `τ : M →* M` and `τ' : N →* N` carries
+`twistedNorm τ` to `twistedNorm τ'`. -/
+theorem map_twistedNorm (f : M →* N) {τ : M →* M} {τ' : N →* N}
+    (h : ∀ x : M, f (τ x) = τ' (f x)) (p : ℕ) (δ : M) :
+    f (twistedNorm τ p δ) = twistedNorm τ' p (f δ) := by
+  induction p with
+  | zero => simp
+  | succ p ih => rw [twistedNorm_succ, twistedNorm_succ, map_mul, h, ih]
 
 /-- In a commutative monoid, the twisted norm equals `∏ i ∈ range p, τ^[i] δ`. -/
 theorem twistedNorm_eq_prod_iterate {C : Type*} [CommMonoid C] (τ : C →* C) (p : ℕ) (δ : C) :
