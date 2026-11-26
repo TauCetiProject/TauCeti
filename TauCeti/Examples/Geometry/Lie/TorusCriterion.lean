@@ -36,8 +36,10 @@ on the groups `SU(2)`, `SU(2) × SU(2)` and `SO(3)`.
   `g ↦ (g, 1)` and `g ↦ (1, g)` of the Lie group `SU(2) × SU(2)` are detected by the Cartan
   three-form: each has injective differential, since the projection to its factor undoes it
   (`TauCeti.Lie.lieMap_fst_lieMap_inl`, `TauCeti.Lie.lieMap_snd_lieMap_inr`), and `𝔰𝔲(2)` is not
-  abelian (`TauCeti.SU2.not_isLieAbelian_leftInvariantDerivation`), so the Cartan three-form of a
-  positive-definite invariant form pulls back to a nonzero top form on `SU(2)`, and neither
+  abelian (`TauCeti.SU2.not_isLieAbelian_leftInvariantDerivation`). So each pulls the Cartan
+  three-form `ω` of an anisotropic invariant form, such as the Killing form, back to a nonzero
+  form `f^*ω` on `𝔰𝔲(2)` (`LinearMap.BilinMap.cartanThreeForm_compLinearMap_ne_zero`), whose
+  left-invariant extension is a volume form on `SU(2)` with nonzero integral, and neither
   homomorphism is null-homotopic
   (`ContMDiffMonoidMorphism.not_nullhomotopic_of_injective_lieMap`).
 * **`SO(3)`.** `SO(3)` is doubly covered by the simply connected group `Spin(3) ≅ S³`, so the
@@ -109,33 +111,63 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 open scoped ContDiff _root_.Manifold Matrix.Norms.Operator
 
-/-- **The root homomorphism `g ↦ (g, 1)` of `SU(2) × SU(2)` is detected by the Cartan
-three-form.** Its differential is injective and `𝔰𝔲(2)` is not abelian, so the Cartan three-form
-of a positive-definite invariant form pulls back to a nonzero form on `SU(2)`, and the
-homomorphism is not null-homotopic. -/
-example : ¬((ContMDiffMonoidMorphism.inl (I := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule))
-    (I' := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule)) (n := ∞) (G := GLSpecialUnitary (Fin 2) ℂ)
-    (G' := GLSpecialUnitary (Fin 2) ℂ) :
-      C(GLSpecialUnitary (Fin 2) ℂ, GLSpecialUnitary (Fin 2) ℂ × GLSpecialUnitary (Fin 2) ℂ)
-      ).Nullhomotopic) := by
-  -- The projection to the factor undoes the inclusion on Lie algebras, so its differential is
-  -- injective.
-  refine ContMDiffMonoidMorphism.not_nullhomotopic_of_injective_lieMap _ SU2.finrank_lieAlgebra
-    SU2.not_isLieAbelian_leftInvariantDerivation fun X Y h ↦ ?_
-  simpa using congrArg (lieMap ContMDiffMonoidMorphism.fst) h
+-- An anisotropic bilinear form `B` on the Lie algebra `𝔤` of `SU(2) × SU(2)` invariant under the
+-- adjoint action, such as its negative-definite Killing form or a positive-definite invariant
+-- inner product, whose Cartan three-form `ω` the root homomorphisms pull back.
+variable (B : LinearMap.BilinForm ℝ (LeftInvariantDerivation
+    (𝓘(ℝ, SU2.lieAlgebra.toSubmodule).prod 𝓘(ℝ, SU2.lieAlgebra.toSubmodule))
+    (GLSpecialUnitary (Fin 2) ℂ × GLSpecialUnitary (Fin 2) ℂ)))
+  (hB : ∀ x y z : LeftInvariantDerivation
+    (𝓘(ℝ, SU2.lieAlgebra.toSubmodule).prod 𝓘(ℝ, SU2.lieAlgebra.toSubmodule))
+    (GLSpecialUnitary (Fin 2) ℂ × GLSpecialUnitary (Fin 2) ℂ), B ⁅x, y⁆ z = -B y ⁅x, z⁆)
+  (hani : B.toQuadraticMap.Anisotropic)
 
-/-- **The root homomorphism `g ↦ (1, g)` of `SU(2) × SU(2)` is detected by the Cartan
-three-form**, for the same reason. -/
-example : ¬((ContMDiffMonoidMorphism.inr (I := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule))
-    (I' := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule)) (n := ∞) (G := GLSpecialUnitary (Fin 2) ℂ)
-    (G' := GLSpecialUnitary (Fin 2) ℂ) :
-      C(GLSpecialUnitary (Fin 2) ℂ, GLSpecialUnitary (Fin 2) ℂ × GLSpecialUnitary (Fin 2) ℂ)
-      ).Nullhomotopic) := by
+/-- **The root homomorphism `f : g ↦ (g, 1)` of `SU(2) × SU(2)` is detected by the Cartan
+three-form.** Its differential `df` is injective, since the projection to the first factor undoes
+it, and `𝔰𝔲(2)` is not abelian, so the Cartan three-form `ω` of an anisotropic invariant form
+pulls back along `df` to a nonzero form `f^*ω` on `𝔰𝔲(2)`. Its left-invariant extension to `SU(2)`
+is then a volume form with nonzero integral, so `f` is not null-homotopic. -/
+example : (B.cartanThreeForm hB).compLinearMap
+      (lieMap (ContMDiffMonoidMorphism.inl (I := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule))
+        (I' := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule)) (n := ∞) (G := GLSpecialUnitary (Fin 2) ℂ)
+        (G' := GLSpecialUnitary (Fin 2) ℂ))).toLinearMap ≠ 0 ∧
+    ¬((ContMDiffMonoidMorphism.inl (I := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule))
+      (I' := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule)) (n := ∞) (G := GLSpecialUnitary (Fin 2) ℂ)
+      (G' := GLSpecialUnitary (Fin 2) ℂ) :
+        C(GLSpecialUnitary (Fin 2) ℂ, GLSpecialUnitary (Fin 2) ℂ × GLSpecialUnitary (Fin 2) ℂ)
+        ).Nullhomotopic) := by
   -- The projection to the factor undoes the inclusion on Lie algebras, so its differential is
   -- injective.
-  refine ContMDiffMonoidMorphism.not_nullhomotopic_of_injective_lieMap _ SU2.finrank_lieAlgebra
-    SU2.not_isLieAbelian_leftInvariantDerivation fun X Y h ↦ ?_
-  simpa using congrArg (lieMap ContMDiffMonoidMorphism.snd) h
+  have hinj : Function.Injective (lieMap (ContMDiffMonoidMorphism.inl
+      (I := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule)) (I' := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule))
+      (n := ∞) (G := GLSpecialUnitary (Fin 2) ℂ) (G' := GLSpecialUnitary (Fin 2) ℂ))) :=
+    fun X Y h ↦ by simpa using congrArg (lieMap ContMDiffMonoidMorphism.fst) h
+  exact ⟨B.cartanThreeForm_compLinearMap_ne_zero hani hinj
+      SU2.not_isLieAbelian_leftInvariantDerivation,
+    ContMDiffMonoidMorphism.not_nullhomotopic_of_injective_lieMap _ SU2.finrank_lieAlgebra
+      SU2.not_isLieAbelian_leftInvariantDerivation hinj⟩
+
+/-- **The root homomorphism `f : g ↦ (1, g)` of `SU(2) × SU(2)` is detected by the Cartan
+three-form**, for the same reason: `f^*ω ≠ 0`, and `f` is not null-homotopic. -/
+example : (B.cartanThreeForm hB).compLinearMap
+      (lieMap (ContMDiffMonoidMorphism.inr (I := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule))
+        (I' := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule)) (n := ∞) (G := GLSpecialUnitary (Fin 2) ℂ)
+        (G' := GLSpecialUnitary (Fin 2) ℂ))).toLinearMap ≠ 0 ∧
+    ¬((ContMDiffMonoidMorphism.inr (I := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule))
+      (I' := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule)) (n := ∞) (G := GLSpecialUnitary (Fin 2) ℂ)
+      (G' := GLSpecialUnitary (Fin 2) ℂ) :
+        C(GLSpecialUnitary (Fin 2) ℂ, GLSpecialUnitary (Fin 2) ℂ × GLSpecialUnitary (Fin 2) ℂ)
+        ).Nullhomotopic) := by
+  -- The projection to the factor undoes the inclusion on Lie algebras, so its differential is
+  -- injective.
+  have hinj : Function.Injective (lieMap (ContMDiffMonoidMorphism.inr
+      (I := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule)) (I' := 𝓘(ℝ, SU2.lieAlgebra.toSubmodule))
+      (n := ∞) (G := GLSpecialUnitary (Fin 2) ℂ) (G' := GLSpecialUnitary (Fin 2) ℂ))) :=
+    fun X Y h ↦ by simpa using congrArg (lieMap ContMDiffMonoidMorphism.snd) h
+  exact ⟨B.cartanThreeForm_compLinearMap_ne_zero hani hinj
+      SU2.not_isLieAbelian_leftInvariantDerivation,
+    ContMDiffMonoidMorphism.not_nullhomotopic_of_injective_lieMap _ SU2.finrank_lieAlgebra
+      SU2.not_isLieAbelian_leftInvariantDerivation hinj⟩
 
 end RootHomomorphisms
 
