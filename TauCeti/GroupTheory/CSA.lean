@@ -14,7 +14,10 @@ public import TauCeti.GroupTheory.TrivialIntersection
 
 A group is CSA if its maximal abelian subgroups are malnormal. The centralizer of a nonidentity
 element in such a group is its unique maximal abelian subgroup containing that element. In
-particular, commutation is transitive through a nonidentity element. In a torsion-free
+particular, commutation is transitive through a nonidentity element: the centralizer of a
+nonidentity element is abelian, every subset of it containing a nonidentity element has the same
+centralizer, and every entry of a list of nonidentity elements in which
+consecutive entries commute commutes with the product of the list. In a torsion-free
 commutative-transitive group roots are unique, no nonidentity element is conjugate to its
 inverse, and in the nonabelian case every nonidentity conjugacy class is infinite. In a
 torsion-free CSA group, conjugates of nontrivial powers of `u ≠ 1` by elements of different
@@ -145,6 +148,38 @@ theorem isCommTransitive_iff_centralizer_isMulCommutative :
       Subgroup.mem_centralizer_singleton_iff.mpr hyz.eq.symm
     exact (commute_iff_eq _ _).mpr
       ((isMulCommutative_iff_of_setLike.mp (h y hy)) x hx z hz)
+
+/-- In a commutative-transitive group, elements of the centralizer of `d ≠ 1` commute with each
+other. -/
+theorem IsCommTransitive.commute_of_mem_centralizer_singleton (hG : IsCommTransitive G)
+    {d g h : G} (hd : d ≠ 1) (hg : g ∈ Subgroup.centralizer {d})
+    (hh : h ∈ Subgroup.centralizer {d}) : Commute g h :=
+  have := isCommTransitive_iff_centralizer_isMulCommutative.1 hG d hd
+  setLike_mul_comm hg hh
+
+/-- In a commutative-transitive group, a subset of the centralizer of `d ≠ 1` that contains a
+nonidentity element has the same centralizer as `d`. -/
+theorem IsCommTransitive.centralizer_eq_centralizer_singleton (hG : IsCommTransitive G)
+    {d g : G} {S : Set G} (hd : d ≠ 1) (hS : S ⊆ Subgroup.centralizer {d}) (hgS : g ∈ S)
+    (hg : g ≠ 1) : Subgroup.centralizer S = Subgroup.centralizer {d} := by
+  refine le_antisymm (fun h hh ↦ Subgroup.mem_centralizer_singleton_iff.2 ?_) fun h hh ↦
+    Subgroup.mem_centralizer_iff.2 fun s hs ↦ (hG.commute_of_mem_centralizer_singleton hd (hS hs)
+      hh).eq
+  exact (isCommTransitive_iff G).1 hG _ _ _ hg (Subgroup.mem_centralizer_iff.1 hh g hgS).symm
+    (Subgroup.mem_centralizer_singleton_iff.1 (hS hgS))
+
+/-- In a commutative-transitive group, every entry of a `Commute`-chain of nonidentity elements
+commutes with the product of the chain. -/
+theorem IsCommTransitive.commute_list_prod_of_isChain (hG : IsCommTransitive G) {l : List G}
+    (hl : l.IsChain Commute) (h1 : ∀ g ∈ l, g ≠ 1) {g : G} (hg : g ∈ l) : Commute g l.prod := by
+  -- Commutation between nonidentity elements is transitive.
+  let R : G → G → Prop := fun a b ↦ Commute a b ∧ a ≠ 1 ∧ b ≠ 1
+  have : Trans R R R :=
+    ⟨fun hab hbc ↦ ⟨(isCommTransitive_iff G).1 hG _ _ _ hab.2.2 hab.1 hbc.1, hab.2.1, hbc.2.2⟩⟩
+  have : Std.Symm (Commute : G → G → Prop) := ⟨fun _ _ h ↦ h.symm⟩
+  have hR : l.IsChain R := hl.imp_of_mem_imp fun a b ha hb h ↦ ⟨h, h1 a ha, h1 b hb⟩
+  exact Commute.list_prod_right _ _ fun g' hg' ↦
+    (hR.pairwise.imp And.left).forall_of_forall (fun g _ ↦ Commute.refl g) hg hg'
 
 /-- CSA groups have transitive commutation through every nonidentity element. -/
 theorem IsCSA.isCommTransitive (hG : IsCSA G) : IsCommTransitive G :=
