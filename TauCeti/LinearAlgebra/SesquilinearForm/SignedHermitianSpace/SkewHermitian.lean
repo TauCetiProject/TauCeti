@@ -27,11 +27,14 @@ be a `K`-module with compatible `F`-module structure, and let `t : K → F` be `
 of a quadratic étale algebra). For a signed hermitian form `h` on `V`, `t ∘ h` is an `F`-bilinear
 form on `V` (`TauCeti.SignedHermitianSpace.traceForm`), preserved by the unitary group of `h`. If
 `t` vanishes on the elements negated by `σ` and `h` is skew-hermitian, `t ∘ h` is alternating, not
-merely skew-symmetric; if moreover the pairing `(a, b) ↦ t (a b)` on `K` is nondegenerate, so is
-`t ∘ h`. Thus the unitary group of a skew-hermitian space lies in the symplectic group of its trace
-form. For the trace of a finite Galois extension of fields and an automorphism `τ ≠ 1`, both
-conditions hold (`TauCeti.SignedHermitianSpace.isAlt_traceForm_trace`,
-`TauCeti.SignedHermitianSpace.nondegenerate_traceForm_trace`).
+merely skew-symmetric. If `t` is invariant under `σ` and the pairing `(a, b) ↦ t (a b)` on `K` is
+nondegenerate, `t ∘ h` is nondegenerate, for either sign. Thus the unitary group of a
+skew-hermitian space lies in the symplectic group of its trace form. For a Galois extension of
+fields `K/F` and `τ ≠ 1`, the trace form of a skew-hermitian form for `τ` is alternating, because
+a nonzero such space forces `τ` to have order two
+(`TauCeti.SignedHermitianSpace.isAlt_traceForm_trace`). For a finite separable `K/F` it is
+nondegenerate for any `τ` and either sign
+(`TauCeti.SignedHermitianSpace.nondegenerate_traceForm_trace`).
 
 ## Main definitions
 
@@ -51,8 +54,8 @@ conditions hold (`TauCeti.SignedHermitianSpace.isAlt_traceForm_trace`,
   orthogonal sums and the unitary group.
 * `TauCeti.SignedHermitianSpace.isAlt_traceForm`: the trace form of a skew-hermitian form is
   alternating, in every characteristic.
-* `TauCeti.SignedHermitianSpace.nondegenerate_traceForm`: it is nondegenerate when the trace pairing
-  of `K` is.
+* `TauCeti.SignedHermitianSpace.nondegenerate_traceForm`: the trace form of a signed hermitian
+  form is nondegenerate when `t` is `σ`-invariant and the trace pairing of `K` is nondegenerate.
 * `TauCeti.SignedHermitianSpace.restrictScalars_mem_isometryGroup_traceForm`: the unitary group
   preserves the trace form.
 * `TauCeti.SignedHermitianSpace.isAlt_traceForm_trace`,
@@ -240,12 +243,11 @@ theorem separatingLeft_traceForm (hnd : ∀ b, (∀ a, t (a * b) = 0) → b = 0)
     (H.traceForm t hσ).SeparatingLeft := fun x hx ↦
   H.separatingLeft x fun y ↦ hnd _ fun a ↦ by simpa using hx (a • y)
 
-/-- The trace form of a skew-hermitian form is **nondegenerate** when `t` vanishes on the elements
-negated by `σ` and the pairing `(a, b) ↦ t (a b)` on `K` is nondegenerate. -/
-theorem nondegenerate_traceForm (H : SignedHermitianSpace K V σ (-1))
-    (ht : ∀ b, σ b = -b → t b = 0) (hnd : ∀ b, (∀ a, t (a * b) = 0) → b = 0) :
-    (H.traceForm t hσ).Nondegenerate :=
-  (H.isAlt_traceForm t hσ ht).isRefl.nondegenerate_iff_separatingLeft.2
+/-- The trace form of a signed hermitian form, of either sign, is **nondegenerate** when `t` is
+invariant under `σ` and the pairing `(a, b) ↦ t (a b)` on `K` is nondegenerate. -/
+theorem nondegenerate_traceForm (ht : ∀ b, t (σ b) = t b)
+    (hnd : ∀ b, (∀ a, t (a * b) = 0) → b = 0) : (H.traceForm t hσ).Nondegenerate :=
+  (H.isRefl_traceForm t hσ ht).nondegenerate_iff_separatingLeft.2
     (H.separatingLeft_traceForm t hσ hnd)
 
 /-- The unitary group of `h` preserves its trace form: for a skew-hermitian `h` it lies in the
@@ -282,9 +284,8 @@ trace is invariant under `τ`, and separating since the trace pairing of `K/F` i
 theorem nondegenerate_traceForm_trace [FiniteDimensional F K] [Algebra.IsSeparable F K]
     {τ : Gal(K/F)} (H : SignedHermitianSpace K V (τ : K →+* K) ε) :
     (H.traceForm (Algebra.trace F K) fun a ↦ τ.commutes a).Nondegenerate :=
-  (H.isRefl_traceForm _ _ (Algebra.trace_eq_of_algEquiv τ)).nondegenerate_iff_separatingLeft.2 <|
-    H.separatingLeft_traceForm _ _ fun b hb ↦
-      (traceForm_nondegenerate F K).2 b fun a ↦ by simpa using hb a
+  H.nondegenerate_traceForm _ _ (Algebra.trace_eq_of_algEquiv τ) fun b hb ↦
+    (traceForm_nondegenerate F K).2 b fun a ↦ by simpa using hb a
 
 end GaloisTrace
 
