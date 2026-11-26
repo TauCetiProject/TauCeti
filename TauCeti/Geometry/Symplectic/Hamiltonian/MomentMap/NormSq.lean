@@ -109,8 +109,9 @@ theorem momentNormSq_apply (μ : M → Module.Dual ℝ 𝔤) (K : Module.Dual �
 /-- Expanding `μ x` in the dual basis of a finite basis `b` of `𝔤` writes the norm square as
 `Σ i, ⟨μ x, b i⟩ ⟨μ x, K (b.coord i)⟩`, a sum of products of components of `μ`. -/
 private theorem momentNormSq_eq_sum {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ 𝔤)
-    (μ : M → Module.Dual ℝ 𝔤) (K : Module.Dual ℝ 𝔤 →ₗ[ℝ] 𝔤) (x : M) :
-    momentNormSq μ K x = ∑ i, μ x (b i) * μ x (K (b.coord i)) := by
+    (μ : M → Module.Dual ℝ 𝔤) (K : Module.Dual ℝ 𝔤 →ₗ[ℝ] 𝔤) :
+    momentNormSq μ K = fun x ↦ ∑ i, μ x (b i) * μ x (K (b.coord i)) := by
+  ext x
   have hK : K (μ x) = ∑ i, μ x (b i) • K (b.coord i) := by
     conv_lhs => rw [← b.sum_dual_apply_smul_coord (μ x)]
     simp only [map_sum, map_smul]
@@ -142,8 +143,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 theorem contMDiff_momentNormSq (h : σ.IsMomentMap a μ) :
     ContMDiff I 𝓘(ℝ) ∞ (momentNormSq μ K) := by
   let b := Module.finBasis ℝ 𝔤
-  rw [show momentNormSq μ K = fun x ↦ ∑ i, μ x (b i) * μ x (K (b.coord i)) from
-    funext (momentNormSq_eq_sum b μ K)]
+  rw [momentNormSq_eq_sum b μ K]
   exact contMDiff_finsetSum fun i _ ↦ (h.contMDiff (b i)).mul (h.contMDiff (K (b.coord i)))
 
 /-- **The differential of the norm square of a moment map.** For a symmetric `K`, the
@@ -155,9 +155,7 @@ theorem mvfderiv_momentNormSq (h : σ.IsMomentMap a μ)
   let b := Module.finBasis ℝ 𝔤
   ext v
   -- Expand `‖μ‖²` as `Σ i, μ^{b i} μ^{K (b.coord i)}` and differentiate each product.
-  rw [show momentNormSq μ K = fun y ↦ ∑ i, μ y (b i) * μ y (K (b.coord i)) from
-      funext (momentNormSq_eq_sum b μ K),
-    mvfderiv_fun_sum (f := fun i y ↦ μ y (b i) * μ y (K (b.coord i)))
+  rw [momentNormSq_eq_sum b μ K, mvfderiv_fun_sum (f := fun i y ↦ μ y (b i) * μ y (K (b.coord i)))
       fun i _ ↦ (h.mdifferentiableAt _ x).mul (h.mdifferentiableAt _ x)]
   simp only [FunLike.coe_sum, Finset.sum_apply,
     mvfderiv_fun_mul (h.mdifferentiableAt _ x) (h.mdifferentiableAt _ x),
@@ -280,8 +278,8 @@ coadjoint-equivariant moment map. -/
 theorem momentNormSq_smul (hμ : ∀ (g : G) x, μ (g • x) = ρ.dual g (μ x))
     (hK : ∀ g ν, K (ρ.dual g ν) = ρ g (K ν)) (g : G) (x : M) :
     momentNormSq μ K (g • x) = momentNormSq μ K x := by
-  rw [momentNormSq_apply, momentNormSq_apply, hμ, hK, Representation.dual_apply,
-    Module.Dual.transpose_apply, LinearMap.comp_apply, Representation.inv_self_apply]
+  simp only [momentNormSq_apply, hμ, hK]
+  simp [Module.Dual.transpose_apply]
 
 end Invariance
 
