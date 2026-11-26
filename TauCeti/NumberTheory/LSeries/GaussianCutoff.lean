@@ -65,12 +65,18 @@ theorem gaussianShift_mem_Icc {X : ℝ} {z : ℂ} (hz : ‖(X : ℂ) * z‖ ≤ 
 theorem re_gaussian_eq {X : ℝ} {z : ℂ} (hz : ‖(X : ℂ) * z‖ = 1) (U : ℝ) :
     (2 - U * z - (X : ℂ) / 4 * (1 + X * z) ^ 2).re =
       2 - (U + gaussianShift X z) * z.re := by
-  have him := ((X : ℂ) * z).sq_norm_sub_sq_re
-  rw [hz] at him
-  simp [mul_re, mul_im] at him
-  rw [← Complex.ofReal_ofNat 4, ← Complex.ofReal_div]
-  norm_num [gaussianShift_def, sub_re, mul_re, mul_im, add_re, add_im, pow_two]
-  linear_combination -X / 4 * him
+  -- `‖X * z‖ = 1` says `X² (z.re² + z.im²) = 1`.
+  have hnorm : X ^ 2 * (z.re ^ 2 + z.im ^ 2) = 1 := by
+    have h := Complex.normSq_eq_norm_sq ((X : ℂ) * z)
+    rw [hz, Complex.normSq_mul, Complex.normSq_ofReal, Complex.normSq_apply] at h
+    linear_combination h
+  -- Write the coefficient `X / 4` as a real number, so that the real part splits termwise.
+  have h4 : (X : ℂ) / 4 * (1 + X * z) ^ 2 = ((X / 4 : ℝ) : ℂ) * ((1 + X * z) * (1 + X * z)) := by
+    push_cast
+    ring
+  rw [h4, sub_re, sub_re, re_ofReal_mul, re_ofReal_mul, mul_re, add_re, add_im, one_re, one_im,
+    re_ofReal_mul, im_ofReal_mul, re_ofNat, gaussianShift_def]
+  linear_combination X / 4 * hnorm
 
 /-- A restricted Dirichlet series has a Gaussian majorant if its log indices are below
 the shifted cutoff when moving left from `1 + 1 / U`, or above that cutoff when moving right.
