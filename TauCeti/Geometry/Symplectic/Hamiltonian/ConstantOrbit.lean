@@ -64,6 +64,8 @@ symplectic manifold at a critical point; the manifold statement is not proved he
   derivative of the evolution of `εF` from `s` to `t` is `exp ((t - s) ε dX_F(p))`.
 * `SymplecticForm.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt`: a nondegenerate constant
   orbit sits at a nondegenerate critical point, for every `ε`.
+* `SymplecticForm.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt'`: the same for the
+  autonomous Hamiltonian `F` itself, written `fun _ ↦ F`.
 * `SymplecticForm.isNondegenerateFixedPt_timeDependentHamiltonianFlow_const_mul_iff`: for
   `ε (t - s) ≠ 0` and `|ε (t - s)| ‖dX_F(p)‖ < log 2`, the constant orbit is nondegenerate exactly
   at a nondegenerate critical point.
@@ -156,6 +158,23 @@ theorem isNondegenerateCriticalPoint_of_isNondegenerateFixedPt (hF : ContDiff �
   refine (ω.isNondegenerateFixedPt_timeDependentHamiltonianFlow_const_mul_iff_exp hF hp ε hX s t).1
     h u ?_
   exact ContinuousLinearMap.exp_apply_of_apply_eq_zero (by rw [_root_.smul_apply, hA, smul_zero])
+
+/-- A nondegenerate constant orbit of the autonomous Hamiltonian `F` itself sits at a
+nondegenerate critical point: the case `ε = 1` of
+`SymplecticForm.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt`, for the Hamiltonian
+written `fun _ ↦ F` rather than `fun _ y ↦ 1 * F y`. -/
+theorem isNondegenerateCriticalPoint_of_isNondegenerateFixedPt' (hF : ContDiff ℝ 2 F)
+    (hp : fderiv ℝ F p = 0) {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension fun _ ↦ F)) {s t : ℝ}
+    (h : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow (fun _ ↦ F) hX s t) p) :
+    IsNondegenerateCriticalPoint F p := by
+  have e : (fun (_ : ℝ) (y : V) ↦ (1 : ℝ) * F y) = fun _ ↦ F := by
+    funext _ y
+    exact one_mul _
+  -- `hX` and `h` mention the Hamiltonian, so they are reverted before rewriting it.
+  revert hX
+  rw [← e]
+  exact fun hX h ↦ ω.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt hF hp hX h
 
 /-- **Constant orbits of small Hamiltonians.** Let `p` be a critical point of a `C²` function `F`,
 and let `ε (t - s) ≠ 0` with `|ε (t - s)| ‖dX_F(p)‖ < log 2`. Then the constant orbit at `p` is a

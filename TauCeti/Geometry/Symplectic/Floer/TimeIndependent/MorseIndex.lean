@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.SpecialFunctions.SmoothSegmentPath
 import TauCeti.Analysis.Calculus.Morse.SpectralSplitting
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Index
@@ -42,8 +42,8 @@ linearized flows
 `μ(p₊) - μ(p₋)`.
 
 The proof compares `D_u` with the operator along the time-independent cylinder
-`(s, t) ↦ γ(s)` over the path `γ(s) = p₋ + β(s) (p₊ - p₋)`, where `β` is a smooth transition from
-`0` to `1`.
+`(s, t) ↦ γ(s)` over the path `γ(s) = p₋ + β(s) (p₊ - p₋)` (`TauCeti.smoothSegmentPath`), where
+`β` is a smooth transition from `0` to `1`.
 
 * The index does not depend on the almost complex structures and the Hamiltonian terms away from
   the ends (`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical_data`), nor on the
@@ -62,7 +62,7 @@ The proof compares `D_u` with the operator along the time-independent cylinder
   critical point
   (`TauCeti.IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex`).
   A nondegenerate constant orbit sits at a nondegenerate critical point
-  (`TauCeti.SymplecticForm.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt`).
+  (`TauCeti.SymplecticForm.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt'`).
 
 So the index of a Floer cylinder between the constant orbits of a small Hamiltonian is the
 expected dimension of the space of gradient lines of `H` from `p₋` to `p₊`: a time-independent
@@ -87,31 +87,7 @@ namespace TauCeti.SymplecticForm
 
 section Path
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (x y : E)
-
-/-- The smooth path from `x` to `y` along the segment, equal to `x` for `s ≤ 0` and to `y` for
-`s ≥ 1`. -/
-private noncomputable def transitionPath (s : ℝ) : E :=
-  x + Real.smoothTransition s • (y - x)
-
-private theorem contDiff_transitionPath : ContDiff ℝ 1 (transitionPath x y) :=
-  contDiff_const.add (Real.smoothTransition.contDiff.smul contDiff_const)
-
-private theorem transitionPath_mem_segment (s : ℝ) : transitionPath x y s ∈ segment ℝ x y := by
-  rw [segment_eq_image']
-  exact ⟨_, ⟨Real.smoothTransition.nonneg s, Real.smoothTransition.le_one s⟩, rfl⟩
-
-private theorem transitionPath_of_nonpos {s : ℝ} (hs : s ≤ 0) : transitionPath x y s = x := by
-  simp [transitionPath, Real.smoothTransition.zero_of_nonpos hs]
-
-private theorem transitionPath_of_one_le {s : ℝ} (hs : 1 ≤ s) : transitionPath x y s = y := by
-  simp [transitionPath, Real.smoothTransition.one_of_one_le hs]
-
-private theorem eventuallyEq_transitionPath_atBot : transitionPath x y =ᶠ[atBot] fun _ ↦ x :=
-  eventually_le_atBot 0 |>.mono fun _ hs ↦ transitionPath_of_nonpos x y hs
-
-private theorem eventuallyEq_transitionPath_atTop : transitionPath x y =ᶠ[atTop] fun _ ↦ y :=
-  eventually_ge_atTop 1 |>.mono fun _ hs ↦ transitionPath_of_one_le x y hs
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The loops of the cylinder `(s, t) ↦ γ(s)` over a path `γ` which is eventually constant along a
 filter converge uniformly to the constant loop, and their slice defects for a vector field `X`
@@ -137,23 +113,6 @@ section Unitary
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
   {ω : SymplecticForm F} {H : F → ℝ}
 
-/-- A nondegenerate fixed point of the time-one map of an autonomous Hamiltonian `H` at a
-critical point is a nondegenerate critical point of `H`: the case `ε = 1` of
-`TauCeti.SymplecticForm.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt`, for the
-Hamiltonian written `fun _ ↦ H` rather than `fun _ y ↦ 1 * H y`. -/
-private theorem isNondegenerateCriticalPoint_of_isNondegenerateFixedPt_timeOne
-    (hH : ContDiff ℝ 2 H) {p : F} (hp : fderiv ℝ H p = 0) {K : ℝ≥0}
-    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension fun _ ↦ H))
-    (h : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow (fun _ ↦ H) hX 0 1) p) :
-    IsNondegenerateCriticalPoint H p := by
-  have e : (fun (_ : ℝ) (y : F) ↦ (1 : ℝ) * H y) = fun _ ↦ H := by
-    funext _ y
-    exact one_mul _
-  -- `hX` and `h` mention the Hamiltonian, so they are reverted before rewriting it.
-  revert hX
-  rw [← e]
-  exact fun hX h ↦ ω.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt hH hp hX h
-
 /-- At a nondegenerate critical point `p` of `H`, the sum of the eigenspaces of `-i dX_H(p)` at
 negative eigenvalues has dimension `dim F - ind_p(H)`: for the metric `Re ⟪·, ·⟫`, `i dX_H(p)` is
 the Hessian of `H`. -/
@@ -177,13 +136,14 @@ private theorem finrank_pointSpectralSubspace_add_morseIndex
 /-- Along the time-independent cylinder `(s, t) ↦ γ(s)` over the path `γ` from `p₋` to `p₊` along
 the segment, the operator of the data `(i, 0, H)` has index `ind_{p₊}(H) - ind_{p₋}(H)`, if
 `‖dX_H‖ ≤ a < 2π` on the segment. -/
-private theorem index_floerSobolevOperator_transitionPath (hω : ∀ v w, ω v w = (inner ℂ v w).im)
-    (hH : ContDiff ℝ 2 H) {a : ℝ} (ha : a < 2 * Real.pi) {pm pp : F}
+private theorem index_floerSobolevOperator_smoothSegmentPath
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 H) {a : ℝ} (ha : a < 2 * Real.pi)
+    {pm pp : F}
     (haH : ∀ y ∈ segment ℝ pm pp, ‖fderiv ℝ (ω.hamiltonianVectorField H) y‖ ≤ a)
     (hpm : IsNondegenerateCriticalPoint H pm) (hpp : IsNondegenerateCriticalPoint H pp) :
     (ω.floerSobolevOperator
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ transitionPath pm pp z.1)).index =
+        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ smoothSegmentPath pm pp z.1)).index =
       (morseIndex H pp : ℤ) - morseIndex H pm := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   have hg := ω.apply_ofComplexModule_eq_inner hω
@@ -194,10 +154,10 @@ private theorem index_floerSobolevOperator_transitionPath (hω : ∀ v w, ω v w
       rw [← apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg,
         ← apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg, hvw])
   rw [index_floerSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank hω hH
-    (contDiff_transitionPath pm pp).continuous ha
-    (fun s ↦ haH _ (transitionPath_mem_segment pm pp s))
-    (tendsto_const_nhds.congr' (eventuallyEq_transitionPath_atBot pm pp).symm)
-    (tendsto_const_nhds.congr' (eventuallyEq_transitionPath_atTop pm pp).symm)
+    (contDiff_smoothSegmentPath (n := 0) pm pp).continuous ha
+    (fun s ↦ haH _ (smoothSegmentPath_mem_segment pm pp s))
+    (tendsto_const_nhds.congr' (eventuallyEq_smoothSegmentPath_atBot pm pp).symm)
+    (tendsto_const_nhds.congr' (eventuallyEq_smoothSegmentPath_atTop pm pp).symm)
     (hinj pm hpm) (hinj pp hpp)]
   have hm := finrank_pointSpectralSubspace_add_morseIndex hω hpm
   have hp := finrank_pointSpectralSubspace_add_morseIndex hω hpp
@@ -262,19 +222,19 @@ theorem index_floerSobolevOperator_eq_morseIndex_sub_morseIndex
     contDiff_const (hHu₂.comp (contDiff_fst.snd.prodMk contDiff_snd)) hJ hKs hKt hJc₀ hJc hu hX
     (hx pm hpm) hndm hum hδm hX (hx pp hpp) hndp hup hδp h₀
   -- The comparison cylinder over the path `γ` from `pm` to `pp` along the segment.
-  have hγ := contDiff_transitionPath pm pp
+  have hγ := contDiff_smoothSegmentPath (n := 1) pm pp
   have hγm := tendstoUniformlyOn_comp_fst_and_sliceDefect hγ
-    (eventuallyEq_transitionPath_atBot pm pp) (fun _ ↦ hXz pm hpm)
+    (eventuallyEq_smoothSegmentPath_atBot pm pp) (fun _ ↦ hXz pm hpm)
   have hγp := tendstoUniformlyOn_comp_fst_and_sliceDefect hγ
-    (eventuallyEq_transitionPath_atTop pm pp) (fun _ ↦ hXz pp hpp)
-  have hγu : ContDiff ℝ 1 fun z : ℝ × ℝ ↦ transitionPath pm pp z.1 := hγ.comp contDiff_fst
+    (eventuallyEq_smoothSegmentPath_atTop pm pp) (fun _ ↦ hXz pp hpp)
+  have hγu : ContDiff ℝ 1 fun z : ℝ × ℝ ↦ smoothSegmentPath pm pp z.1 := hγ.comp contDiff_fst
   have hmap := index_floerSobolevOperator_eq_of_cylindrical ω (hcyl₀ u) contDiff_const
     contDiff_const (hHu₂.comp (contDiff_fst.snd.prodMk contDiff_snd)) hJc₀ hu hγu hX (hx pm hpm)
     hndm hum hδm hγm.1 hγm.2 hX (hx pp hpp) hndp hup hδp hγp.1 hγp.2 h₀
   rw [hdata, ← hmap]
-  exact index_floerSobolevOperator_transitionPath hω hH₂ ha haH
-    (isNondegenerateCriticalPoint_of_isNondegenerateFixedPt_timeOne hH₂ hpm hX hndm)
-    (isNondegenerateCriticalPoint_of_isNondegenerateFixedPt_timeOne hH₂ hpp hX hndp)
+  exact index_floerSobolevOperator_smoothSegmentPath hω hH₂ ha haH
+    (ω.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt' hH₂ hpm hX hndm)
+    (ω.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt' hH₂ hpp hX hndp)
 
 end Unitary
 
