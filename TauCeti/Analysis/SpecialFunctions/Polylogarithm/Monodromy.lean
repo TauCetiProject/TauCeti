@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Monad
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FundamentalGroup
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Tower
 import Mathlib.Algebra.Group.Action.End
@@ -38,11 +37,12 @@ counterclockwise continuation shifts are assigned to `periph0⁻¹` and `periph1
   equivariance at `1 / 2` normalized by `F (1 / 2) 0 = Complex.log (1 / 2)`.
 * `TauCeti.Polylog.continuesInside_polylogTower`, `TauCeti.Polylog.polylogBranch`,
   `TauCeti.Polylog.eq_polylogBranch_of_isAnalyticContinuationAlong`,
-  `TauCeti.Polylog.polylogBranch_trans`, `TauCeti.Polylog.eqOn_polylogBranch_comp_polylogTower`,
+  `TauCeti.Polylog.isPolylogTowerGerm_polylogBranch_comp`, `TauCeti.Polylog.polylogBranch_trans`,
+  `TauCeti.Polylog.eqOn_polylogBranch_comp_polylogTower`,
   `TauCeti.Polylog.polylogBranch_eq_polylog_of_one_sub_mem_slitPlane`,
   `TauCeti.Polylog.polylogBranch_smul`, `TauCeti.Polylog.exists_polylogBranch_monodromy`: all-height
-  continuation, universal-cover branch, uniqueness, concatenation, principal-section agreement,
-  principal-domain comparison, and polynomial `π₁`-equivariance of `polylogTower N`.
+  continuation, universal-cover branch, uniqueness, tower ODEs, concatenation, principal-section
+  agreement, principal-domain comparison, and polynomial `π₁`-equivariance of `polylogTower N`.
 
 ## References
 
@@ -73,6 +73,18 @@ private noncomputable def shiftPolylogEquiv (N : ℕ) (c : ℂ) : Equiv.Perm (Fi
   left_inv v := by ext i; by_cases hi : (i : ℕ) = 0 <;> simp [shiftPolylog, hi]; ring
   right_inv v := by ext i; by_cases hi : (i : ℕ) = 0 <;> simp [shiftPolylog, hi]; ring
 
+@[simp] private theorem coe_shiftLogEquiv (N : ℕ) (c : ℂ) :
+    ⇑(shiftLogEquiv N c) = shiftLog N c := rfl
+
+@[simp] private theorem coe_shiftLogEquiv_symm (N : ℕ) (c : ℂ) :
+    ⇑(shiftLogEquiv N c).symm = shiftLog N (-c) := rfl
+
+@[simp] private theorem coe_shiftPolylogEquiv (N : ℕ) (c : ℂ) :
+    ⇑(shiftPolylogEquiv N c) = shiftPolylog N c := rfl
+
+@[simp] private theorem coe_shiftPolylogEquiv_symm (N : ℕ) (c : ℂ) :
+    ⇑(shiftPolylogEquiv N c).symm = shiftPolylog N (-c) := rfl
+
 /-- **Peripheral monodromy of the polylogarithm tower.** Since `periph0`, `periph1` are the classes
 of `γ0`, `γ1` while `UniversalCover.smul_mk` prepends inverse loops, `(periph0⁻¹ • ·)` adds `2πi`
 to entry `0` and `(periph1⁻¹ • ·)` subtracts `2πi · w₀^(i-1) / (i-1)!` from entries `i ≥ 1`. -/
@@ -83,19 +95,19 @@ noncomputable def polylogMonodromy (N : ℕ) :
 
 private theorem polylogMonodromy_periph0_eq (N : ℕ) :
     ⇑(polylogMonodromy N periph0) = shiftLog N (-(2 * Real.pi * Complex.I)) := by
-  simp [polylogMonodromy, ← peripheralBasis_zero]; rfl
+  simp [polylogMonodromy, ← peripheralBasis_zero]
 
 private theorem polylogMonodromy_periph0_inv_eq (N : ℕ) :
     ⇑(polylogMonodromy N periph0⁻¹) = shiftLog N (2 * Real.pi * Complex.I) := by
-  simp [polylogMonodromy, ← peripheralBasis_zero, Equiv.Perm.inv_def, shiftLogEquiv]
+  simp [polylogMonodromy, ← peripheralBasis_zero, Equiv.Perm.inv_def]
 
 private theorem polylogMonodromy_periph1_eq (N : ℕ) :
     ⇑(polylogMonodromy N periph1) = shiftPolylog N (2 * Real.pi * Complex.I) := by
-  simp [polylogMonodromy, ← peripheralBasis_one]; rfl
+  simp [polylogMonodromy, ← peripheralBasis_one]
 
 private theorem polylogMonodromy_periph1_inv_eq (N : ℕ) :
     ⇑(polylogMonodromy N periph1⁻¹) = shiftPolylog N (-(2 * Real.pi * Complex.I)) := by
-  simp [polylogMonodromy, ← peripheralBasis_one, Equiv.Perm.inv_def]; rfl
+  simp [polylogMonodromy, ← peripheralBasis_one, Equiv.Perm.inv_def]
 
 /-- Action of `periph0⁻¹` (the deck element prepending `γ0` around `0`) under `polylogMonodromy`. -/
 theorem polylogMonodromy_periph0_inv (N : ℕ) (w : Fin (N + 1) → ℂ) (i : Fin (N + 1)) :
@@ -129,7 +141,7 @@ theorem polylogMonodromy_periph1_inv (N : ℕ) (w : Fin (N + 1) → ℂ) (i : Fi
 @[simp] theorem polylogMonodromy_periph1 (N : ℕ) (w : Fin (N + 1) → ℂ) (i : Fin (N + 1)) :
     polylogMonodromy N periph1 w i = w i + if (i : ℕ) = 0 then 0 else
       2 * Real.pi * Complex.I * w 0 ^ ((i : ℕ) - 1) / (((i : ℕ) - 1).factorial : ℂ) := by
-  rw [polylogMonodromy_periph1_eq]; rfl
+  rw [polylogMonodromy_periph1_eq]; simp [shiftPolylog]
 
 private theorem exists_mvPolynomial_shiftLog (N : ℕ) (c : ℂ) (i : Fin (N + 1)) :
     ∃ P : MvPolynomial (Fin (N + 1)) ℂ, ∀ w, shiftLog N c w i = MvPolynomial.eval w P :=
@@ -141,7 +153,8 @@ private theorem exists_mvPolynomial_shiftPolylog (N : ℕ) (c : ℂ) (i : Fin (N
       MvPolynomial.C (c / (((i : ℕ) - 1).factorial : ℂ)) * MvPolynomial.X 0 ^ ((i : ℕ) - 1),
     fun _ => by by_cases hi : (i : ℕ) = 0 <;> simp [shiftPolylog, hi, div_mul_eq_mul_div]⟩
 
-/-- **Polynomiality of `polylogMonodromy`.** -/
+/-- Every coordinate `polylogMonodromy N g · i` is given by evaluating a multivariate polynomial
+in `MvPolynomial (Fin (N + 1)) ℂ`. -/
 theorem exists_mvPolynomial_polylogMonodromy (N : ℕ)
     (g : FundamentalGroup ThricePuncturedSphere basePt) (i : Fin (N + 1)) :
     ∃ P : MvPolynomial (Fin (N + 1)) ℂ, ∀ w, polylogMonodromy N g w i = MvPolynomial.eval w P := by
@@ -184,14 +197,17 @@ theorem analyticOnNhd_polylogMonodromy (N : ℕ) (g : FundamentalGroup ThricePun
     (fun x hx v => by rcases hx with rfl | rfl <;> ext j <;> simp [π, MulAction.compHom_smul_def])
     (closure_periph0_periph1 ▸ Subgroup.mem_top g) w) i
 
-/-- **Noncommutativity of the peripheral monodromy at weight two (`Li₂`).** -/
+/-- At weight two (`Li₂`), the monodromy actions of `periph1⁻¹` and `periph0⁻¹` do not commute:
+the difference `polylogMonodromy N periph1⁻¹ (polylogMonodromy N periph0⁻¹ w) 2 -`
+`polylogMonodromy N periph0⁻¹ (polylogMonodromy N periph1⁻¹ w) 2` equals `4 * π ^ 2`. -/
 theorem polylogMonodromy_periph1_inv_periph0_inv_sub_two {N : ℕ} (hN : 2 ≤ N)
     (w : Fin (N + 1) → ℂ) :
     polylogMonodromy N periph1⁻¹ (polylogMonodromy N periph0⁻¹ w) ⟨2, Nat.succ_lt_succ hN⟩ -
       polylogMonodromy N periph0⁻¹ (polylogMonodromy N periph1⁻¹ w) ⟨2, Nat.succ_lt_succ hN⟩ =
       4 * (Real.pi : ℂ) ^ 2 := by
   simp only [polylogMonodromy_periph1_inv, polylogMonodromy_periph0_inv, Fin.val_zero, ↓reduceIte,
-    OfNat.ofNat_ne_zero]; norm_num; ring_nf; simp [Complex.I_sq]
+    OfNat.ofNat_ne_zero]
+  linear_combination -4 * (Real.pi : ℂ) ^ 2 * Complex.I_sq
 
 private theorem half_mem_slitPlane : (1 / 2 : ℂ) ∈ Complex.slitPlane :=
   Complex.mem_slitPlane_iff.mpr (Or.inl (by norm_num))
@@ -251,7 +267,8 @@ private theorem shiftPolylog_comp {N : ℕ} {F : ℂ → Fin (N + 1) → ℂ} {w
         _ = c * (F z 0) ^ m / (m.factorial : ℂ) := by
               rw [hd0, mul_one]; field_simp [Nat.cast_ne_zero.mpr (Nat.succ_ne_zero m)]
 
-/-- **Monodromy invariance of the polylogarithm tower differential system.** -/
+/-- Post-composing any `IsPolylogTowerGerm N F w` with `polylogMonodromy N g` yields another
+`IsPolylogTowerGerm N` at `w`. -/
 theorem polylogMonodromy_comp {N : ℕ} {F : ℂ → Fin (N + 1) → ℂ} {w : ℂ}
     (hF : IsPolylogTowerGerm N F w) (g : FundamentalGroup ThricePuncturedSphere basePt) :
     IsPolylogTowerGerm N (polylogMonodromy N g ∘ F) w := by
@@ -310,12 +327,6 @@ private theorem analyticAt_logSing1 (N : ℕ) {w : ℂ → ℂ} {z : ℂ} (hw : 
       exact (hw.mul ((analyticAt_id.clog hz).pow _)).div analyticAt_const
         (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _))
 
-private theorem analyticAt_add_logSing1 {N : ℕ} {A : ℂ → Fin (N + 1) → ℂ}
-    (hAan : AnalyticOnNhd ℂ A (ball 1 (3 / 4))) :
-    AnalyticAt ℂ (fun z => A z + logSing1 N (polylog 1 z) z) (1 / 2) :=
-  (hAan _ (by rw [mem_ball, dist_eq_norm]; norm_num)).add
-    (analyticAt_logSing1 N (analyticAt_polylog 1 sub_half_mem_slitPlane) half_mem_slitPlane)
-
 private theorem eventually_deriv_last_logSing1 {K : ℕ} {g a : ℂ → ℂ}
     (haderiv : ∀ z ∈ ball (1 : ℂ) (3 / 4), HasDerivAt a
       (g z / z + dslope (fun u => (Complex.log u) ^ (K + 1) / ((K + 1).factorial : ℂ)) 1 z) z) :
@@ -370,28 +381,24 @@ private theorem exists_analyticOnNhd_ball_one_succ {K : ℕ} {A' : ℂ → Fin (
   have hAan : AnalyticOnNhd ℂ A (ball 1 (3 / 4)) := fun z hz => AnalyticAt.pi <|
     Fin.lastCases (by simpa [A, Fin.lastCases_last] using ha_an z hz)
       fun j => by simpa [A, Fin.lastCases_castSucc] using analyticAt_pi_iff.1 (hA'an z hz) j
-  have hGcast : ∀ u (j : Fin (K + 2)), (A u + logSing1 (K + 2) (polylog 1 u) u) j.castSucc =
-      (A' u + logSing1 (K + 1) (polylog 1 u) u) j :=
-    fun u j => by simp [A, logSing1, Fin.lastCases_castSucc]
-  have h0cast : (0 : Fin (K + 3)) = (0 : Fin (K + 2)).castSucc := rfl
-  refine ⟨A, hAan, ?_, analyticAt_add_logSing1 hAan,
-    hG'.eventually_exp_zero.mono fun z hz => by rwa [h0cast, hGcast z 0],
-    Fin.lastCases ?_ fun j => ?_⟩
-  · ext i; refine Fin.lastCases ?_ (fun j => by rw [hGcast (1 / 2) j, Fin.lastCases_castSucc]) i
-    have hk : K + 2 - 1 = K + 1 := rfl
-    simp only [A, Pi.add_apply, logSing1, Fin.val_last, Nat.succ_ne_zero, ↓reduceIte, hk,
-      Fin.lastCases_last, ha_val, B]; ring
-  · have hlast : (fun u => (A u + logSing1 (K + 2) (polylog 1 u) u) (Fin.last (K + 1)).succ) =
-        fun u => a u + polylog 1 u * (Complex.log u) ^ (K + 1) / ((K + 1).factorial : ℂ) := by
-      ext u; rw [(Fin.ext rfl : (Fin.last (K + 1)).succ = Fin.last (K + 2)), Pi.add_apply]
-      dsimp only [A, logSing1]; rw [Fin.lastCases_last]; simp
-    filter_upwards [eventually_deriv_last_logSing1 haderiv] with z hz
-    rw [hlast, hGcast z (Fin.last (K + 1))]; simpa [Fin.val_last, logSing1] using hz
-  · have hs : (fun u => (A u + logSing1 (K + 2) (polylog 1 u) u) (Fin.castSucc j).succ) =
-        fun u => (A' u + logSing1 (K + 1) (polylog 1 u) u) j.succ :=
-      funext fun u => (congrArg _ (Fin.ext rfl : j.castSucc.succ = j.succ.castSucc)).trans
-        (hGcast u j.succ)
-    exact (hG'.eventually_deriv_succ j).mono fun z hz => by rwa [hs, hGcast z j.castSucc]
+  let g : ℂ → ℂ := fun z => a z + polylog 1 z * (Complex.log z) ^ (K + 1) / ((K + 1).factorial : ℂ)
+  have hg_an : AnalyticAt ℂ g (1 / 2) :=
+    (ha_an _ (by rw [mem_ball, dist_eq_norm]; norm_num)).add
+      (((analyticAt_polylog 1 sub_half_mem_slitPlane).mul
+        ((analyticAt_id.clog half_mem_slitPlane).pow (K + 1))).div analyticAt_const
+          (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)))
+  have hfun : (fun z => A z + logSing1 (K + 2) (polylog 1 z) z) =
+      fun z => Fin.lastCases (g z) (A' z + logSing1 (K + 1) (polylog 1 z) z) := by
+    ext z i; refine Fin.lastCases ?_ (fun j => ?_) i
+    · have hk : K + 2 - 1 = K + 1 := rfl
+      simp [A, g, logSing1, hk, Fin.lastCases_last]
+    · simp [A, logSing1, Fin.lastCases_castSucc]
+  refine ⟨A, hAan, ?_, hfun ▸ hG'.lastCases hg_an ?_⟩
+  · rw [congrFun hfun (1 / 2)]
+    exact funext <| Fin.lastCases (by simp only [Fin.lastCases_last, g, ha_val, B]; ring)
+      (fun j => by simp [Fin.lastCases_castSucc])
+  · filter_upwards [eventually_deriv_last_logSing1 haderiv] with z hz
+    simpa [g, Fin.val_last, logSing1, neg_mul] using hz
 
 private theorem exists_analyticOnNhd_ball_one_add_logSing1 :
     ∀ (N : ℕ) (v : Fin (N + 1) → ℂ), v 0 = Complex.log (1 / 2) →
@@ -422,9 +429,10 @@ private theorem exists_analyticOnNhd_ball_one_add_logSing1 :
 
 namespace IsPolylogTowerGerm
 
-/-- **Germ-level `γ0`-monodromy** for an `IsPolylogTowerGerm` at `1 / 2` normalized by
-`F (1 / 2) 0 = Complex.log (1 / 2)` whose positive weights extend analytically to `ball 0 1`. -/
-theorem eventuallyEq_periph0_inv_comp_of_γ0 {N : ℕ} {F : ℂ → Fin (N + 1) → ℂ}
+/-- **Germ-level `γ0`-monodromy.** If an `IsPolylogTowerGerm` `F` at `1 / 2` satisfies
+`F (1 / 2) 0 = Complex.log (1 / 2)` and has positive weights extending analytically to `ball 0 1`,
+then continuing `F` along `γ0` gives terminal germ `polylogMonodromy N periph0⁻¹ ∘ F`. -/
+theorem eventuallyEq_polylogMonodromy_periph0_inv_comp_of_γ0 {N : ℕ} {F : ℂ → Fin (N + 1) → ℂ}
     (hF : IsPolylogTowerGerm N F (1 / 2)) (hF0 : F (1 / 2) 0 = Complex.log (1 / 2))
     {G : ℂ → Fin N → ℂ} (hGan : AnalyticOnNhd ℂ G (ball 0 1))
     (hFG : ∀ i : Fin N, (fun z => F z i.succ) =ᶠ[𝓝 (1 / 2 : ℂ)] fun z => G z i)
@@ -451,9 +459,10 @@ theorem eventuallyEq_periph0_inv_comp_of_γ0 {N : ℕ} {F : ℂ → Fin (N + 1) 
     hf.eventuallyEq hg isPreconnected_univ (mem_univ 0) (mem_univ 1)
       ((by rw [Path.source, coe_basePt] : (γ0 0 : ℂ) = 1 / 2).symm ▸ hf0.trans hg0.symm)).trans hg1
 
-/-- **Germ-level `γ1`-monodromy** for an `IsPolylogTowerGerm` at `1 / 2` normalized by
-`F (1 / 2) 0 = Complex.log (1 / 2)` (without assuming `ball 0 1` analyticity). -/
-theorem eventuallyEq_periph1_inv_comp_of_γ1 {N : ℕ} {F : ℂ → Fin (N + 1) → ℂ}
+/-- **Germ-level `γ1`-monodromy.** If an `IsPolylogTowerGerm` `F` at `1 / 2` satisfies
+`F (1 / 2) 0 = Complex.log (1 / 2)`, then continuing `F` along `γ1` gives terminal germ
+`polylogMonodromy N periph1⁻¹ ∘ F` (without assuming `ball 0 1` analyticity). -/
+theorem eventuallyEq_polylogMonodromy_periph1_inv_comp_of_γ1 {N : ℕ} {F : ℂ → Fin (N + 1) → ℂ}
     (hF : IsPolylogTowerGerm N F (1 / 2)) (hF0 : F (1 / 2) 0 = Complex.log (1 / 2))
     {f : I → ℂ → Fin (N + 1) → ℂ} (hf : IsAnalyticContinuationAlong f (fun t => (γ1 t : ℂ)) univ)
     (hf0 : f 0 =ᶠ[𝓝 (1 / 2 : ℂ)] F) : f 1 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogMonodromy N periph1⁻¹ ∘ F := by
@@ -493,7 +502,8 @@ theorem universalCoverBranch_periph0_inv_smul_of_analyticOnNhd_ball {N : ℕ}
   obtain ⟨f, hf, hf0, -⟩ :=
     hF.continuesInside.exists_isAnalyticContinuationAlong_universalCoverBranch γ0
   have hf1 : f 1 =ᶠ[𝓝 (basePt : ℂ)] polylogMonodromy N periph0⁻¹ ∘ F := coe_basePt.symm ▸
-    (coe_basePt ▸ hF).eventuallyEq_periph0_inv_comp_of_γ0 hF0 hGan hFG hf (coe_basePt ▸ hf0)
+    (coe_basePt ▸ hF).eventuallyEq_polylogMonodromy_periph0_inv_comp_of_γ0 hF0 hGan hFG hf
+      (coe_basePt ▸ hf0)
   exact periph0_def ▸ hF.continuesInside.universalCoverBranch_inv_smul_of_loop hf hf0
     (analyticOnNhd_polylogMonodromy N periph0⁻¹ univ) hf1 p
 
@@ -507,7 +517,7 @@ theorem universalCoverBranch_periph1_inv_smul {N : ℕ} {F : ℂ → Fin (N + 1)
   obtain ⟨f, hf, hf0, -⟩ :=
     hF.continuesInside.exists_isAnalyticContinuationAlong_universalCoverBranch γ1
   have hf1 : f 1 =ᶠ[𝓝 (basePt : ℂ)] polylogMonodromy N periph1⁻¹ ∘ F := coe_basePt.symm ▸
-    (coe_basePt ▸ hF).eventuallyEq_periph1_inv_comp_of_γ1 hF0 hf (coe_basePt ▸ hf0)
+    (coe_basePt ▸ hF).eventuallyEq_polylogMonodromy_periph1_inv_comp_of_γ1 hF0 hf (coe_basePt ▸ hf0)
   exact periph1_def ▸ hF.continuesInside.universalCoverBranch_inv_smul_of_loop hf hf0
     (analyticOnNhd_polylogMonodromy N periph1⁻¹ univ) hf1 p
 
@@ -541,24 +551,24 @@ theorem isPolylogTowerGerm_polylogTower_basePt (N : ℕ) :
 
 /-- **Principal-tower `γ0`-monodromy.** Continuing `polylogTower N` along `γ0` shifts the
 terminal germ by `polylogMonodromy N periph0⁻¹`. -/
-theorem eventuallyEq_periph0_inv_comp_polylogTower_of_γ0 (N : ℕ) {f : I → ℂ → Fin (N + 1) → ℂ}
-    (hf : IsAnalyticContinuationAlong f (fun t => (γ0 t : ℂ)) univ)
+theorem eventuallyEq_polylogMonodromy_periph0_inv_comp_polylogTower_of_γ0 (N : ℕ)
+    {f : I → ℂ → Fin (N + 1) → ℂ} (hf : IsAnalyticContinuationAlong f (fun t => (γ0 t : ℂ)) univ)
     (hf0 : f 0 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogTower N) :
     f 1 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogMonodromy N periph0⁻¹ ∘ polylogTower N :=
   (isPolylogTowerGerm_polylogTower N half_mem_slitPlane
-    (fun _ => sub_half_mem_slitPlane)).eventuallyEq_periph0_inv_comp_of_γ0
+    (fun _ => sub_half_mem_slitPlane)).eventuallyEq_polylogMonodromy_periph0_inv_comp_of_γ0
       (polylogTower_zero N (1 / 2))
       (fun _ hz => AnalyticAt.pi fun i => analyticOnNhd_polylog_ball (i.succ : ℕ) _ hz)
       (fun i => Eventually.of_forall fun z => polylogTower_succ N z i) hf hf0
 
 /-- **Principal-tower `γ1`-monodromy.** Continuing `polylogTower N` along `γ1` shifts the
 terminal germ by `polylogMonodromy N periph1⁻¹`. -/
-theorem eventuallyEq_periph1_inv_comp_polylogTower_of_γ1 (N : ℕ) {f : I → ℂ → Fin (N + 1) → ℂ}
-    (hf : IsAnalyticContinuationAlong f (fun t => (γ1 t : ℂ)) univ)
+theorem eventuallyEq_polylogMonodromy_periph1_inv_comp_polylogTower_of_γ1 (N : ℕ)
+    {f : I → ℂ → Fin (N + 1) → ℂ} (hf : IsAnalyticContinuationAlong f (fun t => (γ1 t : ℂ)) univ)
     (hf0 : f 0 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogTower N) :
     f 1 =ᶠ[𝓝 (1 / 2 : ℂ)] polylogMonodromy N periph1⁻¹ ∘ polylogTower N :=
   (isPolylogTowerGerm_polylogTower N half_mem_slitPlane
-    (fun _ => sub_half_mem_slitPlane)).eventuallyEq_periph1_inv_comp_of_γ1
+    (fun _ => sub_half_mem_slitPlane)).eventuallyEq_polylogMonodromy_periph1_inv_comp_of_γ1
       (polylogTower_zero N (1 / 2)) hf hf0
 
 /-- `polylogTower N` continues inside `{z : ℂ | z ≠ 0 ∧ z ≠ 1}` from `basePt` in every height. -/
@@ -615,7 +625,7 @@ theorem eq_polylogBranch_of_isAnalyticContinuationAlong (N : ℕ)
       obtain ⟨f, hf, hf0, hval⟩ := hB z γ
       exact ⟨f, hf, coe_basePt.symm ▸ hf0, hval⟩
 
-/-- **Pointwise exponential law for coordinate `0` of `polylogBranch N`.** -/
+/-- Coordinate `0` of `polylogBranch N p` exponentiates to the base projection `(p.proj : ℂ)`. -/
 @[simp] theorem exp_polylogBranch_zero (N : ℕ) (p : UniversalCover basePt) :
     Complex.exp (polylogBranch N p 0) = (p.proj : ℂ) := by
   rcases p with ⟨z, q⟩; induction q with | mk γ =>
@@ -635,6 +645,16 @@ theorem isPolylogTowerGerm_polylogBranch_comp_of_continuousAt (N : ℕ)
   rw [polylogBranch_def]
   exact (isPolylogTowerGerm_polylogTower_basePt N).universalCoverBranch_comp_of_continuousAt
     (continuesInside_polylogTower N) hsec hproj
+
+/-- **Open-set tower ODEs for `polylogBranch N`.** Composing `polylogBranch N` with any
+continuous section `sec` on an open set `V` satisfying `((sec z).proj : ℂ) = z` yields an
+`IsPolylogTowerGerm N` at every `z ∈ V`. -/
+theorem isPolylogTowerGerm_polylogBranch_comp (N : ℕ) {V : Set ℂ} (hVo : IsOpen V)
+    {sec : ℂ → UniversalCover basePt} (hsec : ContinuousOn sec V)
+    (hproj : ∀ z ∈ V, ((sec z).proj : ℂ) = z) :
+    ∀ z ∈ V, IsPolylogTowerGerm N (polylogBranch N ∘ sec) z := fun _ hz =>
+  isPolylogTowerGerm_polylogBranch_comp_of_continuousAt N (hsec.continuousAt (hVo.mem_nhds hz))
+    (Filter.eventually_of_mem (hVo.mem_nhds hz) hproj)
 
 /-- **Concatenation rule for `polylogBranch N`.** Continuing `polylogTower N` along `γ` and then
 continuing from `f 1` along `δ` gives `polylogBranch N ⟨z₂, ⟦γ.trans δ⟧⟩ = g 1 (z₂ : ℂ)`. -/
@@ -687,11 +707,13 @@ theorem polylogBranch_eq_polylog_of_one_sub_mem_slitPlane (N : ℕ) {z : ThriceP
 @[simp] theorem polylogBranch_castLE {M N : ℕ} (h : M + 1 ≤ N + 1) (p : UniversalCover basePt)
     (i : Fin (M + 1)) : polylogBranch N p (Fin.castLE h i) = polylogBranch M p i := by
   rw [polylogBranch_def, polylogBranch_def,
-    ← (isPolylogTowerGerm_polylogTower_basePt N).universalCoverBranch_castLE h p i,
+    ← (continuesInside_polylogTower N).universalCoverBranch_castLE h p i,
     ContinuesInside.universalCoverBranch_congr _
       (.of_forall fun z => funext (polylogTower_castLE h z))]
 
-/-- **Equivariance of `polylogBranch N` under `π₁(ℂ \ {0, 1}, 1/2)` in every height `N`.** -/
+/-- `polylogBranch N` is equivariant with respect to `polylogMonodromy N`: for every deck element
+`g : FundamentalGroup ThricePuncturedSphere basePt` and `p : UniversalCover basePt`,
+`polylogBranch N (g • p) = polylogMonodromy N g (polylogBranch N p)`. -/
 theorem polylogBranch_smul (N : ℕ) (g : FundamentalGroup ThricePuncturedSphere basePt)
     (p : UniversalCover basePt) :
     polylogBranch N (g • p) = polylogMonodromy N g (polylogBranch N p) :=
@@ -700,7 +722,9 @@ theorem polylogBranch_smul (N : ℕ) (g : FundamentalGroup ThricePuncturedSphere
     (fun _ hz => AnalyticAt.pi fun i => analyticOnNhd_polylog_ball (i.succ : ℕ) _ hz)
     (fun i => Eventually.of_forall fun z => polylogTower_succ N z i) g p
 
-/-- **Coherent universal-cover branch and polynomial monodromy of `polylogTower N`.** -/
+/-- Summary packaging the coherent universal-cover branch `B = polylogBranch N` and polynomial
+monodromy representation `ρ = polylogMonodromy N` of `polylogTower N`, with continuation witnesses,
+explicit `periph0⁻¹`/`periph1⁻¹` formulas, and full `π₁`-equivariance. -/
 theorem exists_polylogBranch_monodromy (N : ℕ) :
     ∃ (B : UniversalCover basePt → Fin (N + 1) → ℂ)
       (ρ : FundamentalGroup ThricePuncturedSphere basePt →* Equiv.Perm (Fin (N + 1) → ℂ)),

@@ -58,7 +58,8 @@ theorem polylogTower_apply (N : ℕ) (z : ℂ) (i : Fin (N + 1)) :
 
 /-- Entry `1` of `polylogTower N z` (`[NeZero N]`) is `polylog 1 z`. -/
 @[simp] theorem polylogTower_one {N : ℕ} [NeZero N] (z : ℂ) :
-    polylogTower N z 1 = polylog 1 z := by rw [← Fin.succ_zero_eq_one', polylogTower_succ]; rfl
+    polylogTower N z 1 = polylog 1 z := by
+  simp [polylogTower_apply, Nat.mod_eq_of_lt (Nat.succ_lt_succ (Nat.pos_of_ne_zero (NeZero.ne N)))]
 
 /-- At any nonzero index `i`, `polylogTower N z i` is `polylog i z`. -/
 theorem polylogTower_apply_of_ne_zero {N : ℕ} (z : ℂ) {i : Fin (N + 1)} (hi : (i : ℕ) ≠ 0) :
@@ -98,11 +99,6 @@ theorem not_analyticAt_polylogTower_of_one_lt {N : ℕ} (hN : 1 ≤ N) {x : ℝ}
   simp only [polylogTower_one] at h1
   exact (Complex.mem_slitPlane_iff.mp (continuousAt_polylog_one_iff.mp h1.continuousAt)).elim
     (fun hlt => by simp at hlt; linarith) (fun him => by simp at him)
-
-/-- For `1 ≤ N`, `polylogTower N` is not complex analytic at `z = 3`. -/
-theorem not_analyticAt_polylogTower_three {N : ℕ} (hN : 1 ≤ N) :
-    ¬ AnalyticAt ℂ (polylogTower N) 3 := by
-  simpa using not_analyticAt_polylogTower_of_one_lt hN (by norm_num : (1 : ℝ) < 3)
 
 /-- `IsPolylogTowerGerm N F w` states that `F : ℂ → Fin (N + 1) → ℂ` is complex analytic at `w`,
 `exp (F z 0) = z` near `w`, and its higher coordinates satisfy `(1 - z) · (F · 1)'(z) = 1` for
@@ -191,7 +187,9 @@ theorem castLE {M : ℕ} (h : M + 1 ≤ N + 1) (hF : IsPolylogTowerGerm N F w) :
   eventually_exp_zero := hF.eventually_exp_zero
   eventually_deriv_succ i := hF.eventually_deriv_succ (Fin.castLE (Nat.le_of_succ_le_succ h) i)
 
-/-- **Persistence of the tower differential system along analytic continuation.** -/
+/-- **Persistence of the tower differential system along analytic continuation.** If `f` is an
+analytic continuation along `c` over a preconnected set `s` starting at an `IsPolylogTowerGerm` at
+`c t₀`, then `f t₁` is an `IsPolylogTowerGerm` at `c t₁`. -/
 theorem of_isAnalyticContinuationAlong {X : Type*} [TopologicalSpace X] {s : Set X} {t₀ t₁ : X}
     (hs : IsPreconnected s) (ht₀ : t₀ ∈ s) (ht₁ : t₁ ∈ s) {c : X → ℂ}
     {f : X → ℂ → Fin (N + 1) → ℂ} (hf : IsAnalyticContinuationAlong f c s)
@@ -227,7 +225,8 @@ theorem of_isAnalyticContinuationAlong {X : Type*} [TopologicalSpace X] {s : Set
       (.const hf.continuousOn fun _ _ => analyticAt_const) hs ht₀ ht₁ h0).mono
       fun _ => sub_eq_zero.mp
 
-/-- **Initial-value uniqueness for `IsPolylogTowerGerm`.** -/
+/-- **Initial-value uniqueness for `IsPolylogTowerGerm`.** Two `N`-tower germs at `w` agree on
+a neighborhood of `w` if and only if they have the same value at `w`. -/
 theorem eventuallyEq_iff_eq (hF : IsPolylogTowerGerm N F w) (hG : IsPolylogTowerGerm N G w) :
     (F =ᶠ[𝓝 w] G) ↔ F w = G w := by
   refine ⟨EventuallyEq.eq_of_nhds, fun hFG => ?_⟩
@@ -266,7 +265,47 @@ theorem eventuallyEq_iff_eq (hF : IsPolylogTowerGerm N F w) (hG : IsPolylogTower
       (fun z hz => (hball (mem_ball.mp hz)).2.2) (mem_ball_self hδ) (congrFun hFG j.succ)
     exact hj_succ ▸ eventually_of_mem (Metric.ball_mem_nhds w hδ) heqOn
 
+/-- Appending a coordinate `g` satisfying the `(M + 1)`-th tower differential equation at `w` to
+an `M`-tower germ `G'` yields an `(M + 1)`-tower germ `fun z => Fin.lastCases (g z) (G' z)`. -/
+theorem lastCases {M : ℕ} {G' : ℂ → Fin (M + 1) → ℂ} {g : ℂ → ℂ} {w : ℂ}
+    (hG' : IsPolylogTowerGerm M G' w) (hg : AnalyticAt ℂ g w)
+    (hode : ∀ᶠ z in 𝓝 w,
+      (if M = 0 then 1 - z else z) * deriv g z = if M = 0 then 1 else G' z (Fin.last M)) :
+    IsPolylogTowerGerm (M + 1) (fun z => Fin.lastCases (g z) (G' z)) w where
+  analyticAt := AnalyticAt.pi <| Fin.lastCases (by simpa [Fin.lastCases_last] using hg)
+    fun i => by simpa [Fin.lastCases_castSucc] using analyticAt_pi_iff.1 hG'.analyticAt i
+  eventually_exp_zero := by
+    have h0 : ∀ u, Fin.lastCases (g u) (G' u) 0 = G' u 0 := fun u =>
+      (congrArg (Fin.lastCases (g u) (G' u))
+        (Fin.ext rfl : (0 : Fin (M + 2)) = (0 : Fin (M + 1)).castSucc)).trans
+        (Fin.lastCases_castSucc 0)
+    simpa [h0] using hG'.eventually_exp_zero
+  eventually_deriv_succ := Fin.lastCases
+    (by
+      have hGl : (fun v => Fin.lastCases (g v) (G' v) (Fin.last M).succ) = g :=
+        funext fun v => (congrArg (Fin.lastCases (g v) (G' v))
+          (Fin.ext rfl : (Fin.last M).succ = Fin.last (M + 1))).trans Fin.lastCases_last
+      have hGc : ∀ u, Fin.lastCases (g u) (G' u) (Fin.last M).castSucc = G' u (Fin.last M) :=
+        fun _ => Fin.lastCases_castSucc _
+      filter_upwards [hode] with u hu
+      simpa [Fin.val_last, hGl, hGc] using hu)
+    (fun i => by
+      have hGs : (fun u => Fin.lastCases (g u) (G' u) i.castSucc.succ) =
+          fun u => G' u i.succ := funext fun u =>
+        (congrArg (Fin.lastCases (g u) (G' u))
+          (Fin.ext rfl : i.castSucc.succ = i.succ.castSucc)).trans (Fin.lastCases_castSucc _)
+      have hGc : ∀ u, Fin.lastCases (g u) (G' u) i.castSucc.castSucc = G' u i.castSucc :=
+        fun _ => Fin.lastCases_castSucc _
+      exact (hG'.eventually_deriv_succ i).mono fun u hu => by simpa [hGs, hGc] using hu)
+
 end IsPolylogTowerGerm
+
+private theorem exists_pos_radius_avoiding {N : ℕ} {w : ℂ} (hw0 : w ≠ 0)
+    (hw1 : N ≠ 0 → w ≠ 1) : ∃ r > 0, 0 ∉ ball w r ∧ (N ≠ 0 → 1 ∉ ball w r) := by
+  let r : ℝ := if N = 0 then ‖w‖ else min ‖w‖ ‖w - 1‖
+  exact ⟨r, by by_cases hN : N = 0 <;> simp [r, hN, hw0, sub_ne_zero, hw1],
+    by by_cases hN : N = 0 <;> simp [r, hN, dist_zero_left],
+    fun hN => by simp [r, hN, dist_eq_norm, norm_sub_rev]⟩
 
 private theorem exists_analyticOnNhd_ball_zero {w : ℂ} {r : ℝ} (h0 : 0 ∉ ball w r) (c₀ : ℂ)
     (hexp₀ : Complex.exp c₀ = w) : ∃ G : ℂ → Fin 1 → ℂ, AnalyticOnNhd ℂ G (ball w r) ∧
@@ -296,32 +335,18 @@ private theorem exists_analyticOnNhd_ball_succ {M : ℕ} {w : ℂ} {r : ℝ} (h0
   obtain ⟨g, hgw, hgderiv⟩ := ((hrhs_an.differentiableOn).isExactOn_ball).with_val_at w c
   have hgan : AnalyticOnNhd ℂ g (ball w r) := DifferentiableOn.analyticOnNhd
     (fun z hz => (hgderiv z hz).differentiableAt.differentiableWithinAt) isOpen_ball
-  let G : ℂ → Fin (M + 2) → ℂ := fun z => Fin.lastCases (g z) (G' z)
-  have hGan : AnalyticOnNhd ℂ G (ball w r) := fun z hz => AnalyticAt.pi <|
-    Fin.lastCases (by simpa [G, Fin.lastCases_last] using hgan z hz)
-      fun i => by simpa [G, Fin.lastCases_castSucc] using analyticAt_pi_iff.1 (hG'an z hz) i
-  have hG0 : ∀ u, G u 0 = G' u 0 := fun u =>
-    (congrArg (G u) (Fin.ext rfl : (0 : Fin (M + 2)) = (0 : Fin (M + 1)).castSucc)).trans
-      (Fin.lastCases_castSucc 0)
-  refine ⟨G, hGan, by ext i; refine Fin.lastCases (by simp [G, hgw]) (fun _ => by simp [G]) i,
-    fun z hz => ⟨hGan z hz, by simpa [hG0] using (hG'tower z hz).eventually_exp_zero,
-      Fin.lastCases ?_ fun i => ?_⟩⟩
-  · have hGl : (fun v => G v (Fin.last M).succ) = g := funext fun v =>
-      (congrArg (G v) (Fin.ext rfl : (Fin.last M).succ = Fin.last (M + 1))).trans Fin.lastCases_last
-    filter_upwards [isOpen_ball.mem_nhds hz] with u hu
-    have hu0 : u ≠ 0 := fun h => h0 (h ▸ hu)
-    have hu1 : 1 - u ≠ 0 := sub_ne_zero.mpr fun h => h1 (h.symm ▸ hu)
-    have hGc : G u (Fin.last M).castSucc = G' u (Fin.last M) := Fin.lastCases_castSucc _
-    rw [hGl, (hgderiv u hu).deriv]
-    if hM : M = 0 then simp [Fin.val_last, hM, rhs, mul_inv_cancel₀ hu1]
-    else simp [Fin.val_last, hM, rhs, hGc, mul_div_cancel₀ _ hu0]
-  · have hGs : (fun u => G u i.castSucc.succ) = fun u => G' u i.succ := funext fun u =>
-      (congrArg (G u) (Fin.ext rfl : i.castSucc.succ = i.succ.castSucc)).trans
-        (Fin.lastCases_castSucc _)
-    have hGc : ∀ u, G u i.castSucc.castSucc = G' u i.castSucc := fun _ => Fin.lastCases_castSucc _
-    exact ((hG'tower z hz).eventually_deriv_succ i).mono fun u hu => by simpa [hGs, hGc] using hu
+  have hGt : ∀ z ∈ ball w r, IsPolylogTowerGerm (M + 1) (fun u => Fin.lastCases (g u) (G' u)) z :=
+    fun z hz => (hG'tower z hz).lastCases (hgan z hz) <|
+      Filter.eventually_of_mem (isOpen_ball.mem_nhds hz) fun u hu => by
+        have hu0 : u ≠ 0 := fun h => h0 (h ▸ hu)
+        have hu1 : 1 - u ≠ 0 := sub_ne_zero.mpr fun h => h1 (h.symm ▸ hu)
+        rw [(hgderiv u hu).deriv]
+        by_cases hM : M = 0 <;> simp [hM, rhs, mul_inv_cancel₀ hu1, mul_div_cancel₀ _ hu0]
+  exact ⟨fun z => Fin.lastCases (g z) (G' z), fun z hz => (hGt z hz).analyticAt,
+    by ext i; refine Fin.lastCases (by simp [hgw]) (fun _ => by simp) i, hGt⟩
 
-/-- **Holomorphic polylogarithm tower on an unpunctured disc with prescribed initial value.** -/
+/-- Any `v : Fin (N + 1) → ℂ` with `exp (v 0) = w` extends to an analytic `IsPolylogTowerGerm N`
+function `G` on any disc `ball w r` avoiding `0` (and `1` when `N ≠ 0`), satisfying `G w = v`. -/
 theorem exists_analyticOnNhd_ball_of_exp_eq {N : ℕ} {w : ℂ} {r : ℝ}
     (v : Fin (N + 1) → ℂ) (hv0 : Complex.exp (v 0) = w)
     (h0 : 0 ∉ ball w r) (h1 : N ≠ 0 → 1 ∉ ball w r) :
@@ -346,7 +371,8 @@ namespace IsPolylogTowerGerm
 
 variable {N : ℕ} {F : ℂ → Fin (N + 1) → ℂ} {w : ℂ}
 
-/-- **Local disc extension of a tower germ.** -/
+/-- Any `IsPolylogTowerGerm N F w` extends analytically as an `IsPolylogTowerGerm N` on any disc
+`ball w r` avoiding `0` (and `1` when `N ≠ 0`), agreeing with `F` near `w`. -/
 theorem exists_analyticOnNhd_ball (hF : IsPolylogTowerGerm N F w) {r : ℝ}
     (h0 : 0 ∉ ball w r) (h1 : N ≠ 0 → 1 ∉ ball w r) :
     ∃ G : ℂ → Fin (N + 1) → ℂ, AnalyticOnNhd ℂ G (ball w r) ∧ (G =ᶠ[𝓝 w] F) ∧
@@ -356,7 +382,8 @@ theorem exists_analyticOnNhd_ball (hF : IsPolylogTowerGerm N F w) {r : ℝ}
   obtain ⟨G, hGan, hGw, hGt⟩ := exists_analyticOnNhd_ball_of_exp_eq (F w) hF.exp_zero h0 h1
   exact ⟨G, hGan, ((hGt w (mem_ball_self hr)).eventuallyEq_iff_eq hF).mpr hGw, hGt⟩
 
-/-- **Global continuation of a tower germ along any path in `ℂ \ {0, 1}`.** -/
+/-- Any `IsPolylogTowerGerm N F (c 0)` analytically continues along any continuous path
+`c : I → ℂ` avoiding `0` (and `1` when `N ≠ 0`). -/
 theorem continuesAlong {c : I → ℂ} (hF : IsPolylogTowerGerm N F (c 0)) (hc : Continuous c)
     (hc0 : ∀ t, c t ≠ 0) (hc1 : N ≠ 0 → ∀ t, c t ≠ 1) : ContinuesAlong F c := by
   let S : Set I := {b | ∃ f : I → ℂ → Fin (N + 1) → ℂ,
@@ -364,10 +391,8 @@ theorem continuesAlong {c : I → ℂ} (hF : IsPolylogTowerGerm N F (c 0)) (hc :
   have h0S : (0 : I) ∈ S := ⟨fun _ => F, .const hc.continuousOn fun t ht =>
     (Subtype.ext (le_antisymm (Subtype.coe_le_coe.mpr (mem_Iic.mp ht)) t.property.left)) ▸
       hF.analyticAt, .rfl⟩
-  let b₀ : I := sSup S; let r : ℝ := if N = 0 then ‖c b₀‖ else min ‖c b₀‖ ‖c b₀ - 1‖
-  have hr : 0 < r := by by_cases hN : N = 0 <;> simp [r, hN, hc0 b₀, sub_ne_zero, hc1]
-  have h0_b₀ : 0 ∉ ball (c b₀) r := by by_cases hN : N = 0 <;> simp [r, hN, dist_zero_left]
-  have h1_b₀ : N ≠ 0 → 1 ∉ ball (c b₀) r := fun hN => by simp [r, hN, dist_eq_norm, norm_sub_rev]
+  let b₀ : I := sSup S
+  obtain ⟨r, hr, h0_b₀, h1_b₀⟩ := exists_pos_radius_avoiding (hc0 b₀) (fun hN => hc1 hN b₀)
   obtain ⟨δ, hδ, hδc⟩ := Metric.continuousAt_iff.mp hc.continuousAt (r / 3) (by positivity)
   have hcoe_sup : (b₀ : ℝ) = sSup ((↑) '' S : Set ℝ) := Set.Icc.coe_sSup zero_le_one ⟨0, h0S⟩
   obtain ⟨_, ⟨t₁, ⟨f₁, hf₁, hf₁0⟩, rfl⟩, ht₁_gt⟩ :=
@@ -400,7 +425,7 @@ theorem continuesAlong {c : I → ℂ} (hF : IsPolylogTowerGerm N F (c 0)) (hc :
     ⟨_, hf_ext.mono fun t _ => ht₂_one ▸ mem_Iic.mpr (Subtype.coe_le_coe.mp t.property.right),
       hf_ext0⟩
 
-/-- **Continuation inside `ℂ \ {0, 1}`.** -/
+/-- Any `IsPolylogTowerGerm N F w` continues inside `{z : ℂ | z ≠ 0 ∧ z ≠ 1}`. -/
 theorem continuesInside (hF : IsPolylogTowerGerm N F w) :
     ContinuesInside F {z : ℂ | z ≠ 0 ∧ z ≠ 1} w :=
   ContinuesInside.of_forall fun _ hc hcU hc0 =>
@@ -412,16 +437,8 @@ theorem continuesInside_zero {F : ℂ → Fin 1 → ℂ} (hF : IsPolylogTowerGer
   ContinuesInside.of_forall fun _ hc hcU hc0 =>
     (hc0 ▸ hF).continuesAlong hc hcU (fun h => absurd rfl h)
 
-/-- Truncating an `N`-tower germ along `Fin.castLE h` commutes with `universalCoverBranch`. -/
-theorem universalCoverBranch_castLE {M : ℕ} (h : M + 1 ≤ N + 1)
-    {z₀ : ({z : ℂ | z ≠ 0 ∧ z ≠ 1} : Set ℂ)}
-    (hF : IsPolylogTowerGerm N F (z₀ : ℂ)) (p : UniversalCover z₀) (i : Fin (M + 1)) :
-    (hF.castLE h).continuesInside.universalCoverBranch p i =
-      hF.continuesInside.universalCoverBranch p (Fin.castLE h i) := by
-  rw [← (hF.castLE h).continuesInside.universalCoverBranch_eval_apply i p,
-    ← hF.continuesInside.universalCoverBranch_eval_apply (Fin.castLE h i) p]
-
-/-- **Local determinations of the universal-cover branch satisfy the tower ODE system.** -/
+/-- Composing `H.universalCoverBranch` with any local continuous section `sec` near `u`
+satisfies `IsPolylogTowerGerm N (H.universalCoverBranch ∘ sec) u`. -/
 theorem universalCoverBranch_comp_of_continuousAt {U : Set ℂ} {z₀ : U}
     (hF : IsPolylogTowerGerm N F (z₀ : ℂ)) (H : ContinuesInside F U (z₀ : ℂ))
     {sec : ℂ → UniversalCover z₀} {u : ℂ} (hsec : ContinuousAt sec u)
@@ -436,15 +453,12 @@ theorem universalCoverBranch_comp_of_continuousAt {U : Set ℂ} {z₀ : U}
 
 end IsPolylogTowerGerm
 
-/-- **Existence of polylogarithm tower germs with prescribed initial value.** -/
+/-- Given `v : Fin (N + 1) → ℂ` with `exp (v 0) = w` (and `w ≠ 1` if `N ≠ 0`), there exists
+an `IsPolylogTowerGerm N F w` with initial value `F w = v`. -/
 theorem exists_isPolylogTowerGerm {N : ℕ} {w : ℂ} (v : Fin (N + 1) → ℂ)
     (hv0 : Complex.exp (v 0) = w) (hw1 : N ≠ 0 → w ≠ 1) :
     ∃ F : ℂ → Fin (N + 1) → ℂ, IsPolylogTowerGerm N F w ∧ F w = v := by
-  have hw0 : w ≠ 0 := hv0 ▸ Complex.exp_ne_zero (v 0)
-  let r : ℝ := if N = 0 then ‖w‖ else min ‖w‖ ‖w - 1‖
-  have hr : 0 < r := by by_cases hN : N = 0 <;> simp [r, hN, hw0, sub_ne_zero, hw1]
-  have h0 : 0 ∉ ball w r := by by_cases hN : N = 0 <;> simp [r, hN, dist_zero_left]
-  have h1 : N ≠ 0 → 1 ∉ ball w r := fun hN => by simp [r, hN, dist_eq_norm, norm_sub_rev]
+  obtain ⟨r, hr, h0, h1⟩ := exists_pos_radius_avoiding (hv0 ▸ Complex.exp_ne_zero (v 0)) hw1
   obtain ⟨G, -, hGw, hGt⟩ := exists_analyticOnNhd_ball_of_exp_eq v hv0 h0 h1
   exact ⟨G, hGt w (mem_ball_self hr), hGw⟩
 
@@ -474,10 +488,5 @@ theorem isPolylogTowerGerm_polylogTower (N : ℕ) {w : ℂ} (hw0 : w ∈ Complex
 theorem analyticOnNhd_polylogTower (N : ℕ) : AnalyticOnNhd ℂ (polylogTower N)
     {z : ℂ | z ∈ Complex.slitPlane ∧ (N ≠ 0 → 1 - z ∈ Complex.slitPlane)} :=
   fun _ hz => (isPolylogTowerGerm_polylogTower N hz.1 hz.2).analyticAt
-
-/-- Height zero (`Log z` alone) is complex analytic at `z = 3`. -/
-theorem analyticAt_polylogTower_zero_three : AnalyticAt ℂ (polylogTower 0) 3 :=
-  (isPolylogTowerGerm_polylogTower 0 (Complex.mem_slitPlane_iff.mpr (Or.inl (by norm_num)))
-    (fun h => (h rfl).elim)).analyticAt
 
 end TauCeti.Polylog

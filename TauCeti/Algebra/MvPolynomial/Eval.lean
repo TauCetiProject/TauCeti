@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.MvPolynomial.Variables
 public import Mathlib.RingTheory.Ideal.Defs
 
-import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Tactic.Ring
 
@@ -50,8 +49,7 @@ Evaluation at a family `x` is surjective exactly when `x` generates the algebra.
   the `x i` generate the algebra.
 * `MvPolynomial.exists_pos_eval_eq_mul_eval_div`: clears nonzero polynomial denominators in the
   value of a polynomial at a coordinatewise rational map by a strictly positive polynomial factor.
-* `MvPolynomial.eval_aeval`, `MvPolynomial.exists_eval_comp`: evaluating an `aeval`-substituted
-  polynomial and closure of polynomial-witnessed maps under composition.
+* `MvPolynomial.exists_eval_comp`: closure of polynomial-witnessed maps under composition.
 -/
 
 public section
@@ -177,13 +175,6 @@ theorem exists_pos_eval_eq_mul_eval_div {α β K : Type*} [Field K] [LinearOrder
     eval₂Hom_congr' rfl (fun a ha _ ↦ by simp [N', D', ha]) rfl
   obtain ⟨hB, hEq⟩ := hAB x hx; exact ⟨hB, heval ▸ hEq⟩
 
-/-- Evaluating an `aeval`-substituted polynomial at `w` evaluates the outer polynomial at the
-evaluations of the substituted polynomials at `w`. -/
-theorem eval_aeval {σ τ R : Type*} [CommSemiring R] (w : σ → R) (Q : τ → MvPolynomial σ R)
-    (P : MvPolynomial τ R) :
-    eval w (aeval Q P) = eval (fun k ↦ eval w (Q k)) P := by
-  simpa [aeval_eq_eval] using comp_aeval_apply Q (aeval w) P
-
 /-- **Composition of polynomial-witnessed maps.** If `Φ : (τ → R) → R` is given by a multivariate
 polynomial and every coordinate of `Ψ : (σ → R) → τ → R` is given by a multivariate polynomial,
 then `fun w ↦ Φ (Ψ w)` is given by a multivariate polynomial. -/
@@ -195,7 +186,7 @@ theorem exists_eval_comp {σ τ R : Type*} [CommSemiring R] {Φ : (τ → R) →
   choose Q hQ using hΨ
   obtain ⟨P, hP⟩ := hΦ
   refine ⟨aeval Q P, fun w ↦ ?_⟩
-  rw [hP (Ψ w), eval_aeval]
+  rw [hP (Ψ w), ← aeval_eq_eval, ← aeval_eq_eval, comp_aeval_apply, aeval_eq_eval, aeval_eq_eval]
   exact congrArg (fun x ↦ eval x P) (funext fun k ↦ hQ k w)
 
 end MvPolynomial
