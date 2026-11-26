@@ -30,6 +30,8 @@ decays like `exp (-t)` at `+∞`, and for `t > 0` it is the geometric series
 * `Real.hasDerivAt_inv_exp_sub_one`: `g' = -(g + g²)` away from `0`.
 * `Real.isBigO_inv_exp_sub_one`: `g(t) = O(exp (-t))` as `t → ∞`.
 * `Real.hasSum_exp_neg_nat_succ_mul`: `g(t) = ∑_{k ≥ 0} exp (-((k + 1) t))` for `t > 0`.
+* `Real.hasSum_mul_exp_neg_nat_succ_mul`: `a / (exp t - 1) = ∑_{k ≥ 0} a * exp (-((k + 1) t))`
+  for `t > 0`.
 -/
 
 public section
@@ -82,5 +84,11 @@ theorem hasSum_exp_neg_nat_succ_mul {t : ℝ} (ht : 0 < t) :
   · have h2 : exp t - 1 ≠ 0 := by linarith
     rw [exp_neg]
     field_simp
+
+/-- For `t > 0` and any scalar `a : ℝ`, the scaled geometric expansion
+`a / (exp t - 1) = ∑_{k ≥ 0} a * exp (-((k + 1) * t))`. -/
+theorem hasSum_mul_exp_neg_nat_succ_mul (a : ℝ) {t : ℝ} (ht : 0 < t) :
+    HasSum (fun k : ℕ ↦ a * exp (-((k + 1) * t))) (a / (exp t - 1)) := by
+  simpa [div_eq_mul_inv] using (hasSum_exp_neg_nat_succ_mul ht).mul_left a
 
 end Real

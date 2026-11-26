@@ -47,6 +47,10 @@ Abel–Plana summation formula.
   in terms of `bernoulli (2 * s)`.
 * `TauCeti.integral_Ioi_pow_div_exp_two_pi_mul_sub_one` and
   `TauCeti.integral_Ioi_self_div_exp_two_pi_mul_sub_one`: specializations to `c = 2 * π`.
+* `TauCeti.two_mul_neg_one_pow_div_factorial_mul_integral_Ioi_pow_div_exp_mul_sub_one` and
+  `TauCeti.two_mul_neg_one_pow_div_factorial_mul_integral_Ioi_pow_div_exp_two_pi_mul_sub_one`:
+  normalized odd-moment identities `(2 * (-1)^(s - 1) / (2s - 1)!) * ∫ ...` in terms of
+  `bernoulli (2 * s) / (2 * s)!`.
 
 ## References
 
@@ -61,15 +65,6 @@ namespace TauCeti
 
 open Filter Finset MeasureTheory Real Set
 open scoped Nat Topology
-
-/-- Pointwise geometric series expansion `y ^ (p - 1) / (exp (c * y) - 1) =
-∑_n y ^ (p - 1) * exp (-c * (n + 1) * y)` for `c > 0` and `y > 0`. -/
-private theorem hasSum_rpow_mul_exp_neg_mul {p c y : ℝ} (hc : 0 < c) (hy : 0 < y) :
-    HasSum (fun n : ℕ => y ^ (p - 1) * exp (-(c * (n + 1) * y)))
-      (y ^ (p - 1) / (exp (c * y) - 1)) := by
-  convert (Real.hasSum_exp_neg_nat_succ_mul (mul_pos hc hy)).mul_left (y ^ (p - 1)) using 1
-  · ext n; ring_nf
-  · rw [div_eq_mul_inv]
 
 /-- For `p > 1` and `c > 0`, the Bose–Einstein integrand `y ^ (p - 1) / (exp (c * y) - 1)` is
 integrable on `(0, ∞)`. -/
@@ -134,7 +129,8 @@ theorem hasSum_integral_Ioi_rpow_div_exp_mul_sub_one {p c : ℝ} (hp : 1 < p) (h
   have h_lim : ∀ᵐ y ∂volume.restrict (Ioi 0),
       HasSum (fun n => F n y) (y ^ (p - 1) / (exp (c * y) - 1)) := by
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with y hy
-    simpa [F, neg_mul] using hasSum_rpow_mul_exp_neg_mul hc hy
+    simpa [F, neg_mul, mul_assoc, mul_left_comm, mul_comm] using
+      Real.hasSum_mul_exp_neg_nat_succ_mul (y ^ (p - 1)) (mul_pos hc hy)
   have hsum := hasSum_integral_of_dominated_convergence F hF_meas h_bound
     (h_lim.mono fun _ => HasSum.summable)
     ((integrableOn_rpow_div_exp_mul_sub_one hp hc).congr (h_lim.mono fun _ h => h.tsum_eq.symm))
@@ -222,5 +218,49 @@ theorem integral_Ioi_self_div_exp_two_pi_mul_sub_one :
   have h := integral_Ioi_pow_div_exp_two_pi_mul_sub_one (s := 1) le_rfl
   rw [bernoulli_two] at h
   simpa using (h.trans (by norm_num))
+
+/-- Normalized odd-moment Bose–Einstein identity: for `s ≥ 1` and `c > 0`,
+`2 * ((-1) ^ (s - 1) / (2 * s - 1)!) * ∫ y in Ioi 0, y ^ (2 * s - 1) / (exp (c * y) - 1) =
+  (2 * π / c) ^ (2 * s) * bernoulli (2 * s) / (2 * s)!`. -/
+theorem two_mul_neg_one_pow_div_factorial_mul_integral_Ioi_pow_div_exp_mul_sub_one
+    {s : ℕ} (hs : 1 ≤ s) {c : ℝ} (hc : 0 < c) :
+    2 * ((-1 : ℝ) ^ (s - 1) / (2 * s - 1)!) *
+        ∫ y in Ioi (0 : ℝ), y ^ (2 * s - 1) / (exp (c * y) - 1) =
+      (2 * π / c) ^ (2 * s) * (bernoulli (2 * s) : ℝ) / (2 * s)! := by
+  rw [integral_Ioi_pow_div_exp_mul_sub_one hs hc]
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hs
+  have hpow : (-1 : ℝ) ^ (k + 1 - 1) * (-1 : ℝ) ^ (k + 1 + 1) = 1 := by
+    rw [Nat.add_sub_cancel, ← pow_add, show k + (k + 1 + 1) = 2 * (k + 1) by omega,
+      Even.neg_one_pow ⟨k + 1, by omega⟩]
+  have hfact : ((2 * (k + 1))! : ℝ) = (2 * (k + 1 : ℝ)) * ((2 * (k + 1) - 1)! : ℝ) := by
+    rw [← Nat.mul_factorial_pred (by omega : 2 * (k + 1) ≠ 0)]
+    push_cast; ring
+  have hfac_ne : ((2 * (k + 1) - 1)! : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
+  have hk_ne : ((k + 1 : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero k)
+  rw [hfact]
+  push_cast at hk_ne ⊢
+  calc
+    2 * ((-1 : ℝ) ^ (k + 1 - 1) / ((2 * (k + 1) - 1)! : ℝ)) *
+        ((-1 : ℝ) ^ (k + 1 + 1) * (2 * π / c) ^ (2 * (k + 1)) *
+          (bernoulli (2 * (k + 1)) : ℝ) / (4 * ((k : ℝ) + 1)))
+      = ((-1 : ℝ) ^ (k + 1 - 1) * (-1 : ℝ) ^ (k + 1 + 1)) *
+          ((2 * π / c) ^ (2 * (k + 1)) * (bernoulli (2 * (k + 1)) : ℝ) /
+            (2 * ((k : ℝ) + 1) * ((2 * (k + 1) - 1)! : ℝ))) := by
+        field_simp; ring
+    _ = (2 * π / c) ^ (2 * (k + 1)) * (bernoulli (2 * (k + 1)) : ℝ) /
+          (2 * ((k : ℝ) + 1) * ((2 * (k + 1) - 1)! : ℝ)) := by
+        rw [hpow, one_mul]
+
+/-- Specialization of
+`two_mul_neg_one_pow_div_factorial_mul_integral_Ioi_pow_div_exp_mul_sub_one` to `c = 2 * π`:
+`2 * ((-1) ^ (s - 1) / (2 * s - 1)!) * ∫ y in Ioi 0, y ^ (2 * s - 1) / (exp (2 * π * y) - 1) =
+  bernoulli (2 * s) / (2 * s)!`. -/
+theorem two_mul_neg_one_pow_div_factorial_mul_integral_Ioi_pow_div_exp_two_pi_mul_sub_one
+    {s : ℕ} (hs : 1 ≤ s) :
+    2 * ((-1 : ℝ) ^ (s - 1) / (2 * s - 1)!) *
+        ∫ y in Ioi (0 : ℝ), y ^ (2 * s - 1) / (exp (2 * π * y) - 1) =
+      (bernoulli (2 * s) : ℝ) / (2 * s)! := by
+  rw [two_mul_neg_one_pow_div_factorial_mul_integral_Ioi_pow_div_exp_mul_sub_one hs two_pi_pos,
+    div_self two_pi_pos.ne', one_pow, one_mul]
 
 end TauCeti

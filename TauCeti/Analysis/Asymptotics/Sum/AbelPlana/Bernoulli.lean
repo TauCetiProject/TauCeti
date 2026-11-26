@@ -67,28 +67,6 @@ namespace TauCeti
 
 /-! ### Main theorems -/
 
-/-- Twice the integrated `s`-th odd Taylor term against `(e^{2πy} - 1)⁻¹` equals
-`(B_{2s} / (2s)!) * A`. -/
-private lemma two_mul_odd_moment_eq_bernoulli {s : ℕ} (hs : 1 ≤ s) (A : ℝ) :
-    2 * (((-1 : ℝ) ^ (s - 1) * A / (2 * s - 1)!) *
-      ∫ y in Ioi (0 : ℝ), y ^ (2 * s - 1) / (Real.exp (2 * π * y) - 1)) =
-    (bernoulli (2 * s) : ℝ) / (2 * s)! * A := by
-  rw [integral_Ioi_pow_div_exp_two_pi_mul_sub_one hs]
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hs
-  have hs_add : (-1 : ℝ) ^ (k + 1 + 1) = (-1 : ℝ) ^ k := by
-    rw [add_assoc, pow_add]; norm_num
-  have hs_sq : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by
-    rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
-  have hfact_s : ((2 * (k + 1))! : ℝ) = (2 * (k + 1 : ℝ)) * ((2 * (k + 1) - 1)! : ℝ) := by
-    rw [← Nat.mul_factorial_pred (by omega : 2 * (k + 1) ≠ 0)]
-    push_cast; ring
-  have hfac_s_ne : ((2 * (k + 1) - 1)! : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
-  have hk_ne : ((k + 1 : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero k)
-  rw [Nat.add_sub_cancel, hs_add, hfact_s]
-  push_cast at hk_ne ⊢
-  field_simp
-  linear_combination 4 * (bernoulli (2 * (k + 1)) : ℝ) * A * hs_sq
-
 /-- **Bernoulli–Taylor expansion of the Abel–Plana half-line integral** (DLMF 2.10.2, integral
 expansion). Let `f` be `C^{2m}` (`m ≥ 1`) over `ℂ` on the closed vertical strip
 `S = {z : ℂ | a ≤ z.re ∧ z.re ≤ b}` (`a < b`) and real on `[a, b]`. For any `c ∈ [a, b]` such that
@@ -195,8 +173,10 @@ theorem exists_two_mul_integral_im_div_exp_two_pi_sub_one_eq {f : ℂ → ℂ} {
   congr 1
   · refine Finset.sum_congr rfl fun s hs => ?_
     dsimp only [term]
-    rw [integral_const_mul]
-    exact two_mul_odd_moment_eq_bernoulli (Finset.mem_Icc.mp hs).1 _
+    rw [integral_const_mul, mul_div_right_comm]
+    linear_combination (iteratedDerivWithin (2 * s - 1) f S c).re *
+      two_mul_neg_one_pow_div_factorial_mul_integral_Ioi_pow_div_exp_two_pi_mul_sub_one
+        (Finset.mem_Icc.mp hs).1
   · ring
 
 /-- **The Abel–Plana summation formula with Bernoulli expansion** (DLMF 2.10.2). Let `a < n` be
