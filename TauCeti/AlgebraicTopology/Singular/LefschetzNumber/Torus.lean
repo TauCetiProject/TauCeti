@@ -115,7 +115,7 @@ theorem lefschetzNumber_eq_det_id_sub_of_bijective
     -- `singularChains k` computes the singular homology functor with coefficients `k = 𝟙_`
     exact @Equiv.subsingleton _ _ (LinearEquiv.ofBijective _ (hG n)).symm.toEquiv hsub
   rw [lefschetzNumber_eq_sum hs, ← LinearMap.sum_neg_one_pow_mul_trace_exteriorPower_map]
-  -- `singularHomologyMap k n f` is the map of the singular homology functor on `TopCat.ofHom f`
+  simp_rw [singularHomologyMap_eq_singularHomologyFunctor_map]
   exact Finset.sum_congr rfl fun n _ ↦ congrArg _
     (TopCat.trace_singularHomologyFunctor_map_eq_trace_exteriorPower_map
       (TopCat.ofHom (f : C(G, G))) (hG n))
@@ -158,8 +158,8 @@ private theorem det_id_sub_singularHomologyMap_smulVecHom_int (A : Matrix ι ι 
 
 /-- **The Lefschetz number of a linear endomorphism of a torus.** For `p ≠ 0`, an integer matrix
 `A` and a field `k` of characteristic zero, the map `x ↦ A • x` of the torus `ι → AddCircle p` has
-Lefschetz number `det (1 - A)`: it acts on `Hₙ(Tⁿ; k) = ⋀ⁿ kⁿ` by `⋀ⁿ A`, and
-`∑ₙ (-1) ^ n tr (⋀ⁿ A) = det (1 - A)`. -/
+Lefschetz number `det (1 - A)`: it acts on `H_r(Tⁿ; k) = ⋀ʳ kⁿ` by `⋀ʳ A`, and
+`∑ᵣ (-1) ^ r tr (⋀ʳ A) = det (1 - A)`. -/
 theorem lefschetzNumber_smulVecHom (A : Matrix ι ι ℤ) (k : Type) [Field k] [CharZero k]
     (hp : p ≠ 0) :
     (A.smulVecHom (AddCircle p) : C(ι → AddCircle p, ι → AddCircle p)).lefschetzNumber k =
@@ -180,8 +180,10 @@ theorem lefschetzNumber_smulVecHom (A : Matrix ι ι ℤ) (k : Type) [Field k] [
         (A.smulVecHom (AddCircle p) : C(ι → AddCircle p, ι → AddCircle p))).det :=
     lefschetzNumber_eq_det_id_sub_of_bijective
       (AddCircle.bijective_pontryaginExteriorPower_pi ι hp) (smulVecHomMul A)
-  -- flat base change from `ℤ` to `k`; `singularHomologyMap` is the singular homology functor's map
-  rw [h, ← det_id_sub_singularHomologyMap_smulVecHom_int A hp, ← eq_intCast (algebraMap ℤ k)]
+  -- flat base change from `ℤ` to `k`
+  rw [h, ← det_id_sub_singularHomologyMap_smulVecHom_int A hp, ← eq_intCast (algebraMap ℤ k),
+    singularHomologyMap_eq_singularHomologyFunctor_map,
+    singularHomologyMap_eq_singularHomologyFunctor_map]
   exact TopCat.det_id_sub_singularHomologyMap_eq_algebraMap _ 1
 
 /-- **The Lefschetz numbers of the iterates of a linear endomorphism of a torus.** For `p ≠ 0`, an

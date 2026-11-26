@@ -64,8 +64,7 @@ theorem neg_one_pow_mul_trace_exteriorPower_map (f : M →ₗ[R] M) (r : ℕ) :
 of `⋀ʳ f` is `(-1) ^ r` times the coefficient of `tʳ` in `det (1 - t f)`. -/
 theorem trace_exteriorPower_map (f : M →ₗ[R] M) (r : ℕ) :
     trace R (⋀[R]^r M) (exteriorPower.map r f) = (-1) ^ r * f.charpoly.reverse.coeff r := by
-  rw [← neg_one_pow_mul_trace_exteriorPower_map, ← mul_assoc, ← mul_pow, neg_mul_neg, one_mul,
-    one_pow, one_mul]
+  simp [← neg_one_pow_mul_trace_exteriorPower_map, ← mul_assoc, ← mul_pow]
 
 /-- **The alternating sum of the traces on the exterior powers.** For an endomorphism `f` of a
 finite free module `M`, `∑ᵣ (-1) ^ r tr (⋀ʳ f) = det (1 - f)`, the sum running over the degrees

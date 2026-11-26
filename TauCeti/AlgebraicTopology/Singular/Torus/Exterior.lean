@@ -394,8 +394,8 @@ private theorem isIso_ofHom_piToCircle (hp : p ≠ 0) :
 
 variable (ι) in
 /-- **The homology of a torus of additive circles is the exterior algebra on its first homology.**
-For `p ≠ 0` and every commutative ring `k`, the Pontryagin map `⋀ⁿ H₁(Tⁿ; k) → Hₙ(Tⁿ; k)` of the
-torus `Tⁿ = ι → AddCircle p` is bijective. The Pontryagin product is taken on the multiplicative
+For `p ≠ 0` and every commutative ring `k`, the Pontryagin map `⋀ⁿ H₁(Tⁱ; k) → Hₙ(Tⁱ; k)` of the
+torus `Tⁱ = ι → AddCircle p` is bijective. The Pontryagin product is taken on the multiplicative
 form of the torus, the monoid object of `TopCat` with the same underlying space. -/
 theorem bijective_pontryaginExteriorPower_pi [Finite ι] {k : Type} [CommRing k] (hp : p ≠ 0)
     (n : ℕ) :
