@@ -44,6 +44,10 @@ A finitely generated submodule of `ℕ →₀ M` consists of functions supported
 * `Finsupp.map_mem_supported_of_map_single_eq_smul_single`: an operator
   `single j 1 ↦ c j • single (σ j) 1` maps `supported R R s` into `supported R R t` when `c j`
   vanishes whenever `σ` moves `j ∈ s` out of `t`.
+* `Finsupp.mem_supported_of_apply_eq_sum`, `Finsupp.filter_of_apply_eq_sum`: a map of free
+  modules given by matrix coefficients preserves the functions supported on a set that no nonzero
+  coefficient leaves, and commutes with filtering by a predicate that no nonzero coefficient
+  crosses.
 * `Submodule.FG.exists_le_supported_Iio`: a finitely generated submodule of `ℕ →₀ M` is
   supported on some initial segment.
 * `Finsupp.exists_support_map_subset_range`: a linear map `(ℕ →₀ M) →ₗ[R] (ℕ →₀ N)` from a
@@ -176,6 +180,46 @@ theorem map_mem_supported_of_map_single_eq_smul_single {s : Set α} {t : Set β}
   · exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _ (single_mem_supported R _ h))
   · rw [hc j hj h, zero_smul, smul_zero]
     exact zero_mem _
+
+end Finsupp
+
+namespace Finsupp
+
+variable {α R : Type*} [Semiring R] {f : (α →₀ R) → α →₀ R} {k : α → α → R}
+
+/-- A map of free modules with matrix coefficients `k x y` maps the functions supported on `s` to
+functions supported on `s`, when no nonzero coefficient leads out of `s`. -/
+theorem mem_supported_of_apply_eq_sum (hf : ∀ v y, f v y = v.sum fun x a => a * k x y)
+    {s : Set α} (hs : ∀ x ∈ s, ∀ y, k x y ≠ 0 → y ∈ s) {v : α →₀ R}
+    (hv : v ∈ supported R R s) : f v ∈ supported R R s := by
+  rw [mem_supported']
+  intro y hy
+  rw [hf, Finsupp.sum]
+  refine Finset.sum_eq_zero fun x hx => ?_
+  rw [not_ne_iff.mp (mt (hs x ((mem_supported _ _).mp hv hx) y) hy), mul_zero]
+
+/-- A map of free modules with matrix coefficients `k x y` commutes with restricting a function to
+the points satisfying `p`, when no nonzero coefficient joins a point satisfying `p` to one that
+does not. -/
+theorem filter_of_apply_eq_sum (hf : ∀ v y, f v y = v.sum fun x a => a * k x y)
+    {p : α → Prop} [DecidablePred p] (hk : ∀ x y, k x y ≠ 0 → (p x ↔ p y))
+    (v : α →₀ R) : f (v.filter p) = (f v).filter p := by
+  have hk' (x y : α) (hxy : ¬(p x ↔ p y)) : k x y = 0 :=
+    not_imp_comm.mp (hk x y) hxy
+  ext y
+  rw [filter_apply, hf, hf, sum_of_support_subset _ (s := v.support)
+    (by rw [support_filter]; exact Finset.filter_subset _ _) _ fun _ _ => zero_mul _, Finsupp.sum]
+  split_ifs with hy
+  · refine Finset.sum_congr rfl fun x _ => ?_
+    rw [filter_apply]
+    split_ifs with hx
+    · rfl
+    · rw [zero_mul, hk' x y (fun h => hx (h.mpr hy)), mul_zero]
+  · refine Finset.sum_eq_zero fun x _ => ?_
+    rw [filter_apply]
+    split_ifs with hx
+    · rw [hk' x y (fun h => hy (h.mp hx)), mul_zero]
+    · rw [zero_mul]
 
 end Finsupp
 
