@@ -27,8 +27,8 @@ winding number of `α` around any normal circle `{z} × {‖w‖ = ρ}` outside 
   (`TauCeti.SeibergWitten.cutoffCurrent_eq_zero_of_notMem_closedBall`), since there `χ = 1`
   near `|α|²`.
 * Over every base point `z` the flux `∫ dμ_z` is the charge of the normal disc
-  `w ↦ (z, w)` of radius `ρ > R`, which is `2π` times the winding number of `w ↦ α(z, w)`
-  around its boundary circle
+  `w ↦ (z, w)` of any radius `ρ ≥ 0` with `ρ > R`, which is `2π` times the winding number of
+  `w ↦ α(z, w)` around its boundary circle
   (`TauCeti.SeibergWitten.exists_int_sliceMoment_cutoffCurrent_eq`, by
   `TauCeti.SeibergWitten.exists_int_integral_cutoffCurrent_comp_closedBall`).
 * The flux is continuous in `z` and takes values in `2π ℤ`, so it is the same integer over the
@@ -85,10 +85,11 @@ private theorem nonneg_of_eqOn_one (hχ₀ : χ =ᶠ[𝓝 0] 0) (hχc : EqOn χ 
   rw [hχ₀.eq_of_nhds] at h₁
   exact zero_ne_one h₁
 
-/-- **The flux through a normal fibre is the winding number at its boundary.** Under the
-hypotheses of `cutoffCurrent_eq_zero_of_notMem_closedBall`, for every radius `ρ > R` the flux
-`∫ dμ_z` of the cutoff current through the normal fibre over `z` is `2π n`, where the integer `n`
-is the winding number of `α(z, ·)` around the circle of radius `ρ`. -/
+/-- **The flux through a normal fibre is the winding number at its boundary.** Let `α` be a `C²`
+section and `b` a `C¹` connection form, let the cutoff `χ` be `C¹`, vanish near `0` and equal `1`
+on `(c, ∞)`, and let `|α(z, w)|² > c` whenever `‖w‖ > R`. Then for every radius `ρ ≥ 0` with
+`ρ > R` the flux `∫ dμ_z` of the cutoff current through the normal fibre over `z` is `2π n`, where
+the integer `n` is the winding number of `α(z, ·)` around the circle of radius `ρ`. -/
 theorem exists_int_sliceMoment_cutoffCurrent_eq (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b)
     (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (hχc : EqOn χ 1 (Ioi c))
     (hR : ∀ z w, R < ‖w‖ → c < normSq (α (z, w))) {ρ : ℝ} (hρ₀ : 0 ≤ ρ) (hρ : R < ρ) (z : E) :
@@ -113,10 +114,11 @@ theorem exists_int_sliceMoment_cutoffCurrent_eq (hα : ContDiff ℝ 2 α) (hb : 
       (fun h ↦ hw (Metric.closedBall_subset_closedBall hρ.le h))]
     simp
 
-/-- **Constant integer transverse flux.** Under the hypotheses of
-`cutoffCurrent_eq_zero_of_notMem_closedBall`, there is one integer `n` such that the flux
-`∫ dμ_z` of the cutoff current through the normal fibre over every base point `z` is `2π n`, and
-`n` is the winding number of `α(z, ·)` around every circle of radius `ρ > R`. -/
+/-- **Constant integer transverse flux.** Let `α` be a `C²` section and `b` a `C¹` connection
+form, let the cutoff `χ` be `C¹`, vanish near `0` and equal `1` on `(c, ∞)`, and let
+`|α(z, w)|² > c` whenever `‖w‖ > R`. Then there is one integer `n` such that the flux `∫ dμ_z` of
+the cutoff current through the normal fibre over every base point `z` is `2π n`, and `n` is the
+winding number of `α(z, ·)` around every circle of radius `ρ ≥ 0` with `ρ > R`. -/
 theorem exists_int_forall_sliceMoment_cutoffCurrent_eq (hα : ContDiff ℝ 2 α)
     (hb : ContDiff ℝ 1 b) (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (hχc : EqOn χ 1 (Ioi c))
     (hR : ∀ z w, R < ‖w‖ → c < normSq (α (z, w))) :
@@ -152,9 +154,9 @@ theorem exists_int_forall_sliceMoment_cutoffCurrent_eq (hα : ContDiff ℝ 2 α)
 
 open ContinuousLinearMap in
 /-- **The pairing of the cutoff current with a taming form is topological.** Let the base `E`
-be two-dimensional with basis `e`, and assume the hypotheses of
-`cutoffCurrent_eq_zero_of_notMem_closedBall` with a `C³` section and `C²` connection form and
-cutoff, so that the cutoff current is closed.
+be two-dimensional with basis `e`. Let `α` be a `C³` section and `b` a `C²` connection form, let
+the cutoff `χ` be `C²`, vanish near `0` and equal `1` on `(c, ∞)`, and let `|α(z, w)|² > c`
+whenever `‖w‖ > R`; then the cutoff current is closed.
 Let `n` be the winding number of `α` around the normal circles outside the tube. For a compactly
 supported continuous base two-form `β` and a compactly supported `C¹` one-form `η` on `E × ℂ`,
 
@@ -187,10 +189,10 @@ theorem exists_int_integral_cutoffCurrent_wedge_smul_compContinuousLinearMap_fst
     (fun x ↦ congr_fun (extDeriv_cutoffCurrent hα hb hχ hχ₀) x) hβ hβc hη hηc k 0, hflux 0]
   ring
 
-/-- **The cutoff current under the normal dilation.** For `a ≠ 0`, the cutoff current of the pair
-`(Φ_a^* b, α ∘ Φ_a)` pulled back by the normal dilation `Φ_a (z, W) = (z, a W)` is the pullback
-`Φ_a^* Θ` (`cutoffCurrent_comp`), so its slice moments are those of the cutoff current `Θ` of
-`(b, α)` with the weight rescaled by `a⁻¹`: `∫ g dμ_z(Φ_a^* Θ) = ∫ g(a⁻¹ w) dμ_z(Θ)`. In
+/-- **The cutoff current under the normal dilation.** Let `Φ_a (z, W) = (z, a W)` be the normal
+dilation, `a ≠ 0`. The cutoff current of the dilated pair `(Φ_a^* b, α ∘ Φ_a)` is the pullback
+`Φ_a^* Θ` of the cutoff current `Θ` of `(b, α)` (`cutoffCurrent_comp`), so its slice moments are
+those of `Θ` with the weight rescaled by `a⁻¹`: `∫ g dμ_z(Φ_a^* Θ) = ∫ g(a⁻¹ w) dμ_z(Θ)`. In
 particular the dilated current has the same flux as `Θ`. -/
 theorem sliceMoment_cutoffCurrent_comp_prodMap_smul {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b) (hχ : ContDiff ℝ 1 χ)
