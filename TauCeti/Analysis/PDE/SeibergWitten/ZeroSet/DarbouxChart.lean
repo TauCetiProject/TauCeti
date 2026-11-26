@@ -10,7 +10,6 @@ public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.UpperDensity
 import TauCeti.Analysis.InnerProductSpace.Comass
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Mass
 import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
-import TauCeti.Geometry.Symplectic.MixedWedge
 
 /-!
 # Density of the defect energy for large-parameter solutions in a Darboux chart
@@ -36,11 +35,12 @@ The two pointwise inputs of Taubes's monotonicity inequality transfer from `G` t
 
 * The Kähler component is the same in the chart and in the frame,
   `F(e₀, e₁) + F(e₂, e₃) = G(e₀, e₁) + G(e₂, e₃)`, because `S x` is symplectic
-  (`ContinuousAlternatingMap.apply_add_apply_eq_of_cross_eq_zero`). So the defect density
-  `δ = (r / 4) |1 - |φ|² - |β|²|` is bounded by the Kähler component of `F` exactly as in the flat
-  chart.
+  (`TauCeti.AlmostComplexStructure.compContinuousLinearMap_apply_add_apply_eq`). So the defect
+  density `δ = (r / 4) |1 - |φ|² - |β|²|` is bounded by the Kähler component of `F` exactly as in
+  the flat chart (`TauCeti.SeibergWitten.div_mul_abs_one_sub_sub_le_apply_add_apply_add`).
 * The Hermitian part `F(v, J v) = G(S v, S J v)` sees the moving geometry. Exchanging `S J v` for
-  `J S v` costs `G(S v, (S J - J S) v)`, and `‖S J - J S‖ ≤ 2 ‖S - 1‖`. The whole curvature is
+  `J S v` costs `G(S v, (S J - J S) v)`, and `‖S J - J S‖ ≤ 2 ‖S - 1‖`
+  (`ContinuousAlternatingMap.compContinuousLinearMap_apply_apply_le`). The whole curvature is
   bounded by the defect density, `‖G‖ ≤ (2 + C) δ + O(1)`
   (`TauCeti.SeibergWitten.norm_le_of_add_hodgeStar_eq_of_norm_smul_sub_hodgeStar_le`), so on the
   sphere of radius `σ` this costs a factor `1 + C' σ`.
@@ -52,8 +52,8 @@ The result is Taubes's differential inequality in a Darboux chart, with the geom
 
 (`TauCeti.SeibergWitten.exists_measure_closedBall_le_mul_one_add_mul_deriv_add_of_frame`), with
 `C'` and `K'` depending only on the constants of the hypotheses and on the radius of the chart, not
-on `r`, on the solution or on the centre. Integrating it as in
-`TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Covering` and
+on `r`, on the solution or on the centre. Integrating it as in the flat chart
+(`TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_withDensity_closedBall_of_eq_zero`) and as in
 `TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.UpperDensity` gives
 
 * the quadratic lower bound `E_r(B_σ) ≥ c σ²` at zeros of `α`, for `c₀ r^(-1/2) ≤ σ ≤ ρ₀`
@@ -94,81 +94,12 @@ open scoped RealInnerProductSpace InnerProductSpace NNReal ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {J : AlmostComplexStructure E}
 
-/-! ### Two-forms in a moving frame -/
-
-section Kahler
-
-variable [Fact (finrank ℝ E = 4)] {e : OrthonormalBasis (Fin 4) ℝ E}
-
-attribute [local instance] finiteDimensional_of_finrank_four
-
-/-- **The Kähler component in a symplectic frame.** If `S` preserves the Kähler form
-`ω(u, v) = ⟪J u, v⟫`, then a two-form `G` and its pullback `G ∘ S` have the same Kähler component
-`G(e₀, e₁) + G(e₂, e₃)` in a unitary frame `e`. -/
-private theorem compContinuousLinearMap_apply_add_apply_eq (h₀ : J (e 0) = e 1)
-    (h₂₃ : J (e 2) = e 3) {S : E →L[ℝ] E} (hS : ∀ u v, ⟪J (S u), S v⟫ = ⟪J u, v⟫)
-    (G : E [⋀^Fin 2]→L[ℝ] ℝ) :
-    G.compContinuousLinearMap S ![e 0, e 1] + G.compContinuousLinearMap S ![e 2, e 3] =
-      G ![e 0, e 1] + G ![e 2, e 3] := by
-  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
-  have hω (u w : E) : alternatingFormEquiv E 2 J.kahlerForm ![u, w] = ⟪J u, w⟫ :=
-    AlmostComplexStructure.alternatingFormEquiv_kahlerForm_apply hJ _
-  have he (i j : Fin 4) : ⟪e i, e j⟫ = if i = j then 1 else 0 :=
-    orthonormal_iff_ite.1 e.orthonormal i j
-  have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
-  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply_vecCons_two]
-  refine ContinuousAlternatingMap.apply_add_apply_eq_of_cross_eq_zero
-    (ω₀ := alternatingFormEquiv E 2 J.kahlerForm) Fact.out ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ G <;>
-    simp only [hω, hS, h₀, h₁, h₂₃, inner_neg_left, he] <;> norm_num
-
-end Kahler
-
-/-- **The Hermitian part in a moving frame.** Let `G` be a two-form with Hermitian part bounded
-by `a`, `G(u, J u) ≤ a ‖u‖²`, and norm at most `b`, and let `S` be within `ε` of the identity.
-Then the pullback `G ∘ S` has Hermitian part bounded by `a (1 + ε)² + 2 b ε (1 + ε)`: the
-difference is `G(S v, (S J - J S) v)`, and `‖S J - J S‖ ≤ 2 ε`. -/
-private theorem compContinuousLinearMap_apply_apply_le (hJ : ∀ v, ‖J v‖ = ‖v‖)
-    {G : E [⋀^Fin 2]→L[ℝ] ℝ} {S : E →L[ℝ] E} {a b ε : ℝ} (ha : 0 ≤ a) (hε : 0 ≤ ε)
-    (hG : ∀ u, G ![u, J u] ≤ a * ‖u‖ ^ 2) (hGb : ‖G‖ ≤ b) (hS : ‖S - 1‖ ≤ ε) (v : E) :
-    G.compContinuousLinearMap S ![v, J v] ≤ (a * (1 + ε) ^ 2 + 2 * b * ε * (1 + ε)) * ‖v‖ ^ 2 := by
-  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply_vecCons_two]
-  have hS₁ (w : E) : ‖S w - w‖ ≤ ε * ‖w‖ := by
-    simpa using (S - 1).le_of_opNorm_le hS w
-  have hSv : ‖S v‖ ≤ (1 + ε) * ‖v‖ := by
-    calc ‖S v‖ = ‖v + (S v - v)‖ := by rw [add_sub_cancel]
-      _ ≤ ‖v‖ + ε * ‖v‖ := (norm_add_le _ _).trans (by gcongr; exact hS₁ v)
-      _ = (1 + ε) * ‖v‖ := by ring
-  -- The commutator `S J v - J S v = (S - 1) J v - J ((S - 1) v)` has length at most `2 ε ‖v‖`.
-  have hd : ‖S (J v) - J (S v)‖ ≤ 2 * ε * ‖v‖ := by
-    have h : S (J v) - J (S v) = (S (J v) - J v) - J (S v - v) := by
-      rw [J.apply_sub]
-      abel
-    rw [h]
-    calc ‖(S (J v) - J v) - J (S v - v)‖ ≤ ‖S (J v) - J v‖ + ‖J (S v - v)‖ := norm_sub_le _ _
-      _ ≤ ε * ‖J v‖ + ε * ‖v‖ := by
-        rw [hJ (S v - v)]
-        exact add_le_add (hS₁ (J v)) (hS₁ v)
-      _ = 2 * ε * ‖v‖ := by rw [hJ]; ring
-  -- Exchanging `S J v` for `J S v` changes `G(S v, ·)` by `G(S v, S J v - J S v)`.
-  have hsplit : G ![S v, S (J v)] = G ![S v, J (S v)] + G ![S v, S (J v) - J (S v)] := by
-    have h := G.map_vecCons_sub (S (J v)) (J (S v)) ![S v]
-    rw [G.apply_vecCons_swap (S v), G.apply_vecCons_swap (S v),
-      G.apply_vecCons_swap (S v)] at h
-    linarith
-  have hnorm : |G ![S v, S (J v) - J (S v)]| ≤ ‖G‖ * (‖S v‖ * ‖S (J v) - J (S v)‖) := by
-    simpa [Fin.prod_univ_two, Real.norm_eq_abs] using G.le_opNorm ![S v, S (J v) - J (S v)]
-  have hb : 0 ≤ b := (norm_nonneg G).trans hGb
-  calc G ![S v, S (J v)]
-      ≤ a * ‖S v‖ ^ 2 + ‖G‖ * (‖S v‖ * ‖S (J v) - J (S v)‖) := by
-        rw [hsplit]
-        exact add_le_add (hG (S v)) ((le_abs_self _).trans hnorm)
-    _ ≤ a * ((1 + ε) * ‖v‖) ^ 2 + b * ((1 + ε) * ‖v‖ * (2 * ε * ‖v‖)) := by
-        gcongr
-    _ = (a * (1 + ε) ^ 2 + 2 * b * ε * (1 + ε)) * ‖v‖ ^ 2 := by ring
+/-! ### The constants of the moving frame -/
 
 /-- The real inequality that turns the bound of
-`compContinuousLinearMap_apply_apply_le`, with `a = (1 + κ) δ + K₁`, `b = (2 + C) δ + K₂` and
-`0 ≤ ε ≤ M`, into the form `(1 + C' ε) (1 + κ) δ + K₃` of the monotonicity inequality. -/
+`ContinuousAlternatingMap.compContinuousLinearMap_apply_apply_le`, with `a = (1 + κ) δ + K₁`,
+`b = (2 + C) δ + K₂` and `0 ≤ ε ≤ M`, into the form `(1 + C' ε) (1 + κ) δ + K₃` of the
+monotonicity inequality. -/
 private theorem add_mul_one_add_sq_add_le {δ κ C M ε K₁ K₂ : ℝ} (hδ : 0 ≤ δ) (hκ : 0 ≤ κ)
     (hC : 0 ≤ C) (hε : 0 ≤ ε) (hεM : ε ≤ M) (hK₁ : 0 ≤ K₁) (hK₂ : 0 ≤ K₂) :
     ((1 + κ) * δ + K₁) * (1 + ε) ^ 2 + 2 * ((2 + C) * δ + K₂) * ε * (1 + ε) ≤
@@ -241,11 +172,8 @@ private theorem compContinuousLinearMap_apply_apply_le_of_add_hodgeStar_eq
   -- The Hermitian part and the norm of `G`.
   have hGB (u : E) : G ![u, J u] ≤ ((1 + C / √r) * (r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2|) +
       ((1 + C) * K + √2 * H / 2 + C)) * ‖u‖ ^ 2 := by
-    have h := hermitianForm_apply_self_le_of_add_hodgeStar_eq h₀ h₂₃ hQ hkl he hφ hβ hr hβK hGeq
-      hC hGm u
-    rw [AlmostComplexStructure.hermitianForm_apply_self, inner_alternatingFormEquiv_symm_ιMulti]
-      at h
-    refine h.trans (mul_le_mul_of_nonneg_right ?_ (sq_nonneg _))
+    refine (apply_apply_le_of_add_hodgeStar_eq h₀ h₂₃ hQ hkl he hr hφ hβ hβK hGeq hC hGm u).trans
+      (mul_le_mul_of_nonneg_right ?_ (sq_nonneg _))
     have : √2 * ‖η‖ / 2 ≤ √2 * H / 2 := by gcongr
     linarith
   have hGn : ‖G‖ ≤ (2 + C) * (r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2|) + ((2 + C) * (K + 1) + H) := by
@@ -254,8 +182,9 @@ private theorem compContinuousLinearMap_apply_apply_le_of_add_hodgeStar_eq
     have hG : ‖G‖ ≤ ‖(alternatingFormEquiv E 2).symm G‖ := by
       simpa using norm_alternatingFormEquiv_le ((alternatingFormEquiv E 2).symm G)
     linarith
-  refine (compContinuousLinearMap_apply_apply_le (AlmostComplexStructure.norm_apply hJ)
-    (add_nonneg (mul_nonneg (by linarith) hδ) (by positivity)) hε hGB hGn hS v).trans ?_
+  refine (G.compContinuousLinearMap_apply_apply_le (J := J.toLinearMap)
+    (AlmostComplexStructure.norm_apply hJ) (add_nonneg (mul_nonneg (by linarith) hδ)
+      (by positivity)) hε hGB hGn hS v).trans ?_
   refine mul_le_mul_of_nonneg_right ?_ (sq_nonneg _)
   exact add_mul_one_add_sq_add_le hδ hκ hC hε hεM (by positivity) (by positivity)
 
@@ -311,24 +240,17 @@ theorem exists_measure_closedBall_le_mul_one_add_mul_deriv_add_of_frame {K C H L
     K₃ * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)), by positivity,
     fun r hr F G S φ β η c hF hdF hFG hSω hS₁ hφc hβc hφ hβ hφβ hβK hη hGeq hGm σ hσ ↦ ?_⟩
   have hr0 : 0 < r := by linarith
-  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
-  -- The two-vector of `G x` pairs with `u ∧ w` to `G x (u, w)`.
-  have hpair (x : E) (u w : E) :
-      ⟪(alternatingFormEquiv E 2).symm (G x), exteriorPower.ιMulti ℝ 2 ![u, w]⟫ = G x ![u, w] :=
-    inner_alternatingFormEquiv_symm_ιMulti _ _
   set δ : E → ℝ := fun x ↦ r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|
   have hδx (x : E) : r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2| = δ x := rfl
   have hδ₀ (x : E) : 0 ≤ δ x := mul_nonneg (by linarith) (abs_nonneg _)
   -- The defect density is bounded by the Kähler component, which is the same for `F` and `G`.
   have hω : ∀ x ∈ ball c R, δ x ≤ F x ![e 0, e 1] + F x ![e 2, e 3] + K₃ := by
     intro x hx
-    have h := div_mul_abs_one_sub_sub_le_inner_add hQ hkl
-      (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he)
-      (AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ) (hφ x hx) (hβ x hx) hr0 hK
-      (hφβ x hx) (hGeq x hx)
-    rw [real_inner_comm, AlmostComplexStructure.kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂₃,
-      inner_add_right, hpair, hpair, hδx] at h
-    rw [hFG x hx, compContinuousLinearMap_apply_add_apply_eq h₀ h₂₃ (hSω x hx)]
+    have h := div_mul_abs_one_sub_sub_le_apply_add_apply_add h₀ h₂₃ hQ hkl he hr0 hK (hφ x hx)
+      (hβ x hx) (hφβ x hx) (hGeq x hx)
+    rw [hδx] at h
+    rw [hFG x hx, AlmostComplexStructure.compContinuousLinearMap_apply_add_apply_eq Fact.out h₀ h₂₃
+      (hSω x hx)]
     have hηx : √2 * ‖η x‖ / 2 ≤ √2 * H / 2 := by gcongr; exact hη x hx
     have hK₁₃ : K₁ ≤ K₃ := by
       have : K₁ ≤ (1 + M) ^ 2 * K₁ := le_mul_of_one_le_left hK₁ (one_le_pow₀ (by linarith))
@@ -395,47 +317,12 @@ theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame {K C H L R : 
   obtain ⟨C', hC', K', hK', hmono⟩ :=
     exists_measure_closedBall_le_mul_one_add_mul_deriv_add_of_frame (μ := μ) h₀ h₂₃ hQ hkl he hρ
       h₂ hK hC hH hL
-  have hB₁ : 0 < μ.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
-  -- The smallest scale `c₀ / √r` is at most `R / 2` and keeps `|α|²` below `1 / 4`.
-  set c₀ := min (R / 2) (1 / (16 * (K + 1)))
-  have hc₀ : 0 < c₀ := lt_min (half_pos hR) (by positivity)
-  have hc₀K : 256 * K * c₀ ^ 2 ≤ 1 := by
-    have h1 : 256 * K * (1 / (16 * (K + 1))) ^ 2 ≤ 1 := by
-      rw [div_pow, one_pow, mul_one_div, div_le_one (by positivity)]
-      nlinarith
-    calc 256 * K * c₀ ^ 2 ≤ 256 * K * (1 / (16 * (K + 1))) ^ 2 := by
-          gcongr
-          exact min_le_right _ _
-      _ ≤ 1 := h1
-  obtain ⟨c, hc, ρ₀, hρ₀, hdens⟩ :=
-    TauCeti.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le (X := E) hC' hC hK' hc₀
-      (by positivity : 0 < c₀ ^ 4 * μ.real (ball (0 : E) 1) / 8) (half_pos hR)
+  obtain ⟨c₀, hc₀, c, hc, ρ₀, hρ₀, hdens⟩ :=
+    exists_forall_ofReal_mul_sq_le_withDensity_closedBall_of_eq_zero (G := positiveHalfSpinors o ρ)
+      (F := positiveHalfSpinors o ρ) (μ := μ) Fact.out hK hC' hC hK' hR
   refine ⟨c₀, hc₀, c, hc, ρ₀, hρ₀, fun r hr hrK F G S φ β α b η x₀ hF hdF hFG hSω hS hφc hβc hα
-    hφα hφ hβ hφβ hβK hgrad hη hGeq hGm hα₀ σ hσ hσρ₀ ↦ ?_⟩
-  have hδ : ContinuousOn (fun x ↦ r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|) (ball x₀ R) :=
-    continuousOn_const.mul ((continuousOn_const.sub (hφc.norm.pow 2)).sub (hβc.norm.pow 2)).abs
-  have hfin : ∀ s < R, (μ.withDensity fun x ↦
-      ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|)) (closedBall x₀ s) ≠ ⊤ := by
-    intro s hs
-    rw [withDensity_apply _ measurableSet_closedBall]
-    exact ((hδ.mono (closedBall_subset_ball hs)).integrableOn_compact
-      (isCompact_closedBall x₀ s)).setLIntegral_lt_top.ne
-  refine hdens r hr _ x₀ (hfin _ (half_lt_self hR))
-    (Filter.Eventually.of_forall fun s hs ↦ ?_) ?_ σ hσ hσρ₀
-  · -- Taubes's monotonicity inequality holds at every radius below `R`.
-    have hs0 : 0 < s := (by positivity : 0 ≤ c₀ / √r).trans_lt hs.1
-    exact hmono r hr F G S φ β η x₀ hF hdF hFG hSω hS hφc hβc hφ hβ hφβ hβK hη hGeq hGm s
-      ⟨hs0, hs.2.trans (half_lt_self hR)⟩
-  · -- The defect energy at the smallest scale.
-    have hsR : c₀ / √r < R :=
-      (div_le_self hc₀.le (Real.one_le_sqrt.2 hr)).trans_lt
-        ((min_le_left _ _).trans_lt (half_lt_self hR))
-    have hsub : closedBall x₀ (c₀ / √r) ⊆ ball x₀ R := closedBall_subset_ball hsR
-    rw [← ENNReal.ofReal_le_iff_le_toReal (hfin _ hsR)]
-    exact ofReal_div_le_withDensity_closedBall_of_eq_zero hK hr hrK hc₀.le hc₀K
-      (fun y hy ↦ hα y (hsub hy)) (fun y hy ↦ hφα y (hsub hy)) (fun y hy ↦ hφβ y (hsub hy))
-      (fun y hy ↦ hβK y (hsub hy)) (fun y hy ↦ hgrad y (hsub hy)) hα₀
+    hφα hφ hβ hφβ hβK hgrad hη hGeq hGm hα₀ ↦ hdens r hr hrK φ β α b x₀ hφc hβc hα hφα hφβ hβK
+      hgrad (hmono r hr F G S φ β η x₀ hF hdF hFG hSω hS hφc hβc hφ hβ hφβ hβK hη hGeq hGm) hα₀⟩
 
 /-- **Quadratic upper bound for the defect energy in a Darboux chart.** Fix constants
 `K, C, H, L, M ≥ 0`, a radius `R > 0` and a scale `c₀ > 0`. There is a constant `C'' > 0` with the

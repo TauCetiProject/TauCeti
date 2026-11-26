@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # Alternatization of a continuous bilinear map
@@ -30,6 +31,9 @@ of bilinear maps has a smooth alternatization. As in Mathlib's `alternatizeUncur
   `(L u, L w)`.
 * `ContinuousAlternatingMap.nondegenerate_compContinuousLinearEquiv`: a two-form with trivial left
   kernel keeps a trivial left kernel when pulled back along a continuous linear equivalence.
+* `ContinuousAlternatingMap.compContinuousLinearMap_apply_apply_le`: a bound
+  `G(u, J u) ≤ a ‖u‖²` for an isometry `J` survives pullback along a map within `ε` of the
+  identity, with `a` replaced by `a (1 + ε)² + 2 ‖G‖ ε (1 + ε)`.
 -/
 
 public section
@@ -103,6 +107,51 @@ theorem nondegenerate_compContinuousLinearEquiv (a : V [⋀^Fin 2]→L[𝕜] W) 
   refine e.injective ((hnd (e v) fun w ↦ ?_).trans e.map_zero.symm)
   simpa [-compContinuousLinearMap_apply, compContinuousLinearMap_apply_vecCons_two] using
     hv (e.symm w)
+
+/-- **The Hermitian part of a pulled-back two-form.** Let `J` be a linear map preserving norms,
+and let the real two-form `G` satisfy `G(u, J u) ≤ a ‖u‖²` and `‖G‖ ≤ b`. If `S` is within `ε`
+of the identity, then the pullback `G ∘ S` satisfies
+`(G ∘ S)(v, J v) ≤ (a (1 + ε)² + 2 b ε (1 + ε)) ‖v‖²`: the difference from `G(S v, J S v)` is
+`G(S v, S J v - J S v)`, and `‖S J v - J S v‖ ≤ 2 ε ‖v‖`. -/
+theorem compContinuousLinearMap_apply_apply_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (G : E [⋀^Fin 2]→L[ℝ] ℝ) {J : E →ₗ[ℝ] E} (hJ : ∀ v, ‖J v‖ = ‖v‖)
+    {S : E →L[ℝ] E} {a b ε : ℝ} (ha : 0 ≤ a) (hε : 0 ≤ ε) (hG : ∀ u, G ![u, J u] ≤ a * ‖u‖ ^ 2)
+    (hGb : ‖G‖ ≤ b) (hS : ‖S - 1‖ ≤ ε) (v : E) :
+    G.compContinuousLinearMap S ![v, J v] ≤ (a * (1 + ε) ^ 2 + 2 * b * ε * (1 + ε)) * ‖v‖ ^ 2 := by
+  rw [compContinuousLinearMap_apply_vecCons_two]
+  have hS₁ (w : E) : ‖S w - w‖ ≤ ε * ‖w‖ := by
+    simpa using (S - 1).le_of_opNorm_le hS w
+  have hSv : ‖S v‖ ≤ (1 + ε) * ‖v‖ := by
+    calc ‖S v‖ = ‖v + (S v - v)‖ := by rw [add_sub_cancel]
+      _ ≤ ‖v‖ + ε * ‖v‖ := (norm_add_le _ _).trans (by gcongr; exact hS₁ v)
+      _ = (1 + ε) * ‖v‖ := by ring
+  -- The commutator `S J v - J S v = (S - 1) J v - J ((S - 1) v)` has length at most `2 ε ‖v‖`.
+  have hd : ‖S (J v) - J (S v)‖ ≤ 2 * ε * ‖v‖ := by
+    have h : S (J v) - J (S v) = (S (J v) - J v) - J (S v - v) := by
+      rw [map_sub]
+      abel
+    rw [h]
+    calc ‖(S (J v) - J v) - J (S v - v)‖ ≤ ‖S (J v) - J v‖ + ‖J (S v - v)‖ := norm_sub_le _ _
+      _ ≤ ε * ‖J v‖ + ε * ‖v‖ := by
+        rw [hJ (S v - v)]
+        exact add_le_add (hS₁ (J v)) (hS₁ v)
+      _ = 2 * ε * ‖v‖ := by rw [hJ]; ring
+  -- Exchanging `S J v` for `J S v` changes `G(S v, ·)` by `G(S v, S J v - J S v)`.
+  have hsplit : G ![S v, S (J v)] = G ![S v, J (S v)] + G ![S v, S (J v) - J (S v)] := by
+    have h := G.map_vecCons_sub (S (J v)) (J (S v)) ![S v]
+    rw [G.apply_vecCons_swap (S v), G.apply_vecCons_swap (S v),
+      G.apply_vecCons_swap (S v)] at h
+    linarith
+  have hnorm : |G ![S v, S (J v) - J (S v)]| ≤ ‖G‖ * (‖S v‖ * ‖S (J v) - J (S v)‖) := by
+    simpa [Fin.prod_univ_two, Real.norm_eq_abs] using G.le_opNorm ![S v, S (J v) - J (S v)]
+  have hb : 0 ≤ b := (norm_nonneg G).trans hGb
+  calc G ![S v, S (J v)]
+      ≤ a * ‖S v‖ ^ 2 + ‖G‖ * (‖S v‖ * ‖S (J v) - J (S v)‖) := by
+        rw [hsplit]
+        exact add_le_add (hG (S v)) ((le_abs_self _).trans hnorm)
+    _ ≤ a * ((1 + ε) * ‖v‖) ^ 2 + b * ((1 + ε) * ‖v‖ * (2 * ε * ‖v‖)) := by
+        gcongr
+    _ = (a * (1 + ε) ^ 2 + 2 * b * ε * (1 + ε)) * ‖v‖ ^ 2 := by ring
 
 end ContinuousAlternatingMap
 
