@@ -56,7 +56,8 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
   representation of `GL₂(F)` on the projective line.
 * `OnePoint.instMulActionPGL`: the action of `PGL(2, K)` on `OnePoint K`, with `pglMk_smul` and its
   faithfulness.
-* `OnePoint.instMulActionPSL`: the action of `PSL(2, K)` on `OnePoint K`, with `pslMk_smul`.
+* `OnePoint.instMulActionPSL`: the action of `PSL(2, K)` on `OnePoint K`, with `pslMk_smul`, and
+  `equivProjectivization_pslMk_smul_eq_mk`, its effect on homogeneous coordinates.
 * `Matrix.ProjectiveSpecialLinearGroup.toPGL_smul`: the inclusion `PSL(2, K) → PGL(2, K)` is
   compatible with the actions.
 * `OnePoint.instIsMultiplyPretransitiveGL`: `GL(2, K)` acts 2-transitively on `OnePoint K`, and
@@ -230,6 +231,17 @@ noncomputable instance instMulActionPSL : MulAction PSL(2, K) (OnePoint K) :=
 lemma pslMk_smul (g : SL(2, K)) (c : OnePoint K) :
     (g : PSL(2, K)) • c = (g : GL (Fin 2) K) • c :=
   (rfl)
+
+/-- If a matrix `A` of `SL(2, K)` sends homogeneous coordinates `v` of a point `x` to a multiple
+of `w`, then its class in `PSL(2, K)` moves `x` to the point with homogeneous coordinates `w`. -/
+lemma equivProjectivization_pslMk_smul_eq_mk (A : SL(2, K)) {v w : Fin 2 → K} (hv : v ≠ 0)
+    (hw : w ≠ 0) {x : OnePoint K} (hx : equivProjectivization K x = .mk K v hv) {a : K}
+    (hA : (A : Matrix (Fin 2) (Fin 2) K) *ᵥ v = a • w) :
+    equivProjectivization K ((A : PSL(2, K)) • x) = .mk K w hw := by
+  rw [pslMk_smul, equivProjectivization_smul, hx, Projectivization.smul_mk,
+    Projectivization.mk_eq_mk_iff']
+  -- The action of `SL(2, K)` on vectors is multiplication by the underlying matrix.
+  exact ⟨a, hA.symm⟩
 
 /-- The identification `OnePoint.equivProjectivization` intertwines the actions of `PSL(2, K)` on
 `OnePoint K` and on `ℙ K (Fin 2 → K)`. -/

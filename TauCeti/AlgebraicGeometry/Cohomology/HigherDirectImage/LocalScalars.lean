@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Presheaf
+public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback.Opens
 import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 
@@ -25,7 +25,11 @@ its pullback `f^* r`
 (`Scheme.Hom.cohomologyOnPullbackι_higherDirectImagePresheafToPresheafIso_hom_app_smul`).
 The existing `AlgebraicGeometry.Scheme.Hom.higherDirectImagePresheafToPresheafIso_hom_app_smul`
 handles restrictions of global functions of `Y`, acting on `Hⁿ(f⁻¹ U, M)` itself; the lemma here
-handles arbitrary functions on `V`, after applying `cohomologyOnPullbackι`.
+handles arbitrary functions on `V`, after applying `cohomologyOnPullbackι`. For quasi-compact
+quasi-separated `f`, quasi-coherent `M` and affine `V`, the same holds for the sections of the
+sheafification `Rⁿ f_* M` over `V`, read in `Hⁿ(f⁻¹ V, M)` through
+`AlgebraicGeometry.Scheme.Hom.higherDirectImageSectionsAddEquiv`
+(`Scheme.Hom.cohomologyOnPullbackι_higherDirectImageSectionsAddEquiv_symm_smul`).
 
 The proof computes the identification on homology classes of cycles of the injective resolution
 used to build the presheaf: the class of a cycle `s ∈ Γ(f⁻¹ V, Pⁿ)` goes to the class of `s` in
@@ -88,25 +92,7 @@ private lemma homologyπ_comp_higherDirectImagePresheafToPresheafIso_hom (M : X.
       (Modules.pushforward f ⋙ Modules.toPresheafOfModules Y)
   let t := PresheafOfModules.toPresheaf Y.ringCatSheaf.obj
   let Kmod := modComplex f M
-  let Kab := abComplex M
   let W := preimageWhisker f
-  have a1 : t.map (Kmod.homologyπ n) ≫
-      (t.mapHomologicalComplexCompHomologyFunctorIso _ n).inv.app Kmod =
-      ((Kmod.sc n).mapCyclesIso t).inv ≫ ((t.mapHomologicalComplex _).obj Kmod).homologyπ n := by
-    rw [← cancel_mono ((t.mapHomologicalComplexCompHomologyFunctorIso _ n).hom.app Kmod),
-      Category.assoc, Iso.inv_hom_id_app, Category.assoc,
-      Functor.mapHomologicalComplexCompHomologyFunctorIso_hom_app]
-    -- `(t.mapHomologicalComplex _).obj Kmod).sc n` and `(Kmod.sc n).map t` are the same short
-    -- complex only up to unfolding `mapHomologicalComplex`, so `erw` is needed to rewrite with
-    -- `homologyπ_comp_mapHomologyIso_hom`, and `rfl` closes the remaining unfolding.
-    erw [Category.comp_id, ShortComplex.homologyπ_comp_mapHomologyIso_hom (Kmod.sc n) t,
-      Iso.inv_hom_id_assoc]
-    rfl
-  have a3 : ((W.mapHomologicalComplex _).obj Kab).homologyπ n ≫
-      (W.mapHomologicalComplexCompHomologyFunctorIso _ n).hom.app Kab =
-      ((Kab.sc n).mapCyclesIso W).hom ≫ W.map (Kab.homologyπ n) := by
-    rw [Functor.mapHomologicalComplexCompHomologyFunctorIso_hom_app]
-    exact ShortComplex.homologyπ_comp_mapHomologyIso_hom (Kab.sc n) W
   have hG : t.map ((injectiveResolution M).isoRightDerivedObj
       (Modules.pushforward f ⋙ Modules.toPresheafOfModules Y) n).inv ≫
       (f.higherDirectImagePresheafToPresheafIso M n).hom =
@@ -119,11 +105,12 @@ private lemma homologyπ_comp_higherDirectImagePresheafToPresheafIso_hom (M : X.
     simp only [Iso.trans_hom, Iso.app_hom, Iso.symm_hom, Functor.mapIso_hom]
     rw [← Category.assoc, ← Functor.map_comp, Iso.inv_hom_id]
     exact (congrArg (· ≫ _) (t.map_id _)).trans (Category.id_comp _)
-  rw [hG, reassoc_of% a1]
+  rw [hG, t.map_homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_inv_app_assoc]
   -- `pushforwardSectionsComplexIso` relates `t` applied to `f_* P` and `W` applied to `P` only up
   -- to unfolding `mapHomologicalComplex`, so the naturality rewrites need `erw`; the final `rfl`
   -- unfolds the abbreviation `cyclesComparison`.
-  erw [HomologicalComplex.homologyπ_naturality_assoc, reassoc_of% a3]
+  erw [HomologicalComplex.homologyπ_naturality_assoc,
+    W.homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app_assoc]
   rw [Functor.map_comp]
   rfl
 
@@ -136,9 +123,6 @@ private lemma cyclesComparison_comp_iCycles (M : X.Modules) (n : ℕ) :
   let Kmod := modComplex f M
   let Kab := abComplex M
   let W := preimageWhisker f
-  have b1 : ((Kab.sc n).mapCyclesIso W).hom ≫ W.map (Kab.iCycles n) =
-      ((W.mapHomologicalComplex _).obj Kab).iCycles n :=
-    ShortComplex.mapCyclesIso_hom_iCycles (Kab.sc n) W
   have b2 : HomologicalComplex.cyclesMap
         ((pushforwardSectionsComplexIso f).hom.app (injectiveResolution M).cocomplex) n ≫
         ((W.mapHomologicalComplex _).obj Kab).iCycles n =
@@ -146,15 +130,15 @@ private lemma cyclesComparison_comp_iCycles (M : X.Modules) (n : ℕ) :
     (HomologicalComplex.cyclesMap_i _ n).trans
       ((congrArg (_ ≫ ·) (pushforwardSectionsComplexIso_hom_app_f f _ n)).trans
         (Category.comp_id _))
-  have b3 : ((Kmod.sc n).mapCyclesIso t).inv ≫ ((t.mapHomologicalComplex _).obj Kmod).iCycles n =
-      t.map (Kmod.iCycles n) :=
-    ShortComplex.mapCyclesIso_inv_comp_iCycles (Kmod.sc n) t
-  -- Reassociate and apply `b1`, `b2`, `b3`. The objects between the factors agree only up to
-  -- unfolding `mapHomologicalComplex` (the cycles of `t` applied to `f_* P` versus `W` applied to
-  -- `P`), so `rw [Category.assoc]` fails with a motive type error and the chain is built by hand.
+  -- Reassociate and apply `mapCyclesIso_hom_comp_map_iCycles`, `b2` and
+  -- `mapCyclesIso_inv_comp_iCycles`. The objects between
+  -- the factors agree only up to unfolding `mapHomologicalComplex` (the cycles of `t` applied to
+  -- `f_* P` versus `W` applied to `P`), so `rw [Category.assoc]` fails with a motive type error and
+  -- the chain is built by hand.
   refine (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
-    (congrArg (_ ≫ ·) b1))).trans ?_)
-  exact (congrArg (((Kmod.sc n).mapCyclesIso t).inv ≫ ·) b2).trans b3
+    (congrArg (_ ≫ ·) (W.mapCyclesIso_hom_comp_map_iCycles _ n Kab)))).trans ?_)
+  exact (congrArg (((Kmod.sc n).mapCyclesIso t).inv ≫ ·) b2).trans
+    (t.mapCyclesIso_inv_comp_iCycles _ n Kmod)
 
 /-- **Classes of cycles.** Let `P` be the injective resolution of `M` used to construct the presheaf
 `V ↦ Hⁿ(f⁻¹ V, M)`, so that its sections over `V` are the homology of the complex `Γ(f⁻¹ V, P)`.
@@ -174,9 +158,11 @@ lemma higherDirectImagePresheafToPresheafIso_hom_app_homologyπ (M : X.Modules) 
       CategoryTheory.Sheaf.H'.resolutionClass
         (K := ((toSheaf X).mapHomologicalComplex _).obj (injectiveResolution M).cocomplex)
         ((toSheaf X).map ((injectiveResolution M).ι.f 0))
-        ((injectiveResolution M).map_ι_f_zero_comp_d (toSheaf X))
-        ((injectiveResolution M).exact₀_map (toSheaf X))
-        ((injectiveResolution M).exactAt_succ_map (toSheaf X)) (f ⁻¹ᵁ V)
+        (CochainComplex.map_augmentation_comp_d (toSheaf X)
+          (injectiveResolution M).ι_f_zero_comp_complex_d)
+        (CochainComplex.map_augmentation_exact (toSheaf X) (injectiveResolution M).exact₀)
+        (CochainComplex.map_exactAt_succ (toSheaf X) (injectiveResolution M).cocomplex_exactAt_succ)
+        (f ⁻¹ᵁ V)
         (((((Modules.pushforward f ⋙ Modules.toPresheafOfModules Y).mapHomologicalComplex
           _).obj (injectiveResolution M).cocomplex).iCycles n).app (.op V) z) (by
           have h := ConcreteCategory.congr_hom
@@ -246,4 +232,29 @@ theorem cohomologyOnPullbackι_higherDirectImagePresheafToPresheafIso_hom_app_sm
   congr 2
   · exact _root_.map_smul ((Kmod.iCycles n).app (op V)).hom r z
   · exact proof_irrel_heq _ _
+
+/-- **Local functions act on the sections of `Rⁿ f_* M` through the open subscheme.** For a
+quasi-compact quasi-separated `f`, a quasi-coherent `M` and an affine open `V` of `Y`, read the
+sections of `Rⁿ f_* M` over `V` in the cohomology `Hⁿ(f⁻¹ V, M|_{f⁻¹ V})` of the open subscheme
+`f⁻¹ V`, through `higherDirectImageSectionsAddEquiv` and `Scheme.Opens.cohomologyOnPullbackι`.
+There a function `r` on `V` acts as its pullback `f^* r`, a global function of `f⁻¹ V`. This is
+the sheaf form of `cohomologyOnPullbackι_higherDirectImagePresheafToPresheafIso_hom_app_smul`. -/
+@[simp]
+theorem cohomologyOnPullbackι_higherDirectImageSectionsAddEquiv_symm_smul [QuasiCompact f]
+    [QuasiSeparated f] (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) {V : Y.Opens}
+    (hV : IsAffineOpen V) (r : Γ(Y, V)) (y : Γ((f.higherDirectImage n).obj M, V)) :
+    (f ⁻¹ᵁ V).cohomologyOnPullbackι M n
+        ((f.higherDirectImageSectionsAddEquiv M n hV).symm (r • y)) =
+      (f ⁻¹ᵁ V).topIso.inv (f.app V r) • (f ⁻¹ᵁ V).cohomologyOnPullbackι M n
+        ((f.higherDirectImageSectionsAddEquiv M n hV).symm y) := by
+  obtain ⟨x, rfl⟩ := (f.higherDirectImagePresheafSectionsLinearEquiv M n hV).surjective y
+  have e (z) : (f.higherDirectImageSectionsAddEquiv M n hV).symm
+      (f.higherDirectImagePresheafSectionsLinearEquiv M n hV z) =
+        (f.higherDirectImagePresheafToPresheafIso M n).hom.app (op V) z :=
+    (AddEquiv.symm_apply_eq _).2
+      (higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app
+        _ _ _ _ _).symm
+  rw [← LinearEquiv.map_smul, e, e]
+  exact cohomologyOnPullbackι_higherDirectImagePresheafToPresheafIso_hom_app_smul f M n V r x
+
 end AlgebraicGeometry.Scheme.Hom

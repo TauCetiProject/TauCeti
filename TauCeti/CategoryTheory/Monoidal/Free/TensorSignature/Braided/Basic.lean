@@ -272,6 +272,52 @@ variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] [BraidedCategory D
   (fo : S.Obj → D)
   (fc : ∀ g : S.Coupon, projectObj fo (S.src g) ⟶ projectObj fo (S.tgt g))
 
+private theorem lift_hrel :
+    ∀ {X Y : FreeMonoidalCategory S.Obj}
+      {f g : MonoidalCore.Hom FreeMonoidalCategory.unit FreeMonoidalCategory.tensor
+        (FreeBraidedGen S) X Y},
+      FreeBraidedRel S f g →
+        MonoidalCore.liftMapAux
+          ({ obj := fun X ↦ projectObj fo X
+             αHom := fun _ _ _ ↦ (α_ _ _ _).hom
+             αInv := fun _ _ _ ↦ (α_ _ _ _).inv
+             lHom := fun _ ↦ (λ_ _).hom
+             lInv := fun _ ↦ (λ_ _).inv
+             ρHom := fun _ ↦ (ρ_ _).hom
+             ρInv := fun _ ↦ (ρ_ _).inv
+             whiskerLeft := fun X {_ _} f ↦ projectObj fo X ◁ f
+             whiskerRight := fun {_ _} f X ↦ f ▷ projectObj fo X
+             tensorHom := fun {_ _ _ _} f g ↦ f ⊗ₘ g } :
+            MonoidalCore.MonoidalEval (@FreeMonoidalCategory.unit S.Obj)
+              (@FreeMonoidalCategory.tensor S.Obj) D)
+          (fun
+            | .β_hom _ _ => (β_ _ _).hom
+            | .β_inv _ _ => (β_ _ _).inv
+            | .coupon g => fc g) f =
+        MonoidalCore.liftMapAux
+          ({ obj := fun X ↦ projectObj fo X
+             αHom := fun _ _ _ ↦ (α_ _ _ _).hom
+             αInv := fun _ _ _ ↦ (α_ _ _ _).inv
+             lHom := fun _ ↦ (λ_ _).hom
+             lInv := fun _ ↦ (λ_ _).inv
+             ρHom := fun _ ↦ (ρ_ _).hom
+             ρInv := fun _ ↦ (ρ_ _).inv
+             whiskerLeft := fun X {_ _} f ↦ projectObj fo X ◁ f
+             whiskerRight := fun {_ _} f X ↦ f ▷ projectObj fo X
+             tensorHom := fun {_ _ _ _} f g ↦ f ⊗ₘ g } :
+            MonoidalCore.MonoidalEval (@FreeMonoidalCategory.unit S.Obj)
+              (@FreeMonoidalCategory.tensor S.Obj) D)
+          (fun
+            | .β_hom _ _ => (β_ _ _).hom
+            | .β_inv _ _ => (β_ _ _).inv
+            | .coupon g => fc g) g
+  | _, _, _, _, .β_hom_inv => Iso.hom_inv_id _
+  | _, _, _, _, .β_inv_hom => Iso.inv_hom_id _
+  | _, _, _, _, .braiding_naturality_right _ _ => BraidedCategory.braiding_naturality_right _ _
+  | _, _, _, _, .braiding_naturality_left _ _ => BraidedCategory.braiding_naturality_left _ _
+  | _, _, _, _, .hexagon_forward => BraidedCategory.hexagon_forward _ _ _
+  | _, _, _, _, .hexagon_reverse => BraidedCategory.hexagon_reverse _ _ _
+
 -- The body is exposed so that the object part reduces, as for `FreeMonoidal.lift`: the statements
 -- of `lift_ε` and its companions only typecheck once `(lift fo fc).obj X` reduces to the
 -- corresponding tensor product in `D`.
@@ -307,7 +353,8 @@ tensorator and unit comparison. -/
       | .hexagon_reverse => BraidedCategory.hexagon_reverse _ _ _)
 
 /-- On objects, `lift fo fc` interprets the underlying tensor word via `projectObj fo`. -/
-theorem lift_obj (X : S.FreeBraided) : (lift fo fc).obj X = projectObj fo X.as := (rfl)
+theorem lift_obj (X : S.FreeBraided) : (lift fo fc).obj X = projectObj fo X.as := by
+  unfold lift; apply MonoidalCore.lift_obj; exact lift_hrel fo fc
 
 /-- `lift fo fc` sends each generating object `of a` to `fo a`. -/
 @[simp]
@@ -324,41 +371,40 @@ theorem lift_obj_tensorUnit : (lift fo fc).obj (𝟙_ S.FreeBraided) = 𝟙_ D :
 
 /-- `lift fo fc` sends each coupon `g` to `fc g`. -/
 @[simp]
-theorem lift_map_coupon (g : S.Coupon) : (lift fo fc).map (coupon g) = fc g := (rfl)
+theorem lift_map_coupon (g : S.Coupon) : (lift fo fc).map (coupon g) = fc g := by
+  rw [coupon]; unfold lift; apply MonoidalCore.lift_map_gen; exact lift_hrel fo fc
 
 /-- `lift fo fc` preserves left whiskering strictly. -/
 @[simp]
 theorem lift_map_whiskerLeft (X : S.FreeBraided) {Y₁ Y₂ : S.FreeBraided} (f : Y₁ ⟶ Y₂) :
     (lift fo fc).map (X ◁ f) = (lift fo fc).obj X ◁ (lift fo fc).map f := by
-  induction f using Quotient.inductionOn
-  rfl
+  unfold lift; apply MonoidalCore.lift_map_whiskerLeft; exact lift_hrel fo fc
 
 /-- `lift fo fc` preserves right whiskering strictly. -/
 @[simp]
 theorem lift_map_whiskerRight {X₁ X₂ : S.FreeBraided} (f : X₁ ⟶ X₂) (Y : S.FreeBraided) :
     (lift fo fc).map (f ▷ Y) = (lift fo fc).map f ▷ (lift fo fc).obj Y := by
-  induction f using Quotient.inductionOn
-  rfl
+  unfold lift; apply MonoidalCore.lift_map_whiskerRight; exact lift_hrel fo fc
 
 /-- `lift fo fc` preserves tensor products of morphisms strictly. -/
 @[simp]
 theorem lift_map_tensorHom {X₁ Y₁ X₂ Y₂ : S.FreeBraided} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂) :
     (lift fo fc).map (f ⊗ₘ g) = (lift fo fc).map f ⊗ₘ (lift fo fc).map g := by
-  induction f using Quotient.inductionOn
-  induction g using Quotient.inductionOn
-  rfl
+  unfold lift; apply MonoidalCore.lift_map_tensorHom; exact lift_hrel fo fc
 
 /-- `lift fo fc` sends the forward associator to the forward associator of `D`. -/
 @[simp]
 theorem lift_map_associator_hom (X Y Z : S.FreeBraided) :
     (lift fo fc).map (α_ X Y Z).hom =
-      (α_ ((lift fo fc).obj X) ((lift fo fc).obj Y) ((lift fo fc).obj Z)).hom := (rfl)
+      (α_ ((lift fo fc).obj X) ((lift fo fc).obj Y) ((lift fo fc).obj Z)).hom := by
+  unfold lift; apply MonoidalCore.lift_map_associator_hom; exact lift_hrel fo fc
 
 /-- `lift fo fc` sends the inverse associator to the inverse associator of `D`. -/
 @[simp]
 theorem lift_map_associator_inv (X Y Z : S.FreeBraided) :
     (lift fo fc).map (α_ X Y Z).inv =
-      (α_ ((lift fo fc).obj X) ((lift fo fc).obj Y) ((lift fo fc).obj Z)).inv := (rfl)
+      (α_ ((lift fo fc).obj X) ((lift fo fc).obj Y) ((lift fo fc).obj Z)).inv := by
+  unfold lift; apply MonoidalCore.lift_map_associator_inv; exact lift_hrel fo fc
 
 /- The unitor lemmas and `lift_map_braiding_hom` are not `@[simp]`: `Functor.LaxMonoidal` unitality
 lemmas rewrite unitors back into `map` of a unitor, and `Functor.map_braiding` together with
@@ -366,28 +412,34 @@ lemmas rewrite unitors back into `map` of a unitor, and `Functor.map_braiding` t
 
 /-- `lift fo fc` sends the forward left unitor to the forward left unitor of `D`. -/
 theorem lift_map_leftUnitor_hom (X : S.FreeBraided) :
-    (lift fo fc).map (λ_ X).hom = (λ_ ((lift fo fc).obj X)).hom := (rfl)
+    (lift fo fc).map (λ_ X).hom = (λ_ ((lift fo fc).obj X)).hom := by
+  unfold lift; apply MonoidalCore.lift_map_leftUnitor_hom; exact lift_hrel fo fc
 
 /-- `lift fo fc` sends the inverse left unitor to the inverse left unitor of `D`. -/
 theorem lift_map_leftUnitor_inv (X : S.FreeBraided) :
-    (lift fo fc).map (λ_ X).inv = (λ_ ((lift fo fc).obj X)).inv := (rfl)
+    (lift fo fc).map (λ_ X).inv = (λ_ ((lift fo fc).obj X)).inv := by
+  unfold lift; apply MonoidalCore.lift_map_leftUnitor_inv; exact lift_hrel fo fc
 
 /-- `lift fo fc` sends the forward right unitor to the forward right unitor of `D`. -/
 theorem lift_map_rightUnitor_hom (X : S.FreeBraided) :
-    (lift fo fc).map (ρ_ X).hom = (ρ_ ((lift fo fc).obj X)).hom := (rfl)
+    (lift fo fc).map (ρ_ X).hom = (ρ_ ((lift fo fc).obj X)).hom := by
+  unfold lift; apply MonoidalCore.lift_map_rightUnitor_hom; exact lift_hrel fo fc
 
 /-- `lift fo fc` sends the inverse right unitor to the inverse right unitor of `D`. -/
 theorem lift_map_rightUnitor_inv (X : S.FreeBraided) :
-    (lift fo fc).map (ρ_ X).inv = (ρ_ ((lift fo fc).obj X)).inv := (rfl)
+    (lift fo fc).map (ρ_ X).inv = (ρ_ ((lift fo fc).obj X)).inv := by
+  unfold lift; apply MonoidalCore.lift_map_rightUnitor_inv; exact lift_hrel fo fc
 
 /-- `lift fo fc` sends the forward braiding to the forward braiding of `D`. -/
 theorem lift_map_braiding_hom (X Y : S.FreeBraided) :
-    (lift fo fc).map (β_ X Y).hom = (β_ ((lift fo fc).obj X) ((lift fo fc).obj Y)).hom := (rfl)
+    (lift fo fc).map (β_ X Y).hom = (β_ ((lift fo fc).obj X) ((lift fo fc).obj Y)).hom := by
+  rw [← homMk_β_hom]; unfold lift; apply MonoidalCore.lift_map_gen; exact lift_hrel fo fc
 
 /-- `lift fo fc` sends the inverse braiding to the inverse braiding of `D`. -/
 @[simp]
 theorem lift_map_braiding_inv (X Y : S.FreeBraided) :
-    (lift fo fc).map (β_ X Y).inv = (β_ ((lift fo fc).obj X) ((lift fo fc).obj Y)).inv := (rfl)
+    (lift fo fc).map (β_ X Y).inv = (β_ ((lift fo fc).obj X) ((lift fo fc).obj Y)).inv := by
+  rw [← homMk_β_inv]; unfold lift; apply MonoidalCore.lift_map_gen; exact lift_hrel fo fc
 
 /-- `lift fo fc` is strong monoidal, with identity unit comparison and tensorator. -/
 instance : (lift fo fc).Monoidal :=

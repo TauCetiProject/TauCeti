@@ -25,6 +25,8 @@ General lemmas on `LinearPMap` that Mathlib does not provide.
   outside its range keeps it injective.
 * `LinearPMap.mem_ker_iff_mem_graph`: the kernel consists of the vectors `x` with `(x, 0)` in the
   graph.
+* `LinearPMap.exists_apply_eq_iff_mem_graph`: `x` lies in the domain with value `y` exactly when
+  `(x, y)` lies in the graph.
 -/
 
 public section
@@ -112,6 +114,12 @@ end supSpanSingleton
 theorem mem_ker_iff_mem_graph {M : Type*} [AddCommGroup M] [Module R M] (f : E →ₗ.[R] M) {x : E} :
     x ∈ f.ker ↔ (x, 0) ∈ f.graph := by
   simp [mem_ker_iff, eq_comm]
+
+/-- A vector `x` lies in the domain of a partial linear map with value `y` exactly when `(x, y)`
+lies in its graph. -/
+theorem exists_apply_eq_iff_mem_graph {M : Type*} [AddCommGroup M] [Module R M] (f : E →ₗ.[R] M)
+    {x : E} {y : M} : (∃ hx : x ∈ f.domain, f ⟨x, hx⟩ = y) ↔ (x, y) ∈ f.graph := by
+  simp only [mem_graph_iff, Subtype.exists, exists_and_left, exists_eq_left]
 
 end LinearPMap
 

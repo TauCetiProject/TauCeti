@@ -130,8 +130,7 @@ theorem mextDerivSection_smul_apply (f : C^∞⟮I, M; ℝ⟯)
         f x * mextDerivSection I M k s x v := by
   have h := SmoothForm.mextDerivₗ_funSMulₗ_apply f (SmoothBundleForm.ofContMDiffSection s) x v
   rw [RoughForm.wedge_def, RoughForm.wedgeWith_apply', mextDeriv_ofFunction] at h
-  have hfs : ⇑(f • s) = fun y ↦ f y • s y := funext (ContMDiffSection.smul_apply f s)
-  simpa [mextDerivₗ_apply, hfs] using h
+  simpa [mextDerivₗ_apply, ContMDiffSection.coe_smul_contMDiffMap, Pi.smul_def'] using h
 
 variable (I M k) in
 /-- **The exterior derivative is a differential operator of order at most one**: by the Leibniz

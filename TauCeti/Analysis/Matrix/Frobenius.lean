@@ -6,8 +6,10 @@ Authors: Claude
 module
 
 public import Mathlib.Analysis.Matrix.Normed
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.LinearAlgebra.UnitaryGroup
+import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
@@ -28,12 +30,14 @@ and the inner product together.
 * `Matrix.frobeniusTopologicalSpace` — the topology induced by the Frobenius norm.
 * `Matrix.frobeniusTopologicalSpace_eq` — that topology is the entrywise topology on matrices.
 * `Matrix.re_trace_mul_conjTranspose_self` — the real trace of `X * Xᴴ` is the sum of the
-  squared entry norms.
+  squared entry norms, and it vanishes only for `X = 0`
+  (`Matrix.re_trace_mul_conjTranspose_self_eq_zero_iff`).
 * `Matrix.frobeniusInnerProductSpace` — the Frobenius inner product, compatible with
   `Matrix.frobeniusSeminormedAddCommGroup`.
 * `Matrix.frobenius_inner_def` — the inner product is the sum of the entrywise inner products.
 * `Matrix.frobenius_inner_smul_left` — the inner product is conjugate-linear in its first argument
   for the entrywise scalar action on matrices.
+* `Matrix.norm_star_dotProduct_mulVec_le` — the bilinear form `v* H w` is at most `‖v‖ ‖H‖ ‖w‖`.
 * `Matrix.frobenius_inner_eq_sum_conj_mul`, `Matrix.frobenius_real_inner_eq_sum_mul` — over `𝕜`
   itself, the inner product is `∑ i, ∑ j, conj (A i j) * B i j`, and over `ℝ` it is
   `∑ i, ∑ j, A i j * B i j`.
@@ -41,6 +45,8 @@ and the inner product together.
   `(Aᴴ * B).trace`.
 * `Matrix.frobenius_real_inner_eq_re_inner` — the real inner product is the real part of the
   scalar inner product, hence is `Re tr(Aᴴ * B)`.
+* `Matrix.IsHermitian.exists_add_orthogonal`: a Hermitian matrix splits into Hermitian parts in a
+  subspace stable under the conjugate transpose and orthogonal to it.
 * `Matrix.IsHermitian.frobenius_real_inner_eq_zero_of_conjTranspose_eq_neg` — a Hermitian and a
   skew-Hermitian matrix are orthogonal for the real inner product.
 * `Matrix.UnitaryGroup.frobenius_inner_mul_left` and
@@ -104,6 +110,17 @@ theorem re_trace_mul_conjTranspose_self (X : Matrix m n 𝕜) :
   simp [Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.conjTranspose_apply,
     RCLike.star_def, RCLike.mul_conj]
 
+open scoped ComplexOrder in
+/-- The real part of the trace of `X * Xᴴ` vanishes only for `X = 0`. -/
+@[simp]
+theorem re_trace_mul_conjTranspose_self_eq_zero_iff {X : Matrix m n 𝕜} :
+    RCLike.re (X * X.conjTranspose).trace = 0 ↔ X = 0 := by
+  rw [← trace_mul_conjTranspose_self_eq_zero_iff]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero]⟩
+  have hc : starRingEnd 𝕜 (X * X.conjTranspose).trace = (X * X.conjTranspose).trace := by
+    rw [← RCLike.star_def, ← trace_conjTranspose, conjTranspose_mul, conjTranspose_conjTranspose]
+  rw [← RCLike.conj_eq_iff_re.1 hc, h, RCLike.ofReal_zero]
+
 section Def
 
 variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
@@ -158,6 +175,26 @@ theorem frobenius_norm_sq_eq_sum_norm_sq [SeminormedAddCommGroup E] (A : Matrix 
   simp only [frobenius_norm_def, ← Real.sqrt_eq_rpow, Real.rpow_two]
   exact Real.sq_sqrt (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
 
+/-- **The bilinear form of a matrix is bounded by its Frobenius norm**:
+`|v* H w| ≤ ‖v‖ ‖H‖ ‖w‖`, for the Euclidean norms of `v` and `w`. -/
+theorem norm_star_dotProduct_mulVec_le (H : Matrix m n 𝕜) (v : m → 𝕜) (w : n → 𝕜) :
+    ‖star v ⬝ᵥ (H *ᵥ w)‖ ≤ ‖WithLp.toLp 2 v‖ * ‖H‖ * ‖WithLp.toLp 2 w‖ := by
+  -- The bilinear form is the single entry of the product of a row, `H` and a column.
+  have h : star v ⬝ᵥ (H *ᵥ w) = (replicateRow Unit (star v) * H * replicateCol Unit w) () () := by
+    simp only [dotProduct, Pi.star_apply, RCLike.star_def, mulVec, Finset.mul_sum,
+      Matrix.mul_apply, replicateRow_apply, replicateCol_apply, Finset.sum_mul, mul_assoc]
+    rw [Finset.sum_comm]
+  have hr : ‖replicateRow Unit (star v)‖ = ‖WithLp.toLp 2 v‖ := by
+    rw [frobenius_norm_replicateRow, EuclideanSpace.norm_eq, EuclideanSpace.norm_eq]
+    simp only [Pi.star_apply, norm_star]
+  rw [h]
+  calc _ ≤ ‖replicateRow Unit (star v) * H * replicateCol Unit w‖ :=
+        norm_apply_le_frobenius_norm _ _ _
+    _ ≤ ‖replicateRow Unit (star v)‖ * ‖H‖ * ‖replicateCol Unit w‖ :=
+        (frobenius_norm_mul _ _).trans
+          (mul_le_mul_of_nonneg_right (frobenius_norm_mul _ _) (norm_nonneg _))
+    _ = ‖WithLp.toLp 2 v‖ * ‖H‖ * ‖WithLp.toLp 2 w‖ := by rw [hr, frobenius_norm_replicateCol]
+
 /-- The Frobenius inner product of matrices over `𝕜` is `∑ i, ∑ j, conj (A i j) * B i j`. -/
 theorem frobenius_inner_eq_sum_conj_mul (A B : Matrix m n 𝕜) :
     ⟪A, B⟫_𝕜 = ∑ i, ∑ j, conj (A i j) * B i j := by
@@ -180,6 +217,35 @@ theorem frobenius_inner_eq_trace_conjTranspose_mul (A B : Matrix m n 𝕜) :
 theorem frobenius_real_inner_eq_re_inner (X Y : Matrix m n 𝕜) :
     ⟪X, Y⟫_ℝ = RCLike.re ⟪X, Y⟫_𝕜 := by
   simp only [frobenius_inner_def, real_inner_eq_re_inner 𝕜, map_sum]
+
+omit [Fintype m] in
+/-- **Hermitian orthogonal splitting.** For a real subspace `V` of the square matrices stable under
+the conjugate transpose, a Hermitian matrix `X` splits as `X₁ + Z` with `X₁ ∈ V` and `Z`
+orthogonal to `V` for the real trace pairing `re (trace (A * B))`, both Hermitian. -/
+theorem IsHermitian.exists_add_orthogonal {X : Matrix n n 𝕜} (hX : X.IsHermitian)
+    {V : Submodule ℝ (Matrix n n 𝕜)} (hV : ∀ Y ∈ V, Yᴴ ∈ V) :
+    ∃ X₁ ∈ V, X₁.IsHermitian ∧ ∃ Z : Matrix n n 𝕜, Z.IsHermitian ∧ X = X₁ + Z ∧
+      ∀ W ∈ V, RCLike.re (Z * W).trace = 0 := by
+  obtain ⟨X₀, hX₀, Z₀, hZ₀, hsum⟩ := V.exists_add_mem_mem_orthogonal X
+  -- `Z₀ ⊥ V` gives `re (trace (Z₀ * W)) = 0` and `re (trace (Z₀ᴴ * W)) = 0` for `W ∈ V`.
+  have horth (W : Matrix n n 𝕜) (hW : W ∈ V) : RCLike.re (Z₀ * W).trace = 0 := by
+    have h := Submodule.inner_right_of_mem_orthogonal (hV W hW) hZ₀
+    rwa [frobenius_real_inner_eq_re_inner, frobenius_inner_eq_trace_conjTranspose_mul,
+      conjTranspose_conjTranspose, trace_mul_comm] at h
+  have horth' (W : Matrix n n 𝕜) (hW : W ∈ V) : RCLike.re (Z₀ᴴ * W).trace = 0 := by
+    have h := Submodule.inner_left_of_mem_orthogonal hW hZ₀
+    rwa [frobenius_real_inner_eq_re_inner, frobenius_inner_eq_trace_conjTranspose_mul] at h
+  refine ⟨(1 / 2 : ℝ) • (X₀ + X₀ᴴ), V.smul_mem _ (V.add_mem hX₀ (hV _ hX₀)), ?_,
+    (1 / 2 : ℝ) • (Z₀ + Z₀ᴴ), ?_, ?_, fun W hW ↦ ?_⟩
+  · simp [IsHermitian, conjTranspose_smul, add_comm]
+  · simp [IsHermitian, conjTranspose_smul, add_comm]
+  · have hX' : X = (1 / 2 : ℝ) • (X + Xᴴ) := by
+      rw [hX.eq, ← two_smul ℝ X, smul_smul]
+      norm_num
+    rw [hX', hsum, conjTranspose_add, ← smul_add]
+    congr 1
+    abel
+  · simp [Matrix.smul_mul, add_mul, trace_smul, RCLike.smul_re, horth W hW, horth' W hW]
 
 /-- A Hermitian matrix and a skew-Hermitian matrix are orthogonal for the real Frobenius inner
 product. -/

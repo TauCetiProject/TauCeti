@@ -34,6 +34,10 @@ commutative ring.
 * `TauCeti.ExteriorAlgebra.instFree`: the exterior algebra of a free module is free.
 * `TauCeti.ExteriorAlgebra.instFinite`: the exterior algebra of a finite module is a finite module.
 * `TauCeti.ExteriorAlgebra.finrank_eq_two_pow`: `finrank R (ExteriorAlgebra R M) = 2 ^ finrank R M`.
+* `TauCeti.ExteriorAlgebra.finrank_exteriorPower_sup`: over a field, exterior powers of two distinct
+  degrees meet in zero, so their sum has dimension `n.choose i + n.choose j`;
+  `TauCeti.ExteriorAlgebra.finrank_one_sup_exteriorPower_finrank`: the scalars and the top exterior
+  power of a nonzero finite-dimensional space span a plane.
 -/
 
 public section
@@ -68,6 +72,31 @@ theorem finrank_eq_two_pow [Nontrivial R] [Module.Free R M] [Module.Finite R M] 
   let : LinearOrder (Free.ChooseBasisIndex R M) := WellOrderingRel.isWellOrder.linearOrder
   rw [finrank_eq_card_basis (Free.chooseBasis R M).ExteriorAlgebra, Fintype.card_finset,
     finrank_eq_card_chooseBasisIndex]
+
+section Field
+
+variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- Over a field, the exterior powers of two distinct degrees `i ≠ j` meet in zero, so their sum
+has dimension `n.choose i + n.choose j` for `n = finrank K V`. -/
+theorem finrank_exteriorPower_sup {i j : ℕ} (hij : i ≠ j) :
+    finrank K ↥(⋀[K]^i V ⊔ ⋀[K]^j V) = (finrank K V).choose i + (finrank K V).choose j := by
+  have hdisj : Disjoint (⋀[K]^i V) (⋀[K]^j V) :=
+    (DirectSum.Decomposition.isInternal fun k : ℕ ↦ ⋀[K]^k V).submodule_iSupIndep.pairwiseDisjoint
+      hij
+  have := Submodule.finrank_sup_add_finrank_inf_eq (⋀[K]^i V) (⋀[K]^j V)
+  rwa [hdisj.eq_bot, finrank_bot, add_zero, exteriorPower.finrank_eq, exteriorPower.finrank_eq]
+    at this
+
+/-- **The scalars and the top exterior power span a plane**: for a nonzero finite-dimensional
+space `V`, the scalars `1 = ⋀⁰ V` and the top exterior power `⋀ⁿ V`, `n = finrank K V`, are lines
+in different degrees. -/
+theorem finrank_one_sup_exteriorPower_finrank (h : finrank K V ≠ 0) :
+    finrank K ↥(1 ⊔ ⋀[K]^(finrank K V) V) = 2 := by
+  have hone : (1 : Submodule K (ExteriorAlgebra K V)) = ⋀[K]^0 V := (pow_zero _).symm
+  rw [hone, finrank_exteriorPower_sup h.symm, Nat.choose_zero_right, Nat.choose_self]
+
+end Field
 
 end ExteriorAlgebra
 

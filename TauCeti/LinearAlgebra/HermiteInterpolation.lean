@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Eval.SMul
 public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Polynomial.DegreeLT
+public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Algebra.Polynomial.Taylor
 public import TauCeti.LinearAlgebra.Matrix.ConfluentVandermonde
 public import TauCeti.RingTheory.Polynomial.DegreeLT
@@ -16,6 +17,7 @@ import Mathlib.Tactic.ComputeDegree
 import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.LinearAlgebra.Matrix.ToLin
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # Hermite interpolation
@@ -85,9 +87,15 @@ interpolation over arbitrary commutative rings and fields (`Polynomial.hermiteJe
   jets.
 * `Polynomial.hasseJet_map`, `Polynomial.hermiteJet_map`, `Polynomial.map_hermiteJetEquiv_symm`:
   the jet maps and interpolation commute with ring homomorphisms.
+* `Polynomial.hermiteBasis_eq_of_dvd_taylor_mul_sub_one`,
+  `Polynomial.hermiteBasis_eq_prod_mul_pow_mul_taylor`: each Hermite basis polynomial factors as
+  `(∏ i ≠ r, (X - C (a i)) ^ m i) * (X - C (a r)) ^ s` times the Taylor shift at `-a r` of the
+  inverse modulo `X ^ (m r - s)` of the local complementary product, constructed from truncated
+  geometric series.
 * `Polynomial.ordinaryHermiteJet_bijective`,
-  `Polynomial.ordinaryHermiteJet_bijective_of_pairwise_isUnit_sub`: the same interpolation with
-  ordinary derivatives, when the factorials `k !` with `k < m i` are units.
+  `Polynomial.ordinaryHermiteJet_bijective_of_pairwise_isUnit_sub`,
+  `Polynomial.eval_iterate_derivative_smul_hermiteBasis`: the same interpolation and scaled basis
+  Kronecker-delta formula with ordinary derivatives, when the required factorials are invertible.
 * `Polynomial.toMatrix_hermiteJet`, `Polynomial.toLin_confluentVandermonde`,
   `Polynomial.toMatrix_hermiteJet_piBasis`,
   `Polynomial.toMatrix_hermiteJetEquiv_symm`, `Polynomial.hermiteBasis_toMatrix_degreeLT_basis`,
@@ -520,6 +528,131 @@ theorem ordinaryHermiteJet_bijective_of_pairwise_isUnit_sub
     simp [e, LinearEquiv.smulOfUnit, Units.smul_def]
   rw [h]
   exact e.bijective.comp (hermiteJet_bijective_of_pairwise_isUnit_sub ha m)
+
+/-- **Local Taylor-inverse formula for the Hermite basis.** If `h` has degree below `m x.1 - x.2`
+and inverts the Taylor shift at `a x.1` of `∏ i ≠ x.1, (X - C (a i)) ^ m i` modulo
+`X ^ (m x.1 - x.2)`, then the Hermite basis polynomial at `x` is
+`(∏ i ≠ x.1, (X - C (a i)) ^ m i) * (X - C (a x.1)) ^ x.2 * taylor (-a x.1) h`. -/
+theorem hermiteBasis_eq_of_dvd_taylor_mul_sub_one [DecidableEq ι] (x : Σ i, Fin (m i))
+    {h : R[X]} (hdeg : h.degree < ↑(m x.1 - x.2))
+    (hdvd : X ^ (m x.1 - x.2) ∣
+      taylor (a x.1) (∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i) * h - 1) :
+    (hermiteBasis ha m x : R[X]) =
+      (∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i) * (X - C (a x.1)) ^ (x.2 : ℕ) *
+        taylor (-a x.1) h := by
+  nontriviality R
+  rw [hermiteBasis_apply]
+  symm
+  set Q : R[X] := ∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i
+  set f : R[X] := Q * (X - C (a x.1)) ^ (x.2 : ℕ) * taylor (-a x.1) h
+  refine (eq_hermiteJetEquiv_symm_iff ha m).2 ⟨?_, fun i k ↦ ?_⟩
+  · have hQ : Monic Q := monic_prod_X_sub_C_pow (univ.erase x.1) a m
+    have hP : Monic (Q * (X - C (a x.1)) ^ (x.2 : ℕ)) := hQ.mul ((monic_X_sub_C _).pow _)
+    have hsum : (∑ i ∈ univ.erase x.1, m i) + x.2 + (m x.1 - x.2) = ∑ i, m i := by
+      rw [add_assoc, Nat.add_sub_of_le x.2.isLt.le, sum_erase_add _ _ (mem_univ x.1)]
+    calc f.degree
+        ≤ (Q * (X - C (a x.1)) ^ (x.2 : ℕ)).degree + (taylor (-a x.1) h).degree := degree_mul_le _ _
+      _ = ↑((∑ i ∈ univ.erase x.1, m i) + x.2) + h.degree := by
+          rw [degree_eq_natDegree hP.ne_zero, hQ.natDegree_mul ((monic_X_sub_C _).pow _),
+            natDegree_prod_X_sub_C_pow, (monic_X_sub_C _).natDegree_pow, natDegree_X_sub_C,
+            mul_one, degree_taylor]
+      _ < ↑((∑ i ∈ univ.erase x.1, m i) + x.2) + ↑(m x.1 - x.2) :=
+          WithBot.add_lt_add_left WithBot.coe_ne_bot hdeg
+      _ = ↑(∑ i, m i) := by rw [← Nat.cast_add, hsum]
+  · by_cases hi : i = x.1
+    · subst hi
+      have htf : taylor (a x.1) f = X ^ (x.2 : ℕ) * (taylor (a x.1) Q * h) := by
+        rw [taylor_mul, taylor_mul_X_sub_C_pow, taylor_taylor, add_neg_cancel, taylor_zero]
+        ring
+      have hdvd' : X ^ m x.1 ∣ taylor (a x.1) f - X ^ (x.2 : ℕ) := by
+        conv_lhs => rw [← Nat.add_sub_of_le x.2.isLt.le, pow_add]
+        rw [htf, ← mul_sub_one]
+        exact mul_dvd_mul_left _ hdvd
+      have hk := X_pow_dvd_iff.1 hdvd' k k.isLt
+      rw [coeff_sub, sub_eq_zero, taylor_coeff, coeff_X_pow] at hk
+      rw [hk]
+      simp [Pi.single_apply, Fin.ext_iff]
+    · have hdvdQ : (X - C (a i)) ^ m i ∣ f :=
+        (dvd_prod_of_mem _ (mem_erase.2 ⟨hi, mem_univ i⟩)).trans
+          ((dvd_mul_right _ _).trans (dvd_mul_right _ _))
+      rw [X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero.1 hdvdQ k k.isLt,
+        Pi.single_eq_of_ne hi, Pi.zero_apply]
+
+/-- When there is only one node, the Hermite basis polynomials are the Taylor monomials
+`(X - C (a x.1)) ^ x.2`. -/
+@[simp]
+theorem hermiteBasis_of_subsingleton [Subsingleton ι] (x : Σ i, Fin (m i)) :
+    (hermiteBasis ha m x : R[X]) = (X - C (a x.1)) ^ (x.2 : ℕ) := by
+  let : DecidableEq ι := fun _ _ ↦ isTrue (Subsingleton.elim _ _)
+  have hempty : univ.erase x.1 = (∅ : Finset ι) :=
+    eq_empty_of_forall_notMem fun i hi ↦ (mem_erase.1 hi).1 (Subsingleton.elim i x.1)
+  have hpos : 0 < m x.1 - x.2 := Nat.sub_pos_of_lt x.2.isLt
+  have hdeg : (1 : R[X]).degree < ↑(m x.1 - x.2) :=
+    degree_one_le.trans_lt (Nat.cast_pos.2 hpos)
+  simpa [hempty] using hermiteBasis_eq_of_dvd_taylor_mul_sub_one ha m x hdeg (by simp [hempty])
+
+/-- **Explicit truncated-geometric-series formula for the Hermite basis.** Given inverses `v i` of
+`a x.1 - a i` for `i ≠ x.1`, each shifted linear factor `X + C (a x.1 - a i)` has formal power
+series inverse `C (v i) * ∑ k, (-v i) ^ k * X ^ k`. Truncating the product of their `m i`-th powers
+below degree `m x.1 - x.2` via `PowerSeries.trunc` gives the local factor of
+`hermiteBasis ha m x`. -/
+theorem hermiteBasis_eq_prod_mul_pow_mul_taylor [DecidableEq ι] (x : Σ i, Fin (m i)) {v : ι → R}
+    (hv : ∀ i, i ≠ x.1 → (a x.1 - a i) * v i = 1) :
+    (hermiteBasis ha m x : R[X]) =
+      (∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i) * (X - C (a x.1)) ^ (x.2 : ℕ) *
+        taylor (-a x.1) (PowerSeries.trunc (m x.1 - x.2)
+          (∏ i ∈ univ.erase x.1,
+            (PowerSeries.C (v i) * PowerSeries.mk fun k ↦ (-v i) ^ k) ^ m i)) := by
+  set N : ℕ := m x.1 - x.2
+  let g : ι → PowerSeries R := fun i ↦ PowerSeries.C (v i) * PowerSeries.mk fun k ↦ (-v i) ^ k
+  let G : PowerSeries R := ∏ i ∈ univ.erase x.1, g i ^ m i
+  refine hermiteBasis_eq_of_dvd_taylor_mul_sub_one ha m x (PowerSeries.degree_trunc_lt G N) ?_
+  set Q : R[X] := ∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i
+  have hinv : ((taylor (a x.1) Q : R[X]) : PowerSeries R) * G = 1 := by
+    have htQ : ((taylor (a x.1) Q : R[X]) : PowerSeries R) =
+        ∏ i ∈ univ.erase x.1, ((taylor (a x.1) (X - C (a i)) : R[X]) : PowerSeries R) ^ m i := by
+      simp only [Q, ← coeToPowerSeries.ringHom_apply, ← taylorAlgHom_apply, map_prod, map_pow]
+    rw [htQ, ← prod_mul_distrib]
+    refine prod_eq_one fun i hi ↦ ?_
+    rw [← mul_pow]
+    have hlin : ((taylor (a x.1) (X - C (a i)) : R[X]) : PowerSeries R) * PowerSeries.C (v i) =
+        1 - PowerSeries.C (-v i) * PowerSeries.X := by
+      have ht : taylor (a x.1) (X - C (a i)) = X + C (a x.1 - a i) := by
+        simp [taylor_apply, sub_eq_add_neg, add_assoc]
+      rw [ht, Polynomial.coe_add, Polynomial.coe_X, Polynomial.coe_C, add_mul,
+        ← PowerSeries.C.map_mul, hv i (mem_erase.1 hi).1, map_one, map_neg]
+      ring
+    dsimp only [g]
+    rw [← mul_assoc, hlin, mul_comm, TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one,
+      one_pow]
+  rw [X_pow_dvd_iff]
+  intro d hd
+  rw [coeff_sub, sub_eq_zero]
+  calc (taylor (a x.1) Q * PowerSeries.trunc N G).coeff d
+      = PowerSeries.coeff d ((taylor (a x.1) Q : PowerSeries R) *
+          (PowerSeries.trunc N G : PowerSeries R)) := by
+          rw [← Polynomial.coeff_coe, Polynomial.coe_mul]
+    _ = (PowerSeries.trunc N ((taylor (a x.1) Q : PowerSeries R) *
+          (PowerSeries.trunc N G : PowerSeries R))).coeff d := by
+          rw [PowerSeries.coeff_trunc, ite_eq_left hd]
+    _ = (PowerSeries.trunc N (1 : PowerSeries R)).coeff d := by
+          rw [PowerSeries.trunc_mul_trunc, hinv]
+    _ = (1 : R[X]).coeff d := by
+          rw [PowerSeries.coeff_trunc, ite_eq_left hd, ← Polynomial.coe_one, Polynomial.coeff_coe]
+
+/-- Scaling a Hermite basis polynomial by an inverse `u` of `(x.2)!` yields Kronecker-delta values
+for the ordinary derivatives `(derivative^[j] _).eval (a i)` of orders `j < m i`. -/
+theorem eval_iterate_derivative_smul_hermiteBasis [DecidableEq ι] (x : Σ i, Fin (m i)) {u : R}
+    (hu : ((x.2 : ℕ)! : R) * u = 1) (i : ι) {j : ℕ} (hj : j < m i) :
+    (derivative^[j] (u • (hermiteBasis ha m x : R[X]))).eval (a i) =
+      if i = x.1 ∧ j = x.2 then 1 else 0 := by
+  have hev := eval_hasseDeriv_hermiteBasis ha m x i ⟨j, hj⟩
+  by_cases h : i = x.1 ∧ j = x.2
+  · rcases h with ⟨rfl, rfl⟩
+    have hx : (⟨x.1, ⟨x.2, hj⟩⟩ : Σ i, Fin (m i)) = x := by ext <;> rfl
+    simp [← factorial_smul_hasseDeriv, hev, hx, mul_comm _ u ▸ hu]
+  · have hx : x ≠ ⟨i, ⟨j, hj⟩⟩ := fun h' ↦ h ⟨(congr_arg Sigma.fst h').symm, by subst h'; rfl⟩
+    simp [← factorial_smul_hasseDeriv, hev, hx, h]
 
 end CommRing
 

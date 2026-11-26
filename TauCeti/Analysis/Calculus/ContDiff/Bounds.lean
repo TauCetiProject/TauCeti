@@ -101,6 +101,11 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   each order, in existential form.
 * `TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen`: the Leibniz bound for `z ↦ c z • f z` at a
   point of an open set on which both factors are smooth.
+* `ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_left`,
+  `ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_right`: the Leibniz rule in scaled units. If
+  one factor of `g • f` has `hⁱ ‖Dⁱ ·‖ ≤ B` for `i ≤ k`, then
+  `hⁿ ‖Dⁿ (g • f)‖ ≤ 2ᵏ B ∑_{j ≤ k} hʲ ‖Dʲ ·‖` of the other factor, for `n ≤ k`;
+  `TauCeti.nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le` records that such a bound has `0 ≤ B`.
 -/
 
 public section
@@ -616,6 +621,12 @@ theorem norm_iteratedFDeriv_smul_le_of_isOpen {𝕜' : Type*} [NormedField 𝕜'
   refine h.trans_eq (Finset.sum_congr rfl fun i _ ↦ ?_)
   rw [iteratedFDerivWithin_of_isOpen i hU hx, iteratedFDerivWithin_of_isOpen _ hU hx]
 
+/-- A bound `hⁱ ‖Dⁱ f‖ ≤ B` on the derivatives of order `i ≤ k` of a map `f` forces `0 ≤ B`, by
+its order-zero case. -/
+theorem nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le {k : ℕ} {h B : ℝ} {f : E → F}
+    (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv 𝕜 i f x‖ ≤ B) (x : E) : 0 ≤ B :=
+  (by positivity : (0 : ℝ) ≤ h ^ 0 * ‖iteratedFDeriv 𝕜 0 f x‖).trans (hB 0 (Nat.zero_le k) x)
+
 end TauCeti
 
 /-- Let `f p` be maps depending on a parameter `p`, jointly `C^n` in `(p, x)` on an open set `W`
@@ -635,3 +646,79 @@ theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen {P : Typ
     hf.contDiffAt (hW.mem_nhds (hCKW hpx))
   exact ⟨hfpx.comp x (contDiffAt_const.prodMk contDiffAt_id), fun i hi ↦
     (hfpx.norm_iteratedFDeriv_prod_right_le i (mod_cast hi)).trans (hA i hi _ hpx)⟩
+
+/-! ### The Leibniz rule in scaled units -/
+
+section ScaledLeibniz
+
+variable {𝕜' : Type*} [NormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [NormedSpace 𝕜' F]
+  [IsScalarTower 𝕜 𝕜' F] {k : ℕ} {h B : ℝ} {g : E → 𝕜'} {f : E → F}
+
+/-- **The Leibniz bound in scaled units.** The Leibniz bound
+`‖Dⁿ (g • f)‖ ≤ ∑ C(n, i) ‖Dⁱ g‖ ‖Dⁿ⁻ⁱ f‖`, with each factor weighted by the power of a scale
+`h ≥ 0` matching its order. -/
+theorem ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_sum (hg : ContDiff 𝕜 k g)
+    (hf : ContDiff 𝕜 k f) (hh : 0 ≤ h) {n : ℕ} (hn : n ≤ k) (x : E) :
+    h ^ n * ‖iteratedFDeriv 𝕜 n (fun y ↦ g y • f y) x‖ ≤
+      ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * (h ^ i * ‖iteratedFDeriv 𝕜 i g x‖) *
+        (h ^ (n - i) * ‖iteratedFDeriv 𝕜 (n - i) f x‖) := by
+  refine (mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_smul_le hg hf x (by exact_mod_cast hn))
+    (pow_nonneg hh n)).trans_eq ?_
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [← Nat.add_sub_cancel' (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)), pow_add,
+    Nat.add_sub_cancel_left]
+  ring
+
+/-- **The Leibniz rule in scaled units, with a bounded scalar factor.** If
+`hⁱ ‖Dⁱ g‖ ≤ B` everywhere for `i ≤ k`, then for `n ≤ k`, at every point,
+`hⁿ ‖Dⁿ (g • f)‖ ≤ 2ᵏ B ∑_{j ≤ k} hʲ ‖Dʲ f‖`. -/
+theorem ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_left (hg : ContDiff 𝕜 k g)
+    (hf : ContDiff 𝕜 k f) (hh : 0 ≤ h) (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv 𝕜 i g x‖ ≤ B)
+    {n : ℕ} (hn : n ≤ k) (x : E) :
+    h ^ n * ‖iteratedFDeriv 𝕜 n (fun y ↦ g y • f y) x‖ ≤
+      2 ^ k * B * ∑ j ∈ Finset.range (k + 1), h ^ j * ‖iteratedFDeriv 𝕜 j f x‖ := by
+  have hB0 : 0 ≤ B := TauCeti.nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le hB x
+  refine (hg.pow_mul_norm_iteratedFDeriv_smul_le_sum hf hh hn x).trans ?_
+  calc ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * (h ^ i * ‖iteratedFDeriv 𝕜 i g x‖) *
+        (h ^ (n - i) * ‖iteratedFDeriv 𝕜 (n - i) f x‖)
+      ≤ ∑ i ∈ Finset.range (n + 1),
+          2 ^ k * B * (h ^ (n - i) * ‖iteratedFDeriv 𝕜 (n - i) f x‖) := by
+        refine Finset.sum_le_sum fun i hi ↦ mul_le_mul_of_nonneg_right ?_ (by positivity)
+        exact mul_le_mul
+          (by exact_mod_cast (Nat.choose_le_two_pow n i).trans (Nat.pow_le_pow_right two_pos hn))
+          (hB i ((Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)).trans hn) x) (by positivity)
+          (by positivity)
+    _ = 2 ^ k * B * ∑ j ∈ Finset.range (n + 1), h ^ j * ‖iteratedFDeriv 𝕜 j f x‖ := by
+        -- Reflect the index, `i ↦ n - i`; here `n + 1 - 1 - i` reduces to `n - i`.
+        rw [Finset.mul_sum]
+        exact Finset.sum_range_reflect (fun j ↦ 2 ^ k * B * (h ^ j * ‖iteratedFDeriv 𝕜 j f x‖))
+          (n + 1)
+    _ ≤ _ := mul_le_mul_of_nonneg_left (Finset.sum_le_sum_of_subset_of_nonneg
+        (Finset.range_subset_range.2 (by omega)) fun j _ _ ↦ by positivity) (by positivity)
+
+/-- **The Leibniz rule in scaled units, with a bounded vector factor.** If
+`hⁱ ‖Dⁱ f‖ ≤ B` everywhere for `i ≤ k`, then for `n ≤ k`, at every point,
+`hⁿ ‖Dⁿ (g • f)‖ ≤ 2ᵏ B ∑_{j ≤ k} hʲ ‖Dʲ g‖`. -/
+theorem ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_right (hg : ContDiff 𝕜 k g)
+    (hf : ContDiff 𝕜 k f) (hh : 0 ≤ h) (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv 𝕜 i f x‖ ≤ B)
+    {n : ℕ} (hn : n ≤ k) (x : E) :
+    h ^ n * ‖iteratedFDeriv 𝕜 n (fun y ↦ g y • f y) x‖ ≤
+      2 ^ k * B * ∑ j ∈ Finset.range (k + 1), h ^ j * ‖iteratedFDeriv 𝕜 j g x‖ := by
+  have hB0 : 0 ≤ B := TauCeti.nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le hB x
+  refine (hg.pow_mul_norm_iteratedFDeriv_smul_le_sum hf hh hn x).trans ?_
+  calc ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * (h ^ i * ‖iteratedFDeriv 𝕜 i g x‖) *
+        (h ^ (n - i) * ‖iteratedFDeriv 𝕜 (n - i) f x‖)
+      ≤ ∑ i ∈ Finset.range (n + 1), 2 ^ k * B * (h ^ i * ‖iteratedFDeriv 𝕜 i g x‖) := by
+        refine Finset.sum_le_sum fun i _ ↦ ?_
+        rw [mul_right_comm (2 ^ k : ℝ)]
+        exact mul_le_mul (mul_le_mul_of_nonneg_right
+          (by exact_mod_cast (Nat.choose_le_two_pow n i).trans (Nat.pow_le_pow_right two_pos hn))
+          (by positivity)) (hB _ (Nat.sub_le_of_le_add (by omega)) x) (by positivity)
+          (by positivity)
+    _ = 2 ^ k * B * ∑ j ∈ Finset.range (n + 1), h ^ j * ‖iteratedFDeriv 𝕜 j g x‖ :=
+        (Finset.mul_sum ..).symm
+    _ ≤ _ := mul_le_mul_of_nonneg_left (Finset.sum_le_sum_of_subset_of_nonneg
+        (Finset.range_subset_range.2 (by omega)) fun j _ _ ↦ by positivity) (by positivity)
+
+end ScaledLeibniz

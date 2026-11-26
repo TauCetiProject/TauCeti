@@ -19,7 +19,6 @@ import Mathlib.RingTheory.LocalRing.Length
 import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 import Mathlib.RingTheory.Localization.Ideal
 import Mathlib.RingTheory.QuotSMulTop
-import Mathlib.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # General facts about the length of a module
@@ -52,8 +51,17 @@ applies to the quotients appearing here without any further appeal to defeq.
   `dim_k M = ℓ_B(M) · [κ(B) : k]`.
 
 * `TauCeti.length_quotient_anti`: `M ⧸ Q` is no longer than `M ⧸ P` when `P ≤ Q`.
+* `LinearMap.length_eq_length_ker_add_length_range`: rank-nullity for length.
+* `TauCeti.length_le_add_of_exact`: the middle term of an exact sequence `N ⟶ M ⟶ P` is no longer
+  than `N` and `P` together.
+* `TauCeti.length_add_length_add_length_eq_of_exact`: along an exact sequence
+  `0 ⟶ A₀ ⟶ B₀ ⟶ C₀ ⟶ A₁ ⟶ B₁ ⟶ C₁ ⟶ 0`, `ℓ(A₀) + ℓ(C₀) + ℓ(B₁) = ℓ(B₀) + ℓ(A₁) + ℓ(C₁)`.
 * `TauCeti.length_quotient_eq_length_map_add_length_quotient_sup`: additivity along a filtration.
 * `TauCeti.length_map_mkQ`: the length of the image of `N` in `M ⧸ P`.
+* `TauCeti.length_quotient_comap_subtype_mono`: `N ⧸ (N ⊓ P)` grows with `N`.
+* `TauCeti.length_quotient_comap_subtype_top`: `⊤ ⧸ P` has the length of `M ⧸ P`.
+* `TauCeti.length_range_le_length_quotient`: the range of `f` is no longer than `M ⧸ K` when
+  `K ≤ ker f`.
 * `TauCeti.length_quotient_eq_length_quotient_comap_subtype_add`: for `P ≤ N`, `M ⧸ P` is filtered
   by `N ⧸ P` and `M ⧸ N`.
 * `TauCeti.length_quotient_comap_subtype_range_map`: an injective `φ` gives `φ(M) ⧸ φ(N) ≃ M ⧸ N`.
@@ -61,6 +69,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   length.
 * `TauCeti.isFiniteLength_of_tower`: finite length over `R` gives finite length over any `A`
   acting compatibly.
+* `TauCeti.length_add_length_eq_length_add_length_of_exact`: in a four-term exact sequence the
+  terms in odd and in even positions have the same total length.
 * `TauCeti.surjective_of_injective_of_length_eq` and
   `TauCeti.injective_of_surjective_of_length_eq`: an injective map between modules of the same
   finite length is surjective, and a surjective one is injective.
@@ -80,7 +90,9 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_residueField_eq_one`: the residue field of a local ring `A` has length one
   over `A`.
 * `TauCeti.natCard_eq_pow_of_length_eq` and `TauCeti.natCard_eq_pow_length_toNat`: a module of
-  finite length `ℓ` over a local ring whose residue field has `q` elements has `q ^ ℓ` elements.
+  finite length `ℓ` over a local ring whose residue field has `q` elements has `q ^ ℓ` elements;
+  conversely, by `TauCeti.length_eq_iff_natCard_eq_pow`, it has length `n` iff it has `q ^ n`
+  elements.
 * `TauCeti.length_self_eq_top_of_ringKrullDim_pos`: a ring of positive Krull dimension has infinite
   length over itself.
 * `Ideal.length_quotient_eq_one`: `length (A ⧸ 𝔪) = 1` for a maximal (left) ideal `𝔪` of a ring
@@ -113,6 +125,19 @@ applies to the quotients appearing here without any further appeal to defeq.
 
 public section
 
+namespace LinearMap
+
+variable {A M N : Type*} [Ring A] [AddCommGroup M] [Module A M] [AddCommGroup N] [Module A N]
+
+/-- **Rank-nullity for length.** The length of `M` is the length of the kernel of a linear map
+out of `M` plus the length of its image. -/
+theorem length_eq_length_ker_add_length_range (f : M →ₗ[A] N) :
+    Module.length A M = Module.length A (ker f) + Module.length A (range f) :=
+  Module.length_eq_add_of_exact _ _ (ker f).injective_subtype f.surjective_rangeRestrict
+    (exact_iff.mpr (by rw [ker_rangeRestrict, Submodule.range_subtype]))
+
+end LinearMap
+
 namespace TauCeti
 
 section Ring
@@ -144,6 +169,25 @@ theorem length_map_mkQ (N P : Submodule A M) :
     rw [LinearMap.range_comp, Submodule.range_subtype]
   rw [← hran, ← hker]
   exact ((LinearMap.quotKerEquivRange (P.mkQ ∘ₗ N.subtype)).length_eq).symm
+
+/-- Shrinking `N` cannot increase the length of `N ⧸ (N ⊓ P)`. -/
+theorem length_quotient_comap_subtype_mono {W N : Submodule A M} (h : W ≤ N) (P : Submodule A M) :
+    Module.length A (↥W ⧸ P.comap W.subtype) ≤ Module.length A (↥N ⧸ P.comap N.subtype) := by
+  rw [← length_map_mkQ, ← length_map_mkQ]
+  exact Module.length_le_of_injective _ (Submodule.inclusion_injective (Submodule.map_mono h))
+
+/-- For `P` as a submodule of `⊤`, the quotient `⊤ ⧸ P` has the length of `M ⧸ P`. -/
+theorem length_quotient_comap_subtype_top (P : Submodule A M) :
+    Module.length A (↥(⊤ : Submodule A M) ⧸ P.comap (⊤ : Submodule A M).subtype) =
+      Module.length A (M ⧸ P) := by
+  rw [← length_map_mkQ, Submodule.map_top, Submodule.range_mkQ]
+  exact Submodule.topEquiv.length_eq
+
+/-- The range of a linear map whose kernel contains `K` is no longer than `M ⧸ K`. -/
+theorem length_range_le_length_quotient {M' : Type*} [AddCommGroup M'] [Module A M']
+    (f : M →ₗ[A] M') {K : Submodule A M} (h : K ≤ LinearMap.ker f) :
+    Module.length A (LinearMap.range f) ≤ Module.length A (M ⧸ K) :=
+  f.quotKerEquivRange.length_eq.symm.trans_le (length_quotient_anti h)
 
 /-- For submodules `P ≤ N`, the quotient `M ⧸ P` is filtered by `N ⧸ P` and `M ⧸ N`. -/
 theorem length_quotient_eq_length_quotient_comap_subtype_add {P N : Submodule A M} (h : P ≤ N) :
@@ -187,6 +231,22 @@ theorem isFiniteLength_of_tower (R : Type*) [Ring R] [SMul R A] [Module R M]
   exact isFiniteLength_iff_isNoetherian_isArtinian.mpr
     ⟨isNoetherian_of_tower R inferInstance, isArtinian_of_tower R inferInstance⟩
 
+/-- **Four-term additivity.** In an exact sequence `0 → N₁ → N₂ → N₃ → N₄ → 0` the terms in odd
+and in even positions have the same total length. -/
+theorem length_add_length_eq_length_add_length_of_exact {N₁ N₂ N₃ N₄ : Type*}
+    [AddCommGroup N₁] [Module A N₁] [AddCommGroup N₂] [Module A N₂]
+    [AddCommGroup N₃] [Module A N₃] [AddCommGroup N₄] [Module A N₄]
+    {f₁ : N₁ →ₗ[A] N₂} {f₂ : N₂ →ₗ[A] N₃} {f₃ : N₃ →ₗ[A] N₄} (hf₁ : Function.Injective f₁)
+    (h₁₂ : Function.Exact f₁ f₂) (h₂₃ : Function.Exact f₂ f₃) (hf₃ : Function.Surjective f₃) :
+    Module.length A N₁ + Module.length A N₃ = Module.length A N₂ + Module.length A N₄ := by
+  -- Split the sequence at the image of `f₂`.
+  have h₂ := Module.length_eq_add_of_exact f₁ f₂.rangeRestrict hf₁ f₂.surjective_rangeRestrict
+    fun y ↦ by rw [← h₁₂ y, ← Subtype.coe_inj]; simp
+  have h₃ := Module.length_eq_add_of_exact (LinearMap.range f₂).subtype f₃
+    (Submodule.subtype_injective _) hf₃ fun y ↦ by
+      rw [h₂₃ y]; simp
+  rw [h₂, h₃, ← add_assoc, add_comm (Module.length A N₁)]
+
 /-- An injective linear map between modules of the same finite length is surjective: its
 cokernel has length zero. -/
 theorem surjective_of_injective_of_length_eq {N : Type*} [AddCommGroup N] [Module A N]
@@ -210,6 +270,36 @@ theorem injective_of_surjective_of_length_eq {N : Type*} [AddCommGroup N] [Modul
   rw [← LinearMap.ker_eq_bot, ← Submodule.subsingleton_iff_eq_bot,
     ← Module.length_eq_zero_iff (R := A)]
   exact WithTop.add_right_cancel hN (hlen.symm.trans (zero_add _).symm)
+
+/-- The middle term of an exact sequence `N ⟶ M ⟶ P` is no longer than the two outer terms
+together. -/
+theorem length_le_add_of_exact {N P : Type*} [AddCommGroup N] [Module A N] [AddCommGroup P]
+    [Module A P] {f : N →ₗ[A] M} {g : M →ₗ[A] P} (h : Function.Exact f g) :
+    Module.length A M ≤ Module.length A N + Module.length A P := by
+  rw [g.length_eq_length_ker_add_length_range, h.linearMap_ker_eq]
+  exact add_le_add (Module.length_le_of_surjective _ f.surjective_rangeRestrict)
+    (Module.length_le_of_injective _ (LinearMap.range g).injective_subtype)
+
+/-- **Lengths along a six-term exact sequence.** For an exact sequence
+`0 ⟶ A₀ ⟶ B₀ ⟶ C₀ ⟶ A₁ ⟶ B₁ ⟶ C₁ ⟶ 0`, the alternating sum of the lengths vanishes, written
+without subtraction as `ℓ(A₀) + ℓ(C₀) + ℓ(B₁) = ℓ(B₀) + ℓ(A₁) + ℓ(C₁)`. No finiteness is
+assumed: both sides may be infinite. This is the shape of the long exact cohomology sequence on a
+curve, where cohomology vanishes above degree one. -/
+theorem length_add_length_add_length_eq_of_exact {A₀ B₀ C₀ A₁ B₁ C₁ : Type*}
+    [AddCommGroup A₀] [Module A A₀] [AddCommGroup B₀] [Module A B₀] [AddCommGroup C₀]
+    [Module A C₀] [AddCommGroup A₁] [Module A A₁] [AddCommGroup B₁] [Module A B₁]
+    [AddCommGroup C₁] [Module A C₁] {f₀ : A₀ →ₗ[A] B₀} {g₀ : B₀ →ₗ[A] C₀} {δ : C₀ →ₗ[A] A₁}
+    {f₁ : A₁ →ₗ[A] B₁} {g₁ : B₁ →ₗ[A] C₁} (hf₀ : Function.Injective f₀)
+    (h₀ : Function.Exact f₀ g₀) (h₁ : Function.Exact g₀ δ) (h₂ : Function.Exact δ f₁)
+    (h₃ : Function.Exact f₁ g₁) (hg₁ : Function.Surjective g₁) :
+    Module.length A A₀ + Module.length A C₀ + Module.length A B₁ =
+      Module.length A B₀ + Module.length A A₁ + Module.length A C₁ := by
+  rw [g₀.length_eq_length_ker_add_length_range, δ.length_eq_length_ker_add_length_range,
+    f₁.length_eq_length_ker_add_length_range, g₁.length_eq_length_ker_add_length_range,
+    h₀.linearMap_ker_eq, h₁.linearMap_ker_eq, h₂.linearMap_ker_eq, h₃.linearMap_ker_eq,
+    (LinearEquiv.ofInjective f₀ hf₀).length_eq.symm, LinearMap.range_eq_top.mpr hg₁,
+    (LinearEquiv.ofTop ⊤ rfl).length_eq]
+  ring
 
 end Ring
 
@@ -348,41 +438,6 @@ theorem isArtinianRing_quotient_span_singleton (A : Type*) {B : Type*} [CommRing
     (isFiniteLength_iff_isNoetherian_isArtinian.1 (isFiniteLength_quotient_span_singleton hb)).2
   exact isArtinian_of_tower A inferInstance
 
-section LocalLengthDecomposition
-
-variable {A B : Type*} [CommRing A] [IsDomain A] [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
-  [CommRing B] [IsDomain B] [Algebra A B] [Module.Finite A B]
-
-/-- **The length of `B ⧸ bB` is a sum of local lengths** (Fulton, *Intersection Theory*,
-Appendix A.3, second step). For a local Noetherian domain `A` of dimension at most one, a domain
-`B` finite over `A`, and `b ≠ 0`, write `C = B ⧸ bB`. Then
-`length_A C = Σ_q length_{C_q} C_q * length_A κ(C_q)`, summed over the maximal ideals `q` of `C`. -/
-theorem length_quotient_span_singleton_eq_finsum [IsLocalRing A] {b : B} (hb : b ≠ 0) :
-    Module.length A (B ⧸ Ideal.span {b}) =
-      ∑ᶠ q : MaximalSpectrum (B ⧸ Ideal.span {b}),
-        Module.length (Localization.AtPrime q.asIdeal) (Localization.AtPrime q.asIdeal) *
-          Module.length A (IsLocalRing.ResidueField (Localization.AtPrime q.asIdeal)) := by
-  set C := B ⧸ Ideal.span {b}
-  have : IsArtinianRing C := isArtinianRing_quotient_span_singleton A hb
-  have := Fintype.ofFinite (MaximalSpectrum C)
-  rw [((MaximalSpectrum.toPiLocalizationEquiv C).toLinearEquiv.restrictScalars A).length_eq,
-    Module.length_pi_of_fintype, finsum_eq_sum_of_fintype]
-  refine Finset.sum_congr rfl fun q _ ↦ ?_
-  -- The maximal ideal of `C_q` lies over the maximal ideal of `A`, since `C` is integral over `A`.
-  have : IsLocalHom (algebraMap A (Localization.AtPrime q.asIdeal)) := by
-    refine ((IsLocalRing.local_hom_tfae _).out 1 5).2 ?_
-    have hq : (IsLocalRing.maximalIdeal (Localization.AtPrime q.asIdeal)).comap
-        (algebraMap C (Localization.AtPrime q.asIdeal)) = q.asIdeal :=
-      Localization.AtPrime.under_maximalIdeal
-    rw [IsScalarTower.algebraMap_eq A C (Localization.AtPrime q.asIdeal), ← Ideal.comap_comap, hq]
-    exact IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A q.asIdeal)
-  rw [IsLocalRing.length_restrictScalars A (Localization.AtPrime q.asIdeal)
-    (Localization.AtPrime q.asIdeal), Module.length_eq_of_surjective
-      (M := IsLocalRing.ResidueField (Localization.AtPrime q.asIdeal))
-      (IsLocalRing.residue_surjective (R := A))]
-
-end LocalLengthDecomposition
-
 section LocalRing
 
 open _root_.IsLocalRing
@@ -441,6 +496,18 @@ theorem natCard_eq_pow_length_toNat [Finite M] :
   have : IsArtinian A M := isArtinian_of_finite
   have : IsNoetherian A M := isNoetherian_of_finite A M
   exact natCard_eq_pow_of_length_eq (ENat.natCast_toNat Module.length_ne_top).symm
+
+/-- Over a local ring whose residue field is finite with `q` elements, a module has length `n`
+exactly when it has `q ^ n` elements. -/
+theorem length_eq_iff_natCard_eq_pow [Finite (ResidueField A)] (n : ℕ) :
+    Module.length A M = n ↔ Nat.card M = Nat.card (ResidueField A) ^ n := by
+  refine ⟨natCard_eq_pow_of_length_eq, fun h ↦ ?_⟩
+  have hq : 1 < Nat.card (ResidueField A) := Finite.one_lt_card
+  have : Finite M := Nat.finite_of_card_ne_zero (by rw [h]; positivity)
+  have : IsArtinian A M := isArtinian_of_finite
+  have : IsNoetherian A M := isNoetherian_of_finite A M
+  rw [natCard_eq_pow_length_toNat (A := A)] at h
+  rw [← ENat.natCast_toNat Module.length_ne_top, Nat.pow_right_injective hq h]
 
 end LocalRing
 

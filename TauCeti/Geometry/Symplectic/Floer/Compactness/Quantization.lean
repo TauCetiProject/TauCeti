@@ -12,7 +12,7 @@ import TauCeti.Analysis.Hofer
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import TauCeti.Geometry.Symplectic.Manifold.Energy
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Energy quantization for pseudoholomorphic planes in a manifold

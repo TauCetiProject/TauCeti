@@ -29,6 +29,9 @@ A natural transformation between lax monoidal functors that is an epimorphism at
 and compatible with the tensorators is already monoidal: compatibility with the unit comparisons
 follows (`CategoryTheory.NatTrans.IsMonoidal.of_tensor`).
 
+For strong monoidal functors, compatibility with the oplax comparisons suffices
+(`CategoryTheory.NatTrans.IsMonoidal.of_oplax`).
+
 Bundled strong monoidal functors `TauCeti.MonoidalFunctor C D`, with the monoidal natural
 transformations as morphisms, embed fully faithfully into `LaxMonoidalFunctor C D`
 (`TauCeti.MonoidalFunctor.fullyFaithfulForget`). Their isomorphisms are the monoidal natural
@@ -98,6 +101,19 @@ open MonoidalCategory Functor.LaxMonoidal
 
 variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
 variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
+
+open Functor.OplaxMonoidal in
+/-- A natural transformation between strong monoidal functors is monoidal if it commutes
+with the oplax unit and tensor comparisons. -/
+theorem of_oplax {F G : C ⥤ D} [F.Monoidal] [G.Monoidal] (τ : F ⟶ G)
+    (hη : τ.app (𝟙_ C) ≫ η G = η F)
+    (hδ : ∀ X Y, τ.app (X ⊗ Y) ≫ δ G X Y = δ F X Y ≫ (τ.app X ⊗ₘ τ.app Y)) :
+    τ.IsMonoidal where
+  unit := by
+    rw [← cancel_mono (η G), Category.assoc, hη, Functor.Monoidal.ε_η, Functor.Monoidal.ε_η]
+  tensor X Y := by
+    rw [← cancel_epi (δ F X Y), ← cancel_mono (δ G X Y), Functor.Monoidal.δ_μ_assoc,
+      Category.assoc, Category.assoc, Functor.Monoidal.μ_δ, Category.comp_id, hδ]
 
 /-- **The unit condition follows from the tensor condition.** A natural transformation `τ` between
 lax monoidal functors that is an epimorphism at the tensor unit and compatible with the
@@ -179,6 +195,22 @@ theorem app_tensor_eq_δ_comp_tensor_comp_μ {F G : C ⥤ D} [F.Monoidal] [G.Mon
     τ.app (X ⊗ Y) = δ F X Y ≫ (τ.app X ⊗ₘ τ.app Y) ≫ μ G X Y := by
   rw [← cancel_epi (μ F X Y), NatTrans.IsMonoidal.tensor, Functor.Monoidal.μ_δ_assoc]
 
+/-- A monoidal natural transformation between strong monoidal functors intertwines the oplax unit
+comparisons: `τ.app (𝟙_ C) ≫ η G = η F`. -/
+@[reassoc]
+theorem app_unit_comp_η {F G : C ⥤ D} [F.Monoidal] [G.Monoidal] (τ : F ⟶ G) [τ.IsMonoidal] :
+    τ.app (𝟙_ C) ≫ η G = η F := by
+  rw [app_tensorUnit_eq_η_comp_ε, Category.assoc, Functor.Monoidal.ε_η, Category.comp_id]
+
+/-- A monoidal natural transformation between strong monoidal functors intertwines the oplax
+tensor comparisons. -/
+@[reassoc]
+theorem δ_comp_tensor {F G : C ⥤ D} [F.Monoidal] [G.Monoidal] (τ : F ⟶ G) [τ.IsMonoidal]
+    (X Y : C) :
+    δ F X Y ≫ (τ.app X ⊗ₘ τ.app Y) = τ.app (X ⊗ Y) ≫ δ G X Y := by
+  rw [app_tensor_eq_δ_comp_tensor_comp_μ, Category.assoc, Category.assoc, Functor.Monoidal.μ_δ,
+    Category.comp_id]
+
 /-- A natural transformation between strong monoidal functors whose unit and tensor components are
 given by the canonical comparison formulas is monoidal. -/
 theorem of_unit_tensor {F G : C ⥤ D} [F.Monoidal] [G.Monoidal] (τ : F ⟶ G)
@@ -244,8 +276,8 @@ theorem map_iso_inv_comp_eq_of_map_iso_hom {F G : C ⥤ D} {X Y : C} (i : X ≅ 
     {eX : F.obj X ⟶ G.obj X} {eY : F.obj Y ⟶ G.obj Y}
     (h : F.map i.hom ≫ eY = eX ≫ G.map i.hom) :
     F.map i.inv ≫ eX = eY ≫ G.map i.inv := by
-  rw [← cancel_epi (F.map i.hom), ← F.map_comp_assoc, i.hom_inv_id, F.map_id,
-    Category.id_comp, reassoc_of% h, ← G.map_comp, i.hom_inv_id, G.map_id, Category.comp_id]
+  rw [← cancel_epi (F.map i.hom)]
+  simp [reassoc_of% h, ← F.map_comp_assoc, ← G.map_comp]
 
 /-- Naturality of the forward associator with respect to a family of morphisms `e` satisfying the
 tensor comparison formula. -/

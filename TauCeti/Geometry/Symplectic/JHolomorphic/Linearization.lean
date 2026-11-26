@@ -97,15 +97,9 @@ theorem cauchyRiemannOperator_eq_zero_on_iff [FiniteDimensional ℝ U] [FiniteDi
     (∀ x ∈ s, cauchyRiemannOperator j.toLinearMap.toContinuousLinearMap
       (fun y ↦ (J y).toLinearMap.toContinuousLinearMap) u x = 0) ↔
       IsJHolomorphicOn (fun _ ↦ j) J u s := by
-  rw [isJHolomorphicOn_iff]
-  constructor
-  · intro h x hx
-    exact ((cauchyRiemannOperator_eq_zero_iff j J u x
-      ((hu x hx).differentiableAt (hs.mem_nhds hx))).mp (h x hx)).isJHolomorphicWithinAt
-  · intro h x hx
-    exact (cauchyRiemannOperator_eq_zero_iff j J u x
-      ((hu x hx).differentiableAt (hs.mem_nhds hx))).mpr
-        ((h x hx).isJHolomorphicAt_of_mem_nhds (hs.mem_nhds hx))
+  rw [hs.isJHolomorphicOn_iff]
+  exact forall₂_congr fun x hx ↦
+    cauchyRiemannOperator_eq_zero_iff j J u x ((hu x hx).differentiableAt (hs.mem_nhds hx))
 
 /-- The derivative of the Cauchy–Riemann defect in a map direction `ξ`, with the
 target endomorphism field fixed. -/

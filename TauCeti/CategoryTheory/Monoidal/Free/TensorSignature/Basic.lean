@@ -234,51 +234,54 @@ theorem lift_obj_tensor (X Y : S.FreeMonoidal) :
 theorem lift_obj_tensorUnit : (lift fo fc).obj (𝟙_ S.FreeMonoidal) = 𝟙_ D := rfl
 
 @[simp]
-theorem lift_map_coupon (g : S.Coupon) : (lift fo fc).map (coupon g) = fc g := by rfl
+theorem lift_map_coupon (g : S.Coupon) : (lift fo fc).map (coupon g) = fc g := by
+  rw [coupon]; unfold lift; apply MonoidalCore.lift_map_gen; exact fun h ↦ False.elim h
 
 @[simp]
 theorem lift_map_whiskerLeft (X : S.FreeMonoidal) {Y₁ Y₂ : S.FreeMonoidal} (f : Y₁ ⟶ Y₂) :
     (lift fo fc).map (X ◁ f) = (lift fo fc).obj X ◁ (lift fo fc).map f := by
-  induction f using Quotient.inductionOn
-  rfl
+  unfold lift; apply MonoidalCore.lift_map_whiskerLeft; exact fun h ↦ False.elim h
 
 @[simp]
 theorem lift_map_whiskerRight {X₁ X₂ : S.FreeMonoidal} (f : X₁ ⟶ X₂) (Y : S.FreeMonoidal) :
     (lift fo fc).map (f ▷ Y) = (lift fo fc).map f ▷ (lift fo fc).obj Y := by
-  induction f using Quotient.inductionOn
-  rfl
+  unfold lift; apply MonoidalCore.lift_map_whiskerRight; exact fun h ↦ False.elim h
 
 @[simp]
 theorem lift_map_tensorHom {X₁ Y₁ X₂ Y₂ : S.FreeMonoidal} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂) :
     (lift fo fc).map (f ⊗ₘ g) = (lift fo fc).map f ⊗ₘ (lift fo fc).map g := by
-  induction f using Quotient.inductionOn
-  induction g using Quotient.inductionOn
-  rfl
+  unfold lift; apply MonoidalCore.lift_map_tensorHom; exact fun h ↦ False.elim h
 
 @[simp]
 theorem lift_map_associator_hom (X Y Z : S.FreeMonoidal) :
     (lift fo fc).map (α_ X Y Z).hom =
-      (α_ ((lift fo fc).obj X) ((lift fo fc).obj Y) ((lift fo fc).obj Z)).hom := by rfl
+      (α_ ((lift fo fc).obj X) ((lift fo fc).obj Y) ((lift fo fc).obj Z)).hom := by
+  unfold lift; apply MonoidalCore.lift_map_associator_hom; exact fun h ↦ False.elim h
 
 @[simp]
 theorem lift_map_associator_inv (X Y Z : S.FreeMonoidal) :
     (lift fo fc).map (α_ X Y Z).inv =
-      (α_ ((lift fo fc).obj X) ((lift fo fc).obj Y) ((lift fo fc).obj Z)).inv := by rfl
+      (α_ ((lift fo fc).obj X) ((lift fo fc).obj Y) ((lift fo fc).obj Z)).inv := by
+  unfold lift; apply MonoidalCore.lift_map_associator_inv; exact fun h ↦ False.elim h
 
 /- The unitor lemmas are not `@[simp]`: the Mathlib simp lemmas
 `Functor.LaxMonoidal.left_unitality` and `right_unitality` rewrite their right-hand sides back
 into `(lift fo fc).map` of a unitor. -/
 theorem lift_map_leftUnitor_hom (X : S.FreeMonoidal) :
-    (lift fo fc).map (λ_ X).hom = (λ_ ((lift fo fc).obj X)).hom := by rfl
+    (lift fo fc).map (λ_ X).hom = (λ_ ((lift fo fc).obj X)).hom := by
+  unfold lift; apply MonoidalCore.lift_map_leftUnitor_hom; exact fun h ↦ False.elim h
 
 theorem lift_map_leftUnitor_inv (X : S.FreeMonoidal) :
-    (lift fo fc).map (λ_ X).inv = (λ_ ((lift fo fc).obj X)).inv := by rfl
+    (lift fo fc).map (λ_ X).inv = (λ_ ((lift fo fc).obj X)).inv := by
+  unfold lift; apply MonoidalCore.lift_map_leftUnitor_inv; exact fun h ↦ False.elim h
 
 theorem lift_map_rightUnitor_hom (X : S.FreeMonoidal) :
-    (lift fo fc).map (ρ_ X).hom = (ρ_ ((lift fo fc).obj X)).hom := by rfl
+    (lift fo fc).map (ρ_ X).hom = (ρ_ ((lift fo fc).obj X)).hom := by
+  unfold lift; apply MonoidalCore.lift_map_rightUnitor_hom; exact fun h ↦ False.elim h
 
 theorem lift_map_rightUnitor_inv (X : S.FreeMonoidal) :
-    (lift fo fc).map (ρ_ X).inv = (ρ_ ((lift fo fc).obj X)).inv := by rfl
+    (lift fo fc).map (ρ_ X).inv = (ρ_ ((lift fo fc).obj X)).inv := by
+  unfold lift; apply MonoidalCore.lift_map_rightUnitor_inv; exact fun h ↦ False.elim h
 
 /- The tensorator and unit comparison of `lift fo fc` are identities. The coherence goals mix
 the objects `(lift fo fc).obj (X ⊗ Y)` and `(lift fo fc).obj X ⊗ (lift fo fc).obj Y`, which agree

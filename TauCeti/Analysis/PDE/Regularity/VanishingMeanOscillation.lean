@@ -579,8 +579,8 @@ private theorem step_bound_le {CW CD : ℝ≥0} {A At X Y Gq ε ε' : ℝ≥0∞
         · gcongr
     _ = CW * S * ((1 + τ) * A + τ * ε * X) := by ring
 
-/-- The gradient of the extended cutoff `ζ (u - c)` lies in `Lᵖ ∩ L¹` when `u`, `∇u ∈ Lᵖ(B_t)`. -/
-private theorem memLp_integrable_of_ae_eq_indicator_cutoff {p : ℝ≥0∞} [Fact (1 ≤ p)]
+/-- The gradient of the extended cutoff `ζ (u - c)` lies in `Lᵖ` when `u`, `∇u ∈ Lᵖ(B_t)`. -/
+private theorem memLp_of_ae_eq_indicator_cutoff {p : ℝ≥0∞}
     {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {t : ℝ} (u : W1p volume Ω 2)
     (hv : MemLp (W1p.value u) p (volume.restrict (ball x₀ t)))
     (hg : MemLp (W1p.gradient u) p (volume.restrict (ball x₀ t)))
@@ -589,7 +589,7 @@ private theorem memLp_integrable_of_ae_eq_indicator_cutoff {p : ℝ≥0∞} [Fac
     {g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
     (hw : ∀ᵐ x, g x = (ball x₀ t).indicator
       (fun y => ζ y • W1p.gradient u y + (W1p.value u y - c) • ∇ ζ y) x) :
-    MemLp g p volume ∧ Integrable g := by
+    MemLp g p volume := by
   have : IsFiniteMeasure (volume.restrict (ball x₀ t)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hfp : MemLp (fun y => ζ y • W1p.gradient u y + (W1p.value u y - c) • ∇ ζ y) p
@@ -598,10 +598,8 @@ private theorem memLp_integrable_of_ae_eq_indicator_cutoff {p : ℝ≥0∞} [Fac
         rw [Real.norm_eq_abs]; exact hζ1 x)).smul hg).add
       ((hv.sub (memLp_const _)).smul (memLp_top_of_bound
         (ContDiff.continuous_gradient hζ (by simp)).aestronglyMeasurable _ (ae_of_all _ hgrad)))
-  exact ⟨((memLp_indicator_iff_restrict measurableSet_ball.nullMeasurableSet).2 hfp).ae_eq
-      (Filter.EventuallyEq.symm hw),
-    ((integrable_indicator_iff measurableSet_ball).2
-      (hfp.integrable Fact.out)).congr (Filter.EventuallyEq.symm hw)⟩
+  exact ((memLp_indicator_iff_restrict measurableSet_ball.nullMeasurableSet).2 hfp).ae_eq
+    (Filter.EventuallyEq.symm hw)
 
 /-- Where the cutoff is `1`, the extended cutoff of `u` has the gradient of `u`, so
 `‖∇u‖_{Lᵖ(B_s)} ≤ ‖∇w‖_{Lᵖ}`. -/
@@ -681,7 +679,7 @@ private theorem exists_eLpNorm_gradient_ball_le_step {p q : ℝ≥0∞} [Fact (1
     (hD (x₀ := x₀) ht) hballt u hu
     hv' hg' hG' hζ hζc htsb hζabs hgrad (⨍ y in ball x₀ t, W1p.value u y)
   -- The whole-space estimate applies to `w`, and `∇w = ∇u` on `B_s`.
-  obtain ⟨hwp, hwint⟩ := memLp_integrable_of_ae_eq_indicator_cutoff u hv' hg' hζ hζabs hgrad _ hw
+  have hwp := memLp_of_ae_eq_indicator_cutoff u hv' hg' hζ hζabs hgrad _ hw
   have hw0 : ∀ᵐ x, x ∉ ball x₀ (r₀ / 4) → W1p.gradient w x = 0 := by
     filter_upwards [hw] with x hx hxr
     rw [hx, indicator_of_notMem fun h => hxr (ball_subset_ball (by linarith) h)]
@@ -697,7 +695,7 @@ private theorem exists_eLpNorm_gradient_ball_le_step {p q : ℝ≥0∞} [Fact (1
     rw [← ENNReal.rpow_add _ _ (measure_ball_pos volume x₀ ht).ne' measure_ball_lt_top.ne,
       neg_add_cancel, ENNReal.rpow_zero]
   calc eLpNorm (W1p.gradient u) p (volume.restrict (ball x₀ s))
-      ≤ CW * eLpNorm F p volume := hlow.trans (hW ha hbd hosc x₀ w F hw0 hweq hwint hwp hF)
+      ≤ CW * eLpNorm F p volume := hlow.trans (hW ha hbd hosc x₀ w F hw0 hweq hwp hF)
     _ ≤ _ := (mul_le_mul_right hFle _).trans
         (step_bound_le hc₀ hLam hK hs hst (eLpNorm_mono_measure _ hle) hεε' hSP hHol)
 

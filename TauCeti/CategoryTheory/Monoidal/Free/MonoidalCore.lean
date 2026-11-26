@@ -387,11 +387,6 @@ structure Lawful (E : MonoidalEval unitObj tensorObj D) : Prop where
   triangle (X Y : Obj) :
     E.αHom X unitObj Y ≫ E.whiskerLeft X (E.lHom Y) = E.whiskerRight (E.ρHom X) Y
 
-private theorem heq_eq_eqToHom_comp {A B A' B' : D} {f : A ⟶ B} {g : A' ⟶ B'}
-    (hA : A = A') (hB : B = B') (h : HEq f g) :
-    f = eqToHom hA ≫ g ≫ eqToHom hB.symm := by
-  subst hA hB; simp [eq_of_heq h]
-
 private theorem associator_hom_congr [MonoidalCategory D] {A B C A' B' C' : D}
     (hA : A = A') (hB : B = B') (hC : C = C') :
     (α_ A B C).hom = eqToHom (by rw [hA, hB, hC]) ≫ (α_ A' B' C').hom ≫
@@ -441,32 +436,34 @@ theorem Lawful.ofMonoidal [MonoidalCategory D] (E : MonoidalEval unitObj tensorO
   have eα_hom (X Y Z) : E.αHom X Y Z =
       eqToHom (by rw [htensor, htensor]) ≫ (α_ (E.obj X) (E.obj Y) (E.obj Z)).hom ≫
         eqToHom (by rw [htensor, htensor]) :=
-    heq_eq_eqToHom_comp (by rw [htensor, htensor]) (by rw [htensor, htensor]) (hα_hom X Y Z)
+    (conj_eqToHom_iff_heq _ _ (by rw [htensor, htensor]) (by rw [htensor, htensor])).mpr
+      (hα_hom X Y Z)
   have eα_inv (X Y Z) : E.αInv X Y Z =
       eqToHom (by rw [htensor, htensor]) ≫ (α_ (E.obj X) (E.obj Y) (E.obj Z)).inv ≫
         eqToHom (by rw [htensor, htensor]) :=
-    heq_eq_eqToHom_comp (by rw [htensor, htensor]) (by rw [htensor, htensor]) (hα_inv X Y Z)
+    (conj_eqToHom_iff_heq _ _ (by rw [htensor, htensor]) (by rw [htensor, htensor])).mpr
+      (hα_inv X Y Z)
   have el_hom (X) : E.lHom X =
       eqToHom (by rw [htensor, hunit]) ≫ (λ_ (E.obj X)).hom := by
-    simpa using heq_eq_eqToHom_comp (by rw [htensor, hunit]) rfl (hl_hom X)
+    simpa using (conj_eqToHom_iff_heq _ _ (by rw [htensor, hunit]) rfl).mpr (hl_hom X)
   have el_inv (X) : E.lInv X =
       (λ_ (E.obj X)).inv ≫ eqToHom (by rw [htensor, hunit]) := by
-    simpa using heq_eq_eqToHom_comp rfl (by rw [htensor, hunit]) (hl_inv X)
+    simpa using (conj_eqToHom_iff_heq _ _ rfl (by rw [htensor, hunit])).mpr (hl_inv X)
   have eρ_hom (X) : E.ρHom X =
       eqToHom (by rw [htensor, hunit]) ≫ (ρ_ (E.obj X)).hom := by
-    simpa using heq_eq_eqToHom_comp (by rw [htensor, hunit]) rfl (hρ_hom X)
+    simpa using (conj_eqToHom_iff_heq _ _ (by rw [htensor, hunit]) rfl).mpr (hρ_hom X)
   have eρ_inv (X) : E.ρInv X =
       (ρ_ (E.obj X)).inv ≫ eqToHom (by rw [htensor, hunit]) := by
-    simpa using heq_eq_eqToHom_comp rfl (by rw [htensor, hunit]) (hρ_inv X)
+    simpa using (conj_eqToHom_iff_heq _ _ rfl (by rw [htensor, hunit])).mpr (hρ_inv X)
   have ewL (X) {Y₁ Y₂} (f : E.obj Y₁ ⟶ E.obj Y₂) :
       E.whiskerLeft X f = eqToHom (htensor X Y₁) ≫ (E.obj X ◁ f) ≫ eqToHom (htensor X Y₂).symm :=
-    heq_eq_eqToHom_comp (htensor X Y₁) (htensor X Y₂) (hwL X f)
+    (conj_eqToHom_iff_heq _ _ (htensor X Y₁) (htensor X Y₂)).mpr (hwL X f)
   have ewR {X₁ X₂} (f : E.obj X₁ ⟶ E.obj X₂) (Y) :
       E.whiskerRight f Y = eqToHom (htensor X₁ Y) ≫ (f ▷ E.obj Y) ≫ eqToHom (htensor X₂ Y).symm :=
-    heq_eq_eqToHom_comp (htensor X₁ Y) (htensor X₂ Y) (hwR f Y)
+    (conj_eqToHom_iff_heq _ _ (htensor X₁ Y) (htensor X₂ Y)).mpr (hwR f Y)
   have etens {W X Y Z} (f : E.obj W ⟶ E.obj Y) (g : E.obj X ⟶ E.obj Z) :
       E.tensorHom f g = eqToHom (htensor W X) ≫ (f ⊗ₘ g) ≫ eqToHom (htensor Y Z).symm :=
-    heq_eq_eqToHom_comp (htensor W X) (htensor Y Z) (htens f g)
+    (conj_eqToHom_iff_heq _ _ (htensor W X) (htensor Y Z)).mpr (htens f g)
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro X₁ Y₁ X₂ Y₂ f g; simp [etens, ewR, ewL, MonoidalCategory.tensorHom_def]
   · intro X Y; simp [etens]
@@ -522,6 +519,70 @@ variable {unitObj tensorObj Gen}
   | _, _, Hom.whiskerRight p X => E.whiskerRight (liftMapAux E fg p) X
   | _, _, Hom.tensor f g => E.tensorHom (liftMapAux E fg f) (liftMapAux E fg g)
 
+@[simp]
+theorem liftMapAux_id (E : MonoidalEval unitObj tensorObj D)
+    (fg : ∀ {X Y : Obj}, Gen X Y → (E.obj X ⟶ E.obj Y)) (X : Obj) :
+    liftMapAux E fg (Hom.id X) = 𝟙 (E.obj X) := rfl
+
+@[simp]
+theorem liftMapAux_α_hom (E : MonoidalEval unitObj tensorObj D)
+    (fg : ∀ {X Y : Obj}, Gen X Y → (E.obj X ⟶ E.obj Y)) (X Y Z : Obj) :
+    liftMapAux E fg (Hom.α_hom X Y Z) = E.αHom X Y Z := rfl
+
+@[simp]
+theorem liftMapAux_α_inv (E : MonoidalEval unitObj tensorObj D)
+    (fg : ∀ {X Y : Obj}, Gen X Y → (E.obj X ⟶ E.obj Y)) (X Y Z : Obj) :
+    liftMapAux E fg (Hom.α_inv X Y Z) = E.αInv X Y Z := rfl
+
+@[simp]
+theorem liftMapAux_l_hom (E : MonoidalEval unitObj tensorObj D)
+    (fg : ∀ {X Y : Obj}, Gen X Y → (E.obj X ⟶ E.obj Y)) (X : Obj) :
+    liftMapAux E fg (Hom.l_hom X) = E.lHom X := rfl
+
+@[simp]
+theorem liftMapAux_l_inv (E : MonoidalEval unitObj tensorObj D)
+    (fg : ∀ {X Y : Obj}, Gen X Y → (E.obj X ⟶ E.obj Y)) (X : Obj) :
+    liftMapAux E fg (Hom.l_inv X) = E.lInv X := rfl
+
+@[simp]
+theorem liftMapAux_ρ_hom (E : MonoidalEval unitObj tensorObj D)
+    (fg : ∀ {X Y : Obj}, Gen X Y → (E.obj X ⟶ E.obj Y)) (X : Obj) :
+    liftMapAux E fg (Hom.ρ_hom X) = E.ρHom X := rfl
+
+@[simp]
+theorem liftMapAux_ρ_inv (E : MonoidalEval unitObj tensorObj D)
+    (fg : ∀ {X Y : Obj}, Gen X Y → (E.obj X ⟶ E.obj Y)) (X : Obj) :
+    liftMapAux E fg (Hom.ρ_inv X) = E.ρInv X := rfl
+
+@[simp]
+theorem liftMapAux_gen (E : MonoidalEval unitObj tensorObj D)
+    (fg : ∀ {X Y : Obj}, Gen X Y → (E.obj X ⟶ E.obj Y)) {X Y : Obj} (g : Gen X Y) :
+    liftMapAux E fg (Hom.gen g) = fg g := rfl
+
+@[simp]
+theorem liftMapAux_comp (E : MonoidalEval unitObj tensorObj D)
+    (fg : ∀ {X Y : Obj}, Gen X Y → (E.obj X ⟶ E.obj Y)) {X Y Z : Obj}
+    (f : Hom unitObj tensorObj Gen X Y) (g : Hom unitObj tensorObj Gen Y Z) :
+    liftMapAux E fg (f.comp g) = liftMapAux E fg f ≫ liftMapAux E fg g := rfl
+
+@[simp]
+theorem liftMapAux_whiskerLeft (E : MonoidalEval unitObj tensorObj D)
+    (fg : ∀ {X Y : Obj}, Gen X Y → (E.obj X ⟶ E.obj Y)) (X : Obj) {Y Z : Obj}
+    (f : Hom unitObj tensorObj Gen Y Z) :
+    liftMapAux E fg (f.whiskerLeft X) = E.whiskerLeft X (liftMapAux E fg f) := rfl
+
+@[simp]
+theorem liftMapAux_whiskerRight (E : MonoidalEval unitObj tensorObj D)
+    (fg : ∀ {X Y : Obj}, Gen X Y → (E.obj X ⟶ E.obj Y)) {Y Z : Obj}
+    (f : Hom unitObj tensorObj Gen Y Z) (X : Obj) :
+    liftMapAux E fg (f.whiskerRight X) = E.whiskerRight (liftMapAux E fg f) X := rfl
+
+@[simp]
+theorem liftMapAux_tensor (E : MonoidalEval unitObj tensorObj D)
+    (fg : ∀ {X Y : Obj}, Gen X Y → (E.obj X ⟶ E.obj Y)) {W X Y Z : Obj}
+    (f : Hom unitObj tensorObj Gen W Y) (g : Hom unitObj tensorObj Gen X Z) :
+    liftMapAux E fg (f.tensor g) = E.tensorHom (liftMapAux E fg f) (liftMapAux E fg g) := rfl
+
 /-- Interpretation of formal morphisms respects all monoidal axioms and any extra relations `Rel`
 respected by `liftMapAux E fg`. -/
 theorem liftMapAux_sound
@@ -574,6 +635,71 @@ morphism actions simplify definitionally. -/
     (fun _ _ h ↦ liftMapAux_sound P.Rel E hE fg hrel h) f
   map_id _ := rfl
   map_comp f g := Quot.inductionOn f fun _ ↦ Quot.inductionOn g fun _ ↦ rfl
+
+section LiftLemmas
+
+variable {P : Presentation.{u, v}} {E : MonoidalEval P.unitObj P.tensorObj D} {hE : E.Lawful}
+  {fg : ∀ {X Y : P.Obj}, P.Gen X Y → (E.obj X ⟶ E.obj Y)}
+  {hrel : ∀ {X Y : P.Obj} {f g : Hom P.unitObj P.tensorObj P.Gen X Y}, P.Rel f g →
+    liftMapAux E fg f = liftMapAux E fg g}
+
+/-- On objects, `lift E hE fg hrel` applies `E.obj` to the underlying syntactic object. -/
+theorem lift_obj (X : Free P) : (lift E hE fg hrel).obj X = E.obj X.as := (rfl)
+
+/-- On the class of a formal morphism, `lift E hE fg hrel` evaluates by `liftMapAux`. -/
+@[simp]
+theorem lift_map_homMk {X Y : Free P} (f : Hom P.unitObj P.tensorObj P.Gen X.as Y.as) :
+    (lift E hE fg hrel).map (homMk f) = liftMapAux E fg f := (rfl)
+
+/-- `lift E hE fg hrel` sends each extra generator `g` to `fg g`. -/
+theorem lift_map_gen {X Y : P.Obj} (g : P.Gen X Y) :
+    (lift E hE fg hrel).map (homMk (X := ⟨X⟩) (Y := ⟨Y⟩) (Hom.gen g)) = fg g := (rfl)
+
+/-- `lift E hE fg hrel` sends left whiskering to `E.whiskerLeft`. -/
+theorem lift_map_whiskerLeft (X : Free P) {Y₁ Y₂ : Free P} (f : Y₁ ⟶ Y₂) :
+    (lift E hE fg hrel).map (X ◁ f) = E.whiskerLeft X.as ((lift E hE fg hrel).map f) := by
+  induction f using Quotient.inductionOn
+  exact liftMapAux_whiskerLeft E fg X.as _
+
+/-- `lift E hE fg hrel` sends right whiskering to `E.whiskerRight`. -/
+theorem lift_map_whiskerRight {X₁ X₂ : Free P} (f : X₁ ⟶ X₂) (Y : Free P) :
+    (lift E hE fg hrel).map (f ▷ Y) = E.whiskerRight ((lift E hE fg hrel).map f) Y.as := by
+  induction f using Quotient.inductionOn
+  exact liftMapAux_whiskerRight E fg _ Y.as
+
+/-- `lift E hE fg hrel` sends tensor products of morphisms to `E.tensorHom`. -/
+theorem lift_map_tensorHom {X₁ Y₁ X₂ Y₂ : Free P} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂) :
+    (lift E hE fg hrel).map (f ⊗ₘ g) =
+      E.tensorHom ((lift E hE fg hrel).map f) ((lift E hE fg hrel).map g) := by
+  induction f using Quotient.inductionOn
+  induction g using Quotient.inductionOn
+  exact liftMapAux_tensor E fg _ _
+
+/-- `lift E hE fg hrel` sends the forward associator to `E.αHom`. -/
+theorem lift_map_associator_hom (X Y Z : Free P) :
+    (lift E hE fg hrel).map (α_ X Y Z).hom = E.αHom X.as Y.as Z.as := (rfl)
+
+/-- `lift E hE fg hrel` sends the inverse associator to `E.αInv`. -/
+theorem lift_map_associator_inv (X Y Z : Free P) :
+    (lift E hE fg hrel).map (α_ X Y Z).inv = E.αInv X.as Y.as Z.as := (rfl)
+
+/-- `lift E hE fg hrel` sends the forward left unitor to `E.lHom`. -/
+theorem lift_map_leftUnitor_hom (X : Free P) :
+    (lift E hE fg hrel).map (λ_ X).hom = E.lHom X.as := (rfl)
+
+/-- `lift E hE fg hrel` sends the inverse left unitor to `E.lInv`. -/
+theorem lift_map_leftUnitor_inv (X : Free P) :
+    (lift E hE fg hrel).map (λ_ X).inv = E.lInv X.as := (rfl)
+
+/-- `lift E hE fg hrel` sends the forward right unitor to `E.ρHom`. -/
+theorem lift_map_rightUnitor_hom (X : Free P) :
+    (lift E hE fg hrel).map (ρ_ X).hom = E.ρHom X.as := (rfl)
+
+/-- `lift E hE fg hrel` sends the inverse right unitor to `E.ρInv`. -/
+theorem lift_map_rightUnitor_inv (X : Free P) :
+    (lift E hE fg hrel).map (ρ_ X).inv = E.ρInv X.as := (rfl)
+
+end LiftLemmas
 
 end Lift
 

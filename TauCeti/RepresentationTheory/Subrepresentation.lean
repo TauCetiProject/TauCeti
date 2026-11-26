@@ -24,8 +24,9 @@ coerces to it, when an intertwining map is zero and when it is surjective in ter
 subrepresentation its range is,
 the inclusion of a subrepresentation as an intertwining map, that the group-algebra action on a
 subrepresentation coerces to the original action, the canonical equivalence between the module of
-the restricted representation and the corresponding submodule, and that a subrepresentation is
-minimal exactly when the `A[G]`-submodule it carries is simple.
+the restricted representation and the corresponding submodule, that membership in a supremum of
+subrepresentations is the same in the lattices of `A[G]`-submodules and of `A`-submodules, and
+that a subrepresentation is minimal exactly when the `A[G]`-submodule it carries is simple.
 
 They are stated at the typeclasses `Subrepresentation` itself asks for, so they apply wherever
 the abstraction does. The `⊥` and `⊤` lemmas let proofs about extreme subrepresentations avoid
@@ -34,7 +35,9 @@ lemmas move an order statement between the two lattices, which is what lets a su
 argument — a dimension count, say, or an orthogonal complement — settle a question about
 subrepresentations; and the membership lemma does the same for a single element, so that a
 carrier computed by a `toSubmodule` lemma answers a `SetLike` membership goal without unfolding
-the `SetLike` instance by hand. `Representation.IntertwiningMap.eq_zero_iff_range_eq_bot` and
+the `SetLike` instance by hand. `Subrepresentation.spanSingleton` packages the line through a
+vector that every `ρ g` sends to a scalar multiple of itself, a common way to exhibit a proper
+nonzero subrepresentation. `Representation.IntertwiningMap.eq_zero_iff_range_eq_bot` and
 `Representation.IntertwiningMap.surjective_iff_range_eq_top` are the first consumers of the `⊥` and
 `⊤` lemmas, and belong here because `⊥` and `⊤` of `Subrepresentation` have no other API: they are
 `LinearMap.range_eq_bot` and `LinearMap.range_eq_top` moved up to the subrepresentation lattice,
@@ -44,8 +47,9 @@ are what they are proved for. In the same spirit,
 across `Subrepresentation.subrepresentationSubmoduleOrderIso`, so that Mathlib's simple- and
 semisimple-module API applies to minimal subrepresentations; being about `asSubmodule` it asks for
 the coefficients to be a commutative ring, as `Subrepresentation.asSubmodule` and
-`IsSimpleModule` between them do.  `Subrepresentation.isCompl_toSubmodule` is one more entry in
-the lattice dictionary, moving `IsCompl` across it, and stated with the rest of that dictionary at
+`IsSimpleModule` between them do.  `Subrepresentation.isCompl_toSubmodule` and
+`Subrepresentation.disjoint_toSubmodule` are two more entries in the lattice dictionary, moving
+`IsCompl` and `Disjoint` across it, and stated with the rest of that dictionary at
 the typeclasses `Subrepresentation` itself asks for. The same dictionary shows that the
 subrepresentations of a representation on a module over a ring form a modular lattice
 (`Subrepresentation.instIsModularLattice`), as the submodules do.  Finally,
@@ -55,7 +59,9 @@ being additive and preserving both summands, supplies the equivariance.  Being a
 `Submodule.prodEquivOfIsCompl`, it asks for the coefficients to be a ring and the module to be a
 group, as that construction does.  Its first component is the projection
 `Submodule.projectionOnto` along the complement, which therefore intertwines
-(`Subrepresentation.isIntertwiningMap_projectionOnto`); its transpose, given by
+(`Subrepresentation.isIntertwiningMap_projectionOnto`). A vector of one summand of a disjoint pair
+is fixed by `ρ g` once `ρ g v - v` lies in the other summand
+(`Subrepresentation.apply_eq_self_of_disjoint`). The transpose of the projection, given by
 `Representation.IsIntertwiningMap.dualMap`, extends linear forms on `ρ₁` by zero on `ρ₂`, which
 includes the dual of `ρ₁` equivariantly into the dual of `ρ`. Annihilators exchange
 subrepresentations of `ρ` and of its dual: `Subrepresentation.dualAnnihilator` and
@@ -75,14 +81,19 @@ containing `v` (`Representation.cyclicSubrepresentation_le_iff`), and its vector
 (`Representation.toSubmodule_cyclicSubrepresentation`), whose span is invariant under `ρ`
 (`Representation.apply_mem_span_range_apply`).
 
-Restriction along a surjective monoid homomorphism identifies the lattices of invariant
-submodules, keeping the underlying submodule in both directions. In particular it preserves
-irreducibility, as does restriction along a monoid isomorphism. Restriction of an algebra action
-along a monoid homomorphism whose image spans the algebra keeps the invariant submodules too
+Restriction along any monoid homomorphism keeps the underlying submodule of a subrepresentation
+(`Subrepresentation.res`), and the restricted subrepresentation carries the restricted
+representation (`Subrepresentation.toRepresentation_res`). Restriction along a surjective monoid
+homomorphism identifies the lattices of invariant submodules, keeping the underlying submodule in
+both directions. In particular it preserves irreducibility, as does restriction along a monoid
+isomorphism. Restriction of an algebra action along a monoid homomorphism whose image spans the
+algebra keeps the invariant submodules too
 (`AlgHom.mem_invtSubmodule_toMonoidHom_comp_iff_of_span_eq_top`).
 
 ## Main results
 
+* `Subrepresentation.res`
+* `Subrepresentation.toRepresentation_res`
 * `MonoidHom.resSubrepresentationOrderIso`
 * `MonoidHom.isIrreducible_comp_surjective_iff`
 * `MulEquiv.isIrreducible_comp_equiv_iff`
@@ -98,9 +109,14 @@ along a monoid homomorphism whose image spans the algebra keeps the invariant su
 * `Subrepresentation.toSubmodule_bot`
 * `Subrepresentation.toSubmodule_top`
 * `Subrepresentation.instNontrivial`
+* `Subrepresentation.spanSingleton`
+* `Subrepresentation.toSubmodule_spanSingleton`
+* `Subrepresentation.mem_spanSingleton`
+* `Subrepresentation.self_mem_spanSingleton`
 * `Subrepresentation.toSubmodule_le_toSubmodule`
 * `Subrepresentation.toSubmodule_lt_toSubmodule`
 * `Subrepresentation.isCompl_toSubmodule`
+* `Subrepresentation.disjoint_toSubmodule`
 * `Subrepresentation.instIsModularLattice`
 * `Subrepresentation.toRepresentation_apply`
 * `Subrepresentation.coe_toRepresentation_apply`
@@ -123,9 +139,11 @@ along a monoid homomorphism whose image spans the algebra keeps the invariant su
 * `Subrepresentation.coe_toRepresentation_asAlgebraHom_apply`
 * `Subrepresentation.asModuleEquivAsSubmodule`
 * `Subrepresentation.intertwiningMapEquivLinearMapAsSubmodule`
+* `Subrepresentation.mem_iSup_asSubmodule_iff`
 * `Subrepresentation.isSimpleModule_asSubmodule_iff`
 * `Subrepresentation.equivProdOfIsCompl`
 * `Subrepresentation.isIntertwiningMap_projectionOnto`
+* `Subrepresentation.apply_eq_self_of_disjoint`
 * `Subrepresentation.instSemilatticeSupFG`
 -/
 
@@ -171,6 +189,34 @@ instance instNontrivial [Nontrivial W] : Nontrivial (Subrepresentation ρ) :=
   ⟨⟨⊥, ⊤, fun hc => _root_.bot_ne_top (α := Submodule A W) (by
     rw [← toSubmodule_bot (ρ := ρ), ← toSubmodule_top (ρ := ρ), hc])⟩⟩
 
+/-- **The line through a common eigenvector.** If every `ρ g` sends `v` to a scalar multiple of
+`v`, then the span of `v` is a subrepresentation. -/
+def spanSingleton (v : W) (h : ∀ g, ∃ t : A, ρ g v = t • v) : Subrepresentation ρ where
+  toSubmodule := A ∙ v
+  apply_mem_toSubmodule g x hx := by
+    obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hx
+    obtain ⟨t, ht⟩ := h g
+    rw [map_smul, ht]
+    exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v))
+
+/-- The line through a common eigenvector carries the span of that vector. -/
+@[simp]
+lemma toSubmodule_spanSingleton (v : W) (h : ∀ g, ∃ t : A, ρ g v = t • v) :
+    (spanSingleton v h).toSubmodule = A ∙ v :=
+  (rfl)
+
+/-- A vector lies in the line through a common eigenvector `v` exactly when it is a multiple
+of `v`. -/
+lemma mem_spanSingleton {v x : W} {h : ∀ g, ∃ t : A, ρ g v = t • v} :
+    x ∈ spanSingleton v h ↔ ∃ a : A, a • v = x :=
+  Submodule.mem_span_singleton
+
+/-- A common eigenvector lies in the line it spans. -/
+@[simp]
+lemma self_mem_spanSingleton (v : W) (h : ∀ g, ∃ t : A, ρ g v = t • v) :
+    v ∈ spanSingleton v h :=
+  Submodule.mem_span_singleton_self v
+
 /-- One subrepresentation is contained in another exactly when the subspace it carries is. -/
 @[simp]
 lemma toSubmodule_le_toSubmodule {ρ₁ ρ₂ : Subrepresentation ρ} :
@@ -192,6 +238,14 @@ theorem isCompl_toSubmodule {ρ₁ ρ₂ : Subrepresentation ρ} :
     IsCompl ρ₁.toSubmodule ρ₂.toSubmodule ↔ IsCompl ρ₁ ρ₂ := by
   simp only [isCompl_iff, disjoint_iff, codisjoint_iff, ← toSubmodule_inf, ← toSubmodule_sup,
     ← toSubmodule_bot (ρ := ρ), ← toSubmodule_top (ρ := ρ), toSubmodule_injective.eq_iff]
+
+/-- Two subrepresentations are disjoint exactly when the subspaces they carry are: the `Disjoint`
+half of `Subrepresentation.isCompl_toSubmodule`. -/
+@[simp]
+theorem disjoint_toSubmodule {ρ₁ ρ₂ : Subrepresentation ρ} :
+    Disjoint ρ₁.toSubmodule ρ₂.toSubmodule ↔ Disjoint ρ₁ ρ₂ := by
+  simp only [disjoint_iff, ← toSubmodule_inf, ← toSubmodule_bot (ρ := ρ),
+    toSubmodule_injective.eq_iff]
 
 /-- The subrepresentations of a representation on a module over a ring form a modular lattice, as
 the submodules they carry do. So Mathlib's modular-lattice API applies to them: in a semisimple
@@ -423,6 +477,16 @@ theorem intertwiningMapEquivLinearMapAsSubmodule_apply (σ : Subrepresentation �
         (σ.asModuleEquivAsSubmodule.symm x) :=
   (rfl)
 
+/-- **Membership in a supremum of subrepresentations.** A vector of `ρ`, read in `ρ.asModule`,
+lies in the supremum of the `A[G]`-submodules `(σ i).asSubmodule` exactly when it lies in the
+supremum of the underlying `A`-submodules `(σ i).toSubmodule`. -/
+theorem mem_iSup_asSubmodule_iff {ι : Sort*} {σ : ι → Subrepresentation ρ} {v : W} :
+    ρ.asModuleEquiv.symm v ∈ ⨆ i, (σ i).asSubmodule ↔ v ∈ ⨆ i, (σ i).toSubmodule := by
+  rw [← Submodule.restrictScalars_mem A, Submodule.restrictScalars_iSup]
+  -- `ρ.asModule` is a type synonym for `W` and each `(σ i).asSubmodule` is built from
+  -- `(σ i).toSubmodule`, so restricting its scalars to `A` gives back `(σ i).toSubmodule`.
+  rfl
+
 end AsSubmoduleEquiv
 
 section AsSubmodule
@@ -496,6 +560,13 @@ theorem isIntertwiningMap_projectionOnto {ρ₁ ρ₂ : Subrepresentation ρ} (h
       LinearMap.ext fun v => by simp [equivProdOfIsCompl_apply]⟩
   exact hf ▸ ⟨f.isIntertwining⟩
 
+/-- A vector `v` of a subrepresentation `ρ₂` that is disjoint from a subrepresentation `ρ₁` is
+fixed by `ρ g` as soon as `ρ g v - v` lies in `ρ₁`: that difference lies in both. -/
+theorem apply_eq_self_of_disjoint {ρ₁ ρ₂ : Subrepresentation ρ} (h : Disjoint ρ₁ ρ₂) {g : G}
+    {v : W} (hv : v ∈ ρ₂) (h₁ : ρ g v - v ∈ ρ₁) : ρ g v = v :=
+  sub_eq_zero.1 <| Submodule.disjoint_def.1 (disjoint_toSubmodule.2 h) _ h₁
+    (ρ₂.toSubmodule.sub_mem (ρ₂.apply_mem_toSubmodule g hv) hv)
+
 end Splitting
 
 section FG
@@ -514,6 +585,42 @@ instance instInhabitedFG : Inhabited {σ : Subrepresentation ρ // σ.toSubmodul
   ⟨⟨⊥, Submodule.fg_bot⟩⟩
 
 end FG
+
+section Res
+
+variable {k : Type*} [Semiring k] {H K : Type*} [Monoid H] [Monoid K]
+  {V : Type*} [AddCommMonoid V] [Module k V] {ρ : Representation k K V}
+
+/-- The restriction of a subrepresentation of `ρ` along a monoid homomorphism `f`: the same
+underlying submodule, as a subrepresentation of `ρ.comp f`. Its body is exposed so that
+`Subrepresentation.toRepresentation_res` can be stated. -/
+@[expose] def res (f : H →* K) (σ : Subrepresentation ρ) : Subrepresentation (ρ.comp f) where
+  toSubmodule := σ.toSubmodule
+  apply_mem_toSubmodule h _ hv := σ.apply_mem_toSubmodule (f h) hv
+
+/-- Restriction along a monoid homomorphism keeps the underlying submodule. -/
+@[simp]
+theorem toSubmodule_res (f : H →* K) (σ : Subrepresentation ρ) :
+    (σ.res f).toSubmodule = σ.toSubmodule :=
+  rfl
+
+/-- Restriction along a monoid homomorphism keeps the underlying set. -/
+@[simp]
+theorem coe_res (f : H →* K) (σ : Subrepresentation ρ) : (σ.res f : Set V) = σ :=
+  rfl
+
+/-- A vector lies in the restriction of `σ` along `f` exactly when it lies in `σ`. -/
+@[simp]
+theorem mem_res {f : H →* K} {σ : Subrepresentation ρ} {v : V} : v ∈ σ.res f ↔ v ∈ σ :=
+  Iff.rfl
+
+/-- The representation carried by the restriction of `σ` along `f` is the restriction along `f` of
+the representation carried by `σ`. -/
+theorem toRepresentation_res (f : H →* K) (σ : Subrepresentation ρ) :
+    (σ.res f).toRepresentation = σ.toRepresentation.comp f :=
+  rfl
+
+end Res
 
 end Subrepresentation
 
@@ -597,9 +704,7 @@ def resSubrepresentationOrderIso (f : H →* K) (hf : Function.Surjective f)
       apply_mem_toSubmodule := fun h v hv ↦ by
         obtain ⟨g, rfl⟩ := hf h
         exact S.apply_mem_toSubmodule g hv }
-  invFun S :=
-    { toSubmodule := S.toSubmodule
-      apply_mem_toSubmodule := fun h v hv ↦ S.apply_mem_toSubmodule (f h) hv }
+  invFun S := S.res f
   left_inv S := by ext; rfl
   right_inv S := by ext; rfl
   map_rel_iff' := by rfl

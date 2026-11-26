@@ -18,6 +18,8 @@ substitution that turns integrals over a half-line into integrals over `(0, π)`
 
 ## Main declarations
 
+* `TauCeti.cos_half_sq`, `TauCeti.sin_half_sq`: the half-angle identities
+  `cos² (θ/2) = (1 + cos θ)/2` and `sin² (θ/2) = (1 - cos θ)/2`.
 * `TauCeti.one_sub_cos_pos`, `TauCeti.one_add_cos_pos`: positivity of `1 ∓ cos θ`.
 * `TauCeti.injOn_one_sub_cos_div_one_add_cos`: `θ ↦ (1 - cos θ)/(1 + cos θ)` is injective on
   `[0, π)`.
@@ -29,6 +31,16 @@ public section
 open Real Set
 
 namespace TauCeti
+
+/-- The half-angle identity `cos² (θ/2) = (1 + cos θ) / 2`. -/
+theorem cos_half_sq (θ : ℝ) : cos (θ / 2) ^ 2 = (1 + cos θ) / 2 := by
+  rw [cos_sq, show 2 * (θ / 2) = θ by ring]
+  ring
+
+/-- The half-angle identity `sin² (θ/2) = (1 - cos θ) / 2`. -/
+theorem sin_half_sq (θ : ℝ) : sin (θ / 2) ^ 2 = (1 - cos θ) / 2 := by
+  rw [sin_sq, cos_half_sq]
+  ring
 
 /-- For `θ ∈ (0, 2π)`, `1 - cos θ` is positive. -/
 theorem one_sub_cos_pos {θ : ℝ} (h₀ : 0 < θ) (h₁ : θ < 2 * π) : 0 < 1 - cos θ :=

@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.ODE.ExistUnique
 import TauCeti.Analysis.Normed.Algebra.Basic
 import TauCeti.Geometry.Lie.Exponential.Trotter
+import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 
 /-!
 # The adjoint action on the Lie-group exponential
@@ -47,6 +48,8 @@ the exponential of their sum is the product of their exponentials.
   left-invariant derivations, two derivations that bracket to zero generate one-parameter
   subgroups fixing each other under `Ad`, hence commuting, and the exponential of their sum is
   the product of their exponentials.
+* `TauCeti.Lie.Ad_lieExp_smul_apply_eq_self_iff`: the one-parameter subgroup of `X` fixes `Y`
+  under `Ad` exactly when `⁅X, Y⁆ = 0`.
 * `LeftInvariantDerivation.Ad_lieExp`: **the adjoint-exponential formula
   `Ad (lieExp X) = exp (ad X)`** as an identity of bounded operators on left-invariant
   derivations, and `LeftInvariantDerivation.Ad_lieExp_apply` its pointwise form.
@@ -260,6 +263,16 @@ theorem Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero {X Y : LeftInvariantDerivati
     ← leftInvariantDerivationLieEquivGroupLieAlgebra_apply]
   refine tangentAd_mulInvariantExp_smul_apply_eq_self_of_lie_eq_zero ?_ s
   rw [← LieEquiv.map_lie, h, map_zero]
+
+/-- **The one-parameter subgroup of `X` fixes `Y` under `Ad` exactly when `⁅X, Y⁆ = 0`.** -/
+theorem Ad_lieExp_smul_apply_eq_self_iff {X Y : LeftInvariantDerivation I G} :
+    (∀ s : ℝ, Ad (I := I) (lieExp (I := I) (s • X)) Y = Y) ↔ ⁅X, Y⁆ = 0 := by
+  refine ⟨fun h ↦ ?_, Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero⟩
+  -- The curve `s ↦ Ad (lieExp (s • X)) Y` has derivative `⁅X, Y⁆` at `0`; here it is constant.
+  have hderiv := hasDerivAt_Ad_lieExp_smul_apply_zero (I := I) X Y
+  rw [show (fun s : ℝ ↦ Ad (I := I) (lieExp (I := I) (s • X)) Y) = fun _ ↦ Y from funext h]
+    at hderiv
+  exact hderiv.unique (hasDerivAt_const 0 Y)
 
 /-- If `⁅X, Y⁆ = 0`, then `Ad (lieExp X) Y = Y`. -/
 theorem Ad_lieExp_apply_eq_self_of_lie_eq_zero {X Y : LeftInvariantDerivation I G}

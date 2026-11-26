@@ -11,6 +11,7 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Data.Sym.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Substitution
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+import TauCeti.RingTheory.Polynomial.Vieta
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 
@@ -53,7 +54,10 @@ are separate later steps.
   inverts `toMonic`, so `Sym K n` is equivalent to the monic polynomials of degree `n`.
 * `Sym.coeffEquiv`: the resulting chart `Sym K n ≃ (Fin n → K)`, with
   `Sym.coeffEquiv_apply` naming its coordinates as the signed elementary symmetric
-  functions and `Sym.coeffEquiv_symm_apply` describing the inverse as a root-taking map.
+  functions, `Sym.coeffEquiv_symm_apply` describing the inverse as a root-taking map, and
+  `Sym.coeffEquiv_symm_esymm` recovering a multiset from its elementary symmetric functions.
+* `Sym.exists_esymm_eq`: every tuple of values is the tuple of elementary symmetric functions of
+  some unordered `n`-tuple.
 * `Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero`: membership in the basepoint
   divisor is characterized by an affine equation in the chart.
 * `Sym.coeffEquiv_one_apply` and `Sym.coeffEquiv_two_apply`: the chart in degrees
@@ -207,16 +211,9 @@ the unordered tuple of those roots: a full set of simple roots pins the polynomi
 theorem toMonic_ofFn_eq_of_forall_isRoot {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n)
     {w : Fin n → R} (hw : Function.Injective w) (hroot : ∀ i, (p : R[X]).IsRoot (w i)) :
     (toMonic (Sym.ofFn w) : R[X]) = p := by
-  have hle : (Sym.ofFn w : Multiset R) ≤ p.roots := by
-    refine (Multiset.le_iff_subset (by rw [Sym.coe_ofFn]; simpa using List.nodup_ofFn.2 hw)).2
-      fun a ha => ?_
-    obtain ⟨i, rfl⟩ := Sym.mem_ofFn.1 (by simpa using ha)
-    exact (mem_roots' (p := p)).2 ⟨hp.ne_zero, hroot i⟩
-  have hcard : Multiset.card (Sym.ofFn w : Multiset R) = n := Sym.card_coe
-  have hroots : (Sym.ofFn w : Multiset R) = p.roots :=
-    Multiset.eq_of_le_of_card_le hle (by rw [hcard, ← hdeg]; exact p.card_roots')
-  rw [coe_toMonic, ofMultiset_apply, hroots]
-  exact prod_multiset_X_sub_C_of_monic_of_roots_card_eq hp (by rw [← hroots, hcard, hdeg])
+  rw [eq_prod_X_sub_C_of_monic_of_isRoot (s := Finset.univ) hp (by simp [hdeg]) hw.injOn
+    fun i _ => hroot i]
+  simp [coe_toMonic, ofMultiset_apply, Sym.coe_ofFn, List.prod_ofFn]
 
 end Domain
 
@@ -350,6 +347,29 @@ recovers its roots, counted with multiplicity. -/
 theorem coeffEquiv_symm_coeff_of_monic {p : K[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
     (((coeffEquiv K n).symm (fun i => p.coeff i) : Sym K n) : Multiset K) = p.roots := by
   rw [coeffEquiv_symm_apply, TauCeti.Polynomial.monicOfCoeff_coeff hp hdeg]
+
+/-- The inverse chart recovers an `n`-element multiset from its elementary symmetric functions,
+in decreasing order and with alternating signs. This is `Sym.coeffEquiv_apply` read backwards. -/
+@[simp]
+theorem coeffEquiv_symm_esymm {s : Multiset K} (hs : Multiset.card s = n) :
+    (coeffEquiv K n).symm (fun i : Fin n => (-1) ^ (n - (i : ℕ)) * s.esymm (n - (i : ℕ))) =
+      Sym.mk s hs := by
+  rw [Equiv.symm_apply_eq]
+  funext i
+  exact (coeffEquiv_apply (Sym.mk s hs) i).symm
+
+/-- **Every coefficient tuple comes from a tuple of roots.** For any prescribed values `c j`, there
+is an unordered `n`-tuple whose `j`-th elementary symmetric function is `c j` for `1 ≤ j ≤ n`:
+the roots of `Xⁿ - c₁ Xⁿ⁻¹ + ⋯ + (-1)ⁿ cₙ`. -/
+theorem exists_esymm_eq (c : ℕ → K) :
+    ∃ s : Sym K n, ∀ j ∈ Finset.Icc 1 n, (s : Multiset K).esymm j = c j := by
+  refine ⟨(coeffEquiv K n).symm fun i => (-1) ^ (n - (i : ℕ)) * c (n - i), fun j hj => ?_⟩
+  obtain ⟨hj₁, hjn⟩ := Finset.mem_Icc.1 hj
+  have hi := congrFun ((coeffEquiv K n).apply_symm_apply
+    fun i : Fin n => (-1) ^ (n - (i : ℕ)) * c (n - i)) ⟨n - j, by omega⟩
+  rw [coeffEquiv_apply] at hi
+  simp only [Nat.sub_sub_self hjn] at hi
+  exact mul_left_cancel₀ (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero)) hi
 
 /-- **The tuples through a point satisfy an affine equation in the elementary symmetric chart.** A
 point `a` belongs to `s` exactly when the monic polynomial whose lower coefficients are the

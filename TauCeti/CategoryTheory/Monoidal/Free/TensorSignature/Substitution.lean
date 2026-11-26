@@ -186,9 +186,9 @@ substitution. This is also the representative computation rule for the descended
 theorem toFunctor_map_homMk {X Y : FreeMonoidalCategory S.Obj} (f : FreeMonoidal.Hom X Y) :
     σ.toFunctor.map (FreeMonoidal.homMk (X := ⟨X⟩) (Y := ⟨Y⟩) f) =
       FreeMonoidal.homMk (Hom.subst σ f) := by
-  -- The lift's interpreter is opaque in this module, so use its computation lemmas.
-  -- The `homMk` structural generators and the wrapped interpreted endpoints are
-  -- definitionally the corresponding native categorical objects and morphisms.
+  -- Use the computation lemmas for `lift`; the `homMk` structural generators and the wrapped
+  -- interpreted endpoints are definitionally the corresponding native categorical objects and
+  -- morphisms.
   induction f with
   | id X => exact (lift σ.obj _).map_id ⟨X⟩
   | α_hom X Y Z => exact lift_map_associator_hom _ _ ⟨X⟩ ⟨Y⟩ ⟨Z⟩

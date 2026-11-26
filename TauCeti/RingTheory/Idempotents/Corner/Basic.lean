@@ -30,6 +30,8 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
 * `IsIdempotentElem.compress`: the compression `x ↦ e * x * e` of `A` onto the corner ring `eAe`.
 * `IsIdempotentElem.Corner.instAlgebra`: the corner `eAe` of an idempotent of a nonunital
   `R`-algebra is a unital `R`-algebra.
+* `IsIdempotentElem.compressAlgHom`: for a central idempotent `e` of an `R`-algebra `A`, the
+  compression `x ↦ e * x` is a surjective `R`-algebra map `A →ₐ[R] eAe`.
 * `IsIdempotentElem.cornerFunctional`: the compression `x ↦ φ x / φ e` of a linear functional `φ`
   to the corner `eAe`, normalised at its unit `e`.
 * `IsIdempotentElem.cornerLinearEquivCornerSubmodule`: the corner ring `eAe`, as an `R`-module,
@@ -315,6 +317,47 @@ theorem val_list_prod_map_compress (l : List A) :
   induction l with
   | nil => simp
   | cons x l ih => simp [ih, mul_assoc, he.mul_self_mul]
+
+section AlgHom
+
+variable (R : Type v) [CommSemiring R] [Algebra R A] (hc : IsMulCentral e)
+
+/-- The compression `x ↦ e * x` of `A` onto the corner `eAe` of a central idempotent `e`, as a
+homomorphism of `R`-algebras. -/
+def compressAlgHom : A →ₐ[R] he.Corner where
+  toFun := he.compress
+  map_one' := he.compress_one
+  map_mul' x y := Subtype.ext <| by
+    rw [Corner.val_mul, he.val_compress_of_commute (hc.comm _),
+      he.val_compress_of_commute (hc.comm x), he.val_compress_of_commute (hc.comm y),
+      ← (hc.comm x).mul_mul_mul_comm, he.eq]
+  map_zero' := he.compress_zero
+  map_add' := he.compress_add
+  commutes' := he.compress_algebraMap
+
+/-- The compression algebra map is the compression `x ↦ e * x * e`. -/
+theorem compressAlgHom_apply (x : A) : he.compressAlgHom R hc x = he.compress x := (rfl)
+
+/-- The compression of `x` to the corner of a central idempotent `e` is `e * x`. -/
+@[simp]
+theorem val_compressAlgHom (x : A) : (he.compressAlgHom R hc x).val = e * x :=
+  he.val_compress_of_commute (hc.comm x)
+
+/-- The compression algebra map fixes the elements of the corner. -/
+@[simp]
+theorem compressAlgHom_val (y : he.Corner) : he.compressAlgHom R hc y.val = y :=
+  he.compress_val y
+
+/-- The compression algebra map sends `e` to the unit of the corner. -/
+@[simp]
+theorem compressAlgHom_self : he.compressAlgHom R hc e = 1 :=
+  Subtype.ext <| by rw [val_compressAlgHom, he.eq, Corner.val_one]
+
+/-- The compression onto the corner of a central idempotent is surjective. -/
+theorem compressAlgHom_surjective : Function.Surjective (he.compressAlgHom R hc) :=
+  fun y ↦ ⟨y.val, he.compressAlgHom_val R hc y⟩
+
+end AlgHom
 
 end Semiring
 
