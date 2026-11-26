@@ -21,8 +21,8 @@ or regularity of `f` is needed. Since the subspace is empty, the comparison is t
 Similarly, if `f ≤ b` everywhere and the sublevel `{f ≤ a}` is contractible (hence nonempty), the
 pair is `(X, {f ≤ a})` and its relative homology is the homology of `X` in positive degrees
 (`TauCeti.singularHomologyIsoSublevelPairOfContractibleSpace`). This reads the homology of `X` off
-the band above a contractible sublevel, as for the height function on a sphere, whose sublevels
-below the maximum are contractible.
+the band above a contractible sublevel, as for the height function on a sphere, whose nonempty
+sublevels below the maximum (`-1 ≤ a < 1`) are contractible.
 
 Consequently the homology of `X` is controlled by any finite filtration of `X` by sublevels. Let
 `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)` with `s 0 < f ≤ s (N + 1)` everywhere, let `V` be a module over a

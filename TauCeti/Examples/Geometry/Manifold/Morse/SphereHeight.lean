@@ -12,9 +12,9 @@ public import TauCeti.Geometry.Manifold.Morse.Sphere.Cell
 # Examples: the homology of the sphere from the cells of the height function
 
 The height function `h x = ⟪x, v⟫` on the unit sphere `Sⁿ` has a minimum of index `0` at the
-south pole and a maximum of index `n` at the north pole. Below the maximum its sublevels are
-contractible (`TauCeti.contractibleSpace_sublevel_sphereHeight`), and the band across the maximum
-has the relative homology of one `n`-cell
+south pole and a maximum of index `n` at the north pole. For `-1 ≤ a < 1` its sublevels
+`{h ≤ a}` are contractible (`TauCeti.contractibleSpace_sublevel_sphereHeight`), and the band across
+the maximum has the relative homology of one `n`-cell
 (`TauCeti.nonempty_singularHomology_sublevelPair_sphereHeight_iso`,
 `TauCeti.isZero_singularHomology_sublevelPair_sphereHeight`). Since the sublevel above the maximum
 is the whole sphere, the homology of `Sⁿ` in positive degrees is this relative homology
