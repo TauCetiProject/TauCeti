@@ -73,8 +73,7 @@ theorem le_measure_closedBall_of_tendsto [l.NeBot] (hμ : Tendsto μ l (𝓝 ν)
     ENNReal.ofReal (c * ρ ^ d) ≤ (ν : Measure X) (closedBall x ρ) :=
   -- The portmanteau theorem bounds the limit superior on the closed ball by its `ν`-mass.
   Measure.le_measure_closedBall_of_limsup_le
-    (fun _ hε ↦ (hZ.eventually_exists_dist_lt hx hε).mono fun _ ⟨y, hy, hxy⟩ ↦
-      ⟨y, hy, by rwa [dist_comm]⟩)
+    (fun _ hε ↦ hZ.isKuratowskiLimit.eventually_exists_dist_lt hx hε)
     hh univ_mem (hdens.mono fun _ hi y hy ↦ hi y hy.1) hρ hρρ₀
     (limsup_measure_closed_le_of_tendsto hμ isClosed_closedBall)
 

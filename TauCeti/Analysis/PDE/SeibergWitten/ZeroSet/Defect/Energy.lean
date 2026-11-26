@@ -52,6 +52,11 @@ chart, `α` is a section of the trivial line with connection form `a = i b`, and
 in an arbitrary normed group. The measure in the integral is arbitrary; the volume of the ball is
 computed only for an additive Haar measure.
 
+## Main definitions
+
+* `TauCeti.SeibergWitten.defectMeasure`: the defect measure `(r / 4) |1 - |α|² - |β|²| μ`, whose
+  value on a set is its defect energy.
+
 ## Main results
 
 * `TauCeti.SeibergWitten.norm_sq_le_mul_dist_of_eq_zero`: `|α(y)|² ≤ 2 A G |y - x₀|` on a convex
@@ -146,7 +151,44 @@ theorem inv_two_le_one_sub_norm_sq_sub_norm_sq_of_eq_zero {C r ρ : ℝ} (hC : 0
     nlinarith [hw y, mul_le_mul_of_nonneg_left (hw y) (div_nonneg hC hr₀.le)]
   linarith
 
+/-- For `C ≥ 0`, every `c₀ > 0` dominates a radius `c > 0` with `256 C c² ≤ 1`, the smallness
+condition under which the coarse bounds control the defect energy at the smallest scale
+(`ofReal_div_le_setLIntegral_of_eq_zero`). -/
+theorem exists_le_and_mul_sq_le_one {C c₀ : ℝ} (hC : 0 ≤ C) (hc₀ : 0 < c₀) :
+    ∃ c, 0 < c ∧ c ≤ c₀ ∧ 256 * C * c ^ 2 ≤ 1 := by
+  set c := min c₀ (16 * (C + 1))⁻¹
+  have h₁ : c * (16 * (C + 1)) ≤ 1 :=
+    (mul_le_mul_of_nonneg_right (min_le_right _ _) (by positivity)).trans_eq
+      (inv_mul_cancel₀ (by positivity))
+  refine ⟨c, lt_min hc₀ (by positivity), min_le_left _ _, ?_⟩
+  nlinarith [mul_le_mul h₁ h₁ (by positivity) zero_le_one,
+    mul_nonneg (sq_nonneg c) (by positivity : (0 : ℝ) ≤ C ^ 2 + C + 1)]
+
 variable [MeasurableSpace E]
+
+/-- The **defect measure** `(r / 4) |1 - |α|² - |β|²| μ` of the normalized spinor `χ = α u₀ + β` at
+parameter `r`. Its value on a set `B` is the defect energy `E_r(B)` (`defectMeasure_apply`). Only
+the norm of `α` enters, so `α` may take values in any normed group; for instance it may be the
+canonical-line component `φ = α u₀` itself. -/
+noncomputable def defectMeasure {G : Type*} [NormedAddCommGroup G] (μ : Measure E) (r : ℝ)
+    (α : E → G) (β : E → F) : Measure E :=
+  μ.withDensity fun y ↦ ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|)
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- The defect measure is the measure with density `(r / 4) |1 - |α|² - |β|²|` against `μ`. -/
+theorem defectMeasure_def {G : Type*} [NormedAddCommGroup G] (μ : Measure E) (r : ℝ)
+    (α : E → G) (β : E → F) :
+    defectMeasure μ r α β =
+      μ.withDensity fun y ↦ ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|) :=
+  (rfl)
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- The defect measure of a set `B` is the defect energy
+`E_r(B) = (r / 4) ∫_B |1 - |α|² - |β|²|`. -/
+theorem defectMeasure_apply {G : Type*} [NormedAddCommGroup G] (μ : Measure E) [SFinite μ]
+    (r : ℝ) (α : E → G) (β : E → F) (s : Set E) :
+    defectMeasure μ r α β s = ∫⁻ y in s, ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|) ∂μ :=
+  withDensity_apply' _ s
 
 section OpensMeasurable
 
