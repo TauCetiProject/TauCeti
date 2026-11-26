@@ -256,15 +256,8 @@ theorem ringChar_residueField_adicCompletion_dvd_iff {n : ℕ} :
 /-- A natural number lying outside `v` is nonzero in the residue field of `K_v`. -/
 theorem residueField_adicCompletion_natCast_ne_zero_of_notMem {n : ℕ}
     (hn : (n : R) ∉ v.asIdeal) :
-    (n : 𝓀[v.adicCompletion K]) ≠ 0 := by
-  have hnat : (n : 𝓀[v.adicCompletion K]) =
-      IsLocalRing.residue 𝒪[v.adicCompletion K]
-        ⟨algebraMap R (v.adicCompletion K) (n : R),
-          v.algebraMap_mem_integer_adicCompletion (K := K) (n : R)⟩ := by
-    rw [← map_natCast (IsLocalRing.residue _)]
-    exact congrArg (IsLocalRing.residue _) (Subtype.ext (by simp))
-  rw [Ne, hnat, v.residue_algebraMap_adicCompletion_eq_zero_iff (K := K) (n : R)]
-  exact hn
+    (n : 𝓀[v.adicCompletion K]) ≠ 0 :=
+  fun h ↦ hn (v.ringChar_residueField_adicCompletion_dvd_iff.1 ((ringChar.spec _ n).1 h))
 
 /-- The residue field of `K_v` has `Nat.card` the absolute norm of `v`; both sides are `0` when
 the residue field is infinite. -/

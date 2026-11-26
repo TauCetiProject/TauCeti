@@ -95,7 +95,12 @@ what lets every result of the first kind be applied to coefficients of the secon
   transfers statements about change-of-group maps, such as Shapiro's lemma, from discrete
   `ℤ`-modules to coefficients over an arbitrary ring.
 * `TauCeti.ContCohomology.ofDiscreteModule_eq_restrictScalarsInt_obj`: for a discrete `X`, the
-  underlying additive representation is `TauCeti.ofDiscreteModule ℤ G X.V`.
+  underlying additive representation is `TauCeti.ofDiscreteModule ℤ G X.V`, intertwined with
+  `TopRep.restrictScalarsInt.map` on morphisms by
+  `TauCeti.ContCohomology.ofDiscreteModuleMap_comp_eqToHom`. Together with
+  `TauCeti.ContCohomology.coeffMap_comp_ofDiscreteModuleRestrictScalarsIntIso_hom` and
+  `TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntEquiv_coeffMap`, this gives naturality
+  of the discrete scalar-restriction isomorphism with respect to `coeffMap`.
 
 ## References
 
@@ -622,6 +627,22 @@ theorem cast_ofDiscreteModule_eq_restrictScalarsInt_obj
       (show X.V from x) := by
   exact cast_eq _ _
 
+/-- Transport along `ofDiscreteModule_eq_restrictScalarsInt_obj` intertwines an
+`ofDiscreteModuleMap` `fInt` with `TopRep.restrictScalarsInt.map fHom` when their underlying
+functions agree. -/
+theorem ofDiscreteModuleMap_comp_eqToHom
+    {X Y : TopRep k G} [DiscreteTopology X.V] [DiscreteTopology Y.V]
+    (fHom : X ⟶ Y) (fInt : ofDiscreteModule ℤ G X.V ⟶ ofDiscreteModule ℤ G Y.V)
+    (hf : ∀ m : X.V, fInt.hom m = fHom.hom m) :
+    fInt ≫ eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj Y) =
+      eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj X) ≫
+        TopRep.restrictScalarsInt.map fHom := by
+  refine TopRep.hom_ext (ContIntertwiningMap.ext (ContinuousLinearMap.ext fun m ↦ ?_))
+  simp only [TopRep.hom_comp, ContIntertwiningMap.toContinuousLinearMap_comp,
+    ContinuousLinearMap.comp_apply, ContIntertwiningMap.toContinuousLinearMap_apply,
+    TopRep.eqToHom_hom_apply, cast_ofDiscreteModule_eq_restrictScalarsInt_obj]
+  exact (hf m).trans (TopRep.restrictScalarsInt_map_hom_apply fHom m).symm
+
 end TauCeti.ContCohomology
 
 namespace TauCeti.ContCohomology
@@ -665,6 +686,52 @@ theorem ofDiscreteModuleRestrictScalarsIntEquiv_apply
       restrictScalarsIntEquiv X n (eqToHom (congrArg (continuousCohomology n)
         (ofDiscreteModule_eq_restrictScalarsInt_obj X)) a) :=
   (rfl)
+
+/-- `ofDiscreteModuleRestrictScalarsIntIso` commutes with `TauCeti.ContinuousCohomology.coeffMap`
+when the underlying functions of the coefficient morphisms `fHom` and `fInt` agree. -/
+theorem coeffMap_comp_ofDiscreteModuleRestrictScalarsIntIso_hom
+    {X Y : TopRep k G} [DiscreteTopology X.V] [DiscreteTopology Y.V]
+    (fHom : X ⟶ Y) (fInt : ofDiscreteModule ℤ G X.V ⟶ ofDiscreteModule ℤ G Y.V)
+    (hf : ∀ m : X.V, fInt.hom m = fHom.hom m) (deg : ℕ) :
+    (ofDiscreteModuleRestrictScalarsIntIso X deg).hom ≫
+        TopModuleCat.restrictScalarsInt.map (TauCeti.ContinuousCohomology.coeffMap fHom deg) =
+      TauCeti.ContinuousCohomology.coeffMap fInt deg ≫
+        (ofDiscreteModuleRestrictScalarsIntIso Y deg).hom := by
+  have hcomm := congrArg (TauCeti.ContinuousCohomology.coeffMap · deg)
+    (ofDiscreteModuleMap_comp_eqToHom fHom fInt hf)
+  simp only [TauCeti.ContinuousCohomology.coeffMap_comp,
+    TauCeti.ContinuousCohomology.coeffMap_eqToHom] at hcomm
+  rw [ofDiscreteModuleRestrictScalarsIntIso_hom, ofDiscreteModuleRestrictScalarsIntIso_hom,
+    Category.assoc, ← coeffMap_comp_restrictScalarsIntIso_hom (n := deg) fHom,
+    ← Category.assoc, ← hcomm, Category.assoc]
+
+/-- Elementwise naturality of `ofDiscreteModuleRestrictScalarsIntEquiv` with respect to
+`TauCeti.ContinuousCohomology.coeffMap` when the underlying functions of the coefficient morphisms
+`fHom` and `fInt` agree. -/
+theorem ofDiscreteModuleRestrictScalarsIntEquiv_coeffMap
+    {X Y : TopRep k G} [DiscreteTopology X.V] [DiscreteTopology Y.V]
+    (fHom : X ⟶ Y) (fInt : ofDiscreteModule ℤ G X.V ⟶ ofDiscreteModule ℤ G Y.V)
+    (hf : ∀ m : X.V, fInt.hom m = fHom.hom m) (deg : ℕ)
+    (z : continuousCohomology deg (ofDiscreteModule ℤ G X.V)) :
+    TauCeti.ContinuousCohomology.coeffMap fHom deg
+        (ofDiscreteModuleRestrictScalarsIntEquiv X deg z) =
+      ofDiscreteModuleRestrictScalarsIntEquiv Y deg
+        (TauCeti.ContinuousCohomology.coeffMap fInt deg z) := by
+  have hL : ofDiscreteModuleRestrictScalarsIntEquiv X deg z =
+      (ofDiscreteModuleRestrictScalarsIntIso X deg).hom z := by
+    rw [ofDiscreteModuleRestrictScalarsIntEquiv_apply, restrictScalarsIntEquiv_apply,
+      ofDiscreteModuleRestrictScalarsIntIso_hom, CategoryTheory.comp_apply]
+  have hR : ofDiscreteModuleRestrictScalarsIntEquiv Y deg
+        (TauCeti.ContinuousCohomology.coeffMap fInt deg z) =
+      (ofDiscreteModuleRestrictScalarsIntIso Y deg).hom
+        (TauCeti.ContinuousCohomology.coeffMap fInt deg z) := by
+    rw [ofDiscreteModuleRestrictScalarsIntEquiv_apply, restrictScalarsIntEquiv_apply,
+      ofDiscreteModuleRestrictScalarsIntIso_hom, CategoryTheory.comp_apply]
+  have hsq := congr($(coeffMap_comp_ofDiscreteModuleRestrictScalarsIntIso_hom fHom fInt hf deg) z)
+  simp only [CategoryTheory.comp_apply] at hsq
+  exact (congrArg (TauCeti.ContinuousCohomology.coeffMap fHom deg) hL).trans
+    ((TopModuleCat.restrictScalarsInt_map_apply (TauCeti.ContinuousCohomology.coeffMap fHom deg)
+      ((ofDiscreteModuleRestrictScalarsIntIso X deg).hom z)).symm.trans (hsq.trans hR.symm))
 
 /-- The cocycles of the carrier of a discrete `X` as a discrete `ℤ`-module are the underlying
 topological abelian group of the cocycles of `X`: the composite of

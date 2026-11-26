@@ -74,11 +74,12 @@ theorem mem_unramifiedTorsionCohomology_iff_forall_localTateWeilPairing_eq_zero
       ∀ b ∈ W.unramifiedTorsionCohomology m,
         W.localTateWeilPairing m
             (have := FinitePadicExtension.charZero K p
-             TauCeti.isUnit_natCast_of_not_dvd_of_charZero hpm)
+             (Nat.cast_ne_zero.2 (by rintro rfl; exact hpm (dvd_zero p)) : (m : K) ≠ 0).isUnit)
             a b =
           0 := by
   have := FinitePadicExtension.charZero K p
-  have hm := TauCeti.isUnit_natCast_of_not_dvd_of_charZero (K := K) hpm
+  have hm : IsUnit (m : K) :=
+    (Nat.cast_ne_zero.2 (by rintro rfl; exact hpm (dvd_zero p)) : (m : K) ≠ 0).isUnit
   have : NeZero m := hm.neZero_natCast
   simp only [unramifiedTorsionCohomology_eq_unramifiedH1]
   exact mem_unramifiedH1_iff_forall_pairing_eq_zero p hpm
@@ -95,7 +96,7 @@ theorem unramifiedTorsionCohomology_eq_ker_compl₂_localTateWeilPairing (hpm : 
     W.unramifiedTorsionCohomology m =
       ((W.localTateWeilPairing m
           (have := FinitePadicExtension.charZero K p
-           TauCeti.isUnit_natCast_of_not_dvd_of_charZero hpm)
+           (Nat.cast_ne_zero.2 (by rintro rfl; exact hpm (dvd_zero p)) : (m : K) ≠ 0).isUnit)
         ).compl₂ (W.unramifiedTorsionCohomology m).subtype).ker := by
   ext a
   rw [AddMonoidHom.mem_ker_compl₂_subtype_iff]
@@ -128,11 +129,13 @@ theorem mem_unramifiedKerCohomology_iff_forall_localTateKerWeilPairing_eq_zero
       ∀ b ∈ φ.dual.unramifiedKerCohomology,
         φ.localTateKerWeilPairing
             (have := FinitePadicExtension.charZero K p
-             TauCeti.isUnit_natCast_of_not_dvd_of_charZero hpn)
+             (Nat.cast_ne_zero.2 (fun h ↦ hpn (h ▸ dvd_zero p)) :
+               (φ.degree : K) ≠ 0).isUnit)
             a b =
           0 := by
   have := FinitePadicExtension.charZero K p
-  have hn := TauCeti.isUnit_natCast_of_not_dvd_of_charZero (K := K) hpn
+  have hn : IsUnit (φ.degree : K) :=
+    (Nat.cast_ne_zero.2 (fun h ↦ hpn (h ▸ dvd_zero p)) : (φ.degree : K) ≠ 0).isUnit
   have : NeZero φ.degree := hn.neZero_natCast
   simp only [unramifiedKerCohomology_eq_unramifiedH1]
   exact mem_unramifiedH1_iff_forall_pairing_eq_zero p hpn
@@ -148,7 +151,8 @@ theorem unramifiedKerCohomology_eq_ker_compl₂_localTateKerWeilPairing (hpn : �
     φ.unramifiedKerCohomology =
       ((φ.localTateKerWeilPairing
           (have := FinitePadicExtension.charZero K p
-           TauCeti.isUnit_natCast_of_not_dvd_of_charZero hpn)
+           (Nat.cast_ne_zero.2 (fun h ↦ hpn (h ▸ dvd_zero p)) :
+             (φ.degree : K) ≠ 0).isUnit)
         ).compl₂ φ.dual.unramifiedKerCohomology.subtype).ker := by
   ext a
   rw [AddMonoidHom.mem_ker_compl₂_subtype_iff]
@@ -163,11 +167,13 @@ theorem mem_unramifiedKerCohomology_dual_iff_forall_localTateKerWeilPairing_eq_z
       ∀ a ∈ φ.unramifiedKerCohomology,
         φ.localTateKerWeilPairing
             (have := FinitePadicExtension.charZero K p
-             TauCeti.isUnit_natCast_of_not_dvd_of_charZero hpn)
+             (Nat.cast_ne_zero.2 (fun h ↦ hpn (h ▸ dvd_zero p)) :
+               (φ.degree : K) ≠ 0).isUnit)
             a b =
           0 := by
   have := FinitePadicExtension.charZero K p
-  have hn := TauCeti.isUnit_natCast_of_not_dvd_of_charZero (K := K) hpn
+  have hn : IsUnit (φ.degree : K) :=
+    (Nat.cast_ne_zero.2 (fun h ↦ hpn (h ▸ dvd_zero p)) : (φ.degree : K) ≠ 0).isUnit
   have : NeZero φ.degree := hn.neZero_natCast
   simp only [unramifiedKerCohomology_eq_unramifiedH1]
   exact mem_unramifiedH1_right_iff_forall_pairing_eq_zero p hpn
@@ -184,7 +190,8 @@ theorem unramifiedKerCohomology_dual_eq_ker_flip_compl₂_localTateKerWeilPairin
     φ.dual.unramifiedKerCohomology =
       ((φ.localTateKerWeilPairing
           (have := FinitePadicExtension.charZero K p
-           TauCeti.isUnit_natCast_of_not_dvd_of_charZero hpn)
+           (Nat.cast_ne_zero.2 (fun h ↦ hpn (h ▸ dvd_zero p)) :
+             (φ.degree : K) ≠ 0).isUnit)
         ).flip.compl₂ φ.unramifiedKerCohomology.subtype).ker := by
   ext b
   rw [AddMonoidHom.mem_ker_compl₂_subtype_iff]

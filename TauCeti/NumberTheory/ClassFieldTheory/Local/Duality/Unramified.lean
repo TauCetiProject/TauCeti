@@ -125,7 +125,8 @@ theorem natCard_unramifiedH1_mul_natCard_unramifiedH1_internalHom_eq_natCard_H1 
           (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) =
       Nat.card (H1 (AbsoluteGaloisGroup K) M) := by
   have := FinitePadicExtension.charZero K p
-  have hn := TauCeti.isUnit_natCast_of_not_dvd_of_charZero (K := K) hpn
+  have hn := TauCeti.isUnit_natCast_of_ne_zero K (A := K) (m := n)
+    (by rintro rfl; exact hpn (dvd_zero p))
   have : NeZero n := hn.neZero_natCast
   rw [natCard_unramifiedH1_eq_natCard_H0, natCard_unramifiedH1_eq_natCard_H0,
     ← natCard_H2_eq_natCard_H0_internalHom hn M hM,
@@ -143,7 +144,8 @@ theorem unramifiedH1_eq_ker_compl₂_dualityMap1 (hpn : ¬ p ∣ n)
         (unramifiedH1 K
           (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))).subtype).ker := by
   have := FinitePadicExtension.charZero K p
-  have hn := TauCeti.isUnit_natCast_of_not_dvd_of_charZero (K := K) hpn
+  have hn := TauCeti.isUnit_natCast_of_ne_zero K (A := K) (m := n)
+    (by rintro rfl; exact hpn (dvd_zero p))
   have : NeZero n := hn.neZero_natCast
   have : Finite (H1 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=
@@ -167,7 +169,8 @@ theorem unramifiedH1_internalHom_eq_ker_flip_compl₂_dualityMap1 (hpn : ¬ p �
       ((dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)).flip.compl₂
         (unramifiedH1 K M).subtype).ker := by
   have := FinitePadicExtension.charZero K p
-  have hn := TauCeti.isUnit_natCast_of_not_dvd_of_charZero (K := K) hpn
+  have hn := TauCeti.isUnit_natCast_of_ne_zero K (A := K) (m := n)
+    (by rintro rfl; exact hpn (dvd_zero p))
   have : NeZero n := hn.neZero_natCast
   have : Finite (H1 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=

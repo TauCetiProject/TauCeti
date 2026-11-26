@@ -83,6 +83,17 @@ variable {n : ℕ} [NeZero n] {M N : Type*} [AddCommGroup M] [AddCommGroup N]
   [Module (ZMod n) M] [Module (ZMod n) N] [Finite M]
   (S : Submodule (ZMod n) M) (B : M →ₗ[ZMod n] N →ₗ[ZMod n] ZMod n)
 
+omit [NeZero n] [Finite M] in
+private theorem toZModLinearMapEquiv_symm_comp_eq_toAddMonoidHom' :
+    (AddMonoidHom.toZModLinearMapEquiv n).symm.toAddMonoidHom.comp B.flip.toAddMonoidHom =
+      LinearMap.toAddMonoidHom'.comp B.flip.toAddMonoidHom := by
+  ext y x
+  simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
+    LinearMap.toAddMonoidHom'_apply, LinearMap.toAddMonoidHom_coe]
+  rw [← AddMonoidHom.coe_toZModLinearMap n]
+  exact congrArg (fun f : M →ₗ[ZMod n] ZMod n ↦ f x)
+    ((AddMonoidHom.toZModLinearMapEquiv n).apply_symm_apply (B.flip y))
+
 omit [Finite M] in
 /-- The orthogonal complement has `Nat.card` equal to that of the quotient if the right
 adjoint of the pairing is bijective. Neither module need be finite. -/
@@ -92,9 +103,8 @@ theorem natCard_orthogonalBilin_zmod (hB : Function.Bijective B.flip) :
     (AddMonoidHom.toZModLinearMapEquiv n).symm.toAddMonoidHom.comp B.flip.toAddMonoidHom
   have he : Function.Bijective e :=
     (AddMonoidHom.toZModLinearMapEquiv n).symm.bijective.comp hB
-  have he_eq : e = LinearMap.toAddMonoidHom'.comp B.flip.toAddMonoidHom := by
-    ext y x
-    rfl
+  have he_eq : e = LinearMap.toAddMonoidHom'.comp B.flip.toAddMonoidHom :=
+    toZModLinearMapEquiv_symm_comp_eq_toAddMonoidHom' B
   have h := e.natCard_ker_compl₂_subtype_eq_index_zmod he
     (ZModModule.char_nsmul_eq_zero n) S.toAddSubgroup
   rw [he_eq, ker_compl₂_toAddSubgroup_eq_orthogonalBilin] at h
@@ -135,9 +145,8 @@ theorem orthogonalBilin_flip_orthogonalBilin_zmod [B.IsPerfPair] :
   have he : Function.Bijective e :=
     (AddMonoidHom.toZModLinearMapEquiv n).symm.bijective.comp
       (LinearMap.IsPerfPair.bijective_right B)
-  have he_eq : e = LinearMap.toAddMonoidHom'.comp B.flip.toAddMonoidHom := by
-    ext y x
-    rfl
+  have he_eq : e = LinearMap.toAddMonoidHom'.comp B.flip.toAddMonoidHom :=
+    toZModLinearMapEquiv_symm_comp_eq_toAddMonoidHom' B
   have he_flip : e.flip = LinearMap.toAddMonoidHom'.comp B.flip.flip.toAddMonoidHom := by
     ext x y
     simp only [AddMonoidHom.flip_apply, he_eq, AddMonoidHom.comp_apply,
