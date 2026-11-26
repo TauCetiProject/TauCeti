@@ -89,6 +89,19 @@ theorem contMDiffOn_continuousMultilinearMapCoordChange
 
 variable [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
 
+/-- The chart of the total space of the bundle of continuous multilinear maps at `y₀` sends `y`
+to the chart of the base at `y₀.proj` applied to `y.proj`, paired with the fibre component of
+`y` read in the trivializations at `y₀.proj`. -/
+@[simp]
+theorem chartAt_continuousMultilinearMap
+    (y₀ y : TotalSpace (ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ F₁) F₂)
+      (fun b : B ↦ ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E₁ b) (E₂ b))) :
+    chartAt (ModelProd HB (ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ F₁) F₂)) y₀ y =
+      (chartAt HB y₀.proj y.proj, inCoordinates F₁ F₂ y₀.proj y.proj y₀.proj y.proj y.snd) := by
+  rw [FiberBundle.chartedSpace_chartAt, OpenPartialHomeomorph.trans_apply,
+    OpenPartialHomeomorph.prod_apply, Trivialization.coe_coe, OpenPartialHomeomorph.refl_apply,
+    Function.id_def, trivializationAt_continuousMultilinearMap_apply]
+
 /-- A map into the bundle of continuous multilinear maps is `C^n` within a set at a point
 exactly when its projection is and its fibre component, read in the trivializations at the
 image of the point, is. -/
