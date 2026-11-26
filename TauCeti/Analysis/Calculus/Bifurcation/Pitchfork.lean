@@ -11,7 +11,6 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Basic.Sign.Basic
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
-import Mathlib.Analysis.Calculus.IteratedDeriv.FaaDiBruno
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.LinearAlgebra.Transvection.Basic
 import Mathlib.Topology.Instances.Sign
@@ -20,7 +19,6 @@ import TauCeti.Analysis.Calculus.Bifurcation
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.Deriv.Parity
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
 # Pitchfork bifurcations of the zeros of an odd family of maps
@@ -102,17 +100,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E → E} {t : ℝ}
 
-/-- A family that is odd near `(t, 0)` vanishes at `0` for all parameters near `t`. -/
-private theorem eventually_apply_zero_eq_zero {V W : Type*} [AddCommGroup V] [TopologicalSpace V]
-    [AddCommGroup W] [Module ℝ W] {g : ℝ → V → W}
-    (hodd : ∀ᶠ p in 𝓝 (t, (0 : V)), g p.1 (-p.2) = -g p.1 p.2) :
-    ∀ᶠ s in 𝓝 t, g s 0 = 0 := by
-  have h := (continuous_id.prodMk continuous_const : Continuous fun s : ℝ ↦ (s, (0 : V)))
-    |>.continuousAt (x := t) |>.eventually hodd
-  filter_upwards [h] with s hs
-  simp only [id, neg_zero] at hs
-  exact eq_zero_of_eq_neg_of_invertible_two (R := ℝ) hs
-
 /-- If the kernel of `D` is the line through `v`, `φ` vanishes on the range of `D`, `ℓ v = 1` and
 `φ c = 1`, then `h ↦ D h + ℓ h • c` is injective. -/
 private theorem eq_zero_of_apply_add_smul_eq_zero {D : E →L[ℝ] E} {v : E}
@@ -187,28 +174,6 @@ private theorem deriv_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0)) {X : 
   rw [← hr, map_smul, hℓ, smul_eq_mul, mul_one] at hℓu
   rw [← hr, hℓu, one_smul]
 
-/-- **The third derivative along an odd curve.** If `g` is an odd `C³` curve through `0` with
-velocity `v` and `φ` vanishes on the range of `DF(0)`, then the third derivative of
-`σ ↦ φ (F (g σ))` at `0` is `φ (D³F(0) (v, v, v))`. -/
-private theorem iteratedDeriv_three_comp_of_odd {F : E → E} {g : ℝ → E} {φ : StrongDual ℝ E}
-    {v : E} (hF : ContDiffAt ℝ 3 F 0) (hg : ContDiffAt ℝ 3 g 0) (hg0 : g 0 = 0)
-    (hgv : deriv g 0 = v) (hodd : ∀ᶠ σ in 𝓝 0, g (-σ) = -g σ)
-    (hφ : ∀ y, φ (fderiv ℝ F 0 y) = 0) :
-    iteratedDeriv 3 (fun σ ↦ φ (F (g σ))) 0 = φ (fderiv ℝ (fderiv ℝ (fderiv ℝ F)) 0 v v v) := by
-  -- Faà di Bruno's formula for `(φ ∘ F) ∘ g` has four terms. An odd curve has no acceleration
-  -- at `0`, which kills the two middle terms, and `φ ∘ DF(0) = 0` kills the last one.
-  have hg₂0 : iteratedDeriv 2 g 0 = 0 := by
-    have : HasUniqueDiv E := .of_isTorsionFree ℝ E
-    exact iteratedDeriv_two_eq_zero_of_eventually_odd hodd
-  rw [← hg0] at hF
-  have hφF : fderiv ℝ (φ ∘ F) (g 0) = φ.comp (fderiv ℝ F (g 0)) :=
-    (φ.hasFDerivAt.comp (g 0) (hF.differentiableAt (by norm_num)).hasFDerivAt).fderiv
-  have h₀ (L : E [×2]→L[ℝ] ℝ) : L ![0, v] = 0 := L.map_coord_zero 0 (by simp)
-  have h₁ (L : E [×2]→L[ℝ] ℝ) : L ![v, 0] = 0 := L.map_coord_zero 1 (by simp)
-  have h := iteratedDeriv_vcomp_three (φ.contDiff.contDiffAt.comp (g 0) hF) hg
-  rw [φ.iteratedFDeriv_comp_left hF le_rfl, hφF] at h
-  simpa [Function.comp_def, hg₂0, hgv, hg0, hφ, h₀, h₁, iteratedFDeriv_three_apply] using h
-
 /-- **The transversality coefficient of the reduction.** The derivative in `s` at `t` of the
 `σ`-derivative at `0` of `φ (f s (X s σ))` is `φ (∂ₛ D(f s)₀ v)`. -/
 private theorem deriv_deriv_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0)) {X : ℝ → ℝ → E}
@@ -280,6 +245,8 @@ private theorem eventually_pitchfork_reduction (hf : ContDiffAt ℝ 3 (uncurry f
           {σ ∈ Ioo (-δ) δ | φ (f s (X s σ)) = 0} = {-σ₀, 0, σ₀} ∧
           0 < deriv (fun σ ↦ φ (f s (X s σ))) σ₀ ∧
           deriv (fun σ ↦ φ (f s (X s σ))) (-σ₀) = deriv (fun σ ↦ φ (f s (X s σ))) σ₀) := by
+  -- A real vector space has no additive torsion.
+  have : HasUniqueDiv E := .of_isTorsionFree ℝ E
   have hev' : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), f p.1 (X p.1 p.2) = φ (f p.1 (X p.1 p.2)) • c ∧
       ℓ (X p.1 p.2) = p.2 := hev.mono fun p hp ↦ ⟨hp.1, hp.2.1⟩
   obtain ⟨hv, hh0⟩ := deriv_reduction hf hX hX0 hker hφ hℓ hev'
@@ -304,10 +271,10 @@ private theorem eventually_pitchfork_reduction (hf : ContDiffAt ℝ 3 (uncurry f
     ((continuous_const.prodMk continuous_id).tendsto 0).eventually (hev.mono fun q hq ↦ hq.2.2)
   have h₃ : iteratedDeriv 3 (fun x ↦ F (x, 0)) 0 =
       φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) := by
-    simpa [F] using iteratedDeriv_three_comp_of_odd (F := f t) (g := X t)
+    simpa [F] using iteratedDeriv_three_comp_of_eventually_odd (g := f t) (f := X t)
       hf.uncurry_left hX.uncurry_left hX0 hv hgodd hφ
   have hXs0 : ∀ᶠ s in 𝓝 t, X s 0 = 0 :=
-    eventually_apply_zero_eq_zero (hev.mono fun _ hq ↦ hq.2.2)
+    eventually_apply_zero_eq_zero_of_eventually_odd (hev.mono fun _ hq ↦ hq.2.2)
   have hb : deriv (fun s ↦ deriv (fun x ↦ F (x, s)) 0) 0 =
       φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) := by
     simp only [F]
@@ -387,6 +354,8 @@ private theorem exists_mem_nhds_of_reduction {X : ℝ → ℝ → E} {φ ℓ : S
       (β * (s - t) < 0 → ∃ x₀, x₀ ≠ 0 ∧ {x ∈ U | f s x = 0} = {0, x₀, -x₀} ∧
         SignType.sign (LinearMap.det (fderiv ℝ (f s) x₀ : E →ₗ[ℝ] E)) = ε ∧
         SignType.sign (LinearMap.det (fderiv ℝ (f s) (-x₀) : E →ₗ[ℝ] E)) = ε) := by
+  -- A real vector space has no additive torsion.
+  have : HasUniqueDiv E := .of_isTorsionFree ℝ E
   obtain ⟨η₁, hη₁, hZ⟩ := hZ
   obtain ⟨η₂, hη₂, hη₂G⟩ := Metric.mem_nhds_iff.1 hev
   set η := min η₁ η₂
@@ -398,7 +367,8 @@ private theorem exists_mem_nhds_of_reduction {X : ℝ → ℝ → E} {φ ℓ : S
   obtain ⟨U, hU, hUZ⟩ := hZ δ ⟨hδ.1, lt_of_lt_of_le hδ.2 (min_le_left _ _)⟩
   refine ⟨U, hU, ?_⟩
   filter_upwards [hδP, Metric.ball_mem_nhds t (lt_min hη₁ hη₂),
-    eventually_apply_zero_eq_zero (hev.mono fun _ hq ↦ hq.1.2)] with s hQ hs hXs
+    eventually_apply_zero_eq_zero_of_eventually_odd (hev.mono fun _ hq ↦ hq.1.2)]
+    with s hQ hs hXs
   have hs' : dist s t < η := Metric.mem_ball.1 hs
   have hη0 : |(0 : ℝ)| < η := by rw [abs_zero]; exact lt_min hη₁ hη₂
   rw [hUZ s (lt_of_lt_of_le hs' (min_le_left _ _))]
@@ -503,8 +473,11 @@ private theorem exists_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
       (∀ᶠ p in 𝓝 (t, (0 : ℝ)), f p.1 (X p.1 p.2) = φ (f p.1 (X p.1 p.2)) • c ∧
         ℓ (X p.1 p.2) = p.2 ∧ X p.1 (-p.2) = -X p.1 p.2) ∧
       ∃ N ∈ 𝓝 (t, (0 : E)), ∀ z ∈ N, f z.1 z.2 = 0 → X z.1 (ℓ z.2) = z.2 := by
+  -- A real vector space has no additive torsion.
+  have : HasUniqueDiv E := .of_isTorsionFree ℝ E
   obtain ⟨ψ, hψ, hψ0, hright, S, hS, hleft⟩ :=
-    exists_chart_inverse hf (eventually_apply_zero_eq_zero hodd).self_of_nhds hker hφ hℓ hc
+    exists_chart_inverse hf (eventually_apply_zero_eq_zero_of_eventually_odd hodd).self_of_nhds
+      hker hφ hℓ hc
   -- The reduced map `X s σ`, the space component of `ψ (s, σ • c)`.
   set y : ℝ × ℝ → ℝ × E := fun p ↦ (p.1, p.2 • c)
   have hy : ContDiff ℝ 3 y := contDiff_fst.prodMk (contDiff_snd.smul contDiff_const)
