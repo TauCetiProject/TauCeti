@@ -127,50 +127,12 @@ theorem cappedCylindricalWeight_eq_cylindricalWeight {z : ℝ × ℝ}
 
 /-! ### The ends of the capped surface -/
 
-/-- Beyond the height `1` of the end at `0`, points lie in the disc `|w| < 1/4`. -/
-theorem norm_lt_of_one_lt_fst_positiveEndCoord_zero {z : ℝ × ℝ}
-    (hz : 1 < (positiveEndCoord zero z).1) : ‖Complex.equivRealProdCLM.symm z‖ < 1 / 4 := by
-  refine lt_of_not_ge fun h ↦ ?_
-  have hexp : Real.exp (-(2 * π)) ≤ 1 / 2 := by
-    rw [Real.exp_neg, inv_le_comm₀ (Real.exp_pos _) (by norm_num)]
-    linarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
-  have h1 := re_endCoord_zero_le_one (by linarith : Real.exp (-(2 * π)) / 2 ≤
-    ‖Complex.equivRealProdCLM.symm z‖)
-  rw [fst_positiveEndCoord_zero] at hz
-  linarith
-
 /-- Beyond the height `0` of the input end at `1` or of the output end, the cylindrical weight of
 the capped surface is the cylindrical weight of the pair of pants. -/
 theorem cappedCylindricalWeight_positiveEndChart {q : Puncture} (hq : q ≠ zero) {ζ : ℝ × ℝ}
     (hζ : 0 < ζ.1) :
     cappedCylindricalWeight (positiveEndChart q ζ) = cylindricalWeight (positiveEndChart q ζ) :=
   cappedCylindricalWeight_eq_cylindricalWeight (half_le_norm_positiveEndChart hq hζ)
-
-/-- **The capped surface is covered by a compact core and two bands.** For `T ≥ 1`, the capped
-surface `ℂ ∖ {1}` is covered by the truncation `S_T` of the pair of pants, the disc `|w| ≤ 1/4`,
-and the images of the band `(T, ∞) × [0, 1)` under the positive end charts of the input end at `1`
-and of the output end. -/
-theorem subset_preimage_truncation_union_union_image_positiveEndChart {T : ℝ} (hT : 1 ≤ T) :
-    {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 1} ⊆
-      (Complex.equivRealProdCLM.symm ⁻¹' truncation T ∪
-          {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ 1 / 4}) ∪
-        (positiveEndChart one '' (Ioi T ×ˢ Ico 0 1) ∪
-          positiveEndChart inf '' (Ioi T ×ˢ Ico 0 1)) := by
-  intro z hz
-  by_cases h0 : Complex.equivRealProdCLM.symm z = 0
-  · exact Or.inl (Or.inr (by simp [h0]))
-  have hS : z ∈ thricePuncturedSphereReal := mem_thricePuncturedSphereReal_iff.2 ⟨h0, hz⟩
-  rcases subset_preimage_truncation_union_iUnion_image_positiveEndChart T hS with h | h
-  · exact Or.inl (Or.inl h)
-  obtain ⟨q, hq⟩ := mem_iUnion.1 h
-  match q with
-  | zero =>
-    obtain ⟨ζ, hζ, rfl⟩ := hq
-    refine Or.inl (Or.inr (le_of_lt (norm_lt_of_one_lt_fst_positiveEndCoord_zero ?_)))
-    rw [fst_positiveEndCoord_positiveEndChart]
-    linarith [mem_Ioi.1 hζ.1]
-  | one => exact Or.inr (Or.inl hq)
-  | inf => exact Or.inr (Or.inr hq)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
