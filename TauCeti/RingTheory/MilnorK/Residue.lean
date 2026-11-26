@@ -328,7 +328,7 @@ theorem milnorResidue_eq_milnorResidue : v.milnorResidue t' ht' = v.milnorResidu
 valuation ring, then `λ_{t'}(x) = λ_t(x) - ∂_v(x) {γ}`, where `γ`, the residue of `c`, is the
 reduced unit part of `t'` relative to `t`. Weibel's Exercise III.7.1 asserts that the
 specialization does not depend on the uniformizer; this formula corrects it: over `ℚ` at `5`,
-`λ_5{5} = 1` but `λ_{10}{5} = {2⁻¹}`. -/
+`λ_5{5} = {1} = 0` but `λ_{10}{5} = {2⁻¹} = {3} ≠ 0` in `K_1ᴹ(𝔽₅)`. -/
 theorem milnorSpecialization_eq_sub_milnorResidue_mul (x : MilnorK F) :
     v.milnorSpecialization t' ht' x =
       v.milnorSpecialization t ht x -
