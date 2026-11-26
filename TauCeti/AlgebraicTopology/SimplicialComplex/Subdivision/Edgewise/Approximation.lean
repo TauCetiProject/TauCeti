@@ -159,12 +159,7 @@ theorem Continuous.eventually_norm_sub_lt_edgewiseSubdivision
       f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ z)) =
         (f ∘ faceInclusion K σ) (edgewiseSubdivisionFaceMap hρσ z) :=
     congrArg f (congrFun (edgewiseSubdivisionRealizationMap_comp_faceInclusion ρ σ hρσ) z)
-  have hcoord (z : StandardSimplex ρ.val) (i : σ.val) :
-      (edgewiseSubdivisionFaceMap hρσ z).val i =
-        ∑ a : ρ.val, z.val a • (edgewiseVertexPoint hρσ a).val i := by
-    rw [edgewiseSubdivisionFaceMap_apply]
-    simp only [coe_edgewiseVertexPoint, smul_eq_mul]
-    exact (Finset.sum_coe_sort ρ.val fun a => z.val a * TauCeti.edgewisePoint a.val i).symm
   rw [hfactor, hfactor]
   exact hk σ ρ.val ρ.property (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) x y _ _
-    (hcoord x) (hcoord y)
+    (fun i => edgewiseSubdivisionFaceMap_apply_eq_sum_edgewiseVertexPoint hρσ x i)
+    (fun i => edgewiseSubdivisionFaceMap_apply_eq_sum_edgewiseVertexPoint hρσ y i)

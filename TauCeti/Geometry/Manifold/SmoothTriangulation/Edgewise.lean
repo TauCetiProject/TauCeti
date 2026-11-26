@@ -252,10 +252,7 @@ theorem eventually_norm_secantMap_sub_lt_edgewiseSubdivision {f : Realization K 
   rw [← hy, secantMap_faceInclusion_edgewiseSubdivision f ρ σ hρσ,
     ← Function.comp_apply (f := edgewiseSubdivisionRealizationMap K k),
     edgewiseSubdivisionRealizationMap_comp_faceInclusion ρ σ hρσ]
-  refine hk σ ρ.val ρ.property (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) y _ fun i =>
-      ?_
-  rw [edgewiseSubdivisionFaceMap_apply]
-  simp only [coe_edgewiseVertexPoint, smul_eq_mul]
-  exact (Finset.sum_coe_sort ρ.val fun a => y.val a * edgewisePoint a.val i).symm
+  exact hk σ ρ.val ρ.property (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) y _ fun i =>
+    edgewiseSubdivisionFaceMap_apply_eq_sum_edgewiseVertexPoint hρσ y i
 
 end Continuous

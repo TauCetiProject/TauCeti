@@ -141,6 +141,17 @@ theorem coe_edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset 
     (edgewiseVertexPoint hρσ a : ι →₀ ℝ) = edgewisePoint a.val.val :=
   (rfl)
 
+/-- The coordinates of the edgewise face map are the combinations of the coordinates of the placed
+vertices `edgewiseVertexPoint hρσ a`, weighted by the barycentric coordinates. -/
+theorem edgewiseSubdivisionFaceMap_apply_eq_sum_edgewiseVertexPoint
+    {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι} (hρσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ)
+    (x : StandardSimplex ρ) (i : ι) :
+    (edgewiseSubdivisionFaceMap hρσ x : ι →₀ ℝ) i =
+      ∑ a : ρ, x.val a • (edgewiseVertexPoint hρσ a : ι →₀ ℝ) i := by
+  rw [edgewiseSubdivisionFaceMap_apply]
+  simp only [coe_edgewiseVertexPoint, smul_eq_mul]
+  exact (Finset.sum_coe_sort ρ fun a => x.val a * edgewisePoint a.val i).symm
+
 /-! ### The realization map -/
 
 /-- Every entry of a vertex of `ρ` is an entry of some vertex of `ρ`. -/
