@@ -6,18 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+public import TauCeti.Algebra.Group.Subgroup.ZPowers
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The `{±I}` subgroup and signed quotient `SL(n, R) ⧸ {±I}`
 
 For an even-rank special linear group `SL(n, R)` over a commutative ring `R`, the scalar matrix `-I`
-generates the central subgroup `{±I} = ⟨-1⟩` (`TauCeti.Matrix.SpecialLinearGroup.negOneSubgroup`).
-Over rings with zero divisors (such as `ZMod 8` or `ZMod 12`), the full center `Z(SL(n, R))` can
-strictly contain `{±I}`; the **signed quotient** `TauCeti.Matrix.SignedQuotient n R = SL(n, R) ⧸
-{±I}` retains the extra central roots of unity and maps surjectively onto `PSL(n, R)` (`toPSL`),
-agreeing canonically with `PSL(2, R)` when `R` has no zero divisors (`equivPSL`). Extension of
-scalars along `R →+* S` is functorial (`map`, `map_id`, `map_comp`).
+generates the central subgroup `{±I} = Subgroup.zpowers (-1)`. Over rings with zero divisors (such
+as `ZMod 8` or `ZMod 12`), the full center `Z(SL(n, R))` can strictly contain `{±I}`; the **signed
+quotient** `TauCeti.Matrix.SignedQuotient n R = SL(n, R) ⧸ Subgroup.zpowers (-1)` retains the
+extra central roots of unity and maps surjectively onto `PSL(n, R)` (`toPSL`), agreeing canonically
+with `PSL(2, R)` when `R` has no zero divisors (`equivPSL`). Extension of scalars along `R →+* S`
+is functorial (`map`, `map_id`, `map_comp`).
 -/
 
 public section
@@ -26,28 +27,13 @@ open scoped MatrixGroups
 
 namespace TauCeti.Matrix.SpecialLinearGroup
 
-variable (n R : Type*) [Fintype n] [DecidableEq n] [CommRing R] [Fact (Even (Fintype.card n))]
+variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [Fact (Even (Fintype.card n))]
 
-/-- The central subgroup `{±I} = ⟨-1⟩` of `SL(n, R)`. Over rings with zero divisors (such as
-`ZMod 8` or `ZMod 12`), this can be a proper subgroup of `Subgroup.center (SpecialLinearGroup n R)`.
--/
-def negOneSubgroup : Subgroup (_root_.Matrix.SpecialLinearGroup n R) :=
-  Subgroup.zpowers (-1)
-
-/-- Unfolding characterization of `negOneSubgroup`. -/
-theorem negOneSubgroup_def : negOneSubgroup n R = Subgroup.zpowers (-1) := by rw [negOneSubgroup]
-
-variable {n R}
-
-/-- `negOneSubgroup n R` lies inside the center of `SL(n, R)`. -/
-theorem negOneSubgroup_le_center :
-    negOneSubgroup n R ≤ Subgroup.center (_root_.Matrix.SpecialLinearGroup n R) := by
-  rw [negOneSubgroup_def, Subgroup.zpowers_le]
-  exact Subgroup.mem_center_iff.mpr fun _ ↦ by rw [neg_one_mul, mul_neg_one]
-
-/-- The central subgroup `negOneSubgroup n R` is normal in `SL(n, R)`. -/
-instance instNormalNegOneSubgroup : (negOneSubgroup n R).Normal :=
-  Subgroup.normal_of_le_center negOneSubgroup_le_center
+/-- The subgroup `{±I} = Subgroup.zpowers (-1)` lies inside the center of `SL(n, R)`. -/
+theorem zpowers_neg_one_le_center :
+    Subgroup.zpowers (-1 : _root_.Matrix.SpecialLinearGroup n R) ≤
+      Subgroup.center (_root_.Matrix.SpecialLinearGroup n R) :=
+  Subgroup.zpowers_le.mpr <| Subgroup.mem_center_iff.mpr fun _ ↦ by rw [neg_one_mul, mul_neg_one]
 
 end TauCeti.Matrix.SpecialLinearGroup
 
@@ -57,7 +43,8 @@ namespace TauCeti.Matrix
 `R = ZMod N`), the quotient by `{±I}` through which `PSL₂(ℤ) = SL₂(ℤ) ⧸ {±I}` acts at level `N`. -/
 abbrev SignedQuotient (n : Type*) [DecidableEq n] [Fintype n] (R : Type*) [CommRing R]
     [Fact (Even (Fintype.card n))] : Type _ :=
-  _root_.Matrix.SpecialLinearGroup n R ⧸ SpecialLinearGroup.negOneSubgroup n R
+  _root_.Matrix.SpecialLinearGroup n R ⧸
+    (Subgroup.zpowers (-1) : Subgroup (_root_.Matrix.SpecialLinearGroup n R))
 
 namespace SignedQuotient
 
@@ -68,7 +55,7 @@ remaining central roots of unity beyond `±I`. -/
 noncomputable def toPSL (n R : Type*) [Fintype n] [DecidableEq n] [CommRing R]
     [Fact (Even (Fintype.card n))] :
     SignedQuotient n R →* _root_.Matrix.ProjectiveSpecialLinearGroup n R :=
-  QuotientGroup.map _ _ (MonoidHom.id _) negOneSubgroup_le_center
+  QuotientGroup.map _ _ (MonoidHom.id _) zpowers_neg_one_le_center
 
 /-- `toPSL` sends the class of `g` modulo `{±I}` to the class of `g` modulo the full center. -/
 @[simp]
@@ -94,12 +81,13 @@ noncomputable def equivPSL (R : Type*) [CommRing R] [NoZeroDivisors R] :
 theorem equivPSL_mk (R : Type*) [CommRing R] [NoZeroDivisors R] (g : SL(2, R)) :
     equivPSL R (QuotientGroup.mk g) = QuotientGroup.mk g := by rw [equivPSL]; rfl
 
-private theorem map_negOneSubgroup_le {n R S : Type*} [Fintype n] [DecidableEq n]
+private theorem map_zpowers_neg_one_le {n R S : Type*} [Fintype n] [DecidableEq n]
     [CommRing R] [CommRing S] [Fact (Even (Fintype.card n))] (f : R →+* S) :
-    negOneSubgroup n R ≤
-      (negOneSubgroup n S).comap (_root_.Matrix.SpecialLinearGroup.map f) :=
+    (Subgroup.zpowers (-1 : _root_.Matrix.SpecialLinearGroup n R)) ≤
+      (Subgroup.zpowers (-1 : _root_.Matrix.SpecialLinearGroup n S)).comap
+        (_root_.Matrix.SpecialLinearGroup.map f) :=
   Subgroup.map_le_iff_le_comap.mp <| by
-    rw [negOneSubgroup_def, negOneSubgroup_def, MonoidHom.map_zpowers, Subgroup.zpowers_le]
+    rw [MonoidHom.map_zpowers, Subgroup.zpowers_le]
     rw [show _root_.Matrix.SpecialLinearGroup.map f (-1) = -1 by
       ext i j; by_cases hij : i = j <;> simp [hij]]
     exact Subgroup.mem_zpowers (-1)
@@ -108,8 +96,8 @@ private theorem map_negOneSubgroup_le {n R S : Type*} [Fintype n] [DecidableEq n
 noncomputable def map {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
     [Fact (Even (Fintype.card n))] (f : R →+* S) :
     SignedQuotient n R →* SignedQuotient n S :=
-  QuotientGroup.map (negOneSubgroup n R) (negOneSubgroup n S)
-    (_root_.Matrix.SpecialLinearGroup.map f) (map_negOneSubgroup_le f)
+  QuotientGroup.map (Subgroup.zpowers (-1)) (Subgroup.zpowers (-1))
+    (_root_.Matrix.SpecialLinearGroup.map f) (map_zpowers_neg_one_le f)
 
 /-- `SignedQuotient.map f` acts on coset representatives by entrywise application of `f`. -/
 @[simp]
@@ -133,7 +121,7 @@ theorem map_id (n R : Type*) [Fintype n] [DecidableEq n] [CommRing R]
     map (n := n) (RingHom.id R) = MonoidHom.id (SignedQuotient n R) := by
   rw [map]
   simpa only [_root_.Matrix.SpecialLinearGroup.map_id] using
-    QuotientGroup.map_id (negOneSubgroup n R)
+    QuotientGroup.map_id (Subgroup.zpowers (-1 : _root_.Matrix.SpecialLinearGroup n R))
 
 /-- Extension of scalars on signed quotients respects composition of ring homomorphisms. -/
 @[simp]
@@ -142,11 +130,14 @@ theorem map_comp {n R S T : Type*} [Fintype n] [DecidableEq n] [CommRing R] [Com
     (map (n := n) g).comp (map (n := n) f) = map (n := n) (g.comp f) := by
   rw [map, map, map]
   simpa only [_root_.Matrix.SpecialLinearGroup.map_comp_map] using
-    QuotientGroup.map_comp_map (negOneSubgroup n R) (negOneSubgroup n S) (negOneSubgroup n T)
+    QuotientGroup.map_comp_map
+      (Subgroup.zpowers (-1 : _root_.Matrix.SpecialLinearGroup n R))
+      (Subgroup.zpowers (-1 : _root_.Matrix.SpecialLinearGroup n S))
+      (Subgroup.zpowers (-1 : _root_.Matrix.SpecialLinearGroup n T))
       (_root_.Matrix.SpecialLinearGroup.map f) (_root_.Matrix.SpecialLinearGroup.map g)
-      (map_negOneSubgroup_le f) (map_negOneSubgroup_le g)
+      (map_zpowers_neg_one_le f) (map_zpowers_neg_one_le g)
       (by simpa only [← _root_.Matrix.SpecialLinearGroup.map_comp_map] using
-        map_negOneSubgroup_le (g.comp f))
+        map_zpowers_neg_one_le (g.comp f))
 
 end SignedQuotient
 

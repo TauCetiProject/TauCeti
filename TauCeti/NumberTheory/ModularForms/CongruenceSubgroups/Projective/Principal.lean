@@ -43,8 +43,12 @@ namespace TauCeti.CongruenceSubgroup
 `TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N) = SL₂(ℤ/Nℤ) ⧸ {±I}`. -/
 noncomputable def psl2zToSignedQuotient (N : ℕ) :
     PSL(2, ℤ) →* TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N) :=
-  (TauCeti.Matrix.SignedQuotient.map (Int.castRingHom (ZMod N))).comp
-    (TauCeti.Matrix.SignedQuotient.equivPSL ℤ).symm.toMonoidHom
+  QuotientGroup.lift (Subgroup.center SL(2, ℤ))
+    ((QuotientGroup.mk' (Subgroup.zpowers (-1 : SL(2, ZMod N)))).comp
+      (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N))))
+    fun _ hx ↦ by
+      rw [CongruenceSubgroup.ker_mk'_comp_map_intCast_zmod]
+      exact Subgroup.mem_sup_right (Matrix.SpecialLinearGroup.center_eq_zpowers_neg_one.le hx)
 
 /-- `psl2zToSignedQuotient N` evaluates on coset representatives by entrywise reduction modulo `N`.
 -/
@@ -52,29 +56,25 @@ noncomputable def psl2zToSignedQuotient (N : ℕ) :
 theorem psl2zToSignedQuotient_mk (N : ℕ) (g : SL(2, ℤ)) :
     psl2zToSignedQuotient N (QuotientGroup.mk g) =
       QuotientGroup.mk (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) g) := by
-  rw [psl2zToSignedQuotient, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    ← TauCeti.Matrix.SignedQuotient.equivPSL_mk ℤ g, MulEquiv.symm_apply_apply,
-    TauCeti.Matrix.SignedQuotient.map_mk]
+  rw [psl2zToSignedQuotient]; rfl
 
 /-- By strong approximation for `SL₂(ℤ)`, `psl2zToSignedQuotient N` is surjective at every level. -/
 theorem psl2zToSignedQuotient_surjective (N : ℕ) :
-    Function.Surjective (psl2zToSignedQuotient N) :=
-  (TauCeti.Matrix.SignedQuotient.map_surjective
-    Matrix.SpecialLinearGroup.map_intCast_zmod_surjective).comp
-    (TauCeti.Matrix.SignedQuotient.equivPSL ℤ).symm.surjective
+    Function.Surjective (psl2zToSignedQuotient N) := by
+  have h : Function.Surjective
+      ((psl2zToSignedQuotient N) ∘ (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))) := by
+    rw [← MonoidHom.coe_comp, psl2zToSignedQuotient, QuotientGroup.lift_comp_mk']
+    exact CongruenceSubgroup.mk'_comp_map_intCast_zmod_surjective
+  exact h.of_comp
 
 /-- The kernel of `PSL₂(ℤ) →* SL₂(ℤ/Nℤ) ⧸ {±I}` is precisely `GammaProjective N`. -/
 theorem ker_psl2zToSignedQuotient (N : ℕ) :
     (psl2zToSignedQuotient N).ker = GammaProjective N := by
-  ext x
-  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
-  rw [MonoidHom.mem_ker, psl2zToSignedQuotient_mk, QuotientGroup.eq_one_iff,
-    TauCeti.Matrix.SpecialLinearGroup.negOneSubgroup_def, Subgroup.mem_zpowers_neg_one_iff,
-    mem_GammaProjective_mk, CongruenceSubgroup.Gamma_mem', CongruenceSubgroup.Gamma_mem']
-  have hneg : Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) (-g) =
-      -Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) g :=
-    Matrix.SpecialLinearGroup.coe_int_neg (R := ZMod N) g
-  rw [hneg, neg_eq_iff_eq_neg]
+  apply Subgroup.liftSL_injective
+  rw [Subgroup.liftSL_def, MonoidHom.comap_ker, psl2zToSignedQuotient,
+    QuotientGroup.lift_comp_mk', CongruenceSubgroup.ker_mk'_comp_map_intCast_zmod,
+    liftSL_GammaProjective, Subgroup.withCenter_def,
+    ← Matrix.SpecialLinearGroup.center_eq_zpowers_neg_one, sup_comm]
 
 /-- **Canonical isomorphism `PSL₂(ℤ) ⧸ GammaProjective N ≃* SL₂(ℤ/Nℤ) ⧸ {±I}`.** -/
 noncomputable def quotientGammaProjectiveEquiv (N : ℕ) :
