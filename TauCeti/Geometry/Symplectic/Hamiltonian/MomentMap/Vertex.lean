@@ -38,7 +38,7 @@ for weights `α₁, …, αₙ ∈ 𝔤*`.
   (`TauCeti.bijective_pi_of_mfderiv_eq`).
 * **Fixed points are isolated.** At a point of the chart other than `p`, some coordinate `zₖ` is
   nonzero, and an element `ξ` with `αₖ(ξ) ≠ 0` does not fix it
-  (`TauCeti.SmoothTwoForm.IsMomentMap.eventually_eq_of_mem_fixedPoints`). So there are finitely
+  (`TauCeti.SmoothTwoForm.IsMomentMap.eventually_mem_fixedPoints_imp_eq`). So there are finitely
   many fixed points (`TauCeti.SmoothTwoForm.IsMomentMap.finite_fixedPoints_of_faithfulSMul`).
 * **A fixed point is the unique maximum of a component.** The elements `ξ` with `αₖ(ξ) > 0` for
   every `k` form a nonempty open cone, and for each of them `μ^ξ ≤ μ^ξ(p)` on the chart: `p` is a
@@ -70,7 +70,7 @@ Apart from `TauCeti.bijective_pi_of_mfderiv_eq`, all declarations are in the nam
 
 * `TauCeti.bijective_pi_of_mfderiv_eq`: in a weight chart of a symplectic toric manifold, the
   weights are the coordinates of a linear isomorphism `𝔤 ≃ ℝⁿ`, so they form a basis of `𝔤*`.
-* `eventually_eq_of_mem_fixedPoints`, `finite_fixedPoints_of_faithfulSMul`: the fixed points of
+* `eventually_mem_fixedPoints_imp_eq`, `finite_fixedPoints_of_faithfulSMul`: the fixed points of
   a symplectic toric manifold are isolated, hence finite in number.
 * `exists_forall_lt_of_mem_fixedPoints`: every fixed point is the unique maximum of some component
   `μ^ξ` of the moment map.
@@ -207,7 +207,7 @@ omit [PreconnectedSpace G] [CompactSpace M] in
 effectively on a connected symplectic manifold `(M, σ)` without boundary, preserving `σ`, with
 moment map `μ`, and with `dim M = 2 dim G`. Then near each fixed point there is no other fixed
 point. -/
-theorem eventually_eq_of_mem_fixedPoints
+theorem eventually_mem_fixedPoints_imp_eq
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsSymplectic)
     (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
       (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
@@ -225,7 +225,7 @@ theorem finite_fixedPoints_of_faithfulSMul
     (MulAction.fixedPoints G M).Finite := by
   have : IsMulCommutative G := ⟨⟨mul_comm⟩⟩
   exact h.finite_fixedPoints hσ.isNondegenerate fun _ hp ↦
-    h.eventually_eq_of_mem_fixedPoints hσ hG hdim hp
+    h.eventually_mem_fixedPoints_imp_eq hσ hG hdim hp
 
 /-- **A fixed point is the unique maximum of a moment map component.** Let a torus `G` act
 smoothly and effectively on a compact connected symplectic manifold `(M, σ)` without boundary,
@@ -245,7 +245,7 @@ theorem exists_forall_lt_of_mem_fixedPoints
     rw [← SmoothForm.eval₂_mpullback _ (ContMDiffSMul.contMDiff_const_smul (I := I) a), hG a]
   have hiso (q : M) (hq : q ∈ MulAction.fixedPoints G M) :
       ∀ᶠ y in 𝓝 q, y ∈ MulAction.fixedPoints G M → y = q :=
-    h.eventually_eq_of_mem_fixedPoints hσ hG hdim hq
+    h.eventually_mem_fixedPoints_imp_eq hσ hG hdim hq
   obtain ⟨U, hU, -, V, hVo, hVne, hV⟩ := h.exists_nhds_of_mem_fixedPoints hσ hG hdim hp
   -- Choose `ξ` in the open cone `V` with dense one-parameter subgroup; then `μ^ξ` is Morse.
   obtain ⟨ξ, hξV, hξ⟩ :=
