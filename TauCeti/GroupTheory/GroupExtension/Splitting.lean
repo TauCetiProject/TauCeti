@@ -13,12 +13,14 @@ public import TauCeti.GroupTheory.GroupExtension.Basic
 # Splittings, their ranges, and semidirect-product decompositions
 
 The range of a splitting complements the included kernel of an extension, and the range
-determines the splitting uniquely. Equivalences of extensions and compatible multiplicative
-equivalences on the middle and quotient groups transport splittings in both directions. These
-results allow splitting criteria to be interpreted as existence criteria for actual subgroup
-complements. This file also supplies the evaluation and inverse formulas for Mathlib's
-`GroupExtension.Splitting.semidirectProductMulEquiv`, expressing the semidirect-product components
-of an extension element `e` in terms of `S.rightHom e` and `e * (s (S.rightHom e))⁻¹`.
+determines the splitting uniquely. Conversely, a subgroup on which the projection to the quotient
+restricts to a bijection is the range of a splitting, `GroupExtension.Splitting.ofBijective`.
+Equivalences of extensions and compatible multiplicative equivalences on the middle and quotient
+groups transport splittings in both directions. These results allow splitting criteria to be
+interpreted as existence criteria for actual subgroup complements. This file also supplies the
+evaluation and inverse formulas for Mathlib's `GroupExtension.Splitting.semidirectProductMulEquiv`,
+expressing the semidirect-product components of an extension element `e` in terms of
+`S.rightHom e` and `e * (s (S.rightHom e))⁻¹`.
 -/
 
 public section
@@ -144,6 +146,36 @@ theorem Splitting.eq_of_range_eq (s t : S.Splitting)
   have : g' = g := by
     simpa using congrArg S.rightHom hg'
   simpa [this] using hg'.symm
+
+/-- The splitting of `S` with range a subgroup `K` of `E` on which `S.rightHom` restricts to a
+bijection onto `G`: it sends `g` to the unique element of `K` over `g`. -/
+noncomputable def Splitting.ofBijective (K : Subgroup E)
+    (hK : Function.Bijective (S.rightHom.comp K.subtype)) : S.Splitting where
+  toMonoidHom := K.subtype.comp (MulEquiv.ofBijective _ hK).symm.toMonoidHom
+  rightInverse_rightHom g := (MulEquiv.ofBijective _ hK).apply_symm_apply g
+
+@[simp]
+theorem Splitting.ofBijective_mem (K : Subgroup E)
+    (hK : Function.Bijective (S.rightHom.comp K.subtype)) (g : G) :
+    Splitting.ofBijective K hK g ∈ K :=
+  Subtype.property _
+
+/-- An element of `K` is the value of `Splitting.ofBijective K hK` at its image in `G`. -/
+@[simp]
+theorem Splitting.ofBijective_rightHom {K : Subgroup E}
+    (hK : Function.Bijective (S.rightHom.comp K.subtype)) {e : E} (he : e ∈ K) :
+    Splitting.ofBijective K hK (S.rightHom e) = e :=
+  congrArg Subtype.val (hK.1 (a₁ := ⟨_, Splitting.ofBijective_mem K hK _⟩) (a₂ := ⟨e, he⟩)
+    (by simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype] using
+      (Splitting.ofBijective K hK).rightHom_splitting _))
+
+@[simp]
+theorem Splitting.range_ofBijective (K : Subgroup E)
+    (hK : Function.Bijective (S.rightHom.comp K.subtype)) :
+    (Splitting.ofBijective K hK).toMonoidHom.range = K := by
+  refine le_antisymm ?_ fun e he ↦ ⟨S.rightHom e, Splitting.ofBijective_rightHom hK he⟩
+  rintro _ ⟨g, rfl⟩
+  exact Splitting.ofBijective_mem K hK g
 
 variable {E' : Type*} [Group E'] {S' : GroupExtension N E' G}
 

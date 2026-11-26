@@ -386,6 +386,16 @@ theorem periodicDomains_lensSpace : (lensSpace p q r).periodicDomains = ⊥ := b
       simpa using this.symm
   simpa [hconst] using hz ()
 
+/-- In the genus-one diagram of `L(p, q)` the only domain between two generators avoiding the
+basepoint is zero: a domain joins only a generator to itself, and the only periodic domain is zero.
+-/
+theorem eq_zero_of_isDomainBetween_lensSpace {x y : (lensSpace p q r).Generator}
+    {E : ZMod p → ℤ} (hE : (lensSpace p q r).IsDomainBetween x y E)
+    (hz : ∀ z, E ((lensSpace p q r).basepoint z) = 0) : E = 0 := by
+  obtain rfl := exists_isDomainBetween_lensSpace_iff.mp ⟨E, hE⟩
+  have hP : E ∈ (lensSpace p q r).periodicDomains := isDomainBetween_self_iff.mp ⟨hE, hz⟩
+  rwa [periodicDomains_lensSpace, AddSubgroup.mem_bot] at hP
+
 /-- The lens space diagram is weakly admissible. -/
 theorem weaklyAdmissible_lensSpace : (lensSpace p q r).WeaklyAdmissible :=
   weaklyAdmissible_iff.mpr fun P hP _ => by simpa using hP
