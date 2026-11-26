@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import TauCeti.InformationTheory.Coding.EuclideanDual
 
@@ -33,12 +34,22 @@ characteristic zero (`AddChar.FiniteField.primitiveChar`), and so does every `ZM
 * `Submodule.sum_addChar_dotProduct`: the orthogonality relation for a code and its dual.
 * `Submodule.sum_sum_addChar_dotProduct_smul`: the Poisson summation formula.
 * `AddChar.sum_apply_dotProduct`: the orthogonality relation for the full space `ι → R`.
+* `AddChar.orthonormal_dotProduct`: for a complex-valued primitive `ψ`, the normalised Fourier
+  vectors `ζ ↦ ψ (-(x ⬝ᵥ ζ)) / √(#R ^ #ι)`, `x : ι → R`, are orthonormal in
+  `EuclideanSpace ℂ (ι → R)`.
 
 ## References
 
 F. J. MacWilliams and N. J. A. Sloane, *The Theory of Error-Correcting Codes*, North-Holland
 (1977), Chapter 5, §2, Lemmas 2 and 11; W. C. Huffman and V. Pless, *Fundamentals of
 Error-Correcting Codes*, Cambridge University Press (2003), §7.2.
+
+## Provenance
+
+`AddChar.orthonormal_dotProduct` is adapted from grh-lean (https://github.com/lsernau/grh-lean at
+commit `72fead1`, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/New/Spanning/SecondMoment/PositiveType.lean`, declaration `New.orthonormal_addChar_div_sqrt`.
+Here it is stated for a primitive character of any finite commutative ring.
 -/
 
 public section
@@ -104,5 +115,31 @@ theorem sum_apply_dotProduct (hψ : ψ.IsPrimitive) (v : ι → R) :
   simp only [Equiv.subtypeUnivEquiv_apply]
   rw [h]
   simp
+
+omit [DecidableEq R] in
+/-- For a primitive additive character `ψ` of a finite ring `R` with complex values, the
+functions `ζ ↦ ψ (-(x ⬝ᵥ ζ)) / √(#R ^ #ι)`, one for each `x : ι → R`, are orthonormal: they are
+the Fourier transforms of the point masses. -/
+theorem orthonormal_dotProduct {ψ : AddChar R ℂ} (hψ : ψ.IsPrimitive) :
+    Orthonormal ℂ fun x : ι → R ↦ (WithLp.toLp 2 fun ζ : ι → R ↦
+      ψ (-(x ⬝ᵥ ζ)) / √((Fintype.card R : ℝ) ^ Fintype.card ι) : EuclideanSpace ℂ (ι → R)) := by
+  classical
+  rw [orthonormal_iff_ite]
+  intro x y
+  have h_mul (ζ : ι → R) :
+      ψ (-(y ⬝ᵥ ζ)) * starRingEnd ℂ (ψ (-(x ⬝ᵥ ζ))) = ψ ((x - y) ⬝ᵥ ζ) := by
+    rw [← AddChar.map_neg_eq_conj, ← AddChar.map_add_eq_mul, sub_dotProduct, neg_neg,
+      neg_add_eq_sub]
+  -- The character sum is `#R ^ #ι` for `x = y` and `0` otherwise.
+  have h_sum : ∑ ζ : ι → R, ψ (-(y ⬝ᵥ ζ)) * starRingEnd ℂ (ψ (-(x ⬝ᵥ ζ))) =
+      if x = y then (Fintype.card R : ℂ) ^ Fintype.card ι else 0 := by
+    simp only [h_mul, sum_apply_dotProduct hψ, sub_eq_zero]
+  have hq : (0 : ℝ) < (Fintype.card R : ℝ) ^ Fintype.card ι := by positivity
+  simp only [PiLp.inner_apply, RCLike.inner_apply, map_div₀, Complex.conj_ofReal,
+    div_mul_div_comm, ← sum_div, h_sum]
+  split_ifs
+  · rw [← Complex.ofReal_mul, Real.mul_self_sqrt hq.le, Complex.ofReal_pow,
+      Complex.ofReal_natCast, div_self (by exact_mod_cast hq.ne')]
+  · simp
 
 end AddChar

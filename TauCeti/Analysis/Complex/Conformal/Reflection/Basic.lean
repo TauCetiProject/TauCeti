@@ -24,7 +24,9 @@ Mathlib already proves the pointwise fact
 `DifferentiableAt.conj_conj`: if `f` is complex differentiable at `conj z`, then
 `z ↦ conj (f (conj z))` is complex differentiable at `z`.  The lemmas here package the
 corresponding within-set statement for reflected images, which is the form needed before the
-real-axis Schwarz reflection principle.
+real-axis Schwarz reflection principle.  For sets closed under conjugation,
+`continuousOn_conj_conj_of_symmetric` and `differentiableOn_conj_conj_of_symmetric` record the
+same invariance on the set itself.
 
 It also names the standard real-axis Schwarz-reflection extension
 `z ↦ if 0 ≤ z.im then f z else conj (f (conj z))`, together with the pointwise API for the
@@ -230,6 +232,13 @@ lemma continuousOn_conj_conj_iff :
       Function.comp_def] using htwice
   · exact continuousOn_conj_conj
 
+/-- If a set `Ω` is closed under conjugation and `f` is continuous on `Ω`, then the reflected
+function `z ↦ conj (f (conj z))` is also continuous on `Ω`. -/
+lemma continuousOn_conj_conj_of_symmetric {Ω : Set ℂ}
+    (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω) (hf : ContinuousOn f Ω) :
+    ContinuousOn (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) Ω :=
+  hΩ.image_eq_of_involutive starRingEnd_self_apply ▸ continuousOn_conj_conj hf
+
 /--
 On any subset of the closed upper half-plane, the explicit Schwarz-reflection extension is
 continuous whenever the original function is.
@@ -360,6 +369,13 @@ lemma differentiableOn_conj_conj_iff :
       (starRingEnd_self_apply : Function.Involutive (starRingEnd ℂ)), Set.preimage_preimage,
       Function.comp_def] using htwice
   · exact differentiableOn_conj_conj
+
+/-- If a set `Ω` is closed under conjugation and `f` is holomorphic on `Ω`, then the reflected
+function `z ↦ conj (f (conj z))` is also holomorphic on `Ω`. -/
+lemma differentiableOn_conj_conj_of_symmetric {Ω : Set ℂ}
+    (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω) (hf : DifferentiableOn ℂ f Ω) :
+    DifferentiableOn ℂ (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) Ω :=
+  hΩ.image_eq_of_involutive starRingEnd_self_apply ▸ differentiableOn_conj_conj hf
 
 /--
 If a domain is closed under conjugation and `f` is holomorphic on its upper half-plane

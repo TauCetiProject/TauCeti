@@ -160,10 +160,8 @@ theorem index_intAddMulOrder :
     rw [index_eq_addSubgroup_index, hS,
       AddSubgroup.index_comap_of_surjective _ Ideal.Quotient.mk_surjective]
   -- `𝓞 K / f` has `f ^ n` elements, and its subgroup `ℤ · 1` has `f`.
-  have hcard : Nat.card (𝓞 K ⧸ I) = f ^ Module.finrank ℚ K := by
-    have : Infinite (𝓞 K) := Infinite.of_injective _ Nat.cast_injective
-    rw [← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, Ideal.absNorm_span_natCast,
-      RingOfIntegers.rank]
+  have hcard : Nat.card (𝓞 K ⧸ I) = f ^ Module.finrank ℚ K :=
+    RingOfIntegers.natCard_quotient_span_natCast f
   have hone : Nat.card (AddSubgroup.zmultiples (1 : 𝓞 K ⧸ I)) = f := by
     rw [Nat.card_zmultiples, CharP.eq _ (CharP.addOrderOf_one _)
       (RingOfIntegers.charP_quotient_span_natCast K f)]

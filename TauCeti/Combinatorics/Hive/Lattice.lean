@@ -295,6 +295,27 @@ theorem edgePoint_injective (n : ℕ) (s : Fin 3) : Function.Injective (edgePoin
   · exact Fin.ext (congrArg Vertex.z h)
   · exact Fin.ext (congrArg Vertex.x h)
 
+/-- Any vertex with `z = 0` lies on side `0` (`A → B`) at index `p.y`. -/
+theorem eq_edgePoint_zero_of_z_eq_zero {n : ℕ} {p : Vertex n} (hz : p.z = 0) :
+    p = edgePoint n 0 ⟨p.y, by have := p.sum_eq; omega⟩ := by
+  have := p.sum_eq
+  ext <;> simp [hz]
+  omega
+
+/-- Any vertex with `x = 0` lies on side `1` (`B → C`) at index `p.z`. -/
+theorem eq_edgePoint_one_of_x_eq_zero {n : ℕ} {p : Vertex n} (hx : p.x = 0) :
+    p = edgePoint n 1 ⟨p.z, by have := p.sum_eq; omega⟩ := by
+  have := p.sum_eq
+  ext <;> simp [hx]
+  omega
+
+/-- Any vertex with `y = 0` lies on side `2` (`C → A`) at index `p.x`. -/
+theorem eq_edgePoint_two_of_y_eq_zero {n : ℕ} {p : Vertex n} (hy : p.y = 0) :
+    p = edgePoint n 2 ⟨p.x, by have := p.sum_eq; omega⟩ := by
+  have := p.sum_eq
+  ext <;> simp [hy]
+  omega
+
 /-- Construct a lattice vertex `(n - y - z, y, z)` from nonnegative `(y, z)` with `y + z ≤ n`. -/
 def ofYZ (n : ℕ) (y z : ℕ) (h : y + z ≤ n) : Vertex n := ⟨n - y - z, y, z, by omega⟩
 

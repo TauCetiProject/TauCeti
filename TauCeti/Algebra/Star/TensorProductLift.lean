@@ -24,7 +24,9 @@ star version of Mathlib's `Algebra.TensorProduct.map`.
 ## Main declarations
 
 * `Algebra.TensorProduct.liftNonUnitalStarAlgHom`: the star homomorphism `a ⊗ b ↦ φ a * ψ b`.
-* `Algebra.TensorProduct.mapNonUnitalStarAlgHom`: the star homomorphism `a ⊗ b ↦ f a ⊗ g b`.
+* `Algebra.TensorProduct.mapNonUnitalStarAlgHom`: the star homomorphism `a ⊗ b ↦ f a ⊗ g b`,
+  with `Algebra.TensorProduct.mapNonUnitalStarAlgHom_id` and
+  `Algebra.TensorProduct.mapNonUnitalStarAlgHom_comp`.
 -/
 
 public section
@@ -141,6 +143,28 @@ theorem mapNonUnitalStarAlgHom_tmul (a : A) (b : B) :
 theorem coe_mapNonUnitalStarAlgHom :
     ⇑(mapNonUnitalStarAlgHom f g) = TensorProduct.map (f : A →ₗ[R] C) (g : B →ₗ[R] D) :=
   (rfl)
+
+/-- The tensor product of the identities is the identity. -/
+@[simp]
+theorem mapNonUnitalStarAlgHom_id :
+    mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.id R A) (NonUnitalStarAlgHom.id R B) =
+      NonUnitalStarAlgHom.id R (A ⊗[R] B) :=
+  NonUnitalStarAlgHom.ext fun x ↦ by
+    induction x using TensorProduct.inductionOn with
+    | add x y hx hy => rw [map_add, map_add, hx, hy]
+    | tmul a b => simp only [mapNonUnitalStarAlgHom_tmul, NonUnitalStarAlgHom.coe_id, id_eq]
+
+/-- The tensor product of composites is the composite of the tensor products. -/
+theorem mapNonUnitalStarAlgHom_comp {C' D' : Type*} [NonUnitalSemiring C'] [Module R C']
+    [StarRing C'] [NonUnitalSemiring D'] [Module R D'] [StarRing D'] [SMulCommClass R C' C']
+    [IsScalarTower R C' C'] [SMulCommClass R D' D'] [IsScalarTower R D' D'] [StarModule R C']
+    [StarModule R D'] (f' : C →⋆ₙₐ[R] C') (g' : D →⋆ₙₐ[R] D') :
+    mapNonUnitalStarAlgHom (f'.comp f) (g'.comp g) =
+      (mapNonUnitalStarAlgHom f' g').comp (mapNonUnitalStarAlgHom f g) :=
+  NonUnitalStarAlgHom.ext fun x ↦ by
+    induction x using TensorProduct.inductionOn with
+    | add x y hx hy => rw [map_add, map_add, hx, hy]
+    | tmul a b => simp
 
 end Map
 
