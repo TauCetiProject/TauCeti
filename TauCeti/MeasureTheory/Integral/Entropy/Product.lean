@@ -172,10 +172,9 @@ private theorem ae_eq_zero_of_integral_fst_eq_zero {g : α × β → ℝ}
   let G : α → ℝ := fun x ↦ ∫ y, g (x, y) ∂ν
   have hGm : Measurable G := hgm.stronglyMeasurable.integral_prod_right'.measurable
   have hmset : MeasurableSet {p : α × β | G p.1 = 0 → g p = 0} := by
-    rw [show {p : α × β | G p.1 = 0 → g p = 0} =
-        {p : α × β | (G ∘ Prod.fst) p = 0}ᶜ ∪ {p : α × β | g p = 0} from
-      Set.ext fun _ ↦ imp_iff_not_or]
-    exact (measurableSet_eq_fun (hGm.comp measurable_fst) measurable_const).compl.union
+    simp only [imp_iff_not_or, Set.ofPred_or, ← Set.compl_ofPred]
+    exact (measurableSet_eq_fun (f := fun p : α × β ↦ G p.1)
+      (hGm.comp measurable_fst) measurable_const).compl.union
       (measurableSet_eq_fun hgm measurable_const)
   rw [ae_prod_iff_ae_ae hmset]
   filter_upwards [hg.prod_right_ae] with x hx
@@ -371,8 +370,9 @@ private theorem entropy_pi_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, M
     entropy (Measure.pi μ) g ≤
       ∑ i, ∫ x, entropy (μ i) (fun y ↦ g (Function.update x i y)) ∂Measure.pi μ
   | 0, _, _, _, _, g, _, _, _, _ => by
-    rw [show g = fun _ ↦ g default from funext fun x ↦ congrArg g (Subsingleton.elim x default),
-      entropy_const]; simp
+    have hg_const : g = fun _ ↦ g default :=
+      funext fun x ↦ congrArg g (Subsingleton.elim x default)
+    rw [hg_const, entropy_const]; simp
   | n + 1, α, _, μ, _, g, hgm, hg0, hg, hglog => by
     -- Split off coordinate `0` via `piFinSuccAbove`, reducing `Measure.pi μ` to `(μ 0).prod ν`.
     let e := MeasurableEquiv.piFinSuccAbove α 0

@@ -185,16 +185,20 @@ theorem integral_mul_deriv_rot_gaussianReal {Φ g : ℝ → ℝ} {A₁ B₁ B₂
         simp only [H, Real.norm_eq_abs, abs_mul, abs_neg, mul_assoc]
         exact mul_le_mul (hA₁ _) (mul_le_mul (hB₂ _) (le_add_of_nonneg_left (abs_nonneg _))
           (abs_nonneg _) hB₂0) (by positivity) ((abs_nonneg _).trans (hA₁ 0))
+  have hH_refl (p : ℝ × ℝ) :
+      Φ p.1 * (deriv g (c * p.1 + s * p.2) * (-s * p.1 + c * p.2)) =
+        H (c * p.1 + s * p.2, s * p.1 - c * p.2) := by
+    simp only [H, hrot p]; ring
   have hch1 := hmp.hasLaw.integral_comp hHc.aestronglyMeasurable
   simp only [Function.comp_def] at hch1
-  rw [show (fun p : ℝ × ℝ ↦ Φ p.1 * (deriv g (c * p.1 + s * p.2) * (-s * p.1 + c * p.2))) =
-      fun p ↦ H (c * p.1 + s * p.2, s * p.1 - c * p.2) from
-        funext fun p ↦ by simp only [H, hrot p]; ring, hch1, integral_prod _ hHint]
+  simp_rw [hH_refl]
+  rw [hch1, integral_prod _ hHint]
   have hinner (u : ℝ) :
       ∫ v, H (u, v) ∂(gaussianReal 0 1) =
         -s * (deriv g u * ∫ v, deriv Φ (c * u + s * v) ∂(gaussianReal 0 1)) := by
-    simp_rw [show ∀ v, H (u, v) = -(deriv g u) * (v * Φ (c * u + s * v)) from
-      fun _ ↦ by simp only [H]; ring]
+    have hH_split (v : ℝ) : H (u, v) = -(deriv g u) * (v * Φ (c * u + s * v)) := by
+      simp only [H]; ring
+    simp_rw [hH_split]
     rw [integral_const_mul, integral_mul_comp_affine_gaussianReal hΦ hA₁ hB₁]; ring
   simp_rw [hinner, integral_const_mul]; congr 1
   -- Reflect back so `deriv Φ` is evaluated at `p.1` and `deriv g` at `c * p.1 + s * p.2`.
@@ -204,10 +208,12 @@ theorem integral_mul_deriv_rot_gaussianReal {Φ g : ℝ → ℝ} {A₁ B₁ B₂
     Integrable.of_bound hKc.aestronglyMeasurable (B₂ * B₁) <| ae_of_all _ fun _ ↦ by
       rw [Real.norm_eq_abs]
       simpa only [K, abs_mul] using mul_le_mul (hB₂ _) (hB₁ _) (abs_nonneg _) hB₂0
+  have hK_refl (p : ℝ × ℝ) :
+      K (c * p.1 + s * p.2, s * p.1 - c * p.2) =
+        deriv Φ p.1 * deriv g (c * p.1 + s * p.2) := by
+    simp only [K, hrot p]; ring
   have hch2 := hmp.hasLaw.integral_comp hKc.aestronglyMeasurable
-  simp only [Function.comp_def, show (fun p : ℝ × ℝ ↦ K (c * p.1 + s * p.2, s * p.1 - c * p.2)) =
-    fun p ↦ deriv Φ p.1 * deriv g (c * p.1 + s * p.2) from
-      funext fun p ↦ by simp only [K, hrot p]; ring] at hch2
+  simp only [Function.comp_def, hK_refl] at hch2
   rw [hch2, integral_prod _ hKint]
   exact (integral_congr_ae (.of_forall fun _ ↦ integral_const_mul _ _)).symm
 
