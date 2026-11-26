@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Descent.RelativeGerbe
-public import TauCeti.CategoryTheory.Sites.Descent.StrongTrans
+public import TauCeti.CategoryTheory.Sites.Descent.IsPrestack
 
 /-!
 # Precomposition with a locally essentially surjective strong transformation
@@ -33,8 +32,8 @@ of the stackification (`TauCeti.Stack.stackificationUniversal`).
 
 ## Main declarations
 
-* `CategoryTheory.Pseudofunctor.StrongTrans.map_obj_mem_essImage`: the essential image of a strong
-  transformation into `Cat` is stable under pullback.
+* `CategoryTheory.Pseudofunctor.StrongTrans.IsLocallyEssSurj`: local essential surjectivity
+  of a strong transformation for a Grothendieck topology.
 * `CategoryTheory.Pseudofunctor.StrongTrans.faithful_precomp`,
   `CategoryTheory.Pseudofunctor.StrongTrans.full_precomp`: precomposition with a locally
   essentially surjective strong transformation, respectively one whose components are also full,
@@ -55,7 +54,19 @@ open CategoryTheory Opposite Bicategory
 
 namespace CategoryTheory.Pseudofunctor.StrongTrans
 
-variable {C : Type u} [Category.{v} C] {F P G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
+variable {C : Type u} [Category.{v} C] {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
+
+/-- A strong transformation `η : F ⟶ G` is *locally essentially surjective* for a Grothendieck
+topology `J` if every object of `G` over `U` lifts along `η` up to isomorphism after pullback
+along every arrow of some `J`-covering sieve of `U`. -/
+class IsLocallyEssSurj (η : StrongTrans F G) (J : GrothendieckTopology C) : Prop where
+  /-- Every object `y` of `G` over `U` lifts along `η`, up to isomorphism, after pullback along
+  every arrow of some covering sieve of `U`. -/
+  exists_covering_lift {U : C} (y : G.obj (.mk (op U))) :
+    ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f → ∃ x : F.obj (.mk (op V)),
+      Nonempty ((η.app (.mk (op V))).toFunctor.obj x ≅ (G.map f.op.toLoc).toFunctor.obj y)
+
+variable {P : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
   {η : F ⟶ P} {Φ Φ' : P ⟶ G} (Γ : η ≫ Φ ⟶ η ≫ Φ')
 
 /-- The component at `M` of a modification `Γ : η ≫ Φ ⟶ η ≫ Φ'`, with its source and target
@@ -89,13 +100,6 @@ private lemma map_appObj {a b : LocallyDiscrete Cᵒᵖ} (f : a ⟶ b) (M : F.ob
               (Φ'.naturalityObjIso f ((η.app a).toFunctor.obj M)).hom := by
   rw [appObj_comp_naturalityObjIso_hom, ← Functor.map_comp_assoc, Iso.inv_hom_id,
     Functor.map_id, Category.id_comp, Iso.inv_hom_id_assoc]
-
-/-- The essential image of a strong transformation into `Cat` is stable under pullback. -/
-lemma map_obj_mem_essImage {a b : LocallyDiscrete Cᵒᵖ} (f : a ⟶ b) {B : P.obj a}
-    (hB : (η.app a).toFunctor.essImage B) :
-    (η.app b).toFunctor.essImage ((P.map f).toFunctor.obj B) :=
-  ⟨(F.map f).toFunctor.obj hB.witness,
-    ⟨η.naturalityObjIso f _ ≪≫ (P.map f).toFunctor.mapIso hB.getIso⟩⟩
 
 /-- The value at an object in the essential image of `η` of the modification `Φ ⟶ Φ'` extending
 `Γ : η ≫ Φ ⟶ η ≫ Φ'`. -/
@@ -141,9 +145,9 @@ private lemma localApp_naturality {a : LocallyDiscrete Cᵒᵖ} {B B' : P.obj a}
 private lemma map_localApp {a b : LocallyDiscrete Cᵒᵖ} (f : a ⟶ b) {B : P.obj a}
     (hB : (η.app a).toFunctor.essImage B) :
     (G.map f).toFunctor.map (localApp Γ hB) =
-      (Φ.naturalityObjIso f B).inv ≫ localApp Γ (map_obj_mem_essImage f hB) ≫
+      (Φ.naturalityObjIso f B).inv ≫ localApp Γ (map_obj_mem_essImage η f hB) ≫
         (Φ'.naturalityObjIso f B).hom := by
-  rw [localApp_eq Γ (map_obj_mem_essImage f hB)
+  rw [localApp_eq Γ (map_obj_mem_essImage η f hB)
     (η.naturalityObjIso f _ ≪≫ (P.map f).toFunctor.mapIso hB.getIso), localApp]
   simp only [Functor.map_comp, map_appObj, Iso.trans_hom, Iso.trans_inv, Functor.mapIso_hom,
     Functor.mapIso_inv, Category.assoc]
@@ -162,7 +166,7 @@ private abbrev essImageSieve {U : C} (A : P.obj (.mk (op U))) : Sieve U where
   arrows _ g := (η.app _).toFunctor.essImage ((P.map g.op.toLoc).toFunctor.obj A)
   downward_closed {_ _} g hg h :=
     Functor.essImage.ofIso (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).symm
-      (map_obj_mem_essImage h.op.toLoc hg)
+      (map_obj_mem_essImage η h.op.toLoc hg)
 
 variable (η) in
 /-- For a locally essentially surjective `η`, the sieve `essImageSieve η A` is covering. -/
@@ -170,31 +174,6 @@ private lemma essImageSieve_mem (J : GrothendieckTopology C) [η.IsLocallyEssSur
     (A : P.obj (.mk (op U))) : essImageSieve η A ∈ J U := by
   obtain ⟨R, hR, h⟩ := IsLocallyEssSurj.exists_covering_lift (η := η) (J := J) A
   exact J.superset_covering (fun _ g hg ↦ h g hg) hR
-
-variable (Φ Φ') in
-/-- The pullback `pullHom` along `h` of a morphism `g^* (Φ A) ⟶ g^* (Φ' A)` written through the
-naturality isomorphisms of `Φ` and `Φ'` at `g`. -/
-private lemma pullHom_naturalityObjIso {U T T' : C} (g : T ⟶ U) (h : T' ⟶ T)
-    (A : P.obj (.mk (op U)))
-    (z : (Φ.app (.mk (op T))).toFunctor.obj ((P.map g.op.toLoc).toFunctor.obj A) ⟶
-      (Φ'.app (.mk (op T))).toFunctor.obj ((P.map g.op.toLoc).toFunctor.obj A)) :
-    pullHom ((Φ.naturalityObjIso g.op.toLoc A).inv ≫ z ≫ (Φ'.naturalityObjIso g.op.toLoc A).hom)
-        h (h ≫ g) (h ≫ g) =
-      (Φ.naturalityObjIso (h ≫ g).op.toLoc A).inv ≫
-        (Φ.app _).toFunctor.map (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).hom ≫
-          (Φ.naturalityObjIso h.op.toLoc _).hom ≫ (G.map h.op.toLoc).toFunctor.map z ≫
-            (Φ'.naturalityObjIso h.op.toLoc _).inv ≫
-              (Φ'.app _).toFunctor.map (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).inv ≫
-                (Φ'.naturalityObjIso (h ≫ g).op.toLoc A).hom := by
-  rw [pullHom_eq_compIso, Φ.naturalityObjIso_inv_comp' g.op.toLoc h.op.toLoc (h ≫ g).op.toLoc rfl,
-    Φ'.naturalityObjIso_hom_comp' g.op.toLoc h.op.toLoc (h ≫ g).op.toLoc rfl,
-    ← compIso_hom P g.op h.op (h ≫ g).op op_comp.symm A,
-    ← compIso_inv P g.op h.op (h ≫ g).op op_comp.symm A,
-    ← compIso_hom G g.op h.op (h ≫ g).op op_comp.symm ((Φ.app _).toFunctor.obj A),
-    ← compIso_inv G g.op h.op (h ≫ g).op op_comp.symm ((Φ'.app _).toFunctor.obj A)]
-  simp only [Functor.map_comp, Category.assoc, ← Functor.map_comp_assoc (Φ.app _).toFunctor,
-    ← Functor.map_comp_assoc (Φ'.app _).toFunctor, Iso.inv_hom_id, Functor.map_id,
-    Category.id_comp, Iso.inv_hom_id_assoc]
 
 section Glue
 
@@ -211,7 +190,7 @@ private lemma pullHom_localApp {U T T' : C} (A : P.obj (.mk (op U))) (g : T ⟶ 
   rw [pullHom_naturalityObjIso, map_localApp]
   simp only [Category.assoc, Iso.hom_inv_id_assoc]
   rw [reassoc_of% (localApp_naturality Γ ((essImageSieve η A).downward_closed hg h)
-    (map_obj_mem_essImage h.op.toLoc hg) (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).hom),
+    (map_obj_mem_essImage η h.op.toLoc hg) (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).hom),
     ← Functor.map_comp_assoc, Iso.hom_inv_id, Functor.map_id, Category.id_comp]
 
 variable (η) in

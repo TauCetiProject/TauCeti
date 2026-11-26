@@ -18,8 +18,8 @@ descent data along `w`-small covering families. For every stack `G` for `J`, pre
 the unit is an equivalence from the category of strong transformations
 `stackification J F ⟶ G` and their modifications to the category of strong transformations
 `F ⟶ G` and their modifications (`TauCeti.Stack.stackificationUniversal`, Stacks, Lemmas 02ZN and
-0435): every strong transformation from `F` to a stack extends along the unit, uniquely up to a
-unique invertible modification.
+0435): every strong transformation from `F` to a stack extends along the unit; the extension
+is unique up to the invertible modification compatible with its specified restriction.
 
 * *Full faithfulness*, for every prestack `G`: the components of the unit are fully faithful
   (`Stackification.Obj.fullyFaithfulToObjFunctor`) and the unit is locally essentially surjective
@@ -115,15 +115,23 @@ through the inverse of the equivalence `Stackification.Obj.toObjFunctor`. -/
 @[simp]
 lemma stackificationLift_app_toFunctor (ψ : F ⟶ G) (a : LocallyDiscrete Cᵒᵖ) :
     ((stackificationLift.{w, v', u'} J ψ).app a).toFunctor =
-      mapFunctor.{w} J ψ a.as.unop ⋙ (toObjFunctor.{w} J G a.as.unop).inv :=
-  (rfl)
+      mapFunctor.{w} J ψ a.as.unop ⋙ (toObjFunctor.{w} J G a.as.unop).inv := by
+  simp only [stackificationLift, StrongTrans.comp_app, Cat.Hom.comp_toFunctor,
+    stackificationOfIsStack_def, equivalenceOfIsEquivalence_inv_app,
+    stackificationMap_app_toFunctor, Functor.toCatHom_toFunctor, toStackification_app_toFunctor]
+  -- The inverse functors agree definitionally after identifying the unit components.
+  rfl
 
 /-- The extension `stackificationLift ψ` restricts to `ψ` along the unit of the stackification,
 up to an invertible modification. -/
 def toStackificationCompStackificationLiftIso (ψ : F ⟶ G) :
-    toStackification.{w, v', u'} J F ≫ stackificationLift.{w, v', u'} J ψ ≅ ψ :=
-  (α_ _ _ _).symm ≪≫ whiskerRightIso (toStackificationCompStackificationMapIso.{w, v', u'} J ψ) _ ≪≫
-    α_ _ _ _ ≪≫ whiskerLeftIso ψ (stackificationOfIsStack.{w, v', u'} J G).unit.symm ≪≫ ρ_ ψ
+    toStackification.{w, v', u'} J F ≫ stackificationLift.{w, v', u'} J ψ ≅ ψ := by
+  unfold stackificationLift
+  rw [stackificationOfIsStack_def]
+  exact (α_ _ _ _).symm ≪≫
+    whiskerRightIso (toStackificationCompStackificationMapIso.{w, v', u'} J ψ) _ ≪≫
+    α_ _ _ _ ≪≫
+    whiskerLeftIso ψ (toStackification.{w, v', u'} J G).equivalenceOfIsEquivalence.unit.symm ≪≫ ρ_ ψ
 
 variable (G) in
 /-- Precomposition with the unit of the stackification is essentially surjective on strong
@@ -155,7 +163,7 @@ lemma stackificationUniversal_functor :
   (rfl)
 
 /-- The inverse of `stackificationUniversal` sends a strong transformation `ψ : F ⟶ G` to its
-extension `stackificationLift ψ`, up to a unique invertible modification. -/
+extension `stackificationLift ψ`, up to an invertible modification. -/
 def stackificationUniversalInverseObjIso (ψ : F ⟶ G) :
     (stackificationUniversal.{w, v', u'} J F G).inverse.obj ψ ≅
       stackificationLift.{w, v', u'} J ψ :=

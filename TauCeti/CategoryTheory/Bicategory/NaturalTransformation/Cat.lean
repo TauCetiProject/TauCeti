@@ -33,7 +33,9 @@ packages the components of a naturality isomorphism at an object
 law along a composite (`Pseudofunctor.StrongTrans.naturalityObjIso_hom_comp'`,
 `Pseudofunctor.StrongTrans.naturalityObjIso_inv_comp'`), and the naturality square of a
 modification on objects (`Pseudofunctor.StrongTrans.app_comp_naturalityObjIso_hom`). It also
-conjugates pullbacks of morphisms by the naturality isomorphisms of a strong transformation,
+shows stability of essential images under the target functors
+(`Pseudofunctor.StrongTrans.map_obj_mem_essImage`), conjugates pullbacks of morphisms by the
+naturality isomorphisms of a strong transformation,
 and computes the image of a morphism between pullbacks along an identity transported back along
 `mapId'` (`Pseudofunctor.StrongTrans.map_mapId'_inv_comp_comp_mapId'_hom`). When the values of
 the target pseudofunctor are groupoids, every modification between strong transformations into it
@@ -208,6 +210,15 @@ lemma naturalityObjIso_inv {B : Type u₁} [Bicategory.{w₁, v₁} B]
     (η.naturalityObjIso f X).inv = (η.naturality f).inv.toNatTrans.app X :=
   (rfl)
 
+/-- The essential image of a strong transformation into `Cat` is stable under its target's
+functors on `1`-morphisms. -/
+lemma map_obj_mem_essImage {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) {X : G.obj a}
+    (hX : (η.app a).toFunctor.essImage X) :
+    (η.app b).toFunctor.essImage ((G.map f).toFunctor.obj X) :=
+  ⟨(F.map f).toFunctor.obj hX.witness,
+    ⟨η.naturalityObjIso f _ ≪≫ (G.map f).toFunctor.mapIso hX.getIso⟩⟩
+
 /-- The naturality isomorphism of a strong transformation `η : F ⟶ G` into `Cat` along a
 composite `f ≫ g = fg`, on an object `X`: it is the image under `η` of the composition isomorphism
 of `F`, followed by the naturality isomorphisms along `g` and along `f`, and the inverse of the
@@ -267,6 +278,7 @@ lemma app_comp_naturalityObjIso_hom {B : Type u₁} [Bicategory.{w₁, v₁} B]
   have h := congrArg (fun t ↦ t.toNatTrans.app X) (Δ.as.naturality f)
   simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at h
   rw [naturalityObjIso_hom, naturalityObjIso_hom]
+  -- `h` matches the goal after unfolding the composite functors in `Cat`.
   exact h
 
 /-- Conjugating by the naturality isomorphism of a strong transformation `η` into `Cat` at `f`

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.CategoryTheory.Groupoid.Discrete
 public import TauCeti.CategoryTheory.Bicategory.Functor.SingleObj
 public import TauCeti.CategoryTheory.Sites.Descent.IsGerbe
+public import TauCeti.CategoryTheory.Sites.Descent.LocallyEssSurj
 public import TauCeti.CategoryTheory.Sites.Descent.TwoFiberProduct
 public import TauCeti.CategoryTheory.Sites.Descent.Yoneda
 
@@ -57,10 +58,9 @@ the universe `v` of the morphisms of `C`; this holds for pseudofunctors with val
 
 ## Main declarations
 
-* `CategoryTheory.Pseudofunctor.StrongTrans.IsLocallyEssSurj`,
-  `CategoryTheory.Pseudofunctor.StrongTrans.IsRelativeGerbe`: locally essentially surjective
-  transformations and relative gerbes, with the two local lifting statements `exists_covering_lift`
-  and `exists_covering_liftIso`.
+* `CategoryTheory.Pseudofunctor.StrongTrans.IsRelativeGerbe`: relative gerbes, extending
+  `StrongTrans.IsLocallyEssSurj` from `Descent/LocallyEssSurj.lean` with the local lifting statement
+  `exists_covering_liftIso`.
 * `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_of_isEquivalence`,
   `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_id`: transformations whose components
   are equivalences, and identities, are relative gerbes.
@@ -96,16 +96,6 @@ open CategoryTheory Opposite Bicategory
 namespace CategoryTheory.Pseudofunctor.StrongTrans
 
 variable {C : Type u} [Category.{v} C] {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
-
-/-- A strong transformation `η : F ⟶ G` is *locally essentially surjective* for a Grothendieck
-topology `J` if every object of `G` over `U` lifts along `η` up to isomorphism after pullback
-along every arrow of some `J`-covering sieve of `U`. -/
-class IsLocallyEssSurj (η : StrongTrans F G) (J : GrothendieckTopology C) : Prop where
-  /-- Every object `y` of `G` over `U` lifts along `η`, up to isomorphism, after pullback along
-  every arrow of some covering sieve of `U`. -/
-  exists_covering_lift {U : C} (y : G.obj (.mk (op U))) :
-    ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f → ∃ x : F.obj (.mk (op V)),
-      Nonempty ((η.app (.mk (op V))).toFunctor.obj x ≅ (G.map f.op.toLoc).toFunctor.obj y)
 
 /-- A strong transformation `η : F ⟶ G` is a *relative gerbe* for a Grothendieck topology `J`
 (Stacks, Lemma 8.11.3 (2) and Definition 8.11.4 (06NY)) if it is locally essentially surjective

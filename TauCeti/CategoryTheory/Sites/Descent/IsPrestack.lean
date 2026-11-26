@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Sites.CoversTop.Basic
 public import Mathlib.CategoryTheory.Sites.Descent.DescentData
 public import Mathlib.CategoryTheory.Sites.Hypercover.One
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
 
 import Mathlib.CategoryTheory.Sites.Coverage
 import Mathlib.CategoryTheory.Sites.Hypercover.SheafOfTypes
@@ -33,7 +34,10 @@ This file also shows that `pullHom` is compatible with composition and identitie
 hence sends isomorphisms to isomorphisms
 (`CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.inv_pullHom`), and that it sends the
 pullback `f^* φ` of a morphism `φ` to its pullback along the composite
-(`CategoryTheory.Pseudofunctor.pullHom_map`). Composition and identities of local morphisms are
+(`CategoryTheory.Pseudofunctor.pullHom_map`). It computes pullbacks of morphisms conjugated by
+strong-transformation naturality isomorphisms
+(`CategoryTheory.Pseudofunctor.StrongTrans.pullHom_naturalityObjIso`).
+Composition and identities of local morphisms are
 therefore morphisms of presheaves on `Over S`
 (`CategoryTheory.Pseudofunctor.presheafHomComp`, `CategoryTheory.Pseudofunctor.presheafHomId`).
 
@@ -222,6 +226,35 @@ lemma pullHom_eq_compIso ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ 
         (F.map g.op.toLoc).toFunctor.map φ ≫
         (F.compIso f₂.op g.op gf₂.op (by rw [← op_comp, hgf₂]) M₂).inv := by
   rw [pullHom, compIso_hom, compIso_inv]
+
+namespace StrongTrans
+
+/-- The pullback `pullHom` along `h` of a morphism `g^* (Φ A) ⟶ g^* (Φ' A)` written through the
+naturality isomorphisms of `Φ` and `Φ'` at `g`. -/
+lemma pullHom_naturalityObjIso
+    {P G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat} (Φ Φ' : P ⟶ G) {U T T' : C} (g : T ⟶ U) (h : T' ⟶ T)
+    (A : P.obj (.mk (op U)))
+    (z : (Φ.app (.mk (op T))).toFunctor.obj ((P.map g.op.toLoc).toFunctor.obj A) ⟶
+      (Φ'.app (.mk (op T))).toFunctor.obj ((P.map g.op.toLoc).toFunctor.obj A)) :
+    pullHom ((Φ.naturalityObjIso g.op.toLoc A).inv ≫ z ≫ (Φ'.naturalityObjIso g.op.toLoc A).hom)
+        h (h ≫ g) (h ≫ g) =
+      (Φ.naturalityObjIso (h ≫ g).op.toLoc A).inv ≫
+        (Φ.app _).toFunctor.map (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).hom ≫
+          (Φ.naturalityObjIso h.op.toLoc _).hom ≫ (G.map h.op.toLoc).toFunctor.map z ≫
+            (Φ'.naturalityObjIso h.op.toLoc _).inv ≫
+              (Φ'.app _).toFunctor.map (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).inv ≫
+                (Φ'.naturalityObjIso (h ≫ g).op.toLoc A).hom := by
+  rw [pullHom_eq_compIso, Φ.naturalityObjIso_inv_comp' g.op.toLoc h.op.toLoc (h ≫ g).op.toLoc rfl,
+    Φ'.naturalityObjIso_hom_comp' g.op.toLoc h.op.toLoc (h ≫ g).op.toLoc rfl,
+    ← compIso_hom P g.op h.op (h ≫ g).op op_comp.symm A,
+    ← compIso_inv P g.op h.op (h ≫ g).op op_comp.symm A,
+    ← compIso_hom G g.op h.op (h ≫ g).op op_comp.symm ((Φ.app _).toFunctor.obj A),
+    ← compIso_inv G g.op h.op (h ≫ g).op op_comp.symm ((Φ'.app _).toFunctor.obj A)]
+  simp only [Functor.map_comp, Category.assoc, ← Functor.map_comp_assoc (Φ.app _).toFunctor,
+    ← Functor.map_comp_assoc (Φ'.app _).toFunctor, Iso.inv_hom_id, Functor.map_id,
+    Category.id_comp, Iso.inv_hom_id_assoc]
+
+end StrongTrans
 
 /-- The pullback of a composite of local morphisms is the composite of their pullbacks. -/
 @[reassoc]
