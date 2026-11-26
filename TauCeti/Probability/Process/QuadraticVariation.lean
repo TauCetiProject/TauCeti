@@ -62,6 +62,15 @@ theorem quadraticSum_nonneg {Ω : Type*} {n : ℕ} (B : ℝ≥0 → Ω → ℝ)
     (t : Fin (n + 1) → ℝ≥0) (ω : Ω) : 0 ≤ quadraticSum B t ω :=
   Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
 
+/-- Along the `Fin (n + 1)` restriction of a `ℕ`-indexed grid `π`, the quadratic sum equals the
+sum of squared increments over `Finset.range n`. -/
+theorem quadraticSum_comp_fin_val {Ω : Type*} {n : ℕ} (B : ℝ≥0 → Ω → ℝ)
+    (π : ℕ → ℝ≥0) (ω : Ω) :
+    quadraticSum B (fun j : Fin (n + 1) ↦ π j) ω =
+      ∑ i ∈ Finset.range n, (B (π (i + 1)) ω - B (π i) ω) ^ 2 := by
+  rw [quadraticSum_def]
+  exact Fin.sum_univ_eq_sum_range (fun i ↦ (B (π (i + 1)) ω - B (π i) ω) ^ 2) n
+
 variable {Ω : Type*} {X A : ℝ≥0 → Ω → ℝ} {s : Set ℝ≥0}
 
 private theorem tendsto_quadraticSum_add_sub {ι : Type*} {l : Filter ι} {N : ι → ℕ}

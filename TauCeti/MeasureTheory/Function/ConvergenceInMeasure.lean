@@ -27,8 +27,10 @@ filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 Convergence in mean absolute norm implies vanishing tail measures even when the measure spaces
 vary with the index. Convergence in mean square implies convergence in measure, with
 integrability of the squared deviations required only eventually along the filter. Chebyshev-type
-bounds with an auxiliary truncation level give measures tending to zero. Real functions tending to
-zero in measure have upper tails of measure tending to zero.
+bounds with an auxiliary truncation level give measures tending to zero, and convergence in measure
+can be localized off a family of exceptional sets whose measures have infimum zero without
+measurability or finiteness hypotheses. Real functions tending to zero in measure have upper tails
+of measure tending to zero.
 
 This file also develops continuous and algebraic stability of `MeasureTheory.TendstoInMeasure`:
 * Pairing (`TendstoInMeasure.prodMk`), uniformly continuous unary and binary maps
@@ -75,6 +77,9 @@ between equivalent finite measures.
   `μ {x | dist (f i x) (g x) ≤ rate i} → 1`; here null-measurability of the
   good events (eventually along the filter) is genuinely needed, since an outer
   measure can assign full measure to both a set and its complement.
+* `TauCeti.tendstoInMeasure_of_iInf_measure_eq_zero`: localize convergence in measure off a family
+  of exceptional sets whose infimum measure vanishes (`⨅ m, μ (F m) = 0`), without measurability
+  or finiteness assumptions.
 * `TauCeti.tendsto_measure_of_le_ofReal_div_sq_add`: a measure bounded by `δ / ε²` plus a
   term tending to zero for every `δ > 0` tends to zero.
 * `TauCeti.tendsto_measure_lt_of_tendstoInMeasure`: real functions tending to zero in measure
@@ -170,6 +175,38 @@ theorem tendstoInMeasure_of_tendsto_measure_dist_le_rate [PseudoMetricSpace E]
   filter_upwards [hmeas] with i hi
   rw [← prob_compl_eq_one_sub₀ hi, Set.compl_ofPred]
   simp_rw [not_le]
+
+/-- **Localization of convergence in measure.** If a family of exceptional sets `F m` satisfies
+`⨅ m, μ (F m) = 0`, and for each `m` a localized family `f_loc m` converges in measure to `g_loc m`
+along `l` while dominating `edist (f k x) (g x)` almost everywhere off `F m` eventually along `l`,
+then `f` converges in measure to `g` along `l`. No measurability of `F m` or finiteness of `μ` is
+needed. -/
+theorem tendstoInMeasure_of_iInf_measure_eq_zero {E' : Type*} {κ : Sort*} [EDist E] [EDist E']
+    {f : ι → α → E} {g : α → E} {F : κ → Set α}
+    {f_loc : κ → ι → α → E'} {g_loc : κ → α → E'}
+    (hF : ⨅ m, μ (F m) = 0)
+    (hlim : ∀ m, TendstoInMeasure μ (f_loc m) l (g_loc m))
+    (hle : ∀ m, ∀ᶠ k in l, ∀ᵐ x ∂μ, x ∉ F m →
+      edist (f k x) (g x) ≤ edist (f_loc m k x) (g_loc m x)) :
+    TendstoInMeasure μ f l g := by
+  intro ε hε
+  refine ENNReal.tendsto_nhds_zero.2 fun η hη ↦ ?_
+  have hη2 : 0 < η / 2 := ENNReal.half_pos hη.ne'
+  obtain ⟨m, hm⟩ : ∃ m, μ (F m) < η / 2 := iInf_lt_iff.1 (hF.symm ▸ hη2)
+  filter_upwards [ENNReal.tendsto_nhds_zero.1 (hlim m ε hε) (η / 2) hη2, hle m] with k hkm hlek
+  have hsub :
+      ({x | ε ≤ edist (f k x) (g x)} : Set α) ≤ᵐ[μ]
+        ({x | ε ≤ edist (f_loc m k x) (g_loc m x)} ∪ F m : Set α) := by
+    filter_upwards [hlek] with x hx hmem
+    by_cases hxF : x ∈ F m
+    · exact Or.inr hxF
+    · exact Or.inl (hmem.trans (hx hxF))
+  calc
+    μ {x | ε ≤ edist (f k x) (g x)}
+        ≤ μ ({x | ε ≤ edist (f_loc m k x) (g_loc m x)} ∪ F m) := measure_mono_ae hsub
+    _ ≤ μ {x | ε ≤ edist (f_loc m k x) (g_loc m x)} + μ (F m) := measure_union_le _ _
+    _ ≤ η / 2 + η / 2 := add_le_add hkm hm.le
+    _ = η := ENNReal.add_halves η
 
 /-- If, for every `δ > 0`, the measure of `A k` is at most `δ / ε²` plus a term `B δ k` tending to
 zero along `l`, then the measure of `A k` tends to zero. This is how Chebyshev-type estimates

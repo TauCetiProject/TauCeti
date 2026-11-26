@@ -57,6 +57,10 @@ A point off a finite set stays farther than `ε` from all of its points for ever
 A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` has norm at most
 `R / (1 - γ)`.
 
+Finite sums in a seminormed additive group tend to `0` along a filter if their summands are
+eventually termwise bounded by arbitrarily small positive multiples of real weights whose totals
+are eventually bounded above.
+
 ## Main declarations
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
@@ -98,6 +102,8 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
   enough `ε > 0`, farther than `ε` from each point of `S`.
 * `TauCeti.norm_le_div_of_isFixedPt` -- a fixed point `v` of `T` with `‖T v‖ ≤ R + γ ‖v‖` and
   `γ < 1` satisfies `‖v‖ ≤ R / (1 - γ)`.
+* `TauCeti.tendsto_sum_zero_of_forall_norm_le_mul` -- finite sums whose terms are eventually
+  bounded by arbitrarily small multiples of real weights with eventually bounded total tend to `0`.
 -/
 
 public section
@@ -303,5 +309,28 @@ theorem norm_le_div_of_isFixedPt {E : Type*} [Norm E] {T : E → E} {v : E} {R �
   rw [hv.eq] at hT
   rw [le_div_iff₀ (sub_pos.2 hγ)]
   linarith
+
+/-- If the summands of finite sums in a seminormed additive group are eventually termwise bounded
+by arbitrarily small positive multiples of real weights whose totals are eventually bounded above,
+then the finite sums tend to `0`. -/
+theorem tendsto_sum_zero_of_forall_norm_le_mul {ι α E : Type*} [SeminormedAddCommGroup E]
+    {l : Filter ι} {s : ι → Finset α} {f : ι → α → E} {w : ι → α → ℝ}
+    (hf : ∀ ε > 0, ∀ᶠ k in l, ∀ i ∈ s k, ‖f k i‖ ≤ ε * w k i)
+    (hw : l.IsBoundedUnder (· ≤ ·) fun k ↦ ∑ i ∈ s k, w k i) :
+    Tendsto (fun k ↦ ∑ i ∈ s k, f k i) l (𝓝 0) := by
+  obtain ⟨K, hK⟩ := hw
+  rw [eventually_map] at hK
+  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
+  have hKpos : 0 < max K 0 + 1 := by positivity
+  filter_upwards [hf (ε / (max K 0 + 1)) (div_pos hε hKpos), hK] with k hfk hKk
+  rw [dist_zero_right]
+  calc
+    ‖∑ i ∈ s k, f k i‖ ≤ ∑ i ∈ s k, ε / (max K 0 + 1) * w k i := norm_sum_le_of_le (s k) hfk
+    _ = ε / (max K 0 + 1) * ∑ i ∈ s k, w k i := (Finset.mul_sum ..).symm
+    _ ≤ ε / (max K 0 + 1) * max K 0 :=
+      mul_le_mul_of_nonneg_left (hKk.trans (le_max_left _ _)) (by positivity)
+    _ < ε := by
+      rw [div_mul_eq_mul_div, div_lt_iff₀ hKpos]
+      exact mul_lt_mul_of_pos_left (lt_add_one _) hε
 
 end TauCeti

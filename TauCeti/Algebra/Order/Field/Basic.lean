@@ -66,7 +66,8 @@ solve the second estimate for `Y` and substitute it into the first.
 It also records that the normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in
 `[0, 1]`, also when the interval is degenerate, and that for a finite family of nonnegative
 elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each reciprocal `(x j)⁻¹`.
-Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`, and for
+Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`, the midpoint
+`(a + b) / 2` satisfies `a ≤ (a + b) / 2 ↔ a ≤ b` and `(a + b) / 2 ≤ b ↔ a ≤ b`, and for
 nonnegative elements in a linearly ordered semifield the bounded-metric gauge `t ↦ t / (1 + t)` is
 nonnegative, strictly below `1`, monotone, subadditive, subhomogeneous under factors `≥ 1`, and
 zero only at `0`.
@@ -122,6 +123,8 @@ zero only at `0`.
   `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
   scaling bound, and zero characterization of the gauge `t / (1 + t)` for `0 ≤ t`.
 * `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
+* `TauCeti.left_le_add_div_two`, `TauCeti.add_div_two_le_right`: non-strict counterparts of
+  `left_lt_add_div_two` and `add_div_two_lt_right` in a strictly ordered semifield.
 -/
 
 public section
@@ -528,6 +531,20 @@ theorem mul_div_one_add_mul_le {α : Type*} [Semifield α] [LinearOrder α]
 theorem div_one_add_eq_zero_iff {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
     {t : α} (ht : 0 ≤ t) : t / (1 + t) = 0 ↔ t = 0 :=
   div_eq_zero_iff.trans (or_iff_left (add_pos_of_pos_of_nonneg zero_lt_one ht).ne')
+
+/-- Non-strict counterpart of `left_lt_add_div_two`: the midpoint `(a + b) / 2` lies at or above
+`a` if and only if `a ≤ b`. -/
+theorem left_le_add_div_two {α : Type*} [Semifield α] [PartialOrder α] [PosMulReflectLT α]
+    [IsStrictOrderedRing α] {a b : α} : a ≤ (a + b) / 2 ↔ a ≤ b := by
+  have := PosMulReflectLT.toMulPosReflectLT (α := α)
+  rw [le_div_iff₀ (zero_lt_two' α), mul_two, add_le_add_iff_left]
+
+/-- Non-strict counterpart of `add_div_two_lt_right`: the midpoint `(a + b) / 2` lies at or below
+`b` if and only if `a ≤ b`. -/
+theorem add_div_two_le_right {α : Type*} [Semifield α] [PartialOrder α] [PosMulReflectLT α]
+    [IsStrictOrderedRing α] {a b : α} : (a + b) / 2 ≤ b ↔ a ≤ b := by
+  have := PosMulReflectLT.toMulPosReflectLT (α := α)
+  rw [div_le_iff₀ (zero_lt_two' α), mul_two, add_le_add_iff_right]
 
 end TauCeti
 

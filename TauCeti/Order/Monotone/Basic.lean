@@ -9,11 +9,17 @@ public import Mathlib.Data.Nat.Basic
 public import Mathlib.Data.Set.Subsingleton
 public import Mathlib.Logic.Function.Basic
 public import Mathlib.Logic.Pairwise
+public import Mathlib.Order.Fin.Basic
 public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Order.Monotone.Defs
+public import Mathlib.Order.Nat
+public import Mathlib.Order.SetNotation
+public import TauCeti.Data.Stream.Init
+import Mathlib.Order.Interval.Set.OrdConnected
+import Mathlib.Order.SuccPred.Nat
 
 /-!
-# Monotonicity on sets: point updates, grids and two-sided minima
+# Monotonicity on sets: point updates, grids, interleaving and two-sided minima
 
 No function is both strictly monotone and strictly antitone on a set with two points
 (`Set.Nontrivial.not_strictMonoOn_and_strictAntiOn`).
@@ -27,6 +33,10 @@ The consecutive intervals `[f i, f (i + 1)]`, `i < n`, of a grid `f` monotone th
 point `f n` follow one another: of two distinct ones, one ends before the other starts
 (`MonotoneOn.pairwise_succ_le_or_succ_le`). For a monotone `ℤ`-indexed sequence, a point strictly
 inside one of these intervals lies in no other (`Monotone.mem_Icc_iff_eq_of_mem_Ioo`).
+
+Interleaving two sequences `a` and `c` as `TauCeti.interleave a c`, namely
+`a 0, c 0, a 1, c 1, …, a n`, produces a monotone sequence on `Iic (2 * n)` whenever
+`a i ≤ c i ≤ a (i + 1)` for every `i < n` (`TauCeti.monotoneOn_interleave_Iic`).
 
 A function on a linearly ordered domain that decreases on `s ∩ (-∞, a]` and increases
 on `s ∩ [a, ∞)` attains its global minimum on `s` at `a` (`TauCeti.le_of_antitoneOn_monotoneOn`),
@@ -42,6 +52,10 @@ strictly so away from `a` when both halves are strict (`TauCeti.lt_of_strictAnti
   overlap at most at an endpoint.
 * `Monotone.mem_Icc_iff_eq_of_mem_Ioo`: a point strictly inside the interval `(a k, a (k + 1))`
   of a monotone `ℤ`-indexed sequence lies in `[a q, a (q + 1)]` exactly when `q = k`.
+* `MonotoneOn.comp_fin_val`, `MonotoneOn.comp_fin_val_Iic`: restrict a function monotone on `Iio n`
+  or `Iic n` along `Fin.val` to obtain a `Monotone` function on `Fin n` or `Fin (n + 1)`.
+* `TauCeti.monotoneOn_interleave_Iic`: `TauCeti.interleave a c` is monotone on `Iic (2 * n)` when
+  `a i ≤ c i` and `c i ≤ a (i + 1)` for `i < n`.
 * `TauCeti.le_of_antitoneOn_monotoneOn`: if `f` is antitone on `s ∩ Iic a` and monotone on
   `s ∩ Ici a` with `a ∈ s`, then `f a ≤ f x` for all `x ∈ s`.
 * `TauCeti.lt_of_strictAntiOn_strictMonoOn`: if `f` is strictly antitone on `s ∩ Iic a` and
@@ -104,7 +118,28 @@ theorem Monotone.mem_Icc_iff_eq_of_mem_Ioo {α : Type*} [Preorder α] {a : ℤ �
   · exact (h.2.trans_lt ((ha (by omega)).trans_lt hx.1)).false
   · exact ((hx.2.trans_le (ha (by omega))).trans_le h.1).false
 
+/-- Restricting a function monotone on `Iio n` along `Fin.val : Fin n → ℕ` yields a monotone
+function on `Fin n`. -/
+theorem MonotoneOn.comp_fin_val {α : Type*} [Preorder α] {n : ℕ} {f : ℕ → α}
+    (hf : MonotoneOn f (Iio n)) : Monotone (fun i : Fin n ↦ f i) :=
+  fun i j hij ↦ hf i.isLt j.isLt hij
+
+/-- Restricting a function monotone on `Iic n` along `Fin.val : Fin (n + 1) → ℕ` yields a monotone
+function on `Fin (n + 1)`. -/
+theorem MonotoneOn.comp_fin_val_Iic {α : Type*} [Preorder α] {n : ℕ} {f : ℕ → α}
+    (hf : MonotoneOn f (Iic n)) : Monotone (fun i : Fin (n + 1) ↦ f i) :=
+  fun i j hij ↦ hf (Nat.le_of_lt_succ i.isLt) (Nat.le_of_lt_succ j.isLt) hij
+
 namespace TauCeti
+
+/-- Interleaving `a 0, c 0, a 1, c 1, …, a n` via `TauCeti.interleave a c` produces a monotone
+sequence on `{0, …, 2 * n}` whenever `a i ≤ c i` and `c i ≤ a (i + 1)` for every `i < n`. -/
+theorem monotoneOn_interleave_Iic {α : Type*} [Preorder α] {n : ℕ} {a c : ℕ → α}
+    (hac : ∀ i < n, a i ≤ c i ∧ c i ≤ a (i + 1)) :
+    MonotoneOn (interleave a c) (Iic (2 * n)) :=
+  monotoneOn_of_le_add_one ordConnected_Iic fun j _ _ hj ↦
+    (forall_lt_two_mul_interleave_succ_iff (R := fun _ x y ↦ x ≤ y)).2 hac j
+      (Nat.lt_of_succ_le hj)
 
 /-- If `f` is antitone on `s ∩ (-∞, a]` and monotone on `s ∩ [a, ∞)` with `a ∈ s`, then `f`
 attains its minimum on `s` at `a`. -/
