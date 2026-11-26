@@ -207,21 +207,23 @@ theorem maslovPhase_symm {L₁ : Submodule ℝ E}
   refine eq_inv_of_mul_eq_one_left ?_
   rw [mul_comm, hL.maslovPhase_mul_maslovPhase hL₁ hL, hL.maslovPhase_self]
 
-/-- The Maslov phase is invariant under a simultaneous complex-linear change of coordinates. -/
-theorem maslovPhase_map_map {L₁ : Submodule ℝ E}
+/-- The Maslov phase is invariant under a simultaneous complex-linear change of coordinates, which
+may take values in another complex module. -/
+theorem maslovPhase_map_map {F : Type*} [AddCommGroup F] [Module ℝ F] [Module ℂ F]
+    [IsScalarTower ℝ ℂ F] {L₁ : Submodule ℝ E}
     (hL₁ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₁)
-    (B : E ≃ₗ[ℂ] E) :
+    (B : E ≃ₗ[ℂ] F) :
     (hL.map_linearEquiv B).maslovPhase (hL₁.map_linearEquiv B) = hL.maslovPhase hL₁ := by
   obtain ⟨A, rfl⟩ := hL.exists_linearEquiv_map_eq hL₁
   -- `B (A L) = (B A B⁻¹) (B L)`, and conjugation does not change the determinant.
-  let C : E ≃ₗ[ℂ] E := B.symm.trans (A.trans B)
-  have hconj : (L.map ((A : E →ₗ[ℂ] E).restrictScalars ℝ)).map ((B : E →ₗ[ℂ] E).restrictScalars ℝ) =
-      (L.map ((B : E →ₗ[ℂ] E).restrictScalars ℝ)).map ((C : E →ₗ[ℂ] E).restrictScalars ℝ) := by
+  let C : F ≃ₗ[ℂ] F := B.symm.trans (A.trans B)
+  have hconj : (L.map ((A : E →ₗ[ℂ] E).restrictScalars ℝ)).map ((B : E →ₗ[ℂ] F).restrictScalars ℝ) =
+      (L.map ((B : E →ₗ[ℂ] F).restrictScalars ℝ)).map ((C : F →ₗ[ℂ] F).restrictScalars ℝ) := by
     rw [← Submodule.map_comp, ← Submodule.map_comp]
     congr 1
     ext x
     simp [C]
-  have hdet : LinearMap.det (C : E →ₗ[ℂ] E) = LinearMap.det (A : E →ₗ[ℂ] E) := by
+  have hdet : LinearMap.det (C : F →ₗ[ℂ] F) = LinearMap.det (A : E →ₗ[ℂ] E) := by
     rw [← LinearMap.det_conj (A : E →ₗ[ℂ] E) B]
     simp only [C, LinearEquiv.coe_trans, LinearMap.comp_assoc]
   rw [(hL.map_linearEquiv B).maslovPhase_congr (hL₁.map_linearEquiv B)

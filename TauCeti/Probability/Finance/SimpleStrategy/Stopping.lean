@@ -134,10 +134,10 @@ theorem exists_simpleHolding_simpleGains_dyadicCeilTime
         fun h ↦ (hi h).elim, fun h ↦ (hi h).elim⟩
   choose N p ζ C' hp hζ hC' hhold hgain using hsingle
   let s : Finset (Σ _ : ℕ, ℕ) := (range n).sigma fun i ↦ range (N i)
-  obtain ⟨M, ρ, c, -, hρ, hc, hbound, hH, hG⟩ :=
+  obtain ⟨M, ρ, c, -, hρ, -, -, hc, -, hbound, hH, hG⟩ :=
     exists_simpleHolding_simpleGains_eq_sum ℱ s (fun q ↦ p q.1 q.2) (fun q ↦ p q.1 (q.2 + 1))
       (fun q ↦ ζ q.1 q.2) (fun q hq ↦ hζ q.1 q.2 (mem_range.mp (mem_sigma.mp hq).2))
-  refine ⟨M, ρ, c, ∑ i ∈ range n, ∑ _ ∈ range (N i), C' i, hρ.monotoneOn, hc,
+  refine ⟨M, ρ, c, ∑ i ∈ range n, ∑ _ ∈ range (N i), C' i, hρ.monotoneOn, fun j _ ↦ hc j,
     fun j hj ω ↦ (hbound j hj ω).trans ?_, fun u huT ω ↦ ?_, fun X ω ↦ ?_⟩
   · dsimp only [s]
     rw [Finset.sum_sigma]

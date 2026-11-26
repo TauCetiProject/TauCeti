@@ -148,7 +148,8 @@ private theorem isItoIntegral_of_localized_stages
     simp only [energyLevelCutoff, (WithTop.coe_le_coe.mpr hs'.2).trans ht_lt.le, ite_true,
       nnvolume.finiteEnergyCutoff_eqOn (hfin t) hs'.2]
   -- Step 4: transfer energy and integral convergence in probability via the vanishing bad sets.
-  refine ⟨K,
+  refine ⟨fun n ↦ (K n).n, fun n ↦ (K n).dates, fun n ↦ (K n).positions,
+    fun n ↦ (K n).monotone_dates.monotoneOn _, fun n ↦ (K n).measurable_positions,
     fun ε hε ↦ TauCeti.tendsto_measure_of_ae_subset_union hB_lim
       (TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
         (f := fun n p ↦ (K n).toProcess p.1 p.2 - energyLevelCutoff H n p.1 p.2)
@@ -157,7 +158,8 @@ private theorem isItoIntegral_of_localized_stages
         hK_L2 hε)
       (Eventually.of_forall fun n ↦ hgood.mono fun ω hω hA ↦
         (Classical.em (ω ∈ B n)).imp id fun hB ↦ by
-          simpa only [Set.mem_ofPred_eq, ← (hω n hB).2] using hA),
+          simpa only [Set.mem_ofPred_eq, ← ElementaryIntegrand.toProcess_eq_simpleHolding,
+            ← (hω n hB).2] using hA),
     fun ε hε ↦ TauCeti.tendsto_measure_of_ae_subset_union hB_lim
       ((tendstoInMeasure_of_tendsto_eLpNorm (p := 2)
         (f := fun n ↦ (K n).integral W t - U n t)
@@ -165,7 +167,7 @@ private theorem isItoIntegral_of_localized_stages
       (Eventually.of_forall fun n ↦ hgood.mono fun ω hω hA ↦
         (Classical.em (ω ∈ B n)).imp id fun hB ↦ by
           simpa only [Set.mem_ofPred_eq, Pi.sub_apply, Pi.zero_apply, eDist_eq_eNorm_sub,
-            sub_zero, (hω n hB).1] using hA)⟩
+            sub_zero, ← ElementaryIntegrand.integral_eq_simpleGains, (hω n hB).1] using hA)⟩
 
 /-- **Internal `L²` stage lemma:** stopping an Itô integral of a `BrownianIntegrable` integrand
 at any stopping time `τ` produces an Itô integral of the cutoff integrand `1_{[0, τ]} · H`. -/
@@ -431,18 +433,24 @@ private theorem isItoIntegral_ite_Ioc_mul_of_brownianIntegrable
     simpa only [L, toProcess_clipIocMul] using eLpNorm_ite_Ioc_mul_sub_le ℱ P hξ hCξ
       (K k).isStronglyPredictable hH.isStronglyPredictable
   -- Step 3: conclude convergence in probability of `(L k).integral W T` via uniform limits.
-  refine ⟨L,
+  refine ⟨fun k ↦ (L k).n, fun k ↦ (L k).dates, fun k ↦ (L k).positions,
+    fun k ↦ (L k).monotone_dates.monotoneOn _, fun k ↦ (L k).measurable_positions,
     fun _ hε ↦ TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
-      (fun k ↦ (((L k).isStronglyPredictable.sub hpred).mono
-        ℱ.predictable_le_prod).aestronglyMeasurable)
-      hL2 hε,
+      (f := fun k p ↦
+        Finance.simpleHolding (L k).dates (L k).n (L k).positions p.1 p.2 -
+          if s < p.1 ∧ p.1 ≤ t then ξ p.2 * H p.1 p.2 else 0)
+      (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (L k).measurable_positions).sub
+        hpred).mono ℱ.predictable_le_prod).aestronglyMeasurable)
+      (by simpa only [← ElementaryIntegrand.toProcess_eq_simpleHolding] using hL2) hε,
     tendstoInMeasure_of_tendsto_ae (fun k ↦
-      ((L k).stronglyAdapted_integral hW.adapted.stronglyAdapted T).mono (ℱ.le T)
-        |>.aestronglyMeasurable)
+      ((Finance.stronglyAdapted_simpleGains ((L k).monotone_dates.monotoneOn _)
+        (L k).measurable_positions hW.adapted.stronglyAdapted T).mono
+        (ℱ.le T)).aestronglyMeasurable)
       (hunif.mono fun ω hω ↦ ?_)⟩
   have h1 := (hω (max (min T t) (min T s))).tendsto_at (Set.mem_Iic.mpr (le_max_left _ _))
   have h2 := (hω (max (min T t) (min T s))).tendsto_at (Set.mem_Iic.mpr (le_max_right _ _))
-  simpa only [L, integral_clipIocMul] using (tendsto_const_nhds (x := ξ ω)).mul (h1.sub h2)
+  simpa only [L, ← ElementaryIntegrand.integral_eq_simpleGains, integral_clipIocMul] using
+    (tendsto_const_nhds (x := ξ ω)).mul (h1.sub h2)
 
 /-- Identify the localized `L²` stages of any Itô integral along `energyLevelLocalizer H`. -/
 private theorem exists_isItoIntegral_stoppedProcess_energyLevelLocalizer

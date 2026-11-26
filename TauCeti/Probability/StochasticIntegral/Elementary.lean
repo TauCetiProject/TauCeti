@@ -549,7 +549,7 @@ theorem exists_toProcess_add_integral_add (K L : ElementaryIntegrand ℱ) :
     rintro (j | j) hj <;> simp only [s, inl_mem_disjSum, inr_mem_disjSum, mem_range] at hj
     · exact K.measurable_positions j hj
     · exact L.measurable_positions j hj
-  obtain ⟨n, τ, b, -, hτ, hb_meas, hb_bdd, hhold, hgain⟩ :=
+  obtain ⟨n, τ, b, -, hτ, -, -, hb_meas, -, hb_bdd, hhold, hgain⟩ :=
     Finance.exists_simpleHolding_simpleGains_eq_sum ℱ s l u a ha
   choose CK hCK using K.bounded_positions
   choose CL hCL using L.bounded_positions
@@ -560,7 +560,7 @@ theorem exists_toProcess_add_integral_add (K L : ElementaryIntegrand ℱ) :
     exact add_le_add
       (sum_le_sum fun i _ ↦ by simpa [Real.norm_eq_abs] using hCK i ω)
       (sum_le_sum fun i _ ↦ by simpa [Real.norm_eq_abs] using hCL i ω)
-  refine ⟨ofSimpleHolding hτ.monotoneOn hb_meas hb_unif, ?_, fun X ↦ ?_⟩
+  refine ⟨ofSimpleHolding hτ.monotoneOn (fun j _ ↦ hb_meas j) hb_unif, ?_, fun X ↦ ?_⟩
   · ext t ω
     rw [toProcess_ofSimpleHolding, hhold t ω, sum_disjSum]
     simp only [l, u, a, Sum.elim_inl, Sum.elim_inr, Pi.add_apply, toProcess_eq_simpleHolding,

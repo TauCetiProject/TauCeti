@@ -292,6 +292,18 @@ theorem normSq_add : normSq (x + y) = normSq x + normSq y + 2 * (x * star y).fst
   simp [normSq_def, Quaternion.normSq_def']
   ring
 
+/-- **The polarization of the norm through the trace**: `N (x + y) = N x + N y + T (x * star y)`,
+the trace pairing `T (x * star y)` being the polar form of the norm. -/
+theorem normSq_add_eq_add_trace_mul_star :
+    normSq (x + y) = normSq x + normSq y + trace (x * star y) := by
+  rw [normSq_add, trace_apply]
+
+/-- The polarization of the norm at a difference: `N (x - y) = N x + N y - T (x * star y)`. -/
+theorem normSq_sub_eq_add_sub_trace_mul_star :
+    normSq (x - y) = normSq x + normSq y - trace (x * star y) := by
+  rw [sub_eq_add_neg, normSq_add_eq_add_trace_mul_star, normSq_neg, star_neg, mul_neg, map_neg,
+    sub_eq_add_neg]
+
 end CommRing
 
 /-! ### Definiteness of the norm -/

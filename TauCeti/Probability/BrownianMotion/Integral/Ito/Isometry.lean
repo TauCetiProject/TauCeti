@@ -173,13 +173,18 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral_approx
   obtain ⟨I, hI, hIp, hIlim, -, φ, hφ, hIc⟩ := exists_continuous_martingale_of_cauchySeq_Lp hmart
     (fun k ↦ hWc.mono fun ω hω ↦ (K k).continuous_integral hω) hmem hcau
   refine ⟨I, fun k ↦ K (φ k),
-    ⟨hH.isStronglyPredictable, hIc.mono fun ω hω ↦ hω.1, fun t ↦ ⟨K,
-      fun _ hε ↦ TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
-        (f := fun k p ↦ (K k).toProcess p.1 p.2 - H p.1 p.2)
-        (fun k ↦ (((K k).isStronglyPredictable.sub
-          hH.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
-        (hKH t) hε,
-      tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩,
+    ⟨hH.isStronglyPredictable, hIc.mono fun ω hω ↦ hω.1, fun t ↦
+      ⟨fun k ↦ (K k).n, fun k ↦ (K k).dates, fun k ↦ (K k).positions,
+        fun k ↦ (K k).monotone_dates.monotoneOn _, fun k ↦ (K k).measurable_positions,
+        fun _ hε ↦ TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
+          (f := fun k p ↦
+            Finance.simpleHolding (K k).dates (K k).n (K k).positions p.1 p.2 - H p.1 p.2)
+          (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (K k).measurable_positions).sub
+            hH.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
+          (by simpa only [ElementaryIntegrand.toProcess_eq_simpleHolding] using hKH t) hε,
+        by
+          simpa only [ElementaryIntegrand.integral_eq_simpleGains] using
+            tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩,
     hIp, hI,
     fun T ↦ (hKH T).comp hφ.tendsto_atTop,
     hIc.mono fun ω hω ↦ hω.2⟩

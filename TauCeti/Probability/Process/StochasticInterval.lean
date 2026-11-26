@@ -16,6 +16,8 @@ For stopping times `σ` and `τ` on a raw filtration, the stochastic intervals `
 and `[0,τ]` are predictable. An event known at `σ` can also be imposed on `(σ,τ]`.
 Consequently, cutting a predictable integrand off at a stopping time preserves
 predictability. No right continuity or completeness of the filtration is needed.
+On any linearly ordered time index, half-open stochastic intervals `[σ, τ)` (and their
+restrictions to an event) equal differences of closed stochastic rays `[σ, ∞) \ [τ, ∞)`.
 
 The lower integral of a nonnegative integrand cut off at `τ` is the stopped cumulative
 integral. This pathwise identity includes infinite energies and infinite stopping times;
@@ -174,5 +176,27 @@ theorem ite_Ioc_eq_add_ite_Ioc {ι Ω E : Type*} [LinearOrder ι] [AddCommMonoid
   have hmem := congr_fun (indicator_union_of_disjoint hdisj (fun _ ↦ H u ω)) (u : WithTop ι)
   rw [Ioc_union_Ioc_eq_Ioc (hρσ ω) (hστ ω)] at hmem
   simpa only [indicator_apply, mem_Ioc] using hmem
+
+end TauCeti
+
+namespace TauCeti
+
+/-- A half-open stochastic interval `[σ, τ)` restricted to an event `A` is the difference of the
+closed stochastic ray `[σ, ∞)` restricted to `A` and the closed stochastic ray `[τ, ∞)`. -/
+theorem stochasticIco_inter_eq_sdiff {ι Ω : Type*} [LinearOrder ι]
+    (σ τ : Ω → WithTop ι) (A : Set Ω) :
+    {p : ι × Ω | σ p.2 ≤ p.1 ∧ (p.1 : WithTop ι) < τ p.2 ∧ p.2 ∈ A} =
+      {p : ι × Ω | σ p.2 ≤ p.1 ∧ p.2 ∈ A} \ {p : ι × Ω | τ p.2 ≤ p.1} := by
+  ext p
+  simp only [mem_ofPred_eq, mem_sdiff, not_le]
+  tauto
+
+/-- A half-open stochastic interval `[σ, τ)` is the difference of the closed stochastic rays
+`[σ, ∞)` and `[τ, ∞)`. -/
+theorem stochasticIco_eq_sdiff {ι Ω : Type*} [LinearOrder ι]
+    (σ τ : Ω → WithTop ι) :
+    {p : ι × Ω | σ p.2 ≤ p.1 ∧ (p.1 : WithTop ι) < τ p.2} =
+      {p : ι × Ω | σ p.2 ≤ p.1} \ {p : ι × Ω | τ p.2 ≤ p.1} := by
+  simpa using stochasticIco_inter_eq_sdiff σ τ Set.univ
 
 end TauCeti

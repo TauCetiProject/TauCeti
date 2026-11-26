@@ -24,6 +24,8 @@ space is the expected-square-energy space for Brownian integrands.
 The measure agrees with the ambient product measure on predictable sets. In particular,
 `(s,t] × A`, with `A` known at `s` and `t ≤ T`, has mass `(t-s) P(A)`. The initial-time
 slice has mass zero, and restricting to a shorter horizon commutes with trimming.
+The symmetric difference of initial time strips has mass equal to their clipped endpoint
+distance times the mass of their common event.
 Filtered measure-preserving sample maps preserve these predictable measures, even with
 different ambient measurable spaces.
 Native `lintegral_trim`, `integral_trim`, and `eLpNorm_trim` then identify predictable
@@ -46,7 +48,7 @@ representative identity, and its API follows the deterministic `timeMeasureExten
 public section
 
 open MeasureTheory Set TauCeti.Probability
-open scoped NNReal ENNReal
+open scoped NNReal ENNReal symmDiff
 
 namespace MeasureTheory.Filtration
 
@@ -111,6 +113,23 @@ theorem predictableMeasure_Ioc_prod (ℱ : Filtration ℝ≥0 m) (P : Measure Ω
       ENNReal.ofReal ((min t T : ℝ≥0) - (s : ℝ)) * P A := by
   rw [predictableMeasure_apply _ _ _ (measurableSet_predictable_Ioc_prod _ _ hA),
     Measure.prod_prod, timeMeasure_Ioc]
+
+/-- Initial predictable strips over the same event differ by their clipped endpoint
+distance times the event mass. -/
+@[simp]
+theorem predictableMeasure_symmDiff_Ioc_prod (ℱ : Filtration ℝ≥0 m)
+    (P : Measure Ω) [SFinite P] (T s t : ℝ≥0) {A : Set Ω}
+    (hA : MeasurableSet[ℱ (min s t)] A) :
+    ℱ.predictableMeasure P T ((Ioc 0 s ×ˢ A) ∆ (Ioc 0 t ×ˢ A)) =
+      ENNReal.ofReal |(min s T : ℝ≥0) - (min t T : ℝ≥0)| * P A := by
+  have hstrip : (Ioc 0 s ×ˢ A) ∆ (Ioc 0 t ×ˢ A) = uIoc s t ×ˢ A := by
+    ext p
+    simp only [mem_symmDiff, mem_prod, mem_Ioc, mem_uIoc]
+    have : (0 : ℝ≥0) ≤ min s t := bot_le
+    grind
+  have hmeas : MeasurableSet[ℱ.predictable] (uIoc s t ×ˢ A) := by
+    simpa only [uIoc] using measurableSet_predictable_Ioc_prod (min s t) (max s t) hA
+  rw [hstrip, predictableMeasure_apply _ _ _ hmeas, Measure.prod_prod, timeMeasure_uIoc]
 
 /-- At a horizon beyond the right endpoint, a predictable rectangle has its full time length. -/
 theorem predictableMeasure_Ioc_prod_of_le (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
