@@ -54,25 +54,23 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [∀ s, CovariantDerivative.ContMDiffCovariantDerivative (cov s) ∞]
 
 /-- For the metric velocity `h = -2 Ric`, contracted Bianchi gives `div (div h) = -Δ Scal`. -/
-private theorem divergence_rieszDual_divBilinearTensor_neg_two_ricciTensor (x : M) :
+private theorem divergence_rieszDual_divergenceBilinearTensor_neg_two_ricciTensor (x : M) :
     divergence I (fun y ↦ Riemannian.Tensor.rieszDual y
-      ((leviCivitaConnection I M).divBilinearTensor ((-2 : ℝ) • fun z ↦
+      ((leviCivitaConnection I M).divergenceBilinearTensor ((-2 : ℝ) • fun z ↦
         ((leviCivitaConnection I M).ricciTensor z).toContinuousBilinearMap) y)) x =
       -laplaceBeltrami I (leviCivitaConnection I M).scalarCurvature x := by
-  have hLC := isLeviCivitaConnection_leviCivitaConnection (M := M) I
-  have hS : ContMDiff I 𝓘(ℝ) 2 (leviCivitaConnection I M).scalarCurvature :=
-    (leviCivitaConnection I M).contMDiff_scalarCurvature.of_le (by simp)
   have hfield : (fun y ↦ Riemannian.Tensor.rieszDual y
-      ((leviCivitaConnection I M).divBilinearTensor ((-2 : ℝ) • fun z ↦
+      ((leviCivitaConnection I M).divergenceBilinearTensor ((-2 : ℝ) • fun z ↦
         ((leviCivitaConnection I M).ricciTensor z).toContinuousBilinearMap) y)) =
-      mgradient I ((-1 : ℝ) • (leviCivitaConnection I M).scalarCurvature) := by
+      (-2 : ℝ) • fun y ↦ Riemannian.Tensor.rieszDual y
+        ((leviCivitaConnection I M).divergenceBilinearTensor (fun z ↦
+          ((leviCivitaConnection I M).ricciTensor z).toContinuousBilinearMap) y) := by
     funext y
-    rw [mgradient_smul, Pi.smul_apply, mgradient_def,
-      ← hLC.isMetricCompatible.two_smul_divBilinearTensor_ricciTensor_eq_mvfderiv_scalarCurvature
-        hLC.torsion y,
-      ← map_smul, divBilinearTensor_const_smul, smul_smul]
-    norm_num
-  rw [hfield, ← laplaceBeltrami_def, laplaceBeltrami_smul I _ hS, neg_one_mul]
+    rw [divergenceBilinearTensor_const_smul, map_smul, Pi.smul_apply]
+  rw [hfield, rieszDual_divergenceBilinearTensor_ricciTensor_eq_mgradient, ← mgradient_smul,
+    smul_smul, ← laplaceBeltrami_def, laplaceBeltrami_smul I _
+      ((leviCivitaConnection I M).contMDiff_scalarCurvature.of_le (by simp))]
+  norm_num
 
 /-- For the metric velocity `h = -2 Ric`, `Δ (tr_g h) = -2 Δ Scal`. -/
 private theorem laplaceBeltrami_metricTrace_neg_two_ricciTensor (x : M) :
@@ -126,19 +124,11 @@ theorem hasDerivAt_scalarCurvature_of_ricciFlow
   have hd := g.hasDerivAt_scalarCurvature (c := id) (t := t) contMDiffAt_id (.of_forall hr) hg x
   simp only [mfderiv_id, ContinuousLinearMap.id_apply, id_eq,
     g.variation_eq_neg_two_ricciTensor (hcov t) hg hflow] at hd
-  rw [divergence_rieszDual_divBilinearTensor_neg_two_ricciTensor,
+  rw [divergence_rieszDual_divergenceBilinearTensor_neg_two_ricciTensor,
     laplaceBeltrami_metricTrace_neg_two_ricciTensor] at hd
-  have hLC : (r t).toNondegenerateMetric.IsLeviCivitaConnection (leviCivitaConnection I M) :=
-    hr t ▸ g.isLeviCivitaConnection_leviCivitaConnection_of_apply_eq_inner hg
-  have hscal : (r t).scalarCurvature = (leviCivitaConnection I M).scalarCurvature := by
-    funext y
-    rw [(r t).scalarCurvature_eq_trace_inverse_ricciTensor _ hLC, ← hr t]
-    -- Trace is independent of reading the fixed tangent fibre as its model space.
-    change traceCLM ℝ (TangentSpace I y) ((g.metric t y).inverse ∘L
-      ((leviCivitaConnection I M).ricciTensor y).toContinuousBilinearMap) = _
-    rw [ContinuousLinearMap.traceCLM_inverse_comp_eq_metricTrace (g.metric t y)
-      (g.metric_apply_eq_inner_of_apply_eq_inner hg y),
-      LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap, scalarCurvature_apply]
+  have hscal : (r t).scalarCurvature = (leviCivitaConnection I M).scalarCurvature :=
+    funext ((r t).scalarCurvature_eq_scalarCurvature_leviCivitaConnection_of_apply_eq_inner
+      fun y u v ↦ hr t ▸ g.metric_apply_eq_inner_of_apply_eq_inner hg y u v)
   -- The inverse metric and the Ricci tensor, read on the model space.
   let A : (E →L[ℝ] ℝ) →L[ℝ] E := (g.metric t x).inverse
   let Ric : E →L[ℝ] E →L[ℝ] ℝ :=

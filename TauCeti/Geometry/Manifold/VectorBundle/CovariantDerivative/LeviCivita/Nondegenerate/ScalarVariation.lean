@@ -31,7 +31,7 @@ This file proves
 `∂ₛ Scal(g_{c s}) = div (div h) - Δ (tr_g h) - ⟨h, Ric⟩` at `s = t`,
 
 with `Δ = div ∘ grad`, for metrics which are positive near `t`. The divergence
-`(div h)_j = ∇^i h_ij` is `CovariantDerivative.divBilinearTensor`, and `div (div h)` is the
+`(div h)_j = ∇^i h_ij` is `CovariantDerivative.divergenceBilinearTensor`, and `div (div h)` is the
 Riemannian divergence of the vector field dual to it. The pairing is
 `⟨h, Ric⟩ = ∑ᵢⱼ h(eᵢ, eⱼ) Ric(eᵢ, eⱼ)` in any orthonormal basis, or `tr (g⁻¹ h g⁻¹ Ric)` with
 indices raised by the metric.
@@ -42,8 +42,8 @@ contraction of `∇Γ'`, where `Γ'` is the variation of the Levi-Civita connect
 variation formula of the connection, the metric trace of `Γ'` is dual to `div h - ½ d (tr_g h)` and
 its endomorphism trace is `½ d (tr_g h)`, so this contraction is `div (div h) - Δ (tr_g h)`.
 
-Along the variation `h = a g` by a constant `a`, as for a constant rescaling `φ(s) g₀`, the first
-two terms vanish and the derivative is `-a Scal`.
+Along the variation `h = a g` by a constant `a`, as for a spatially constant rescaling
+`g_{c s} = φ(s) g₀`, the first two terms vanish and the derivative is `-a Scal`.
 
 ## Main results
 
@@ -55,7 +55,7 @@ In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily`:
 
 * `contMDiff_metricTrace_variation` and `mvfderiv_metricTrace_variation`: the trace of the first
   variation against the installed metric is smooth, with derivative the trace of `∇h`.
-* `metricTrace_deriv_difference_eq_rieszDual_divBilinearTensor_sub_mgradient` and
+* `metricTrace_deriv_difference_eq_rieszDual_divergenceBilinearTensor_sub_mgradient` and
   `trace_deriv_difference_eq_mvfderiv`: the metric trace and the endomorphism trace of the variation
   of the Levi-Civita connection.
 * `hasDerivAt_scalarCurvature`: the first variation of scalar curvature.
@@ -175,11 +175,11 @@ include hc hcov hg
 omit [T2Space M] in
 /-- The metric trace of the variation `Γ'` of the Levi-Civita connection is dual to
 `div h - ½ d (tr_g h)`. -/
-theorem metricTrace_deriv_difference_eq_rieszDual_divBilinearTensor_sub_mgradient (y : M) :
+theorem metricTrace_deriv_difference_eq_rieszDual_divergenceBilinearTensor_sub_mgradient (y : M) :
     LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂
       (deriv (fun s ↦ (cov s).difference (cov t) y) t :
         TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y)) =
-    rieszDual y ((cov t).divBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y) -
+    rieszDual y ((cov t).divergenceBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y) -
       mgradient I ((2⁻¹ : ℝ) • fun z : M ↦ LinearMap.BilinMap.metricTrace
         (ContinuousLinearMap.toLinearMap₁₂
           (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1) z))) y := by
@@ -189,7 +189,7 @@ theorem metricTrace_deriv_difference_eq_rieszDual_divBilinearTensor_sub_mgradien
     mgradient_smul, Pi.smul_apply, real_inner_smul_left, inner_mgradient,
     g.mvfderiv_metricTrace_variation
       (g.isLeviCivitaConnection_of_apply_eq_inner (hcov t) hg).isMetricCompatible _ _ y e w,
-    (cov t).divBilinearTensor_apply_eq_sum _ e, Finset.mul_sum, ← Finset.sum_sub_distrib]
+    (cov t).divergenceBilinearTensor_apply_eq_sum _ e, Finset.mul_sum, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have h := g.two_mul_apply_deriv_difference_eq_derivBilinearTensor hc hcov y (e i) (e i) w
   rw [hg] at h
@@ -230,7 +230,7 @@ private theorem sum_palatini_deriv_difference (x : M) {ι : Type*} [Fintype ι]
     ∑ j, ∑ i, ⟪e i, (cov t).hom ((cov t).hom (cov t)) C x (e i) (e j) (e j) -
         (cov t).hom ((cov t).hom (cov t)) C x (e j) (e j) (e i)⟫ =
       divergence I (fun y ↦ rieszDual y
-        ((cov t).divBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y)) x -
+        ((cov t).divergenceBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y)) x -
       laplaceBeltrami I (fun y ↦ LinearMap.BilinMap.metricTrace
         (ContinuousLinearMap.toLinearMap₁₂ (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1) y))) x := by
   intro C
@@ -243,13 +243,13 @@ private theorem sum_palatini_deriv_difference (x : M) {ι : Type*} [Fintype ι]
     (g.contMDiff_deriv_difference_of_isLeviCivitaConnection hc hcov x).mdifferentiableAt (by simp)
   have hτ' : ContMDiffAt I 𝓘(ℝ) 2 ((2⁻¹ : ℝ) • τ) x := contMDiffAt_const.mul (hτ x)
   have hX : (fun y ↦ rieszDual y
-      ((cov t).divBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y)) =
+      ((cov t).divergenceBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y)) =
       (fun y ↦ LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (C y))) +
         mgradient I ((2⁻¹ : ℝ) • τ) := by
+    have hmt :=
+      g.metricTrace_deriv_difference_eq_rieszDual_divergenceBilinearTensor_sub_mgradient hc hcov hg
     funext y
-    rw [Pi.add_apply,
-      g.metricTrace_deriv_difference_eq_rieszDual_divBilinearTensor_sub_mgradient hc hcov hg y,
-      sub_add_cancel]
+    rw [Pi.add_apply, hmt y, sub_add_cancel]
   rw [hLC.isMetricCompatible.sum_palatini_eq_divergence_sub_laplaceBeltrami
     (fun _ hU z ↦ congr($(g.apply_eq_leviCivitaConnection_of_apply_eq_inner (hcov t) hg hU) z))
     hC hτ'
@@ -266,16 +266,16 @@ private theorem traceCLM_inverse_comp_eq (x : M) {K : E →L[ℝ] E →L[ℝ] �
     (hK : ∀ u v : TangentSpace I x, HasDerivAt (fun s ↦ (cov s).ricciTensor x u v) (K u v) t) :
     traceCLM ℝ E ((g.metric (c t) x).inverse ∘L K) =
       divergence I (fun y ↦ rieszDual y
-        ((CovariantDerivative.leviCivitaConnection I M).divBilinearTensor
+        ((CovariantDerivative.leviCivitaConnection I M).divergenceBilinearTensor
           (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y)) x -
       laplaceBeltrami I (fun y ↦ LinearMap.BilinMap.metricTrace
         (ContinuousLinearMap.toLinearMap₁₂ (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1) y))) x := by
   let e := stdOrthonormalBasis ℝ (TangentSpace I x)
   let Kx : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ := K
-  have hdiv (y : M) : (CovariantDerivative.leviCivitaConnection I M).divBilinearTensor
+  have hdiv (y : M) : (CovariantDerivative.leviCivitaConnection I M).divergenceBilinearTensor
       (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y =
-      (cov t).divBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y :=
-    CovariantDerivative.divBilinearTensor_congr _ _ fun _ hY ↦
+      (cov t).divergenceBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y :=
+    CovariantDerivative.divergenceBilinearTensor_congr _ _ fun _ hY ↦
       (g.apply_eq_leviCivitaConnection_of_apply_eq_inner (hcov t) hg hY).symm
   simp only [hdiv]
   rw [← g.sum_palatini_deriv_difference hc hcov hg x e]
@@ -336,7 +336,7 @@ theorem hasDerivAt_scalarCurvature (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
     (hg : ∀ y (u v : TangentSpace I y), g (c t, y) u v = inner ℝ u v) (x : M) :
     HasDerivAt (fun s ↦ (r s).scalarCurvature x)
       (divergence I (fun y ↦ rieszDual y
-          ((CovariantDerivative.leviCivitaConnection I M).divBilinearTensor
+          ((CovariantDerivative.leviCivitaConnection I M).divergenceBilinearTensor
             (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y)) x -
         laplaceBeltrami I (fun y ↦ LinearMap.BilinMap.metricTrace
           (ContinuousLinearMap.toLinearMap₁₂ (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1) y))) x -
@@ -367,7 +367,7 @@ theorem hasDerivAt_scalarCurvature_sum (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
     {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
     HasDerivAt (fun s ↦ (r s).scalarCurvature x)
       (divergence I (fun y ↦ rieszDual y
-          ((CovariantDerivative.leviCivitaConnection I M).divBilinearTensor
+          ((CovariantDerivative.leviCivitaConnection I M).divergenceBilinearTensor
             (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y)) x -
         laplaceBeltrami I (fun y ↦ LinearMap.BilinMap.metricTrace
           (ContinuousLinearMap.toLinearMap₁₂ (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1) y))) x -

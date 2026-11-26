@@ -25,13 +25,13 @@ matter. Divergences of symmetric two-tensors appear in the contracted second Bia
 
 ## Main definitions and results
 
-* `CovariantDerivative.divBilinearTensor`: the divergence of a field of bilinear forms.
-* `CovariantDerivative.divBilinearTensor_apply_eq_sum`: its values in an orthonormal basis.
-* `CovariantDerivative.divBilinearTensor_congr`: the divergence depends only on the connection on
-  differentiable vector fields.
-* `CovariantDerivative.divBilinearTensor_const_smul`: homogeneity.
-* `CovariantDerivative.divBilinearTensor_eq_zero_of_derivBilinearTensor_eq_zero`: the divergence
-  vanishes where the field is parallel.
+* `CovariantDerivative.divergenceBilinearTensor`: the divergence of a field of bilinear forms.
+* `CovariantDerivative.divergenceBilinearTensor_apply_eq_sum`: its values in an orthonormal basis.
+* `CovariantDerivative.divergenceBilinearTensor_congr`: the divergence depends only on the
+  connection on differentiable vector fields.
+* `CovariantDerivative.divergenceBilinearTensor_const_smul`: homogeneity.
+* `CovariantDerivative.divergenceBilinearTensor_eq_zero_of_derivBilinearTensor_eq_zero`: the
+  divergence vanishes where the field is parallel.
 
 ## References
 
@@ -58,45 +58,47 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 /-- The **divergence of a field of bilinear forms** `b` at `x`: the covector
 `w ↦ tr_g ((u, v) ↦ (∇_v b)(u, w))`, contracting the direction of differentiation against the first
 argument of `b`. Its value in an orthonormal basis is
-`CovariantDerivative.divBilinearTensor_apply_eq_sum`. -/
-def divBilinearTensor (x : M) : TangentSpace I x →L[ℝ] ℝ :=
+`CovariantDerivative.divergenceBilinearTensor_apply_eq_sum`. -/
+def divergenceBilinearTensor (x : M) : TangentSpace I x →L[ℝ] ℝ :=
   LinearMap.BilinMap.metricTrace <| ContinuousLinearMap.toLinearMap₁₂ <|
     (ContinuousLinearMap.flipₗᵢ ℝ (TangentSpace I x) (TangentSpace I x)
       ℝ).toContinuousLinearEquiv.toContinuousLinearMap ∘L cov.derivBilinearTensor b x
 
 /-- In an orthonormal basis `eᵢ`, the divergence of `b` is `(div b)(w) = ∑ᵢ (∇_{eᵢ} b)(eᵢ, w)`. -/
-theorem divBilinearTensor_apply_eq_sum {ι : Type*} [Fintype ι]
+theorem divergenceBilinearTensor_apply_eq_sum {ι : Type*} [Fintype ι]
     (e : OrthonormalBasis ι ℝ (TangentSpace I x)) (w : TangentSpace I x) :
-    cov.divBilinearTensor b x w = ∑ i, cov.derivBilinearTensor b x (e i) w (e i) := by
-  rw [divBilinearTensor, LinearMap.BilinMap.metricTrace_eq_sum _ e, sum_apply]
+    cov.divergenceBilinearTensor b x w = ∑ i, cov.derivBilinearTensor b x (e i) w (e i) := by
+  rw [divergenceBilinearTensor, LinearMap.BilinMap.metricTrace_eq_sum _ e, sum_apply]
   simp [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
 
 /-- The divergence at `x` depends only on the values at `x` of the connection on vector fields
 differentiable there. In particular all Levi-Civita connections of a metric compute the same
 divergence. -/
-theorem divBilinearTensor_congr {cov' : CovariantDerivative I E (TangentSpace I : M → Type _)}
+theorem divergenceBilinearTensor_congr
+    {cov' : CovariantDerivative I E (TangentSpace I : M → Type _)}
     (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) x → cov Y x = cov' Y x) :
-    cov.divBilinearTensor b x = cov'.divBilinearTensor b x := by
-  rw [divBilinearTensor, divBilinearTensor, cov.derivBilinearTensor_congr h]
+    cov.divergenceBilinearTensor b x = cov'.divergenceBilinearTensor b x := by
+  rw [divergenceBilinearTensor, divergenceBilinearTensor, cov.derivBilinearTensor_congr h]
 
 /-- The divergence of `b` vanishes at a point where `b` is parallel. -/
-theorem divBilinearTensor_eq_zero_of_derivBilinearTensor_eq_zero
-    (h : cov.derivBilinearTensor b x = 0) : cov.divBilinearTensor b x = 0 := by
+theorem divergenceBilinearTensor_eq_zero_of_derivBilinearTensor_eq_zero
+    (h : cov.derivBilinearTensor b x = 0) : cov.divergenceBilinearTensor b x = 0 := by
   ext w
-  simp [cov.divBilinearTensor_apply_eq_sum b (stdOrthonormalBasis ℝ (TangentSpace I x)), h]
+  simp [cov.divergenceBilinearTensor_apply_eq_sum b (stdOrthonormalBasis ℝ (TangentSpace I x)), h]
 
 /-- The zero field of bilinear forms has zero divergence. -/
 @[simp]
-theorem divBilinearTensor_zero :
-    cov.divBilinearTensor (0 : (y : M) → TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x = 0 :=
-  cov.divBilinearTensor_eq_zero_of_derivBilinearTensor_eq_zero 0 cov.derivBilinearTensor_zero
+theorem divergenceBilinearTensor_zero :
+    cov.divergenceBilinearTensor
+      (0 : (y : M) → TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x = 0 :=
+  cov.divergenceBilinearTensor_eq_zero_of_derivBilinearTensor_eq_zero 0 cov.derivBilinearTensor_zero
 
 /-- The divergence of a field of bilinear forms commutes with constant real scaling. -/
 @[simp]
-theorem divBilinearTensor_const_smul (c : ℝ) :
-    cov.divBilinearTensor (c • b) x = c • cov.divBilinearTensor b x := by
+theorem divergenceBilinearTensor_const_smul (c : ℝ) :
+    cov.divergenceBilinearTensor (c • b) x = c • cov.divergenceBilinearTensor b x := by
   ext w
-  simp [divBilinearTensor_apply_eq_sum _ _ (stdOrthonormalBasis ℝ (TangentSpace I x)),
+  simp [divergenceBilinearTensor_apply_eq_sum _ _ (stdOrthonormalBasis ℝ (TangentSpace I x)),
     Finset.mul_sum]
 
 end CovariantDerivative
