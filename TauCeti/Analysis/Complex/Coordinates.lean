@@ -17,7 +17,8 @@ The real linear coordinate interchange is an involution with determinant `-1`, r
 the reversal of orientation. Any `v` has real coordinates in the real basis `u`, `r * u * I`,
 `u ≠ 0`, `r ≠ 0`, of radial and angular directions at the point `r * u`
 (`Complex.eq_re_mul_add_im_div_mul`). The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is
-linearly independent. A point `c + t * I` of a vertical line with `c ≠ 0` is nonzero.
+linearly independent. A point `c + t * I` of a vertical line with `c ≠ 0` is nonzero, and with
+`c ≠ 1` it is different from `1` (`Complex.ofReal_add_mul_I_sub_one_ne_zero`).
 
 In the frame of a nonzero direction `v`, the point `v (s ± h i)` on either side of the line through
 `v s` with direction `v` has imaginary coordinate `±h`
@@ -98,6 +99,19 @@ theorem linearIndependent_one_zero_I_zero_zero_one :
 theorem ofReal_add_mul_I_ne_zero {c : ℝ} (hc : c ≠ 0) (t : ℝ) : (c : ℂ) + t * I ≠ 0 :=
   fun h ↦ hc (by simpa using congrArg Complex.re h)
 
+/-- Subtracting `1` from a point `c + t * I` of a vertical line moves it to the line
+`Re z = c - 1` at the same height. -/
+theorem ofReal_add_mul_I_sub_one (c t : ℝ) : (c : ℂ) + t * I - 1 = ((c - 1 : ℝ) : ℂ) + t * I := by
+  push_cast
+  ring
+
+/-- A point `c + t * I` of the vertical line `Re z = c` is different from `1` as soon as `c ≠ 1`,
+in the form `c + t * I - 1 ≠ 0`. -/
+theorem ofReal_add_mul_I_sub_one_ne_zero {c : ℝ} (hc : c ≠ 1) (t : ℝ) :
+    (c : ℂ) + t * I - 1 ≠ 0 := by
+  rw [ofReal_add_mul_I_sub_one]
+  exact ofReal_add_mul_I_ne_zero (sub_ne_zero.mpr hc) t
+
 /-- The point `h` units off the line `s ↦ v * s` in the direction `v * I` is at distance
 `‖v‖ * |h|` from the line point. -/
 @[simp]
@@ -112,6 +126,24 @@ theorem dist_mul_add_mul_I (v : ℂ) (s h : ℝ) : dist (v * (s + h * I)) (v * s
 theorem dist_mul_sub_mul_I (v : ℂ) (s h : ℝ) : dist (v * (s - h * I)) (v * s) = ‖v‖ * |h| := by
   have := dist_mul_add_mul_I v s (-h)
   rwa [ofReal_neg, neg_mul, ← sub_eq_add_neg, abs_neg] at this
+
+/-- The negative imaginary part of the inverse square in Cartesian coordinates. -/
+theorem neg_im_one_div_sq (z : ℂ) :
+    -((1 : ℂ) / z ^ 2).im = 2 * z.re * z.im / Complex.normSq z ^ 2 := by
+  simp [pow_two, Complex.mul_im]
+  ring
+
+/-- The negative imaginary part of `I` divided by a square in Cartesian coordinates. -/
+theorem neg_im_I_div_sq (z : ℂ) :
+    -(Complex.I / z ^ 2).im = (z.im ^ 2 - z.re ^ 2) / Complex.normSq z ^ 2 := by
+  simp [Complex.div_im, pow_two, Complex.normSq_mul, Complex.mul_re]
+  ring
+
+/-- The negative imaginary part of `-1` divided by a square in Cartesian coordinates. -/
+theorem neg_im_neg_one_div_sq (z : ℂ) :
+    -((-1 : ℂ) / z ^ 2).im = -(2 * z.re * z.im) / Complex.normSq z ^ 2 := by
+  simpa only [neg_div, Complex.neg_im, neg_neg] using
+    congrArg Neg.neg (neg_im_one_div_sq z)
 
 end Complex
 

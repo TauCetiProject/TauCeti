@@ -38,6 +38,7 @@ relative to any group of automorphisms.
 
 ## Main results
 
+* `TauCeti.BranchTuple.hurwitzMove_eq_update`: a Hurwitz move as two updates of the tuple.
 * `TauCeti.BranchTuple.hurwitzMove_mul_hurwitzMove_comm` and
   `TauCeti.BranchTuple.hurwitzMove_braid`: the moves satisfy the braid relations.
 * `TauCeti.BranchTuple.hurwitzAction_sigma`: `σ i` acts by the `i`-th move.
@@ -51,6 +52,9 @@ relative to any group of automorphisms.
   conjugate to the entry of `t` at position `(permHom r b)⁻¹ k`; in particular pure braids
   preserve ordered class conditions
   (`TauCeti.BranchTuple.isConj_hurwitzAction_apply_of_mem_pureSubgroup`).
+* `TauCeti.BranchTuple.hurwitzAction_apply_mem`: the action preserves tuples with entries in a
+  conjugation-invariant set.
+* `TauCeti.BranchTuple.ofFn_hurwitzMove`: the list of entries of a Hurwitz move.
 * `TauCeti.BranchTuple.forall_hurwitzAction_apply_mem_carrier_iff`: the action preserves the
   condition that every entry lies in a given conjugacy class.
 * `TauCeti.BranchTuple.hurwitzAction_comp`: the action commutes with homomorphisms applied
@@ -97,12 +101,18 @@ def hurwitzMove (i : Fin (r - 1)) : Equiv.Perm (BranchTuple r G) where
     simp only [update_apply, hne, ↓reduceIte]
     split_ifs with h₁ h₂ <;> subst_vars <;> group
 
+/-- A Hurwitz move updates the adjacent entries at `strand i` and `strandSucc i`. -/
+theorem hurwitzMove_eq_update (i : Fin (r - 1)) (t : BranchTuple r G) :
+    hurwitzMove i t = Function.update
+      (Function.update t (strand i) (t (strand i) * t (strandSucc i) * (t (strand i))⁻¹))
+      (strandSucc i) (t (strand i)) := (rfl)
+
 /-- The value of a Hurwitz move at every position. -/
 theorem hurwitzMove_apply (i : Fin (r - 1)) (t : BranchTuple r G) (k : Fin r) :
     hurwitzMove i t k =
       if k = strandSucc i then t (strand i)
       else if k = strand i then t (strand i) * t (strandSucc i) * (t (strand i))⁻¹ else t k := by
-  simp only [hurwitzMove, Equiv.coe_fn_mk, update_apply]
+  simp only [hurwitzMove_eq_update, update_apply]
 
 /-- The value of an inverse Hurwitz move at every position. -/
 theorem hurwitzMove_symm_apply (i : Fin (r - 1)) (t : BranchTuple r G) (k : Fin r) :
@@ -276,6 +286,23 @@ private theorem drop_ofFn_hurwitzMove (i : Fin (r - 1)) (t : BranchTuple r G) :
   simp only [List.getElem_drop, List.getElem_ofFn]
   exact hurwitzMove_apply_of_ne i t (by simp [Fin.ext_iff]; omega) (by simp [Fin.ext_iff]; omega)
 
+/-- The list of entries of a Hurwitz move: the entries before position `strand i` and after
+position `strandSucc i` are unchanged, and the adjacent pair `(a, b)` between them becomes
+`(a * b * a⁻¹, a)`. -/
+theorem ofFn_hurwitzMove (i : Fin (r - 1)) (t : BranchTuple r G) :
+    List.ofFn (hurwitzMove i t) = (List.ofFn t).take (strand i) ++
+      t (strand i) * t (strandSucc i) * (t (strand i))⁻¹ :: t (strand i) ::
+        (List.ofFn t).drop (strandSucc i + 1) := by
+  have h₁ : (strand i : ℕ) < (List.ofFn (hurwitzMove i t)).length := by
+    simpa using (strand i).isLt
+  have h₂ : (strandSucc i : ℕ) < (List.ofFn (hurwitzMove i t)).length := by
+    simpa using (strandSucc i).isLt
+  have hs : (strand i : ℕ) + 1 = strandSucc i := by simp
+  conv_lhs => rw [← List.take_append_drop (strand i) (List.ofFn (hurwitzMove i t)),
+    List.drop_eq_getElem_cons h₁, hs, List.drop_eq_getElem_cons h₂]
+  simp only [take_ofFn_hurwitzMove, drop_ofFn_hurwitzMove, List.getElem_ofFn, Fin.eta,
+    hurwitzMove_apply_strand, hurwitzMove_apply_strandSucc]
+
 /-- A Hurwitz move preserves the ordered product. -/
 @[simp]
 theorem product_hurwitzMove (i : Fin (r - 1)) (t : BranchTuple r G) :
@@ -352,6 +379,14 @@ theorem isConj_hurwitzAction_apply (b : BraidGroup r) (t : BranchTuple r G) (k :
     simp only [Equiv.Perm.inv_def, Equiv.symm_apply_apply, Equiv.apply_symm_apply] at h
     rw [map_inv, map_inv, inv_inv, Equiv.Perm.inv_def]
     exact h.symm
+
+/-- The Hurwitz action preserves every conjugation-invariant set of entries: if every entry of `t`
+lies in `c`, so does every entry of `b • t`. -/
+theorem hurwitzAction_apply_mem {c : Set G} (hc : ∀ g : G, ∀ x ∈ c, g * x * g⁻¹ ∈ c)
+    {t : BranchTuple r G} (ht : ∀ i, t i ∈ c) (b : BraidGroup r) (k : Fin r) :
+    hurwitzAction b t k ∈ c := by
+  obtain ⟨g, hg⟩ := isConj_iff.mp (isConj_hurwitzAction_apply b t k)
+  exact hg ▸ hc g _ (ht _)
 
 /-- A pure braid preserves the conjugacy class of each entry, so it preserves ordered class
 conditions; the elementary braids, which are not pure, exchange the classes of two entries. -/

@@ -414,6 +414,10 @@ theorem of_mem_lattice_iff {a : ℤ} {f : HahnSeries ℤ V} :
     of R f ∈ lattice R V a ↔ f ∈ TauCeti.LaurentSeries.lattice R V a := by
   simp [mem_lattice_iff, TauCeti.LaurentSeries.mem_lattice_iff]
 
+/-- The monomial `v Xⁿ` lies in the Hahn-module lattice `U_a(V)` once `a ≤ n`. -/
+theorem of_single_mem_lattice {a n : ℤ} (h : a ≤ n) (v : V) : of R (single n v) ∈ lattice R V a :=
+  (of_mem_lattice_iff R V).2 (LaurentSeries.single_mem_lattice h v)
+
 /-- The coefficient-preserving comparison restricted to a lattice. -/
 noncomputable def latticeEquiv (a : ℤ) :
     lattice R V a ≃ₗ[R] TauCeti.LaurentSeries.lattice R V a :=

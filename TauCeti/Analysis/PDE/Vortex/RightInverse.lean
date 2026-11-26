@@ -318,7 +318,7 @@ theorem exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mul_le
     ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
       ‖Q‖ ≤ (√c)⁻¹ ∧ ∀ f, IsMinimalGaugeFixedWeakSolution μ x f (Q f) := by
   set S := gaugeFixedAdjointToLp μ hx
-  set ι := (TestFunction.ambientToLp 2 μ : TestField →L[ℝ] _).toLinearMap
+  set ι := (TestFunction.ambientToLp ℝ 2 μ : TestField →L[ℝ] _).toLinearMap
   have hS := inner_gaugeFixedAdjointToLp (μ := μ) hx
   have hι (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
       ⟪u, ι η⟫ = ∫ z, ⟪u z, η z⟫ ∂μ :=
@@ -957,7 +957,7 @@ private theorem eLpNorm_exp_mul_smul_adjoint_apply_le {c : ℝ} {K : ℝ≥0}
   have hw : AEStronglyMeasurable (fun z : ℂ ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))) μ :=
     (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c one_pos).continuous.aestronglyMeasurable
   have h := ContinuousLinearMap.eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le
-    (ContinuousLinearMap.adjoint Q) (p := 2) (p' := 2) (q := 2) (q' := 2) ENNReal.ofNat_ne_top
+    (ContinuousLinearMap.adjoint Q) (p := 2) (p' := 2) (q := 2) (q' := 2)
     (ae_of_all _ fun z ↦ (Real.exp_pos (c * √(1 + ‖z‖ ^ 2))).ne') hw (C := K) (fun f ↦ ?_) g
   · simpa using h
   · -- `Q†† = Q`, and `exp(c ρ)⁻¹ = exp(-c ρ)`.

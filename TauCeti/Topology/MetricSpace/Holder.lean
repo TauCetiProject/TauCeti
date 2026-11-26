@@ -41,7 +41,8 @@ This is how an almost-everywhere Hölder estimate becomes a Hölder continuous r
 of full measure for a measure that is positive on open sets is dense.
 
 Sums, differences and finite sums of Hölder functions, also with natural multiplicities, are
-Hölder, with the sum of the constants; a scalar multiple `a • f` is Hölder with the constant
+Hölder, with the sum of the constants, so a sum over a finite type with a common constant `C` is
+Hölder with constant `card ι * C`; a scalar multiple `a • f` is Hölder with the constant
 multiplied by `‖a‖₊`; the reciprocal of a Hölder function bounded away from zero is Hölder; the
 second differences `f (x + h) + f (x - h) - 2 f x` of a Hölder function on a normed group are
 bounded by twice its constant times `‖h‖ ^ r`; and a pointwise limit of Hölder functions with a
@@ -102,8 +103,8 @@ positive exponent, is equicontinuous on that set
   preserves Hölder bounds.
 * `Isometry.holderWith_comp_iff`: postcomposition with an isometry preserves global Hölder bounds
   in both directions.
-* `LipschitzWith.comp_holderOnWith`: postcomposition with a `K`-Lipschitz map keeps the exponent
-  and multiplies the Hölder constant by `K`.
+* `LipschitzWith.comp_holderOnWith`, `LipschitzWith.comp_holderWith`: postcomposition with a
+  `K`-Lipschitz map keeps the exponent and multiplies the Hölder constant by `K`.
 * `HolderWith.comp_lipschitzWith_one`: precomposition with a `1`-Lipschitz map keeps the Hölder
   constant and exponent.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
@@ -128,6 +129,9 @@ positive exponent, is equicontinuous on that set
 * `IsCompact.exists_holderOnWith_thickening_and_norm_le`: a function which is Hölder on a ball
   around each point of a compact set `K` is Hölder with one constant, and bounded, on a thickening
   of `K`.
+* `IsCompact.exists_holderOnWith_of_forall_holderOnWith_ball_inter`: Hölder bounds on the
+  parts in a compact set `s` of balls around its points, proportional to a bound of the function,
+  give a Hölder bound on `s` with a constant depending only on the balls and the weights.
 * `le_mul_edist_rpow_iff`: between distinct points, a bound by a multiple of `edist x y ^ r` is a
   bound on the difference quotient.
 * `eHolderNorm_le_iff`: `eHolderNorm r f ≤ C` if and only if the Hölder inequality holds with the
@@ -137,6 +141,9 @@ positive exponent, is equicontinuous on that set
   composition of Hölder functions.
 * `eHolderNorm_eq_iSup`, `eHolderNorm_eq_iSup_dist`: the Hölder seminorm is the supremum of the
   difference quotients.
+* `TauCeti.eHolderNorm_of_subsingleton`, `TauCeti.eHolderNorm_eq_edist_div_of_forall_eq_or_eq`:
+  the Hölder seminorm on a space with at most one point is `0`, and on a space with at most two
+  points it is the single difference quotient.
 * `nnHolderNorm_smul`: scalar homogeneity of Mathlib's `nnHolderNorm`, without assuming that the
   map is Hölder.
 * `TauCeti.eHolderNorm_one_le_coe_iff`: `eHolderNorm 1 f ≤ K` if and only if `f` is
@@ -238,6 +245,13 @@ theorem LipschitzWith.comp_holderOnWith {X Y Z : Type*} [PseudoEMetricSpace X]
     HolderOnWith (K * C) r (g ∘ f) s := by
   have h := hg.holderWith.comp_holderOnWith hf
   rwa [NNReal.coe_one, NNReal.rpow_one, one_mul] at h
+
+/-- Postcomposition with a `K`-Lipschitz map preserves a global Hölder bound with the same
+exponent, multiplying the constant by `K`. -/
+theorem LipschitzWith.comp_holderWith {X Y Z : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {K : ℝ≥0} {g : Y → Z} (hg : LipschitzWith K g)
+    {C r : ℝ≥0} {f : X → Y} (hf : HolderWith C r f) : HolderWith (K * C) r (g ∘ f) :=
+  holderOnWith_univ.mp (hg.comp_holderOnWith (hf.holderOnWith univ))
 
 /-- Precomposition with a `1`-Lipschitz map preserves a global Hölder bound, with the same constant
 and exponent. -/
@@ -439,6 +453,14 @@ theorem HolderOnWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCo
     HolderOnWith (∑ i ∈ s, C i) r (fun x => ∑ i ∈ s, f i x) t :=
   HolderWith.restrict_iff.1 (HolderWith.sum fun i hi => (hf i hi).holderWith)
 
+/-- A sum over a finite type of functions that are Hölder on `t` with a common constant `C` is
+Hölder on `t` with constant `card ι * C`. -/
+theorem HolderOnWith.fintype_sum {ι X Y : Type*} [Fintype ι] [PseudoMetricSpace X]
+    [SeminormedAddCommGroup Y] {C r : ℝ≥0} {f : ι → X → Y} {t : Set X}
+    (hf : ∀ i, HolderOnWith C r (f i) t) :
+    HolderOnWith (Fintype.card ι * C) r (fun x => ∑ i, f i x) t := by
+  simpa using HolderOnWith.sum (s := Finset.univ) fun i _ => hf i
+
 /-- A scalar multiple `a • f` of a function that is Hölder on `s` is Hölder on `s`, with the
 constant multiplied by `‖a‖₊`. Compare Mathlib's `HolderWith.smul`. -/
 theorem HolderOnWith.smul {X Y 𝕜 : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
@@ -626,6 +648,40 @@ theorem IsCompact.exists_holderOnWith_thickening_and_norm_le {X Y : Type*} [Pseu
   · push_cast
     linarith [dist_le_norm_add_norm (f y) (f y'), hM y hy, hM y' hy']
 
+/-- **Hölder bounds on the pieces of a cover of a compact set, uniformly.** Let `s` be compact and
+assign to each `x ∈ s` a radius `ρ x > 0` and a weight `c x`. Then there is a constant `A` such
+that every function `f` which is bounded by `B` on `s` and `α`-Hölder with constant `c x * B` on
+`ball x (ρ x) ∩ s` for each `x ∈ s` is `α`-Hölder on `s` with constant `A * B`. The constant
+`A` depends only on `s`, `ρ`, `c` and `α`, not on `f` or `B`, so the bound is uniform over a family
+of functions with proportional local bounds, as in a priori estimates. -/
+theorem IsCompact.exists_holderOnWith_of_forall_holderOnWith_ball_inter {X Y : Type*}
+    [PseudoMetricSpace X] [SeminormedAddCommGroup Y] {s : Set X} (hs : IsCompact s) {α : ℝ≥0}
+    {ρ : X → ℝ} (hρ : ∀ x ∈ s, 0 < ρ x) (c : X → ℝ≥0) :
+    ∃ A : ℝ≥0, ∀ {f : X → Y} {B : ℝ≥0}, (∀ x ∈ s, ‖f x‖ ≤ B) →
+      (∀ x ∈ s, HolderOnWith (c x * B) α f (Metric.ball x (ρ x) ∩ s)) →
+      HolderOnWith (A * B) α f s := by
+  obtain ⟨t, hts, hcover⟩ := hs.elim_nhds_subcover (fun x => Metric.ball x (ρ x)) fun x hx =>
+    Metric.ball_mem_nhds x (hρ x hx)
+  -- A Lebesgue number `δ` of the finite cover by the balls `B(z, ρ z)`, `z ∈ t`.
+  obtain ⟨δ, hδ, hδs⟩ := lebesgue_number_lemma_of_metric hs
+    (c := fun z : t => Metric.ball (z : X) (ρ z)) (fun _ => Metric.isOpen_ball) fun y hy => by
+      obtain ⟨z, hzt, hyz⟩ := mem_iUnion₂.1 (hcover hy)
+      exact mem_iUnion.2 ⟨⟨z, hzt⟩, hyz⟩
+  set δ' : ℝ≥0 := ⟨δ, hδ.le⟩
+  refine ⟨∑ z ∈ t, c z + 2 * δ' ^ (-(α : ℝ)), fun {f B} hB hf => ?_⟩
+  -- Points of `s` at distance less than `δ` lie in one ball of the cover, and points at larger
+  -- distance are handled by the bound `‖f‖ ≤ B`.
+  refine (HolderOnWith.of_dist_lt_of_dist_le (K := (∑ z ∈ t, c z) * B) (D := 2 * B) (δ := δ')
+    (by exact_mod_cast hδ) (fun x hx y hy hxy => ?_) fun x hx y hy => ?_).mono_const
+    (le_of_eq (by ring))
+  · obtain ⟨⟨z, hzt⟩, hz⟩ := hδs x hx
+    have hyz := hz (Metric.mem_ball.2 (by rw [dist_comm]; exact hxy))
+    refine ((hf z (hts z hzt)).dist_le ⟨hz (Metric.mem_ball_self hδ), hx⟩ ⟨hyz, hy⟩).trans ?_
+    gcongr
+    exact_mod_cast Finset.single_le_sum (fun _ _ => zero_le) hzt
+  · push_cast
+    linarith [dist_le_norm_add_norm (f x) (f y), hB x hx, hB y hy]
+
 namespace TauCeti
 
 /-- **Dyadic sums of smooth pieces are Hölder.** For `0 < α < 1` there is `C` such that, if the
@@ -781,6 +837,34 @@ when `f` is `K`-Lipschitz, so it is the least Lipschitz constant of `f`. -/
 theorem eHolderNorm_one_le_coe_iff {X Y : Type*} [MetricSpace X] [PseudoEMetricSpace Y]
     {f : X → Y} {K : ℝ≥0} : eHolderNorm 1 f ≤ K ↔ LipschitzWith K f := by
   simp [eHolderNorm_le_iff, LipschitzWith]
+
+/-- On a subsingleton space every pair of points is equal, so every map is Hölder with constant `0`
+and its Hölder seminorm is `0`. This extends Mathlib's `eHolderNorm_of_isEmpty` to singletons. -/
+@[simp]
+theorem eHolderNorm_of_subsingleton {X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [Subsingleton X] (r : ℝ≥0) (f : X → Y) : eHolderNorm r f = 0 :=
+  nonpos_iff_eq_zero.1 <|
+    (show HolderWith 0 r f from fun x y ↦ by simp [Subsingleton.elim x y]).eHolderNorm_le
+
+/-- On a metric space with at most the two points `x` and `y`, the Hölder seminorm of `f` is the
+single difference quotient `edist (f x) (f y) / edist x y ^ r`; for `x = y` both sides are `0`.
+For `r = 1` and `X = {0, 1}` this is the Lipschitz seminorm `edist (f 0) (f 1) / edist 0 1`. -/
+theorem eHolderNorm_eq_edist_div_of_forall_eq_or_eq {X Y : Type*} [MetricSpace X]
+    [PseudoEMetricSpace Y] {r : ℝ≥0} {x y : X} (h : ∀ z, z = x ∨ z = y) (f : X → Y) :
+    eHolderNorm r f = edist (f x) (f y) / edist x y ^ (r : ℝ) := by
+  rcases eq_or_ne x y with rfl | hxy
+  · have : Subsingleton X := ⟨fun a b ↦ ((h a).elim id id).trans ((h b).elim id id).symm⟩
+    simp
+  refine le_antisymm (eHolderNorm_le_iff.2 fun a b ↦ ?_) ?_
+  · have hle : edist (f x) (f y) ≤ edist (f x) (f y) / edist x y ^ (r : ℝ) * edist x y ^ (r : ℝ) :=
+      (le_mul_edist_rpow_iff hxy).2 le_rfl
+    rcases h a with rfl | rfl <;> rcases h b with rfl | rfl
+    · simp
+    · exact hle
+    · rwa [edist_comm (f a), edist_comm a b]
+    · simp
+  · rw [eHolderNorm_eq_iSup]
+    exact le_iSup₂_of_le x y (le_iSup_of_le hxy le_rfl)
 
 /-- The Hölder seminorm is lower semicontinuous for the topology of pointwise convergence: its
 sublevel sets are closed. Composing with the continuous coercion, it is also lower semicontinuous

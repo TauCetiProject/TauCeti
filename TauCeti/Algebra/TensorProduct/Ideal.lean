@@ -18,8 +18,9 @@ under `includeRight`. They represent the images of `I ⊗[R] B` and `A ⊗[R] J`
 
 The constructions preserve joins and arbitrary suprema and commute with tensor-product
 maps. Over a commutative ring, tensoring a quotient map has the corresponding tensor ideal
-as its kernel; tensoring two surjective algebra maps has the sum of the two tensor ideals
-as its kernel. Quotients of a noncommutative algebra require a two-sided ideal.
+as its kernel; tensoring two surjective algebra maps, for instance two quotient maps, has the
+sum of the two tensor ideals as its kernel. Quotients of a noncommutative algebra require a
+two-sided ideal.
 
 The kernel formulas use Mathlib's tensor-product right-exactness theorems.
 -/
@@ -244,3 +245,19 @@ theorem ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal
 end Ring
 
 end AlgHom
+
+namespace Ideal
+
+variable {R A B : Type*} [CommRing R] [Ring A] [Ring B] [Algebra R A] [Algebra R B]
+
+/-- The kernel of the tensor product of two quotient maps is the sum of the two tensor
+ideals. -/
+theorem ker_tensorProduct_map_quotient_quotient (I : Ideal A) (J : Ideal B) [I.IsTwoSided]
+    [J.IsTwoSided] :
+    RingHom.ker (Algebra.TensorProduct.map (Quotient.mkₐ R I) (Quotient.mkₐ R J)) =
+      leftTensorIdeal R B I ⊔ rightTensorIdeal R A J := by
+  simpa only [AlgHom.ker_coe, Quotient.mkₐ_ker] using
+    AlgHom.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal (Quotient.mkₐ R I)
+      (Quotient.mkₐ R J) (Quotient.mkₐ_surjective R I) (Quotient.mkₐ_surjective R J)
+
+end Ideal

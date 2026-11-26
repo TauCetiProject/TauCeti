@@ -38,6 +38,8 @@ Cartan matrix computable from that matrix alone.
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_basisFun`: the Gram matrix of the standard
   coordinate basis is `G`.
 * `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_carrier_iff`: the carrier is `ℤⁿ`.
+* `TauCeti.IntegralLattice.eq_ofGramMatrix_basisFun`: a lattice with carrier `ℤⁿ` whose form pairs
+  the standard coordinate vectors by `G` is the lattice presented by `G`.
 * `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_dualCarrier_iff`: the dual carrier consists of
   the vectors whose row combinations against `G` are integers.
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_of_sum_eq_ite` and
@@ -176,6 +178,18 @@ theorem mem_ofGramMatrix_basisFun_carrier_iff (x : ι → ℚ) :
   classical
   rw [ofGramMatrix_carrier, Module.Basis.mem_span_iff_repr_mem]
   simp [Pi.basisFun_repr]
+
+/-- **Characterization of a standard-coordinate Gram-matrix lattice**: an integral lattice on
+`ι → ℚ` whose carrier is the standard integral lattice `ι → ℤ`, and whose form pairs the standard
+coordinate vectors by the entries of `G`, is the lattice presented by `G`. -/
+theorem eq_ofGramMatrix_basisFun [DecidableEq ι] {L : IntegralLattice (ι → ℚ)}
+    (hcarrier : ∀ x, x ∈ L.carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i)
+    (hform : ∀ i j, L.form (Pi.single i 1) (Pi.single j 1) = ((G i j : ℤ) : ℚ)) :
+    L = ofGramMatrix (Pi.basisFun ℚ ι) G hG := by
+  refine IntegralLattice.ext (Submodule.ext fun x ↦
+    (hcarrier x).trans (mem_ofGramMatrix_basisFun_carrier_iff G hG x).symm) ?_
+  refine LinearMap.BilinForm.ext_basis (Pi.basisFun ℚ ι) fun i j ↦ ?_
+  rw [form_ofGramMatrix_basisFun_basisFun, Pi.basisFun_apply, Pi.basisFun_apply, hform]
 
 /-- A vector belongs to the dual of a Gram-matrix lattice exactly when every row combination of the
 Gram matrix against it is an integer. -/

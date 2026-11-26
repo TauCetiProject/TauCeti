@@ -18,7 +18,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Topology.Algebra.Module.Star
-public import TauCeti.LinearAlgebra.Matrix.Hermitian
+public import TauCeti.LinearAlgebra.Matrix.Hermitian.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Pi
@@ -41,7 +41,10 @@ differentiability of the induced continuous-linear-map family `x ↦ (M x).mulVe
 real entrywise derivative of a family of Hermitian matrices is Hermitian in every direction
 (`Matrix.isHermitian_fderiv_apply`). For the elementwise norm, the entries of the self-adjoint
 part `(X + Xᴴ) / 2` of a matrix are smooth real-linear functions of `X`
-(`Matrix.contDiff_selfAdjointPart_apply`, `Matrix.fderiv_selfAdjointPart_apply`).
+(`Matrix.contDiff_selfAdjointPart_apply`, `Matrix.fderiv_selfAdjointPart_apply`). The
+entries of a matrix in the real vector space of Hermitian matrices are real-linear functions of
+it, hence their own derivatives (`Matrix.hasFDerivAt_selfAdjoint_apply`), so the matrix of these
+derivatives in a direction `H` is `H` (`Matrix.of_fderiv_selfAdjoint_apply_eq`).
 
 Over a complete nontrivially normed field, a family of finite matrices `y ↦ M y` induces a
 differentiable family of continuous linear maps `y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap`
@@ -190,6 +193,26 @@ theorem fderiv_selfAdjointPart_apply (a b : n) (X V : Matrix n n 𝕜) :
   rw [← coe_selfAdjointPartEntry, ContinuousLinearMap.fderiv, coe_selfAdjointPartEntry]
 
 end SelfAdjointPart
+
+/-- The `(a, b)` entry of a Hermitian matrix is real-linear in the matrix, so it is its own
+derivative on the real vector space of Hermitian matrices, with the entrywise topology. -/
+theorem hasFDerivAt_selfAdjoint_apply [Finite n] (a b : n)
+    (A : selfAdjoint.submodule ℝ (Matrix n n 𝕜)) :
+    HasFDerivAt (fun B : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦ (B : Matrix n n 𝕜) a b)
+      (LinearMap.toContinuousLinearMap
+        (entryLinearMap ℝ 𝕜 a b ∘ₗ (selfAdjoint.submodule ℝ (Matrix n n 𝕜)).subtype)) A :=
+  (LinearMap.toContinuousLinearMap
+    (entryLinearMap ℝ 𝕜 a b ∘ₗ (selfAdjoint.submodule ℝ (Matrix n n 𝕜)).subtype)).hasFDerivAt
+
+/-- The matrix of entrywise derivatives at `A` in the direction `H` of a Hermitian matrix is `H`,
+on the real vector space of Hermitian matrices with the entrywise topology. -/
+theorem of_fderiv_selfAdjoint_apply_eq [Finite n] (A H : selfAdjoint.submodule ℝ (Matrix n n 𝕜)) :
+    (of fun a b ↦ fderiv ℝ (fun B : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦
+      (B : Matrix n n 𝕜) a b) A H) = H :=
+  ext fun a b ↦ by
+    simp only [of_apply, (hasFDerivAt_selfAdjoint_apply a b A).fderiv,
+      LinearMap.coe_toContinuousLinearMap', LinearMap.coe_comp, Submodule.coe_subtype,
+      Function.comp_apply, entryLinearMap_apply]
 
 end Matrix
 

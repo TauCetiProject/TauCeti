@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Real powers
@@ -39,6 +39,8 @@ the natural power `y ^ (d - i)`, the form in which spectral values of polynomial
 For `n ≠ 0`, the `n`-th power of `x ^ (1 - 1/n)` is `x ^ (n - 1)` for nonnegative `x`, the form in
 which the volume factor `V ^ (1 - 1/n)` of an isoperimetric inequality is raised to the `n`-th
 power.
+For `n ≠ 0` and nonnegative `x`, a bound `n * x ^ (1 / n) ≤ t` on an `n`-th root gives
+`x ≤ (t / n) ^ n`, the power form of an arithmetic-geometric mean inequality.
 
 Rescaling a power law: if `X ≤ N` and `C = C₀ N / R ^ α / 2`, then `C₀ (r / R) ^ α X ≤ 2 (C r ^ α)`
 for `r ≥ 0`, `R > 0` and `C₀ ≥ 0`.
@@ -124,6 +126,8 @@ with the corresponding integral of `q`-th powers.
   and nonnegative `x`, `y`.
 * `Real.rpow_one_sub_inv_natCast_pow`: `(x ^ (1 - 1/n)) ^ n = x ^ (n - 1)` for `0 ≤ x` and
   `n ≠ 0`.
+* `Real.le_div_pow_of_mul_rpow_inv_le`: `n * x ^ (1 / n) ≤ t → x ≤ (t / n) ^ n` for `0 ≤ x`
+  and `n ≠ 0`.
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
 * `Real.pow_succ_rpow_mul_pow_rpow`: `(a ^ (n + 1)) ^ B * (a ^ n) ^ C = a ^ B * (a ^ (B + C)) ^ n`
   for `0 < a`.
@@ -167,6 +171,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.exists_le_mul_rpow_lt_of_neg`: for `0 < ε` and `p < 0`, arbitrarily large `R'` satisfy
   `M * R' ^ p < ε`.
 * `Real.rpow_sub_mul_mul_rpow_mul`: `x ^ ((s - a) t) x ^ (a t) = x ^ (s t)` for `0 < x`.
+* `Real.rpow_sub_pow_mul_rpow_mul_natCast`: `(x ^ (s - a)) ^ n x ^ (a n) = x ^ (s n)` for
+  `0 < x`.
 * `Real.rpow_mul_le_rpow_add_one`: `T ^ S * x ≤ R' ^ (S + 1)` for `0 < R' ≤ T`, `x ≤ T` and
   `S + 1 ≤ 0`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
@@ -269,6 +275,14 @@ theorem rpow_one_sub_inv_natCast_pow {x : ℝ} (hx : 0 ≤ x) {n : ℕ} (hn : n 
     (x ^ (1 - (n : ℝ)⁻¹)) ^ n = x ^ (n - 1) := by
   rw [← rpow_mul_natCast hx, sub_mul, inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn), one_mul,
     ← Nat.cast_pred (Nat.pos_of_ne_zero hn), rpow_natCast]
+
+/-- If `n * x ^ (1 / n) ≤ t` for a nonnegative real `x` and `n ≠ 0`, then `x ≤ (t / n) ^ n`. This
+turns an arithmetic-geometric mean bound on an `n`-th root, such as `n * (det A) ^ (1 / n) ≤ tr A`,
+into the power form `det A ≤ (tr A / n) ^ n`. -/
+theorem le_div_pow_of_mul_rpow_inv_le {x t : ℝ} {k : ℕ} (hk : k ≠ 0) (hx : 0 ≤ x)
+    (h : k * x ^ (k : ℝ)⁻¹ ≤ t) : x ≤ (t / k) ^ k := by
+  rw [← rpow_inv_natCast_pow hx hk]
+  exact pow_le_pow_left₀ (rpow_nonneg hx _) ((le_div_iff₀' (by positivity)).2 h) _
 
 /-- A natural power `b ^ n` with `1 ≤ b` and `n ≤ δ r` is at most `(b ^ δ) ^ r`. This converts a
 degree bound `n ≤ δ r` with a real factor `δ` into a bound by an `r`-th power. -/
@@ -534,6 +548,12 @@ theorem rpow_sub_mul_mul_rpow_mul {x : ℝ} (hx : 0 < x) (s a t : ℝ) :
     x ^ ((s - a) * t) * x ^ (a * t) = x ^ (s * t) := by
   rw [← rpow_add hx, ← add_mul, sub_add_cancel]
 
+/-- Trading `a` orders in a natural-number scaled exponent:
+`(x ^ (s - a)) ^ n x ^ (a n) = x ^ (s n)` for `0 < x`. -/
+theorem rpow_sub_pow_mul_rpow_mul_natCast {x : ℝ} (hx : 0 < x) (s a : ℝ) (n : ℕ) :
+    (x ^ (s - a)) ^ n * x ^ (a * n) = x ^ (s * n) := by
+  rw [← rpow_mul_natCast hx.le, rpow_sub_mul_mul_rpow_mul hx]
+
 /-- For `0 < x` and natural numbers `a ≤ b`, `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))`. -/
 theorem pow_div_pow_pow_eq_rpow_of_le {x : ℝ} (hx : 0 < x) {a b : ℕ} (hab : a ≤ b) (M : ℕ) :
     (x ^ a / x ^ b) ^ M = x ^ (-(M * |(b : ℝ) - a|)) := by
@@ -587,7 +607,8 @@ theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
     have hp : d ^ (2 * β) = (d ^ β) ^ 2 := by
       simpa only [Nat.cast_ofNat, mul_comm] using rpow_mul_natCast hd.le β 2
     rwa [hp, ← mul_pow] at h
-  have h' := le_sqrt_mul_of_sq_le_mul (rpow_nonneg hd.le β) hsq
+  have h' : d * x ≤ sqrt B * d ^ β := (le_sqrt_of_sq_le hsq).trans_eq
+    (by rw [sqrt_mul_sq, abs_of_nonneg (rpow_nonneg hd.le β)])
   rw [rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
   linarith
 

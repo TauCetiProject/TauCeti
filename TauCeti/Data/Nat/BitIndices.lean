@@ -62,6 +62,11 @@ theorem equivBitIndices_land (m n : ℕ) :
   ext x
   simp
 
+/-- Binary finite-set inclusion is tested by bitwise intersection. -/
+theorem equivBitIndices_subset_iff (m n : ℕ) :
+    equivBitIndices m ⊆ equivBitIndices n ↔ m &&& n = m := by
+  rw [← Finset.inter_eq_left, ← equivBitIndices_land, equivBitIndices.injective.eq_iff]
+
 /-- Inserting `x` into a finite set sets bit `x` of its binary code. -/
 theorem equivBitIndices_symm_insert (x : ℕ) (D : Finset ℕ) :
     equivBitIndices.symm (insert x D) = equivBitIndices.symm D ||| 2 ^ x := by

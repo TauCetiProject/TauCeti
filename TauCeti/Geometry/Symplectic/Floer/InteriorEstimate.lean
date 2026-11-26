@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure
+import TauCeti.Geometry.Symplectic.Rescale
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Topology.Constructions.SumProd
@@ -40,6 +41,16 @@ For data on the whole plane, compatible on the disc `‖w‖ ≤ b`, a cutoff be
 `∫_{‖w‖ ≤ a} (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D_u ξ‖² + ∫_{‖w‖ ≤ b} ‖ξ‖²)`
 
 (`exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt`).
+
+The formal adjoint `D_u^*` on covector fields
+(`TauCeti.SymplecticForm.floerLinearizationAdjoint`) satisfies the same estimate on compactly
+supported fields,
+
+`∫_K (‖∂s η‖² + ‖∂t η‖²) ≤ C ∫_K (‖D_u^* η‖² + ‖η‖²)`
+
+(`exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearizationAdjoint`):
+written through `ω` as the vector field `ζ = ω♭⁻¹ ∘ η`, the adjoint is `-ω♭` of a Cauchy--Riemann
+operator for `-J`, which is compatible with `-ω` when `J` is compatible with `ω`.
 
 No nondegeneracy, no Floer equation for `u` and no smallness of the data is assumed. The first two
 estimates need regularity only at the points of `K`, respectively of the rectangle, and control
@@ -129,6 +140,124 @@ theorem
       (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu)
   refine ⟨C, hC, fun ξ hξ hper ha hb ↦ (h hξ hper ha hb).trans_eq ?_⟩
   simp only [floerLinearization_eq_add, LinearMap.coe_toContinuousLinearMap']
+
+/-! ### The formal adjoint -/
+
+/-- **The Cauchy–Riemann estimate behind the formal adjoint.** Under the hypotheses of
+`exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearizationAdjoint`, the vector
+field `ζ = ω♭⁻¹ ∘ η` of every `C²` covector field `η` supported in `K` satisfies
+`∫_K (‖∂s ζ‖² + ‖∂t ζ‖²) ≤ C ∫_K (‖ω♭⁻¹ (D_u^* η)‖² + ‖ζ‖²)`: by
+`floerLinearizationAdjoint_eq_neg_flatEquiv` this is the estimate of a Cauchy–Riemann operator
+for `-J`, which is compatible with `-ω`. -/
+private theorem exists_forall_setIntegral_norm_fderiv_flatEquiv_symm_sq_le (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    {K : Set (ℝ × ℝ)} {μ : Measure (ℝ × ℝ)} [μ.IsAddHaarMeasure] (hK : IsCompact K)
+    (hJ : ∀ z ∈ K, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ K, ContDiffAt ℝ 1 u z) (hc : ∀ z ∈ K, ω.Compatible (J z (u z))) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → tsupport η ⊆ K →
+      ∫ z in K, (‖fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineImag‖ ^ 2) ∂μ ≤
+        C * ∫ z in K, (‖ω.flatEquiv.symm (ω.floerLinearizationAdjoint
+            (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z)‖ ^ 2 +
+          ‖ω.flatEquiv.symm (η z)‖ ^ 2) ∂μ := by
+  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
+  have hJu (z : ℝ × ℝ) (hz : z ∈ K) : ContDiffAt ℝ 1 (fun w ↦ J' w (u w)) z :=
+    (hJ z hz).comp₂ contDiffAt_id (hu z hz)
+  -- The coefficients `-J` and `Aᵀ` of the Cauchy–Riemann operator of `ω♭⁻¹ ∘ η` are continuous.
+  have hA : ContinuousOn (fun z ↦ ω.leftAdjointL
+      (fderiv ℝ (fun w ↦ J' w (u w)) z stdComplexLineImag -
+        ω.floerLinearizationCoeff J' Ks Kt u z)) K :=
+    ω.leftAdjointL.continuous.comp_continuousOn (ContinuousOn.sub
+      (fun z hz ↦ (((hJu z hz).continuousAt_fderiv one_ne_zero).clm_apply
+        continuousAt_const).continuousWithinAt)
+      (ω.continuousOn_floerLinearizationCoeff (J := J') hJ hKs hKt hu))
+  have hJc : ContinuousOn (fun z ↦ (-J z (u z)).toLinearMap.toContinuousLinearMap) K := by
+    have h : ContinuousOn (fun z ↦ -J' z (u z)) K :=
+      ContinuousOn.neg fun z hz ↦ (hJu z hz).continuousAt.continuousWithinAt
+    refine h.congr fun z _ ↦ ?_
+    ext v
+    simp [J']
+  obtain ⟨C, hC, h⟩ := exists_forall_setIntegral_norm_fderiv_sq_le_of_tsupport_subset (μ := μ)
+    (ω := ω.rescale (-1) (by norm_num)) hK
+    (fun z hz ↦ (hc z hz).rescale_neg_of_neg (by norm_num)) hJc hA
+  refine ⟨C, hC, fun η hη hηK ↦ (h (ξ := fun w ↦ ω.flatEquiv.symm (η w))
+    (ω.flatEquiv.symm.contDiff.comp hη) ((tsupport_comp_subset (map_zero _) η).trans hηK)).trans_eq
+    ?_⟩
+  -- On `K`, the Cauchy–Riemann operator of `ω♭⁻¹ ∘ η` is `-ω♭⁻¹ (D^* η)`.
+  congr 1
+  refine setIntegral_congr_fun hK.measurableSet fun z hz ↦ ?_
+  rw [floerLinearizationAdjoint_eq_neg_flatEquiv ω (hη.differentiable two_ne_zero z)
+    ((hJu z hz).differentiableAt one_ne_zero) (hc z hz).invariant, map_neg,
+    ContinuousLinearEquiv.symm_apply_apply, norm_neg]
+
+/-- **The `L²` estimate of the formal adjoint on compactly supported covector fields.** Let
+`K ⊆ ℝ × ℝ` be compact, and suppose that at every `z ∈ K` the structure `J(z, u z)` is
+`ω`-compatible, `J` is `C¹` and the Hamiltonians `Ks`, `Kt` are `C²` at `(z, u z)`, and `u` is
+`C¹` at `z`. Then there is a constant `C ≥ 0` such that every `C²` covector field `η` with support
+in `K` satisfies `∫_K (‖∂s η‖² + ‖∂t η‖²) ≤ C ∫_K (‖D_u^* η‖² + ‖η‖²)` for the formal adjoint
+`D_u^*` of the linearized Floer operator, with respect to an additive Haar measure. Written
+through `ω` as a vector field, `η` is acted on by a Cauchy–Riemann operator for `-J`, which is
+compatible with `-ω` (`floerLinearizationAdjoint_eq_neg_flatEquiv`), so the estimate is that of
+`exists_forall_setIntegral_norm_fderiv_sq_le_of_tsupport_subset` for `-ω`. -/
+theorem
+  exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearizationAdjoint
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {K : Set (ℝ × ℝ)} {μ : Measure (ℝ × ℝ)} [μ.IsAddHaarMeasure]
+    (hK : IsCompact K)
+    (hJ : ∀ z ∈ K, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ K, ContDiffAt ℝ 1 u z) (hc : ∀ z ∈ K, ω.Compatible (J z (u z))) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → tsupport η ⊆ K →
+      ∫ z in K, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2) ∂μ ≤
+        C * ∫ z in K, (‖ω.floerLinearizationAdjoint
+            (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 +
+          ‖η z‖ ^ 2) ∂μ := by
+  obtain ⟨C, hC, h⟩ := exists_forall_setIntegral_norm_fderiv_flatEquiv_symm_sq_le ω (μ := μ) hK hJ
+    hKs hKt hu hc
+  -- `ω♭` and its inverse change square norms by at most the squares of their norms.
+  set c₁ := ‖(ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ))‖
+  set c₂ := ‖(ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖
+  have hc₁ := ω.norm_sq_le_norm_flatEquiv_sq_mul_norm_flatEquiv_symm_apply_sq
+  have hc₂ := ω.norm_flatEquiv_symm_apply_sq_le
+  refine ⟨c₁ ^ 2 * C * c₂ ^ 2, by positivity, fun η hη hηK ↦ ?_⟩
+  set ζ : ℝ × ℝ → V := fun w ↦ ω.flatEquiv.symm (η w)
+  have hdζ (z : ℝ × ℝ) (v : ℝ × ℝ) : fderiv ℝ ζ z v = ω.flatEquiv.symm (fderiv ℝ η z v) :=
+    fderiv_flatEquiv_symm_apply ω η z v
+  have hDc : ContinuousOn (ω.floerLinearizationAdjoint
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η) K := fun z hz ↦
+    (continuousAt_floerLinearizationAdjoint (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz)
+      (hη.of_le one_le_two).contDiffAt).continuousWithinAt
+  have hdη := hη.continuous_fderiv two_ne_zero
+  have hdζc := (ω.flatEquiv.symm.contDiff.comp hη).continuous_fderiv two_ne_zero
+  have hI {g : ℝ × ℝ → ℝ} (hg : ContinuousOn g K) : IntegrableOn g K μ :=
+    hg.integrableOn_compact hK
+  calc _ ≤ ∫ z in K, c₁ ^ 2 * (‖fderiv ℝ ζ z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ ζ z stdComplexLineImag‖ ^ 2) ∂μ :=
+        setIntegral_mono_on (hI (by fun_prop)) (hI (by fun_prop)) hK.measurableSet fun z _ ↦ by
+          rw [hdζ, hdζ, mul_add]
+          exact add_le_add (hc₁ _) (hc₁ _)
+    _ ≤ c₁ ^ 2 * (C * ∫ z in K, c₂ ^ 2 * (‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 +
+          ‖η z‖ ^ 2) ∂μ) := by
+        rw [integral_const_mul]
+        refine mul_le_mul_of_nonneg_left ((h hη hηK).trans (mul_le_mul_of_nonneg_left
+          (setIntegral_mono_on (hI (((ω.flatEquiv.symm.continuous.comp_continuousOn
+            hDc).norm.pow 2).add ((ω.flatEquiv.symm.continuous.comp hη.continuous).norm.pow
+              2).continuousOn))
+          (hI (continuousOn_const.mul ((hDc.norm.pow 2).add
+            (hη.continuous.norm.pow 2).continuousOn))) hK.measurableSet fun z _ ↦ ?_) hC))
+          (sq_nonneg _)
+        rw [mul_add]
+        exact add_le_add (hc₂ _) (hc₂ _)
+    _ = _ := by
+        rw [integral_const_mul]
+        ring
 
 omit [FiniteDimensional ℝ V] in
 /-- **Comparing with a cut-off section on a disc.** If `β = 1` near every point of the disc

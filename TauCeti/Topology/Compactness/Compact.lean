@@ -19,7 +19,8 @@ import TauCeti.Topology.Separation.InvFunOn
 General lemmas about compact and σ-compact subsets of topological spaces, limits along
 ultrafilters of families eventually in a compact set, families whose values tend to the
 cocompact filter, whose images therefore lie in no fixed compact set, and passing from constants
-valid near each point of a compact set to one constant valid on all of it. Maps converging
+valid near each point of a compact set to one constant valid on all of it, also for eventual
+bounds along a filter (`IsCompact.exists_eventually_forall_le_of_forall`). Maps converging
 continuously on a compact set eventually map it into any open set containing the image under the
 limit (`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`). The fibres over `w` of a closed set
 `C ⊆ P × X` that near `w₀` all lie in a fixed compact set are eventually contained in every open
@@ -32,6 +33,9 @@ eventually in `K` (`IsCompact.tendsto_nhds_of_tendsto_comp`) and limits of maps 
 eventually lie in `K` (`IsCompact.exists_tendsto_of_tendsto_comp`) can be read through it. These
 are the versions, for compact sets, of the results for an inducing restriction in
 `TauCeti.Topology.Maps.IsInducing`.
+
+A nonempty compact set totally ordered by specialization contains a point specializing all of its
+points (`IsCompact.exists_forall_specializes`).
 -/
 
 public section
@@ -71,6 +75,22 @@ theorem _root_.IsCompact.exists_forall_of_forall_exists_eventually {α : Type*}
     exact ⟨c, fun y hy ↦ hy.elim (fun hy ↦ hp hac (ha y hy)) fun hy ↦ hp hbc (hb y hy)⟩
   · obtain ⟨a, ha⟩ := h y hy
     exact ⟨_, ha, a, fun _ h ↦ h⟩
+
+/-- **A locally eventual bound is uniform over a compact set.** If near each point of a compact
+set `C`, within `C`, the functions `g n` are eventually bounded above by a constant, then they are
+eventually bounded above on all of `C` by one constant. -/
+theorem _root_.IsCompact.exists_eventually_forall_le_of_forall {ι α : Type*} [Preorder α]
+    [IsDirected α (· ≤ ·)] [Nonempty α] {l : Filter ι} {g : ι → X → α} {C : Set X}
+    (hC : IsCompact C) (h : ∀ x ∈ C, ∃ s ∈ 𝓝[C] x, ∃ M, ∀ᶠ n in l, ∀ y ∈ s, g n y ≤ M) :
+    ∃ M, ∀ᶠ n in l, ∀ y ∈ C, g n y ≤ M := by
+  refine hC.induction_on (p := fun s ↦ ∃ M, ∀ᶠ n in l, ∀ y ∈ s, g n y ≤ M)
+    ⟨Classical.arbitrary α, by simp⟩
+    (fun s t hst ⟨M, hM⟩ ↦ ⟨M, hM.mono fun n hn y hy ↦ hn y (hst hy)⟩)
+    (fun s t ⟨M, hM⟩ ⟨M', hM'⟩ ↦ ?_) h
+  obtain ⟨N, hMN, hM'N⟩ := directed_of (· ≤ ·) M M'
+  refine ⟨N, ?_⟩
+  filter_upwards [hM, hM'] with n hn hn' y hy
+  exacts [hy.elim (fun hy ↦ (hn y hy).trans hMN) fun hy ↦ (hn' y hy).trans hM'N]
 
 /-- **Connected components of a compact set are compact.** The connected component of a compact
 set `K` at a point is closed in `K`, hence compact; it is empty at a point outside `K`. -/
@@ -269,6 +289,18 @@ theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}
       ⟨T, hS T hT, Set.inter_eq_left.2 hT⟩
   exact (hK.of_isClosed_subset (hS S subset_rfl) hSK).finite hd
 
+/-- The preimage of a compact set `K` under an inducing map `j` is compact when `K` lies in the
+union of the range of `j` and an open set `V` meeting no point of `K` in that range: it is the
+preimage of the compact set `K ∖ V`. -/
+theorem _root_.Topology.IsInducing.isCompact_preimage_of_subset_union {Y : Type*}
+    [TopologicalSpace Y] {j : X → Y} (hj : IsInducing j) {V : Set Y} (hV : IsOpen V) {K : Set Y}
+    (hK : IsCompact K) (hKV : K ⊆ range j ∪ V) (hdisj : Disjoint (K ∩ range j) V) :
+    IsCompact (j ⁻¹' K) := by
+  have h : j ⁻¹' (K \ V) = j ⁻¹' K :=
+    Set.ext fun z ↦ and_iff_left_of_imp fun hz ↦ hdisj.notMem_of_mem_left ⟨hz, mem_range_self z⟩
+  exact h ▸ (hj.isCompact_preimage_iff (K := K \ V) fun _ ⟨hz, hz'⟩ ↦
+    (hKV hz).resolve_right hz').2 (hK.diff hV)
+
 /-- In a compact Hausdorff space `X`, the punctured space `{x : X // x ≠ x₀}` is compact if and
 only if `x₀` is an isolated point (`{x₀}` is open). -/
 theorem compactSpace_complSingleton_iff_isOpen_singleton [CompactSpace X] [T2Space X] {x₀ : X} :
@@ -304,6 +336,27 @@ theorem _root_.IsCompact.subset_of_isClosed_of_forall_isClosed_singleton [T0Spac
     (hU.preimage continuous_subtypeVal).isClosed_compl.exists_closed_singleton ⟨⟨z, hzS⟩, hzU⟩
   exact hwU (h w hwS (by simpa [image_singleton] using
     hS.isClosedEmbedding_subtypeVal.isClosedMap _ hwcl))
+
+/-- A nonempty compact set whose points are pairwise comparable for specialization contains a
+point that is a specialization of each of its points. This is the analogue of
+`IsCompact.exists_isGreatest` for the specialization preorder, which need not be linear and in
+which `closure {x}` plays the role of the closed interval `Set.Ici x`. The proof is adapted from
+Mathlib's proof of `IsCompact.exists_isLeast` (in `Mathlib/Topology/Order/Compact.lean`), with the
+closed sets `closure {y}` in place of the intervals `Set.Iic y`. -/
+theorem _root_.IsCompact.exists_forall_specializes {K : Set X} (hK : IsCompact K)
+    (hne : K.Nonempty) (hc : IsChain (· ⤳ ·) K) : ∃ x ∈ K, ∀ y ∈ K, y ⤳ x := by
+  have : Nonempty K := hne.to_subtype
+  suffices (K ∩ ⋂ y : K, closure {y.val}).Nonempty by
+    obtain ⟨x, hxK, hx⟩ := this
+    exact ⟨x, hxK, fun y hy ↦ specializes_iff_mem_closure.2 (mem_iInter.1 hx ⟨y, hy⟩)⟩
+  by_contra H
+  rw [not_nonempty_iff_eq_empty, ← disjoint_iff_inter_eq_empty] at H
+  have hdir : Directed (· ⊇ ·) fun y : K ↦ closure {y.val} := fun y z ↦ by
+    rcases hc.total y.property z.property with h | h
+    · exact ⟨z, specializes_iff_closure_subset.1 h, subset_rfl⟩
+    · exact ⟨y, subset_rfl, specializes_iff_closure_subset.1 h⟩
+  obtain ⟨y, hy⟩ := hK.elim_directed_family_closed _ (fun _ ↦ isClosed_closure) H hdir
+  exact disjoint_left.1 hy y.property (subset_closure rfl)
 
 /-- If maps `f i` converge to `g` continuously at every point of a compact set `A`, that is
 `f p.1 p.2 → g a` as `p → (l, a)`, and `g` maps `A` into an open set `t`, then eventually along

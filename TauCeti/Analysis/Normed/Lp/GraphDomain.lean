@@ -14,11 +14,14 @@ public import Mathlib.Topology.ContinuousMap.Algebra
 This file defines the open normal half-space and the open region above the graph of a continuous
 function in `WithLp 2 (ℝ × E)`. These are the model domains used by graph flattening and Sobolev
 trace theory. It also defines the normal graph parametrization `y ↦ (φ y, y)` and records its
-elementary metric properties.
+elementary metric properties, and the graph map `v ↦ (v, A v)` of a continuous linear map
+`A : E →L[ℝ] F` into `WithLp 2 (E × F)`.
 
 ## Main declarations
 
 * `TauCeti.normalHalfSpace`: the region above a constant normal coordinate.
+* `TauCeti.preimage_withLpMap_prodMap_id_normalHalfSpace`: maps keeping the normal coordinate
+  preserve each half-space.
 * `TauCeti.normalEpigraph`: the region above the graph of a continuous function.
 * `TauCeti.normalGraphEmbedding`: the normal graph parametrization `y ↦ (φ y, y)`.
 * `TauCeti.frontier_setOf_lt_fst`: the frontier of a continuous epigraph is its graph.
@@ -27,6 +30,13 @@ elementary metric properties.
 * `ContinuousLinearMap.normalGraphL`: the continuous linear graph map `x ↦ (A x, x)`.
 * `ContinuousLinearMap.injective_normalGraphL`: the linear graph map is injective.
 * `ContinuousLinearMap.range_normalGraphL`: its range is the linear graph of `A`.
+* `LipschitzOnWith.graph`, `LipschitzWith.graph`: a map `K`-Lipschitz on a set, or on the whole
+  space, has a graph parametrization `x ↦ (x, f x)` that is `(K + 1)`-Lipschitz there.
+* `ContinuousLinearMap.graphL`: the continuous linear graph map `v ↦ (v, A v)` of
+  `A : E →L[ℝ] F`, in every codimension.
+* `ContinuousLinearMap.injective_graphL`, `ContinuousLinearMap.range_graphL`: it is injective,
+  with range the graph `LinearMap.graph A`.
+* `ContinuousLinearMap.mem_range_graphL`: `z` is in that range exactly when `z.snd = A z.fst`.
 -/
 
 public section
@@ -55,6 +65,15 @@ theorem mem_normalHalfSpace (a : ℝ) (x : WithLp 2 (ℝ × E)) :
 theorem coe_normalHalfSpace (a : ℝ) :
     (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) = {x | a < x.fst} :=
   Set.ext (mem_normalHalfSpace a)
+
+/-- A map of `ℝ × E` that keeps the normal coordinate preserves each half-space `{a < t}`. -/
+@[simp]
+theorem preimage_withLpMap_prodMap_id_normalHalfSpace (ψ : E → E) (a : ℝ) :
+    WithLp.map 2 (Prod.map (id : ℝ → ℝ) ψ) ⁻¹'
+        (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) =
+      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
+  ext x
+  simp
 
 /-- The open region `{x | φ x.snd < x.fst}` above the graph of a continuous function
 `φ : E → ℝ` in the ℓ² product `ℝ × E`. -/
@@ -132,26 +151,42 @@ theorem antilipschitzWith_normalGraphEmbedding [PseudoEMetricSpace E] (φ : E �
   simpa only [ENNReal.coe_one, one_mul, normalGraphEmbedding_snd] using
     WithLp.edist_snd_le (normalGraphEmbedding φ x) (normalGraphEmbedding φ y)
 
-/-- A `K`-Lipschitz function has a `(K + 1)`-Lipschitz normal graph parametrization. -/
-theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoEMetricSpace E] {K : ℝ≥0}
-    {φ : E → ℝ} (hφ : LipschitzWith K φ) :
-    LipschitzWith (K + 1) (TauCeti.normalGraphEmbedding φ) := fun x y ↦ by
-  set a := edist (φ x) (φ y)
+/-- A map that is `K`-Lipschitz on a set `s` has a graph parametrization `x ↦ (x, f x)` into the
+`L²` product that is `(K + 1)`-Lipschitz on `s`. -/
+theorem _root_.LipschitzOnWith.graph {α β : Type*} [PseudoEMetricSpace α] [PseudoEMetricSpace β]
+    {K : ℝ≥0} {f : α → β} {s : Set α} (hf : LipschitzOnWith K f s) :
+    LipschitzOnWith (K + 1) (fun x ↦ WithLp.toLp 2 (x, f x)) s := fun x hx y hy ↦ by
+  set a := edist (f x) (f y)
   set b := edist x y
   calc
-    edist (TauCeti.normalGraphEmbedding φ x) (TauCeti.normalGraphEmbedding φ y) =
-        (a ^ 2 + b ^ 2) ^ (1 / 2 : ℝ) := by
+    edist (WithLp.toLp 2 (x, f x)) (WithLp.toLp 2 (y, f y)) = (b ^ 2 + a ^ 2) ^ (1 / 2 : ℝ) := by
       simp [WithLp.prod_edist_eq_add, a, b]
-    -- `a ^ 2 + b ^ 2 ≤ a ^ 2 + 2 * a * b + b ^ 2 = (a + b) ^ 2`.
+    -- `b ^ 2 + a ^ 2 ≤ a ^ 2 + 2 * a * b + b ^ 2 = (a + b) ^ 2`.
     _ ≤ ((a + b) ^ 2) ^ (1 / 2 : ℝ) := by
       refine ENNReal.rpow_le_rpow ?_ (by norm_num)
-      rw [add_sq]
+      rw [add_comm, add_sq]
       exact add_le_add le_self_add le_rfl
     _ = a + b := by
       rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
       norm_num
-    _ ≤ K * b + b := add_le_add (hφ x y) le_rfl
+    _ ≤ K * b + b := add_le_add (hf hx hy) le_rfl
     _ = (K + 1) * b := by rw [add_mul, one_mul]
+
+/-- A `K`-Lipschitz map has a `(K + 1)`-Lipschitz graph parametrization `x ↦ (x, f x)` into the
+`L²` product. -/
+theorem _root_.LipschitzWith.graph {α β : Type*} [PseudoEMetricSpace α] [PseudoEMetricSpace β]
+    {K : ℝ≥0} {f : α → β} (hf : LipschitzWith K f) :
+    LipschitzWith (K + 1) (fun x ↦ WithLp.toLp 2 (x, f x)) :=
+  lipschitzOnWith_univ.1 (lipschitzOnWith_univ.2 hf).graph
+
+/-- A `K`-Lipschitz function has a `(K + 1)`-Lipschitz normal graph parametrization. -/
+theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoEMetricSpace E] {K : ℝ≥0}
+    {φ : E → ℝ} (hφ : LipschitzWith K φ) :
+    LipschitzWith (K + 1) (TauCeti.normalGraphEmbedding φ) := by
+  -- Swapping the coordinates of the `L²` product turns `x ↦ (x, φ x)` into `y ↦ (φ y, y)`.
+  have h := (IsometryEquiv.withLpProdComm 2 E ℝ).isometry.lipschitzWith.comp hφ.graph
+  simpa only [Function.comp_def, IsometryEquiv.withLpProdComm_apply, WithLp.toLp_fst,
+    WithLp.toLp_snd, one_mul, ← normalGraphEmbedding_apply] using h
 
 section
 
@@ -216,6 +251,38 @@ theorem _root_.ContinuousLinearMap.range_normalGraphL (A : E →L[ℝ] ℝ) :
       {z | z.fst = A z.snd} := by
   rw [LinearMap.coe_range, ContinuousLinearMap.coe_coe, A.coe_normalGraphL,
     range_normalGraphEmbedding]
+
+variable {F : Type*} [TopologicalSpace F] [AddCommGroup F] [Module ℝ F]
+
+/-- The continuous linear graph map `v ↦ (v, A v)` of `A : E →L[ℝ] F`, into the Euclidean
+product `WithLp 2 (E × F)`. -/
+def _root_.ContinuousLinearMap.graphL (A : E →L[ℝ] F) : E →L[ℝ] WithLp 2 (E × F) :=
+  (WithLp.prodContinuousLinearEquiv 2 ℝ E F).symm.toContinuousLinearMap ∘L
+    (ContinuousLinearMap.id ℝ E).prod A
+
+@[simp]
+theorem _root_.ContinuousLinearMap.graphL_apply (A : E →L[ℝ] F) (v : E) :
+    A.graphL v = WithLp.toLp 2 (v, A v) :=
+  (rfl)
+
+/-- The continuous linear graph map is injective, since its first coordinate is its argument. -/
+theorem _root_.ContinuousLinearMap.injective_graphL (A : E →L[ℝ] F) :
+    Function.Injective A.graphL := fun _ _ h ↦ by
+  simpa using congrArg WithLp.fst h
+
+/-- The range of the continuous linear graph map is the graph of `A`, transported to the
+Euclidean product. -/
+theorem _root_.ContinuousLinearMap.range_graphL (A : E →L[ℝ] F) :
+    LinearMap.range A.graphL.toLinearMap =
+      (LinearMap.graph (A : E →ₗ[ℝ] F)).map (WithLp.linearEquiv 2 ℝ (E × F)).symm.toLinearMap := by
+  ext z
+  simp [LinearMap.mem_graph_iff, WithLp.ext_iff, Prod.ext_iff, eq_comm]
+
+/-- A point of the Euclidean product lies in the range of the continuous linear graph map exactly
+when its second coordinate is `A` of its first. -/
+theorem _root_.ContinuousLinearMap.mem_range_graphL (A : E →L[ℝ] F) {z : WithLp 2 (E × F)} :
+    z ∈ LinearMap.range A.graphL.toLinearMap ↔ z.snd = A z.fst := by
+  simp [A.range_graphL, LinearMap.mem_graph_iff]
 
 end Linear
 

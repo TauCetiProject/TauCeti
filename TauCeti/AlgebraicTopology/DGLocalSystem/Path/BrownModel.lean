@@ -32,15 +32,27 @@ made to build it: any two Brown models of the same space at the same point, for 
 two CW structures or of two choices of paths to the cells, are homologous, so their twisted
 complexes with coefficients in every DG right module are homotopy equivalent
 (`TauCeti.BrownModel.exists_rowFiniteHomologous_homotopy`). The equivalence is compatible with the
-comparisons with `C_*(P_b B; R)`, up to a specified homotopy. Every Brown model computes the
+comparisons with `C_*(P_b B; R)`, up to a specified homotopy. A Brown model can be moved to any
+other phantom parameter `H` of the chains on the path space (`TauCeti.BrownModel.changePhantom`),
+so the models built with two phantom parameters are homologous too. Every Brown model computes the
 derived tensor product with the ground ring
 (`TauCeti.BrownModel.nonempty_localizedFunctor_iso_derivedTensor`, in
 `TauCeti.AlgebraicTopology.DGLocalSystem.Path.DerivedTensor`).
+
+The **base chain** of a generator `x` (`TauCeti.BrownModel.baseChain`) is the push-forward `e_x`
+to `B` of its image, along the end point map `P_b B → B`. The end point does not see a loop
+concatenated in front, so this push-forward is linear over the augmentation `ε` of the loop chains
+(`TauCeti.cubicalChainModuleLinearMap_endpoint_smul`), and the equation `g(m_x) = ∂ (g x)` of the
+model gives `∂ e_x = ∑_y ε(m_{x,y}) e_y`
+(`TauCeti.BrownModel.cubicalChainModuleDifferential_baseChain`). So `x ↦ e_x` is a chain map to
+`C_*(B; R)` from the twisted complex `R ⊗_{C_*(Ω_b B; R)} K_m` of the ground ring.
 
 ## Main definitions
 
 * `TauCeti.BrownModel B b H R P ind`: a semi-free model of `C_*(P_b B; R)` over `C_*(Ω_b B; R)` on
   the generators `P` with indices `ind`.
+* `TauCeti.BrownModel.changePhantom H M`: the Brown model `M` moved to the phantom parameter `H`.
+* `TauCeti.BrownModel.baseChain M x`: the base chain of the generator `x` of `M`.
 
 ## Main results
 
@@ -48,6 +60,8 @@ derived tensor product with the ground ring
   the differentials.
 * `TauCeti.BrownModel.exists_rowFiniteHomologous_homotopy`: two Brown models are homologous,
   compatibly with their comparisons.
+* `TauCeti.BrownModel.cubicalChainModuleDifferential_baseChain`: `∂ e_x = ∑_y ε(m_{x,y}) e_y` for
+  the base chains `e_x`.
 
 ## References
 
@@ -64,7 +78,7 @@ noncomputable section
 
 open Finsupp
 
-universe uB uH uR uP
+universe uB uH uH' uR uP
 
 namespace TauCeti
 
@@ -123,6 +137,48 @@ theorem linearCombination_differential (M : BrownModel B b H R P ind)
   linearCombination_rowFiniteTwistedDifferential (pathFromChain_isDGLeftModule B b H R)
     M.cocycle.m M.linearCombination_comparison_m f
 
+variable (H) in
+/-- **Changing the phantom parameter of a Brown model.** The same cocycle, with the comparison
+composed with the change of phantom monoid `TauCeti.cubicalChainModuleLeftPhantomEquiv` of the
+chains on the based path space, is a Brown model for the phantom parameter `H`. -/
+def changePhantom {H' : Type uH'} (M : BrownModel B b H' R P ind) : BrownModel B b H R P ind where
+  cocycle := M.cocycle
+  wellFounded := M.wellFounded
+  comparison :=
+    cubicalChainModuleLeftPhantomEquiv (MooreLoopSpace B b) (MoorePathFrom B b) H' H R ∘
+      M.comparison
+  comparison_mem x := cubicalChainModuleLeftPhantomEquiv_mem (M.comparison_mem x)
+  linearCombination_comparison_m x := by
+    let L := cubicalChainModuleLeftPhantomEquiv (MooreLoopSpace B b) (MoorePathFrom B b) H' H R
+    have hL : L (linearCombination (loopChainAlgebra B b R) M.comparison (M.cocycle.m x)) =
+        linearCombination (loopChainAlgebra B b R) (L ∘ M.comparison) (M.cocycle.m x) :=
+      apply_linearCombination _ L.toLinearMap _ _
+    rw [← hL, M.linearCombination_comparison_m, Function.comp_apply,
+      cubicalChainModuleDifferential_leftPhantomEquiv]
+  exists_differential_eq_and_linearCombination_add_eq u w hDu huw := by
+    let L := cubicalChainModuleLeftPhantomEquiv (MooreLoopSpace B b) (MoorePathFrom B b) H' H R
+    have hL (u) : L (linearCombination (loopChainAlgebra B b R) M.comparison u) =
+        linearCombination (loopChainAlgebra B b R) (L ∘ M.comparison) u :=
+      apply_linearCombination _ L.toLinearMap _ u
+    obtain ⟨u', w', hu', hw'⟩ := M.exists_differential_eq_and_linearCombination_add_eq u
+      (L.symm w) hDu <| L.injective <| by
+        rw [hL, huw, ← cubicalChainModuleDifferential_leftPhantomEquiv, L.apply_symm_apply]
+    refine ⟨u', L w', hu', ?_⟩
+    rw [← hL, cubicalChainModuleDifferential_leftPhantomEquiv, ← map_add, hw', L.apply_symm_apply]
+
+/-- Changing the phantom parameter keeps the cocycle. -/
+@[simp]
+theorem changePhantom_cocycle {H' : Type uH'} (M : BrownModel B b H' R P ind) :
+    (M.changePhantom H).cocycle = M.cocycle :=
+  (rfl)
+
+/-- Changing the phantom parameter composes the comparison with the change of phantom monoid. -/
+theorem changePhantom_comparison {H' : Type uH'} (M : BrownModel B b H' R P ind) (x : P) :
+    (M.changePhantom H).comparison x =
+      cubicalChainModuleLeftPhantomEquiv (MooreLoopSpace B b) (MoorePathFrom B b) H' H R
+        (M.comparison x) :=
+  (rfl)
+
 /-- **Brown models are unique up to homotopy.** Two Brown models `M` and `M'` of the chains on the
 based path space, with generators in the same universe, are homologous: there are continuation
 cocycles in both directions whose composites are homotopic to the identities, so the twisted
@@ -145,6 +201,30 @@ theorem exists_rowFiniteHomologous_homotopy {Q : Type uP} {indQ : Q → ℤ}
     M.linearCombination_comparison_m M'.linearCombination_comparison_m
     M.exists_differential_eq_and_linearCombination_add_eq
     M'.exists_differential_eq_and_linearCombination_add_eq
+
+/-- The **base chain** of a generator `x` of a Brown model: the push-forward to `B`, along the end
+point map `P_b B → B`, of the image of `x` in the chains on the based path space. -/
+def baseChain (M : BrownModel B b H R P ind) (x : P) : cubicalChainModule B H R :=
+  cubicalChainModuleLinearMap R (MoorePathFrom.endpoint B b) (M.comparison x)
+
+theorem baseChain_def (M : BrownModel B b H R P ind) (x : P) :
+    M.baseChain x = cubicalChainModuleLinearMap R (MoorePathFrom.endpoint B b) (M.comparison x) :=
+  (rfl)
+
+/-- The base chain of a generator of index `n` has dimension `n`. -/
+theorem baseChain_mem_cubicalChainModuleGrading (M : BrownModel B b H R P ind) (x : P) :
+    M.baseChain x ∈ cubicalChainModuleGrading B H R (-ind x) :=
+  cubicalChainModuleLinearMap_mem _ (M.comparison_mem x)
+
+/-- **The augmented rows of a Brown model are the boundary coefficients of its base chains**:
+`∂ e_x = ∑_y ε(m_{x,y}) e_y`, where `e_x` is the base chain of `x` and `ε` the augmentation of the
+loop chains. -/
+theorem cubicalChainModuleDifferential_baseChain (M : BrownModel B b H R P ind) (x : P) :
+    cubicalChainModuleDifferential B H R (M.baseChain x) =
+      (M.cocycle.m x).sum fun y a ↦ loopChainAugmentation B b R a • M.baseChain y := by
+  rw [baseChain, cubicalChainModuleDifferential_linearMap, ← M.linearCombination_comparison_m,
+    linearCombination_apply, map_finsuppSum]
+  simp only [cubicalChainModuleLinearMap_endpoint_smul, baseChain]
 
 end BrownModel
 

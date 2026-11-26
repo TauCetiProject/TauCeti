@@ -55,6 +55,12 @@ in `TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Sphere`).
 
 ## Main results
 
+* `TauCeti.hasFDerivAt_sub_smul_comp_chartAt_symm`: the derivative of a chart reading with a
+  simple zero.
+* `TauCeti.evalFundamentalClass_complexEulerClass_eq_add_one_of_setOf_eq_insert`: adding a zero of
+  index one raises the Euler number by one.
+* `TauCeti.sectionIndex_eq_one_of_hasFDerivAt_smulRight`: a zero whose chart reading has the
+  derivative of multiplication by a nonzero complex number has local index `1`.
 * `TauCeti.sectionIndex_pointTwistMul_of_ne` and `TauCeti.sectionIndex_pointTwistMul_self`: the
   local indices of the twisted section.
 * `TauCeti.evalFundamentalClass_complexEulerClass_pointTwist`: the Euler number of `L(x)` is that
@@ -140,6 +146,82 @@ theorem sectionIndex_pointTwistMul_of_ne {x z : X} (hzx : z ≠ x) {s : ∀ z, E
   refine (pointTwistCore_localTriv_pointTwistMul hy (s y)).trans ?_
   rw [pointTwistFactor_self, one_smul]
 
+omit [T2Space X] [IsManifold 𝓘(ℂ, ℂ) 1 X] [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F]
+  [FiniteDimensional ℂ F]
+  [∀ z, Module ℝ (E z)] [∀ z, IsScalarTower ℝ ℂ (E z)] in
+/-- **The derivative of a chart reading with a simple zero.** Let `φ` be the chart of `X` at `x`.
+If near `φ x` a function `f` is `w ↦ (w - φ x) G(φ⁻¹ w)`, with `G` continuous at `x`, then the real
+derivative of `f` at `φ x` is multiplication by `G x`. This is how the sections of the point twists
+read at the twisting point. -/
+theorem hasFDerivAt_sub_smul_comp_chartAt_symm {x : X} {f : ℂ → ℂ} {G : X → ℂ}
+    (hG : ContinuousAt G x)
+    (hf : f =ᶠ[𝓝 (chartAt ℂ x x)] fun w ↦ (w - chartAt ℂ x x) • G ((chartAt ℂ x).symm w)) :
+    HasFDerivAt f ((ContinuousLinearMap.id ℝ ℂ).smulRight (G x)) (chartAt ℂ x x) := by
+  set φ := chartAt ℂ x
+  have hxφ : x ∈ φ.source := mem_chart_source ℂ x
+  have hG' : ContinuousAt (G ∘ φ.symm) (φ x) :=
+    ContinuousAt.comp_of_eq hG (φ.continuousAt_symm (φ.map_source hxφ)) (φ.left_inv hxφ)
+  have hA := (((hasFDerivAt_id (𝕜 := ℝ) (φ x)).sub_const (φ x)).smul_of_eq_zero hG'
+    (sub_self _)).congr_of_eventuallyEq hf
+  rwa [Function.comp_apply, φ.left_inv hxφ] at hA
+
+section Count
+
+variable {L₁ L₂ : X → Type} [∀ z, AddCommGroup (L₁ z)] [∀ z, Module ℂ (L₁ z)]
+  [∀ z, Module ℝ (L₁ z)] [∀ z, IsScalarTower ℝ ℂ (L₁ z)] [∀ z, TopologicalSpace (L₁ z)]
+  [TopologicalSpace (TotalSpace ℂ L₁)] [FiberBundle ℂ L₁] [VectorBundle ℂ ℂ L₁]
+  [∀ z, AddCommGroup (L₂ z)] [∀ z, Module ℂ (L₂ z)] [∀ z, Module ℝ (L₂ z)]
+  [∀ z, IsScalarTower ℝ ℂ (L₂ z)] [∀ z, TopologicalSpace (L₂ z)]
+  [TopologicalSpace (TotalSpace ℂ L₂)] [FiberBundle ℂ L₂] [VectorBundle ℂ ℂ L₂]
+
+local instance instVectorBundleRealCountPointTwistEuler₁ : VectorBundle ℝ ℂ L₁ :=
+  VectorBundle.restrictScalars ℝ ℂ ℂ L₁
+
+local instance instVectorBundleRealCountPointTwistEuler₂ : VectorBundle ℝ ℂ L₂ :=
+  VectorBundle.restrictScalars ℝ ℂ ℂ L₂
+
+/-- **Adding a zero of index one raises the Euler number by one.** Let `σ₁` and `σ₂` be continuous
+sections of complex line bundles `L₁` and `L₂` with fibre `ℂ` over a compact Riemann surface `X`,
+where `σ₁` has finitely many zeros, does not vanish at `x`, and the zeros of `σ₂` are those of `σ₁`
+together with `x`. If the local indices of `σ₂` and `σ₁` agree off `x` and `σ₂` has local index `1`
+at `x`, then `⟨e(L₂), [X]⟩ = ⟨e(L₁), [X]⟩ + 1`. -/
+theorem evalFundamentalClass_complexEulerClass_eq_add_one_of_setOf_eq_insert [CompactSpace X]
+    (x : X) {σ₁ : ∀ z, L₁ z} {σ₂ : ∀ z, L₂ z}
+    (hσ₁ : Continuous fun z ↦ TotalSpace.mk' ℂ z (σ₁ z))
+    (hσ₂ : Continuous fun z ↦ TotalSpace.mk' ℂ z (σ₂ z)) (hZ : {z | σ₁ z = 0}.Finite)
+    (hZ₂ : {z | σ₂ z = 0} = insert x {z | σ₁ z = 0}) (hσ₁x : σ₁ x ≠ 0)
+    (hne : ∀ z, z ≠ x →
+      (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
+          (VectorBundleOrientation.complex ℂ L₂)).sectionIndex
+          Complex.finrank_real_complex (complexHomologicalOrientation X) hσ₂ z =
+        (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
+          (VectorBundleOrientation.complex ℂ L₁)).sectionIndex
+          Complex.finrank_real_complex (complexHomologicalOrientation X) hσ₁ z)
+    (hx : (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
+          (VectorBundleOrientation.complex ℂ L₂)).sectionIndex
+          Complex.finrank_real_complex (complexHomologicalOrientation X) hσ₂ x = 1) :
+    ((complexHomologicalOrientation X).evalFundamentalClass Complex.finrank_real_complex
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id X)
+        (complexEulerClass ℂ L₂ (r := 0) (finrank_self ℂ))).down =
+      ((complexHomologicalOrientation X).evalFundamentalClass Complex.finrank_real_complex
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id X)
+        (complexEulerClass ℂ L₁ (r := 0) (finrank_self ℂ))).down + 1 := by
+  classical
+  have hZx : {z | σ₂ z = 0}.Finite := hZ₂ ▸ hZ.insert x
+  rw [complexEulerClass_def, complexEulerClass_def,
+    VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex _ _ _ hσ₂ _ hZx,
+    VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex _ _ _ hσ₁ _ hZ]
+  have hfin : hZx.toFinset = insert x hZ.toFinset := by
+    ext z
+    simp only [Set.Finite.mem_toFinset, Finset.mem_insert, hZ₂, Set.mem_insert_iff]
+  have hx' : x ∉ hZ.toFinset := by simpa using hσ₁x
+  refine (Finset.sum_congr hfin fun _ _ ↦ rfl).trans ?_
+  rw [Finset.sum_insert hx', add_comm]
+  congr 1
+  exact Finset.sum_congr rfl fun z hz ↦ hne z (by rintro rfl; exact hx' hz)
+
+end Count
+
 /-! ### The local index at the twisting point -/
 
 section Line
@@ -183,13 +265,38 @@ private theorem hasFDerivAt_pointTwistMul_chartAt (x : X) {s : ∀ z, L z}
         exact ((pointTwistCore ℂ L x).isOpen_baseSet (x, true)).mem_nhds hxe)] with w hw hwe
     refine (pointTwistCore_localTriv_pointTwistMul hwe (s (φ.symm w))).trans ?_
     rw [pointTwistFactor_false_true, pointTwistCoord_chartAt_symm hw]
-  have hG : ContinuousAt ((fun z ↦ (eL (TotalSpace.mk' ℂ z (s z))).2) ∘ φ.symm) (φ x) :=
-    ContinuousAt.comp_of_eq ((eL.continuousOn_snd_apply_mk hs).continuousAt
-      (eL.open_baseSet.mem_nhds (mem_baseSet_trivializationAt ℂ L x)))
-      (φ.continuousAt_symm (φ.map_source hxφ)) (φ.left_inv hxφ)
-  have hA := (((hasFDerivAt_id (𝕜 := ℝ) (φ x)).sub_const (φ x)).smul_of_eq_zero hG
-    (sub_self _)).congr_of_eventuallyEq hfeq
-  rwa [Function.comp_apply, φ.left_inv hxφ] at hA
+  exact hasFDerivAt_sub_smul_comp_chartAt_symm ((eL.continuousOn_snd_apply_mk hs).continuousAt
+    (eL.open_baseSet.mem_nhds (mem_baseSet_trivializationAt ℂ L x))) hfeq
+
+/-- **A zero with nonzero complex-linear derivative has local index one.** Let `σ` be a continuous
+section of a complex line bundle `L` with fibre `ℂ` over a Riemann surface `X`, vanishing at `x`
+and nowhere else on an open neighbourhood `U` of `x` inside the source of the chart `φ` of `X` at
+`x` and the base set of the chart of `L` at `x`. If the reading of `σ` in these charts has, at
+`φ x`, the real derivative of multiplication by a nonzero `c`, of determinant `|c|² > 0`, then the
+local index of `σ` at `x` is `1`, for the canonical orientations of `L` and `X`. -/
+theorem sectionIndex_eq_one_of_hasFDerivAt_smulRight (x : X) {σ : ∀ z, L z}
+    (hσ : Continuous fun z ↦ TotalSpace.mk' ℂ z (σ z)) {U : Set X} (hU : IsOpen U)
+    (hxU : x ∈ U) (hUz : ∀ y ∈ U, σ y = 0 → y = x) (hσx : σ x = 0)
+    (hUe : U ⊆ (trivializationAt ℂ L x).baseSet) (hUφ : U ⊆ (chartAt ℂ x).source) {c : ℂ}
+    (hc : c ≠ 0)
+    (hA : HasFDerivAt (fun w ↦ (trivializationAt ℂ L x (TotalSpace.mk' ℂ ((chartAt ℂ x).symm w)
+        (σ ((chartAt ℂ x).symm w)))).2) ((ContinuousLinearMap.id ℝ ℂ).smulRight c)
+      (chartAt ℂ x x)) :
+    (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
+        (VectorBundleOrientation.complex ℂ L)).sectionIndex
+        Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x = 1 := by
+  set φ := chartAt ℂ x
+  -- Over `ℝ`, multiplication by `c` has determinant `|c|²`.
+  have hdet : ((ContinuousLinearMap.id ℝ ℂ).smulRight c).det = Complex.normSq c := by
+    simp [ContinuousLinearMap.det, LinearMap.det_complex, Complex.normSq_apply]
+  rw [VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _
+    (trivializationAt ℂ L x) φ hU hxU hUz hσx hUe hUφ
+    (fun y hy ↦ VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _
+      (hUe hy))
+    (localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas
+      (IsManifold.chart_mem_maximalAtlas (n := 1) x) (hUφ hxU))
+    hA (hdet.trans_ne (Complex.normSq_pos.2 hc).ne'), hdet, sign_pos (Complex.normSq_pos.2 hc),
+    SignType.coe_one]
 
 omit [∀ z, Module ℝ (L z)] [∀ z, IsScalarTower ℝ ℂ (L z)] in
 /-- **The local index of the twisted section at the twisting point is one.** For a continuous
@@ -203,7 +310,7 @@ theorem sectionIndex_pointTwistMul_self (x : X) {s : ∀ z, L z}
         Complex.finrank_real_complex (complexHomologicalOrientation X)
         (continuous_pointTwistMul_section (x := x) hs) x = 1 := by
   classical
-  set φ := chartAt ℂ x with hφ_chart
+  set φ := chartAt ℂ x
   set eL := trivializationAt ℂ L x
   -- The preferred chart of the point twist at `x`, its chart `(x, true)`.
   set e := trivializationAt ℂ (pointTwistCore ℂ L x).Fiber x with he
@@ -223,34 +330,10 @@ theorem sectionIndex_pointTwistMul_self (x : X) {s : ∀ z, L z}
     refine ((pointTwistMul_eq_zero_iff (s y)).1 h0).resolve_right fun hsy ↦ hy.2.2 ?_
     exact (eL.snd_apply_eq_zero_iff ℂ (v := TotalSpace.mk' ℂ y (s y)) hy.2.1).2 hsy
   have hUφ : U ⊆ φ.source := fun _ hy ↦ (heb hy.1).2
-  have hA := hasFDerivAt_pointTwistMul_chartAt x hs
-  -- Over `ℝ`, multiplication by `g x` has determinant `|g x|²`.
-  have hdet' : ((ContinuousLinearMap.id ℝ ℂ).smulRight (g x)).det = Complex.normSq (g x) := by
-    simp [ContinuousLinearMap.det, LinearMap.det_complex, Complex.normSq_apply]
-  rw [VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _ e φ hU hxU hUz
-    (congrArg (fun f : L x →L[ℂ] ℂ ↦ f (s x)) (pointTwistMul_self ℂ L x))
-    inter_subset_left hUφ
-    (fun y hy ↦ (VectorBundleOrientation.mapOrientation_reindex_complex ℂ
-      (pointTwistCore ℂ L x).Fiber _ e (inter_subset_left hy)).trans
-        reindex_complexOrientation_complex)
-    (by
-      rw [complexHomologicalOrientation_apply x]
-      have hσ : (((ContinuousLinearEquiv.refl ℝ ℂ : ℂ →L[ℝ] ℂ) : C(ℂ, ℂ)).comp
-          ((⟨fun y ↦ y - φ x, by fun_prop⟩ : C(ℂ, ℂ)).comp φ.sourceRestrict)) =
-          (⟨fun y : φ.source ↦ φ y - φ x,
-            φ.continuousOn.domRestrict.sub continuous_const⟩ : C(φ.source, ℂ)) :=
-        ContinuousMap.ext fun y ↦ congrArg (fun z ↦ z - φ x) (φ.sourceRestrict_apply y)
-      have hφ := φ.localHomologyMap_chart_localOrientationOfOrientedChart (hUφ hxU)
-        (ContinuousLinearEquiv.refl ℝ ℂ) Complex.orientation
-        Complex.finrank_real_complex Complex.finrank_real_complex (by
-          rw [hσ]
-          exact fun y hy ↦ Subtype.ext (φ.injOn y.property (hUφ hxU) (sub_eq_zero.1 hy)))
-      simp only [hσ] at hφ
-      -- Orientation.map uses the underlying linear identity, rather than the continuous structure.
-      have hid : (ContinuousLinearEquiv.refl ℝ ℂ).toLinearEquiv = LinearEquiv.refl ℝ ℂ := rfl
-      simpa only [hid, hφ_chart, Orientation.map_refl, Equiv.refl_apply] using hφ)
-    hA (hdet'.trans_ne (Complex.normSq_pos.2 hgx).ne'), hdet',
-    sign_pos (Complex.normSq_pos.2 hgx), SignType.coe_one]
+  exact sectionIndex_eq_one_of_hasFDerivAt_smulRight (L := (pointTwistCore ℂ L x).Fiber) x
+    (continuous_pointTwistMul_section hs) hU hxU hUz
+    (congrArg (fun f : L x →L[ℂ] ℂ ↦ f (s x)) (pointTwistMul_self ℂ L x)) inter_subset_left hUφ
+    hgx (hasFDerivAt_pointTwistMul_chartAt x hs)
 
 /-! ### The Euler number of the point twist -/
 
@@ -272,21 +355,10 @@ theorem evalFundamentalClass_complexEulerClass_pointTwist [CompactSpace X] (x : 
   have hZ' : {z | pointTwistMul ℂ L x z (s z) = 0} = insert x {z | s z = 0} := by
     ext z
     simp [pointTwistMul_eq_zero_iff]
-  have hZx : {z | pointTwistMul ℂ L x z (s z) = 0}.Finite := hZ' ▸ hZ.insert x
-  rw [complexEulerClass_def, complexEulerClass_def,
-    VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex _ _ _
-      (continuous_pointTwistMul_section (x := x) hs) _ hZx,
-    VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex _ _ _ hs _ hZ]
-  have hfin : hZx.toFinset = insert x hZ.toFinset := by
-    ext z
-    simp only [Set.Finite.mem_toFinset, Finset.mem_insert, hZ', Set.mem_insert_iff]
-  have hx : x ∉ hZ.toFinset := by simpa using hsx
-  refine (Finset.sum_congr hfin fun _ _ ↦ rfl).trans ?_
-  rw [Finset.sum_insert hx, add_comm]
-  congr 1
-  · exact Finset.sum_congr rfl fun z hz ↦
-      sectionIndex_pointTwistMul_of_ne (finrank_self ℂ) (by rintro rfl; exact hx hz) hs
-  · exact sectionIndex_pointTwistMul_self x hs hsx
+  exact evalFundamentalClass_complexEulerClass_eq_add_one_of_setOf_eq_insert x hs
+    (continuous_pointTwistMul_section hs) hZ hZ' hsx
+    (fun _ hz ↦ sectionIndex_pointTwistMul_of_ne (finrank_self ℂ) hz hs)
+    (sectionIndex_pointTwistMul_self x hs hsx)
 
 end Line
 

@@ -38,7 +38,7 @@ semi-free resolution of `R`. A semi-free resolution of `R` computes the derived 
 with `R` (`TauCeti.nonempty_localizedFunctor_iso_derivedTensor`).
 
 For the circle, Brown's resolution `TauCeti.loopCellCocycle` with its comparison
-`TauCeti.loopCellPathComparison` is a Brown model (`TauCeti.loopCellBrownModel`), so
+`TauCeti.cycleCellPathComparison` is a Brown model (`TauCeti.loopCellBrownModel`), so
 (`TauCeti.nonempty_loopCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation`) the
 two-generator twisted complex `𝓕 e₀ ⊕ 𝓕 e₁` with `D e₁ = ([γ] - [1]) e₀` computes
 `𝓕 ⊗^L_{C_*(Ω S¹; R)} R`.
@@ -49,7 +49,7 @@ The derived tensor product is built from the canonical semi-free resolution, who
 in the universe of the loop chains, and a model is compared with it through generators in that
 same universe. The generators `Unit ⊕ Unit` of `TauCeti.loopCellCocycle` lie in `Type`, so the
 circle is treated with coefficients `R : Type`, as in
-`TauCeti.exists_loopCellCocycle_expLoop_differential_eq_and_loopCellPathComparison_add_eq`.
+`TauCeti.exists_loopCellCocycle_expLoop_differential_eq_and_cycleCellPathComparison_add_eq`.
 
 ## Main definitions
 
