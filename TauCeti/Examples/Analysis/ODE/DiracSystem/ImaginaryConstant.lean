@@ -44,24 +44,24 @@ theorem diracHermiteBiehler_I_mul_const_zero (c t : ℝ) :
     diracHermiteBiehler (fun _ ↦ I * c) t 0 = Real.cosh (c * t) + I * Real.sinh (c * t) := by
   simp [diracHermiteBiehler_def, diracFundamentalMatrix_I_mul_const_zero]
 
-/-- At `z = 0` the second factor `A + iC` of the integral equation of `E` is the reflection
-`E#(t, 0) = conj E(t, 0)`. -/
-theorem diracFundamentalMatrix_I_mul_const_zero_add (c t : ℝ) :
-    diracFundamentalMatrix (fun _ ↦ I * c) t 0 0 0 +
-        I * diracFundamentalMatrix (fun _ ↦ I * c) t 0 1 0 =
-      conj (diracHermiteBiehler (fun _ ↦ I * c) t 0) := by
-  rw [diracHermiteBiehler_I_mul_const_zero, map_add, map_mul, conj_I, conj_ofReal, conj_ofReal]
-  simp [diracFundamentalMatrix_I_mul_const_zero, -ofReal_cosh, -ofReal_sinh]
+/-- At `z = 0` the reflection `E#(t, 0) = conj E(t, 0)` is the second factor `A + iC` of the
+integral equation of `E`. -/
+theorem conj_diracHermiteBiehler_I_mul_const_zero (c t : ℝ) :
+    conj (diracHermiteBiehler (fun _ ↦ I * c) t 0) =
+      diracFundamentalMatrix (fun _ ↦ I * c) t 0 0 0 +
+        I * diracFundamentalMatrix (fun _ ↦ I * c) t 0 1 0 := by
+  simp [diracHermiteBiehler_I_mul_const_zero, diracFundamentalMatrix_I_mul_const_zero,
+    -ofReal_cosh, -ofReal_sinh]
 
 /-- **The equation with the reflection.** `E(t, 0) = 1 + ∫₀ᵗ ic conj E(s, 0) ds`, the equation
-`∂ₜE = -izE + qE#` of §3.1 at `z = 0`. -/
+`∂ₜE = -izE + qE#` at `z = 0`. -/
 theorem diracHermiteBiehler_I_mul_const_zero_eq_one_add_integral (c t : ℝ) :
     diracHermiteBiehler (fun _ ↦ I * c) t 0 =
       1 + ∫ s in (0 : ℝ)..t, I * c * conj (diracHermiteBiehler (fun _ ↦ I * c) s 0) := by
   rw [diracHermiteBiehler_eq_one_add_integral (continuousOn_const.integrableOn_uIcc) 0]
   congr 1
   refine integral_congr fun s _ ↦ ?_
-  simp only [mul_zero, zero_mul, zero_add, diracFundamentalMatrix_I_mul_const_zero_add]
+  simp only [mul_zero, zero_mul, zero_add, conj_diracHermiteBiehler_I_mul_const_zero]
 
 /-- **The equation without the reflection.** `y(t) = e^{ict}` solves `y(t) = 1 + ∫₀ᵗ ic y(s) ds`,
 the equation `∂ₜE = -izE + qE` at `z = 0`. -/
@@ -73,8 +73,8 @@ theorem exp_I_mul_eq_one_add_integral (c t : ℝ) :
   rw [intervalIntegral.integral_const_mul, integral_exp_mul_complex hIc, mul_div_cancel₀ _ hIc]
   simp
 
-/-- **The two equations differ.** For `ct ≠ 0`, `E(t, 0) = cosh ct + i sinh ct` is not `e^{ict}`:
-the latter has modulus `1`, the former squared modulus `cosh² ct + sinh² ct > 1`. -/
+/-- **The two equations differ.** For `ct ≠ 0`, `E(t, 0) = cosh ct + i sinh ct` is not
+`e^{ict}`. -/
 theorem diracHermiteBiehler_I_mul_const_zero_ne_exp {c t : ℝ} (hct : c * t ≠ 0) :
     diracHermiteBiehler (fun _ ↦ I * c) t 0 ≠ exp (I * c * t) := by
   intro h
@@ -88,11 +88,11 @@ theorem diracHermiteBiehler_I_mul_const_zero_ne_exp {c t : ℝ} (hct : c * t ≠
   nlinarith [sq_pos_of_ne_zero hsinh]
 
 /-- **`E` does not solve the equation without the reflection.** For `c ≠ 0`, `E(·, 0)` does not
-satisfy `E(t, 0) = 1 + ∫₀ᵗ ic E(s, 0) ds` for every `t`: comparing derivatives at `t = 1` would
-give `c sinh c + ic cosh c = ic cosh c - c sinh c`. -/
+satisfy `E(t, 0) = 1 + ∫₀ᵗ ic E(s, 0) ds` for every `t`. -/
 theorem not_forall_diracHermiteBiehler_I_mul_const_zero_eq_one_add_integral {c : ℝ} (hc : c ≠ 0) :
     ¬ ∀ t : ℝ, diracHermiteBiehler (fun _ ↦ I * c) t 0 =
       1 + ∫ s in (0 : ℝ)..t, I * c * diracHermiteBiehler (fun _ ↦ I * c) s 0 := by
+  -- Comparing derivatives at `t = 1` would give `c sinh c + ic cosh c = ic cosh c - c sinh c`.
   intro h
   set E : ℝ → ℂ := fun t ↦ diracHermiteBiehler (fun _ ↦ I * c) t 0
   have hEf : E = fun t ↦ (Real.cosh (c * t) : ℂ) + I * Real.sinh (c * t) := by
@@ -117,9 +117,8 @@ theorem not_forall_diracHermiteBiehler_I_mul_const_zero_eq_one_add_integral {c :
       ring
   have heq := hL.unique (hR.congr_of_eventuallyEq (Filter.Eventually.of_forall fun t ↦ h t))
   rw [hEf] at heq
-  have hre := congrArg re heq
-  simp only [mul_re, I_re, ofReal_re, zero_mul, I_im, ofReal_im, mul_zero, sub_zero, one_mul,
-    add_re, add_im, mul_im, zero_add, add_zero, zero_sub, mul_one] at hre
+  have hre : c * Real.sinh c = -(c * Real.sinh c) := by
+    simpa [-ofReal_cosh, -ofReal_sinh] using congrArg re heq
   have hs : Real.sinh c ≠ 0 := Real.sinh_ne_zero.mpr hc
   have : c * Real.sinh c = 0 := by linarith
   exact (mul_ne_zero hc hs) this
