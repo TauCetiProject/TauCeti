@@ -54,7 +54,7 @@ noncomputable def squareHom : RatFunc K →+* RatFunc K :=
   algebraMap (RatFunc K) (RatFunc K)
 
 /-- `squareHom` is the structure map of `squareAlgebra`. -/
-theorem squareHom_eq :
+theorem squareHom_def :
     letI := squareAlgebra K
     squareHom K = algebraMap (RatFunc K) (RatFunc K) := by
   unfold squareHom
@@ -62,7 +62,7 @@ theorem squareHom_eq :
 
 @[simp]
 theorem squareHom_X : squareHom K RatFunc.X = RatFunc.X ^ 2 := by
-  rw [squareHom_eq]
+  rw [squareHom_def]
   exact algebraMap_ratFuncAlgebraOfTranscendental_X _
 
 /-- `squareHom` fixes the constants from `K`. -/
@@ -70,7 +70,7 @@ theorem squareHom_algebraMap (a : K) :
     squareHom K (algebraMap K (RatFunc K) a) = algebraMap K (RatFunc K) a := by
   let _ := squareAlgebra K
   have := isScalarTower_ratFuncAlgebraOfTranscendental (transcendental_X_sq K)
-  rw [squareHom_eq]
+  rw [squareHom_def]
   exact (IsScalarTower.algebraMap_apply K (RatFunc K) (RatFunc K) a).symm
 
 @[simp]
@@ -91,7 +91,7 @@ theorem isEmpty_iso_SpecMap_squareHom
     IsEmpty (Over.mk Q.p ≅ Over.mk (Spec.map (CommRingCat.ofHom (squareHom K)))) := by
   let _ := squareAlgebra K
   have := isScalarTower_ratFuncAlgebraOfTranscendental (transcendental_X_sq K)
-  rw [squareHom_eq]
+  rw [squareHom_def]
   refine DistinguishedSquareEmptyOpenExample.isEmpty_iso_SpecMap_of_finrank_ne_one _ _ ?_ Q
   rw [← finrank_adjoin_algebraMap_X (k := K), algebraMap_ratFuncAlgebraOfTranscendental_X,
     RatFunc.finrank_adjoin_X_pow]
