@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.RepresentationTheory.BaseChange.BrauerNesbitt
 import TauCeti.LinearAlgebra.Charpoly.FinrankTwo
-import TauCeti.RepresentationTheory.Character.Charpoly
+import TauCeti.RepresentationTheory.BrauerNesbitt.TraceForm
 
 /-!
 # The trace form of Brauer–Nesbitt in dimension two
@@ -21,7 +21,8 @@ element as soon as `2` is invertible
 (`Representation.charpoly_eq_of_character_eq_of_finrank_eq_two`), and Brauer–Nesbitt
 (`Representation.nonempty_equiv_of_charpoly_eq_of_perfectField`) turns equal characters into an
 equivalence of semisimple representations. This is the case `d = 2`, over a perfect field, of the
-trace form of Brauer–Nesbitt in characteristic `p > d`.
+trace form of Brauer–Nesbitt in characteristic `p > d`
+(`Representation.nonempty_equiv_of_character_eq_of_factorial_ne_zero`).
 
 Over `𝔽₂` the trace of `f²` does not recover `det f`, but for a group the determinant of `ρ g` is a
 unit of `𝔽₂`, hence `1` (`Representation.det_apply_eq_one`): two-dimensional semisimple
@@ -64,8 +65,8 @@ theorem nonempty_equiv_of_character_eq_of_finrank_eq_two [PerfectField k] (hk : 
     (h : ∀ g, ρ.character g = σ.character g) : Nonempty (ρ.Equiv σ) :=
   have := Module.finite_of_finrank_eq_succ hV
   have := Module.finite_of_finrank_eq_succ hW
-  nonempty_equiv_of_charpoly_eq_of_perfectField ρ σ
-    fun g ↦ charpoly_eq_of_character_eq_of_finrank_eq_two hk hV hW (h g) (h (g ^ 2))
+  nonempty_equiv_of_character_eq_of_factorial_ne_zero ρ σ (hV.trans hW.symm)
+    (by rw [hV]; exact_mod_cast hk) h
 
 end Monoid
 
