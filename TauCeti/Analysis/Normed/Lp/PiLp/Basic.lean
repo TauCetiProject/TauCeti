@@ -44,6 +44,8 @@ coordinate.
 Reindexing the coordinates along the identity bijection is the identity.
 Maps into `PiLp p β` converge uniformly exactly when each coordinate does.
 
+For `p ≥ 1` the `Lᵖ` norm is at most the sum of the coordinate norms (`PiLp.norm_le_sum_norm`).
+
 We also record `PiLp.univ_sum_single`, the coordinate isometry `PiLp.singleLI` (and the
 continuous coordinate inclusion `PiLp.singleCLM`), the power identity `PiLp.norm_rpow_eq_sum`,
 coordinatewise decomposition `ContinuousLinearMap.sum_comp_piLpSingleCLM`,
@@ -177,6 +179,13 @@ variable {p E}
     singleLI (𝕜 := 𝕜) p E i v = single p i v := by simp [singleLI]
 
 end SingleLI
+
+/-- For `p ≥ 1`, the `Lᵖ` norm of a finite family is at most the sum of the norms of its
+coordinates, its `L¹` norm. -/
+theorem norm_le_sum_norm [Fact (1 ≤ p)] (x : PiLp p E) : ‖x‖ ≤ ∑ i, ‖x i‖ := by
+  classical
+  calc ‖x‖ = ‖∑ i, single p i (x i)‖ := by rw [univ_sum_single]
+    _ ≤ ∑ i, ‖x i‖ := (norm_sum_le _ _).trans_eq (Finset.sum_congr rfl fun i _ ↦ norm_single ..)
 
 /-- The sum of coordinate norms of a vector is at most `√(card ι)` times its `L²` norm. -/
 theorem sum_norm_le_sqrt_card_mul_norm (x : PiLp 2 E) :
