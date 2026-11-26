@@ -363,11 +363,11 @@ theorem eval₂_mextDerivₗ_annihilatorLiouvilleForm_mfderiv
   rw [mextDerivₗ_annihilatorLiouvilleForm]
   exact eval₂_mpullback_mfderiv_of_eventuallyEq _ hev hκ u u'
 
-/-- **Local charts of the symplectization are local diffeomorphisms.** If `κ : ℝ × M → ξ⁰` is
-differentiable at `p = (t, x)` and, composed with the inclusion `ξ⁰ → T*M`, agrees near `p` with
-the map `(s, y) ↦ eˢ β_y`, where `β` is a contact form at `x`, then the differential of `κ` at `p`
-is bijective: it carries the nondegenerate form `d(eˢ β)` to `dθ`, so it is injective, and its
-source and target both have dimension `dim M + 1`. -/
+/-- **Local charts of the symplectization have bijective differential.** If
+`κ : ℝ × M → ξ⁰` is differentiable at `p = (t, x)` and, composed with the inclusion `ξ⁰ → T*M`,
+agrees near `p` with the map `(s, y) ↦ eˢ β_y`, where `β` is a contact form at `x`, then the
+differential of `κ` at `p` is bijective: it carries the nondegenerate form `d(eˢ β)` to `dθ`, so
+it is injective, and its source and target both have dimension `dim M + 1`. -/
 theorem bijective_mfderiv_of_eventuallyEq
     {κ : ℝ × M → TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x} {β : SmoothForm I M ℝ 1}
     {p : ℝ × M}

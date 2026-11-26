@@ -526,7 +526,7 @@ theorem annihilatorPairing_smul (c : 𝕜) (V : Π x : M, TangentSpace I x) :
   ext z
   simp
 
-/-- **Fibre-linear functions are the sections of `TM ⧸ D`.** On a finite-dimensional manifold, two
+/-- **The function of `V` depends exactly on `V` modulo `D`.** On a finite-dimensional manifold, two
 vector fields have the same function on the annihilator bundle of `D` exactly when their
 difference is tangent to `D`. -/
 theorem annihilatorPairing_eq_annihilatorPairing_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
