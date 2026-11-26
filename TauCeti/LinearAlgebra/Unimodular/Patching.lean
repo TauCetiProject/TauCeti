@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import TauCeti.LinearAlgebra.Unimodular.Polynomial
-import Mathlib.RingTheory.Localization.Integral
+import Mathlib.RingTheory.Localization.Algebra
 
 /-!
 # Quillen patching and Horrocks' theorem over an integral domain
@@ -182,42 +182,22 @@ private theorem map_map_injective {φ : R →+* S} (hφ : Function.Injective φ)
 
 section Localization
 
-variable (M : Submonoid R) [Algebra R S] [IsLocalization M S]
+variable {M : Submonoid R} [Algebra R S] [IsLocalization M S]
 
-/-- Every polynomial in two variables over a localisation `S` of `R` becomes a polynomial over `R`
-after multiplication by some element of `M`. -/
-private theorem exists_map_map_eq_mul (q : S[X][X]) :
-    ∃ s ∈ M, ∃ q' : R[X][X],
-      q'.map (mapRingHom (algebraMap R S)) = C (C (algebraMap R S s)) * q := by
-  induction q using Polynomial.induction_on' with
-  | add p q hp hq =>
-    obtain ⟨s, hs, p', hp'⟩ := hp
-    obtain ⟨t, ht, q', hq'⟩ := hq
-    refine ⟨s * t, mul_mem hs ht, C (C t) * p' + C (C s) * q', ?_⟩
-    simp only [Polynomial.map_add, Polynomial.map_mul, map_C, coe_mapRingHom, hp', hq', map_mul]
-    ring
-  | monomial n a =>
-    obtain ⟨s, hs, ha⟩ := IsLocalization.integerNormalization_spec M a
-    refine ⟨s, hs, monomial n (IsLocalization.integerNormalization M a), ?_⟩
-    rw [Polynomial.map_monomial, coe_mapRingHom, ha, C_mul_monomial, Algebra.smul_def,
-      Polynomial.algebraMap_apply]
-
-variable {M}
-
-/-- If the constant term in `Y` of `p : S[X][Y]` comes from `R[X]`, then `p(X, sY)` comes from
-`R[X][Y]` for some `s ∈ M`, and so does `p(X, suY)` for every `u`. -/
-private theorem exists_map_map_eq_scale (p : S[X][X])
-    (hp : p.coeff 0 ∈ Set.range (Polynomial.map (algebraMap R S))) :
-    ∃ s ∈ M, ∀ u : R, ∃ p' : R[X][X],
-      p'.map (mapRingHom (algebraMap R S)) = scale (algebraMap R S (s * u)) p := by
-  obtain ⟨a, ha⟩ := hp
-  obtain ⟨s, hs, q, hq⟩ := exists_map_map_eq_mul M p.divX
-  refine ⟨s, hs, fun u ↦ ⟨C (C u) * X * scale (s * u) q + C a, ?_⟩⟩
-  -- `p = Y q + p(X, 0)`, and `s q` comes from `R[X][Y]`.
-  conv_rhs => rw [← X_mul_divX_add p]
-  simp only [Polynomial.map_add, Polynomial.map_mul, map_C, coe_mapRingHom, map_X,
-    map_map_scale, hq, map_add, map_mul, scale_X, scale_C, ha]
-  ring
+attribute [local instance] Polynomial.algebra in
+/-- A finite family of polynomials in two variables over a localisation `S` of `R` becomes a
+family of polynomials over `R` after multiplication by a single element of `M`. This uses that
+`S[X][Y]` is a localisation of `R[X][Y]` (`Polynomial.isLocalization`). -/
+private theorem exists_map_map_eq_mul {κ : Type*} [Finite κ] (q : κ → S[X][X]) :
+    ∃ s ∈ M, ∀ k, ∃ q' : R[X][X],
+      q'.map (mapRingHom (algebraMap R S)) = C (C (algebraMap R S s)) * q k := by
+  have := Polynomial.isLocalization M S
+  have := Polynomial.isLocalization (M.map C) S[X]
+  obtain ⟨⟨_, _, ⟨s, hs, rfl⟩, rfl⟩, hb⟩ :=
+    IsLocalization.exist_integer_multiples_of_finite ((M.map C).map C) q
+  refine ⟨s, hs, fun k ↦ ?_⟩
+  obtain ⟨q', hq'⟩ := hb k
+  exact ⟨q', by simpa [Algebra.smul_def] using hq'⟩
 
 /-- If the constant terms in `Y` of the entries of a matrix over `S[X][Y]` come from `R[X]`,
 then for some `s ∈ M` and every `u` the matrix `A(X, suY)` comes from `R[X][Y]`. -/
@@ -226,16 +206,18 @@ private theorem exists_mapMatrix_eq_scale (A : Matrix ι ι S[X][X])
     ∃ s ∈ M, ∀ u : R, ∃ A' : Matrix ι ι R[X][X],
       (mapRingHom (mapRingHom (algebraMap R S))).mapMatrix A' =
         (scale (algebraMap R S (s * u))).mapMatrix A := by
-  choose s hs hlift using fun ij : ι × ι ↦
-    exists_map_map_eq_scale (M := M) (A ij.1 ij.2) (hA ij.1 ij.2)
-  refine ⟨∏ ij, s ij, prod_mem fun ij _ ↦ hs ij, fun u ↦ ?_⟩
-  have : ∀ ij : ι × ι, ∃ p' : R[X][X], p'.map (mapRingHom (algebraMap R S)) =
-      scale (algebraMap R S ((∏ ij, s ij) * u)) (A ij.1 ij.2) := fun ij ↦ by
-    obtain ⟨w, hw⟩ := Finset.dvd_prod_of_mem s (Finset.mem_univ ij)
-    rw [hw, mul_assoc]
-    exact hlift ij (w * u)
-  choose A' hA' using this
-  exact ⟨Matrix.of fun i j ↦ A' (i, j), by ext i j; simp [hA']⟩
+  choose a ha using hA
+  obtain ⟨s, hs, hq⟩ := exists_map_map_eq_mul (M := M) fun ij : ι × ι ↦ (A ij.1 ij.2).divX
+  choose q hq using hq
+  refine ⟨s, hs, fun u ↦
+    ⟨Matrix.of fun i j ↦ C (C u) * X * scale (s * u) (q (i, j)) + C (a i j), ?_⟩⟩
+  -- `A = Y A' + A(X, 0)`, and `s A'` comes from `R[X][Y]`.
+  ext i j : 1
+  conv_rhs => rw [RingHom.mapMatrix_apply, Matrix.map_apply, ← X_mul_divX_add (A i j)]
+  simp only [RingHom.mapMatrix_apply, Matrix.map_apply, Matrix.of_apply, Polynomial.map_add,
+    Polynomial.map_mul, map_C, coe_mapRingHom, map_X, map_map_scale, hq, map_add, map_mul,
+    scale_X, scale_C, ha]
+  ring
 
 /-- An invertible matrix `G` over `S[X][Y]` with `G(X, 0) = 1` has, for some `s ∈ M`, the
 matrix `G(X, sY)` coming from an invertible matrix over `R[X][Y]`, provided `R → S` is injective.
@@ -268,8 +250,7 @@ private theorem exists_map_eq_scale (hinj : Function.Injective (algebraMap R S))
         (scale (algebraMap R S (s * t))).mapMatrix G' →
       (mapRingHom (mapRingHom (algebraMap R S))).mapMatrix Q' =
         (scale (algebraMap R S (s * t))).mapMatrix ↑G'⁻¹ → P' * Q' = 1 :=
-    fun G' P' Q' hP' hQ' ↦ hinj' (by rw [map_mul, hP', hQ', ← map_mul, G'.mul_inv, map_one,
-      map_one])
+    fun G' P' Q' hP' hQ' ↦ hinj' (by rw [map_mul, hP', hQ']; simp)
   refine ⟨s * t, mul_mem hs ht, ⟨P, Q, hPQ G P Q hP hQ, ?_⟩, Units.ext hP⟩
   refine hPQ G⁻¹ Q P hQ ?_
   rwa [inv_inv]
@@ -285,13 +266,12 @@ private theorem exists_mulVec_eq_shift_one {g : ι → S[X]}
   obtain ⟨N, hN⟩ := unimodularEquiv_iff.mp hg
   refine ⟨Matrix.GeneralLinearGroup.map (shift 1) N⁻¹ * Matrix.GeneralLinearGroup.map C N, ?_, ?_⟩
   · have hNinv : (↑N⁻¹ : Matrix ι ι S[X]) *ᵥ (fun k ↦ C ((g k).eval 0)) = g := by
-      rw [← hN, Matrix.mulVec_mulVec, ← Matrix.GeneralLinearGroup.coe_mul, inv_mul_cancel,
-        Matrix.GeneralLinearGroup.coe_one, Matrix.one_mulVec]
+      simp [← hN, Matrix.mulVec_mulVec]
     have hCN : ((Matrix.GeneralLinearGroup.map C N : GL ι S[X][X]) : Matrix ι ι S[X][X]) *ᵥ
         (fun k ↦ C (g k)) = shift 1 ∘ fun k ↦ C ((g k).eval 0) := by
       funext k
-      rw [Function.comp_apply, shift_C, ← congr_fun hN k, RingHom.map_mulVec,
-        Matrix.GeneralLinearGroup.val_map_apply, Function.comp_def]
+      rw [Function.comp_apply, shift_C, ← congr_fun hN k]
+      simp [RingHom.map_mulVec, Function.comp_def]
     rw [Matrix.GeneralLinearGroup.coe_mul, ← Matrix.mulVec_mulVec, hCN,
       Matrix.GeneralLinearGroup.val_map_apply]
     funext k
@@ -326,7 +306,8 @@ private theorem exists_mem_patchingIdeal {M : Submonoid R} [Algebra R S] [IsLoca
       ⇑(scale (algebraMap R S s)) ∘ fun k ↦ C ((f k).map (algebraMap R S)) := by
     funext k
     simp [scale_C]
-  rw [hC, ← RingHom.map_mulVec, hG, scale_shift, mul_one]
+  rw [hC, ← RingHom.map_mulVec, hG]
+  simp [scale_shift]
 
 /-! ### Quillen patching and Horrocks' theorem -/
 
