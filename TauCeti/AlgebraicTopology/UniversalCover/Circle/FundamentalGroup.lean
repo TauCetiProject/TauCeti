@@ -604,8 +604,11 @@ theorem mapOfEq_pow (n : ℕ) (γ : FundamentalGroup Circle 1) :
         fundamentalGroupMulEquiv x δ := by
     rintro x _ rfl δ
     simp
+  -- Unfold `mapOfEq` into the conjugation by `eqToIso` of `FundamentalGroup.map`, then compare
+  -- the images in `ℤ`.
   apply (fundamentalGroupMulEquiv 1).injective
-  rw [map_pow, ← fundamentalGroupMulEquiv_map_pow n γ]
+  rw [FundamentalGroup.mapOfEq, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, map_pow,
+    ← fundamentalGroupMulEquiv_map_pow n γ]
   exact key (one_pow n) _
 
 /-- **The image of the `n`-th power map on `π₁(S¹)`.** A loop class at `1` is in the image of the
@@ -620,7 +623,8 @@ theorem mem_range_mapOfEq_pow_iff (n : ℕ) (γ : FundamentalGroup Circle 1) :
   · rintro ⟨k, hk⟩
     refine ⟨(fundamentalGroupMulEquiv 1).symm (Multiplicative.ofAdd k), ?_⟩
     apply (fundamentalGroupMulEquiv 1).injective
-    rw [map_pow, MulEquiv.apply_symm_apply, ← ofAdd_nsmul, nsmul_eq_mul, ← hk, ofAdd_toAdd]
+    apply Multiplicative.toAdd.injective
+    simp [hk]
 
 section Detect
 

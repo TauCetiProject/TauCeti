@@ -117,14 +117,14 @@ theorem bijective_mapDomain_add_mapDomain_mul_single (p : M →* N) (hp : Functi
       (mapDomain p a + mapDomain p b * single g (1 : R)).coeff (p m) = a.coeff m := by
     have : p m * g⁻¹ ∉ Set.range p := by
       rintro ⟨k, hk⟩
-      exact hg ⟨k⁻¹ * m, by rw [map_mul, map_inv, hk, mul_inv_rev, inv_inv, inv_mul_cancel_right]⟩
+      exact hg ⟨k⁻¹ * m, by simp [hk]⟩
     simp [coeff_mul_single_apply, Finsupp.mapDomain_apply_of_injective hp,
       Finsupp.mapDomain_of_notMem_range _ _ this]
   have h₂ (a b : R[M]) (m : M) :
       (mapDomain p a + mapDomain p b * single g (1 : R)).coeff (p m * g) = b.coeff m := by
     have : p m * g ∉ Set.range p := by
       rintro ⟨k, hk⟩
-      exact hg ⟨m⁻¹ * k, by rw [map_mul, map_inv, hk, inv_mul_cancel_left]⟩
+      exact hg ⟨m⁻¹ * k, by simp [hk]⟩
     simp [coeff_mul_single_apply, Finsupp.mapDomain_apply_of_injective hp,
       Finsupp.mapDomain_of_notMem_range _ _ this]
   refine ⟨fun ⟨a, b⟩ ⟨a', b'⟩ hab ↦ ?_, fun u ↦ ?_⟩
