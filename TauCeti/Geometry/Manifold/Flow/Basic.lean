@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Geometry.Manifold.IntegralCurve.Flow
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Dynamics.Flow.PeriodBound
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 
@@ -54,7 +55,9 @@ compact set.
 * `TauCeti.mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq`: a function that the flow rescales by
   `e^s` is differentiated to itself by the field, and
   `TauCeti.mvfderiv_apply_eq_one_of_eventually_apply_flowOf_eq_add`: a function that the flow
-  translates at unit speed has derivative `1` along the field.
+  translates at unit speed has derivative `1` along the field, so
+  (`TauCeti.isRegularValue_of_apply_flowOf_eq_add`) the values it is translated through are
+  regular.
 * `TauCeti.mfderiv_flowOf_zero_apply`: the derivative of the flow at time zero.
 * `TauCeti.mfderiv_flowOf_zero_apply_eq_self`: the spatial derivative of the time-zero flow map is
   the identity.
@@ -460,6 +463,27 @@ theorem mvfderiv_apply_eq_one_of_eventually_apply_flowOf_eq_add [IsManifold I 1 
   rw [flowOf_zero v] at hcurve
   exact ((((hasDerivAt_id' (0 : ℝ)).const_add (F x)).congr_of_eventuallyEq heq).unique
     hcurve).symm
+
+/-- **Values swept by a local flow are regular.** If `f` is differentiable on the band
+`a < f < b` and the maximal flow `φ` of `v` translates `f` at unit speed there,
+`f (φ_t x) = f x + t` whenever `f x` and `f x + t` lie in `(a, b)`, then every value in `(a, b)`
+is a regular value of `f`. No completeness of `v` is needed: only the times near `0`, at which the
+flow is defined, enter. -/
+theorem isRegularValue_of_apply_flowOf_eq_add [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x} (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {f : M → ℝ} {a b : ℝ} (hf : ∀ x, f x ∈ Ioo a b → MDifferentiableAt I 𝓘(ℝ) f x)
+    (hfv : ∀ x t, f x ∈ Ioo a b → f x + t ∈ Ioo a b → f (flowOf v t x) = f x + t)
+    {c : ℝ} (hc : c ∈ Ioo a b) : IsRegularValue I 𝓘(ℝ) f c := by
+  rw [isRegularValue_iff]
+  rintro x rfl
+  rw [isRegularPoint_iff_mvfderiv_ne_zero]
+  intro h0
+  have h1 := mvfderiv_apply_eq_one_of_eventually_apply_flowOf_eq_add hv (hf x hc) <| by
+    filter_upwards [(isOpen_Ioo.preimage (by fun_prop : Continuous fun s ↦ f x + s)).mem_nhds
+      (by simpa using hc)] with s hs
+    exact hfv x s hc hs
+  rw [h0] at h1
+  exact zero_ne_one h1
 
 /-- **The derivative of the flow at time zero.** At `(0, x)`, the derivative of
 `(t, y) ↦ flowOf v t y` sends the time direction to the field at `x` and is the identity in the

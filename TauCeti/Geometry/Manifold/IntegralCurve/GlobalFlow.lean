@@ -37,9 +37,7 @@ use is a compact invariant region of a field that blows up elsewhere, such as th
   `TauCeti.apply_globalFlow_eq_sub_of_forall_mem`: the same forward or backward up to a time `s`,
   along a flow line staying where `df(v) = -1` between `0` and `s`;
   `TauCeti.isRegularValue_of_apply_globalFlow_eq_add`: conversely, the values through which the
-  flow translates a function at unit speed are regular, and
-  `TauCeti.isRegularValue_of_apply_flowOf_eq_add` the same for the maximal flow of a field that
-  need not be complete.
+  flow translates a function at unit speed are regular.
 * `TauCeti.globalFlow_eq_of_isMIntegralCurve`: every integral curve is an orbit.
 * `TauCeti.forall_globalFlow_eq_self_iff`, `TauCeti.exists_globalFlow_ne_self`: a point is fixed at
   all times exactly when the field vanishes there.
@@ -177,27 +175,6 @@ theorem apply_globalFlow_eq_sub_of_forall_mem {f : M → ℝ} {U : Set M}
     left_mem_uIcc right_mem_uIcc
   rw [Flow.map_zero_apply, add_zero] at hconst
   linarith
-
-omit hcomplete in
-/-- **Values swept by a local flow are regular.** If `f` is differentiable on the band
-`a < f < b` and the maximal flow `φ` of `v` translates `f` at unit speed there,
-`f (φ_t x) = f x + t` whenever `f x` and `f x + t` lie in `(a, b)`, then every value in `(a, b)`
-is a regular value of `f`. No completeness of `v` is needed: only the times near `0`, at which the
-flow is defined, enter. -/
-theorem isRegularValue_of_apply_flowOf_eq_add {f : M → ℝ} {a b : ℝ}
-    (hf : ∀ x, f x ∈ Ioo a b → MDifferentiableAt I 𝓘(ℝ) f x)
-    (hfv : ∀ x t, f x ∈ Ioo a b → f x + t ∈ Ioo a b → f (flowOf v t x) = f x + t)
-    {c : ℝ} (hc : c ∈ Ioo a b) : IsRegularValue I 𝓘(ℝ) f c := by
-  rw [isRegularValue_iff]
-  rintro x rfl
-  rw [isRegularPoint_iff_mvfderiv_ne_zero]
-  intro h0
-  have h1 := mvfderiv_apply_eq_one_of_eventually_apply_flowOf_eq_add hv (hf x hc) <| by
-    filter_upwards [(isOpen_Ioo.preimage (by fun_prop : Continuous fun s ↦ f x + s)).mem_nhds
-      (by simpa using hc)] with s hs
-    exact hfv x s hc hs
-  rw [h0] at h1
-  exact zero_ne_one h1
 
 /-- **Values swept by a flow are regular.** If `f` is differentiable on the band `a < f < b` and
 the flow `ψ` of `v` translates `f` at unit speed there, `f (ψ_t x) = f x + t` whenever `f x` and
