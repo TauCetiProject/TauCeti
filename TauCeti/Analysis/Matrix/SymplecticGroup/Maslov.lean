@@ -43,7 +43,8 @@ It satisfies the axioms of McDuff and Salamon, Theorem 2.2.12:
   matrices `t ↦ e^{2π i t} I` in `U(n) ⊆ Sp(2n)` has Maslov index `n`
   (`TauCeti.GLSymplectic.maslovIndex_scalarRotationLoop`).
 
-Concatenation adds Maslov indices, reversal and pointwise inversion negate them, and a loop has
+Concatenation adds Maslov indices, reversal and pointwise inversion negate them, conjugation by a
+fixed symplectic matrix keeps them (`TauCeti.GLSymplectic.maslovIndex_map_conj`), and a loop has
 the Maslov index of its loop of orthogonal polar factors.
 
 The map `ρ` is not multiplicative on the whole symplectic group, so the product axiom is proved
@@ -238,6 +239,14 @@ theorem maslovIndex_inv {A : GLSymplectic n ℝ} (γ : Path A A) :
   have h1 : maslovIndex (γ.inv.mul γ) = 0 :=
     (Circle.degree_congr _ (Path.refl 1) fun t ↦ by simp).trans (Circle.degree_refl 1)
   omega
+
+/-- **Conjugation invariance.** Conjugating a loop of symplectic matrices by a fixed symplectic
+matrix `P` does not change its Maslov index: the loop `t ↦ P γ(t) P⁻¹` is the product of `γ` with
+two constant loops. -/
+theorem maslovIndex_map_conj (P : GLSymplectic n ℝ) {A : GLSymplectic n ℝ} (γ : Path A A) :
+    maslovIndex (γ.map (f := fun X ↦ P * X * P⁻¹) (by fun_prop)) = maslovIndex γ := by
+  rw [maslovIndex_congr _ (((Path.refl P).mul γ).mul (Path.refl P⁻¹)) fun t ↦ by simp,
+    maslovIndex_mul, maslovIndex_mul, maslovIndex_refl, maslovIndex_refl, zero_add, add_zero]
 
 /-! ### The loop of scalar rotations -/
 
