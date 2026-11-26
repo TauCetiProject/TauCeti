@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Smoothing
+import TauCeti.Algebra.Algebra.Bilinear
 import TauCeti.Analysis.Pseudodifferential.Composition.Compression
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic

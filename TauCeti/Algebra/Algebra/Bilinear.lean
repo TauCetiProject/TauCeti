@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Bilinear
+public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Module.Equiv.Opposite
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 
@@ -19,11 +20,21 @@ kernel of multiplication is stable under the outer bimodule actions.
 
 The multiplication map `TauCeti.LinearMap.mulUnop' R A : A ⊗[R] Aᵐᵒᵖ → A`, `a ⊗ bᵒᵖ ↦ a b`,
 is the variant with the second factor read in the opposite algebra.
+
+`Algebra.lsmul_eq_mulLeft` identifies the action `Algebra.lsmul R R A a` of `a` on `A` itself
+with left multiplication `LinearMap.mulLeft R a`.
 -/
 
 public section
 
 open scoped TensorProduct
+
+/-- Left multiplication by `a` in an `R`-algebra, as `Algebra.lsmul`, is `LinearMap.mulLeft R a`.
+This converts, for instance, a commutator with `Algebra.lsmul R R A a` into one with
+`LinearMap.mulLeft R a`. -/
+theorem Algebra.lsmul_eq_mulLeft {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    (a : A) : Algebra.lsmul R R A a = LinearMap.mulLeft R a :=
+  LinearMap.ext fun x ↦ smul_eq_mul a x
 
 namespace TauCeti
 
