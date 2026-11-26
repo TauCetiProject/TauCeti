@@ -60,6 +60,8 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
   `equivProjectivization_pslMk_smul_eq_mk`, its effect on homogeneous coordinates.
 * `Matrix.ProjectiveSpecialLinearGroup.toPGL_smul`: the inclusion `PSL(2, K) → PGL(2, K)` is
   compatible with the actions.
+* `Matrix.GeneralLinearGroup.exists_psl_forall_smul_eq_smul`: over an algebraically closed field
+  every invertible matrix acts on `OnePoint K` as an element of `PSL(2, K)`.
 * `OnePoint.instIsMultiplyPretransitiveGL`: `GL(2, K)` acts 2-transitively on `OnePoint K`, and
   `OnePoint.exists_smul_zero_infty_eq`: any two distinct points are the images of `0` and `∞`
   under a matrix of determinant one.
@@ -320,6 +322,18 @@ both act through the underlying matrix. -/
 theorem toPGL_smul (g : PSL(2, K)) (c : OnePoint K) : toPGL g • c = g • c := by
   induction g using QuotientGroup.induction_on with
   | H g => simp
+
+/-- **Over an algebraically closed field every Möbius transformation is in `PSL(2, K)`**: an
+invertible matrix acts on the projective line as some element of `PSL(2, K)`, since `PSL(2, K)`
+maps onto `PGL(2, K)`. -/
+theorem _root_.Matrix.GeneralLinearGroup.exists_psl_forall_smul_eq_smul [IsAlgClosed K]
+    (g : GL (Fin 2) K) :
+    ∃ h : PSL(2, K), ∀ c : OnePoint K, h • c = g • c := by
+  -- `PSL(2, K) → PGL(2, K)` is onto, being inverse to `isoPSLOfAlgClosedOfNonempty`.
+  obtain ⟨h, hs⟩ := (isoPSLOfAlgClosedOfNonempty (n := Fin 2) (F := K)).symm.surjective
+    (Matrix.ProjGenLinGroup.mk g)
+  have hh' : toPGL h = Matrix.ProjGenLinGroup.mk g := hs
+  exact ⟨h, fun c ↦ by rw [← toPGL_smul, hh', pglMk_smul]⟩
 
 /-- The translation `upperRightHom x` fixes `∞`. -/
 @[simp]
