@@ -25,7 +25,10 @@ coefficients are drawn uniformly:
 
 The map `a ↦ f_a` is an `R`-linear isomorphism onto the homogeneous polynomials of degree `d`
 (`FormDensity.formEquiv`), it commutes with coefficient ring homomorphisms (`FormDensity.map_form`),
-and the Veronese vector of `c • x` is `c ^ d • ν(x)` (`FormDensity.veronese_smul`).
+and the Veronese vector of `c • x` is `c ^ d • ν(x)` (`FormDensity.veronese_smul`). In `N`
+variables, `TauCeti.NumberTheory.ArithmeticStatistics.FormDensity.Veronese` identifies `ν(x)` with
+the lexicographically indexed vector of monomials `TauCeti.veroneseMonomials d x` of the
+projective Veronese map.
 
 ## References
 

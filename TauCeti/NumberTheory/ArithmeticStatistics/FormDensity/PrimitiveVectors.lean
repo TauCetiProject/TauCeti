@@ -81,8 +81,13 @@ theorem mem_primitiveVectors_zmod_iff_gcd {Q : ℕ} [NeZero Q] {b : ι → ℤ} 
     obtain ⟨x, y, hxy⟩ := Int.isCoprime_iff_gcd_eq_one.mpr h
     obtain ⟨c, hc⟩ := Finset.gcd_eq_sum_mul univ b
     refine TauCeti.Module.isUnimodular_pi_iff.mpr ⟨fun i ↦ (y * c i : ℤ), ?_⟩
-    have := congrArg (Int.cast : ℤ → ZMod Q) hxy
-    simpa [hc, Finset.mul_sum, mul_comm, mul_left_comm] using this
+    have hQ := congrArg (Int.cast : ℤ → ZMod Q) hxy
+    push_cast [hc, ZMod.natCast_self] at hQ
+    have hsum : ∑ i, (b i : ZMod Q) * ((y * c i : ℤ) : ZMod Q) =
+        y * ∑ i, (b i : ZMod Q) * c i := by
+      rw [Finset.mul_sum]
+      exact Finset.sum_congr rfl fun i _ ↦ by push_cast; ring
+    linear_combination hsum + hQ
 
 /-- The number of primitive vectors is the number of unimodular vectors. -/
 theorem card_primitiveVectors :
