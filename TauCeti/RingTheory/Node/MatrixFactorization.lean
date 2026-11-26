@@ -102,7 +102,29 @@ private theorem adjugate_mul_sectionMatrixLift :
       pointedNodePolynomial γ δ s t • 1 := by
   rw [BinaryQuadraticForm.adjugate_mul_sectionMatrix, eval_sub_eval_sectionMatrixLift]
 
+private theorem transpose_adjugate_mul_transpose_sectionMatrixLift :
+    (sectionMatrixLift γ δ s t).adjugate.transpose * (sectionMatrixLift γ δ s t).transpose =
+      pointedNodePolynomial γ δ s t • 1 := by
+  rw [← Matrix.transpose_mul, sectionMatrixLift_mul_adjugate, Matrix.transpose_smul,
+    Matrix.transpose_one]
+
+private theorem transpose_sectionMatrixLift_mul_transpose_adjugate :
+    (sectionMatrixLift γ δ s t).transpose * (sectionMatrixLift γ δ s t).adjugate.transpose =
+      pointedNodePolynomial γ δ s t • 1 := by
+  rw [← Matrix.transpose_mul, adjugate_mul_sectionMatrixLift, Matrix.transpose_smul,
+    Matrix.transpose_one]
+
 variable (N : Type*) [AddCommGroup N] [Module A N]
+
+/-- The reductions to `R` of a matrix factorization `Ψ * Φ = Φ * Ψ = F • 1` of the defining
+polynomial over `A[Y][X]` form an exact sequence after tensoring with any `A`-module `N`. -/
+private theorem exact_rTensor_map_mkₐ {Φ Ψ : Matrix (Fin 2) (Fin 2) A[X][X]}
+    (hΨΦ : Ψ * Φ = pointedNodePolynomial γ δ s t • 1)
+    (hΦΨ : Φ * Ψ = pointedNodePolynomial γ δ s t • 1) :
+    Function.Exact (((Ψ.map (mkₐ γ δ s t)).mulVecLin.restrictScalars A).rTensor N)
+      (((Φ.map (mkₐ γ δ s t)).mulVecLin.restrictScalars A).rTensor N) :=
+  Matrix.exact_rTensor_mulVecLin_map_of_mul_eq_smul_one Φ Ψ _ AdjoinRoot.mk_surjective
+    (ker_mkₐ γ δ s t) (isRegular_pointedNodePolynomial γ δ s t).left.isSMulRegular hΨΦ hΦΨ N
 
 /-- **Universal exactness of the node-section complex at `Φ`.** For every `A`-module `N`, the
 kernel of `Φ ⊗ N` on `R² ⊗[A] N` is the image of `Ψ ⊗ N`, where `Φ` is the node-section matrix
@@ -112,9 +134,8 @@ theorem exact_rTensor_adjugate_sectionMatrix :
       (((sectionMatrix γ δ s t).adjugate.mulVecLin.restrictScalars A).rTensor N)
       (((sectionMatrix γ δ s t).mulVecLin.restrictScalars A).rTensor N) := by
   rw [adjugate_sectionMatrix_eq_map, sectionMatrix_eq_map]
-  exact Matrix.exact_rTensor_mulVecLin_map_of_mul_eq_smul_one _ _ _ AdjoinRoot.mk_surjective
-    (ker_mkₐ γ δ s t) (isRegular_pointedNodePolynomial γ δ s t).left.isSMulRegular
-    (adjugate_mul_sectionMatrixLift γ δ s t) (sectionMatrixLift_mul_adjugate γ δ s t) N
+  exact exact_rTensor_map_mkₐ γ δ s t N (adjugate_mul_sectionMatrixLift γ δ s t)
+    (sectionMatrixLift_mul_adjugate γ δ s t)
 
 /-- **Universal exactness of the node-section complex at `Ψ`.** For every `A`-module `N`, the
 kernel of `Ψ ⊗ N` on `R² ⊗[A] N` is the image of `Φ ⊗ N`, where `Φ` is the node-section matrix
@@ -124,9 +145,8 @@ theorem exact_rTensor_sectionMatrix_adjugate :
       (((sectionMatrix γ δ s t).mulVecLin.restrictScalars A).rTensor N)
       (((sectionMatrix γ δ s t).adjugate.mulVecLin.restrictScalars A).rTensor N) := by
   rw [adjugate_sectionMatrix_eq_map, sectionMatrix_eq_map]
-  exact Matrix.exact_rTensor_mulVecLin_map_of_mul_eq_smul_one _ _ _ AdjoinRoot.mk_surjective
-    (ker_mkₐ γ δ s t) (isRegular_pointedNodePolynomial γ δ s t).left.isSMulRegular
-    (sectionMatrixLift_mul_adjugate γ δ s t) (adjugate_mul_sectionMatrixLift γ δ s t) N
+  exact exact_rTensor_map_mkₐ γ δ s t N (sectionMatrixLift_mul_adjugate γ δ s t)
+    (adjugate_mul_sectionMatrixLift γ δ s t)
 
 /-- **Universal exactness of the transposed node-section complex at `Φᵀ`.** For every
 `A`-module `N`, the kernel of `Φᵀ ⊗ N` on `R² ⊗[A] N` is the image of `Ψᵀ ⊗ N`. -/
@@ -136,12 +156,9 @@ theorem exact_rTensor_transpose_adjugate_sectionMatrix :
       (((sectionMatrix γ δ s t).transpose.mulVecLin.restrictScalars A).rTensor N) := by
   rw [adjugate_sectionMatrix_eq_map, sectionMatrix_eq_map, ← Matrix.transpose_map,
     ← Matrix.transpose_map]
-  exact Matrix.exact_rTensor_mulVecLin_map_of_mul_eq_smul_one _ _ _ AdjoinRoot.mk_surjective
-    (ker_mkₐ γ δ s t) (isRegular_pointedNodePolynomial γ δ s t).left.isSMulRegular
-    (by rw [← Matrix.transpose_mul, sectionMatrixLift_mul_adjugate, Matrix.transpose_smul,
-      Matrix.transpose_one])
-    (by rw [← Matrix.transpose_mul, adjugate_mul_sectionMatrixLift, Matrix.transpose_smul,
-      Matrix.transpose_one]) N
+  exact exact_rTensor_map_mkₐ γ δ s t N
+    (transpose_adjugate_mul_transpose_sectionMatrixLift γ δ s t)
+    (transpose_sectionMatrixLift_mul_transpose_adjugate γ δ s t)
 
 /-- **Universal exactness of the transposed node-section complex at `Ψᵀ`.** For every
 `A`-module `N`, the kernel of `Ψᵀ ⊗ N` on `R² ⊗[A] N` is the image of `Φᵀ ⊗ N`. -/
@@ -151,12 +168,9 @@ theorem exact_rTensor_transpose_sectionMatrix_adjugate :
       (((sectionMatrix γ δ s t).adjugate.transpose.mulVecLin.restrictScalars A).rTensor N) := by
   rw [adjugate_sectionMatrix_eq_map, sectionMatrix_eq_map, ← Matrix.transpose_map,
     ← Matrix.transpose_map]
-  exact Matrix.exact_rTensor_mulVecLin_map_of_mul_eq_smul_one _ _ _ AdjoinRoot.mk_surjective
-    (ker_mkₐ γ δ s t) (isRegular_pointedNodePolynomial γ δ s t).left.isSMulRegular
-    (by rw [← Matrix.transpose_mul, adjugate_mul_sectionMatrixLift, Matrix.transpose_smul,
-      Matrix.transpose_one])
-    (by rw [← Matrix.transpose_mul, sectionMatrixLift_mul_adjugate, Matrix.transpose_smul,
-      Matrix.transpose_one]) N
+  exact exact_rTensor_map_mkₐ γ δ s t N
+    (transpose_sectionMatrixLift_mul_transpose_adjugate γ δ s t)
+    (transpose_adjugate_mul_transpose_sectionMatrixLift γ δ s t)
 
 end PointedNodeRing
 

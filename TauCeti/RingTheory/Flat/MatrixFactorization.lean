@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Ideal.Span
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import Mathlib.RingTheory.Flat.Equalizer
+import TauCeti.Algebra.Exact.LiftCancel
 import TauCeti.RingTheory.Flat.Pi
 
 /-!
@@ -47,31 +48,6 @@ is free over `A`.
 public section
 
 open TensorProduct
-
-namespace Function.Exact
-
-variable {A P Q : Type*} [Semiring A] [AddCommGroup P] [Module A P] [AddCommGroup Q] [Module A Q]
-  {p : P →ₗ[A] Q} {μ f g : P →ₗ[A] P} {f' g' : Q →ₗ[A] Q}
-
-/-- **Lifting and cancelling.** Let `p : P → Q` be surjective with kernel the image of an injective
-`μ : P → P`, and let `f g : P → P` lift `f' g' : Q → Q` along `p`. If `g ∘ f = μ`, `g` commutes
-with `μ` and `f' ∘ g' = 0`, then `ker f' = im g'`. -/
-theorem of_lift_of_comp_eq (hp : Function.Surjective p) (hμ : Function.Injective μ)
-    (hμp : Function.Exact μ p) (hf : p ∘ₗ f = f' ∘ₗ p) (hg : p ∘ₗ g = g' ∘ₗ p)
-    (hgf : g ∘ₗ f = μ) (hgμ : g ∘ₗ μ = μ ∘ₗ g) (hfg : f' ∘ₗ g' = 0) :
-    Function.Exact g' f' := by
-  intro y
-  refine ⟨fun hy ↦ ?_, ?_⟩
-  · obtain ⟨x, rfl⟩ := hp y
-    obtain ⟨z, hz⟩ := (hμp (f x)).mp (by rw [← LinearMap.comp_apply, hf, LinearMap.comp_apply, hy])
-    have hx : x = g z := hμ <|
-      calc μ x = g (f x) := by rw [← hgf, LinearMap.comp_apply]
-        _ = μ (g z) := by rw [← hz, ← LinearMap.comp_apply, hgμ, LinearMap.comp_apply]
-    exact ⟨p z, by simpa [hx] using (LinearMap.congr_fun hg z).symm⟩
-  · rintro ⟨z, rfl⟩
-    rw [← LinearMap.comp_apply, hfg, LinearMap.zero_apply]
-
-end Function.Exact
 
 namespace Matrix
 
@@ -111,19 +87,23 @@ theorem exact_rTensor_mulVecLin_map_of_mul_eq_smul_one (Φ Ψ : Matrix n n S) {F
     simp [p, Matrix.mulVec, dotProduct, map_sum]
   -- Tensoring with `N` keeps `p` surjective and `μ, p` exact, and keeps `μ` injective since
   -- the cokernel `Rⁿ` of `μ` is `A`-flat. Then lift and cancel.
-  refine Function.Exact.of_lift_of_comp_eq (LinearMap.rTensor_surjective N hp)
+  exact Function.Exact.of_lift_of_comp_eq (LinearMap.rTensor_surjective N hp)
     ((LinearMap.lTensor_inj_iff_rTensor_inj N μ).mp
       (LinearMap.lTensor_injective_of_exact_of_flat p hp μ hμ hμp N))
     (rTensor_exact N hμp hp) (f := (Φ.mulVecLin.restrictScalars A).rTensor N)
-    (g := (Ψ.mulVecLin.restrictScalars A).rTensor N) ?_ ?_ ?_ ?_ ?_ <;>
-    simp only [μ, ← LinearMap.rTensor_comp, hcomm, ← LinearMap.restrictScalars_comp,
-      ← Matrix.mulVecLin_mul]
-  · rw [hΨΦ]
-  · rw [mul_smul_comm, smul_mul_assoc, mul_one, one_mul]
-  · have : (Φ * Ψ).map π = 0 := by
-      ext
-      simp [hΦΨ, hπF]
-    rw [← Matrix.map_mul, this, Matrix.mulVecLin_zero, LinearMap.restrictScalars_zero,
-      LinearMap.rTensor_zero]
+    (g := (Ψ.mulVecLin.restrictScalars A).rTensor N)
+    (hf := by simp only [← LinearMap.rTensor_comp, hcomm])
+    (hg := by simp only [← LinearMap.rTensor_comp, hcomm])
+    (hgf := by simp only [μ, ← LinearMap.rTensor_comp, ← LinearMap.restrictScalars_comp,
+      ← Matrix.mulVecLin_mul, hΨΦ])
+    (hgμ := by simp only [μ, ← LinearMap.rTensor_comp, ← LinearMap.restrictScalars_comp,
+      ← Matrix.mulVecLin_mul, mul_smul_comm, smul_mul_assoc, mul_one, one_mul])
+    (hfg := by
+      have : (Φ * Ψ).map π = 0 := by
+        ext
+        simp [hΦΨ, hπF]
+      rw [← LinearMap.rTensor_comp, ← LinearMap.restrictScalars_comp, ← Matrix.mulVecLin_mul,
+        ← Matrix.map_mul, this, Matrix.mulVecLin_zero, LinearMap.restrictScalars_zero,
+        LinearMap.rTensor_zero])
 
 end Matrix
