@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import TauCeti.Analysis.LocallyConvex.Polar
-import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 
 /-!
 # The annihilator bundle is the dual of the quotient bundle
@@ -45,8 +44,8 @@ becomes a nowhere-zero local section of `L*`.
 
 The smoothness proof tests the fibre maps on a local frame `[V_i]` of `TM ⧸ D`, whose members lift
 locally to `C^n` vector fields `V_i` (`TauCeti.IsContMDiffDistribution.exists_contMDiffOn_mk_eq`):
-the evaluations are the fibre-linear functions `α ↦ α(V_i)` on `D⁰`, which are `C^n` because the
-inclusion `D⁰ → T*M` is.
+the evaluations are the fibre-linear functions `α ↦ α(V_i)` on `D⁰`, which are `C^n` near the
+point (`TauCeti.CotangentBundle.contMDiffAt_annihilatorPairing`).
 
 ## Main definitions
 
@@ -179,16 +178,11 @@ theorem contMDiff_totalSpace_annihilatorSpaceEquivDualQuotient :
   have hUp : TotalSpace.proj ⁻¹' U ∈ 𝓝 p :=
     (hU.preimage (FiberBundle.continuous_proj _ _)).mem_nhds hpU
   -- Near `p`, the evaluation on the frame is the pairing of the covector with `σ`.
-  have hj := hD.contMDiff_annihilatorInclusion hr
-  rw [show annihilatorInclusion I D (Fin r → 𝕜) = fun z ↦ ⟨z.proj, z.snd⟩ from
-    funext (annihilatorInclusion_apply I D _)] at hj
-  refine (ContMDiffAt.clm_bundle_apply_scalar (V := TangentSpace I)
-    (b := fun z : TotalSpace (Fin r → 𝕜) (fun x ↦ annihilatorSpace I D x) ↦ z.proj) (hj p)
-    ((hσ.contMDiffAt (hU.mem_nhds hpU)).comp p (contMDiff_proj _ p))).contMDiffWithinAt
-    |>.congr_of_eventuallyEq ?_ ?_
+  refine (contMDiffAt_annihilatorPairing hD hr (hσ.contMDiffAt (hU.mem_nhds hpU))
+    ).contMDiffWithinAt.congr_of_eventuallyEq ?_ ?_
   · filter_upwards [mem_nhdsWithin_of_mem_nhds hUp] with z hz
-    simp [← hσU z.proj hz]
-  · simp [← hσU p.proj hpU]
+    simp [annihilatorPairing_apply, ← hσU z.proj hz]
+  · simp [annihilatorPairing_apply, ← hσU p.proj hpU]
 
 /-- **The annihilator bundle is the dual of the quotient bundle.** For a `C^n` distribution `D` of
 rank `k` on a manifold of dimension `k + r`, the annihilator bundle `D⁰ ⊆ T*M` is isomorphic to the
