@@ -40,6 +40,8 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
 * `TauCeti.eq_riemannianVolume_iff`: this property characterizes the Riemannian volume.
 * `TauCeti.riemannianVolume_apply_of_subset`: the volume of a subset of a chart source is its
   chart volume.
+* `TauCeti.riemannianVolume_apply_eq_setLIntegral_of_subset`: the volume of a measurable subset
+  of a chart source is the coordinate integral of the chart density over its chart image.
 * `TauCeti.setLIntegral_riemannianVolume_of_subset`,
   `TauCeti.setIntegral_riemannianVolume_of_subset`: integration over a subset of a chart source in
   coordinates, and `TauCeti.setLIntegral_riemannianVolume_inter_preimage`, its form over the
@@ -132,6 +134,17 @@ theorem setLIntegral_riemannianVolume_of_subset {α : M} {s : Set M}
           φ ((extChartAt I α).symm y) ∂(Module.finBasis ℝ E).addHaar := by
   rw [← Measure.restrict_restrict_of_subset hs, riemannianVolume_restrict_source,
     setLIntegral_chartRiemannianVolume α hs', inter_eq_left.2 (by rwa [extChartAt_source])]
+
+/-- The Riemannian volume of a measurable subset of a chart source is the coordinate integral of
+the chart density over its chart image. -/
+theorem riemannianVolume_apply_eq_setLIntegral_of_subset {α : M} {s : Set M}
+    (hs : s ⊆ (chartAt H α).source) (hs' : MeasurableSet s) :
+    riemannianVolume I M s =
+      ∫⁻ y in (extChartAt I α) '' s,
+        ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y))
+          ∂(Module.finBasis ℝ E).addHaar := by
+  simpa only [mul_one, setLIntegral_one] using
+    setLIntegral_riemannianVolume_of_subset hs hs' (fun _ ↦ 1)
 
 /-- **Integration in coordinates** against the Riemannian volume, for Bochner integrals: over a
 measurable subset of a chart source, the integral of `φ` is the coordinate integral of `φ` read in

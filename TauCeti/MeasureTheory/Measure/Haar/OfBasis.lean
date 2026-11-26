@@ -8,8 +8,10 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import Mathlib.MeasureTheory.Measure.Prod
 
 /-!
 # The additive Haar measure of the standard basis
@@ -29,6 +31,10 @@ carries the normalized Haar measure of the first to that of the second.
   `volume`.
 * `Module.Basis.addHaar_eq_dirac` — the additive Haar measure of a basis indexed by an empty type
   is the Dirac mass at `0`.
+* `Module.Basis.addHaar_withDensity_eq_of_eq_abs_det_mul` — Haar measures weighted by densities
+  that scale by the absolute determinant of a change of basis agree.
+* `Module.Basis.setLIntegral_prod_of_addHaar_withDensity_eq` — a weighted Haar integral over a
+  product set whose density factors in a product basis is the product of the factor integrals.
 * `Module.Basis.measurePreserving_equiv` — the linear equivalence matching two bases carries the
   additive Haar measure of one to that of the other.
 * `ContinuousLinearEquiv.exists_map_restrict_preimage_eq_smul_addHaar` — a continuous linear
@@ -45,6 +51,7 @@ coordinate change in
 public section
 
 open MeasureTheory
+open scoped ENNReal
 
 namespace Module.Basis
 
@@ -111,7 +118,52 @@ theorem addHaar_eq_smul_of_basis (b b' : Basis ι ℝ E) :
       simpa only [LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.coe_coe, hdet] using
         Measure.map_linearMap_addHaar_eq_smul_addHaar b.addHaar e.isUnit_det'.ne_zero
 
+/-- **Densities that scale like a change of basis give the same weighted Haar measure.** If the
+density `f` used with the Haar measure of `b'` is the density `g` used with the Haar measure of
+`b`, multiplied by the absolute determinant of the change of basis, then the two weighted measures
+agree: the change of basis rescales the Haar measure by the inverse factor. -/
+theorem addHaar_withDensity_eq_of_eq_abs_det_mul (b b' : Basis ι ℝ E) {f g : E → ℝ≥0∞}
+    (hfg : ∀ x, f x = ENNReal.ofReal |b.det b'| * g x) :
+    b'.addHaar.withDensity f = b.addHaar.withDensity g := by
+  have hd : ENNReal.ofReal |(b.det b')⁻¹| * ENNReal.ofReal |b.det b'| = 1 := by
+    rw [← ENNReal.ofReal_mul (abs_nonneg _), ← abs_mul, inv_mul_cancel₀ (b.isUnit_det b').ne_zero,
+      abs_one, ENNReal.ofReal_one]
+  have hf : f = ENNReal.ofReal |b.det b'| • g := funext hfg
+  rw [addHaar_eq_smul_of_basis b b', withDensity_smul_measure, hf,
+    withDensity_smul' _ _ ENNReal.ofReal_ne_top, smul_smul, hd, one_smul]
+
 end ChangeBasis
+
+section Prod
+
+variable {E F ι ι' κ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace F] [BorelSpace F]
+  [Fintype ι] [Fintype ι'] [Fintype κ]
+
+/-- **Weighted Haar integrals over product sets.** Suppose the Haar measure of a basis `b₀` of
+`E × F` weighted by `D₀` is the Haar measure of the product basis of `b₁` and `b₂`, reindexed
+along `e`, weighted by `D`. If `D` factors on `A₁ ×ˢ A₂` as `f z.1 * g z.2`, then the integral of
+`D₀` over `A₁ ×ˢ A₂` is the product of the integrals of `f` and `g`, since the Haar measure of a
+product basis is the product of the Haar measures. The Borel structure on `E × F` is arbitrary,
+so this applies to the chart measurable structure of a manifold model space. -/
+theorem setLIntegral_prod_of_addHaar_withDensity_eq [mEF : MeasurableSpace (E × F)]
+    [BorelSpace (E × F)] (e : ι ⊕ ι' ≃ κ) (b₀ : Basis κ ℝ (E × F)) (b₁ : Basis ι ℝ E)
+    (b₂ : Basis ι' ℝ F) {A₁ : Set E} {A₂ : Set F} (hA₁ : MeasurableSet A₁)
+    (hA₂ : MeasurableSet A₂) {D₀ D : E × F → ℝ≥0∞} {f : E → ℝ≥0∞} {g : F → ℝ≥0∞}
+    (hD : b₀.addHaar.withDensity D₀ = ((b₁.prod b₂).reindex e).addHaar.withDensity D)
+    (hf : AEMeasurable f (b₁.addHaar.restrict A₁)) (hg : AEMeasurable g (b₂.addHaar.restrict A₂))
+    (hfg : ∀ z ∈ A₁ ×ˢ A₂, D z = f z.1 * g z.2) :
+    ∫⁻ z in A₁ ×ˢ A₂, D₀ z ∂b₀.addHaar =
+      (∫⁻ x in A₁, f x ∂b₁.addHaar) * ∫⁻ y in A₂, g y ∂b₂.addHaar := by
+  have : FiniteDimensional ℝ F := b₂.finiteDimensional_of_finite
+  obtain rfl : mEF = Prod.instMeasurableSpace :=
+    BorelSpace.measurable_eq.trans (Prod.borelSpace (α := E) (β := F)).measurable_eq.symm
+  rw [← withDensity_apply _ (hA₁.prod hA₂), hD, withDensity_apply _ (hA₁.prod hA₂),
+    setLIntegral_congr_fun (hA₁.prod hA₂) hfg, addHaar_reindex, prod_addHaar,
+    ← Measure.prod_restrict, lintegral_prod_mul hf hg]
+
+end Prod
+
 
 section Equiv
 
