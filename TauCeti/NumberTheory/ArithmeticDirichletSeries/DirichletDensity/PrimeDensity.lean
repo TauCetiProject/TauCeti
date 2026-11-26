@@ -47,6 +47,8 @@ higher degree, and these are at most `5 [K : ℚ]` uniformly in `s`
 
 ## Main results
 
+* `TauCeti.degreeOnePrimeSum_add`, `TauCeti.degreeOnePrimeSum_const_mul`: the series over the
+  primes of degree one is linear in the coefficients.
 * `TauCeti.hasPrimeDensity_of_tendsto`: the density from the order of the Euler product at `1`.
 * `TauCeti.HasPrimeDensity.add`, `TauCeti.HasPrimeDensity.const_mul`,
   `TauCeti.HasPrimeDensity.sum`: densities are linear.
@@ -126,6 +128,30 @@ theorem hasPrimeDensity_iff :
         fun _ ↦ (1 : ℝ) := by
   rw [HasPrimeDensity]
 
+/-- The series of the zero function over the primes of degree one vanishes. -/
+@[simp]
+theorem degreeOnePrimeSum_zero (s : ℂ) :
+    degreeOnePrimeSum (0 : HeightOneSpectrum (𝓞 K) → ℂ) s = 0 := by
+  simp [degreeOnePrimeSum_def]
+
+/-- The series over the primes of degree one is additive in the coefficients, when both series
+converge. -/
+theorem degreeOnePrimeSum_add {s : ℂ}
+    (ha : Summable fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦
+      (higherDegreePrimes K)ᶜ.indicator a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s)
+    (hb : Summable fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦
+      (higherDegreePrimes K)ᶜ.indicator b 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) :
+    degreeOnePrimeSum (a + b) s = degreeOnePrimeSum a s + degreeOnePrimeSum b s := by
+  simp only [degreeOnePrimeSum_def, Set.indicator_add', Pi.add_apply, add_div]
+  exact ha.tsum_add hb
+
+/-- Multiplying the coefficients by a constant multiplies the series over the primes of degree
+one. -/
+theorem degreeOnePrimeSum_const_mul (c : ℂ) (a : HeightOneSpectrum (𝓞 K) → ℂ) (s : ℂ) :
+    degreeOnePrimeSum (fun 𝔭 ↦ c * a 𝔭) s = c * degreeOnePrimeSum a s := by
+  simp only [degreeOnePrimeSum_def, Set.indicator_mul_right _ (fun _ ↦ c) a, mul_div_assoc,
+    tsum_mul_left]
+
 /-- For a bounded function and `Re s > 1` the Dirichlet series over any set of primes converges
 absolutely. -/
 theorem summable_indicator_div_absNorm_cpow {C : ℝ} (hC : ∀ 𝔭, ‖a 𝔭‖ ≤ C)
@@ -134,7 +160,7 @@ theorem summable_indicator_div_absNorm_cpow {C : ℝ} (hC : ∀ 𝔭, ‖a 𝔭�
       S.indicator a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s := by
   refine Summable.of_norm_bounded ((summable_absNorm_rpow_primes_of_one_lt hs).mul_left C)
     fun 𝔭 ↦ ?_
-  rw [norm_div_absNorm_cpow]
+  rw [𝔭.norm_div_absNorm_cpow]
   exact mul_le_mul_of_nonneg_right ((norm_indicator_le_norm_self a 𝔭).trans (hC 𝔭))
     (by positivity)
 
@@ -144,23 +170,6 @@ theorem eventually_summable_indicator_div_absNorm_cpow {C : ℝ} (hC : ∀ 𝔭,
       (higherDegreePrimes K)ᶜ.indicator a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (s : ℂ) :=
   eventually_mem_nhdsWithin.mono fun _ hs ↦
     summable_indicator_div_absNorm_cpow hC _ (by simpa using hs)
-
-/-- The sum over a set of primes of the indicator, as a complex series, is Mathlib's
-`NumberField.Set.primeIdealZetaSum`. -/
-private theorem hasSum_indicator_one_div (S : Set (HeightOneSpectrum (𝓞 K))) {s : ℝ}
-    (hs : 1 < s) :
-    HasSum (fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦
-        S.indicator 1 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (s : ℂ))
-      (S.primeIdealZetaSum s : ℂ) := by
-  classical
-  have hsum := summable_indicator_div_absNorm_cpow (C := 1) (a := 1) (fun _ ↦ by simp) S
-    (s := (s : ℂ)) (by simpa using hs)
-  have hfun : (fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦
-      S.indicator 1 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (s : ℂ)) =
-      fun 𝔭 ↦ (if 𝔭 ∈ S then 1 else 0) / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (s : ℂ) :=
-    funext fun 𝔭 ↦ by rw [Set.indicator_apply, Pi.one_apply]
-  rw [NumberField.Set.ofReal_primeIdealZetaSum, ← hfun]
-  exact hsum.hasSum
 
 /-! ### Linearity and monotonicity -/
 
@@ -174,9 +183,7 @@ theorem HasPrimeDensity.add (ha : HasPrimeDensity a l) (hb : HasPrimeDensity b l
   refine ⟨(ha.1.and hb.1).mono fun s hs ↦ ?_, (ha.2.add hb.2).congr' ?_ .rfl⟩
   · simpa only [hind] using hs.1.add hs.2
   · filter_upwards [ha.1, hb.1] with s has hbs
-    rw [degreeOnePrimeSum_def, degreeOnePrimeSum_def, degreeOnePrimeSum_def]
-    simp only [hind]
-    rw [has.tsum_add hbs]
+    rw [degreeOnePrimeSum_add has hbs]
     ring
 
 /-- Multiplying a function by a constant multiplies its density. -/
@@ -189,7 +196,7 @@ theorem HasPrimeDensity.const_mul (ha : HasPrimeDensity a l) (c : ℂ) :
   refine ⟨ha.1.mono fun s hs ↦ ?_, (ha.2.const_mul_left c).congr' ?_ (.rfl)⟩
   · simpa only [hind, mul_div_assoc] using hs.mul_left c
   · refine .of_forall fun s ↦ ?_
-    simp only [degreeOnePrimeSum_def, hind, mul_div_assoc, tsum_mul_left]
+    simp only [degreeOnePrimeSum_const_mul]
     ring
 
 /-- The density of a finite sum of functions is the sum of their densities. -/
@@ -308,7 +315,7 @@ theorem hasPrimeDensity_zero_of_eventually_eq_zero
   filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s)
   rw [zero_mul, sub_zero, norm_one, mul_one, degreeOnePrimeSum_def, tsum_eq_sum (hzero _)]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun 𝔭 _ ↦ ?_)
-  rw [norm_div_absNorm_cpow, ofReal_re]
+  rw [𝔭.norm_div_absNorm_cpow, ofReal_re]
   exact (mul_le_of_le_one_right (norm_nonneg _) (Real.rpow_le_one_of_one_le_of_nonpos
     (one_le_two.trans (two_le_absNorm_asIdeal_real 𝔭)) (by linarith))).trans
     (norm_indicator_le_norm_self a 𝔭)
@@ -329,8 +336,10 @@ private theorem degreeOnePrimeSum_indicator_one_eq (S : Set (HeightOneSpectrum (
     (hs : 1 < s) :
     degreeOnePrimeSum (S.indicator 1) s =
       (S.primeIdealZetaSum s : ℂ) - (S ∩ higherDegreePrimes K).primeIdealZetaSum s := by
-  rw [degreeOnePrimeSum_def, ((hasSum_indicator_one_div S hs).sub
-    (hasSum_indicator_one_div (S ∩ higherDegreePrimes K) hs)).tsum_eq.symm]
+  rw [degreeOnePrimeSum_def,
+    ((NumberField.Set.hasSum_indicator_one_div_absNorm_cpow S hs).sub
+      (NumberField.Set.hasSum_indicator_one_div_absNorm_cpow (S ∩ higherDegreePrimes K)
+        hs)).tsum_eq.symm]
   refine tsum_congr fun 𝔭 ↦ ?_
   by_cases h𝔭 : 𝔭 ∈ higherDegreePrimes K <;> by_cases hS : 𝔭 ∈ S <;> simp [h𝔭, hS]
 
@@ -459,7 +468,8 @@ private theorem continuousOn_tsum_neg_log (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1) :
     ContinuousOn (fun s : ℝ ↦ ∑' 𝔭 : HeightOneSpectrum (𝓞 K),
       -log (1 - a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (s : ℂ))) (Set.Ioi 1) := by
   intro s₀ hs₀
-  obtain ⟨σ, hσ, hσs⟩ := exists_between (show 1 < s₀ from hs₀)
+  rw [Set.mem_Ioi] at hs₀
+  obtain ⟨σ, hσ, hσs⟩ := exists_between hs₀
   refine ContinuousAt.continuousWithinAt ?_
   refine tendsto_tsum_of_dominated_convergence
     (bound := fun 𝔭 ↦ 3 / 2 * (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-σ))
@@ -473,7 +483,7 @@ private theorem continuousOn_tsum_neg_log (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1) :
       (continuous_const.sub (continuous_const.div hpow
         fun t ↦ cpow_ne_zero_iff.mpr (Or.inl hN))).continuousAt
     exact (hcont.clog (one_sub_div_absNorm_cpow_mem_slitPlane (ha 𝔭)
-      (by rw [ofReal_re]; exact (show 1 < s₀ from hs₀).le))).neg
+      (by rw [ofReal_re]; exact hs₀.le))).neg
   · filter_upwards [Ici_mem_nhds hσs] with t (ht : σ ≤ t) 𝔭
     exact norm_neg_log_one_sub_div_absNorm_cpow_le (ha 𝔭) (by rw [ofReal_re]; linarith)
       (by rwa [ofReal_re])

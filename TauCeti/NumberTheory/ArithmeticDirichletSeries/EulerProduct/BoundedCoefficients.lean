@@ -72,9 +72,16 @@ public section
 open NumberField IsDedekindDomain Complex
 open scoped nonZeroDivisors
 
-namespace TauCeti
-
 variable {K : Type*} [Field K] [NumberField K]
+
+/-- The modulus of `x N(𝔭) ^ (-s)` is `‖x‖ N(𝔭) ^ (-Re s)`. -/
+theorem IsDedekindDomain.HeightOneSpectrum.norm_div_absNorm_cpow (𝔭 : HeightOneSpectrum (𝓞 K))
+    (x s : ℂ) :
+    ‖x / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s‖ = ‖x‖ * (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s.re) := by
+  rw [norm_div, norm_natCast_cpow_of_pos (NumberField.HeightOneSpectrum.one_lt_absNorm 𝔭).pos,
+    Real.rpow_neg (Nat.cast_nonneg _), div_eq_mul_inv]
+
+namespace TauCeti
 
 /-- **The Euler product with coefficients `a`** over the height-one primes of `𝓞 K`:
 `∏_𝔭 (1 - a(𝔭) N(𝔭) ^ (-s))⁻¹`, as Mathlib's unconditional product `tprod`. For `‖a 𝔭‖ ≤ 1` and
@@ -91,16 +98,16 @@ theorem primeEulerProduct_def (a : HeightOneSpectrum (𝓞 K) → ℂ) (s : ℂ)
       ∏' 𝔭 : HeightOneSpectrum (𝓞 K), (1 - a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s)⁻¹ := by
   rw [primeEulerProduct]
 
-/-- The modulus of `x N(𝔭) ^ (-s)` is `‖x‖ N(𝔭) ^ (-Re s)`. -/
-theorem norm_div_absNorm_cpow (x : ℂ) (𝔭 : HeightOneSpectrum (𝓞 K)) (s : ℂ) :
-    ‖x / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s‖ = ‖x‖ * (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s.re) := by
-  rw [norm_div, norm_natCast_cpow_of_pos (NumberField.HeightOneSpectrum.one_lt_absNorm 𝔭).pos,
-    Real.rpow_neg (Nat.cast_nonneg _), div_eq_mul_inv]
+/-- With zero coefficients every Euler factor is `1`, so the Euler product is `1`. -/
+@[simp]
+theorem primeEulerProduct_zero (s : ℂ) :
+    primeEulerProduct (0 : HeightOneSpectrum (𝓞 K) → ℂ) s = 1 := by
+  simp [primeEulerProduct_def]
 
 /-- A local ratio `a(𝔭) N(𝔭) ^ (-s)` with `‖a 𝔭‖ ≤ 1` has modulus at most `N(𝔭) ^ (-Re s)`. -/
 theorem norm_div_absNorm_cpow_le_rpow_neg {𝔭 : HeightOneSpectrum (𝓞 K)} (ha : ‖a 𝔭‖ ≤ 1) :
     ‖a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s‖ ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s.re) := by
-  rw [norm_div_absNorm_cpow]
+  rw [𝔭.norm_div_absNorm_cpow]
   exact mul_le_of_le_one_left (by positivity) ha
 
 /-- For `Re s ≥ 1` a local ratio `a(𝔭) N(𝔭) ^ (-s)` with `‖a 𝔭‖ ≤ 1` has modulus at most `1/2`,
