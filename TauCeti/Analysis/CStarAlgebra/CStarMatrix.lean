@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Star.Unitization
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
+public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import Mathlib.RingTheory.SimpleRing.Matrix
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
@@ -13,8 +15,6 @@ import TauCeti.Analysis.CStarAlgebra.Compression
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.CStarAlgebra.Hom
-import Mathlib.Analysis.CStarAlgebra.Unitization
-import Mathlib.Algebra.Order.Star.Unitization
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Data.Matrix.Composition
 import TauCeti.LinearAlgebra.Matrix.PartialIsometry
@@ -96,7 +96,9 @@ embeddings into block-diagonal matrices.
 * `CStarMatrix.sum_star_mul_mul_eq_dotProduct_mulVec`: rewriting a quadratic form as a
   dot product with `mulVec`.
 * `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity, with
-  `CStarMatrix.ofMatrix_smul_nonneg` (`[pᵢⱼ b]` is positive for positive `[pᵢⱼ]` and `b`).
+  `CStarMatrix.ofMatrix_smul_nonneg` (`[pᵢⱼ b]` is positive for positive `[pᵢⱼ]` and `b`) and
+  `CStarMatrix.star_left_conjugate_unitization_nonneg` (compressing a positive matrix over `A⁺¹`
+  by `e ∈ A` gives a positive matrix over `A`).
 * `CStarMatrix.diag_nonneg_of_nonneg`: the diagonal entries of a positive matrix are positive.
 * `CStarMatrix.submatrix_nonneg` and `CStarMatrix.extend_nonneg`: reindexing a positive matrix
   along any map of indices, or extending it by zero along an injective one, gives a positive
@@ -806,6 +808,21 @@ theorem ofMatrix_smul_nonneg {P : CStarMatrix n n ℂ} (hP : 0 ≤ P) {b : A} (h
         Finset.sum_congr rfl fun _ _ => by rw [mul_comm]
   rw [h]
   exact Finset.sum_nonneg fun k _ => star_left_conjugate_nonneg hb _
+
+open scoped ComplexOrder in
+/-- Compressing a positive matrix `[λᵢⱼ + aᵢⱼ]` over the unitization `A⁺¹` by `e ∈ A` gives the
+positive matrix `[e⋆ aᵢⱼ e + λᵢⱼ e⋆ e]` over `A`: it is the conjugate `diag(e)⋆ M diag(e)`, whose
+entries lie in `A`. -/
+theorem star_left_conjugate_unitization_nonneg {M : CStarMatrix n n (Unitization ℂ A)}
+    (hM : 0 ≤ M) (e : A) : 0 ≤ ofMatrix
+      (Matrix.of fun i j => star e * (M i j).snd * e + (M i j).fst • (star e * e)) := by
+  refine nonneg_iff_forall_sum_nonneg.mpr fun z => ?_
+  have h := nonneg_iff_forall_sum_nonneg.mp hM fun i => ((e * z i : A) : Unitization ℂ A)
+  rw [← Unitization.inr_nonneg_iff ℂ]
+  convert h using 1
+  simp only [← Unitization.inrNonUnitalStarAlgHom_apply ℂ, map_sum]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  ext <;> simp [mul_assoc, mul_add, add_mul, smul_mul_assoc, mul_smul_comm, add_comm]
 
 /-- The `1 × 1` C⋆-matrix associated to `a` has norm `‖a‖`. -/
 @[simp]
