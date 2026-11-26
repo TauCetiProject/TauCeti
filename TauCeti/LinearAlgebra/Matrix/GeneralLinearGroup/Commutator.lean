@@ -149,12 +149,10 @@ theorem diagGL_eq_commutatorElement_transvectionWeylElement (a : Rˣ) :
     diagGL ![a, a⁻¹] =
       ⁅diagGL (Pi.mulSingle (0 : Fin 2) a),
         transvectionWeylElement (A := R) (zero_ne_one : (0 : Fin 2) ≠ 1)⁆ := by
-  rw [commutatorElement_def, transvectionWeylElement_inv, mul_assoc, mul_assoc,
-    ← mul_assoc (transvectionWeylElement _), ← map_inv, transvectionWeylElement_mul_diagGL_mul_inv,
-    ← map_mul]
-  congr 1
-  funext k
-  fin_cases k <;> simp
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [commutatorElement_def, Matrix.mul_apply, Fin.sum_univ_two, ← map_inv,
+      coe_transvectionWeylElement_apply, Matrix.one_apply, Pi.mulSingle_apply]
 
 /-- The upper-left section `[[a, 0], [c, a⁻¹]]` of `SL₂` is the lower unipotent matrix
 `[[1, 0], [c a⁻¹, 1]]` times the diagonal matrix `diag(a, a⁻¹)`. -/

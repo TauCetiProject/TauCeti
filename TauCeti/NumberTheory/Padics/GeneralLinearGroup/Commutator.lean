@@ -135,13 +135,11 @@ theorem mem_commutatorSet_pow_four_padicInt_two {g : GL (Fin 2) ℤ_[2]}
       transvectionUnit zero_ne_one 1⁆ with hc_def
   have hcS : c ∈ commutatorSet (GL (Fin 2) ℤ_[2]) := commutator_mem_commutatorSet _ _
   have hc₁ : GeneralLinearGroup.map (toZMod (p := 2)) c ≠ 1 := by
-    rw [hc_def, map_commutatorElement, map_transvectionWeylElement, map_transvectionUnit,
-      commutatorElement_def, transvectionWeylElement_inv,
-      transvectionWeylElement_mul_transvectionUnit_mul_inv_self, transvectionUnit_inv]
     intro h
     have h11 := congrArg (fun x : GL (Fin 2) (ZMod 2) ↦ (x : Matrix (Fin 2) (Fin 2) (ZMod 2)) 1 1) h
     -- The `(1, 1)` entry of the reduction is `(-1) * (-1) + 1 = 0` in `𝔽₂`, not `1`.
-    simp [Matrix.mul_apply, Fin.sum_univ_two, transvection] at h11
+    simp [hc_def, commutatorElement_def, Matrix.mul_apply, Fin.sum_univ_two, transvection,
+      Matrix.one_apply] at h11
   have hc : GeneralLinearGroup.map (toZMod (p := 2)) c ^ 3 = 1 := by
     rw [← GeneralLinearGroup.mem_commutator_fin_two_iff_pow_three_eq_one (Nat.card_zmod 2),
       map_commutatorElement]
