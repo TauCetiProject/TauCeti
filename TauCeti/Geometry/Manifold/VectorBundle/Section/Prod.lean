@@ -25,7 +25,8 @@ over a field `𝕜'` above the field `𝕜` of the base, such as complex bundles
 the maps are `𝕜'`-linear. They are induced by fibrewise linear bundle maps, so they commute with
 multiplication by `𝕜'`-valued functions (`ContMDiffSection.fstLinearMap_smul_function` and its
 analogues), and they satisfy the identities of the biproduct: `fst (inl s) = s`,
-`snd (inl s) = 0`, `fst (inr s) = 0`, `snd (inr s) = s` and `inl ∘ fst + inr ∘ snd = 1`.
+`snd (inl s) = 0`, `fst (inr s) = 0`, `snd (inr s) = s` and `inl ∘ fst + inr ∘ snd = 1`. A
+section of `E₁ ×ᵇ E₂` is determined by its two components (`ContMDiffSection.prod_ext`).
 
 An operator `P : Γ(E₁ ×ᵇ E₂) → Γ(F₁ ×ᵇ F₂)` between direct sums is therefore a `2 × 2` matrix of
 operators `Pᵢⱼ : Γ(Eⱼ) → Γ(Fᵢ)`. The operator with matrix `Pᵢⱼ` is
@@ -33,10 +34,12 @@ operators `Pᵢⱼ : Γ(Eⱼ) → Γ(Fᵢ)`. The operator with matrix `Pᵢⱼ` 
 `(P₁₁ s₁ + P₁₂ s₂, P₂₁ s₁ + P₂₂ s₂)`. Its entries are recovered by the projections and inclusions
 (`ContMDiffSection.fstLinearMap_comp_blockLinearMap_comp_inlLinearMap` and its analogues), and
 every operator is the block operator of its entries
-(`ContMDiffSection.blockLinearMap_entries`). Operators of this form are the folded operators of
-index theory: the operator `[[0, P*], [P, 0]]` on `E₀ ⊕ E₁` built from an operator
+(`ContMDiffSection.blockLinearMap_entries`). Block operators add entrywise and compose by matrix
+multiplication (`ContMDiffSection.blockLinearMap_add`,
+`ContMDiffSection.blockLinearMap_comp_blockLinearMap`). Operators of this form are the folded
+operators of index theory: the operator `[[0, P*], [P, 0]]` on `E₀ ⊕ E₁` built from an operator
 `P : Γ(E₀) → Γ(E₁)`, and the operator `d + d*` from the even to the odd terms of an elliptic
-complex.
+complex with two even and two odd terms (longer complexes need iterated block decompositions).
 
 ## Main definitions
 
@@ -148,6 +151,34 @@ theorem fstLinearMap_inrLinearMap (s : Cₛ^n⟮I; F₂, E₂⟯) :
     fstLinearMap 𝕜' I F₁ F₂ n E₁ E₂ (inrLinearMap 𝕜' I F₁ F₂ n E₁ E₂ s) = 0 :=
   (rfl)
 
+@[simp]
+theorem fstLinearMap_comp_inlLinearMap :
+    fstLinearMap 𝕜' I F₁ F₂ n E₁ E₂ ∘ₗ inlLinearMap 𝕜' I F₁ F₂ n E₁ E₂ = LinearMap.id :=
+  (rfl)
+
+@[simp]
+theorem sndLinearMap_comp_inrLinearMap :
+    sndLinearMap 𝕜' I F₁ F₂ n E₁ E₂ ∘ₗ inrLinearMap 𝕜' I F₁ F₂ n E₁ E₂ = LinearMap.id :=
+  (rfl)
+
+@[simp]
+theorem sndLinearMap_comp_inlLinearMap :
+    sndLinearMap 𝕜' I F₁ F₂ n E₁ E₂ ∘ₗ inlLinearMap 𝕜' I F₁ F₂ n E₁ E₂ = 0 :=
+  (rfl)
+
+@[simp]
+theorem fstLinearMap_comp_inrLinearMap :
+    fstLinearMap 𝕜' I F₁ F₂ n E₁ E₂ ∘ₗ inrLinearMap 𝕜' I F₁ F₂ n E₁ E₂ = 0 :=
+  (rfl)
+
+/-- Two sections of a direct-sum bundle are equal when their components are. -/
+theorem prod_ext {s t : Cₛ^n⟮I; F₁ × F₂, E₁ ×ᵇ E₂⟯}
+    (h₁ : fstLinearMap 𝕜' I F₁ F₂ n E₁ E₂ s = fstLinearMap 𝕜' I F₁ F₂ n E₁ E₂ t)
+    (h₂ : sndLinearMap 𝕜' I F₁ F₂ n E₁ E₂ s = sndLinearMap 𝕜' I F₁ F₂ n E₁ E₂ t) : s = t := by
+  ext x
+  · exact congr($h₁ x)
+  · exact congr($h₂ x)
+
 /-- A section of a direct-sum bundle is the sum of the inclusions of its two components. -/
 theorem inlLinearMap_comp_fstLinearMap_add_inrLinearMap_comp_sndLinearMap :
     inlLinearMap 𝕜' I F₁ F₂ n E₁ E₂ ∘ₗ fstLinearMap 𝕜' I F₁ F₂ n E₁ E₂ +
@@ -257,6 +288,37 @@ theorem sndLinearMap_comp_blockLinearMap_comp_inrLinearMap :
   ext s x
   simp
 
+@[simp]
+theorem fstLinearMap_blockLinearMap (s : Cₛ^n⟮I; F₁ × F₂, E₁ ×ᵇ E₂⟯) :
+    fstLinearMap 𝕜' I G₁ G₂ n Z₁ Z₂ (blockLinearMap P₁₁ P₁₂ P₂₁ P₂₂ s) =
+      P₁₁ (fstLinearMap 𝕜' I F₁ F₂ n E₁ E₂ s) + P₁₂ (sndLinearMap 𝕜' I F₁ F₂ n E₁ E₂ s) := by
+  ext x
+  simp
+
+@[simp]
+theorem sndLinearMap_blockLinearMap (s : Cₛ^n⟮I; F₁ × F₂, E₁ ×ᵇ E₂⟯) :
+    sndLinearMap 𝕜' I G₁ G₂ n Z₁ Z₂ (blockLinearMap P₁₁ P₁₂ P₂₁ P₂₂ s) =
+      P₂₁ (fstLinearMap 𝕜' I F₁ F₂ n E₁ E₂ s) + P₂₂ (sndLinearMap 𝕜' I F₁ F₂ n E₁ E₂ s) := by
+  ext x
+  simp
+
+@[simp]
+theorem blockLinearMap_zero :
+    blockLinearMap (0 : Cₛ^n⟮I; F₁, E₁⟯ →ₗ[𝕜'] Cₛ^n⟮I; G₁, Z₁⟯)
+      (0 : Cₛ^n⟮I; F₂, E₂⟯ →ₗ[𝕜'] Cₛ^n⟮I; G₁, Z₁⟯)
+      (0 : Cₛ^n⟮I; F₁, E₁⟯ →ₗ[𝕜'] Cₛ^n⟮I; G₂, Z₂⟯)
+      (0 : Cₛ^n⟮I; F₂, E₂⟯ →ₗ[𝕜'] Cₛ^n⟮I; G₂, Z₂⟯) = 0 := by
+  ext s x <;> simp
+
+/-- Block operators add entrywise. -/
+theorem blockLinearMap_add (Q₁₁ : Cₛ^n⟮I; F₁, E₁⟯ →ₗ[𝕜'] Cₛ^n⟮I; G₁, Z₁⟯)
+    (Q₁₂ : Cₛ^n⟮I; F₂, E₂⟯ →ₗ[𝕜'] Cₛ^n⟮I; G₁, Z₁⟯)
+    (Q₂₁ : Cₛ^n⟮I; F₁, E₁⟯ →ₗ[𝕜'] Cₛ^n⟮I; G₂, Z₂⟯)
+    (Q₂₂ : Cₛ^n⟮I; F₂, E₂⟯ →ₗ[𝕜'] Cₛ^n⟮I; G₂, Z₂⟯) :
+    blockLinearMap (P₁₁ + Q₁₁) (P₁₂ + Q₁₂) (P₂₁ + Q₂₁) (P₂₂ + Q₂₂) =
+      blockLinearMap P₁₁ P₁₂ P₂₁ P₂₂ + blockLinearMap Q₁₁ Q₁₂ Q₂₁ Q₂₂ := by
+  ext s x <;> simp <;> abel
+
 /-- Every operator between direct sums is the block operator of its four entries. -/
 theorem blockLinearMap_entries
     (P : Cₛ^n⟮I; F₁ × F₂, E₁ ×ᵇ E₂⟯ →ₗ[𝕜'] Cₛ^n⟮I; G₁ × G₂, Z₁ ×ᵇ Z₂⟯) :
@@ -269,6 +331,28 @@ theorem blockLinearMap_entries
   conv_rhs => rw [← LinearMap.id_apply (R := 𝕜') s,
     ← inlLinearMap_comp_fstLinearMap_add_inrLinearMap_comp_sndLinearMap]
   ext x <;> simp
+
+/-- The composition of two block operators is the block operator of the product of their
+matrices. -/
+theorem blockLinearMap_comp_blockLinearMap
+    {H₁ : Type*} [NormedAddCommGroup H₁] [NormedSpace 𝕜 H₁] [NormedSpace 𝕜' H₁]
+    [IsScalarTower 𝕜 𝕜' H₁]
+    {H₂ : Type*} [NormedAddCommGroup H₂] [NormedSpace 𝕜 H₂] [NormedSpace 𝕜' H₂]
+    [IsScalarTower 𝕜 𝕜' H₂]
+    {Y₁ Y₂ : B → Type*} [∀ x, TopologicalSpace (Y₁ x)] [∀ x, TopologicalSpace (Y₂ x)]
+    [∀ x, AddCommGroup (Y₁ x)] [∀ x, Module 𝕜 (Y₁ x)] [∀ x, Module 𝕜' (Y₁ x)]
+    [∀ x, AddCommGroup (Y₂ x)] [∀ x, Module 𝕜 (Y₂ x)] [∀ x, Module 𝕜' (Y₂ x)]
+    [TopologicalSpace (TotalSpace H₁ Y₁)] [TopologicalSpace (TotalSpace H₂ Y₂)]
+    [FiberBundle H₁ Y₁] [FiberBundle H₂ Y₂] [VectorBundle 𝕜 H₁ Y₁] [VectorBundle 𝕜 H₂ Y₂]
+    [VectorBundle 𝕜' H₁ Y₁] [VectorBundle 𝕜' H₂ Y₂]
+    (Q₁₁ : Cₛ^n⟮I; G₁, Z₁⟯ →ₗ[𝕜'] Cₛ^n⟮I; H₁, Y₁⟯)
+    (Q₁₂ : Cₛ^n⟮I; G₂, Z₂⟯ →ₗ[𝕜'] Cₛ^n⟮I; H₁, Y₁⟯)
+    (Q₂₁ : Cₛ^n⟮I; G₁, Z₁⟯ →ₗ[𝕜'] Cₛ^n⟮I; H₂, Y₂⟯)
+    (Q₂₂ : Cₛ^n⟮I; G₂, Z₂⟯ →ₗ[𝕜'] Cₛ^n⟮I; H₂, Y₂⟯) :
+    blockLinearMap Q₁₁ Q₁₂ Q₂₁ Q₂₂ ∘ₗ blockLinearMap P₁₁ P₁₂ P₂₁ P₂₂ =
+      blockLinearMap (Q₁₁ ∘ₗ P₁₁ + Q₁₂ ∘ₗ P₂₁) (Q₁₁ ∘ₗ P₁₂ + Q₁₂ ∘ₗ P₂₂)
+        (Q₂₁ ∘ₗ P₁₁ + Q₂₂ ∘ₗ P₂₁) (Q₂₁ ∘ₗ P₁₂ + Q₂₂ ∘ₗ P₂₂) := by
+  ext s x <;> simp <;> abel
 
 end Block
 

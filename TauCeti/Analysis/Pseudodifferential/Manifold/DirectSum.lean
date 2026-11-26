@@ -35,8 +35,9 @@ Operators between direct sums occur as the folded operators of index theory. For
 (`TauCeti.blockLinearMap_zero₁₁_zero₂₂_mem_sectionClassicalPseudodifferentialOperators_iff`). The
 direct sum `P₁ ⊕ P₂` of two operators has order `m` exactly when `P₁` and `P₂` do
 (`TauCeti.blockLinearMap_zero₁₂_zero₂₁_mem_sectionClassicalPseudodifferentialOperators_iff`). For a
-complex of operators of order `m`, the operator `d + d*` from the even to the odd terms is a block
-operator whose entries are differentials, formal adjoints of differentials and zeros.
+complex of operators of order `m` with two even and two odd terms, the operator `d + d*` from the
+even to the odd terms is a block operator whose entries are differentials, formal adjoints of
+differentials and zeros; longer complexes need iterated block decompositions.
 
 ## Main results
 
