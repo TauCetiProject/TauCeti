@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.Extensions
 public import TauCeti.Condensed.Light.Solid.Basic
 
 import Mathlib.Algebra.Homology.ShortComplex.ShortExact
+import TauCeti.CategoryTheory.Abelian.Projective.Internal
 import TauCeti.CategoryTheory.Limits.Preserves.Shapes.Kernels
 import TauCeti.Condensed.Light.NullSequence.Projective
 

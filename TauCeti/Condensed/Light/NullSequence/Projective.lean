@@ -5,7 +5,6 @@ Authors: Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Preadditive.Projective.Internal
 public import TauCeti.Condensed.Light.NullSequence.Basic
 public import TauCeti.Condensed.Light.Sequence
 
@@ -14,8 +13,7 @@ public import TauCeti.Condensed.Light.Sequence
 
 Over a commutative ring in any site universe, internal Hom out of the null-sequence module
 preserves epimorphisms. The marked-point splitting exhibits the reduced module as a retract
-of the internally projective free module on the convergent sequence. Internal Hom out of the
-null-sequence module is therefore exact (`CategoryTheory.InternallyProjective.preservesHomology`).
+of the internally projective free module on the convergent sequence.
 
 See Rodríguez Camargo, *Notes on Solid Geometry*, Theorem 2.3.3(3) and Definition 3.2.1.
 -/
