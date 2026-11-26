@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Convexity.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Smooth
-import TauCeti.Topology.Algebra.QuadraticForm.PosDef
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Strict convexity and strict concavity of the boundary are open conditions
@@ -18,10 +18,11 @@ strictly convex, respectively strictly concave, form an open subset of `∂M`
 
 The proof reads `II` in a local frame of `T∂M`: near `q₀`, transporting `II_q` to the model fibre
 along a local trivialization of `T∂M` gives a family of bilinear forms on a fixed vector space
-whose entries on a basis are continuous, because `II` pairs continuous tangent fields to a
-continuous function. Positive definiteness is an open condition on such a family
-(`LinearMap.BilinForm.eventually_posDef_of_continuousAt`). Strict concavity is positive
-definiteness of `-II`, so both cases are positivity of `s • II` for a sign `s`, proved once.
+which is continuous, because `II` pairs continuous tangent fields to a continuous function and
+the fibre is finite-dimensional. Positivity on nonzero diagonal vectors is an open condition on
+continuous bilinear forms (`TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos`). Strict
+concavity is positive definiteness of `-II`, so both cases are positivity of `s • II` for a
+sign `s`, proved once.
 
 ## Main results
 
@@ -93,27 +94,33 @@ private theorem eventually_forall_mul_boundarySecondFundamentalForm_pos (s : ℝ
   set e := trivializationAt (EuclideanSpace ℝ (Fin n))
     (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) q₀
   have hq₀ : q₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' q₀
-  let B : (𝓡∂ (n + 1)).boundary M → LinearMap.BilinForm ℝ (EuclideanSpace ℝ (Fin n)) :=
-    fun q ↦ s • (boundarySecondFundamentalForm q).compl₁₂ (e.symmL ℝ q).toLinearMap
-      (e.symmL ℝ q).toLinearMap
-  have hB : ∀ q x, (B q).toQuadraticMap x =
-      s * boundarySecondFundamentalForm q (e.symmL ℝ q x) (e.symmL ℝ q x) := fun _ _ ↦ rfl
+  let C : (𝓡∂ (n + 1)).boundary M →
+      EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ :=
+    fun q ↦ (s • (boundarySecondFundamentalForm q).compl₁₂ (e.symmL ℝ q).toLinearMap
+      (e.symmL ℝ q).toLinearMap).toContinuousBilinearMap
+  have hC : ∀ q x y, C q x y =
+      s * boundarySecondFundamentalForm q (e.symmL ℝ q x) (e.symmL ℝ q y) := fun q x y ↦ by
+    simp only [C, LinearMap.toContinuousBilinearMap_apply, LinearMap.smul_apply,
+      LinearMap.compl₁₂_apply, ContinuousLinearMap.coe_coe, smul_eq_mul]
+  have hCcont : ContinuousAt C q₀ :=
+    continuousAt_clm_apply.2 fun v ↦ continuousAt_clm_apply.2 fun w ↦ by
+      simp only [hC]
+      exact continuousAt_const.mul (continuousAt_boundarySecondFundamentalForm_symmL q₀ v w)
   have hpos : ∀ q ∈ e.baseSet, (∀ u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q, u ≠ 0 →
-      0 < s * boundarySecondFundamentalForm q u u) ↔ (B q).toQuadraticMap.PosDef := by
+      0 < s * boundarySecondFundamentalForm q u u) ↔ ∀ x, x ≠ 0 → 0 < C q x x := by
     intro q hq
     constructor
     · intro hII x hx
-      rw [hB]
+      rw [hC]
       exact hII _ fun h0 ↦ hx (by
         rw [← e.continuousLinearMapAt_symmL (R := ℝ) hq x, h0, map_zero])
-    · intro hBq u hu
+    · intro hCq u hu
       have hx : e.continuousLinearMapAt ℝ q u ≠ 0 := fun h0 ↦ hu (by
         rw [← e.symmL_continuousLinearMapAt (R := ℝ) hq u, h0, map_zero])
-      simpa only [hB, e.symmL_continuousLinearMapAt (R := ℝ) hq u] using hBq _ hx
-  filter_upwards [LinearMap.BilinForm.eventually_posDef_of_continuousAt
-      (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
-      (fun i j ↦ continuousAt_const.mul (continuousAt_boundarySecondFundamentalForm_symmL q₀ _ _))
-      ((hpos q₀ hq₀).1 h), e.open_baseSet.mem_nhds hq₀] with q hq hqe
+      simpa only [hC, e.symmL_continuousLinearMapAt (R := ℝ) hq u] using hCq _ hx
+  filter_upwards [hCcont.eventually
+      (isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds ((hpos q₀ hq₀).1 h)),
+    e.open_baseSet.mem_nhds hq₀] with q hq hqe
   exact (hpos q hqe).2 hq
 
 /-- **Strict convexity of the boundary is an open condition**: if `∂M` is strictly convex at `q₀`,
