@@ -40,13 +40,6 @@ def compatibleAlgebraFamilies : Subalgebra R (∀ b, I.right b) :=
     ((Pi.evalAlgHom R (fun b => I.right b) (J.fst a)).prod
       (Pi.evalAlgHom R (fun b => I.right b) (J.snd a)))
 
-/-- Compatible families form the meet of the comaps of the face-span ranges. -/
-theorem compatibleAlgebraFamilies_def :
-    I.compatibleAlgebraFamilies =
-      ⨅ a, ((I.fst a).hom.prod (I.snd a).hom).range.comap
-        ((Pi.evalAlgHom R (fun b => I.right b) (J.fst a)).prod
-          (Pi.evalAlgHom R (fun b => I.right b) (J.snd a))) := (rfl)
-
 /-- Each face span must have a common preimage for the two incident values. -/
 @[simp]
 theorem mem_compatibleAlgebraFamilies {x : ∀ b, I.right b} :
@@ -175,51 +168,41 @@ def multispanSectionsLinearEquiv : AlgCat.sectionsSubalgebra I.multispan ≃ₗ[
   (AlgCat.sectionsLinearEquiv I.multispan).trans
     (SemimoduleCat.sectionsLinearEquivOfIso I.asSemimoduleIndexIso)
 
-/-- The multispan comparison factors through the general forgetting equivalence. -/
-theorem multispanSectionsLinearEquiv_eq :
-    I.multispanSectionsLinearEquiv =
-      (AlgCat.sectionsLinearEquiv I.multispan).trans
-        (SemimoduleCat.sectionsLinearEquivOfIso I.asSemimoduleIndexIso) := (rfl)
-
 /-- The comparison of sections preserves a face component. -/
 @[simp]
 theorem multispanSectionsLinearEquiv_apply_left
     (s : AlgCat.sectionsSubalgebra I.multispan) (a : J.L) :
     (I.multispanSectionsLinearEquiv s).val (.left a) = s.val (.left a) := by
-  rw [multispanSectionsLinearEquiv_eq, LinearEquiv.trans_apply,
-    SemimoduleCat.sectionsLinearEquivOfIso_apply, AlgCat.sectionsLinearEquiv_apply,
-    asSemimoduleIndexIso_hom_app_left]
-  exact SemimoduleCat.id_apply (SemimoduleCat.of R (I.left a)) (s.val (.left a))
+  simp [multispanSectionsLinearEquiv]
+  -- The linear map underlying the categorical identity is the linear identity.
+  rfl
 
 /-- The comparison of sections preserves a chamber component. -/
 @[simp]
 theorem multispanSectionsLinearEquiv_apply_right
     (s : AlgCat.sectionsSubalgebra I.multispan) (b : J.R) :
     (I.multispanSectionsLinearEquiv s).val (.right b) = s.val (.right b) := by
-  rw [multispanSectionsLinearEquiv_eq, LinearEquiv.trans_apply,
-    SemimoduleCat.sectionsLinearEquivOfIso_apply, AlgCat.sectionsLinearEquiv_apply,
-    asSemimoduleIndexIso_hom_app_right]
-  exact SemimoduleCat.id_apply (SemimoduleCat.of R (I.right b)) (s.val (.right b))
+  simp [multispanSectionsLinearEquiv]
+  -- The linear map underlying the categorical identity is the linear identity.
+  rfl
 
 /-- The inverse comparison of sections preserves a face component. -/
 @[simp]
 theorem multispanSectionsLinearEquiv_symm_apply_left
     (s : SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan) (a : J.L) :
     (I.multispanSectionsLinearEquiv.symm s).val (.left a) = s.val (.left a) := by
-  rw [multispanSectionsLinearEquiv_eq, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
-    AlgCat.sectionsLinearEquiv_symm_apply, SemimoduleCat.sectionsLinearEquivOfIso_symm_apply,
-    asSemimoduleIndexIso_inv_app_left]
-  exact SemimoduleCat.id_apply (SemimoduleCat.of R (I.left a)) (s.val (.left a))
+  simp [multispanSectionsLinearEquiv]
+  -- The linear map underlying the categorical identity is the linear identity.
+  rfl
 
 /-- The inverse comparison of sections preserves a chamber component. -/
 @[simp]
 theorem multispanSectionsLinearEquiv_symm_apply_right
     (s : SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan) (b : J.R) :
     (I.multispanSectionsLinearEquiv.symm s).val (.right b) = s.val (.right b) := by
-  rw [multispanSectionsLinearEquiv_eq, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
-    AlgCat.sectionsLinearEquiv_symm_apply, SemimoduleCat.sectionsLinearEquivOfIso_symm_apply,
-    asSemimoduleIndexIso_inv_app_right]
-  exact SemimoduleCat.id_apply (SemimoduleCat.of R (I.right b)) (s.val (.right b))
+  simp [multispanSectionsLinearEquiv]
+  -- The linear map underlying the categorical identity is the linear identity.
+  rfl
 
 /-- A chamber family is compatible over the algebras exactly when it is compatible over
 their underlying semimodules. -/
