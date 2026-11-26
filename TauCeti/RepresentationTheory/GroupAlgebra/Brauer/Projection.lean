@@ -29,6 +29,11 @@ Both hypotheses are needed: over `ℚ`, `x = r + r²` gives
 `Br_P(x²) = 2` but `Br_P(x)² = 0`; and over `𝔽₂` with `P = C₃` and `x` the sum of the
 transpositions, `Br_P(x²) = 1 + r + r²` but `Br_P(x)² = 0`.
 
+For a `p`-group `P` in characteristic `p`, every `x ∈ R[G]^P` acts as `Br_P(x)` on an
+`R[G]`-module on which `P` acts trivially
+(`TauCeti.smul_eq_mapDomainRingHom_brauerProjection_smul`): the other coefficients of `x` come in
+orbits of conjugation by `P` of size divisible by `p`.
+
 For `Q ≤ P`, `C_G(P) ≤ C_G(Q)` and `Br_P` factors through `Br_Q`
 (`TauCeti.brauerProjection_eq_comapDomain`).
 
@@ -66,6 +71,8 @@ is nonzero; this is not formalized here.
 * `TauCeti.brauerProjection_mul`: `Br_P(x y) = Br_P(x) Br_P(y)` for `x, y ∈ R[G]^P`.
 * `TauCeti.coeff_brauerProjection_conj_of_mem_conjInvariants`: `Br_P` of an element invariant
   under conjugation by `N_G(P)`, for instance a central one, is invariant under `N_G(P)`.
+* `TauCeti.smul_eq_mapDomainRingHom_brauerProjection_smul`: on a module on which the `p`-group
+  `P` acts trivially, `x ∈ R[G]^P` acts as `Br_P(x)`.
 
 ## References
 
@@ -253,29 +260,20 @@ theorem brauerProjection_mul [Finite G] {p : ℕ} [Fact p.Prime] [CharP R p] {P 
     brauerProjection P (x * y) = brauerProjection P x * brauerProjection P y := by
   classical
   have := Fintype.ofFinite G
-  let : MulAction P G := MulAction.compHom G (MulAut.conj.comp P.subtype)
-  have hsmul (g : P) (a : G) : g • a = g * a * (g : G)⁻¹ := by
-    rw [MulAction.compHom_smul_def]
-    simp
   ext c
   have hc := Subgroup.mem_centralizer_iff.1 c.property
   rw [coeff_brauerProjection, coeff_mul_apply_left, Finsupp.sum_fintype _ _ (by simp),
     coeff_mul_apply_left, Finsupp.sum_fintype _ _ (by simp)]
   simp only [coeff_brauerProjection]
-  rw [IsPGroup.sum_eq_sum_fixedPoints hP (fun a : G => x.coeff a * y.coeff (a⁻¹ * c)) ?_]
-  · refine Finset.sum_subtype _ (fun a => ?_) (fun a : G => x.coeff a * y.coeff (a⁻¹ * c)) |>.trans
-      (Fintype.sum_congr _ _ fun a => by simp)
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, MulAction.mem_fixedPoints, hsmul,
-      Subgroup.mem_centralizer_iff, SetLike.mem_coe]
-    refine ⟨fun h m hm => ?_, fun h m => ?_⟩
-    · simpa [mul_inv_eq_iff_eq_mul] using h ⟨m, hm⟩
-    · rw [h m m.property, mul_inv_cancel_right]
-  · intro g a
-    have hgc : (g : G)⁻¹ * c = c * (g : G)⁻¹ := by
-      rw [inv_mul_eq_iff_eq_mul, ← mul_assoc, hc g g.property, mul_inv_cancel_right]
-    rw [hsmul, (mem_conjInvariants_iff_coeff.1 hx) g g.property a]
+  rw [IsPGroup.sum_eq_sum_centralizer_of_nsmul_eq_zero hP
+    (fun r : R => by rw [nsmul_eq_mul, CharP.cast_eq_zero, zero_mul]) _ fun g hg a => ?_]
+  · exact Finset.sum_subtype _ (fun a => by simp)
+      (fun a : G => x.coeff a * y.coeff (a⁻¹ * c)) |>.trans (Fintype.sum_congr _ _ fun a => by simp)
+  · have hgc : g⁻¹ * c = c * g⁻¹ := by
+      rw [inv_mul_eq_iff_eq_mul, ← mul_assoc, hc g hg, mul_inv_cancel_right]
+    rw [(mem_conjInvariants_iff_coeff.1 hx) g hg a]
     congr 1
-    rw [← (mem_conjInvariants_iff_coeff.1 hy) g g.property (a⁻¹ * c)]
+    rw [← (mem_conjInvariants_iff_coeff.1 hy) g hg (a⁻¹ * c)]
     congr 1
     simp only [mul_inv_rev, inv_inv, mul_assoc, hgc]
 
@@ -294,5 +292,38 @@ theorem brauerHom_apply [Finite G] {p : ℕ} [Fact p.Prime] [CharP R p] {P : Sub
     (hP : IsPGroup p P) (x : conjInvariants R P) :
     brauerHom hP x = brauerProjection P (x : MonoidAlgebra R G) := by
   simp [brauerHom]
+
+/-- **The Brauer projection on a module with trivial `P`-action.** Let `P` be a `p`-subgroup of a
+finite group `G` and `R` a commutative semiring of characteristic `p`. On an `R[G]`-module on
+which every element of `P` acts trivially, an element `x ∈ R[G]^P` acts as its Brauer projection
+`Br_P(x)`, pushed forward along `C_G(P) ≤ G`: the coefficients of `x` off `C_G(P)` are constant on
+the orbits of conjugation by `P`, which have size divisible by `p`, and the elements of one orbit
+act alike. -/
+theorem smul_eq_mapDomainRingHom_brauerProjection_smul [Finite G] {p : ℕ} [Fact p.Prime]
+    [CharP R p] {P : Subgroup G} (hP : IsPGroup p P) {x : MonoidAlgebra R G}
+    (hx : x ∈ conjInvariants R P) {M : Type*} [AddCommMonoid M] [Module (MonoidAlgebra R G) M]
+    (hM : ∀ g ∈ P, ∀ m : M, of R G g • m = m) (m : M) :
+    x • m = mapDomainRingHom R (Subgroup.centralizer (P : Set G)).subtype
+      (brauerProjection P x) • m := by
+  classical
+  have := Fintype.ofFinite G
+  -- An element `y` of `R[G]` acts on `m` as the sum of its homogeneous components.
+  have hsum (y : MonoidAlgebra R G) : y • m = ∑ a, single a (y.coeff a) • m := by
+    conv_lhs => rw [← sum_coeff_single y]
+    rw [Finsupp.sum_fintype _ _ (by simp), Finset.sum_smul]
+  have hp (n : M) : p • n = 0 := by
+    rw [← Nat.cast_smul_eq_nsmul (MonoidAlgebra R G), natCast_def, CharP.cast_eq_zero, single_zero,
+      zero_smul]
+  rw [hsum, hsum, IsPGroup.sum_eq_sum_centralizer_of_nsmul_eq_zero hP hp _ fun g hg a => ?_]
+  · rw [Finset.sum_filter]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [coeff_mapDomainRingHom_brauerProjection]
+    split_ifs <;> simp
+  · -- Conjugation by `g ∈ P` fixes the coefficient of `x` and the action on `m`.
+    have hconj : single (g * a * g⁻¹) (x.coeff a) =
+        of R G g * single a (x.coeff a) * of R G g⁻¹ := by
+      simp [of_apply, single_mul_single]
+    rw [(mem_conjInvariants_iff_coeff.1 hx) g hg a, hconj, mul_smul, mul_smul, hM _ (inv_mem hg),
+      hM g hg]
 
 end TauCeti

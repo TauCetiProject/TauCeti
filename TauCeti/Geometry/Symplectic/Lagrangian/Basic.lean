@@ -47,6 +47,8 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
 * `TauCeti.SymplecticForm.isLagrangian_iff`: Lagrangian is isotropic and coisotropic.
 * `TauCeti.SymplecticForm.isLagrangian_iff_maximal_isIsotropic`: Lagrangian subspaces are exactly
   the maximal isotropic subspaces, in any dimension.
+* `TauCeti.SymplecticForm.isIsotropic_of_finrank_le_one`: a subspace of dimension at most one is
+  isotropic.
 * `TauCeti.SymplecticForm.isSymplectic_iff_nondegenerate_restrict`: a subspace is symplectic exactly
   when `ω` restricts to it nondegenerately, and in finite dimension
   `isSymplectic_iff_isCompl` identifies this with the splitting `V = L ⊕ L^ω`.
@@ -154,6 +156,19 @@ lemma mem_orthogonal_span_iff {s : Set V} {x : V} :
     x ∈ ω.orthogonal (Submodule.span ℝ s) ↔ ∀ y ∈ s, ω y x = 0 :=
   -- Both sides say that the span, respectively `s`, lies in the kernel of `ω (·, x)`.
   (Submodule.span_le (p := LinearMap.ker (ω.toBilinForm.flip x)))
+
+/-- A subspace of dimension at most one is isotropic: on a line spanned by `u`,
+`ω(a u, b u) = a b ω(u, u) = 0`. -/
+lemma isIsotropic_of_finrank_le_one [Module.Finite ℝ L] (h : finrank ℝ L ≤ 1) :
+    ω.IsIsotropic L := by
+  obtain ⟨u, hu⟩ := finrank_le_one_iff.1 h
+  refine isIsotropic_iff.2 fun v hv w hw ↦ ?_
+  obtain ⟨a, ha⟩ := hu ⟨v, hv⟩
+  obtain ⟨b, hb⟩ := hu ⟨w, hw⟩
+  have hv' : v = a • (u : V) := (congrArg Subtype.val ha).symm
+  have hw' : w = b • (u : V) := (congrArg Subtype.val hb).symm
+  -- `ω(a u, b u) = a b ω(u, u)` vanishes by bilinearity and alternation.
+  simp [hv', hw']
 
 /-- A span is isotropic exactly when `ω` vanishes on pairs of spanning vectors. -/
 lemma isIsotropic_span_iff {s : Set V} :

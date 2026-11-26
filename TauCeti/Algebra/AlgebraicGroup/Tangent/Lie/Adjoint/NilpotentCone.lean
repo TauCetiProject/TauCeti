@@ -12,11 +12,14 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.BasePoints
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Quotient
+public import TauCeti.LinearAlgebra.Dual.BaseChange
 public import TauCeti.Algebra.Lie.AdjointAction.InvariantZeroLocus
 public import TauCeti.Algebra.Lie.TracePowerPolynomial
 public import TauCeti.Algebra.Lie.Reductive.InvariantZeroLocus
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Coalgebra.Comodule.Evaluation
 import TauCeti.Algebra.Polynomial.Degree.Map
 
 /-!
@@ -95,8 +98,15 @@ matrix of the point acting on `M` has characteristic polynomial `T ^ d`.
 * `TauCeti.mem_adjointInvariantPolynomials_iff_mem_coinvariants` and
   `TauCeti.nilpotentConeIdeal_eq_symmetricAlgebraHilbertIdeal`: the invariants and the ideal of
   the cone, in terms of the coinvariants of the symmetric algebra of the comodule `𝔤*`.
-* `TauCeti.nilpotentConeIdeal_isHomogeneous` and `TauCeti.nilpotentConeSubcomodule`: it is
-  stable under scaling and under the adjoint action.
+* `TauCeti.nilpotentConeIdeal_isHomogeneous` and `TauCeti.nilpotentConeSubcomodule`: the ideal
+  is stable under scaling and under the adjoint action.
+* `TauCeti.nilpotentConeComoduleAlgebra`: the descended coaction on the full quotient ring
+  of the nilpotent cone, with computation and intertwining laws
+  `TauCeti.nilpotentConeComoduleAlgebra_coact_mk` and
+  `TauCeti.nilpotentConeComoduleAlgebra_coactAlgHom_comp_mk`.
+* `TauCeti.polynomialCoact_eval_ι`: evaluating the group leg of a linear polynomial coaction at
+  `g⁻¹` and the polynomial leg at the coordinates `x` of `z` gives the linear polynomial evaluated
+  on `Ad(g) z`.
 * `TauCeti.lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials`,
   `TauCeti.lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials`, and
   `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk`: invariance of adjoint-invariant
@@ -193,6 +203,43 @@ noncomputable def adjointInvariantPolynomials :
     Subalgebra k (SymmetricAlgebra k (Module.Dual k 𝔤)) :=
   ComoduleAlgebra.coinvariants k H (SymmetricAlgebra k (Module.Dual k 𝔤))
 
+section Evaluation
+
+variable {A : Type u} [CommRing A] [Algebra k A]
+
+attribute [local instance] Comodule.dual
+
+/-- Evaluating the group leg of a coacted linear polynomial at `g⁻¹` and its polynomial leg at
+the coordinates `x` of `z` gives the linear polynomial evaluated on `Ad(g) z`.
+The hypothesis `hx` identifies `x` with evaluation at `z` after base change to `A`. -/
+theorem polynomialCoact_eval_ι
+    (g : WithConv (H →ₐ[k] A)) (x : Module.Dual k 𝔤 →ₗ[k] A) (z : A ⊗[k] 𝔤)
+    (hx : ∀ φ, x φ = Module.Dual.baseChangeEvaluation (1 ⊗ₜ[k] φ) z)
+    (φ : Module.Dual k 𝔤) :
+    Algebra.TensorProduct.lift (SymmetricAlgebra.lift x) (g⁻¹).ofConv
+        (fun _ _ ↦ Commute.all _ _)
+        (Comodule.coact (R := k) (C := H) (SymmetricAlgebra.ι k (Module.Dual k 𝔤) φ)) =
+      Module.Dual.baseChangeEvaluation (1 ⊗ₜ[k] φ)
+        ((Derivation.adjointAction (CommAlgCat.of k A) g).val z) := by
+  have heval (w : A ⊗[k] Module.Dual k 𝔤) :
+      x.liftBaseChange A w = Module.Dual.baseChangeEvaluation w z := by
+    induction w using TensorProduct.inductionOn with
+    | add w w' hw hw' => simp only [map_add, LinearMap.add_apply, hw, hw']
+    | tmul a ψ =>
+        rw [LinearMap.liftBaseChange_tmul, hx, TensorProduct.tmul_eq_smul_one_tmul a ψ,
+          map_smul, LinearMap.smul_apply]
+  have htranslate := DFunLike.congr_fun
+    (ComoduleAlgebra.lift_liftBaseChange_endOfPoint (g⁻¹).ofConv x)
+    (SymmetricAlgebra.ι k (Module.Dual k 𝔤) φ)
+  simp only [SymmetricAlgebra.lift_ι_apply, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+    TensorProduct.mk_apply, AlgHom.comp_apply] at htranslate
+  rw [ComoduleAlgebra.symmetricAlgebra_coact, AlgHom.toLinearMap_apply, ← htranslate, heval,
+    Comodule.baseChangeEvaluation_dual_endOfPoint, inv_inv]
+  exact congrArg (Module.Dual.baseChangeEvaluation (1 ⊗ₜ[k] φ))
+    (Derivation.adjointComodule_endOfPoint_eq_adjointAction (CommAlgCat.of k A) g z)
+
+end Evaluation
+
 variable {k H}
 
 /-- A polynomial function on the Lie algebra is invariant when its coaction is trivial. -/
@@ -277,6 +324,43 @@ theorem coact_mem_map_includeLeft_nilpotentConeIdeal {p : SymmetricAlgebra k (Mo
       (nilpotentConeIdeal k H).map (Algebra.TensorProduct.includeLeft (R := k) (S := k)
         (A := SymmetricAlgebra k (Module.Dual k 𝔤)) (B := H)) :=
   ComoduleAlgebra.coact_mem_map_includeLeft_symmetricAlgebraHilbertIdeal hp
+
+section Quotient
+
+variable (k H)
+
+local notation "P" => SymmetricAlgebra k (Module.Dual k 𝔤)
+local notation "I" => nilpotentConeIdeal k H
+
+/-- The polynomial coaction descends to the full coordinate ring of the nilpotent cone.
+Its computation and intertwining laws are `nilpotentConeComoduleAlgebra_coact_mk` and
+`nilpotentConeComoduleAlgebra_coactAlgHom_comp_mk`. -/
+@[irreducible]
+noncomputable def nilpotentConeComoduleAlgebra : ComoduleAlgebra k H (P ⧸ I) :=
+  ComoduleAlgebra.quotient I fun _ hp ↦ coact_mem_map_includeLeft_nilpotentConeIdeal hp
+
+/-- The descended coaction applies the quotient map to the polynomial tensor factor. -/
+@[simp]
+theorem nilpotentConeComoduleAlgebra_coact_mk (p : P) :
+    letI := nilpotentConeComoduleAlgebra k H
+    Comodule.coact (R := k) (C := H) (Ideal.Quotient.mk I p) =
+      Algebra.TensorProduct.map (Ideal.Quotient.mkₐ k I) (AlgHom.id k H)
+        (Comodule.coact (R := k) (C := H) p) := by
+  unfold nilpotentConeComoduleAlgebra
+  exact ComoduleAlgebra.quotient_coact_mk I
+    (fun _ hp ↦ coact_mem_map_includeLeft_nilpotentConeIdeal hp) p
+
+/-- The quotient map intertwines the polynomial and nilpotent-cone coactions. -/
+theorem nilpotentConeComoduleAlgebra_coactAlgHom_comp_mk :
+    letI := nilpotentConeComoduleAlgebra k H
+    (ComoduleAlgebra.coactAlgHom k H (P ⧸ I)).comp (Ideal.Quotient.mkₐ k I) =
+      (Algebra.TensorProduct.map (Ideal.Quotient.mkₐ k I) (AlgHom.id k H)).comp
+        (ComoduleAlgebra.coactAlgHom k H P) := by
+  unfold nilpotentConeComoduleAlgebra
+  exact ComoduleAlgebra.quotient_coactAlgHom_comp_mk I
+    fun _ hp ↦ coact_mem_map_includeLeft_nilpotentConeIdeal hp
+
+end Quotient
 
 variable (k H) in
 /-- The ideal of the nilpotent cone, as a subcomodule of the polynomial functions on the Lie

@@ -562,4 +562,25 @@ theorem _root_.AddMonoidHom.explicitCup11_eq_zero_of_mem_unramifiedH1
 
 end CupProduct
 
+/-- **A continuous 1-cocycle vanishing on inertia and at a Frobenius lift vanishes identically.**
+No torsion or wild-inertia hypothesis is needed; only `T₁` on the coefficient module. -/
+theorem eq_zero_of_apply_inertiaSubgroup_eq_zero_of_isArithFrobeniusLift {K : Type} [Field K]
+    [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] {M : Type*}
+    [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M] [T1Space M]
+    [DistribMulAction (Field.absoluteGaloisGroup K) M]
+    (c : Z1 (Field.absoluteGaloisGroup K) M) {σ : Field.absoluteGaloisGroup K}
+    (hσ : IsArithFrobeniusLift K σ)
+    (hI : ∀ g ∈ inertiaSubgroup K, (c : Field.absoluteGaloisGroup K → M) g = 0)
+    (hσ0 : (c : Field.absoluteGaloisGroup K → M) σ = 0) :
+    c = 0 := by
+  have hc := mem_Z1_iff.1 c.property
+  have htop : (Subgroup.closure ({σ} ∪ (inertiaSubgroup K : Set _))).topologicalClosure = ⊤ := by
+    rw [Subgroup.closure_union, ← Subgroup.zpowers_eq_closure, Subgroup.closure_eq]
+    exact hσ.topologicalClosure_zpowers_sup_inertiaSubgroup
+  refine Subtype.ext (groupCohomology.eq_zero_of_eqOn_zero_of_topologicalClosure_closure_eq_top
+    hc.2 hc.1 htop ?_)
+  rintro g (rfl | hg)
+  · exact hσ0
+  · exact hI g hg
+
 end TauCeti

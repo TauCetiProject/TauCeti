@@ -152,14 +152,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {c : EuclideanSpace ℝ ι → ℝ} {lam Lam gamma : ℝ}
 
 omit [DecidableEq ι] in
-/-- The Sobolev inequality `‖w‖_{Lˢ} ≤ S ‖∇w‖_{L²}` in real form. -/
-private theorem toReal_eLpNorm_value_le {s : ℝ≥0∞} {S : ℝ≥0} {w : W1p mu Omega 2}
-    (hS : eLpNorm (W1p.value w) s (mu.restrict Omega) ≤ S * ‖W1p.gradient w‖ₑ) :
-    (eLpNorm (W1p.value w) s (mu.restrict Omega)).toReal ≤ S * ‖W1p.gradient w‖ := by
-  have := ENNReal.toReal_mono (by finiteness) hS
-  rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_eNorm] at this
-
-omit [DecidableEq ι] in
 /-- The step of Stampacchia's energy estimate that does not depend on the right-hand side. Let
 `u ∈ H¹(Ω)` satisfy `a(u, v) ≤ R v` for every nonnegative `v ∈ H¹₀(Ω)`, and let
 `(u - k)⁺ ∈ H¹₀(Ω)` for a level `k ≥ 0`. At a level `l ≥ k`, the truncation `w = (u - l)⁺` is such
@@ -228,9 +220,9 @@ private theorem toReal_eLpNorm_posPartAbove_le
     mul_norm_gradient_posPartAbove_sq_le hcoeff hc_nonneg hκ hu hk hboundary hkl
   -- The Sobolev inequality, in real form.
   have hsob := hS w hw0
-  have hwLp : MemLp (W1p.value w) s ν := lt_of_le_of_lt hsob (by finiteness)
+  have hwLp : MemLp (W1p.value w) s ν := W1p.memLp_value_of_eLpNorm_le hsob
   have hsobR : (eLpNorm (W1p.value w) s ν).toReal ≤ S * ‖W1p.gradient w‖ :=
-    toReal_eLpNorm_value_le hsob
+    W1p.toReal_eLpNorm_value_le_mul_norm_gradient hsob
   -- Hölder's inequality on the superlevel set `{u > l}`, off which `w` vanishes.
   set A := {x | l < W1p.value u x}
   have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
@@ -568,9 +560,9 @@ private theorem toReal_eLpNorm_posPartAbove_le_of_mul_norm_gradient_sq_le
   have h2q : 2 / (q : ℝ) = 2 * (q : ℝ)⁻¹ := by ring
   -- The Sobolev inequality, in real form.
   have hsob := hS w hw0
-  have hwLp : MemLp (W1p.value w) s ν := lt_of_le_of_lt hsob (by finiteness)
+  have hwLp : MemLp (W1p.value w) s ν := W1p.memLp_value_of_eLpNorm_le hsob
   have hsobR : (eLpNorm (W1p.value w) s ν).toReal ≤ S * ‖W1p.gradient w‖ :=
-    toReal_eLpNorm_value_le hsob
+    W1p.toReal_eLpNorm_value_le_mul_norm_gradient hsob
   -- `w` and `∇w` vanish off `A = {u > l}`.
   set A := {x | l < W1p.value u x}
   have hwA : ∀ᵐ x ∂ν, x ∉ A → W1p.value w x = 0 := by

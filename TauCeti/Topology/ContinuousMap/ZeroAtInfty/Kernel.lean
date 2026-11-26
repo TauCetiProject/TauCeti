@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Diagonal
-public import TauCeti.RingTheory.PowerSeries.Geometric
+public import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # Coefficient kernels of operators on null sequences

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.MellinTransform.Basic
+import TauCeti.Analysis.MellinTransform
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -41,6 +42,13 @@ The bounded-kernel estimate is extracted from the native partial-sum norm estima
   `r < Re s` with local integrability.
 * `TauCeti.integrableOn_mul_cpow_of_bound`: absolute convergence for a bounded kernel.
 * `TauCeti.norm_integral_mul_cpow_le_of_bound`: the explicit bound for a bounded kernel.
+* `TauCeti.integrableOn_ramp_mul_cpow` and `TauCeti.integral_ramp_mul_cpow`: integrability and
+  Mellin transform `r ^ (-s) / (s * (s - 1))` of the ramp `y ↦ (y / r - 1) * y ^ (-s - 1)` on
+  `(r, ∞)` for `0 < r` and `1 < Re s`.
+* `TauCeti.integrableOn_ramp_mul_rpow` and `TauCeti.integral_ramp_mul_rpow`: the same for the real
+  ramp `y ↦ (y / r - 1) * y ^ (-σ - 1)` with `1 < σ`.
+* `TauCeti.hasMellin_max_one_sub_mul_inv`: the Mellin transform `r ^ (1 - s) / (s * (s - 1))` of
+  `y ↦ max (1 - r * y⁻¹) 0` at `1 - s`, for `0 < r` and `1 < Re s`.
 -/
 
 public section
@@ -199,5 +207,106 @@ theorem norm_integral_mul_cpow_le_of_bound {g : ℝ → ℂ} {C a : ℝ} (ha : 0
       have hexp : -(s.re + 1) + 1 = -s.re := by ring
       rw [integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) ha, hexp, neg_div_neg_eq,
         mul_div_assoc]
+
+/-- For `0 < r` and `1 < s.re`, the Mellin transform of `y ↦ max (1 - r * y⁻¹) 0` at `1 - s` is
+`r ^ (1 - s) / (s * (s - 1))`. -/
+theorem hasMellin_max_one_sub_mul_inv {r : ℝ} (hr : 0 < r) {s : ℂ} (hs : 1 < s.re) :
+    HasMellin (fun y : ℝ ↦ ((max (1 - r * y⁻¹) 0 : ℝ) : ℂ)) (1 - s)
+      ((r : ℂ) ^ (1 - s) / (s * (s - 1))) := by
+  have hs1 : 0 < (s - 1).re := by simp only [sub_re, one_re]; linarith
+  have h1 := hasMellin_max_one_sub_zero hs1
+  have hconv : MellinConvergent (fun y : ℝ ↦ ((max (1 - r * y⁻¹) 0 : ℝ) : ℂ)) (1 - s) := by
+    have hinv : (1 - s) / ((-1 : ℝ) : ℂ) = s - 1 := by push_cast; ring
+    simpa only [Real.rpow_neg_one] using
+      (MellinConvergent.comp_rpow (f := fun t : ℝ ↦ ((max (1 - r * t) 0 : ℝ) : ℂ))
+        (s := 1 - s) (a := -1) (by norm_num)).mpr
+        (by rw [hinv]; exact (MellinConvergent.comp_mul_left hr).mpr h1.1)
+  refine ⟨hconv, ?_⟩
+  rw [mellin_comp_inv (fun t : ℝ ↦ ((max (1 - r * t) 0 : ℝ) : ℂ)), neg_sub,
+    mellin_comp_mul_left (fun t : ℝ ↦ ((max (1 - t) 0 : ℝ) : ℂ)) (s - 1) hr, h1.2, smul_eq_mul]
+  simp only [neg_sub, sub_add_cancel, div_eq_mul_inv, mul_comm s]
+
+private theorem mul_ramp_mul_cpow_eq {r y : ℝ} (hr : 0 < r) (hy : r < y) (s : ℂ) :
+    (y : ℂ) ^ (-s) * ((max (1 - r * y⁻¹) 0 : ℝ) : ℂ) =
+      (r : ℂ) * (((y : ℂ) / r - 1) * (y : ℂ) ^ (-s - 1)) := by
+  have hypos : 0 < y := hr.trans hy
+  have hyc : (y : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hypos.ne'
+  have hmax : max (1 - r * y⁻¹) 0 = 1 - r * y⁻¹ :=
+    max_eq_left (sub_nonneg.mpr (by rw [← div_eq_mul_inv]; exact (div_le_one hypos).mpr hy.le))
+  rw [hmax, Complex.ofReal_sub, Complex.ofReal_one, Complex.ofReal_mul, Complex.ofReal_inv]
+  calc (y : ℂ) ^ (-s) * (1 - (r : ℂ) * (y : ℂ)⁻¹)
+      = ((y : ℂ) ^ (1 : ℂ) * (y : ℂ) ^ (-s - 1)) * (1 - (r : ℂ) * (y : ℂ)⁻¹) := by
+          rw [← Complex.cpow_add _ _ hyc, show (1 : ℂ) + (-s - 1) = -s by ring]
+    _ = (r : ℂ) * (((y : ℂ) / r - 1) * (y : ℂ) ^ (-s - 1)) := by
+          rw [Complex.cpow_one]
+          field_simp [Complex.ofReal_ne_zero.mpr hr.ne', hyc]
+
+/-- For `0 < r` and `1 < s.re`, the ramp term `y ↦ (y / r - 1) * y ^ (-s - 1)` is integrable on
+`(r, ∞)`. -/
+theorem integrableOn_ramp_mul_cpow {r : ℝ} (hr : 0 < r) {s : ℂ} (hs : 1 < s.re) :
+    IntegrableOn (fun y : ℝ ↦ ((y : ℂ) / r - 1) * (y : ℂ) ^ (-s - 1)) (Set.Ioi r) := by
+  have hm := (hasMellin_max_one_sub_mul_inv hr hs).1
+  have h1 : IntegrableOn (fun y : ℝ ↦ (y : ℂ) ^ (-s) * ((max (1 - r * y⁻¹) 0 : ℝ) : ℂ))
+      (Set.Ioi r) := by
+    simpa only [MellinConvergent, smul_eq_mul, show (1 - s) - 1 = -s by ring] using
+      hm.mono_set (Set.Ioi_subset_Ioi hr.le)
+  refine IntegrableOn.congr_fun (h1.const_mul (r : ℂ)⁻¹) (fun y hy ↦ ?_) measurableSet_Ioi
+  rw [mul_ramp_mul_cpow_eq hr hy s, inv_mul_cancel_left₀ (Complex.ofReal_ne_zero.mpr hr.ne')]
+
+/-- For `0 < r` and `1 < s.re`, the Mellin integral of `y ↦ (y / r - 1) * y ^ (-s - 1)` on
+`(r, ∞)` equals `r ^ (-s) / (s * (s - 1))`. -/
+theorem integral_ramp_mul_cpow {r : ℝ} (hr : 0 < r) {s : ℂ} (hs : 1 < s.re) :
+    ∫ y in Set.Ioi r, ((y : ℂ) / r - 1) * (y : ℂ) ^ (-s - 1) =
+      (r : ℂ) ^ (-s) / (s * (s - 1)) := by
+  have heq : ∫ y in Set.Ioi (0 : ℝ), (y : ℂ) ^ (-s) * ((max (1 - r * y⁻¹) 0 : ℝ) : ℂ) =
+      ∫ y in Set.Ioi r, (y : ℂ) ^ (-s) * ((max (1 - r * y⁻¹) 0 : ℝ) : ℂ) := by
+    refine setIntegral_eq_of_subset_of_ae_sdiff_eq_zero measurableSet_Ioi.nullMeasurableSet
+      (Set.Ioi_subset_Ioi hr.le) (.of_forall fun y hy ↦ ?_)
+    have hypos : 0 < y := hy.1
+    have hyr : y ≤ r := not_lt.mp hy.2
+    have hle : 1 - r * y⁻¹ ≤ 0 :=
+      sub_nonpos.mpr (by rw [← div_eq_mul_inv]; exact (one_le_div hypos).mpr hyr)
+    simp [max_eq_right hle]
+  have hint : ∫ y in Set.Ioi r, (y : ℂ) ^ (-s) * ((max (1 - r * y⁻¹) 0 : ℝ) : ℂ) =
+      (r : ℂ) * ∫ y in Set.Ioi r, ((y : ℂ) / r - 1) * (y : ℂ) ^ (-s - 1) := by
+    rw [← integral_const_mul]
+    exact setIntegral_congr_fun measurableSet_Ioi fun y hy ↦ mul_ramp_mul_cpow_eq hr hy s
+  have hval : ∫ y in Set.Ioi (0 : ℝ), (y : ℂ) ^ (-s) * ((max (1 - r * y⁻¹) 0 : ℝ) : ℂ) =
+      (r : ℂ) ^ (1 - s) / (s * (s - 1)) := by
+    simpa only [mellin, smul_eq_mul, show (1 - s) - 1 = -s by ring] using
+      (hasMellin_max_one_sub_mul_inv hr hs).2
+  have hrc : (r : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hr.ne'
+  calc ∫ y in Set.Ioi r, ((y : ℂ) / r - 1) * (y : ℂ) ^ (-s - 1)
+      = (r : ℂ)⁻¹ * ((r : ℂ) * ∫ y in Set.Ioi r, ((y : ℂ) / r - 1) * (y : ℂ) ^ (-s - 1)) := by
+          rw [inv_mul_cancel_left₀ hrc]
+    _ = (r : ℂ)⁻¹ * ((r : ℂ) ^ (1 - s) / (s * (s - 1))) := by rw [← hint, ← heq, hval]
+    _ = (r : ℂ) ^ (-s) / (s * (s - 1)) := by
+          rw [sub_eq_neg_add, Complex.cpow_add _ _ hrc, Complex.cpow_one]
+          field_simp
+
+/-- For `0 ≤ y`, the complex ramp term at a real exponent `σ` is the cast of the real ramp term. -/
+private theorem ramp_mul_cpow_ofReal {r y : ℝ} (hy : 0 ≤ y) (σ : ℝ) :
+    ((y : ℂ) / r - 1) * (y : ℂ) ^ (-(σ : ℂ) - 1) = (((y / r - 1) * y ^ (-σ - 1) : ℝ) : ℂ) := by
+  rw [Complex.ofReal_mul, Complex.ofReal_cpow hy]
+  push_cast
+  ring
+
+/-- For `0 < r` and `1 < σ`, the real ramp term `y ↦ (y / r - 1) * y ^ (-σ - 1)` is integrable on
+`(r, ∞)`. -/
+theorem integrableOn_ramp_mul_rpow {r : ℝ} (hr : 0 < r) {σ : ℝ} (hσ : 1 < σ) :
+    IntegrableOn (fun y : ℝ ↦ (y / r - 1) * y ^ (-σ - 1)) (Set.Ioi r) := by
+  have h := (integrableOn_ramp_mul_cpow hr (s := σ) (by simpa using hσ)).congr_fun
+    (fun y hy ↦ ramp_mul_cpow_ofReal (hr.trans hy).le σ) measurableSet_Ioi
+  simpa using h.re
+
+/-- For `0 < r` and `1 < σ`, the integral of the real ramp term `y ↦ (y / r - 1) * y ^ (-σ - 1)`
+on `(r, ∞)` equals `r ^ (-σ) / (σ * (σ - 1))`. -/
+theorem integral_ramp_mul_rpow {r : ℝ} (hr : 0 < r) {σ : ℝ} (hσ : 1 < σ) :
+    ∫ y in Set.Ioi r, (y / r - 1) * y ^ (-σ - 1) = r ^ (-σ) / (σ * (σ - 1)) := by
+  apply Complex.ofReal_injective
+  rw [← integral_complex_ofReal, ← setIntegral_congr_fun measurableSet_Ioi
+    (fun y hy ↦ ramp_mul_cpow_ofReal (hr.trans hy).le σ),
+    integral_ramp_mul_cpow hr (by simpa using hσ), Complex.ofReal_div, Complex.ofReal_cpow hr.le,
+    Complex.ofReal_neg, Complex.ofReal_mul, Complex.ofReal_sub, Complex.ofReal_one]
 
 end TauCeti

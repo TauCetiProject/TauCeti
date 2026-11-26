@@ -41,6 +41,10 @@ the parameter when `ρ` is invariant under negation (`ρ.IsNegInvariant`), as Le
 time line is (`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_comp_neg`); the latter reverses
 time in such estimates.
 
+A family `u : β → Lᵖ(μ)` representing an element `Φ` of the Bochner space `L^q(ρ; L^r(μ))` has
+mixed norm `‖u‖_{L^q L^r} = ‖Φ‖` (`MeasureTheory.eLpNorm_eLpNorm_eq_eNorm_of_ae_eq`), so bounds in
+mixed norms of `L²`-valued families are bounds in the Bochner norm.
+
 ## References
 
 * G. B. Folland, *Real Analysis*, second edition, Theorem 6.14 (norming `Lᵖ` by test functions).
@@ -152,6 +156,20 @@ theorem eLpNorm_eLpNorm_apply_indicator {Y G : Type*} {mY : MeasurableSpace Y} {
     · rw [Set.indicator_of_notMem hb, Set.indicator_of_notMem hb, hT,
         eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
   rw [hind, eLpNorm_indicator_eq_eLpNorm_restrict hs]
+
+/-! ### Representatives of Bochner-space elements -/
+
+omit [Fact (1 ≤ p)] in
+/-- The mixed norm `‖b ↦ ‖u b‖_{L^r(μ)}‖_{L^q(ρ)}` of a family `u` of `Lᵖ` functions representing
+an element `Φ` of the Bochner space `L^q(ρ; L^r(μ))`, `Φ(b) = u(b)` almost everywhere for almost
+every `b`, is the norm of `Φ`. -/
+theorem eLpNorm_eLpNorm_eq_eNorm_of_ae_eq [Fact (1 ≤ r)] {Φ : Lp (Lp F r μ) q ρ}
+    {u : β → Lp F p μ} (hΦu : ∀ᵐ b ∂ρ, (Φ b : X → F) =ᵐ[μ] u b) :
+    eLpNorm (fun b ↦ eLpNorm (u b) r μ) q ρ = ‖Φ‖ₑ := by
+  rw [Lp.eNorm_def, ← eLpNorm_eNorm _ (Lp.aestronglyMeasurable Φ)]
+  refine eLpNorm_congr_ae ?_
+  filter_upwards [hΦu] with b hb
+  rw [Lp.eNorm_def, eLpNorm_congr_ae hb]
 
 end Elementary
 

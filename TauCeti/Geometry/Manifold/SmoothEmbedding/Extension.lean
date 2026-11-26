@@ -262,6 +262,32 @@ end Global
 
 end TauCeti.SmoothEmbedding
 
+namespace Manifold.IsSmoothEmbedding
+
+variable {E E' H H' S M V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {k : ℕ∞}
+  [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H] [TopologicalSpace H']
+  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace S] [ChartedSpace H S] [TopologicalSpace M] [ChartedSpace H' M]
+  [I.Boundaryless] [IsManifold J ∞ M] [T2Space M] [SigmaCompactSpace M]
+
+/-- A vector-valued function of class `C^k` on a closed embedded submanifold extends to
+a function of the same class on the ambient manifold. -/
+theorem exists_contMDiff_extension_of_isClosed_range {i : S → M}
+    (hi : IsSmoothEmbedding I J k i) (hclosed : IsClosed (range i))
+    {f : S → V} (hf : ContMDiff I 𝓘(ℝ, V) k f) :
+    ∃ F : M → V, ContMDiff J 𝓘(ℝ, V) k F ∧ F ∘ i = f := by
+  let e := TauCeti.SmoothEmbedding.ofIsSmoothEmbedding i hi
+  have hK : IsClosed (e '' (univ : Set S)) := by
+    simpa [e] using hclosed
+  obtain ⟨F, hF, -⟩ := e.exists_contMDiffMap_extension ⟨f, hf⟩
+    hK isOpen_univ (subset_univ _)
+  refine ⟨F, F.contMDiff, funext fun x ↦ ?_⟩
+  simpa [e, Function.comp_apply] using hF (mem_univ x)
+
+end Manifold.IsSmoothEmbedding
+
 namespace Topology.IsEmbedding
 
 open Bundle

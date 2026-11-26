@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
+import TauCeti.Analysis.Calculus.FDeriv.Puncture
 import TauCeti.MeasureTheory.Integral.NormRpow
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
@@ -24,7 +25,8 @@ the puncture changes its classical differential only at that point. This is an i
 statement about the classical differential off the puncture. That this differential is also the
 weak differential of the extension, which therefore solves the Cauchy--Riemann equation weakly
 across the puncture, is proved in `TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative`.
-Elliptic bootstrapping remains a separate step towards smooth removal of singularities.
+Elliptic bootstrapping then gives smooth removal of singularities, in
+`TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Smooth`.
 
 The proof combines `SymplecticForm.exists_pos_norm_fderiv_le_rpow` with integrability of
 norm powers in real dimension two. No regularity at the missing point is assumed.
@@ -143,9 +145,6 @@ theorem exists_continuousOn_update_memLp_fderiv_of_finite_energy
   apply hmem.ae_eq
   have hne : ∀ᵐ z : ℂ ∂volume, z ≠ z₀ := volume.ae_ne z₀
   filter_upwards [ae_restrict_of_ae hne] with z hz
-  symm
-  apply Filter.EventuallyEq.fderiv_eq
-  filter_upwards [eventually_ne_nhds hz] with w hw
-  exact Function.update_of_ne hw _ _
+  exact (fderiv_update_of_ne hz _).symm
 
 end TauCeti.SymplecticForm

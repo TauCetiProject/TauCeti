@@ -20,6 +20,8 @@ A polynomial weight times a real Gaussian is bounded above, and completing the s
 linear tilt into half the Gaussian weight. This file records an explicit upper bound for
 `(1 + r) ^ m * exp (-a r²)` (the scalar estimate behind the decay of Gaussian Schwartz functions),
 the uniform bound `exp (-b u² - c u) ≤ exp (c² / (2 b)) * exp (-(b / 2) u²)` for `0 < b`,
+the linear growth `α r exp (-α r²) t ≤ exp (-α (r - t)²) - exp (-α r²)` for `α ≥ 0` and
+`0 ≤ t ≤ r`, which makes a Gaussian a barrier with a positive inward slope at a sphere,
 the cocompact decay of `t ↦ exp (c - δ * t ^ 2)`, and modulus and vertical-shift bounds for
 `z ↦ exp (δ * (z - θ) ^ 2)`, together with the complex derivative of `w ↦ exp (a (w - b)²)`.
 
@@ -29,6 +31,8 @@ the cocompact decay of `t ↦ exp (c - δ * t ^ 2)`, and modulus and vertical-sh
   `(1 + r) ^ m * exp (-a r²)`.
 * `TauCeti.exp_neg_mul_sq_sub_mul_le`: uniform completing-the-square bound for
   `exp (-b u² - c u)` when `0 < b`.
+* `TauCeti.mul_exp_neg_mul_sq_mul_le_exp_neg_mul_sub_sq_sub`: moving inward from radius `r`, the
+  Gaussian `exp (-α s²)` grows at least linearly, at rate `α r exp (-α r²)`.
 * `TauCeti.norm_exp_ofReal_mul_sub_sq`, `TauCeti.exp_mul_sq_add_mul`: modulus and
   square-completion for complex Gaussians.
 * `TauCeti.norm_exp_ofReal_mul_sq_add_ofReal_mul_le`: the bound `exp (δ + |ω|)` for
@@ -105,6 +109,22 @@ theorem exp_neg_mul_sq_sub_mul_le {b : ℝ} (hb : 0 < b) (c u : ℝ) :
     field_simp
     ring
   linarith
+
+/-- Moving inward from radius `r`, the Gaussian `exp (-α s²)` grows at least linearly:
+`α r e^{-α r²} t ≤ exp (-α (r - t)²) - exp (-α r²)` for `α ≥ 0` and `0 ≤ t ≤ r`. -/
+theorem mul_exp_neg_mul_sq_mul_le_exp_neg_mul_sub_sq_sub {α r t : ℝ} (hα : 0 ≤ α) (ht : 0 ≤ t)
+    (htr : t ≤ r) :
+    α * r * Real.exp (-α * r ^ 2) * t ≤ Real.exp (-α * (r - t) ^ 2) - Real.exp (-α * r ^ 2) := by
+  have hexp : Real.exp (-α * (r - t) ^ 2) =
+      Real.exp (-α * r ^ 2) * Real.exp (α * (r ^ 2 - (r - t) ^ 2)) := by
+    rw [← Real.exp_add]
+    ring_nf
+  have h1 := Real.add_one_le_exp (α * (r ^ 2 - (r - t) ^ 2))
+  have h2 : α * r * t ≤ α * (r ^ 2 - (r - t) ^ 2) := by
+    have : r * t ≤ r ^ 2 - (r - t) ^ 2 := by nlinarith
+    nlinarith
+  rw [hexp]
+  nlinarith [Real.exp_pos (-α * r ^ 2)]
 
 /-- For `0 < δ` and any `c : ℝ`, `t ↦ exp (c - δ * t ^ 2)` tends to `0` along `cocompact ℝ`. -/
 theorem tendsto_exp_sub_mul_sq_cocompact {δ : ℝ} (hδ : 0 < δ) (c : ℝ) :

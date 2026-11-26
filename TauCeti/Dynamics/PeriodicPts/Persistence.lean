@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.FDeriv.Perturbation
 public import TauCeti.Dynamics.FixedPoints.Persistence
+import Mathlib.Dynamics.FixedPoints.Topology
 import Mathlib.Order.Filter.Finite
 import Mathlib.Topology.Order.LeftRightNhds
 import TauCeti.Analysis.Calculus.ContDiff.Comp
@@ -53,6 +54,20 @@ of the Lefschetz zeta function of `f`; the unsigned counts play the same role fo
 zeta function. The last two statements say that these contributions through order `N` do not
 depend on the perturbation, among small nondegenerate ones.
 
+For a `C¹` map `f`, three more statements of this kind hold for all small enough `δ > 0` and all
+maps `g` that are `δ`-close to `f` in value and derivative at every point. If no point of `K` has
+period `j`, neither has any for `g` (`IsCompact.eventually_forall_not_isFixedPt_iterate`). If the
+points of period `k` in `K` are nondegenerate and remain periodic for `g`, then `g` has no other
+points of period `k` in `K` (`IsCompact.eventually_forall_fixedPoints_iterate_inter_eq`): on a
+compact neighbourhood of `K` whose points of period `k` are interior, those of `g` correspond
+bijectively to those of `f`. If, for some `n ≤ N`, every point of `K` of period at most `n` is a
+nondegenerate fixed point of each `f^[k]`, `1 ≤ k ≤ N`, fixing it, the same holds for `g`
+(`IsCompact.eventually_forall_isNondegenerateFixedPt_iterate_of_exists_isFixedPt`): these orbits
+are finitely many, near them persistence applies, and away from them avoidance does. This is the
+invariant of the induction over the periods that makes all periodic points of period at most `N`
+of an area-preserving map of the plane nondegenerate
+(`TauCeti.exists_forall_mem_Icc_isNondegenerateFixedPt_iterate_comp`).
+
 For perturbations of the form `g ∘ ψ` with `ψ` close to the identity in `C¹` (`TauCeti.IsNearId`),
 as they arise when localized perturbations are composed one after another, nondegeneracy and the
 avoidance of a closed set by the graph of an iterate hold for all `ψ` close enough to the identity
@@ -72,6 +87,12 @@ avoidance of a closed set by the graph of an iterate hold for all `ψ` close eno
   `IsCompact.exists_pos_forall_mem_Icc_ncard_fixedPoints_iterate_inter_eq`,
   `IsCompact.exists_pos_forall_mem_Icc_finsum_sign_det_iterate_eq`: nondegeneracy, number and
   signed count for all periods `1 ≤ k ≤ N` at once.
+* `IsCompact.eventually_forall_not_isFixedPt_iterate`: the absence of points of period `j` from a
+  compact set is `C¹`-open.
+* `IsCompact.eventually_forall_fixedPoints_iterate_inter_eq`: a small `C¹` perturbation keeping the
+  nondegenerate points of period `k` in a compact set periodic has no other such points there.
+* `IsCompact.eventually_forall_isNondegenerateFixedPt_iterate_of_exists_isFixedPt`: nondegeneracy
+  of the orbits of period at most `n` in all their covers of period at most `N` is `C¹`-open.
 * `TauCeti.eventually_forall_isNearId_isNondegenerateFixedPt_iterate_comp`,
   `TauCeti.eventually_forall_isNearId_iterate_comp_notMem`: nondegeneracy and avoidance persist
   for `g ∘ ψ` with `ψ` close enough to the identity in `C¹`.
@@ -308,6 +329,142 @@ theorem exists_pos_forall_mem_Icc_ncard_fixedPoints_iterate_inter_eq (hK : IsCom
   exists_pos_forall_mem_finset fun k hk ↦ hK.exists_pos_forall_ncard_fixedPoints_iterate_inter_eq
     (fun j hj ↦ hf j (hj.trans_le (Finset.mem_Icc.1 hk).2)) (hnd k hk) (hint k hk)
     (nhdsSet_iUnion_iterate_image_mono (Finset.mem_Icc.1 hk).2 hU)
+
+/-! ### Perturbations keeping the old periodic points -/
+
+section Short
+
+open Metric
+
+omit [FiniteDimensional ℝ E] in
+/-- **Avoiding periodic points is `C¹`-open.** If no point of the compact set `K` is fixed by
+`f^[j]`, for a `C¹` map `f`, then for all small enough `δ > 0` the same holds for every
+differentiable map `g` that is `δ`-close to `f` in value and derivative at every point. -/
+theorem eventually_forall_not_isFixedPt_iterate (hK : IsCompact K) (hf : ContDiff ℝ 1 f) (j : ℕ)
+    (h : ∀ y ∈ K, ¬IsFixedPt f^[j] y) :
+    ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ g : E → E, Differentiable ℝ g → (∀ y, ‖g y - f y‖ ≤ δ) →
+      (∀ y, ‖fderiv ℝ g y - fderiv ℝ f y‖ ≤ δ) → ∀ y ∈ K, ¬IsFixedPt g^[j] y := by
+  -- The displacement `f^[j] y - y` stays at distance `η > 0` from zero on `K`.
+  have hC : IsCompact ((fun y ↦ f^[j] y - y) '' K) :=
+    hK.image ((hf.continuous.iterate j).sub continuous_id)
+  have h0 : (0 : E) ∉ (fun y ↦ f^[j] y - y) '' K := fun ⟨y, hy, hy0⟩ ↦ h y hy (sub_eq_zero.1 hy0)
+  obtain ⟨η, hη, hηC⟩ := Metric.isOpen_iff.1 hC.isClosed.isOpen_compl 0 h0
+  filter_upwards [hK.eventually_forall_norm_iterate_sub_le hf j (half_pos hη)]
+    with δ hδ g hg hg₀ hg₁ y hy hfix
+  have h1 := hδ g hg hg₀ hg₁ y hy
+  have h2 : ¬‖f^[j] y - y‖ < η := fun h ↦ hηC (mem_ball_zero_iff.2 h) ⟨y, hy, rfl⟩
+  rw [hfix.eq, norm_sub_rev] at h1
+  linarith
+
+/-- **No new periodic points appear in a compact set.** Let `f` be `C¹` and let every point of
+period `k` of `f` in the compact set `K` be a nondegenerate fixed point of `f^[k]`. For all small
+enough `δ > 0`, every differentiable map `g` that is `δ`-close to `f` in value and derivative at
+every point, and keeps the points of period `k` of `f` in `K` periodic of period `k`, has no other
+points of period `k` in `K`. -/
+theorem eventually_forall_fixedPoints_iterate_inter_eq (hK : IsCompact K) (hf : ContDiff ℝ 1 f)
+    (k : ℕ) (hnd : ∀ x ∈ K, IsFixedPt f^[k] x → IsNondegenerateFixedPt 𝓘(ℝ, E) f^[k] x) :
+    ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ g : E → E, Differentiable ℝ g → (∀ y, ‖g y - f y‖ ≤ δ) →
+      (∀ y, ‖fderiv ℝ g y - fderiv ℝ f y‖ ≤ δ) → fixedPoints f^[k] ∩ K ⊆ fixedPoints g^[k] →
+      fixedPoints g^[k] ∩ K = fixedPoints f^[k] ∩ K := by
+  set F := fixedPoints f^[k] ∩ K
+  have hFfin : F.Finite := (hK.inter_left (isClosed_fixedPoints (hf.continuous.iterate k)))
+    |>.finite_of_isNondegenerateFixedPt fun x hx ↦ hnd x hx.2 hx.1
+  -- Each point of `F` has a closed ball around it containing no other point of period `k`.
+  have hiso (x : E) (hx : x ∈ F) : ∃ ρ > 0, ∀ y ∈ closedBall x ρ, IsFixedPt f^[k] y → y = x :=
+    (hnd x hx.2 hx.1).exists_pos_forall_mem_closedBall_isFixedPt_eq
+  choose! ρ hρ0 hρ using hiso
+  -- On `K₂ = K ∪ ⋃ x ∈ F, closedBall x (ρ x)` the points of period `k` are those of `F`, and they
+  -- lie in the interior of `K₂`, so they persist bijectively.
+  set K₂ := K ∪ ⋃ x ∈ F, closedBall x (ρ x)
+  have hF₂ : fixedPoints f^[k] ∩ K₂ = F := by
+    refine Subset.antisymm ?_ fun y hy ↦ ⟨hy.1, Or.inl hy.2⟩
+    rintro y ⟨hy, hyK | hyB⟩
+    · exact ⟨hy, hyK⟩
+    · obtain ⟨x, hx, hyx⟩ := mem_iUnion₂.1 hyB
+      rw [hρ x hx y hyx hy]
+      exact hx
+  obtain ⟨δ, hδ, hbij⟩ := (hK.union (hFfin.isCompact_biUnion fun x _ ↦ isCompact_closedBall x _))
+    |>.exists_pos_forall_exists_bijOn_fixedPoints_iterate_inter (fun _ _ _ _ ↦ hf.contDiffAt)
+      (fun x hx hfix ↦ (hF₂ ▸ ⟨hfix, hx⟩ : x ∈ F) |> fun h ↦ hnd x h.2 h.1)
+      (fun x hx hfix ↦ mem_interior.2 ⟨ball x (ρ x), fun y hy ↦ Or.inr (mem_iUnion₂.2
+        ⟨x, hF₂ ▸ ⟨hfix, hx⟩, ball_subset_closedBall hy⟩), isOpen_ball,
+        mem_ball_self (hρ0 x (hF₂ ▸ ⟨hfix, hx⟩))⟩) univ_mem one_pos
+  filter_upwards [Ioo_mem_nhdsGT hδ] with δ' hδ' g hg hg₀ hg₁ hsub
+  obtain ⟨φ, hφ, -⟩ := hbij g (fun y _ ↦ hg y) (fun y _ ↦ (hg₀ y).trans hδ'.2.le)
+    (fun y _ ↦ (hg₁ y).trans hδ'.2.le)
+  rw [hF₂] at hφ
+  -- The points of period `k` of `g` in `K₂` are the image of `F`, and contain `F`.
+  have hT : F = fixedPoints g^[k] ∩ K₂ := by
+    rw [← hφ.image_eq]
+    exact Set.eq_of_subset_of_ncard_le (fun y hy ↦ hφ.image_eq ▸ ⟨hsub hy, Or.inl hy.2⟩)
+      (ncard_image_le hFfin) (hFfin.image φ)
+  exact Subset.antisymm (fun y hy ↦ hT ▸ (⟨hy.1, Or.inl hy.2⟩ : y ∈ fixedPoints g^[k] ∩ K₂))
+    fun y hy ↦ ⟨hsub hy, hy.2⟩
+
+/-- **Nondegeneracy of the covers of short orbits is `C¹`-open.** Let `f` be `C¹`, `K` compact and
+`n ≤ N`. Suppose that every point `x ∈ K` fixed by some `f^[j]` with `1 ≤ j ≤ n` is a
+nondegenerate fixed point of every `f^[k]`, `1 ≤ k ≤ N`, that fixes it: the periodic orbits of
+period at most `n` through `K` are nondegenerate in all their covers of period at most `N`. Then for
+all small enough `δ > 0` the same holds for every differentiable map `g` that is `δ`-close to `f`
+in value and derivative at every point. -/
+theorem eventually_forall_isNondegenerateFixedPt_iterate_of_exists_isFixedPt (hK : IsCompact K)
+    (hf : ContDiff ℝ 1 f) {n : ℕ} (hnN : n ≤ N)
+    (hnd : ∀ k ∈ Finset.Icc 1 N, ∀ x ∈ K, IsFixedPt f^[k] x →
+      (∃ j ∈ Finset.Icc 1 n, IsFixedPt f^[j] x) → IsNondegenerateFixedPt 𝓘(ℝ, E) f^[k] x) :
+    ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ g : E → E, Differentiable ℝ g → (∀ y, ‖g y - f y‖ ≤ δ) →
+      (∀ y, ‖fderiv ℝ g y - fderiv ℝ f y‖ ≤ δ) → ∀ k ∈ Finset.Icc 1 N, ∀ x ∈ K,
+        IsFixedPt g^[k] x → (∃ j ∈ Finset.Icc 1 n, IsFixedPt g^[j] x) →
+          IsNondegenerateFixedPt 𝓘(ℝ, E) g^[k] x := by
+  -- The points `F` of `K` of period at most `n` are nondegenerate, hence finitely many.
+  set F := ⋃ j ∈ Finset.Icc 1 n, fixedPoints f^[j] ∩ K
+  have hmemF {j : ℕ} {y : E} (hj : j ∈ Finset.Icc 1 n) (hy : IsFixedPt f^[j] y) (hyK : y ∈ K) :
+      y ∈ F :=
+    mem_iUnion₂.2 ⟨j, hj, hy, hyK⟩
+  have hFfin : F.Finite := (Finset.Icc 1 n).finite_toSet.biUnion fun j hj ↦
+    (hK.inter_left (isClosed_fixedPoints (hf.continuous.iterate j)))
+      |>.finite_of_isNondegenerateFixedPt fun x hx ↦ hnd j
+        (Finset.mem_Icc.2 ⟨(Finset.mem_Icc.1 hj).1, (Finset.mem_Icc.1 hj).2.trans hnN⟩) x hx.2 hx.1
+        ⟨j, hj, hx.1⟩
+  -- Each point of `F` has a closed ball around it containing no other point of period at most `N`.
+  have hiso (x : E) (hx : x ∈ F) : ∃ r > 0, ∀ y ∈ closedBall x r, y ≠ x →
+      ∀ k ∈ Finset.Icc 1 N, ¬IsFixedPt f^[k] y := by
+    have hev : ∀ᶠ y in 𝓝[≠] x, ∀ k ∈ Finset.Icc 1 N, ¬IsFixedPt f^[k] y := by
+      refine (eventually_all_finset _).2 fun k hk ↦ ?_
+      by_cases hxk : IsFixedPt f^[k] x
+      · obtain ⟨j, hj, hjx⟩ := mem_iUnion₂.1 hx
+        exact (hnd k hk x hjx.2 hxk ⟨j, hj, hjx.1⟩).eventually_not_isFixedPt
+      · exact nhdsWithin_le_nhds
+          ((isClosed_fixedPoints (hf.continuous.iterate k)).isOpen_compl.mem_nhds hxk)
+    obtain ⟨r, hr, hr'⟩ := (nhdsWithin_hasBasis nhds_basis_closedBall _).eventually_iff.1 hev
+    exact ⟨r, hr, fun y hy hyx ↦ hr' ⟨hy, hyx⟩⟩
+  choose! r hr0 hr using hiso
+  -- On the balls, all points of period at most `N` are points of `F`, which are nondegenerate.
+  set L := K ∩ ⋃ x ∈ F, closedBall x (r x)
+  have hLnd : ∀ k ∈ Finset.Icc 1 N, ∀ x ∈ L, IsFixedPt f^[k] x →
+      IsNondegenerateFixedPt 𝓘(ℝ, E) f^[k] x := by
+    rintro k hk x ⟨hxK, hxB⟩ hfix
+    obtain ⟨z, hz, hxz⟩ := mem_iUnion₂.1 hxB
+    obtain rfl : x = z := by_contra fun hne ↦ hr z hz x hxz hne k hk hfix
+    obtain ⟨j, hj, hjx⟩ := mem_iUnion₂.1 hz
+    exact hnd k hk x hxK hfix ⟨j, hj, hjx.1⟩
+  obtain ⟨δ₁, hδ₁, hpers⟩ := (hK.inter_right (hFfin.isClosed_biUnion fun x _ ↦ isClosed_closedBall))
+    |>.exists_pos_forall_mem_Icc_isNondegenerateFixedPt_iterate (fun _ _ _ _ ↦ hf.contDiffAt) hLnd
+      univ_mem
+  -- Off the balls, `K` has no point of period at most `n`, and this persists.
+  set K' := K \ ⋃ x ∈ F, ball x (r x)
+  have havoid (j : ℕ) (hj : j ∈ Finset.Icc 1 n) := (hK.diff (isOpen_biUnion fun _ _ ↦ isOpen_ball))
+    |>.eventually_forall_not_isFixedPt_iterate hf j fun y hy hfix ↦
+      hy.2 (mem_iUnion₂.2 ⟨y, hmemF hj hfix hy.1, mem_ball_self (hr0 y (hmemF hj hfix hy.1))⟩)
+  filter_upwards [Ioo_mem_nhdsGT hδ₁, (eventually_all_finset _).2 havoid]
+    with δ hδ hav g hg hg₀ hg₁ k hk x hxK hfix ⟨j, hj, hjx⟩
+  by_cases hxB : x ∈ ⋃ z ∈ F, ball z (r z)
+  · obtain ⟨z, hz, hxz⟩ := mem_iUnion₂.1 hxB
+    exact hpers g (fun y _ ↦ hg y) (fun y _ ↦ (hg₀ y).trans hδ.2.le)
+      (fun y _ ↦ (hg₁ y).trans hδ.2.le) k hk x
+      ⟨hxK, mem_iUnion₂.2 ⟨z, hz, ball_subset_closedBall hxz⟩⟩ hfix
+  · exact absurd hjx (hav j hj g hg hg₀ hg₁ x ⟨hxK, hxB⟩)
+
+end Short
 
 end IsCompact
 

@@ -231,6 +231,11 @@ noncomputable def reducedPart (ε : 𝒜.Augmentation) : A →ₗ[R] ε.augmenta
 theorem coe_reducedPart (ε : 𝒜.Augmentation) (x : A) :
     (ε.reducedPart x : A) = x - ε x • ε.unit := (rfl)
 
+/-- Recovering an element from its reduced part and scalar part. -/
+theorem coe_reducedPart_add_smul_unit (ε : 𝒜.Augmentation) (x : A) :
+    (ε.reducedPart x : A) + ε x • ε.unit = x := by
+  rw [coe_reducedPart, sub_add_cancel]
+
 /-- The reduced-part projection fixes the augmentation ideal pointwise. -/
 @[simp]
 theorem reducedPart_coe (ε : 𝒜.Augmentation) (x : ε.augmentationIdeal) :
@@ -400,6 +405,43 @@ theorem splitLinearEquiv_symm_apply (ε : 𝒜.Augmentation)
   · simp [hx]
   · rw [coe_reducedPart]
     simp [hx]
+
+/-- The reduced-part projection commutes with any Koszul twist. -/
+@[simp]
+theorem reducedPart_koszulTwist (ε : 𝒜.Augmentation) (q : ℤ) (x : A) :
+    ε.reducedPart (𝒜.grading.koszulTwist q x) =
+      ε.reducedGrading.koszulTwist q (ε.reducedPart x) := by
+  rw [← ε.reducedAlgebra_grading]
+  exact (ε.isHomogeneous_reducedPart.koszulTwist_apply_zero q x).symm
+
+/-- The unary restricted operation on a singleton agrees with the original unary operation. -/
+theorem coe_reducedOperation_one (ε : 𝒜.Augmentation) (a : ε.augmentationIdeal) :
+    (ε.reducedOperation 1 ![a] : A) = 𝒜.m 1 ![(a : A)] := by
+  rw [coe_reducedOperation]
+  congr 1
+  exact funext <| Fin.forall_fin_one.2 rfl
+
+/-- The binary restricted operation on a pair agrees with the original binary operation. -/
+theorem coe_reducedOperation_two (ε : 𝒜.Augmentation) (a b : ε.augmentationIdeal) :
+    (ε.reducedOperation 2 ![a, b] : A) = 𝒜.m 2 ![(a : A), (b : A)] := by
+  rw [coe_reducedOperation]
+  congr 1
+  exact funext <| Fin.forall_fin_two.2 ⟨rfl, rfl⟩
+
+/-- The reduced-part projection commutes with the unary operation. -/
+@[simp]
+theorem reducedPart_m_one (ε : 𝒜.Augmentation) (x : A) :
+    ε.reducedPart (𝒜.m 1 ![x]) = ε.reducedOperation 1 ![ε.reducedPart x] := by
+  have hd : 𝒜.differential x = 𝒜.differential (ε.reducedPart x : A) := by
+    have h := congrArg 𝒜.differential (ε.coe_reducedPart_add_smul_unit x).symm
+    rwa [map_add, map_smul, ε.isStrictUnit.differential_eq_zero, smul_zero, add_zero] at h
+  rw [← differential_apply, hd, differential_apply, ← coe_reducedOperation_one, ε.reducedPart_coe]
+
+/-- The reduced-part projection intertwines the differential with that of the reduced `A∞`
+algebra. -/
+theorem reducedPart_differential (ε : 𝒜.Augmentation) (x : A) :
+    ε.reducedPart (𝒜.differential x) = ε.reducedAlgebra.differential (ε.reducedPart x) := by
+  simp only [differential_apply, reducedAlgebra_m, reducedPart_m_one]
 
 end Augmentation
 

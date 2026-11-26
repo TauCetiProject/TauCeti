@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Meromorphic.Conj
 public import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # Completed Dirichlet L-functions
@@ -20,7 +21,8 @@ positive-half-plane zero-multiplicity comparisons. For a nonprincipal character 
 of Mathlib's Hurwitz decomposition cancel, so the completed function is Mathlib's entire periodic
 completion `ZMod.completedLFunction₀`. The functions themselves are Mathlib's, without any change
 of representative. The conjugation comparison is asserted only away from the possible poles at zero
-and one.
+and one. A character and its primitive character have the same gamma factor
+(`DirichletCharacter.gammaFactor_primitiveCharacter`).
 
 The analytic input is David Loeffler and Michael Stoll's development in
 `Mathlib.NumberTheory.LSeries.DirichletContinuation`.
@@ -156,6 +158,17 @@ theorem gammaFactor_inv_conj (s : ℂ) :
   classical
   simp only [gammaFactor, even_inv_iff]
   split_ifs <;> simp [← Complex.Gammaℝ_conj]
+
+omit [NeZero N] in
+/-- A character and its primitive character have the same gamma factor, since they have the same
+value at `-1`. -/
+@[simp] theorem gammaFactor_primitiveCharacter (s : ℂ) :
+    χ.primitiveCharacter.gammaFactor s = χ.gammaFactor s := by
+  rcases χ.even_or_odd with hχ | hχ
+  · have hp : χ.primitiveCharacter.Even := by rwa [Even, primitiveCharacter_apply_neg_one]
+    rw [hp.gammaFactor_def, hχ.gammaFactor_def]
+  · have hp : χ.primitiveCharacter.Odd := by rwa [Odd, primitiveCharacter_apply_neg_one]
+    rw [hp.gammaFactor_def, hχ.gammaFactor_def]
 
 /-- Conjugating the completed function gives the inverse character, away from its possible
 poles. This compares the actual continued functions, not raw series outside convergence. -/

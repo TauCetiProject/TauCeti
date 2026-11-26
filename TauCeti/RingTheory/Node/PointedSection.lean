@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Node.SectionMatrix
 public import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 public import Mathlib.RingTheory.AdjoinRoot
+public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import Mathlib.RingTheory.Polynomial.Ideal
 
 /-!
@@ -40,6 +41,8 @@ is two only over a nontrivial ring.
 * `TauCeti.pointedNodePolynomial`: the defining monic quadratic `F`.
 * `TauCeti.monic_pointedNodePolynomial`, `TauCeti.isRegular_pointedNodePolynomial`.
 * `TauCeti.PointedNodeRing`: the ring `R = AdjoinRoot F`.
+* `TauCeti.PointedNodeRing.instFreePolynomial`, `TauCeti.PointedNodeRing.instFree`: `R` is free
+  over `A[Y]` and over `A`.
 * `TauCeti.PointedNodeRing.coordX`, `TauCeti.PointedNodeRing.coordY`: the coordinates `u`, `v`.
 * `TauCeti.PointedNodeRing.lift`, `TauCeti.PointedNodeRing.algHom_ext`: the universal property.
 * `TauCeti.PointedNodeRing.sectionEval`: evaluation at the section `(s, t)`.
@@ -115,6 +118,15 @@ abbrev PointedNodeRing : Type _ :=
   AdjoinRoot (pointedNodePolynomial γ δ s t)
 
 namespace PointedNodeRing
+
+/-- The pointed node ring is free over `A[Y]`: division by the monic defining polynomial gives the
+basis `1, u`. -/
+instance instFreePolynomial : Module.Free A[X] (PointedNodeRing γ δ s t) :=
+  (monic_pointedNodePolynomial γ δ s t).free_adjoinRoot
+
+/-- The pointed node ring is free over `A`, over every commutative ring `A`. -/
+instance instFree : Module.Free A (PointedNodeRing γ δ s t) :=
+  .trans (S := A[X])
 
 /-- The coordinate `u = [X]` of the pointed node ring, the adjoined root. -/
 def coordX : PointedNodeRing γ δ s t :=
