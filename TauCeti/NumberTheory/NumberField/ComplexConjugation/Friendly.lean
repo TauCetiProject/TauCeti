@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 public import TauCeti.NumberTheory.NumberField.ComplexConjugation.MaximalRealOrCMSubfield
+public import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
 # Friendly places
@@ -27,17 +28,18 @@ Unramified over `ℚ` means ramification index `1` over `ℤ`.
 
 ## Main definitions
 
-* `TauCeti.NumberField.IsFriendly v`: the finite place `v` of `K` is friendly.
+* `IsDedekindDomain.HeightOneSpectrum.IsFriendly v`: the finite place `v` of `K` is friendly.
 
 ## Main results
 
-* `TauCeti.NumberField.IsFriendly.ramificationIdx_eq_one`: a friendly place is unramified over
-  `ℚ`.
-* `TauCeti.NumberField.isFriendly_iff_of_not_isCMField`,
-  `TauCeti.NumberField.isFriendly_iff_of_forall_not_isCMField`: if `K` has no CM subfield, a
-  place is friendly exactly when it is unramified over `ℚ`.
-* `TauCeti.NumberField.isFriendly_iff_of_isTotallyReal`: in particular for totally real `K`.
-* `TauCeti.NumberField.isFriendly_rat`: every prime of `ℚ` is friendly.
+* `IsDedekindDomain.HeightOneSpectrum.IsFriendly.ramificationIdx_eq_one`: a friendly place is
+  unramified over `ℚ`.
+* `IsDedekindDomain.HeightOneSpectrum.isFriendly_iff_of_not_isCMField`,
+  `IsDedekindDomain.HeightOneSpectrum.isFriendly_iff_of_forall_not_isCMField`: if `K` has no CM
+  subfield, a place is friendly exactly when it is unramified over `ℚ`.
+* `IsDedekindDomain.HeightOneSpectrum.isFriendly_iff_of_isTotallyReal`: in particular for totally
+  real `K`.
+* `IsDedekindDomain.HeightOneSpectrum.isFriendly_rat`: every prime of `ℚ` is friendly.
 
 ## References
 
@@ -47,9 +49,9 @@ Unramified over `ℚ` means ramification index `1` over `ℤ`.
 
 public section
 
-open NumberField IsDedekindDomain
+open NumberField TauCeti.NumberField
 
-namespace TauCeti.NumberField
+namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {K : Type*} [Field K] [NumberField K]
 
@@ -103,24 +105,12 @@ theorem isFriendly_iff_of_isTotallyReal [IsTotallyReal K] (v : HeightOneSpectrum
   refine isFriendly_iff_of_not_isCMField (fun h ↦ ?_) v
   rw [isCMField_maximalRealOrCMSubfield_iff_ne_maximalRealSubfield,
     IsTotallyReal.maximalRealSubfield_eq_top] at h
-  exact h (eq_top_iff.mpr (IsTotallyReal.maximalRealSubfield_eq_top (K := K) ▸
-    maximalRealSubfield_le_maximalRealOrCMSubfield K))
-
-/-- `ℤ → 𝓞 ℚ` is surjective. -/
-private theorem algebraMap_int_ringOfIntegers_rat_surjective :
-    Function.Surjective (algebraMap ℤ (𝓞 ℚ)) := fun z ↦
-  ⟨Rat.ringOfIntegersEquiv z, by
-    rw [show algebraMap ℤ (𝓞 ℚ) = (Rat.ringOfIntegersEquiv.symm : ℤ →+* 𝓞 ℚ) from
-      Subsingleton.elim _ _]
-    exact Rat.ringOfIntegersEquiv.symm_apply_apply z⟩
+  exact h maximalRealOrCMSubfield_eq_top_of_isTotallyReal
 
 /-- **Every prime of `ℚ` is friendly.** -/
+@[simp]
 theorem isFriendly_rat (v : HeightOneSpectrum (𝓞 ℚ)) : IsFriendly v := by
   rw [isFriendly_iff_of_isTotallyReal]
-  have : Algebra.FormallyUnramified ℤ (𝓞 ℚ) :=
-    Algebra.FormallyUnramified.of_surjective (Algebra.ofId ℤ (𝓞 ℚ))
-      algebraMap_int_ringOfIntegers_rat_surjective
-  have : Algebra.EssFiniteType ℤ (𝓞 ℚ) := inferInstance
   exact Ideal.ramificationIdx_eq_one v.asIdeal ℤ
 
-end TauCeti.NumberField
+end IsDedekindDomain.HeightOneSpectrum
