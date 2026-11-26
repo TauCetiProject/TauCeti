@@ -89,10 +89,7 @@ omit [FiniteDimensional ℝ E] [TopologicalSpace H] [I.Boundaryless] [Topologica
 private theorem tendsto_setIntegral_ball_two_mul_dist_inter {f : ℝ × ℝ → ℝ}
     (hf : IntegrableOn f Ω) :
     Tendsto (fun z ↦ ∫ y in ball z₀ (2 * dist z z₀) ∩ Ω, f y) (𝓝[≠] z₀) (𝓝 0) := by
-  -- A point is a null set of the plane, as the product of two points of `ℝ`.
-  have : NullSingletonClass (volume : Measure (ℝ × ℝ)) := ⟨fun z ↦ by
-    rw [← Prod.mk.eta (p := z), ← singleton_prod_singleton, Measure.volume_eq_prod,
-      Measure.prod_prod, Real.volume_singleton, zero_mul]⟩
+  have : NullSingletonClass (volume : Measure (ℝ × ℝ)) := Measure.prod.instNullSingletonClass_fst
   have hr := hf.tendsto_setIntegral_ball_nhds_zero z₀
   simp only [Measure.restrict_restrict measurableSet_ball] at hr
   have hd : Tendsto (fun z ↦ 2 * dist z z₀) (𝓝[≠] z₀) (𝓝 0) := by
