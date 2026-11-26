@@ -12,6 +12,7 @@ import Mathlib.Data.Nat.Cast.Order.Field
 import Mathlib.Topology.Order.Compact
 import TauCeti.Dynamics.Flow.Basic
 import TauCeti.Dynamics.Flow.Lyapunov
+import TauCeti.Topology.Neighborhoods
 
 /-!
 # Lusternik–Schnirelmann bounds for flows with a Lyapunov function
@@ -117,22 +118,6 @@ section Index
 
 variable {ν : Set α → ℕ∞}
 
-/-- A finite set of points, each with a neighbourhood of index at most `1`, has an open
-neighbourhood whose index is at most its cardinality. -/
-private lemma exists_isOpen_superset_le_encard (hmono : Monotone ν) (hempty : ν ∅ = 0)
-    (hunion : ∀ A B, ν (A ∪ B) ≤ ν A + ν B) {K : Set α} (hK : K.Finite)
-    (hloc : ∀ x ∈ K, ∃ V ∈ 𝓝 x, ν V ≤ 1) : ∃ U, IsOpen U ∧ K ⊆ U ∧ ν U ≤ K.encard := by
-  induction K, hK using Set.Finite.induction_on with
-  | empty => exact ⟨∅, isOpen_empty, subset_rfl, by simp [hempty]⟩
-  | @insert a s ha _ ih =>
-    obtain ⟨U, hUo, hsU, hU⟩ := ih fun x hx ↦ hloc x (mem_insert_of_mem a hx)
-    obtain ⟨V, hV, hνV⟩ := hloc a (mem_insert a s)
-    refine ⟨interior V ∪ U, isOpen_interior.union hUo,
-      insert_subset (Or.inl (mem_interior_iff_mem_nhds.2 hV)) (hsU.trans subset_union_right), ?_⟩
-    calc ν (interior V ∪ U) ≤ ν (interior V) + ν U := hunion _ _
-      _ ≤ 1 + s.encard := add_le_add ((hmono interior_subset).trans hνV) hU
-      _ = (insert a s).encard := by rw [encard_insert_of_notMem ha, add_comm]
-
 /-- **The Lusternik–Schnirelmann bound on sublevels.** Let `W` be a continuous function on a
 compact space which strictly decreases along every nonconstant orbit of the flow `ϕ`, and let `ν`
 be an index on `α`: monotone, zero on `∅`, subadditive, not increased by the flow in forward time,
@@ -173,7 +158,7 @@ theorem index_sublevel_le_encard [CompactSpace α] (hWc : Continuous W)
   -- and the deformation lemma crosses the level `s` outside `U`.
   set K := {x | (∀ t, ϕ t x = x) ∧ W x = s}
   have hKfin : K.Finite := hfin.subset fun x hx ↦ ⟨hx.1, hx.2.le.trans hsb⟩
-  obtain ⟨U, hUo, hKU, hU⟩ := exists_isOpen_superset_le_encard hmono hempty hunion hKfin
+  obtain ⟨U, hUo, hKU, hU⟩ := hKfin.exists_isOpen_superset_le_encard hmono hempty hunion
     fun x hx ↦ hloc x hx.1
   obtain ⟨ε, hε, T, hT, hdef⟩ :=
     exists_pos_forall_apply_le_sub hWc hW s hUo fun x hx hxs ↦ hKU ⟨hx, hxs⟩
