@@ -9,9 +9,10 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.WaveFrontSet.NormalTopology
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Convex.Cone.InfDist
 import TauCeti.Analysis.Distribution.TestFunction.DominatedSeries
 import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
+import TauCeti.Analysis.Distribution.TestFunction.LatticeSeries
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.NonstationaryPhase.Basic
 import TauCeti.Analysis.Normed.Module.Cone
@@ -26,7 +27,7 @@ mapped into `Ω` (`Distribution.compCLMOfOpenPartialHomeomorph`), and covectors 
 transpose of the derivative (`Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`). So for a
 fixed set `Γ`, the distributions with wave front set in `Γ` are all sent into the fixed set
 
-`e^* Γ = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ Γ}` (`TauCeti.pullbackConeOfOpenPartialHomeomorph`)
+`e^* Γ = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ Γ}` (`TauCeti.pullbackCone`)
 
 (`Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph_subset`). This file proves that for a
 closed cone `Γ` of nonzero covectors over `Ω` the pullback is continuous for the normal topologies
@@ -66,6 +67,12 @@ phase (`TauCeti.exists_one_add_norm_pow_mul_norm_integral_fourierChar_le`). Henc
   functions depend continuously on `ξ ∈ V` and tend to zero at infinity, so together with `0` they
   form a compact set, on which `T` is bounded by a continuous seminorm of `𝓓'_Γ(Ω)`.
 
+This good/bad splitting of the lattice series and the compactness argument follow the proof of
+`TauCeti.WaveFrontSpace.pullbackInlCLM` (`NormalTopology/Pullback.lean`), with the coefficients
+`a(ξ, m)` in place of `𝓕 ψ (ξ + m.fst)`; the domination and compactness of the weighted lattice
+series are shared with it
+(`ContDiffMapSupportedIn.isCompact_insert_range_tsum_one_add_pow_mul_smul_modulate`).
+
 ## Main declarations
 
 * `TauCeti.WaveFrontSpace.compCLMOfOpenPartialHomeomorph`: the pullback
@@ -99,17 +106,6 @@ namespace TauCeti
 
 section Cone
 
-omit [FiniteDimensional ℝ E] in
-/-- For a cone `V` and `t > 0`, `dist (t z, V) ≤ t dist (z, V)`. -/
-private theorem infDist_smul_le {V : Set E} (hV0 : (0 : E) ∈ V)
-    (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {t : ℝ} (ht : 0 < t) (z : E) :
-    infDist (t • z) V ≤ t * infDist z V := by
-  have hsub : t • V ⊆ V := by
-    rintro _ ⟨ξ, hξ, rfl⟩
-    exact hVcone t ht ξ hξ
-  have hle := infDist_le_infDist_of_subset hsub ⟨t • (0 : E), 0, hV0, rfl⟩ (x := t • z)
-  rwa [infDist_smul₀, Real.norm_of_nonneg ht.le] at hle
-
 /-- The closed cone `{η | dist (P η, V) ≤ ε ‖η‖}` of the frequencies whose image under `P` lies
 within relative distance `ε` of `V`. -/
 private def nearCone (P : E →L[ℝ] E) (V : Set E) (ε : ℝ) : Set E :=
@@ -125,7 +121,8 @@ private theorem smul_mem_nearCone (P : E →L[ℝ] E) {V : Set E} (hV0 : (0 : E)
     (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {ε : ℝ} (t : ℝ) (ht : 0 < t)
     (η : E) (hη : η ∈ nearCone P V ε) : t • η ∈ nearCone P V ε := by
   simp only [nearCone, mem_ofPred_eq, map_smul, norm_smul, Real.norm_of_nonneg ht.le] at hη ⊢
-  calc infDist (t • P η) V ≤ t * infDist (P η) V := infDist_smul_le hV0 hVcone ht _
+  calc infDist (t • P η) V ≤ t * infDist (P η) V :=
+        (infDist_smul_of_smul_mem ⟨0, hV0⟩ hVcone ht _).le
     _ ≤ t * (ε * ‖η‖) := by gcongr
     _ = ε * (t * ‖η‖) := by ring
 
@@ -180,7 +177,8 @@ private theorem exists_forall_notMem_of_infDist_le {Ω : Opens E} {Γ : Set (E �
         inv_mul_cancel₀ hηpos.ne']
   have h2 : infDist (P (t • η)) V < κ := by
     rw [map_smul]
-    calc infDist (t • P η) V ≤ t * infDist (P η) V := infDist_smul_le hV0 hVcone ht _
+    calc infDist (t • P η) V ≤ t * infDist (P η) V :=
+          (infDist_smul_of_smul_mem ⟨0, hV0⟩ hVcone ht _).le
       _ ≤ t * (min (r / 2) κ / 2 * ‖η‖) := by gcongr; exact hη
       _ = min (r / 2) κ / 2 := by rw [mul_left_comm, inv_mul_cancel₀ hηpos.ne', mul_one]
       _ < κ := by linarith [min_le_right (r / 2) κ]
@@ -219,27 +217,24 @@ private theorem norm_pairCovector_le (m ξ : E) : ‖pairCovector m ξ‖ ≤ �
       _ = ‖ξ‖ := by rw [mul_one, innerSL_apply_norm]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- A covector `Λ` with `Λ p = ‖p‖ ^ 2` has norm at least `‖p‖`. -/
+private theorem norm_le_norm_of_apply_eq_sq {X : Type*} [SeminormedAddCommGroup X]
+    [NormedSpace ℝ X] (Λ : X →L[ℝ] ℝ) {p : X} (hp : Λ p = ‖p‖ ^ 2) : ‖p‖ ≤ ‖Λ‖ := by
+  rcases (norm_nonneg p).eq_or_lt with h | h
+  · exact h ▸ norm_nonneg Λ
+  have hle := Λ.le_opNorm p
+  rw [hp, Real.norm_of_nonneg (by positivity), sq] at hle
+  exact le_of_mul_le_mul_right hle h
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- `‖m‖ + ‖ξ‖ ≤ 2 ‖Λ‖`, testing `Λ` on `(m, 0)` and `(0, ξ)`. -/
 private theorem norm_add_norm_le_two_mul_norm_pairCovector (m ξ : E) :
     ‖m‖ + ‖ξ‖ ≤ 2 * ‖pairCovector m ξ‖ := by
-  have hfst : ‖m‖ ≤ ‖pairCovector m ξ‖ := by
-    rcases eq_or_ne m 0 with rfl | hm
-    · simp only [norm_zero]
-      positivity
-    have h := (pairCovector m ξ).le_opNorm (m, 0)
-    rw [pairCovector_apply, real_inner_self_eq_norm_sq, inner_zero_right, add_zero,
-      Real.norm_of_nonneg (by positivity), Prod.norm_def, norm_zero, max_eq_left (norm_nonneg _),
-      sq] at h
-    exact le_of_mul_le_mul_right h (norm_pos_iff.2 hm)
-  have hsnd : ‖ξ‖ ≤ ‖pairCovector m ξ‖ := by
-    rcases eq_or_ne ξ 0 with rfl | hξ
-    · simp only [norm_zero]
-      positivity
-    have h := (pairCovector m ξ).le_opNorm (0, ξ)
-    rw [pairCovector_apply, real_inner_self_eq_norm_sq, inner_zero_right, zero_add,
-      Real.norm_of_nonneg (by positivity), Prod.norm_def, norm_zero,
-      max_eq_right (norm_nonneg _), sq] at h
-    exact le_of_mul_le_mul_right h (norm_pos_iff.2 hξ)
+  have hfst := norm_le_norm_of_apply_eq_sq (pairCovector m ξ) (p := (m, 0))
+    (by simp [pairCovector_apply])
+  have hsnd := norm_le_norm_of_apply_eq_sq (pairCovector m ξ) (p := (0, ξ))
+    (by simp [pairCovector_apply])
+  simp only [Prod.norm_mk, norm_zero, norm_nonneg, max_eq_left, max_eq_right] at hfst hsnd
   linarith
 
 omit [MeasurableSpace E] [BorelSpace E] in
@@ -391,11 +386,17 @@ private theorem exists_one_add_norm_pow_mul_norm_coeff_le_mul {ψ : E → ℂ} (
 
 end Coefficient
 
-/-! ### The terms of the lattice series off the cone -/
+/-! ### The terms of the lattice series off the cone
+
+The coefficients off the cone, `badCoeff`, adapt the private helper of the same name in
+`NormalTopology/Pullback.lean` to coefficients `a(ξ, m)` that are not translates of one function.
+The domination and compactness of their weighted lattice series are the shared
+`ContDiffMapSupportedIn.exists_summable_one_add_pow_mul_norm_mul_seminorm_modulate_le` and
+`ContDiffMapSupportedIn.isCompact_insert_range_tsum_one_add_pow_mul_smul_modulate`. -/
 
 section Series
 
-variable [MeasurableSpace E] [BorelSpace E] {K : Compacts E} {L : Submodule ℤ E}
+variable [MeasurableSpace E] [BorelSpace E] {L : Submodule ℤ E}
 
 /-- The coefficients `(covolume L)⁻¹ a(ξ, m)` of the lattice series, for the `m` with `-m ∉ A`. -/
 private def badCoeff (L : Submodule ℤ E) (A : Set E) (a : E → E → ℂ) (ξ : E)
@@ -403,70 +404,22 @@ private def badCoeff (L : Submodule ℤ E) (A : Set E) (a : E → E → ℂ) (ξ
   {m : ZLattice.dual L | -(m : E) ∉ A}.indicator
     (fun m ↦ (ZLattice.covolume L : ℂ)⁻¹ * a ξ m) m
 
-private theorem norm_badCoeff_le (A : Set E) (a : E → E → ℂ) (ξ : E) (m : ZLattice.dual L) :
-    ‖badCoeff L A a ξ m‖ ≤ ‖(ZLattice.covolume L : ℂ)⁻¹‖ *
-      {m : ZLattice.dual L | -(m : E) ∉ A}.indicator (fun m ↦ ‖a ξ m‖) m := by
+/-- If `a(ξ, m)` decays rapidly in `1 + ‖m‖ + ‖ξ‖` for `ξ ∈ V` and `-m ∉ A`, the coefficients off
+`A` decay rapidly in `1 + ‖ξ‖ + ‖m‖` for `ξ ∈ V` and all `m`. -/
+private theorem exists_one_add_add_pow_mul_norm_badCoeff_le {A V : Set E} {a : E → E → ℂ}
+    (ha : ∀ M : ℕ, ∃ C, ∀ m ξ : E, ξ ∈ V → -m ∉ A → (1 + ‖m‖ + ‖ξ‖) ^ M * ‖a ξ m‖ ≤ C) (M : ℕ) :
+    ∃ C, ∀ (ξ : V) (m : ZLattice.dual L),
+      (1 + ‖(ξ : E)‖ + ‖(m : E)‖) ^ M * ‖badCoeff L A a ξ m‖ ≤ C := by
+  obtain ⟨C, hC⟩ := ha M
+  refine ⟨‖(ZLattice.covolume L : ℂ)⁻¹‖ * max C 0, fun ξ m ↦ ?_⟩
   by_cases hm : -(m : E) ∈ A
-  · simp [badCoeff, hm]
-  · simp [badCoeff, hm]
-
-/-- **Domination of the series off `A`.** If `a(ξ, m)` decays rapidly in `1 + ‖m‖ + ‖ξ‖` for
-`ξ ∈ V` and `-m ∉ A`, then the products of the coefficients off `A`, weighted by `(1 + ‖ξ‖) ^ N`,
-with the seminorms of the modulated cutoffs `χ e_(-m)` are dominated by summable sequences,
-uniformly in `ξ ∈ V`. -/
-private theorem exists_summable_one_add_pow_mul_norm_badCoeff_mul_seminorm_le
-    [DiscreteTopology L] [IsZLattice ℝ L] {A V : Set E} {a : E → E → ℂ}
-    (ha : ∀ M : ℕ, ∃ C, ∀ m ξ : E, ξ ∈ V → -m ∉ A → (1 + ‖m‖ + ‖ξ‖) ^ M * ‖a ξ m‖ ≤ C)
-    (χ : 𝓓_{K}(E, ℂ)) (N : ℕ) :
-    ∃ b : ℕ → ZLattice.dual L → ℝ, (∀ k, Summable (b k)) ∧ (∀ k m, 0 ≤ b k m) ∧
-      ∀ ξ ∈ V, ∀ k m, (1 + ‖ξ‖) ^ N * ‖badCoeff L A a ξ m‖ *
-        N[ℂ]_{K, k} (χ.modulate (m : E)) ≤ b k m := by
-  set q := Module.finrank ℤ (ZLattice.dual L) + 1
-  have hq := ZLattice.summable_one_add_norm_pow_inv (ZLattice.dual L) (r := q) (by omega)
-  choose C hC using fun k : ℕ ↦ ha (N + k + q)
-  set S : ℕ → ℝ := fun k ↦ ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k χ
-  have hS (k : ℕ) : 0 ≤ S k := apply_nonneg _ _
-  refine ⟨fun k m ↦ ‖(ZLattice.covolume L : ℂ)⁻¹‖ * max (C k) 0 * (S k * (1 + 2 * π) ^ k) *
-      ((1 + ‖(m : E)‖) ^ q)⁻¹, fun k ↦ hq.mul_left _, fun k m ↦ by have := hS k; positivity,
-    fun ξ hξ k m ↦ ?_⟩
-  dsimp only
-  set t := ‖(m : E)‖
-  have hmod : N[ℂ]_{K, k} (χ.modulate (m : E)) ≤ S k * (1 + 2 * π) ^ k * (1 + t) ^ k := by
-    calc _ ≤ S k * (1 + 2 * π * t) ^ k := ContDiffMapSupportedIn.seminorm_modulate_le _ _ k
-      _ ≤ S k * ((1 + 2 * π) * (1 + t)) ^ k := by
-          have := hS k
-          gcongr
-          nlinarith [Real.pi_pos, norm_nonneg (m : E)]
-      _ = S k * (1 + 2 * π) ^ k * (1 + t) ^ k := by rw [mul_pow, mul_assoc]
-  have hbad := norm_badCoeff_le A a ξ m
-  by_cases hm : -(m : E) ∈ A
-  · rw [indicator_of_notMem (by simpa using hm), mul_zero] at hbad
-    have : ‖badCoeff L A a ξ m‖ = 0 := le_antisymm hbad (norm_nonneg _)
-    rw [this, mul_zero, zero_mul]
-    have := hS k
+  · simp only [badCoeff, indicator_of_notMem (s := {m : ZLattice.dual L | -(m : E) ∉ A})
+      (by simpa using hm), norm_zero, mul_zero]
     positivity
-  rw [indicator_of_mem (by simpa using hm)] at hbad
-  have hCk := hC k m ξ hξ hm
-  have hw : (1 + ‖ξ‖) ^ N * (1 + t) ^ (k + q) ≤ (1 + t + ‖ξ‖) ^ (N + k + q) := by
-    have ht0 : 0 ≤ t := norm_nonneg _
-    have h₁ : 1 + ‖ξ‖ ≤ 1 + t + ‖ξ‖ := by linarith
-    have h₂ : 1 + t ≤ 1 + t + ‖ξ‖ := by linarith [norm_nonneg ξ]
-    calc (1 + ‖ξ‖) ^ N * (1 + t) ^ (k + q)
-        ≤ (1 + t + ‖ξ‖) ^ N * (1 + t + ‖ξ‖) ^ (k + q) :=
-          mul_le_mul (pow_le_pow_left₀ (by positivity) h₁ N)
-            (pow_le_pow_left₀ (by positivity) h₂ (k + q)) (by positivity) (by positivity)
-      _ = (1 + t + ‖ξ‖) ^ (N + k + q) := by rw [← pow_add, ← Nat.add_assoc]
-  rw [le_mul_inv_iff₀ (by positivity)]
-  calc (1 + ‖ξ‖) ^ N * ‖badCoeff L A a ξ m‖ * N[ℂ]_{K, k} (χ.modulate (m : E)) * (1 + t) ^ q
-      ≤ (1 + ‖ξ‖) ^ N * (‖(ZLattice.covolume L : ℂ)⁻¹‖ * ‖a ξ m‖) *
-          (S k * (1 + 2 * π) ^ k * (1 + t) ^ k) * (1 + t) ^ q := by gcongr
-    _ = ‖(ZLattice.covolume L : ℂ)⁻¹‖ * (S k * (1 + 2 * π) ^ k) *
-          ((1 + ‖ξ‖) ^ N * (1 + t) ^ (k + q) * ‖a ξ m‖) := by ring
-    _ ≤ ‖(ZLattice.covolume L : ℂ)⁻¹‖ * (S k * (1 + 2 * π) ^ k) *
-          ((1 + t + ‖ξ‖) ^ (N + k + q) * ‖a ξ m‖) := by have := hS k; gcongr
-    _ ≤ ‖(ZLattice.covolume L : ℂ)⁻¹‖ * (S k * (1 + 2 * π) ^ k) * max (C k) 0 := by
-        have := hS k; gcongr; exact hCk.trans (le_max_left _ _)
-    _ = _ := by ring
+  rw [badCoeff, indicator_of_mem (s := {m : ZLattice.dual L | -(m : E) ∉ A}) hm, norm_mul,
+    add_right_comm, mul_left_comm]
+  gcongr
+  exact (hC m ξ ξ.property hm).trans (le_max_left _ _)
 
 /-- The coefficients off `A` depend continuously on `ξ` when `a(ξ, m)` does. -/
 private theorem continuous_badCoeff {A : Set E} {a : E → E → ℂ}
@@ -478,77 +431,6 @@ private theorem continuous_badCoeff {A : Set E} {a : E → E → ℂ}
     exact continuous_const
   · simp only [badCoeff, indicator_of_mem (s := {m : ZLattice.dual L | -(m : E) ∉ A}) hm]
     exact continuous_const.mul (hac m)
-
-/-- **The coefficients off `A` tend to zero.** Weighted by `(1 + ‖ξ‖) ^ N`, the coefficients off
-`A` still decay like `(1 + ‖ξ‖)⁻¹` on `V`, given a decay estimate of order `N + 1`. -/
-private theorem tendsto_one_add_pow_mul_badCoeff {A V : Set E} (hV : IsClosed V)
-    {a : E → E → ℂ} {N : ℕ} {C : ℝ}
-    (hC : ∀ m ξ : E, ξ ∈ V → -m ∉ A → (1 + ‖m‖ + ‖ξ‖) ^ (N + 1) * ‖a ξ m‖ ≤ C)
-    (m : ZLattice.dual L) :
-    Tendsto (fun ξ : V ↦ (((1 + ‖(ξ : E)‖) ^ N : ℝ) : ℂ) * badCoeff L A a ξ m)
-      (cocompact V) (𝓝 0) := by
-  have hnormV : Tendsto (fun ξ : V ↦ ‖(ξ : E)‖) (cocompact V) atTop :=
-    tendsto_norm_cocompact_atTop.comp hV.isClosedEmbedding_subtypeVal.tendsto_cocompact
-  have hinv := (tendsto_inv_atTop_zero.comp (tendsto_atTop_add_const_left _ 1 hnormV)).const_mul
-    (‖(ZLattice.covolume L : ℂ)⁻¹‖ * max C 0)
-  rw [mul_zero] at hinv
-  refine squeeze_zero_norm (fun ξ ↦ ?_) hinv
-  have hbad := norm_badCoeff_le A a ξ m
-  rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity), Function.comp_apply,
-    ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
-  by_cases hm : -(m : E) ∈ A
-  · rw [indicator_of_notMem (by simpa using hm), mul_zero] at hbad
-    rw [le_antisymm hbad (norm_nonneg _), mul_zero, zero_mul]
-    positivity
-  rw [indicator_of_mem (by simpa using hm)] at hbad
-  have hw : (1 + ‖(ξ : E)‖) ^ (N + 1) ≤ (1 + ‖(m : E)‖ + ‖(ξ : E)‖) ^ (N + 1) := by
-    gcongr; linarith [norm_nonneg (m : E)]
-  calc (1 + ‖(ξ : E)‖) ^ N * ‖badCoeff L A a ξ m‖ * (1 + ‖(ξ : E)‖)
-      = (1 + ‖(ξ : E)‖) ^ (N + 1) * ‖badCoeff L A a ξ m‖ := by ring
-    _ ≤ ‖(ZLattice.covolume L : ℂ)⁻¹‖ * ((1 + ‖(m : E)‖ + ‖(ξ : E)‖) ^ (N + 1) * ‖a ξ m‖) := by
-        rw [mul_left_comm]
-        exact mul_le_mul hw hbad (norm_nonneg _) (by positivity)
-    _ ≤ _ := by
-        gcongr; exact (hC m ξ ξ.property hm).trans (le_max_left _ _)
-
-/-- **The weighted series off `A` form a compact set.** If moreover `a(ξ, m)` is continuous in `ξ`,
-the series of the modulated cutoffs with the coefficients off `A` weighted by `(1 + ‖ξ‖) ^ N`
-depends continuously on `ξ ∈ V` and tends to zero at infinity, so these series and `0` form a
-compact set of `𝓓_K`. -/
-private theorem isCompact_insert_range_tsum [DiscreteTopology L] [IsZLattice ℝ L] {A V : Set E}
-    (hV : IsClosed V) {a : E → E → ℂ} (hac : ∀ m, Continuous fun ξ ↦ a ξ m)
-    (ha : ∀ M : ℕ, ∃ C, ∀ m ξ : E, ξ ∈ V → -m ∉ A → (1 + ‖m‖ + ‖ξ‖) ^ M * ‖a ξ m‖ ≤ C)
-    (χ : 𝓓_{K}(E, ℂ)) (N : ℕ) :
-    IsCompact (insert 0 (range fun ξ : V ↦ ∑' m : ZLattice.dual L,
-      ((((1 + ‖(ξ : E)‖) ^ N : ℝ) : ℂ) * badCoeff L A a ξ m) • χ.modulate (m : E))) := by
-  obtain ⟨b, hb, hb0, hbound'⟩ :=
-    exists_summable_one_add_pow_mul_norm_badCoeff_mul_seminorm_le (L := L) ha χ N
-  set c : V → ZLattice.dual L → ℂ := fun ξ m ↦
-    (((1 + ‖(ξ : E)‖) ^ N : ℝ) : ℂ) * badCoeff L A a ξ m
-  have hbound (ξ : V) (k : ℕ) (m : ZLattice.dual L) :
-      ‖c ξ m‖ * N[ℂ]_{K, k} (χ.modulate (m : E)) ≤ b k m := by
-    rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-    exact hbound' ξ ξ.property k m
-  have hb0' (k : ℕ) (m : ZLattice.dual L) :
-      ‖(0 : ℂ)‖ * N[ℂ]_{K, k} (χ.modulate (m : E)) ≤ b k m := by
-    rw [norm_zero, zero_mul]
-    exact hb0 k m
-  have hcont (m : ZLattice.dual L) : Continuous fun ξ : V ↦ c ξ m :=
-    (Complex.continuous_ofReal.comp ((continuous_const.add
-      (continuous_norm.comp continuous_subtypeVal)).pow N)).mul
-        ((continuous_badCoeff hac m).comp continuous_subtypeVal)
-  obtain ⟨C, hC⟩ := ha (N + 1)
-  have hF : Continuous fun ξ : V ↦ ∑' m, c ξ m • χ.modulate (m : E) :=
-    continuous_iff_continuousAt.2 fun ξ₀ ↦
-      ContDiffMapSupportedIn.tendsto_tsum_smul_of_dominated hb (Eventually.of_forall (hbound ·))
-        (hbound ξ₀) fun m ↦ (hcont m).continuousAt
-  have hF0 : Tendsto (fun ξ : V ↦ ∑' m, c ξ m • χ.modulate (m : E)) (cocompact V) (𝓝 0) := by
-    have h := ContDiffMapSupportedIn.tendsto_tsum_smul_of_dominated (c₀ := 0) hb
-      (Eventually.of_forall (hbound ·)) hb0'
-      (tendsto_one_add_pow_mul_badCoeff hV (fun m ξ hξ hm ↦ hC m ξ hξ hm))
-    simp only [Pi.zero_apply, zero_smul, tsum_zero] at h
-    exact h
-  exact hF0.isCompact_insert_range_of_cocompact hF
 
 end Series
 
@@ -578,18 +460,6 @@ private theorem mul_mul_le_of_le {w t α β c C₁ S : ℝ} {N q : ℕ} (hw : 0 
         rw [pow_add]; field_simp
     _ ≤ c * ((C₁ * (1 + t) ^ N) * S) * (w⁻¹ * ((1 + t) ^ N)⁻¹ * ((1 + t) ^ q)⁻¹) := by gcongr
     _ = c * C₁ * S * w⁻¹ * ((1 + t) ^ q)⁻¹ := by field_simp
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The weight `w ≥ 0` of the pairing of a distribution with a series in `𝓓_K` moves into the
-coefficients of the series. -/
-private theorem mul_norm_complexPairing_tsum_smul (T : 𝓓'(Ω, ℂ)) {K : Compacts E}
-    (hKΩ : (K : Set E) ⊆ Ω) {ι : Type*} {c : ι → ℂ} {v : ι → 𝓓_{K}(E, ℂ)} {w : ℝ}
-    (hw : 0 ≤ w) (hc : Summable fun m ↦ c m • v m) :
-    w * ‖T.complexPairing (ofSupportedIn hKΩ (∑' m, c m • v m))‖ =
-      ‖T.complexPairing (ofSupportedIn hKΩ (∑' m, ((w : ℂ) * c m) • v m))‖ := by
-  simp_rw [mul_smul]
-  rw [hc.tsum_const_smul, ← coe_ofSupportedInCLM (𝕜 := ℂ) hKΩ, map_smul, map_smul, smul_eq_mul,
-    norm_mul, Complex.norm_real, Real.norm_of_nonneg hw]
 
 /-- **The lattice series of the pullback**, with the coefficients `a(ξ, m)` written with a smooth
 `g` agreeing with `e` on the support of `ψ`
@@ -722,12 +592,19 @@ private theorem exists_seminorm_localFourier_le_of_cutoff
     obtain ⟨C, hC⟩ := exists_one_add_norm_pow_mul_norm_coeff_le (V := V) ψ.contDiff
       ψ.hasCompactSupport hg hε hM₁ hgP hgM M
     exact ⟨C, fun m ξ hξ hm ↦ hC m ξ (Or.inl ⟨hξ, not_le.1 hm⟩)⟩
+  have ha' := exists_one_add_add_pow_mul_norm_badCoeff_le (L := L) ha
   obtain ⟨p', hp', hp'le⟩ := exists_continuous_seminorm_norm_complexPairing_le (Γ := Γ)
-    ((isCompact_insert_range_tsum (L := L) (A := A) hV
-      (continuous_coeff ψ.continuous ψ.hasCompactSupport hg.continuous) ha χ N).image
-        (continuous_ofSupportedIn hKΩ))
+    ((ContDiffMapSupportedIn.isCompact_insert_range_tsum_one_add_pow_mul_smul_modulate
+      (ZLattice.dual L) (w := fun ξ : V ↦ ‖(ξ : E)‖)
+      (a := fun ξ m ↦ badCoeff L A (coeff (ψ : E → ℂ) g) ξ m) (fun _ ↦ norm_nonneg _)
+      (continuous_norm.comp continuous_subtypeVal)
+      (tendsto_norm_cocompact_atTop.comp hV.isClosedEmbedding_subtypeVal.tendsto_cocompact)
+      (fun m ↦ (continuous_badCoeff (continuous_coeff ψ.continuous ψ.hasCompactSupport
+        hg.continuous) m).comp continuous_subtypeVal) ha' χ N).image
+          (continuous_ofSupportedIn hKΩ))
   obtain ⟨b, hb, -, hbound⟩ :=
-    exists_summable_one_add_pow_mul_norm_badCoeff_mul_seminorm_le (L := L) ha χ 0
+    ContDiffMapSupportedIn.exists_summable_one_add_pow_mul_norm_mul_seminorm_modulate_le
+      (ZLattice.dual L) (w := fun ξ : V ↦ ‖(ξ : E)‖) (fun _ ↦ norm_nonneg _) ha' χ 0
   set q := Module.finrank ℤ (ZLattice.dual L) + 1
   have hq := ZLattice.summable_one_add_norm_pow_inv (ZLattice.dual L) (r := q) (by omega)
   set K₀ : ℝ := ‖(ZLattice.covolume L : ℂ)⁻¹‖ * C₁ *
@@ -738,7 +615,7 @@ private theorem exists_seminorm_localFourier_le_of_cutoff
   have h := one_add_pow_mul_norm_localFourier_le (he := he) (he' := he') (hU := hU)
     (hUΩ := hUΩ) u.toDistribution hge hKΩ hχ L hL hq hC₁0 (apply_nonneg _ u) (hC₁ · ξ)
     (fun m hm ↦ by simpa using le_seminorm (i (N + q)) u (η := -m) hm)
-    (ContDiffMapSupportedIn.summable_smul_of_le hb fun k m ↦ by simpa using hbound ξ hξ k m)
+    (ContDiffMapSupportedIn.summable_smul_of_le hb fun k m ↦ by simpa using hbound ⟨ξ, hξ⟩ k m)
     (hp'le u _ (mem_image_of_mem _ (mem_insert_of_mem _ ⟨⟨ξ, hξ⟩, rfl⟩)))
   refine h.trans_eq ?_
   simp only [add_apply, smul_apply, NNReal.smul_def, Real.coe_toNNReal _ hK₀,
@@ -754,7 +631,7 @@ private theorem exists_mem_nhds_forall_exists_seminorm_le
     (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0)
     {V : Set E} (hV : IsClosed V) (hV0 : (0 : E) ∈ V)
     (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {x₀ : E} (hx₀ : x₀ ∈ U)
-    (hx₀V : ∀ ξ ∈ V, (x₀, ξ) ∉ pullbackConeOfOpenPartialHomeomorph e U Γ) (N : ℕ) :
+    (hx₀V : ∀ ξ ∈ V, (x₀, ξ) ∉ pullbackCone e U Γ) (N : ℕ) :
     ∃ O ∈ 𝓝 x₀, ∀ ψ : 𝓓(U, ℂ), tsupport ψ ⊆ O →
       ∃ p : Seminorm ℂ (WaveFrontSpace Ω Γ), Continuous p ∧ ∀ u : WaveFrontSpace Ω Γ, ∀ ξ ∈ V,
         (1 + ‖ξ‖) ^ N * ‖(compCLMOfOpenPartialHomeomorph e he he' hU hUΩ
@@ -764,7 +641,7 @@ private theorem exists_mem_nhds_forall_exists_seminorm_le
   -- No covector of `Γ` near `e x₀` lies in the cone `{η | dist (De(x₀)ᵀ η, V) ≤ ε ‖η‖}`.
   obtain ⟨ε, hε, hεΓ⟩ := exists_forall_notMem_of_infDist_le hΓ hcone hΓ0 hy₀
     ((fderiv ℝ e x₀)†) hV hV0 hVcone fun η hη hΓη ↦
-      hx₀V _ hη (mem_pullbackConeOfOpenPartialHomeomorph.2 ⟨hx₀, η, hΓη, rfl⟩)
+      hx₀V _ hη (mem_pullbackCone.2 ⟨hx₀, η, hΓη, rfl⟩)
   -- A smooth `g` equal to `e` near `x₀`.
   obtain ⟨g, hg, -, hge⟩ :=
     he.exists_contDiff_eventuallyEq_of_finiteDimensional (e.open_source.mem_nhds hx₀s)
@@ -801,7 +678,7 @@ each supported near a point of `supp φ` where the local estimate holds. -/
 private theorem exists_seminorm_localFourier_le
     (hΓ : IsOpen (((Ω : Set E) ×ˢ {0}ᶜ) \ Γ))
     (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0)
-    (j : WaveFrontSeminormIndex U (pullbackConeOfOpenPartialHomeomorph e U Γ)) :
+    (j : WaveFrontSeminormIndex U (pullbackCone e U Γ)) :
     ∃ p : Seminorm ℂ (WaveFrontSpace Ω Γ), Continuous p ∧ ∀ u : WaveFrontSpace Ω Γ, ∀ ξ ∈ j.cone,
       (1 + ‖ξ‖) ^ j.order * ‖(compCLMOfOpenPartialHomeomorph e he he' hU hUΩ
         u.toDistribution).localFourier j.cutoff ξ‖ ≤ p u := by
@@ -842,38 +719,45 @@ proved. -/
 private def compCLMOfOpenPartialHomeomorphₗ (e : OpenPartialHomeomorph E E)
     (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
     (hU : (U : Set E) ⊆ e.source) (hUΩ : MapsTo e U Ω) :
-    WaveFrontSpace Ω Γ →ₗ[ℂ] WaveFrontSpace U (pullbackConeOfOpenPartialHomeomorph e U Γ) where
+    WaveFrontSpace Ω Γ →ₗ[ℂ] WaveFrontSpace U (pullbackCone e U Γ) where
   toFun u := mk (Distribution.compCLMOfOpenPartialHomeomorph e he he' hU hUΩ u.toDistribution)
     (waveFrontSet_compCLMOfOpenPartialHomeomorph_subset u.waveFrontSet_toDistribution_subset)
   map_add' u v := ext (by simp)
   map_smul' c u := ext (by ext φ; simp)
 
+private theorem toDistribution_compCLMOfOpenPartialHomeomorphₗ (e : OpenPartialHomeomorph E E)
+    (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
+    (hU : (U : Set E) ⊆ e.source) (hUΩ : MapsTo e U Ω) (u : WaveFrontSpace Ω Γ) :
+    (compCLMOfOpenPartialHomeomorphₗ e he he' hU hUΩ u).toDistribution =
+      Distribution.compCLMOfOpenPartialHomeomorph e he he' hU hUΩ u.toDistribution :=
+  toDistribution_mk _ _
+
 /-- **Continuity of changes of variables in the normal topology.** Let `Γ` be a cone of nonzero
 covectors over `Ω`, closed in `Ω × (E \ {0})`. Then the pullback `e^* T` along a smooth change of
 variables `e` (`Distribution.compCLMOfOpenPartialHomeomorph`) is a continuous linear map from
 `𝓓'_Γ(Ω)` to `𝓓'_{e^* Γ}(U)`, where `e^* Γ = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ Γ}`
-(`TauCeti.pullbackConeOfOpenPartialHomeomorph`). So the normal topology is invariant under changes
+(`TauCeti.pullbackCone`). So the normal topology is invariant under changes
 of coordinates. -/
 def compCLMOfOpenPartialHomeomorph (e : OpenPartialHomeomorph E E)
     (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
     (hU : (U : Set E) ⊆ e.source) (hUΩ : MapsTo e U Ω)
     (hΓ : IsOpen (((Ω : Set E) ×ˢ {0}ᶜ) \ Γ))
     (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0) :
-    WaveFrontSpace Ω Γ →L[ℂ] WaveFrontSpace U (pullbackConeOfOpenPartialHomeomorph e U Γ) :=
+    WaveFrontSpace Ω Γ →L[ℂ] WaveFrontSpace U (pullbackCone e U Γ) :=
   ⟨compCLMOfOpenPartialHomeomorphₗ e he he' hU hUΩ, by
     borelize E
     refine continuous_linearMap_of_le _ ?_ fun j ↦ ?_
     · have h : ⇑(toDistribution ∘ₗ compCLMOfOpenPartialHomeomorphₗ (Γ := Γ) e he he' hU hUΩ) =
           Distribution.compCLMOfOpenPartialHomeomorph e he he' hU hUΩ ∘ toDistribution := by
         funext u
-        exact toDistribution_mk _ _
+        exact toDistribution_compCLMOfOpenPartialHomeomorphₗ e he he' hU hUΩ u
       rw [h]
       exact (Distribution.compCLMOfOpenPartialHomeomorph e he he' hU hUΩ).continuous.comp
         continuous_toDistribution
     · obtain ⟨p, hp, hpj⟩ := exists_seminorm_localFourier_le hΓ hcone hΓ0 j
       refine ⟨p, hp, fun u ↦ seminorm_le_bound j _ (apply_nonneg _ _) fun ξ hξ ↦ ?_⟩
-      simpa only [LinearMap.coe_comp, Function.comp_apply, compCLMOfOpenPartialHomeomorphₗ,
-        LinearMap.coe_mk, AddHom.coe_mk, toDistribution_mk] using hpj u ξ hξ⟩
+      rw [toDistribution_compCLMOfOpenPartialHomeomorphₗ]
+      exact hpj u ξ hξ⟩
 
 @[simp]
 theorem toDistribution_compCLMOfOpenPartialHomeomorph (e : OpenPartialHomeomorph E E)
@@ -884,7 +768,7 @@ theorem toDistribution_compCLMOfOpenPartialHomeomorph (e : OpenPartialHomeomorph
     (u : WaveFrontSpace Ω Γ) :
     (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ hΓ hcone hΓ0 u).toDistribution =
       Distribution.compCLMOfOpenPartialHomeomorph e he he' hU hUΩ u.toDistribution :=
-  toDistribution_mk _ _
+  toDistribution_compCLMOfOpenPartialHomeomorphₗ e he he' hU hUΩ u
 
 end WaveFrontSpace
 

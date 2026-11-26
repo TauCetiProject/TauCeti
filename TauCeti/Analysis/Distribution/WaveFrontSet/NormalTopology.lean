@@ -62,6 +62,9 @@ differentiation and restriction to an open subset are continuous linear maps of 
   `𝓓'_Γ(Ω)`.
 * `TauCeti.WaveFrontSpace.exists_continuous_seminorm_norm_complexPairing_le`: on a compact set of
   test functions, the values of the members of `𝓓'_Γ(Ω)` are bounded by a continuous seminorm.
+* `Distribution.mul_norm_complexPairing_tsum_smul`: a nonnegative weight of the value of a
+  distribution on a series of test functions in `𝓓_K` moves into the coefficients of the series;
+  with the previous bound, this controls weighted values on compact sets of such series.
 * `TauCeti.WaveFrontSpace.inclusionCLM`, `TauCeti.WaveFrontSpace.smulLeftCLM`,
   `TauCeti.WaveFrontSpace.lineDerivCLM`, `TauCeti.WaveFrontSpace.restrictCLM`: the
   inclusion for a larger cone, multiplication by a smooth real-valued function, differentiation
@@ -766,3 +769,20 @@ end WaveFrontSpace
 end Space
 
 end TauCeti
+
+namespace Distribution
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
+
+/-- The weight `w ≥ 0` of the pairing of a distribution with a series in `𝓓_K` moves into the
+coefficients of the series. -/
+theorem mul_norm_complexPairing_tsum_smul (T : 𝓓'(Ω, ℂ)) {K : Compacts E}
+    (hKΩ : (K : Set E) ⊆ Ω) {ι : Type*} {c : ι → ℂ} {v : ι → 𝓓_{K}(E, ℂ)} {w : ℝ}
+    (hw : 0 ≤ w) (hc : Summable fun m ↦ c m • v m) :
+    w * ‖T.complexPairing (TestFunction.ofSupportedIn hKΩ (∑' m, c m • v m))‖ =
+      ‖T.complexPairing (TestFunction.ofSupportedIn hKΩ (∑' m, ((w : ℂ) * c m) • v m))‖ := by
+  simp_rw [mul_smul]
+  rw [hc.tsum_const_smul, ← TestFunction.coe_ofSupportedInCLM (𝕜 := ℂ) hKΩ, map_smul, map_smul,
+    smul_eq_mul, norm_mul, Complex.norm_real, Real.norm_of_nonneg hw]
+
+end Distribution

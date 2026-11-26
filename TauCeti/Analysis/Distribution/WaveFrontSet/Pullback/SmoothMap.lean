@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.FDeriv.AddSnd
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Basic
+public import TauCeti.Analysis.Distribution.WaveFrontSet.PullbackCone
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Submersion
 import TauCeti.Analysis.Distribution.TestFunction.Convolution
 
@@ -26,7 +27,7 @@ over the fibres of `f` (`Distribution.pullback_eq_compCLMOfSubmersion`).
 The wave front set of the pullback lies in the pullback of the wave front set of `T`
 (`Distribution.waveFrontSet_pullback_subset`):
 
-`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}`.
+`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}` (`TauCeti.pullbackCone`).
 
 So `k^* (f^* T)` is defined whenever the wave front set of `T` meets neither the normal set of `f`
 nor that of `f ∘ k` (`Distribution.adjoint_fderiv_apply_ne_zero_of_comp`).
@@ -313,7 +314,7 @@ theorem isMicrolocallySmoothAt_pullback (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : M
 wave front set of `f^* T` are of the form `(x, Df(x)ᵀ η)` with `x ∈ Ω` and `(f x, η)` in the wave
 front set of `T`:
 
-`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}`.
+`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}` (`TauCeti.pullbackCone`).
 
 Covectors with `Df(x)ᵀ η = 0` do not occur, by the hypothesis on `WF(T)`. For a submersion this
 is an equality (`Distribution.pullback_eq_compCLMOfSubmersion`,
@@ -321,8 +322,7 @@ is an equality (`Distribution.pullback_eq_compCLMOfSubmersion`,
 theorem waveFrontSet_pullback_subset (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
     {T : 𝓓'(Ω', ℂ)}
     (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0) :
-    (T.pullback f hf hfΩ h).waveFrontSet ⊆
-      {p | p.1 ∈ Ω ∧ ∃ η, (f p.1, η) ∈ T.waveFrontSet ∧ (fderiv ℝ f p.1).adjoint η = p.2} := by
+    (T.pullback f hf hfΩ h).waveFrontSet ⊆ pullbackCone f Ω T.waveFrontSet := by
   rintro ⟨x, ξ⟩ hxξ
   obtain ⟨hx, hξ, hns⟩ := mem_waveFrontSet_iff.1 hxξ
   refine ⟨hx, ?_⟩

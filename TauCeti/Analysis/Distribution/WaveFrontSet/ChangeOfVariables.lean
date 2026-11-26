@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.MicrolocalRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
+public import TauCeti.Analysis.Distribution.WaveFrontSet.PullbackCone
 import TauCeti.Algebra.Module.ZLattice.Dual
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
@@ -66,10 +67,12 @@ rapidly, and `|a_m(ξ)|` is bounded. For the others, the phase of `𝓕 G_ξ (m)
 * `Distribution.isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff`: the converse, for
   `x ∈ U`, by pulling back along `e⁻¹` from `e '' U`.
 * `Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`: the wave front set of `e^* T`.
-* `TauCeti.pullbackConeOfOpenPartialHomeomorph`,
-  `Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph_subset`: the pullback
-  `e^* Γ = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ Γ}` of a set `Γ` of covectors, which contains the wave
-  front set of `e^* T` whenever `Γ` contains that of `T`.
+* `Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph_subset`: the pullback
+  `e^* Γ = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ Γ}` (`TauCeti.pullbackCone`) of a set `Γ` of
+  covectors contains the wave front set of `e^* T` whenever `Γ` contains that of `T`.
+* `OpenPartialHomeomorph.ne_zero_of_mem_pullbackCone`,
+  `OpenPartialHomeomorph.isOpen_prod_compl_diff_pullbackCone`: like `Γ`, the cone `e^* Γ` contains
+  no zero covectors, and it is closed in `U × (E \ {0})` when `Γ` is closed in `Ω × (E \ {0})`.
 
 ## References
 
@@ -349,32 +352,61 @@ end Distribution
 
 /-! ### The pullback of a cone -/
 
-namespace TauCeti
+namespace OpenPartialHomeomorph
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- The pullback `e^* Γ = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ Γ}` of a set `Γ` of covectors along a
-map `e` over a set `U`: covectors at `e x` pull back by the transpose of the derivative of `e`
-at `x`. For a smooth change of variables `e`, it contains the wave front set of the pullback `e^* T`
-of every distribution `T` with wave front set in `Γ`
-(`Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph_subset`). -/
-def pullbackConeOfOpenPartialHomeomorph (e : OpenPartialHomeomorph E E) (U : Set E)
-    (Γ : Set (E × E)) : Set (E × E) :=
-  {p | p.1 ∈ U ∧ ∃ η, (e p.1, η) ∈ Γ ∧ ((fderiv ℝ e p.1)†) η = p.2}
+/-- The pullback `e^* Γ` along a change of variables of a set `Γ` of nonzero covectors contains no
+zero covectors, since the transposed derivative of `e` is injective. -/
+theorem ne_zero_of_mem_pullbackCone (e : OpenPartialHomeomorph E E)
+    (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
+    {U : Set E} (hU : U ⊆ e.source) {Γ : Set (E × E)} (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0) {p : E × E}
+    (hp : p ∈ TauCeti.pullbackCone e U Γ) : p.2 ≠ 0 := by
+  obtain ⟨hx, η, hη, hηp⟩ := hp
+  intro h0
+  refine hΓ0 _ hη ?_
+  rw [← e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn he he' (by simp) (hU hx) η,
+    hηp, h0, map_zero]
 
-@[simp]
-theorem mem_pullbackConeOfOpenPartialHomeomorph {e : OpenPartialHomeomorph E E} {U : Set E}
-    {Γ : Set (E × E)} {p : E × E} :
-    p ∈ pullbackConeOfOpenPartialHomeomorph e U Γ ↔
-      p.1 ∈ U ∧ ∃ η, (e p.1, η) ∈ Γ ∧ ((fderiv ℝ e p.1)†) η = p.2 :=
-  Iff.rfl
+/-- **The pullback of a closed cone is closed.** If `Γ` is closed in `Ω × (E \ {0})`, then the
+pullback `e^* Γ` along a change of variables is closed in `U × (E \ {0})`: over `U` it is the
+preimage of `Γ` under the continuous map `(x, ξ) ↦ (e x, De⁻¹(e x)ᵀ ξ)`. -/
+theorem isOpen_prod_compl_diff_pullbackCone (e : OpenPartialHomeomorph E E)
+    (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
+    {U Ω : Set E} (hUo : IsOpen U) (hU : U ⊆ e.source) (hUΩ : MapsTo e U Ω) {Γ : Set (E × E)}
+    (hΓ : IsOpen ((Ω ×ˢ {0}ᶜ) \ Γ)) :
+    IsOpen ((U ×ˢ {0}ᶜ) \ TauCeti.pullbackCone e U Γ) := by
+  set Φ : E × E → E × E := fun p ↦ (e p.1, ((fderiv ℝ e.symm (e p.1))†) p.2)
+  have hinv (x : E) (hx : x ∈ U) (ξ : E) :=
+    e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn he he' (by simp) (hU hx) ξ
+  have hinv' (x : E) (hx : x ∈ U) (η : E) :=
+    e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn he he' (by simp) (hU hx) η
+  have hset : (U ×ˢ {0}ᶜ) \ TauCeti.pullbackCone e U Γ =
+      (U ×ˢ {0}ᶜ) ∩ Φ ⁻¹' ((Ω ×ˢ {0}ᶜ) \ Γ) := by
+    ext ⟨x, ξ⟩
+    simp only [Set.mem_sdiff, mem_prod, mem_compl_iff, mem_singleton_iff, mem_inter_iff,
+      mem_preimage, Φ]
+    constructor
+    · rintro ⟨⟨hx, hξ⟩, hn⟩
+      refine ⟨⟨hx, hξ⟩, ⟨hUΩ hx, fun h0 ↦ hξ ?_⟩, fun hΓξ ↦ hn ⟨hx, _, hΓξ, hinv x hx ξ⟩⟩
+      rw [← hinv x hx ξ, h0, map_zero]
+    · rintro ⟨⟨hx, hξ⟩, -, hn⟩
+      refine ⟨⟨hx, hξ⟩, fun ⟨_, η, hη, hηξ⟩ ↦ hn ?_⟩
+      dsimp only at hη hηξ
+      rwa [← hηξ, hinv' x hx η]
+  rw [hset]
+  have hcont : ContinuousOn Φ (U ×ˢ univ) := by
+    have he1 : ContinuousOn (fun p : E × E ↦ e p.1) (U ×ˢ univ) :=
+      (e.continuousOn.mono hU).comp continuousOn_fst fun p hp ↦ hp.1
+    have hD : ContinuousOn (fun p : E × E ↦ (fderiv ℝ e.symm (e p.1))†) (U ×ˢ univ) :=
+      (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := E) (F := E)).continuous.comp_continuousOn
+        ((he'.continuousOn_fderiv_of_isOpen e.open_target (by simp)).comp he1
+          fun p hp ↦ e.map_source (hU hp.1))
+    exact he1.prodMk (hD.clm_apply continuousOn_snd)
+  exact (hcont.mono (prod_mono subset_rfl (subset_univ _))).isOpen_inter_preimage
+    (hUo.prod isOpen_compl_singleton) hΓ
 
-theorem pullbackConeOfOpenPartialHomeomorph_mono {e : OpenPartialHomeomorph E E} {U : Set E}
-    {Γ Γ' : Set (E × E)} (h : Γ ⊆ Γ') :
-    pullbackConeOfOpenPartialHomeomorph e U Γ ⊆ pullbackConeOfOpenPartialHomeomorph e U Γ' :=
-  fun _ ⟨hx, η, hη, hp⟩ ↦ ⟨hx, η, h hη, hp⟩
-
-end TauCeti
+end OpenPartialHomeomorph
 
 namespace Distribution
 
@@ -384,12 +416,11 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {hU : (U : Set E) ⊆ e.source} {hUΩ : MapsTo e U Ω}
 
 /-- If the wave front set of `T` lies in `Γ`, that of its pullback `e^* T` along a change of
-variables lies in `e^* Γ = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ Γ}`
-(`TauCeti.pullbackConeOfOpenPartialHomeomorph`). -/
+variables lies in `e^* Γ = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ Γ}` (`TauCeti.pullbackCone`). -/
 theorem waveFrontSet_compCLMOfOpenPartialHomeomorph_subset {T : 𝓓'(Ω, ℂ)} {Γ : Set (E × E)}
     (hT : T.waveFrontSet ⊆ Γ) :
     (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).waveFrontSet ⊆
-      TauCeti.pullbackConeOfOpenPartialHomeomorph e U Γ := by
+      TauCeti.pullbackCone e U Γ := by
   rw [waveFrontSet_compCLMOfOpenPartialHomeomorph]
   rintro ⟨x, ξ⟩ ⟨hx, hxξ⟩
   exact ⟨hx, _, hT hxξ,
