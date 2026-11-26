@@ -119,10 +119,8 @@ theorem transMatrix_toReal_eq_map_toMatrix (π : S → PMF A) :
     M.transMatrix (fun s a ↦ (π s a).toReal) =
       (M.stationaryKernel π).toMatrix.map ((↑) : ℝ≥0 → ℝ) := by
   ext s s'
-  rw [transMatrix_apply, map_apply, Kernel.toMatrix_apply, ENNReal.coe_toNNReal_eq_toReal,
-    stationaryKernel_apply_singleton, ENNReal.toReal_sum fun a _ ↦
-      ENNReal.mul_ne_top (PMF.apply_ne_top _ _) (PMF.apply_ne_top _ _)]
-  simp only [ENNReal.toReal_mul]
+  simp [transMatrix_apply, Kernel.toMatrix_apply, ENNReal.coe_toNNReal_eq_toReal,
+    ENNReal.toReal_sum, ENNReal.mul_ne_top, PMF.apply_ne_top]
 
 omit [MeasurableSpace S] [Countable S] [MeasurableSingletonClass S] in
 /-- The transition matrix of a deterministic policy `d` has the transition probabilities of the
@@ -159,30 +157,20 @@ weight table of `π`. -/
 theorem coe_value_eq_policyValue {γ : ℝ≥0} (hγ : γ < 1) (π : S → PMF A) :
     ⇑(M.value γ π) = M.policyValue γ (fun s a ↦ (π s a).toReal) := by
   set w : BoundedFn S := ⟨M.policyValue γ (fun s a ↦ (π s a).toReal), Memℓp.all (p := ∞) _⟩
+  -- Mathlib has no simp lemma for the coercion of an `lp` element built with the constructor.
+  have hw' : ⇑w = M.policyValue γ (fun s a ↦ (π s a).toReal) := rfl
   have hw : M.bellmanEval γ π w = w := by
     refine lp.ext ?_
-    rw [coe_bellmanEval_eq_meanReward_add_mulVec]
+    rw [coe_bellmanEval_eq_meanReward_add_mulVec, hw']
     exact (policyValue_eq_meanReward_add hγ (isPolicy_toReal π)).symm
-  rw [← (M.bellmanEval_eq_self_iff hγ π).1 hw]
+  rw [← (M.bellmanEval_eq_self_iff hγ π).1 hw, hw']
 
 /-- On a finite state space and for `γ < 1`, the value of `π` is the sum of its discounted mean
 rewards after `k` steps: `V^π = ∑ₖ γ ^ k (P^π) ^ k r^π`. -/
 theorem hasSum_value {γ : ℝ≥0} (hγ : γ < 1) (π : S → PMF A) :
     HasSum (fun k ↦ (γ : ℝ) ^ k • (M.transMatrix (fun s a ↦ (π s a).toReal) ^ k *ᵥ
-      M.meanReward (fun s a ↦ (π s a).toReal))) ⇑(M.value γ π) := by
-  have hγ' : |(γ : ℝ)| < 1 := by
-    rw [abs_of_nonneg γ.coe_nonneg]
-    exact_mod_cast hγ
-  have h := (hasSum_pow_smul_of_mem_rowStochastic
-    (transMatrix_mem_rowStochastic (M := M) (isPolicy_toReal π)) hγ').map
-    (mulVec.addMonoidHomLeft (M.meanReward fun s a ↦ (π s a).toReal))
-    (continuous_id.matrix_mulVec continuous_const)
-  rw [M.coe_value_eq_policyValue hγ π, policyValue_def]
-  convert h using 1
-  · ext k s
-    simp only [Function.comp_apply, mulVec.addMonoidHomLeft_apply, smul_pow, smul_mulVec]
-  · ext s
-    simp only [mulVec.addMonoidHomLeft_apply]
+      M.meanReward (fun s a ↦ (π s a).toReal))) ⇑(M.value γ π) :=
+  M.coe_value_eq_policyValue hγ π ▸ hasSum_policyValue hγ (isPolicy_toReal π)
 
 end Finite
 
