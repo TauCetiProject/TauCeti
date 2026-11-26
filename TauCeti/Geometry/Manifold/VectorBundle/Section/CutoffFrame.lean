@@ -136,6 +136,14 @@ theorem cutoffFrameCoeff_apply (χ : C^n⟮I, M; ℝ⟯) (hχ : tsupport χ ⊆ 
     t.cutoffFrameCoeff χ hχ ℓ h x = χ x • ℓ (t.continuousLinearMapAt ℂ x (h x)) :=
   (rfl)
 
+/-- On the base set of `t`, a real cut-off frame section `g t⁻¹ v` is the complex-linear inverse
+`t⁻¹ₓ` applied to `(g x : ℂ) • v`. -/
+theorem cutoffFrameSection_apply_eq_symmL (g : C^n⟮I, M; ℝ⟯) (hg : tsupport g ⊆ t.baseSet) (v : W)
+    {x : M} (hx : x ∈ t.baseSet) :
+    t.cutoffFrameSection g hg v x = t.symmL ℂ x ((g x : ℂ) • v) := by
+  rw [cutoffFrameSection_apply, ← t.symmL_apply (R := ℝ) hx, ← map_smul, ← Complex.coe_smul,
+    t.symmL_apply (R := ℝ) hx, t.symmL_apply (R := ℂ) hx]
+
 /-- In one trivialization `t`, with the same function `g` cutting off the frame and the
 coefficients, the cut-off frame sections `g t⁻¹ bⱼ` multiplied by the cut-off frame coefficients
 `g bⱼ*(t h)` add up to `g² h`. -/
@@ -150,9 +158,7 @@ private theorem sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply [FiniteDimens
     have hterm (j : κ) : t.cutoffFrameCoeff g hg (b.coord j).toContinuousLinearMap h x •
         t.cutoffFrameSection g hg (b j) x = t.symmL ℂ x (((g x ^ 2 : ℝ) : ℂ) •
           (b.coord j).toContinuousLinearMap (t.continuousLinearMapAt ℂ x (h x)) • b j) := by
-      rw [cutoffFrameCoeff_apply, cutoffFrameSection_apply, ← t.symmL_apply (R := ℝ) hx,
-        ← map_smul (t.symmL ℝ x) (g x), ← Complex.coe_smul (g x) (b j),
-        t.symmL_apply (R := ℝ) hx, ← t.symmL_apply (R := ℂ) hx, ← map_smul (t.symmL ℂ x)]
+      rw [cutoffFrameCoeff_apply, t.cutoffFrameSection_apply_eq_symmL g hg _ hx, ← map_smul]
       congr 1
       simp only [smul_smul, Complex.real_smul, Complex.ofReal_pow]
       congr 1

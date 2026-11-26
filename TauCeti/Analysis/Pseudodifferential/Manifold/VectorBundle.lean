@@ -56,11 +56,11 @@ is the quantization `Op(a)` of a classical symbol `a` of order `m` with values i
 is the local description of a pseudodifferential operator between bundles in Taylor (Lecture I,
 §8) and Melrose (§5.3).
 
-The class is closed under composition: if `P : Γ(E) → Γ(F)` has order `m` and `R : Γ(F) → Γ(G)`
-has order `m'`, then `R ∘ P` has order `m' + m`
-(`TauCeti.comp_mem_sectionClassicalPseudodifferentialOperators`). On the sections supported in a
-compact set `K`, the outputs of `P` are supported in a compact set `K'`, and over `K'` they expand
-in finitely many cut-off frames `gᵢ tᵢ⁻¹ bⱼ` of `F` with `∑ᵢ gᵢ² = 1`
+The class is closed under composition: if the middle bundle `F` has finite-dimensional fibre,
+`P : Γ(E) → Γ(F)` has order `m` and `R : Γ(F) → Γ(G)` has order `m'`, then `R ∘ P` has order
+`m' + m` (`TauCeti.comp_mem_sectionClassicalPseudodifferentialOperators`). On the sections
+supported in a compact set `K`, the outputs of `P` are supported in a compact set `K'`, and over
+`K'` they expand in finitely many cut-off frames `gᵢ tᵢ⁻¹ bⱼ` of `F` with `∑ᵢ gᵢ² = 1`
 (`ContMDiffSection.eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection`). So on functions supported
 in `K` each entry of `R ∘ P` is a finite sum of compositions of an entry of `R` with an entry of
 `P`, and these have order `m' + m` by the scalar composition theorem
@@ -89,7 +89,8 @@ suffices, since the chart compressions only see such inputs
   bundles are trivial, the compression of an operator of order `m` is the quantization of a
   classical symbol of order `m` with values in `V →L[ℂ] W`.
 * `TauCeti.comp_mem_sectionClassicalPseudodifferentialOperators`: the composition of operators of
-  orders `m'` and `m` between bundles has order `m' + m`.
+  orders `m'` and `m` between bundles, through a middle bundle with finite-dimensional fibre, has
+  order `m' + m`.
 
 ## References
 
@@ -260,7 +261,7 @@ theorem sectionEntry_apply
 
 /-- The matrix entry of `P` applied to `f` is the cut-off frame coefficient of `P` applied to the
 section `f · ψ t⁻¹ v`. -/
-theorem sectionEntry_apply_eq
+theorem sectionEntry_apply_eq_cutoffFrameCoeff
     (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯)
     (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     sectionEntry t ψ hψ v t' χ hχ ℓ P f =
@@ -474,9 +475,10 @@ variable [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
   [∀ x, Module ℝ (G x)] [∀ x, Module ℂ (G x)] [∀ x, TopologicalSpace (G x)] [FiberBundle U G]
   [VectorBundle ℝ U G] [VectorBundle ℂ U G] [ContMDiffVectorBundle ∞ U G 𝓘(ℝ, CoordinateSpace n)]
 
-/-- **Composition of pseudodifferential operators between bundles.** If `P : Γ(E) → Γ(F)` is a
-classical pseudodifferential operator of order `m` and `R : Γ(F) → Γ(G)` one of order `m'`, then
-`R ∘ P : Γ(E) → Γ(G)` is a classical pseudodifferential operator of order `m' + m`. -/
+/-- **Composition of pseudodifferential operators between bundles.** If the middle bundle `F` has
+finite-dimensional fibre, `P : Γ(E) → Γ(F)` is a classical pseudodifferential operator of order `m`
+and `R : Γ(F) → Γ(G)` one of order `m'`, then `R ∘ P : Γ(E) → Γ(G)` is a classical
+pseudodifferential operator of order `m' + m`. -/
 theorem comp_mem_sectionClassicalPseudodifferentialOperators [FiniteDimensional ℂ W] {m m' : ℝ}
     {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
     {R : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); U, G⟯}
@@ -506,9 +508,10 @@ theorem comp_mem_sectionClassicalPseudodifferentialOperators [FiniteDimensional 
       (inter_subset_left.trans hf)
   have hPs (x : M) (hx : P (f • t.cutoffFrameSection ψ hψ v) x ≠ 0) : ∑ i, g i x ^ 2 = 1 :=
     hg1 x (hPK' _ hs (by rw [ContMDiffSection.tsupport_def]; exact subset_closure hx))
-  rw [sectionEntry_apply_eq, LinearMap.comp_apply,
+  rw [sectionEntry_apply_eq_cutoffFrameCoeff, LinearMap.comp_apply,
     (P _).eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection _ g hg' hPs b]
-  simp only [map_sum, LinearMap.sum_apply, LinearMap.comp_apply, sectionEntry_apply_eq]
+  simp only [map_sum, LinearMap.sum_apply, LinearMap.comp_apply,
+    sectionEntry_apply_eq_cutoffFrameCoeff]
 
 end Composition
 
