@@ -45,7 +45,9 @@ It satisfies the axioms of McDuff and Salamon, Theorem 2.2.12:
 
 Concatenation adds Maslov indices, reversal and pointwise inversion negate them, conjugation by a
 fixed symplectic matrix keeps them (`TauCeti.GLSymplectic.maslovIndex_map_conj`), and a loop has
-the Maslov index of its loop of orthogonal polar factors.
+the Maslov index of its loop of orthogonal polar factors. A loop along which `ρ` takes only the
+values `1` and `-1` has Maslov index zero
+(`TauCeti.GLSymplectic.maslovIndex_eq_zero_of_forall_maslovPhase_sq_eq_one`).
 
 The map `ρ` is not multiplicative on the whole symplectic group, so the product axiom is proved
 by a homotopy: contracting the positive factors of both loops through symplectic matrices
@@ -168,6 +170,20 @@ theorem maslovIndex_eq_of_homotopic {A : GLSymplectic n ℝ} {γ₀ γ₁ : Path
 @[simp]
 theorem maslovIndex_refl (A : GLSymplectic n ℝ) : maslovIndex (Path.refl A) = 0 :=
   (Circle.degree_congr _ (Path.refl (maslovPhase A)) fun _ ↦ by simp).trans (Circle.degree_refl _)
+
+/-- **A loop with `ρ = ±1` has Maslov index zero.** If `ρ` takes only the values `1` and `-1`
+along a loop of symplectic matrices, the loop `t ↦ ρ(γ t)` avoids `i`, so it has degree zero. -/
+theorem maslovIndex_eq_zero_of_forall_maslovPhase_sq_eq_one {A : GLSymplectic n ℝ}
+    (γ : Path A A) (h : ∀ t, maslovPhase (γ t) ^ 2 = 1) : maslovIndex γ = 0 := by
+  rw [maslovIndex_def]
+  refine Circle.degree_eq_zero_of_forall_ne _ (c := Circle.exp (Real.pi / 2)) fun t ht ↦ ?_
+  have h' := congrArg ((↑) : Circle → ℂ) (h t)
+  rw [Path.map_coe, Function.comp_apply] at ht
+  rw [ht, Circle.coe_pow, Circle.coe_exp, ← Complex.exp_natCast_mul] at h'
+  push_cast at h'
+  rw [show (2 : ℂ) * (Real.pi / 2 * Complex.I) = Real.pi * Complex.I by ring,
+    Complex.exp_pi_mul_I] at h'
+  norm_num at h'
 
 /-- The Maslov index is additive under concatenation of loops. -/
 @[simp]
