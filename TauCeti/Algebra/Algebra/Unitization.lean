@@ -111,11 +111,13 @@ theorem conjStar_zero (u : Unitization R A) : u.conjStar 0 = 0 :=
   inr_injective (R := R) (by simp)
 
 /-- Conjugation is additive. -/
+@[simp]
 theorem conjStar_add (u : Unitization R A) (x y : A) :
     u.conjStar (x + y) = u.conjStar x + u.conjStar y :=
   inr_injective (R := R) (by simp [mul_add, add_mul])
 
 /-- Conjugation commutes with scalar multiplication. -/
+@[simp]
 theorem conjStar_smul (u : Unitization R A) (r : R) (x : A) :
     u.conjStar (r • x) = r • u.conjStar x :=
   inr_injective (R := R) (by simp [inr_smul])
@@ -148,7 +150,7 @@ theorem conjStar_nonneg [PartialOrder A] [StarOrderedRing A] (u : Unitization R 
     convert star_mul_self_nonneg w using 1
     exact inr_injective (R := R) (by simp [hw, mul_assoc])
   | zero => simp
-  | add x y _ _ hx hy => simpa [conjStar_add] using add_nonneg hx hy
+  | add x y _ _ hx hy => simpa using add_nonneg hx hy
 
 end ConjStar
 
