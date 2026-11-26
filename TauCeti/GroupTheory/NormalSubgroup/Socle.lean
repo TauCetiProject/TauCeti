@@ -115,27 +115,8 @@ internal direct product. -/
 theorem exists_iSupIndep_iSup_eq_socle [Finite G] :
     ∃ (k : ℕ) (N : Fin k → Subgroup G), (∀ i, (N i).IsMinimalNormal) ∧ iSupIndep N ∧
       ⨆ i, N i = socle G := by
-  classical
-  have : Fintype (NormalSubgroup G) := Fintype.ofFinite _
-  -- An independent subfamily `t` of the atoms of `NormalSubgroup G` with the same join.
-  obtain ⟨t, hts, hind, hsup⟩ := exists_subset_supIndep_sup_eq_of_isAtom
-    (N := (id : NormalSubgroup G → NormalSubgroup G))
-    (Finset.univ.filter IsAtom) fun a ha ↦ (Finset.mem_filter.1 ha).2
-  let e := t.equivFin
-  let N : Fin t.card → Subgroup G := fun i ↦ ((e.symm i : NormalSubgroup G) : Subgroup G)
-  have hN : ∀ i, (N i).IsMinimalNormal := fun i ↦
-    NormalSubgroup.isAtom_iff_isMinimalNormal.1 (Finset.mem_filter.1 (hts (e.symm i).property)).2
-  refine ⟨t.card, N, hN, (CompleteSublattice.iSupIndep_coe_iff.2
-    (iSupIndep_comp_coe_iff_supIndep.2 hind)).comp e.symm.injective,
-    le_antisymm (iSup_le fun i ↦ le_socle (hN i)) (socle_le_iff.2 fun M hM ↦ ?_)⟩
-  -- A minimal normal subgroup `M` is an atom, so it lies below the join of `t`.
-  have hM' : (⟨M, mem_normalSubgroups.2 hM.normal⟩ : NormalSubgroup G) ≤ t.sup id :=
-    hsup ▸ Finset.le_sup (f := id)
-      (Finset.mem_filter.2 ⟨Finset.mem_univ _, NormalSubgroup.isAtom_iff_isMinimalNormal.2 hM⟩)
-  have hle : M ≤ ((t.sup id : NormalSubgroup G) : Subgroup G) := Subtype.coe_le_coe.2 hM'
-  rw [NormalSubgroup.coe_finset_sup] at hle
-  refine hle.trans (Finset.sup_le fun x hx ↦ ?_)
-  simpa [N] using le_iSup N (e ⟨x, hx⟩)
+  rw [socle_def]
+  exact exists_iSupIndep_iSup_eq_sSup_of_isMinimalNormal (Set.toFinite _) fun _ ↦ Set.mem_ofPred.1
 
 /-- The socle is commutative exactly when every minimal normal subgroup is commutative. -/
 theorem isMulCommutative_socle_iff :
@@ -153,7 +134,7 @@ theorem isMulCommutative_socle_iff :
     · exact hN.commute_of_ne hM hne hx hy
 
 /-- **The socle of a solvable group is commutative.** -/
-theorem isMulCommutative_socle [Group.IsSolvable G] : IsMulCommutative (socle G) :=
+instance isMulCommutative_socle [Group.IsSolvable G] : IsMulCommutative (socle G) :=
   isMulCommutative_socle_iff.2 fun _ hN ↦ hN.isMulCommutative
 
 /-- **The socle of a finite solvable group has squarefree exponent.** -/
@@ -164,7 +145,6 @@ theorem squarefree_exponent_socle [Finite G] [Group.IsSolvable G] :
   suffices h : ∀ x ∈ socle G, x ^ ∏ p ∈ (Nat.card G).primeFactors, p = 1 from
     (Nat.squarefree_prod_primeFactors (Nat.card G)).squarefree_of_dvd
       (Monoid.exponent_dvd_of_forall_pow_eq_one fun g ↦ Subtype.ext (by simpa using h g g.property))
-  have := isMulCommutative_socle (G := G)
   intro x hx
   rw [socle_eq_closure] at hx
   induction hx using closure_induction with
