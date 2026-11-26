@@ -110,6 +110,13 @@ private theorem injective_mkQ_domRestrict_ker
   rw [LinearMap.injective_domRestrict_iff, Submodule.ker_mkQ]
   exact (disjoint_ker_of_isInvertible_coprod_domRestrict hinv).symm
 
+private theorem surjective_mkQ_domRestrict_range
+    (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
+    Surjective (T.range.mkQ.domRestrict W) := by
+  rw [LinearMap.surjective_domRestrict_iff T.range.mkQ_surjective, Submodule.ker_mkQ]
+  exact (isTopCompl_map_of_isInvertible_coprod_domRestrict hinv).isCompl.symm.codisjoint.mono_right
+    LinearMap.map_le_range
+
 /-- If `(T.domRestrict V).coprod W.subtypeL` is invertible and `V` has finite codimension, then
 `finrank 𝕜 T.ker ≤ finrank 𝕜 (E ⧸ V)`. -/
 theorem finrank_ker_le_of_isInvertible_coprod_domRestrict [V.CoFG]
@@ -121,12 +128,9 @@ theorem finrank_ker_le_of_isInvertible_coprod_domRestrict [V.CoFG]
 `finrank 𝕜 (F ⧸ T.range) ≤ finrank 𝕜 W`. -/
 theorem finrank_quotient_range_le_of_isInvertible_coprod_domRestrict [FiniteDimensional 𝕜 W]
     (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
-    finrank 𝕜 (F ⧸ T.range) ≤ finrank 𝕜 W := by
-  have hTop := isTopCompl_map_of_isInvertible_coprod_domRestrict hinv
-  let e := (V.map (T : E →ₗ[𝕜] F)).quotientEquivOfIsCompl W hTop.isCompl
-  refine ((Submodule.factor LinearMap.map_le_range).comp e.symm.toLinearMap)
-    |>.finrank_le_finrank_of_surjective ?_
-  exact (Submodule.factor_surjective LinearMap.map_le_range).comp e.symm.surjective
+    finrank 𝕜 (F ⧸ T.range) ≤ finrank 𝕜 W :=
+  (T.range.mkQ.domRestrict W).finrank_le_finrank_of_surjective
+    (surjective_mkQ_domRestrict_range hinv)
 
 /-- If `V` has finite codimension, `W` is finite-dimensional, and
 `(T.domRestrict V).coprod W.subtypeL` is invertible, then the index of `T` equals
@@ -138,10 +142,14 @@ theorem index_eq_of_isInvertible_coprod_domRestrict [V.CoFG] [FiniteDimensional 
     (isTopCompl_map_of_isInvertible_coprod_domRestrict hinv).isCompl
   have : FiniteDimensional 𝕜 T.ker := .of_injective _ (injective_mkQ_domRestrict_ker hinv)
   have : FiniteDimensional 𝕜 (F ⧸ T.range) :=
-    .of_surjective ((Submodule.factor LinearMap.map_le_range).comp e.symm.toLinearMap)
-      ((Submodule.factor_surjective LinearMap.map_le_range).comp e.symm.surjective)
-  have : FiniteDimensional 𝕜 V.subtype.ker := V.ker_subtype.symm ▸ inferInstance
-  have : FiniteDimensional 𝕜 (E ⧸ V.subtype.range) := V.range_subtype.symm ▸ ‹V.CoFG›
+    .of_surjective _ (surjective_mkQ_domRestrict_range hinv)
+  have : FiniteDimensional 𝕜 V.subtype.ker := by
+    rw [Submodule.ker_subtype]
+    infer_instance
+  have : FiniteDimensional 𝕜 (E ⧸ V.subtype.range) := by
+    -- `Submodule.CoFG` and `FiniteDimensional` are both `abbrev`s for `Module.Finite`.
+    rw [Submodule.range_subtype]
+    infer_instance
   -- `T|_V` is injective with cokernel `F ⧸ T(V) ≃ₗ W`, so `index (T|_V) = -dim W`.
   have hinj : Injective ((T : E →ₗ[𝕜] F) ∘ₗ V.subtype) :=
     LinearMap.injective_domRestrict_iff.mpr (disjoint_ker_of_isInvertible_coprod_domRestrict hinv)
