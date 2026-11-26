@@ -20,7 +20,8 @@ Isomorphic cores have the same first Chern class (`firstChernClass_eq_of_iso`): 
 an isomorphism of cores form a fibrewise complex-linear isomorphism of the reconstructed bundles,
 continuous on total spaces. The ranks of isomorphic cores agree over a nonempty base, and over the
 empty base every first Chern class vanishes. The first Chern class of a trivial core vanishes
-(`firstChernClass_trivial`).
+(`firstChernClass_trivial`), and that of the core presenting an actual complex vector bundle is
+the first Chern class of the bundle (`firstChernClass_ofBundle`).
 -/
 
 public section
@@ -45,6 +46,23 @@ def firstChernClass (C : FiniteRankBundleCore ℂ B) :
 theorem firstChernClass_def (C : FiniteRankBundleCore ℂ B) :
     C.firstChernClass = _root_.TauCeti.firstChernClass (Fin C.rank → ℂ) C.core.Fiber :=
   (rfl)
+
+/-- The first Chern class of the core presenting an actual complex vector bundle `E` is the first
+Chern class of `E`: the reconstructed bundle is isomorphic to `E`. -/
+@[simp]
+theorem firstChernClass_ofBundle (n : ℕ) (E : B → Type) [∀ b, AddCommGroup (E b)]
+    [∀ b, Module ℂ (E b)] [∀ b, TopologicalSpace (E b)]
+    [TopologicalSpace (TotalSpace (Fin n → ℂ) E)] [FiberBundle (Fin n → ℂ) E]
+    [VectorBundle ℂ (Fin n → ℂ) E] :
+    (ofBundle ℂ n E).firstChernClass = _root_.TauCeti.firstChernClass (Fin n → ℂ) E := by
+  -- `ofBundle ℂ n E` has rank `n` and core `pointIndexedCore ℂ (Fin n → ℂ) E` by definition
+  -- (`rank_ofBundle`, `core_ofBundle`); the rank occurs in the model fibre, so the class is
+  -- restated rather than rewritten.
+  change _root_.TauCeti.firstChernClass (Fin n → ℂ) (pointIndexedCore ℂ (Fin n → ℂ) E).Fiber = _
+  exact _root_.TauCeti.firstChernClass_eq_of_fiberwise
+    (φ := pointIndexedCoreFiberEquiv ℂ (Fin n → ℂ) E)
+    ((pointIndexedCoreHomeomorph ℂ (Fin n → ℂ) E).continuous.congr
+      (pointIndexedCoreHomeomorph_apply ℂ (Fin n → ℂ) E))
 
 /-- Over the empty base every first Chern class vanishes. -/
 theorem firstChernClass_eq_zero_of_isEmpty [IsEmpty B] (C : FiniteRankBundleCore ℂ B) :
