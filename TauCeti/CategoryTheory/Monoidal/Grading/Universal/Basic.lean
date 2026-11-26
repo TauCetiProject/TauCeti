@@ -95,11 +95,6 @@ degrees. -/
   have h' : f.toHomUnits = g.toHomUnits := PresentedGroup.ext fun S ↦ Units.ext (h S)
   ext x; exact congrArg Units.val (DFunLike.congr_fun h' x)
 
-/-- Any subgroup containing all simple degrees `degree S` is the whole universal grading group. -/
-theorem mem_subgroup_of_degree_mem {H : Subgroup (universalGradingGroup C)}
-    (hdeg : ∀ S : SimpleClasses C, degree S ∈ H) (x : universalGradingGroup C) : x ∈ H :=
-  PresentedGroup.generated_by _ H hdeg x
-
 section Monoid
 
 variable {M : Type w} [Monoid M]
