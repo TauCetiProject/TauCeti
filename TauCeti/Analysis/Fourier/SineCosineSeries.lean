@@ -445,20 +445,6 @@ theorem ae_eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero {g : �
     (e := fun (k : ℕ) x => Real.sin ((2 * k + 1) * π * (x - a) / (2 * (b - a))))
     (fun _ hg hgk => ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero hg hgk) hg h
 
-/-- Completeness of the sine system in the first variable of a product, with a parameter `y`:
-if for every `k ≥ 1` the coefficient `y ↦ ∫ G (t, y) sin (k π (t - a) / (b - a)) dt` vanishes for
-almost every `y`, then `G` vanishes almost everywhere. -/
-private theorem ae_eq_zero_prod_of_forall_integral_mul_sin_eq_zero {β : Type*}
-    [MeasurableSpace β] {ν : Measure β} [SFinite ν] {G : ℝ × β → ℝ}
-    (hG : Integrable G ((volume.restrict (Ioo a b)).prod ν))
-    (h : ∀ k : ℕ, 0 < k → (fun y => ∫ t, G (t, y) * Real.sin (k * π * (t - a) / (b - a))
-      ∂volume.restrict (Ioo a b)) =ᵐ[ν] 0) :
-    G =ᵐ[(volume.restrict (Ioo a b)).prod ν] 0 :=
-  ae_eq_zero_prod_of_forall_integral_mul_eq_zero
-    (e := fun (k : {k : ℕ // 0 < k}) t => Real.sin (k * π * (t - a) / (b - a)))
-    (fun _ hg hgk => ae_eq_zero_of_forall_setIntegral_mul_sin_eq_zero hg fun k hk => hgk ⟨k, hk⟩)
-    hG fun k => h k k.property
-
 /-- The sine system on a box, in the coordinates `Fin n → ℝ` and with the product of the
 restricted measures, by induction on the dimension. -/
 private theorem ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero_fin :
@@ -517,7 +503,10 @@ private theorem ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero_fin :
         Fin.cons_succ]
       ring
     have hG0 : G =ᵐ[(μ 0).prod ν] 0 :=
-      ae_eq_zero_prod_of_forall_integral_mul_sin_eq_zero hG hH
+      ae_eq_zero_prod_of_forall_integral_mul_eq_zero
+        (e := fun (k : {k : ℕ // 0 < k}) t => Real.sin (k * π * (t - a 0) / (b 0 - a 0)))
+        (fun _ hg hgk => ae_eq_zero_of_forall_setIntegral_mul_sin_eq_zero hg fun k hk =>
+          hgk ⟨k, hk⟩) hG fun k => hH k k.property
     have hGe : G ∘ e = g := funext fun x => by simp [G]
     rw [← hGe]
     exact hmp.quasiMeasurePreserving.ae_eq_comp hG0

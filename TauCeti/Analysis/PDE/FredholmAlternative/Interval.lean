@@ -153,7 +153,7 @@ private theorem value_eq_smul_of_inner_eq (hab : a < b) {k : ℕ}
     W1p.value (u : W1p volume (intervalDomain a b) 2) =
       t • W1p.value (s : W1p volume (intervalDomain a b) 2) := by
   rw [← sub_eq_zero]
-  refine eq_zero_of_forall_setIntegral_mul_sin_eq_zero hab _ fun j _ ↦ ?_
+  refine eq_zero_of_forall_setIntegral_mul_sin_eq_zero _ fun j _ ↦ ?_
   obtain ⟨sj, hsj, hsjeq⟩ := exists_value_ae_eq_sin hab j
   rw [setIntegral_mul_sin_eq_inner _ hsj, inner_sub_left, real_inner_smul_left]
   by_cases hjk : j = k

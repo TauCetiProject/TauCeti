@@ -135,6 +135,18 @@ private def squareModeDx (m l : ℕ) (x : WithLp 2 (ℝ × ℝ)) : ℝ :=
 private def squareModeDy (m l : ℕ) (x : WithLp 2 (ℝ × ℝ)) : ℝ :=
   Real.sin ((2 * m + 1) * π / 2 * x.fst) * (-(l * π) * Real.sin (l * π * x.snd))
 
+/-- The partial derivative `∂ₓ` of a mode is smooth. -/
+private theorem contDiff_squareModeDx (m l : ℕ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (squareModeDx m l) :=
+  contDiff_mul_fst_snd (A := fun t => (2 * m + 1) * π / 2 * Real.cos ((2 * m + 1) * π / 2 * t))
+    (B := fun t => Real.cos (l * π * t)) (by fun_prop) (by fun_prop)
+
+/-- The partial derivative `∂_y` of a mode is smooth. -/
+private theorem contDiff_squareModeDy (m l : ℕ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (squareModeDy m l) :=
+  contDiff_mul_fst_snd (A := fun t => Real.sin ((2 * m + 1) * π / 2 * t))
+    (B := fun t => -(l * π) * Real.sin (l * π * t)) (by fun_prop) (by fun_prop)
+
 /-- The gradient of a mode is `(∂ₓ, ∂_y)`. -/
 private theorem gradient_squareMode (m l : ℕ) (x : WithLp 2 (ℝ × ℝ)) :
     ∇ (squareMode m l) x = WithLp.toLp 2 (squareModeDx m l x, squareModeDy m l x) :=
@@ -178,14 +190,20 @@ private theorem setIntegral_inner_gradient_squareMode (m l : ℕ) {ψ : WithLp 2
     ∫ x in openUnitSquareOpens, ⟪∇ (squareMode m l) x, ∇ ψ x⟫_ℝ =
       (((2 * m + 1) * π / 2) ^ 2 + (l * π) ^ 2) *
         ∫ x in openUnitSquareOpens, squareMode m l x * ψ x := by
-  have hc₁ : ContDiff ℝ 1 (squareModeDx m l) :=
-    contDiff_mul_fst_snd (A := fun t => (2 * m + 1) * π / 2 * Real.cos ((2 * m + 1) * π / 2 * t))
-      (B := fun t => Real.cos (l * π * t)) (by fun_prop) (by fun_prop)
-  have hc₂ : ContDiff ℝ 1 (squareModeDy m l) :=
-    contDiff_mul_fst_snd (A := fun t => Real.sin ((2 * m + 1) * π / 2 * t))
-      (B := fun t => -(l * π) * Real.sin (l * π * t)) (by fun_prop) (by fun_prop)
-  have key := setIntegral_divergence_withLp_prod_Ioo (hψ.mul hc₁) (hψ.mul hc₂)
+  have hc₁ := contDiff_squareModeDx (n := 1) m l
+  have hc₂ := contDiff_squareModeDy (n := 1) m l
+  have hcont : Continuous fun x => fderiv ℝ (fun y => ψ y * squareModeDx m l y) x
+      (WithLp.toLp 2 (1, 0)) + fderiv ℝ (fun y => ψ y * squareModeDy m l y) x
+        (WithLp.toLp 2 (0, 1)) :=
+    (((hψ.mul hc₁).continuous_fderiv one_ne_zero).clm_apply continuous_const).add
+      (((hψ.mul hc₂).continuous_fderiv one_ne_zero).clm_apply continuous_const)
+  have hi := integrableOn_unitSquare hcont
+  rw [coe_openUnitSquareOpens_eq_setOf] at hi
+  have key := setIntegral_divergence_withLp_prod_Ioo
     (show ((0 : ℝ), (0 : ℝ)) ≤ (1, 1) by simp [Prod.le_def])
+    (hψ.mul hc₁).continuous.continuousOn (hψ.mul hc₂).continuous.continuousOn
+    (fun x _ => ((hψ.mul hc₁).differentiable one_ne_zero x).hasFDerivAt)
+    (fun x _ => ((hψ.mul hc₂).differentiable one_ne_zero x).hasFDerivAt) hi
   rw [← coe_openUnitSquareOpens_eq_setOf] at key
   -- All four boundary terms vanish: `∂_y g = 0` for `y ∈ {0, 1}`, `∂ₓg = 0` for `x = 1`, since
   -- `cos ((2m + 1) π / 2) = 0`, and `ψ = 0` for `x = 0`.
@@ -208,11 +226,6 @@ private theorem setIntegral_inner_gradient_squareMode (m l : ℕ) {ψ : WithLp 2
     rw [uIcc_of_le zero_le_one] at hs
     simp [hψ0 s hs]
   rw [hb₁, hb₂, hb₃, hb₄, sub_zero, add_zero, sub_zero] at key
-  have hcont : Continuous fun x => fderiv ℝ (fun y => ψ y * squareModeDx m l y) x
-      (WithLp.toLp 2 (1, 0)) + fderiv ℝ (fun y => ψ y * squareModeDy m l y) x
-        (WithLp.toLp 2 (0, 1)) :=
-    (((hψ.mul hc₁).continuous_fderiv one_ne_zero).clm_apply continuous_const).add
-      (((hψ.mul hc₂).continuous_fderiv one_ne_zero).clm_apply continuous_const)
   have hgψ : Continuous fun x => squareMode m l x * ψ x :=
     (contDiff_squareMode m l (n := 0)).continuous.mul hψ.continuous
   have hdiv := fderiv_mul_squareModeDx_add_fderiv_mul_squareModeDy m l

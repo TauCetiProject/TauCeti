@@ -348,11 +348,10 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (
     exact one_ne_zero
 
 /-- An element of `L²(a, b)` whose integrals against every `F i (x 0)` vanish is zero, when the
-functions `F i` form a complete system among the integrable functions on `(a, b]`. -/
-private theorem eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete {ι : Type*} (hab : a < b)
-    (F : ι → ℝ → ℝ)
-    (hF : ∀ g : ℝ → ℝ, IntegrableOn g (Ioc a b) → (∀ i, ∫ t in a..b, g t * F i t = 0) →
-      g =ᵐ[volume.restrict (Ioc a b)] 0)
+functions `F i` form a complete system among the integrable functions on `(a, b)`. -/
+private theorem eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete {ι : Type*} (F : ι → ℝ → ℝ)
+    (hF : ∀ g : ℝ → ℝ, IntegrableOn g (Ioo a b) → (∀ i, ∫ t in Ioo a b, g t * F i t = 0) →
+      g =ᵐ[volume.restrict (Ioo a b)] 0)
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (h : ∀ i, ∫ x in intervalDomain a b, f x * F i (x 0) = 0) :
     f = 0 := by
@@ -368,14 +367,11 @@ private theorem eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete {ι : Type
       (measurableSet_Ioo (a := a) (b := b))
     rwa [← coe_intervalDomain_eq_preimage] at this
   -- Read `f` on the real line, where the system is complete.
-  have hg : MemLp (fun t => f (lineEquiv t)) 2 (volume.restrict (Ioc a b)) := by
-    rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
-    exact (Lp.memLp f).comp_measurePreserving hmpΩ
+  have hg : MemLp (fun t => f (lineEquiv t)) 2 (volume.restrict (Ioo a b)) :=
+    (Lp.memLp f).comp_measurePreserving hmpΩ
   have hg0 := hF _ (hg.integrable one_le_two) fun i => by
-    rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo, ← h i,
-      ← setIntegral_intervalDomain]
+    rw [← h i, ← setIntegral_intervalDomain]
     simp only [← lineEquiv_symm_apply, LinearIsometryEquiv.apply_symm_apply]
-  rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc] at hg0
   refine Lp.ext ?_
   filter_upwards [hmpΩ'.quasiMeasurePreserving.ae_eq_comp hg0, Lp.coeFn_zero ℝ 2
     (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))] with x h1 h2
@@ -384,15 +380,15 @@ private theorem eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete {ι : Type
 
 /-- The sine modes are complete in `L²(a, b)`: an element of `L²(a, b)` orthogonal to every
 `x ↦ sin (k π (x - a) / (b - a))`, `k ≥ 1`, is zero. -/
-theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
+theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (h : ∀ k : ℕ, 0 < k → ∫ x in intervalDomain a b,
       f x * Real.sin (k * π * (x 0 - a) / (b - a)) = 0) :
     f = 0 :=
-  eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete hab
+  eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete
     (fun (k : {k : ℕ // 0 < k}) t => Real.sin (k * π * (t - a) / (b - a)))
-    (fun _ hg hgF => ae_eq_zero_of_forall_integral_mul_sin_eq_zero hg fun k hk => hgF ⟨k, hk⟩) f
-    fun k => h k k.property
+    (fun _ hg hgF => ae_eq_zero_of_forall_setIntegral_mul_sin_eq_zero hg fun k hk => hgF ⟨k, hk⟩)
+    f fun k => h k k.property
 
 /-- **The Dirichlet spectrum of `-Δ` on an interval.** The Dirichlet eigenvalues of `-Δ` on
 `(a, b)` are exactly the numbers `(k π / (b - a))²` with `k ≥ 1`: the homogeneous Dirichlet
@@ -411,7 +407,7 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain_iff (hab : a < b) {kappa 
   refine hu0 (Subtype.ext (W1p.ext_value ?_))
   rw [ZeroMemClass.coe_zero, W1p.value_zero]
   -- `u` is orthogonal to every sine mode, since `κ` differs from each of their eigenvalues.
-  refine eq_zero_of_forall_setIntegral_mul_sin_eq_zero hab _ fun k hk => ?_
+  refine eq_zero_of_forall_setIntegral_mul_sin_eq_zero _ fun k hk => ?_
   obtain ⟨s, hs, hseq⟩ := exists_value_ae_eq_sin_and_energyFormH1_eq hab k
   have hint := inner_value_eq_zero_of_energyFormH1_eq_of_ne
     (ae_of_all _ fun _ => Matrix.isSymm_one) (hne k hk) hu hseq
@@ -488,25 +484,25 @@ attribute [local instance] W1pVanishingOn.instNormedAddCommGroup
 
 /-- The cosine modes are complete in `L²(a, b)`: an element of `L²(a, b)` orthogonal to every
 `x ↦ cos (k π (x - a) / (b - a))`, `k ≥ 0`, is zero. -/
-theorem eq_zero_of_forall_setIntegral_mul_cos_eq_zero (hab : a < b)
+theorem eq_zero_of_forall_setIntegral_mul_cos_eq_zero
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (h : ∀ k : ℕ, ∫ x in intervalDomain a b,
       f x * Real.cos (k * π * (x 0 - a) / (b - a)) = 0) :
     f = 0 :=
-  eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete hab
+  eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete
     (fun (k : ℕ) t => Real.cos (k * π * (t - a) / (b - a)))
-    (fun _ hg hgF => ae_eq_zero_of_forall_integral_mul_cos_eq_zero hg hgF) f h
+    (fun _ hg hgF => ae_eq_zero_of_forall_setIntegral_mul_cos_eq_zero hg hgF) f h
 
 /-- The quarter-wave sine modes are complete in `L²(a, b)`: an element of `L²(a, b)` orthogonal
 to every `x ↦ sin ((2k + 1) π (x - a) / (2 (b - a)))`, `k ≥ 0`, is zero. -/
-theorem eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero (hab : a < b)
+theorem eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (h : ∀ k : ℕ, ∫ x in intervalDomain a b,
       f x * Real.sin ((2 * k + 1) * π * (x 0 - a) / (2 * (b - a))) = 0) :
     f = 0 :=
-  eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete hab
+  eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete
     (fun (k : ℕ) t => Real.sin ((2 * k + 1) * π * (t - a) / (2 * (b - a))))
-    (fun _ hg hgF => ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero hg hgF) f h
+    (fun _ hg hgF => ae_eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero hg hgF) f h
 
 /-- The gradient of `x ↦ g (x 0)` on the Euclidean line is `g' (x 0)` along the unit vector. -/
 private theorem gradient_comp_apply_zero (g : ℝ → ℝ) (x : EuclideanSpace ℝ (Fin 1)) :
@@ -730,7 +726,7 @@ theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty (hab : 
   refine exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
     (fun (k : ℕ) (x : EuclideanSpace ℝ (Fin 1)) => Real.cos (k * π * (x 0 - a) / (b - a))) w hwv
     (fun k => ?_) hw
-    (eq_zero_of_forall_setIntegral_mul_cos_eq_zero hab)
+    eq_zero_of_forall_setIntegral_mul_cos_eq_zero
   exact value_ne_zero_of_value_ae_eq hab (F := fun t => Real.cos (k * π * (t - a) / (b - a)))
     (by fun_prop) (left_mem_Icc.2 hab.le) (by simp) (hwv k)
 
@@ -752,7 +748,7 @@ theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_left (hab : a
   refine exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
     (fun (k : ℕ) (x : EuclideanSpace ℝ (Fin 1)) =>
       Real.sin ((2 * k + 1) * π * (x 0 - a) / (2 * (b - a)))) w hwv (fun k => ?_) hw
-    (eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero hab)
+    eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero
   -- At `b` the mode is `sin (k π + π / 2) = ± 1`.
   refine value_ne_zero_of_value_ae_eq hab
     (F := fun t => Real.sin ((2 * k + 1) * π * (t - a) / (2 * (b - a)))) (by fun_prop)
