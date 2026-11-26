@@ -83,6 +83,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
 * `Matrix.SpecialLinearGroup.coe_ne_zero`: a square matrix of determinant one over a nontrivial
   ring, indexed by a nonempty type, is nonzero.
+* `Matrix.SpecialLinearGroup.coe_mul_coe_inv` and `Matrix.SpecialLinearGroup.coe_inv_mul_coe`:
+  an element of `SL(n, R)` and its inverse multiply to `1` as matrices.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
   nonassociative ring.
@@ -153,6 +155,18 @@ nonzero. -/
 theorem coe_ne_zero {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [Fintype n]
     [DecidableEq n] [Nonempty n] (A : SpecialLinearGroup n R) : (A : Matrix n n R) ≠ 0 := fun h ↦
   A.det_ne_zero (by rw [h, det_zero])
+
+/-- An element of `SL(n, R)` times its inverse, as matrices, is `1`. -/
+theorem coe_mul_coe_inv {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n]
+    (A : SpecialLinearGroup n R) : (A : Matrix n n R) * ((A⁻¹ : SpecialLinearGroup n R) :
+      Matrix n n R) = 1 := by
+  rw [← coe_mul, mul_inv_cancel, coe_one]
+
+/-- The inverse of an element of `SL(n, R)` times the element, as matrices, is `1`. -/
+theorem coe_inv_mul_coe {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n]
+    (A : SpecialLinearGroup n R) : ((A⁻¹ : SpecialLinearGroup n R) : Matrix n n R) *
+      (A : Matrix n n R) = 1 := by
+  rw [← coe_mul, inv_mul_cancel, coe_one]
 
 /-- Entrywise coefficient mapping commutes with scalar extension of an integer matrix. -/
 @[simp]

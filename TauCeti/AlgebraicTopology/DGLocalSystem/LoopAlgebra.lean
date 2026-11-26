@@ -62,6 +62,8 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
   of the `0`-chain, weighted by their coefficients.
 * `TauCeti.loopChainToGroupAlgebra_apply`, `TauCeti.loopChainToGroupAlgebra_surjective`: it only
   sees the component of dimension zero, and it is surjective.
+* `TauCeti.exists_cubicalChainDifferential_eq_mul_sub_one_of_isUnit`: a chain of degree zero
+  whose image in the group ring is a unit is invertible up to homotopy.
 * `TauCeti.augmentation_loopChainToGroupAlgebra`: it is compatible with the augmentations.
 * `TauCeti.loopChainToGroupAlgebra_koszulTwist`: it is invariant under the Koszul sign twists.
 * `TauCeti.groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom`: the basis element of the
@@ -430,6 +432,46 @@ def loopChainToGroupAlgebraDGAlgHom :
 theorem loopChainToGroupAlgebraDGAlgHom_apply (a : loopChainAlgebra B b R) :
     loopChainToGroupAlgebraDGAlgHom B b R a = loopChainToGroupAlgebra B b R a :=
   (rfl)
+
+/-- **A chain of degree zero whose image in the group ring is a unit is invertible up to
+homotopy.** If `a ∈ C_0(Ω_b B; R)` goes to a unit of `R[π₁(B, b)]`, there is a cycle `μ` of degree
+zero such that `a μ - 1` and `μ a - 1` are boundaries of elements of cohomological degree `-1`, the
+chains of dimension one. The point chain of a single loop is an example; it is not invertible in
+`C_*(Ω_b B; R)` itself when the loop has positive length, since lengths add under the Pontryagin
+product and the unit is the constant loop of length zero. -/
+theorem exists_cubicalChainDifferential_eq_mul_sub_one_of_isUnit {a : loopChainAlgebra B b R}
+    (ha : a ∈ cubicalChainGrading (MooreLoopSpace B b) R 0)
+    (hu : IsUnit (loopChainToGroupAlgebra B b R a)) :
+    ∃ μ ∈ cubicalChainGrading (MooreLoopSpace B b) R 0,
+      cubicalChainDifferential (MooreLoopSpace B b) R μ = 0 ∧
+      (∃ k ∈ cubicalChainGrading (MooreLoopSpace B b) R (-1),
+        cubicalChainDifferential (MooreLoopSpace B b) R k = a * μ - 1) ∧
+      ∃ k ∈ cubicalChainGrading (MooreLoopSpace B b) R (-1),
+        cubicalChainDifferential (MooreLoopSpace B b) R k = μ * a - 1 := by
+  obtain ⟨y, rfl⟩ := exists_cubicalChainLof_eq ha 0 (by simp)
+  rw [loopChainToGroupAlgebra_lof_zero] at hu
+  obtain ⟨z, hz⟩ := loopZeroChainToGroupAlgebra_surjective (X := B) (x := b) (R := R)
+    ↑hu.unit⁻¹
+  -- A chain of dimension zero whose image in the group ring is `1` differs from `1` by a
+  -- boundary.
+  have hbd : ∀ w : NormalizedCubicalChain (MooreLoopSpace B b) R 0,
+      loopZeroChainToGroupAlgebra B b R w = 1 →
+      ∃ k ∈ cubicalChainGrading (MooreLoopSpace B b) R (-1),
+        cubicalChainDifferential (MooreLoopSpace B b) R k =
+          cubicalChainLof (MooreLoopSpace B b) R 0 w - 1 := fun w hw ↦ by
+    obtain ⟨c, hc⟩ := (loopZeroChainToGroupAlgebra_eq_zero_iff
+      (w - NormalizedCubicalChain.one (MooreLoopSpace B b) R)).1
+        (by rw [map_sub, hw, loopZeroChainToGroupAlgebra_one, sub_self])
+    refine ⟨cubicalChainLof (MooreLoopSpace B b) R 1 c,
+      by simpa using cubicalChainLof_mem (MooreLoopSpace B b) R c, ?_⟩
+    rw [cubicalChainDifferential_lof_succ, hc, map_sub, cubicalChainLof_one]
+  refine ⟨cubicalChainLof (MooreLoopSpace B b) R 0 z,
+    by simpa using cubicalChainLof_mem (MooreLoopSpace B b) R z,
+    cubicalChainDifferential_lof_zero (MooreLoopSpace B b) R z, ?_, ?_⟩
+  · rw [cubicalChainLof_mul]
+    exact hbd _ (by rw [loopZeroChainToGroupAlgebra_mul, hz, IsUnit.mul_val_inv])
+  · rw [cubicalChainLof_mul]
+    exact hbd _ (by rw [loopZeroChainToGroupAlgebra_mul, hz, IsUnit.val_inv_mul])
 
 end DegreeZero
 

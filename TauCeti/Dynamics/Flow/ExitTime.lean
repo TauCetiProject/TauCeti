@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.ENNReal.Lemmas
+public import Mathlib.Topology.Semicontinuity.Defs
 public import TauCeti.Dynamics.Flow.Basic
+import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Dynamics.Flow.OmegaLimit
 import TauCeti.Topology.Instances.ENNReal
 
@@ -30,9 +32,22 @@ These are the data of the index-pair arguments of Conley index theory. For `t �
 cover `P` as `P = N_t ∪ E_t` with `S⁺ = ⋂ₜ N_t`. The sets `N_t` and `S⁺` are closed
 (`Flow.isClosed_setOf_le_exitTime`, `Flow.isClosed_setOf_exitTime_eq_top`), and so is `E_t` when
 the exit time is continuous on `P` as a map to `[0, ∞]` (`Flow.isClosed_setOf_exitTime_le`).
-Continuity of the exit time is a genuine hypothesis, to be established for the particular flow
-and set: it fails, for instance, when a trajectory touches the boundary of `P` from inside and
-only leaves `P` later, since nearby trajectories may leave at the touching time.
+
+The exit time vanishes exactly when the trajectory leaves `P` at times arbitrarily close to `0`
+(`Flow.exitTime_eq_zero_iff_frequently`). For closed `P` it is always upper semicontinuous
+(`Flow.upperSemicontinuous_exitTime`): a trajectory found outside `P` at some time keeps nearby
+trajectories outside `P` at that time. So exit times tend to `0` near a point leaving `P`
+immediately (`Flow.tendsto_exitTime_nhds_zero`). Lower semicontinuity is a genuine condition:
+it fails, for instance, when a trajectory touches the boundary of `P` from inside and only leaves
+`P` later, since nearby trajectories may leave at the touching time. It holds at a point `x` of
+`P` (`Flow.lowerSemicontinuousWithinAt_exitTime`) when the trajectory of `x` lies in the interior
+of `P` at every positive time before its exit and the points of `P` near `x` all stay in `P`
+during a common initial time interval. When this holds at every point of a closed set `P` of
+positive exit time, the exit time is continuous on `P` (`Flow.continuousOn_exitTime`), which is
+the hypothesis of the deformation below. The file `TauCeti/Dynamics/Flow/ExitTime/Deriv.lean`
+verifies the common-initial-interval condition, and immediate exit, by the signs of derivatives
+along the flow of functions describing `P`; the interior-trajectory condition must be proved
+separately.
 
 The **flow stopped at the exit** (`Flow.stopAtExit ϕ P t`) sends `x` to its position at time
 `min t (exitTime x)`. It maps `P` into `P`, it fixes the points of exit time zero, and it maps
@@ -67,6 +82,11 @@ the identity (`Flow.homotopic_id_restrict` in `TauCeti/Dynamics/Flow/Basic.lean`
 * `Flow.exitTime_flow_eq_sub`: the exit time decreases at unit speed along the trajectory.
 * `Flow.isClosed_setOf_le_exitTime`, `Flow.isClosed_setOf_exitTime_le`: the sets `N_t` and `E_t`
   are closed.
+* `Flow.exitTime_eq_zero_iff_frequently`: the exit time vanishes exactly at immediate exits.
+* `Flow.upperSemicontinuous_exitTime`: the exit time from a closed set is upper semicontinuous.
+* `Flow.lowerSemicontinuousWithinAt_exitTime`, `Flow.continuousOn_exitTime`: lower
+  semicontinuity at a point with an interior trajectory and a common initial interval in `P` for
+  its neighbours, and continuity on `P` when this holds at every point of positive exit time.
 * `Flow.homotopicRel_stopAtExitMap`: the stopped flow is homotopic to the identity relative to
   the points of exit time zero.
 * `Flow.mapsTo_stopAtExit_setOf_exitTime_le`: the stopped flow at time `t` sends the points
@@ -86,7 +106,7 @@ the identity (`Flow.homotopic_id_restrict` in `TauCeti/Dynamics/Flow/Basic.lean`
 public section
 
 open Filter Set
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Topology
 
 namespace Flow
 
@@ -214,6 +234,119 @@ theorem isForwardInvariant_setOf_exitTime_eq_top :
   exact hx _ (add_nonneg hs ht)
 
 end ExitTime
+
+/-! ### Semicontinuity of the exit time -/
+
+section Semicontinuity
+
+variable {ϕ : Flow ℝ α} {P : Set α} {x : α}
+
+/-- A time `t` during which the trajectory stays in `P` is at most the exit time; for `t < 0`
+there is no condition. -/
+theorem ofReal_le_exitTime {t : ℝ} (h : ∀ s ∈ Icc (0 : ℝ) t, ϕ s x ∈ P) :
+    ENNReal.ofReal t ≤ ϕ.exitTime P x := by
+  rcases lt_or_ge t 0 with ht | ht
+  · simp [ENNReal.ofReal_of_nonpos ht.le]
+  · exact le_exitTime fun s hs ↦ h s ⟨hs.1, hs.2.trans_eq (Real.coe_toNNReal t ht)⟩
+
+/-- A trajectory lying outside `P` at a time `s ≥ 0` leaves `P` by time `s`. -/
+theorem exitTime_le_of_apply_notMem {s : ℝ} (hs : 0 ≤ s) (h : ϕ s x ∉ P) :
+    ϕ.exitTime P x ≤ ENNReal.ofReal s :=
+  not_lt.1 fun hlt ↦ h (apply_mem_of_lt_exitTime hs hlt)
+
+/-- **Immediate exits.** The exit time of `x` from `P` is zero exactly when the trajectory of `x`
+lies outside `P` at times `s ≥ 0` arbitrarily close to `0`. -/
+theorem exitTime_eq_zero_iff_frequently :
+    ϕ.exitTime P x = 0 ↔ ∃ᶠ s in 𝓝[≥] (0 : ℝ), ϕ s x ∉ P := by
+  refine ⟨fun h hP ↦ ?_, fun h ↦ ?_⟩
+  · -- staying in `P` during `[0, b)` for some `b > 0` gives the exit time at least `b / 2`
+    obtain ⟨b, hb, hbP⟩ := mem_nhdsGE_iff_exists_Ico_subset.1 hP
+    have := ofReal_le_exitTime (ϕ := ϕ) (P := P) (x := x) (t := b / 2) fun s hs ↦
+      not_not.1 (hbP ⟨hs.1, hs.2.trans_lt (half_lt_self hb)⟩)
+    rw [h, nonpos_iff_eq_zero, ENNReal.ofReal_eq_zero] at this
+    linarith [mem_Ioi.1 hb]
+  · by_contra h0
+    -- a positive exit time keeps the trajectory in `P` during an initial interval
+    obtain ⟨b, -, hb0, hbx⟩ := ENNReal.lt_iff_exists_real_btwn.1 (pos_iff_ne_zero.2 h0)
+    refine h ?_
+    filter_upwards [Ico_mem_nhdsGE (ENNReal.ofReal_pos.1 hb0)] with s hs
+    exact not_not.2 <| apply_mem_of_lt_exitTime hs.1
+      (((ENNReal.ofReal_lt_ofReal_iff (ENNReal.ofReal_pos.1 hb0)).2 hs.2).trans hbx)
+
+/-- A trajectory lying outside `P` at all small times `s > 0` leaves `P` at once. -/
+theorem exitTime_eq_zero_of_eventually_notMem (h : ∀ᶠ s in 𝓝[>] (0 : ℝ), ϕ s x ∉ P) :
+    ϕ.exitTime P x = 0 :=
+  exitTime_eq_zero_iff_frequently.2
+    (h.frequently.filter_mono (nhdsWithin_mono _ Ioi_subset_Ici_self))
+
+/-- **Upper semicontinuity of the exit time.** The exit time from a closed set `P` is upper
+semicontinuous: the trajectories of points near `x` leave `P` at most slightly later than that of
+`x`. -/
+theorem upperSemicontinuous_exitTime (hP : IsClosed P) : UpperSemicontinuous (ϕ.exitTime P) := by
+  intro x r hr
+  obtain ⟨s, -, hxs, hsr⟩ := ENNReal.lt_iff_exists_real_btwn.1 hr
+  -- the trajectory of `x` lies outside `P` at some time `u ∈ [0, s]`
+  obtain ⟨u, hu, hux⟩ : ∃ u ∈ Icc (0 : ℝ) s, ϕ u x ∉ P := by
+    by_contra! h
+    exact (ofReal_le_exitTime h).not_gt hxs
+  -- and so do the trajectories of the points near `x`
+  filter_upwards [(ϕ.continuous_toFun u).continuousAt.preimage_mem_nhds
+    (hP.isOpen_compl.mem_nhds hux)] with y hy
+  exact (exitTime_le_of_apply_notMem hu.1 hy).trans_lt
+    ((ENNReal.ofReal_le_ofReal hu.2).trans_lt hsr)
+
+/-- Near a point of a closed set `P` leaving `P` immediately, the exit times tend to `0`. -/
+theorem tendsto_exitTime_nhds_zero (hP : IsClosed P) (hx : ϕ.exitTime P x = 0) :
+    Tendsto (ϕ.exitTime P) (𝓝 x) (𝓝 0) :=
+  ENNReal.tendsto_nhds_zero.2 fun ε hε ↦
+    (upperSemicontinuousAt_iff.1 (upperSemicontinuous_exitTime hP x) ε (by rwa [hx])).mono
+      fun _ h ↦ h.le
+
+/-- **Lower semicontinuity of the exit time.** Let `x` be a point whose trajectory lies in the
+interior of `P` at every time `s > 0` before its exit time, and suppose that the points of `P`
+near `x` all stay in `P` during a common time interval `[0, δ]`, `δ > 0`. Then the exit time is
+lower semicontinuous at `x` within `P`: the trajectories of the points of `P` near `x` stay in `P`
+at least almost as long as that of `x`. -/
+theorem lowerSemicontinuousWithinAt_exitTime
+    (hin : ∃ δ > 0, ∀ᶠ y in 𝓝[P] x, ∀ s ∈ Icc (0 : ℝ) δ, ϕ s y ∈ P)
+    (hint : ∀ s : ℝ, 0 < s → ENNReal.ofReal s < ϕ.exitTime P x → ϕ s x ∈ interior P) :
+    LowerSemicontinuousWithinAt (ϕ.exitTime P) P x := by
+  intro r hr
+  obtain ⟨δ, hδ, hδP⟩ := hin
+  obtain ⟨b, -, hrb, hbx⟩ := ENNReal.lt_iff_exists_real_btwn.1 hr
+  have hb : 0 < b := ENNReal.ofReal_pos.1 (bot_le.trans_lt hrb)
+  -- on the compact time interval `[min δ b, b]` the trajectory of `x` lies in the open interior
+  -- of `P`, and so do the trajectories of the points near `x`
+  have hK : ∀ᶠ y in 𝓝 x, ∀ s ∈ Icc (min δ b) b, ϕ s y ∈ interior P :=
+    isCompact_Icc.eventually_forall_of_forall_eventually fun s hs ↦
+      (ϕ.continuous continuous_snd continuous_fst).continuousAt.preimage_mem_nhds
+        (isOpen_interior.mem_nhds (hint s ((lt_min hδ hb).trans_le hs.1)
+          ((ENNReal.ofReal_le_ofReal hs.2).trans_lt hbx)))
+  -- before the time `min δ b` the points of `P` near `x` stay in `P` by hypothesis
+  filter_upwards [hδP, nhdsWithin_le_nhds hK] with y hyδ hyK
+  refine hrb.trans_le (ofReal_le_exitTime fun s hs ↦ ?_)
+  rcases le_total s (min δ b) with hsδ | hsδ
+  · exact hyδ s ⟨hs.1, hsδ.trans (min_le_left _ _)⟩
+  · exact interior_subset (hyK s ⟨hsδ, hs.2⟩)
+
+/-- **Continuity of the exit time.** Let `P` be closed. Suppose that the trajectory of every point
+of `P` lies in the interior of `P` at every time `s > 0` before its exit time, and that every point
+`x` of `P` of positive exit time has a common time interval `[0, δ]`, `δ > 0`, during which the
+points of `P` near `x` stay in `P`. Then the exit time is continuous on `P` as a map to
+`[0, ∞]`. -/
+theorem continuousOn_exitTime (hP : IsClosed P)
+    (hin : ∀ x ∈ P, ϕ.exitTime P x ≠ 0 →
+      ∃ δ > 0, ∀ᶠ y in 𝓝[P] x, ∀ s ∈ Icc (0 : ℝ) δ, ϕ s y ∈ P)
+    (hint : ∀ x ∈ P, ∀ s : ℝ, 0 < s → ENNReal.ofReal s < ϕ.exitTime P x → ϕ s x ∈ interior P) :
+    ContinuousOn (ϕ.exitTime P) P := by
+  refine continuousOn_iff_lower_upperSemicontinuousOn.2
+    ⟨fun x hx ↦ ?_, (upperSemicontinuous_exitTime hP).semicontinuousOn P⟩
+  rcases eq_or_ne (ϕ.exitTime P x) 0 with h | h
+  · intro r hr
+    exact absurd (h ▸ hr) (ENNReal.not_lt_zero)
+  · exact lowerSemicontinuousWithinAt_exitTime (hin x hx h) (hint x hx)
+
+end Semicontinuity
 
 section StopAtExit
 

@@ -36,8 +36,9 @@ plus the normalized integral of the linearized scalar curvature over `‖x‖ > 
 the existence of the mass of an asymptotically Euclidean end of order `t > (n - 2) / 2`: there the
 scalar curvature differs from its linearization by terms quadratic in `g - δ` and its derivatives,
 which are `O(|x|^(-2t-2))` and so integrable since `2t + 2 > n`, so that integrability of the
-scalar curvature gives integrability of the linearized scalar curvature. That comparison is not
-part of this file.
+scalar curvature gives integrability of the linearized scalar curvature. That comparison is
+`TauCeti.isBigO_coordinateScalarCurvature_sub_linearizedScalarCurvature`, in
+`TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.ScalarCurvature`.
 
 ## Main declarations
 

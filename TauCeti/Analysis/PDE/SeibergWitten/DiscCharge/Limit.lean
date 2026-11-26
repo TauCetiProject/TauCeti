@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.DiscCharge.Continuous
 public import TauCeti.Geometry.Symplectic.Manifold.LimitZeroCharge
+public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Limit
 import TauCeti.Topology.Circle.Normalize
 import TauCeti.Topology.Compactness.Compact
 
@@ -42,6 +43,17 @@ asserted. For Seiberg–Witten solutions at large parameter it is the separate i
 limit zero charges a positive cohomology assignment
 (`TauCeti.PositiveCohomologyAssignment.ofIsZeroChargeLimit`). No density bound on `Z` enters
 anywhere.
+
+For large-parameter fields the vacuum hypothesis comes from Taubes's off-zero bound
+`w₊ ≤ (C / r) w₊ + C / r + C exp (-c R / h)`, `w₊ = max (1 - |α|²) 0`: when the zero sets of the
+`αₖ` converge to `Z` in the sense of Kuratowski (`TauCeti.IsKuratowskiLimit`), every point off `Z`
+has a neighbourhood on which eventually `|αₖ|² > σ`, which lies in the vacuum region when `χ = 1`
+above `σ`. So the framing sections form a zero-charge limit with support the Kuratowski limit of
+their zero sets (`TauCeti.SeibergWitten.isZeroChargeLimit_of_isKuratowskiLimit`). Since `E` has a
+countable basis, every sequence of such fields has a subsequence whose zero sets have a Kuratowski
+limit, a closed set `Z`, and along which the framing sections form a zero-charge limit with
+support `Z` (`TauCeti.SeibergWitten.exists_strictMono_isKuratowskiLimit_and_isZeroChargeLimit`).
+No compactness of the domain enters.
 
 ## References
 
@@ -127,5 +139,59 @@ theorem isZeroChargeLimit_of_tendsto [FiniteDimensional ℝ E] [MeasurableSpace 
       rw [ContinuousMap.comp_apply, discRetraction_apply, Complex.UnitDisc.coe_mk]
       exact hu ζ]
   exact hk _ hu
+
+/-- **The framed charges of large-parameter fields have a limit supported on the limit of the zero
+sets.** Let `(bₖ, αₖ)` be abelian Higgs pairs along a nontrivial filter `l` whose cutoff currents
+`Θₖ` have coefficients converging as distributions, built with a cutoff `χ` equal to one above
+`σ < 1`. Let the sets `Zₖ` converge in the sense of Kuratowski to `Z`, while `rₖ → ∞` and
+`hₖ → 0⁺`, and suppose that eventually Taubes's off-zero bound
+`max (1 - |αₖ|²) 0 ≤ (C / rₖ) max (1 - |αₖ|²) 0 + C / rₖ + C exp (-c R / hₖ)` holds at every point
+where `|αₖ|² ≤ σ`, for every radius `R ≥ c₀ hₖ` of an open ball about that point missing `Zₖ`.
+Then the framing sections `αₖ` form a zero-charge limit with support `Z`. -/
+theorem isZeroChargeLimit_of_isKuratowskiLimit [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] [l.NeBot]
+    {b : ι → E → E [⋀^Fin 1]→L[ℝ] ℝ} (hα : ∀ k, ContDiff ℝ 2 (α k)) (hb : ∀ k, ContDiff ℝ 1 (b k))
+    (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) {σ : ℝ} (hσ : σ < 1) (hχσ : EqOn χ 1 (Ioi σ))
+    {Zs : ι → Set E} {r h : ι → ℝ} (C c c₀ : ℝ) (hc : 0 < c) (hr : Tendsto r l atTop)
+    (hh : Tendsto h l (𝓝 0)) (hh₀ : ∀ᶠ k in l, 0 < h k) (hZ : IsKuratowskiLimit l Zs Z)
+    (hbound : ∀ᶠ k in l, ∀ x, normSq (α k x) ≤ σ → ∀ R, c₀ * h k ≤ R →
+      (∀ z ∈ Zs k, R ≤ dist x z) → max (1 - normSq (α k x)) 0 ≤
+        C / r k * max (1 - normSq (α k x)) 0 + C / r k + C * Real.exp (-(c * R / h k)))
+    (hlim : ∀ φ : E → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ → ∀ m : Fin 2 → E,
+      ∃ L, Tendsto (fun k ↦ ∫ y, φ y * cutoffCurrent χ (b k) (α k) y m ∂μ) l (𝓝 L)) :
+    IsZeroChargeLimit l α Z := by
+  refine isZeroChargeLimit_of_tendsto hα hb hχ hχ₀ (fun y hy ↦ ?_) hlim
+  obtain ⟨U, hU, hUσ⟩ := exists_mem_nhds_eventually_forall_lt_of_isKuratowskiLimit
+    (s := fun k x ↦ normSq (α k x)) C c c₀ hc hσ hr hh hZ hh₀ hbound hy
+  exact ⟨U, hU, hUσ.mono fun k hk x hx ↦ hχσ (hk x hx)⟩
+
+/-- **Extraction of a limit of the zero sets and of the framed charges.** Let `(bₖ, αₖ)` be a
+sequence of abelian Higgs pairs whose cutoff currents `Θₖ` have coefficients converging as
+distributions, built with a cutoff `χ` equal to one above `σ < 1`, while `rₖ → ∞` and `hₖ → 0⁺`.
+Suppose that eventually Taubes's off-zero bound holds at every point where `|αₖ|² ≤ σ`, relative to
+the zero set of `αₖ`. Then there are a subsequence `φ` and a set `Z`, closed by
+`TauCeti.IsKuratowskiLimit.isClosed`, such that the zero sets of the `α (φ k)` converge to `Z` in
+the sense of Kuratowski and the framing sections `α (φ k)` form a zero-charge limit with
+support `Z`. -/
+theorem exists_strictMono_isKuratowskiLimit_and_isZeroChargeLimit [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {α : ℕ → C(E, ℂ)}
+    {b : ℕ → E → E [⋀^Fin 1]→L[ℝ] ℝ} (hα : ∀ k, ContDiff ℝ 2 (α k))
+    (hb : ∀ k, ContDiff ℝ 1 (b k)) (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) {σ : ℝ}
+    (hσ : σ < 1) (hχσ : EqOn χ 1 (Ioi σ)) {r h : ℕ → ℝ} (C c c₀ : ℝ) (hc : 0 < c)
+    (hr : Tendsto r atTop atTop) (hh : Tendsto h atTop (𝓝 0)) (hh₀ : ∀ᶠ k in atTop, 0 < h k)
+    (hbound : ∀ᶠ k in atTop, ∀ x, normSq (α k x) ≤ σ → ∀ R, c₀ * h k ≤ R →
+      (∀ z ∈ α k ⁻¹' {0}, R ≤ dist x z) → max (1 - normSq (α k x)) 0 ≤
+        C / r k * max (1 - normSq (α k x)) 0 + C / r k + C * Real.exp (-(c * R / h k)))
+    (hlim : ∀ φ : E → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ → ∀ m : Fin 2 → E,
+      ∃ L, Tendsto (fun k ↦ ∫ y, φ y * cutoffCurrent χ (b k) (α k) y m ∂μ) atTop (𝓝 L)) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ Z : Set E,
+      IsKuratowskiLimit atTop (fun k ↦ α (φ k) ⁻¹' {0}) Z ∧ IsZeroChargeLimit atTop (α ∘ φ) Z := by
+  obtain ⟨φ, hφ, Z, hZ⟩ := exists_strictMono_isKuratowskiLimit fun k ↦ α k ⁻¹' {0}
+  have hφt := hφ.tendsto_atTop
+  refine ⟨φ, hφ, Z, hZ, isZeroChargeLimit_of_isKuratowskiLimit (μ := μ) (b := b ∘ φ)
+    (fun k ↦ hα (φ k)) (fun k ↦ hb (φ k)) hχ hχ₀ hσ hχσ C c c₀ hc (hr.comp hφt) (hh.comp hφt)
+    (hφt.eventually hh₀) hZ (hφt.eventually hbound) fun ψ hψ hψc m ↦ ?_⟩
+  obtain ⟨L, hL⟩ := hlim ψ hψ hψc m
+  exact ⟨L, hL.comp hφt⟩
 
 end TauCeti.SeibergWitten

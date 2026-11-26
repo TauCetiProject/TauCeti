@@ -8,54 +8,38 @@ module
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 
 /-!
-# Sigma-finite support for a.e. finite strong measurability
+# Almost everywhere finite strong measurability and sigma-finite support
 
-A.e. finite strong measurability is equivalent to a.e. strong measurability together with
-vanishing a.e. outside a measurable sigma-finite support. This separates the topological
-measurability requirement from the measure-theoretic support requirement, for arbitrary
-measures and Hausdorff targets with zero.
+Almost everywhere finite strong measurability is equivalent to almost everywhere strong
+measurability together with vanishing off a measurable sigma-finite support. This criterion
+separates the topological condition from the support condition, allowing each to be transported
+independently under maps of the target.
 
-A continuous map sending zero to zero preserves a.e. finite strong measurability; this gives,
-for example, a.e. finite strong measurability of every scalar evaluation.
+The pointwise criterion is Mathlib's
+`finStronglyMeasurable_iff_stronglyMeasurable_and_exists_set_sigmaFinite`.
 -/
 
 public section
 
-open Filter Set
+open MeasureTheory Set
 
-namespace MeasureTheory
-
-/-- Composing an a.e. finitely strongly measurable function with a continuous map sending zero
-to zero gives an a.e. finitely strongly measurable function. -/
-theorem _root_.Continuous.comp_aefinStronglyMeasurable {S X Y : Type*} [MeasurableSpace S]
-    [TopologicalSpace X] [Zero X] [TopologicalSpace Y] [Zero Y] {μ : Measure S}
-    {f : S → X} {g : X → Y} (hg : Continuous g) (hg0 : g 0 = 0)
-    (hf : AEFinStronglyMeasurable f μ) : AEFinStronglyMeasurable (fun s ↦ g (f s)) μ := by
-  obtain ⟨k, ⟨fs, hfin, hlim⟩, hfk⟩ := hf
-  refine ⟨fun s ↦ g (k s), ⟨fun n ↦ (fs n).map g, fun n ↦ (measure_mono ?_).trans_lt (hfin n),
-    fun s ↦ (hg.tendsto _).comp (hlim s)⟩, hfk.fun_comp g⟩
-  rw [SimpleFunc.coe_map]
-  exact Function.support_comp_subset hg0 _
+namespace TauCeti
 
 /-- A function is a.e. finitely strongly measurable exactly when it is a.e. strongly measurable
 and vanishes a.e. outside a measurable set on which the measure is sigma-finite. -/
 theorem aefinStronglyMeasurable_iff_aestronglyMeasurable_and_exists_set_sigmaFinite
-    {S X : Type*} [MeasurableSpace S] [TopologicalSpace X] [T2Space X] [Zero X]
-    {μ : Measure S} {f : S → X} :
+    {α E : Type*} [MeasurableSpace α] [TopologicalSpace E] [T2Space E] [Zero E]
+    {μ : Measure α} {f : α → E} :
     AEFinStronglyMeasurable f μ ↔ AEStronglyMeasurable f μ ∧
-      ∃ t, MeasurableSet t ∧ f =ᵐ[μ.restrict tᶜ] 0 ∧ SigmaFinite (μ.restrict t) := by
+      ∃ s, MeasurableSet s ∧ f =ᵐ[μ.restrict sᶜ] 0 ∧ SigmaFinite (μ.restrict s) := by
   refine ⟨fun hf ↦ ⟨?_, hf.exists_set_sigmaFinite⟩, ?_⟩
-  · obtain ⟨g, hg, hfg⟩ := hf
-    exact ⟨g, hg.stronglyMeasurable, hfg⟩
-  rintro ⟨hf, t, ht, hzero, hσ⟩
-  classical
-  have hm := hf.stronglyMeasurable_mk.indicator ht
-  refine ⟨t.indicator (hf.mk f), hm.finStronglyMeasurable_of_set_sigmaFinite
-    ht (fun x hx ↦ indicator_of_notMem hx _) hσ, ?_⟩
-  rw [EventuallyEq, ae_restrict_iff' ht.compl] at hzero
-  filter_upwards [hf.ae_eq_mk, hzero] with s hs hz
-  by_cases hst : s ∈ t
-  · simp [hst, hs]
-  · simp [hst, hz hst]
+  · exact ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable, hf.ae_eq_mk⟩
+  rintro ⟨hf, s, hs, hzero, hσ⟩
+  refine ⟨s.indicator (hf.mk f),
+    (hf.stronglyMeasurable_mk.indicator hs).finStronglyMeasurable_of_set_sigmaFinite hs
+      (fun x hx ↦ indicator_of_notMem hx _) hσ, ?_⟩
+  refine (indicator_ae_eq_of_restrict_compl_ae_eq_zero hs hzero).symm.trans ?_
+  filter_upwards [hf.ae_eq_mk] with x hx
+  simp only [Set.indicator, hx]
 
-end MeasureTheory
+end TauCeti

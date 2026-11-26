@@ -232,7 +232,8 @@ private theorem exists_forall_comp_positiveEndChart_eq_zero {q : Puncture} {R : 
     (hξR : tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < (positiveEndCoord q z).1}) :
     ∃ b, R ≤ b ∧ ∀ s t, s ∉ Ioo R b → (ξ ∘ positiveEndChart q) (s, t) = 0 := by
   obtain ⟨N, hN⟩ :=
-    exists_forall_comp_positiveEndChart_eventuallyEq_zero hξc (fun z hz ↦ (hξR hz).1) q
+    exists_forall_comp_positiveEndChart_eventuallyEq_zero hξc fun z hz ↦
+      Puncture.ne_endCenter (mem_thricePuncturedSphereReal_iff.1 (hξR hz).1) q
   refine ⟨max N R + 1, by linarith [le_max_right N R], fun s t hs ↦ ?_⟩
   rcases le_or_gt s R with h | h
   · rw [Function.comp_apply]

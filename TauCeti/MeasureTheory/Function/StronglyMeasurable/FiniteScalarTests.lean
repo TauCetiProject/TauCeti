@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteSupport
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.ContinuousOn
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.ScalarTests
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Normed.Operator.Norming
@@ -139,10 +140,10 @@ theorem aefinStronglyMeasurable_iff_scalar_tests {f : S → X} :
       ∀ x' : StrongDual 𝕜 X, AEFinStronglyMeasurable (fun s ↦ x' (f s)) μ := by
   constructor
   · intro hf
-    refine ⟨?_, fun x' ↦ x'.continuous.comp_aefinStronglyMeasurable (map_zero x') hf⟩
+    refine ⟨?_, fun x' ↦ x'.continuous.comp_aefinStronglyMeasurable hf (map_zero x')⟩
     obtain ⟨g, hg, hfg⟩ := hf
     obtain ⟨⟨E, hEc, hEs, hgE⟩, -⟩ :=
-      (stronglyMeasurable_iff_scalar_tests (𝕜 := 𝕜)).1 hg.stronglyMeasurable
+      (stronglyMeasurable_iff_scalar_tests (𝕜 := 𝕜) g).1 hg.stronglyMeasurable
     exact ⟨E, hEc, hEs, by filter_upwards [hfg] with s hs using hs.symm ▸ hgE s⟩
   · rintro ⟨⟨E, -, hEs, hfE⟩, htest⟩
     have : SeparableSpace E := hEs.separableSpace
@@ -175,7 +176,7 @@ theorem aefinStronglyMeasurable_iff_separating_tests {E : Submodule 𝕜 X}
     AEFinStronglyMeasurable f μ ↔
       ∀ x' ∈ T, AEFinStronglyMeasurable (fun s ↦ x' (f s)) μ := by
   refine ⟨?_, aefinStronglyMeasurable_of_subspace_tests E ?_ hsep hfE⟩
-  · exact fun hf x' _ ↦ x'.continuous.comp_aefinStronglyMeasurable (map_zero x') hf
+  · exact fun hf x' _ ↦ x'.continuous.comp_aefinStronglyMeasurable hf (map_zero x')
   · apply evalMeasurableSpace_eq_borel_of_separating
     intro x hx
     exact Subtype.ext <| hsep x x.property fun x' hx' ↦ hx _ (mem_image_of_mem _ hx')

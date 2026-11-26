@@ -8,8 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.Coadjoint.Height.Perfect
 public import TauCeti.Geometry.Symplectic.Coadjoint.Height.Weyl
 
+import TauCeti.Geometry.Lie.Subgroup.Torus.RootPlane
+
 /-!
-# The Poincaré polynomial of a coadjoint orbit
+# The Poincaré polynomial and Euler characteristic of a coadjoint orbit
 
 Let `T` be a maximal torus of a compact Lie group `G`, with Lie algebra `𝔱` and Weyl group
 `W = N(T) / T`, let `B` be an `Ad`-invariant bilinear form on `𝔤` with trivial left radical, and
@@ -49,6 +51,19 @@ The odd Betti numbers vanish
 formulas do not involve `k`, so the Betti numbers of a coadjoint orbit are the same over every
 division ring.
 
+The **Euler characteristic** of `O_μ` is the index `[W : W_μ]`: all Morse indices of `f_X` are even,
+so `χ(O_μ)` is the number of critical points of `f_X`
+(`Module.Dual.eulerChar_quotient_stabilizer_coadjointRepresentation_eq_ncard`), and these are
+indexed by `W / W_μ`
+(`TauCeti.IsRootPlaneDecomposition.card_criticalPoints_orbitMap_coadjointRepresentation`), so
+`χ(O_μ) = [W : W_μ]`
+(`TauCeti.IsRootPlaneDecomposition.eulerChar_quotient_stabilizer_coadjointRepresentation_eq_index`).
+Every `Ad`-invariant inner product admits such a root-plane decomposition with a regular element,
+so `χ(O_μ) = [W : W_μ]` holds with no choice of `t` or `X`
+(`TauCeti.Lie.eulerChar_quotient_stabilizer_coadjointRepresentation_eq_index`). When `W_μ` is
+trivial, this is `χ(O_μ) = |W|`
+(`TauCeti.Lie.eulerChar_quotient_stabilizer_coadjointRepresentation_eq_card_normalizerQuotient`).
+
 ## Main results
 
 In the namespace `TauCeti.IsRootPlaneDecomposition`:
@@ -58,6 +73,13 @@ In the namespace `TauCeti.IsRootPlaneDecomposition`:
 * `card_stabilizer_mul_bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_ncard`:
   `|W_μ| b_j(O_μ; k) = #{w ∈ W | 2 n(w) = j}`.
 * `card_stabilizer_smul_sum_monomial_bettiNumber_eq_sum_X_pow`: the index generating polynomial.
+* `eulerChar_quotient_stabilizer_coadjointRepresentation_eq_index`: `χ(O_μ) = [W : W_μ]`.
+
+In the namespace `TauCeti.Lie`:
+* `eulerChar_quotient_stabilizer_coadjointRepresentation_eq_index`: `χ(O_μ) = [W : W_μ]` for every
+  `Ad`-invariant inner product.
+* `eulerChar_quotient_stabilizer_coadjointRepresentation_eq_card_normalizerQuotient`:
+  `χ(O_μ) = |W|` when `W_μ` is trivial.
 
 ## References
 
@@ -227,4 +249,84 @@ theorem card_stabilizer_smul_sum_monomial_bettiNumber_eq_sum_X_pow [Fintype T.no
     hD.card_stabilizer_mul_bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_ncard k hT hB
       hsep hF ht μ hX j, Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
 
+omit [Fintype ι] in
+/-- **The Euler characteristic of a coadjoint orbit is `[W : W_μ]`.** In a root-plane
+decomposition over the image `t` of the Lie algebra of a maximal torus `T` of a compact Lie group,
+for an invariant form `B` with trivial left radical and `μ ∈ 𝔱`, the Euler characteristic of the
+coadjoint orbit of `B (e μ)` is the index of the stabilizer `W_μ` of `μ` in the Weyl group `W`.
+The height of an element `X ∈ t` at which no root vanishes is a Morse function with only even
+indices, so `χ` counts its critical points, which are indexed by `W / W_μ`. -/
+theorem eulerChar_quotient_stabilizer_coadjointRepresentation_eq_index [Finite ι]
+    (hD : IsRootPlaneDecomposition B t α F J) (hT : IsMaximalTorus T)
+    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
+    (hsep : B.SeparatingLeft)
+    (ht : t = (lieSubalgebraOfSubgroup (I := I) T).toSubmodule.map
+      (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint).toLinearEquiv.toLinearMap)
+    (μ : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule)
+    [FiniteCWType (G ⧸ (coadjointRepresentation ℝ I G).stabilizer
+      (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint μ)))]
+    {X : t} (hX : ∀ i, α i X ≠ 0) :
+    eulerChar (G ⧸ (coadjointRepresentation ℝ I G).stabilizer
+        (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          BoundarylessManifold.isInteriorPoint μ))) =
+      ((T.weylAdjointRepresentation (I := I)).stabilizer μ).index := by
+  rw [Module.Dual.eulerChar_quotient_stabilizer_coadjointRepresentation_eq_ncard _
+    (hD.isMorse_orbitMap_coadjointRepresentation_apply
+      (lieInvariant_of_isInvariantForm_adjointRepresentation hB) hsep hX),
+    ← Nat.card_coe_set_eq,
+    hD.card_criticalPoints_orbitMap_coadjointRepresentation hT hB hsep ht μ hX]
+
 end TauCeti.IsRootPlaneDecomposition
+
+namespace TauCeti.Lie
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {G : Type u} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G] [T2Space G]
+  [CompactSpace G]
+  {T : Subgroup G} [IsMulCommutative T] {B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)}
+
+/-- **The Euler characteristic of a coadjoint orbit is `[W : W_μ]`** (Bott). Let `T` be a maximal
+torus of a compact Lie group `G`, with Weyl group `W`, and let `B` be an `Ad`-invariant inner
+product on `𝔤`. For `μ` in the Lie algebra `𝔱` of `T`, the Euler characteristic of the coadjoint
+orbit of `B (e μ)` is the index of the stabilizer `W_μ` of `μ` in `W`: a regular Morse height on
+the orbit has only even indices and one critical point for each point of `W / W_μ`. -/
+theorem eulerChar_quotient_stabilizer_coadjointRepresentation_eq_index (hT : IsMaximalTorus T)
+    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B) (hBs : B.IsSymm)
+    (hpos : ∀ a, a ≠ 0 → 0 < B a a) (μ : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule)
+    [FiniteCWType (G ⧸ (coadjointRepresentation ℝ I G).stabilizer
+      (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint μ)))] :
+    eulerChar (G ⧸ (coadjointRepresentation ℝ I G).stabilizer
+        (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          BoundarylessManifold.isInteriorPoint μ))) =
+      ((T.weylAdjointRepresentation (I := I)).stabilizer μ).index := by
+  -- The root planes of `t`, and an element `X ∈ t` at which no root vanishes.
+  obtain ⟨r, α, F, J, hD, -, X, hX⟩ := hT.exists_isRootPlaneDecomposition hBs hpos
+    (lieInvariant_of_isInvariantForm_adjointRepresentation hB) rfl
+  have hsep : B.SeparatingLeft := fun a ha ↦ by
+    by_contra h
+    exact (hpos a h).ne' (ha a)
+  exact hD.eulerChar_quotient_stabilizer_coadjointRepresentation_eq_index hT hB hsep rfl μ hX
+
+/-- **A coadjoint orbit with trivial Weyl stabilizer has Euler characteristic `|W|`.** For a
+maximal torus `T` of a compact Lie group with Weyl group `W`, an `Ad`-invariant inner product `B`
+and `μ ∈ 𝔱` fixed by no nontrivial element of `W`, the coadjoint orbit of `B (e μ)` has Euler
+characteristic `|W|`. -/
+theorem eulerChar_quotient_stabilizer_coadjointRepresentation_eq_card_normalizerQuotient
+    (hT : IsMaximalTorus T) (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
+    (hBs : B.IsSymm) (hpos : ∀ a, a ≠ 0 → 0 < B a a)
+    (μ : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule)
+    (hμ : (T.weylAdjointRepresentation (I := I)).stabilizer μ = ⊥)
+    [FiniteCWType (G ⧸ (coadjointRepresentation ℝ I G).stabilizer
+      (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint μ)))] :
+    eulerChar (G ⧸ (coadjointRepresentation ℝ I G).stabilizer
+        (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          BoundarylessManifold.isInteriorPoint μ))) = Nat.card T.normalizerQuotient := by
+  rw [eulerChar_quotient_stabilizer_coadjointRepresentation_eq_index hT hB hBs hpos μ, hμ,
+    Subgroup.index_bot]
+
+end TauCeti.Lie
