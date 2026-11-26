@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Geometrically.Connected
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Mon
 public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Connected
 public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Scheme
+public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 
 /-!
 # Connectedness and commutativity of constant group schemes
@@ -29,6 +30,9 @@ abelian scheme as soon as `G` is nontrivial or noncommutative:
   over a nontrivial ring is disconnected.
 * `TauCeti.ConstantGroup.not_geometricallyConnected_groupScheme`: a nontrivial constant group
   scheme over a field is not geometrically connected.
+* `TauCeti.ConstantGroup.not_geometricallyConnected_finiteTypeCoordinateHopfAlgebra`: the
+  coordinate Hopf algebra `TauCeti.ConstantGroup.finiteTypeCoordinateHopfAlgebra` of a nontrivial
+  constant group over a field is not geometrically connected either.
 * `TauCeti.ConstantGroup.not_isCommMonObj_groupScheme`: the constant group scheme of a
   noncommutative finite group over a nontrivial ring is not a commutative group object.
 -/
@@ -68,6 +72,18 @@ theorem not_geometricallyConnected_groupScheme (K : Type u) [Field K] [Nontrivia
     ¬ GeometricallyConnected (groupScheme K G).X.hom := fun h ↦
   not_connectedSpace_groupScheme G K
     (self_of_isIntegral_of_geometrically h.geometrically_connectedSpace)
+
+/-- The coordinate Hopf algebra of a nontrivial constant group over a field is not geometrically
+connected: already its prime spectrum is disconnected. -/
+theorem not_geometricallyConnected_finiteTypeCoordinateHopfAlgebra (K : Type u) [Field K]
+    [Nontrivial G] :
+    ¬ geometricallyConnectedCommHopfAlgProperty K (finiteTypeCoordinateHopfAlgebra K G).obj := by
+  intro h
+  have hX : ConnectedSpace (PrimeSpectrum (coordinateRing K G)) := h.connectedSpace
+  apply not_connectedSpace_groupScheme G K
+  rw [groupScheme_X_left]
+  -- The underlying space of `Spec R` is `PrimeSpectrum R` by definition.
+  exact hX
 
 /-- **The constant group scheme of a noncommutative finite group is not commutative**: its group
 of points over the base ring contains `G` itself. -/
