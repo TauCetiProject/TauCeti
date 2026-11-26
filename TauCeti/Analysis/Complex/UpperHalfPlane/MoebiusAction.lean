@@ -140,6 +140,16 @@ theorem _root_.Matrix.SpecialLinearGroup.denom_mapGL_mul {R : Type*} [CommRing R
     σ_eq_refl_of_det_pos (by rw [← Matrix.GeneralLinearGroup.val_det_apply]; simp),
     ContinuousAlgEquiv.refl_apply, Matrix.SpecialLinearGroup.mapGL_smul]
 
+/-- At a fixed point `τ` of `g`, the automorphy factor of `g ^ n` is the `n`-th power of that of
+`g`, by the cocycle relation `Matrix.SpecialLinearGroup.denom_mapGL_mul`. -/
+theorem _root_.Matrix.SpecialLinearGroup.denom_mapGL_pow_of_smul_eq_self {R : Type*} [CommRing R]
+    [Algebra R ℝ] {g : SL(2, R)} {τ : ℍ} (hgτ : g • τ = τ) (n : ℕ) :
+    denom (Matrix.SpecialLinearGroup.mapGL ℝ (g ^ n)) τ =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, Matrix.SpecialLinearGroup.denom_mapGL_mul, hgτ, ih, pow_succ]
+
 /-- The orientation-reversing involution `J : z ↦ -conj z` negates the real part. -/
 @[simp]
 theorem J_smul_re (τ : ℍ) : (J • τ).re = -τ.re := by
