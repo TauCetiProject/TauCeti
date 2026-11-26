@@ -104,9 +104,9 @@ variable (I) in
 open set of coordinates `z` of points of the chart whose image under `f` lies in the chart. -/
 def chartFixedPointDomain (c : OpenPartialHomeomorph M H) (f : C(M, M)) : Opens E where
   carrier := (c.extend I).target ∩ (c.extend I).symm ⁻¹' (f ⁻¹' c.source)
-  is_open' := (c.continuousOn_extend_symm (I := I)).isOpen_inter_preimage c.isOpen_extend_target
-    (c.open_source.preimage f.continuous)
+  is_open' := c.isOpen_extend_target_inter_preimage (c.open_source.preimage f.continuous)
 
+@[simp]
 theorem mem_chartFixedPointDomain {c : OpenPartialHomeomorph M H} {f : C(M, M)} {z : E} :
     z ∈ chartFixedPointDomain I c f ↔
       z ∈ (c.extend I).target ∧ f ((c.extend I).symm z) ∈ c.source :=
@@ -126,12 +126,9 @@ is defined. Its fixed points are the coordinates of the fixed points of `f` in t
 def chartFixedPointMap (c : OpenPartialHomeomorph M H) (f : C(M, M)) :
     C(chartFixedPointDomain I c f, E) where
   toFun z := c.extend I (f ((c.extend I).symm z))
-  continuous_toFun := by
-    refine (c.continuousOn_extend (I := I)).comp_continuous (f.continuous.comp ?_) fun z ↦ ?_
-    · exact (c.continuousOn_extend_symm (I := I)).comp_continuous continuous_subtypeVal
-        fun z ↦ z.property.1
-    · rw [c.extend_source]
-      exact z.property.2
+  continuous_toFun := continuousOn_iff_continuous_domRestrict.1 <|
+    c.continuousOn_extend_comp_symm (I := I) (I' := I) c f.continuous.continuousOn (s := univ)
+      (W := chartFixedPointDomain I c f) fun _ hz ↦ ⟨hz.1, trivial, hz.2⟩
 
 @[simp]
 theorem chartFixedPointMap_apply (c : OpenPartialHomeomorph M H) (f : C(M, M))
@@ -164,7 +161,7 @@ theorem chartLocalFixedPointIndex_of_mem {c : OpenPartialHomeomorph M H} {f : C(
   simp only [chartLocalFixedPointIndex, hx, hfx, and_self, ↓reduceDIte]
 
 /-- The index read in the chart `c` is `0` unless `x` and `f x` lie in the chart. -/
-theorem chartLocalFixedPointIndex_of_not_mem {c : OpenPartialHomeomorph M H} {f : C(M, M)} {x : M}
+theorem chartLocalFixedPointIndex_of_notMem {c : OpenPartialHomeomorph M H} {f : C(M, M)} {x : M}
     (h : ¬(x ∈ c.source ∧ f x ∈ c.source)) : chartLocalFixedPointIndex I c f x = 0 := by
   simp only [chartLocalFixedPointIndex, h, ↓reduceDIte]
 
@@ -177,7 +174,7 @@ theorem chartLocalFixedPointIndex_of_ne (c : OpenPartialHomeomorph M H) {f : C(M
     rw [chartFixedPointMap_apply, c.extend_left_inv h.1] at heq
     rw [← c.extend_source (I := I)] at h
     exact (c.extend I).injOn h.2 h.1 heq
-  · exact chartLocalFixedPointIndex_of_not_mem h
+  · exact chartLocalFixedPointIndex_of_notMem h
 
 /-- **Comparison of local indices read in charts.** Let `x` be a fixed point of `f : M → M`, and
 let `Φ : M → N`, continuous at `x`, conjugate `f` near `x` to `g : N → N`. If the coordinate
@@ -212,12 +209,9 @@ theorem chartLocalFixedPointIndex_eq_of_hasStrictFDerivAt {H' N : Type*} [Topolo
   -- conjugates `f` to `g`.
   have hsymm : Tendsto (fun z : chartFixedPointDomain I c f ↦ (c.extend I).symm z)
       (𝓝 ⟨c.extend I x, extend_mem_chartFixedPointDomain hx hfx'⟩) (𝓝 x) := by
-    have hc : Continuous fun z : chartFixedPointDomain I c f ↦ (c.extend I).symm z :=
-      (c.continuousOn_extend_symm (I := I)).comp_continuous continuous_subtypeVal
-        fun z ↦ z.property.1
-    simpa only [c.extend_left_inv hx] using
-      hc.tendsto (⟨c.extend I x, extend_mem_chartFixedPointDomain hx hfx'⟩ :
-        chartFixedPointDomain I c f)
+    simpa only [comp_def, c.extend_left_inv hx] using
+      (c.continuousAt_extend_symm (I := I) hx).tendsto.comp (continuous_subtypeVal.tendsto
+        (⟨c.extend I x, extend_mem_chartFixedPointDomain hx hfx'⟩ : chartFixedPointDomain I c f))
   have hΦc : ∀ᶠ z in 𝓝 x, Φ z ∈ c'.source := hΦ.preimage_mem_nhds (c'.open_source.mem_nhds hΦx)
   filter_upwards [hsymm.eventually hΦc, hsymm.eventually hconj] with z hzc hzconj hz
   have hfz : f ((c.extend I).symm z) ∈ c.source := z.property.2
@@ -307,12 +301,10 @@ theorem localFixedPointIndex_of_frequently_eq {f : C(M, M)} {x : M}
         -- `extChartAt I x` is by definition the extension `c.extend I` of the chart `c` at `x`.
         rw [hψ.self_of_nhds]
         rfl
-      · filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (hψ.and hV)] with z hz hzψ
-        refine fun heq ↦ hz ?_
-        -- `x₀` is the point `extChartAt I x x = c.extend I x`, by definition of `extChartAt`.
-        have h' : c.extend I z = c.extend I x := by rw [← hzψ.1, heq]; rfl
-        rw [← c.extend_source (I := I)] at hzψ
-        exact (c.extend I).injOn hzψ.2.1 (by rw [c.extend_source]; exact mem_chart_source H x) h'
+      · filter_upwards [(I.tendsto_extChartAt_nhdsNE x).eventually self_mem_nhdsWithin,
+          nhdsWithin_le_nhds hψ] with z hz hzψ heq
+        -- `extChartAt I x` is by definition `c.extend I`, and `x₀` is `extChartAt I x x`.
+        exact hz (hzψ.symm.trans (congrArg Subtype.val heq))
     refine hψt.frequently ((h.and_eventually (nhdsWithin_le_nhds (hψ.and hV))).mono ?_)
     rintro z ⟨hfz, hzψ, hzV⟩
     rw [chartFixedPointMap_apply, hzψ, c.extend_left_inv hzV.1, hfz]
