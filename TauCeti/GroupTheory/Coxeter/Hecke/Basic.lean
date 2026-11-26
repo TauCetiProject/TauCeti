@@ -30,7 +30,7 @@ equal-parameter Hecke algebra over `ℤ[v, v⁻¹]` in the normalisation of Kazh
 `c = 0` the defining relations are the Coxeter relations of the simple reflections.
 
 Let `cs : CoxeterSystem M W` be a Coxeter system with Coxeter matrix `M`. For `w : W` the element
-`CoxeterMatrix.HeckeAlgebra.Tw cs c w`, usually written `T_w`, is the product
+`CoxeterMatrix.HeckeAlgebra.Tw c cs w`, usually written `T_w`, is the product
 `T i₁ * ⋯ * T iₖ` along any reduced expression `w = s i₁ ⋯ s iₖ`; by Matsumoto's theorem
 (`TauCeti.existsUnique_reducedWordLift`) it does not depend on the reduced expression. The
 elements `T_w` multiply by the length rule: `T_v * T_w = T_(v * w)` when lengths add, and

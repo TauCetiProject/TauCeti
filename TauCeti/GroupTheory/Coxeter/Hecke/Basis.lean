@@ -53,8 +53,8 @@ group (`CoxeterMatrix.HeckeAlgebra.finrank_eq_natCard`).
 * J. E. Humphreys, *Reflection Groups and Coxeter Groups*, CUP (1990), Section 7.3.
 * M. Geck and G. Pfeiffer, *Characters of Finite Coxeter Groups and Iwahori-Hecke Algebras*,
   OUP (2000), Section 4.4.
-* The argument is adapted from the earlier Tau Ceti proof of the type-A case; the type-A basis
-  theorem in `TauCeti.Algebra.TypeAHeckeAlgebra.Basis` is now derived from this file.
+* The type-A basis theorem in `TauCeti.Algebra.TypeAHeckeAlgebra.Basis` is obtained from this one
+  by transport.
 -/
 
 public section
