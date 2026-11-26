@@ -123,9 +123,17 @@ by the homeomorphism `CP¹ ≃ₜ S²`. -/
 theorem hopfSphere2Hom_mem_serreFibrations : TopCat.serreFibrations hopfSphere2Hom := by
   have : hopfHom 1 ≫ (TopCat.isoOfHomeo homeomorphSphere2).hom = hopfSphere2Hom := by
     ext v : 1
+    rw [TopCat.comp_app, TopCat.isoOfHomeo_hom, TopCat.ofHom_apply, TopCat.ofHom_apply,
+      TopCat.ofHom_apply]
     exact homeomorphSphere2_mk v
   rw [← this]
   exact MorphismProperty.RespectsIso.postcomp _ _ _ (mk_mem_serreFibrations 1)
+
+/-- The preimage of a set under the Hopf map `S³ → S²` as a morphism of topological spaces is its
+preimage under the Hopf map. -/
+theorem preimage_hopfSphere2Hom (s : Set Sphere2) : hopfSphere2Hom ⁻¹' s = hopfSphere2 ⁻¹' s := by
+  ext v
+  rw [Set.mem_preimage, Set.mem_preimage, TopCat.ofHom_apply]
 
 /-- The fibre of the Hopf map `S³ → S²` over `x` is the fibre of the Hopf fibration `S³ → CP¹`
 over the point of `CP¹` corresponding to `x` under `CP¹ ≃ₜ S²`. -/

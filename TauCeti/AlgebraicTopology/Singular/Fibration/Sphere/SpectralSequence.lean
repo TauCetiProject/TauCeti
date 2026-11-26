@@ -143,13 +143,6 @@ def sphereSerreSpectralSequenceFirstPageXIsoTopCell (hp : serreFibrations p) (hn
       (q + n) ≪≫
     sphereFibrationSingularHomologyIso h hp R hn q
 
-/-- The other end of a differential of the page `s` at `pq` lies `s - 1` columns away. -/
-private lemma snd_eq_or_snd_eq_of_rel {s : ℤ} {pq pq' : ℤ × ℤ}
-    (h : (ComplexShape.up' ((s, 1 - s) : ℤ × ℤ)).Rel pq pq' ∨
-      (ComplexShape.up' ((s, 1 - s) : ℤ × ℤ)).Rel pq' pq) :
-    pq'.2 = pq.2 + 1 - s ∨ pq'.2 = pq.2 - 1 + s := by
-  rcases h with h | h <;> have := congrArg Prod.snd h <;> simp only [Prod.snd_add] at this <;> lia
-
 /-- **The objects of the two columns survive to the page `n + 1`.** For `2 ≤ r ≤ n + 1`, the
 object at a position `pq` in the column `0` or `n` of the page `r` of the Serre spectral sequence of
 a map to `Sⁿ` is the object of the first page: the differentials of the pages before `n + 1` join
@@ -160,7 +153,7 @@ def sphereSerreSpectralSequencePageXIsoFirstPageX (r : ℤ) (hr : 2 ≤ r)
       ((sphereSerreSpectralSequence h p R).page 2).X pq :=
   (sphereSerreSpectralSequence h p R).pageXIsoOfLEOfIsZeroOfLT le_rfl r hr
     fun s hs hsr pq' hpq' ↦ by
-      have := snd_eq_or_snd_eq_of_rel hpq'
+      have := ComplexShape.snd_eq_of_up'_rel hpq'
       exact isZero_sphereSerreSpectralSequence_page_two_X h p R pq' (by lia) (by lia)
 
 /-- **The page `n + 2` of the Serre spectral sequence of a map to `Sⁿ` is its last.** From the page
@@ -176,7 +169,7 @@ theorem isZero_sphereSerreSpectralSequence_page_X_of_isZero (pq : ℤ × ℤ)
   let S := sphereSerreSpectralSequence h p R
   -- From the page `n + 2` on, the object at `pq` survives unchanged to the page `n + 3 + m`.
   have hsurvive := S.pageXIsoOfLEOfIsZero (r := n + 2) (by lia) (pq := pq) (fun s hs pq' hpq' ↦ by
-    have := snd_eq_or_snd_eq_of_rel hpq'
+    have := ComplexShape.snd_eq_of_up'_rel hpq'
     exact S.isZero_page_X_of_le le_rfl
       (isZero_sphereSerreSpectralSequence_page_two_X h p R pq' (by lia) (by lia)) _ (by lia))
     (n + 3 + m) (by lia)
@@ -199,6 +192,26 @@ theorem isZero_sphereSerreSpectralSequence_page_X_of_isZero (pq : ℤ × ℤ)
   rw [hm]
   exact hE.of_iso (chainFiltrationAbutmentIso _ (monotone_preimageSkeleton (C := univ) p) m)
 
+/-- On the page `n + 1` of the Serre spectral sequence of a map to `Sⁿ`, the homology at a
+position `j` in the column `0` or `n` vanishes when the homology `Hₘ(E; R)` of its total degree
+does, since it is the object at `j` of the page `n + 2`. -/
+private lemma exact_sphereSerreSpectralSequence_page_sc' (hn : 1 ≤ n) (i j k : ℤ × ℤ)
+    (hij : i + ((n + 1 : ℤ), -(n : ℤ)) = j) (hjk : j + ((n + 1 : ℤ), -(n : ℤ)) = k)
+    (hb : j.2 = -1 ∨ j.2 = n - 1) {m : ℕ} (hm : j.1 + j.2 = -m)
+    (hE : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) m).obj
+      (ModuleCat.of R R)).obj E)) :
+    (((sphereSerreSpectralSequence h p R).page (n + 1) (by lia)).sc' i j k).Exact := by
+  let S := sphereSerreSpectralSequence h p R
+  have hij' : (ComplexShape.up' (((n + 1 : ℤ), 1 - (n + 1 : ℤ)) : ℤ × ℤ)).Rel i j := by
+    rw [← hij]; ext <;> simp
+  have hjk' : (ComplexShape.up' (((n + 1 : ℤ), 1 - (n + 1 : ℤ)) : ℤ × ℤ)).Rel j k := by
+    rw [← hjk]; ext <;> simp
+  exact ((S.page (n + 1) (by lia)).exactAt_iff' i j k (ComplexShape.prev_eq' _ hij')
+    (ComplexShape.next_eq' _ hjk')).1
+      (((S.page (n + 1) (by lia)).exactAt_iff_isZero_homology j).2
+      ((isZero_sphereSerreSpectralSequence_page_X_of_isZero h p R j hb hm hE).of_iso
+        (S.iso (n + 1) (n + 2) j (by lia) (by lia))))
+
 /-- **The transgression `dⁿ` of a fibration over `Sⁿ` is injective when the total space has no
 homology in its degree.** The only differential of the Serre spectral sequence of a map to `Sⁿ`
 that can be nonzero goes from the column `n` to the column `0` on the page `n + 1` (classically
@@ -211,23 +224,12 @@ theorem mono_sphereSerreSpectralSequence_page_d (hn : 1 ≤ n) (r : ℤ) (hr : r
       (ModuleCat.of R R)).obj E)) :
     Mono (((sphereSerreSpectralSequence h p R).page r (by lia)).d pq pq') := by
   subst hr
-  let S := sphereSerreSpectralSequence h p R
-  have hrel : (ComplexShape.up' (((n + 1 : ℤ), 1 - (n + 1 : ℤ)) : ℤ × ℤ)).Rel pq pq' := by
-    rw [← hpq']; ext <;> simp
-  have hrel' : (ComplexShape.up' (((n + 1 : ℤ), 1 - (n + 1 : ℤ)) : ℤ × ℤ)).Rel
-      (pq - ((n + 1 : ℤ), -(n : ℤ))) pq := by
-    ext <;> simp
-  -- The homology at `pq` is the object of the next page, which vanishes.
-  have hexact := ((S.page (n + 1) (by lia)).exactAt_iff' _ pq pq' (ComplexShape.prev_eq' _ hrel')
-    (ComplexShape.next_eq' _ hrel)).1
-      (((S.page (n + 1) (by lia)).exactAt_iff_isZero_homology pq).2
-      ((isZero_sphereSerreSpectralSequence_page_X_of_isZero h p R pq (Or.inr hb) hm hE).of_iso
-        (S.iso (n + 1) (n + 2) pq (by lia) (by lia))))
   -- The incoming differential starts in the empty column `2n`.
-  refine hexact.mono_g ((S.isZero_page_X_of_le le_rfl
-    (isZero_sphereSerreSpectralSequence_page_two_X h p R _ ?_ ?_) (n + 1) (by lia)).eq_of_src _ _)
-  · simp; lia
-  · simp; lia
+  refine (exact_sphereSerreSpectralSequence_page_sc' h p R hn _ pq pq' (sub_add_cancel _ _) hpq'
+    (Or.inr hb) hm hE).mono_g (((sphereSerreSpectralSequence h p R).isZero_page_X_of_le le_rfl
+      (isZero_sphereSerreSpectralSequence_page_two_X h p R _ ?_ ?_) (n + 1) (by lia)).eq_of_src _ _)
+  · simp only [Prod.snd_sub]; lia
+  · simp only [Prod.snd_sub]; lia
 
 /-- **The transgression `dⁿ` of a fibration over `Sⁿ` is surjective when the total space has no
 homology in the degree of its target.** The differential `dⁿ : Eⁿ_{n,q} ⟶ Eⁿ_{0,q+n-1}` of the page
@@ -242,24 +244,14 @@ theorem epi_sphereSerreSpectralSequence_page_d (hn : 1 ≤ n) (r : ℤ) (hr : r 
     Epi (((sphereSerreSpectralSequence h p R).page r (by lia)).d pq pq') := by
   subst hr
   let _ := sphereRelCWComplex h
-  let S := sphereSerreSpectralSequence h p R
-  have hb' : pq'.2 = -1 := by rw [← hpq']; simp; lia
-  have hrel : (ComplexShape.up' (((n + 1 : ℤ), 1 - (n + 1 : ℤ)) : ℤ × ℤ)).Rel pq pq' := by
-    rw [← hpq']; ext <;> simp
-  have hrel' : (ComplexShape.up' (((n + 1 : ℤ), 1 - (n + 1 : ℤ)) : ℤ × ℤ)).Rel
-      pq' (pq' + ((n + 1 : ℤ), -(n : ℤ))) := by
-    ext <;> simp
-  -- The homology at `pq'` is the object of the next page, which vanishes.
-  have hexact := ((S.page (n + 1) (by lia)).exactAt_iff' pq pq' _ (ComplexShape.prev_eq' _ hrel)
-    (ComplexShape.next_eq' _ hrel')).1
-      (((S.page (n + 1) (by lia)).exactAt_iff_isZero_homology pq').2
-      ((isZero_sphereSerreSpectralSequence_page_X_of_isZero h p R pq' (Or.inl hb') hm hE).of_iso
-        (S.iso (n + 1) (n + 2) pq' (by lia) (by lia))))
+  have hb' : pq'.2 = -1 := by rw [← hpq', Prod.snd_add]; lia
   -- The outgoing differential ends below the column `0`.
-  refine hexact.epi_f ((S.isZero_page_X_of_le le_rfl
-    (isZero_serreSpectralSequence_page_two_X_of_snd_le_neg_two R _ _ ?_) (n + 1)
-      (by lia)).eq_of_tgt _ _)
-  simp; lia
+  refine (exact_sphereSerreSpectralSequence_page_sc' h p R hn pq pq' _ hpq' rfl (Or.inl hb') hm
+    hE).epi_f (((sphereSerreSpectralSequence h p R).isZero_page_X_of_le le_rfl
+      (isZero_serreSpectralSequence_page_two_X_of_snd_le_neg_two R _ _ ?_) (n + 1)
+        (by lia)).eq_of_tgt _ _)
+  rw [Prod.snd_add]
+  lia
 
 end TopCat
 

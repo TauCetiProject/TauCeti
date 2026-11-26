@@ -37,7 +37,7 @@ page `2` survives unchanged to every later page
 * `CategoryTheory.SpectralSequence.isZero_page_X_of_le`: a zero object stays zero on later pages.
 * `CategoryTheory.SpectralSequence.page_d_eq_zero_of_le`: a differential of a later page between
   positions one of which is zero on an earlier page vanishes.
-* `CategoryTheory.SpectralSequence.page_d_eq_zero_of_forall_isZero_of_rel`,
+* `CategoryTheory.SpectralSequence.page_d_eq_zero_of_forall_isZero_page`,
   `CategoryTheory.SpectralSequence.page_d_eq_zero_of_forall_isZero`: the differentials at a
   position whose neighbours vanish are zero on a later page, or on all later pages.
 * `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero`: an object whose neighbours vanish
@@ -87,7 +87,7 @@ lemma page_d_eq_zero_of_le {r : ℤ} (hr : r₀ ≤ r) {pq pq' : κ}
 on the page `r` every object joined to the position `pq` by a differential of the page `s ≥ r` is
 zero. Then both differentials of the page `s` at `pq` vanish: either their other end is zero, or
 the shape forbids them. -/
-lemma page_d_eq_zero_of_forall_isZero_of_rel {r : ℤ} (hr : r₀ ≤ r) {pq : κ} (s : ℤ) (hrs : r ≤ s)
+lemma page_d_eq_zero_of_forall_isZero_page {r : ℤ} (hr : r₀ ≤ r) {pq : κ} (s : ℤ) (hrs : r ≤ s)
     (h : ∀ pq', (c s).Rel pq pq' ∨ (c s).Rel pq' pq → IsZero ((E.page r).X pq'))
     {i j : κ} (hij : i = pq ∨ j = pq) :
     (E.page s (hr.trans hrs)).d i j = 0 := by
@@ -105,13 +105,13 @@ lemma page_d_eq_zero_of_forall_isZero {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
     (h : ∀ s, r ≤ s → ∀ pq', (c s).Rel pq pq' ∨ (c s).Rel pq' pq → IsZero ((E.page r).X pq'))
     (s : ℤ) (hrs : r ≤ s) {i j : κ} (hij : i = pq ∨ j = pq) :
     (E.page s (hr.trans hrs)).d i j = 0 :=
-  E.page_d_eq_zero_of_forall_isZero_of_rel hr s hrs (h s hrs) hij
+  E.page_d_eq_zero_of_forall_isZero_page hr s hrs (h s hrs) hij
 
 /-- **Objects with vanishing neighbours survive up to a page.** Suppose that on the page `r` every
 object joined to the position `pq` by a differential of a page `s` with `r ≤ s < r'` is zero. Then
 the object at `pq` on the page `r'` is isomorphic to the object at `pq` on the page `r`: on each
 page in between, both differentials at `pq` vanish
-(`CategoryTheory.SpectralSequence.page_d_eq_zero_of_forall_isZero_of_rel`), so the object is its own
+(`CategoryTheory.SpectralSequence.page_d_eq_zero_of_forall_isZero_page`), so the object is its own
 homology. Nothing is assumed about the differentials of the page `r'` and the later ones, which may
 be nonzero at `pq`. The isomorphism is built page by page, see
 `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZeroOfLT_self` and
@@ -126,10 +126,10 @@ noncomputable def pageXIsoOfLEOfIsZeroOfLT {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
     (fun _ ↦ Iso.refl _)
     (fun s hrs e h ↦ (E.iso s (s + 1) pq rfl (hr.trans hrs)).symm ≪≫
       ((E.page s (hr.trans hrs)).isoHomologyπ _ pq rfl
-        (E.page_d_eq_zero_of_forall_isZero_of_rel hr s hrs (h s hrs (by lia))
+        (E.page_d_eq_zero_of_forall_isZero_page hr s hrs (h s hrs (by lia))
           (Or.inr rfl))).symm ≪≫
       (E.page s (hr.trans hrs)).iCyclesIso pq _ rfl
-        (E.page_d_eq_zero_of_forall_isZero_of_rel hr s hrs (h s hrs (by lia)) (Or.inl rfl)) ≪≫
+        (E.page_d_eq_zero_of_forall_isZero_page hr s hrs (h s hrs (by lia)) (Or.inl rfl)) ≪≫
       e fun t ht hts ↦ h t ht (by lia))
     r' hrr' h
 
@@ -151,10 +151,10 @@ lemma pageXIsoOfLEOfIsZeroOfLT_add_one {r : ℤ} (hr : r₀ ≤ r) {pq : κ} (s 
     E.pageXIsoOfLEOfIsZeroOfLT hr (s + 1) (Int.le_add_one hrs) h =
       (E.iso s (s + 1) pq rfl (hr.trans hrs)).symm ≪≫
         ((E.page s (hr.trans hrs)).isoHomologyπ _ pq rfl
-          (E.page_d_eq_zero_of_forall_isZero_of_rel hr s hrs (h s hrs (by lia))
+          (E.page_d_eq_zero_of_forall_isZero_page hr s hrs (h s hrs (by lia))
             (Or.inr rfl))).symm ≪≫
         (E.page s (hr.trans hrs)).iCyclesIso pq _ rfl
-          (E.page_d_eq_zero_of_forall_isZero_of_rel hr s hrs (h s hrs (by lia)) (Or.inl rfl)) ≪≫
+          (E.page_d_eq_zero_of_forall_isZero_page hr s hrs (h s hrs (by lia)) (Or.inl rfl)) ≪≫
         E.pageXIsoOfLEOfIsZeroOfLT hr s hrs fun t ht hts ↦ h t ht (by lia) := by
   rw [pageXIsoOfLEOfIsZeroOfLT, Int.leInduction_add_one]
   rfl

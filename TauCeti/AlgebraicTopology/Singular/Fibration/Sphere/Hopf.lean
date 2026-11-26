@@ -94,8 +94,11 @@ def hopfSerreSpectralSequenceSecondPageXIsoPole (q : ℕ) (pq : ℤ × ℤ) (hb 
     sphereSerreSpectralSequenceFirstPageXIsoPole (ι := Fin 3) (n := 2) rfl hopfSphere2Hom R
       (by norm_num) q pq hb ha ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) q).obj
-      (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo (hopfSphere2FiberHomeomorph _
-        (hopfSphere2_surjective _).choose_spec)).symm
+      (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo
+        ((Homeomorph.setCongr (preimage_hopfSphere2Hom
+          {spherePolePoint (rfl : Fintype.card (Fin 3) = 2 + 1)})).trans
+          (hopfSphere2FiberHomeomorph _ (hopfSphere2_surjective
+            (spherePolePoint (rfl : Fintype.card (Fin 3) = 2 + 1))).choose_spec).symm))
 
 /-- **The column `2` of the second page of the Serre spectral sequence of the Hopf fibration** is
 the homology of the circle: `E²_{2,q} ≅ Hq(S¹; R)`, through the fibre over the centre of the
@@ -110,8 +113,11 @@ def hopfSerreSpectralSequenceSecondPageXIsoTopCell (q : ℕ) (pq : ℤ × ℤ) (
     sphereSerreSpectralSequenceFirstPageXIsoTopCell (ι := Fin 3) (n := 2) rfl R
       hopfSphere2Hom_mem_serreFibrations (by norm_num) q pq hb ha ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) q).obj
-      (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo (hopfSphere2FiberHomeomorph _
-        (hopfSphere2_surjective _).choose_spec)).symm
+      (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo
+        ((Homeomorph.setCongr (preimage_hopfSphere2Hom
+          {sphereTopCellCenter (rfl : Fintype.card (Fin 3) = 2 + 1)})).trans
+          (hopfSphere2FiberHomeomorph _ (hopfSphere2_surjective
+            (sphereTopCellCenter (rfl : Fintype.card (Fin 3) = 2 + 1))).choose_spec).symm))
 
 end TopCat
 
