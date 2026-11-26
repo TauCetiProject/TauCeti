@@ -26,10 +26,13 @@ commutative monoid with zero the empty matrix. No cancellation is assumed.
 * `TauCeti.IdempotentMonoid` with `mk`, `mk_eq_mk_iff`, `ind`, `lift`, `hom_ext`,
   `Unique` over subsingletons, `nsmul_mk_one`, and `mk_one_eq_mk_one_iff` under
   `InvariantBasisNumber`.
+* `of_mk_eq_of_mk_iff`: `[e] = [f]` in the group completion of `V(A)` exactly when
+  `e ⊕ r ∼ f ⊕ r` for some `r`; `V(A)` need not be cancellative.
 * Functoriality (`map`, `congr`), the product decomposition
   `prodEquiv : IdempotentMonoid (A × B) ≃+ IdempotentMonoid A × IdempotentMonoid B` (with
   `prodEquiv_mk` and `prodEquiv_symm_mk_mk`), transposition over the opposite ring (`opEquiv`), the
-  ring group-completion normal form `exists_of_mk_sub_of_mk_one_eq`, and the division-ring rank
+  complement relation `mk_add_mk_one_sub` (`[f] + [1 - f] = [1]`), the ring
+  group-completion normal form `exists_of_mk_sub_of_mk_one_eq`, and the division-ring rank
   isomorphisms `finrankAddEquiv : IdempotentMonoid D ≃+ ℕ` and `grothendieckAddGroupEquivInt`.
 
 ## References
@@ -257,6 +260,29 @@ theorem mk_fromBlocks_zero_left {ι κ : Type*} [Fintype ι] [Fintype κ] (e : M
     mk (fromBlocks (0 : Matrix ι ι A) 0 0 e)
       (IsIdempotentElem.zero.fromBlocks_zero₁₂_zero₂₁ he) = mk e he :=
   mk_eq_mk (he.idempotentEquivalent_fromBlocks_zero_left ι)
+
+/-- **Equality criterion.** Idempotent matrices `e` and `f`, of possibly different sizes, have the
+same class in the group completion of `V(A)` exactly when `e ⊕ r` and `f ⊕ r` are equivalent
+idempotents for some square matrix `r`, which is then idempotent. Over a ring, `r` can be taken to
+be an identity matrix: see `TauCeti.IdempotentMonoid.toKZero_mk_eq_toKZero_mk_iff`. -/
+theorem of_mk_eq_of_mk_iff {e : Matrix ι ι A} {f : Matrix κ κ A} (he : IsIdempotentElem e)
+    (hf : IsIdempotentElem f) :
+    (_root_.Algebra.GrothendieckAddGroup.of (mk e he) :
+        _root_.Algebra.GrothendieckAddGroup (IdempotentMonoid A)) =
+        _root_.Algebra.GrothendieckAddGroup.of (mk f hf) ↔
+      ∃ (k : ℕ) (r : Matrix (Fin k) (Fin k) A),
+        IdempotentEquivalent (fromBlocks e 0 0 r) (fromBlocks f 0 0 r) := by
+  rw [_root_.Algebra.GrothendieckAddGroup.of_eq_of_iff]
+  constructor
+  · rintro ⟨c, h⟩
+    induction c using ind with | mk k r hr
+    rw [mk_add_mk, mk_add_mk, mk_eq_mk_iff] at h
+    exact ⟨k, r, h⟩
+  · rintro ⟨k, r, h⟩
+    have hr := (isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff.1 h.isIdempotentElem_left).2
+    refine ⟨mk r hr, ?_⟩
+    rw [mk_add_mk, mk_add_mk]
+    exact mk_eq_mk h
 
 section Map
 
@@ -527,6 +553,13 @@ section Ring
 
 variable {R : Type u} [Ring R]
 
+/-- **Complements.** The classes in `V(R)` of an idempotent matrix `f` and of its complement
+`1 - f` add up to the class of the identity matrix. -/
+theorem mk_add_mk_one_sub [DecidableEq ι] {f : Matrix ι ι R} (hf : IsIdempotentElem f) :
+    mk f hf + mk (1 - f) hf.one_sub = mk (1 : Matrix ι ι R) .one := by
+  rw [mk_add_mk]
+  exact mk_eq_mk (idempotentEquivalent_fromBlocks_one_sub hf)
+
 /-- **Every element of the group completion of `V(R)` is `[e] - [1ₘ]`.** -/
 theorem exists_of_mk_sub_of_mk_one_eq
     (y : _root_.Algebra.GrothendieckAddGroup (IdempotentMonoid R)) :
@@ -543,9 +576,7 @@ theorem exists_of_mk_sub_of_mk_one_eq
   have h₁ : mk (reindex finSumFinEquiv finSumFinEquiv (fromBlocks e 0 0 (1 - f)))
       hE.isIdempotentElem_right = mk e he + mk (1 - f) hf.one_sub := by
     rw [mk_add_mk]; exact mk_eq_mk hE.symm
-  have h₂ : mk (1 : Matrix (Fin m) (Fin m) R) .one = mk f hf + mk (1 - f) hf.one_sub := by
-    rw [mk_add_mk]; exact mk_eq_mk (idempotentEquivalent_fromBlocks_one_sub hf).symm
-  rw [h₁, h₂, map_add, map_add, add_sub_add_right_eq_sub]
+  rw [h₁, ← mk_add_mk_one_sub hf, map_add, map_add, add_sub_add_right_eq_sub]
 
 end Ring
 
