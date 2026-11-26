@@ -12,10 +12,12 @@ public import Mathlib.RingTheory.Bialgebra.TensorProduct
 # Base change of the cotangent space at the identity
 
 For a commutative bialgebra `A` over `R`, the cotangent space at the identity
-`ω = I ⧸ I ^ 2`, with `I = ker ε` the augmentation ideal, is the module of invariant differentials
-of the affine monoid `Spec A`. This file proves that its formation commutes with **every** base
-change `R → S`: the canonical map `S ⊗[R] (I ⧸ I ^ 2) → I_S ⧸ I_S ^ 2`, where `I_S` is the
-augmentation ideal of `S ⊗[R] A`, is an isomorphism of `S`-modules.
+`ω = I ⧸ I ^ 2`, with `I = ker ε` the augmentation ideal, is the conormal module `e^* Ω¹` of the
+affine monoid `Spec A` along its identity section `e`; for a Hopf algebra it is the module of
+invariant differentials of the affine group `Spec A`. This file proves that its formation
+commutes with **every** base change `R → S`: the canonical map
+`S ⊗[R] (I ⧸ I ^ 2) → I_S ⧸ I_S ^ 2`, where `I_S` is the augmentation ideal of `S ⊗[R] A`, is an
+isomorphism of `S`-modules.
 
 No flatness or finiteness is needed. Mathlib's `Ideal.tensorCotangentEquiv` gives the comparison
 for the base change of an arbitrary ideal only when `S` is flat over `R`. For an augmentation ideal
@@ -81,8 +83,10 @@ private noncomputable def cotangentSpaceBaseChangeInv :
     (((cotangentMap R A).baseChange S).comp
       ((AugmentationIdeal S (S ⊗[R] A)).subtype.restrictScalars S))
     fun x y => by
-      have hx : counit (R := S) (x : S ⊗[R] A) = 0 := x.prop
-      have hy : counit (R := S) (y : S ⊗[R] A) = 0 := y.prop
+      have hx : counit (R := S) (x : S ⊗[R] A) = 0 := by
+        simpa using RingHom.mem_ker.mp x.prop
+      have hy : counit (R := S) (y : S ⊗[R] A) = 0 := by
+        simpa using RingHom.mem_ker.mp y.prop
       simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, Submodule.coe_subtype,
         MulMemClass.coe_mul, baseChange_cotangentMap_mul, hx, hy, zero_smul, add_zero]
 
@@ -94,17 +98,16 @@ private lemma cotangentSpaceBaseChangeInv_toCotangent (x : AugmentationIdeal S (
 private lemma cotangentSpaceBaseChangeInv_cotangentMap (w : S ⊗[R] A) :
     cotangentSpaceBaseChangeInv R S A (cotangentMap S (S ⊗[R] A) w) =
       (cotangentMap R A).baseChange S w := by
-  rw [cotangentMap_apply, cotangentSpaceBaseChangeInv_toCotangent, map_sub,
-    Algebra.algebraMap_eq_smul_one, LinearMap.map_smul, Algebra.TensorProduct.one_def,
-    LinearMap.baseChange_tmul, cotangentMap_one, tmul_zero, smul_zero, sub_zero]
+  rw [cotangentMap_apply, cotangentSpaceBaseChangeInv_toCotangent]
+  simp [Algebra.algebraMap_eq_smul_one, Algebra.TensorProduct.one_def]
 
 /-- The `R`-linear comparison `CotangentSpace R A → CotangentSpace S (S ⊗[R] A)` induced by
 `a ↦ 1 ⊗ a`, which sends the augmentation ideal of `A` into that of `S ⊗[R] A`. -/
 private noncomputable def cotangentSpaceToBaseChange :
     CotangentSpace R A →ₗ[R] CotangentSpace S (S ⊗[R] A) :=
   Ideal.mapCotangent _ _ (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A) fun a ha ↦ by
-    have ha : counit (R := R) a = 0 := ha
-    simp [AugmentationIdeal, ha]
+    have ha : counit (R := R) a = 0 := by simpa using RingHom.mem_ker.mp ha
+    simp [RingHom.mem_ker, ha]
 
 private lemma cotangentSpaceToBaseChange_cotangentMap (a : A) :
     cotangentSpaceToBaseChange R S A (cotangentMap R A a) =
@@ -141,15 +144,13 @@ noncomputable def cotangentSpaceBaseChangeEquiv :
     (by
       ext c
       obtain ⟨x, rfl⟩ := (AugmentationIdeal S (S ⊗[R] A)).toCotangent_surjective c
-      rw [LinearMap.comp_apply, cotangentSpaceBaseChangeInv_toCotangent,
-        liftBaseChange_baseChange_cotangentMap, cotangentMap_augmentation, LinearMap.id_apply])
+      simp [cotangentSpaceBaseChangeInv_toCotangent, liftBaseChange_baseChange_cotangentMap,
+        cotangentMap_augmentation])
     (by
       refine AlgebraTensorModule.ext fun s c => ?_
-      obtain ⟨x, rfl⟩ := (AugmentationIdeal R A).toCotangent_surjective c
-      rw [LinearMap.comp_apply, LinearMap.liftBaseChange_tmul, ← cotangentMap_augmentation,
-        cotangentSpaceToBaseChange_cotangentMap, LinearMap.map_smul,
-        cotangentSpaceBaseChangeInv_cotangentMap, LinearMap.baseChange_tmul, smul_tmul',
-        smul_eq_mul, mul_one, LinearMap.id_apply])
+      obtain ⟨a, rfl⟩ := cotangentMap_surjective R A c
+      simp [cotangentSpaceToBaseChange_cotangentMap, cotangentSpaceBaseChangeInv_cotangentMap,
+        smul_tmul'])
 
 /-- The base change comparison sends `s ⊗ [a - ε a]` to `s • [1 ⊗ a - ε a]`. -/
 @[simp]
