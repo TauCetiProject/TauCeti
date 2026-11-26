@@ -9,9 +9,6 @@ public import Mathlib.Algebra.Ring.Semireal.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Complex.Trigonometric
 public import TauCeti.Analysis.RCLike.Basic
-import Mathlib.Analysis.Normed.Module.Connected
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
@@ -61,14 +58,8 @@ by itself; at `z = r`, Lean's totalized inverse gives value one.
 Two integers whose images in `ℂ` are at distance less than `1` are equal, and on any compact
 subset of `ℂ` avoiding the nonpositive integers `-ℕ`, the shifted norms `‖(n : ℂ) + c‖` have a
 positive uniform lower bound (`IsCompact.exists_pos_le_norm_natCast_add`). Moreover, the natural
-numbers embedded in `ℂ` form a closed set (`Complex.isClosed_range_natCast`), and the complement
-`{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}` of the nonpositive integers is connected
-(`Complex.isConnected_setOf_forall_ne_neg_natCast`). For a closed set `s ⊆ ℝ` avoiding `w₀.re`,
-an open ball around `w₀` avoids `s` in real part and preserves strict order against every element
-of `s` (`Complex.exists_ball_re_notMem_and_lt_iff`, with the shifted negative-integer specialization
-`Complex.exists_ball_re_add_ne_neg_natCast_and_lt_iff` and localization lemma
-`Complex.neg_sub_natCast_mem_ball_of_re_gt`). Negating `x + y * I` reflects both real
-coordinates (`Complex.neg_ofReal_add_mul_I`).
+numbers embedded in `ℂ` form a closed set (`Complex.isClosed_range_natCast`), and negating
+`x + y * I` reflects both real coordinates (`Complex.neg_ofReal_add_mul_I`).
 
 The oriented area `Im (conj ω₁ ω₂)` of the parallelogram spanned by `ω₁`, `ω₂` satisfies
 `2 i Im (conj ω₁ ω₂) = ω₂ conj ω₁ - ω₁ conj ω₂` (`TauCeti.two_mul_I_mul_im_conj_mul`).
@@ -468,65 +459,11 @@ theorem isClosed_range_natCast : IsClosed (Set.range ((↑) : ℕ → ℂ)) := b
   rw [h]
   exact isClosed_range_intCast.inter (isClosed_le continuous_const continuous_re)
 
-/-- The complement `{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}` of the nonpositive integers is
-connected. -/
-theorem isConnected_setOf_forall_ne_neg_natCast :
-    IsConnected {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} := by
-  have heq : {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} = (Set.range fun n : ℕ => -(n : ℂ))ᶜ := by
-    ext w; simp [eq_comm]
-  rw [heq]
-  exact (Set.countable_range _).isConnected_compl_of_one_lt_rank
-    (Complex.rank_real_complex ▸ Nat.one_lt_ofNat)
-
 /-- Negating a complex number written as `x + y * I` reflects both real coordinates:
 `-(x + y * I) = (-x : ℝ) + (-y : ℝ) * I`. -/
 theorem neg_ofReal_add_mul_I (x y : ℝ) :
     -((x : ℂ) + (y : ℂ) * I) = ((-x : ℝ) : ℂ) + ((-y : ℝ) : ℂ) * I := by
   rw [ofReal_neg, ofReal_neg, neg_add, neg_mul]
-
-/-- For a closed set `s ⊆ ℝ` and `w₀ : ℂ` with `w₀.re ∉ s`, there is `δ > 0` such that on
-`Metric.ball w₀ δ`, the real part `w.re` avoids `s` and stays on the same side of every `y ∈ s`
-as `w₀.re`. -/
-theorem exists_ball_re_notMem_and_lt_iff (w₀ : ℂ) {s : Set ℝ} (hs : IsClosed s)
-    (hw₀ : w₀.re ∉ s) :
-    ∃ δ : ℝ, 0 < δ ∧ ∀ w ∈ Metric.ball w₀ δ,
-      w.re ∉ s ∧ ∀ y ∈ s, y < w₀.re ↔ y < w.re := by
-  obtain ⟨a, b, ⟨ha, hb⟩, h⟩ := hs.exists_Ioo_disjoint_and_lt_iff hw₀
-  refine ⟨min (w₀.re - a) (b - w₀.re), lt_min (sub_pos.2 ha) (sub_pos.2 hb), fun w hw => ?_⟩
-  have hre : |w.re - w₀.re| < min (w₀.re - a) (b - w₀.re) :=
-    (abs_re_le_norm (w - w₀)).trans_lt (mem_ball_iff_norm.1 hw)
-  exact h w.re ⟨by linarith [(abs_lt.1 hre).1, min_le_left (w₀.re - a) (b - w₀.re)],
-    by linarith [(abs_lt.1 hre).2, min_le_right (w₀.re - a) (b - w₀.re)]⟩
-
-/-- For `w₀ : ℂ` and `σ : ℝ` with `w₀.re + σ ∉ -ℕ`, there is `δ > 0` such that on
-`Metric.ball w₀ δ`, every `w` still avoids `w.re + σ ∈ -ℕ` and keeps every shifted pole
-`-w - k` on the same side of `Re s = σ` as `-w₀ - k`. -/
-theorem exists_ball_re_add_ne_neg_natCast_and_lt_iff (w₀ : ℂ) {σ : ℝ}
-    (hw₀ : ∀ k : ℕ, w₀.re + σ ≠ -k) :
-    ∃ δ : ℝ, 0 < δ ∧ ∀ w ∈ Metric.ball w₀ δ,
-      (∀ k : ℕ, w.re + σ ≠ -k) ∧
-        ∀ k : ℕ, (-w₀ - k).re < σ ↔ (-w - k).re < σ := by
-  have hcl : IsClosed ((fun x : ℝ => -(x + σ)) ⁻¹' Set.range ((↑) : ℕ → ℝ)) :=
-    Nat.isClosedEmbedding_coe_real.isClosed_range.preimage
-      (continuous_neg.comp (continuous_id.add continuous_const))
-  obtain ⟨δ, hδ, hav⟩ := w₀.exists_ball_re_notMem_and_lt_iff hcl
-    (by rintro ⟨k, hk⟩; exact hw₀ k (by linarith))
-  refine ⟨δ, hδ, fun w hw => ⟨fun k hk => (hav w hw).1 ⟨k, by linarith⟩, fun k => ?_⟩⟩
-  have h := (hav w hw).2 (-(k : ℝ) - σ) ⟨k, by ring⟩
-  simp only [sub_re, neg_re, natCast_re]
-  exact ⟨fun _ => by linarith [h.1 (by linarith)], fun _ => by linarith [h.2 (by linarith)]⟩
-
-/-- If `w₀.re + σ ≠ -(k : ℝ)`, `‖w - w₀‖ < r`, and `(-w₀ - k).re < σ → (-w - k).re < σ`,
-then any shifted point `-w - k` with `σ < (-w - k).re` also satisfies `σ < (-w₀ - k).re` and lies
-in `Metric.ball (-w₀ - k) r`. -/
-theorem neg_sub_natCast_mem_ball_of_re_gt {w₀ w : ℂ} {σ r : ℝ} {k : ℕ}
-    (hw₀_σ : w₀.re + σ ≠ -k) (hw_dist : ‖w - w₀‖ < r)
-    (hw_cross : (-w₀ - k).re < σ → (-w - k).re < σ)
-    (hk : σ < (-w - k).re) :
-    σ < (-w₀ - k).re ∧ (-w - k : ℂ) ∈ Metric.ball (-w₀ - k) r := by
-  refine ⟨lt_of_le_of_ne (not_lt.1 fun h => hk.not_gt (hw_cross h))
-    (fun h => hw₀_σ (by simp at h; linarith)), ?_⟩
-  rwa [mem_ball_iff_norm, sub_sub_sub_cancel_right, neg_sub_neg, norm_sub_rev]
 
 /-- If `s + β` never vanishes for natural numbers `s ≥ 1`, then `‖s + β‖` is bounded below by a
 positive multiple of `s` for all `s ≥ 1`. -/

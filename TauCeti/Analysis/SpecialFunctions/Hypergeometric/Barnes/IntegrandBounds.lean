@@ -17,9 +17,10 @@ import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 This module extends `TauCeti.Analysis.SpecialFunctions.Hypergeometric.Barnes.Contour` with:
 * monotonicity of `Complex.gammaPolesRightOf` in the abscissa `σ`;
-* the right-family residue formula
-  `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast_right` at `t = -b - k`,
-  obtained by symmetry from `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast`;
+* the `b`-family residue formula
+  `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast_right` at the second
+  left-family pole `t = -b - k`, obtained by symmetry from
+  `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast`;
 * `AnalyticAt` and joint five-variable holomorphy of `Complex.hypergeometricMellinBarnesIntegrand`
   in `(a, b, c, z, t)` away from the pole families `-a - ℕ`, `-b - ℕ`, `ℕ` and the branch cut
   `-z ∉ Complex.slitPlane`;
@@ -54,7 +55,7 @@ open scoped Nat Real Topology
 
 namespace Complex
 
-/-! ### Pole combinatorics and right-family residue -/
+/-! ### Pole combinatorics and `b`-family residue -/
 
 /-- `gammaPolesRightOf a` is antitone in the abscissa `σ`: shifting `σ` to the left only adds
 poles of `t ↦ Γ(a + t)` to the right of `Re t = σ`. -/
