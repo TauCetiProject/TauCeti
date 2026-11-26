@@ -25,18 +25,20 @@ on the groups `SU(2)`, `SU(2) × SU(2)` and `SO(3)`.
   hold. In particular its third homotopy group vanishes.
 * **`SU(2)` and `SU(2) × SU(2)`.** `SU(2)` is the three-sphere
   (`TauCeti.specialUnitaryGroupTwoHomeomorphSphere`), so `π₃(SU(2)) ≅ ℤ`
-  (`TauCeti.nonempty_homotopyGroup_three_specialUnitaryGroup_mulEquiv_int`), and
-  `π₃(SU(2) × SU(2)) ≅ ℤ²`, one factor for each of `SU(2) × 1` and `1 × SU(2)`
-  (`TauCeti.nonempty_homotopyGroup_three_prod_specialUnitaryGroup_mulEquiv`).
+  (`TauCeti.nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int`), and
+  `π₃(SU(2) × SU(2)) ≅ ℤ²`
+  (`TauCeti.nonempty_homotopyGroup_three_prod_specialUnitaryGroup_two_mulEquiv`).
 * **`SO(3)`.** The finite cover of `SO(3)` by a torus times a simply connected group is the double
   cover `SU(2) → SO(3)` (`TauCeti.SU2.isCoveringMap_toSO3`), with a trivial torus factor. A
   covering map is bijective on the homotopy groups in degrees at least two, so
   `π₃(SO(3)) ≅ π₃(S³) ≅ ℤ` at every base point
-  (`TauCeti.nonempty_homotopyGroup_three_specialOrthogonalGroup_mulEquiv_int`), while
+  (`TauCeti.nonempty_homotopyGroup_three_specialOrthogonalGroup_three_mulEquiv_int`), while
   `π₂(SO(3)) = 0` (`TauCeti.subsingleton_homotopyGroup_specialOrthogonalGroup_three`). Hence
-  `SO(3)` is not aspherical (`TauCeti.not_isAspherical_specialOrthogonalGroup`), and it is not a
-  torus, since tori are aspherical
-  (`TauCeti.not_exists_continuousMulEquiv_torus_specialOrthogonalGroup`): both sides fail.
+  `SO(3)` is not aspherical (`TauCeti.not_isAspherical_specialOrthogonalGroup_three`), and it is
+  not a torus, since tori are aspherical
+  (`TauCeti.not_exists_continuousMulEquiv_torus_specialOrthogonalGroup_three`): both sides fail.
+  The computation of `π₃(SO(3))` and the failure of asphericity are proved with the other
+  homotopy groups of `SO(3)` in `TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HomotopyGroup`.
 
 The Lie group hypothesis of the criterion is checked on the product `ℕ → Circle` of countably
 many circles by `Circle.isEmpty_pi_mulEquiv_pi` and `TauCeti.not_lieGroup_pi_circle`: it is
@@ -56,7 +58,7 @@ public section
 noncomputable section
 
 open Matrix
-open scoped Quaternion Topology Topology.Homotopy
+open scoped Topology Topology.Homotopy
 
 namespace TauCeti
 
@@ -77,48 +79,29 @@ example (r : ℕ) : Subsingleton (π_ 3 (Fin r → Circle) 1) :=
 
 /-- **`π₃(SU(2)) ≅ ℤ`**, at every base point: `SU(2)` is the three-sphere, the unit sphere of the
 quaternions. -/
-theorem nonempty_homotopyGroup_three_specialUnitaryGroup_mulEquiv_int (g : SU2) :
+theorem nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int (g : SU2) :
     Nonempty (π_ 3 SU2 g ≃* Multiplicative ℤ) :=
   ⟨(HomotopyGroup.homeomorphMulEquiv specialUnitaryGroupTwoHomeomorphSphere g).trans
-    (AddEquiv.toMultiplicativeRight (homotopyGroupSphereAddEquiv (n := 1)
-      ((stdOrthonormalBasis ℝ ℍ[ℝ]).reindex (finCongr Quaternion.finrank_eq_four)) _))⟩
+    (homotopyGroupSphereQuaternionMulEquiv _)⟩
 
-/-- **`π₃(SU(2) × SU(2)) ≅ ℤ²`**, at every base point, one factor `ℤ` for each of the subgroups
-`SU(2) × 1` and `1 × SU(2)`. -/
-theorem nonempty_homotopyGroup_three_prod_specialUnitaryGroup_mulEquiv (g h : SU2) :
+/-- **`π₃(SU(2) × SU(2)) ≅ ℤ²`**, at every base point: the homotopy groups of a product are the
+products of the homotopy groups of the factors. -/
+theorem nonempty_homotopyGroup_three_prod_specialUnitaryGroup_two_mulEquiv (g h : SU2) :
     Nonempty (π_ 3 (SU2 × SU2) (g, h) ≃* Multiplicative ℤ × Multiplicative ℤ) := by
-  obtain ⟨e₁⟩ := nonempty_homotopyGroup_three_specialUnitaryGroup_mulEquiv_int g
-  obtain ⟨e₂⟩ := nonempty_homotopyGroup_three_specialUnitaryGroup_mulEquiv_int h
+  obtain ⟨e₁⟩ := nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int g
+  obtain ⟨e₂⟩ := nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int h
   exact ⟨(HomotopyGroup.prodMulEquiv g h).trans (e₁.prodCongr e₂)⟩
 
 /-! ### The rotation group `SO(3)` -/
 
-/-- **`π₃(SO(3)) ≅ ℤ`**, at every base point: `π₃(SO(3)) ≅ π₃(S³)`, through the double cover of
-`SO(3)` by `Spin(3) ≅ S³`, and `π₃(S³) ≅ ℤ`. -/
-theorem nonempty_homotopyGroup_three_specialOrthogonalGroup_mulEquiv_int
-    (S : specialOrthogonalGroup (Fin 3) ℝ) :
-    Nonempty (π_ 3 (specialOrthogonalGroup (Fin 3) ℝ) S ≃* Multiplicative ℤ) :=
-  -- Translate the base point to `1`, where the comparison with `S³` is stated.
-  ⟨(HomotopyGroup.homeomorphMulEquivOfEq (Homeomorph.mulLeft S) (mul_one S)).symm.trans <|
-    specialOrthogonalGroupThreeHomotopyGroupMulEquivSphere.trans <|
-      AddEquiv.toMultiplicativeRight (homotopyGroupSphereAddEquiv (n := 1)
-        ((stdOrthonormalBasis ℝ ℍ[ℝ]).reindex (finCongr Quaternion.finrank_eq_four)) 1)⟩
-
-/-- **`SO(3)` is not aspherical**, at any base point, since `π₃(SO(3)) ≅ ℤ` is nontrivial. -/
-theorem not_isAspherical_specialOrthogonalGroup (S : specialOrthogonalGroup (Fin 3) ℝ) :
-    ¬IsAspherical (specialOrthogonalGroup (Fin 3) ℝ) S := fun hS ↦ by
-  obtain ⟨e⟩ := nonempty_homotopyGroup_three_specialOrthogonalGroup_mulEquiv_int S
-  have := hS.subsingleton_homotopyGroup 1
-  exact not_subsingleton (Multiplicative ℤ) e.symm.toEquiv.subsingleton
-
 /-- **`SO(3)` is not a torus**: it is not isomorphic, as a topological group, to any torus
 `Fin r → Circle`, since tori are aspherical and `SO(3)` is not. With
-`TauCeti.not_isAspherical_specialOrthogonalGroup`, both sides of the torus criterion fail for
-`SO(3)`. -/
-theorem not_exists_continuousMulEquiv_torus_specialOrthogonalGroup :
+`TauCeti.not_isAspherical_specialOrthogonalGroup_three`, both sides of the torus criterion fail
+for `SO(3)`. -/
+theorem not_exists_continuousMulEquiv_torus_specialOrthogonalGroup_three :
     ¬∃ r : ℕ, Nonempty (specialOrthogonalGroup (Fin 3) ℝ ≃ₜ* (Fin r → Circle)) := by
   rintro ⟨r, ⟨e⟩⟩
-  exact not_isAspherical_specialOrthogonalGroup 1
+  exact not_isAspherical_specialOrthogonalGroup_three 1
     ((Circle.isAspherical_pi 1).of_homotopyEquiv e.toHomeomorph.symm.toHomotopyEquiv 1)
 
 end TauCeti
