@@ -22,12 +22,13 @@ conditions:
   p. 224);
 * `τ` is **densely defined** (`TauCeti.IsDenselyDefined`) when `𝔪_τ⁺` is dense in `B₊`.
 
-For a lower semicontinuous trace and an increasing sequence or net `xᵢ → x` in norm,
-`τ(xᵢ) → τ(x)` (`TauCeti.IsTrace.tendsto_comp_of_monotone`, Dixmier 1963, Remarque 2, p. 225):
-the positive cone is closed, so `xᵢ ≤ x` and `τ(xᵢ) ≤ τ(x)` by monotonicity, while lower
-semicontinuity at `x` gives the reverse inequality for the supremum. The map `x ↦ τ(x⋆x)` is lower
-semicontinuous on all of `B` (`TauCeti.IsTrace.lowerSemicontinuous_star_mul_self`), as the
-composition of `τ` with the norm-continuous map `x ↦ x⋆x` into `B₊`.
+For a lower semicontinuous trace and an increasing sequence or net `xᵢ → x` of positive elements
+converging in norm, `τ(xᵢ) → τ(x)` (`TauCeti.IsTrace.tendsto_comp_of_monotone`, Dixmier 1963,
+Remarque 2, p. 225): the positive cone is closed, so `xᵢ ≤ x` and `τ(xᵢ) ≤ τ(x)` by monotonicity,
+while lower semicontinuity at `x` gives the reverse inequality for the supremum. The map
+`x ↦ τ(x⋆x)` is lower semicontinuous on all of `B`
+(`TauCeti.IsTrace.lowerSemicontinuous_star_mul_self`), as the composition of `τ` with the
+norm-continuous map `x ↦ x⋆x` into `B₊`.
 
 ## Main definitions
 
@@ -37,7 +38,7 @@ composition of `τ` with the norm-continuous map `x ↦ x⋆x` into `B₊`.
 ## Main results
 
 * `TauCeti.IsTrace.iSup_eq_of_monotone`, `TauCeti.IsTrace.tendsto_comp_of_monotone`: continuity
-  along increasing nets of a lower semicontinuous trace.
+  along increasing nets of positive elements of a lower semicontinuous trace.
 * `TauCeti.IsTrace.lowerSemicontinuous_star_mul_self`: `x ↦ τ(x⋆x)` is lower semicontinuous.
 * `TauCeti.isSemifinite_of_lt_top`, `TauCeti.isDenselyDefined_of_lt_top`: traces finite on `B₊`
   are semifinite and densely defined.
