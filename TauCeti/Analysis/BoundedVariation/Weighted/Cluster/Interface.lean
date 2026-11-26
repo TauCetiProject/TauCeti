@@ -35,7 +35,9 @@ point lies on the reduced boundaries of three cells
   (`TauCeti.Cluster.perimeter_eq_sum_interfaceArea`);
 * grouping cells by a map `f : Fin q → Fin p` (`TauCeti.Cluster.coarsen`) leaves the interfaces
   between cells sent to different indices, so the grouped cluster has total perimeter
-  `Σ_{i < j, f i ≠ f j} A_ij` (`TauCeti.Cluster.perimeter_coarsen_eq_sum_interfaceArea`);
+  `Σ_{i < j, f i ≠ f j} A_ij` (`TauCeti.Cluster.perimeter_coarsen_eq_sum_interfaceArea`), that is
+  `P_μ(Ω)` minus the interfaces inside the groups
+  (`TauCeti.Cluster.perimeter_coarsen_add_sum_interfaceArea`);
 * merging two cells `Ω_i`, `Ω_j` gives total perimeter exactly `P_μ(Ω) − A_ij`
   (`TauCeti.Cluster.perimeter_coarsen_eq_sub_interfaceArea`,
   `TauCeti.Cluster.perimeter_coarsen_add_interfaceArea`).
@@ -220,18 +222,26 @@ theorem weightedPerimeter_cell_eq_sum_interfaceArea (hW : ContDiff ℝ 1 W)
     weightedPerimeter W ⊤ (Ω.cell i) = ∑ j ∈ {i}ᶜ, Ω.interfaceArea i j := by
   simpa using Ω.weightedPerimeter_biUnion_cell_eq_sum_interfaceArea hW hn {i}
 
+/-- Half of a symmetric double sum over the off-diagonal pairs is its sum over the increasing
+pairs. -/
+private theorem sum_sum_erase_div_two {ι : Type*} [Fintype ι] [LinearOrder ι]
+    [LocallyFiniteOrderBot ι] [LocallyFiniteOrderTop ι] (B : ι → ι → ℝ≥0∞)
+    (hB : ∀ i j, B i j = B j i) :
+    (∑ i, ∑ j ∈ Finset.univ.erase i, B i j) / 2 = ∑ i, ∑ j ∈ Finset.Ioi i, B i j := by
+  simp_rw [Finset.sum_erase_univ_eq_sum_Ioi_add_sum_Iio, Finset.sum_add_distrib,
+    Finset.sum_sum_Iio_eq_sum_sum_Ioi]
+  rw [Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => hB j i, ← two_mul,
+    mul_comm]
+  exact ENNReal.mul_div_cancel_right two_ne_zero ENNReal.ofNat_ne_top
+
 /-- **The total perimeter of a cluster is the total area of its interfaces.** For a `C¹` weight,
 in dimension `n ≥ 2`, `P_μ(Ω) = Σ_{i < j} A_ij`. -/
 theorem perimeter_eq_sum_interfaceArea (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E)
     (Ω : Cluster W q) :
     Ω.perimeter = ∑ i, ∑ j ∈ Finset.Ioi i, Ω.interfaceArea i j := by
   rw [perimeter_def]
-  simp_rw [weightedPerimeter_cell_eq_sum_interfaceArea hW hn, Finset.compl_singleton,
-    Finset.sum_erase_univ_eq_sum_Ioi_add_sum_Iio, Finset.sum_add_distrib,
-    Finset.sum_sum_Iio_eq_sum_sum_Ioi]
-  simp_rw [interfaceArea_comm Ω]
-  rw [← two_mul, mul_comm]
-  exact ENNReal.mul_div_cancel_right two_ne_zero ENNReal.ofNat_ne_top
+  simp_rw [weightedPerimeter_cell_eq_sum_interfaceArea hW hn, Finset.compl_singleton]
+  exact sum_sum_erase_div_two _ (interfaceArea_comm Ω)
 
 /-! ### Equivalent clusters and grouped cells -/
 
@@ -249,13 +259,17 @@ theorem IsEquivalent.interfaceArea_eq {Ω Ω' : Cluster W q} (h : Ω.IsEquivalen
     (i j : Fin q) : Ω.interfaceArea i j = Ω'.interfaceArea i j := by
   simp only [interfaceArea_def, h.interface_eq]
 
-/-- An interface area is at most the total perimeter. -/
+/-- For a `C¹` weight, in dimension `n ≥ 2`, the area `A_ij` of the interface between two distinct
+cells is at most the total perimeter. -/
 theorem interfaceArea_le_perimeter (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E)
-    (Ω : Cluster W q) {i j : Fin q} (hij : i < j) : Ω.interfaceArea i j ≤ Ω.perimeter := by
+    (Ω : Cluster W q) {i j : Fin q} (hij : i ≠ j) : Ω.interfaceArea i j ≤ Ω.perimeter := by
+  wlog hlt : i < j generalizing i j
+  · rw [interfaceArea_comm]
+    exact this hij.symm (hij.lt_or_gt.resolve_left hlt)
   rw [Ω.perimeter_eq_sum_interfaceArea hW hn]
   calc Ω.interfaceArea i j ≤ ∑ j ∈ Finset.Ioi i, Ω.interfaceArea i j :=
         Finset.single_le_sum (f := Ω.interfaceArea i) (fun _ _ => zero_le)
-          (Finset.mem_Ioi.2 hij)
+          (Finset.mem_Ioi.2 hlt)
     _ ≤ ∑ i, ∑ j ∈ Finset.Ioi i, Ω.interfaceArea i j :=
         Finset.single_le_sum (f := fun i => ∑ j ∈ Finset.Ioi i, Ω.interfaceArea i j)
           (fun _ _ => zero_le) (Finset.mem_univ i)
@@ -284,49 +298,58 @@ theorem perimeter_coarsen_eq_sum_interfaceArea (hW : ContDiff ℝ 1 W) (hn : 2 �
   rw [perimeter_def]
   simp_rw [hcell]
   rw [Finset.sum_fiberwise Finset.univ f fun i => ∑ j, B i j]
-  have hdiag : ∀ i, B i i = 0 := fun i => by simp [B]
-  have hsymm : ∀ i j, B i j = B j i := fun i j => by
-    by_cases h : f i = f j
-    · simp [B, h]
-    · simp only [B]
-      rw [interfaceArea_comm Ω i j]
-      simp [h, Ne.symm h]
-  have hrow : ∀ i, ∑ j, B i j = ∑ j ∈ Finset.Ioi i, B i j + ∑ j ∈ Finset.Iio i, B i j :=
-    fun i => by
-      rw [← Finset.add_sum_erase _ _ (Finset.mem_univ i), hdiag, zero_add,
-        Finset.sum_erase_univ_eq_sum_Ioi_add_sum_Iio]
-  simp_rw [hrow, Finset.sum_add_distrib, Finset.sum_sum_Iio_eq_sum_sum_Ioi]
-  rw [Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => hsymm j i, ← two_mul,
-    mul_comm]
-  exact ENNReal.mul_div_cancel_right two_ne_zero ENNReal.ofNat_ne_top
+  have hrow : ∀ i, ∑ j, B i j = ∑ j ∈ Finset.univ.erase i, B i j := fun i => by
+    rw [← Finset.add_sum_erase _ _ (Finset.mem_univ i)]
+    simp [B]
+  simp_rw [hrow]
+  refine sum_sum_erase_div_two B fun i j => ?_
+  by_cases h : f i = f j
+  · simp [B, h]
+  · simp only [B]
+    rw [interfaceArea_comm Ω i j]
+    simp [h, Ne.symm h]
+
+/-- **Grouping cells removes the interfaces inside each group.** For a `C¹` weight, in dimension
+`n ≥ 2`, and a map `f : Fin q → Fin p`, the total perimeter of the grouped cluster plus the
+interface areas `A_ij`, `i < j`, between cells sent to the same index is `P_μ(Ω)`. -/
+theorem perimeter_coarsen_add_sum_interfaceArea (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E)
+    {p : ℕ} (Ω : Cluster W q) (f : Fin q → Fin p) :
+    (Ω.coarsen hW f).perimeter +
+        ∑ i, ∑ j ∈ Finset.Ioi i, (if f i = f j then Ω.interfaceArea i j else 0) =
+      Ω.perimeter := by
+  rw [perimeter_coarsen_eq_sum_interfaceArea hW hn, perimeter_eq_sum_interfaceArea hW hn,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  split_ifs <;> simp
 
 /-- **Merging two cells removes their interface.** For a `C¹` weight, in dimension `n ≥ 2`, if
-`f : Fin q → Fin p` identifies the indices `i < j` and no other pair, then the grouped cluster,
-in which `Ω_i` and `Ω_j` are merged, has total perimeter `P_μ(Ω) − A_ij`, in additive form. -/
+`f : Fin q → Fin p` identifies the distinct indices `i`, `j` and no other pair, then the grouped
+cluster, in which `Ω_i` and `Ω_j` are merged, has total perimeter `P_μ(Ω) − A_ij`, in additive
+form. -/
 theorem perimeter_coarsen_add_interfaceArea (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E)
-    {p : ℕ} (Ω : Cluster W q) {f : Fin q → Fin p} {i j : Fin q} (hij : i < j)
+    {p : ℕ} (Ω : Cluster W q) {f : Fin q → Fin p} {i j : Fin q} (hij : i ≠ j)
     (hf : ∀ a b, a ≠ b → (f a = f b ↔ s(a, b) = s(i, j))) :
     (Ω.coarsen hW f).perimeter + Ω.interfaceArea i j = Ω.perimeter := by
-  rw [perimeter_coarsen_eq_sum_interfaceArea hW hn, perimeter_eq_sum_interfaceArea hW hn]
-  have hsplit : ∀ a b, Ω.interfaceArea a b =
-      (if f a = f b then 0 else Ω.interfaceArea a b) +
-        if f a = f b then Ω.interfaceArea a b else 0 := fun a b => by
-    split_ifs <;> simp
-  rw [Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => hsplit a b]
-  simp_rw [Finset.sum_add_distrib]
+  wlog hlt : i < j generalizing i j
+  · rw [interfaceArea_comm]
+    exact this hij.symm (fun a b hab => (hf a b hab).trans (by rw [Sym2.eq_swap (a := i)]))
+      (hij.lt_or_gt.resolve_left hlt)
+  rw [← Ω.perimeter_coarsen_add_sum_interfaceArea hW hn f]
   congr 1
   have hpair : ∀ a, ∀ b ∈ Finset.Ioi a, f a = f b → a = i ∧ b = j := fun a b hb hab => by
     have hab' := (hf a b (Finset.mem_Ioi.1 hb).ne).1 hab
     rw [Sym2.eq_iff] at hab'
     rcases hab' with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · exact ⟨rfl, rfl⟩
-    · exact absurd ((Finset.mem_Ioi.1 hb).trans hij) (lt_irrefl _)
+    · exact absurd ((Finset.mem_Ioi.1 hb).trans hlt) (lt_irrefl _)
   rw [Finset.sum_eq_single i, Finset.sum_eq_single j]
-  · simp [(hf i j hij.ne).2 rfl]
+  · simp [(hf i j hij).2 rfl]
   · intro b hb hbj
     simp only [ite_eq_right_iff]
     exact fun h => absurd (hpair i b hb h).2 hbj
-  · exact fun h => absurd (Finset.mem_Ioi.2 hij) h
+  · exact fun h => absurd (Finset.mem_Ioi.2 hlt) h
   · intro a _ hai
     refine Finset.sum_eq_zero fun b hb => ?_
     simp only [ite_eq_right_iff]
@@ -334,10 +357,10 @@ theorem perimeter_coarsen_add_interfaceArea (hW : ContDiff ℝ 1 W) (hn : 2 ≤ 
   · exact fun h => absurd (Finset.mem_univ i) h
 
 /-- **Merging two cells removes their interface.** For a `C¹` weight, in dimension `n ≥ 2`, if
-`f : Fin q → Fin p` identifies the indices `i < j` and no other pair, then the grouped cluster,
-in which `Ω_i` and `Ω_j` are merged, has total perimeter exactly `P_μ(Ω) − A_ij`. -/
+`f : Fin q → Fin p` identifies the distinct indices `i`, `j` and no other pair, then the grouped
+cluster, in which `Ω_i` and `Ω_j` are merged, has total perimeter exactly `P_μ(Ω) − A_ij`. -/
 theorem perimeter_coarsen_eq_sub_interfaceArea (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E)
-    {p : ℕ} (Ω : Cluster W q) {f : Fin q → Fin p} {i j : Fin q} (hij : i < j)
+    {p : ℕ} (Ω : Cluster W q) {f : Fin q → Fin p} {i j : Fin q} (hij : i ≠ j)
     (hf : ∀ a b, a ≠ b → (f a = f b ↔ s(a, b) = s(i, j))) :
     (Ω.coarsen hW f).perimeter = Ω.perimeter - Ω.interfaceArea i j :=
   ENNReal.eq_sub_of_add_eq
