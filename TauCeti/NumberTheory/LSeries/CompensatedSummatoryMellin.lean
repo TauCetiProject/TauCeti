@@ -13,9 +13,10 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 # Mellin transform after subtraction of a linear summatory main term
 
 Subtracting `A * x` from a Dirichlet series' summatory function subtracts `A / (s - 1)`
-from its Mellin transform. If the summatory error weighted by `x⁻²` is integrable,
-this transform has a right-hand limit at `1`. This identifies the constant term in
-smoothed summation formulas with a value of the compensated Dirichlet series.
+from its Mellin transform. If the Dirichlet series converges for real `s` sufficiently
+close to `1` from above and the summatory error weighted by `x⁻²` is integrable on `(1, ∞)`,
+this transform has a right-hand limit at `1`. This identifies the constant term in smoothed
+summation formulas with the right-hand limit at `1` of the compensated Dirichlet series.
 -/
 
 public section
@@ -50,8 +51,9 @@ theorem integral_summatory_sub_linear_mul_cpow {a : ℕ → ℂ} (A : ℂ) {s : 
   have he : -s + 1 = -(s - 1) := by ring
   rw [he, neg_div_neg_eq, mul_one_div]
 
-/-- If the summatory error divided by `x²` is integrable on `(1, ∞)`, the compensated
-Dirichlet series has a right-hand limit at `1` given by the integral of that error. -/
+/-- If the Dirichlet series of `a` is summable for real parameters sufficiently close to `1`
+from above and the summatory error divided by `x²` is integrable on `(1, ∞)`, the compensated
+Dirichlet series has a right-hand limit at `1` given by the integral of that weighted error. -/
 theorem tendsto_sub_linear_pole_of_integrable_summatory_error {a : ℕ → ℂ} (A : ℂ)
     (ha : ∀ᶠ σ : ℝ in 𝓝[>] 1, LSeriesSummable a (σ : ℂ))
     (hE : IntegrableOn (fun t : ℝ ↦ ((∑ n ∈ Finset.Icc 1 ⌊t⌋₊, a n) - A * t) / (t : ℂ) ^ 2)

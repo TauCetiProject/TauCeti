@@ -9,14 +9,16 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 public import TauCeti.NumberTheory.LSeries.CompensatedSummatoryMellin
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.NumberTheory.AbelSummation
+import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # The normalized first Riesz sum and the summatory error
 
 If the summatory function of `a` has main term `A * x`, its error divided by `x²`
 controls the first Riesz sum divided by its length. When that weighted error is
-integrable, its integral is both the constant term of the normalized sum and the
-right-hand limit at `1` of the Dirichlet series after subtracting `A * s / (s - 1)`.
+integrable, its integral is the constant term of the normalized sum. If the Dirichlet
+series also converges for real `s` sufficiently close to `1` from above, this constant is
+its right-hand limit at `1` after subtracting `A * s / (s - 1)`.
 The remaining error is exactly minus the integral over the tail, so a bound for the
 unsmoothed error yields one for the smoothed error by integration.
 
@@ -50,10 +52,9 @@ theorem rieszSum_div_eq_integral_summatory (a : ℕ → ℂ) (y : ℝ) :
       (fun t ht ↦ (hderiv t (zero_lt_one.trans_le ht.1)).deriv.symm) measurableSet_Icc
   have hsum (m : ℕ) (g : ℕ → ℂ) :
       ∑ n ∈ Finset.Icc 0 m, g n * b n = ∑ n ∈ Finset.Icc 1 m, g n * a n := by
-    rw [Finset.Icc_eq_cons_Ioc (Nat.zero_le m), Finset.sum_cons, ← Finset.Icc_add_one_left_eq_Ioc]
-    simp only [b, ite_eq_left rfl, mul_zero, zero_add]
+    rw [Finset.sum_Icc_zero_eq_sum_Icc_one (f := fun n ↦ g n * b n) (by simp [b])]
     exact Finset.sum_congr rfl fun n hn ↦ by
-      rw [ite_eq_right (Nat.ne_zero_of_lt (Finset.mem_Icc.mp hn).1)]
+      simp only [b, ite_eq_right (Nat.ne_zero_of_lt (Finset.mem_Icc.mp hn).1)]
   have hsum' (m : ℕ) : ∑ n ∈ Finset.Icc 0 m, b n = ∑ n ∈ Finset.Icc 1 m, a n := by
     simpa using hsum m (fun _ ↦ 1)
   have h := sum_mul_eq_sub_integral_mul₀ b (by simp [b]) y
@@ -118,9 +119,10 @@ theorem rieszSum_div_sub_log_sub_integral_eq_neg_integral (a : ℕ → ℂ) (A :
   rw [rieszSum_div_sub_log_eq_integral a A hy, ← intervalIntegral.integral_of_le hy,
     ← intervalIntegral.integral_Ioi_sub_Ioi hE hy, sub_sub_cancel_left]
 
-/-- If the compensated Dirichlet series tends to `c` from the right at `1`, then subtracting
-`c` as well as the logarithmic main term expresses the normalized Riesz remainder exactly
-as the negative tail integral of the summatory error. -/
+/-- Suppose the weighted summatory error is integrable on `(1, ∞)` and the Dirichlet series
+converges just to the right of `1`, where its compensated version tends to `c`. For `y ≥ 1`,
+subtracting `c` and the logarithmic main term from the normalized first Riesz sum leaves the
+negative tail integral of the weighted summatory error. -/
 theorem rieszSum_div_sub_log_sub_eq_neg_integral_of_tendsto {a : ℕ → ℂ} {A c : ℂ}
     (ha : ∀ᶠ σ : ℝ in 𝓝[>] 1, LSeriesSummable a (σ : ℂ))
     (hE : IntegrableOn (fun t : ℝ ↦ ((∑ n ∈ Finset.Icc 1 ⌊t⌋₊, a n) - A * t) / (t : ℂ) ^ 2)
