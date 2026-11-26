@@ -70,8 +70,8 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
   values in a torsion-free cancellative monoid and nontrivial coefficients, this happens exactly
   when the period or the degree vanishes, since a nonzero degree `δ` takes the infinitely many
   values `n δ(C)` for a class `C` with `δ(C) ≠ 0`.
-* `TauCeti.NovikovSeries.single_mem_gradeByCoeff_iff_of_mem`: for independent pieces of the
-  coefficient module, a nonzero homogeneous monomial has exactly one degree.
+* `TauCeti.NovikovSeries.single_mem_gradeByCoeff_iff_of_mem`: for pairwise disjoint pieces of
+  the coefficient module, a nonzero homogeneous monomial has exactly one degree.
 * `TauCeti.NovikovSeries.map_mem_gradeByCoeff`: a pushforward of Novikov series whose coefficient
   map and exponent map respect the degrees preserves the degree.
 
@@ -515,15 +515,16 @@ theorem single_mem_gradeByCoeff_iff {𝒱 : Γ → Submodule R V} {δ : H → Γ
   · simpa using hv
   · simp [coeff_single_of_ne hA]
 
-/-- **A homogeneous monomial has exactly one degree.** If the pieces `𝒱` are independent and
-`v ≠ 0` has degree `j`, the monomial `e^h v` has degree `D` exactly when `D = j + δ h`. -/
-theorem single_mem_gradeByCoeff_iff_of_mem {𝒱 : Γ → Submodule R V} (h𝒱 : iSupIndep 𝒱)
-    {δ : H → Γ} {D j : Γ} {h : H} {v : V} (hv : v ∈ 𝒱 j) (hv₀ : v ≠ 0) :
+/-- **A homogeneous monomial has exactly one degree.** If the pieces `𝒱` are pairwise disjoint
+and `v ≠ 0` has degree `j`, the monomial `e^h v` has degree `D` exactly when `D = j + δ h`. -/
+theorem single_mem_gradeByCoeff_iff_of_mem {𝒱 : Γ → Submodule R V}
+    (h𝒱 : Pairwise (Disjoint on 𝒱)) {δ : H → Γ} {D j : Γ} {h : H} {v : V} (hv : v ∈ 𝒱 j)
+    (hv₀ : v ≠ 0) :
     (single h v : NovikovSeries V H N) ∈ gradeByCoeff N 𝒱 δ D ↔ D = j + δ h := by
   rw [single_mem_gradeByCoeff_iff, ← sub_eq_iff_eq_add]
   refine ⟨fun hD => ?_, fun hD => hD ▸ hv⟩
   by_contra hne
-  exact hv₀ (Submodule.disjoint_def.1 (h𝒱.pairwiseDisjoint hne) v hD hv)
+  exact hv₀ (Submodule.disjoint_def.1 (h𝒱 hne) v hD hv)
 
 /-- **Pushforwards preserve degrees.** If the coefficient map `ρ : V →+ W` sends each piece
 `𝒱 k` into `𝒲 k`, and the exponent map `φ` carries the degree `δ` to `δ'`, then the pushforward
