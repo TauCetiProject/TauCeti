@@ -15,8 +15,9 @@ For a sequence of complex coefficients `a : ℕ → ℂ` and a real cutoff `y`, 
 
 `TauCeti.rieszSum a y = ∑ n ∈ Finset.Icc 1 ⌊y⌋₊, a n * (y / n - 1)`.
 
-As a function of `y`, `TauCeti.rieszSum a` vanishes on `(-∞, 1]`, is continuous on `ℝ`, and is
-affine on every unit interval `[m, m + 1]`. Dividing `TauCeti.rieszSum (fun n ↦ n * a n) y` by `y`
+As a function of `y`, `TauCeti.rieszSum a` vanishes on `(-∞, 1]`, is a sum of ramps
+`a(n) max (y / n - 1) 0` (`TauCeti.rieszSum_eq_sum_max`), is continuous on `ℝ`, and is affine on
+every unit interval `[m, m + 1]`. Dividing `TauCeti.rieszSum (fun n ↦ n * a n) y` by `y`
 recovers the classical first Riesz mean `∑_{1 ≤ n ≤ y} a(n) (1 - n / y)`. See
 `TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Ideal` for the ideal-coefficient form,
 `TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Mellin` for the forward Mellin transform, and
@@ -110,10 +111,12 @@ theorem tsum_ite_mul_div_sub_one_eq_rieszSum (a : ℕ → ℂ) (y : ℝ) :
       exact False.elim (hyn.not_ge h.2)
     · rfl
 
-private theorem rieszSum_eq_sum_of_le (a : ℕ → ℂ) {y : ℝ} {N : ℕ} (hyN : y ≤ N) :
+/-- **The first Riesz sum as a sum of ramps.** For every `N ≥ ⌊y⌋₊`,
+`TauCeti.rieszSum a y = ∑_{1 ≤ n ≤ N} a(n) max (y / n - 1) 0`: the ramps of the indices `n > y`
+vanish. -/
+theorem rieszSum_eq_sum_max (a : ℕ → ℂ) {y : ℝ} {N : ℕ} (hN : ⌊y⌋₊ ≤ N) :
     rieszSum a y = ∑ n ∈ Finset.Icc 1 N, a n * ((max (y / n - 1) 0 : ℝ) : ℂ) := by
-  have hsub : Finset.Icc 1 ⌊y⌋₊ ⊆ Finset.Icc 1 N :=
-    Finset.Icc_subset_Icc_right (Nat.floor_le_of_le hyN)
+  have hsub : Finset.Icc 1 ⌊y⌋₊ ⊆ Finset.Icc 1 N := Finset.Icc_subset_Icc_right hN
   rw [rieszSum_def, ← Finset.sum_subset hsub]
   · refine Finset.sum_congr rfl fun n hn ↦ ?_
     obtain ⟨hn1, hny⟩ := one_le_and_le_of_mem_Icc_floor hn
@@ -172,7 +175,7 @@ theorem continuous_rieszSum (a : ℕ → ℂ) : Continuous (rieszSum a) := by
     fun_prop
   refine hcont.continuousAt.congr ?_
   filter_upwards [isOpen_Iio.mem_nhds hy₀] with y hy
-  exact (rieszSum_eq_sum_of_le a hy.le).symm
+  exact (rieszSum_eq_sum_max a (Nat.floor_le_of_le hy.le)).symm
 
 /-- **First Riesz mean normalization**: for every `y : ℝ`,
 `∑_{1 ≤ n ≤ y} a(n) (1 - n / y) = y⁻¹ * rieszSum (fun n ↦ n * a n) y`. -/
