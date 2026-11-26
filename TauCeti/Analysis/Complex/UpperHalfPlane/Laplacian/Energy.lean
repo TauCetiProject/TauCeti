@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Laplacian.Basic
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Indicator
+import TauCeti.Analysis.Calculus.ContDiff.IsOpen
 import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Integral
 
@@ -30,7 +32,8 @@ space, and the right side is a Lebesgue integral over the open upper half-plane 
 
 Two consequences are the nonnegativity of `Δ` on compactly supported functions, whose quadratic
 form `∫ (Δ f) · conj f dμ` is the Dirichlet energy `∫ (|∂ₓ f|² + |∂ᵧ f|²) dx dy`, and its
-symmetry `∫ (Δ f) · conj g dμ = ∫ f · conj (Δ g) dμ` for compactly supported `C²` functions.
+symmetry `∫ (Δ f) · conj g dμ = ∫ f · conj (Δ g) dμ` for `g` compactly supported and `C²` and `f`
+`C²` near the support of `g`.
 These are the identities from which the Laplacian of a quotient `Γ\ℍ` is built as a nonnegative
 self-adjoint operator.
 
@@ -143,24 +146,70 @@ theorem integral_hyperbolicLaplacian_mul_conj_self
   push_cast
   simp only [mul_conj']
 
-/-- **The hyperbolic Laplacian is symmetric** on compactly supported functions: for `f, g : ℍ → ℂ`
-of class `C²` with compact support in `ℍ`, `∫_ℍ (Δ f) · conj g dμ = ∫_ℍ f · conj (Δ g) dμ`. -/
+/-- A function on `ℍ` of class `C²` near the compact support of `g` agrees near that support with
+a compactly supported function on `ℍ` of class `C²`. -/
+private theorem exists_contDiffOn_hasCompactSupport_eventuallyEq
+    (hf : ∀ z ∈ tsupport g, ContDiffAt ℝ 2 (f ∘ ofComplex) z) (hgc : HasCompactSupport g) :
+    ∃ f₀ : ℍ → ℂ, ContDiffOn ℝ 2 (f₀ ∘ ofComplex) upperHalfPlaneSet ∧ HasCompactSupport f₀ ∧
+      ∀ z ∈ tsupport g, f ∘ ofComplex =ᶠ[𝓝 (z : ℂ)] f₀ ∘ ofComplex := by
+  set K : Set ℂ := (↑) '' tsupport g
+  have hK : IsCompact K := hgc.isCompact.image continuous_coe
+  have hfK : ∀ w ∈ K, ContDiffAt ℝ 2 (f ∘ ofComplex) w := by
+    rintro _ ⟨z, hz, rfl⟩
+    exact hf z hz
+  obtain ⟨U, hU, hKU, hfU⟩ := TauCeti.exists_isOpen_superset_contDiffOn (by simp) hfK
+  have hKH : K ⊆ upperHalfPlaneSet := by rintro _ ⟨z, -, rfl⟩; exact z.im_pos
+  obtain ⟨F, hF, hFc, hFU, -, hFf⟩ :=
+    (hfU.mono inter_subset_left).exists_contDiff_eventuallyEq_on_isCompact hK
+      (hU.inter isOpen_upperHalfPlaneSet) (subset_inter hKU hKH)
+  have hF₀ (w : ℂ) (hw : w ∈ upperHalfPlaneSet) : (F ∘ (↑) : ℍ → ℂ) (ofComplex w) = F w := by
+    simp [ofComplex_apply_of_im_pos hw]
+  refine ⟨F ∘ (↑), hF.contDiffOn.congr fun w hw ↦ hF₀ w hw,
+    (isEmbedding_coe.isInducing.isCompact_preimage' hFc fun w hw ↦ ⟨⟨w, (hFU hw).2⟩, rfl⟩)
+      |>.of_isClosed_subset isClosed_closure (tsupport_comp_subset_preimage F continuous_coe),
+    fun z hz ↦ ?_⟩
+  filter_upwards [hFf _ ⟨z, hz, rfl⟩, isOpen_upperHalfPlaneSet.mem_nhds z.im_pos] with w hw hwH
+  rw [← hw, Function.comp_apply, hF₀ w hwH]
+
+/-- **The hyperbolic Laplacian is symmetric**: for `g : ℍ → ℂ` of class `C²` with compact support
+in `ℍ` and `f : ℍ → ℂ` of class `C²` near the support of `g`,
+`∫_ℍ (Δ f) · conj g dμ = ∫_ℍ f · conj (Δ g) dμ`. Both sides only see `f` near the support of `g`,
+so `f` is first replaced by a compactly supported `C²` function agreeing with it there. -/
 theorem integral_hyperbolicLaplacian_mul_conj_eq_integral_mul_conj_hyperbolicLaplacian
-    (hf : ContDiffOn ℝ 2 (f ∘ ofComplex) upperHalfPlaneSet) (hfc : HasCompactSupport f)
+    (hf : ∀ z ∈ tsupport g, ContDiffAt ℝ 2 (f ∘ ofComplex) z)
     (hg : ContDiffOn ℝ 2 (g ∘ ofComplex) upperHalfPlaneSet) (hgc : HasCompactSupport g) :
     ∫ z, hyperbolicLaplacian f z * conj (g z) = ∫ z, f z * conj (hyperbolicLaplacian g z) := by
-  have h : ∫ z, f z * conj (hyperbolicLaplacian g z) =
-      conj (∫ z, hyperbolicLaplacian g z * conj (f z)) := by
-    rw [← integral_conj]
-    simp [mul_comm]
-  have hf' (z : ℍ) (_ : z ∈ tsupport g) : ContDiffAt ℝ 2 (f ∘ ofComplex) z :=
-    hf.contDiffAt (isOpen_upperHalfPlaneSet.mem_nhds z.im_pos)
-  have hg' (z : ℍ) (_ : z ∈ tsupport f) : ContDiffAt ℝ 2 (g ∘ ofComplex) z :=
+  obtain ⟨f₀, hf₀, hf₀c, hff₀⟩ := exists_contDiffOn_hasCompactSupport_eventuallyEq hf hgc
+  have hg0 (z : ℍ) (hz : z ∉ tsupport g) : hyperbolicLaplacian g z = 0 := by
+    have h : g ∘ ofComplex =ᶠ[𝓝 (z : ℂ)] (fun _ : ℍ ↦ (0 : ℂ)) ∘ ofComplex := by
+      rw [← isOpenEmbedding_coe.map_nhds_eq, eventuallyEq_map]
+      simpa [Function.comp_def, ofComplex_apply, Pi.zero_def] using
+        notMem_tsupport_iff_eventuallyEq.1 hz
+    rw [hyperbolicLaplacian_apply, (InnerProductSpace.laplacian_congr_nhds h).self_of_nhds,
+      ← hyperbolicLaplacian_apply, hyperbolicLaplacian_const, Pi.zero_apply]
+  have hf₀' (z : ℍ) (_ : z ∈ tsupport g) : ContDiffAt ℝ 2 (f₀ ∘ ofComplex) z :=
+    hf₀.contDiffAt (isOpen_upperHalfPlaneSet.mem_nhds z.im_pos)
+  have hg' (z : ℍ) (_ : z ∈ tsupport f₀) : ContDiffAt ℝ 2 (g ∘ ofComplex) z :=
     hg.contDiffAt (isOpen_upperHalfPlaneSet.mem_nhds z.im_pos)
-  rw [h, integral_hyperbolicLaplacian_mul_conj hf' (hg.of_le one_le_two) hgc,
-    integral_hyperbolicLaplacian_mul_conj hg' (hf.of_le one_le_two) hfc, ← integral_conj]
-  refine integral_congr_ae (ae_of_all _ fun w ↦ ?_)
-  simp only [map_add, map_mul, conj_conj]
-  ring
+  calc ∫ z, hyperbolicLaplacian f z * conj (g z)
+      = ∫ z, hyperbolicLaplacian f₀ z * conj (g z) := integral_congr_ae <| ae_of_all _ fun z ↦ by
+        by_cases hz : z ∈ tsupport g
+        · simp only [hyperbolicLaplacian_apply,
+            (InnerProductSpace.laplacian_congr_nhds (hff₀ z hz)).self_of_nhds]
+        · simp [image_eq_zero_of_notMem_tsupport hz]
+    _ = conj (∫ z, hyperbolicLaplacian g z * conj (f₀ z)) := by
+        rw [integral_hyperbolicLaplacian_mul_conj hf₀' (hg.of_le one_le_two) hgc,
+          integral_hyperbolicLaplacian_mul_conj hg' (hf₀.of_le one_le_two) hf₀c, ← integral_conj]
+        refine integral_congr_ae (ae_of_all _ fun w ↦ ?_)
+        simp only [map_add, map_mul, conj_conj]
+        ring
+    _ = ∫ z, f₀ z * conj (hyperbolicLaplacian g z) := by
+        rw [← integral_conj]
+        simp [mul_comm]
+    _ = ∫ z, f z * conj (hyperbolicLaplacian g z) := integral_congr_ae <| ae_of_all _ fun z ↦ by
+        by_cases hz : z ∈ tsupport g
+        · simpa [ofComplex_apply] using congrArg (· * conj (hyperbolicLaplacian g z))
+            (hff₀ z hz).self_of_nhds.symm
+        · simp [hg0 z hz]
 
 end TauCeti.UpperHalfPlane
