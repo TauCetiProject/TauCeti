@@ -77,11 +77,9 @@ theorem exists_compatible_mfderiv_I_smul (φ : PartialDiffeomorph 𝓘(ℝ, E) I
         mfderiv 𝓘(ℝ, E) I φ x (Complex.I • v) = J (φ x) (mfderiv 𝓘(ℝ, E) I φ x v) := by
   -- Every tangent space of `E` is `E`, where the standard structure is multiplication by `i`.
   have hstd (x : E) : (SmoothAlmostComplexStructure.ofComplexManifold E E).almostComplexStructureAt
-      x = (AlmostComplexStructure.ofComplexModule E : AlmostComplexStructure E) :=
-    AlmostComplexStructure.toLinearMap_injective (LinearMap.ext fun v : E ↦
-      ((SmoothAlmostComplexStructure.almostComplexStructureAt_apply _ x v).trans
-        (SmoothAlmostComplexStructure.ofComplexManifold_apply x v)).trans
-          (AlmostComplexStructure.ofComplexModule_apply (V := E) v).symm)
+      x = (AlmostComplexStructure.ofComplexModule E : AlmostComplexStructure E) := by
+    rw [SmoothAlmostComplexStructure.ofComplexManifold_self_eq_constSmooth,
+      AlmostComplexStructure.constSmooth_almostComplexStructureAt]
   obtain ⟨J, hJ, hK'⟩ := φ.exists_compatible_mfderiv_apply_eq
     (SmoothAlmostComplexStructure.ofComplexManifold E E) hσ hW hWs
     (fun _ ↦ imInnerSymplecticForm E)

@@ -24,9 +24,10 @@ on the target of `φ` are meaningful: there it is a smooth section of the tangen
 bundle (`PartialDiffeomorph.contMDiffOn_pushforwardEndomorphism`) squaring to `-1`
 (`PartialDiffeomorph.pushforwardEndomorphism_apply_pushforwardEndomorphism`), and it is the unique
 field on the target making every differential of `φ` complex linear
-(`PartialDiffeomorph.pushforwardEndomorphism_mfderiv_apply`). Where `φ` pulls a nondegenerate
-two-form `σ` on `M` back to forms compatible with `J'`, the pushed-forward field is compatible
-with `σ` (`PartialDiffeomorph.compatible_pushforwardEndomorphism`).
+(`PartialDiffeomorph.pushforwardEndomorphism_mfderiv_apply` and
+`PartialDiffeomorph.eq_pushforwardEndomorphism_of_mfderiv_apply`). Where `φ` pulls a
+nondegenerate two-form `σ` on `M` back to forms compatible with `J'`, the pushed-forward field is
+compatible with `σ` (`PartialDiffeomorph.compatible_pushforwardAt`).
 
 Combined with the relative extension of compatible structures
 (`TauCeti.SmoothTwoForm.Compatible.exists_compatible_eqOn`), this gives a global smooth
@@ -214,9 +215,7 @@ theorem exists_compatible_mfderiv_apply_eq [T2Space M] [SigmaCompactSpace M]
   classical
   let L : M → AlmostComplexStructure E := fun y ↦
     if hy : y ∈ φ.target then φ.pushforwardAt J' hy else J₀.almostComplexStructureAt y
-  have hLt {y : M} (hy : y ∈ φ.target) : L y = φ.pushforwardAt J' hy := by
-    simp only [L, hy, ↓reduceDIte]
-    rfl
+  have hLt {y : M} (hy : y ∈ φ.target) : L y = φ.pushforwardAt J' hy := dite_eq_left hy
   have hL {x : M'} (hx : x ∈ φ.source) : L (φ x) = φ.pushforwardAt J' (φ.map_source hx) :=
     hLt (φ.map_source hx)
   have hUo : IsOpen (φ '' W) := φ.toOpenPartialHomeomorph.isOpen_image_of_subset_source hW hWs
