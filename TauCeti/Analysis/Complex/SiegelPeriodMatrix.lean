@@ -44,6 +44,7 @@ An integral symplectic matrix `M = [[A, B], [C, D]]` acts on `H_g` by `Ω ↦ M 
 * `TauCeti.siegelFiberMap_mul_of_isUnit`: the cocycle law `R_{M N}(Ω) = R_M(N · Ω) R_N(Ω)` when
   `C_N Ω + D_N` is invertible, and `TauCeti.siegelFiberMap_mul` for symplectic `N` and `Ω ∈ H_g`.
 * `TauCeti.siegelLatticeMap_mul`: `ρ(M N) = ρ(M) ρ(N)`.
+* `TauCeti.siegelLatticeMap_mem_symplecticGroup`: `ρ(M)` is symplectic for symplectic `M`.
 
 ## References
 
@@ -125,11 +126,27 @@ theorem siegelLatticeMap_mul (M N : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) �
   rw [siegelLatticeMap_def, siegelLatticeMap_def, siegelLatticeMap_def, Matrix.mul_inv_rev,
     transpose_mul]
 
-/-- For symplectic `M`, `ρ(M) = M⁻ᵀ` is a right inverse of `Mᵀ`. -/
+/-- For unimodular `M`, `ρ(M) = M⁻ᵀ` is a right inverse of `Mᵀ`. -/
 theorem transpose_mul_siegelLatticeMap {M : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ}
-    (hM : M ∈ symplecticGroup (Fin g) ℤ) : Mᵀ * siegelLatticeMap M = 1 := by
-  rw [siegelLatticeMap_def, ← transpose_mul, nonsing_inv_mul _ (SymplecticGroup.symplectic_det hM),
-    transpose_one]
+    (hM : IsUnit M.det) : Mᵀ * siegelLatticeMap M = 1 := by
+  rw [siegelLatticeMap_def, ← transpose_mul, nonsing_inv_mul _ hM, transpose_one]
+
+/-- For unimodular `M`, `ρ(M) = M⁻ᵀ` is a left inverse of `Mᵀ`. -/
+theorem siegelLatticeMap_mul_transpose {M : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ}
+    (hM : IsUnit M.det) : siegelLatticeMap M * Mᵀ = 1 := by
+  rw [siegelLatticeMap_def, ← transpose_mul, mul_nonsing_inv _ hM, transpose_one]
+
+/-- For unimodular `M`, the lattice action `ρ(M)` is unimodular. -/
+theorem isUnit_det_siegelLatticeMap {M : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ}
+    (hM : IsUnit M.det) : IsUnit (siegelLatticeMap M).det := by
+  rw [siegelLatticeMap_def, det_transpose]
+  exact isUnit_nonsing_inv_det _ hM
+
+/-- For symplectic `M`, the lattice action `ρ(M) = M⁻ᵀ` is symplectic. -/
+theorem siegelLatticeMap_mem_symplecticGroup {M : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ}
+    (hM : M ∈ symplecticGroup (Fin g) ℤ) : siegelLatticeMap M ∈ symplecticGroup (Fin g) ℤ := by
+  rw [siegelLatticeMap_def, ← SymplecticGroup.coe_inv' ⟨M, hM⟩]
+  exact SymplecticGroup.transpose_mem (⟨M, hM⟩⁻¹ : symplecticGroup (Fin g) ℤ).property
 
 /-- **The cocycle law** `R_{M N}(Ω) = R_M(N · Ω) R_N(Ω)`, whenever `j(N, Ω) = C_N Ω + D_N` is
 invertible. -/
@@ -187,7 +204,8 @@ theorem siegelFiberMap_mul_siegelPeriodMatrix {M : Matrix (Fin g ⊕ Fin g) (Fin
     siegelFiberMap M Ω * siegelPeriodMatrix Ω =
       siegelPeriodMatrix (siegelAction M Ω) * (siegelLatticeMap M).map ((↑) : ℤ → ℂ) := by
   rw [← siegelFiberMap_mul_siegelPeriodMatrix_mul_transpose hM hΩ, Matrix.mul_assoc,
-    ← transpose_map, ← Matrix.map_mul_intCast, transpose_mul_siegelLatticeMap hM,
+    ← transpose_map, ← Matrix.map_mul_intCast,
+    transpose_mul_siegelLatticeMap (SymplecticGroup.symplectic_det hM),
     Matrix.map_one _ Int.cast_zero Int.cast_one, Matrix.mul_one]
 
 /-- **Period equivariance** `R_M(Ω) Π_Ω(v) = Π_{M · Ω}(M⁻ᵀ v)` for symplectic `M`, `Ω` in the
