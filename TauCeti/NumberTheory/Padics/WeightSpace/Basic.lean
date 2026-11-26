@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Padics.AddChar
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.Padics.UnitsDecomposition.Logarithm
 import Mathlib.Analysis.Normed.Algebra.Ultra
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import TauCeti.Topology.Algebra.Group.Units
 
 /-!
@@ -61,6 +62,8 @@ topologised, as `ℤ_p` is, the two constructions agree (`TauCeti.WeightSpace.of
   character `x ↦ (κ x : R)`.
 * `TauCeti.WeightSpace.inclusion K`: the weight `x ↦ x` with values in a normed `ℚ_p`-algebra
   `K`.
+* `TauCeti.WeightSpace.algebraic E v`: the algebraic weight `y ↦ y ^ v` with values in a
+  topological `ℤ_p`-algebra `E`.
 * `TauCeti.WeightSpace.finiteChar κ`: the finite part `κ ∘ ω : Δ →* Rˣ`.
 * `TauCeti.WeightSpace.principalChar κ`: the additive character `s ↦ κ(exp(q s))` of `ℤ_p`.
 * `TauCeti.WeightSpace.coord κ`: the coordinate `T_κ = κ(γ) - 1`.
@@ -407,6 +410,37 @@ theorem inclusion_injective [Nontrivial K] : Function.Injective (inclusion (p :=
     rw [← coe_inclusion_apply, ← coe_inclusion_apply, hxy]
 
 end Inclusion
+
+section Algebraic
+
+variable (E : Type*) [CommRing E] [TopologicalSpace E] [ContinuousMul E]
+  [Algebra ℤ_[p] E] [ContinuousSMul ℤ_[p] E]
+
+/-- The algebraic weight `y ↦ y ^ v` on `ℤ_pˣ` with values in `Eˣ`. -/
+noncomputable def algebraic (v : ℤ) : WeightSpace p E :=
+  (⟨Units.map (algebraMap ℤ_[p] E : ℤ_[p] →* E),
+    Continuous.units_map _ (continuous_algebraMap ℤ_[p] E)⟩ : WeightSpace p E) ^ v
+
+@[simp]
+theorem algebraic_apply (v : ℤ) (y : ℤ_[p]ˣ) :
+    algebraic E v y = Units.map (algebraMap ℤ_[p] E : ℤ_[p] →* E) y ^ v := by
+  rw [algebraic, ContinuousMonoidHom.zpow_apply]
+  congr 1
+
+@[simp]
+theorem algebraic_zero : (algebraic E 0 : WeightSpace p E) = 1 :=
+  zpow_zero _
+
+theorem algebraic_add (v₁ v₂ : ℤ) :
+    (algebraic E (v₁ + v₂) : WeightSpace p E) = algebraic E v₁ * algebraic E v₂ :=
+  zpow_add _ v₁ v₂
+
+theorem algebraic_neg (v : ℤ) :
+    (algebraic E (-v) : WeightSpace p E) = (algebraic E v)⁻¹ := by
+  refine ContinuousMonoidHom.ext fun y ↦ ?_
+  simp [algebraic_apply]
+
+end Algebraic
 
 section Construction
 

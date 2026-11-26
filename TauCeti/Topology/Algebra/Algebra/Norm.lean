@@ -51,16 +51,9 @@ No freeness, finiteness, or continuity of multiplication on `S` is needed: witho
 @[continuity, fun_prop]
 theorem Algebra.continuous_normUnits (R S : Type*) [CommRing R] [Ring S] [Algebra R S]
     [TopologicalSpace R] [IsTopologicalRing R] [TopologicalSpace S] [IsModuleTopology R S] :
-    Continuous (Algebra.normUnits R (S := S)) := by
-  refine Units.continuous_iff.mpr ⟨?_, ?_⟩
-  · simpa only [Function.comp_def, Algebra.coe_normUnits] using
-      (continuous_algebraNorm R S).comp Units.continuous_val
-  · have h : (fun x : Sˣ ↦ (((Algebra.normUnits R x)⁻¹ : Rˣ) : R)) =
-        fun x ↦ Algebra.norm R ((x⁻¹ : Sˣ) : S) := by
-      ext x
-      rw [← map_inv, Algebra.coe_normUnits]
-    rw [h]
-    exact (continuous_algebraNorm R S).comp Units.continuous_coe_inv
+    Continuous (Algebra.normUnits R (S := S)) :=
+  (Continuous.units_map (Algebra.norm R : S →* R) (continuous_algebraNorm R S)).congr fun x ↦
+    Units.ext (Algebra.coe_normUnits R x).symm
 
 /-- The norm of a finite-dimensional Hausdorff topological vector space carrying an algebra
 structure over a complete nontrivially normed field is continuous. -/
