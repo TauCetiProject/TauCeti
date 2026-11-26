@@ -18,13 +18,14 @@ group whose elements fix a specified subset pointwise. Mathlib already provides 
 pointwise fixing subgroup `fixingSubgroup` for any group action; this file specializes that
 construction to the tautological action of the diffeomorphism group on its manifold.
 
-It also introduces the smaller subgroup `Diffeomorph.nhdsFixingSubgroup s` of diffeomorphisms
-that are equal to the identity on some neighbourhood of `s`, rather than only on `s` itself.
-
 In particular `Diff(M, ∂M)` is the subgroup fixing the boundary pointwise. Only the group structure
 is treated here: for a compact source manifold,
-`TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Topology` shows that these subgroups are closed in
-the weak Whitney topology (`Diffeomorph.isClosed_fixingSubgroup`).
+`TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Topology` shows that these pointwise fixing
+subgroups are closed in the weak Whitney topology (`Diffeomorph.isClosed_fixingSubgroup`).
+
+This file also introduces the smaller subgroup `Diffeomorph.nhdsFixingSubgroup s` of
+diffeomorphisms that are equal to the identity on some neighbourhood of `s`, rather than only on
+`s` itself.
 
 ## Main definitions
 
