@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Real.Cardinality
 import TauCeti.Analysis.Fredholm.CompactPerturbation
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 
@@ -39,9 +40,10 @@ The proof has two steps.
   (`ContinuousLinearMap.countable_setOf_exists_ne_zero_apply_eq_ofReal_smul`). Since `B` is
   symmetric through `ι`, eigenvectors for distinct real eigenvalues have orthogonal images under
   `ι`, and these images are nonzero when `ι` is injective on the kernel of `B`. Normalized, they
-  form a family of unit vectors at pairwise distance `√2` in the range of `ι`, which is separable
-  since `ι` is compact (`IsCompactOperator.isSeparable_range`). So there are only countably many
-  real eigenvalues, and some real `c` is not one of them.
+  form an orthonormal family in the range of `ι`, which is separable since `ι` is compact
+  (`IsCompactOperator.isSeparable_range`), so the family is countable
+  (`Orthonormal.countable_of_separableSpace`). So there are only countably many real eigenvalues,
+  and some real `c` is not one of them.
 
 No symmetry of `A` and no injectivity of `ι` are needed: a vector `x ≠ 0` with `ι x = 0` is not
 killed by `c₀ • ι - A`, so `A x ≠ 0`, and `(B - A) x = 0`, so `B x ≠ 0`.
@@ -65,7 +67,7 @@ killed by `c₀ • ι - A`, so `A x ≠ 0`, and `(B - A) x = 0`, so `B x ≠ 0`
 
 public section
 
-open Function Metric Set
+open Function
 
 namespace ContinuousLinearMap
 
@@ -98,28 +100,23 @@ theorem countable_setOf_exists_ne_zero_apply_eq_ofReal_smul (hι : IsCompactOper
     have hB : x c ∈ B.ker := by
       rw [LinearMap.mem_ker, coe_coe, hxB, h, smul_zero]
     simpa using congrArg Subtype.val (hker (a₁ := ⟨x c, hB⟩) (a₂ := 0) (by simpa using h))
-  -- Normalized, they are unit vectors in the range of `ι` at pairwise distance greater than `1`.
+  -- Normalized, they form an orthonormal family in the range of `ι`.
   set w : S → H := fun c ↦ ((‖ι (x c)‖⁻¹ : ℝ) : 𝕜) • ι (x c)
-  have hw (c : S) : ‖w c‖ = 1 := by
-    simp only [w, norm_smul, RCLike.norm_ofReal, abs_inv, abs_norm]
-    exact inv_mul_cancel₀ (norm_ne_zero_iff.2 (hιx c))
-  have hdist {c d : S} (hcd : c ≠ d) : 1 < dist (w c) (w d) := by
-    have h₀ : ⟪w c, w d⟫ = 0 := by
-      simp only [w, inner_smul_left, inner_smul_right,
+  have hw : Orthonormal 𝕜 w := by
+    refine ⟨fun c ↦ ?_, fun c d hcd ↦ ?_⟩
+    · simp only [w, norm_smul, RCLike.norm_ofReal, abs_inv, abs_norm]
+      exact inv_mul_cancel₀ (norm_ne_zero_iff.2 (hιx c))
+    · simp only [w, inner_smul_left, inner_smul_right,
         inner_eq_zero_of_apply_eq_ofReal_smul hsymm (Subtype.coe_injective.ne hcd) (hxB c)
           (hxB d), mul_zero]
-    have h₂ : dist (w c) (w d) ^ 2 = 2 := by
-      rw [dist_eq_norm, @norm_sub_sq 𝕜, h₀, hw, hw, map_zero]
-      norm_num
-    nlinarith [dist_nonneg (x := w c) (y := w d)]
-  have hmem (c : S) : w c ∈ range ι := ⟨((‖ι (x c)‖⁻¹ : ℝ) : 𝕜) • x c, map_smul _ _ _⟩
-  -- The balls of radius `1 / 2` around them are disjoint in the separable range of `ι`.
-  have := (hι.isSeparable_range (f := (ι : D →ₗ[𝕜] H))).separableSpace
-  have : Countable S :=
-    Pairwise.countable_of_isOpen_disjoint (s := fun c ↦ ball (⟨w c, hmem c⟩ : range ι) (1 / 2))
-      (fun _ _ hcd ↦ ball_disjoint_ball ((add_halves 1).trans_le (hdist hcd).le))
-      (fun _ ↦ isOpen_ball) fun _ ↦ ⟨_, mem_ball_self one_half_pos⟩
-  exact Set.countable_coe_iff.1 this
+  have hmem (c : S) : w c ∈ LinearMap.range (ι : D →ₗ[𝕜] H) :=
+    ⟨((‖ι (x c)‖⁻¹ : ℝ) : 𝕜) • x c, map_smul _ _ _⟩
+  -- The range of `ι` is separable, so the family is countable.
+  have : TopologicalSpace.SeparableSpace (LinearMap.range (ι : D →ₗ[𝕜] H)) := by
+    have h := hι.isSeparable_range (f := (ι : D →ₗ[𝕜] H))
+    rw [← LinearMap.coe_range] at h
+    exact h.separableSpace
+  exact Set.countable_coe_iff.1 ((hw.codRestrict _ hmem).countable_of_separableSpace)
 
 variable [CompleteSpace D] [CompleteSpace H] {c₀ : 𝕜}
 
