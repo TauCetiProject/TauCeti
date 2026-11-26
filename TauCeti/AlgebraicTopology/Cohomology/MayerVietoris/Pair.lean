@@ -67,10 +67,6 @@ cochains (`SSetPair.quasiIso_cochainComplexMap`).
   maps `f : X ⟶ Y` carrying `A`, `B`, `C` and `D` into `A'`, `B'`, `C'` and `D'`, and
   `TopCat.singularCohomologyPairMayerVietorisδ_naturality_of_subset` is the case of the inclusions
   for `A ⊆ A'`, `B ⊆ B'`, `C ⊆ C'` and `D ⊆ D'` in `X`.
-* `TopCat.quasiIso_cochainComplexMap_smallSingularSubcomplexPairToUnion` and
-  `TopCat.isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion`: for `U` and `V`
-  open in `U ∪ V`, the cochains of `X` relative to its singular simplices lying in `U` or in `V`
-  compute the cohomology of `(X, U ∪ V)`.
 * `SSetPair.mayerVietorisCochainδ_comp_homologyMap_cochainComplexπ`: the quotient maps from ambient
   to relative chains carry the relative cochain Mayer–Vietoris connecting morphism of a square of
   pairs of simplicial sets to the absolute one of its square of ambient simplicial sets.

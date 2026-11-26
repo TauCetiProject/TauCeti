@@ -82,11 +82,6 @@ corner pair with `(A ∪ B, C ∪ D)`.
 * `TopCat.pairMayerVietoris_exact₁`, `TopCat.pairMayerVietoris_exact₂`,
   `TopCat.pairMayerVietoris_exact₃`: exactness at `Hₘ(A ∩ B, C ∩ D)`, at
   `Hₙ(A, C) ⊞ Hₙ(B, D)` and at `Hₙ(A ∪ B, C ∪ D)`.
-* `TopCat.smallSingularSubcomplexPairToUnion`: the comparison of `X` relative to its singular
-  simplices lying in `U` or in `V` with `(X, U ∪ V)`, compatible with the quotient maps
-  (`TopCat.chainComplexπ_smallSingularSubcomplexPairToUnion`) and natural along the maps
-  `TopCat.smallSingularSubcomplexPairMap`
-  (`TopCat.smallSingularSubcomplexPairToUnion_comp_ofSubsetMap`).
 * `TopCat.smallSingularPair`, `TopCat.toSmallSingularPair` and `TopCat.smallSingularPairToUnion`:
   the square of singular pairs underlying the sequence of two pairs and its comparison with
   `(A ∪ B, C ∪ D)`, through `TopCat.smallSingularSubcomplexToUnion`; they are shared with the
@@ -213,10 +208,10 @@ private lemma mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnion (n : ℕ
     relativeMayerVietorisFromBiprod R U V n := by
   apply biprod.hom_ext'
   · rw [SSetPair.inl_mayerVietorisFromBiprod_assoc, ← SSetPair.homologyMap_comp,
-      toSmallPair_comp_smallPairToUnion _ _ _ Set.subset_union_left,
+      toSmallPair_comp_smallSingularSubcomplexPairToUnion _ _ _ Set.subset_union_left,
       inl_relativeMayerVietorisFromBiprod]
   · rw [SSetPair.inr_mayerVietorisFromBiprod_assoc, ← SSetPair.homologyMap_comp,
-      toSmallPair_comp_smallPairToUnion _ _ _ Set.subset_union_right,
+      toSmallPair_comp_smallSingularSubcomplexPairToUnion _ _ _ Set.subset_union_right,
       inr_relativeMayerVietorisFromBiprod]
 
 /-! ### The long exact sequence -/
@@ -239,7 +234,8 @@ identifying the last of these with `Hₙ(X, U ∪ V)`. -/
 def relativeMayerVietorisδ (n m : ℕ) (h : m + 1 = n := by lia) :
     (TopPair.ofSubset (U ∪ V)).singularHomology R n ⟶
       (TopPair.ofSubset (U ∩ V)).singularHomology R m :=
-  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U V hU hV n
+  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U V
+    (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal) n
   inv (SSetPair.homologyMap (smallSingularSubcomplexPairToUnion U V) R n) ≫
     SSetPair.mayerVietorisδ R (isPushout_left U V) (isPushout_right U V) n m h
 
@@ -249,7 +245,8 @@ private lemma homologyMap_smallPairToUnion_comp_relativeMayerVietorisδ (n m : �
         relativeMayerVietorisδ R hU hV n m h =
       SSetPair.mayerVietorisδ R (isPushout_left U V) (isPushout_right U V)
         n m h := by
-  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U V hU hV n
+  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U V
+    (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal) n
   rw [relativeMayerVietorisδ, IsIso.hom_inv_id_assoc]
 
 @[reassoc (attr := simp)]
@@ -268,7 +265,8 @@ lemma relativeMayerVietorisFromBiprod_δ (n m : ℕ) (h : m + 1 = n := by lia) :
 /-- **Exactness of the relative Mayer–Vietoris sequence at `Hₘ(X, U ∩ V)`.** -/
 lemma relativeMayerVietoris_exact₁ (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (relativeMayerVietorisδ_toBiprod R hU hV n m h)).Exact := by
-  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U V hU hV n
+  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U V
+    (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal) n
   refine (ShortComplex.exact_iff_of_iso ?_).1
     (SSetPair.mayerVietoris_exact₁ R (isPushout_left U V) (isPushout_right U V) n m h)
   refine ShortComplex.isoMk
@@ -289,7 +287,8 @@ include hU hV in
 /-- **Exactness of the relative Mayer–Vietoris sequence at `Hₙ(X, U) ⊞ Hₙ(X, V)`.** -/
 lemma relativeMayerVietoris_exact₂ (n : ℕ) :
     (ShortComplex.mk _ _ (relativeMayerVietorisToBiprod_fromBiprod R U V n)).Exact := by
-  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U V hU hV n
+  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U V
+    (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal) n
   refine (ShortComplex.exact_iff_of_iso ?_).1
     (SSetPair.mayerVietoris_exact₂ R (isPushout_left U V) (isPushout_right U V)
       n)
@@ -301,7 +300,8 @@ lemma relativeMayerVietoris_exact₂ (n : ℕ) :
 /-- **Exactness of the relative Mayer–Vietoris sequence at `Hₙ(X, U ∪ V)`.** -/
 lemma relativeMayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (relativeMayerVietorisFromBiprod_δ R hU hV n m h)).Exact := by
-  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U V hU hV n
+  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U V
+    (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal) n
   refine (ShortComplex.exact_iff_of_iso ?_).1
     (SSetPair.mayerVietoris_exact₃ R (isPushout_left U V) (isPushout_right U V) n m h)
   refine ShortComplex.isoMk (Iso.refl _)
@@ -420,7 +420,8 @@ theorem quasiIso_cokernelDesc_relativeMayerVietorisChainFromBiprod (hW : U ∩ V
       (relativeMayerVietorisChainToBiprod_fromBiprod R hWU hWV hUZ hVZ)) := by
   obtain rfl : W = U ∩ V := (Set.subset_inter hWU hWV).antisymm hW
   obtain rfl : Z = U ∪ V := hZ.antisymm (Set.union_subset hUZ hVZ)
-  have := quasiIso_chainComplexMap_smallSingularSubcomplexPairToUnion R U V hU hV
+  have := quasiIso_chainComplexMap_smallSingularSubcomplexPairToUnion R U V
+    (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal)
   -- The cokernel of the first map is the last term of the short exact sequence of singular pairs
   -- modulo the singular simplices lying in `U` or in `V`, and the comparison of that term with
   -- `(X, U ∪ V)` carries its last map to the second map.
@@ -437,10 +438,10 @@ theorem quasiIso_cokernelDesc_relativeMayerVietorisChainFromBiprod (hW : U ∩ V
     apply biprod.hom_ext'
     · simp only [biprod.inl_desc, biprod.inl_desc_assoc, ← Functor.map_comp]
       exact congrArg (SSetPair.chainComplexMap · R)
-        (toSmallPair_comp_smallPairToUnion U V _ Set.subset_union_left).symm
+        (toSmallPair_comp_smallSingularSubcomplexPairToUnion U V _ Set.subset_union_left).symm
     · simp only [biprod.inr_desc, biprod.inr_desc_assoc, ← Functor.map_comp]
       exact congrArg (SSetPair.chainComplexMap · R)
-        (toSmallPair_comp_smallPairToUnion U V _ Set.subset_union_right).symm
+        (toSmallPair_comp_smallSingularSubcomplexPairToUnion U V _ Set.subset_union_right).symm
   rw [he]
   infer_instance
 
@@ -501,8 +502,10 @@ lemma relativeMayerVietorisδ_naturality (n m : ℕ) (h : m + 1 = n := by lia) :
         TopPair.singularHomologyMap (TopPair.ofSubsetMap f (hfU.inter_inter hfV)) R m =
       TopPair.singularHomologyMap (TopPair.ofSubsetMap f (hfU.union_union hfV)) R n ≫
         relativeMayerVietorisδ R hU' hV' n m h := by
-  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U V hU hV n
-  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U' V' hU' hV' n
+  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U V
+    (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal) n
+  have := isIso_homologyMap_smallSingularSubcomplexPairToUnion R U' V'
+    (hU'.preimage continuous_subtypeVal) (hV'.preimage continuous_subtypeVal) n
   have hnat := SSetPair.mayerVietorisδ_naturality R
     (TopPair.toSSetPair.map (TopPair.ofSubsetMap f (hfU.inter_inter hfV)))
     (TopPair.toSSetPair.map (TopPair.ofSubsetMap f hfU))
@@ -518,8 +521,8 @@ lemma relativeMayerVietorisδ_naturality (n m : ℕ) (h : m + 1 = n := by lia) :
     exact congrArg _ (ofSubsetMap_id_comp_ofSubsetMap f _ _ _ _)
   · simp only [← Functor.map_comp]
     exact congrArg _ (ofSubsetMap_id_comp_ofSubsetMap f _ _ _ _)
-  · exact toSmallPair_comp_smallPairMap f hfU hfV _ _ hfU
-  · exact toSmallPair_comp_smallPairMap f hfU hfV _ _ hfV
+  · exact toSmallPair_comp_smallSingularSubcomplexPairMap f hfU hfV _ _ hfU
+  · exact toSmallPair_comp_smallSingularSubcomplexPairMap f hfU hfV _ _ hfV
 
 /-! ### The Mayer–Vietoris sequence of two pairs -/
 

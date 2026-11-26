@@ -298,8 +298,9 @@ variable {k : Type*} [CommRing k] {R N : ModuleCat.{w} k}
   (hx : x ∈ φ.source)
 
 /-- **Local cohomology in the top degree for modules isomorphic to the base ring**: at a point
-with a chart to a real normed space of dimension `d`, linear equivalences `eR : R ≃ₗ[k] k` and
-`eN : N ≃ₗ[k] k` identify `Hᵈ(M, M ∖ {x}; R, N)` with `k`. -/
+`x ∈ φ.source` in a `T₁` space `M` with a chart `φ` to a real normed space `E` of dimension `d`,
+linear equivalences `eR : R ≃ₗ[k] k` and `eN : N ≃ₗ[k] k` identify `Hᵈ(M, M ∖ {x}; R, N)` with
+`k`. -/
 def singularCohomologyComplSingletonFinrankEquivOfLinearEquiv (eR : R ≃ₗ[k] k) (eN : N ≃ₗ[k] k) :
     (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularCohomology R k N (finrank ℝ E) ≃ₗ[k] k :=
   haveI : Module.Projective k R := .of_equiv eR.symm

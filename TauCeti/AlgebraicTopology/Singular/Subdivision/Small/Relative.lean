@@ -267,8 +267,8 @@ lemma chainComplexπ_smallSingularSubcomplexPairToUnion :
   rw [← SSetPair.chainComplexπ_naturality, chainComplexMap_smallSingularSubcomplexPairToUnion_right]
   exact Category.id_comp _
 
-lemma toSmallPair_comp_smallPairToUnion {A : Set X} {i : Fin 2} (h : A ⊆ ![U, V] i)
-    (h' : A ⊆ U ∪ V) :
+lemma toSmallPair_comp_smallSingularSubcomplexPairToUnion {A : Set X} {i : Fin 2}
+    (h : A ⊆ ![U, V] i) (h' : A ⊆ U ∪ V) :
     toSmallPair ![U, V] h ≫ smallSingularSubcomplexPairToUnion U V =
       TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) h') := by
   refine MorphismProperty.Arrow.Hom.ext ?_ ?_
@@ -296,14 +296,14 @@ lemma quasiIso_chainComplexMap_smallSingularSubcomplexToUnion
   rw [← he, hcomp] at hq
   exact quasiIso_of_comp_left (SSet.chainComplexMap e.hom R) _
 
-/-- For open `U` and `V`, the relative chains of `X` modulo its singular simplices lying in `U` or
-in `V` include into the relative chains of `(X, U ∪ V)` by a quasi-isomorphism. -/
+/-- For `U` and `V` open in `U ∪ V`, the quotient map from the relative chains of `X` modulo its
+singular simplices lying in `U` or in `V` to the relative chains of `(X, U ∪ V)` (killing all
+singular simplices lying in `U ∪ V`) is a quasi-isomorphism. -/
 lemma quasiIso_chainComplexMap_smallSingularSubcomplexPairToUnion
-    (hU : IsOpen U) (hV : IsOpen V) :
+    (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) :
     QuasiIso (SSetPair.chainComplexMap (smallSingularSubcomplexPairToUnion U V) R) := by
   have : QuasiIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).left R) :=
-    quasiIso_chainComplexMap_smallSingularSubcomplexToUnion R U V
-      (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal)
+    quasiIso_chainComplexMap_smallSingularSubcomplexToUnion R U V hU hV
   have : IsIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).right R) := by
     rw [chainComplexMap_smallSingularSubcomplexPairToUnion_right]
     exact IsIso.id _
@@ -311,8 +311,10 @@ lemma quasiIso_chainComplexMap_smallSingularSubcomplexPairToUnion
     quasiIso_of_isIso _
   exact SSetPair.quasiIso_chainComplexMap _ R
 
+/-- For `U` and `V` open in `U ∪ V`, the comparison map from the relative homology of `X` modulo
+its singular simplices lying in `U` or in `V` to `Hₙ(X, U ∪ V; R)` is an isomorphism. -/
 lemma isIso_homologyMap_smallSingularSubcomplexPairToUnion
-    (hU : IsOpen U) (hV : IsOpen V) (n : ℕ) :
+    (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) (n : ℕ) :
     IsIso (SSetPair.homologyMap (smallSingularSubcomplexPairToUnion U V) R n) := by
   have := quasiIso_chainComplexMap_smallSingularSubcomplexPairToUnion R U V hU hV
   infer_instance
@@ -342,7 +344,7 @@ lemma smallSingularSubcomplexPairMap_right :
     (smallSingularSubcomplexPairMap f hfU hfV).right = toSSet.map f :=
   (rfl)
 
-lemma toSmallPair_comp_smallPairMap {A : Set X} {A' : Set Y} {i : Fin 2}
+lemma toSmallPair_comp_smallSingularSubcomplexPairMap {A : Set X} {A' : Set Y} {i : Fin 2}
     (h : A ⊆ ![U, V] i) (h' : A' ⊆ ![U', V'] i) (hA : Set.MapsTo f A A') :
     toSmallPair ![U, V] h ≫ smallSingularSubcomplexPairMap f hfU hfV =
       TopPair.toSSetPair.map (TopPair.ofSubsetMap f hA) ≫ toSmallPair ![U', V'] h' := by

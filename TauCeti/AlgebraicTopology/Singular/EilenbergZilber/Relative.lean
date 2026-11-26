@@ -14,9 +14,12 @@ import TauCeti.CategoryTheory.Monoidal.Category
 # The relative Eilenberg–Zilber theorem for singular chains
 
 For topological spaces `X` and `Y`, subsets `A ⊆ X` and `B ⊆ Y`, and coefficient objects `R` and
-`S` in an abelian monoidal category `C`, the relative Alexander–Whitney map
+`S` in an abelian monoidal category `C`, let `C(X × Y; fst⁻¹(A) + snd⁻¹(B); R ⊗ S)` denote the
+quotient of `C(X × Y; R ⊗ S)` modulo singular simplices lying wholly in `A × Y` or wholly in
+`X × B` (the chain complex of `(X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]`).
+The relative Alexander–Whitney map
 `TopCat.relativeAlexanderWhitney X Y A B R S :
-  C(X × Y; A × Y + X × B; R ⊗ S) ⟶ C(X, A; R) ⊗ C(Y, B; S)`
+  C(X × Y; fst⁻¹(A) + snd⁻¹(B); R ⊗ S) ⟶ C(X, A; R) ⊗ C(Y, B; S)`
 and the relative shuffle map `TopCat.relativeShuffle X Y A B R S` form a chain homotopy
 equivalence `TopCat.relativeEilenbergZilberHomotopyEquiv`.
 
@@ -25,7 +28,9 @@ complex preserves short exactness via `HomologicalComplex.shortExact_tensorLeftS
 and `HomologicalComplex.shortExact_tensorRightShortComplex`, so both Eilenberg–Zilber
 homotopies descend to relative chains via `Homotopy.descCokernel`, giving
 `TopCat.relativeShuffleAlexanderWhitneyHomotopy` and
-`TopCat.relativeAlexanderWhitneyShuffleHomotopy` without openness, flatness, or Künneth assumptions.
+`TopCat.relativeAlexanderWhitneyShuffleHomotopy` without openness, flatness, or Künneth assumptions
+(passing to `C(X × Y, A × Y ∪ X × B; R ⊗ S)` when `A` and `B` are open is
+`TopCat.quasiIso_shufflePair_of_isOpen`).
 
 ## Main definitions and results
 
@@ -33,7 +38,7 @@ homotopies descend to relative chains via `Homotopy.descCokernel`, giving
   `C(X, A; R) ⊗ C(Y, B; S)`, characterized on quotient chains by
   `TopCat.singularChainComplexπ_tensorHom_f_relativeShuffleAlexanderWhitneyHomotopy_hom`.
 * `TopCat.relativeAlexanderWhitneyShuffleHomotopy`: the chain homotopy `shuffle ∘ AW ≃ id` on
-  `C(X × Y; A × Y + X × B; R ⊗ S)`, characterized on quotient chains by
+  `C(X × Y; fst⁻¹(A) + snd⁻¹(B); R ⊗ S)`, characterized on quotient chains by
   `TopCat.chainComplexπ_f_relativeAlexanderWhitneyShuffleHomotopy_hom`.
 * `TopCat.relativeEilenbergZilberHomotopyEquiv`: the resulting chain homotopy equivalence.
 * `TopCat.quasiIso_relativeShuffle`: `TopCat.relativeShuffle` is a quasi-isomorphism.
@@ -260,7 +265,7 @@ private lemma chainComplexMap_smallSingularSubcomplex_ι_comp_ambientHomotopy_ho
           (fun w _ ↦ w.property) (Set.mem_preimage.2 (Set.mem_univ _))) (R ⊗ S))
 
 /-- **The relative Eilenberg–Zilber chain homotopy** `shuffle ∘ AW ≃ id` on
-`C(X × Y; A × Y + X × B; R ⊗ S)`. -/
+`C(X × Y; fst⁻¹(A) + snd⁻¹(B); R ⊗ S)`. -/
 def relativeAlexanderWhitneyShuffleHomotopy :
     _root_.Homotopy
       (relativeAlexanderWhitney X Y A B R S ≫ relativeShuffle X Y A B R S) (𝟙 _) :=
@@ -296,8 +301,8 @@ lemma chainComplexπ_f_relativeAlexanderWhitneyShuffleHomotopy_hom (i j : ℕ) :
   exact _root_.Homotopy.π_descCokernel_hom _ _ _ _ _ _ _ _ _ i j
 
 /-- **The relative Eilenberg–Zilber theorem**: `TopCat.relativeAlexanderWhitney` and
-`TopCat.relativeShuffle` form a chain homotopy equivalence between `C(X × Y; A × Y + X × B; R ⊗ S)`
-and `C(X, A; R) ⊗ C(Y, B; S)`. -/
+`TopCat.relativeShuffle` form a chain homotopy equivalence between
+`C(X × Y; fst⁻¹(A) + snd⁻¹(B); R ⊗ S)` and `C(X, A; R) ⊗ C(Y, B; S)`. -/
 def relativeEilenbergZilberHomotopyEquiv :
     _root_.HomotopyEquiv
       (((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplex (R ⊗ S))

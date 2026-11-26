@@ -114,6 +114,34 @@ private lemma homologyMap_relativeShuffle_comp_singularKronecker_singularRelativ
   exact congrArg _ (TauCeti.ChainComplex.cup_eq_of_homotopy _ μ
     (relativeShuffleAlexanderWhitneyHomotopy X Y A B R S) p q n h a b)
 
+private lemma singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross_eq
+    (μ : M ⊗ N ⟶ L) {p q p' q' n : ℕ} (h : p + q = n) (h' : p' + q' = n)
+    [PreservesColimitsOfShape WalkingParallelPair (tensorLeft
+      (((TopPair.ofSubset A).singularChainComplex R).homology p))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight
+      (((TopPair.ofSubset B).singularChainComplex S).cycles q))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight
+      (((TopPair.ofSubset B).singularChainComplex S).X ((ComplexShape.down ℕ).prev q)))]
+    (a : (TopPair.ofSubset A).singularCohomology R k M p')
+    (b : (TopPair.ofSubset B).singularCohomology S k N q') :
+    singularRelativeHomologyCross X Y R S A B p q n h ≫
+        (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularKronecker (R := R ⊗ S) (M := L)
+          k n (TauCeti.singularRelativeCross k X Y hA hB μ p' q' n h' a b) =
+      homologyCross ((TopPair.ofSubset A).singularChainComplex R)
+          ((TopPair.ofSubset B).singularChainComplex S) p q n h ≫
+        TauCeti.ChainComplex.kronecker k
+          (HomologicalComplex.tensorObj ((TopPair.ofSubset A).singularChainComplex R)
+            ((TopPair.ofSubset B).singularChainComplex S)) L n
+          (TauCeti.ChainComplex.cup k
+            (𝟙 (HomologicalComplex.tensorObj ((TopPair.ofSubset A).singularChainComplex R)
+              ((TopPair.ofSubset B).singularChainComplex S))) μ p' q' n h' a b) := by
+  rw [singularRelativeHomologyCross_def, ← relativeShuffle_comp_smallSingularSubcomplexPairToUnion,
+    homologyMap_comp, TopPair.singularKronecker_def]
+  exact (Category.assoc _ _ _).trans <|
+    whisker_eq _ ((Category.assoc _ _ _).trans
+      (homologyMap_relativeShuffle_comp_singularKronecker_singularRelativeCross
+        X Y hA hB μ p' q' n h' a b))
+
 /-- **The Kronecker pairing of relative cross products**, `⟨a × b, x × y⟩ = μ (⟨a, x⟩ ⊗ ⟨b, y⟩)`
 for open `A ⊆ X` and `B ⊆ Y`. -/
 theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross
@@ -131,14 +159,12 @@ theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCro
           k n (TauCeti.singularRelativeCross k X Y hA hB μ p q n h a b) =
       ((TopPair.ofSubset A).singularKronecker (R := R) (M := M) k p a ⊗ₘ
         (TopPair.ofSubset B).singularKronecker (R := S) (M := N) k q b) ≫ μ := by
-  rw [singularRelativeHomologyCross_def, ← relativeShuffle_comp_smallSingularSubcomplexPairToUnion,
-    homologyMap_comp]
-  simp only [TopPair.singularKronecker_def]
-  exact (Category.assoc _ _ _).trans <|
-    (whisker_eq _ ((Category.assoc _ _ _).trans
-      (homologyMap_relativeShuffle_comp_singularKronecker_singularRelativeCross
-        X Y hA hB μ p q n h a b))).trans
-    (ChainComplex.homologyCross_comp_kronecker_cup _ _ μ p q n h a b)
+  have hkr := ChainComplex.homologyCross_comp_kronecker_cup
+    ((TopPair.ofSubset A).singularChainComplex R) ((TopPair.ofSubset B).singularChainComplex S)
+    μ p q n h a b
+  rw [← TopPair.singularKronecker_def, ← TopPair.singularKronecker_def] at hkr
+  exact (singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross_eq
+    X Y hA hB μ h h a b).trans hkr
 
 /-- **Off-diagonal vanishing for the Kronecker pairing of relative cross products** (`p ≠ p'`). -/
 theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross_of_ne
@@ -153,13 +179,9 @@ theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCro
     (b : (TopPair.ofSubset B).singularCohomology S k N q') :
     singularRelativeHomologyCross X Y R S A B p q n h ≫
         (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularKronecker (R := R ⊗ S) (M := L)
-          k n (TauCeti.singularRelativeCross k X Y hA hB μ p' q' n h' a b) = 0 := by
-  rw [singularRelativeHomologyCross_def, ← relativeShuffle_comp_smallSingularSubcomplexPairToUnion,
-    homologyMap_comp, TopPair.singularKronecker_def]
-  exact (Category.assoc _ _ _).trans <|
-    (whisker_eq _ ((Category.assoc _ _ _).trans
-      (homologyMap_relativeShuffle_comp_singularKronecker_singularRelativeCross
-        X Y hA hB μ p' q' n h' a b))).trans
+          k n (TauCeti.singularRelativeCross k X Y hA hB μ p' q' n h' a b) = 0 :=
+  (singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross_eq
+    X Y hA hB μ h h' a b).trans
     (ChainComplex.homologyCross_comp_kronecker_cup_of_ne _ _ μ p q h h' hp a b)
 
 /-- **The Kronecker pairing of `TopCat.singularRelativeCupPullback` along `fst` and `snd`** when

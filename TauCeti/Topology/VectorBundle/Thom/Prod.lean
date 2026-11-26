@@ -26,8 +26,9 @@ vector of `E₁ ⊕ E₂` has a nonzero first or second component, so the Thom p
 (`TauCeti.singularCohomologyMap_fiberThomPairMap_thomPairCup`), and its Euler class is the cup
 product of the Euler classes (`TauCeti.eulerClass_thomPairCup`): the zero section of `E₁ ⊕ E₂`
 followed by `pᵢ` is the zero section of `Eᵢ`. No orientation is involved; the oriented form is in
-`TauCeti.Topology.VectorBundle.Orientation.Whitney`. These hold in any abelian monoidal category
-of coefficients.
+`TauCeti.Topology.VectorBundle.Orientation.Whitney`. These hold for coefficients in any abelian
+monoidal preadditive category with coproducts and a compatible linear structure over the
+commutative base ring `k`.
 
 Over a commutative ring `K`, for `R₁, R₂, M₁, M₂ ≃ₗ[K] K` and isomorphisms `u, μ`,
 `TauCeti.thomPairCup` produces a Thom class of `E₁ ⊕ E₂` iff both factors are Thom classes

@@ -10,30 +10,22 @@ public import TauCeti.AlgebraicTopology.Singular.KoszulBraiding
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Relative
 
 /-!
-# The shuffle map of a product of two pairs
+# The relative Eilenberg–Zilber theorem for a product of pairs
 
 Let `A ⊆ X` and `B ⊆ Y` be subsets of topological spaces, and write `A × Y` and `X × B` for the
-preimages of `A` and `B` under the projections of `X × Y`. The shuffle map
-`C(X; R) ⊗ C(Y; S) ⟶ C(X × Y; R ⊗ S)` (`TopCat.shuffle`) carries `C(A; R) ⊗ C(Y; S)` into the chains
-of `A × Y` and `C(X; R) ⊗ C(B; S)` into the chains of `X × B`. So it descends to the **shuffle map
-of the product of the pairs** `(X, A)` and `(Y, B)` (`TopCat.shufflePair`)
+preimages of `A` and `B` under the projections of `X × Y`. The shuffle map of the product of pairs
+`TopCat.shufflePair X Y A B R S : C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y, A × Y ∪ X × B; R ⊗ S)`
+is constructed and proved natural in `TauCeti.AlgebraicTopology.Singular.Shuffle.Relative`. This
+file proves that `TopCat.shufflePair` is a quasi-isomorphism under excision, relates it to the
+relative cross product, and establishes its graded commutativity.
 
-`C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y, A × Y ∪ X × B; R ⊗ S)`,
-
-characterized by `(π ⊗ π) ≫ shufflePair = shuffle ≫ π`
-(`TopCat.singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair`). It is built from the
-relative shuffle map `TopCat.shuffleRel` of `(X, A)` and `Y`: tensoring on the left with
-`C(X, A; R)` preserves the short exact sequence `C(B) ⟶ C(Y) ⟶ C(Y, B)`, since the inclusion of
-the singular chains of `B` splits in each degree, and the relative shuffle map followed by the
-quotient modulo the chains of `A × Y ∪ X × B` vanishes on `C(X, A; R) ⊗ C(B; S)`.
-
-It is natural in maps of pairs (`TopCat.shufflePair_naturality`). When the interiors of `A × Y`
-and `X × B` cover their union, in particular when `A` and `B` are open, it is a quasi-isomorphism
-(`TopCat.quasiIso_shufflePair`, `TopCat.quasiIso_shufflePair_of_isOpen`): this is the **relative
-Eilenberg–Zilber theorem for a product of pairs**. The tensored sequence maps to the singular
-chain sequence of the triple `(X × Y, A × Y ∪ X × B, A × Y)`, by the relative shuffle maps of
-`(X, A)` with `B` and with `Y` on the first two terms and by `shufflePair` on the third. The
-relative shuffle maps are quasi-isomorphisms (`TopCat.quasiIso_shuffleRel`), and the first is
+When the interiors of `A × Y` and `X × B` cover their union, in particular when `A` and `B` are
+open, `TopCat.shufflePair` is a quasi-isomorphism (`TopCat.quasiIso_shufflePair`,
+`TopCat.quasiIso_shufflePair_of_isOpen`): this is the **relative Eilenberg–Zilber theorem for a
+product of pairs**. The tensored sequence `C(X, A) ⊗ (C(B) ⟶ C(Y) ⟶ C(Y, B))` maps to the
+singular chain sequence of the triple `(X × Y, A × Y ∪ X × B, A × Y)`, by the relative shuffle maps
+of `(X, A)` with `B` and with `Y` on the first two terms and by `TopCat.shufflePair` on the third.
+The relative shuffle maps are quasi-isomorphisms (`TopCat.quasiIso_shuffleRel`), and the first is
 followed by the inclusion of pairs `(X × B, A × B) ⟶ (A × Y ∪ X × B, A × Y)`, an excision since
 the interiors of `A × Y` and `X × B` cover the union
 (`TopPair.isIso_singularHomologyMap_prodExcisionFst`). The five lemma concludes
@@ -41,12 +33,13 @@ the interiors of `A × Y` and `X × B` cover the union
 
 On homology, the relative cross product `Hₚ(X, A; R) ⊗ H_q(Y; S) ⟶ Hₙ(X × Y, A × Y; R ⊗ S)`
 followed by the restriction to `(X × Y, A × Y ∪ X × B)` is the cross product with the image in
-`H_q(Y, B; S)`, through `shufflePair` (`TopCat.singularHomologyCrossRel_comp_singularHomologyMap`).
+`H_q(Y, B; S)`, through `TopCat.shufflePair`
+(`TopCat.singularHomologyCrossRel_comp_singularHomologyMap`).
 
 In a braided coefficient category the shuffle map of a product of pairs is graded commutative.
 The swap `X × Y ⟶ Y × X` carries `A × Y ∪ X × B` into `B × X ∪ Y × A`
 (`TopCat.mapsTo_braiding_hom_preimage_union`), and together with the coefficient braiding
-`R ⊗ S ⟶ S ⊗ R` it intertwines `shufflePair` with the Koszul braiding
+`R ⊗ S ⟶ S ⊗ R` it intertwines `TopCat.shufflePair` with the Koszul braiding
 `x ⊗ y ↦ (-1)^(p * q) y ⊗ x` (`TopCat.tensorBraiding_hom_comp_shufflePair`), as for the absolute
 shuffle map (`TopCat.tensorBraiding_hom_comp_shuffle`). On homology the swap sends the cross product
 `a × b` of `a ∈ Hₚ(X, A; R)` and `b ∈ H_q(Y, B; S)` to `(-1)^(p * q) b × a`
@@ -61,7 +54,7 @@ chain-level constructions are not compared here.
 ## Main results
 
 * `TopCat.singularHomologyCrossRel_comp_singularHomologyMap`: the relative cross product restricts
-  to the product of pairs through `shufflePair`.
+  to the product of pairs through `TopCat.shufflePair`.
 * `TopCat.quasiIso_shufflePair_of_isIso`: the relative Eilenberg–Zilber theorem for a product of
   pairs whose excision map `TopPair.prodExcisionFst` is a homology isomorphism.
 * `TopCat.quasiIso_shufflePair`: the same when the interiors of `A × Y` and `X × B` cover their
@@ -141,6 +134,10 @@ private def shufflePairτ₂ :
       (TauCeti.TopTriple.totalPair.obj
         (TopPair.prodUnionTripleFst A B)).singularChainComplex (R ⊗ S) :=
   shuffleRel X Y A R S
+
+private lemma shufflePairτ₂_def :
+    shufflePairτ₂ X Y A B R S = shuffleRel X Y A R S :=
+  (rfl)
 
 /-- The comparison maps commute with the maps of the sequences on the first two terms. -/
 private theorem shufflePair_comm₁₂ :
@@ -228,6 +225,16 @@ theorem singularHomologyCrossRel_comp_singularHomologyMap :
 end Cross
 
 section QuasiIso
+omit [MonoidalPreadditive C]
+  [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft T)]
+  [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight T)] in
+private lemma prodUnionTripleFst_singularChainComplexShortComplex_g :
+    ((TopPair.prodUnionTripleFst A B).singularChainComplexShortComplex (R ⊗ S)).g =
+      TopPair.singularChainComplexMap
+        (TopPair.ofSubsetMap (𝟙 _) fun _ hz ↦ Or.inl hz) (R ⊗ S) :=
+  congrArg (TopPair.singularChainComplexMap · (R ⊗ S))
+    (TauCeti.TopTriple.totalToOuter_app_ofSubset Set.subset_union_left)
+
 /-- The morphism from the sequence `C(X, A) ⊗ (C(B) ⟶ C(Y) ⟶ C(Y, B))` to the singular chain
 sequence of the triple `(X × Y, A × Y ∪ X × B, A × Y)` given by the relative shuffle maps and the
 shuffle map of the product of pairs. -/
@@ -239,10 +246,10 @@ private def shufflePairShortComplexMap :
   τ₂ := shufflePairτ₂ X Y A B R S
   τ₃ := shufflePair X Y A B R S
   comm₁₂ := (shufflePair_comm₁₂ X Y A B R S).symm
-  comm₂₃ := ((id_tensorHom_singularChainComplexπ_shufflePair X Y A B R S).trans <| by
-    dsimp only
-    rw [TauCeti.TopTriple.totalToOuter_app_ofSubset]
-    rfl).symm
+  comm₂₃ := by
+    rw [tensorLeftShortComplex_g, shufflePairτ₂_def,
+      prodUnionTripleFst_singularChainComplexShortComplex_g]
+    exact (id_tensorHom_singularChainComplexπ_shufflePair X Y A B R S).symm
 
 variable {A B}
 

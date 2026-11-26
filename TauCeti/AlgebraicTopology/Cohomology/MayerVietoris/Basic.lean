@@ -37,8 +37,9 @@ split in each degree, so applying `Hom(-, M)` keeps it short exact
 (`SSet.shortExact_mayerVietorisCochainShortComplex`). Its cohomology sequence is a long exact
 sequence `⋯ ⟶ Hⁿ(X₄) ⟶ Hⁿ(X₂) ⊞ Hⁿ(X₃) ⟶ Hⁿ(X₁) ⟶ Hⁿ⁺¹(X₄) ⟶ ⋯`, natural in maps of pushout
 squares. For the singular simplicial sets of `U ∩ V`, `U`, `V` and the subcomplex of singular
-simplices of `X` lying in `U` or in `V`, the small-chain theorem identifies the cohomology of that
-subcomplex with the singular cohomology of `X` (`TauCeti.smallSingularCohomologyIso`).
+simplices of `X` lying in `U` or in `V`, the small-chain theorem
+(`TauCeti.smallSingularCohomologyIso` in `TauCeti.AlgebraicTopology.Cohomology.Small`) identifies
+the cohomology of that subcomplex with the singular cohomology of `X`.
 
 ## Main definitions and results
 
@@ -52,10 +53,6 @@ subcomplex with the singular cohomology of `X` (`TauCeti.smallSingularCohomology
   (`SSet.mayerVietorisCochainδ_congr`); the other two maps are natural as well
   (`SSet.mayerVietorisCochainToBiprod_naturality`,
   `SSet.mayerVietorisCochainFromBiprod_naturality`).
-* `TauCeti.smallSingularCohomologyIso`: restricting cochains to the chains subordinate to an open
-  cover is an isomorphism on cohomology, natural in maps of covered spaces
-  (`TauCeti.smallSingularCohomologyIso_naturality`); equivalently, that restriction is a
-  quasi-isomorphism (`TauCeti.quasiIso_cochainComplexMap_smallSingularSubcomplex_ι`).
 * `TopCat.singularCohomologyMayerVietorisToBiprod` and
   `TopCat.singularCohomologyMayerVietorisFromBiprod`: the maps `Hⁿ(X) ⟶ Hⁿ(U) ⊞ Hⁿ(V)` and
   `Hⁿ(U) ⊞ Hⁿ(V) ⟶ Hⁿ(U ∩ V)`.

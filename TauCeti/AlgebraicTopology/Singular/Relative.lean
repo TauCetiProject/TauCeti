@@ -506,6 +506,13 @@ protected noncomputable abbrev singularHomologyMap (n : ℕ) :
     P.singularHomology R n ⟶ P'.singularHomology R n :=
   SSetPair.homologyMap (toSSetPair.map f) R n
 
+variable {P P'} in
+/-- The relative singular homology map induced by a map of pairs is the homology map of the
+induced map on relative singular chain complexes. -/
+lemma singularHomologyMap_def (n : ℕ) :
+    P.singularHomologyMap f R n = HomologicalComplex.homologyMap (singularChainComplexMap f R) n :=
+  (rfl)
+
 /-- Relative singular homology sends the identity map of a pair to the identity. -/
 @[simp]
 lemma singularHomologyMap_id (n : ℕ) : P.singularHomologyMap (𝟙 P) R n = 𝟙 _ := by
@@ -529,7 +536,7 @@ protected noncomputable abbrev singularHomologyCoefficientMap {R' : C} (φ : R �
 variable {R} in
 /-- The relative homology coefficient map is the homology map of the relative chain coefficient
 map. -/
-lemma singularHomologyCoefficientMap_eq {R' : C} (φ : R ⟶ R') (n : ℕ) :
+lemma singularHomologyCoefficientMap_def {R' : C} (φ : R ⟶ R') (n : ℕ) :
     P.singularHomologyCoefficientMap φ n =
       HomologicalComplex.homologyMap (P.singularChainComplexCoefficientMap φ) n :=
   (rfl)
@@ -556,9 +563,8 @@ variable {P P' R} in
 lemma singularHomologyCoefficientMap_naturality {R' : C} (φ : R ⟶ R') (n : ℕ) :
     P.singularHomologyMap f R n ≫ P'.singularHomologyCoefficientMap φ n =
       P.singularHomologyCoefficientMap φ n ≫ P.singularHomologyMap f R' n := by
-  rw [TopPair.singularHomologyMap, SSetPair.homologyMap, ← singularChainComplexMap,
-    TopPair.singularHomologyMap, SSetPair.homologyMap, ← singularChainComplexMap,
-    TopPair.singularHomologyCoefficientMap, TopPair.singularHomologyCoefficientMap,
+  rw [singularHomologyMap_def, singularHomologyMap_def,
+    singularHomologyCoefficientMap_def, singularHomologyCoefficientMap_def,
     ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
     singularChainComplexCoefficientMap_naturality]
 
