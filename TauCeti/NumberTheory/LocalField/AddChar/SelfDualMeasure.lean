@@ -191,6 +191,7 @@ continuous additive character, is locally constant. -/
 theorem isLocallyConstant_fourierIntegral (hψ : Continuous ψ) (μ : Measure K) {f : K → E}
     (hfc : HasCompactSupport f) : IsLocallyConstant (Fourier.fourierIntegral ψ μ f) := by
   obtain ⟨n, hn⟩ := hfc.isCompact.exists_subset_setOf_valuation_le_uniformizer_zpow
+  rw [Fourier.fourierIntegral_eq_vectorFourierIntegral]
   exact VectorFourier.isLocallyConstant_fourierIntegral ψ μ (LinearMap.mul K K)
     (U := (valuation K).leAddSubgroup (uniformizer K ^ n))
     (isCompact_leAddSubgroup K _)
@@ -206,6 +207,7 @@ theorem hasCompactSupport_fourierIntegral (hψ : Continuous ψ) (h1 : ψ ≠ 1) 
     [μ.IsAddRightInvariant] {f : K → E} (hf : IsLocallyConstant f) (hfc : HasCompactSupport f) :
     HasCompactSupport (Fourier.fourierIntegral ψ μ f) := by
   obtain ⟨m, hm⟩ := hf.exists_forall_periodic_leAddSubgroup_uniformizer_zpow hfc
+  rw [Fourier.fourierIntegral_eq_vectorFourierIntegral]
   refine VectorFourier.hasCompactSupport_fourierIntegral ψ μ (LinearMap.mul K K) hm ?_
   rw [characterAnnihilator_leAddSubgroup (setOf_eq_one_mem_nhds_zero hψ) h1]
   exact isCompact_leAddSubgroup K _
@@ -229,8 +231,8 @@ theorem fourierIntegral_fourierIntegral_selfDualMeasure (hψ : Continuous ψ) (h
     (by rw [hdual]; exact hmeas _) (by rw [LinearMap.flip_mul, hdual, hdual, sub_sub_cancel])
     (by simp [hdual, measureReal_def, ← ENNReal.toReal_mul, selfDualMeasure_mul_selfDualMeasure])
     (hf.continuous.integrable_of_hasCompactSupport hfc) hm x
-  -- `Fourier.fourierIntegral` is by definition the transform for the multiplication pairing.
-  rwa [LinearMap.flip_mul] at h
+  rwa [LinearMap.flip_mul, ← Fourier.fourierIntegral_eq_vectorFourierIntegral,
+    ← Fourier.fourierIntegral_eq_vectorFourierIntegral] at h
 
 open LocallyConstant
 
@@ -254,7 +256,7 @@ def fourierCompactlySupported (hψ : Continuous ψ) (h1 : ψ ≠ 1) :
         (mem_compactlySupported.1 g.property)).comp_homeomorph (Homeomorph.neg K)⟩
   map_add' f g := by
     ext x
-    -- `Fourier.fourierIntegral` is by definition the transform for the multiplication pairing.
+    simp only [LocallyConstant.coe_mk, Fourier.fourierIntegral_eq_vectorFourierIntegral]
     exact congrFun (VectorFourier.fourierIntegral_add hψ (by simpa using continuous_mul)
       ((f : LocallyConstant K E).continuous.integrable_of_hasCompactSupport
         (mem_compactlySupported.1 f.property))

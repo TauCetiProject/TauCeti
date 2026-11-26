@@ -49,6 +49,8 @@ used.
   reciprocal.
 * `VectorFourier.fourierIntegral_fourierIntegral_of_periodic`: under the same duality and volume
   hypotheses, Fourier inversion `𝓕 (𝓕 f) v = f (-v)` for every integrable `U`-periodic `f`.
+* `Fourier.fourierIntegral_eq_vectorFourierIntegral`: the transform `Fourier.fourierIntegral` on
+  the ring `R` itself is the case `L = LinearMap.mul R R`, so the results above apply to it.
 
 ## References
 
@@ -256,3 +258,16 @@ theorem fourierIntegral_fourierIntegral_of_periodic (hψ : Continuous ψ)
 end Inversion
 
 end VectorFourier
+
+namespace Fourier
+
+variable {R E : Type*} [CommRing R] [MeasurableSpace R] [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- The Fourier transform of a function on the ring `R` is the transform for the multiplication
+pairing `LinearMap.mul R R`. This holds by definition. -/
+theorem fourierIntegral_eq_vectorFourierIntegral (ψ : AddChar R Circle) (μ : Measure R)
+    (f : R → E) :
+    fourierIntegral ψ μ f = VectorFourier.fourierIntegral ψ μ (LinearMap.mul R R) f :=
+  rfl
+
+end Fourier
