@@ -169,11 +169,12 @@ theorem signTwisted_domRestrict_ker_inf_eq_sup {ι : G →+ ZMod 2} {S : Submodu
       exact Submodule.mem_sup_left ⟨fun g z ↦ hv ⟨g, by simp⟩ z, hvS⟩
     obtain ⟨g₀, hg₀⟩ := ι.exists_eq_one_of_ne_zero hι
     -- With `s` the sign of `χ g₀` and `w = v (· + j g₀)`, the summands are `(v ± s w) / 2`.
-    set s := hilbertSign (χ g₀)
+    set s := hilbertSign (χ g₀) with hs
     set w : A → E := fun z ↦ v (z + j g₀)
     have hw : w ∈ signTwisted R (j.domRestrict ι.ker) (χ.domRestrict ι.ker) :=
       translate_mem_signTwisted hv fun g ↦ by
         simp only [AddMonoidHom.domRestrict_apply, ← map_add, add_comm]
+    have hvw : ∀ z, v (z + j g₀) = w z := fun _ ↦ rfl
     have hww : ∀ z, w (z + j g₀) = v z :=
       apply_add_add_eq_of_mem_signTwisted_domRestrict_ker hv g₀
     have hsw : s • w ∈ signTwisted R (j.domRestrict ι.ker) (χ.domRestrict ι.ker) := by
@@ -182,14 +183,14 @@ theorem signTwisted_domRestrict_ker_inf_eq_sup {ι : G →+ ZMod 2} {S : Submodu
       rw [Units.smul_def]; exact Submodule.smul_of_tower_mem _ _ (hS g₀ v hvS)
     have h₁ : v + s • w ∈ signTwisted R j χ :=
       mem_signTwisted_of_mem_signTwisted_domRestrict_ker hg₀ (add_mem hv hsw) fun z ↦ by
-        change w z + s • w (z + j g₀) = s • (v z + s • w z)
-        simp only [hww, smul_add, smul_smul, Int.units_mul_self, one_smul, add_comm]
+        simp only [Pi.add_apply, Pi.smul_apply, ← hs, hvw, hww, smul_add, smul_smul,
+          Int.units_mul_self, one_smul, add_comm]
     have h₂ : v - s • w ∈ signTwisted R j (χ + ι) :=
       mem_signTwisted_of_mem_signTwisted_domRestrict_ker (χ := χ + ι) hg₀
         (by rw [AddMonoidHom.domRestrict_ker_add_self]; exact sub_mem hv hsw) fun z ↦ by
         rw [AddMonoidHom.add_apply, hg₀, hilbertSign_add_one]
-        change w z - s • w (z + j g₀) = (-s) • (v z - s • w z)
-        rw [hww, Units.neg_smul, smul_sub, smul_smul, Int.units_mul_self, one_smul, neg_sub]
+        simp only [Pi.sub_apply, Pi.smul_apply, ← hs, hvw, hww, smul_sub, smul_smul, neg_mul,
+          Int.units_mul_self, Units.neg_smul, one_smul, sub_neg_eq_add, neg_add_eq_sub]
     have hv₂ : v = ⅟(2 : R) • (v + s • w) + ⅟(2 : R) • (v - s • w) := by
       rw [← smul_add, add_add_sub_cancel, ← two_smul R v, smul_smul, invOf_mul_self, one_smul]
     rw [hv₂]

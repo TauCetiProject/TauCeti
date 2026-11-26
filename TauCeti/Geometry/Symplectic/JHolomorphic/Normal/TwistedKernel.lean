@@ -26,7 +26,8 @@ splitting of twisted maps on double covers of
 the double cover `ℂ ⧸ ker ι` of `C`, and every sign character `χ`:
 
 * the solutions on the double cover twisted by the restriction of `χ` are the sums of solutions on
-  `C` twisted by `χ` and by `χ + ι` (`TauCeti.signTwisted_domRestrict_ker_inf_cauchyRiemannKernel`);
+  `C` twisted by `χ` and by `χ + ι`
+  (`TauCeti.signTwisted_domRestrict_ker_inf_cauchyRiemannKernel_eq_sup`);
   together with `TauCeti.disjoint_signTwisted_add` this sum is direct, so the kernel of the twisted
   operator of the double cover is the direct sum of the kernels of two twisted operators of `C`;
 * hence the twisted operator of the double cover has no kernel exactly when the operators of `C`
@@ -95,7 +96,7 @@ variable {Λ : AddSubgroup ℂ} {ι χ κ : Λ →+ ZMod 2}
 /-- **Twisted solutions on a double cover.** For `Λ`-periodic coefficients and a sign character
 `ι`, the solutions of `D v = 0` twisted along `ker ι` by the restriction of `χ` are the
 sums of solutions twisted by `χ` and by `χ + ι` along `Λ`. -/
-theorem signTwisted_domRestrict_ker_inf_cauchyRiemannKernel
+theorem signTwisted_domRestrict_ker_inf_cauchyRiemannKernel_eq_sup
     (hν : ∀ ω ∈ Λ, ∀ z, ν (z + ω) = ν z) (hμ : ∀ ω ∈ Λ, ∀ z, μ (z + ω) = μ z) :
     signTwisted ℝ (Λ.subtype.domRestrict ι.ker) (χ.domRestrict ι.ker) ⊓ cauchyRiemannKernel ν μ =
       signTwisted ℝ Λ.subtype χ ⊓ cauchyRiemannKernel ν μ ⊔
