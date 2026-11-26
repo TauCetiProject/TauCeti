@@ -345,7 +345,7 @@ private theorem exists_pos_forall_window (hω : ω.IsNondegenerate) (p : PSSPlan
       (D := Icc (T + 1) (T + 3) ×ˢ Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5)
         ((bif b then 1 / 2 else 0) + 2 / 5)) (isCompact_Icc.prod isCompact_Icc)
       (t₀ := (bif b then 1 / 2 else 0) - 1 / 2)
-      (Icc_prod_Icc_subset_Ioi_prod_Ioo (max_le le_rfl hT) b)
+      (endWindow_closed_subset_Ioi_prod_Ioo (max_le le_rfl hT) b)
   obtain ⟨δc, hδc, hconvc⟩ :=
     hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pssPlanePerturbation
       p hH hHs hB isOpen_univ (isCompact_setOf_norm_equivRealProdCLM_symm_le _) (subset_univ _)
@@ -364,7 +364,7 @@ private theorem exists_pos_forall_window (hω : ω.IsNondegenerate) (p : PSSPlan
   · have hEb (k : ℕ) := nonneg_and_lintegral_floerEnergyDensity_le hω p hH hHs₁ hB hJt
       ((hu k).of_le (by norm_num)) (hfl k) (ha k) (hA k)
     have hΩT (y : ℝ × ℝ) (hy : y ∈ endWindow T b) :=
-      add_mem_Ioi_prod_Ioo le_rfl (Nat.cast_nonneg m) hy
+      endWindow_add_mem_Ioi_prod_Ioo le_rfl (Nat.cast_nonneg m) hy
     have hδb : min δc (min (δe false) (δe true)) ≤ δe b :=
       (min_le_right _ _).trans (by cases b; exacts [min_le_left _ _, min_le_right _ _])
     obtain ⟨φ, hφ, Z, hZΩ, -, hcz, -, v, -, hv, -⟩ := hconve b (Ω := endWindow T b)

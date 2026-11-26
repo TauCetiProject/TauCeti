@@ -21,12 +21,12 @@ and `c = 1/2` for `b = true`.
 
 This file records the bookkeeping that does not depend on a chart of the end: membership in an end
 window is characterized by `TauCeti.Floer.mem_endWindow_iff`, the end windows are open, their
-closures (`TauCeti.Floer.Icc_prod_Icc_subset_Ioi_prod_Ioo`) and their translates by `(m, 0)`,
-`m ≥ 0` (`TauCeti.Floer.add_mem_Ioi_prod_Ioo`), lie beyond any `T' ≤ T` in a band of angular
-width one, and every point `(s, t)` with `s > T + 1` is the translate of a point of an end window
-by `(m, k)` for some `m ∈ ℕ` and `k ∈ ℤ` (`TauCeti.Floer.exists_sub_mem_endWindow`). A chart of
-the end that is periodic of period one in `t` then maps the translated end windows onto a
-neighbourhood of the end.
+closures (`TauCeti.Floer.endWindow_closed_subset_Ioi_prod_Ioo`) and their translates by
+`(m, 0)`, `m ≥ 0` (`TauCeti.Floer.endWindow_add_mem_Ioi_prod_Ioo`), lie beyond any `T' ≤ T` in a
+band of angular width one, and every point `(s, t)` with `s > T + 1` is the translate of a point
+of an end window by `(m, k)` for some `m ∈ ℕ` and `k ∈ ℤ`
+(`TauCeti.Floer.exists_sub_mem_endWindow`). A chart of the end that is periodic of period one in
+`t` then maps the translated end windows onto a neighbourhood of the end.
 -/
 
 public section
@@ -60,7 +60,7 @@ theorem endWindow_subset_Icc_prod_Icc (T : ℝ) (b : Bool) :
   prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self
 
 /-- The closed end windows lie beyond any `T' ≤ T` in a band of angular width one. -/
-theorem Icc_prod_Icc_subset_Ioi_prod_Ioo {T' T : ℝ} (hT : T' ≤ T) (b : Bool) :
+theorem endWindow_closed_subset_Ioi_prod_Ioo {T' T : ℝ} (hT : T' ≤ T) (b : Bool) :
     Icc (T + 1) (T + 3) ×ˢ
         Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5) ((bif b then 1 / 2 else 0) + 2 / 5) ⊆
       Ioi T' ×ˢ
@@ -70,8 +70,8 @@ theorem Icc_prod_Icc_subset_Ioi_prod_Ioo {T' T : ℝ} (hT : T' ≤ T) (b : Bool)
 
 /-- The translates by `(m, 0)`, `m ≥ 0`, of an end window beyond `T` lie beyond any `T' ≤ T` in
 a band of angular width one. -/
-theorem add_mem_Ioi_prod_Ioo {T' T m : ℝ} (hT : T' ≤ T) (hm : 0 ≤ m) {b : Bool} {y : ℝ × ℝ}
-    (hy : y ∈ endWindow T b) :
+theorem endWindow_add_mem_Ioi_prod_Ioo {T' T m : ℝ} (hT : T' ≤ T) (hm : 0 ≤ m) {b : Bool}
+    {y : ℝ × ℝ} (hy : y ∈ endWindow T b) :
     y + (m, 0) ∈ Ioi T' ×ˢ
       Ioo ((bif b then 1 / 2 else 0) - 1 / 2) ((bif b then 1 / 2 else 0) - 1 / 2 + 1) := by
   obtain ⟨hs, -, ht₁, ht₂⟩ := mem_endWindow_iff.1 hy
