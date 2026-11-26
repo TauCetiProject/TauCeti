@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
-import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Analysis.Sobolev.Cylinder.GluedIndex
 import TauCeti.Analysis.SpecialFunctions.SmoothSegmentPath
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
@@ -84,38 +83,6 @@ private theorem contDiff_loopInterpolation {x x' : ℝ → V} (hx : ContDiff ℝ
   exact (hx.comp contDiff_snd).add ((smoothTransition.contDiff.comp contDiff_fst).smul
     ((hx'.comp contDiff_snd).sub (hx.comp contDiff_snd)))
 
-/-- A map of the cylinder which agrees with `(s, t) ↦ x(t)` on the half-cylinder `s < a`, for a
-solution `x` of `x' = X(t, x)`, has loops converging uniformly to `x` at `-∞`, with slice defects
-for `X` tending uniformly to zero. -/
-private theorem tendstoUniformlyOn_and_sliceDefect_atBot {X : ℝ → V → V} {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (X t (x t)) t) {v : ℝ × ℝ → V} {a : ℝ}
-    (hv : ∀ w : ℝ × ℝ, w.1 < a → v w = x w.2) :
-    TendstoUniformlyOn (fun s t ↦ v (s, t)) x atBot (Icc 0 1) ∧
-      TendstoUniformlyOn (fun s t ↦ sliceDefect X v (s, t)) 0 atBot (Icc 0 1) := by
-  have h : ∀ᶠ s in atBot, ∀ t : ℝ, v =ᶠ[𝓝 (s, t)] fun w ↦ x w.2 := by
-    filter_upwards [eventually_lt_atBot a] with s hs t
-    exact Filter.eventually_of_mem ((isOpen_lt continuous_fst continuous_const).mem_nhds hs) hv
-  exact ⟨(tendstoUniformlyOn_const x atBot _).congr
-      (h.mono fun s hs t _ ↦ (hs t).eq_of_nhds.symm),
-    (tendstoUniformlyOn_const 0 atBot _).congr
-      (h.mono fun s hs t _ ↦ (sliceDefect_eq_zero_of_eventuallyEq hx (hs t)).symm)⟩
-
-/-- A map of the cylinder which agrees with `(s, t) ↦ x(t)` on the half-cylinder `s > a`, for a
-solution `x` of `x' = X(t, x)`, has loops converging uniformly to `x` at `+∞`, with slice defects
-for `X` tending uniformly to zero. -/
-private theorem tendstoUniformlyOn_and_sliceDefect_atTop {X : ℝ → V → V} {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (X t (x t)) t) {v : ℝ × ℝ → V} {a : ℝ}
-    (hv : ∀ w : ℝ × ℝ, a < w.1 → v w = x w.2) :
-    TendstoUniformlyOn (fun s t ↦ v (s, t)) x atTop (Icc 0 1) ∧
-      TendstoUniformlyOn (fun s t ↦ sliceDefect X v (s, t)) 0 atTop (Icc 0 1) := by
-  have h : ∀ᶠ s in atTop, ∀ t : ℝ, v =ᶠ[𝓝 (s, t)] fun w ↦ x w.2 := by
-    filter_upwards [eventually_gt_atTop a] with s hs t
-    exact Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_fst).mem_nhds hs) hv
-  exact ⟨(tendstoUniformlyOn_const x atTop _).congr
-      (h.mono fun s hs t _ ↦ (hs t).eq_of_nhds.symm),
-    (tendstoUniformlyOn_const 0 atTop _).congr
-      (h.mono fun s hs t _ ↦ (sliceDefect_eq_zero_of_eventuallyEq hx (hs t)).symm)⟩
-
 /-- The interpolating cylinder from `x` to `x'` has loops converging uniformly to `x` at `-∞` and
 to `x'` at `+∞`, with slice defects for the vector fields of `x` and `x'` tending uniformly to
 zero there. -/
@@ -127,10 +94,16 @@ private theorem tendstoUniformlyOn_loopInterpolation {X X' : ℝ → V → V} {x
     (TendstoUniformlyOn (fun s t ↦ loopInterpolation x x' (s, t)) x' atTop (Icc 0 1) ∧
       TendstoUniformlyOn (fun s t ↦ sliceDefect X' (loopInterpolation x x') (s, t)) 0 atTop
         (Icc 0 1)) :=
-  ⟨tendstoUniformlyOn_and_sliceDefect_atBot hx (a := 0) fun _ hw ↦
-      smoothSegmentPath_of_nonpos _ _ hw.le,
-    tendstoUniformlyOn_and_sliceDefect_atTop hx' (a := 1) fun _ hw ↦
-      smoothSegmentPath_of_one_le _ _ hw.le⟩
+  have hbot := tendstoUniformly_and_sliceDefect_of_eventuallyEq (u := loopInterpolation x x') hx
+    ((eventually_lt_atBot 0).mono fun _ hs _ ↦ eventually_of_mem
+      ((isOpen_lt continuous_fst continuous_const).mem_nhds hs) fun _ hw ↦
+        smoothSegmentPath_of_nonpos _ _ (le_of_lt hw))
+  have htop := tendstoUniformly_and_sliceDefect_of_eventuallyEq (u := loopInterpolation x x') hx'
+    ((eventually_gt_atTop 1).mono fun _ hs _ ↦ eventually_of_mem
+      ((isOpen_lt continuous_const continuous_fst).mem_nhds hs) fun _ hw ↦
+        smoothSegmentPath_of_one_le _ _ (le_of_lt hw))
+  ⟨⟨hbot.1.tendstoUniformlyOn, hbot.2.tendstoUniformlyOn⟩,
+    ⟨htop.1.tendstoUniformlyOn, htop.2.tendstoUniformlyOn⟩⟩
 
 /-- The cylinder `x₋ + β(s + R) (y - x₋) + β(s - R) (x₊ - y)` obtained by gluing the interpolating
 cylinders from `x₋` to `y` and from `y` to `x₊` along a neck of length `2 R`. -/
@@ -172,15 +145,23 @@ private theorem tendstoUniformlyOn_gluedLoopInterpolation {Xm Xp : ℝ → V →
         (Icc 0 1) ∧
       TendstoUniformlyOn (fun s t ↦ sliceDefect Xp (gluedLoopInterpolation xm y xp R) (s, t)) 0
         atTop (Icc 0 1)) := by
-  refine ⟨tendstoUniformlyOn_and_sliceDefect_atBot hxm (a := -R) fun w hw ↦ ?_,
-    tendstoUniformlyOn_and_sliceDefect_atTop hxp (a := R + 1) fun w hw ↦ ?_⟩
-  · simp [gluedLoopInterpolation, loopInterpolation,
-      smoothSegmentPath_of_nonpos _ _ (show w.1 + R ≤ 0 by linarith),
-      smoothTransition.zero_of_nonpos (show w.1 - R ≤ 0 by linarith)]
-  · simp only [gluedLoopInterpolation, loopInterpolation,
-      smoothSegmentPath_of_one_le _ _ (show 1 ≤ w.1 + R by linarith),
-      smoothTransition.one_of_one_le (show 1 ≤ w.1 - R by linarith), one_smul]
-    abel
+  have hbot := tendstoUniformly_and_sliceDefect_of_eventuallyEq
+    (u := gluedLoopInterpolation xm y xp R) hxm
+    ((eventually_lt_atBot (-R)).mono fun _ hs _ ↦ eventually_of_mem
+      ((isOpen_lt continuous_fst continuous_const).mem_nhds hs) fun w (hw : w.1 < -R) ↦ by
+        simp [gluedLoopInterpolation, loopInterpolation,
+          smoothSegmentPath_of_nonpos _ _ (show w.1 + R ≤ 0 by linarith),
+          smoothTransition.zero_of_nonpos (show w.1 - R ≤ 0 by linarith)])
+  have htop := tendstoUniformly_and_sliceDefect_of_eventuallyEq
+    (u := gluedLoopInterpolation xm y xp R) hxp
+    ((eventually_gt_atTop (R + 1)).mono fun _ hs _ ↦ eventually_of_mem
+      ((isOpen_lt continuous_const continuous_fst).mem_nhds hs) fun w (hw : R + 1 < w.1) ↦ by
+        simp only [gluedLoopInterpolation, loopInterpolation,
+          smoothSegmentPath_of_one_le _ _ (show 1 ≤ w.1 + R by linarith),
+          smoothTransition.one_of_one_le (show 1 ≤ w.1 - R by linarith), one_smul]
+        abel)
+  exact ⟨⟨hbot.1.tendstoUniformlyOn, hbot.2.tendstoUniformlyOn⟩,
+    ⟨htop.1.tendstoUniformlyOn, htop.2.tendstoUniformlyOn⟩⟩
 
 end Interpolation
 
@@ -280,13 +261,6 @@ private theorem isCylindricalNearEnds_gluedContinuationHomotopy {Hm H₀ Hp : �
 
 variable (ω : SymplecticForm F)
 
-/-- The orbits of a jointly `C³` Hamiltonian are `C¹`. -/
-private theorem contDiff_of_hasDerivAt_hamiltonianVectorField {H : ℝ → F → ℝ}
-    (hH : ContDiff ℝ 3 (uncurry H)) {x : ℝ → F}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) : ContDiff ℝ 1 x :=
-  contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (hH.of_le (by norm_num))).continuous hx
-
 /-- The comparison operator from `x` to `x'`, of the data `(i, 0, H_{(s, t)})` of the continuation
 homotopy along the interpolating cylinder, has bounded coefficients and is Fredholm. -/
 private theorem memLp_and_isFredholm_floerSobolevOperator_loopInterpolation
@@ -310,8 +284,9 @@ private theorem memLp_and_isFredholm_floerSobolevOperator_loopInterpolation
   have hH'₂ : ContDiff ℝ 2 (uncurry H') := hH'.of_le (by norm_num)
   have hcyl := isCylindricalNearEnds_continuationHomotopy_ofComplexModule hH₂ hH'₂
     (loopInterpolation x x')
-  have hu := contDiff_loopInterpolation (contDiff_of_hasDerivAt_hamiltonianVectorField ω hH hx)
-    (contDiff_of_hasDerivAt_hamiltonianVectorField ω hH' hx')
+  have hu := contDiff_loopInterpolation
+    (ω.contDiff_of_hasDerivAt_hamiltonianVectorField (hH₂.of_le one_le_two) hx)
+    (ω.contDiff_of_hasDerivAt_hamiltonianVectorField (hH'₂.of_le one_le_two) hx')
   obtain ⟨⟨hux, hδ⟩, ⟨hux', hδ'⟩⟩ := tendstoUniformlyOn_loopInterpolation hx hx'
   exact ⟨ω.memLp_floerJetCoeff_of_cylindrical hcyl hu hH₂ contDiff_const hux hδ hH'₂
       contDiff_const hux' hδ',
@@ -416,10 +391,10 @@ private theorem index_floerSobolevOperator_loopInterpolation_eq_add
     ← floerSobolevOperator_def, ← floerSobolevOperator_def] at hGi
   rw [uncurry_gluedCoeff_floerJetCoeff ω J₀ Hm H₀ Hp xm y xp hR, ← floerSobolevOperator_def] at hG
   -- Compare the glued operator with the operator from `x₋` to `x₊`: first the data, then the map.
-  have hw := contDiff_gluedLoopInterpolation
-    (contDiff_of_hasDerivAt_hamiltonianVectorField ω hHm hxm)
-    (contDiff_of_hasDerivAt_hamiltonianVectorField ω hH₀ hy)
-    (contDiff_of_hasDerivAt_hamiltonianVectorField ω hHp hxp) R
+  have hxmc := ω.contDiff_of_hasDerivAt_hamiltonianVectorField (hHm₂.of_le one_le_two) hxm
+  have hxpc := ω.contDiff_of_hasDerivAt_hamiltonianVectorField (hHp₂.of_le one_le_two) hxp
+  have hw := contDiff_gluedLoopInterpolation hxmc
+    (ω.contDiff_of_hasDerivAt_hamiltonianVectorField (hH₀.of_le (by norm_num)) hy) hxpc R
   obtain ⟨⟨hwxm, hwδm⟩, ⟨hwxp, hwδp⟩⟩ :=
     tendstoUniformlyOn_gluedLoopInterpolation (y := y) hxm hxp (zero_le_one.trans hR)
   obtain ⟨⟨hvxm, hvδm⟩, ⟨hvxp, hvδp⟩⟩ := tendstoUniformlyOn_loopInterpolation hxm hxp
@@ -436,8 +411,7 @@ private theorem index_floerSobolevOperator_loopInterpolation_eq_add
     contDiff_const hKG hJ₀ contDiff_const hKC hA hA hw hXm hxm hndm hwxm hwδm hXp hxp hndp hwxp
     hwδp).1 hG
   have hmap := index_floerSobolevOperator_eq_of_cylindrical ω (hcylC _) hJ₀ contDiff_const hKC hA
-    hw (contDiff_loopInterpolation (contDiff_of_hasDerivAt_hamiltonianVectorField ω hHm hxm)
-      (contDiff_of_hasDerivAt_hamiltonianVectorField ω hHp hxp)) hXm hxm hndm hwxm hwδm hvxm hvδm
+    hw (contDiff_loopInterpolation hxmc hxpc) hXm hxm hndm hwxm hwδm hvxm hvδm
     hXp hxp hndp hwxp hwδp hvxp hvδp hG'
   exact (hmap.trans hdata).trans hGi
 
@@ -494,9 +468,10 @@ private theorem index_floerSobolevOperator_eq_loopInterpolation
   -- The comparison operator along `u` has the index of the comparison operator along the
   -- interpolating cylinder.
   have hmap := index_floerSobolevOperator_eq_of_cylindrical ω (hcylC u) hJ₀ contDiff_const hKC hA
-    hu (contDiff_loopInterpolation (contDiff_of_hasDerivAt_hamiltonianVectorField ω hHm hxm)
-      (contDiff_of_hasDerivAt_hamiltonianVectorField ω hHp hxp)) hXm hxm hndm huxm hδm hvxm hvδm
-    hXp hxp hndp huxp hδp hvxp hvδp hF
+    hu (contDiff_loopInterpolation
+      (ω.contDiff_of_hasDerivAt_hamiltonianVectorField (hHm₂.of_le one_le_two) hxm)
+      (ω.contDiff_of_hasDerivAt_hamiltonianVectorField (hHp₂.of_le one_le_two) hxp))
+    hXm hxm hndm huxm hδm hvxm hvδm hXp hxp hndp huxp hδp hvxp hvδp hF
   exact hdata.trans hmap.symm
 
 /-- **The index of the linearized Floer operator is additive under catenation.** Let `F` be a
@@ -645,7 +620,7 @@ theorem index_floerSobolevOperator_add_eq_zero
     ← index_floerSobolevOperator_loopInterpolation_eq_add ω hω hXm hHm hHmper hX₀ hH₀ hH₀per hXm
       hHm hHmper hxm hxmper hndm hy hyper hnd₀ hxm hxmper hndm]
   -- The comparison operator from `x₋` to itself is that of the stationary cylinder over `x₋`.
-  have hloop := contDiff_of_hasDerivAt_hamiltonianVectorField ω hHm hxm
+  have hloop := ω.contDiff_of_hasDerivAt_hamiltonianVectorField (hHm.of_le (by norm_num)) hxm
   obtain ⟨⟨hvm, hvδm⟩, ⟨hvp, hvδp⟩⟩ := tendstoUniformlyOn_loopInterpolation hxm hxm
   rw [Floer.continuationHomotopy_self]
   exact index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt ω hXm hHm hHmper hxm hxmper

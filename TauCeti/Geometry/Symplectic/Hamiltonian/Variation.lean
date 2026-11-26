@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.ParametricFDeriv
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Analysis.ODE.Regularity
 
 /-!
 # Variations of Hamiltonian vector fields
@@ -17,8 +18,10 @@ import TauCeti.Algebra.Order.Floor.Ring
 For a constant symplectic form, taking the Hamiltonian vector field commutes with parameter
 variation: `δX_H = X_(δH)`. Joint `C²` regularity of the Hamiltonians justifies exchanging the
 parameter and target derivatives. We also record joint regularity of the vector fields, with
-one derivative lost. These are the coefficient calculus needed to differentiate inhomogeneous
-Cauchy–Riemann equations in local coordinates. For a jointly `C²`, `1`-periodic family the vector
+one derivative lost, and that the orbits of a jointly `C¹` family are `C¹`
+(`TauCeti.SymplecticForm.contDiff_of_hasDerivAt_hamiltonianVectorField`). These are the
+coefficient calculus needed to differentiate inhomogeneous Cauchy–Riemann equations in local
+coordinates. For a jointly `C²`, `1`-periodic family the vector
 fields `X_{H_t}` are Lipschitz on each bounded set with a constant independent of `t`
 (`TauCeti.SymplecticForm.exists_forall_lipschitzOnWith_hamiltonianVectorField`).
 
@@ -54,6 +57,13 @@ theorem contDiff_hamiltonianVectorField_uncurry (ω : SymplecticForm V)
     {K : P → V → ℝ} {n : WithTop ℕ∞} (hK : ContDiff ℝ (n + 1) (Function.uncurry K)) :
     ContDiff ℝ n (fun w : P × V ↦ ω.hamiltonianVectorField (K w.1) w.2) :=
   contDiff_iff_contDiffAt.2 fun _ ↦ ω.contDiffAt_hamiltonianVectorField_uncurry hK.contDiffAt
+
+/-- The orbits `x' = X_{H_t}(x)` of a jointly `C¹` Hamiltonian family are `C¹`. -/
+theorem contDiff_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ 1 (Function.uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) : ContDiff ℝ 1 x :=
+  contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous hx
 
 /-- **A uniform Lipschitz bound.** For a jointly `C²`, `1`-periodic Hamiltonian family `H`, the
 vector fields `X_{H_t}` are Lipschitz on every bounded set `s`, with a constant independent of
