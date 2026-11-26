@@ -37,6 +37,8 @@ places; it is a closed embedding as well.
 
 * `IsDedekindDomain.FiniteAdeleRing.isOpenQuotientMap_proj`: the projection is an open quotient
   map.
+* `IsDedekindDomain.FiniteAdeleRing.proj_surjective`: the projection is surjective, so the finite
+  adele ring is nontrivial when `R` has a height one prime.
 * `IsDedekindDomain.FiniteAdeleRing.image_proj_integralAdeles`: the integral finite adeles project
   onto the local integers.
 * `IsDedekindDomain.FiniteAdeleRing.isClosedEmbedding_single` and
@@ -214,6 +216,10 @@ theorem single_mem_integralAdeles_iff (v : HeightOneSpectrum R) {x : v.adicCompl
 theorem proj_surjective (v : HeightOneSpectrum R) :
     Function.Surjective (proj K v : FiniteAdeleRing R K → v.adicCompletion K) :=
   (leftInverse_proj_single v).surjective
+
+/-- The finite adele ring is nontrivial as soon as `R` has a height one prime. -/
+instance [Nonempty (HeightOneSpectrum R)] : Nontrivial (FiniteAdeleRing R K) :=
+  (proj_surjective (K := K) (Classical.arbitrary (HeightOneSpectrum R))).nontrivial
 
 /-- The projection onto the completion at `v` is an open map. -/
 theorem isOpenMap_proj (v : HeightOneSpectrum R) :

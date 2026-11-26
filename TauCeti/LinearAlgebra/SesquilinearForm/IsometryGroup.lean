@@ -18,6 +18,8 @@ For a sesquilinear form `B : M →ₛₗ[I₁] M →ₛₗ[I₂] N`, this file d
   `B (e x) (e y) = B x y`;
 * the *similitude group* `B.similitudeGroup S`, the pairs `(e, λ)` of a linear automorphism `e`
   of `M` and a unit `λ` of a monoid `S` acting on `N`, with `B (e x) (e y) = λ • B x y`.
+* the additive group `B.skewAdjointAddSubgroup` of the endomorphisms `X` of `M` with
+  `B (X x) y = -B x (X y)`.
 
 For a nondegenerate hermitian form `h` on a module `V` over a quadratic étale algebra `E/F`, with
 `S = F`, these are the groups of rational points of the unitary group `U(V)` and of the unitary
@@ -41,6 +43,8 @@ similitude group `GU(0)` is `Sˣ` rather than trivial.
 * `LinearMap.similitudeToLinearEquiv`, `LinearMap.similitudeMultiplier`: the action and the
   multiplier of a similitude, as group homomorphisms.
 * `LinearMap.isometryToSimilitude`: an isometry is a similitude of multiplier `1`.
+* `LinearMap.skewAdjointAddSubgroup`: the endomorphisms `X` with `B (X x) y = -B x (X y)`, the
+  infinitesimal counterpart of the isometry group.
 
 ## Main results
 
@@ -222,5 +226,29 @@ theorem similitudeToLinearEquiv_injective (S : Type*) [Ring S] [IsCancelMulZero 
     _ = ((B.similitudeMultiplier S h : Sˣ) : S) • B x y := B.similitudeGroup_map_app S h x y
 
 end AddCommGroup
+
+end LinearMap
+
+/-! ### Skew-adjoint endomorphisms -/
+
+namespace LinearMap
+
+variable {R M N : Type*} [CommSemiring R] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] {I₁ I₂ : R →+* R} (B : M →ₛₗ[I₁] M →ₛₗ[I₂] N)
+
+/-- The endomorphisms `X` of `M` that are skew-adjoint for a sesquilinear form `B`:
+`B (X x) y = -B x (X y)`. For a bilinear form this is the carrier of Mathlib's
+`LinearMap.skewAdjointSubmodule`; for a form semilinear in its arguments, such as a hermitian
+form, it is in general only an additive subgroup. -/
+def skewAdjointAddSubgroup : AddSubgroup (M →ₗ[R] M) where
+  carrier := {X | ∀ x y, B (X x) y = -B x (X y)}
+  zero_mem' _ _ := by simp
+  add_mem' {X Y} hX hY x y := by simp [hX x y, hY x y, add_comm]
+  neg_mem' {X} hX x y := by simp [hX x y]
+
+variable {B} in
+@[simp]
+theorem mem_skewAdjointAddSubgroup_iff {X : M →ₗ[R] M} :
+    X ∈ B.skewAdjointAddSubgroup ↔ ∀ x y, B (X x) y = -B x (X y) := Iff.rfl
 
 end LinearMap

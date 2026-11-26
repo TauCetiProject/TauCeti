@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.RingTheory.LocalRing.Pullback
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
@@ -34,10 +35,21 @@ When `π₁` or `π₂` is surjective, Whitehead's elementary matrix `u ⊕ u⁻
 matrix over that leg, so `M(u) × M(u⁻¹) ≅ M(u ⊕ u⁻¹) ≅ M(1) ≅ D²ⁿ`: the patched module is a direct
 summand of a finite free module, hence finitely generated projective.
 
+Matrices `X₁` over `A₁` and `X₂` over `A₂` with `u' π₁(X₁) = π₂(X₂) u` induce the linear map
+`(a, b) ↦ (X₁ a, X₂ b)` from `M(u)` to `M(u')`. With one surjective leg, every linear map between
+patched modules arises in this way from a unique pair of matrices: `M(u)` is a retract of
+`M(1) ≅ D²ⁿ` by maps of this form, and a linear map out of `M(1)` is determined by the images of
+the standard basis vectors. Consequently the converse of the double coset invariance holds:
+`M(u) ≅ M(u')` exactly when `u' π₁(g₁) = π₂(g₂) u` for invertible matrices `g₁` and `g₂`. This is
+the matrix form of the full faithfulness in Milnor's patching theorem, and it gives the exactness
+of the Mayer–Vietoris sequence at `K₁(Q)`.
+
 ## Main definitions
 
 * `RingHom.patchedSubgroup π₁ π₂ u`: the patched module `M(u)`, an additive subgroup of
   `A₁ⁿ × A₂ⁿ` with its right `D`-module structure.
+* `RingHom.patchedSubgroupLinearMap π₁ π₂ X₁ X₂ h`: the linear map `M(u) → M(u')`,
+  `(a, b) ↦ (X₁ a, X₂ b)`, induced by a compatible pair of matrices.
 
 ## Main results
 
@@ -51,6 +63,10 @@ summand of a finite free module, hence finitely generated projective.
   `M(u) × M(u⁻¹) ≅ D²ⁿ`.
 * `RingHom.projective_patchedSubgroup`, `RingHom.finite_patchedSubgroup`: with one surjective
   leg, `M(u)` is finitely generated projective.
+* `RingHom.exists_patchedSubgroupLinearMap_eq`, `RingHom.patchedSubgroupLinearMap_inj`: with one
+  surjective leg, every linear map between patched modules is induced by a unique pair of matrices.
+* `RingHom.nonempty_patchedSubgroup_equiv_iff`: with one surjective leg, `M(u) ≅ M(u')` if and only
+  if `u` and `u'` lie in the same double coset of the images of `GLₙ(A₂)` and `GLₙ(A₁)`.
 
 ## References
 
@@ -277,17 +293,60 @@ theorem coe_patchedSubgroupReindexEquiv_symm_apply (e : n ≃ m) (u : GL n Q)
       ((y : (m → A₁) × (m → A₂)).1 ∘ e, (y : (m → A₁) × (m → A₂)).2 ∘ e) :=
   (rfl)
 
-/-! ## Double cosets -/
+/-! ## Linear maps induced by matrices -/
 
-/-- If `u' π₁(X₁) = π₂(X₂) u` for square matrices `X₁` over `A₁` and `X₂` over `A₂`, then
-`(a, b) ↦ (X₁ a, X₂ b)` maps `M(u)` into `M(u')`. -/
-theorem mulVec_mem_patchedSubgroup {u u' : GL n Q} {X₁ : Matrix n n A₁} {X₂ : Matrix n n A₂}
-    (h : (u' : Matrix n n Q) * X₁.map π₁ = X₂.map π₂ * u) {x : (n → A₁) × (n → A₂)}
-    (hx : x ∈ π₁.patchedSubgroup π₂ u) : (X₁ *ᵥ x.1, X₂ *ᵥ x.2) ∈ π₁.patchedSubgroup π₂ u' := by
+/-- If `u' π₁(X₁) = π₂(X₂) u` for (possibly rectangular) matrices `X₁` over `A₁` and `X₂` over
+`A₂`, then `(a, b) ↦ (X₁ a, X₂ b)` maps `M(u)` into `M(u')`. -/
+theorem mulVec_mem_patchedSubgroup {u : GL n Q} {u' : GL m Q} {X₁ : Matrix m n A₁}
+    {X₂ : Matrix m n A₂} (h : (u' : Matrix m m Q) * X₁.map π₁ = X₂.map π₂ * (u : Matrix n n Q))
+    {x : (n → A₁) × (n → A₂)} (hx : x ∈ π₁.patchedSubgroup π₂ u) :
+    (X₁ *ᵥ x.1, X₂ *ᵥ x.2) ∈ π₁.patchedSubgroup π₂ u' := by
   rw [mem_patchedSubgroup] at hx ⊢
   rw [show π₁ ∘ (X₁ *ᵥ x.1) = X₁.map π₁ *ᵥ (π₁ ∘ x.1) from funext (π₁.map_mulVec _ _),
     show π₂ ∘ (X₂ *ᵥ x.2) = X₂.map π₂ *ᵥ (π₂ ∘ x.2) from funext (π₂.map_mulVec _ _),
     mulVec_mulVec, h, ← mulVec_mulVec, hx]
+
+variable (π₁ π₂) in
+/-- The linear map `M(u) → M(u')`, `(a, b) ↦ (X₁ a, X₂ b)`, induced by matrices `X₁` over `A₁` and
+`X₂` over `A₂` with `u' π₁(X₁) = π₂(X₂) u`. With one surjective leg every linear map between
+patched modules is of this form (`RingHom.exists_patchedSubgroupLinearMap_eq`), for a unique pair
+of matrices (`RingHom.patchedSubgroupLinearMap_inj`). -/
+def patchedSubgroupLinearMap {u : GL n Q} {u' : GL m Q} (X₁ : Matrix m n A₁) (X₂ : Matrix m n A₂)
+    (h : (u' : Matrix m m Q) * X₁.map π₁ = X₂.map π₂ * (u : Matrix n n Q)) :
+    π₁.patchedSubgroup π₂ u →ₗ[(π₁.pullback π₂)ᵐᵒᵖ] π₁.patchedSubgroup π₂ u' where
+  toFun x := ⟨_, mulVec_mem_patchedSubgroup h x.property⟩
+  map_add' _ _ := Subtype.ext <| Prod.ext (mulVec_add _ _ _) (mulVec_add _ _ _)
+  map_smul' _ _ := Subtype.ext <| Prod.ext (mulVec_smul _ _ _) (mulVec_smul _ _ _)
+
+@[simp]
+theorem coe_patchedSubgroupLinearMap_apply {u : GL n Q} {u' : GL m Q} (X₁ : Matrix m n A₁)
+    (X₂ : Matrix m n A₂) (h : (u' : Matrix m m Q) * X₁.map π₁ = X₂.map π₂ * (u : Matrix n n Q))
+    (x : π₁.patchedSubgroup π₂ u) :
+    (patchedSubgroupLinearMap π₁ π₂ X₁ X₂ h x : (m → A₁) × (m → A₂)) =
+      (X₁ *ᵥ (x : (n → A₁) × (n → A₂)).1, X₂ *ᵥ (x : (n → A₁) × (n → A₂)).2) :=
+  (rfl)
+
+/-- The identity matrices induce the identity of `M(u)`. -/
+@[simp]
+theorem patchedSubgroupLinearMap_one {u : GL n Q}
+    (h : (u : Matrix n n Q) * (1 : Matrix n n A₁).map π₁ =
+      (1 : Matrix n n A₂).map π₂ * (u : Matrix n n Q)) :
+    patchedSubgroupLinearMap π₁ π₂ 1 1 h = LinearMap.id :=
+  LinearMap.ext fun x ↦ Subtype.ext <| by simp
+
+/-- The composite of the maps induced by two pairs of matrices is induced by their products. -/
+@[simp]
+theorem patchedSubgroupLinearMap_comp {k : Type*} [Fintype k] [DecidableEq k] {u : GL n Q}
+    {u' : GL m Q} {u'' : GL k Q} (Y₁ : Matrix k m A₁) (Y₂ : Matrix k m A₂)
+    (hY : (u'' : Matrix k k Q) * Y₁.map π₁ = Y₂.map π₂ * (u' : Matrix m m Q)) (X₁ : Matrix m n A₁)
+    (X₂ : Matrix m n A₂) (hX : (u' : Matrix m m Q) * X₁.map π₁ = X₂.map π₂ * (u : Matrix n n Q)) :
+    patchedSubgroupLinearMap π₁ π₂ Y₁ Y₂ hY ∘ₗ patchedSubgroupLinearMap π₁ π₂ X₁ X₂ hX =
+      patchedSubgroupLinearMap π₁ π₂ (Y₁ * X₁) (Y₂ * X₂) (by
+        rw [Matrix.map_mul, Matrix.map_mul, ← Matrix.mul_assoc, hY, Matrix.mul_assoc, hX,
+          Matrix.mul_assoc]) :=
+  LinearMap.ext fun x ↦ Subtype.ext <| by simp [mulVec_mulVec]
+
+/-! ## Double cosets -/
 
 /-- The matrix form of a relation `u' π₁(g₁) = π₂(g₂) u` between invertible matrices. -/
 private theorem val_mul_map_eq {u u' : GL n Q} {g₁ : GL n A₁} {g₂ : GL n A₂}
@@ -310,13 +369,10 @@ and `g₂` over `A₂`, then `(a, b) ↦ (g₁ a, g₂ b)` is an isomorphism `M(
 def patchedSubgroupEquivOfMul {u u' : GL n Q} (g₁ : GL n A₁) (g₂ : GL n A₂)
     (h : u' * Units.map (π₁.mapMatrix (m := n)).toMonoidHom g₁ =
       Units.map (π₂.mapMatrix (m := n)).toMonoidHom g₂ * u) :
-    π₁.patchedSubgroup π₂ u ≃ₗ[(π₁.pullback π₂)ᵐᵒᵖ] π₁.patchedSubgroup π₂ u' where
-  toFun x := ⟨_, mulVec_mem_patchedSubgroup (val_mul_map_eq h) x.property⟩
-  invFun y := ⟨_, mulVec_mem_patchedSubgroup (val_mul_map_eq (mul_map_inv_eq h)) y.property⟩
-  map_add' x y := Subtype.ext <| Prod.ext (mulVec_add _ _ _) (mulVec_add _ _ _)
-  map_smul' d x := Subtype.ext <| Prod.ext (mulVec_smul _ _ _) (mulVec_smul _ _ _)
-  left_inv x := Subtype.ext <| Prod.ext (by simp [mulVec_mulVec]) (by simp [mulVec_mulVec])
-  right_inv y := Subtype.ext <| Prod.ext (by simp [mulVec_mulVec]) (by simp [mulVec_mulVec])
+    π₁.patchedSubgroup π₂ u ≃ₗ[(π₁.pullback π₂)ᵐᵒᵖ] π₁.patchedSubgroup π₂ u' :=
+  .ofLinearMap (patchedSubgroupLinearMap π₁ π₂ _ _ (val_mul_map_eq h))
+    (patchedSubgroupLinearMap π₁ π₂ _ _ (val_mul_map_eq (mul_map_inv_eq h)))
+    (by simp) (by simp)
 
 @[simp]
 theorem coe_patchedSubgroupEquivOfMul_apply {u u' : GL n Q} (g₁ : GL n A₁) (g₂ : GL n A₂)
@@ -334,6 +390,29 @@ theorem coe_patchedSubgroupEquivOfMul_symm_apply {u u' : GL n Q} (g₁ : GL n A�
     ((patchedSubgroupEquivOfMul π₁ π₂ g₁ g₂ h).symm y : (n → A₁) × (n → A₂)) =
       (((g₁⁻¹ : GL n A₁) : Matrix n n A₁) *ᵥ (y : (n → A₁) × (n → A₂)).1,
         ((g₂⁻¹ : GL n A₂) : Matrix n n A₂) *ᵥ (y : (n → A₁) × (n → A₂)).2) :=
+  (rfl)
+
+/-- The isomorphism `M(u) ≅ M(u')` given by invertible matrices `g₁` and `g₂` is the linear map
+induced by these matrices. -/
+@[simp]
+theorem patchedSubgroupEquivOfMul_toLinearMap {u u' : GL n Q} (g₁ : GL n A₁) (g₂ : GL n A₂)
+    (h : u' * Units.map (π₁.mapMatrix (m := n)).toMonoidHom g₁ =
+      Units.map (π₂.mapMatrix (m := n)).toMonoidHom g₂ * u) :
+    (patchedSubgroupEquivOfMul π₁ π₂ g₁ g₂ h).toLinearMap =
+      patchedSubgroupLinearMap π₁ π₂ (g₁ : Matrix n n A₁) (g₂ : Matrix n n A₂)
+        (by simpa using congrArg Units.val h) :=
+  (rfl)
+
+/-- The inverse of the isomorphism `M(u) ≅ M(u')` given by invertible matrices `g₁` and `g₂` is
+the linear map induced by `g₁⁻¹` and `g₂⁻¹`. -/
+@[simp]
+theorem patchedSubgroupEquivOfMul_symm_toLinearMap {u u' : GL n Q} (g₁ : GL n A₁)
+    (g₂ : GL n A₂)
+    (h : u' * Units.map (π₁.mapMatrix (m := n)).toMonoidHom g₁ =
+      Units.map (π₂.mapMatrix (m := n)).toMonoidHom g₂ * u) :
+    (patchedSubgroupEquivOfMul π₁ π₂ g₁ g₂ h).symm.toLinearMap =
+      patchedSubgroupLinearMap π₁ π₂ ((g₁⁻¹ : GL n A₁) : Matrix n n A₁)
+        ((g₂⁻¹ : GL n A₂) : Matrix n n A₂) (by simpa using congrArg Units.val (mul_map_inv_eq h)) :=
   (rfl)
 
 /-- The patched module of an invertible matrix over `A₁`, sent to `Q`, is free. -/
@@ -405,5 +484,179 @@ theorem finite_patchedSubgroup (h : Function.Surjective π₁ ∨ Function.Surje
   obtain ⟨e⟩ := nonempty_patchedSubgroup_prod_inv_equiv h u
   exact .of_surjective (LinearMap.fst _ _ _ ∘ₗ e.symm.toLinearMap)
     fun x ↦ ⟨e (x, 0), by simp⟩
+
+/-! ## Linear maps between patched modules
+
+With one surjective leg, every linear map `M(u) → M(u')` is the map `(a, b) ↦ (X₁ a, X₂ b)` induced
+by a unique pair of matrices `X₁` over `A₁` and `X₂` over `A₂` with `u' π₁(X₁) = π₂(X₂) u`. The
+proof writes `M(u)` as a retract of `M(1) ≅ D²ⁿ` by maps given by matrices, using an invertible lift
+of Whitehead's matrix `u ⊕ u⁻¹`. -/
+
+section LinearMap
+
+/-- The image of the standard basis vector `eᵢ` of `Dⁿ` in `M(1)` is the pair `(eᵢ, eᵢ)`. -/
+private theorem coe_patchedSubgroupOneEquiv_symm_single (i : n) :
+    ((patchedSubgroupOneEquiv π₁ π₂ n).symm (Pi.single i 1) : (n → A₁) × (n → A₂)) =
+      (Pi.single i 1, Pi.single i 1) := by
+  refine Prod.ext (funext fun j ↦ ?_) (funext fun j ↦ ?_) <;>
+  rcases eq_or_ne j i with rfl | hj <;> simp [*]
+
+/-- Two linear maps out of `M(1) ≅ Dⁿ` agreeing on the standard basis vectors are equal. -/
+private theorem linearMap_patchedSubgroup_one_ext {M : Type*} [AddCommGroup M]
+    [Module (π₁.pullback π₂)ᵐᵒᵖ M]
+    {f g : π₁.patchedSubgroup π₂ (1 : GL n Q) →ₗ[(π₁.pullback π₂)ᵐᵒᵖ] M}
+    (h : ∀ i, f ((patchedSubgroupOneEquiv π₁ π₂ n).symm (Pi.single i 1)) =
+      g ((patchedSubgroupOneEquiv π₁ π₂ n).symm (Pi.single i 1))) : f = g :=
+  ((Pi.basisFun (π₁.pullback π₂)ᵐᵒᵖ n).map (patchedSubgroupOneEquiv π₁ π₂ n).symm).ext
+    fun i ↦ by simpa using h i
+
+/-- Every linear map out of `M(1) ≅ Dⁿ` is induced by matrices: their columns are the images of
+the standard basis vectors. -/
+private theorem exists_patchedSubgroupLinearMap_eq_of_one {u' : GL m Q}
+    (f : π₁.patchedSubgroup π₂ (1 : GL n Q) →ₗ[(π₁.pullback π₂)ᵐᵒᵖ] π₁.patchedSubgroup π₂ u') :
+    ∃ (X₁ : Matrix m n A₁) (X₂ : Matrix m n A₂)
+      (h : (u' : Matrix m m Q) * X₁.map π₁ = X₂.map π₂ * ((1 : GL n Q) : Matrix n n Q)),
+      patchedSubgroupLinearMap π₁ π₂ X₁ X₂ h = f := by
+  let X₁ : Matrix m n A₁ :=
+    .of fun r i ↦ (↑(f ((patchedSubgroupOneEquiv π₁ π₂ n).symm (Pi.single i 1))) :
+      (m → A₁) × (m → A₂)).1 r
+  let X₂ : Matrix m n A₂ :=
+    .of fun r i ↦ (↑(f ((patchedSubgroupOneEquiv π₁ π₂ n).symm (Pi.single i 1))) :
+      (m → A₁) × (m → A₂)).2 r
+  have hcol (i : n) : (X₁ *ᵥ Pi.single i 1, X₂ *ᵥ Pi.single i 1) =
+      (f ((patchedSubgroupOneEquiv π₁ π₂ n).symm (Pi.single i 1)) : (m → A₁) × (m → A₂)) := by
+    refine Prod.ext (funext fun r ↦ ?_) (funext fun r ↦ ?_) <;> simp [X₁, X₂]
+  have h : (u' : Matrix m m Q) * X₁.map π₁ = X₂.map π₂ * ((1 : GL n Q) : Matrix n n Q) := by
+    refine ext_of_mulVec_single fun i ↦ ?_
+    have hmem := (f ((patchedSubgroupOneEquiv π₁ π₂ n).symm (Pi.single i 1))).property
+    rw [← hcol, mem_patchedSubgroup] at hmem
+    simpa [mulVec_single_one, col_mul_eq_mulVec_col, col_map] using hmem
+  exact ⟨X₁, X₂, h, linearMap_patchedSubgroup_one_ext fun i ↦ Subtype.ext <| by
+    rw [coe_patchedSubgroupLinearMap_apply, coe_patchedSubgroupOneEquiv_symm_single]
+    exact hcol i⟩
+
+/-- The images of a lift `X` of Whitehead's matrix `u ⊕ u⁻¹` and of its inverse, as block
+matrices. -/
+private theorem map_val_eq_fromBlocks {A : Type*} [Ring A] (π : A →+* Q) {u : GL n Q}
+    {X : GL (n ⊕ n) A}
+    (hX : Units.map (π.mapMatrix (m := n ⊕ n)).toMonoidHom X = fromBlocksGL (u, u⁻¹)) :
+    (X : Matrix (n ⊕ n) (n ⊕ n) A).map π = fromBlocks u 0 0 ↑u⁻¹ ∧
+      ((X⁻¹ : GL (n ⊕ n) A) : Matrix (n ⊕ n) (n ⊕ n) A).map π = fromBlocks ↑u⁻¹ 0 0 u := by
+  have hinv := congrArg Inv.inv hX
+  rw [← map_inv, ← map_inv, Prod.inv_mk, inv_inv] at hinv
+  exact ⟨by simpa using congrArg Units.val hX, by simpa using congrArg Units.val hinv⟩
+
+/-- With one surjective leg, `M(u)` is a retract of `M(1) ≅ D²ⁿ` by maps given by matrices: there
+are matrix pairs `(I₁, I₂)` inducing `M(u) → M(1)` and `(R₁, R₂)` inducing `M(1) → M(u)` with
+`R₁ I₁ = 1` and `R₂ I₂ = 1`. They are built from an invertible lift `X` of `u ⊕ u⁻¹` along the
+surjective leg: for `π₁` surjective, `I₁ = X J`, `I₂ = J`, `R₁ = Jᵀ X⁻¹` and `R₂ = Jᵀ`, where `J` is
+the inclusion of the first block. -/
+private theorem exists_patchedSubgroup_retract
+    (h : Function.Surjective π₁ ∨ Function.Surjective π₂) (u : GL n Q) :
+    ∃ (I₁ : Matrix (n ⊕ n) n A₁) (I₂ : Matrix (n ⊕ n) n A₂) (R₁ : Matrix n (n ⊕ n) A₁)
+      (R₂ : Matrix n (n ⊕ n) A₂),
+      ((1 : GL (n ⊕ n) Q) : Matrix (n ⊕ n) (n ⊕ n) Q) * I₁.map π₁ = I₂.map π₂ * (u : Matrix n n Q) ∧
+      (u : Matrix n n Q) * R₁.map π₁ =
+        R₂.map π₂ * ((1 : GL (n ⊕ n) Q) : Matrix (n ⊕ n) (n ⊕ n) Q) ∧
+      R₁ * I₁ = 1 ∧ R₂ * I₂ = 1 := by
+  have hW := fromBlocksGL_inv_mem_elementarySubgroup u
+  rcases h with h | h
+  · obtain ⟨X, -, hX⟩ := π₁.exists_mem_elementarySubgroup_unitsMap_mapMatrix_eq h hW
+    obtain ⟨hX₁, hX₂⟩ := map_val_eq_fromBlocks π₁ hX
+    refine ⟨(X : Matrix (n ⊕ n) (n ⊕ n) A₁) * fromRows 1 0, fromRows 1 0,
+      fromCols 1 0 * ((X⁻¹ : GL (n ⊕ n) A₁) : Matrix (n ⊕ n) (n ⊕ n) A₁), fromCols 1 0,
+      ?_, ?_, ?_, ?_⟩
+    · simp [Matrix.map_mul, hX₁, fromRows_map, fromBlocks_mul_fromRows, fromRows_mul]
+    · simp [Matrix.map_mul, hX₂, fromCols_map, fromCols_mul_fromBlocks, mul_fromCols]
+    · rw [Matrix.mul_assoc, ← Matrix.mul_assoc _ (X : Matrix (n ⊕ n) (n ⊕ n) A₁), Units.inv_mul,
+        Matrix.one_mul]
+      simp [fromCols_mul_fromRows]
+    · simp [fromCols_mul_fromRows]
+  · obtain ⟨Y, -, hY⟩ := π₂.exists_mem_elementarySubgroup_unitsMap_mapMatrix_eq h hW
+    obtain ⟨hY₁, hY₂⟩ := map_val_eq_fromBlocks π₂ hY
+    refine ⟨fromRows 1 0, ((Y⁻¹ : GL (n ⊕ n) A₂) : Matrix (n ⊕ n) (n ⊕ n) A₂) * fromRows 1 0,
+      fromCols 1 0, fromCols 1 0 * (Y : Matrix (n ⊕ n) (n ⊕ n) A₂), ?_, ?_, ?_, ?_⟩
+    · simp [Matrix.map_mul, hY₂, fromRows_map, fromBlocks_mul_fromRows, fromRows_mul]
+    · simp [Matrix.map_mul, hY₁, fromCols_map, fromCols_mul_fromBlocks, mul_fromCols]
+    · simp [fromCols_mul_fromRows]
+    · rw [Matrix.mul_assoc,
+        ← Matrix.mul_assoc _ ((Y⁻¹ : GL (n ⊕ n) A₂) : Matrix (n ⊕ n) (n ⊕ n) A₂), Units.mul_inv,
+        Matrix.one_mul]
+      simp [fromCols_mul_fromRows]
+
+/-- The matrices inducing a linear map out of `M(1) ≅ Dⁿ` are unique: their columns are the images
+of the standard basis vectors. -/
+private theorem eq_of_patchedSubgroupLinearMap_one_eq {u' : GL m Q} {X₁ Y₁ : Matrix m n A₁}
+    {X₂ Y₂ : Matrix m n A₂}
+    (hX : (u' : Matrix m m Q) * X₁.map π₁ = X₂.map π₂ * ((1 : GL n Q) : Matrix n n Q))
+    (hY : (u' : Matrix m m Q) * Y₁.map π₁ = Y₂.map π₂ * ((1 : GL n Q) : Matrix n n Q))
+    (e : patchedSubgroupLinearMap π₁ π₂ X₁ X₂ hX = patchedSubgroupLinearMap π₁ π₂ Y₁ Y₂ hY) :
+    X₁ = Y₁ ∧ X₂ = Y₂ := by
+  have he (i : n) := congrArg Subtype.val
+    (LinearMap.congr_fun e ((patchedSubgroupOneEquiv π₁ π₂ n).symm (Pi.single i 1)))
+  simp only [coe_patchedSubgroupLinearMap_apply, coe_patchedSubgroupOneEquiv_symm_single,
+    Prod.mk.injEq] at he
+  exact ⟨ext_of_mulVec_single fun i ↦ (he i).1, ext_of_mulVec_single fun i ↦ (he i).2⟩
+
+/-- With one surjective leg, the matrices inducing a linear map between patched modules are
+unique. -/
+theorem patchedSubgroupLinearMap_inj (h : Function.Surjective π₁ ∨ Function.Surjective π₂)
+    {u : GL n Q} {u' : GL m Q} {X₁ Y₁ : Matrix m n A₁} {X₂ Y₂ : Matrix m n A₂}
+    (hX : (u' : Matrix m m Q) * X₁.map π₁ = X₂.map π₂ * (u : Matrix n n Q))
+    (hY : (u' : Matrix m m Q) * Y₁.map π₁ = Y₂.map π₂ * (u : Matrix n n Q)) :
+    patchedSubgroupLinearMap π₁ π₂ X₁ X₂ hX = patchedSubgroupLinearMap π₁ π₂ Y₁ Y₂ hY ↔
+      X₁ = Y₁ ∧ X₂ = Y₂ := by
+  refine ⟨fun e ↦ ?_, fun ⟨h₁, h₂⟩ ↦ by subst h₁ h₂; rfl⟩
+  -- Compose with the retraction `M(1) → M(u)` given by `(R₁, R₂)`, then cancel `R I = 1`.
+  obtain ⟨I₁, I₂, R₁, R₂, -, hR, hRI₁, hRI₂⟩ := exists_patchedSubgroup_retract h u
+  have e' := congrArg (· ∘ₗ patchedSubgroupLinearMap π₁ π₂ R₁ R₂ hR) e
+  simp only [patchedSubgroupLinearMap_comp] at e'
+  obtain ⟨e₁, e₂⟩ := eq_of_patchedSubgroupLinearMap_one_eq _ _ e'
+  exact ⟨by simpa [Matrix.mul_assoc, hRI₁] using congrArg (· * I₁) e₁,
+    by simpa [Matrix.mul_assoc, hRI₂] using congrArg (· * I₂) e₂⟩
+
+/-- **Linear maps between patched modules are given by matrices.** With one surjective leg, every
+linear map `f : M(u) → M(u')` of right modules over the fibre product is `(a, b) ↦ (X₁ a, X₂ b)`
+for matrices `X₁` over `A₁` and `X₂` over `A₂` with `u' π₁(X₁) = π₂(X₂) u`. -/
+theorem exists_patchedSubgroupLinearMap_eq (h : Function.Surjective π₁ ∨ Function.Surjective π₂)
+    {u : GL n Q} {u' : GL m Q}
+    (f : π₁.patchedSubgroup π₂ u →ₗ[(π₁.pullback π₂)ᵐᵒᵖ] π₁.patchedSubgroup π₂ u') :
+    ∃ (X₁ : Matrix m n A₁) (X₂ : Matrix m n A₂)
+      (hX : (u' : Matrix m m Q) * X₁.map π₁ = X₂.map π₂ * (u : Matrix n n Q)),
+      patchedSubgroupLinearMap π₁ π₂ X₁ X₂ hX = f := by
+  obtain ⟨I₁, I₂, R₁, R₂, hI, hR, hRI₁, hRI₂⟩ := exists_patchedSubgroup_retract h u
+  obtain ⟨G₁, G₂, hG, hGf⟩ :=
+    exists_patchedSubgroupLinearMap_eq_of_one (f ∘ₗ patchedSubgroupLinearMap π₁ π₂ R₁ R₂ hR)
+  refine ⟨_, _, _, (patchedSubgroupLinearMap_comp G₁ G₂ hG I₁ I₂ hI).symm.trans ?_⟩
+  rw [hGf, LinearMap.comp_assoc, patchedSubgroupLinearMap_comp]
+  simp only [hRI₁, hRI₂, patchedSubgroupLinearMap_one, LinearMap.comp_id]
+
+/-- **The patched module determines the double coset.** With one surjective leg, `M(u) ≅ M(u')`
+for `u, u' ∈ GLₙ(Q)` if and only if `u' π₁(g₁) = π₂(g₂) u` for invertible matrices `g₁` over `A₁`
+and `g₂` over `A₂`, that is, if `u` and `u'` lie in the same double coset of the images of
+`GLₙ(A₂)` and `GLₙ(A₁)`. -/
+theorem nonempty_patchedSubgroup_equiv_iff
+    (h : Function.Surjective π₁ ∨ Function.Surjective π₂) {u u' : GL n Q} :
+    Nonempty (π₁.patchedSubgroup π₂ u ≃ₗ[(π₁.pullback π₂)ᵐᵒᵖ] π₁.patchedSubgroup π₂ u') ↔
+      ∃ (g₁ : GL n A₁) (g₂ : GL n A₂),
+        u' * Units.map (π₁.mapMatrix (m := n)).toMonoidHom g₁ =
+          Units.map (π₂.mapMatrix (m := n)).toMonoidHom g₂ * u := by
+  refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨g₁, g₂, hg⟩ ↦ ⟨patchedSubgroupEquivOfMul π₁ π₂ g₁ g₂ hg⟩⟩
+  obtain ⟨X₁, X₂, hX, hXe⟩ := exists_patchedSubgroupLinearMap_eq h e.toLinearMap
+  obtain ⟨Y₁, Y₂, hY, hYe⟩ := exists_patchedSubgroupLinearMap_eq h e.symm.toLinearMap
+  have h₁ : (u : Matrix n n Q) * (1 : Matrix n n A₁).map π₁ =
+      (1 : Matrix n n A₂).map π₂ * (u : Matrix n n Q) := by simp
+  have h₁' : (u' : Matrix n n Q) * (1 : Matrix n n A₁).map π₁ =
+      (1 : Matrix n n A₂).map π₂ * (u' : Matrix n n Q) := by simp
+  -- The composites `e⁻¹ ∘ e` and `e ∘ e⁻¹` are the identities, so the matrices are inverse.
+  have hYX := (patchedSubgroupLinearMap_inj h _ h₁).1 <| by
+    rw [← patchedSubgroupLinearMap_comp Y₁ Y₂ hY X₁ X₂ hX, hXe, hYe, patchedSubgroupLinearMap_one]
+    exact e.symm_comp
+  have hXY := (patchedSubgroupLinearMap_inj h _ h₁').1 <| by
+    rw [← patchedSubgroupLinearMap_comp X₁ X₂ hX Y₁ Y₂ hY, hXe, hYe, patchedSubgroupLinearMap_one]
+    exact e.comp_symm
+  exact ⟨⟨X₁, Y₁, hXY.1, hYX.1⟩, ⟨X₂, Y₂, hXY.2, hYX.2⟩, Units.ext (by simpa using hX)⟩
+
+end LinearMap
 
 end RingHom
