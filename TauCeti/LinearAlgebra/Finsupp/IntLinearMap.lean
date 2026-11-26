@@ -33,6 +33,9 @@ coefficients are integers cast into `R`.
 * `Finsupp.intLinearMapEquivModuleCat`: the same identification for additive maps into `R`, with
   the `R`-linear forms read as morphisms of `ModuleCat R` into `R` lifted to the universe of `S`,
   as in the `R`-dual of a chain complex of free modules.
+* `Finsupp.intLinearMapEquivModuleCat_apply`,
+  `Finsupp.intLinearMapEquivModuleCat_symm_apply_single`: its values, and the additive map
+  recovered from a morphism.
 -/
 
 public section
@@ -129,5 +132,15 @@ theorem intLinearMapEquivModuleCat_apply (a : (S →₀ ℤ) →ₗ[ℤ] R) (c :
   -- values into `ULift`, and `simp` does not see through the coercion of the morphism to a function
   -- (`ConcreteCategory.hom`), so the identity is closed by unfolding.
   (rfl)
+
+/-- The additive map recovered from a morphism `φ` of `ModuleCat R` out of the free `R`-module on
+`S` sends `single p k` to `k` times the value of `φ` at `single p 1`. -/
+@[simp]
+theorem intLinearMapEquivModuleCat_symm_apply_single
+    (φ : ModuleCat.of R (S →₀ R) ⟶ ModuleCat.of R (ULift.{u} R)) (p : S) (k : ℤ) :
+    (intLinearMapEquivModuleCat S R).symm φ (single p k) = k • (φ (single p 1)).down := by
+  rw [map_single_int]
+  conv_rhs => rw [← (intLinearMapEquivModuleCat S R).apply_symm_apply φ]
+  rw [intLinearMapEquivModuleCat_apply, intLinearMapEquiv_apply_single, one_smul]
 
 end Finsupp

@@ -58,8 +58,12 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   boundary into degree `0`, the Morse cohomology in degree `0` is `R`.
 * `signedMorseCochainComplexIso`: over a commutative ring `R`, the integral Morse cochain complex
   is the `R`-dual of the Morse chain complex with coefficients in `R`.
+* `signedMorseCochainComplexIso_hom_f_apply_single`,
+  `signedMorseCochainComplexIso_inv_f_apply_single`: its values on the critical points.
 * `IsMorseSmale.signedMorseCochainComplexIsoMorseCochainComplex`: with coefficients in `ZMod 2` it
-  is the mod-two Morse cochain complex.
+  is the mod-two Morse cochain complex, with the value lemmas
+  `IsMorseSmale.signedMorseCochainComplexIsoMorseCochainComplex_hom_f_apply_single` and
+  `IsMorseSmale.signedMorseCochainComplexIsoMorseCochainComplex_inv_f_apply_single`.
 
 ## References
 
@@ -262,6 +266,22 @@ theorem signedMorseCochainComplexIso_hom_f_apply_single {n : ℕ}
   (Finsupp.intLinearMapEquivModuleCat_apply a _).trans
     (Finsupp.intLinearMapEquiv_apply_single a p r)
 
+/-- The integral cochain associated with an `R`-linear form `φ` on the Morse chains of index `n`
+with coefficients in `R` takes the value `k • φ p` at `k • p`, for every critical point `p` of
+index `n`. -/
+-- The value of the inverse is an additive map on the integral chains, which are the terms of
+-- `signedMorseCochainComplex` only by definition, so the target of the morphism applied is named.
+@[simp]
+theorem signedMorseCochainComplexIso_inv_f_apply_single {n : ℕ}
+    (φ : ModuleCat.of R
+        ({p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R) ⟶
+      ModuleCat.of R (ULift.{u} R))
+    (p : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n}) (k : ℤ) :
+    ConcreteCategory.hom (Y := ModuleCat.of R (_ →ₗ[ℤ] R))
+      ((hX.signedMorseCochainComplexIso hsq R).inv.f n) φ (Finsupp.single p k) =
+      k • (φ (Finsupp.single p 1)).down :=
+  Finsupp.intLinearMapEquivModuleCat_symm_apply_single φ p k
+
 end CommRing
 
 namespace IsMorseSmale
@@ -270,11 +290,57 @@ namespace IsMorseSmale
 the Morse–Smale condition, the Morse cochain complex `Hom_ℤ(CM_*(f; ℤ), ZMod 2)` is isomorphic to
 the mod-two Morse cochain complex `Hom(CM_*(f; ZMod 2), ZMod 2)`, whatever the orientations of the
 unstable manifolds. -/
+-- The components are those of `signedMorseCochainComplexIso`. The isomorphism is built from them
+-- rather than composed with an `eqToIso` along `IsMorseSmale.signedMorseComplex_zmod_two`, so that
+-- its values compute by definition, as in the value lemmas below.
 noncomputable def signedMorseCochainComplexIsoMorseCochainComplex (h : hX.IsMorseSmale) :
     hX.signedMorseCochainComplex 𝔬 hf (ZMod 2) hsq ≅ h.morseCochainComplex hf :=
-  hX.signedMorseCochainComplexIso hsq (ZMod 2) ≪≫ eqToIso
-    (congrArg (fun K ↦ K.linearYonedaObj (ZMod 2) (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))))
-      (h.signedMorseComplex_zmod_two _))
+  HomologicalComplex.Hom.isoOfComponents
+    (fun n ↦ (Finsupp.intLinearMapEquivModuleCat
+      {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} (ZMod 2)).toModuleIso)
+    fun i j hij ↦ by
+      obtain rfl : i + 1 = j := hij
+      unfold morseCochainComplex
+      rw [ChainComplex.linearYonedaObj_d, morseComplex_d,
+        ← h.signedMorseBoundaryAt_eq_morseBoundaryAt (𝔬 := 𝔬), signedMorseCochainComplex_d]
+      ext a : 2
+      refine ModuleCat.hom_ext (Finsupp.lhom_ext fun p r ↦ ULift.ext ?_)
+      -- As in `signedMorseCochainComplexIso`, the mod-two boundary being the integral one cast
+      -- into `ZMod 2`.
+      exact intLinearMapEquiv_signedMorseBoundaryAt a p r
+
+/-- The mod-two linear form associated with an integral cochain `a` of index `n` takes the value
+`r * a p` at `r • p`, for every critical point `p` of index `n`. -/
+-- As for `signedMorseCochainComplexIso_hom_f_apply_single`, the source and target of the morphism
+-- applied are named.
+@[simp]
+theorem signedMorseCochainComplexIsoMorseCochainComplex_hom_f_apply_single (h : hX.IsMorseSmale)
+    {n : ℕ}
+    (a : ({p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ ℤ) →ₗ[ℤ] ZMod 2)
+    (p : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n}) (r : ZMod 2) :
+    (ConcreteCategory.hom (X := ModuleCat.of (ZMod 2) (_ →₀ ZMod 2))
+      (Y := ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2)))
+      ((h.signedMorseCochainComplexIsoMorseCochainComplex hsq).hom.f n a)
+        (Finsupp.single p r)).down =
+      r * a (Finsupp.single p 1) :=
+  (Finsupp.intLinearMapEquivModuleCat_apply a _).trans
+    (Finsupp.intLinearMapEquiv_apply_single a p r)
+
+/-- The integral cochain associated with a mod-two linear form `φ` on the Morse chains of index `n`
+takes the value `k • φ p` at `k • p`, for every critical point `p` of index `n`. -/
+-- As for `signedMorseCochainComplexIso_inv_f_apply_single`, the target of the morphism applied is
+-- named.
+@[simp]
+theorem signedMorseCochainComplexIsoMorseCochainComplex_inv_f_apply_single (h : hX.IsMorseSmale)
+    {n : ℕ}
+    (φ : ModuleCat.of (ZMod 2)
+        ({p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ ZMod 2) ⟶
+      ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2)))
+    (p : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n}) (k : ℤ) :
+    ConcreteCategory.hom (Y := ModuleCat.of (ZMod 2) (_ →ₗ[ℤ] ZMod 2))
+      ((h.signedMorseCochainComplexIsoMorseCochainComplex hsq).inv.f n) φ (Finsupp.single p k) =
+      k • (φ (Finsupp.single p 1)).down :=
+  Finsupp.intLinearMapEquivModuleCat_symm_apply_single φ p k
 
 end IsMorseSmale
 
