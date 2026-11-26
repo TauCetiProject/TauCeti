@@ -11,21 +11,21 @@ public import Mathlib.RingTheory.Coprime.Basic
 public import TauCeti.Algebra.Group.UniqueProds.TorsionFree
 public import TauCeti.Algebra.MonoidAlgebra.Degree
 public import TauCeti.Algebra.MonoidAlgebra.Units
-import Mathlib.Algebra.Category.Grp.Injective
 import Mathlib.Algebra.Order.Field.Rat
-import Mathlib.LinearAlgebra.Span.Basic
+import Mathlib.Tactic.Abel
+import TauCeti.GroupTheory.Divisible
 
 /-!
 # Relative primality along independent rays in torsion-free group algebras
 
 Using the weighted degree width API (`TauCeti.GradedAlgebra.degWidth` on
 `AddMonoidAlgebra.gradeBy R w` from `TauCeti.Algebra.MonoidAlgebra.Degree`), this file applies
-rational functionals `w : L →+ ℚ` (constructed via Baer's criterion) to divisibility in the group
-algebra `R[L]` of a torsion-free commutative group `L` over `[CommSemiring R] [NoZeroDivisors R]`:
-any divisor of a nonzero element supported on `ℤ • a` has ray-collinear support differences, common
-divisors along `ℤ`-linearly independent rays are monomials, and finite products of binomials
-`1 + single a (c r)` along `ℤ`-linearly independent rays are relatively prime without any
-finite-generation hypothesis on `L`.
+rational functionals `w : L →+ ℚ` (`TauCeti.exists_addMonoidHom_apply_eq_zero_and_apply_eq`,
+constructed via Baer's criterion) to divisibility in the group algebra `R[L]` of a torsion-free
+commutative group `L` over `[CommSemiring R] [NoZeroDivisors R]`: any divisor of a nonzero element
+supported on `ℤ • a` has ray-collinear support differences, common divisors along `ℤ`-linearly
+independent rays are monomials, and finite products of binomials `1 + single a (c r)` along
+`ℤ`-linearly independent rays are relatively prime without any finite-generation hypothesis on `L`.
 
 ## Main results
 
@@ -56,30 +56,7 @@ theorem exists_zsmul_sub_eq_zsmul_of_dvd_of_support_subset_zsmul {a : L} {h P : 
     {x y : L} (hx : x ∈ h.coeff.support) (hy : y ∈ h.coeff.support) :
     ∃ (n k : ℤ), n ≠ 0 ∧ n • (x - y) = k • a := by
   by_contra! H
-  -- Extend the projection onto `x - y` to `w : L →+ ℚ` with `w a = 0` and `w (x - y) = 1`
-  -- via Baer's criterion for the divisible `ℤ`-module `ℚ`.
-  let d : L := x - y
-  let S : Submodule ℤ L := Submodule.span ℤ {a}
-  let i : S × ℤ →+ L :=
-    { toFun p := (p.fst : L) + p.snd • d
-      map_zero' := by simp
-      map_add' p q := by simp [add_smul]; abel }
-  have hi : Function.Injective i := (injective_iff_map_eq_zero i).mpr fun ⟨z, v⟩ hzv ↦ by
-    have hv : v = 0 := by_contra fun hv ↦ by
-      obtain ⟨k, hk⟩ := Submodule.mem_span_singleton.mp z.property
-      have heq : v • d = (-k) • a := by
-        rw [neg_smul, hk, eq_neg_iff_add_eq_zero, add_comm]
-        exact hzv
-      exact H v (-k) hv heq
-    subst hv
-    have hz0 : (z : L) = 0 := by simpa [i] using hzv
-    exact Prod.ext (Subtype.ext hz0) rfl
-  let g : S × ℤ →+ ℚ := (Int.castAddHom ℚ).comp (AddMonoidHom.snd S ℤ)
-  obtain ⟨w, hw⟩ := (Module.Baer.of_divisible ℚ).extension_property_addMonoidHom i hi g
-  have hwa : w a = 0 := by
-    simpa [i, g] using DFunLike.congr_fun hw (⟨a, Submodule.mem_span_singleton_self a⟩, 0)
-  have hwxy : w (x - y) = 1 := by
-    simpa [i, g, d] using DFunLike.congr_fun hw (0, 1)
+  obtain ⟨w, hwa, hwxy⟩ := TauCeti.exists_addMonoidHom_apply_eq_zero_and_apply_eq H (1 : ℚ)
   have hPmem : P ∈ gradeBy R w 0 := fun m hm ↦ by
     obtain ⟨k, rfl⟩ := hP hm
     simp [hwa]
@@ -112,8 +89,8 @@ theorem exists_eq_single_of_dvd_of_support_subset_zsmul {a b : L}
   obtain ⟨n₂, k₂, hn₂, h2⟩ :=
     exists_zsmul_sub_eq_zsmul_of_dvd_of_support_subset_zsmul hdvdQ hQ0 hQ hx hd
   have hrel : (n₂ * k₁) • a + (-(n₁ * k₂)) • b = 0 := by
-    rw [mul_smul, ← h1, ← mul_smul, mul_comm n₂ n₁, mul_smul, h2, ← mul_smul, neg_smul,
-      add_neg_cancel]
+    simp only [mul_smul, neg_smul, ← h1, ← h2, smul_comm n₂ n₁]
+    abel
   have hn₂k₁ : n₂ * k₁ = 0 :=
     Fintype.linearIndependent_iff.mp hlin ![n₂ * k₁, -(n₁ * k₂)]
       (by simpa [Fin.sum_univ_two] using hrel) 0

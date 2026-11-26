@@ -53,19 +53,7 @@ namespace MvPolynomial
 
 section CommSemiring
 
-variable {R K : Type*} [CommSemiring R]
-
-/-- Every monic polynomial monomial becomes a unit in `LaurentRing R K`. -/
-theorem isUnit_toLaurent_monomial_one (n : K →₀ ℕ) :
-    IsUnit (toLaurent (monomial n (1 : R))) := by
-  let m : K →₀ ℤ := n.mapRange Nat.cast Nat.cast_zero
-  refine isUnit_iff_exists.mpr ⟨single (-m) 1, ?_, ?_⟩
-  · simp [m, single_mul_single, AddMonoidAlgebra.one_def]
-  · simp [m, single_mul_single, AddMonoidAlgebra.one_def]
-
-section NoZeroDivisors
-
-variable [NoZeroDivisors R]
+variable {R K : Type*} [CommSemiring R] [NoZeroDivisors R]
 
 /-- Over a nontrivial commutative semiring without zero divisors, `toLaurent p` is a unit of
 `LaurentRing R K` if and only if `p` is a monomial with a unit coefficient. -/
@@ -142,8 +130,6 @@ theorem isRelPrime_one_add_monomial {a b : K →₀ ℕ}
     IsRelPrime (1 + monomial a c : MvPolynomial K R) (1 + monomial b d : MvPolynomial K R) := by
   simpa using isRelPrime_prod_one_add_monomial hlin ({()} : Finset Unit) ({()} : Finset Unit)
     (fun _ ↦ c) (fun _ ↦ d)
-
-end NoZeroDivisors
 
 end CommSemiring
 
@@ -222,7 +208,9 @@ theorem isRelPrime_prod_one_add_smul_X {i j : K} (hij : i ≠ j)
   have hlin : LinearIndependent ℤ ![Finsupp.single i (1 : ℤ), Finsupp.single j (1 : ℤ)] := by
     have h := (Finsupp.basisSingleOne (ι := K) (R := ℤ)).linearIndependent.comp ![i, j]
       fun a b hab ↦ by fin_cases a <;> fin_cases b <;> simp_all
-    convert h using 1; ext k; fin_cases k <;> rfl
+    convert h using 1
+    ext k
+    fin_cases k <;> simp [Finsupp.coe_basisSingleOne]
   simpa only [X_def, smul_single, smul_eq_mul, mul_one] using
     AddMonoidAlgebra.isRelPrime_prod_one_add_single hlin s u c d
 

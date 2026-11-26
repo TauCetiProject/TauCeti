@@ -33,8 +33,8 @@ identifies the algebra with `AddMonoidAlgebra k L`.
   projections.
 * `TauCeti.TwistedMonoidAlgebra.gradeByHom`, `grade`, `gradeByAddHom`, `degWidth_of_mul`,
   `degWidth_mul_of`: additive weight `GradedAlgebra` structures and basis-unit width invariance.
-* `TauCeti.TwistedMonoidAlgebra.addMonoidAlgebraEquiv`, `map_gradeBy_addMonoidAlgebraEquiv`:
-  trivial-twist `k`-algebra equivalence with `AddMonoidAlgebra k L` and grading compatibility.
+* `TauCeti.TwistedMonoidAlgebra.map_gradeBy_addMonoidAlgebraEquiv`: compatibility of the
+  trivial-twist fiber grading with `AddMonoidAlgebra.gradeBy` under `addMonoidAlgebraEquiv`.
 -/
 
 public section
@@ -66,7 +66,7 @@ support has weight `i`. -/
 theorem mem_gradeBy_iff {ι : Type*} (w : G → ι) (i : ι) (x : twistedMonoidAlgebra k G α) :
     x ∈ gradeBy k G α w i ↔ ∀ g ∈ ((basis k G α).repr x).support, w g = i := by
   rw [gradeBy_eq_span_basis, Basis.mem_span_image]
-  rfl
+  simp [Set.subset_def]
 
 theorem of_mem_gradeBy {ι : Type*} (w : G → ι) (g : G) :
     (of g : twistedMonoidAlgebra k G α) ∈ gradeBy k G α w (w g) :=
@@ -266,28 +266,6 @@ noncomputable abbrev gradeByAddHom {ι : Type*} [AddMonoid ι]
     (α : Multiplicative L → Multiplicative L → kˣ) [IsFactorSet α] (w : L →+ ι) :
     ι → Submodule k (twistedMonoidAlgebra k (Multiplicative L) α) :=
   gradeByHom k (Multiplicative L) α (w.comp (AddEquiv.additiveMultiplicative L).toAddMonoidHom)
-
-/-- For the trivial factor set `1`, `twistedMonoidAlgebra k (Multiplicative L) 1` is canonically
-isomorphic as a `k`-algebra to `AddMonoidAlgebra k L`. -/
-noncomputable def addMonoidAlgebraEquiv :
-    twistedMonoidAlgebra k (Multiplicative L) (1 : Multiplicative L → Multiplicative L → kˣ) ≃ₐ[k]
-      AddMonoidAlgebra k L :=
-  (monoidAlgebraEquiv k (Multiplicative L)).trans
-    (AddMonoidAlgebra.toMultiplicativeAlgEquiv k k L).symm
-
-@[simp]
-theorem addMonoidAlgebraEquiv_of (m : L) :
-    addMonoidAlgebraEquiv k L (of (Multiplicative.ofAdd m)) = AddMonoidAlgebra.single m 1 := by
-  apply (AddMonoidAlgebra.toMultiplicativeAlgEquiv k k L).injective
-  simp [addMonoidAlgebraEquiv]
-
-@[simp]
-theorem addMonoidAlgebraEquiv_symm_single (m : L) (c : k) :
-    (addMonoidAlgebraEquiv k L).symm (AddMonoidAlgebra.single m c) =
-      c • of (Multiplicative.ofAdd m) := by
-  apply (addMonoidAlgebraEquiv k L).injective
-  rw [AlgEquiv.apply_symm_apply, map_smul, addMonoidAlgebraEquiv_of,
-    AddMonoidAlgebra.smul_single, smul_eq_mul, mul_one]
 
 /-- Under `addMonoidAlgebraEquiv`, the fiber grading of the trivial-twist algebra matches
 `AddMonoidAlgebra.gradeBy`. -/

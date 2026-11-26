@@ -85,6 +85,14 @@ theorem toLaurent_monomial (s : K →₀ ℕ) (r : R) :
     toLaurent (monomial s r) = single (s.mapRange Nat.cast Nat.cast_zero : K →₀ ℤ) r := by
   simp [toLaurent_apply, ← single_eq_monomial]
 
+/-- Every monic polynomial monomial becomes a unit in `LaurentRing R K`. -/
+theorem isUnit_toLaurent_monomial_one (n : K →₀ ℕ) :
+    IsUnit (toLaurent (monomial n (1 : R))) := by
+  let m : K →₀ ℤ := n.mapRange Nat.cast Nat.cast_zero
+  refine isUnit_iff_exists.mpr ⟨single (-m) 1, ?_, ?_⟩
+  · simp [m, single_mul_single, AddMonoidAlgebra.one_def]
+  · simp [m, single_mul_single, AddMonoidAlgebra.one_def]
+
 @[simp]
 theorem toLaurent_X (i : K) : toLaurent (X i : MvPolynomial K R) = LaurentRing.X i := by
   simp [X, LaurentRing.X_def]

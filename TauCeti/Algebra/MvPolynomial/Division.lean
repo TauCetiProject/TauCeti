@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Division
 public import Mathlib.Algebra.MvPolynomial.Variables
-import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 
 /-!
 # Divisibility and remainder by powers of a variable
@@ -39,7 +38,7 @@ to variable elimination by minimal-exponent slicing in multihomogeneous polynomi
   `monomial k 1 * q` with `q` divisible by no variable `Xᵢ`.
 * `MvPolynomial.aeval_update_X_zero_eq_modMonomial`, `MvPolynomial.modMonomial_single_mul`: setting
   `X i` to `0` computes the remainder `p.modMonomial (Finsupp.single i 1)`, which is multiplicative.
-* `MvPolynomial.X_dvd_mul`, `MvPolynomial.dvd_X_mul_iff_of_not_X_dvd`,
+* `MvPolynomial.X_dvd_mul_iff_of_noZeroDivisors`, `MvPolynomial.dvd_X_mul_iff_of_not_X_dvd`,
   `MvPolynomial.dvd_monomial_one_mul_iff_of_forall_not_X_dvd`: over `[CommSemiring R]
   [NoZeroDivisors R]`, `Xᵢ` divides a product iff it divides a factor, and factors prime to all
   variables cancel monic monomial multipliers.
@@ -206,14 +205,6 @@ theorem modMonomial_single_mul (i : σ) (p q : MvPolynomial σ R) :
   classical
   simp only [← aeval_update_X_zero_eq_modMonomial, map_mul]
 
-/-- Left multiplication by a monic monomial `monomial s 1` is injective over any commutative
-semiring. -/
-theorem mul_left_injective_monomial_one (s : σ →₀ ℕ) :
-    Function.Injective (monomial s (1 : R) * · : MvPolynomial σ R → MvPolynomial σ R) := by
-  intro a b hab
-  ext e
-  simpa only [coeff_monomial_mul, one_mul] using congrArg (fun q ↦ q.coeff (s + e)) hab
-
 section NoZeroDivisors
 
 variable [NoZeroDivisors R]
@@ -221,7 +212,7 @@ variable [NoZeroDivisors R]
 /-- Over a commutative semiring without zero divisors, a variable `X i` divides a product if and
 only if it divides one of the factors (extending `MvPolynomial.X_dvd_mul_iff`, which assumes
 `CommRing R` and `IsCancelMulZero R`). -/
-theorem X_dvd_mul {i : σ} {p q : MvPolynomial σ R} :
+theorem X_dvd_mul_iff_of_noZeroDivisors {i : σ} {p q : MvPolynomial σ R} :
     X i ∣ p * q ↔ X i ∣ p ∨ X i ∣ q := by
   rw [X_dvd_iff_modMonomial_eq_zero, X_dvd_iff_modMonomial_eq_zero,
     X_dvd_iff_modMonomial_eq_zero, modMonomial_single_mul, mul_eq_zero]
@@ -231,10 +222,9 @@ divides `X i * q` if and only if `g` divides `q`. -/
 theorem dvd_X_mul_iff_of_not_X_dvd {i : σ} {g q : MvPolynomial σ R}
     (hXg : ¬ X i ∣ g) : g ∣ X i * q ↔ g ∣ q := by
   refine ⟨fun ⟨u, hu⟩ ↦ ?_, fun h ↦ dvd_mul_of_dvd_right h (X i)⟩
-  have hXu : X i ∣ u := (X_dvd_mul.mp ⟨q, hu.symm⟩).resolve_left hXg
+  have hXu : X i ∣ u := (X_dvd_mul_iff_of_noZeroDivisors.mp ⟨q, hu.symm⟩).resolve_left hXg
   obtain ⟨u', rfl⟩ := hXu
-  refine ⟨u', mul_left_injective_monomial_one (Finsupp.single i 1) ?_⟩
-  simpa only [X, mul_left_comm, mul_assoc] using hu
+  exact ⟨u', X_mul_cancel_left_iff.mp (by simpa only [mul_left_comm, mul_assoc] using hu)⟩
 
 /-- Over a commutative semiring without zero divisors, if no variable `X i` divides `g`, then `g`
 divides `monomial m 1 * q` if and only if `g` divides `q`. -/
