@@ -37,7 +37,6 @@ elements are Frobenius groups; their Frobenius kernels are identified in
 * `TauCeti.AffineGroup`: the semidirect product `F ⋊ Fˣ` for this action, acting faithfully on
   `F` by affine maps (`TauCeti.AffineGroup.smul_def`).
 * `TauCeti.AffineGroup.map`: the homomorphism of affine groups induced by a ring homomorphism.
-* `TauCeti.affineTranslationEquiv`: the additive group of `F` is isomorphic to the translations.
 * `TauCeti.affineTranslationSubgroup` and `TauCeti.affineLinearSubgroup`: the two canonical
   factors.
 * `TauCeti.isComplement'_affineTranslationSubgroup_affineLinearSubgroup`: the two factors are
@@ -220,18 +219,6 @@ instance {F : Type*} [Ring F] : (affineTranslationSubgroup F).Normal := by
   rw [affineTranslationSubgroup_eq_ker_rightHom]
   infer_instance
 
-/-- The additive group of a ring is isomorphic to the translation subgroup of its affine group,
-`b` corresponding to the translation `x ↦ b + x`. -/
-noncomputable def affineTranslationEquiv (F : Type*) [Ring F] :
-    Multiplicative F ≃* affineTranslationSubgroup F :=
-  MonoidHom.ofInjective SemidirectProduct.inl_injective
-
-/-- `TauCeti.affineTranslationEquiv` sends `b` to the translation `SemidirectProduct.inl b`. -/
-@[simp]
-theorem coe_affineTranslationEquiv_apply {F : Type*} [Ring F] (b : Multiplicative F) :
-    (affineTranslationEquiv F b : AffineGroup F) = SemidirectProduct.inl b :=
-  (rfl)
-
 /-- The stabilizer of `0` in the affine group is the linear factor. -/
 theorem AffineGroup.stabilizer_zero (F : Type*) [Ring F] :
     MulAction.stabilizer (AffineGroup F) (0 : F) = affineLinearSubgroup F := by
@@ -265,8 +252,9 @@ theorem isComplement'_affineTranslationSubgroup_affineLinearSubgroup
 
 /-- The translation subgroup of an affine group has the same natural cardinality as the ring. -/
 theorem card_affineTranslationSubgroup (F : Type*) [Ring F] :
-    Nat.card (affineTranslationSubgroup F) = Nat.card F :=
-  (Nat.card_congr (affineTranslationEquiv F).toEquiv.symm).trans
+    Nat.card (affineTranslationSubgroup F) = Nat.card F := by
+  rw [affineTranslationSubgroup_eq_ker_rightHom]
+  exact (Nat.card_congr SemidirectProduct.mulEquivKerRightHom.toEquiv.symm).trans
     (Nat.card_congr Multiplicative.toAdd)
 
 /-- The linear factor of an affine group has natural cardinality one less than the ring. -/
