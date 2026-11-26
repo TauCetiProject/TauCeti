@@ -135,7 +135,7 @@ theorem prodNegativeEquiv_negativeCoord (v : E × E') :
   refine (φ.prodNegativeEquiv ψ).symm.injective ?_
   rw [LinearEquiv.symm_apply_apply]
   funext i
-  rw [prodNegativeEquiv_symm_apply, negativeCoord_apply, prod_coord_apply]
+  rw [prodNegativeEquiv_symm_apply, MorseBottChart.negativeCoord_apply, prod_coord_apply]
   have h := φ.sumMap_val_prodNegativeWeightEquiv ψ i
   rcases hi : φ.prodNegativeWeightEquiv ψ i with j | j <;> rw [hi] at h <;> simp [← h]
 

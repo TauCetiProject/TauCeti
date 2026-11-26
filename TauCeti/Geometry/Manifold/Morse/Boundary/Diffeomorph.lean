@@ -103,7 +103,7 @@ variable {x : M} (φ : MorseChart E f' (σ x))
 @[simp]
 theorem pullback_negativeCoord : (φ.pullback hf).negativeCoord = φ.negativeCoord := by
   ext v i
-  exact (negativeCoord_apply _ v i).trans (negativeCoord_apply φ v i).symm
+  exact (MorseBottChart.negativeCoord_apply _ v i).trans (φ.negativeCoord_apply v i).symm
 
 /-- The pullback keeps the extension by zero of the coordinates of negative weight. -/
 @[simp]
