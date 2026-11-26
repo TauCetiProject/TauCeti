@@ -68,11 +68,7 @@ theorem annihilator_flat_baseChange [Module.Flat R S] [Module.Finite R M] :
     Module.annihilator S (S ⊗[R] M) =
       (Module.annihilator R M).map (algebraMap R S) := by
   obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin (R := R) (M := M)
-  have hbase : Submodule.span S (Set.range fun i ↦ (1 : S) ⊗ₜ[R] g i) = ⊤ := by
-    simpa [Submodule.baseChange_span, ← Set.range_comp, Function.comp_def,
-      TensorProduct.mk_apply] using
-      congrArg (Submodule.baseChange S) hg
-  rw [← Submodule.annihilator_top, ← hbase,
+  rw [← Submodule.annihilator_top, ← span_one_tmul_eq_top (A := S) hg,
     annihilator_flat_baseChange_generators, hg, Submodule.annihilator_top]
 
 /-- Flat scalar extension preserves the annihilator of the element `1 ⊗ₜ m`.
