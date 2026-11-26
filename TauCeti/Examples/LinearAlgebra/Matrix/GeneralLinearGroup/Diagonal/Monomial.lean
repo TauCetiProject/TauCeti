@@ -17,7 +17,7 @@ monomial subgroup. Both contain `-1`, so their projective indices are their indi
 `[GL₂(𝔽₁₃) : ±C_s⁺(13)] = 91` and `[GL₂(𝔽₁₃) : ±C_s(13)] = 182`. At `ℓ = 2` the monomial
 subgroup has order `2` and index `3`, while the normalizer of the (trivial) split Cartan
 subgroup is all of `GL₂(𝔽₂)`, of order `6`. The determinant is surjective on `C_s(13)` and
-`C_s⁺(13)`.
+`C_s⁺(13)`, and `C_s(13)` has index `2` in `C_s⁺(13)`.
 -/
 
 public section
@@ -27,11 +27,6 @@ open TauCeti
 namespace TauCeti.MonomialGLExamples
 
 instance : Fact (Nat.Prime 13) := ⟨by decide⟩
-
-/-- `𝔽₂` has a single unit. -/
-instance : Subsingleton (ZMod 2)ˣ :=
-  ⟨fun a b ↦ Units.ext ((by decide : ∀ x y : ZMod 2, x ≠ 0 → y ≠ 0 → x = y) _ _
-    a.ne_zero b.ne_zero)⟩
 
 /-- `[GL₂(𝔽₁₃) : ±C_s⁺(13)] = 91`. -/
 example : (monomialGL (ZMod 13) 2).projectiveIndex = 91 := by
@@ -44,6 +39,10 @@ example : (monomialGL (ZMod 13) 2).projectiveIndex = 91 := by
 example : (diagonalTorus (ZMod 13) 2).projectiveIndex = 182 := by
   rw [Subgroup.projectiveIndex_eq_index neg_one_mem_diagonalTorus, index_diagonalTorus_two,
     Nat.card_zmod]
+
+/-- `C_s(13)` has index `2` in `C_s⁺(13)`. -/
+example : (diagonalTorus (ZMod 13) 2).relIndex (monomialGL (ZMod 13) 2) = 2 :=
+  relIndex_diagonalTorus_monomialGL (ZMod 13) 2
 
 /-- At `ℓ = 2` the monomial subgroup has order `2`. -/
 example : Nat.card (monomialGL (ZMod 2) 2) = 2 := by
@@ -60,6 +59,10 @@ example : (monomialGL (ZMod 2) 2).index = 3 := by
 `6`, so it is not the monomial subgroup. -/
 example : Subgroup.normalizer (diagonalTorus (ZMod 2) 2 : Set (GL (Fin 2) (ZMod 2))) = ⊤ ∧
     Nat.card (GL (Fin 2) (ZMod 2)) = 6 := by
+  -- `𝔽₂` has a single unit.
+  have : Subsingleton (ZMod 2)ˣ :=
+    ⟨fun a b ↦ Units.ext ((by decide : ∀ x y : ZMod 2, x ≠ 0 → y ≠ 0 → x = y) _ _
+      a.ne_zero b.ne_zero)⟩
   refine ⟨?_, natCard_GL_fin_two_of_card_eq_two (Nat.card_zmod 2)⟩
   rw [diagonalTorus_eq_bot]
   exact Subgroup.normalizer_eq_top_iff.2 Subgroup.normal_bot

@@ -21,8 +21,9 @@ and its normalizer is all of `GLₙ(𝔽₂)`, while the monomial subgroup is th
 matrices.
 
 Over a nontrivial semiring the factorization `g = diagGL d * permutationGL σ` is unique
-(`TauCeti.diagGL_mul_permutationGL_injective`), so over a field with `q` elements the monomial
-subgroup has `n! (q - 1)ⁿ` elements (`TauCeti.natCard_monomialGL`).
+(`TauCeti.diagGL_mul_permutationGL_injective`), so over a division semiring with `q` elements the
+monomial subgroup has `n! (q - 1)ⁿ` elements (`TauCeti.natCard_monomialGL`) and contains the
+diagonal torus with index `n!` (`TauCeti.relIndex_diagonalTorus_monomialGL`).
 
 In rank two the diagonal torus is the split Cartan subgroup `C_s` of `GL₂(𝔽_q)` and the monomial
 subgroup, the matrices that are diagonal or antidiagonal, is the subgroup `C_s⁺` stabilizing the
@@ -33,13 +34,13 @@ and the determinant is surjective on both (`TauCeti.map_det_diagonalTorus`,
 
 ## Main declarations
 
-* `TauCeti.monomialGL k n`: the monomial subgroup, with `TauCeti.mem_monomialGL_iff`.
+* `TauCeti.monomialGL k n`: the monomial subgroup, with `TauCeti.mem_monomialGL_iff` and the
+  entrywise criterion `TauCeti.mem_monomialGL_iff_exists_perm`.
 * `TauCeti.diagonalTorus_le_monomialGL`, `TauCeti.permutationGL_mem_monomialGL`,
   `TauCeti.monomialGL_le_normalizer`, `TauCeti.normalizer_diagonalTorus_eq_monomialGL`.
-* `TauCeti.diagGL_mul_permutationGL_injective`, `TauCeti.natCard_monomialGL`.
-* `TauCeti.index_diagonalTorus_two`, `TauCeti.two_mul_index_monomialGL_two`,
-  `TauCeti.relIndex_diagonalTorus_monomialGL_two`, `TauCeti.neg_one_mem_diagonalTorus`,
-  `TauCeti.neg_one_mem_monomialGL`, `TauCeti.map_det_diagonalTorus`, `TauCeti.map_det_monomialGL`.
+* `TauCeti.natCard_monomialGL`, `TauCeti.relIndex_diagonalTorus_monomialGL`.
+* `TauCeti.two_mul_index_monomialGL_two`, `TauCeti.neg_one_mem_monomialGL`,
+  `TauCeti.map_det_monomialGL`.
 
 ## References
 
@@ -76,9 +77,8 @@ def monomialGL : Subgroup (GL (Fin n) k) where
     group
   inv_mem' := by
     rintro _ ⟨d, σ, rfl⟩
-    refine ⟨fun i ↦ (d (σ i))⁻¹, σ⁻¹, ?_⟩
+    refine ⟨(fun i ↦ d (σ i))⁻¹, σ⁻¹, ?_⟩
     rw [diagGL_mul_permutationGL, _root_.mul_inv_rev, ← map_inv, ← map_inv]
-    rfl
 
 /-- Membership in the monomial subgroup. -/
 theorem mem_monomialGL_iff {g : GL (Fin n) k} :
@@ -87,15 +87,18 @@ theorem mem_monomialGL_iff {g : GL (Fin n) k} :
   Iff.rfl
 
 /-- A diagonal matrix followed by a permutation matrix is monomial. -/
+@[simp]
 theorem diagGL_mul_permutationGL_mem_monomialGL (d : Fin n → kˣ) (σ : Equiv.Perm (Fin n)) :
     diagGL d * permutationGL σ ∈ monomialGL k n :=
   ⟨d, σ, rfl⟩
 
 /-- Diagonal matrices of units are monomial. -/
+@[simp]
 theorem diagGL_mem_monomialGL (d : Fin n → kˣ) : diagGL d ∈ monomialGL k n :=
   ⟨d, 1, by simp⟩
 
 /-- Permutation matrices are monomial. -/
+@[simp]
 theorem permutationGL_mem_monomialGL (σ : Equiv.Perm (Fin n)) :
     permutationGL σ ∈ monomialGL k n :=
   ⟨1, σ, by simp⟩
@@ -120,22 +123,18 @@ theorem coe_diagGL_mul_permutationGL_apply (d : Fin n → kˣ) (σ : Equiv.Perm 
       if i = σ j then (d i : k) else 0 := by
   rw [coe_mul_permutationGL_apply, diagGL_coe, Matrix.diagonal_apply]
 
-/-- **Uniqueness of the monomial factorization** over a nontrivial semiring. -/
-theorem diagGL_mul_permutationGL_injective [Nontrivial k] :
-    Function.Injective fun p : (Fin n → kˣ) × Equiv.Perm (Fin n) ↦
-      (diagGL p.1 * permutationGL p.2 : GL (Fin n) k) := by
-  rintro ⟨d, σ⟩ ⟨d', σ'⟩ h
-  have h' (i j : Fin n) := congrArg (fun g : GL (Fin n) k ↦ (g : Matrix (Fin n) (Fin n) k) i j) h
-  simp only [coe_diagGL_mul_permutationGL_apply] at h'
-  have hσ : σ = σ' := by
-    ext j
-    by_contra hne
-    have := h' (σ j) j
-    rw [ite_eq_left (rfl : σ j = σ j), ite_eq_right (fun h ↦ hne (congrArg Fin.val h))] at this
-    exact (d (σ j)).ne_zero this
-  subst hσ
-  refine Prod.ext (funext fun i ↦ Units.ext ?_) rfl
-  simpa using h' i (σ⁻¹ i)
+/-- **The entrywise membership criterion**: an invertible matrix is monomial exactly when, for
+some permutation `σ`, its `(i, j)` entry vanishes unless `i = σ j`. -/
+theorem mem_monomialGL_iff_exists_perm {g : GL (Fin n) k} :
+    g ∈ monomialGL k n ↔
+      ∃ σ : Equiv.Perm (Fin n), ∀ i j, i ≠ σ j → (g : Matrix (Fin n) (Fin n) k) i j = 0 := by
+  constructor
+  · rintro ⟨d, σ, rfl⟩
+    exact ⟨σ, fun i j hij ↦ by simp [hij]⟩
+  · rintro ⟨σ, hσ⟩
+    refine exists_eq_diagGL_mul_permutationGL_of_forall_eq_of_ne_zero_of_ne_zero
+      fun i j l hj hl ↦ σ.injective ?_
+    rw [← not_ne_iff.1 (mt (hσ i j) hj), ← not_ne_iff.1 (mt (hσ i l) hl)]
 
 end Semiring
 
@@ -152,12 +151,12 @@ theorem normalizer_diagonalTorus_eq_monomialGL :
 
 end Normalizer
 
-section Field
+section DivisionSemiring
 
-variable (k n) [Field k]
+variable (k n) [DivisionSemiring k]
 
-/-- **The order of the monomial subgroup**: over a field with `q` elements it has `n! (q - 1)ⁿ`
-elements. -/
+/-- **The order of the monomial subgroup**: over a division semiring with `q` elements it has
+`n! (q - 1)ⁿ` elements. -/
 theorem natCard_monomialGL :
     Nat.card (monomialGL k n) = n.factorial * (Nat.card k - 1) ^ n := by
   let e : (Fin n → kˣ) × Equiv.Perm (Fin n) ≃ monomialGL k n :=
@@ -168,15 +167,22 @@ theorem natCard_monomialGL :
     Nat.card_fin]
   exact mul_comm _ _
 
-/-! ### Rank two: the split Cartan subgroup and its normalizer -/
+/-- **The index of the diagonal torus in the monomial subgroup** is `n!`, the number of
+permutation matrices, over a finite division semiring. -/
+theorem relIndex_diagonalTorus_monomialGL [Finite k] :
+    (diagonalTorus k n).relIndex (monomialGL k n) = n.factorial := by
+  have hq : 0 < (Nat.card k - 1) ^ n := pow_pos (Nat.sub_pos_of_lt Finite.one_lt_card) n
+  have h := (diagonalTorus k n).relIndex_mul_card (monomialGL k n)
+  rw [inf_of_le_left diagonalTorus_le_monomialGL, natCard_diagonalTorus, natCard_monomialGL] at h
+  exact Nat.eq_of_mul_eq_mul_right hq h
 
-/-- **The index of the split Cartan subgroup** of `GL₂(𝔽_q)` is `q(q + 1)`. -/
-theorem index_diagonalTorus_two [Finite k] :
-    (diagonalTorus k 2).index = Nat.card k * (Nat.card k + 1) := by
-  have hq : 0 < (Nat.card k - 1) ^ 2 := pow_pos (Nat.sub_pos_of_lt Finite.one_lt_card) 2
-  have h := (diagonalTorus k 2).card_mul_index
-  rw [natCard_diagonalTorus, natCard_GL_fin_two] at h
-  exact Nat.eq_of_mul_eq_mul_left hq h
+end DivisionSemiring
+
+section Field
+
+variable (k) [Field k]
+
+/-! ### Rank two: the split Cartan subgroups `C_s` and `C_s⁺` -/
 
 /-- **The index of the monomial subgroup** `C_s⁺` of `GL₂(𝔽_q)` is `q(q + 1) / 2`. -/
 theorem two_mul_index_monomialGL_two [Finite k] :
@@ -189,36 +195,22 @@ theorem two_mul_index_monomialGL_two [Finite k] :
   simp only [Nat.factorial_two]
   ring
 
-/-- The split Cartan subgroup has index two in the monomial subgroup of `GL₂(𝔽_q)`. -/
-theorem relIndex_diagonalTorus_monomialGL_two [Finite k] :
-    (diagonalTorus k 2).relIndex (monomialGL k 2) = 2 := by
-  have hpos : 0 < (monomialGL k 2).index := Subgroup.index_pos
-  have h := Subgroup.relIndex_mul_index (diagonalTorus_le_monomialGL (k := k) (n := 2))
-  rw [index_diagonalTorus_two, ← two_mul_index_monomialGL_two, mul_comm 2] at h
-  exact Nat.eq_of_mul_eq_mul_right hpos (h.trans (mul_comm _ _))
-
 end Field
+
+section Ring
+
+variable [Ring k]
+
+/-- `-1` lies in the monomial subgroup. -/
+@[simp]
+theorem neg_one_mem_monomialGL : (-1 : GL (Fin n) k) ∈ monomialGL k n :=
+  diagonalTorus_le_monomialGL neg_one_mem_diagonalTorus
+
+end Ring
 
 section CommRing
 
 variable [CommRing k]
-
-/-- `-1` lies in the diagonal torus. -/
-theorem neg_one_mem_diagonalTorus : (-1 : GL (Fin n) k) ∈ diagonalTorus k n :=
-  mem_diagonalTorus_iff_exists_diagGL.2 ⟨fun _ ↦ -1, by
-    ext i j
-    by_cases h : i = j <;> simp [h]⟩
-
-/-- `-1` lies in the monomial subgroup. -/
-theorem neg_one_mem_monomialGL : (-1 : GL (Fin n) k) ∈ monomialGL k n :=
-  diagonalTorus_le_monomialGL neg_one_mem_diagonalTorus
-
-/-- **The determinant is surjective on the diagonal torus** of `GLₙ` for `n ≥ 1`. -/
-theorem map_det_diagonalTorus [NeZero n] :
-    (diagonalTorus k n).map Matrix.GeneralLinearGroup.det = ⊤ := by
-  refine eq_top_iff.2 fun u _ ↦ ⟨diagGL (Function.update 1 0 u), ?_, ?_⟩
-  · exact mem_diagonalTorus_iff_exists_diagGL.2 ⟨_, rfl⟩
-  · simp [det_diagGL, Finset.prod_update_of_mem]
 
 /-- **The determinant is surjective on the monomial subgroup** of `GLₙ` for `n ≥ 1`. -/
 theorem map_det_monomialGL [NeZero n] :

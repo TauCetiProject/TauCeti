@@ -21,6 +21,8 @@ public import Mathlib.SetTheory.Cardinal.Finite
 -- `Nat.card_units`, the number of units of a `GroupWithZero`.
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
 import TauCeti.LinearAlgebra.Matrix.Diagonal
+-- `TauCeti.natCard_GL_fin_two`, the order of `GL₂` over a field.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 
 /-!
 # Diagonal elements of the general linear group, and the diagonal torus
@@ -71,6 +73,10 @@ element (`TauCeti.diagGL_const`).
   relabelling its entries.
 * `TauCeti.natCard_diagonalTorus`: the torus has `(q - 1)ⁿ` elements over a division semiring
   with `q` elements.
+* `TauCeti.index_diagonalTorus_two`: in `GL₂(𝔽_q)` the torus, the split Cartan subgroup, has
+  index `q(q + 1)`.
+* `TauCeti.neg_one_mem_diagonalTorus` and `TauCeti.map_det_diagonalTorus`: the torus contains `-1`,
+  and the determinant maps it onto `kˣ` when `n ≥ 1`.
 * `TauCeti.centralizer_diagonalTorus`: the diagonal torus is its own centralizer.
 * `TauCeti.mem_centralizer_range_iff_apply_eq_zero_of_coe_eq_diagGL` and
   `TauCeti.mem_centralizer_range_iff_isDiag_of_coe_eq_diagGL`: inside any subgroup, an element
@@ -235,6 +241,14 @@ theorem natCard_diagonalTorus (k : Type u) [DivisionSemiring k] (n : ℕ) :
   rw [← Nat.card_congr (diagonalTorusEquiv k n).toEquiv, Nat.card_fun, Nat.card_units,
     Nat.card_fin]
 
+/-- **The index of the split Cartan subgroup** of `GL₂(𝔽_q)` is `q(q + 1)`. -/
+theorem index_diagonalTorus_two (k : Type u) [Field k] [Finite k] :
+    (diagonalTorus k 2).index = Nat.card k * (Nat.card k + 1) := by
+  have hq : 0 < (Nat.card k - 1) ^ 2 := pow_pos (Nat.sub_pos_of_lt Finite.one_lt_card) 2
+  have h := (diagonalTorus k 2).card_mul_index
+  rw [natCard_diagonalTorus, natCard_GL_fin_two] at h
+  exact Nat.eq_of_mul_eq_mul_left hq h
+
 /-- An element centralizing the diagonal torus commutes, as a matrix, with every diagonal matrix
 of units. -/
 theorem commute_diagonal_of_mem_centralizer {g : GL (Fin n) k}
@@ -381,6 +395,18 @@ theorem coe_inv_of_coe_eq_diagonal {g : GL ι k} {d : ι → k}
 
 end DivisionRing
 
+section Ring
+
+variable [Ring k]
+
+/-- `-1` lies in the diagonal torus. -/
+theorem neg_one_mem_diagonalTorus : (-1 : GL (Fin n) k) ∈ diagonalTorus k n :=
+  mem_diagonalTorus_iff_exists_diagGL.2 ⟨fun _ ↦ -1, by
+    ext i j
+    by_cases h : i = j <;> simp [h]⟩
+
+end Ring
+
 variable [CommRing k]
 
 /-- The determinant of a diagonal matrix is the product of its diagonal entries. -/
@@ -473,5 +499,12 @@ theorem det_of_mem_diagonalTorus {g : GL (Fin n) k} (hg : g ∈ diagonalTorus k 
     (Matrix.GeneralLinearGroup.det g : k) = ∏ i, (g : Matrix (Fin n) (Fin n) k) i i := by
   obtain ⟨t, rfl⟩ := hg
   simp
+
+/-- **The determinant is surjective on the diagonal torus** of `GLₙ` for `n ≥ 1`. -/
+theorem map_det_diagonalTorus [NeZero n] :
+    (diagonalTorus k n).map Matrix.GeneralLinearGroup.det = ⊤ := by
+  refine eq_top_iff.2 fun u _ ↦ ⟨diagGL (Function.update 1 0 u), ?_, ?_⟩
+  · exact mem_diagonalTorus_iff_exists_diagGL.2 ⟨_, rfl⟩
+  · simp [det_diagGL, Finset.prod_update_of_mem]
 
 end TauCeti
