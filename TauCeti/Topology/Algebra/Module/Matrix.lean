@@ -24,7 +24,8 @@ A matrix `A : Matrix κ ι R` acts on vectors `x : ι → M` with entries in an 
 which `R` acts additively by `k ↦ ∑ i, A k i • x i`. When `M` is a topological additive monoid on
 which each scalar acts continuously, this is the continuous additive map
 `Matrix.smulVecHom A M : (ι → M) →ₜ+ (κ → M)`. When `M` is an `R`-module it is functorial in the
-matrix (`Matrix.smulVecHom_one`, `Matrix.smulVecHom_mul`). For `M = R` it is `Matrix.mulVec`
+matrix (`Matrix.smulVecHom_one`, `Matrix.smulVecHom_mul`), so the iterates of the map of a square
+matrix are the maps of its powers (`Matrix.iterate_smulVecHom`). For `M = R` it is `Matrix.mulVec`
 (`Matrix.smulVecHom_self_apply`); over a topological commutative semiring, bundling linearity as
 well gives `Matrix.mulVecCLM : (ι → R) →L[R] (κ → R)`, which varies continuously with the matrix
 entries over any normed field (`Matrix.continuous_mulVecCLM`, `Matrix.continuousOn_mulVecCLM`).
@@ -97,6 +98,14 @@ theorem smulVecHom_mul [Fintype κ] (B : Matrix μ κ R) :
     (B * A).smulVecHom M = (B.smulVecHom M).comp (A.smulVecHom M) := by
   ext x m
   simp only [smulVecHom_apply, ContinuousAddMonoidHom.comp_toFun, Matrix.sum_mul_apply_smul]
+
+/-- The iterates of the map induced by a square matrix are the maps induced by its powers. -/
+theorem iterate_smulVecHom [DecidableEq ι] (A : Matrix ι ι R) (n : ℕ) :
+    (⇑(A.smulVecHom M))^[n] = ⇑((A ^ n).smulVecHom M) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Function.iterate_succ, ih, pow_succ, smulVecHom_mul, ContinuousAddMonoidHom.coe_comp]
 
 end Module
 
