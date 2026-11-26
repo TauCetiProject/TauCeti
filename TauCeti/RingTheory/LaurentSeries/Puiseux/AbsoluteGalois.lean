@@ -107,8 +107,9 @@ noncomputable def galEquivTateModuleOfAlgEquiv (e : puiseuxField K ≃ₐ[K⸨X�
 @[simp]
 theorem galEquivTateModuleOfAlgEquiv_apply (e : puiseuxField K ≃ₐ[K⸨X⸩] L)
     (σ : Gal(L/K⸨X⸩)) :
-    galEquivTateModuleOfAlgEquiv e σ = galEquivTateModule K (e.symm.autCongr σ) :=
-  (rfl)
+    galEquivTateModuleOfAlgEquiv e σ = galEquivTateModule K (e.symm.autCongr σ) := by
+  rw [galEquivTateModuleOfAlgEquiv, ContinuousMulEquiv.trans_apply,
+    AlgEquiv.autCongrContinuousMulEquiv_apply]
 
 /-- The inverse of `galEquivTateModuleOfAlgEquiv e` is the Kummer action conjugated by `e`. -/
 @[simp]
@@ -123,7 +124,9 @@ theorem galEquivTateModuleOfAlgEquiv_symm_apply (e : puiseuxField K ≃ₐ[K⸨X
 theorem galEquivTateModuleOfAlgEquiv_refl :
     galEquivTateModuleOfAlgEquiv (AlgEquiv.refl : puiseuxField K ≃ₐ[K⸨X⸩] puiseuxField K) =
       galEquivTateModule K :=
-  (rfl)
+  DFunLike.ext _ _ fun σ ↦ by
+    rw [galEquivTateModuleOfAlgEquiv_apply, AlgEquiv.refl_symm, AlgEquiv.autCongr_refl,
+      MulEquiv.refl_apply]
 
 /-- **Independence of the model.** The identification `Gal(L/K⸨X⸩) ≃ₜ* lim_n μₙ(K)` does not
 depend on the isomorphism `e : puiseuxField K ≃ₐ[K⸨X⸩] L` it is transported along. -/
@@ -195,7 +198,8 @@ theorem absoluteGaloisGroupEquivTateModule_apply
     absoluteGaloisGroupEquivTateModule K σ = galEquivTateModule K (e.symm.autCongr σ) :=
   -- `Field.absoluteGaloisGroup K⸨X⸩` is by definition `Gal(AlgebraicClosure K⸨X⸩/K⸨X⸩)`, the
   -- domain of `galEquivTateModuleOfAlgEquiv e`, so the two maps are compared pointwise.
-  DFunLike.congr_fun (galEquivTateModuleOfAlgEquiv_eq _ e) σ
+  (DFunLike.congr_fun (galEquivTateModuleOfAlgEquiv_eq _ e) σ).trans
+    (galEquivTateModuleOfAlgEquiv_apply e σ)
 
 /-- **The characters `θₙ` on the algebraic closure.** Let `π` be a uniformizer of `K⸨X⸩` and `α`
 an `n`-th root of `π` in `AlgebraicClosure K⸨X⸩`. An automorphism `σ` of the algebraic closure

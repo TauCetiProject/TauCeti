@@ -323,7 +323,7 @@ closure `Ω` of `K`, conjugation by the `K`-isomorphism `IsSepClosure.equiv` bet
 `SeparableClosure K` and `Ω` identifies `Gal(Ω/K)` with `AbsoluteGaloisGroup K` as topological
 groups. This lets results stated for `AbsoluteGaloisGroup K` be used for a concrete separable
 closure, such as `ℂ` over `ℝ`. -/
-@[expose] def galEquivAbsoluteGaloisGroup : Gal(Ω/K) ≃ₜ* AbsoluteGaloisGroup K :=
+def galEquivAbsoluteGaloisGroup : Gal(Ω/K) ≃ₜ* AbsoluteGaloisGroup K :=
   (equiv K (SeparableClosure K) Ω).symm.autCongrContinuousMulEquiv
 
 /-- `galEquivAbsoluteGaloisGroup K Ω σ` acts on `SeparableClosure K` as `σ` conjugated by
@@ -331,15 +331,18 @@ closure, such as `ℂ` over `ℝ`. -/
 @[simp]
 theorem galEquivAbsoluteGaloisGroup_apply (σ : Gal(Ω/K)) (x : SeparableClosure K) :
     galEquivAbsoluteGaloisGroup K Ω σ x =
-      (equiv K (SeparableClosure K) Ω).symm (σ (equiv K (SeparableClosure K) Ω x)) :=
-  (rfl)
+      (equiv K (SeparableClosure K) Ω).symm (σ (equiv K (SeparableClosure K) Ω x)) := by
+  rw [galEquivAbsoluteGaloisGroup, AlgEquiv.autCongrContinuousMulEquiv_apply,
+    AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.trans_apply, AlgEquiv.symm_symm]
 
 /-- The inverse of `galEquivAbsoluteGaloisGroup K Ω` acts on `Ω` as `τ` conjugated by the inverse
 of `IsSepClosure.equiv`. -/
 @[simp]
 theorem galEquivAbsoluteGaloisGroup_symm_apply (τ : AbsoluteGaloisGroup K) (x : Ω) :
     (galEquivAbsoluteGaloisGroup K Ω).symm τ x =
-      equiv K (SeparableClosure K) Ω (τ ((equiv K (SeparableClosure K) Ω).symm x)) :=
-  (rfl)
+      equiv K (SeparableClosure K) Ω (τ ((equiv K (SeparableClosure K) Ω).symm x)) := by
+  rw [galEquivAbsoluteGaloisGroup, AlgEquiv.autCongrContinuousMulEquiv_symm,
+    AlgEquiv.autCongrContinuousMulEquiv_apply, AlgEquiv.autCongr_apply, AlgEquiv.trans_apply,
+    AlgEquiv.trans_apply, AlgEquiv.symm_symm]
 
 end IsSepClosure

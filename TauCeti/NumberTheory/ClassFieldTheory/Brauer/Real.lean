@@ -79,9 +79,8 @@ def realBrEquivRelative :
     apply Units.ext
     -- The action on units is evaluation by the field automorphism. After taking values,
     -- `Units.mapEquiv` and the additive type tags reduce to the underlying field map.
-    change eC ((eC.autCongr.symm h) (m.toMul : SeparableClosure ℝ)) =
-      h (eC (m.toMul : SeparableClosure ℝ))
-    simp [AlgEquiv.autCongr_symm, AlgEquiv.autCongr_apply]
+    change eC (φ h (m.toMul : SeparableClosure ℝ)) = h (eC (m.toMul : SeparableClosure ℝ))
+    simp [φ, eC]
   exact (unitsRepH2Equiv ℝ).symm.trans
     ((ContCohomology.explicitMap2Equiv (AbsoluteGaloisGroup ℝ) (UnitsCoeff ℝ)
       (ℂ ≃ₐ[ℝ] ℂ) (Additive ℂˣ) φ e continuous_of_discreteTopology

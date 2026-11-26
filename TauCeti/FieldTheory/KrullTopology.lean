@@ -171,7 +171,7 @@ theorem AlgEquiv.continuous_autCongr {L' : Type*} [Field L'] [Algebra K L'] (e :
 `e : L ≃ₐ[K] L'` of field extensions of `K` conjugates `Gal(L/K)` onto `Gal(L'/K)`,
 `σ ↦ e ∘ σ ∘ e⁻¹`, and this is a homeomorphism for the Krull topologies
 (`AlgEquiv.continuous_autCongr`). It is `AlgEquiv.autCongr` with its continuity recorded. -/
-@[expose] def AlgEquiv.autCongrContinuousMulEquiv {L' : Type*} [Field L'] [Algebra K L']
+def AlgEquiv.autCongrContinuousMulEquiv {L' : Type*} [Field L'] [Algebra K L']
     (e : L ≃ₐ[K] L') : Gal(L/K) ≃ₜ* Gal(L'/K) where
   toMulEquiv := e.autCongr
   continuous_toFun := e.continuous_autCongr
