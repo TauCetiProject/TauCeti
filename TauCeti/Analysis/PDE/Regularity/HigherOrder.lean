@@ -314,23 +314,6 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_se
 
 /-! ### Differentiating the equation with differentiable coefficients -/
 
-omit [mu.IsAddHaarMeasure] in
-/-- A coefficient field whose entries have bounded derivatives on `Ω`, of any order, has an
-essentially bounded energy integrand on `Ω`: its entries are continuous and bounded there. -/
-private theorem memLp_energyIntegrand_of_bddDerivOn {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {k : ℕ} (ha : ∀ i j, BddDerivOn ℝ k (fun x => a x i j) (Omega : Set (EuclideanSpace ℝ ι))) :
-    MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) := by
-  choose C hC using fun i j => (ha i j).exists_bound
-  exact memLp_energyIntegrand_of_continuousOn_of_norm_le (b := 0) (c := 0) (beta := 0)
-    (gamma := 0) (Lam := ∑ i, ∑ j, C i j)
-    (continuousOn_pi.2 fun i => continuousOn_pi.2 fun j => (ha i j).contDiffOn.continuousOn)
-    continuousOn_const continuousOn_const
-    (fun x hx => (norm_matrixBilinearForm_le_sum_abs (a x)).trans
-      (Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => by
-        simpa only [norm_iteratedFDeriv_zero, Real.norm_eq_abs] using
-          hC i j 0 (Nat.zero_le _) x hx))
-    (fun _ _ => by simp) (fun _ _ => by simp)
-
 /-- **The derivative of a weak solution with coefficients with bounded derivatives.** Let the
 entries of `a` be of class `C^{k+2}` on `Ω` with derivatives of order at most `k + 2` bounded on
 `Ω`, let `F ∈ W^{k+1,2}(Ω)`, and let `u ∈ H^{k+2}(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = F` against

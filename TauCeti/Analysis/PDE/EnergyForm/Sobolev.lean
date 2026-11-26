@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ContDiff.BoundedDerivatives
 public import TauCeti.Analysis.PDE.EnergyForm.Integrability
 public import TauCeti.Analysis.PDE.EnergyForm.Integrated.Basic
 public import TauCeti.Analysis.PDE.EnergyForm.Integrated.Symmetry
@@ -360,6 +361,22 @@ theorem memLp_energyIntegrand_of_continuousOn_of_norm_le
       simpa [Real.norm_eq_abs] using (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le
         ((hLam x hx).trans (le_max_left _ _)) le_rfl le_rfl)
     hbeta hgamma
+
+/-- A coefficient field whose entries have bounded derivatives on `Ω`, of any order, defines an
+essentially bounded field of drift- and mass-free pointwise energy forms on `Ω`: its entries are
+continuous and bounded there. -/
+theorem memLp_energyIntegrand_of_bddDerivOn {k : ℕ}
+    (ha : ∀ i j, BddDerivOn ℝ k (fun x => a x i j) (Omega : Set (EuclideanSpace ℝ ι))) :
+    MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) := by
+  choose C hC using fun i j => (ha i j).exists_norm_le
+  exact memLp_energyIntegrand_of_continuousOn_of_norm_le (b := 0) (c := 0) (beta := 0)
+    (gamma := 0) (Lam := ∑ i, ∑ j, C i j)
+    (continuousOn_pi.2 fun i => continuousOn_pi.2 fun j => (ha i j).contDiffOn.continuousOn)
+    continuousOn_const continuousOn_const
+    (fun x hx => (norm_matrixBilinearForm_le_sum_abs (a x)).trans
+      (Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => by
+        simpa only [Real.norm_eq_abs] using hC i j x hx))
+    (fun _ _ => by simp) (fun _ _ => by simp)
 
 variable [mu.IsAddHaarMeasure]
 

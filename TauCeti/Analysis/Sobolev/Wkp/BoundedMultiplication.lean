@@ -50,6 +50,18 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [mu.IsAddHaarMeasure] [Fact (1 ≤ p)] in
+/-- Multiplication by a function continuous and bounded on `Ω` preserves `Lᵖ(Ω)`. -/
+private theorem exists_coeFn_ae_eq_mul_of_continuousOn {phi : E → ℝ} {M : ℝ}
+    (hphi : ContinuousOn phi Omega) (hM : ∀ x ∈ (Omega : Set E), ‖phi x‖ ≤ M)
+    (f : Lp ℝ p (mu.restrict Omega)) :
+    ∃ g : Lp ℝ p (mu.restrict Omega), (g : E → ℝ) =ᵐ[mu.restrict Omega]
+      fun x => phi x * f x := by
+  have h : MemLp (fun x => phi x * f x) p (mu.restrict Omega) :=
+    (memLp_top_of_bound (hphi.aestronglyMeasurable Omega.isOpen.measurableSet) M
+      ((ae_restrict_mem Omega.isOpen.measurableSet).mono hM)).fun_mul (Lp.memLp f)
+  exact ⟨h.toLp _, h.coeFn_toLp⟩
+
 /-- **Multiplication by a function with bounded derivatives in `W^{k,p}`.** Let `ψ` be `Cᵏ` on
 the open set `Ω`, with every derivative of order at most `k` bounded on `Ω`. If
 `u ∈ W^{k,p}(Ω)`, then `ψ u` lies in `W^{k,p}(Ω)`: some element of `W^{k,p}(Ω)` has value `ψ u`
@@ -62,27 +74,16 @@ theorem exists_value_ae_eq_mul_of_bddDerivOn {k : ℕ} {psi : E → ℝ}
     (hpsi : BddDerivOn ℝ k psi Omega) (u : Wkp mu Omega p k) :
     ∃ w : Wkp mu Omega p k, (value k w : E → ℝ) =ᵐ[mu.restrict Omega]
       fun x => psi x * value k u x := by
-  -- A function continuous and bounded on `Ω` preserves `Lᵖ(Ω)` under multiplication.
-  have hLp : ∀ {phi : E → ℝ} {M : ℝ}, ContinuousOn phi Omega →
-      (∀ x ∈ (Omega : Set E), ‖phi x‖ ≤ M) → ∀ f : Lp ℝ p (mu.restrict Omega),
-      ∃ g : Lp ℝ p (mu.restrict Omega), (g : E → ℝ) =ᵐ[mu.restrict Omega]
-        fun x => phi x * f x := fun {phi M} hphi hM f => by
-    have h : MemLp (fun x => phi x * f x) p (mu.restrict Omega) :=
-      (memLp_top_of_bound (hphi.aestronglyMeasurable Omega.isOpen.measurableSet) M
-        ((ae_restrict_mem Omega.isOpen.measurableSet).mono hM)).fun_mul (Lp.memLp f)
-    exact ⟨h.toLp _, h.coeFn_toLp⟩
-  -- In particular `ψ` itself is bounded on `Ω`.
-  have hpsi0 : ∀ {k : ℕ} {psi : E → ℝ}, BddDerivOn ℝ k psi Omega →
-      ∃ M : ℝ, ∀ x ∈ (Omega : Set E), ‖psi x‖ ≤ M := fun h =>
-    h.exists_bound.imp fun _ hC x hx => by
-      simpa only [norm_iteratedFDeriv_zero] using hC 0 (Nat.zero_le _) x hx
   induction k generalizing psi with
   | zero =>
-    obtain ⟨M, hM⟩ := hpsi0 hpsi
-    simpa only [value_zero] using hLp hpsi.contDiffOn.continuousOn hM (value 0 u)
+    -- `ψ` is continuous and bounded on `Ω`, so multiplication by `ψ` preserves `Lᵖ(Ω)`.
+    obtain ⟨M, hM⟩ := hpsi.exists_norm_le
+    simpa only [value_zero] using
+      exists_coeFn_ae_eq_mul_of_continuousOn hpsi.contDiffOn.continuousOn hM (value 0 u)
   | succ k ih =>
-    obtain ⟨M, hM⟩ := hpsi0 hpsi
-    obtain ⟨g, hg⟩ := hLp hpsi.contDiffOn.continuousOn hM (value (k + 1) u)
+    obtain ⟨M, hM⟩ := hpsi.exists_norm_le
+    obtain ⟨g, hg⟩ := exists_coeFn_ae_eq_mul_of_continuousOn hpsi.contDiffOn.continuousOn hM
+      (value (k + 1) u)
     set b := stdOrthonormalBasis ℝ E
     refine (exists_value_eq_of_forall_hasWeakLineDerivOn b g k fun i => ?_).imp
       fun w (hw : value (k + 1) w = g) => hw ▸ hg
@@ -122,14 +123,13 @@ theorem exists_value_eq_of_value_ae_eq_mul {k : ℕ} {rho : E → ℝ}
     rw [hV] at hz
     -- The candidate derivative `q = ρ⁻¹ (∂ᵢ(ρ v) - (∂ᵢρ) v)` lies in `Lᵖ(Ω)`.
     have hinv : ContDiffOn ℝ (k + 1) (fun x => (rho x)⁻¹) Omega := hrho.contDiffOn.inv hne
-    have hq : MemLp (fun x => (rho x)⁻¹ * value k (g - z) x) p (mu.restrict Omega) :=
-      (memLp_top_of_bound (hinv.continuousOn.aestronglyMeasurable Omega.isOpen.measurableSet)
-        lam⁻¹ ((ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx => by
-          rw [norm_inv, Real.norm_of_nonneg (hlam.le.trans (hrl x hx))]
-          exact inv_anti₀ hlam (hrl x hx))).fun_mul (Lp.memLp _)
+    obtain ⟨q, hq⟩ := exists_coeFn_ae_eq_mul_of_continuousOn hinv.continuousOn
+      (M := lam⁻¹) (fun x hx => by
+        rw [norm_inv, Real.norm_of_nonneg (hlam.le.trans (hrl x hx))]
+        exact inv_anti₀ hlam (hrl x hx)) (value k (g - z))
     -- `ρ q = ∂ᵢ(ρ v) - (∂ᵢρ) v` lies in `W^{k,p}(Ω)`, so by induction so does `q`.
-    obtain ⟨d, hdq⟩ := ih (hrho.of_le (Nat.le_succ k)) hrl (hq.toLp _) (g - z) (by
-        filter_upwards [hq.coeFn_toLp, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
+    obtain ⟨d, hdq⟩ := ih (hrho.of_le (Nat.le_succ k)) hrl q (g - z) (by
+        filter_upwards [hq, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
         rw [hx, ← mul_assoc, mul_inv_cancel₀ (hne x hxΩ), one_mul])
     refine ⟨d, ?_⟩
     rw [hdq]
@@ -137,7 +137,7 @@ theorem exists_value_eq_of_value_ae_eq_mul {k : ℕ} {rho : E → ℝ}
     refine (((hg.contDiffOn_smul_of_ne_zero hinv (by simp)).congr_ae ?_).congr_ae_deriv ?_)
     · filter_upwards [hw, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
       rw [smul_eq_mul, hx, ← mul_assoc, inv_mul_cancel₀ (hne x hxΩ), one_mul]
-    · filter_upwards [hq.coeFn_toLp, hw, hz, value_sub_ae k g z,
+    · filter_upwards [hq, hw, hz, value_sub_ae k g z,
         ae_restrict_mem Omega.isOpen.measurableSet] with x hx hwx hzx hsub hxΩ
       have hdx : DifferentiableAt ℝ rho x :=
         ((hrho.contDiffOn x hxΩ).differentiableWithinAt (by simp)).differentiableAt

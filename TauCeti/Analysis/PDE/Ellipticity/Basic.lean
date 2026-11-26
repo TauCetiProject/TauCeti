@@ -474,6 +474,13 @@ lemma abs_dotProduct_coefficientSymmetricPart_mulVec_le {A : Matrix n n ℝ} {La
   exact (div_le_iff₀' two_pos).2 (by
     simpa [Real.norm_eq_abs] using hsum)
 
+/-- A matrix bilinear form in coordinates: `ηᵀ A ξ = ∑ᵢⱼ ηᵢ ξⱼ Aᵢⱼ`. -/
+lemma matrixBilinearForm_apply_eq_sum (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm A η ξ = ∑ i, ∑ j, η i * ξ j * A i j := by
+  classical
+  rw [matrixBilinearForm_apply, ← Matrix.toLinearMap₂'_apply', Matrix.toLinearMap₂'_apply]
+  simp only [smul_eq_mul, mul_assoc]
+
 /-- If the bilinear form of `A` is bounded, `|ηᵀ A ξ| ≤ Λ ‖η‖ ‖ξ‖`, then so is its pairing with
 the coordinates of two linear functionals: `|∑ᵢⱼ Aᵢⱼ L₁(eᵢ) L₂(eⱼ)| ≤ Λ ‖L₁‖ ‖L₂‖`. This bounds
 the first-order cross term `∑ᵢⱼ Aᵢⱼ ∂ᵢη ∂ⱼu` of the principal part of a product. -/
@@ -493,14 +500,8 @@ lemma abs_sum_mul_apply_single_mul_apply_single_le [DecidableEq n] {A : Matrix n
   have h := hA X Y
   rw [LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map] at h
   convert h using 2
-  simp only [hX, hY, dotProduct, mulVec, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-
-/-- A matrix bilinear form in coordinates: `ηᵀ A ξ = ∑ᵢⱼ ηᵢ ξⱼ Aᵢⱼ`. -/
-lemma matrixBilinearForm_apply_eq_sum (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
-    matrixBilinearForm A η ξ = ∑ i, ∑ j, η i * ξ j * A i j := by
-  simp only [matrixBilinearForm_apply, dotProduct, mulVec, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+  rw [← matrixBilinearForm_apply, matrixBilinearForm_apply_eq_sum]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by rw [hX, hY]; ring
 
 end BilinearForm
 
@@ -1390,11 +1391,8 @@ theorem exists_lipschitzWith_matrixBilinearForm_eqOn {X : Type*} [PseudoMetricSp
       LipschitzWith K' (fun x => matrixBilinearForm (abar x)) := by
   classical
   -- Extend the entries of `a` from `S` to Lipschitz functions on the whole space.
-  have hent : ∀ i j, LipschitzOnWith (K * ‖EuclideanSpace.single i (1 : ℝ)‖₊ *
-      ‖EuclideanSpace.single j (1 : ℝ)‖₊) (fun x => a x i j) S := fun i j => by
-    simpa [matrixBilinearForm_apply] using lipschitzOnWith_matrixBilinearForm_apply_apply hK
-      (EuclideanSpace.single i (1 : ℝ)) (EuclideanSpace.single j 1)
-  choose g hgL hgS using fun i j => (hent i j).extend_real
+  choose g hgL hgS using fun i j =>
+    (lipschitzOnWith_apply_apply_of_matrixBilinearForm hK i j).extend_real
   have habar : EqOn (fun x => Matrix.of fun i j => g i j x) a S := fun x hx => by
     ext i j
     exact (hgS i j hx).symm

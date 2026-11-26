@@ -30,9 +30,10 @@ This file proves that `u ∈ H^{m+2}(Ω)`, globally on `Ω` and not only on comp
 subsets (`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_halfSpace_of_contDiffOn`). Each
 derivative of the data and of the coefficients buys one more derivative of the solution up to the
 boundary. This is the flat model of higher regularity up to the boundary: flattening the boundary
-of a domain of class `C^{m+2}` turns the equation in each chart into one of this form. The cases
-`m = 0` and `m = 1` are `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_halfSpace` and,
-for smooth coefficients, `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_halfSpace`.
+of a domain of class `C^{m+2}` turns the equation in each chart into one of this form. The case
+`m = 0` is `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_halfSpace`; the case `m = 1`,
+for coefficients whose first derivatives are Lipschitz, is
+`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_halfSpace`.
 
 ## The argument
 
@@ -63,6 +64,9 @@ The proof is by induction on `m`, the case `m = 0` being `H²` regularity up to 
   to `ν`.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_halfSpace_of_contDiffOn`: the
   half-space case.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_mapsTo` and its half-space case
+  `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_halfSpace`: `H³` regularity, the case
+  `m = 1`, for coefficients whose first derivatives are Lipschitz.
 
 ## References
 
@@ -115,18 +119,6 @@ private theorem exists_hasWeakLineDerivOn_tangential (hν : ν ≠ 0)
   -- The induction hypothesis puts `∂_τ u` in `W^{m+2,2}(Ω)`.
   obtain ⟨T, hT⟩ := ih G t ((isWeakSolutionDirichlet_iff _ _).2 hG)
   exact ⟨T, by rw [hU, hT]; exact ht⟩
-
-omit [DecidableEq ι] in
-/-- Negating a family of Sobolev functions with given values negates their values almost
-everywhere, in the form taken by `TauCeti.Wkp.ae_value_add_sum_eq`. -/
-private theorem ae_forall_value_neg_eq {k : ℕ} {Y : ι → ι → Wkp mu Omega 2 k}
-    {c : ι → ι → EuclideanSpace ℝ ι → ℝ}
-    (hY : ∀ i j, (Wkp.value k (Y i j) : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] c i j)
-    (s t : Finset ι) :
-    ∀ᵐ x ∂mu.restrict Omega, ∀ i ∈ s, ∀ j ∈ t, Wkp.value k (-Y i j) x = -c i j x :=
-  (Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j => by
-    filter_upwards [Wkp.value_neg_ae k (Y i j), hY i j] with x h₁ h₂
-    rw [h₁, Pi.neg_apply, h₂]).mono fun _ h i _ j _ => h i j
 
 /-- For a unit vector `e`, the coefficient `ρ = ∑ᵢⱼ eᵢ eⱼ aⁱʲ = ⟪e, a e⟫` of the purely normal
 second derivative has bounded derivatives along with the entries of `a`, and `λ ≤ ρ` on `Ω`. -/
@@ -203,7 +195,7 @@ private theorem exists_hasWeakLineDerivOn_normal {e : EuclideanSpace ℝ ι} (he
         (fun i j => -Y₂ i j) (c₁ := fun i j x => -(fderiv ℝ (fun y => a y i j) x (b i) *
           Wkp.value (m + 1) (D j) x))
         (c₂ := fun i j x => -(a x i j * Wkp.value (m + 1) (R i j) x))
-        (ae_forall_value_neg_eq hY₁ _ _) (ae_forall_value_neg_eq hY₂ _ _),
+        (Wkp.ae_forall_value_neg_eq hY₁ _ _) (Wkp.ae_forall_value_neg_eq hY₂ _ _),
       Wkp.value_neg_ae (m + 1) F, heq, hg₁, Filter.eventually_all.2 fun i =>
         Filter.eventually_all.2 fun j =>
           Wkp.ae_inner_gradient_firstOrder_lineDerivL_eq he hT (b i) (b j)]
@@ -327,6 +319,52 @@ theorem UniformlyEllipticOn.exists_value_eq_value_of_halfSpace_of_contDiffOn (h�
     ∃ W : Wkp mu Omega 2 (m + 2), Wkp.value (m + 2) W = W1p.value (u : W1p mu Omega 2) :=
   ha.exists_value_eq_value_of_mapsTo_of_contDiffOn hν (TauCeti.convex_of_halfSpace hΩ)
     (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hK m hsmooth hC hu
+
+/-- **`H³` regularity up to the boundary.** Let `ν ≠ 0` and let `Ω` be convex and mapped into
+itself by every translation orthogonal to `ν`, as a half-space `{x | c < ⟪x, ν⟫}` or a slab is.
+Let `a` be uniformly elliptic and bounded on `Ω`, with entries of class `C²` on `Ω`, `x ↦ a(x)`
+Lipschitz on `Ω` as a bilinear form and the first derivatives of its entries Lipschitz on `Ω`. Let
+`F ∈ H¹(Ω)` and let `u ∈ H¹₀(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = F`, that is, of the
+Dirichlet problem with zero boundary values. Then `u` is the value of an element of `W^{3,2}(Ω)`:
+its third weak derivatives lie in `L²(Ω)` up to the boundary. No regularity of `∂Ω` is assumed.
+
+This is the case `m = 1` of
+`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_mapsTo_of_contDiffOn`: the Lipschitz
+constant `K'` of the first derivatives bounds the second derivatives. -/
+theorem UniformlyEllipticOn.exists_value_eq_value_of_mapsTo (hν : ν ≠ 0)
+    (hΩc : Convex ℝ (Omega : Set (EuclideanSpace ℝ ι)))
+    (hΩ : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega)
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    (hsmooth : ∀ i j, ContDiffOn ℝ 2 (fun x => a x i j) Omega) {K' : ℝ≥0}
+    (hK' : ∀ i j, LipschitzOnWith K' (fun x => fderiv ℝ (fun y => a y i j) x) Omega)
+    {F : W1p mu Omega 2} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a 0 0 (W1p.value F) u) :
+    ∃ W : Wkp mu Omega 2 3, Wkp.value 3 W = W1p.value (u : W1p mu Omega 2) :=
+  ha.exists_value_eq_value_of_mapsTo_of_contDiffOn hν hΩc hΩ hK 1 hsmooth (C := K')
+    (fun i j k hk₂ hk x hx => by
+      obtain rfl : k = 2 := by omega
+      rw [← norm_iteratedFDeriv_fderiv, norm_iteratedFDeriv_one]
+      exact norm_fderiv_le_of_lipschitzOn ℝ (Omega.isOpen.mem_nhds hx) (hK' i j))
+    (F := F) (by convert hu using 2; exact Wkp.value_one F)
+
+/-- **`H³` regularity up to the boundary of a half-space.** Let `Ω = {x | c < ⟪x, ν⟫}` with
+`ν ≠ 0`, let `a` be uniformly elliptic and bounded on `Ω`, with entries of class `C²` on `Ω`,
+`x ↦ a(x)` Lipschitz on `Ω` as a bilinear form and the first derivatives of its entries Lipschitz
+on `Ω`, let `F ∈ H¹(Ω)` and let `u ∈ H¹₀(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = F`. Then `u`
+is the value of an element of `W^{3,2}(Ω)`. This is the half-space case of
+`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_mapsTo`. -/
+theorem UniformlyEllipticOn.exists_value_eq_value_of_halfSpace (hν : ν ≠ 0)
+    (hΩ : ∀ x, x ∈ Omega ↔ c < ⟪x, ν⟫_ℝ)
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    (hsmooth : ∀ i j, ContDiffOn ℝ 2 (fun x => a x i j) Omega) {K' : ℝ≥0}
+    (hK' : ∀ i j, LipschitzOnWith K' (fun x => fderiv ℝ (fun y => a y i j) x) Omega)
+    {F : W1p mu Omega 2} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a 0 0 (W1p.value F) u) :
+    ∃ W : Wkp mu Omega 2 3, Wkp.value 3 W = W1p.value (u : W1p mu Omega 2) :=
+  ha.exists_value_eq_value_of_mapsTo hν (TauCeti.convex_of_halfSpace hΩ)
+    (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hK hsmooth hK' hu
 
 end PDE
 

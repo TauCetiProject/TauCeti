@@ -95,6 +95,15 @@ theorem BddDerivOn.exists_bound (h : BddDerivOn 𝕜 k f s) :
     ∃ C : ℝ, ∀ i ≤ k, ∀ x ∈ s, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C :=
   h.2
 
+/-- A function with bounded derivatives up to order `k` on `s` is bounded on `s`. -/
+theorem BddDerivOn.exists_norm_le (h : BddDerivOn 𝕜 k f s) : ∃ M : ℝ, ∀ x ∈ s, ‖f x‖ ≤ M :=
+  h.2.imp fun _ hC x hx => by simpa only [norm_iteratedFDeriv_zero] using hC 0 k.zero_le x hx
+
+/-- Bounded derivatives on `s` are bounded on every subset of `s`. -/
+theorem BddDerivOn.mono {t : Set E} (h : BddDerivOn 𝕜 k f s) (hts : t ⊆ s) :
+    BddDerivOn 𝕜 k f t :=
+  ⟨h.1.mono hts, h.2.imp fun _ hC i hi x hx => hC i hi x (hts hx)⟩
+
 /-- Bounded derivatives up to order `k` are bounded up to every order `l ≤ k`. -/
 theorem BddDerivOn.of_le (h : BddDerivOn 𝕜 k f s) (hl : l ≤ k) : BddDerivOn 𝕜 l f s :=
   ⟨h.1.of_le (by exact_mod_cast hl), h.2.imp fun _ hC i hi => hC i (hi.trans hl)⟩

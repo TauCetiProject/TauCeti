@@ -96,8 +96,9 @@ private theorem energyFormH1_ofTestFunctionₗ_eq_sum_sum {a : EuclideanSpace �
   -- Pointwise, `⟨η, A ξ⟩ = ∑ᵢ ∑ⱼ ηᵢ Aᵢⱼ ξⱼ`.
   have hB : ∀ (A : Matrix ι ι ℝ) (η ξ : EuclideanSpace ℝ ι), matrixBilinearForm A η ξ =
       ∑ i, ∑ j, ⟪η, b i⟫_ℝ * (A i j * innerSL ℝ ξ (b j)) := fun A η ξ => by
-    simp only [b, innerSL_apply_apply, EuclideanSpace.inner_basisFun_real, matrixBilinearForm_apply,
-      dotProduct, Matrix.mulVec, Finset.mul_sum]
+    simp only [matrixBilinearForm_apply_eq_sum, b, innerSL_apply_apply,
+      EuclideanSpace.inner_basisFun_real]
+    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
   rw [energyFormH1_zero_zero_eq_setIntegral]
   calc ∫ x in Omega, matrixBilinearForm (a x)
         (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ) x) (W1p.gradient w x) ∂mu
