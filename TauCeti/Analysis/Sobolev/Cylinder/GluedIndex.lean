@@ -46,7 +46,8 @@ Stabilizers made of test sections exist for every Fredholm piece
 (`ContinuousLinearMap.IsFredholm.exists_le_testSectionLp_isTopCompl`).
 
 The two inequalities between `dim E_R` and `dim E₁ + dim E₂` come from two injective linear maps.
-Write `β = neckCutoff (-(2 / R))` for the cutoff equal to `1` on `s ≤ 0` and to `0` on `s ≥ R / 2`.
+Write `β = neckCutoff (-(2 / R))` for the cutoff, which for `R > 0` is equal to `1` on `s ≤ 0` and
+to `0` on `s ≥ R / 2`.
 
 * **Cutting.** An element `(ξ, σ₁, σ₂)` of `E_R` is cut into the pieces `((β ξ)(· - R, ·), σ₁)`
   and `(((1 - β) ξ)(· + R, ·), σ₂)`, translated back to the pieces. They nearly lie in the kernels
@@ -637,7 +638,8 @@ private theorem exists_bound_neckCutoff (a : ℝ) : ∃ B : ℝ,
 
 `(β ξ₁(· + R, ·) + (1 - β) ξ₂(· - R, ·), (σ₁, σ₂))`,
 
-for the neck cutoff `β = neckCutoff (-(2 / R))`, which is `1` on `s ≤ 0` and `0` on `s ≥ R / 2`
+for the neck cutoff `β = neckCutoff (-(2 / R))`, which, for `R > 0`, is `1` on `s ≤ 0` and `0` on
+`s ≥ R / 2`
 (`TauCeti.CylinderSobolev.coe_fst_neckPreglue_apply`,
 `TauCeti.CylinderSobolev.snd_neckPreglue_apply`). The pieces are translated to the two halves of
 the neck as in the glued coefficient field `TauCeti.gluedCoeff`, which is `M₁(· + R, ·)` on `s < 0`
@@ -714,11 +716,11 @@ theorem coe_gluedKernelMap_apply {Y : Type*} [NormedAddCommGroup Y] [NormedSpace
 
 /-- **The obstruction map** `b_R`. Let `A` be an operator on `W^{1,2} × (S₁ × S₂)` with a right
 inverse `Q`, and let `K₁`, `K₂` be subspaces of `W^{1,2} × S₁` and `W^{1,2} × S₂`. The obstruction
-map sends an element of `K₁ × K₂` to the stabilizer component `(σ₁, σ₂)` of its corrected pregluing
-`TauCeti.CylinderSobolev.gluedKernelMap`, namely `(σ₁, σ₂) - (Q (A (p k))).2` for the pregluing
-`p k` (`TauCeti.CylinderSobolev.gluedObstructionMap_apply`). For the stabilized glued operator
-`A = D_R ⊕ j_R` and the kernels `E₁`, `E₂` of the stabilized pieces it is the middle map of the
-exact sequence `0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`
+map sends `k = ((ξ₁, σ₁), (ξ₂, σ₂))` in `K₁ × K₂` to the stabilizer component of its corrected
+pregluing `TauCeti.CylinderSobolev.gluedKernelMap`, namely `b_R k = (σ₁, σ₂) - (Q (A (p k))).2`
+for the pregluing `p k` (`TauCeti.CylinderSobolev.gluedObstructionMap_apply`). For the stabilized
+glued operator `A = D_R ⊕ j_R` and the kernels `E₁`, `E₂` of the stabilized pieces it is the middle
+map of the exact sequence `0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`
 (`TauCeti.CylinderSobolev.exists_forall_ge_forall_exists_linearEquiv_exact_gluedKernelMap`). -/
 noncomputable def gluedObstructionMap {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
     (A : H1 V × (S₁ × S₂) →L[ℝ] Y) (Q : Y →L[ℝ] H1 V × (S₁ × S₂))
@@ -1066,7 +1068,7 @@ along `Q` is a linear isomorphism `e : E₁ × E₂ ≃ E_R` onto the kernel of 
 `0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`
 
 is exact. Its maps are `ξ ↦ e⁻¹ (ξ, 0)`; the **obstruction map** `b_R`, the stabilizer component
-`(σ₁, σ₂)` of `e k ∈ E_R` (`TauCeti.CylinderSobolev.gluedObstructionMap`); and
+of `e k ∈ E_R` (`TauCeti.CylinderSobolev.gluedObstructionMap`); and
 `(σ₁, σ₂) ↦ [j_R (σ₁, σ₂)]`. When `b_R = 0`, the first map is an isomorphism `ker D_R ≃ E₁ × E₂`
 and the last one an isomorphism `S₁ × S₂ ≃ coker D_R`.
 
