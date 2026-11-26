@@ -49,8 +49,9 @@ variable [N.Normal]
 /-- A virtual character of squared norm one on the generator coset of a normal subgroup of prime
 index agrees there with a cyclotomic root of unity times an extension of a stable irreducible
 character. The extension need not split. -/
-theorem exists_rootOfUnity_mul_extension_eq_on_coset (hp : N.index.Prime) {x : G} (hx : x ∉ N)
-    [Fintype N] {ζ : ℂ} (hζ : IsPrimitiveRoot ζ N.index) {X : G → ℂ}
+theorem exists_rootOfUnity_mul_extension_eq_on_coset_of_norm_eq_one
+    (hp : N.index.Prime) {x : G} (hx : x ∉ N) [Fintype N]
+    {ζ : ℂ} (hζ : IsPrimitiveRoot ζ N.index) {X : G → ℂ}
     (hX : X ∈ virtualCharacters ℂ G)
     (hnorm : (Nat.card N : ℂ)⁻¹ * ∑ n : N, X (x * n) * conj (X (x * n)) = 1) :
     ∃ θ ∈ irreducibleCharacters ℂ N, θ ∘ MulAut.conjNormal x = θ ∧
