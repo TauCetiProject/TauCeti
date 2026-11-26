@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Finset.Lattice.Fold
 public import Mathlib.Tactic.Group
 public import TauCeti.GroupTheory.FreeGroup.StartsWith
+public import TauCeti.GroupTheory.PowersProperty
 import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
@@ -34,6 +35,8 @@ with `γⱼ = b^j w` form the required partition.
 
 * `FreeGroup.exists_powers_partition`: the Powers partition property of a free group on a type of
   generators with two distinct elements.
+* `FreeGroup.hasPowersProperty_of_ne`, `FreeGroup.hasPowersProperty`: `TauCeti.HasPowersProperty`
+  for free groups on at least two generators.
 
 ## References
 
@@ -165,5 +168,16 @@ theorem exists_powers_partition (a b : α) (hab : a ≠ b) (F : Finset (FreeGrou
         _ = of b ^ (((j : ℕ) : ℤ) - (i : ℕ)) * (w * y) := by group
     rw [h]
     exact ⟨_, of_zpow_mul_mem_startsWith hk fun h => hy ⟨_, h⟩⟩
+
+/-- A free group on a type of generators with two distinct elements `a ≠ b` has the Powers
+partition property. -/
+theorem hasPowersProperty_of_ne {a b : α} (hab : a ≠ b) :
+    TauCeti.HasPowersProperty (FreeGroup α) :=
+  TauCeti.hasPowersProperty_def.2 (exists_powers_partition a b hab)
+
+/-- A free group on a nontrivial type of generators has the Powers partition property. -/
+theorem hasPowersProperty [Nontrivial α] : TauCeti.HasPowersProperty (FreeGroup α) :=
+  let ⟨_, _, hab⟩ := exists_pair_ne α
+  hasPowersProperty_of_ne hab
 
 end FreeGroup

@@ -29,7 +29,8 @@ complementary projection `1 - lp.indicatorCLM 2 𝕜 s`.
 
 * `lp.norm_indicator_of_nonempty`, `lp.norm_indicatorCLM_of_nonempty`: the norm of a nonempty
   indicator multiplier is `1`.
-* `lp.indicatorCLM_mul_of_disjoint`: indicators of disjoint sets compose to `0`.
+* `lp.indicator_mul`, `lp.indicatorCLM_mul`: indicators multiply by intersecting their sets,
+  yielding `lp.indicatorCLM_mul_of_disjoint` for disjoint sets.
 * `lp.indicatorCLM_compl`: the indicator of `sᶜ` is `1 - lp.indicatorCLM p 𝕜 s`.
 * `lp.isStarProjection_indicatorCLM`: on `ℓ²`, `lp.indicatorCLM 2 𝕜 s` is a star projection.
 -/
@@ -100,21 +101,21 @@ section IndicatorRing
 
 variable {ι 𝕜 : Type*} [NormedRing 𝕜] {s : Set ι}
 
-/-- Indicator sequences are idempotent under multiplication. -/
+/-- The product of indicator sequences is the indicator sequence of the intersection. -/
 @[simp]
-theorem indicator_mul_self : indicator 𝕜 s * indicator 𝕜 s = indicator 𝕜 s := by
+theorem indicator_mul (t : Set ι) : indicator 𝕜 s * indicator 𝕜 t = indicator 𝕜 (s ∩ t) := by
   ext i
   classical
-  by_cases hi : i ∈ s <;> simp [lp.infty_coeFn_mul, hi]
+  by_cases his : i ∈ s <;> by_cases hit : i ∈ t <;> simp [lp.infty_coeFn_mul, his, hit]
+
+/-- Indicator sequences are idempotent under multiplication. -/
+theorem indicator_mul_self : indicator 𝕜 s * indicator 𝕜 s = indicator 𝕜 s := by
+  rw [indicator_mul, Set.inter_self]
 
 /-- The product of indicator sequences of disjoint sets is `0`. -/
 theorem indicator_mul_of_disjoint {t : Set ι} (hst : Disjoint s t) :
     indicator 𝕜 s * indicator 𝕜 t = 0 := by
-  ext i
-  by_cases his : i ∈ s
-  · have hit : i ∉ t := Set.disjoint_left.1 hst his
-    simp [lp.infty_coeFn_mul, his, hit]
-  · simp [lp.infty_coeFn_mul, his]
+  rw [indicator_mul, hst.inter_eq, indicator_empty]
 
 section NormOneClass
 
@@ -129,8 +130,8 @@ theorem indicator_univ : indicator 𝕜 (Set.univ : Set ι) = 1 := by
 /-- The indicator sequence of `sᶜ` is `1 - indicator 𝕜 s`. -/
 theorem indicator_compl : indicator 𝕜 sᶜ = 1 - indicator 𝕜 s := by
   ext i
-  rw [indicator_apply, Set.indicator_compl, lp.coeFn_sub, Pi.sub_apply, lp.infty_coeFn_one]
-  rfl
+  rw [lp.coeFn_sub, Pi.sub_apply, lp.infty_coeFn_one]
+  by_cases hi : i ∈ s <;> simp [hi]
 
 end NormOneClass
 
@@ -185,17 +186,22 @@ theorem indicatorCLM_univ :
     indicatorCLM p 𝕜 (Set.univ : Set ι) = ContinuousLinearMap.id 𝕜 ℓ^p(ι, 𝕜) := by
   simp [indicatorCLM_def]
 
-/-- Indicator operators are idempotent. -/
+/-- Indicator operators compose by intersecting their sets. -/
 @[simp]
+theorem indicatorCLM_mul (t : Set ι) :
+    indicatorCLM p 𝕜 s * indicatorCLM p 𝕜 t = indicatorCLM p 𝕜 (s ∩ t) := by
+  rw [indicatorCLM_def, indicatorCLM_def, ContinuousLinearMap.mul_def, ← diagonalCLM_mul,
+    indicator_mul, ← indicatorCLM_def]
+
+/-- Indicator operators are idempotent. -/
 theorem indicatorCLM_mul_self :
     indicatorCLM p 𝕜 s * indicatorCLM p 𝕜 s = indicatorCLM p 𝕜 s := by
-  rw [indicatorCLM_def, ContinuousLinearMap.mul_def, ← diagonalCLM_mul, indicator_mul_self]
+  rw [indicatorCLM_mul, Set.inter_self]
 
 /-- Indicator operators of disjoint sets compose to `0`. -/
 theorem indicatorCLM_mul_of_disjoint {t : Set ι} (hst : Disjoint s t) :
     indicatorCLM p 𝕜 s * indicatorCLM p 𝕜 t = 0 := by
-  rw [indicatorCLM_def, indicatorCLM_def, ContinuousLinearMap.mul_def, ← diagonalCLM_mul,
-    indicator_mul_of_disjoint hst, diagonalCLM_zero]
+  rw [indicatorCLM_mul, hst.inter_eq, indicatorCLM_empty]
 
 /-- The indicator operator of `sᶜ` is `1 - indicatorCLM p 𝕜 s`. -/
 theorem indicatorCLM_compl :
