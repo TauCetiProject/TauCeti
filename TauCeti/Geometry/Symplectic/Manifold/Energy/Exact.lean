@@ -22,7 +22,8 @@ Let `u : C → X` be a smooth pseudoholomorphic map from a compact connected bou
 is its symplectic area `∫_C u^* form`
 (`TauCeti.SmoothTwoForm.energy_eq_integralTopForm_mpullback`), and when this area vanishes the
 differential of `u` vanishes (`TauCeti.mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero`). So
-`u` is constant as soon as its symplectic area vanishes, and Stokes' theorem gives this in the
+`u` is constant as soon as its symplectic area vanishes
+(`TauCeti.apply_eq_of_integralTopForm_mpullback_eq_zero`), and Stokes' theorem gives this in the
 following situations. All the results below are in the namespace `TauCeti`.
 
 * **Exact regions.** If `u` maps `C` into an open subset `U` of `X` on which `form` is exact, then
@@ -97,20 +98,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
   {form : SmoothTwoForm I X} {J : SmoothAlmostComplexStructure I X}
   {j : SmoothAlmostComplexStructure I' C} {o : Manifold.Orientation I' C (Fin 2)} {u : C → X}
 
-omit [BoundarylessManifold I' C] [T2Space C] in
-/-- A closed pseudoholomorphic curve of zero symplectic area is constant, for a form taming `J`
-along the curve. -/
-private theorem apply_eq_of_integralTopForm_mpullback_eq_zero
-    (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
-      b.orientation = o.orientationAt c)
-    (hu : ContMDiff I' I ∞ u) (hhol : ∀ c, IsPseudoholomorphicAt j J u c)
-    (htame : ∀ c (v : TangentSpace I (u c)), v ≠ 0 →
-      0 < SmoothBundleForm.eval₂ form (u c) v (J (u c) v))
-    (harea : integralTopForm o (mpullback I' I u form.val) = 0) (c c' : C) : u c = u c' :=
-  (hu.mdifferentiable (by simp)).apply_eq_of_mfderiv_eq_zero
-    (mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero hu ho hhol htame
-      (by rwa [SmoothForm.coe_mpullback])) c c'
-
 /-- **Closed pseudoholomorphic curves in exact regions are constant.** Let `u` be a smooth
 pseudoholomorphic map from a compact connected boundaryless surface `(C, j)`, oriented so that the
 frames `(e, j e)` are positive, into an open subset `U` of `X` on which `form` is exact, and let
@@ -125,13 +112,14 @@ theorem apply_eq_of_isPseudoholomorphicAt_of_range_subset
     (U : Opens X) (huU : Set.range u ⊆ U)
     (hform : SmoothForm.mpullback ((↑) : U → X) contMDiff_subtypeVal form ∈ exactForms I U 2)
     (c c' : C) : u c = u c' :=
-  apply_eq_of_integralTopForm_mpullback_eq_zero ho hu hhol htame
-    (integralTopForm_mpullback_eq_zero_of_range_subset o hu U huU hform) c c'
+  apply_eq_of_integralTopForm_mpullback_eq_zero hu ho hhol htame (by
+    rw [SmoothForm.coe_mpullback]
+    exact integralTopForm_mpullback_eq_zero_of_range_subset o hu U huU hform) c c'
 
 /-- **Nonconstant closed pseudoholomorphic curves leave exact regions.** Let `u` be a smooth
 pseudoholomorphic map from a compact connected boundaryless surface `(C, j)`, oriented so that the
-frames `(e, j e)` are positive, and let `form` tame `J` along `u`. If `u` is not constant, then it
-maps some point outside every open subset `U` of `X` on which `form` is exact. -/
+frames `(e, j e)` are positive, and let `form` tame `J` along `u`. If `u` is not constant, then for
+every open subset `U` of `X` on which `form` is exact, some point of `C` is mapped outside `U`. -/
 theorem exists_apply_notMem_of_isPseudoholomorphicAt
     (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
       b.orientation = o.orientationAt c)
@@ -158,8 +146,9 @@ theorem apply_eq_of_isPseudoholomorphicAt_of_subsingleton_deRhamCohomology
       0 < SmoothBundleForm.eval₂ form (u c) v (J (u c) v))
     (U : Opens X) [Subsingleton (deRhamCohomology I U 2)] (huU : Set.range u ⊆ U) (c c' : C) :
     u c = u c' :=
-  apply_eq_of_integralTopForm_mpullback_eq_zero ho hu hhol htame
-    (integralTopForm_mpullback_eq_zero_of_subsingleton_deRhamCohomology o hu U huU
+  apply_eq_of_integralTopForm_mpullback_eq_zero hu ho hhol htame (by
+    rw [SmoothForm.coe_mpullback]
+    exact integralTopForm_mpullback_eq_zero_of_subsingleton_deRhamCohomology o hu U huU
       ((mem_closedForms I form).2 ((SmoothForm.isClosed_def form).1 hclosed))) c c'
 
 variable [FiniteDimensional ℝ E] [BoundarylessManifold I X] [T2Space X]
@@ -176,8 +165,9 @@ theorem apply_eq_of_isPseudoholomorphicAt_of_nullhomotopic (hclosed : form.IsClo
     (htame : ∀ c (v : TangentSpace I (u c)), v ≠ 0 →
       0 < SmoothBundleForm.eval₂ form (u c) v (J (u c) v))
     (hnull : (⟨u, hu.continuous⟩ : C(C, X)).Nullhomotopic) (c c' : C) : u c = u c' :=
-  apply_eq_of_integralTopForm_mpullback_eq_zero ho hu hhol htame
-    (integralTopForm_mpullback_eq_zero_of_nullhomotopic (f := ⟨u, hu.continuous⟩) o hu hnull
+  apply_eq_of_integralTopForm_mpullback_eq_zero hu ho hhol htame (by
+    rw [SmoothForm.coe_mpullback]
+    exact integralTopForm_mpullback_eq_zero_of_nullhomotopic (f := ⟨u, hu.continuous⟩) o hu hnull
       ((mem_closedForms I form).2 ((SmoothForm.isClosed_def form).1 hclosed))) c c'
 
 /-- **Closed pseudoholomorphic curves in contractible regions are constant.** Let `u` be a smooth
