@@ -68,6 +68,8 @@ maps valued in an arbitrary module.
   `x = a v + c t` modulo torsion, where `v, t` is a hyperbolic pair of a `ℤ`-valued form.
 * `LinearMap.IsRefl.apply_eq_zero_of_mem_ker`: a vector in the kernel of a reflexive form is
   orthogonal to every vector on either side.
+* `LinearMap.separatingLeft_iff_injective`, `LinearMap.SeparatingLeft.injective`: a sesquilinear
+  map is left-separating exactly when it is injective in its left argument.
 * `LinearMap.BilinForm.even_apply_self_of_isOfFinAddOrder_span`: a `ℤ`-valued form spanned modulo
   torsion by a hyperbolic pair is even.
 * `LinearMap.IsAlt.eq_zero_of_smul_apply_basis_eq_zero`: the value of a left-separating
@@ -279,6 +281,23 @@ theorem IsRefl.apply_eq_zero_of_mem_ker {R₁ M₁ : Type*} [CommSemiring R₁] 
     {B : M₁ →ₛₗ[I₁] M₁ →ₛₗ[I₂] M} (hB : B.IsRefl) (y : M₁) {x : M₁} (hx : x ∈ ker B) :
     B y x = 0 :=
   hB x y <| LinearMap.congr_fun (mem_ker.1 hx) y
+
+end LinearMap
+
+namespace LinearMap
+
+variable {R R₁ R₂ M M₁ M₂ : Type*} [CommSemiring R] [Semiring R₁] [Semiring R₂]
+  [AddCommMonoid M] [Module R M] [AddCommGroup M₁] [Module R₁ M₁] [AddCommMonoid M₂]
+  [Module R₂ M₂] {I₁ : R₁ →+* R} {I₂ : R₂ →+* R} {B : M₁ →ₛₗ[I₁] M₂ →ₛₗ[I₂] M}
+
+/-- A sesquilinear map is left-separating exactly when it is injective as a map from its left
+argument to the space of maps out of its right argument. -/
+theorem separatingLeft_iff_injective : B.SeparatingLeft ↔ Function.Injective B :=
+  separatingLeft_iff_linear_nontrivial.trans (injective_iff_map_eq_zero B).symm
+
+/-- A left-separating sesquilinear map is injective in its left argument. -/
+theorem SeparatingLeft.injective (hB : B.SeparatingLeft) : Function.Injective B :=
+  separatingLeft_iff_injective.mp hB
 
 end LinearMap
 

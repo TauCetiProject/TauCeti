@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Lie.Adjoint.Representation.OrbitSpace
 public import TauCeti.Geometry.Lie.Subgroup.Weyl.AdjointOrbit
 public import TauCeti.RepresentationTheory.InvariantForm
 import TauCeti.Geometry.Lie.Adjoint.InvariantForm
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.RepresentationTheory.Continuous.Basic
 import TauCeti.Topology.Algebra.Module.ModuleTopology
 
@@ -172,16 +173,10 @@ local notation "evalOne" => leftInvariantDerivationLieEquivGroupLieAlgebra (I :=
 
 variable {T : Subgroup G} {B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)}
 
-omit [T2Space G] [FiniteDimensional ℝ E] [LieGroup I ∞ G] in
-/-- A form with trivial left radical is injective as a map `𝔤 → 𝔤*`. -/
-private theorem injective_of_separatingLeft (hB' : LinearMap.SeparatingLeft B) :
-    Function.Injective B :=
-  LinearMap.ker_eq_bot.mp (LinearMap.separatingLeft_iff_ker_eq_bot.mp hB')
-
 omit [T2Space G] in
 private theorem injective_apply_evalOne (hB' : LinearMap.SeparatingLeft B) :
     Function.Injective fun X : LeftInvariantDerivation I G ↦ B (evalOne X) :=
-  (injective_of_separatingLeft hB').comp (evalOne).injective
+  hB'.injective.comp (evalOne).injective
 
 /-- The linear map `𝔱 → 𝔤*`, `X ↦ B (X(1), ·)`, sending an element of the Lie algebra of `T` to
 its covector for the form `B`. -/
@@ -208,7 +203,7 @@ theorem IsMaximalTorus.exists_coadjointRepresentation_apply_eq (hT : IsMaximalTo
   -- In finite dimension, a form with trivial left radical identifies `𝔤` with `𝔤*`.
   obtain ⟨Z, rfl⟩ := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
     (Subspace.dual_finrank_eq (K := ℝ) (V := GroupLieAlgebra I G)).symm).mp
-    (injective_of_separatingLeft hB') ν
+    hB'.injective ν
   obtain ⟨X, rfl⟩ := (evalOne).surjective Z
   obtain ⟨g, hg⟩ := hT.exists_Ad_mem_lieSubalgebraOfSubgroup X
   exact ⟨g, _, hg, (Representation.orbitMap_mk _ _ g).symm.trans
