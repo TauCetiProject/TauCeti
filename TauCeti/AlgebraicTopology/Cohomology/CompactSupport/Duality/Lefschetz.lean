@@ -8,10 +8,9 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.Manifold
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Extension
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
-import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
-import TauCeti.AlgebraicTopology.Cohomology.Triple
+import TauCeti.AlgebraicTopology.Cohomology.Collar
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
-import TauCeti.Geometry.Manifold.Boundary.Collar.PushIn
+import TauCeti.Geometry.Manifold.Boundary.Collar.Retraction
 
 /-!
 # Lefschetz duality
@@ -53,8 +52,9 @@ The proof is Hatcher's, through Poincaré duality for the interior. For `0 < t`,
 
 ## Main results
 
-* `TauCeti.IsCollar.isIso_singularCohomologyMap_ofSubsetMap_collarPart`: for `0 < t`, restriction
-  `Hᵏ(X, Cₜ) ⟶ Hᵏ(X, ∂X)` is an isomorphism, for coefficients in any abelian category.
+* `TauCeti.HomologicalOrientation.capFundamentalClassRel_restrict`: for compact `K ⊆ M`, on
+  classes restricted from `Hᵖ(X, X ∖ ι(K))`, capping with `[X, ∂X]` is capping with the
+  fundamental class of `M` along `K` after excision, followed by the map induced by `ι`.
 * `TauCeti.HomologicalOrientation.bijective_capFundamentalClassRel`: **Lefschetz duality**, and
   `TauCeti.HomologicalOrientation.isIso_capFundamentalClassRel` as an isomorphism.
 
@@ -73,33 +73,6 @@ open CategoryTheory Limits MonoidalCategory Module TopologicalSpace Topology Set
 namespace TauCeti
 
 attribute [local instance] MonoidalPreadditive.monoidalLinearInt
-
-universe w u v
-
-/-! ### Cohomology relative to a collar -/
-
-section Collar
-
-variable {X : Type w} {N : Type*} [TopologicalSpace X] [TopologicalSpace N] {f : N → X}
-  {c : N × Ico (0 : ℝ) 1 → X} {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
-
-/-- **Cohomology relative to a collar of positive depth.** For a collar `c` of `f`, `0 < t`, and
-`S = f(N) ⊆ T = c(N × [0, t))`, restriction `Hᵏ(X, T) ⟶ Hᵏ(X, S)` is an isomorphism, by the long
-exact sequence of the triple `(X, T, S)`: the collar deforms `T` onto `S` relative to `S`. This is
-the cohomology form of `TauCeti.IsCollar.isIso_localHomologyRestriction_compl_collarPart`. -/
-theorem IsCollar.isIso_singularCohomologyMap_ofSubsetMap_collarPart (hc : IsCollar f c)
-    {S T : Set (TopCat.of X)} (hST : S ⊆ T) (hS : S = range f) {t : ℝ} (ht : 0 < t)
-    (hT : T = collarPart c t) (R : C) (k : Type*) [Ring k] [Linear k C] (M : C) (n : ℕ) :
-    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-      (TopPair.ofSubsetMap (𝟙 (TopCat.of X)) hST) n) := by
-  subst hS hT
-  have hz (m : ℕ) := TopPair.isZero_singularCohomology_ofInclusion_of_homotopyRel hST _
-    (hc.collarDeformation ht) R k M m
-  have := TopTriple.isIso_singularCohomologyMap_totalToOuter_of_isZero
-    (TopTriple.ofSubset (X := TopCat.of X) hST) R k M n (hz n) fun m _ ↦ hz m
-  rwa [TopTriple.totalToOuter_app_ofSubset] at this
-
-end Collar
 
 namespace HomologicalOrientation
 
@@ -135,6 +108,47 @@ lemma capFundamentalClassRel_apply (p q : ℕ) (h : p + q = n)
         (ρ_ L).hom p q n h α).hom (o.fundamentalClassRel hn hι hιf hf) :=
   (rfl)
 
+/-- **Capping with `[X, ∂X]` through the interior.** For compact `K ⊆ M`, on a class restricted
+from `Hᵖ(X, X ∖ ι(K))`, capping with the relative fundamental class is capping the excised class in
+`Hᵖ(M, M ∖ K)` with the fundamental class of `M` along `K`, followed by the map induced by `ι`. -/
+theorem capFundamentalClassRel_restrict (K : Compacts (TopCat.of M)) (p q : ℕ) (h : p + q = n)
+    (β : (TopPair.ofSubset ((K.map (TopCat.ofHom ⟨ι, hι.continuous⟩)
+      (TopCat.ofHom ⟨ι, hι.continuous⟩).hom.continuous : Set (TopCat.of X)))ᶜ).singularCohomology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
+    o.capFundamentalClassRel hn hι hιf hf L p q h (TopPair.singularCohomologyMap
+        (TopPair.ofSubsetMap (𝟙 (TopCat.of X)) (TopCat.mapsTo_id_compl
+          (S := (K.map (TopCat.ofHom ⟨ι, hι.continuous⟩)
+            (TopCat.ofHom ⟨ι, hι.continuous⟩).hom.continuous : Set (TopCat.of X)))
+          (image_subset_range ι K))) p β) =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
+        (TopCat.ofHom ⟨ι, hι.continuous⟩)
+        (o.capFundamentalClassOn hn L K.isCompact p q h
+          (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (TopCat.ofHom ⟨ι, hι.continuous⟩)
+            (TopCat.mapsTo_compl_compacts_map hι.injective K)) p β)) := by
+  -- Naturality of the cap product along the identity of `X`, from `(X, ∂X)` to `(X, X ∖ ι(K))`.
+  have h₁ := ConcreteCategory.congr_hom (TopPair.singularCap_naturality
+    (TopPair.ofSubsetMap (𝟙 (TopCat.of X)) (TopCat.mapsTo_id_compl (image_subset_range ι K))) ℤ
+    (ρ_ _).inv (ρ_ L).hom p q n h β) (o.fundamentalClassRel hn hι hιf hf)
+  -- Naturality of the cap product along `ι`, from `(M, M ∖ K)` to `(X, X ∖ ι(K))`.
+  have h₂ := ConcreteCategory.congr_hom (TopPair.singularCap_naturality
+    (TopPair.ofSubsetMap (TopCat.ofHom ⟨ι, hι.continuous⟩)
+      (TopCat.mapsTo_compl_compacts_map hι.injective K)) ℤ (ρ_ _).inv (ρ_ L).hom p q n h β)
+    (o.fundamentalClassOn hn K.isCompact)
+  -- The relative fundamental class restricts to the image of the fundamental class along `K`.
+  have hμ := o.localHomologyRestriction_fundamentalClassRel_image hn hι hιf hf K.isCompact
+  rw [localHomologyRestriction_def, localHomologyMap_def] at hμ
+  have hfst : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
+      (TopPair.Hom.fst (TopPair.ofSubsetMap (𝟙 (TopCat.of X))
+        (TopCat.mapsTo_id_compl (image_subset_range ι K)))) = 𝟙 _ := by
+    rw [TopPair.ofSubsetMap_fst]
+    exact CategoryTheory.Functor.map_id _ _
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hfst] at h₁
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopPair.ofSubsetMap_fst] at h₂
+  rw [capFundamentalClassRel_apply, capFundamentalClassOn_apply]
+  -- The source and target of the identity from `hfst` agree only after unfolding
+  -- `TopPair.ofSubset`, so `ConcreteCategory.id_apply` applies by `exact` but not by `rw`.
+  exact (ConcreteCategory.id_apply _).symm.trans (h₁.trans ((congrArg _ hμ).trans h₂.symm))
+
 /-! ### Proof of Lefschetz duality -/
 
 section Proof
@@ -147,8 +161,7 @@ private abbrev interiorHom (hι : IsOpenEmbedding ι) : TopCat.of M ⟶ TopCat.o
 
 /-- The points of the interior outside the collar of depth less than `s`, a compact set. -/
 private def interiorCompl {s : ℝ} (hs : 0 < s) : Compacts (TopCat.of M) :=
-  ⟨ι ⁻¹' (collarPart c s)ᶜ, hι.isInducing.isCompact_preimage'
-    (hc.isOpen_collarPart s).isClosed_compl.isCompact (hc.compl_collarPart_subset_range hιf hs)⟩
+  ⟨ι ⁻¹' (collarPart c s)ᶜ, isCompact_preimage_compl_collarPart hι hc hιf hs⟩
 
 /-- Its image in `X`, the complement of the collar of depth less than `s`. -/
 private abbrev collarCompl {s : ℝ} (hs : 0 < s) : Compacts (TopCat.of X) :=
@@ -256,48 +269,6 @@ private lemma bijective_capFundamentalClassOn_interiorCompl {t : ℝ} (ht : 0 < 
   funext α
   rw [Function.comp_apply, ← ConcreteCategory.comp_apply, compactSupportCohomologyι_dualityMap]
 
-omit [CompactSpace N] in
-/-- **Capping with `[X, ∂X]` through the interior.** On a class restricted from `Hᵖ(X, Cₜ)`,
-capping with the relative fundamental class is capping the excised class with the fundamental class
-of `M` along `ι⁻¹(Kₜ)`, followed by the map induced by `ι`. -/
-private lemma capFundamentalClassRel_restrict {t : ℝ} (ht : 0 < t) (p q : ℕ) (h : p + q = n)
-    (β : (TopPair.ofSubset ((collarCompl hι hιf hc ht : Set (TopCat.of X)))ᶜ).singularCohomology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
-    o.capFundamentalClassRel hn hι hιf hf L p q h (TopPair.singularCohomologyMap
-        (TopPair.ofSubsetMap (𝟙 (TopCat.of X)) (compl_range_subset_compl_collarCompl hι hιf hc ht))
-        p β) =
-      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map (interiorHom hι)
-        (o.capFundamentalClassOn hn L (interiorCompl hι hιf hc ht).isCompact p q h
-          (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (interiorHom hι)
-            (TopCat.mapsTo_compl_compacts_map hι.injective (interiorCompl hι hιf hc ht))) p
-            β)) := by
-  -- Naturality of the cap product along the identity of `X`, from `(X, ∂X)` to `(X, Cₜ)`.
-  have h₁ := ConcreteCategory.congr_hom (TopPair.singularCap_naturality
-    (TopPair.ofSubsetMap (𝟙 (TopCat.of X)) (compl_range_subset_compl_collarCompl hι hιf hc ht)) ℤ
-    (ρ_ _).inv (ρ_ L).hom p q n h β) (o.fundamentalClassRel hn hι hιf hf)
-  -- Naturality of the cap product along `ι`, from `(M, M ∖ ι⁻¹(Kₜ))` to `(X, Cₜ)`.
-  have h₂ := ConcreteCategory.congr_hom (TopPair.singularCap_naturality
-    (TopPair.ofSubsetMap (interiorHom hι)
-      (TopCat.mapsTo_compl_compacts_map hι.injective (interiorCompl hι hιf hc ht))) ℤ
-    (ρ_ _).inv (ρ_ L).hom p q n h β)
-    (o.fundamentalClassOn hn (interiorCompl hι hιf hc ht).isCompact)
-  -- The relative fundamental class restricts to the image of the fundamental class along
-  -- `ι⁻¹(Kₜ)`.
-  have hμ := o.localHomologyRestriction_fundamentalClassRel_image hn hι hιf hf
-    (interiorCompl hι hιf hc ht).isCompact
-  rw [localHomologyRestriction_def, localHomologyMap_def] at hμ
-  have hfst : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
-      (TopPair.Hom.fst (TopPair.ofSubsetMap (𝟙 (TopCat.of X))
-        (compl_range_subset_compl_collarCompl hι hιf hc ht))) = 𝟙 _ := by
-    rw [TopPair.ofSubsetMap_fst]
-    exact CategoryTheory.Functor.map_id _ _
-  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hfst] at h₁
-  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopPair.ofSubsetMap_fst] at h₂
-  rw [capFundamentalClassRel_apply, capFundamentalClassOn_apply]
-  -- The source and target of the identity from `hfst` agree only after unfolding
-  -- `TopPair.ofSubset`, so `ConcreteCategory.id_apply` applies by `exact` but not by `rw`.
-  exact (ConcreteCategory.id_apply _).symm.trans (h₁.trans ((congrArg _ hμ).trans h₂.symm))
-
 omit [CompactSpace X] [T2Space M] in
 include hιf hc in
 /-- The map `H_q(M; L) ⟶ H_q(X; L)` induced by the interior is bijective. -/
@@ -339,7 +310,7 @@ theorem bijective_capFundamentalClassRel (p q : ℕ) (h : p + q = n) :
         (R := ModuleCat.of ℤ (ULift.{0} ℤ)) (k := ℤ) (M := L) (TopPair.ofSubsetMap (interiorHom hι)
           (TopCat.mapsTo_compl_compacts_map hι.injective (interiorCompl hι hιf hc ht))) p))) using 1
   funext β
-  exact o.capFundamentalClassRel_restrict hn hι hιf hf L hc ht p q h β
+  exact o.capFundamentalClassRel_restrict hn hι hιf hf L (interiorCompl hι hιf hc ht) p q h β
 
 /-- **Lefschetz duality**, as an isomorphism `Hᵖ(X, ∂X; L) ≅ H_q(X; L)`. -/
 theorem isIso_capFundamentalClassRel (p q : ℕ) (h : p + q = n) :

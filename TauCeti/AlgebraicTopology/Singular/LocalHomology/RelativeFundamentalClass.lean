@@ -165,7 +165,9 @@ variable (hι : IsOpenEmbedding ι) {c : N × Ico (0 : ℝ) 1 → X} (hc : IsCol
   (hιf : range ι = (range f)ᶜ)
 include hι hc hιf
 
-private lemma isCompact_preimage_compl_collarPart [CompactSpace X] {t : ℝ} (ht : 0 < t) :
+/-- For a compact space `X` and `0 < t`, the points of the interior `M` outside the collar of depth
+less than `t` form a compact set `ι⁻¹(X ∖ Cₜ)`. -/
+lemma isCompact_preimage_compl_collarPart [CompactSpace X] {t : ℝ} (ht : 0 < t) :
     IsCompact (ι ⁻¹' (collarPart c t)ᶜ) :=
   hι.isInducing.isCompact_preimage' (hc.isOpen_collarPart t).isClosed_compl.isCompact
     (hc.compl_collarPart_subset_range hιf ht)

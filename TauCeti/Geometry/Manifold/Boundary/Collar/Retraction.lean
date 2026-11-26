@@ -39,6 +39,8 @@ closed in `M`. That is where compactness of `N` and the Hausdorff property of `M
   the image of the collar.
 * `TauCeti.IsCollar.complHomotopyEquiv`: the inclusion `M \ f(N) → M` of the complement of a
   collared compact set, as a homotopy equivalence.
+* `TauCeti.IsCollar.homotopyEquivOfRangeEq`: an embedding onto `M \ f(N)`, such as the interior
+  of a compact manifold with collared boundary, as a homotopy equivalence.
 
 ## Main results
 
@@ -308,6 +310,22 @@ noncomputable def complHomotopyEquiv : ContinuousMap.HomotopyEquiv ((range f)ᶜ
 @[simp]
 theorem coe_complHomotopyEquiv : ⇑hc.complHomotopyEquiv = Subtype.val :=
   (rfl)
+
+/-- **An embedding onto the complement of a collared boundary is a homotopy equivalence**, for a
+compact boundary parameter space in a Hausdorff space: the interior of a compact manifold with
+collared boundary is homotopy equivalent to the manifold. -/
+noncomputable def homotopyEquivOfRangeEq {P : Type*} [TopologicalSpace P] {ι : P → M}
+    (hι : IsEmbedding ι) (hιf : range ι = (range f)ᶜ) : ContinuousMap.HomotopyEquiv P M :=
+  ((hι.toHomeomorph.trans (Homeomorph.setCongr hιf)).toHomotopyEquiv).trans hc.complHomotopyEquiv
+
+/-- The homotopy equivalence of an embedding onto the complement of the boundary is the
+embedding. -/
+@[simp]
+theorem coe_homotopyEquivOfRangeEq {P : Type*} [TopologicalSpace P] {ι : P → M}
+    (hι : IsEmbedding ι) (hιf : range ι = (range f)ᶜ) :
+    ⇑(hc.homotopyEquivOfRangeEq hι hιf) = ι := by
+  rw [homotopyEquivOfRangeEq]
+  exact funext fun x ↦ congrFun hc.coe_complHomotopyEquiv _
 
 /-- The homotopy inverse of the inclusion `M \ f(N) → M` is the push at time `1`. -/
 private theorem coe_complHomotopyEquiv_symm_eq_push (x : M) :
