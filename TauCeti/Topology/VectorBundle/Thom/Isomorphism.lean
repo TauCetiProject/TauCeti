@@ -38,9 +38,11 @@ whenever `B` admits a finite trivializing cover (extended to arbitrary bases ove
    `TauCeti.thomMap_pullback`), is `H^*(B; K)`-linear (`TauCeti.thomMap_singularCup`), and restricts
    on fibres to cupping with the fibre restriction of `u`
    (`TauCeti.singularCohomologyMap_fiberThomPairMap_thomMap`). Over any subset `W ⊆ B`,
-   `TauCeti.thomMapOver` restricts `u` to `(E|_W, E₀|_W)`, agrees with `TopCat.pullbackCupRestrict`
-   (`TauCeti.thomMapOver_eq_pullbackCupRestrict`) and over `Set.univ` with `TauCeti.thomMap` on
-   bijectivity (`TauCeti.bijective_thomMapOver_univ_iff`), and commutes with pullback along `W ↪ B`
+   `TauCeti.thomMapOver` restricts `u` to `(E|_W, E₀|_W)`, is natural in `W`
+   (`TauCeti.thomMapOver_naturality`), agrees with `TopCat.pullbackCupRestrict`
+   (`TauCeti.thomMapOver_eq_pullbackCupRestrict`), is bijective over `∅`
+   (`TauCeti.bijective_thomMapOver_empty`) and over `Set.univ` iff `TauCeti.thomMap` is
+   (`TauCeti.bijective_thomMapOver_univ_iff`), and commutes with pullback along `W ↪ B`
    (`TauCeti.singularCohomologyMap_pullbackSubtypeValThomPairMap_thomMapOver`,
    `TauCeti.bijective_thomMapOver_iff_pullback`). For a real vector bundle, the Euler class map
    `TauCeti.eulerClass` sends `Φ_u(a)` to `a ⌣ e(u)` (`TauCeti.eulerClass_thomMap`).
@@ -67,10 +69,11 @@ whenever `B` admits a finite trivializing cover (extended to arbitrary bases ove
   `W ⊆ B`, bilinear in `u` and `a`.
 * `TauCeti.thomMap_one`, `TauCeti.thomMapOver_one`: `Φ_u(1) = u` and its subset form.
 * `TauCeti.thomMap_naturality`, `TauCeti.thomMap_pullback`,
-  `TauCeti.thomMapOver_eq_pullbackCupRestrict`, `TauCeti.bijective_thomMapOver_univ_iff`,
+  `TauCeti.thomMapOver_eq_pullbackCupRestrict`, `TauCeti.thomMapOver_naturality`,
+  `TauCeti.bijective_thomMapOver_empty`, `TauCeti.bijective_thomMapOver_univ_iff`,
   `TauCeti.singularCohomologyMap_pullbackSubtypeValThomPairMap_thomMapOver`,
   `TauCeti.bijective_thomMapOver_iff_pullback`: naturality, agreement with
-  `TopCat.pullbackCupRestrict` and `TauCeti.thomMap` over `Set.univ`, and pullback compatibility.
+  `TopCat.pullbackCupRestrict`, `∅` and `Set.univ` characterizations, and pullback compatibility.
 * `TauCeti.thomMap_singularCup`: linearity over the cohomology of the base.
 * `TauCeti.singularCohomologyMap_fiberThomPairMap_thomMap`: the restriction to a fibre.
 * `TauCeti.eulerClass_thomMap`: the Euler class map sends `Φ_u(a)` to `a ⌣ e(u)`.
@@ -262,6 +265,32 @@ theorem thomMapOver_one (W : Set B) {n : ℕ} (h : 0 + n = n)
         (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W) n u := by
   rw [thomMapOver_apply]
   exact TopPair.pullbackCup_one _ _ h _
+
+/-- **Naturality of `thomMapOver` in the subset**: for `W ⊆ W'`, restricting `thomMapOver` over
+`W'` along `thomPairOverMap F E hWW'` gives `thomMapOver` over `W` at the restriction of `a` to
+`W`. -/
+@[simp]
+theorem thomMapOver_naturality {W W' : Set B} (hWW' : W ⊆ W') {n p m : ℕ} (h : p + n = m)
+    (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (a : (TopCat.of W').singularCohomology (ModuleCat.of K K) K M p) :
+    TopPair.singularCohomologyMap (thomPairOverMap F E hWW') m
+        (thomMapOver F E M W' n p m h u a) =
+      thomMapOver F E M W n p m h u
+        (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.inclusion hWW')) p a) := by
+  rw [thomMapOver_apply, thomMapOver_apply,
+    ← thomPairOverMap_comp_restrictPreimagePairMap F E hWW',
+    TopPair.singularCohomologyMap_comp_apply]
+  exact (TopPair.pullbackCup_naturality (thomPairOverMap F E hWW') _ _ _
+    (thomPairOverMap_fst_comp_thomPairOverProj F E hWW') h _ a).symm
+
+variable (M) in
+/-- Over the empty subset `∅ ⊆ B`, `TauCeti.thomMapOver` of `u` is bijective in every degree. -/
+@[simp]
+theorem bijective_thomMapOver_empty {n p m : ℕ} (h : p + n = m)
+    (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    Function.Bijective (thomMapOver F E M ∅ n p m h u) := by
+  rw [thomMapOver_eq_pullbackCupRestrict]
+  exact TopCat.bijective_pullbackCupRestrict_empty _ _ M h u
 
 /-- Over the whole base `Set.univ`, `TauCeti.thomMapOver` of `u` is bijective if and only if
 `TauCeti.thomMap` of `u` is bijective. -/
@@ -507,8 +536,8 @@ private theorem bijective_thomMapOver_biUnion_of_isOpen [FiniteDimensional ℝ F
   classical
   induction s using Finset.induction_on generalizing W p m with
   | empty =>
-    rw [(by simp : (⋃ i ∈ (∅ : Finset ι), W i) = ∅), thomMapOver_eq_pullbackCupRestrict]
-    exact TopCat.bijective_pullbackCupRestrict_empty _ _ M h u
+    rw [(by simp : (⋃ i ∈ (∅ : Finset ι), W i) = ∅)]
+    exact bijective_thomMapOver_empty F E M h u
   | insert a s _ ih =>
     rw [Finset.set_biUnion_insert, thomMapOver_eq_pullbackCupRestrict]
     have ha : a ∈ insert a s := Finset.mem_insert_self a s
