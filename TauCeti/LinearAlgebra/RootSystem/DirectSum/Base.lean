@@ -128,25 +128,16 @@ noncomputable def Base.restrictPi (b : (RootPairing.pi P).Base) (c : κ) : (P c)
     simp only [Finset.coe_preimage, Set.univ_sigma_preimage_mk]
   { support := b.support.preimage (Sigma.mk c) sigma_mk_injective.injOn
     linearIndepOn_root := by
-      have hfn : (fun p : Σ d, ι d ↦ Pi.single p.1 ((P p.1).root p.2)) =
-          (RootPairing.pi P).root :=
+      have hfn : (fun p : Σ d, ι d ↦ Pi.single p.1 ((P p.1).root p.2)) = (RootPairing.pi P).root :=
         funext fun ⟨d, i⟩ ↦ (pi_root P d i).symm
-      have hroot : LinearIndepOn R (fun p : Σ d, ι d ↦ Pi.single p.1 ((P p.1).root p.2))
-          (Set.univ.sigma fun d ↦ ((b.support.preimage (Sigma.mk d)
-            sigma_mk_injective.injOn : Finset (ι d)) : Set (ι d))) := by
-        rw [hfn, ← hsupp]
-        exact b.linearIndepOn_root
-      exact (Pi.linearIndepOn_single_iff fun d ↦ (P d).root).mp hroot c (Set.mem_univ c)
+      exact (Pi.linearIndepOn_single_iff fun d ↦ (P d).root).mp
+        (by rw [hfn, ← hsupp]; exact b.linearIndepOn_root) c (Set.mem_univ c)
     linearIndepOn_coroot := by
       have hfn : (fun p : Σ d, ι d ↦ Pi.single p.1 ((P p.1).coroot p.2)) =
           (RootPairing.pi P).coroot :=
         funext fun ⟨d, i⟩ ↦ (pi_coroot P d i).symm
-      have hcoroot : LinearIndepOn R (fun p : Σ d, ι d ↦ Pi.single p.1 ((P p.1).coroot p.2))
-          (Set.univ.sigma fun d ↦ ((b.support.preimage (Sigma.mk d)
-            sigma_mk_injective.injOn : Finset (ι d)) : Set (ι d))) := by
-        rw [hfn, ← hsupp]
-        exact b.linearIndepOn_coroot
-      exact (Pi.linearIndepOn_single_iff fun d ↦ (P d).coroot).mp hcoroot c (Set.mem_univ c)
+      exact (Pi.linearIndepOn_single_iff fun d ↦ (P d).coroot).mp
+        (by rw [hfn, ← hsupp]; exact b.linearIndepOn_coroot) c (Set.mem_univ c)
     root_mem_or_neg_mem i := by
       have hle : (AddSubmonoid.closure
             ((RootPairing.pi P).root '' (b.support : Set (Σ d, ι d)))).map
@@ -155,15 +146,12 @@ noncomputable def Base.restrictPi (b : (RootPairing.pi P).Base) (c : κ) : (P c)
             sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) := by
         rw [AddMonoidHom.map_mclosure, AddSubmonoid.closure_le]
         rintro _ ⟨_, ⟨⟨d, j⟩, hj, rfl⟩, rfl⟩
-        by_cases hdc : d = c
-        · subst hdc
-          exact AddSubmonoid.subset_closure ⟨j, by simpa using hj, by simp⟩
-        · simp [Pi.single_eq_of_ne (Ne.symm hdc), zero_mem]
+        rcases eq_or_ne d c with rfl | hdc
+        · exact AddSubmonoid.subset_closure ⟨j, by simpa using hj, by simp⟩
+        · simp [Pi.single_eq_of_ne hdc.symm, zero_mem]
       rcases b.root_mem_or_neg_mem ⟨c, i⟩ with h | h
-      · exact Or.inl <| by
-          simpa using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom M c) h)
-      · exact Or.inr <| by
-          simpa using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom M c) h)
+      · exact Or.inl <| by simpa using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom M c) h)
+      · exact Or.inr <| by simpa using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom M c) h)
     coroot_mem_or_neg_mem i := by
       have hle : (AddSubmonoid.closure
             ((RootPairing.pi P).coroot '' (b.support : Set (Σ d, ι d)))).map
@@ -172,10 +160,9 @@ noncomputable def Base.restrictPi (b : (RootPairing.pi P).Base) (c : κ) : (P c)
             sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) := by
         rw [AddMonoidHom.map_mclosure, AddSubmonoid.closure_le]
         rintro _ ⟨_, ⟨⟨d, j⟩, hj, rfl⟩, rfl⟩
-        by_cases hdc : d = c
-        · subst hdc
-          exact AddSubmonoid.subset_closure ⟨j, by simpa using hj, by simp⟩
-        · simp [Pi.single_eq_of_ne (Ne.symm hdc), zero_mem]
+        rcases eq_or_ne d c with rfl | hdc
+        · exact AddSubmonoid.subset_closure ⟨j, by simpa using hj, by simp⟩
+        · simp [Pi.single_eq_of_ne hdc.symm, zero_mem]
       rcases b.coroot_mem_or_neg_mem ⟨c, i⟩ with h | h
       · exact Or.inl <| by
           simpa using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom N c) h)

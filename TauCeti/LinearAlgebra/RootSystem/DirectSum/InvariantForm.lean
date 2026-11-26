@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Internal
 import TauCeti.LinearAlgebra.RootSystem.Flip
-import TauCeti.LinearAlgebra.RootSystem.RootForm
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance.RootForm
 
 /-!
 # Canonical bilinear forms and anisotropy of direct sums of root pairings

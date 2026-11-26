@@ -155,8 +155,7 @@ variable {κ R M : Type*} [Finite κ] [CommRing R] [NeZero (2 : R)]
 the Weyl groups of its summands.** -/
 noncomputable def internalDirectSumWeylGroupEquiv :
     (internalDirectSum hEi hEt P).weylGroup ≃* ∀ c, (P c).weylGroup :=
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : DecidableEq κ := Classical.decEq κ
+  let _ := Fintype.ofFinite κ; let _ := Classical.decEq κ
   (piEquivInternalDirectSum hEi hEt P).weylGroupEquiv.symm.trans (piWeylGroupEquiv P)
 
 /-- The Weyl-group isomorphism acts equivariantly on every internal projection. -/
@@ -165,8 +164,7 @@ theorem internalProjection_smul_internalDirectSum
     (w : (internalDirectSum hEi hEt P).weylGroup) (c : κ) (x : M) :
     internalProjection hEi hEt c (w • x) =
       internalDirectSumWeylGroupEquiv hEi hEt P w c • internalProjection hEi hEt c x := by
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : DecidableEq κ := Classical.decEq κ
+  let _ := Fintype.ofFinite κ; classical
   let e := piEquivInternalDirectSum hEi hEt P
   have h := e.weylGroupEquiv_smul (e.weylGroupEquiv.symm w) (e.weightEquiv.symm x)
   rw [MulEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply] at h
@@ -179,16 +177,14 @@ theorem internalDirectSumWeylGroupEquiv_ofIdx_self (c : κ) (i : ι c) :
     internalDirectSumWeylGroupEquiv hEi hEt P
         (weylGroup.ofIdx (internalDirectSum hEi hEt P) ⟨c, i⟩) c =
       weylGroup.ofIdx (P c) i := by
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : DecidableEq κ := Classical.decEq κ
+  let _ := Fintype.ofFinite κ; classical
   simp [internalDirectSumWeylGroupEquiv]
 
 @[simp]
 theorem internalDirectSumWeylGroupEquiv_ofIdx_ne {c d : κ} (hdc : d ≠ c) (i : ι c) :
     internalDirectSumWeylGroupEquiv hEi hEt P
         (weylGroup.ofIdx (internalDirectSum hEi hEt P) ⟨c, i⟩) d = 1 := by
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : DecidableEq κ := Classical.decEq κ
+  let _ := Fintype.ofFinite κ; classical
   simp [internalDirectSumWeylGroupEquiv, hdc]
 
 /-- Lifting a single summand reflection from coordinate `c` maps under
@@ -199,7 +195,7 @@ theorem internalDirectSumWeylGroupEquiv_symm_mulSingle_ofIdx [DecidableEq κ]
     (internalDirectSumWeylGroupEquiv hEi hEt P).symm
         (Pi.mulSingle c (weylGroup.ofIdx (P c) i)) =
       weylGroup.ofIdx (internalDirectSum hEi hEt P) ⟨c, i⟩ := by
-  let _ : Fintype κ := Fintype.ofFinite κ
+  let _ := Fintype.ofFinite κ
   rw [MulEquiv.symm_apply_eq]
   ext d
   by_cases hdc : d = c

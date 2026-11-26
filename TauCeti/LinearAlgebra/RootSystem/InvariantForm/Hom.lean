@@ -8,8 +8,8 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import TauCeti.LinearAlgebra.RootSystem.EquivComp
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
+public import TauCeti.LinearAlgebra.RootSystem.HomInvariance.RootForm
 public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.MulAction
-public import TauCeti.LinearAlgebra.RootSystem.RootForm
 
 import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
@@ -23,8 +23,8 @@ commutes with rescaling, preserves positive definiteness when the weight map is 
 along an equivalence of root pairings it is a bijection of invariant forms.
 
 A morphism of finite root pairings preserves the canonical root form (proved in
-`TauCeti.LinearAlgebra.RootSystem.RootForm`). So the canonical invariant form of `Q` pulls back to
-that of `P`.
+`TauCeti.LinearAlgebra.RootSystem.HomInvariance.RootForm`). So the canonical invariant form of `Q`
+pulls back to that of `P`.
 
 ## Main definitions
 

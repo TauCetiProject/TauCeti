@@ -115,12 +115,11 @@ noncomputable def internalDirectSum [Finite κ] :
     RootPairing (Σ c, ι c) R M (Module.Dual R M) where
   toLinearMap := Module.Dual.eval R M
   isPerfPair_toLinearMap := by
-    let _ : Fintype κ := Fintype.ofFinite κ
+    let _ := Fintype.ofFinite κ
     have : ∀ c, Module.IsReflexive R (E c) := fun c ↦
       Module.IsReflexive.of_isPerfPair (P c).toLinearMap
     have : Module.IsReflexive R (∀ c, E c) := Module.IsReflexive.pi
-    have : Module.IsReflexive R M :=
-      Module.equiv (internalDirectSumEquiv hEi hEt)
+    have : Module.IsReflexive R M := Module.equiv (internalDirectSumEquiv hEi hEt)
     infer_instance
   root := ⟨fun s ↦ ((P s.1).root s.2 : M), internalDirectSum_root_injective hEi hEt P⟩
   coroot :=
@@ -130,35 +129,29 @@ noncomputable def internalDirectSum [Finite κ] :
     simp only [Function.Embedding.coeFn_mk, Module.Dual.eval_apply, LinearMap.comp_apply,
       internalProjection_apply, root_coroot'_eq_pairing, pairing_same]
   reflectionPerm :=
-    let _ : Fintype κ := Fintype.ofFinite κ
-    let _ : DecidableEq κ := Classical.decEq κ
+    let _ := Fintype.ofFinite κ
+    let _ := Classical.decEq κ
     (pi P).reflectionPerm
   reflectionPerm_root := by
     rintro ⟨c, i⟩ ⟨d, j⟩
-    let _ : Fintype κ := Fintype.ofFinite κ
-    let _ : DecidableEq κ := Classical.decEq κ
+    let _ := Fintype.ofFinite κ; classical
     simp only [Function.Embedding.coeFn_mk, Module.Dual.eval_apply, LinearMap.comp_apply]
-    by_cases hcd : c = d
-    · subst hcd
-      rw [pi_reflectionPerm_same, internalProjection_apply]
+    rcases eq_or_ne c d with rfl | hcd
+    · rw [pi_reflectionPerm_same, internalProjection_apply]
       exact_mod_cast (P c).reflectionPerm_root i j
-    · rw [pi_reflectionPerm_ne P hcd, internalProjection_apply_of_ne hEi hEt (Ne.symm hcd)]
-      simp
+    · rw [pi_reflectionPerm_ne P hcd, internalProjection_apply_of_ne hEi hEt hcd.symm]; simp
   reflectionPerm_coroot := by
     rintro ⟨c, i⟩ ⟨d, j⟩
-    let _ : Fintype κ := Fintype.ofFinite κ
-    let _ : DecidableEq κ := Classical.decEq κ
+    let _ := Fintype.ofFinite κ; classical
     refine LinearMap.ext fun x ↦ ?_
     simp only [Function.Embedding.coeFn_mk, LinearMap.sub_apply, LinearMap.smul_apply,
       LinearMap.comp_apply, Module.Dual.eval_apply, smul_eq_mul]
-    by_cases hcd : c = d
-    · subst hcd
-      rw [pi_reflectionPerm_same, internalProjection_apply]
+    rcases eq_or_ne c d with rfl | hcd
+    · rw [pi_reflectionPerm_same, internalProjection_apply]
       have h := congrArg (fun y ↦ (P c).toLinearMap (internalProjection hEi hEt c x) y)
         ((P c).reflectionPerm_coroot i j)
       simpa [coroot', map_sub, map_smul, smul_eq_mul, mul_comm] using h
-    · rw [pi_reflectionPerm_ne P hcd, internalProjection_apply_of_ne hEi hEt hcd]
-      simp
+    · rw [pi_reflectionPerm_ne P hcd, internalProjection_apply_of_ne hEi hEt hcd]; simp
 
 section Evaluation
 
@@ -223,15 +216,13 @@ theorem isOrthogonal_internalDirectSum_of_ne {c d : κ} (hcd : c ≠ d) (i : ι 
 @[simp]
 theorem internalDirectSum_reflectionPerm_same (c : κ) (i j : ι c) :
     (internalDirectSum hEi hEt P).reflectionPerm ⟨c, i⟩ ⟨c, j⟩ = ⟨c, (P c).reflectionPerm i j⟩ := by
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : DecidableEq κ := Classical.decEq κ
+  let _ := Fintype.ofFinite κ; classical
   exact pi_reflectionPerm_same P c i j
 
 @[simp]
 theorem internalDirectSum_reflectionPerm_ne {c d : κ} (hcd : c ≠ d) (i : ι c) (j : ι d) :
     (internalDirectSum hEi hEt P).reflectionPerm ⟨c, i⟩ ⟨d, j⟩ = ⟨d, j⟩ := by
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : DecidableEq κ := Classical.decEq κ
+  let _ := Fintype.ofFinite κ; classical
   exact pi_reflectionPerm_ne P hcd i j
 
 /-- Formula for the reflection of an internal direct sum at `⟨c, i⟩` on an arbitrary vector. -/
@@ -437,16 +428,13 @@ variable [Finite κ]
 /-- **A finite internal direct sum of root systems is a root system.** -/
 instance isRootSystem_internalDirectSum [∀ c, (P c).IsRootSystem] :
     (internalDirectSum hEi hEt P).IsRootSystem :=
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : DecidableEq κ := Classical.decEq κ
+  let _ := Fintype.ofFinite κ; let _ := Classical.decEq κ
   (piEquivInternalDirectSum hEi hEt P).isRootSystem
 
 /-- **A finite internal direct sum is a root system iff every summand is a root system.** -/
 theorem isRootSystem_internalDirectSum_iff :
     (internalDirectSum hEi hEt P).IsRootSystem ↔ ∀ c, (P c).IsRootSystem :=
-  ⟨fun _ ↦
-    let _ : Fintype κ := Fintype.ofFinite κ
-    let _ : DecidableEq κ := Classical.decEq κ
+  ⟨fun _ ↦ let _ := Fintype.ofFinite κ; let _ := Classical.decEq κ
     let _ := (piEquivInternalDirectSum hEi hEt P).symm.isRootSystem
     (isRootSystem_pi_iff P).mp ‹_›,
    fun _ ↦ isRootSystem_internalDirectSum hEi hEt P⟩
@@ -455,16 +443,13 @@ theorem isRootSystem_internalDirectSum_iff :
 internal direct sum of crystallographic root pairings is crystallographic. -/
 instance isValuedIn_internalDirectSum (S : Type*) [CommRing S] [Algebra S R]
     [∀ c, (P c).IsValuedIn S] : (internalDirectSum hEi hEt P).IsValuedIn S :=
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : DecidableEq κ := Classical.decEq κ
+  let _ := Fintype.ofFinite κ; let _ := Classical.decEq κ
   (piEquivInternalDirectSum hEi hEt P).toHom.isValuedIn S
 
 /-- **A finite internal direct sum is `S`-valued iff every summand is `S`-valued.** -/
 theorem isValuedIn_internalDirectSum_iff (S : Type*) [CommRing S] [Algebra S R] :
     (internalDirectSum hEi hEt P).IsValuedIn S ↔ ∀ c, (P c).IsValuedIn S :=
-  ⟨fun _ ↦
-    let _ : Fintype κ := Fintype.ofFinite κ
-    let _ : DecidableEq κ := Classical.decEq κ
+  ⟨fun _ ↦ let _ := Fintype.ofFinite κ; let _ := Classical.decEq κ
     let _ := (piEquivInternalDirectSum hEi hEt P).symm.toHom.isValuedIn S
     (isValuedIn_pi_iff P S).mp ‹_›,
    fun _ ↦ isValuedIn_internalDirectSum hEi hEt P S⟩
@@ -485,16 +470,14 @@ theorem internalDirectSum_pairingIn_ne (S : Type*) [CommRing S] [Algebra S R] [F
 in `R`. -/
 theorem isReduced_internalDirectSum_of_isRegular (h2 : IsRegular (2 : R)) [∀ c, (P c).IsReduced] :
     (internalDirectSum hEi hEt P).IsReduced :=
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : DecidableEq κ := Classical.decEq κ
+  let _ := Fintype.ofFinite κ; let _ := Classical.decEq κ
   let _ := isReduced_pi_of_isRegular P h2
   (piEquivInternalDirectSum hEi hEt P).isReduced
 
 /-- Every summand of a reduced finite internal direct sum is reduced. -/
 theorem isReduced_of_internalDirectSum [(internalDirectSum hEi hEt P).IsReduced] (c : κ) :
     (P c).IsReduced :=
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : DecidableEq κ := Classical.decEq κ
+  let _ := Fintype.ofFinite κ; let _ := Classical.decEq κ
   let _ := (piEquivInternalDirectSum hEi hEt P).symm.isReduced
   isReduced_of_pi P c
 
@@ -540,13 +523,10 @@ noncomputable def Equiv.internalDirectSumCongr
     (hEi' : iSupIndep E') (hEt' : ⨆ c', E' c' = ⊤)
     (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (eκ c))) :
     (internalDirectSum hEi hEt P).Equiv (internalDirectSum hEi' hEt' Q) :=
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : Fintype κ' := Fintype.ofFinite κ'
-  let _ : DecidableEq κ := Classical.decEq κ
-  let _ : DecidableEq κ' := Classical.decEq κ'
+  let _ := Fintype.ofFinite κ; let _ := Fintype.ofFinite κ'
+  let _ := Classical.decEq κ; let _ := Classical.decEq κ'
   Equiv.comp (piEquivInternalDirectSum hEi' hEt' Q)
-    (Equiv.comp (Equiv.piCongr eκ e)
-      ((piEquivInternalDirectSum hEi hEt P).symm))
+    (Equiv.comp (Equiv.piCongr eκ e) ((piEquivInternalDirectSum hEi hEt P).symm))
 
 @[simp]
 theorem Equiv.internalDirectSumCongr_indexEquiv
@@ -555,10 +535,7 @@ theorem Equiv.internalDirectSumCongr_indexEquiv
     (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (eκ c))) (c : κ) (i : ι c) :
     (Equiv.internalDirectSumCongr hEi hEt hEi' hEt' eκ e).indexEquiv ⟨c, i⟩ =
       ⟨eκ c, (e c).indexEquiv i⟩ := by
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : Fintype κ' := Fintype.ofFinite κ'
-  let _ : DecidableEq κ := Classical.decEq κ
-  let _ : DecidableEq κ' := Classical.decEq κ'
+  let _ := Fintype.ofFinite κ; let _ := Fintype.ofFinite κ'; classical
   simp [Equiv.internalDirectSumCongr, Equiv.toHom_comp]
 
 @[simp]
@@ -568,10 +545,7 @@ theorem Equiv.internalDirectSumCongr_weightMap_coe
     (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (eκ c))) (c : κ) (x : E c) :
     (Equiv.internalDirectSumCongr hEi hEt hEi' hEt' eκ e).weightMap (x : M) =
       ((e c).weightMap x : M') := by
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : Fintype κ' := Fintype.ofFinite κ'
-  let _ : DecidableEq κ := Classical.decEq κ
-  let _ : DecidableEq κ' := Classical.decEq κ'
+  let _ := Fintype.ofFinite κ; let _ := Fintype.ofFinite κ'; classical
   have hw : (Equiv.internalDirectSumCongr hEi hEt hEi' hEt' eκ e).weightMap (x : M) =
       (piEquivInternalDirectSum hEi' hEt' Q).weightMap
         ((Equiv.piCongr eκ e).weightMap
@@ -595,10 +569,7 @@ theorem Equiv.internalProjection_internalDirectSumCongr_weightMap
     internalProjection hEi' hEt' (eκ c)
         ((Equiv.internalDirectSumCongr hEi hEt hEi' hEt' eκ e).weightMap x) =
       (e c).weightMap (internalProjection hEi hEt c x) := by
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : Fintype κ' := Fintype.ofFinite κ'
-  let _ : DecidableEq κ := Classical.decEq κ
-  let _ : DecidableEq κ' := Classical.decEq κ'
+  let _ := Fintype.ofFinite κ; let _ := Fintype.ofFinite κ'; classical
   have he : ((Equiv.internalDirectSumCongr hEi hEt hEi' hEt' eκ e).weightEquiv x) =
       (piEquivInternalDirectSum hEi' hEt' Q).weightEquiv
         ((Equiv.piCongr eκ e).weightEquiv
@@ -622,10 +593,7 @@ theorem Equiv.toPerfPair_symm_internalDirectSumCongr_coweightMap
         (((Equiv.internalDirectSumCongr hEi hEt hEi' hEt' eκ e).coweightMap g).comp (E c).subtype) =
       (e c).coweightMap
         ((Q (eκ c)).toLinearMap.flip.toPerfPair.symm (g.comp (E' (eκ c)).subtype)) := by
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : Fintype κ' := Fintype.ofFinite κ'
-  let _ : DecidableEq κ := Classical.decEq κ
-  let _ : DecidableEq κ' := Classical.decEq κ'
+  let _ := Fintype.ofFinite κ; let _ := Fintype.ofFinite κ'; classical
   simp only [← RootPairing.flip_toLinearMap]
   rw [← piEquivInternalDirectSum_coweightMap_apply hEi hEt P]
   simp only [Equiv.internalDirectSumCongr, Equiv.toHom_comp, Hom.comp, LinearMap.comp_apply,
@@ -642,8 +610,7 @@ theorem Equiv.internalDirectSumCongr_id
     Equiv.internalDirectSumCongr hEi hEt hEi hEt
         (_root_.Equiv.refl κ) (fun c ↦ Equiv.id (P c)) =
       Equiv.id (internalDirectSum hEi hEt P) := by
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : DecidableEq κ := Classical.decEq κ
+  let _ := Fintype.ofFinite κ; classical
   simp [Equiv.internalDirectSumCongr]
 
 /-- Composing two `Equiv.internalDirectSumCongr` equivalences gives
@@ -665,12 +632,8 @@ theorem Equiv.internalDirectSumCongr_comp
         (Equiv.internalDirectSumCongr hEi hEt hEi' hEt' eκ e) =
       Equiv.internalDirectSumCongr hEi hEt hEi'' hEt'' (eκ.trans eκ')
         fun c ↦ Equiv.comp (e' (eκ c)) (e c) := by
-  let _ : Fintype κ := Fintype.ofFinite κ
-  let _ : Fintype κ' := Fintype.ofFinite κ'
-  let _ : Fintype κ'' := Fintype.ofFinite κ''
-  let _ : DecidableEq κ := Classical.decEq κ
-  let _ : DecidableEq κ' := Classical.decEq κ'
-  let _ : DecidableEq κ'' := Classical.decEq κ''
+  let _ := Fintype.ofFinite κ; let _ := Fintype.ofFinite κ'; let _ := Fintype.ofFinite κ''
+  classical
   simp only [Equiv.internalDirectSumCongr, Equiv.comp_assoc]
   congr 1
   rw [← Equiv.comp_assoc (piEquivInternalDirectSum hEi' hEt' Q).symm
