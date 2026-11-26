@@ -61,6 +61,9 @@ kernel of `Stₙ(R) → Eₙ(R)` is central.
   `TauCeti.Steinberg.FiniteRank.equivIndexedSteinbergGroup_mapIndex`,
   `TauCeti.IndexedSteinbergGroup.toGL_equivIndexedSteinbergGroup`: the identification commutes
   with coefficient homomorphisms, index embeddings and the projection to `GLₙ(R)`.
+* `TauCeti.Steinberg.FiniteRank.toGL_map`, `TauCeti.Steinberg.FiniteRank.toGL_mapIndex`: the
+  projection to `GLₙ(R)` intertwines `map f` with entrywise scalar change and `mapIndex e` with
+  extension by the identity `e.extendGL R`.
 * `TauCeti.Steinberg.FiniteRank.range_toGL`: the image of `Stₙ(R)` in `GLₙ(R)` is `Eₙ(R)`.
 * `TauCeti.Steinberg.FiniteRank.existsUnique_comp_eq_of_five_le`,
   `TauCeti.Steinberg.FiniteRank.isUniversalCentralExtension_id_of_five_le`: for `n ≥ 5`, every
@@ -379,6 +382,32 @@ def toGL : FiniteRank R n →* GL (Fin n) R :=
 @[simp]
 theorem toGL_x {i j : Fin n} (hij : i ≠ j) (a : R) : toGL (x hij a) = transvectionUnit hij a :=
   lift_x _ _ _ _ hij a
+
+/-- The projection `Stₙ(R) →* GLₙ(R)` intertwines `TauCeti.Steinberg.FiniteRank.map` with entrywise
+scalar change. -/
+theorem toGL_comp_map (f : R →+* S) :
+    (toGL (R := S) (n := n)).comp (map f) =
+      (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom).comp toGL := by
+  ext i j hij a
+  simp [RingHom.unitsMap_mapMatrix_transvectionUnit]
+
+/-- The projection `Stₙ(R) →* GLₙ(R)` is natural in ring homomorphisms. -/
+@[simp]
+theorem toGL_map (f : R →+* S) (z : FiniteRank R n) :
+    toGL (map f z) = Units.map (f.mapMatrix (m := Fin n)).toMonoidHom (toGL z) :=
+  DFunLike.congr_fun (toGL_comp_map f) z
+
+/-- Along an index embedding `e : Fin m ↪ Fin n`, the projection to `GLₙ(R)` intertwines
+`TauCeti.Steinberg.FiniteRank.mapIndex e` with extension by the identity `e.extendGL R`. -/
+theorem toGL_comp_mapIndex {m : ℕ} (e : Fin m ↪ Fin n) :
+    (toGL (R := R) (n := n)).comp (mapIndex e) = (e.extendGL R).comp toGL :=
+  hom_ext fun i j hij a ↦ by simp
+
+/-- Along an index embedding `e : Fin m ↪ Fin n`, `toGL` sends the image of `z` under
+`mapIndex e` to the extension of `toGL z` by the identity. -/
+theorem toGL_mapIndex {m : ℕ} (e : Fin m ↪ Fin n) (z : FiniteRank R m) :
+    toGL (mapIndex e z) = e.extendGL R (toGL z) :=
+  DFunLike.congr_fun (toGL_comp_mapIndex e) z
 
 end FiniteRank
 
