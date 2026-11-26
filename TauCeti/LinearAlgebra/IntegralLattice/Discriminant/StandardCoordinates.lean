@@ -54,8 +54,7 @@ theorem nsmul_discriminantGroup_ofGramMatrix_basisFun_eq_zero {M : Matrix ι ι 
     (x : ι → ℚ) j
   simp_rw [form_ofGramMatrix_basisFun_right, ← hw] at hx
   have hn' : (n : ℚ) ≠ 0 := by exact_mod_cast hn
-  change _ = n • (x : ι → ℚ) j
-  rw [hx, nsmul_eq_mul]
+  rw [Submodule.coe_smul_of_tower, Pi.smul_apply, hx, nsmul_eq_mul]
   push_cast
   field_simp
 
@@ -75,8 +74,8 @@ theorem discriminantGroup_mk_eq_mk_iff_of_mul_eq_smul_one (i i' : ι) :
       ∀ j, d ∣ M j i - M j i' := by
   rw [discriminantGroup_mk_eq_iff, mem_ofGramMatrix_basisFun_carrier_iff]
   refine forall_congr' fun j ↦ ?_
-  change (∃ z : ℤ, (z : ℚ) = (M j i : ℚ) / d - (M j i' : ℚ) / d) ↔ _
-  rw [← Rat.den_div_intCast_eq_one_iff _ _ hd, Int.cast_sub, sub_div]
+  rw [Submodule.coe_sub, Pi.sub_apply, ← Rat.den_div_intCast_eq_one_iff _ _ hd, Int.cast_sub,
+    sub_div]
   exact ⟨fun ⟨z, hz⟩ ↦ hz ▸ Rat.den_intCast z, fun h ↦ ⟨_, (Rat.den_eq_one_iff _).mp h⟩⟩
 
 /-- The class of the `i`-th column of `M / d` vanishes exactly when that column of `M` is
@@ -88,8 +87,7 @@ theorem discriminantGroup_mk_eq_zero_iff_of_mul_eq_smul_one (i : ι) :
       ∀ j, d ∣ M j i := by
   rw [discriminantGroup_mk_eq_zero_iff, mem_ofGramMatrix_basisFun_carrier_iff]
   refine forall_congr' fun j ↦ ?_
-  change (∃ z : ℤ, (z : ℚ) = (M j i : ℚ) / d) ↔ _
-  rw [← Rat.den_div_intCast_eq_one_iff _ _ hd]
+  rw [Submodule.coe_mk, ← Rat.den_div_intCast_eq_one_iff _ _ hd]
   exact ⟨fun ⟨z, hz⟩ ↦ hz ▸ Rat.den_intCast z, fun h ↦ ⟨_, (Rat.den_eq_one_iff _).mp h⟩⟩
 
 /-- The discriminant quadratic value of the class of the `i`-th column of `M / d` is
