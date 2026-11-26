@@ -173,7 +173,8 @@ def descendS [T2Space M] (ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M)
     ((QuotientGroup.lift (maxUnramifiedOutside F (AlgebraicClosure F) S).fixingSubgroup
       ρ.toRepresentation
       (isUnramifiedOutside_iff_fixingSubgroup_le_ker.1 h)).comp
-        (quotientFixingSubgroupEquivS F (AlgebraicClosure F) S).symm.toMonoidHom)
+        (quotientFixingSubgroupEquiv F (AlgebraicClosure F)
+          (maxUnramifiedOutside F (AlgebraicClosure F) S)).symm.toMonoidHom)
   continuous_action := by
     -- `G_F × M → G_{F,S} × M` is an open surjection, hence a quotient map
     have hq : Topology.IsQuotientMap
@@ -185,15 +186,17 @@ def descendS [T2Space M] (ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M)
     have : (fun p : galoisGroupS F (AlgebraicClosure F) S × M ↦
         ((QuotientGroup.lift (maxUnramifiedOutside F (AlgebraicClosure F) S).fixingSubgroup
           ρ.toRepresentation (isUnramifiedOutside_iff_fixingSubgroup_le_ker.1 h)).comp
-            (quotientFixingSubgroupEquivS F (AlgebraicClosure F) S).symm.toMonoidHom) p.1 p.2) ∘
+            (quotientFixingSubgroupEquiv F (AlgebraicClosure F)
+              (maxUnramifiedOutside F (AlgebraicClosure F) S)).symm.toMonoidHom) p.1 p.2) ∘
           Prod.map (restrictionS F (AlgebraicClosure F) S) id =
         fun p : Gal(AlgebraicClosure F/F) × M ↦ ρ p.1 p.2 := by
       funext ⟨σ, x⟩
       change QuotientGroup.lift (maxUnramifiedOutside F (AlgebraicClosure F) S).fixingSubgroup
         ρ.toRepresentation (isUnramifiedOutside_iff_fixingSubgroup_le_ker.1 h)
-          ((quotientFixingSubgroupEquivS F (AlgebraicClosure F) S).symm
+          ((quotientFixingSubgroupEquiv F (AlgebraicClosure F)
+              (maxUnramifiedOutside F (AlgebraicClosure F) S)).symm
             (restrictionS F (AlgebraicClosure F) S σ)) x = ρ σ x
-      rw [quotientFixingSubgroupEquivS_symm_restrictionS]
+      rw [restrictionS_apply, quotientFixingSubgroupEquiv_symm_restrictNormalHom]
       rfl
     rw [this]
     exact ρ.continuous_action
@@ -206,9 +209,10 @@ theorem descendS_restrictionS_apply (h : ρ.IsUnramifiedOutside S)
     ρ.descendS h (restrictionS F (AlgebraicClosure F) S σ) = ρ σ := by
   change QuotientGroup.lift (maxUnramifiedOutside F (AlgebraicClosure F) S).fixingSubgroup
     ρ.toRepresentation (isUnramifiedOutside_iff_fixingSubgroup_le_ker.1 h)
-      ((quotientFixingSubgroupEquivS F (AlgebraicClosure F) S).symm
+      ((quotientFixingSubgroupEquiv F (AlgebraicClosure F)
+          (maxUnramifiedOutside F (AlgebraicClosure F) S)).symm
         (restrictionS F (AlgebraicClosure F) S σ)) = ρ σ
-  rw [quotientFixingSubgroupEquivS_symm_restrictionS]
+  rw [restrictionS_apply, quotientFixingSubgroupEquiv_symm_restrictNormalHom]
   rfl
 
 /-- The descended representation restricts back to `ρ` along `G_F → G_{F,S}`. -/

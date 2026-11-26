@@ -15,15 +15,13 @@ Let `K` be a number field, `Ω` a normal extension of `K` (such as an algebraic 
 set of finite places of `K`. Restriction of automorphisms to the maximal extension `K_S` of `K`
 unramified outside `S` is a continuous surjection `Gal(Ω / K) → G_{K,S}`
 (`TauCeti.RestrictedRamification.restrictionS`) whose kernel is the closed normal subgroup
-`H_S = Gal(Ω / K_S)` fixing `K_S`. It is a quotient map, and it induces an isomorphism of
-topological groups `Gal(Ω / K) ⧸ H_S ≃ₜ* G_{K,S}`
-(`TauCeti.RestrictedRamification.quotientFixingSubgroupEquivS`).
+`H_S = Gal(Ω / K_S)` fixing `K_S`. It is an open quotient map; the induced isomorphism of
+topological groups `Gal(Ω / K) ⧸ H_S ≃ₜ* G_{K,S}` is `TauCeti.quotientFixingSubgroupEquiv`
+applied to `K_S`.
 
 ## Main definitions
 
 * `TauCeti.RestrictedRamification.restrictionS`: the restriction `Gal(Ω / K) →ₜ* G_{K,S}`.
-* `TauCeti.RestrictedRamification.quotientFixingSubgroupEquivS`: the isomorphism of topological
-  groups `Gal(Ω / K) ⧸ Gal(Ω / K_S) ≃ₜ* G_{K,S}`.
 
 ## Main results
 
@@ -87,46 +85,20 @@ theorem restrictionS_eq_one_iff {σ : Gal(Ω/K)} :
   rw [← ker_restrictionS]
   rfl
 
-/-- **`G_{K,S}` as a quotient of `Gal(Ω / K)`**, as topological groups: restriction induces an
-isomorphism `Gal(Ω / K) ⧸ Gal(Ω / K_S) ≃ₜ* G_{K,S}`. -/
-def quotientFixingSubgroupEquivS :
-    Gal(Ω/K) ⧸ (maxUnramifiedOutside K Ω S).fixingSubgroup ≃ₜ* galoisGroupS K Ω S :=
-  quotientFixingSubgroupEquiv K Ω (maxUnramifiedOutside K Ω S)
-
-variable {K Ω S}
-
-@[simp]
-theorem quotientFixingSubgroupEquivS_mk (σ : Gal(Ω/K)) :
-    quotientFixingSubgroupEquivS K Ω S
-        (σ : Gal(Ω/K) ⧸ (maxUnramifiedOutside K Ω S).fixingSubgroup) =
-      restrictionS K Ω S σ :=
-  quotientFixingSubgroupEquiv_mk σ
-
-@[simp]
-theorem quotientFixingSubgroupEquivS_symm_restrictionS (σ : Gal(Ω/K)) :
-    (quotientFixingSubgroupEquivS K Ω S).symm (restrictionS K Ω S σ) =
-      (σ : Gal(Ω/K) ⧸ (maxUnramifiedOutside K Ω S).fixingSubgroup) :=
-  quotientFixingSubgroupEquiv_symm_restrictNormalHom σ
-
-variable (K Ω S)
+/-- **Restriction to `G_{K,S}` is an open map.** -/
+theorem isOpenMap_restrictionS : IsOpenMap (restrictionS K Ω S) := by
+  have h : ⇑(restrictionS K Ω S) =
+      quotientFixingSubgroupEquiv K Ω (maxUnramifiedOutside K Ω S) ∘
+        ((↑) : Gal(Ω/K) → Gal(Ω/K) ⧸ (maxUnramifiedOutside K Ω S).fixingSubgroup) :=
+    funext fun σ ↦ (quotientFixingSubgroupEquiv_mk σ).symm
+  rw [h]
+  exact (quotientFixingSubgroupEquiv K Ω _).toHomeomorph.isOpenMap.comp
+    (QuotientGroup.isOpenMap_coe)
 
 /-- **Restriction to `G_{K,S}` is a quotient map**: `G_{K,S}` carries the quotient topology of
 `Gal(Ω / K)`. -/
-theorem isQuotientMap_restrictionS : Topology.IsQuotientMap (restrictionS K Ω S) := by
-  have h : ⇑(restrictionS K Ω S) = quotientFixingSubgroupEquivS K Ω S ∘
-      ((↑) : Gal(Ω/K) → Gal(Ω/K) ⧸ (maxUnramifiedOutside K Ω S).fixingSubgroup) :=
-    funext fun σ ↦ (quotientFixingSubgroupEquivS_mk σ).symm
-  rw [h]
-  exact (quotientFixingSubgroupEquivS K Ω S).toHomeomorph.isQuotientMap.comp
-    (QuotientGroup.isQuotientMap_mk _)
-
-/-- **Restriction to `G_{K,S}` is an open map.** -/
-theorem isOpenMap_restrictionS : IsOpenMap (restrictionS K Ω S) := by
-  have h : ⇑(restrictionS K Ω S) = quotientFixingSubgroupEquivS K Ω S ∘
-      ((↑) : Gal(Ω/K) → Gal(Ω/K) ⧸ (maxUnramifiedOutside K Ω S).fixingSubgroup) :=
-    funext fun σ ↦ (quotientFixingSubgroupEquivS_mk σ).symm
-  rw [h]
-  exact (quotientFixingSubgroupEquivS K Ω S).toHomeomorph.isOpenMap.comp
-    (QuotientGroup.isOpenMap_coe)
+theorem isQuotientMap_restrictionS : Topology.IsQuotientMap (restrictionS K Ω S) :=
+  (isOpenMap_restrictionS K Ω S).isQuotientMap (restrictionS K Ω S).continuous
+    (restrictionS_surjective K Ω S)
 
 end TauCeti.RestrictedRamification
