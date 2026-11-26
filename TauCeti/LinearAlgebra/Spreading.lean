@@ -29,8 +29,6 @@ and bounds are meant for finite-dimensional `V` and `W`.
   `0 < ε < 1/16`, then the images of a set `t` of maps with
   `#t dim V ≤ (5/2) (1 + log (1 / (16 ε))) dim W` together span at least `(1 - 16 ε) dim W`
   dimensions.
-* `TauCeti.finrank_biSup_range_le`: restricting finitely many maps to a subspace `U` loses at
-  most `dim V - dim U` dimensions of the span of their images per map.
 
 ## References
 
@@ -41,8 +39,8 @@ dimension of a sum of images.
 These results are adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0,
 Copyright 2026 Anthropic PBC), file `src/New/Spanning/SecondMoment/FewTranslates.lean`
 (`New.IsSpread`, `New.IsSpread.exists_codim_le`, `New.IsSpread.exists_codim_le_max`,
-`New.IsSpread.exists_few_le_finrank_iSup_range`, `New.finrank_biSup_range_le`), where they are
-stated for complex vector spaces; here they hold over any division ring.
+`New.IsSpread.exists_few_le_finrank_iSup_range`), where they are stated for complex vector
+spaces; here they hold over any division ring.
 -/
 
 public section
@@ -212,20 +210,5 @@ theorem IsSpread.exists_card_mul_finrank_le_and_le_finrank_biSup_range
   have := Module.finite_of_finrank_pos hV
   have := Module.finite_of_finrank_pos hW
   exact h_spread.exists_card_mul_finrank_le_and_le_finrank_biSup_range_of_pos hV hW hε hε_lt
-
-/-- **Restricting a few maps to a subspace.** Restricting the maps `B s`, `s ∈ t`, to a subspace
-`U` lowers the dimension of the span of their images by at most `#t (dim V - dim U)`. -/
-theorem finrank_biSup_range_le [FiniteDimensional K V] (B : Θ → V →ₗ[K] W) (t : Finset Θ)
-    (U : Submodule K V) :
-    finrank K ↥(⨆ s ∈ t, range (B s)) ≤
-      finrank K ↥(⨆ s ∈ t, U.map (B s)) + #t * (finrank K V - finrank K U) := by
-  obtain ⟨C, hC⟩ : ∃ C : Submodule K V, IsCompl U C := U.exists_isCompl
-  have h_dim : finrank K V - finrank K U = finrank K C := by
-    rw [← finrank_add_eq_of_isCompl hC, Nat.add_sub_cancel_left]
-  have h_split : ⨆ s ∈ t, range (B s) = (⨆ s ∈ t, U.map (B s)) ⊔ ⨆ s ∈ t, C.map (B s) := by
-    simp only [← iSup_sup_eq, ← Submodule.map_sup, hC.sup_eq_top, Submodule.map_top]
-  rw [h_dim, h_split]
-  exact (finrank_add_le_finrank_add_finrank _ _).trans
-    (Nat.add_le_add_left (Submodule.finrank_biSup_map_le B t C) _)
 
 end TauCeti

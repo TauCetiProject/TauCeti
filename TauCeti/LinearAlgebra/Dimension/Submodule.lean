@@ -54,9 +54,15 @@ of equal dimension are exchanged by a linear automorphism of the ambient space
 The span `⨆ i ∈ t, M i` of finitely many finite-dimensional subspaces is finite-dimensional
 (`Submodule.finiteDimensional_biSup`, an instance) of dimension at most `∑ i ∈ t, dim M i`
 (`Submodule.finrank_biSup_le_sum`); in particular the images of a subspace `C` under maps `B s`,
-`s ∈ t`, span at most `#t dim C` dimensions (`Submodule.finrank_biSup_map_le`). Adding the image
+`s ∈ t`, span at most `#t dim C` dimensions (`Submodule.finrank_biSup_map_le`), so restricting
+the maps to a subspace `U` lowers the dimension of the span of their images by at most
+`#t (dim E - dim U)` (`TauCeti.finrank_biSup_range_le`). Adding the image
 of `A : V → W` to a subspace `F` adds `dim V - dim A⁻¹(F)` dimensions
 (`LinearMap.finrank_sup_range_add_finrank_comap`).
+
+`TauCeti.finrank_biSup_range_le` is adapted from grh-lean (https://github.com/lsernau/grh-lean,
+Apache 2.0, Copyright 2026 Anthropic PBC), file `src/New/Spanning/SecondMoment/FewTranslates.lean`,
+`New.finrank_biSup_range_le`.
 -/
 
 public section
@@ -332,6 +338,23 @@ theorem finrank_biSup_map_le [FiniteDimensional 𝕜 E] {Θ G : Type*} [AddCommG
     finrank 𝕜 ↥(⨆ s ∈ t, C.map (B s)) ≤ #t * finrank 𝕜 C :=
   (finrank_biSup_le_sum _ t).trans <| by
     simpa using Finset.sum_le_sum fun s (_ : s ∈ t) ↦ finrank_map_le (B s) C
+
+open Finset in
+/-- **Restricting a few maps to a subspace.** Restricting the maps `B s`, `s ∈ t`, to a subspace
+`U` lowers the dimension of the span of their images by at most `#t (dim E - dim U)`. -/
+theorem _root_.TauCeti.finrank_biSup_range_le [FiniteDimensional 𝕜 E] {Θ G : Type*}
+    [AddCommGroup G] [Module 𝕜 G] (B : Θ → E →ₗ[𝕜] G) (t : Finset Θ) (U : Submodule 𝕜 E) :
+    finrank 𝕜 ↥(⨆ s ∈ t, LinearMap.range (B s)) ≤
+      finrank 𝕜 ↥(⨆ s ∈ t, U.map (B s)) + #t * (finrank 𝕜 E - finrank 𝕜 U) := by
+  obtain ⟨C, hC⟩ : ∃ C : Submodule 𝕜 E, IsCompl U C := U.exists_isCompl
+  have h_dim : finrank 𝕜 E - finrank 𝕜 U = finrank 𝕜 C := by
+    rw [← finrank_add_eq_of_isCompl hC, Nat.add_sub_cancel_left]
+  have h_split : ⨆ s ∈ t, LinearMap.range (B s) =
+      (⨆ s ∈ t, U.map (B s)) ⊔ ⨆ s ∈ t, C.map (B s) := by
+    simp only [← iSup_sup_eq, ← map_sup, hC.sup_eq_top, map_top]
+  rw [h_dim, h_split]
+  exact (finrank_add_le_finrank_add_finrank _ _).trans
+    (Nat.add_le_add_left (finrank_biSup_map_le B t C) _)
 
 end DivisionRing
 

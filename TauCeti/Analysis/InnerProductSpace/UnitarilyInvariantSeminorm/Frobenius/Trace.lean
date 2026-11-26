@@ -16,17 +16,14 @@ For linear maps `A B : E →ₗ[𝕜] F` between finite-dimensional inner produc
 Hilbert–Schmidt inner product of `A` and `B` is the trace `tr (A† B)`, and the Frobenius seminorm
 `‖A‖_F` of `TauCeti.UnitarilyInvariantSeminorm.frobenius` is its square root on the diagonal. This
 file records that identity, the Cauchy–Schwarz inequality `‖tr (A† B)‖ ≤ ‖A‖_F ‖B‖_F`, and the
-behaviour of `‖·‖_F` under adjoints and orthogonal projections, the tools for second-moment
-arguments with linear maps.
+behaviour of `‖·‖_F` under orthogonal projections, the tools for second-moment arguments with
+linear maps.
 
 ## Main results
 
 * `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_eq_trace`: `‖A‖_F² = tr (A† A)`.
 * `TauCeti.UnitarilyInvariantSeminorm.norm_trace_adjoint_comp_le`: Cauchy–Schwarz,
   `‖tr (A† B)‖ ≤ ‖A‖_F ‖B‖_F`.
-* `TauCeti.UnitarilyInvariantSeminorm.frobenius_adjoint`: `‖A†‖_F = ‖A‖_F`.
-* `TauCeti.UnitarilyInvariantSeminorm.frobenius_le_frobenius_of_norm_le`: pointwise domination
-  `‖A x‖ ≤ ‖B x‖` gives `‖A‖_F ≤ ‖B‖_F`.
 * `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_starProjection`: the orthogonal projection onto
   `U` has `‖pr_U‖_F² = dim U`.
 * `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_comp_starProjection` and
@@ -54,20 +51,9 @@ open scoped InnerProductSpace
 
 namespace TauCeti.UnitarilyInvariantSeminorm
 
-variable {𝕜 E F G : Type*} [RCLike 𝕜]
+variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
-  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
-
-/-- **Domination of Frobenius seminorms.** If `‖A x‖ ≤ ‖B x‖` for every `x`, then
-`‖A‖_F ≤ ‖B‖_F`. -/
-theorem frobenius_le_frobenius_of_norm_le {A : E →ₗ[𝕜] F} {B : E →ₗ[𝕜] G}
-    (h : ∀ x, ‖A x‖ ≤ ‖B x‖) : frobenius 𝕜 E F A ≤ frobenius 𝕜 E G B := by
-  rw [frobenius_apply (stdOrthonormalBasis 𝕜 E), frobenius_apply (stdOrthonormalBasis 𝕜 E)]
-  gcongr with i
-  exact h _
-
-variable [FiniteDimensional 𝕜 F]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
 
 /-- **The Frobenius seminorm through the trace**: `‖A‖_F² = tr (A† A)`. -/
 theorem sq_frobenius_eq_trace (A : E →ₗ[𝕜] F) :
@@ -93,13 +79,6 @@ theorem norm_trace_adjoint_comp_le (A B : E →ₗ[𝕜] F) :
 theorem re_trace_adjoint_comp_le (A B : E →ₗ[𝕜] F) :
     RCLike.re (trace 𝕜 E (A.adjoint ∘ₗ B)) ≤ frobenius 𝕜 E F A * frobenius 𝕜 E F B :=
   (RCLike.re_le_norm _).trans (norm_trace_adjoint_comp_le A B)
-
-/-- **Adjoint invariance of the Frobenius seminorm**: `‖A†‖_F = ‖A‖_F`, since `A` and `A†` have
-the same singular values. Not `@[simp]`: `simp` already proves it from
-`frobenius_apply_eq_sqrt_sum_sq_singularValues` and `LinearMap.singularValues_adjoint`, so the
-`simpNF` linter rejects the attribute. -/
-theorem frobenius_adjoint (A : E →ₗ[𝕜] F) : frobenius 𝕜 F E A.adjoint = frobenius 𝕜 E F A := by
-  simp only [frobenius_apply_eq_sqrt_sum_sq_singularValues, LinearMap.singularValues_adjoint]
 
 omit [FiniteDimensional 𝕜 F] in
 /-- The squared Frobenius seminorm of the orthogonal projection onto `U` is `dim U`. -/
