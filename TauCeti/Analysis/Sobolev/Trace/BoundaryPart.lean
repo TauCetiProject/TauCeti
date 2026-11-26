@@ -90,6 +90,15 @@ private def vanishingNear (p : ℝ≥0∞) [Fact (1 ≤ p)] (a c : ℝ) (ℓ : E
     rw [FunLike.coe_smul]
     exact tsupport_smul_subset_right (fun _ => r) φ
 
+/-- The carrier of `vanishingNear` is the image of the test functions whose support is disjoint
+from `{x | x.fst = a ∧ ℓ x.snd ≤ c}`, the generating set of `w1pVanishingOnSubmodule`. -/
+private theorem coe_vanishingNear (a c : ℝ) (ℓ : E →L[ℝ] ℝ) :
+    SetLike.coe (vanishingNear p a c ℓ) =
+      (fun φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ) =>
+        W1p.restrictL le_top (W1p.ofTestFunctionₗ volume ⊤ p φ)) ''
+        {φ | Disjoint (tsupport φ) {x | x.fst = a ∧ ℓ x.snd ≤ c}} :=
+  rfl
+
 /-- `W^{1,p}_0(H)` lies in the closure: a test function on `H` extends to one on `ℝ × E` supported
 in `H`, away from the boundary hyperplane. -/
 private theorem w1p0Submodule_subset_closure_vanishingNear (a c : ℝ) (ℓ : E →L[ℝ] ℝ) :
@@ -195,7 +204,7 @@ private theorem mem_closure_vanishingNear_of_ae_eq_zero (hp : p ≠ (∞ : ℝ�
     have h := W1p.restrictL_contDiffSMul_mem_w1pVanishingOnSubmodule
       (Omega := normalHalfSpace (E := E) a) hp hχ hM (fun x _ => hχM x) (fun x _ => hgradM x)
       (hKc.closure_eq.symm ▸ hχK) w
-    rwa [← SetLike.mem_coe, coe_w1pVanishingOnSubmodule, hKc.closure_eq] at h
+    rwa [← SetLike.mem_coe, coe_w1pVanishingOnSubmodule, hKc.closure_eq, ← coe_vanishingNear] at h
   rw [W1p.restrictL_contDiffSMul] at hχv
   have hsub : v = (v - χv) + χv := (sub_add_cancel v χv).symm
   rw [hsub]
