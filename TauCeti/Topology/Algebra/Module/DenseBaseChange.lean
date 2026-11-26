@@ -7,16 +7,16 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Finiteness.Cardinality
-public import Mathlib.RingTheory.TensorProduct.Pi
+public import Mathlib.RingTheory.TensorProduct.Free
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 
 /-!
 # Density of a finite module in its scalar extensions
 
-Let `R` be a commutative semiring and `(A i)` a family of topological `R`-algebras such that the
-diagonal image of `R` is dense in `∏ i, A i`. Then for every finite `R`-module `M`, the diagonal
-image of `M` is dense in `∏ i, A i ⊗[R] M`, where each `A i ⊗[R] M` carries its `A i`-module
-topology (`DenseRange.pi_one_tmul`).
+Let `R` be a commutative semiring and `(A i)` a family of topological `R`-algebras, not
+necessarily commutative, such that the diagonal image of `R` is dense in `∏ i, A i`. Then for
+every finite `R`-module `M`, the diagonal image of `M` is dense in `∏ i, A i ⊗[R] M`, where each
+`A i ⊗[R] M` carries its `A i`-module topology (`DenseRange.pi_one_tmul`).
 
 This is how approximation statements pass from a ring to its finite modules: in strong
 approximation, the `S`-integers of a global field are dense in the product of the completions at a
@@ -46,7 +46,7 @@ public section
 open scoped TensorProduct
 
 variable {R : Type*} [CommSemiring R] {ι : Type*} {A : ι → Type*}
-  [∀ i, CommSemiring (A i)] [∀ i, Algebra R (A i)] [∀ i, TopologicalSpace (A i)]
+  [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] [∀ i, TopologicalSpace (A i)]
   [∀ i, IsTopologicalSemiring (A i)]
 
 /-- **Density of a finite module in its scalar extensions.** If `R` is dense in the product of
@@ -58,9 +58,11 @@ theorem DenseRange.pi_one_tmul (h : DenseRange fun r : R ↦ fun i ↦ algebraMa
     DenseRange fun m : M ↦ fun i ↦ (1 : A i) ⊗ₜ[R] m := by
   obtain ⟨n, π, hπ⟩ := Module.Finite.exists_fin' R M
   -- In each factor, the base change of `π` is a continuous `A i`-linear surjection from
-  -- `(A i)ⁿ` onto `A i ⊗[R] M`.
+  -- `(A i)ⁿ` onto `A i ⊗[R] M`. We identify `(A i)ⁿ` with `A i ⊗[R] Rⁿ` through the
+  -- base-changed standard basis, since `TensorProduct.piScalarRight` needs `A i` commutative.
   let Φ (i : ι) : (Fin n → A i) →ₗ[A i] A i ⊗[R] M :=
-    π.baseChange (A i) ∘ₗ (TensorProduct.piScalarRight R (A i) (A i) (Fin n)).symm.toLinearMap
+    π.baseChange (A i) ∘ₗ
+      (Algebra.TensorProduct.basis (A i) (Pi.basisFun R (Fin n))).equivFun.symm.toLinearMap
   have hΦc (i : ι) : Continuous (Φ i) :=
     have := IsModuleTopology.toContinuousAdd (A i) (A i ⊗[R] M)
     IsModuleTopology.continuous_of_linearMap (Φ i)
@@ -80,9 +82,12 @@ theorem DenseRange.pi_one_tmul (h : DenseRange fun r : R ↦ fun i ↦ algebraMa
     funext r i
     simp only [Function.comp_apply, Pi.map_apply, Ψ, Φ, LinearMap.coe_comp,
       LinearEquiv.coe_coe]
-    -- `algebraMap (Fin n → R) (Fin n → A i)` is `algebraMap R (A i)` pointwise by definition.
-    exact (congrArg (π.baseChange (A i))
-      (TensorProduct.piScalarRight_symm_algebraMap R (A i) (Fin n) r)).trans
-      (LinearMap.baseChange_tmul ..) |>.symm
+    -- In the base-changed standard basis, `1 ⊗ₜ r` has coordinates `algebraMap R (A i) (r j)`.
+    have hr : (Algebra.TensorProduct.basis (A i) (Pi.basisFun R (Fin n))).equivFun.symm
+        (fun j ↦ algebraMap R (A i) (r j)) = 1 ⊗ₜ[R] r := by
+      rw [LinearEquiv.symm_apply_eq]
+      funext j
+      simp
+    rw [hr, LinearMap.baseChange_tmul]
   rw [DenseRange, ← hπ.range_comp, ← DenseRange, heq]
   exact hdense
