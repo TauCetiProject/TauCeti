@@ -231,17 +231,17 @@ theorem heightCochain_tilingOfHeight (hH : IsHeightFunction H) (e : TriEdge) :
   by_cases he : e ∈ tilingOfHeight H
   · rw [heightCochain_of_mem he, mem_tilingOfHeight.1 he]
   · rw [heightCochain_of_notMem he]
-    rw [mem_tilingOfHeight] at he
-    rcases hH e with h | h <;> rcases neutralIncrement_eq_zero_or_eq_one e with h' | h' <;>
-      omega
+    exact ((ne_one_sub_neutralIncrement_iff (hH e)).1 he).symm
 
-/-- **The tiling of a height function is a plane tiling**: round every face the increments of `H`
-along the edges of directions `e₁`, `e₂`, `e₃` are `(0, 0, 0)`, `(1, 0, 1)` or `(0, 1, 1)`, and
-exactly one edge is selected. -/
-theorem isTiling_tilingOfHeight (hH : IsHeightFunction H) :
-    IsTiling Set.univ (tilingOfHeight H) := by
-  rw [isTiling_univ_iff]
-  intro f
+end IsHeightFunction
+
+/-- Round a face along whose three edges the increments of `H` lie in `{0, 1}`, exactly one edge
+has the non-neutral increment: the increments along the edges of directions `e₁`, `e₂`, `e₃` are
+`(0, 0, 0)`, `(1, 0, 1)` or `(0, 1, 1)`. -/
+theorem TriFace.existsUnique_mem_tilingOfHeight_edges (f : TriFace)
+    (hH : ∀ k, H (f.edge k).target - H (f.edge k).v = 0 ∨
+      H (f.edge k).target - H (f.edge k).v = 1) :
+    ∃! e, e ∈ tilingOfHeight H ∧ e ∈ f.edges := by
   rw [TriFace.existsUnique_mem_edges_iff]
   have hcl := isClosedCochainOn_def.1 (isClosedCochainOn_coboundary Set.univ H) f (Set.mem_univ f)
   have hmem : ∀ k, f.edge k ∈ tilingOfHeight H ↔
@@ -249,9 +249,9 @@ theorem isTiling_tilingOfHeight (hH : IsHeightFunction H) :
     intro k
     rw [mem_tilingOfHeight, f.neutralIncrement_edge]
   simp only [hmem]
-  have h0 := hH (f.edge 0)
-  have h1 := hH (f.edge 1)
-  have h2 := hH (f.edge 2)
+  have h0 := hH 0
+  have h1 := hH 1
+  have h2 := hH 2
   obtain ⟨d, hd⟩ : ∃ d : Fin 3 → ℤ, ∀ k, H (f.edge k).target - H (f.edge k).v = d k :=
     ⟨_, fun _ => rfl⟩
   simp only [hd] at hcl h0 h1 h2 ⊢
@@ -264,6 +264,14 @@ theorem isTiling_tilingOfHeight (hH : IsHeightFunction H) :
   · exact ⟨1, by simp; omega, fun k hk => huniq 1 (by simp; omega) k hk⟩
   · exact ⟨0, by simp; omega, fun k hk => huniq 0 (by simp; omega) k hk⟩
   · omega
+
+namespace IsHeightFunction
+
+/-- **The tiling of a height function is a plane tiling**: round every face exactly one edge has
+the non-neutral increment (`TriFace.existsUnique_mem_tilingOfHeight_edges`). -/
+theorem isTiling_tilingOfHeight (hH : IsHeightFunction H) :
+    IsTiling Set.univ (tilingOfHeight H) :=
+  isTiling_univ_iff.2 fun f => f.existsUnique_mem_tilingOfHeight_edges fun _ => hH _
 
 /-- The height function of the tiling of a height function vanishing at `0` is the height
 function itself. -/
