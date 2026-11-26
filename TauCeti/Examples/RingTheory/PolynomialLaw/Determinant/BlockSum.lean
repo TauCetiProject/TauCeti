@@ -26,22 +26,22 @@ variable {A R : Type*} [CommRing A] [Ring R] [Algebra A R] {n₁ n₂ : Type*} [
 
 -- The determinant law of a block sum is the product law.
 example (ρ₁ : R →ₐ[A] Matrix n₁ n₁ A) (ρ₂ : R →ₐ[A] Matrix n₂ n₂ A) :
-    (algHomDet (fromBlocksAlgHom ρ₁ ρ₂)).toLaw = (algHomDet ρ₁).toLaw * (algHomDet ρ₂).toLaw :=
-  (toLaw_algHomDet_fromBlocksAlgHom ρ₁ ρ₂).trans (toLaw_mul _ _)
+    (algHomDet (ρ₁.fromBlocks ρ₂)).toLaw = (algHomDet ρ₁).toLaw * (algHomDet ρ₂).toLaw :=
+  (toLaw_algHomDet_fromBlocks ρ₁ ρ₂).trans (toLaw_mul _ _)
 
 -- Characteristic polynomials multiply, as for the product determinant.
 example (ρ₁ : R →ₐ[A] Matrix n₁ n₁ A) (ρ₂ : R →ₐ[A] Matrix n₂ n₂ A) (x : R) :
-    (algHomDet (fromBlocksAlgHom ρ₁ ρ₂)).charpoly x =
+    (algHomDet (ρ₁.fromBlocks ρ₂)).charpoly x =
       ((algHomDet ρ₁).mul (algHomDet ρ₂)).charpoly x := by
   simp [Matrix.charpoly_fromBlocks_zero₂₁]
 
 -- Traces add, as for the product determinant.
 example (ρ₁ : R →ₐ[A] Matrix n₁ n₁ A) (ρ₂ : R →ₐ[A] Matrix n₂ n₂ A) (x : R) :
-    (algHomDet (fromBlocksAlgHom ρ₁ ρ₂)).trace x = ((algHomDet ρ₁).mul (algHomDet ρ₂)).trace x := by
+    (algHomDet (ρ₁.fromBlocks ρ₂)).trace x = ((algHomDet ρ₁).mul (algHomDet ρ₂)).trace x := by
   simp [Matrix.trace_fromBlocks]
 
 -- `det diag(M, M) = (det M)² = 4` for `M = !![1, 2; 3, 4]`.
-example : algHomDet (fromBlocksAlgHom (AlgHom.id ℤ (Matrix (Fin 2) (Fin 2) ℤ))
+example : algHomDet (AlgHom.fromBlocks (AlgHom.id ℤ (Matrix (Fin 2) (Fin 2) ℤ))
     (AlgHom.id ℤ (Matrix (Fin 2) (Fin 2) ℤ))) !![1, 2; 3, 4] = 4 := by
-  rw [algHomDet_fromBlocksAlgHom_apply, algHomDet_apply]
+  rw [algHomDet_fromBlocks_apply, algHomDet_apply]
   simp [Matrix.det_fin_two]
