@@ -26,9 +26,9 @@ polynomial:
   at every integer `z : ℤ`, and multiplying `hilbertPoly (h.map (Int.castRingHom ℚ)) e` by
   `(e - 1)!` produces a polynomial with integer coefficients.
 * **Shifted series.** Given a sequence `f : ℤ → F` whose shifted generating series satisfies
-  `(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `F⟦X⟧` over a field `F` of characteristic zero, the
-  shifted Hilbert polynomial `(hilbertPoly h e).comp (X - C (d₀ : F))` has degree `< e` and agrees
-  with `f d` for all `d ≥ d₀ + h.natDegree + 1`.
+  `(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `F⟦X⟧` over a field `F` in which `(e - 1)!` is
+  nonzero, the shifted Hilbert polynomial `(hilbertPoly h e).comp (X - C (d₀ : F))` has degree
+  `< e` and agrees with `f d` for all `d ≥ d₀ + h.natDegree + 1`.
 
 ## Main results
 
@@ -42,10 +42,10 @@ polynomial:
   of `h` takes integer values at every integer.
 * `Polynomial.exists_map_eq_factorial_nsmul_hilbertPoly`: for `h : ℤ[X]`,
   `(e - 1)! • hilbertPoly (h.map (Int.castRingHom ℚ)) e` has integer coefficients and degree `< e`.
-* `Polynomial.eval_hilbertPoly_comp_sub_eq_of_mul_one_sub_pow_eq`: eventual evaluation of the
+* `Polynomial.eval_hilbertPoly_comp_X_sub_C_eq_of_mul_one_sub_pow_eq`: eventual evaluation of the
   shifted Hilbert polynomial associated to a rational series `h / (1 - X)^e`.
-* `Polynomial.eval_hilbertPoly_map_intCast_comp_sub_eq_of_mul_one_sub_pow_eq`: specialization to an
-  integer power-series identity mapped into a field `F`.
+* `Polynomial.eval_hilbertPoly_map_intCast_comp_X_sub_C_eq_of_mul_one_sub_pow_eq`: specialization
+  to an integer power-series identity mapped into a field `F`.
 -/
 
 public section
@@ -179,10 +179,11 @@ theorem degree_hilbertPoly_comp_X_sub_C_lt {F : Type*} [Field F] (p : F[X]) (d :
     exact zero_lt_one
 
 /-- Given a sequence `f : ℤ → F` whose shifted generating series satisfies
-`(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `F⟦X⟧` over a field `F` of characteristic zero, the
-shifted Hilbert polynomial agrees with `f d` for every integer `d ≥ d₀ + h.natDegree + 1`. -/
-theorem eval_hilbertPoly_comp_sub_eq_of_mul_one_sub_pow_eq {F : Type*} [Field F] [CharZero F]
-    {f : ℤ → F} {d₀ : ℤ} {h : F[X]} {e : ℕ}
+`(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `F⟦X⟧` over a field `F` such that
+`((e - 1).factorial : F) ≠ 0`, the shifted Hilbert polynomial agrees with `f d` for every integer
+`d ≥ d₀ + h.natDegree + 1`. -/
+theorem eval_hilbertPoly_comp_X_sub_C_eq_of_mul_one_sub_pow_eq {F : Type*} [Field F]
+    {f : ℤ → F} {d₀ : ℤ} {h : F[X]} {e : ℕ} (hfac : ((e - 1).factorial : F) ≠ 0)
     (hser : (PowerSeries.mk fun n : ℕ ↦ f (d₀ + n)) * (1 - PowerSeries.X) ^ e = (h : F⟦X⟧))
     {d : ℤ} (hd : d₀ + (h.natDegree : ℤ) + 1 ≤ d) :
     ((hilbertPoly h e).comp (X - C (d₀ : F))).eval (d : F) = f d := by
@@ -198,15 +199,34 @@ theorem eval_hilbertPoly_comp_sub_eq_of_mul_one_sub_pow_eq {F : Type*} [Field F]
     omega
   have hfn : f d = ((h : F⟦X⟧) * (PowerSeries.invOneSubPow F e : F⟦X⟧)).coeff n := by
     rw [← hinv, PowerSeries.coeff_mk, hdn]
-  rw [eval_comp, eval_sub, eval_X, eval_C, harg, hfn,
-    coeff_mul_invOneSubPow_eq_hilbertPoly_eval e hn]
+  rw [eval_comp, eval_sub, eval_X, eval_C, harg, hfn]
+  cases e with
+  | zero =>
+    simp only [hilbertPoly_zero_right, eval_zero, PowerSeries.invOneSubPow_zero, Units.val_one,
+      mul_one, coeff_coe]
+    exact (coeff_eq_zero_of_natDegree_lt hn).symm
+  | succ k =>
+    rw [Nat.add_sub_cancel] at hfac
+    rw [hilbertPoly_succ, eval_finsetSum, PowerSeries.coeff_mul,
+      Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk,
+      PowerSeries.invOneSubPow_val_succ_eq_mk_add_choose]
+    simp only [eval_smul, smul_eq_mul, coeff_coe, PowerSeries.coeff_mk]
+    refine Finset.sum_subset_zero_on_sdiff (fun i hi ↦ ?_) (fun i hi ↦ ?_) (fun i hi ↦ ?_)
+    · exact Finset.mem_range_succ_iff.mpr
+        ((le_natDegree_of_ne_zero (mem_support_iff.mp hi)).trans hn.le)
+    · simp only [Finset.mem_sdiff, mem_support_iff, not_not] at hi
+      rw [hi.2, zero_mul]
+    · have hin : i ≤ n := (le_natDegree_of_ne_zero (mem_support_iff.mp hi)).trans hn.le
+      have hidx : (n : ℤ) - (i : ℤ) + 1 + (k : ℤ) - 1 = ((n - i + k : ℕ) : ℤ) := by omega
+      rw [← Int.cast_natCast n, preHilbertPoly_eval_intCast F hfac i (n : ℤ),
+        Ring.multichoose_eq, hidx, Ring.choose_natCast, Int.cast_natCast, add_comm k (n - i)]
 
 /-- Given a sequence `f : ℤ → ℤ` whose shifted generating series satisfies
-`(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `ℤ⟦X⟧` and a field `F` of characteristic zero, the
-shifted Hilbert polynomial of `h.map (Int.castRingHom F)` agrees with `(f d : F)` for every
-integer `d ≥ d₀ + h.natDegree + 1`. -/
-theorem eval_hilbertPoly_map_intCast_comp_sub_eq_of_mul_one_sub_pow_eq {F : Type*} [Field F]
-    [CharZero F] {f : ℤ → ℤ} {d₀ : ℤ} {h : ℤ[X]} {e : ℕ}
+`(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `ℤ⟦X⟧` and a field `F` such that
+`((e - 1).factorial : F) ≠ 0`, the shifted Hilbert polynomial of `h.map (Int.castRingHom F)` agrees
+with `(f d : F)` for every integer `d ≥ d₀ + h.natDegree + 1`. -/
+theorem eval_hilbertPoly_map_intCast_comp_X_sub_C_eq_of_mul_one_sub_pow_eq {F : Type*} [Field F]
+    {f : ℤ → ℤ} {d₀ : ℤ} {h : ℤ[X]} {e : ℕ} (hfac : ((e - 1).factorial : F) ≠ 0)
     (hh : (PowerSeries.mk fun n : ℕ ↦ f (d₀ + n)) * (1 - PowerSeries.X) ^ e = h.toPowerSeries)
     {d : ℤ} (hd : d₀ + (h.natDegree : ℤ) + 1 ≤ d) :
     ((hilbertPoly (h.map (Int.castRingHom F)) e).comp (X - C (d₀ : F))).eval (d : F) =
@@ -223,7 +243,7 @@ theorem eval_hilbertPoly_map_intCast_comp_sub_eq_of_mul_one_sub_pow_eq {F : Type
       ext n; simp
     rwa [hmk, hcoe] at hmap
   have hdeg : (h.map (Int.castRingHom F)).natDegree ≤ h.natDegree := natDegree_map_le
-  exact eval_hilbertPoly_comp_sub_eq_of_mul_one_sub_pow_eq
+  exact eval_hilbertPoly_comp_X_sub_C_eq_of_mul_one_sub_pow_eq hfac
     (f := fun k ↦ (f k : F)) (d₀ := d₀) (h := h.map (Int.castRingHom F)) (e := e)
     hserF (by omega)
 

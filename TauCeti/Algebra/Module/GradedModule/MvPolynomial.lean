@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.Algebra.Module.GradedModule.Quotient
+import TauCeti.Algebra.Module.GradedModule.Finite
 
 /-!
 # Integer-graded modules over a polynomial ring
@@ -31,9 +32,12 @@ over an Artinian coefficient ring.
   for `x` homogeneous of degree `j`, is the degree-`n` component of `p` acting on `x`.
 * `TauCeti.MvPolynomial.piece_eq_iSup_map`: the degree-`d` piece is spanned over `A` by the
   homogeneous polynomials of degree `d - deg g` times the generators `g`.
-* `TauCeti.MvPolynomial.fg_piece`: each graded piece is a finitely generated `A`-module.
 * `TauCeti.MvPolynomial.exists_forall_lt_piece_eq_bot`: the pieces vanish in sufficiently negative
   degrees.
+* `TauCeti.MvPolynomial.exists_degree_ge_le_span_piece`: for a finitely generated `ℤ`-graded
+  `MvPolynomial σ A`-module, every sufficiently high graded piece generates the subsequent tail.
+* `TauCeti.MvPolynomial.fg_piece` and `TauCeti.MvPolynomial.moduleFinite_piece`: each graded piece
+  is a finitely generated (finite) `A`-module.
 * `TauCeti.MvPolynomial.isHomogeneous_lsmul_X`: multiplication by a variable has degree one.
 * `TauCeti.MvPolynomial.smul_mem_ker_piece`, `TauCeti.MvPolynomial.smul_mem_quotient_piece`: the
   gradings of the kernel of a homogeneous map and of the quotient by a homogeneous submodule are
@@ -153,6 +157,47 @@ theorem exists_forall_lt_piece_eq_bot [IsScalarTower A (MvPolynomial σ A) M]
   have := hd₀ (Finset.mem_coe.mpr (Finset.mem_image_of_mem deg hx))
   omega
 
+/-- For a finitely generated `ℤ`-graded `MvPolynomial σ A`-module, there is `N₀` such that for
+every `N₁ ≥ N₀`, each piece `ℳ d` with `d ≥ N₁` lies in the `MvPolynomial σ A`-span of `ℳ N₁`. -/
+theorem exists_degree_ge_le_span_piece [IsScalarTower A (MvPolynomial σ A) M]
+    [Module.Finite (MvPolynomial σ A) M]
+    (hℳ : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial σ A),
+      p ∈ homogeneousSubmodule σ A i → ∀ m ∈ ℳ j, p • m ∈ ℳ (j + i)) :
+    ∃ N₀ : ℤ, ∀ N₁ ≥ N₀, ∀ d ≥ N₁,
+      ℳ d ≤ (Submodule.span (MvPolynomial σ A) (ℳ N₁ : Set M)).restrictScalars A := by
+  classical
+  let := MvPolynomial.gradedAlgebra (σ := σ) (R := A)
+  obtain ⟨G, hGmem, hGspan⟩ := GradedModule.exists_finset_homogeneous_span (B := MvPolynomial σ A) ℳ
+  let N₀ : ℤ := if h : G.Nonempty then (G.image Prod.fst).max' (h.image _) else 0
+  refine ⟨N₀, fun N₁ hN₁ d hd m hm ↦ ?_⟩
+  obtain ⟨c, rfl⟩ := GradedModule.exists_eq_sum_filter_decompose_smul
+    (homogeneousSubmodule σ A) ℳ hℳ hGmem hm (hGspan ▸ Submodule.mem_top)
+  refine Submodule.sum_mem _ fun p _ ↦ ?_
+  have hp_le : p.val.1 ≤ N₁ := le_trans (by
+    have hne : G.Nonempty := ⟨p.val, p.property⟩
+    simp only [N₀, hne, ↓reduceDIte]
+    exact Finset.le_max' _ _ (Finset.mem_image.mpr ⟨p.val, p.property, rfl⟩)) hN₁
+  set q := decompose (homogeneousSubmodule σ A) (c p) (d - p.val.1).toNat
+  have hdeg : (d - p.val.1).toNat = (d - N₁).toNat + (N₁ - p.val.1).toNat := by omega
+  have hq : (q : MvPolynomial σ A) ∈
+      homogeneousSubmodule σ A (d - N₁).toNat *
+        homogeneousSubmodule σ A (N₁ - p.val.1).toNat := by
+    have hpow1 : homogeneousSubmodule σ A (d - N₁).toNat =
+        homogeneousSubmodule σ A 1 ^ (d - N₁).toNat :=
+      (homogeneousSubmodule_one_pow A _).symm
+    have hpow2 : homogeneousSubmodule σ A (N₁ - p.val.1).toNat =
+        homogeneousSubmodule σ A 1 ^ (N₁ - p.val.1).toNat :=
+      (homogeneousSubmodule_one_pow A _).symm
+    rw [hpow1, hpow2, ← pow_add, homogeneousSubmodule_one_pow, ← hdeg]
+    exact q.property
+  refine Submodule.mul_induction_on hq (fun r₁ _ r₂ hr₂ ↦ ?_) (fun u v hu hv ↦ by
+    rw [add_smul]; exact add_mem hu hv)
+  rw [mul_smul]
+  have hr₂m : r₂ • p.val.2 ∈ ℳ N₁ := by
+    have h1 := hℳ (N₁ - p.val.1).toNat p.val.1 r₂ hr₂ p.val.2 (hGmem p.val p.property)
+    rwa [Int.toNat_of_nonneg (sub_nonneg.mpr hp_le), add_sub_cancel] at h1
+  exact Submodule.smul_mem _ r₁ (Submodule.subset_span hr₂m)
+
 variable [Finite σ]
 
 /-- Each graded piece of a finitely generated graded module over a polynomial ring in finitely
@@ -165,6 +210,15 @@ theorem fg_piece [IsScalarTower A (MvPolynomial σ A) M] [Module.Finite (MvPolyn
   rw [piece_eq_iSup_map hℳ hdeg hspan d]
   exact Submodule.fg_biSup s _ fun x _ ↦
     Submodule.fg_iSup _ fun _ ↦ (homogeneousSubmodule_fg σ A _).map _
+
+/-- Each graded piece of a finitely generated graded module over a polynomial ring in finitely
+many variables is a finite module over the coefficients. -/
+theorem moduleFinite_piece [IsScalarTower A (MvPolynomial σ A) M]
+    [Module.Finite (MvPolynomial σ A) M]
+    (hℳ : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial σ A),
+      p ∈ homogeneousSubmodule σ A i → ∀ m ∈ ℳ j, p • m ∈ ℳ (j + i)) (d : ℤ) :
+    Module.Finite A (ℳ d) :=
+  Module.Finite.of_fg (fg_piece hℳ d)
 
 end Pieces
 

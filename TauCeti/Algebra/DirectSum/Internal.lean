@@ -61,8 +61,9 @@ supremum-independent family with supremum `S` into an internal direct sum of `S`
 take their `i`-th terms from the `i`-th summand of an internal direct sum and are equal, then their
 terms are equal at every index of that `Finset` (`DirectSum.IsInternal.eq_of_finsetSum_eq`).
 
-`DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
-action on a homogeneous element when the scalar and module decompositions are compatible.
+`DirectSum.coe_decompose_smul_add_of_right_mem`, `DirectSum.decompose_smul_eq_zero_of_lt`, and
+`DirectSum.decompose_smul_of_le` compute the components of a scalar action on a homogeneous
+element when the scalar and module decompositions are compatible.
 When the ambient carrier is an additive commutative group, `DirectSum.coe_decompose_neg` shows that
 homogeneous projections commute with negation even when the summand type carries only
 `AddSubmonoidClass` (such as submodules over a semiring), giving closure of each summand under
@@ -563,13 +564,9 @@ theorem of_algebraMap_surjective {R S M ι : Type*} [CommRing R] [Ring S] [Algeb
     (hℳ : IsInternal ℳ) :
     IsInternal fun i ↦ (Submodule.orderIsoOfAlgebraMapSurjective hsurj).symm (ℳ i) := by
   let e := (Submodule.orderIsoOfAlgebraMapSurjective (R := R) (S := S) (M := M) hsurj).symm
-  refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top ?_ ?_
-  · rw [iSupIndep_def]
-    intro i
-    have hind := iSupIndep_def.mp hℳ.submodule_iSupIndep i
-    rw [← map_iSup₂ e, disjoint_iff, ← map_inf e, ← map_bot e, e.injective.eq_iff, ← disjoint_iff]
-    exact hind
-  · rw [← map_iSup e, hℳ.submodule_iSup_eq_top, map_top]
+  refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
+    (hℳ.submodule_iSupIndep.map_orderIso e) ?_
+  rw [← map_iSup e, hℳ.submodule_iSup_eq_top, map_top]
 
 /-- **Finite sums in an internal direct sum are compared termwise.** If two sums over the same
 `Finset` `s`, each taking its `i`-th term from the `i`-th summand, are equal, then their terms are
@@ -613,6 +610,45 @@ theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x �
     · rw [decompose_of_mem_ne ℳ hmem (fun h ↦ hki (add_right_cancel h)),
         decompose_of_mem_ne 𝒜 a.property hki, zero_smul]
   | add a b ha hb => simp [add_smul, ha, hb]
+
+end DirectSum
+
+namespace DirectSum
+
+/-- For a `ℤ`-graded module over an `ℕ`-graded semiring, the degree-`d` component of `b • m`
+vanishes whenever `m ∈ ℳ j` and `d < j`. -/
+theorem decompose_smul_eq_zero_of_lt {A B M : Type*} [Semiring A] [Semiring B]
+    [Module A B] (ℬ : ℕ → Submodule A B) [Decomposition ℬ]
+    [AddCommMonoid M] [Module A M] [Module B M] (ℳ : ℤ → Submodule A M)
+    [Decomposition ℳ]
+    (hgraded : ∀ (i : ℕ) (j : ℤ) (b : B), b ∈ ℬ i → ∀ m ∈ ℳ j, b • m ∈ ℳ (j + i))
+    {j d : ℤ} (hdj : d < j) (b : B) {m : M} (hm : m ∈ ℳ j) :
+    (decompose ℳ (b • m) d : M) = 0 := by
+  induction b using Decomposition.inductionOn ℬ with
+  | zero => simp
+  | @homogeneous i b => exact decompose_of_mem_ne ℳ (hgraded i j b b.property m hm) (by omega)
+  | add b₁ b₂ hb₁ hb₂ => simp [add_smul, hb₁, hb₂]
+
+/-- For a `ℤ`-graded module over an `ℕ`-graded semiring, the degree-`d` component of `b • m` for
+`m ∈ ℳ j` with `j ≤ d` equals the degree-`(d - j)` component of `b` acting on `m`. -/
+theorem decompose_smul_of_le {A B M : Type*} [Semiring A] [Semiring B]
+    [Module A B] (ℬ : ℕ → Submodule A B) [Decomposition ℬ]
+    [AddCommMonoid M] [Module A M] [Module B M] (ℳ : ℤ → Submodule A M)
+    [Decomposition ℳ]
+    (hgraded : ∀ (i : ℕ) (j : ℤ) (b : B), b ∈ ℬ i → ∀ m ∈ ℳ j, b • m ∈ ℳ (j + i))
+    {j d : ℤ} (hjd : j ≤ d) (b : B) {m : M} (hm : m ∈ ℳ j) :
+    (decompose ℳ (b • m) d : M) = (decompose ℬ b (d - j).toNat : B) • m := by
+  induction b using Decomposition.inductionOn ℬ with
+  | zero => simp
+  | @homogeneous i b =>
+    have hmem : (b : B) • m ∈ ℳ (j + i) := hgraded i j b b.property m hm
+    by_cases hi : i = (d - j).toNat
+    · subst hi
+      rw [decompose_of_mem_same ℬ b.property]
+      rw [Int.toNat_of_nonneg (sub_nonneg.mpr hjd), add_sub_cancel] at hmem
+      exact decompose_of_mem_same ℳ hmem
+    · rw [decompose_of_mem_ne ℳ hmem (by omega), decompose_of_mem_ne ℬ b.property hi, zero_smul]
+  | add b₁ b₂ hb₁ hb₂ => simp [add_smul, hb₁, hb₂]
 
 end DirectSum
 

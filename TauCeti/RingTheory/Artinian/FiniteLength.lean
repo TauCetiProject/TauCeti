@@ -66,14 +66,9 @@ theorem isArtinianRing_quotient_annihilator {A N : Type*} [CommRing A] [AddCommG
       map_smul' := fun r a ↦ funext fun _ ↦ mul_smul r a _ }
   have hker : LinearMap.ker φ = Module.annihilator A N := by
     ext a
-    rw [LinearMap.mem_ker, Module.mem_annihilator]
-    refine ⟨fun ha x ↦ ?_, fun ha ↦ funext fun t ↦ ha t.val⟩
-    have hx : x ∈ Submodule.span A (T : Set N) := hT ▸ Submodule.mem_top
-    induction hx using Submodule.span_induction with
-    | mem y hy => exact congrFun ha ⟨y, hy⟩
-    | zero => exact smul_zero a
-    | add y z _ _ hy hz => rw [smul_add, hy, hz, add_zero]
-    | smul r y _ hy => rw [smul_comm, hy, smul_zero]
+    rw [LinearMap.mem_ker, funext_iff, ← Submodule.annihilator_top (R := A) (M := N), ← hT,
+      Submodule.mem_annihilator_span]
+    exact Iff.rfl
   have hinj : Function.Injective ((Module.annihilator A N).liftQ φ (le_of_eq hker.symm)) := by
     rw [← LinearMap.ker_eq_bot, Submodule.ker_liftQ_eq_bot']
     exact hker.symm

@@ -543,20 +543,10 @@ theorem MvPolynomial.IsHomogeneous.exists_map_eq {A B σ : Type*} [CommSemiring 
     {f : A →+* B} (hf : Function.Surjective f) {i : ℕ} {q : MvPolynomial σ B}
     (hq : q.IsHomogeneous i) :
     ∃ p : MvPolynomial σ A, p.IsHomogeneous i ∧ MvPolynomial.map f p = q := by
-  classical
-  let p : MvPolynomial σ A :=
-    ∑ s ∈ q.support, MvPolynomial.monomial s (hf (q.coeff s)).choose
-  refine ⟨p, (MvPolynomial.mem_homogeneousSubmodule i p).mp <| Submodule.sum_mem _ fun s hs ↦
-    (MvPolynomial.mem_homogeneousSubmodule i _).mpr <|
-      MvPolynomial.isWeightedHomogeneous_monomial 1 s _ (hq (MvPolynomial.mem_support_iff.mp hs)),
-    ?_⟩
-  ext s
-  rw [map_sum, MvPolynomial.coeff_sum]
-  simp_rw [MvPolynomial.map_monomial, MvPolynomial.coeff_monomial]
-  rw [Finset.sum_ite_eq' q.support s]
-  split_ifs with hs
-  · exact (hf (q.coeff s)).choose_spec
-  · exact (MvPolynomial.notMem_support_iff.mp hs).symm
+  obtain ⟨r, rfl⟩ := MvPolynomial.map_surjective f hf q
+  refine ⟨MvPolynomial.homogeneousComponent i r,
+    MvPolynomial.homogeneousComponent_isHomogeneous i r, ?_⟩
+  rw [MvPolynomial.map_homogeneousComponent, MvPolynomial.homogeneousComponent_eq_self hq]
 
 /-- Evaluating a homogeneous polynomial of degree `i` at elements that shift a module grading by
 `r` shifts the grading by `i • r`. -/
