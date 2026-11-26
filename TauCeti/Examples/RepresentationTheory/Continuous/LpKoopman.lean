@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Group.TypeTags
 public import TauCeti.MeasureTheory.Measure.Count.MeasurePreserving
 public import TauCeti.RepresentationTheory.Continuous.LpKoopman
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
@@ -133,22 +134,17 @@ section Translation
 
 variable (p : ℝ≥0∞) [Fact (1 ≤ p)]
 
-/-- Translations of `ℝ`, as the action of `Multiplicative ℝ`, preserve Lebesgue measure. -/
-theorem measurePreserving_translation (g : Multiplicative ℝ) :
-    MeasurePreserving (g • · : ℝ → ℝ) volume volume :=
-  measurePreserving_add_left volume (Multiplicative.toAdd g)
-
 /-- The indicator of `[a, a + 1]` as an `Lᵖ` class for Lebesgue measure. -/
 noncomputable abbrev unitIcc (a : ℝ) : Lp ℂ p (volume : Measure ℝ) :=
   indicatorConstLp p (measurableSet_Icc (a := a) (b := a + 1)) (by simp) 1
 
 /-- **Check.** The pullback of `1_[0,1]` by the translation by `t` is `1_[t,t+1]`. -/
 theorem lpKoopman_unitIcc_zero (t : ℝ) :
-    lpKoopman ℂ ℂ p volume measurePreserving_translation (Multiplicative.ofAdd t)
-      (unitIcc p 0) = unitIcc p t := by
+    lpKoopman ℂ ℂ p volume (measurePreserving_multiplicative_smul volume)
+      (Multiplicative.ofAdd t) (unitIcc p 0) = unitIcc p t := by
   rw [Lp.ext_iff]
   refine (coeFn_lpKoopman _ _).trans ?_
-  refine ((measurePreserving_translation _).quasiMeasurePreserving.ae_eq_comp
+  refine ((measurePreserving_multiplicative_smul volume _).quasiMeasurePreserving.ae_eq_comp
     indicatorConstLp_coeFn).trans (Filter.EventuallyEq.trans ?_ indicatorConstLp_coeFn.symm)
   refine Filter.Eventually.of_forall fun x ↦ ?_
   have hmem : (Multiplicative.ofAdd t)⁻¹ • x ∈ Icc (0 : ℝ) (0 + 1) ↔ x ∈ Icc t (t + 1) := by
@@ -159,8 +155,8 @@ theorem lpKoopman_unitIcc_zero (t : ℝ) :
 /-- **Check.** The pullback of `1_[0,1]` by any translation has `Lᵖ` norm `1`, for every
 `1 ≤ p ≤ ∞`, although Lebesgue measure is infinite. -/
 theorem norm_lpKoopman_unitIcc_zero (t : ℝ) :
-    ‖lpKoopman ℂ ℂ p volume measurePreserving_translation (Multiplicative.ofAdd t)
-      (unitIcc p 0)‖ = 1 := by
+    ‖lpKoopman ℂ ℂ p volume (measurePreserving_multiplicative_smul volume)
+      (Multiplicative.ofAdd t) (unitIcc p 0)‖ = 1 := by
   rw [norm_lpKoopman_apply, norm_indicatorConstLp' (zero_lt_one.trans_le Fact.out).ne' (by simp)]
   simp
 
