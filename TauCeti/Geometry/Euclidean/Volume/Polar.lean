@@ -51,15 +51,17 @@ from Mathlib's Lebesgue differentiation theorem on the line,
 
 ## Main results
 
+* `TauCeti.setIntegral_sphere_eq_smul_integral_toSphere`: integration against Hausdorff measure on
+  `sphere c r` is integration against `volume.toSphere` on the unit sphere, scaled by
+  `r ^ (n - 1)`.
 * `TauCeti.lintegral_eq_lintegral_Ioi_setLIntegral_sphere`,
   `TauCeti.setLIntegral_ball_eq_lintegral_Ioo_setLIntegral_sphere`: nonnegative polar integration
   over the whole space and over balls.
 * `TauCeti.ae_integrableOn_sphere`, `TauCeti.integrableOn_Ioi_setIntegral_sphere`: integrability on
   almost every sphere and of the sphere integrals.
 * `TauCeti.integral_eq_integral_Ioi_setIntegral_sphere`,
-  `TauCeti.setIntegral_ball_eq_integral_Ioo_setIntegral_sphere`,
-  `TauCeti.setIntegral_ball_sdiff_closedBall_eq_integral_Ioo_setIntegral_sphere`: Bochner polar
-  integration over the whole space, over balls and over spherical shells.
+  `TauCeti.setIntegral_ball_eq_integral_Ioo_setIntegral_sphere`: Bochner polar integration over
+  the whole space and over balls.
 
 ## References
 
@@ -93,7 +95,7 @@ private lemma setLIntegral_sphere_eq_mul_lintegral_toSphere (c : E) {r : ℝ} (h
 
 /-- Integration against Mathlib's surface measure on the unit sphere, transported to the sphere
 `sphere c r` by `u ↦ c + r • u`, is integration against Hausdorff measure on `sphere c r`. -/
-private lemma setIntegral_sphere_eq_smul_integral_toSphere (c : E) {r : ℝ} (hr : 0 < r)
+theorem setIntegral_sphere_eq_smul_integral_toSphere (c : E) {r : ℝ} (hr : 0 < r)
     (f : E → F) :
     ∫ y in sphere c r, f y ∂μHE[finrank ℝ E - 1] = r ^ (finrank ℝ E - 1) •
       ∫ u : sphere (0 : E) 1, f (c + r • (u : E)) ∂(volume : Measure E).toSphere := by
@@ -208,43 +210,6 @@ theorem setIntegral_ball_eq_integral_Ioo_setIntegral_sphere [Nontrivial E] (c : 
       (hpre ▸ (hmp.integrableOn_comp_preimage (measurableEmbedding_addLeft c)).2 hf)]
   exact setIntegral_congr_fun measurableSet_Ioo fun r hr ↦
     (setIntegral_sphere_eq_smul_integral_toSphere c hr.1 f).symm
-
-/-- **Integration over a spherical shell in polar coordinates against Hausdorff measure.** In a
-nontrivial real inner product space of dimension `n`, the integral over the open shell
-`ball c R \ closedBall c r` of a function integrable there is the integral over the radii
-`s ∈ (r, R)` of its integrals against `(n - 1)`-dimensional Hausdorff measure on the spheres
-`sphere c s`. -/
-theorem setIntegral_ball_sdiff_closedBall_eq_integral_Ioo_setIntegral_sphere [Nontrivial E]
-    (c : E) (r R : ℝ) {f : E → F}
-    (hf : IntegrableOn f (ball c R \ closedBall c r)) :
-    ∫ x in ball c R \ closedBall c r, f x =
-      ∫ s in Ioo r R, ∫ y in sphere c s, f y ∂μHE[finrank ℝ E - 1] := by
-  have hA : MeasurableSet (ball c R \ closedBall c r) :=
-    measurableSet_ball.diff measurableSet_closedBall
-  have hmem {y : E} : y ∈ ball c R \ closedBall c r ↔ dist y c ∈ Ioo r R := by
-    simp [and_comm]
-  rw [← integral_indicator hA, integral_eq_integral_Ioi_setIntegral_sphere c
-    (hf.integrable_indicator hA)]
-  -- The sphere `sphere c s` lies in the shell when `r < s < R`, and misses it otherwise.
-  have hinner : ∀ s ∈ Ioi (0 : ℝ),
-      ∫ y in sphere c s, (ball c R \ closedBall c r).indicator f y ∂μHE[finrank ℝ E - 1] =
-        (Ioo r R).indicator (fun s ↦ ∫ y in sphere c s, f y ∂μHE[finrank ℝ E - 1]) s := by
-    intro s _
-    by_cases hs : s ∈ Ioo r R
-    · rw [indicator_of_mem hs]
-      exact setIntegral_congr_fun isClosed_sphere.measurableSet fun y hy ↦
-        indicator_of_mem (hmem.2 (mem_sphere.1 hy ▸ hs)) f
-    · rw [indicator_of_notMem hs]
-      exact setIntegral_eq_zero_of_forall_eq_zero fun y hy ↦
-        indicator_of_notMem (fun h ↦ hs (mem_sphere.1 hy ▸ hmem.1 h)) f
-  rw [setIntegral_congr_fun measurableSet_Ioi hinner, setIntegral_indicator measurableSet_Ioo]
-  -- The spheres of negative radius are empty, and the radius `0` is a null set.
-  have hne : ∀ᵐ s : ℝ, s ≠ 0 := by simp [ae_iff, measure_singleton]
-  refine (setIntegral_eq_of_subset_of_ae_sdiff_eq_zero measurableSet_Ioo.nullMeasurableSet
-    inter_subset_right ?_).symm
-  filter_upwards [hne] with s hs0 hs
-  have hs' : s < 0 := lt_of_le_of_ne (not_lt.1 fun h ↦ hs.2 ⟨h, hs.1⟩) hs0
-  rw [sphere_eq_empty_of_neg hs', restrict_empty, integral_zero_measure]
 
 /-- **Null sets meet almost every sphere in a null set.** If `N` is Lebesgue-null, then for almost
 every radius `r` the slice `N ∩ sphere c r` is null for `(n - 1)`-dimensional Hausdorff measure.

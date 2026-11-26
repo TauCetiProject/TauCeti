@@ -128,13 +128,18 @@ private lemma coordinateFluxIntegrand_eq_inner_div_norm
     Finset.sum_div, RCLike.inner_apply, conj_trivial]
   exact Finset.sum_congr rfl fun j _ ↦ by ring
 
+/-- For `C²` coefficients, the first partial derivatives of the coefficients are `C¹`. -/
+private lemma contDiffAt_fderiv_apply_single
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {x : EuclideanSpace ℝ (Fin n)}
+    (hg : ∀ i j, ContDiffAt ℝ 2 (fun y ↦ g y i j) x) (i j k : Fin n) :
+    ContDiffAt ℝ 1 (fun y ↦ fderiv ℝ (fun z ↦ g z i j) y (EuclideanSpace.single k 1)) x :=
+  ((hg i j).fderiv_right (m := 1) (by norm_num)).clm_apply contDiffAt_const
+
 /-- For `C²` coefficients, `coordinateFluxField` is `C¹`. -/
 private lemma contDiffAt_coordinateFluxField {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ}
     {x : EuclideanSpace ℝ (Fin n)} (hg : ∀ i j, ContDiffAt ℝ 2 (fun y ↦ g y i j) x) :
     ContDiffAt ℝ 1 (coordinateFluxField g) x := by
-  have hD (i j k : Fin n) :
-      ContDiffAt ℝ 1 (fun y ↦ fderiv ℝ (fun z ↦ g z i j) y (EuclideanSpace.single k 1)) x :=
-    ((hg i j).fderiv_right (m := 1) (by norm_num)).clm_apply contDiffAt_const
+  have hD := contDiffAt_fderiv_apply_single hg
   refine contDiffAt_piLp' 2 fun j ↦ ?_
   simp only [coordinateFluxField_apply]
   exact ContDiffAt.sum fun i _ ↦ (hD i j i).sub (hD i i j)
@@ -149,15 +154,15 @@ private lemma trace_fderiv_coordinateFluxField
       linearizedScalarCurvature g x := by
   have hD (i j k : Fin n) :
       DifferentiableAt ℝ (fun y ↦ fderiv ℝ (fun z ↦ g z i j) y (EuclideanSpace.single k 1)) x :=
-    (((hg i j).fderiv_right (m := 1) (by norm_num)).clm_apply contDiffAt_const).differentiableAt
-      one_ne_zero
+    (contDiffAt_fderiv_apply_single hg i j k).differentiableAt one_ne_zero
   rw [trace_fderiv_eq_sum_fderiv_apply_single
     ((contDiffAt_coordinateFluxField hg).differentiableAt one_ne_zero),
     linearizedScalarCurvature_def]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   simp only [coordinateFluxField_apply]
   rw [fderiv_fun_sum fun i _ ↦ (hD i j i).fun_sub (hD i i j), sum_apply]
-  exact Finset.sum_congr rfl fun i _ ↦ by rw [fderiv_fun_sub (hD i j i) (hD i i j)]; rfl
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    rw [fderiv_fun_sub (hD i j i) (hD i i j), _root_.sub_apply]
 
 /-- **The flux identity.** For metric coefficients of class `C²` near the closed shell
 `r₁ ≤ ‖x‖ ≤ r₂`, `0 < r₁ ≤ r₂`, the normalized ADM flux at radius `r₂` minus that at radius `r₁`
@@ -176,8 +181,8 @@ theorem normalizedCoordinateFlux_sub_eq_setIntegral_linearizedScalarCurvature
   simp only [finrank_euclideanSpace_fin, sub_zero] at hdiv
   rw [normalizedCoordinateFlux_def, normalizedCoordinateFlux_def, ← sub_div,
     ← setIntegral_congr_fun (measurableSet_ball.diff measurableSet_closedBall) fun x hx ↦
-      trace_fderiv_coordinateFluxField (hg x
-        ⟨ball_subset_closedBall hx.1, fun h ↦ hx.2 (ball_subset_closedBall h)⟩),
+      trace_fderiv_coordinateFluxField
+        (hg x (sdiff_subset_sdiff ball_subset_closedBall ball_subset_closedBall hx)),
     hdiv]
   simp only [coordinateFluxIntegrand_eq_inner_div_norm]
 
