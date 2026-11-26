@@ -142,11 +142,8 @@ theorem ΓSpecIso_inv_mem_invariants_spec_iff (E : DescentDatum R S B) {b : B} :
   have hsnd : L ≫ pullback.snd _ _ = Spec.map (CommRingCat.ofHom
       (Algebra.TensorProduct.includeRight : B →ₐ[R] S ⊗[R] B).toRingHom) :=
     pullback.lift_snd _ _ _
-  -- Pulling back along `Spec φ` is `φ`, through `ΓSpecIso`.
-  have hΓ (φ : CommRingCat.of B ⟶ CommRingCat.of (S ⊗[R] B)) :
-      (Spec.map φ).appTop ((Scheme.ΓSpecIso _).inv b) = (Scheme.ΓSpecIso _).inv (φ b) := by
-    rw [← CommRingCat.comp_apply, ← Scheme.ΓSpecIso_inv_naturality, CommRingCat.comp_apply]
-  rw [TauCeti.DescentDatum.mem_invariants_iff_of_isIso L, hact, hsnd, mem_descended_iff, hΓ, hΓ,
+  rw [TauCeti.DescentDatum.mem_invariants_iff_of_isIso L, hact, hsnd, mem_descended_iff,
+    Scheme.SpecMap_appTop_ΓSpecIso_inv, Scheme.SpecMap_appTop_ΓSpecIso_inv,
     (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso _).inv).injective.eq_iff]
   simp
 

@@ -102,14 +102,6 @@ variable {X : Scheme.{u}} (I : X.IdealSheafData)
 abbrev reesComponent (n : ℕ) : X.Modules :=
   (I ^ n).sheaf
 
-/-- The inclusion `I ⟶ 𝒪_X`, read as a morphism to the monoidal unit of `X.Modules`, so that
-composites with morphisms out of tensor products are formed in a single category. -/
-private def sheafιUnit (J : X.IdealSheafData) : J.sheaf ⟶ 𝟙_ X.Modules :=
-  J.sheafι
-
-private instance (J : X.IdealSheafData) : Mono J.sheafιUnit :=
-  inferInstanceAs (Mono J.sheafι)
-
 /-- Transport along an equality of ideal sheaves commutes with the inclusions into `𝒪_X`. -/
 @[reassoc]
 private lemma eqToHom_sheafιUnit {J K : X.IdealSheafData} (h : J = K) :

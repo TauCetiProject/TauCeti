@@ -15,8 +15,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.OfWeierstrass
 # Invariant differentials and adapted `x`-coordinates on elliptic curves over schemes
 
 For an elliptic curve `E` over `S`, `E.zero` is a relative effective Cartier divisor
-(`isRelativeEffectiveCartier_zero_ker`), and a nowhere-vanishing **invariant differential** on
-`E/S` is a global basis `𝟙_ S.Modules ≅ E.zero.conormalSheaf`
+(`Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension`), and a nowhere-vanishing
+**invariant differential** on `E/S` is a global basis `𝟙_ S.Modules ≅ E.zero.conormalSheaf`
 (`EllipticCurveGeom.InvariantDifferential`, Katz–Mazur 2.2.8; Deligne–Rapoport II.1.5). Invariant
 differentials pull back along pointed cartesian squares (`invariantDifferentialPullback`) and are
 determined on any pointed Weierstrass atlas (`invariantDifferential_ext_of_atlas`). For sections
@@ -48,15 +48,6 @@ namespace TauCeti.AlgebraicGeometry
 namespace EllipticCurveGeom
 
 variable {S : Scheme.{u}} (E : EllipticCurveGeom S)
-
-/-- `E.zero` is a relative effective Cartier divisor on `E` over `S`. -/
-theorem isRelativeEffectiveCartier_zero_ker :
-    E.zero.ker.IsRelativeEffectiveCartier E.structureMap :=
-  Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension E.zero E.zero_comp
-
-/-- `E.zero` is an effective Cartier divisor on `E`. -/
-theorem isEffectiveCartier_zero_ker : E.zero.ker.IsEffectiveCartier :=
-  E.isRelativeEffectiveCartier_zero_ker.isEffectiveCartier
 
 /-- A nowhere-vanishing **invariant differential** `𝟙_ S.Modules ≅ E.zero.conormalSheaf` on `E`. -/
 abbrev InvariantDifferential : Type u := 𝟙_ S.Modules ≅ E.zero.conormalSheaf
@@ -177,25 +168,19 @@ private theorem appTop_adaptedXCoordSection {S' : Scheme.{u}} {E' : EllipticCurv
     h.appTop (c.adaptedXCoordSection hP hQ hP₀ hQ₀ ω) =
       k.adaptedXCoordSection hP' hQ' hP'₀ hQ'₀
         (EllipticCurveGeom.invariantDifferentialPullback hg h0 ω) := by
-  obtain ⟨φ, hφ⟩ : ∃ φ : c.ring ⟶ k.ring, Spec.map φ = k.baseIso.inv ≫ h ≫ c.baseIso.hom :=
-    ⟨Spec.preimage _, Spec.map_preimage _⟩
-  have hF := isPullback_modelMap hg hh; have hz := projModelZero_modelMap hg hh h0
-  have hPF := modelPoint_modelMap hg hh hP hP' hPg; have hQF := modelPoint_modelMap hg hh hQ hQ' hQg
-  have hω := conormalBasisPullback_modelDifferential hg h0 hh ω
-  rw [← hφ, ← CommRingCat.ofHom_hom φ] at hF hz hPF hQF
+  obtain ⟨φ, hφ, hF, hz⟩ := exists_ringHom_isPullback_modelMap hg hh h0
+  have hPF := hφ ▸ modelPoint_modelMap hg hh hP hP' hPg
+  have hQF := hφ ▸ modelPoint_modelMap hg hh hQ hQ' hQg
   have hx := WeierstrassCurve.map_projModelAdaptedXCoord_of_isPullback hF hz
     (k.modelPoint_projModelOver hP') (k.modelPoint_projModelOver hQ')
     (k.modelPoint_apply_ne hP' hP'₀) (k.modelPoint_apply_ne hQ' hQ'₀)
     (c.modelPoint_projModelOver hP) (c.modelPoint_projModelOver hQ)
     (c.modelPoint_apply_ne hP hP₀) (c.modelPoint_apply_ne hQ hQ₀) hPF hQF (c.modelDifferential ω)
-  have hcongr := (conormalBasisPullback_congr c.equation.projModelZero_projModelOver
-    k.equation.projModelZero_projModelOver (by rw [CommRingCat.ofHom_hom, hφ]) rfl
-    hF hz _ _ _).trans hω
-  rw [hcongr] at hx
-  have hh' : h ≫ c.baseIso.hom = k.baseIso.hom ≫ Spec.map φ := by simp [hφ]
-  rw [adaptedXCoordSection, adaptedXCoordSection, ← CommRingCat.comp_apply,
-    ← Scheme.Hom.comp_appTop, hh', Scheme.Hom.comp_appTop, CommRingCat.comp_apply]
-  simpa using congrArg k.baseIso.hom.appTop (congrArg (ΓSpecIso k.ring).inv hx)
+  have hω_congr := (conormalBasisPullback_congr c.equation.projModelZero_projModelOver
+    k.equation.projModelZero_projModelOver hφ rfl hF hz _ _ _).trans
+    (conormalBasisPullback_modelDifferential hg h0 hh ω)
+  rw [adaptedXCoordSection, adaptedXCoordSection, appTop_baseIso_hom_ΓSpecIso_inv hφ, hx,
+    k.equation.projModelAdaptedXCoord_congr rfl rfl hω_congr]
 
 end PointedWeierstrassChart
 
@@ -362,14 +347,9 @@ theorem adaptedXCoord_toEllipticCurveGeom {P Q : Spec (.of R) ⟶ W.toEllipticCu
     rw [PointedWeierstrassChart.modelDifferential_def, conormalBasisPullbackOfIso_def]
     exact conormalBasisPullback_congr W.toEllipticCurveGeom.zero_comp W.projModelZero_projModelOver
       (by simp [c]) (by simp [c]) _ _ _ _ ω
-  have hcongr : ∀ {P₁ P₂ Q₁ Q₂ : Spec (.of R) ⟶ W.projModel} (_ : P₁ = P₂) (_ : Q₁ = Q₂)
-      {ω₁ ω₂} (_ : ω₁ = ω₂) (hP₁ hQ₁ hP₁₀ hQ₁₀ hP₂ hQ₂ hP₂₀ hQ₂₀),
-      W.projModelAdaptedXCoord (P := P₁) (Q := Q₁) hP₁ hQ₁ hP₁₀ hQ₁₀ ω₁ =
-        W.projModelAdaptedXCoord (P := P₂) (Q := Q₂) hP₂ hQ₂ hP₂₀ hQ₂₀ ω₂ := by
-    rintro _ _ _ _ rfl rfl _ _ rfl _ _ _ _ _ _ _ _; rfl
   simp only [c, Scheme.Hom.id_appTop, Iso.refl_hom, CommRingCat.id_apply] at h
   rw [h]; congr 1
-  exact hcongr (W.toEllipticCurveGeomChart_modelPoint hP)
-    (W.toEllipticCurveGeomChart_modelPoint hQ) hω_c _ _ _ _ _ _ _ _
+  exact W.projModelAdaptedXCoord_congr (W.toEllipticCurveGeomChart_modelPoint hP)
+    (W.toEllipticCurveGeomChart_modelPoint hQ) hω_c
 
 end WeierstrassCurve

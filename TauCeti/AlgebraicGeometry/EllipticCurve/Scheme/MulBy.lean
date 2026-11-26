@@ -234,16 +234,38 @@ theorem _root_.TauCeti.AlgebraicGeometry.EllipticCurveGeom.modelPoint_mulBy
     (by rw [c.modelPoint_projModelOver, Category.assoc, projModelMulBy_projModelOver,
       c.modelPoint_projModelOver])
 
+end WeierstrassCurve
+
+namespace TauCeti.AlgebraicGeometry.PointedWeierstrassChart
+
+open WeierstrassCurve
+
 /-- If `n • P` misses the zero section of `E` everywhere, then `n • (c.modelPoint hP)` misses the
 zero section of `c.equation.projModel` everywhere. -/
-theorem _root_.TauCeti.AlgebraicGeometry.PointedWeierstrassChart.modelPoint_mulBy_apply_ne
-    {S : Scheme.{u}} {E : TauCeti.AlgebraicGeometry.EllipticCurveGeom S}
-    (c : TauCeti.AlgebraicGeometry.PointedWeierstrassChart E.structureMap E.zero)
+theorem modelPoint_mulBy_apply_ne {S : Scheme.{u}} {E : EllipticCurveGeom S}
+    (c : PointedWeierstrassChart E.structureMap E.zero)
     {P : S ⟶ E.carrier} (hP : P ≫ E.structureMap = 𝟙 S) {n : ℤ}
     (hn : ∀ s, (P ≫ (E.mulBy n).left) s ≠ E.zero s) (s : Spec c.ring) :
     (c.modelPoint hP ≫ c.equation.projModelMulBy n) s ≠ c.equation.projModelZero s := by
   rw [← E.modelPoint_mulBy c hP n]
   exact c.modelPoint_apply_ne _ hn s
+
+/-- If `n • P` equals the zero section of `E`, then `n • (c.modelPoint hP)` equals the zero section
+of `c.equation.projModel`. -/
+theorem modelPoint_projModelMulBy_eq_projModelZero {S : Scheme.{u}} {E : EllipticCurveGeom S}
+    (c : PointedWeierstrassChart E.structureMap E.zero)
+    {P : S ⟶ E.carrier} (hP : P ≫ E.structureMap = 𝟙 S) {n : ℤ}
+    (hn : P ≫ (E.mulBy n).left = E.zero) :
+    c.modelPoint hP ≫ c.equation.projModelMulBy n = c.equation.projModelZero := by
+  have hcongr {Q₁ Q₂ : S ⟶ E.carrier} (hQ : Q₁ = Q₂) (h₁ : Q₁ ≫ E.structureMap = 𝟙 S)
+      (h₂ : Q₂ ≫ E.structureMap = 𝟙 S) : c.modelPoint h₁ = c.modelPoint h₂ := by
+    subst hQ; rfl
+  exact (E.modelPoint_mulBy c hP n).symm.trans
+    ((hcongr hn _ E.zero_comp).trans (c.modelPoint_zero E.zero_comp))
+
+end TauCeti.AlgebraicGeometry.PointedWeierstrassChart
+
+namespace WeierstrassCurve
 
 section Sections
 

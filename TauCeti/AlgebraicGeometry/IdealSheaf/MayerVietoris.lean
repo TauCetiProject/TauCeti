@@ -53,15 +53,7 @@ namespace AlgebraicGeometry.Scheme.IdealSheafData
 
 noncomputable section
 
-variable {X : Scheme.{u}} (I J : X.IdealSheafData)
-
-/-- The inclusion `I ⟶ 𝒪_X` as a morphism of `X.Modules`. `I.sheafι` is a morphism of
-`SheafOfModules X.ringCatSheaf`, whose category structure is not reducibly that of `X.Modules`.
-Stated with `I.sheafι`, the sums of composites below find no `Add` instance on morphisms, and `rw`
-does not match the composites with morphisms of `X.Modules` such as `toPushforwardSubscheme`. -/
-private abbrev sheafι' : I.sheaf ⟶ Scheme.Modules.unit X := I.sheafι
-
-variable {I J}
+variable {X : Scheme.{u}} {I J : X.IdealSheafData}
 
 /-! ### Restriction to a smaller closed subscheme -/
 
@@ -110,15 +102,15 @@ private def sumToSup : I.sheaf ⊞ J.sheaf ⟶ (I ⊔ J).sheaf :=
     ((I ⊔ J).sheafLift J.sheafι fun U s ↦ sections_mono le_sup_right U (J.sheafι_app_mem U s))
 
 private lemma inl_sumToSup_sheafι :
-    biprod.inl ≫ sumToSup ≫ (I ⊔ J).sheafι' = I.sheafι' :=
+    biprod.inl ≫ sumToSup ≫ (I ⊔ J).sheafιUnit = I.sheafιUnit :=
   (biprod.inl_desc_assoc _ _ _).trans ((I ⊔ J).sheafLift_ι _ _)
 
 private lemma inr_sumToSup_sheafι :
-    biprod.inr ≫ sumToSup ≫ (I ⊔ J).sheafι' = J.sheafι' :=
+    biprod.inr ≫ sumToSup ≫ (I ⊔ J).sheafιUnit = J.sheafιUnit :=
   (biprod.inr_desc_assoc _ _ _).trans ((I ⊔ J).sheafLift_ι _ _)
 
 private lemma sumToSup_sheafι :
-    sumToSup ≫ (I ⊔ J).sheafι' = biprod.fst ≫ I.sheafι' + biprod.snd ≫ J.sheafι' := by
+    sumToSup ≫ (I ⊔ J).sheafιUnit = biprod.fst ≫ I.sheafιUnit + biprod.snd ≫ J.sheafιUnit := by
   rw [← biprod.desc_eq]
   refine biprod.hom_ext' _ _ ?_ ?_
   · rw [inl_sumToSup_sheafι, biprod.inl_desc]
@@ -137,11 +129,11 @@ private lemma epi_sumToSup : Epi (sumToSup (I := I) (J := J)) := by
   refine ⟨Scheme.Modules.Hom.app (biprod.inl : I.sheaf ⟶ I.sheaf ⊞ J.sheaf) U (I.sectionMk a ha) +
     Scheme.Modules.Hom.app (biprod.inr : J.sheaf ⟶ I.sheaf ⊞ J.sheaf) U (J.sectionMk b hb), ?_⟩
   apply (I ⊔ J).sheafι_app_injective U
-  have hl : Scheme.Modules.Hom.app (biprod.inl ≫ sumToSup ≫ (I ⊔ J).sheafι') U (I.sectionMk a ha) =
-      Scheme.Modules.Hom.app I.sheafι' U (I.sectionMk a ha) := by
+  have hl : Scheme.Modules.Hom.app (biprod.inl ≫ sumToSup ≫ (I ⊔ J).sheafιUnit) U
+      (I.sectionMk a ha) = Scheme.Modules.Hom.app I.sheafιUnit U (I.sectionMk a ha) := by
     rw [inl_sumToSup_sheafι]
-  have hr : Scheme.Modules.Hom.app (biprod.inr ≫ sumToSup ≫ (I ⊔ J).sheafι') U (J.sectionMk b hb) =
-      Scheme.Modules.Hom.app J.sheafι' U (J.sectionMk b hb) := by
+  have hr : Scheme.Modules.Hom.app (biprod.inr ≫ sumToSup ≫ (I ⊔ J).sheafιUnit) U
+      (J.sectionMk b hb) = Scheme.Modules.Hom.app J.sheafιUnit U (J.sectionMk b hb) := by
     rw [inr_sumToSup_sheafι]
   simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply] at hl hr
   rw [map_add, map_add, hl, hr, sheafι_app_sectionMk, sheafι_app_sectionMk]
@@ -214,14 +206,14 @@ lemma mayerVietoris_g : (mayerVietoris I J).g =
 private lemma exists_eq_add_of_comp_toPushforwardSubscheme_sup_eq_zero {A : X.Modules}
     (y : A ⟶ Scheme.Modules.unit X) (hy : y ≫ (I ⊔ J).toPushforwardSubscheme = 0) :
     ∃ (A' : X.Modules) (π : A' ⟶ A) (_ : Epi π) (c : A' ⟶ I.sheaf) (e : A' ⟶ J.sheaf),
-      π ≫ y = c ≫ I.sheafι' + e ≫ J.sheafι' := by
+      π ≫ y = c ≫ I.sheafιUnit + e ≫ J.sheafιUnit := by
   have hS := (I ⊔ J).shortExact_toPushforwardSubscheme
   have := hS.mono_f
   have := epi_sumToSup (I := I) (J := J)
   -- `y` is a section of `I ⊔ J`, which is a sum after refinement since `I ⊞ J ⟶ I ⊔ J` is epi.
   obtain ⟨A', π, _, d, hd⟩ := surjective_up_to_refinements_of_epi sumToSup (hS.exact.lift _ hy)
   refine ⟨A', π, inferInstance, d ≫ biprod.fst, d ≫ biprod.snd, ?_⟩
-  have h := hd =≫ (I ⊔ J).sheafι'
+  have h := hd =≫ (I ⊔ J).sheafιUnit
   rw [Category.assoc, hS.exact.lift_f, Category.assoc, sumToSup_sheafι] at h
   simpa only [Category.assoc, Preadditive.comp_add] using h
 
@@ -282,8 +274,8 @@ private lemma exact_mayerVietoris : (mayerVietoris I J).Exact := by
   obtain ⟨A₃, π₃, _, c, e, hce⟩ := exists_eq_add_of_comp_toPushforwardSubscheme_sup_eq_zero _ hab
   rw [Preadditive.comp_add] at hce
   refine ⟨A₃, π₃ ≫ π₂ ≫ π₁, inferInstance,
-    (π₃ ≫ π₂ ≫ a - c ≫ I.sheafι') ≫ (I ⊓ J).toPushforwardSubscheme, ?_⟩
-  have hb' : π₃ ≫ π₂ ≫ a - c ≫ I.sheafι' = e ≫ J.sheafι' - π₃ ≫ b := by
+    (π₃ ≫ π₂ ≫ a - c ≫ I.sheafιUnit) ≫ (I ⊓ J).toPushforwardSubscheme, ?_⟩
+  have hb' : π₃ ≫ π₂ ≫ a - c ≫ I.sheafιUnit = e ≫ J.sheafιUnit - π₃ ≫ b := by
     rw [sub_eq_sub_iff_add_eq_add, hce, add_comm]
   apply biprod.hom_ext
   · simp only [Category.assoc, biprod.lift_fst, toPushforwardSubscheme_pushforwardSubschemeMap,

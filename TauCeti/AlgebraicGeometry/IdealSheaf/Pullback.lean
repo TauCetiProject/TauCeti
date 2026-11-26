@@ -210,32 +210,11 @@ section Functorial
 
 variable {Z : Scheme.{u}}
 
-/-- `I.sheafι` typed with codomain `𝟙_ W.Modules` rather than `W.ringCatSheaf`, keeping objects in
-`W.Modules` (`Scheme.Modules` is semireducible) so `rw` rewrites cleanly without transparency
-mismatches. -/
-abbrev sheafιUnit {W : Scheme.{u}} (I : W.IdealSheafData) : I.sheaf ⟶ 𝟙_ W.Modules :=
-  I.sheafι
-
-/-- `pullbackSheafHom_sheafι` stated with `sheafιUnit` (`𝟙_ _.Modules` codomain). -/
-@[reassoc]
-lemma pullbackSheafHom_sheafιUnit {V W : Scheme.{u}} (I : W.IdealSheafData) (f : V ⟶ W) :
-    I.pullbackSheafHom f ≫ (I.comap f).sheafιUnit =
-      (Modules.pullback f).map I.sheafιUnit ≫ (Modules.pullbackObjUnitIso f).hom :=
-  I.pullbackSheafHom_sheafι f
-
-/-- Rewrites `(Modules.pullback f).map I.sheafι ≫ (Modules.pullbackObjUnitIso f).hom` to use
-`I.sheafιUnit` (`𝟙_ W.Modules` codomain) so categorical lemmas rewrite without `change`. -/
-lemma pullback_map_sheafι_comp_pullbackObjUnitIso_hom {V W : Scheme.{u}}
-    (I : W.IdealSheafData) (f : V ⟶ W) :
-    (Modules.pullback f).map I.sheafι ≫ (Modules.pullbackObjUnitIso f).hom =
-      (Modules.pullback f).map I.sheafιUnit ≫ (Modules.pullbackObjUnitIso f).hom :=
-  rfl
-
 private lemma pullbackSheafHom_eqToHom_sheafιUnit {V W : Scheme.{u}} {I : W.IdealSheafData}
     {J : V.IdealSheafData} {f : V ⟶ W} (h : I.comap f = J) :
     (I.pullbackSheafHom f ≫ eqToHom (congrArg sheaf h)) ≫ J.sheafιUnit =
       (Modules.pullback f).map I.sheafιUnit ≫ (Modules.pullbackObjUnitIso f).hom := by
-  subst h; rw [eqToHom_refl, Category.comp_id, pullbackSheafHom_sheafιUnit]
+  subst h; rw [eqToHom_refl, Category.comp_id]; exact I.pullbackSheafHom_sheafι f
 
 /-- Compatibility of `Modules.pullbackComp` with `I.sheafι : I.sheaf ⟶ 𝒪_Z`. -/
 lemma pullbackComp_inv_map_sheafι (I : Z.IdealSheafData) (f : X ⟶ Y) (g : Y ⟶ Z) :
@@ -243,10 +222,14 @@ lemma pullbackComp_inv_map_sheafι (I : Z.IdealSheafData) (f : X ⟶ Y) (g : Y �
         (Modules.pullback f).map ((Modules.pullback g).map I.sheafι ≫
           (Modules.pullbackObjUnitIso g).hom) ≫ (Modules.pullbackObjUnitIso f).hom =
       (Modules.pullback (f ≫ g)).map I.sheafι ≫ (Modules.pullbackObjUnitIso (f ≫ g)).hom := by
-  rw [I.pullback_map_sheafι_comp_pullbackObjUnitIso_hom g,
-    I.pullback_map_sheafι_comp_pullbackObjUnitIso_hom (f ≫ g), Functor.map_comp, Category.assoc,
-    ← Functor.comp_map, ← (Modules.pullbackComp f g).inv.naturality_assoc,
-    Modules.pullbackObjUnitIso_comp]
+  -- State the goal with `sheafιUnit` (`𝟙_ _.Modules` codomain) so `Functor.map_comp` and
+  -- `pullbackComp` naturality rewrite at reducible transparency.
+  change (Modules.pullbackComp f g).inv.app I.sheaf ≫
+      (Modules.pullback f).map ((Modules.pullback g).map I.sheafιUnit ≫
+        (Modules.pullbackObjUnitIso g).hom) ≫ (Modules.pullbackObjUnitIso f).hom =
+    (Modules.pullback (f ≫ g)).map I.sheafιUnit ≫ (Modules.pullbackObjUnitIso (f ≫ g)).hom
+  rw [Functor.map_comp, Category.assoc, ← Functor.comp_map,
+    ← (Modules.pullbackComp f g).inv.naturality_assoc, Modules.pullbackObjUnitIso_comp]
 
 /-- Along the identity morphism, `pullbackSheafHom` is `(Modules.pullbackId X).hom.app`. -/
 lemma pullbackSheafHom_id (I : X.IdealSheafData) :
@@ -263,8 +246,11 @@ lemma pullbackSheafHom_comp (I : Z.IdealSheafData) (f : X ⟶ Y) (g : Y ⟶ Z) :
         (I.comap g).pullbackSheafHom f =
       I.pullbackSheafHom (f ≫ g) ≫ eqToHom (congrArg sheaf (I.comap_comp f g)) := by
   refine (cancel_mono ((I.comap g).comap f).sheafιUnit).mp ?_
-  rw [Category.assoc, Category.assoc, pullbackSheafHom_sheafιUnit, ← Functor.map_comp_assoc,
-    pullbackSheafHom_sheafιUnit, pullbackComp_inv_map_sheafι,
+  have hι {V W : Scheme.{u}} (K : W.IdealSheafData) (k : V ⟶ W) :
+      K.pullbackSheafHom k ≫ (K.comap k).sheafιUnit =
+        (Modules.pullback k).map K.sheafιUnit ≫ (Modules.pullbackObjUnitIso k).hom :=
+    K.pullbackSheafHom_sheafι k
+  rw [Category.assoc, Category.assoc, hι, ← Functor.map_comp_assoc, hι, pullbackComp_inv_map_sheafι,
     pullbackSheafHom_eqToHom_sheafιUnit (I.comap_comp f g)]
 
 end Functorial

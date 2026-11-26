@@ -72,6 +72,25 @@ lemma pullbackComparison_id (p : S ⟶ X) (h₀ : p ≫ 𝟙 X = 𝟙 S ≫ p :=
     Modules.pseudofunctor_left_unitality_app, Modules.pseudofunctor_right_unitality_app]
   simp [Modules.pullbackCongr]
 
+@[reassoc]
+private lemma pullbackComp_inv_app_map_hom_app {A B C : Scheme.{u}} (u : A ⟶ B) (v : B ⟶ C)
+    {M N : C.Modules} (φ : M ⟶ N) :
+    (Modules.pullbackComp u v).inv.app M ≫
+        (Modules.pullback u).map ((Modules.pullback v).map φ) ≫
+        (Modules.pullbackComp u v).hom.app N = (Modules.pullback (u ≫ v)).map φ := by
+  rw [← Functor.comp_map, ← (Modules.pullbackComp u v).inv.naturality_assoc,
+    Iso.inv_hom_id_app, Category.comp_id]
+
+@[reassoc]
+private lemma pullback_map_pullbackCongr_hom_pullbackComp_inv {A B C : Scheme.{u}}
+    {w : A ⟶ C} {u : A ⟶ B} {v : B ⟶ C} (hw : w = u ≫ v) {M N : C.Modules} (φ : M ⟶ N) :
+    (Modules.pullback w).map φ ≫ (Modules.pullbackCongr hw).hom.app N ≫
+        (Modules.pullbackComp u v).inv.app N =
+      (Modules.pullbackCongr hw).hom.app M ≫ (Modules.pullbackComp u v).inv.app M ≫
+        (Modules.pullback u).map ((Modules.pullback v).map φ) := by
+  rw [(Modules.pullbackCongr hw).hom.naturality_assoc]; congr 1
+  simpa only [Functor.comp_map] using (Modules.pullbackComp u v).inv.naturality φ
+
 /-- Along two stacked squares, `pullbackComparison` composes through `pullbackComp`. -/
 lemma pullbackComparison_comp (h₀ : p' ≫ g = f ≫ p) (hI : I' = I.comap g)
     (h₀' : p'' ≫ g' = f' ≫ p') (hI' : I'' = I'.comap g')
@@ -80,34 +99,30 @@ lemma pullbackComparison_comp (h₀ : p' ≫ g = f ≫ p) (hI : I' = I.comap g)
         (Modules.pullback f').map (I.pullbackComparison I' h₀ hI) ≫
         I'.pullbackComparison I'' h₀' hI' = I.pullbackComparison I'' h₀'' hI'' := by
   subst hI hI'
-  set φ := I.pullbackSheafHom g; set φ' := (I.comap g).pullbackSheafHom g'
-  set φ'' := I.pullbackSheafHom (g' ≫ g) ≫ eqToHom (congrArg sheaf hI''.symm)
-  simp only [pullbackComparison, eqToHom_refl, Category.comp_id, Functor.map_comp, Category.assoc]
-  rw [Modules.pullbackComp_inv_app_comp_pullback_map_pullbackComp_hom_app_assoc,
-    Modules.pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app_assoc,
-    Modules.pullbackComp_inv_app_comp_pullback_map_pullbackComp_inv_app_assoc]
-  have h1 : (Modules.pullbackComp f' p').inv.app _ ≫
-      (Modules.pullback f').map ((Modules.pullback p').map φ) ≫
-      (Modules.pullbackComp f' p').hom.app _ = (Modules.pullback (f' ≫ p')).map φ := by
-    rw [← Functor.comp_map, ← (Modules.pullbackComp f' p').inv.naturality_assoc,
-      Iso.inv_hom_id_app, Category.comp_id]
-  have h2 : (Modules.pullback (f' ≫ p')).map φ ≫ (Modules.pullbackCongr h₀'.symm).hom.app _ ≫
-      (Modules.pullbackComp p'' g').inv.app _ =
-      (Modules.pullbackCongr h₀'.symm).hom.app _ ≫ (Modules.pullbackComp p'' g').inv.app _ ≫
-      (Modules.pullback p'').map ((Modules.pullback g').map φ) := by
-    rw [(Modules.pullbackCongr h₀'.symm).hom.naturality_assoc]; congr 1
-    simpa only [Functor.comp_map] using (Modules.pullbackComp p'' g').inv.naturality φ
-  have h3 : (Modules.pullback p'').map ((Modules.pullback g').map φ) ≫
-      (Modules.pullback p'').map φ' =
+  -- Push `(pullbackComp f' f).inv` past the coherence morphisms of `I.pullbackComparison I'`,
+  -- commute `I.pullbackSheafHom g` past `pullbackCongr h₀'.symm ≫ (pullbackComp p'' g').inv` to
+  -- pair it with `(I.comap g).pullbackSheafHom g'`, and combine them via `pullbackSheafHom_comp`.
+  have h3 : (Modules.pullback p'').map ((Modules.pullback g').map (I.pullbackSheafHom g)) ≫
+      (Modules.pullback p'').map ((I.comap g).pullbackSheafHom g') =
       (Modules.pullback p'').map ((Modules.pullbackComp g' g).hom.app I.sheaf) ≫
-      (Modules.pullback p'').map φ'' := by
-    rw [← Functor.map_comp, ← Functor.map_comp]; congr 1
+        (Modules.pullback p'').map (I.pullbackSheafHom (g' ≫ g)) ≫
+        (Modules.pullback p'').map (eqToHom (congrArg sheaf hI''.symm)) := by
+    rw [← Functor.map_comp, ← Functor.map_comp, ← Functor.map_comp]; congr 1
     exact (cancel_epi ((Modules.pullbackComp g' g).inv.app I.sheaf)).mp
       ((I.pullbackSheafHom_comp g' g).trans (Iso.inv_hom_id_app_assoc _ _ _).symm)
-  rw [reassoc_of% h1, reassoc_of% h2, h3,
+  have hcancel {u v : S'' ⟶ X'} (huv : u = v)
+      (e : (Modules.pullback g ⋙ Modules.pullback v).obj I.sheaf =
+        (Modules.pullback g ⋙ Modules.pullback u).obj I.sheaf) :
+      (Modules.pullbackComp v g).inv.app I.sheaf ≫ eqToHom e ≫
+        (Modules.pullbackComp u g).hom.app I.sheaf = eqToHom (by rw [huv]) := by
+    subst huv; simp
+  simp only [pullbackComparison, eqToHom_refl, Category.comp_id, Functor.map_comp, Category.assoc,
     Modules.pullbackComp_inv_app_comp_pullback_map_pullbackComp_hom_app_assoc,
-    Modules.pullbackCongr_hom_app_comp_pullbackComp_hom_app_assoc, Iso.inv_hom_id_app_assoc]
-  simp [Modules.pullbackCongr, φ'']
+    Modules.pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app_assoc,
+    Modules.pullbackComp_inv_app_comp_pullback_map_pullbackComp_inv_app_assoc,
+    pullbackComp_inv_app_map_hom_app_assoc, pullback_map_pullbackCongr_hom_pullbackComp_inv_assoc,
+    h3]
+  simp [Modules.pullbackCongr, reassoc_of% (hcancel h₀')]
 
 private lemma pullbackCongr_hom_app_comp_map_sheafι {p₁ p₂ : S' ⟶ X} (hp : p₂ = p₁) :
     (Modules.pullbackCongr hp).hom.app I.sheaf ≫ (Modules.pullback p₁).map I.sheafι ≫
@@ -123,10 +138,24 @@ lemma pullbackComparison_comp_map_sheafι (h₀ : p' ≫ g = f ≫ p) (hI : I' =
         ((Modules.pullback p).map I.sheafι ≫ (Modules.pullbackObjUnitIso p).hom) ≫
         (Modules.pullbackObjUnitIso f).hom := by
   subst hI
-  rw [(I.comap g).pullback_map_sheafι_comp_pullbackObjUnitIso_hom p', pullbackComparison,
-    eqToHom_refl, Category.comp_id, Category.assoc, Category.assoc, Category.assoc,
-    ← Functor.map_comp_assoc, I.pullbackSheafHom_sheafιUnit g,
-    ← I.pullback_map_sheafι_comp_pullbackObjUnitIso_hom g, I.pullbackComp_inv_map_sheafι p' g,
+  have hmap : (Modules.pullback p').map (I.pullbackSheafHom g ≫ eqToHom rfl) ≫
+      ((Modules.pullback p').map (I.comap g).sheafι ≫ (Modules.pullbackObjUnitIso p').hom) =
+      (Modules.pullback p').map
+        ((Modules.pullback g).map I.sheafι ≫ (Modules.pullbackObjUnitIso g).hom) ≫
+        (Modules.pullbackObjUnitIso p').hom := by
+    -- State the codomain of `sheafι` as `𝟙_ _.Modules` (`sheafιUnit`) so `Functor.map_comp`
+    -- applies.
+    change (Modules.pullback p').map (I.pullbackSheafHom g ≫ eqToHom rfl) ≫
+        ((Modules.pullback p').map (I.comap g).sheafιUnit ≫ (Modules.pullbackObjUnitIso p').hom) =
+      (Modules.pullback p').map
+        ((Modules.pullback g).map I.sheafιUnit ≫ (Modules.pullbackObjUnitIso g).hom) ≫
+        (Modules.pullbackObjUnitIso p').hom
+    have hι : I.pullbackSheafHom g ≫ (I.comap g).sheafιUnit =
+        (Modules.pullback g).map I.sheafιUnit ≫ (Modules.pullbackObjUnitIso g).hom :=
+      I.pullbackSheafHom_sheafι g
+    rw [eqToHom_refl, Category.comp_id, ← Functor.map_comp_assoc, hι, Functor.map_comp,
+      Category.assoc]
+  simp only [pullbackComparison, Category.assoc, hmap, I.pullbackComp_inv_map_sheafι p' g,
     I.pullbackCongr_hom_app_comp_map_sheafι h₀.symm, ← I.pullbackComp_inv_map_sheafι f p,
     Iso.hom_inv_id_app_assoc]
 

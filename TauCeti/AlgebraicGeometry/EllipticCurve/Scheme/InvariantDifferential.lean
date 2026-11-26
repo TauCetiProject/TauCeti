@@ -79,21 +79,35 @@ theorem projModelFormalPoint_projModelVariableChangeIso_hom (C : VariableChange 
   have hDd : D * invOfUnit D (C.u ^ 3) = 1 :=
     mul_invOfUnit D (C.u ^ 3) (C.constantCoeff_formalDenom W)
   let uD : R⟦X⟧ˣ := Units.mkOfMulEqOne D (invOfUnit D (C.u ^ 3)) hDd
-  have hj : IsUnit (((C.map (algebraMap R R⟦X⟧)).toMatrix *ᵥ ![X, -1, formalW (C • W)]) 1) := by
-    have h1 : ((C.map (algebraMap R R⟦X⟧)).toMatrix *ᵥ ![X, -1, formalW (C • W)]) 1 = -D := by
-      simp [VariableChange.toMatrix_def, D, VariableChange.formalDenom_def]; ring
-    exact h1 ▸ (C.isUnit_formalDenom W).neg
+  have hx : ((C.map (algebraMap R R⟦X⟧)).toMatrix *ᵥ ![X, -1, formalW (C • W)]) 0 =
+      PowerSeries.C (C.u : R) ^ 2 * X + PowerSeries.C C.r * formalW (C • W) := by
+    simp [VariableChange.toMatrix_def, algebraMap_eq]; ring
+  have h1 : ((C.map (algebraMap R R⟦X⟧)).toMatrix *ᵥ ![X, -1, formalW (C • W)]) 1 = -D := by
+    simp [VariableChange.toMatrix_def, D, VariableChange.formalDenom_def]; ring
+  have hz : ((C.map (algebraMap R R⟦X⟧)).toMatrix *ᵥ ![X, -1, formalW (C • W)]) 2 =
+      formalW (C • W) := by
+    simp [VariableChange.toMatrix_def]
+  have hj : IsUnit (((C.map (algebraMap R R⟦X⟧)).toMatrix *ᵥ ![X, -1, formalW (C • W)]) 1) :=
+    h1 ▸ (C.isUnit_formalDenom W).neg
   rw [projModelFormalPoint_def, projModelPoint_projModelVariableChangeIso_hom _ hj,
     SpecMap_substAlgHom_projModelFormalPoint, projModelPoint_eq_projModelPoint_iff]
   refine ⟨rfl, uD, funext fun k ↦ ?_⟩
   have huD : (uD : R⟦X⟧) = D := Units.val_mkOfMulEqOne hDd
   rw [C.subst_formalCoordinate_formalW W, C.formalCoordinate_toPowerSeries W]
-  fin_cases k <;>
-    simp [VariableChange.toMatrix_def, Units.smul_def, smul_eq_mul, huD, algebraMap_eq]
-  · linear_combination -((PowerSeries.C (C.u : R) ^ 2 * X +
+  fin_cases k
+  · -- x-coordinate
+    simp only [Fin.zero_eta, Fin.isValue, hx, Matrix.cons_val_zero, Units.smul_def, Pi.smul_apply,
+      smul_eq_mul, huD]
+    linear_combination -((PowerSeries.C (C.u : R) ^ 2 * X +
       PowerSeries.C C.r * formalW (C • W)) * hDd)
-  · simp only [D, VariableChange.formalDenom_def, map_mul, map_pow]; ring
-  · linear_combination -(formalW (C • W) * hDd)
+  · -- y-coordinate
+    simp only [Fin.mk_one, Fin.isValue, h1, Matrix.cons_val_one, Matrix.cons_val_zero,
+      Units.smul_def, Pi.smul_apply, smul_eq_mul, huD]
+    ring
+  · -- z-coordinate
+    simp only [Fin.reduceFinMk, Fin.isValue, hz, Matrix.cons_val_two, Matrix.tail_cons,
+      Matrix.head_cons, Units.smul_def, Pi.smul_apply, smul_eq_mul, huD]
+    linear_combination -(formalW (C • W) * hDd)
 
 private lemma isSMulRegular_formalParamTop (U : (Spec (.of R⟦X⟧)).affineOpens) :
     IsSMulRegular Γ(Spec (.of R⟦X⟧), U) ((Spec (.of R⟦X⟧)).presheaf.map
@@ -102,20 +116,24 @@ private lemma isSMulRegular_formalParamTop (U : (Spec (.of R⟦X⟧)).affineOpen
     (TauCeti.isSMulRegular_map_iff (ΓSpecIso (.of R⟦X⟧)).symm.commRingCatIsoToRingEquiv X).mpr
       PowerSeries.X_mul_injective
 
+private lemma ker_comap_projModelFormalPoint :
+    W.projModelZero.ker.comap W.projModelFormalPoint =
+      Scheme.IdealSheafData.ofIdealTop (Ideal.span {((ΓSpecIso (.of R⟦X⟧)).inv X)}) := by
+  rw [← W.zeroSectionDivisor_def, W.zeroSectionDivisor_comap_projModelFormalPoint, Ideal.map_span,
+    Set.image_singleton]
+
 private lemma ideal_ker_comap_projModelFormalPoint (U : (Spec (.of R⟦X⟧)).affineOpens) :
     (W.projModelZero.ker.comap W.projModelFormalPoint).ideal U =
       Ideal.span {((Spec (.of R⟦X⟧)).presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op
         ((ΓSpecIso (.of R⟦X⟧)).inv X))} := by
-  rw [← W.zeroSectionDivisor_def, W.zeroSectionDivisor_comap_projModelFormalPoint, Ideal.map_span,
-    Set.image_singleton, Scheme.IdealSheafData.ofIdealTop_ideal, Ideal.map_span,
+  rw [W.ker_comap_projModelFormalPoint, Scheme.IdealSheafData.ofIdealTop_ideal, Ideal.map_span,
     Set.image_singleton]
 
 private theorem isEffectiveCartier_ker_comap_projModelFormalPoint :
-    (W.projModelZero.ker.comap W.projModelFormalPoint).IsEffectiveCartier := by
-  rw [← W.zeroSectionDivisor_def, W.zeroSectionDivisor_comap_projModelFormalPoint, Ideal.map_span,
-    Set.image_singleton]
-  exact Scheme.IdealSheafData.isEffectiveCartier_ofIdealTop_span_singleton _
-    isSMulRegular_formalParamTop
+    (W.projModelZero.ker.comap W.projModelFormalPoint).IsEffectiveCartier :=
+  W.ker_comap_projModelFormalPoint ▸
+    Scheme.IdealSheafData.isEffectiveCartier_ofIdealTop_span_singleton _
+      isSMulRegular_formalParamTop
 
 /-- The zero-section ideal sheaf of an elliptic Weierstrass curve is an effective Cartier
 divisor. -/
@@ -154,9 +172,8 @@ lemma formalConormalIso_hom_comp_map_sheafι [W.IsElliptic] :
       globalSectionsSmul (𝟙_ (Spec (.of R⟦X⟧)).Modules) ((ΓSpecIso (.of R⟦X⟧)).inv X) := by
   have := W.projModelZero.ker.isIso_pullbackSheafHom W.projModelFormalPoint
     W.isEffectiveCartier_ker_projModelZero W.isEffectiveCartier_ker_comap_projModelFormalPoint
-  let ι : (W.projModelZero.ker.comap W.projModelFormalPoint).sheaf ⟶ 𝟙_ (Spec (.of R⟦X⟧)).Modules :=
-    (W.projModelZero.ker.comap W.projModelFormalPoint).sheafι
-  have hpull : W.projModelZero.ker.pullbackSheafHom W.projModelFormalPoint ≫ ι = _ :=
+  have hpull : W.projModelZero.ker.pullbackSheafHom W.projModelFormalPoint ≫
+      (W.projModelZero.ker.comap W.projModelFormalPoint).sheafιUnit = _ :=
     W.projModelZero.ker.pullbackSheafHom_sheafι W.projModelFormalPoint
   rw [← hpull, formalConormalIso, Iso.trans_hom, Iso.symm_hom, asIso_inv, Category.assoc,
     IsIso.inv_hom_id_assoc]
@@ -242,20 +259,36 @@ private theorem conormalBasisPullback_weierstrassDifferential_of_formal
   have hI'C := W'.isEffectiveCartier_ker_projModelZero
   have hεSpec : f ≫ ε = ε' ≫ F := by
     simp only [f, F, ε, ε', ← Spec.map_comp, ← CommRingCat.ofHom_comp, hε]
-  rw [conormalBasisPullback_eq_basisPullback W.projModelZero_projModelOver
-      W'.projModelZero_projModelOver hg h₀ hIC hI'C, weierstrassDifferential_def,
-    W.projModelZero.ker.basisPullback_comp W.projModelZero.ker W'.projModelZero.ker _ _ h₀ hI
-      (by rw [Category.comp_id, h₀, Category.assoc, W.SpecMap_constantCoeff_projModelFormalPoint])
-      (by rw [Category.comp_id, hI]) hIC hIC hI'C,
-    W.projModelZero.ker.basisPullback_congr W'.projModelZero.ker hεSpec
-      (by simp : g ≫ 𝟙 W.projModel = 𝟙 W'.projModel ≫ g) _ _
-      (by rw [Category.id_comp, Category.assoc, ← hF,
-        W'.SpecMap_constantCoeff_projModelFormalPoint_assoc])
-      (by rw [Category.id_comp, hI]) hIC hI'C,
-    ← W.projModelZero.ker.basisPullback_comp W'.projModelZero.ker W'.projModelZero.ker hF hI
+  -- Paste `ε` (`X = 0` on `W`) with `(F, g)` along `f ≫ ε = ε' ≫ F`, factor out `ε'` on `W'`,
+  -- and evaluate `F^* W.formalConormalIso` via `basisPullback_formalConormalIso`.
+  have hsq' : W'.projModelZero ≫ g = (ε' ≫ F) ≫ W.projModelFormalPoint := by
+    rw [Category.assoc, ← hF, W'.SpecMap_constantCoeff_projModelFormalPoint_assoc]
+  have hpaste : conormalBasisPullback W.projModelZero_projModelOver W'.projModelZero_projModelOver
+      hg h₀ W.weierstrassDifferential =
+      W.projModelZero.ker.basisPullback W'.projModelZero.ker hsq' hI hIC hI'C
+        W.formalConormalIso := by
+    rw [conormalBasisPullback_eq_basisPullback W.projModelZero_projModelOver
+        W'.projModelZero_projModelOver hg h₀ hIC hI'C, weierstrassDifferential_def,
+      W.projModelZero.ker.basisPullback_comp W.projModelZero.ker W'.projModelZero.ker _ _ h₀ hI
+        (by rw [Category.comp_id, h₀, Category.assoc, W.SpecMap_constantCoeff_projModelFormalPoint])
+        (by rw [Category.comp_id, hI]) hIC hIC hI'C]
+    exact W.projModelZero.ker.basisPullback_congr W'.projModelZero.ker hεSpec
+      (by simp : g ≫ 𝟙 W.projModel = g) _ _ hsq' hI hIC hI'C W.formalConormalIso
+  have hunpaste : W.projModelZero.ker.basisPullback W'.projModelZero.ker hsq' hI hIC hI'C
+      W.formalConormalIso =
+      W'.projModelZero.ker.basisPullback W'.projModelZero.ker
+        (by rw [W'.SpecMap_constantCoeff_projModelFormalPoint, Category.comp_id] :
+          W'.projModelZero ≫ 𝟙 W'.projModel = ε' ≫ W'.projModelFormalPoint)
+        W'.projModelZero.ker.comap_id.symm hI'C hI'C
+        (W.projModelZero.ker.basisPullback W'.projModelZero.ker hF hI hIC hI'C
+          W.formalConormalIso) := by
+    rw [W.projModelZero.ker.basisPullback_comp W'.projModelZero.ker W'.projModelZero.ker hF hI
       (by rw [W'.SpecMap_constantCoeff_projModelFormalPoint, Category.comp_id])
-      W'.projModelZero.ker.comap_id.symm _ _ hIC hI'C hI'C,
-    basisPullback_formalConormalIso hF hI v hψX,
+      W'.projModelZero.ker.comap_id.symm (by rw [Category.id_comp]; exact hsq')
+      (by rw [Category.id_comp, hI]) hIC hI'C hI'C]
+    exact W.projModelZero.ker.basisPullback_congr W'.projModelZero.ker rfl (Category.id_comp g).symm
+      _ _ hsq' hI hIC hI'C W.formalConormalIso
+  rw [hpaste, hunpaste, basisPullback_formalConormalIso hF hI v hψX,
     Scheme.IdealSheafData.basisPullback_unitSmulIso, ← weierstrassDifferential_def]
   congr 1; ext1
   rw [Units.coe_map, coe_ΓSpecUnitsMulEquiv, coe_ΓSpecUnitsMulEquiv, Units.coe_map]
@@ -452,6 +485,19 @@ theorem projModelAdaptedXCoord_eq_one_iff_of_eq_projModelAffinePoint {x₁ y₁ 
     fun h ↦ by linear_combination (↑u⁻¹ : R) ^ 2 * h + ((u : R) * ↑u⁻¹ + 1) * hu⟩
 
 end Def
+
+/-- `projModelAdaptedXCoord` depends only on `P`, `Q`, and `ω` (not on the section or non-meeting
+proofs). -/
+theorem projModelAdaptedXCoord_congr [W.IsElliptic] {P₁ P₂ Q₁ Q₂ : Spec (.of R) ⟶ W.projModel}
+    (hP : P₁ = P₂) (hQ : Q₁ = Q₂)
+    {ω₁ ω₂ : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf} (hω : ω₁ = ω₂)
+    {hP₁ : P₁ ≫ W.projModelOver = 𝟙 _} {hQ₁ : Q₁ ≫ W.projModelOver = 𝟙 _}
+    {hP₁₀ : ∀ s, P₁ s ≠ W.projModelZero s} {hQ₁₀ : ∀ s, Q₁ s ≠ W.projModelZero s}
+    {hP₂ : P₂ ≫ W.projModelOver = 𝟙 _} {hQ₂ : Q₂ ≫ W.projModelOver = 𝟙 _}
+    {hP₂₀ : ∀ s, P₂ s ≠ W.projModelZero s} {hQ₂₀ : ∀ s, Q₂ s ≠ W.projModelZero s} :
+    W.projModelAdaptedXCoord hP₁ hQ₁ hP₁₀ hQ₁₀ ω₁ =
+      W.projModelAdaptedXCoord hP₂ hQ₂ hP₂₀ hQ₂₀ ω₂ := by
+  subst hP hQ hω; rfl
 
 variable {W} {W' : WeierstrassCurve R'} [W.IsElliptic] [W'.IsElliptic]
 

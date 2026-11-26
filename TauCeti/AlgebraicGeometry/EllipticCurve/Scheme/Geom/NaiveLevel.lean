@@ -455,9 +455,9 @@ theorem isFiberwiseInjective_zmod_two_prod_iff
     decide
   have hψ (a b) : ψ a = ψ b ↔ (φ a).left s = (φ b).left s :=
     pointsPullback_fromSpecResidueField_eq_iff _ _ s
-  rw [injective_zmod_two_prod_iff, hsub, map_div, ne_eq, ne_eq, ne_eq, div_eq_one,
-    ← map_one ψ, hψ, hψ, hψ]
-  simp [map_one]
+  have hψ₁ (a) : ψ a = 1 ↔ (φ a).left s = E.zero s := by
+    simpa [map_one] using hψ a 1
+  simp only [injective_zmod_two_prod_iff, hsub, map_div, ne_eq, div_eq_one, hψ₁, hψ]
 
 /-- **The naive `[Γ(3)]` condition.** A homomorphism `φ : (ℤ/3ℤ)² →* E(S)`, given by the pair of
 `S`-points `P = φ (1, 0)` and `Q = φ (0, 1)` of `E[3]`, is injective on every fibre exactly when

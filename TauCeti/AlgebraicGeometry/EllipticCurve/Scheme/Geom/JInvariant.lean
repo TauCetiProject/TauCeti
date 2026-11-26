@@ -83,16 +83,9 @@ private theorem appTop_jSection {S' X' : Scheme.{u}} {π' : X' ⟶ S'} {zero' : 
     {k : PointedWeierstrassChart π' zero'} {c : PointedWeierstrassChart π zero}
     {h : k.base ⟶ c.base} (hh : h ≫ c.baseMap = k.baseMap ≫ f) :
     h.appTop c.jSection = k.jSection := by
-  obtain ⟨φ, hφ⟩ : ∃ φ : c.ring ⟶ k.ring, Spec.map φ = k.baseIso.inv ≫ h ≫ c.baseIso.hom :=
-    ⟨Spec.preimage _, Spec.map_preimage _⟩
-  have hF := isPullback_modelMap hg hh
-  have hz := projModelZero_modelMap hg hh h0
-  rw [← hφ, ← CommRingCat.ofHom_hom φ] at hF hz
-  have hj := WeierstrassCurve.j_eq_of_isPullback hF hz
-  have hh' : h ≫ c.baseIso.hom = k.baseIso.hom ≫ Spec.map φ := by simp [hφ]
-  rw [jSection, jSection, ← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, hh',
-    Scheme.Hom.comp_appTop, CommRingCat.comp_apply, ← CommRingCat.comp_apply _ (Spec.map φ).appTop,
-    ← Scheme.ΓSpecIso_inv_naturality, CommRingCat.comp_apply, ← hj]
+  obtain ⟨φ, hφ, hF, hz⟩ := exists_ringHom_isPullback_modelMap hg hh h0
+  rw [jSection, jSection, appTop_baseIso_hom_ΓSpecIso_inv hφ,
+    WeierstrassCurve.j_eq_of_isPullback hF hz]
 
 end PointedWeierstrassChart
 

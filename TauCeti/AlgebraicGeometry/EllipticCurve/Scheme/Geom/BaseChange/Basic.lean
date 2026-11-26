@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Basic
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Section
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 
 /-!
 # Base change of elliptic curves over a scheme
@@ -50,8 +51,10 @@ Smoothness of relative dimension one, properness and the local-model condition
 * `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.isPullback_modelMap` and
   `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.projModelZero_modelMap`: the morphism
   `modelMap hg hh` is a base change square of projective models carrying the zero section to the
-  zero section. Statements about the projective models of Weierstrass equations which are
-  compatible with such squares therefore pass to elliptic curves along base change squares.
+  zero section (`exists_ringHom_isPullback_modelMap` packages the underlying ring map, and
+  `appTop_baseIso_hom_ΓSpecIso_inv` transports global sections along it). Statements about the
+  projective models of Weierstrass equations which are compatible with such squares therefore pass
+  to elliptic curves along base change squares.
 * `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.modelPoint_modelMap_of_comp_eq`: if an
   endomorphism of `X` over `S` fixes a section, the induced endomorphism of the projective model of
   a chart fixes its model point.
@@ -363,6 +366,36 @@ theorem modelPoint_modelMap_of_comp_eq {P : S ⟶ X} (hP : P ≫ π = 𝟙 S) {�
       c.modelPoint hP := by
   simpa using modelPoint_modelMap hσ (by simp : 𝟙 c.base ≫ c.baseMap = c.baseMap ≫ 𝟙 S) hP hP
     (by rw [hσP, Category.id_comp])
+
+/-- The comparison `modelMap hg hh` between the projective models of two compatible charts lies over
+`Spec (CommRingCat.ofHom φ)` for a ring homomorphism `φ : c.ring →+* k.ring`. -/
+theorem exists_ringHom_isPullback_modelMap (h0 : zero' ≫ g = f ≫ zero) :
+    ∃ φ : c.ring →+* k.ring,
+      Spec.map (CommRingCat.ofHom φ) = k.baseIso.inv ≫ h ≫ c.baseIso.hom ∧
+        IsPullback (modelMap hg hh) k.equation.projModelOver c.equation.projModelOver
+          (Spec.map (CommRingCat.ofHom φ)) ∧
+        k.equation.projModelZero ≫ modelMap hg hh =
+          Spec.map (CommRingCat.ofHom φ) ≫ c.equation.projModelZero := by
+  -- the comparison of the projective models lies over `Spec φ`
+  let φ : c.ring ⟶ k.ring := Spec.preimage (k.baseIso.inv ≫ h ≫ c.baseIso.hom)
+  have hφ : Spec.map (CommRingCat.ofHom φ.hom) = k.baseIso.inv ≫ h ≫ c.baseIso.hom := by
+    rw [CommRingCat.ofHom_hom, Spec.map_preimage]
+  exact ⟨φ.hom, hφ, hφ.symm ▸ isPullback_modelMap hg hh,
+    hφ.symm ▸ projModelZero_modelMap hg hh h0⟩
+
+/-- Along `h : k.base ⟶ c.base` corresponding to `φ : c.ring →+* k.ring` under `baseIso`,
+`h.appTop` transports `xc : c.ring` on `c.base` to `φ xc` on `k.base`. -/
+theorem appTop_baseIso_hom_ΓSpecIso_inv {φ : c.ring →+* k.ring}
+    (hφ : Spec.map (CommRingCat.ofHom φ) = k.baseIso.inv ≫ h ≫ c.baseIso.hom) (xc : c.ring) :
+    h.appTop (c.baseIso.hom.appTop ((Scheme.ΓSpecIso c.ring).inv xc)) =
+      k.baseIso.hom.appTop ((Scheme.ΓSpecIso k.ring).inv (φ xc)) := by
+  -- pull back along `h ≫ c.baseIso.hom = k.baseIso.hom ≫ Spec ψ`, and move `ψ` past `ΓSpecIso`
+  let ψ : c.ring ⟶ k.ring := Spec.preimage (k.baseIso.inv ≫ h ≫ c.baseIso.hom)
+  have hψ : ψ = CommRingCat.ofHom φ := Spec.map_injective (by rw [Spec.map_preimage, hφ])
+  have hh' : h ≫ c.baseIso.hom = k.baseIso.hom ≫ Spec.map ψ := by simp [ψ, Spec.map_preimage]
+  rw [← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, hh', Scheme.Hom.comp_appTop,
+    CommRingCat.comp_apply, Scheme.SpecMap_appTop_ΓSpecIso_inv, hψ]
+  rfl
 
 end PointedWeierstrassChart
 

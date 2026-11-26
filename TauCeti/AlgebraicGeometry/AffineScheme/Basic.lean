@@ -130,11 +130,6 @@ theorem Scheme.coe_ΓSpecUnitsMulEquiv_symm (R : CommRingCat.{u}) (u : Γ(Spec R
     ((Scheme.ΓSpecUnitsMulEquiv R).symm u : R) = (Scheme.ΓSpecIso R).hom u := by
   simp [Scheme.ΓSpecUnitsMulEquiv, Iso.commRingCatIsoToRingEquiv]
 
-/-- `Scheme.ΓSpecUnitsMulEquiv R` acts on units via `(ΓSpecIso R).inv`. -/
-theorem Scheme.ΓSpecUnitsMulEquiv_apply (R : CommRingCat.{u}) (u : Rˣ) :
-    Scheme.ΓSpecUnitsMulEquiv R u = Units.map (Scheme.ΓSpecIso R).inv.hom.toMonoidHom u :=
-  Units.ext (by simp)
-
 /-- On an affine scheme `Z`, the stalk at `(isAffineOpen_top Z).fromSpec y` is a `Γ(Z, ⊤)`-algebra
 via the germ map on `⊤`. -/
 noncomputable instance Scheme.algebraStalkFromSpecTop (Z : Scheme.{u}) [IsAffine Z]

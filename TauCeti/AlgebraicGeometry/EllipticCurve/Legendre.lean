@@ -261,7 +261,7 @@ theorem exists_variableChange_legendre_iff [W.IsElliptic] :
   · -- `(0, 0)` and `(1, 0)` are points of order two on `freyCurve 1 B`, and `C` carries
     -- `(x₁, y₁)` and `(x₂, y₂)` to them
     have e₀ := (Affine.variableChange_equation W C 0 0).mpr
-      (by rw [hC]; exact Affine.equation_zero.mpr (freyCurve_a₆ 1 B))
+      (by rw [hC]; exact equation_freyCurve_zero 1 B)
     have e₁ := (Affine.variableChange_equation W C 1 0).mpr
       (by rw [hC, Affine.equation_iff]; simp)
     have p₀ := Affine.variableChange_evalEval_polynomialY W C 0 0

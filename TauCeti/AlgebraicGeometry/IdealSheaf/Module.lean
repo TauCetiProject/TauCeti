@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Submodule
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Submodule
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!
 # The ideal sheaf as a sheaf of modules
@@ -32,7 +33,8 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
   sheaves;
 * `Scheme.IdealSheafData.submodule I`: the submodule `I ⊆ 𝒪_X` of the sheaf of modules `𝒪_X`;
 * `Scheme.IdealSheafData.sheaf I`: the ideal sheaf as an `𝒪_X`-module, with its inclusion
-  `Scheme.IdealSheafData.sheafι I : I ⟶ 𝒪_X`, which is injective on sections
+  `Scheme.IdealSheafData.sheafι I : I ⟶ 𝒪_X` (and `sheafιUnit I : I ⟶ 𝟙_ X.Modules` typed in
+  `X.Modules`), which is injective on sections
   (`sheafι_app_injective`) with image `sections I U` over `U` (`range_sheafι_app`), the ideal
   `I(U)ⁿ` for the power `Iⁿ` over an affine open `U` (`range_sheafι_app_pow`), and
   `Scheme.IdealSheafData.sectionMk` building a section of `I` from an element of `sections I U`;
@@ -51,7 +53,7 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
 
 public section
 
-open CategoryTheory Opposite TopologicalSpace
+open CategoryTheory MonoidalCategory Opposite TopologicalSpace
 
 universe u
 
@@ -155,6 +157,15 @@ def sheafι : I.sheaf ⟶ SheafOfModules.unit X.ringCatSheaf :=
 
 instance : Mono I.sheafι :=
   SheafOfModules.Submodule.instMonoι I.submodule
+
+/-- The inclusion `I ⟶ 𝒪_X` typed in `X.Modules` with codomain `𝟙_ X.Modules` rather than
+`SheafOfModules.unit X.ringCatSheaf`, so composites in `X.Modules` rewrite at reducible
+transparency. -/
+abbrev sheafιUnit : I.sheaf ⟶ 𝟙_ X.Modules :=
+  I.sheafι
+
+instance : Mono I.sheafιUnit :=
+  inferInstanceAs (Mono I.sheafι)
 
 /-- A regular function lying in `sections I U`, as a section of the ideal sheaf over `U`. -/
 def sectionMk {U : X.Opens} (s : Γ(X, U)) (hs : s ∈ I.sections U) : Γ(I.sheaf, U) :=

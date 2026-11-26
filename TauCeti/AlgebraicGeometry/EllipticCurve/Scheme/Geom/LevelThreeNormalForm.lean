@@ -500,8 +500,8 @@ theorem existsUnique_levelThreeNormalForm :
   refine (existsUnique_congr fun _ ↦ by rw [Fin.forall_fin_two]; exact Iff.rfl).mpr
     (existsUnique_isLevelThree (c.modelPoint_projModelOver hP) (c.modelPoint_projModelOver hQ)
       (c.modelPoint_apply_ne hP hP₀) (c.modelPoint_apply_ne hQ hQ₀)
-      (by simpa [hP₃] using (E.modelPoint_mulBy c hP 3).symm)
-      (by simpa [hQ₃] using (E.modelPoint_mulBy c hQ 3).symm) fun s ↦
+      (c.modelPoint_projModelMulBy_eq_projModelZero hP hP₃)
+      (c.modelPoint_projModelMulBy_eq_projModelZero hQ hQ₃) fun s ↦
         ⟨c.modelPoint_apply_ne_modelPoint hP hQ (fun s ↦ (hQP s).1) s, ?_⟩)
   rw [← modelPoint_neg c hP]
   exact c.modelPoint_apply_ne_modelPoint _ hQ (fun s ↦ (hQP s).2) s
