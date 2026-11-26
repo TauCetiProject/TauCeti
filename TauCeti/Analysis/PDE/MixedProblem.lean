@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 public import TauCeti.Analysis.PDE.EnergyForm.InverseCoercive
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.BoundaryPart
 import TauCeti.Analysis.InnerProductSpace.Variational.Lifting
+import TauCeti.Analysis.Variational.QuadraticEnergy
 
 /-!
 # The mixed boundary value problem in the coercive case
@@ -78,12 +79,14 @@ almost everywhere symmetric inverse-coercive `a`, no drift and `c ≥ 0`.
   and `isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomainWith`, in the namespace
   `TauCeti.PDE.IsUniformlyEllipticAE`: the mixed problem on a bounded connected Lipschitz domain,
   with a Dirichlet part of positive surface measure.
-* `TauCeti.PDE.isMinOn_iff_forall_energyFormH1_eq`: Dirichlet's principle for the mixed problem,
-  for a symmetric form nonnegative on `H¹_Γ(Ω)`.
-* `TauCeti.PDE.isMinOn_iff_mixedSolutionL_eq` and `TauCeti.PDE.existsUnique_isMinOn`: for a
-  coercive symmetric form, the energy has exactly one minimizer, and it gives `mixedSolutionL`.
-* `TauCeti.PDE.IsUniformlyEllipticAE.existsUnique_isMinOn_of_isLipschitzDomainWith`: the same on a
-  bounded connected Lipschitz domain, for an almost everywhere symmetric principal coefficient.
+* `TauCeti.PDE.isMinOn_w1pVanishingOn_iff_forall_energyFormH1_eq`: Dirichlet's principle for the
+  mixed problem, for a symmetric form nonnegative on `H¹_Γ(Ω)`.
+* `TauCeti.PDE.isMinOn_iff_mixedSolutionL_eq` and
+  `TauCeti.PDE.existsUnique_w1pVanishingOn_isMinOn_energyFormH1`: for a coercive symmetric form,
+  the energy has exactly one minimizer, and it gives `mixedSolutionL`.
+* `existsUnique_w1pVanishingOn_isMinOn_energyFormH1_of_isLipschitzDomainWith`, in the namespace
+  `TauCeti.PDE.IsUniformlyEllipticAE`: the same on a bounded connected Lipschitz domain, for an
+  almost everywhere symmetric principal coefficient.
 
 ## References
 
@@ -245,7 +248,7 @@ The functions `g + w` run over the affine space `g + H¹_Γ(Ω)` of functions wi
 the minimizers of `B(u, u) / 2 - ℓ (u - g)` over `g + H¹_Γ(Ω)`. With no drift and an almost
 everywhere symmetric principal coefficient the symmetry hypothesis is
 `TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`. -/
-theorem isMinOn_iff_forall_energyFormH1_eq
+theorem isMinOn_w1pVanishingOn_iff_forall_energyFormH1_eq
     (hsymm : ∀ v w : W1p mu Omega 2, energyFormH1 a b c v w = energyFormH1 a b c w v)
     (hnonneg : ∀ w : W1pVanishingOn mu Omega 2 Γ,
       0 ≤ energyFormH1 a b c (w : W1p mu Omega 2) (w : W1p mu Omega 2))
@@ -277,8 +280,8 @@ theorem isMinOn_iff_mixedSolutionL_eq
   have hnonneg (w : W1pVanishingOn mu Omega 2 Γ) :
       0 ≤ energyFormH1 a b c (w : W1p mu Omega 2) (w : W1p mu Omega 2) := by
     simpa only [energyFormH1LVanishingOn_apply] using hcoercive.apply_self_nonneg w
-  rw [isMinOn_iff_forall_energyFormH1_eq hcoeff hsymm hnonneg, mixedSolutionL_eq_iff,
-    add_sub_cancel_left]
+  rw [isMinOn_w1pVanishingOn_iff_forall_energyFormH1_eq hcoeff hsymm hnonneg,
+    mixedSolutionL_eq_iff, add_sub_cancel_left]
   exact (and_iff_right w₀.property).symm
 
 include hcoercive in
@@ -287,7 +290,7 @@ on `H¹(Ω)` and coercive on `H¹_Γ(Ω)`, then for every Dirichlet datum `g ∈
 `ℓ ∈ (H¹_Γ(Ω))*` the energy `J(w) = B(g + w, g + w) / 2 - ℓ w` has exactly one minimizer `w₀` on
 `H¹_Γ(Ω)`, and `g + w₀` is the solution of the mixed problem
 (`TauCeti.PDE.isMinOn_iff_mixedSolutionL_eq`). -/
-theorem existsUnique_isMinOn
+theorem existsUnique_w1pVanishingOn_isMinOn_energyFormH1
     (hsymm : ∀ v w : W1p mu Omega 2, energyFormH1 a b c v w = energyFormH1 a b c w v)
     (g : W1p mu Omega 2) (ℓ : StrongDual ℝ (W1pVanishingOn mu Omega 2 Γ)) :
     ∃! w₀ : W1pVanishingOn mu Omega 2 Γ, IsMinOn (fun w : W1pVanishingOn mu Omega 2 Γ =>
@@ -494,7 +497,7 @@ everywhere and an essentially bounded mass coefficient `c ≥ 0`, every Dirichle
 
 has exactly one minimizer `w₀` on `H¹_Γ(Ω)`, and `g + w₀` is the solution of the mixed problem
 (`TauCeti.PDE.isMinOn_iff_mixedSolutionL_eq`). -/
-theorem existsUnique_isMinOn_of_isLipschitzDomainWith
+theorem existsUnique_w1pVanishingOn_isMinOn_energyFormH1_of_isLipschitzDomainWith
     (h : IsUniformlyEllipticAE volume (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (volume.restrict Omega))
     (ha_symm : ∀ᵐ x ∂volume.restrict Omega, (a x).IsSymm)
@@ -516,7 +519,7 @@ theorem existsUnique_isMinOn_of_isLipschitzDomainWith
   have hsymm (u v : W1p volume Omega 2) : energyFormH1 a b c u v = energyFormH1 a b c v u := by
     rw [energyFormH1_congr_ae .rfl hb .rfl, energyFormH1_congr_ae .rfl hb .rfl v,
       energyFormH1_comm_of_isSymm_ae ha_symm]
-  exact existsUnique_isMinOn hcoeff
+  exact existsUnique_w1pVanishingOn_isMinOn_energyFormH1 hcoeff
     (h.isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomainWith ha hc hb hc_nonneg hcoeff hV
       hVb e hVΩ hconn hΓ) hsymm g ℓ
 

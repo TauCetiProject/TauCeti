@@ -34,6 +34,9 @@ equation `a u v = ℓ v` (and conversely when `re (a w w) ≥ 0`). This file pro
   weak equation and the minimum property are equivalent when the energy of the form is nonnegative
   on `W` (`ContinuousLinearMap.forall_le_quadraticEnergy_add_iff`,
   `ContinuousLinearMap.isMinOn_quadraticEnergy_iff`);
+* Dirichlet's principle with a lifting: for a symmetric real form `B` on `H`, nonnegative on the
+  image of `S : V →L[ℝ] H`, `w₀` minimizes `B(g + S w, g + S w) / 2 - ℓ w` exactly when
+  `B(g + S w₀, S v) = ℓ v` for every `v` (`ContinuousLinearMap.isMinOn_iff_forall_apply_eq`);
 * for a form with nonnegative energy, the Cauchy–Schwarz inequality
   `‖a u v‖² ≤ re (a u u) re (a v v)` (`ContinuousLinearMap.norm_apply_sq_le_of_hermitian`) and
   the kernel identity `re (a u u) = 0 ↔ a u = 0`
@@ -55,6 +58,8 @@ energies on constraint sets, and to identify their minima with eigenvectors.
 
 * J. K. Hunter, *Notes on Partial Differential Equations*, Proposition 4.5, Corollary 4.6 and
   Theorem 4.20 (the Dirichlet energy and the Lax–Milgram theorem).
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., §2.2.5, Theorem 17 (Dirichlet's
+  principle).
 -/
 
 public section
@@ -224,6 +229,38 @@ theorem mul_norm_sub_le_norm_sub_of_coercive {W : Submodule 𝕜 V} {c : ℝ}
   exact le_of_mul_le_mul_right h' hpos
 
 end Seminormed
+
+section Lifting
+
+variable {H V : Type*} [SeminormedAddCommGroup H] [NormedSpace ℝ H]
+  [SeminormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- **Dirichlet's principle with a lifting.** Let `B` be a symmetric bounded bilinear form on `H`,
+nonnegative on the image of `S : V →L[ℝ] H`. For a lifting `g : H` and a forcing `ℓ`, the energy
+`J(w) = B(g + S w, g + S w) / 2 - ℓ w` has a minimum on `V` at `w₀` exactly when `u = g + S w₀`
+solves the variational equation `B(u, S v) = ℓ v` for every `v : V`. -/
+theorem isMinOn_iff_forall_apply_eq (B : H →L[ℝ] H →L[ℝ] ℝ) (S : V →L[ℝ] H)
+    (hsymm : ∀ x y, B x y = B y x) (hnonneg : ∀ w, 0 ≤ B (S w) (S w)) (g : H)
+    (ℓ : StrongDual ℝ V) (w₀ : V) :
+    IsMinOn (fun w => B (g + S w) (g + S w) / 2 - ℓ w) univ w₀ ↔
+      ∀ v, B (g + S w₀) (S v) = ℓ v := by
+  -- `J` is `B(g, g) / 2` plus half the quadratic energy of `B(S ·, S ·)` with forcing
+  -- `ℓ - B(g, S ·)`.
+  have hJ (w : V) : B (g + S w) (g + S w) / 2 - ℓ w =
+      B g g / 2 + (B.bilinearComp S S).quadraticEnergy (ℓ - (B g).comp S) w / 2 := by
+    simp only [quadraticEnergy_apply, re_to_real, bilinearComp_apply, sub_apply, comp_apply,
+      map_add, add_apply, hsymm (S w) g]
+    ring
+  have hmin := isMinOn_quadraticEnergy_iff (a := B.bilinearComp S S) (ℓ - (B g).comp S)
+    (fun u v => by rw [bilinearComp_apply, bilinearComp_apply, hsymm, star_trivial])
+    (fun w => by rw [re_to_real]; exact hnonneg w) (u := w₀)
+  simp only [isMinOn_univ_iff, hJ, add_le_add_iff_left,
+    div_le_div_iff_of_pos_right (two_pos : (0 : ℝ) < 2)] at hmin ⊢
+  rw [hmin, ContinuousLinearMap.ext_iff]
+  simp only [bilinearComp_apply, sub_apply, comp_apply, map_add, add_apply, eq_sub_iff_add_eq,
+    add_comm (B g _)]
+
+end Lifting
 
 section Normed
 
