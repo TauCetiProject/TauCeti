@@ -8,7 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
+public import TauCeti.LinearAlgebra.Projectivization.OnePoint
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 
 import Mathlib.Analysis.Analytic.Polynomial
@@ -59,6 +61,9 @@ is injective on homogeneous polynomials of degree `d`
   `Projectivization.mdifferentiable_section_twistCore_iff` is the differentiable version.
 * `Projectivization.homogeneousSection`: the section of `𝒪(d)` defined by a homogeneous
   polynomial of degree `d`, analytic by `Projectivization.contMDiff_homogeneousSection`.
+* `Projectivization.twistTransition_one_zero_equivProjectivization` and
+  `Projectivization.twistTransition_zero_one_equivProjectivization`: on the projective line, the
+  transitions of `𝒪(k)` between the two charts are the powers `t⁻ᵏ` and `tᵏ` at `[t : 1]`.
 
 ## References
 
@@ -210,6 +215,16 @@ theorem chartAt_eq_affineOpenPartialHomeomorph_twistCore_indexAt (k : ℤ)
 theorem mem_affineOpen_twistCore_indexAt (k : ℤ) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
     x ∈ affineOpen ((twistCore (𝕜 := 𝕜) k).indexAt x) :=
   (twistCore (𝕜 := 𝕜) (n := n) k).mem_baseSet_at x
+
+/-- On the projective line, the preferred chart of `𝒪(k)` at a point outside the standard affine
+open of the coordinate `1` is the chart `0`. -/
+theorem indexAt_twistCore_eq_zero_of_notMem (k : ℤ) {x : ℙ 𝕜 (Fin 2 → 𝕜)}
+    (hx : x ∉ affineOpen 1) : (twistCore (𝕜 := 𝕜) (n := 1) k).indexAt x = 0 := by
+  have h := mem_affineOpen_twistCore_indexAt (n := 1) k x
+  generalize (twistCore (𝕜 := 𝕜) (n := 1) k).indexAt x = i at h ⊢
+  fin_cases i
+  · rfl
+  · exact absurd h hx
 
 /-- The homogeneous coordinate of the preferred chart of `𝒪(k)` at `[v]` does not vanish
 on `v`. -/
@@ -407,5 +422,31 @@ theorem homogeneousSection_eq_zero_iff {d : ℕ} {P : MvPolynomial (Fin (n + 1))
     · exact hz v hv
   · funext x
     simp [homogeneousSection, h]
+
+/-! ### The projective line -/
+
+section ProjectiveLine
+
+variable [ProperSpace 𝕜] [DecidableEq 𝕜]
+
+/-- On the projective line, the transition from the chart `1` to the chart `0` of `𝒪(k)` at the
+point `[t : 1]` is the `k`-th power of the inverted coordinate `t⁻¹`. -/
+theorem twistTransition_one_zero_equivProjectivization (k : ℤ) (y : OnePoint 𝕜)
+    (hy : y ≠ (OnePoint.infty : OnePoint 𝕜)) :
+    twistTransition k 1 0 (OnePoint.equivProjectivization 𝕜 y) = OnePoint.invChart y ^ k := by
+  induction y using OnePoint.rec with
+  | infty => exact absurd rfl hy
+  | coe t => simp [one_div]
+
+/-- On the projective line, the transition from the chart `0` to the chart `1` of `𝒪(k)` at the
+point `[t : 1]` is the `(-k)`-th power of the inverted coordinate `t⁻¹`. -/
+theorem twistTransition_zero_one_equivProjectivization (k : ℤ) (y : OnePoint 𝕜)
+    (hy : y ≠ (OnePoint.infty : OnePoint 𝕜)) :
+    twistTransition k 0 1 (OnePoint.equivProjectivization 𝕜 y) = OnePoint.invChart y ^ (-k) := by
+  induction y using OnePoint.rec with
+  | infty => exact absurd rfl hy
+  | coe t => simp [zpow_neg]
+
+end ProjectiveLine
 
 end Projectivization
