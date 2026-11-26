@@ -43,8 +43,13 @@ imaginary form `i q(ψ)`, so `q(u₀) = ω / 4` is the identity `q(u₀) = i ω 
 * `cliffordProjection_neg_apply_eq_smul_cliffordRestriction_apply`: if
   `C(iω') ψ + C(iω) ψ' = 2 ψ'`, the differentiated eigenvalue equation, then
   `P_β ψ' = C(iω') ψ / 4`.
+* `cliffordProjection_apply_add_cliffordProjection_neg_apply`: `ψ = P_α ψ + P_β ψ`.
 * `isStarProjection_cliffordProjection`: for self-dual `ω` with `‖ω‖² = 2`, `P_α` is an orthogonal
-  projection.
+  projection, so `P_α P_α = P_α`, `P_β P_β = P_β` and `P_α P_β = 0`
+  (`cliffordProjection_cliffordProjection_apply`,
+  `cliffordProjection_neg_cliffordProjection_neg_apply`,
+  `cliffordProjection_cliffordProjection_neg_apply`), and
+  `‖ψ‖² = ‖P_α ψ‖² + ‖P_β ψ‖²` (`norm_sq_eq_add_norm_sq_cliffordProjection`).
 * `cliffordProjection_apply_eq_self_iff`,
   `bivectorExterior_apply_of_cliffordProjection_apply_eq_self`: the fixed vectors of `P_α` are
   the `2`-eigenvectors of `C(iω)`, on which `c₂(ω)` acts by `-2i`, and
@@ -157,6 +162,11 @@ theorem cliffordProjection_neg : cliffordProjection o ρ (-ω) = 1 - cliffordPro
 theorem cliffordProjection_neg_apply (ψ : positiveHalfSpinors o ρ) :
     cliffordProjection o ρ (-ω) ψ = ψ - cliffordProjection o ρ ω ψ := by
   rw [cliffordProjection_neg, sub_apply, one_apply_eq_self]
+
+/-- Taubes's splitting of a positive spinor along the two lines: `P_α ψ + P_β ψ = ψ`. -/
+theorem cliffordProjection_apply_add_cliffordProjection_neg_apply (ψ : positiveHalfSpinors o ρ) :
+    cliffordProjection o ρ ω ψ + cliffordProjection o ρ (-ω) ψ = ψ := by
+  rw [cliffordProjection_neg_apply, add_sub_cancel]
 
 variable {ω} in
 /-- The fixed vectors of `P_α` are the `2`-eigenvectors of `C(iω)`: `P_α ψ = ψ` exactly when
@@ -354,6 +364,24 @@ theorem cliffordRestriction_mul_cliffordProjection :
 theorem isIdempotentElem_cliffordProjection : IsIdempotentElem (cliffordProjection o ρ ω) :=
   isIdempotentElem_halfOneAdd ℂ (inv_two_smul_cliffordRestriction_mul_self o ρ hQ hkl hω hω₂)
 
+/-- `P_α` is idempotent, applied to a spinor: `P_α (P_α ψ) = P_α ψ`. -/
+theorem cliffordProjection_cliffordProjection_apply (ψ : positiveHalfSpinors o ρ) :
+    cliffordProjection o ρ ω (cliffordProjection o ρ ω ψ) = cliffordProjection o ρ ω ψ := by
+  rw [← mul_apply_eq_comp, (isIdempotentElem_cliffordProjection o ρ hQ hkl hω hω₂).eq]
+
+/-- `P_β` is idempotent, applied to a spinor: `P_β (P_β ψ) = P_β ψ`. -/
+theorem cliffordProjection_neg_cliffordProjection_neg_apply (ψ : positiveHalfSpinors o ρ) :
+    cliffordProjection o ρ (-ω) (cliffordProjection o ρ (-ω) ψ) =
+      cliffordProjection o ρ (-ω) ψ :=
+  cliffordProjection_cliffordProjection_apply o ρ (ω := -ω) hQ hkl (by rw [map_neg, hω])
+    (by rwa [norm_neg]) ψ
+
+/-- `P_α` kills the complementary line: `P_α (P_β ψ) = 0`. -/
+theorem cliffordProjection_cliffordProjection_neg_apply (ψ : positiveHalfSpinors o ρ) :
+    cliffordProjection o ρ ω (cliffordProjection o ρ (-ω) ψ) = 0 := by
+  rw [cliffordProjection_neg_apply, map_sub,
+    cliffordProjection_cliffordProjection_apply o ρ hQ hkl hω hω₂, sub_self]
+
 variable {ρ} in
 /-- **`P_α` is an orthogonal projection** when `ω` is self-dual of norm `√2`. -/
 theorem isStarProjection_cliffordProjection
@@ -361,6 +389,16 @@ theorem isStarProjection_cliffordProjection
     IsStarProjection (cliffordProjection o ρ ω) :=
   ⟨isIdempotentElem_cliffordProjection o ρ hQ hkl hω hω₂,
     isSelfAdjoint_cliffordProjection o ω hρ⟩
+
+variable {ρ} in
+/-- **Pythagoras for Taubes's splitting** `ψ = P_α ψ + P_β ψ`: `‖ψ‖² = ‖P_α ψ‖² + ‖P_β ψ‖²`. -/
+theorem norm_sq_eq_add_norm_sq_cliffordProjection
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (ψ : positiveHalfSpinors o ρ) :
+    ‖ψ‖ ^ 2 = ‖cliffordProjection o ρ ω ψ‖ ^ 2 + ‖cliffordProjection o ρ (-ω) ψ‖ ^ 2 := by
+  conv_lhs => rw [← cliffordProjection_apply_add_cliffordProjection_neg_apply o ρ ω ψ]
+  exact norm_add_sq_of_cliffordProjection o hρ
+    (cliffordProjection_cliffordProjection_apply o ρ hQ hkl hω hω₂ ψ)
+    (cliffordProjection_cliffordProjection_neg_apply o ρ hQ hkl hω hω₂ ψ)
 
 section TwoDimensional
 
@@ -386,9 +424,8 @@ theorem exists_ne_zero_cliffordProjection_apply_eq_self_forall_eq_smul :
   set P := cliffordProjection o ρ ω
   obtain ⟨⟨_, ψ', rfl⟩, hr, hspan⟩ :=
     finrank_eq_one_iff'.1 (finrank_range_cliffordProjection o ρ hQ hkl hω hω₂ h₂)
-  have hPP : P (P ψ') = P ψ' := by
-    rw [← mul_apply_eq_comp, (isIdempotentElem_cliffordProjection o ρ hQ hkl hω hω₂).eq]
-  refine ⟨P ψ', fun h ↦ hr (Subtype.ext h), hPP, fun ψ hψ ↦ ?_⟩
+  refine ⟨P ψ', fun h ↦ hr (Subtype.ext h),
+    cliffordProjection_cliffordProjection_apply o ρ hQ hkl hω hω₂ ψ', fun ψ hψ ↦ ?_⟩
   obtain ⟨c, hc⟩ := hspan ⟨ψ, ψ, hψ⟩
   exact ⟨c, (congrArg Subtype.val hc).symm⟩
 

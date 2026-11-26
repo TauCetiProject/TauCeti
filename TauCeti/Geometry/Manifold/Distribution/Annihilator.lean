@@ -48,6 +48,8 @@ smooth distribution `D` is involutive exactly when `dα` vanishes on `D` for eve
   real one-forms.
 * `TauCeti.IsContMDiffDistribution.exists_isSmoothForm_apply_ne_zero`: on a Hausdorff manifold,
   a vector outside a smooth distribution is detected by a global smooth one-form annihilating it.
+* `TauCeti.IsContMDiffDistribution.exists_isSmoothForm_ker_eq`: on a Hausdorff manifold, a smooth
+  hyperplane distribution is near each point the kernel of a global smooth one-form.
 * `TauCeti.IsInvolutiveDistribution.mextDeriv_apply_eq_zero`: for an involutive `C¹` distribution,
   the exterior derivative of a one-form annihilating it near a point vanishes on it there.
 * `TauCeti.isInvolutiveDistribution_iff_forall_mextDeriv`: a smooth distribution on a Hausdorff
@@ -210,6 +212,28 @@ theorem IsContMDiffDistribution.exists_isSmoothForm_apply_ne_zero [T2Space M] [I
     by_cases hy : y ∈ U
     · simp [RoughForm.mem_ker.mp ((hαD y hy).2 hv)]
     · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (hρU h)]
+
+/-- **A hyperplane field is near each point the kernel of a global one-form.** On a Hausdorff
+manifold, every point of a smooth distribution `D` of rank `k` with `k + 1 = dim E` has an open
+neighbourhood `W` on which `D` is the kernel of a smooth one-form `α` on all of `M`, nonvanishing
+on `W`. No coorientation of `D` is assumed: away from `W` the form need not define `D`. -/
+theorem IsContMDiffDistribution.exists_isSmoothForm_ker_eq [T2Space M] [IsManifold I ∞ M]
+    (hD : IsContMDiffDistribution I ∞ k D) (hk : k + 1 = finrank ℝ E) (x : M) :
+    ∃ W : Set M, IsOpen W ∧ x ∈ W ∧ ∃ α : RoughForm I M ℝ 1, IsSmoothForm I ∞ α ∧
+      ∀ y ∈ W, α y ≠ 0 ∧ α.ker y = D y := by
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  obtain ⟨U, hU, hxU, α, hα, hαD⟩ := hD.exists_roughForm_ker_eq hk x
+  obtain ⟨ρ, -, hρU⟩ :=
+    (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp (hU.mem_nhds hxU)
+  obtain ⟨V, hVρ, hV, hxV⟩ := mem_nhds_iff.mp ρ.eventuallyEq_one
+  refine ⟨V ∩ U, hV.inter hU, ⟨hxV, hxU⟩, fun y ↦ ρ y • α y, ?_, fun y hy ↦ ?_⟩
+  · rw [isSmoothForm_def]
+    exact ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρU hα
+  · -- On `V` the bump function is one, so the cut-off form is the local defining form.
+    have hval : ρ y • α y = α y := by rw [show ρ y = 1 from hVρ hy.1, one_smul]
+    refine ⟨by simpa only [hval] using (hαD y hy.2).1, ?_⟩
+    ext v
+    simp only [RoughForm.mem_ker, hval, ← (hαD y hy.2).2]
 
 section Local
 

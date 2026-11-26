@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Hom
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Over
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 import TauCeti.CategoryTheory.Monoidal.Closed.Basic
-import TauCeti.CategoryTheory.Monoidal.Closed.Functor
+import TauCeti.CategoryTheory.Monoidal.Closed.Naturality
 
 /-!
 # Sections of the internal Hom of sheaves of modules
@@ -345,6 +345,59 @@ theorem _root_.SheafOfModules.ihomObjEquiv_apply_app (U : C)
             (((ihomCompForgetIso M).hom.app N).app (op U) s))) := by
   rw [ihomObjEquiv_apply]
   exact TauCeti.PresheafOfModules.ihomObjEquiv_apply_app U M.val N.val _ g m
+
+/-- The comparison with the presheaf internal Hom is the canonical comparison of the lax
+monoidal forgetful functor. -/
+theorem _root_.SheafOfModules.ihomCompForgetIso_hom_app_eq_ihomComparison :
+    (ihomCompForgetIso M).hom.app N = ((forget (ringCatSheaf R)).ihomComparison M).app N := by
+  let adj := PresheafOfModules.sheafificationAdjunction (R := ringCatSheaf R)
+    (J := J) (𝟙 (ringCatSheaf R).obj)
+  let G := forget (ringCatSheaf R) ⋙ PresheafOfModules.restrictScalars (𝟙 (ringCatSheaf R).obj)
+  let : G.LaxMonoidal := adj.rightAdjointLaxMonoidal
+  let e := forgetRestrictScalarsIdIso (R := R)
+  have hμ : Functor.LaxMonoidal.μ G M ((ihom M).obj N) ≫ e.hom.app (M ⊗ (ihom M).obj N) =
+      (e.hom.app M ⊗ₘ e.hom.app ((ihom M).obj N)) ≫
+        Functor.LaxMonoidal.μ (forget (ringCatSheaf R)) M ((ihom M).obj N) := by
+    rw [sheafificationAdjunction_μ_eq_forget_μ]
+    apply PresheafOfModules.hom_ext
+    intro U
+    apply ModuleCat.MonoidalCategory.tensor_ext
+    intro m s
+    simp only [PresheafOfModules.comp_app]
+    -- Identity restriction of scalars leaves the values of section maps unchanged.
+    rfl
+  have h := G.ihomComparison_app_comp_map (forget (ringCatSheaf R)) e.hom M N hμ
+  rw [Monoidal.Reflective.ihomComparison_app_eq_ihomComparisonUnitIso_inv adj M N] at h
+  rw [ihomCompForgetIso_hom_app]
+  simp only [ihomCompForgetIsoApp, ihomForgetRestrictScalarsIdIso, Iso.trans_hom, Iso.symm_hom,
+    Iso.app_hom, Iso.app_inv, Functor.mapIso_hom, asIso_hom]
+  dsimp only [G, adj, e, Functor.comp_obj] at h ⊢
+  rw [reassoc_of% h]
+  simp only [Iso.inv_hom_id_app_assoc, ← NatTrans.comp_app, ← pre_map, Iso.inv_hom_id,
+    NatTrans.id_app, pre_id, Category.comp_id]
+  rfl
+
+/-- Evaluation of a sheaf internal-Hom section on a section over the same site object
+is the component of the corresponding morphism of restrictions at the identity. -/
+theorem _root_.SheafOfModules.ihom_ev_app_tmul (U : C)
+    (m : M.val.obj (op U)) (s : ((ihom M).obj N).val.obj (op U)) :
+    ((ihom.ev M).app N).val.app (op U)
+        ((Functor.LaxMonoidal.μ (forget (ringCatSheaf R)) M ((ihom M).obj N)).app (op U)
+          (m ⊗ₜ[R.obj.obj (op U)] s)) =
+      (M.ihomObjEquiv N U s).val.app (op (Over.mk (𝟙 U))) m := by
+  rw [ihomObjEquiv_apply_app, ihomCompForgetIso_hom_app_eq_ihomComparison]
+  -- The sections equivalence uses the presheaf restriction along the slice structure map.
+  erw [op_id, ((ihom M.val).obj N.val).map_id (op U), ModuleCat.id_apply]
+  have h := (forget (ringCatSheaf R)).ihomComparison_ev M N
+  have hU := congrArg (fun k ↦ k.app (op U)) h
+  simp only [PresheafOfModules.comp_app] at hU
+  let k := ((forget (ringCatSheaf R)).ihomComparison M).app N
+  have hw : (M.val ◁ k).app (op U) (m ⊗ₜ[R.obj.obj (op U)] s) =
+      m ⊗ₜ[R.obj.obj (op U)] k.app (op U) s :=
+    ModuleCat.MonoidalCategory.whiskerLeft_apply (R := R.obj.obj (op U))
+      (M.val.obj (op U)) (k.app (op U)) m s
+  exact (congrArg (fun k ↦ k (m ⊗ₜ[R.obj.obj (op U)] s)) hU.symm).trans
+    (congrArg (((ihom.ev M.val).app N.val).app (op U)) hw)
 
 /-- Evaluation of a local morphism is additive in its internal-Hom section. -/
 theorem _root_.SheafOfModules.ihomObjEquiv_add_app (U : C)

@@ -415,6 +415,17 @@ theorem trace_eq_neg_charpoly_coeff (hd : 0 < d) (x : R) :
   rw [coeff_charpoly, ite_eq_left (Nat.sub_le d 1), Nat.sub_sub_self hd, pow_one, neg_one_mul,
     neg_neg, trace_apply]
 
+/-- The trace is minus the second coefficient (`Polynomial.nextCoeff`) of the characteristic
+polynomial, in every dimension, including zero. -/
+theorem trace_eq_neg_charpoly_nextCoeff (x : R) : D.trace x = -(D.charpoly x).nextCoeff := by
+  nontriviality A
+  rcases Nat.eq_zero_or_pos d with rfl | hd
+  · rw [trace_eq_zero_of_dim_zero, LinearMap.zero_apply,
+      nextCoeff_eq_zero.mpr (Or.inl (D.charpoly_natDegree_eq_dim x)), neg_zero]
+  · rw [trace_eq_neg_charpoly_coeff D hd,
+      nextCoeff_of_natDegree_pos (by rw [charpoly_natDegree_eq_dim]; omega),
+      charpoly_natDegree_eq_dim]
+
 /-- The characteristic polynomial of `1` is `(X - 1) ^ d`. -/
 @[simp]
 theorem charpoly_one : D.charpoly 1 = (X - 1) ^ d := by

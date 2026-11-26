@@ -27,7 +27,8 @@ characters alone need not index all fiberwise simple roots.
 `Pinning` records generators as linear equivalences from the base ring onto the simple
 root spaces. This expresses generation and freeness, rather than merely choosing nonzero
 vectors, which would be insufficient over a ring. Smoothness and finite type remain
-explicit hypotheses; reductivity over the base is certified by the data.
+explicit hypotheses; reductivity over the base is certified by the data. A pinning is determined
+by its torus, its Borel subgroup and its root vectors (`TauCeti.Pinning.ext_rootVector`).
 
 ## References
 
@@ -125,6 +126,26 @@ theorem rootVector_mem (P : Pinning R H r)
     P.rootVector α ∈
       Derivation.adjointWeightSpace P.torus.coordinateMap.hom (Multiplicative.ofAdd α.val) :=
   (P.rootSpaceEquiv α 1).property
+
+/-- **Pinnings are determined by their torus, Borel subgroup and root vectors.** The simple roots
+indexing the root vectors are read off from the torus and the Borel subgroup, so they agree once
+these do. -/
+theorem ext_rootVector {P Q : Pinning R H r} (htorus : P.torus = Q.torus)
+    (hborel : P.borel = Q.borel)
+    (hroot : ∀ α (hP : P.torus.IsSimpleRoot P.borel α) (hQ : Q.torus.IsSimpleRoot Q.borel α),
+      P.rootVector ⟨α, hP⟩ = Q.rootVector ⟨α, hQ⟩) :
+    P = Q := by
+  obtain ⟨_, T, B, _, _, e⟩ := P
+  obtain ⟨_, T', B', _, _, e'⟩ := Q
+  dsimp only at htorus hborel hroot
+  subst htorus hborel
+  congr
+  funext α
+  apply LinearEquiv.toLinearMap_injective
+  apply LinearMap.ext_ring
+  have h := hroot α.val α.property α.property
+  rw [rootVector_def, rootVector_def] at h
+  exact Subtype.ext h
 
 end Pinning
 

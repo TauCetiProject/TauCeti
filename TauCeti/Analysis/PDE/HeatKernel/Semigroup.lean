@@ -53,6 +53,8 @@ semigroup is not strongly continuous at `0`.
   positivity and order.
 * `TauCeti.integral_heatSemigroup`: the semigroup preserves the integral on `L¹`.
 * `TauCeti.norm_heatSemigroup_of_nonneg`: it preserves the `L¹` norm of nonnegative functions.
+* `TauCeti.heatSemigroup_realOperator_heatKernel`: the semigroup sends the heat
+  kernel `K_s` to `K_{t+s}`.
 
 ## References
 
@@ -205,5 +207,21 @@ theorem norm_heatSemigroup_of_nonneg (t : ℝ≥0) {f : Lp ℝ 1 (volume : Measu
     ‖heatSemigroup ENNReal.one_ne_top t f‖ = ‖f‖ := by
   rw [L1.norm_eq_integral_of_nonneg (heatSemigroup_nonneg ENNReal.one_ne_top t hf),
     L1.norm_eq_integral_of_nonneg hf, integral_heatSemigroup]
+
+/-- **The heat semigroup moves the heat kernel forward in time.** For `s > 0` and `t ≥ 0`, if
+`f, g ∈ Lᵖ` are the classes of `K_s` and `K_{t+s}`, then `e^{tΔ} f = g`: this is the
+Chapman–Kolmogorov identity `K_t ⋆ K_s = K_{t+s}` read in `Lᵖ`. -/
+theorem heatSemigroup_realOperator_heatKernel (hp : p ≠ ∞) {s t : ℝ} (hs : 0 < s)
+    (ht : 0 ≤ t) {f g : Lp ℝ p (volume : Measure E)} (hf : f =ᵐ[volume] heatKernel s)
+    (hg : g =ᵐ[volume] heatKernel (t + s)) : (heatSemigroup hp).realOperator t f = g := by
+  rcases ht.eq_or_lt with rfl | ht
+  · rw [zero_add] at hg
+    rw [StronglyContinuousSemigroup.realOperator_zero_apply]
+    exact Lp.ext (hf.trans hg.symm)
+  rw [heatSemigroup_realOperator hp ht]
+  refine Lp.ext ((convolutionLp_ae_eq_convolution_coeFn hp (integrable_heatKernel ht) f).trans ?_)
+  rw [convolution_congr _ (ae_eq_refl _) hf,
+    heatKernel_convolution_heatKernel ht hs]
+  exact hg.symm
 
 end TauCeti

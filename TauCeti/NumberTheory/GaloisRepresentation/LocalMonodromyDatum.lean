@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import TauCeti.GroupTheory.GroupAction.ConjAct
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Basic
 
 /-!
@@ -53,6 +54,8 @@ character by `c` gives the datum `c • D`, isomorphic to `D` through the identi
 
 * `TauCeti.LocalMonodromyDatum.mem_frobenius_iff_inv_mul_mem`: the Frobenius coset is a single
   coset of inertia.
+* `TauCeti.LocalMonodromyDatum.tame_conj_of_coe_eq_frobClass_pow`: conjugation by an element of
+  the class `frobClass ^ n` divides the tame character by `q ^ n`.
 * `TauCeti.LocalMonodromyDatum.one_notMem_frobenius`: the Frobenius coset is not inertia itself.
 * `TauCeti.LocalMonodromyDatum.denseRange_zpow_frobClass`: the class of Frobenius topologically
   generates `H / I`.
@@ -138,6 +141,10 @@ variable (D : LocalMonodromyDatum ℓ H)
 instance compactSpace_inertia : CompactSpace D.inertia :=
   inferInstanceAs (CompactSpace (⟨D.inertia, D.isClosed_inertia⟩ : ClosedSubgroup H))
 
+/-- Inertia is closed, as an instance: with it, `H ⧸ D.inertia` is again a profinite group. -/
+instance : IsClosed (D.inertia : Set H) :=
+  D.isClosed_inertia
+
 /-- The **Frobenius coset** of a local monodromy datum: the elements of `H` whose class modulo
 inertia is `frobClass`. -/
 def frobenius : Set H :=
@@ -176,6 +183,12 @@ theorem mul_mem_frobenius_left {σ Φ : H} (hσ : σ ∈ D.inertia) (hΦ : Φ �
   rw [mem_frobenius, QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff σ).2 hσ, one_mul]
   exact hΦ
 
+/-- An element lies in the class `frobClass ^ n` exactly when it differs from the `n`-th power of
+a Frobenius element by an element of inertia. -/
+theorem coe_eq_frobClass_pow_iff {Φ : H} (hΦ : Φ ∈ D.frobenius) (x : H) (n : ℕ) :
+    (x : H ⧸ D.inertia) = D.frobClass ^ n ↔ (Φ ^ n)⁻¹ * x ∈ D.inertia := by
+  rw [← mem_frobenius.1 hΦ, ← QuotientGroup.mk_pow, eq_comm, QuotientGroup.eq]
+
 /-- The integer `q` is a unit in `ℚ_ℓ`. -/
 theorem q_ne_zero : (D.q : ℚ_[ℓ]) ≠ 0 :=
   Nat.cast_ne_zero.2 (by have := D.two_le_q; lia)
@@ -183,6 +196,12 @@ theorem q_ne_zero : (D.q : ℚ_[ℓ]) ≠ 0 :=
 /-- The integer `q` is different from `1` in `ℚ_ℓ`. -/
 theorem q_ne_one : (D.q : ℚ_[ℓ]) ≠ 1 :=
   Nat.cast_ne_one.2 (by have := D.two_le_q; lia)
+
+/-- The integer `q` is nonzero in every nontrivial algebra over `ℚ_ℓ`. -/
+theorem natCast_q_ne_zero {E : Type*} [Semiring E] [Nontrivial E] [Algebra ℚ_[ℓ] E] :
+    (D.q : E) ≠ 0 := by
+  rw [← map_natCast (algebraMap ℚ_[ℓ] E)]
+  exact (map_ne_zero _).2 D.q_ne_zero
 
 variable (D) in
 /-- The tame character takes a nonzero value, in additive form. -/
@@ -202,6 +221,31 @@ theorem exists_tame_ne_one_of_isOpen (U : Subgroup D.inertia) (hU : IsOpen (U : 
   replace h := congrArg Multiplicative.toAdd h
   rw [map_pow, toAdd_pow, toAdd_one, nsmul_eq_mul] at h
   exact (mul_eq_zero.1 h).resolve_left (Nat.cast_ne_zero.2 hn.ne')
+
+/-- The tame character, viewed in a nontrivial algebra `E` over `ℚ_ℓ`, is not identically zero on
+any open subgroup of inertia. -/
+theorem exists_algebraMap_tame_ne_zero_of_isOpen {E : Type*} [Semiring E] [Nontrivial E]
+    [Algebra ℚ_[ℓ] E] (U : Subgroup D.inertia) (hU : IsOpen (U : Set D.inertia)) :
+    ∃ σ ∈ U, algebraMap ℚ_[ℓ] E (D.tame σ).toAdd ≠ 0 := by
+  obtain ⟨σ, hσ, hσt⟩ := D.exists_tame_ne_one_of_isOpen U hU
+  exact ⟨σ, hσ, (map_ne_zero _).2 fun h0 ↦ hσt (Multiplicative.toAdd.injective h0)⟩
+
+/-- **Conjugation by an element of the class `frobClass ^ n` divides the tame character by
+`q ^ n`**: `t(Φ σ Φ⁻¹) = q⁻ⁿ t(σ)`. -/
+theorem tame_conj_of_coe_eq_frobClass_pow {Φ : H} {n : ℕ}
+    (hΦ : (Φ : H ⧸ D.inertia) = D.frobClass ^ n) (σ : D.inertia) :
+    (D.tame (MulAut.conjNormal Φ σ)).toAdd = ((D.q : ℚ_[ℓ]) ^ n)⁻¹ * (D.tame σ).toAdd := by
+  -- Replace `Φ` by the power `Φ₀ ^ n` of a Frobenius element, then induct on `n`.
+  obtain ⟨Φ₀, hΦ₀⟩ := D.frobenius_nonempty
+  have h : D.tame (MulAut.conjNormal Φ σ) = D.tame (MulAut.conjNormal (Φ₀ ^ n) σ) :=
+    D.tame.toMonoidHom.map_conjNormal_eq_of_inv_mul_mem ((coe_eq_frobClass_pow_iff hΦ₀ Φ n).1 hΦ) σ
+  rw [h]
+  clear h hΦ
+  induction n generalizing σ with
+  | zero => rw [pow_zero, map_one, MulAut.one_apply, pow_zero, inv_one, one_mul]
+  | succ n ih =>
+    rw [pow_succ', map_mul, MulAut.mul_apply, D.tame_conj Φ₀ hΦ₀, ih, pow_succ', mul_inv,
+      mul_assoc]
 
 /-- **`1` is not a Frobenius element.** -/
 theorem one_notMem_frobenius : (1 : H) ∉ D.frobenius := by
@@ -376,6 +420,14 @@ theorem trans (h : IsIso D D' α c) (h' : IsIso D' D'' β c') :
     have hσ' := (h.map_mem_inertia_iff σ).2 hσ
     simp only [ContinuousMulEquiv.trans_apply]
     rw [h'.toAdd_tame_map _ hσ', h.toAdd_tame_map σ hσ hσ', Units.val_mul, mul_assoc]
+
+/-- An isomorphism of local monodromy data preserves the classes of the powers of Frobenius:
+`α x` lies in `frobClass' ^ n` exactly when `x` lies in `frobClass ^ n`. -/
+theorem coe_apply_eq_frobClass_pow_iff (h : IsIso D D' α c) (x : H) (n : ℕ) :
+    (α x : H' ⧸ D'.inertia) = D'.frobClass ^ n ↔ (x : H ⧸ D.inertia) = D.frobClass ^ n := by
+  obtain ⟨Φ, hΦ⟩ := D.frobenius_nonempty
+  rw [coe_eq_frobClass_pow_iff ((h.map_mem_frobenius_iff Φ).2 hΦ), coe_eq_frobClass_pow_iff hΦ,
+    ← map_pow, ← map_inv, ← map_mul, h.map_mem_inertia_iff]
 
 /-- The constant of an isomorphism of local monodromy data is determined by the underlying group
 isomorphism. -/

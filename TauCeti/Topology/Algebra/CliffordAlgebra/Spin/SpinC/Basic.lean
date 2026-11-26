@@ -96,6 +96,20 @@ theorem continuous_det : Continuous (det Q hQ) := by
   -- Function powers are pointwise, so this is the square of the second projection.
   exact continuous_snd.pow 2
 
+/-- The inverse determinant character `g ↦ (det g)⁻¹` is continuous. It is stated for the
+inverse in the group of homomorphisms, the form in which it is passed to constructions such as the
+extension of structure group along this character. -/
+@[fun_prop]
+theorem continuous_inv_det : Continuous ⇑(det Q hQ)⁻¹ :=
+  (continuous_det Q hQ).inv
+
+/-- The character `(g, w) ↦ (det g * w)⁻¹` of `Spinᶜ(Q) × U(1)` is continuous. -/
+@[fun_prop]
+theorem continuous_inv_det_comp_fst_mul_snd :
+    Continuous ⇑((det Q hQ).comp (MonoidHom.fst (spinCGroup Q hQ) Circle) *
+      MonoidHom.snd (spinCGroup Q hQ) Circle)⁻¹ :=
+  (((continuous_det Q hQ).comp continuous_fst).mul continuous_snd).inv
+
 /-- The quotient map `Spin(Q) × U(1) → Spinᶜ(Q)`, `(s, z) ↦ [s, z]`, is continuous. -/
 @[fun_prop]
 theorem continuous_mk : Continuous (mk Q hQ) := by

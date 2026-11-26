@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Splitting
 public import TauCeti.AlgebraicGeometry.GroupScheme.Torsion.Basic
+import TauCeti.AlgebraicGeometry.Scheme.SpecAlgHom
 import TauCeti.GroupTheory.ExponentPrime
 
 /-!
@@ -91,8 +92,8 @@ theorem exists_isScalarTower_and_nonempty_mulEquiv_points_of_zpow_eq_one
     inferInstance, hr₁ ▸ hdeg, ?_⟩
   -- The points of `G_{K₁}` over `K₁` with values in `L` are the points of `G` with values in `L`,
   -- through the pullback adjunction.
-  have hL : Spec.algebraMap K L = Spec.algebraMap K₁ L ≫ g := by
-    rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
+  have hL : Spec.algebraMap K L = Spec.algebraMap K₁ L ≫ g :=
+    (Spec.algebraMap_comp_algebraMap K K₁ L).symm
   have hcard' : Nat.card (Over.mk (Spec.algebraMap K L) ⟶ G.X) = ℓ ^ r := by
     rw [← hr₁, ← hcard, hL]
     exact Nat.card_congr ((Over.mapPullbackAdj g).homEquiv (Over.mk (Spec.algebraMap K₁ L)) G.X)

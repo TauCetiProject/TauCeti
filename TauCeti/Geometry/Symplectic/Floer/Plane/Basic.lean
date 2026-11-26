@@ -390,6 +390,17 @@ theorem perturbation_def (p : PSSPlane) (H : ℝ → M → ℝ) (w : ℂ) (x : M
         p.endAngularForm w :=
   (rfl)
 
+/-- **The perturbation read through a map.** Where `H t` agrees near `y` with `H' t ∘ φ` for every
+`t`, the perturbation of a PSS plane given by `H`, evaluated on a tangent vector `v` of the domain,
+agrees near `y` with the perturbation given by `H'` composed with `φ`. -/
+theorem perturbation_eventuallyEq_comp [TopologicalSpace M] {V : Type*} (p : PSSPlane)
+    {H : ℝ → M → ℝ} {H' : ℝ → V → ℝ} {φ : M → V} {y : M} (hHH' : ∀ t, H t =ᶠ[𝓝 y] H' t ∘ φ)
+    (w v : ℂ) :
+    (fun x ↦ p.perturbation H w x v) =ᶠ[𝓝 y] (fun x ↦ p.perturbation H' w x v) ∘ φ :=
+  (hHH' (p.endCoord w).im).mono fun x hx ↦ by
+    simp only [Function.comp_apply, perturbation_def] at hx ⊢
+    rw [hx]
+
 /-- **The negative plane is the positive plane for the reversed Hamiltonian.** The perturbation
 of the negative plane given by `H` is the perturbation of the positive plane given by the
 Hamiltonian `-H(-t)`: the two planes have the same signed longitudinal coordinate, while their

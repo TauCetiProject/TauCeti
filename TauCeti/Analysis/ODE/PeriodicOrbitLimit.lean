@@ -126,8 +126,10 @@ and the defect tends uniformly to zero, the slice velocity `∂_t u` converges u
 are bounded on the strip when this holds at both ends
 (`TauCeti.exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect`). Both conditions pass
 from two `C¹` maps to every point `u + μ (u' - u)` of the segment between them
-(`TauCeti.tendstoUniformlyOn_add_smul_sub_and_sliceDefect`). These are the asymptotics along which
-the linearized Floer operator is deformed.
+(`TauCeti.tendstoUniformlyOn_add_smul_sub_and_sliceDefect`), and the defect condition passes to
+every continuous vector field that agrees with `X` along `x`
+(`TauCeti.tendstoUniformlyOn_sliceDefect_of_apply_eq`). These are the asymptotics along which the
+linearized Floer operator is deformed.
 
 ## References
 
@@ -164,17 +166,32 @@ theorem sliceDefect_def (X : ℝ → V → V) (u : ℝ × ℝ → V) (z : ℝ ×
     sliceDefect X u z = fderiv ℝ u z (0, 1) - X z.2 (u z) :=
   (rfl)
 
+/-- A map which agrees near `z` with the map `(s, t) ↦ x(t)` constant in `s`, where `x` solves
+`x' = X(t, x)` at `t = z.2`, has vanishing defect at `z`. -/
+theorem sliceDefect_eq_zero_of_eventuallyEq {x : ℝ → V} {z : ℝ × ℝ}
+    (hx : HasDerivAt x (X z.2 (x z.2)) z.2) (hu : u =ᶠ[𝓝 z] fun w ↦ x w.2) :
+    sliceDefect X u z = 0 := by
+  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ x w.2) _ z :=
+    hx.hasFDerivAt.comp z (hasFDerivAt_snd (p := z))
+  simp [sliceDefect_def, hu.fderiv_eq, hu.eq_of_nhds, h.fderiv]
+
 /-- The map `(s, t) ↦ x(t)` constant in `s` along a solution of `x' = X(t, x)` has vanishing
 defect. -/
 theorem sliceDefect_comp_snd_eq_zero {x : ℝ → V} (hx : ∀ t, HasDerivAt x (X t (x t)) t) :
-    sliceDefect X (fun w : ℝ × ℝ ↦ x w.2) = 0 := by
-  funext z
-  obtain ⟨s, t⟩ := z
-  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ x w.2)
-      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (X t (x t))).comp
-        (ContinuousLinearMap.snd ℝ ℝ ℝ)) (s, t) :=
-    (hx t).hasFDerivAt.comp (s, t) (hasFDerivAt_snd (p := (s, t)))
-  simp [sliceDefect_def, h.fderiv]
+    sliceDefect X (fun w : ℝ × ℝ ↦ x w.2) = 0 :=
+  funext fun z ↦ sliceDefect_eq_zero_of_eventuallyEq (hx z.2) EventuallyEq.rfl
+
+/-- A map which, eventually along a filter `l` in `s`, agrees near every point `(s, t)` with the
+map `(s, t) ↦ x(t)` constant in `s`, along a solution of `x' = X(t, x)`, has loops converging
+uniformly to `x` along `l`, with slice defects tending uniformly to zero. -/
+theorem tendstoUniformly_and_sliceDefect_of_eventuallyEq {l : Filter ℝ} {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (X t (x t)) t) (hu : ∀ᶠ s in l, ∀ t, u =ᶠ[𝓝 (s, t)] fun w ↦ x w.2) :
+    TendstoUniformly (fun s t ↦ u (s, t)) x l ∧
+      TendstoUniformly (fun s t ↦ sliceDefect X u (s, t)) 0 l :=
+  ⟨tendstoUniformlyOn_univ.1 <| (tendstoUniformlyOn_const x l univ).congr
+      (hu.mono fun _ hs t _ ↦ (hs t).eq_of_nhds.symm),
+    tendstoUniformlyOn_univ.1 <| (tendstoUniformlyOn_const 0 l univ).congr
+      (hu.mono fun _ hs t _ ↦ (sliceDefect_eq_zero_of_eventuallyEq (hx t) (hs t)).symm)⟩
 
 /-- The defect of a map that is `C¹` on an open set `U` is continuous on `U`, for a continuous
 vector field. -/
@@ -1208,6 +1225,21 @@ theorem tendstoUniformlyOn_fderiv_apply_of_sliceDefect [ProperSpace V] (hX : Con
     hx.continuousOn hux)).congr (.of_forall fun s t _ ↦ ?_)).congr_right fun t _ ↦ ?_
   · simp only [sliceDefect_def, uncurry_apply_pair, sub_add_cancel]
   · simp only [Pi.zero_apply, uncurry_apply_pair, zero_add]
+
+/-- If the loops of `u` converge uniformly to a continuous loop `x` and the slice defect
+`∂t u - X_t(u)` tends uniformly to zero, then so does the slice defect `∂t u - Y_t(u)` for every
+continuous time-dependent vector field `Y` that agrees with `X` along `x`. -/
+theorem tendstoUniformlyOn_sliceDefect_of_apply_eq [ProperSpace V] {Y : ℝ → V → V}
+    (hX : Continuous (uncurry X)) (hY : Continuous (uncurry Y)) (hx : Continuous x)
+    (hXY : ∀ t, Y t (x t) = X t (x t))
+    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect X u (s, t)) 0 l (Icc 0 1)) :
+    TendstoUniformlyOn (fun s t ↦ sliceDefect Y u (s, t)) 0 l (Icc 0 1) := by
+  refine ((tendstoUniformlyOn_fderiv_apply_of_sliceDefect hX hx hux hδ).fun_sub
+    (isCompact_Icc.tendstoUniformlyOn_comp_prodMk_of_continuous hY hx.continuousOn hux)).congr
+      (.of_forall fun s t _ ↦ ?_) |>.congr_right fun t _ ↦ ?_
+  · simp only [sliceDefect_def, uncurry_apply_pair]
+  · simp only [Pi.zero_apply, uncurry_apply_pair, hXY, sub_self]
 
 /-- A `C¹` map of the cylinder and its derivative in `t` are bounded on the strip `ℝ × [0, 1]`
 when its loops converge uniformly to continuous loops at both ends and its slice defects for
