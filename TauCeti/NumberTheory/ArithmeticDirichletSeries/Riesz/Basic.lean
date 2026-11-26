@@ -15,9 +15,10 @@ For a sequence of complex coefficients `a : ℕ → ℂ` and a real cutoff `y`, 
 
 `TauCeti.rieszSum a y = ∑ n ∈ Finset.Icc 1 ⌊y⌋₊, a n * (y / n - 1)`.
 
-As a function of `y`, `TauCeti.rieszSum a` vanishes on `(-∞, 1]`, is continuous on `ℝ`, and is
-affine on every unit interval `[m, m + 1]`. Dividing `TauCeti.rieszSum (fun n ↦ n * a n) y` by `y`
-recovers the classical first Riesz mean `∑_{1 ≤ n ≤ y} a(n) (1 - n / y)`. See
+As a function of `y`, `TauCeti.rieszSum a` vanishes on `(-∞, 1]`, is a sum of ramps
+`a(n) max (y / n - 1) 0` (`TauCeti.rieszSum_eq_sum_max_of_floor_le`), is continuous on `ℝ`, and
+is affine on every unit interval `[m, m + 1]`. Dividing `TauCeti.rieszSum (fun n ↦ n * a n) y` by
+`y` recovers the classical first Riesz mean `∑_{1 ≤ n ≤ y} a(n) (1 - n / y)`. See
 `TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Ideal` for the ideal-coefficient form,
 `TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Mellin` for the forward Mellin transform, and
 `TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Inversion` for Perron–Riesz inversion.

@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
-public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+public import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -29,7 +29,9 @@ via `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p`, proving
   multiplication by the pointwise adjoints `B(b x, ·)†`, that is by `adjointRealCLM ∘L B`
   (`ContinuousLinearMap.adjoint_holderL_apply`);
 * the symmetry `⟪A f, ι ∘ g⟫ = ⟪ι ∘ f, A g⟫` on `L²` for an `ι`-symmetric symbol `A`
-  (`inner_operatorMultiplication_compLpL`, and `inner_compLpL_compLpL` for a constant one);
+  (`inner_operatorMultiplication_compLpL`, and `inner_compLpL_compLpL` for a constant one), and
+  the skew-adjointness `⟪J ∘ f, g⟫ = -⟪f, J ∘ g⟫` for a skew-adjoint `J`
+  (`inner_compLpL_eq_neg_inner_compLpL`);
 * `‖operatorMultiplication p A‖ = ‖A‖` and `isometry_operatorMultiplication` for `[SigmaFinite μ]`.
 
 Multiplication by the indicator of a measurable set `s` is the operator
@@ -296,6 +298,16 @@ theorem inner_indicatorMultiplication_left (hs : MeasurableSet s) (f g : Lp E 2 
   filter_upwards [indicatorMultiplication_ae (𝕜 := 𝕜) hs f,
     indicatorMultiplication_ae (𝕜 := 𝕜) hs g] with x hf hg
   by_cases hx : x ∈ s <;> simp [hf, hg, hx]
+
+/-- Postcomposition by a skew-adjoint operator `J` (`⟪J u, v⟫ = -⟪u, J v⟫`) is skew-adjoint on
+`L²`: `⟪J ∘ f, g⟫ = -⟪f, J ∘ g⟫`. -/
+theorem inner_compLpL_eq_neg_inner_compLpL {J : E →L[𝕜] E}
+    (hJ : ∀ u v : E, ⟪J u, v⟫_𝕜 = -⟪u, J v⟫_𝕜) (f g : Lp E 2 μ) :
+    ⟪J.compLpL 2 μ f, g⟫_𝕜 = -⟪f, J.compLpL 2 μ g⟫_𝕜 := by
+  rw [L2.inner_def, L2.inner_def, ← integral_neg]
+  refine integral_congr_ae ?_
+  filter_upwards [J.coeFn_compLpL f, J.coeFn_compLpL g] with x hf hg
+  rw [hf, hg, hJ]
 
 end InnerProductSpace
 

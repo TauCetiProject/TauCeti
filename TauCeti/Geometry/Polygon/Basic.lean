@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Polygon.Basic
 public import TauCeti.Data.Fin.Basic
 
 import Mathlib.Algebra.Group.Fin.Basic
+import TauCeti.Analysis.Convex.Between
 
 /-!
 # Relabelling, inserting vertices and images of polygons
@@ -357,15 +358,8 @@ to its end. -/
 theorem edgeSet_eq_affineSegment_union (hs : s ∈ Icc (0 : R) 1) :
     poly.edgeSet R i = affineSegment R (poly i) (poly.edgePath R i s) ∪
       affineSegment R (poly.edgePath R i s) (poly (finRotate n i)) := by
-  have hseg (t u : R) (htu : t ≤ u) :
-      affineSegment R (poly.edgePath R i t) (poly.edgePath R i u) =
-        poly.edgePath R i '' Icc t u := by
-    rw [← affineSegment_image, affineSegment_eq_segment, segment_eq_Icc htu]
-  have h₀ : poly.edgePath R i 0 = poly i := by rw [edgePath, AffineMap.lineMap_apply_zero]
-  have h₁ : poly.edgePath R i 1 = poly (finRotate n i) := by
-    rw [edgePath, AffineMap.lineMap_apply_one]
-  rw [← h₀, ← h₁, hseg 0 s hs.1, hseg s 1 hs.2, ← image_union, Icc_union_Icc_eq_Icc hs.1 hs.2,
-    edgeSet_eq_image_edgePath]
+  rw [edgeSet]
+  exact TauCeti.affineSegment_eq_union_of_mem_affineSegment ⟨s, hs, rfl⟩
 
 /-- **Subdividing an edge does not change the boundary** of a polygon. -/
 theorem boundary_insertVertex_edgePath (hs : s ∈ Icc (0 : R) 1) :

@@ -8,6 +8,8 @@ module
 public import Mathlib.NumberTheory.LSeries.Dirichlet
 public import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 public import TauCeti.Analysis.Meromorphic.Divisor
+-- `re_mem_Ioo_of_riemannZeta_eq_zero` confines the zeros of `Λ` to the open critical strip.
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 
 /-!
 # Meromorphy and poles of the completed Riemann zeta function
@@ -25,9 +27,10 @@ from `0` and `1`, and has a simple pole, of order exactly `-1`, at each of `0` a
   `TauCeti.meromorphicOrderAt_completedRiemannZeta_one`
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_neg_two_mul_nat_add_one`: `Λ` is regular and
   nonzero at the trivial zeros `-2(n + 1)` of `riemannZeta`, where `Γ_ℝ` has its poles.
-* `TauCeti.zero_lt_divisor_completedRiemannZeta_iff`: the points of positive divisor of `Λ` are
-  exactly the zeros of `riemannZeta` excluded neither by `RiemannHypothesis` as trivial zeros nor
-  as the pole `1`.
+* `TauCeti.zero_lt_divisor_completedRiemannZeta_iff`,
+  `TauCeti.zero_lt_divisor_completedRiemannZeta_iff_mem_Ioo`: the points of positive divisor of
+  `Λ` are the nontrivial zeros of `riemannZeta`, equivalently its zeros in the open critical strip
+  `0 < re s < 1`.
 * `TauCeti.completedRiemannZeta_two`: the value `Λ(2) = π / 6`.
 -/
 
@@ -163,6 +166,26 @@ theorem zero_lt_divisor_completedRiemannZeta_iff {s : ℂ} :
       cases n with
       | zero => simp at hs0
       | succ m => exact absurd ⟨m, by push_cast; ring⟩ htriv
+
+/-- Every zero of `completedRiemannZeta` lies in the open critical strip `0 < re s < 1`. -/
+theorem re_mem_Ioo_of_zero_lt_divisor_completedRiemannZeta {s : ℂ}
+    (hs : 0 < MeromorphicOn.divisor completedRiemannZeta univ s) : s.re ∈ Ioo 0 1 := by
+  obtain ⟨hζ, htriv, -⟩ := zero_lt_divisor_completedRiemannZeta_iff.1 hs
+  exact re_mem_Ioo_of_riemannZeta_eq_zero hζ htriv
+
+/-- The points of positive divisor of `completedRiemannZeta` are precisely the zeros of
+`riemannZeta` in the open critical strip `0 < re s < 1`. -/
+theorem zero_lt_divisor_completedRiemannZeta_iff_mem_Ioo {s : ℂ} :
+    0 < MeromorphicOn.divisor completedRiemannZeta univ s ↔
+      riemannZeta s = 0 ∧ s.re ∈ Ioo 0 1 := by
+  refine ⟨fun h ↦ ⟨(zero_lt_divisor_completedRiemannZeta_iff.1 h).1,
+    re_mem_Ioo_of_zero_lt_divisor_completedRiemannZeta h⟩, ?_⟩
+  rintro ⟨hζ, h0, h1⟩
+  refine zero_lt_divisor_completedRiemannZeta_iff.2 ⟨hζ, ?_, ?_⟩
+  · rintro ⟨n, rfl⟩
+    exact (re_neg_two_mul_nat_add_one_lt_zero n).not_gt h0
+  · rintro rfl
+    norm_num at h1
 
 /-- The completed Riemann zeta function takes the value `π / 6` at `2`. -/
 @[simp]

@@ -5,129 +5,117 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.Hecke.RieszRemainder.Basic
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.NumberTheory.LFunctions.Hecke.RieszRemainder
+import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
-# First Riesz remainders of weighted ray class families
+# First Riesz remainders of finitely supported character families
 
-The weighted sum of the real parts of the individual Riesz remainders is real even if the
-support is not closed under inversion. For Mellin transforms it can also be written as a
-complex sum over inverse pairs. Bounds on the individual summands transfer to the family.
+The family remainder is the real-weighted sum of the real parts of the individual remainders.
+It is linear in the weights and invariant under relabeling by inverse characters. Taking real
+parts is equivalent to averaging each remainder with the remainder of its inverse character;
+this is the pairing that enters the Mellin transform. The family remainder is continuous and
+its upper-tail Mellin integral is absolutely convergent on `Re s > 1`.
 
-The real-part normalization is that of Levent Alpöge's `Deduction.Gm`
+The rational normalization is Levent Alpöge's `Deduction.Gm` in
+`Development/AutomorphicArithmetic/DedekindLFunctions/CharFamily.lean`
 (<https://github.com/leanprover-community/riemann-hypothesis>).
 -/
 
 public section
 
-open Complex MeasureTheory Set TauCeti.LFunctions
-open scoped ComplexConjugate
+open Complex MeasureTheory Set
+open scoped NumberField
 
-namespace Finsupp
+namespace TauCeti.LFunctions
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- The real first Riesz remainder of finitely supported weights on primitive ray class
-characters, obtained by weighting the real parts of the individual remainders. -/
-noncomputable def familyRieszRemainder (w : PrimitiveRayClassCharacter K →₀ ℝ) : ℝ → ℝ :=
-  linearCombination ℝ (fun ψ y ↦ (ψ.rieszRemainder y).re) w
+/-- The first Riesz remainder of a family of primitive ray class characters, as a linear map
+from finitely supported real weights to real functions. The weights may have either sign. -/
+noncomputable def finsuppRieszRemainder : (PrimitiveRayClassCharacter K →₀ ℝ) →ₗ[ℝ] (ℝ → ℝ) :=
+  Finsupp.linearCombination ℝ fun ψ y ↦ (ψ.rieszRemainder y).re
 
-/-- The family remainder as a sum over the support of its weights. -/
-theorem familyRieszRemainder_apply (w : PrimitiveRayClassCharacter K →₀ ℝ) (y : ℝ) :
-    w.familyRieszRemainder y = w.sum (fun ψ c ↦ c * (ψ.rieszRemainder y).re) := by
-  simp [familyRieszRemainder, linearCombination_apply, Finsupp.sum, Finset.sum_apply]
+/-- The family remainder is the finite weighted sum of the real parts of the individual
+remainders. -/
+theorem finsuppRieszRemainder_apply (w : PrimitiveRayClassCharacter K →₀ ℝ) (y : ℝ) :
+    finsuppRieszRemainder w y = w.sum (fun ψ c ↦ c * (ψ.rieszRemainder y).re) := by
+  simp only [finsuppRieszRemainder, Finsupp.linearCombination_apply, Finsupp.sum,
+    Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
 
-/-- An empty family has zero remainder. -/
-@[simp] theorem familyRieszRemainder_zero :
-    (0 : PrimitiveRayClassCharacter K →₀ ℝ).familyRieszRemainder = 0 := by
-  simp [familyRieszRemainder]
+/-- A family supported at a single character gives that character's real remainder, scaled
+by its weight. -/
+@[simp] theorem finsuppRieszRemainder_single (ψ : PrimitiveRayClassCharacter K) (c y : ℝ) :
+    finsuppRieszRemainder (Finsupp.single ψ c) y = c * (ψ.rieszRemainder y).re := by
+  simp [finsuppRieszRemainder_apply]
 
-/-- A singleton's remainder is the real part of its member's remainder times the weight. -/
-@[simp] theorem familyRieszRemainder_single (ψ : PrimitiveRayClassCharacter K) (c y : ℝ) :
-    (single ψ c).familyRieszRemainder y = c * (ψ.rieszRemainder y).re := by
-  simp [familyRieszRemainder_apply, sum_single_index]
+/-- Relabeling the weights by inversion leaves the real family remainder unchanged. -/
+@[simp] theorem finsuppRieszRemainder_mapDomain_inv (w : PrimitiveRayClassCharacter K →₀ ℝ) :
+    finsuppRieszRemainder (w.mapDomain Inv.inv) = finsuppRieszRemainder w := by
+  simp [finsuppRieszRemainder, Function.comp_def]
 
-/-- Adding weights adds the Riesz remainders. -/
-@[simp] theorem familyRieszRemainder_add (w v : PrimitiveRayClassCharacter K →₀ ℝ) :
-    (w + v).familyRieszRemainder = w.familyRieszRemainder + v.familyRieszRemainder := by
-  simp [familyRieszRemainder]
-
-/-- Scaling weights scales the Riesz remainder. -/
-@[simp] theorem familyRieszRemainder_smul (w : PrimitiveRayClassCharacter K →₀ ℝ) (c : ℝ) :
-    (c • w).familyRieszRemainder = c • w.familyRieszRemainder := by
-  simp [familyRieszRemainder]
-
-/-- Relabeling the weights by character inversion leaves the real remainder unchanged. -/
-@[simp] theorem familyRieszRemainder_mapDomain_inv (w : PrimitiveRayClassCharacter K →₀ ℝ) :
-    (w.mapDomain Inv.inv).familyRieszRemainder = w.familyRieszRemainder := by
-  funext y
-  simp only [familyRieszRemainder_apply]
-  rw [sum_mapDomain_index_inj inv_injective]
-  simp only [PrimitiveRayClassCharacter.rieszRemainder_inv, conj_re]
-
-/-- The real remainder, regarded as complex-valued, is the weighted sum of the averages of
-inverse pairs. This formula does not require inverse characters to belong to the support. -/
-theorem ofReal_familyRieszRemainder (w : PrimitiveRayClassCharacter K →₀ ℝ) (y : ℝ) :
-    (w.familyRieszRemainder y : ℂ) =
+/-- The complex value of the family remainder is obtained by averaging the two remainders
+of each inverse pair. No symmetry of the weights is required. -/
+theorem ofReal_finsuppRieszRemainder (w : PrimitiveRayClassCharacter K →₀ ℝ) (y : ℝ) :
+    (finsuppRieszRemainder w y : ℂ) =
       w.sum (fun ψ c ↦ (c : ℂ) * ((ψ.rieszRemainder y + ψ⁻¹.rieszRemainder y) / 2)) := by
-  simp only [familyRieszRemainder_apply, Finsupp.sum, ofReal_sum, ofReal_mul,
+  simp only [finsuppRieszRemainder_apply, Finsupp.sum, ofReal_sum, ofReal_mul,
     PrimitiveRayClassCharacter.rieszRemainder_inv, re_eq_add_conj]
 
-/-- For inversion-invariant weights the complex sum is already real. -/
-theorem ofReal_familyRieszRemainder_of_mapDomain_inv_eq (w : PrimitiveRayClassCharacter K →₀ ℝ)
+/-- For inverse-invariant weights, the complex weighted sum already has real values. -/
+theorem ofReal_finsuppRieszRemainder_of_mapDomain_inv_eq (w : PrimitiveRayClassCharacter K →₀ ℝ)
     (hw : w.mapDomain Inv.inv = w) (y : ℝ) :
-    (w.familyRieszRemainder y : ℂ) = w.sum (fun ψ c ↦ (c : ℂ) * ψ.rieszRemainder y) := by
-  have hinv : w.sum (fun ψ c ↦ (c : ℂ) * ψ⁻¹.rieszRemainder y) =
-      w.sum (fun ψ c ↦ (c : ℂ) * ψ.rieszRemainder y) := by
-    conv_rhs => rw [← hw, sum_mapDomain_index_inj inv_injective]
-  rw [ofReal_familyRieszRemainder]
-  simp only [Finsupp.sum] at hinv ⊢
-  simp_rw [← mul_div_assoc, mul_add, ← Finset.sum_div, Finset.sum_add_distrib]
-  rw [hinv, ← two_mul, mul_div_cancel_left₀ _ two_ne_zero]
+    (finsuppRieszRemainder w y : ℂ) = w.sum (fun ψ c ↦ (c : ℂ) * ψ.rieszRemainder y) := by
+  let v (ψ : PrimitiveRayClassCharacter K) := ψ.rieszRemainder y
+  have h : Finsupp.linearCombination ℝ v (w.mapDomain Inv.inv) =
+      Finsupp.linearCombination ℝ v w := congrArg (Finsupp.linearCombination ℝ v) hw
+  rw [Finsupp.linearCombination_mapDomain] at h
+  simp only [Finsupp.linearCombination_apply, Finsupp.sum, Function.comp_apply, real_smul, v] at h
+  rw [ofReal_finsuppRieszRemainder]
+  simp only [Finsupp.sum, ← mul_div_assoc, ← Finset.sum_div, mul_add, Finset.sum_add_distrib, h]
+  ring
 
-/-- The weighted real remainder is continuous. -/
-@[fun_prop] theorem continuous_familyRieszRemainder (w : PrimitiveRayClassCharacter K →₀ ℝ) :
-    Continuous w.familyRieszRemainder := by
-  simp only [funext (familyRieszRemainder_apply w), Finsupp.sum]
-  fun_prop
+/-- The family remainder is continuous, including at the cutoffs in its prime sums. -/
+@[fun_prop] theorem continuous_finsuppRieszRemainder (w : PrimitiveRayClassCharacter K →₀ ℝ) :
+    Continuous (finsuppRieszRemainder w) := by
+  simp only [funext (finsuppRieszRemainder_apply w), Finsupp.sum]
+  exact continuous_finsetSum _ fun ψ _ ↦
+    (continuous_re.comp ψ.continuous_rieszRemainder).const_mul _
 
-/-- Termwise power bounds for the members give a power bound for the weighted family. The
-weights may have either sign, and no bound is needed outside their support. -/
-theorem exists_norm_familyRieszRemainder_le_rpow_of_forall_mem_support
+/-- A power bound on the remainder of each character in the support of the weights gives
+one for the family remainder. The weights may have either sign. -/
+theorem exists_norm_finsuppRieszRemainder_le_rpow_of_forall_mem_support
     (w : PrimitiveRayClassCharacter K →₀ ℝ) {a σ : ℝ}
     (h : ∀ ψ ∈ w.support, ∃ C : ℝ, ∀ y ≥ a, ‖ψ.rieszRemainder y‖ ≤ C * y ^ σ) :
-    ∃ C : ℝ, ∀ y ≥ a, ‖w.familyRieszRemainder y‖ ≤ C * y ^ σ := by
+    ∃ C : ℝ, ∀ y ≥ a, ‖finsuppRieszRemainder w y‖ ≤ C * y ^ σ := by
   classical
   choose C hC using h
   let D (ψ : PrimitiveRayClassCharacter K) := if hψ : ψ ∈ w.support then C ψ hψ else 0
   refine ⟨∑ ψ ∈ w.support, ‖w ψ‖ * D ψ, fun y hy ↦ ?_⟩
-  rw [familyRieszRemainder_apply, Finsupp.sum, Finset.sum_mul]
-  refine norm_sum_le_of_le _ fun ψ hψ ↦ ?_
-  rw [norm_mul, mul_assoc]
+  rw [finsuppRieszRemainder_apply, Finsupp.sum, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun ψ hψ ↦ ?_)
+  rw [norm_mul, mul_assoc, Real.norm_eq_abs (ψ.rieszRemainder y).re]
   have hD : D ψ = C ψ hψ := dite_eq_left hψ
   exact mul_le_mul_of_nonneg_left ((abs_re_le_norm _).trans (hD ▸ hC ψ hψ y hy)) (norm_nonneg _)
 
-/-- On `y ≥ 1`, the family remainder is bounded by a constant times `y ^ σ` for any `σ > 1`. -/
-theorem exists_norm_familyRieszRemainder_le_rpow (w : PrimitiveRayClassCharacter K →₀ ℝ)
-    {σ : ℝ} (hσ : 1 < σ) : ∃ C : ℝ, ∀ y ≥ 1, ‖w.familyRieszRemainder y‖ ≤ C * y ^ σ :=
-  w.exists_norm_familyRieszRemainder_le_rpow_of_forall_mem_support
+/-- The family remainder has growth at most `y ^ σ` for each `σ > 1` on `[1, ∞)`. -/
+theorem exists_norm_finsuppRieszRemainder_le_rpow (w : PrimitiveRayClassCharacter K →₀ ℝ)
+    {σ : ℝ} (hσ : 1 < σ) : ∃ C : ℝ, ∀ y ≥ 1, ‖finsuppRieszRemainder w y‖ ≤ C * y ^ σ :=
+  exists_norm_finsuppRieszRemainder_le_rpow_of_forall_mem_support w
     fun ψ _ ↦ ψ.exists_norm_rieszRemainder_le_rpow hσ
 
-/-- On `Re s > 1`, the family remainder has an absolutely convergent upper-ray Mellin integral. -/
-theorem integrableOn_familyRieszRemainder_mul_cpow (w : PrimitiveRayClassCharacter K →₀ ℝ)
+/-- The upper-tail Mellin integrand for the family remainder is absolutely integrable for
+`Re s > 1`. -/
+theorem integrableOn_finsuppRieszRemainder_mul_cpow (w : PrimitiveRayClassCharacter K →₀ ℝ)
     {s : ℂ} (hs : 1 < s.re) :
-    IntegrableOn (fun y : ℝ ↦ (w.familyRieszRemainder y : ℂ) * (y : ℂ) ^ (-s - 1)) (Ioi 1) := by
-  simp only [IntegrableOn] at ⊢
-  have hintegrable (ψ : PrimitiveRayClassCharacter K) :
-      IntegrableOn (fun y : ℝ ↦ (w ψ : ℂ) *
-        ((ψ.rieszRemainder y + ψ⁻¹.rieszRemainder y) / 2 * (y : ℂ) ^ (-s - 1))) (Ioi 1) := by
-    have h := (ψ.integrableOn_rieszRemainder_mul_cpow hs).add
-      (ψ⁻¹.integrableOn_rieszRemainder_mul_cpow hs)
-    simpa only [IntegrableOn, Pi.add_apply, ← add_mul, div_eq_mul_inv,
-      mul_right_comm _ (2 : ℂ)⁻¹] using
-      (h.mul_const (2 : ℂ)⁻¹).const_mul (w ψ : ℂ)
-  simpa only [ofReal_familyRieszRemainder, Finsupp.sum, Finset.sum_mul, mul_assoc] using
-    integrable_finsetSum w.support fun ψ _ ↦ hintegrable ψ
+    IntegrableOn (fun y : ℝ ↦ (finsuppRieszRemainder w y : ℂ) * (y : ℂ) ^ (-s - 1)) (Ioi 1) := by
+  simp only [ofReal_finsuppRieszRemainder, Finsupp.sum, Finset.sum_mul]
+  refine integrable_finsetSum _ fun ψ _ ↦ ?_
+  have h := ((ψ.integrableOn_rieszRemainder_mul_cpow hs).add
+    (ψ⁻¹.integrableOn_rieszRemainder_mul_cpow hs)).const_mul ((w ψ : ℂ) / 2)
+  convert h using 1
+  funext y
+  simp only [Pi.add_apply]
+  ring
 
-end Finsupp
+end TauCeti.LFunctions

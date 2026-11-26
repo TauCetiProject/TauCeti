@@ -22,11 +22,11 @@ namespace TauCeti.PrimitiveDirichletCharacter
 
 /-- The Riesz remainder of the transferred weights is the weighted sum of the real parts of
 the Dirichlet remainders over the original cyclic family. -/
-theorem familyRieszRemainder_cyclicFamilyWeights (ψ : PrimitiveDirichletCharacter)
+theorem finsuppRieszRemainder_cyclicFamilyWeights (ψ : PrimitiveDirichletCharacter)
     (w : PrimitiveDirichletCharacter → ℝ) (y : ℝ) :
-    (ψ.cyclicFamilyWeights w).familyRieszRemainder y =
+    LFunctions.finsuppRieszRemainder (ψ.cyclicFamilyWeights w) y =
       ∑ κ ∈ ψ.cyclicFamily, w κ * (κ.rieszRemainder y).re := by
-  rw [Finsupp.familyRieszRemainder_apply]
+  rw [LFunctions.finsuppRieszRemainder_apply]
   simpa only [smul_eq_mul, rieszRemainder_toPrimitiveRayClassCharacter] using
     ψ.sum_cyclicFamilyWeights w (fun η ↦ (η.rieszRemainder y).re)
 

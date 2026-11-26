@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MkOfDetNeZero
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
+import TauCeti.LinearAlgebra.Matrix.Block
 
 /-!
 # The standard general-linear subgroup of the symplectic group
@@ -39,6 +40,8 @@ alongside the upper- and lower-unipotent factors.
 
 ## Main results
 
+* `TauCeti.GLSymplectic.exists_leviHom_eq_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero`: a
+  symplectic matrix with vanishing off-diagonal blocks lies in the image of the Levi embedding.
 * `TauCeti.GLSymplectic.leviHom_injective` and
   `TauCeti.GLSymplecticFin.leviHom_injective`: both presentations are embeddings.
 * `TauCeti.GLSymplecticFin.leviHom_transvection`: an elementary transvection maps to the
@@ -117,6 +120,22 @@ theorem coe_leviHom (A : GL l R) :
         ((A⁻¹ : GL l R) : Matrix l l R)ᵀ := by
   rw [leviHom]
   exact coe_leviElement A
+
+/-- **The image of the Levi embedding.** A symplectic matrix with vanishing off-diagonal blocks is
+`diag(A, (A⁻¹)ᵀ)` for its upper left block `A`. -/
+theorem exists_leviHom_eq_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero {M : GLSymplectic l R}
+    (h₁₂ : ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₁₂ = 0)
+    (h₂₁ : ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₂₁ = 0) :
+    ∃ A : GL l R, (A : Matrix l l R) = ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₁₁ ∧
+      M = leviHom A := by
+  have hmem := SymplecticGroup.mem_iff_toBlocks.1 (mem_iff_mem_symplecticGroup.1 M.property)
+  simp only [h₁₂, Matrix.mul_zero, sub_zero] at hmem
+  have hDA := congrArg transpose hmem.2.2
+  rw [transpose_mul, transpose_transpose, transpose_one] at hDA
+  refine ⟨⟨_, _, mul_eq_one_comm.1 hDA, hDA⟩, rfl, Subtype.ext (Units.ext ?_)⟩
+  rw [coe_leviHom]
+  refine (eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero h₁₂ h₂₁).trans ?_
+  simp
 
 /-- The general-linear Levi homomorphism is injective. -/
 theorem leviHom_injective : Function.Injective (leviHom : GL l R → GLSymplectic l R) := by

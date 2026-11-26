@@ -10,10 +10,10 @@ public import TauCeti.Analysis.LaplaceTransform.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.RemainderMellin
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.VonMangoldt
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.RieszMellin
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Mellin
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Bundle
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.RayClass
-public import TauCeti.NumberTheory.LFunctions.Hecke.RieszRemainder.Basic
+public import TauCeti.NumberTheory.LFunctions.Hecke.RieszRemainder
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import Mathlib.NumberTheory.LSeries.Injectivity
 import Mathlib.NumberTheory.MulChar.Lemmas
