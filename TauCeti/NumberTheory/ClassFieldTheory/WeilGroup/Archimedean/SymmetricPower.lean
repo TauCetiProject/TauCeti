@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Basic
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.SymmetricPower
 public import TauCeti.RepresentationTheory.Semisimple.Restriction
 public import TauCeti.RepresentationTheory.SymmetricPower.Semisimple
 
@@ -28,13 +27,12 @@ restriction to a normal subgroup whose index is invertible detects semisimplicit
 `ℂ`. Symmetric powers commute with restriction, so the `W_ℂ` case gives the
 `W_ℝ` case.
 
-For a continuous representation `ρ : TauCeti.ContinuousRep W ℂ V` on a space with its module
-topology, the symmetric power `ρ.symmetricPower m` is again continuous
-(`TauCeti.ContinuousRep.symmetricPower`), so the symmetric powers of a semisimple continuous
-`n`-dimensional representation of `W_ℂ` or `W_ℝ` are semisimple continuous representations of
-dimension `binom(n + m - 1, m)`
-(`TauCeti.ClassFieldTheory.WeilGroupComplex.continuousRep_symmetricPower`,
-`TauCeti.ClassFieldTheory.WeilGroupReal.continuousRep_symmetricPower`).
+For a continuous representation `ρ : TauCeti.ContinuousRep W ℂ V` of `W = W_ℂ` or `W_ℝ` on a space
+with its module topology, the symmetric power `ρ.symmetricPower m` is again continuous
+(`TauCeti.ContinuousRep.symmetricPower`), and the instances of this file give its underlying
+representation semisimple through `TauCeti.ContinuousRep.isSemisimpleRepresentation_symmetricPower`.
+So the symmetric powers of a semisimple continuous `n`-dimensional representation of `W_ℂ` or `W_ℝ`
+are semisimple continuous representations of dimension `binom(n + m - 1, m)`.
 
 ## Main results
 
@@ -44,50 +42,15 @@ dimension `binom(n + m - 1, m)`
 * `TauCeti.ClassFieldTheory.WeilGroupReal.isSemisimpleRepresentation_symmetricPower`: the
   symmetric powers of a semisimple finite-dimensional complex representation of `W_ℝ` are
   semisimple.
-* `TauCeti.ClassFieldTheory.WeilGroupComplex.continuousRep_symmetricPower`,
-  `TauCeti.ClassFieldTheory.WeilGroupReal.continuousRep_symmetricPower`: the symmetric powers of a
-  semisimple continuous `n`-dimensional representation are semisimple of dimension
-  `binom(n + m - 1, m)`.
-
-## References
-
-* A. W. Knapp, *Local Langlands correspondence: the archimedean case*, §3, pp.401–403.
 -/
 
 public section
-
-open Module
-open scoped TensorProduct
 
 namespace TauCeti.ClassFieldTheory
 
 open Representation
 
 variable {V : Type*} [AddCommGroup V] [Module ℂ V] [FiniteDimensional ℂ V]
-
-namespace WeilGroupComplex
-
-variable [TopologicalSpace V] [IsModuleTopology ℂ V] (m : ℕ) [TopologicalSpace (Sym[ℂ]^m V)]
-  [IsModuleTopology ℂ (Sym[ℂ]^m V)]
-
-/-- The symmetric powers of a semisimple continuous finite-dimensional representation of
-`W_ℂ = ℂˣ` are semisimple. -/
-instance isSemisimpleRepresentation_continuousRep_symmetricPower
-    (ρ : ContinuousRep WeilGroupComplex ℂ V) [ρ.toRepresentation.IsSemisimpleRepresentation] :
-    (ρ.symmetricPower m).toRepresentation.IsSemisimpleRepresentation := by
-  rw [ContinuousRep.toRepresentation_symmetricPower]
-  infer_instance
-
-/-- **Symmetric powers of continuous representations of `W_ℂ`.** The `m`-th symmetric power of a
-semisimple continuous `n`-dimensional representation of `W_ℂ` is a semisimple continuous
-representation of dimension `binom(n + m - 1, m)`. -/
-theorem continuousRep_symmetricPower (ρ : ContinuousRep WeilGroupComplex ℂ V)
-    [ρ.toRepresentation.IsSemisimpleRepresentation] :
-    (ρ.symmetricPower m).toRepresentation.IsSemisimpleRepresentation ∧
-      finrank ℂ (Sym[ℂ]^m V) = (finrank ℂ V + m - 1).choose m :=
-  ⟨inferInstance, SymmetricPower.finrank_eq_choose⟩
-
-end WeilGroupComplex
 
 namespace WeilGroupReal
 
@@ -124,30 +87,6 @@ instance isSemisimpleRepresentation_symmetricPower (ρ : Representation ℂ Weil
     IsSemisimpleRepresentation (ρ.symmetricPower m) := by
   rw [← isSemisimpleRepresentation_comp_includeComplex_iff, ← symmetricPower_comp]
   infer_instance
-
-section Continuous
-
-variable [TopologicalSpace V] [IsModuleTopology ℂ V] (m : ℕ) [TopologicalSpace (Sym[ℂ]^m V)]
-  [IsModuleTopology ℂ (Sym[ℂ]^m V)]
-
-/-- The symmetric powers of a semisimple continuous finite-dimensional representation of `W_ℝ` are
-semisimple. -/
-instance isSemisimpleRepresentation_continuousRep_symmetricPower
-    (ρ : ContinuousRep WeilGroupReal ℂ V) [ρ.toRepresentation.IsSemisimpleRepresentation] :
-    (ρ.symmetricPower m).toRepresentation.IsSemisimpleRepresentation := by
-  rw [ContinuousRep.toRepresentation_symmetricPower]
-  infer_instance
-
-/-- **Symmetric powers of continuous representations of `W_ℝ`.** The `m`-th symmetric power of a
-semisimple continuous `n`-dimensional representation of `W_ℝ` is a semisimple continuous
-representation of dimension `binom(n + m - 1, m)`. -/
-theorem continuousRep_symmetricPower (ρ : ContinuousRep WeilGroupReal ℂ V)
-    [ρ.toRepresentation.IsSemisimpleRepresentation] :
-    (ρ.symmetricPower m).toRepresentation.IsSemisimpleRepresentation ∧
-      finrank ℂ (Sym[ℂ]^m V) = (finrank ℂ V + m - 1).choose m :=
-  ⟨inferInstance, SymmetricPower.finrank_eq_choose⟩
-
-end Continuous
 
 end WeilGroupReal
 
