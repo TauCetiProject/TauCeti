@@ -54,6 +54,8 @@ hold in the degenerate cases only through those conventions.
 * `TauCeti.eLpNorm_heatKernel_le`: an explicit `Lᵠ` bound for `1 ≤ q ≤ ∞`.
 * `TauCeti.memLp_heatKernel`: for `t > 0`, `K_t` belongs to every `Lᵠ`, `0 ≤ q ≤ ∞`.
 * `TauCeti.laplacian_heatKernel`: `Δ K_t(x) = (‖x‖² / (4t²) - n / (2t)) K_t(x)`.
+* `TauCeti.fderiv_heatKernel_apply_self`: the radial derivative in terms of the kernel and its
+  Laplacian, `D K_t(x) x = -n K_t(x) - 2t Δ K_t(x)`.
 * `TauCeti.hasDerivAt_heatKernel`: the heat equation `∂ₜ K_t(x) = Δ K_t(x)` for `t > 0`.
 * `TauCeti.heatKernel_convolution_heatKernel`: the semigroup identity `K_t ⋆ K_s = K_{t+s}`.
 * `TauCeti.fourier_heatKernel`: `𝓕 K_t(ξ) = exp(-4π² t ‖ξ‖²)`.
@@ -193,6 +195,22 @@ theorem laplacian_heatKernel (t : ℝ) (x : E) :
   have hρc : ContDiff ℝ 2 ρ := contDiff_const.mul ((contDiff_id.neg.div_const _).exp)
   rw [hK, hρc.contDiffAt.laplacian_comp_norm_sq, hddρ, hdρ]
   ring
+
+/-- The derivative of the heat kernel in the radial direction is determined by its value and
+Laplacian. -/
+theorem fderiv_heatKernel_apply_self (t : ℝ) (x : E) :
+    fderiv ℝ (heatKernel t) x x = -(Module.finrank ℝ E * heatKernel t x) -
+      2 * t * Δ (heatKernel t : E → ℝ) x := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · rw [(hasGradientAt_heatKernel 0 x).hasFDerivAt.fderiv]
+    by_cases h : Module.finrank ℝ E = 0
+    · simp [h]
+    · have hd : (Module.finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast h
+      simp [heatKernel_apply, Real.zero_rpow (div_ne_zero (neg_ne_zero.mpr hd) two_ne_zero)]
+  · simp only [(hasGradientAt_heatKernel t x).hasFDerivAt.fderiv, toDual_apply_apply,
+      real_inner_smul_left, real_inner_self_eq_norm_sq, laplacian_heatKernel]
+    field_simp [ht]
+    ring
 
 /-- **The heat equation.** For `t > 0`, the heat kernel solves `∂ₜ K_t(x) = Δ K_t(x)`. -/
 theorem hasDerivAt_heatKernel {t : ℝ} (ht : 0 < t) (x : E) :

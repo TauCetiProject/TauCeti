@@ -9,6 +9,7 @@ public import TauCeti.Probability.DenoisingDiffusion.SmoothedDensity
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
+import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
 
 /-!
 # The Fokker–Planck equation of a Gaussian noising path
@@ -159,11 +160,8 @@ private theorem hasFDerivAt_integral_kernel (y : EuclideanSpace ℝ ι)
     HasFDerivAt (fun q : ℝ × ℝ ↦ ∫ x, heatKernel q.2 (y - q.1 • x) ∂μ₀)
       (∫ x, kernelDeriv y x p ∂μ₀) p := by
   obtain ⟨B, hB⟩ := exists_eventually_norm_kernelDeriv_le y hc ht
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le_const
-    (E := EuclideanSpace ℝ ι) ht 0
-  have hint : Integrable (fun x ↦ heatKernel p.2 (y - p.1 • x)) μ₀ :=
-    Integrable.of_bound (((contDiff_heatKernel p.2 (k := 0)).continuous).comp
-      (by fun_prop)).aestronglyMeasurable C (.of_forall fun x ↦ by simpa using hC _)
+  have hint := integrable_heatKernel_comp ht
+    (show AEStronglyMeasurable (fun x : EuclideanSpace ℝ ι ↦ y - p.1 • x) μ₀ by fun_prop)
   exact hasFDerivAt_integral_of_dominated_of_fderiv_le
     (F := fun q : ℝ × ℝ ↦ fun x ↦ heatKernel q.2 (y - q.1 • x))
     (F' := fun q x ↦ kernelDeriv y x q)
@@ -176,7 +174,7 @@ private theorem hasFDerivAt_integral_kernel (y : EuclideanSpace ℝ ι)
 
 omit [DecidableEq ι] in
 private theorem neg_fderiv_heatKernel_sub_smul_apply (x y : EuclideanSpace ℝ ι)
-    {c v : ℝ} (hc : c ≠ 0) (hv : 0 < v) :
+    {c v : ℝ} (hc : c ≠ 0) :
     -fderiv ℝ (heatKernel v) (y - c • x) x =
       -(1 / c) * (Module.finrank ℝ (EuclideanSpace ℝ ι) * heatKernel v (y - c • x) +
         fderiv ℝ (heatKernel v) (y - c • x) y) -
@@ -184,11 +182,8 @@ private theorem neg_fderiv_heatKernel_sub_smul_apply (x y : EuclideanSpace ℝ �
   set z := y - c • x
   let D := fderiv ℝ (heatKernel v) z
   have hEuler : D z = -(Module.finrank ℝ (EuclideanSpace ℝ ι) * heatKernel v z) -
-      (2 * v) * Δ (heatKernel v : EuclideanSpace ℝ ι → ℝ) z := by
-    simp only [D, (hasGradientAt_heatKernel v z).hasFDerivAt.fderiv, toDual_apply_apply,
-      real_inner_smul_left, real_inner_self_eq_norm_sq, laplacian_heatKernel]
-    field_simp [hv.ne']
-    ring
+      (2 * v) * Δ (heatKernel v : EuclideanSpace ℝ ι → ℝ) z :=
+    fderiv_heatKernel_apply_self v z
   have hshift : z + c • x = y := sub_add_cancel _ _
   have hDy : D z + c * D x = D y := by
     simpa only [map_add, map_smul, smul_eq_mul] using congrArg D hshift
@@ -207,26 +202,13 @@ private theorem integral_neg_fderiv_heatKernel_sub_smul_apply {c s : ℝ}
         ⟪y, gradient (smoothedDensity μ₀ c s) y⟫) -
       (s ^ 2 / c) * Δ (smoothedDensity μ₀ c s) y := by
   have hv : 0 < s ^ 2 / 2 := by positivity
-  have hshift : Continuous (fun x : EuclideanSpace ℝ ι ↦ y - c • x) := by fun_prop
-  choose B hB using exists_norm_iteratedFDeriv_heatKernel_le_const (E := EuclideanSpace ℝ ι) hv
-  have hintK : Integrable (fun x ↦ heatKernel (s ^ 2 / 2) (y - c • x)) μ₀ :=
-    Integrable.of_bound
-      (((contDiff_heatKernel (s ^ 2 / 2) (k := 0)).continuous).comp hshift).aestronglyMeasurable
-      (B 0) (.of_forall fun x ↦ by simpa using hB 0 (y - c • x))
-  have hD := (contDiff_heatKernel (E := EuclideanSpace ℝ ι)
-    (s ^ 2 / 2) (k := ∞)).continuous_fderiv (by simp)
-  have hintD : Integrable (fun x ↦ fderiv ℝ (heatKernel (s ^ 2 / 2)) (y - c • x)) μ₀ :=
-    Integrable.of_bound (hD.comp hshift).aestronglyMeasurable (B 1)
-      (.of_forall fun x ↦ by simpa only [norm_iteratedFDeriv_one] using hB 1 (y - c • x))
+  have hshift : AEStronglyMeasurable (fun x : EuclideanSpace ℝ ι ↦ y - c • x) μ₀ := by
+    fun_prop
+  have hintK := integrable_heatKernel_comp hv hshift
+  have hintD := integrable_fderiv_heatKernel_comp hv hshift
   have hintDy : Integrable (fun x ↦ fderiv ℝ (heatKernel (s ^ 2 / 2)) (y - c • x) y) μ₀ :=
     (ContinuousLinearMap.apply ℝ ℝ y).integrable_comp hintD
-  have hintΔ : Integrable (fun x ↦
-      Δ (heatKernel (s ^ 2 / 2) : EuclideanSpace ℝ ι → ℝ) (y - c • x)) μ₀ := by
-    have hΔ := (contDiff_heatKernel (E := EuclideanSpace ℝ ι) (s ^ 2 / 2)).continuous_laplacian
-    refine Integrable.of_bound (hΔ.comp hshift).aestronglyMeasurable
-      (Module.finrank ℝ (EuclideanSpace ℝ ι) * B 2) (.of_forall fun x ↦ ?_)
-    exact (norm_laplacian_le_norm_iteratedFDeriv_two _ _).trans
-      (mul_le_mul_of_nonneg_left (hB 2 _) (Nat.cast_nonneg _))
+  have hintΔ := integrable_laplacian_heatKernel_comp hv hshift
   have hvs : 2 * (s ^ 2 / 2) = s ^ 2 := by ring
   have hpoint (x : EuclideanSpace ℝ ι) :
       -fderiv ℝ (heatKernel (s ^ 2 / 2)) (y - c • x) x =
@@ -234,7 +216,8 @@ private theorem integral_neg_fderiv_heatKernel_sub_smul_apply {c s : ℝ}
           fderiv ℝ (heatKernel (s ^ 2 / 2)) (y - c • x) y) -
         (s ^ 2 / c) *
           Δ (heatKernel (s ^ 2 / 2) : EuclideanSpace ℝ ι → ℝ) (y - c • x) := by
-    simpa only [finrank_euclideanSpace, hvs] using neg_fderiv_heatKernel_sub_smul_apply x y hc hv
+    have h := neg_fderiv_heatKernel_sub_smul_apply (v := s ^ 2 / 2) x y hc
+    rwa [finrank_euclideanSpace, hvs] at h
   have hintSum : Integrable (fun x ↦ (Fintype.card ι : ℝ) *
       heatKernel (s ^ 2 / 2) (y - c • x) + fderiv ℝ (heatKernel (s ^ 2 / 2)) (y - c • x) y) μ₀ :=
     (hintK.const_mul _).add hintDy
@@ -274,40 +257,15 @@ private theorem integral_kernelDeriv_apply {c s : ℝ} (hc : c ≠ 0) (hs : s �
   simp only [smul_eq_mul]
   ring
 
-omit [DecidableEq ι] in
-private theorem hasDerivAt_integral_heatKernel {c v : ℝ} (hv : 0 < v)
-    (y : EuclideanSpace ℝ ι) :
-    HasDerivAt (fun w ↦ ∫ x, heatKernel w (y - c • x) ∂μ₀)
-      (∫ x, Δ (heatKernel v : EuclideanSpace ℝ ι → ℝ) (y - c • x) ∂μ₀) v := by
-  obtain ⟨B, hB⟩ := exists_eventually_norm_iteratedFDeriv_heatKernel_mul_rpow_le
-    (E := EuclideanSpace ℝ ι) hv 2 (α := 0) le_rfl
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le_const
-    (E := EuclideanSpace ℝ ι) hv 0
-  have hΔ : Continuous (Δ (heatKernel v : EuclideanSpace ℝ ι → ℝ)) :=
-    (contDiff_heatKernel v).continuous_laplacian
-  refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le
-    (s := {w | 0 < w ∧ ∀ z : EuclideanSpace ℝ ι,
-      ‖iteratedFDeriv ℝ 2 (heatKernel w) z‖ * ‖z‖ ^ (0 : ℝ) ≤ B})
-    ((eventually_gt_nhds hv).and hB)
-    (F' := fun w x ↦ Δ (heatKernel w : EuclideanSpace ℝ ι → ℝ) (y - c • x))
-    (bound := fun _ ↦ Module.finrank ℝ (EuclideanSpace ℝ ι) * B)
-    (.of_forall fun w ↦ (((contDiff_heatKernel w (k := 0)).continuous).comp
-      (by fun_prop)).aestronglyMeasurable)
-    (Integrable.of_bound (((contDiff_heatKernel v (k := 0)).continuous).comp
-      (by fun_prop)).aestronglyMeasurable C (.of_forall fun x ↦ by simpa using hC _))
-    ((hΔ.comp (by fun_prop)).aestronglyMeasurable)
-    (.of_forall fun x w hw ↦ (norm_laplacian_le_norm_iteratedFDeriv_two _ _).trans
-      (mul_le_mul_of_nonneg_left (by simpa using hw.2 (y - c • x)) (Nat.cast_nonneg _)))
-    (integrable_const _) (.of_forall fun x w hw ↦ hasDerivAt_heatKernel hw.1 _)).2
-
 /-- **Noise derivative of the smoothed density.** This includes zero signal and negative noise
 levels, since the smoothing depends on the square of the noise. -/
 theorem hasDerivAt_smoothedDensity_noise {c s : ℝ} (hs : s ≠ 0)
     (y : EuclideanSpace ℝ ι) :
     HasDerivAt (fun r ↦ smoothedDensity μ₀ c r y)
       (s * Δ (smoothedDensity μ₀ c s) y) s := by
-  have h := (hasDerivAt_integral_heatKernel (μ₀ := μ₀) (c := c)
-    (by positivity : 0 < s ^ 2 / 2) y).comp s (((hasDerivAt_id s).pow 2).div_const 2)
+  have h := (hasDerivAt_integral_heatKernel (μ := μ₀) (z := fun x ↦ y - c • x)
+    (by positivity : 0 < s ^ 2 / 2) (by fun_prop)).comp s
+      (((hasDerivAt_id s).pow 2).div_const 2)
   have hd : (∫ x, Δ (heatKernel (s ^ 2 / 2) : EuclideanSpace ℝ ι → ℝ)
       (y - c • x) ∂μ₀) * (2 * s ^ (2 - 1) * 1 / 2) =
       s * Δ (smoothedDensity μ₀ c s) y := by
@@ -339,13 +297,14 @@ theorem hasFDerivAt_smoothedDensity_level {c s : ℝ} (hc : c ≠ 0) (hs : s ≠
     smul_apply, ContinuousLinearMap.coe_fst',
     ContinuousLinearMap.coe_snd', smul_eq_mul]
   rw [integral_kernelDeriv_apply hc hs]
-  simp only [add_apply, smul_apply,
+  simp only [add_apply, smul_apply, id_eq,
     ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', smul_eq_mul]
-  norm_num
   ring
 
-/-- **The Fokker–Planck equation along a Gaussian noising path.** The drift is `c′ / c t`
-and the diffusion coefficient is `2 * (s t * s′ - (s t)² * c′ / c t)`. -/
+/-- **The Fokker–Planck equation along a Gaussian noising path.** The drift is the linear field
+`y ↦ (c′ / c t) • y`. Set `g² = 2 * (s t * s′ - (s t)² * c′ / c t)`, twice the Laplacian
+coefficient and the squared diffusion coefficient when nonnegative. The formula expands the
+forward equation `∂ₜp = -div((c′/c) y p) + (g²/2) Δp`. -/
 theorem hasDerivAt_smoothedDensity_path {c s : ℝ → ℝ} {c' s' t : ℝ}
     (hc : HasDerivAt c c' t) (hs : HasDerivAt s s' t)
     (hct : c t ≠ 0) (hst : s t ≠ 0) (y : EuclideanSpace ℝ ι) :
@@ -369,7 +328,9 @@ theorem hasDerivAt_smoothedDensity_signal {c s : ℝ} (hc : c ≠ 0) (hs : s ≠
       (-(1 / c) * (Fintype.card ι * smoothedDensity μ₀ c s y +
         ⟪y, gradient (smoothedDensity μ₀ c s) y⟫) -
         (s ^ 2 / c) * Δ (smoothedDensity μ₀ c s) y) c := by
-  convert hasDerivAt_smoothedDensity_path (μ₀ := μ₀)
-    (hasDerivAt_id c) (hasDerivAt_const c s) hc hs y using 1 <;> simp only [id_eq]; ring
+  exact (hasDerivAt_smoothedDensity_path (μ₀ := μ₀)
+    (hasDerivAt_id c) (hasDerivAt_const c s) hc hs y).congr_deriv (by
+      simp only [id_eq]
+      ring)
 
 end TauCeti.Probability

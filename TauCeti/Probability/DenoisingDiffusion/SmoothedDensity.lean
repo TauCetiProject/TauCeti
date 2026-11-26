@@ -52,6 +52,9 @@ denoising score matching, which express it as a conditional expectation of the n
   `p` is positive and `C^∞`.
 * `TauCeti.Probability.iteratedFDeriv_smoothedDensity`: every derivative of `p` is taken under
   the integral sign.
+* `TauCeti.Probability.fderiv_smoothedDensity` and
+  `TauCeti.Probability.laplacian_smoothedDensity`: the derivative and Laplacian of `p` are the
+  mixtures of the heat-kernel derivative and Laplacian.
 * `TauCeti.Probability.hasGradientAt_smoothedDensity`: the gradient formula for `p`.
 * `TauCeti.Probability.noisyScore_eq_inv_smul_gradient` and
   `TauCeti.Probability.noisyScore_eq_integral`: the score is `∇p / p`, explicitly
@@ -102,27 +105,6 @@ theorem noisyScore_apply (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : ℝ) (
     noisyScore μ₀ c s y = gradient (fun y ↦ Real.log (smoothedDensity μ₀ c s y)) y :=
   (rfl)
 
-/-! ### The Gaussian kernel -/
-
-section Kernel
-
-private theorem measurable_pdf_sub_smul (y : EuclideanSpace ℝ ι) :
-    Measurable fun x : EuclideanSpace ℝ ι ↦
-      multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1) (y - c • x) :=
-  (measurable_multivariateGaussianPDFReal _ _).comp (by fun_prop)
-
-/-- Against a finite measure the integrand of the smoothed density is integrable. -/
-private theorem integrable_pdf_sub_smul [IsFiniteMeasure μ₀] (hs : s ≠ 0)
-    (y : EuclideanSpace ℝ ι) :
-    Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x)) μ₀ := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_multivariateGaussianPDFReal_smul_one_le
-    (ι := ι) (by positivity : 0 < s ^ 2) 0 0
-  refine Integrable.of_bound (C := C) (measurable_pdf_sub_smul y).aestronglyMeasurable
-    (.of_forall fun x ↦ ?_)
-  simpa using hC (y - c • x)
-
-end Kernel
-
 /-! ### The density of the noisy observation -/
 
 /-- For `s ≠ 0`, the smoothed density is the integral of the heat kernel at time `s² / 2`. -/
@@ -138,10 +120,10 @@ theorem smoothedDensity_nonneg (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : 
 /-- The smoothed density of a nonzero finite measure is positive. -/
 theorem smoothedDensity_pos [IsFiniteMeasure μ₀] [NeZero μ₀] (hs : s ≠ 0)
     (y : EuclideanSpace ℝ ι) : 0 < smoothedDensity μ₀ c s y := by
-  rw [smoothedDensity_apply, integral_pos_iff_support_of_nonneg
-    (fun _ ↦ multivariateGaussianPDFReal_nonneg _ _ _) (integrable_pdf_sub_smul hs y),
-    Function.support_eq_univ fun _ ↦ (multivariateGaussianPDFReal_pos
-      (Matrix.PosDef.one.smul (by positivity : 0 < s ^ 2)).det_pos _ _).ne']
+  rw [smoothedDensity_eq_integral_heatKernel hs, integral_pos_iff_support_of_nonneg
+    (fun _ ↦ (heatKernel_pos (by positivity : 0 < s ^ 2 / 2) _).le)
+    (integrable_heatKernel_comp (by positivity) (by fun_prop)),
+    Function.support_eq_univ fun _ ↦ (heatKernel_pos (by positivity : 0 < s ^ 2 / 2) _).ne']
   exact Measure.measure_univ_pos.2 (NeZero.ne μ₀)
 
 /-- **Gaussian smoothing of a finite measure has a density.** Mixing the isotropic Gaussian laws
@@ -161,8 +143,10 @@ theorem bind_multivariateGaussian_eq_withDensity_smoothedDensity [IsFiniteMeasur
     ((measurable_multivariateGaussianPDFReal _ _).comp (by fun_prop)).ennreal_ofReal.aemeasurable]
   congr 1
   funext y
-  rw [smoothedDensity_apply, ofReal_integral_eq_lintegral_ofReal (integrable_pdf_sub_smul hs y)
-    (.of_forall fun x ↦ multivariateGaussianPDFReal_nonneg _ _ _)]
+  rw [smoothedDensity_apply, multivariateGaussianPDFReal_zero_smul_one hs2,
+    ofReal_integral_eq_lintegral_ofReal
+      (integrable_heatKernel_comp (by positivity) (by fun_prop))
+      (.of_forall fun x ↦ (heatKernel_pos (by positivity : 0 < s ^ 2 / 2) _).le)]
 
 /-- **The density of a Gaussian observation.** If `X` has a finite law `μ₀` and `Z` is a standard
 Gaussian vector independent of `X`, then for `s ≠ 0` the observation `c • X + s • Z` has the
@@ -267,13 +251,9 @@ theorem laplacian_smoothedDensity [IsFiniteMeasure μ₀] {c s : ℝ} (hs : s �
     (fun _ : Fin 2 => EuclideanSpace ℝ ι) ℝ
       ![stdOrthonormalBasis ℝ (EuclideanSpace ℝ ι) i,
         stdOrthonormalBasis ℝ (EuclideanSpace ℝ ι) i]
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le_const
-    (E := EuclideanSpace ℝ ι) (by positivity : 0 < s ^ 2 / 2) 2
-  have hint : Integrable
-      (fun x ↦ iteratedFDeriv ℝ 2 (heatKernel (s ^ 2 / 2)) (y - c • x)) μ₀ :=
-    Integrable.of_bound (((contDiff_heatKernel _).continuous_iteratedFDeriv
-      (by exact_mod_cast le_top)).comp (by fun_prop)).aestronglyMeasurable
-      C (.of_forall fun x ↦ hC _)
+  have hint := integrable_iteratedFDeriv_heatKernel_comp
+    (by positivity : 0 < s ^ 2 / 2) 2
+    (show AEStronglyMeasurable (fun x : EuclideanSpace ℝ ι ↦ y - c • x) μ₀ by fun_prop)
   exact (L.integral_comp_comm hint).symm.trans
     (integral_congr_ae (.of_forall fun x ↦ (laplacian_eq_traceL_iteratedFDeriv _ _).symm))
 
