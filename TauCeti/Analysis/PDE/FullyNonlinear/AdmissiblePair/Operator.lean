@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralGradient
 public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction.ContDiff
 public import TauCeti.Analysis.Convex.SpectralFunction
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
-import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 
 /-!
 # The operator of an admissible pair
@@ -21,7 +20,8 @@ sorted eigenvalue vector `λ(A)` lies in `Γ`, with gradient `∇F_f(A)`
 (`Matrix.IsHermitian.spectralGradient`). This file transfers the conditions on the pair to the
 operator:
 
-* the domain `{A | λ(A) ∈ Γ}` is open, and `F_f` is `C¹` on it (Lewis's theorem,
+* the domain `{A | λ(A) ∈ Γ}` is open (`Matrix.isOpen_setOf_eigenvalues₀_mem`, as `Γ` is open),
+  and `F_f` is `C¹` on it (Lewis's theorem,
   `Matrix.contDiffOn_spectralFunction_iff`), applied to the symmetric extension of `f` by `0`
   off `Γ`;
 * `∇F_f(A)` is positive definite (ellipticity);
@@ -33,7 +33,6 @@ operator:
 
 ## Main results
 
-* `TauCeti.IsAdmissibleCone.isOpen_setOf_eigenvalues₀_mem`: the domain `{A | λ(A) ∈ Γ}` is open.
 * `TauCeti.IsAdmissiblePair.contDiffOn_spectralFunction`: `F_f` is `C¹` on `{A | λ(A) ∈ Γ}`.
 * `TauCeti.IsAdmissiblePair.posDef_spectralGradient`: `∇F_f(A)` is positive definite.
 * `TauCeti.IsAdmissiblePair.re_trace_spectralGradient_mul_self`: Euler's identity.
@@ -56,13 +55,6 @@ open scoped Matrix.Norms.Frobenius ComplexOrder
 
 variable {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
   {Γ : Set (Fin (Fintype.card ι) → ℝ)} {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
-
-/-- The domain `{A | λ(A) ∈ Γ}` of the operator of an admissible pair, or of any admissible cone
-`Γ`, is open. -/
-theorem TauCeti.IsAdmissibleCone.isOpen_setOf_eigenvalues₀_mem (hΓ : IsAdmissibleCone Γ) :
-    IsOpen {B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) |
-      B.property.isHermitian.eigenvalues₀ ∈ Γ} :=
-  hΓ.isOpen.preimage Matrix.continuous_eigenvalues₀_selfAdjoint
 
 namespace TauCeti.IsAdmissiblePair
 
