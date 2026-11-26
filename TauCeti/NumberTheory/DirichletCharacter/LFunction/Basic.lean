@@ -42,6 +42,8 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   function `LFunctionTrivChar₁ N`, which is `(s - 1) L(s)` away from `s = 1` and, for `N = 1`,
   `(s - 1) ζ(s)` away from `1` and `1` at `1`; it is nonzero wherever `ζ` is, and away from `1`
   its analytic orders agree with `ζ`.
+* `DirichletCharacter.LFunctionTrivChar₁_eq_of_primeFactors_eq`: the pole-removed principal
+  functions agree at levels with the same prime factors, including at `s = 1`.
 * `DirichletCharacter.meromorphicOrderAt_LFunction_ne_top`,
   `DirichletCharacter.analyticOrderAt_LFunction_ne_top`,
   `DirichletCharacter.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt`,
@@ -65,6 +67,10 @@ The order lemmas are adapted, with the hypothesis `χ ≠ 1` weakened, from chri
 file `LFunction/Order.lean` in
 https://github.com/TauCetiProject/TauCeti/pull/45143
 (feat: prove Layer 6 zero-free regions over Q).
+
+The equal-prime-factor comparison for the pole-removed principal function is used in
+`New.exists_regularL_eq_of_sq_eq_one` in `grh/src/Lib/Analytic/Primes.lean` of
+https://github.com/lsernau/grh-lean (rev. `72fead1`).
 -/
 
 public section
@@ -78,6 +84,15 @@ namespace DirichletCharacter
 theorem LFunctionTrivChar₁_apply_of_ne_one (N : ℕ) [NeZero N] {s : ℂ} (hs : s ≠ 1) :
     LFunctionTrivChar₁ N s = (s - 1) * LFunctionTrivChar N s :=
   Function.update_of_ne hs ..
+
+/-- The entire pole-cleared L-functions of principal characters agree at levels with the same
+prime factors, including their residue values at `1`. -/
+theorem LFunctionTrivChar₁_eq_of_primeFactors_eq {M N : ℕ} [NeZero M] [NeZero N]
+    (h : N.primeFactors = M.primeFactors) : LFunctionTrivChar₁ N = LFunctionTrivChar₁ M := by
+  funext s
+  rcases eq_or_ne s 1 with rfl | hs
+  · simp only [LFunctionTrivChar₁, Function.update_self, h]
+  · simp only [LFunctionTrivChar₁_apply_of_ne_one _ hs, LFunctionTrivChar_eq_mul_riemannZeta hs, h]
 
 /-- Away from `s = 1`, Mathlib's pole-removed zeta function is `(s - 1) ζ(s)`. -/
 theorem LFunctionTrivChar₁_one_apply_of_ne_one {s : ℂ} (hs : s ≠ 1) :
