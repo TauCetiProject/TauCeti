@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.Grp.Limits
-public import Mathlib.CategoryTheory.Bicategory.Functor.Cat
+public import TauCeti.CategoryTheory.Bicategory.Functor.Cat
 public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Cover
 public import TauCeti.CategoryTheory.Sites.Descent.IsPrestack
 
@@ -22,7 +22,7 @@ For a covering sieve `R` of `U` and a compatible family `z` on `R`
 categorical centre of the fibre over `V` (`IntrinsicBandSections.coverCenterAt`). These units are
 compatible with pullback along every arrow `g : W ⟶ V`, whether or not `g ≫ a` lies in `R`
 (`IntrinsicBandSections.coverCenterAt_compatible`); the proof transports the local formula along
-the composition isomorphisms of `F` (`IntrinsicBandSections.center_map_comp`). So they form a
+the composition isomorphisms of `F` (`Pseudofunctor.map_map_eq_catCenter_app`). So they form a
 central section `glue(R, z) ∈ ZF(U)` (`IntrinsicBandSections.glue`), the unique one restricting to
 `z_i` along every arrow `i` of `R` (`IntrinsicBandSections.restrict_glue`,
 `IntrinsicBandSections.glue_unique`).
@@ -41,8 +41,6 @@ in Definition 8.4.1 (026F).
 
 ## Main results
 
-* `IntrinsicBandSections.center_map_comp`: transport of a central formula along a composite
-  pullback.
 * `IntrinsicBandSections.coverCenterAt_unique`, `IntrinsicBandSections.coverCenterAt_compatible`,
   `IntrinsicBandSections.coverCenterAt_of_mem`.
 * `IntrinsicBandSections.restrict_glue`, `IntrinsicBandSections.glue_unique`,
@@ -64,25 +62,6 @@ open CategoryTheory Opposite Bicategory
 namespace CategoryTheory.Pseudofunctor.IntrinsicBandSections
 
 variable {C : Type u} [Category.{v} C] {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
-
-/-- **Transport along a composite pullback.** If the pullback of an endomorphism `c` of `x` along
-`h ≫ g` is the component of a central element `z` at `(h ≫ g)^* x`, then its iterated pullback
-`h^* (g^* c)` is the component of `z` at `h^* (g^* x)`. The composition isomorphism of `F` is
-kept; the two pullback objects are not identified. -/
-theorem center_map_comp {V W X : C} (g : W ⟶ V) (h : X ⟶ W) (x : F.obj (.mk (op V)))
-    (c : x ⟶ x) (z : CatCenter (F.obj (.mk (op X))))
-    (hc : (F.map (h ≫ g).op.toLoc).toFunctor.map c =
-      z.app ((F.map (h ≫ g).op.toLoc).toFunctor.obj x)) :
-    (F.map h.op.toLoc).toFunctor.map ((F.map g.op.toLoc).toFunctor.map c) =
-      z.app ((F.map h.op.toLoc).toFunctor.obj ((F.map g.op.toLoc).toFunctor.obj x)) := by
-  -- Conjugating the component of the central element `z` by an isomorphism gives its component
-  -- at the target; apply this to the composition isomorphism of `F` at `x`.
-  have key {P Q : F.obj (.mk (op X))} (e : P ≅ Q) (d : P ⟶ P) (hd : d = z.app P) :
-      e.inv ≫ d ≫ e.hom = z.app Q := by
-    rw [hd, ← Category.assoc, CatCenter.naturality, Category.assoc, e.inv_hom_id,
-      Category.comp_id]
-  exact (F.mapComp'_naturality_1 g.op.toLoc h.op.toLoc (h ≫ g).op.toLoc rfl c).symm.trans
-    (key ((Cat.Hom.toNatIso (F.mapComp' g.op.toLoc h.op.toLoc (h ≫ g).op.toLoc)).app x) _ hc)
 
 variable {U : C} {R : Sieve U} {z w : ∀ i : R.arrows.category, IntrinsicBandSections F i.obj.left}
 
@@ -179,7 +158,7 @@ theorem coverCenterAt_compatible (hR : R ∈ J U) (hz : IsCompatible z) {V W : C
   have h₁ := map_coverCenterAt_app hR hz a x (Presieve.categoryMk _ (h ≫ g) hh')
   have h₂ := map_coverCenterAt_app hR hz (g ≫ a) ((F.map g.op.toLoc).toFunctor.obj x)
     (Presieve.categoryMk _ h hh)
-  rw [center_map_comp g h x _ _ h₁]
+  rw [map_map_eq_catCenter_app F g.op.toLoc h.op.toLoc (h ≫ g).op.toLoc rfl _ _ h₁]
   refine Eq.trans ?_ h₂.symm
   exact congrArg (fun s : IntrinsicBandSections F X ↦ (s.val X (𝟙 X)).val.app
       ((F.map h.op.toLoc).toFunctor.obj ((F.map g.op.toLoc).toFunctor.obj x)))
