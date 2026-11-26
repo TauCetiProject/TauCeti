@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
 public import TauCeti.Analysis.PDE.GreenFunction.Representation.Basic
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DirichletBall
+public import TauCeti.Analysis.PDE.TorsionFunction.Ball
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ParametricIntegral
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
@@ -61,8 +62,9 @@ acts on `L¹(B)` (`TauCeti.integrable_ballGreenKernel_mul`), and the representat
 extends to `L²(B)`.
 
 As a check, the torsion function of the ball: the weak solution of `-Δu = 1` in `B` is
-`(1 - ‖x‖²) / (2n)`, so `∫_B G(x, y) dy = (1 - ‖x‖²) / (2n)` for almost every `x ∈ B`
-(`TauCeti.ae_setIntegral_ballGreenKernel_eq`); for `n = 3` this is `(1 - ‖x‖²) / 6`.
+`(1 - ‖x‖²) / (2n)` (`TauCeti.PDE.ballTorsionFunction`), so `∫_B G(x, y) dy = (1 - ‖x‖²) / (2n)`
+for almost every `x ∈ B` (`TauCeti.ae_setIntegral_ballGreenKernel_eq`); for `n = 3` this is
+`(1 - ‖x‖²) / 6`.
 
 ## Main declarations
 
@@ -312,11 +314,12 @@ end PDE
 
 /-- **The torsion function of the ball.** Let `n ≠ 1`, so that the dimension `n + 1` is `1` or at
 least `3`. The Green potential of the constant `1` on the unit ball `B` of `ℝⁿ⁺¹` is
-`∫_B G(x, y) dy = (1 - ‖x‖²) / (2(n + 1))` for almost every `x ∈ B`: it is the solution of
-`-Δu = 1` in `B`, `u = 0` on the sphere. In `ℝ³` (`n = 2`) this is `(1 - ‖x‖²) / 6`. -/
+`∫_B G(x, y) dy = (1 - ‖x‖²) / (2(n + 1))` (`TauCeti.PDE.ballTorsionFunction`) for almost every
+`x ∈ B`: it is the solution of `-Δu = 1` in `B`, `u = 0` on the sphere. In `ℝ³` (`n = 2`) this is
+`(1 - ‖x‖²) / 6`. -/
 theorem ae_setIntegral_ballGreenKernel_eq (hn : n ≠ 1) :
     ∀ᵐ x ∂(volume.restrict (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)),
-      ∫ y in ball 0 1, ballGreenKernel (n + 1) x y = (1 - ‖x‖ ^ 2) / (2 * ((n : ℝ) + 1)) := by
+      ∫ y in ball 0 1, ballGreenKernel (n + 1) x y = PDE.ballTorsionFunction (Fin (n + 1)) x := by
   let Omega : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball 0 1, isOpen_ball⟩
   have hΩ : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) = ball 0 1 := rfl
   have : IsFiniteMeasure (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
@@ -325,31 +328,18 @@ theorem ae_setIntegral_ballGreenKernel_eq (hn : n ≠ 1) :
       (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) := memLp_const 1
   obtain ⟨u, hu, -⟩ := PDE.existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball
     (z := 0) (R := 1) hΩ.le (h1.toLp _)
-  obtain ⟨w, hwdef⟩ : ∃ w : EuclideanSpace ℝ (Fin (n + 1)) → ℝ,
-      w = (2 * ((n : ℝ) + 1))⁻¹ • ((fun _ => (1 : ℝ)) - fun y => ‖y‖ ^ 2) := ⟨_, rfl⟩
-  have hwx : ∀ x, w x = (1 - ‖x‖ ^ 2) / (2 * ((n : ℝ) + 1)) := fun x => by
-    rw [hwdef, Pi.smul_apply, Pi.sub_apply, smul_eq_mul, div_eq_inv_mul]
-  have hw' : ContDiff ℝ 2
-      ((fun _ => (1 : ℝ)) - fun y : EuclideanSpace ℝ (Fin (n + 1)) => ‖y‖ ^ 2) :=
-    contDiff_const.sub (contDiff_norm_sq ℝ)
-  have hw : ContDiff ℝ 2 w := by
-    rw [hwdef]
-    exact hw'.const_smul (2 * ((n : ℝ) + 1))⁻¹
-  -- `Δ (1 - ‖y‖²) = -2 (n + 1)`, by `laplacian_norm_sq`.
-  have hΔ : ∀ x, Δ w x = -1 := fun x => by
-    simp [hwdef, laplacian_smul _ hw'.contDiffAt,
-      contDiffAt_const.laplacian_sub (contDiff_norm_sq ℝ).contDiffAt, laplacian_norm_sq]
-    field_simp
+  have hw : ContDiff ℝ 2 (PDE.ballTorsionFunction (Fin (n + 1))) :=
+    PDE.contDiff_ballTorsionFunction
   have hwu := hu.value_ae_eq_of_contDiffOn hΩ.le hw.contDiffOn hw.continuous.continuousOn
     (fun x hx => by
-      rw [hΩ, frontier_ball 0 one_ne_zero, mem_sphere_zero_iff_norm] at hx
-      simp [hwx, hx])
+      rw [hΩ, frontier_ball 0 one_ne_zero] at hx
+      exact PDE.ballTorsionFunction_eq_zero_of_mem_sphere hx)
     (by
       filter_upwards [h1.coeFn_toLp] with x hx
-      rw [hx, Pi.neg_apply, hΔ x, neg_neg])
+      rw [hx, Pi.neg_apply, PDE.laplacian_ballTorsionFunction, neg_neg])
   filter_upwards [hwu.symm.trans (hu.value_ae_eq_setIntegral_ballGreenKernel_mul hn hΩ)]
     with x hx
-  rw [← hwx, hx]
+  rw [hx]
   refine integral_congr_ae ?_
   filter_upwards [h1.coeFn_toLp] with y hy
   rw [hy, mul_one]
