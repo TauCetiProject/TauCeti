@@ -42,9 +42,10 @@ Fredholmness and the index.
   `(0,1)`-forms sends `θ` to `Φ⁻¹ ∘ θ`.
 * `TauCeti.IsRealCauchyRiemannOperator.zeroOneTransportEquivL_comp_sobolevL`: the induced
   isomorphisms intertwine the realizations of `D` and of its transport.
-* `TauCeti.IsRealCauchyRiemannOperator.isFredholm_sobolevL_sectionTransport`,
-  `TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_sectionTransport`: the realization of the
-  transport is Fredholm with the index of the realization of `D`.
+* `TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_sectionTransport`: the realization of the
+  transport has the index of the realization of `D`; it is Fredholm for `1 < p < ∞` by
+  `TauCeti.IsRealCauchyRiemannOperator.isFredholm_sobolevL` applied to
+  `TauCeti.IsRealCauchyRiemannOperator.transport_of_contMDiff`.
 
 ## References
 
@@ -256,16 +257,6 @@ theorem zeroOneTransportEquivL_comp_sobolevL (hp : p ≠ ⊤) :
         ((A.ofBaseSet h).image_tangentHom i).symm
     simp only [hμ, ContMDiffSection.coeFn_mk, hDs'] at key
     exact key
-
-omit [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
-/-- **The transport of a smooth real Cauchy–Riemann operator is Fredholm.** On a closed surface,
-the realization `W^{1,p} → L^p` of the transport of `D` along a smooth bundle isomorphism is
-Fredholm, `1 < p < ∞`. -/
-theorem isFredholm_sobolevL_sectionTransport (hp : 1 < p) (hp_top : p ≠ ⊤) :
-    ((hD.transport_of_contMDiff hΦ).sobolevL
-      (A.ofBaseSet h) (hDs.sectionTransport_of_contMDiff hΦ)
-        volume p).IsFredholm :=
-  isFredholm_sobolevL (A.ofBaseSet h) _ _ hp hp_top
 
 /-- **The index is invariant under bundle isomorphisms** (McDuff–Salamon, proof of Theorem C.1.10,
 step 1). On a closed surface, the realizations `W^{1,p} → L^p` of a smooth real Cauchy–Riemann
