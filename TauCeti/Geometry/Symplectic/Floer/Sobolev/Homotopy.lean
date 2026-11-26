@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.Continuation
 import TauCeti.Geometry.Symplectic.Floer.Continuation.SemiFredholm
 
@@ -84,8 +85,8 @@ private theorem isCylindricalNearEnds_continuationHomotopy_const {ω : Symplecti
       u := by
   have h := Floer.isCylindricalNearEnds_continuationHomotopy hJ₀ (Jm := fun _ _ ↦ J₀)
     (Jp := fun _ _ ↦ J₀) (hJmt := fun _ _ ↦ hJ₀.tames) (hJpt := fun _ _ ↦ hJ₀.tames)
-    (Hm := Hm μ) (Hp := Hp μ) contDiff_const contDiff_const (hHm.comp (contDiff_prodMk_right μ))
-    (hHp.comp (contDiff_prodMk_right μ)) u
+    (Hm := Hm μ) (Hp := Hp μ) contDiff_const contDiff_const (contDiff_uncurry_apply hHm μ)
+    (contDiff_uncurry_apply hHp μ) u
   rwa [show Floer.continuationAlmostComplex hJ₀ (fun _ _ ↦ J₀) (fun _ _ ↦ J₀)
       (fun _ _ ↦ hJ₀.tames) (fun _ _ ↦ hJ₀.tames) = fun _ _ ↦ J₀ from
     funext₂ fun z x ↦ Floer.continuationAlmostComplex_self hJ₀ z x] at h
@@ -197,18 +198,18 @@ private theorem isFredholm_iff_and_index_eq_of_homotopy (ω : SymplecticForm V)
   have hcylD (μ : ℝ) (v : ℝ × ℝ → V) :=
     isCylindricalNearEnds_continuationHomotopy_const (hJc 0 0) hHm hHp μ v
   have hKtD (μ : ℝ) : ContDiff ℝ 2 (uncurry (Floer.continuationHomotopy (Hm μ) (Hp μ))) :=
-    Floer.contDiff_uncurry_continuationHomotopy (hHm.comp (contDiff_prodMk_right μ))
-      (hHp.comp (contDiff_prodMk_right μ))
+    Floer.contDiff_uncurry_continuationHomotopy (contDiff_uncurry_apply hHm μ)
+      (contDiff_uncurry_apply hHp μ)
   have hJ₀ : ContDiff ℝ 1 fun _ : (ℝ × ℝ) × V ↦ J₀.toLinearMap.toContinuousLinearMap :=
     contDiff_const
   have hKsD : ContDiff ℝ 2 (uncurry fun (_ : ℝ × ℝ) (_ : V) ↦ (0 : ℝ)) := contDiff_const
   have hJ₀c : ∀ (_ : ℝ × ℝ) (_ : V), ω.Compatible J₀ := fun _ _ ↦ hJc 0 0
   have hδm₁ := ω.tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt
-    (H := Hm 0) (H' := Hm 1) ((hHm.comp (contDiff_prodMk_right 0)).of_le one_le_two)
-    ((hHm.comp (contDiff_prodMk_right 1)).of_le one_le_two) (hxm 0 h₀) (hxm 1 h₁) huxm hδm
+    (H := Hm 0) (H' := Hm 1) ((contDiff_uncurry_apply hHm 0).of_le one_le_two)
+    ((contDiff_uncurry_apply hHm 1).of_le one_le_two) (hxm 0 h₀) (hxm 1 h₁) huxm hδm
   have hδp₁ := ω.tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt
-    (H := Hp 0) (H' := Hp 1) ((hHp.comp (contDiff_prodMk_right 0)).of_le one_le_two)
-    ((hHp.comp (contDiff_prodMk_right 1)).of_le one_le_two) (hxp 0 h₀) (hxp 1 h₁) huxp hδp
+    (H := Hp 0) (H' := Hp 1) ((contDiff_uncurry_apply hHp 0).of_le one_le_two)
+    ((contDiff_uncurry_apply hHp 1).of_le one_le_two) (hxp 0 h₀) (hxp 1 h₁) huxp hδp
   have hfam₀₁ := isFredholm_and_index_eq_of_homotopy_model ω (hJc 0 0) hu h₀ h₁ hHm hHp hXm hxm
     hndm huxm hδm hXp hxp hndp huxp hδp
   have hfam₁₀ := isFredholm_and_index_eq_of_homotopy_model ω (hJc 0 0) hu h₁ h₀ hHm hHp hXm hxm
