@@ -35,6 +35,9 @@ the subspaces of a given dimension through the stabiliser of one of them.
   invariant.
 * `Submodule.mem_orbit_units_iff`: the orbit of a finite-dimensional subspace `U` is the set of
   finite-dimensional subspaces of the dimension of `U`.
+* `Submodule.isUnit_restrict_of_mem_stabilizer`, `Submodule.isUnit_snd_comp_of_mem_stabilizer`: an
+  automorphism stabilising `U` restricts to an automorphism of `U` and induces an automorphism of
+  a complement `Z` of `U`.
 * `Submodule.stabilizerBlockEquiv`: for a complement `Z` of a submodule `U` of a module over any
   ring, the stabiliser of `U` is parametrised by the automorphisms of `U` and of `Z` and the maps
   `Z → U`, through the block automorphisms `Submodule.blockUnit`.
@@ -169,7 +172,7 @@ private theorem blockParam_injective : Function.Injective (blockParam hUZ) := by
   rfl
 
 /-- An automorphism stabilising `U` restricts to an automorphism of `U`. -/
-private theorem isUnit_restrict_of_mem_stabilizer {g : (Module.End R V)ˣ}
+theorem isUnit_restrict_of_mem_stabilizer {g : (Module.End R V)ˣ}
     (hg : g ∈ stabilizer (Module.End R V)ˣ U) (hU : ∀ v ∈ U, (g : Module.End R V) v ∈ U) :
     IsUnit ((g : Module.End R V).restrict hU) := by
   -- Since `g • U = U`, the restriction of `g` maps `U` onto `U`.
@@ -182,7 +185,7 @@ private theorem isUnit_restrict_of_mem_stabilizer {g : (Module.End R V)ˣ}
 
 /-- An automorphism stabilising `U` induces an automorphism of the complement `Z`: its `Z`-block
 `z ↦ (g z)_Z` is invertible. -/
-private theorem isUnit_snd_comp_of_mem_stabilizer {g : (Module.End R V)ˣ}
+theorem isUnit_snd_comp_of_mem_stabilizer {g : (Module.End R V)ˣ}
     (hg : g ∈ stabilizer (Module.End R V)ˣ U) :
     IsUnit (LinearMap.snd R U Z ∘ₗ (U.prodEquivOfIsCompl Z hUZ).symm.toLinearMap ∘ₗ
       (g : Module.End R V) ∘ₗ Z.subtype) := by
