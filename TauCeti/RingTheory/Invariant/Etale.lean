@@ -153,15 +153,10 @@ theorem isEtaleAt_of_inertia_eq_bot {R : Type*} [CommRing R] [Algebra R B] [SMul
     (hq : q.inertia G = ⊥) : Algebra.IsEtaleAt R q := by
   have := isEtaleAt_fixedPoints_of_inertia_eq_bot q hq
   -- `R → Bᴳ` is an isomorphism.
-  let e : R ≃+* FixedPoints.subring B G := RingEquiv.ofBijective
-    ((algebraMap R B).codRestrict _ fun r g ↦ smul_algebraMap g r)
-    ⟨fun _ _ h ↦ FaithfulSMul.algebraMap_injective R B (congrArg Subtype.val h), fun b ↦ by
-      obtain ⟨r, hr⟩ := Algebra.IsInvariant.isInvariant (A := R) (b : B) b.property
-      exact ⟨r, Subtype.ext hr⟩⟩
+  let e := TauCeti.Algebra.IsInvariant.ringEquivFixedPoints R B G
   let := e.toRingHom.toAlgebra
-  -- `e` is by definition the corestriction of `R → B` to `Bᴳ`.
   have he (r : R) : (e r : B) = algebraMap R B r :=
-    RingHom.codRestrict_apply (algebraMap R B) _ (fun r g ↦ smul_algebraMap g r) r
+    TauCeti.Algebra.IsInvariant.coe_ringEquivFixedPoints_apply R B G r
   have : IsScalarTower R (FixedPoints.subring B G) (Localization.AtPrime q) :=
     .of_algebraMap_eq fun r ↦ by
       rw [IsScalarTower.algebraMap_apply R B (Localization.AtPrime q),
