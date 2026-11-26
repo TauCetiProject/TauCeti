@@ -84,12 +84,12 @@ theorem l2Integral_compMeasurePreserving_fst (hW : IsFilteredPreBrownianReal ℱ
 measure has the same `l2Integral` as its `wienerIntegral`. -/
 theorem l2Integral_uncurry_eq_wienerIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
     (T : ℝ≥0) {h : ℝ≥0 → ℝ} (hh : MemLp h 2 (timeMeasure T))
-    (hh_pred : MemLp (fun p : ℝ≥0 × Ω ↦ h p.1) 2 (ℱ.predictableMeasure P T)) :
+    (hh_pred : MemLp (Function.uncurry fun t (_ : Ω) ↦ h t) 2 (ℱ.predictableMeasure P T)) :
     letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    hW.l2Integral T (hh_pred.toLp (fun p : ℝ≥0 × Ω ↦ h p.1)) =
+    hW.l2Integral T (hh_pred.toLp (Function.uncurry fun t (_ : Ω) ↦ h t)) =
       hW.toIsPreBrownianReal.wienerIntegral T (hh.toLp h) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hcomp : hh_pred.toLp (fun p : ℝ≥0 × Ω ↦ h p.1) =
+  have hcomp : hh_pred.toLp (Function.uncurry fun t (_ : Ω) ↦ h t) =
       Lp.compMeasurePreserving Prod.fst (ℱ.measurePreserving_fst_predictableMeasure P T)
         (hh.toLp h) := by
     rw [Lp.toLp_compMeasurePreserving hh (ℱ.measurePreserving_fst_predictableMeasure P T)]
@@ -97,7 +97,7 @@ theorem l2Integral_uncurry_eq_wienerIntegral (hW : IsFilteredPreBrownianReal ℱ
     filter_upwards [hh_pred.coeFn_toLp,
       (hh.comp_measurePreserving (ℱ.measurePreserving_fst_predictableMeasure P T)).coeFn_toLp]
       with p h1 h2
-    rw [h1, h2, Function.comp_apply]
+    rw [h1, h2, Function.comp_apply, Function.uncurry_apply_pair]
   rw [hcomp, hW.l2Integral_compMeasurePreserving_fst T (hh.toLp h)]
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

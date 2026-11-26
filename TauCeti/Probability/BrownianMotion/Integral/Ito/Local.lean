@@ -10,7 +10,6 @@ public import TauCeti.Probability.BrownianMotion.Integral.Stopping
 public import Mathlib.Probability.Process.LocalProperty
 import Mathlib.MeasureTheory.Integral.Indicator
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
-import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.MeasureTheory.Measure.Prod
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
@@ -191,16 +190,7 @@ theorem IsItoIntegral.ite_Ioc_add {σ τ ρ : Ω → WithTop ℝ≥0} (hστ : �
     IsItoIntegral ℱ P W
       (fun t ω ↦ if σ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ ρ ω then H t ω else 0)
       (fun t ω ↦ J₁ t ω + J₂ t ω) := by
-  have hint_eq : (fun (t : ℝ≥0) ω ↦
-      if σ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ ρ ω then H t ω else 0) =
-      fun (t : ℝ≥0) ω ↦
-        (if σ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) +
-          (if τ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ ρ ω then H t ω else 0) := by
-    ext t ω
-    rw [TauCeti.ite_Ioc_eq_sub_ite_le ((hστ.trans hτρ) ω),
-      TauCeti.ite_Ioc_eq_sub_ite_le (hστ ω), TauCeti.ite_Ioc_eq_sub_ite_le (hτρ ω)]
-    ring
-  rw [hint_eq]
+  rw [TauCeti.ite_Ioc_fun_eq_add_ite_Ioc hστ hτρ]
   exact hJ₁.add hJ₂
 
 /-! ### Stopping compatibility for L² Itô integrals -/
@@ -234,10 +224,27 @@ private theorem ae_eq_stoppedProcess_dyadicCeilTime_of_brownianIntegrable
   have heach : ∀ k ∈ Finset.range N, (hW.l2Integral T (hH.dyadicCellLp hτ m T k) : Ω → ℝ) =ᵐ[P]
       (A k).indicator (fun ω ↦ I (t (k + 1)) ω - I (t k) ω) := fun k hk ↦ by
     have hk' := Finset.mem_range.mp hk
+    have hcell : hH.dyadicCellLp hτ m T k =
+        ((Lp.memLp fH).indicator
+          (measurableSet_predictable_Ioc_prod (t k) (t (k + 1))
+            (hτ.measurableSet_gt_dyadicCeilTime m hk')).nullMeasurableSet).toLp
+          ((Ioc (t k) (t (k + 1)) ×ˢ A k).indicator fH) := by
+      refine Lp.ext ?_
+      filter_upwards [hH.coeFn_dyadicCellLp hτ m T k,
+        ((Lp.memLp fH).indicator
+          (measurableSet_predictable_Ioc_prod (t k) (t (k + 1))
+            (hτ.measurableSet_gt_dyadicCeilTime m hk')).nullMeasurableSet).coeFn_toLp,
+        (hH.memLp_predictableMeasure T).coeFn_toLp] with p hp1 hp2 hp3
+      dsimp only [t, A, fH] at hp2 ⊢
+      rw [hp1, hp2]
+      by_cases hmem : p ∈ Ioc (dyadicGridClip m T k) (dyadicGridClip m T (k + 1)) ×ˢ
+          dyadicCellEvent m τ k
+      · rw [indicator_of_mem hmem, indicator_of_mem hmem, hp3]
+      · rw [indicator_of_notMem hmem, indicator_of_notMem hmem]
     have hloc := hW.coeFn_l2Integral_indicator_Ioc_prod T (t k) (t (k + 1))
       (hτ.measurableSet_gt_dyadicCeilTime m hk') fH
     have hbT : t (k + 1) ≤ T := dyadicGridClip_le m T (k + 1)
-    rw [ℱ.indicator_Ioc_prod_eq_predictableMeasureExtendLp_sub P (𝕜 := ℝ) fH
+    rw [← hcell, ℱ.indicator_Ioc_prod_eq_predictableMeasureExtendLp_sub P (𝕜 := ℝ) fH
         (ht_mono k.le_succ) hbT,
       map_sub, hW.l2Integral_predictableMeasureExtendLp hbT,
       hW.l2Integral_predictableMeasureExtendLp ((ht_mono k.le_succ).trans hbT),
@@ -248,7 +255,6 @@ private theorem ae_eq_stoppedProcess_dyadicCeilTime_of_brownianIntegrable
       hW.ae_eq_l2Integral_of_isItoIntegral hH hI (t (k + 1)),
       hW.ae_eq_l2Integral_of_isItoIntegral hH hI (t k)] with ω h1 h2 hI1 hI0
     dsimp only [g1, g0] at h1 h2
-    dsimp only [BrownianIntegrable.dyadicCellLp]
     rw [h1]
     by_cases hω : ω ∈ A k
     · rw [indicator_of_mem hω, indicator_of_mem hω, h2, Pi.sub_apply, hI1, hI0]
@@ -277,6 +283,7 @@ theorem isItoIntegral_ite_le_stoppedProcess_of_brownianIntegrable
   let Lm (m : ℕ) : Ω → ℝ :=
     hW.l2Integral T (((hH.ite_le (hτ.dyadicCeilTime m)).memLp_predictableMeasure T).toLp _)
   let L : Ω → ℝ := hW.l2Integral T (((hH.ite_le hτ).memLp_predictableMeasure T).toLp _)
+  -- Stage 1: pass the dyadic-ceiling `L²` integrals `Lm m` to `L` along a subsequence.
   have hL_lim : Tendsto (fun m ↦ eLpNorm (Lm m - L) 2 P) atTop (𝓝 0) := by
     have heq (m : ℕ) : eLpNorm (Lm m - L) 2 P =
         eLpNorm (fun p : ℝ≥0 × Ω ↦
@@ -289,21 +296,10 @@ theorem isItoIntegral_ite_le_stoppedProcess_of_brownianIntegrable
         ((hH.ite_le (hτ.dyadicCeilTime m)).memLp_predictableMeasure T)
         ((hH.ite_le hτ).memLp_predictableMeasure T)
     simp_rw [heq]
-    refine tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (by norm_num)
-      (Eventually.of_forall fun m ↦ ((hH.ite_le (hτ.dyadicCeilTime m)).isStronglyPredictable.mono
-        ℱ.predictable_le_prod).aestronglyMeasurable) (hH.memLp_timeMeasure T)
-      (Eventually.of_forall fun m ↦ Eventually.of_forall fun p ↦ by
-        simp only [ENNReal.coe_one, one_mul, Function.uncurry_def]; split_ifs <;> simp)
-      (Eventually.of_forall fun p ↦ ?_)
-    by_cases hp : (p.fst : WithTop ℝ≥0) ≤ τ p.snd
-    · exact tendsto_const_nhds.congr fun m ↦ by
-        rw [ite_eq_left hp, ite_eq_left (hp.trans (le_dyadicCeilTime m (τ p.snd)))]
-    · refine tendsto_const_nhds.congr' ?_
-      filter_upwards [(tendsto_dyadicCeilTime (τ p.snd)).eventually (gt_mem_nhds (not_le.mp hp))]
-        with m hm
-      rw [ite_eq_right hp, ite_eq_right (not_le.mpr hm)]
+    exact hH.tendsto_eLpNorm_ite_le_dyadicCeilTime_sub hτ T
   obtain ⟨φ, hφ, hφ_ae⟩ :=
     (tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero hL_lim).exists_seq_tendsto_ae
+  -- Stage 2: identify the a.e. limit with `stoppedProcess I τ T` via path continuity.
   filter_upwards [hφ_ae, hI.ae_continuous, ae_all_iff.mpr fun k ↦
     hW.ae_eq_stoppedProcess_dyadicCeilTime_of_brownianIntegrable hH hI hτ (φ k) T] with
     ω hLω hIω hdyad
@@ -376,8 +372,7 @@ theorem exists_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
     hW.exists_energyLocalized_integrals hcont hH
   refine ⟨I, hII, hIpred, hIpred.isStronglyProgressive.locally_martingale_of_ae_stopped_eq
     hH.isLocalizingSequence_energyLocalizer hUmart fun n t ↦ ?_⟩
-  rw [stoppedProcess_indicator_pos _ fun ω ↦
-    bot_le.trans_lt (nnvolume.energyLocalizer_pos H (C := (n : ℝ≥0) + 1) (by positivity) ω)]
+  rw [nnvolume.stoppedProcess_indicator_pos_energyLocalizer H I (by positivity)]
   exact (hIstop n).mono fun ω hω ↦ (hω t).symm
 
 /-- **Existence of the Itô integral for strongly progressive integrands.** Against an almost
@@ -463,14 +458,7 @@ theorem isItoIntegral_ite_Ioc_stoppedProcess_sub (hW : IsFilteredPreBrownianReal
     IsItoIntegral ℱ P W
       (fun t ω ↦ if σ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
       (fun t ω ↦ stoppedProcess I τ t ω - stoppedProcess I σ t ω) := by
-  have hint_eq : (fun (t : ℝ≥0) ω ↦
-      if σ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) =
-      fun (t : ℝ≥0) ω ↦
-        (if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) -
-          (if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0) := by
-    ext t ω
-    exact TauCeti.ite_Ioc_eq_sub_ite_le (hστ ω) _
-  rw [hint_eq]
+  rw [TauCeti.ite_Ioc_fun_eq_sub_ite_le hστ]
   exact (hW.isItoIntegral_ite_le_stoppedProcess hcont hI hτ).sub
     (hW.isItoIntegral_ite_le_stoppedProcess hcont hI hσ)
 
@@ -513,8 +501,7 @@ theorem locally_martingale_sq_sub_of_isItoIntegral (hW : IsFilteredPreBrownianRe
     (fun n ↦ hW.martingale_sq_sub_of_isItoIntegral (hHseq n) (hUI n)
       (hUpred n).isStronglyProgressive.stronglyAdapted) fun n t ↦ ?_
   let σn := nnvolume.energyLocalizer H ((n : ℝ≥0) + 1)
-  rw [stoppedProcess_indicator_pos _ fun ω ↦
-    bot_le.trans_lt (nnvolume.energyLocalizer_pos H (C := (n : ℝ≥0) + 1) (by positivity) ω)]
+  rw [nnvolume.stoppedProcess_indicator_pos_energyLocalizer H _ (by positivity)]
   filter_upwards [(hII₀.stoppedProcess σn).trans (hI₀stop n),
     hH.ae_accumulatedEnergy_lt_top] with ω hIω hfin
   have hI_eq : U n t ω = stoppedProcess I σn t ω := (hIω t).symm

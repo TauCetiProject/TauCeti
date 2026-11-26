@@ -94,8 +94,9 @@ theorem integral_mul_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
     _ = ∫ p, H p.fst p.snd * K p.fst p.snd ∂ℱ.predictableMeasure P t := by
         rw [(hW.l2Integral t).inner_map_map, real_inner_comm, L2.inner_def]
         exact integral_congr_ae <| (hH.memLp_predictableMeasure t).coeFn_toLp.mp <|
-          (hK.memLp_predictableMeasure t).coeFn_toLp.mono fun _ hpK hpH ↦ by
-            simp only [RCLike.inner_apply, conj_trivial, f, g, hpH, hpK]; rfl
+          (hK.memLp_predictableMeasure t).coeFn_toLp.mono fun ⟨_, _⟩ hpK hpH ↦ by
+            simp only [RCLike.inner_apply, conj_trivial, f, g, hpH, hpK,
+              Function.uncurry_apply_pair]
     _ = ∫ p, H p.fst p.snd * K p.fst p.snd ∂(timeMeasure t).prod P :=
         ℱ.integral_predictableMeasure P
           (hH.isStronglyPredictable.mul hK.isStronglyPredictable) t
@@ -228,8 +229,7 @@ theorem ae_eq_wienerIntegral_of_isItoIntegral (hW : IsFilteredPreBrownianReal �
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   let hbi := TauCeti.brownianIntegrable_fst (ℱ := ℱ) (P := P) hm hLp
   refine (hW.ae_eq_l2Integral_of_isItoIntegral hbi hI T).trans ?_
-  exact EventuallyEq.of_eq <| congrArg (fun f : Lp ℝ 2 P ↦ (f : Ω → ℝ))
-    (hW.l2Integral_uncurry_eq_wienerIntegral T (hLp T) (hbi.memLp_predictableMeasure T))
+  rw [hW.l2Integral_uncurry_eq_wienerIntegral T (hLp T) (hbi.memLp_predictableMeasure T)]
 
 /-- **Deterministic L² characterization.** For a measurable deterministic integrand `h` in `L²` on
 every finite horizon, an almost surely continuous process `I` is an Itô integral of `h` if and
@@ -243,12 +243,8 @@ theorem isItoIntegral_iff_ae_eq_wienerIntegral (hW : IsFilteredPreBrownianReal �
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   let hbi := TauCeti.brownianIntegrable_fst (ℱ := ℱ) (P := P) hm hLp
   rw [hW.isItoIntegral_iff_ae_eq_l2Integral hbi hIcont]
-  exact forall_congr' fun T ↦ by
-    have heq : hW.l2Integral T
-        ((hbi.memLp_predictableMeasure T).toLp (Function.uncurry fun t _ ↦ h t)) =
-        hW.toIsPreBrownianReal.wienerIntegral T ((hLp T).toLp h) :=
-      hW.l2Integral_uncurry_eq_wienerIntegral T (hLp T) (hbi.memLp_predictableMeasure T)
-    rw [heq]
+  refine forall_congr' fun T ↦ ?_
+  rw [hW.l2Integral_uncurry_eq_wienerIntegral T (hLp T) (hbi.memLp_predictableMeasure T)]
 
 /-- **Doob uniform approximation for elementary gains.** If simple holdings with square-integrable
 left-measurable heights converge in `L²` on `(0, T] × Ω` to a Brownian-integrable integrand `H`,
@@ -303,9 +299,6 @@ private theorem exists_martingale_sq_sub_ae_eq (hW : IsFilteredPreBrownianReal �
     ∃ Z : ℝ≥0 → Ω → ℝ, Martingale Z ℱ P ∧ (∀ t, Z t =ᵐ[P] I t) ∧ (∀ t, MemLp (Z t) 2 P) ∧
       Martingale (fun t ω ↦ Z t ω ^ 2 - ∫ s, H s ω ^ 2 ∂timeMeasure t) ℱ P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have hA_adapt : StronglyAdapted ℱ (fun t ω ↦ ∫ s, H s ω ^ 2 ∂timeMeasure t) :=
-    hH.isStronglyPredictable.isStronglyPredictable_integral_sq_timeMeasure
-      |>.isStronglyProgressive.stronglyAdapted
   -- Choose `L²`-approximating simple holdings whose gains converge in `L²` to a martingale
   -- `Z =ᵐ I`.
   obtain ⟨n, τ, a, Z, hτ, ha, ha₂, hlim, hZ, hZmem, hZlim, hZL⟩ :=
@@ -317,7 +310,8 @@ private theorem exists_martingale_sq_sub_ae_eq (hW : IsFilteredPreBrownianReal �
   -- Pass the elementary square-compensated martingales `M_k^2 - B_k` to the limit in `L¹(P)`.
   refine ⟨Z, hZ, hIZ, hZmem, martingale_of_tendsto_eLpNorm_one
     (fun k ↦ hW.martingale_sq_simpleGains_sub (hτ k) (ha k) (ha₂ k))
-    (fun t ↦ (hZ.stronglyAdapted t).pow 2 |>.sub (hA_adapt t)) fun t ↦ ?_⟩
+    (fun t ↦ (hZ.stronglyAdapted t).pow 2 |>.sub
+      (hH.isStronglyPredictable.stronglyAdapted_integral_sq_timeMeasure t)) fun t ↦ ?_⟩
   have hsq_lim : Tendsto (fun k ↦ eLpNorm
       (fun ω ↦ Finance.simpleGains (τ k) (n k) (a k) W t ω ^ 2 - Z t ω ^ 2) 1 P) atTop (𝓝 0) :=
     TauCeti.tendsto_eLpNorm_sq_sub_one (hZmem t).eLpNorm_ne_top (hZlim t)
@@ -361,12 +355,11 @@ theorem martingale_sq_sub_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W
     (hI_adapt : StronglyAdapted ℱ I) :
     Martingale (fun t ω ↦ I t ω ^ 2 - ∫ s, H s ω ^ 2 ∂timeMeasure t) ℱ P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have hA_adapt : StronglyAdapted ℱ (fun t ω ↦ ∫ s, H s ω ^ 2 ∂timeMeasure t) :=
-    hH.isStronglyPredictable.isStronglyPredictable_integral_sq_timeMeasure
-      |>.isStronglyProgressive.stronglyAdapted
   obtain ⟨Z, -, hZI, -, hMZ⟩ := exists_martingale_sq_sub_ae_eq hW hH hI
-  exact hMZ.congr (fun t ↦ (hI_adapt t).pow 2 |>.sub (hA_adapt t)) fun t ↦
-    (hZI t).mono fun ω hω ↦ by dsimp only; rw [hω]
+  exact hMZ.congr
+    (fun t ↦ (hI_adapt t).pow 2 |>.sub
+      (hH.isStronglyPredictable.stronglyAdapted_integral_sq_timeMeasure t))
+    fun t ↦ (hZI t).mono fun ω hω ↦ by dsimp only; rw [hω]
 
 /-- **Set-integral square increment on predictable rectangles.** For any Itô integral `I` of a
 Brownian-integrable integrand `H`, the second moment of `I t - I s` over an `ℱ s`-measurable

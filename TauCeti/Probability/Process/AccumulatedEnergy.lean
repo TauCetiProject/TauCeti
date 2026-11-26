@@ -311,4 +311,10 @@ theorem isStronglyPredictable_integral_sq_timeMeasure {H : ℝ≥0 → Ω → �
     funext fun t ↦ funext fun ω ↦ hH.integral_sq_timeMeasure_eq_toReal_accumulatedEnergy t ω
   rwa [hfun]
 
+/-- The elapsed pathwise Bochner square energy of a predictable process is strongly adapted. -/
+theorem stronglyAdapted_integral_sq_timeMeasure {H : ℝ≥0 → Ω → ℝ}
+    (hH : IsStronglyPredictable ℱ H) :
+    StronglyAdapted ℱ (fun t ω ↦ ∫ s, H s ω ^ 2 ∂TauCeti.Probability.timeMeasure t) :=
+  hH.isStronglyPredictable_integral_sq_timeMeasure.isStronglyProgressive.stronglyAdapted
+
 end MeasureTheory.IsStronglyPredictable

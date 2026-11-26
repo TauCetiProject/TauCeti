@@ -159,6 +159,29 @@ theorem ite_Ioc_eq_sub_ite_le {α G : Type*} [LinearOrder α] [AddGroup G]
   have h1 := congrFun (Set.indicator_sdiff (Iic_subset_Iic.mpr hab) (fun _ : α ↦ r)) x
   simpa only [Iic_sdiff_Iic, Set.indicator_apply, mem_Ioc, mem_Iic, Pi.sub_apply] using h1
 
+/-- Function-level restriction to a stochastic interval `(σ, τ]` equals subtracting the cutoff
+at `σ` from the cutoff at `τ`, whenever `σ ≤ τ`. -/
+theorem ite_Ioc_fun_eq_sub_ite_le {ι Ω α G : Type*} [LinearOrder α] [AddGroup G]
+    {σ τ : Ω → α} (hστ : σ ≤ τ) (x : ι → α) (H : ι → Ω → G) :
+    (fun (t : ι) ω ↦ if σ ω < x t ∧ x t ≤ τ ω then H t ω else 0) =
+      fun (t : ι) ω ↦
+        (if x t ≤ τ ω then H t ω else 0) - (if x t ≤ σ ω then H t ω else 0) := by
+  ext t ω
+  exact ite_Ioc_eq_sub_ite_le (hστ ω) (H t ω)
+
+/-- Function-level restriction to `(σ, ρ]` splits as the sum of restrictions to `(σ, τ]` and
+`(τ, ρ]`, whenever `σ ≤ τ ≤ ρ`. -/
+theorem ite_Ioc_fun_eq_add_ite_Ioc {ι Ω α G : Type*} [LinearOrder α] [AddCommGroup G]
+    {σ τ ρ : Ω → α} (hστ : σ ≤ τ) (hτρ : τ ≤ ρ) (x : ι → α) (H : ι → Ω → G) :
+    (fun (t : ι) ω ↦ if σ ω < x t ∧ x t ≤ ρ ω then H t ω else 0) =
+      fun (t : ι) ω ↦
+        (if σ ω < x t ∧ x t ≤ τ ω then H t ω else 0) +
+          (if τ ω < x t ∧ x t ≤ ρ ω then H t ω else 0) := by
+  ext t ω
+  rw [ite_Ioc_eq_sub_ite_le ((hστ.trans hτρ) ω), ite_Ioc_eq_sub_ite_le (hστ ω),
+    ite_Ioc_eq_sub_ite_le (hτρ ω)]
+  abel
+
 end TauCeti
 
 namespace TauCeti

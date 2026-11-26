@@ -334,9 +334,11 @@ to the expected-energy domain. -/
 theorem brownianIntegrable_fst [IsFiniteMeasure P] {h : ℝ≥0 → ℝ}
     (hm : Measurable h) (hLp : ∀ T : ℝ≥0, MemLp h 2 (Probability.timeMeasure T)) :
     BrownianIntegrable ℱ P (fun t _ ↦ h t) where
-  isStronglyPredictable := hm.stronglyMeasurable.comp_measurable ℱ.measurable_fst_predictable
+  isStronglyPredictable := by
+    simpa only [IsStronglyPredictable, Function.uncurry_def, Function.comp_def] using
+      hm.stronglyMeasurable.comp_measurable ℱ.measurable_fst_predictable
   memLp T := by
     rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def]
-    exact (hLp T).comp_fst P
+    simpa only [Function.uncurry_def] using (hLp T).comp_fst P
 
 end TauCeti

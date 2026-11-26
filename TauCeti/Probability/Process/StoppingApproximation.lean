@@ -240,17 +240,17 @@ theorem tendsto_stoppedProcess_dyadicCeilTime {Ω E : Type*} [TopologicalSpace E
       (Eventually.of_forall fun n => min_le_min_left _ (le_dyadicCeilTime n _)) hX
 
 /-- The `k`-th dyadic grid point of mesh `2⁻ⁿ`, clipped at horizon `T`. -/
-@[expose] def dyadicGridClip (n : ℕ) (T : ℝ≥0) (k : ℕ) : ℝ≥0 :=
+def dyadicGridClip (n : ℕ) (T : ℝ≥0) (k : ℕ) : ℝ≥0 :=
   min ((k : ℝ≥0) / 2 ^ n) T
 
 /-- The defining formula for the clipped dyadic grid point. -/
 theorem dyadicGridClip_def (n : ℕ) (T : ℝ≥0) (k : ℕ) :
-    dyadicGridClip n T k = min ((k : ℝ≥0) / 2 ^ n) T := rfl
+    dyadicGridClip n T k = min ((k : ℝ≥0) / 2 ^ n) T := (rfl)
 
 /-- The clipped dyadic grid starts at zero. -/
 @[simp]
 theorem dyadicGridClip_zero (n : ℕ) (T : ℝ≥0) : dyadicGridClip n T 0 = 0 := by
-  simp [dyadicGridClip]
+  simp [dyadicGridClip_def]
 
 /-- The clipped dyadic grid is monotone in the cell index. -/
 theorem monotone_dyadicGridClip (n : ℕ) (T : ℝ≥0) : Monotone (dyadicGridClip n T) :=

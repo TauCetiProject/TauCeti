@@ -89,6 +89,16 @@ theorem energyLocalizer_pos {C : ℝ≥0} (hC : 0 < C) (ω : Ω) :
   rw [← not_le, ← WithTop.coe_zero, energyLocalizer_le_iff]
   simpa using hC.ne'
 
+/-- Stopping the positive-time indicator restriction at a positive-level energy localizer agrees
+with stopping the process itself. -/
+theorem stoppedProcess_indicator_pos_energyLocalizer {F : Type*} [Zero F]
+    (X : ℝ≥0 → Ω → F) {C : ℝ≥0} (hC : 0 < C) :
+    stoppedProcess
+        (fun t ↦ {ω | (⊥ : WithTop ℝ≥0) < μ.energyLocalizer H C ω}.indicator (X t))
+        (μ.energyLocalizer H C) =
+      stoppedProcess X (μ.energyLocalizer H C) :=
+  stoppedProcess_indicator_pos X fun ω ↦ bot_le.trans_lt (μ.energyLocalizer_pos H hC ω)
+
 omit [NullSingletonClass μ] in
 /-- Closed energy levels give pointwise increasing hitting times. -/
 theorem monotone_energyLocalizer (ω : Ω) : Monotone (fun C ↦ μ.energyLocalizer H C ω) := by
