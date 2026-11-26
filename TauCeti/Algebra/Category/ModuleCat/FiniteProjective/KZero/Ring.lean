@@ -18,13 +18,14 @@ generated projective `R`-modules a commutative ring (`TauCeti.SplitK0.instCommRi
 symmetric monoidal structure of `TauCeti.finiteProjectiveModulesSymmetricCategory`). This file
 records that ring structure in terms of modules: the class of `R` is the unit, the class of `Rⁿ` is
 the integer `n`, and the class of a tensor product `M ⊗[R] N` is the product of the classes of `M`
-and `N`.
+and `N`. Extension of scalars along a ring homomorphism of commutative rings preserves the unit.
 
 ## Main results
 
 * `TauCeti.FiniteProjectiveModules.splitK0_of_self`: `[R] = 1`.
 * `TauCeti.FiniteProjectiveModules.splitK0_of_fin`: `[Rⁿ] = n`.
 * `TauCeti.FiniteProjectiveModules.splitK0_of_tensorProduct`: `[M ⊗[R] N] = [M] * [N]`.
+* `TauCeti.SplitK0.map_extendScalars_one`: extension of scalars sends `1 = [R]` to `1 = [S]`.
 
 ## References
 
@@ -72,5 +73,19 @@ theorem splitK0_of_tensorProduct (M N : Type u) [AddCommGroup M] [Module R M] [M
     (SplitK0.of_mul_of _ _).symm
 
 end FiniteProjectiveModules
+
+namespace SplitK0
+
+open FiniteProjectiveModules
+
+/-- Extension of scalars along a ring homomorphism `f : R →+* S` of commutative rings sends the
+unit `[R]` of projective `K₀(R)` to the unit `[S]` of projective `K₀(S)`. -/
+@[simp]
+theorem map_extendScalars_one {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S) :
+    SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars 1 = 1 := by
+  rw [← splitK0_of_finiteProjectiveModulesRegular, SplitK0.map_of,
+    of_extendScalars_obj_finiteProjectiveModulesRegular, splitK0_of_finiteProjectiveModulesRegular]
+
+end SplitK0
 
 end TauCeti
