@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
+import Mathlib.MeasureTheory.Function.Holder
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.FunctionalSpaces.SobolevInequality
 import TauCeti.Analysis.Sobolev.GagliardoNirenberg
@@ -102,17 +103,15 @@ private theorem inv_sub_div_le_div_mul {n p i j k : ℝ} (hn : 0 < n) (hp : 0 < 
   nlinarith [mul_le_mul_of_nonneg_left hk.le (sub_nonneg.2 hji),
     mul_nonneg (mul_nonneg hj.le hp.le) (sub_nonneg.2 hik)]
 
-/-- For `j ≠ 0`, the exponent `(j / (i p))⁻¹` is the finite exponent `i p / j`. -/
-private theorem inv_natCast_div_mul_eq_coe {j : ℕ} (hj : j ≠ 0) (i : ℕ) (p : ℝ≥0) :
-    ((j : ℝ≥0∞) / (i * p))⁻¹ = ((i * p / j : ℝ≥0) : ℝ≥0∞) := by
-  rw [ENNReal.inv_div (Or.inl (by finiteness)) (Or.inr (by simpa using hj)),
-    ENNReal.coe_div (by simpa using hj)]
-  norm_cast
-
-/-- For `i ≠ 0`, the exponent `(i / (i p))⁻¹` is `p`. -/
-private theorem inv_natCast_div_natCast_mul {i : ℕ} (hi : i ≠ 0) (p : ℝ≥0) :
-    ((i : ℝ≥0∞) / (i * p))⁻¹ = p := by
-  rw [inv_natCast_div_mul_eq_coe hi, mul_div_cancel_left₀ _ (by exact_mod_cast hi)]
+/-- For `i, j, p ≠ 0`, the exponent `(j p⁻¹ / i)⁻¹` is the finite exponent `i p / j`. -/
+private theorem inv_natCast_mul_inv_div_eq_coe {p : ℝ≥0} (hp : p ≠ 0) {j : ℕ} (hj : j ≠ 0) {i : ℕ}
+    (hi : i ≠ 0) : ((j : ℝ≥0∞) * (p : ℝ≥0∞)⁻¹ / i)⁻¹ = ((i * p / j : ℝ≥0) : ℝ≥0∞) := by
+  have hij : (j * p⁻¹ / i : ℝ≥0) ≠ 0 := by positivity
+  have h : (j : ℝ≥0∞) * (p : ℝ≥0∞)⁻¹ / i = ((j * p⁻¹ / i : ℝ≥0) : ℝ≥0∞) := by
+    simp [ENNReal.coe_div, ENNReal.coe_inv, hp, hi]
+  rw [h, ← ENNReal.coe_inv hij]
+  congr 1
+  field_simp
 
 /-- For `p < n`, the derivative `Dʲ u`, `j ≤ k`, of a compactly supported `C^k` function lies in
 `L^q` whenever `p ≤ q < ∞` and `1 / q ≥ 1 / p - (k - j) / n`, with norm controlled by the `Lᵖ`
@@ -191,15 +190,16 @@ private theorem exists_eLpNorm_iteratedFDeriv_le_add_sum_of_finrank_lt_or_eq_one
 
 /-- For `k p > n`, and `p ≠ n` or `n = 1`, the intermediate derivative `Dʲ u` of a compactly
 supported `C^k` function `u` lies in `L^{i p / j}` for `j ≤ i ≤ k`, `i ≠ 0`, with norm controlled by
-`‖u‖_∞` and the `Lᵖ` norms of the derivatives of `u` through order `k`. -/
+`‖u‖_∞` and the `Lᵖ` norms of the derivatives of `u` through order `k`; the exponent is written
+`(j p⁻¹ / i)⁻¹`, as in `TauCeti.holderTriple_inv_div`. -/
 private theorem exists_eLpNorm_iteratedFDeriv_le_of_ne_finrank {p : ℝ≥0} (hp : 1 ≤ p)
     (hpn : (p : ℝ) ≠ finrank ℝ E ∨ finrank ℝ E = 1) {k : ℕ} (hk : (finrank ℝ E : ℝ) < k * p) {i : ℕ}
     (hi : i ≠ 0) (hik : i ≤ k) :
     ∃ c : ℕ → ℝ≥0, ∀ j ≤ i, ∀ u : E → F, ContDiff ℝ k u → HasCompactSupport u →
-      eLpNorm (iteratedFDeriv ℝ j u) ((j : ℝ≥0∞) / (i * p))⁻¹ μ ≤
+      eLpNorm (iteratedFDeriv ℝ j u) ((j : ℝ≥0∞) * (p : ℝ≥0∞)⁻¹ / i)⁻¹ μ ≤
         c j * (eLpNorm u ∞ μ + ∑ l ∈ Finset.range (k + 1), eLpNorm (iteratedFDeriv ℝ l u) p μ) := by
   suffices h : ∀ j, ∃ c : ℝ≥0, j ≤ i → ∀ u : E → F, ContDiff ℝ k u → HasCompactSupport u →
-      eLpNorm (iteratedFDeriv ℝ j u) ((j : ℝ≥0∞) / (i * p))⁻¹ μ ≤
+      eLpNorm (iteratedFDeriv ℝ j u) ((j : ℝ≥0∞) * (p : ℝ≥0∞)⁻¹ / i)⁻¹ μ ≤
         c * (eLpNorm u ∞ μ + ∑ l ∈ Finset.range (k + 1), eLpNorm (iteratedFDeriv ℝ l u) p μ) by
     choose c hc using h
     exact ⟨c, hc⟩
@@ -212,19 +212,20 @@ private theorem exists_eLpNorm_iteratedFDeriv_le_of_ne_finrank {p : ℝ≥0} (hp
   rcases Nat.eq_zero_or_pos j with rfl | hj0
   · -- `j = 0`: the exponent is `∞`.
     refine ⟨1, fun u _ _ ↦ ?_⟩
-    rw [Nat.cast_zero, ENNReal.zero_div, ENNReal.inv_zero, eLpNorm_iteratedFDeriv_zero,
+    rw [Nat.cast_zero, zero_mul, ENNReal.zero_div, ENNReal.inv_zero, eLpNorm_iteratedFDeriv_zero,
       ENNReal.coe_one, one_mul]
     exact le_self_add
   rcases hji.eq_or_lt with rfl | hji'
   · -- `j = i`: the exponent is `p`.
     refine ⟨1, fun u _ _ ↦ ?_⟩
-    rw [inv_natCast_div_natCast_mul hi, ENNReal.coe_one, one_mul]
+    rw [ENNReal.mul_div_right_comm, ENNReal.div_self (by simpa using hi) (by simp), one_mul,
+      inv_inv, ENNReal.coe_one, one_mul]
     exact eLpNorm_iteratedFDeriv_le_eLpNorm_top_add_sum u p hik
   -- `0 < j < i`: the exponent is `q = i p / j`, with `p < q < ∞`.
   have hpq : p ≤ i * p / j := by
     rw [le_div_iff₀ (by exact_mod_cast hj0), mul_comm (i : ℝ≥0)]
     exact mul_le_mul_of_nonneg_left (by exact_mod_cast hji) zero_le
-  rw [inv_natCast_div_mul_eq_coe hj0.ne']
+  rw [inv_natCast_mul_inv_div_eq_coe (by positivity) hj0.ne' hi]
   rcases lt_or_ge (p : ℝ) (finrank ℝ E) with hlt | hge
   · refine exists_eLpNorm_iteratedFDeriv_le_add_sum_of_lt_finrank hp hlt (hji'.trans_le hik).le
       hpq ?_
@@ -260,23 +261,16 @@ theorem exists_eLpNorm_iteratedFDeriv_bilinear_le_of_ne_finrank {p : ℝ≥0} (h
   rcases Nat.eq_zero_or_pos i with rfl | hi0
   · -- `‖B (u, v)‖_p ≤ ‖B‖ ‖u‖_∞ ‖v‖_p`.
     refine ⟨1, fun B u v hu _ hv _ ↦ ?_⟩
-    have h := B.eLpNorm_iteratedFDeriv_le_of_bilinear (μ := μ) hu hv zero_le hp1
-      (q := fun _ ↦ ∞) (r := fun _ ↦ p) fun _ _ ↦ inferInstance
-    simp only [zero_add, Finset.sum_range_one, Nat.choose_self, Nat.cast_one, mul_one,
-      eLpNorm_iteratedFDeriv_zero] at h
-    rw [eLpNorm_iteratedFDeriv_zero]
-    refine h.trans ?_
-    rw [ENNReal.coe_one, one_mul]
+    rw [eLpNorm_iteratedFDeriv_zero, ENNReal.coe_one, one_mul]
+    refine (eLpNorm_le_eNorm_mul_eLpNorm_mul_eLpNorm (p := ∞) (q := p) B
+      hu.continuous.aestronglyMeasurable hv.continuous.aestronglyMeasurable).trans ?_
     gcongr
     · exact le_self_add
-    · exact eLpNorm_iteratedFDeriv_le_eLpNorm_top_add_sum (μ := μ) v p (Nat.zero_le k)
+    · simpa using eLpNorm_iteratedFDeriv_le_eLpNorm_top_add_sum (μ := μ) v p (Nat.zero_le k)
   -- The exponents `1 / q_j = j / (i p)` and `1 / r_j = (i - j) / (i p)`.
-  set q : ℕ → ℝ≥0∞ := fun j ↦ ((j : ℝ≥0∞) / (i * p))⁻¹
-  have hqr : ∀ j ≤ i, ENNReal.HolderTriple (q j) (q (i - j)) p := fun j hj ↦ by
-    refine ⟨?_⟩
-    simp only [q, inv_inv]
-    rw [ENNReal.div_add_div_same, ← Nat.cast_add, Nat.add_sub_cancel' hj]
-    exact inv_eq_iff_eq_inv.1 (inv_natCast_div_natCast_mul hi0.ne' p)
+  set q : ℕ → ℝ≥0∞ := fun j ↦ ((j : ℝ≥0∞) * (p : ℝ≥0∞)⁻¹ / i)⁻¹
+  have hqr : ∀ j ≤ i, ENNReal.HolderTriple (q j) (q (i - j)) p := fun j hj ↦
+    holderTriple_inv_div hi0.ne' hj
   obtain ⟨cu, hcu⟩ :=
     exists_eLpNorm_iteratedFDeriv_le_of_ne_finrank (μ := μ) (F := F) hp hpn hk hi0.ne' hik
   obtain ⟨cv, hcv⟩ :=
@@ -332,10 +326,12 @@ theorem exists_eLpNorm_iteratedFDeriv_bilinear_le_of_finrank_lt_mul {p : ℝ≥0
   -- `p = n` is an integer, at least one and not one, so at least two.
   obtain ⟨hpn, hn⟩ : (p : ℝ) = finrank ℝ E ∧ finrank ℝ E ≠ 1 := by tauto
   have hp2 : (2 : ℝ≥0∞) ≤ p := by
-    have h1 : 1 ≤ finrank ℝ E := by exact_mod_cast hpn ▸ (by exact_mod_cast hp : (1 : ℝ) ≤ p)
-    have h2 : 2 ≤ finrank ℝ E := by omega
-    rw [← ENNReal.coe_ofNat, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, hpn]
-    exact_mod_cast h2
+    have h1 : (1 : ℝ) ≤ finrank ℝ E := hpn ▸ by exact_mod_cast hp
+    have h2 : 2 ≤ finrank ℝ E := by
+      have : 1 ≤ finrank ℝ E := by exact_mod_cast h1
+      omega
+    have h2' : (2 : ℝ) ≤ p := hpn ▸ by exact_mod_cast h2
+    exact_mod_cast h2'
   obtain ⟨c, hc⟩ := exists_eLpNorm_iteratedFDeriv_bilinear_le (μ := μ) (F := F) (G := G) (H := H)
     hp2 ENNReal.coe_ne_top i
   refine ⟨2 * c, fun B u v hu hcu hv hcv ↦ (hc B u v (hu.of_le (by exact_mod_cast hik)) hcu

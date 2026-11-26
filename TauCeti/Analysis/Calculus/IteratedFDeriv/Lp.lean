@@ -53,7 +53,9 @@ of products of `Lᵠ` norms of `D^i u` and `Lʳ` norms of `D^(k-i) v`
 (`ContinuousLinearMap.eLpNorm_iteratedFDeriv_le_of_bilinear`). The derivative of the `k`-th
 derivative has the `Lᵖ` norm of the `(k + 1)`-th derivative, for any function and any measure
 (`TauCeti.eLpNorm_fderiv_iteratedFDeriv`, `TauCeti.lpNorm_fderiv_iteratedFDeriv`), and the zeroth
-derivative has the `Lᵖ` norm of the function (`TauCeti.eLpNorm_iteratedFDeriv_zero`).
+derivative has the `Lᵖ` norm of the function and lies in `Lᵖ` exactly when the function does
+(`TauCeti.eLpNorm_iteratedFDeriv_zero`, `TauCeti.lpNorm_iteratedFDeriv_zero`,
+`TauCeti.memLp_iteratedFDeriv_zero_iff`).
 -/
 
 public section
@@ -238,6 +240,20 @@ theorem eLpNorm_iteratedFDeriv_zero (f : E → F) (p : ENNReal) (μ : Measure E)
     eLpNorm (iteratedFDeriv 𝕜 0 f) p μ = eLpNorm f p μ := by
   rw [iteratedFDeriv_zero_eq_comp, Function.comp_def]
   exact LinearIsometryEquiv.eLpNorm_comp _ _ p μ
+
+/-- The zeroth derivative of a function has its `Lᵖ` norm, since the two differ by a linear
+isometry equivalence. -/
+@[simp]
+theorem lpNorm_iteratedFDeriv_zero (f : E → F) (p : ENNReal) (μ : Measure E) :
+    lpNorm (iteratedFDeriv 𝕜 0 f) p μ = lpNorm f p μ := by
+  rw [← toReal_eLpNorm, ← toReal_eLpNorm, eLpNorm_iteratedFDeriv_zero]
+
+/-- The zeroth derivative of a function is in `Lᵖ` exactly when the function is, since the two
+have the same `eLpNorm`. -/
+@[simp]
+theorem memLp_iteratedFDeriv_zero_iff {f : E → F} {p : ENNReal} {μ : Measure E} :
+    MemLp (iteratedFDeriv 𝕜 0 f) p μ ↔ MemLp f p μ := by
+  rw [memLp_iff, memLp_iff, eLpNorm_iteratedFDeriv_zero]
 
 /-- The derivative of the `n`-th derivative has the `eLpNorm` of the `(n + 1)`-th derivative:
 `‖D(Dⁿ f)‖_p = ‖Dⁿ⁺¹ f‖_p`, since the two differ by a linear isometry equivalence. -/

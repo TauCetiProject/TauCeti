@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.MeanInequalities
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
@@ -664,28 +665,13 @@ section Bilinear
 variable {G H : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [NormedAddCommGroup H]
   [NormedSpace ℝ H]
 
-omit [μ.IsAddHaarMeasure] in
-/-- The case `k = 0` of the Moser product estimate: `‖B (u, v)‖_p ≤ ‖B‖ ‖u‖_∞ ‖v‖_p`. -/
-private theorem eLpNorm_iteratedFDeriv_zero_bilinear_le {p : ℝ≥0∞} (hp1 : 1 ≤ p)
-    (B : F →L[ℝ] G →L[ℝ] H) {u : E → F} {v : E → G} (hu : ContDiff ℝ 0 u)
-    (hv : ContDiff ℝ 0 v) :
-    eLpNorm (iteratedFDeriv ℝ 0 (fun x ↦ B (u x) (v x))) p μ ≤
-      (1 : ℝ≥0) * ‖B‖ₑ * (eLpNorm u ∞ μ * eLpNorm (iteratedFDeriv ℝ 0 v) p μ +
-        eLpNorm (iteratedFDeriv ℝ 0 u) p μ * eLpNorm v ∞ μ) := by
-  have h := B.eLpNorm_iteratedFDeriv_le_of_bilinear (μ := μ) hu hv (k := 0) le_rfl hp1
-    (q := fun _ ↦ ∞) (r := fun _ ↦ p) (fun _ _ ↦ inferInstance)
-  simp only [zero_add, Finset.range_one, Finset.sum_singleton, Nat.choose_self, Nat.cast_one,
-    mul_one, eLpNorm_iteratedFDeriv_zero (𝕜 := ℝ) u ∞ μ] at h
-  refine h.trans ?_
-  rw [ENNReal.coe_one, one_mul, mul_assoc]
-  gcongr
-  exact le_self_add
-
 private theorem natCast_mul_inv_inv_div {p : ℝ≥0∞} {k : ℕ} (hk : k ≠ 0) (i : ℕ) :
     (k : ℝ≥0∞) * (((i : ℝ≥0∞) * p⁻¹ / k)⁻¹)⁻¹ = i * p⁻¹ := by
   rw [inv_inv, ENNReal.mul_div_cancel (by exact_mod_cast hk) (by simp)]
 
-private theorem holderTriple_inv_div {p : ℝ≥0∞} {k : ℕ} (hk : k ≠ 0) {i : ℕ} (hi : i ≤ k) :
+/-- The exponents `(i / (k p))⁻¹` and `((k - i) / (k p))⁻¹`, `i ≤ k`, form a Hölder triple with
+`p`: their reciprocals add up to `1 / p`. -/
+theorem holderTriple_inv_div {p : ℝ≥0∞} {k : ℕ} (hk : k ≠ 0) {i : ℕ} (hi : i ≤ k) :
     ENNReal.HolderTriple ((i : ℝ≥0∞) * p⁻¹ / k)⁻¹ (((k - i : ℕ) : ℝ≥0∞) * p⁻¹ / k)⁻¹ p := by
   constructor
   rw [inv_inv, inv_inv, ENNReal.div_add_div_same, ← add_mul, ← Nat.cast_add,
@@ -732,7 +718,14 @@ theorem exists_eLpNorm_iteratedFDeriv_bilinear_le {p : ℝ≥0∞} (hp : 2 ≤ p
           eLpNorm (iteratedFDeriv ℝ k u) p μ * eLpNorm v ∞ μ) := by
   have hp1 : 1 ≤ p := le_trans (by norm_num) hp
   rcases eq_or_ne k 0 with rfl | hk
-  · exact ⟨1, fun B u v hu _ hv _ ↦ eLpNorm_iteratedFDeriv_zero_bilinear_le hp1 B hu hv⟩
+  · -- `‖B (u, v)‖_p ≤ ‖B‖ ‖u‖_∞ ‖v‖_p`.
+    refine ⟨1, fun B u v hu _ hv _ ↦ ?_⟩
+    rw [eLpNorm_iteratedFDeriv_zero, eLpNorm_iteratedFDeriv_zero, eLpNorm_iteratedFDeriv_zero,
+      ENNReal.coe_one, one_mul]
+    refine (eLpNorm_le_eNorm_mul_eLpNorm_mul_eLpNorm (p := ∞) (q := p) B
+      hu.continuous.aestronglyMeasurable hv.continuous.aestronglyMeasurable).trans ?_
+    rw [mul_assoc]
+    exact mul_le_mul_right le_self_add _
   set q : ℕ → ℝ≥0∞ := fun i ↦ ((i : ℝ≥0∞) * p⁻¹ / k)⁻¹
   have hGNu : ∀ i ≤ k, ∃ C : ℝ≥0, ∀ u : E → F, ContDiff ℝ k u → HasCompactSupport u →
       eLpNorm (iteratedFDeriv ℝ i u) (q i) μ ≤ C * eLpNorm u ∞ μ ^ (1 - (i : ℝ) / k) *

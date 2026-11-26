@@ -283,17 +283,16 @@ private theorem exists_le_and_inv_eq_add_inv {p q : ℝ≥0} {m : ℕ} (hp0 : (0
   have hr : (((q : ℝ)⁻¹ + (finrank ℝ E : ℝ)⁻¹)⁻¹.toNNReal : ℝ)⁻¹ =
       (q : ℝ)⁻¹ + (finrank ℝ E : ℝ)⁻¹ := by
     rw [Real.coe_toNNReal _ (by positivity), inv_inv]
+  -- `(m + 1) / n = m / n + 1 / n` and `(m + 2) / n = m / n + 2 / n`.
+  have hm₁ : ((m + 1 : ℕ) : ℝ) / finrank ℝ E = m / finrank ℝ E + (finrank ℝ E : ℝ)⁻¹ := by
+    push_cast; ring
+  have hm₂ : ((m + 1 + 1 : ℕ) : ℝ) / finrank ℝ E = m / finrank ℝ E + 2 * (finrank ℝ E : ℝ)⁻¹ := by
+    push_cast; ring
   refine ⟨_, ?_, hr, ?_⟩
   · rw [← NNReal.coe_le_coe, ← inv_le_inv₀ (by positivity) hp0, hr]
     have : (0 : ℝ) ≤ m / finrank ℝ E := by positivity
-    push_cast at hqm
-    rw [add_div, div_eq_mul_inv 1, one_mul] at hqm
     linarith
-  · rw [hr]
-    push_cast at hq ⊢
-    rw [add_div, add_div, div_eq_mul_inv 1, one_mul] at hq
-    rw [add_div, div_eq_mul_inv 1, one_mul]
-    linarith
+  · linarith
 
 /-- **The Sobolev inequality of order `m` for compactly supported functions, `p < n`.** Let
 `1 ≤ p < n`, where `n` is the dimension of `E`, and let `q ≥ p` be finite with
@@ -385,10 +384,10 @@ theorem exists_eLpNorm_top_le_mul_eLpNorm_iteratedFDeriv_finrank :
         rw [← L.coe_coe, ContinuousLinearMap.iteratedFDeriv_comp_right _ hu z le_rfl]
         have hle := (iteratedFDeriv ℝ n u (L z)).norm_compContinuousLinearMap_le
           fun _ : Fin n ↦ (L : EuclideanSpace ℝ (Fin n) →L[ℝ] E)
-        rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, mul_comm] at hle
-        simp only [← ofReal_norm]
-        rw [← ENNReal.ofReal_pow (norm_nonneg _), ← ENNReal.ofReal_mul (by positivity)]
-        exact ENNReal.ofReal_le_ofReal hle
+        simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] at hle
+        simp only [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
+        rw [← ENNReal.ofReal_mul (by positivity)]
+        exact ENNReal.ofReal_le_ofReal (hle.trans_eq (mul_comm _ _))
     _ = ‖(L : EuclideanSpace ℝ (Fin n) →L[ℝ] E)‖ₑ ^ n *
           ∫⁻ w, ‖iteratedFDeriv ℝ n u w‖ₑ ∂(Measure.map L volume) := by
         rw [lintegral_const_mul' _ _ (ENNReal.pow_ne_top eNorm_ne_top), lintegral_map
@@ -396,7 +395,8 @@ theorem exists_eLpNorm_top_le_mul_eLpNorm_iteratedFDeriv_finrank :
     _ = _ := by
         rw [hmap, lintegral_smul_measure, eLpNorm_one_eq_lintegral_eNorm
           (hu.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable, ENNReal.smul_def,
-          smul_eq_mul, ENNReal.coe_mul, ENNReal.coe_pow, eNorm_eq_nnNorm]
+          smul_eq_mul]
+        push_cast [← eNorm_eq_nnNorm]
         ring
 
 end TauCeti
