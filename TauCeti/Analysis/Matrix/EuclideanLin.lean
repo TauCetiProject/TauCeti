@@ -61,6 +61,10 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
 * `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
   rank is the dimension of the range of the induced map, and the `LinearMap.rank` of the induced
   continuous linear map;
+* `Matrix.toEuclideanLin_conjTranspose_mul`, `Matrix.toEuclideanLin_mul_conjTranspose` —
+  adjoint-composition bridges for `toEuclideanLin`;
+* `Matrix.trace_adjoint_comp_toEuclideanLin` — operator trace of
+  `A.toEuclideanLin† ∘ₗ B.toEuclideanLin` equals `(Aᴴ * B).trace`;
 * `Matrix.ker_toEuclideanLin_conjTranspose` — the kernel of the map of `Aᴴ` is the orthogonal
   complement of the span of the columns of `A`;
 * `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM` — a matrix is unitary exactly when its
@@ -229,6 +233,37 @@ theorem rank_coe_toEuclideanCLM (A : Matrix ι ι 𝕜) :
       A.rank := by
   rw [LinearMap.rank, coe_toEuclideanCLM_eq_toEuclideanLin, ← Module.finrank_eq_rank,
     rank_eq_finrank_range_toEuclideanLin]
+
+section MultiplicationAndTrace
+
+omit [DecidableEq ι] [DecidableEq κ] in
+/-- Multiplying on the left by `Aᴴ` corresponds under `Matrix.toEuclideanLin` to composing with
+`LinearMap.adjoint A.toEuclideanLin`. -/
+theorem toEuclideanLin_conjTranspose_mul {m n p : Type*} [Fintype m] [Fintype n] [Fintype p]
+    [DecidableEq n] [DecidableEq p] (A : Matrix m n 𝕜) (B : Matrix m p 𝕜) :
+    (Aᴴ * B).toEuclideanLin = LinearMap.adjoint A.toEuclideanLin ∘ₗ B.toEuclideanLin := by
+  classical
+  rw [toLpLin_mul_same, toEuclideanLin_conjTranspose_eq_adjoint]
+
+omit [DecidableEq ι] [DecidableEq κ] in
+/-- Multiplying on the right by `Bᴴ` corresponds under `Matrix.toEuclideanLin` to composing with
+`LinearMap.adjoint B.toEuclideanLin` on the right. -/
+theorem toEuclideanLin_mul_conjTranspose {m n p : Type*} [Fintype n] [Fintype p]
+    [DecidableEq n] [DecidableEq p] (A : Matrix m n 𝕜) (B : Matrix p n 𝕜) :
+    (A * Bᴴ).toEuclideanLin = A.toEuclideanLin ∘ₗ LinearMap.adjoint B.toEuclideanLin := by
+  classical
+  rw [toLpLin_mul_same, toEuclideanLin_conjTranspose_eq_adjoint]
+
+omit [DecidableEq κ] in
+/-- The Hilbert–Schmidt operator trace pairing `tr (A† B)` of `A.toEuclideanLin` and
+`B.toEuclideanLin` equals the matrix trace `(Aᴴ * B).trace`. -/
+theorem trace_adjoint_comp_toEuclideanLin (A B : Matrix κ ι 𝕜) :
+    LinearMap.trace 𝕜 (EuclideanSpace 𝕜 ι)
+        (LinearMap.adjoint A.toEuclideanLin ∘ₗ B.toEuclideanLin) =
+      (Aᴴ * B).trace := by
+  rw [← toEuclideanLin_conjTranspose_mul, toEuclideanLin_eq_toLin_orthonormal, trace_toLin_eq]
+
+end MultiplicationAndTrace
 
 /-- The continuous linear map of a matrix acts as its Euclidean linear map. -/
 @[simp]
