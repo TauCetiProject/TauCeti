@@ -24,7 +24,7 @@ equivalence of semisimple representations. This is the case `d = 2`, over a perf
 trace form of Brauer–Nesbitt in characteristic `p > d`.
 
 Over `𝔽₂` the trace of `f²` does not recover `det f`, but for a group the determinant of `ρ g` is a
-unit of `𝔽₂`, hence `1` (`Representation.det_apply_eq_one_zmod_two`): two-dimensional semisimple
+unit of `𝔽₂`, hence `1` (`Representation.det_apply_eq_one`): two-dimensional semisimple
 representations of a group over `𝔽₂` with equal characters are again equivalent.
 
 ## Main results
@@ -84,10 +84,10 @@ theorem nonempty_equiv_of_character_eq_of_finrank_eq_two_zmod_two {V W : Type*} 
   have := Module.finite_of_finrank_eq_succ hV
   have := Module.finite_of_finrank_eq_succ hW
   refine nonempty_equiv_of_charpoly_eq_of_perfectField ρ σ fun g => ?_
+  have htr := h g
+  simp only [character] at htr
   rw [LinearMap.charpoly_of_finrank_eq_two hV, LinearMap.charpoly_of_finrank_eq_two hW,
-    det_apply_eq_one_zmod_two, det_apply_eq_one_zmod_two]
-  have htr : LinearMap.trace (ZMod 2) V (ρ g) = LinearMap.trace (ZMod 2) W (σ g) := h g
-  rw [htr]
+    det_apply_eq_one, det_apply_eq_one, htr]
 
 end ZModTwo
 

@@ -77,16 +77,15 @@ theorem charpoly_eq_of_character_eq_of_finrank_eq_two (hk : (2 : k) ≠ 0)
     (hV : finrank k V = 2) (hW : finrank k W = 2) {g : G} {h : H}
     (h₁ : ρ.character g = σ.character h) (h₂ : ρ.character (g ^ 2) = σ.character (h ^ 2)) :
     (ρ g).charpoly = (σ h).charpoly := by
+  simp only [character] at h₁ h₂
   have hdet : LinearMap.det (ρ g) = LinearMap.det (σ h) := by
     have hρ := LinearMap.trace_mul_self_of_finrank_eq_two hV (ρ g)
     have hσ := LinearMap.trace_mul_self_of_finrank_eq_two hW (σ h)
     rw [← map_mul, ← sq] at hρ hσ
-    simp only [character] at h₁ h₂
     refine mul_left_cancel₀ hk ?_
     linear_combination hρ - hσ - h₂ + (LinearMap.trace k V (ρ g) +
       LinearMap.trace k W (σ h)) * h₁
-  have htr : LinearMap.trace k V (ρ g) = LinearMap.trace k W (σ h) := h₁
-  rw [LinearMap.charpoly_of_finrank_eq_two hV, LinearMap.charpoly_of_finrank_eq_two hW, htr, hdet]
+  rw [LinearMap.charpoly_of_finrank_eq_two hV, LinearMap.charpoly_of_finrank_eq_two hW, h₁, hdet]
 
 variable [CharZero k]
 
