@@ -109,17 +109,14 @@ theorem not_isMicrolocallySmoothAt_cutoffPushforwardCLM_ofFun_one {A : E →L[�
     exact LinearMap.range_eq_top.1 h
   -- The localized Fourier transform of the constant function `1` is a Fourier transform.
   have hloc (ξ : E) : (ofFun Ω (1 : E → ℂ) volume ⊤).localFourier φ ξ = 𝓕 (fun y => φ y) ξ := by
-    have h := localFourier_eq_fourier (T := ofFun Ω (1 : E → ℂ) volume ⊤) (U := Ω)
-      (f := (1 : E → ℂ)) ((locallyIntegrable_const 1).locallyIntegrableOn _)
-      (fun ψ _ => ofFun_apply ((locallyIntegrable_const 1).locallyIntegrableOn _))
-      φ.tsupport_subset ξ
-    simpa using h
+    simpa only [Pi.one_apply, mul_one] using
+      localFourier_ofFun (f := 1) ((locallyIntegrable_const 1).locallyIntegrableOn _) φ ξ
   -- Along the frequencies `t η + w` the localized Fourier transform is `𝓕 φ (Aᵀ w)`, independently
   -- of `t`, so rapid decay in a cone around `η` forces it to vanish.
   have hF : 𝓕 (fun y => φ y) = 0 := by
     ext v
     obtain ⟨w, rfl⟩ := hsurj v
-    refine eq_zero_of_forall_smul_add_eq (g := localFourier _ f) (w := w) hΓ hηΓ hη hcone
+    refine hΓ.eq_zero_of_forall_smul_add_eq (g := localFourier _ f) (w := w) hηΓ hη hcone
       (fun ξ hξ => by simpa only [pow_one] using hC ξ hξ) fun t => ?_
     rw [localFourier_cutoffPushforwardCLM, map_add, map_smul, hAη, smul_zero, zero_add, hloc]
   -- By Fourier inversion `χ (f ∘ A) = 0`, which fails at `x₀`.
