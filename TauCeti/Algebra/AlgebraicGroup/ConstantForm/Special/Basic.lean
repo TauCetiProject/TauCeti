@@ -16,11 +16,10 @@ The determinant-one subgroup scheme of the group preserving a matrix `C` is cut 
 commutative ring and permits degenerate forms. The matrix condition on points uses the row
 convention of `TauCeti.ConstantForm`.
 
-The coordinate Hopf algebra and its base-change isomorphism follow
-`TauCeti.SpecialOrthogonal.definingHopfIdeal` and
-`TauCeti.SpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso`, with the identity matrix
-replaced by the coefficient matrix of the form. Congruence of forms induces conjugation on the
-matrix groups, through the constant-form congruence theorem for the defining ideals.
+The coordinate Hopf algebra follows `TauCeti.SpecialOrthogonal.definingHopfIdeal`, with the
+identity matrix replaced by the coefficient matrix of the form. The base-change argument
+applies to both the identity and antidiagonal forms. Congruence of forms induces conjugation
+on the matrix groups, through the constant-form congruence theorem for the defining ideals.
 -/
 
 public section
@@ -75,10 +74,17 @@ noncomputable abbrev groupScheme :=
   CommHopfAlgCat.quotientSpec (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n C)
 
 /-- The inclusion of the determinant-one subgroup scheme into the constant-form group scheme. -/
-noncomputable abbrev inclusion :
+noncomputable def inclusion :
     groupScheme R n C ⟶ ConstantForm.groupScheme R n C :=
   CommHopfAlgCat.quotientSpecMapOfLe (GeneralLinear.coordinateHopfAlgebra R n)
     (le_sup_left.trans_eq (definingHopfIdeal_def R n C).symm)
+
+/-- The inclusion is induced by the containment of the constant-form ideal in the joint ideal. -/
+theorem inclusion_def :
+    inclusion R n C =
+      CommHopfAlgCat.quotientSpecMapOfLe (GeneralLinear.coordinateHopfAlgebra R n)
+        (le_sup_left.trans_eq (definingHopfIdeal_def R n C).symm) :=
+  (rfl)
 
 /-- The inclusion into the form-preserving group followed by its inclusion into `GLₙ` is the
 closed immersion defined by the joint ideal. -/
@@ -86,7 +92,7 @@ closed immersion defined by the joint ideal. -/
 theorem inclusion_comp_constantForm_inclusion :
     inclusion R n C ≫ ConstantForm.inclusion R n C =
       GeneralLinear.hopfIdealInclusion R n (definingHopfIdeal R n C) := by
-  rw [ConstantForm.inclusion_def, GeneralLinear.hopfIdealInclusion_def,
+  rw [inclusion_def, ConstantForm.inclusion_def, GeneralLinear.hopfIdealInclusion_def,
     GeneralLinear.hopfIdealInclusion_def, ← Category.assoc]
   simp
 
@@ -128,8 +134,18 @@ noncomputable def coordinateHopfAlgebraCongr (P : GL (Fin n) R)
     coordinateHopfAlgebra R n C ≅ coordinateHopfAlgebra R n C' :=
   CommHopfAlgCat.quotientIsoOfComapEq (GeneralLinear.conjCoordinateIso P⁻¹)
     (definingHopfIdeal R n C') (by
-      rw [definingHopfIdeal_def, definingHopfIdeal_def]
-      exact ConstantForm.sup_specialLinear_comapOfSurjective_conjCoordinateIso_inv P hP)
+      simpa only [definingHopfIdeal_def] using
+        ConstantForm.sup_specialLinear_comapOfSurjective_conjCoordinateIso_inv P hP)
+
+/-- The coordinate isomorphism for a congruence is the quotient of ambient conjugation. -/
+theorem coordinateHopfAlgebraCongr_def (P : GL (Fin n) R)
+    (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C') :
+    coordinateHopfAlgebraCongr P hP =
+      CommHopfAlgCat.quotientIsoOfComapEq (GeneralLinear.conjCoordinateIso P⁻¹)
+        (definingHopfIdeal R n C') (by
+          simpa only [definingHopfIdeal_def] using
+            ConstantForm.sup_specialLinear_comapOfSurjective_conjCoordinateIso_inv P hP) :=
+  (rfl)
 
 /-- The coordinate isomorphism induced by congruence intertwines the quotient maps with the
 pullback of conjugation by `P⁻¹` on `GLₙ`. -/
@@ -142,6 +158,18 @@ theorem mkQuotient_comp_coordinateHopfAlgebraCongr_hom (P : GL (Fin n) R)
         CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C') :=
   CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_hom _ _ _
 
+/-- The inverse coordinate isomorphism intertwines the quotient maps with the pullback of
+conjugation by `P` on `GLₙ`. -/
+@[reassoc]
+theorem mkQuotient_comp_coordinateHopfAlgebraCongr_inv (P : GL (Fin n) R)
+    (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C') :
+    CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C') ≫
+        (coordinateHopfAlgebraCongr P hP).inv =
+      (GeneralLinear.conjCoordinateIso P).hom ≫
+        CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C) := by
+  rw [coordinateHopfAlgebraCongr_def, CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_inv,
+    GeneralLinear.conjCoordinateIso_inv, Iso.symm_inv]
+
 /-- Congruence of coefficient matrices induces the corresponding conjugation isomorphism
 of determinant-one group schemes. -/
 noncomputable def groupSchemeCongr (P : GL (Fin n) R)
@@ -149,25 +177,43 @@ noncomputable def groupSchemeCongr (P : GL (Fin n) R)
     groupScheme R n C ≅ groupScheme R n C' :=
   (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso (coordinateHopfAlgebraCongr P hP).op.symm
 
+/-- The group-scheme isomorphism for a congruence is induced by the coordinate isomorphism. -/
+theorem groupSchemeCongr_def (P : GL (Fin n) R)
+    (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C') :
+    groupSchemeCongr P hP =
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso
+        (coordinateHopfAlgebraCongr P hP).op.symm :=
+  (rfl)
+
 /-- The group-scheme isomorphism is induced by conjugation by `P` on the ambient group. -/
 @[reassoc]
-theorem groupSchemeCongr_hom_comp_quotientSpecι (P : GL (Fin n) R)
+theorem groupSchemeCongr_hom_comp_hopfIdealInclusion (P : GL (Fin n) R)
     (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C') :
-    (groupSchemeCongr P hP).hom ≫ CommHopfAlgCat.quotientSpecι _ (definingHopfIdeal R n C') =
-      CommHopfAlgCat.quotientSpecι _ (definingHopfIdeal R n C) ≫
+    (groupSchemeCongr P hP).hom ≫
+        GeneralLinear.hopfIdealInclusion R n (definingHopfIdeal R n C') =
+      GeneralLinear.hopfIdealInclusion R n (definingHopfIdeal R n C) ≫
+        eqToHom (GeneralLinear.groupScheme_def R n) ≫
         (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-          (GeneralLinear.conjCoordinateIso P).hom.op := by
-  have h := (Iso.comp_inv_eq (coordinateHopfAlgebraCongr P hP)).2
-    (mkQuotient_comp_coordinateHopfAlgebraCongr_hom P hP).symm
-  have hinv : CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C') ≫
-      (coordinateHopfAlgebraCongr P hP).inv =
-        (GeneralLinear.conjCoordinateIso P).hom ≫
-          CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C) := by
-    rw [Category.assoc] at h
-    simpa only [GeneralLinear.conjCoordinateIso_inv, Iso.symm_inv] using
-      (Iso.eq_inv_comp (GeneralLinear.conjCoordinateIso P⁻¹)).mpr h
-  simp only [groupSchemeCongr, Functor.mapIso_hom, Iso.symm_hom, Iso.op_inv,
-    CommHopfAlgCat.quotientSpecι_def, ← Functor.map_comp, ← op_comp, hinv]
+          (GeneralLinear.conjCoordinateIso P).hom.op ≫
+        eqToHom (GeneralLinear.groupScheme_def R n).symm := by
+  simp only [groupSchemeCongr_def, GeneralLinear.hopfIdealInclusion_def, Functor.mapIso_hom,
+    Iso.symm_hom, Iso.op_inv, CommHopfAlgCat.quotientSpecι_def, Category.assoc,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ← Functor.map_comp_assoc, ← op_comp,
+    mkQuotient_comp_coordinateHopfAlgebraCongr_inv]
+
+/-- Congruence commutes with inclusion into the full form-preserving subgroup schemes. -/
+@[reassoc]
+theorem groupSchemeCongr_hom_comp_inclusion (P : GL (Fin n) R)
+    (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C') :
+    (groupSchemeCongr P hP).hom ≫ inclusion R n C' =
+      inclusion R n C ≫ (ConstantForm.groupSchemeCongr P hP).hom := by
+  have : Mono (ConstantForm.inclusion R n C') :=
+    (Grp.forget _ ⋙ Over.forget _).mono_of_mono_map
+      (inferInstanceAs (Mono (ConstantForm.inclusion R n C').hom.hom.left))
+  apply (cancel_mono (ConstantForm.inclusion R n C')).mp
+  simp only [Category.assoc, inclusion_comp_constantForm_inclusion,
+    groupSchemeCongr_hom_comp_hopfIdealInclusion, ConstantForm.groupSchemeCongr_hom_comp_inclusion,
+    inclusion_comp_constantForm_inclusion_assoc]
 
 end Congruence
 
@@ -202,6 +248,15 @@ noncomputable def coordinateHopfAlgebraBaseChangeIso (hC : C.map (algebraMap R S
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S n)
     (map_baseChangeHopfIdeal_definingHopfIdeal hC)
 
+/-- The base-change isomorphism is induced by scalar extension of the ambient quotient. -/
+theorem coordinateHopfAlgebraBaseChangeIso_def (hC : C.map (algebraMap R S) = C') :
+    coordinateHopfAlgebraBaseChangeIso hC =
+      CommHopfAlgCat.quotientBaseChangeIsoOfMapEq
+        (definingHopfIdeal R n C) (definingHopfIdeal S n C')
+        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S n)
+        (map_baseChangeHopfIdeal_definingHopfIdeal hC) :=
+  (rfl)
+
 /-- The base-change isomorphism intertwines the two quotient maps from the ambient general
 linear coordinate algebras. -/
 @[reassoc]
@@ -213,6 +268,17 @@ theorem baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_hom
         CommHopfAlgCat.mkQuotient _ (definingHopfIdeal S n C') :=
   CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _ _
 
+/-- The inverse coordinate base-change isomorphism also intertwines the ambient quotient maps. -/
+@[reassoc]
+theorem mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_inv
+    (hC : C.map (algebraMap R S) = C') :
+    CommHopfAlgCat.mkQuotient _ (definingHopfIdeal S n C') ≫
+        (coordinateHopfAlgebraBaseChangeIso hC).inv =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S n).inv ≫
+        CommHopfAlgCat.baseChangeMap (K := S)
+          (CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C)) :=
+  CommHopfAlgCat.mkQuotient_comp_quotientBaseChangeIsoOfMapEq_inv _ _ _ _
+
 /-- The base-change isomorphism on the finite-type coordinate Hopf algebras. -/
 noncomputable def finiteTypeCoordinateHopfAlgebraBaseChangeIso
     (hC : C.map (algebraMap R S) = C') :
@@ -221,6 +287,16 @@ noncomputable def finiteTypeCoordinateHopfAlgebraBaseChangeIso
   FiniteTypeCommHopfAlgCat.baseChangeIsoOfObjIso
     (finiteTypeCoordinateHopfAlgebra_obj R n C) (finiteTypeCoordinateHopfAlgebra_obj S n C')
     (coordinateHopfAlgebraBaseChangeIso hC)
+
+/-- The finite-type base-change isomorphism induces the coordinate base-change morphism. -/
+@[simp]
+theorem finiteTypeCoordinateHopfAlgebraBaseChangeIso_hom (hC : C.map (algebraMap R S) = C') :
+    (finiteTypeCoordinateHopfAlgebraBaseChangeIso hC).hom.hom =
+      (eqToIso (congrArg (CommHopfAlgCat.baseChange (K := S))
+          (finiteTypeCoordinateHopfAlgebra_obj R n C)) ≪≫
+        coordinateHopfAlgebraBaseChangeIso hC ≪≫
+        eqToIso (finiteTypeCoordinateHopfAlgebra_obj S n C').symm).hom :=
+  FiniteTypeCommHopfAlgCat.baseChangeIsoOfObjIso_hom _ _ _
 
 end BaseChange
 
@@ -236,6 +312,14 @@ noncomputable def groupSchemeBaseChangeIso (hC : C.map (algebraMap R S) = C') :
   GeneralLinear.hopfIdealBaseChangeIso R S n (definingHopfIdeal R n C) (definingHopfIdeal S n C')
     (coordinateHopfAlgebraBaseChangeIso hC).symm
 
+/-- The group-scheme base-change isomorphism is the ambient Hopf-ideal comparison. -/
+theorem groupSchemeBaseChangeIso_def (hC : C.map (algebraMap R S) = C') :
+    groupSchemeBaseChangeIso hC =
+      GeneralLinear.hopfIdealBaseChangeIso R S n
+        (definingHopfIdeal R n C) (definingHopfIdeal S n C')
+        (coordinateHopfAlgebraBaseChangeIso hC).symm :=
+  (rfl)
+
 /-- The scalar-extension isomorphism respects the inclusions into the general linear
 group schemes. -/
 @[reassoc]
@@ -246,10 +330,9 @@ theorem map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso_hom
         (GeneralLinear.groupSchemeBaseChangeIso R S n).hom =
       (groupSchemeBaseChangeIso hC).hom ≫
         GeneralLinear.hopfIdealInclusion S n (definingHopfIdeal S n C') := by
-  rw [groupSchemeBaseChangeIso]
+  rw [groupSchemeBaseChangeIso_def]
   exact GeneralLinear.map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso R S n _ _ _
-    (CommHopfAlgCat.mkQuotient_comp_quotientBaseChangeIsoOfMapEq_inv _ _ _
-      (map_baseChangeHopfIdeal_definingHopfIdeal hC))
+    (mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_inv hC)
 
 end SchemeBaseChange
 

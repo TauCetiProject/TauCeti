@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Special.Basic
+public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Reductive
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
 import TauCeti.LinearAlgebra.BilinearForm.SepClosed
@@ -16,8 +16,7 @@ import TauCeti.LinearAlgebra.BilinearForm.SepClosed
 Over a field of characteristic different from two, the determinant-one subgroup scheme of a
 nonsingular symmetric matrix is reductive. Over an algebraic closure the matrix is congruent
 to the identity, so the geometric fibre is the standard special orthogonal group. This uses
-the standard reductivity theorem in every rank and the same descent theorem as the
-antidiagonal special orthogonal case.
+the standard reductivity theorem in every rank and descends reductivity to the base field.
 -/
 
 public section
@@ -28,17 +27,11 @@ namespace TauCeti.ConstantForm.Special
 
 universe u
 
-/-- For the identity form, the determinant-one Hopf ideal is the standard special orthogonal
-Hopf ideal. -/
-theorem definingHopfIdeal_one (R : Type u) [CommRing R] (n : ℕ) :
-    definingHopfIdeal R n (1 : Matrix (Fin n) (Fin n) R) =
-      SpecialOrthogonal.definingHopfIdeal R n := by
-  rw [definingHopfIdeal_def, SpecialOrthogonal.definingHopfIdeal_def]
+variable {R : Type u} [CommRing R] {n : ℕ} {C : Matrix (Fin n) (Fin n) R}
 
 /-- When `P C Pᵀ = 1`, the finite-type coordinate Hopf algebra of the determinant-one
 subgroup for `C` is isomorphic to that of the standard special orthogonal group. -/
-noncomputable def finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal
-    {R : Type u} [CommRing R] {n : ℕ} {C : Matrix (Fin n) (Fin n) R} (P : GL (Fin n) R)
+noncomputable def finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal (P : GL (Fin n) R)
     (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = 1) :
     finiteTypeCoordinateHopfAlgebra R n C ≅ SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra R n :=
   ObjectProperty.isoMk _ (eqToIso (finiteTypeCoordinateHopfAlgebra_obj R n C) ≪≫
@@ -46,6 +39,32 @@ noncomputable def finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal
     eqToIso (congrArg (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R n))
       (definingHopfIdeal_one R n)) ≪≫
     eqToIso (SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra_obj R n).symm)
+
+/-- The comparison with standard special orthogonal coordinates is induced by congruence
+with the identity form. -/
+theorem finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal_def (P : GL (Fin n) R)
+    (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = 1) :
+    finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal P hP =
+      ObjectProperty.isoMk _ (eqToIso (finiteTypeCoordinateHopfAlgebra_obj R n C) ≪≫
+        coordinateHopfAlgebraCongr P hP ≪≫
+        eqToIso (congrArg (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R n))
+          (definingHopfIdeal_one R n)) ≪≫
+        eqToIso (SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra_obj R n).symm) :=
+  (rfl)
+
+/-- The underlying Hopf-algebra morphism of the comparison with standard special orthogonal
+coordinates is the congruence morphism, transported along the coordinate object equalities. -/
+@[simp]
+theorem finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal_hom (P : GL (Fin n) R)
+    (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = 1) :
+    (finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal P hP).hom.hom =
+      (eqToIso (finiteTypeCoordinateHopfAlgebra_obj R n C) ≪≫
+        coordinateHopfAlgebraCongr P hP ≪≫
+        eqToIso (congrArg (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R n))
+          (definingHopfIdeal_one R n)) ≪≫
+        eqToIso (SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra_obj R n).symm).hom := by
+  simp only [finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal_def, ObjectProperty.isoMk_hom,
+    ObjectProperty.homMk_hom]
 
 /-- The special orthogonal group of a nonsingular symmetric form over a field of characteristic
 different from two is reductive. This includes smoothness and geometric connectedness. -/

@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.Congruence.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
-import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Reductive
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
+import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Special.Reductive
 
 /-!
 # Reductivity of `SO_l^J`
@@ -19,12 +18,9 @@ preserving the antidiagonal form `J_l`, is isomorphic to that of the special ort
 `SO_l` of the identity form
 (`TauCeti.AntidiagonalSpecialOrthogonal.coordinateHopfAlgebraIsoSpecialOrthogonal`).
 
-Now let `k` be a field of characteristic different from two. Its algebraic closure `K` contains a
-square root of `-1`, so the geometric fibre of `SO_l^J` is isomorphic to `SO_l` over `K`, which
-is reductive
-(`TauCeti.SpecialOrthogonal.reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra`).
-Reductivity is tested on the geometric fibre, so `SO_l^J` is reductive over `k`, whether or not `k`
-itself contains a square root of `-1`.
+Over a field of characteristic different from two, reductivity of `SO_l^J` follows from
+`TauCeti.ConstantForm.Special.reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra`,
+since `J_l` is symmetric and has unit determinant.
 
 ## Main declarations
 
@@ -38,8 +34,6 @@ public section
 
 open CategoryTheory
 
-open scoped TensorProduct
-
 namespace TauCeti.AntidiagonalSpecialOrthogonal
 
 universe u
@@ -50,7 +44,8 @@ variable {R : Type u} [CommRing R] [Invertible (2 : R)] (l : ℕ) {i : R}
 containing `1/2` and a square root `i` of `-1`. -/
 noncomputable def finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal (hi : i * i = -1) :
     finiteTypeCoordinateHopfAlgebra R l ≅ SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra R l :=
-  ObjectProperty.isoMk _ (eqToIso (finiteTypeCoordinateHopfAlgebra_obj R l) ≪≫
+  ObjectProperty.isoMk _
+    (eqToIso (ConstantForm.Special.finiteTypeCoordinateHopfAlgebra_obj R l (formMatrix R l)) ≪≫
     coordinateHopfAlgebraIsoSpecialOrthogonal l hi ≪≫
     eqToIso (SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra_obj R l).symm)
 
@@ -58,7 +53,8 @@ noncomputable def finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal (hi : i * 
 Hopf algebras as its underlying isomorphism. -/
 theorem finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal_def (hi : i * i = -1) :
     finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal l hi =
-      ObjectProperty.isoMk _ (eqToIso (finiteTypeCoordinateHopfAlgebra_obj R l) ≪≫
+      ObjectProperty.isoMk _
+        (eqToIso (ConstantForm.Special.finiteTypeCoordinateHopfAlgebra_obj R l (formMatrix R l)) ≪≫
         coordinateHopfAlgebraIsoSpecialOrthogonal l hi ≪≫
         eqToIso (SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra_obj R l).symm) :=
   (rfl)
@@ -67,18 +63,8 @@ theorem finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal_def (hi : i * i = -1
 not that field contains a square root of `-1`. -/
 theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra (k : Type u) [Field k]
     [NeZero (2 : k)] (l : ℕ) :
-    reductiveCommHopfAlgProperty k (finiteTypeCoordinateHopfAlgebra k l) := by
-  -- The algebraic closure `K` contains a square root of `-1`, so the geometric fibre of `SO_l^J`
-  -- is isomorphic to `SO_l` over `K`, which is reductive; reductivity then descends to `k`.
-  let K := AlgebraicClosure k
-  let _ : NeZero (2 : K) := ⟨by
-    simpa only [map_ofNat] using (map_ne_zero (algebraMap k K)).2 (NeZero.ne (2 : k))⟩
-  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne _)
-  obtain ⟨i, hi⟩ := IsAlgClosed.exists_pow_nat_eq (-1 : K) two_pos
-  exact reductiveCommHopfAlgProperty.of_baseChange_algebraicClosure <|
-    (reductiveCommHopfAlgProperty K).prop_of_iso
-      ((finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal l (by rw [← hi, sq])).symm ≪≫
-        (finiteTypeCoordinateHopfAlgebraBaseChangeIso k l K).symm)
-      (SpecialOrthogonal.reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra K l)
+    reductiveCommHopfAlgProperty k (finiteTypeCoordinateHopfAlgebra k l) :=
+  ConstantForm.Special.reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
+    (transpose_formMatrix k l) isUnit_det_formMatrix.ne_zero
 
 end TauCeti.AntidiagonalSpecialOrthogonal
