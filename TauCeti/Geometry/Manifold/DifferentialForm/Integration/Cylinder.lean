@@ -809,7 +809,7 @@ theorem VanishesOnSpheres.rectangleIntegral_eq (hS : VanishesOnSpheres φ)
   have h₀ : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := left_mem_Icc.mpr zero_le_one
   have hglue := hS _ hw.contMDiff
     (fun t ht ↦ by rw [hw.apply_zero, hw.apply_zero, hu.apply_one t ht, hu.apply_one 0 h₀])
-    (fun t ht ↦ by rw [hw.apply_one t ht, hw.apply_one 0 h₀]) hw.seam
+    (fun t ht ↦ by rw [hw.apply_one t ht, hw.apply_one 0 h₀]) hw.periodic
   rw [rectangleIntegral_rectangleTrans_comp_prodMap_one_sub hφ (hu.contMDiff.of_le (by simp))
     (hv.contMDiff.of_le (by simp)) h, sub_eq_zero] at hglue
   exact hglue.symm
