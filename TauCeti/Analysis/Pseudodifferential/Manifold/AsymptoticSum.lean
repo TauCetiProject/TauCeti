@@ -128,9 +128,7 @@ theorem exists_forall_sub_sum_mem_classicalPseudodifferentialOperators [SigmaCom
   refine ⟨patchedQuantization he θ θ b hS,
     patchedQuantization_mem_classicalPseudodifferentialOperators he θ θ b hS, fun N ↦ ?_⟩
   -- The remainder is the patched quantization of the `rᵢ N`, minus operators of order `-∞`.
-  rw [key N, show ∀ A B C : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯, A + B - C = A - (C - B) from
-    fun _ _ _ ↦ by abel, ← sum_sub_distrib]
+  rw [key N, ← sub_sub_eq_add_sub, ← sum_sub_distrib]
   exact sub_mem (patchedQuantization_mem_classicalPseudodifferentialOperators he θ θ _ hS)
     (Submodule.sum_mem _ fun k _ ↦
       smoothingPseudodifferentialOperators_le_classicalPseudodifferentialOperators _ (hd k))

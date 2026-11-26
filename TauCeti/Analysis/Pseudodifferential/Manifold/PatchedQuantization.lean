@@ -101,6 +101,15 @@ theorem patchedQuantization_apply
       ∑ᶠ i, (e i).chartQuantization (he i) (φ i) (ψ i) (a i) f x :=
   ContMDiffMap.locallyFiniteSum_apply f x
 
+/-- At a point `x`, only the charts with `x ∈ eᵢ⁻¹(supp φᵢ ∪ supp ψᵢ)` contribute to the chart
+quantizations `Op_{eᵢ}(aᵢ) f`. -/
+theorem support_chartQuantization_apply_subset (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (x : M) :
+    (Function.support fun i ↦ (e i).chartQuantization (he i) (φ i) (ψ i) (a i) f x) ⊆
+      {i | x ∈ (e i).symm '' (tsupport (φ i) ∪ tsupport (ψ i))} := fun i hi ↦
+  image_mono subset_union_left
+    ((e i).tsupport_chartQuantization_subset (he i) _ _ _ f (subset_tsupport _ hi))
+
 /-- **Patched quantization.** For charts `eᵢ` of the maximal atlas, classical symbols `aᵢ` of order
 `m` and cutoffs `φᵢ`, `ψᵢ` with compact supports in the chart targets, such that the chart preimages
 `eᵢ⁻¹(supp φᵢ ∪ supp ψᵢ)` form a locally finite family, the patched quantization
@@ -152,15 +161,13 @@ theorem patchedQuantization_eq_add {m₁ m₂ : ℝ} {b : ι → ClassicalSymbol
       (b i).toSymbol.coefficient + (c i).toSymbol.coefficient) :
     patchedQuantization he φ ψ a hS =
       patchedQuantization he φ ψ b hS + patchedQuantization he φ ψ c hS := by
-  -- At `x`, only the finitely many charts with `x ∈ eᵢ⁻¹(supp φᵢ)` contribute.
-  have hfin {m' : ℝ} (d : ι → ClassicalSymbol n ℂ ℂ m') (f) (x : M) :
-      (Function.support fun i ↦ (e i).chartQuantization (he i) (φ i) (ψ i) (d i) f x).Finite :=
-    (hS.point_finite x).subset fun i hi ↦ image_mono subset_union_left
-      ((e i).tsupport_chartQuantization_subset (he i) _ _ _ f (subset_tsupport _ hi))
   ext f x
   simp only [LinearMap.add_apply, ContMDiffMap.coe_add, Pi.add_apply, patchedQuantization_apply,
     (e _).chartQuantization_eq_add (he _) _ _ (h _)]
-  exact finsum_add_distrib (hfin b f x) (hfin c f x)
+  -- At `x`, only the finitely many charts with `x ∈ eᵢ⁻¹(supp φᵢ ∪ supp ψᵢ)` contribute.
+  exact finsum_add_distrib
+    ((hS.point_finite x).subset (support_chartQuantization_apply_subset he φ ψ b f x))
+    ((hS.point_finite x).subset (support_chartQuantization_apply_subset he φ ψ c f x))
 
 /-! ### Operators on a compact manifold are finite sums of chart quantizations -/
 

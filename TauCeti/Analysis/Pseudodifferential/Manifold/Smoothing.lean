@@ -366,8 +366,7 @@ private theorem sub_patchedQuantization_apply_eq_sum {ι : Type*}
   have hpatch : patchedQuantization he φ ψ a hS f x =
       ∑ i ∈ I, c i x * P ((e i).complexCutoffPullback (he i) (χ i) 1 * f) x := by
     rw [patchedQuantization_apply, finsum_eq_sum_of_support_subset _ (s := I) fun i hi ↦
-      hI i (image_mono subset_union_left ((e i).tsupport_chartQuantization_subset (he i) _ _ _ f
-        (subset_tsupport _ hi)))]
+      hI i (support_chartQuantization_apply_subset he φ ψ a f x hi)]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [(e i).chartQuantization_eq_mulLeft_comp_comp_mulLeft (he i) (ha i) (hφ i) (hψ i)]
     simp [c]
