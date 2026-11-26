@@ -131,10 +131,12 @@ theorem inner_map_map (f : E →ₗᵢ[ℝ] F) (x y : ⋀[ℝ]^n E) :
   | smul r x _ hx => simp only [map_smul, real_inner_smul_left, hx]
 
 /-- The map of exterior powers induced by a linear isometry preserves the norm. -/
+@[simp]
 theorem norm_map (f : E →ₗᵢ[ℝ] F) (x : ⋀[ℝ]^n E) : ‖map n f.toLinearMap x‖ = ‖x‖ := by
   rw [@norm_eq_sqrt_real_inner, @norm_eq_sqrt_real_inner, inner_map_map]
 
 /-- The map of exterior powers induced by a linear isometry equivalence preserves the norm. -/
+@[simp]
 theorem norm_map_linearIsometryEquiv (f : E ≃ₗᵢ[ℝ] F) (x : ⋀[ℝ]^n E) :
     ‖map n f.toLinearMap x‖ = ‖x‖ :=
   norm_map f.toLinearIsometry x

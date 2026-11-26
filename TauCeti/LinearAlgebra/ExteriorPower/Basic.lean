@@ -353,20 +353,6 @@ theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) 
   ⟨map_injective (LinearEquiv.ofBijective f hf).symm.toLinearMap (by ext; simp),
     map_surjective hf.2⟩
 
-/-- The map induced by a linear equivalence `e` inverts the map induced by `e.symm`. -/
-@[simp]
-theorem map_map_symm {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n N) :
-    map n e.toLinearMap (map n e.symm.toLinearMap x) = x := by
-  rw [← LinearMap.comp_apply, ← map_comp]
-  simp
-
-/-- The map induced by `e.symm` inverts the map induced by a linear equivalence `e`. -/
-@[simp]
-theorem map_symm_map {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n M) :
-    map n e.symm.toLinearMap (map n e.toLinearMap x) = x := by
-  rw [← LinearMap.comp_apply, ← map_comp]
-  simp
-
 /-- Scaling a linear map by `c` scales the induced map on the `n`th exterior power by `c ^ n`. -/
 @[simp] theorem map_smul_eq_pow_smul (n : ℕ) (c : R) (f : M →ₗ[R] N) :
     map n (c • f) = c ^ n • map n f := by
@@ -440,6 +426,22 @@ theorem exteriorPower_apply_ιMulti (e : M ≃ₗ[R] N) (n : ℕ) (m : Fin n →
 theorem exteriorPower_symm (e : M ≃ₗ[R] N) (n : ℕ) :
     (e.exteriorPower n).symm = e.symm.exteriorPower n :=
   (rfl)
+
+/-- The map induced by a linear equivalence `e` inverts the map induced by `e.symm`: the inverse
+law of `LinearEquiv.exteriorPower`, stated for the underlying maps. -/
+@[simp]
+theorem _root_.exteriorPower.map_map_symm {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n N) :
+    _root_.exteriorPower.map n e.toLinearMap (_root_.exteriorPower.map n e.symm.toLinearMap x) =
+      x :=
+  (e.exteriorPower n).apply_symm_apply x
+
+/-- The map induced by `e.symm` inverts the map induced by a linear equivalence `e`: the inverse
+law of `LinearEquiv.exteriorPower`, stated for the underlying maps. -/
+@[simp]
+theorem _root_.exteriorPower.map_symm_map {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n M) :
+    _root_.exteriorPower.map n e.symm.toLinearMap (_root_.exteriorPower.map n e.toLinearMap x) =
+      x :=
+  (e.exteriorPower n).symm_apply_apply x
 
 @[simp]
 theorem exteriorPower_refl (n : ℕ) :
