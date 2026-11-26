@@ -132,7 +132,9 @@ constants are parameters, not hidden existential data.
   perturbation preserves uniform ellipticity with lower constant `λ - μ` when the
   perturbation size `μ` is smaller than `λ`.
 * `TauCeti.PDE.coefficientSymmetricPart`: the symmetric part `(A + Aᵀ) / 2` of a
-  coefficient matrix.
+  coefficient matrix. It vanishes exactly on skew-symmetric matrices
+  (`TauCeti.PDE.coefficientSymmetricPart_eq_zero_iff`) and commutes with congruences
+  `A ↦ O A Oᵀ` (`TauCeti.PDE.coefficientSymmetricPart_conj`).
 * `TauCeti.PDE.UniformlyEllipticOn.transpose` and
   `TauCeti.PDE.UniformlyEllipticOn.coefficientSymmetricPart`: transposing or replacing a
   coefficient field by its symmetric part preserves uniform ellipticity with the same
@@ -166,6 +168,9 @@ self-adjoint elliptic operators. -/
 noncomputable def coefficientSymmetricPart (A : Matrix n n ℝ) : Matrix n n ℝ :=
   (1 / 2 : ℝ) • (A + Aᵀ)
 
+lemma coefficientSymmetricPart_def (A : Matrix n n ℝ) :
+    coefficientSymmetricPart A = (1 / 2 : ℝ) • (A + Aᵀ) := (rfl)
+
 /-- The symmetric part of a coefficient matrix is symmetric. -/
 lemma coefficientSymmetricPart_isSymm (A : Matrix n n ℝ) : (coefficientSymmetricPart A).IsSymm :=
   (isSymm_add_transpose_self A).smul (1 / 2 : ℝ)
@@ -183,6 +188,19 @@ lemma coefficientSymmetricPart_eq_self_of_isSymm {A : Matrix n n ℝ} (hA : A.Is
   ext i j
   rw [coefficientSymmetricPart_apply, hA.apply i j]
   ring
+
+/-- The symmetric part vanishes exactly on skew-symmetric matrices. -/
+lemma coefficientSymmetricPart_eq_zero_iff {A : Matrix n n ℝ} :
+    coefficientSymmetricPart A = 0 ↔ Aᵀ = -A := by
+  rw [coefficientSymmetricPart_def, smul_eq_zero, or_iff_right (by norm_num),
+    add_eq_zero_iff_eq_neg']
+
+/-- Taking the symmetric part commutes with every congruence `A ↦ O A Oᵀ`. -/
+lemma coefficientSymmetricPart_conj {m : Type*} [Fintype n] (O : Matrix m n ℝ)
+    (A : Matrix n n ℝ) :
+    coefficientSymmetricPart (O * A * Oᵀ) = O * coefficientSymmetricPart A * Oᵀ := by
+  simp [coefficientSymmetricPart_def, transpose_mul, Matrix.mul_assoc, Matrix.mul_add,
+    Matrix.add_mul]
 
 end SymmetricPart
 
