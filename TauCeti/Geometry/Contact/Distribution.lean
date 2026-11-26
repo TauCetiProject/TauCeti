@@ -51,6 +51,15 @@ the contact hyperplanes have even dimension and `M` has odd dimension `2 m + 1`
 not involutive (`TauCeti.IsContactDistribution.not_isInvolutiveDistribution`), so by Frobenius it
 has no integral hypersurfaces.
 
+Being a contact structure is a local property invariant under local diffeomorphisms. The pullback
+`x ↦ df_x⁻¹ (D' (f x))` of a contact structure `D'` through a local diffeomorphism `f` is a contact
+structure (`TauCeti.IsContactDistribution.comap_mfderiv`), since `df_x` identifies the hyperplanes
+and, by the naturality of the Levi form (`TauCeti.distributionLeviForm_mfderivRestrictEquiv`),
+the Levi forms at `x` and `f x`. In particular the restriction of a contact structure to an open
+subset is a contact structure (`TauCeti.IsContactDistribution.comp_subtypeVal`), and a
+diffeomorphism pulls a distribution back to a contact structure exactly when the distribution is
+one (`Diffeomorph.isContactDistribution_comap_mfderiv_iff`).
+
 ## Main definitions
 
 * `TauCeti.IsContactDistribution I n ξ`: `ξ` is a `C^n` hyperplane field with nondegenerate Levi
@@ -74,6 +83,11 @@ has no integral hypersurfaces.
   contact hyperplanes have even dimension, and contact manifolds odd dimension.
 * `TauCeti.IsContactDistribution.not_isInvolutiveDistribution`: contact structures in dimension at
   least three are not involutive.
+* `TauCeti.IsContactDistribution.comap_mfderiv`: the pullback of a contact structure by a local
+  diffeomorphism is a contact structure; `TauCeti.IsContactDistribution.comp_subtypeVal`: so is its
+  restriction to an open subset.
+* `Diffeomorph.isContactDistribution_comap_mfderiv_iff`: contact structures correspond under
+  diffeomorphisms.
 
 ## References
 
@@ -310,4 +324,91 @@ theorem SmoothForm.IsContactForm.kerSymplecticForm_apply {α : SmoothForm I M �
   dsimp only
   rw [LinearMap.domRestrict₁₂_apply, ← SmoothForm.mextDeriv_eq_bilinFormAt]
 
+/-! ### Pullback along local diffeomorphisms and restriction to open subsets -/
+
+section Pullback
+
+variable {F H' N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  [FiniteDimensional ℝ F] [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [TopologicalSpace N]
+  [ChartedSpace H' N] [IsManifold J 2 N] {D' : Π y : N, Submodule ℝ (TangentSpace J y)} {m : ℕ∞ω}
+
+/-- **Pullback of a contact structure by a local diffeomorphism.** The pullback
+`x ↦ df_x⁻¹ (D' (f x))` of a `C^n` contact structure `D'` through a `C^m` local diffeomorphism
+`f`, with `1 ≤ n` and `n + 1 ≤ m`, is a `C^n` contact structure: the differential `df_x`
+identifies its hyperplane and its Levi form at `x` with those of `D'` at `f x`. -/
+theorem IsContactDistribution.comap_mfderiv {f : M → N} (hD' : IsContactDistribution J n D')
+    (hf : IsLocalDiffeomorph I J m f) (hn : 1 ≤ n) (hnm : n + 1 ≤ m) :
+    IsContactDistribution I n (fun x ↦ (D' (f x)).comap (mfderiv I J f x).toLinearMap) := by
+  have hm : 2 ≤ m := calc
+    (2 : ℕ∞ω) = 1 + 1 := one_add_one_eq_two.symm
+    _ ≤ n + 1 := by gcongr
+    _ ≤ m := hnm
+  have hm0 : m ≠ 0 := (zero_lt_two.trans_le hm).ne'
+  set D₀ : Π x : M, Submodule ℝ (TangentSpace I x) :=
+    fun x ↦ (D' (f x)).comap (mfderiv I J f x).toLinearMap
+  refine ⟨?_, fun x hx ↦ ?_, fun x ↦ ?_⟩
+  · rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
+    · exact isContMDiffDistribution_iff.2 fun x ↦ isEmptyElim x
+    -- The differential at a point identifies the model spaces, so the ranks agree.
+    obtain ⟨e, -⟩ := (hf x).isInvertible_mfderiv hm0
+    rw [show finrank ℝ E = finrank ℝ F from e.toLinearEquiv.finrank_eq]
+    exact hD'.isContMDiffDistribution.comap_mfderiv hf hnm
+  · -- The differential is onto, so it maps the pullback onto `D' (f x)`.
+    have hsurj := ((hf x).isInvertible_mfderiv hm0).surjective
+    have hmap : (D₀ x).map (mfderiv I J f x).toLinearMap = D' (f x) :=
+      Submodule.map_comap_eq_of_surjective hsurj _
+    refine hD'.ne_top (f x) ?_
+    rw [← hmap, hx, Submodule.map_top, LinearMap.range_eq_top.2 hsurj]
+  · -- Through `df_x`, the Levi form of `D'` at `f x` is that of the pullback at `x`.
+    set e := (hf x).mfderivRestrictEquiv (D := D₀) hm0 rfl
+    set q := (hf x).mfderivQuotientEquiv (D := D₀) hm0 rfl
+    have hL : ⇑(distributionLeviForm D' (f x)) =
+        e.arrowCongr q ∘ distributionLeviForm D₀ x ∘ e.symm := by
+      funext u
+      ext v
+      rw [Function.comp_apply, Function.comp_apply, LinearEquiv.arrowCongr_apply,
+        ← distributionLeviForm_mfderivRestrictEquiv hD'.isContMDiffDistribution hn (hf x) hm
+          (.of_forall fun _ ↦ rfl), LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+    have h := hD'.bijective_distributionLeviForm (f x)
+    rw [hL] at h
+    exact (EquivLike.bijective_comp _ _).1 ((EquivLike.comp_bijective _ _).1 h)
+
+/-- **Restriction of a contact structure to an open subset.** The restriction `x ↦ D x` of a `C^n`
+contact structure, with `1 ≤ n`, to an open subset `U` is a `C^n` contact structure on `U`. -/
+theorem IsContactDistribution.comp_subtypeVal (hD : IsContactDistribution I n D) (hn : 1 ≤ n)
+    (U : TopologicalSpace.Opens M) : IsContactDistribution I n (fun x : U ↦ D x) := by
+  rw [show (fun x : U ↦ D x) = fun x : U ↦ (D x).comap (mfderiv I I Subtype.val x).toLinearMap from
+    funext fun x ↦ (Submodule.comap_mfderiv_subtype_val (D x)).symm]
+  exact hD.comap_mfderiv isLocalDiffeomorph_subtype_val hn le_rfl
+
+end Pullback
+
 end TauCeti
+
+namespace Diffeomorph
+
+open TauCeti
+
+variable {E H M F H' N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I 2 M] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  [FiniteDimensional ℝ F] [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [TopologicalSpace N]
+  [ChartedSpace H' N] [IsManifold J 2 N] {n m : ℕ∞ω}
+
+/-- **Contact structures correspond under a diffeomorphism.** A distribution `D'` is a `C^n`
+contact structure exactly when its pullback `x ↦ dh_x⁻¹ (D' (h x))` by a `C^m` diffeomorphism `h`
+is one, for `1 ≤ n` and `n + 1 ≤ m`. -/
+theorem isContactDistribution_comap_mfderiv_iff (h : M ≃ₘ^m⟮I, J⟯ N) (hn : 1 ≤ n)
+    (hnm : n + 1 ≤ m) (D' : Π y : N, Submodule ℝ (TangentSpace J y)) :
+    IsContactDistribution I n (fun x ↦ (D' (h x)).comap (mfderiv I J h x).toLinearMap) ↔
+      IsContactDistribution J n D' := by
+  refine ⟨fun hD ↦ ?_, fun hD' ↦ hD'.comap_mfderiv h.isLocalDiffeomorph hn hnm⟩
+  have hm0 : m ≠ 0 := ((zero_lt_one.trans_le (hn.trans le_self_add)).trans_le hnm).ne'
+  -- Pulling the pullback back by `h⁻¹` recovers `D'`.
+  rw [show D' = fun y ↦ ((D' (h (h.symm y))).comap (mfderiv I J h (h.symm y)).toLinearMap).comap
+      (mfderiv J I h.symm y).toLinearMap from
+    funext fun y ↦ Submodule.ext fun w ↦ h.mem_iff_mfderiv_symm_apply_mem hm0
+      (D := fun x ↦ (D' (h x)).comap (mfderiv I J h x).toLinearMap) (fun _ _ ↦ Iff.rfl) y w]
+  exact hD.comap_mfderiv h.symm.isLocalDiffeomorph hn hnm
+
+end Diffeomorph

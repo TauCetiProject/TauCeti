@@ -132,7 +132,7 @@ theorem IsRealPolarization.comap_mfderiv [CompleteSpace E] [CompleteSpace E₂]
     exact hP₂.isLagrangian (ψ x)
   exists_isContMDiffDistribution :=
     let ⟨k, hk⟩ := hP₂.exists_isContMDiffDistribution
-    ⟨k, hk.comap_mfderiv ψ (by simp)⟩
+    ⟨k, hk.comap_mfderiv ψ.isLocalDiffeomorph (by simp)⟩
   isInvolutive := by
     have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
     have : IsManifold I₂ (minSmoothness ℝ 2) M₂ := IsManifold.of_le (n := ∞) (by simp)

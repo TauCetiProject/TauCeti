@@ -137,7 +137,7 @@ theorem IsContMDiffDistribution.exists_splitCoordinates {m : ℕ∞ω} {k : ℕ}
   have hsmooth : IsContMDiffDistribution 𝓘(𝕜, distributionModelFiber D p × T) m k D' := by
     rw [hD'eq]
     simp only [Dt]
-    exact hcoe ▸ hD.comap_mfderiv eω (by simp)
+    exact hcoe ▸ hD.comap_mfderiv eω.isLocalDiffeomorph (by simp)
   have hinv' : IsInvolutiveDistribution 𝓘(𝕜, distributionModelFiber D p × T) D' := by
     rw [hD'eq]
     simp only [Dt]

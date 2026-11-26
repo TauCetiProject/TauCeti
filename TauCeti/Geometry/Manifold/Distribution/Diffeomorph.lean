@@ -10,24 +10,27 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Transport of distributions through diffeomorphisms
 
 A partial diffeomorphism transports local frames and involutivity between its source and target,
-while a global diffeomorphism transports smooth constant-rank distributions. This allows
+while a local diffeomorphism pulls smooth constant-rank distributions back. This allows
 regularity and involutivity to be checked in local or global coordinate models when constructing
-integral manifolds. In particular, the pullback of a smooth distribution is smooth, and a
-distribution is involutive if and only if its pullback by a diffeomorphism is involutive.
+integral manifolds. In particular, the pullback of a smooth distribution by a local
+diffeomorphism, for instance its restriction to an open subset, is smooth, and a distribution is
+involutive if and only if its pullback by a diffeomorphism is involutive.
 
 The vector-field pullback and Lie-bracket naturality APIs are provided by Mathlib.
 
 `TauCeti.IsDistributionFrameOn.comap_mfderivWithin` pulls a local frame back through partial
-coordinates. `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global specialization, and
-`TauCeti.IsContMDiffDistribution.comap_mfderiv` pulls back a smooth distribution.
-`TauCeti.IsContMDiffDistribution.exists_isDistributionFrameOn_of_eventually_eq_comap` is the local
-version: a distribution that a local diffeomorphism pulls back from a `C^m` one near a point has a
-`C^m` local frame there.
+coordinates. `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global specialization.
+`TauCeti.IsContMDiffDistribution.exists_isDistributionFrameOn_of_eventually_eq_comap` shows that a
+distribution that a local diffeomorphism pulls back from a `C^m` one near a point has a `C^m` local
+frame there. Hence `TauCeti.IsContMDiffDistribution.comap_mfderiv` pulls back a smooth
+distribution through a local diffeomorphism, and `TauCeti.IsContMDiffDistribution.comp_subtypeVal`
+restricts it to an open subset.
 When `D x` is the preimage of `D' (f x)` under the differential of a local diffeomorphism `f` at
 `x`, the differential restricts to a linear equivalence `D x ≃ D' (f x)`
 (`IsLocalDiffeomorphAt.mfderivRestrictEquiv`) and induces one of normal spaces
@@ -67,6 +70,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {n : ℕ∞ω}
   {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
   {D' : Π y : N, Submodule 𝕜 (TangentSpace J y)}
+
+omit [CompleteSpace E] in
+/-- The differential of the inclusion of an open subset `U` is the identity of the common tangent
+space, so pulling a subspace of `T_x M` back along it, at a point `x` of `U`, gives the same
+subspace. -/
+theorem Submodule.comap_mfderiv_subtype_val {U : TopologicalSpace.Opens M} {x : U}
+    (S : Submodule 𝕜 (TangentSpace I (x : M))) :
+    S.comap (mfderiv I I (Subtype.val : U → M) x).toLinearMap = S :=
+  ext fun v ↦ Iff.of_eq (congrArg (· ∈ S) (TauCeti.Manifold.mfderiv_subtype_val_apply x v))
 
 namespace TauCeti
 
@@ -133,18 +145,6 @@ theorem IsDistributionFrameOn.comap_mfderiv {m : ℕ∞ω} {ι : Type*}
       (fun x _ ↦ by simpa only [mfderivWithin_univ] using h.isInvertible_mfderiv hn0)
       uniqueMDiffOn_univ hmn
 
-/-- The pullback of a `C^m` distribution through a `C^n` diffeomorphism is a `C^m`
-distribution of the same rank when `m + 1 ≤ n`. -/
-theorem IsContMDiffDistribution.comap_mfderiv {m : ℕ∞ω} {k : ℕ}
-    (hD' : IsContMDiffDistribution J m k D') (h : M ≃ₘ^n⟮I, J⟯ N) (hmn : m + 1 ≤ n) :
-    IsContMDiffDistribution I m k
-      (fun x ↦ (D' (h x)).comap (mfderiv I J h x).toLinearMap) := by
-  rw [isContMDiffDistribution_iff] at hD' ⊢
-  intro x
-  obtain ⟨U, hU, hx, X, hX⟩ := hD' (h x)
-  exact ⟨h ⁻¹' U, hU.preimage h.continuous, hx, fun i ↦ mpullback I J h (X i),
-    hX.comap_mfderiv h hmn⟩
-
 open Filter in
 open scoped Topology in
 /-- **Local frames of a pulled-back distribution.** If a `C^n` local diffeomorphism `f` at `x`
@@ -178,6 +178,26 @@ theorem IsContMDiffDistribution.exists_isDistributionFrameOn_of_eventually_eq_co
   refine ⟨_, inter_mem hU (hDf.and hcomap), fun i ↦ mpullbackWithin I J Φ (X' i) Φ.source,
     (hY.mono inter_subset_left).contMDiffOn, fun hz ↦ hY.linearIndependent hz.1, fun hz ↦ ?_⟩
   rw [hY.span_eq hz.1, hz.2.2, hz.2.1]
+
+/-- **Pullback of a distribution by a local diffeomorphism.** The pullback of a `C^m` distribution
+of rank `k` through a `C^n` local diffeomorphism `f`, the preimage `x ↦ df_x⁻¹ (D' (f x))` of each
+subspace under the differential, is a `C^m` distribution of rank `k` when `m + 1 ≤ n`. -/
+theorem IsContMDiffDistribution.comap_mfderiv {m : ℕ∞ω} {k : ℕ} {f : M → N}
+    (hD' : IsContMDiffDistribution J m k D') (hf : IsLocalDiffeomorph I J n f) (hmn : m + 1 ≤ n) :
+    IsContMDiffDistribution I m k
+      (fun x ↦ (D' (f x)).comap (mfderiv I J f x).toLinearMap) :=
+  .of_mem_nhds fun x ↦ hD'.exists_isDistributionFrameOn_of_eventually_eq_comap (hf x) hmn
+    (.of_forall fun _ ↦ rfl)
+
+/-- **Restriction of a distribution to an open subset.** The restriction `x ↦ D x` of a `C^m`
+distribution of rank `k` to an open subset `U` is a `C^m` distribution of rank `k` on `U`, the
+tangent spaces of `U` being those of `M`. -/
+theorem IsContMDiffDistribution.comp_subtypeVal {m : ℕ∞ω} {k : ℕ}
+    (hD : IsContMDiffDistribution I m k D) (U : TopologicalSpace.Opens M) :
+    IsContMDiffDistribution I m k (fun x : U ↦ D x) := by
+  rw [show (fun x : U ↦ D x) = fun x : U ↦ (D x).comap (mfderiv I I Subtype.val x).toLinearMap from
+    funext fun x ↦ (Submodule.comap_mfderiv_subtype_val (D x)).symm]
+  exact hD.comap_mfderiv isLocalDiffeomorph_subtype_val le_rfl
 
 end Regularity
 
