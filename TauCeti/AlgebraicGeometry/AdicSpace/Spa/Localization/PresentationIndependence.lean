@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.UniversalProperty
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.UniversalProperty.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.CompleteSeparated.RefinementCategory
 public import TauCeti.Topology.Category.TopCommRingCat.Basic
 

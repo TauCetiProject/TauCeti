@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Covering.Basic
+public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
@@ -19,6 +20,11 @@ sections are smooth.
 
 For an individual trivialization, local invertibility is needed only on its source.
 No manifold structure on the fiber of the trivialization is required.
+
+Maps lift through such coverings with the same regularity: a `C^n` map from a simply connected,
+locally path-connected manifold has a `C^n` lift through every point of the fibre over the image
+of a base point (`IsCoveringMap.exists_contMDiff_lift`). The continuous lift is the topological
+one, and composing with the local inverses of the covering shows it is `C^n`.
 
 ## References
 
@@ -89,5 +95,18 @@ theorem exists_trivialization_contMDiffOn_symm (hcover : IsCoveringMap p)
   subst y
   have hlabel : (t a).2 = ⟨a, rfl⟩ := h.toTrivialization_apply
   simpa only [hlabel] using t.symm_apply_mk_proj (t.mem_source.mpr hy)
+
+/-- **Smooth lifts through a covering.** Let `p` be a covering map which is a `C^n` local
+diffeomorphism. A `C^n` map `f` from a simply connected, locally path-connected manifold `N` lifts
+through `p` to a `C^n` map `g`, through any prescribed point `x₀` of the fibre over `f y₀`. -/
+theorem exists_contMDiff_lift {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] [SimplyConnectedSpace N] [LocallyPathConnectedSpace N]
+    (hcover : IsCoveringMap p) (hp : IsLocalDiffeomorph I J n p) {f : N → B}
+    (hf : ContMDiff I' J n f) (y₀ : N) {x₀ : M} (hx₀ : p x₀ = f y₀) :
+    ∃ g : N → M, ContMDiff I' I n g ∧ p ∘ g = f ∧ g y₀ = x₀ := by
+  obtain ⟨g, ⟨hg₀, hg⟩, -⟩ :=
+    hcover.existsUnique_continuousMap_lifts ⟨f, hf.continuous⟩ y₀ x₀ hx₀
+  exact ⟨g, ContMDiff.of_comp_isLocalDiffeomorph hp g.continuous (by rwa [hg]), hg, hg₀⟩
 
 end IsCoveringMap

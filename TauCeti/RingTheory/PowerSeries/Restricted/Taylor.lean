@@ -214,8 +214,7 @@ theorem IsRestricted.norm_evalAt_add_le_max (hf : f.IsRestricted c)
     obtain rfl : y = 0 := norm_le_zero_iff.mp hy
     rcases T with _ | T
     · refine le_max_of_le_right ?_
-      simpa using norm_evalAt_hasseDeriv_mul_pow_le_gaussNorm (hasGaussNorm_of_isRestricted hf)
-        ha 0
+      simp
     · refine le_max_of_le_left ?_
       simpa using h 0 (Nat.succ_pos T)
   have hy₁ : ‖y‖ / c ≤ 1 := (div_le_one hc).mpr hy

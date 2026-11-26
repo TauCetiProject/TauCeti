@@ -33,6 +33,7 @@ homomorphism `K₀(A) → K₀(B)` through the unitization `Unitization.starMap 
 ## Main statements
 
 * `TauCeti.UnitizationKZero.map_id` and `TauCeti.UnitizationKZero.map_comp`: functoriality.
+* `TauCeti.UnitizationKZero.map_zero`: the zero homomorphism induces zero on `K₀`.
 * `TauCeti.UnitizationKZero.augmentation_comp_inl`: the scalar inclusion splits `K₀(ε)`.
 * `TauCeti.UnitizationKZero.augmentation_comp_map_starMap`: `K₀(ε)` is natural for unitized star
   homomorphisms.
@@ -230,6 +231,18 @@ theorem map_comp (ψ : B →⋆ₙₐ[R] C) (φ : A →⋆ₙₐ[R] B) :
     NonUnitalStarRingHom.ext fun _ ↦ rfl
   rw [coe_map, AddMonoidHom.comp_apply, coe_map, coe_map, Unitization.starMap_comp, h,
     ProjectionKZero.map_comp, AddMonoidHom.comp_apply]
+
+/-- **Zero maps.** The zero homomorphism `A → B` induces the zero homomorphism on `K₀`: its
+unitization is the augmentation `A⁺ → R` followed by the scalar inclusion `R → B⁺`. -/
+@[simp]
+theorem map_zero : map (0 : A →⋆ₙₐ[R] B) = 0 := by
+  have h : NonUnitalStarRingHom.ofClass (Unitization.starMap (0 : A →⋆ₙₐ[R] B)) =
+      (NonUnitalStarRingHom.ofClass (StarAlgHom.ofId R (Unitization R B))).comp
+        (NonUnitalStarRingHom.ofClass (Unitization.fstStarAlgHom R A)) :=
+    NonUnitalStarRingHom.ext fun u ↦ by ext <;> simp
+  ext v
+  rw [coe_map, h, ProjectionKZero.map_comp, ← augmentation_def, ← inl_def]
+  simp [(mem_iff _).1 v.property]
 
 end map
 
