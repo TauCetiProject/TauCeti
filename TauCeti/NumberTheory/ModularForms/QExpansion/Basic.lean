@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import Mathlib.NumberTheory.ModularForms.QExpansion
+public import TauCeti.Analysis.Analytic.TaylorSeries
 public import TauCeti.Analysis.Complex.Periodic
 
 /-!
@@ -128,6 +129,14 @@ lemma UpperHalfPlane.hasFPowerSeriesAt_cuspFunction {f : ℍ → ℂ}
   simpa [_root_.UpperHalfPlane.qExpansion_coeff, div_eq_mul_inv, mul_comm]
     using hfanalytic.hasFPowerSeriesAt
 
+/-- When a cusp function is analytic at zero, its Taylor series is the `q`-expansion. -/
+theorem UpperHalfPlane.qExpansion_eq_taylorSeries {f : ℍ → ℂ}
+    (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
+    qExpansion h f = taylorSeries (cuspFunction h f) 0 := by
+  ext n
+  rw [(hasFPowerSeriesAt_cuspFunction hf).coeff_taylorSeries]
+  simp
+
 /-- **Uniqueness of `q`-expansion coefficients, for a raw function on `ℍ`.** If `f` is given by
 a convergent expansion `f τ = ∑' m, c m * 𝕢 h τ ^ m` and its cusp function is analytic at `0`,
 then the `c m` are the coefficients of `qExpansion h f`.
@@ -217,6 +226,20 @@ theorem UpperHalfPlane.cuspFunction_eventuallyEq_nhds_of_continuousAt {ψ : ℂ 
   simp only [cuspFunction]
   rw [Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne]
   exact ((hψ.tendsto.mono_left nhdsWithin_le_nhds).congr' hf.symm).limUnder_eq
+
+/-- Pulling a function continuous at zero back along the local parameter recovers its germ
+as the cusp function. -/
+theorem UpperHalfPlane.cuspFunction_comp_qParam_eventuallyEq (hh : 0 < h) {ψ : ℂ → ℂ}
+    (hψ : ContinuousAt ψ 0) :
+    cuspFunction h (fun τ : ℍ ↦ ψ (Function.Periodic.qParam h τ)) =ᶠ[𝓝 0] ψ := by
+  refine cuspFunction_eventuallyEq_nhds_of_continuousAt ?_ hψ
+  filter_upwards [self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
+  have hq0 : q ≠ 0 := Set.mem_compl_singleton_iff.mp hq
+  rw [cuspFunction_of_ne_zero hq0,
+    ofComplex_apply_of_im_pos (Function.Periodic.im_invQParam_pos_of_norm_lt_one hh
+      (mem_ball_zero_iff.mp hqn) hq0),
+    Function.Periodic.qParam_right_inv hh.ne' hq0]
 
 /-- The `q`-expansion only depends on the cusp function off `q = 0`. -/
 theorem UpperHalfPlane.qExpansion_congr (hfg : cuspFunction h f =ᶠ[𝓝[≠] 0] cuspFunction h g) :

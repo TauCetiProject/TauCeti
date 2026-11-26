@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.ModularLambda.Basic
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
-public import Mathlib.Combinatorics.Enumerative.Pentagonal.PowerSeries
+public import TauCeti.Combinatorics.Enumerative.Pentagonal.PowerSeries
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import Mathlib.RingTheory.PowerSeries.Inverse
 import TauCeti.Analysis.Analytic.PowerSubstitution
@@ -36,7 +36,7 @@ ring after base change.
 
 public noncomputable section
 
-open Complex Filter Topology PowerSeries
+open Complex Topology PowerSeries
 open scoped UpperHalfPlane
 
 namespace TauCeti.ModularForm
@@ -71,9 +71,8 @@ theorem modularLambdaCoordinate_coeff_two :
   let E₄ := E.expand 4 (by decide)
   have h₀ : constantCoeff E = 1 := constantCoeff_pentagonalSeries ℤ
   have h₁ : coeff 1 E = -1 := by
-    have h := coeff_pentagonalSeries_pentagonal ℤ 1
-    rw [show pentagonal 1 = 1 by norm_num [pentagonal_def]] at h
-    simpa [Int.coe_negOnePow] using h
+    have hone : pentagonal 1 = 1 := by norm_num [pentagonal_def]
+    simpa [hone, Int.coe_negOnePow] using coeff_pentagonalSeries_pentagonal ℤ 1
   have h₂ : coeff 1 E₂ = 0 := coeff_expand_of_not_dvd _ _ _ (by decide)
   have h₄ : coeff 1 E₄ = 0 := coeff_expand_of_not_dvd _ _ _ (by decide)
   have hi : coeff 1 (E₂.invOfUnit 1) = 0 := by
@@ -109,15 +108,19 @@ private theorem modularLambda_div_sixteen_eq_euler {τ : ℂ} (hτ : 0 < τ.im) 
   rw [(eq_div_iff hne).2 hodd.symm, heven']
   ring
 
-private def normalizedLambdaEuler (q : ℂ) : ℂ :=
-  q * (eulerFunction q * eulerFunction (q ^ 4) ^ 2 *
-    (eulerFunction (q ^ 2))⁻¹ ^ 3) ^ 8
+private def normalizedLambdaEuler : ℂ → ℂ :=
+  (fun q ↦ q) * (eulerFunction * (fun q : ℂ ↦ eulerFunction (q ^ 4)) ^ 2 *
+    (fun q : ℂ ↦ eulerFunction (q ^ 2))⁻¹ ^ 3) ^ 8
+
+private theorem analyticAt_eulerFunction_comp_pow (k : ℕ) (hk : k ≠ 0) :
+    AnalyticAt ℂ (fun q : ℂ ↦ eulerFunction (q ^ k)) 0 :=
+  analyticAt_eulerFunction_zero.comp_of_eq (by fun_prop) (zero_pow hk)
 
 private theorem analyticAt_normalizedLambdaEuler : AnalyticAt ℂ normalizedLambdaEuler 0 := by
-  have h (k : ℕ) (hk : k ≠ 0) : AnalyticAt ℂ (fun q : ℂ ↦ eulerFunction (q ^ k)) 0 :=
-    analyticAt_eulerFunction_zero.comp_of_eq (by fun_prop) (zero_pow hk)
-  exact analyticAt_id.mul (((analyticAt_eulerFunction_zero.mul ((h 4 (by decide)).pow 2)).mul
-    (((h 2 two_ne_zero).inv (by simp)).pow 3)).pow 8)
+  have h₂ := analyticAt_eulerFunction_comp_pow 2 two_ne_zero
+  have h₄ := analyticAt_eulerFunction_comp_pow 4 (by decide)
+  exact analyticAt_id.mul (((analyticAt_eulerFunction_zero.mul (h₄.pow 2)).mul
+    ((h₂.inv (by simp)).pow 3)).pow 8)
 
 private theorem cuspFunction_modularLambda_div_sixteen_eventuallyEq :
     UpperHalfPlane.cuspFunction 2 (fun τ : ℍ ↦ modularLambda τ / 16) =ᶠ[𝓝 0]
@@ -126,66 +129,44 @@ private theorem cuspFunction_modularLambda_div_sixteen_eventuallyEq :
       fun τ : ℍ ↦ normalizedLambdaEuler (Function.Periodic.qParam 2 τ) := by
     funext τ
     rw [modularLambda_div_sixteen_eq_euler τ.im_pos]
-    have hq : cexp (Real.pi * I * τ) = Function.Periodic.qParam 2 τ := by
-      simpa using Periodic.exp_pi_mul_I_mul_eq_qParam_pow
-        (h := 2) (t := 1) (m := 1) (by norm_num) (by norm_num) τ
-    simp [hq, normalizedLambdaEuler]
+    simp only [Periodic.exp_pi_I_mul_eq_qParam_two, normalizedLambdaEuler,
+      Pi.mul_apply, Pi.pow_apply, Pi.inv_apply]
   rw [hfun]
-  apply TauCeti.UpperHalfPlane.cuspFunction_eventuallyEq_nhds_of_continuousAt _
+  exact TauCeti.UpperHalfPlane.cuspFunction_comp_qParam_eventuallyEq (by norm_num)
     analyticAt_normalizedLambdaEuler.continuousAt
-  filter_upwards [self_mem_nhdsWithin,
-    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
-  have hq0 : q ≠ 0 := Set.mem_compl_singleton_iff.mp hq
-  rw [TauCeti.UpperHalfPlane.cuspFunction_of_ne_zero hq0,
-    UpperHalfPlane.ofComplex_apply_of_im_pos
-      (Function.Periodic.im_invQParam_pos_of_norm_lt_one (by norm_num)
-        (mem_ball_zero_iff.mp hqn) hq0),
-    Function.Periodic.qParam_right_inv (by norm_num : (2 : ℝ) ≠ 0) hq0]
 
 /-- The width-two cusp function of `λ / 16` is analytic at the origin. -/
 theorem analyticAt_cuspFunction_modularLambda_div_sixteen :
     AnalyticAt ℂ (UpperHalfPlane.cuspFunction 2 (fun τ : ℍ ↦ modularLambda τ / 16)) 0 :=
   analyticAt_normalizedLambdaEuler.congr cuspFunction_modularLambda_div_sixteen_eventuallyEq.symm
 
-private theorem qExpansion_modularLambda_div_sixteen_eq_taylor :
-    UpperHalfPlane.qExpansion 2 (fun τ : ℍ ↦ modularLambda τ / 16) =
-      taylorSeries normalizedLambdaEuler 0 := by
-  rw [← taylorSeries_congr cuspFunction_modularLambda_div_sixteen_eventuallyEq]
-  ext n
-  rw [(TauCeti.UpperHalfPlane.hasFPowerSeriesAt_cuspFunction
-    analyticAt_cuspFunction_modularLambda_div_sixteen).coeff_taylorSeries]
-  simp
-
 /-- The integral formal coordinate is the width-two `q`-expansion of `λ / 16`. -/
 theorem modularLambdaCoordinate_map_eq_qExpansion :
     modularLambdaCoordinate.toPowerSeries.map (Int.castRingHom ℂ) =
       UpperHalfPlane.qExpansion 2 (fun τ : ℍ ↦ modularLambda τ / 16) := by
-  let E (k : ℕ) : ℂ → ℂ := fun q ↦ eulerFunction (q ^ k)
-  have hE (k : ℕ) (hk : k ≠ 0) : AnalyticAt ℂ (E k) 0 :=
-    analyticAt_eulerFunction_zero.comp_of_eq (by fun_prop) (zero_pow hk)
+  have hE : AnalyticAt ℂ (eulerFunction : ℂ → ℂ) 0 := analyticAt_eulerFunction_zero
+  have h₂ := analyticAt_eulerFunction_comp_pow 2 two_ne_zero
+  have h₄ := analyticAt_eulerFunction_comp_pow 4 (by decide)
+  have hne : eulerFunction ((0 : ℂ) ^ 2) ≠ 0 := by simp
+  have hId : AnalyticAt ℂ (fun q : ℂ ↦ q) 0 := analyticAt_id
+  have hInv := h₂.inv hne
+  have hSquare := h₄.pow 2
+  have hCube := hInv.pow 3
+  have hNumerator := hE.mul hSquare
+  have hProduct := hNumerator.mul hCube
+  have hPower := hProduct.pow 8
   have hTaylor (k : ℕ) (hk : k ≠ 0) :
-      taylorSeries (E k) 0 = (pentagonalSeries ℂ).expand k hk := by
-    change taylorSeries (fun q : ℂ ↦ eulerFunction (q ^ k)) 0 = _
-    rw [taylorSeries_comp_pow analyticAt_eulerFunction_zero k hk, taylorSeries_eulerFunction]
-  have hE0 : E 2 0 ≠ 0 := by simp [E]
-  have hA := (hE 1 one_ne_zero).mul ((hE 4 (by decide)).pow 2)
-  have hB := ((hE 2 two_ne_zero).inv hE0).pow 3
-  have hF := hA.mul hB
-  rw [qExpansion_modularLambda_div_sixteen_eq_taylor]
-  have hform : normalizedLambdaEuler =
-      (fun q : ℂ ↦ q) * (E 1 * E 4 ^ 2 * (E 2)⁻¹ ^ 3) ^ 8 := by
-    funext q
-    simp [normalizedLambdaEuler, E]
-  rw [hform]
-  have hId : AnalyticAt ℂ (fun q : ℂ ↦ q) 0 := by fun_prop
-  rw [taylorSeries_mul hId (hF.pow 8), taylorSeries_pow hF, taylorSeries_mul hA hB,
-    taylorSeries_mul (hE 1 one_ne_zero) ((hE 4 (by decide)).pow 2),
-    taylorSeries_pow (hE 4 (by decide)), taylorSeries_pow ((hE 2 two_ne_zero).inv hE0)]
-  rw [taylorSeries_id, taylorSeries_inv (hE 2 two_ne_zero) hE0,
-    hTaylor 1 one_ne_zero, hTaylor 4 (by decide), hTaylor 2 two_ne_zero,
-    modularLambdaCoordinate_toPowerSeries]
+      taylorSeries (fun q : ℂ ↦ eulerFunction (q ^ k)) 0 = (pentagonalSeries ℂ).expand k hk := by
+    rw [taylorSeries_comp_pow hE k hk, taylorSeries_eulerFunction]
+  rw [TauCeti.UpperHalfPlane.qExpansion_eq_taylorSeries
+    analyticAt_cuspFunction_modularLambda_div_sixteen,
+    taylorSeries_congr cuspFunction_modularLambda_div_sixteen_eventuallyEq]
+  simp (disch := assumption) only
+    [normalizedLambdaEuler, taylorSeries_mul, taylorSeries_pow, taylorSeries_inv, taylorSeries_id,
+      taylorSeries_eulerFunction, hTaylor 2 two_ne_zero, hTaylor 4 (by decide)]
+  rw [modularLambdaCoordinate_toPowerSeries]
   simp only [map_mul, map_pow, map_X, map_invOfUnit_ringHom, map_one, map_expand,
-    map_pentagonalSeries, expand_one_apply]
+    map_pentagonalSeries]
   rw [invOfUnit_eq' _ _ (by simp)]
 
 end TauCeti.ModularForm

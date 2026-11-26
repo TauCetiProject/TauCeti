@@ -204,6 +204,7 @@ theorem taylorSeries_sub_const : taylorSeries (fun z : 𝕜 ↦ z - a) a = Power
     rcases n with _ | n <;> simp
 
 /-- The Taylor series of the identity function at zero is the variable `X`. -/
+@[simp]
 theorem taylorSeries_id : taylorSeries (fun z : 𝕜 ↦ z) 0 = PowerSeries.X := by
   simpa using (taylorSeries_sub_const (𝕜 := 𝕜) (a := 0))
 

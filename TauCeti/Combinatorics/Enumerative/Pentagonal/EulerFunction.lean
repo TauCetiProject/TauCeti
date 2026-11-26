@@ -7,42 +7,19 @@ module
 
 public import Mathlib.Combinatorics.Enumerative.Pentagonal.EulerFunction
 public import TauCeti.Analysis.Analytic.TaylorSeries
+import TauCeti.Combinatorics.Enumerative.Pentagonal.PowerSeries
 import TauCeti.RingTheory.PowerSeries.Radius
 
 /-!
 # The Taylor series of the Euler function
 
-The pentagonal series is preserved by coefficient ring maps and has constant coefficient one.
-It gives the analytic expansion of the Euler function on the open unit ball, allowing Euler
-products to be compared with formal power series over other coefficient rings.
+The pentagonal series gives the analytic expansion of the Euler function on the open unit ball,
+allowing Euler products to be compared with formal power series over other coefficient rings.
 -/
 
 public section
 
 open PowerSeries
-
-namespace PowerSeries
-
-/-- Applying a coefficient ring homomorphism to the pentagonal series preserves the series. -/
-@[simp]
-theorem map_pentagonalSeries {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S) :
-    (pentagonalSeries R).map f = pentagonalSeries S := by
-  ext n
-  have hR := coeff_pentagonalSeries_mul_eq_extend R n (fun _ ↦ 1)
-  have hS := coeff_pentagonalSeries_mul_eq_extend S n (fun _ ↦ 1)
-  simp only [mul_one] at hR hS
-  rw [coeff_map, hR, hS, Function.apply_extend ⇑f]
-  simp [Function.comp_def, Int.coe_negOnePow, Pi.zero_def]
-
-/-- The pentagonal series has constant coefficient one. -/
-@[simp]
-theorem constantCoeff_pentagonalSeries (R : Type*) [CommRing R] :
-    constantCoeff (pentagonalSeries R) = 1 := by
-  rw [← coeff_zero_eq_constantCoeff_apply,
-    ← show pentagonal 0 = 0 by norm_num [pentagonal_def], coeff_pentagonalSeries_pentagonal]
-  simp
-
-end PowerSeries
 
 namespace TauCeti
 
@@ -77,6 +54,7 @@ theorem analyticAt_eulerFunction_zero : AnalyticAt 𝕜 (eulerFunction : 𝕜 �
   hasFPowerSeriesOnBall_eulerFunction.analyticAt
 
 /-- The Taylor series of the Euler function at zero is the pentagonal series. -/
+@[simp]
 theorem taylorSeries_eulerFunction :
     taylorSeries (eulerFunction : 𝕜 → 𝕜) 0 = pentagonalSeries 𝕜 := by
   ext n
