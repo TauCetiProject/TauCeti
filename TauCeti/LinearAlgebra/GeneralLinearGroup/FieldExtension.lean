@@ -94,10 +94,6 @@ theorem mulGalois_one_right (c : Eˣ) :
     mulGalois c (1 : E ≃ₐ[F] E) = Units.map (Algebra.lmul F E : E →* Module.End F E) c :=
   Units.ext (LinearMap.ext fun v ↦ by simp [Algebra.coe_lmul_eq_mul])
 
-/-- `v ↦ 1 · id(v)` is the identity. -/
-theorem mulGalois_one_one : mulGalois (1 : Eˣ) (1 : E ≃ₐ[F] E) = 1 := by
-  simp
-
 /-- Conjugation by `v ↦ c τ(v)` maps the units of `E` acting by multiplication into themselves. -/
 theorem mulGalois_conj_mem_lmulUnitsRange (c : Eˣ) (τ : E ≃ₐ[F] E)
     {u : LinearMap.GeneralLinearGroup F E} (hu : u ∈ lmulUnitsRange F E) :
