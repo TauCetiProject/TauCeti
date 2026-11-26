@@ -24,9 +24,11 @@ termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`;
 `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`, `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the
 termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`;
 `Nat.pow_three_le_two_mul_descFactorial_three`, `n ^ 3 ≤ 2 * (n)₃` for `6 ≤ n`, comparing the
-number of triples of `n` elements with the number of injective ones; and
+number of triples of `n` elements with the number of injective ones;
 `Nat.factorial_add_mul_factorial_add_le`, `(s + j)! * (s + j)! ≤ (2 * s + j)! * j !`, which bounds
-products of factorials in double hypergeometric series.
+products of factorials in double hypergeometric series; and
+`Nat.le_three_of_mul_sub_one_eq_factorial`, `n (n - 1) = n! → n ≤ 3`, which says that the
+`n (n - 1)` affine maps of a field of order `n` exhaust its `n!` permutations only for `n ≤ 3`.
 -/
 
 public section
@@ -117,5 +119,18 @@ theorem pow_three_le_two_mul_descFactorial_three {n : ℕ} (hn : 6 ≤ n) :
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
   simp only [descFactorial_succ, descFactorial_zero]
   grind
+
+/-- If `n (n - 1) = n!` then `n ≤ 3`: for `n = m + 2` the factorial is `(m + 2) (m + 1) m!`, so
+`m! = 1`, which forces `m ≤ 1`. -/
+theorem le_three_of_mul_sub_one_eq_factorial {n : ℕ} (h : n * (n - 1) = n.factorial) :
+    n ≤ 3 := by
+  by_contra! h4
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
+  rw [Nat.factorial_succ, Nat.factorial_succ, ← Nat.mul_assoc, show m + 2 - 1 = m + 1 by omega] at h
+  have hm : m.factorial = 1 :=
+    Nat.eq_of_mul_eq_mul_left (Nat.mul_pos (by omega) (by omega))
+      (h.symm.trans (Nat.mul_one _).symm)
+  have := Nat.factorial_eq_one.1 hm
+  omega
 
 end Nat

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Field.ZMod
 public import TauCeti.GroupTheory.SpecificGroups.Affine.Primitive
+import TauCeti.Data.Nat.Factorial.Basic
 import Mathlib.Algebra.Group.Subgroup.Finite
 import Mathlib.Data.Finite.Perm
 import Mathlib.Tactic.IntervalCases
@@ -90,20 +91,6 @@ theorem mem_range_toPermHom_iff {σ : Perm F} :
 
 end Ring
 
-/-- If `n (n - 1) = n!` then `n ≤ 3`: for `n = m + 2` the factorial is `(m + 2) (m + 1) m!`, so
-`m! = 1`, which forces `m ≤ 1`. -/
-private theorem le_three_of_mul_sub_one_eq_factorial {n : ℕ} (h : n * (n - 1) = n.factorial) :
-    n ≤ 3 := by
-  by_contra! h4
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
-  rw [Nat.factorial_succ, Nat.factorial_succ, ← mul_assoc, show m + 2 - 1 = m + 1 by omega] at h
-  have hm : m.factorial = 1 :=
-    Nat.eq_of_mul_eq_mul_left (Nat.mul_pos (by omega) (by omega))
-      (h.symm.trans (mul_one _).symm)
-  have h2 : Nat.factorial 2 ≤ m.factorial := Nat.factorial_le (by omega)
-  rw [hm, Nat.factorial_two] at h2
-  omega
-
 section DivisionRing
 
 variable {F : Type*} [DivisionRing F] [Finite F]
@@ -118,7 +105,7 @@ theorem range_toPermHom_eq_top_iff :
   constructor
   · intro htop
     rw [htop, Subgroup.card_top, Nat.card_perm] at hcard
-    exact le_three_of_mul_sub_one_eq_factorial hcard.symm
+    exact Nat.le_three_of_mul_sub_one_eq_factorial hcard.symm
   · intro h3
     apply Subgroup.eq_top_of_card_eq
     rw [hcard, Nat.card_perm]
