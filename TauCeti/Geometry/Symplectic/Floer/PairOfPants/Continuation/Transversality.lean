@@ -29,7 +29,7 @@ the graph of `u` over `O`, the range of `D_u` and the Hamiltonian variations sup
 
 Beyond the height `2 + ∑_q |L_q|` on each end, past every neck and collar, the datum is the
 pair-of-pants datum of `H`
-(`TauCeti.SymplecticForm.pairOfPantsContinuationPerturbation_components_eq`), so this is the
+(`TauCeti.Floer.pairOfPantsContinuationPerturbation_components_eq`), so this is the
 cokernel detection for data that agree with the pair-of-pants data far out on the ends
 (`topologicalClosure_range_sup_span_hamiltonianVariationsOn_pairOfPants_eq_top`, in the namespace
 `TauCeti.SymplecticForm`). No hypothesis is placed on `u` over `O`, which may be constant there,
