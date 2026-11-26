@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.MorseBott
 import TauCeti.Geometry.Lie.Adjoint.Representation.Stabilizer
 import TauCeti.Geometry.Lie.Subgroup.Torus.Stabilizer
 import TauCeti.Geometry.Manifold.Algebra.SMul
+import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # Critical orbits of heights on coadjoint orbits are Morse–Bott
@@ -93,19 +94,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G] [T2Space G]
   {T : Subgroup G} [IsMulCommutative T] {B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)}
 
-omit [I.Boundaryless] in
-/-- Every orbit of the adjoint stabilizer `Z_G(Y)` of a compact Lie group acting continuously on a
-space is compact. -/
-private theorem isCompact_orbit_stabilizer_continuousAdjointRepresentation [CompactSpace G]
-    {Y : LeftInvariantDerivation I G} {M : Type*} [TopologicalSpace M] [MulAction G M]
-    [ContinuousSMul G M] (x : M) :
-    IsCompact (MulAction.orbit
-      ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y) x) := by
-  have : CompactSpace
-      ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y) :=
-    isCompact_iff_compactSpace.1 (isClosed_stabilizer_continuousAdjointRepresentation Y).isCompact
-  exact isCompact_range (continuous_subtypeVal.smul continuous_const)
-
 /-- **The adjoint stabilizer preserves the critical set of a height.** Let `T` be a maximal torus
 of a compact Lie group, `B` an invariant form with trivial left radical, and `μ`, `X` in the Lie
 algebra `𝔱` of `T`. The orbit of a critical point of the height `f_X` on the coadjoint orbit of
@@ -145,56 +133,6 @@ theorem orbit_subset_criticalPoints [CompactSpace G] (hT : IsMaximalTorus T)
   exact Set.subset_iUnion
     (fun w ↦ MulAction.orbit _ (normalizerQuotientToCoadjointOrbit B hB μ w)) w
 
-/-- The complement of the `Z_G(X)`-orbit of a critical point of `f_X` in the critical set is
-closed: it is the union of the finitely many other critical orbits, which are compact. -/
-private theorem isClosed_criticalPoints_diff_orbit [CompactSpace G] (hT : IsMaximalTorus T)
-    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
-    (hsep : B.SeparatingLeft) (μ X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule)
-    (x : G ⧸ (coadjointRepresentation ℝ I G).stabilizer
-      (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-        BoundarylessManifold.isInteriorPoint μ))) :
-    IsClosed (criticalPoints
-        𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer
-          (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-            BoundarylessManifold.isInteriorPoint μ))))
-        (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap
-          (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-            BoundarylessManifold.isInteriorPoint μ)) y
-          (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-            BoundarylessManifold.isInteriorPoint X)) \
-      MulAction.orbit
-        ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
-          (X : LeftInvariantDerivation I G)) x) := by
-  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  set Z := (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
-    (X : LeftInvariantDerivation I G)
-  set C := criticalPoints
-    𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer
-      (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-        BoundarylessManifold.isInteriorPoint μ))))
-    (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap
-      (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-        BoundarylessManifold.isInteriorPoint μ)) y
-      (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-        BoundarylessManifold.isInteriorPoint X))
-  -- The other critical orbits form a finite family of compact, hence closed, sets.
-  have hclosed : IsClosed (⋃ O ∈ MulAction.orbit Z '' C \ {MulAction.orbit Z x}, O) :=
-    ((finite_image_orbit_criticalPoints hT hB hsep μ X).sdiff).isClosed_biUnion fun _ hO ↦ by
-      obtain ⟨y, -, rfl⟩ := hO.1
-      exact (isCompact_orbit_stabilizer_continuousAdjointRepresentation y).isClosed
-  convert hclosed using 1
-  ext y
-  simp only [Set.mem_sdiff, Set.mem_iUnion, Set.mem_image, Set.mem_singleton_iff, exists_prop]
-  constructor
-  · -- A critical point outside the orbit of `x` lies in its own orbit, which is another one.
-    rintro ⟨hy, hyx⟩
-    exact ⟨MulAction.orbit Z y, ⟨⟨y, hy, rfl⟩, fun h ↦ hyx (h ▸ MulAction.mem_orbit_self y)⟩,
-      MulAction.mem_orbit_self y⟩
-  · -- A point of another critical orbit is critical, and is not in the orbit of `x`.
-    rintro ⟨_, ⟨⟨z, hz, rfl⟩, hzx⟩, hyz⟩
-    refine ⟨orbit_subset_criticalPoints hT hB hsep μ X hz hyz, fun hyx ↦ hzx ?_⟩
-    rw [← MulAction.orbit_eq_iff.2 hyz, MulAction.orbit_eq_iff.2 hyx]
-
 /-- **The critical orbits of a height are open and closed in its critical set.** Let `T` be a
 maximal torus of a compact Lie group, `B` an invariant form with trivial left radical, and `μ`,
 `X` in the Lie algebra `𝔱` of `T`. The orbit of a critical point of the height `f_X` on the
@@ -227,15 +165,12 @@ theorem isClopen_preimage_val_orbit_criticalPoints [CompactSpace G] (hT : IsMaxi
           (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
             BoundarylessManifold.isInteriorPoint X)))) := by
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  refine ⟨(isCompact_orbit_stabilizer_continuousAdjointRepresentation _).isClosed.preimage
-    continuous_subtypeVal, ?_⟩
-  -- Inside the critical set, the orbit of `x` is the complement of a closed set.
-  convert ((isClosed_criticalPoints_diff_orbit hT hB hsep μ X x).preimage
-    continuous_subtypeVal).isOpen_compl using 1
-  ext y
-  simp only [Set.mem_preimage, Set.mem_compl_iff, Set.mem_sdiff, not_and, not_not]
-  exact ⟨fun h _ ↦ h, fun h ↦ h y.property⟩
-
+  -- The critical set is the union of finitely many orbits of `Z_G(X)`, which are compact since
+  -- `Z_G(X)` is a closed subgroup of the compact group `G`.
+  have := isCompact_iff_compactSpace.1 (isClosed_stabilizer_continuousAdjointRepresentation
+    (X : LeftInvariantDerivation I G)).isCompact
+  exact isClopen_preimage_val_orbit_of_finite (finite_image_orbit_criticalPoints hT hB hsep μ X)
+    (fun y _ ↦ (isCompact_orbit y).isClosed) x
 
 /-- **The critical orbits of a height are the connected components of its critical set.** Let `T`
 be a maximal torus of a compact connected Lie group, `B` an invariant form with trivial left
@@ -358,22 +293,17 @@ theorem exists_isNondegenerateCriticalSubmanifold_orbit_criticalPoints [CompactS
                   (y : G ⧸ (coadjointRepresentation ℝ I G).stabilizer
                     (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
                       BoundarylessManifold.isInteriorPoint μ))) := by
-  have h := (Module.Dual.isEquivariantMomentMap_coadjointOrbitForm
-    (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-      BoundarylessManifold.isInteriorPoint μ))).toIsMomentMap
-  have hσ := (Module.Dual.isSymplectic_coadjointOrbitForm
-    (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-      BoundarylessManifold.isInteriorPoint μ))).isNondegenerate
-  have hcrit := h.criticalPoints_eq_fixedPoints hσ
-    (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-      BoundarylessManifold.isInteriorPoint X)
+  have hopen := (isClopen_preimage_val_orbit_criticalPoints hT hB hsep μ X ⟨x, hx⟩).isOpen
+  set ν := B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint μ)
+  set ξ := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint X
+  have h := (Module.Dual.isEquivariantMomentMap_coadjointOrbitForm ν).toIsMomentMap
+  have hσ := (Module.Dual.isSymplectic_coadjointOrbitForm ν).isNondegenerate
+  have hcrit := h.criticalPoints_eq_fixedPoints hσ ξ
   have : ContMDiffConstSMul 𝓘(ℝ, Subgroup.QuotientModelSpace I
-      ((coadjointRepresentation ℝ I G).stabilizer
-        (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-          BoundarylessManifold.isInteriorPoint μ)))) ∞ G
-      (G ⧸ (coadjointRepresentation ℝ I G).stabilizer
-        (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-          BoundarylessManifold.isInteriorPoint μ))) :=
+      ((coadjointRepresentation ℝ I G).stabilizer ν)) ∞ G
+      (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) :=
     ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
   refine h.exists_isNondegenerateCriticalSubmanifold_of_subset_fixedPointsOfFinrank_of_compactSpace
     hσ hL ?_ ?_
@@ -383,16 +313,13 @@ theorem exists_isNondegenerateCriticalSubmanifold_orbit_criticalPoints [CompactS
     rw [stabilizer_continuousAdjointRepresentation_eq_stabilizer_adjointRepresentation,
       stabilizer_adjointRepresentation_eq_centralizer_closedOneParameterSubgroup] at hk
     have hkx := ((Diffeomorph.constSmul 𝓘(ℝ, Subgroup.QuotientModelSpace I
-      ((coadjointRepresentation ℝ I G).stabilizer
-        (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-          BoundarylessManifold.isInteriorPoint μ)))) ∞ k).apply_mem_fixedPointsOfFinrank_iff
+      ((coadjointRepresentation ℝ I G).stabilizer ν)) ∞ k).apply_mem_fixedPointsOfFinrank_iff
       (by simp) fun g ↦ .of_forall fun y ↦ by
         simp only [Function.comp_apply, Diffeomorph.constSmul_apply, Subgroup.smul_def, smul_smul,
           Subgroup.mem_centralizer_iff.1 hk g g.property]).2
       (mem_fixedPointsOfFinrank.2 ⟨hcrit ▸ hx, rfl⟩)
     rwa [Diffeomorph.constSmul_apply] at hkx
   · -- The orbit is open in the critical set, the fixed set of `T_X`.
-    rw [← hcrit]
-    exact (isClopen_preimage_val_orbit_criticalPoints hT hB hsep μ X ⟨x, hx⟩).isOpen
+    rwa [← hcrit]
 
 end TauCeti.Lie

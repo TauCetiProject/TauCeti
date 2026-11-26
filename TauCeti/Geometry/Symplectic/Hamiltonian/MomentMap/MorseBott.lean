@@ -38,7 +38,7 @@ embedded submanifold `M^{T_ξ}_d` whose tangent space at each point is that fixe
 Comparing the two descriptions of the fixed tangent subspace, each `M^{T_ξ}_d` is a nondegenerate
 critical submanifold of `μ^ξ` (`exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank`),
 and so is every subset of `M^{T_ξ}_d` which is open in `M^{T_ξ}`, such as a connected component of
-the critical set or a union of orbits of a group commuting with `T_ξ`
+the critical set or a union of orbits of a group commuting with `T_ξ` that is open in `M^{T_ξ}`
 (`exists_isNondegenerateCriticalSubmanifold_of_subset_fixedPointsOfFinrank`).
 The comparison itself holds for every smooth embedding into `M^{T_ξ}` whose tangent images contain
 the fixed tangent subspaces (`isNondegenerateCriticalSubmanifold_of_fixedTangentSubspace_le`).
