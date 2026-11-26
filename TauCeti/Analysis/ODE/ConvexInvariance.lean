@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import TauCeti.Analysis.Calculus.TangentCone.InnerProductSpace
 public import TauCeti.Analysis.ODE.UniformTime
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.InnerProductSpace.Projection.MetricProj
 
 /-!
 # Invariance of closed convex sets under ODEs: Nagumo's criterion
@@ -89,10 +90,8 @@ private theorem mapsTo_Icc_of_lipschitzOnWith (hKc : Convex ℝ K) (hK : IsCompl
   -- The squared distance `d t = infDist (x t) K ^ 2` has upper right Dini derivative `≤ 2 L d t`.
   have hslope (t : ℝ) (ht : t ∈ Ico a b) (r : ℝ) (hr : 2 * L * infDist (x t) K ^ 2 < r) :
       ∃ᶠ τ in 𝓝[>] t, (τ - t)⁻¹ * (infDist (x τ) K ^ 2 - infDist (x t) K ^ 2) < r := by
-    obtain ⟨p, hpK, hp⟩ := exists_norm_eq_iInf_of_complete_convex hKne hK hKc (x t)
-    have hpd : ‖x t - p‖ = infDist (x t) K := by
-      simp only [hp, infDist_eq_iInf, dist_eq_norm]
-    have hnormal := (norm_eq_iInf_iff_real_inner_le_zero hKc hpK).1 hp
+    obtain ⟨p, hpK, hpd⟩ := exists_norm_sub_eq_infDist_of_isComplete hKne hK hKc (x t)
+    have hnormal := inner_sub_sub_nonpos_of_norm_sub_eq_infDist hKc hpK hpd
     have hxU : x t ∈ U := hU t ht (mem_closedBall_self infDist_nonneg)
     have hpU : p ∈ U := hU t ht (by rw [mem_closedBall, dist_comm, dist_eq_norm, hpd])
     have hbound : 2 * ⟪x t - p, v t (x t)⟫ ≤ 2 * L * infDist (x t) K ^ 2 := by

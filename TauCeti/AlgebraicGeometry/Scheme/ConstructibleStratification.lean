@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
-public import TauCeti.Topology.Stratification
+public import TauCeti.Topology.Stratification.Finite
 
 /-!
 # Constructible stratifications of schemes

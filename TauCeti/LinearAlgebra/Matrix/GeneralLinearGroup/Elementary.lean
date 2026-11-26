@@ -64,6 +64,9 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
 
 * `TauCeti.commutator_elementarySubgroup_self`: `⁅E n A, E n A⁆ = E n A` when `3 ≤ card n`.
 * `TauCeti.elementarySubgroup_le_commutator`: `E n A ≤ ⁅GL n A, GL n A⁆` when `3 ≤ card n`.
+* `TauCeti.elementarySubgroup_le_commutator_of_isUnit_sub_one`: `E n A ≤ ⁅GL n A, GL n A⁆` in every
+  size, when some unit `a` of `A` has `a - 1` invertible, as over a division ring other than
+  `𝔽₂`.
 * `TauCeti.mem_center_iff_forall_commute_transvectionUnit`: with two distinct indices, a matrix
   is central exactly when it commutes with every elementary matrix.
 * `TauCeti.mem_centralizer_elementarySubgroup_iff`, `TauCeti.centralizer_elementarySubgroup`:
@@ -95,6 +98,11 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
   change exactly when both blocks do.
 * `Matrix.GeneralLinearGroup.eq_fromBlocksGL_mul_upperBlockGL`: block upper-triangular
   factorization of a matrix in `GL (m ⊕ k) A` with bottom row `(0, 1)`.
+* `Matrix.GeneralLinearGroup.isUnit_sub_mul_mul_of_coe_eq_fromBlocks`,
+  `Matrix.GeneralLinearGroup.eq_lowerBlockGL_mul_fromBlocksGL_mul_upperBlockGL`: block Gaussian
+  elimination; the Schur complement `W - Z u⁻¹ Y` of an invertible upper-left block `u` of an
+  invertible matrix `fromBlocks u Y Z W` is invertible, and the matrix is the product of block
+  unipotent matrices and the block diagonal matrix of `u` and its Schur complement.
 * `TauCeti.fromBlocksGL_inv_mem_elementarySubgroup`: Whitehead's lemma, `u ⊕ u⁻¹ ∈ E`.
 * `TauCeti.map_commutator_le_elementarySubgroup`: the stabilized commutator subgroup is elementary.
 * `TauCeti.fromBlocksGL_conj_mem_elementarySubgroup`: the stabilization of a conjugate of an
@@ -185,6 +193,24 @@ theorem elementarySubgroup_le_commutator (hn : 3 ≤ Fintype.card n) :
     elementarySubgroup n A ≤ commutator (GL n A) := by
   rw [← commutator_elementarySubgroup_self hn]
   exact Subgroup.commutator_mono le_top le_top
+
+/-- If some unit `a` of `A` has `a - 1` invertible, the elementary subgroup lies in the
+commutator subgroup of `GL n A`, in every size: `eᵢⱼ((a - 1) b)` is the commutator of the
+diagonal matrix with `i`-th entry `a` and all others `1` with `eᵢⱼ(b)`. -/
+theorem elementarySubgroup_le_commutator_of_isUnit_sub_one (a : Aˣ) (ha : IsUnit ((a : A) - 1)) :
+    elementarySubgroup n A ≤ commutator (GL n A) := by
+  obtain ⟨u, hu⟩ := ha
+  refine elementarySubgroup_le_iff.2 fun i j hij c ↦ ?_
+  have hc : transvectionUnit hij c =
+      ⁅diagGL (Pi.mulSingle i a), transvectionUnit hij (↑u⁻¹ * c)⁆ := by
+    rw [commutatorElement_def, diagGL_mul_transvectionUnit_mul_inv, Pi.mulSingle_eq_same,
+      Pi.mulSingle_eq_of_ne hij.symm, inv_one, Units.val_one, mul_one, transvectionUnit_inv,
+      ← transvectionUnit_add]
+    congr 1
+    -- `a b - b = (a - 1) b` with `b = (a - 1)⁻¹ c`
+    rw [← sub_eq_add_neg, ← sub_one_mul, ← hu, Units.mul_inv_cancel_left]
+  rw [hc, commutator_def]
+  exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
 
 /-! ## The centralizer of the elementary subgroup -/
 
@@ -773,6 +799,36 @@ theorem eq_fromBlocksGL_mul_upperBlockGL (g : GL (m ⊕ k) A)
             (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₂) : GL (m ⊕ k) A) :
           Matrix (m ⊕ k) (m ⊕ k) A) := by
         simp [fromBlocks_multiply, hcancel]
+
+/-- In an invertible block matrix `fromBlocks u Y Z W` whose upper-left block `u` is invertible,
+the **Schur complement** `W - Z u⁻¹ Y` of `u` is invertible. -/
+theorem isUnit_sub_mul_mul_of_coe_eq_fromBlocks {g : GL (m ⊕ k) A} {u : GL m A}
+    {Y : Matrix m k A} {Z : Matrix k m A} {W : Matrix k k A}
+    (hg : (g : Matrix (m ⊕ k) (m ⊕ k) A) = fromBlocks u Y Z W) :
+    IsUnit (W - Z * (↑u⁻¹ : Matrix m m A) * Y) := by
+  -- Clearing the off-diagonal blocks of `g` by block unipotent matrices and then the upper-left
+  -- block by `u⁻¹` leaves the block diagonal matrix of `1` and the Schur complement.
+  set h := fromBlocksGL (u⁻¹, 1) * (lowerBlockGL (Z * (↑u⁻¹ : Matrix m m A)))⁻¹ * g *
+    (upperBlockGL ((↑u⁻¹ : Matrix m m A) * Y))⁻¹
+  have hh : (h : Matrix (m ⊕ k) (m ⊕ k) A) =
+      fromBlocks 1 0 0 (W - Z * (↑u⁻¹ : Matrix m m A) * Y) := by
+    simp [h, hg, fromBlocks_multiply, Matrix.mul_assoc, neg_add_eq_sub]
+  obtain ⟨v, hv, -⟩ := exists_fromBlocksGL_one_eq hh
+  exact hv ▸ v.isUnit
+
+/-- **Block Gaussian elimination**: an invertible block matrix `fromBlocks u Y Z W` whose
+upper-left block `u` is invertible is the product of the lower block unipotent matrix of
+`Z u⁻¹`, the block diagonal matrix of `u` and of its Schur complement `v = W - Z u⁻¹ Y`, and the
+upper block unipotent matrix of `u⁻¹ Y`. -/
+theorem eq_lowerBlockGL_mul_fromBlocksGL_mul_upperBlockGL {g : GL (m ⊕ k) A} {u : GL m A}
+    {v : GL k A} {Y : Matrix m k A} {Z : Matrix k m A} {W : Matrix k k A}
+    (hg : (g : Matrix (m ⊕ k) (m ⊕ k) A) = fromBlocks u Y Z W)
+    (hv : (v : Matrix k k A) = W - Z * (↑u⁻¹ : Matrix m m A) * Y) :
+    g = lowerBlockGL (Z * (↑u⁻¹ : Matrix m m A)) * fromBlocksGL (u, v) *
+      upperBlockGL ((↑u⁻¹ : Matrix m m A) * Y) :=
+  have hY : (u : Matrix m m A) * ((↑u⁻¹ : Matrix m m A) * Y) = Y := by
+    rw [← Matrix.mul_assoc, Units.mul_inv, Matrix.one_mul]
+  Units.ext (by simp [hg, hv, fromBlocks_multiply, Matrix.mul_assoc, hY])
 
 end Ring
 
