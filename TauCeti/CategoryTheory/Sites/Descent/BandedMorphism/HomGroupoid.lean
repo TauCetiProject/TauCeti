@@ -34,7 +34,7 @@ In the namespace `CategoryTheory.Pseudofunctor.BandedMorphism`:
 * `HomCategory`: the full subcategory of band-preserving transformations, with `HomCategory.mk`,
   `HomCategory.homMk` and `hom_ext`.
 * `homIso`, `homIso_hom`, `homIso_inv_app`, `hom_homIso_inv`, `homIso_inv_hom`, `homIso_id`,
-  `homIso_comp`, `hom_isIso`, `isGroupoid_homCategory`, `groupoid`, `groupoid_inv`,
+  `homIso_comp`, `isGroupoid_homCategory`, `hom_isIso`, `groupoid`, `groupoid_inv`,
   `groupoid_comp_inv`, `groupoid_inv_comp`.
 * `componentIso`, `componentIso_hom`, `componentIso_id`, `componentIso_comp`,
   `componentIso_homIso_inv`.
@@ -163,12 +163,15 @@ theorem homIso_comp {X Y Z : HomCategory bF bG} (m : X ⟶ Y) (n : Y ⟶ Z) :
     homIso (m ≫ n) = homIso m ≪≫ homIso n :=
   Iso.ext rfl
 
+/-- `HomCategory` is a groupoid: its inclusion into the groupoid of strong transformations
+`F ⟶ G` (`Pseudofunctor.isGroupoid_hom`) is fully faithful, so it reflects isomorphisms. -/
+instance isGroupoid_homCategory : IsGroupoid (HomCategory bF bG) :=
+  haveI : ∀ a : LocallyDiscrete Cᵒᵖ, IsGroupoid (G.obj a) := fun a ↦ hG a.as.unop
+  isGroupoid_of_reflects_iso (ObjectProperty.ι _)
+
 /-- Every arrow of `HomCategory` is an isomorphism. -/
 theorem hom_isIso {X Y : HomCategory bF bG} (m : X ⟶ Y) : IsIso m :=
-  homIso_hom m ▸ (homIso m).isIso_hom
-
-instance isGroupoid_homCategory : IsGroupoid (HomCategory bF bG) where
-  all_isIso := hom_isIso
+  inferInstance
 
 variable (bF bG) in
 /-- **The groupoid of band-preserving transformations.** -/
