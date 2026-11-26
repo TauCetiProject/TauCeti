@@ -14,6 +14,7 @@ import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Topology.Constructions.SumProd
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 /-!
@@ -47,7 +48,7 @@ together, with equal indices
 `TauCeti.CylinderSobolev.index_jetOperator_firstOrderJetCoeff_frame`). The multiplication by `Ψ` on
 `L²` used for the target is invertible by
 `MeasureTheory.Lp.isInvertible_operatorMultiplication_of_comp_eq_id`.
-A `C²` frame of invertible maps that, far out on each end, does not depend on `s` is bounded
+A `C¹` frame of invertible maps that, far out on each end, does not depend on `s` is bounded
 together with its derivative and its inverses
 (`TauCeti.CylinderSobolev.exists_forall_norm_le_of_eq_comp_snd`), as these bounds require.
 
@@ -239,10 +240,10 @@ theorem coe_frameEquiv_symm_apply (hΨΦ : ∀ z, (Ψ z).comp (Φ z) = Continuou
 
 end Inverse
 
-/-- A `C²` family `Φ` of invertible maps on the cylinder, of period one in `t`, which for `s ≤ -R`
+/-- A `C¹` family `Φ` of invertible maps on the cylinder, of period one in `t`, which for `s ≤ -R`
 and for `s ≥ R` does not depend on `s`, is bounded together with its derivative and its inverses. -/
 theorem exists_forall_norm_le_of_eq_comp_snd [CompleteSpace V] {Φ : ℝ × ℝ → V →L[ℝ] W}
-    (hΦ : ContDiff ℝ 2 Φ) (hΦi : ∀ z, (Φ z).IsInvertible)
+    (hΦ : ContDiff ℝ 1 Φ) (hΦi : ∀ z, (Φ z).IsInvertible)
     (hΦp : ∀ s t, Φ (s, t + 1) = Φ (s, t)) {R : ℝ} (hm : ∀ s ≤ -R, ∀ t, Φ (s, t) = Φ (-R, t))
     (hp : ∀ s, R ≤ s → ∀ t, Φ (s, t) = Φ (R, t)) :
     ∃ B B' D : ℝ, (∀ z, ‖Φ z‖ ≤ B) ∧ (∀ z, ‖fderiv ℝ Φ z‖ ≤ B') ∧
@@ -263,7 +264,7 @@ theorem exists_forall_norm_le_of_eq_comp_snd [CompleteSpace V] {Φ : ℝ × ℝ 
   have hshift : (fun z : ℝ × ℝ ↦ Φ (z + (0, 1))) = Φ := funext fun ⟨s, t⟩ ↦ by
     simpa using hΦp s t
   obtain ⟨B', hB'⟩ := exists_forall_norm_le_of_periodic_of_eventually_eq
-    (hΦ.continuous_fderiv (by norm_num))
+    (hΦ.continuous_fderiv one_ne_zero)
     (gm := fun t ↦ fderiv ℝ (fun w : ℝ × ℝ ↦ Φ (-R, w.2)) (0, t))
     (gp := fun t ↦ fderiv ℝ (fun w : ℝ × ℝ ↦ Φ (R, w.2)) (0, t))
     (fun s t ↦ by

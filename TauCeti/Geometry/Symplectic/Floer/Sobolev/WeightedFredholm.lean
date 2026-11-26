@@ -13,6 +13,7 @@ import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Geometry.Symplectic.FrameTrivialization
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
 import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.Topology.Constructions.SumProd
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
@@ -392,7 +393,8 @@ private theorem isFredholm_floerWeightedSobolevOperator_of_eq_comp_snd (ω : Sym
   have hΦp' (s : ℝ) (hs : R ≤ s) (t : ℝ) : Φ (s, t) = Φ (R, t) := by
     simp only [Φ, hcyl.almostComplex_eq_of_le (s, t) hs, hcyl.almostComplex_eq_of_le (R, t) le_rfl,
       hup' s hs, hup' R le_rfl]
-  obtain ⟨B, B', D, hB, hB', hD⟩ := exists_forall_norm_le_of_eq_comp_snd hΦ hΦi hΦp hΦm hΦp'
+  obtain ⟨B, B', D, hB, hB', hD⟩ := exists_forall_norm_le_of_eq_comp_snd (hΦ.of_le one_le_two)
+    hΦi hΦp hΦm hΦp'
   -- The structures of the ends along the orbits, read through the cylinder data at `s = ∓R`.
   have hJm (t : ℝ) : Jm t = J (-R, t) := (hcyl.almostComplex_eq_of_le_neg (-R, t) le_rfl).symm
   have hJp (t : ℝ) : Jp t = J (R, t) := (hcyl.almostComplex_eq_of_le (R, t) le_rfl).symm
