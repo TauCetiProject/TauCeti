@@ -28,8 +28,8 @@ its highest root `θ`, the root at index `62`
 (`TauCeti.DynkinType.highestRoot_e7SimplyConnectedBase`).
 
 * **The orbit.** The system is irreducible and simply laced, so its Weyl group is transitive on the
-  roots (`RootPairing.Base.exists_weylGroupToPerm_eq_of_isSimplyLaced`): the orbit of `θ` consists
-  of all `126` roots.
+  roots: the orbit of `θ` consists of all `126` roots
+  (`RootPairing.Base.orbit_root_eq_range_of_isSimplyLaced`).
 * **The stabilizer.** In the fundamental-weight coordinates of the model, `θ` is the fundamental
   weight `ω₁`: it pairs to `1` with the simple coroot `α₁^∨` and to `0` with the other six. So `θ`
   is dominant, and its stabilizer is the standard parabolic subgroup of the Coxeter system
@@ -103,11 +103,9 @@ private lemma coroot'_simpleSupportEquiv_root_e7Theta (k : Fin E7.rank) :
 
 /-- The highest root of `E₇` is dominant. -/
 private lemma root_e7Theta_mem_dominantChamber : (P₇).root e7Theta ∈ dominantChamber P₇ b₇ := by
-  refine (mem_dominantChamber P₇ b₇ _).mpr fun i hi ↦ ?_
-  have hk : (E7.simpleSupportEquiv valid_E7 ((E7.simpleSupportEquiv valid_E7).symm ⟨i, hi⟩) :
-      Fin E7.numRoots) = i := by
-    rw [Equiv.apply_symm_apply]
-  rw [← hk, coroot'_simpleSupportEquiv_root_e7Theta]
+  refine (mem_dominantChamber_iff_forall_equiv P₇ b₇ (E7.simpleSupportEquiv valid_E7) _).mpr
+    fun k ↦ ?_
+  rw [coroot'_simpleSupportEquiv_root_e7Theta]
   split_ifs <;> norm_num
 
 /-- The walls through the highest root of `E₇` are the simple roots `α₂, …, α₇`. -/
@@ -123,14 +121,8 @@ private lemma wallIndices_root_e7Theta :
 /-- Along the `D₆` subdiagram of walls the Coxeter matrix of the `E₇` base is that of `D₆`. -/
 private lemma coxeterMatrix_D_eq_coxeterMatrixOfBase_e7Wall (i j : Fin (D 6).rank) :
     (D 6).coxeterMatrix i j = coxeterMatrixOfBase P₇ b₇ (e7Wall i) (e7Wall j) := by
-  have he (i j : (b₇).support) : (b₇).cartanMatrix i j =
-      E7.cartanMatrix ((E7.simpleSupportEquiv valid_E7).symm i)
-        ((E7.simpleSupportEquiv valid_E7).symm j) := by
-    obtain ⟨k, rfl⟩ := (E7.simpleSupportEquiv valid_E7).surjective i
-    obtain ⟨l, rfl⟩ := (E7.simpleSupportEquiv valid_E7).surjective j
-    rw [cartanMatrix_rationalBase, Equiv.symm_apply_apply, Equiv.symm_apply_apply]
-  rw [coxeterMatrixOfBase_eq_coxeterMatrix_reindex _ he, CoxeterMatrix.reindex_apply,
-    Equiv.symm_symm, coxeterMatrix_D (by norm_num)]
+  rw [coxeterMatrixOfBase_eq_coxeterMatrix_reindex _ (E7.cartanMatrix_rationalBase_symm valid_E7),
+    CoxeterMatrix.reindex_apply, Equiv.symm_symm, coxeterMatrix_D (by norm_num)]
   simp only [e7Wall, Equiv.symm_apply_apply, coxeterMatrix_E7]
   fin_cases i <;> fin_cases j <;> rfl
 
@@ -151,28 +143,13 @@ private lemma card_stabilizer_root_e7Theta :
     card_weylGroup_of_hasCartanType_D (by norm_num) ((D 6).hasCartanType_rationalRootSystem hD)]
   rfl
 
-/-- The Weyl group of `E₇` is transitive on its `126` roots, so the orbit of the highest root is
-the set of all roots. -/
-private lemma card_orbit_root_e7Theta :
-    Nat.card (orbit (P₇).weylGroup ((P₇).root e7Theta)) = 126 := by
-  have hsl : (b₇).cartanMatrix.IsSimplyLaced :=
-    ((E7.hasCartanType_rationalRootSystem valid_E7).isSimplyLaced_iff).mpr (.inl isSimplyLaced_E7)
-  have horbit : orbit (P₇).weylGroup ((P₇).root e7Theta) = Set.range (P₇).root := by
-    ext x
-    refine ⟨?_, ?_⟩
-    · rintro ⟨w, rfl⟩
-      exact ⟨_, ((P₇).weylGroup_apply_root w e7Theta).symm⟩
-    · rintro ⟨j, rfl⟩
-      obtain ⟨w, hw⟩ := (b₇).exists_weylGroupToPerm_eq_of_isSimplyLaced hsl e7Theta j
-      exact ⟨w, ((P₇).weylGroup_apply_root w e7Theta).trans (congrArg (P₇).root hw)⟩
-  rw [horbit, Nat.card_range_of_injective (P₇).root.injective, Nat.card_fin, numRoots_E7]
-
 /-- The Weyl group of the pinned rational root system of type `E₇` has order `2903040`, the `126`
 roots in the orbit of the highest root times the `2⁵ · 6!` elements of its stabilizer. -/
 private theorem card_weylGroup_rationalRootSystem_E7 : Nat.card (P₇).weylGroup = 2903040 := by
-  rw [← Subgroup.card_mul_index (stabilizer (P₇).weylGroup ((P₇).root e7Theta)),
-    index_stabilizer, ← Nat.card_coe_set_eq, card_stabilizer_root_e7Theta,
-    card_orbit_root_e7Theta]
+  have hsl : (b₇).cartanMatrix.IsSimplyLaced :=
+    ((E7.hasCartanType_rationalRootSystem valid_E7).isSimplyLaced_iff).mpr (.inl isSimplyLaced_E7)
+  rw [(b₇).card_weylGroup_eq_card_mul_card_stabilizer_of_isSimplyLaced hsl e7Theta,
+    card_stabilizer_root_e7Theta, Nat.card_fin, numRoots_E7]
 
 end TauCeti.DynkinType
 
