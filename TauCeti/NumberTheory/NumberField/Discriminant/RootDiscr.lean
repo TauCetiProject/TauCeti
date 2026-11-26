@@ -36,6 +36,9 @@ that there is no irreducible two-dimensional mod-`2` Galois representation of `�
 outside `2`. The thresholds are not sharp: the analytic bounds of Odlyzko and Poitou are much
 stronger, but these follow from Minkowski's bound alone.
 
+The trivial lower bound `1 ≤ rd(K)` (`TauCeti.NumberField.one_le_rootDiscr`) holds because
+`d_K` is a nonzero integer.
+
 ## References
 
 * A. M. Odlyzko, *Bounds for discriminants and related estimates for class numbers, regulators
@@ -129,6 +132,12 @@ theorem pow_lt_minkowskiDiscrBound {c : ℝ} {n₀ n : ℕ} (hc : 0 ≤ c)
     rw [pow_succ, minkowskiDiscrBound_succ, mul_comm (π / 4 * _)]
     exact (mul_le_mul_of_nonneg_left hratio (pow_nonneg hc m)).trans_lt
       (mul_lt_mul_of_pos_right ih hpos)
+
+/-- A number field has root discriminant at least one, as its discriminant is a nonzero integer. -/
+theorem one_le_rootDiscr (K : Type*) [Field K] [NumberField K] : 1 ≤ rootDiscr K := by
+  simp only [rootDiscr_def, ← Int.natCast_natAbs, Int.cast_natCast]
+  have h : 1 ≤ (discr K).natAbs := Nat.one_le_iff_ne_zero.mpr (by simp [discr_ne_zero])
+  exact Real.one_le_rpow (by exact_mod_cast h) (by positivity)
 
 /-- A number field of degree `n` whose Minkowski bound `B_n` exceeds `cⁿ` has root discriminant
 greater than `c`. -/

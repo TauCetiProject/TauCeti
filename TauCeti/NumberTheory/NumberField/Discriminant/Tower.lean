@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Different
+import TauCeti.NumberTheory.NumberField.Discriminant.RootDiscr
 
 /-!
 # Root discriminants in towers
@@ -42,12 +43,6 @@ theorem rootDiscr_eq_mul_rpow_absNorm_differentIdeal :
   rw [natAbs_discr_eq_absNorm_differentIdeal_mul_natAbs_discr_pow K (𝓞 K) L (𝓞 L),
     Nat.cast_mul, Nat.cast_pow, Real.mul_rpow (by positivity) (by positivity),
     ← Real.rpow_natCast_mul (by positivity), hexp, mul_comm]
-
-/-- A number field has root discriminant at least one. -/
-theorem one_le_rootDiscr : 1 ≤ rootDiscr K := by
-  simp only [rootDiscr_def, ← Int.natCast_natAbs, Int.cast_natCast]
-  have h : 1 ≤ (discr K).natAbs := Nat.one_le_iff_ne_zero.mpr (by simp [discr_ne_zero])
-  exact Real.one_le_rpow (by exact_mod_cast h) (by positivity)
 
 /-- If the relative different contains the positive integer `n`, the root discriminant of the
 extension is between the root discriminant of the base and `n` times that root discriminant. -/

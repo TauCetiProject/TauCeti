@@ -8,14 +8,19 @@ module
 public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Parameters
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.RootDiscriminant
 public import TauCeti.NumberTheory.NumberField.QuadraticAlgebra
+import TauCeti.NumberTheory.NumberField.Discriminant.RootDiscr
 import TauCeti.NumberTheory.NumberField.Quadratic.Model
 
 /-!
 # The root discriminant bound for the cyclotomic tower
 
-Over the imaginary quadratic field of discriminant `-d`, the cyclotomic extension of level
-`q₁` has root discriminant at most `q₁ √d`. In particular `1 ≤ rd_E ≤ q₁ d`, the bounds needed
-when comparing the scale of an auxiliary prime level to the weights and principal level.
+Let `K` be a number field of discriminant `-d`, such as the imaginary quadratic field `ℚ(√-d)`
+(`discr_quadraticAlgebra`), and `E` its cyclotomic extension of level `q₁`. The root
+discriminant of `K` is at most `d`, and equals `√d` when `K` is quadratic, so
+`rd_E ≤ q₁ √d` for quadratic `K` (`rootDiscr_le_mul_sqrt`) and `1 ≤ rd_E ≤ q₁ d` in general
+(`rootDiscr_mem_Icc`), the bounds needed when comparing the scale of an auxiliary prime level to
+the weights and principal level. Stating them for every model of `K` lets them apply to `ℚ(√-d)`
+realized inside `ℂ` as well as to `QuadraticAlgebra`.
 
 The latter estimate is `New.rootDiscr_mem_Icc` in lsernau/grh-lean,
 `New/Reduction/Data/AdmissibleData.lean` at commit `72fead102f663d5c7a407964a13dc0cf9d977207`.
@@ -27,27 +32,43 @@ open NumberField
 
 namespace TauCeti.OneSidedBound.Parameters
 
-/-- The root discriminant of `ℚ(√−d, ζ_(q₁(s)))` is between `1` and `q₁(s) · d`. -/
-theorem rootDiscr_mem_Icc (P : Parameters) (s : ℕ) (E : Type*)
-    [Field E] [NumberField E] [Algebra (QuadraticAlgebra ℚ (Int.cast (-(P.d : ℤ))) 0) E]
-    [IsCyclotomicExtension {P.q₁ s} (QuadraticAlgebra ℚ (Int.cast (-(P.d : ℤ))) 0) E] :
-    rootDiscr E ∈ Set.Icc 1 ((P.q₁ s : ℝ) * P.d) := by
+variable (P : Parameters)
+
+/-- The quadratic field `ℚ(√-d)` has discriminant `-d`, as `-d ≡ 1 (mod 4)`. -/
+theorem discr_quadraticAlgebra :
+    discr (QuadraticAlgebra ℚ (Int.cast (-(P.d : ℤ))) 0) = -(P.d : ℤ) := by
   have : NeZero P.d := ⟨P.prime_d.ne_zero⟩
-  have hsf : Squarefree (-(P.d : ℤ)) := by
-    exact Int.squarefree_natAbs.mp (by simpa using P.prime_d.squarefree)
+  have hsf : Squarefree (-(P.d : ℤ)) :=
+    Int.squarefree_natAbs.mp (by simpa using P.prime_d.squarefree)
   have hd4 : (-(P.d : ℤ)) % 4 = 1 := by
     have := P.d_mod_eight
     omega
-  have h := IsCyclotomicExtension.rootDiscr_mem_Icc
-    (QuadraticAlgebra ℚ (Int.cast (-(P.d : ℤ))) 0) E (P.q₁_pos s)
-  have hb : rootDiscr (QuadraticAlgebra ℚ (Int.cast (-(P.d : ℤ))) 0) = √(P.d : ℝ) := by
-    rw [rootDiscr_def, QuadraticAlgebra.discr_eq_of_mod_four_eq_one hsf hd4,
-      QuadraticAlgebra.finrank_eq_two]
+  exact QuadraticAlgebra.discr_eq_of_mod_four_eq_one hsf hd4
+
+variable (s : ℕ) {K : Type*} (E : Type*) [Field K] [NumberField K] [Field E] [NumberField E]
+  [Algebra K E] [IsCyclotomicExtension {P.q₁ s} K E]
+
+/-- Over a quadratic field of discriminant `-d`, the cyclotomic extension of level `q₁(s)` has root
+discriminant at most `q₁(s) √d`. -/
+theorem rootDiscr_le_mul_sqrt (hK : discr K = -(P.d : ℤ)) (hK₂ : Module.finrank ℚ K = 2) :
+    rootDiscr E ≤ P.q₁ s * √(P.d : ℝ) := by
+  have hb : rootDiscr K = √(P.d : ℝ) := by
+    rw [rootDiscr_def, hK, hK₂]
     simp [Real.sqrt_eq_rpow, one_div]
+  simpa only [hb, mul_comm] using (IsCyclotomicExtension.rootDiscr_mem_Icc K E (P.q₁_pos s)).2
+
+/-- **The root discriminant of `K(ζ_{q₁(s)})`** lies between `1` and `q₁(s) · d` when `K` has
+discriminant `-d`. -/
+theorem rootDiscr_mem_Icc (hK : discr K = -(P.d : ℤ)) :
+    rootDiscr E ∈ Set.Icc 1 ((P.q₁ s : ℝ) * P.d) := by
   have hd : (1 : ℝ) ≤ P.d := by exact_mod_cast P.prime_d.one_lt.le
-  refine ⟨TauCeti.NumberField.one_le_rootDiscr E, ?_⟩
-  rw [hb, mul_comm] at h
-  exact le_trans h.2 <| mul_le_mul_of_nonneg_left
-    (Real.sqrt_le_self_iff.mpr (Or.inr hd)) (Nat.cast_nonneg _)
+  have hb : rootDiscr K ≤ P.d := by
+    rw [rootDiscr_def, hK, abs_neg, Nat.abs_cast, Int.cast_natCast]
+    refine (Real.rpow_le_rpow_of_exponent_le hd ?_).trans_eq (Real.rpow_one _)
+    exact inv_le_one_of_one_le₀ (by exact_mod_cast Module.finrank_pos)
+  have h := (IsCyclotomicExtension.rootDiscr_mem_Icc K E (P.q₁_pos s)).2
+  refine ⟨TauCeti.NumberField.one_le_rootDiscr E, h.trans ?_⟩
+  rw [mul_comm]
+  exact mul_le_mul_of_nonneg_left hb (Nat.cast_nonneg _)
 
 end TauCeti.OneSidedBound.Parameters
