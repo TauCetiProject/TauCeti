@@ -261,8 +261,7 @@ theorem setIntegral_ball_newtonianKernel_sub_of_norm_sub_le (hn : n ≠ 2)
   have hinner : ∫ y in ball (0 : EuclideanSpace ℝ (Fin n)) ‖z‖, newtonianKernel n (z - y) =
       ‖z‖ ^ 2 / (n * (n - 2)) := by
     rw [setIntegral_ball_newtonianKernel_sub_of_le_norm_sub (by rw [sub_zero]), sub_zero,
-      measureReal_def, Measure.addHaar_ball _ _ (norm_nonneg z), ENNReal.toReal_mul,
-      ENNReal.toReal_ofReal (by positivity), ← measureReal_def, finrank_euclideanSpace_fin,
+      Measure.addHaar_real_ball _ _ (norm_nonneg z), finrank_euclideanSpace_fin,
       pow_norm_mul_measureReal_ball_mul_newtonianKernel]
   rcases hx.eq_or_lt with hzR | hzR
   · rw [← hzR, hinner, sub_self, zero_div, add_zero]
