@@ -13,6 +13,7 @@ import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Topology.Instances.Matrix
 import TauCeti.MeasureTheory.Function.LpSeminorm.HolderOnWith
+import TauCeti.Analysis.Normed.Operator.Holder
 
 /-!
 # Comparison with the frozen-coefficient problem
@@ -81,11 +82,14 @@ the sum of these.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le`: its squared form with the
   coefficient term weighted by the local deviation `‖a(x) - A‖²`.
 * `TauCeti.PDE.aestronglyMeasurable_of_holderOnWith_matrixBilinearForm` and
-  `TauCeti.PDE.memLp_energyIntegrand_of_holderOnWith`: inside a ball on which `a` is `α`-Hölder,
+  `TauCeti.PDE.memLp_energyIntegrand_of_holderOnWith`: inside a set on which `a` is `α`-Hölder,
   `a` is measurable and its energy integrands are essentially bounded where it is elliptic.
 * `TauCeti.PDE.memLp_energyIntegrand_and_memLp_of_holderOnWith`: on an open set of finite
   measure, Hölder elliptic coefficients give an essentially bounded energy integrand and a
   bounded Hölder field is square integrable.
+* `TauCeti.PDE.holderOnWith_continuousLinearMapOfBilin_flip_matrixBilinearForm`: for a constant
+  vector `p`, the field `x ↦ a(x) p`, written as a Riesz representative, is Hölder with constant
+  `K_a ‖p‖`.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le`: on an
   open set inside a ball `B(x₀, r)`, the replacement frozen at `x₀` exists and its error is
   `O(r^α)` for `α`-Hölder coefficients and field, plus `2 r ‖f‖_{L²(B)}`.
@@ -304,29 +308,38 @@ theorem UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le
     _ ≤ _ := by linarith
 
 omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
-/-- On a measurable set `B` inside a ball `B(x₀, ρ)` on which the bilinear forms of `a` are
-`α`-Hölder, with `α > 0`, the coefficient matrix `a` is almost everywhere strongly measurable
-on `B`. -/
-theorem aestronglyMeasurable_of_holderOnWith_matrixBilinearForm {B : Set (EuclideanSpace ℝ ι)}
-    (hB : MeasurableSet B) {x₀ : EuclideanSpace ℝ ι} {ρ : ℝ} (hBρ : B ⊆ ball x₀ ρ)
-    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {α Ka : ℝ≥0} (hα : 0 < α)
-    (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (ball x₀ ρ)) :
+/-- On a measurable set `B` inside a set `S` on which the bilinear forms of `a` are `α`-Hölder,
+with `α > 0`, the coefficient matrix `a` is almost everywhere strongly measurable on `B`. -/
+theorem aestronglyMeasurable_of_holderOnWith_matrixBilinearForm {B S : Set (EuclideanSpace ℝ ι)}
+    (hB : MeasurableSet B) (hBS : B ⊆ S) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {α Ka : ℝ≥0}
+    (hα : 0 < α) (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) S) :
     AEStronglyMeasurable a (mu.restrict B) :=
   (continuousOn_of_continuousOn_matrixBilinearForm
-    ((haK.continuousOn hα).mono hBρ)).aestronglyMeasurable hB
+    ((haK.continuousOn hα).mono hBS)).aestronglyMeasurable hB
+
+omit [DecidableEq ι] in
+/-- If the bilinear forms of `a` are `α`-Hölder with constant `K_a` on `s`, then for a constant
+vector `p` the field `x ↦ a(x) p`, the Riesz representative of `η ↦ ηᵀ a(x) p`, is `α`-Hölder on
+`s` with constant `K_a ‖p‖`. -/
+theorem holderOnWith_continuousLinearMapOfBilin_flip_matrixBilinearForm
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {s : Set (EuclideanSpace ℝ ι)} {α Ka : ℝ≥0}
+    (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) s) (p : EuclideanSpace ℝ ι) :
+    HolderOnWith (Ka * ‖p‖₊) α
+      (fun x => continuousLinearMapOfBilin (matrixBilinearForm (a x)).flip p) s :=
+  (toDual ℝ (EuclideanSpace ℝ ι)).symm.isometry.comp_holderOnWith (haK.clm_flip.clm_apply_const p)
 
 omit [mu.IsAddHaarMeasure] in
-/-- On an open set `B` inside a ball `B(x₀, ρ)` on which the bilinear forms of `a` are
-`α`-Hölder, with `α > 0`, and on which `a` is uniformly elliptic, the energy integrands of `a`
-are essentially bounded. -/
+/-- On an open set `B` inside a set `S` on which the bilinear forms of `a` are `α`-Hölder, with
+`α > 0`, and on which `a` is uniformly elliptic, the energy integrands of `a` are essentially
+bounded. -/
 theorem memLp_energyIntegrand_of_holderOnWith {B : Opens (EuclideanSpace ℝ ι)}
-    {x₀ : EuclideanSpace ℝ ι} {ρ : ℝ} (hBρ : (B : Set (EuclideanSpace ℝ ι)) ⊆ ball x₀ ρ)
+    {S : Set (EuclideanSpace ℝ ι)} (hBS : (B : Set (EuclideanSpace ℝ ι)) ⊆ S)
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
     (h : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) a lam Lam) {α Ka : ℝ≥0}
-    (hα : 0 < α) (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (ball x₀ ρ)) :
+    (hα : 0 < α) (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) S) :
     MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B) :=
   memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) h.upper_nonneg
-    (aestronglyMeasurable_of_holderOnWith_matrixBilinearForm B.isOpen.measurableSet hBρ hα haK)
+    (aestronglyMeasurable_of_holderOnWith_matrixBilinearForm B.isOpen.measurableSet hBS hα haK)
     aestronglyMeasurable_const aestronglyMeasurable_const (fun x hx => h.upper_bound hx)
     (fun _ _ => by simp) (fun _ _ => by simp)
 
@@ -345,10 +358,7 @@ theorem memLp_energyIntegrand_and_memLp_of_holderOnWith {α : ℝ≥0} (hα : 0 
     (hG : HolderOnWith KG α G t) (hGM : ∀ x ∈ t, ‖G x‖ ≤ M) :
     MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict D) ∧
       MemLp G 2 (mu.restrict D) :=
-  ⟨memLp_energyIntegrand_of_memLp_top (hell.pos.le.trans hell.le)
-      (((continuousOn_of_continuousOn_matrixBilinearForm (hKa.continuousOn hα)).mono
-        hDt).aestronglyMeasurable D.isOpen.measurableSet)
-      (fun _ hx => hell.upper_bound (hDt hx)) (memLp_top_const 0) (memLp_top_const 0),
+  ⟨memLp_energyIntegrand_of_holderOnWith hDt (hell.mono_set hDt) hα hKa,
     MemLp.of_bound (((hG.continuousOn hα).mono hDt).aestronglyMeasurable
       D.isOpen.measurableSet) _
       ((ae_restrict_mem D.isOpen.measurableSet).mono fun x hx => hGM x (hDt hx))⟩
