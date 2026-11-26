@@ -26,7 +26,7 @@ over `A`, or when `C` is complete Hausdorff of noetherian type — the canonical
 Whenever `C ⊗[A] B` is naturally complete over `C`, the equivalence
 `CompletedTensor.baseChangeEquiv` is the canonical tensor map, not an unspecified isomorphism,
 and is a homeomorphism for the natural `C`-module topology. The corresponding plus-ring transport
-for Huber pairs lives in `TauCeti.RingTheory.Huber.TensorProduct.Plus`.
+for Huber pairs lives in `TauCeti.RingTheory.Huber.TensorProduct.Finite.Plus`.
 
 ## References
 
