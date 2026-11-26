@@ -38,6 +38,8 @@ torus to the image `TauCeti.lmulUnitsRange F E` of `Eˣ` under left multiplicati
   `TauCeti.GL2NonSplitTorus.relIndex_normalizer`,
   `TauCeti.GL2NonSplitTorus.two_mul_index_normalizer`,
   `TauCeti.GL2NonSplitTorus.neg_one_mem_normalizer`.
+* `TauCeti.GL2NonSplitTorus.map_det_normalizer`: over a finite field the determinant maps the
+  normalizer onto `Fˣ`.
 
 ## References
 
@@ -153,6 +155,13 @@ theorem relIndex_normalizer [Finite F] :
 theorem neg_one_mem_normalizer :
     (-1 : GL (Fin 2) F) ∈ Subgroup.normalizer (GL2NonSplitTorus F E : Set (GL (Fin 2) F)) :=
   Subgroup.le_normalizer neg_one_mem
+
+/-- **The determinant is surjective on the normalizer of the non-split torus** over a finite
+field, since it is already surjective on the torus (`TauCeti.GL2NonSplitTorus.map_det`). -/
+theorem map_det_normalizer [Finite F] :
+    (Subgroup.normalizer (GL2NonSplitTorus F E : Set (GL (Fin 2) F))).map
+      Matrix.GeneralLinearGroup.det = ⊤ :=
+  eq_top_iff.2 ((map_det (F := F) (E := E)).ge.trans (Subgroup.map_mono Subgroup.le_normalizer))
 
 end GL2NonSplitTorus
 
