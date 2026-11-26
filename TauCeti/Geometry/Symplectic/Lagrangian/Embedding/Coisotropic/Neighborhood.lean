@@ -107,6 +107,19 @@ private abbrev inducedMetric (g : ContMDiffRiemannianMetric J ∞ V (fun x : M �
     ContMDiffRiemannianMetric I ∞ E (fun q : Q ↦ TangentSpace I q) :=
   g.pullback i (i.contMDiff.of_le (by simp)) fun q ↦ i.isImmersion.mfderiv_injective (by simp) q
 
+omit [FiniteDimensional ℝ V] in
+private theorem inducedMetric_inner_apply
+    (g : ContMDiffRiemannianMetric J ∞ V (fun x : M ↦ TangentSpace J x))
+    (i : SmoothEmbedding I J ∞ Q M) (q : Q) (u w : TangentSpace I q) :
+    (inducedMetric g i).inner q u w = g.inner (i q) (mfderiv I J i q u) (mfderiv I J i q w) :=
+  ContMDiffRiemannianMetric.pullback_inner _ _ _ _ q u w
+
+omit [FiniteDimensional ℝ V] in
+private theorem isInvertible_inducedMetric_inner
+    (g : ContMDiffRiemannianMetric J ∞ V (fun x : M ↦ TangentSpace J x))
+    (i : SmoothEmbedding I J ∞ Q M) (q : Q) : ((inducedMetric g i).inner q).IsInvertible :=
+  ContinuousLinearMap.isInvertible_of_pos ((inducedMetric g i).pos q)
+
 /-- The tangential part `P v` of an ambient tangent vector `v` along `i`: the tangent vector of
 `Q` whose image under `di_q` is the `g`-orthogonal projection of `v` onto the tangent image. -/
 private def tangentialPart (g : ContMDiffRiemannianMetric J ∞ V (fun x : M ↦ TangentSpace J x))
@@ -133,8 +146,8 @@ private theorem tangentialPart_mfderiv
   -- The `g`-pairings of `di_q u` with the tangent image are the induced pairings of `u`.
   have h : (g.inner (i q) (mfderiv I J i q u)).comp (mfderiv I J i q) =
       (inducedMetric g i).inner q u :=
-    ContinuousLinearMap.ext fun w ↦ (ContMDiffRiemannianMetric.pullback_inner _ _ _ _ q u w).symm
-  rw [h, (ContinuousLinearMap.isInvertible_of_pos ((inducedMetric g i).pos q)).inverse_apply_self]
+    ContinuousLinearMap.ext fun w ↦ (inducedMetric_inner_apply g i q u w).symm
+  rw [h, (isInvertible_inducedMetric_inner g i q).inverse_apply_self]
 
 variable (θ : SmoothTwoForm J M) (σ : SmoothTwoForm K N)
   (gM : ContMDiffRiemannianMetric J ∞ V (fun x : M ↦ TangentSpace J x))
@@ -182,10 +195,9 @@ private theorem eval₂_coisotropicExtension_mfderiv {σ : SmoothTwoForm K N}
   rw [coisotropicExtension_apply, SmoothBundleForm.eval₂_add_left, hpull, ← flat_apply σ,
     (hσ.isInvertible_flat (j q)).self_apply_inverse]
   -- `g_N(dj_q x, dj_q w)` is the induced metric on `x` and `w`.
-  rw [← ContMDiffRiemannianMetric.pullback_inner gN j (j.contMDiff.of_le (by simp))
-    (fun q ↦ j.isImmersion.mfderiv_injective (by simp) q),
-    (ContinuousLinearMap.isInvertible_of_pos ((inducedMetric gN j).pos q)).self_apply_inverse,
-    ContinuousLinearMap.comp_apply, flat_apply, SmoothBundleForm.eval₂_sub_left, add_sub_cancel]
+  rw [← inducedMetric_inner_apply gN j,
+    (isInvertible_inducedMetric_inner gN j q).self_apply_inverse, ContinuousLinearMap.comp_apply,
+    flat_apply, SmoothBundleForm.eval₂_sub_left, add_sub_cancel]
 
 variable {θ σ} {hθ : θ.IsNondegenerate}
 
@@ -253,7 +265,7 @@ private theorem contMDiff_coisotropicExtension (hσ : σ.IsNondegenerate) :
       (fun p : TotalSpace V ((i : Q → M) *ᵖ (TangentSpace J)) ↦
         (⟨p.proj, tangentialPart gM i p.proj p.snd⟩ : TangentBundle I Q)) :=
     i.contMDiff_inverse_comp_mfderiv (m := ∞) (by simp) (inducedMetric gM i).contMDiff
-      (fun q ↦ ContinuousLinearMap.isInvertible_of_pos ((inducedMetric gM i).pos q)) gM.contMDiff
+      (isInvertible_inducedMetric_inner gM i) gM.contMDiff
   -- The normal part `v - di_q (P v)`, as a vector of the pulled-back bundle.
   let c (q : Q) (v : TangentSpace J (i q)) : TangentSpace J (i q) :=
     v - mfderiv I J i q (tangentialPart gM i q v)
@@ -262,12 +274,10 @@ private theorem contMDiff_coisotropicExtension (hσ : σ.IsNondegenerate) :
         (⟨p.proj, c p.proj p.snd⟩ : TotalSpace V ((i : Q → M) *ᵖ (TangentSpace J)))) :=
     (Bundle.Pullback.contMDiff_iff i i.contMDiff).2 ⟨hbase,
       i.contMDiff_of_eq_sub_mfderiv_inverse (m := ∞) (by simp) (inducedMetric gM i).contMDiff
-        (fun q ↦ ContinuousLinearMap.isInvertible_of_pos ((inducedMetric gM i).pos q)) gM.contMDiff
-        _ fun _ _ ↦ rfl⟩
+        (isInvertible_inducedMetric_inner gM i) gM.contMDiff _ fun _ _ ↦ rfl⟩
   -- The vector `x` of `Q` with `g_N(dj_q x, dj_q ·) = θ(v - di_q (P v), di_q ·)`.
   have hx := (i.contMDiff_inverse_comp_mfderiv (m := ∞) (by simp) (inducedMetric gN j).contMDiff
-    (fun q ↦ ContinuousLinearMap.isInvertible_of_pos ((inducedMetric gN j).pos q))
-    (contMDiff_flat θ)).comp hc
+    (isInvertible_inducedMetric_inner gN j) (contMDiff_flat θ)).comp hc
   -- Push `x` forward by `dj`, take its `g_N`-dual and invert `σ♭`.
   have hη := (gN.contMDiff.comp hjb).clm_bundle_apply (F₂ := F →L[ℝ] ℝ)
     (E₂ := fun y : N ↦ TangentSpace K y →L[ℝ] ℝ)
