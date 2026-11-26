@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.InhomogeneousF2
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inhomogeneous.F2
 
 /-!
 # The degree-one class of a continuous homomorphism to `𝔽₂`
