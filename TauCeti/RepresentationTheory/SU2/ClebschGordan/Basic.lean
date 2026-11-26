@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Data.Nat.Factorial.Basic
-import TauCeti.Algebra.BigOperators.Finset.Range
+public import TauCeti.RepresentationTheory.SU2.ClebschGordan.Triad
 
 /-!
 # The Clebsch–Gordan coefficients of `SU(2)` by Racah's formula
@@ -17,7 +17,8 @@ decomposes, without multiplicity, into the irreducible representations of the sp
 `j = |j₁ - j₂|, |j₁ - j₂| + 1, …, j₁ + j₂`. The Clebsch–Gordan coefficient
 `(j₁ m₁ j₂ m₂ | j₁ j₂ j m)` is the component of the coupled vector of spin `j` and weight `m`
 along the product vector `e_{m₁} ⊗ e_{m₂}`. This file defines these real numbers by Racah's
-closed formula and records the elementary facts about their support.
+closed formula and records the elementary facts about their support. Its support is described
+by the admissible triples `TauCeti.SU2.IsTriad` of spins `(j₁, j₂, j)`.
 
 ## Conventions
 
@@ -29,8 +30,6 @@ is meaningful for `i ≤ d`. So Edmonds's order `m = j, …, -j` is `i = d, …,
 
 ## Main definitions
 
-* `TauCeti.SU2.IsTriad d₁ d₂ d`: the spins `(d₁ / 2, d₂ / 2, d / 2)` form an admissible triple:
-  they satisfy the triangle inequalities and `j₁ + j₂ + j` is an integer [Edmonds, (3.1.5)].
 * `TauCeti.SU2.clebschGordan d₁ d₂ d i₁ i₂ i`: the Clebsch–Gordan coefficient
   `(j₁ m₁ j₂ m₂ | j₁ j₂ j m)`, by Racah's formula [Edmonds, (3.6.11)], built from its summand
   `TauCeti.SU2.clebschGordanTerm` and the factor `TauCeti.SU2.clebschGordanPrefactor` under its
@@ -40,14 +39,15 @@ is meaningful for `i ≤ d`. So Edmonds's order `m = j, …, -j` is `i = d, …,
 
 ## Main results
 
-* `TauCeti.SU2.isTriad_iff_exists`: the admissible `d` are `d₁ + d₂ - 2k`, `k ≤ min d₁ d₂`.
-* `TauCeti.SU2.sum_isTriad_succ`: the dimension count `Σ_j (2j + 1) = (2j₁ + 1)(2j₂ + 1)` over
-  the admissible `j`.
 * `TauCeti.SU2.clebschGordan_eq_zero_of_not_isTriad`, `TauCeti.SU2.clebschGordan_eq_zero_of_ne`:
   the selection rules: the coefficient vanishes for an inadmissible triple and unless
   `m = m₁ + m₂`.
 * `TauCeti.SU2.clebschGordanPrefactor_eq_mul_sq_triangleCoefficient`: the factor under the square
   root is `(2j + 1) Δ(j₁ j₂ j)² Π_r (j_r + m_r)! (j_r - m_r)!`.
+* `TauCeti.SU2.triangleCoefficient_comm`, `TauCeti.SU2.triangleCoefficient_rotate`: `Δ(j₁ j₂ j₃)`
+  is invariant under permutations of the three spins.
+* `TauCeti.SU2.clebschGordan_eq_sqrt_mul_clebschGordanTerm`: the coefficient when a single index
+  contributes to Racah's sum.
 
 ## References
 
@@ -68,74 +68,14 @@ namespace TauCeti.SU2
 
 open Finset
 
-/-! ### Admissible triples -/
-
-/-- **Admissible triple** [Edmonds, (3.1.5)]; DLMF §34.2: the spins `d₁ / 2`, `d₂ / 2`,
-`d / 2` satisfy the triangle inequalities `|j₁ - j₂| ≤ j ≤ j₁ + j₂` and `j₁ + j₂ + j` is an
-integer. These are the spins `j` occurring in the tensor product of the representations of spins
-`j₁` and `j₂`. -/
-def IsTriad (d₁ d₂ d : ℕ) : Prop :=
-  d ≤ d₁ + d₂ ∧ d₁ ≤ d₂ + d ∧ d₂ ≤ d₁ + d ∧ Even (d₁ + d₂ + d)
-
-/-- Admissibility, unfolded. -/
-theorem isTriad_iff {d₁ d₂ d : ℕ} :
-    IsTriad d₁ d₂ d ↔ d ≤ d₁ + d₂ ∧ d₁ ≤ d₂ + d ∧ d₂ ≤ d₁ + d ∧ Even (d₁ + d₂ + d) :=
-  Iff.rfl
-
-instance (d₁ d₂ d : ℕ) : Decidable (IsTriad d₁ d₂ d) :=
-  decidable_of_iff _ isTriad_iff.symm
-
-/-- Admissibility is symmetric in the first two spins. -/
-theorem isTriad_comm (d₁ d₂ d : ℕ) : IsTriad d₁ d₂ d ↔ IsTriad d₂ d₁ d := by
-  unfold IsTriad
-  rw [Nat.add_comm d₂ d₁]
-  constructor <;> rintro ⟨h₁, h₂, h₃, h₄⟩ <;> exact ⟨by omega, by omega, by omega, h₄⟩
-
-/-- Admissibility is invariant under the cyclic permutation of the three spins. -/
-theorem isTriad_rotate (d₁ d₂ d : ℕ) : IsTriad d₁ d₂ d ↔ IsTriad d₂ d d₁ := by
-  unfold IsTriad
-  rw [show d₂ + d + d₁ = d₁ + d₂ + d by omega]
-  constructor <;> rintro ⟨h₁, h₂, h₃, h₄⟩ <;> exact ⟨by omega, by omega, by omega, h₄⟩
-
-/-- The admissible spins `j` for given `j₁`, `j₂` are `j₁ + j₂ - k` for `k = 0, 1, …,
-min(2j₁, 2j₂)`, that is `d = d₁ + d₂ - 2k` for `k ≤ min d₁ d₂`. -/
-theorem isTriad_iff_exists (d₁ d₂ d : ℕ) :
-    IsTriad d₁ d₂ d ↔ ∃ k ≤ min d₁ d₂, d = d₁ + d₂ - 2 * k := by
-  constructor
-  · rintro ⟨h₁, h₂, h₃, r, hr⟩
-    exact ⟨(d₁ + d₂ - d) / 2, by omega, by omega⟩
-  · rintro ⟨k, hk, rfl⟩
-    exact ⟨by omega, by omega, by omega, ⟨d₁ + d₂ - k, by omega⟩⟩
-
-/-- The admissible `d` below `d₁ + d₂ + 1` are the images of `k ≤ min d₁ d₂` under
-`k ↦ d₁ + d₂ - 2k`. -/
-private theorem filter_isTriad_eq_image (d₁ d₂ : ℕ) :
-    (range (d₁ + d₂ + 1)).filter (IsTriad d₁ d₂) =
-      (range (min d₁ d₂ + 1)).image fun k ↦ d₁ + d₂ - 2 * k := by
-  ext d
-  simp only [mem_filter, mem_range, mem_image, isTriad_iff_exists]
-  constructor
-  · rintro ⟨-, k, hk, rfl⟩
-    exact ⟨k, by omega, rfl⟩
-  · rintro ⟨k, hk, rfl⟩
-    exact ⟨by omega, k, by omega, rfl⟩
-
-/-- **The dimension count** `Σ_j (2j + 1) = (2j₁ + 1)(2j₂ + 1)`, the sum over the admissible
-`j`: the dimensions of the representations occurring in the tensor product of the
-representations of spins `j₁` and `j₂` add up to the dimension of that tensor product. -/
-theorem sum_isTriad_succ (d₁ d₂ : ℕ) :
-    ∑ d ∈ (range (d₁ + d₂ + 1)).filter (IsTriad d₁ d₂), (d + 1) = (d₁ + 1) * (d₂ + 1) := by
-  rw [filter_isTriad_eq_image, sum_image fun k hk k' hk' h ↦ by
-    simp only [coe_range, Set.mem_Iio] at hk hk'
-    omega]
-  exact sum_range_min_add_one_sub_two_mul d₁ d₂
-
 /-! ### Racah's formula -/
 
 /-- The summand of Racah's formula [Edmonds, (3.6.11)] at the summation index `z`: with
 `L = j₁ + j₂ - j`, it is
 `(-1)^z / (z! (L - z)! (j₁ - m₁ - z)! (j₂ + m₂ - z)! (j - j₂ + m₁ + z)! (j - j₁ - m₂ + z)!)`,
-and `0` unless every argument of a factorial is nonnegative. In indices `j₁ - m₁ = d₁ - i₁`,
+and `0` unless the arguments of the last four factorials are nonnegative. The term is meaningful
+only for the indices `z ≤ L` summed in `clebschGordan`: the condition `z ≤ L` is not checked, and
+for `z > L` truncated subtraction turns `(L - z)!` into `0! = 1`. In indices `j₁ - m₁ = d₁ - i₁`,
 `j₂ + m₂ = i₂`, `j - j₂ + m₁ = i₁ - L` and `j - j₁ - m₂ = (d₂ - i₂) - L`. -/
 def clebschGordanTerm (d₁ d₂ d i₁ i₂ z : ℕ) : ℝ :=
   if (d₁ + d₂ - d) / 2 ≤ z + i₁ ∧ (d₁ + d₂ - d) / 2 ≤ z + (d₂ - i₂) ∧ z ≤ d₁ - i₁ ∧
@@ -193,6 +133,32 @@ theorem clebschGordanPrefactor_def (d₁ d₂ d i₁ i₂ i : ℕ) :
         (((d₁ + d₂ + d) / 2 + 1).factorial : ℕ) :=
   (rfl)
 
+/-- The summand of Racah's formula at an index `z` where it is nonzero, with the arguments
+`a = L - z`, `b = d₁ - i₁ - z`, `c = i₂ - z`, `e = z + i₁ - L` and `f = z + (d₂ - i₂) - L` of its
+factorials evaluated, `L = (d₁ + d₂ - d) / 2`. -/
+theorem clebschGordanTerm_eq {d₁ d₂ d i₁ i₂ z a b c e f : ℕ}
+    (ha : (d₁ + d₂ - d) / 2 - z = a) (hb : d₁ - i₁ - z = b) (hc : i₂ - z = c)
+    (he : z + i₁ - (d₁ + d₂ - d) / 2 = e) (hf : z + (d₂ - i₂) - (d₁ + d₂ - d) / 2 = f)
+    (h : (d₁ + d₂ - d) / 2 ≤ z + i₁ ∧ (d₁ + d₂ - d) / 2 ≤ z + (d₂ - i₂) ∧ z ≤ d₁ - i₁ ∧
+      z ≤ i₂) :
+    clebschGordanTerm d₁ d₂ d i₁ i₂ z =
+      (-1) ^ z / ((z.factorial * a.factorial * b.factorial * c.factorial * e.factorial *
+        f.factorial : ℕ) : ℝ) := by
+  subst ha hb hc he hf
+  exact ite_eq_left h
+
+/-- The factor under the square root in Racah's formula, with the arguments
+`a = (d₁ + d₂ - d) / 2`, `b = (d₁ + d - d₂) / 2`, `c = (d₂ + d - d₁) / 2` and
+`s = (d₁ + d₂ + d) / 2` of its factorials evaluated. -/
+theorem clebschGordanPrefactor_eq {d₁ d₂ d i₁ i₂ i a b c s : ℕ} (ha : (d₁ + d₂ - d) / 2 = a)
+    (hb : (d₁ + d - d₂) / 2 = b) (hc : (d₂ + d - d₁) / 2 = c) (hs : (d₁ + d₂ + d) / 2 = s) :
+    clebschGordanPrefactor d₁ d₂ d i₁ i₂ i =
+      (((d + 1) * a.factorial * b.factorial * c.factorial * i₁.factorial * (d₁ - i₁).factorial *
+          i₂.factorial * (d₂ - i₂).factorial * i.factorial * (d - i).factorial : ℕ) : ℝ) /
+        ((s + 1).factorial : ℕ) := by
+  subst ha hb hc hs
+  rfl
+
 /-- The triangle coefficient, unfolded. -/
 theorem triangleCoefficient_def (d₁ d₂ d₃ : ℕ) :
     triangleCoefficient d₁ d₂ d₃ =
@@ -210,6 +176,18 @@ theorem sq_triangleCoefficient (d₁ d₂ d₃ : ℕ) :
 /-- The triangle coefficient is positive. -/
 theorem triangleCoefficient_pos (d₁ d₂ d₃ : ℕ) : 0 < triangleCoefficient d₁ d₂ d₃ :=
   Real.sqrt_pos.2 (by positivity)
+
+/-- The triangle coefficient is symmetric in its first two spins. -/
+theorem triangleCoefficient_comm (d₁ d₂ d₃ : ℕ) :
+    triangleCoefficient d₁ d₂ d₃ = triangleCoefficient d₂ d₁ d₃ := by
+  rw [triangleCoefficient_def, triangleCoefficient_def, Nat.add_comm d₂ d₁, Nat.mul_right_comm]
+
+/-- The triangle coefficient is invariant under the cyclic permutation of its spins. -/
+theorem triangleCoefficient_rotate (d₁ d₂ d₃ : ℕ) :
+    triangleCoefficient d₁ d₂ d₃ = triangleCoefficient d₂ d₃ d₁ := by
+  rw [triangleCoefficient_def, triangleCoefficient_def, Nat.add_comm d₂ d₁, Nat.add_comm d₃ d₁,
+    Nat.add_comm (d₂ + d₃) d₁, ← Nat.add_assoc]
+  ac_rfl
 
 /-- The factor under the square root in Racah's formula is positive. -/
 theorem clebschGordanPrefactor_pos (d₁ d₂ d i₁ i₂ i : ℕ) :
@@ -238,6 +216,17 @@ theorem clebschGordan_of_isTriad {d₁ d₂ d i₁ i₂ i : ℕ} (h : IsTriad d�
       Real.sqrt (clebschGordanPrefactor d₁ d₂ d i₁ i₂ i) *
         ∑ z ∈ range ((d₁ + d₂ - d) / 2 + 1), clebschGordanTerm d₁ d₂ d i₁ i₂ z :=
   ite_eq_left ⟨h, h₁, h₂, hi, hm⟩
+
+/-- When a single index `z₀` contributes to Racah's sum, the Clebsch–Gordan coefficient is the
+square root of `clebschGordanPrefactor` times the summand `clebschGordanTerm` at `z₀`. -/
+theorem clebschGordan_eq_sqrt_mul_clebschGordanTerm {d₁ d₂ d i₁ i₂ i : ℕ} (h : IsTriad d₁ d₂ d)
+    (h₁ : i₁ ≤ d₁) (h₂ : i₂ ≤ d₂) (hi : i ≤ d) (hm : 2 * i + d₁ + d₂ = 2 * i₁ + 2 * i₂ + d)
+    {z₀ : ℕ} (hz₀ : z₀ ≤ (d₁ + d₂ - d) / 2)
+    (hz : ∀ z ≤ (d₁ + d₂ - d) / 2, z ≠ z₀ → clebschGordanTerm d₁ d₂ d i₁ i₂ z = 0) :
+    clebschGordan d₁ d₂ d i₁ i₂ i =
+      Real.sqrt (clebschGordanPrefactor d₁ d₂ d i₁ i₂ i) * clebschGordanTerm d₁ d₂ d i₁ i₂ z₀ := by
+  rw [clebschGordan_of_isTriad h h₁ h₂ hi hm, sum_eq_single_of_mem z₀ (mem_range.2 (by omega))
+    fun z hz' ↦ hz z (Nat.lt_succ_iff.1 (mem_range.1 hz'))]
 
 /-- **Selection rule** [Edmonds, p. 38]: the coefficient vanishes for an inadmissible
 triple. -/
