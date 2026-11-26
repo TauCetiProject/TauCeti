@@ -113,6 +113,21 @@ theorem complexConjugationAt_eq_complexConjugationAt (w w' : InfinitePlace K)
 
 end TauCeti.NumberField
 
+namespace AlgEquiv
+
+/-- Complex conjugation of an algebraic CM field commutes with every rational automorphism. -/
+theorem commute_complexConj {K : Type*} [Field K] [CharZero K] [Algebra.IsIntegral ℚ K]
+    [IsCMField K] (g : Gal(K/ℚ)) :
+    Commute g ((IsCMField.complexConj K).restrictScalars ℚ) := by
+  obtain ⟨φ⟩ : Nonempty (K →+* ℂ) := inferInstance
+  apply AlgEquiv.ext
+  intro x
+  apply φ.injective
+  exact (IsCMField.complexEmbedding_complexConj K (φ.comp g.toRingHom) x).trans
+    (IsCMField.complexEmbedding_complexConj K φ (g x)).symm
+
+end AlgEquiv
+
 namespace RingHom
 
 variable {K : Type*} [Field K] [CharZero K] [Algebra.IsIntegral ℚ K] [NumberField.IsCMField K]
