@@ -48,6 +48,8 @@ polynomials they generalize already live.
   are symmetric**.
 * `TauCeti.schurPoly_mem_symmetricSubalgebra`: the same, read in
   `MvPolynomial.symmetricSubalgebra`.
+* `TauCeti.symmetricDiagramSchurPoly`: the Schur polynomial of a diagram as an element of
+  `MvPolynomial.symmetricSubalgebra`.
 
 ## References
 
@@ -162,6 +164,17 @@ theorem diagramSchurPoly_mem_symmetricSubalgebra (N : ℕ) (R : Type*) [CommSemi
     (μ : YoungDiagram) : diagramSchurPoly N R μ ∈ symmetricSubalgebra (Fin N) R :=
   (mem_symmetricSubalgebra _).mpr (isSymmetric_diagramSchurPoly N R μ)
 
+/-- The Schur polynomial `TauCeti.diagramSchurPoly N R μ`, as an element of
+`MvPolynomial.symmetricSubalgebra`. -/
+@[expose] noncomputable def symmetricDiagramSchurPoly (N : ℕ) (R : Type*) [CommSemiring R]
+    (μ : YoungDiagram) : symmetricSubalgebra (Fin N) R :=
+  ⟨diagramSchurPoly N R μ, diagramSchurPoly_mem_symmetricSubalgebra N R μ⟩
+
+@[simp, norm_cast]
+theorem coe_symmetricDiagramSchurPoly (N : ℕ) (μ : YoungDiagram) :
+    (symmetricDiagramSchurPoly N R μ : MvPolynomial (Fin N) R) = diagramSchurPoly N R μ :=
+  rfl
+
 /-- Renaming a diagram Schur polynomial along a bijection of finite alphabets preserves it. -/
 @[simp]
 theorem rename_diagramSchurPoly {M N : ℕ} (μ : YoungDiagram) (e : Fin M ≃ Fin N) :
@@ -176,6 +189,14 @@ diagram-indexed Schur polynomial. -/
 theorem schurPoly_fin_shapePartition (N : ℕ) (μ : YoungDiagram) :
     schurPoly (Fin N) R (shapePartition μ) = diagramSchurPoly N R μ := by
   rw [schurPoly_eq_rename, ofPartition_shapePartition, rename_diagramSchurPoly]
+
+/-- The partition-indexed Schur polynomial in `Fin N` of the partition read off a Young diagram is
+its diagram-indexed Schur polynomial; this is `TauCeti.schurPoly_fin_shapePartition` for a
+diagram whose size is recorded as an arbitrary `d`. -/
+@[simp]
+theorem schurPoly_fin_toPartition (N : ℕ) {μ : YoungDiagram} {d : ℕ} (h : μ.card = d) :
+    schurPoly (Fin N) R (μ.toPartition h) = diagramSchurPoly N R μ := by
+  rw [schurPoly_eq_rename, YoungDiagram.ofPartition_toPartition, rename_diagramSchurPoly]
 
 /-- Renaming a symmetric polynomial along a bijection of alphabets keeps it symmetric. -/
 private theorem isSymmetric_rename {σ τ : Type*} {p : MvPolynomial τ R} (hp : p.IsSymmetric)

@@ -383,31 +383,24 @@ theorem linearIndependent_schurPoly (h : n ≤ Fintype.card σ) :
     ((schurPolyBasis σ R n).linearIndependent.comp f hf).map'
       (symmetricHomogeneousSubmodule σ R n).subtype (Submodule.ker_subtype _)
 
-/-- The Schur polynomial of a diagram, read as the Schur polynomial of the partition of its size
-given by its row lengths. -/
-private theorem schurPoly_toPartition {N : ℕ} {μ : YoungDiagram} {d : ℕ} (h : μ.card = d) :
-    schurPoly (Fin N) R (μ.toPartition h) = diagramSchurPoly N R μ := by
-  rw [schurPoly_eq_rename, YoungDiagram.ofPartition_toPartition, rename_diagramSchurPoly]
-
-/-- The Schur polynomials of a fixed degree `d` and at most `n` rows are linearly independent,
+/-- The Schur polynomials of a fixed degree `d` and at most `N` rows are linearly independent,
 being the Schur basis `TauCeti.schurPolyBasis` of the symmetric polynomials of degree `d`. -/
 private theorem linearIndependent_diagramSchurPoly_card (N d : ℕ) :
     LinearIndependent R fun μ : {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = d} =>
       diagramSchurPoly N R μ.val.val := by
   have hli := (schurPolyBasis (Fin N) R d).linearIndependent.map' _ (Submodule.ker_subtype _)
+  -- Reorder the two subtype conditions, then read the diagrams of size `d` as partitions of `d`.
   let e : {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = d} ≃
       {ν : d.Partition // ν.parts.card ≤ Fintype.card (Fin N)} :=
-    { toFun μ := ⟨μ.val.val.toPartition μ.property, by
-        rw [Fintype.card_fin, ← YoungDiagram.colLen_zero_ofPartition,
-          YoungDiagram.ofPartition_toPartition]
-        exact μ.val.property⟩
-      invFun ν := ⟨⟨YoungDiagram.ofPartition ν.val, by
-        rw [YoungDiagram.colLen_zero_ofPartition]; simpa using ν.property⟩,
-        YoungDiagram.card_ofPartition ν.val⟩
-      left_inv μ := by simp [YoungDiagram.ofPartition_toPartition]
-      right_inv ν := by simp [YoungDiagram.toPartition_ofPartition] }
+    (Equiv.subtypeSubtypeEquivSubtypeInter _ _).trans <|
+      (Equiv.subtypeEquivRight fun _ => and_comm).trans <|
+        (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm.trans <|
+          Equiv.subtypeEquiv YoungDiagram.equivPartition fun μ => by
+            rw [Fintype.card_fin, ← YoungDiagram.colLen_zero_ofPartition]
+            simp [YoungDiagram.equivPartition, YoungDiagram.ofPartition_toPartition]
   convert hli.comp e e.injective with μ
-  simp [e, coe_schurPolyBasis, schurPoly_toPartition]
+  simp [e, coe_schurPolyBasis, YoungDiagram.equivPartition, Equiv.subtypeSubtypeEquivSubtypeInter,
+    Equiv.subtypeSubtypeEquivSubtypeExists]
 
 /-- **The Schur polynomials are linearly independent**: in `N` variables, the Schur polynomials of
 the Young diagrams with at most `N` rows are linearly independent over every commutative ring.

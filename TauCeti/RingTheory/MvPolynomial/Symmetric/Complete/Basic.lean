@@ -53,6 +53,7 @@ polynomial.
   symmetric polynomials is symmetric and homogeneous of degree `n` for a partition `ν` of `n`.
 * `TauCeti.hsymmInt`: the complete homogeneous symmetric polynomial `h_m` of an integer degree `m`,
   which is `0` for `m < 0`.
+* `TauCeti.symmetricHsymm`: `h_k` as an element of `MvPolynomial.symmetricSubalgebra`.
 -/
 
 public section
@@ -207,5 +208,23 @@ theorem hsymmInt_isSymmetric (m : ℤ) : (hsymmInt σ R m).IsSymmetric := by
   · exact (MvPolynomial.symmetricSubalgebra σ R).zero_mem
 
 end hsymmInt
+
+section symmetricHsymm
+
+variable (σ : Type*) [Fintype σ] [DecidableEq σ] (R : Type*) [CommSemiring R]
+
+/-- The complete homogeneous symmetric polynomial `MvPolynomial.hsymm σ R k`, as an element of
+`MvPolynomial.symmetricSubalgebra`. -/
+@[expose] noncomputable def symmetricHsymm (k : ℕ) : MvPolynomial.symmetricSubalgebra σ R :=
+  ⟨MvPolynomial.hsymm σ R k, MvPolynomial.hsymm_isSymmetric σ R k⟩
+
+variable {σ R}
+
+@[simp, norm_cast]
+theorem coe_symmetricHsymm (k : ℕ) :
+    (symmetricHsymm σ R k : MvPolynomial σ R) = MvPolynomial.hsymm σ R k :=
+  rfl
+
+end symmetricHsymm
 
 end TauCeti

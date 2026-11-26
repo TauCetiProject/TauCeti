@@ -482,27 +482,21 @@ variable {R : Type*} [CommRing R]
 
 /-- **The Schur polynomials span the symmetric polynomials**: every symmetric polynomial in `N`
 variables is an `R`-linear combination of Schur polynomials. Products of elementary symmetric
-polynomials are such combinations by the Pieri rule `TauCeti.esymm_mul_diagramSchurPoly`, and they
-generate the symmetric polynomials by the fundamental theorem. -/
+polynomials are such combinations by the dual Pieri rule `TauCeti.esymm_mul_diagramSchurPoly`, and
+they generate the symmetric polynomials by the fundamental theorem. -/
 theorem span_diagramSchurPoly_eq_top {N : ℕ} :
-    Submodule.span R (Set.range fun μ : YoungDiagram =>
-      (⟨diagramSchurPoly N R μ, diagramSchurPoly_mem_symmetricSubalgebra N R μ⟩ :
-        symmetricSubalgebra (Fin N) R)) = ⊤ := by
+    Submodule.span R (Set.range (symmetricDiagramSchurPoly N R)) = ⊤ := by
   classical
-  set S := Submodule.span R (Set.range fun μ : YoungDiagram =>
-    (⟨diagramSchurPoly N R μ, diagramSchurPoly_mem_symmetricSubalgebra N R μ⟩ :
-      symmetricSubalgebra (Fin N) R))
+  set S := Submodule.span R (Set.range (symmetricDiagramSchurPoly N R))
   -- Multiplication by an elementary symmetric polynomial preserves `S`, by the Pieri rule.
   have hesymm (k : ℕ) {y : symmetricSubalgebra (Fin N) R} (hy : y ∈ S) :
       ⟨esymm (Fin N) R k, esymm_isSymmetric _ _ k⟩ * y ∈ S := by
     induction hy using Submodule.span_induction with
     | mem y hy =>
       obtain ⟨ν, rfl⟩ := hy
-      have h : (⟨esymm (Fin N) R k, esymm_isSymmetric _ _ k⟩ * ⟨diagramSchurPoly N R ν,
-            diagramSchurPoly_mem_symmetricSubalgebra N R ν⟩ : symmetricSubalgebra (Fin N) R) =
+      have h : ⟨esymm (Fin N) R k, esymm_isSymmetric _ _ k⟩ * symmetricDiagramSchurPoly N R ν =
           ∑ μ : (ν.card + k).Partition with (YoungDiagram.ofPartition μ).IsVerticalStrip ν,
-            ⟨diagramSchurPoly N R (YoungDiagram.ofPartition μ),
-              diagramSchurPoly_mem_symmetricSubalgebra N R _⟩ :=
+            symmetricDiagramSchurPoly N R (YoungDiagram.ofPartition μ) :=
         Subtype.ext (by simp [esymm_mul_diagramSchurPoly])
       rw [h]
       exact sum_mem fun μ _ => Submodule.subset_span ⟨_, rfl⟩
