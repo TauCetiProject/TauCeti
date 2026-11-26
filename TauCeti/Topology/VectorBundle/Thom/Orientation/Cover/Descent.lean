@@ -80,14 +80,14 @@ degree
 (`TauCeti.VectorBundleOrientationCover.nonempty_singularHomology_thomPair_iso_twistedHomology` and
 `TauCeti.VectorBundleOrientationCover.nonempty_singularCohomology_thomPair_iso_twistedCohomology`).
 The natural class `U` is the Thom class with coefficients in the orientation system
-(`TauCeti.twistedThomClass`, over a compact base), which takes the value `1` on the fibre class
-over every point. Its lift is a Thom class of `E'`
-(`isThomClass_thomPairSignCohomologyMap_twistedThomClass`), so over a compact base
-`Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` holds for every bundle and every commutative ring `k`
-(`nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`, in the namespace
-`TauCeti.VectorBundleOrientationCover`), and so does `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` for
-every `k`-module `N` (`nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`,
-in the same namespace).
+(`TauCeti.twistedThomClass`), which takes the value `1` on the fibre class over every point. Its
+lift is a Thom class of `E'` (`isThomClass_thomPairSignCohomologyMap_twistedThomClass`), so
+`Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` holds for every bundle, over any base, and every commutative
+ring `k` (`nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem`, in the
+namespace `TauCeti.VectorBundleOrientationCover`), and so does
+`Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` for every `k`-module `N`
+(`nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem`, in the same
+namespace).
 
 The base, the fibres and the ring lie in any common universe `w`, and the orientations are indexed
 by a type `ι : Type`, such as `Fin r`. Representations, their associated local systems and the
@@ -107,7 +107,7 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   `(E, E₀)` with coefficients in `π^*o(E)` whose lifted class is a Thom class of `E'`, and
   `nonempty_singularHomology_thomPair_iso_twistedHomology`: the same from a class of
   `Hʳ(E, E₀; π^*o(E), k)` whose lift is a Thom class of `E'`.
-* `nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`: over a compact base,
+* `nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem`:
   `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` for every bundle and every commutative ring `k`.
 * `thomPairSingularCohomologyIsoTwistedCohomology`: `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)`
   for every `k`-module `N`, from a semi-invariant Thom cocycle of `E'`.
@@ -115,9 +115,9 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   `(E, E₀)` with coefficients in `π^*o(E)` whose lifted class is a Thom class of `E'`, and
   `nonempty_singularCohomology_thomPair_iso_twistedCohomology`: the same from a class of
   `Hʳ(E, E₀; π^*o(E), k)` whose lift is a Thom class of `E'`.
-* `nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`: over a compact
-  base, `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` for every bundle, every commutative ring `k` and
-  every `k`-module `N`.
+* `nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem`:
+  `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` for every bundle, every commutative ring `k` and every
+  `k`-module `N`.
 
 ## References
 
@@ -417,14 +417,13 @@ theorem nonempty_singularHomology_thomPair_iso_twistedHomology
     (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U
   exact ⟨thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass F E hι k ψ hU p⟩
 
-/-- **The Thom isomorphism with coefficients in the orientation system over a compact base, over
-every ring.** Let `E → B` be a real vector bundle of rank `r` over a compact base, orientable or
-not, with orientation local system `o(E)`, and let `k` be a commutative ring, `ℤ` included. Then
+/-- **The Thom isomorphism with coefficients in the orientation system, over every ring.** Let
+`E → B` be a real vector bundle of rank `r` over any base, orientable or not, with orientation
+local system `o(E)`, and let `k` be a commutative ring, `ℤ` included. Then
 `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` in every degree `p`. For the Möbius line over the circle and
 `k = ℤ` this gives `H₁(E, E₀; ℤ) ≅ H₀(S¹; o(E)) ≅ ℤ/2`, where constant coefficients would give
 `ℤ`. -/
-theorem nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace [CompactSpace B]
-    (p : ℕ) :
+theorem nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem (p : ℕ) :
     Nonempty ((thomPair F E).singularHomology (ModuleCat.of k k) (p + finrank ℝ F) ≅
       twistedHomology (signLocalSystem F E k hι) p) := by
   classical
@@ -480,12 +479,12 @@ theorem nonempty_singularCohomology_thomPair_iso_twistedCohomology
   exact ⟨thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass F E hι k ψ hU N p⟩
 
 variable (F E) in
-/-- **The Thom isomorphism in cohomology with orientation-twisted coefficients over a compact
-base.** Let `E → B` be a real vector bundle of rank `r` over a compact base, orientable or not, with
-orientation local system `o(E)`, let `k` be any commutative ring and `N` any `k`-module, for
-instance `k = N = ℤ`. Then `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in every degree `p`. -/
-theorem nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace
-    [CompactSpace B] (N : ModuleCat.{w} k) (p : ℕ) :
+/-- **The Thom isomorphism in cohomology with orientation-twisted coefficients.** Let `E → B` be a
+real vector bundle of rank `r` over any base, orientable or not, with orientation local system
+`o(E)`, let `k` be any commutative ring and `N` any `k`-module, for instance `k = N = ℤ`. Then
+`Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in every degree `p`. -/
+theorem nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem
+    (N : ModuleCat.{w} k) (p : ℕ) :
     Nonempty ((thomPair F E).singularCohomology (ModuleCat.of k k) k N (p + finrank ℝ F) ≅
       (signLocalSystem F E k hι).twistedCohomology k N p) := by
   classical
