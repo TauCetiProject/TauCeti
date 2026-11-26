@@ -233,11 +233,8 @@ theorem marchenkoPastur_ae {𝕜 : Type*} [RCLike 𝕜] [MeasurableSpace 𝕜] [
   let f := toComplexStarAlgHom 𝕜
   have hiso : Isometry f := isometry_toComplexStarAlgHom 𝕜
   have hf : Measurable f := hiso.continuous.measurable
-  let e : 𝕜 →ₗᵢ[ℝ] ℂ := ⟨f.toAlgHom.toLinearMap, fun z ↦ by
-    simpa only [AlgHom.coe_toLinearMap, StarAlgHom.coe_toAlgHom]
-      using hiso.norm_map_of_map_zero (map_zero f) z⟩
-  have he (z : 𝕜) : e z = f z := by
-    simp only [e, LinearIsometry.coe_mk, AlgHom.coe_toLinearMap, StarAlgHom.coe_toAlgHom]
+  let e := f.toAlgHom.toLinearMap.toLinearIsometry hiso
+  have he (z : 𝕜) : e z = f z := rfl
   have hmean' : ∫ z, z ∂ν.map f = 0 := by
     rw [integral_map hf.aemeasurable (f := fun z : ℂ ↦ z) aestronglyMeasurable_id]
     simp_rw [← he]
