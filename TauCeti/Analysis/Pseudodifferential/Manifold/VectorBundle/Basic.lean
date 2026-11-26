@@ -291,13 +291,8 @@ theorem smulCommutator_sectionEntry (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M
     smulCommutator ℂ g (sectionEntry t ψ hψ v t' χ hχ ℓ P) =
       sectionEntry t ψ hψ v t' χ hχ ℓ (smulCommutator ℂ g P) := by
   rw [sectionEntry_eq_comp, sectionEntry_eq_comp]
-  -- The maps `f ↦ f · ψ t⁻¹ v` and `h ↦ χ · ℓ(t' h)` are linear over the complex-valued functions.
-  refine smulCommutator_comp_comp (fun f ↦ by simp [mul_smul]) (fun h ↦ ?_) P
-  ext x
-  simp only [Bundle.Trivialization.cutoffFrameCoeff_apply,
-    ContMDiffSection.smul_apply_of_normedAlgebra, map_smul, smul_eq_mul, ContMDiffMap.coe_mul,
-    Pi.mul_apply, Complex.real_smul]
-  ring
+  exact smulCommutator_comp_comp (fun f ↦ by simp [mul_smul])
+    (t'.cutoffFrameCoeff_smul χ hχ ℓ g) P
 
 /-- The iterated form of `TauCeti.smulCommutator_sectionEntry`: the iterated commutators of a
 matrix entry of `P` are the matrix entries of the iterated commutators of `P`. -/
@@ -306,10 +301,9 @@ theorem smulCommutator_pow_sectionEntry (g : C^∞⟮𝓘(ℝ, CoordinateSpace n
     (k : ℕ) :
     (smulCommutator ℂ g ^ k) (sectionEntry t ψ hψ v t' χ hχ ℓ P) =
       sectionEntry t ψ hψ v t' χ hχ ℓ ((smulCommutator ℂ g ^ k) P) := by
-  induction k with
-  | zero => rfl
-  | succ k ih => rw [pow_succ', mul_apply_eq_comp, ih, smulCommutator_sectionEntry, pow_succ',
-      mul_apply_eq_comp]
+  rw [sectionEntry_eq_comp, sectionEntry_eq_comp]
+  exact smulCommutator_pow_comp_comp (fun f ↦ by simp [mul_smul])
+    (t'.cutoffFrameCoeff_smul χ hχ ℓ g) P k
 
 /-- The entries of a properly supported operator are properly supported. -/
 theorem IsSectionProperlySupported.sectionEntry
@@ -340,15 +334,9 @@ theorem sectionEntry_mem_differentialOperators {m : ℕ}
       differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
         C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
         C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ m := by
-  induction m generalizing P with
-  | zero =>
-    refine mem_differentialOperators_zero_iff_smulCommutator.2 fun g ↦ ?_
-    rw [smulCommutator_sectionEntry, smulCommutator_eq_zero_of_mem_differentialOperators_zero hP,
-      map_zero]
-  | succ m ih =>
-    refine mem_differentialOperators_succ_iff.2 fun g ↦ ?_
-    rw [smulCommutator_sectionEntry]
-    exact ih (smulCommutator_mem_differentialOperators hP g)
+  rw [sectionEntry_eq_comp]
+  exact comp_comp_mem_differentialOperators
+    (fun g ↦ ⟨g, fun f ↦ by simp [mul_smul], t'.cutoffFrameCoeff_smul χ hχ ℓ g⟩) hP
 
 end Entry
 
@@ -488,12 +476,6 @@ theorem toSpanSingleton_comp_comp_cutoffFrameCoeff_mem_sectionClassicalPseudodif
     (σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
     (LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∘ₗ A ∘ₗ t.cutoffFrameCoeff ρ hρ ℓ ∈
       sectionClassicalPseudodifferentialOperators m := by
-  -- The cut-off frame coefficient of `f s` is `f` times that of `s`.
-  have hC (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
-      (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
-      t.cutoffFrameCoeff ρ hρ ℓ (f • s) = t.cutoffFrameCoeff ρ hρ ℓ s * f := by
-    ext x
-    simp [mul_comm, mul_left_comm]
   refine mem_sectionClassicalPseudodifferentialOperators_iff.2
     ⟨isSectionProperlySupported_iff.2 fun K hK ↦ ?_, fun T _ ψ hψ v T' _ χ hχ ℓ' ↦ ?_⟩
   · obtain ⟨K', hK', hA₁, hA₂⟩ :=
@@ -512,7 +494,7 @@ theorem toSpanSingleton_comp_comp_cutoffFrameCoeff_mem_sectionClassicalPseudodif
         LinearMap.mulLeft ℂ (T'.cutoffFrameCoeff χ hχ ℓ' σ) ∘ₗ A ∘ₗ
           LinearMap.mulLeft ℂ (t.cutoffFrameCoeff ρ hρ ℓ (T.cutoffFrameSection ψ hψ v)) := by
       ext f x
-      simp [hC, mul_comm, mul_assoc]
+      simp [Bundle.Trivialization.cutoffFrameCoeff_smul, mul_comm, mul_assoc]
     rw [hentry]
     exact mulLeft_comp_mem_classicalPseudodifferentialOperators
       (comp_mulLeft_mem_classicalPseudodifferentialOperators hA _) _
