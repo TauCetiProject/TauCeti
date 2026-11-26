@@ -132,13 +132,9 @@ theorem ratFunc_eq_prod_zpow :
     D.ratFunc K = ∏ n ∈ D.gammaSupport, algebraMap K[X] (RatFunc K) (X ^ n - 1) ^ D.gamma n := by
   have hS {S : Multiset ℕ} (hS : S ≤ D.A + D.B) : ∀ a ∈ S, a.divisors ⊆ D.gammaSupport :=
     fun a ha n hn ↦ D.mem_gammaSupport.2 ⟨a, Multiset.mem_of_le hS ha, Nat.dvd_of_mem_divisors hn⟩
-  have hA : ∀ a ∈ D.A, a ≠ 0 := fun a ha ↦ (D.pos_of_mem_A ha).ne'
-  have hB : ∀ b ∈ D.B, b ≠ 0 := fun b hb ↦ (D.pos_of_mem_B hb).ne'
   rw [ratFunc_def, phiA_def, phiB_def,
-    algebraMap_prod_cyclotomic_eq_prod_zpow _ hA (hS (Multiset.le_add_right _ _))
-      D.zero_notMem_gammaSupport,
-    algebraMap_prod_cyclotomic_eq_prod_zpow _ hB (hS (Multiset.le_add_left _ _))
-      D.zero_notMem_gammaSupport,
+    algebraMap_prod_cyclotomic_eq_prod_zpow _ (hS (Multiset.le_add_right _ _)),
+    algebraMap_prod_cyclotomic_eq_prod_zpow _ (hS (Multiset.le_add_left _ _)),
     ← Finset.prod_div_distrib]
   refine Finset.prod_congr rfl fun n hn ↦ ?_
   rw [gamma_def,

@@ -24,7 +24,7 @@ independence fails, since `X ^ p - 1 = (X - 1) ^ p`.
 Products of this shape are the integral form of a rational function `∏_n (X ^ n - 1) ^ γ(n)`
 with integer exponents, the form in which Beukers, Cohen and Mellit parametrize hypergeometric
 data by their gamma vector. Every product of cyclotomic polynomials has this form in
-`RatFunc K`, by Möbius inversion of `X ^ n - 1 = ∏_{d ∣ n} Φ_d`.
+`RatFunc R`, by Möbius inversion of `X ^ n - 1 = ∏_{d ∣ n} Φ_d`.
 
 ## Main results
 
@@ -35,7 +35,7 @@ data by their gamma vector. Every product of cyclotomic polynomials has this for
 * `Polynomial.eq_of_prod_X_pow_sub_one_pow_eq`: in characteristic zero, equal products have equal
   exponents.
 * `Polynomial.algebraMap_prod_cyclotomic_eq_prod_zpow`: a product of cyclotomic polynomials is
-  `∏_n (X ^ n - 1) ^ (∑_{a, n ∣ a} μ(a / n))` in `RatFunc K`.
+  `∏_n (X ^ n - 1) ^ (∑_{a, n ∣ a} μ(a / n))` in `RatFunc R`.
 
 ## References
 
@@ -154,40 +154,40 @@ section RatFunc
 
 open scoped ArithmeticFunction.Moebius
 
-variable {K : Type*} [Field K]
+variable [IsDomain R]
 
-/-- Möbius inversion for one cyclotomic polynomial in `RatFunc K`,
+/-- Möbius inversion for one cyclotomic polynomial in `RatFunc R`,
 `Φ_a = ∏_{n ∣ a} (X ^ n - 1) ^ μ(a / n)`, with the product spread over a finite set `S` of indices
 containing the divisors of `a`. -/
-theorem algebraMap_cyclotomic_eq_prod_zpow {a : ℕ} (ha : a ≠ 0) {S : Finset ℕ}
-    (hS : a.divisors ⊆ S) :
-    algebraMap K[X] (RatFunc K) (cyclotomic a K) =
-      ∏ n ∈ S, algebraMap K[X] (RatFunc K) (X ^ n - 1) ^ (if n ∣ a then μ (a / n) else 0) := by
+theorem algebraMap_cyclotomic_eq_prod_zpow {a : ℕ} {S : Finset ℕ} (hS : a.divisors ⊆ S) :
+    algebraMap R[X] (RatFunc R) (cyclotomic a R) =
+      ∏ n ∈ S, algebraMap R[X] (RatFunc R) (X ^ n - 1) ^ (if n ∣ a then μ (a / n) else 0) := by
   rw [cyclotomic_eq_prod_X_pow_sub_one_pow_moebius,
-    Nat.prod_divisorsAntidiagonal' fun i j ↦ algebraMap K[X] (RatFunc K) (X ^ j - 1) ^ μ i,
+    Nat.prod_divisorsAntidiagonal' fun i j ↦ algebraMap R[X] (RatFunc R) (X ^ j - 1) ^ μ i,
     ← Finset.prod_subset hS fun n _ hn ↦ by
+      rcases eq_or_ne a 0 with rfl | ha
+      · simp
       rw [ite_eq_right fun h ↦ hn (Nat.mem_divisors.2 ⟨h, ha⟩), zpow_zero]]
   exact Finset.prod_congr rfl fun n hn ↦ by rw [ite_eq_left (Nat.dvd_of_mem_divisors hn)]
 
-/-- Möbius inversion for a product of cyclotomic polynomials in `RatFunc K`:
-`∏_{a ∈ A} Φ_a = ∏_{n ∈ S} (X ^ n - 1) ^ (∑_{a ∈ A, n ∣ a} μ(a / n))` for a finite set `S ∌ 0` of
+/-- Möbius inversion for a product of cyclotomic polynomials in `RatFunc R`:
+`∏_{a ∈ A} Φ_a = ∏_{n ∈ S} (X ^ n - 1) ^ (∑_{a ∈ A, n ∣ a} μ(a / n))` for a finite set `S` of
 indices containing the divisors of the elements of `A`. -/
-theorem algebraMap_prod_cyclotomic_eq_prod_zpow (A : Multiset ℕ) (hA : ∀ a ∈ A, a ≠ 0)
-    {S : Finset ℕ} (hS : ∀ a ∈ A, a.divisors ⊆ S) (hS₀ : 0 ∉ S) :
-    algebraMap K[X] (RatFunc K) (A.map fun a ↦ cyclotomic a K).prod =
-      ∏ n ∈ S, algebraMap K[X] (RatFunc K) (X ^ n - 1) ^
+theorem algebraMap_prod_cyclotomic_eq_prod_zpow (A : Multiset ℕ) {S : Finset ℕ}
+    (hS : ∀ a ∈ A, a.divisors ⊆ S) :
+    algebraMap R[X] (RatFunc R) (A.map fun a ↦ cyclotomic a R).prod =
+      ∏ n ∈ S, algebraMap R[X] (RatFunc R) (X ^ n - 1) ^
         ((A.filter (n ∣ ·)).map fun a ↦ μ (a / n)).sum := by
   induction A using Multiset.induction_on with
   | empty => simp
   | cons a A ih =>
     rw [Multiset.map_cons, Multiset.prod_cons, map_mul,
-      algebraMap_cyclotomic_eq_prod_zpow (hA a (Multiset.mem_cons_self a A))
-        (hS a (Multiset.mem_cons_self a A)),
-      ih (fun b hb ↦ hA b (Multiset.mem_cons_of_mem hb)) fun b hb ↦
-        hS b (Multiset.mem_cons_of_mem hb),
-      ← Finset.prod_mul_distrib]
-    refine Finset.prod_congr rfl fun n hn ↦ ?_
-    have hn₀ : 0 < n := Nat.pos_of_ne_zero fun h ↦ hS₀ (h ▸ hn)
+      algebraMap_cyclotomic_eq_prod_zpow (hS a (Multiset.mem_cons_self a A)),
+      ih fun b hb ↦ hS b (Multiset.mem_cons_of_mem hb), ← Finset.prod_mul_distrib]
+    refine Finset.prod_congr rfl fun n _ ↦ ?_
+    -- The exponents at `n = 0` are values `μ (a / 0) = μ 0 = 0`.
+    rcases Nat.eq_zero_or_pos n with rfl | hn₀
+    · simp
     rw [← zpow_add₀ (RatFunc.algebraMap_ne_zero (X_pow_sub_C_ne_zero hn₀ 1)),
       Multiset.filter_cons]
     split_ifs <;> simp
