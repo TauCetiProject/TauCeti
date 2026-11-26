@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Plane.SemiFredholm.Adjoint
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Sobolev
-public import TauCeti.Geometry.Symplectic.Floer.Transversality.WeakCokernel
 public import TauCeti.Analysis.Fredholm.ClosedRange
 
 import TauCeti.Algebra.Order.Floor.Ring
@@ -17,6 +16,7 @@ import TauCeti.Geometry.Symplectic.Floer.Plane.SemiFredholm
 import TauCeti.Topology.Constructions.SumProd
 import TauCeti.Geometry.Symplectic.Floer.Transversality.Conformal
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # The linearized operator of a PSS plane is Fredholm
@@ -37,13 +37,12 @@ so that `D_u` is Fredholm.
 * **Cokernel elements are regular.** An element `h ∈ L²(ℂ, V)` orthogonal to the range of `D_u`
   annihilates `D_u ξ` for every test section `ξ`, so the covector field `⟪h, ·⟫` is a weak
   cokernel element. When the data are regular enough it agrees almost everywhere with a `C²`
-  covector field `η` (`exists_contDiff_ae_eq_of_forall_integral_apply_floerLinearization_eq_zero`
-  in `TauCeti.Geometry.Symplectic.Floer.Transversality.WeakCokernel`), and Green's formula shows
-  `D_u^* η = 0`
-  (`TauCeti.SymplecticForm.exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero`).
+  covector field `η` with `D_u^* η = 0`
+  (`TauCeti.SymplecticForm.exists_contDiffOn_ae_eq_forall_floerLinearizationAdjoint_eq_zero`, on
+  every conformal domain, applied here to the plane).
 * **The `L²` norm of a cokernel element lives on a disc.** The adjoint estimate holds for
   covector fields of compact support. Applied to `χ_n η` for the radial cutoffs `χ_n` of the disc
-  `‖w‖ ≤ n` (`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith`), whose derivatives have
+  `‖w‖ ≤ n` (`TauCeti.exists_contDiff_cutoff_comp_continuousLinearMap`), whose derivatives have
   size `O(1/n)` on the annulus `n ≤ ‖w‖ ≤ 2n`, the weighted term
   `∫ (1 + ‖w‖²) ‖D_u^* (χ_n η)‖²` is at most a constant times the tail `∫_{‖w‖ ≥ n} ‖η‖²`,
   which tends to zero. On the end the `W^{1,2}` energy of the pullback
@@ -54,9 +53,9 @@ so that `D_u` is Fredholm.
   elements are bounded in `W^{1,2}`, so their restrictions to the disc `‖w‖ ≤ b` form a compact
   family (Rellich's theorem,
   `TauCeti.ConformalSobolev.isCompactOperator_restrictWeightedValue_comp_subtypeL`).
-  An infinite-dimensional cokernel would contain unit-size vectors at mutual distance at least one,
-  two of which are close on the disc, hence everywhere: so the orthogonal complement of the range
-  is finite-dimensional
+  An infinite-dimensional cokernel would contain a sequence of vectors of norm at most some
+  `R > 1` at mutual distance at least one, two of which are close on the disc, hence everywhere:
+  so the orthogonal complement of the range is finite-dimensional
   (`finiteDimensional_orthogonal_range_floerConformalSobolevOperator_positive`, in the namespace
   `TauCeti.SymplecticForm`), and `D_u` is Fredholm
   (`TauCeti.SymplecticForm.isFredholm_floerConformalSobolevOperator_positive`).
@@ -87,192 +86,17 @@ open TauCeti.Complex (realChart contDiff_realChart)
 
 namespace TauCeti
 
-namespace AlmostComplexStructure
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- **Inverting `a + b J` on covectors.** For an almost complex structure `J` and `a² + b² = r²`
-with `r > 0`, every covector `θ` satisfies `r ‖θ‖ ≤ (1 + ‖J‖) ‖θ ∘ (a + b J)‖`, since
-`(a + b J) (a - b J) = a² + b²`. This is the covector counterpart of
-`TauCeti.AlmostComplexStructure.mul_opNorm_le_of_eq_smul_sub_smul`. -/
-theorem mul_opNorm_le_opNorm_comp_smul_add_smul (J : AlmostComplexStructure V) (θ : V →L[ℝ] ℝ)
-    {a b r : ℝ} (hab : a ^ 2 + b ^ 2 = r ^ 2) (hr : 0 < r) :
-    r * ‖θ‖ ≤ (1 + ‖J.toLinearMap.toContinuousLinearMap‖) *
-      ‖θ.comp (a • (1 : V →L[ℝ] V) + b • J.toLinearMap.toContinuousLinearMap)‖ := by
-  set NJ := ‖J.toLinearMap.toContinuousLinearMap‖
-  set θ' := θ.comp (a • (1 : V →L[ℝ] V) + b • J.toLinearMap.toContinuousLinearMap)
-  have ha : |a| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg b]) hr.le
-  have hb : |b| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg a]) hr.le
-  -- `θ' (a v - b J v) = θ ((a² + b²) v) = r² θ v`, and `‖a v - b J v‖ ≤ r (1 + ‖J‖) ‖v‖`.
-  have hv (v : V) : r * ‖θ v‖ ≤ (1 + NJ) * ‖θ'‖ * ‖v‖ := by
-    have hθ' : θ' (a • v - b • J v) = r ^ 2 * θ v := by
-      have h := J.smul_add_smul_apply_smul_sub_smul a b v
-      simp only [θ', ContinuousLinearMap.comp_apply, add_apply,
-        smul_apply, one_apply_eq_self, LinearMap.coe_toContinuousLinearMap']
-      rw [h, map_smul, hab, smul_eq_mul]
-    have hw : ‖a • v - b • J v‖ ≤ r * ((1 + NJ) * ‖v‖) := by
-      have hJv : ‖J v‖ ≤ NJ * ‖v‖ := J.toLinearMap.toContinuousLinearMap.le_opNorm v
-      refine (norm_sub_le _ _).trans ?_
-      rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
-      calc |a| * ‖v‖ + |b| * ‖J v‖ ≤ r * ‖v‖ + r * (NJ * ‖v‖) := by gcongr
-        _ = r * ((1 + NJ) * ‖v‖) := by ring
-    have h1 : r ^ 2 * ‖θ v‖ ≤ r * ((1 + NJ) * ‖θ'‖ * ‖v‖) := by
-      have hn : ‖θ' (a • v - b • J v)‖ = r ^ 2 * ‖θ v‖ := by
-        rw [hθ', norm_mul, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg r)]
-      rw [← hn]
-      calc ‖θ' (a • v - b • J v)‖ ≤ ‖θ'‖ * ‖a • v - b • J v‖ := θ'.le_opNorm _
-        _ ≤ ‖θ'‖ * (r * ((1 + NJ) * ‖v‖)) := by gcongr
-        _ = r * ((1 + NJ) * ‖θ'‖ * ‖v‖) := by ring
-    nlinarith [norm_nonneg (θ v)]
-  have hθ : ‖θ‖ ≤ (1 + NJ) * ‖θ'‖ / r :=
-    θ.opNorm_le_bound (by positivity) fun v ↦ by
-      rw [div_mul_eq_mul_div, le_div_iff₀ hr]
-      linarith [hv v]
-  calc r * ‖θ‖ ≤ r * ((1 + NJ) * ‖θ'‖ / r) := by gcongr
-    _ = (1 + NJ) * ‖θ'‖ := by field_simp
-
-end AlmostComplexStructure
-
-
 namespace SymplecticForm
 
 open Floer Floer.PSSPlane ConformalSobolev
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-! ### Cokernel elements of the linearized operator of a PSS plane -/
-
-section Cokernel
-
-variable (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V}
-  {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-
-/-- **Cokernel elements of the linearized operator of a PSS plane are regular.** Let the data be
-regular along `u`: `J` is `C³` and `K_s`, `K_t` are `C⁴` at the points `(z, u z)`, and `u` is `C³`,
-and let the coefficient field on conformal jets be essentially bounded. Every element
-`h ∈ L²(ℂ, V)` orthogonal to the range of the realization `D_u : W^{1,2}(ℂ, V) → L²(ℂ, V)` is
-represented by a `C²` covector field: `⟪h, ·⟫ = η` almost everywhere, and `η` is annihilated by
-the formal adjoint, `D_u^* η = 0`. -/
-theorem exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero
-    (hJ : ∀ z, ContDiffAt ℝ 3
-      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hKs : ∀ z, ContDiffAt ℝ 4 (uncurry Ks) (z, u z))
-    (hKt : ∀ z, ContDiffAt ℝ 4 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 3 u)
-    (hM : MemLp (ω.floerConformalJetCoeff PSSPlane.cylindricalWeight
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u) ∞ (volume.restrict univ))
-    {h : Lp V 2 (volume.restrict (univ : Set (ℝ × ℝ)))}
-    (hh : h ∈ (ω.floerConformalSobolevOperator univ PSSPlane.cylindricalWeight
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u).rangeᗮ) :
-    ∃ η : ℝ × ℝ → V →L[ℝ] ℝ, ContDiff ℝ 2 η ∧ (fun z ↦ innerSL ℝ (h z)) =ᵐ[volume] η ∧
-      ∀ z, ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-        Ks Kt u η z = 0 := by
-  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap
-  have hm : MemLp (⇑h) 2 volume := by simpa only [Measure.restrict_univ] using Lp.memLp h
-  have hloc : MemLpLoc 2 univ (fun z ↦ innerSL ℝ (h z)) := memLpLoc_iff.2 fun K _ _ ↦
-    (innerSL ℝ).comp_memLp' (hm.restrict K)
-  -- The weak annihilation of `D_u`, from the orthogonality to its range.
-  have hweak (ξ : ℝ × ℝ → V) (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ) :
-      ∫ z, innerSL ℝ (h z) (ω.floerLinearization J' Ks Kt u ξ z) = 0 := by
-    simp only [innerSL_apply_apply]
-    rw [← setIntegral_univ]
-    exact setIntegral_inner_floerLinearization_eq_zero_of_mem_orthogonal_range
-      PSSPlane.isWeight_cylindricalWeight hM hh (mem_testSection_iff.2 ⟨hξ, hξc, subset_univ _⟩)
-  obtain ⟨η, hηc, hηae⟩ :=
-    exists_contDiffOn_ae_eq_of_forall_integral_apply_floerLinearization_eq_zero (ω := ω)
-    (J := J') isOpen_univ (k := 2) (fun z _ ↦ (hJ z).of_le (by norm_num))
-    (fun z _ ↦ (hKs z).of_le (by norm_num)) (fun z _ ↦ (hKt z).of_le (by norm_num))
-    (fun z _ ↦ hu.contDiffAt.of_le (by norm_num))
-    (fun z _ ↦ (J z (u z)).toContinuousLinearMap_mul_self) ENNReal.one_lt_two hloc
-    fun ξ hξ hξc _ ↦ hweak ξ (hξ.of_le (by norm_num)) hξc
-  have hη : ContDiff ℝ 2 η := contDiffOn_univ.1 hηc
-  refine ⟨η, hη, hηae, ?_⟩
-  have hJ1 (z : ℝ × ℝ) : ContDiffAt ℝ 1 (uncurry J') (z, u z) := (hJ z).of_le (by norm_num)
-  have hKs1 (z : ℝ × ℝ) : ContDiffAt ℝ 2 (uncurry Ks) (z, u z) := (hKs z).of_le (by norm_num)
-  have hKt1 (z : ℝ × ℝ) : ContDiffAt ℝ 2 (uncurry Kt) (z, u z) := (hKt z).of_le (by norm_num)
-  have hcont := ω.continuous_floerLinearizationAdjoint hJ1 hKs1 hKt1 (hu.of_le (by norm_num))
-    (hη.of_le one_le_two)
-  -- Each component `z ↦ (D^* η)(z) v` vanishes against every test function, by Green's formula.
-  have hv (v : V) : (fun z ↦ ω.floerLinearizationAdjoint J' Ks Kt u η z v) = fun _ ↦ 0 := by
-    have hcv : Continuous fun z ↦ ω.floerLinearizationAdjoint J' Ks Kt u η z v :=
-      hcont.clm_apply continuous_const
-    refine (hcv.ae_eq_iff_eq volume continuous_const).1 ?_
-    refine ae_eq_zero_of_integral_contDiff_smul_eq_zero hcv.locallyIntegrable fun g hg hgc ↦ ?_
-    set ξ : ℝ × ℝ → V := fun z ↦ g z • v
-    have hξ : ContDiff ℝ 2 ξ := (hg.of_le (by simp)).smul contDiff_const
-    have hξc : HasCompactSupport ξ := hgc.smul_right
-    have hc : IsCompact (tsupport η ∩ tsupport ξ) := hξc.isCompact.inter_left (isClosed_tsupport η)
-    have hgreen := ω.integral_apply_floerLinearization_eq_integral_floerLinearizationAdjoint_apply
-      (J := J') (Ks := Ks) (Kt := Kt) (u := u) (η := η) (ξ := ξ) (fun z _ ↦ hJ1 z)
-      (fun z _ ↦ hKs1 z) (fun z _ ↦ hKt1 z) (fun z _ ↦ (hu.of_le (by norm_num)).contDiffAt)
-      (fun z _ ↦ (hη.of_le one_le_two).contDiffAt) (fun z _ ↦ (hξ.of_le one_le_two).contDiffAt) hc
-    calc ∫ z, g z • ω.floerLinearizationAdjoint J' Ks Kt u η z v
-        = ∫ z, ω.floerLinearizationAdjoint J' Ks Kt u η z (ξ z) := by
-          simp only [ξ, map_smul, smul_eq_mul]
-      _ = ∫ z, η z (ω.floerLinearization J' Ks Kt u ξ z) := hgreen.symm
-      _ = ∫ z, innerSL ℝ (h z) (ω.floerLinearization J' Ks Kt u ξ z) :=
-          integral_congr_ae (hηae.mono fun z hz ↦ by simp only [hz])
-      _ = 0 := hweak ξ hξ hξc
-  intro z
-  ext v
-  exact congrFun (hv v) z
-
-end Cokernel
-
 /-! ### The `L²` norm of a cokernel element is controlled on a disc -/
 
 section Estimate
 
 variable {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-
-omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- **Cutoffs for the discs of the plane.** There are `M ≥ 0` and smooth functions `χ_n`, `n ≥ 1`,
-with values in `[0, 1]`, equal to `1` on the disc `‖w‖ ≤ n` and to `0` off the disc `‖w‖ < 2n`,
-whose derivatives vanish off the annulus `n ≤ ‖w‖ ≤ 2n` and have norm at most `M / n`. They are
-the radial cutoffs of `TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith` with Lipschitz
-constant `2 / n`, read in the real coordinates of `ℂ`. -/
-private theorem exists_contDiff_dilatedCutoff_plane :
-    ∃ M : ℝ, 0 ≤ M ∧ ∃ χ : ℕ → ℝ × ℝ → ℝ, ∀ n : ℕ, 1 ≤ n →
-      ContDiff ℝ (⊤ : ℕ∞) (χ n) ∧ (∀ z, χ n z ∈ Icc 0 1) ∧
-      (∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ n → χ n z = 1) ∧
-      (∀ z, 2 * n ≤ ‖Complex.equivRealProdCLM.symm z‖ → χ n z = 0) ∧
-      (∀ z, ‖Complex.equivRealProdCLM.symm z‖ < n → fderiv ℝ (χ n) z = 0) ∧
-      (∀ z, 2 * n < ‖Complex.equivRealProdCLM.symm z‖ → fderiv ℝ (χ n) z = 0) ∧
-      ∀ z, ‖fderiv ℝ (χ n) z‖ ≤ M / n := by
-  set e : ℝ × ℝ →L[ℝ] ℂ := (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ)
-  have hcut (n : ℕ) (hn : 1 ≤ n) := exists_contDiff_cutoff_closedBall_lipschitzWith (0 : ℂ)
-    (r := n) (R := 2 * n) (by have : (1 : ℝ) ≤ n := (by exact_mod_cast hn); linarith)
-    (K := ⟨2 / n, by positivity⟩) (by
-      have : (0 : ℝ) < n := by exact_mod_cast hn
-      change (2 * (n : ℝ) - n)⁻¹ < 2 / n
-      rw [show 2 * (n : ℝ) - n = n by ring, inv_eq_one_div]
-      exact div_lt_div_of_pos_right one_lt_two this)
-  choose! ψ hψ hψ01 hψ1 hψsupp hψL using hcut
-  refine ⟨2 * ‖e‖, by positivity, fun n z ↦ ψ n (e z), fun n hn ↦ ?_⟩
-  -- `ψ_n` is locally constant on the open disc `‖w‖ < n` and off the closed disc `‖w‖ ≤ 2n`.
-  have hloc (z : ℝ × ℝ) (c : ℝ) (h : (fun w ↦ ψ n (e w)) =ᶠ[𝓝 z] fun _ ↦ c) :
-      fderiv ℝ (fun w ↦ ψ n (e w)) z = 0 := by
-    rw [h.fderiv_eq, fderiv_const_apply]
-  have hzero (w : ℂ) (hw : 2 * n ≤ ‖w‖) : ψ n w = 0 :=
-    notMem_support.1 fun h ↦ (not_lt.2 hw) (by simpa using hψsupp n hn h)
-  refine ⟨(hψ n hn).comp e.contDiff, fun z ↦ hψ01 n hn ⟨_, rfl⟩, fun z hz ↦ ?_,
-    fun z hz ↦ hzero _ hz, fun z hz ↦ hloc z 1 ?_, fun z hz ↦ hloc z 0 ?_, fun z ↦ ?_⟩
-  · exact hψ1 n hn (by simpa [e] using hz)
-  · filter_upwards [(isOpen_lt (continuous_norm.comp e.continuous) continuous_const).mem_nhds hz]
-      with w hw
-    exact hψ1 n hn (by simpa [e] using hw.le)
-  · filter_upwards [(isOpen_lt continuous_const (continuous_norm.comp e.continuous)).mem_nhds hz]
-      with w hw
-    exact hzero _ hw.le
-  · -- The derivative is that of `ψ_n`, of norm at most `2 / n`, composed with `e`.
-    have hd : HasFDerivAt (fun w ↦ ψ n (e w)) ((fderiv ℝ (ψ n) (e z)).comp e) z :=
-      (((hψ n hn).differentiable (by simp)) _).hasFDerivAt.comp z e.hasFDerivAt
-    rw [hd.fderiv]
-    calc ‖(fderiv ℝ (ψ n) (e z)).comp e‖ ≤ ‖fderiv ℝ (ψ n) (e z)‖ * ‖e‖ :=
-          ContinuousLinearMap.opNorm_comp_le _ _
-      _ ≤ 2 / n * ‖e‖ := by
-          gcongr
-          exact norm_fderiv_le_of_lipschitz ℝ (hψL n hn)
-      _ = 2 * ‖e‖ / n := by ring
 
 omit [InnerProductSpace ℝ V] in
 /-- The real and imaginary parts of the derivative of the end lift of a PSS plane in the direction
@@ -427,8 +251,7 @@ private theorem inv_mul_norm_floerLinearizationAdjoint_smul_sq_le (ω : Symplect
   set ν := ‖Complex.equivRealProdCLM.symm z‖
   have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB z)
   have hJu : DifferentiableAt ℝ (fun w ↦ J' w (u w)) z :=
-    ((hJ z).differentiableAt one_ne_zero).comp (f := fun w ↦ (w, u w)) z
-      (differentiableAt_id.prodMk ((hu.differentiable one_ne_zero) z))
+    ((hJ z).comp₂ contDiffAt_id hu.contDiffAt).differentiableAt one_ne_zero
   -- `‖D^* (χ η)‖ ≤ ‖dχ‖ (1 + B) ‖η‖`, since `D^* η = 0`.
   have hle : ‖ω.floerLinearizationAdjoint J' Ks Kt u (fun z ↦ χ z • η z) z‖ ≤
       ‖fderiv ℝ χ z‖ * (1 + B) * ‖η z‖ := by
@@ -461,23 +284,6 @@ private theorem inv_mul_norm_floerLinearizationAdjoint_smul_sq_le (ω : Symplect
     rw [h0, norm_zero]
     simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, mul_zero]
     exact mul_nonneg (by positivity) (indicator_nonneg (fun _ _ ↦ by positivity) _)
-
-omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The integrals of an integrable function over the complements `‖w‖ ≥ n` of the discs of the
-plane tend to zero. -/
-private theorem tendsto_setIntegral_le_norm_symm {f : ℝ × ℝ → ℝ} (hf : Integrable f) :
-    Tendsto (fun n : ℕ ↦ ∫ z in {z : ℝ × ℝ | (n : ℝ) ≤ ‖Complex.equivRealProdCLM.symm z‖}, f z)
-      atTop (𝓝 0) := by
-  have hν : Continuous fun z : ℝ × ℝ ↦ ‖Complex.equivRealProdCLM.symm z‖ :=
-    Complex.equivRealProdCLM.symm.continuous.norm
-  have h := tendsto_setIntegral_of_antitone (μ := volume) (f := f)
-    (fun n : ℕ ↦ measurableSet_le measurable_const hν.measurable)
-    (fun i j hij z (hz : (j : ℝ) ≤ _) ↦ (Nat.cast_le.2 hij).trans hz) ⟨0, hf.integrableOn⟩
-  have hempty : (⋂ n : ℕ, {z : ℝ × ℝ | (n : ℝ) ≤ ‖Complex.equivRealProdCLM.symm z‖}) = ∅ := by
-    refine eq_empty_of_forall_notMem fun z hz ↦ ?_
-    obtain ⟨n, hn⟩ := exists_nat_gt ‖Complex.equivRealProdCLM.symm z‖
-    exact (not_le.2 hn) (mem_iInter.1 hz n)
-  rwa [hempty, Measure.restrict_empty, integral_zero_measure] at h
 
 omit [FiniteDimensional ℝ V] in
 /-- If `g = η` on the disc `‖w‖ ≤ n`, then on every measurable set the `L²` norm of `η` is at most
@@ -605,7 +411,7 @@ private theorem exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero
           ‖η z‖ ^ 2 := by
   set J' : ℝ × ℝ → V → V →L[ℝ] V := fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap
   set ν : ℝ × ℝ → ℝ := fun z ↦ ‖Complex.equivRealProdCLM.symm z‖
-  obtain ⟨M, -, χ, hχ⟩ := exists_contDiff_dilatedCutoff_plane
+  set M := 2 * ‖(Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ)‖
   set m := max 1 ((1 + B) ^ 2)
   set c := 5 * (M * (1 + B)) ^ 2
   refine ⟨m * max C 0, mul_nonneg (le_max_of_le_left zero_le_one) (le_max_right _ _),
@@ -613,7 +419,9 @@ private theorem exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero
   set D₀ := {z : ℝ × ℝ | ν z ≤ Real.exp (2 * π * R)}
   set P := ∫ z in {z | ν z ≤ Real.exp (2 * π * (R + 1))}, ‖η z‖ ^ 2
   set tail : ℕ → ℝ := fun n ↦ ∫ z in {z | (n : ℝ) ≤ ν z}, ‖η z‖ ^ 2
-  have htail : Tendsto tail atTop (𝓝 0) := tendsto_setIntegral_le_norm_symm hηi
+  have htail : Tendsto tail atTop (𝓝 0) :=
+    (tendsto_setIntegral_setOf_le hηi
+      Complex.equivRealProdCLM.symm.continuous.norm.measurable).comp tendsto_natCast_atTop_atTop
   -- For every `n ≥ e^{2π (R + 1)}`, the estimate of the cut-off field `χ_n η` bounds `∫ ‖η‖²` by
   -- `m C (c tail_n + P) + tail_n`; letting `n → ∞` gives the claim.
   refine ge_of_tendsto
@@ -622,8 +430,10 @@ private theorem exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero
   have hRn : Real.exp (2 * π * (R + 1)) ≤ n :=
     (Nat.le_ceil _).trans (by exact_mod_cast (Nat.le_succ _).trans hn)
   have hR0n : Real.exp (2 * π * R) ≤ n := (Real.exp_le_exp.2 (by nlinarith [pi_pos])).trans hRn
-  obtain ⟨hχs, -, hχ1, hχ0, hχd0, hχd2, hχM⟩ := hχ n (le_of_add_le_right hn)
-  set g : ℝ × ℝ → V →L[ℝ] ℝ := fun z ↦ χ n z • η z
+  obtain ⟨χ, hχs, -, hχ1, hχ0, hχd0, hχd2, hχM⟩ :=
+    exists_contDiff_cutoff_comp_continuousLinearMap
+      (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ) (Nat.cast_pos.2 (le_of_add_le_right hn))
+  set g : ℝ × ℝ → V →L[ℝ] ℝ := fun z ↦ χ z • η z
   have hg : ContDiff ℝ 2 g := (hχs.of_le (by simp)).smul hη
   have hgc : HasCompactSupport g :=
     HasCompactSupport.intro (isCompact_setOf_norm_equivRealProdCLM_symm_le (2 * n)) fun z hz ↦ by
@@ -847,8 +657,7 @@ private theorem norm_sub_sq_le_of_setIntegral_le (ω : SymplecticForm V)
     ‖h₁ - h₂‖ ^ 2 ≤ A * |B| * ε ^ 2 := by
   have hJu (z : ℝ × ℝ) : DifferentiableAt ℝ
       (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap) z :=
-    ((hJ z).differentiableAt one_ne_zero).comp (f := fun w ↦ (w, u w)) z
-      (differentiableAt_id.prodMk ((hu.differentiable one_ne_zero) z))
+    ((hJ z).comp₂ contDiffAt_id hu.contDiffAt).differentiableAt one_ne_zero
   -- The difference `h₁ - h₂` is represented by `η₁ - η₂`, annihilated by `D_u^*`.
   have hae : (fun z ↦ innerSL ℝ ((h₁ - h₂) z)) =ᵐ[volume] η₁ - η₂ := by
     have hsub := (ae_restrict_iff' MeasurableSet.univ).1 (Lp.coeFn_sub h₁ h₂)
@@ -869,22 +678,6 @@ private theorem norm_sub_sq_le_of_setIntegral_le (ω : SymplecticForm V)
           (le_abs_self B) (sq_nonneg ε))) hA
     _ = A * |B| * ε ^ 2 := by ring
 
-omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The difference of the classes of the jets of two test sections is the jet of their difference.
--/
-private theorem toLp_jet_sub_ae_eq {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
-    {ρ : ℝ × ℝ → ℝ} (hρ : IsWeight univ ρ) {g₁ g₂ : ℝ × ℝ → W} (h₁ : g₁ ∈ testSection W univ)
-    (h₂ : g₂ ∈ testSection W univ) :
-    ⇑((memLp_jet hρ h₁).toLp (jet ρ g₁) - (memLp_jet hρ h₂).toLp (jet ρ g₂))
-      =ᵐ[volume.restrict univ] jet ρ (g₁ - g₂) := by
-  have hd₁ := ((mem_testSection_iff.1 h₁).1.differentiable (by norm_num))
-  have hd₂ := ((mem_testSection_iff.1 h₂).1.differentiable (by norm_num))
-  filter_upwards [Lp.coeFn_sub ((memLp_jet hρ h₁).toLp (jet ρ g₁))
-    ((memLp_jet hρ h₂).toLp (jet ρ g₂)), (memLp_jet hρ h₁).coeFn_toLp,
-    (memLp_jet hρ h₂).coeFn_toLp] with z hz h1 h2
-  rw [hz, Pi.sub_apply, h1, h2, jet_apply, jet_apply, jet_apply, fderiv_sub (hd₁ z) (hd₂ z)]
-  simp [smul_sub]
-
 /-- **The cokernel of the linearized operator of a PSS plane is finite-dimensional.** Let `J` be
 `C³` and `K_s`, `K_t` be `C⁴` at the points `(z, u z)` along a `C³` map `u`, with `J` compatible
 along `u` and `‖J(z, u z)‖ ≤ B`, and let the coefficient field of `D_u` on conformal jets be
@@ -892,14 +685,7 @@ essentially bounded. Suppose that the formal adjoint `D_u^*` satisfies the semi-
 of the positive PSS plane (as in
 `TauCeti.SymplecticForm.exists_forall_le_mul_integral_floerLinearizationAdjoint_add_positive`).
 Then the orthogonal complement of the range of the realization
-`D_u : W^{1,2}(ℂ, V) → L²(ℂ, V)` is finite-dimensional.
-
-Its elements are represented by `C²` covector fields `η` with `D_u^* η = 0`
-(`TauCeti.SymplecticForm.exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero`). Applied
-to cut-offs of `η`, the semi-Fredholm estimate of `D_u^*` bounds `∫ ‖η‖²` by the `L²` norm of `η`
-on a disc, and the estimate of `D_u^*` on discs bounds the `W^{1,2}` norm of `η` there. A sequence
-of unit vectors at mutual distance at least one would then have, by Rellich's theorem, two members
-arbitrarily close on the disc, hence close in `L²(ℂ, V)`. -/
+`D_u : W^{1,2}(ℂ, V) → L²(ℂ, V)` is finite-dimensional. -/
 theorem finiteDimensional_orthogonal_range_floerConformalSobolevOperator_positive
     (ω : SymplecticForm V)
     (hJ : ∀ z, ContDiffAt ℝ 3
@@ -938,9 +724,10 @@ theorem finiteDimensional_orthogonal_range_floerConformalSobolevOperator_positiv
   set n₁ : ℕ := ⌈b⌉₊ + 1
   have hn₁ : 1 ≤ n₁ := Nat.le_add_left 1 _
   have hbn : b ≤ n₁ := (Nat.le_ceil b).trans (by exact_mod_cast Nat.le_succ _)
-  obtain ⟨M, -, χ, hχ⟩ := exists_contDiff_dilatedCutoff_plane
-  obtain ⟨hχs, hχ01, hχ1, hχ0, hχd0, hχd2, hχM⟩ := hχ n₁ hn₁
-  have hχ2 : ContDiff ℝ 2 (χ n₁) := hχs.of_le (by simp)
+  obtain ⟨χ, hχs, hχ01, hχ1, hχ0, hχd0, hχd2, hχM⟩ :=
+    exists_contDiff_cutoff_comp_continuousLinearMap
+      (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ) (Nat.cast_pos.2 hn₁)
+  have hχ2 : ContDiff ℝ 2 χ := hχs.of_le (by simp)
   obtain ⟨K, hK⟩ := exists_integral_weighted_smul_le ω hJ1 hKs2 hKt2 hu1 hc hB hχ2 hχ01
     (by exact_mod_cast hn₁) hχ0 hχd0 hχd2 hχM
   set Kb := {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ b}
@@ -950,13 +737,20 @@ theorem finiteDimensional_orthogonal_range_floerConformalSobolevOperator_positiv
       (subset_univ _)
   have hcpt := isCompactOperator_restrictWeightedValue_comp_subtypeL (V := V →L[ℝ] ℝ) hρ hKb
     (subset_univ _)
-  -- An infinite-dimensional cokernel contains unit-size vectors at mutual distance at least one.
+  -- An infinite-dimensional cokernel contains vectors of norm at most `Rr` at mutual distance ≥ 1.
   by_contra hfin
   obtain ⟨Rr, f, -, hfR, hsep⟩ := exists_seq_norm_le_one_le_norm_sub hfin
-  choose η hηs hηae hηD using fun k ↦
-    ω.exists_contDiff_ae_eq_forall_floerLinearizationAdjoint_eq_zero hJ hKs hKt hu hM (f k).property
+  have hreg (k : ℕ) : ∃ η : ℝ × ℝ → V →L[ℝ] ℝ, ContDiff ℝ 2 η ∧
+      (fun z ↦ innerSL ℝ ((f k : Lp V 2 (volume.restrict (univ : Set (ℝ × ℝ)))) z)) =ᵐ[volume] η ∧
+      ∀ z, ω.floerLinearizationAdjoint J' Ks Kt u η z = 0 := by
+    obtain ⟨η, hη, hae, hD⟩ := ω.exists_contDiffOn_ae_eq_forall_floerLinearizationAdjoint_eq_zero
+      (J := J') (u := u) hρ (fun z _ ↦ hJ z) (fun z _ ↦ (J z (u z)).toContinuousLinearMap_mul_self)
+      (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun z _ ↦ hu.contDiffAt) hM (f k).property
+    exact ⟨η, contDiffOn_univ.1 hη, ((ae_restrict_iff' MeasurableSet.univ).1 hae).mono
+      fun z hz ↦ hz (mem_univ z), fun z ↦ hD z (mem_univ z)⟩
+  choose η hηs hηae hηD using hreg
   -- The jets of their cut-offs are bounded in `W^{1,2}`.
-  set g : ℕ → ℝ × ℝ → V →L[ℝ] ℝ := fun k z ↦ χ n₁ z • η k z
+  set g : ℕ → ℝ × ℝ → V →L[ℝ] ℝ := fun k z ↦ χ z • η k z
   have hg (k : ℕ) : ContDiff ℝ 2 (g k) := hχ2.smul (hηs k)
   have hgT (k : ℕ) : g k ∈ testSection (V →L[ℝ] ℝ) univ := by
     refine mem_testSection_iff.2 ⟨hg k, HasCompactSupport.intro
@@ -1098,13 +892,14 @@ private theorem exists_forall_norm_sliceDefect_le_one (ω : SymplecticForm V) {H
     ∃ T₀, ∀ ζ : ℝ × ℝ, T₀ ≤ ζ.1 → ‖sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t))
       (u ∘ realChart positive.cylindricalEndLift) ζ‖ ≤ 1 := by
   obtain ⟨T₀, hT₀⟩ := eventually_atTop.1 ((Metric.tendstoUniformlyOn_iff.1 hδ) 1 one_pos)
-  refine ⟨T₀, fun ζ hζ ↦ ?_⟩
+  refine ⟨T₀, ?_⟩
+  rintro ⟨s, t⟩ (hs : T₀ ≤ s)
   have hper : Periodic (fun t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t))
-      (u ∘ realChart positive.cylindricalEndLift) (ζ.1, t)) 1 :=
-    fun t ↦ sliceDefect_comp_realChart_positive_add_one ω hH u ζ.1 t
-  have h := hT₀ ζ.1 hζ (Int.fract ζ.2) ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
+      (u ∘ realChart positive.cylindricalEndLift) (s, t)) 1 :=
+    fun t ↦ sliceDefect_comp_realChart_positive_add_one ω hH u s t
+  have h := hT₀ s hs (Int.fract t) ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
   rw [Pi.zero_apply, dist_zero_left] at h
-  rw [show ζ = (ζ.1, ζ.2) from rfl, ← hper.apply_fract ζ.2]
+  rw [← hper.apply_fract t]
   exact h.le
 
 /-- **The linearized operator along a finite-energy PSS plane is Fredholm.** Let `H` be a `C⁴`

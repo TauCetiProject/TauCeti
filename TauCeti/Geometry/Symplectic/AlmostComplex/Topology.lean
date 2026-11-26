@@ -38,6 +38,8 @@ equivalent, it does not depend on the choice of the norm of `V`.
 * `TauCeti.AlmostComplexStructure.mul_opNorm_le_of_eq_smul_sub_smul`: if `B = (a - b J) A` with
   `a² + b² = r² > 0`, then `r ‖A‖ ≤ (1 + ‖J‖) ‖B‖`, inverting `a - b J` through
   `(a + b J) (a - b J) = a² + b²`.
+* `TauCeti.AlmostComplexStructure.mul_opNorm_le_opNorm_comp_smul_add_smul`: the same inversion on
+  covectors, `r ‖θ‖ ≤ (1 + ‖J‖) ‖θ ∘ (a + b J)‖`.
 * `TauCeti.AlmostComplexStructure.isInvertible_smul_id_add_smul`: `a + b J` is invertible
   whenever `a² + b² ≠ 0`, with inverse `(a² + b²)⁻¹ (a - b J)`.
 * `TauCeti.SymplecticForm.Tames.eventually_of_continuousAt`: tameness is an open condition along
@@ -133,6 +135,46 @@ theorem mul_opNorm_le_of_eq_smul_sub_smul (J : AlmostComplexStructure V)
       linarith [hv v]
   calc r * ‖A‖ ≤ r * ((1 + NJ) * ‖B‖ / r) := by gcongr
     _ = (1 + NJ) * ‖B‖ := by field_simp
+
+/-- **Inverting `a + b J` on covectors.** For an almost complex structure `J` and `a² + b² = r²`
+with `r > 0`, every covector `θ` satisfies `r ‖θ‖ ≤ (1 + ‖J‖) ‖θ ∘ (a + b J)‖`, since
+`(a + b J) (a - b J) = a² + b²`. This is the covector counterpart of
+`mul_opNorm_le_of_eq_smul_sub_smul`. -/
+theorem mul_opNorm_le_opNorm_comp_smul_add_smul (J : AlmostComplexStructure V) (θ : V →L[ℝ] ℝ)
+    {a b r : ℝ} (hab : a ^ 2 + b ^ 2 = r ^ 2) (hr : 0 < r) :
+    r * ‖θ‖ ≤ (1 + ‖J.toLinearMap.toContinuousLinearMap‖) *
+      ‖θ.comp (a • (1 : V →L[ℝ] V) + b • J.toLinearMap.toContinuousLinearMap)‖ := by
+  set NJ := ‖J.toLinearMap.toContinuousLinearMap‖
+  set θ' := θ.comp (a • (1 : V →L[ℝ] V) + b • J.toLinearMap.toContinuousLinearMap)
+  have ha : |a| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg b]) hr.le
+  have hb : |b| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg a]) hr.le
+  -- `θ' (a v - b J v) = θ ((a² + b²) v) = r² θ v`, and `‖a v - b J v‖ ≤ r (1 + ‖J‖) ‖v‖`.
+  have hv (v : V) : r * ‖θ v‖ ≤ (1 + NJ) * ‖θ'‖ * ‖v‖ := by
+    have hθ' : θ' (a • v - b • J v) = r ^ 2 * θ v := by
+      have h := J.smul_add_smul_apply_smul_sub_smul a b v
+      simp only [θ', ContinuousLinearMap.comp_apply, add_apply,
+        smul_apply, one_apply_eq_self, LinearMap.coe_toContinuousLinearMap']
+      rw [h, map_smul, hab, smul_eq_mul]
+    have hw : ‖a • v - b • J v‖ ≤ r * ((1 + NJ) * ‖v‖) := by
+      have hJv : ‖J v‖ ≤ NJ * ‖v‖ := J.toLinearMap.toContinuousLinearMap.le_opNorm v
+      refine (norm_sub_le _ _).trans ?_
+      rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+      calc |a| * ‖v‖ + |b| * ‖J v‖ ≤ r * ‖v‖ + r * (NJ * ‖v‖) := by gcongr
+        _ = r * ((1 + NJ) * ‖v‖) := by ring
+    have h1 : r ^ 2 * ‖θ v‖ ≤ r * ((1 + NJ) * ‖θ'‖ * ‖v‖) := by
+      have hn : ‖θ' (a • v - b • J v)‖ = r ^ 2 * ‖θ v‖ := by
+        rw [hθ', norm_mul, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg r)]
+      rw [← hn]
+      calc ‖θ' (a • v - b • J v)‖ ≤ ‖θ'‖ * ‖a • v - b • J v‖ := θ'.le_opNorm _
+        _ ≤ ‖θ'‖ * (r * ((1 + NJ) * ‖v‖)) := by gcongr
+        _ = r * ((1 + NJ) * ‖θ'‖ * ‖v‖) := by ring
+    nlinarith [norm_nonneg (θ v)]
+  have hθ : ‖θ‖ ≤ (1 + NJ) * ‖θ'‖ / r :=
+    θ.opNorm_le_bound (by positivity) fun v ↦ by
+      rw [div_mul_eq_mul_div, le_div_iff₀ hr]
+      linarith [hv v]
+  calc r * ‖θ‖ ≤ r * ((1 + NJ) * ‖θ'‖ / r) := by gcongr
+    _ = (1 + NJ) * ‖θ'‖ := by field_simp
 
 /-- For an almost complex structure `J`, `a + b J` is invertible whenever `a² + b² ≠ 0`, with
 inverse `(a² + b²)⁻¹ (a - b J)`, since `(a + b J) (a - b J) = (a - b J) (a + b J) = a² + b²`. -/
