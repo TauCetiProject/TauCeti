@@ -43,8 +43,8 @@ and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponent
   `1 - 2k`.
 * `Complex.differentiableAt_Gammaℝ`, `Complex.differentiableAt_Gammaℂ`,
   `Complex.continuousAt_Gammaℝ`, `Complex.continuousAt_Gammaℂ`: regularity away from the poles.
-* `Complex.norm_Gammaℝ`, `Complex.norm_Gammaℂ`, `Complex.log_norm_Gammaℝ`,
-  `Complex.log_norm_Gammaℂ`: norm and log-norm identities.
+* `Complex.norm_Gammaℝ`, `Complex.norm_Gammaℝ_ofReal`, `Complex.norm_Gammaℂ`,
+  `Complex.log_norm_Gammaℝ`, `Complex.log_norm_Gammaℂ`: norm and log-norm identities.
 * `Complex.Gammaℝ_two_mul_natCast_add_one`, `Complex.Gammaℝ_neg_two_mul_natCast_sub_one`: the
   values `Γ_ℝ(2k + 1)` and, where `Gammaℝ` is regular, `Γ_ℝ(-2k - 1)`; like the values above,
   each is a rational multiple of a power of `π`.
@@ -156,6 +156,12 @@ at the poles where both sides are zero. -/
 theorem norm_Gammaℝ (z : ℂ) : ‖Gammaℝ z‖ = Real.pi ^ (-z.re / 2) * ‖Gamma (z / 2)‖ := by
   rw [Gammaℝ_def, norm_mul, norm_cpow_eq_rpow_re_of_pos Real.pi_pos]
   simp [neg_div]
+
+/-- The norm of the real gamma factor at a nonnegative real argument `x`. -/
+theorem norm_Gammaℝ_ofReal {x : ℝ} (hx : 0 ≤ x) :
+    ‖Gammaℝ (x : ℂ)‖ = Real.pi ^ (-x / 2) * Real.Gamma (x / 2) := by
+  rw [norm_Gammaℝ, ofReal_re, ← ofReal_ofNat, ← ofReal_div, Gamma_ofReal, norm_real,
+    Real.norm_eq_abs, abs_of_nonneg (Real.Gamma_nonneg_of_nonneg (by positivity))]
 
 /-- Norm of Deligne's complex archimedean factor: `‖Γ_ℂ(z)‖ = 2 (2π) ^ (-z.re) ‖Γ(z)‖`, including
 at the poles where both sides are zero. -/
