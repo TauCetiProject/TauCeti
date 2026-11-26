@@ -14,16 +14,15 @@ public import Mathlib.RingTheory.Localization.Away.AdjoinRoot
 # Checks for the schematic closure
 
 Let `O` be a domain with fraction field `K` and `ϖ ∈ O` a nonzero nonunit (for instance a
-uniformizer of a discrete valuation ring). Two Checks of `ReductiveGroupsPartII` RG2.3.1
-*schematic-closure*:
+uniformizer of a discrete valuation ring). Two examples of the schematic closure:
 
-* *closure_nonIntegralPoint*: for `A = O[x]` and the ideal `I = (x - ϖ⁻¹)` of the generic fibre
+* a non-integral point: for `A = O[x]` and the ideal `I = (x - ϖ⁻¹)` of the generic fibre
   `K[x] = K ⊗[O] O[x]`, the closure ideal is `I^♮ = (ϖx - 1)`
   (`TauCeti.Examples.closureIdeal_span_X_sub_inv`). The closure `O[x] ⧸ (ϖx - 1)` has no section
   (`TauCeti.Examples.isEmpty_algHom_closure_span_X_sub_inv`) and, over a local ring, an empty
   special fibre (`TauCeti.Examples.subsingleton_residueField_tensor_closure_span_X_sub_inv`):
   the `K`-point `x = ϖ⁻¹` does not extend to an `O`-point.
-* *closureIdeal_bot_eq_torsion*: without flatness the closure of the zero ideal is the `O`-torsion
+* the failure of `(0)^♮ = 0` without flatness: the closure of the zero ideal is the `O`-torsion
   ideal, which for `A = O × O ⧸ (ϖ)` is `0 × O ⧸ (ϖ)`, not `0`
   (`TauCeti.Examples.mem_closureIdeal_bot_prod_iff`).
 -/
@@ -34,7 +33,7 @@ namespace TauCeti.Examples
 
 open Polynomial TensorProduct Algebra.TensorProduct SchematicClosure
 
-variable {O K : Type*} [CommRing O] [IsDomain O] [Field K] [Algebra O K] [IsFractionRing O K]
+variable {O K : Type*} [CommRing O] [Field K] [Algebra O K] [IsFractionRing O K]
   {ϖ : O}
 
 /-- In `K ⊗[O] O[x]`, the element `1 ⊗ (ϖx - 1)` is the unit `ϖ ⊗ 1` times `1 ⊗ x - ϖ⁻¹ ⊗ 1`. -/
@@ -42,13 +41,10 @@ private theorem includeRight_C_mul_X_sub_one (hϖ0 : ϖ ≠ 0) :
     (includeRight : O[X] →ₐ[O] K ⊗[O] O[X]) (C ϖ * X - 1) =
       (algebraMap O K ϖ ⊗ₜ[O] (1 : O[X])) *
         ((1 : K) ⊗ₜ[O] (X : O[X]) - (algebraMap O K ϖ)⁻¹ ⊗ₜ[O] (1 : O[X])) := by
-  have hne : algebraMap O K ϖ ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hϖ0)
-  rw [mul_sub, Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
-    mul_one, one_mul, mul_inv_cancel₀ hne, map_sub, map_one, includeRight_apply,
-    ← smul_eq_C_mul, mul_one, ← Algebra.TensorProduct.one_def]
-  congr 1
-  rw [← TensorProduct.smul_tmul, Algebra.smul_def, mul_one]
+  rw [mul_sub, tmul_mul_tmul, tmul_mul_tmul,
+    mul_inv_cancel₀ (IsFractionRing.to_map_eq_zero_iff.not.mpr hϖ0)]
+  simp only [mul_one, one_mul, map_sub, map_one, includeRight_apply, ← smul_eq_C_mul,
+    Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul, Algebra.TensorProduct.one_def]
 
 /-- **The closure of the non-integral point `x = ϖ⁻¹`.** For `A = O[x]` and the ideal
 `I = (x - ϖ⁻¹)` of `K[x] = K ⊗[O] O[x]`, the closure ideal is `I^♮ = (ϖx - 1)`: the quotient
@@ -62,19 +58,20 @@ theorem closureIdeal_span_X_sub_inv (hϖ0 : ϖ ≠ 0) :
   have : Module.Flat O (O[X] ⧸ Ideal.span {C ϖ * X - 1}) :=
     IsLocalization.flat _ (Submonoid.powers ϖ)
   refine (closure_unique ?_).symm
-  have hne : algebraMap O K ϖ ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hϖ0)
   have hu : IsUnit (algebraMap O K ϖ ⊗ₜ[O] (1 : O[X])) :=
-    (isUnit_iff_ne_zero.mpr hne).map (algebraMap K (K ⊗[O] O[X]))
+    (isUnit_iff_ne_zero.mpr (IsFractionRing.to_map_eq_zero_iff.not.mpr hϖ0)).map
+      (algebraMap K (K ⊗[O] O[X]))
   rw [Ideal.map_span, Set.image_singleton, includeRight_C_mul_X_sub_one hϖ0]
   exact Ideal.span_singleton_mul_left_unit hu _
 
-/-- `ϖx - 1` vanishes in the closure of `x = ϖ⁻¹`. -/
-private theorem mk_C_mul_X_sub_one_eq_zero (hϖ0 : ϖ ≠ 0) :
-    Ideal.Quotient.mk (closureIdeal K (Ideal.span
-        {(1 : K) ⊗ₜ[O] (X : O[X]) - (algebraMap O K ϖ)⁻¹ ⊗ₜ[O] (1 : O[X])}))
-      (C ϖ * X - 1) = 0 := by
-  rw [Ideal.Quotient.eq_zero_iff_mem, closureIdeal_span_X_sub_inv hϖ0]
+/-- `ϖ` is invertible in the closure of `x = ϖ⁻¹`, with inverse the class of `x`. -/
+private theorem algebraMap_mul_mk_X_eq_one (hϖ0 : ϖ ≠ 0) :
+    algebraMap O (closure K (Ideal.span
+        {(1 : K) ⊗ₜ[O] (X : O[X]) - (algebraMap O K ϖ)⁻¹ ⊗ₜ[O] (1 : O[X])})) ϖ *
+      Ideal.Quotient.mk _ X = 1 := by
+  rw [← sub_eq_zero, ← Ideal.Quotient.mk_algebraMap, Polynomial.algebraMap_eq, ← map_mul,
+    ← map_one (Ideal.Quotient.mk _), ← map_sub, Ideal.Quotient.eq_zero_iff_mem,
+    closureIdeal_span_X_sub_inv hϖ0]
   exact Ideal.subset_span rfl
 
 /-- **The closure of `x = ϖ⁻¹` has no section**: an `O`-point of `O[x] ⧸ (ϖx - 1)` would make
@@ -83,11 +80,8 @@ theorem isEmpty_algHom_closure_span_X_sub_inv (hϖ0 : ϖ ≠ 0) (hϖ : ¬IsUnit 
     IsEmpty (closure K (Ideal.span
         {(1 : K) ⊗ₜ[O] (X : O[X]) - (algebraMap O K ϖ)⁻¹ ⊗ₜ[O] (1 : O[X])}) →ₐ[O] O) := by
   refine ⟨fun f ↦ hϖ (IsUnit.of_mul_eq_one (f (Ideal.Quotient.mk _ X)) ?_)⟩
-  have h := congrArg f (mk_C_mul_X_sub_one_eq_zero (K := K) hϖ0)
-  rw [← Polynomial.algebraMap_eq] at h
-  simp only [map_sub, map_mul, map_one, map_zero, Ideal.Quotient.mk_algebraMap, AlgHom.commutes,
-    Algebra.algebraMap_self, RingHom.id_apply] at h
-  exact sub_eq_zero.mp h
+  simpa only [map_mul, map_one, AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply]
+    using congrArg f (algebraMap_mul_mk_X_eq_one (K := K) hϖ0)
 
 /-- **The closure of `x = ϖ⁻¹` has empty special fibre**: over a local ring `O` with `ϖ` in the
 maximal ideal, `κ ⊗[O] O[x] ⧸ (ϖx - 1)` is the zero ring. -/
@@ -96,18 +90,17 @@ theorem subsingleton_residueField_tensor_closure_span_X_sub_inv [IsLocalRing O] 
     Subsingleton (IsLocalRing.ResidueField O ⊗[O] closure K (Ideal.span
         {(1 : K) ⊗ₜ[O] (X : O[X]) - (algebraMap O K ϖ)⁻¹ ⊗ₜ[O] (1 : O[X])})) := by
   refine subsingleton_of_zero_eq_one ?_
-  have h := mk_C_mul_X_sub_one_eq_zero (K := K) hϖ0
-  rw [map_sub, map_one, sub_eq_zero, map_mul, ← Polynomial.algebraMap_eq,
-    Ideal.Quotient.mk_algebraMap, ← Algebra.smul_def] at h
-  rw [Algebra.TensorProduct.one_def, ← h, TensorProduct.tmul_smul, TensorProduct.smul_tmul',
-    Algebra.smul_def, mul_one, IsLocalRing.ResidueField.algebraMap_eq,
-    (IsLocalRing.residue_eq_zero_iff ϖ).mpr hϖ, TensorProduct.zero_tmul]
+  -- `ϖ` acts invertibly on the closure but as zero on the residue field.
+  rw [Algebra.TensorProduct.one_def, ← algebraMap_mul_mk_X_eq_one (K := K) hϖ0,
+    ← Algebra.smul_def, ← TensorProduct.smul_tmul]
+  simp [Algebra.smul_def, (IsLocalRing.residue_eq_zero_iff ϖ).mpr hϖ]
 
 /-- **The closure of the zero ideal is the torsion, not `0`, without flatness.** For
 `A = O × O ⧸ (ϖ)`, which is not torsion-free, `(a, b) ∈ (0)^♮` exactly when `a = 0`: the closure
 of the zero ideal of the generic fibre is `0 × O ⧸ (ϖ)`. -/
 theorem mem_closureIdeal_bot_prod_iff (hϖ0 : ϖ ≠ 0) (a : O) (b : O ⧸ Ideal.span {ϖ}) :
     (a, b) ∈ closureIdeal K (⊥ : Ideal (K ⊗[O] (O × O ⧸ Ideal.span {ϖ}))) ↔ a = 0 := by
+  have : IsDomain O := (IsFractionRing.isDomain_iff_isField (K := K)).mpr (Field.toIsField K)
   rw [closureIdeal_bot_eq_scalarTorsionIdeal, mem_scalarTorsionIdeal]
   constructor
   · rintro ⟨s, h⟩
@@ -117,9 +110,8 @@ theorem mem_closureIdeal_bot_prod_iff (hϖ0 : ϖ ≠ 0) (a : O) (b : O ⧸ Ideal
   · rintro rfl
     refine ⟨⟨ϖ, mem_nonZeroDivisors_of_ne_zero hϖ0⟩, Prod.ext (smul_zero _) ?_⟩
     obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective b
-    change ϖ • Ideal.Quotient.mk (Ideal.span {ϖ}) b = 0
-    rw [Algebra.smul_def, Ideal.Quotient.algebraMap_eq, ← map_mul,
-      Ideal.Quotient.eq_zero_iff_mem]
+    rw [Prod.smul_snd, Prod.snd_zero, Submonoid.smul_def, Algebra.smul_def,
+      Ideal.Quotient.algebraMap_eq, ← map_mul, Ideal.Quotient.eq_zero_iff_mem]
     exact Ideal.mul_mem_right _ _ (Ideal.subset_span rfl)
 
 end TauCeti.Examples
