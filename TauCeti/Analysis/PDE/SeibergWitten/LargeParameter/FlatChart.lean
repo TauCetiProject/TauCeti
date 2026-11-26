@@ -114,11 +114,15 @@ private theorem sum_covariantDeriv_eq_of_add_hodgeStar_eq_positiveHalfSpinors
     ∑ k, covariantDeriv b (fun y ↦ covariantDeriv b χ y (e k)) x (e k) =
       (r / 4 * (‖χ x‖ ^ 2 - 1)) • χ x + (r / 2) • cliffordProjection o ρ (-ω) (χ x) +
         (2⁻¹ : ℝ) • cliffordRestriction o ρ η (χ x) := by
-  set ι := (positiveHalfSpinors o ρ).subtypeL
-  have hψ : ContDiffAt ℝ 2 (fun y ↦ ι (χ y)) x := hχ.continuousLinearMap_comp (ι.restrictScalars ℝ)
+  -- Commute the sum past the inclusion `W⁺ → W`, normalized to the coercion `Subtype.val`.
+  have hι := sum_covariantDeriv_covariantDeriv_continuousLinearMap_comp
+    (positiveHalfSpinors o ρ).subtypeL hχ hb e
+  simp only [Submodule.subtypeL_apply] at hι
+  have hψ : ContDiffAt ℝ 2 (fun y ↦ (χ y : W)) x := by
+    simpa [Function.comp_def] using
+      hχ.continuousLinearMap_comp ((positiveHalfSpinors o ρ).subtypeL.restrictScalars ℝ)
   apply Subtype.val_injective
-  rw [← sum_covariantDeriv_eq_of_add_hodgeStar_eq o hQ hkl hρ h₂ hψ hb hD rfl hF e]
-  exact (sum_covariantDeriv_covariantDeriv_continuousLinearMap_comp ι hχ hb e).symm
+  rw [← sum_covariantDeriv_eq_of_add_hodgeStar_eq o hQ hkl hρ h₂ hψ hb hD rfl hF e, hι]
 
 /-! ### The projected equations -/
 
@@ -141,9 +145,8 @@ theorem sum_covariantDeriv_cliffordProjection_eq_of_add_hodgeStar_eq
       (r / 4 * (‖χ x‖ ^ 2 - 1)) • cliffordProjection o ρ ω (χ x) +
         (2⁻¹ : ℝ) • cliffordProjection o ρ ω (cliffordRestriction o ρ η (χ x)) := by
   rw [sum_covariantDeriv_covariantDeriv_continuousLinearMap_comp _ hχ hb e,
-    sum_covariantDeriv_eq_of_add_hodgeStar_eq_positiveHalfSpinors o hQ hkl hρ h₂ hχ hb hD hF e,
-    map_add, map_add, ContinuousLinearMap.map_smul_of_tower,
-    ContinuousLinearMap.map_smul_of_tower, ContinuousLinearMap.map_smul_of_tower,
+    sum_covariantDeriv_eq_of_add_hodgeStar_eq_positiveHalfSpinors o hQ hkl hρ h₂ hχ hb hD hF e]
+  simp only [map_add, ContinuousLinearMap.map_smul_of_tower,
     cliffordProjection_cliffordProjection_neg_apply o ρ hQ hkl hω hω₂, smul_zero, add_zero]
 
 include hQ hρ h₂ hω hω₂ in
@@ -164,9 +167,8 @@ theorem sum_covariantDeriv_cliffordProjection_neg_eq_of_add_hodgeStar_eq
       (r / 4 * (‖χ x‖ ^ 2 + 1)) • cliffordProjection o ρ (-ω) (χ x) +
         (2⁻¹ : ℝ) • cliffordProjection o ρ (-ω) (cliffordRestriction o ρ η (χ x)) := by
   rw [sum_covariantDeriv_covariantDeriv_continuousLinearMap_comp _ hχ hb e,
-    sum_covariantDeriv_eq_of_add_hodgeStar_eq_positiveHalfSpinors o hQ hkl hρ h₂ hχ hb hD hF e,
-    map_add, map_add, ContinuousLinearMap.map_smul_of_tower,
-    ContinuousLinearMap.map_smul_of_tower, ContinuousLinearMap.map_smul_of_tower,
+    sum_covariantDeriv_eq_of_add_hodgeStar_eq_positiveHalfSpinors o hQ hkl hρ h₂ hχ hb hD hF e]
+  simp only [map_add, ContinuousLinearMap.map_smul_of_tower,
     cliffordProjection_neg_cliffordProjection_neg_apply o ρ hQ hkl hω hω₂]
   module
 
@@ -243,16 +245,25 @@ theorem laplacian_norm_sq_cliffordProjection_neg_eq_of_add_hodgeStar_eq
 /-! ### Taubes's projected inequalities -/
 
 include hQ hρ in
-/-- The forcing term of a projected identity: `|Re ⟪σ, C(iη) χ⟫ / 2| ≤ (√2 / 2) |η| |σ| s` for any
-`s ≥ |χ|`. -/
-private theorem abs_re_inner_cliffordRestriction_div_two_le (η : ⋀[ℝ]^2 V)
-    (σ ψ : positiveHalfSpinors o ρ) {s : ℝ} (hs : ‖ψ‖ ≤ s) :
-    |(⟪σ, cliffordRestriction o ρ η ψ⟫_ℂ).re / 2| ≤ √2 / 2 * ‖η‖ * ‖σ‖ * s := by
-  have h := abs_re_inner_cliffordRestriction_apply_le o hQ hρ η ψ σ
-  rw [abs_div, abs_two]
-  have h' : √2 * ‖η‖ * ‖ψ‖ * ‖σ‖ ≤ √2 * ‖η‖ * ‖σ‖ * s := by
+/-- From a projected identity to a projected inequality: if
+`L / 2 = S + c |σ|² + Re ⟪σ, C(iη) ψ⟫ / 2`, then, since `|ψ| ≤ |P_α ψ| + |P_β ψ|`,
+`|-L / 2 + S + c |σ|²| ≤ (√2 / 2) |η| |σ| (|P_α ψ| + |P_β ψ|)`. -/
+private theorem abs_neg_div_two_add_le_of_eq {L S c : ℝ} {η : ⋀[ℝ]^2 V}
+    {σ ψ : positiveHalfSpinors o ρ}
+    (h : L / 2 = S + c * ‖σ‖ ^ 2 + (⟪σ, cliffordRestriction o ρ η ψ⟫_ℂ).re / 2) :
+    |-L / 2 + S + c * ‖σ‖ ^ 2| ≤
+      √2 / 2 * ‖η‖ * ‖σ‖ * (‖cliffordProjection o ρ ω ψ‖ + ‖cliffordProjection o ρ (-ω) ψ‖) := by
+  have hs := norm_add_le (cliffordProjection o ρ ω ψ) (cliffordProjection o ρ (-ω) ψ)
+  rw [cliffordProjection_apply_add_cliffordProjection_neg_apply] at hs
+  have hre := abs_re_inner_cliffordRestriction_apply_le o hQ hρ η ψ σ
+  have hmono : √2 * ‖η‖ * ‖ψ‖ * ‖σ‖ ≤
+      √2 * ‖η‖ * ‖σ‖ * (‖cliffordProjection o ρ ω ψ‖ + ‖cliffordProjection o ρ (-ω) ψ‖) := by
     rw [mul_right_comm (√2 * ‖η‖)]
     gcongr
+  have hL : -L / 2 + S + c * ‖σ‖ ^ 2 = -((⟪σ, cliffordRestriction o ρ η ψ⟫_ℂ).re / 2) := by
+    rw [neg_div, h]
+    ring
+  rw [hL, abs_neg, abs_div, abs_two]
   linarith
 
 include hQ hρ h₂ hω hω₂ in
@@ -276,14 +287,10 @@ theorem abs_neg_laplacian_norm_sq_div_two_add_le_canonical
           ‖cliffordProjection o ρ (-ω) (χ x)‖ ^ 2 - 1) * ‖cliffordProjection o ρ ω (χ x)‖ ^ 2| ≤
       √2 / 2 * ‖η‖ * ‖cliffordProjection o ρ ω (χ x)‖ *
         (‖cliffordProjection o ρ ω (χ x)‖ + ‖cliffordProjection o ρ (-ω) (χ x)‖) := by
-  have hsq := norm_sq_eq_add_norm_sq_cliffordProjection o hQ hkl hω hω₂ hρ (χ x)
-  have hle := norm_add_le (cliffordProjection o ρ ω (χ x)) (cliffordProjection o ρ (-ω) (χ x))
-  rw [cliffordProjection_apply_add_cliffordProjection_neg_apply] at hle
-  have hid := laplacian_norm_sq_cliffordProjection_eq_of_add_hodgeStar_eq o hQ hkl hρ h₂ hω hω₂ hχ
-    hb hD hF e
-  rw [← hsq, neg_div, hid, ← abs_neg]
-  convert abs_re_inner_cliffordRestriction_div_two_le o hQ hρ η _ _ hle using 2
-  ring
+  rw [← norm_sq_eq_add_norm_sq_cliffordProjection o hQ hkl hω hω₂ hρ (χ x)]
+  exact abs_neg_div_two_add_le_of_eq o hQ hρ
+    (laplacian_norm_sq_cliffordProjection_eq_of_add_hodgeStar_eq o hQ hkl hρ h₂ hω hω₂ hχ hb hD hF
+      e)
 
 include hQ hρ h₂ hω hω₂ in
 /-- **Taubes's projected inequality for the complementary component.** Under the hypotheses of
@@ -307,13 +314,9 @@ theorem abs_neg_laplacian_norm_sq_div_two_add_le_complement
           ‖cliffordProjection o ρ (-ω) (χ x)‖ ^ 2| ≤
       √2 / 2 * ‖η‖ * ‖cliffordProjection o ρ (-ω) (χ x)‖ *
         (‖cliffordProjection o ρ ω (χ x)‖ + ‖cliffordProjection o ρ (-ω) (χ x)‖) := by
-  have hsq := norm_sq_eq_add_norm_sq_cliffordProjection o hQ hkl hω hω₂ hρ (χ x)
-  have hle := norm_add_le (cliffordProjection o ρ ω (χ x)) (cliffordProjection o ρ (-ω) (χ x))
-  rw [cliffordProjection_apply_add_cliffordProjection_neg_apply] at hle
-  have hid := laplacian_norm_sq_cliffordProjection_neg_eq_of_add_hodgeStar_eq o hQ hkl hρ h₂ hω hω₂
-    hχ hb hD hF e
-  rw [← hsq, neg_div, hid, ← abs_neg]
-  convert abs_re_inner_cliffordRestriction_div_two_le o hQ hρ η _ _ hle using 2
-  ring
+  rw [← norm_sq_eq_add_norm_sq_cliffordProjection o hQ hkl hω hω₂ hρ (χ x)]
+  exact abs_neg_div_two_add_le_of_eq o hQ hρ
+    (laplacian_norm_sq_cliffordProjection_neg_eq_of_add_hodgeStar_eq o hQ hkl hρ h₂ hω hω₂ hχ hb hD
+      hF e)
 
 end TauCeti.SeibergWitten
