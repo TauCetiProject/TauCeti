@@ -74,21 +74,12 @@ private theorem modularFunctionCoeffAction_mem_modularFunctionField (σ : ℂ �
 
 /-- Restriction of the coefficient action to the arithmetic subfield. -/
 private def coeffActionRestrict (σ : ℂ ≃+* ℂ) :
-    modularFunctionField N ≃+* modularFunctionField N where
-  toFun F := ⟨modularFunctionCoeffAction N σ F,
-    modularFunctionCoeffAction_mem_modularFunctionField σ F⟩
-  invFun F := ⟨modularFunctionCoeffAction N σ.symm F,
-    modularFunctionCoeffAction_mem_modularFunctionField σ.symm F⟩
-  left_inv F := Subtype.ext (by
-    dsimp only
-    have h : σ.symm * σ = 1 := RingEquiv.ext σ.symm_apply_apply
-    rw [← RingAut.mul_apply, ← map_mul, h, map_one, RingAut.one_apply])
-  right_inv F := Subtype.ext (by
-    dsimp only
-    have h : σ * σ.symm = 1 := RingEquiv.ext σ.apply_symm_apply
-    rw [← RingAut.mul_apply, ← map_mul, h, map_one, RingAut.one_apply])
-  map_mul' F G := Subtype.ext (map_mul (modularFunctionCoeffAction N σ) F.val G.val)
-  map_add' F G := Subtype.ext (map_add (modularFunctionCoeffAction N σ) F.val G.val)
+    modularFunctionField N ≃+* modularFunctionField N :=
+  (modularFunctionCoeffAction N σ).restrict _ _ fun F ↦
+    ⟨fun hF ↦ modularFunctionCoeffAction_mem_modularFunctionField σ ⟨F, hF⟩, fun hF ↦ by
+      have h := modularFunctionCoeffAction_mem_modularFunctionField σ.symm ⟨_, hF⟩
+      have hσ : σ.symm * σ = 1 := RingEquiv.ext σ.symm_apply_apply
+      rwa [← RingAut.mul_apply, ← map_mul, hσ, map_one, RingAut.one_apply] at h⟩
 
 /-- The restriction depends only on the image of the standard primitive root, even when
 compared with a coefficient endomorphism that is not surjective. -/
@@ -99,7 +90,7 @@ private theorem laurentQExpansion_coeffActionRestrict {σ : ℂ ≃+* ℂ} {τ :
     (F : modularFunctionField N) :
     laurentQExpansion (cuspDatumInftyGamma N) (coeffActionRestrict σ F) =
       HahnSeries.mapRingHom τ (laurentQExpansion (cuspDatumInftyGamma N) F) := by
-  rw [coeffActionRestrict, RingEquiv.coe_mk, Equiv.coe_fn_mk,
+  rw [coeffActionRestrict, RingEquiv.restrict_apply_coe,
     laurentQExpansion_modularFunctionCoeffAction]
   ext n
   simp only [HahnSeries.coeff_mapRingHom]
