@@ -28,7 +28,7 @@ measures on the circle factors.
   of the functions in `Lᵖ(𝕋ᵈ)`.
 
 The inclusions `B^s_{p,1}(𝕋ᵈ) ⊆ H^{s,p}(𝕋ᵈ) ⊆ B^s_{p,∞}(𝕋ᵈ)` and their consequences are in
-`TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus.BesselPotential`.
+`TauCeti.Analysis.Sobolev.Torus.Besov`.
 
 ## References
 
