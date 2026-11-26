@@ -568,8 +568,10 @@ theorem norm_mixedForcingL_le (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLip
   set S := (W1pVanishingOn mu Omega 2 Γ).subtypeL
   have hS : ‖S‖ ≤ 1 := Submodule.norm_subtypeL_le _
   have hV : ‖(W1p.valueL : W1p mu Omega 2 →L[ℝ] _).comp S‖ ≤ 1 :=
-    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v => by
-      simpa [S] using W1p.norm_value_le (v : W1p mu Omega 2)
+    calc _ ≤ 1 * 1 := (ContinuousLinearMap.opNorm_comp_le _ _).trans <| by
+          gcongr
+          exact W1p.norm_valueL_le
+      _ = 1 := one_mul 1
   have hR : ‖(Lp.restrictOfSubsetL (sdiff_subset (t := Γ))).comp (T.comp S)‖ ≤ ‖T‖ :=
     calc _ ≤ 1 * (‖T‖ * 1) := (ContinuousLinearMap.opNorm_comp_le _ _).trans <| by
           gcongr

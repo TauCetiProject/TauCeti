@@ -637,6 +637,13 @@ theorem W1p.ext {u v : W1p mu Omega p}
 theorem W1p.norm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ ≤ ‖u‖ :=
   Sobolev1JetLp.norm_value_le u.val
 
+/-- The value projection `W1p.valueL` has operator norm at most one. -/
+theorem W1p.norm_valueL_le :
+    ‖(W1p.valueL : W1p mu Omega p →L[ℝ] Lp ℝ p (mu.restrict Omega))‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by
+    rw [one_mul, W1p.valueL_apply]
+    exact W1p.norm_value_le u
+
 /-- The extended norm of a Sobolev function controls the extended norm of its value component. -/
 theorem W1p.enorm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ₑ ≤ ‖u‖ₑ :=
   eNorm_le_iff_norm_le.2 (W1p.norm_value_le u)

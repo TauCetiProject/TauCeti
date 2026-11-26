@@ -220,9 +220,7 @@ theorem norm_dirichletForcing_apply_le (f : Lp ℝ 2 (mu.restrict Omega))
 /-- The operator norm of the forcing functional is at most `‖f‖_{L²(Ω)}`. -/
 theorem norm_dirichletForcing_le (f : Lp ℝ 2 (mu.restrict Omega)) :
     ‖dirichletForcing f‖ ≤ ‖f‖ :=
-  (Lp.norm_pairingL_le f _).trans <| mul_le_of_le_one_right (norm_nonneg f) <|
-    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v => by
-      simpa using W1p.norm_value_le (v : W1p mu Omega 2)
+  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) (norm_dirichletForcing_apply_le f)
 
 /-- The **divergence-form right-hand side of the Dirichlet problem** as a continuous linear
 functional on `H¹₀(Ω)`: a vector field `F ∈ L²(Ω; ℝⁿ)` acts by `v ↦ -∫_Ω ⟪F, ∇v⟫`, the weak form
