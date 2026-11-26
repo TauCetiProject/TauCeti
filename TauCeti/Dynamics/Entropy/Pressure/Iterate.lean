@@ -63,6 +63,7 @@ variable {X : Type*} {T : X → X} {φ : X → ℝ} {k : ℕ}
 
 /-- The pressure sums of `T^[k]` with the potential `birkhoffSum T φ k` at the entourage
 `dynEntourage T U k` and time `n` are the pressure sums of `T` with `φ` at `U` and time `k * n`. -/
+@[simp]
 theorem pressureNetSum_iterate (T : X → X) (φ : X → ℝ) (U : SetRel X X) (k n : ℕ) :
     pressureNetSum (T^[k]) (birkhoffSum T φ k) (dynEntourage T U k) n =
       pressureNetSum T φ U (k * n) := by
