@@ -69,6 +69,8 @@ exceptional mass instead.
   polyad decomposition, the number of injective triples of a color is the support-weighted sum
   of its relative densities.
 * `TauCeti.TriadicComplex3.VertexCellsControlled.card_le`: controlled cells are small.
+* `TauCeti.TriadicComplex3.VertexCellsControlled.le_card`: control at `t₀` needs at least `t₀`
+  vertices.
 * `TauCeti.Colored3Graph.topRegularOverMostPolyads_iff_sum_card_support_le`: the support of
   the irregular polyads is at most an `ε`-proportion of the selected support.
 * `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_rank_one`: rank-one top regularity over
@@ -293,6 +295,11 @@ theorem VertexCellsControlled.card_le (h : C.VertexCellsControlled t₀) (ht₀ 
   have hle := h.1.card_part_le_average_add_one hA
   rw [card_univ] at hle
   exact hle.trans (Nat.add_le_add_right (Nat.div_le_div_left h.2 ht₀) 1)
+
+/-- A host carrying a complex with vertex cells controlled at `t₀` has at least `t₀` vertices,
+since the cells are nonempty. -/
+theorem VertexCellsControlled.le_card (h : C.VertexCellsControlled t₀) : t₀ ≤ Fintype.card V :=
+  h.2.trans (C.skeleton.vertexPart.card_parts_le_card.trans_eq card_univ)
 
 end TriadicComplex3
 
