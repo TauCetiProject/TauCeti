@@ -45,6 +45,11 @@ def compLpL : Lp E p μ ≃L[𝕜] Lp F p μ :=
 theorem coe_compLpL : (e.compLpL p μ : Lp E p μ →L[𝕜] Lp F p μ) = (e : E →L[𝕜] F).compLpL p μ :=
   (rfl)
 
+/-- Applied to `u`, `e.compLpL p μ` is `ContinuousLinearMap.compLpL` of `e` applied to `u`. -/
+@[simp]
+theorem compLpL_apply (u : Lp E p μ) : e.compLpL p μ u = (e : E →L[𝕜] F).compLpL p μ u :=
+  (rfl)
+
 /-- The inverse of `e.compLpL p μ` is postcomposition with `e.symm`. -/
 @[simp]
 theorem symm_compLpL : (e.compLpL p μ).symm = e.symm.compLpL p μ :=
