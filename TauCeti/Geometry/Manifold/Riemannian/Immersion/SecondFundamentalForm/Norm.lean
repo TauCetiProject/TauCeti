@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Bilinear
-public import TauCeti.Geometry.Manifold.Riemannian.Immersion.SecondFundamentalForm
+public import TauCeti.Geometry.Manifold.Riemannian.Immersion.SecondFundamentalForm.Basic
 import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.Riemannian.Basic
@@ -22,6 +22,10 @@ The second fundamental form of a `C²` map is tensorial in both tangent
 arguments. Its squared Hilbert–Schmidt norm is the sum of the squares of its coefficients in
 any orthonormal tangent frame. For an immersion the squared norm is continuous, including
 at boundary and corner points of the source.
+
+The squared norm uses Otis Chodosh's intrinsic two-slot Hilbert–Schmidt construction,
+`TauCeti.bilinearHilbertSchmidtEnergy`, from
+`TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Bilinear`.
 
 ## References
 
@@ -80,6 +84,12 @@ noncomputable def immersionSecondFundamentalFormAt :
       (fun X _ ↦ tensorialAt_immersionSecondFundamentalForm_right hf X)
   else 0
 
+/-- The pointwise second fundamental form vanishes outside the `C²` locus. -/
+@[simp]
+theorem immersionSecondFundamentalFormAt_of_not_contMDiffAt
+    (hf : ¬ ContMDiffAt I J 2 f x) : immersionSecondFundamentalFormAt (I := I) cov f x = 0 := by
+  rw [immersionSecondFundamentalFormAt, dite_eq_right hf]
+
 /-- Evaluating the pointwise form on differentiable vector fields recovers the covariant
 definition of the second fundamental form. -/
 theorem immersionSecondFundamentalFormAt_apply (hf : ContMDiffAt I J 2 f x)
@@ -87,6 +97,27 @@ theorem immersionSecondFundamentalFormAt_apply (hf : ContMDiffAt I J 2 f x)
     immersionSecondFundamentalFormAt cov f x (X x) (Y x) =
       immersionSecondFundamentalForm cov f X Y x := by
   rw [immersionSecondFundamentalFormAt, dite_eq_left hf, TensorialAt.mkHom₂_apply _ _ hX hY]
+
+/-- Values of the pointwise second fundamental form lie in the normal space. -/
+theorem immersionSecondFundamentalFormAt_mem (v w : TangentSpace I x) :
+    immersionSecondFundamentalFormAt cov f x v w ∈ orthogonalNormalSpace I J f x := by
+  by_cases hf : ContMDiffAt I J 2 f x
+  · rw [immersionSecondFundamentalFormAt, dite_eq_left hf,
+      TensorialAt.mkHom₂_apply_eq_extend]
+    exact immersionSecondFundamentalForm_mem _ _ x
+  · simp [immersionSecondFundamentalFormAt_of_not_contMDiffAt hf]
+
+/-- The pointwise second fundamental form of a torsion-free connection is symmetric. -/
+theorem immersionSecondFundamentalFormAt_comm (ht : cov.IsTorsionFree)
+    (v w : TangentSpace I x) :
+    immersionSecondFundamentalFormAt cov f x v w =
+      immersionSecondFundamentalFormAt cov f x w v := by
+  by_cases hf : ContMDiffAt I J 2 f x
+  · simp only [immersionSecondFundamentalFormAt, dite_eq_left hf,
+      TensorialAt.mkHom₂_apply_eq_extend]
+    exact immersionSecondFundamentalForm_comm ht hf
+      (FiberBundle.mdifferentiableAt_extend ..) (FiberBundle.mdifferentiableAt_extend ..)
+  · simp [immersionSecondFundamentalFormAt_of_not_contMDiffAt hf]
 
 section Norm
 
@@ -97,6 +128,24 @@ noncomputable def immersionSecondFundamentalFormNormSq
     (cov : CovariantDerivative J F (TangentSpace J : N → Type _)) (f : M → N) (x : M) : ℝ :=
   bilinearHilbertSchmidtEnergy (𝕜 := ℝ) (E := TangentSpace I x) (E₂ := TangentSpace I x)
     (F := TangentSpace J (f x)) (immersionSecondFundamentalFormAt (I := I) cov f x)
+
+/-- The squared norm is the intrinsic two-slot Hilbert–Schmidt energy of the pointwise form. -/
+theorem immersionSecondFundamentalFormNormSq_def :
+    immersionSecondFundamentalFormNormSq (I := I) cov f x =
+      bilinearHilbertSchmidtEnergy (immersionSecondFundamentalFormAt (I := I) cov f x) := (rfl)
+
+/-- The squared norm of the second fundamental form is nonnegative. -/
+theorem immersionSecondFundamentalFormNormSq_nonneg :
+    0 ≤ immersionSecondFundamentalFormNormSq (I := I) cov f x := by
+  rw [immersionSecondFundamentalFormNormSq_def]
+  exact bilinearHilbertSchmidtEnergy_nonneg _
+
+/-- The squared norm vanishes exactly when the pointwise second fundamental form vanishes. -/
+@[simp]
+theorem immersionSecondFundamentalFormNormSq_eq_zero_iff :
+    immersionSecondFundamentalFormNormSq (I := I) cov f x = 0 ↔
+      immersionSecondFundamentalFormAt (I := I) cov f x = 0 := by
+  rw [immersionSecondFundamentalFormNormSq_def, bilinearHilbertSchmidtEnergy_eq_zero_iff]
 
 /-- The squared norm is the sum of the squared norms of all coefficients in an orthonormal
 tangent basis. -/

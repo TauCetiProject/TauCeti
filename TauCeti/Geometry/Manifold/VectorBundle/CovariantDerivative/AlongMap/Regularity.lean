@@ -44,19 +44,6 @@ section Coordinates
 variable [IsManifold J 2 N]
   (cov : CovariantDerivative J F (TangentSpace J : N → Type _))
 
-private theorem symmL_christoffelMap_eq_sum {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ F)
-    {e : Trivialization F (π F (TangentSpace J : N → Type _))} [MemTrivializationAtlas e]
-    {z : N} (hz : z ∈ e.baseSet) (v w : F) :
-    e.symmL ℝ z (christoffelMap b (cov.isCovariantDerivativeOn (s := e.baseSet)) z v w) =
-      ∑ i, b.coord i v • cov (e.localFrame b i) z (e.symmL ℝ z w) := by
-  rw [christoffelMap_apply, e.symmL_continuousLinearMapAt hz,
-    christoffelForm_apply b (cov.isCovariantDerivativeOn (s := e.baseSet)) hz, sum_apply]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [smul_apply, e.localFrameCoeff_eq_coeff (s := fun y ↦ e.symmL ℝ y v) hz]
-  dsimp only
-  rw [e.symmL_apply hz, e.apply_mk_symm hz]
-  rfl
-
 /-- In a fixed target tangent trivialization, the covariant derivative along a map is the
 derivative of the coordinate reading plus the Christoffel term in that trivialization. -/
 theorem alongMap_apply_of_mem_baseSet
@@ -106,7 +93,7 @@ theorem alongMap_apply_of_mem_baseSet
   let hcov := cov.isCovariantDerivativeOn (s := e.baseSet)
   have hΓ : e.symmL ℝ (f x) (christoffelMap b hcov (f x) (g x) u) =
       ∑ i, c i x • cov (X i) (f x) w := by
-    rw [symmL_christoffelMap_eq_sum cov b ha, e.symmL_continuousLinearMapAt ha w]
+    rw [symmL_christoffelMap_eq_sum b hcov ha, e.symmL_continuousLinearMapAt ha w]
     rfl
   have hcoord (i) := mdifferentiableAt_sectionCoord f (fun y ↦ X i (f y)) ((hX i).comp x hf)
     (mem_baseSet_trivializationAt F (TangentSpace J) (f x))
