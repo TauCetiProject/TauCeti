@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.RingTheory.Jacobson.Ideal
+import TauCeti.RingTheory.Jacobson.Basic
 import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
@@ -190,8 +191,7 @@ variable {O E : Type*} [CommRing O] [CommRing E] [Algebra O E]
 theorem isUnit_det_integralShear_of_mem_jacobson {e₁ : O} (he₁ : e₁ ∈ Ring.jacobson O) (e₂ : O) :
     IsUnit (integralShear e₁ e₂).det := by
   rw [det_integralShear]
-  convert Ring.mem_jacobson_iff.mp he₁ (-e₂) using 1
-  ring
+  exact Ideal.isUnit_one_sub_mul_of_le_jacobson le_rfl (Or.inl he₁)
 
 /-- Let `O ⊆ E` and let `I` be an infinite ideal of `O` contained in the Jacobson radical, such as
 the maximal ideal of a local domain that is not a field. For finitely many slopes `r ∈ E`, there

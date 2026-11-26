@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import TauCeti.RingTheory.Ideal.Span
+import TauCeti.RingTheory.Ideal.Basic
 import Mathlib.RingTheory.IntegralDomain
 
 /-!
@@ -43,14 +44,10 @@ theorem mem_maximalIdeal_of_not_dvd {R : Type*} [CommSemiring R] [IsLocalRing R]
 /-- In a local domain that is not a field, such as a discrete valuation ring, the maximal ideal is
 infinite. -/
 theorem infinite_maximalIdeal {R : Type*} [CommRing R] [IsDomain R] [IsLocalRing R]
-    (hR : ¬ IsField R) : (_root_.IsLocalRing.maximalIdeal R : Set R).Infinite := by
-  -- A finite domain is a field, so `R` is infinite, and `R` embeds in `𝔪` by `y ↦ x * y` for any
-  -- nonzero `x ∈ 𝔪`.
-  obtain ⟨x, hx, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    (_root_.IsLocalRing.isField_iff_maximalIdeal_eq.not.mp hR)
+    (hR : ¬ IsField R) : (_root_.IsLocalRing.maximalIdeal R : Set R).Infinite :=
+  -- A finite domain is a field, so `R` is infinite, and its nonzero maximal ideal is infinite.
   have : Infinite R := not_finite_iff_infinite.mp fun _ ↦ hR (Finite.isField_of_domain R)
-  exact Set.infinite_of_injective_forall_mem (mul_right_injective₀ hx0)
-    fun y ↦ Ideal.mul_mem_right y _ hx
+  Ideal.infinite_of_ne_bot (_root_.IsLocalRing.isField_iff_maximalIdeal_eq.not.mp hR)
 
 end TauCeti.IsLocalRing
 
