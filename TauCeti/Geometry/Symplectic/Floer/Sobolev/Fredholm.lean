@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Sobolev.Cylinder.Fredholm
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 import TauCeti.Analysis.Calculus.FDeriv.Add
-import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Geometry.Symplectic.Floer.Continuation
 import TauCeti.Geometry.Symplectic.Floer.Continuation.AlmostComplex
@@ -1050,9 +1049,8 @@ private theorem isFredholm_floerSobolevOperator_and_index_eq_zero
     hH₂.comp (contDiff_fst.snd.prodMk contDiff_snd)
   -- The stationary cylinder over `x`, at which the operator is invertible.
   have hs : ContDiff ℝ 1 fun w : ℝ × ℝ ↦ x w.2 :=
-    (contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
-      (ω.contDiff_hamiltonianVectorField_uncurry (n := 0)
-        (by simpa using hH.of_le (by norm_num))).continuous hx).comp contDiff_snd
+    (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le (by norm_num)) hx).comp
+      contDiff_snd
   have hsx (l : Filter ℝ) : TendstoUniformlyOn (fun s t ↦ (fun w : ℝ × ℝ ↦ x w.2) (s, t)) x l
       (Icc 0 1) :=
     tendstoUniformlyOn_const x l _
