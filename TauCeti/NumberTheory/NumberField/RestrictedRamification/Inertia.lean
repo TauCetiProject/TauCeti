@@ -197,6 +197,9 @@ private theorem ramificationIdx_eq_one_of_inertia_le_fixingSubgroup
     (τ'.restrictScalars K).comp (IsScalarTower.toAlgHom K L (w.adicCompletion L))
   obtain ⟨τ, hτ⟩ := IsSepClosed.surjective_domRestrict_of_isSeparable (K := K) L
     (E := SeparableClosure K) (M := SeparableClosure (v.adicCompletion K)) j
+  -- `hτ : τ.domRestrict L = j`; evaluating both sides at `a`, the left side is `τ a` and the
+  -- right side is `τ' (algebraMap L _ a)` by unfolding `domRestrict`, `comp`, `restrictScalars`
+  -- and `toAlgHom`, all of which are definitional.
   have hτL (a : L) : τ a = τ' (algebraMap L (w.adicCompletion L) a) :=
     congrArg (fun φ : L →ₐ[K] _ ↦ φ a) hτ
   have hfix : separableClosureInertiaSubgroup (v.adicCompletion K) ≤
@@ -325,18 +328,6 @@ theorem liftGaloisGroupS_comp_restrictGaloisGroupS {S : Set (HeightOneSpectrum (
     (liftGaloisGroupS K φ hφ).comp (restrictGaloisGroupS K (SeparableClosure K) S) = φ :=
   ContinuousMonoidHom.liftOfIsQuotientMap_comp _ _ _ _
 
-/-- Two continuous homomorphisms out of `G_{K,S}` agree if they agree after composing with
-`restrictGaloisGroupS`. -/
-theorem ext_restrictGaloisGroupS {S : Set (HeightOneSpectrum (𝓞 K))}
-    {H : Type*} [Group H] [TopologicalSpace H]
-    {ψ₁ ψ₂ : galoisGroupS K (SeparableClosure K) S →ₜ* H}
-    (h : ψ₁.comp (restrictGaloisGroupS K (SeparableClosure K) S) =
-      ψ₂.comp (restrictGaloisGroupS K (SeparableClosure K) S)) :
-    ψ₁ = ψ₂ := by
-  ext y
-  obtain ⟨σ, rfl⟩ := restrictGaloisGroupS_surjective K (SeparableClosure K) S y
-  exact DFunLike.congr_fun h σ
-
 /-- **Universal property of `G_{K,S}`.** A continuous homomorphism `φ : G_K →ₜ* H` into a `T₁`
 topological group factors uniquely through `restrictGaloisGroupS : G_K →ₜ* G_{K,S}` whenever it
 kills local inertia at every finite place outside `S`. -/
@@ -351,6 +342,7 @@ theorem existsUnique_comp_restrictGaloisGroupS_eq {S : Set (HeightOneSpectrum (�
     ∃! ψ : galoisGroupS K (SeparableClosure K) S →ₜ* H,
       ψ.comp (restrictGaloisGroupS K (SeparableClosure K) S) = φ :=
   ⟨liftGaloisGroupS K φ hφ, liftGaloisGroupS_comp_restrictGaloisGroupS K φ hφ, fun _ hψ ↦
-    ext_restrictGaloisGroupS K (hψ.trans (liftGaloisGroupS_comp_restrictGaloisGroupS K φ hφ).symm)⟩
+    ext_restrictGaloisGroupS K (SeparableClosure K)
+      (hψ.trans (liftGaloisGroupS_comp_restrictGaloisGroupS K φ hφ).symm)⟩
 
 end TauCeti.RestrictedRamification

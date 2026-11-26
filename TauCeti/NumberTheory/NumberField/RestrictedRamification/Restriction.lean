@@ -23,6 +23,8 @@ quotient property, and functoriality laws.
 
 * `TauCeti.RestrictedRamification.restrictGaloisGroupS`: the continuous restriction map
   `Gal(Ω / K) →ₜ* G_{K,S}`.
+* `TauCeti.RestrictedRamification.ext_restrictGaloisGroupS`: continuous homomorphisms out of
+  `G_{K,S}` are determined by their composites with `restrictGaloisGroupS`.
 * `TauCeti.RestrictedRamification.ker_restrictGaloisGroupS`: its kernel is the fixing subgroup of
   `maxUnramifiedOutside K Ω S`.
 * `TauCeti.RestrictedRamification.isQuotientMap_restrictGaloisGroupS`: restriction to `G_{K,S}` is
@@ -74,6 +76,17 @@ theorem restrictGaloisGroupS_eq_restrictNormalHom (S : Set (HeightOneSpectrum (�
 theorem restrictGaloisGroupS_surjective (S : Set (HeightOneSpectrum (𝓞 K))) :
     Function.Surjective (restrictGaloisGroupS K Ω S) :=
   AlgEquiv.restrictNormalHom_surjective Ω
+
+/-- Two continuous homomorphisms out of `G_{K,S}` agree if they agree after composing with
+`restrictGaloisGroupS`. -/
+@[ext]
+theorem ext_restrictGaloisGroupS {S : Set (HeightOneSpectrum (𝓞 K))}
+    {H : Type*} [Group H] [TopologicalSpace H] {ψ₁ ψ₂ : galoisGroupS K Ω S →ₜ* H}
+    (h : ψ₁.comp (restrictGaloisGroupS K Ω S) = ψ₂.comp (restrictGaloisGroupS K Ω S)) :
+    ψ₁ = ψ₂ := by
+  ext y
+  obtain ⟨σ, rfl⟩ := restrictGaloisGroupS_surjective K Ω S y
+  exact DFunLike.congr_fun h σ
 
 /-- The kernel of `Gal(Ω / K) → G_{K,S}` is the fixing subgroup of `K_S`. -/
 theorem ker_restrictGaloisGroupS (S : Set (HeightOneSpectrum (𝓞 K))) :
