@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialOperator.Codifferential
+public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Section
+public import TauCeti.Geometry.Manifold.DifferentialOperator.Section
 public import TauCeti.Geometry.Manifold.Riemannian.Curl
 import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
@@ -40,8 +41,11 @@ is not injective at any nonzero covector.
 
 ## Main results
 
+* `TauCeti.ofContMDiffSection_curlSection`: the curl on sections is the curl of the
+  corresponding smooth one-forms.
 * `TauCeti.curlSection_smul_apply`: the Leibniz rule `curl (f α) = f curl α + ⋆(df ∧ α)`.
 * `TauCeti.curlSection_mem_differentialOperators_one`: the curl has order at most one.
+* `TauCeti.tsupport_curlSection_apply_subset`: the curl does not enlarge supports.
 * `TauCeti.sectionPrincipalSymbol_curlSection_apply`: its principal symbol at `ξ` is `⋆(ξ ∧ ·)`.
 * `TauCeti.sectionPrincipalSymbol_curlSection_apply_self`: the symbol at `ξ` kills `ξ`.
 
@@ -91,6 +95,14 @@ theorem curlSection_apply
     curlSection o s x = (SmoothForm.curl o (SmoothBundleForm.ofContMDiffSection s)).val x :=
   SmoothForm.toContMDiffSection_apply _ x
 
+/-- The section `curl s` is the curl of the smooth one-form `s`. -/
+theorem ofContMDiffSection_curlSection
+    (s : Cₛ^∞⟮I; E [⋀^Fin 1]→L[ℝ] ℝ, fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M ℝ x⟯) :
+    SmoothBundleForm.ofContMDiffSection (curlSection o s) =
+      SmoothForm.curl o (SmoothBundleForm.ofContMDiffSection s) :=
+  Subtype.ext (funext fun x ↦ by
+    rw [SmoothBundleForm.coe_ofContMDiffSection, curlSection_apply])
+
 /-- **The Leibniz rule for the curl** `curl (f α) = f curl α + ⋆(df ∧ α)` for a smooth function `f`
 and a smooth section `α` of `T*M`, where `df` at `x` is the one-form `mvfderiv I f x`. -/
 theorem curlSection_smul_apply (f : C^∞⟮I, M; ℝ⟯)
@@ -100,7 +112,7 @@ theorem curlSection_smul_apply (f : C^∞⟮I, M; ℝ⟯)
       f x • curlSection o s x + formHodgeStarCLM o (k := 2) (l := 1) rfl x
         ((ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1)
           (mvfderiv I f x)).wedge (s x)) := by
-  rw [curlSection_apply, curlSection_apply, SmoothForm.ofContMDiffSection_smul_eq_funSMulₗ,
+  rw [curlSection_apply, curlSection_apply, SmoothBundleForm.ofContMDiffSection_smul_eq_funSMulₗ,
     ← mextDeriv_ofFunction]
   simpa only [SmoothBundleForm.coe_ofContMDiffSection] using
     congrFun (SmoothForm.coe_curl_funSMulₗ o f (SmoothBundleForm.ofContMDiffSection s)) x
@@ -118,6 +130,13 @@ theorem curlSection_mem_differentialOperators_one :
     ContMDiffSection.smul_apply, curlSection_smul_apply,
     ContinuousAlternatingMap.wedge_smul_right, map_smul]
   module
+
+/-- The curl does not enlarge supports. -/
+theorem tsupport_curlSection_apply_subset [T2Space M]
+    (s : Cₛ^∞⟮I; E [⋀^Fin 1]→L[ℝ] ℝ, fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M ℝ x⟯) :
+    (curlSection o s).tsupport ⊆ s.tsupport :=
+  tsupport_differentialOperators_section_apply_subset
+    (curlSection_mem_differentialOperators_one o) s
 
 /-- **The principal symbol of the curl** at a covector `ξ ∈ T_x*M` is
 `σ_geom(curl)(ξ) α = ⋆(ξ ∧ α)`, the Hodge star of the wedge of the one-form `ξ` with `α`: the cross
