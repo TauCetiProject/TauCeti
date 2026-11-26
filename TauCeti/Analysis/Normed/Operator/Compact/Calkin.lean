@@ -163,14 +163,15 @@ def lift (f : (E →L[𝕜] E) →ₐ[𝕜] A) (hf : ∀ T : E →L[𝕜] E, IsC
     CalkinAlgebra 𝕜 E →ₐ[𝕜] A :=
   let hf' : ∀ T ∈ compactOperatorIdeal 𝕜 E, (f : (E →L[𝕜] E) →ₙ+* A) T = 0 :=
     fun T hT ↦ hf T (mem_compactOperatorIdeal.mp hT)
-  { TwoSidedIdeal.Quotient.lift _ (f : (E →L[𝕜] E) →ₙ+* A) hf' with
+  { toFun := TwoSidedIdeal.Quotient.lift _ (f : (E →L[𝕜] E) →ₙ+* A) hf'
+    map_zero' := map_zero _
+    map_add' := map_add _
+    map_mul' := map_mul _
     map_one' := by
-      rw [← TwoSidedIdeal.Quotient.mk_one, MulHom.toFun_eq_coe, NonUnitalRingHom.coe_toMulHom,
-        TwoSidedIdeal.Quotient.lift_mk]
+      rw [← TwoSidedIdeal.Quotient.mk_one, TwoSidedIdeal.Quotient.lift_mk]
       exact map_one f
-    commutes' := fun c ↦ by
-      rw [← TwoSidedIdeal.Quotient.mk_algebraMap, MulHom.toFun_eq_coe,
-        NonUnitalRingHom.coe_toMulHom, TwoSidedIdeal.Quotient.lift_mk]
+    commutes' c := by
+      rw [← TwoSidedIdeal.Quotient.mk_algebraMap, TwoSidedIdeal.Quotient.lift_mk]
       exact f.commutes c }
 
 @[simp]
@@ -239,7 +240,7 @@ instance subsingleton [LocallyCompactSpace 𝕜] [FiniteDimensional 𝕜 E] :
   refine ⟨fun x y ↦ ?_⟩
   obtain ⟨S, rfl⟩ := mk_surjective x
   obtain ⟨T, rfl⟩ := mk_surjective y
-  exact mk_eq_mk_iff.mpr (hid.comp_clm (S - T))
+  exact mk_eq_mk_iff.mpr (by simpa using hid.comp_clm (S - T))
 
 /-- Over a locally compact field, the Calkin algebra of `E` is zero exactly when `E` is
 finite-dimensional. -/
