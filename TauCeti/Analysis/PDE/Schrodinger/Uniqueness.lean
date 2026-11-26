@@ -64,7 +64,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set Complex Metric Distribution Filter Topology TemperedDistribution
+open MeasureTheory Set Complex Filter Topology TemperedDistribution
 open scoped FourierTransform Laplacian SchwartzMap ENNReal
 
 namespace TauCeti
@@ -142,18 +142,7 @@ theorem eqOn_zero_of_forall_apply_eq_I_smul_setIntegral_apply_laplacian {u : ℝ
   intro t ht
   refine eq_zero_of_forall_hasCompactSupport_fourier fun φ hφ ↦ ?_
   -- The Fourier transform of `φ` vanishes outside a closed ball.
-  obtain ⟨R, hR, hφR⟩ : ∃ R > 0, IsVanishingOn (𝓕 (φ : 𝓢'(E, ℂ)) : 𝓢'(E, ℂ))
-      (closedBall 0 R)ᶜ := by
-    obtain ⟨R₀, hR₀⟩ := hφ.isCompact.isBounded.subset_closedBall 0
-    refine ⟨max R₀ 1, by positivity, fun ψ hψ ↦ ?_⟩
-    rw [fourier_toTemperedDistributionCLM_eq]
-    simp only [SchwartzMap.toTemperedDistributionCLM_apply_apply]
-    refine integral_eq_zero_of_ae (ae_of_all _ fun ξ ↦ ?_)
-    by_cases hξ : ξ ∈ tsupport ψ
-    · have : ξ ∉ tsupport ((𝓕 φ : 𝓢(E, ℂ)) : E → ℂ) := fun h' ↦
-        hψ hξ ((closedBall_subset_closedBall (le_max_left _ _)) (hR₀ h'))
-      simp [image_eq_zero_of_notMem_tsupport this]
-    · simp [image_eq_zero_of_notMem_tsupport hξ]
+  obtain ⟨R, hR, hφR⟩ := exists_pos_isVanishingOn_fourier_compl_closedBall_of_hasCompactSupport hφ
   -- Iterate the weak formulation and apply Bernstein's inequality to `Δᵏ⁺¹ φ`.
   set M := ∫ s in Ioc 0 T, |m s|
   have hle (k : ℕ) : ‖u t φ‖ ≤
