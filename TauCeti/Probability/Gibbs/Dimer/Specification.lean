@@ -10,6 +10,7 @@ public import TauCeti.Probability.Gibbs.Closed
 import TauCeti.Combinatorics.SimpleGraph.Finite
 import TauCeti.MeasureTheory.Constructions.Cylinder.Events
 import TauCeti.MeasureTheory.Constructions.Cylinder.FullShift
+import TauCeti.MeasureTheory.Constructions.Cylinder.Partition
 import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -385,16 +386,21 @@ theorem isDimerGibbs_map_val {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e)
     ring
   · simp only [indicator_of_notMem hη, mul_zero]
 
+omit [Countable G.edgeSet] in
+variable (Γ hΓ) in
+/-- A dimer Gibbs measure is carried by `𝔛(G)`. -/
+theorem IsDimerGibbs.ae_mem_dimerSubshift {w : G.edgeSet → ℝ} {μ : Measure (G.edgeSet → Bool)}
+    (hμ : G.IsDimerGibbs w μ) : ∀ᵐ ω ∂μ, ω ∈ G.dimerSubshift Γ hΓ :=
+  hμ.ae_isDimerConfiguration.mono fun _ => mem_dimerSubshift.2
+
 variable (Γ hΓ) in
 /-- A dimer Gibbs measure is carried by `𝔛(G)`: pulling it back to `𝔛(G)` and pushing forward
 along the inclusion gives it back. -/
 theorem IsDimerGibbs.map_comap_val {w : G.edgeSet → ℝ} {μ : Measure (G.edgeSet → Bool)}
     (hμ : G.IsDimerGibbs w μ) :
-    (μ.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)).map Subtype.val = μ := by
-  refine (map_comap_subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe μ).trans
-    (Measure.restrict_eq_self_of_ae_mem ?_)
-  rw [ae_iff]
-  simpa using hμ.measure_setOf_not_isDimerConfiguration
+    (μ.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)).map Subtype.val = μ :=
+  (map_comap_subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe μ).trans
+    (Measure.restrict_eq_self_of_ae_mem (hμ.ae_mem_dimerSubshift Γ hΓ))
 
 variable (Γ hΓ) in
 /-- The pull-back to `𝔛(G)` of a dimer Gibbs measure is a probability measure. -/
@@ -404,7 +410,7 @@ theorem IsDimerGibbs.isProbabilityMeasure_comap_val {w : G.edgeSet → ℝ}
   have := hμ.isProbabilityMeasure
   exact (MeasurableEmbedding.subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe)
     |>.isProbabilityMeasure_comap
-      (by simpa [ae_iff] using hμ.measure_setOf_not_isDimerConfiguration)
+      ((hμ.ae_mem_dimerSubshift Γ hΓ).mono fun ω hω => ⟨⟨ω, hω⟩, rfl⟩)
 
 variable (Γ hΓ) in
 /-- **The DLR equation on a cylinder.** Let `μ` be dimer Gibbs for a positive `w`, `ω` a dimer
@@ -464,32 +470,23 @@ theorem IsDimerGibbs.isGibbs_comap_val {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < 
       Finset.mem_union_right _ ((Finite.mem_toFinset _).2 ⟨e, he, v, hve', hve⟩)
   have hsE : s ⊆ E := Finset.subset_union_left
   -- split the cylinder into the cylinders of the patterns on `E`
-  set T := Finset.univ.filter fun p : E → Bool => Finset.restrict₂ (π := fun _ => Bool) hsE p ∈ t
-  have hcyl : MeasureTheory.cylinder s t = ⋃ p ∈ T, {η : G.edgeSet → Bool | E.restrict η = p} := by
-    ext η
-    simp only [mem_cylinder, mem_iUnion, mem_ofPred_eq, exists_prop, exists_eq_right',
-      ← Finset.restrict₂_comp_restrict hsE, Function.comp_apply, T, Finset.mem_filter,
-      Finset.mem_univ, true_and]
-  have hmeas (p : E → Bool) : MeasurableSet {η : G.edgeSet → Bool | E.restrict η = p} :=
-    MeasurableSet.cylinder (α := fun _ : G.edgeSet => Bool) E (measurableSet_singleton p)
-  have hdisj : (↑T : Set (E → Bool)).PairwiseDisjoint
-      fun p => {η : G.edgeSet → Bool | E.restrict η = p} :=
-    fun p _ q _ hne => Set.disjoint_left.2 fun η h₁ h₂ => hne (h₁.symm.trans h₂)
-  rw [hcyl, measure_biUnion_finset hdisj fun p _ => hmeas p]
-  simp_rw [measure_biUnion_finset hdisj fun p _ => hmeas p]
+  simp_rw [TauCeti.MeasureTheory.measure_cylinder_eq_sum_measure_cylinder_singleton
+    (α := fun _ => Bool) hsE t]
   rw [lintegral_finsetSum _ fun p _ => (measurable_dimerBoltzmann_apply Γ hΓ w F
-    (hmeas p)).mono ((G.dimerSubshift Γ hΓ).exterior_le F) le_rfl]
+    (MeasurableSet.cylinder E (measurableSet_singleton p))).mono
+    ((G.dimerSubshift Γ hΓ).exterior_le F) le_rfl]
   refine Finset.sum_congr rfl fun p _ => ?_
   by_cases hp : ∃ ω, G.IsDimerConfiguration ω ∧ E.restrict ω = p
   · obtain ⟨ω, hω, rfl⟩ := hp
-    have hset : {η : G.edgeSet → Bool | E.restrict η = E.restrict ω} =
+    have hset : MeasureTheory.cylinder (α := fun _ : G.edgeSet => Bool) E {E.restrict ω} =
         {η | ∀ e ∈ E, η e = ω e} := by
       ext η
       simp [funext_iff]
     rw [hset]
     exact hμ.lintegral_dimerBoltzmann_setOf_forall_mem_eq Γ hΓ hw hE hω
   · -- no dimer configuration has the pattern `p`: both sides vanish
-    have hnull : {η : G.edgeSet → Bool | E.restrict η = p} ⊆ {ω | ¬ G.IsDimerConfiguration ω} :=
+    have hnull : MeasureTheory.cylinder (α := fun _ : G.edgeSet => Bool) E {p} ⊆
+        {ω | ¬ G.IsDimerConfiguration ω} :=
       fun η hη hD => hp ⟨η, hD, hη⟩
     rw [measure_mono_null hnull hμ.measure_setOf_not_isDimerConfiguration]
     exact (lintegral_congr fun η : G.dimerSubshift Γ hΓ => measure_mono_null hnull
