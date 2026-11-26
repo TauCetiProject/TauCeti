@@ -130,11 +130,12 @@ theorem jetPairingDualEquiv_apply
   have heq : jetPairingDualEquiv h f = jetPairing.flip f := by
     apply (basisMonomials σ R).ext
     intro d
-    rw [LinearMap.flip_apply, jetPairing_basisMonomials, MvPowerSeries.coeff_apply]
-    -- On the underlying coefficient function, the diagonal equivalence multiplies by the units.
-    change (basisMonomials σ R).constr R (fun i ↦ (↑(h i).unit : R) * f i)
-      (basisMonomials σ R d) = _
-    rw [Module.Basis.constr_basis, (h d).unit_spec]
+    rw [LinearMap.flip_apply, jetPairing_basisMonomials, MvPowerSeries.coeff_apply,
+      jetPairingDualEquiv]
+    -- The equivalence rewrites use the coefficient-function type underlying MvPowerSeries.
+    erw [LinearEquiv.trans_apply, Module.Basis.constr_basis, LinearEquiv.piCongrRight_apply]
+    rw [LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv_apply, Units.smul_def,
+      smul_eq_mul, (h d).unit_spec]
   exact LinearMap.congr_fun heq p
 
 /-- The series representing a functional has its monomial values divided by the factorials. -/
@@ -144,10 +145,12 @@ theorem coeff_jetPairingDualEquiv_symm
     (L : MvPolynomial σ R →ₗ[R] R) (d : σ →₀ ℕ) :
     MvPowerSeries.coeff d ((jetPairingDualEquiv h).symm L) =
       ↑(h d).unit⁻¹ * L (monomial d 1) := by
-  rw [MvPowerSeries.coeff_apply]
-  -- The inverse coordinatewise equivalence divides the evaluated basis coefficient by its unit.
-  change ↑(h d).unit⁻¹ * (Module.Basis.constr (basisMonomials σ R) R).symm L d = _
-  rw [Module.Basis.constr_symm_apply, coe_basisMonomials]
+  rw [MvPowerSeries.coeff_apply, jetPairingDualEquiv]
+  -- The equivalence rewrites use the coefficient-function type underlying MvPowerSeries.
+  erw [LinearEquiv.symm_trans_apply, LinearEquiv.piCongrRight_symm,
+    LinearEquiv.piCongrRight_apply]
+  rw [LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv_symm_apply, Units.smul_def,
+    smul_eq_mul, Module.Basis.constr_symm_apply, coe_basisMonomials]
 
 end CommSemiring
 
