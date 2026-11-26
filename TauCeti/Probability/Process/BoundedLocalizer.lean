@@ -84,8 +84,14 @@ theorem exists_isLocalizingSequence_countable_range_bounded (hX : StronglyAdapte
     rw [stoppedProcess_indicator_comm]
     by_cases hn : ω ∈ A n
     · have heq : ρ n ω = η n ω := piecewise_eq_of_mem _ _ _ hn
+      have hstop : MeasureTheory.stoppedProcess X (ρ n) t ω =
+          MeasureTheory.stoppedProcess X (η n) t ω := by
+        by_cases ht : (t : WithTop ℝ≥0) ≤ ρ n ω
+        · rw [stoppedProcess_eq_of_le ht, stoppedProcess_eq_of_le (heq ▸ ht)]
+        · have ht' := le_of_not_ge ht
+          rw [stoppedProcess_eq_of_ge ht', stoppedProcess_eq_of_ge (heq ▸ ht'), heq]
       have hcenter : ‖MeasureTheory.stoppedProcess X (ρ n) t ω - X 0 ω‖ ≤ (n : ℝ) + 1 := by
-        simpa only [MeasureTheory.stoppedProcess, heq] using (hω n).2 t
+        simpa only [hstop] using (hω n).2 t
       refine ⟨fun _ ↦ hcenter, (norm_indicator_le_norm_self _ _).trans ?_⟩
       have hinit : ‖X 0 ω‖ ≤ (n : ℝ) := hn
       have htriangle := norm_add_le (MeasureTheory.stoppedProcess X (ρ n) t ω - X 0 ω) (X 0 ω)

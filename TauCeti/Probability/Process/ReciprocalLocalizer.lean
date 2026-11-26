@@ -61,8 +61,11 @@ theorem exists_isLocalizingSequence_countable_range_bounded_inv (hX : StronglyAd
   have h := (hω n t).2
   simp only [stoppedProcess_indicator_comm] at h ⊢
   by_cases hp : 0 < ρ n ω
-  · simp only [indicator_apply, mem_ofPred_eq, hp, ↓reduceIte,
-      MeasureTheory.stoppedProcess, Prod.norm_def, max_le_iff] at h ⊢
+  · simp only [indicator_apply, mem_ofPred_eq, hp, ↓reduceIte] at h ⊢
+    let Y (s : ℝ≥0) (x : Ω) := (X s x, (X s x)⁻¹)
+    have hfst := congrFun (congrFun (stoppedProcess_comp (u := Y) (τ := ρ n) Prod.fst) t) ω
+    have hsnd := congrFun (congrFun (stoppedProcess_comp (u := Y) (τ := ρ n) Prod.snd) t) ω
+    rw [Prod.norm_def, max_le_iff, ← hfst, ← hsnd] at h
     exact h
   · simp only [indicator_apply, mem_ofPred_eq, hp, ↓reduceIte, norm_zero]
     constructor <;> positivity
