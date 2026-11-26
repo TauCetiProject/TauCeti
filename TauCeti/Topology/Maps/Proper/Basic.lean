@@ -243,18 +243,18 @@ theorem ContinuousOn.isProperMap_restrict_biUnion {ι : Type*} (s : Finset ι) (
     exact (hSf i.val i.property).comp e.isProperMap
   rw [isProperMap_iff_isClosedMap_and_compact_fibers]
   refine ⟨hf.domRestrict, fun C hC ↦ ?_, fun y ↦ ?_⟩
-  · have himage : U.domRestrict f '' C =
+  · have himage : (fun x : U ↦ f x) '' C =
         ⋃ i : s, (T i).domRestrict (U.domRestrict f) '' (((↑) : T i → U) ⁻¹' C) := by
+      rw [← Function.comp_def f Subtype.val, ← Set.domRestrict_eq]
       simp_rw [Set.image_domRestrict, ← Set.image_iUnion, ← Set.inter_iUnion, hcov, Set.inter_univ]
-    change U.domRestrict f '' C ∈ {s | IsClosed s}
     rw [himage]
     exact isClosed_iUnion_of_finite fun i : s ↦
       (hTi i).isClosedMap _ (hC.preimage continuous_subtypeVal)
-  · have hfib : U.domRestrict f ⁻¹' {y} =
+  · have hfib : (fun x : U ↦ f x) ⁻¹' {y} =
         ⋃ i : s, ((↑) : T i → U) '' ((T i).domRestrict (U.domRestrict f) ⁻¹' {y}) := by
+      rw [← Function.comp_def f Subtype.val, ← Set.domRestrict_eq]
       simp_rw [Set.domRestrict_eq, Set.preimage_comp, Subtype.image_preimage_coe,
         ← Set.iUnion_inter, hcov, Set.univ_inter]
-    change IsCompact (U.domRestrict f ⁻¹' {y})
     rw [hfib]
     exact isCompact_iUnion fun i : s ↦
       ((hTi i).isCompact_preimage isCompact_singleton).image continuous_subtypeVal

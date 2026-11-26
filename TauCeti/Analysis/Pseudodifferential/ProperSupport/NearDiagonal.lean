@@ -108,8 +108,8 @@ theorem hasProperSupport_localizeAmplitude (a : Symbol n V W m)
     (hχ_prop : HasProperSupport χ) :
     (a.localizeAmplitude χ hχ).HasProperSupport :=
   Amplitude.hasProperSupport_iff.mpr
-    ⟨a.hasProperInputSupport_localizeAmplitude hχ hχ_prop.inp,
-      a.hasProperOutputSupport_localizeAmplitude hχ hχ_prop.out⟩
+    ⟨a.hasProperInputSupport_localizeAmplitude hχ hχ_prop.hasProperInputSupport,
+      a.hasProperOutputSupport_localizeAmplitude hχ hχ_prop.hasProperOutputSupport⟩
 
 /-- When `χ(x, x) = 1` for every `x`, the diagonal restriction of `a.localizeAmplitude χ hχ`
 recovers `a`. -/
@@ -247,7 +247,7 @@ theorem exists_hasProperSupport_amplitude_and_contDiff_kernel
     (hR : 0 < R) (hrR : r < R) :
     ∃ (A : Amplitude n V W m) (hA : A.HasProperSupport)
       (K : CoordinateSpace n → CoordinateSpace n → V →L[ℂ] W),
-      ContDiff ℝ ∞ (uncurry K) ∧ ((A.leftSymbol hA.inp) - a).IsSmoothing ∧
+      ContDiff ℝ ∞ (uncurry K) ∧ ((A.leftSymbol hA.hasProperInputSupport) - a).IsSmoothing ∧
       tsupport (uncurry fun x y ξ ↦ A.coefficient (x, y, ξ)) ⊆
         {p : CoordinateSpace n × CoordinateSpace n | ‖p.1 - p.2‖ < R} ∧
       (∀ x y, ‖x - y‖ ≤ r → K x y = 0) ∧
@@ -274,8 +274,8 @@ theorem exists_hasProperSupport_amplitude_and_contDiff_kernel
     simp [uncurry_def, hχ_zero p.1 p.2 (not_le.1 hgt).le]
   exact ⟨a.localizeAmplitude χ hχ, a.hasProperSupport_localizeAmplitude hχ hχ_prop,
     a.localizedOffDiagonalKernel χ, a.contDiff_localizedOffDiagonalKernel hχ hχ_diag,
-    a.isSmoothing_leftSymbol_localizeAmplitude_sub hχ hχ_prop.inp hχ_fiber, hsupp,
-    fun x y hxy ↦ by simp [hχ_one x y hxy], fun u hu x ↦
+    a.isSmoothing_leftSymbol_localizeAmplitude_sub hχ hχ_prop.hasProperInputSupport hχ_fiber,
+    hsupp, fun x y hxy ↦ by simp [hχ_one x y hxy], fun u hu x ↦
       a.quantizeSchwartzValue_eq_quantizeAmplitudeValue_add_integral_localizedOffDiagonalKernel
         hχ hu x (hχ_fiber x)⟩
 

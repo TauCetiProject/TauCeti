@@ -557,12 +557,6 @@ theorem coefficient_ofLeft (b : Symbol n V W m)
     (ofLeft b).coefficient p = b.coefficient (p.1, p.2.2) := (rfl)
 
 @[simp]
-theorem quantizeAmplitudeValue_ofLeft [CompleteSpace V] [CompleteSpace W] (b : Symbol n V W m)
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeAmplitudeValue (ofLeft b).coefficient u x = quantizeSchwartzValue b.coefficient u x :=
-  quantizeAmplitudeValue_eq_quantizeSchwartzValue b.coefficient u x
-
-@[simp]
 theorem spatialDerivSnd_ofLeft (j : Fin n) (b : Symbol n V W m) :
     spatialDerivSnd j (ofLeft b) = 0 := by
   refine Amplitude.ext (funext fun p ↦ ?_)

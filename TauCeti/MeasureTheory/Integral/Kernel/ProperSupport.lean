@@ -156,9 +156,9 @@ private theorem integral_apply_integral_swap_of_isCompact_isClosed {X Y 𝕜 V W
     [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν] {C : Set X} {L : Set Y}
     (hC : IsCompact C) (hCc : IsClosed C) (hL : IsCompact L) (hLc : IsClosed L)
     (hx_out : ∀ x ∉ C, v x = 0 ∨ ∀ y, K x y (u y) = 0)
-    (hy_in : ∀ x ∈ C, ∀ y ∉ L, K x y (u y) = 0)
+    (hy_in : ∀ x ∈ C, ∀ y ∉ L, v x = 0 ∨ K x y (u y) = 0)
     (hy_out : ∀ y ∉ L, u y = 0 ∨ ∀ x, (v x).comp (K x y) = 0)
-    (hx_in : ∀ y ∈ L, ∀ x ∉ C, (v x).comp (K x y) = 0) :
+    (hx_in : ∀ y ∈ L, ∀ x ∉ C, u y = 0 ∨ (v x).comp (K x y) = 0) :
     (∫ x, v x (∫ y, K x y (u y) ∂ν) ∂μ) = ∫ y, (∫ x, (v x).comp (K x y) ∂μ) (u y) ∂ν := by
   by_cases hM : CompleteSpace M; swap
   · simp [integral_of_not_completeSpace hM]
@@ -169,24 +169,30 @@ private theorem integral_apply_integral_swap_of_isCompact_isClosed {X Y 𝕜 V W
   have hcs_prod : HasCompactSupport fun p : X × Y ↦ v p.1 (K p.1 p.2 (u p.2)) :=
     HasCompactSupport.intro' (hC.prod hL) (hCc.prod hLc) fun ⟨x, y⟩ hxy ↦ by
       by_cases hx : x ∈ C
-      · simp [hy_in x hx y fun hy ↦ hxy ⟨hx, hy⟩]
+      · exact (hy_in x hx y fun hy ↦ hxy ⟨hx, hy⟩).elim (fun hv0 ↦ by simp [hv0])
+          (fun hK0 ↦ by simp [hK0])
       · exact (hx_out x hx).elim (fun hv0 ↦ by simp [hv0]) fun hK0 ↦ by simp [hK0]
   have hLHS : (∫ x, v x (∫ y, K x y (u y) ∂ν) ∂μ) = ∫ x, ∫ y, v x (K x y (u y)) ∂ν ∂μ := by
     refine integral_congr_ae (.of_forall fun x ↦ ?_)
     by_cases hx : x ∈ C
-    · have hint : Integrable (fun y ↦ K x y (u y)) ν :=
-        ((hKc.comp (continuous_const.prodMk continuous_id)).clm_apply
-          hu).integrable_of_hasCompactSupport (HasCompactSupport.intro' hL hLc (hy_in x hx))
-      exact (((v x).restrictScalars ℝ).integral_comp_comm hint).symm
+    · by_cases hv0 : v x = 0
+      · simp [hv0]
+      · have hint : Integrable (fun y ↦ K x y (u y)) ν :=
+          ((hKc.comp (continuous_const.prodMk continuous_id)).clm_apply
+            hu).integrable_of_hasCompactSupport
+            (HasCompactSupport.intro' hL hLc fun y hy ↦ (hy_in x hx y hy).resolve_left hv0)
+        exact (((v x).restrictScalars ℝ).integral_comp_comm hint).symm
     · exact (hx_out x hx).elim (fun hv0 ↦ by simp [hv0]) fun hK0 ↦ by simp [hK0]
   have hRHS : (∫ y, ∫ x, v x (K x y (u y)) ∂μ ∂ν) =
       ∫ y, (∫ x, (v x).comp (K x y) ∂μ) (u y) ∂ν := by
     refine integral_congr_ae (.of_forall fun y ↦ ?_)
     by_cases hy : y ∈ L
-    · have hint : Integrable (fun x ↦ (v x).comp (K x y)) μ :=
-        (hcont_comp.comp (continuous_id.prodMk continuous_const)).integrable_of_hasCompactSupport
-          (HasCompactSupport.intro' hC hCc (hx_in y hy))
-      exact ((ContinuousLinearMap.apply 𝕜 M (u y)).restrictScalars ℝ).integral_comp_comm hint
+    · by_cases hu0 : u y = 0
+      · simp [hu0]
+      · have hint : Integrable (fun x ↦ (v x).comp (K x y)) μ :=
+          (hcont_comp.comp (continuous_id.prodMk continuous_const)).integrable_of_hasCompactSupport
+            (HasCompactSupport.intro' hC hCc fun x hx ↦ (hx_in y hy x hx).resolve_left hu0)
+        exact ((ContinuousLinearMap.apply 𝕜 M (u y)).restrictScalars ℝ).integral_comp_comm hint
     · refine (hy_out y hy).elim (fun hu0 ↦ by simp [hu0]) fun hc0 ↦ ?_
       have h0 : ∀ x, v x (K x y (u y)) = 0 := fun x ↦ by
         simpa using ContinuousLinearMap.ext_iff.mp (hc0 x) (u y)
@@ -211,15 +217,13 @@ theorem HasProperInputSupport.integral_apply_integral_swap {X Y 𝕜 V W M : Typ
     (hvc : HasCompactSupport v) (μ : Measure X := by volume_tac)
     (ν : Measure Y := by volume_tac) [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν] :
     (∫ x, v x (∫ y, K x y (u y) ∂ν) ∂μ) = ∫ y, (∫ x, (v x).comp (K x y) ∂μ) (u y) ∂ν := by
-  obtain ⟨L, hL, hLc, hKL⟩ := hK.exists_isCompact_isClosed_forall_eq_zero hvc
+  obtain ⟨L, hL, hLc, hKL⟩ :=
+    hK.exists_isCompact_isClosed_forall_eq_zero_or_eq_zero_of_hasCompactSupport hvc
   exact integral_apply_integral_swap_of_isCompact_isClosed hKc hu hv μ ν hvc (isClosed_tsupport v)
     hL hLc (fun x hx ↦ Or.inl (image_eq_zero_of_notMem_tsupport hx))
-    (fun x hx y hy ↦ by simp [hKL x hx y hy])
-    (fun y hy ↦ Or.inr fun x ↦ by
-      by_cases hx : x ∈ tsupport v
-      · simp [hKL x hx y hy]
-      · simp [image_eq_zero_of_notMem_tsupport hx])
-    (fun _ _ x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx])
+    (fun x _ y hy ↦ (hKL y hy x).elim (fun h ↦ Or.inr (by simp [h])) Or.inl)
+    (fun y hy ↦ Or.inr fun x ↦ (hKL y hy x).elim (fun h ↦ by simp [h]) (fun h ↦ by simp [h]))
+    (fun _ _ x hx ↦ Or.inr (by simp [image_eq_zero_of_notMem_tsupport hx]))
 
 /-- **Transposition identity under proper output support.** Symmetrically, if `K` is continuous with
 proper output support, `W` is complete, `μ` and `ν` are finite on compact subsets, and
@@ -237,15 +241,13 @@ theorem HasProperOutputSupport.integral_apply_integral_swap {X Y 𝕜 V W M : Ty
     {v : X → W →L[𝕜] M} (hv : Continuous v) (μ : Measure X := by volume_tac)
     (ν : Measure Y := by volume_tac) [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν] :
     (∫ x, v x (∫ y, K x y (u y) ∂ν) ∂μ) = ∫ y, (∫ x, (v x).comp (K x y) ∂μ) (u y) ∂ν := by
-  obtain ⟨C, hC, hCc, hCK⟩ := hK.exists_isCompact_isClosed_forall_eq_zero huc
+  obtain ⟨C, hC, hCc, hCK⟩ :=
+    hK.exists_isCompact_isClosed_forall_eq_zero_or_eq_zero_of_hasCompactSupport huc
   exact integral_apply_integral_swap_of_isCompact_isClosed hKc hu hv μ ν hC hCc
     huc (isClosed_tsupport u)
-    (fun x hx ↦ Or.inr fun y ↦ by
-      by_cases hy : y ∈ tsupport u
-      · simp [hCK x hx y hy]
-      · simp [image_eq_zero_of_notMem_tsupport hy])
-    (fun _ _ y hy ↦ by simp [image_eq_zero_of_notMem_tsupport hy])
+    (fun x hx ↦ Or.inr fun y ↦ (hCK x hx y).elim (fun h ↦ by simp [h]) (fun h ↦ by simp [h]))
+    (fun _ _ y hy ↦ Or.inr (by simp [image_eq_zero_of_notMem_tsupport hy]))
     (fun y hy ↦ Or.inl (image_eq_zero_of_notMem_tsupport hy))
-    (fun y hy x hx ↦ by simp [hCK x hx y hy])
+    (fun y _ x hx ↦ (hCK x hx y).elim (fun h ↦ Or.inr (by simp [h])) Or.inl)
 
 end TauCeti

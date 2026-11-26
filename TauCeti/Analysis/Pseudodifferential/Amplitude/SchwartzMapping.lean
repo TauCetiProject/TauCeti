@@ -52,8 +52,8 @@ theorem HasProperSupport.exists_schwartzMap_quantizeAmplitudeValue
     ∃ v : 𝓢(CoordinateSpace n, W),
       (v : CoordinateSpace n → W) = quantizeAmplitudeValue a.coefficient u ∧
       HasCompactSupport (v : CoordinateSpace n → W) := by
-  have hsupp := ha.out.hasCompactSupport_quantizeAmplitudeValue hu
-  have hsmooth := ha.inp.contDiff_quantizeAmplitudeValue u
+  have hsupp := ha.hasProperOutputSupport.hasCompactSupport_quantizeAmplitudeValue hu
+  have hsmooth := ha.hasProperInputSupport.contDiff_quantizeAmplitudeValue u
   have hv : ((hsupp.toSchwartzMap hsmooth : 𝓢(CoordinateSpace n, W)) : CoordinateSpace n → W) =
       quantizeAmplitudeValue a.coefficient u :=
     funext (HasCompactSupport.toSchwartzMap_toFun hsupp hsmooth)

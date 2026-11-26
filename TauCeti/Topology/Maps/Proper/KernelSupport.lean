@@ -87,11 +87,11 @@ theorem hasProperOutputSupport_iff_isProperMap {K : X → Y → M} :
     HasProperOutputSupport K ↔ IsProperMap fun p : tsupport (uncurry K) ↦ p.val.2 :=
   Iff.rfl
 
-theorem HasProperSupport.inp {K : X → Y → M} (hK : HasProperSupport K) :
+theorem HasProperSupport.hasProperInputSupport {K : X → Y → M} (hK : HasProperSupport K) :
     HasProperInputSupport K :=
   hK.1
 
-theorem HasProperSupport.out {K : X → Y → M} (hK : HasProperSupport K) :
+theorem HasProperSupport.hasProperOutputSupport {K : X → Y → M} (hK : HasProperSupport K) :
     HasProperOutputSupport K :=
   hK.2
 
@@ -195,14 +195,29 @@ theorem HasProperOutputSupport.exists_isCompact_isClosed_forall_eq_zero {K : X �
   obtain ⟨C, hC, hCc, hCK⟩ := hK.flip.exists_isCompact_isClosed_forall_eq_zero hL
   exact ⟨C, hC, hCc, fun x hx y hy ↦ hCK y hy x hx⟩
 
-/-- If `K` has proper output support and `u : Y → N` has compact support, there is a compact set
-`C ⊆ X` outside which `K x y = 0` or `u y = 0` for every `y`. -/
-theorem HasProperOutputSupport.exists_isCompact_forall_eq_zero_or_eq_zero_of_hasCompactSupport
+namespace HasProperOutputSupport
+
+/-- If `K` has proper output support and `u : Y → N` has compact support, there is a compact closed
+set `C ⊆ X` outside which `K x y = 0` or `u y = 0` for every `y`. -/
+theorem exists_isCompact_isClosed_forall_eq_zero_or_eq_zero_of_hasCompactSupport
     {K : X → Y → M} (hK : HasProperOutputSupport K) {u : Y → N} (hu : HasCompactSupport u) :
-    ∃ C : Set X, IsCompact C ∧ ∀ x ∉ C, ∀ y, K x y = 0 ∨ u y = 0 := by
-  obtain ⟨C, hC, -, hCK⟩ := hK.exists_isCompact_isClosed_forall_eq_zero hu
-  exact ⟨C, hC, fun x hx y ↦ by_cases (fun hy : y ∈ tsupport u ↦ Or.inl (hCK x hx y hy))
+    ∃ C : Set X, IsCompact C ∧ IsClosed C ∧ ∀ x ∉ C, ∀ y, K x y = 0 ∨ u y = 0 := by
+  obtain ⟨C, hC, hCc, hCK⟩ := hK.exists_isCompact_isClosed_forall_eq_zero hu
+  exact ⟨C, hC, hCc, fun x hx y ↦ by_cases (fun hy : y ∈ tsupport u ↦ Or.inl (hCK x hx y hy))
     fun hy ↦ Or.inr (image_eq_zero_of_notMem_tsupport hy)⟩
+
+end HasProperOutputSupport
+
+namespace HasProperInputSupport
+
+/-- If `K` has proper input support and `v : X → N` has compact support, there is a compact closed
+set `L ⊆ Y` outside which `K x y = 0` or `v x = 0` for every `x`. -/
+theorem exists_isCompact_isClosed_forall_eq_zero_or_eq_zero_of_hasCompactSupport
+    {K : X → Y → M} (hK : HasProperInputSupport K) {v : X → N} (hv : HasCompactSupport v) :
+    ∃ L : Set Y, IsCompact L ∧ IsClosed L ∧ ∀ y ∉ L, ∀ x, K x y = 0 ∨ v x = 0 :=
+  hK.flip.exists_isCompact_isClosed_forall_eq_zero_or_eq_zero_of_hasCompactSupport hv
+
+end HasProperInputSupport
 
 /-- Characterization of proper input support when `X` is weakly locally compact and `Y` is
 Hausdorff: for every compact `C ⊆ X`, `K x y` vanishes for `x ∈ C` and `y` outside some compact

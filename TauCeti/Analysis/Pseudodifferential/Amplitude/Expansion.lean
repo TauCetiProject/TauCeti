@@ -175,7 +175,7 @@ theorem coefficient_leftTerm (a : Amplitude n V W m) (k : ℕ) (x ξ : Coordinat
       exact List.Perm.cons _ List.perm_middle.symm
 
 @[simp]
-theorem leftTerm_zero_amp (k : ℕ) : (0 : Amplitude n V W m).leftTerm k = 0 := by
+theorem zero_leftTerm (k : ℕ) : (0 : Amplitude n V W m).leftTerm k = 0 := by
   ext1
   funext ⟨x, ξ⟩
   simp [coefficient_leftTerm, iteratedFDerivAlong_zero]
