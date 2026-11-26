@@ -24,8 +24,6 @@ under `T` read backwards, so every label has the same entropy rate under `T` and
 
 ## Main results
 
-* `TauCeti.partitionEntropyRate_comp_le`: coarsening a countable label does not increase its
-  entropy rate.
 * `TauCeti.countablePartitionEntropy_iteratedPartitionLabel_iterate`:
   `H(join^{T^[k]}_m (join^T_k a)) = H(join^T_{m * k} a)`, for every measure.
 * `TauCeti.partitionEntropyRate_iterate_iteratedPartitionLabel`:
@@ -35,12 +33,9 @@ under `T` read backwards, so every label has the same entropy rate under `T` and
 * `TauCeti.partitionEntropyRate_symm`, `TauCeti.measureEntropy_symm`: for a measure-preserving
   measurable equivalence `e`, `h_μ(e.symm, a) = h_μ(e, a)` and `h_μ(e.symm) = h_μ(e)`.
 
-These are item 2 of §4.1 of the ClassicalErgodicTheory roadmap.
-
 ## References
 
-* O. Sarig, *Lecture Notes on Ergodic Theory*, 2023, Problems 4.4–4.5, p. 130 (the locator given
-  by the ClassicalErgodicTheory roadmap).
+* O. Sarig, *Lecture Notes on Ergodic Theory*, 2023, Problems 4.4–4.5, p. 130.
 -/
 
 public section
@@ -50,15 +45,7 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {X ι ι' : Type*} {mX : MeasurableSpace X} {μ : Measure X}
-
-/-- **Coarsening.** Coarsening a countable label does not increase its entropy rate, for every
-measure and every map. -/
-theorem partitionEntropyRate_comp_le [Countable ι] (T : X → X) (a : X → ι) (f : ι → ι') :
-    partitionEntropyRate μ T (f ∘ a) ≤ partitionEntropyRate μ T a := by
-  simp only [partitionEntropyRate_def, iteratedPartitionLabel_comp]
-  gcongr
-  exact countablePartitionEntropy_comp_le _ _
+variable {X ι : Type*} {mX : MeasurableSpace X} {μ : Measure X}
 
 /-- The length-`m` itinerary under `T^[k]` of the length-`k` itinerary of `a` under `T` is the
 length-`m * k` itinerary of `a` under `T`, cut into `m` blocks of length `k`. -/
@@ -70,29 +57,15 @@ theorem iteratedPartitionLabel_iterate_iteratedPartitionLabel (T : X → X) (a :
   simp only [iteratedPartitionLabel_apply, Function.comp_apply, finProdFinEquiv_apply_val,
     ← Function.iterate_mul, ← Function.iterate_add_apply]
 
-/-- Cutting a word of length `m * k` into `m` blocks of length `k` loses nothing. -/
-private theorem injective_blocks (m k : ℕ) :
-    Function.Injective fun (w : Fin (m * k) → ι) (j : Fin m) (i : Fin k) ↦
-      w (finProdFinEquiv (j, i)) := fun w w' h ↦ funext fun p ↦ by
-  have := congrFun (congrFun h (finProdFinEquiv.symm p).1) (finProdFinEquiv.symm p).2
-  simp only [Prod.mk.eta, Equiv.apply_symm_apply] at this
-  exact this
-
 /-- The length-`m` itinerary under `T^[k]` of the length-`k` itinerary of `a` under `T` has the
 entropy of the length-`m * k` itinerary of `a` under `T`, for every measure. -/
 theorem countablePartitionEntropy_iteratedPartitionLabel_iterate (T : X → X) (a : X → ι)
     (k m : ℕ) :
     countablePartitionEntropy μ (iteratedPartitionLabel T^[k] (iteratedPartitionLabel T a k) m) =
       countablePartitionEntropy μ (iteratedPartitionLabel T a (m * k)) := by
-  rw [iteratedPartitionLabel_iterate_iteratedPartitionLabel,
-    countablePartitionEntropy_comp_of_injective _ (injective_blocks m k)]
-
-/-- `k * (x / (N * k)) = x / N` in `ℝ≥0∞` for natural numbers `N` and `k ≠ 0`. -/
-private theorem natCast_mul_div_mul_natCast (x : ℝ≥0∞) (N : ℕ) {k : ℕ} (hk : k ≠ 0) :
-    (k : ℝ≥0∞) * (x / ((N * k : ℕ) : ℝ≥0∞)) = x / N := by
-  rw [Nat.cast_mul, mul_comm (N : ℝ≥0∞), ENNReal.div_eq_inv_mul, ENNReal.div_eq_inv_mul,
-    ENNReal.mul_inv (by simp [hk]) (by simp), ← mul_assoc, ← mul_assoc,
-    ENNReal.mul_inv_cancel (by simp [hk]) (by simp), one_mul]
+  rw [iteratedPartitionLabel_iterate_iteratedPartitionLabel]
+  exact countablePartitionEntropy_comp_of_injective _
+    ((Equiv.curry _ _ _).injective.comp finProdFinEquiv.surjective.injective_comp_right)
 
 variable [MeasurableSpace ι] [MeasurableSingletonClass ι] [Countable ι] {T : X → X}
 
@@ -112,8 +85,9 @@ theorem partitionEntropyRate_iterate_iteratedPartitionLabel [IsZeroOrProbability
       ⨅ m : ℕ, k * (H ((m + 1) * k) / (((m + 1) * k : ℕ) : ℝ≥0∞)) := by
     rw [partitionEntropyRate_def]
     refine iInf_congr fun m ↦ ?_
-    rw [countablePartitionEntropy_iteratedPartitionLabel_iterate,
-      natCast_mul_div_mul_natCast _ (m + 1) hk, Nat.cast_succ]
+    rw [countablePartitionEntropy_iteratedPartitionLabel_iterate, Nat.cast_mul, ← mul_div_assoc,
+      mul_comm (k : ℝ≥0∞), ENNReal.mul_div_mul_right _ _ (by simp [hk])
+        (ENNReal.natCast_ne_top k), Nat.cast_succ]
   rw [hrate]
   refine le_antisymm ?_ (le_iInf fun m ↦ ?_)
   · have hlim := (tendsto_partitionEntropyRate hT ha).comp
@@ -182,11 +156,8 @@ theorem partitionEntropyRate_symm (e : X ≃ᵐ X) (he : MeasurePreserving e μ 
   have h := iteratedPartitionLabel_symm_comp_iterate e.toEquiv a n
   rw [← countablePartitionEntropy_comp_of_measurePreserving (he.iterate n)
       (measurable_iteratedPartitionLabel e.symm.measurable ha _)]
-  change countablePartitionEntropy μ (iteratedPartitionLabel e.toEquiv.symm a (n + 1) ∘
-    e.toEquiv^[n]) = _
-  rw [h, countablePartitionEntropy_comp_of_injective _ fun w w' hw ↦ ?_]
-  · rfl
-  · exact funext fun i ↦ by simpa using congrFun hw (Fin.rev i)
+  rw [e.coe_toEquiv_symm, e.coe_toEquiv] at h
+  rw [h, countablePartitionEntropy_comp_of_injective _ Fin.rev_surjective.injective_comp_right]
 
 /-- **Entropy of the inverse.** A measure-preserving measurable equivalence has the same
 Kolmogorov–Sinai entropy as its inverse: `h_μ(e.symm) = h_μ(e)`. -/
