@@ -89,9 +89,6 @@ private theorem symmWeyl_mem_cubicFixed (N : ℕ) (a : Fin N → ZMod 3) :
 private noncomputable def symmWeylFixed (N : ℕ) (a : Fin N → ZMod 3) : cubicFixed N :=
   ⟨symmWeyl N a, symmWeyl_mem_cubicFixed N a⟩
 
-private theorem eq_zero_of_neg_eq_self {N : ℕ} {a : Fin N → ZMod 3} (h : -a = a) : a = 0 :=
-  funext fun i ↦ ((ZMod.neg_eq_self_iff (a i)).mp (congrFun h i)).resolve_right (by omega)
-
 private noncomputable def cubicOrbitVec (N : ℕ) : CubicOrbit N → cubicFixed N :=
   Quotient.lift
     (fun a ↦ if a = 0 then 1 else symmWeylFixed N a)
@@ -118,7 +115,8 @@ private theorem repr_cubicOrbitVec (N : ℕ) (q : CubicOrbit N) (a : Fin N → Z
     simp only [cubicOrbitVec, Quotient.lift_mk, ↓reduceIte, OneMemClass.coe_one]
     rw [← of_one, TwistedMonoidAlgebra.repr_of, Finsupp.single_apply]
     simp only [h1, h0]
-  · have hne : x ≠ -x := fun h ↦ hx (eq_zero_of_neg_eq_self h.symm)
+  · have hne : x ≠ -x := fun h ↦ hx (funext fun i ↦
+      (ZMod.add_self_eq_zero_iff_eq_zero (by decide)).mp (eq_neg_iff_add_eq_zero.mp (congrFun h i)))
     have hrepr (y : Fin N → ZMod 3) :
         (TwistedMonoidAlgebra.basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)).repr
             (weyl N y) (ofAdd a) = if y = a then 1 else 0 := by
@@ -234,7 +232,9 @@ theorem cubicFixedBasis_repr (N : ℕ) (x : cubicFixed N) (a : Fin N → ZMod 3)
   have hfix : Function.fixedPoints σ = {1} := by
     ext a
     simp only [Function.mem_fixedPoints_iff, σ, Set.mem_singleton_iff]
-    exact ⟨fun h ↦ toAdd.injective (eq_zero_of_neg_eq_self (congrArg toAdd h)),
+    exact ⟨fun h ↦ toAdd.injective (funext fun i ↦
+        (ZMod.add_self_eq_zero_iff_eq_zero (by decide)).mp
+          (neg_eq_iff_add_eq_zero.mp (congrFun (congrArg toAdd h) i))),
       fun h ↦ by simp [h]⟩
   have htrθ : _root_.LinearMap.trace ℂ (CubicTorus N) θ = 1 := by
     rw [_root_.LinearMap.trace_eq_matrix_trace ℂ b θ, hmat, Matrix.trace_permutation, hfix,
