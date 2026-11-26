@@ -29,6 +29,13 @@ operator between such bundles has a formal adjoint, again a differential operato
 holds for weighted densities `e^φ dV`
 (`LinearMap.isFormalTranspose_vectorFieldDerivation_withDensity_exp`).
 
+Since these formal adjoints exist and are unique, the formal adjoint `P ↦ P*` with respect to `dV`
+is an involution on differential operators
+(`LinearMap.formalAdjoint_formalAdjoint_riemannianVolume`), additive
+(`LinearMap.formalAdjoint_riemannianVolume_add`, `LinearMap.formalAdjoint_riemannianVolume_sub`)
+and reverses composition:
+`(R ∘ P)* = P* ∘ R*` (`LinearMap.formalAdjoint_riemannianVolume_comp`).
+
 ## The argument
 
 Formal adjoints glue (`LinearMap.exists_isFormalAdjoint_of_forall_exists_nhds`), exactly as formal
@@ -446,6 +453,83 @@ theorem formalAdjoint_riemannianVolume_mem_differentialOperators
   have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
     (V := V)
   rwa [h.formalAdjoint_eq]
+
+/-! ### The algebra of formal adjoints -/
+
+/-- With respect to the Riemannian volume, taking the formal adjoint of a differential operator
+twice gives it back. -/
+theorem formalAdjoint_formalAdjoint_riemannianVolume
+    (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m) :
+    (P.formalAdjoint (riemannianVolume I M)).formalAdjoint (riemannianVolume I M) = P := by
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
+    (V := V)
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F')
+    (V := W)
+  exact (isFormalAdjoint_formalAdjoint_riemannianVolume_of_mem_differentialOperators
+    hP).formalAdjoint_formalAdjoint
+
+variable {P₁ P₂ : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯} {k : ℕ}
+
+/-- With respect to the Riemannian volume, the formal adjoint of a sum of differential operators
+is the sum of their formal adjoints. -/
+theorem formalAdjoint_riemannianVolume_add
+    (hP₁ : P₁ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
+    (hP₂ : P₂ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ k) :
+    (P₁ + P₂).formalAdjoint (riemannianVolume I M) =
+      P₁.formalAdjoint (riemannianVolume I M) + P₂.formalAdjoint (riemannianVolume I M) := by
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
+    (V := V)
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F')
+    (V := W)
+  exact ((isFormalAdjoint_formalAdjoint_riemannianVolume_of_mem_differentialOperators hP₁).add
+    (isFormalAdjoint_formalAdjoint_riemannianVolume_of_mem_differentialOperators hP₂)
+    (tsupport_differentialOperators_section_apply_subset hP₁)
+    (tsupport_differentialOperators_section_apply_subset hP₂)
+    (tsupport_differentialOperators_section_apply_subset
+      (formalAdjoint_riemannianVolume_mem_differentialOperators hP₁))
+    (tsupport_differentialOperators_section_apply_subset
+      (formalAdjoint_riemannianVolume_mem_differentialOperators hP₂))).formalAdjoint_eq
+
+/-- With respect to the Riemannian volume, the formal adjoint of a difference of differential
+operators is the difference of their formal adjoints. -/
+theorem formalAdjoint_riemannianVolume_sub
+    (hP₁ : P₁ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
+    (hP₂ : P₂ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ k) :
+    (P₁ - P₂).formalAdjoint (riemannianVolume I M) =
+      P₁.formalAdjoint (riemannianVolume I M) - P₂.formalAdjoint (riemannianVolume I M) := by
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
+    (V := V)
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F')
+    (V := W)
+  exact ((isFormalAdjoint_formalAdjoint_riemannianVolume_of_mem_differentialOperators hP₁).sub
+    (isFormalAdjoint_formalAdjoint_riemannianVolume_of_mem_differentialOperators hP₂)
+    (tsupport_differentialOperators_section_apply_subset hP₁)
+    (tsupport_differentialOperators_section_apply_subset hP₂)
+    (tsupport_differentialOperators_section_apply_subset
+      (formalAdjoint_riemannianVolume_mem_differentialOperators hP₁))
+    (tsupport_differentialOperators_section_apply_subset
+      (formalAdjoint_riemannianVolume_mem_differentialOperators hP₂))).formalAdjoint_eq
+
+/-- **Formal adjunction reverses composition.** With respect to the Riemannian volume, the formal
+adjoint of a composition of differential operators between smooth Riemannian vector bundles of
+finite rank is the composition of their formal adjoints in the reverse order. -/
+theorem formalAdjoint_riemannianVolume_comp {F'' : Type*} [NormedAddCommGroup F'']
+    [NormedSpace ℝ F''] [FiniteDimensional ℝ F''] {U : M → Type*}
+    [TopologicalSpace (TotalSpace F'' U)] [∀ x, NormedAddCommGroup (U x)]
+    [∀ x, InnerProductSpace ℝ (U x)] [FiberBundle F'' U] [VectorBundle ℝ F'' U]
+    [ContMDiffVectorBundle ∞ F'' U I] [IsContMDiffRiemannianBundle I ∞ F'' U]
+    {R : Cₛ^∞⟮I; F', W⟯ →ₗ[ℝ] Cₛ^∞⟮I; F'', U⟯}
+    (hR : R ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F', W⟯ Cₛ^∞⟮I; F'', U⟯ k)
+    (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m) :
+    (R ∘ₗ P).formalAdjoint (riemannianVolume I M) =
+      P.formalAdjoint (riemannianVolume I M) ∘ₗ R.formalAdjoint (riemannianVolume I M) := by
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
+    (V := V)
+  exact ((isFormalAdjoint_formalAdjoint_riemannianVolume_of_mem_differentialOperators hR).comp
+    (isFormalAdjoint_formalAdjoint_riemannianVolume_of_mem_differentialOperators hP)
+    (tsupport_differentialOperators_section_apply_subset hP)
+    (tsupport_differentialOperators_section_apply_subset
+      (formalAdjoint_riemannianVolume_mem_differentialOperators hR))).formalAdjoint_eq
 
 end RiemannianVolume
 
