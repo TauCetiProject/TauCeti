@@ -47,6 +47,10 @@ used.
 * `VectorFourier.fourierIntegral_fourierIntegral_indicator_addSubgroup`: Fourier inversion for the
   indicator of `U`, when `U` is the annihilator of its annihilator and the two volumes are
   reciprocal.
+* `VectorFourier.fourierIntegral_fourierIntegral_of_periodic`: under the same duality and volume
+  hypotheses, Fourier inversion `𝓕 (𝓕 f) v = f (-v)` for every integrable `U`-periodic `f`.
+* `Fourier.fourierIntegral_eq_vectorFourierIntegral`: the transform `Fourier.fourierIntegral` on
+  the ring `R` itself is the case `L = LinearMap.mul R R`, so the results above apply to it.
 
 ## References
 
@@ -57,6 +61,7 @@ used.
 public section
 
 open MeasureTheory Function Set
+open scoped ENNReal
 
 namespace VectorFourier
 
@@ -186,4 +191,83 @@ theorem fourierIntegral_fourierIntegral_indicator_addSubgroup [MeasurableAdd V]
     L.flip hA, le_antisymm hdual (U.le_characterAnnihilator_characterAnnihilator_flip ψ L),
     smul_smul, mul_comm, hvol, one_smul]
 
+section Inversion
+
+variable [TopologicalSpace R] [IsTopologicalRing R] [TopologicalSpace V] [BorelSpace V]
+  [MeasurableAdd V] [μ.IsAddRightInvariant] [SigmaFinite μ] [TopologicalSpace W]
+  [MeasurableSpace W] [BorelSpace W] [MeasurableAdd W] [SecondCountableTopologyEither W V]
+  (ν : Measure W) [ν.IsAddRightInvariant] [SigmaFinite ν] [CompleteSpace E]
+
+/-- **Fourier inversion for a periodic function.** Let `μ` on `V` and `ν` on `W` be
+right-invariant, let `U` be an additive subgroup of `V` and `A = U.characterAnnihilator ψ L`. If
+the annihilator of `A` for the transposed pairing `L.flip` is contained in `U` and the volumes
+satisfy `μ.real U * ν.real A = 1`, then every integrable `U`-periodic `f` satisfies
+`𝓕 (𝓕 f) v = f (-v)`, the first transform taken for `(μ, L)` and the second for `(ν, L.flip)`.
+
+On a nonarchimedean local field every locally constant compactly supported function is periodic
+under a compact open subgroup, so this is Fourier inversion on its Schwartz–Bruhat space for the
+self-dual measure. -/
+theorem fourierIntegral_fourierIntegral_of_periodic (hψ : Continuous ψ)
+    (hL : Continuous fun p : V × W ↦ L p.1 p.2) {U : AddSubgroup V}
+    (hU : MeasurableSet (U : Set V)) (hA : MeasurableSet (U.characterAnnihilator ψ L : Set W))
+    (hdual : (U.characterAnnihilator ψ L).characterAnnihilator ψ L.flip ≤ U)
+    (hvol : μ.real U * ν.real (U.characterAnnihilator ψ L) = 1) {f : V → E}
+    (hf : Integrable f μ) (hper : ∀ u ∈ U, Periodic f u) (v : V) :
+    fourierIntegral ψ ν L.flip (fourierIntegral ψ μ L f) v = f (-v) := by
+  set A := U.characterAnnihilator ψ L
+  have hAfin : ν A ≠ ∞ := fun h ↦ by simp [Measure.real, h] at hvol
+  -- The test function `g = ψ (-L v ·) 1_A`, modulated so that its transform is a translate.
+  set g : W → ℂ := fun ξ ↦ ψ (L.flip ξ (-v)) • (A : Set W).indicator (fun _ ↦ (1 : ℂ)) ξ
+  have hg : Integrable g ν := by
+    have hg' : g = (A : Set W).indicator fun ξ ↦ (ψ (L.flip ξ (-v)) : ℂ) := by
+      ext ξ
+      by_cases hξ : ξ ∈ A <;> simp [g, hξ, Circle.smul_def]
+    rw [hg', integrable_indicator_iff hA]
+    refine Measure.integrableOn_of_bounded (M := 1) hAfin ?_ (by simp)
+    exact (continuous_subtypeVal.comp
+      (hψ.comp (hL.comp (continuous_const.prodMk continuous_id)))).aestronglyMeasurable
+  -- Since `𝓕 f` vanishes off `A`, the outer transform at `v` is the pairing of `𝓕 f` with `g`.
+  have hpair : fourierIntegral ψ ν L.flip (fourierIntegral ψ μ L f) v =
+      ∫ ξ, (ContinuousLinearMap.lsmul ℂ ℂ).flip (fourierIntegral ψ μ L f ξ) (g ξ) ∂ν := by
+    rw [fourierIntegral]
+    congr 1 with ξ
+    by_cases hξ : ξ ∈ A
+    · simp [g, hξ, Circle.smul_def]
+    · have h0 := notMem_support.mp fun h ↦ hξ (support_fourierIntegral_subset ψ μ L hper h)
+      simp [h0]
+  -- The transform of `g` is `ν.real A` times the indicator of `U - v`, as `A`'s annihilator is `U`.
+  have hgT (x : V) : fourierIntegral ψ ν L.flip g x =
+      (U : Set V).indicator (fun _ ↦ ν.real A • (1 : ℂ)) (x + v) := by
+    rw [congrFun (fourierIntegral_char_smul ψ ν L.flip _ (-v)) x,
+      fourierIntegral_indicator_addSubgroup ψ ν L.flip hA, sub_neg_eq_add,
+      le_antisymm hdual (U.le_characterAnnihilator_characterAnnihilator_flip ψ L)]
+  -- On `U - v`, periodicity gives `f x = f (-v)`.
+  have hint (x : V) : (ContinuousLinearMap.lsmul ℂ ℂ).flip (f x)
+      (fourierIntegral ψ ν L.flip g x) =
+      ((fun x ↦ x + v) ⁻¹' (U : Set V)).indicator (fun _ ↦ ν.real A • f (-v)) x := by
+    rw [hgT]
+    by_cases hx : x + v ∈ U
+    · have hfx : f x = f (-v) := by simpa using hper _ hx (-v)
+      simp [hx, hfx]
+    · simp [hx]
+  rw [hpair, integral_bilin_fourierIntegral_eq_flip _ hψ hL hf hg]
+  simp_rw [hint]
+  rw [integral_indicator_const _ (hU.preimage (measurable_add_const v)), measureReal_def,
+    measure_preimage_add_right, ← measureReal_def, smul_smul, hvol, one_smul]
+
+end Inversion
+
 end VectorFourier
+
+namespace Fourier
+
+variable {R E : Type*} [CommRing R] [MeasurableSpace R] [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- The Fourier transform of a function on the ring `R` is the transform for the multiplication
+pairing `LinearMap.mul R R`. This holds by definition. -/
+theorem fourierIntegral_eq_vectorFourierIntegral (ψ : AddChar R Circle) (μ : Measure R)
+    (f : R → E) :
+    fourierIntegral ψ μ f = VectorFourier.fourierIntegral ψ μ (LinearMap.mul R R) f :=
+  rfl
+
+end Fourier
