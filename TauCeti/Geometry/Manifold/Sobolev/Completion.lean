@@ -13,7 +13,6 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Sc
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
-import TauCeti.Analysis.Normed.Operator.Compact.Pi
 import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
 import TauCeti.Geometry.Manifold.Sobolev.ChartReading
 
@@ -48,9 +47,9 @@ extension is unique, and extensions compose.
 * **Rellich's theorem.** For `r < s` the inclusion `H^s(M) ⊆ H^r(M)` is compact
   (`TauCeti.isCompactOperator_chartSobolevInclusion`). Every component of an element of `H^s(M)` is
   fixed by a Schwartz function equal to `1` on the support of its cutoff
-  (`TauCeti.smulLeftCLM_apply_of_eqOn_one`), so componentwise the inclusion is multiplication by
-  that function, compact by the Euclidean Rellich theorem for a common compact support
-  (`BesselPotentialSpace.isCompactOperator_inclusion_comp_smulLeftCLM`).
+  (`TauCeti.smulLeftCLM_chartSobolevSpace_apply_of_eqOn_one`), so componentwise the inclusion is
+  multiplication by that function, compact by the Euclidean Rellich theorem for a common compact
+  support in a finite Hilbert sum (`BesselPotentialSpace.isCompactOperator_piLp_of_smulLeftCLM_eq`).
 
 Such families of cutoffs exist on every compact manifold
 (`IsCompact.exists_sum_cutoffPullback_eq_one`).
@@ -131,6 +130,21 @@ theorem isClosed_chartSobolevSpace (s : ℝ) :
     IsClosed (chartSobolevSpace he ψ s : Set (PiLp 2 fun _ : ι ↦ H^{s}(CoordinateSpace n))) :=
   Submodule.isClosed_topologicalClosure _
 
+/-- The elements of `H^s(M)` are the limits in `⨁ᵢ H^s(ℝⁿ)` of chart readings of smooth
+functions. -/
+theorem mem_chartSobolevSpace_iff {s : ℝ} {x : PiLp 2 fun _ : ι ↦ H^{s}(CoordinateSpace n)} :
+    x ∈ chartSobolevSpace he ψ s ↔ x ∈ closure (range (chartReading he ψ s)) := by
+  rw [← SetLike.mem_coe, chartSobolevSpace, Submodule.topologicalClosure_coe, LinearMap.coe_range]
+
+/-- `H^s(M)` is the smallest closed subspace of `⨁ᵢ H^s(ℝⁿ)` containing the chart readings of all
+smooth functions. -/
+theorem chartSobolevSpace_le_of_isClosed {s : ℝ}
+    {S : Submodule ℂ (PiLp 2 fun _ : ι ↦ H^{s}(CoordinateSpace n))}
+    (hS : IsClosed (S : Set (PiLp 2 fun _ : ι ↦ H^{s}(CoordinateSpace n))))
+    (h : ∀ u, chartReading he ψ s u ∈ S) : chartSobolevSpace he ψ s ≤ S :=
+  Submodule.topologicalClosure_minimal _ (LinearMap.range_le_iff_comap.2
+    (eq_top_iff.2 fun u _ ↦ h u)) hS
+
 theorem chartReading_mem_chartSobolevSpace (s : ℝ)
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     chartReading he ψ s u ∈ chartSobolevSpace he ψ s :=
@@ -206,10 +220,22 @@ theorem chartSobolevInclusion_toChartSobolevSpace (h : r ≤ s)
 /-- The inclusion `H^s(M) ⊆ H^r(M)` does not increase norms. -/
 theorem norm_chartSobolevInclusion_apply_le (h : r ≤ s) (x : chartSobolevSpace he ψ s) :
     ‖chartSobolevInclusion he ψ h x‖ ≤ ‖x‖ := by
-  rw [← Submodule.norm_coe, ← Submodule.norm_coe, PiLp.norm_eq_of_L2, PiLp.norm_eq_of_L2]
-  gcongr with i
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe x]
+  refine PiLp.norm_mono fun i ↦ ?_
   rw [coe_chartSobolevInclusion_apply]
   exact BesselPotentialSpace.norm_inclusion_apply_le h _
+
+/-- The inclusion `H^s(M) ⊆ H^s(M)` is the identity. -/
+@[simp]
+theorem chartSobolevInclusion_self : chartSobolevInclusion he ψ (le_refl s) = 1 :=
+  chartSobolevSpace_ext he ψ fun u ↦ by simp
+
+/-- The inclusions `H^s(M) ⊆ H^r(M) ⊆ H^t(M)` compose to the inclusion `H^s(M) ⊆ H^t(M)`. -/
+@[simp]
+theorem chartSobolevInclusion_comp_chartSobolevInclusion {t : ℝ} (h₁ : r ≤ s) (h₂ : t ≤ r) :
+    chartSobolevInclusion he ψ h₂ ∘L chartSobolevInclusion he ψ h₁ =
+      chartSobolevInclusion he ψ (h₂.trans h₁) :=
+  chartSobolevSpace_ext he ψ fun u ↦ by simp
 
 /-! ### The Rellich theorem -/
 
@@ -217,14 +243,14 @@ theorem norm_chartSobolevInclusion_apply_le (h : r ≤ s) (x : chartSobolevSpace
 function `θ` equals `1` on the support of `ψᵢ`, then multiplication by `θ` fixes the `i`-th
 component of every element of `H^s(M)`: it fixes the reading `ψᵢ · (u ∘ eᵢ⁻¹)` of every smooth
 `u`, and these are dense. -/
-theorem smulLeftCLM_apply_of_eqOn_one {θ : 𝓢(CoordinateSpace n, ℂ)} {i : ι}
+theorem smulLeftCLM_chartSobolevSpace_apply_of_eqOn_one {θ : 𝓢(CoordinateSpace n, ℂ)} {i : ι}
     (hθ : EqOn θ 1 (tsupport (ψ i))) (x : chartSobolevSpace he ψ s) :
     BesselPotentialSpace.smulLeftCLM s θ ((x : PiLp 2 fun _ : ι ↦ H^{s}(CoordinateSpace n)) i) =
       (x : PiLp 2 fun _ : ι ↦ H^{s}(CoordinateSpace n)) i := by
   have hclosed : IsClosed {y : PiLp 2 fun _ : ι ↦ H^{s}(CoordinateSpace n) |
       BesselPotentialSpace.smulLeftCLM s θ (y i) = y i} :=
     isClosed_eq (by fun_prop) (by fun_prop)
-  refine closure_minimal (s := range (chartReading he ψ s)) ?_ hclosed x.property
+  refine closure_minimal ?_ hclosed ((mem_chartSobolevSpace_iff he ψ).1 x.property)
   rintro _ ⟨u, rfl⟩
   refine BesselPotentialSpace.ext ?_
   rw [BesselPotentialSpace.toDistr_smulLeftCLM, chartReading_apply,
@@ -244,28 +270,12 @@ theorem isCompactOperator_chartSobolevInclusion (h : r < s) :
   -- A Schwartz function `θ` equal to `1` on the finitely many compact supports of the `ψᵢ`.
   obtain ⟨θ, -, -, hθ1⟩ := (isCompact_iUnion fun i ↦
     (ψ i).hasCompactSupport.isCompact).exists_schwartzMap_cutoff isOpen_univ (subset_univ _)
-  have hθ (i : ι) : EqOn θ 1 (tsupport (ψ i)) := fun y hy ↦
-    hθ1.self_of_nhdsSet y (mem_iUnion_of_mem i hy)
-  -- In every component, the inclusion is `w ↦ θ w`, which is compact from `H^s` to `H^r`.
-  let g (y : PiLp 2 fun _ : ι ↦ H^{s}(CoordinateSpace n)) :
-      PiLp 2 fun _ : ι ↦ H^{r}(CoordinateSpace n) :=
-    WithLp.toLp 2 fun i ↦ (BesselPotentialSpace.inclusion h.le ∘L
-      BesselPotentialSpace.smulLeftCLM s θ) (y i)
-  have hg : IsCompactOperator g :=
-    (IsCompactOperator.pi fun i ↦
-      (BesselPotentialSpace.isCompactOperator_inclusion_comp_smulLeftCLM θ h).comp_clm
-        (PiLp.proj (𝕜 := ℂ) 2 (fun _ ↦ H^{s}(CoordinateSpace n)) i)).continuous_comp
-      (PiLp.continuous_toLp 2 _)
-  have hgx (x : chartSobolevSpace he ψ s) :
-      g x = (chartSobolevInclusion he ψ h.le x : PiLp 2 fun _ : ι ↦ H^{r}(CoordinateSpace n)) :=
-    PiLp.ext fun i ↦ by
-      simp [g, smulLeftCLM_apply_of_eqOn_one he ψ (hθ i)]
-  have hcod := (hg.comp_clm (chartSobolevSpace he ψ s).subtypeL).codRestrict
-    (fun x ↦ by simp [hgx])
-    (isClosed_chartSobolevSpace he ψ r)
-  convert hcod using 1
-  ext x : 2
-  exact (hgx x).symm
+  exact BesselPotentialSpace.isCompactOperator_piLp_of_smulLeftCLM_eq θ h
+    (i := Subtype.val) continuous_subtypeVal rfl
+    (isClosed_chartSobolevSpace he ψ r).isClosedEmbedding_subtypeVal
+    (fun x i ↦ smulLeftCLM_chartSobolevSpace_apply_of_eqOn_one he ψ
+      (fun y hy ↦ hθ1.self_of_nhdsSet y (mem_iUnion_of_mem i hy)) x)
+    (coe_chartSobolevInclusion_apply he ψ h.le)
 
 /-! ### Extending operators by continuity -/
 
