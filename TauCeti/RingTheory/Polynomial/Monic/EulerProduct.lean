@@ -8,11 +8,11 @@ module
 public import Mathlib.Algebra.Polynomial.FieldDivision
 public import Mathlib.RingTheory.PowerSeries.WellKnown
 public import Mathlib.RingTheory.PrincipalIdealDomain
+public import TauCeti.RingTheory.Polynomial.Monic.Irreducible
 public import TauCeti.RingTheory.Polynomial.Monic.Squarefree
 public import TauCeti.RingTheory.PowerSeries.Expand
 import TauCeti.FieldTheory.Finite.Irreducible.Count
 import TauCeti.RingTheory.Polynomial.Factors
-import TauCeti.RingTheory.Polynomial.DegreeLT
 import TauCeti.RingTheory.Polynomial.Monic.Factorization
 import TauCeti.RingTheory.PowerSeries.Binomial
 import TauCeti.RingTheory.PowerSeries.EulerTransform
@@ -40,37 +40,26 @@ namespace TauCeti
 private abbrev MonicIrreducible (F : Type*) [Field F] :=
   {p : Polynomial F // p.Monic ∧ Irreducible p}
 
-/-- There are finitely many monic irreducibles of bounded degree over a finite field. -/
-theorem finite_monicIrreducible_natDegree_le (F : Type*) [Field F] [Finite F] (m : ℕ) :
-    {p : {p : Polynomial F // p.Monic ∧ Irreducible p} |
-      (p : Polynomial F).natDegree ≤ m}.Finite := by
-  apply (Set.finite_Iic m).preimage'
-  intro d _
-  exact ((Polynomial.finite_setOf_monic_natDegree_eq F d).preimage
-    Subtype.val_injective.injOn).subset fun p hp ↦ ⟨p.property.1, hp⟩
-
 /-- The coefficient of degree `m` sums `c ^ k` over the monic squarefree polynomials of degree
-`m`, with `k` the number of monic irreducible factors. -/
-noncomputable def weightedSquarefreeSeries (F : Type*) [Field F] [DecidableEq F] [Finite F]
+`m`, with `k` the number of monic irreducible factors. Normalization preserves this count. -/
+noncomputable def weightedSquarefreeSeries (F : Type*) [Field F] [Finite F]
     {R : Type*} [CommRing R] (c : R) : R⟦X⟧ :=
   PowerSeries.mk fun m ↦
     ∑ f ∈ (Polynomial.finite_monicSquarefreePolysOfDegree F m).toFinset,
-      c ^ (normalizedFactors f).card
+      c ^ (factors f).card
 
 /-- The degree-`m` coefficient is the finite weighted sum over monic squarefree polynomials. -/
 @[simp]
-theorem coeff_weightedSquarefreeSeries (F : Type*) [Field F] [DecidableEq F] [Finite F]
+theorem coeff_weightedSquarefreeSeries (F : Type*) [Field F] [Finite F]
     {R : Type*} [CommRing R] (c : R) (m : ℕ) :
     coeff m (weightedSquarefreeSeries F c) =
       ∑ f ∈ (Polynomial.finite_monicSquarefreePolysOfDegree F m).toFinset,
-        c ^ (normalizedFactors f).card := by
+        c ^ (factors f).card := by
   rw [weightedSquarefreeSeries, coeff_mk]
 
 variable {F : Type*} [Field F]
 
 section Weighted
-
-variable [DecidableEq F]
 
 private theorem weightedSum_eq_sum_powerset [Finite F] {R : Type*} [CommRing R]
     (c : R) (m : ℕ) :
@@ -78,7 +67,7 @@ private theorem weightedSum_eq_sum_powerset [Finite F] {R : Type*} [CommRing R]
       fun s : Finset (MonicIrreducible F) ↦ ∑ p ∈ s, (p : Polynomial F).natDegree = m),
       c ^ s.card) =
     ∑ f ∈ (Polynomial.finite_monicSquarefreePolysOfDegree F m).toFinset,
-      c ^ (normalizedFactors f).card := by
+      c ^ (factors f).card := by
   classical
   have hfac (s : Finset (MonicIrreducible F)) :
       (∏ p ∈ s, (p : Polynomial F)).Monic ∧ Squarefree (∏ p ∈ s, (p : Polynomial F)) ∧
@@ -118,11 +107,13 @@ private theorem weightedSum_eq_sum_powerset [Finite F] {R : Type*} [CommRing R]
         (congrArg (fun t : Finset (Polynomial F) ↦ ∏ p ∈ t, p) hmap).trans
           (hm.prod_toFinset_normalizedFactors_of_squarefree hsf)
   · intro s _
-    rw [(hfac s).2.2, Multiset.card_map, Finset.card_def]
+    have hcard := congrArg Multiset.card (hfac s).2.2
+    simp only [normalizedFactors, Multiset.card_map] at hcard
+    rw [hcard, Finset.card_def]
 
 /-- The weighted generating series is the coefficientwise product of
 `1 + c X ^ p.natDegree` over all monic irreducible polynomials `p`. -/
-theorem hasProd_weightedSquarefreeSeries (F : Type*) [Field F] [DecidableEq F] [Finite F]
+theorem hasProd_weightedSquarefreeSeries (F : Type*) [Field F] [Finite F]
     {R : Type*} [CommRing R] [TopologicalSpace R] (c : R) :
     HasProd (fun p : {p : Polynomial F // p.Monic ∧ Irreducible p} ↦
       1 + C c * X ^ (p : Polynomial F).natDegree) (weightedSquarefreeSeries F c) := by

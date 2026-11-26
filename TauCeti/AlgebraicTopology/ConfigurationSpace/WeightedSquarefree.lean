@@ -30,7 +30,7 @@ namespace TauCeti
 /-- For a field of cardinality `q`, the generating series with weight `-(-1)^n N`
 per irreducible factor is the coefficientwise product of `(1 - q X^r)^(-e_r(n,N))`. -/
 theorem hasProd_eulerExponent_weightedSquarefreeSeries
-    (F : Type*) [Field F] [DecidableEq F] [Finite F] (n N : ℕ) :
+    (F : Type*) [Field F] [Finite F] (n N : ℕ) :
     HasProd (fun r : ℕ+ ↦ expand r r.ne_zero
       (rescale (Nat.card F : ℤ) ↑(invOneSubPow ℤ 1 ^ eulerExponent n N r)))
       (weightedSquarefreeSeries F (-((-1 : ℤ) ^ n * N))) := by
@@ -110,7 +110,7 @@ theorem weightedSquarefreeCountPolynomial_zero (n N : ℕ) :
 /-- Evaluating the squarefree count polynomial at the cardinality of a finite field gives
 the weighted count of its monic squarefree polynomials of that degree. -/
 theorem eval_weightedSquarefreeCountPolynomial
-    (F : Type*) [Field F] [DecidableEq F] [Finite F] (n N m : ℕ) :
+    (F : Type*) [Field F] [Finite F] (n N m : ℕ) :
     (weightedSquarefreeCountPolynomial n N m).eval (Nat.card F : ℤ) =
       coeff m (weightedSquarefreeSeries F (-((-1 : ℤ) ^ n * N))) := by
   let q : ℤ := Nat.card F

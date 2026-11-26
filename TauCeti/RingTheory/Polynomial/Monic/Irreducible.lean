@@ -32,6 +32,8 @@ monic quadratic factors, in the domain itself.
 * `Polynomial.mem_monicIrreduciblesOfDegree_iff`: the defining membership condition.
 * `Polynomial.finite_monicIrreduciblesOfDegree`: over a finite coefficient ring there are
   finitely many.
+* `TauCeti.finite_monicIrreducible_natDegree_le`: over a finite field there are finitely many
+  monic irreducibles of bounded degree.
 * `Polynomial.ncard_monicIrreduciblesOfDegree_one`: over a domain the monic irreducibles of degree
   one are the `X - C a`, as many as the elements of the coefficient ring.
 * `Polynomial.monicIrreduciblesOfDegree_sdiff_singleton_X`: the monic irreducibles other than `X`
@@ -155,6 +157,19 @@ both sides are `0` by convention (`ncard` of an infinite set and `Nat.card R` ar
 end Domain
 
 end Polynomial
+
+namespace TauCeti
+
+/-- There are finitely many monic irreducibles of bounded degree over a finite field. -/
+theorem finite_monicIrreducible_natDegree_le (F : Type*) [Field F] [Finite F] (m : ℕ) :
+    {p : {p : Polynomial F // p.Monic ∧ Irreducible p} |
+      (p : Polynomial F).natDegree ≤ m}.Finite := by
+  apply (Set.finite_Iic m).preimage'
+  intro d _
+  exact ((Polynomial.finite_setOf_monic_natDegree_eq F d).preimage
+    Subtype.val_injective.injOn).subset fun p hp ↦ ⟨p.property.1, hp⟩
+
+end TauCeti
 
 namespace Polynomial.Monic
 
