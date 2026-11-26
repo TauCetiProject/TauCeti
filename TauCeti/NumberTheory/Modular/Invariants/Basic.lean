@@ -162,13 +162,11 @@ noncomputable def fixedσ0EquivFixedPermR :
     right_inv := fun ⟨y, _⟩ ↦ Subtype.ext (hS_idem y) }
 
 /-- Evaluating `fixedσ0EquivFixedPermR` on `e (g Γ')` gives `e ((S * g) Γ')`. -/
-theorem fixedσ0EquivFixedPermR_mk (g : PSL(2, ℤ))
+@[simp] theorem fixedσ0EquivFixedPermR_mk (g : PSL(2, ℤ))
     (hg : (modularTriple Γ' e).σ0 (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ')) :
-    fixedσ0EquivFixedPermR Γ' e ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hg⟩ =
-      ⟨e ((((S : PSL(2, ℤ)) * g : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')), by
-        simpa [fixedσ0EquivFixedPermR, permS, MulAction.Quotient.smul_mk] using
-          (fixedσ0EquivFixedPermR Γ' e ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hg⟩).property⟩ :=
-  Subtype.ext (by simp [fixedσ0EquivFixedPermR, permS, MulAction.Quotient.smul_mk])
+    (fixedσ0EquivFixedPermR Γ' e ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hg⟩).val =
+      e ((((S : PSL(2, ℤ)) * g : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) := by
+  simp [fixedσ0EquivFixedPermR, permS, MulAction.Quotient.smul_mk]
 
 /-- `ellipticTwo Γ' e ≤ n`. -/
 theorem ellipticTwo_le : ellipticTwo Γ' e ≤ n := by
@@ -242,8 +240,10 @@ noncomputable def cuspCycleMapOfLE {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' �
     Quotient (SameCycle.setoid (permT Γ'' e'')) → Quotient (SameCycle.setoid (permT Γ' e')) :=
   (semiconj_cosetProjOfLE h e'' e').cycleQuotientMap
 
+/-- Induction principle on `permT`-cycles: it suffices to prove a predicate on cycles of cosets
+`e (g Γ')` for `g : PSL(2, ℤ)`. -/
 @[elab_as_elim]
-private theorem cuspCycle_ind {Γ' : Subgroup PSL(2, ℤ)} {e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n}
+theorem cuspCycle_induction_on {Γ' : Subgroup PSL(2, ℤ)} {e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n}
     {P : Quotient (SameCycle.setoid (permT Γ' e)) → Prop}
     (q : Quotient (SameCycle.setoid (permT Γ' e)))
     (h : ∀ g : PSL(2, ℤ), P (Quotient.mk _ (e (g : PSL(2, ℤ) ⧸ Γ')))) : P q := by
@@ -269,7 +269,7 @@ theorem cuspCycleMapOfLE_mk_apply {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' �
 /-- `cuspCycleMapOfLE` for the trivial inclusion `Γ' ≤ Γ'` is the identity. -/
 @[simp] theorem cuspCycleMapOfLE_self (q : Quotient (SameCycle.setoid (permT Γ' e))) :
     cuspCycleMapOfLE (le_refl Γ') e e q = q :=
-  cuspCycle_ind q fun g ↦ cuspCycleMapOfLE_mk (le_refl Γ') e e g
+  cuspCycle_induction_on q fun g ↦ cuspCycleMapOfLE_mk (le_refl Γ') e e g
 
 /-- `cuspCycleMapOfLE` respects composition of subgroup inclusions. -/
 @[simp] theorem cuspCycleMapOfLE_cuspCycleMapOfLE {Γ''' Γ'' Γ' : Subgroup PSL(2, ℤ)}
@@ -279,7 +279,8 @@ theorem cuspCycleMapOfLE_mk_apply {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' �
     (q : Quotient (SameCycle.setoid (permT Γ''' e'''))) :
     cuspCycleMapOfLE h₂ e'' e' (cuspCycleMapOfLE h₁ e''' e'' q) =
       cuspCycleMapOfLE (h₁.trans h₂) e''' e' q :=
-  cuspCycle_ind q fun g ↦ by rw [cuspCycleMapOfLE_mk, cuspCycleMapOfLE_mk, cuspCycleMapOfLE_mk]
+  cuspCycle_induction_on q fun g ↦ by
+    rw [cuspCycleMapOfLE_mk, cuspCycleMapOfLE_mk, cuspCycleMapOfLE_mk]
 
 /-- Function-composition form of `cuspCycleMapOfLE_cuspCycleMapOfLE`. -/
 theorem cuspCycleMapOfLE_comp {Γ''' Γ'' Γ' : Subgroup PSL(2, ℤ)}
@@ -299,7 +300,7 @@ theorem permTCycleEquivDoubleCoset_cuspCycleMapOfLE {Γ'' Γ' : Subgroup PSL(2, 
     permTCycleEquivDoubleCoset Γ' e' (cuspCycleMapOfLE h e'' e' q) =
       DoubleCoset.quotientMapOfLELeft h (Subgroup.zpowers (T : PSL(2, ℤ)))
         (permTCycleEquivDoubleCoset Γ'' e'' q) :=
-  cuspCycle_ind q fun g ↦ by
+  cuspCycle_induction_on q fun g ↦ by
     rw [cuspCycleMapOfLE_mk, permTCycleEquivDoubleCoset_mk, permTCycleEquivDoubleCoset_mk,
       DoubleCoset.quotientMapOfLELeft_apply_mk]
 
@@ -330,7 +331,7 @@ theorem cuspCycleWidth_map_dvd {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' ≤ �
     (e'' : PSL(2, ℤ) ⧸ Γ'' ≃ Fin m) (e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
     (q : Quotient (SameCycle.setoid (permT Γ'' e''))) :
     cuspCycleWidth Γ' e' (cuspCycleMapOfLE h e'' e' q) ∣ cuspCycleWidth Γ'' e'' q :=
-  cuspCycle_ind q fun g ↦ by
+  cuspCycle_induction_on q fun g ↦ by
     rw [cuspCycleMapOfLE_mk, cuspCycleWidth_mk, cuspCycleWidth_mk]
     exact minimalPeriod_permT_dvd_of_le h e'' e' g
 
@@ -351,27 +352,13 @@ theorem natCard_fiber_permTCycleEquivDoubleCoset
   rw [← natCard_fiber_cuspCycle Γ' e ((permTCycleEquivDoubleCoset Γ' e).symm d)]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ (Equiv.eq_symm_apply _).symm)
 
-/-- The canonical map from right cosets `Γ' \ PSL(2, ℤ)` to double cosets
-`Γ' \ PSL(2, ℤ) / ⟨T⟩`. -/
-def rightCosetToDoubleCoset :
-    Quotient (QuotientGroup.rightRel Γ') →
-      DoubleCoset.Quotient (Γ' : Set PSL(2, ℤ)) (Subgroup.zpowers (T : PSL(2, ℤ))) :=
-  Quotient.lift (fun g ↦ DoubleCoset.mk Γ' (Subgroup.zpowers (T : PSL(2, ℤ))) g) fun a b h ↦
-    DoubleCoset.eq.mpr ⟨b * a⁻¹, QuotientGroup.rightRel_apply.mp h, 1, Subgroup.one_mem _, by simp⟩
-
-/-- `rightCosetToDoubleCoset` sends the right coset `Γ' g` to `Γ' g ⟨T⟩`. -/
-@[simp]
-theorem rightCosetToDoubleCoset_mk (g : PSL(2, ℤ)) :
-    rightCosetToDoubleCoset Γ' (Quotient.mk'' g) =
-      DoubleCoset.mk Γ' (Subgroup.zpowers (T : PSL(2, ℤ))) g :=
-  (rfl)
-
 /-- **The width of a double coset as its number of right cosets.** The number of right cosets
 `Γ' g : Quotient (QuotientGroup.rightRel Γ')` mapping into a double coset `d` equals
 `cuspCycleWidth Γ' e ((permTCycleEquivDoubleCoset Γ' e).symm d)`. -/
 theorem natCard_fiber_rightCosetToDoubleCoset
     (d : DoubleCoset.Quotient (Γ' : Set PSL(2, ℤ)) (Subgroup.zpowers (T : PSL(2, ℤ)))) :
-    Nat.card {q : Quotient (QuotientGroup.rightRel Γ') // rightCosetToDoubleCoset Γ' q = d} =
+    Nat.card {q : Quotient (QuotientGroup.rightRel Γ') //
+        TauCeti.rightCosetToDoubleCoset Γ' (Subgroup.zpowers (T : PSL(2, ℤ))) q = d} =
       cuspCycleWidth Γ' e ((permTCycleEquivDoubleCoset Γ' e).symm d) := by
   rw [← natCard_fiber_permTCycleEquivDoubleCoset Γ' e d]
   refine Nat.card_congr
@@ -603,10 +590,9 @@ periods two and three, and its number `ε∞` of cusps satisfy
 theorem genus_formula :
     12 * genus Γ' e + 3 * ellipticTwo Γ' e + 4 * ellipticThree Γ' e + 6 * cuspCount Γ' e =
       12 + n := by
-  have hg := two_sub_two_mul_genus Γ' e
-  have h2 := two_mul_orbitCount_permS Γ' e
-  have h3 := three_mul_orbitCount_σ0 Γ' e
-  rw [eulerChar_def] at hg; rw [permS] at h2; rw [cuspCount_def, permT]; omega
+  have h1 := two_sub_two_mul_genus Γ' e
+  have h2 := six_mul_eulerChar_modularTriple Γ' e
+  zify; linarith
 
 /-- A torsion-free subgroup of `PSL(2, ℤ)` has no elliptic points of period `2`. -/
 @[simp] theorem ellipticTwo_eq_zero [IsMulTorsionFree Γ'] : ellipticTwo Γ' e = 0 := by

@@ -122,7 +122,8 @@ theorem sum_minimalPeriod_cycleQuotientMap_fiber_eq_natCard [Finite α]
   have hSfin : ({q | h.cycleQuotientMap q = c} : Set _).Finite := Set.toFinite _
   let t : Finset (Quotient (SameCycle.setoid σ)) :=
     Finset.univ.filter (fun q ↦ h.cycleQuotientMap q = c)
-  rw [finsum_mem_eq_finite_toFinset_sum _ hSfin, show hSfin.toFinset = t by ext; simp [t]]
+  have htoFinset : hSfin.toFinset = t := by ext; simp [t]
+  rw [finsum_mem_eq_finite_toFinset_sum _ hSfin, htoFinset]
   have hcard : ∀ q ∈ t, σ.cycleQuotientPeriod q =
       (Finset.univ.filter (fun y : α ↦ Quotient.mk (SameCycle.setoid σ) y = q)).card := by
     intro q _; induction q using Quotient.ind with | _ x =>

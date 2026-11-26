@@ -64,7 +64,8 @@ theorem CuspTranslationOrbit.induction_on {P : CuspTranslationOrbit 𝒢 → Pro
   induction c using Quotient.inductionOn with | h q =>
   induction q using Quotient.inductionOn with | h x =>
   obtain ⟨γ, hγ⟩ := x.property
-  rw [show x = (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ from Subtype.ext hγ.symm]
+  have hx : x = (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ := Subtype.ext hγ.symm
+  rw [hx]
   exact h γ
 
 /-- A subgroup of finite relative index has finitely many cusp translation orbits: they are the

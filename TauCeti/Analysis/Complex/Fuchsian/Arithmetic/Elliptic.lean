@@ -51,7 +51,7 @@ private def stabilizerSubgroupOfEquiv (Γ' : Subgroup PSL(2, ℤ)) {z₀ : ℍ} 
           ((TauCeti.mem_conj_smul g Γ' t).mp (Subgroup.mem_subgroupOf.mp ht))⟩, by
       have htfix : t.val • z₀ = z₀ := mem_stabilizer_iff.mp (by rw [hstab]; exact t.property)
       rw [mem_stabilizer_iff, Subgroup.smul_def, ← mul_smul, ← map_mul,
-        show (g⁻¹ * t.val * g) * g⁻¹ = g⁻¹ * t.val by group, map_mul, mul_smul,
+        mul_inv_cancel_right, map_mul, mul_smul,
         UpperHalfPlane.psl2zToPSL2R_smul, UpperHalfPlane.psl2zToPSL2R_smul, htfix,
         ← UpperHalfPlane.psl2zToPSL2R_smul]⟩)
     ⟨fun ⟨⟨t₁, _⟩, _⟩ ⟨⟨t₂, _⟩, _⟩ h ↦ Subtype.ext <| Subtype.ext <| by
@@ -84,9 +84,9 @@ theorem cardStabilizerOnOrbit_inverseTranslateOrbit_eq_iff
   refine ⟨fun htop ↦ (TauCeti.mem_conj_smul g Γ' s).mp
     (Subgroup.mem_subgroupOf.mp (htop ⟨s, Subgroup.mem_zpowers s⟩)), fun hs ⟨t, ht⟩ ↦ ?_⟩
   obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp ht
-  rw [Subgroup.mem_subgroupOf, TauCeti.mem_conj_smul,
-    show g⁻¹ * s ^ k * g = (g⁻¹ * s * g) ^ k by
-      simpa [MulAut.conj_apply] using map_zpow (MulAut.conj g⁻¹) s k]
+  have hconj : g⁻¹ * s ^ k * g = (g⁻¹ * s * g) ^ k := by
+    simpa [MulAut.conj_apply] using map_zpow (MulAut.conj g⁻¹) s k
+  rw [Subgroup.mem_subgroupOf, TauCeti.mem_conj_smul, hconj]
   exact zpow_mem hs k
 
 /-- Bijection between `s`-fixed cosets in `PSL(2, ℤ) ⧸ Γ'` and `(Γ'.map psl2zToPSL2R)`-orbits of

@@ -19,6 +19,8 @@ For any subgroup `Γ' ≤ PSL(2, ℤ)`, the Fuchsian cusp points and cusp orbits
 
 * `Subgroup.isCuspPoint_map_psl2zToPSL2R_iff_isCusp`: Fuchsian cusp points of `Γ'.map psl2zToPSL2R`
   coincide with Mathlib's cusps of `Γ'.liftSL`.
+* `Subgroup.mem_orbit_map_psl2zToPSL2R_iff`: orbits on `OnePoint ℝ` under `Γ'.map psl2zToPSL2R`
+  coincide with orbits under `Γ'.liftSL`.
 * `Subgroup.fuchsianCuspOrbitEquivCuspOrbits`: bijection between `(Γ'.map psl2zToPSL2R).CuspOrbit`
   and `CuspOrbits Γ'.liftSL`.
 -/
@@ -50,7 +52,9 @@ theorem isCuspPoint_map_psl2zToPSL2R_iff_isCusp (Γ' : Subgroup PSL(2, ℤ)) (c 
           simpa only [MulAction.subgroup_smul_def, TauCeti.psl2zToPSL2R_smul_boundary] using hfix),
         (TauCeti.isParabolic_psl2zToPSL2R_iff a).mpr hpar⟩
 
-private theorem mem_orbit_map_psl2zToPSL2R_iff (Γ' : Subgroup PSL(2, ℤ)) (c₁ c₂ : OnePoint ℝ) :
+/-- For any `Γ' ≤ PSL(2, ℤ)`, orbits on `OnePoint ℝ` under `Γ'.map psl2zToPSL2R` coincide with
+orbits under `Γ'.liftSL ≤ GL(2, ℝ)`. -/
+theorem mem_orbit_map_psl2zToPSL2R_iff (Γ' : Subgroup PSL(2, ℤ)) (c₁ c₂ : OnePoint ℝ) :
     c₁ ∈ orbit (Γ'.map psl2zToPSL2R) c₂ ↔ c₁ ∈ orbit (Γ'.liftSL : Subgroup (GL (Fin 2) ℝ)) c₂ := by
   simp only [mem_orbit_iff, Subtype.exists, Subgroup.smul_def]
   constructor

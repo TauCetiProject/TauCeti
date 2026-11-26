@@ -165,13 +165,14 @@ private theorem cuspDatum_width_dvd_of_conj_T_zpow_mem
     exact Subgroup.mem_map_of_mem psl2zToPSL2R hk⟩
   have hgk_conj : D.scaling * (gk : PSL(2, ℝ)) * D.scaling⁻¹ = upperRightHom (k : ℝ) := by
     dsimp only [gk]
-    rw [← psl2zToPSL2R_mk, conj_scaling_psl2zToPSL2R hσ,
-      show σ⁻¹ * (σ * _root_.ModularGroup.T ^ k * σ⁻¹) * σ = _root_.ModularGroup.T ^ k by group,
+    have hT : σ⁻¹ * (σ * _root_.ModularGroup.T ^ k * σ⁻¹) * σ = _root_.ModularGroup.T ^ k := by
+      group
+    rw [← psl2zToPSL2R_mk, conj_scaling_psl2zToPSL2R hσ, hT,
       TauCeti.UpperHalfPlane.sl2zToPSL2R_T_zpow]
   have hgk_stab : gk ∈ stabilizer (Γ'.map psl2zToPSL2R) D.cusp := by
     rw [mem_stabilizer_iff]; apply MulAction.injective D.scaling; dsimp only
     rw [Subgroup.smul_def, ← mul_smul,
-      show D.scaling * (gk : PSL(2, ℝ)) = (D.scaling * gk * D.scaling⁻¹) * D.scaling by group,
+      ← inv_mul_cancel_right (D.scaling * (gk : PSL(2, ℝ))) D.scaling,
       mul_smul, D.scaling_smul_cusp, hgk_conj, upperRightHom_smul_infty]
   obtain ⟨r, hr⟩ := D.mem_stabilizer_iff_conj.mp hgk_stab
   exact ⟨r, (upperRightHom_injective (hgk_conj ▸ hr)).symm⟩
@@ -285,12 +286,10 @@ combinatorial cycle map `cuspCycleMapOfLE` corresponds to the geometric cusp-orb
     (h : Γ'' ≤ Γ') (e'' : PSL(2, ℤ) ⧸ Γ'' ≃ Fin m) (e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
     (q : Quotient (SameCycle.setoid (permT Γ'' e''))) :
     permTCycleEquivFuchsianCuspOrbit Γ' e' (cuspCycleMapOfLE h e'' e' q) =
-      Subgroup.cuspOrbitMap (Subgroup.map_mono h) (permTCycleEquivFuchsianCuspOrbit Γ'' e'' q) := by
-  induction q using Quotient.ind with | _ y =>
-  obtain ⟨qy, rfl⟩ := e''.surjective y
-  induction qy using QuotientGroup.induction_on with | H g =>
-  rw [cuspCycleMapOfLE_mk, permTCycleEquivFuchsianCuspOrbit_mk, permTCycleEquivFuchsianCuspOrbit_mk,
-    Subgroup.cuspOrbitMap_cuspOrbitMk]
+      Subgroup.cuspOrbitMap (Subgroup.map_mono h) (permTCycleEquivFuchsianCuspOrbit Γ'' e'' q) :=
+  cuspCycle_induction_on q fun g ↦ by
+    rw [cuspCycleMapOfLE_mk, permTCycleEquivFuchsianCuspOrbit_mk,
+      permTCycleEquivFuchsianCuspOrbit_mk, Subgroup.cuspOrbitMap_cuspOrbitMk]
 
 /-- The combinatorial cusp count equals the number of Fuchsian cusp orbits of
 `Γ'.map psl2zToPSL2R`. -/
@@ -325,33 +324,12 @@ combinatorial cycle map `cuspCycleMapOfLE` corresponds to `CuspOrbits.map`. -/
     (q : Quotient (SameCycle.setoid (permT Γ'' e''))) :
     permTCycleEquivCuspOrbits Γ' e' (cuspCycleMapOfLE h e'' e' q) =
       CuspOrbits.map (Subgroup.map_mono (Subgroup.liftSL_le_liftSL_iff.mpr h))
-        (permTCycleEquivCuspOrbits Γ'' e'' q) := by
-  induction q using Quotient.ind with | _ y =>
-  obtain ⟨qy, rfl⟩ := e''.surjective y
-  induction qy using QuotientGroup.induction_on with | H g =>
-  rw [cuspCycleMapOfLE_mk, permTCycleEquivCuspOrbits_mk, permTCycleEquivCuspOrbits_mk,
-    CuspOrbits.map_mk]
+        (permTCycleEquivCuspOrbits Γ'' e'' q) :=
+  cuspCycle_induction_on q fun g ↦ by
+    rw [cuspCycleMapOfLE_mk, permTCycleEquivCuspOrbits_mk, permTCycleEquivCuspOrbits_mk,
+      CuspOrbits.map_mk]
 
 /-! ### Elliptic orbits -/
-
-private def fixedPermEquivFixed (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
-    (p : Perm (Fin n)) (a : PSL(2, ℤ))
-    (hp : ∀ g : PSL(2, ℤ), p (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ') ↔
-      g⁻¹ * a * g ∈ Γ') :
-    {x : Fin n // p x = x} ≃ {q : PSL(2, ℤ) ⧸ Γ' // a • q = q} :=
-  Equiv.subtypeEquiv e.symm fun x ↦ by
-    obtain ⟨q, rfl⟩ := e.surjective x
-    induction q using QuotientGroup.induction_on with | H g =>
-    rw [e.symm_apply_apply, hp, TauCeti.smul_quotientGroup_mk_eq_self_iff]
-
-private theorem fixedPermEquivFixed_mk (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
-    (p : Perm (Fin n)) (a : PSL(2, ℤ))
-    (hp : ∀ g : PSL(2, ℤ), p (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ') ↔
-      g⁻¹ * a * g ∈ Γ')
-    (g : PSL(2, ℤ)) (hg : p (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ')) :
-    fixedPermEquivFixed Γ' e p a hp ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hg⟩ =
-      ⟨(g : PSL(2, ℤ) ⧸ Γ'), by rw [TauCeti.smul_quotientGroup_mk_eq_self_iff, ← hp]; exact hg⟩ :=
-  Subtype.ext (e.symm_apply_apply _)
 
 /-- **Order-`2` elliptic orbits via fixed points of `permS`.** The fixed points of `permS Γ' e`
 are in bijection with the elliptic orbits of `Γ'.map psl2zToPSL2R` on `ℍ` having stabilizer
@@ -360,8 +338,9 @@ def fixedPermSEquivOrderTwoEllipticOrbits (Γ' : Subgroup PSL(2, ℤ))
     (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     {x : Fin n // permS Γ' e x = x} ≃
       {q : orbitRel.Quotient (Γ'.map psl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = 2} :=
-  (fixedPermEquivFixed Γ' e (permS Γ' e) (S : PSL(2, ℤ)) (permS_apply_eq_self_iff Γ' e)).trans
-    (fixedCosetSEquivOrderTwoEllipticOrbits Γ')
+  (Equiv.subtypeEquivRight fun _ ↦ by rw [permS, modularTriple_σ1]).trans
+    ((e.fixedPermutationRepresentationEquiv (S : PSL(2, ℤ))).trans
+      (fixedCosetSEquivOrderTwoEllipticOrbits Γ'))
 
 /-- Evaluating `fixedPermSEquivOrderTwoEllipticOrbits` on `e (g Γ')` gives the orbit of
 `g⁻¹ • i`. -/
@@ -370,8 +349,23 @@ def fixedPermSEquivOrderTwoEllipticOrbits (Γ' : Subgroup PSL(2, ℤ))
     (hg : permS Γ' e (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ')) :
     (fixedPermSEquivOrderTwoEllipticOrbits Γ' e ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hg⟩).val =
       Quotient.mk (orbitRel (Γ'.map psl2zToPSL2R) ℍ) (g⁻¹ • I) := by
-  rw [fixedPermSEquivOrderTwoEllipticOrbits, Equiv.trans_apply, fixedPermEquivFixed_mk,
-    fixedCosetSEquivOrderTwoEllipticOrbits_mk]
+  have hS : e.permutationRepresentation (S : PSL(2, ℤ)) (e (g : PSL(2, ℤ) ⧸ Γ')) =
+      e (g : PSL(2, ℤ) ⧸ Γ') := by
+    simpa [permS] using hg
+  have hcoset :
+      e.fixedPermutationRepresentationEquiv (S : PSL(2, ℤ)) ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hS⟩ =
+        ⟨(g : PSL(2, ℤ) ⧸ Γ'), by
+          rw [← MulAction.mem_stabilizer_iff,
+            ← e.permutationRepresentation_apply_eq_self_iff]
+          exact hS⟩ :=
+    Subtype.ext (e.fixedPermutationRepresentationEquiv_apply (S : PSL(2, ℤ)) _ hS)
+  rw [fixedPermSEquivOrderTwoEllipticOrbits, Equiv.trans_apply, Equiv.trans_apply,
+    Equiv.subtypeEquivRight_apply, hcoset, fixedCosetSEquivOrderTwoEllipticOrbits_mk]
+
+private theorem permR_eq (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    permR Γ' e = e.permutationRepresentation (R : PSL(2, ℤ)) := by
+  rw [permR_eq_permS_mul_permT, permS, permT, modularTriple_σ1, modularTriple_σinf, ← map_mul,
+    ← QuotientGroup.mk_mul, ← R_def]
 
 /-- **Order-`3` elliptic orbits via fixed points of `permR`.** The fixed points of `permR Γ' e`
 are in bijection with the elliptic orbits of `Γ'.map psl2zToPSL2R` on `ℍ` having stabilizer
@@ -380,8 +374,9 @@ def fixedPermREquivOrderThreeEllipticOrbits (Γ' : Subgroup PSL(2, ℤ))
     (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     {x : Fin n // permR Γ' e x = x} ≃
       {q : orbitRel.Quotient (Γ'.map psl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = 3} :=
-  (fixedPermEquivFixed Γ' e (permR Γ' e) (R : PSL(2, ℤ)) (permR_apply_eq_self_iff Γ' e)).trans
-    (fixedCosetREquivOrderThreeEllipticOrbits Γ')
+  (Equiv.subtypeEquivRight fun _ ↦ by rw [permR_eq]).trans
+    ((e.fixedPermutationRepresentationEquiv (R : PSL(2, ℤ))).trans
+      (fixedCosetREquivOrderThreeEllipticOrbits Γ'))
 
 /-- Evaluating `fixedPermREquivOrderThreeEllipticOrbits` on `e (g Γ')` gives the orbit of
 `g⁻¹ • ρ`. -/
@@ -390,8 +385,18 @@ def fixedPermREquivOrderThreeEllipticOrbits (Γ' : Subgroup PSL(2, ℤ))
     (hg : permR Γ' e (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ')) :
     (fixedPermREquivOrderThreeEllipticOrbits Γ' e ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hg⟩).val =
       Quotient.mk (orbitRel (Γ'.map psl2zToPSL2R) ℍ) (g⁻¹ • ρ) := by
-  rw [fixedPermREquivOrderThreeEllipticOrbits, Equiv.trans_apply, fixedPermEquivFixed_mk,
-    fixedCosetREquivOrderThreeEllipticOrbits_mk]
+  have hR : e.permutationRepresentation (R : PSL(2, ℤ)) (e (g : PSL(2, ℤ) ⧸ Γ')) =
+      e (g : PSL(2, ℤ) ⧸ Γ') := by
+    simpa [permR_eq] using hg
+  have hcoset :
+      e.fixedPermutationRepresentationEquiv (R : PSL(2, ℤ)) ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hR⟩ =
+        ⟨(g : PSL(2, ℤ) ⧸ Γ'), by
+          rw [← MulAction.mem_stabilizer_iff,
+            ← e.permutationRepresentation_apply_eq_self_iff]
+          exact hR⟩ :=
+    Subtype.ext (e.fixedPermutationRepresentationEquiv_apply (R : PSL(2, ℤ)) _ hR)
+  rw [fixedPermREquivOrderThreeEllipticOrbits, Equiv.trans_apply, Equiv.trans_apply,
+    Equiv.subtypeEquivRight_apply, hcoset, fixedCosetREquivOrderThreeEllipticOrbits_mk]
 
 /-- **Order-`3` elliptic orbits via fixed points of `σ0`.** The fixed points of
 `(modularTriple Γ' e).σ0` are in bijection with the elliptic orbits of `Γ'.map psl2zToPSL2R` on
@@ -410,7 +415,12 @@ def fixedσ0EquivOrderThreeEllipticOrbits (Γ' : Subgroup PSL(2, ℤ))
     (fixedσ0EquivOrderThreeEllipticOrbits Γ' e ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hg⟩).val =
       Quotient.mk (orbitRel (Γ'.map psl2zToPSL2R) ℍ)
         ((((S : PSL(2, ℤ)) * g)⁻¹ : PSL(2, ℤ)) • ρ) := by
-  rw [fixedσ0EquivOrderThreeEllipticOrbits, Equiv.trans_apply, fixedσ0EquivFixedPermR_mk,
+  have hmk : fixedσ0EquivFixedPermR Γ' e ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hg⟩ =
+      ⟨e ((((S : PSL(2, ℤ)) * g : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')), by
+        rw [← fixedσ0EquivFixedPermR_mk Γ' e g hg]
+        exact (fixedσ0EquivFixedPermR Γ' e ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hg⟩).property⟩ :=
+    Subtype.ext (fixedσ0EquivFixedPermR_mk Γ' e g hg)
+  rw [fixedσ0EquivOrderThreeEllipticOrbits, Equiv.trans_apply, hmk,
     fixedPermREquivOrderThreeEllipticOrbits_mk]
 
 /-- The combinatorial count `ellipticTwo` equals the number of order-`2` elliptic orbits of
