@@ -208,10 +208,10 @@ theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame
   intro g
   obtain ⟨f, rfl⟩ := surjective_operatorMultiplication_comp_snd hΦd.continuous hΦi g
   obtain ⟨ξ, rfl⟩ := (Floer.bijective_stationarySobolevOperator_ofComplexModule hS'₁ hS'ω hdet).2 f
-  exact (StripSobolev.denseRange_toJetClosure 2 (testSection F)).induction_on ξ
-    (hclosed.preimage (mult.continuous.comp DF.continuous)) fun ζ ↦ by
-      rw [StripSobolev.toJetClosure_apply]
-      exact hgen ζ
+  refine StripSobolev.jetClosure_induction (hclosed.preimage (mult.continuous.comp DF.continuous))
+    (fun ζ ↦ ?_) ξ
+  rw [StripSobolev.toJetClosure_apply]
+  exact hgen ζ
 
 include hH hHp hx hxp hΦ hΦp hΦi hΦω hΦJ in
 /-- **The linearized Floer operator at a nondegenerate orbit is invertible.** Under the hypotheses

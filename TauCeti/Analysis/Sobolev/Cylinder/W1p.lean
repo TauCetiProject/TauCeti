@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.Sobolev.Cylinder.Morrey
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.Algebra.Order.Floor.Ring
 
 /-!
 # The Sobolev spaces `W^{1,p}` of the cylinder and their Sobolev embedding for `p > 2`
@@ -126,9 +127,7 @@ theorem exists_forall_norm_le_of_mem_testSection (hξ : ξ ∈ testSection V) :
     fun z hz ↦ hR z.1 z.2 hz.le
   refine ⟨C, fun ⟨s, t⟩ ↦ ?_⟩
   have hper' : Function.Periodic (fun t ↦ ξ (s, t)) 1 := fun t ↦ hper s t
-  have h := hper'.sub_int_mul_eq (x := t) ⌊t⌋
-  simp only [mul_one, Int.self_sub_floor] at h
-  rw [← h]
+  rw [← hper'.apply_fract t]
   exact hC _ ⟨mem_univ _, Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
 
 /-- A test section, as a bounded continuous function on `ℝ × ℝ`. -/
