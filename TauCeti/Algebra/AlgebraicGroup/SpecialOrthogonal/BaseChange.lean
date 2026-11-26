@@ -54,13 +54,24 @@ section Coordinate
 variable (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
 variable (n : ℕ)
 
+/-- The identity-form case of transport of the determinant-one defining ideal. -/
+private theorem map_baseChangeHopfIdeal_definingHopfIdeal :
+    (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (definingHopfIdeal R n)).map
+        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom =
+      definingHopfIdeal K n := by
+  rw [definingHopfIdeal_eq_special, definingHopfIdeal_eq_special]
+  exact ConstantForm.Special.map_baseChangeHopfIdeal_definingHopfIdeal
+    (Matrix.map_one (algebraMap R K) (map_zero _) (map_one _))
+
 /-- Base change of the special-orthogonal coordinate Hopf algebra is canonically the
 special-orthogonal coordinate Hopf algebra over the new base. -/
 noncomputable def coordinateHopfAlgebraBaseChangeIso :
     CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra R n) ≅
       coordinateHopfAlgebra K n :=
-  ConstantForm.Special.coordinateHopfAlgebraBaseChangeIso (n := n)
-    (Matrix.map_one (algebraMap R K) (map_zero _) (map_one _))
+  CommHopfAlgCat.quotientBaseChangeIsoOfMapEq
+    (definingHopfIdeal R n) (definingHopfIdeal K n)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n)
+    (map_baseChangeHopfIdeal_definingHopfIdeal R K n)
 
 /-- The special-orthogonal base-change isomorphism is compatible with the quotient coordinate
 morphisms from the corresponding general-linear coordinate Hopf algebras. -/
@@ -69,15 +80,20 @@ theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom 
     CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R n) ≫
         (coordinateHopfAlgebraBaseChangeIso R K n).hom =
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom ≫ coordinateMap K n := by
-  rw [coordinateMap_def, coordinateMap_def, coordinateHopfAlgebraBaseChangeIso]
-  exact ConstantForm.Special.baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_hom _
+  rw [coordinateMap_def, coordinateMap_def]
+  exact CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
+    (definingHopfIdeal R n) (definingHopfIdeal K n)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n)
+    (map_baseChangeHopfIdeal_definingHopfIdeal R K n)
 
 /-- The finite-type coordinate Hopf algebra of `SOₙ` commutes with base change. -/
 noncomputable def finiteTypeCoordinateHopfAlgebraBaseChangeIso :
     FiniteTypeCommHopfAlgCat.baseChange (K := K) (finiteTypeCoordinateHopfAlgebra R n) ≅
       finiteTypeCoordinateHopfAlgebra K n :=
-  ConstantForm.Special.finiteTypeCoordinateHopfAlgebraBaseChangeIso (n := n)
-    (Matrix.map_one (algebraMap R K) (map_zero _) (map_one _))
+  FiniteTypeCommHopfAlgCat.baseChangeIsoOfObjIso
+    (finiteTypeCoordinateHopfAlgebra_obj R n)
+    (finiteTypeCoordinateHopfAlgebra_obj K n)
+    (coordinateHopfAlgebraBaseChangeIso R K n)
 
 /-- The underlying commutative-Hopf-algebra morphism of the finite-type base-change isomorphism
 is the coordinate-Hopf-algebra base-change isomorphism, with the object equalities made explicit.
@@ -89,8 +105,10 @@ theorem finiteTypeCoordinateHopfAlgebraBaseChangeIso_hom :
           (finiteTypeCoordinateHopfAlgebra_obj R n)) ≪≫
         coordinateHopfAlgebraBaseChangeIso R K n ≪≫
         eqToIso (finiteTypeCoordinateHopfAlgebra_obj K n).symm).hom := by
-  rw [finiteTypeCoordinateHopfAlgebraBaseChangeIso, coordinateHopfAlgebraBaseChangeIso]
-  exact ConstantForm.Special.finiteTypeCoordinateHopfAlgebraBaseChangeIso_hom _
+  exact FiniteTypeCommHopfAlgCat.baseChangeIsoOfObjIso_hom
+    (finiteTypeCoordinateHopfAlgebra_obj R n)
+    (finiteTypeCoordinateHopfAlgebra_obj K n)
+    (coordinateHopfAlgebraBaseChangeIso R K n)
 
 /-- The inverse base-change isomorphism is compatible with the quotient coordinate morphisms. -/
 @[reassoc]
@@ -99,7 +117,7 @@ theorem coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv :
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).inv ≫
         CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R n) := by
   rw [coordinateMap_def, coordinateMap_def, coordinateHopfAlgebraBaseChangeIso]
-  exact ConstantForm.Special.mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_inv _
+  exact CommHopfAlgCat.mkQuotient_comp_quotientBaseChangeIsoOfMapEq_inv _ _ _ _
 
 end Coordinate
 
@@ -118,8 +136,8 @@ noncomputable def groupSchemeBaseChangeIso :
         (groupScheme R n) ≅ groupScheme K n :=
   (Over.pullback (AlgebraicGeometry.Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.mapIso
       (eqToIso (groupScheme_def R n)) ≪≫
-    ConstantForm.Special.groupSchemeBaseChangeIso (n := n)
-      (Matrix.map_one (algebraMap R K) (map_zero _) (map_one _)) ≪≫
+    GeneralLinear.hopfIdealBaseChangeIso R K n (definingHopfIdeal R n) (definingHopfIdeal K n)
+      (coordinateHopfAlgebraBaseChangeIso R K n).symm ≪≫
     eqToIso (groupScheme_def K n).symm
 
 /-- The base-change isomorphism of `SOₙ` is the Hopf-ideal base-change comparison of `GLₙ` for
@@ -130,9 +148,8 @@ theorem groupSchemeBaseChangeIso_def :
           (CommRingCat.ofHom (algebraMap R K)))).mapGrp.mapIso (eqToIso (groupScheme_def R n)) ≪≫
         GeneralLinear.hopfIdealBaseChangeIso R K n (definingHopfIdeal R n)
           (definingHopfIdeal K n) (coordinateHopfAlgebraBaseChangeIso R K n).symm ≪≫
-        eqToIso (groupScheme_def K n).symm := by
-  rw [groupSchemeBaseChangeIso, ConstantForm.Special.groupSchemeBaseChangeIso_def,
-    coordinateHopfAlgebraBaseChangeIso]
+        eqToIso (groupScheme_def K n).symm :=
+  (rfl)
 
 /-- Followed by the quotient-spectrum presentation `groupScheme_def` over `K`, the base-change
 isomorphism of `SOₙ` is the Hopf-ideal base-change comparison of `GLₙ`, after the presentation
@@ -155,12 +172,12 @@ theorem map_inclusion_comp_groupSchemeBaseChangeIso_hom :
     (Over.pullback (AlgebraicGeometry.Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.map
           (inclusion R n) ≫ (GeneralLinear.groupSchemeBaseChangeIso R K n).hom =
       (groupSchemeBaseChangeIso R K n).hom ≫ inclusion K n := by
-  have h := ConstantForm.Special.map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso_hom
-    (Matrix.map_one (n := Fin n) (algebraMap R K) (map_zero _) (map_one _))
-  rw [ConstantForm.Special.groupSchemeBaseChangeIso_def] at h
+  have he := coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv R K n
+  rw [coordinateMap_def, coordinateMap_def] at he
+  have h := GeneralLinear.map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso R K n _ _
+    (coordinateHopfAlgebraBaseChangeIso R K n).symm he
   rw [inclusion_eq_eqToHom_comp_hopfIdealInclusion, inclusion_eq_eqToHom_comp_hopfIdealInclusion,
-    Functor.map_comp, Category.assoc, h, groupSchemeBaseChangeIso_hom_comp_eqToHom_assoc,
-    coordinateHopfAlgebraBaseChangeIso]
+    Functor.map_comp, Category.assoc, h, groupSchemeBaseChangeIso_hom_comp_eqToHom_assoc]
 
 end GroupScheme
 

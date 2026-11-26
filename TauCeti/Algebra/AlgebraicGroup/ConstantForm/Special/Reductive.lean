@@ -35,6 +35,7 @@ noncomputable def finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal (P : GL (F
     finiteTypeCoordinateHopfAlgebra R n C ≅ SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra R n :=
   ObjectProperty.isoMk _ (eqToIso (finiteTypeCoordinateHopfAlgebra_obj R n C) ≪≫
     coordinateHopfAlgebraCongr P hP ≪≫
+    eqToIso (SpecialOrthogonal.coordinateHopfAlgebra_eq_special R n).symm ≪≫
     eqToIso (SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra_obj R n).symm)
 
 /-- The comparison with standard special orthogonal coordinates is induced by congruence
@@ -44,6 +45,7 @@ theorem finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal_def (P : GL (Fin n) 
     finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal P hP =
       ObjectProperty.isoMk _ (eqToIso (finiteTypeCoordinateHopfAlgebra_obj R n C) ≪≫
         coordinateHopfAlgebraCongr P hP ≪≫
+        eqToIso (SpecialOrthogonal.coordinateHopfAlgebra_eq_special R n).symm ≪≫
         eqToIso (SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra_obj R n).symm) :=
   (rfl)
 
@@ -55,6 +57,7 @@ theorem finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal_hom (P : GL (Fin n) 
     (finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal P hP).hom.hom =
       (eqToIso (finiteTypeCoordinateHopfAlgebra_obj R n C) ≪≫
         coordinateHopfAlgebraCongr P hP ≪≫
+        eqToIso (SpecialOrthogonal.coordinateHopfAlgebra_eq_special R n).symm ≪≫
         eqToIso (SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra_obj R n).symm).hom := by
   simp only [finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal_def, ObjectProperty.isoMk_hom,
     ObjectProperty.homMk_hom]

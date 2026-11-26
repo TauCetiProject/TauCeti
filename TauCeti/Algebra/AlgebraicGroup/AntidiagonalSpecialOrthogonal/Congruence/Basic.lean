@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.Basic
-public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Congruence.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Smooth
 
 /-!
@@ -28,7 +27,7 @@ Conjugation by `P` preserves determinants, so it identifies the determinant-one 
 of the two congruent forms: for every congruence `P C Pᵀ = C'`, the coordinate automorphism of
 conjugation pulls the join of the constant-form Hopf ideal of `C'` and the determinant kernel back
 to the corresponding join for `C`
-(`TauCeti.ConstantForm.sup_specialLinear_comapOfSurjective_conjCoordinateIso`). Hence the
+(`TauCeti.ConstantForm.Special.coordinateHopfAlgebraCongr`). Hence the
 coordinate Hopf algebras are isomorphic,
 
 `O(SO_l^J) ≅ O(SO_l)`
@@ -143,34 +142,23 @@ end CongrMatrix
 
 variable {R : Type u} [CommRing R] [Invertible (2 : R)] (l : ℕ) {i : R}
 
-/-- Conjugation by the inverse of the congruence matrix pulls the defining Hopf ideal of `SO_l` back
-to that of `SO_l^J`. -/
-theorem specialOrthogonal_comapOfSurjective_conjCoordinateIso_congrUnit_inv (hi : i * i = -1) :
-    (SpecialOrthogonal.definingHopfIdeal R l).comapOfSurjective
-        (GeneralLinear.conjCoordinateIso (congrUnit l hi)⁻¹).hom.hom
-        (ConcreteCategory.bijective_of_isIso
-          (GeneralLinear.conjCoordinateIso (congrUnit l hi)⁻¹).hom).2 =
-      definingHopfIdeal R l := by
-  rw [SpecialOrthogonal.definingHopfIdeal_def, definingHopfIdeal_def]
-  exact ConstantForm.sup_specialLinear_comapOfSurjective_conjCoordinateIso_inv (congrUnit l hi)
-    (by rw [coe_congrUnit]; exact congrMatrix_mul_formMatrix_mul_transpose hi)
-
 /-- **`SO_l^J` and `SO_l` have isomorphic coordinate Hopf algebras** over a ring containing `1/2`
 and a square root `i` of `-1`, through conjugation by the inverse of the congruence matrix on
 `GL_l`. -/
 noncomputable def coordinateHopfAlgebraIsoSpecialOrthogonal (hi : i * i = -1) :
     coordinateHopfAlgebra R l ≅ SpecialOrthogonal.coordinateHopfAlgebra R l :=
-  CommHopfAlgCat.quotientIsoOfComapEq (GeneralLinear.conjCoordinateIso (congrUnit l hi)⁻¹)
-    (SpecialOrthogonal.definingHopfIdeal R l)
-    (specialOrthogonal_comapOfSurjective_conjCoordinateIso_congrUnit_inv l hi)
+  eqToIso (congrArg (CommHopfAlgCat.quotient _) (definingHopfIdeal_eq_special R l)) ≪≫
+    ConstantForm.Special.coordinateHopfAlgebraCongr (congrUnit l hi)
+      (by rw [coe_congrUnit]; exact congrMatrix_mul_formMatrix_mul_transpose hi) ≪≫
+    eqToIso (SpecialOrthogonal.coordinateHopfAlgebra_eq_special R l).symm
 
-/-- The isomorphism of coordinate Hopf algebras is the quotient isomorphism induced by conjugation
-by the inverse of the congruence matrix on `GL_l`. -/
+/-- The coordinate isomorphism is the general determinant-one congruence for `J_l` and `1`. -/
 theorem coordinateHopfAlgebraIsoSpecialOrthogonal_def (hi : i * i = -1) :
     coordinateHopfAlgebraIsoSpecialOrthogonal l hi =
-      CommHopfAlgCat.quotientIsoOfComapEq (GeneralLinear.conjCoordinateIso (congrUnit l hi)⁻¹)
-        (SpecialOrthogonal.definingHopfIdeal R l)
-        (specialOrthogonal_comapOfSurjective_conjCoordinateIso_congrUnit_inv l hi) :=
+      eqToIso (congrArg (CommHopfAlgCat.quotient _) (definingHopfIdeal_eq_special R l)) ≪≫
+        ConstantForm.Special.coordinateHopfAlgebraCongr (congrUnit l hi)
+          (by rw [coe_congrUnit]; exact congrMatrix_mul_formMatrix_mul_transpose hi) ≪≫
+        eqToIso (SpecialOrthogonal.coordinateHopfAlgebra_eq_special R l).symm :=
   (rfl)
 
 /-- The isomorphism of coordinate Hopf algebras is induced by conjugation by the inverse of the
@@ -181,8 +169,11 @@ theorem coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_hom (hi : i
       (GeneralLinear.conjCoordinateIso (congrUnit l hi)⁻¹).hom ≫
         SpecialOrthogonal.coordinateMap R l := by
   rw [coordinateMap_def, SpecialOrthogonal.coordinateMap_def,
-    coordinateHopfAlgebraIsoSpecialOrthogonal,
-    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_hom]
+    coordinateHopfAlgebraIsoSpecialOrthogonal_def, Iso.trans_hom, Iso.trans_hom, eqToIso.hom,
+    eqToIso.hom, ← Category.assoc, ← Category.assoc,
+    CommHopfAlgCat.mkQuotient_comp_eqToHom (definingHopfIdeal_eq_special R l).symm,
+    ConstantForm.Special.mkQuotient_comp_coordinateHopfAlgebraCongr_hom, Category.assoc,
+    CommHopfAlgCat.mkQuotient_comp_eqToHom (SpecialOrthogonal.definingHopfIdeal_eq_special R l)]
 
 /-- The inverse isomorphism of coordinate Hopf algebras is induced by conjugation by the congruence
 matrix on the coordinates of `GL_l`. -/
@@ -190,9 +181,13 @@ matrix on the coordinates of `GL_l`. -/
 theorem coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_inv (hi : i * i = -1) :
     SpecialOrthogonal.coordinateMap R l ≫ (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).inv =
       (GeneralLinear.conjCoordinateIso (congrUnit l hi)).hom ≫ coordinateMap R l := by
-  rw [Iso.comp_inv_eq, Category.assoc,
-    coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_hom,
-    GeneralLinear.conjCoordinateIso_inv, Iso.symm_hom, Iso.hom_inv_id_assoc]
+  rw [coordinateMap_def, SpecialOrthogonal.coordinateMap_def,
+    coordinateHopfAlgebraIsoSpecialOrthogonal_def, Iso.trans_inv, Iso.trans_inv, eqToIso.inv,
+    eqToIso.inv, ← Category.assoc, ← Category.assoc,
+    CommHopfAlgCat.mkQuotient_comp_eqToHom
+      (SpecialOrthogonal.definingHopfIdeal_eq_special R l).symm,
+    ConstantForm.Special.mkQuotient_comp_coordinateHopfAlgebraCongr_inv, Category.assoc,
+    CommHopfAlgCat.mkQuotient_comp_eqToHom (definingHopfIdeal_eq_special R l)]
 
 /-- **`SO_l^J` is smooth** over a ring containing `1/2` and a square root of `-1`. -/
 theorem smooth_coordinateHopfAlgebra (hi : i * i = -1) :
@@ -207,8 +202,11 @@ square root `i` of `-1`: the spectrum of the isomorphism of coordinate Hopf alge
 points it is conjugation by the congruence matrix `P`. -/
 noncomputable def groupSchemeIsoSpecialOrthogonal (hi : i * i = -1) :
     groupScheme R l ≅ SpecialOrthogonal.groupScheme R l :=
-  (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso
-      (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).op.symm ≪≫
+  eqToIso (congrArg (CommHopfAlgCat.quotientSpec _) (definingHopfIdeal_eq_special R l)) ≪≫
+    ConstantForm.Special.groupSchemeCongr (congrUnit l hi)
+      (by rw [coe_congrUnit]; exact congrMatrix_mul_formMatrix_mul_transpose hi) ≪≫
+    eqToIso (congrArg (CommHopfAlgCat.quotientSpec _)
+      (SpecialOrthogonal.definingHopfIdeal_eq_special R l)).symm ≪≫
     eqToIso (SpecialOrthogonal.groupScheme_def R l).symm
 
 /-- The isomorphism of group schemes is the spectrum of the isomorphism of coordinate Hopf
@@ -217,8 +215,12 @@ theorem groupSchemeIsoSpecialOrthogonal_def (hi : i * i = -1) :
     groupSchemeIsoSpecialOrthogonal l hi =
       (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso
           (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).op.symm ≪≫
-        eqToIso (SpecialOrthogonal.groupScheme_def R l).symm :=
-  (rfl)
+        eqToIso (SpecialOrthogonal.groupScheme_def R l).symm := by
+  apply Iso.ext
+  simp only [groupSchemeIsoSpecialOrthogonal, ConstantForm.Special.groupSchemeCongr_def,
+    coordinateHopfAlgebraIsoSpecialOrthogonal_def, Iso.trans_hom, Functor.mapIso_hom, Iso.symm_hom,
+    Iso.op_inv, Iso.trans_inv, eqToIso.hom, eqToIso.inv, op_comp, Functor.map_comp, eqToHom_op,
+    eqToHom_map, Category.assoc]
 
 /-- Followed by the quotient-spectrum presentation `SpecialOrthogonal.groupScheme_def`, the
 isomorphism of group schemes is the spectrum of the inverse isomorphism of coordinate Hopf
@@ -240,12 +242,18 @@ theorem groupSchemeIsoSpecialOrthogonal_hom_comp_inclusion (hi : i * i = -1) :
         (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
           (GeneralLinear.conjCoordinateIso (congrUnit l hi)).hom.op ≫
         eqToHom (GeneralLinear.groupScheme_def R l).symm := by
-  rw [groupSchemeIsoSpecialOrthogonal_def, SpecialOrthogonal.inclusion_eq_eqToHom_comp_hopfSpec_map,
-    inclusion_def, GeneralLinear.hopfIdealInclusion_def, CommHopfAlgCat.quotientSpecι_def,
-    ← coordinateMap_def]
-  simp only [Iso.trans_hom, Functor.mapIso_hom, Iso.symm_hom, Iso.op_inv, eqToIso.hom,
-    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ← Functor.map_comp_assoc,
-    ← op_comp, coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_inv]
+  have htarget := CommHopfAlgCat.eqToHom_comp_quotientSpecι
+    (GeneralLinear.coordinateHopfAlgebra R l)
+    (SpecialOrthogonal.definingHopfIdeal_eq_special R l).symm
+  have hsource := CommHopfAlgCat.eqToHom_comp_quotientSpecι
+    (GeneralLinear.coordinateHopfAlgebra R l) (definingHopfIdeal_eq_special R l)
+  simp only [groupSchemeIsoSpecialOrthogonal,
+    SpecialOrthogonal.inclusion_eq_eqToHom_comp_hopfIdealInclusion, Iso.trans_hom, eqToIso.hom,
+    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  rw [GeneralLinear.hopfIdealInclusion_def, reassoc_of% htarget,
+    ← GeneralLinear.hopfIdealInclusion_def,
+    ConstantForm.Special.groupSchemeCongr_hom_comp_hopfIdealInclusion, inclusion_def]
+  simp only [GeneralLinear.hopfIdealInclusion_def, Category.assoc, reassoc_of% hsource]
 
 /-- **On points, the inverse isomorphism `SO_l ≅ SO_l^J` is conjugation by `P⁻¹`.**
 Precomposing with `coordinateHopfAlgebraIsoSpecialOrthogonal l hi` sends an `A`-valued point of

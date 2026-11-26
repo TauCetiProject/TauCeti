@@ -24,6 +24,7 @@ congruence theorem for the defining ideals.
 public section
 
 open AlgebraicGeometry CategoryTheory Matrix
+open WithConv
 open scoped TensorProduct
 
 namespace TauCeti.ConstantForm.Special
@@ -68,6 +69,16 @@ theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [Ring T] [Algebra R T]
 noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{u} R :=
   CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n C)
 
+/-- The quotient morphism from the general-linear coordinate Hopf algebra. -/
+noncomputable def coordinateMap :
+    GeneralLinear.coordinateHopfAlgebra R n ⟶ coordinateHopfAlgebra R n C :=
+  CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C)
+
+/-- The coordinate morphism is the quotient by the joint defining Hopf ideal. -/
+theorem coordinateMap_def :
+    coordinateMap R n C = CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C) :=
+  (rfl)
+
 /-- The finite-type coordinate Hopf algebra of the determinant-one subgroup scheme preserving
 `C`. -/
 noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
@@ -97,6 +108,11 @@ theorem inclusion_def :
       CommHopfAlgCat.quotientSpecMapOfLe (GeneralLinear.coordinateHopfAlgebra R n)
         (le_sup_left.trans_eq (definingHopfIdeal_def R n C).symm) :=
   (rfl)
+
+/-- The determinant-one inclusion into the form-preserving group is a closed immersion. -/
+instance isClosedImmersion_inclusion : IsClosedImmersion (inclusion R n C).hom.hom.left := by
+  rw [inclusion_def]
+  infer_instance
 
 /-- The inclusion into the form-preserving group followed by its inclusion into `GLₙ` is the
 closed immersion defined by the joint ideal. -/
@@ -132,6 +148,51 @@ theorem mem_hopfIdealPointsSubgroup_iff (g : GL (Fin n) A) :
   rw [hopfIdealPointsSubgroup_definingHopfIdeal, Subgroup.mem_inf,
     ConstantForm.mem_pointsSubgroup_iff, MonoidHom.mem_ker,
     ← Units.val_eq_one, Matrix.GeneralLinearGroup.val_det_apply]
+
+variable {A}
+
+/-- The algebra-valued points of the determinant-one subgroup scheme are the invertible
+matrices preserving the scalar-extended form and having determinant one. -/
+noncomputable def pointsMulEquiv :
+    HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n C) (CommAlgCat.of R A) ≃*
+      ↥(ConstantForm.pointsSubgroup (C.map (algebraMap R A)) ⊓
+        (Matrix.GeneralLinearGroup.det : GL (Fin n) A →* Aˣ).ker) :=
+  (GeneralLinear.hopfIdealPointsSubgroupMulEquiv n (definingHopfIdeal R n C)
+    (CommAlgCat.of R A)).trans (MulEquiv.subgroupCongr (hopfIdealPointsSubgroup_definingHopfIdeal
+      R n C A))
+
+/-- The matrix underlying the point equivalence is the matrix of the included general-linear
+point. -/
+theorem pointsMulEquiv_coe
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n C) (CommAlgCat.of R A)) :
+    (pointsMulEquiv R n C (A := A) f : GL (Fin n) A) =
+      GeneralLinear.pointsMulEquiv n
+        (CommHopfAlgCat.quotientPointsHom _ (definingHopfIdeal R n C) (CommAlgCat.of R A) f) := by
+  rw [pointsMulEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
+    GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply]
+
+/-- The point equivalence sends scalar extension along an algebra map to entrywise matrix
+extension along that map. -/
+theorem pointsMulEquiv_mapValue {B : Type v} [CommRing B] [Algebra R B] (phi : A →ₐ[R] B)
+    (f : WithConv (coordinateHopfAlgebra R n C →ₐ[R] A)) :
+    (pointsMulEquiv R n C (A := B) (AlgHom.mapValue (H := coordinateHopfAlgebra R n C) phi f) :
+      GL (Fin n) B) =
+      GeneralLinearGroup.map (phi : A →+* B) (pointsMulEquiv R n C (A := A) f : GL (Fin n) A) := by
+  rw [pointsMulEquiv_coe, pointsMulEquiv_coe, ← CommHopfAlgCat.mapValue_quotientPointsHom,
+    GeneralLinear.pointsMulEquiv_mapValue]
+
+/-- An ambient algebra-valued point lies in the determinant-one subgroup scheme precisely
+when its matrix preserves the scalar-extended form and has determinant one. -/
+theorem mem_definingPointsSubgroup_iff
+    (g : HopfAlgebra.points (R := R) (H := GeneralLinear.coordinateHopfAlgebra R n)
+      (CommAlgCat.of R A)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup _ (definingHopfIdeal R n C) (CommAlgCat.of R A) ↔
+      (GeneralLinear.pointsMulEquiv n g : Matrix (Fin n) (Fin n) A) * C.map (algebraMap R A) *
+        (GeneralLinear.pointsMulEquiv n g : Matrix (Fin n) (Fin n) A)ᵀ =
+          C.map (algebraMap R A) ∧
+        (GeneralLinear.pointsMulEquiv n g : Matrix (Fin n) (Fin n) A).det = 1 := by
+  rw [← mem_hopfIdealPointsSubgroup_iff R n C A, GeneralLinear.mem_hopfIdealPointsSubgroup_iff,
+    MulEquiv.symm_apply_apply, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
 
 end Points
 

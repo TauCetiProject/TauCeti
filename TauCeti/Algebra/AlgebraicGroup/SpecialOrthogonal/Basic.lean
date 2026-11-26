@@ -76,9 +76,15 @@ variable (R : Type u) [CommRing R] (n : ℕ)
 
 /-- **The special orthogonal Hopf ideal**: the join of the orthogonal Hopf ideal and the
 determinant kernel in the coordinate Hopf algebra of `GL n`. -/
-noncomputable abbrev definingHopfIdeal :
+noncomputable def definingHopfIdeal :
     HopfIdeal R (GeneralLinear.coordinateHopfAlgebra R n) :=
   ConstantForm.Special.definingHopfIdeal R n 1
+
+/-- The standard special orthogonal Hopf ideal is the determinant-one ideal for the identity
+form. -/
+theorem definingHopfIdeal_eq_special :
+    definingHopfIdeal R n = ConstantForm.Special.definingHopfIdeal R n 1 :=
+  (rfl)
 
 /-- The special orthogonal Hopf ideal is the join of the orthogonal and special linear
 Hopf ideals. -/
@@ -103,6 +109,11 @@ theorem definingHopfIdeal_toIdeal :
 noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{u} R :=
   CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R n)
     (definingHopfIdeal R n)
+
+/-- The standard coordinate Hopf algebra is the determinant-one quotient for the identity form. -/
+theorem coordinateHopfAlgebra_eq_special :
+    coordinateHopfAlgebra R n = ConstantForm.Special.coordinateHopfAlgebra R n 1 :=
+  congrArg (CommHopfAlgCat.quotient _) (definingHopfIdeal_eq_special R n)
 
 /-- The quotient coordinate morphism from `O(GL n)` to the special orthogonal coordinate Hopf
 algebra. -/
@@ -217,11 +228,18 @@ instance isClosedImmersion_inclusion :
   exact hc₂
 
 /-- The special orthogonal coordinate Hopf algebra, bundled with its finite-type property. -/
-noncomputable abbrev finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
+noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
   ConstantForm.Special.finiteTypeCoordinateHopfAlgebra R n 1
+
+/-- The standard finite-type package is the determinant-one package for the identity form. -/
+theorem finiteTypeCoordinateHopfAlgebra_eq_special :
+    finiteTypeCoordinateHopfAlgebra R n =
+      ConstantForm.Special.finiteTypeCoordinateHopfAlgebra R n 1 :=
+  (rfl)
 
 /-- The finite-type package has the special orthogonal coordinate Hopf algebra as its underlying
 object. -/
+@[simp]
 theorem finiteTypeCoordinateHopfAlgebra_obj :
     (finiteTypeCoordinateHopfAlgebra R n).obj = coordinateHopfAlgebra R n :=
   ConstantForm.Special.finiteTypeCoordinateHopfAlgebra_obj R n 1
