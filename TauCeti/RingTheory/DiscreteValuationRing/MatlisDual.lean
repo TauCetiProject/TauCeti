@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Module.Injective.Cogenerator
 public import TauCeti.LinearAlgebra.Matrix.RowLattice
 public import TauCeti.RingTheory.DiscreteValuationRing.Length
 import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
+import TauCeti.Algebra.Module.Submodule.LinearMap
 
 /-!
 # Matlis duality over a discrete valuation ring and lengths of orthogonals in `(K/O)ⁿ`
@@ -149,24 +150,22 @@ omit [IsDiscreteValuationRing O] in
 /-- For `a ≠ 0` and an `O`-module `Q` killed by `a`, `divQuotient a` induces an equivalence
 `Hom_O(Q, O ⧸ Ideal.span {a}) ≃ₗ[O] Hom_O(Q, K ⧸ O)`. -/
 noncomputable def linearMapQuotientSpanEquivFractionRingQuotient
-    {Q : Type*} [AddCommGroup Q] [Module O Q] {a : O} (ha : a ≠ 0) (h : ∀ x : Q, a • x = 0) :
+    {Q : Type*} [AddCommMonoid Q] [Module O Q] {a : O} (ha : a ≠ 0) (h : ∀ x : Q, a • x = 0) :
     (Q →ₗ[O] O ⧸ Ideal.span {a}) ≃ₗ[O] (Q →ₗ[O] K ⧸ range (Algebra.linearMap O K)) :=
   (LinearEquiv.congrRight (quotientEquivTorsionBySet (K := K) ha)).trans
-    (LinearEquiv.ofBijective
-      (LinearMap.llcomp O Q _ (K ⧸ range (Algebra.linearMap O K)) (Submodule.subtype _))
-      ⟨fun _ _ hφ ↦ (LinearMap.cancel_left (Submodule.subtype_injective _)).1 hφ,
-        fun ψ ↦ ⟨ψ.codRestrict _ fun x ↦ by
-          rw [Submodule.torsionBySet_span_singleton_eq, Submodule.mem_torsionBy_iff,
-            ← map_smul, h, map_zero],
-          by simp only [LinearMap.llcomp_apply', LinearMap.subtype_comp_codRestrict]⟩⟩)
+    (Submodule.linearMapSubtypeEquiv O _ fun ψ x ↦ by
+      rw [Submodule.torsionBySet_span_singleton_eq, Submodule.mem_torsionBy_iff,
+        ← map_smul, h, map_zero])
 
 omit [IsDomain O] [IsDiscreteValuationRing O] in
 @[simp]
 theorem linearMapQuotientSpanEquivFractionRingQuotient_apply
-    {Q : Type*} [AddCommGroup Q] [Module O Q] {a : O} (ha : a ≠ 0) (h : ∀ x : Q, a • x = 0)
+    {Q : Type*} [AddCommMonoid Q] [Module O Q] {a : O} (ha : a ≠ 0) (h : ∀ x : Q, a • x = 0)
     (φ : Q →ₗ[O] O ⧸ Ideal.span {a}) (x : Q) :
     linearMapQuotientSpanEquivFractionRingQuotient (K := K) ha h φ x =
-      divQuotient (K := K) a (φ x) := by rfl
+      divQuotient (K := K) a (φ x) := by
+  simp [linearMapQuotientSpanEquivFractionRingQuotient]
+  rfl
 
 /-- For `a ≠ 0`, `Hom_O(O/a, K/O)` has length `v(a)`. -/
 theorem length_linearMap_quotient_span_singleton {a : O} (ha : a ≠ 0) :
