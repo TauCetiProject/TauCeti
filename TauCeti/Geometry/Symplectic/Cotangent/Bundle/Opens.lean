@@ -492,7 +492,7 @@ theorem liouvilleForm_sub_mpullback_apply_openInclusion {U : Opens M} {V : Opens
   have hι' := (contMDiff_openInclusion (I := J) V).mdifferentiableAt (x := Φ a) (by simp)
   -- Compare both sides after pulling back along `ι`, whose differential is surjective.
   rw [← Pi.sub_apply,
-    ← mpullback_apply_eq_mpullback_apply_iff (surjective_mfderiv_openInclusion U a), mpullback_sub,
+    ← mpullback_apply_eq_mpullback_apply_iff (mfderiv_openInclusion_surjective U a), mpullback_sub,
     Pi.sub_apply, mpullback_mextDeriv_ofFunction_apply hι hg]
   -- On the right, `g ∘ ι` has the differential of `f`, which is `λ_U - Φ^* λ_V`.
   rw [mextDeriv_ofFunction, hgf.mvfderiv_eq, ← mextDeriv_ofFunction, ← hf]

@@ -219,7 +219,7 @@ theorem range_openInclusion (U : Opens M) :
 
 /-- The differential of the cotangent inclusion is surjective at every point, since the inclusion
 is the restriction identification followed by the inclusion of an open subset. -/
-theorem surjective_mfderiv_openInclusion (U : Opens M) (z : CotangentBundle I U) :
+theorem mfderiv_openInclusion_surjective (U : Opens M) (z : CotangentBundle I U) :
     Function.Surjective (mfderiv (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜))
       (openInclusion (I := I) U) z) := by
   have hι : openInclusion (I := I) U = Subtype.val ∘ restrictOpen U :=

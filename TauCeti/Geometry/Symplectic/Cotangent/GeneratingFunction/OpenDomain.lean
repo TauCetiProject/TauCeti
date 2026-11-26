@@ -320,9 +320,8 @@ theorem exists_partialDiffeomorph_of_isInvertible_mixedHessian
   -- Over the chart domains, the ambient branch is the branch of the restriction.
   have hb {a} (ha : a ∈ Φ.source) : b (ι a) = Prod.map Subtype.val Subtype.val (β a) := by
     obtain ⟨-, hsrc, htgt⟩ := hβ a ha
-    have h₁ : a.proj = (β a).1 :=
-      (congrArg TotalSpace.proj hsrc).symm.trans (proj_generatingSource _)
-    simp only [b, ι, hΨ a ha, proj_openInclusion, htgt, proj_generatingTarget, h₁, Prod.map_apply']
+    simp only [b, ι, hΨ a ha, proj_openInclusion,
+      eq_proj_of_generatingSource_eq_of_generatingTarget_eq hsrc htgt.symm, Prod.map_apply']
   refine ⟨Ψ, b, hιy ▸ hιΨ hyΦ, by rw [← hιy, hb hyΦ, hβy]; rfl, ?_, fun z hz ↦ ?_, hΨω,
     fun z hz ↦ ?_, fun γ hγ hγx hγsrc ↦ ?_⟩
   · exact (contMDiff_proj _).contMDiffOn.prodMk
@@ -388,11 +387,8 @@ theorem exists_diffeomorph_opens_of_isInvertible_mixedHessian
   obtain ⟨Ψ, β, hx₀, hβx, hβs, hβ, hΨω, hprim, -⟩ :=
     exists_partialDiffeomorph_of_isInvertible_mixedHessian hW hxW hS hx
   -- On the source of `Ψ`, the branch is read off from the base points.
-  have hβeq {z} (hz : z ∈ Ψ.source) : β z = (z.proj, (Ψ z).proj) := by
-    obtain ⟨-, hsrc, htgt⟩ := hβ z hz
-    have h₁ := congrArg TotalSpace.proj hsrc
-    rw [proj_generatingSource] at h₁
-    exact Prod.ext h₁ (by rw [htgt, proj_generatingTarget])
+  have hβeq {z} (hz : z ∈ Ψ.source) : β z = (z.proj, (Ψ z).proj) :=
+    eq_proj_of_generatingSource_eq_of_generatingTarget_eq (hβ z hz).2.1 (hβ z hz).2.2.symm
   refine ⟨⟨Ψ.source, Ψ.open_source⟩, ⟨Ψ.target, Ψ.open_target⟩, Ψ.toDiffeomorphSourceTarget,
     ⟨hx₀, (Ψ.toDiffeomorphSourceTarget_apply_coe _).trans ?_⟩, fun z ↦ ?_, ?_, fun z ↦ ?_⟩
   · rw [(hβ _ hx₀).2.2, hβx]
@@ -471,7 +467,8 @@ theorem eventually_apply_eq_of_isInvertible_mixedHessian
       funext z
       exact hγU z z.property
     have hγx : γ (generatingSource I S x) = x := by
-      rw [hγU _ h, hφx, proj_generatingSource, proj_generatingTarget]
+      rw [hγU _ h]
+      exact (eq_proj_of_generatingSource_eq_of_generatingTarget_eq rfl hφx.symm).symm
     have hγsrc : ∀ᶠ z in 𝓝 (generatingSource I S x), generatingSource I S (γ z) = z := by
       filter_upwards [hU] with z hz
       rw [hγU z hz]
