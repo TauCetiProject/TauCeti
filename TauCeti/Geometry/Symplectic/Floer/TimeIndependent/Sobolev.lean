@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Cylinder.Slice.Average
+public import TauCeti.Analysis.ODE.TrajectoryOperator
+public import TauCeti.Analysis.Sobolev.Cylinder.Slice.ZeroMode
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.NonzeroModes
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -24,8 +25,9 @@ be the linearized Floer operator along the time-independent cylinder `(s, t) ↦
 (`TauCeti.SymplecticForm.floerLinearization_const_eq`), realized on the Sobolev space as
 `TauCeti.SymplecticForm.floerSobolevOperator : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)`. Its
 coefficients do not depend on `t`. This file shows that, when `‖dX_H(γ(s))‖ ≤ a < 2π` for every
-`s`, the realization commutes with the projection onto the zero Fourier mode, and that the other
-modes carry no kernel.
+`s`, the realization commutes with the projection onto the zero Fourier mode, that the other
+modes carry no kernel, and that on the zero mode it is the Morse operator
+`M ζ = ζ' - J dX_H(γ) ζ` on `W^{1,2}(ℝ, V)`, so that `D` and `M` have the same kernel.
 
 * **The coefficients.** For a constant `J` the coefficient field of `D` on jets is that of
   `∂s + J ∂t - J dX_H(u)` (`TauCeti.SymplecticForm.floerJetCoeff_const_eq`). Along `γ` it does not
@@ -47,15 +49,26 @@ modes carry no kernel.
   `W^{1,2}` is its own slice average, a section that does not depend on `t`
   (`TauCeti.SymplecticForm.sliceAverageL_eq_self_of_floerSobolevOperator_eq_zero`), whatever the
   regularity of the element.
+* **The zero mode is the Morse operator.** The zero mode of `W^{1,2}(ℝ × S¹, V)` is the image of
+  `W^{1,2}(ℝ, V)` under `TauCeti.CylinderSobolev.zeroModeL`, which reads a path `ζ` as the section
+  `(s, t) ↦ ζ(s)`. For `A` the `L∞` class of `s ↦ -J dX_H(γ(s))`, `D` maps the zero mode of `ζ` to
+  the zero mode of `M ζ`, where `M = TauCeti.WeakDerivStep.trajectoryOperator A` is the Morse
+  operator (`TauCeti.SymplecticForm.floerSobolevOperator_zeroModeL`).
+* **The kernels agree.** Hence the kernel of `D` is the image of the kernel of `M` under the zero
+  mode (`TauCeti.SymplecticForm.ker_floerSobolevOperator_eq_map_zeroModeL`). So the two kernels
+  have the same dimension, and `D` is injective exactly when `M` is
+  (`finrank_ker_floerSobolevOperator_eq_finrank_ker_trajectoryOperator` and
+  `injective_floerSobolevOperator_iff_injective_trajectoryOperator`, in the namespace
+  `TauCeti.SymplecticForm`).
 
-This is the `W^{1,2}` analogue of the `t`-independence half of
+The kernel statements are the `W^{1,2}` analogue of
 `TauCeti.SymplecticForm.forall_floerLinearization_comp_fst_eq_zero_iff`: kernel elements that lie in
-`W^{1,2}` do not depend on `t`, without that theorem's hypotheses on the second derivative of `X_H`
-and on `γ'`. It does not imply that half, which covers every bounded periodic `C²` kernel element;
-bounded kernel elements that are not square integrable on the cylinder, such as nonzero ones that
-do not decay in `s`, are not treated here. The ordinary differential
-equation on the zero mode, the converse, the cokernel, and the identification of the zero mode with
-the Morse operator `ζ ↦ ζ' - J dX_H(γ) ζ` on `W^{1,2}(ℝ, V)` are not treated here.
+`W^{1,2}` do not depend on `t` and solve the Morse equation, without that theorem's hypotheses on
+the second derivative of `X_H` and on `γ'`. They do not imply it, since it covers every bounded
+periodic `C²` kernel element; bounded kernel elements that are not square integrable on the
+cylinder, such as nonzero ones that do not decay in `s`, are not treated here. The cokernels of
+`D` and `M`, and hence their Fredholm properties and indices, are compared in
+`TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Index`.
 
 ## References
 
@@ -125,6 +138,33 @@ theorem floerSobolevOperator_sliceAverageL (ω : SymplecticForm V) (J : AlmostCo
   rw [floerSobolevOperator_def, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     Submodule.subtypeL_apply, Submodule.subtypeL_apply, coe_sliceAverageL,
     sliceAverageLp_jetOperator (floerJetCoeff_const_comp_fst_mk ω J H γ)]
+
+/-- **The zero mode of the linearized operator is the Morse operator.** Let `H` be a `C²`
+autonomous Hamiltonian and `γ` a continuous curve along which `dX_H` is bounded, and let `A` be the
+`L∞` class of `s ↦ -J dX_H(γ(s))`. The Sobolev realization of the linearized operator along the
+time-independent cylinder `(s, t) ↦ γ(s)` maps the zero mode of a path `ζ ∈ W^{1,2}(ℝ, V)` to the
+zero mode of `M ζ = ζ' - J dX_H(γ) ζ`, the trajectory operator
+`TauCeti.WeakDerivStep.trajectoryOperator A`. -/
+theorem floerSobolevOperator_zeroModeL
+    {A : Lp (V →L[ℝ] V) ∞ (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))}
+    (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
+      fun s ↦ -(J.toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s))))
+    (u : WeakDerivStep volume ⊤ 2 (ContinuousLinearMap.id ℝ
+      (Lp V 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))))) :
+    ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun _ ↦ H) (fun z ↦ γ z.1) (zeroModeL V u) =
+      zeroModeLp V (WeakDerivStep.trajectoryOperator A u) := by
+  have hpull := measurePreserving_fst_stripMeasure.quasiMeasurePreserving
+  refine Lp.ext ?_
+  filter_upwards [coeFn_floerSobolevOperator ω (memLp_floerJetCoeff_const_comp_fst hH hγ haγ)
+      (zeroModeL V u), coeFn_zeroModeL u, coeFn_zeroModeLp (WeakDerivStep.trajectoryOperator A u),
+    hpull.ae_eq_comp (WeakDerivStep.trajectoryOperator_apply_ae A u), hpull.ae_eq_comp hA]
+    with z h₁ h₂ h₃ h₄ h₅
+  simp only [Function.comp_apply] at h₄ h₅
+  rw [h₁, h₂, h₃, h₄, h₅, floerJetCoeff_const_eq, firstOrderJetCoeff_apply, map_zero, add_zero]
 
 end Coefficients
 
@@ -264,5 +304,76 @@ theorem sliceAverageL_eq_self_of_floerSobolevOperator_eq_zero (hg : ∀ v w, ω 
   exact pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm h0 (sq_nonneg _))
 
 end Gap
+
+section ZeroMode
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : V → ℝ} {γ : ℝ → V}
+  {A : Lp (V →L[ℝ] V) ∞ (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))}
+
+/-- **The kernel of the linearized operator is the kernel of the Morse operator.** Let the inner
+product of `V` be the metric `ω(·, J ·)`, let `H` be a `C²` autonomous Hamiltonian and `γ` a
+continuous curve with `‖dX_H(γ(s))‖ ≤ a < 2π` for every `s`, and let `A` be the `L∞` class of
+`s ↦ -J dX_H(γ(s))`. The kernel of the Sobolev realization of the linearized operator along the
+time-independent cylinder `(s, t) ↦ γ(s)` on `W^{1,2}(ℝ × S¹, V)` is the image under the zero mode
+of the kernel of the Morse operator `ζ ↦ ζ' - J dX_H(γ) ζ` on `W^{1,2}(ℝ, V)`. -/
+theorem ker_floerSobolevOperator_eq_map_zeroModeL (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
+      fun s ↦ -(J.toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s)))) :
+    (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun _ ↦ H) (fun z ↦ γ z.1)).ker =
+      (WeakDerivStep.trajectoryOperator (p := 2) A).ker.map (zeroModeL V).toLinearMap := by
+  ext x
+  simp only [LinearMap.mem_ker, Submodule.mem_map, ContinuousLinearMap.coe_coe]
+  constructor
+  · intro hx
+    obtain ⟨u, rfl⟩ := sliceAverageL_eq_self_iff.1
+      (sliceAverageL_eq_self_of_floerSobolevOperator_eq_zero hg hH hγ ha haγ hx)
+    rw [floerSobolevOperator_zeroModeL hH hγ haγ hA] at hx
+    exact ⟨u, (zeroModeLp V).injective (by rw [hx, map_zero]), rfl⟩
+  · rintro ⟨u, hu, rfl⟩
+    rw [floerSobolevOperator_zeroModeL hH hγ haγ hA, hu, map_zero]
+
+/-- Under the hypotheses of
+`TauCeti.SymplecticForm.ker_floerSobolevOperator_eq_map_zeroModeL`, the kernels of the linearized
+operator along `(s, t) ↦ γ(s)` and of the Morse operator `ζ ↦ ζ' - J dX_H(γ) ζ` have the same
+dimension. -/
+theorem finrank_ker_floerSobolevOperator_eq_finrank_ker_trajectoryOperator
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
+      fun s ↦ -(J.toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s)))) :
+    Module.finrank ℝ (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)).ker =
+      Module.finrank ℝ (WeakDerivStep.trajectoryOperator (p := 2) A).ker := by
+  rw [ker_floerSobolevOperator_eq_map_zeroModeL hg hH hγ ha haγ hA]
+  exact (Submodule.equivMapOfInjective _ zeroModeL_injective _).finrank_eq.symm
+
+/-- Under the hypotheses of
+`TauCeti.SymplecticForm.ker_floerSobolevOperator_eq_map_zeroModeL`, the linearized operator along
+`(s, t) ↦ γ(s)` is injective on `W^{1,2}(ℝ × S¹, V)` exactly when the Morse operator
+`ζ ↦ ζ' - J dX_H(γ) ζ` is injective on `W^{1,2}(ℝ, V)`. -/
+theorem injective_floerSobolevOperator_iff_injective_trajectoryOperator
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
+      fun s ↦ -(J.toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s)))) :
+    Function.Injective (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)) ↔
+      Function.Injective (WeakDerivStep.trajectoryOperator (p := 2) A) := by
+  rw [← ContinuousLinearMap.coe_coe, ← LinearMap.ker_eq_bot,
+    ker_floerSobolevOperator_eq_map_zeroModeL hg hH hγ ha haγ hA,
+    ← Submodule.map_bot (zeroModeL V).toLinearMap,
+    (Submodule.map_injective_of_injective zeroModeL_injective).eq_iff, LinearMap.ker_eq_bot,
+    ContinuousLinearMap.coe_coe]
+
+end ZeroMode
 
 end TauCeti.SymplecticForm

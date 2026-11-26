@@ -192,8 +192,7 @@ theorem exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm {ι : Typ
       ∀ i, A.sectionChartData.chartValueL volume p k i w
         =ᵐ[volume.restrict (A.image i)] A.coord i s := by
   refine exists_ae_eq_coord_of_memWkpLoc fun i ↦ ⟨_, (A.chart i).isOpen_inter_preimage_symm
-    (A.triv i).open_baseSet, (A.closure_image_subset_chart_image_closure_dom i).trans
-      (A.chart_image_closure_dom_subset i), ?_⟩
+    (A.triv i).open_baseSet, A.closure_image_subset_target_inter_preimage_baseSet i, ?_⟩
   rw [funext (A.coord_def i s)]
   exact memWkpLoc_trivialization_comp_chart_symm_of_cover (IsManifold.chart_mem_maximalAtlas _)
     (A.triv i) φ hφ e U hU (fun x _ ↦ hcover x) hs (.inr Fact.out) hn hkn

@@ -124,7 +124,7 @@ namespace TauCeti
 variable {B : Type w} [TopologicalSpace B] {F : Type w}
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] {E : B → Type w}
   [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)]
-  [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] {ι : Type w} [Fintype ι]
+  [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] {ι : Type} [Fintype ι]
   {R : Type w} [Ring R] (hι : Fintype.card ι = finrank ℝ F)
 
 /-! ### The orientation system on the total space -/
@@ -1112,7 +1112,7 @@ section FiberInclusion
 variable (F E R) in
 /-- The orientation system `π^*o(E)` pulled back to the fibre pair `(E_b, E_b ∖ {0})` along the
 fibre inclusion `(E_b, E_b ∖ {0}) ⟶ (E, E₀)`, trivialized by evaluating at an orientation `o` of
-`E_b`: every path in `E_b` projects to the constant path at `b`. For `ι : Type` it is the
+`E_b`: every path in `E_b` projects to the constant path at `b`. It is the
 trivialization along the constant lift `⟨b, o⟩` to the orientation cover
 (`TauCeti.fiberThomPairSignIso_hom`). -/
 def fiberThomPairSignIso (b : B) (o : Orientation ℝ (E b) ι) :
@@ -1248,10 +1248,10 @@ end FiberInclusion
 
 section FiberInclusionLift
 
-variable {B : Type} [TopologicalSpace B] {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type} [TopologicalSpace (TotalSpace F E)]
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
   [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
-  [VectorBundle ℝ F E] {ι : Type} [Fintype ι] {R : Type} [Ring R]
+  [VectorBundle ℝ F E] {ι : Type} [Fintype ι] {R : Type w} [Ring R]
   (hι : Fintype.card ι = finrank ℝ F)
 
 /-- The trivialization `fiberThomPairSignIso` at `o` is the trivialization of the orientation system
@@ -1282,6 +1282,16 @@ theorem fiberThomPairSignIso_hom (b : B) (o : Orientation ℝ (E b) ι) :
   refine Eq.trans ?_ (VectorBundleOrientationCover.pullbackSignLocalSystemIsoOfLift_hom_app_apply
     (R := R) (F := F) (E := E) hι _ _ _ x.as _).symm
   exact VectorBundleOrientationCover.liftFiberEquiv_apply hι _ _ f
+
+/-- The trivialization `fiberThomPairSignIso` at `o` is the identification of `π^*o(E)` with its
+written-out form (`TauCeti.thomPairSignLocalSystem_def`), followed by the trivialization
+`fiberThomPairSignLocalSystemIso` of the written-out form at `o`. -/
+theorem fiberThomPairSignIso_hom_eq (b : B) (o : Orientation ℝ (E b) ι) :
+    (fiberThomPairSignIso F E R hι b o).hom =
+      (LocalCoefficientSystem.pullback (TopPair.Hom.fst (fiberThomPairMap F E b)).hom).map
+          (eqToHom (thomPairSignLocalSystem_def hι)) ≫
+        (fiberThomPairSignLocalSystemIso F E R hι b o).hom :=
+  fiberThomPairSignIso_hom hι b o
 
 end FiberInclusionLift
 

@@ -43,6 +43,7 @@ The derivative bound comes from Mathlib's Faà di Bruno estimate
 * `TauCeti.exists_one_add_norm_pow_mul_norm_iteratedFDeriv_heatKernel_le` and
   `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le`: Gaussian bounds on all derivatives, with and
   without polynomial weights.
+* `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le_const`: every derivative is bounded.
 * `TauCeti.exists_integrable_norm_iteratedFDeriv_heatKernel_add_le`: integrable domination of the
   derivatives on translates of any bounded radius.
 * `TauCeti.integrable_iteratedFDeriv_heatKernel`: every derivative is integrable.
@@ -221,6 +222,14 @@ positive constant `C` with `‖D^k K_t(x)‖ ≤ C K_{2t}(x)` for all `x`. -/
 theorem exists_norm_iteratedFDeriv_heatKernel_le {t : ℝ} (ht : 0 < t) (k : ℕ) :
     ∃ C > 0, ∀ x : E, ‖iteratedFDeriv ℝ k (heatKernel t) x‖ ≤ C * heatKernel (2 * t) x := by
   simpa using exists_one_add_norm_pow_mul_norm_iteratedFDeriv_heatKernel_le (E := E) ht k 0
+
+/-- **Every derivative of the heat kernel is bounded.** For `t > 0` and every order `k` there is a
+constant `C` with `‖D^k K_t(x)‖ ≤ C` for all `x`. -/
+theorem exists_norm_iteratedFDeriv_heatKernel_le_const {t : ℝ} (ht : 0 < t) (k : ℕ) :
+    ∃ C, ∀ x : E, ‖iteratedFDeriv ℝ k (heatKernel t) x‖ ≤ C := by
+  obtain ⟨C, hC₀, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le (E := E) ht k
+  exact ⟨_, fun x ↦ (hC x).trans
+    (mul_le_mul_of_nonneg_left (heatKernel_le (by positivity) x) hC₀.le)⟩
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 

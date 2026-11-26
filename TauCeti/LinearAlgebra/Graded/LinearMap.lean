@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GradedMulAction
+public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.Algebra.Module.Submodule.LinearMap
 public import Mathlib.Algebra.Module.Submodule.Range
 
@@ -62,6 +64,15 @@ variable {R : Type uR} {ι : Type uι} {M : Type uM} {N : Type uN} {σM : Type*}
   [Semiring R] [AddCommMonoid M] [AddCommMonoid N]
   [Module R M] [Module R N] [SetLike σM M] [SetLike σN N]
 
+/-- If a linear map detects membership in each piece, a graded scalar action on the
+target also respects the source pieces. -/
+theorem gradedSMul_of_mem_iff {κ S : Type*} [SetLike S R] [VAdd κ ι]
+    (f : M →ₗ[R] N) (𝒜 : κ → S) (G : ι → σM) (H : ι → σN) [SetLike.GradedSMul 𝒜 H]
+    (hmem : ∀ {q x}, x ∈ G q ↔ f x ∈ H q) : SetLike.GradedSMul 𝒜 G where
+  smul_mem {p q} {a x} ha hx := by
+    rw [hmem, map_smul]
+    exact SetLike.GradedSMul.smul_mem ha (hmem.mp hx)
+
 section Add
 
 variable [Add ι]
@@ -82,6 +93,12 @@ theorem IsHomogeneous.map_mem {f : M →ₗ[R] N} {𝒜 : ι → σM}
     {ℬ : ι → σN} {q p : ι} (hf : IsHomogeneous f 𝒜 ℬ q) {x : M} (hx : x ∈ 𝒜 p) :
     f x ∈ ℬ (p + q) :=
   hf hx
+
+/-- A homogeneous linear map kills a homogeneous element whose target piece is trivial. -/
+theorem IsHomogeneous.apply_eq_zero_of_eq_bot {f : M →ₗ[R] N} {𝒜 : ι → σM}
+    {ℬ : ι → Submodule R N} {q p : ι} (hf : IsHomogeneous f 𝒜 ℬ q) (hbot : ℬ (p + q) = ⊥)
+    {x : M} (hx : x ∈ 𝒜 p) : f x = 0 :=
+  (Submodule.mem_bot R).mp (hbot ▸ hf.map_mem hx)
 
 /-- The zero linear map is homogeneous of every degree. -/
 @[simp]

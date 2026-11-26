@@ -48,6 +48,7 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
 ## Main results
 
 * `TauCeti.mem_cornerSubmodule_iff`: the fixed-point characterization of an idempotent corner.
+* `TauCeti.mul_mem_cornerSubmodule`: the Peirce multiplication rule `(eAf)(fAg) ⊆ eAg`.
 * `TauCeti.mem_span_singleton_of_mem_cornerSubmodule`: the corner `eAf` lies in the left ideal
   `Af` without idempotency assumptions.
 * `IsIdempotentElem.mul_corner_val` and `IsIdempotentElem.corner_val_mul`: an element of the
@@ -90,6 +91,18 @@ theorem cornerSubmodule_def (e f : A) :
 /-- Cutting an element down by `e` on the left and `f` on the right lands in the corner `eAf`. -/
 theorem mul_mul_mem_cornerSubmodule (e f x : A) : e * x * f ∈ cornerSubmodule k e f :=
   ⟨x, by simp only [LinearMap.mulLeftRight_apply]⟩
+
+variable {k} in
+/-- **The Peirce multiplication rule** `(eAf)(fAg) ⊆ eAg`. No idempotency is needed. -/
+theorem mul_mem_cornerSubmodule {e f g x y : A} (hx : x ∈ cornerSubmodule k e f)
+    (hy : y ∈ cornerSubmodule k f g) : x * y ∈ cornerSubmodule k e g := by
+  rw [cornerSubmodule_def, LinearMap.mem_range] at hx hy
+  obtain ⟨a, rfl⟩ := hx
+  obtain ⟨b, rfl⟩ := hy
+  simp only [LinearMap.mulLeftRight_apply]
+  have h : e * a * f * (f * b * g) = e * (a * f * (f * b)) * g := by simp only [mul_assoc]
+  rw [h]
+  exact mul_mul_mem_cornerSubmodule k e g _
 
 /-- For idempotents `e` and `f`, an element belongs to the corner `eAf` exactly when multiplying it
 by `e` on the left and by `f` on the right fixes it. -/
