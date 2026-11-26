@@ -205,8 +205,8 @@ private theorem mem_closure_range_of_mem_aeZeroOff [T2Space M] (hp : p ≠ ⊤)
     have hT' := (T.continuous.tendsto _).comp (hlim j)
     rw [hTu j] at hT'
     exact hT'
-  have hE := ((extendByZeroL h (isClosed_tsupport ψ) hψi).continuous.tendsto _).comp hconv
-  simp only [Function.comp_def, extendByZeroL_chartRestrictL] at hE
+  have hE := tendsto_subtype_rng.1 (tendsto_of_tendsto_chartRestrictL h (isClosed_tsupport ψ) hψi
+    hconv)
   exact (Submodule.isClosed_topologicalClosure _).mem_of_tendsto hE
     (Eventually.of_forall fun m ↦ Submodule.le_topologicalClosure _ (ha m))
 

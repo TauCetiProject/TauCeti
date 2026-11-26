@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.Iwasawa.GrowthFormula
 
 import TauCeti.Algebra.Module.Submodule.Pointwise
 import TauCeti.LinearAlgebra.Pi
-import TauCeti.LinearAlgebra.Submodule.Prod
+import TauCeti.LinearAlgebra.Submodule.Prod.Basic
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Norm.Cokernel
