@@ -38,7 +38,9 @@ degree by the induced map `LinearMap.cohomologyMap`. If the induced map is bijec
 degree, it is an isomorphism of `R`-algebras (`LinearMap.cohomologyAlgEquiv`), and then the
 condition on the units is not needed: it is automatic once the induced map is onto in degree zero
 (`LinearMap.sub_mem_coboundaries_of_surjective_cohomologyMap`), since a multiplicative map onto
-the cohomology of a unital product sends the unit to the unit.
+the cohomology of a unital product sends the unit to the unit. In particular, two such products
+on the same module which agree up to coboundaries on cocycles give the same graded ring structure,
+whatever their units (`LinearMap.cohomologyGRing_eq_of_sub_mem_coboundaries`).
 
 The degree-wise cohomology is that of `TauCeti.Algebra.Homology.SquareZero.Graded`, where `M` need
 not be the direct sum of the pieces `G i`; the ring is the direct sum of the cohomology groups of
@@ -441,5 +443,56 @@ theorem cohomologyAlgEquiv_of
       f hfdeg hfD hfmul (hbij 0).2) x
 
 end AlgHom
+
+section Agreement
+
+variable (μ : M →ₗ[R] M →ₗ[R] M)
+  (hμdeg : ∀ {i j : ℤ} {a b : M}, a ∈ G i → b ∈ G j → μ a b ∈ G (i + j))
+  (hμL : ∀ {i : ℤ} {a : M}, a ∈ G i → ∀ b, D (μ a b) = μ (D a) b + negOnePowCast R i • μ a (D b))
+  (e : M) (he : e ∈ D.cocycles G 0)
+  (hμone_mul : ∀ {i : ℤ} {a : M}, a ∈ D.cocycles G i → μ e a - a ∈ D.coboundaries G i)
+  (hμmul_one : ∀ {i : ℤ} {a : M}, a ∈ D.cocycles G i → μ a e - a ∈ D.coboundaries G i)
+  (hμassoc : ∀ {i j k : ℤ} {a b c : M}, a ∈ D.cocycles G i → b ∈ D.cocycles G j →
+    c ∈ D.cocycles G k → μ (μ a b) c - μ a (μ b c) ∈ D.coboundaries G (i + j + k))
+  (ν : M →ₗ[R] M →ₗ[R] M)
+  (hνdeg : ∀ {i j : ℤ} {a b : M}, a ∈ G i → b ∈ G j → ν a b ∈ G (i + j))
+  (hνL : ∀ {i : ℤ} {a : M}, a ∈ G i → ∀ b, D (ν a b) = ν (D a) b + negOnePowCast R i • ν a (D b))
+  (e' : M) (he' : e' ∈ D.cocycles G 0)
+  (hνone_mul : ∀ {i : ℤ} {a : M}, a ∈ D.cocycles G i → ν e' a - a ∈ D.coboundaries G i)
+  (hνmul_one : ∀ {i : ℤ} {a : M}, a ∈ D.cocycles G i → ν a e' - a ∈ D.coboundaries G i)
+  (hνassoc : ∀ {i j k : ℤ} {a b c : M}, a ∈ D.cocycles G i → b ∈ D.cocycles G j →
+    c ∈ D.cocycles G k → ν (ν a b) c - ν a (ν b c) ∈ D.coboundaries G (i + j + k))
+  (hsub : ∀ {i j : ℤ} {a b : M}, a ∈ D.cocycles G i → b ∈ D.cocycles G j →
+    μ a b - ν a b ∈ D.coboundaries G (i + j))
+
+include hsub in
+/-- **Products agreeing up to coboundaries have the same cohomology ring.** Let `μ` and `ν` be
+products on the same module, each with a unit up to coboundaries, as in
+`LinearMap.cohomologyGRing`. If `μ a b - ν a b` is a coboundary for all cocycles `a` and `b`, then
+the two graded ring structures on the degree-wise cohomology are equal. The units need not agree
+on the chain level: `e - e'` is a coboundary, since `[e] = [e] [e'] = [e']`. -/
+theorem cohomologyGRing_eq_of_sub_mem_coboundaries :
+    cohomologyGRing μ hμdeg hμL e he hμone_mul hμmul_one hμassoc =
+      cohomologyGRing ν hνdeg hνL e' he' hνone_mul hνmul_one hνassoc := by
+  have hmul : ∀ i j, cohomologyMul μ hμdeg hμL (i := i) (j := j) = cohomologyMul ν hνdeg hνL :=
+    fun i j => by
+      rw [cohomologyMul_eq_cohomologyProduct, cohomologyMul_eq_cohomologyProduct]
+      exact cohomologyProduct_eq_of_sub_mem_coboundaries _ _ fun ha hb => by
+        simpa only [add_zero] using hsub ha hb
+  -- The identity is multiplicative and onto, so it sends the unit `e` to the unit `e'`.
+  have hone :
+      (Submodule.Quotient.mk ⟨e, he⟩ : D.cohomology G 0) = Submodule.Quotient.mk ⟨e', he'⟩ :=
+    cohomology_mk_eq_mk_iff.2 <| by
+      simpa only [LinearMap.id_apply] using sub_mem_coboundaries_of_surjective_cohomologyMap μ e he
+        hμone_mul ν hνdeg hνL e' he' hνmul_one LinearMap.id (fun ha => ha) (fun _ => rfl)
+        (fun ha hb => hsub ha hb) (by rw [cohomologyMap_id]; exact Function.surjective_id)
+  -- The two structures differ only in their products, units, and the casts built from the units.
+  unfold cohomologyGRing
+  congr
+  all_goals first
+    | (funext i j x y; rw [hmul])
+    | (funext k; rw [hone])
+
+end Agreement
 
 end LinearMap
