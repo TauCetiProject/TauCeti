@@ -402,6 +402,21 @@ theorem PosSemidef.rank_le_iff_eigenvalues₀_eq_zero (hA : A.PosSemidef)
     exact Subtype.ext (Fin.ext (congrArg (fun x : Fin d ↦ x.val) hij))
   simpa only [Fintype.card_fin] using Fintype.card_le_of_injective f hf
 
+/-- A sorted eigenvalue of a positive-semidefinite matrix is positive exactly at the indices
+below the rank. -/
+theorem PosSemidef.eigenvalues₀_pos_iff (hA : A.PosSemidef) (i : Fin (Fintype.card ι)) :
+    0 < hA.isHermitian.eigenvalues₀ i ↔ (i : ℕ) < A.rank := by
+  classical
+  rw [hA.isHermitian.rank_eq_card_non_zero_eigenvalues₀, Fintype.card_subtype,
+    Finset.filter_congr fun j _ ↦ (hA.eigenvalues₀_nonneg j).lt_iff_ne'.symm,
+    Tuple.lt_card_gt_iff_apply_gt_of_antitone hA.isHermitian.eigenvalues₀_antitone]
+
+/-- A sorted eigenvalue of a positive-semidefinite matrix vanishes exactly from the rank
+onward. -/
+theorem PosSemidef.eigenvalues₀_eq_zero_iff (hA : A.PosSemidef) (i : Fin (Fintype.card ι)) :
+    hA.isHermitian.eigenvalues₀ i = 0 ↔ A.rank ≤ i := by
+  rw [← not_lt, ← hA.eigenvalues₀_pos_iff, (hA.eigenvalues₀_nonneg i).lt_iff_ne', not_not]
+
 /-! ### Weyl's additive inequalities and rank perturbations -/
 
 /-- **Weyl's additive inequality** for Hermitian matrices, upper form: if `i + j ≤ k`, then
