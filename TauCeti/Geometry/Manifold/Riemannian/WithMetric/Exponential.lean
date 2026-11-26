@@ -14,7 +14,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Isometry
 
 The tautological map `ofWithMetric : WithMetric g → M` identifies `expDomain` and `riemannianExp`
 on `WithMetric g` with those on `M` whenever `M` carries `g`, both in `[RiemannianBundle]` form
-(`TauCeti.WithMetric.mem_expDomain_iff`, `TauCeti.WithMetric.ofWithMetric_riemannianExp`) and in
+(`TauCeti.WithMetric.mem_expDomain_iff_mfderiv_ofWithMetric`,
+`TauCeti.WithMetric.ofWithMetric_riemannianExp`) and in
 `letI` form at `toWithMetric g p` (`TauCeti.WithMetric.mem_expDomain_toWithMetric_iff`,
 `TauCeti.WithMetric.ofWithMetric_riemannianExp_toWithMetric`). It also intertwines `expDomain` and
 `riemannianExp` along `diffeomorphWithMetric` under constant metric rescaling `g ↦ c g`
@@ -46,7 +47,7 @@ variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 include hg
 
 /-- Membership in `expDomain` on `WithMetric g` reduces to `M` when `M` carries `g`. -/
-theorem mem_expDomain_iff {x : WithMetric g} {v : TangentSpace I x} :
+theorem mem_expDomain_iff_mfderiv_ofWithMetric {x : WithMetric g} {v : TangentSpace I x} :
     v ∈ expDomain I (WithMetric g) x ↔
       mfderiv I I ofWithMetric x v ∈ expDomain I M x.ofWithMetric := by
   have h := (riemannianIsometryOfInner g hg).mfderiv_mem_expDomain_iff (p := x) (v := v)
@@ -63,7 +64,7 @@ theorem ofWithMetric_riemannianExp [I.Boundaryless] [T2Space M]
 
 end RiemannianBundle
 
-/-- `letI` version of `mem_expDomain_iff` at `toWithMetric g p`. -/
+/-- `letI` version of `mem_expDomain_iff_mfderiv_ofWithMetric` at `toWithMetric g p`. -/
 theorem mem_expDomain_toWithMetric_iff (p : M) (v : TangentSpace I (toWithMetric g p)) :
     v ∈ expDomain I (WithMetric g) (toWithMetric g p) ↔
       (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
@@ -73,7 +74,8 @@ theorem mem_expDomain_toWithMetric_iff (p : M) (v : TangentSpace I (toWithMetric
   let _ : RiemannianBundle _ := ⟨g.toRiemannianMetric⟩
   let _ : IsContMDiffRiemannianBundle I ∞ E _ := Bundle.instIsContMDiffRiemannianBundle g
   simpa only [ofWithMetric_toWithMetric] using
-    mem_expDomain_iff g g.inner_riemannianBundle (x := toWithMetric g p) (v := v)
+    mem_expDomain_iff_mfderiv_ofWithMetric g g.inner_riemannianBundle (x := toWithMetric g p)
+      (v := v)
 
 /-- `letI` version of `ofWithMetric_riemannianExp` at `toWithMetric g p`. -/
 theorem ofWithMetric_riemannianExp_toWithMetric [I.Boundaryless] [T2Space M]
@@ -104,12 +106,12 @@ theorem mfderiv_diffeomorphWithMetric_rescale_const_mem_expDomain
     let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
     let _ : IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y) :=
       Bundle.instIsContMDiffRiemannianBundle g
-    rw [← mem_expDomain_iff g g.inner_riemannianBundle]
+    rw [← mem_expDomain_iff_mfderiv_ofWithMetric g g.inner_riemannianBundle]
     exact hv
   let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g_c.toRiemannianMetric⟩
   let _ : IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y) :=
     Bundle.instIsContMDiffRiemannianBundle g_c
-  rw [mem_expDomain_iff g_c g_c.inner_riemannianBundle]
+  rw [mem_expDomain_iff_mfderiv_ofWithMetric g_c g_c.inner_riemannianBundle]
   exact (congr_mfderiv_ofWithMetric_diffeomorphWithMetric g_c ∞ (by simp)
     (fun b u ↦ u ∈ expDomain I M b) x v).mpr hmem
 

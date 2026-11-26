@@ -19,8 +19,8 @@ This file computes the pointwise and global injectivity radius of the round unit
 `sphere (0 : E) 1` (`finrank ℝ E = n + 1`), its rescaled version of radius `r > 0`
 (`sphereRoundMetricOfRadius r hr`), and the antipodal sharpness phenomena at distance `π`:
 
-* `n = 0`: `inj(p) = inj(S⁰) = ⊤` (`injectivityRadiusAt_sphere_zero`,
-  `injectivityRadius_sphere_zero`).
+* `n = 0`: `inj(p) = inj(S⁰) = ⊤` (`injectivityRadiusAt_eq_top_of_subsingleton`,
+  `injectivityRadius_eq_top_of_subsingleton`).
 * Every `n : ℕ`: `Metric.ball 0 Real.pi` is a normal domain (`isNormalDomain_ball_sphere_pi`) via
   constant sectional curvature `1` and the explicit formula for `exp_p`.
 * `1 ≤ n`: antipodal collision at norm `π` yields `inj(p) = inj(Sⁿ) = ENNReal.ofReal Real.pi`
@@ -54,17 +54,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
-
-/-! ### Dimension zero -/
-
-/-- Each point of the zero-dimensional round sphere `S⁰` has infinite injectivity radius. -/
-theorem injectivityRadiusAt_sphere_zero [Fact (finrank ℝ E = 0 + 1)] (p : sphere (0 : E) 1) :
-    injectivityRadiusAt (𝓡 0) (sphere (0 : E) 1) p = ⊤ :=
-  injectivityRadiusAt_eq_top_of_subsingleton p
-
-/-- The zero-dimensional round sphere `S⁰` has infinite global injectivity radius. -/
-theorem injectivityRadius_sphere_zero [Fact (finrank ℝ E = 0 + 1)] :
-    injectivityRadius (𝓡 0) (sphere (0 : E) 1) = ⊤ := injectivityRadius_eq_top_of_subsingleton
 
 /-! ### Normal tangent ball of radius `π` -/
 
