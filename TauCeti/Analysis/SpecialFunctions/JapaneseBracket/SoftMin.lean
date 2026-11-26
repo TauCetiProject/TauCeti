@@ -33,10 +33,12 @@ Its gradient is a convex combination of the gradients of the regularized distanc
 
 Unlike the distance function it is nearly flat near `s` once `b` is large: where
 `Φ(z) ≤ √b + L`, the gradient has norm at most `card s · exp L / √(√b)`
-(`TauCeti.norm_fderiv_softMinDist_le_of_le`). Each center `a` contributes its unit gradient with
-the weight `exp (Φ(z) - √(b + ‖z - a‖²))`, so a center far from `z` contributes an exponentially
-small amount, while a center near `z` contributes a small gradient because `√(b + t²)` is flat
-for `t` small compared with `√b`.
+(`TauCeti.norm_fderiv_softMinDist_le_of_le`). Each center `a` contributes the gradient of
+`√(b + ‖z - a‖²)`, of norm `‖z - a‖ / √(b + ‖z - a‖²) < 1`, with the weight
+`exp (Φ(z) - √(b + ‖z - a‖²))`; these weights sum to one
+(`TauCeti.sum_exp_softMinDist_sub_sqrt`). A center far from `z` therefore contributes an
+exponentially small amount, while a center near `z` contributes a small gradient because
+`√(b + t²)` is flat for `t` small compared with `√b`.
 
 So `exp (c Φ)` is a smooth weight comparable to `exp (c · infDist z s)`, with logarithmic gradient
 at most `|c|` everywhere (`TauCeti.norm_fderiv_exp_mul_softMinDist_le`) and arbitrarily small near
@@ -86,6 +88,12 @@ private theorem exp_softMinDist_sub_sqrt (hs : s.Nonempty) (a : E) :
     Real.exp (softMinDist b s z - √(b + ‖z - a‖ ^ 2)) =
       (∑ a' ∈ s, Real.exp (-√(b + ‖z - a'‖ ^ 2)))⁻¹ * Real.exp (-√(b + ‖z - a‖ ^ 2)) := by
   rw [sub_eq_add_neg, Real.exp_add, softMinDist_def, Real.exp_neg, Real.exp_log (sum_exp_pos hs)]
+
+/-- The weights `exp (Φ(z) - √(b + ‖z - a‖²))` of the centers of a nonempty set sum to one. -/
+theorem sum_exp_softMinDist_sub_sqrt (hs : s.Nonempty) (b : ℝ) (z : E) :
+    ∑ a ∈ s, Real.exp (softMinDist b s z - √(b + ‖z - a‖ ^ 2)) = 1 := by
+  simp_rw [exp_softMinDist_sub_sqrt hs, ← Finset.mul_sum]
+  exact inv_mul_cancel₀ (sum_exp_pos hs).ne'
 
 /-- The soft minimum is at most each regularized distance. -/
 theorem softMinDist_le_sqrt (ha : a ∈ s) : softMinDist b s z ≤ √(b + ‖z - a‖ ^ 2) := by
@@ -187,7 +195,8 @@ theorem contDiff_softMinDist (hb : 0 < b) (s : Finset E) {n : WithTop ℕ∞} :
 
 /-- **The derivative of the soft minimum.** It is the convex combination of the derivatives
 `(√(b + ‖z - a‖²))⁻¹ • ⟪z - a, ·⟫` of the regularized distances, with the weights
-`exp (Φ(z) - √(b + ‖z - a‖²))`, which sum to one when `s` is nonempty. -/
+`exp (Φ(z) - √(b + ‖z - a‖²))`, which sum to one when `s` is nonempty
+(`sum_exp_softMinDist_sub_sqrt`). -/
 theorem hasFDerivAt_softMinDist (hb : 0 < b) (s : Finset E) (z : E) :
     HasFDerivAt (softMinDist b s)
       (∑ a ∈ s, Real.exp (softMinDist b s z - √(b + ‖z - a‖ ^ 2)) •
@@ -222,9 +231,7 @@ theorem norm_fderiv_softMinDist_le_one (hb : 0 < b) (s : Finset E) (z : E) :
       ≤ ∑ a ∈ s, Real.exp (softMinDist b s z - √(b + ‖z - a‖ ^ 2)) :=
         Finset.sum_le_sum fun a _ ↦ mul_le_of_le_one_right (Real.exp_pos _).le
           (by simpa using norm_div_sqrt_add_norm_sq_le_one hb.le (z - a))
-    _ = 1 := by
-      simp_rw [exp_softMinDist_sub_sqrt hs, ← Finset.mul_sum]
-      exact inv_mul_cancel₀ (sum_exp_pos hs).ne'
+    _ = 1 := sum_exp_softMinDist_sub_sqrt hs b z
 
 /-- One term of the gradient of the soft minimum is small where the soft minimum is at most
 `√b + L`: the center contributes `exp (Φ - y) √(y² - b) / y`, `y = √(b + t²)`, which is at most

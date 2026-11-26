@@ -387,6 +387,13 @@ private theorem mul_integral_sq_mul_norm_sq_le_of_forall_le
     integral_add' i₃ i₄, integral_const_mul, integral_const_mul] at hmono
   linarith
 
+/-- A gradient bound `t ≤ √m / 4` squares to `t² ≤ m / 16`. -/
+private theorem sq_le_div_sixteen_of_le_sqrt_div_four {t m : ℝ} (ht : 0 ≤ t) (hm : 0 ≤ m)
+    (h : t ≤ √m / 4) : t ^ 2 ≤ m / 16 := by
+  have := pow_le_pow_left₀ ht h 2
+  rw [div_pow, Real.sq_sqrt hm] at this
+  linarith
+
 /-- The pointwise margin of the localization by the pair of weights `V cos θ`, `V sin θ`. Let
 `m = min c₀ a`. If `V` has logarithmic gradient at most `|c|` everywhere and at most `√m / 4` on
 a set `S`, and the angle `θ` has gradient at most `√m / 4` and equals `π / 2` near every point
@@ -418,10 +425,8 @@ private theorem min_mul_sq_le_sub_norm_fderiv_sq {c₀ a c : ℝ} {S : Set ℂ} 
   have hv₂d := hgd Real.hasDerivAt_sin Real.abs_cos_le_one
   by_cases hz : z ∈ S
   · -- On `S` both gradients are small, and half of `m` survives.
-    have he2 : ‖fderiv ℝ θ z‖ ^ 2 ≤ min c₀ a / 16 := by
-      have := pow_le_pow_left₀ (norm_nonneg _) (hθd z) 2
-      rw [div_pow, Real.sq_sqrt hm] at this
-      linarith
+    have he2 : ‖fderiv ℝ θ z‖ ^ 2 ≤ min c₀ a / 16 :=
+      sq_le_div_sixteen_of_le_sqrt_div_four (norm_nonneg _) hm (hθd z)
     exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (sq_nonneg _)).trans
       (half_mul_le_of_norm_le (min_le_left c₀ a) (min_le_right c₀ a) (norm_nonneg _)
         (norm_nonneg _) (norm_nonneg _) (hdV₂ z hz) he2 hv₁d hv₂d)
@@ -685,9 +690,10 @@ theorem exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le (m 
     linarith)
   -- The angle has gradient at most `ε`.
   have hθd (z : ℂ) : ‖fderiv ℝ θ z‖ ≤ √mm / 4 := by
-    have hd := ((hθ₀.differentiable (by simp)) (Φ z - s₀)).hasFDerivAt.comp z
-      ((hΦd z).hasFDerivAt.sub_const s₀)
-    rw [show θ = θ₀ ∘ fun t ↦ Φ t - s₀ from rfl, hd.fderiv]
+    have hd : HasFDerivAt θ ((fderiv ℝ θ₀ (Φ z - s₀)).comp (fderiv ℝ Φ z)) z :=
+      ((hθ₀.differentiable (by simp)) (Φ z - s₀)).hasFDerivAt.comp z
+        ((hΦd z).hasFDerivAt.sub_const s₀)
+    rw [hd.fderiv]
     refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
     have h₁ := hθ₀d (Φ z - s₀)
     have h₂ := norm_fderiv_softMinDist_le_one hb s z
@@ -725,10 +731,8 @@ theorem exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le (m 
       hθout hθd hm.le) hη hηc
   · exact norm_fderiv_exp_mul_softMinDist_sq_le hb s c z
   · rw [norm_fderiv_exp_mul_softMinDist hb, mul_pow, mul_pow, sq_abs]
-    have h₂ : ‖fderiv ℝ Φ z‖ ^ 2 ≤ mm / 16 := by
-      have := pow_le_pow_left₀ (norm_nonneg _) (hΦS z hz) 2
-      rw [div_pow, Real.sq_sqrt hm.le] at this
-      linarith
+    have h₂ : ‖fderiv ℝ Φ z‖ ^ 2 ≤ mm / 16 :=
+      sq_le_div_sixteen_of_le_sqrt_div_four (norm_nonneg _) hm.le (hΦS z hz)
     have hc2' : c ^ 2 ≤ 1 := by linarith
     calc c ^ 2 * ‖fderiv ℝ Φ z‖ ^ 2 * V z ^ 2 ≤ 1 * (mm / 16) * V z ^ 2 := by gcongr
       _ = mm / 16 * V z ^ 2 := by ring
