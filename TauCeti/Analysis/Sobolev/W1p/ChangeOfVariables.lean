@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -44,10 +45,11 @@ precomposition also preserves zero boundary values: a test function on `V` compo
 vanishes off the compact set `Φ⁻¹(tsupport φ) ⊆ U`.
 
 The same change of variables at exponent one, applied on small balls, gives the chain rule for
-weak derivatives under a `C¹` map `Φ`, injective with invertible derivative on `U` and mapping it
-into `V`, with no bound on `DΦ` or on the Jacobian: if `Du` is a weak derivative of `u` on `V`,
-then `x ↦ Du(Φ x) ∘ DΦ(x)` is one of `u ∘ Φ` on `U`, for any complete codomain. On a ball whose
-closure lies in `U` the derivative of `Φ` is bounded and its Jacobian is bounded below, so
+weak derivatives under a `C¹` map `Φ` with invertible derivative on `U` and mapping it into `V`,
+with no bound on `DΦ` or on the Jacobian and no injectivity: if `Du` is a weak derivative of `u`
+on `V`, then `x ↦ Du(Φ x) ∘ DΦ(x)` is one of `u ∘ Φ` on `U`, for any complete codomain. By the
+inverse function theorem `Φ` is injective on a small ball around each point of `U`; on such a ball
+whose closure lies in `U` the derivative of `Φ` is bounded and its Jacobian is bounded below, so
 `TauCeti.W1p.compL` applies to each scalar component `ℓ ∘ u`; the local identities glue
 (`TauCeti.hasWeakFDerivOn_iff_locally`) and continuous linear functionals detect the
 vector-valued identity (`TauCeti.hasWeakFDerivOn_of_forall_strongDual`).
@@ -459,12 +461,12 @@ private theorem exists_w1p_one_ae_eq {u : E → ℝ} {Du : E → E →L[ℝ] ℝ
   · filter_upwards [hg1.coeFn_toLp] with y hy
     rw [W1p.gradient_mk, hy, hg]
 
-/-- The scalar chain rule on a ball whose closure lies in `U`, from the first-order change of
-variables `TauCeti.W1p.compL` at exponent one. -/
+/-- The scalar chain rule on a ball whose closure lies in `U` and on which `Φ` is injective, from
+the first-order change of variables `TauCeti.W1p.compL` at exponent one. -/
 private theorem hasWeakFDerivOn_comp_ball {u : E → ℝ} {Du : E → E →L[ℝ] ℝ}
-    (hu : HasWeakFDerivOn mu V u Du) (hΦ : ContDiffOn ℝ 1 Φ U) (hinj : InjOn Φ U)
+    (hu : HasWeakFDerivOn mu V u Du) (hΦ : ContDiffOn ℝ 1 Φ U)
     (hdet : ∀ x ∈ (U : Set E), (fderiv ℝ Φ x).det ≠ 0) (hmaps : MapsTo Φ U V) {x : E} {r : ℝ}
-    (hr : Metric.closedBall x r ⊆ U) :
+    (hr : Metric.closedBall x r ⊆ U) (hinj : InjOn Φ (Metric.ball x r)) :
     HasWeakFDerivOn mu ⟨Metric.ball x r, Metric.isOpen_ball⟩ (fun y => u (Φ y))
       (fun y => (Du (Φ y)).comp (fderiv ℝ Φ y)) := by
   set B : Opens E := ⟨Metric.ball x r, Metric.isOpen_ball⟩
@@ -486,47 +488,49 @@ private theorem hasWeakFDerivOn_comp_ball {u : E → ℝ} {Du : E → E →L[ℝ
     hLK y (Metric.ball_subset_closedBall hy)
   obtain ⟨w, hwu, hwg⟩ := exists_w1p_one_ae_eq (V' := V') hu hWV hWc
   have hcomp := W1p.hasWeakFDerivOn
-    (W1p.compL Φ ENNReal.one_ne_top hΦB (hinj.mono hBU) hmaps' hLB hc hcB w)
+    (W1p.compL Φ ENNReal.one_ne_top hΦB hinj hmaps' hLB hc hcB w)
   -- Almost-everywhere statements on `V'` pull back to `B` along `Φ`.
   have hpull : ∀ {P : E → Prop}, (∀ᵐ z ∂mu.restrict V', P z) → ∀ᵐ y ∂mu.restrict B, P (Φ y) :=
     fun h => ae_comp_of_map_absolutelyContinuous
       (hΦB.continuousOn.aemeasurable B.isOpen.measurableSet)
       (Measure.absolutelyContinuous_of_le_smul
-        (map_restrict_le_smul_restrict_of_differentiableOn mu B.isOpen hΦB (hinj.mono hBU)
-          hmaps' hc hcB)) h
+        (map_restrict_le_smul_restrict_of_differentiableOn mu B.isOpen hΦB hinj hmaps' hc hcB)) h
   refine (hcomp.congr_ae ?_).congr_ae_deriv ?_
-  · filter_upwards [W1p.value_compL_ae Φ ENNReal.one_ne_top hΦB (hinj.mono hBU) hmaps' hLB hc
-      hcB w, hpull hwu] with y h1 h2
+  · filter_upwards [W1p.value_compL_ae Φ ENNReal.one_ne_top hΦB hinj hmaps' hLB hc hcB w,
+      hpull hwu] with y h1 h2
     rw [h1, h2]
-  · filter_upwards [W1p.gradient_compL_ae Φ ENNReal.one_ne_top hΦB (hinj.mono hBU) hmaps' hLB hc
-      hcB w, hpull hwg] with y h1 h2
+  · filter_upwards [W1p.gradient_compL_ae Φ ENNReal.one_ne_top hΦB hinj hmaps' hLB hc hcB w,
+      hpull hwg] with y h1 h2
     rw [h1, ← h2]
     ext v
     simp [ContinuousLinearMap.adjoint_inner_left]
 
-/-- **The chain rule for weak derivatives under a `C¹` change of variables.** Let `Φ` be `C¹`
-and injective on an open set `U`, with invertible derivative there, mapping `U` into an open set
-`V`. If `Du` is a weak derivative of `u` on `V`, then `x ↦ Du(Φ x) ∘ DΦ(x)` is a weak derivative
-of `u ∘ Φ` on `U`. The derivative of `Φ` need not be bounded on `U`, nor its Jacobian bounded
-below, and the codomain may be any complete real normed space. -/
+/-- **The chain rule for weak derivatives under a `C¹` change of variables.** Let `Φ` be `C¹` on
+an open set `U`, with invertible derivative there, mapping `U` into an open set `V`. If `Du` is a
+weak derivative of `u` on `V`, then `x ↦ Du(Φ x) ∘ DΦ(x)` is a weak derivative of `u ∘ Φ` on `U`.
+The map `Φ` need not be injective, its derivative need not be bounded on `U`, nor its Jacobian
+bounded below, and the codomain may be any complete real normed space. -/
 theorem HasWeakFDerivOn.comp_contDiffOn_diffeo {u : E → F} {Du : E → E →L[ℝ] F}
     (hu : HasWeakFDerivOn mu V u Du) (hΦ : ContDiffOn ℝ 1 Φ U)
-    (hinj : InjOn Φ U) (hdet : ∀ x ∈ (U : Set E), (fderiv ℝ Φ x).det ≠ 0)
-    (hmaps : MapsTo Φ U V) :
+    (hdet : ∀ x ∈ (U : Set E), (fderiv ℝ Φ x).det ≠ 0) (hmaps : MapsTo Φ U V) :
     HasWeakFDerivOn mu U (fun x => u (Φ x)) (fun x => (Du (Φ x)).comp (fderiv ℝ Φ x)) := by
   have := hu.completeSpace
-  have hDloc := hu.locallyIntegrableOn_deriv.comp_fderiv_contDiffOn_diffeo U.isOpen hΦ hinj hdet
-    hmaps
+  have hDloc := hu.locallyIntegrableOn_deriv.comp_fderiv_contDiffOn_diffeo U.isOpen hΦ hdet hmaps
   refine hasWeakFDerivOn_of_forall_strongDual
-    (hu.locallyIntegrableOn.comp_contDiffOn_diffeo U.isOpen hΦ hinj hdet hmaps)
+    (hu.locallyIntegrableOn.comp_contDiffOn_diffeo U.isOpen hΦ hdet hmaps)
     (fun v => by
       simpa only [Function.comp_def, ContinuousLinearMap.apply_apply] using
         (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp hDloc) fun ℓ => ?_
   refine hasWeakFDerivOn_iff_locally.2 fun x hx => ?_
-  obtain ⟨r, hr, hrU⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (U.isOpen.mem_nhds hx)
+  -- Near `x` the map `Φ` is injective, by the inverse function theorem.
+  obtain ⟨W, hW, hinj⟩ := (hΦ.contDiffAt (U.isOpen.mem_nhds hx)).exists_mem_nhds_injOn
+    one_ne_zero ⟨_, ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero _ (hdet x hx)⟩
+  obtain ⟨r, hr, hrUW⟩ :=
+    Metric.nhds_basis_closedBall.mem_iff.1 (Filter.inter_mem (U.isOpen.mem_nhds hx) hW)
   refine ⟨⟨Metric.ball x r, Metric.isOpen_ball⟩, Metric.mem_ball_self hr, ?_⟩
   simpa only [ContinuousLinearMap.comp_assoc] using
-    hasWeakFDerivOn_comp_ball (hu.clm_comp ℓ) hΦ hinj hdet hmaps hrU
+    hasWeakFDerivOn_comp_ball (hu.clm_comp ℓ) hΦ hdet hmaps (hrUW.trans inter_subset_left)
+      (hinj.mono (Metric.ball_subset_closedBall.trans (hrUW.trans inter_subset_right)))
 
 /-- **Affine changes of variables.** For `A : E ≃L[ℝ] E` and `b : E` with `x ↦ A x + b` mapping `U`
 into `V`, a weak derivative `Du` of `u` on `V` gives the weak derivative `x ↦ Du (A x + b) ∘ A` of
@@ -536,7 +540,7 @@ theorem HasWeakFDerivOn.comp_continuousLinearEquiv_add {u : E → F} {Du : E →
     (hmaps : MapsTo (fun x => A x + b) U V) :
     HasWeakFDerivOn mu U (fun x => u (A x + b)) (fun x => (Du (A x + b)).comp (A : E →L[ℝ] E)) := by
   simpa only [fderiv_add_const, A.fderiv] using hu.comp_contDiffOn_diffeo (Φ := fun x => A x + b)
-    (A.contDiff.add contDiff_const).contDiffOn ((add_left_injective b).comp A.injective).injOn
+    (A.contDiff.add contDiff_const).contDiffOn
     (fun x _ => by rw [fderiv_add_const, A.fderiv]; exact A.toLinearEquiv.isUnit_det'.ne_zero)
     hmaps
 
