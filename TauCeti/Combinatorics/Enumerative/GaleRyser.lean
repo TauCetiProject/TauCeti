@@ -8,8 +8,9 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Fintype.Card
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Data.Finset.Max
+import Mathlib.Combinatorics.Enumerative.DoubleCounting
 import TauCeti.Algebra.Order.BigOperators.Sum.Min
+import TauCeti.Data.Finset.Max
 
 /-!
 # The Gale–Ryser theorem for conjugate column sums
@@ -60,36 +61,14 @@ namespace TauCeti
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 
-omit [Fintype κ] in
-/-- In a finite set `s` with `c ≤ #s`, some `c` elements carry the largest values of `f`. -/
-private theorem exists_subset_card_eq_forall_le (f : κ → ℕ) (s : Finset κ) {c : ℕ}
-    (hc : c ≤ #s) : ∃ C ⊆ s, #C = c ∧ ∀ l ∈ s, l ∉ C → ∀ l' ∈ C, f l ≤ f l' := by
-  classical
-  induction c with
-  | zero => exact ⟨∅, empty_subset _, card_empty, fun _ _ _ _ h ↦ absurd h (notMem_empty _)⟩
-  | succ c ih =>
-    obtain ⟨C, hCs, hC, htop⟩ := ih (Nat.le_of_succ_le hc)
-    have hne : (s \ C).Nonempty := by
-      rw [← card_pos, card_sdiff_of_subset hCs]
-      omega
-    obtain ⟨m, hm, hmax⟩ := exists_max_image (s \ C) f hne
-    rw [mem_sdiff] at hm
-    refine ⟨insert m C, insert_subset hm.1 hCs, by rw [card_insert_of_notMem hm.2, hC], ?_⟩
-    intro l hl hlC l' hl'
-    rw [mem_insert, not_or] at hlC
-    rcases mem_insert.1 hl' with rfl | hl'
-    · exact hmax l (mem_sdiff.2 ⟨hl, hlC.2⟩)
-    · exact htop l hl hlC.2 l' hl'
-
 /-- If the columns of a `0`-`1` matrix with rows `S l` have the lengths `#{j | i < μ j}`, then the
 truncated sum `∑ j, min k (μ j)` counts the ones of the matrix in its first `k` columns. -/
 private theorem sum_min_eq_sum_card_filter_mem {μ : ι → ℕ} {S : κ → Finset ℕ}
     (hcol : ∀ i, #{l | i ∈ S l} = #{j | i < μ j}) (k : ℕ) :
     ∑ j, min k (μ j) = ∑ l, #{i ∈ range k | i ∈ S l} := by
   classical
-  rw [sum_min_eq_sum_range_card_filter_lt]
-  simp_rw [← hcol, card_filter]
-  exact sum_comm
+  simp_rw [sum_min_eq_sum_range_card_filter_lt, ← hcol]
+  exact (sum_card_bipartiteAbove_eq_sum_card_bipartiteBelow _).symm
 
 /-- **Gale–Ryser, necessity.** If a `0`-`1` matrix with rows `S l` has row sums `ν l` and column
 sums `#{j | i < μ j}`, then `∑ j, min k (μ j) ≤ ∑ l, min k (ν l)` for every `k`: its first `k`
@@ -150,20 +129,12 @@ private theorem sum_min_le_of_greedy (hCpos : ∀ l ∈ C, 0 < ν l)
   · -- Every row outside `C` is at most `k`, so truncating at `k + 1` sees exactly one extra box in
     -- each row of `C`, and one extra box in each nonzero row of `μ`.
     simp only [not_exists, not_and, not_lt] at hu
-    have hμ : ∑ j, min (k + 1) (μ j) = ∑ j, min k (μ j - 1) + #{j | 0 < μ j} := by
-      rw [card_filter, ← sum_add_distrib]
-      exact sum_congr rfl fun j _ ↦ by split_ifs <;> omega
-    have hν : ∑ l, min (k + 1) (ν l) =
-        ∑ l, min k (if l ∈ C then ν l - 1 else ν l) + #{l | l ∈ C} := by
-      rw [card_filter, ← sum_add_distrib]
-      refine sum_congr rfl fun l _ ↦ ?_
-      by_cases hl : l ∈ C
-      · have := hCpos l hl
-        simp only [hl, ↓reduceIte]
-        omega
-      · have := hu l hl
-        simp only [hl, ↓reduceIte]
-        omega
+    have hμ := sum_min_add_one_eq_sum_min_ite_add_card_filter univ μ (fun j ↦ 0 < μ j) (k := k)
+      (fun _ _ h ↦ h) fun j _ h ↦ by omega
+    have hν := sum_min_add_one_eq_sum_min_ite_add_card_filter univ ν (· ∈ C) (k := k)
+      (fun l _ ↦ hCpos l) fun l _ ↦ hu l
+    simp only [show ∀ j, (if 0 < μ j then μ j - 1 else μ j) = μ j - 1 from fun j ↦ by
+      split_ifs <;> omega] at hμ
     have := h (k + 1)
     rw [hμ, hν, filter_mem_eq_inter, univ_inter, hC] at this
     omega
@@ -219,26 +190,19 @@ theorem exists_finset_card_eq_card_filter_mem (μ : ι → ℕ) (ν : κ → ℕ
       have h₁ := h 1
       rw [← zero_add 1, sum_min_add_one, sum_min_add_one] at h₁
       simpa using h₁
-    obtain ⟨C, hCs, hC, htop⟩ := exists_subset_card_eq_forall_le ν _ hc
+    obtain ⟨C, hCs, hC, htop⟩ := exists_subset_card_eq_forall_le _ (OrderDual.toDual ∘ ν) hc
     have hCpos (l : κ) (hl : l ∈ C) : 0 < ν l := (mem_filter.1 (hCs hl)).2
     -- Removing the first column lowers both totals by `#C`.
     have hsum' : ∑ j, (μ j - 1) = ∑ l, if l ∈ C then ν l - 1 else ν l := by
-      have h₁ : ∑ j, μ j = ∑ j, (μ j - 1) + #{j | 0 < μ j} := by
-        rw [card_filter, ← sum_add_distrib]
-        exact sum_congr rfl fun j _ ↦ by split_ifs <;> omega
-      have h₂ : ∑ l, ν l = ∑ l, (if l ∈ C then ν l - 1 else ν l) + #{l | l ∈ C} := by
-        rw [card_filter, ← sum_add_distrib]
-        refine sum_congr rfl fun l _ ↦ ?_
-        by_cases hl : l ∈ C
-        · have := hCpos l hl
-          simp only [hl, ↓reduceIte]
-          omega
-        · simp only [hl, ↓reduceIte]
-          omega
+      have h₁ := sum_eq_sum_ite_add_card_filter univ μ (fun j ↦ 0 < μ j) fun _ _ h ↦ h
+      have h₂ := sum_eq_sum_ite_add_card_filter univ ν (· ∈ C) fun l _ ↦ hCpos l
+      simp only [show ∀ j, (if 0 < μ j then μ j - 1 else μ j) = μ j - 1 from fun j ↦ by
+        split_ifs <;> omega] at h₁
       rw [filter_mem_eq_inter, univ_inter] at h₂
       omega
     obtain ⟨S', hS', hcol'⟩ := ih (fun j ↦ μ j - 1) (fun l ↦ if l ∈ C then ν l - 1 else ν l)
-      hsum' (sum_min_le_of_greedy hCpos (fun l hl ↦ htop l (mem_filter.2 ⟨mem_univ _, hl⟩)) hC h)
+      hsum' (sum_min_le_of_greedy hCpos
+        (fun l hl hlC l' hl' ↦ htop l' hl' l (mem_filter.2 ⟨mem_univ _, hl⟩) hlC) hC h)
       fun j ↦ by have := hm j; omega
     exact exists_of_greedy hCpos hC hS' hcol'
 
