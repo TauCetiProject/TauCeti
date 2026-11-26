@@ -187,15 +187,14 @@ private noncomputable def descendHom (ρ : ContinuousRep Γ A M) (φ : Γ →ₜ
     (hφs : Function.Surjective φ) (h : φ.toMonoidHom.ker ≤ ρ.toRepresentation.ker) :
     Representation A Γ' M :=
   (QuotientGroup.lift _ ρ.toRepresentation h).comp
-    (QuotientGroup.quotientKerEquivOfSurjective φ.toMonoidHom hφs).symm.toMonoidHom
+    (QuotientGroup.liftEquiv _ (φ := φ.toMonoidHom) hφs rfl).symm.toMonoidHom
 
 private theorem descendHom_apply (ρ : ContinuousRep Γ A M) (φ : Γ →ₜ* Γ')
     (hφs : Function.Surjective φ) (h : φ.toMonoidHom.ker ≤ ρ.toRepresentation.ker) (g : Γ) :
     descendHom ρ φ hφs h (φ g) = ρ g := by
-  have hmk : (QuotientGroup.quotientKerEquivOfSurjective φ.toMonoidHom hφs).symm (φ g) = g :=
-    (MulEquiv.symm_apply_eq _).2 (QuotientGroup.kerLift_mk φ.toMonoidHom g).symm
-  rw [descendHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hmk, QuotientGroup.lift_mk,
-    coe_toRepresentation]
+  -- the inverse of the first isomorphism theorem sends `φ g` to the class of `g`
+  simpa [descendHom] using congrArg (QuotientGroup.lift _ ρ.toRepresentation h)
+    ((MulEquiv.symm_apply_eq _).2 (QuotientGroup.liftEquiv_mk _ hφs rfl g).symm)
 
 /-- **Descent along an open surjection.** If `φ : Γ →ₜ* Γ'` is an open surjective continuous
 homomorphism whose kernel acts trivially through `ρ`, then `ρ` descends to a continuous

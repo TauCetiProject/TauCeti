@@ -82,23 +82,16 @@ theorem ker_restrictionS :
 /-- An automorphism of `Ω` restricts to the identity of `K_S` exactly when it fixes `K_S`. -/
 theorem restrictionS_eq_one_iff {σ : Gal(Ω/K)} :
     restrictionS K Ω S σ = 1 ↔ σ ∈ (maxUnramifiedOutside K Ω S).fixingSubgroup := by
-  rw [← ker_restrictionS, MonoidHom.mem_ker, ContinuousMonoidHom.coe_toMonoidHom,
-    MonoidHom.coe_ofClass]
+  rw [← ker_restrictionS]
+  exact MonoidHom.mem_ker.symm
 
 /-- **Restriction to `G_{K,S}` is an open map.** -/
-theorem isOpenMap_restrictionS : IsOpenMap (restrictionS K Ω S) := by
-  have h : ⇑(restrictionS K Ω S) =
-      quotientFixingSubgroupEquiv K Ω (maxUnramifiedOutside K Ω S) ∘
-        ((↑) : Gal(Ω/K) → Gal(Ω/K) ⧸ (maxUnramifiedOutside K Ω S).fixingSubgroup) :=
-    funext fun σ ↦ (quotientFixingSubgroupEquiv_mk σ).symm
-  rw [h]
-  exact (quotientFixingSubgroupEquiv K Ω _).toHomeomorph.isOpenMap.comp
-    (QuotientGroup.isOpenMap_coe)
+theorem isOpenMap_restrictionS : IsOpenMap (restrictionS K Ω S) :=
+  isOpenMap_restrictNormalHom (maxUnramifiedOutside K Ω S)
 
 /-- **Restriction to `G_{K,S}` is a quotient map**: `G_{K,S}` carries the quotient topology of
 `Gal(Ω / K)`. -/
 theorem isQuotientMap_restrictionS : Topology.IsQuotientMap (restrictionS K Ω S) :=
-  (isOpenMap_restrictionS K Ω S).isQuotientMap (restrictionS K Ω S).continuous
-    (restrictionS_surjective K Ω S)
+  isQuotientMap_restrictNormalHom (maxUnramifiedOutside K Ω S)
 
 end TauCeti.RestrictedRamification
