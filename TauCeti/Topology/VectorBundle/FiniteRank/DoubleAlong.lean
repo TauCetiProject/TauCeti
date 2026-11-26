@@ -408,10 +408,11 @@ noncomputable def doubleAlongTrivialIso (n : ℕ) :
 
 /-- The inverse of an isomorphism whose fibre map at a point commutes with coordinatewise
 conjugation commutes with it as well. -/
-theorem fiberMap_inv_star {C C' : FiniteRankBundleCore ℂ X} (e : C ≅ C') {a : X}
+theorem _root_.CategoryTheory.Iso.fiberMap_inv_star {C C' : FiniteRankBundleCore ℂ X} (e : C ≅ C')
+    {a : X}
     (he : ∀ v, e.hom.fiberMap a (star v) = star (e.hom.fiberMap a v)) (v : Fin C'.rank → ℂ) :
     e.inv.fiberMap a (star v) = star (e.inv.fiberMap a v) := by
-  conv_lhs => rw [← e.fiberMap_hom_inv_apply a v, ← he, e.fiberMap_inv_hom_apply]
+  conv_lhs => rw [← e.fiberMap_inv_hom_id_apply a v, ← he, e.fiberMap_hom_inv_id_apply]
 
 /-- For cores `C` and `C'` real along `A`, the chart expression of a bundle map `C ⟶ C'` whose fibre
 maps over `A` commute with conjugation is real at the points of `A`. -/
@@ -574,7 +575,7 @@ noncomputable def doubleAlongIso (e : C ≅ C')
     (he : ∀ a ∈ A, ∀ v, e.hom.fiberMap a (star v) = star (e.hom.fiberMap a v)) :
     C.doubleAlong hC ≅ C'.doubleAlong hC' where
   hom := doubleAlongMap hC hC' e.hom he
-  inv := doubleAlongMap hC' hC e.inv fun a ha => fiberMap_inv_star e (he a ha)
+  inv := doubleAlongMap hC' hC e.inv fun a ha => e.fiberMap_inv_star (he a ha)
   hom_inv_id := by
     rw [← doubleAlongMap_comp _ _ _ _ _ _ _ (by simp)]
     simp only [Iso.hom_inv_id, doubleAlongMap_id]
@@ -591,7 +592,7 @@ noncomputable def doubleAlongIso (e : C ≅ C')
 @[simp] theorem doubleAlongIso_inv (e : C ≅ C')
     (he : ∀ a ∈ A, ∀ v, e.hom.fiberMap a (star v) = star (e.hom.fiberMap a v)) :
     (doubleAlongIso hC hC' e he).inv =
-      doubleAlongMap hC' hC e.inv fun a ha => fiberMap_inv_star e (he a ha) :=
+      doubleAlongMap hC' hC e.inv fun a ha => e.fiberMap_inv_star (he a ha) :=
   -- The `inv` field of `doubleAlongIso`, as defined above.
   (rfl)
 
