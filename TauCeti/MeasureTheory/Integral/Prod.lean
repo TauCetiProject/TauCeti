@@ -56,6 +56,8 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 * `TauCeti.integrable_and_integral_prod_le` deduces product-measure integrability and an integral
   bound for an a.e.-nonnegative kernel from a.e. slice integrability and an integrable slice
   majorant.
+* `TauCeti.mul_integral_le_integral_prod_of_forall` integrates a slicewise lower bound
+  `c F x ≤ ∫ g (x, y) dy` over the first factor: `c ∫ F ≤ ∫ g` over the product measure.
 -/
 
 public section
@@ -318,6 +320,15 @@ theorem integrable_and_integral_prod_le [SFinite μ] [SFinite ν] {G : α × β 
     exact h.2
   exact ⟨hG_int, (integral_prod G hG_int).trans_le
     (integral_mono_ae hG_int.integral_prod_left hH_int (hslice.mono fun _ h ↦ h.2))⟩
+
+/-- Integrating a slicewise lower bound `c F x ≤ ∫ g (x, y) dy` over the first factor gives
+`c ∫ F ≤ ∫ g` over the product measure. -/
+theorem mul_integral_le_integral_prod_of_forall [SFinite μ] [SFinite ν] {F : α → ℝ}
+    {g : α × β → ℝ} {c : ℝ} (hF : Integrable F μ) (hg : Integrable g (μ.prod ν))
+    (h : ∀ x, c * F x ≤ ∫ y, g (x, y) ∂ν) :
+    c * ∫ x, F x ∂μ ≤ ∫ p, g p ∂μ.prod ν := by
+  rw [integral_prod _ hg, ← integral_const_mul]
+  exact integral_mono (hF.const_mul c) hg.integral_prod_left h
 
 /-- The integral of `f s t` over a region `{(s, t) | s ∈ S t}` is bounded by the iterated
 integral of `‖f s t‖`: `|∫ ∫_{s ∈ S t} f s t ds dt| ≤ ∫∫ |f s t| ds dt`.
