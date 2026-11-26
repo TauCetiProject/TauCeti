@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
+public import TauCeti.LinearAlgebra.IntegralLattice.Scaling
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 
 /-!
@@ -41,6 +42,7 @@ than reproving Smith normal form.
   every primitive vector pairs to `1` with some lattice vector.
 * `TauCeti.IntegralLattice.isUnimodular_iff_discriminant_eq_one`: the determinant criterion.
 * `TauCeti.IntegralLattice.integralPairingEquiv`: the restricted pairing as a linear equivalence.
+* `TauCeti.IntegralLattice.isUnimodular_neg_iff`: form negation preserves unimodularity.
 * `TauCeti.IntegralLattice.isUnimodular_orthogonalSum_iff`: an orthogonal sum is unimodular
   exactly when both summands are.
 * `TauCeti.IntegralLattice.isUnimodular_hyperbolicPlane`: the hyperbolic plane is unimodular.
@@ -216,6 +218,10 @@ theorem isUnimodular_iff_isUnit_determinant :
     L.IsUnimodular ↔ IsUnit L.determinant := by
   rw [L.isUnimodular_iff_discriminant_eq_one, L.discriminant_def,
     ← Int.isUnit_iff_natAbs_eq]
+
+/-- Form negation preserves unimodularity. -/
+theorem isUnimodular_neg_iff : (-L).IsUnimodular ↔ L.IsUnimodular := by
+  rw [isUnimodular_iff_discriminant_eq_one, discriminant_neg, isUnimodular_iff_discriminant_eq_one]
 
 /-- An orthogonal sum is unimodular exactly when both summands are. -/
 theorem isUnimodular_orthogonalSum_iff {W : Type v} [AddCommGroup W] [Module ℚ W]

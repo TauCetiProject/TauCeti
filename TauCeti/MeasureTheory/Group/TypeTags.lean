@@ -40,6 +40,9 @@ omitted until something asks for them.
   is left invariant for the multiplication of `Multiplicative α`.
 * `TauCeti.instIsHaarMeasureMultiplicative`: an additive Haar measure on `α` is a Haar measure on
   `Multiplicative α`.
+* `TauCeti.measurePreserving_multiplicative_smul`: `Multiplicative α`, acting on `β` through the
+  additive action of `α`, preserves every measure invariant under that additive action; for
+  instance translations of `ℝ`, as the action of `Multiplicative ℝ`, preserve Lebesgue measure.
 
 ## Tags
 
@@ -91,5 +94,13 @@ instances above; only the assembly into `IsHaarMeasure` is new, because a struct
 found from its fields by typeclass search. -/
 instance instIsHaarMeasureMultiplicative [TopologicalSpace α] [AddGroup α] [MeasurableSpace α]
     (μ : Measure α) [μ.IsAddHaarMeasure] : Measure.IsHaarMeasure (G := Multiplicative α) μ where
+
+/-- The action of `Multiplicative α` on `β`, `ofAdd a • x = a +ᵥ x`, preserves every measure
+invariant under the additive action of `α`. With `β = α` this says that translations of an
+additive group, read as the action of `Multiplicative α`, preserve a left-invariant measure. -/
+theorem measurePreserving_multiplicative_smul {β : Type*} [VAdd α β] [MeasurableSpace β]
+    [MeasurableConstVAdd α β] (μ : Measure β) [VAddInvariantMeasure α β μ]
+    (g : Multiplicative α) : MeasurePreserving (g • · : β → β) μ μ :=
+  measurePreserving_vadd g.toAdd μ
 
 end TauCeti
