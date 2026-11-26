@@ -7,11 +7,11 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus.Little
 public import TauCeti.Analysis.Semigroups.Basic
-import Mathlib.Analysis.Normed.Group.Tannery
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Fourier.Torus.SchwartzMultiplier
+import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.PDE.HeatKernel.Basic
 import TauCeti.Analysis.PDE.HeatKernel.FrequencyLocalized
 
@@ -549,26 +549,12 @@ theorem tendsto_heatSemigroup (hq : q ≠ ⊤) (u : BesovSpace φ s p q) :
   have hq0 : 0 < q.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq
   rw [tendsto_iff_norm_sub_tendsto_zero]
   simp_rw [norm_eq_tsum_rpow hq]
-  have hu : Summable fun j : ℕ ↦
-      (2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j u.coeff‖) ^ q.toReal :=
-    (Memℓp.summable hq0 (memBesov_def.1 u.memBesov_coeff)).congr fun j ↦ by
-      rw [Real.norm_of_nonneg (by positivity)]
-  -- Dominated convergence for the sum of the `q`-th powers of the weighted blocks.
-  have hsum : Tendsto (fun t : ℝ≥0 ↦ ∑' j : ℕ,
-      (2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j (heatSemigroup φ s p q t u - u).coeff‖) ^
-        q.toReal) (𝓝 0) (𝓝 (∑' _ : ℕ, (0 : ℝ))) := by
-    refine tendsto_tsum_of_dominated_convergence (bound := fun j ↦
-      2 ^ q.toReal * (2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j u.coeff‖) ^ q.toReal)
-      (hu.mul_left _) (fun j ↦ ?_) (.of_forall fun t j ↦ ?_)
-    · have h := (tendsto_rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub u j).rpow_const
-        (Or.inr hq0.le)
-      rwa [Real.zero_rpow hq0.ne'] at h
-    · rw [Real.norm_of_nonneg (by positivity), ← Real.mul_rpow zero_le_two (by positivity)]
-      exact Real.rpow_le_rpow (by positivity)
-        (rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub_le t u j) hq0.le
-  rw [tsum_zero] at hsum
-  have h := hsum.rpow_const (Or.inr (one_div_pos.2 hq0).le)
-  rwa [Real.zero_rpow (one_div_pos.2 hq0).ne'] at h
+  refine TauCeti.tendsto_tsum_rpow_rpow_of_dominated hq0 (fun t j ↦ by positivity)
+    (fun t j ↦ rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub_le t u j)
+    (tendsto_rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub u)
+    (((Memℓp.summable hq0 (memBesov_def.1 u.memBesov_coeff)).mul_left (2 ^ q.toReal)).congr
+      fun j ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity), Real.mul_rpow zero_le_two (by positivity)]
 
 /-- **The heat flow lies in the periodic little Besov space.** For `t > 0` and every
 `u ∈ B^s_{p,∞}(𝕋ᵈ)`, `e^{tΔ} u ∈ b^s_{p,∞}(𝕋ᵈ)`: it lies in `B^{s+1}_{p,∞}(𝕋ᵈ)`, so its weighted
@@ -595,24 +581,12 @@ private theorem tendsto_heatSemigroup_of_tendsto_rpow_mul_norm_littlewoodPaleyBl
     (ha : Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j u.coeff‖) atTop
       (𝓝 0)) :
     Tendsto (fun t ↦ heatSemigroup φ s p ∞ t u) (𝓝 0) (𝓝 u) := by
-  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 ha (ε / 4) (by positivity)
-  have hlow : ∀ᶠ t in 𝓝 (0 : ℝ≥0), ∀ j ∈ Finset.range N,
-      2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j (heatSemigroup φ s p ∞ t u - u).coeff‖ <
-        ε / 2 :=
-    (Finset.range N).eventually_all.2 fun j _ ↦
-      (tendsto_rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub u j).eventually
-        (gt_mem_nhds (half_pos hε))
-  filter_upwards [hlow] with t ht
-  rw [dist_eq_norm]
-  refine lt_of_le_of_lt ?_ (half_lt_self hε)
-  rw [norm_eq_ciSup]
-  refine ciSup_le fun j ↦ ?_
-  rcases lt_or_ge j N with hj | hj
-  · exact (ht j (Finset.mem_range.2 hj)).le
-  · have hNj := hN j hj
-    rw [Real.dist_eq, sub_zero, abs_of_nonneg (by positivity)] at hNj
-    linarith [rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub_le t u j]
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  simp_rw [norm_eq_ciSup]
+  exact TauCeti.tendsto_iSup_of_dominated (fun t j ↦ by positivity)
+    (fun t j ↦ rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub_le t u j)
+    (tendsto_rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub u)
+    (by simpa using ha.const_mul 2)
 
 /-- **Strong continuity of the heat semigroup on `B^s_{p,∞}(𝕋ᵈ)`.** For every `1 ≤ p ≤ ∞` and
 `u ∈ B^s_{p,∞}(𝕋ᵈ)`, `e^{tΔ} u → u` in `B^s_{p,∞}(𝕋ᵈ)` as `t → 0` exactly when `u` lies in the
