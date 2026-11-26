@@ -16,6 +16,7 @@ import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.Sobolev.W1p.Convex
 import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
+import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
 import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Topology.Instances.Matrix
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
@@ -52,9 +53,10 @@ barrier for the frozen operator, corrected by the solution of a Dirichlet proble
 small by the `C^{1,β}` estimate up to the boundary.
 
 * **Rescaling.** For `0 < ε ≤ R` the homothety `T z = ε z + y + (R - ε) ν` maps the closed unit ball
-  into `closedBall y R`, touching the sphere only at `T ν = x₀`. The composition `u ∘ T` is a weak
-  supersolution on the annulus `D = {1/2 < ‖z‖ < 1}` for the coefficients `b = a ∘ T`, which are
-  `α`-Hölder with constant `K_a ε^α` and within `K_a (2 ε)^α` of the frozen matrix `A = a x₀`.
+  into `closedBall y R`, the open unit ball into `ball y R`, and `ν` to `x₀`. The composition
+  `u ∘ T` is a weak supersolution on the annulus `D = {1/2 < ‖z‖ < 1}` for the coefficients
+  `b = a ∘ T`, which are `α`-Hölder with constant `K_a ε^α` and within `K_a (2 ε)^α` of the frozen
+  matrix `A = a x₀`.
 * **The barrier.** The Gaussian `Φ(z) = e^{-κ‖z‖²} - e^{-κ}` vanishes on the unit sphere, is a
   classical subsolution of `div (A ∇·)` on `D` once `κ` is large compared with `tr A / λ`, and grows
   like `κ e^{-κ} t` along the inward normal at `ν`. Unlike Rosales, who solves the frozen Dirichlet
@@ -107,9 +109,45 @@ local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 private def unitAnnulus : Opens E :=
   ⟨ball 0 1 ∩ (closedBall 0 (1 / 2))ᶜ, isOpen_ball.inter isClosed_closedBall.isOpen_compl⟩
 
+private theorem coe_unitAnnulus :
+    (unitAnnulus (n := n) : Set E) = ball 0 1 ∩ (closedBall 0 (1 / 2))ᶜ :=
+  rfl
+
 private theorem mem_unitAnnulus {z : E} :
     z ∈ (unitAnnulus (n := n) : Set E) ↔ ‖z‖ < 1 ∧ 1 / 2 < ‖z‖ := by
-  simp [unitAnnulus]
+  simp [coe_unitAnnulus]
+
+private theorem unitAnnulus_subset_ball : (unitAnnulus (n := n) : Set E) ⊆ ball 0 1 :=
+  fun _ hz => mem_ball_zero_iff.2 (mem_unitAnnulus.1 hz).1
+
+private theorem unitAnnulus_subset_closedBall : (unitAnnulus (n := n) : Set E) ⊆ closedBall 0 1 :=
+  unitAnnulus_subset_ball.trans ball_subset_closedBall
+
+private theorem closure_unitAnnulus_subset :
+    closure (unitAnnulus (n := n) : Set E) ⊆ closedBall 0 1 :=
+  (closure_mono unitAnnulus_subset_ball).trans closure_ball_subset_closedBall
+
+private theorem frontier_unitAnnulus_subset :
+    frontier (unitAnnulus (n := n) : Set E) ⊆ sphere 0 1 ∪ sphere 0 (1 / 2) := by
+  rw [coe_unitAnnulus]
+  exact (frontier_inter_subset _ _).trans (union_subset_union
+    (inter_subset_left.trans frontier_ball_subset_sphere)
+    (inter_subset_right.trans ((frontier_compl _).subset.trans frontier_closedBall_subset_sphere)))
+
+private instance : IsFiniteMeasure (volume.restrict (unitAnnulus (n := n) : Set E)) :=
+  isFiniteMeasure_restrict.2 (measure_ne_top_of_subset unitAnnulus_subset_ball
+    measure_ball_lt_top.ne)
+
+private theorem aestronglyMeasurable_restrict_unitAnnulus
+    {b : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} (hbc : ContinuousOn b (closedBall 0 1)) :
+    AEStronglyMeasurable b (volume.restrict (unitAnnulus (n := n) : Set E)) :=
+  (hbc.mono unitAnnulus_subset_closedBall).aestronglyMeasurable unitAnnulus.isOpen.measurableSet
+
+/-- Along the line through a unit vector `ν`, the distance from `c • ν` to `ν` is `|c - 1|`. -/
+private theorem dist_smul_self_of_norm_eq_one {ν : E} (hν : ‖ν‖ = 1) (c : ℝ) :
+    dist (c • ν) ν = |c - 1| := by
+  have h : c • ν - ν = (c - 1) • ν := by rw [sub_smul, one_smul]
+  rw [dist_eq_norm, h, norm_smul, hν, mul_one, Real.norm_eq_abs]
 
 /-- The bump function equal to one on `closedBall 0 (1/4)` and supported in `ball 0 (1/2)`. -/
 private def sphereBump {K : Type*} [NormedAddCommGroup K] :
@@ -135,6 +173,7 @@ private theorem contDiff_sphereGraph : ContDiff ℝ 2 (sphereGraph (K := K)) := 
   · -- Off `closedBall 0 (1/2)` the bump function, hence the graph, vanishes nearby.
     have hout : v ∉ closedBall (0 : K) (sphereBump (K := K)).rOut := by
       rw [mem_closedBall, dist_zero_right]
+      -- The outer radius of `sphereBump` is `1/2` by definition.
       change ¬ ‖v‖ ≤ 1 / 2
       linarith
     have hev : sphereGraph (K := K) =ᶠ[𝓝 v] fun _ => 0 := by
@@ -177,8 +216,7 @@ private def unitSplitting (ν : E) (hν : ‖ν‖ = 1) : E ≃ₗᵢ[ℝ] WithL
 
 private theorem unitSplitting_symm_apply (ν : E) (hν : ‖ν‖ = 1) (z : WithLp 2 (ℝ × (ℝ ∙ ν)ᗮ)) :
     (unitSplitting ν hν).symm z = (-z.fst) • ν + (z.snd : E) := by
-  have hz : z = WithLp.toLp 2 (z.fst, z.snd) := rfl
-  rw [hz]
+  obtain ⟨⟨t, v⟩⟩ := z
   simp [unitSplitting, LinearIsometryEquiv.symm_apply_eq, LinearIsometryEquiv.coe_refl]
 
 /-- The rigid coordinates at a unit vector `ν`: the point `ν` goes to the origin and the inward
@@ -208,7 +246,7 @@ private theorem sphereChart_symm_mem_unitAnnulus_iff (ν : E) (hν : ‖ν‖ = 
   obtain ⟨ht1, ht2, hv⟩ := hz
   set t := z.fst
   set v : E := (z.snd : E)
-  have hvn : ‖(z.snd : E)‖ = ‖z.snd‖ := rfl
+  have hvn : ‖(z.snd : E)‖ = ‖z.snd‖ := Submodule.norm_coe _
   have hinner : ⟪ν, v⟫_ℝ = 0 :=
     Submodule.mem_orthogonal_singleton_iff_inner_right.1 z.snd.property
   -- The squared norm of the point is `(1 - t)² + ‖v‖²`.
@@ -286,14 +324,12 @@ private theorem energyFormH1_gaussBarrier_nonpos {A : Matrix (Fin (n + 1)) (Fin 
       0 ≤ W1p.value (v : W1p volume (unitAnnulus (n := n)) 2) z) :
     energyFormH1 (fun _ => A) 0 0 W (v : W1p volume (unitAnnulus (n := n)) 2) ≤ 0 := by
   set f : E → ℝ := fun z => -divMatrixGradient (fun _ => A) (gaussBarrier κ) z
-  have hsub : (unitAnnulus (n := n) : Set E) ⊆ closedBall 0 1 :=
-    fun z hz => mem_closedBall_zero_iff.2 (mem_unitAnnulus.1 hz).1.le
   have hcont : ContinuousOn f (closedBall 0 1) :=
     (continuousOn_divMatrixGradient (Omega := ⊤) (A := A)
       (contDiff_gaussBarrier (n := n) κ).contDiffOn).neg.mono (subset_univ _)
   have hf : MemLp f 2 (volume.restrict (unitAnnulus (n := n) : Set E)) :=
     hcont.memLp_restrict_of_subset_isCompact (isCompact_closedBall 0 1)
-      unitAnnulus.isOpen.measurableSet hsub 2
+      unitAnnulus.isOpen.measurableSet unitAnnulus_subset_closedBall 2
   have hweak := (forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
     (memLp_energyIntegrand_const_zero_zero A) (hf.toLp f) W).2 (fun φ => by
       rw [energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_divMatrixGradient
@@ -383,13 +419,6 @@ private theorem holderOnWith_correctionField {b : E → Matrix (Fin (n + 1)) (Fi
     rw [hnorm, matrixBilinearForm_sub]
     exact mul_le_mul (hbA z hz) (hB z hz) (norm_nonneg _) hη
 
-private theorem unitAnnulus_subset_ball : (unitAnnulus (n := n) : Set E) ⊆ ball 0 1 :=
-  fun _ hz => mem_ball_zero_iff.2 (mem_unitAnnulus.1 hz).1
-
-private theorem closure_unitAnnulus_subset :
-    closure (unitAnnulus (n := n) : Set E) ⊆ closedBall 0 1 :=
-  (closure_mono unitAnnulus_subset_ball).trans closure_ball_subset_closedBall
-
 /-- The energy form of coefficients uniformly elliptic on the annulus is coercive on `H¹₀`, with
 constant `λ / 10` from the Poincaré inequality in the unit ball. -/
 private theorem div_ten_mul_norm_sq_le_energyFormH1 {b : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -423,21 +452,15 @@ private theorem exists_correction_of_uniformlyEllipticOn
       ∀ M : ℝ, 0 ≤ M → (∀ z ∈ closedBall (0 : E) 1, ‖correctionField b A κ z‖ ≤ M) →
         ‖ψ‖ ≤ 10 / lam * ((measureUnivNNReal (volume.restrict (unitAnnulus (n := n) : Set E)) : ℝ) ^
           ((2 : ℝ≥0∞).toReal⁻¹) * M) := by
-  have hsub : (unitAnnulus (n := n) : Set E) ⊆ closedBall 0 1 := unitAnnulus_subset_ball.trans
-    ball_subset_closedBall
-  have hbD := hb.mono_set hsub
-  have hm : AEStronglyMeasurable b (volume.restrict (unitAnnulus (n := n) : Set E)) :=
-    (hbc.mono hsub).aestronglyMeasurable unitAnnulus.isOpen.measurableSet
+  have hbD := hb.mono_set unitAnnulus_subset_closedBall
+  have hm := aestronglyMeasurable_restrict_unitAnnulus hbc
   have hHL : MemLp (correctionField b A κ) 2 (volume.restrict (unitAnnulus (n := n) : Set E)) :=
     hH.memLp_restrict_of_subset_isCompact (isCompact_closedBall 0 1)
-      unitAnnulus.isOpen.measurableSet hsub 2
+      unitAnnulus.isOpen.measurableSet unitAnnulus_subset_closedBall 2
   obtain ⟨ψ, hψ⟩ := hbD.exists_forall_energyFormH1_eq_divergence_of_measure_ne_top hm
     (measure_ne_top_of_subset unitAnnulus_subset_ball measure_ball_lt_top.ne) hHL
   refine ⟨ψ, hψ, fun M hM hHM => ?_⟩
   have := hb.pos
-  have : IsFiniteMeasure (volume.restrict (unitAnnulus (n := n) : Set E)) :=
-    isFiniteMeasure_restrict.2 (measure_ne_top_of_subset unitAnnulus_subset_ball
-      measure_ball_lt_top.ne)
   -- The `L²` norm of the field is at most `V M`, and `(λ / 10) ‖ψ‖² ≤ a(ψ, ψ) ≤ ‖H‖_{L²} ‖ψ‖`.
   have hL2 : ‖hHL.toLp (correctionField b A κ)‖ ≤
       (measureUnivNNReal (volume.restrict (unitAnnulus (n := n) : Set E)) : ℝ) ^
@@ -446,7 +469,7 @@ private theorem exists_correction_of_uniformlyEllipticOn
     filter_upwards [hHL.coeFn_toLp, ae_restrict_mem unitAnnulus.isOpen.measurableSet]
       with z h1 h2
     rw [h1]
-    exact hHM z (hsub h2)
+    exact hHM z (unitAnnulus_subset_closedBall h2)
   have hcoer := div_ten_mul_norm_sq_le_energyFormH1 hbD hm ψ
   have henergy : energyFormH1 b 0 0 (ψ : W1p volume unitAnnulus 2) (ψ : W1p volume unitAnnulus 2)
       ≤ ‖hHL.toLp (correctionField b A κ)‖ * ‖ψ‖ := by
@@ -461,37 +484,25 @@ private theorem exists_correction_of_uniformlyEllipticOn
   calc ‖ψ‖ = 10 / lam * (lam / 10 * ‖ψ‖) := by field_simp
     _ ≤ _ := mul_le_mul_of_nonneg_left hX (by positivity)
 
-/-- A function Lipschitz near a point `ν` of the unit sphere that vanishes there outside the closed
-unit ball vanishes at `ν`. -/
-private theorem eq_zero_of_lipschitzOnWith_of_eqOn {f : E → ℝ} {ν : E} (hν : ‖ν‖ = 1) {ρ : ℝ}
-    (hρ : 0 < ρ) {M : ℝ≥0} (hL : LipschitzOnWith M f (ball ν ρ))
+/-- A function continuous near a point `ν` of the unit sphere that vanishes there outside the
+closed unit ball vanishes at `ν`. -/
+private theorem eq_zero_of_continuousOn_of_eqOn {f : E → ℝ} {ν : E} (hν : ‖ν‖ = 1) {ρ : ℝ}
+    (hρ : 0 < ρ) (hf : ContinuousOn f (ball ν ρ))
     (hzero : EqOn f 0 (ball ν ρ ∩ (closedBall 0 1)ᶜ)) : f ν = 0 := by
-  -- `|f ν| ≤ M s` for all `0 < s < ρ`, comparing with the point `(1 + s) ν`.
-  have hle : ∀ s ∈ Ioo (0 : ℝ) ρ, |f ν| ≤ M * s := by
-    intro s hs
-    have hmem : (1 + s) • ν ∈ ball ν ρ ∩ (closedBall 0 1)ᶜ := by
-      refine ⟨?_, ?_⟩
-      · rw [mem_ball, dist_eq_norm, add_smul, one_smul, add_sub_cancel_left, norm_smul,
-          Real.norm_eq_abs, abs_of_pos hs.1, hν, mul_one]
-        exact hs.2
-      · rw [mem_compl_iff, mem_closedBall_zero_iff, norm_smul, Real.norm_eq_abs,
-          abs_of_pos (by linarith [hs.1]), hν, mul_one, not_le]
-        linarith [hs.1]
-    have hd := hL.dist_le_mul ν (mem_ball_self hρ) _ hmem.1
-    rw [hzero hmem, Pi.zero_apply, dist_zero_right, Real.norm_eq_abs, dist_eq_norm, add_smul,
-      one_smul, sub_add_cancel_left, norm_neg, norm_smul, Real.norm_eq_abs, abs_of_pos hs.1,
-      hν, mul_one] at hd
-    exact hd
-  by_contra hne
-  have hpos : 0 < |f ν| := abs_pos.2 hne
-  set s := min (ρ / 2) (|f ν| / (2 * (M + 1)))
-  have hs0 : 0 < s := lt_min (by linarith) (by positivity)
-  have h := hle s ⟨hs0, (min_le_left _ _).trans_lt (by linarith)⟩
-  have h2 : (M : ℝ) * s ≤ (M + 1) * (|f ν| / (2 * (M + 1))) :=
-    mul_le_mul (by linarith) (min_le_right _ _) hs0.le (by positivity)
-  have h3 : ((M : ℝ) + 1) * (|f ν| / (2 * (M + 1))) = |f ν| / 2 := by
-    field_simp
-  linarith
+  -- `ν` is the limit of the points `(1 + s) ν`, `s → 0⁺`, which lie outside the closed unit ball.
+  have hcl : ν ∈ closure (ball ν ρ ∩ (closedBall (0 : E) 1)ᶜ) := by
+    have ht : Tendsto (fun s : ℝ => (1 + s) • ν) (𝓝[>] 0) (𝓝 ν) := by
+      have hc : Continuous fun s : ℝ => (1 + s) • ν := by fun_prop
+      simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+    refine mem_closure_of_tendsto ht ?_
+    filter_upwards [Ioo_mem_nhdsGT hρ] with s hs
+    refine ⟨?_, ?_⟩
+    · rw [mem_ball, dist_smul_self_of_norm_eq_one hν, add_sub_cancel_left, abs_of_pos hs.1]
+      exact hs.2
+    · rw [mem_compl_iff, mem_closedBall_zero_iff, norm_smul, hν, mul_one, Real.norm_eq_abs, not_le]
+      exact (lt_add_of_pos_right 1 hs.1).trans_le (le_abs_self _)
+  exact hzero.of_subset_closure (hf.mono (insert_subset (mem_ball_self hρ) inter_subset_left))
+    continuousOn_const (subset_insert _ _) (insert_subset hcl subset_closure) (mem_insert _ _)
 
 /-- **A representative vanishing at a boundary point.** If the gradient of `ψ ∈ H¹₀` of a subset of
 the unit ball is bounded by `M` near a point `ν` of the unit sphere, then `ψ` has a representative
@@ -537,7 +548,7 @@ private theorem exists_lipschitzOnWith_ae_eq_of_ae_norm_gradient_le {D : Opens E
       refine (ae_restrict_iff' hO.measurableSet).2 ?_
       filter_upwards [hval, hprec] with z h1 h2 hz
       rw [← h2, h1, indicator_of_notMem (hOD z hz), Pi.zero_apply]
-    exact eq_zero_of_lipschitzOnWith_of_eqOn hν hρ hL hzero
+    exact eq_zero_of_continuousOn_of_eqOn hν hρ hL.continuousOn hzero
 
 /-- **The correction is small near the boundary point.** Fix a point `ν` of the unit sphere, an
 exponent `0 < α ≤ 1`, ellipticity constants and `κ`. There are `ρ > 0` and `C ≥ 0` such that for
@@ -574,8 +585,6 @@ private theorem exists_correction (ν : E) (hν : ‖ν‖ = 1) {α : ℝ≥0} (
     sphereGraph_zero (contDiff_sphereGraph.of_le one_le_two) hγK
     (fun z hz => sphereChart_symm_mem_unitAnnulus_iff ν hν hz) lam Lam 1
   -- The volume factor in the `L²` bound of the correction field.
-  have : IsFiniteMeasure (volume.restrict (unitAnnulus (n := n) : Set E)) :=
-    isFiniteMeasure_restrict.2 (hΩ.measure_lt_top).ne
   set V : ℝ := (measureUnivNNReal (volume.restrict (unitAnnulus (n := n) : Set E)) : ℝ) ^
     ((2 : ℝ≥0∞).toReal⁻¹)
   have : 0 ≤ V := by positivity
@@ -614,122 +623,6 @@ private theorem exists_correction (ν : E) (hν : ‖ν‖ = 1) {α : ℝ≥0} (
       rw [hz hzD]
       exact (hgb' z ⟨hzD.2, subset_closure hzD.1⟩).trans (Real.le_coe_toNNReal _))
   exact ⟨ψ, ψ', hψ, hae, hLip, h0⟩
-
-/-! ### Rescaling a supersolution -/
-
-private theorem hasFDerivAt_homothety (ε : ℝ) (c x : E) :
-    HasFDerivAt (fun z : E => ε • z + c) (ε • ContinuousLinearMap.id ℝ E) x :=
-  ((hasFDerivAt_id x).const_smul ε).add_const c
-
-private theorem abs_det_fderiv_homothety {ε : ℝ} (hε : 0 < ε) (c x : E) :
-    |(fderiv ℝ (fun z : E => ε • z + c) x).det| = ε ^ (n + 1) := by
-  rw [(hasFDerivAt_homothety ε c x).fderiv, ContinuousLinearMap.det,
-    ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.coe_id, LinearMap.det_smul,
-    LinearMap.det_id, mul_one, finrank_euclideanSpace, Fintype.card_fin,
-    abs_of_pos (pow_pos hε _)]
-
-/-- The homothety `z ↦ ε z + c` is a change of variables with constants `ε` and `ε ^ (n + 1)`. -/
-private theorem isChangeOfVariables_homothety {ε : ℝ} (hε : 0 < ε) (c : E) {U V : Opens E}
-    (hUV : MapsTo (fun z : E => ε • z + c) U V) :
-    Wkp.IsChangeOfVariables 1 U V (fun z : E => ε • z + c) ε (ε ^ (n + 1)) where
-  contDiffOn := ((contDiff_id.const_smul ε).add contDiff_const).contDiffOn
-  differentiableOn x _ := (hasFDerivAt_homothety ε c x).differentiableAt.differentiableWithinAt
-  injOn _ _ _ _ h := smul_right_injective E hε.ne' (add_right_cancel h)
-  mapsTo := hUV
-  norm_iteratedFDeriv_le i hi hik x _ := by
-    obtain rfl : i = 1 := le_antisymm (by exact_mod_cast hik) hi
-    rw [norm_iteratedFDeriv_one, (hasFDerivAt_homothety ε c x).fderiv, norm_smul,
-      Real.norm_eq_abs, abs_of_pos hε]
-    exact mul_le_of_le_one_right hε.le ContinuousLinearMap.norm_id_le
-  pos := pow_pos hε _
-  le_abs_det x _ := (abs_det_fderiv_homothety hε c x).ge
-
-/-- Under the homothety `z ↦ ε z + c` the transformed principal coefficient is the coefficient at
-the image point, multiplied by `ε ^ (n + 1) ε⁻²`. -/
-private theorem matrixBilinearForm_pullbackPrincipal_homothety {ε : ℝ} (hε : 0 < ε) (c : E)
-    (a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (z : E) :
-    matrixBilinearForm (pullbackPrincipal (fun z : E => ε • z + c) a z) =
-      (ε ^ (n + 1) * (ε⁻¹ * ε⁻¹)) • matrixBilinearForm (a (ε • z + c)) := by
-  have hT : (ε⁻¹ • ContinuousLinearMap.id ℝ E) ∘L fderiv ℝ (fun z : E => ε • z + c) z =
-      ContinuousLinearMap.id ℝ E := by
-    rw [(hasFDerivAt_homothety ε c z).fderiv, ContinuousLinearMap.smul_comp,
-      ContinuousLinearMap.comp_smul, ContinuousLinearMap.id_comp, smul_smul,
-      inv_mul_cancel₀ hε.ne', one_smul]
-  rw [matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a hT, abs_det_fderiv_homothety hε c z]
-  ext η ξ
-  simp [ContinuousLinearMap.adjoint_id, mul_assoc, mul_left_comm]
-
-/-- The energy form of the transformed principal coefficient under a homothety is a positive
-multiple of the energy form of the composed coefficient. -/
-private theorem energyFormH1_pullbackPrincipal_homothety {ε : ℝ} (hε : 0 < ε) (c : E)
-    (a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) {U : Opens E} (u v : W1p volume U 2) :
-    energyFormH1 (pullbackPrincipal (fun z : E => ε • z + c) a) 0 0 u v =
-      (ε ^ (n + 1) * (ε⁻¹ * ε⁻¹)) * energyFormH1 (fun z => a (ε • z + c)) 0 0 u v := by
-  rw [energyFormH1_zero_zero_eq_setIntegral, energyFormH1_zero_zero_eq_setIntegral,
-    ← integral_const_mul]
-  refine integral_congr_ae (ae_of_all _ fun z => ?_)
-  dsimp only
-  rw [matrixBilinearForm_pullbackPrincipal_homothety hε c a z, smul_apply, smul_apply,
-    smul_eq_mul]
-
-/-- **Rescaling a supersolution.** Let `u ∈ H¹(Ω)` be a weak supersolution of
-`-div (a ∇u) ≥ 0` in `Ω` and let the homothety `T z = ε z + c` map an open set `U` into `Ω`.
-Then `u ∘ T ∈ H¹(U)` is a weak supersolution of
-`-div ((a ∘ T) ∇v) ≥ 0` in `U`. -/
-private theorem exists_supersolution_comp_homothety {Ω : Opens E} {u : W1p volume Ω 2}
-    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (hu : ∀ v : W1p0 volume Ω 2, (∀ᵐ x ∂volume.restrict (Ω : Set E),
-      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a 0 0 u (v : W1p volume Ω 2))
-    {ε : ℝ} (hε : 0 < ε) (c : E) (U : Opens E)
-    (hUΩ : MapsTo (fun z : E => ε • z + c) U Ω) :
-    ∃ uε : W1p volume U 2, W1p.value uε =ᵐ[volume.restrict (U : Set E)]
-        (fun z => W1p.value u (ε • z + c)) ∧
-      ∀ v : W1p0 volume U 2, (∀ᵐ z ∂volume.restrict (U : Set E),
-        0 ≤ W1p.value (v : W1p volume U 2) z) →
-        0 ≤ energyFormH1 (fun z => a (ε • z + c)) 0 0 uε (v : W1p volume U 2) := by
-  set V : Opens E := ⟨(fun y : E => ε⁻¹ • y + -(ε⁻¹ • c)) ⁻¹' U,
-      U.isOpen.preimage (by fun_prop)⟩
-  have hST : ∀ z : E, ε⁻¹ • (ε • z + c) + -(ε⁻¹ • c) = z := fun z => by
-    rw [smul_add, smul_smul, inv_mul_cancel₀ hε.ne', one_smul, add_neg_cancel_right]
-  have hTS : ∀ y : E, ε • (ε⁻¹ • y + -(ε⁻¹ • c)) + c = y := fun y => by
-    rw [smul_add, smul_smul, mul_inv_cancel₀ hε.ne', one_smul, smul_neg, smul_smul,
-      mul_inv_cancel₀ hε.ne', one_smul, neg_add_cancel_right]
-  have hT := isChangeOfVariables_homothety (n := n) hε c (U := U) (V := V)
-    (fun z hz => by
-      -- Membership in the preimage `V` is membership of the image under the inverse homothety.
-      change ε⁻¹ • (ε • z + c) + -(ε⁻¹ • c) ∈ (U : Set E)
-      rwa [hST z])
-  have hS := isChangeOfVariables_homothety (n := n) (inv_pos.2 hε) (-(ε⁻¹ • c)) (U := V)
-    (V := U) (fun y hy => hy)
-  have himage : (fun z : E => ε • z + c) '' U = V := by
-    refine Subset.antisymm hT.mapsTo.image_subset fun y hy => ⟨_, hy, hTS y⟩
-  have hVΩ : V ≤ Ω := fun y hy => hTS y ▸ hUΩ hy
-  have hp : (2 : ℝ≥0∞) ≠ ⊤ := ENNReal.ofNat_ne_top
-  refine ⟨hT.w1pCompL hp (W1p.restrictL hVΩ u), ?_, fun v hv => ?_⟩
-  · filter_upwards [hT.value_w1pCompL_ae hp (W1p.restrictL hVΩ u),
-      hT.ae_comp (W1p.value_restrictL_ae hVΩ u)] with z h1 h2
-    rw [h1, h2]
-  · -- The test function `v ∘ T⁻¹` on `V` is nonnegative, vanishes on the boundary, and pulls
-    -- back to `v`.
-    set w := hS.w1pCompL hp (v : W1p volume U 2)
-    have hw0 : w ∈ w1p0Submodule volume V 2 :=
-      hS.w1pCompL_mem_w1p0Submodule_of_leftInvOn hp hT.differentiableOn.continuousOn hT.mapsTo
-        (fun y _ => hTS y) v.property
-    have hwpos : ∀ᵐ y ∂volume.restrict (V : Set E), 0 ≤ W1p.value w y := by
-      filter_upwards [hS.value_w1pCompL_ae hp (v : W1p volume U 2), hS.ae_comp hv] with y h1 h2
-      rw [h1]
-      exact h2
-    have hvw : hT.w1pCompL hp w = v :=
-      W1p.compL_compL_of_leftInvOn _ hp hT.differentiableOn hT.injOn hT.mapsTo hT.norm_fderiv_le
-        hT.pos hT.le_abs_det hS.differentiableOn hS.injOn hS.mapsTo hS.norm_fderiv_le hS.pos
-        hS.le_abs_det (fun z _ => hST z) _
-    have h := energyFormH1_compL hT.differentiableOn hT.injOn hT.mapsTo hT.norm_fderiv_le hT.pos
-      hT.le_abs_det himage a 0 0 (W1p.restrictL hVΩ u) w
-    rw [pullbackDrift_zero, pullbackDensity_zero, hvw,
-      energyFormH1_pullbackPrincipal_homothety hε c a] at h
-    have hnn := energyFormH1_restrictL_nonneg hVΩ hu ⟨w, hw0⟩ hwpos
-    rw [← h] at hnn
-    exact (mul_nonneg_iff_of_pos_left (by positivity)).1 hnn
 
 /-! ### The comparison -/
 
@@ -778,22 +671,6 @@ private theorem mul_le_gaussBarrier_smul {κ : ℝ} (hκ : 0 ≤ κ) {ν : E} (h
   rw [hsplit]
   nlinarith [Real.exp_pos (-κ)]
 
-private theorem frontier_unitAnnulus_subset :
-    frontier (unitAnnulus (n := n) : Set E) ⊆ sphere 0 1 ∪ sphere 0 (1 / 2) := by
-  intro z hz
-  have hcl : closure (unitAnnulus (n := n) : Set E) ⊆ {z : E | 1 / 2 ≤ ‖z‖ ∧ ‖z‖ ≤ 1} :=
-    closure_minimal (fun w hw => ⟨(mem_unitAnnulus.1 hw).2.le, (mem_unitAnnulus.1 hw).1.le⟩)
-      ((isClosed_le continuous_const continuous_norm).inter
-        (isClosed_le continuous_norm continuous_const))
-  obtain ⟨h1, h2⟩ := hcl hz.1
-  have hnot : z ∉ (unitAnnulus (n := n) : Set E) := by
-    rw [← unitAnnulus.isOpen.interior_eq]
-    exact hz.2
-  rw [mem_unitAnnulus, not_and_or, not_lt, not_lt] at hnot
-  rcases hnot with h | h
-  · exact Or.inl (mem_sphere_zero_iff_norm.2 (le_antisymm h2 h))
-  · exact Or.inr (mem_sphere_zero_iff_norm.2 (le_antisymm h h1))
-
 /-- **The comparison on the annulus.** Let `uε ∈ H¹` of the annulus be a weak supersolution for
 coefficients `b`, uniformly elliptic and continuous on the closed unit ball, equal almost
 everywhere to a function `ĝ` continuous there. If `ĝ ≥ s₀` on the outer sphere and
@@ -820,17 +697,12 @@ private theorem ae_add_mul_le_of_supersolution {b : E → Matrix (Fin (n + 1)) (
     (h2 : ∀ z ∈ sphere (0 : E) (1 / 2), s₀ + θ * gaussBarrier κ z ≤ ĝ z) :
     ∀ᵐ z ∂volume.restrict (unitAnnulus (n := n) : Set E),
       s₀ + θ * (gaussBarrier κ z + W1p.value (ψ : W1p volume unitAnnulus 2) z) ≤ ĝ z := by
-  have hsub : (unitAnnulus (n := n) : Set E) ⊆ closedBall 0 1 :=
-    unitAnnulus_subset_ball.trans ball_subset_closedBall
-  have : IsFiniteMeasure (volume.restrict (unitAnnulus (n := n) : Set E)) :=
-    isFiniteMeasure_restrict.2 (measure_ne_top_of_subset unitAnnulus_subset_ball
-      measure_ball_lt_top.ne)
   obtain ⟨W, hWv, hWg⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact
     (Omega := unitAnnulus (n := n)) (mu := volume) (p := 2) isOpen_univ
-    (contDiff_gaussBarrier κ).contDiffOn (isCompact_closedBall 0 1) hsub (subset_univ _)
-  have hbD := hb.mono_set hsub
-  have hm : AEStronglyMeasurable b (volume.restrict (unitAnnulus (n := n) : Set E)) :=
-    (hbc.mono hsub).aestronglyMeasurable unitAnnulus.isOpen.measurableSet
+    (contDiff_gaussBarrier κ).contDiffOn (isCompact_closedBall 0 1) unitAnnulus_subset_closedBall
+    (subset_univ _)
+  have hbD := hb.mono_set unitAnnulus_subset_closedBall
+  have hm := aestronglyMeasurable_restrict_unitAnnulus hbc
   have hcb := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
     hbD.upper_nonneg hm aestronglyMeasurable_const aestronglyMeasurable_const
     (fun _x hx eta xi => hbD.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
@@ -920,7 +792,7 @@ private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1)
     ((continuousOn_const.add (continuousOn_const.mul
       (((contDiff_gaussBarrier κ (k := 0)).continuous.continuousOn).add
         (hLip.continuousOn.mono inter_subset_right)))).sub
-      (hĝ.mono (inter_subset_left.trans (unitAnnulus_subset_ball.trans ball_subset_closedBall)))
+      (hĝ.mono (inter_subset_left.trans unitAnnulus_subset_closedBall))
       ).sup continuousOn_const
   have hF0 : EqOn F 0 O := by
     refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ hO hF continuousOn_const
@@ -936,8 +808,8 @@ private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1)
     refine ⟨mem_unitAnnulus.2 ?_, ?_⟩
     · rw [norm_smul, hν, mul_one, Real.norm_eq_abs, abs_of_pos (by linarith)]
       constructor <;> linarith
-    · rw [mem_ball, dist_eq_norm, sub_smul, one_smul, sub_sub_cancel_left, norm_neg, norm_smul,
-        hν, mul_one, Real.norm_eq_abs, abs_of_pos ht0]
+    · rw [mem_ball, dist_smul_self_of_norm_eq_one hν, sub_sub_cancel_left, abs_neg,
+        abs_of_pos ht0]
       exact htρ
   have hFz := hF0 hzt
   simp only [F, Pi.zero_apply, max_eq_right_iff, sub_nonpos] at hFz
@@ -946,8 +818,7 @@ private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1)
   have hψ' : -(C * η * t) ≤ ψ' ((1 - t) • ν) := by
     have hd := hLip.dist_le_mul ((1 - t) • ν) hzt.2 ν (mem_ball_self hρ)
     have hdist : dist ((1 - t) • ν) ν = t := by
-      rw [dist_eq_norm, sub_smul, one_smul, sub_sub_cancel_left, norm_neg, norm_smul, hν, mul_one,
-        Real.norm_eq_abs, abs_of_pos ht0]
+      rw [dist_smul_self_of_norm_eq_one hν, sub_sub_cancel_left, abs_neg, abs_of_pos ht0]
     rw [h0, dist_zero_right, Real.norm_eq_abs, hdist,
       Real.coe_toNNReal _ (mul_nonneg hC (hKb.trans' Kb.coe_nonneg))] at hd
     linarith [neg_abs_le (ψ' ((1 - t) • ν))]
@@ -1129,12 +1000,12 @@ theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg {Ω : Opens E}
   obtain ⟨hmaps, hmapsO, hbell, hbh, hbA⟩ := rescaled_coefficient hν hell hhol₁ hε hεR
   have hT : Continuous fun z : E => ε • z + c := (continuous_id.const_smul ε).add continuous_const
   -- The rescaled supersolution on the annulus, its continuous representative and boundary values.
-  obtain ⟨uε, huεv, huε⟩ := exists_supersolution_comp_homothety hu hε c unitAnnulus
+  obtain ⟨uε, huεv, huε⟩ := exists_supersolution_comp_smul_add_const hu hε c unitAnnulus
     (fun z hz => hB (hmapsO (unitAnnulus_subset_ball hz)))
   have huĝ : W1p.value uε =ᵐ[volume.restrict (unitAnnulus (n := n) : Set E)]
       fun z => g (ε • z + c) := by
-    filter_upwards [huεv, (isChangeOfVariables_homothety hε c (U := unitAnnulus)
-      (V := ⟨ball y R, isOpen_ball⟩)
+    filter_upwards [huεv, (Wkp.IsChangeOfVariables.smul_add_const (k := 1) hε c
+      (U := unitAnnulus) (V := ⟨ball y R, isOpen_ball⟩)
       (fun z hz => hmapsO (unitAnnulus_subset_ball hz))).ae_comp hug] with z h1 h2
     rw [h1, h2]
   obtain ⟨θ, hθ, h1, h2⟩ := exists_pos_add_mul_gaussBarrier_le hR hg hmin hT hmaps hmapsO hκ

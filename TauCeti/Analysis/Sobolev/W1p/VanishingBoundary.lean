@@ -150,14 +150,14 @@ theorem W1p.mem_w1p0Submodule_of_continuousOn_closure (hp : p ≠ ∞)
 /-- **Positive parts below continuous boundary values.** Let `Ω` be bounded and `1 ≤ p < ∞`. If
 `ψ ∈ W^{1,p}_0(Ω)` and `G ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with a function `g`
 continuous on `closure Ω` and nonpositive on `frontier Ω`, then `(ψ + G)⁺ ∈ W^{1,p}_0(Ω)`: the
-boundary values of `ψ + G` are nonpositive. Approximating `ψ` by test functions `φ`, each
-`(φ + G)⁺` differs from `G⁺` only on the compact support of `φ`, and `G⁺` vanishes continuously on
-the boundary. -/
+boundary values of `ψ + G` are nonpositive. -/
 theorem W1p.posPart_add_mem_w1p0Submodule (hp : p ≠ ∞) (hb : Bornology.IsBounded (Omega : Set E))
     {ψ G : W1p mu Omega p} (hψ : ψ ∈ w1p0Submodule mu Omega p) {g : E → ℝ}
     (hg : ContinuousOn g (closure (Omega : Set E)))
     (hg0 : ∀ x ∈ frontier (Omega : Set E), g x ≤ 0) (hG : W1p.value G =ᵐ[mu.restrict Omega] g) :
     W1p.posPart hp (ψ + G) ∈ w1p0Submodule mu Omega p := by
+  -- Approximate `ψ` by test functions `φ`: each `(φ + G)⁺` differs from `G⁺` only on the compact
+  -- support of `φ`, and `G⁺` vanishes continuously on the boundary.
   have hGp : W1p.posPart hp G ∈ w1p0Submodule mu Omega p := by
     refine W1p.mem_w1p0Submodule_of_continuousOn_closure hp hb (g := fun x => max (g x) 0)
       (ContinuousOn.sup hg continuousOn_const) (fun x hx => max_eq_right (hg0 x hx)) ?_
