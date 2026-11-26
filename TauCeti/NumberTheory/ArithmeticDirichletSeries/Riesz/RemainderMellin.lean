@@ -55,19 +55,14 @@ open scoped ComplexConjugate in
 The equality holds even at poles and removable singularities because both sides use normal form. -/
 @[simp] theorem rieszRemainderMellin_conj_conj (L : ℂ → ℂ) :
     rieszRemainderMellin (conj ∘ L ∘ conj) = conj ∘ rieszRemainderMellin L ∘ conj := by
-  let Q (s : ℂ) :=
-    (s * logDerivFinitePart L 1 - (meromorphicOrderAt L 1).untop₀ * (s - 1) -
-      (logDeriv L s - (meromorphicOrderAt L 1).untop₀ / (s - 1))) / (s * (s - 1))
-  have hQ : (fun s ↦
-      (s * logDerivFinitePart (conj ∘ L ∘ conj) 1 -
-        (meromorphicOrderAt (conj ∘ L ∘ conj) 1).untop₀ * (s - 1) -
-        (logDeriv (conj ∘ L ∘ conj) s -
-          (meromorphicOrderAt (conj ∘ L ∘ conj) 1).untop₀ / (s - 1))) / (s * (s - 1))) =
-      conj ∘ Q ∘ conj := by
-    funext s
-    simp [Q, logDeriv_conj_conj, meromorphicOrderAt_conj_conj]
-  unfold rieszRemainderMellin
-  rw [hQ, toMeromorphicNFOn_conj_conj, preimage_univ]
+  have hnorm (g : ℂ → ℂ) : toMeromorphicNFOn (conj ∘ g ∘ conj) univ =
+      conj ∘ toMeromorphicNFOn g univ ∘ conj := by
+    simp only [toMeromorphicNFOn_conj_conj, preimage_univ]
+  simp only [rieszRemainderMellin, ← hnorm]
+  congr 1
+  funext s
+  simp only [logDerivFinitePart_conj_conj, meromorphicOrderAt_conj_conj, logDeriv_conj_conj,
+    Function.comp_apply, map_sub, map_mul, map_div₀, map_intCast, map_one, Complex.conj_conj]
 
 /-- The quotient defining the Mellin expression, before normalization, describes its
 punctured germ at every point. -/

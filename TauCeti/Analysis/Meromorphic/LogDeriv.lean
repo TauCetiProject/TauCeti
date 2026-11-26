@@ -72,12 +72,13 @@ open scoped ComplexConjugate in
 /-- Reflection in the real axis conjugates the finite part of the logarithmic derivative. -/
 @[simp] theorem logDerivFinitePart_conj_conj (f : ℂ → ℂ) (a : ℂ) :
     logDerivFinitePart (conj ∘ f ∘ conj) a = conj (logDerivFinitePart f (conj a)) := by
-  let g (z : ℂ) := logDeriv f z - (meromorphicOrderAt f (conj a)).untop₀ / (z - conj a)
-  have hg : (fun z ↦ logDeriv (conj ∘ f ∘ conj) z -
-      (meromorphicOrderAt (conj ∘ f ∘ conj) a).untop₀ / (z - a)) = conj ∘ g ∘ conj := by
-    funext z
-    simp [g, logDeriv_conj_conj, meromorphicOrderAt_conj_conj]
-  rw [logDerivFinitePart, hg, toMeromorphicNFAt_conj_conj]
-  rfl
+  have hnorm (g : ℂ → ℂ) :
+      toMeromorphicNFAt (conj ∘ g ∘ conj) a a = conj (toMeromorphicNFAt g (conj a) (conj a)) := by
+    simp only [toMeromorphicNFAt_conj_conj, Function.comp_apply]
+  simp only [logDerivFinitePart, ← hnorm]
+  congr 1
+  funext z
+  simp only [logDeriv_conj_conj, meromorphicOrderAt_conj_conj, Function.comp_apply,
+    map_sub, map_div₀, map_intCast, Complex.conj_conj]
 
 end TauCeti
