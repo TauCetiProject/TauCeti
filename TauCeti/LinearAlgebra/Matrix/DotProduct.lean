@@ -19,7 +19,7 @@ form sends `x` to `l i ⬝ᵥ x`, is linearly independent exactly when the squar
 
 Relabelling the indices of a square matrix `M` along `e : I ≃ J` is an isometry of the pairing
 `(u, v) ↦ u ⬝ᵥ M *ᵥ v`, and the sesquilinear form of a compression `Aᴴ * M * A` is that of `M`
-pulled back along `A`.
+pulled back along `A`; for `M = 1` this is the form of the Gram matrix `Aᴴ * A`.
 
 When `A` scales `x` to a multiple of `x'` and `Aᵀ` scales `y'` to a multiple of `y`, the scalars
 transform the dot products `x' ⬝ᵥ y'` and `x ⬝ᵥ y` into each other. For the character-lattice
@@ -40,6 +40,8 @@ ordered off-diagonal index pairs.
 * `Matrix.comp_equiv_symm_dotProduct_reindex_mulVec`: relabelling the indices is an isometry.
 * `Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec`: the sesquilinear form of a compression
   `Aᴴ * M * A` is that of `M` pulled back along `A`.
+* `Matrix.star_dotProduct_conjTranspose_mul_mulVec`: the sesquilinear form of `Aᴴ * A` is the
+  standard form pulled back along `A`.
 * `Matrix.dotProduct_self_nonneg`: over an ordered ring `v ⬝ᵥ v` is nonnegative.
 * `TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul`: if `A *ᵥ x = a • x'` and `Aᵀ *ᵥ y' = b • y`,
   then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`.
@@ -92,6 +94,13 @@ theorem Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec {k l α : Type*} [Fi
     [Fintype l] [NonUnitalSemiring α] [StarRing α] (A : Matrix k l α) (M : Matrix k k α)
     (x y : l → α) : star x ⬝ᵥ (Aᴴ * M * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ M *ᵥ (A *ᵥ y) := by
   rw [← mulVec_mulVec, ← mulVec_mulVec, star_mulVec, dotProduct_mulVec]
+
+/-- The sesquilinear form of a Gram matrix `Aᴴ * A` is the form of the identity pulled back along
+`A`: `star x ⬝ᵥ (Aᴴ * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ A *ᵥ y`. -/
+theorem Matrix.star_dotProduct_conjTranspose_mul_mulVec {k l α : Type*} [Fintype k]
+    [Fintype l] [NonUnitalSemiring α] [StarRing α] (A : Matrix k l α) (x y : l → α) :
+    star x ⬝ᵥ (Aᴴ * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ A *ᵥ y := by
+  rw [← mulVec_mulVec, dotProduct_mulVec, star_mulVec]
 
 /-- Over an ordered ring the dot product `v ⬝ᵥ v`, a sum of squares, is nonnegative. -/
 @[simp]

@@ -15,8 +15,7 @@ import TauCeti.MeasureTheory.Constructions.Pi
 /-!
 # External products in the Fock model
 
-This file treats the external products of the Fock model (roadmap
-WeilRepresentationsOnBanachSpacesOfData §2.1 (d)).
+This file treats the external products of the Fock model.
 
 A splitting `e : ι₁ ⊕ ι₂ ≃ ι` of the coordinates compatible with the signs makes `β_ε` and the
 Gaussian the orthogonal sum of those of the two parts (`TauCeti.Fock.coordSum`), so the tensor
@@ -29,22 +28,24 @@ For a finite type `T`, the external product `⊗_τ v_τ` of Fock vectors `v_τ 
 and an integral over `T × ι → ℂ` of a product of functions of the blocks is the product of the
 integrals. The map is a bounded multilinear map with `‖⊗ v_τ‖ = ∏ ‖v_τ‖`,
 `⟨⊗ v_τ, ⊗ w_τ⟩ = ∏ ⟨v_τ, w_τ⟩` and `⊗ v_{P_τ} = v_{∏ P_τ}`. Block diagonal elements `(u_τ)` of the
-unitary group have multiplier `∏ τ, Δ_∞(u_τ)` and act factor by factor:
-`ω((u_τ)) (⊗ v_τ) = ⊗ ω(u_τ) v_τ`.
+unitary group, Mathlib's `Matrix.blockDiagonal` reindexed from `ι × T` to `T × ι`, have multiplier
+`∏ τ, Δ_∞(u_τ)` and act factor by factor: `ω((u_τ)) (⊗ v_τ) = ⊗ ω(u_τ) v_τ`.
 
 ## Main definitions
 
 * `TauCeti.Fock.coordSum`, `TauCeti.Fock.boxProd`: the splitting of the coordinates as an orthogonal
   sum, and the external product along it.
 * `TauCeti.Fock.piTensor`: the external product `⊗_τ v_τ` of a finite family.
-* `TauCeti.Fock.blockMatrix`, `TauCeti.Fock.blockU`: block diagonal matrices and the block diagonal
-  embedding `U(ε)^T → U(ε ∘ pr₂)`.
+* `TauCeti.Fock.blockDiagonalHom`: the block diagonal embedding `U(ε)^T → U(ε ∘ pr₂)`.
 
 ## Main results
 
-* `TauCeti.Fock.boxProd_polyVector`, `TauCeti.Fock.norm_piTensor`,
-  `TauCeti.Fock.innerSL_piTensor`, `TauCeti.Fock.piTensor_polyVector`,
-  `TauCeti.Fock.multiplier_blockU`, `TauCeti.Fock.weilRep_piTensor`: 2.1 (d).
+* `TauCeti.Fock.boxProd_polyVector`: `v_P ⊗ v_Q = v_{PQ}`.
+* `TauCeti.Fock.norm_piTensor`, `TauCeti.Fock.innerSL_piTensor`,
+  `TauCeti.Fock.piTensor_polyVector`: `‖⊗ v_τ‖ = ∏ ‖v_τ‖`, `⟨⊗ v_τ, ⊗ w_τ⟩ = ∏ ⟨v_τ, w_τ⟩` and
+  `⊗ v_{P_τ} = v_{∏ P_τ}`.
+* `TauCeti.Fock.multiplier_blockDiagonalHom`, `TauCeti.Fock.weilRep_piTensor`: block diagonal
+  elements have multiplier `∏ τ, Δ_∞(u_τ)` and act factor by factor.
 
 ## Provenance
 
@@ -54,7 +55,8 @@ PBC), file `src/Lib/Weil/Fock/Basic.lean` (`New.Fock.realCoordSum`, `New.Fock.re
 `New.Fock.fockInner_piTensor`, `New.Fock.piTensor_polyVector`, `New.Fock.blockMatrix`,
 `New.Fock.blockU`, `New.Fock.realMultiplier_blockU`, `New.Fock.realWeil_piTensor`). The source's
 identity of product measures is replaced by the integral identity
-`TauCeti.Fock.integral_prod_block`, built on `TauCeti.measurePreserving_curry`.
+`TauCeti.Fock.integral_prod_block`, built on `TauCeti.measurePreserving_curry`, and its
+`blockMatrix` by Mathlib's `Matrix.blockDiagonal` reindexed along `Equiv.prodComm`.
 -/
 
 public noncomputable section
@@ -113,7 +115,7 @@ theorem holomorphicCoord_coordSumEquiv_inl (he : ε ∘ e = Sum.elim ε₁ ε₂
     holomorphicCoord ε (coordSumEquiv ι₁ ι₂ e x) (e (Sum.inl j)) = holomorphicCoord ε₁ x.1 j := by
   have := congrFun he (Sum.inl j)
   simp only [Function.comp_apply, Sum.elim_inl] at this
-  simp [holomorphicCoord, this]
+  simp [holomorphicCoord_apply, this]
 
 omit [Fintype ι] [DecidableEq ι] [Fintype ι₁] [DecidableEq ι₁] [Fintype ι₂] [DecidableEq ι₂] in
 theorem holomorphicCoord_coordSumEquiv_inr (he : ε ∘ e = Sum.elim ε₁ ε₂)
@@ -121,7 +123,7 @@ theorem holomorphicCoord_coordSumEquiv_inr (he : ε ∘ e = Sum.elim ε₁ ε₂
     holomorphicCoord ε (coordSumEquiv ι₁ ι₂ e x) (e (Sum.inr j)) = holomorphicCoord ε₂ x.2 j := by
   have := congrFun he (Sum.inr j)
   simp only [Function.comp_apply, Sum.elim_inr] at this
-  simp [holomorphicCoord, this]
+  simp [holomorphicCoord_apply, this]
 
 /-- A splitting `e : ι₁ ⊕ ι₂ ≃ ι` of the coordinates compatible with the signs makes `β_ε` and the
 Gaussian the orthogonal sum of those of `ε₁` and `ε₂`. -/
@@ -138,13 +140,16 @@ def coordSum (he : ε ∘ e = Sum.elim ε₁ ε₂) :
     simp only [coordSumEquiv_apply, Sum.elim_inl, Sum.elim_inr, h₁, h₂]
     ring
   vacuum_equiv x := by
-    simp only [gaussian, ← Complex.exp_add]
+    simp only [gaussian_apply, ← Complex.exp_add]
     congr 1
     rw [sum_coordSumEquiv e]
     simp only [coordSumEquiv_apply, Sum.elim_inl, Sum.elim_inr]
     ring
 
 variable (he : ε ∘ e = Sum.elim ε₁ ε₂)
+
+@[simp]
+theorem coordSum_equiv : (coordSum he).equiv = coordSumEquiv ι₁ ι₂ e := (rfl)
 
 /-- The *external product* `v ⊗ w` of Fock vectors along a splitting of the coordinates, the
 tensor product of the orthogonal sum `TauCeti.Fock.coordSum`. -/
@@ -153,10 +158,10 @@ def boxProd : FockSpace ε₁ →L[ℂ] FockSpace ε₂ →L[ℂ] FockSpace ε :
 
 theorem boxProd_apply (v : FockSpace ε₁) (w : FockSpace ε₂) (x : (ι₁ → ℂ) × (ι₂ → ℂ)) :
     boxProd he v w (coordSumEquiv ι₁ ι₂ e x) = v x.1 * w x.2 := by
-  rw [boxProd, HeisenbergDatum.OrthogonalSum.tmul_apply,
-    show (coordSum he).equiv = coordSumEquiv ι₁ ι₂ e from rfl, ContinuousAddEquiv.symm_apply_apply]
+  rw [boxProd, HeisenbergDatum.OrthogonalSum.tmul_apply, coordSum_equiv,
+    ContinuousAddEquiv.symm_apply_apply]
 
-/-- Along a splitting compatible with the signs, `v_P ⊗ v_Q = v_{PQ}` (2.1 (d)). -/
+/-- Along a splitting compatible with the signs, `v_P ⊗ v_Q = v_{PQ}`. -/
 theorem boxProd_polyVector (P : MvPolynomial ι₁ ℂ) (Q : MvPolynomial ι₂ ℂ) :
     boxProd he (polyVector ε₁ P) (polyVector ε₂ Q) =
       polyVector ε (rename (e ∘ Sum.inl) P * rename (e ∘ Sum.inr) Q) := by
@@ -167,8 +172,7 @@ theorem boxProd_polyVector (P : MvPolynomial ι₁ ℂ) (Q : MvPolynomial ι₂ 
   have h₂ : holomorphicCoord ε (coordSumEquiv ι₁ ι₂ e x) ∘ e ∘ Sum.inr = holomorphicCoord ε₂ x.2 :=
     funext (holomorphicCoord_coordSumEquiv_inr he x)
   rw [boxProd_apply, polyVector_apply, polyVector_apply, polyVector_apply, eval_mul, eval_rename,
-    eval_rename, h₁, h₂, show gaussian ι (coordSumEquiv ι₁ ι₂ e x) = _ from
-      (coordSum he).vacuum_equiv x]
+    eval_rename, h₁, h₂, ← coordSum_equiv he, (coordSum he).vacuum_equiv x]
   ring
 
 end Splitting
@@ -183,7 +187,8 @@ abbrev blockSign (S : Type*) (ε : ι → ℤˣ) : S × ι → ℤˣ := fun p �
 variable {T : Type*} [Fintype T] [DecidableEq T]
 
 omit [DecidableEq ι] [DecidableEq T] in
-/-- The block `x ⟨τ, ·⟩` of a vector on `T × ι`. -/
+/-- Currying `T × ι → ℂ ≃ T → ι → ℂ` carries Lebesgue measure to the product of Lebesgue
+measures. -/
 private theorem measurePreserving_curry_volume :
     MeasurePreserving (MeasurableEquiv.curry T ι ℂ) (volume : Measure (T × ι → ℂ))
       (Measure.pi fun _ : T ↦ (volume : Measure (ι → ℂ))) :=
@@ -201,6 +206,7 @@ omit [DecidableEq ι] [DecidableEq T] in
 theorem integrable_prod_block {𝕜 : Type*} [RCLike 𝕜] {f : T → (ι → ℂ) → 𝕜}
     (hf : ∀ τ, Integrable (f τ) (measure ι)) :
     Integrable (fun x : T × ι → ℂ ↦ ∏ τ, f τ fun i ↦ x (τ, i)) (measure (T × ι)) := by
+  simp only [measure_def] at hf ⊢
   have h : Integrable (fun y : T → ι → ℂ ↦ ∏ τ, f τ (y τ))
       (Measure.pi fun _ : T ↦ (volume : Measure (ι → ℂ))) :=
     Integrable.fintype_prod fun τ ↦ (integrable_smul_measure (by simp [Real.pi_pos])
@@ -217,8 +223,10 @@ theorem integral_prod_block {𝕜 : Type*} [RCLike 𝕜] (f : T → (ι → ℂ)
   have h : ∫ x : T × ι → ℂ, ∏ τ, f τ (fun i ↦ x (τ, i)) = ∏ τ, ∫ y, f τ y := by
     rw [← integral_fintype_prod_eq_prod (μ := fun _ : T ↦ (volume : Measure (ι → ℂ))),
       ← measurePreserving_curry_volume.integral_comp' (fun y : T → ι → ℂ ↦ ∏ τ, f τ (y τ))]
+    -- `MeasurableEquiv.curry` is `Function.curry`, and `Function.curry x τ` is `fun i ↦ x (τ, i)`.
+    simp only [MeasurableEquiv.coe_curry]
     rfl
-  simp only [measure, integral_smul_measure]
+  simp only [measure_def, integral_smul_measure]
   rw [h, measure_prod_const]
   simp only [RCLike.real_smul_eq_coe_mul, map_prod, prod_mul_distrib]
 
@@ -228,8 +236,8 @@ private theorem heisenbergDatum_mul_gaussian_block (x y : T × ι → ℂ) :
     heisenbergDatum (blockSign T ε) y x * gaussian (T × ι) (x - y) =
       ∏ τ, (heisenbergDatum ε (fun i ↦ y (τ, i)) (fun i ↦ x (τ, i)) *
         gaussian ι ((fun i ↦ x (τ, i)) - fun i ↦ y (τ, i))) := by
-  simp only [heisenbergDatum_apply, gaussian, star_dotProduct_signMatrix_mulVec, ← Complex.exp_add,
-    ← Complex.exp_sum, Pi.sub_apply]
+  simp only [heisenbergDatum_apply, gaussian_apply, star_dotProduct_signMatrix_mulVec,
+    ← Complex.exp_add, ← Complex.exp_sum, Pi.sub_apply]
   congr 1
   simp only [Fintype.sum_prod_type, sum_div, ← sum_neg_distrib, ← sum_sub_distrib,
     ← sum_add_distrib]
@@ -237,14 +245,14 @@ private theorem heisenbergDatum_mul_gaussian_block (x y : T × ι → ℂ) :
 omit [DecidableEq ι] [DecidableEq T] in
 /-- The Gaussian on `T × ι → ℂ` is the product of the Gaussians of the blocks. -/
 theorem gaussian_block (x : T × ι → ℂ) : gaussian (T × ι) x = ∏ τ, gaussian ι fun i ↦ x (τ, i) := by
-  simp only [gaussian, ← Complex.exp_sum]
+  simp only [gaussian_apply, ← Complex.exp_sum]
   congr 1
   simp only [Fintype.sum_prod_type, ← sum_neg_distrib, sum_div]
 
 omit [Fintype ι] [DecidableEq ι] [Fintype T] [DecidableEq T] in
 theorem holomorphicCoord_block (x : T × ι → ℂ) (τ : T) :
     (fun i ↦ holomorphicCoord (blockSign T ε) x (τ, i)) = holomorphicCoord ε fun i ↦ x (τ, i) :=
-  rfl
+  funext fun i ↦ by simp only [holomorphicCoord_apply]
 
 /-- The multilinear form `v ↦ ∏ τ, v τ (x ⟨τ, ·⟩)`. -/
 private def prodAt (x : T × ι → ℂ) : ((_ : T) → FockSpace ε) →ₘₗ[ℂ] ℂ :=
@@ -300,79 +308,69 @@ theorem piTensor_apply (v : T → FockSpace ε) (x : T × ι → ℂ) :
 theorem norm_piTensor (v : T → FockSpace ε) : ‖piTensor ε T v‖ = ∏ τ, ‖v τ‖ :=
   norm_piTensorAux v
 
-/-- `⟨⊗ v_τ, ⊗ w_τ⟩ = ∏ τ, ⟨v_τ, w_τ⟩` (2.1 (d)). -/
+/-- `⟨⊗ v_τ, ⊗ w_τ⟩ = ∏ τ, ⟨v_τ, w_τ⟩`. -/
 theorem innerSL_piTensor (v w : T → FockSpace ε) :
     ReproducingModel.innerSL (piTensor ε T v) (piTensor ε T w) =
       ∏ τ, ReproducingModel.innerSL (v τ) (w τ) := by
   simp only [ReproducingModel.innerSL_apply, piTensor_apply, map_prod, ← prod_mul_distrib]
   exact integral_prod_block fun τ y ↦ conj (v τ y) * w τ y
 
-/-- `⊗ v_{P_τ} = v_{∏ P_τ}`, each `P_τ` renamed into the variables `(τ, ·)` (2.1 (d)). -/
+/-- `⊗ v_{P_τ} = v_{∏ P_τ}`, each `P_τ` renamed into the variables `(τ, ·)`. -/
 theorem piTensor_polyVector (P : T → MvPolynomial ι ℂ) :
     piTensor ε T (fun τ ↦ polyVector ε (P τ)) =
       polyVector (blockSign T ε) (∏ τ, rename (fun i ↦ (τ, i)) (P τ)) := by
   ext x
   simp only [piTensor_apply, polyVector_apply, map_prod, eval_rename, gaussian_block,
-    prod_mul_distrib]
-  rfl
+    prod_mul_distrib, Function.comp_def, ← holomorphicCoord_block]
 
 /-! ### Block diagonal elements of `U(ε)` -/
 
-variable (T) in
-/-- The block diagonal matrix with blocks `M τ`, with rows and columns indexed by `T × κ`. -/
-def blockMatrix {κ : Type*} [Fintype κ] [DecidableEq κ] :
-    (T → Matrix κ κ ℂ) →+* Matrix (T × κ) (T × κ) ℂ :=
-  (reindexRingEquiv ℂ (Equiv.prodComm κ T)).toRingHom.comp (blockDiagonalRingHom κ T ℂ)
+omit [Fintype ι] [DecidableEq ι] [Fintype T] in
+private theorem reindex_blockDiagonal_apply (M : T → Matrix ι ι ℂ) (p q : T × ι) :
+    reindex (Equiv.prodComm ι T) (Equiv.prodComm ι T) (blockDiagonal M) p q =
+      if p.1 = q.1 then M p.1 p.2 q.2 else 0 := by
+  simp [blockDiagonal_apply]
 
-theorem blockMatrix_apply {κ : Type*} [Fintype κ] [DecidableEq κ] (M : T → Matrix κ κ ℂ)
-    (p q : T × κ) : blockMatrix T M p q = if p.1 = q.1 then M p.1 p.2 q.2 else 0 := by
-  obtain ⟨τ, i⟩ := p
-  obtain ⟨σ, j⟩ := q
-  simp [blockMatrix, blockDiagonal_apply']
-
-theorem det_blockMatrix {κ : Type*} [Fintype κ] [DecidableEq κ] (M : T → Matrix κ κ ℂ) :
-    (blockMatrix T M).det = ∏ τ, (M τ).det := by
-  change (reindex (Equiv.prodComm κ T) (Equiv.prodComm κ T) (blockDiagonal M)).det = _
-  rw [det_reindex_self, det_blockDiagonal]
-
+omit [Fintype ι] [Fintype T] in
 private theorem signMatrix_blockSign :
-    signMatrix (blockSign T ε) = blockMatrix T fun _ ↦ signMatrix ε := by
+    signMatrix (blockSign T ε) =
+      reindex (Equiv.prodComm ι T) (Equiv.prodComm ι T) (blockDiagonal fun _ ↦ signMatrix ε) := by
   ext ⟨τ, i⟩ ⟨σ, j⟩
-  simp only [signMatrix, diagonal_apply, blockMatrix_apply, Prod.mk.injEq]
+  simp only [signMatrix_eq_diagonal, diagonal_apply, reindex_blockDiagonal_apply, Prod.mk.injEq]
   split_ifs <;> simp_all
 
-private theorem star_blockMatrix (M : T → Matrix ι ι ℂ) :
-    star (blockMatrix T M) = blockMatrix T fun τ ↦ star (M τ) := by
-  ext p q
-  simp only [star_apply, blockMatrix_apply, eq_comm (a := p.1)]
-  split_ifs with h <;> simp [h]
-
 variable (T) in
-/-- The block diagonal embedding `U(ε)^T → U(ε ∘ pr₂)`. -/
-def blockU : (T → unitaryGroup ε) →* unitaryGroup (blockSign T ε) where
+/-- The block diagonal embedding `U(ε)^T → U(ε ∘ pr₂)`: `(u_τ)` acts on `T × ι → ℂ` by Mathlib's
+`Matrix.blockDiagonal` of the `u_τ`, with rows and columns reindexed from `ι × T` to `T × ι`. -/
+def blockDiagonalHom : (T → unitaryGroup ε) →* unitaryGroup (blockSign T ε) where
   toFun u := unitaryGroupOf.ofMatrix isUnit_signMatrix
-    (blockMatrix T fun τ ↦ ((u τ : GL ι ℂ) : Matrix ι ι ℂ)) (by
-      rw [star_blockMatrix, signMatrix_blockSign, ← map_mul, ← map_mul]
-      exact congrArg _ (funext fun τ ↦ mem_unitaryGroupOf_iff.mp (u τ).property))
+    (reindex (Equiv.prodComm ι T) (Equiv.prodComm ι T)
+      (blockDiagonal fun τ ↦ ((u τ : GL ι ℂ) : Matrix ι ι ℂ))) (by
+      rw [signMatrix_blockSign, star_eq_conjTranspose, conjTranspose_reindex,
+        blockDiagonal_conjTranspose, ← coe_reindexRingEquiv, ← map_mul, ← map_mul,
+        ← blockDiagonal_mul, ← blockDiagonal_mul]
+      exact congrArg _ (congrArg _ (funext fun τ ↦ by
+        simpa [star_eq_conjTranspose] using mem_unitaryGroupOf_iff.mp (u τ).property)))
   map_one' := Subtype.ext (Units.ext (by
-    simp only [unitaryGroupOf.val_ofMatrix, OneMemClass.coe_one, Units.val_one]
-    exact map_one (blockMatrix T)))
+    simp only [unitaryGroupOf.val_ofMatrix, Pi.one_apply, OneMemClass.coe_one, Units.val_one]
+    rw [← Pi.one_def, blockDiagonal_one, ← coe_reindexRingEquiv, map_one]))
   map_mul' u u' := Subtype.ext (Units.ext (by
-    simp only [unitaryGroupOf.val_ofMatrix, Subgroup.coe_mul, Units.val_mul, Pi.mul_apply,
-      ← map_mul]
-    rfl))
+    simp only [unitaryGroupOf.val_ofMatrix, Pi.mul_apply, Subgroup.coe_mul, Units.val_mul]
+    rw [← coe_reindexRingEquiv, ← map_mul, ← blockDiagonal_mul]))
 
 @[simp]
-theorem val_blockU (u : T → unitaryGroup ε) :
-    (((blockU T u : unitaryGroup (blockSign T ε)) : GL (T × ι) ℂ) : Matrix (T × ι) (T × ι) ℂ) =
-      blockMatrix T fun τ ↦ ((u τ : GL ι ℂ) : Matrix ι ι ℂ) :=
+theorem val_blockDiagonalHom (u : T → unitaryGroup ε) :
+    (((blockDiagonalHom T u : unitaryGroup (blockSign T ε)) : GL (T × ι) ℂ) :
+        Matrix (T × ι) (T × ι) ℂ) =
+      reindex (Equiv.prodComm ι T) (Equiv.prodComm ι T)
+        (blockDiagonal fun τ ↦ ((u τ : GL ι ℂ) : Matrix ι ι ℂ)) :=
   unitaryGroupOf.val_ofMatrix _ _ _
 
 /-- A block diagonal element acts block by block. -/
-theorem blockU_smul_apply (u : T → unitaryGroup ε) (y : T × ι → ℂ) (τ : T) :
-    (fun i ↦ (blockU T u • y) (τ, i)) = u τ • fun i ↦ y (τ, i) := by
+theorem blockDiagonalHom_smul_apply (u : T → unitaryGroup ε) (y : T × ι → ℂ) (τ : T) :
+    (fun i ↦ (blockDiagonalHom T u • y) (τ, i)) = u τ • fun i ↦ y (τ, i) := by
   ext i
-  simp [smul_def, mulVec, dotProduct, Fintype.sum_prod_type, blockMatrix_apply, ite_mul]
+  simp [smul_def, mulVec, dotProduct, Fintype.sum_prod_type, reindex_blockDiagonal_apply, ite_mul]
 
 /-- The bijection between the negative indices of `T × ι` and `T` times those of `ι`. -/
 private def negIndexEquiv :
@@ -382,27 +380,30 @@ private def negIndexEquiv :
   left_inv _ := rfl
   right_inv _ := rfl
 
-/-- `Δ_∞` is multiplicative on block diagonal elements: `Δ_∞((u_τ)) = ∏ τ, Δ_∞(u_τ)` (2.1 (d)). -/
-theorem multiplier_blockU (u : T → unitaryGroup ε) :
-    multiplier (blockSign T ε) (blockU T u) = ∏ τ, multiplier ε (u τ) := by
-  have h_block : negBlock (blockSign T ε) (blockMatrix T fun τ ↦ ((u τ : GL ι ℂ) : Matrix ι ι ℂ)) =
-      (blockMatrix T fun τ ↦ negBlock ε ((u τ : GL ι ℂ) : Matrix ι ι ℂ)).submatrix negIndexEquiv
-        negIndexEquiv := by
+/-- `Δ_∞` is multiplicative on block diagonal elements: `Δ_∞((u_τ)) = ∏ τ, Δ_∞(u_τ)`. -/
+theorem multiplier_blockDiagonalHom (u : T → unitaryGroup ε) :
+    multiplier (blockSign T ε) (blockDiagonalHom T u) = ∏ τ, multiplier ε (u τ) := by
+  have h_block : negBlock (blockSign T ε) (reindex (Equiv.prodComm ι T) (Equiv.prodComm ι T)
+      (blockDiagonal fun τ ↦ ((u τ : GL ι ℂ) : Matrix ι ι ℂ))) =
+      (reindex (Equiv.prodComm _ T) (Equiv.prodComm _ T)
+        (blockDiagonal fun τ ↦ negBlock ε ((u τ : GL ι ℂ) : Matrix ι ι ℂ))).submatrix
+          negIndexEquiv negIndexEquiv := by
     ext p q
-    simp [blockMatrix_apply, negIndexEquiv]
-  simp only [multiplier_apply, val_blockU, h_block, det_submatrix_equiv_self, det_blockMatrix,
-    map_prod]
+    simp only [negBlock_apply, submatrix_apply, reindex_blockDiagonal_apply, negIndexEquiv,
+      Equiv.coe_fn_mk]
+  simp only [multiplier_apply, val_blockDiagonalHom, h_block, det_submatrix_equiv_self,
+    det_reindex_self, det_blockDiagonal, map_prod]
 
 /-- Block diagonal elements act on external products factor by factor:
-`ω((u_τ)) (⊗ v_τ) = ⊗ ω(u_τ) v_τ` (2.1 (d)). -/
+`ω((u_τ)) (⊗ v_τ) = ⊗ ω(u_τ) v_τ`. -/
 theorem weilRep_piTensor (u : T → unitaryGroup ε) (v : T → FockSpace ε) :
-    weilRep (blockSign T ε) (blockU T u) (piTensor ε T v) =
+    weilRep (blockSign T ε) (blockDiagonalHom T u) (piTensor ε T v) =
       piTensor ε T fun τ ↦ weilRep ε (u τ) (v τ) := by
   ext x
-  simp only [ReproducingModel.weilRep_apply, piTensor_apply, multiplier_blockU]
+  simp only [ReproducingModel.weilRep_apply, piTensor_apply, multiplier_blockDiagonalHom]
   rw [prod_mul_distrib]
   congr 1
-  simp_rw [heisenbergDatum_mul_gaussian_block, blockU_smul_apply, ← prod_mul_distrib]
+  simp_rw [heisenbergDatum_mul_gaussian_block, blockDiagonalHom_smul_apply, ← prod_mul_distrib]
   exact integral_prod_block fun τ y ↦ v τ y * (heisenbergDatum ε (u τ • y) (fun i ↦ x (τ, i)) *
     gaussian ι ((fun i ↦ x (τ, i)) - u τ • y))
 

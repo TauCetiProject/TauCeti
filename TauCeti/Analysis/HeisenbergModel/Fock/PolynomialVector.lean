@@ -9,6 +9,8 @@ public import TauCeti.Analysis.HeisenbergModel.Fock.Basic
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import TauCeti.Analysis.MvPolynomial.Jacobian
+import TauCeti.Analysis.MvPolynomial.L1Norm
+import TauCeti.Analysis.Normed.Group.Pi
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Reproducing
 import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.Analysis.Calculus.ParametricIntegral
@@ -19,7 +21,7 @@ import Mathlib.Analysis.SpecialFunctions.Exponential
 
 For signs `ε : ι → ℤˣ` and a complex polynomial `P` in variables indexed by `ι`, the function
 `v_P(x) = P(ζ(x)) e(x)`, with `ζ` the holomorphic coordinates and `e` the Gaussian, is a vector of
-the Fock space `𝓕(ε)` (roadmap WeilRepresentationsOnBanachSpacesOfData §2.1 (c)). The map
+the Fock space `𝓕(ε)`. The map
 `P ↦ v_P` is injective, and the Heisenberg operators differentiate polynomial vectors into
 polynomial vectors: `t ↦ ϱ(t x) v_P` (`t ∈ ℝ`) is differentiable at `0` in `𝓕(ε)` with derivative
 `v_{D_x P}`, where `D_x = ∑ i, (x i • A_i - conj (x i * ε i) • B_i)` and `A_i`, `B_i` are the
@@ -41,16 +43,19 @@ the derivative with `v_{D_x P}`, which therefore lies in `𝓕(ε)`. Taking `x =
 
 ## Main results
 
-* `TauCeti.Fock.polyVector_apply`, `TauCeti.Fock.polyVector_injective`,
-  `TauCeti.Fock.hasDerivAt_heisenbergRep_polyVector`: 2.1 (c).
-* `TauCeti.Fock.exists_norm_eval_le_exp`, `TauCeti.Fock.integrable_exp_mul_norm_gaussian`: the
-  exponential bounds behind the domination.
+* `TauCeti.Fock.polyVector_apply`, `TauCeti.Fock.polyVector_injective`: `v_P(x) = P(ζ(x)) e(x)`,
+  and `P ↦ v_P` is injective.
+* `TauCeti.Fock.hasDerivAt_heisenbergRep_polyVector`: the Heisenberg operators differentiate
+  `v_P` into `v_{D_x P}`.
+* `TauCeti.Fock.integrable_exp_mul_norm_gaussian`: the exponential bound behind the domination,
+  with `MvPolynomial.norm_eval_le_l1Norm_mul_exp`.
 
 ## Provenance
 
 Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic,
 PBC), file `src/Lib/Weil/Fock/Basic.lean` (`New.Fock.raiseOp`, `New.Fock.lowerOp`,
-`New.Fock.heisenbergDeriv`, `New.Fock.exists_norm_eval_le_exp`,
+`New.Fock.heisenbergDeriv`, `New.Fock.exists_norm_eval_le_exp` (here
+`MvPolynomial.norm_eval_le_l1Norm_mul_exp`),
 `New.Fock.integrable_exp_mul_realVac`, `New.Fock.exists_hasDerivAt_realHeisenbergOp`,
 `New.Fock.polyVector`, `New.Fock.polyVector_injective`, `New.Fock.hasDerivAt_realHeisenbergOp`).
 The source differentiates in a complex parameter with Cauchy estimates; here the derivative is
@@ -106,43 +111,14 @@ theorem eval_heisenbergDeriv (v l : ι → ℂ) (P : MvPolynomial ι ℂ) :
         ∑ i, holomorphicCoord ε v i * eval l (pderiv i P) := by
   simp only [heisenbergDeriv, LinearMap.sum_apply, map_sum, sum_mul, ← sum_sub_distrib]
   refine sum_congr rfl fun i _ ↦ ?_
-  rcases sign_eq_one_or (ε := ε) i with h | h <;>
-    simp [h, holomorphicCoord, raiseOp, lowerOp] <;> ring
+  rcases Int.units_eq_one_or (ε i) with h | h <;>
+    simp [h, raiseOp, lowerOp] <;> ring
 
 /-! ### Growth estimates -/
 
 omit [DecidableEq ι] in
-/-- A complex polynomial grows at most exponentially for the sup norm: `‖P(l)‖ ≤ C exp (k ‖l‖)`. -/
-theorem exists_norm_eval_le_exp (P : MvPolynomial ι ℂ) :
-    ∃ (k : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ l : ι → ℂ, ‖eval l P‖ ≤ C * Real.exp (k * ‖l‖) := by
-  refine ⟨∑ i, P.degreeOf i, ∑ d ∈ P.support, ‖P.coeff d‖, by positivity, fun l ↦ ?_⟩
-  -- Each monomial is at most `exp ‖l‖ ^ k`, as `‖l i‖ ≤ exp ‖l‖` and `1 ≤ exp ‖l‖`.
-  have h_coord (i : ι) : ‖l i‖ ≤ Real.exp ‖l‖ :=
-    (norm_le_pi_norm l i).trans ((le_add_of_nonneg_right zero_le_one).trans
-      (Real.add_one_le_exp _))
-  have h_mono (d : ι →₀ ℕ) (hd : d ∈ P.support) :
-      ∏ i, ‖l i‖ ^ d i ≤ Real.exp ‖l‖ ^ ∑ i, P.degreeOf i := by
-    rw [← prod_pow_eq_pow_sum]
-    refine prod_le_prod₀ (fun _ _ ↦ by positivity) fun i _ ↦ ?_
-    calc ‖l i‖ ^ d i ≤ Real.exp ‖l‖ ^ d i := pow_le_pow_left₀ (norm_nonneg _) (h_coord i) _
-      _ ≤ Real.exp ‖l‖ ^ P.degreeOf i :=
-        pow_le_pow_right₀ (Real.one_le_exp (norm_nonneg _)) (P.monomial_le_degreeOf i hd)
-  calc ‖eval l P‖ ≤ ∑ d ∈ P.support, ‖P.coeff d‖ * ∏ i, ‖l i‖ ^ d i := by
-        simpa [eval_eq', norm_prod] using norm_sum_le P.support fun d ↦ P.coeff d * ∏ i, l i ^ d i
-    _ ≤ ∑ d ∈ P.support, ‖P.coeff d‖ * Real.exp ‖l‖ ^ ∑ i, P.degreeOf i :=
-        sum_le_sum fun d hd ↦ mul_le_mul_of_nonneg_left (h_mono d hd) (norm_nonneg _)
-    _ = _ := by rw [← sum_mul, ← Real.exp_natCast_mul]
-
-omit [DecidableEq ι] in
-/-- The square of the sup norm is at most the sum of the squares of the coordinates. -/
-theorem sq_norm_le_sum_sq_norm (x : ι → ℂ) : ‖x‖ ^ 2 ≤ ∑ i, ‖x i‖ ^ 2 := by
-  rw [← Real.sqrt_le_sqrt_iff (by positivity), Real.sqrt_sq (norm_nonneg _)]
-  refine (pi_norm_le_iff_of_nonneg (Real.sqrt_nonneg _)).2 fun i ↦ ?_
-  exact Real.le_sqrt_of_sq_le (single_le_sum (fun j _ ↦ sq_nonneg ‖x j‖) (mem_univ i))
-
-omit [DecidableEq ι] in
 theorem norm_gaussian (x : ι → ℂ) : ‖gaussian ι x‖ = Real.exp (-(∑ i, ‖x i‖ ^ 2) / 2) := by
-  rw [gaussian, Complex.norm_exp]
+  rw [gaussian_apply, Complex.norm_exp]
   congr 1
   simp [← ofReal_pow, -ofReal_sum]
 
@@ -153,9 +129,10 @@ theorem integrable_exp_mul_norm_gaussian (C : ℝ) :
   -- It is at most `exp (C ^ 2)` times the wider Gaussian `exp (-|x|² / 4)`.
   have h_int := (integrable_cexp_neg_sum_mul_norm_sq_add (ι := ι) (a := fun _ ↦ 1 / 4)
     (fun _ ↦ by norm_num) 0 0).norm.const_mul (Real.exp (C ^ 2))
+  rw [measure_def]
   refine (h_int.smul_measure ENNReal.ofReal_ne_top).mono' (by fun_prop) (.of_forall fun x ↦ ?_)
   have h_le : C * ‖x‖ - (∑ i, ‖x i‖ ^ 2) / 2 ≤ C ^ 2 - (∑ i, ‖x i‖ ^ 2) / 4 := by
-    nlinarith [sq_norm_le_sum_sq_norm x, sq_nonneg (‖x‖ - 2 * C)]
+    nlinarith [Pi.norm_pow_le_sum_norm_pow x two_ne_zero, sq_nonneg (‖x‖ - 2 * C)]
   have h_norm : ‖cexp (-∑ i, (1 / 4 : ℂ) * (‖x i‖ : ℂ) ^ 2 + ∑ i, (0 : ι → ℂ) i * x i +
       ∑ i, (0 : ι → ℂ) i * conj (x i))‖ = Real.exp (-(∑ i, ‖x i‖ ^ 2) / 4) := by
     rw [Complex.norm_exp]
@@ -168,7 +145,7 @@ omit [Fintype ι] [DecidableEq ι] in
 theorem holomorphicCoord_real_smul (t : ℝ) (x : ι → ℂ) :
     holomorphicCoord ε (t • x) = (t : ℂ) • holomorphicCoord ε x := by
   ext i
-  simp only [holomorphicCoord, Pi.smul_apply]
+  simp only [holomorphicCoord_apply, Pi.smul_apply]
   split_ifs <;> simp [Complex.real_smul]
 
 omit [DecidableEq ι] in
@@ -208,23 +185,26 @@ private theorem ExpBounded.mul {f g : ℝ → (ι → ℂ) → ℂ} (hf : ExpBou
   rw [norm_mul, add_mul, Real.exp_add, mul_mul_mul_comm]
   exact mul_le_mul (h₁ t ht y) (h₂ t ht y) (norm_nonneg _) (by positivity)
 
-private theorem ExpBounded.const (c : ℂ) : ExpBounded (ι := ι) fun _ _ ↦ c :=
-  ⟨‖c‖, 0, norm_nonneg _, le_rfl, fun _ _ _ ↦ by simp⟩
-
 /-- A polynomial evaluated on the line `ζ(y) - t ζ(v)` is exponentially bounded. -/
 private theorem ExpBounded.eval (P : MvPolynomial ι ℂ) (v : ι → ℂ) :
     ExpBounded fun t y ↦ eval (holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v) P := by
-  obtain ⟨k, C, hC, h⟩ := exists_norm_eval_le_exp P
-  refine ⟨C * Real.exp (k * ‖v‖), k, by positivity, by positivity, fun t ht y ↦ ?_⟩
+  have hP := P.l1Norm_nonneg
+  refine ⟨P.l1Norm * Real.exp (P.totalDegree * ‖v‖), P.totalDegree, by positivity, by positivity,
+    fun t ht y ↦ ?_⟩
   have h_norm : ‖holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v‖ ≤ ‖y‖ + ‖v‖ := by
     refine (norm_sub_le _ _).trans ?_
     rw [norm_holomorphicCoord, norm_smul, norm_holomorphicCoord, Complex.norm_real,
       Real.norm_eq_abs]
     exact add_le_add le_rfl (mul_le_of_le_one_left (norm_nonneg _) ht.le)
-  refine (h _).trans ?_
-  rw [mul_assoc, ← Real.exp_add]
-  gcongr
-  linarith [mul_le_mul_of_nonneg_left h_norm (Nat.cast_nonneg (α := ℝ) k)]
+  have h_max : max 1 ‖holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v‖ ≤
+      Real.exp (‖y‖ + ‖v‖) :=
+    max_le (Real.one_le_exp (by positivity))
+      (h_norm.trans (by linarith [Real.add_one_le_exp (‖y‖ + ‖v‖)]))
+  refine (P.norm_eval_le_l1Norm_mul_max_one_pow _).trans ?_
+  calc P.l1Norm * max 1 ‖holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v‖ ^ P.totalDegree
+      ≤ P.l1Norm * Real.exp (‖y‖ + ‖v‖) ^ P.totalDegree := by gcongr
+    _ = P.l1Norm * Real.exp (P.totalDegree * ‖v‖) * Real.exp (P.totalDegree * ‖y‖) := by
+        rw [← Real.exp_natCast_mul, mul_assoc, ← Real.exp_add, mul_add, add_comm]
 
 omit [DecidableEq ι] in
 private theorem norm_phase_le (v y : ι → ℂ) :
@@ -246,12 +226,17 @@ private theorem ExpBounded.phase (v : ι → ℂ) :
   rw [one_mul]
   linarith [Real.add_one_le_exp ‖y‖]
 
-/-- The Gaussian factor `exp (t S(v, y) - t² |v|² / 2)` is exponentially bounded. -/
-private theorem ExpBounded.cexp (v : ι → ℂ) :
-    ExpBounded fun t y ↦ cexp (t * ∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
-      t ^ 2 * (∑ i, (‖v i‖ : ℂ) ^ 2) / 2) := by
+variable (ε) in
+/-- The Gaussian factor `exp (t S(v, y) - t² |v|² / 2)` of a Heisenberg translate of a polynomial
+vector, with the phase `S(v, y) = ∑ i, conj (ζ(v) i) * ζ(y) i`. -/
+private def phaseFactor (v : ι → ℂ) (t : ℝ) (y : ι → ℂ) : ℂ :=
+  cexp (t * ∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
+    t ^ 2 * (∑ i, (‖v i‖ : ℂ) ^ 2) / 2)
+
+/-- The Gaussian factor is exponentially bounded. -/
+private theorem expBounded_phaseFactor (v : ι → ℂ) : ExpBounded (phaseFactor ε v) := by
   refine ⟨1, Fintype.card ι * ‖v‖, zero_le_one, by positivity, fun t ht y ↦ ?_⟩
-  rw [Complex.norm_exp, one_mul, Real.exp_le_exp]
+  rw [phaseFactor, Complex.norm_exp, one_mul, Real.exp_le_exp]
   have h_re : (t ^ 2 * (∑ i, (‖v i‖ : ℂ) ^ 2) / 2 : ℂ).re = t ^ 2 * (∑ i, ‖v i‖ ^ 2) / 2 := by
     simp [← ofReal_pow, -ofReal_sum]
   rw [sub_re, h_re]
@@ -266,48 +251,28 @@ private theorem ExpBounded.real_mul (c : ℂ) : ExpBounded (ι := ι) fun t _ �
   rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, zero_mul, Real.exp_zero, mul_one]
   exact mul_le_of_le_one_left (norm_nonneg _) ht.le
 
-end ExpBounded
+variable (ε) in
+/-- The `t`-derivative of `P(ζ(y) - t ζ(v))` times the Gaussian factor `phaseFactor ε v t y`. -/
+private def derivIntegrand (P : MvPolynomial ι ℂ) (v : ι → ℂ) (t : ℝ) (y : ι → ℂ) : ℂ :=
+  eval (holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v)
+      (∑ i, C (-holomorphicCoord ε v i) * pderiv i P) * phaseFactor ε v t y +
+    eval (holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v) P *
+      ((∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
+        t * ∑ i, (‖v i‖ : ℂ) ^ 2) * phaseFactor ε v t y)
 
-/-- The value of a Heisenberg translate of a polynomial vector `u = v_P` at `y`:
-`e(y) P(ζ(y) - t ζ(v)) exp (t S(v, y) - t² |v|² / 2)`. -/
-private theorem heisenbergRep_real_smul_apply {u : FockSpace ε} {P : MvPolynomial ι ℂ}
-    (hu : ∀ x, u x = eval (holomorphicCoord ε x) P * gaussian ι x) (v : ι → ℂ) (t : ℝ)
-    (y : ι → ℂ) :
-    ReproducingModel.heisenbergRep (t • v) u y = gaussian ι y *
-      (eval (holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v) P *
-        cexp (t * ∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
-          t ^ 2 * (∑ i, (‖v i‖ : ℂ) ^ 2) / 2)) := by
-  have hk := heisenbergDatum_mul_gaussian (ε := ε) y (t • v)
-  have h_exp : gaussian ι (t • v) *
-      cexp (∑ i, conj (holomorphicCoord ε (t • v) i) * holomorphicCoord ε y i) =
-      cexp (t * ∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
-        t ^ 2 * (∑ i, (‖v i‖ : ℂ) ^ 2) / 2) := by
-    simp only [gaussian, ← Complex.exp_add, holomorphicCoord_real_smul, Pi.smul_apply,
-      smul_eq_mul, map_mul, conj_ofReal, Pi.smul_apply, norm_smul, Real.norm_eq_abs, ofReal_mul,
-      mul_pow, ← mul_sum, mul_assoc]
-    congr 1
-    rw [show ((|t| : ℝ) : ℂ) ^ 2 = (t : ℂ) ^ 2 by rw [← ofReal_pow, sq_abs, ofReal_pow]]
-    ring
-  rw [ReproducingModel.heisenbergRep_apply, hu, holomorphicCoord_sub, holomorphicCoord_real_smul,
-    ← h_exp]
-  linear_combination (eval (holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v) P) * hk
+/-- The derivative of `hasDerivAt_eval_mul_phaseFactor` is exponentially bounded. -/
+private theorem expBounded_derivIntegrand (P : MvPolynomial ι ℂ) (v : ι → ℂ) :
+    ExpBounded (derivIntegrand ε P v) := by
+  refine ((ExpBounded.eval _ v).mul (expBounded_phaseFactor v)).add
+    ((ExpBounded.eval P v).mul (ExpBounded.mul ?_ (expBounded_phaseFactor v)))
+  simpa [sub_eq_add_neg] using (ExpBounded.phase (ε := ε) v).add
+    ((ExpBounded.real_mul (-∑ i, (‖v i‖ : ℂ) ^ 2)))
 
-omit [DecidableEq ι] in
-/-- The derivative along `t ↦ ζ(y) - t ζ(v)` of `P` times the Gaussian factor of
-`heisenbergRep_real_smul_apply`, with `Q = -∑ i, ζ(v) i ∂_i P`. -/
-private theorem hasDerivAt_eval_mul_cexp (P : MvPolynomial ι ℂ) (v y : ι → ℂ) (t : ℝ) :
+/-- The derivative along `t ↦ ζ(y) - t ζ(v)` of `P` times the Gaussian factor. -/
+private theorem hasDerivAt_eval_mul_phaseFactor (P : MvPolynomial ι ℂ) (v y : ι → ℂ) (t : ℝ) :
     HasDerivAt (fun s : ℝ ↦ eval (holomorphicCoord ε y - (s : ℂ) • holomorphicCoord ε v) P *
-        cexp (s * ∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
-          s ^ 2 * (∑ i, (‖v i‖ : ℂ) ^ 2) / 2))
-      (eval (holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v)
-          (∑ i, C (-holomorphicCoord ε v i) * pderiv i P) *
-          cexp (t * ∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
-            t ^ 2 * (∑ i, (‖v i‖ : ℂ) ^ 2) / 2) +
-        eval (holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v) P *
-          ((∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
-              t * ∑ i, (‖v i‖ : ℂ) ^ 2) *
-            cexp (t * ∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
-              t ^ 2 * (∑ i, (‖v i‖ : ℂ) ^ 2) / 2))) t := by
+      phaseFactor ε v s y) (derivIntegrand ε P v t y) t := by
+  simp only [derivIntegrand, phaseFactor]
   set S := ∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i
   set N := ∑ i, (‖v i‖ : ℂ) ^ 2
   have h_line : HasDerivAt (fun s : ℝ ↦ holomorphicCoord ε y - (s : ℂ) • holomorphicCoord ε v)
@@ -323,29 +288,55 @@ private theorem hasDerivAt_eval_mul_cexp (P : MvPolynomial ι ℂ) (v y : ι →
     exact h.comp_ofReal
   convert h_poly.mul h_inner.cexp using 1
   · rfl
-  simp only [ContinuousLinearMap.coe_restrictScalars', sum_apply, smul_apply,
-    ContinuousLinearMap.proj_apply, Pi.neg_apply, smul_eq_mul, Function.comp_apply, map_sum,
-    eval_mul, eval_C, sum_mul]
+  simp only [ContinuousLinearMap.coe_restrictScalars', sum_apply,
+    smul_apply, ContinuousLinearMap.proj_apply, Pi.neg_apply, smul_eq_mul, Function.comp_apply,
+    map_sum, eval_mul, eval_C, sum_mul]
   ring_nf
   congr 1
   exact sum_congr rfl fun i _ ↦ by ring
 
-omit [DecidableEq ι] in
-/-- The derivative of `hasDerivAt_eval_mul_cexp` is exponentially bounded. -/
-private theorem expBounded_deriv (P : MvPolynomial ι ℂ) (v : ι → ℂ) :
-    ExpBounded fun t y ↦ eval (holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v)
-          (∑ i, C (-holomorphicCoord ε v i) * pderiv i P) *
-          cexp (t * ∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
-            t ^ 2 * (∑ i, (‖v i‖ : ℂ) ^ 2) / 2) +
-        eval (holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v) P *
-          ((∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
-              t * ∑ i, (‖v i‖ : ℂ) ^ 2) *
-            cexp (t * ∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
-              t ^ 2 * (∑ i, (‖v i‖ : ℂ) ^ 2) / 2)) := by
-  refine ((ExpBounded.eval _ v).mul (ExpBounded.cexp v)).add
-    ((ExpBounded.eval P v).mul (ExpBounded.mul ?_ (ExpBounded.cexp v)))
-  simpa [sub_eq_add_neg] using (ExpBounded.phase (ε := ε) v).add
-    ((ExpBounded.real_mul (-∑ i, (‖v i‖ : ℂ) ^ 2)))
+end ExpBounded
+
+/-- The value of a Heisenberg translate of a polynomial vector `u = v_P` at `y`:
+`e(y) P(ζ(y) - t ζ(v)) exp (t S(v, y) - t² |v|² / 2)`. -/
+private theorem heisenbergRep_real_smul_apply {u : FockSpace ε} {P : MvPolynomial ι ℂ}
+    (hu : ∀ x, u x = eval (holomorphicCoord ε x) P * gaussian ι x) (v : ι → ℂ) (t : ℝ)
+    (y : ι → ℂ) :
+    ReproducingModel.heisenbergRep (t • v) u y = gaussian ι y *
+      (eval (holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v) P * phaseFactor ε v t y) := by
+  have hk := heisenbergDatum_mul_gaussian (ε := ε) y (t • v)
+  have h_exp : gaussian ι (t • v) *
+      cexp (∑ i, conj (holomorphicCoord ε (t • v) i) * holomorphicCoord ε y i) =
+      phaseFactor ε v t y := by
+    simp only [phaseFactor, gaussian_apply, ← Complex.exp_add, holomorphicCoord_real_smul,
+      Pi.smul_apply, smul_eq_mul, map_mul, conj_ofReal, norm_smul, Real.norm_eq_abs, ofReal_mul,
+      mul_pow, ← mul_sum, mul_assoc]
+    congr 1
+    rw [show ((|t| : ℝ) : ℂ) ^ 2 = (t : ℂ) ^ 2 by rw [← ofReal_pow, sq_abs, ofReal_pow]]
+    ring
+  rw [ReproducingModel.heisenbergRep_apply, hu, holomorphicCoord_sub, holomorphicCoord_real_smul,
+    ← h_exp]
+  linear_combination (eval (holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v) P) * hk
+
+/-- The pointwise derivative of the Heisenberg translates of `u = v_P`. -/
+private theorem hasDerivAt_heisenbergRep_apply {u : FockSpace ε} {P : MvPolynomial ι ℂ}
+    (hu : ∀ x, u x = eval (holomorphicCoord ε x) P * gaussian ι x) (v y : ι → ℂ) (t : ℝ) :
+    HasDerivAt (fun s : ℝ ↦ ReproducingModel.heisenbergRep (s • v) u y)
+      (gaussian ι y * derivIntegrand ε P v t y) t := by
+  simp_rw [heisenbergRep_real_smul_apply hu]
+  exact (hasDerivAt_eval_mul_phaseFactor P v y t).const_mul _
+
+/-- The candidate derivative of `t ↦ ϱ(t v) u` at `0` is a continuous superposition of the
+translates of the vacuum. -/
+private theorem continuous_derivIntegrand_smul (P : MvPolynomial ι ℂ) (v : ι → ℂ) :
+    Continuous fun y ↦ (gaussian ι y * derivIntegrand ε P v 0 y) •
+      ReproducingModel.heisenbergRep y (ReproducingModel.vacuum : FockSpace ε) := by
+  refine Continuous.smul (f := fun y ↦ gaussian ι y * derivIntegrand ε P v 0 y) ?_
+    (HeisenbergDatum.Representation.continuous_apply_apply _ continuous_id continuous_const)
+  have := MvPolynomial.continuous_eval (∑ i, C (-holomorphicCoord ε v i) * pderiv i P)
+  have := MvPolynomial.continuous_eval P
+  simp only [derivIntegrand, phaseFactor]
+  fun_prop
 
 /-- **The derivative of the Heisenberg operators on a polynomial vector.** If `u = v_P`, then
 `t ↦ ϱ(t v) u` is differentiable at `0` in the Fock space, with derivative the function
@@ -357,44 +348,24 @@ private theorem exists_hasDerivAt_heisenbergRep {u : FockSpace ε} {P : MvPolyno
   set ϱ := ReproducingModel.heisenbergRep (β := heisenbergDatum ε) (μ := measure ι)
     (e := gaussian ι)
   set vac : FockSpace ε := ReproducingModel.vacuum
-  set G' : ℝ → (ι → ℂ) → ℂ := fun t y ↦
-    eval (holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v)
-          (∑ i, C (-holomorphicCoord ε v i) * pderiv i P) *
-          cexp (t * ∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
-            t ^ 2 * (∑ i, (‖v i‖ : ℂ) ^ 2) / 2) +
-        eval (holomorphicCoord ε y - (t : ℂ) • holomorphicCoord ε v) P *
-          ((∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
-              t * ∑ i, (‖v i‖ : ℂ) ^ 2) *
-            cexp (t * ∑ i, conj (holomorphicCoord ε v i) * holomorphicCoord ε y i -
-              t ^ 2 * (∑ i, (‖v i‖ : ℂ) ^ 2) / 2))
   -- The curve is the superposition of the translates of the vacuum, weighted by its values.
   have h_curve (t : ℝ) : ϱ (t • v) u = ∫ y, ϱ (t • v) u y • ϱ y vac ∂measure ι := by
     conv_lhs => rw [← ReproducingModel.integrated_vacuum (ϱ (t • v) u)]
     exact HeisenbergDatum.Representation.integrated_apply _ _ _
-  have h_pt (y : ι → ℂ) (t : ℝ) :
-      HasDerivAt (fun s : ℝ ↦ ϱ (s • v) u y) (gaussian ι y * G' t y) t := by
-    simp_rw [ϱ, heisenbergRep_real_smul_apply hu]
-    exact (hasDerivAt_eval_mul_cexp P v y t).const_mul _
-  obtain ⟨K, k, -, -, h_bound⟩ := expBounded_deriv (ε := ε) P v
+  obtain ⟨K, k, -, -, h_bound⟩ := expBounded_derivIntegrand (ε := ε) P v
   have h_cont (t : ℝ) : Continuous fun y ↦ ϱ (t • v) u y • ϱ y vac :=
     (ReproducingModel.continuous _).smul
       (HeisenbergDatum.Representation.continuous_apply_apply ϱ continuous_id continuous_const)
-  have h_cont' : Continuous fun y ↦ (gaussian ι y * G' 0 y) • ϱ y vac := by
-    refine Continuous.smul (f := fun y ↦ gaussian ι y * G' 0 y) ?_
-      (HeisenbergDatum.Representation.continuous_apply_apply ϱ continuous_id continuous_const)
-    have := MvPolynomial.continuous_eval (∑ i, C (-holomorphicCoord ε v i) * pderiv i P)
-    have := MvPolynomial.continuous_eval P
-    simp only [G']
-    fun_prop
   have h_deriv := hasDerivAt_integral_of_dominated_loc_of_deriv_le (μ := measure ι)
     (F := fun t y ↦ ϱ (t • v) u y • ϱ y vac) (x₀ := (0 : ℝ))
-    (F' := fun t y ↦ (gaussian ι y * G' t y) • ϱ y vac)
+    (F' := fun t y ↦ (gaussian ι y * derivIntegrand ε P v t y) • ϱ y vac)
     (bound := fun y ↦ K * (Real.exp (k * ‖y‖) * ‖gaussian ι y‖) * ‖vac‖)
     (Metric.ball_mem_nhds 0 one_pos) (.of_forall fun t ↦ (h_cont t).aestronglyMeasurable)
-    (HeisenbergDatum.Representation.integrable_smul_apply ϱ _ vac) h_cont'.aestronglyMeasurable
-    (.of_forall fun y t ht ↦ ?_) (((integrable_exp_mul_norm_gaussian k).const_mul K).mul_const _)
-    (.of_forall fun y t _ ↦ (h_pt y t).smul_const (ϱ y vac))
-  · set D := ∫ y, (gaussian ι y * G' 0 y) • ϱ y vac ∂measure ι
+    (HeisenbergDatum.Representation.integrable_smul_apply ϱ _ vac)
+    (continuous_derivIntegrand_smul P v).aestronglyMeasurable (.of_forall fun y t ht ↦ ?_)
+    (((integrable_exp_mul_norm_gaussian k).const_mul K).mul_const _)
+    (.of_forall fun y t _ ↦ (hasDerivAt_heisenbergRep_apply hu v y t).smul_const (ϱ y vac))
+  · set D := ∫ y, (gaussian ι y * derivIntegrand ε P v 0 y) • ϱ y vac ∂measure ι
     have hD : HasDerivAt (fun t : ℝ ↦ ϱ (t • v) u) D 0 := by
       simpa only [← h_curve] using h_deriv.2
     refine ⟨D, hD, fun x ↦ ?_⟩
@@ -402,15 +373,15 @@ private theorem exists_hasDerivAt_heisenbergRep {u : FockSpace ε} {P : MvPolyno
       simpa [Function.comp_def] using ((ReproducingModel.evalCLM (β := heisenbergDatum ε)
         (μ := measure ι) (e := gaussian ι) x).restrictScalars ℝ).hasFDerivAt.comp_hasDerivAt
           (0 : ℝ) hD
-    rw [← (h_pt x 0).unique h₁]
-    simp [G', eval_heisenbergDeriv]
+    rw [← (hasDerivAt_heisenbergRep_apply hu v x 0).unique h₁, eval_heisenbergDeriv]
+    simp only [derivIntegrand, phaseFactor, ofReal_zero, zero_smul, sub_zero, zero_mul, ne_eq,
+      OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_div, sub_self, Complex.exp_zero,
+      mul_one, eval_sum, eval_mul, eval_C, neg_mul, sum_neg_distrib]
     ring
   · rw [Metric.mem_ball, dist_zero_right, Real.norm_eq_abs] at ht
-    have h := h_bound t ht y
-    beta_reduce at h
     rw [norm_smul, HeisenbergDatum.Representation.norm_apply, norm_mul]
-    calc ‖gaussian ι y‖ * ‖G' t y‖ * ‖vac‖ ≤ ‖gaussian ι y‖ * (K * Real.exp (k * ‖y‖)) * ‖vac‖ := by
-          gcongr
+    calc ‖gaussian ι y‖ * ‖derivIntegrand ε P v t y‖ * ‖vac‖
+        ≤ ‖gaussian ι y‖ * (K * Real.exp (k * ‖y‖)) * ‖vac‖ := by gcongr; exact h_bound t ht y
       _ = K * (Real.exp (k * ‖y‖) * ‖gaussian ι y‖) * ‖vac‖ := by ring
 
 /-- Every polynomial `P` gives a vector `v_P(x) = P(ζ(x)) e(x)` of the Fock space: the constants
@@ -449,7 +420,7 @@ def polyVector : MvPolynomial ι ℂ →ₗ[ℂ] FockSpace ε where
     rw [ReproducingModel.smul_apply, (exists_polyVector (c • P)).choose_spec,
       (exists_polyVector P).choose_spec, RingHom.id_apply, smul_eval, mul_assoc]
 
-/-- `v_P(x) = P(ζ(x)) e(x)` (2.1 (c)). -/
+/-- `v_P(x) = P(ζ(x)) e(x)`. -/
 @[simp]
 theorem polyVector_apply (P : MvPolynomial ι ℂ) (x : ι → ℂ) :
     polyVector ε P x = eval (holomorphicCoord ε x) P * gaussian ι x :=
@@ -459,14 +430,15 @@ theorem polyVector_apply (P : MvPolynomial ι ℂ) (x : ι → ℂ) :
 theorem polyVector_one : polyVector ε 1 = ReproducingModel.vacuum :=
   ReproducingModel.ext fun x ↦ by simp
 
-/-- `P ↦ v_P` is injective (2.1 (c)). -/
+/-- `P ↦ v_P` is injective. -/
 theorem polyVector_injective : Function.Injective (polyVector ε) := by
   refine fun P Q h ↦ MvPolynomial.funext fun x ↦ ?_
-  have h_ne : gaussian ι (holomorphicCoord ε x) ≠ 0 := Complex.exp_ne_zero _
+  have h_ne : gaussian ι (holomorphicCoord ε x) ≠ 0 := by
+    rw [gaussian_apply]; exact Complex.exp_ne_zero _
   have := congr($h (holomorphicCoord ε x))
   simpa [polyVector_apply, h_ne] using this
 
-/-- **Heisenberg derivatives of polynomial vectors** (2.1 (c)): `t ↦ ϱ(t x) v_P` (`t ∈ ℝ`) is
+/-- **Heisenberg derivatives of polynomial vectors**: `t ↦ ϱ(t x) v_P` (`t ∈ ℝ`) is
 differentiable at `0` in the Fock space, with derivative `v_{D_x P}`. -/
 theorem hasDerivAt_heisenbergRep_polyVector (v : ι → ℂ) (P : MvPolynomial ι ℂ) :
     HasDerivAt (fun t : ℝ ↦ ReproducingModel.heisenbergRep (t • v) (polyVector ε P))

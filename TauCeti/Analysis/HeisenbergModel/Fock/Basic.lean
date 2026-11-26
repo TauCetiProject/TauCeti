@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.HeisenbergModel.WeilOperators
 public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
-import TauCeti.Analysis.Matrix.L2OpNorm
+import TauCeti.Analysis.Matrix.DeterminantBound.L2OpNorm
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Accretive
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Reproducing
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -50,10 +50,12 @@ jointly continuous representation `ω_ε` of `U(ε)` on the Fock space `𝓕(ε)
 
 ## Main results
 
-* `TauCeti.Fock.heisenbergDatum_mul_gaussian`, `TauCeti.Fock.isVacuum_gaussian`: 2.1 (a).
-* `TauCeti.Fock.cocycle_multiplier`: the cocycle of `Δ_∞` is trivial, 2.1 (b).
+* `TauCeti.Fock.heisenbergDatum_mul_gaussian`, `TauCeti.Fock.isVacuum_gaussian`: the reproducing
+  kernel of the Gaussian, and the Gaussian is a vacuum.
+* `TauCeti.Fock.cocycle_multiplier`: the cocycle of `Δ_∞` is trivial.
 * `TauCeti.Fock.norm_multiplier_le`, `TauCeti.Fock.norm_weilRep_le`,
-  `TauCeti.Fock.continuous_weilRep`: the bounds and the continuity of 2.1 (b).
+  `TauCeti.Fock.continuous_weilRep`: the bounds `|Δ_∞(u)| ≤ ‖u‖^{|ι|}` and
+  `‖ω_ε(u)‖ ≤ ‖e‖ ‖u‖^{|ι|}`, and the joint continuity of `ω_ε`.
 
 ## Provenance
 
@@ -88,7 +90,10 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] (ε : ι → ℤˣ)
 /-! ### Signs -/
 
 /-- The diagonal matrix `diag(ε)` of a sign vector `ε : ι → ℤˣ`, over `ℂ`. -/
-@[expose] def signMatrix : Matrix ι ι ℂ := diagonal fun i ↦ ((ε i : ℤ) : ℂ)
+def signMatrix : Matrix ι ι ℂ := diagonal fun i ↦ ((ε i : ℤ) : ℂ)
+
+omit [Fintype ι] in
+theorem signMatrix_eq_diagonal : signMatrix ε = diagonal fun i ↦ ((ε i : ℤ) : ℂ) := (rfl)
 
 /-- The unitary group `U(ε)` of the hermitian form `star x ⬝ᵥ diag(ε) *ᵥ y` on `ι → ℂ`. -/
 abbrev unitaryGroup : Subgroup (GL ι ℂ) := Matrix.unitaryGroupOf (signMatrix ε)
@@ -96,12 +101,9 @@ abbrev unitaryGroup : Subgroup (GL ι ℂ) := Matrix.unitaryGroupOf (signMatrix 
 variable {ε}
 
 omit [Fintype ι] [DecidableEq ι] in
-theorem sign_eq_one_or (i : ι) : ε i = 1 ∨ ε i = -1 := Int.units_eq_one_or (ε i)
-
-omit [Fintype ι] [DecidableEq ι] in
 @[simp]
 theorem sign_mul_sign (i : ι) : ((ε i : ℤ) : ℂ) * ((ε i : ℤ) : ℂ) = 1 := by
-  rcases sign_eq_one_or (ε := ε) i with h | h <;> simp [h]
+  rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h]
 
 omit [Fintype ι] [DecidableEq ι] in
 theorem conj_sign (i : ι) : conj ((ε i : ℤ) : ℂ) = ((ε i : ℤ) : ℂ) := by
@@ -109,7 +111,7 @@ theorem conj_sign (i : ι) : conj ((ε i : ℤ) : ℂ) = ((ε i : ℤ) : ℂ) :=
 
 omit [Fintype ι] [DecidableEq ι] in
 theorem norm_sign (i : ι) : ‖((ε i : ℤ) : ℂ)‖ = 1 := by
-  rcases sign_eq_one_or (ε := ε) i with h | h <;> simp [h]
+  rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h]
 
 omit [Fintype ι] in
 @[simp]
@@ -184,11 +186,18 @@ theorem heisenbergDatum_apply (x y : ι → ℂ) :
 
 variable (ι) in
 /-- The Gaussian `e(x) = exp (-|x|² / 2)` on `ι → ℂ`, for the Euclidean norm `|x|`. -/
-@[expose] def gaussian (x : ι → ℂ) : ℂ := cexp (-(∑ i, (‖x i‖ : ℂ) ^ 2) / 2)
+def gaussian (x : ι → ℂ) : ℂ := cexp (-(∑ i, (‖x i‖ : ℂ) ^ 2) / 2)
+
+omit [DecidableEq ι] in
+theorem gaussian_apply (x : ι → ℂ) : gaussian ι x = cexp (-(∑ i, (‖x i‖ : ℂ) ^ 2) / 2) := (rfl)
 
 variable (ι) in
 /-- The measure `π^{-|ι|} dx` on `ι → ℂ`, for Lebesgue measure `dx`. -/
-@[expose] def measure : Measure (ι → ℂ) := ENNReal.ofReal ((1 / Real.pi) ^ Fintype.card ι) • volume
+def measure : Measure (ι → ℂ) := ENNReal.ofReal ((1 / Real.pi) ^ Fintype.card ι) • volume
+
+omit [DecidableEq ι] in
+theorem measure_def :
+    measure ι = ENNReal.ofReal ((1 / Real.pi) ^ Fintype.card ι) • volume := (rfl)
 
 omit [DecidableEq ι] in
 instance : (measure ι).IsAddHaarMeasure :=
@@ -197,7 +206,23 @@ instance : (measure ι).IsAddHaarMeasure :=
 variable (ε) in
 /-- The holomorphic coordinates `ζ(x)`: `ζ(x) i` is `conj (x i)` if `ε i = 1` and `x i` if
 `ε i = -1`. -/
-@[expose] def holomorphicCoord (x : ι → ℂ) : ι → ℂ := fun i ↦ if ε i = 1 then conj (x i) else x i
+def holomorphicCoord (x : ι → ℂ) : ι → ℂ := fun i ↦ if ε i = 1 then conj (x i) else x i
+
+omit [Fintype ι] [DecidableEq ι] in
+theorem holomorphicCoord_apply (x : ι → ℂ) (i : ι) :
+    holomorphicCoord ε x i = if ε i = 1 then conj (x i) else x i := (rfl)
+
+omit [Fintype ι] [DecidableEq ι] in
+@[simp]
+theorem holomorphicCoord_apply_of_eq_one {x : ι → ℂ} {i : ι} (h : ε i = 1) :
+    holomorphicCoord ε x i = conj (x i) := by
+  simp [holomorphicCoord_apply, h]
+
+omit [Fintype ι] [DecidableEq ι] in
+@[simp]
+theorem holomorphicCoord_apply_of_eq_neg_one {x : ι → ℂ} {i : ι} (h : ε i = -1) :
+    holomorphicCoord ε x i = x i := by
+  simp [holomorphicCoord_apply, h]
 
 omit [Fintype ι] [DecidableEq ι] in
 @[fun_prop]
@@ -228,7 +253,7 @@ theorem holomorphicCoord_holomorphicCoord (x : ι → ℂ) :
 omit [DecidableEq ι] in
 private theorem ofReal_norm_sq (z : ℂ) : (‖z‖ : ℂ) ^ 2 = conj z * z := (conj_mul' z).symm
 
-/-- **The reproducing kernel of the Gaussian** (2.1 (a)): with `ζ` the holomorphic coordinates,
+/-- **The reproducing kernel of the Gaussian**: with `ζ` the holomorphic coordinates,
 `β(y, x) e(x - y) = e(x) e(y) exp (∑ i, conj (ζ(y) i) * ζ(x) i)`. -/
 theorem heisenbergDatum_mul_gaussian (x y : ι → ℂ) :
     heisenbergDatum ε y x * gaussian ι (x - y) =
@@ -241,7 +266,7 @@ theorem heisenbergDatum_mul_gaussian (x y : ι → ℂ) :
     ← sum_add_distrib]
   refine sum_eq_zero fun i _ ↦ ?_
   simp only [holomorphicCoord, Pi.sub_apply, ofReal_norm_sq, map_sub]
-  rcases sign_eq_one_or (ε := ε) i with h | h <;> simp [h] <;> ring
+  rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h] <;> ring
 
 omit [DecidableEq ι] in
 private theorem gaussian_eq_exp_sum (x : ι → ℂ) :
@@ -282,9 +307,9 @@ private theorem gaussian_mul_heisenbergDatum (x y z : ι → ℂ) :
     ← sum_add_distrib, mul_sum, ofReal_one]
   refine sum_eq_zero fun i _ ↦ ?_
   simp only [holomorphicCoord, Pi.sub_apply, Pi.add_apply, ofReal_norm_sq, map_sub, map_add]
-  rcases sign_eq_one_or (ε := ε) i with h | h <;> simp [h] <;> ring
+  rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h] <;> ring
 
-/-- The Gaussian is a vacuum for `β_ε` and the measure `π^{-|ι|} dx` (2.1 (a)). -/
+/-- The Gaussian is a vacuum for `β_ε` and the measure `π^{-|ι|} dx`. -/
 instance isVacuum_gaussian : (heisenbergDatum ε).IsVacuum (measure ι) (gaussian ι) where
   continuous := continuous_gaussian
   integrable := integrable_gaussian
@@ -329,8 +354,7 @@ theorem measurePreserving_smul (g : unitaryGroup ε) :
     CStarRing.norm_of_mem_unitary
       (det_mem_unitary_of_mem_unitaryGroupOf isUnit_signMatrix g.property)
   refine ⟨(continuous_const.matrix_mulVec continuous_id).measurable, ?_⟩
-  rw [show (g • · : (ι → ℂ) → ι → ℂ) = fun x ↦ ((g : GL ι ℂ) : Matrix ι ι ℂ) *ᵥ x from rfl,
-    map_mulVec_addHaar_eq_smul fun h ↦ by simp [h] at h_norm]
+  rw [funext (smul_def g), map_mulVec_addHaar_eq_smul fun h ↦ by simp [h] at h_norm]
   simp [h_norm]
 
 variable (ε) in
@@ -343,27 +367,17 @@ def multiplier : (heisenbergDatum ε).Multiplier (measure ι) (unitaryGroup ε) 
   measurePreserving_smul := measurePreserving_smul
   continuous_toFun := Complex.continuous_conj.comp continuous_negBlock_det
   map_one' := by simp [negBlock, submatrix_one _ Subtype.val_injective]
-  map_inv' g := by rw [negBlock_inv, det_conjTranspose]; rfl
+  map_inv' g := by rw [negBlock_inv, det_conjTranspose, Complex.star_def]
 
 theorem multiplier_apply (g : unitaryGroup ε) :
     multiplier ε g = conj (negBlock ε ((g : GL ι ℂ) : Matrix ι ι ℂ)).det := (rfl)
 
 open scoped Matrix.Norms.L2Operator in
-/-- The determinant of a square matrix is at most the `|ι|`-th power of its `ℓ²` operator norm. -/
-private theorem norm_det_le_l2_opNorm_pow {κ : Type*} [Fintype κ] [DecidableEq κ]
-    (A : Matrix κ κ ℂ) : ‖A.det‖ ≤ ‖A‖ ^ Fintype.card κ := by
-  refine (norm_det_le_prod_norm_toLp A).trans ?_
-  rw [← Finset.card_univ, ← prod_const]
-  refine prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ ?_
-  rw [EuclideanSpace.norm_eq, Real.sqrt_le_left (norm_nonneg _)]
-  exact sum_norm_sq_le_l2_opNorm_sq A i
-
-open scoped Matrix.Norms.L2Operator in
-/-- `|Δ_∞(u)| ≤ ‖u‖^{|ι|}` for the operator norm of the standard hermitian norm (2.1 (b)). -/
+/-- `|Δ_∞(u)| ≤ ‖u‖^{|ι|}` for the operator norm of the standard hermitian norm. -/
 theorem norm_multiplier_le (g : unitaryGroup ε) :
     ‖multiplier ε g‖ ≤ ‖((g : GL ι ℂ) : Matrix ι ι ℂ)‖ ^ Fintype.card ι := by
   rw [multiplier_apply, RCLike.norm_conj]
-  refine (norm_det_le_l2_opNorm_pow _).trans ?_
+  refine (Matrix.norm_det_le_l2_opNorm_pow _).trans ?_
   calc ‖negBlock ε ((g : GL ι ℂ) : Matrix ι ι ℂ)‖ ^ Fintype.card {i // ε i = -1}
       ≤ ‖((g : GL ι ℂ) : Matrix ι ι ℂ)‖ ^ Fintype.card {i // ε i = -1} :=
         pow_le_pow_left₀ (norm_nonneg _)
@@ -379,17 +393,21 @@ theorem norm_multiplier_le (g : unitaryGroup ε) :
 
 variable (ε) in
 /-- The projection `P₊` onto the coordinates of sign `1`. -/
-def posProj : Matrix ι ι ℂ := diagonal fun i ↦ if ε i = 1 then 1 else 0
+private def posProj : Matrix ι ι ℂ := diagonal fun i ↦ if ε i = 1 then 1 else 0
+
+variable (ε) in
+/-- `P₊ + P₋ x`, for the projections `P₊` and `P₋ = 1 - P₊` onto the coordinates of sign `1` and
+`-1`. -/
+private def posProjAdd (x : Matrix ι ι ℂ) : Matrix ι ι ℂ := posProj ε + (1 - posProj ε) * x
 
 omit [Fintype ι] in
 private theorem signMatrix_eq_posProj_sub : signMatrix ε = posProj ε - (1 - posProj ε) := by
   rw [signMatrix, posProj, ← diagonal_one, diagonal_sub, diagonal_sub]
   congr 1
   funext i
-  rcases sign_eq_one_or (ε := ε) i with h | h <;> simp [h]
+  rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h]
 
-omit [Fintype ι] in
-private theorem posProj_mul_posProj [Fintype ι] : posProj ε * posProj ε = posProj ε := by
+private theorem posProj_mul_posProj : posProj ε * posProj ε = posProj ε := by
   simp [posProj]
 
 omit [Fintype ι] in
@@ -397,66 +415,120 @@ private theorem conjTranspose_posProj : (posProj ε)ᴴ = posProj ε := by
   simp [posProj]
 
 /-- The determinant of `P₊ + P₋ x` is the minor of `x` on the indices of sign `-1`. -/
-private theorem det_posProj_add_mul (x : Matrix ι ι ℂ) :
-    (posProj ε + (1 - posProj ε) * x).det = (negBlock ε x).det := by
+private theorem det_posProjAdd (x : Matrix ι ι ℂ) : (posProjAdd ε x).det = (negBlock ε x).det := by
   let e := Equiv.sumCompl fun i ↦ ε i = -1
-  have h_pos (i : {i // ¬ ε i = -1}) : ε i = 1 := (sign_eq_one_or (i : ι)).resolve_right i.property
-  have h_blocks : (posProj ε + (1 - posProj ε) * x).submatrix e e =
+  have h_pos (i : {i // ¬ ε i = -1}) : ε i = 1 :=
+    (Int.units_eq_one_or (ε i)).resolve_right i.property
+  have h_blocks : (posProjAdd ε x).submatrix e e =
       fromBlocks (negBlock ε x) (x.submatrix Subtype.val Subtype.val) 0 1 := by
     ext (i | i) (j | j)
-    · simp [e, negBlock, posProj, sub_mul, diagonal_mul, diagonal_apply, i.property]
-    · simp [e, posProj, sub_mul, diagonal_mul, diagonal_apply, i.property]
+    · simp [e, posProjAdd, negBlock, posProj, sub_mul, diagonal_mul, diagonal_apply, i.property]
+    · simp [e, posProjAdd, posProj, sub_mul, diagonal_mul, diagonal_apply, i.property]
     · have h_ne : (i : ι) ≠ j := fun h ↦ i.property (h ▸ j.property)
-      simp [e, posProj, sub_mul, diagonal_mul, h_pos, h_ne]
-    · simp [e, posProj, sub_mul, diagonal_mul, diagonal_apply, Matrix.one_apply, h_pos,
+      simp [e, posProjAdd, posProj, sub_mul, diagonal_mul, h_pos, h_ne]
+    · simp [e, posProjAdd, posProj, sub_mul, diagonal_mul, diagonal_apply, Matrix.one_apply, h_pos,
         Subtype.ext_iff]
   rw [← det_submatrix_equiv_self e, h_blocks, det_fromBlocks_zero₂₁, det_one, mul_one]
 
-/-- `conj (det (P₊ + P₋ x)) = Δ x` and `det (P₊ + P₋ x⁻¹) = Δ x`. -/
-private theorem conj_det_posProj_add_mul (x : unitaryGroup ε) :
-    conj (posProj ε + (1 - posProj ε) * ((x : GL ι ℂ) : Matrix ι ι ℂ)).det = multiplier ε x := by
-  rw [det_posProj_add_mul, multiplier_apply]
+/-- `conj (det (P₊ + P₋ x)) = Δ_∞(x)`. -/
+private theorem conj_det_posProjAdd (x : unitaryGroup ε) :
+    conj (posProjAdd ε ((x : GL ι ℂ) : Matrix ι ι ℂ)).det = multiplier ε x := by
+  rw [det_posProjAdd, multiplier_apply]
 
-private theorem det_posProj_add_mul_inv (x : unitaryGroup ε) :
-    (posProj ε + (1 - posProj ε) * (((x⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ)).det =
-      multiplier ε x := by
-  rw [det_posProj_add_mul, negBlock_inv, det_conjTranspose, multiplier_apply]
-  rfl
+/-- `det (P₊ + P₋ x⁻¹) = Δ_∞(x)`. -/
+private theorem det_posProjAdd_inv (x : unitaryGroup ε) :
+    (posProjAdd ε (((x⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ)).det = multiplier ε x := by
+  rw [det_posProjAdd, negBlock_inv, det_conjTranspose, multiplier_apply, Complex.star_def]
 
-/-- The determinant of the three block matrices factoring the Gaussian of the cocycle: with
-`k = g h` and `T x = P₊ + P₋ x`, it is `Δ g Δ h Δ k⁻¹`. -/
-private theorem det_fromBlocks_mul_fromBlocks (g h : unitaryGroup ε)
-    (T : Matrix ι ι ℂ → Matrix ι ι ℂ) (hT : ∀ x, T x = posProj ε + (1 - posProj ε) * x) :
-    (((T ((h : GL ι ℂ) : Matrix ι ι ℂ)).fromBlocks (1 - posProj ε) 0
-          (T ((((g * h)⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) *
-              (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ)))ᴴ *
-        (posProj ε).fromBlocks (posProj ε - 1) 1 1 *
-        fromBlocks 1 1 (-T ((h : GL ι ℂ) : Matrix ι ι ℂ))
-          (-T ((h : GL ι ℂ) : Matrix ι ι ℂ) +
-            T (((g⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) *
-                (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))).det =
-      multiplier ε g * multiplier ε h * multiplier ε (g * h)⁻¹ := by
+variable (ε) in
+/-- The matrix `A = ½ (J* J + (1, 1 + ε; 1 - ε, 1))`, `J = diag(h, g h)`, of the Gaussian on
+`(ι → ℂ)²` whose integral is the cocycle of `Δ_∞` at `(g, h)`. -/
+private def cocycleMatrix (g h : unitaryGroup ε) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℂ :=
+  (2⁻¹ : ℂ) • ((fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
+      (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))ᴴ *
+      fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
+        (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) +
+      fromBlocks 1 (1 + signMatrix ε) (1 - signMatrix ε) 1)
+
+/-- For `u ∈ U(ε)`, `½ (u* u + 1) = P₊ + u* P₋ u`, as `u* (P₊ - P₋) u = P₊ - P₋`. -/
+private theorem two_inv_smul_conjTranspose_mul_add_one (u : unitaryGroup ε) :
+    (2⁻¹ : ℂ) • ((((u : GL ι ℂ) : Matrix ι ι ℂ))ᴴ * ((u : GL ι ℂ) : Matrix ι ι ℂ) + 1) =
+      posProj ε +
+        (((u : GL ι ℂ) : Matrix ι ι ℂ))ᴴ * (1 - posProj ε) * ((u : GL ι ℂ) : Matrix ι ι ℂ) := by
+  have hu := mem_unitaryGroupOf_iff.mp u.property
+  rw [star_eq_conjTranspose, signMatrix_eq_posProj_sub] at hu
+  simp only [Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_one] at hu ⊢
+  linear_combination (norm := module) (2⁻¹ : ℂ) • hu
+
+/-- For `u ∈ U(ε)`, `½ (u* u + 1) = P₋ + u* P₊ u`, as `u* (P₊ - P₋) u = P₊ - P₋`. -/
+private theorem two_inv_smul_conjTranspose_mul_add_one' (u : unitaryGroup ε) :
+    (2⁻¹ : ℂ) • ((((u : GL ι ℂ) : Matrix ι ι ℂ))ᴴ * ((u : GL ι ℂ) : Matrix ι ι ℂ) + 1) =
+      (1 - posProj ε) +
+        (((u : GL ι ℂ) : Matrix ι ι ℂ))ᴴ * posProj ε * ((u : GL ι ℂ) : Matrix ι ι ℂ) := by
+  have hu := mem_unitaryGroupOf_iff.mp u.property
+  rw [star_eq_conjTranspose, signMatrix_eq_posProj_sub] at hu
+  simp only [Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_one] at hu ⊢
+  linear_combination (norm := module) (-2⁻¹ : ℂ) • hu
+
+/-- The blocks of the cocycle matrix, by the unitarity of `h` and `k = g h`:
+`A = (P₊ + h* P₋ h, P₊; P₋, P₋ + k* P₊ k)`. -/
+private theorem cocycleMatrix_eq_fromBlocks (g h : unitaryGroup ε) :
+    cocycleMatrix ε g h = fromBlocks
+      (posProj ε +
+        (((h : GL ι ℂ) : Matrix ι ι ℂ))ᴴ * (1 - posProj ε) * ((h : GL ι ℂ) : Matrix ι ι ℂ))
+      (posProj ε) (1 - posProj ε)
+      ((1 - posProj ε) + (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ)ᴴ * posProj ε *
+        (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ)) := by
+  rw [← two_inv_smul_conjTranspose_mul_add_one, ← two_inv_smul_conjTranspose_mul_add_one',
+    cocycleMatrix, fromBlocks_conjTranspose, fromBlocks_multiply, fromBlocks_add, fromBlocks_smul,
+    signMatrix_eq_posProj_sub]
+  simp only [conjTranspose_zero, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add]
+  congr 1 <;> module
+
+/-- The cocycle matrix factors as `X* M Y` with `T x = P₊ + P₋ x`, `k = g h` and
+`X = (T h, P₋; 0, T k⁻¹ k)`, `M = (P₊, -P₋; 1, 1)`, `Y = (1, 1; -T h, -T h + T g⁻¹ k)`:
+indeed `M Y = (T h, P₊; P₋ (1 - h), P₋ + P₊ k)`. -/
+private theorem cocycleMatrix_eq_mul (g h : unitaryGroup ε) :
+    cocycleMatrix ε g h =
+      (fromBlocks (posProjAdd ε ((h : GL ι ℂ) : Matrix ι ι ℂ)) (1 - posProj ε) 0
+          (posProjAdd ε ((((g * h)⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) *
+            (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ)))ᴴ *
+        fromBlocks (posProj ε) (posProj ε - 1) 1 1 *
+        fromBlocks 1 1 (-posProjAdd ε ((h : GL ι ℂ) : Matrix ι ι ℂ))
+          (-posProjAdd ε ((h : GL ι ℂ) : Matrix ι ι ℂ) +
+            posProjAdd ε (((g⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) *
+              (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ)) := by
+  have hPP (x : Matrix ι ι ℂ) : posProj ε * (posProj ε * x) = posProj ε * x := by
+    rw [← Matrix.mul_assoc, posProj_mul_posProj]
+  have hGK : (((g⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) *
+      (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) = ((h : GL ι ℂ) : Matrix ι ι ℂ) := by
+    rw [← Units.val_mul, ← Subgroup.coe_mul, inv_mul_cancel_left]
+  have hKK : ((((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))ᴴ *
+      (((((g * h)⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))ᴴ = 1 := by
+    rw [← conjTranspose_mul, ← Units.val_mul, ← Subgroup.coe_mul, inv_mul_cancel]
+    simp
+  rw [cocycleMatrix_eq_fromBlocks, fromBlocks_conjTranspose, fromBlocks_multiply,
+    fromBlocks_multiply]
+  simp only [posProjAdd, conjTranspose_add, conjTranspose_mul, conjTranspose_sub, conjTranspose_one,
+    conjTranspose_zero, conjTranspose_posProj, Matrix.mul_add, Matrix.add_mul, Matrix.mul_sub,
+    Matrix.sub_mul, Matrix.mul_one, Matrix.one_mul, Matrix.zero_mul, Matrix.mul_neg,
+    Matrix.mul_assoc, hPP, hGK, hKK, posProj_mul_posProj]
+  congr 1 <;> abel
+
+/-- The determinant of the cocycle matrix is `Δ_∞(g) Δ_∞(h) Δ_∞((g h)⁻¹)`. -/
+private theorem det_cocycleMatrix (g h : unitaryGroup ε) :
+    (cocycleMatrix ε g h).det = multiplier ε g * multiplier ε h * multiplier ε (g * h)⁻¹ := by
   set k : unitaryGroup ε := g * h
-  have h_conj_det_T (x : unitaryGroup ε) :
-      conj (T ((x : GL ι ℂ) : Matrix ι ι ℂ)).det = multiplier ε x := by
-    rw [hT, conj_det_posProj_add_mul]
-  have h_det_T_inv (x : unitaryGroup ε) :
-      (T (((x⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ)).det = multiplier ε x := by
-    rw [hT, det_posProj_add_mul_inv]
   have h_det_k : conj (((k : GL ι ℂ) : Matrix ι ι ℂ)).det * (((k : GL ι ℂ) : Matrix ι ι ℂ)).det =
       1 := by
     rw [conj_mul', CStarRing.norm_of_mem_unitary
       (det_mem_unitary_of_mem_unitaryGroupOf isUnit_signMatrix k.property)]
     simp
   have h_middle : posProj ε - (posProj ε - 1) * 1 = 1 := by simp
-  have h_last : -T ((h : GL ι ℂ) : Matrix ι ι ℂ) +
-      T (((g⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) * ((k : GL ι ℂ) : Matrix ι ι ℂ) -
-        -T ((h : GL ι ℂ) : Matrix ι ι ℂ) * 1 =
-      T (((g⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) * ((k : GL ι ℂ) : Matrix ι ι ℂ) :=
-          by simp
-  rw [det_mul, det_mul, det_conjTranspose, det_fromBlocks_zero₂₁, det_fromBlocks_one₂₂,
-    det_fromBlocks_one₁₁, h_middle, h_last, det_one, det_mul, det_mul]
-  rw [Complex.star_def, map_mul, map_mul, h_conj_det_T h, h_conj_det_T k⁻¹, h_det_T_inv g]
+  rw [cocycleMatrix_eq_mul, det_mul, det_mul, det_conjTranspose, det_fromBlocks_zero₂₁,
+    det_fromBlocks_one₂₂, det_fromBlocks_one₁₁, h_middle, Matrix.mul_one, sub_neg_eq_add,
+    neg_add_cancel_comm, det_one, det_mul, det_mul, Complex.star_def, map_mul, map_mul,
+    conj_det_posProjAdd, conj_det_posProjAdd, det_posProjAdd_inv]
   linear_combination (multiplier ε g * multiplier ε h * multiplier ε k⁻¹) * h_det_k
 
 omit [DecidableEq ι] in
@@ -464,17 +536,13 @@ theorem gaussian_eq_exp_star_dotProduct (x : ι → ℂ) : gaussian ι x = cexp 
   simp [gaussian, dotProduct, ofReal_norm_sq]
 
 /-- The quadratic form of the Gaussian integrand of the cocycle is strictly accretive. -/
-private theorem isStrictlyAccretive_cocycleMatrix (h k : unitaryGroup ε) :
-    ((2⁻¹ : ℂ) • ((fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0 ((k : GL ι ℂ) : Matrix ι ι ℂ))ᴴ *
-        fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0 ((k : GL ι ℂ) : Matrix ι ι ℂ) +
-      fromBlocks 1 (1 + signMatrix ε) (1 - signMatrix ε) 1)).IsStrictlyAccretive := by
-  set J : Matrix (ι ⊕ ι) (ι ⊕ ι) ℂ :=
-      fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0 ((k : GL ι ℂ) : Matrix ι ι ℂ)
+private theorem isStrictlyAccretive_cocycleMatrix (g h : unitaryGroup ε) :
+    (cocycleMatrix ε g h).IsStrictlyAccretive := by
+  set J : Matrix (ι ⊕ ι) (ι ⊕ ι) ℂ := fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
+    (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ)
   set C : Matrix (ι ⊕ ι) (ι ⊕ ι) ℂ := fromBlocks 1 1 0 0
-  have h_add : (2⁻¹ : ℂ) • (Jᴴ * J + fromBlocks 1 (1 + signMatrix ε) (1 - signMatrix ε) 1) +
-      ((2⁻¹ : ℂ) • (Jᴴ * J + fromBlocks 1 (1 + signMatrix ε) (1 - signMatrix ε) 1))ᴴ =
-      Jᴴ * J + Cᴴ * C := by
-    simp only [J, C, conjTranspose_smul, conjTranspose_add, conjTranspose_mul,
+  have h_add : cocycleMatrix ε g h + (cocycleMatrix ε g h)ᴴ = Jᴴ * J + Cᴴ * C := by
+    simp only [cocycleMatrix, J, C, conjTranspose_smul, conjTranspose_add, conjTranspose_mul,
       conjTranspose_conjTranspose, fromBlocks_conjTranspose, conjTranspose_one, conjTranspose_zero,
       conjTranspose_sub, conjTranspose_signMatrix, fromBlocks_multiply, fromBlocks_add,
       fromBlocks_smul, star_inv₀, star_ofNat, Matrix.mul_one, Matrix.mul_zero,
@@ -484,74 +552,29 @@ private theorem isStrictlyAccretive_cocycleMatrix (h k : unitaryGroup ε) :
   refine (PosDef.conjTranspose_mul_self J ?_).add_posSemidef (posSemidef_conjTranspose_mul_self C)
   rw [mulVec_injective_iff_isUnit, isUnit_iff_isUnit_det]
   simpa [J, det_fromBlocks_zero₂₁] using
-    ⟨(isUnits_det_units (h : GL ι ℂ)).ne_zero, (isUnits_det_units (k : GL ι ℂ)).ne_zero⟩
-
-omit [DecidableEq ι] in
-private theorem star_dotProduct_conjTranspose_mul_mulVec (M : Matrix ι ι ℂ) (x : ι → ℂ) :
-    star x ⬝ᵥ (Mᴴ * M) *ᵥ x = star (M *ᵥ x) ⬝ᵥ M *ᵥ x := by
-  rw [← mulVec_mulVec, dotProduct_mulVec, star_mulVec]
+    ⟨(isUnits_det_units (h : GL ι ℂ)).ne_zero, (isUnits_det_units (g : GL ι ℂ)).ne_zero,
+      (isUnits_det_units (h : GL ι ℂ)).ne_zero⟩
 
 /-- The integrand of the cocycle is the Gaussian `exp (-z* A z)` of `z = (x, y)`. -/
 private theorem cocycle_integrand (g h : unitaryGroup ε) (x y : ι → ℂ) :
     gaussian ι (h • x) * gaussian ι ((g * h) • y) * heisenbergDatum ε x y * gaussian ι (x + y) =
-      cexp (-(star (Sum.elim x y) ⬝ᵥ ((2⁻¹ : ℂ) •
-        ((fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
-            (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))ᴴ *
-                fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
-                    (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) +
-          fromBlocks 1 (1 + signMatrix ε) (1 - signMatrix ε) 1)) *ᵥ (Sum.elim x y - 0))) := by
+      cexp (-(star (Sum.elim x y) ⬝ᵥ cocycleMatrix ε g h *ᵥ (Sum.elim x y - 0))) := by
   simp only [gaussian_eq_exp_star_dotProduct, heisenbergDatum_apply, smul_def, ← Complex.exp_add]
   congr 1
-  simp only [sub_zero, fromBlocks_conjTranspose, fromBlocks_multiply, Matrix.mul_zero,
-    Matrix.zero_mul, add_zero, zero_add, conjTranspose_zero, fromBlocks_add, smul_mulVec,
-    fromBlocks_mulVec, Function.star_sumElim, sumElim_dotProduct_sumElim, add_mulVec, sub_mulVec,
-    one_mulVec, dotProduct_add, dotProduct_sub, dotProduct_smul, star_add, add_dotProduct,
-    Sum.elim_comp_inl, Sum.elim_comp_inr, star_dotProduct_conjTranspose_mul_mulVec, smul_eq_mul]
+  simp only [cocycleMatrix, sub_zero, fromBlocks_conjTranspose, fromBlocks_multiply,
+    Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add, conjTranspose_zero, fromBlocks_add,
+    smul_mulVec, fromBlocks_mulVec, Function.star_sumElim, sumElim_dotProduct_sumElim, add_mulVec,
+    sub_mulVec, one_mulVec, dotProduct_add, dotProduct_sub, dotProduct_smul, star_add,
+    add_dotProduct, Sum.elim_comp_inl, Sum.elim_comp_inr, star_dotProduct_conjTranspose_mul_mulVec,
+    smul_eq_mul]
   ring
 
-/-- The determinant of the Gaussian of the cocycle is `Δ g Δ h Δ (g h)⁻¹`. -/
-private theorem det_cocycleMatrix (g h : unitaryGroup ε) :
-    ((2⁻¹ : ℂ) • ((fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
-        (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))ᴴ *
-            fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
-                (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) +
-      fromBlocks 1 (1 + signMatrix ε) (1 - signMatrix ε) 1)).det =
-      multiplier ε g * multiplier ε h * multiplier ε (g * h)⁻¹ := by
-  set k : unitaryGroup ε := g * h
-  let T (x : Matrix ι ι ℂ) : Matrix ι ι ℂ := posProj ε + (1 - posProj ε) * x
-  have h_unit (x : unitaryGroup ε) : (((x : GL ι ℂ) : Matrix ι ι ℂ))ᴴ * signMatrix ε *
-      ((x : GL ι ℂ) : Matrix ι ι ℂ) = signMatrix ε := by
-    simpa [star_eq_conjTranspose] using mem_unitaryGroupOf_iff.mp x.property
-  have h_blocks : (2⁻¹ : ℂ) • fromBlocks ((((h : GL ι ℂ) : Matrix ι ι ℂ))ᴴ * signMatrix ε *
-      ((h : GL ι ℂ) : Matrix ι ι ℂ)) 0 0
-      (-((((k : GL ι ℂ) : Matrix ι ι ℂ))ᴴ * signMatrix ε * ((k : GL ι ℂ) : Matrix ι ι ℂ))) =
-        (2⁻¹ : ℂ) • fromBlocks (signMatrix ε) 0 0 (-signMatrix ε) := by
-    rw [h_unit, h_unit]
-  rw [← det_fromBlocks_mul_fromBlocks g h T fun x ↦ rfl]
-  congr 1
-  linear_combination (norm :=
-    (simp +zetaDelta only [Subgroup.coe_mul, Units.val_mul, fromBlocks_conjTranspose,
-       conjTranspose_zero, conjTranspose_mul, fromBlocks_multiply, mul_zero, add_zero, zero_mul,
-       Matrix.mul_assoc, zero_add, signMatrix_eq_posProj_sub, fromBlocks_add, fromBlocks_smul,
-       smul_add, neg_sub, smul_zero, sub_mul, one_mul, _root_.mul_inv_rev, InvMemClass.coe_inv,
-       coe_units_inv, add_mul, inv_mul_cancel_left_of_invertible, inv_mul_of_invertible, mul_one,
-       conjTranspose_add, conjTranspose_posProj, conjTranspose_sub, conjTranspose_one,
-       posProj_mul_posProj, sub_self, mul_sub, sub_add_cancel_left, zero_sub, neg_add_rev, mul_add,
-       ← mul_assoc (posProj _) (posProj _), mul_neg, neg_zero, sub_zero, sub_add_sub_cancel,
-       sub_eq_zero, fromBlocks_inj]
-     split_ands <;> module)) h_blocks
-
-/-- **The cocycle of `Δ_∞` is trivial** (2.1 (b)): for `g, h ∈ U(ε)`,
+/-- **The cocycle of `Δ_∞` is trivial**: for `g, h ∈ U(ε)`,
 `Δ_∞(g) Δ_∞(h) Δ_∞((gh)⁻¹) ∫∫ e(hx) e(ghy) β_ε(x, y) e(x + y) dμ(x) dμ(y) = 1`. -/
 theorem cocycle_multiplier (g h : unitaryGroup ε) :
     (multiplier ε).cocycle (gaussian ι) g h = 1 := by
-  set A : Matrix (ι ⊕ ι) (ι ⊕ ι) ℂ := (2⁻¹ : ℂ) •
-    ((fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
-        (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ))ᴴ *
-            fromBlocks ((h : GL ι ℂ) : Matrix ι ι ℂ) 0 0
-                (((g * h : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) +
-      fromBlocks 1 (1 + signMatrix ε) (1 - signMatrix ε) 1)
-  have hA : A.IsStrictlyAccretive := isStrictlyAccretive_cocycleMatrix h (g * h)
+  set A := cocycleMatrix ε g h
+  have hA : A.IsStrictlyAccretive := isStrictlyAccretive_cocycleMatrix g h
   have h_det : A.det = multiplier ε g * multiplier ε h * multiplier ε (g * h)⁻¹ :=
     det_cocycleMatrix g h
   have h_gauss := integral_cexp_neg_star_dotProduct_mulVec hA 0
@@ -571,7 +594,7 @@ theorem cocycle_multiplier (g h : unitaryGroup ε) :
   rw [← h_mp.integral_comp', Measure.volume_eq_prod, integral_prod _ h_int'] at h_gauss
   simp only [h_symm] at h_gauss
   rw [HeisenbergDatum.Multiplier.cocycle_def]
-  simp_rw [cocycle_integrand, measure, integral_smul_measure]
+  simp_rw [cocycle_integrand, measure_def, integral_smul_measure]
   rw [integral_smul, h_gauss, ← h_det, ENNReal.toReal_ofReal (by positivity), Fintype.card_sum]
   have hd := hA.det_ne_zero
   generalize A.det = d at hd ⊢
@@ -596,14 +619,14 @@ abbrev weilRep : unitaryGroup ε →* FockSpace ε →L[ℂ] FockSpace ε :=
   ReproducingModel.weilRep (gaussian ι) (multiplier ε) cocycle_multiplier
 
 open scoped Matrix.Norms.L2Operator in
-/-- `‖ω_ε(u)‖ ≤ ‖e‖ ‖u‖^{|ι|}` (2.1 (b)). -/
+/-- `‖ω_ε(u)‖ ≤ ‖e‖ ‖u‖^{|ι|}` for the operator norm of the standard hermitian norm. -/
 theorem norm_weilRep_le (g : unitaryGroup ε) :
     ‖weilRep ε g‖ ≤ ‖(ReproducingModel.vacuum : FockSpace ε)‖ *
         ‖((g : GL ι ℂ) : Matrix ι ι ℂ)‖ ^ Fintype.card ι :=
   (ReproducingModel.norm_weilRep_le _ _ _).trans
     (mul_le_mul_of_nonneg_left (norm_multiplier_le g) (norm_nonneg _))
 
-/-- The Weil representation of `U(ε)` is jointly continuous (2.1 (b)). -/
+/-- The Weil representation of `U(ε)` is jointly continuous. -/
 theorem continuous_weilRep :
     Continuous fun p : unitaryGroup ε × FockSpace ε ↦ weilRep ε p.1 p.2 :=
   ReproducingModel.continuous_weilRep _ _

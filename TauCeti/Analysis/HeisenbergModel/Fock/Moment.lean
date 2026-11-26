@@ -16,14 +16,16 @@ import Mathlib.Analysis.Distribution.TemperateGrowth
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Analysis.MvPolynomial.L1Norm
+import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
 # Moments on the Fock space and approximation by polynomial vectors
 
 For a Fock vector `v ∈ 𝓕(ε)` and `N ∈ ℕ` the *moment* `M_N(v) = ∫ (1 + ‖y‖)^N |v(y)| dμ(y)`, with
 `‖y‖` the sup norm on `ι → ℂ`, is a weighted `L¹` norm with values in `[0, ∞]`; `v` has *finite
-moments* if all of them are finite (roadmap WeilRepresentationsOnBanachSpacesOfData §2.3). They
-play the role of Schwartz seminorms.
+moments* if all of them are finite. They play the role of Schwartz seminorms, and the vectors with
+finite moments form a subspace stable under the Heisenberg operators and the Weil representation.
 
 The moments grow at most polynomially under the Heisenberg operators and the Weil representation,
 satisfy Minkowski's inequality for Bochner integrals, and are finite on polynomial vectors. A
@@ -40,12 +42,19 @@ derivatives of polynomial vectors and induction on `N`.
 
 ## Main results
 
-* `TauCeti.Fock.moment_zero`, `TauCeti.Fock.moment_heisenbergRep_le`,
-  `TauCeti.Fock.moment_polyVector_ne_top`, `TauCeti.Fock.moment_weilRep_le`,
-  `TauCeti.Fock.moment_integral_le`, `TauCeti.Fock.hasFiniteMoments_integral`: 2.3 (a).
-* `TauCeti.Fock.exists_tendsto_moment`: 2.3 (b).
+* `TauCeti.Fock.moment_zero`, `TauCeti.Fock.moment_add_le`, `TauCeti.Fock.moment_heisenbergRep_le`,
+  `TauCeti.Fock.moment_weilRep_le`, `TauCeti.Fock.moment_integral_le`: `M_0` is the norm, the
+  moments are subadditive, grow at most polynomially under the Heisenberg operators and the Weil
+  representation, and satisfy Minkowski's inequality.
+* `TauCeti.Fock.hasFiniteMoments_polyVector`, `TauCeti.Fock.HasFiniteMoments.add`,
+  `TauCeti.Fock.HasFiniteMoments.smul`, `TauCeti.Fock.HasFiniteMoments.heisenbergRep`,
+  `TauCeti.Fock.HasFiniteMoments.weilRep`, `TauCeti.Fock.hasFiniteMoments_integral`: polynomial
+  vectors have finite moments, and so do sums, multiples, translates, Weil transforms and
+  integrals of vectors with finite moments.
+* `TauCeti.Fock.exists_tendsto_moment`: approximation by polynomial vectors in all moments.
 * `TauCeti.Fock.enorm_le_mul_moment`, `TauCeti.Fock.exists_enorm_le_mul_moment_of_norm_sub_le`:
-  2.3 (c).
+  bounds for linear forms by moments, the second for forms controlled by short Heisenberg
+  differences.
 
 ## Provenance
 
@@ -93,6 +102,17 @@ theorem moment_zero (v : FockSpace ε) : moment 0 v = ‖v‖ₑ := by
 theorem moment_smul (N : ℕ) (c : ℂ) (v : FockSpace ε) : moment N (c • v) = ‖c‖ₑ * moment N v := by
   simp [moment, ← lintegral_const_mul', mul_left_comm]
 
+/-- The moments are subadditive. -/
+theorem moment_add_le (N : ℕ) (v w : FockSpace ε) : moment N (v + w) ≤ moment N v + moment N w := by
+  have h_meas : Measurable fun y : ι → ℂ ↦ (1 + ‖y‖ₑ) ^ N * ‖v y‖ₑ :=
+    ((measurable_id.eNorm.const_add 1).pow_const N).mul
+      (ReproducingModel.continuous v).measurable.eNorm
+  rw [moment, moment, moment, ← lintegral_add_left h_meas]
+  refine lintegral_mono fun y ↦ ?_
+  rw [ReproducingModel.add_apply, ← mul_add]
+  gcongr
+  exact eNorm_add_le _ _
+
 theorem moment_eq_lintegral_ofReal (N : ℕ) (v : FockSpace ε) :
     moment N v = ∫⁻ y, ENNReal.ofReal ((1 + ‖y‖) ^ N * ‖v y‖) ∂measure ι := by
   simp (disch := positivity) [moment, ENNReal.ofReal_mul, ENNReal.ofReal_pow, ENNReal.ofReal_add]
@@ -118,7 +138,7 @@ theorem moment_heisenbergRep_le (N : ℕ) (y : ι → ℂ) (v : FockSpace ε) :
         simp [moment, mul_pow, mul_assoc, lintegral_const_mul']
 
 /-- *Superposition bound*: a bounded linear form `ℓ` with `|ℓ(ϱ(z) e)| ≤ S (1 + ‖z‖) ^ N` for all
-`z` satisfies `|ℓ(v)| ≤ S M_N(v)` for every Fock vector `v` (2.3 (c)). -/
+`z` satisfies `|ℓ(v)| ≤ S M_N(v)` for every Fock vector `v`. -/
 theorem enorm_le_mul_moment {N : ℕ} {S : ℝ} {ℓ : FockSpace ε →L[ℂ] ℂ}
     (h_bound : ∀ z : ι → ℂ,
       ‖ℓ (ReproducingModel.heisenbergRep z ReproducingModel.vacuum)‖ ≤ S * (1 + ‖z‖) ^ N)
@@ -136,27 +156,55 @@ theorem enorm_le_mul_moment {N : ℕ} {S : ℝ} {ℓ : FockSpace ε →L[ℂ] �
         rw [← ENNReal.ofReal_mul (norm_nonneg _), ← ENNReal.ofReal_mul hS]
         ring_nf
 
-/-- Polynomial vectors have finite moments (2.3 (a)). -/
-theorem moment_polyVector_ne_top (N : ℕ) (P : MvPolynomial ι ℂ) :
-    moment N (polyVector ε P) ≠ ⊤ := by
-  obtain ⟨k, C, -, h_eval⟩ := exists_norm_eval_le_exp P
-  have h_int := (integrable_exp_mul_norm_gaussian (ι := ι) (N + k)).const_mul C
+/-- Polynomial vectors have finite moments. -/
+theorem hasFiniteMoments_polyVector (P : MvPolynomial ι ℂ) : HasFiniteMoments (polyVector ε P) := by
+  intro N
+  have h_int := (integrable_exp_mul_norm_gaussian (ι := ι) (N + P.totalDegree)).const_mul
+    P.l1Norm
   rw [moment_eq_lintegral_ofReal, ← lt_top_iff_ne_top]
   refine lt_of_le_of_lt (lintegral_mono fun y ↦ ENNReal.ofReal_le_ofReal ?_) h_int.lintegral_lt_top
   have h_one : 1 + ‖y‖ ≤ Real.exp ‖y‖ := by linarith [Real.add_one_le_exp ‖y‖]
+  have h_eval : ‖MvPolynomial.eval (holomorphicCoord ε y) P‖ ≤
+      P.l1Norm * Real.exp ‖y‖ ^ P.totalDegree := by
+    refine (P.norm_eval_le_l1Norm_mul_max_one_pow _).trans ?_
+    rw [norm_holomorphicCoord]
+    gcongr
+    · exact P.l1Norm_nonneg
+    · exact max_le (Real.one_le_exp (norm_nonneg _)) (by linarith)
   calc (1 + ‖y‖) ^ N * ‖polyVector ε P y‖
       = (1 + ‖y‖) ^ N * ‖MvPolynomial.eval (holomorphicCoord ε y) P‖ * ‖gaussian ι y‖ := by
         rw [polyVector_apply, norm_mul, mul_assoc]
-    _ ≤ Real.exp ‖y‖ ^ N * (C * Real.exp (k * ‖y‖)) * ‖gaussian ι y‖ := by
+    _ ≤ Real.exp ‖y‖ ^ N * (P.l1Norm * Real.exp ‖y‖ ^ P.totalDegree) * ‖gaussian ι y‖ := by
         gcongr
-        simpa using h_eval (holomorphicCoord ε y)
-    _ = C * (Real.exp ((N + k) * ‖y‖) * ‖gaussian ι y‖) := by
-        rw [← Real.exp_natCast_mul, add_mul, Real.exp_add]
+    _ = P.l1Norm * (Real.exp ((N + P.totalDegree) * ‖y‖) * ‖gaussian ι y‖) := by
+        rw [add_mul, Real.exp_add, Real.exp_natCast_mul, Real.exp_natCast_mul]
         ring
 
-/-- The vacuum has finite moments (2.3 (a)). -/
-theorem hasFiniteMoments_vacuum : HasFiniteMoments (ReproducingModel.vacuum : FockSpace ε) :=
-  fun N ↦ by simpa using moment_polyVector_ne_top (ε := ε) N 1
+/-- The vacuum has finite moments. -/
+theorem hasFiniteMoments_vacuum : HasFiniteMoments (ReproducingModel.vacuum : FockSpace ε) := by
+  simpa using hasFiniteMoments_polyVector (ε := ε) 1
+
+theorem HasFiniteMoments.add {v w : FockSpace ε} (hv : HasFiniteMoments v)
+    (hw : HasFiniteMoments w) : HasFiniteMoments (v + w) :=
+  fun N ↦ ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hv N, hw N⟩) (moment_add_le N v w)
+
+theorem HasFiniteMoments.smul {v : FockSpace ε} (hv : HasFiniteMoments v) (c : ℂ) :
+    HasFiniteMoments (c • v) :=
+  fun N ↦ by rw [moment_smul]; exact ENNReal.mul_ne_top eNorm_ne_top (hv N)
+
+theorem HasFiniteMoments.neg {v : FockSpace ε} (hv : HasFiniteMoments v) :
+    HasFiniteMoments (-v) := by
+  simpa using hv.smul (-1)
+
+theorem HasFiniteMoments.sub {v w : FockSpace ε} (hv : HasFiniteMoments v)
+    (hw : HasFiniteMoments w) : HasFiniteMoments (v - w) := by
+  simpa [sub_eq_add_neg] using hv.add hw.neg
+
+/-- The Heisenberg operators preserve finite moments. -/
+theorem HasFiniteMoments.heisenbergRep {v : FockSpace ε} (hv : HasFiniteMoments v) (y : ι → ℂ) :
+    HasFiniteMoments (ReproducingModel.heisenbergRep y v) :=
+  fun N ↦ ne_top_of_le_ne_top (ENNReal.mul_ne_top (by finiteness) (hv N))
+    (moment_heisenbergRep_le N y v)
 
 /-! ### Integrals of Fock vectors -/
 
@@ -174,7 +222,7 @@ private theorem continuous_apply_uncurry :
   refine h.congr fun p ↦ ?_
   simp [HeisenbergDatum.apply_zero]
 
-/-- *Minkowski's inequality* for moments: `M_N(∫ F) ≤ ∫ M_N(F)` (2.3 (a)). -/
+/-- *Minkowski's inequality* for moments: `M_N(∫ F) ≤ ∫ M_N(F)`. -/
 theorem moment_integral_le (N : ℕ) :
     moment N (∫ t, F t ∂ν) ≤ ∫⁻ t, moment N (F t) ∂ν := by
   by_cases hF : Integrable F ν
@@ -198,7 +246,7 @@ theorem moment_integral_le (N : ℕ) :
   · simp [moment, integral_undef hF]
 
 /-- A strongly measurable family of Fock vectors with `∫ M_N(F) < ∞` for every `N` is Bochner
-integrable, and its integral has finite moments (2.3 (a)). -/
+integrable, and its integral has finite moments. -/
 theorem hasFiniteMoments_integral (hF_meas : AEStronglyMeasurable F ν)
     (h_fin : ∀ N, ∫⁻ t, moment N (F t) ∂ν ≠ ⊤) :
     Integrable F ν ∧ HasFiniteMoments (∫ t, F t ∂ν) :=
@@ -233,24 +281,8 @@ private theorem weilRep_eq_integral (g : unitaryGroup ε) (v : FockSpace ε) :
     HeisenbergDatum.Representation.integrated_apply]
   simp only [HeisenbergDatum.Representation.twist_apply]
 
-omit [DecidableEq ι] in
 open scoped Matrix.Norms.Operator in
-/-- `1 + ‖A y‖ ≤ (1 + ‖A‖) (1 + ‖y‖)` for the sup norm and its operator norm. -/
-private theorem one_add_enorm_mulVec_le (A : Matrix ι ι ℂ) (y : ι → ℂ) :
-    1 + ‖A *ᵥ y‖ₑ ≤ (1 + ‖A‖ₑ) * (1 + ‖y‖ₑ) := by
-  have h : ‖A *ᵥ y‖ₑ ≤ ‖A‖ₑ * ‖y‖ₑ := by
-    rw [eNorm_eq_nnNorm, eNorm_eq_nnNorm, eNorm_eq_nnNorm, ← ENNReal.coe_mul]
-    exact_mod_cast Matrix.linfty_opNNNorm_mulVec A y
-  calc 1 + ‖A *ᵥ y‖ₑ ≤ 1 + ‖A‖ₑ * ‖y‖ₑ := by gcongr
-    _ ≤ (1 + ‖A‖ₑ) * (1 + ‖y‖ₑ) := by
-        rw [add_mul, one_mul, mul_add, mul_one]
-        calc 1 + ‖A‖ₑ * ‖y‖ₑ ≤ 1 + (‖y‖ₑ + (‖A‖ₑ + ‖A‖ₑ * ‖y‖ₑ)) := by
-              gcongr
-              exact le_add_self.trans le_add_self
-          _ = _ := by ring
-
-open scoped Matrix.Norms.Operator in
-/-- The Weil representation and moments (2.3 (a)):
+/-- The Weil representation and moments:
 `M_N(ω_ε(u) v) ≤ |Δ_∞(u)| (1 + ‖u‖) ^ N M_N(e) M_N(v)`, for the operator norm of `u` for the
 sup norm. -/
 theorem moment_weilRep_le (N : ℕ) (g : unitaryGroup ε) (v : FockSpace ε) :
@@ -261,13 +293,30 @@ theorem moment_weilRep_le (N : ℕ) (g : unitaryGroup ε) (v : FockSpace ε) :
       moment N (ReproducingModel.heisenbergRep (g • y) (ReproducingModel.vacuum : FockSpace ε)) ≤
         (1 + ‖((g : GL ι ℂ) : Matrix ι ι ℂ)‖ₑ) ^ N *
           moment N (ReproducingModel.vacuum : FockSpace ε) * (1 + ‖y‖ₑ) ^ N := by
+    set A := ((g : GL ι ℂ) : Matrix ι ι ℂ)
+    have h_mulVec : ‖A *ᵥ y‖ₑ ≤ ‖A‖ₑ * ‖y‖ₑ := by
+      rw [eNorm_eq_nnNorm, eNorm_eq_nnNorm, eNorm_eq_nnNorm, ← ENNReal.coe_mul]
+      exact_mod_cast Matrix.linfty_opNNNorm_mulVec A y
     refine (moment_heisenbergRep_le N _ _).trans ?_
     rw [smul_def, mul_right_comm, ← mul_pow]
     gcongr
-    exact one_add_enorm_mulVec_le _ y
+    calc 1 + ‖A *ᵥ y‖ₑ ≤ 1 + ‖A‖ₑ * ‖y‖ₑ := by gcongr
+      _ ≤ (1 + ‖A‖ₑ) * (1 + ‖y‖ₑ) := by
+          rw [add_mul, one_mul, mul_add, mul_one, add_assoc]
+          gcongr
+          exact le_add_self.trans le_add_self
   rw [weilRep_eq_integral, moment_smul]
   gcongr
   exact (moment_integral_le N).trans (lintegral_moment_smul_le h_point v)
+
+open scoped Matrix.Norms.Operator in
+/-- The Weil representation preserves finite moments. -/
+theorem HasFiniteMoments.weilRep {v : FockSpace ε} (hv : HasFiniteMoments v)
+    (g : unitaryGroup ε) : HasFiniteMoments (weilRep ε g v) :=
+  fun N ↦ ne_top_of_le_ne_top (ENNReal.mul_ne_top eNorm_ne_top (ENNReal.mul_ne_top
+    (ENNReal.mul_ne_top (ENNReal.pow_ne_top (ENNReal.add_ne_top.2 ⟨ENNReal.one_ne_top,
+      eNorm_ne_top⟩)) (hasFiniteMoments_vacuum N)) (hv N)))
+    (moment_weilRep_le N g v)
 
 /-! ### Approximation by polynomial vectors -/
 
@@ -280,7 +329,7 @@ private theorem pow_mul_norm_gaussian_le (N : ℕ) {s t : ℝ} {u : ι → ℂ}
   have h_gauss : ‖gaussian ι u‖ ≤ Real.exp (-‖u‖ ^ 2 / 2) := by
     rw [norm_gaussian]
     gcongr
-    exact sq_norm_le_sum_sq_norm u
+    exact Pi.norm_pow_le_sum_norm_pow u two_ne_zero
   have h_one : ‖u‖ + 1 ≤ Real.exp ‖u‖ := by linarith [Real.add_one_le_exp ‖u‖]
   calc s ^ N * ‖gaussian ι u‖ ≤ (Real.exp ‖u‖ * t) ^ N * Real.exp (-‖u‖ ^ 2 / 2) := by
         gcongr
@@ -410,7 +459,7 @@ private theorem norm_smul_partialSum_le (N m n : ℕ) (v : FockSpace ε) (y w : 
         exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right h_kernel (norm_nonneg _))
           (by positivity)
 
-/-- **Approximation by polynomial vectors** (2.3 (b)): a Fock vector with finite moments is the
+/-- **Approximation by polynomial vectors**: a Fock vector with finite moments is the
 limit of polynomial vectors `v_{P_n}` in every moment at once. -/
 theorem exists_tendsto_moment {v : FockSpace ε} (hv : HasFiniteMoments v) :
     ∃ P : ℕ → MvPolynomial ι ℂ, ∀ N,
@@ -559,11 +608,9 @@ private theorem norm_sub_heisenbergRep_le {N : ℕ} {C : MvPolynomial ι ℂ →
   rw [norm_sub_rev]
   exact h_mv.trans_eq (by simp only [m, mul_pow]; ring)
 
-/-- Each Heisenberg derivative gains a factor `t` and costs a factor `1 + ‖z‖` (2.3 (c)). For each
-`N` and `P` there is `C ≥ 0` such that, for `0 ≤ t ≤ 1` and every bounded linear form `ℓ` whose
-values are bounded by any bound on its differences under translations of size at most `t`,
-`|ℓ(ϱ(z) v_P)| ≤ C ‖ℓ‖ t ^ N (1 + ‖z‖) ^ N`. -/
-theorem exists_norm_heisenbergRep_polyVector_le (N : ℕ) (P : MvPolynomial ι ℂ) :
+/-- The induction behind `exists_norm_heisenbergRep_polyVector_le`, for `0 ≤ t ≤ 1`: each
+Heisenberg derivative gains a factor `t` and costs a factor `1 + ‖z‖`. -/
+private theorem exists_norm_heisenbergRep_polyVector_le_aux (N : ℕ) (P : MvPolynomial ι ℂ) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (t : ℝ) (ℓ : FockSpace ε →L[ℂ] ℂ), 0 ≤ t → t ≤ 1 →
       (∀ (f : FockSpace ε) (B : ℝ), (∀ y : ι → ℂ, ‖y‖ ≤ t →
         ‖ℓ f - ℓ (ReproducingModel.heisenbergRep y f)‖ ≤ B) → ‖ℓ f‖ ≤ B) →
@@ -581,32 +628,48 @@ theorem exists_norm_heisenbergRep_polyVector_le (N : ℕ) (P : MvPolynomial ι �
         (by positivity), fun t ℓ ht ht_le hℓ z ↦ hℓ _ _ fun y hy ↦ ?_⟩
     exact norm_sub_heisenbergRep_le hC ht ht_le (fun Q ↦ h_bound Q t ℓ ht ht_le hℓ) P z y hy
 
-/-- **Linear forms controlled by short differences** (2.3 (c)). For each `N` there is `C` such
-that for every `t ≥ 0`, every bounded linear form `ℓ` and every Fock vector `v`,
-`|ℓ(v)| ≤ C ‖ℓ‖ t ^ N M_N(v)`, provided (when `t < 1`) that `|ℓ(f)| ≤ B` whenever
-`|ℓ(f) - ℓ(ϱ(y) f)| ≤ B` for all `‖y‖ ≤ t`. -/
-theorem exists_enorm_le_mul_moment_of_norm_sub_le (N : ℕ) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (t : ℝ) (ℓ : FockSpace ε →L[ℂ] ℂ) (v : FockSpace ε), 0 ≤ t →
+/-- Each Heisenberg derivative gains a factor `t` and costs a factor `1 + ‖z‖`. For each `N` and
+`P` there is `C ≥ 0` such that for every `t` and every bounded linear form `ℓ` whose values are
+bounded, when `t < 1`, by any bound on its differences under translations of size at most `t`,
+`|ℓ(ϱ(z) v_P)| ≤ C ‖ℓ‖ t ^ N (1 + ‖z‖) ^ N`. For `t < 0` the hypothesis on `ℓ` cannot hold. -/
+theorem exists_norm_heisenbergRep_polyVector_le (N : ℕ) (P : MvPolynomial ι ℂ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (t : ℝ) (ℓ : FockSpace ε →L[ℂ] ℂ),
       (t < 1 → ∀ (f : FockSpace ε) (B : ℝ), (∀ y : ι → ℂ, ‖y‖ ≤ t →
         ‖ℓ f - ℓ (ReproducingModel.heisenbergRep y f)‖ ≤ B) → ‖ℓ f‖ ≤ B) →
-      ‖ℓ v‖ₑ ≤ ENNReal.ofReal (C * ‖ℓ‖ * t ^ N) * moment N v := by
-  obtain ⟨C, hC, h_bound⟩ := exists_norm_heisenbergRep_polyVector_le (ε := ε) N 1
-  set c := ‖(ReproducingModel.vacuum : FockSpace ε)‖
-  refine ⟨C + c, by positivity, fun t ℓ v ht h_diff ↦ enorm_le_mul_moment (fun z ↦ ?_) v⟩
+      ∀ z : ι → ℂ, ‖ℓ (ReproducingModel.heisenbergRep z (polyVector ε P))‖ ≤
+        C * ‖ℓ‖ * t ^ N * (1 + ‖z‖) ^ N := by
+  obtain ⟨C, hC, h_bound⟩ := exists_norm_heisenbergRep_polyVector_le_aux (ε := ε) N P
+  set c := ‖polyVector ε P‖
+  refine ⟨C + c, by positivity, fun t ℓ h_diff z ↦ ?_⟩
   rcases lt_or_ge t 1 with ht_lt | ht_ge
-  · calc ‖ℓ (ReproducingModel.heisenbergRep z ReproducingModel.vacuum)‖
-        ≤ C * ‖ℓ‖ * t ^ N * (1 + ‖z‖) ^ N := by
-          simpa using h_bound t ℓ ht ht_lt.le (h_diff ht_lt) z
+  · rcases lt_or_ge t 0 with ht_neg | ht_nonneg
+    · -- No translation has negative size, so every `ℓ f` would be bounded by `-1`.
+      have h := h_diff ht_lt 0 (-1) fun y hy ↦ absurd ((norm_nonneg y).trans hy) ht_neg.not_ge
+      linarith [norm_nonneg (ℓ 0)]
+    calc ‖ℓ (ReproducingModel.heisenbergRep z (polyVector ε P))‖
+        ≤ C * ‖ℓ‖ * t ^ N * (1 + ‖z‖) ^ N := h_bound t ℓ ht_nonneg ht_lt.le (h_diff ht_lt) z
       _ ≤ (C + c) * ‖ℓ‖ * t ^ N * (1 + ‖z‖) ^ N := by
           gcongr
           exact le_add_of_nonneg_right (norm_nonneg _)
-  · calc ‖ℓ (ReproducingModel.heisenbergRep z ReproducingModel.vacuum)‖ ≤ c * ‖ℓ‖ * 1 * 1 := by
+  · calc ‖ℓ (ReproducingModel.heisenbergRep z (polyVector ε P))‖ ≤ c * ‖ℓ‖ * 1 * 1 := by
           simpa [mul_comm, c, HeisenbergDatum.Representation.norm_apply] using
-            ℓ.le_opNorm (ReproducingModel.heisenbergRep z (ReproducingModel.vacuum : FockSpace ε))
+            ℓ.le_opNorm (ReproducingModel.heisenbergRep z (polyVector ε P))
       _ ≤ (C + c) * ‖ℓ‖ * t ^ N * (1 + ‖z‖) ^ N := by
           gcongr
           · exact le_add_of_nonneg_left hC
           · exact one_le_pow₀ ht_ge
           · exact one_le_pow₀ (le_add_of_nonneg_right (norm_nonneg z))
+
+/-- **Linear forms controlled by short differences.** For each `N` there is `C` such that for
+every `t`, every bounded linear form `ℓ` and every Fock vector `v`, `|ℓ(v)| ≤ C ‖ℓ‖ t ^ N M_N(v)`,
+provided (when `t < 1`) that `|ℓ(f)| ≤ B` whenever `|ℓ(f) - ℓ(ϱ(y) f)| ≤ B` for all `‖y‖ ≤ t`. -/
+theorem exists_enorm_le_mul_moment_of_norm_sub_le (N : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (t : ℝ) (ℓ : FockSpace ε →L[ℂ] ℂ) (v : FockSpace ε),
+      (t < 1 → ∀ (f : FockSpace ε) (B : ℝ), (∀ y : ι → ℂ, ‖y‖ ≤ t →
+        ‖ℓ f - ℓ (ReproducingModel.heisenbergRep y f)‖ ≤ B) → ‖ℓ f‖ ≤ B) →
+      ‖ℓ v‖ₑ ≤ ENNReal.ofReal (C * ‖ℓ‖ * t ^ N) * moment N v := by
+  obtain ⟨C, hC, h_bound⟩ := exists_norm_heisenbergRep_polyVector_le (ε := ε) N 1
+  exact ⟨C, hC, fun t ℓ v h_diff ↦
+    enorm_le_mul_moment (fun z ↦ by simpa using h_bound t ℓ h_diff z) v⟩
 
 end TauCeti.Fock
