@@ -67,7 +67,7 @@ Write `β = neckCutoff (-(2 / R))` for the cutoff equal to `1` on `s ≤ 0` and 
 **The gluing isomorphism and the obstruction map.** Since the dimensions agree, the corrected
 pregluing is a linear isomorphism `E₁ × E₂ ≃ E_R` for long necks and every right inverse `Q` of
 `A_R` with `‖Q‖ ≤ 4 (‖Q₁‖ + ‖Q₂‖)`
-(`TauCeti.CylinderSobolev.exists_forall_ge_forall_bijective_gluingKerMap`). Reading off its
+(`TauCeti.CylinderSobolev.exists_forall_ge_forall_gluingKerMap_bijective`). Reading off its
 stabilizer components gives the obstruction map `b_R : E₁ × E₂ → S₁ × S₂`
 (`TauCeti.CylinderSobolev.gluingObstruction`). Through the gluing isomorphism, the exact sequence
 `0 → ker D_R → E_R → S₁ × S₂ → coker D_R → 0` of the stabilization `A_R`
@@ -77,16 +77,16 @@ gluing
 
 `0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`,
 
-with middle map `b_R` (`TauCeti.CylinderSobolev.injective_gluingKerInclusion`,
+with middle map `b_R` (`TauCeti.CylinderSobolev.gluingKerInclusion_injective`,
 `TauCeti.CylinderSobolev.exact_gluingKerInclusion_gluingObstruction`,
 `TauCeti.CylinderSobolev.exact_gluingObstruction_parameterToCoker`). When the stabilizers
 `Sᵢ` project isomorphically onto the cokernels of the `Dᵢ`, as for the test-section stabilizers
 above, `Eᵢ` is a copy of `ker Dᵢ`, and the sequence compares the kernels and cokernels of the
 pieces with those of `D_R`. The kernel and the cokernel of `D_R` are `E₁ × E₂` and `S₁ × S₂`
-exactly when `b_R` vanishes (`TauCeti.CylinderSobolev.surjective_gluingKerInclusion_iff`,
-`TauCeti.CylinderSobolev.injective_parameterToCoker_gluedStabilizer_iff`); in general a kernel
-element of one piece can cancel against a cokernel element of the other, so only the index is
-additive.
+exactly when `b_R` vanishes (`TauCeti.CylinderSobolev.gluingKerInclusion_surjective_iff`,
+`TauCeti.CylinderSobolev.parameterToCoker_injective_iff_gluingObstruction_eq_zero`); in general a
+kernel element of one piece can cancel against a cokernel element of the other, so only the index
+is additive.
 
 ## Main definitions
 
@@ -100,15 +100,16 @@ additive.
 
 * `exists_forall_ge_finiteDimensional_and_finrank_ker_coprod_jetOperator_gluedCoeff_eq`: the
   kernel of the stabilized glued operator has dimension `dim E₁ + dim E₂` for long necks.
-* `TauCeti.CylinderSobolev.exists_forall_ge_forall_bijective_gluingKerMap`: for long necks the
+* `TauCeti.CylinderSobolev.exists_forall_ge_forall_gluingKerMap_bijective`: for long necks the
   gluing map is a linear isomorphism `E₁ × E₂ ≃ E_R`.
-* `TauCeti.CylinderSobolev.injective_gluingKerInclusion`,
+* `TauCeti.CylinderSobolev.gluingKerInclusion_injective`,
   `TauCeti.CylinderSobolev.exact_gluingKerInclusion_gluingObstruction`,
   `TauCeti.CylinderSobolev.exact_gluingObstruction_parameterToCoker`: the exact sequence
   `0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`.
-* `TauCeti.CylinderSobolev.surjective_gluingKerInclusion_iff`,
-  `TauCeti.CylinderSobolev.injective_parameterToCoker_gluedStabilizer_iff`: the kernel and the
-  cokernel of `D_R` split as those of the pieces exactly when the obstruction map vanishes.
+* `TauCeti.CylinderSobolev.gluingKerInclusion_surjective_iff`,
+  `TauCeti.CylinderSobolev.parameterToCoker_injective_iff_gluingObstruction_eq_zero`: the kernel
+  and the cokernel of `D_R` split as those of the pieces exactly when the obstruction map
+  vanishes.
 * `TauCeti.CylinderSobolev.exists_forall_ge_isFredholm_and_index_jetOperator_gluedCoeff_eq`: the
   glued operator of two Fredholm operators is Fredholm for long necks, with
   `ind D_R = ind D₁ + ind D₂`.
@@ -682,11 +683,12 @@ def neckPreglue (R : ℝ) : (H1 V × S₁) × (H1 V × S₂) →L[ℝ] H1 V × (
 /-- The pregluing keeps the stabilizer components. -/
 @[simp]
 theorem neckPreglue_apply_snd (R : ℝ) (k : (H1 V × S₁) × (H1 V × S₂)) :
-    (neckPreglue R k).2 = (k.1.2, k.2.2) :=
-  (rfl)
+    (neckPreglue R k).2 = (k.1.2, k.2.2) := by
+  simp [neckPreglue]
 
 /-- As an `L²` jet, the first component of the pregluing is
 `β ξ₁(· + R, ·) + (1 - β) ξ₂(· - R, ·)` for the cutoff `β = neckCutoff (-(2 / R))`. -/
+@[simp]
 theorem coe_fst_neckPreglue_apply (R : ℝ) (k : (H1 V × S₁) × (H1 V × S₂)) :
     ((neckPreglue R k).1 : Lp (V × V × V) 2 stripMeasure) =
       jetOperator stripMeasure (cutoffCoeff V (neckCutoff (-(2 / R))))
@@ -695,28 +697,22 @@ theorem coe_fst_neckPreglue_apply (R : ℝ) (k : (H1 V × S₁) × (H1 V × S₂
           (translate 2 (testSection V) (-R) k.2.1 : Lp (V × V × V) 2 stripMeasure) := by
   simp [neckPreglue]
 
-/-- The cutoff operator does not depend on the bound used to define it. -/
-private theorem cutoffL_congr {β : ℝ → ℝ} (hβ hβ' : ContDiff ℝ 2 β) {B B' : ℝ}
-    (hβB : ∀ s, |β s| ≤ B) (hβ'B : ∀ s, |deriv β s| ≤ B) (hβB' : ∀ s, |β s| ≤ B')
-    (hβ'B' : ∀ s, |deriv β s| ≤ B') :
-    cutoffL (V := V) hβ hβB hβ'B = cutoffL hβ' hβB' hβ'B' :=
-  ContinuousLinearMap.ext fun x ↦ Subtype.ext (by rw [coe_cutoffL, coe_cutoffL])
-
-/-- The pregluing, with its cutoff operators written for any bounds of the cutoffs. -/
-private theorem neckPreglue_apply_eq {R B₁ B₂ : ℝ} (hβ : ContDiff ℝ 2 (neckCutoff (-(2 / R))))
+/-- The pregluing is `(β ξ₁(· + R, ·) + (1 - β) ξ₂(· - R, ·), (σ₁, σ₂))` for the cutoff
+`β = neckCutoff (-(2 / R))`, with its cutoff operators written for any bounds of the cutoffs. -/
+theorem neckPreglue_apply {R B₁ B₂ : ℝ} (hβ : ContDiff ℝ 2 (neckCutoff (-(2 / R))))
     (hβB : ∀ s, |neckCutoff (-(2 / R)) s| ≤ B₁)
     (hβ'B : ∀ s, |deriv (neckCutoff (-(2 / R))) s| ≤ B₁)
     (hγ : ContDiff ℝ 2 fun s ↦ 1 - neckCutoff (-(2 / R)) s)
     (hγB : ∀ s, |1 - neckCutoff (-(2 / R)) s| ≤ B₂)
-    (hγ'B : ∀ s, |deriv (fun s ↦ 1 - neckCutoff (-(2 / R)) s) s| ≤ B₂) (k₁ : H1 V × S₁)
-    (k₂ : H1 V × S₂) :
-    neckPreglue R (k₁, k₂) = (cutoffL hβ hβB hβ'B (translate 2 (testSection V) R k₁.1) +
-      cutoffL hγ hγB hγ'B (translate 2 (testSection V) (-R) k₂.1), (k₁.2, k₂.2)) := by
+    (hγ'B : ∀ s, |deriv (fun s ↦ 1 - neckCutoff (-(2 / R)) s) s| ≤ B₂)
+    (k : (H1 V × S₁) × (H1 V × S₂)) :
+    neckPreglue R k = (cutoffL hβ hβB hβ'B (translate 2 (testSection V) R k.1.1) +
+      cutoffL hγ hγB hγ'B (translate 2 (testSection V) (-R) k.2.1), (k.1.2, k.2.2)) := by
   rw [cutoffL_congr hβ (contDiff_neckCutoff _) hβB hβ'B (abs_neckCutoff_le_add _)
       (abs_deriv_neckCutoff_le_add _),
     cutoffL_congr hγ (contDiff_const.sub (contDiff_neckCutoff _)) hγB hγ'B
       (abs_one_sub_neckCutoff_le_add _) (abs_deriv_one_sub_neckCutoff_le_add _)]
-  rfl
+  simp [neckPreglue]
 
 /-- **The gluing map of the stabilized kernels.** Let `Aᵢ (ξ, σ) = Dᵢ ξ + ιᵢ σ` be the stabilized
 pieces, with kernels `Eᵢ`, and `A_R (ξ, σ₁, σ₂) = D_R ξ + j_R (σ₁, σ₂)` the stabilized glued
@@ -725,7 +721,7 @@ of `A_R`, the gluing map `E₁ × E₂ → E_R` preglues (`TauCeti.CylinderSobol
 corrects the result into `E_R` along the range of `Q`: it sends `k` to `p - Q (A_R p)` for the
 pregluing `p` of `k` (`TauCeti.CylinderSobolev.coe_gluingKerMap_apply`). For long necks and
 uniformly bounded right inverses it is a linear isomorphism
-(`TauCeti.CylinderSobolev.exists_forall_ge_forall_bijective_gluingKerMap`). -/
+(`TauCeti.CylinderSobolev.exists_forall_ge_forall_gluingKerMap_bijective`). -/
 def gluingKerMap {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W} {ι₁ : S₁ →L[ℝ] Lp W 2 stripMeasure}
     {ι₂ : S₂ →L[ℝ] Lp W 2 stripMeasure} {R : ℝ}
     {Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂)}
@@ -764,7 +760,7 @@ theorem coe_gluingKerMap_apply {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ]
 
 /-- The gluing map is injective as soon as the pairs of elements of the kernels of the pieces
 whose pregluing `p` satisfies `p = Q (A_R p)` all vanish. -/
-private theorem injective_gluingKerMap_of_forall {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
+private theorem gluingKerMap_injective_of_forall {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
     {ι₁ : S₁ →L[ℝ] Lp W 2 stripMeasure} {ι₂ : S₂ →L[ℝ] Lp W 2 stripMeasure} {R : ℝ}
     {Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂)}
     (hQ : Function.RightInverse Q (((jetOperator stripMeasure
@@ -871,11 +867,11 @@ private theorem finiteDimensional_and_finrank_ker_eq {M₁ M₂ : ℝ × ℝ →
   obtain ⟨hfin, hle⟩ := finiteDimensional_and_finrank_ker_le hM₁ hM₂ hι₁ hι₂ hTR h2TR hβ hβ1 hβ'1
     hγ hγ1 hγ'1 hβ0 hβR hB0 hB₁ hB₂ hβd hγd hε hn hn₂ hQ₁ hQ₂ hsmall₁
   -- The gluing map is injective: an element of its kernel has a pregluing fixed by `Q A_R`.
-  have hinj := injective_gluingKerMap_of_forall hQ fun k₁ hk₁ k₂ hk₂ h ↦ eq_zero_of_preglue hM₁
+  have hinj := gluingKerMap_injective_of_forall hQ fun k₁ hk₁ k₂ hk₂ h ↦ eq_zero_of_preglue hM₁
     hM₂ hι₁ hι₂ hTR h2TR hβ hβ1 hβ'1 hγ hγ1 hγ'1 hβ0 hβR hB0 hB hβd hγd hε hn hn₂ (by norm_num)
     (fun _ hk ↦ norm_multiplicationOperator_fst_le _ ht₁ hk)
     (fun _ hk ↦ norm_multiplicationOperator_fst_le _ ht₂ hk) hsmall₂ hk₁ hk₂
-    (by rwa [neckPreglue_apply_eq hβ hβ1 hβ'1 hγ hγ1 hγ'1] at h)
+    (by rwa [neckPreglue_apply hβ hβ1 hβ'1 hγ hγ1 hγ'1] at h)
   have := free_ker (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁)
   have := free_ker (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂)
   exact ⟨hfin, le_antisymm hle (Module.finrank_prod.symm.trans_le
@@ -917,10 +913,9 @@ private theorem exists_forall_ge_forall_rightInverse
     [FiniteDimensional ℝ (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker]
     [FiniteDimensional ℝ (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker] :
     ∃ R₀ : ℝ, ∀ R ≥ R₀, (∃ Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂),
-      (((jetOperator stripMeasure
+      Function.RightInverse Q (((jetOperator stripMeasure
         (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
-          (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)).comp Q =
-        ContinuousLinearMap.id ℝ _ ∧ ‖Q‖ ≤ 4 * (‖Q₁‖ + ‖Q₂‖)) ∧
+          (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)) ∧ ‖Q‖ ≤ 4 * (‖Q₁‖ + ‖Q₂‖)) ∧
       ∀ (Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂))
         (hQ : Function.RightInverse Q (((jetOperator stripMeasure
           (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
@@ -968,7 +963,9 @@ private theorem exists_forall_ge_forall_rightInverse
   simp only [ge_iff_le, max_le_iff] at hR
   obtain ⟨⟨hRR₁, hRR₂⟩, ⟨hRT₁, hRT₂⟩, ⟨hRT, h2TR⟩, hR1, hR2L, hRLB⟩ := hR
   have hRpos : 0 < R := by linarith
-  refine ⟨hR₁ R hRR₁, fun Q hQ hQn ↦ ?_⟩
+  refine ⟨?_, fun Q hQ hQn ↦ ?_⟩
+  · obtain ⟨Q, hQ, hQn⟩ := hR₁ R hRR₁
+    exact ⟨Q, ContinuousLinearMap.rightInverse_of_comp hQ, hQn⟩
   obtain ⟨hR₂₁, hR₂₂⟩ := hR₂ R hRR₂
   have hB₁ : ∀ᵐ z ∂stripMeasure, ‖M₁ z‖ ≤ B := (ae_le_lpNorm_exponent_top hM₁).mono fun z h ↦
     h.trans (by rw [hB]; exact le_add_of_nonneg_right lpNorm_nonneg)
@@ -1019,7 +1016,7 @@ theorem exists_forall_ge_finiteDimensional_and_finrank_ker_coprod_jetOperator_gl
   obtain ⟨R₀, hR₀⟩ := exists_forall_ge_forall_rightInverse hM₁ hM₂ h₁ h₂ hι₁ hι₂ hQ₁ hQ₂
   refine ⟨R₀, fun R hR ↦ ?_⟩
   obtain ⟨⟨Q, hQ, hQn⟩, h⟩ := hR₀ R hR
-  obtain ⟨hfin, hrank, -⟩ := h Q (ContinuousLinearMap.rightInverse_of_comp hQ) hQn
+  obtain ⟨hfin, hrank, -⟩ := h Q hQ hQn
   exact ⟨hfin, hrank⟩
 
 variable [CompleteSpace W] in
@@ -1033,7 +1030,7 @@ stabilized glued operator `A_R (ξ, σ₁, σ₂) = D_R ξ + j_R (σ₁, σ₂)`
 `‖Q‖ ≤ 4 (‖Q₁‖ + ‖Q₂‖)`, and for every such `Q` the gluing map
 (`TauCeti.CylinderSobolev.gluingKerMap`), which preglues and corrects along the range of `Q`, is
 a linear isomorphism `E₁ × E₂ ≃ E_R`. -/
-theorem exists_forall_ge_forall_bijective_gluingKerMap
+theorem exists_forall_ge_forall_gluingKerMap_bijective
     {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
     {M : ℝ → V × V × V →L[ℝ] W} (hM₁ : MemLp M₁ ∞ stripMeasure) (hM₂ : MemLp M₂ ∞ stripMeasure)
     (h₁ : TendstoUniformlyOn (Function.curry M₁) M atTop (Icc 0 1))
@@ -1049,10 +1046,9 @@ theorem exists_forall_ge_forall_bijective_gluingKerMap
     [FiniteDimensional ℝ (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker]
     [FiniteDimensional ℝ (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker] :
     ∃ R₀ : ℝ, ∀ R ≥ R₀, (∃ Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂),
-      (((jetOperator stripMeasure
+      Function.RightInverse Q (((jetOperator stripMeasure
         (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
-          (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)).comp Q =
-        ContinuousLinearMap.id ℝ _ ∧ ‖Q‖ ≤ 4 * (‖Q₁‖ + ‖Q₂‖)) ∧
+          (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)) ∧ ‖Q‖ ≤ 4 * (‖Q₁‖ + ‖Q₂‖)) ∧
       ∀ (Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂))
         (hQ : Function.RightInverse Q (((jetOperator stripMeasure
           (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
@@ -1190,7 +1186,7 @@ theorem gluingKerMap_gluingKerInclusion (h : Function.Bijective (gluingKerMap hQ
   (LinearEquiv.ofBijective (gluingKerMap hQ).toLinearMap h).apply_symm_apply _
 
 /-- **Exactness at `ker D_R`.** The map `ker D_R → E₁ × E₂` is injective. -/
-theorem injective_gluingKerInclusion (h : Function.Bijective (gluingKerMap hQ)) :
+theorem gluingKerInclusion_injective (h : Function.Bijective (gluingKerMap hQ)) :
     Function.Injective (gluingKerInclusion hQ h) :=
   (LinearEquiv.ofBijective (gluingKerMap hQ).toLinearMap h).symm.injective.comp
     (kerCoprodHom_injective _ _)
@@ -1218,7 +1214,7 @@ theorem exact_gluingObstruction_parameterToCoker (h : Function.Surjective (gluin
 
 /-- **Splitting of the kernel.** When the gluing map is bijective, `ker D_R → E₁ × E₂` is onto,
 so that `ker D_R ≃ E₁ × E₂`, exactly when the obstruction map vanishes. -/
-theorem surjective_gluingKerInclusion_iff (h : Function.Bijective (gluingKerMap hQ)) :
+theorem gluingKerInclusion_surjective_iff (h : Function.Bijective (gluingKerMap hQ)) :
     Function.Surjective (gluingKerInclusion hQ h) ↔ gluingObstruction hQ = 0 := by
   have hex := exact_gluingKerInclusion_gluingObstruction hQ h
   refine ⟨fun hs ↦ ContinuousLinearMap.ext fun k ↦ ?_, fun h0 k ↦ (hex k).1 (by simp [h0])⟩
@@ -1227,7 +1223,7 @@ theorem surjective_gluingKerInclusion_iff (h : Function.Bijective (gluingKerMap 
 
 /-- **Splitting of the cokernel.** When the gluing map is onto, `S₁ × S₂ → coker D_R` is
 injective, so that `S₁ × S₂ ≃ coker D_R`, exactly when the obstruction map vanishes. -/
-theorem injective_parameterToCoker_gluedStabilizer_iff
+theorem parameterToCoker_injective_iff_gluingObstruction_eq_zero
     (h : Function.Surjective (gluingKerMap hQ)) :
     Function.Injective (parameterToCoker ((jetOperator stripMeasure
       (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
