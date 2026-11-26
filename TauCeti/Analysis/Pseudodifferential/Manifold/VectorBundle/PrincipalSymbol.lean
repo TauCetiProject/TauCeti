@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+public import TauCeti.Geometry.Manifold.DifferentialOperator.Elliptic
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -54,6 +55,25 @@ bijective for every nonzero covector `ξ`. Ellipticity is unchanged by perturbat
 to have the same rank (`TauCeti.IsSectionClassicalEllipticAt.finrank_eq`). In dimension zero there
 are no nonzero covectors, every operator is elliptic and the ranks are unconstrained.
 
+A differential operator `P : Γ(E) → Γ(F)` of order at most `k`, in Grothendieck's sense for
+commutators with complex-valued smooth functions, is a classical pseudodifferential operator of
+order `k`. When the real structures of the fibres are those underlying their complex structures,
+`P` also has a geometric principal symbol `σ_geom(P)` (`TauCeti.sectionPrincipalSymbol`), defined
+by `σ_geom(P)(df_x) s(x) = (1 / k!) ([⋯[P, f], …, f] s)(x)` for real-valued functions `f`, and
+
+`σ_k(P)(x, ξ) = i ^ k σ_geom(P)(ξ)`
+
+at every nonzero covector `ξ`
+(`TauCeti.sectionClassicalPrincipalSymbol_apply_of_mem_differentialOperators`). This is the
+angular-frequency convention `σ(∂ⱼ) = i ξⱼ`. The matrix entries of `P` are complex differential
+operators on functions, whose principal symbols are `i ^ k / k!` times their iterated commutators
+with a real function `f` at `df_x`
+(`TauCeti.classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators`), and these commutators
+are the entries of the iterated commutators of `P` with `f`. Since `i ^ k` is invertible, `P` is
+elliptic as a pseudodifferential operator exactly when it is elliptic as a differential operator
+(`TauCeti.isSectionClassicalElliptic_iff_isSectionElliptic`), so the elliptic theory of
+pseudodifferential operators between bundles applies to elliptic differential operators.
+
 ## Main definitions
 
 * `TauCeti.sectionClassicalPrincipalSymbol m P x ξ`: the principal symbol `E_x →ₗ[ℂ] F_x`.
@@ -79,6 +99,12 @@ are no nonzero covectors, every operator is elliptic and the ranks are unconstra
 * `TauCeti.isSectionClassicalEllipticAt_smul_iff`: ellipticity is unchanged by nonzero scalars.
 * `TauCeti.IsSectionClassicalEllipticAt.finrank_eq`: in positive dimension, ellipticity at a
   point forces `rank E = rank F`.
+* `TauCeti.sectionClassicalPrincipalSymbol_apply_of_mem_differentialOperators`: the principal
+  symbol of a differential operator of order at most `k` is `i ^ k` times its geometric principal
+  symbol.
+* `TauCeti.isSectionClassicalEllipticAt_iff_isSectionEllipticAt`,
+  `TauCeti.isSectionClassicalElliptic_iff_isSectionElliptic`: a differential operator is elliptic
+  as a pseudodifferential operator exactly when it is elliptic as a differential operator.
 
 ## References
 
@@ -653,5 +679,152 @@ theorem isSectionClassicalElliptic_id :
       Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) := fun x ξ hξ ↦ by
   rw [sectionClassicalPrincipalSymbol_id x hξ]
   exact Function.bijective_id
+
+/-! ### Differential operators -/
+
+section DifferentialOperator
+
+variable [∀ x, IsScalarTower ℝ ℂ (E x)] [∀ x, IsScalarTower ℝ ℂ (F x)] {k : ℕ}
+
+omit [FiniteDimensional ℂ W] in
+/-- The matrix entries of a differential operator `P : Γ(E) → Γ(F)` of order at most `k` have
+principal symbol `i ^ k` times the reading in the frames of the geometric principal symbol of
+`P`. -/
+private theorem classicalPrincipalSymbol_sectionEntry_of_mem_differentialOperators
+    (hP : P ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ k)
+    (t : Trivialization V (π V E)) [MemTrivializationAtlas t]
+    (ψ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hψ : tsupport ψ ⊆ t.baseSet) (v : V)
+    (t' : Trivialization W (π W F)) [MemTrivializationAtlas t']
+    (χ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hχ : tsupport χ ⊆ t'.baseSet) (ℓ : W →L[ℂ] ℂ)
+    (x : M) {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
+    classicalPrincipalSymbol k (sectionEntry t ψ hψ v t' χ hχ ℓ P) x ξ =
+      ((χ x * ψ x : ℝ) : ℂ) * ℓ (t'.continuousLinearMapAt ℂ x (Complex.I ^ k •
+        sectionPrincipalSymbol 𝓘(ℝ, CoordinateSpace n) BoundarylessManifold.isInteriorPoint
+          ⟨P.restrictScalars ℝ, restrictScalars_mem_differentialOperators_of_complex hP⟩ ξ
+          (t.symm x v))) := by
+  -- Write `ξ = df_x` for a real smooth function `f`, acting on sections as the complex `g`.
+  obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯,
+      mvfderiv 𝓘(ℝ, CoordinateSpace n) f x = ξ :=
+    ⟨_, mvfderiv_covectorLift BoundarylessManifold.isInteriorPoint ξ⟩
+  set g := ContMDiffMap.ofReal f
+  set s := t.cutoffFrameSection ψ hψ v
+  set C := (smulCommutator ℂ g ^ k) P
+  -- The iterated commutators of the entry with `g` are the entries of those of `P` with `g`.
+  have hentry : (smulCommutator ℂ g ^ k) (sectionEntry t ψ hψ v t' χ hχ ℓ P) 1 x =
+      χ x • ℓ (t'.continuousLinearMapAt ℂ x (C s x)) := by
+    have h := smulCommutator_pow_comp_comp (R := ℂ) (a := g) (b := g)
+      (ρ := (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ)
+      (fun u ↦ map_smul (LinearMap.toSpanSingleton _ _ s) g u)
+      (t'.cutoffFrameCoeff_smul_of_normedAlgebra χ hχ ℓ g) P k
+    have hP' : sectionEntry t ψ hψ v t' χ hχ ℓ P = t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+        (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ := by
+      ext u y
+      simp [s]
+    rw [hP', h]
+    simp [C]
+  -- The iterated commutators of `P` with `f` are those with `g`, so the geometric principal
+  -- symbol at `df_x` is read from `C`.
+  have hgeom : (smulCommutator ℝ f ^ k) (P.restrictScalars ℝ) = C.restrictScalars ℝ := by
+    have h := smulCommutator_pow_comp_comp (R := ℝ) (a := g) (b := f) (ρ := LinearMap.id)
+      (σ := LinearMap.id) (fun u ↦ by simp [g]) (fun u ↦ by simp [g]) (P.restrictScalars ℝ) k
+    simpa [C] using h
+  have hσ := sectionPrincipalSymbol_mvfderiv (x := x) BoundarylessManifold.isInteriorPoint
+    ⟨P.restrictScalars ℝ, restrictScalars_mem_differentialOperators_of_complex hP⟩ f s
+  rw [hgeom] at hσ
+  simp only [s, Bundle.Trivialization.cutoffFrameSection_apply, map_smul,
+    LinearMap.coe_restrictScalars] at hσ
+  set w := sectionPrincipalSymbol 𝓘(ℝ, CoordinateSpace n) BoundarylessManifold.isInteriorPoint
+    ⟨P.restrictScalars ℝ, restrictScalars_mem_differentialOperators_of_complex hP⟩
+    (mvfderiv 𝓘(ℝ, CoordinateSpace n) f x) (t.symm x v)
+  have hk : (k.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.2 k.factorial_ne_zero
+  have hC : C s x = ((k.factorial : ℝ) * ψ x) • w := by
+    rw [mul_smul, hσ, smul_inv_smul₀ hk]
+  rw [classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators
+    (sectionEntry_mem_differentialOperators t ψ hψ v t' χ hχ ℓ hP) f x hξ, hentry, hC]
+  simp only [ContinuousLinearMap.map_smul_of_tower, map_smul, smul_eq_mul, Complex.real_smul]
+  have hk' : (k.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.2 k.factorial_ne_zero
+  push_cast
+  field_simp
+
+/-- **The principal symbol of a differential operator between bundles.** Let the real structures
+of the fibres of `E` and `F` be those underlying their complex structures, and let
+`P : Γ(E) → Γ(F)` be a differential operator of order at most `k` in Grothendieck's sense, for
+commutators with multiplication by complex-valued smooth functions, so that `P` is a classical
+pseudodifferential operator of order `k`
+(`TauCeti.mem_sectionClassicalPseudodifferentialOperators_of_mem_differentialOperators`). At every
+nonzero covector `ξ ∈ T*ₓM` its principal symbol of order `k` is `i ^ k` times its geometric
+principal symbol (`TauCeti.sectionPrincipalSymbol`), defined by iterated commutators with
+real-valued functions:
+
+`σ_k(P)(x, ξ) = i ^ k σ_geom(P)(ξ)`.
+
+This is the angular-frequency convention `σ(∂ⱼ) = i ξⱼ`, as for scalar operators
+(`TauCeti.classicalPrincipalSymbol_complexifyLinearMap`). -/
+theorem sectionClassicalPrincipalSymbol_apply_of_mem_differentialOperators
+    (hP : P ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ k)
+    (x : M) {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ} (hξ : ξ ≠ 0) (u : E x) :
+    sectionClassicalPrincipalSymbol k P x ξ u =
+      Complex.I ^ k • sectionPrincipalSymbol 𝓘(ℝ, CoordinateSpace n)
+        BoundarylessManifold.isInteriorPoint
+        ⟨P.restrictScalars ℝ, restrictScalars_mem_differentialOperators_of_complex hP⟩ ξ u := by
+  have hx := FiberBundle.mem_baseSet_trivializationAt V E x
+  have hx' := FiberBundle.mem_baseSet_trivializationAt W F x
+  -- Read both sides in the preferred frames at `x`, along every functional `ℓ`.
+  obtain ⟨v, rfl⟩ : ∃ v, (trivializationAt V E x).symm x v = u :=
+    ⟨_, (trivializationAt V E x).symm_apply_apply_mk hx u⟩
+  rw [← (trivializationAt W F x).symmL_continuousLinearMapAt (R := ℂ) hx'
+      (sectionClassicalPrincipalSymbol _ P x ξ _),
+    ← (trivializationAt W F x).symmL_continuousLinearMapAt (R := ℂ) hx' (Complex.I ^ k • _)]
+  refine congrArg _ ((SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2 fun ℓ ↦ ?_)
+  rw [coord_sectionClassicalPrincipalSymbol
+      (mem_sectionClassicalPseudodifferentialOperators_of_mem_differentialOperators hP),
+    classicalPrincipalSymbol_sectionEntry_of_mem_differentialOperators hP _ _ _ _ _ _ _ _ x hξ,
+    frameCutoff_self (V := V) (W := W) n E F x]
+  simp
+
+/-- **Ellipticity of a differential operator between bundles.** A differential operator
+`P : Γ(E) → Γ(F)` of order at most `k`, as in
+`TauCeti.sectionClassicalPrincipalSymbol_apply_of_mem_differentialOperators`, is elliptic at `x` as
+a classical pseudodifferential operator of order `k` exactly when it is elliptic at `x` in the
+sense of its geometric principal symbol (`TauCeti.IsSectionEllipticAt`). -/
+theorem isSectionClassicalEllipticAt_iff_isSectionEllipticAt
+    (hP : P ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ k) {x : M} :
+    IsSectionClassicalEllipticAt k P x ↔
+      IsSectionEllipticAt ⟨P.restrictScalars ℝ, restrictScalars_mem_differentialOperators_of_complex
+        hP⟩ x := by
+  have hc : Complex.I ^ k ≠ 0 := pow_ne_zero _ Complex.I_ne_zero
+  have h (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) (hξ : ξ ≠ 0) :
+      Function.Bijective (sectionClassicalPrincipalSymbol k P x ξ) ↔
+        Function.Bijective (sectionPrincipalSymbol 𝓘(ℝ, CoordinateSpace n)
+          BoundarylessManifold.isInteriorPoint
+          ⟨P.restrictScalars ℝ, restrictScalars_mem_differentialOperators_of_complex hP⟩ ξ) := by
+    rw [show ⇑(sectionClassicalPrincipalSymbol k P x ξ) = (fun w ↦ Complex.I ^ k • w) ∘
+      ⇑(sectionPrincipalSymbol 𝓘(ℝ, CoordinateSpace n) BoundarylessManifold.isInteriorPoint
+        ⟨P.restrictScalars ℝ, restrictScalars_mem_differentialOperators_of_complex hP⟩ ξ) from
+      funext (sectionClassicalPrincipalSymbol_apply_of_mem_differentialOperators hP x hξ)]
+    exact (MulAction.bijective (Units.mk0 _ hc)).of_comp_iff' _
+  rw [isSectionEllipticAt_iff]
+  exact ⟨fun hP' _ ξ hξ ↦ (h ξ hξ).1 (hP' ξ hξ),
+    fun hP' ξ hξ ↦ (h ξ hξ).2 (hP' BoundarylessManifold.isInteriorPoint ξ hξ)⟩
+
+/-- **Ellipticity of a differential operator between bundles.** A differential operator
+`P : Γ(E) → Γ(F)` of order at most `k` is elliptic as a classical pseudodifferential operator of
+order `k` exactly when it is elliptic in the sense of its geometric principal symbol
+(`TauCeti.IsSectionElliptic`). So the elliptic theory of pseudodifferential operators applies to
+elliptic differential operators, such as operators of Laplace type
+(`TauCeti.IsSectionLaplaceType.isSectionElliptic`). -/
+theorem isSectionClassicalElliptic_iff_isSectionElliptic
+    (hP : P ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ k) :
+    IsSectionClassicalElliptic k P ↔
+      IsSectionElliptic ⟨P.restrictScalars ℝ, restrictScalars_mem_differentialOperators_of_complex
+        hP⟩ := by
+  rw [isSectionElliptic_iff]
+  exact forall_congr' fun _ ↦ isSectionClassicalEllipticAt_iff_isSectionEllipticAt hP
+
+end DifferentialOperator
 
 end TauCeti
