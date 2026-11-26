@@ -313,9 +313,10 @@ theorem exists_length_quotient_range_eq_length_ker_add_and_ordFrac_det_baseChang
     (TensorProduct.mk A K M 1) hf fun m ↦ LinearMap.baseChange_tmul f 1 m
 
 omit [IsDomain A] in
-/-- An endomorphism of a finitely generated module over a Noetherian domain of dimension at most
+/-- A linear map out of a finitely generated module over a Noetherian domain of dimension at most
 one that is injective after tensoring with the fraction field has a kernel of finite length. -/
-theorem length_ker_ne_top_of_injective_baseChange {f : M →ₗ[A] M}
+theorem length_ker_ne_top_of_injective_baseChange {N : Type*} [AddCommGroup N] [Module A N]
+    {f : M →ₗ[A] N}
     (hf : Function.Injective (f.baseChange K)) : Module.length A (LinearMap.ker f) ≠ ⊤ := by
   have hle : LinearMap.ker f ≤ LinearMap.ker (TensorProduct.mk A K M 1) := fun m hm ↦ hf (by
     rw [map_zero, TensorProduct.mk_apply, LinearMap.baseChange_tmul, LinearMap.mem_ker.1 hm,
