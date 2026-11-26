@@ -72,6 +72,13 @@ theorem wordElem_append (w₁ w₂ : List ((Fin Ω.numItems ⊕ A) × Bool)) :
     Ω.wordElem (w₁ ++ w₂) = Ω.wordElem w₁ * Ω.wordElem w₂ := by
   simp [wordElem, ← FreeGroup.mul_mk]
 
+/-- The value of a word `x :: w` is the value of its first letter times the value of `w`. This is
+not a `simp` lemma: since `[x]` is `x :: []`, its right-hand side contains an instance of its
+left-hand side, so `simp` would loop on it. -/
+theorem wordElem_cons (x : (Fin Ω.numItems ⊕ A) × Bool) (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
+    Ω.wordElem (x :: w) = Ω.wordElem [x] * Ω.wordElem w := by
+  rw [← List.singleton_append, wordElem_append]
+
 @[simp]
 theorem wordElem_singleton_inl (k : Fin Ω.numItems) :
     Ω.wordElem [(Sum.inl k, true)] = Ω.item k :=
