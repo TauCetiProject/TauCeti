@@ -226,14 +226,14 @@ theorem exists_intervalRepresentativeL_eq_and_forall_setIntegral_gradient_mul_gr
         ∫ t in Ioo a b, gradient u t * gradient v t =
           (c - ∫ t in Ioo a b, f t) * (intervalTraceL hab v).2 -
             c * (intervalTraceL hab v).1 + ∫ t in Ioo a b, f t * value v t := by
-  obtain ⟨u, hu, hgu⟩ := exists_intervalRepresentativeL_eq_and_gradient_ae_eq (p := p) hab
-    (left_mem_Icc.2 hab.le) C
-    ((memLp_const c).sub (TauCeti.intervalIntegral.memLp_primitive hf (left_mem_Icc.2 hab.le)))
+  have hg : MemLp (fun t => c - ∫ s in a..t, f s) p (volume.restrict (Ioo a b)) :=
+    (memLp_const c).sub (TauCeti.intervalIntegral.memLp_primitive hf (left_mem_Icc.2 hab.le))
+  obtain ⟨u, hu, hgu⟩ :=
+    exists_intervalRepresentativeL_eq_and_gradient_ae_eq hab (left_mem_Icc.2 hab.le) C hg
   refine ⟨u, hu, fun v => ?_⟩
   rw [← setIntegral_sub_intervalIntegral_mul_gradient_eq hab hf c v]
   refine integral_congr_ae ?_
   filter_upwards [hgu] with t ht
   rw [ht]
-  rfl
 
 end TauCeti.W1p
