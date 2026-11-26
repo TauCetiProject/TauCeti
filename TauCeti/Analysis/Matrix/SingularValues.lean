@@ -9,6 +9,8 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
+import Mathlib.Analysis.InnerProductSpace.NormDet
+
 /-!
 # Singular values and two-sided unitary matrix orbits
 
@@ -17,6 +19,9 @@ agree. The singular values are Mathlib's `LinearMap.singularValues`, applied thr
 `Matrix.toEuclideanLin`; no second enumeration is introduced.
 The estimate `Matrix.abs_sq_singularValues_sub_le` controls squared singular values by the
 operator-norm distance of the source Gram matrix from a scalar matrix.
+
+For a square matrix, the norm of the determinant is the product of the singular values,
+so the determinant is nonzero exactly when all singular values in the finite list are nonzero.
 
 `Matrix.exists_unitary_mul_diagonal_mul_unitary` reads the operator singular value decomposition
 in the standard orthonormal basis. The orbit characterization then identifies the diagonal
@@ -44,6 +49,20 @@ variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 variable {κ : Type*} [Fintype κ] [DecidableEq κ]
+
+/-- The norm of the determinant of a square matrix is the product of its singular values.
+This is the matrix form of `LinearMap.normDet_eq_prod_singularValues`. -/
+theorem norm_det_eq_prod_singularValues (A : Matrix ι ι 𝕜) :
+    ‖A.det‖ = ∏ i : Fin (Fintype.card ι), (toEuclideanLin A).singularValues i := by
+  rw [← LinearMap.det_toLpLin 2 A, ← LinearMap.normDet_eq_norm_det,
+    LinearMap.normDet_eq_prod_singularValues, finrank_euclideanSpace, Fin.prod_univ_eq_prod_range]
+
+/-- A square matrix has nonzero determinant exactly when all singular values indexed by
+`Fin (Fintype.card ι)` are nonzero. -/
+theorem det_ne_zero_iff_forall_singularValues_ne_zero (A : Matrix ι ι 𝕜) :
+    A.det ≠ 0 ↔ ∀ i : Fin (Fintype.card ι), (toEuclideanLin A).singularValues i ≠ 0 := by
+  rw [← norm_ne_zero_iff, A.norm_det_eq_prod_singularValues]
+  simp [Finset.prod_ne_zero_iff]
 
 /-- Left multiplication by a unitary matrix preserves every singular value. -/
 theorem singularValues_toEuclideanLin_unitary_mul

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.RepresentationTheory.RelativeNorm
+import TauCeti.RepresentationTheory.GroupAlgebra.TraceSplit
+import TauCeti.RepresentationTheory.Rep.Projective
 
 /-!
 # Representations whose identity is a norm
@@ -122,48 +124,31 @@ namespace Rep
 
 open CategoryTheory
 
-/-- **A representation whose identity is a norm is projective.** If `A` is projective over `k` and
-`id_A = ∑ g, A.ρ g ∘ φ ∘ A.ρ g⁻¹` for a `k`-linear `φ`, then `A` is projective. -/
-theorem projective_of_id_mem_range_norm_linHom {k G : Type u} [CommRing k] [Group G] [Fintype G]
-    (A : Rep.{u} k G) [Module.Projective k A.V]
-    (h : LinearMap.id ∈ LinearMap.range (Representation.linHom A.ρ A.ρ).norm) : Projective A := by
-  classical
-  obtain ⟨φ, hφ⟩ := h
-  have hφ' (x : A.V) : x = ∑ g : G, A.ρ g (φ (A.ρ g⁻¹ x)) := by
-    rw [← Representation.norm_linHom_apply, hφ, LinearMap.id_apply]
-  -- `A` is a retract of the free representation on the underlying set of `A`.
-  obtain ⟨σ, hσ⟩ := Module.projective_def'.1 (inferInstance : Module.Projective k A.V)
-  let ι := A.V
-  let r : free k G ι ⟶ A := freeLift (k := k) (G := G) (A := A) id
-  -- `e` sends a vector to a `k`-linear splitting of it, placed at `1 ∈ G`; `r` undoes it.
-  let e : A.V →ₗ[k] (ι →₀ MonoidAlgebra k G) :=
-    Finsupp.mapRange.linearMap (MonoidAlgebra.lsingle 1) ∘ₗ σ
-  have he (x : A.V) : r.hom (e x) = x := by
-    have : r.hom.toLinearMap ∘ₗ Finsupp.mapRange.linearMap (MonoidAlgebra.lsingle 1) =
-        Finsupp.linearCombination k id := Finsupp.lhom_ext fun v c ↦ by
-      simp [r]
-    calc r.hom (e x) = Finsupp.linearCombination k id (σ x) := LinearMap.congr_fun this (σ x)
-      _ = x := LinearMap.congr_fun hσ x
-  let ψ₀ := (Representation.linHom A.ρ (Representation.free k G ι)).norm (e ∘ₗ φ)
-  let s : A ⟶ free k G ι := Representation.linHom.invariantsEquivRepHom A (free k G ι)
-    ⟨ψ₀, fun g ↦ Representation.self_norm_apply _ g _⟩
-  refine (Retract.mk s r ?_).projective
-  ext x
-  -- Expose the underlying linear maps so the formulas for `r` and `ψ₀` can rewrite the retraction.
-  change r.hom (ψ₀ x) = x
-  conv_rhs => rw [hφ' x]
-  simp only [ψ₀, Representation.norm_linHom_apply, LinearMap.comp_apply, map_sum]
-  refine Finset.sum_congr rfl fun g _ ↦ ?_
-  conv_rhs => rw [← he (φ (A.ρ g⁻¹ x))]
-  exact LinearMap.congr_fun (r.hom.isIntertwining' g) _
-
 /-- A representation that is projective over `k` and whose identity is a norm is a projective
 `k[G]`-module. -/
 theorem moduleProjective_of_id_mem_range_norm_linHom {k G : Type u} [CommRing k] [Group G]
     [Fintype G] (A : Rep.{u} k G) [Module.Projective k A.V]
     (h : LinearMap.id ∈ LinearMap.range (Representation.linHom A.ρ A.ρ).norm) :
     Module.Projective (MonoidAlgebra k G) A.ρ.asModule := by
-  have := projective_of_id_mem_range_norm_linHom A h
-  rwa [← equivalenceModuleMonoidAlgebra.map_projective_iff, ← IsProjective.iff_projective] at this
+  obtain ⟨φ, hφ⟩ := h
+  have : Module.Projective k A.ρ.asModule := .of_equiv A.ρ.asModuleEquiv.symm
+  refine TauCeti.moduleProjective_of_sumOfConjugates_eq_id
+    (φ := A.ρ.asModuleEquiv.symm.toLinearMap ∘ₗ φ ∘ₗ A.ρ.asModuleEquiv.toLinearMap) ?_
+  refine LinearMap.ext fun x => A.ρ.asModuleEquiv.injective ?_
+  -- The sum of conjugates of `φ` is its norm, reindexed by `g ↦ g⁻¹`.
+  conv_rhs => rw [LinearMap.id_apply, ← LinearMap.id_apply (R := k) (A.ρ.asModuleEquiv x), ← hφ,
+    Representation.norm_linHom_apply]
+  rw [LinearMap.sumOfConjugates_apply, map_sum]
+  refine Fintype.sum_equiv (Equiv.inv G) _ _ fun g => ?_
+  simp only [LinearMap.conjugate_apply, Representation.asModuleEquiv_map_smul,
+    Representation.asAlgebraHom_single_one, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.apply_symm_apply, Equiv.inv_apply, inv_inv]
+
+/-- **A representation whose identity is a norm is projective.** If `A` is projective over `k` and
+`id_A = ∑ g, A.ρ g ∘ φ ∘ A.ρ g⁻¹` for a `k`-linear `φ`, then `A` is projective. -/
+theorem projective_of_id_mem_range_norm_linHom {k G : Type u} [CommRing k] [Group G] [Fintype G]
+    (A : Rep.{u} k G) [Module.Projective k A.V]
+    (h : LinearMap.id ∈ LinearMap.range (Representation.linHom A.ρ A.ρ).norm) : Projective A :=
+  (projective_iff_moduleProjective A).2 (moduleProjective_of_id_mem_range_norm_linHom A h)
 
 end Rep

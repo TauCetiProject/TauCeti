@@ -356,9 +356,9 @@ theorem finite_faces_iff (h : StellarEquivalentUpToRelabeling K L) :
     K.faces.Finite ↔ L.faces.Finite := by
   apply induction_on h
   · intro A B f g he
-    exact (finite_faces_map_iff_of_injective (K := A) f f.injective).symm.trans
+    exact (finite_faces_map_iff_of_injOn (K := A) f f.injective.injOn).symm.trans
       (he.finite_faces_iff.trans
-        (finite_faces_map_iff_of_injective (K := B) g g.injective))
+        (finite_faces_map_iff_of_injOn (K := B) g g.injective.injOn))
   · intro A
     rfl
   · intro A B ih

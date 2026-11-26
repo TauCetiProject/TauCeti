@@ -61,6 +61,10 @@ applying the map.
   maps on composable words extend to their coalgebra morphisms and graded Taylor expansions.
 * `TauCeti.GradedLinearQuiver.IsWordPathCompatible.eq_of_totalHomMap_eq`: path-compatible maps
   into a quiver induced along a map of objects are determined by their images on composable words.
+* `TauCeti.GradedLinearQuiver.IsPathCompatible.evalNat_mem_range_homInclusion_of_pos` and
+  `TauCeti.GradedLinearQuiver.IsPathCompatible.evalNat_eq_zero_of_not_isComposableString`: a
+  path-compatible operation of positive arity sends a natural-indexed string of morphisms to a
+  morphism between the images of its endpoints, and a string which is not composable to zero.
 
 ## References
 
@@ -286,6 +290,66 @@ theorem replaceBlock_mem_range_homInclusion {n p d : ℕ} {a b : ℕ → C} {y :
   · rw [replaceBlock_of_gt _ _ _ _ h, replaceBlock_of_gt _ _ _ _ h, replaceBlock_of_gt _ _ _ _ h]
     exact hy (i + d - 1) (by omega)
 
+/-- A nonempty string of elements `xᵢ` of single hom modules `sᵢ ⟶ tᵢ`, indexed by `Fin n`, extends
+to a string of elements of single hom modules indexed by the naturals. -/
+theorem exists_natString {n : ℕ} (hn : 0 < n) (s t : Fin n → C) {x : Fin n → TotalHom R C}
+    (hx : ∀ i, x i ∈ LinearMap.range (homInclusion (R := R) (s i) (t i))) :
+    ∃ (a b : ℕ → C) (z : ℕ → TotalHom R C),
+      (∀ i < n, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) ∧
+        (∀ i : Fin n, a i = s i) ∧ (∀ i : Fin n, b i = t i) ∧ ∀ i : Fin n, z i = x i := by
+  -- Clamp the indices to `Fin n`, so that the objects are those of the string itself.
+  let j : ℕ → Fin n := fun i ↦ ⟨min i (n - 1), by omega⟩
+  have hj (i : Fin n) : j i = i := Fin.ext (min_eq_left (by have := i.isLt; omega))
+  refine ⟨fun i ↦ s (j i), fun i ↦ t (j i), fun i ↦ if i < n then x (j i) else 0,
+    fun i hi ↦ ?_, fun i ↦ congrArg s (hj i), fun i ↦ congrArg t (hj i), fun i ↦ by simp [hj]⟩
+  simpa only [hi, ↓reduceIte] using hx (j i)
+
+/-- Elements of single hom modules, indexed by the naturals, are the inclusions of a family of
+morphisms. -/
+theorem exists_eq_homInclusion {k : ℕ} {z : ℕ → TotalHom R C} {a b : ℕ → C}
+    (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) :
+    ∃ g : ∀ i : Fin k, homModule (R := R) (a i) (b i),
+      ∀ i : Fin k, z i = homInclusion (a i) (b i) (g i) := by
+  choose g hg using fun i : Fin k ↦ hz i i.isLt
+  exact ⟨g, fun i ↦ (hg i).symm⟩
+
+section PathCompatible
+
+open _root_.MultilinearMap (evalNat evalNat_def)
+
+variable {D : Type u'} [GradedLinearQuiver.{u', v', w} R D] {φ : C → D} {k : ℕ}
+  {f : MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ TotalHom R C) (TotalHom R D)}
+  {z : ℕ → TotalHom R C} {a b : ℕ → C}
+
+/-- A path-compatible operation sends a string of morphisms `aᵢ ⟶ bᵢ` which is not composable to
+zero. -/
+theorem IsPathCompatible.evalNat_eq_zero_of_not_isComposableString (hf : IsPathCompatible φ f)
+    (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
+    (hab : ¬ IsComposableString a b k) : evalNat f z = 0 := by
+  obtain ⟨i, hi, hne⟩ : ∃ i, ∃ (_ : i + 1 < k), b (i + 1) ≠ a i := by
+    by_contra! hc
+    exact hab ⟨hc⟩
+  obtain ⟨g, hg⟩ := exists_eq_homInclusion hz
+  rw [evalNat_def, funext hg]
+  exact hf.eq_zero_of_ne (fun i ↦ a i) (fun i ↦ b i) g ⟨i, by omega⟩ ⟨i + 1, hi⟩ rfl hne
+
+/-- A path-compatible operation of positive arity sends any string of morphisms `aᵢ ⟶ bᵢ` to a
+morphism from the image of `a (k - 1)` to the image of `b 0`: the image of a composable string is
+such a morphism, and any other string is sent to zero. -/
+theorem IsPathCompatible.evalNat_mem_range_homInclusion_of_pos (hf : IsPathCompatible φ f)
+    (hk : 0 < k) (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) :
+    evalNat f z ∈ LinearMap.range (homInclusion (R := R) (φ (a (k - 1))) (φ (b 0))) := by
+  by_cases hab : IsComposableString a b k
+  · obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
+    obtain ⟨g, hg⟩ := exists_eq_homInclusion hz
+    rw [evalNat_def, funext hg]
+    exact hf.mem_range_homInclusion_of_chain (fun i ↦ a i) (fun i ↦ b i) g
+      (fun j ↦ by simpa using hab.eq j (by omega)) (by simp) (by simp)
+  · rw [hf.evalNat_eq_zero_of_not_isComposableString hz hab]
+    exact zero_mem _
+
+end PathCompatible
+
 /-- The morphisms of a string with a morphism prepended lie in the expected hom modules. -/
 private theorem cons_mem {n : ℕ} {a b : ℕ → C} {z : ℕ → TotalHom R C}
     (hz : ∀ i < n, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) {Y Z : C}
@@ -476,13 +540,8 @@ private theorem isWordPathCompatible_of_isPathCompatible {D : Type u'}
   · intro X Y w hw
     induction hw using Submodule.span_induction with
     | mem w hw =>
-      obtain ⟨n, hn, a, b, z, hz, hab, rfl, rfl, rfl⟩ := hw
-      obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
-      choose g hg using fun i : Fin (m + 1) ↦ hz i i.isLt
-      have e := (h (m + 1) hn).mem_range_homInclusion_of_chain (fun i ↦ a i) (fun i ↦ b i) g
-        (fun k ↦ by simpa using hab.eq k (by have := k.isLt; omega)) (a := a m) (b := b 0)
-        (by simp) (by simp)
-      simpa [hg] using e
+      obtain ⟨n, hn, a, b, z, hz, -, rfl, rfl, rfl⟩ := hw
+      simpa [MultilinearMap.evalNat_def] using (h n hn).evalNat_mem_range_homInclusion_of_pos hn hz
     | zero => simp
     | add x y _ _ hx hy => simpa using add_mem hx hy
     | smul r x _ hx => simpa using Submodule.smul_mem _ r hx
@@ -490,13 +549,8 @@ private theorem isWordPathCompatible_of_isPathCompatible {D : Type u'}
     induction hw using Submodule.span_induction with
     | mem w hw =>
       obtain ⟨n, hn, a, b, z, hz, hab, rfl⟩ := hw
-      choose g hg using fun i : Fin n ↦ hz i i.isLt
-      obtain ⟨i, hi, hne⟩ : ∃ i, ∃ _ : i + 1 < n, b (i + 1) ≠ a i := by
-        by_contra! hc
-        exact hab ⟨hc⟩
-      have e := (h n hn).eq_zero_of_ne (fun k ↦ a k) (fun k ↦ b k) g ⟨i, by omega⟩ ⟨i + 1, hi⟩
-        rfl hne
-      simpa [hg] using e
+      simpa [MultilinearMap.evalNat_def] using
+        (h n hn).evalNat_eq_zero_of_not_isComposableString hz hab
     | zero => simp
     | add x y _ _ hx hy => simp [hx, hy]
     | smul r x _ hx => simp [hx]

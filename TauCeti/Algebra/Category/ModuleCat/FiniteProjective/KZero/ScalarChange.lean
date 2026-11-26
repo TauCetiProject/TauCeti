@@ -63,11 +63,11 @@ private theorem map_extendScalars_mul (f : R →+* S) :
     (Q := f.finiteProjectiveModulesExtendScalars.obj P ⊗
       f.finiteProjectiveModulesExtendScalars.obj Q) <|
     (BalancedExtension.congr f
-      (eqToIso (FiniteProjectiveModules.tensorObj_obj P Q)).toLinearEquiv).trans
+      (eqToIso (FiniteProjectiveModules.tensorObj_obj R P Q)).toLinearEquiv).trans
       ((BalancedExtension.equivTensorProduct R S (P.obj ⊗[R] Q.obj)).trans
         ((TensorProduct.AlgebraTensorModule.distribBaseChange R S P.obj Q.obj).trans
           ((TensorProduct.congr (e P) (e Q)).trans
-            (eqToIso (FiniteProjectiveModules.tensorObj_obj _ _)).symm.toLinearEquiv)))
+            (eqToIso (FiniteProjectiveModules.tensorObj_obj S _ _)).symm.toLinearEquiv)))
 
 /-- **Extension of scalars as a ring homomorphism on split `K₀`.** For commutative rings, a ring
 homomorphism `f : R →+* S` induces a ring homomorphism

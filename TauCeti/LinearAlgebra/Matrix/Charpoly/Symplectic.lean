@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.SymplecticGroup
 public import TauCeti.Algebra.Polynomial.Derivative
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
-public import TauCeti.RingTheory.PowerSeries.Geometric
+public import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # The reciprocal characteristic polynomial of a symplectic matrix

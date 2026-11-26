@@ -16,6 +16,11 @@ chart data of a section in chart `j` are compared with those in chart `i` on the
 in the base sets of the bundle charts `i` and `j`. This file collects the geometry of transfer
 domains used to move chart data between charts.
 
+For an open `Q` in chart `i`, the localized image `A.localizedImage i j Q` is the part of the image
+of chart `j` read in chart `i` inside `Q`: data supported over the points of `Q` live there in chart
+`j`. If the closure of `Q` lies in the image of chart `i`, the closure of the localized image lies
+in the transfer domain.
+
 For a `C^n` vector bundle over a `C^n` manifold without boundary modelled on a real normed space,
 the coordinate change of the bundle, read in chart `j`, is `C^n` on the transfer domain.
 
@@ -31,6 +36,8 @@ manifold.
 
 * `TauCeti.FiniteBundleAtlas.transferDomain`: the chart-`j` coordinates on which chart `i` and the
   bundle charts `i` and `j` are defined.
+* `TauCeti.FiniteBundleAtlas.localizedImage`: the part of the image of chart `j` read in chart `i`
+  inside a given open set.
 
 ## Main results
 
@@ -45,6 +52,8 @@ manifold.
 * `TauCeti.FiniteBundleAtlas.exists_transfer_piece`: for a compact set inside the domain of chart
   `i`, the image of chart `j` is covered by a transfer piece from chart `i` and an open set avoiding
   the compact set.
+* `TauCeti.FiniteBundleAtlas.closure_localizedImage_subset_transferDomain`: the localized image of
+  an open set with closure in the image of chart `i` lies, with its closure, in the transfer domain.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coordChangeL_transferDomain`: the coordinate change of the
   bundle, read in chart `j`, is `C^n` on the transfer domain.
 -/
@@ -258,6 +267,89 @@ theorem exists_transfer_piece [T2Space E] {K U : Set M} {i : Fin A.n} (hKU : K �
     obtain ⟨x, hxj, rfl⟩ := A.mem_image.1 hy
     rw [(A.chart j).left_inv (A.dom_subset_chart_source j hxj)] at hK'
     exact hyK ⟨x, ⟨hK', subset_closure hxj⟩, rfl⟩
+
+/-! ### Localized images -/
+
+/-- The points of the image of chart `j` whose preimage lies in the domain of chart `i` and is
+read in chart `i` inside `Q`: the part of chart `j` that sees data supported over `Q`. -/
+def localizedImage (i j : Fin A.n) (Q : Opens E) : Opens E :=
+  ⟨(A.image j : Set E) ∩ (A.chart j).symm ⁻¹' (A.dom i ∩ A.chart i ⁻¹' Q), by
+    refine (A.continuousOn_chart_symm j).isOpen_inter_preimage (A.image j).isOpen ?_
+    exact ((A.chart i).continuousOn.mono (A.dom_subset_chart_source i)).isOpen_inter_preimage
+      (A.isOpen_dom i) Q.isOpen⟩
+
+variable {A}
+
+@[simp]
+theorem mem_localizedImage {i j : Fin A.n} {Q : Opens E} {y : E} :
+    y ∈ A.localizedImage i j Q ↔ y ∈ A.image j ∧ (A.chart j).symm y ∈ A.dom i ∧
+      A.chart i ((A.chart j).symm y) ∈ Q :=
+  Iff.rfl
+
+theorem localizedImage_le_image (i j : Fin A.n) (Q : Opens E) :
+    A.localizedImage i j Q ≤ A.image j :=
+  fun _ hy ↦ hy.1
+
+theorem mapsTo_localizedImage (i j : Fin A.n) (Q : Opens E) :
+    MapsTo ((A.chart j).symm ≫ₕ A.chart i) (A.localizedImage i j Q) Q :=
+  fun _ hy ↦ hy.2.2
+
+theorem localizedImage_subset_overlap [T2Space E] (i j : Fin A.n) (Q : Opens E) :
+    (A.localizedImage i j Q : Set E) ⊆ A.overlap i j := by
+  rintro y ⟨hy, hi, -⟩
+  refine A.mem_overlap.2 ⟨(A.chart j).symm y, ⟨hi, A.symm_mem_dom hy⟩, ?_⟩
+  exact (A.chart j).right_inv (A.closure_image_subset_target j (subset_closure hy))
+
+theorem isCompact_closure_localizedImage [T2Space E] (i j : Fin A.n) (Q : Opens E) :
+    IsCompact (closure (A.localizedImage i j Q : Set E)) :=
+  (A.isCompact_closure_image j).of_isClosed_subset isClosed_closure
+    (closure_mono (A.localizedImage_le_image i j Q))
+
+/-- If the closure of `Q` lies in the image of chart `i`, the closure of the localized image lies
+in the domain on which data are transferred from chart `i` to chart `j`. -/
+theorem closure_localizedImage_subset_transferDomain [T2Space E] [T2Space M] {i j : Fin A.n}
+    {Q : Opens E} (hQi : closure (Q : Set E) ⊆ A.image i) :
+    closure (A.localizedImage i j Q : Set E) ⊆ A.transferDomain i j := by
+  have hQc : IsCompact (closure (Q : Set E)) :=
+    (A.isCompact_closure_image i).of_isClosed_subset isClosed_closure (hQi.trans subset_closure)
+  -- The points of `M` read in chart `i` inside `closure Q` form a compact subset of `dom i`.
+  set K := (A.chart i).symm '' closure (Q : Set E)
+  have hK : IsCompact K := hQc.image_of_continuousOn ((A.continuousOn_chart_symm i).mono hQi)
+  have hKi : K ⊆ A.dom i := by
+    rintro _ ⟨z, hz, rfl⟩
+    exact A.symm_mem_dom (hQi hz)
+  have hS : IsClosed (closure (A.image j : Set E) ∩ (A.chart j).symm ⁻¹' K) :=
+    ((A.chart j).continuousOn_symm.mono
+      (A.closure_image_subset_target j)).preimage_isClosed_of_isClosed isClosed_closure hK.isClosed
+  have hPS : (A.localizedImage i j Q : Set E) ⊆
+      closure (A.image j : Set E) ∩ (A.chart j).symm ⁻¹' K := by
+    intro y hy
+    obtain ⟨hyj, hyi, hyQ⟩ := mem_localizedImage.1 hy
+    refine ⟨subset_closure hyj, A.chart i ((A.chart j).symm y), subset_closure hyQ, ?_⟩
+    exact (A.chart i).left_inv (A.dom_subset_chart_source i hyi)
+  refine (closure_minimal hPS hS).trans fun y hy ↦ ?_
+  obtain ⟨x, hx, rfl⟩ := A.closure_image_subset_chart_image_closure_dom j hy.1
+  have hxs : x ∈ (A.chart j).source := A.closure_dom_subset_source j hx
+  have hxK := hy.2
+  rw [mem_preimage, (A.chart j).left_inv hxs] at hxK
+  refine A.mem_transferDomain.2 ⟨(A.chart j).map_source hxs, ?_⟩
+  rw [(A.chart j).left_inv hxs]
+  exact ⟨A.dom_subset_chart_source i (hKi hxK), A.closure_dom_subset_baseSet j hx,
+    A.dom_subset_baseSet i (hKi hxK)⟩
+
+/-- A point of the image of chart `j` outside the localized image does not come from a point of
+`K ⊆ Q` read in chart `i`. -/
+theorem symm_notMem_image_of_notMem_localizedImage [T2Space E] {i j : Fin A.n} {Q : Opens E}
+    {K : Set E} (hKQ : K ⊆ Q) (hQi : (Q : Set E) ⊆ A.image i) {y : E} (hy : y ∈ A.image j)
+    (hyP : y ∉ A.localizedImage i j Q) : (A.chart j).symm y ∉ (A.chart i).symm '' K := by
+  rintro ⟨z, hz, hzy⟩
+  have hzi : z ∈ A.image i := hQi (hKQ hz)
+  -- The point is `(A.chart i).symm z`, which chart `i` reads as `z ∈ Q`.
+  refine hyP (mem_localizedImage.2 ⟨hy, ?_, ?_⟩)
+  · rw [← hzy]
+    exact A.symm_mem_dom hzi
+  · rw [← hzy, (A.chart i).right_inv (A.closure_image_subset_target i (subset_closure hzi))]
+    exact hKQ hz
 
 end FiniteBundleAtlas
 

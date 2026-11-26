@@ -16,6 +16,7 @@ import TauCeti.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.InnerProductSpace.OfNorm
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Integral.Bochner.Holder
 
 /-!
 # Norms of averages
@@ -140,6 +141,7 @@ applied to an integrable function that is almost everywhere at least `a`.
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
 * `TauCeti.measureReal_mul_sq_norm_setAverage_le`: the real form `μ s ‖f_s‖² ≤ ∫_s ‖f‖²`, for
   `f ∈ L²(s)`, of Hölder's bound `TauCeti.enorm_setAverage_rpow_le` at exponent `2`.
+* `TauCeti.norm_le_add_sqrt_of_ae_eq`: a pointwise bound from `L²` and oscillation bounds.
 * `TauCeti.laverage_const_mul`: a finite constant factor comes out of the lower average.
 * `TauCeti.setLAverage_add_const`: a constant term comes out of the lower average over a set of
   finite nonzero measure.
@@ -276,21 +278,17 @@ theorem enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q) :
   · simp [setAverage_eq, measureReal_def, hs0, ENNReal.zero_rpow_of_pos hq0]
   by_cases hs : mu s = ∞
   · simp [setAverage_eq, measureReal_def, hs, ENNReal.zero_rpow_of_pos hq0]
-  by_cases hf : IntegrableOn f s mu
-  swap
-  · simp [setAverage_eq, integral_undef hf, ENNReal.zero_rpow_of_pos hq0]
-  have h0 : ‖⨍ y in s, f y ∂mu‖ₑ ≤ (mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ∂mu := by
-    simpa only [setLAverage_eq, ENNReal.div_eq_inv_mul] using
-      enorm_setAverage_le_setLAverage mu f s
-  have hholder : (∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q ≤ mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu := by
-    have := rpow_lintegral_le_measure_univ_rpow_mul (μ := mu.restrict s)
-      (u := fun y => ‖f y‖ₑ) hq
-    rwa [Measure.restrict_apply_univ] at this
+  -- Jensen's inequality for the integral over `s`, normalized by `μ s`.
+  have hJ := enorm_integral_rpow_le_measure_univ_rpow_mul (μ := mu.restrict s) f hq
+  rw [Measure.restrict_apply_univ] at hJ
+  have hnorm : ‖(mu.real s)⁻¹‖ₑ = (mu s)⁻¹ := by
+    rw [eNorm_inv (by simp [measureReal_def, ENNReal.toReal_eq_zero_iff, hs0, hs]),
+      Real.eNorm_of_nonneg measureReal_nonneg, measureReal_def, ENNReal.ofReal_toReal hs]
   have hexp : -q + (q - 1) = (-1 : ℝ) := by ring
   calc ‖⨍ y in s, f y ∂mu‖ₑ ^ q
-      ≤ ((mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q := ENNReal.rpow_le_rpow h0 hq0.le
-    _ = (mu s)⁻¹ ^ q * (∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q := ENNReal.mul_rpow_of_nonneg _ _ hq0.le
-    _ ≤ (mu s)⁻¹ ^ q * (mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu) := mul_le_mul' le_rfl hholder
+      = (mu s)⁻¹ ^ q * ‖∫ y in s, f y ∂mu‖ₑ ^ q := by
+        rw [setAverage_eq, eNorm_smul, hnorm, ENNReal.mul_rpow_of_nonneg _ _ hq0.le]
+    _ ≤ (mu s)⁻¹ ^ q * (mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu) := mul_le_mul' le_rfl hJ
     _ = (mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu := by
         rw [← mul_assoc, ENNReal.inv_rpow, ← ENNReal.rpow_neg, ← ENNReal.rpow_add _ _ hs0 hs,
           hexp, ENNReal.rpow_neg_one]
@@ -767,6 +765,29 @@ average form of `MeasureTheory.norm_setIntegral_le_of_norm_le_const`. -/
 theorem norm_setAverage_le_of_norm_le_const {C : ℝ} (hC : 0 ≤ C) (hf : ∀ x ∈ s, ‖f x‖ ≤ C) :
     ‖⨍ x in s, f x ∂μ‖ ≤ C :=
   norm_setAverage_le_of_norm_le_const_ae' hC (Filter.Eventually.of_forall hf)
+
+/-- **A pointwise bound from `L²` and oscillation bounds.** If `f = P` a.e. on a measurable set
+`s` of finite positive measure, `‖P z - P y‖ ≤ M` on `s` and `∫_s ‖f‖² ≤ C`, then
+`‖P y‖ ≤ M + √(C / μ s)`. -/
+theorem norm_le_add_sqrt_of_ae_eq (hs : MeasurableSet s) (hs0 : μ s ≠ 0) (hst : μ s ≠ ⊤)
+    {P : X → F} (hf : MemLp f 2 (μ.restrict s)) (hfP : ∀ᵐ z ∂μ.restrict s, f z = P z) {y : X}
+    {M C : ℝ} (hPM : ∀ z ∈ s, ‖P z - P y‖ ≤ M)
+    (hC : ∫ z in s, ‖f z‖ ^ 2 ∂μ ≤ C) : ‖P y‖ ≤ M + √(C / μ.real s) := by
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hPM _ (nonempty_of_measure_ne_zero hs0).some_mem)
+  have hsr : 0 < μ.real s := ENNReal.toReal_pos hs0 hst
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hst
+  have hsub := setAverage_sub (hf.integrable (by norm_num)) (integrableOn_const (C := P y) hst)
+  simp only [Pi.sub_apply, setAverage_const hs0 hst] at hsub
+  have h1 : ‖(⨍ z in s, f z ∂μ) - P y‖ ≤ M := by
+    refine hsub ▸ norm_setAverage_le_of_norm_le_const_ae' hM ?_
+    filter_upwards [(ae_restrict_iff' hs).1 hfP] with z hz hzs
+    simpa only [hz hzs] using hPM z hzs
+  have h := measureReal_mul_sq_norm_setAverage_le hst hf
+  have h2 : ‖⨍ z in s, f z ∂μ‖ ≤ √(C / μ.real s) := by
+    rw [Real.le_sqrt (norm_nonneg _) (div_nonneg ((by positivity : 0 ≤ μ.real s *
+      ‖⨍ z in s, f z ∂μ‖ ^ 2).trans (h.trans hC)) hsr.le), le_div_iff₀ hsr]
+    linarith
+  linarith [norm_le_insert' (P y) (⨍ z in s, f z ∂μ), norm_sub_rev (P y) (⨍ z in s, f z ∂μ)]
 
 /-- On a set of finite positive measure, the average of an almost everywhere strongly measurable
 `f` differs from a constant `c` by at most the average of `‖f - c‖ₑ`. No integrability is assumed:

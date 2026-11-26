@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Morphism
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Restrict
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Discrete
-public import Mathlib.AlgebraicGeometry.Scheme
+public import Mathlib.AlgebraicGeometry.AffineScheme
 public import TauCeti.Geometry.RingedSpace.OpenImmersion
 
 /-!
@@ -34,7 +35,7 @@ The category construction follows Mathlib's `AlgebraicGeometry.Scheme`, using
 
 public section
 
-open CategoryTheory TopologicalSpace AlgebraicGeometry
+open CategoryTheory TopologicalSpace Opposite AlgebraicGeometry
 
 universe u
 
@@ -55,6 +56,16 @@ instance : CoeSort FormalScheme Type* := ⟨fun X ↦ X.toLocallyRingedSpace⟩
 
 instance (X : FormalScheme) : TopologicalSpace X :=
   inferInstanceAs (TopologicalSpace X.toLocallyRingedSpace)
+
+/-- The underlying space of a formal scheme is T₀: two inseparable points lie in a common open
+formal spectrum, whose underlying space is a subspace of a prime spectrum. -/
+instance (X : FormalScheme) : T0Space X := by
+  refine (t0Space_iff_inseparable X).mpr fun x y h ↦ ?_
+  obtain ⟨A, _, _, _, _, f, hf, x', rfl⟩ := X.local_spf x
+  obtain ⟨y', rfl⟩ := (h.mem_open_iff hf.base_open.isOpen_range).mp ⟨x', rfl⟩
+  -- the points of `Spf A` are open primes of `A`, with the subspace topology of `Spec A`
+  have : T0Space (Spf A).toPresheafedSpace := inferInstanceAs (T0Space (Spf.carrier A))
+  exact congrArg f.base (hf.base_open.isInducing.inseparable_iff.mp h).eq
 
 /-- Formal schemes have exactly the morphisms of their underlying locally ringed spaces. -/
 instance : Category FormalScheme :=
@@ -96,12 +107,39 @@ theorem ofSpf_toLocallyRingedSpace (A : Type u) [CommRing A] [TopologicalSpace A
     [IsTopologicalRing A] [IsAdicRing A] :
     (ofSpf A).toLocallyRingedSpace = Spf A := (rfl)
 
+section OfSpfMap
+variable {A B C : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
+  [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B] [CommRing C]
+  [TopologicalSpace C] [IsTopologicalRing C] [IsAdicRing C]
+
+/-- Morphism `ofSpf B ⟶ ofSpf A` attached to a continuous ring homomorphism `φ : A →+* B`. -/
+noncomputable def ofSpfMap (φ : A →+* B) (hφ : Continuous φ) : ofSpf B ⟶ ofSpf A :=
+  InducedCategory.homMk (Spf.map φ hφ)
+
+@[simp] theorem forgetToLocallyRingedSpace_map_ofSpfMap (φ : A →+* B) (hφ : Continuous φ) :
+    forgetToLocallyRingedSpace.map (ofSpfMap φ hφ) = Spf.map φ hφ := (rfl)
+@[simp] theorem ofSpfMap_id : ofSpfMap (RingHom.id A) continuous_id = 𝟙 (ofSpf A) :=
+  InducedCategory.hom_ext Spf.map_id
+@[reassoc] theorem ofSpfMap_comp (φ : B →+* C) (hφ : Continuous φ) (ψ : A →+* B)
+    (hψ : Continuous ψ) : ofSpfMap (φ.comp ψ) (hφ.comp hψ) = ofSpfMap φ hφ ≫ ofSpfMap ψ hψ :=
+  InducedCategory.hom_ext (Spf.map_comp φ hφ ψ hψ)
+end OfSpfMap
+
 /-- An open is affine formal if it is the image of an open immersion from a formal spectrum.
 This definition does not choose a presentation or a topology on its ring of sections. -/
 def IsAffineOpen (X : FormalScheme) (U : Opens X) : Prop :=
   ∃ (A : Type u) (_ : CommRing A) (_ : TopologicalSpace A) (_ : IsTopologicalRing A)
     (_ : IsAdicRing A) (f : Spf A ⟶ X.toLocallyRingedSpace),
     LocallyRingedSpace.IsOpenImmersion f ∧ Set.range f.base = (U : Set X)
+
+/-- An open is affine formal exactly when it is the image of an open immersion from a formal
+spectrum. -/
+theorem isAffineOpen_def (X : FormalScheme) (U : Opens X) :
+    X.IsAffineOpen U ↔
+      ∃ (A : Type u) (_ : CommRing A) (_ : TopologicalSpace A) (_ : IsTopologicalRing A)
+        (_ : IsAdicRing A) (f : Spf A ⟶ X.toLocallyRingedSpace),
+        LocallyRingedSpace.IsOpenImmersion f ∧ Set.range f.base = (U : Set X) :=
+  Iff.rfl
 
 /-- An open is affine formal exactly when its restricted locally ringed space is isomorphic
 to a formal spectrum. -/
@@ -134,6 +172,25 @@ theorem isAffineOpen_top_ofSpf (A : Type u) [CommRing A] [TopologicalSpace A]
   ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, 𝟙 _,
     inferInstanceAs (LocallyRingedSpace.IsOpenImmersion (𝟙 (Spf A))), Set.range_id⟩
 
+/-- If a morphism from a formal spectrum `Spf A` hits a point `x`, then every neighbourhood of `x`
+contains the image of a basic open set `D(a) ≅ Spf A_{a}` of `Spf A` whose image contains `x`. -/
+theorem exists_basicOpenι_comp_mem_range_and_range_subset {A : Type u} [CommRing A]
+    [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A] {X : LocallyRingedSpace.{u}}
+    (i : Spf A ⟶ X) (U : Opens X) {x : X} (hx : x ∈ U) (hxi : x ∈ Set.range i.base) :
+    ∃ a : A, x ∈ Set.range (Spf.basicOpenι a ≫ i).base ∧
+      Set.range (Spf.basicOpenι a ≫ i).base ⊆ (U : Set X) := by
+  obtain ⟨y, hy⟩ := hxi
+  -- The explicit preimage open tells the basis lemma which neighbourhood to shrink;
+  -- membership in `Opens.map` is membership of the image point, where `hy` applies.
+  obtain ⟨V, ⟨a, rfl⟩, hyV, hVU⟩ := (Opens.isBasis_iff_nbhd.mp Spf.isBasis_basicOpen)
+    (show y ∈ (Opens.map i.base).obj U from
+      (congrArg (fun z ↦ z ∈ U) hy).mpr hx)
+  obtain ⟨z, hz⟩ := (Spf.range_basicOpenι a).ge hyV
+  refine ⟨a, ⟨z, ?_⟩, ?_⟩
+  · simpa only [LocallyRingedSpace.comp_base, TopCat.coe_comp, Function.comp_apply, hz] using hy
+  · rintro _ ⟨w, rfl⟩
+    exact hVU ((Spf.range_basicOpenι a).le (Set.mem_range_self w))
+
 /-- Every neighbourhood contains a formal-spectrum chart through the given point. -/
 theorem exists_spf_mem_range_and_range_subset (X : FormalScheme) (U : Opens X)
     (x : X) (hx : x ∈ U) :
@@ -141,19 +198,11 @@ theorem exists_spf_mem_range_and_range_subset (X : FormalScheme) (U : Opens X)
       (_ : IsAdicRing A) (f : Spf A ⟶ X.toLocallyRingedSpace),
       LocallyRingedSpace.IsOpenImmersion f ∧ x ∈ Set.range f.base ∧
         Set.range f.base ⊆ (U : Set X) := by
-  obtain ⟨A, _, _, _, _, i, hi, y, hy⟩ := X.local_spf x
+  obtain ⟨A, _, _, _, _, i, hi, hxi⟩ := X.local_spf x
   have := hi
-  -- The explicit preimage open tells the basis lemma which neighbourhood to shrink;
-  -- membership in `Opens.map` is membership of the image point, where `hy` applies.
-  obtain ⟨V, ⟨a, rfl⟩, hyV, hVU⟩ := (Opens.isBasis_iff_nbhd.mp Spf.isBasis_basicOpen)
-    (show y ∈ (Opens.map i.base).obj U from
-      (congrArg (fun z ↦ z ∈ U) hy).mpr hx)
-  obtain ⟨z, hz⟩ := (Spf.range_basicOpenι a).ge hyV
-  refine ⟨AdicRing.CompletedAway A a, inferInstance, inferInstance, inferInstance,
-    inferInstance, Spf.basicOpenι a ≫ i, inferInstance, ⟨z, ?_⟩, ?_⟩
-  · simpa only [LocallyRingedSpace.comp_base, TopCat.coe_comp, Function.comp_apply, hz] using hy
-  · rintro _ ⟨w, rfl⟩
-    exact hVU ((Spf.range_basicOpenι a).le (Set.mem_range_self w))
+  obtain ⟨a, hxa, haU⟩ := exists_basicOpenι_comp_mem_range_and_range_subset i U hx hxi
+  exact ⟨AdicRing.CompletedAway A a, inferInstance, inferInstance, inferInstance,
+    inferInstance, Spf.basicOpenι a ≫ i, inferInstance, hxa, haU⟩
 
 /-- The affine formal opens form a basis of the topology. -/
 theorem isBasis_affineOpens (X : FormalScheme) :
@@ -163,6 +212,25 @@ theorem isBasis_affineOpens (X : FormalScheme) :
   obtain ⟨A, _, _, _, _, f, hf, hx, hU⟩ := X.exists_spf_mem_range_and_range_subset U x hx
   exact ⟨⟨Set.range f.base, hf.base_open.isOpen_range⟩,
     ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, f, hf, rfl⟩, hx, hU⟩
+
+/-- Every point of an open `W` in a formal scheme has an affine formal neighbourhood contained in
+`W`. -/
+theorem exists_isAffineOpen_mem_le (X : FormalScheme) {W : Opens X} {x : X} (hx : x ∈ W) :
+    ∃ U : Opens X, X.IsAffineOpen U ∧ x ∈ U ∧ U ≤ W :=
+  Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens hx
+
+/-- Every point of a formal scheme lies in an affine formal open. -/
+theorem exists_isAffineOpen_mem (X : FormalScheme) (x : X) :
+    ∃ U : Opens X, X.IsAffineOpen U ∧ x ∈ U :=
+  let ⟨U, hU, hx, _⟩ := X.exists_isAffineOpen_mem_le (W := ⊤) (x := x) trivial
+  ⟨U, hU, hx⟩
+
+/-- The affine formal opens of any formal scheme `X` cover `X`. -/
+theorem iSup_affineOpens_eq_top (X : FormalScheme) :
+    (⨆ U : {U : Opens X // X.IsAffineOpen U}, U.val) = ⊤ := by
+  apply Opens.ext; rw [Opens.coe_iSup]; refine Set.eq_univ_iff_forall.mpr fun x ↦ ?_
+  obtain ⟨U, hU, hx⟩ := X.exists_isAffineOpen_mem x
+  exact Set.mem_iUnion.mpr ⟨⟨U, hU⟩, hx⟩
 
 /-- Restrict a formal scheme to an open subset, using the restriction of its locally ringed
 space. The affine atlas is obtained by shrinking charts using completed localizations.
@@ -330,6 +398,15 @@ theorem forgetToLocallyRingedSpace_map_ofSchemeSpecIso_inv (R : Type u) [CommRin
     forgetToLocallyRingedSpace.map (ofSchemeSpecIso R).inv =
       (Spf.discreteIsoSpec R).hom := (rfl)
 
+/-- Every affine open of an ordinary scheme `X` is an affine formal open of `ofScheme.obj X`. -/
+theorem isAffineOpen_ofScheme {X : Scheme.{u}} {U : X.Opens}
+    (hU : AlgebraicGeometry.IsAffineOpen U) : (ofScheme.obj X).IsAffineOpen U := by
+  let R : Type u := X.presheaf.obj (op U)
+  let _ : TopologicalSpace R := ⊥; have : DiscreteTopology R := ⟨rfl⟩
+  exact ((ofScheme.obj X).isAffineOpen_iff U).mpr ⟨R, inferInstance, ⊥, inferInstance,
+    inferInstance, ⟨Scheme.forgetToLocallyRingedSpace.mapIso hU.isoSpec ≪≫
+      (Spf.discreteIsoSpec R).symm⟩⟩
+
 /-- Viewing schemes as formal schemes does not change their morphisms. -/
 noncomputable def fullyFaithfulOfScheme : ofScheme.FullyFaithful where
   preimage f := ⟨f.hom⟩
@@ -337,6 +414,20 @@ noncomputable def fullyFaithfulOfScheme : ofScheme.FullyFaithful where
 instance : ofScheme.Full := fullyFaithfulOfScheme.full
 
 instance : ofScheme.Faithful := fullyFaithfulOfScheme.faithful
+
+/-- An affine open `U` of a scheme `X` is an affine formal open of `X` regarded as a formal
+scheme: it is the image of the formal spectrum of the discrete ring `Γ(X, U)`. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.isAffineOpen_toFormalScheme {X : Scheme.{u}}
+    {U : X.Opens} (hU : AlgebraicGeometry.IsAffineOpen U) : X.toFormalScheme.IsAffineOpen U := by
+  let : TopologicalSpace Γ(X, U) := ⊥
+  have : DiscreteTopology Γ(X, U) := ⟨rfl⟩
+  let e := (Spf.discreteIsoSpec Γ(X, U)).symm
+  -- `X.toFormalScheme` has the locally ringed space of `X`, so `hU.fromSpec` lands in it
+  exact (isAffineOpen_def X.toFormalScheme U).mpr ⟨Γ(X, U), inferInstance, inferInstance,
+    inferInstance, inferInstance, e.inv ≫ hU.fromSpec.toLRSHom,
+    @LocallyRingedSpace.IsOpenImmersion.comp _ _ _ e.inv inferInstance hU.fromSpec.toLRSHom
+      hU.isOpenImmersion_fromSpec,
+    (LocallyRingedSpace.range_iso_inv_comp e _).trans hU.range_fromSpec⟩
 
 /-- Forgetting the formal atlas of an ordinary scheme recovers the original scheme's
 locally ringed space, on objects and morphisms. -/

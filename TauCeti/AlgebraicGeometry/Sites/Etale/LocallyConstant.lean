@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Pullback
-public import TauCeti.CategoryTheory.Sites.LocallyConstant
+public import TauCeti.CategoryTheory.Sites.LocallyConstant.Basic
 
 /-!
 # Locally constant sheaves on the small étale site

@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.Basic
+import Mathlib.Algebra.Ring.Idempotent
 
 /-!
 # Elementary inequalities in seminormed rings
 
 This file records elementary consequences of the submultiplicativity of the norm (for instance, a
-nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`), exact positive-power
-norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is
+nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`, forcing an idempotent
+of norm `< 1` to be `0` and one within `< 1` of `1` to be `1`), including its form
+`‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ` for the extended norm (`TauCeti.eNorm_mul_le`), exact positive-power
+norms without `NormOneClass` (so `‖qⁿ‖ < 1 ↔ ‖q‖ < 1` for `n ≠ 0`, `TauCeti.norm_pow_lt_one_iff`),
+an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is
 multiplicative, convergence to `0` of finite partial products when factors tend to `0` cofinitely
 (`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
 shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers of a unit `u`
@@ -30,6 +34,10 @@ the lower bound `1 - ‖q‖ ≤ ‖1 - qⁿ‖` for `‖q‖ ≤ 1` and `n ≠ 
 (`TauCeti.one_sub_norm_le_norm_one_sub_pow`),
 and `‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ` for `‖b‖ ≤ 1` and `‖c‖ ≤ 1`
 (`TauCeti.enorm_mul_sub_mul_le`), which bounds the change of a product of two factors.
+
+Multiplying by elements of norm at most one on the left, on the right or on both sides does not
+increase the norm (`TauCeti.norm_mul_le_of_norm_le_one_left`,
+`TauCeti.norm_mul_le_of_norm_le_one_right`, `TauCeti.norm_mul_mul_le_of_norm_le_one`).
 -/
 
 public section
@@ -51,6 +59,11 @@ theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : 
     _ ≤ ‖u‖ := by
       simpa only [mul_one] using mul_le_mul_of_nonneg_left hv.le (norm_nonneg u)
     _ < 1 := hu
+
+/-- The extended norm is submultiplicative: `‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ`. -/
+theorem eNorm_mul_le {R : Type*} [NonUnitalSeminormedRing R] (a b : R) :
+    ‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ := by
+  simpa only [eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using nnNorm_mul_le a b
 
 /-- The distance from `e * a` to `c` exceeds the distance from `e * b` to `c` by at most
 `‖e‖ ‖a - b‖`: `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`. -/
@@ -79,6 +92,26 @@ theorem enorm_mul_sub_mul_le {R : Type*} [NonUnitalSeminormedRing R] {a b c d : 
   rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_add (norm_nonneg _)
     (norm_nonneg _)]
   exact ENNReal.ofReal_le_ofReal h
+
+section NormLeOne
+
+variable {R : Type*} [NonUnitalSeminormedRing R] {p q : R}
+
+/-- Left multiplication by an element of norm at most one does not increase the norm. -/
+theorem norm_mul_le_of_norm_le_one_left (hq : ‖q‖ ≤ 1) (x : R) : ‖q * x‖ ≤ ‖x‖ :=
+  (norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) hq)
+
+/-- Right multiplication by an element of norm at most one does not increase the norm. -/
+theorem norm_mul_le_of_norm_le_one_right (hq : ‖q‖ ≤ 1) (x : R) : ‖x * q‖ ≤ ‖x‖ :=
+  (norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hq)
+
+/-- Multiplying on the left and on the right by elements of norm at most one does not increase
+the norm. -/
+theorem norm_mul_mul_le_of_norm_le_one (hp : ‖p‖ ≤ 1) (hq : ‖q‖ ≤ 1) (x : R) :
+    ‖p * x * q‖ ≤ ‖x‖ :=
+  (norm_mul_le_of_norm_le_one_right hq _).trans (norm_mul_le_of_norm_le_one_left hp x)
+
+end NormLeOne
 
 /-- Consecutive powers stay in the open unit ball when the first factor is strictly inside
 and the second factor is in the closed unit ball. -/
@@ -223,6 +256,13 @@ theorem norm_pow_succ {M : Type*} [Norm M] [Monoid M] [NormMulClass M] (x : M) (
   | zero => simp
   | succ n ih => rw [pow_succ x (n + 1), norm_mul, ih, pow_succ ‖x‖ (n + 1)]
 
+/-- For a multiplicative norm and `n ≠ 0`, `‖qⁿ‖ < 1` exactly when `‖q‖ < 1`. -/
+theorem norm_pow_lt_one_iff {R : Type*} [SeminormedRing R] [NormMulClass R] {q : R} {n : ℕ}
+    (hn : n ≠ 0) : ‖q ^ n‖ < 1 ↔ ‖q‖ < 1 := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  rw [norm_pow_succ]
+  exact pow_lt_one_iff_of_nonneg (norm_nonneg q) hn
+
 /-- For a multiplicative norm with `‖1‖ = 1`, an element `w` of norm one and `r` of norm at most
 one, `‖w - 1‖ ≤ ‖(w - 1) a‖ + 2 ‖a - r‖ + 2 (1 - ‖r‖)` for every `a`. So `w - 1` is controlled by
 `(w - 1) a` wherever `a` is close to some `r` of norm close to one. -/
@@ -347,6 +387,19 @@ theorem one_le_norm {R : Type*} [NonUnitalNormedRing R] {p : R} (hp : IsIdempote
     (hp0 : p ≠ 0) : 1 ≤ ‖p‖ :=
   (le_mul_iff_one_le_right (norm_pos_iff.mpr hp0)).mp <| by
     simpa only [hp.eq] using norm_mul_le p p
+
+/-- An idempotent of norm strictly less than one in a nonunital normed ring is zero. -/
+theorem eq_zero_of_norm_lt_one {R : Type*} [NonUnitalNormedRing R] {e : R}
+    (he : IsIdempotentElem e) (h : ‖e‖ < 1) : e = 0 := by
+  by_contra he₀
+  exact (he.one_le_norm he₀).not_gt h
+
+/-- An idempotent within norm distance `1` of `1` in a normed ring is `1`, since `1 - e` is an
+idempotent of norm strictly less than `1`. -/
+theorem eq_one_of_norm_sub_one_lt_one {R : Type*} [NormedRing R] {e : R}
+    (he : IsIdempotentElem e) (h : ‖e - 1‖ < 1) : e = 1 :=
+  sub_eq_zero.mp <| neg_eq_zero.mp <| by
+    simpa only [neg_sub] using he.one_sub.eq_zero_of_norm_lt_one (by rwa [norm_sub_rev])
 
 end IsIdempotentElem
 

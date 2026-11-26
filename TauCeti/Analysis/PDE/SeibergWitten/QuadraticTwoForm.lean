@@ -27,7 +27,8 @@ equation of the Seiberg–Witten equations reads `F_A⁺ = q(ψ) + η`. As for `
 This file proves the pointwise algebra and calculus of `q` needed by the nonlinear analysis of the
 equations, transporting those of `Q₀` through `C`. The map `q` is real-quadratic, so its
 polarization `q'(ψ, φ) = τ(B(ψ, φ)) / 4`, with `B` the polarization of `Q₀`, and its derivative
-are only real-linear.
+are only real-linear. The polarization and local Lipschitz estimates hold in every half-spinor
+rank.
 
 ## Main definitions
 
@@ -48,8 +49,6 @@ are only real-linear.
   `‖q(ψ)‖² = ‖ψ‖⁴ / 8`; in particular `q(ψ) = 0` only for `ψ = 0`
   (`quadraticTwoForm_eq_zero_iff`).
 * `inner_quadraticTwoForm_eq_re_inner`: `⟪q(ψ), ω⟫ = Re⟪ψ, C(iω) ψ⟫ / 4` for every two-form `ω`.
-* `abs_re_inner_cliffordRestriction_apply_self_le`: `|Re⟪ψ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖²` for every
-  two-form `μ`.
 * `cliffordRestriction_quadraticTwoFormPolar`: `C(i q'(ψ, φ)) = φψ* + ψφ* - Re⟪ψ, φ⟫ Id`.
 * `quadraticTwoForm_add`: `q(ψ + φ) = q(ψ) + q(φ) + q'(ψ, φ)`.
 * `inner_quadraticTwoFormPolar_eq_re_inner`: `⟪q'(ψ, φ), x⟫ = Re⟪φ, C(i x) ψ⟫ / 2` for every
@@ -57,6 +56,9 @@ are only real-linear.
 * `quadraticTwoFormPolar_smul_self`: `q'(ψ, c ψ) = 2 Re(c) q(ψ)`, so the derivative of `q` kills
   the infinitesimal gauge directions `ξ ψ` with `ξ` imaginary.
 * `norm_quadraticTwoFormPolar_le`: `‖q'(ψ, φ)‖ ≤ ‖ψ‖ ‖φ‖ / √2`.
+* `abs_re_inner_cliffordRestriction_apply_le`, `abs_re_inner_cliffordRestriction_apply_self_le`:
+  `|Re⟪φ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖ ‖φ‖`, in particular `|Re⟪ψ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖²`, for every
+  two-form `μ`.
 * `norm_quadraticTwoForm_sub_le`: `q` is locally Lipschitz,
   `‖q(ψ) - q(φ)‖ ≤ ‖ψ - φ‖ (‖ψ‖ + ‖φ‖) / (2 √2)`.
 * `hasFDerivAt_quadraticTwoForm`, `contDiff_quadraticTwoForm`: `q` is smooth, with real Fréchet
@@ -224,39 +226,18 @@ theorem inner_quadraticTwoForm_eq_re_inner (ω : ⋀[ℝ]^2 V) (ψ : positiveHal
     ⟪(quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V), ω⟫ =
       (⟪ψ, cliffordRestriction o ρ ω ψ⟫_ℂ).re / 4 := by
   have hstar := o.hodgeStar_hodgeStar_of_even even_two hkl ω
-  -- The self-dual part of `ω`, and the vanishing of `C` on the anti-self-dual part.
+  -- The self-dual part of `ω`, on which `C` acts as on `ω`.
   have hplus : o.hodgeStar hkl ((2 : ℝ)⁻¹ • (ω + o.hodgeStar hkl ω)) =
       (2 : ℝ)⁻¹ • (ω + o.hodgeStar hkl ω) := by
     rw [map_smul, map_add, hstar, add_comm]
-  have hminus : cliffordRestriction o ρ (ω - o.hodgeStar hkl ω) = 0 :=
-    cliffordRestriction_eq_zero_of_hodgeStar_eq_neg o ρ hQ hkl (by rw [map_sub, hstar, neg_sub])
   have hC : cliffordRestriction o ρ ((2 : ℝ)⁻¹ • (ω + o.hodgeStar hkl ω)) =
       cliffordRestriction o ρ ω := by
-    rw [map_sub, sub_eq_zero] at hminus
-    rw [map_smul, map_add, ← hminus, ← two_smul ℝ, smul_smul, inv_mul_cancel₀ two_ne_zero,
-      one_smul]
+    rw [map_smul, map_add, cliffordRestriction_hodgeStar o ρ hQ hkl, ← two_smul ℝ, smul_smul,
+      inv_mul_cancel₀ two_ne_zero, one_smul]
   have hq := o.inner_hodgeStar_right_of_hodgeStar_eq_self even_two hkl
     (o.hodgeStar_coe_of_mem_eigenspace_one hkl (quadraticTwoForm o ρ hkl ψ)) ω
   have h := inner_quadraticTwoForm_eq_re_inner_of_hodgeStar_eq_self o ρ hQ hkl hplus ψ
   rw [hC, real_inner_smul_right, inner_add_right, hq] at h
-  linarith
-
-include hQ in
-variable {ρ} in
-/-- The pairing of a positive spinor with the Clifford action of a two-form on it is bounded:
-`|Re⟪ψ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖²`. The pairing is `4 ⟪q(ψ), μ⟫`
-(`inner_quadraticTwoForm_eq_re_inner`) and `‖q(ψ)‖ = ‖ψ‖² / (2 √2)`. -/
-theorem abs_re_inner_cliffordRestriction_apply_self_le
-    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (μ : ⋀[ℝ]^2 V) (ψ : positiveHalfSpinors o ρ) :
-    |(⟪ψ, cliffordRestriction o ρ μ ψ⟫_ℂ).re| ≤ √2 * ‖μ‖ * ‖ψ‖ ^ 2 := by
-  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
-  have hcs := abs_real_inner_le_norm (quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V) μ
-  rw [inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl μ ψ, Submodule.norm_coe,
-    norm_quadraticTwoForm o hQ hkl hρ h₂, abs_div, abs_of_pos (four_pos : (0 : ℝ) < 4)] at hcs
-  have key : 4 * (‖ψ‖ ^ 2 / (2 * √2) * ‖μ‖) = √2 * ‖μ‖ * ‖ψ‖ ^ 2 := by
-    field_simp
-    linear_combination -2 * ‖μ‖ * ‖ψ‖ ^ 2 * Real.mul_self_sqrt zero_le_two
   linarith
 
 /-! ### Polarization and derivative -/
@@ -354,13 +335,56 @@ include hQ in
 variable {ρ} in
 /-- The polarization of `q` satisfies `‖q'(ψ, φ)‖ ≤ ‖ψ‖ ‖φ‖ / √2`. -/
 theorem norm_quadraticTwoFormPolar_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ φ : positiveHalfSpinors o ρ) :
+    (ψ φ : positiveHalfSpinors o ρ) :
     ‖quadraticTwoFormPolar o ρ hkl ψ φ‖ ≤ ‖ψ‖ * ‖φ‖ / √2 := by
-  have : Nontrivial (positiveHalfSpinors o ρ) := Module.nontrivial_of_finrank_eq_succ h₂
-  have h := norm_cliffordRestriction_coe o hQ hρ hkl (quadraticTwoFormPolar o ρ hkl ψ φ)
-  rw [cliffordRestriction_quadraticTwoFormPolar o hQ hkl hρ h₂] at h
-  rw [le_div_iff₀ (by positivity), mul_comm, ← h]
-  exact norm_quadraticEndPolar_le ψ φ
+  set p := quadraticTwoFormPolar o ρ hkl ψ φ
+  by_cases hp : p = 0
+  · rw [hp, norm_zero]; positivity
+  have hpair : ⟪(p : ⋀[ℝ]^2 V), (p : ⋀[ℝ]^2 V)⟫ = (⟪φ, cliffordRestriction o ρ p ψ⟫_ℂ).re / 2 :=
+    inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ p ψ φ
+  rw [real_inner_self_eq_norm_sq, Submodule.norm_coe] at hpair
+  have hcs := re_inner_le_norm (𝕜 := ℂ) φ (cliffordRestriction o ρ p ψ)
+  rw [RCLike.re_to_complex, norm_cliffordRestriction_apply_of_hodgeStar_eq_self o hQ hρ hkl
+    (o.hodgeStar_coe_of_mem_eigenspace_one hkl p), Submodule.norm_coe] at hcs
+  have hb : 2 * ‖p‖ ≤ √2 * (‖ψ‖ * ‖φ‖) := by
+    apply (mul_le_mul_iff_right₀ (norm_pos_iff.2 hp)).1
+    nlinarith only [hpair, hcs]
+  rw [le_div_iff₀ (by positivity)]
+  calc ‖p‖ * √2 = (2 * ‖p‖) / √2 := by
+         rw [eq_div_iff (by positivity), mul_assoc, Real.mul_self_sqrt zero_le_two, mul_comm]
+    _ ≤ ‖ψ‖ * ‖φ‖ := (div_le_iff₀' (by positivity)).2 hb
+
+include hQ in
+variable {ρ} in
+/-- The Clifford action of a two-form pairs two positive spinors boundedly:
+`|Re⟪φ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖ ‖φ‖`. -/
+theorem abs_re_inner_cliffordRestriction_apply_le
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (μ : ⋀[ℝ]^2 V) (ψ φ : positiveHalfSpinors o ρ) :
+    |(⟪φ, cliffordRestriction o ρ μ ψ⟫_ℂ).re| ≤ √2 * ‖μ‖ * ‖ψ‖ * ‖φ‖ := by
+  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
+  set p := quadraticTwoFormPolar o ρ hkl ψ φ
+  have hcs := abs_real_inner_le_norm (p : ⋀[ℝ]^2 V) μ
+  rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, abs_div,
+    abs_of_pos (two_pos : (0 : ℝ) < 2), Submodule.norm_coe] at hcs
+  apply (div_le_div_iff_of_pos_right (by norm_num : 0 < (2 : ℝ))).1
+  calc |(⟪φ, cliffordRestriction o ρ μ ψ⟫_ℂ).re| / 2 ≤ ‖p‖ * ‖μ‖ := hcs
+    _ ≤ (‖ψ‖ * ‖φ‖ / √2) * ‖μ‖ :=
+      mul_le_mul_of_nonneg_right (norm_quadraticTwoFormPolar_le o hQ hkl hρ ψ φ) (norm_nonneg _)
+    _ = (√2 * ‖μ‖ * ‖ψ‖ * ‖φ‖) / 2 := by
+      field_simp
+      linear_combination -‖μ‖ * ‖ψ‖ * ‖φ‖ * Real.mul_self_sqrt zero_le_two
+
+include hQ in
+variable {ρ} in
+/-- The pairing of a positive spinor with the Clifford action of a two-form on it is bounded:
+`|Re⟪ψ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖²`. -/
+theorem abs_re_inner_cliffordRestriction_apply_self_le
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (μ : ⋀[ℝ]^2 V) (ψ : positiveHalfSpinors o ρ) :
+    |(⟪ψ, cliffordRestriction o ρ μ ψ⟫_ℂ).re| ≤ √2 * ‖μ‖ * ‖ψ‖ ^ 2 := by
+  rw [sq, ← mul_assoc]
+  exact abs_re_inner_cliffordRestriction_apply_le o hQ hρ μ ψ ψ
 
 /-- `q'(ψ - φ, ψ + φ) = 2 (q(ψ) - q(φ))`. -/
 theorem quadraticTwoFormPolar_sub_add (ψ φ : positiveHalfSpinors o ρ) :
@@ -374,16 +398,15 @@ include hQ in
 variable {ρ} in
 /-- `q` is locally Lipschitz: `‖q(ψ) - q(φ)‖ ≤ ‖ψ - φ‖ (‖ψ‖ + ‖φ‖) / (2 √2)`. -/
 theorem norm_quadraticTwoForm_sub_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ φ : positiveHalfSpinors o ρ) :
+    (ψ φ : positiveHalfSpinors o ρ) :
     ‖quadraticTwoForm o ρ hkl ψ - quadraticTwoForm o ρ hkl φ‖ ≤
       ‖ψ - φ‖ * (‖ψ‖ + ‖φ‖) / (2 * √2) := by
-  have : Nontrivial (positiveHalfSpinors o ρ) := Module.nontrivial_of_finrank_eq_succ h₂
-  have h := norm_cliffordRestriction_coe o hQ hρ hkl
-    (quadraticTwoForm o ρ hkl ψ - quadraticTwoForm o ρ hkl φ)
-  rw [Submodule.coe_sub, map_sub, cliffordRestriction_quadraticTwoForm o hQ hkl hρ h₂,
-    cliffordRestriction_quadraticTwoForm o hQ hkl hρ h₂] at h
-  rw [le_div_iff₀' (by positivity), mul_assoc, ← h]
-  exact (le_div_iff₀' two_pos).1 (norm_quadraticEnd_sub_le ψ φ)
+  have h := norm_quadraticTwoFormPolar_le o hQ hkl hρ (ψ - φ) (ψ + φ)
+  rw [quadraticTwoFormPolar_sub_add, norm_smul, Real.norm_of_nonneg (by norm_num)] at h
+  rw [le_div_iff₀ (by positivity)]
+  calc _ = (2 * ‖quadraticTwoForm o ρ hkl ψ - quadraticTwoForm o ρ hkl φ‖) * √2 := by ring
+    _ ≤ ‖ψ - φ‖ * ‖ψ + φ‖ := (le_div_iff₀ (by positivity)).1 h
+    _ ≤ _ := mul_le_mul_of_nonneg_left (norm_add_le ψ φ) (norm_nonneg _)
 
 private theorem quadraticTwoForm_eq_comp :
     quadraticTwoForm o ρ hkl =

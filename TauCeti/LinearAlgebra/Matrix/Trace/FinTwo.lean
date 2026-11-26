@@ -38,6 +38,12 @@ trace of a commutator differs from `2` by minus the determinant of the additive 
 `tr ⁅A, B⁆ - 2 = -det (A B - B A)`, since `⁅A, B⁆ - 1 = (A B - B A) A⁻¹ B⁻¹` and
 `det (M - 1) = 2 - tr M` for `M ∈ SL(2, R)`.
 
+For an invertible `2 × 2` matrix `g` over a commutative ring, `det g • g⁻¹` is the adjugate
+`tr g • 1 - g`, so multiplying by `h` and taking traces gives the rank-two trace identity
+`det g * tr (g⁻¹ h) - tr g * tr h + tr (g h) = 0` in `GL₂(A)`. Together with `tr 1 = 2`,
+`tr (g h) = tr (h g)` and multiplicativity of `det`, it is what the pair
+`(tr ∘ ρ, det ∘ ρ)` of a representation `ρ : Γ →* GL₂(A)` satisfies.
+
 These are the matrix inputs for reading off the order of an element of `SL(2, R)` or `PSL(2, R)`
 from its trace, and for recognizing a commutator as hyperbolic. The real elliptic case, where the
 trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic`.
@@ -47,6 +53,10 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 * `Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two`: the Cayley–Hamilton identity in size two.
 * `Matrix.pow_add_two_fin_two`, `Matrix.trace_pow_add_two_fin_two`: the Cayley–Hamilton recurrence
   for the powers of a `2 × 2` matrix and for their traces.
+* `Matrix.mul_add_mul_eq_fin_two`: the polarized Cayley–Hamilton identity, expressing the
+  anticommutator `A * B + B * A` through traces; hence
+  `Matrix.mul_eq_neg_mul_of_trace_eq_zero_fin_two`: traceless matrices with traceless product
+  anticommute.
 * `Matrix.two_lt_trace_pow`, `Matrix.two_lt_abs_trace_pow`: the nonzero powers of a
   determinant-one matrix of trace (respectively absolute trace) greater than `2` again have that
   property.
@@ -77,6 +87,8 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_fin_two`: the Fricke trace identity.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two`: the trace of a commutator
   through the determinant of the additive commutator.
+* `Matrix.GeneralLinearGroup.det_mul_trace_inv_mul_sub_trace_mul_trace_add_trace_mul_fin_two`:
+  `det g * tr (g⁻¹ h) - tr g * tr h + tr (g h) = 0` in `GL₂(A)`.
 
 ## References
 
@@ -84,6 +96,7 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   Press, 1992, §2.1 (the classification of elements of `PSL(2, ℝ)` by their trace).
 * William M. Goldman, *Trace coordinates on Fricke spaces of some simple hyperbolic surfaces*,
   in *Handbook of Teichmüller theory, Vol. II*, EMS, 2009, §2 (the trace of a commutator).
+* G. Chenevier, arXiv:0809.0415v2, Lemma 1.9, p. 11 (the rank-two trace identity).
 -/
 
 public section
@@ -121,6 +134,23 @@ theorem trace_pow_eq_two_of_trace_eq_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : 
   | zero => norm_num [trace_one]
   | one => simpa using htr
   | more n h₀ h₁ => rw [trace_pow_add_two_fin_two, h₀, h₁, htr, hdet]; ring
+
+/-- **Polarized Cayley–Hamilton in size two**: for `2 × 2` matrices `A` and `B`,
+`A * B + B * A = trace A • B + trace B • A + (trace (A * B) - trace A * trace B) • 1`. -/
+theorem mul_add_mul_eq_fin_two (A B : Matrix (Fin 2) (Fin 2) R) :
+    A * B + B * A =
+      A.trace • B + B.trace • A + ((A * B).trace - A.trace * B.trace) • (1 : Matrix _ _ R) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
+
+/-- Two traceless `2 × 2` matrices whose product is traceless anticommute. -/
+theorem mul_eq_neg_mul_of_trace_eq_zero_fin_two {A B : Matrix (Fin 2) (Fin 2) R}
+    (hA : A.trace = 0) (hB : B.trace = 0) (hAB : (A * B).trace = 0) : A * B = -(B * A) := by
+  have h := mul_add_mul_eq_fin_two A B
+  rw [hA, hB, hAB] at h
+  simp only [zero_smul, add_zero, mul_zero, sub_zero] at h
+  exact eq_neg_of_add_eq_zero_left h
 
 /-- Every power of a `2 × 2` matrix `A` is a linear combination `a • A - b • 1` of `A` and `1`, by
 the Cayley–Hamilton identity in size two. -/
@@ -361,5 +391,18 @@ theorem SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two {R : Type*} [
       Fin.sum_univ_two, of_apply,
     cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one]
   linear_combination 2 * (A 0 0 * A 1 1 - A 0 1 * A 1 0) * hB + 2 * hA
+
+/-- **The rank-two trace identity.** For `g h ∈ GL₂(A)`,
+`det g * tr (g⁻¹ h) - tr g * tr h + tr (g h) = 0`. -/
+theorem GeneralLinearGroup.det_mul_trace_inv_mul_sub_trace_mul_trace_add_trace_mul_fin_two
+    {A : Type*} [CommRing A] (g h : GL (Fin 2) A) :
+    (g : Matrix (Fin 2) (Fin 2) A).det * ((g⁻¹ : GL (Fin 2) A) * h : Matrix (Fin 2) (Fin 2) A).trace
+      - (g : Matrix (Fin 2) (Fin 2) A).trace * (h : Matrix (Fin 2) (Fin 2) A).trace
+      + ((g : Matrix (Fin 2) (Fin 2) A) * h).trace = 0 := by
+  have key := trace_adjugate_mul_fin_two (g : Matrix (Fin 2) (Fin 2) A) h
+  -- `adj g = det g • g⁻¹`.
+  rw [adjugate_eq_det_smul_of_mul_eq_one (Units.mul_inv g), smul_mul_assoc, trace_smul,
+    smul_eq_mul] at key
+  linear_combination key
 
 end Matrix

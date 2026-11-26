@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ParametricIntegral
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Analysis.Normed.Operator.Basic
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Compactness.Normed
 import TauCeti.Analysis.Calculus.FDeriv.Const
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Parametric integrals with a fixed compact support
@@ -23,6 +25,15 @@ On an open parameter domain, the integral is `C¹` when the first parameter deri
 jointly continuous, and `C²` when both the first and second are jointly continuous. The
 second derivative is also computed by integration. A general successor step reduces higher
 regularity to the regularity of the integral of the first parameter derivative.
+
+For a compactly supported `C¹` function `Φ` on a product `H × Y` of normed spaces, the derivative
+of `t ↦ ∫ y, Φ (t, y)` is the integral of the derivative of `t ↦ Φ (t, y)`
+(`hasFDerivAt_integral_of_contDiff_of_hasCompactSupport`,
+`fderiv_integral_apply_of_contDiff_of_hasCompactSupport`), and these slice derivatives are
+integrable (`integrable_fderiv_of_contDiff_of_hasCompactSupport`). For a real inner product
+space, the same holds for the pairing `t ↦ ∫ y, ⟪κ y, Φ (t, y)⟫` with a continuous field `κ`
+(`fderiv_integral_inner_apply_of_contDiff_of_hasCompactSupport`), whose integrand is integrable
+(`integrable_inner_fderiv_apply_of_contDiff_of_hasCompactSupport`).
 
 The lemmas `integrable_of_hasFDerivAt_of_compact_support` and
 `integrable_of_hasFDerivAt_of_hasFDerivAt_of_compact_support` give integrability of the first
@@ -234,6 +245,113 @@ theorem contDiffOn_two_integral_of_compact_support (hU : IsOpen U) (hK : IsCompa
   exact contDiffOn_succ_integral_of_compact_support (n := 1) hU hK hD hD₁ hderiv₁ hsupp
     (contDiffOn_one_integral_of_compact_support hU hK
       (fun t ht ↦ continuousOn_univ.1 (hD₁.uncurry_left t ht)) hD₂ hderiv₂ hsupp₁)
+
+section Product
+
+variable {Y : Type*} [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {Φ : H × Y → E}
+
+omit [NormedSpace ℝ E] in
+/-- The slices `t ↦ Φ (t, y)` vanish for `y` off the projection of the support of `Φ`. -/
+private theorem slice_eq_zero_of_notMem (t : H) {y : Y} (hy : y ∉ Prod.snd '' tsupport Φ) :
+    Φ (t, y) = 0 :=
+  image_eq_zero_of_notMem_tsupport fun h ↦ hy ⟨(t, y), h, rfl⟩
+
+variable [MeasurableSpace Y] [OpensMeasurableSpace Y] {ν : Measure Y} [IsFiniteMeasureOnCompacts ν]
+
+omit [NormedSpace ℝ E] in
+/-- The derivatives of the slices `t ↦ Φ (t, y)` of a compactly supported `C¹` function `Φ` on a
+product are integrable. -/
+theorem integrable_fderiv_of_contDiff_of_hasCompactSupport (hΦ : ContDiff 𝕜 1 Φ)
+    (hΦc : HasCompactSupport Φ) (t₀ : H) :
+    Integrable (fun y ↦ fderiv 𝕜 (fun t ↦ Φ (t, y)) t₀) ν := by
+  have hΦd := hΦ.differentiable one_ne_zero
+  rw [funext fun y ↦ (hΦd (t₀, y)).hasFDerivAt_slice_fst.fderiv]
+  exact integrable_of_hasFDerivAt_of_compact_support (D := fun t y ↦ Φ (t, y)) univ_mem
+    (hΦc.isCompact.image continuous_snd)
+    (((hΦ.continuous_fderiv one_ne_zero).comp (Continuous.prodMk_right t₀)).clm_comp
+      continuous_const)
+    (fun y ↦ (hΦd (t₀, y)).hasFDerivAt_slice_fst) fun t _ _ hy ↦ slice_eq_zero_of_notMem t hy
+
+/-- **Differentiation under the integral sign for a compactly supported `C¹` function of two
+variables.** If `Φ : H × Y → E` is `C¹` with compact support, the integral
+`t ↦ ∫ y, Φ (t, y) ∂ν` has, at every `t₀`, the derivative obtained by integrating the derivative
+of `t ↦ Φ (t, y)` at `t₀`. -/
+theorem hasFDerivAt_integral_of_contDiff_of_hasCompactSupport (hΦ : ContDiff 𝕜 1 Φ)
+    (hΦc : HasCompactSupport Φ) (t₀ : H) :
+    HasFDerivAt (fun t ↦ ∫ y, Φ (t, y) ∂ν) (∫ y, fderiv 𝕜 (fun t ↦ Φ (t, y)) t₀ ∂ν) t₀ := by
+  have hΦd := hΦ.differentiable one_ne_zero
+  rw [funext fun y ↦ (hΦd (t₀, y)).hasFDerivAt_slice_fst.fderiv]
+  exact hasFDerivAt_integral_of_compact_support (D := fun t y ↦ Φ (t, y))
+    (D₁ := fun t y ↦ (fderiv 𝕜 Φ (t, y)).comp (ContinuousLinearMap.inl 𝕜 H Y)) univ_mem
+    (hΦc.isCompact.image continuous_snd)
+    (fun t _ ↦ hΦ.continuous.comp (Continuous.prodMk_right t))
+    ((hΦ.continuous_fderiv one_ne_zero).clm_comp continuous_const).continuousOn
+    (fun t _ y ↦ (hΦd (t, y)).hasFDerivAt_slice_fst) fun t _ _ hy ↦ slice_eq_zero_of_notMem t hy
+
+/-- **Differentiation under the integral sign for a compactly supported `C¹` function of two
+variables, in a direction.** If `Φ : H × Y → E` is `C¹` with compact support, the derivative of
+`t ↦ ∫ y, Φ (t, y) ∂ν` at `t₀` along `v` is the integral of the derivatives of `t ↦ Φ (t, y)` at
+`t₀` along `v`. -/
+theorem fderiv_integral_apply_of_contDiff_of_hasCompactSupport (hΦ : ContDiff 𝕜 1 Φ)
+    (hΦc : HasCompactSupport Φ) (t₀ v : H) :
+    fderiv 𝕜 (fun t ↦ ∫ y, Φ (t, y) ∂ν) t₀ v = ∫ y, fderiv 𝕜 (fun t ↦ Φ (t, y)) t₀ v ∂ν := by
+  rw [(hasFDerivAt_integral_of_contDiff_of_hasCompactSupport hΦ hΦc t₀).fderiv,
+    ContinuousLinearMap.integral_apply
+      (integrable_fderiv_of_contDiff_of_hasCompactSupport hΦ hΦc t₀)]
+
+end Product
+
+section ProductInner
+
+open scoped RealInnerProductSpace
+
+variable {P Y F : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [NormedAddCommGroup Y]
+  [NormedSpace ℝ Y] [MeasurableSpace Y] [OpensMeasurableSpace Y] {ν : Measure Y}
+  [IsFiniteMeasureOnCompacts ν] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  {Φ : P × Y → F} {κ : Y → F}
+
+/-- The pairing of a continuous field `κ` with the derivatives of the slices `t ↦ Φ (t, y)` of a
+compactly supported `C¹` function `Φ` on a product is integrable. -/
+theorem integrable_inner_fderiv_apply_of_contDiff_of_hasCompactSupport (hΦ : ContDiff ℝ 1 Φ)
+    (hΦc : HasCompactSupport Φ) (hκ : Continuous κ) (t₀ v : P) :
+    Integrable (fun y ↦ ⟪κ y, fderiv ℝ (fun t ↦ Φ (t, y)) t₀ v⟫) ν := by
+  have hcont : Continuous fun y ↦ fderiv ℝ (fun t ↦ Φ (t, y)) t₀ v := by
+    simp only [fun y ↦ ((hΦ.differentiable one_ne_zero) (t₀, y)).hasFDerivAt_slice_fst.fderiv]
+    exact ((hΦ.continuous_fderiv one_ne_zero).comp (Continuous.prodMk_right t₀)).clm_apply
+      continuous_const
+  refine (hκ.inner hcont).integrable_of_hasCompactSupport
+    (HasCompactSupport.intro (hΦc.isCompact.image continuous_snd) fun y hy ↦ ?_)
+  rw [funext fun t ↦ slice_eq_zero_of_notMem t hy]
+  simp
+
+/-- **Differentiation under the integral sign of a pairing.** For a continuous field `κ` and a
+compactly supported `C¹` function `Φ` on a product, the derivative of
+`t ↦ ∫ y, ⟪κ y, Φ (t, y)⟫ ∂ν` at `t₀` along `v` is the integral of the pairings of `κ` with the
+derivatives of the slices `t ↦ Φ (t, y)` at `t₀` along `v`. -/
+theorem fderiv_integral_inner_apply_of_contDiff_of_hasCompactSupport (hΦ : ContDiff ℝ 1 Φ)
+    (hΦc : HasCompactSupport Φ) (hκ : Continuous κ) (t₀ v : P) :
+    fderiv ℝ (fun t ↦ ∫ y, ⟪κ y, Φ (t, y)⟫ ∂ν) t₀ v =
+      ∫ y, ⟪κ y, fderiv ℝ (fun t ↦ Φ (t, y)) t₀ v⟫ ∂ν := by
+  have hΦd := hΦ.differentiable one_ne_zero
+  set D₁ : P → Y → P →L[ℝ] ℝ := fun t y ↦
+    (innerSL ℝ (κ y)).comp ((fderiv ℝ Φ (t, y)).comp (ContinuousLinearMap.inl ℝ P Y)) with hD₁def
+  have hD₁ : Continuous (uncurry D₁) :=
+    ((innerSL ℝ).continuous.comp (hκ.comp continuous_snd)).clm_comp
+      ((hΦ.continuous_fderiv one_ne_zero).clm_comp continuous_const)
+  have hderiv (t : P) (y : Y) : HasFDerivAt (fun t ↦ ⟪κ y, Φ (t, y)⟫) (D₁ t y) t :=
+    (innerSL ℝ (κ y)).hasFDerivAt.comp t (hΦd (t, y)).hasFDerivAt_slice_fst
+  have hK := hΦc.isCompact.image continuous_snd
+  have hsupp : ∀ t ∈ (univ : Set P), ∀ y ∉ Prod.snd '' tsupport Φ, ⟪κ y, Φ (t, y)⟫ = 0 :=
+    fun t _ y hy ↦ by rw [slice_eq_zero_of_notMem t hy, inner_zero_right]
+  rw [(hasFDerivAt_integral_of_compact_support (μ := ν) univ_mem hK
+      (fun t _ ↦ hκ.inner (hΦ.continuous.comp (Continuous.prodMk_right t)))
+      hD₁.continuousOn (fun t _ y ↦ hderiv t y) hsupp).fderiv,
+    ContinuousLinearMap.integral_apply (integrable_of_hasFDerivAt_of_compact_support
+      (D₁ := D₁ t₀) univ_mem hK (hD₁.comp (Continuous.prodMk_right t₀)) (hderiv t₀) hsupp)]
+  refine integral_congr_ae (.of_forall fun y ↦ ?_)
+  simp [hD₁def, (hΦd (t₀, y)).hasFDerivAt_slice_fst.fderiv]
+
+end ProductInner
 
 section Scalar
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 
 /-!
 # Ordered-pair contractions on the exterior square
@@ -18,6 +19,14 @@ vanish. Consequently their rank-one operators sum to twice the identity on `Λ²
 This gives a trace formula using all ordered pairs instead of the increasing pairs indexing
 Mathlib's `OrthonormalBasis.exteriorPower`. It applies to arbitrary endomorphisms, without a
 self-adjointness assumption, and fixes the factor of two in curvature contractions.
+
+Evaluated on a two-vector, the same identity gives its coordinates over all ordered pairs,
+`∑ₚ ∑_q ⟪x, bₚ ∧ b_q⟫ • (bₚ ∧ b_q) = 2 • x` (`OrthonormalBasis.sum_sum_inner_smul_ιMulti_two`),
+and the inner product `∑ₚ ∑_q ⟪x, bₚ ∧ b_q⟫ ⟪y, bₚ ∧ b_q⟫ = 2 ⟪x, y⟫`
+(`OrthonormalBasis.sum_sum_inner_ιMulti_two_mul_inner_ιMulti_two`). Through the skew endomorphism
+`A_X = TauCeti.twoVectorContraction X`, the latter says that the inner product of `⋀² E` is the
+trace form `-½ tr (A_X A_Y)` of the orthogonal Lie algebra
+(`TauCeti.trace_twoVectorContraction_mul_twoVectorContraction`).
 -/
 
 public section
@@ -75,4 +84,43 @@ theorem sum_inner_ιMulti_two_eq_two_mul_trace (b : OrthonormalBasis ι ℝ E)
     LinearMap.comp_smul, LinearMap.comp_id, map_smul, smul_eq_mul,
     real_inner_comm] using h
 
+/-- **Coordinates of a two-vector over all ordered pairs.** For an orthonormal basis `b` of `E`,
+`∑ₚ ∑_q ⟪x, bₚ ∧ b_q⟫ • (bₚ ∧ b_q) = 2 • x`: each unordered pair `{p, q}` contributes twice. -/
+theorem sum_sum_inner_smul_ιMulti_two (b : OrthonormalBasis ι ℝ E) (x : ⋀[ℝ]^2 E) :
+    ∑ p, ∑ q, ⟪x, ιMulti ℝ 2 ![b p, b q]⟫ • ιMulti ℝ 2 ![b p, b q] = (2 : ℝ) • x := by
+  simpa [LinearMap.sum_apply, InnerProductSpace.rankOne_apply, real_inner_comm] using
+    LinearMap.congr_fun b.sum_rankOne_ιMulti_two x
+
+/-- **The inner product of two-vectors in coordinates over all ordered pairs.** For an orthonormal
+basis `b` of `E`, `∑ₚ ∑_q ⟪x, bₚ ∧ b_q⟫ ⟪y, bₚ ∧ b_q⟫ = 2 ⟪x, y⟫`. -/
+theorem sum_sum_inner_ιMulti_two_mul_inner_ιMulti_two (b : OrthonormalBasis ι ℝ E)
+    (x y : ⋀[ℝ]^2 E) :
+    ∑ p, ∑ q, ⟪x, ιMulti ℝ 2 ![b p, b q]⟫ * ⟪y, ιMulti ℝ 2 ![b p, b q]⟫ = 2 * ⟪x, y⟫ := by
+  have h := congrArg (⟪·, y⟫) (b.sum_sum_inner_smul_ιMulti_two x)
+  simp only [sum_inner, real_inner_smul_left] at h
+  rw [← h]
+  simp only [real_inner_comm _ y]
+
 end OrthonormalBasis
+
+namespace TauCeti
+
+open exteriorPower
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **The inner product of bivectors is the trace form of `so(V)`**:
+`tr (A_X A_Y) = -2 ⟪X, Y⟫`, that is `⟪X, Y⟫ = -½ tr (A_X A_Y)`. -/
+theorem trace_twoVectorContraction_mul_twoVectorContraction (X Y : ⋀[ℝ]^2 V) :
+    LinearMap.trace ℝ V (twoVectorContraction X * twoVectorContraction Y) = -2 * ⟪X, Y⟫ := by
+  let b := stdOrthonormalBasis ℝ V
+  have h := b.sum_sum_inner_ιMulti_two_mul_inner_ιMulti_two X Y
+  simp only [← inner_twoVectorContraction_apply, b.real_sum_inner_mul_inner] at h
+  have hp (p) : ⟪b p, (twoVectorContraction X * twoVectorContraction Y) (b p)⟫ =
+      -⟪twoVectorContraction X (b p), twoVectorContraction Y (b p)⟫ := by
+    rw [mul_apply_eq_comp, inner_twoVectorContraction_apply_left X (b p), neg_neg]
+  rw [LinearMap.trace_eq_sum_inner _ b]
+  simp only [hp, Finset.sum_neg_distrib, h]
+  ring
+
+end TauCeti

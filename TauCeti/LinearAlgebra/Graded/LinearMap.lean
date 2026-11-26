@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GradedMulAction
+public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.Algebra.Module.Submodule.LinearMap
+public import Mathlib.Algebra.Module.Submodule.Range
+public import Mathlib.LinearAlgebra.Span.Defs
 
 /-!
 # Homogeneous linear maps
@@ -39,6 +43,10 @@ The multilinear counterpart, and the degree calculus for substitution, are in
 * `LinearMap.IsHomogeneous.comp`: degrees add under composition of linear maps.
 * `LinearMap.IsHomogeneous.pow`: the `k`-th power of an endomorphism of degree `q` has degree
   `k • q`.
+* `LinearMap.isHomogeneous_span_iff`: a linear map out of a module whose pieces are spanned by
+  given sets is homogeneous exactly when it moves the spanning vectors to the right degree.
+* `LinearMap.IsHomogeneous.iSup_range_inf_eq`: the range of a homogeneous map out of a module
+  spanned by its pieces is spanned by its intersections with the target pieces.
 * `LinearMap.IsHomogeneous.restrict_zero`, `LinearMap.IsHomogeneous.restrict_id`, and
   `LinearMap.IsHomogeneous.restrict_comp`: functoriality of `IsHomogeneous.restrict`.
 
@@ -58,6 +66,15 @@ section Semiring
 variable {R : Type uR} {ι : Type uι} {M : Type uM} {N : Type uN} {σM : Type*} {σN : Type*}
   [Semiring R] [AddCommMonoid M] [AddCommMonoid N]
   [Module R M] [Module R N] [SetLike σM M] [SetLike σN N]
+
+/-- If a linear map detects membership in each piece, a graded scalar action on the
+target also respects the source pieces. -/
+theorem gradedSMul_of_mem_iff {κ S : Type*} [SetLike S R] [VAdd κ ι]
+    (f : M →ₗ[R] N) (𝒜 : κ → S) (G : ι → σM) (H : ι → σN) [SetLike.GradedSMul 𝒜 H]
+    (hmem : ∀ {q x}, x ∈ G q ↔ f x ∈ H q) : SetLike.GradedSMul 𝒜 G where
+  smul_mem {p q} {a x} ha hx := by
+    rw [hmem, map_smul]
+    exact SetLike.GradedSMul.smul_mem ha (hmem.mp hx)
 
 section Add
 
@@ -80,6 +97,12 @@ theorem IsHomogeneous.map_mem {f : M →ₗ[R] N} {𝒜 : ι → σM}
     f x ∈ ℬ (p + q) :=
   hf hx
 
+/-- A homogeneous linear map kills a homogeneous element whose target piece is trivial. -/
+theorem IsHomogeneous.apply_eq_zero_of_eq_bot {f : M →ₗ[R] N} {𝒜 : ι → σM}
+    {ℬ : ι → Submodule R N} {q p : ι} (hf : IsHomogeneous f 𝒜 ℬ q) (hbot : ℬ (p + q) = ⊥)
+    {x : M} (hx : x ∈ 𝒜 p) : f x = 0 :=
+  (Submodule.mem_bot R).mp (hbot ▸ hf.map_mem hx)
+
 /-- The zero linear map is homogeneous of every degree. -/
 @[simp]
 theorem isHomogeneous_zero [ZeroMemClass σN N] (𝒜 : ι → σM) (ℬ : ι → σN) (q : ι) :
@@ -94,6 +117,17 @@ theorem IsHomogeneous.add [AddMemClass σN N] {f g : M →ₗ[R] N} {𝒜 : ι �
     IsHomogeneous (f + g) 𝒜 ℬ q := by
   intro p x hx
   simpa using add_mem (hf hx) (hg hx)
+
+/-- The range of a homogeneous linear map out of a module spanned by its graded pieces is spanned
+by its intersections with the target pieces. -/
+theorem IsHomogeneous.iSup_range_inf_eq {f : M →ₗ[R] N} {ℳ : ι → Submodule R M}
+    {𝒩 : ι → Submodule R N} {q : ι} (hf : IsHomogeneous f ℳ 𝒩 q) (hℳ : ⨆ p, ℳ p = ⊤) :
+    ⨆ p, range f ⊓ 𝒩 p = range f := by
+  refine le_antisymm (iSup_le fun _ ↦ inf_le_left) ?_
+  calc range f = (⨆ p, ℳ p).map f := by rw [hℳ, range_eq_map]
+    _ = ⨆ p, (ℳ p).map f := Submodule.map_iSup f ℳ
+    _ ≤ ⨆ p, range f ⊓ 𝒩 p := iSup_le fun p ↦ le_iSup_of_le (p + q) <|
+        le_inf map_le_range (Submodule.map_le_iff_le_comap.2 fun _ hx ↦ hf hx)
 
 end Add
 
@@ -168,6 +202,23 @@ theorem IsHomogeneous.restrict_comp {P : Type uP} [AddCommMonoid P] [Module R P]
 end AddZeroClass
 
 end Semiring
+
+section Span
+
+variable {R : Type uR} {S : Type*} {ι : Type uι} {M : Type uM} {N : Type uN}
+  [Semiring R] [Semiring S] [Add ι] [AddCommMonoid M] [AddCommMonoid N]
+  [Module R M] [Module R N] [Module S M] [Module S N] [CompatibleSMul M N R S]
+
+/-- A linear map out of a module whose degree-`p` piece is spanned by a set `s p` has degree `q`
+exactly when it maps each vector of each `s p` into the degree-`p + q` piece of the target. The
+map may be linear over a larger semiring `S` than the semiring `R` of the pieces. -/
+theorem isHomogeneous_span_iff {f : M →ₗ[S] N} {s : ι → Set M} {ℬ : ι → Submodule R N}
+    {q : ι} :
+    IsHomogeneous f (fun p ↦ Submodule.span R (s p)) ℬ q ↔ ∀ p, ∀ x ∈ s p, f x ∈ ℬ (p + q) :=
+  ⟨fun hf _ _ hx ↦ hf (Submodule.subset_span hx), fun h p _ hx ↦
+    (Submodule.span_le (p := (ℬ (p + q)).comap (f.restrictScalars R))).2 (h p) hx⟩
+
+end Span
 
 section Neg
 

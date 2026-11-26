@@ -126,7 +126,7 @@ theorem hessian_comp_coe_sphere [CompleteSpace E] {F : E → ℝ} {p : sphere (0
     hgrad.hasFDerivAt.sub (hc.hasFDerivAt.smul (hasFDerivAt_id (p : E)))
   have hι : MDifferentiableAt (𝓡 n) 𝓘(ℝ, E) ι p :=
     (contMDiff_coe_sphere (m := 1) p).mdifferentiableAt one_ne_zero
-  rw [Manifold.hessian_def, ← hVp,
+  rw [ModelWithCorners.hessian_eq_inner_leviCivitaConnection_mgradient, ← hVp,
     (isLeviCivitaConnection_leviCivitaConnection (I := 𝓡 n)).inner_apply_eq_inner_mvfderiv
       (contMDiff_coe_sphere (m := 2) p) inner_tangentSpace_sphere hV hY,
     hVp, hev.mvfderiv_eq, mvfderiv_comp_apply_of_differentiableAt hG.differentiableAt hι, hG.fderiv]

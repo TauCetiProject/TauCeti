@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.OpenSet
+public import TauCeti.Analysis.Holder.OpenSet.Basic
 public import Mathlib.Topology.Algebra.Module.LocallyConvex
 public import Mathlib.Topology.Metrizable.Uniformity
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
