@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
+import Mathlib.Analysis.Complex.Angle
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
@@ -84,6 +85,8 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.exp_mem_slitPlane_of_abs_im_lt`: `exp x` lies in the slit plane when `|im x| < π`.
 * `Complex.abs_arg_le_pi_div_two_mul_norm_sub_one`: on the unit circle, `|arg z| ≤ (π / 2) ‖z - 1‖`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
+* `TauCeti.continuousAt_abs_arg`: `|arg z|`, the unoriented angle with `1`, is continuous away
+  from the origin, across the negative real axis too.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
 * `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
@@ -501,6 +504,16 @@ theorem ContDiff.contDiffAt_comp_arg {E : Type*} [NormedAddCommGroup E] [NormedS
 namespace TauCeti
 
 open Complex Metric Set
+
+/-- The absolute value of the argument, the unoriented angle with `1`, is continuous away from
+`0`, across the negative real axis too, where the argument itself jumps. -/
+theorem continuousAt_abs_arg {w : ℂ} (hw : w ≠ 0) : ContinuousAt (fun z : ℂ => |z.arg|) w := by
+  have hangle : ContinuousAt (fun z : ℂ => InnerProductGeometry.angle z 1) w :=
+    (InnerProductGeometry.continuousAt_angle (x := (w, (1 : ℂ))) hw one_ne_zero).comp
+      (f := fun z : ℂ => (z, (1 : ℂ))) (by fun_prop)
+  refine hangle.congr ?_
+  filter_upwards [isOpen_ne.mem_nhds hw] with z hz
+  exact angle_one_right hz
 
 /-- In polar coordinates about `v`, rotated and scaled by `b`, the open sector
 `{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by the punctured ball of radius `δ`, is
