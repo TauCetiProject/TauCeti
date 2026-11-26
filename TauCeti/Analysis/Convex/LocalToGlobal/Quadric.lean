@@ -10,6 +10,7 @@ import Mathlib.Analysis.Convex.PathConnected
 import TauCeti.Analysis.Convex.PathConnected
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Normed.MulAction
 
 /-!
 # Convexity charts of an indefinite quadratic form
@@ -64,12 +65,6 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddComm
 
 /-! ### The fibres -/
 
-/-- Scaling by `t ∈ [0, 1]` does not increase the squared norm. -/
-private theorem norm_smul_sq_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (x : E)
-    {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : ‖t • x‖ ^ 2 ≤ ‖x‖ ^ 2 := by
-  rw [norm_smul, Real.norm_of_nonneg ht.1, mul_pow]
-  exact mul_le_of_le_one_left (sq_nonneg _) (pow_le_one₀ ht.1 ht.2)
-
 /-- The fibres of `‖b‖² - ‖a‖²` of positive value in the ball `‖a‖² + ‖b‖² < r` are preconnected
 when `W` does not have dimension one. -/
 private theorem isPreconnected_setOf_norm_sq_sub_norm_sq_eq_of_pos (hW : Module.rank ℝ W ≠ 1)
@@ -101,7 +96,8 @@ private theorem isPreconnected_setOf_norm_sq_sub_norm_sq_eq_of_pos (hW : Module.
   -- `D` is closed under scaling by `t ∈ [0, 1]`.
   have hD : IsPreconnected D := isPreconnected_of_forall_smul_mem fun a ha t ht ↦ by
     simp only [D, mem_ofPred_eq] at ha ⊢
-    linarith [norm_smul_sq_le a ht]
+    have ht' : ‖t‖ ≤ 1 := (Real.norm_of_nonneg ht.1).trans_le ht.2
+    linarith [pow_le_pow_left₀ (norm_nonneg _) (norm_smul_le_of_norm_le_one ht' a) 2]
   -- The unit sphere of `W` is preconnected, being empty in dimension zero.
   have hS : IsPreconnected (sphere (0 : W) 1) := by
     rcases hW.lt_or_gt with h | h
@@ -131,7 +127,9 @@ theorem isPreconnected_setOf_norm_sq_sub_norm_sq_eq (hV : Module.rank ℝ V ≠ 
   · -- The fibre of `0` is closed under scaling by `t ∈ [0, 1]`.
     refine isPreconnected_of_forall_smul_mem fun y hy t ht ↦ ?_
     simp only [mem_ofPred_eq, Prod.smul_fst, Prod.smul_snd] at hy ⊢
-    refine ⟨by linarith [norm_smul_sq_le y.1 ht, norm_smul_sq_le y.2 ht], ?_⟩
+    have ht' : ‖t‖ ≤ 1 := (Real.norm_of_nonneg ht.1).trans_le ht.2
+    refine ⟨by linarith [pow_le_pow_left₀ (norm_nonneg _) (norm_smul_le_of_norm_le_one ht' y.1) 2,
+      pow_le_pow_left₀ (norm_nonneg _) (norm_smul_le_of_norm_le_one ht' y.2) 2], ?_⟩
     rw [norm_smul, norm_smul, mul_pow, mul_pow, ← mul_sub, hy.2, mul_zero]
   · exact isPreconnected_setOf_norm_sq_sub_norm_sq_eq_of_pos hW r hv
 
@@ -250,7 +248,9 @@ theorem isConvexChart_prod_setOf_norm_sq_add_norm_sq_lt {P : Type*} [Topological
   -- The ball is closed under scaling by `t ∈ [0, 1]`.
   have hR : IsPreconnected R := isPreconnected_of_forall_smul_mem fun y hy t ht ↦ by
     simp only [R, mem_ofPred_eq, Prod.smul_fst, Prod.smul_snd] at hy ⊢
-    linarith [norm_smul_sq_le y.1 ht, norm_smul_sq_le y.2 ht]
+    have ht' : ‖t‖ ≤ 1 := (Real.norm_of_nonneg ht.1).trans_le ht.2
+    linarith [pow_le_pow_left₀ (norm_nonneg _) (norm_smul_le_of_norm_le_one ht' y.1) 2,
+      pow_le_pow_left₀ (norm_nonneg _) (norm_smul_le_of_norm_le_one ht' y.2) 2]
   refine ⟨hBo.prod (isOpen_lt (by fun_prop) continuous_const), ?_, fun U _ hUo z hz ↦ ?_,
     fun v ↦ ?_⟩
   · -- The image of the preconnected chart is an interval.
