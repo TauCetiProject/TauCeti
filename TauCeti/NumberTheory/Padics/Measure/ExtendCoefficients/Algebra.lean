@@ -11,11 +11,12 @@ public import TauCeti.NumberTheory.Padics.Measure.CharacterIntegral
 /-!
 # Coefficient extension and convolution
 
-Extension of coefficients from the closed unit ball respects the right-handed convolution of
+Extension of coefficients along a uniformly bounded map respects the right-handed convolution of
 measures on a profinite topological monoid. The ring homomorphism
 `AbstractMeasure.extendCoefficientsRingHom` makes the extension available to ring-theoretic
 constructions, without requiring the monoid to be commutative or the
-source coefficient ring to be normed or complete. Continuity of the coefficient homomorphism is
+source coefficient ring to be normed or complete. The target can be any complete ultrametric
+normed commutative ring. Continuity of the coefficient homomorphism is
 needed only for the comparison formulas on arbitrary source-valued continuous test functions.
 
 Composing this extension with character integration gives
@@ -43,12 +44,12 @@ open AbstractMeasure ContinuousMap
 
 variable {G O K : Type*} [TopologicalSpace G] [CompactSpace G] [T2Space G]
   [TotallyDisconnectedSpace G] [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
-  [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
+  [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K] {B : ℝ}
   [Monoid G] [ContinuousMul G]
 
 namespace AbstractMeasure
 
-variable (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (hjc : Continuous j)
+variable (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) (hjc : Continuous j)
 
 /-- Right convolution of an extended measure with a coefficient-extended test function is the
 coefficient extension of the original right convolution. -/
@@ -95,7 +96,7 @@ omit [ContinuousMul G] in
 theorem extendCoefficients_one : extendCoefficients j hj (1 : D(G, O)) = 1 := by
   simp [one_def]
 
-/-- Extension from unit-ball coefficients as a unital ring homomorphism of convolution rings. -/
+/-- Bounded coefficient extension as a unital ring homomorphism of convolution rings. -/
 def extendCoefficientsRingHom : D(G, O) →+* D(G, K) :=
   { extendCoefficients j hj with
     map_one' := extendCoefficients_one j hj
@@ -111,9 +112,9 @@ end AbstractMeasure
 
 namespace ContinuousMonoidHom
 
-variable (χ : G →ₜ* K) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (hjc : Continuous j)
+variable (χ : G →ₜ* K) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) (hjc : Continuous j)
 
-/-- Integration of a scalar-valued continuous character after extending integral coefficients.
+/-- Integration of a scalar-valued continuous character after bounded coefficient extension.
 This is a ring map on measures, not on their total quotient ring. -/
 def extendedCharacterRingHom : D(G, O) →+* K :=
   χ.characterIntegralAlgHom.toRingHom.comp (AbstractMeasure.extendCoefficientsRingHom j hj)
@@ -147,7 +148,7 @@ namespace TauCeti
 
 open ContinuousMonoidHom
 
-variable (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1)
+variable (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B)
 
 /-! These computations check the multiplicity and the order of the convolution factors. -/
 

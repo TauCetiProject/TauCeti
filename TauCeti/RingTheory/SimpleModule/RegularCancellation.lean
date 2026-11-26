@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import Mathlib.RingTheory.FiniteLength
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.LinearAlgebra.Span.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.RingTheory.KrullSchmidt.Cancellation
 
@@ -56,9 +57,7 @@ theorem nonempty_quotient_span_singleton_linearEquiv_of_injective (v : Fin 2 →
   let V := Fin 2 →₀ S
   let N : Submodule S V := Submodule.span S {v}
   obtain ⟨Q, hNQ⟩ := exists_isCompl N
-  let eN : S ≃ₗ[S] N :=
-    (LinearEquiv.ofInjective (LinearMap.toSpanSingleton S V v) hinj).trans
-      (LinearEquiv.ofEq _ _ (LinearMap.range_toSpanSingleton v))
+  let eN : S ≃ₗ[S] N := LinearEquiv.toSpanSingletonOfInjective v hinj
   let eV : V ≃ₗ[S] S × S :=
     (Finsupp.linearEquivFunOnFinite S S (Fin 2)).trans (LinearEquiv.finTwoArrow S S)
   let eProd :=

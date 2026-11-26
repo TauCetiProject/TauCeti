@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Analysis.Contour.Winding.RealIntegral.Basic
@@ -18,6 +17,7 @@ import TauCeti.Analysis.Contour.Winding.Number.Reparam
 import TauCeti.Topology.Circle.Normalize
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 
 /-!
 # Winding numbers as degrees of direction loops
@@ -116,9 +116,8 @@ theorem integral_realWindingIntegrand_eq_two_pi_mul_degree {γ : ℝ → ℂ} {w
   have hc : ContinuousOn γ (Icc 0 1) := by
     simpa only [uIcc_of_le zero_le_one] using hγ.continuousOn
   have hn : ∀ t ∈ uIcc (0 : ℝ) 1, γ t ≠ w := by simpa only [uIcc_of_le zero_le_one] using havoid
-  obtain ⟨P, hP, hd⟩ := hγ.exists_countable_differentiableAt
-  have hreal := windingNumber_eq_real_integral_of_closed hclosed hP hγ.continuousOn hd hn
-    (intervalIntegrable_inv_sub_mul_deriv hγ.continuousOn hn hγ.intervalIntegrable_deriv)
+  have hreal := hγ.absolutelyContinuousOnInterval.windingNumber_eq_real_integral hclosed
+    fun ⟨t, ht, h⟩ ↦ hn t ht h
   let Γ : Path (γ 0) (γ 0) :=
     { toFun t := γ t
       continuous_toFun := hc.domRestrict

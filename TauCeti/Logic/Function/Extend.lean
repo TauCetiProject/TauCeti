@@ -9,6 +9,7 @@ public import Mathlib.Data.Int.Init
 public import Mathlib.Data.Set.Inclusion
 public import Mathlib.Logic.Equiv.Set
 public import Mathlib.Logic.Function.Basic
+public import Mathlib.Logic.Function.DependsOn
 public import Mathlib.Order.SetNotation
 public import Mathlib.Tactic.Coe
 import Mathlib.Data.Set.UnionLift
@@ -47,6 +48,9 @@ along `f` is surjective.
   restriction to `s ⊆ t` agree at every point of `s` and every point outside `t`.
 * `Function.exists_eqOn_of_agree`: a family of functions agreeing on pairwise overlaps glues and
   extends to an ambient function equal to a prescribed fallback outside the union.
+* `Function.FactorsThrough.apply_extend_eq_apply`: gluing. Functions given on blocks of
+  coordinates that agree where the blocks meet glue to one function, at which every functional
+  of one block takes its value at that block's function.
 * `Function.Injective.surjective_pi_comp_right`: restriction of dependent functions along an
   injection is surjective.
 -/
@@ -173,6 +177,18 @@ theorem exists_eqOn_of_agree {ι α β : Type*} {U : ι → Set α} {f : ι → 
     rw [Subtype.val_injective.extend_apply g_sub (fun _ ↦ d) ⟨z, hzU⟩]
     exact Set.iUnionLift_of_mem ⟨z, hzU⟩ hz
   · exact extend_apply' _ _ _ fun ⟨y, hy⟩ ↦ hz (hy ▸ y.property)
+
+/-- Gluing along `e : κ → α` the functions `V i` given on the blocks `e '' (p ⁻¹' {i})`, which
+agree wherever two blocks meet (`fun k => V (p k) (e k)` factors through `e`; for instance, the
+blocks are pairwise disjoint when `p` factors through `e`). The function that takes the value
+`V (p k) (e k)` at each `e k`, and the value of a fallback `f` off the range of `e`, has the same
+image as `V i` under every `F` that depends only on the values on block `i`. -/
+theorem FactorsThrough.apply_extend_eq_apply {ι κ α β γ : Type*} {p : κ → ι} {e : κ → α}
+    {V : ι → α → β} (hV : (fun k => V (p k) (e k)).FactorsThrough e) (f : α → β)
+    {F : (α → β) → γ} {i : ι} (hF : DependsOn F (e '' (p ⁻¹' {i}))) :
+    F (extend e (fun k => V (p k) (e k)) f) = F (V i) :=
+  hF <| Set.forall_mem_image.2 fun k hk => by
+    rw [hV.extend_apply f k, Set.mem_singleton_iff.1 hk]
 
 /-- Restriction `g ↦ fun i ↦ g (f i)` of dependent functions along an injective map `f` is
 surjective: extend by a fallback `g₀` off the range of `f`. This is the dependent version of
