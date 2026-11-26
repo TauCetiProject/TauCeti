@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 public import TauCeti.LinearAlgebra.LinearPMap.Restrict
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Intertwining
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Compact
+import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Intertwining
 
 /-!
@@ -235,6 +236,6 @@ theorem IsReducing.hasCompactResolvent_restrict (hR : A.IsReducing U)
   refine HasCompactResolvent.of_isCompactOperator_resolvent hT.mem_resolventSet ?_
   rw [resolvent_eq_of_isResolventAt hT]
   exact hc.restrict (fun _ ↦ hR.apply_mem_of_isResolventAt (isResolventAt_resolvent hz))
-    (U.orthogonal_orthogonal ▸ Uᗮ.isClosed_orthogonal)
+    U.isClosed_of_hasOrthogonalProjection
 
 end LinearPMap

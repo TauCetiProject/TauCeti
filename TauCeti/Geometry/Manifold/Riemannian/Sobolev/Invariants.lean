@@ -33,9 +33,8 @@ resolvent (`TauCeti.Manifold.SobolevH1.hasCompactResolvent_negLaplacian_restrict
 
 For a subgroup `H` acting freely, the invariant subspace `L²(M)^H` is the image of `L²(M / H)`
 under the normalized pullback along the quotient map (compare
-`IsQuotientCoveringMap.mem_range_normalizedPullbackLp_iff`), so this is how the Laplacian of the
-quotient appears inside that of `M`: the spectral theory of `Δ⁺` splits along
-`L²(M) = L²(M)^H ⊕ (L²(M)^H)ᗮ`.
+`IsQuotientCoveringMap.mem_range_normalizedPullbackLp_iff`). Since `L²(M)^H` reduces `Δ⁺`, the
+spectral theory of `Δ⁺` splits along `L²(M) = L²(M)^H ⊕ (L²(M)^H)ᗮ`.
 
 ## Main results
 
