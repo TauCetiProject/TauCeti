@@ -93,6 +93,23 @@ theorem mulAdjoint_apply (d : ℕ) (f F : HallAlgebra k) (a : SimilarityClass k)
     mulAdjoint d f F a = rankInner d f (blockAverage F a) :=
   (rfl)
 
+/-- The function `∂_{d,f} 0` is `0`. -/
+@[simp]
+theorem mulAdjoint_zero (d : ℕ) (f : HallAlgebra k) : mulAdjoint d f 0 = 0 :=
+  ext fun _ ↦ by simp [rankInner_def]
+
+/-- The function `∂_{d,f} A` is additive in `A`. -/
+@[simp]
+theorem mulAdjoint_add (d : ℕ) (f F H : HallAlgebra k) :
+    mulAdjoint d f (F + H) = mulAdjoint d f F + mulAdjoint d f H :=
+  ext fun _ ↦ by simp [rankInner_def, mul_add, Finset.expect_add_distrib]
+
+/-- The function `∂_{d,f} A` commutes with complex scalars in `A`. -/
+@[simp]
+theorem mulAdjoint_smul (d : ℕ) (f : HallAlgebra k) (c : ℂ) (F : HallAlgebra k) :
+    mulAdjoint d f (c • F) = c • mulAdjoint d f F :=
+  ext fun _ ↦ by simp [rankInner_def, Finset.mul_expect, mul_left_comm]
+
 omit [Fintype k] [DecidableEq k] in
 /-- The automorphisms of a finite-dimensional space over a finite field form a finite group. -/
 private local instance finite_units_end [Finite k] {V : Type*} [AddCommGroup V] [Module k V]

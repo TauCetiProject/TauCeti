@@ -100,6 +100,23 @@ theorem IsCuspidal.blockAverage_eq_zero {F : HallAlgebra k} (hF : F.IsCuspidal)
     {a b : SimilarityClass k} (ha : a.dim ≠ 0) (hb : b.dim ≠ 0) : blockAverage F a b = 0 :=
   hF a b ha hb
 
+/-- The block average of `0` is `0`. -/
+@[simp]
+theorem blockAverage_zero (a : SimilarityClass k) : blockAverage (0 : HallAlgebra k) a = 0 :=
+  ext fun _ ↦ by simp [blockAverage]
+
+/-- The block average is additive in the function. -/
+@[simp]
+theorem blockAverage_add (F H : HallAlgebra k) (a : SimilarityClass k) :
+    blockAverage (F + H) a = blockAverage F a + blockAverage H a :=
+  ext fun _ ↦ by simp [blockAverage, Finset.expect_add_distrib]
+
+/-- The block average commutes with complex scalars. -/
+@[simp]
+theorem blockAverage_smul (c : ℂ) (F : HallAlgebra k) (a : SimilarityClass k) :
+    blockAverage (c • F) a = c • blockAverage F a :=
+  ext fun _ ↦ by simp [blockAverage, Finset.mul_expect]
+
 variable {V W : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
   [AddCommGroup W] [Module k W] [Module.Finite k W]
 
