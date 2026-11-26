@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Tactic.Module
 
 /-!
 # Bounds for real-linear maps out of an `RCLike` field
@@ -20,7 +21,8 @@ equation into a bound on the full differential: if `L I = A (L 1)` with `‖A‖
 (`ContinuousLinearMap.norm_le_of_apply_I_eq`), and such an `L` vanishes exactly when `L 1` does
 (`ContinuousLinearMap.eq_zero_iff_apply_one_eq_zero_of_apply_I_eq`). If moreover `A² = -1`, then
 `L I` vanishes exactly when `L 1` does
-(`ContinuousLinearMap.apply_I_eq_zero_iff_apply_one_eq_zero_of_apply_I_eq`).
+(`ContinuousLinearMap.apply_I_eq_zero_iff_apply_one_eq_zero_of_apply_I_eq`), and `L` is injective
+exactly when `L 1 ≠ 0` (`ContinuousLinearMap.injective_iff_apply_one_ne_zero_of_apply_I_eq`).
 
 For `K = ℝ` the imaginary unit is `0` and the first bound reduces to `‖L z‖ ≤ ‖L 1‖ * ‖z‖`; the
 other two keep their factor `1 + M`.
@@ -78,6 +80,30 @@ theorem apply_I_eq_zero_iff_apply_one_eq_zero_of_apply_I_eq {f : K →L[ℝ] V} 
     rw [hCR, ← comp_apply, hL]
     simp
   simpa [h] using h1
+
+/-- If a real-linear map `f : K → V` out of an `RCLike` field satisfies `f I = L (f 1)` for a
+complex structure `L`, `L² = -1`, then it is injective exactly when `f 1 ≠ 0`: if
+`f z = re z • f 1 + im z • L (f 1)` vanishes, then so does `‖z‖² • f 1`. -/
+theorem injective_iff_apply_one_ne_zero_of_apply_I_eq {f : K →L[ℝ] V} {L : V →L[ℝ] V}
+    (hL : L ∘L L = -ContinuousLinearMap.id ℝ V) (hCR : f RCLike.I = L (f 1)) :
+    Function.Injective f ↔ f 1 ≠ 0 := by
+  refine ⟨fun h h1 ↦ one_ne_zero (h (h1.trans (map_zero f).symm)), fun h1 ↦ ?_⟩
+  refine (injective_iff_map_eq_zero f).2 fun z hz ↦ ?_
+  have hz' : RCLike.re z • f 1 + RCLike.im z • L (f 1) = 0 := by
+    rw [← hCR, ← hz]
+    conv_rhs => rw [← RCLike.re_add_im z]
+    simp [RCLike.ofReal_alg]
+  have hLL : L (L (f 1)) = -f 1 := by simpa using congr($hL (f 1))
+  have hLz : RCLike.re z • L (f 1) - RCLike.im z • f 1 = 0 := by
+    have h := congrArg L hz'
+    rwa [map_add, map_smul, map_smul, hLL, smul_neg, ← sub_eq_add_neg, map_zero] at h
+  have hn : ‖z‖ ^ 2 • f 1 = 0 := by
+    rw [RCLike.norm_sq_eq_def]
+    calc (RCLike.re z * RCLike.re z + RCLike.im z * RCLike.im z) • f 1
+        = RCLike.re z • (RCLike.re z • f 1 + RCLike.im z • L (f 1)) -
+          RCLike.im z • (RCLike.re z • L (f 1) - RCLike.im z • f 1) := by module
+      _ = 0 := by rw [hz', hLz, smul_zero, smul_zero, sub_zero]
+  simpa [h1] using hn
 
 end ContinuousLinearMap
 

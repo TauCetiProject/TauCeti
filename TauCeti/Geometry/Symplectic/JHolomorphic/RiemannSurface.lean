@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.GermFactorization
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import Mathlib.Topology.DiscreteSubset
+import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Symplectic.JHolomorphic.Coincidence
@@ -39,7 +40,9 @@ domains in `ℂ` and targets in a normed space to such maps:
   `S` (`TauCeti.setOf_ne_mem_codiscrete_of_isPseudoholomorphic`);
 * **isolated critical points**: if such a map is not constant, its critical points, where its
   manifold derivative vanishes, form a discrete subset of `S`
-  (`TauCeti.setOf_mfderiv_ne_zero_mem_codiscrete_of_isPseudoholomorphic`);
+  (`TauCeti.setOf_mfderiv_ne_zero_mem_codiscrete_of_isPseudoholomorphic`); at every other point
+  its derivative is injective, since it intertwines multiplication by `i` with `J`
+  (`TauCeti.IsPseudoholomorphicAt.injective_mfderiv_iff_ne_zero`);
 * **accumulating coincidences factor**: for a second pseudoholomorphic map `u₁ : S' → N` of class
   `C¹`, a target `N` that is Hausdorff and `u` of class `C²` and immersed at `a₀`, if the points
   `b ≠ b₀` at which `u₁` meets the image under `u` of a neighbourhood of `a₀` accumulate at `b₀`,
@@ -258,6 +261,24 @@ private theorem exists_ne_of_isPseudoholomorphic [PreconnectedSpace S]
   obtain ⟨x₁, x₂, h₁₂⟩ := hne
   exact h₁₂ ((eq_of_isPseudoholomorphic_of_eventually_eq hu hJu hux x₁).trans
     (eq_of_isPseudoholomorphic_of_eventually_eq hu hJu hux x₂).symm)
+
+/-! ### Immersed points -/
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] in
+/-- **A pseudoholomorphic curve is immersed wherever its differential does not vanish.** The
+manifold derivative at `x` of a map from a Riemann surface that is pseudoholomorphic at `x`
+intertwines multiplication by `i` with the complex structure `J (u x)`, so it is injective exactly
+when it is nonzero. -/
+theorem IsPseudoholomorphicAt.injective_mfderiv_iff_ne_zero {x : S}
+    (hu : IsPseudoholomorphicAt (ofComplexManifold ℂ S) J u x) :
+    Injective (mfderiv 𝓘(ℝ, ℂ) I u x) ↔ mfderiv 𝓘(ℝ, ℂ) I u x ≠ 0 := by
+  have hCR := hu.mfderiv_apply_commute (1 : ℂ)
+  rw [ofComplexManifold_apply, smul_eq_mul, mul_one] at hCR
+  -- The tangent spaces of `S` and `N` are the model spaces `ℂ` and `E`.
+  have h := ContinuousLinearMap.injective_iff_apply_one_ne_zero_of_apply_I_eq (K := ℂ) (V := E)
+    (f := mfderiv 𝓘(ℝ, ℂ) I u x) (J.square_neg (u x)) hCR
+  exact h.trans (ContinuousLinearMap.eq_zero_iff_apply_one_eq_zero_of_apply_I_eq (K := ℂ) (V := E)
+    (f := mfderiv 𝓘(ℝ, ℂ) I u x) hCR).not.symm
 
 /-! ### Discreteness of fibres and critical points -/
 
