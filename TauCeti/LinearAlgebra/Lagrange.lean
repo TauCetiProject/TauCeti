@@ -25,9 +25,11 @@ nodes are strictly monotone or antitone in a linearly ordered commutative ring.
   and `c ∉ x '' s`,
   `∑ i ∈ s, F.eval (x i) / ((x i - c) * (derivative (nodal s x)).eval (x i)) =
   -(F.eval c / (nodal s x).eval c)`.
-* `Lagrange.derivative_nodal_sign_of_strictAnti` and
-  `Lagrange.derivative_nodal_sign_of_strictMono`: sign of `(derivative (nodal univ x)).eval (x i)`
-  for strictly decreasing or increasing nodes `x : Fin M → K`.
+* `Lagrange.neg_one_pow_mul_eval_derivative_nodal_pos_of_strictAnti` and
+  `Lagrange.neg_one_pow_mul_eval_derivative_nodal_pos_of_strictMono`: positivity of
+  `(-1) ^ i * (derivative (nodal univ x)).eval (x i)` and
+  `(-1) ^ (M - 1 - i) * (derivative (nodal univ x)).eval (x i)` for strictly decreasing or
+  increasing nodes `x : Fin M → K`.
 
 ## References
 
@@ -73,9 +75,9 @@ section Signs
 
 variable {K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] {M : ℕ} {x : Fin M → K}
 
-/-- For strictly decreasing nodes `x 0 > x 1 > ...`, `(derivative (nodal univ x)).eval (x i)` has
-sign `(-1) ^ i`. -/
-theorem derivative_nodal_sign_of_strictAnti (hx : StrictAnti x) (i : Fin M) :
+/-- For strictly decreasing nodes `x 0 > x 1 > ...`,
+`(-1) ^ i * (derivative (nodal univ x)).eval (x i)` is positive. -/
+theorem neg_one_pow_mul_eval_derivative_nodal_pos_of_strictAnti (hx : StrictAnti x) (i : Fin M) :
     0 < (-1 : K) ^ (i : ℕ) * (derivative (nodal univ x)).eval (x i) := by
   have hsplit : (-1 : K) ^ (i : ℕ) * ∏ j ∈ univ.erase i, (x i - x j) =
       (∏ j ∈ Ioi i, (x i - x j)) * ∏ j ∈ Iio i, (x j - x i) := by
@@ -87,8 +89,8 @@ theorem derivative_nodal_sign_of_strictAnti (hx : StrictAnti x) (i : Fin M) :
     (prod_pos fun j hj ↦ sub_pos.2 (hx (mem_Iio.1 hj)))
 
 /-- For strictly increasing nodes `x 0 < ... < x (M - 1)`,
-`(derivative (nodal univ x)).eval (x i)` has sign `(-1) ^ (M - 1 - i)`. -/
-theorem derivative_nodal_sign_of_strictMono (hx : StrictMono x) (i : Fin M) :
+`(-1) ^ (M - 1 - i) * (derivative (nodal univ x)).eval (x i)` is positive. -/
+theorem neg_one_pow_mul_eval_derivative_nodal_pos_of_strictMono (hx : StrictMono x) (i : Fin M) :
     0 < (-1 : K) ^ (M - 1 - (i : ℕ)) * (derivative (nodal univ x)).eval (x i) := by
   have hsplit : (-1 : K) ^ (M - 1 - (i : ℕ)) * ∏ j ∈ univ.erase i, (x i - x j) =
       (∏ j ∈ Ioi i, (x j - x i)) * ∏ j ∈ Iio i, (x i - x j) := by
