@@ -311,6 +311,12 @@ theorem addBasepointGenerator_injective :
   · simpa using h' i.castSucc
   · simpa using h' (Fin.last n)
 
+/-- The generators `(x, k)` and `(y, m)` agree exactly when `x = y` and `k = m`. -/
+@[simp]
+theorem addBasepointGenerator_inj {x y : H.Generator} {k m : Fin 2} :
+    H.addBasepointGenerator r₀ x k = H.addBasepointGenerator r₀ y m ↔ x = y ∧ k = m :=
+  ((H.addBasepointGenerator_injective r₀).eq_iff (a := (x, k)) (b := (y, m))).trans Prod.ext_iff
+
 /-- A point on an old `α`-curve of the diagram with an added basepoint is an old point. -/
 private theorem exists_eq_inl_of_addBasepoint_alpha {p : Point ⊕ Fin 2} {i : Fin n}
     (hp : (H.addBasepoint r₀).alpha p = i.castSucc) : ∃ q, p = Sum.inl q ∧ H.alpha q = i := by
@@ -744,6 +750,20 @@ theorem coe_addBasepointPeriodicDomainsEquiv_apply (c : H.periodicDomains × ℤ
     (H.addBasepointPeriodicDomainsEquiv r₀ c : Region ⊕ Fin 3 → ℤ) =
       Sum.elim (c.1 : Region → ℤ) ![c.2, (c.1 : Region → ℤ) r₀ - c.2, 0] :=
   (rfl)
+
+/-- When `r₀` contains a basepoint, the periodic domain attached to `(Q, 0)` is `Q` extended by
+zero over the new regions: `Q` vanishes on `r₀`. -/
+theorem coe_addBasepointPeriodicDomainsEquiv_mk_zero (hr₀ : r₀ ∈ Set.range H.basepoint)
+    (Q : H.periodicDomains) :
+    (H.addBasepointPeriodicDomainsEquiv r₀ (Q, 0) : Region ⊕ Fin 3 → ℤ) =
+      Sum.elim (Q : Region → ℤ) 0 := by
+  obtain ⟨z₀, rfl⟩ := hr₀
+  have hQ : (Q : Region → ℤ) (H.basepoint z₀) = 0 :=
+    (mem_periodicDomains_iff.mp Q.property).1 z₀
+  funext s
+  rcases s with s | k
+  · simp
+  · fin_cases k <;> simp [hQ]
 
 /-- The old periodic domain attached to a periodic domain of the diagram with an added basepoint
 is its restriction to the old regions. -/
