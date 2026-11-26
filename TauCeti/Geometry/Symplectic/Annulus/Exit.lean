@@ -60,11 +60,15 @@ a face. Combining the two orders along a maximal cyclic run of momenta on one fa
 * At a boundary point of the block outside `L`, all momenta on faces belong to positive factors
   and move strictly into the block: the trajectory is in the interior of the block just after
   (`TauCeti.eventually_nhdsGT_forall_stripGeneratingSource_snd_mem_Ioo`), and outside it just
-  before (`TauCeti.eventually_nhdsLT_stripGeneratingSource_snd_notMem_Icc`).
+  before (`TauCeti.eventually_nhdsLT_stripGeneratingSource_snd_notMem_Icc`). The velocity of each
+  momentum on a face points strictly into the block there
+  (`TauCeti.exists_hasDerivAt_stripGeneratingSource_snd_and_mul_pos`).
 * Hence, if no face carries all the momenta, a point of the block leaves it immediately exactly
   when it lies in `L` (`TauCeti.eventually_nhdsGT_exists_stripGeneratingSource_snd_notMem_Icc_iff`):
-  `L` is the immediate exit set of the block. The further properties of an index pair in Conley's
-  theory, such as every exit from the block passing through `L`, are not proved here.
+  `L` is the immediate exit set of the block. For a flow with these trajectories, the exit time
+  from the block vanishes exactly on `L` and, for closed `K`, is continuous on `K`, so the flow
+  stopped at the exit deforms `K` relative to `L`; this is proved in
+  `TauCeti.Geometry.Symplectic.Annulus.Block.ExitTime`.
 * A critical configuration, at which `Y_(k-1) = y_k` for every `k`, has no momentum on a face
   `c` unless all momenta are on it, provided `Y_k = c` forces `y_k = c`
   (`TauCeti.stripGeneratingSource_snd_ne_of_forall_stripGeneratingTarget_eq`). So a rest point of
@@ -84,6 +88,8 @@ with the negative gradient flow near the block.
 * `TauCeti.eventually_nhdsGT_forall_stripGeneratingSource_snd_mem_Ioo`,
   `TauCeti.eventually_nhdsLT_stripGeneratingSource_snd_notMem_Icc`: trajectories through the rest
   of the boundary enter the interior of the block.
+* `TauCeti.exists_hasDerivAt_stripGeneratingSource_snd_and_mul_pos`: there the momenta on faces
+  move strictly into the block.
 * `TauCeti.eventually_nhdsGT_exists_stripGeneratingSource_snd_notMem_Icc_iff`: if no face carries
   all the momenta, `L` is exactly the set of points of the block which leave it immediately.
 * `TauCeti.stripGeneratingSource_snd_ne_of_forall_stripGeneratingTarget_eq`: critical
@@ -601,6 +607,34 @@ theorem eventually_nhdsLT_stripGeneratingSource_snd_notMem_Icc
     (fun j hjP hj ↦ neg_pos.2 (hpos j hjP (hj ▸ hk))) (fun j hj ↦ hall j (hj ▸ hk)) rfl
   filter_upwards [h.eventually_nhdsLT_mul_sub_neg rfl hv] with t ht hmem
   exact (mul_sub_nonneg_of_mem_Icc hk hmem).not_gt ht
+
+/-- **Momenta on the faces of positive factors move strictly into the block.** In the setting of
+`TauCeti.eventually_nhdsGT_forall_stripGeneratingSource_snd_mem_Ioo`, a momentum `y_k` on a face
+`c ∈ {0, 1}` at `t₀` has a derivative `y'` at `t₀` along the trajectory which points strictly into
+the block: `0 < (1 - 2c) y'`. -/
+theorem exists_hasDerivAt_stripGeneratingSource_snd_and_mul_pos
+    (hS : ∀ k, ContDiffAt ℝ 2 (S k) (γ t₀ k, γ t₀ (k + 1)))
+    (hγ : ∀ᶠ t in 𝓝 t₀, HasDerivAt γ (fun i ↦ (stripGeneratingSource (S i) (γ t i, γ t (i + 1))).2 -
+      (stripGeneratingTarget (S (i - 1)) (γ t (i - 1), γ t i)).2) t)
+    (hsrc : ∀ k, (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ Icc (0 : ℝ) 1)
+    (htgt : ∀ k, (stripGeneratingTarget (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ Icc (0 : ℝ) 1)
+    (hiff : ∀ k, ∀ c ∈ ({0, 1} : Set ℝ),
+      (stripGeneratingTarget (S k) (γ t₀ k, γ t₀ (k + 1))).2 = c ↔
+        (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 = c)
+    (hface : ∀ k, (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ ({0, 1} : Set ℝ) →
+      ∃ B, 0 < B ∧ ∀ v, B * fderiv ℝ (fderiv ℝ (S k)) (γ t₀ k, γ t₀ (k + 1)) v (0, 1) =
+        -fderiv ℝ (fderiv ℝ (S k)) (γ t₀ k, γ t₀ (k + 1)) v (1, 0))
+    (hpos : ∀ k ∈ P, (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ ({0, 1} : Set ℝ) →
+      fderiv ℝ (fderiv ℝ (S k)) (γ t₀ k, γ t₀ (k + 1)) (0, 1) (1, 0) < 0)
+    (hP : ∀ k ∈ P, k + 1 ∉ P)
+    (hall : ∀ k, (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ ({0, 1} : Set ℝ) →
+      k ∈ P)
+    {k : ZMod N} (hk : (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ ({0, 1} : Set ℝ)) :
+    ∃ y', HasDerivAt (fun t ↦ (stripGeneratingSource (S k) (γ t k, γ t (k + 1))).2) y' t₀ ∧
+      0 < (1 - 2 * (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2) * y' := by
+  obtain ⟨Y', B, h⟩ := exists_faceData hS hγ hsrc htgt hiff hface hk
+  exact ⟨_, h.hasDerivAt.self_of_nhds k, h.mul_momentumVelocity_pos_of_forall_mem hP
+    (fun j hjP hj ↦ neg_pos.2 (hpos j hjP (hj ▸ hk))) (fun j hj ↦ hall j (hj ▸ hk)) rfl⟩
 
 /-- **The exit set of the block.** In the setting of
 `TauCeti.eventually_nhdsGT_exists_stripGeneratingSource_snd_notMem_Icc`, a trajectory leaves the
