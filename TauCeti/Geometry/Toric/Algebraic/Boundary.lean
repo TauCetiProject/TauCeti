@@ -349,7 +349,7 @@ theorem boundaryQuotientBasis_repr_quotientMap {S : Type*} [CommRing S] (φ : R 
   ext p
   simp
 
-/-- The `h`-th infinitesimal neighbourhood of the boundary of a regular chart is free over `R`: the
+/-- The thickening of the boundary of a regular chart cut out by `(t)^h` is free over `R`: the
 classes of the monomials `x^a y^b` with some `a_i < h` form a basis of
 `R[(ι →₀ ℕ) × Q] ⧸ (x_1 ⋯ x_r)^h`. -/
 noncomputable def boundaryPowQuotientBasis (h : ℕ) :
@@ -380,9 +380,9 @@ instance (h : ℕ) : Module.Free R
     (AddMonoidAlgebra R ((ι →₀ ℕ) × Q) ⧸ Ideal.span {boundaryMonomial R ι Q} ^ h) :=
   .of_basis (boundaryPowQuotientBasis h)
 
-/-- The transition maps `A ⧸ (t)^h' → A ⧸ (t)^h` between the infinitesimal neighbourhoods of the
-boundary, for `h ≤ h'`, restrict the monomial coordinates: the coordinate at an exponent with some
-`a_i < h` is unchanged. -/
+/-- The transition maps `A ⧸ (t)^h' → A ⧸ (t)^h` between the thickenings of the boundary cut out
+by the powers of `(t)`, for `h ≤ h'`, restrict the monomial coordinates: the coordinate at an
+exponent with some `a_i < h` is unchanged. -/
 @[simp]
 theorem boundaryPowQuotientBasis_repr_factor {h h' : ℕ} (hh : h ≤ h')
     (y : AddMonoidAlgebra R ((ι →₀ ℕ) × Q) ⧸ Ideal.span {boundaryMonomial R ι Q} ^ h')
