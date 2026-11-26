@@ -10,7 +10,9 @@ public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.RingTheory.PowerSeries.Inverse
+public import TauCeti.LinearAlgebra.TensorProduct.Pi
 public import TauCeti.RingTheory.DiscreteValuationRing.EigenvalueLifting
+public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Checks for the Deligne–Serre eigenvalue lifting lemma
@@ -51,33 +53,6 @@ namespace TauCeti.EigenvalueLiftingChecks
 
 variable {O : Type*} [CommRing O]
 
-/-- Reduction along an `O`-algebra map `φ` acts on coordinates through `φ`. -/
-private theorem piScalarRight_rTensor_apply {A B : Type*} [CommRing A] [Algebra O A] [CommRing B]
-    [Algebra O B] (φ : A →ₐ[O] B) (v : A ⊗[O] (Fin 2 → O)) (i : Fin 2) :
-    piScalarRight O B B (Fin 2) (φ.toLinearMap.rTensor _ v) i =
-      φ (piScalarRight O A A (Fin 2) v i) := by
-  induction v using TensorProduct.inductionOn with
-  | tmul a x => simp [Algebra.smul_def]
-  | add v w hv hw => simp_all
-
-/-- The basis vector `1 ⊗ eᵢ` of `A ⊗[O] O²` is nonzero over a nontrivial ring `A`. -/
-private theorem one_tmul_single_ne_zero {A : Type*} [CommRing A] [Nontrivial A] [Algebra O A]
-    (i : Fin 2) : (1 : A) ⊗ₜ[O] (Pi.single i 1 : Fin 2 → O) ≠ 0 := by
-  intro h
-  simpa using
-    congr_arg (fun w ↦ piScalarRight O A A (Fin 2) w i) h
-
-/-- An irreducible element of an integrally closed domain has no square root in its fraction
-field. -/
-private theorem sq_ne_algebraMap_of_irreducible [IsIntegrallyClosed O] (K : Type*)
-    [Field K] [Algebra O K] [IsFractionRing O K] {ϖ : O} (hϖ : Irreducible ϖ) (x : K) :
-    x ^ 2 ≠ algebraMap O K ϖ := by
-  intro hx
-  obtain ⟨y, rfl⟩ := IsIntegrallyClosed.exists_algebraMap_eq_of_isIntegral_pow (R := O) two_pos
-    (hx ▸ isIntegral_algebraMap)
-  rw [← map_pow, (IsFractionRing.injective O K).eq_iff] at hx
-  exact hϖ.not_isSquare ⟨y, by rw [← hx, sq]⟩
-
 section Nilpotent
 
 variable (ϖ : O)
@@ -87,10 +62,10 @@ zero, so every vector of `κ ⊗[O] O²`, in particular `e₂`, is a residual ei
 eigenvalue `0`. -/
 theorem nilpotent_baseChange_residueField_eq_zero [IsLocalRing O] (hϖ : ϖ ∈ maximalIdeal O) :
     (toLin' !![0, ϖ; 0, 0]).baseChange (ResidueField O) = 0 := by
-  have : (toLin' !![0, ϖ; 0, 0] : Module.End O (Fin 2 → O)) = ϖ • toLin' !![0, 1; 0, 0] := by
-    rw [← map_smul, smul_of, smul_vec2, smul_vec2]
-    simp
-  rw [this, LinearMap.baseChange_smul]
+  have h : !![0, ϖ; 0, 0] = ϖ • !![0, 1; 0, 0] := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  rw [h, map_smul, LinearMap.baseChange_smul]
   ext x
   simp [← algebraMap_smul (ResidueField O) ϖ, (residue_eq_zero_iff ϖ).2 hϖ]
 
@@ -172,6 +147,18 @@ theorem companion_mul_self :
     fin_cases i <;> fin_cases j <;> simp
   rw [Module.End.mul_eq_comp, ← toLin'_mul, h, map_smul, toLin'_one, Module.End.one_eq_id]
 
+/-- The companion operator `[[0, ϖ], [1, 0]]` sends `e₁` to `e₂`. -/
+private theorem companion_single_zero :
+    toLin' !![0, ϖ; 1, 0] (Pi.single 0 1 : Fin 2 → O) = Pi.single 1 1 := by
+  ext i
+  fin_cases i <;> simp
+
+/-- The companion operator `[[0, ϖ], [1, 0]]` sends `e₂` to `ϖ e₁`. -/
+private theorem companion_single_one :
+    toLin' !![0, ϖ; 1, 0] (Pi.single 1 1 : Fin 2 → O) = ϖ • Pi.single 0 1 := by
+  ext i
+  fin_cases i <;> simp
+
 /-- Every eigenvalue `c` of the companion operator `[[0, ϖ], [1, 0]]` over an `O`-algebra `A`
 that is a domain satisfies `c ^ 2 = ϖ`. -/
 theorem sq_eq_of_companion_baseChange_eq_smul {A : Type*} [CommRing A] [IsDomain A] [Algebra O A]
@@ -191,10 +178,8 @@ theorem companion_baseChange_residueField_one_tmul_single_one [IsLocalRing O]
     (hϖ : ϖ ∈ maximalIdeal O) :
     (toLin' !![0, ϖ; 1, 0]).baseChange (ResidueField O) (1 ⊗ₜ Pi.single 1 1) =
       (0 : ResidueField O) • (1 ⊗ₜ[O] (Pi.single 1 1 : Fin 2 → O)) := by
-  have he₂ : toLin' !![0, ϖ; 1, 0] (Pi.single 1 1 : Fin 2 → O) = ϖ • Pi.single 0 1 := by
-    ext i
-    fin_cases i <;> simp
-  rw [LinearMap.baseChange_tmul, he₂, ← smul_tmul, ← algebraMap_smul (ResidueField O) ϖ]
+  rw [LinearMap.baseChange_tmul, companion_single_one, ← smul_tmul,
+    ← algebraMap_smul (ResidueField O) ϖ]
   simp [ResidueField.algebraMap_eq, (residue_eq_zero_iff ϖ).2 hϖ]
 
 /-- *Necessity of a fraction-field extension*: for an irreducible element `ϖ` of an integrally
@@ -205,7 +190,8 @@ theorem not_exists_companion_baseChange_fractionRing_eq_smul [IsIntegrallyClosed
     ¬ ∃ (c : K) (v : K ⊗[O] (Fin 2 → O)), v ≠ 0 ∧
       (toLin' !![0, ϖ; 1, 0]).baseChange K v = c • v := by
   rintro ⟨c, v, hv0, hv⟩
-  exact sq_ne_algebraMap_of_irreducible K hϖ c (sq_eq_of_companion_baseChange_eq_smul ϖ hv0 hv)
+  exact hϖ.not_isSquare_algebraMap K
+    ⟨c, by rw [← sq_eq_of_companion_baseChange_eq_smul ϖ hv0 hv, sq]⟩
 
 /-- Over an `O`-algebra `A` containing a square root `α` of `ϖ`, the vector `(α, 1)` is an
 eigenvector of the companion operator `[[0, ϖ], [1, 0]]` with eigenvalue `α`, and it is nonzero
@@ -215,18 +201,12 @@ example {A : Type*} [CommRing A] [Nontrivial A] [Algebra O A] {α : A}
     α ⊗ₜ[O] (Pi.single 0 1 : Fin 2 → O) + 1 ⊗ₜ Pi.single 1 1 ≠ 0 ∧
       (toLin' !![0, ϖ; 1, 0]).baseChange A (α ⊗ₜ Pi.single 0 1 + 1 ⊗ₜ Pi.single 1 1) =
         α • (α ⊗ₜ[O] (Pi.single 0 1 : Fin 2 → O) + 1 ⊗ₜ Pi.single 1 1) := by
-  have he₁ : toLin' !![0, ϖ; 1, 0] (Pi.single 0 1 : Fin 2 → O) = Pi.single 1 1 := by
-    ext i
-    fin_cases i <;> simp
-  have he₂ : toLin' !![0, ϖ; 1, 0] (Pi.single 1 1 : Fin 2 → O) = ϖ • Pi.single 0 1 := by
-    ext i
-    fin_cases i <;> simp
   refine ⟨fun h ↦ ?_, ?_⟩
   · simpa using
       congr_arg (fun w ↦ piScalarRight O A A (Fin 2) w 1) h
-  · rw [map_add, LinearMap.baseChange_tmul, LinearMap.baseChange_tmul, he₁, he₂, ← smul_tmul,
-      ← algebraMap_smul A ϖ, ← hα, smul_add, smul_tmul', smul_tmul', add_comm]
-    simp only [smul_eq_mul, mul_one, sq]
+  · simp only [map_add, LinearMap.baseChange_tmul, companion_single_zero, companion_single_one,
+      ← smul_tmul, ← algebraMap_smul A ϖ, ← hα]
+    simp [smul_tmul', sq, add_comm]
 
 /-- *An inseparable instance of the lifting*: let `ϖ` be an irreducible element of an
 integrally closed domain `O` of characteristic two, with fraction field `K`. No eigenvalue of the
@@ -248,7 +228,7 @@ theorem not_isSeparable_of_companion_baseChange_eq_smul [IsIntegrallyClosed O]
   rw [hc, adjoin_simple_eq_bot_iff.2 (IntermediateField.algebraMap_mem _ _)] at h
   obtain ⟨y, rfl⟩ := mem_bot.1 (h ▸ mem_adjoin_simple_self K c)
   rw [← map_pow, (algebraMap K L).injective.eq_iff] at hc
-  exact sq_ne_algebraMap_of_irreducible K hϖ y hc
+  exact hϖ.not_isSquare_algebraMap K ⟨y, by rw [← hc, sq]⟩
 
 /-- For `O = 𝔽₂⟦t⟧` and `ϖ = t`, an eigenvalue `c` of the companion operator `[[0, t], [1, 0]]`
 over a field `L` containing the fraction field `K` generates a nontrivial purely inseparable
@@ -287,7 +267,7 @@ example [IsDomain O] [IsDiscreteValuationRing O] (K : Type*) [Field K] [Algebra 
   refine ⟨L, V, ‹_›, b (), hb2, ?_, by simp [(hb ()).2]⟩
   rintro ⟨y, hy⟩
   rw [← hy, ← map_pow, (algebraMap K L).injective.eq_iff] at hb2
-  exact sq_ne_algebraMap_of_irreducible K hϖ y hb2
+  exact hϖ.not_isSquare_algebraMap K ⟨y, by rw [← hb2, sq]⟩
 
 end Companion
 

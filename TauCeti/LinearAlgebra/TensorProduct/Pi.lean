@@ -57,6 +57,10 @@ equivalence and is compatible with identities, composition and inverses.
   identification `A ⊗[R] (ι → R) ≃ (ι → A)` sends `a ⊗ v` to `a • (algebraMap R A ∘ v)`.
 * `TensorProduct.piScalarRight_symm_algebraMap_comp`: conversely, `algebraMap R N ∘ v`
   corresponds to the pure tensor `1 ⊗ v`.
+* `TensorProduct.piScalarRight_rTensor_apply`: along an `R`-algebra map `φ : A → B`, the
+  coordinates of `φ ⊗ id` applied to a vector are the images under `φ` of its coordinates.
+* `TensorProduct.one_tmul_single_ne_zero`: the basis vector `1 ⊗ eᵢ` of `A ⊗[R] (ι → R)` is
+  nonzero over a nontrivial `A`.
 
 ## References
 
@@ -116,6 +120,22 @@ theorem piScalarRight_symm_algebraMap_comp {S N : Type*} [CommSemiring S] [Algeb
     [Semiring N] [Algebra R N] [Module S N] [IsScalarTower R S N] (v : ι → R) :
     (piScalarRight R S N ι).symm (algebraMap R N ∘ v) = 1 ⊗ₜ v :=
   piScalarRight_symm_algebraMap R S ι v
+
+/-- Along an `R`-algebra map `φ : A → B`, the coordinates of `φ ⊗ id` applied to `v` are the
+images under `φ` of the coordinates of `v`. -/
+theorem piScalarRight_rTensor_apply {B : Type*} [CommSemiring B] [Algebra R B] (φ : A →ₐ[R] B)
+    (v : A ⊗[R] (ι → R)) (i : ι) :
+    piScalarRight R B B ι (φ.toLinearMap.rTensor _ v) i = φ (piScalarRight R A A ι v i) := by
+  induction v using TensorProduct.inductionOn with
+  | tmul a x => simp [_root_.Algebra.smul_def]
+  | add v w hv hw => simp_all
+
+omit [Fintype ι] in
+/-- The basis vector `1 ⊗ eᵢ` of `A ⊗[R] (ι → R)` is nonzero over a nontrivial `A`. -/
+theorem one_tmul_single_ne_zero [Nontrivial A] (i : ι) :
+    (1 : A) ⊗ₜ[R] (Pi.single i 1 : ι → R) ≠ 0 := by
+  intro h
+  simpa using congr_arg (fun w ↦ piScalarRightHom R A A ι w i) h
 
 end PiScalarRight
 
