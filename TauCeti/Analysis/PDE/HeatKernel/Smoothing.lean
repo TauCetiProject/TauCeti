@@ -183,7 +183,7 @@ private theorem ae_norm_heatSemigroup_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp :
 
 /-- Splitting the evolution in two half-steps writes the heat semigroup at a positive time as the
 heat convolution of an essentially bounded function: `e^{tΔ} f = K_{t/2} ⋆ e^{(t/2)Δ} f`. -/
-private theorem heatSemigroup_ae_eq_convolution_heatSemigroup_half {p : ℝ≥0∞} [Fact (1 ≤ p)]
+theorem heatSemigroup_ae_eq_convolution_heatSemigroup_half {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp : p ≠ ∞) {t : ℝ≥0} (ht : t ≠ 0) (f : Lp F p (volume : Measure E)) :
     (heatSemigroup hp t f : E → F) =ᵐ[volume]
       heatKernel ((t / 2 : ℝ≥0) : ℝ) ⋆ (heatSemigroup hp (t / 2) f : E → F) := by
