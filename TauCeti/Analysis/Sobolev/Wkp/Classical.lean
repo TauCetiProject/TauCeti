@@ -216,10 +216,7 @@ theorem Wkp.memLp_iteratedFDeriv_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
       intro i hi
       have hi0 : i = 0 := by omega
       subst i
-      refine (MemLp.ae_eq hu (Lp.memLp (value 0 u))).congr_norm
-        ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen
-          (by simp)).aestronglyMeasurable Omega.isOpen.measurableSet) ?_
-      exact .of_forall fun x => (norm_iteratedFDeriv_zero (f := f) (x := x)).symm
+      exact memLp_iteratedFDeriv_zero_iff.2 (MemLp.ae_eq hu (Lp.memLp (value 0 u)))
   | succ k ih =>
       intro i hi
       by_cases hik : i ≤ k
@@ -277,15 +274,13 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
     ∀ (k : ℕ) {f : E → ℝ}, ContDiffOn ℝ k f Omega →
       (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p (mu.restrict Omega)) →
       ∃ u : Wkp mu Omega p k, (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f
-  | 0, f, hf, hmem => by
+  | 0, f, _, hmem => by
       have hv : MemLp f p (mu.restrict Omega) :=
-        (hmem 0 le_rfl).congr_norm (hf.continuousOn.aestronglyMeasurable
-          Omega.isOpen.measurableSet) (.of_forall fun x => norm_iteratedFDeriv_zero)
+        memLp_iteratedFDeriv_zero_iff.1 (hmem 0 le_rfl)
       exact ⟨hv.toLp f, by rw [value_zero]; exact hv.coeFn_toLp⟩
   | 1, f, hf, hmem => by
       have hv : MemLp f p (mu.restrict Omega) :=
-        (hmem 0 (by simp)).congr_norm (hf.continuousOn.aestronglyMeasurable
-          Omega.isOpen.measurableSet) (.of_forall fun x => norm_iteratedFDeriv_zero)
+        memLp_iteratedFDeriv_zero_iff.1 (hmem 0 (by simp))
       have hg : MemLp (gradient f) p (mu.restrict Omega) :=
         (hmem 1 le_rfl).congr_norm
           (((InnerProductSpace.toDual ℝ E).symm.continuous.comp_continuousOn

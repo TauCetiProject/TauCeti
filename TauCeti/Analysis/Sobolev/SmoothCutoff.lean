@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
 import TauCeti.Analysis.Calculus.ContDiff.Scaling
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
@@ -240,8 +241,7 @@ theorem exists_contDiff_hasCompactSupport_tendsto_eLpNorm_sub_fderiv_sub
   have hf1 : ContDiff ℝ 1 f := hf.of_le (by exact_mod_cast hm)
   have hmem : ∀ i ≤ 1, MemLp (iteratedFDeriv ℝ i f) p μ := fun i hi ↦ by
     interval_cases i
-    · exact hfp.congr_norm (hf1.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
-        (.of_forall fun x ↦ norm_iteratedFDeriv_zero.symm)
+    · exact memLp_iteratedFDeriv_zero_iff.2 hfp
     · exact hdf.congr_norm (hf1.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable
         (.of_forall fun x ↦ (norm_iteratedFDeriv_one f).symm)
   obtain ⟨g, hg, -, hlim⟩ := exists_contDiff_hasCompactSupport_approximation hp hf 1
