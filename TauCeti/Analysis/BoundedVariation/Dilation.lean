@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupWithZero.Action.Basic
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.Analysis.BoundedVariation.Space
 public import TauCeti.Analysis.Distribution.TestFunction.Dilation
-public import TauCeti.Topology.Algebra.ConstMulAction
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.BoundedVariation.Translation
 

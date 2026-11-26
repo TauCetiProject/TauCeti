@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ConstSMul
-import TauCeti.Topology.Algebra.ConstMulAction
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Integral.Average
 

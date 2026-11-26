@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Topology.Algebra.Module.Determinant
-import Mathlib.Analysis.Calculus.FDeriv.Linear
 import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Dilation
-import TauCeti.Topology.Algebra.ConstMulAction
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 
 /-!
 # Dilation scaling of the Poincaré constants
@@ -40,6 +40,11 @@ so is vanishing on a boundary part, which is dilated along.
   Poincaré–Friedrichs constant scales linearly under dilation.
 * `TauCeti.W1p.forall_eLpNorm_value_sub_setAverage_le_iff_of_preimage_smul`: the
   Poincaré–Wirtinger constant scales linearly under dilation.
+
+Each equivalence is assembled from a one-directional transfer from `U` to `V`
+(`TauCeti.W1p.forall_norm_value_le_mul_norm_gradient_of_preimage_smul`,
+`TauCeti.W1p.forall_eLpNorm_value_sub_setAverage_le_of_preimage_smul`), applied to `c` and, for
+the converse, to `c⁻¹` with the roles of `U` and `V` swapped.
 -/
 
 public section
@@ -55,6 +60,23 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {U V : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)] {c : ℝ}
 
+/-- **A Poincaré–Friedrichs inequality transfers along a dilation.** Let `c ≠ 0`, `1 ≤ p < ∞` and
+`U = (c • ·)⁻¹(V)`, and let `Γ` be a set. If `‖u‖_{Lᵖ(U)} ≤ C ‖∇u‖_{Lᵖ(U)}` holds for every
+`u ∈ W^{1,p}_{(c • ·)⁻¹(Γ)}(U)`, then `‖u‖_{Lᵖ(V)} ≤ |c| C ‖∇u‖_{Lᵖ(V)}` holds for every
+`u ∈ W^{1,p}_Γ(V)`. -/
+theorem W1p.forall_norm_value_le_mul_norm_gradient_of_preimage_smul (hp : p ≠ ⊤) (hc : c ≠ 0)
+    (hUV : (U : Set E) = (c • ·) ⁻¹' V) {Γ : Set E} {C : ℝ}
+    (h : ∀ u ∈ w1pVanishingOnSubmodule mu U p ((c • ·) ⁻¹' Γ),
+      ‖W1p.value u‖ ≤ C * ‖W1p.gradient u‖) :
+    ∀ u ∈ w1pVanishingOnSubmodule mu V p Γ, ‖W1p.value u‖ ≤ |c| * C * ‖W1p.gradient u‖ := by
+  -- Test the inequality on `U` with the dilate `u (c • ·)`.
+  intro u hu
+  have h' := h _ ((W1p.compSMulL_mem_w1pVanishingOnSubmodule_iff hp hc hUV).2 hu)
+  rw [W1p.norm_value_compSMulL, W1p.norm_gradient_compSMulL] at h'
+  refine le_of_mul_le_mul_left ?_
+    (by positivity : 0 < (|c| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹)
+  linarith
+
 /-- **The Poincaré–Friedrichs constant scales linearly under dilation.** Let `c ≠ 0`, `1 ≤ p < ∞`
 and `U = (c • ·)⁻¹(V)`, so that `V` is the dilate of `U` by `c`, and let `Γ` be a set. The
 inequality `‖u‖_{Lᵖ(U)} ≤ C ‖∇u‖_{Lᵖ(U)}` holds for every `u ∈ W^{1,p}_{(c • ·)⁻¹(Γ)}(U)` exactly
@@ -64,31 +86,37 @@ theorem W1p.forall_norm_value_le_mul_norm_gradient_iff_of_preimage_smul (hp : p 
     (∀ u ∈ w1pVanishingOnSubmodule mu U p ((c • ·) ⁻¹' Γ),
         ‖W1p.value u‖ ≤ C * ‖W1p.gradient u‖) ↔
       ∀ u ∈ w1pVanishingOnSubmodule mu V p Γ, ‖W1p.value u‖ ≤ |c| * C * ‖W1p.gradient u‖ := by
-  have hk {c : ℝ} (hc : c ≠ 0) : 0 < (|c| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹ := by positivity
-  constructor
-  · -- Test the inequality on `U` with the dilate `u (c • ·)`.
-    intro h u hu
-    have h' := h _ ((W1p.compSMulL_mem_w1pVanishingOnSubmodule_iff hp hc hUV).2 hu)
-    rw [W1p.norm_value_compSMulL, W1p.norm_gradient_compSMulL] at h'
-    refine le_of_mul_le_mul_left ?_ (hk hc)
-    linarith
-  · -- Test the inequality on `V` with the dilate `u (c⁻¹ • ·)`.
-    intro h u hu
-    have hVU := eq_preimage_inv_smul_of_eq_preimage_smul₀ hc hUV
-    have hu' : W1p.compSMulL mu hp (inv_ne_zero hc) hVU u ∈ w1pVanishingOnSubmodule mu V p Γ := by
-      rw [← W1p.compSMulL_mem_w1pVanishingOnSubmodule_iff hp (inv_ne_zero hc) hVU,
-        LeftInverse.preimage_preimage (f := fun x : E => c⁻¹ • x) (fun x => smul_inv_smul₀ hc x)]
-        at hu
-      exact hu
-    have h' := h _ hu'
-    rw [W1p.norm_value_compSMulL, W1p.norm_gradient_compSMulL, abs_inv] at h'
-    refine le_of_mul_le_mul_left ?_ (hk (inv_ne_zero hc))
-    rw [abs_inv]
-    have hcc : |c| * |c|⁻¹ = 1 := mul_inv_cancel₀ (abs_ne_zero.2 hc)
-    set K := (|c|⁻¹ ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹
-    calc K * ‖W1p.value u‖ ≤ |c| * C * (|c|⁻¹ * K * ‖W1p.gradient u‖) := h'
-      _ = K * (C * ‖W1p.gradient u‖) := by
-        linear_combination (C * K * ‖W1p.gradient u‖) * hcc
+  refine ⟨W1p.forall_norm_value_le_mul_norm_gradient_of_preimage_smul hp hc hUV, fun h => ?_⟩
+  -- Transfer back along the inverse dilation `c⁻¹ • ·`, which maps `V` onto `U`.
+  have h' := W1p.forall_norm_value_le_mul_norm_gradient_of_preimage_smul hp (inv_ne_zero hc)
+    (eq_preimage_inv_smul_of_eq_preimage_smul₀ hc hUV) (Γ := (c • ·) ⁻¹' Γ) (C := |c| * C)
+    (by rwa [LeftInverse.preimage_preimage (fun x => smul_inv_smul₀ hc x)])
+  simpa only [abs_inv, inv_mul_cancel_left₀ (abs_ne_zero.2 hc)] using h'
+
+/-- **A Poincaré–Wirtinger inequality transfers along a dilation.** Let `c ≠ 0`, `1 ≤ p < ∞` and
+`U = (c • ·)⁻¹(V)`, and let `S ⊆ V`. If `‖u - ⨍_{(c • ·)⁻¹(S)} u‖_{Lᵖ(U)} ≤ C ‖∇u‖_{Lᵖ(U)}` holds
+for every `u ∈ W^{1,p}(U)`, then `‖u - ⨍_S u‖_{Lᵖ(V)} ≤ |c| C ‖∇u‖_{Lᵖ(V)}` holds for every
+`u ∈ W^{1,p}(V)`. -/
+theorem W1p.forall_eLpNorm_value_sub_setAverage_le_of_preimage_smul (hp : p ≠ ⊤) (hc : c ≠ 0)
+    (hUV : (U : Set E) = (c • ·) ⁻¹' V) {S : Set E} (hS : S ⊆ V) {C : ℝ}
+    (h : ∀ u : W1p mu U p,
+      eLpNorm (fun x => W1p.value u x - ⨍ y in (c • ·) ⁻¹' S, W1p.value u y ∂mu) p
+        (mu.restrict U) ≤ ENNReal.ofReal C * ‖W1p.gradient u‖ₑ) :
+    ∀ u : W1p mu V p,
+      eLpNorm (fun x => W1p.value u x - ⨍ y in S, W1p.value u y ∂mu) p (mu.restrict V) ≤
+        ENNReal.ofReal (|c| * C) * ‖W1p.gradient u‖ₑ := by
+  -- Test the inequality on `U` with the dilate `u (c • ·)`.
+  intro u
+  have h' := h (W1p.compSMulL mu hp hc hUV u)
+  rw [W1p.setAverage_value_compSMulL hp hc hUV hS, W1p.eLpNorm_value_compSMulL_sub hp hc hUV,
+    W1p.enorm_gradient_compSMulL hp hc hUV] at h'
+  have hk : ENNReal.ofReal (|c| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹ ≠ 0 := by
+    simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
+    positivity
+  refine (ENNReal.mul_le_mul_iff_right hk ENNReal.ofReal_ne_top).1 ?_
+  rw [ENNReal.ofReal_mul (abs_nonneg c)]
+  calc _ ≤ _ := h'
+    _ = _ := by ring
 
 /-- **The Poincaré–Wirtinger constant scales linearly under dilation.** Let `c ≠ 0`, `1 ≤ p < ∞`
 and `U = (c • ·)⁻¹(V)`, so that `V` is the dilate of `U` by `c`, and let `S ⊆ V`. The inequality
@@ -102,38 +130,11 @@ theorem W1p.forall_eLpNorm_value_sub_setAverage_le_iff_of_preimage_smul (hp : p 
       ∀ u : W1p mu V p,
         eLpNorm (fun x => W1p.value u x - ⨍ y in S, W1p.value u y ∂mu) p (mu.restrict V) ≤
           ENNReal.ofReal (|c| * C) * ‖W1p.gradient u‖ₑ := by
-  have hk {c : ℝ} (hc : c ≠ 0) :
-      ENNReal.ofReal (|c| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹ ≠ 0 := by
-    simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
-    positivity
-  rw [ENNReal.ofReal_mul (abs_nonneg c)]
-  constructor
-  · -- Test the inequality on `U` with the dilate `u (c • ·)`.
-    intro h u
-    have h' := h (W1p.compSMulL mu hp hc hUV u)
-    rw [W1p.setAverage_value_compSMulL hp hc hUV hS, W1p.eLpNorm_value_compSMulL_sub hp hc hUV,
-      W1p.enorm_gradient_compSMulL hp hc hUV] at h'
-    refine (ENNReal.mul_le_mul_iff_right (hk hc) ENNReal.ofReal_ne_top).1 ?_
-    calc _ ≤ _ := h'
-      _ = _ := by ring
-  · -- Test the inequality on `V` with the dilate `u (c⁻¹ • ·)`.
-    intro h u
-    have hVU := eq_preimage_inv_smul_of_eq_preimage_smul₀ hc hUV
-    have hSU : (c • ·) ⁻¹' S ⊆ (U : Set E) := (preimage_mono hS).trans hUV.symm.subset
-    have h' := h (W1p.compSMulL mu hp (inv_ne_zero hc) hVU u)
-    rw [← LeftInverse.preimage_preimage (f := fun x : E => c⁻¹ • x)
-        (fun x => smul_inv_smul₀ hc x) S,
-      W1p.setAverage_value_compSMulL hp (inv_ne_zero hc) hVU hSU,
-      W1p.eLpNorm_value_compSMulL_sub hp (inv_ne_zero hc) hVU,
-      W1p.enorm_gradient_compSMulL hp (inv_ne_zero hc) hVU] at h'
-    refine (ENNReal.mul_le_mul_iff_right (hk (inv_ne_zero hc)) ENNReal.ofReal_ne_top).1 ?_
-    have hcc : ENNReal.ofReal |c| * ENNReal.ofReal |c⁻¹| = 1 := by
-      rw [← ENNReal.ofReal_mul (abs_nonneg c), ← abs_mul, mul_inv_cancel₀ hc, abs_one,
-        ENNReal.ofReal_one]
-    calc _ ≤ _ := h'
-      _ = ENNReal.ofReal (|c⁻¹| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹ *
-          (ENNReal.ofReal C * ‖W1p.gradient u‖ₑ) * (ENNReal.ofReal |c| * ENNReal.ofReal |c⁻¹|) := by
-        ring
-      _ = _ := by rw [hcc, mul_one]
+  refine ⟨W1p.forall_eLpNorm_value_sub_setAverage_le_of_preimage_smul hp hc hUV hS, fun h => ?_⟩
+  -- Transfer back along the inverse dilation `c⁻¹ • ·`, which maps `V` onto `U`.
+  have h' := W1p.forall_eLpNorm_value_sub_setAverage_le_of_preimage_smul hp (inv_ne_zero hc)
+    (eq_preimage_inv_smul_of_eq_preimage_smul₀ hc hUV) ((preimage_mono hS).trans hUV.symm.subset)
+    (C := |c| * C) (by rwa [LeftInverse.preimage_preimage (fun x => smul_inv_smul₀ hc x)])
+  simpa only [abs_inv, inv_mul_cancel_left₀ (abs_ne_zero.2 hc)] using h'
 
 end TauCeti
