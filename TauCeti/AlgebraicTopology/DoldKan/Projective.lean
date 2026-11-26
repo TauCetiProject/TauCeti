@@ -70,6 +70,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
 instance Γ.projective_obj (K : ChainComplex C ℕ) [∀ n, Projective (K.X n)]
     (Δ : SimplexCategoryᵒᵖ) :
     Projective ((Γ.obj K).obj Δ) :=
+  -- `Idempotents.DoldKan.Γ` is defined as `Γ₀` (`EquivalencePseudoabelian.lean`).
   inferInstanceAs (Projective ((Γ₀.obj K).obj Δ))
 
 instance N.projective_X (X : SimplicialObject C) [∀ n, Projective (X _⦋n⦌)] (n : ℕ) :
@@ -86,6 +87,7 @@ namespace CategoryTheory.Abelian.DoldKan
 instance Γ.projective_obj {A : Type u} [Category.{v} A] [Abelian A]
     (K : ChainComplex A ℕ) [∀ n, Projective (K.X n)] (Δ : SimplexCategoryᵒᵖ) :
     Projective ((Γ.obj K).obj Δ) :=
+  -- `Abelian.DoldKan.Γ` is defined as `Idempotents.DoldKan.Γ` (`Equivalence.lean`).
   inferInstanceAs (Projective ((Idempotents.DoldKan.Γ.obj K).obj Δ))
 
 end CategoryTheory.Abelian.DoldKan

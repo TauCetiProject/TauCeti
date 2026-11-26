@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicTopology.SimplicialObject.Homotopy
 public import Mathlib.CategoryTheory.Limits.Shapes.FiniteProducts
 public import TauCeti.AlgebraicTopology.SimplexCategory.ToMkOne
 import Mathlib.AlgebraicTopology.SimplexCategory.MorphismProperty
-import TauCeti.AlgebraicTopology.SimplicialObject.Basic
 
 /-!
 # The cylinder functor on simplicial objects
@@ -306,7 +305,7 @@ private lemma toCylinderHomTerm_δ_of_le {X Y : SimplicialObject C} {f g : X ⟶
     rw [hk_pred]
     simp only [toCylinderHomTerm, Fin.cases_succ]
     rw [← Category.assoc, ← H.h_castSucc_comp_δ_succ_of_lt i j' hj'_lt_i, ← hj',
-      Category.assoc, Y.δ_succ_comp_δ_succ hij, ← Category.assoc, hj']
+      Category.assoc, Y.δ_comp_δ hij, Fin.castSucc_succ, ← Category.assoc, hj']
 
 omit [HasFiniteCoproducts C] in
 /-- Subcase `k = 1` (`j = 0`) of `toCylinderHomTerm_δ` when `i.castSucc < k`, forcing `i = 0`. -/
@@ -344,11 +343,11 @@ private lemma toCylinderHomTerm_δ_succ_succ {X Y : SimplicialObject C} {f g : X
       have h2 : j'.val < (i : ℕ) := by simpa [Fin.lt_def] using hji
       simp only [Fin.val_succ]; omega)
     subst hij
+    have hδ : Y.δ j'.succ.succ ≫ Y.δ j'.succ = Y.δ j'.castSucc.succ ≫ Y.δ j'.succ := by
+      rw [← Y.δ_comp_δ_self, Fin.castSucc_succ]
     rw [← Category.assoc, ← H.h_castSucc_comp_δ_succ_of_lt j'.succ j' Fin.castSucc_lt_succ,
-      Category.assoc, Y.δ_succ_comp_δ_succ (i := j'.succ) (j := j') le_rfl,
-      ← Category.assoc, ← H.h_succ_comp_δ_castSucc_succ,
-      Category.assoc, (Y.δ_succ_comp_δ_succ (i := j'.succ) (j := j') le_rfl).symm,
-      ← Category.assoc]
+      Category.assoc, hδ, ← Category.assoc, ← H.h_succ_comp_δ_castSucc_succ,
+      Category.assoc, ← hδ, ← Category.assoc]
 
 omit [HasFiniteCoproducts C] in
 private lemma toCylinderHomTerm_δ {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g)

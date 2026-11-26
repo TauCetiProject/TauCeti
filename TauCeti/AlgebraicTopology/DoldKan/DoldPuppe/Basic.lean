@@ -410,7 +410,7 @@ lemma Functor.doldPuppeFunctorConstHomotopyEquiv_hom [HasZeroObject D]
     HomotopyEquiv.ofIso]
   rw [Functor.mapIso_hom, Iso.app_hom,
     SimplicialObject.Augmented.ExtraDegeneracy.const_homotopyEquiv_hom]
-  rfl
+  dsimp only [SimplicialObject.Augmented.drop, SimplicialObject.Augmented.const]
 
 @[simp]
 lemma Functor.doldPuppeFunctorConstHomotopyEquiv_inv [HasZeroObject D]
