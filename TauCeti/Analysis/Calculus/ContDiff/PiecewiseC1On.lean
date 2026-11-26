@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.ContDiff.ClosedInterval
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
 import TauCeti.Order.Interval.Finite
 import TauCeti.Order.Interval.Set.Piecewise
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Piecewise `C¹` curves on an interval

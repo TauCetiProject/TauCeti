@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.CharacteristicCube
 public import TauCeti.AlgebraicTopology.Cellular.CharacteristicMap
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Pullback
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Additivity
@@ -83,6 +84,8 @@ which free generators, one for each `(m + 1)`-cell, are compared with the relati
 
 * `TauCeti.MoorePathPullback.isCubicalRepresentative_cubicalHomologyCubeBoundaryEquiv`: for a
   cycle `z` of `Ω_b X`, the chain `z · c₀` represents the image of `[z]`.
+* `TauCeti.subtypeVal_comp_characteristicCube`, `TauCeti.map_ofCube_characteristicCube`: read in
+  `B`, the characteristic cube of a cell in the skeleton, and its chain, are `TauCeti.cellCube`.
 * `TauCeti.isColimitCofanCellCubePathPullbackPairι`: the pullback over the disks of the `n`-cells
   is the disjoint union of the pullbacks over the single cells.
 * `TauCeti.isCubicalRepresentative_cellPathPullbackHomologyEquiv`: for a cycle `z` of `Ω_b B`, the
@@ -318,6 +321,25 @@ theorem cellCube_zero (j : cell C 0) : cellCube C 0 j = SingularCube.point (map 
   rw [SingularCube.eq_point (cellCube C 0 j), cellCube_apply]
   congr 2
   exact Subsingleton.elim _ _
+
+variable [T2Space B] in
+/-- Read in `B`, the characteristic cube `TauCeti.characteristicCube` of a cell, a cube of the
+skeleton, is `TauCeti.cellCube`. -/
+@[simp]
+theorem subtypeVal_comp_characteristicCube (n : ℕ) (j : cell C n) :
+    (ContinuousMap.subtypeVal _).comp (characteristicCube C n j) = cellCube C n j :=
+  ContinuousMap.ext fun d ↦ (coe_characteristicCube_apply n j d).trans (cellCube_apply n j d).symm
+
+variable [T2Space B] in
+/-- Pushed forward to `B`, the chain of the characteristic cube of a cell, a chain of the skeleton,
+is the chain of `TauCeti.cellCube`. -/
+theorem map_ofCube_characteristicCube (R : Type) [Ring R] (n : ℕ) (j : cell C n) :
+    NormalizedCubicalChain.map R (ContinuousMap.subtypeVal _ : C((skeletonPair C n).fst, B)) n
+        (NormalizedCubicalChain.ofCube _ R (characteristicCube C n j)) =
+      NormalizedCubicalChain.ofCube B R (cellCube C n j) :=
+  -- The skeleton is the ambient space of the skeletal pair only up to unfolding.
+  (NormalizedCubicalChain.map_ofCube R _ _).trans
+    (congrArg _ (subtypeVal_comp_characteristicCube n j))
 
 variable (C) in
 /-- The characteristic map of the `n`-cell `j`, on the closed unit ball of the sup norm. -/
