@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Strichartz.HomogeneousBesov
 public import TauCeti.Analysis.PDE.Wave.Propagator
+import TauCeti.Analysis.Fourier.Bernstein
 import TauCeti.Analysis.PDE.Wave.MixedNorm
 import TauCeti.Analysis.PDE.Wave.TimeExponentTwo
 import TauCeti.Analysis.PDE.Wave.WeakSolution
@@ -32,10 +33,10 @@ functions, so `cos(tD)` and `D⁻¹ sin(tD)` have no a priori meaning on them. F
 
 whose pieces are the evolutions of the `L²` blocks of the data, and shows that these series
 converge to some limit `U`, determined for almost every `t`, which serves as the evolution, with
-the Strichartz bound. It builds no evolution operator on these Besov spaces and does not show that
-the limits attain the data. For each series there is `U : ℝ → L^r` such
-that the partial sums converge to `U(t)` in `L^r` for almost every time `t` and to `U` in
-`L^q_t L^r_x`, with
+the Strichartz bound. It builds no evolution operator on these Besov spaces, and it shows that the
+limits attain the data only for the position datum at the pairs `(∞, r)` (see below). For each
+series there is `U : ℝ → L^r` such that the partial sums converge to `U(t)` in `L^r` for almost
+every time `t` and to `U` in `L^q_t L^r_x`, with
 
 `‖U‖_{L^q_t L^r_x} ≤ C ‖f‖_{\dot B^γ_{2,1}}`, respectively
 `‖U‖_{L^q_t L^r_x} ≤ C ‖g‖_{\dot B^{γ - 1}_{2,1}}`,
@@ -63,6 +64,21 @@ products `θ(t) ψ(x)` of a compactly supported `C²` function of time and a Sch
 The partial sums are free waves with `L²` data, which satisfy this identity
 (`TauCeti.integral_deriv_deriv_mul_inner_waveDuhamelSolution`), and both sides pass to limits in
 mixed norm (`TauCeti.integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_waveDuhamelSolution`).
+
+At the pairs `(∞, r)`, `2 ≤ r ≤ ∞`, the evolutions are continuous in time and attain the position
+datum. For `f ∈ \dot B^γ_{2,1}` with `γ = n / 2 - n / r` the series `∑ⱼ cos(tD) Pⱼ f` converges
+in `L^r` uniformly in `t`, to a continuous `U : ℝ → L^r` whose value `U(0)` is the sum `∑ⱼ Pⱼ f`
+of the blocks of `f` in `L^r`, so that `U(t) → ∑ⱼ Pⱼ f` in `L^r` as `t → 0`
+(`ContDiffBump.exists_continuous_tendsto_iSup_eLpNorm_sub_sum_waveCosPropagator_block`). For
+`g ∈ \dot B^{γ - 1}_{2,1}` the series `∑ⱼ D⁻¹ sin(tD) Pⱼ g` converges in the same way, to a
+continuous `U` with `U(0) = 0`
+(`ContDiffBump.exists_continuous_tendsto_iSup_eLpNorm_sub_sum_waveSinPropagator_block`). The
+attainment of the velocity datum `∂ₜU(0) = g` is not proved here. These follow from the
+frequency-localized estimates at every time
+(`ContDiffBump.exists_eLpNorm_waveCosPropagator_littlewoodPaley_le`) and the continuity of each
+block in `L^r`, which is Bernstein's inequality
+(`ContDiffBump.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le_of_two_le`) applied to the
+continuous `L²` evolution.
 
 Each piece obeys the frequency-localized Strichartz estimate
 `‖cos(tD) Pⱼ x‖_{L^q_t L^r_x} ≤ C 2^{jγ} ‖x‖₂`, and its `D⁻¹ sin(tD)` counterpart with
@@ -288,5 +304,73 @@ theorem integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_sum_waveSinPropaga
     hθc
 
 end WaveEquation
+
+/-! ### Continuity in time and the initial data
+
+At the pairs `(∞, r)` the frequency-localized estimates hold at every time, not only at almost
+every time, and the evolutions are continuous in time for the `L^r` distance. -/
+
+section Continuous
+
+/-- **`cos(tD)` on data in `\dot B^γ_{2,1}`, continuously in time, attaining the datum.** Let
+`2 ≤ r ≤ ∞` and `γ = n / 2 - n / r`. There is `C` such that for every `f ∈ \dot B^γ_{2,1}` the
+dyadic series `∑ⱼ cos(tD) Pⱼ f` converges in `L^r`, uniformly in `t`, to a continuous
+`U : ℝ → L^r` with `‖U(t)‖_r ≤ C ‖f‖_{\dot B^γ_{2,1}}` for every `t`, and `U(0)` is the sum
+`∑ⱼ Pⱼ f` of the blocks of `f` in `L^r`. So `U(t) → ∑ⱼ Pⱼ f` in `L^r` as `t → 0`: the evolution
+attains its initial datum. -/
+theorem exists_continuous_tendsto_iSup_eLpNorm_sub_sum_waveCosPropagator_block (hr : 2 ≤ r) :
+    ∃ C : ℝ≥0, ∀ f : HomogeneousBesovSpace ℂ φ ((Module.finrank ℝ E : ℝ) / 2 -
+        Module.finrank ℝ E * (r⁻¹).toReal) 2 1,
+      ∃ U : ℝ → Lp ℂ r (volume : Measure E), Continuous U ∧
+        Tendsto (fun s : Finset ℤ ↦ ⨆ t,
+          eLpNorm (⇑(U t) - ⇑(∑ j ∈ s, waveCosPropagator ℂ t (f.block j))) r volume) atTop
+            (𝓝 0) ∧
+        (∀ t, ‖U t‖ₑ ≤ C * ‖f‖ₑ) ∧
+        Tendsto (fun s : Finset ℤ ↦ eLpNorm (⇑(U 0) - ⇑(∑ j ∈ s, f.block j)) r volume) atTop
+          (𝓝 0) := by
+  obtain ⟨C, hC⟩ := φ.exists_continuous_tendsto_iSup_eLpNorm_sub_sum_apply_block _
+    (fun t ↦ waveCosPropagator ℂ t) (φ.exists_eLpNorm_waveCosPropagator_littlewoodPaley_le hr)
+    fun j m hm x t₀ ↦ by
+      simpa only [← fourierMultiplierCLM_waveCosPropagator_apply] using
+        φ.tendsto_eLpNorm_fourierMultiplierCLM_littlewoodPaley_sub hr hm
+          (continuous_waveCosPropagator_apply x) t₀
+  refine ⟨C, fun f ↦ ?_⟩
+  obtain ⟨U, hU, hunif, hle⟩ := hC f
+  refine ⟨U, hU, hunif, hle, tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hunif
+    (fun _ ↦ zero_le) fun s ↦ le_iSup_of_le 0 (le_of_eq ?_)⟩
+  simp [waveCosPropagator_zero]
+
+/-- **`D⁻¹ sin(tD)` on data in `\dot B^{γ - 1}_{2,1}`, continuously in time.** Let `2 ≤ r ≤ ∞` and
+`γ = n / 2 - n / r`. There is `C` such that for every `g ∈ \dot B^{γ - 1}_{2,1}` the dyadic series
+`∑ⱼ D⁻¹ sin(tD) Pⱼ g` converges in `L^r`, uniformly in `t`, to a continuous `U : ℝ → L^r` with
+`‖U(t)‖_r ≤ C ‖g‖_{\dot B^{γ - 1}_{2,1}}` for every `t`, and `U(0) = 0`. -/
+theorem exists_continuous_tendsto_iSup_eLpNorm_sub_sum_waveSinPropagator_block (hr : 2 ≤ r) :
+    ∃ C : ℝ≥0, ∀ g : HomogeneousBesovSpace ℂ φ ((Module.finrank ℝ E : ℝ) / 2 -
+        Module.finrank ℝ E * (r⁻¹).toReal - 1) 2 1,
+      ∃ U : ℝ → Lp ℂ r (volume : Measure E), Continuous U ∧
+        Tendsto (fun s : Finset ℤ ↦ ⨆ t,
+          eLpNorm (⇑(U t) - ⇑(∑ j ∈ s, waveSinPropagator ℂ t (g.block j))) r volume) atTop
+            (𝓝 0) ∧
+        (∀ t, ‖U t‖ₑ ≤ C * ‖g‖ₑ) ∧ U 0 = 0 := by
+  obtain ⟨C, hC⟩ := φ.exists_continuous_tendsto_iSup_eLpNorm_sub_sum_apply_block _
+    (fun t ↦ waveSinPropagator ℂ t) (φ.exists_eLpNorm_waveSinPropagator_littlewoodPaley_le hr)
+    fun j m hm x t₀ ↦ by
+      simpa only [← fourierMultiplierCLM_waveSinPropagator_apply] using
+        φ.tendsto_eLpNorm_fourierMultiplierCLM_littlewoodPaley_sub hr hm
+          (continuous_waveSinPropagator_apply x) t₀
+  refine ⟨C, fun g ↦ ?_⟩
+  obtain ⟨U, hU, hunif, hle⟩ := hC g
+  refine ⟨U, hU, hunif, hle, ?_⟩
+  -- At `t = 0` every partial sum vanishes, so the uniform convergence forces `‖U(0)‖_r = 0`.
+  have h0 : Tendsto (fun _ : Finset ℤ ↦ ‖U 0‖ₑ) atTop (𝓝 0) :=
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hunif (fun _ ↦ zero_le)
+      fun s ↦ le_iSup_of_le 0 (le_of_eq ?_)
+  · exact eNorm_eq_zero.1 (tendsto_nhds_unique tendsto_const_nhds h0)
+  simp only [waveSinPropagator_zero, zero_apply, Finset.sum_const_zero, Lp.eNorm_def]
+  refine eLpNorm_congr_ae ?_
+  filter_upwards [Lp.coeFn_zero ℂ 2 (volume : Measure E)] with x hx
+  rw [Pi.sub_apply, hx, Pi.zero_apply, sub_zero]
+
+end Continuous
 
 end ContDiffBump
