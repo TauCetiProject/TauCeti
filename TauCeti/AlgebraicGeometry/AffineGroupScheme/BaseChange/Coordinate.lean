@@ -29,7 +29,8 @@ anti-equivalence.
   group-object comparison intertwines pullback and coordinate scalar extension on morphisms.
 * `TauCeti.AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality`: a commuting
   square of coordinate Hopf algebras, with the scalar extensions identified, gives the commuting
-  square of group schemes over `S`.
+  square of group schemes over `S`; `hopfSpecBaseChangeGrpIso_trans_hom_naturality_inv` is the
+  variant for the inverses of a coordinate square of isomorphisms.
 * `TauCeti.AffineGroupSchemeCat.hopfSpecBaseChangeNatIso`: the comparison is natural in the
   coordinate Hopf algebra.
 
@@ -162,6 +163,25 @@ theorem hopfSpecBaseChangeGrpIso_trans_hom_naturality {H H' : CommHopfAlgCat.{u}
   simp only [Iso.trans_hom, Functor.mapIso_hom, Iso.op_hom, Iso.symm_hom]
   rw [← Category.assoc, hopfSpecBaseChangeGrpIso_hom_naturality, Category.assoc, Category.assoc,
     ← Functor.map_comp, ← Functor.map_comp, ← op_comp, ← op_comp, h']
+
+/-- **A coordinate square of isomorphisms gives a group-scheme square of their inverses.** If
+`(S ⊗ e) ≫ b' = b ≫ e'` for isomorphisms `e : H ≅ H'` and `e' : A ≅ A'`, then the square of
+`hopfSpecBaseChangeGrpIso_trans_hom_naturality` commutes for `Spec e.inv` and `Spec e'.inv`. -/
+@[reassoc]
+theorem hopfSpecBaseChangeGrpIso_trans_hom_naturality_inv {H H' : CommHopfAlgCat.{u} R}
+    {A A' : CommHopfAlgCat.{u} S} (e : H ≅ H') (e' : A ≅ A')
+    (b : CommHopfAlgCat.baseChange (K := S) H ≅ A) (b' : CommHopfAlgCat.baseChange (K := S) H' ≅ A')
+    (h : CommHopfAlgCat.baseChangeMap (K := S) e.hom ≫ b'.hom = b.hom ≫ e'.hom) :
+    (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R S)))).mapGrp.map
+          ((hopfSpec (CommRingCat.of R)).map e.inv.op) ≫
+        (hopfSpecBaseChangeGrpIso H' ≪≫ (hopfSpec (CommRingCat.of S)).mapIso b'.symm.op).hom =
+      (hopfSpecBaseChangeGrpIso H ≪≫ (hopfSpec (CommRingCat.of S)).mapIso b.symm.op).hom ≫
+        (hopfSpec (CommRingCat.of S)).map e'.inv.op := by
+  refine hopfSpecBaseChangeGrpIso_trans_hom_naturality e.inv e'.inv b b' ?_
+  -- Read the hypothesis as a square of `hom`s of isomorphisms, and invert it horizontally.
+  rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_hom] at h
+  rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_inv]
+  exact (CommSq.horiz_inv ⟨h⟩).w
 
 /-- The group-object comparison between pullback of Hopf spectra and Hopf spectra of scalar
 extensions, natural in the coordinate Hopf algebra. -/

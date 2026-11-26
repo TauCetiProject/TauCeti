@@ -23,6 +23,8 @@ Over a possibly noncommutative ring `R` of Bass stable range at most `s`
   `AlgebraicK1.mk R n : GL (Fin n) R →* K₁(R)` is surjective, yielding
   `GL (Fin n) R ⧸ (AlgebraicK1.mk R n).ker ≃* K₁(R)` already at the boundary `n = s` where
   injective stability need not yet hold.
+  In stable range at most `1` this says that every class of `K₁(R)` is the class of an
+  invertible `1 × 1` matrix.
 * **Injective `K₁`-stability (`s + 1 ≤ n`).** The kernel of `AlgebraicK1.mk R n` equals
   `elementarySubgroup (Fin n) R`, yielding
   `GL (Fin n) R ⧸ elementarySubgroup (Fin n) R ≃* K₁(R)` and
