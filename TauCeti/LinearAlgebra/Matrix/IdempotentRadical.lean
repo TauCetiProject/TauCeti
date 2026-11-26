@@ -11,6 +11,8 @@ public import Mathlib.Topology.Instances.Matrix
 
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NoncommRing
+import Mathlib.Topology.Algebra.Group.Units
+import TauCeti.Algebra.Polynomial.Semiconj
 
 /-!
 # The unipotent radical attached to an idempotent matrix
@@ -130,48 +132,32 @@ theorem coe_radicalHom_mul_idempotent (hε : IsIdempotentElem ε)
 /-- Over a topological ring, `Matrix.radicalHom hε` is continuous. -/
 theorem continuous_radicalHom [TopologicalSpace k] [IsTopologicalRing k]
     (hε : IsIdempotentElem ε) : Continuous (radicalHom hε) := by
-  rw [Units.continuous_iff]
-  have h1 : Continuous fun Y : Multiplicative (Matrix n n k) ↦
+  have hval : Continuous fun Y : Multiplicative (Matrix n n k) ↦
       (radicalHom hε Y : Matrix n n k) := by
     simp only [coe_radicalHom]
     exact continuous_const.add ((continuous_const.mul continuous_toAdd).mul continuous_const)
-  have h2 : Continuous fun Y : Multiplicative (Matrix n n k) ↦
-      ((radicalHom hε Y)⁻¹).val := by
-    have hinv : ∀ Y : Multiplicative (Matrix n n k),
-        ((radicalHom hε Y)⁻¹).val = (radicalHom hε Y⁻¹ : Matrix n n k) := fun Y ↦ by
-      rw [← map_inv]
-    simp only [hinv, coe_radicalHom, toAdd_inv]
-    exact continuous_const.add ((continuous_const.mul continuous_toAdd.neg).mul continuous_const)
-  exact ⟨h1, h2⟩
-
-/-- If `a * b = c * a`, then `a * aeval b p = aeval c p * a` for every polynomial `p`. -/
-theorem mul_aeval_eq_aeval_mul {a b c : Matrix n n k} (hab : a * b = c * a) (p : k[X]) :
-    a * aeval b p = aeval c p * a := by
-  induction p using Polynomial.induction_on' with
-  | add p₁ p₂ hp₁ hp₂ => simp only [map_add, mul_add, add_mul, hp₁, hp₂]
-  | monomial m r =>
-    simp only [aeval_monomial, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, mul_smul_comm,
-      one_mul]
-    congr 1
-    induction m with
-    | zero => simp
-    | succ m ih => rw [pow_succ, pow_succ, ← mul_assoc, ih, mul_assoc, hab, ← mul_assoc]
+  exact Continuous.of_coeHom_comp hval
 
 /-- If `ε * (g * ε) = g * ε` and `x - g ∈ upperBlocks ε`, then `aeval x p - aeval g p` lies in
 `upperBlocks ε` for every polynomial `p`. -/
 theorem aeval_sub_aeval_mem_upperBlocks {g x : Matrix n n k} (hg : ε * (g * ε) = g * ε)
     (hx : x - g ∈ upperBlocks ε) (p : k[X]) : aeval x p - aeval g p ∈ upperBlocks ε := by
   obtain ⟨hx_range, hx_ker⟩ := mem_upperBlocks_iff.mp hx
-  have hx_image : ε * (g * ε) = x * ε := by
+  have hx_image : SemiconjBy ε (g * ε) x := by
+    rw [SemiconjBy]
     linear_combination (norm := noncomm_ring) hg - hx_ker
-  have hg_quot : (1 - ε) * g = (1 - ε) * g * (1 - ε) := by
+  have hg_quot : SemiconjBy (1 - ε) g ((1 - ε) * g) := by
+    rw [SemiconjBy]
     linear_combination (norm := noncomm_ring) -hg
-  have hx_quot : (1 - ε) * x = (1 - ε) * g * (1 - ε) := by
-    linear_combination (norm := noncomm_ring) hg_quot - hx_range
-  have h_image : aeval x p * ε = aeval g p * ε :=
-    (mul_aeval_eq_aeval_mul hx_image p).symm.trans (mul_aeval_eq_aeval_mul hg p)
-  have h_quot : (1 - ε) * aeval x p = (1 - ε) * aeval g p :=
-    (mul_aeval_eq_aeval_mul hx_quot p).trans (mul_aeval_eq_aeval_mul hg_quot p).symm
+  have hx_quot : SemiconjBy (1 - ε) x ((1 - ε) * g) := by
+    rw [SemiconjBy]
+    linear_combination (norm := noncomm_ring) hg_quot.eq - hx_range
+  have h_image : aeval x p * ε = aeval g p * ε := by
+    simpa only [aeval_eq_smeval] using
+      (hx_image.smeval_right p).eq.symm.trans ((SemiconjBy.smeval_right hg p).eq)
+  have h_quot : (1 - ε) * aeval x p = (1 - ε) * aeval g p := by
+    simpa only [aeval_eq_smeval] using
+      (hx_quot.smeval_right p).eq.trans (hg_quot.smeval_right p).eq.symm
   refine mem_upperBlocks_iff.mpr ⟨?_, by rw [sub_mul, h_image, sub_self]⟩
   linear_combination (norm := noncomm_ring) -h_quot
 
@@ -179,7 +165,8 @@ theorem aeval_sub_aeval_mem_upperBlocks {g x : Matrix n n k} (hg : ε * (g * ε)
 theorem mul_mul_eq_mul_of_aeval {g : Matrix n n k} {p : k[X]}
     (h_range : ε * aeval g p = aeval g p) (h_fix : aeval g p * ε = ε) :
     ε * (g * ε) = g * ε := by
-  have h_comm : g * aeval g p = aeval g p * g := mul_aeval_eq_aeval_mul rfl p
+  have h_comm : g * aeval g p = aeval g p * g := by
+    simpa only [aeval_eq_smeval] using (SemiconjBy.smeval_right (rfl : SemiconjBy g g g) p).eq
   have h_eq : g * ε = aeval g p * (g * ε) := by rw [← mul_assoc, ← h_comm, mul_assoc, h_fix]
   rw [h_eq, ← mul_assoc, h_range]
 
@@ -191,8 +178,10 @@ theorem semiconjBy_one_add_aeval_sub {g x : Matrix n n k} {p : k[X]}
   obtain ⟨hεD, -⟩ := mem_upperBlocks_iff.mp
     (aeval_sub_aeval_mem_upperBlocks (mul_mul_eq_mul_of_aeval h_range h_fix) hx p)
   obtain ⟨hεZ, -⟩ := mem_upperBlocks_iff.mp hx
-  have hg_comm : g * aeval g p = aeval g p * g := mul_aeval_eq_aeval_mul rfl p
-  have hx_comm : x * aeval x p = aeval x p * x := mul_aeval_eq_aeval_mul rfl p
+  have hg_comm : g * aeval g p = aeval g p * g := by
+    simpa only [aeval_eq_smeval] using (SemiconjBy.smeval_right (rfl : SemiconjBy g g g) p).eq
+  have hx_comm : x * aeval x p = aeval x p * x := by
+    simpa only [aeval_eq_smeval] using (SemiconjBy.smeval_right (rfl : SemiconjBy x x x) p).eq
   have hZe : (x - g) * aeval g p = 0 := mul_eq_zero_of_mem_upperBlocks hx h_range
   have hZD : (x - g) * (aeval x p - aeval g p) = 0 := mul_eq_zero_of_mem_upperBlocks hx hεD
   have heZ : aeval g p * (x - g) = x - g := by rw [← hεZ, ← mul_assoc, h_fix]
