@@ -35,6 +35,8 @@ transport Hochschild's central `p`-polynomials along a field extension.
 
 * `UniversalEnvelopingAlgebra.baseChangeRingHom_ι`: the characteristic equation on the
   canonical Lie generators.
+* `UniversalEnvelopingAlgebra.baseChangeRingHom_unique`: it is the only ring homomorphism with
+  these values on the Lie generators and the scalars.
 * `UniversalEnvelopingAlgebra.baseChangeRingHom_smul`: the map is `R`-linear, `R` acting
   on the target through `algebraMap R A`.
 * `UniversalEnvelopingAlgebra.baseChangeRingHom_mem_center`: central elements map to
@@ -56,36 +58,73 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable (R : Type u) (A : Type v) (L : Type w)
 variable [CommRing R] [CommRing A] [Algebra R A] [LieRing L] [LieAlgebra R L]
 
+section Lift
+
+-- `R` acts on `U_A(A ⊗[R] L)` through `A`. Mathlib registers no such `R`-algebra structure, so the
+-- lift defining `baseChangeRingHom` and the lemmas proved through it share this local one.
+private noncomputable local instance algebraOfBaseChange :
+    Algebra R (UniversalEnvelopingAlgebra A (A ⊗[R] L)) :=
+  Algebra.compHom _ (algebraMap R A)
+
+private local instance isScalarTowerOfBaseChange :
+    IsScalarTower R A (UniversalEnvelopingAlgebra A (A ⊗[R] L)) :=
+  IsScalarTower.of_algebraMap_eq fun _ => rfl
+
+/-- The Lie homomorphism `x ↦ ι (1 ⊗ x)` over `R` whose lift is `baseChangeRingHom`. -/
+private noncomputable def baseChangeLieHom :
+    L →ₗ⁅R⁆ UniversalEnvelopingAlgebra A (A ⊗[R] L) where
+  toFun x := ι A ((1 : A) ⊗ₜ[R] x)
+  map_add' x y := by rw [tmul_add, map_add]
+  map_smul' r x := by
+    rw [tmul_smul, ← algebraMap_smul A, map_smul, algebraMap_smul, RingHom.id_apply]
+  map_lie' {x y} := by
+    rw [← LieHom.map_lie, LieAlgebra.ExtendScalars.bracket_tmul, mul_one]
+
 /-- The ring homomorphism `U_R(L) →+* U_A(A ⊗[R] L)` induced by the Lie homomorphism
 `x ↦ ι (1 ⊗ x)`, for a commutative `R`-algebra `A`. It sends `ι x` to `ι (1 ⊗ x)` and
 `algebraMap R _ r` to `algebraMap A _ (algebraMap R A r)`; see `baseChangeRingHom_ι` and
-`baseChangeRingHom_algebraMap`. -/
+`baseChangeRingHom_algebraMap`, and `baseChangeRingHom_unique` for the uniqueness. -/
 noncomputable def baseChangeRingHom :
     UniversalEnvelopingAlgebra R L →+*
       UniversalEnvelopingAlgebra A (A ⊗[R] L) :=
-  -- `R` acts on the target through `A`, which is how the lift sees it as an `R`-algebra.
-  letI := Algebra.compHom (UniversalEnvelopingAlgebra A (A ⊗[R] L)) (algebraMap R A)
-  haveI : IsScalarTower R A (UniversalEnvelopingAlgebra A (A ⊗[R] L)) :=
-    IsScalarTower.of_algebraMap_eq fun _ => rfl
-  (lift R
-    { toFun := fun x => ι A ((1 : A) ⊗ₜ[R] x)
-      map_add' := fun x y => by rw [tmul_add, map_add]
-      map_smul' := fun r x => by
-        rw [tmul_smul, ← algebraMap_smul A, map_smul, algebraMap_smul, RingHom.id_apply]
-      map_lie' := fun {x y} => by
-        rw [← LieHom.map_lie, LieAlgebra.ExtendScalars.bracket_tmul, mul_one] }).toRingHom
+  (lift R (baseChangeLieHom R A L)).toRingHom
 
 variable {R A L}
+
+private theorem baseChangeRingHom_apply (u : UniversalEnvelopingAlgebra R L) :
+    baseChangeRingHom R A L u = lift R (baseChangeLieHom R A L) u :=
+  rfl
 
 /-- `baseChangeRingHom` sends the canonical generator `ι x` to `ι (1 ⊗ x)`. -/
 -- `simp`-normal form is `baseChangeRingHom_ι'`, since `simp` unfolds `ι` through `ι_apply`.
 theorem baseChangeRingHom_ι (x : L) :
     baseChangeRingHom R A L (ι R x) =
       ι A ((1 : A) ⊗ₜ[R] x) := by
-  -- The `R`-algebra structure through which `baseChangeRingHom` is built as a lift.
-  let := Algebra.compHom (UniversalEnvelopingAlgebra A (A ⊗[R] L)) (algebraMap R A)
-  rw [baseChangeRingHom]
-  exact lift_ι_apply R _ x
+  rw [baseChangeRingHom_apply, lift_ι_apply]
+  rfl
+
+/-- `baseChangeRingHom` sends the scalar `r` of `U_R(L)` to the scalar `algebraMap R A r`. -/
+@[simp]
+theorem baseChangeRingHom_algebraMap (r : R) :
+    baseChangeRingHom R A L (algebraMap R _ r) =
+      algebraMap A _ (algebraMap R A r) := by
+  rw [baseChangeRingHom_apply, AlgHom.commutes]
+  rfl
+
+/-- `baseChangeRingHom` is the only ring homomorphism `U_R(L) →+* U_A(A ⊗[R] L)` sending `ι x`
+to `ι (1 ⊗ x)` and the scalar `r` to the scalar `algebraMap R A r`. -/
+theorem baseChangeRingHom_unique
+    (g : UniversalEnvelopingAlgebra R L →+* UniversalEnvelopingAlgebra A (A ⊗[R] L))
+    (hι : ∀ x, g (ι R x) = ι A ((1 : A) ⊗ₜ[R] x))
+    (halg : ∀ r, g (algebraMap R _ r) = algebraMap A _ (algebraMap R A r)) :
+    g = baseChangeRingHom R A L := by
+  have h : ({ g with commutes' := halg } : _ →ₐ[R] _) = lift R (baseChangeLieHom R A L) :=
+    hom_ext R (LieHom.ext fun x => (hι x).trans (lift_ι_apply R (baseChangeLieHom R A L) x).symm)
+  exact RingHom.ext fun u => congrArg (· u) h
+
+end Lift
+
+variable {R A L}
 
 /-- The `simp`-normal form of `baseChangeRingHom_ι`, stated for the canonical generators as `simp`
 writes them: `ι R x` unfolds to `mkAlgHom R L (TensorAlgebra.ι R x)`. -/
@@ -96,16 +135,6 @@ theorem baseChangeRingHom_ι' (x : L) :
       mkAlgHom A (A ⊗[R] L)
         (TensorAlgebra.ι A ((1 : A) ⊗ₜ[R] x)) :=
   baseChangeRingHom_ι x
-
-/-- `baseChangeRingHom` sends the scalar `r` of `U_R(L)` to the scalar `algebraMap R A r`. -/
-@[simp]
-theorem baseChangeRingHom_algebraMap (r : R) :
-    baseChangeRingHom R A L (algebraMap R _ r) =
-      algebraMap A _ (algebraMap R A r) := by
-  -- The `R`-algebra structure through which `baseChangeRingHom` is built as a lift.
-  let := Algebra.compHom (UniversalEnvelopingAlgebra A (A ⊗[R] L)) (algebraMap R A)
-  rw [baseChangeRingHom]
-  exact AlgHom.commutes _ r
 
 /-- `baseChangeRingHom` is `R`-linear, `R` acting on `U_A(A ⊗[R] L)` through `algebraMap R A`. -/
 @[simp]
@@ -125,12 +154,10 @@ theorem baseChangeRingHom_mem_center {u : UniversalEnvelopingAlgebra R L}
   intro t
   induction t using TensorProduct.inductionOn with
   | tmul a x =>
-    have hx : ⁅u, ι R x⁆ = 0 :=
-      (TauCeti.UniversalEnvelopingAlgebra.mem_center_iff_forall_lie_ι R L).mp hu x
+    have hx : Commute u (ι R x) := (Subalgebra.mem_center_iff.mp hu (ι R x)).symm
     have hax : a ⊗ₜ[R] x = a • ((1 : A) ⊗ₜ[R] x) := by rw [smul_tmul', smul_eq_mul, mul_one]
     rw [hax, map_smul, lie_smul, ← baseChangeRingHom_ι, LieRing.of_associative_ring_bracket,
-      ← map_mul, ← map_mul, ← map_sub, ← LieRing.of_associative_ring_bracket, hx, map_zero,
-      smul_zero]
+      (hx.map (baseChangeRingHom R A L)).eq, sub_self, smul_zero]
   | add s t hs ht => rw [map_add, lie_add, hs, ht, add_zero]
 
 end UniversalEnvelopingAlgebra
