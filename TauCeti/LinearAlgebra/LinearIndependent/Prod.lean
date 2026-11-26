@@ -13,10 +13,11 @@ public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 Over a domain `R`, the vectors `(1, c)` and `v` of `R × R` are linearly independent exactly when
 the determinant `v.2 - c * v.1` is nonzero (`TauCeti.linearIndependent_pair_mk_one_iff`).
 
-Over a ring `K`, a family `u : Option J → V × K` is linearly independent when
-its values at `some i` are `(eᵢ, 0)` for a linearly independent family `e`, and its value at `none`
-has a right-regular second coordinate (`LinearIndependent.option_prod`): adjoining a vector with
-a new coordinate keeps a family independent.
+Over a semiring `K`, a family `u : Option J → V × K` in a cancellative semimodule is
+linearly independent when its values at `some i` are `(eᵢ, 0)` for a linearly independent
+family `e`,
+and its value at `none` has a right-regular second coordinate (`LinearIndependent.option_prod`):
+adjoining a vector with a new coordinate keeps a family independent.
 -/
 
 public section
@@ -39,22 +40,24 @@ theorem linearIndependent_pair_mk_one_iff {R : Type*} [CommRing R] [IsDomain R] 
 
 end TauCeti
 
-/-- Over a ring `K`, a family `u : Option J → V × K` is linearly independent
-when its values at `some i` are `(eᵢ, 0)` for a linearly independent family `e`, and its value at
-`none` has a second coordinate whose right multiplication is injective. -/
-theorem LinearIndependent.option_prod {K V J : Type*} [Ring K] [AddCommGroup V]
+/-- Over a semiring `K`, a family `u : Option J → V × K` in a cancellative semimodule is
+linearly independent when its values at `some i` are `(eᵢ, 0)` for a linearly independent
+family `e`,
+and its value at `none` has a second coordinate whose right multiplication is injective. -/
+theorem LinearIndependent.option_prod {K V J : Type*} [Semiring K] [AddCancelCommMonoid V]
     [Module K V] {e : J → V} (he : LinearIndependent K e) {u : Option J → V × K}
     (hsome : ∀ i, u (some i) = (e i, 0)) (hnone : Function.Injective (fun a : K ↦ a * (u none).2)) :
     LinearIndependent K u := by
-  rw [linearIndependent_iff]
-  intro l hl
+  rw [linearIndependent_iffₛ]
+  intro l m hlm
   have hcomp : u ∘ some = LinearMap.inl K V K ∘ e := funext hsome
-  rw [Finsupp.linearCombination_option, hcomp, ← Finsupp.apply_linearCombination] at hl
-  -- The second coordinate sees only the value at `none`, the first one only the others.
-  have hnone' : l none = 0 :=
-    hnone (by simpa using congrArg Prod.snd hl)
-  have hsome' : l.some = 0 :=
-    linearIndependent_iff.mp he _ (by simpa [hnone'] using congrArg Prod.fst hl)
+  simp only [Finsupp.linearCombination_option, hcomp,
+    ← Finsupp.apply_linearCombination] at hlm
+  -- The second coordinate determines `none`; cancellation then isolates the other coefficients.
+  have hnone' : l none = m none :=
+    hnone (by simpa using congrArg Prod.snd hlm)
+  have hsome' : l.some = m.some := he.finsuppLinearCombination_injective <| by
+    simpa [hnone'] using congrArg Prod.fst hlm
   ext (_ | i)
   · exact hnone'
   · simpa using congrArg (· i) hsome'
