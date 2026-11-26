@@ -51,11 +51,15 @@ Laplacian between the quotients of one manifold by almost-conjugate subgroups.
   with `TauCeti.Manifold.SobolevH1.normalizedPullback_ofSmooth` on smooth functions.
 * `TauCeti.Manifold.SobolevH1.toLp_normalizedPullback`: compatibility with the normalized pullback
   on `L²`.
-* `TauCeti.Manifold.SobolevH1.dirichletForm_normalizedPullback`: the energy-form identity.
+* `TauCeti.Manifold.SobolevH1.dirichletForm_normalizedPullback`,
+  `TauCeti.Manifold.SobolevH1.inner_toLp_normalizedPullback`: the energy-form identity and its
+  `L²` counterpart.
 * `TauCeti.Manifold.SobolevH1.compRiemannianIsometry_normalizedPullback`: the range consists of
   deck-invariant elements.
 * `TauCeti.Manifold.SobolevH1.smul_sum_compRiemannianIsometry_mem_range_normalizedPullback`: the
-  average over the deck transformations maps `H¹(M)` into the range.
+  average over the deck transformations maps `H¹(M)` into the range, and
+  `TauCeti.Manifold.SobolevH1.map_normalizedPullback_eq_of_eq_smul_sum`: a linear map invariant
+  at `v` under the deck transformations takes the same value at its deck average.
 * `TauCeti.Manifold.SobolevH1.mem_range_normalizedPullback_iff`: the range is exactly the
   deck-invariant subspace.
 
@@ -210,6 +214,15 @@ theorem dirichletForm_normalizedPullback (hq : IsQuotientCoveringMap q G)
   rw [dirichletForm_apply, dirichletForm_apply, LinearIsometry.inner_map_map,
     toLp_normalizedPullback, toLp_normalizedPullback, LinearIsometry.inner_map_map]
 
+/-- The normalized pullback preserves the `L²` inner product of values of elements of `H¹`:
+`⟪J w, J v⟫_{L²(M)} = ⟪w, v⟫_{L²(N)}`. -/
+@[simp]
+theorem inner_toLp_normalizedPullback (hq : IsQuotientCoveringMap q G)
+    (hf : IsLocalRiemannianIsometry I I' q) (w v : SobolevH1 I' N) :
+    ⟪toLp (normalizedPullback hq hf w), toLp (normalizedPullback hq hf v)⟫_ℝ =
+      ⟪toLp w, toLp v⟫_ℝ := by
+  rw [toLp_normalizedPullback, toLp_normalizedPullback, LinearIsometry.inner_map_map]
+
 /-- **Deck invariance.** The normalized pullback of `w ∈ H¹(N)` is invariant under pullback along
 every Riemannian isometry `Φ` of `M` with `q ∘ Φ = q`, such as a deck transformation of the
 covering. -/
@@ -262,6 +275,20 @@ theorem smul_sum_compRiemannianIsometry_mem_range_normalizedPullback [Fintype G]
   rw [map_smul, normalizedPullback_ofSmooth, smul_smul, hc, one_smul, hv, hA]
   simp only [map_smul, map_sum, compRiemannianIsometry_ofSmooth]
 
+/-- **Testing against deck averages.** A linear map `φ` on `H¹(M)` which takes the same value at
+`v` and at each deck pullback `(g ·)^* v` takes this value at the deck average
+`J v' = |G|⁻¹ ∑_g (g ·)^* v` too. -/
+theorem map_normalizedPullback_eq_of_eq_smul_sum [Fintype G] (hq : IsQuotientCoveringMap q G)
+    (hf : IsLocalRiemannianIsometry I I' q) {F : Type*} [AddCommGroup F] [Module ℝ F]
+    (φ : SobolevH1 I M →ₗ[ℝ] F) {v : SobolevH1 I M}
+    (hφ : ∀ g : G, φ (compRiemannianIsometry (hq.deckIsometry hf g) v) = φ v)
+    {v' : SobolevH1 I' N} (hv' : normalizedPullback hq hf v' =
+      (Fintype.card G : ℝ)⁻¹ • ∑ g : G, compRiemannianIsometry (hq.deckIsometry hf g) v) :
+    φ (normalizedPullback hq hf v') = φ v := by
+  simp only [hv', map_smul, map_sum, hφ, Finset.sum_const, Finset.card_univ,
+    ← Nat.cast_smul_eq_nsmul ℝ, smul_smul]
+  rw [inv_mul_cancel₀ (Nat.cast_ne_zero.2 Fintype.card_ne_zero), one_smul]
+
 /-- **The range of the normalized pullback.** An element of `H¹(M)` is the normalized pullback of
 an element of `H¹(N)` exactly when it is invariant under pullback along every deck transformation
 of the finite quotient covering `q : M → N`. So `H¹(N)` is identified isometrically with the
@@ -274,13 +301,9 @@ theorem mem_range_normalizedPullback_iff (hq : IsQuotientCoveringMap q G)
   · rintro ⟨w, rfl⟩ g
     exact compRiemannianIsometry_normalizedPullback hq hf (fun x ↦ by simp [hq.map_smul]) w
   have := Fintype.ofFinite G
-  -- an invariant element is its own average over the deck transformations
-  have hAw : (Fintype.card G : ℝ)⁻¹ • ∑ g : G, compRiemannianIsometry (hq.deckIsometry hf g) w =
-      w := by
-    simp only [hw, Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul]
-    rw [inv_mul_cancel₀ (Nat.cast_ne_zero.2 Fintype.card_ne_zero), one_smul]
-  rw [← hAw]
-  exact smul_sum_compRiemannianIsometry_mem_range_normalizedPullback hq hf w
+  -- the average over the deck transformations fixes `w` and is a normalized pullback
+  obtain ⟨v, hv⟩ := smul_sum_compRiemannianIsometry_mem_range_normalizedPullback hq hf w
+  exact ⟨v, map_normalizedPullback_eq_of_eq_smul_sum hq hf LinearMap.id hw hv⟩
 
 end Range
 

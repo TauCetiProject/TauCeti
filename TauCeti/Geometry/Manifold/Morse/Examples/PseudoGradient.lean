@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Examples.QuadraticWell
+public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Diffeomorph
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Existence
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Prod
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
 /-!
 # Adapted pseudo-gradients of the quadratic well and the saddle
@@ -31,6 +33,11 @@ This file tests the definition on the two simplest Morse functions.
   (`TauCeti.mvfderiv_sq_real_apply`). The Euclidean negative
   gradient `x ↦ -2 x`, which reads `z ↦ -2 z` in the Morse chart, is not adapted
   (`TauCeti.not_isAdaptedPseudoGradient_sq_real_neg_mgradient`).
+* **Metrics in which the negative gradient is adapted.** For the metric `a dx²` on `ℝ`
+  (`TauCeti.scaledLineMetric`) the negative gradient of `x²` is `x ↦ -2 x / a`, so it is adapted
+  exactly when `a = 2` (`TauCeti.isAdaptedPseudoGradient_neg_mgradient_sq_scaledLineMetric_iff`).
+  The metric `2 dx²` is the Euclidean metric `dz²` of the Morse chart `z = √2 x`, in which the
+  negative gradient of `x² = z² / 2` is `z ↦ -z`.
 * **The saddle `f(u, v) = -u² + v²` on `ℝ²`.** In the Morse chart `z = √2 (u, v)` with weights
   `(-1, 1)` the field `(u, v) ↦ (u, -v)` reads `(z₁, -z₂)`, and it is adapted
   (`TauCeti.isAdaptedPseudoGradient_neg_sq_add_sq_prodMk_neg`), as the product of the adapted
@@ -42,7 +49,10 @@ This file tests the definition on the two simplest Morse functions.
 * **A normalized field on a band.** On the band `1 ≤ x² ≤ 4`, the field `x ↦ -1 / (2 x)` lowers
   `x²` at unit speed (`TauCeti.mvfderiv_sq_real_apply_neg_inv`), as do the fields that deform a
   sublevel across a critical-free band
-  (`TauCeti.exists_flow_apply_eq_sub_of_mvfderiv_lt_zero`).
+  (`TauCeti.exists_flow_apply_eq_sub_of_mvfderiv_lt_zero`). It is the normalized negative
+  gradient `-grad f / ‖grad f‖²` of the standard metric
+  (`TauCeti.inv_norm_mgradient_sq_real_sq_smul_neg_mgradient_sq_real`), the field along which
+  `TauCeti.exists_sublevelDeformation_neg_mgradient` deforms sublevels.
   Its trajectory from `x = 2` is `t ↦ √(4 - t)` (`TauCeti.isMIntegralCurveOn_sqrt_four_sub`),
   which reaches `x = 1` at the time `3 = f(2) - 1`.
 
@@ -55,7 +65,7 @@ This file tests the definition on the two simplest Morse functions.
 public section
 
 open Filter Set Topology TauCeti.Manifold
-open scoped ContDiff Manifold
+open scoped Bundle ContDiff Manifold
 
 namespace TauCeti
 
@@ -178,6 +188,72 @@ theorem not_isAdaptedPseudoGradient_sq_real_neg_mgradient :
   rw [neg_mgradient_sq_real_apply] at hy
   exact hy0 (by simp only [mem_singleton_iff]; linarith)
 
+/-! ### Metrics in which the negative gradient is adapted -/
+
+section ScaledMetric
+
+open WithMetric
+
+variable {a : ℝ} (ha : 0 < a)
+
+/-- Read on `ℝ` through the identity `toWithMetric`, the negative gradient of `x ↦ x²` for the
+metric `a dx²` is the field `x ↦ -2 x / a`. -/
+private theorem mpullback_toWithMetric_neg_mgradient_sq_scaledLineMetric_apply (y : ℝ) :
+    VectorField.mpullback 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (toWithMetric (scaledLineMetric ha))
+        (-mgradient 𝓘(ℝ, ℝ) fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2) y =
+      (-(2 / a * y) : ℝ) := by
+  have h := (diffeomorph (I := 𝓘(ℝ, ℝ)) (scaledLineMetric ha) ∞).symm.mfderiv_apply_mpullback
+    (by simp) (-mgradient 𝓘(ℝ, ℝ) fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2) y
+  rwa [coe_diffeomorph_symm, mfderiv_toWithMetric_apply, neg_mgradient_sq_scaledLineMetric_apply,
+    ofWithMetric_toWithMetric] at h
+
+/-- Pushed forward along the identity `toWithMetric`, the field `x ↦ -2 x / a` of `ℝ` is the
+negative gradient of `x ↦ x²` for the metric `a dx²`. -/
+private theorem mpullback_ofWithMetric_neg_mul_eq_neg_mgradient_sq_scaledLineMetric :
+    VectorField.mpullback 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (ofWithMetric (g := scaledLineMetric ha))
+        (fun x : ℝ ↦ (-(2 / a * x) : ℝ)) =
+      -mgradient 𝓘(ℝ, ℝ) fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2 := by
+  funext y
+  have h := (diffeomorph (I := 𝓘(ℝ, ℝ)) (scaledLineMetric ha) ∞).mfderiv_apply_mpullback
+    (by simp) (fun x : ℝ ↦ (-(2 / a * x) : ℝ)) y
+  rw [coe_diffeomorph, mfderiv_ofWithMetric_apply] at h
+  rw [h, neg_mgradient_sq_scaledLineMetric_apply]
+
+/-- **The negative gradient of the quadratic well is adapted exactly for the metric `2 dx²`.** For
+the metric `a dx²` on `ℝ` (`TauCeti.scaledLineMetric`, on the copy
+`WithMetric (scaledLineMetric ha)` of `ℝ`), the negative gradient of `x ↦ x²` is `x ↦ -2 x / a`
+(`TauCeti.mgradient_sq_scaledLineMetric`), and it is a pseudo-gradient adapted to `x ↦ x²` if and
+only if `a = 2`. The metric `2 dx²` is the Euclidean metric `dz²` of the Morse chart `z = √2 x`
+(`MorseChart.sqReal`), in which the negative gradient of `x² = z² / 2` is the linear field
+`z ↦ -z`. For the standard metric `a = 1`, the negative gradient `x ↦ -2 x` reads `z ↦ -2 z` and is
+not adapted. -/
+theorem isAdaptedPseudoGradient_neg_mgradient_sq_scaledLineMetric_iff :
+    IsAdaptedPseudoGradient (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2)
+        (-mgradient 𝓘(ℝ, ℝ) fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2) ↔
+      a = 2 := by
+  let σ := WithMetric.diffeomorph (I := 𝓘(ℝ, ℝ)) (scaledLineMetric ha) ∞
+  constructor
+  · intro hX
+    -- Pull the field back to `ℝ` along the identity `toWithMetric`, where it is `x ↦ -2 x / a`.
+    have h := hX.mpullback σ.symm
+    rw [coe_diffeomorph_symm] at h
+    -- Near `0` the pulled-back field is `x ↦ -x`; compare at a point `y ≠ 0`.
+    obtain ⟨y, hy, hy0⟩ := ((h.eventually_eq_neg_sq_real.filter_mono nhdsWithin_le_nhds).and
+      self_mem_nhdsWithin).exists (f := 𝓝[≠] (0 : ℝ))
+    rw [mpullback_toWithMetric_neg_mgradient_sq_scaledLineMetric_apply] at hy
+    have h2 : 2 / a = 1 := mul_right_cancel₀ (show y ≠ 0 from hy0) (by linarith)
+    exact ((div_eq_one_iff_eq ha.ne').1 h2).symm
+  · rintro rfl
+    -- Push the adapted field `x ↦ -x` of `ℝ` forward along the identity `ofWithMetric`.
+    have h := isAdaptedPseudoGradient_sq_real_neg.mpullback σ
+    rw [coe_diffeomorph] at h
+    have hX : (fun x : ℝ ↦ (-x : ℝ)) = fun x ↦ (-(2 / 2 * x) : ℝ) := by
+      rw [div_self two_ne_zero]
+      simp only [one_mul]
+    rwa [hX, mpullback_ofWithMetric_neg_mul_eq_neg_mgradient_sq_scaledLineMetric] at h
+
+end ScaledMetric
+
 /-! ### The saddle -/
 
 /-- **The field `(u, v) ↦ (u, -v)` is a pseudo-gradient adapted to the saddle `-u² + v²`** on
@@ -239,6 +315,26 @@ theorem mvfderiv_sq_real_apply_neg_inv {x : ℝ} (hx : x ≠ 0) :
     mvfderiv 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x (-(2 * x)⁻¹) = -1 := by
   rw [mvfderiv_sq_real_apply]
   field_simp
+
+/-- **The normalized negative gradient of the quadratic well.** For the standard metric on `ℝ`,
+the normalized negative gradient `-grad f / ‖grad f‖²` of `f(x) = x²` is `x ↦ -1 / (2 x)`. At the
+critical point `0` both sides vanish, by the convention `0⁻¹ = 0`. -/
+theorem inv_norm_mgradient_sq_real_sq_smul_neg_mgradient_sq_real (x : ℝ) :
+    (‖mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x‖ ^ 2)⁻¹ •
+        -mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x = (-(2 * x)⁻¹ : ℝ) := by
+  have h := neg_mgradient_sq_real_apply x
+  rw [Pi.neg_apply] at h
+  have hn : ‖mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x‖ = |2 * x| := by
+    rw [← norm_neg, norm_tangentSpace_vectorSpace, h]
+    -- `NormedSpace.fromTangentSpace x` is the identity of `ℝ` by definition.
+    exact (Real.norm_eq_abs (-(2 * x))).trans (abs_neg _)
+  rw [hn, sq_abs, h]
+  -- The scalar action of `ℝ` on its tangent space is multiplication.
+  have hx : ((2 * x) ^ 2)⁻¹ * -(2 * x) = -(2 * x)⁻¹ := by
+    rcases eq_or_ne x 0 with rfl | hx
+    · simp
+    · field_simp
+  exact hx
 
 /-- The trajectory of the normalized field `x ↦ -1 / (2 x)` through `2` is `t ↦ √(4 - t)`: it
 crosses the band `1 ≤ x² ≤ 4` from `x = 2` to `x = 1` in the time `3 = f(2) - 1`. -/

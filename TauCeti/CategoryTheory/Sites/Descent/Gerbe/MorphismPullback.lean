@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
-public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism
+public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism.Basic
 
 /-!
 # Band-preserving transformations on restricted isomorphisms

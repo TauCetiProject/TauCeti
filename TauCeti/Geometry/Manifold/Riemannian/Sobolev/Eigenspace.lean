@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Regularity
 
@@ -18,10 +19,11 @@ space `H¹(M)` (`TauCeti.Manifold.SobolevH1`) with its Dirichlet form `D`, which
 
 `{w ∈ H¹(M) | D(w, v) = μ ⟪w, v⟫_{L²} for every v ∈ H¹(M)}`
 
-(`TauCeti.Manifold.SobolevH1.weakEigenspace`), the kernel of the continuous bilinear form
-`D - μ ⟪·, ·⟫_{L²}`. It asks for no second derivatives, only for the energy form, and testing
-against smooth functions is enough (`mem_weakEigenspace_iff_forall_ofSmooth`). For a `C¹` metric
-it is zero unless `μ ≥ 0` (`nonneg_of_mem_weakEigenspace`), since `D` is nonnegative.
+(`TauCeti.Manifold.SobolevH1.weakEigenspace`), the kernel of the shifted form
+`D - μ ⟪·, ·⟫_{L²}` (`ContinuousLinearMap.shiftedForm`). It asks for no second
+derivatives, only for the energy form, and testing against smooth functions is enough
+(`mem_weakEigenspace_iff_forall_ofSmooth`). For a `C¹` metric it is zero unless `μ ≥ 0`
+(`nonneg_of_mem_weakEigenspace`), since `D` is nonnegative.
 
 When the metric is smooth, weak eigenfunctions are classical ones. By elliptic regularity a weak
 eigenfunction is a smooth function `u` with `-Δu = μ u`
@@ -37,7 +39,8 @@ from the `(-μ)`-eigenspace of the Laplace–Beltrami operator `Δ = div grad` o
 ## Main results
 
 * `TauCeti.Manifold.SobolevH1.weakEigenspace`: the weak eigenspaces of `Δ⁺` in `H¹(M)`, with
-  `mem_weakEigenspace_iff` and `mem_weakEigenspace_iff_forall_ofSmooth`.
+  `mem_weakEigenspace_iff`, `mem_weakEigenspace_iff_shiftedForm` and
+  `mem_weakEigenspace_iff_forall_ofSmooth`.
 * `TauCeti.Manifold.SobolevH1.nonneg_of_mem_weakEigenspace_of_toLp_ne_zero`,
   `TauCeti.Manifold.SobolevH1.nonneg_of_mem_weakEigenspace`: weak eigenvalues are nonnegative.
 * `TauCeti.Manifold.SobolevH1.ofSmooth_mem_weakEigenspace_iff`: a smooth function is a weak
@@ -63,20 +66,32 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MeasurableSpace M] [BorelSpace M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
+/-- The shifted form `D + c ⟪·, ·⟫_{L²}` (`ContinuousLinearMap.shiftedForm`) of the Dirichlet
+form, evaluated at `u` and `v`. -/
+theorem shiftedForm_dirichletForm_apply (c : ℝ) (u v : SobolevH1 I M) :
+    toLp.shiftedForm dirichletForm c u v = dirichletForm u v + c * ⟪toLp u, toLp v⟫_ℝ :=
+  ContinuousLinearMap.shiftedForm_apply _ _ _ _ _
+
 variable (I M) in
 /-- The **weak `μ`-eigenspace** of the nonnegative Laplacian `Δ⁺ = -div grad` on `H¹(M)`: the
 elements `w` with `D(w, v) = μ ⟪w, v⟫_{L²}` for every `v ∈ H¹(M)`, where `D` is the Dirichlet
-form (`TauCeti.Manifold.SobolevH1.mem_weakEigenspace_iff`). -/
+form (`TauCeti.Manifold.SobolevH1.mem_weakEigenspace_iff`). It is the kernel of the shifted form
+`D - μ ⟪·, ·⟫_{L²}` (`ContinuousLinearMap.shiftedForm`). -/
 def weakEigenspace (μ : ℝ) : Submodule ℝ (SobolevH1 I M) :=
-  (dirichletForm (I := I) (M := M) - μ •
-    ((innerSL ℝ).bilinearComp (toLp (I := I) (M := M)) toLp :
-      SobolevH1 I M →L[ℝ] SobolevH1 I M →L[ℝ] ℝ)).ker
+  ((toLp (I := I) (M := M)).shiftedForm dirichletForm (-μ)).ker
+
+/-- `w ∈ H¹(M)` is a weak `μ`-eigenfunction exactly when the shifted form
+`D(w, v) - μ ⟪w, v⟫_{L²}` vanishes for every `v ∈ H¹(M)`. -/
+theorem mem_weakEigenspace_iff_shiftedForm {μ : ℝ} {w : SobolevH1 I M} :
+    w ∈ weakEigenspace I M μ ↔ ∀ v, toLp.shiftedForm dirichletForm (-μ) w v = 0 :=
+  LinearMap.mem_ker.trans ContinuousLinearMap.ext_iff
 
 /-- `w ∈ H¹(M)` is a weak `μ`-eigenfunction exactly when `D(w, v) = μ ⟪w, v⟫_{L²}` for every
 `v ∈ H¹(M)`. -/
 theorem mem_weakEigenspace_iff {μ : ℝ} {w : SobolevH1 I M} :
     w ∈ weakEigenspace I M μ ↔ ∀ v, dirichletForm w v = μ * ⟪toLp w, toLp v⟫_ℝ := by
-  simp [weakEigenspace, ContinuousLinearMap.ext_iff, sub_eq_zero]
+  simp only [mem_weakEigenspace_iff_shiftedForm, shiftedForm_dirichletForm_apply, neg_mul,
+    ← sub_eq_add_neg, sub_eq_zero]
 
 /-- The weak eigenspaces are closed. -/
 theorem isClosed_weakEigenspace (μ : ℝ) :

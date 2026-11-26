@@ -8,9 +8,13 @@ module
 public import Mathlib.Algebra.BigOperators.Finsupp.Basic
 public import Mathlib.Algebra.Group.Action.Defs
 public import Mathlib.Analysis.Normed.Group.Defs
+public import Mathlib.Analysis.Normed.MulAction
 
 /-!
-# Norm scaling under iterated scalar actions
+# Norm scaling under scalar actions
+
+A bounded scalar action by an element of norm at most one does not increase norms
+(`TauCeti.norm_smul_le_of_norm_le_one`).
 
 If acting by `u` turns the weighted norm `‖e‖ * r` into `‖u • e‖ * s` for every `e`, then
 acting by `u ^ n` turns `‖e‖ * r ^ n` into `‖u ^ n • e‖ * s ^ n`. Only a monoid action and a
@@ -23,6 +27,7 @@ every `x` and `‖u‖ * s = r`.
 
 ## Main results
 
+* `TauCeti.norm_smul_le_of_norm_le_one`: `‖r • x‖ ≤ ‖x‖` whenever `‖r‖ ≤ 1`.
 * `TauCeti.norm_smul_mul_of_norm_mul`: `‖u • e‖ * s = ‖e‖ * r` for left multiplication by `u`
   whenever `‖u * x‖ = ‖u‖ * ‖x‖` for every `x` and `‖u‖ * s = r`.
 * `TauCeti.norm_pow_smul_mul_pow`: `‖u ^ n • e‖ * s ^ n = ‖e‖ * r ^ n` whenever
@@ -34,6 +39,11 @@ every `x` and `‖u‖ * s = r`.
 public section
 
 namespace TauCeti
+
+/-- A bounded scalar action by an element of norm at most one does not increase norms. -/
+theorem norm_smul_le_of_norm_le_one {α β : Type*} [SeminormedRing α] [SeminormedAddGroup β]
+    [SMulZeroClass α β] [IsBoundedSMul α β] {r : α} (hr : ‖r‖ ≤ 1) (x : β) : ‖r • x‖ ≤ ‖x‖ :=
+  (norm_smul_le r x).trans (mul_le_of_le_one_left (norm_nonneg x) hr)
 
 /-- If left multiplication by `u` scales every norm by `‖u‖` and `‖u‖ * s = r`, then acting by `u`
 on its own type changes the weighted norm `‖e‖ * r` into `‖u • e‖ * s`. This is the one-step

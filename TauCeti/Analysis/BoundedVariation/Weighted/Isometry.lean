@@ -67,7 +67,7 @@ theorem weightedVariation_comp_le (e : E ≃ₗᵢ[ℝ] E') (hVO : MapsTo e V Ω
   let e' : E ≃L[ℝ] E' := e.toContinuousLinearEquiv
   have hVO' : MapsTo e' V Ω := by rwa [coe_toContinuousLinearEquiv]
   -- The transported field `y ↦ e (X (e.symm y))`, a test vector field on `Ω`.
-  let Y : 𝓓(Ω, E') := postcompCLM (e' : E →L[ℝ] E') (e'.transportTestFunction hVO' X)
+  let Y : 𝓓(Ω, E') := postcompCLM (e' : E →L[ℝ] E') (e'.transportTestFunction ℝ hVO' X)
   have hY (x : E) : Y (e x) = e (X x) := by
     simp [Y, e', ContinuousLinearEquiv.transportTestFunction_apply]
   have hdiv (x : E) : divergenceCLM Y (e x) = divergenceCLM X x := by

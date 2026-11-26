@@ -22,7 +22,10 @@ In an `ℕ`-divisible additive commutative group `A`, injectivity of `A` as a `�
 `y : ℕ+ → A` with `y 1 = x` and `d • y (n * d) = y n` for all `n d : ℕ+`. Transporting along
 `Additive` gives the multiplicative counterpart for `ℕ`-rootable commutative groups `G`, and
 handling zero separately extends this to commutative groups with zero `M₀` whose unit group `M₀ˣ`
-is `ℕ`-rootable.
+is `ℕ`-rootable. More generally, for a `ℤ`-divisible additive commutative group `A` and an element
+`d` of an additive commutative group `L` with no nonzero integer multiple in an additive subgroup
+`S`, Baer's criterion extends `1 ↦ c` along `ℤ ↪ L ⧸ S` to an additive homomorphism `L →+ A`
+vanishing on `S` and sending `d` to `c`.
 
 ## Main definitions
 
@@ -31,6 +34,10 @@ is `ℕ`-rootable.
 
 ## Main results
 
+* `AddSubgroup.exists_addMonoidHom_eq_zero_and_apply_eq`,
+  `TauCeti.exists_addMonoidHom_apply_eq_zero_and_apply_eq`: additive homomorphisms `L →+ A` into a
+  `ℤ`-divisible group vanishing on a subgroup `S` (or on `a`) and taking a prescribed value at an
+  element `d` with no nonzero integer multiple in `S` (or in `ℤ • a`).
 * `TauCeti.exists_apply_one_eq_and_forall_nsmul_eq`: compatible `ℕ+`-indexed multiples in an
   `ℕ`-divisible additive commutative group.
 * `TauCeti.exists_apply_one_eq_and_forall_pow_eq`: compatible `ℕ+`-indexed roots in an `ℕ`-rootable
@@ -52,7 +59,41 @@ instance instDivisibleByNat {G : Type*} [Monoid G] [RootableBy G ℕ] :
 
 end Additive
 
+namespace AddSubgroup
+
+/-- If no nonzero integer multiple of `d` lies in the additive subgroup `S`, then any element `c`
+of a `ℤ`-divisible additive commutative group `A` is the value at `d` of an additive homomorphism
+`L →+ A` vanishing on `S` (constructed via Baer's criterion on `L ⧸ S`). -/
+theorem exists_addMonoidHom_eq_zero_and_apply_eq {L A : Type*} [AddCommGroup L] [AddCommGroup A]
+    [DivisibleBy A ℤ] (S : AddSubgroup L) {d : L} (hd : ∀ n : ℤ, n ≠ 0 → n • d ∉ S) (c : A) :
+    ∃ w : L →+ A, (∀ s ∈ S, w s = 0) ∧ w d = c := by
+  let π : L →+ L ⧸ S := QuotientAddGroup.mk' S
+  let f : ℤ →+ L ⧸ S := zmultiplesHom (L ⧸ S) (π d)
+  have hf : Function.Injective f := (injective_iff_map_eq_zero f).mpr fun n hn ↦
+    by_contra fun hn0 ↦ hd n hn0 <| (QuotientAddGroup.eq_zero_iff (n • d)).mp <| by
+      simpa [f, π, map_zsmul] using hn
+  obtain ⟨φ, hφ⟩ :=
+    (Module.Baer.of_divisible A).extension_property_addMonoidHom f hf (zmultiplesHom A c)
+  refine ⟨φ.comp π, fun s hs ↦ ?_, ?_⟩
+  · simp [π, (QuotientAddGroup.eq_zero_iff s).mpr hs]
+  · simpa [f, π] using DFunLike.congr_fun hφ 1
+
+end AddSubgroup
+
 namespace TauCeti
+
+/-- If no nonzero integer multiple of `d` lies in `ℤ • a`, then any element `c` of a `ℤ`-divisible
+additive commutative group `A` is the value at `d` of an additive homomorphism `L →+ A` sending `a`
+to `0`. -/
+theorem exists_addMonoidHom_apply_eq_zero_and_apply_eq {L A : Type*} [AddCommGroup L]
+    [AddCommGroup A] [DivisibleBy A ℤ] {a d : L}
+    (hd : ∀ (n k : ℤ), n ≠ 0 → n • d ≠ k • a) (c : A) :
+    ∃ w : L →+ A, w a = 0 ∧ w d = c := by
+  obtain ⟨w, hwS, hwd⟩ := (AddSubgroup.zmultiples a).exists_addMonoidHom_eq_zero_and_apply_eq
+    (fun n hn hmem ↦ by
+      obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.mp hmem
+      exact hd n k hn hk.symm) c
+  exact ⟨w, hwS a (AddSubgroup.mem_zmultiples a), hwd⟩
 
 /-- Every element of an `ℕ`-divisible additive commutative group admits a compatible `ℕ+`-indexed
 family of divisions: `y 1 = x` and `d • y (n * d) = y n` for all `n d : ℕ+`. -/

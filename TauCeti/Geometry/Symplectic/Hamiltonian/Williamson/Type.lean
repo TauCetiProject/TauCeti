@@ -17,9 +17,9 @@ with `m + 2f` planes. For a set `u` of planes among the first `m`, the Williamso
 `k_f = f` focus-focus pairs. Williamson's classification of mixed type puts the span of a
 nondegenerate family of quadratic forms into the span of such blocks when that span contains a
 regular element
-(`IsNondegenerateQuadraticFamily.exists_isDarbouxBasis_span_eq_span_williamsonBlocks`). This file
-proves that the **type** `(k_e, k_h, k_f)` is determined by the span alone: two normal forms with
-the same span have the same numbers of elliptic, hyperbolic and focus-focus blocks
+(`IsNondegenerateQuadraticFamily.exists_isDarbouxBasis_span_eq_span_williamsonBlocks_of_mem_span`).
+This file proves that the **type** `(k_e, k_h, k_f)` is determined by the span alone: two normal
+forms with the same span have the same numbers of elliptic, hyperbolic and focus-focus blocks
 (`IsDarbouxBasis.eq_and_eq_and_card_eq_of_span_williamsonBlocks_eq`). All declarations are in the
 namespace `TauCeti.SymplecticForm`.
 

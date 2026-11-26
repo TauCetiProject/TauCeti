@@ -48,6 +48,8 @@ its `K`-action has finite multiplicities, `Representation.HasFiniteMultiplicitie
 
 ## Main statements
 
+* `Representation.IsGFinite.lie`: for a finite-dimensional `𝔤` and a covariant representation of
+  `K`, the `K`-finite vectors are stable under `𝔤`.
 * `TauCeti.GKModule.hasFiniteMultiplicities_submodule`,
   `TauCeti.GKModule.hasFiniteMultiplicities_directSum`: admissibility passes to `(𝔤, K)`-submodules
   and to finite direct sums.
@@ -82,6 +84,24 @@ structure GKModule (Ad : Representation k K 𝔤) [IsLieAction Ad] (V : Type v) 
   map_lie (g : K) (x : 𝔤) (v : V) : ρ g ⁅x, v⁆ = ⁅Ad g x, ρ g v⁆
   /-- Every vector is `K`-finite. -/
   isGFinite (v : V) : ρ.IsGFinite v
+
+/-- **`K`-finite vectors are stable under `𝔤`.** Let `𝔤` be finite-dimensional and `ρ` a
+representation of `K` on a `𝔤`-module `V`, covariant for `Ad`. If `v` is `K`-finite then so is
+`⁅x, v⁆`: its orbit lies in the span of the brackets of a basis of `𝔤` with the orbit of `v`. -/
+theorem _root_.Representation.IsGFinite.lie [FiniteDimensional k 𝔤] {Ad : Representation k K 𝔤}
+    {V : Type*} [AddCommGroup V] [Module k V] [LieRingModule 𝔤 V] [LieModule k 𝔤 V]
+    {ρ : Representation k K V} (h : ∀ g x v, ρ g ⁅x, v⁆ = ⁅Ad g x, ρ g v⁆) {v : V}
+    (hv : ρ.IsGFinite v) (x : 𝔤) : ρ.IsGFinite ⁅x, v⁆ := by
+  let b := Module.finBasis k 𝔤
+  let O := Submodule.span k (Set.range fun g : K ↦ ρ g v)
+  -- The orbit span `O` is finite-dimensional, hence so is the supremum of its images below.
+  have : FiniteDimensional k O := (isGFinite_iff _ _).1 hv
+  refine IsGFinite.of_forall_apply_mem (W := ⨆ j, O.map (LieModule.toEnd k 𝔤 V (b j))) fun g ↦ ?_
+  rw [h, ← b.sum_repr (Ad g x), sum_lie]
+  refine Submodule.sum_mem _ fun j _ ↦ ?_
+  rw [smul_lie]
+  exact Submodule.smul_mem _ _ (Submodule.mem_iSup_of_mem j
+    (Submodule.mem_map_of_mem (Submodule.subset_span ⟨g, rfl⟩)))
 
 variable {Ad : Representation k K 𝔤} [IsLieAction Ad] {V : Type v} [AddCommGroup V]
   [Module k V] [LieRingModule 𝔤 V] [LieModule k 𝔤 V]
@@ -154,8 +174,7 @@ variable (N : GKSubmodule M)
 def submodule : GKModule Ad N.toLieSubmodule where
   ρ := N.toSubrepresentation.toRepresentation
   map_lie g x v := Subtype.ext (M.map_lie g x v)
-  isGFinite v := IsGFinite.of_injective N.toSubrepresentation.subtype
-    N.toSubrepresentation.subtype_injective (by simpa using M.isGFinite v)
+  isGFinite v := (N.toSubrepresentation.isGFinite_toRepresentation_iff v).2 (M.isGFinite v)
 
 @[simp]
 theorem submodule_ρ_apply_coe (g : K) (v : N.toLieSubmodule) :

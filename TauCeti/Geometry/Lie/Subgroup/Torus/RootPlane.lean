@@ -7,7 +7,11 @@ module
 
 public import TauCeti.Algebra.Lie.Coadjoint.RootPlane
 public import TauCeti.Geometry.Lie.Subgroup.Torus
+public import TauCeti.Algebra.Lie.Coadjoint.Height
+public import TauCeti.Geometry.Lie.Tangent.LieEquiv
 import TauCeti.Algebra.Lie.InvariantForm.RootPlane
+-- Proof-only: root-plane decompositions of maximal abelian subspaces.
+import TauCeti.Algebra.Lie.InvariantForm.RootPlane.Decomposition
 
 /-!
 # The real root planes of a maximal torus
@@ -32,6 +36,8 @@ because the Lie algebra of a maximal torus is a maximal abelian subalgebra
 
 * `TauCeti.Lie.IsMaximalTorus.exists_isInternal_isRootPlane`: the real root decomposition of the
   Lie algebra of a compact Lie group with respect to a maximal torus.
+* `TauCeti.Lie.IsMaximalTorus.exists_isRootPlaneDecomposition`: the image of the Lie algebra of a
+  maximal torus in `GroupLieAlgebra I G` carries a root-plane decomposition with a regular element.
 
 ## References
 
@@ -81,5 +87,43 @@ theorem IsMaximalTorus.exists_isInternal_isRootPlane {T : Subgroup G} (hT : IsMa
       lie_eq_zero_of_mem_lieSubalgebraOfSubgroup (K := T) hX hY
   rw [hT.iInf_ker_ad_eq] at hint hC
   exact ⟨r, α, V, J, hint, hroot, hne, hrank, hC, hV⟩
+
+/-- **Root-plane decompositions over a maximal torus.** Let `T` be a maximal torus of a compact Lie
+group, `B` a symmetric positive definite invariant form on `𝔤`, and `t` the image of the Lie
+algebra `𝔱` of `T` under the evaluation `e` at the identity. Then `t` is a maximal abelian subspace
+of `𝔤`, so its root planes form a root-plane decomposition `𝔤 = t + Σ F_k` with two-dimensional
+planes, and some `X ∈ t` is regular: no root vanishes at it. -/
+theorem IsMaximalTorus.exists_isRootPlaneDecomposition {T : Subgroup G} (hT : IsMaximalTorus T)
+    {B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)} {t : Submodule ℝ (GroupLieAlgebra I G)}
+    (hBs : B.IsSymm) (hpos : ∀ a, a ≠ 0 → 0 < B a a) (hB : B.lieInvariant (GroupLieAlgebra I G))
+    (ht : t = (lieSubalgebraOfSubgroup (I := I) T).toSubmodule.map
+      (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint).toLinearEquiv.toLinearMap) :
+    ∃ (r : ℕ) (α : Fin r → Dual ℝ t) (F : Fin r → Submodule ℝ (GroupLieAlgebra I G))
+      (J : (k : Fin r) → Module.End ℝ (F k)),
+      IsRootPlaneDecomposition B t α F J ∧ (∀ k, finrank ℝ (F k) = 2) ∧
+        ∃ X : t, ∀ k, α k X ≠ 0 := by
+  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := inferInstanceAs (FiniteDimensional ℝ E)
+  have := hT.isTorus.isMulCommutative
+  set e := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint
+  have he (D : LeftInvariantDerivation I G) (hD : D ∈ lieSubalgebraOfSubgroup (I := I) T) :
+      e D ∈ t := by
+    rw [ht]
+    exact ⟨D, hD, rfl⟩
+  refine exists_isRootPlaneDecomposition_of_forall_lt hBs hpos hB ?_ fun s hts hs ↦ ?_
+  · -- `t` is abelian, since `𝔱` is.
+    rw [ht]
+    rintro _ ⟨D, hD, rfl⟩ _ ⟨D', hD', rfl⟩
+    simp only [LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv]
+    rw [← LieEquiv.map_lie, lie_eq_zero_of_mem_lieSubalgebraOfSubgroup hD hD', map_zero]
+  -- `t` is maximal abelian: an element `Y` of a larger abelian subspace has `e⁻¹ Y` commuting with
+  -- `𝔱`, so `e⁻¹ Y ∈ 𝔱` by maximality of `T`, and `Y ∈ t`.
+  obtain ⟨Y, hYs, hYt⟩ := IsConcreteLE.exists_of_lt hts
+  refine hYt ?_
+  rw [← e.apply_symm_apply Y]
+  refine he _ (hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero fun D hD ↦ ?_)
+  have h := hs Y hYs (e D) (hts.le (he D hD))
+  rwa [← e.apply_symm_apply Y, ← LieEquiv.map_lie, EmbeddingLike.map_eq_zero_iff] at h
 
 end TauCeti.Lie

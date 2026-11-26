@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Group.Quotient
 import TauCeti.Dynamics.Billiard.Continuous
 import TauCeti.Topology.Constructions.SumProd
 import TauCeti.Topology.Instances.AddCircle.Coe
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The billiard map is a homeomorphism

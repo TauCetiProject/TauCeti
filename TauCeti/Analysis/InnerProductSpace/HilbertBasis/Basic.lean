@@ -14,7 +14,9 @@ import TauCeti.Topology.Algebra.InfiniteSum.Defs
 
 This file transfers orthogonality to every vector of a subspace from orthogonality to each
 element of a Hilbert basis of that subspace.  In particular, this lets Hilbert bases of mutually
-orthogonal eigenspaces be assembled into a spectral basis of the ambient space.
+orthogonal eigenspaces be assembled into a spectral basis of the ambient space. For the whole
+space, only `0` is orthogonal to every vector of a Hilbert basis
+(`HilbertBasis.eq_zero_of_forall_inner_eq_zero`).
 
 A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`), and every nonzero vector
 has a nonzero inner product with at least one basis element (`HilbertBasis.exists_inner_ne_zero`).
@@ -78,6 +80,13 @@ theorem inner_eq_zero_of_forall_inner_eq_zero {K : Submodule 𝕜 E} (bK : Hilbe
   have h : (innerSL 𝕜 x).comp K.subtypeL = 0 := bK.ext_continuousLinearMap fun i ↦ by
     simpa [innerSL_apply_apply] using hx i
   simpa [innerSL_apply_apply] using DFunLike.congr_fun h ⟨y, hy⟩
+
+/-- Only the zero vector is orthogonal to every vector of a Hilbert basis. -/
+theorem eq_zero_of_forall_inner_eq_zero (b : HilbertBasis ι 𝕜 E) {x : E}
+    (hx : ∀ i, ⟪x, b i⟫_𝕜 = 0) : x = 0 := by
+  have h : innerSL 𝕜 x = 0 := b.ext_continuousLinearMap fun i ↦ by
+    simpa [innerSL_apply_apply] using hx i
+  simpa [innerSL_apply_apply] using DFunLike.congr_fun h x
 
 /-- A continuous semilinear map out of `E` sends every vector into a closed submodule that contains
 the images of all vectors of a Hilbert basis of `E`. -/

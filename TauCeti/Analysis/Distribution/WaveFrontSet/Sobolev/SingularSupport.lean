@@ -242,6 +242,21 @@ theorem isLocallySobolevAt_conj_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x : E} :
       fun h ξ hξ ↦ h (-ξ) (neg_ne_zero.2 hξ)⟩
   · exact iff_of_false (fun h ↦ hx h.mem) fun h ↦ hx h.mem
 
+/-- The real part of a distribution `H^s` near `x` is `H^s` near `x`. -/
+theorem IsLocallySobolevAt.re {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x : E}
+    (h : T.IsLocallySobolevAt s x) :
+    (mapCLM (ofRealCLM ∘L reCLM) T).IsLocallySobolevAt s x := by
+  -- The real part is the average of `T` and its complex conjugate.
+  have hre : mapCLM (ofRealCLM ∘L reCLM) T =
+      (2⁻¹ : ℂ) • (T + mapCLM conjCLE.toContinuousLinearMap T) := by
+    ext φ
+    simp only [mapCLM_apply, ContinuousLinearMap.comp_apply, reCLM_apply, ofRealCLM_apply,
+      FunLike.coe_smul, FunLike.coe_add, Pi.smul_apply, Pi.add_apply,
+      ContinuousLinearEquiv.coe_coe, conjCLE_apply, smul_eq_mul, re_eq_add_conj]
+    ring
+  rw [hre]
+  exact (h.add (isLocallySobolevAt_conj_iff.2 h)).smul _
+
 section SmulLeft
 
 variable {g : E → ℝ}

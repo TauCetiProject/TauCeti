@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
-public import TauCeti.Combinatorics.SimpleGraph.Dart
+public import TauCeti.Combinatorics.SimpleGraph.Dart.Basic
 import TauCeti.Data.List.Chain
 
 /-!

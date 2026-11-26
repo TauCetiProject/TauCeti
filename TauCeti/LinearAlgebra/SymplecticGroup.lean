@@ -95,6 +95,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.one_add_mul_mem_symplecticGroup`: over a square-zero ideal `I`, correcting `M` by
   `1 + X`, where `X` has entries in `I` and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix
   when `M * J * Mᵀ - J = E`.
+* `SymplecticGroup.nonsing_inv_mem` and `SymplecticGroup.transpose_nonsing_inv_mem`: the inverse
+  `A⁻¹` and the inverse transpose `A⁻ᵀ` of a symplectic matrix `A` are symplectic.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse; `SymplecticGroup.mem_of_J_conj_eq_transpose` is its converse, a
   matrix whose `J`-conjugate is its inverse transpose is symplectic.
@@ -489,6 +491,19 @@ end Matrix
 namespace SymplecticGroup
 
 variable {l : Type*} [DecidableEq l] [Fintype l] {R : Type*} [CommRing R]
+
+/-- **The inverse of a symplectic matrix is symplectic**, for the inverse `Matrix.nonsing_inv`
+of the underlying matrix: Mathlib's `SymplecticGroup.coe_inv'` identifies it with the group
+inverse in `symplecticGroup l R`. -/
+theorem nonsing_inv_mem {A : Matrix (l ⊕ l) (l ⊕ l) R} (hA : A ∈ symplecticGroup l R) :
+    A⁻¹ ∈ symplecticGroup l R := by
+  rw [← coe_inv' ⟨A, hA⟩]
+  exact (⟨A, hA⟩⁻¹ : symplecticGroup l R).property
+
+/-- **The inverse transpose of a symplectic matrix is symplectic.** -/
+theorem transpose_nonsing_inv_mem {A : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hA : A ∈ symplecticGroup l R) : A⁻¹ᵀ ∈ symplecticGroup l R :=
+  transpose_mem (nonsing_inv_mem hA)
 
 /-- **The transpose of a symplectic matrix is the `J`-conjugate of its inverse.** Mathlib's
 `SymplecticGroup.inv_eq_symplectic_inv` computes the inverse as `-J * Aᵀ * J`; cancelling the

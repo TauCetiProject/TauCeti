@@ -45,6 +45,7 @@ product in elementary symmetric polynomials.
   and the reversal `e_j(s⁻¹) ∏ s = e_{card s - j}(s)` for `0 ∉ s`.
 * `TauCeti.esymmInt`: the elementary symmetric polynomial `e_m` of an integer degree `m`, which
   is `0` for `m < 0`.
+* `TauCeti.symmetricEsymm`: `e_k` as an element of `MvPolynomial.symmetricSubalgebra`.
 * `TauCeti.coeff_prod_one_add_C_mul_X`: the coefficient of `tⁿ` in `∏ᵢ (1 + xᵢ t)`, as a sum
   over the `n`-element subsets of the variables.
 * `TauCeti.mk_esymm_eq_prod_one_add_X`: the generating function of the `eₙ`.
@@ -277,6 +278,32 @@ theorem rename_esymmInt {τ : Type*} [Fintype τ] (m : ℤ) (e : σ ≃ τ) :
   split_ifs <;> simp [MvPolynomial.rename_esymm]
 
 end esymmInt
+
+section symmetricEsymm
+
+variable (σ : Type*) [Fintype σ] (R : Type*) [CommSemiring R]
+
+/-- The elementary symmetric polynomial `MvPolynomial.esymm σ R k`, as an element of
+`MvPolynomial.symmetricSubalgebra`. -/
+noncomputable def symmetricEsymm (k : ℕ) : MvPolynomial.symmetricSubalgebra σ R :=
+  ⟨MvPolynomial.esymm σ R k, MvPolynomial.esymm_isSymmetric σ R k⟩
+
+variable {σ R}
+
+@[simp, norm_cast]
+theorem coe_symmetricEsymm (k : ℕ) :
+    (symmetricEsymm σ R k : MvPolynomial σ R) = MvPolynomial.esymm σ R k :=
+  (rfl)
+
+/-- The elementary symmetric polynomial `e_k` in the symmetric subalgebra vanishes when `k`
+exceeds the number of variables. -/
+theorem symmetricEsymm_eq_zero_of_lt {k : ℕ} (h : Fintype.card σ < k) :
+    symmetricEsymm σ R k = 0 := by
+  ext1
+  rw [coe_symmetricEsymm, MvPolynomial.esymm_eq_multiset_esymm]
+  exact Multiset.esymm_of_card_lt (by simpa using h)
+
+end symmetricEsymm
 
 section GeneratingFunction
 

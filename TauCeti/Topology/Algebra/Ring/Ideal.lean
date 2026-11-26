@@ -82,6 +82,8 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
   products and powers of topological closures of ideals lie inside the closures of products and
   powers, so in a `T₁` topological ring the closure of a nilpotent ideal has the same nilpotency
   exponent.
+* `RingEquiv.isOpen_map_ideal`: a ring equivalence whose inverse is continuous maps open ideals
+  to open ideals.
 
 ## References
 
@@ -343,3 +345,14 @@ theorem Ideal.closure_pow_eq_bot [T1Space R] {I : Ideal R} {n : ℕ} (hI : I ^ n
   le_bot_iff.mp ((I.closure_pow_le n).trans (by rw [hI, Ideal.closure_bot]))
 
 end ClosureMul
+
+namespace RingEquiv
+
+/-- A ring equivalence whose inverse is continuous maps open ideals to open ideals. -/
+theorem isOpen_map_ideal {R S : Type*} [Semiring R] [TopologicalSpace R] [Semiring S]
+    [TopologicalSpace S] (e : R ≃+* S) (he' : Continuous e.symm) (J : Ideal R)
+    (hJ : IsOpen (J : Set R)) : IsOpen (Ideal.map (e : R →+* S) J : Set S) := by
+  rw [Ideal.map_eq_image_of_surjective (e : R →+* S) e.surjective]
+  exact (IsOpenMap.of_inverse he' e.apply_symm_apply e.symm_apply_apply) J hJ
+
+end RingEquiv

@@ -130,6 +130,26 @@ theorem augmentedConjWirtingerDerivL_apply (u : CkHolderSpaceOn 1 α (unitBallOp
   rw [iteratedFDerivL_apply, ← h]
   simp
 
+/-- The augmented operator commutes with postcomposition by a continuous complex-linear map `L`:
+each of its three components is mapped by `L`. -/
+theorem augmentedConjWirtingerDerivL_compLeftL {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℂ G] (L : F →L[ℂ] G) (u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) F) :
+    augmentedConjWirtingerDerivL α G (compLeftL (L.restrictScalars ℝ) u) =
+      (HolderSpace.compLeftL (L.restrictScalars ℝ) (conjWirtingerDerivL α (unitBallOpens ℂ) F u),
+        L (u.extend 0), L (fderiv ℝ u.extend 0 1)) := by
+  have h0 := zero_mem_unitBallOpens ℂ
+  have hu : DifferentiableAt ℝ u.extend 0 :=
+    (u.contDiffOn_extend.contDiffAt ((unitBallOpens ℂ).isOpen.mem_nhds h0)).differentiableAt
+      one_ne_zero
+  have hgerm := extend_compLeftL_eventuallyEq (L.restrictScalars ℝ) u h0
+  rw [augmentedConjWirtingerDerivL_apply, conjWirtingerDerivL_compLeftL, hgerm.eq_of_nhds,
+    hgerm.fderiv_eq]
+  have hd : fderiv ℝ (fun y ↦ L.restrictScalars ℝ (u.extend y)) 0 =
+      L.restrictScalars ℝ ∘L fderiv ℝ u.extend 0 :=
+    (L.restrictScalars ℝ).fderiv_comp_left hu
+  rw [hd]
+  simp
+
 end augmented
 
 /-! ### Surjectivity -/
@@ -141,16 +161,10 @@ every `α`-Hölder forcing `f` on the open unit disc and all `a b : ℂ`, some e
 theorem exists_mem_rotatingLineSubspace_augmentedConjWirtingerDerivL_eq (hk : 3 ≤ k)
     (hα0 : 0 < α) (hα1 : α < 1) (y : HolderSpace α (unitBallOpens ℂ) ℂ × ℂ × ℂ) :
     ∃ u ∈ rotatingLineSubspace k α, augmentedConjWirtingerDerivL α ℂ u = y := by
-  classical
   obtain ⟨f, a, b⟩ := y
   -- The forcing, extended to the closed disc as an `α`-Hölder function.
-  set g₀ : ℂ → ℂ := fun z ↦ if h : z ∈ unitBallOpens ℂ then f ⟨z, h⟩ else 0
-  have hg₀_apply (z : unitBallOpens ℂ) : g₀ z = f z := dite_eq_left z.property
-  have hg₀ : HolderOnWith ‖f‖₊ α g₀ (ball 0 1) := by
-    rw [← coe_unitBallOpens ℂ]
-    exact HolderSpace.holderOnWith_of_apply_eq f fun z ↦ (hg₀_apply z).symm
-  obtain ⟨hGg, hG⟩ := hg₀.extendFrom_closure hα0
-  rw [closure_ball 0 one_ne_zero] at hG
+  obtain ⟨G, hGg, hG⟩ := f.exists_holderOnWith_closure hα0
+  rw [closure_unitBallOpens] at hG
   obtain ⟨u, ⟨K, huH⟩, hud, ⟨u', K', hu'H, hu'⟩, hubar, hub, hu0, hu1⟩ :=
     exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_and_eq_and_fderiv_eq_of_holderOnWith hk
       hα0 hα1 hG a b
@@ -176,7 +190,7 @@ theorem exists_mem_rotatingLineSubspace_augmentedConjWirtingerDerivL_eq (hk : 3 
     (hUe (mem_ball_self one_pos)).fderiv_eq, hu0, hu1]
   refine Prod.ext (HolderSpace.ext fun z ↦ ?_) rfl
   have hz := mem_unitBallOpens_iff_mem_ball.1 z.property
-  rw [conjWirtingerDerivL_apply U z (hUe hz), hubar z hz, hGg hz, hg₀_apply]
+  rw [conjWirtingerDerivL_apply U z (hUe hz), hubar z hz, hGg]
 
 /-! ### Injectivity -/
 

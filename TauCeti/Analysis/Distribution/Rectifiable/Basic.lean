@@ -53,6 +53,8 @@ the planes they span. Its local mass on a set `U` is at most `∫_U |θ| dμHE[k
 
 * `Distribution.frameCurrent θ τ`: the current `ω ↦ ∫ θ(x) ω_x(τ(x)) dμHE[k](x)`.
 * `Distribution.frameCurrent_apply`: its value on a test form, for locally integrable `θ`.
+* `Distribution.frameCurrent_indicator_one_apply`: for multiplicity one on a set, the integral of
+  the form over the set.
 * `Distribution.frameCurrent_eq_of_ae`: data with almost everywhere equal pairings have the same
   current.
 * `Distribution.frameCurrent_eq_add_of_ae`, `Distribution.frameCurrent_neg`: linearity in the
@@ -151,6 +153,19 @@ theorem frameCurrent_apply {θ : V → ℝ} {τ : V → Fin k → V} (hθ : Loca
     frameCurrent θ τ ω = ∫ x, θ x * ω x (τ x) ∂μHE[k] := by
   simp [frameCurrent, integralAgainstBilinCLM_eq_integral
     (locallyIntegrableOn_frameDensity hθ hτ hτo)]
+
+/-- The frame current of the multiplicity one on a measurable set `S` integrates a test form over
+`S`: its value on `ω` is `∫_S ω_x(τ(x)) dμHE[k](x)`, for measurable frames orthonormal on `S`. -/
+theorem frameCurrent_indicator_one_apply {S : Set V} (hS : MeasurableSet S)
+    (hSi : LocallyIntegrableOn (S.indicator (1 : V → ℝ)) Ω μHE[k]) {τ : V → Fin k → V}
+    (hτ : Measurable τ) (hτo : ∀ x ∈ S, Orthonormal ℝ (τ x))
+    (ω : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ] ℝ)) :
+    frameCurrent (S.indicator 1) τ ω = ∫ x in S, ω x (τ x) ∂μHE[k] := by
+  rw [frameCurrent_apply hSi hτ fun x hx ↦ hτo x (mem_of_indicator_ne_zero hx),
+    ← integral_indicator hS]
+  congr 1
+  funext x
+  by_cases hx : x ∈ S <;> simp [hx]
 
 /-- The integrand of the frame current on a test form is integrable. -/
 theorem integrable_frameCurrent_integrand {θ : V → ℝ} {τ : V → Fin k → V}
