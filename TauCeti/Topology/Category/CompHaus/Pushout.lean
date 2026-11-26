@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Tietze
 public import Mathlib.RingTheory.LocalRing.Pullback
 public import Mathlib.Topology.Category.CompHaus.Basic
 public import Mathlib.Topology.ContinuousMap.Compact
+public import Mathlib.Topology.TietzeExtension
+public import TauCeti.Topology.ContinuousMap.Compact
 public import TauCeti.Topology.Instances.Shrink
 
 /-!
@@ -43,10 +44,12 @@ correspond to modules over `C(X, A)` and `C(Y, A)` glued along `C(S, A)`.
   `Y`.
 * `CompHaus.continuousMap_pushout_ext`: continuous maps on `pushout i j` are determined by their
   restrictions to `X` and `Y`.
-* `CompHaus.norm_coe_continuousMapPushoutAlgEquiv_apply`: for a normed ring `A`, the supremum norm
-  of `f` is the maximum of the norms of its restrictions to `X` and `Y`.
-* `CompHaus.surjective_compRightAlgHom_of_injective`: restriction along an injective map of compact
-  Hausdorff spaces is surjective on functions with values in a Tietze extension space.
+* `CompHaus.norm_continuousMap_pushout_eq_max`: for a seminormed additive group `E`, the supremum
+  norm of `f : C(pushout i j, E)` is the maximum of the norms of its restrictions to `X` and `Y`.
+  `CompHaus.norm_coe_continuousMapPushoutAlgEquiv_apply` restates this for the algebra isomorphism.
+* `CompHaus.surjective_comp_of_injective`: restriction along an injective map of compact Hausdorff
+  spaces is surjective on continuous maps into a Tietze extension space;
+  `CompHaus.surjective_compRightAlgHom_of_injective` is its algebra form.
 
 ## Implementation notes
 
@@ -81,9 +84,9 @@ theorem pushout_jointly_surjective (m : (pushout i j : CompHaus.{u})) :
     (∃ x, pushout.inl i j x = m) ∨ ∃ y, pushout.inr i j y = m := by
   let K := Set.range (ConcreteCategory.hom (pushout.inl i j)) ∪
     Set.range (ConcreteCategory.hom (pushout.inr i j))
-  have : CompactSpace K := isCompact_iff_compactSpace.1
-    ((isCompact_range (ConcreteCategory.hom (pushout.inl i j)).continuous).union
-      (isCompact_range (ConcreteCategory.hom (pushout.inr i j)).continuous))
+  have : CompactSpace K := ContinuousMap.compactSpace_range_union
+    (ConcreteCategory.hom (C := CompHaus.{u}) (pushout.inl i j))
+    (ConcreteCategory.hom (C := CompHaus.{u}) (pushout.inr i j))
   let a : X ⟶ CompHaus.of K :=
     CompHausLike.ofHom _ ⟨fun x ↦ ⟨pushout.inl i j x, .inl ⟨x, rfl⟩⟩, by fun_prop⟩
   let b : Y ⟶ CompHaus.of K :=
@@ -131,22 +134,13 @@ private def descCompact (a : C(X, K)) (b : C(Y, K)) (h : ∀ s, a (i s) = b (j s
 
 private theorem descCompact_inl (a : C(X, K)) (b : C(Y, K)) (h : ∀ s, a (i s) = b (j s))
     (x : X) : descCompact i j a b h (pushout.inl i j x) = a x := by
-  have key := congr($(pushout.inl_desc _ _ (shrink_comp_eq i j a b h)) x)
-  rw [comp_apply] at key
-  exact (congrArg (Shrink.homeomorph K).symm key).trans ((Shrink.homeomorph K).symm_apply_apply _)
+  simp [descCompact]
 
 private theorem descCompact_inr (a : C(X, K)) (b : C(Y, K)) (h : ∀ s, a (i s) = b (j s))
     (y : Y) : descCompact i j a b h (pushout.inr i j y) = b y := by
-  have key := congr($(pushout.inr_desc _ _ (shrink_comp_eq i j a b h)) y)
-  rw [comp_apply] at key
-  exact (congrArg (Shrink.homeomorph K).symm key).trans ((Shrink.homeomorph K).symm_apply_apply _)
+  simp [descCompact]
 
 end Desc
-
-/-- The union of the ranges of two continuous maps out of compact spaces is compact. -/
-private theorem compactSpace_range_union {T : Type*} [TopologicalSpace T] (f : C(X, T))
-    (g : C(Y, T)) : CompactSpace ↥(Set.range f ∪ Set.range g) :=
-  isCompact_iff_compactSpace.1 ((isCompact_range f.continuous).union (isCompact_range g.continuous))
 
 section Glue
 
@@ -158,7 +152,7 @@ continuous map on the pushout `pushout i j`, restricting to `f` on `X` and to `g
 def continuousMapPushoutDesc (f : C(X, T)) (g : C(Y, T)) (h : ∀ s, f (i s) = g (j s)) :
     C((pushout i j : CompHaus.{u}), T) :=
   -- Both maps take values in the compact set `range f ∪ range g`.
-  haveI := compactSpace_range_union f g
+  haveI := ContinuousMap.compactSpace_range_union f g
   (ContinuousMap.mk ((↑) : ↥(Set.range f ∪ Set.range g) → T)).comp <|
     descCompact i j ⟨fun x ↦ ⟨f x, .inl ⟨x, rfl⟩⟩, f.continuous.subtype_mk _⟩
       ⟨fun y ↦ ⟨g y, .inr ⟨y, rfl⟩⟩, g.continuous.subtype_mk _⟩ fun s ↦ Subtype.ext (h s)
@@ -167,17 +161,37 @@ def continuousMapPushoutDesc (f : C(X, T)) (g : C(Y, T)) (h : ∀ s, f (i s) = g
 @[simp]
 theorem continuousMapPushoutDesc_inl (f : C(X, T)) (g : C(Y, T)) (h : ∀ s, f (i s) = g (j s))
     (x : X) : continuousMapPushoutDesc i j f g h (pushout.inl i j x) = f x := by
-  have := compactSpace_range_union f g
+  have := ContinuousMap.compactSpace_range_union f g
   exact congrArg Subtype.val (descCompact_inl i j _ _ _ x)
 
 /-- The glued map restricts to `g` on `Y`. -/
 @[simp]
 theorem continuousMapPushoutDesc_inr (f : C(X, T)) (g : C(Y, T)) (h : ∀ s, f (i s) = g (j s))
     (y : Y) : continuousMapPushoutDesc i j f g h (pushout.inr i j y) = g y := by
-  have := compactSpace_range_union f g
+  have := ContinuousMap.compactSpace_range_union f g
   exact congrArg Subtype.val (descCompact_inr i j _ _ _ y)
 
 end Glue
+
+/-- For a seminormed additive group `E`, the supremum norm of a function on the pushout is the
+maximum of the supremum norms of its restrictions to `X` and `Y`. -/
+theorem norm_continuousMap_pushout_eq_max {E : Type*} [SeminormedAddCommGroup E]
+    (f : C((pushout i j : CompHaus.{u}), E)) :
+    ‖f‖ = max ‖f.comp (ConcreteCategory.hom (C := CompHaus.{u}) (pushout.inl i j))‖
+      ‖f.comp (ConcreteCategory.hom (C := CompHaus.{u}) (pushout.inr i j))‖ := by
+  refine le_antisymm ((ContinuousMap.norm_le _ (by positivity)).2 fun m ↦ ?_) (max_le ?_ ?_)
+  · obtain ⟨x, rfl⟩ | ⟨y, rfl⟩ := pushout_jointly_surjective i j m
+    · exact ((f.comp _).norm_coe_le_norm x).trans (le_max_left _ _)
+    · exact ((f.comp _).norm_coe_le_norm y).trans (le_max_right _ _)
+  · exact (ContinuousMap.norm_le _ (norm_nonneg _)).2 fun x ↦ f.norm_coe_le_norm _
+  · exact (ContinuousMap.norm_le _ (norm_nonneg _)).2 fun y ↦ f.norm_coe_le_norm _
+
+/-- Restriction along an injective map of compact Hausdorff spaces is surjective on continuous
+maps into a space with the Tietze extension property, such as `ℝ` or `ℂ`. -/
+theorem surjective_comp_of_injective {T : Type*} [TopologicalSpace T] [TietzeExtension.{u} T]
+    (hi : Function.Injective i) :
+    Function.Surjective fun f : C(X, T) ↦ f.comp (ConcreteCategory.hom (C := CompHaus.{u}) i) :=
+  fun f ↦ f.exists_extension ((ConcreteCategory.hom i).continuous.isClosedEmbedding hi)
 
 section Algebra
 
@@ -254,28 +268,23 @@ theorem continuousMapPushoutAlgEquiv_symm_apply_inr [T2Space A]
       (p : C(X, A) × C(Y, A)).2 y :=
   continuousMapPushoutDesc_inr i j _ _ (apply_eq_of_mem_pullback i j p.property) y
 
-/-- Restriction along an injective map of compact Hausdorff spaces is surjective on functions with
-values in a space with the Tietze extension property, such as `ℝ` or `ℂ`. -/
+/-- Restriction along an injective map of compact Hausdorff spaces is a surjective algebra map on
+functions with values in a space with the Tietze extension property, such as `ℝ` or `ℂ`
+(`CompHaus.surjective_comp_of_injective`). -/
 theorem surjective_compRightAlgHom_of_injective [TietzeExtension.{u} A]
     (hi : Function.Injective i) :
     Function.Surjective
-      (ContinuousMap.compRightAlgHom R A (ConcreteCategory.hom (C := CompHaus.{u}) i)) := fun f ↦
-  f.exists_extension ((ConcreteCategory.hom i).continuous.isClosedEmbedding hi)
+      (ContinuousMap.compRightAlgHom R A (ConcreteCategory.hom (C := CompHaus.{u}) i)) :=
+  surjective_comp_of_injective i hi
 
 end Algebra
 
-/-- For a normed ring `A`, the supremum norm of a function on the pushout is the maximum of the
-supremum norms of its restrictions to `X` and `Y`: the identification of `C(pushout i j, A)` with
-the fibre product is isometric for the supremum norm of the product `C(X, A) × C(Y, A)`. -/
+/-- For a normed ring `A`, the identification of `C(pushout i j, A)` with the fibre product is
+isometric for the supremum norm of the product `C(X, A) × C(Y, A)`
+(`CompHaus.norm_continuousMap_pushout_eq_max`). -/
 theorem norm_coe_continuousMapPushoutAlgEquiv_apply (R : Type*) {A : Type*} [CommSemiring R]
     [NormedRing A] [Algebra R A] (f : C((pushout i j : CompHaus.{u}), A)) :
     ‖(continuousMapPushoutAlgEquiv i j R A f : C(X, A) × C(Y, A))‖ = ‖f‖ := by
-  rw [coe_continuousMapPushoutAlgEquiv_apply, Prod.norm_mk]
-  refine le_antisymm (max_le ?_ ?_) ((ContinuousMap.norm_le _ (by positivity)).2 fun m ↦ ?_)
-  · exact (ContinuousMap.norm_le _ (norm_nonneg _)).2 fun x ↦ f.norm_coe_le_norm _
-  · exact (ContinuousMap.norm_le _ (norm_nonneg _)).2 fun y ↦ f.norm_coe_le_norm _
-  obtain ⟨x, rfl⟩ | ⟨y, rfl⟩ := pushout_jointly_surjective i j m
-  · exact ((f.comp _).norm_coe_le_norm x).trans (le_max_left _ _)
-  · exact ((f.comp _).norm_coe_le_norm y).trans (le_max_right _ _)
+  rw [coe_continuousMapPushoutAlgEquiv_apply, Prod.norm_mk, norm_continuousMap_pushout_eq_max]
 
 end CompHaus
