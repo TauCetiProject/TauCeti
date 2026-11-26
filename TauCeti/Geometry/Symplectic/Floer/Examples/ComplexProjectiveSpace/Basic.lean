@@ -273,8 +273,9 @@ theorem NovikovRing.single_zsmul_projectiveSpaceGenerator_mem_gradeBy_degree_iff
     single (k • projectiveSpaceGenerator ω c v hn) r ∈
         gradeBy R (-PeriodGroup.area _ _) (PeriodGroup.degree _ _) d ↔
       d = 2 * k * PeriodGroup.chern _ _ (projectiveSpaceGenerator ω c v hn) := by
-  rw [single_mem_gradeBy_iff hr, map_zsmul, PeriodGroup.degree_apply, smul_eq_mul]
-  constructor <;> intro h <;> linarith
+  rw [single_mem_gradeBy_iff hr, PeriodGroup.degree_eq_two_smul_chern,
+    (single_mem_gradeBy_iff hr).1
+      (single_zsmul_mem_gradeBy_two_smul (N := -PeriodGroup.area _ _) _ k _ r), eq_comm]
 
 /-- **The comparison `q^A ↦ e^(-A)` preserves the degree of the quantum relation of `CPⁿ`.**
 Let `L ∈ H₂(CPⁿ; ℤ)` be the Hurewicz class of the generator of `π₂(CPⁿ)`. The comparison sends the
@@ -294,10 +295,8 @@ theorem coefficientComparison_projectiveSpace_single_mem_gradeBy_degree {R : Typ
         (-(2 * k * c (hurewiczIntHom _ (mk n v) 1
           (Additive.ofMul ((pi2MulEquivInt v hn).symm (Multiplicative.ofAdd 1)))))) := by
   rw [PeriodGroup.degree_eq_two_smul_chern]
-  convert coefficientComparison_mem_gradeBy_two_smul _ _ c _ (chern_ofSingularHomology _)
-    (single_mem_gradeBy (2 • c : _ →+ ℤ) _ r) using 2
-  rw [map_zsmul, AddMonoidHom.smul_apply, smul_eq_mul, two_nsmul]
-  ring
+  exact coefficientComparison_mem_gradeBy_two_smul _ _ c _ (chern_ofSingularHomology _)
+    (single_zsmul_mem_gradeBy_two_smul c k _ r)
 
 namespace SphericalCapClass
 

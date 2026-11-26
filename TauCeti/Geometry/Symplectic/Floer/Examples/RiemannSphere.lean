@@ -384,12 +384,8 @@ first Chern number `2`, so the quantum monomial `q^(k L)` has degree `2 c₁(k L
 theorem single_zsmul_riemannSphereSquare_mem_gradeBy {R : Type*} [Semiring R] (k : ℤ) (r : R) :
     (single (k • hurewiczIntHom _ ∞ 1 (Additive.ofMul ⟦riemannSphereSquare⟧)) r :
         NovikovSeries R _ ω_FS) ∈ gradeBy R ω_FS (2 • c₁_FS : _ →+ ℤ) (4 * k) := by
-  have h := single_mem_gradeBy (R := R) (N := ω_FS) (2 • c₁_FS : _ →+ ℤ)
-    (k • hurewiczIntHom _ ∞ 1 (Additive.ofMul ⟦riemannSphereSquare⟧)) r
-  convert h using 2
-  rw [map_zsmul, AddMonoidHom.smul_apply,
-    homologyFirstChernHom_fubiniStudyForm_hurewiczIntHom_riemannSphereSquare, smul_eq_mul,
-    two_nsmul]
+  convert single_zsmul_mem_gradeBy_two_smul (R := R) (N := ω_FS) c₁_FS k _ r using 2
+  rw [homologyFirstChernHom_fubiniStudyForm_hurewiczIntHom_riemannSphereSquare]
   ring
 
 /-- **The comparison `q^A ↦ e^(-A)` preserves the degree of the quantum relation of `CP¹`.**

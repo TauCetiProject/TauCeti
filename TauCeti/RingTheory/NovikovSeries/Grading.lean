@@ -376,6 +376,14 @@ section Internal
 
 variable [AddGroup H] {N : H →+ ℝ}
 
+/-- For the degree function `2 • c` of an integer-valued homomorphism `c`, the monomial `r e^(k h)`
+has degree `2 k c(h)`. -/
+theorem single_zsmul_mem_gradeBy_two_smul (c : H →+ ℤ) (k : ℤ) (h : H) (r : R) :
+    (single (k • h) r : NovikovSeries R H N) ∈ gradeBy R N (2 • c : H →+ ℤ) (2 * k * c h) := by
+  convert single_mem_gradeBy (R := R) (N := N) (2 • c : H →+ ℤ) (k • h) r using 2
+  simp only [map_zsmul, AddMonoidHom.smul_apply, smul_eq_mul]
+  ring
+
 /-- Over a nontrivial ring, if the period is nonzero and the additive degree `δ` takes infinitely
 many values, some Novikov series has nonzero coefficients in infinitely many degrees. -/
 theorem exists_infinite_image_support [Nontrivial R] [AddMonoid ι] (hN : N ≠ 0) {δ : H →+ ι}
