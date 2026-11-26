@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 import Mathlib.NumberTheory.MulChar.Lemmas
+import TauCeti.Analysis.Fourier.ZMod
 import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
@@ -81,14 +82,6 @@ private theorem tsum_periodic_gaussian_eq_residue_sum {N : ℕ} [NeZero N] (Φ :
     push_cast
     simp [mul_assoc, mul_left_comm, mul_comm]
 
-private theorem exp_eq_stdAddChar_mul_intCast {N : ℕ} [NeZero N] (a : ZMod N) (n : ℤ) :
-    exp (2 * π * I * ((a.val : ℝ) / N : ℝ) * n) = stdAddChar (a * (n : ZMod N)) := by
-  have h : a * (n : ZMod N) = (((a.val : ℤ) * n : ℤ) : ZMod N) := by simp
-  rw [h, stdAddChar_coe]
-  congr 1
-  push_cast
-  ring
-
 private theorem hasSum_weighted_fourier_kernel {N : ℕ} [NeZero N] (Φ : ZMod N → ℂ)
     {j : ℕ} (hj : j ≤ 1) {y : ℝ} (hy : y ≠ 0) :
     HasSum (fun n : ℤ ↦ (-(I : ℂ)) ^ j * (n : ℂ) ^ j *
@@ -100,8 +93,11 @@ private theorem hasSum_weighted_fourier_kernel {N : ℕ} [NeZero N] (Φ : ZMod N
       stdAddChar (a * (n : ZMod N)) * Real.exp (-Real.pi * (n : ℝ) ^ 2 * y ^ 2))
       (if j = 0 then (cosKernel (toAddCircle a) (y ^ 2) : ℂ)
         else (sinKernel (toAddCircle a) (y ^ 2) : ℂ)) := by
+    have hchar (n : ℤ) : stdAddChar (a * (n : ZMod N)) =
+        exp (2 * π * I * ((a.val : ℝ) / N : ℝ) * n) := by
+      rw [← fourier_val_div_eq_stdAddChar, fourier_coe_apply, ofReal_one, div_one, mul_right_comm]
     rw [toAddCircle_apply]
-    simp_rw [← exp_eq_stdAddChar_mul_intCast]
+    simp_rw [hchar]
     interval_cases j
     · simpa using hasSum_int_cosKernel ((a.val : ℝ) / N) hy2
     · simpa using hasSum_int_sinKernel ((a.val : ℝ) / N) hy2
