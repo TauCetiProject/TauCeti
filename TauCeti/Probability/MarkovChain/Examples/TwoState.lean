@@ -117,13 +117,12 @@ theorem twoStateChain_pow_comp_real_true_sub (n : ℕ) {ν ν' : Measure Bool} [
     rw [pow_succ', Kernel.mul_def, ← Measure.comp_assoc, ← Measure.comp_assoc,
       twoStateChain_comp_real_true, twoStateChain_comp_real_true, pow_succ', mul_assoc, ← ih]
     -- The masses at `false` are determined by the common total mass.
-    have hμ := sum_measureReal_singleton (μ := (twoStateChain a b ^ n) ∘ₘ ν) Finset.univ
-    have hμ' := sum_measureReal_singleton (μ := (twoStateChain a b ^ n) ∘ₘ ν') Finset.univ
     have huniv : ((twoStateChain a b ^ n) ∘ₘ ν).real Set.univ =
         ((twoStateChain a b ^ n) ∘ₘ ν').real Set.univ := by
       simp only [measureReal_def, Measure.comp_apply_univ, h]
-    simp only [Finset.coe_univ, Fintype.sum_bool] at hμ hμ'
-    linear_combination (a : ℝ) * (hμ - hμ' + huniv)
+    rw [measureReal_singleton_false (μ := (twoStateChain a b ^ n : Kernel Bool Bool) ∘ₘ ν),
+      measureReal_singleton_false (μ := (twoStateChain a b ^ n : Kernel Bool Bool) ∘ₘ ν'), huniv]
+    ring
 
 /-- **Exact contraction in total variation.** For two finite initial measures of the same total
 mass, `n` steps of the two-state chain multiply their total variation distance by

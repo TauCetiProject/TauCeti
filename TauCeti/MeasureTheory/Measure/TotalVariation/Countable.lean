@@ -32,6 +32,8 @@ probability measures is at most two, not one.
 
 * `MeasureTheory.etvDist_eq_tsum_enorm_singleton`, `MeasureTheory.tvDist_eq_tsum_abs_singleton`:
   extended and real total variation distances as singleton series;
+* `MeasureTheory.measureReal_singleton_false`: on `Bool`, the mass at `false` is the total mass
+  minus the mass at `true`;
 * `MeasureTheory.tvDist_eq_two_mul_abs_measureReal_true`: on `Bool`, for measures of equal total
   mass, the distance is twice the difference of the masses at `true`;
 * `MeasureTheory.iSup_measure_sub_eq_tsum_singleton`,
@@ -88,18 +90,23 @@ theorem tvDist_eq_tsum_abs_singleton :
 
 end TotalVariation
 
+/-- On `Bool`, the mass of a finite measure at `false` is its total mass minus its mass at
+`true`. -/
+theorem measureReal_singleton_false {μ : Measure Bool} [IsFiniteMeasure μ] :
+    μ.real {false} = μ.real Set.univ - μ.real {true} := by
+  rw [← measureReal_compl (measurableSet_singleton true), Bool.compl_singleton, Bool.not_true]
+
 /-- On `Bool`, the total variation distance between two finite measures of the same total mass
 (e.g. two probability measures) is twice the absolute difference of their masses at `true`. -/
 theorem tvDist_eq_two_mul_abs_measureReal_true {μ ν : Measure Bool} [IsFiniteMeasure μ]
     (h : μ Set.univ = ν Set.univ) :
     tvDist μ ν = 2 * |μ.real {true} - ν.real {true}| := by
   have : IsFiniteMeasure ν := ⟨h ▸ measure_lt_top μ Set.univ⟩
-  have hμ := sum_measureReal_singleton (μ := μ) Finset.univ
-  have hν := sum_measureReal_singleton (μ := ν) Finset.univ
   have huniv : μ.real Set.univ = ν.real Set.univ := by simp only [measureReal_def, h]
-  simp only [Finset.coe_univ, Fintype.sum_bool] at hμ hν
   rw [tvDist_eq_tsum_abs_singleton, tsum_fintype, Fintype.sum_bool,
-    show μ.real {false} - ν.real {false} = -(μ.real {true} - ν.real {true}) by linarith,
+    measureReal_singleton_false (μ := μ), measureReal_singleton_false (μ := ν), huniv,
+    show ν.real Set.univ - μ.real {true} - (ν.real Set.univ - ν.real {true}) =
+      -(μ.real {true} - ν.real {true}) by ring,
     abs_neg, two_mul]
 
 section Excess
