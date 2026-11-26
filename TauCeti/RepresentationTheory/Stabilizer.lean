@@ -34,7 +34,8 @@ and subset stabilizers across standard constructions on representations:
   `Representation.map_stabilizer_comp_of_surjective`), trivial and subsingleton representations,
   binary and arbitrary products (`Representation.stabilizer_prod`, `Representation.stabilizer_pi`,
   `Representation.stabilizer_pi_ofMulAction_quotient_basepoint`), and kernels of tensor
-  products (`Representation.ker_inf_ker_le_ker_tprod`);
+  products and Hom representations (`Representation.ker_inf_ker_le_ker_tprod`,
+  `Representation.ker_inf_ker_le_ker_linHom`);
 * permutation and left regular representations (`Representation.stabilizer_ofMulAction_single`,
   `Representation.finite_stabilizer_leftRegular`) and trivial subgroup restrictions
   (`Representation.isTrivial_comp_subtype_iff` and
@@ -290,6 +291,13 @@ theorem le_stabilizer_dual {U : Subgroup G} (h : ∀ v, U ≤ ρ.stabilizer v)
 theorem ker_inf_ker_le_ker_tprod {W : Type*} [AddCommMonoid W] [Module A W]
     (ρ : Representation A G V) (σ : Representation A G W) : ρ.ker ⊓ σ.ker ≤ (ρ.tprod σ).ker :=
   fun g hg ↦ by simp [MonoidHom.mem_ker.mp hg.1, MonoidHom.mem_ker.mp hg.2]
+
+/-- An element acting trivially on both modules acts trivially on their Hom representation. -/
+theorem ker_inf_ker_le_ker_linHom {W : Type*} [AddCommMonoid W] [Module A W]
+    (ρ : Representation A G V) (σ : Representation A G W) : ρ.ker ⊓ σ.ker ≤ (ρ.linHom σ).ker :=
+  fun g hg ↦ by
+    ext f x
+    simp [linHom_apply, MonoidHom.mem_ker.mp hg.2, MonoidHom.mem_ker.mp (ρ.ker.inv_mem hg.1)]
 
 end CommSemiring
 
