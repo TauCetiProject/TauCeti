@@ -43,10 +43,9 @@ the line in the chart `a`, and multiplying its tangent coordinate by `εₐ`, gi
 (`Projectivization.contMDiff_coordLineTangentEquiv`), so they form an analytic diffeomorphism of
 total spaces over `ℙ¹`.
 
-The splitting `ℓ* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` is an input for the regularity of the lines of `ℂPⁿ`
-as holomorphic spheres. An arbitrary line still has to be moved to the coordinate line `ℓ` by an
-element of `PGL`, and the vanishing `H¹(ℂP¹, 𝒪(k)) = 0` for `k ≥ -1`, which makes the linearized
-Cauchy–Riemann operator along a line onto, is an external input not proved here.
+Combined with the vanishing `H¹(ℂP¹, 𝒪(k)) = 0` for `k ≥ -1`, the splitting
+`ℓ* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` gives `H¹(ℂP¹, ℓ* TℂPⁿ) = 0`: the linearized Cauchy–Riemann operator
+along `ℓ` is onto, so `ℓ` is regular as a holomorphic sphere in `ℂPⁿ`.
 
 ## Main declarations
 
@@ -64,8 +63,7 @@ Cauchy–Riemann operator along a line onto, is an external input not proved her
   Chapter 1, §1 (the tangent bundle of projective space).
 * W. Fulton and R. Pandharipande, *Notes on stable maps and quantum cohomology*, in *Algebraic
   geometry, Santa Cruz 1995*, Proc. Sympos. Pure Math. 62, Part 2, AMS, 1997, Lemma 10 (the
-  vanishing of `H¹(C, μ* T_X)` for genus-zero maps to convex targets such as `ℙʳ`, for which this
-  splitting of the coordinate line is an input).
+  vanishing of `H¹(C, μ* T_X)` for genus-zero maps to convex targets such as `ℙʳ`).
 -/
 
 public noncomputable section
