@@ -31,12 +31,15 @@ their images in annuli under the translated exponential `w ↦ z₀ + exp w`, un
 differentiability (`uniqueDiffOn_verticalClosedStrip`), vanishing of imaginary parts of iterated
 derivatives along the real segment for functions real-valued on `[a, b]`
 (`ContDiffOn.im_iteratedDerivWithin_verticalClosedStrip_eq_zero`), the vertical Taylor–Lagrange
-expansion of `Im f(c + i y)` (`TauCeti.exists_im_add_mul_I_eq_taylor_odd`), the exponential gauge
-multiplier `scaleFactor` normalizing strip boundary bounds, holomorphic primitives
-`Complex.wedgeIntegral` for functions satisfying `DiffContOnCl` on a vertical strip (specializing
-`TauCeti.Analysis.Complex.HasPrimitives.Basic` to `verticalClosedStrip a b = Icc a b ×ℂ univ`),
-and the Cauchy rectangle contour-shift identity `DiffContOnCl.intervalIntegral_add_mul_I_eq`
-equating vertical line integrals of vertically periodic holomorphic strip functions.
+expansion of `Im f(c + i y)` (`TauCeti.exists_im_add_mul_I_eq_taylor_odd`), the bound
+`‖exp ((z - θ) a)‖ ≤ exp |a|` on the closed unit strip for `0 ≤ θ ≤ 1` (`norm_exp_sub_mul_le`)
+and its complex-power form `‖b ^ ((z - θ) s)‖ ≤ exp |s log b|` for `0 < b`
+(`norm_ofReal_cpow_sub_mul_le`), the exponential gauge multiplier `scaleFactor` normalizing strip
+boundary bounds, holomorphic primitives `Complex.wedgeIntegral` for functions satisfying
+`DiffContOnCl` on a vertical strip (specializing `TauCeti.Analysis.Complex.HasPrimitives.Basic` to
+`verticalClosedStrip a b = Icc a b ×ℂ univ`), and the Cauchy rectangle contour-shift identity
+`DiffContOnCl.intervalIntegral_add_mul_I_eq` equating vertical line integrals of vertically
+periodic holomorphic strip functions.
 -/
 
 public section
@@ -174,6 +177,26 @@ theorem ContDiffOn.im_iteratedDerivWithin_verticalClosedStrip_eq_zero {f : ℂ �
 namespace TauCeti.Complex.HadamardThreeLines
 
 variable {a b : ℝ} {z : ℂ}
+
+/-- For `0 ≤ θ ≤ 1` and `z` in the closed unit strip, `|re z - θ| ≤ 1`, so the exponential
+`exp ((z - θ) a)` with real slope `a` has modulus at most `exp |a|`. -/
+theorem norm_exp_sub_mul_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) (a : ℝ)
+    (hz : z ∈ verticalClosedStrip 0 1) : ‖exp ((z - θ) * a)‖ ≤ Real.exp |a| := by
+  rw [norm_exp]
+  refine Real.exp_le_exp.2 ((le_abs_self _).trans ?_)
+  simp only [mul_re, sub_re, ofReal_re, sub_im, ofReal_im, mul_zero, sub_zero, abs_mul]
+  exact mul_le_of_le_one_left (abs_nonneg _)
+    (abs_le.2 ⟨by linarith [hz.1, hθ.2], by linarith [hz.2, hθ.1]⟩)
+
+/-- For `0 < b`, `0 ≤ θ ≤ 1` and `z` in the closed unit strip, the complex power
+`b ^ ((z - θ) s)` with real exponent slope `s` has modulus at most `exp |s log b|`. -/
+theorem norm_ofReal_cpow_sub_mul_le {b : ℝ} (hb : 0 < b) {θ : ℝ} (hθ : θ ∈ Icc 0 1) (s : ℝ)
+    (hz : z ∈ verticalClosedStrip 0 1) :
+    ‖(b : ℂ) ^ ((z - θ) * s)‖ ≤ Real.exp |s * Real.log b| := by
+  rw [cpow_def_of_ne_zero (ofReal_ne_zero.2 hb.ne'), ← ofReal_log hb.le,
+    show (Real.log b : ℂ) * ((z - θ) * s) = (z - θ) * ((s * Real.log b : ℝ) : ℂ) by
+      push_cast; ring]
+  exact norm_exp_sub_mul_le hθ _ hz
 
 section ScaleFactor
 
