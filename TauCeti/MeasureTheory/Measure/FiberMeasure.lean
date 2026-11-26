@@ -103,7 +103,7 @@ theorem _root_.Measurable.isLeFiberMeasure_of_coordinates
     [IsCountablyGenerated (𝓝 b)] [ν.IsOpenPosMeasure] {ρ : Measure P}
     {ψ : B → P → X} {w : B → P → ℝ≥0∞} {V : Set B} (hπ : Measurable π)
     (hν : ν.FiniteAtFilter (𝓝 b))
-    (hψ : Measurable ψ.uncurry) (hw : Measurable w.uncurry) (hV : V ∈ 𝓝 b)
+    (hψ : ∀ t, Measurable (ψ t)) (hw : ∀ t, Measurable (w t)) (hV : V ∈ 𝓝 b)
     (h_fiber : ∀ t ∈ V, ∀ᵐ p : P ∂ρ, w t p ≠ 0 → π (ψ t p) = t)
     (h_reg : ∀ᵐ p : P ∂ρ, ContinuousAt (ψ · p) b ∧ LowerSemicontinuousAt (w · p) b)
     (h_le : ∀ K : X → ℝ≥0∞, Measurable K →
@@ -113,7 +113,7 @@ theorem _root_.Measurable.isLeFiberMeasure_of_coordinates
   let A (t : B) : ℝ≥0∞ := ∫⁻ p, w t p * K (ψ t p) ∂ρ
   have hK_meas : Measurable K := hK.measurable
   have hA : LowerSemicontinuousAt A b := by
-    refine lowerSemicontinuousAt_lintegral (fun _ ↦ by fun_prop)
+    refine lowerSemicontinuousAt_lintegral (fun t ↦ ((hw t).mul (hK_meas.comp (hψ t))).aemeasurable)
       (h_reg.mono fun p ⟨hψ_cont, hw_lsc⟩ ↦ ?_)
     rw [lowerSemicontinuousAt_iff_le_liminf]
     calc
@@ -121,8 +121,8 @@ theorem _root_.Measurable.isLeFiberMeasure_of_coordinates
         mul_le_mul' (lowerSemicontinuousAt_iff_le_liminf.1 hw_lsc)
           (lowerSemicontinuousAt_iff_le_liminf.1 ((hK _).comp hψ_cont))
       _ ≤ liminf (fun t ↦ w t p * K (ψ t p)) (𝓝 b) := ENNReal.le_liminf_mul
-  rw [lintegral_map hK_meas hψ.of_uncurry_left,
-    lintegral_withDensity_eq_lintegral_mul _ hw.of_uncurry_left (by fun_prop)]
+  rw [lintegral_map hK_meas (hψ b),
+    lintegral_withDensity_eq_lintegral_mul _ (hw b) (by fun_prop)]
   refine hA.le_of_setLIntegral_le hν ?_
   filter_upwards [hC, eventually_smallSets_subset.2 hV] with S hS hS_sub hS_open
   have hπS : MeasurableSet (π ⁻¹' S) := hπ hS_open.measurableSet
@@ -150,7 +150,8 @@ theorem _root_.MeasureTheory.MeasurePreserving.isLeFiberMeasure
     IsLeFiberMeasure μ ν π b (ρ.map fun p : P ↦ φ (b, p)) := by
   rw [← withDensity_one (μ := ρ)]
   exact hπ.isLeFiberMeasure_of_coordinates (ψ := fun t p ↦ φ (t, p)) (w := 1)
-    hν hφ.measurable measurable_const univ_mem (fun t _ ↦ .of_forall fun p _ ↦ h_fiber t p)
+    hν (fun _ ↦ hφ.measurable.comp (measurable_const.prodMk measurable_id))
+    (fun _ ↦ measurable_const) univ_mem (fun t _ ↦ .of_forall fun p _ ↦ h_fiber t p)
     (h_cont.mono fun _ hp ↦ ⟨hp, continuousAt_const.lowerSemicontinuousAt⟩) fun K hK ↦ by
       simpa [← hφ.lintegral_comp hK] using
         (lintegral_prod _ (hK.comp hφ.measurable).aemeasurable).ge
