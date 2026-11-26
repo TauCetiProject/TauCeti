@@ -212,13 +212,19 @@ theorem contMDiffOn_coordChange_doubledBundleCore (C : FiniteRankBundleCore ℂ 
       (Fin (doubledBundleCore C hC).rank → ℂ)) n
       ((doubledBundleCore C hC).core.coordChange i j)
       ((doubledBundleCore C hC).core.baseSet i ∩ (doubledBundleCore C hC).core.baseSet j) := by
+  -- The chart domains of the doubled core are the preimages of those of `C` under the fold.
+  have hdom : (doubledBundleCore C hC).core.baseSet i ∩ (doubledBundleCore C hC).core.baseSet j =
+      DoubleAlong.fold A ⁻¹' (C.core.baseSet (DoubleAlong.fold A i) ∩
+        C.core.baseSet (DoubleAlong.fold A j)) := by
+    ext y
+    rw [doubledBundleCore_eq, Set.mem_inter_iff, FiniteRankBundleCore.mem_baseSet_doubleAlong,
+      FiniteRankBundleCore.mem_baseSet_doubleAlong, Set.mem_preimage, Set.mem_inter_iff]
+  rw [hdom]
   -- The doubled core has rank `C.rank` and transitions `doubleAlongCoordChange C A`, both by
   -- definition (`doubledBundleCore_eq`, `rank_doubleAlong`, `coordChange_doubleAlong`). The rank
   -- occurs in the model of the target, so the statement is restated rather than rewritten.
   change ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, (Fin C.rank → ℂ) →L[ℂ] (Fin C.rank → ℂ)) n
-    (FiniteRankBundleCore.doubleAlongCoordChange C A i j)
-    (DoubleAlong.fold A ⁻¹' (C.core.baseSet (DoubleAlong.fold A i) ∩
-      C.core.baseSet (DoubleAlong.fold A j)))
+    (FiniteRankBundleCore.doubleAlongCoordChange C A i j) _
   exact contMDiffOn_of_eq_sheets_of_collar
     ((C.core.isOpen_baseSet _).inter (C.core.isOpen_baseSet _)) (hg _ _)
     (fun x _ ↦ FiniteRankBundleCore.doubleAlongCoordChange_inl C i j x)
