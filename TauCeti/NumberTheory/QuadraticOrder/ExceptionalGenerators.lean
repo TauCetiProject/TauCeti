@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-import Mathlib.Algebra.QuadraticAlgebra.Int
 import TauCeti.RingTheory.RootsOfUnity.FourthAndSixth
 
 /-!
@@ -24,33 +23,32 @@ open scoped QuadraticAlgebra
 
 namespace TauCeti.QuadraticAlgebra
 
+private def omegaUnit {R : Type*} [CommRing R] (b : R) : (QuadraticAlgebra R (-1) b)ˣ :=
+  Units.mkOfMulEqOne ω (algebraMap R _ b - ω) (by ext <;> simp)
+
 /-- The Gaussian generator `ω = √-1` as a unit, with inverse `-ω`. -/
 def gaussianUnit : (QuadraticAlgebra ℤ (-1) 0)ˣ :=
-  Units.mkOfMulEqOne ω (-ω) (by ext <;> simp)
+  omegaUnit 0
 
 /-- The underlying Gaussian integer of the generator is `ω`. -/
 @[simp] theorem gaussianUnit_val :
-    (gaussianUnit : QuadraticAlgebra ℤ (-1) 0) = ω := by simp [gaussianUnit]
+    (gaussianUnit : QuadraticAlgebra ℤ (-1) 0) = ω := (rfl)
 
 /-- The inverse Gaussian generator has underlying value `-ω`. -/
 @[simp] theorem gaussianUnit_inv_val :
-    (↑(gaussianUnit⁻¹) : QuadraticAlgebra ℤ (-1) 0) = -ω := by
-  apply Units.inv_eq_of_mul_eq_one_right
-  ext <;> simp
+    (↑(gaussianUnit⁻¹) : QuadraticAlgebra ℤ (-1) 0) = -ω := (rfl)
 
 /-- The Eisenstein generator `ω = (1 + √-3)/2` as a unit, with inverse `1 - ω`. -/
 def eisensteinUnit : (QuadraticAlgebra ℤ (-1) 1)ˣ :=
-  Units.mkOfMulEqOne ω (1 - ω) (by ext <;> simp)
+  omegaUnit 1
 
 /-- The underlying Eisenstein integer of the generator is `ω`. -/
 @[simp] theorem eisensteinUnit_val :
-    (eisensteinUnit : QuadraticAlgebra ℤ (-1) 1) = ω := by simp [eisensteinUnit]
+    (eisensteinUnit : QuadraticAlgebra ℤ (-1) 1) = ω := (rfl)
 
 /-- The inverse Eisenstein generator has underlying value `1 - ω`. -/
 @[simp] theorem eisensteinUnit_inv_val :
-    (↑(eisensteinUnit⁻¹) : QuadraticAlgebra ℤ (-1) 1) = 1 - ω := by
-  apply Units.inv_eq_of_mul_eq_one_right
-  ext <;> simp
+    (↑(eisensteinUnit⁻¹) : QuadraticAlgebra ℤ (-1) 1) = 1 - ω := (rfl)
 
 /-- The Eisenstein generator is a root of the sixth cyclotomic polynomial `X² - X + 1`. -/
 theorem eisensteinUnit_sq_sub_add_one_eq_zero :
@@ -66,9 +64,16 @@ theorem isPrimitiveRoot_gaussianUnit :
 /-- The Eisenstein generator is a primitive sixth root of unity. -/
 theorem isPrimitiveRoot_eisensteinUnit :
     IsPrimitiveRoot (eisensteinUnit : QuadraticAlgebra ℤ (-1) 1) 6 := by
-  have : Fact (¬ IsSquare (QuadraticAlgebra.discr (-1 : ℤ) 1)) :=
-    ⟨not_isSquare_of_neg (by norm_num [QuadraticAlgebra.discr_def])⟩
-  exact (TauCeti.isPrimitiveRoot_six_iff (R := QuadraticAlgebra ℤ (-1) 1)).2
+  have : NeZero (3 : QuadraticAlgebra ℤ (-1) 1) := ⟨by norm_num⟩
+  exact TauCeti.isPrimitiveRoot_six_of_sq_sub_add_one_eq_zero
     eisensteinUnit_sq_sub_add_one_eq_zero
+
+/-- The Gaussian generator has order four in the unit group. -/
+@[simp] theorem orderOf_gaussianUnit : orderOf gaussianUnit = 4 :=
+  (IsPrimitiveRoot.coe_units_iff.mp isPrimitiveRoot_gaussianUnit).eq_orderOf.symm
+
+/-- The Eisenstein generator has order six in the unit group. -/
+@[simp] theorem orderOf_eisensteinUnit : orderOf eisensteinUnit = 6 :=
+  (IsPrimitiveRoot.coe_units_iff.mp isPrimitiveRoot_eisensteinUnit).eq_orderOf.symm
 
 end TauCeti.QuadraticAlgebra

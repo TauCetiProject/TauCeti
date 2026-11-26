@@ -48,8 +48,6 @@ subgroups.
   imaginary quadratic field.
 * `TauCeti.NumberField.Units.card_units_of_isTotallyComplex_of_discr`: the number of units of an
   imaginary quadratic field in terms of its discriminant.
-* `TauCeti.NumberField.Units.card_units_of_ringOfIntegersMulEquiv`: the same unit count in a
-  multiplicatively equivalent presentation of the ring of integers.
 * `TauCeti.NumberField.Units.eq_one_or_neg_one_of_isTotallyComplex`: apart from discriminants
   `-3` and `-4`, the only units of an imaginary quadratic field are `±1`.
 -/
@@ -165,14 +163,6 @@ theorem card_units_of_isTotallyComplex_of_discr [IsTotallyComplex K] (hK : finra
     Nat.card (𝓞 K)ˣ = if discr K = -4 then 4 else if discr K = -3 then 6 else 2 := by
   rw [← torsionOrder_eq_of_finrank_eq_two hK, torsionOrder,
     torsion_eq_top_of_isTotallyComplex hK, Subgroup.card_top]
-
-/-- A multiplicative presentation of the ring of integers of an imaginary quadratic field has
-four units in discriminant `-4`, six in discriminant `-3`, and two otherwise. -/
-theorem card_units_of_ringOfIntegersMulEquiv [IsTotallyComplex K] {R : Type*} [Monoid R]
-    (e : 𝓞 K ≃* R) (hK : finrank ℚ K = 2) :
-    Nat.card Rˣ = if discr K = -4 then 4 else if discr K = -3 then 6 else 2 :=
-  (Nat.card_congr (Units.mapEquiv e).toEquiv).symm.trans
-    (card_units_of_isTotallyComplex_of_discr hK)
 
 /-- **The units of an imaginary quadratic field are `±1`**, unless its discriminant is `-3` or
 `-4`. -/

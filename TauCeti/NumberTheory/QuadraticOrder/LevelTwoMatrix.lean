@@ -49,7 +49,9 @@ theorem units_map_zmod_two_gaussian_surjective :
   · refine ⟨1, Units.ext ?_⟩
     ext <;> simp [h.1, h.2]
   · refine ⟨TauCeti.QuadraticAlgebra.gaussianUnit, Units.ext ?_⟩
-    ext <;> simp [mapRingHom, h.1, h.2]
+    simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+      TauCeti.QuadraticAlgebra.gaussianUnit_val, mapRingHom_omega]
+    ext <;> simp [h.1, h.2]
 
 /-- Every unit modulo `2` in the Eisenstein integer algebra lifts to an integral unit. The
 three residues are represented by `1`, `ω`, and `ω² = ω - 1`. -/
@@ -66,8 +68,14 @@ theorem units_map_zmod_two_eisenstein_surjective :
   · refine ⟨1, Units.ext ?_⟩
     ext <;> simp [h.1, h.2]
   · refine ⟨TauCeti.QuadraticAlgebra.eisensteinUnit, Units.ext ?_⟩
-    ext <;> simp [mapRingHom, h.1, h.2]
+    simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+      TauCeti.QuadraticAlgebra.eisensteinUnit_val, mapRingHom_omega]
+    ext <;> simp [h.1, h.2]
   · refine ⟨TauCeti.QuadraticAlgebra.eisensteinUnit ^ 2, Units.ext ?_⟩
-    ext <;> simp [mapRingHom, sq, h.1, h.2]
+    simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+      Units.val_pow_eq_pow_val, map_pow, TauCeti.QuadraticAlgebra.eisensteinUnit_val,
+      mapRingHom_omega]
+    rw [sq, omega_mul_omega_eq_mk]
+    ext <;> simp [h.1, h.2, ZMod.neg_eq_self_mod_two]
 
 end QuadraticAlgebra
