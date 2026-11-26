@@ -36,7 +36,8 @@ variable {G : Type*} [Group G] [IsMulCommutative G] [Finite G]
 open scoped Classical IsMulCommutative in
 /-- Inverting the character averages inside a Riesz sum selects the mass of one group element
 at each index. The mass is its indicator averaged over the input finset. -/
-theorem sum_inv_mul_rieszSum_expect (F : ℕ → Finset G) (b : ℕ → ℂ) (g : G) (y : ℝ) :
+theorem sum_inv_mul_rieszSum_expect_eq_card_mul_rieszSum_expect_ite
+    (F : ℕ → Finset G) (b : ℕ → ℂ) (g : G) (y : ℝ) :
     (∑ χ : G →* ℂˣ, (↑(χ g)⁻¹ : ℂ) *
       rieszSum (fun n ↦ b n * 𝔼 h ∈ F n, (χ h : ℂ)) y) =
     (Nat.card G : ℂ) * rieszSum (fun n ↦ b n * 𝔼 h ∈ F n, if h = g then 1 else 0) y := by
@@ -77,7 +78,7 @@ theorem sum_mul_expect_max_eq_sum_mul_rieszSum_expect
       ∑ χ : G →* ℂˣ, (↑(χ g)⁻¹ : ℂ) *
         rieszSum (fun n ↦ b n * 𝔼 h ∈ F n, (χ h : ℂ)) (a / w g) := by
   have hcard : (Nat.card G : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  simp_rw [sum_inv_mul_rieszSum_expect]
+  simp_rw [sum_inv_mul_rieszSum_expect_eq_card_mul_rieszSum_expect_ite]
   have hnorm (g : G) (z : ℂ) : (w g : ℂ) * ((Nat.card G : ℂ) * z) =
       (Nat.card G : ℂ) * ((w g : ℂ) * z) := mul_left_comm ..
   simp_rw [hnorm, ← mul_sum, inv_mul_cancel_left₀ hcard]
