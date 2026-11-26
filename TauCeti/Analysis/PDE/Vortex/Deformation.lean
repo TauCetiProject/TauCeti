@@ -39,9 +39,11 @@ the modulus defect and on `|d_a α (1)|` bound it (`energyDensity_le_of_equation
 particular it is continuous on a solution with continuous `b₁` and `C¹` section
 (`continuous_energyDensity_of_equation_eq_zero`).
 
-`equation_add_smul` gives the exact quadratic expansion, and `hasDerivAt_equation`
-identifies `linearizedEquation` as its first variation. For the charge-one infinitesimal
-gauge action `gaugeDirection x f`, the off-shell composition is
+`equation_add_smul` gives the exact quadratic expansion, whose quadratic remainder
+`quadraticTerm` is the diagonal of the bilinear map `quadraticTermBilinear` and is homogeneous of
+degree two under real weights (`quadraticTerm_fun_smul`), and `hasDerivAt_equation` identifies
+`linearizedEquation` as its first variation. For the
+charge-one infinitesimal gauge action `gaugeDirection x f`, the off-shell composition is
 `(0, -f * (equation x)₂, f * (equation x)₁)`. Consequently it vanishes at every
 solution, giving the differential-complex identity without a gauge-fixing assumption.
 The vacuum is `(0, 0, 1/2, 0)`; its linearization agrees with the last three rows of
@@ -863,6 +865,43 @@ theorem quadraticTerm_apply_two (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : �
     quadraticTerm y z 2 = y z 0 * y z 2 - y z 1 * y z 3 := by
   rfl
 
+/-- A continuous bilinear map of two field values whose diagonal is the quadratic remainder:
+`quadraticTerm y z = quadraticTermBilinear (y z) (y z)` (`quadraticTerm_eq_quadraticTermBilinear`).
+-/
+def quadraticTermBilinear :
+    EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 3) :=
+  LinearMap.toContinuousLinearMap <|
+    (LinearMap.toContinuousLinearMap :
+        (EuclideanSpace ℝ (Fin 4) →ₗ[ℝ] EuclideanSpace ℝ (Fin 3)) ≃ₗ[ℝ]
+          (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 3))).toLinearMap ∘ₗ
+      LinearMap.mk₂ ℝ (fun u v : EuclideanSpace ℝ (Fin 4) ↦
+        !₂[(u 2 * v 2 + u 3 * v 3) / 2, -u 0 * v 3 - u 1 * v 2, u 0 * v 2 - u 1 * v 3])
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+
+/-- The defining formula of `quadraticTermBilinear`. -/
+@[simp]
+theorem quadraticTermBilinear_apply (u v : EuclideanSpace ℝ (Fin 4)) :
+    quadraticTermBilinear u v =
+      !₂[(u 2 * v 2 + u 3 * v 3) / 2, -u 0 * v 3 - u 1 * v 2, u 0 * v 2 - u 1 * v 3] :=
+  (rfl)
+
+/-- The quadratic remainder is the diagonal of the bilinear map `quadraticTermBilinear`. -/
+theorem quadraticTerm_eq_quadraticTermBilinear (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    quadraticTerm y = fun z ↦ quadraticTermBilinear (y z) (y z) := by
+  ext z i
+  fin_cases i <;> simp
+  ring
+
+/-- The quadratic term is homogeneous of degree two under multiplication by a real function. -/
+theorem quadraticTerm_fun_smul (y : ℂ → EuclideanSpace ℝ (Fin 4)) (w : ℂ → ℝ) (z : ℂ) :
+    quadraticTerm (fun t ↦ w t • y t) z = w z ^ 2 • quadraticTerm y z := by
+  ext i
+  fin_cases i <;>
+    simp [quadraticTerm_apply_zero, quadraticTerm_apply_one, quadraticTerm_apply_two] <;> ring
+
 /-- The first connection component of the infinitesimal gauge action. -/
 @[simp]
 theorem gaugeDirection_apply_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ → ℝ) (z : ℂ) :
@@ -975,6 +1014,15 @@ theorem gaugeDirection_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : gaugeDire
 @[simp]
 theorem vacuumField_apply (z : ℂ) : vacuumField z = !₂[0, 0, 1 / 2, 0] := by
   rfl
+
+/-- The vacuum field is constant. -/
+theorem vacuumField_eq_const : vacuumField = fun _ ↦ vacuumField 0 :=
+  funext fun z ↦ by rw [vacuumField_apply, vacuumField_apply]
+
+/-- The vacuum field is smooth. -/
+theorem contDiff_vacuumField {n : WithTop ℕ∞} : ContDiff ℝ n vacuumField := by
+  rw [vacuumField_eq_const]
+  exact contDiff_const
 
 /-- The zero phase acts as the identity. -/
 @[simp]

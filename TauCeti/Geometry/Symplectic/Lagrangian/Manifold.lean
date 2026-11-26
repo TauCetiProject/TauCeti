@@ -187,6 +187,16 @@ theorem IsLagrangianMap.isIsotropicMap (h : hσ.IsLagrangianMap J f) : hσ.IsIso
 theorem IsLagrangianMap.isCoisotropicMap (h : hσ.IsLagrangianMap J f) : hσ.IsCoisotropicMap J f :=
   (isLagrangianMap_iff.mp h).2
 
+/-- A tangent vector at `f x` which is `σ`-orthogonal to the tangent image of a coisotropic map `f`
+lies in that tangent image. -/
+theorem IsCoisotropicMap.exists_mfderiv_eq_of_forall_eval₂_mfderiv_eq_zero
+    (h : hσ.IsCoisotropicMap J f) (x : N) {v : TangentSpace I (f x)}
+    (hv : ∀ u, SmoothBundleForm.eval₂ σ (f x) v (mfderiv J I f x u) = 0) :
+    ∃ u, mfderiv J I f x u = v :=
+  LinearMap.mem_range.1 (hσ.mem_of_forall_eval₂_eq_zero_of_isCoisotropic (h x) fun w hw ↦ by
+    obtain ⟨u, rfl⟩ := LinearMap.mem_range.1 hw
+    exact hv u)
+
 /-- **Isotropy is the vanishing of the pullback.** A smooth map is isotropic exactly when it pulls
 the two-form back to zero. -/
 theorem isIsotropicMap_iff_mpullback_eq_zero [IsManifold J ∞ N] (hf : ContMDiff J I ∞ f) :

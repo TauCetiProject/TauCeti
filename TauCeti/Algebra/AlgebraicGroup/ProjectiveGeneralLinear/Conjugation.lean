@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.MultiplicativeMatrix
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Kernel
 public import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InnerAut
+import TauCeti.LinearAlgebra.Matrix.Kronecker.MulLeftMulRight
 
 /-!
 # The conjugation homomorphism from `GLₙ` to `PGLₙ`
@@ -96,9 +97,9 @@ theorem conjugationMatrix_map {T : Type w} [CommRing T] {F : Type*} [FunLike F S
 theorem toMatrix_mulLeft_comp_mulRight (X Y : Matrix (Fin n) (Fin n) S) :
     LinearMap.toMatrix (matrixUnitBasis n S) (matrixUnitBasis n S)
         (LinearMap.mulLeft S X ∘ₗ LinearMap.mulRight S Y) = conjugationMatrix X Y := by
+  rw [conjugationMatrix, Matrix.kronecker, ← Matrix.toMatrix_stdBasis_mulLeft_comp_mulRight]
   ext a c
-  simp [LinearMap.toMatrix_apply, conjugationMatrix_apply, Matrix.mul_apply, Matrix.single_apply,
-    ite_and, Finset.sum_ite_eq]
+  simp [LinearMap.toMatrix_apply, Matrix.stdBasis, Matrix.single_eq_of_single_single]
 
 /-- In the matrix-unit basis, the conjugation matrix acts by left and right multiplication. -/
 @[simp]

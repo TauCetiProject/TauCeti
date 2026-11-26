@@ -148,6 +148,14 @@ theorem coverPullback_apply (n : ℕ) (g : C(AddCircle p, X)) (x : AddCircle ((n
     coverPullback n g x = g (coverMap (AddSubgroup.natCast_mul_mem_zmultiples p n) x) :=
   (rfl)
 
+/-- The pulled-back loop is invariant under the rotation by `p`, a deck transformation of the
+covering: `g` is read through the reduction modulo `p`. -/
+@[simp]
+theorem coverPullback_add_coe_period (n : ℕ) (g : C(AddCircle p, X))
+    (x : AddCircle ((n : ℝ) * p)) :
+    coverPullback n g (x + (p : AddCircle ((n : ℝ) * p))) = coverPullback n g x := by
+  rw [coverPullback_apply, coverPullback_apply, map_add, coverMap_coe, coe_period, add_zero]
+
 /-- The pullback along the covering map is continuous for the compact-open topologies. -/
 @[continuity, fun_prop]
 theorem continuous_coverPullback (n : ℕ) :

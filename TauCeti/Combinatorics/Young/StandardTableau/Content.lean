@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Young.StandardTableau.Basic
 import TauCeti.Combinatorics.Young.HookLength.Basic
 import TauCeti.Combinatorics.Young.StandardTableau.Order
+import TauCeti.Combinatorics.Young.StandardTableau.Separation
 import TauCeti.GroupTheory.Perm.Fin
 
 /-!
@@ -314,74 +315,18 @@ end StandardYoungTableau
 
 namespace StandardYoungTableau
 
-variable {μ : YoungDiagram}
-
-/-- Let two standard tableaux of one shape carry each label below `i` in the same cell. If the
-label `i` lies in a strictly earlier row of the first tableau than of the second, its contents in
-the two differ. Otherwise the cell `d` left of `i` in the second tableau carries a smaller label,
-hence the same label in the first, and the cell in the row of `i` and the column of `d` would carry
-in the first tableau a label both smaller than that of `d` and at least `i`. -/
-private theorem labelContent_ne_of_rowIndex_lt {T U : StandardYoungTableau μ} {i : Fin μ.card}
-    (h : ∀ j < i, T.toTableau.symm j = U.toTableau.symm j)
-    (hrow : YoungTableau.rowIndex T.toTableau i < YoungTableau.rowIndex U.toTableau i) :
-    YoungTableau.labelContent T.toTableau i ≠ YoungTableau.labelContent U.toTableau i := by
-  intro hc
-  rw [YoungTableau.labelContent_def, YoungTableau.labelContent_def] at hc
-  rw [YoungTableau.rowIndex_def, YoungTableau.rowIndex_def] at hrow
-  have hTa : T (T.toTableau.symm i) = i := by
-    rw [← toTableau_apply, Equiv.apply_symm_apply]
-  have hUb : U (U.toTableau.symm i) = i := by
-    rw [← toTableau_apply, Equiv.apply_symm_apply]
-  generalize T.toTableau.symm i = a at hc hrow hTa
-  generalize U.toTableau.symm i = b at hc hrow hUb
-  obtain ⟨⟨r, s⟩, ha⟩ := a
-  obtain ⟨⟨r', s'⟩, hb⟩ := b
-  simp only [YoungDiagram.cellContent_mk] at hc hrow
-  have hb' : (r', s') ∈ μ := hb
-  have ha' : (r, s) ∈ μ := ha
-  have hd : (r', s' - 1) ∈ μ := μ.up_left_mem le_rfl (Nat.sub_le _ _) hb'
-  have he : (r, s' - 1) ∈ μ := μ.up_left_mem hrow.le le_rfl hd
-  -- the label `j` of the cell `d = (r', s' - 1)` in `U` is smaller than `i`
-  have hji : U ⟨(r', s' - 1), hd⟩ < i :=
-    hUb ▸ U.apply_lt_apply_of_mem hd hb' le_rfl (by omega) (Or.inr (by omega))
-  -- so `T` gives `d` the same label
-  have hTd : T ⟨(r', s' - 1), hd⟩ = U ⟨(r', s' - 1), hd⟩ := by
-    have hsymm := h _ hji
-    rw [← toTableau_apply U, Equiv.symm_apply_apply, Equiv.symm_apply_eq] at hsymm
-    simpa using hsymm.symm
-  have h₁ : T ⟨(r, s' - 1), he⟩ < i :=
-    (T.apply_lt_apply_of_mem he hd hrow.le le_rfl (Or.inl hrow)).trans (hTd ▸ hji)
-  have h₂ : i ≤ T ⟨(r, s' - 1), he⟩ := by
-    rcases (show s ≤ s' - 1 by omega).lt_or_eq with hs | hs
-    · exact hTa ▸ (T.apply_lt_apply_of_mem ha' he le_rfl hs.le (Or.inr hs)).le
-    · obtain rfl : s = s' - 1 := hs
-      exact hTa.ge
-  exact lt_irrefl i (h₂.trans_lt h₁)
-
 /-- **A standard Young tableau is determined by the contents of its labels**, as it is by their
 rows (`TauCeti.StandardYoungTableau.rowIndex_injective`). -/
 theorem labelContent_injective (μ : YoungDiagram) :
     Function.Injective fun T : StandardYoungTableau μ => YoungTableau.labelContent T.toTableau := by
-  intro T U hTU
-  have hc : ∀ i, YoungTableau.labelContent T.toTableau i =
-      YoungTableau.labelContent U.toTableau i := congrFun hTU
-  have key : ∀ i, T.toTableau.symm i = U.toTableau.symm i := by
-    intro i
-    induction i using WellFoundedLT.induction with
-    | _ i ih =>
-    rcases lt_trichotomy (YoungTableau.rowIndex T.toTableau i)
-        (YoungTableau.rowIndex U.toTableau i) with hr | hr | hr
-    · exact absurd (hc i) (labelContent_ne_of_rowIndex_lt ih hr)
-    · have hcol : YoungTableau.colIndex T.toTableau i = YoungTableau.colIndex U.toTableau i := by
-        have hci := hc i
-        rw [YoungTableau.labelContent_eq_colIndex_sub_rowIndex,
-          YoungTableau.labelContent_eq_colIndex_sub_rowIndex, hr] at hci
-        omega
-      rw [YoungTableau.rowIndex_def, YoungTableau.rowIndex_def] at hr
-      rw [YoungTableau.colIndex_def, YoungTableau.colIndex_def] at hcol
-      exact Subtype.ext (Prod.ext hr hcol)
-    · exact absurd (hc i).symm (labelContent_ne_of_rowIndex_lt (fun j hj => (ih j hj).symm) hr)
-  exact toTableau_injective (Equiv.symm_bijective.injective (Equiv.ext key))
+  have h (p : μ.card.Partition) :
+      Function.Injective (fun T : StandardYoungTableau (YoungDiagram.ofPartition p) =>
+        YoungTableau.labelContent T.toTableau) := by
+    intro T U hTU
+    exact sigma_mk_injective (i := p) (sigma_comp_labelContent_injective_of_injOn_addables id
+      (fun D _ => D.injOn_cellContent) (a₁ := ⟨p, T⟩) (a₂ := ⟨p, U⟩)
+      (funext fun i => congrFun hTU _))
+  exact YoungDiagram.ofPartition_toPartition (μ := μ) rfl ▸ h (μ.toPartition rfl)
 
 end StandardYoungTableau
 

@@ -102,6 +102,19 @@ noncomputable def doubleAlongCoordChange (C : FiniteRankBundleCore ℂ X) (A : S
       C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j) x := by
   simp [doubleAlongCoordChange]
 
+/-- On the second sheet, away from the glued set, the doubled transition is the conjugate
+transition of `C`; no realness of `C` is needed there. -/
+theorem doubleAlongCoordChange_inr_of_notMem (C : FiniteRankBundleCore ℂ X) (i j : DoubleAlong A)
+    {x : X} (hx : x ∉ A) :
+    doubleAlongCoordChange C A i j (DoubleAlong.inr A x) =
+      (star (toConv
+        (C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j) x))).ofConv := by
+  have : DoubleAlong.inr A x ∉ range (DoubleAlong.inl A) := by
+    rintro ⟨y, hy⟩
+    obtain ⟨rfl, hyA⟩ := (DoubleAlong.inl_eq_inr_iff A).1 hy
+    exact hx hyA
+  simp [doubleAlongCoordChange, this]
+
 /-- On the second sheet the doubled transition is the conjugate transition of `C`, at points of the
 two charts. -/
 theorem doubleAlongCoordChange_inr {C : FiniteRankBundleCore ℂ X} (hC : C.IsRealAlong A)
@@ -114,11 +127,7 @@ theorem doubleAlongCoordChange_inr {C : FiniteRankBundleCore ℂ X} (hC : C.IsRe
   · rw [← DoubleAlong.inl_coe_eq_inr A ⟨x, hx⟩, doubleAlongCoordChange_inl]
     exact (congrArg (fun f : WithConv ((Fin C.rank → ℂ) →L[ℂ] (Fin C.rank → ℂ)) ↦ f.ofConv)
       (hC _ _ x hx hi hj).star_eq).symm
-  · have : DoubleAlong.inr A x ∉ range (DoubleAlong.inl A) := by
-      rintro ⟨y, hy⟩
-      obtain ⟨rfl, hyA⟩ := (DoubleAlong.inl_eq_inr_iff A).1 hy
-      exact hx hyA
-    simp [doubleAlongCoordChange, this]
+  · exact doubleAlongCoordChange_inr_of_notMem C i j hx
 
 /-- The doubled transition from a chart to itself is the identity on the chart. -/
 theorem doubleAlongCoordChange_self {C : FiniteRankBundleCore ℂ X} (hC : C.IsRealAlong A)

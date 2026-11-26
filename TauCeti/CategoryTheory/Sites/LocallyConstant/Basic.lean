@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Sites.LocallyBijective
+public import Mathlib.CategoryTheory.Sites.PreservesLocallyBijective
 public import TauCeti.CategoryTheory.Sites.Point.ConstantSheaf
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 public import TauCeti.CategoryTheory.Sites.Point.Over
 
 /-!
@@ -37,6 +40,9 @@ constant, and the fibre of a constant sheaf with value `M` is `M`.
   `T`, local constancy only needs to be checked over `T`.
 * `CategoryTheory.Sheaf.IsLocallyConstantIn.exists_sheafFiber_iso`: the fibres of a locally
   constant sheaf are isomorphic to objects satisfying `P`.
+* `CategoryTheory.Sheaf.constToOver`: an isomorphism
+  `F.over Y ≅ ((constantSheaf J A).obj M).over Y` gives a locally bijective morphism from the
+  constant presheaf on `M` to `F.over Y`.
 
 ## References
 
@@ -61,9 +67,7 @@ def locallyConstantSieve (F : Sheaf J A) (X : C) : Sieve X where
   arrows Y _ := ∃ M, P M ∧ Nonempty (F.over Y ≅ ((constantSheaf J A).obj M).over Y)
   downward_closed := by
     rintro Y Z - ⟨M, hM, ⟨e⟩⟩ g
-    exact ⟨M, hM, ⟨(F.pushforwardOverMapIso g).symm ≪≫
-      ((Over.map g).sheafPushforwardContinuous A _ _).mapIso e ≪≫
-        ((constantSheaf J A).obj M).pushforwardOverMapIso g⟩⟩
+    exact ⟨M, hM, ⟨overIsoRestrict e g⟩⟩
 
 @[simp]
 lemma locallyConstantSieve_apply (F : Sheaf J A) {X Y : C} (f : Y ⟶ X) :
@@ -142,5 +146,58 @@ lemma IsLocallyConstantIn.exists_sheafFiber_iso [LocallySmall.{w} C]
   obtain ⟨Y, -, ⟨M, hM, ⟨e⟩⟩, y, -⟩ := Φ.jointly_surjective _ (hF u.obj) u.val
   exact ⟨M, hM, ⟨(Φ.sheafFiberOverIso y F).symm ≪≫ (Φ.over y).sheafFiber.mapIso e ≪≫
     Φ.sheafFiberOverIso y _ ≪≫ Φ.sheafFiberConstantSheafIso M⟩⟩
+
+/-- An isomorphism `e` between the restrictions to `Over Y` of a sheaf `F` and of the constant
+sheaf on `M` gives a morphism from the constant presheaf on `M` to the restriction of `F`: the
+sheafification map of the constant presheaf, followed by the inverse of `e`. It is locally
+bijective when sheafification maps are. -/
+noncomputable def constToOver {F : Sheaf J A} {Y : C} {M : A}
+    (e : F.over Y ≅ ((constantSheaf J A).obj M).over Y) :
+    (Functor.const (Over Y)ᵒᵖ).obj M ⟶ (F.over Y).obj :=
+  Functor.whiskerLeft (Over.forget Y).op (toSheafify J ((Functor.const Cᵒᵖ).obj M)) ≫ e.inv.hom
+
+@[reassoc (attr := simp)]
+lemma constToOver_comp_hom_app {F : Sheaf J A} {Y : C} {M : A}
+    (e : F.over Y ≅ ((constantSheaf J A).obj M).over Y) (X : (Over Y)ᵒᵖ) :
+    (constToOver e).app X ≫ e.hom.hom.app X =
+      (toSheafify J ((Functor.const Cᵒᵖ).obj M)).app (Opposite.op X.unop.left) := by
+  have h : e.inv.hom.app X ≫ e.hom.hom.app X = 𝟙 _ := congr_app congr($(e.inv_hom_id).hom) X
+  -- `e.inv.hom` has source `(Over.forget Y).op ⋙ sheafify J _` only up to unfolding `over`.
+  exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) h).trans (Category.comp_id _))
+
+/-- `constToOver e` is the restricted sheafification map followed by an isomorphism. -/
+private lemma exists_isIso_constToOver_eq {F : Sheaf J A} {Y : C} {M : A}
+    (e : F.over Y ≅ ((constantSheaf J A).obj M).over Y) :
+    ∃ i : (Over.forget Y).op ⋙ sheafify J ((Functor.const Cᵒᵖ).obj M) ⟶ (F.over Y).obj,
+      IsIso i ∧ constToOver e =
+        Functor.whiskerLeft (Over.forget Y).op (toSheafify J ((Functor.const Cᵒᵖ).obj M)) ≫ i :=
+  -- The source of `e.inv.hom` is `(Over.forget Y).op ⋙ sheafify J _` after unfolding `over`.
+  ⟨e.inv.hom, inferInstanceAs (IsIso ((sheafToPresheaf _ _).map e.inv)), rfl⟩
+
+section LocallyBijective
+
+variable {FA : A → A → Type*} {CA : A → Type*} [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)]
+  [ConcreteCategory A FA] [J.WEqualsLocallyBijective A] {F : Sheaf J A} {Y : C} {M : A}
+  (e : F.over Y ≅ ((constantSheaf J A).obj M).over Y)
+
+/-- `constToOver e` is locally surjective, as the sheafification map is. -/
+instance isLocallySurjective_constToOver :
+    Presheaf.IsLocallySurjective (J.over Y) (constToOver e) := by
+  have := Presheaf.isLocallySurjective_whisker (J.over Y) J (Over.forget Y)
+    (toSheafify J ((Functor.const Cᵒᵖ).obj M))
+  obtain ⟨i, _, h⟩ := exists_isIso_constToOver_eq e
+  rw [h]
+  infer_instance
+
+/-- `constToOver e` is locally injective, as the sheafification map is. -/
+instance isLocallyInjective_constToOver :
+    Presheaf.IsLocallyInjective (J.over Y) (constToOver e) := by
+  have := Presheaf.isLocallyInjective_whisker (J.over Y) J (Over.forget Y)
+    (toSheafify J ((Functor.const Cᵒᵖ).obj M))
+  obtain ⟨i, _, h⟩ := exists_isIso_constToOver_eq e
+  rw [h]
+  infer_instance
+
+end LocallyBijective
 
 end CategoryTheory.Sheaf

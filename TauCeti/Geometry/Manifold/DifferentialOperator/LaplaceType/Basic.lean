@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
-public import TauCeti.Geometry.Manifold.DifferentialOperator.Restrict
+public import TauCeti.Geometry.Manifold.DifferentialOperator.Restrict.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
@@ -188,16 +188,9 @@ theorem IsLaplaceType.restrictDifferentialOperators (hD : IsLaplaceType D c) (U 
   have hx' : I.IsInteriorPoint (x : M) := I.isInteriorPoint_iff_isInteriorPoint_val.mp hx
   -- Write `ξ` as `η ∘ ι` for the identification `ι : T_x U ≃ T_x M` of the tangent spaces, which
   -- is a linear isometric equivalence for the inherited metric, so `η` has the norm of `ξ`.
-  have hξ : ξ = (ξ.comp ((tangentSpaceOpenLinearIsometryEquiv (I := I) U x).symm :
-      TangentSpace I (x : M) →L[ℝ] TangentSpace I x)).comp
-      (tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap := by
-    ext v
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_coe, ← coe_tangentSpaceOpenLinearIsometryEquiv,
-      LinearIsometryEquiv.symm_apply_apply]
-  conv_lhs => rw [hξ]
+  conv_lhs => rw [← comp_tangentSpaceOpenEquiv_symm_comp x ξ]
   rw [smoothPrincipalSymbol_restrictDifferentialOperators hx', hD.smoothPrincipalSymbol_eq hx',
-    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+    opNorm_comp_tangentSpaceOpenEquiv_symm]
 
 end IsLaplaceType
 

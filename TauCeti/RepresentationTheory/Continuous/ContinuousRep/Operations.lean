@@ -8,8 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.RepresentationTheory.Character.Twist
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Hom
 public import TauCeti.RepresentationTheory.LinHom.Basic
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Operations on jointly continuous representations
@@ -34,16 +35,20 @@ isomorphism `M ≅ M^∨∨`, the isomorphism `M^∨ ⊗ N ≅ Hom_A(M, N)` (Mat
 `dualTensorHomEquiv`, as the equivalence of representations
 `Representation.Equiv.dualTensorHomOfProjective`), and the
 identification of the twist `M(χ)` with the tensor product `M ⊗ A(χ)`. Twisting by `1` does
-nothing and twisting twice multiplies the characters. The invariants of the Hom representation are
-the morphisms of continuous representations. Evaluation `M^∨ ⊗ M → A` is a morphism to the trivial
-representation, and the scalar map `A → Hom_A(M, M)`, `a ↦ a • id`, and coevaluation
-`A → M ⊗ M^∨` are morphisms from it.
+nothing and twisting twice multiplies the characters. The contragredient of a twist is the twist
+of the contragredient by the inverse character, `M(χ)^∨ = M^∨(χ⁻¹)`, and evaluation at `1`,
+`Hom_A(A, A) ≅ A`, identifies the contragredient of the line of `χ` with the line of `χ⁻¹`.
+The invariants of the Hom representation are the morphisms of continuous representations.
+Evaluation `M^∨ ⊗ M → A` is a morphism to the trivial representation, and the scalar map
+`A → Hom_A(M, M)`, `a ↦ a • id`, and coevaluation `A → M ⊗ M^∨` are morphisms from it.
 Restriction is functorial and commutes with products, tensor products, Hom, the contragredient,
 twists and character lines.
 
 ## Main definitions
 
 * `TauCeti.ContinuousRep.res`: restriction along a continuous monoid homomorphism `Γ' →ₜ* Γ`.
+* `TauCeti.ContinuousRep.descend`: descent of a representation along an open surjective
+  continuous homomorphism `φ : Γ →ₜ* Γ'` whose kernel acts trivially.
 * `TauCeti.ContinuousRep.tprod`: the tensor product `ρ ⊗ σ` on `M ⊗[A] N`.
 * `TauCeti.ContinuousRep.tprodCommIso`: the braiding `M ⊗ N ≅ N ⊗ M`.
 * `TauCeti.ContinuousRep.linHom`: the Hom representation on `M →ₗ[A] N`, using
@@ -53,6 +58,7 @@ twists and character lines.
 * `TauCeti.ContinuousRep.dualDualIso`: `M ≅ M^∨∨` for finite projective `M`.
 * `TauCeti.ContinuousRep.dualTensorIsoHom`: `M^∨ ⊗ N ≅ Hom_A(M, N)` for finite projective `M`.
 * `TauCeti.ContinuousRep.tprodOfCharacterIsoTwist`: `M ⊗ A(χ) ≅ M(χ)`.
+* `TauCeti.ContinuousRep.dualOfCharacterIso`: `A(χ)^∨ ≅ A(χ⁻¹)`.
 * `TauCeti.ContinuousRep.invariantsLinHomEquiv`: the invariants of `Hom_A(M, N)` are the morphisms
   `ρ ⟶ σ` of continuous representations.
 * `TauCeti.ContinuousRep.evaluation` and `TauCeti.ContinuousRep.scalarToLinHom`: the evaluation
@@ -63,8 +69,13 @@ twists and character lines.
 
 * `TauCeti.ContinuousRep.res_id` and `TauCeti.ContinuousRep.res_res`: restriction along the
   identity is the identity, and restriction composes.
+* `TauCeti.ContinuousRep.res_descend`, `TauCeti.ContinuousRep.eq_descend_of_res_eq` and
+  `TauCeti.ContinuousRep.exists_res_eq_iff`: the descent restricts back to `ρ` and is the unique
+  such representation, and `ρ` is a restriction along an open surjection exactly when the kernel
+  acts trivially.
 * `TauCeti.ContinuousRep.twist_one` and `TauCeti.ContinuousRep.twist_twist`: `M(1) = M` and
   `M(ψ)(χ) = M(χψ)`.
+* `TauCeti.ContinuousRep.dual_twist`: `M(χ)^∨ = M^∨(χ⁻¹)`.
 * `TauCeti.ContinuousRep.res_prod`, `TauCeti.ContinuousRep.res_tprod`,
   `TauCeti.ContinuousRep.res_linHom`, `TauCeti.ContinuousRep.res_dual`,
   `TauCeti.ContinuousRep.res_twist` and `TauCeti.ContinuousRep.res_ofCharacter`: restriction
@@ -158,6 +169,82 @@ theorem res_prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (φ : �
   ext fun _ _ => by simp
 
 end Res
+
+section Descend
+
+variable {Γ Γ' A M : Type*} [Group Γ] [TopologicalSpace Γ] [Group Γ'] [TopologicalSpace Γ']
+  [Semiring A] [AddCommMonoid M] [Module A M] [TopologicalSpace M]
+
+/-- The kernel of `φ` acts trivially in every restriction along `φ`. -/
+theorem ker_le_ker_res (ρ : ContinuousRep Γ' A M) (φ : Γ →ₜ* Γ') :
+    φ.toMonoidHom.ker ≤ (ρ.res φ).toRepresentation.ker := fun g hg ↦ by
+  rw [MonoidHom.mem_ker] at hg ⊢
+  rw [toRepresentation_res, MonoidHom.comp_apply, hg, map_one]
+
+/-- The homomorphism `Γ' →* End M` underlying `descend`, `φ g ↦ ρ g`, built through the first
+isomorphism theorem `Γ ⧸ ker φ ≃* Γ'`. -/
+private noncomputable def descendHom (ρ : ContinuousRep Γ A M) (φ : Γ →ₜ* Γ')
+    (hφs : Function.Surjective φ) (h : φ.toMonoidHom.ker ≤ ρ.toRepresentation.ker) :
+    Representation A Γ' M :=
+  (QuotientGroup.lift _ ρ.toRepresentation h).comp
+    (QuotientGroup.liftEquiv _ (φ := φ.toMonoidHom) hφs rfl).symm.toMonoidHom
+
+private theorem descendHom_apply (ρ : ContinuousRep Γ A M) (φ : Γ →ₜ* Γ')
+    (hφs : Function.Surjective φ) (h : φ.toMonoidHom.ker ≤ ρ.toRepresentation.ker) (g : Γ) :
+    descendHom ρ φ hφs h (φ g) = ρ g := by
+  -- the inverse of the first isomorphism theorem sends `φ g` to the class of `g`
+  simpa [descendHom] using congrArg (QuotientGroup.lift _ ρ.toRepresentation h)
+    ((MulEquiv.symm_apply_eq _).2 (QuotientGroup.liftEquiv_mk _ hφs rfl g).symm)
+
+/-- **Descent along an open surjection.** If `φ : Γ →ₜ* Γ'` is an open surjective continuous
+homomorphism whose kernel acts trivially through `ρ`, then `ρ` descends to a continuous
+representation of `Γ'` in which `φ g` acts by `ρ g`. -/
+noncomputable def descend (ρ : ContinuousRep Γ A M) (φ : Γ →ₜ* Γ') (hφo : IsOpenMap φ)
+    (hφs : Function.Surjective φ) (h : φ.toMonoidHom.ker ≤ ρ.toRepresentation.ker) :
+    ContinuousRep Γ' A M where
+  toRepresentation := descendHom ρ φ hφs h
+  continuous_action := by
+    -- `Γ × M → Γ' × M` is an open surjection, hence a quotient map
+    have hq : Topology.IsQuotientMap (Prod.map φ (id : M → M)) :=
+      (hφo.prodMap IsOpenMap.id).isQuotientMap (φ.continuous.prodMap continuous_id)
+        (hφs.prodMap Function.surjective_id)
+    refine hq.continuous_iff.2 ?_
+    have : (fun p : Γ' × M ↦ descendHom ρ φ hφs h p.1 p.2) ∘ Prod.map φ id =
+        fun p : Γ × M ↦ ρ p.1 p.2 :=
+      funext fun p ↦ congrArg (fun f : M →ₗ[A] M ↦ f p.2) (descendHom_apply ρ φ hφs h p.1)
+    rw [this]
+    exact ρ.continuous_action
+
+variable {ρ : ContinuousRep Γ A M} {φ : Γ →ₜ* Γ'} {hφo : IsOpenMap φ}
+  {hφs : Function.Surjective φ} {h : φ.toMonoidHom.ker ≤ ρ.toRepresentation.ker}
+
+/-- In the descended representation, `φ g` acts by `ρ g`. -/
+@[simp]
+theorem descend_apply (g : Γ) : ρ.descend φ hφo hφs h (φ g) = ρ g :=
+  descendHom_apply ρ φ hφs h g
+
+/-- The descended representation restricts back to `ρ` along `φ`. -/
+@[simp]
+theorem res_descend : (ρ.descend φ hφo hφs h).res φ = ρ :=
+  ext fun g x ↦ by rw [res_apply, descend_apply]
+
+/-- **Uniqueness of the descent.** A representation of `Γ'` restricting to `ρ` along the
+surjection `φ` is `ρ.descend φ hφo hφs h`. -/
+theorem eq_descend_of_res_eq {ρ' : ContinuousRep Γ' A M} (h' : ρ'.res φ = ρ) :
+    ρ' = ρ.descend φ hφo hφs h := by
+  refine ext fun g' x ↦ ?_
+  obtain ⟨g, rfl⟩ := hφs g'
+  rw [descend_apply, ← h', res_apply]
+
+variable (φ) in
+/-- **The factorisation criterion.** Along an open surjective continuous homomorphism `φ`, a
+continuous representation `ρ` is a restriction along `φ` exactly when the kernel of `φ` acts
+trivially. -/
+theorem exists_res_eq_iff (hφo : IsOpenMap φ) (hφs : Function.Surjective φ) :
+    (∃ ρ' : ContinuousRep Γ' A M, ρ'.res φ = ρ) ↔ φ.toMonoidHom.ker ≤ ρ.toRepresentation.ker :=
+  ⟨fun ⟨ρ', hρ'⟩ ↦ hρ' ▸ ker_le_ker_res ρ' φ, fun h ↦ ⟨ρ.descend φ hφo hφs h, res_descend⟩⟩
+
+end Descend
 
 section Tensor
 
@@ -265,6 +352,12 @@ theorem toRepresentation_twist (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ)
 theorem twist_apply (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) (g : Γ) (x : M) :
     ρ.twist χ g x = (χ g : A) • ρ g x :=
   Representation.charTwist_apply_apply _ _ g x
+
+/-- **The twist acts by `χ g • ρ g`**, as an equation of endomorphisms: the whole-map form of
+`TauCeti.ContinuousRep.twist_apply`. -/
+theorem twist_apply_eq_smul (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) (g : Γ) :
+    ρ.twist χ g = (χ g : A) • ρ g :=
+  LinearMap.ext (twist_apply ρ χ g)
 
 /-- **Twisting by the trivial character changes nothing**: `M(1) = M`. -/
 @[simp]
@@ -435,6 +528,17 @@ theorem res_dual {Γ' : Type*} [Group Γ'] [TopologicalSpace Γ'] [ContinuousInv
     (ρ : ContinuousRep Γ A M) (φ : Γ' →ₜ* Γ) : ρ.dual.res φ = (ρ.res φ).dual :=
   ext fun g ψ => LinearMap.ext fun x => by simp
 
+/-- **The contragredient of a twist** is the twist of the contragredient by the inverse character:
+`M(χ)^∨ = M^∨(χ⁻¹)`. -/
+@[simp]
+theorem dual_twist (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) :
+    haveI := IsModuleTopology.toContinuousSMul A M
+    haveI := IsModuleTopology.toContinuousSMul A (Module.Dual A M)
+    (ρ.twist χ).dual = ρ.dual.twist χ⁻¹ :=
+  haveI := IsModuleTopology.toContinuousSMul A M
+  haveI := IsModuleTopology.toContinuousSMul A (Module.Dual A M)
+  ext fun g ψ => LinearMap.ext fun x => by simp
+
 section DualDual
 
 variable [TopologicalSpace (Module.Dual A (Module.Dual A M))]
@@ -475,6 +579,33 @@ theorem dualTensorIsoHom_tmul_apply (ρ : ContinuousRep Γ A M) (σ : Continuous
   simp [dualTensorIsoHom]
 
 end Dual
+
+section DualOfCharacter
+
+variable {Γ A : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
+  [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+  [TopologicalSpace (Module.Dual A A)] [IsModuleTopology A (Module.Dual A A)]
+
+/-- **The contragredient of a character line is the line of the inverse character**:
+evaluation at `1` is an isomorphism `A(χ)^∨ ≅ A(χ⁻¹)`. A dual defined by the transpose without
+the inverse would return `χ` instead. -/
+noncomputable def dualOfCharacterIso (χ : Γ →ₜ* Aˣ) : Iso (ofCharacter χ).dual (ofCharacter χ⁻¹) :=
+  Iso.ofEquiv (.mk (LinearMap.ringLmapEquivSelf A A A) fun g => LinearMap.ext fun ψ => by
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.ringLmapEquivSelf_apply,
+      coe_toRepresentation, dual_apply_apply, ofCharacter_apply, ContinuousMonoidHom.inv_apply,
+      map_inv, ← smul_eq_mul, map_smul])
+
+@[simp]
+theorem dualOfCharacterIso_apply (χ : Γ →ₜ* Aˣ) (ψ : Module.Dual A A) :
+    dualOfCharacterIso χ ψ = ψ 1 :=
+  Iso.ofEquiv_apply _ _
+
+@[simp]
+theorem dualOfCharacterIso_symm_apply_apply (χ : Γ →ₜ* Aˣ) (a x : A) :
+    (dualOfCharacterIso χ).symm a x = x * a := by
+  simp [dualOfCharacterIso]
+
+end DualOfCharacter
 
 section Evaluation
 

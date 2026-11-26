@@ -25,9 +25,10 @@ solution. This file proves that the vortex fields form a smooth family of smooth
   (`TauCeti.Vortex.contDiff_reducedSolution_monicOfCoeff`);
 * so is the vortex field `(c, z) ↦ x_c(z)`
   (`TauCeti.Vortex.contDiff_polynomialVortex_monicOfCoeff`);
-* so is its end normalization `(c, z) ↦ (g_c · x_c)(z)` by the polynomial gauge `g_c`
-  (`TauCeti.Vortex.polynomialGauge`), whose section has the fixed winding phase `(z / |z|)ᵐ`
-  outside a disc (`TauCeti.Vortex.contDiff_gaugeTransform_polynomialGauge_polynomialVortex`).
+* so is the normalized vortex `(c, z) ↦ y_c(z)`, where `y_c = g_c · x_c`
+  (`TauCeti.Vortex.normalizedVortex`) is the end normalization of `x_c` by the polynomial gauge
+  `g_c` (`TauCeti.Vortex.polynomialGauge`), whose section has the fixed winding phase `(z / |z|)ᵐ`
+  outside a disc (`TauCeti.Vortex.contDiff_normalizedVortex_uncurry`).
 
 In particular all mixed derivatives of the vortex fields in the symmetric coordinates `c` and in
 the point `z` exist and are continuous, over the whole divisor space, collisions included. These
@@ -95,14 +96,28 @@ theorem contDiff_polynomialVortex_monicOfCoeff :
     (((contDiff_parametric_backgroundAmplitude (f := fun c ↦ (monicOfCoeff c).eval) hP).add
       contDiff_reducedSolution_monicOfCoeff).of_le (by simp)) hP
 
-/-- **The end-normalized plane vortices are jointly smooth in the divisor and the point.** The
+/-- **The normalized plane vortex** with divisor coefficients `c ∈ ℂᵐ`: Taubes's vortex
+`TauCeti.Vortex.polynomialVortex` of the monic polynomial `P_c = monicOfCoeff c`, followed by its
+end-normalizing gauge `TauCeti.Vortex.polynomialGauge c`, so that outside a disc its section is a
+positive multiple of the winding phase `(z / |z|)ᵐ`. -/
+def normalizedVortex (c : Fin m → ℂ) : ℂ → EuclideanSpace ℝ (Fin 4) :=
+  gaugeTransform (polynomialGauge c) (polynomialVortex (monicOfCoeff c))
+
+theorem normalizedVortex_def (c : Fin m → ℂ) :
+    normalizedVortex c = gaugeTransform (polynomialGauge c) (polynomialVortex (monicOfCoeff c)) :=
+  (rfl)
+
+/-- **The normalized plane vortices are jointly smooth in the divisor and the point.** The
 vortex field `x_c` with zero divisor `P_c`, transformed by the polynomial gauge `g_c`
 (`TauCeti.Vortex.polynomialGauge`), whose section has the winding phase `(z / |z|)ᵐ` outside a disc,
 satisfies: `(c, z) ↦ (g_c · x_c)(z)` is `C^∞`. -/
-theorem contDiff_gaugeTransform_polynomialGauge_polynomialVortex :
-    ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦
-      gaugeTransform (polynomialGauge p.1) (polynomialVortex (monicOfCoeff p.1)) p.2 :=
+theorem contDiff_normalizedVortex_uncurry :
+    ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ normalizedVortex p.1 p.2 :=
   contDiff_parametric_gaugeTransform (n := ∞) (x := fun c ↦ polynomialVortex (monicOfCoeff c))
     (contDiff_polynomialGauge.of_le (by simp)) contDiff_polynomialVortex_monicOfCoeff
+
+/-- The normalized vortex is smooth. -/
+theorem contDiff_normalizedVortex (c : Fin m → ℂ) : ContDiff ℝ ∞ (normalizedVortex c) :=
+  contDiff_normalizedVortex_uncurry.comp (contDiff_const.prodMk contDiff_id)
 
 end TauCeti.Vortex
