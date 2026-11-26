@@ -13,6 +13,7 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 public import TauCeti.Topology.VectorBundle.Associated.Bilinear
 public import TauCeti.Topology.VectorBundle.Associated.Metric
 public import TauCeti.Topology.VectorBundle.SpinStructure.Basic
+import Mathlib.Topology.Algebra.Module.Star
 
 /-!
 # Spinor bundles and the determinant line of a `Spinᶜ` structure
@@ -24,7 +25,9 @@ complex vector bundles associated to `P` on which Seiberg–Witten theory is set
 **The determinant line.** For every rank `n ≥ 1`, `Spinᶜ(n)` acts on `ℂ` through its determinant
 character `[s, z] ↦ z²` (`CliffordAlgebra.spinCGroup.det`). The associated bundle
 `L = P ×_{z²} ℂ` is the determinant line of `s` (`TauCeti.SpinCStructure.determinantLine`), a
-Hermitian line bundle on which the central circle `[1, z]` acts with weight two.
+Hermitian line bundle on which the central circle `[1, z]` acts with weight two. Complex
+conjugation of the model (`TauCeti.SpinCStructure.DeterminantModel.conj`) intertwines the action
+of `χ g` with that of `g`, for charge conjugation `χ` (`CliffordAlgebra.spinCGroup.chargeConj`).
 
 **The half-spinor bundles.** In rank four, fix a model Hermitian Clifford module: an oriented
 real inner product space `V` of dimension four with `Q v = -‖v‖²`, an orthonormal basis `b` of
@@ -62,6 +65,7 @@ half-spinors being the square of the twisting circle.
 
 * `Orientation.HalfSpinModel o hQ b ρ hρ ε`: the eigenspace `S^ε` with its action of `Spinᶜ(4)`.
 * `TauCeti.SpinCStructure.DeterminantModel n`: `ℂ` with `Spinᶜ(n)` acting by `z²`.
+* `TauCeti.SpinCStructure.DeterminantModel.conj`: complex conjugation of the determinant model.
 * `TauCeti.SpinCStructure.determinantLine`: the determinant line `L` of a `Spinᶜ` structure.
 * `TauCeti.SpinCStructure.halfSpinorBundle`: the half-spinor bundle `W^ε` of a `Spinᶜ` structure
   of rank four.
@@ -75,6 +79,8 @@ half-spinors being the square of the twisting circle.
 ## Main results
 
 * `Orientation.HalfSpinModel.smul_cliffordMul`: model Clifford multiplication is equivariant.
+* `TauCeti.SpinCStructure.DeterminantModel.conj_chargeConj_smul`:
+  `conj (det (χ g) w) = det g (conj w)`.
 * `TauCeti.SpinCStructure.finrank_determinantLine`: `L` is a line bundle.
 * `TauCeti.SpinCStructure.mk_ofCircle_smul_determinantLine`,
   `TauCeti.SpinCStructure.mk_ofCircle_smul_halfSpinorBundle`: the central circle acts with weight
@@ -354,6 +360,25 @@ instance instIsIsometricSMul :
     fun w ↦ by
       rw [DistribSMul.toAddMonoidHom_apply, ← toComplex.norm_map, toComplex_smul, norm_mul,
         Circle.norm_coe, one_mul, toComplex.norm_map]
+
+/-- Complex conjugation of the determinant model, a conjugate-linear isometric isomorphism. -/
+def conj : DeterminantModel n ≃L⋆[ℂ] DeterminantModel n :=
+  (toComplex.toContinuousLinearEquiv.trans (starL ℂ)).trans toComplex.symm.toContinuousLinearEquiv
+
+omit [NeZero n] in
+@[simp]
+theorem toComplex_conj (w : DeterminantModel n) :
+    toComplex (conj w) = starRingEnd ℂ (toComplex w) := by
+  simp [conj]
+
+/-- **Conjugation intertwines charge conjugation**: `conj (det (χ g) w) = det g (conj w)` for
+charge conjugation `χ` (`CliffordAlgebra.spinCGroup.chargeConj`), since `det (χ g) = (det g)⁻¹`
+lies on the circle. -/
+theorem conj_chargeConj_smul (g : SpinCn) (w : DeterminantModel n) :
+    conj (spinCGroup.chargeConj _ hQn g • w) = g • conj w :=
+  toComplex.injective (by
+    rw [toComplex_conj, toComplex_smul, spinCGroup.det_chargeConj, Circle.coe_inv_eq_conj]
+    simp)
 
 end DeterminantModel
 
