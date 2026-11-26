@@ -37,7 +37,7 @@ rows of all the `ψ(θ)`, `θ ∈ Rel`, read as vectors in `O^{ι × n}`, span a
 `R = TauCeti.blockRowSpan ψ Rel`, and any `n` vectors of `R` are the `n` rows of one `ψ(θ)`
 (`TauCeti.exists_mem_blockRow_eq`). The solution module is the orthogonal of `R` in
 `(K/O)^{ι × n}`, so by Matlis duality its length is the colength of `R`
-(`IsDiscreteValuationRing.length_orthogonalPi`). (Determinants) The rows of `ψ(Θ)` lie in `R`, so
+(`IsDiscreteValuationRing.length_orthogonalBilin`). (Determinants) The rows of `ψ(Θ)` lie in `R`, so
 the colength of `R` is at most that of the span of the rows, which is `v(det ψ(Θ))`
 (`Matrix.length_quotient_span_range_eq_addVal_det`); conversely, if `R` has finite colength it is
 spanned by the rows of a square matrix, whose rows, grouped `n` at a time, are the rows of the
@@ -135,17 +135,19 @@ theorem blockRow_mem_blockRowSpan {θ : ι → 𝒜} (hθ : θ ∈ Rel) (i : n) 
 
 /-- The solution module with values in `E` is the orthogonal of the row span, after currying
 `E^{ι × n} = (E^n)^ι`. -/
-theorem blockSolutions_eq_map_orthogonalPi [Fintype ι] (E : Type*) [AddCommGroup E] [Module O E] :
+theorem blockSolutions_eq_map_orthogonalBilin [Fintype ι] (E : Type*) [AddCommGroup E]
+    [Module O E] :
     blockSolutions ψ Rel E =
-      ((blockRowSpan ψ Rel).orthogonalPi E).map (LinearEquiv.curry O E ι n).toLinearMap := by
+      ((blockRowSpan ψ Rel).orthogonalBilin (Fintype.bilinearCombination O O (M := E)).flip).map
+        (LinearEquiv.curry O E ι n).toLinearMap := by
   ext u
-  rw [Submodule.mem_map_equiv, blockRowSpan, Submodule.mem_orthogonalPi_span,
+  rw [Submodule.mem_map_equiv, blockRowSpan, Submodule.mem_orthogonalBilin_span,
     mem_blockSolutions]
   simp only [Set.mem_ofPred_eq, forall_exists_index, and_imp]
   refine ⟨fun h v θ hθ i hv ↦ ?_, fun h θ hθ i ↦ ?_⟩
   · subst hv
-    simpa [Fintype.sum_prod_type] using h θ hθ i
-  · simpa [Fintype.sum_prod_type] using h _ θ hθ i rfl
+    simpa [Fintype.linearCombination_apply, Fintype.sum_prod_type] using h θ hθ i
+  · simpa [Fintype.linearCombination_apply, Fintype.sum_prod_type] using h θ hθ i rfl
 
 end Defs
 
@@ -208,8 +210,8 @@ variable [Fintype ι] [IsDomain O] [IsDiscreteValuationRing O] {K : Type*} [Fiel
 theorem length_blockSolutions :
     Module.length O (blockSolutions ψ Rel (K ⧸ range (Algebra.linearMap O K))) =
       Module.length O ((ι × n → O) ⧸ blockRowSpan ψ Rel) := by
-  rw [blockSolutions_eq_map_orthogonalPi, ← ((LinearEquiv.curry O _ ι n).submoduleMap _).length_eq,
-    length_orthogonalPi]
+  rw [blockSolutions_eq_map_orthogonalBilin,
+    ← ((LinearEquiv.curry O _ ι n).submoduleMap _).length_eq, length_orthogonalBilin]
 
 variable [DecidableEq ι]
 

@@ -20,7 +20,8 @@ Let `O` be a discrete valuation ring with fraction field `K`. The module `K/O` i
 over `O`, and `Hom_O(O/𝔪, K/O)` is simple, so `Hom_O(-, K/O)` preserves lengths
 (`TauCeti.length_linearMap_of_forall_isMaximal`). Applied to quotients of `Oⁿ`, this computes
 the length of the orthogonal in `(K/O)ⁿ` of a submodule `R ⊆ Oⁿ` under the pairing
-`⟨v, u⟩ = ∑ i, v i • u i` (`Submodule.orthogonalPi`): it is the colength of `R`. For the span of
+`⟨v, u⟩ = ∑ i, v i • u i` (Mathlib's `Submodule.orthogonalBilin` for
+`(Fintype.bilinearCombination O O).flip`): it is the colength of `R`. For the span of
 the rows of a square matrix `M` the orthogonal is the kernel of `M` acting on `(K/O)ⁿ`, and its
 length is the valuation of `det M`, both infinite when `det M = 0`.
 
@@ -36,7 +37,7 @@ length is the valuation of `det M`, both infinite when `det M = 0`.
   `Hom_O(O/a, K/O)` has length `v(a)`.
 * `IsDiscreteValuationRing.length_linearMap_fractionRing_quotient`: `Hom_O(M, K/O)` has the
   length of `M`, for every `O`-module `M` (Matlis duality over a discrete valuation ring).
-* `IsDiscreteValuationRing.length_orthogonalPi`: the orthogonal of `R ⊆ Oⁿ` in `(K/O)ⁿ` has
+* `IsDiscreteValuationRing.length_orthogonalBilin`: the orthogonal of `R ⊆ Oⁿ` in `(K/O)ⁿ` has
   length `length_O (Oⁿ/R)`.
 * `Matrix.length_ker_eq_addVal_det`: the kernel of a square matrix `M` acting on `(K/O)ⁿ` has
   length `v(det M)`.
@@ -166,8 +167,9 @@ variable {ι : Type*} [Fintype ι]
 
 /-- **The orthogonal in `(K/O)^ι` of a submodule `R ⊆ O^ι` has the colength of `R`.** The
 orthogonal is `Hom_O(O^ι / R, K/O)`, and Matlis duality preserves lengths. -/
-theorem length_orthogonalPi (R : Submodule O (ι → O)) :
-    Module.length O (R.orthogonalPi (K ⧸ range (Algebra.linearMap O K))) =
+theorem length_orthogonalBilin (R : Submodule O (ι → O)) :
+    Module.length O (R.orthogonalBilin
+        (Fintype.bilinearCombination O O (M := K ⧸ range (Algebra.linearMap O K))).flip) =
       Module.length O ((ι → O) ⧸ R) := by
   classical
   rw [(R.orthogonalPiEquiv _).length_eq, length_linearMap_fractionRing_quotient]
@@ -190,10 +192,11 @@ theorem length_ker_eq_addVal_det (M : Matrix ι ι O) :
       addVal O M.det := by
   have hker : LinearMap.ker (LinearMap.pi fun i ↦ ∑ j, M i j •
         LinearMap.proj j : (ι → K ⧸ range (Algebra.linearMap O K)) →ₗ[O] _) =
-      (Submodule.span O (Set.range M.row)).orthogonalPi _ := by
+      (Submodule.span O (Set.range M.row)).orthogonalBilin
+        (Fintype.bilinearCombination O O).flip := by
     ext u
-    rw [LinearMap.mem_ker, Submodule.mem_orthogonalPi_span, Set.forall_mem_range, funext_iff]
-    simp [Matrix.row]
-  rw [hker, length_orthogonalPi, length_quotient_span_range_eq_addVal_det]
+    rw [LinearMap.mem_ker, Submodule.mem_orthogonalBilin_span, Set.forall_mem_range, funext_iff]
+    simp [Matrix.row, Fintype.linearCombination_apply]
+  rw [hker, length_orthogonalBilin, length_quotient_span_range_eq_addVal_det]
 
 end Matrix
