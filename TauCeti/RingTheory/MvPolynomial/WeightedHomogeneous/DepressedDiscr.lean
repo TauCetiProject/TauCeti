@@ -28,11 +28,11 @@ The case `m = 3` with doubled weights is the graded ring of the short Weierstras
 curve `y² = x³ + a x + b` is invariant under `(x, y, a, b) ↦ (t² x, t³ y, t⁴ a, t⁶ b)`, and its
 discriminant `-16 (4 a³ + 27 b²)` is `16` times `depressedDiscr R 3 = -4 a³ - 27 b²`, a unit
 multiple when `2` is invertible. With `a, b` of weights `4, 6`, the discriminant has weight `12`
-(`depressedDiscr_three_mem`), and when `2 ≠ 0` and `3` is invertible, for instance over a field of
-characteristic neither `2` nor `3`, the degrees of the homogeneous units of `R[a, b]_Δ` are the
-multiples of `12` (`homogeneousUnitDegrees_awayGrading_depressedDiscr_three`), so its shift classes
-form `ZMod 12` (`shiftClassGroupAwayGradingDepressedDiscrThreeEquiv`). This is the graded ring
-behind Mumford's computation `Pic M_{1,1} ≅ ℤ/12`.
+(`depressedDiscr_three_mem_four_six`), and when `2 ≠ 0` and `3` is invertible, for instance over a
+field of characteristic neither `2` nor `3`, the degrees of the homogeneous units of `R[a, b]_Δ`
+are the multiples of `12` (`homogeneousUnitDegrees_awayGrading_depressedDiscr_three_four_six`), so
+its shift classes form `ZMod 12` (`shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv`).
+This is the graded ring behind Mumford's computation `Pic M_{1,1} ≅ ℤ/12`.
 
 ## Main results
 
@@ -40,9 +40,10 @@ behind Mumford's computation `Pic M_{1,1} ≅ ℤ/12`.
   `R[a₂, …, aₘ]_Δ` are the multiples of `m (m - 1)`.
 * `TauCeti.shiftClassGroupAwayGradingDepressedDiscrEquiv`: the shift classes of `R[a₂, …, aₘ]_Δ`
   form `ZMod (m (m - 1))`.
-* `TauCeti.depressedDiscr_three_mem`: `-4 a³ - 27 b²` has weight `12` for the weights `4, 6`.
-* `TauCeti.homogeneousUnitDegrees_awayGrading_depressedDiscr_three`,
-  `TauCeti.shiftClassGroupAwayGradingDepressedDiscrThreeEquiv`: for the weights `4, 6`, the
+* `TauCeti.depressedDiscr_three_mem_four_six`: `-4 a³ - 27 b²` has weight `12` for the weights
+  `4, 6`.
+* `TauCeti.homogeneousUnitDegrees_awayGrading_depressedDiscr_three_four_six`,
+  `TauCeti.shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv`: for the weights `4, 6`, the
   homogeneous unit degrees of `R[a, b]_Δ` are the multiples of `12`, and its shift classes form
   `ZMod 12`.
 
@@ -94,7 +95,7 @@ theorem shiftClassGroupAwayGradingDepressedDiscrEquiv_mk [IsDomain R] {m : ℕ} 
 variable (R) in
 /-- The discriminant `-4 a³ - 27 b²` of `X³ + a X + b` is weighted homogeneous of weight `12` for
 the weights `4, 6` of `a, b`, those of the short Weierstrass equation `y² = x³ + a x + b`. -/
-theorem depressedDiscr_three_mem :
+theorem depressedDiscr_three_mem_four_six :
     depressedDiscr R 3 ∈ weightedHomogeneousSubmodule R (![4, 6] : Fin 2 → ℤ) 12 := by
   -- Doubling the weights `2, 3` of `depressedWeight 3` doubles the weight `6` of the discriminant.
   have h := ((mem_weightedHomogeneousSubmodule _ _ _ _).mp (depressedDiscr_mem R 3)).comp_weight
@@ -108,30 +109,32 @@ theorem depressedDiscr_three_mem :
 /-- **Homogeneous units away from the discriminant of the short Weierstrass equation.** Over a
 domain in which `2 ≠ 0` and `3` is invertible, the degrees of the homogeneous units of `R[a, b]_Δ`,
 with `a, b` of weights `4, 6` and `Δ = -4 a³ - 27 b²`, are the multiples of `12`. -/
-theorem homogeneousUnitDegrees_awayGrading_depressedDiscr_three [IsDomain R] (h2 : (2 : R) ≠ 0)
-    (h3 : IsUnit (3 : R)) :
+theorem homogeneousUnitDegrees_awayGrading_depressedDiscr_three_four_six [IsDomain R]
+    (h2 : (2 : R) ≠ 0) (h3 : IsUnit (3 : R)) :
     homogeneousUnitDegrees (GradedAlgebra.awayGrading
-        (weightedHomogeneousSubmodule R (![4, 6] : Fin 2 → ℤ)) (depressedDiscr_three_mem R)) =
+        (weightedHomogeneousSubmodule R (![4, 6] : Fin 2 → ℤ))
+        (depressedDiscr_three_mem_four_six R)) =
       AddSubgroup.zmultiples 12 :=
   homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_prime _ _
     (depressedDiscr_prime h2 (by exact_mod_cast h3) (by norm_num))
 
 /-- Over a domain in which `2 ≠ 0` and `3` is invertible, the shift classes of `R[a, b]_Δ`, with
 `a, b` of weights `4, 6` and `Δ = -4 a³ - 27 b²`, form `ZMod 12`. -/
-noncomputable def shiftClassGroupAwayGradingDepressedDiscrThreeEquiv [IsDomain R]
+noncomputable def shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv [IsDomain R]
     (h2 : (2 : R) ≠ 0) (h3 : IsUnit (3 : R)) :
     ShiftClassGroup (GradedAlgebra.awayGrading
-        (weightedHomogeneousSubmodule R (![4, 6] : Fin 2 → ℤ)) (depressedDiscr_three_mem R)) ≃+
+        (weightedHomogeneousSubmodule R (![4, 6] : Fin 2 → ℤ))
+        (depressedDiscr_three_mem_four_six R)) ≃+
       ZMod 12 :=
   -- The index `(12 : ℤ).natAbs` of `ShiftClassGroup.equivZMod` reduces to `12`.
-  ShiftClassGroup.equivZMod (homogeneousUnitDegrees_awayGrading_depressedDiscr_three h2 h3)
+  ShiftClassGroup.equivZMod (homogeneousUnitDegrees_awayGrading_depressedDiscr_three_four_six h2 h3)
 
 /-- The identification of the shift classes of `R[a, b]_Δ` with `ZMod 12` sends the class of a
 shift `c` to `c mod 12`. -/
 @[simp]
-theorem shiftClassGroupAwayGradingDepressedDiscrThreeEquiv_mk [IsDomain R] (h2 : (2 : R) ≠ 0)
-    (h3 : IsUnit (3 : R)) (c : ℤ) :
-    shiftClassGroupAwayGradingDepressedDiscrThreeEquiv h2 h3 c = c :=
+theorem shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv_mk [IsDomain R]
+    (h2 : (2 : R) ≠ 0) (h3 : IsUnit (3 : R)) (c : ℤ) :
+    shiftClassGroupAwayGradingDepressedDiscrThreeFourSixEquiv h2 h3 c = c :=
   ShiftClassGroup.equivZMod_mk _ c
 
 end TauCeti
