@@ -295,10 +295,11 @@ theorem vertexTensorBimoduleDifferential_vertexTensorBimoduleDifferential
 /-- When `d` kills the vertex idempotents, the generator `∑ᵥ eᵥ ⊗ eᵥ` of `kQ ⊗_{kQ₀} kQ` is a
 cycle. -/
 @[simp]
-theorem vertexTensorBimoduleDifferential_vertexTensorGenerator (hdε : ∀ v, d (ε v) = 0) :
-    vertexTensorBimoduleDifferential wt d (vertexTensorGenerator k Q) = 0 := by
+theorem vertexTensorBimoduleDifferential_spanSingletonGenerator (hdε : ∀ v, d (ε v) = 0) :
+    vertexTensorBimoduleDifferential wt d (spanSingletonGenerator (vertexTensorIdempotent k Q)) =
+      0 := by
   apply Subtype.ext
-  rw [coe_vertexTensorBimoduleDifferential_apply, coe_vertexTensorGenerator,
+  rw [coe_vertexTensorBimoduleDifferential_apply, coe_spanSingletonGenerator,
     vertexTensorIdempotent_def]
   simp [hdε]
 

@@ -115,9 +115,10 @@ theorem tmul_mem_vertexTensorGrading {p q : ℤ} {x y : A}
     (((Γ).op_mem_opposite_piece_iff _ _).2 hy')
 
 /-- The generator `∑ᵥ eᵥ ⊗ eᵥ` of the vertex term has degree zero. -/
-theorem vertexTensorGenerator_mem_vertexTensorGrading_zero :
-    vertexTensorGenerator k Q ∈ (vertexTensorGrading k Q wt).piece 0 := by
-  rw [mem_vertexTensorGrading_piece_iff, coe_vertexTensorGenerator, vertexTensorIdempotent_def]
+theorem spanSingletonGenerator_mem_vertexTensorGrading_zero :
+    (spanSingletonGenerator (vertexTensorIdempotent k Q) : vertexTensorBimodule k Q) ∈
+      (vertexTensorGrading k Q wt).piece 0 := by
+  rw [mem_vertexTensorGrading_piece_iff, coe_spanSingletonGenerator, vertexTensorIdempotent_def]
   refine Submodule.sum_mem _ fun v _ ↦ ?_
   have hv := vertexIdempotent_mem_gradeBy_zero (k := k) wt v
   simpa only [add_zero] using (Γ).tmul_mem_tensorProduct (Γ).opposite hv

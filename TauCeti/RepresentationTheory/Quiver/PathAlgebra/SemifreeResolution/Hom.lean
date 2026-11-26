@@ -200,24 +200,28 @@ noncomputable def vertexTensorCochainsEquiv (p : ℤ) :
     dgBimoduleCochains (B := 𝒫) (𝒜 := gradeBy k wt)
       (ℳ := (vertexTensorDGBimodule hd hdε).grading) (𝒩 := N.grading) p ≃ₗ[k]
       N.envelopeCorner (vertexTensorIdempotent k Q) p where
-  toFun f := ⟨f.val.val (vertexTensorGenerator k Q), by
+  toFun f := ⟨f.val.val (spanSingletonGenerator (vertexTensorIdempotent k Q)), by
     refine mem_envelopeCorner_vertexTensorIdempotent_iff.2 ⟨?_, ?_⟩
     · simpa only [zero_add] using
         dgBimoduleCochains.map_mem f ((mem_vertexTensorDGBimodule_grading_iff hd hdε).2
-          (vertexTensorGenerator_mem_vertexTensorGrading_zero k Q wt))
-    · rw [← envelopeTwistAction_vertexTensorIdempotent p, ← coe_vertexTensorGenerator,
-        ← vertexTensor_cochain_apply_smul hdε, coe_smul_vertexTensorGenerator]⟩
+          (spanSingletonGenerator_mem_vertexTensorGrading_zero k Q wt))
+    · have hfix : vertexTensorIdempotent k Q • spanSingletonGenerator (vertexTensorIdempotent k Q) =
+          spanSingletonGenerator (vertexTensorIdempotent k Q) := by
+        simpa using smul_spanSingletonGenerator (isIdempotentElem_vertexTensorIdempotent k Q)
+          (spanSingletonGenerator (vertexTensorIdempotent k Q))
+      rw [← envelopeTwistAction_vertexTensorIdempotent p, ← vertexTensor_cochain_apply_smul hdε,
+        hfix]⟩
   map_add' _ _ := (rfl)
   map_smul' _ _ := (rfl)
   invFun := vertexTensorCochainOfCorner hdε N
   left_inv f := by
     ext z
     rw [vertexTensorCochainOfCorner_apply, ← vertexTensor_cochain_apply_smul hdε,
-      coe_smul_vertexTensorGenerator]
+      smul_spanSingletonGenerator (isIdempotentElem_vertexTensorIdempotent k Q)]
   right_inv m := by
     refine Subtype.ext ?_
     dsimp only
-    rw [vertexTensorCochainOfCorner_apply, coe_vertexTensorGenerator,
+    rw [vertexTensorCochainOfCorner_apply, coe_spanSingletonGenerator,
       envelopeTwistAction_vertexTensorIdempotent,
       (mem_envelopeCorner_vertexTensorIdempotent_iff.1 m.property).2]
 
@@ -225,7 +229,8 @@ noncomputable def vertexTensorCochainsEquiv (p : ℤ) :
 theorem coe_vertexTensorCochainsEquiv_apply {p : ℤ}
     (f : dgBimoduleCochains (B := 𝒫) (𝒜 := gradeBy k wt)
       (ℳ := (vertexTensorDGBimodule hd hdε).grading) (𝒩 := N.grading) p) :
-    (vertexTensorCochainsEquiv hdε N p f : N) = f.val.val (vertexTensorGenerator k Q) := (rfl)
+    (vertexTensorCochainsEquiv hdε N p f : N) =
+      f.val.val (spanSingletonGenerator (vertexTensorIdempotent k Q)) := (rfl)
 
 @[simp]
 theorem vertexTensorCochainsEquiv_symm_apply {p : ℤ}
@@ -245,7 +250,7 @@ theorem coe_vertexTensorCochainsEquiv_differential {p : ℤ}
       N.differential (vertexTensorCochainsEquiv hdε N p f) := by
   rw [coe_vertexTensorCochainsEquiv_apply, coe_vertexTensorCochainsEquiv_apply,
     dgBimoduleCochains.differential_apply, vertexTensorDGBimodule_differential_apply,
-    vertexTensorBimoduleDifferential_vertexTensorGenerator hdε, map_zero, smul_zero, sub_zero]
+    vertexTensorBimoduleDifferential_spanSingletonGenerator hdε, map_zero, smul_zero, sub_zero]
 
 end Vertex
 
@@ -504,12 +509,13 @@ theorem vertexTensor_cochain_apply_arrowTensorDifferential_arrowTensorDerivation
       (ℳ := (vertexTensorDGBimodule hd hdε).grading) (𝒩 := N.grading) p) (y : 𝒫) :
     f.val.val (arrowTensorDifferential k Q (arrowTensorDerivation k Q y)) =
       InternalGrading.koszulTwistAlgEquiv (gradeBy k wt) p y •
-          f.val.val (vertexTensorGenerator k Q) -
-        op y • f.val.val (vertexTensorGenerator k Q) := by
+          f.val.val (spanSingletonGenerator (vertexTensorIdempotent k Q)) -
+        op y • f.val.val (spanSingletonGenerator (vertexTensorIdempotent k Q)) := by
   have h : arrowTensorDifferential k Q (arrowTensorDerivation k Q y) =
-      (y ⊗ₜ[k] (1 : 𝒫ᵐᵒᵖ) - (1 : 𝒫) ⊗ₜ[k] op y) • vertexTensorGenerator k Q :=
+      (y ⊗ₜ[k] (1 : 𝒫ᵐᵒᵖ) - (1 : 𝒫) ⊗ₜ[k] op y) •
+        spanSingletonGenerator (vertexTensorIdempotent k Q) :=
     Subtype.ext (by
-      rw [Submodule.coe_smul, coe_vertexTensorGenerator, smul_eq_mul,
+      rw [Submodule.coe_smul, coe_spanSingletonGenerator, smul_eq_mul,
         coe_arrowTensorDifferential_arrowTensorDerivation])
   rw [h, vertexTensor_cochain_apply_smul hdε, map_sub, LinearMap.sub_apply,
     envelopeTwistAction_tmul, envelopeTwistAction_tmul, map_one, one_smul, one_smul]
