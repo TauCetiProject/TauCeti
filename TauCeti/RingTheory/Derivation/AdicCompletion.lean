@@ -186,13 +186,8 @@ by `AdicCompletion.of_smul`. By `Derivation.eq_liftAdicCompletion` it is the onl
 `Â → N` agreeing with `D` on `A`. -/
 noncomputable def liftAdicCompletion (hI : I.FG) (D : Derivation R A N) :
     Derivation R (AdicCompletion I A) N :=
-  haveI : IsScalarTower R (AdicCompletion I A) N := .of_algebraMap_smul fun r n ↦ by
-    rw [IsScalarTower.algebraMap_apply R A (AdicCompletion I A), algebraMap_smul,
-      algebraMap_smul]
-  haveI : IsScalarTower R (AdicCompletion I A) (AdicCompletion I N) :=
-    .of_algebraMap_smul fun r n ↦ by
-      rw [IsScalarTower.algebraMap_apply R A (AdicCompletion I A), algebraMap_smul,
-        algebraMap_smul]
+  haveI := IsScalarTower.to₁₃₄ R A (AdicCompletion I A) N
+  haveI := IsScalarTower.to₁₃₄ R A (AdicCompletion I A) (AdicCompletion I N)
   let e : AdicCompletion I N →ₗ[AdicCompletion I A] N :=
     { toFun := (ofLinearEquiv I N).symm
       map_add' := map_add _

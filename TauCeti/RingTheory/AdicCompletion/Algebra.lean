@@ -111,22 +111,19 @@ theorem of_smul (fg : I.FG) {N : Type*} [AddCommGroup N] [Module (AdicCompletion
     [Module R N] [IsScalarTower R (AdicCompletion I R) N] (x : AdicCompletion I R) (m : N) :
     of I N (x • m) = x • of I N m := by
   ext n
-  -- `x` is the image of some `y ∈ R` up to an element `x - y` of `I ^ n R̂`
+  -- `x` is the image of some `y ∈ R` up to an element `d` of `I ^ n R̂`
   obtain ⟨y, hy⟩ := exists_sub_algebraMap_mem_map_pow fg n x
-  have hm : (x - algebraMap R _ y) • m ∈ (I ^ n • ⊤ : Submodule R N) := by
-    have h : (x - algebraMap R _ y) • m ∈
-        ((I ^ n).map (algebraMap R (AdicCompletion I R)) • ⊤ :
-          Submodule (AdicCompletion I R) N) := Submodule.smul_mem_smul hy Submodule.mem_top
+  obtain ⟨d, hd, rfl⟩ : ∃ d ∈ (I ^ n).map (algebraMap R (AdicCompletion I R)),
+      x = d + algebraMap R _ y := ⟨_, hy, (sub_add_cancel _ _).symm⟩
+  -- so `d • m` vanishes in `N ⧸ I ^ n N`, and `d` acts by zero on the `n`-th level of `N̂`
+  have hm : d • m ∈ (I ^ n • ⊤ : Submodule R N) := by
+    have h : d • m ∈ ((I ^ n).map (algebraMap R (AdicCompletion I R)) • ⊤ :
+        Submodule (AdicCompletion I R) N) := Submodule.smul_mem_smul hd Submodule.mem_top
     rwa [← Submodule.restrictScalars_mem R, Ideal.smul_restrictScalars,
       Submodule.restrictScalars_top] at h
-  have hx : evalₐ I n (x - algebraMap R _ y) = 0 := by
-    rwa [← RingHom.mem_ker, ker_evalₐ_eq_map_pow fg]
-  rw [← sub_add_cancel x (algebraMap R _ y), add_smul, add_smul, map_add, val_add, val_add,
-    algebraMap_smul, algebraMap_smul, LinearMap.map_smul, Pi.add_apply, Pi.add_apply,
-    add_left_inj]
-  rw [smul_eval, val_smul_eq_evalₐ_smul, hx, zero_smul, of_apply, Submodule.mkQ_apply,
-    Submodule.Quotient.mk_eq_zero]
-  exact hm
+  have hx : evalₐ I n d = 0 := by rwa [← RingHom.mem_ker, ker_evalₐ_eq_map_pow fg]
+  simpa [add_smul, smul_eval, hx, (Submodule.Quotient.mk_eq_zero _).mpr hm] using
+    val_smul_eq_evalₐ_smul I n d (Submodule.Quotient.mk m)
 
 /-- **Ring homomorphisms out of the adic completion are determined on `R`.** For a finitely
 generated ideal `I`, two ring homomorphisms `R̂ → T` into a ring that is Hausdorff for an ideal `J`,

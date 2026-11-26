@@ -16,8 +16,10 @@ prime ideal, `A†` the Monsky–Washnitzer weak completion of `A` along `ϖ`, a
 generic ring of `A` at `(π)`, with its canonical map `A† → Ô`. An `O`-derivation `D` of `A†`
 restricts to an `O`-derivation `A → Ô`, which extends uniquely to a derivation of `Ô` and, when
 `A` is Noetherian and `π` a nonzerodivisor, to a derivation of the completed generic field
-`E = Ô[1/π]`. This extension is compatible with `D` on all of `A†`, not only on `A`: the canonical
-maps `A† → Ô → E` intertwine `D` with the extended derivations.
+`E = Ô[1/π]`, unique among those mapping the valuation ring into itself
+(`eq_completedGenericFieldDerivationLift`). This extension is compatible with `D` on all of
+`A†`, not only on `A`: the canonical maps `A† → Ô → E` intertwine `D` with the extended
+derivations.
 
 For a smooth affine lift `A` of a curve, with dagger algebra `A†`, this compares the derivation of
 `A†` with its generic realisation on `E`, which is what scalar extension of a module with
@@ -91,13 +93,13 @@ theorem completedGenericIntegersDerivationLift_toCompletedGenericIntegers
   refine IsHausdorff.haus' (I := Ideal.span {algebraMap A C π}) _ fun n ↦ ?_
   -- write `z = a + ϖ ^ n * y` with `a ∈ A`
   obtain ⟨a, ha⟩ := Dagger.weakCompletion.exists_sub_mem_span_pow ϖ z n
-  rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton'] at ha
-  obtain ⟨y, hy⟩ := ha
-  have hz : Δ z = ϖ ^ n • Δ y := by
-    rw [← sub_add_cancel z (Dagger.weakCompletion.of ϖ A a), map_add, hΔ, add_zero, ← hy,
-      mul_comm, ← map_pow, ← Algebra.smul_def, map_smul]
-  rw [hz, SModEq.zero, smul_eq_mul, Ideal.mul_top, Algebra.smul_def,
-    IsScalarTower.algebraMap_apply O A C, map_pow, map_pow]
-  exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow (Ideal.mem_span_singleton_self _) n)
+  obtain ⟨y, rfl⟩ : ∃ y, z = Dagger.weakCompletion.of ϖ A a + ϖ ^ n • y := by
+    rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton'] at ha
+    obtain ⟨y, hy⟩ := ha
+    exact ⟨y, by rw [Algebra.smul_def, map_pow, mul_comm, hy, add_sub_cancel]⟩
+  -- `Δ` is `O`-linear and vanishes on `A`, so `Δ z = ϖ ^ n • Δ y`
+  rw [map_add, hΔ, zero_add, map_smul, SModEq.zero, ← algebraMap_smul C (ϖ ^ n), map_pow,
+    IsScalarTower.algebraMap_apply O A C]
+  exact Submodule.smul_mem_smul (Ideal.pow_mem_pow (Ideal.mem_span_singleton_self _) n) trivial
 
 end TauCeti.Dagger.weakCompletion
