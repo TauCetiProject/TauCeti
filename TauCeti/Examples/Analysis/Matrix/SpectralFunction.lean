@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Convex.SpectralFunction
-public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction
+public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction.Basic
 public import TauCeti.Analysis.Matrix.MinkowskiDeterminant
 public import TauCeti.Data.Fin.Basic
 

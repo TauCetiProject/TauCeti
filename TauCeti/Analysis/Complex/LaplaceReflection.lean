@@ -64,6 +64,8 @@ Laplace equation; it needs no hypothesis on `R`.
   `TauCeti.evenReflection`.
 * `TauCeti.locallyIntegrableOn_twistedReflection`: the reflection of a function locally integrable
   up to the real axis is locally integrable on the doubled domain.
+* `MeasureTheory.AEStronglyMeasurable.twistedReflection`: the same for almost everywhere strong
+  measurability.
 * `TauCeti.forall_integral_laplacian_smul_twistedReflection_eq_iff`: the reflected triple solves
   the weak Laplace equation on `Ω` if and only if the even and odd half-plane identities hold.
 * `TauCeti.integral_laplacian_smul_twistedReflection_eq`: the direction used for regularity up to
@@ -231,6 +233,27 @@ theorem locallyIntegrableOn_twistedReflection {s : Set ℂ} (hs : ∀ z ∈ s, c
     simpa only [conjCLE_apply] using h.comp_continuousLinearEquiv_of_mapsTo conjCLE
       (fun z hz ↦ by simpa only [conjCLE_apply] using hs z hz)
   exact h.add (R.locallyIntegrableOn_comp hc)
+
+/-- **Measurability of the twisted reflection.** If `f` is almost everywhere strongly measurable on
+`s` up to the real axis, its twisted reflection is almost everywhere strongly measurable on the
+conjugation-invariant set `s`. -/
+theorem _root_.MeasureTheory.AEStronglyMeasurable.twistedReflection {s : Set ℂ}
+    (hs : ∀ z ∈ s, conj z ∈ s) (R : V →L[ℝ] V)
+    (hf : AEStronglyMeasurable f (volume.restrict (s ∩ {z | 0 ≤ z.im}))) :
+    AEStronglyMeasurable (twistedReflection R f) (volume.restrict s) := by
+  have hsub : upper ∩ s ⊆ s ∩ {z | 0 ≤ z.im} := fun z hz => ⟨hz.2, (mem_ofPred.1 hz.1).le⟩
+  have hg : AEStronglyMeasurable (upper.indicator f) (volume.restrict s) := by
+    refine (aestronglyMeasurable_indicator_iff measurableSet_upper).2 ?_
+    rw [Measure.restrict_restrict measurableSet_upper]
+    exact hf.mono_measure (Measure.restrict_mono hsub le_rfl)
+  have hconj : MeasurePreserving (conjLIE : ℂ → ℂ) (volume.restrict ((conjLIE : ℂ → ℂ) ⁻¹' s))
+      (volume.restrict s) :=
+    conjLIE.measurePreserving.restrict_preimage_emb conjLIE.toHomeomorph.measurableEmbedding s
+  have hgc := ((R.continuous.comp_aestronglyMeasurable hg).comp_measurePreserving
+    hconj).mono_measure (Measure.restrict_mono (fun z hz => by simpa using hs z hz) le_rfl)
+  -- The defining formula: the cutoff plus `R` of the cutoff at the conjugate point.
+  rw [funext (twistedReflection_def R f)]
+  exact hg.add (by simpa only [Function.comp_def, conjLIE_apply] using hgc)
 
 /-! ### The doubled weak Laplace equation -/
 
