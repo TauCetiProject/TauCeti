@@ -66,6 +66,8 @@ of this holds on a bounded `Ω`: the constants have zero energy, and `0` is a mi
   the optimal Poincaré–Friedrichs constant.
 * `TauCeti.PDE.exists_firstMixedEigenvalue_laplacian_of_isLipschitzDomainWith`: the mixed Laplacian
   on a bounded connected Lipschitz domain, for `Γ` of positive surface measure.
+* `TauCeti.PDE.inner_gradient_eq_mul_inner_value_of_mem_w1pVanishingOnSubmodule`: a weak
+  eigen-identity of `-Δ_Γ` extends from the generators of `H¹_Γ(Ω)` to all of it.
 
 ## References
 
@@ -84,7 +86,35 @@ namespace TauCeti
 namespace PDE
 
 open Bornology MeasureTheory Module Set TopologicalSpace
-open scoped InnerProductSpace NNReal
+open scoped Distributions InnerProductSpace NNReal
+
+/-! ### Extending a weak eigen-identity over `H¹_Γ(Ω)` -/
+
+section EigenIdentity
+
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  {Omega : Opens E} {Γ : Set E}
+
+/-- **A weak eigen-identity extends from the generators of `H¹_Γ(Ω)` to all of it.** If
+`∫ ∇u · ∇v = κ ∫ u v` holds whenever `v` is the restriction to `Ω` of a test function on `E` whose
+support avoids the closure of `Γ`, then it holds for every `v ∈ H¹_Γ(Ω)`: both sides are continuous
+in `v`, and `H¹_Γ(Ω)` is the closure of those restrictions. -/
+theorem inner_gradient_eq_mul_inner_value_of_mem_w1pVanishingOnSubmodule {u : W1p mu Omega 2}
+    {kappa : ℝ} (h : ∀ φ : 𝓓((⊤ : Opens E), ℝ), Disjoint (tsupport φ) (closure Γ) →
+      ⟪W1p.gradient u, W1p.gradient (W1p.restrictL (le_top : Omega ≤ ⊤)
+          (W1p.ofTestFunctionₗ mu ⊤ 2 φ))⟫_ℝ =
+        kappa * ⟪W1p.value u, W1p.value (W1p.restrictL (le_top : Omega ≤ ⊤)
+          (W1p.ofTestFunctionₗ mu ⊤ 2 φ))⟫_ℝ)
+    {v : W1p mu Omega 2} (hv : v ∈ w1pVanishingOnSubmodule mu Omega 2 Γ) :
+    ⟪W1p.gradient u, W1p.gradient v⟫_ℝ = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ :=
+  w1pVanishingOnSubmodule_subset_of_isClosed (s := {v | ⟪W1p.gradient u,
+      W1p.gradient v⟫_ℝ = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ})
+    (isClosed_eq (continuous_const.inner (W1p.gradientL.continuous.congr W1p.gradientL_apply))
+      (continuous_const.mul (continuous_const.inner
+        (W1p.valueL.continuous.congr W1p.valueL_apply)))) h hv
+
+end EigenIdentity
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)} {Γ : Set (EuclideanSpace ℝ ι)}
