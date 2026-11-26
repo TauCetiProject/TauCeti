@@ -62,6 +62,13 @@ identity consumed by
 `TauCeti.NovikovModule.kernelProduct_sub_negOnePow_smul_kernelProduct_of_tensorDifferential`
 (`NovikovModule.sub_negOnePow_mul_eq_kernelComp_add_kernelComp_of_functionalBoundary`).
 
+For associativity, the source is the triple tensor product `(C₁ ⊗ C₂) ⊗ C₃` with its Koszul
+differential. A degree `-1` functional whose boundary is the readout of the composite kernel of
+`(a ⋆ b) ⋆' c` minus the readout of that of `a ⋆''' (b ⋆'' c)` gives the associativity kernel
+identity consumed by
+`TauCeti.NovikovModule.kernelProduct_kernelProduct_sub_kernelProduct_kernelProduct_of_mem_gradeBy`
+(`NovikovModule.finsum_sub_finsum_eq_kernelComp_add_kernelComp_of_functionalBoundary`).
+
 The functional identities themselves are hypotheses: they are the boundary theorems for oriented
 one-dimensional moduli spaces, which are not constructed here.
 
@@ -80,6 +87,8 @@ one-dimensional moduli spaces, which are not constructed here.
   Leibniz rule from a closed product functional.
 * `TauCeti.NovikovModule.sub_negOnePow_mul_eq_kernelComp_add_kernelComp_of_functionalBoundary`:
   the commutativity homotopy identity from an exchange functional.
+* `TauCeti.NovikovModule.finsum_sub_finsum_eq_kernelComp_add_kernelComp_of_functionalBoundary`:
+  the associativity homotopy identity from a functional of the four-punctured sphere family.
 
 ## References
 
@@ -354,6 +363,47 @@ theorem sub_negOnePow_mul_eq_kernelComp_add_kernelComp_of_functionalBoundary
   rfl
 
 end Product
+
+section Associativity
+
+variable {S₁ S₂ S₃ S₁₂ S₂₃ : Type*} [DecidableEq S₁] [DecidableEq S₂] [DecidableEq S₃]
+  {d₁ : S₁ → ℤ} {d₂ : S₂ → ℤ} {d₃ : S₃ → ℤ} {d₀ : S₀ → ℤ}
+  {δ₁ : S₁ → S₁ → R} {δ₂ : S₂ → S₂ → R} {δ₃ : S₃ → S₃ → R} {δ₀ : S₀ → S₀ → R}
+
+/-- **The associativity homotopy from a functional of the four-punctured sphere family.** Let
+`n`, `n'` be the product kernels of `(a ⋆ b) ⋆' c` and `m`, `m'` those of `a ⋆''' (b ⋆'' c)`, and
+let `k` be a kernel of degree `-1` out of `C₁ ⊗ C₂ ⊗ C₃`. If the boundary of the readout of `k`,
+for the Koszul tensor differential `δ⊗` of `(C₁ ⊗ C₂) ⊗ C₃`, is the readout of the composite
+kernel `∑ₜ n(p₁, p₂, t) n'(t, p₃, ·)` minus the readout of `∑ᵤ m(p₂, p₃, u) m'(p₁, u, ·)`, then
+`k` is a kernel homotopy
+
+`∑ₜ n(p₁, p₂, t) n'(t, p₃, p₀) - ∑ᵤ m(p₂, p₃, u) m'(p₁, u, p₀) =
+  ∑ k(q, p) δ₀(p, p₀) + ∑ δ⊗(q, q') k(q', p₀)`
+
+at `q = ((p₁, p₂), p₃)`, as consumed by
+`TauCeti.NovikovModule.kernelProduct_kernelProduct_sub_kernelProduct_kernelProduct_of_mem_gradeBy`.
+For the pair-of-pants product the hypothesis is the count of the boundary of the one-dimensional
+moduli spaces of the associativity family, whose two parameter ends are the two broken
+compositions. -/
+theorem finsum_sub_finsum_eq_kernelComp_add_kernelComp_of_functionalBoundary
+    {n : S₁ → S₂ → S₁₂ → R} {n' : S₁₂ → S₃ → S₀ → R} {m : S₂ → S₃ → S₂₃ → R}
+    {m' : S₁ → S₂₃ → S₀ → R} {k : (S₁ × S₂) × S₃ → S₀ → R}
+    (hk : ∀ q p₀, k q p₀ ≠ 0 → d₀ p₀ = d₁ q.1.1 + d₂ q.1.2 + d₃ q.2 - 1)
+    {q : (S₁ × S₂) × S₃} {p₀ : S₀}
+    (hψ : functionalBoundary (fun q : (S₁ × S₂) × S₃ => d₁ q.1.1 + d₂ q.1.2 + d₃ q.2) d₀
+      (tensorDifferential (fun q : S₁ × S₂ => d₁ q.1 + d₂ q.2) (tensorDifferential d₁ δ₁ δ₂) δ₃)
+      δ₀ (kernelReadout d₀ k) q p₀ =
+        kernelReadout d₀ (fun q p₀ => ∑ᶠ t, n q.1.1 q.1.2 t * n' t q.2 p₀) q p₀ -
+          kernelReadout d₀ (fun q p₀ => ∑ᶠ u, m q.1.2 q.2 u * m' q.1.1 u p₀) q p₀) :
+    ∑ᶠ t, n q.1.1 q.1.2 t * n' t q.2 p₀ - ∑ᶠ u, m q.1.2 q.2 u * m' q.1.1 u p₀ =
+      kernelComp k δ₀ q p₀ +
+        kernelComp (tensorDifferential (fun q : S₁ × S₂ => d₁ q.1 + d₂ q.2)
+          (tensorDifferential d₁ δ₁ δ₂) δ₃) k q p₀ :=
+  ((functionalBoundary_kernelReadout_eq_kernelReadout_iff
+    (s := fun q p₀ => ∑ᶠ t, n q.1.1 q.1.2 t * n' t q.2 p₀ - ∑ᶠ u, m q.1.2 q.2 u * m' q.1.1 u p₀)
+    hk q p₀).1 (by rw [hψ]; simp only [kernelReadout_apply, mul_sub])).symm
+
+end Associativity
 
 end NovikovModule
 
