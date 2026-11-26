@@ -73,8 +73,9 @@ approximates `a`.
 * `IsDedekindDomain.FiniteAdeleRing.algebraMap_mem_sIntegralAdeles_iff` and
   `IsDedekindDomain.FiniteAdeleRing.algebraMap_mem_integralAdeles_iff`: the diagonal image of
   `x : K` is an `S`-integral finite adele if and only if `x` is an `S`-integer (inducing the
-  canonical `S.integer K`-algebra and scalar-tower structures `sIntegralAdelesAlgebraOfSubset` and
-  `isScalarTower_sIntegralAdelesAlgebraOfSubset` on `sIntegralAdeles R K T` for `S ⊆ T`), and an
+  canonical `S.integer K`-algebra, scalar-tower, and inclusion structures
+  `sIntegralAdelesAlgebraOfSubset`, `isScalarTower_sIntegralAdelesAlgebraOfSubset`, and
+  `sIntegralAdelesValOfSubset` on `sIntegralAdeles R K T` for `S ⊆ T`), and an
   integral finite adele if and only if `x` lies in `R`.
 * `IsDedekindDomain.FiniteAdeleRing.mul_nonZeroDivisor_mem_integralAdeles`: a finite adele has a
   common denominator in `R`.
@@ -366,6 +367,44 @@ theorem isScalarTower_sIntegralAdelesAlgebraOfSubset {S T : Set (HeightOneSpectr
   let : Algebra (S.integer K) (sIntegralAdeles R K T) := sIntegralAdelesAlgebraOfSubset R K h
   exact IsScalarTower.of_algebraMap_eq fun x ↦
     (IsScalarTower.algebraMap_apply (S.integer K) K (FiniteAdeleRing R K) x).symm
+
+variable (R K) in
+/-- For `S ⊆ T`, the canonical `S.integer K`-algebra embedding
+`sIntegralAdeles R K T →ₐ[S.integer K] FiniteAdeleRing R K` into the finite adele ring. -/
+noncomputable def sIntegralAdelesValOfSubset {S T : Set (HeightOneSpectrum R)} (h : S ⊆ T) :
+    letI : Algebra (S.integer K) (sIntegralAdeles R K T) := sIntegralAdelesAlgebraOfSubset R K h
+    sIntegralAdeles R K T →ₐ[S.integer K] FiniteAdeleRing R K :=
+  letI : Algebra (S.integer K) (sIntegralAdeles R K T) := sIntegralAdelesAlgebraOfSubset R K h
+  letI : IsScalarTower (S.integer K) (sIntegralAdeles R K T) (FiniteAdeleRing R K) :=
+    isScalarTower_sIntegralAdelesAlgebraOfSubset R K h
+  IsScalarTower.toAlgHom (S.integer K) (sIntegralAdeles R K T) (FiniteAdeleRing R K)
+
+variable (R K) in
+/-- The underlying function of `sIntegralAdelesValOfSubset R K h` is `Subtype.val`. -/
+@[simp]
+theorem coe_sIntegralAdelesValOfSubset {S T : Set (HeightOneSpectrum R)} (h : S ⊆ T) :
+    (sIntegralAdelesValOfSubset R K h : sIntegralAdeles R K T → FiniteAdeleRing R K) =
+      Subtype.val := by
+  let : Algebra (S.integer K) (sIntegralAdeles R K T) := sIntegralAdelesAlgebraOfSubset R K h
+  let : IsScalarTower (S.integer K) (sIntegralAdeles R K T) (FiniteAdeleRing R K) :=
+    isScalarTower_sIntegralAdelesAlgebraOfSubset R K h
+  ext x
+  rw [sIntegralAdelesValOfSubset, IsScalarTower.toAlgHom_apply, Subalgebra.algebraMap_apply]
+
+variable (R K) in
+/-- Evaluating `sIntegralAdelesValOfSubset R K h` at `x` coerces `x` to `FiniteAdeleRing R K`. -/
+theorem sIntegralAdelesValOfSubset_apply {S T : Set (HeightOneSpectrum R)} (h : S ⊆ T)
+    (x : sIntegralAdeles R K T) :
+    sIntegralAdelesValOfSubset R K h x = (x : FiniteAdeleRing R K) :=
+  congrFun (coe_sIntegralAdelesValOfSubset R K h) x
+
+variable (R K) in
+/-- For `S ⊆ T`, the canonical `S.integer K`-algebra embedding `sIntegralAdelesValOfSubset R K h`
+is injective. -/
+theorem sIntegralAdelesValOfSubset_injective {S T : Set (HeightOneSpectrum R)} (h : S ⊆ T) :
+    Function.Injective (sIntegralAdelesValOfSubset R K h) := by
+  rw [coe_sIntegralAdelesValOfSubset]
+  exact Subtype.val_injective
 
 /-- The `S`-integral finite adeles form an `S.integer K`-algebra via the diagonal embedding. -/
 noncomputable instance instAlgebraIntegerSIntegralAdeles (S : Set (HeightOneSpectrum R)) :

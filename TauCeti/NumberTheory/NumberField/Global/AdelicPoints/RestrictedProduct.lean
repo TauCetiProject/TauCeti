@@ -128,19 +128,6 @@ theorem toRestrictedProductMonoidHom_apply (M : IntegralModel F H S)
     M.toRestrictedProductMonoidHom x v = finiteLocalProjection (𝓞 F) F H v x := by
   simp [toRestrictedProductMonoidHom, RestrictedProduct.mk_apply]
 
-private noncomputable def sIntegralAdelesToBaseAlgHom
-    {T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T) :
-    letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
-      FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
-    FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _) →ₐ[SIntegers F S] FiniteAdeleRing (𝓞 F) F :=
-  letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
-    FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
-  letI : IsScalarTower (SIntegers F S)
-      (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) (FiniteAdeleRing (𝓞 F) F) :=
-    FiniteAdeleRing.isScalarTower_sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
-  IsScalarTower.toAlgHom (SIntegers F S)
-    (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) (FiniteAdeleRing (𝓞 F) F)
-
 /-- For `S ⊆ T`, the canonical embedding of model points over the `T`-integral finite adeles
 `FiniteAdeleRing.sIntegralAdeles (𝓞 F) F T` into `FiniteAdelicPoints (𝓞 F) F H` under the
 generic-fibre identification. -/
@@ -153,7 +140,19 @@ noncomputable def finiteAdelicIntegralHom (M : IntegralModel F H S)
       FiniteAdelicPoints (𝓞 F) F H :=
   letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
     FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
-  M.integralPointsHom (sIntegralAdelesToBaseAlgHom hST)
+  M.integralPointsHom
+    (FiniteAdeleRing.sIntegralAdelesValOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST))
+
+/-- Unfolding `M.finiteAdelicIntegralHom T hST` as `M.integralPointsHom` along
+`FiniteAdeleRing.sIntegralAdelesValOfSubset`. -/
+theorem finiteAdelicIntegralHom_def (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+      FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+    M.finiteAdelicIntegralHom T hST =
+      M.integralPointsHom
+        (FiniteAdeleRing.sIntegralAdelesValOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)) := by
+  rw [finiteAdelicIntegralHom]
 
 @[simp]
 theorem finiteAdelicIntegralHom_ofConv_toBase (M : IntegralModel F H S)
@@ -167,7 +166,8 @@ theorem finiteAdelicIntegralHom_ofConv_toBase (M : IntegralModel F H S)
   let : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
     FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
   intro x a
-  exact M.integralPointsHom_ofConv_toBase (sIntegralAdelesToBaseAlgHom hST) x a
+  rw [M.finiteAdelicIntegralHom_def, M.integralPointsHom_ofConv_toBase,
+    FiniteAdeleRing.sIntegralAdelesValOfSubset_apply]
 
 /-- For `S ⊆ T`, `M.finiteAdelicIntegralHom T hST` is injective. -/
 theorem finiteAdelicIntegralHom_injective (M : IntegralModel F H S)
@@ -175,7 +175,8 @@ theorem finiteAdelicIntegralHom_injective (M : IntegralModel F H S)
     Function.Injective (M.finiteAdelicIntegralHom T hST) :=
   letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
     FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
-  M.integralPointsHom_injective Subtype.val_injective
+  M.integralPointsHom_injective
+    (FiniteAdeleRing.sIntegralAdelesValOfSubset_injective (𝓞 F) F (Finset.coe_subset.mpr hST))
 
 /-- For `S ⊆ T`, `M.finiteAdelicIntegralHom T hST` is an open topological embedding into
 `G(𝔸_{F,f})`. -/
@@ -184,8 +185,10 @@ theorem isOpenEmbedding_finiteAdelicIntegralHom (M : IntegralModel F H S)
     Topology.IsOpenEmbedding (M.finiteAdelicIntegralHom T hST) := by
   let : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
     FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
-  exact M.isOpenEmbedding_integralPointsHom
-    (FiniteAdeleRing.isOpen_sIntegralAdeles (𝓞 F) F (T : Set _)).isOpenEmbedding_subtypeVal
+  rw [M.finiteAdelicIntegralHom_def]
+  refine M.isOpenEmbedding_integralPointsHom ?_
+  rw [FiniteAdeleRing.coe_sIntegralAdelesValOfSubset]
+  exact (FiniteAdeleRing.isOpen_sIntegralAdeles (𝓞 F) F (T : Set _)).isOpenEmbedding_subtypeVal
 
 /-- For `S ⊆ T`, the range of `M.finiteAdelicIntegralHom T hST` consists of the finite adelic points
 whose local projections outside `T` lie in `M.level v`. -/
@@ -195,11 +198,11 @@ theorem mem_range_finiteAdelicIntegralHom_iff (M : IntegralModel F H S)
       ∀ v ∉ T, finiteLocalProjection (𝓞 F) F H v x ∈ M.level v := by
   let : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
     FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
-  rw [finiteAdelicIntegralHom, M.mem_range_integralPointsHom_iff Subtype.val_injective]
-  have hcoe : Set.range (sIntegralAdelesToBaseAlgHom hST) =
-      (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _) : Set (FiniteAdeleRing (𝓞 F) F)) :=
-    Subtype.range_coe
-  simp only [hcoe, SetLike.mem_coe, FiniteAdeleRing.mem_sIntegralAdeles]
+  rw [M.finiteAdelicIntegralHom_def,
+    M.mem_range_integralPointsHom_iff
+      (FiniteAdeleRing.sIntegralAdelesValOfSubset_injective (𝓞 F) F (Finset.coe_subset.mpr hST)),
+    FiniteAdeleRing.coe_sIntegralAdelesValOfSubset, Subtype.range_coe]
+  simp only [SetLike.mem_coe, FiniteAdeleRing.mem_sIntegralAdeles]
   refine ⟨fun hx v hv ↦ ?_, fun hx a v hv ↦ ?_⟩
   · rw [M.level_of_notMem fun hvS ↦ hv (hST hvS), M.mem_localPoints_iff]
     intro a
@@ -420,32 +423,31 @@ noncomputable def sIntegralRestrictedProductEquiv (M : IntegralModel F H S)
       FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
     WithConv (M.coordinate →ₐ[SIntegers F S]
         FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) ≃ₜ*
-      TauCeti.levelOpenSubgroup M.level T (fun v _ ↦ M.isOpen_level v) := by
+      TauCeti.levelOpenSubgroup M.level T (fun v _ ↦ M.isOpen_level v) :=
   letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
     FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
-  let φ := (M.restrictedProductEquiv :
-    FiniteAdelicPoints (𝓞 F) F H →* Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]).comp
-    (M.finiteAdelicIntegralHom T hST)
+  let φ := ((M.restrictedProductEquiv :
+      FiniteAdelicPoints (𝓞 F) F H →* Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]).comp
+    (M.finiteAdelicIntegralHom T hST)).codRestrict
+    (TauCeti.levelOpenSubgroup M.level T (fun v _ ↦ M.isOpen_level v)) fun x ↦ by
+      rw [TauCeti.mem_levelOpenSubgroup]
+      intro v hv
+      rw [MonoidHom.comp_apply, MonoidHom.coe_ofClass, M.restrictedProductEquiv_apply]
+      exact (M.mem_range_finiteAdelicIntegralHom_iff T hST).mp
+        (MonoidHom.mem_range.mpr ⟨x, rfl⟩) v hv
   have hφ : Topology.IsEmbedding φ :=
-    M.restrictedProductEquiv.toHomeomorph.isEmbedding.comp
-      (M.isOpenEmbedding_finiteAdelicIntegralHom T hST).isEmbedding
-  have hrange : Set.range φ =
-      (TauCeti.levelOpenSubgroup M.level T (fun v _ ↦ M.isOpen_level v) :
-        Set (Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v])) := by
-    ext y
-    rw [SetLike.mem_coe, TauCeti.mem_levelOpenSubgroup]
-    refine ⟨?_, fun hy ↦ ?_⟩
-    · rintro ⟨x, rfl⟩ v hv
-      have hx : M.finiteAdelicIntegralHom T hST x ∈ (M.finiteAdelicIntegralHom T hST).range :=
-        ⟨x, rfl⟩
-      rw [M.mem_range_finiteAdelicIntegralHom_iff T hST] at hx
-      simpa [φ] using hx v hv
-    · obtain ⟨x, hx⟩ := (M.mem_range_finiteAdelicIntegralHom_iff T hST
-        (x := M.restrictedProductEquiv.symm y)).mpr fun v hv ↦ by simpa using hy v hv
-      exact ⟨x, by
-        rw [MonoidHom.comp_apply, MonoidHom.coe_ofClass, hx, ContinuousMulEquiv.apply_symm_apply]⟩
-  exact ContinuousMulEquiv.mk' (hφ.toHomeomorph.trans (Homeomorph.setCongr hrange))
-    fun x₁ x₂ ↦ Subtype.ext (map_mul φ x₁ x₂)
+    Topology.IsEmbedding.subtypeVal.of_comp_iff.mp <|
+      M.restrictedProductEquiv.toHomeomorph.isEmbedding.comp
+        (M.isOpenEmbedding_finiteAdelicIntegralHom T hST).isEmbedding
+  have hsurj : Function.Surjective φ := by
+    intro y
+    have hy := (TauCeti.mem_levelOpenSubgroup M.level T _ y.val).mp y.property
+    obtain ⟨x, hx⟩ := (M.mem_range_finiteAdelicIntegralHom_iff T hST
+      (x := M.restrictedProductEquiv.symm y.val)).mpr fun v hv ↦ by simpa using hy v hv
+    exact ⟨x, Subtype.ext <| by
+      rw [MonoidHom.codRestrict_apply, Subtype.coe_mk, MonoidHom.comp_apply, MonoidHom.coe_ofClass,
+        hx, ContinuousMulEquiv.apply_symm_apply]⟩
+  ContinuousMulEquiv.mk' (hφ.toHomeomorphOfSurjective hsurj) (map_mul φ)
 
 /-- Coercing `M.sIntegralRestrictedProductEquiv T hST x` into the ambient restricted product agrees
 with applying `M.restrictedProductEquiv` to `M.finiteAdelicIntegralHom T hST x`. -/
@@ -460,8 +462,13 @@ theorem val_sIntegralRestrictedProductEquiv_apply (M : IntegralModel F H S)
           TauCeti.levelOpenSubgroup M.level T (fun v _ ↦ M.isOpen_level v)) :
         Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) =
         M.restrictedProductEquiv (M.finiteAdelicIntegralHom T hST x) := by
+  let : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+    FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
   intro x
-  rfl
+  exact (congrArg Subtype.val <|
+    (congrFun (ContinuousMulEquiv.coe_mk' _ _) x).trans
+      (Topology.IsEmbedding.toHomeomorphOfSurjective_apply _ _ x)).trans <| by
+    rw [MonoidHom.codRestrict_apply, Subtype.coe_mk, MonoidHom.comp_apply, MonoidHom.coe_ofClass]
 
 /-- Coordinate evaluation of `M.sIntegralRestrictedProductEquiv T hST` on `M.toBase`; not marked
 `@[simp]` because `simp` already reduces the left-hand side via
@@ -547,9 +554,9 @@ theorem adelicRestrictedProductEquiv_symm_apply (M : IntegralModel F H S)
     M.adelicRestrictedProductEquiv.symm p =
       (AdelicPoints.prodContinuousMulEquiv (𝓞 F) F H).symm
         (p.1, M.restrictedProductEquiv.symm p.2) := by
-  simp only [adelicRestrictedProductEquiv, ContinuousMulEquiv.symm_trans_apply,
-    ContinuousMulEquiv.prodCongr_symm, ContinuousMulEquiv.prodCongr_apply]
-  rfl
+  rw [adelicRestrictedProductEquiv, ContinuousMulEquiv.symm_trans_apply,
+    ContinuousMulEquiv.prodCongr_symm, ContinuousMulEquiv.prodCongr_apply,
+    (ContinuousMulEquiv.refl _).symm_apply_eq.mpr (ContinuousMulEquiv.refl_apply _ p.1).symm]
 
 /-! ### Independence of the integral model -/
 

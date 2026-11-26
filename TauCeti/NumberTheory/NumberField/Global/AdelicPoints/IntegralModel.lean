@@ -464,26 +464,6 @@ end LocalPoints
 
 section GlobalPoints
 
-private noncomputable def sIntegersToBaseAlgHom
-    {T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T) :
-    letI : Algebra (SIntegers F S) (SIntegers F T) :=
-      Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
-    SIntegers F T →ₐ[SIntegers F S] F :=
-  letI : Algebra (SIntegers F S) (SIntegers F T) :=
-    Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
-  letI : IsScalarTower (SIntegers F S) (SIntegers F T) F :=
-    Set.isScalarTower_integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
-  IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F
-
-private theorem sIntegersToBaseAlgHom_injective
-    {T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T) :
-    Function.Injective (sIntegersToBaseAlgHom hST) := by
-  let : Algebra (SIntegers F S) (SIntegers F T) :=
-    Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
-  let : IsScalarTower (SIntegers F S) (SIntegers F T) F :=
-    Set.isScalarTower_integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
-  exact Set.toAlgHom_integer_injective F
-
 /-- The canonical embedding `𝓗(𝒪_{F,T}) →* G(F)` of `𝒪_{F,T}`-points of `M.coordinate` into
 `F`-rational points for `S ⊆ T`, under the generic-fibre identification. -/
 noncomputable def globalIntegralHom (M : IntegralModel F H S)
@@ -493,7 +473,17 @@ noncomputable def globalIntegralHom (M : IntegralModel F H S)
     WithConv (M.coordinate →ₐ[SIntegers F S] SIntegers F T) →* WithConv (H →ₐ[F] F) :=
   letI : Algebra (SIntegers F S) (SIntegers F T) :=
     Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
-  M.integralPointsHom (sIntegersToBaseAlgHom hST)
+  M.integralPointsHom (Set.integerValOfSubset F (Finset.coe_subset.mpr hST))
+
+/-- Unfolding `M.globalIntegralHom T hST` as `M.integralPointsHom` along
+`Set.integerValOfSubset`. -/
+theorem globalIntegralHom_def (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    letI : Algebra (SIntegers F S) (SIntegers F T) :=
+      Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+    M.globalIntegralHom T hST =
+      M.integralPointsHom (Set.integerValOfSubset F (Finset.coe_subset.mpr hST)) := by
+  rw [globalIntegralHom]
 
 @[simp]
 theorem globalIntegralHom_ofConv_toBase (M : IntegralModel F H S)
@@ -505,7 +495,7 @@ theorem globalIntegralHom_ofConv_toBase (M : IntegralModel F H S)
   let : Algebra (SIntegers F S) (SIntegers F T) :=
     Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
   intro x a
-  exact M.integralPointsHom_ofConv_toBase (sIntegersToBaseAlgHom hST) x a
+  rw [M.globalIntegralHom_def, M.integralPointsHom_ofConv_toBase, Set.integerValOfSubset_apply]
 
 /-- The canonical map `𝓗(𝒪_{F,T}) →* G(F)` is injective for every `T ⊇ S`. -/
 theorem globalIntegralHom_injective (M : IntegralModel F H S)
@@ -513,7 +503,7 @@ theorem globalIntegralHom_injective (M : IntegralModel F H S)
     Function.Injective (M.globalIntegralHom T hST) :=
   letI : Algebra (SIntegers F S) (SIntegers F T) :=
     Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
-  M.integralPointsHom_injective (sIntegersToBaseAlgHom_injective hST)
+  M.integralPointsHom_injective (Set.integerValOfSubset_injective F (Finset.coe_subset.mpr hST))
 
 private theorem mem_range_globalIntegralHom_iff (M : IntegralModel F H S)
     (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) {g : WithConv (H →ₐ[F] F)} :
@@ -521,10 +511,10 @@ private theorem mem_range_globalIntegralHom_iff (M : IntegralModel F H S)
       ∀ a : M.coordinate, g.ofConv (M.toBase a) ∈ SIntegers F T := by
   let : Algebra (SIntegers F S) (SIntegers F T) :=
     Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
-  rw [globalIntegralHom, M.mem_range_integralPointsHom_iff (sIntegersToBaseAlgHom_injective hST)]
-  exact forall_congr' fun a ↦ by
-    change g.ofConv (M.toBase a) ∈ Set.range (Subtype.val : SIntegers F T → F) ↔ _
-    simp
+  rw [M.globalIntegralHom_def,
+    M.mem_range_integralPointsHom_iff
+      (Set.integerValOfSubset_injective F (Finset.coe_subset.mpr hST))]
+  simp [Set.coe_integerValOfSubset]
 
 /-- The subgroup `Γ(M, T) ≤ G(F)` of `T`-integral rational points for `S ⊆ T`: the subgroup of
 rational points taking `𝒪_{F,T}`-values on `M.toBase`, equal to the image of the `𝒪_{F,T}`-points
@@ -561,11 +551,10 @@ theorem mem_globalPoints_iff_of_adjoin_eq_top (M : IntegralModel F H S)
       ∀ i, g.ofConv (M.toBase (a i)) ∈ SIntegers F T := by
   let : Algebra (SIntegers F S) (SIntegers F T) :=
     Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
-  rw [← M.range_globalIntegralHom T hST, globalIntegralHom,
-    M.mem_range_integralPointsHom_iff_of_adjoin_eq_top (sIntegersToBaseAlgHom_injective hST) ha]
-  exact forall_congr' fun i ↦ by
-    change g.ofConv (M.toBase (a i)) ∈ Set.range (Subtype.val : SIntegers F T → F) ↔ _
-    simp
+  rw [← M.range_globalIntegralHom T hST, M.globalIntegralHom_def,
+    M.mem_range_integralPointsHom_iff_of_adjoin_eq_top
+      (Set.integerValOfSubset_injective F (Finset.coe_subset.mpr hST)) ha]
+  simp [Set.coe_integerValOfSubset]
 
 /-- Enlarging the finite set of places `T` enlarges the subgroup of `T`-integral rational points. -/
 theorem globalPoints_mono (M : IntegralModel F H S)
@@ -623,13 +612,21 @@ variable (M : IntegralModel F H S) {T : Finset (HeightOneSpectrum (𝓞 F))}
   [instA : Algebra (SIntegers F S) (SIntegers F T)]
   [instT : IsScalarTower (SIntegers F S) (SIntegers F T) F]
 
+-- Callers may hold any `[Algebra (SIntegers F S) (SIntegers F T)]` forming a scalar tower with `F`
+-- (e.g. `Algebra.id` when `S = T`), not necessarily definitionally equal to the
+-- `Set.integerAlgebraOfSubset` instance fixed inside `enlarge`. By `Set.integerAlgebraOfSubset_eq`
+-- the two `Algebra` instances are propositionally equal, so the resulting objects of
+-- `CommHopfAlgCat (SIntegers F T)` are equal and related by `eqToIso`.
 /-- Canonical Hopf `𝒪_{F,T}`-algebra isomorphism identifying `(M.enlarge hST).coordinate` with the
 scalar extension `𝒪_{F,T} ⊗[𝒪_{F,S}] M.coordinate`. -/
 noncomputable def enlargeCoordinateIso (hST : S ⊆ T) :
     (M.enlarge hST).coordinate ≅
-      TauCeti.CommHopfAlgCat.baseChange (K := SIntegers F T) M.coordinate := by
-  obtain rfl := (Set.integerAlgebraOfSubset_eq F (Finset.coe_subset.mpr hST)).symm
-  exact Iso.refl _
+      TauCeti.CommHopfAlgCat.baseChange (K := SIntegers F T) M.coordinate :=
+  eqToIso <| congrArg
+    (fun inst : Algebra (SIntegers F S) (SIntegers F T) ↦
+      letI := inst
+      TauCeti.CommHopfAlgCat.baseChange (K := SIntegers F T) M.coordinate)
+    (Set.integerAlgebraOfSubset_eq F (Finset.coe_subset.mpr hST))
 
 /-- Compatibility of `(M.enlarge hST).baseChangeIso` with `enlargeCoordinateIso` and
 `baseChangeTowerIso`. -/
@@ -638,11 +635,13 @@ theorem enlarge_baseChangeIso (hST : S ⊆ T) :
       (TauCeti.CommHopfAlgCat.baseChangeFunctor (K := F)).mapIso (M.enlargeCoordinateIso hST) ≪≫
         TauCeti.CommHopfAlgCat.baseChangeTowerIso (SIntegers F S) F M.coordinate ≪≫
           M.baseChangeIso := by
+  -- Identify the ambient `Algebra` and `IsScalarTower` instances with those inside `enlarge` so
+  -- that `enlargeCoordinateIso` reduces via `eqToIso_refl` to `Iso.refl`.
   obtain rfl := (Set.integerAlgebraOfSubset_eq F (Finset.coe_subset.mpr hST)).symm
   obtain rfl : instT = Set.isScalarTower_integerAlgebraOfSubset F (Finset.coe_subset.mpr hST) :=
     Subsingleton.elim _ _
   dsimp only [enlarge, enlargeCoordinateIso]
-  rw [Functor.mapIso_refl, Iso.refl_trans]
+  rw [eqToIso_refl, Functor.mapIso_refl, Iso.refl_trans]
 
 /-- Pointwise evaluation of `(M.enlarge hST).baseChangeIso.hom` on a pure tensor in terms of
 `enlargeCoordinateIso`, `baseChangeTowerIso`, and `M.baseChangeIso`. -/

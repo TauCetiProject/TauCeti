@@ -20,9 +20,9 @@ instances and monotonicity (`Set.integer_mono`) from
 `TauCeti.RingTheory.DedekindDomain.SInteger.Basic`. Import
 `TauCeti.RingTheory.DedekindDomain.SInteger.Inclusion` separately for the scalar-tower inclusion
 helpers (`Set.integerAlgebraOfSubset`, `Set.isScalarTower_integerAlgebraOfSubset`,
-`Set.integerAlgebraOfSubset_eq`, `Set.toAlgHom_integer_injective`), applied via
-`Finset.coe_subset.mpr`, and `TauCeti.NumberTheory.NumberField.SInteger.Completion` for the
-local-global completion characterization and local integer subalgebras.
+`Set.integerAlgebraOfSubset_eq`, `Set.integerValOfSubset`, `Set.toAlgHom_integer_injective`),
+applied via `Finset.coe_subset.mpr`, and `TauCeti.NumberTheory.NumberField.SInteger.Completion` for
+the local-global completion characterization and local integer subalgebras.
 
 ## Main declarations
 
