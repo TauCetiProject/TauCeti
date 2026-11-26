@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Spectrum.Box
+public import TauCeti.Analysis.PDE.Spectrum.Mixed
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv

@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.PDE.ClassicalSolution
 public import TauCeti.Analysis.PDE.IntervalDomain
 public import TauCeti.Analysis.PDE.Spectrum.Basic
+public import TauCeti.Analysis.PDE.Spectrum.Mixed
 public import TauCeti.Analysis.PDE.Spectrum.Operator.Mixed
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
