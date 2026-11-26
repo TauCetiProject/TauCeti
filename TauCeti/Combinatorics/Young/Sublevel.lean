@@ -33,6 +33,7 @@ def sublevel (μ : YoungDiagram) (f : ↥μ.cells → A) (hf : Monotone f) (a : 
       ⟨Finset.mem_attach _ _, (hf hcd).trans_lt (Finset.mem_filter.mp hmem).2⟩, rfl⟩
 
 /-- A cell belongs to a sublevel diagram exactly when it has a label below the threshold. -/
+@[simp]
 theorem mem_sublevel {μ : YoungDiagram} {f : ↥μ.cells → A} {hf : Monotone f} {a : A}
     {c : ℕ × ℕ} : c ∈ μ.sublevel f hf a ↔ ∃ hc : c ∈ μ.cells, f ⟨c, hc⟩ < a := by
   have hcells : (μ.sublevel f hf a).cells =

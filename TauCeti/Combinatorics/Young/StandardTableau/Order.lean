@@ -138,17 +138,16 @@ theorem apply_lt_apply_of_mem (T : StandardYoungTableau μ) {i₁ j₁ i₂ j₂
     simp only [Subtype.mk.injEq, Prod.mk.injEq] at h
     omega
 
-private theorem monotone_toTableau (T : StandardYoungTableau μ) : Monotone T.toTableau := by
-  intro _ _ h
-  rcases h.lt_or_eq with h | rfl
-  · exact (T.apply_lt_apply_of_le h.le.1 h.le.2 h.ne).le
-  · exact le_rfl
+/-- The labels of a standard Young tableau are strictly monotone in the product order on cells. -/
+theorem strictMono_toTableau (T : StandardYoungTableau μ) : StrictMono T.toTableau :=
+  fun _ _ h => T.apply_lt_apply_of_le h.le.1 h.le.2 h.ne
 
 /-- The diagram of the cells labelled strictly below `i` in a standard Young tableau. -/
 def initialDiagram (T : StandardYoungTableau μ) (i : Fin μ.card) : YoungDiagram :=
-  μ.sublevel T.toTableau T.monotone_toTableau i
+  μ.sublevel T.toTableau T.strictMono_toTableau.monotone i
 
 /-- The cells of the initial diagram are exactly those carrying a label below its cutoff. -/
+@[simp]
 theorem mem_initialDiagram {T : StandardYoungTableau μ} {i : Fin μ.card} {c : ℕ × ℕ} :
     c ∈ T.initialDiagram i ↔
       ∃ j < i, (rowIndex T.toTableau j, colIndex T.toTableau j) = c := by
