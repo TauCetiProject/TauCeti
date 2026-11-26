@@ -94,13 +94,15 @@ private theorem pow_prime_eq_one_of_prod_eq_one (hζ : IsPrimitiveRoot ζ (p ^ h
     induction i with
     | zero => simp
     | succ i ih => rw [pow_succ', AlgEquiv.mul_apply, ih, map_pow, ← ha, ← pow_mul, pow_succ']
-  have hfixη := hfix (η ^ p ^ (j - h))
-    (by rw [← pow_mul, ← pow_add, Nat.sub_add_cancel hhj.le, hη.pow_eq_one]) 1
-  rw [pow_one, map_pow, ← ha, ← pow_mul,
-    (hη.isOfFinOrder (pow_ne_zero _ hp.out.ne_zero)).pow_eq_pow_iff_modEq, ← hη.eq_orderOf,
-    ← Nat.sub_add_cancel hhj.le, pow_add, Nat.sub_add_cancel hhj.le, mul_comm a] at hfixη
-  have ha1 : a ≡ 1 [MOD p ^ h] :=
-    Nat.ModEq.mul_left_cancel' (pow_ne_zero _ hp.out.ne_zero) (by simpa using hfixη)
+  have hpj : p ^ j = p ^ (j - h) * p ^ h := by rw [← pow_add, Nat.sub_add_cancel hhj.le]
+  have hmod : a * p ^ (j - h) ≡ p ^ (j - h) [MOD p ^ j] := by
+    have hfixη := hfix (η ^ p ^ (j - h)) (by rw [← pow_mul, ← hpj, hη.pow_eq_one]) 1
+    rwa [pow_one, map_pow, ← ha, ← pow_mul,
+      (hη.isOfFinOrder (pow_ne_zero _ hp.out.ne_zero)).pow_eq_pow_iff_modEq,
+      ← hη.eq_orderOf] at hfixη
+  have ha1 : a ≡ 1 [MOD p ^ h] := by
+    refine Nat.ModEq.mul_left_cancel' (c := p ^ (j - h)) (pow_ne_zero _ hp.out.ne_zero) ?_
+    rwa [mul_one, mul_comm _ a, ← hpj]
   -- the product of the conjugates of `η` is `η ^ (1 + a + ⋯ + a ^ (p - 1))`
   have hS : p ^ 2 ∣ ∑ i ∈ range p, a ^ i := by
     refine (pow_dvd_pow p (by omega : 2 ≤ j)).trans (hη.dvd_of_pow_eq_one _ ?_)
@@ -161,8 +163,9 @@ theorem exists_pow_eq_of_adjoin_eq_top (hζ : IsPrimitiveRoot ζ (p ^ h)) (h2 : 
   obtain ⟨k, -, hk⟩ := (hξ.map_of_injective (algebraMap K L).injective).eq_pow_of_pow_eq_one hηp
   obtain ⟨z, hz⟩ : y / ω ^ k ∈ Set.range (algebraMap K L) := by
     have hfix : g ∈ MulAction.stabilizer (L ≃ₐ[K] L) (y / ω ^ k) := by
-      rw [MulAction.mem_stabilizer_iff, AlgEquiv.smul_def, map_div₀, map_pow, hgω, mul_pow, hk,
-        hη, div_mul_eq_mul_div, div_div_eq_mul_div, mul_div_mul_left _ _ (map_ne_zero g |>.2 hy0)]
+      have hgy : g y ≠ 0 := (map_ne_zero g).2 hy0
+      rw [MulAction.mem_stabilizer_iff, AlgEquiv.smul_def, map_div₀, map_pow, hgω, mul_pow, hk, hη]
+      field_simp
     exact (IsGalois.mem_range_algebraMap_iff_fixed _).2 fun σ ↦ Subgroup.zpowers_le.2 hfix (hg σ)
   refine ⟨z, (algebraMap K L).injective ?_⟩
   rw [map_pow, hz, div_pow, ← pow_mul, mul_comm k, pow_mul, hωE, one_pow, div_one, hy]
