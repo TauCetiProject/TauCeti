@@ -25,6 +25,8 @@ The construction applies in particular to positive noncommutative star-polynomia
 It needs no norm, order, faithfulness or traciality on the original algebra. Normalization is
 required only to make the cyclic vector a unit vector. `StarPositiveFunctional.comp` pulls positive
 functionals back along (possibly non-unital) `⋆`-algebra homomorphisms,
+`StarPositiveFunctional.smulOfNonneg` scales them by a nonnegative constant, which for a positive
+constant keeps the null space (`StarPositiveFunctional.nullSubmodule_smulOfNonneg`),
 `StarPositiveFunctional.ofPositiveLinearMap` views any order-positive functional on a
 `StarOrderedRing` as a `StarPositiveFunctional`, whose null space is then a left ideal
 (`TauCeti.map_star_mul_mul_self_eq_zero`), and
@@ -126,6 +128,19 @@ theorem ofPositiveLinearMap_apply {C : Type*} [NonUnitalRing C] [PartialOrder C]
 theorem toLinearMap_ofPositiveLinearMap {C : Type*} [NonUnitalRing C] [PartialOrder C]
     [StarRing C] [StarOrderedRing C] [Module ℂ C] (ω : C →ₚ[ℂ] ℂ) :
     (ofPositiveLinearMap ω).toLinearMap = ω.toLinearMap :=
+  (rfl)
+
+/-- A positive functional scaled by a nonnegative complex number `c`, `a ↦ c * φ a`. -/
+def smulOfNonneg (φ : StarPositiveFunctional A) {c : ℂ} (hc : 0 ≤ c) :
+    StarPositiveFunctional A where
+  toLinearMap := c • φ.toLinearMap
+  square_nonneg a := by
+    simpa [LinearMap.smul_apply] using mul_nonneg hc (φ.square_nonneg a)
+
+/-- `smulOfNonneg` evaluates as `c * φ a`. -/
+@[simp]
+theorem smulOfNonneg_apply (φ : StarPositiveFunctional A) {c : ℂ} (hc : 0 ≤ c) (a : A) :
+    φ.smulOfNonneg hc a = c * φ a :=
   (rfl)
 
 variable (φ : StarPositiveFunctional A)
@@ -238,6 +253,13 @@ theorem apply_star_mul_self_pos_of_nullSubmodule_eq_bot
     (hφ : φ.nullSubmodule = ⊥) {a : A} (ha : a ≠ 0) : 0 < φ (star a * a) :=
   (φ.square_nonneg a).lt_of_ne' fun hz =>
     ha ((φ.apply_star_mul_self_eq_zero_iff_of_nullSubmodule_eq_bot hφ a).mp hz)
+
+/-- Scaling by a positive constant does not change the GNS null space. -/
+@[simp]
+theorem nullSubmodule_smulOfNonneg {c : ℂ} (hc : 0 < c) :
+    (φ.smulOfNonneg hc.le).nullSubmodule = φ.nullSubmodule := by
+  ext a
+  simp [hc.ne']
 
 /-- Membership in the null space is vanishing of all pairings. -/
 theorem mem_nullSubmodule (a : A) : a ∈ φ.nullSubmodule ↔ ∀ b, φ (star b * a) = 0 := by

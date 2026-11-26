@@ -45,7 +45,8 @@ global one. It does extend after multiplication by a cutoff:
   (`TauCeti.LocalSymbol.hasCompactSpatialSupport_extend`), so it satisfies its estimates uniformly
   in the position (`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`). Restricting the extension
   to an open set on which `ψ = 1` recovers the restriction of the original symbol
-  (`TauCeti.LocalSymbol.restrict_extend_of_eqOn_one`). The mixed derivatives of the extension obey
+  (`TauCeti.LocalSymbol.restrict_extend_of_eqOn_one`). The extension only depends on the cutoff
+  on `U` (`TauCeti.LocalSymbol.extend_congr`). The mixed derivatives of the extension obey
   the Leibniz bound `TauCeti.LocalSymbol.norm_mixedDeriv_cutoff_smul_le` in terms of those of the
   original symbol, vanish outside `tsupport ψ`
   (`TauCeti.mixedDeriv_comp_fst_smul_eq_zero_of_notMem_tsupport`), and are those of the original
@@ -59,8 +60,15 @@ on `ℝⁿ` is smoothing on `U`. Over `U = ℝⁿ` they are the smoothing symbol
 
 Conversely, `TauCeti.LocalSymbol.ofEventuallyEq` builds a local symbol from a function that agrees,
 near every position in `U`, with a symbol on `ℝⁿ`: the estimates of a local symbol only involve
-the coefficient near positions of `U`. Over all of `ℝⁿ`, `TauCeti.Symbol.ofEventuallyEq` glues a
-symbol on `ℝⁿ × ℝⁿ` in the same way.
+the coefficient near positions of `U`. Every local symbol is of this form: near each position of
+`U` it agrees with its extension by a cutoff equal to `1` near that position
+(`TauCeti.LocalSymbol.exists_symbol_eventually_eq`). Two local symbols agreeing near every
+position of `U` with a common symbol on `ℝⁿ` are equal
+(`TauCeti.LocalSymbol.ext_of_symbol_eventually_eq`), and such representatives are compatible with
+sums and scalar multiples (`TauCeti.LocalSymbol.eventually_coefficient_add_eq`,
+`TauCeti.LocalSymbol.eventually_coefficient_smul_eq`); this transfers identities between symbols
+on `ℝⁿ` to local symbols. Over all of `ℝⁿ`, `TauCeti.Symbol.ofEventuallyEq` glues a symbol on
+`ℝⁿ × ℝⁿ` in the same way.
 
 ## References
 
@@ -596,7 +604,62 @@ theorem extend_restrict (h : U' ≤ U) (hψU' : tsupport ψ ⊆ U') (a : LocalSy
     · simp [hx]
     · simp [hx, image_eq_zero_of_notMem_tsupport fun hy => hx (hψU' hy)])
 
+/-- The extension only depends on the values of the cutoff on `U`. -/
+theorem extend_congr {ψ' : CoordinateSpace n → ℝ} (hψ' : ContDiff ℝ ∞ ψ')
+    (hψ'U : tsupport ψ' ⊆ U) (hψψ' : EqOn ψ ψ' U) (a : LocalSymbol U V W m) :
+    extend ψ hψ hψU a = extend ψ' hψ' hψ'U a :=
+  Symbol.ext (funext fun ⟨x, ξ⟩ => by
+    by_cases hx : x ∈ U
+    · simp [hψψ' hx]
+    · simp [a.coefficient_of_notMem x hx ξ])
+
+/-- Near every position of `U`, a local symbol agrees with a symbol on `ℝⁿ`: its extension by a
+cutoff equal to `1` near the position. This is the converse of
+`TauCeti.LocalSymbol.ofEventuallyEq`. -/
+theorem exists_symbol_eventually_eq (a : LocalSymbol U V W m) {x : CoordinateSpace n}
+    (hx : x ∈ U) :
+    ∃ s : Symbol n V W m, ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = a.coefficient (y, η) := by
+  obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ := isCompact_singleton.exists_contDiff_cutoff_eventuallyEq_one
+    U.isOpen (singleton_subset_iff.2 hx)
+  refine ⟨extend ψ hψ hψU a, ?_⟩
+  filter_upwards [hψ1 x rfl] with y hy η
+  simp [hy]
+
 end Extend
+
+section Representatives
+
+/-- Two local symbols are equal if near every position of `U` both agree with one symbol on `ℝⁿ`.
+This transfers identities between symbols on `ℝⁿ` to local symbols through representatives. -/
+theorem ext_of_symbol_eventually_eq {a b : LocalSymbol U V W m}
+    (h : ∀ x ∈ U, ∃ s : Symbol n V W m,
+      (∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = a.coefficient (y, η)) ∧
+        ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = b.coefficient (y, η)) :
+    a = b :=
+  ext_of_mem fun x hx ξ => by
+    obtain ⟨s, hsa, hsb⟩ := h x hx
+    exact (hsa.self_of_nhds ξ).symm.trans (hsb.self_of_nhds ξ)
+
+/-- If symbols `s` and `t` on `ℝⁿ` agree near `x` with local symbols `a` and `b`, then `s + t`
+agrees near `x` with `a + b`. -/
+theorem eventually_coefficient_add_eq {x : CoordinateSpace n} {a b : LocalSymbol U V W m}
+    {s t : Symbol n V W m}
+    (hs : ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = a.coefficient (y, η))
+    (ht : ∀ᶠ y in 𝓝 x, ∀ η, t.coefficient (y, η) = b.coefficient (y, η)) :
+    ∀ᶠ y in 𝓝 x, ∀ η, (s + t).coefficient (y, η) = (a + b).coefficient (y, η) := by
+  filter_upwards [hs, ht] with y hys hyt η
+  simp [hys η, hyt η]
+
+/-- If a symbol `s` on `ℝⁿ` agrees near `x` with a local symbol `a`, then `c • s` agrees near `x`
+with `c • a`. -/
+theorem eventually_coefficient_smul_eq (c : ℂ) {x : CoordinateSpace n} {a : LocalSymbol U V W m}
+    {s : Symbol n V W m}
+    (hs : ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = a.coefficient (y, η)) :
+    ∀ᶠ y in 𝓝 x, ∀ η, (c • s).coefficient (y, η) = (c • a).coefficient (y, η) := by
+  filter_upwards [hs] with y hys η
+  simp [hys η]
+
+end Representatives
 
 section Smoothing
 

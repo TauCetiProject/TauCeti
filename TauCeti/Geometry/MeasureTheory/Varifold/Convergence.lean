@@ -8,9 +8,10 @@ module
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 public import Mathlib.Topology.ContinuousMap.CocompactMap
-import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Topology.Order.LiminfLimsup
 import Mathlib.Topology.Metrizable.Urysohn
+import Mathlib.Topology.PartitionOfUnity
+import TauCeti.MeasureTheory.Integral.CompactlySupported
 import TauCeti.MeasureTheory.Measure.Prokhorov
 import TauCeti.MeasureTheory.Measure.Vague
 
@@ -38,9 +39,20 @@ this file proves the basic properties of the convergence for them:
 * convergence is preserved by push-forward along continuous maps under which preimages of
   compact sets are compact (`TauCeti.VarifoldTendsto.map`); this is how the weights
   `‖V n‖ = π_* V n` of convergent varifolds converge to the weight of the limit;
-* **compactness**: on a second countable space, every sequence whose masses are bounded on each
-  compact set uniformly in `n` has a subsequence converging to a measure that is finite on
-  compact sets (`TauCeti.exists_subseq_varifoldTendsto`; L. Simon, Theorem 4.4).
+* convergence commutes with restriction to open subspaces, read as pullback along an open
+  embedding (`TauCeti.VarifoldTendsto.comap`), and it is local: a sequence of measures finite on
+  compact sets converges to a measure `ν` finite on compact sets as soon as its restrictions to
+  the sets of an open cover converge to the restrictions of `ν`
+  (`TauCeti.varifoldTendsto_iff_forall_comap`);
+* **compactness**: on a locally compact, second countable Hausdorff space carrying its Borel
+  σ-algebra, every sequence that frequently lies in a set of measures with uniformly bounded masses
+  on each compact set, for instance a sequence whose masses are bounded on each compact set
+  uniformly in `n`, has a subsequence in that set converging to a measure that is finite on compact
+  sets (`TauCeti.exists_subseq_varifoldTendsto`; L. Simon, Theorem 4.4).
+
+Locality is proved by cutting a test function into finitely many pieces with a partition of
+unity, each piece supported in one set of the cover and therefore the extension by zero of a test
+function on that set (`CompactlySupportedContinuousMap.extendZero`).
 
 The compactness theorem is vague compactness of measures with locally bounded masses
 (`TauCeti.exists_subseq_tendsto_integral_of_iSup_measure_ne_top`), which applies because a
@@ -160,16 +172,66 @@ theorem VarifoldTendsto.map {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
     integral_map hπ.aemeasurable f.continuous.aestronglyMeasurable
   simpa only [hf] using h (f.comp π)
 
-/-- **Compactness of varifolds.** On a locally compact, second countable Hausdorff space, every
-sequence of measures whose masses on each compact set are bounded uniformly in `n` has a
-subsequence converging to a measure that is finite on compact sets. -/
+/-- **Restriction to open subspaces**: convergence is preserved by pulling the measures back
+along an open embedding into a Hausdorff space. For the inclusion of the part of a Grassmann
+bundle lying over an open subset `W'` of the base, this restricts varifolds converging on `W` to
+varifolds converging on `W'`. -/
+theorem VarifoldTendsto.comap {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
+    [T2Space Y] [BorelSpace Y] (h : VarifoldTendsto μ ν) {e : X → Y} (he : IsOpenEmbedding e) :
+    VarifoldTendsto (fun n ↦ (μ n).comap e) (ν.comap e) := by
+  intro f
+  simpa only [CompactlySupportedContinuousMap.integral_extendZero] using h (f.extendZero he)
+
+/-- **Locality of convergence**: on a locally compact Hausdorff space covered by the ranges of
+open embeddings `e i`, measures finite on compact sets converge to a measure finite on compact
+sets if and only if their pullbacks along each `e i` converge to the pullback of the limit. -/
+theorem varifoldTendsto_iff_forall_comap [T2Space Y] [LocallyCompactSpace Y] [BorelSpace Y]
+    [∀ n, IsFiniteMeasureOnCompacts (μ n)] [IsFiniteMeasureOnCompacts ν] {ι : Type*}
+    {X : ι → Type*} [∀ i, TopologicalSpace (X i)] [∀ i, MeasurableSpace (X i)]
+    [∀ i, BorelSpace (X i)] {e : ∀ i, X i → Y} (he : ∀ i, IsOpenEmbedding (e i))
+    (hcov : ⋃ i, range (e i) = univ) :
+    VarifoldTendsto μ ν ↔ ∀ i, VarifoldTendsto (fun n ↦ (μ n).comap (e i)) (ν.comap (e i)) := by
+  refine ⟨fun h i ↦ h.comap (he i), fun h f ↦ ?_⟩
+  -- Finitely many of the ranges cover the support of `f`; index them by `Fin t.card`.
+  obtain ⟨t, ht⟩ := f.hasCompactSupport.isCompact.elim_finite_subcover (fun i ↦ range (e i))
+    (fun i ↦ (he i).isOpen_range) (hcov ▸ subset_univ _)
+  let j : Fin t.card → ι := fun m ↦ t.equivFin.symm m
+  have hK : tsupport f ⊆ ⋃ m, range (e (j m)) := fun y hy ↦ by
+    obtain ⟨i, hi, hyi⟩ := mem_iUnion₂.1 (ht hy)
+    have hj : j (t.equivFin ⟨i, hi⟩) = i := by simp [j]
+    exact mem_iUnion.2 ⟨t.equivFin ⟨i, hi⟩, by rw [hj]; exact hyi⟩
+  -- A partition of unity on the support cuts `f` into pieces `g m`, each supported in the range
+  -- of one embedding, hence the extension by zero of a test function `g' m` on its domain.
+  obtain ⟨ψ, hψe, hψ1, -, hψc⟩ := exists_continuous_sum_one_of_isOpen_isCompact
+    (fun m ↦ (he (j m)).isOpen_range) f.hasCompactSupport.isCompact hK
+  let g (m : Fin t.card) : C_c(Y, ℝ) := ⟨ψ m * f.toContinuousMap, (hψc m).mul_right⟩
+  have hfg (y : Y) : f y = ∑ m, g m y := by
+    by_cases hy : y ∈ tsupport f
+    · simpa [g, ← Finset.sum_mul] using congrArg (· * f y) (hψ1 hy).symm
+    · simp [g, image_eq_zero_of_notMem_tsupport hy]
+  choose g' hg' using fun m ↦ (g m).exists_extendZero_eq (he (j m))
+    (tsupport_mul_subset_left.trans (hψe m))
+  have key (ρ : Measure Y) [IsFiniteMeasureOnCompacts ρ] :
+      ∫ y, f y ∂ρ = ∑ m, ∫ x, g' m x ∂ρ.comap (e (j m)) := by
+    simp_rw [hfg]
+    rw [integral_finsetSum _ fun m _ ↦ (g m).integrable]
+    refine Finset.sum_congr rfl fun m _ ↦ ?_
+    rw [← hg' m, CompactlySupportedContinuousMap.integral_extendZero]
+  rw [key ν, funext fun n ↦ key (μ n)]
+  exact tendsto_finsetSum _ fun m _ ↦ h (j m) (g' m)
+
+/-- **Compactness of varifolds.** On a locally compact, second countable Hausdorff space carrying
+its Borel σ-algebra, every sequence of measures that frequently lies in a set `S` of measures whose
+masses on each compact set are bounded uniformly over `S` has a subsequence in `S` converging to a
+measure that is finite on compact sets. For `S` the range of the sequence, this is a sequence whose
+masses on each compact set are bounded uniformly in `n`. -/
 theorem exists_subseq_varifoldTendsto [T2Space Y] [LocallyCompactSpace Y]
-    [SecondCountableTopology Y] [BorelSpace Y] (μ : ℕ → Measure Y)
-    (hμ : ∀ K, IsCompact K → ⨆ n, μ n K ≠ ∞) :
+    [SecondCountableTopology Y] [BorelSpace Y] (μ : ℕ → Measure Y) {S : Set (Measure Y)}
+    (hS : ∀ K, IsCompact K → ⨆ ρ ∈ S, ρ K ≠ ∞) (hμ : ∃ᶠ n in atTop, μ n ∈ S) :
     ∃ (ν : Measure Y) (φ : ℕ → ℕ), IsFiniteMeasureOnCompacts ν ∧ StrictMono φ ∧
-      VarifoldTendsto (μ ∘ φ) ν := by
-  obtain ⟨ν, φ, hν, hφ, hlim⟩ := exists_subseq_tendsto_integral_of_iSup_measure_ne_top μ hμ
-  exact ⟨ν, φ, inferInstance, hφ, hlim⟩
+      (∀ k, μ (φ k) ∈ S) ∧ VarifoldTendsto (μ ∘ φ) ν := by
+  obtain ⟨ν, φ, hν, hφ, hφS, hlim⟩ := exists_subseq_tendsto_integral_of_iSup_measure_ne_top μ hS hμ
+  exact ⟨ν, φ, inferInstance, hφ, hφS, hlim⟩
 
 /-- Dirac masses at a convergent sequence of points converge to the Dirac mass at the limit. -/
 theorem varifoldTendsto_dirac [OpensMeasurableSpace Y] {x : ℕ → Y} {y : Y}

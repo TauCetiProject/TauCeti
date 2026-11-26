@@ -253,6 +253,17 @@ theorem LinearIsometry.apply_adjoint_apply_of_mem_range [CompleteSpace E] [Compl
     f (ContinuousLinearMap.adjoint f.toContinuousLinearMap y) = y :=
   f.isPartialIsometry_toContinuousLinearMap.apply_adjoint_apply_of_mem_range hy
 
+/-- Conjugation by the adjoint of a linear isometry `f` between complete inner product spaces undoes
+conjugation by `f`: `f† (f T f†) f = T`. -/
+theorem LinearIsometry.adjoint_comp_comp_comp_adjoint_comp [CompleteSpace E] [CompleteSpace F]
+    (f : E →ₗᵢ[𝕜] F) (T : E →L[𝕜] E) :
+    f.toContinuousLinearMap† ∘L (f.toContinuousLinearMap ∘L T ∘L f.toContinuousLinearMap†) ∘L
+      f.toContinuousLinearMap = T := by
+  simp only [← ContinuousLinearMap.comp_assoc, f.adjoint_comp_self, ContinuousLinearMap.one_def,
+    ContinuousLinearMap.id_comp]
+  simp only [ContinuousLinearMap.comp_assoc, f.adjoint_comp_self, ContinuousLinearMap.one_def,
+    ContinuousLinearMap.comp_id]
+
 namespace LinearMap
 
 section FiniteDimensional
