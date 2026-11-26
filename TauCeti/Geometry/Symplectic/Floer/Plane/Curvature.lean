@@ -14,6 +14,7 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-!
 # The curvature and the energy identity of the perturbation on a PSS plane
@@ -280,6 +281,17 @@ theorem injOn_realChart_cylindricalEndLift (p : PSSPlane) (t₀ : ℝ) :
   TauCeti.Complex.injOn_realChart <| (p.injOn_cylindricalEndLift t₀).mono <| by
     rintro _ ⟨q, hq, rfl⟩
     simpa using hq.2
+
+/-- The end lift in real coordinates is an open map: it is the exponential map after a nonzero
+rescaling. -/
+theorem isOpenMap_realChart_cylindricalEndLift (p : PSSPlane) :
+    IsOpenMap (realChart p.cylindricalEndLift) := by
+  have hc : ((2 * π * p.endSign : ℝ) : ℂ) ≠ 0 := by simp [Real.pi_ne_zero, p.endSign_ne_zero]
+  convert (Complex.equivRealProdCLM.toHomeomorph.isOpenMap.comp (Complex.isOpenMap_exp.comp
+    (Homeomorph.mulLeft₀ _ hc).isOpenMap)).comp
+      Complex.equivRealProdCLM.symm.toHomeomorph.isOpenMap using 1
+  funext z
+  simp [TauCeti.Complex.realChart_apply, cylindricalEndLift_def]
 
 /-- **The end lift recovers a point from its end coordinates.** At a point `w ≠ 0` of the plane,
 the end lift of the positive plane sends the end coordinates `(log ‖w‖ / 2π, arg w / 2π)` of `w`
