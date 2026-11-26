@@ -67,6 +67,14 @@ def overTwistedChainComplexMap (g : A ⟶ B) (h : g ≫ b = a) :
         (pullbackCompIso g.hom b.hom).app L).hom ≫
     twistedChainComplexMap g ((pullback b.hom).obj L)
 
+/-- The map induced by a map `g` of spaces over `X` is the change of coefficients identifying the
+pullbacks of `L` along `a` and along `g ≫ b`, followed by the map induced by `g`. -/
+lemma overTwistedChainComplexMap_def (g : A ⟶ B) (h : g ≫ b = a) :
+    overTwistedChainComplexMap L g h = twistedChainComplexCoefficientMap
+        (eqToIso (congrArg (fun k : A ⟶ X ↦ (pullback k.hom).obj L) h.symm) ≪≫
+          (pullbackCompIso g.hom b.hom).app L).hom ≫
+      twistedChainComplexMap g ((pullback b.hom).obj L) := (rfl)
+
 /-- A map of spaces over `X` followed by the map of its target to `X` is the map of its source to
 `X`, on twisted chains. -/
 @[reassoc (attr := simp)]
