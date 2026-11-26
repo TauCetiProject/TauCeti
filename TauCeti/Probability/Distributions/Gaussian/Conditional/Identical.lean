@@ -16,7 +16,7 @@ import TauCeti.Probability.Distributions.Gaussian.Conditional.RankOne
 For a Gaussian vector with common mean and positive common covariance, the pseudoinverse
 conditional kernel is Dirac at the average of the displayed observations, even off the diagonal.
 The joint law of copies of a scalar Gaussian has these parameters by
-`TauCeti.Probability.map_toLp_const_gaussianReal`.
+`TauCeti.Probability.gaussianReal_map_toLp_const`.
 
 In particular, for `(Z, Z, Z)` with `Z` standard Gaussian, the covariance of the last two
 coordinates is the singular all-ones matrix. An observation `(z, z)` determines the retained

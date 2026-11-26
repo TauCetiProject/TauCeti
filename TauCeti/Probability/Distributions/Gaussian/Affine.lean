@@ -34,7 +34,7 @@ allowed, so the result applies both to embeddings and to possibly singular proje
   a translation.
 * `TauCeti.Probability.map_comp_multivariateGaussian`: reindexing the coordinates along a map of
   index types.
-* `TauCeti.Probability.map_toLp_const_gaussianReal`: copying a scalar Gaussian into every
+* `TauCeti.Probability.gaussianReal_map_toLp_const`: copying a scalar Gaussian into every
   coordinate gives the Gaussian with constant mean and covariance, including zero variance and
   the empty index type.
 * `ProbabilityTheory.HasLaw.affine_multivariateGaussian`,
@@ -202,7 +202,7 @@ theorem map_comp_multivariateGaussian (m : EuclideanSpace ℝ ι) {S : Matrix ι
 
 /-- Repeating a scalar Gaussian in every coordinate gives the Gaussian with constant mean
 and covariance. This includes zero variance and the empty coordinate type. -/
-theorem map_toLp_const_gaussianReal (ι : Type*) [Fintype ι] [DecidableEq ι]
+theorem gaussianReal_map_toLp_const (ι : Type*) [Fintype ι] [DecidableEq ι]
     (μ : ℝ) (v : ℝ≥0) :
     (gaussianReal μ v).map (fun z ↦ WithLp.toLp 2 (fun _ : ι ↦ z)) =
       multivariateGaussian (WithLp.toLp 2 (fun _ : ι ↦ μ))
