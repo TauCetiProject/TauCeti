@@ -13,7 +13,7 @@ public import TauCeti.RepresentationTheory.AsAlgebraHom
 
 Let `ρ` be a representation of a monoid `G` and let `a = Σ_g a_g g` be an element of the monoid
 algebra with eigenvector `x`: `Σ_g a_g ρ(g) x = θ x`. If some coefficient `g ↦ ℓ(ρ(g) x)` of `x`,
-for a linear map `ℓ` to a normed module, is bounded and nonzero, then `‖θ‖ ≤ Σ_g ‖a_g‖`, the `ℓ¹`
+for a linear map `ℓ` to a normed module, is bounded and `ℓ x ≠ 0`, then `‖θ‖ ≤ Σ_g ‖a_g‖`, the `ℓ¹`
 norm of `a`. The reason is that the
 coefficient `f(g) = ℓ(ρ(g) x)` satisfies `θ f(g) = Σ_{g'} a_{g'} f(g g')`, so that
 `‖θ‖ ‖f(g)‖ ≤ (Σ_{g'} ‖a_{g'}‖) sup ‖f‖` for every `g`, and taking the supremum over `g` gives the
@@ -33,7 +33,7 @@ cosets, and its `ℓ¹` norm is `Σ_c |h(c)|`. The results below therefore give 
 ## Main results
 
 * `Representation.norm_le_sum_norm_of_bddAbove_coeff`: the bound for an eigenvector with a bounded
-  nonzero coefficient `g ↦ ℓ (ρ g x)`, for `ℓ` a linear map to a normed module.
+  coefficient `g ↦ ℓ (ρ g x)` with `ℓ x ≠ 0`, for `ℓ` a linear map to a normed module.
 * `Representation.norm_le_sum_norm_of_bddAbove_norm`: the case `ℓ = id`, an eigenvector with a
   bounded orbit in a normed carrier.
 * `Representation.norm_le_sum_norm_of_norm_apply_eq`: the bound for a representation by isometries.
