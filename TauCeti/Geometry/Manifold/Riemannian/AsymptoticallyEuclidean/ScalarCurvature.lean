@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 import Mathlib.MeasureTheory.Integral.Asymptotics
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The scalar curvature of asymptotically Euclidean coefficients and existence of the mass
@@ -195,9 +196,17 @@ theorem isBigO_coordinateScalarCurvature_sub_linearizedScalarCurvature (ht : 0 <
   have hx' : 0 < ‖x‖ := norm_pos_iff.2 hx
   have h : ‖‖x‖ ^ (-t)‖ * ‖‖x‖ ^ (-t - 1 - 1)‖ + ‖‖x‖ ^ (-t - 1)‖ ^ 2 =
       2 * ‖‖x‖ ^ (-2 * t - 2)‖ := by
-    simp only [Real.norm_of_nonneg (Real.rpow_nonneg hx'.le _)]
-    rw [← Real.rpow_add hx', ← Real.rpow_natCast, ← Real.rpow_mul hx'.le]
-    ring_nf
+    have h₁ : ‖x‖ ^ (-t) * ‖x‖ ^ (-t - 1 - 1) = ‖x‖ ^ (-2 * t - 2) := by
+      rw [← Real.rpow_add hx']
+      congr 1
+      ring
+    have h₂ : (‖x‖ ^ (-t - 1)) ^ 2 = ‖x‖ ^ (-2 * t - 2) := by
+      rw [← Real.rpow_mul_natCast hx'.le]
+      congr 1
+      push_cast
+      ring
+    simp only [Real.norm_of_nonneg (Real.rpow_nonneg hx'.le _), h₁, h₂]
+    ring
   rw [h, norm_mul, Real.norm_two, norm_norm]
 
 /-- **The quadratic remainder is integrable at infinity.** If `g_ij - δ_ij = O₂(|x|^(-t))` with
@@ -211,7 +220,7 @@ theorem integrableAtFilter_coordinateScalarCurvature_sub_linearizedScalarCurvatu
   -- Near infinity the coefficients are `C²` with invertible Gram matrix, so the coordinate scalar
   -- curvature is continuous there.
   have hdet : ∀ᶠ x in cobounded _, (Matrix.of fun i j ↦ g x i j).det ≠ 0 :=
-    Manifold.eventually_det_ne_zero_of_tendsto_one (tendsto_matrix_of_of_isSymbolAtInfinity ht hg)
+    Matrix.eventually_det_ne_zero_of_tendsto_one (tendsto_matrix_of_of_isSymbolAtInfinity ht hg)
   obtain ⟨R, -, hR⟩ :=
     (hasBasis_cobounded_compl_closedBall (0 : EuclideanSpace ℝ (Fin n))).mem_iff.1
       ((eventually_contDiffAt_of_isSymbolAtInfinity hg).and hdet)

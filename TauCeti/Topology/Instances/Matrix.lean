@@ -75,8 +75,9 @@ A matrix-valued function converges exactly when each of its entries does
 (`Matrix.tendsto_iff_tendsto_apply`), and exactly when its products with all column vectors do
 (`Matrix.tendsto_iff_forall_tendsto_mulVec`). In particular, pointwise convergence of
 sesquilinear forms gives convergence of their Gram matrices in any pair of finite bases
-(`LinearMap.tendsto_toMatrix₂`). The matrices with nonnegative diagonal form a closed set
-(`Matrix.isClosed_setOfPred_nonneg_diag`).
+(`LinearMap.tendsto_toMatrix₂`). Square matrices tending to the identity are eventually invertible
+(`Matrix.eventually_det_ne_zero_of_tendsto_one`). The matrices with nonnegative diagonal form a
+closed set (`Matrix.isClosed_setOfPred_nonneg_diag`).
 
 `Matrix.ofHomeomorph` bundles `Matrix.of` as a homeomorphism `(m → n → α) ≃ₜ Matrix m n α`.
 Flattening a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i, κ i × μ i) → α` is a
@@ -420,6 +421,14 @@ theorem tendsto_iff_forall_tendsto_mulVec {α m n R : Type*} [Fintype n] [NonAss
   refine ⟨fun h v ↦ ((continuous_id.matrix_mulVec continuous_const).tendsto D).comp h,
     fun h ↦ tendsto_iff_tendsto_apply.2 fun i j ↦ ?_⟩
   simpa [mulVec_single_one] using tendsto_pi_nhds.1 (h (Pi.single j 1)) i
+
+open Filter Topology in
+/-- Square matrices tending to the identity along a filter eventually have nonzero determinant. -/
+theorem eventually_det_ne_zero_of_tendsto_one {α n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [T1Space R] [Nontrivial R]
+    {l : Filter α} {M : α → Matrix n n R} (hM : Tendsto M l (𝓝 1)) :
+    ∀ᶠ x in l, (M x).det ≠ 0 :=
+  (((continuous_id.matrix_det).tendsto 1).comp hM).eventually_ne (by simp)
 
 /-- The matrices with nonnegative diagonal form a closed set. -/
 theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero R] [Preorder R]

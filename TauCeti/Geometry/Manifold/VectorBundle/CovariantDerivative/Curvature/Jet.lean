@@ -12,6 +12,7 @@ public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Analysis.Asymptotics.Defs
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Matrix.Normed
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -280,40 +281,14 @@ private lemma isBigO_mul_of_right (hf : f =O[L] b) (hh : h =O[L] b) :
     rw [norm_mul, ← sq]
     exact (le_add_of_nonneg_left (by positivity)).trans (Real.le_norm_self _)
 
-/-- Gram matrices tending to the identity are eventually invertible. -/
-theorem eventually_det_ne_zero_of_tendsto_one (hg : Tendsto g L (𝓝 1)) :
-    ∀ᶠ x in L, (g x).det ≠ 0 := by
-  have := ((continuous_id.matrix_det).tendsto (1 : Matrix ι ι ℝ)).comp hg
-  simp only [id_eq, Matrix.det_one] at this
-  exact this.eventually_ne one_ne_zero
-
-/-- Gram matrices tending to the identity have bounded inverses. -/
-private lemma isBigO_inv_apply (hg : Tendsto g L (𝓝 1)) (k l : ι) :
-    (fun x ↦ (g x)⁻¹ k l) =O[L] fun _ ↦ (1 : ℝ) := by
-  have hinv : Tendsto (fun x ↦ (g x)⁻¹) L (𝓝 1) := by
-    simpa [Function.comp_def] using
-      ((continuousAt_id (x := (1 : Matrix ι ι ℝ))).matrix_inv (by simp)).tendsto.comp hg
-  exact (((continuous_apply_apply k l).tendsto _).comp hinv).isBigO_one ℝ
-
-/-- If `g → 1` and `g - 1 = O(a)`, then `g⁻¹ - 1 = -g⁻¹ (g - 1) = O(a)`. -/
-private lemma isBigO_inv_sub_one_apply (hg : Tendsto g L (𝓝 1))
-    (hga : ∀ i j, (fun x ↦ (g x - 1) i j) =O[L] a) (k l : ι) :
-    (fun x ↦ ((g x)⁻¹ - 1) k l) =O[L] a := by
-  have hdet := eventually_det_ne_zero_of_tendsto_one hg
-  have hsum : (fun x ↦ -∑ m, (g x)⁻¹ k m * (g x - 1) m l) =O[L] a :=
-    (IsBigO.fun_sum fun m _ ↦ isBigO_one_mul (isBigO_inv_apply hg k m) (hga m l)).neg_left
-  refine hsum.congr' ?_ .rfl
-  filter_upwards [hdet] with x hx
-  rw [← Matrix.mul_apply, Matrix.mul_sub, Matrix.nonsing_inv_mul _ (isUnit_iff_ne_zero.2 hx),
-    Matrix.mul_one, Matrix.sub_apply, Matrix.sub_apply, neg_sub]
-
 /-- The Christoffel symbols of jets with `g → 1` and `dg = O(b)` are `O(b)`. -/
 private lemma isBigO_christoffelOfJet (hg : Tendsto g L (𝓝 1))
     (hdg : ∀ k i j, (fun x ↦ dg x k i j) =O[L] b) (i j k : ι) :
     (fun x ↦ christoffelOfJet (g x) (dg x) i j k) =O[L] b := by
   simp only [christoffelOfJet_def]
-  exact (IsBigO.fun_sum (s := .univ) fun l _ ↦ isBigO_one_mul (isBigO_inv_apply hg k l)
-    (((hdg i j l).add (hdg j i l)).sub (hdg l i j))).const_mul_left _
+  exact (IsBigO.fun_sum (s := .univ) fun l _ ↦
+    isBigO_one_mul (Matrix.isBigO_inv_apply_of_tendsto_one hg k l)
+      (((hdg i j l).add (hdg j i l)).sub (hdg l i j))).const_mul_left _
 
 omit [Fintype ι] [DecidableEq ι] in
 private lemma isBigO_christoffelDerivLin (hddg : ∀ m k i j, (fun x ↦ ddg x m k i j) =O[L] c)
@@ -329,11 +304,12 @@ private lemma isBigO_christoffelDerivOfJet_sub (hg : Tendsto g L (𝓝 1))
         christoffelDerivLin (ddg x) m i j k) =O[L] fun x ↦ ‖a x‖ * ‖c x‖ + ‖b x‖ ^ 2 := by
   -- Split `g⁻¹ = 1 + (g⁻¹ - 1)` in the linear term; the other term is quadratic in `dg`.
   refine ((IsBigO.fun_sum (s := .univ) fun l _ ↦
-    isBigO_mul_of_left (isBigO_inv_sub_one_apply hg hga k l)
+    isBigO_mul_of_left (Matrix.isBigO_inv_sub_one_apply_of_tendsto_one hg hga k l)
     (isBigO_christoffelDerivLin hddg m i j l)).sub
-      (IsBigO.fun_sum (s := .univ) fun l _ ↦ isBigO_one_mul (isBigO_inv_apply hg k l)
-        (IsBigO.fun_sum (s := .univ) fun q _ ↦ isBigO_mul_of_right (hdg m q l)
-          (isBigO_christoffelOfJet hg hdg i j q)))).congr_left fun x ↦ ?_
+      (IsBigO.fun_sum (s := .univ) fun l _ ↦
+        isBigO_one_mul (Matrix.isBigO_inv_apply_of_tendsto_one hg k l)
+          (IsBigO.fun_sum (s := .univ) fun q _ ↦ isBigO_mul_of_right (hdg m q l)
+            (isBigO_christoffelOfJet hg hdg i j q)))).congr_left fun x ↦ ?_
   simp only [christoffelDerivOfJet_def, christoffelDerivLin, Matrix.sub_apply, Matrix.one_apply,
     sub_mul, mul_sub, ite_mul, one_mul, zero_mul, Finset.sum_sub_distrib, Finset.sum_ite_eq,
     Finset.mem_univ, ite_true]
@@ -386,10 +362,10 @@ theorem isBigO_scalarCurvatureOfJet_sub (hg : Tendsto g L (𝓝 1))
   -- Contract the curvature coefficients with `g⁻¹ = 1 + (g⁻¹ - 1)`: the identity picks out the
   -- trace of their linear part, and the other terms are quadratic.
   refine (IsBigO.fun_sum (s := .univ) fun j _ ↦ IsBigO.fun_sum (s := .univ) fun k _ ↦
-    (isBigO_mul_of_left (isBigO_inv_sub_one_apply hg hga j k)
+    (isBigO_mul_of_left (Matrix.isBigO_inv_sub_one_apply_of_tendsto_one hg hga j k)
       (IsBigO.fun_sum (s := .univ) fun i _ ↦ (isBigO_christoffelDerivLin hddg i j k i).sub
         (isBigO_christoffelDerivLin hddg j i k i))).add
-    (isBigO_one_mul (isBigO_inv_apply hg j k)
+    (isBigO_one_mul (Matrix.isBigO_inv_apply_of_tendsto_one hg j k)
       (isBigO_sum_riemannOfJet_sub hg hga hdg hddg j k))).congr' ?_ .rfl
   filter_upwards [hsymm] with x hx
   rw [← sum_sum_christoffelDerivLin_sub (ddg x) hx]
