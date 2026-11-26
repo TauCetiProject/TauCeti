@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus
+public import TauCeti.Analysis.Sobolev.Torus.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
-import TauCeti.Analysis.Fourier.Torus.FourierCoeff
-import TauCeti.Analysis.Fourier.Torus.SchwartzMultiplier
 
 /-!
 # Periodic Bessel-potential spaces between periodic Besov spaces
@@ -19,6 +18,7 @@ Fourier coefficients by `⟨n⟩^s = (1 + ‖n‖²)^{s/2}`. For `1 ≤ p ≤ �
 (`TauCeti.UnitAddTorus.MemSobolev s p c`) when `J^s c` is the Fourier series of a function in
 `Lᵖ(𝕋ᵈ)`: some `f ∈ Lᵖ(𝕋ᵈ)` has `f̂(n) = ⟨n⟩^s c(n)` for every `n`. At `s = 0` these are the
 coefficient sequences of the functions in `Lᵖ(𝕋ᵈ)` (`TauCeti.UnitAddTorus.memSobolev_zero_iff`).
+The predicate and its linear structure are in `TauCeti.Analysis.Sobolev.Torus.Basic`.
 
 This file proves that `H^{s,p}(𝕋ᵈ)` lies between two periodic Besov spaces with the same
 smoothness and integrability,
@@ -56,9 +56,8 @@ measures on the circle factors.
 
 ## Main declarations
 
-* `TauCeti.UnitAddTorus.MemSobolev`: the predicate `c ∈ H^{s,p}(𝕋ᵈ)`, closed under the linear
-  operations, and containing the trigonometric polynomials
-  (`TauCeti.UnitAddTorus.memSobolev_of_finite_support`).
+* `TauCeti.UnitAddTorus.memSobolev_of_finite_support`: the trigonometric polynomials lie in
+  `H^{s,p}(𝕋ᵈ)`.
 * `TauCeti.UnitAddTorus.exists_rpow_mul_norm_littlewoodPaleyBlockLp_le_of_mFourierCoeff_eq` and
   `TauCeti.UnitAddTorus.MemSobolev.memBesov`: `H^{s,p}(𝕋ᵈ) ⊆ B^s_{p,∞}(𝕋ᵈ)`.
 * `TauCeti.UnitAddTorus.exists_mFourierCoeff_eq_and_norm_le_tsum_of_memBesov` and
@@ -86,67 +85,11 @@ open _root_.UnitAddTorus
 
 variable {d : Type*} [Fintype d]
 
--- The periodic Littlewood–Paley blocks, Mathlib's monomials `mFourierLp` and the Schwartz
--- multiplier bound live on `Lᵖ` for the product of the Haar probability measures on the circle
--- factors, given by this instance; use it here so that `H^{s,p}(𝕋ᵈ)` is built on that same space.
+-- The periodic Littlewood–Paley blocks and `H^{s,p}(𝕋ᵈ)` live on `Lᵖ` for the product of the Haar
+-- probability measures on the circle factors, given by this instance.
 attribute [local instance 2000] instMeasureSpaceUnitAddCircle
 
-/-! ### The predicate -/
-
-/-- A formal Fourier series with coefficients `c : ℤᵈ → ℂ` lies in the **periodic
-Bessel-potential space** `H^{s,p}(𝕋ᵈ)` if multiplying its coefficients by the Bessel weight
-`(1 + ‖n‖²)^{s/2}` gives the Fourier coefficients of a function in `Lᵖ(𝕋ᵈ)`. -/
-def MemSobolev (s : ℝ) (p : ℝ≥0∞) (c : (d → ℤ) → ℂ) : Prop :=
-  ∃ f : Lp ℂ p (volume : Measure (UnitAddTorus d)),
-    ∀ n, mFourierCoeff f n = (((1 + ‖latticePoint n‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * c n
-
-variable {s : ℝ} {p : ℝ≥0∞} {c c' : (d → ℤ) → ℂ}
-
-theorem memSobolev_def :
-    MemSobolev s p c ↔ ∃ f : Lp ℂ p (volume : Measure (UnitAddTorus d)),
-      ∀ n, mFourierCoeff f n = (((1 + ‖latticePoint n‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * c n :=
-  Iff.rfl
-
-/-- `H^{0,p}(𝕋ᵈ)` consists of the coefficient sequences of the functions in `Lᵖ(𝕋ᵈ)`. -/
-theorem memSobolev_zero_iff :
-    MemSobolev 0 p c ↔ ∃ f : Lp ℂ p (volume : Measure (UnitAddTorus d)), mFourierCoeff f = c := by
-  simp [memSobolev_def, funext_iff]
-
-theorem MemSobolev.zero : MemSobolev s p (0 : (d → ℤ) → ℂ) :=
-  ⟨0, fun n ↦ by
-    -- The zero class is the zero function almost everywhere, whose coefficients are integrals of
-    -- zero.
-    rw [Pi.zero_apply, mul_zero, mFourierCoeff_congr_ae (Lp.coeFn_zero ℂ p volume)]
-    simp [mFourierCoeff]⟩
-
-section Linear
-
-variable [Fact (1 ≤ p)]
-
-theorem MemSobolev.add (hc : MemSobolev s p c) (hc' : MemSobolev s p c') :
-    MemSobolev s p (c + c') := by
-  obtain ⟨f, hf⟩ := hc
-  obtain ⟨f', hf'⟩ := hc'
-  refine ⟨f + f', fun n ↦ ?_⟩
-  rw [← mFourierCoeffCLM_apply, map_add, mFourierCoeffCLM_apply, mFourierCoeffCLM_apply, hf, hf',
-    Pi.add_apply, mul_add]
-
-theorem MemSobolev.smul (hc : MemSobolev s p c) (a : ℂ) : MemSobolev s p (a • c) := by
-  obtain ⟨f, hf⟩ := hc
-  refine ⟨a • f, fun n ↦ ?_⟩
-  rw [← mFourierCoeffCLM_apply, map_smul, mFourierCoeffCLM_apply, hf, Pi.smul_apply, smul_eq_mul,
-    smul_eq_mul, mul_left_comm]
-
-theorem MemSobolev.neg (hc : MemSobolev s p c) : MemSobolev s p (-c) := by
-  simpa using hc.smul (-1)
-
-theorem MemSobolev.sub (hc : MemSobolev s p c) (hc' : MemSobolev s p c') :
-    MemSobolev s p (c - c') := by
-  simpa [sub_eq_add_neg] using hc.add hc'.neg
-
-end Linear
-
-variable {φ : ContDiffBump (0 : EuclideanSpace ℝ d)}
+variable {s : ℝ} {p : ℝ≥0∞} {c : (d → ℤ) → ℂ} {φ : ContDiffBump (0 : EuclideanSpace ℝ d)}
 
 /-! ### `H^{s,p}(𝕋ᵈ) ⊆ B^s_{p,∞}(𝕋ᵈ)` -/
 
@@ -192,7 +135,7 @@ theorem exists_rpow_mul_norm_littlewoodPaleyBlockLp_le_of_mFourierCoeff_eq (s : 
 theorem MemSobolev.memBesov [Fact (1 ≤ p)] (hc : MemSobolev s p c)
     (φ : ContDiffBump (0 : EuclideanSpace ℝ d)) : MemBesov φ s p ∞ c := by
   obtain ⟨C, -, hC⟩ := exists_rpow_mul_norm_littlewoodPaleyBlockLp_le_of_mFourierCoeff_eq φ s
-  obtain ⟨f, hf⟩ := hc
+  obtain ⟨f, hf⟩ := memSobolev_def.1 hc
   refine memBesov_def.2 (memℓp_infty_iff.2 ⟨C * ‖f‖, ?_⟩)
   rintro _ ⟨j, rfl⟩
   dsimp only
@@ -246,7 +189,7 @@ theorem exists_mFourierCoeff_eq_and_norm_le_tsum_of_memBesov (s : ℝ) :
 theorem MemBesov.memSobolev [Fact (1 ≤ p)] (hc : MemBesov φ s p 1 c) : MemSobolev s p c := by
   obtain ⟨C, -, hC⟩ := exists_mFourierCoeff_eq_and_norm_le_tsum_of_memBesov φ s
   obtain ⟨f, hf, -⟩ := hC p c hc
-  exact ⟨f, hf⟩
+  exact memSobolev_def.2 ⟨f, hf⟩
 
 /-! ### Consequences -/
 
