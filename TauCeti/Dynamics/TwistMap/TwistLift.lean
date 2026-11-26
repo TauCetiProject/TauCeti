@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.Instances.AddCircle.Annulus
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Algebra.Order.Archimedean.Basic
-import TauCeti.Topology.Homeomorph.Order
+import TauCeti.Order.Monotone.Basic
 
 /-!
 # Twist lifts of the annulus
@@ -20,7 +20,8 @@ coordinate `y ↦ F₁(x, y)` is strictly increasing (Katok–Hasselblatt, *Intr
 Theory of Dynamical Systems*, Section 9.2; Herman, *Sur les courbes invariantes par les
 difféomorphismes de l'anneau*, Chapitre I, 1.2, for the differentiable form). A *negative twist
 lift* is the same with strictly decreasing; for `ℓ ≠ 0` it is described here through its
-inverse.
+inverse. The positive twist condition is Herman's *deviation of the verticals* (Appendice, §2):
+the image of a vertical crosses every vertical it meets from left to right.
 
 The geometric case is `ℓ ≠ 0` and `a < b`: then `F` is the lift of a homeomorphism of the closed
 annulus `AddCircle ℓ × [a, b]` preserving its two boundary circles. The predicate itself makes
@@ -52,8 +53,6 @@ the strip is empty.
   `TauCeti.isTwistLift_stripFiberConj_iff`: for `ℓ ≠ 0` this conjugation exchanges positive and
   negative twist lifts. One may take `r(y) = a + b - y` (`TauCeti.iccReflect`, in
   `TauCeti.Topology.Order.IccReflect`).
-* `TauCeti.IsTwistLift.deviates_verticals`: a positive twist lift deviates the verticals (Herman,
-  Appendice, §2): the image of a vertical crosses every vertical it meets from left to right.
 
 ## Implementation notes
 
@@ -89,7 +88,9 @@ structure IsTwistLift (ℓ : ℝ) {a b : ℝ} (F : ℝ × Icc a b ≃ₜ ℝ × 
   snd_apply_of_eq_left : ∀ p : ℝ × Icc a b, (p.2 : ℝ) = a → ((F p).2 : ℝ) = a
   /-- `F` maps the upper boundary line `y = b` into itself. -/
   snd_apply_of_eq_right : ∀ p : ℝ × Icc a b, (p.2 : ℝ) = b → ((F p).2 : ℝ) = b
-  /-- Positive twist: the first coordinate of `F` is strictly increasing on every vertical. -/
+  /-- Positive twist: the first coordinate of `F` is strictly increasing on every vertical. This
+  says that `F` *deviates the verticals* (Herman, Appendice, §2): the image of a vertical crosses
+  every vertical it meets from left to right, so it meets each vertical at most once. -/
   strictMono_fst_apply : ∀ x : ℝ, StrictMono fun y : Icc a b => (F (x, y)).1
 
 namespace IsTwistLift
@@ -315,7 +316,7 @@ private theorem stripFiberConj_data {r : Icc a b ≃ₜ Icc a b} (hr : StrictAnt
         ((stripFiberConj r F p).1 + ℓ, (stripFiberConj r F p).2)) ∧
       (∀ p : ℝ × Icc a b, (p.2 : ℝ) = a → ((stripFiberConj r F p).2 : ℝ) = a) ∧
       (∀ p : ℝ × Icc a b, (p.2 : ℝ) = b → ((stripFiberConj r F p).2 : ℝ) = b) := by
-  have hrs : StrictAnti r.symm := Homeomorph.strictAnti_symm hr
+  have hrs : StrictAnti r.symm := Function.strictAnti_of_rightInverse hr r.apply_symm_apply
   refine ⟨fun p => ?_, fun p hp => ?_, fun p hp => ?_⟩
   · simp only [stripFiberConj_apply, hd (p.1, r.symm p.2)]
   · rw [stripFiberConj_apply]
@@ -333,7 +334,7 @@ theorem IsTwistLift.strictAnti_fst_stripFiberConj_apply (hF : IsTwistLift ℓ F)
     {r : Icc a b ≃ₜ Icc a b} (hr : StrictAnti r) (x : ℝ) :
     StrictAnti fun y : Icc a b => (stripFiberConj r F (x, y)).1 := by
   simpa [Function.comp_def] using StrictMono.comp_strictAnti
-    (hF.strictMono_fst_apply x) (Homeomorph.strictAnti_symm hr)
+    (hF.strictMono_fst_apply x) (Function.strictAnti_of_rightInverse hr r.apply_symm_apply)
 
 /-- **Conjugation by a fibre reversal exchanges positive and negative twist lifts.** For a nonzero
 period and a strictly decreasing homeomorphism `r` of `[a, b]`, the conjugate of `F` by
@@ -343,7 +344,7 @@ theorem isTwistLift_symm_stripFiberConj_iff (hℓ : ℓ ≠ 0) {r : Icc a b ≃�
     (hr : StrictAnti r) : IsTwistLift ℓ (stripFiberConj r F).symm ↔ IsTwistLift ℓ F := by
   refine ⟨fun h => ?_, fun h => (isTwistLift_symm_iff hℓ).2 ?_⟩
   · obtain ⟨hd, hl, hr', hanti⟩ := (isTwistLift_symm_iff hℓ).1 h
-    have hrs : StrictAnti r.symm := Homeomorph.strictAnti_symm hr
+    have hrs : StrictAnti r.symm := Function.strictAnti_of_rightInverse hr r.apply_symm_apply
     obtain ⟨hd', hl', hr''⟩ := stripFiberConj_data hrs hd hl hr'
     rw [stripFiberConj_symm_stripFiberConj] at hd' hl' hr''
     refine ⟨hd', hl', hr'', fun x => ?_⟩
@@ -357,17 +358,5 @@ theorem isTwistLift_symm_stripFiberConj_iff (hℓ : ℓ ≠ 0) {r : Icc a b ≃�
 theorem isTwistLift_stripFiberConj_iff (hℓ : ℓ ≠ 0) {r : Icc a b ≃ₜ Icc a b}
     (hr : StrictAnti r) : IsTwistLift ℓ (stripFiberConj r F) ↔ IsTwistLift ℓ F.symm := by
   simpa using isTwistLift_symm_stripFiberConj_iff (F := F.symm) hℓ hr
-
-/-! ### Deviation of the verticals -/
-
-/-- **A positive twist lift deviates the verticals** (Herman's condition). Suppose that the image
-of the vertical through `x` meets the vertical through `X` at a point `F(x, y₀)`. Then the image
-crosses that vertical there from left to right: the points `F(x, y)` lie strictly to the left of
-the vertical through `X` for `y < y₀`, and strictly to its right for `y > y₀`. In particular the
-image of a vertical meets every vertical at most once. -/
-theorem IsTwistLift.deviates_verticals (hF : IsTwistLift ℓ F) {x X : ℝ} {y₀ : Icc a b}
-    (h : (F (x, y₀)).1 = X) :
-    (∀ y, y < y₀ → (F (x, y)).1 < X) ∧ (∀ y, y₀ < y → X < (F (x, y)).1) :=
-  ⟨fun _ hy => h ▸ hF.strictMono_fst_apply x hy, fun _ hy => h ▸ hF.strictMono_fst_apply x hy⟩
 
 end TauCeti
