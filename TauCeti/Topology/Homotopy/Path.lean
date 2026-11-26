@@ -39,7 +39,10 @@ prescribed end paths as a path between paths. The smoothing of caps in
 of paths pointwise. A homotopy between constant maps is such a family
 (`ContinuousMap.Homotopy.evalAtEquiv`), and this identification matches the concatenation and
 reversal of homotopies with `pathTrans` and `pathSymm`; the paths traced by concatenated and
-reversed homotopies are computed by `ContinuousMap.Homotopy.evalAt_trans` and `evalAt_symm`.
+reversed homotopies are computed by `ContinuousMap.Homotopy.evalAt_trans` and `evalAt_symm`, and
+those traced by reversed pullbacks with their ends rewritten by
+`ContinuousMap.Homotopy.coe_map_evalAt_cast_symm_compContinuousMap` and
+`coe_cast_evalAt_cast_symm_compContinuousMap`.
 `Topology/Homotopy/Homotopic/Homotopy.lean` reads homotopy of homotopies between constant maps
 through `evalAtEquiv`.
 
@@ -704,6 +707,34 @@ theorem evalAt_trans (F : Homotopy f₀ f₁) (G : Homotopy f₁ f₂) (x : X) :
     (F.trans G).evalAt x = (F.evalAt x).trans (G.evalAt x) := by
   ext t
   simp only [evalAt_apply, trans_apply, Path.trans_apply]
+
+/-- Evaluating the reversed pullback of a homotopy `F` along `g`, with its ends rewritten, at `z`
+and mapping it by `φ` traces the reverse of the evaluation of `F` at `g z` mapped by a map `ψ`
+agreeing with `φ`. It is stated for the underlying functions, so that `exact` matches it against
+evaluations whose spaces are only definitionally equal to the ones here, such as objects of
+`TopCat`, which rewriting does not see through. -/
+theorem coe_map_evalAt_cast_symm_compContinuousMap {Z W : Type*} [TopologicalSpace Z]
+    [TopologicalSpace W] (F : f₀.Homotopy f₁) (g : C(Z, X)) {k₀ k₁ : C(Z, Y)}
+    (h₀ : f₁.comp g = k₀) (h₁ : f₀.comp g = k₁) (z : Z) {φ ψ : Y → W} (hφ : Continuous φ)
+    (hψ : Continuous ψ) (hφψ : ∀ y, φ y = ψ y) :
+    ⇑((((F.compContinuousMap g).symm.cast h₀ h₁).evalAt z).map hφ) =
+      ⇑((F.evalAt (g z)).map hψ).symm := by
+  funext t
+  simp [hφψ]
+
+/-- Evaluating the reversed pullback of a homotopy `F` along `g`, with its ends rewritten, at a
+point `z` with `g z = x` traces the reverse of the evaluation of `F` at `x`, whatever the end
+points of the two paths are written as. Like `coe_map_evalAt_cast_symm_compContinuousMap`, it is
+stated for the underlying functions. -/
+theorem coe_cast_evalAt_cast_symm_compContinuousMap {Z : Type*} [TopologicalSpace Z]
+    (F : f₀.Homotopy f₁) (g : C(Z, X)) {k₀ k₁ : C(Z, Y)} (h₀ : f₁.comp g = k₀)
+    (h₁ : f₀.comp g = k₁) {z : Z} {x : X} (hz : g z = x) {a b a' b' : Y} (ha : a = k₀ z)
+    (hb : b = k₁ z) (ha' : a' = f₀ x) (hb' : b' = f₁ x) :
+    ⇑((((F.compContinuousMap g).symm.cast h₀ h₁).evalAt z).cast ha hb) =
+      ⇑((F.evalAt x).cast ha' hb').symm := by
+  subst hz
+  funext t
+  simp
 
 @[simp]
 theorem symm_refl (f : C(X, Y)) : (Homotopy.refl f).symm = Homotopy.refl f := by

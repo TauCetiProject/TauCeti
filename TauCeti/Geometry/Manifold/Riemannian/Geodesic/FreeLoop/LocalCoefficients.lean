@@ -778,35 +778,6 @@ private theorem sum_repeatCutoff_le (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) {
         Finset.sum_le_sum fun _ _ ↦ cutoff_le_of_forall_le_succ_of_lt hδ (by omega) _ _
     _ = _ := by rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
 
-/-- Evaluating the reversed pullback of a homotopy `F` along `g`, with its ends rewritten, at `z`
-and mapping it by `φ` traces the reverse of the evaluation of `F` at `g z` mapped by a map `ψ`
-agreeing with `φ`. It is stated over plain spaces so that `exact` matches it against the
-evaluations in the coherence below, whose spaces are objects of `TopCat`, which rewriting does
-not see through. -/
-private theorem coe_map_evalAt_cast_symm_compContinuousMap {X Y Z W : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [TopologicalSpace Z] [TopologicalSpace W] {f₀ f₁ : C(X, Y)}
-    (F : f₀.Homotopy f₁) (g : C(Z, X)) {k₀ k₁ : C(Z, Y)} (h₀ : f₁.comp g = k₀)
-    (h₁ : f₀.comp g = k₁) (z : Z) {φ ψ : Y → W} (hφ : Continuous φ) (hψ : Continuous ψ)
-    (hφψ : ∀ y, φ y = ψ y) :
-    ⇑((((F.compContinuousMap g).symm.cast h₀ h₁).evalAt z).map hφ) =
-      ⇑((F.evalAt (g z)).map hψ).symm := by
-  funext t
-  simp [hφψ]
-
-/-- Evaluating the reversed pullback of a homotopy `F` along `g`, with its ends rewritten, at a
-point `z` with `g z = x` traces the reverse of the evaluation of `F` at `x`, whatever the end
-points of the two paths are written as. Like the previous lemma, it is stated over plain spaces
-for the coherence below. -/
-private theorem coe_cast_evalAt_cast_symm_compContinuousMap {X Y Z : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [TopologicalSpace Z] {f₀ f₁ : C(X, Y)} (F : f₀.Homotopy f₁) (g : C(Z, X))
-    {k₀ k₁ : C(Z, Y)} (h₀ : f₁.comp g = k₀) (h₁ : f₀.comp g = k₁) {z : Z} {x : X} (hz : g z = x)
-    {a b a' b' : Y} (ha : a = k₀ z) (hb : b = k₁ z) (ha' : a' = f₀ x) (hb' : b' = f₁ x) :
-    ⇑((((F.compContinuousMap g).symm.cast h₀ h₁).evalAt z).cast ha hb) =
-      ⇑((F.evalAt x).cast ha' hb').symm := by
-  subst hz
-  funext t
-  simp
-
 include hr in
 /-- **The two homotopies of the approximation by broken geodesics are coherent.** For a compact
 family `K` of tuples of the distance cut `𝓛ʲM` and a compact family `K'` of free loops containing
@@ -877,11 +848,13 @@ private theorem cyclicDistanceCutCocone_coherent (hpos : 0 < δ 0 0) (hlt : ∀ 
       (MapsTo.val_restrict_apply hKK' x).symm
   · -- Repeating the first vertex `N + 1` times and then `0` times is the map of the sequence.
     refine Subtype.ext
-      ((coe_cyclicDistanceCutRepeatFirstIterate_zero_cyclicDistanceCutRepeatFirstIterate _ hδ''δ
-      (cutoff_sub_le_of_forall_le_succ hδ j (N + 1)) x.val).trans ?_)
+      ((coe_cyclicDistanceCutRepeatFirstIterate_zero_apply (fun i ↦ hδ''δ i) (ρ x)).trans ?_)
     rw [cyclicDistanceCutFunctor_map_homOfLE M hpos.le hδ j (N + 1)
       (cutoff_sub_le_of_forall_le_succ hδ j (N + 1)), ContinuousMap.comp_apply,
       ContinuousMap.subtypeVal_apply]
+    funext i
+    rw [ContinuousMap.comp_apply, ContinuousMap.subtypeVal_apply,
+      coe_cyclicDistanceCutRepeatFirstIterate_apply, coe_cyclicDistanceCutRepeatFirstIterate_apply]
   · -- The coherence is that of the slide and the straightening at the stage `m`.
     have hγ : cyclicDistanceCutBrokenGeodesic hr hδ'' (ρ x) ∈
         MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (j + (N + 1) + 1) :=
@@ -891,10 +864,11 @@ private theorem cyclicDistanceCutCocone_coherent (hpos : 0 < δ 0 0) (hlt : ∀ 
         (ρ x)).map (cyclicDistanceCutBrokenGeodesic hr (hlt _)).continuous).symm) ?_ ?_
       (homotopic_map_evalAt_cyclicDistanceCutSampleBrokenGeodesicHomotopy hr hδ'' (ρ x)
         (hlt _) hδ''δ hm hγ).symm₂
-    · exact coe_map_evalAt_cast_symm_compContinuousMap _ _ _ _ _ _ _
+    · exact ContinuousMap.Homotopy.coe_map_evalAt_cast_symm_compContinuousMap _ _ _ _ _ _ _
         (DFunLike.congr_fun (cyclicDistanceCutCocone_ι_app_hom hr hlt hpos.le hδ _))
     · -- The loop `geoʲ x` with its short arcs is the broken geodesic of the repeated tuple.
-      exact coe_cast_evalAt_cast_symm_compContinuousMap _ _ _ _ (Subtype.ext (hgeo x).symm) _ _ _ _
+      exact ContinuousMap.Homotopy.coe_cast_evalAt_cast_symm_compContinuousMap _ _ _ _
+        (Subtype.ext (hgeo x).symm) _ _ _ _
 
 /-- **The homology of the free loop space with local coefficients is the colimit of the homology
 of the distance cuts.** For cut-offs `δ n i < r` which grow from each stage to the next,
