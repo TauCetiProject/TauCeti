@@ -21,7 +21,9 @@ If the attaching map of `j` is injective, its two endpoints are distinct, so eve
 frontier of `j` has incidence number `1` or `-1`
 (`TauCeti.isUnit_cellularIncidence_zero_of_injective`). This is the case of `0`-dimensional faces
 left out of `TauCeti.isUnit_cellularIncidence_of_injective`, where the boundary sphere is
-connected.
+connected. At the other extreme, if the complex has a single `0`-cell, both endpoints lie at it and
+every incidence number of a `1`-cell vanishes
+(`TauCeti.cellularIncidence_zero_eq_zero_of_subsingleton`).
 
 ## Main results
 
@@ -29,6 +31,8 @@ connected.
   endpoint indicators.
 * `TauCeti.isUnit_cellularIncidence_zero_of_injective`: injective attaching maps of `1`-cells have
   unit incidence numbers.
+* `TauCeti.cellularIncidence_zero_eq_zero_of_subsingleton`: in a CW complex with a single
+  `0`-cell, every incidence number of a `1`-cell vanishes.
 
 ## References
 
@@ -131,5 +135,22 @@ theorem isUnit_cellularIncidence_zero_of_injective {i : cell C 0} {j : cell C 1}
   rcases eq_sphereMinus_or_eq_spherePlus q with rfl | rfl
   · simp [sphereMinus_ne_spherePlus.symm]
   · simp [sphereMinus_ne_spherePlus]
+
+/-- **A single `0`-cell kills the incidence numbers of `1`-cells.** If a CW complex has a single
+`0`-cell `i`, both endpoints of the attaching map of a `1`-cell `j` lie at it, so the incidence
+number of `i` in the cellular boundary of `j` is `1 - 1 = 0`. -/
+theorem cellularIncidence_zero_eq_zero_of_subsingleton {C : Set X} [CWComplex C]
+    [Subsingleton (cell C 0)] (i : cell C 0) (j : cell C 1) :
+    cellularIncidence C R 0 i j = 0 := by
+  -- Every point of the `0`-skeleton lies in the open cell of `i`.
+  have hmem (x : skeletonObj C 1) : (x : X) ∈ openCell 0 i := by
+    have hx : (x : X) ∈ ⋃ (m : ℕ) (_ : (m : ℕ∞) < (1 : ℕ)) (j : cell C m), openCell m j := by
+      rw [CWComplex.iUnion_openCell_eq_skeletonLT]
+      exact x.property
+    simp only [Set.mem_iUnion] at hx
+    obtain ⟨m, hm, i', hi'⟩ := hx
+    obtain rfl : m = 0 := by exact_mod_cast Nat.lt_one_iff.mp (by exact_mod_cast hm)
+    rwa [Subsingleton.elim i' i] at hi'
+  simp [cellularIncidence_zero, hmem]
 
 end TauCeti
