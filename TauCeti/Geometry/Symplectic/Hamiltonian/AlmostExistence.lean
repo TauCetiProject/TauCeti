@@ -75,6 +75,8 @@ monotone in `W`.
 * `TauCeti.SmoothTwoForm.HasContractibleAlmostExistence.exists_hasContractibleClosedCharacteristic`:
   when the nearby values are regular, almost existence gives closed characteristics on levels
   arbitrarily close to the given one.
+* `TauCeti.SmoothTwoForm.not_hasContractibleAlmostExistence_of_ae`: conversely, the property fails
+  when almost every value is regular with a level carrying no contractible closed characteristic.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleClosedCharacteristic_image_iff`: closed
   characteristics are invariant under symplectic diffeomorphisms, and by its variant
   `IsNondegenerate.hasContractibleClosedCharacteristic_image_iff_of_mpullback_eq_smul` under
@@ -318,6 +320,21 @@ theorem HasContractibleAlmostExistence.exists_hasContractibleClosedCharacteristi
   have hcδ : c' ∈ Ioo (c - δ) (c + δ) := Ioo_subset_Ioo (by linarith) (by linarith) hc'
   have hcε : c' ∈ Ioo (c - ε) (c + ε) := Ioo_subset_Ioo (by linarith) (by linarith) hc'
   exact ⟨c', hcδ, h' hcε (hreg c' hcδ)⟩
+
+/-- **Almost existence fails where closed characteristics are absent.** If almost every value is
+a regular value of `F` whose level carries no closed characteristic contractible in `W`, then no
+level of `F` has the contractible almost existence property in `W`: the property asks for such
+closed characteristics on almost every regular level of an interval of positive length. -/
+theorem not_hasContractibleAlmostExistence_of_ae
+    (h : ∀ᵐ c', IsRegularValue I 𝓘(ℝ) F c' ∧ ¬σ.HasContractibleClosedCharacteristic W F c') :
+    ¬σ.HasContractibleAlmostExistence W F c := by
+  rintro ⟨ε, hε, hae⟩
+  -- Almost every value lies outside `(c - ε, c + ε)`, an interval of positive length.
+  have hout : ∀ᵐ c' : ℝ, c' ∉ Ioo (c - ε) (c + ε) := by
+    filter_upwards [hae, h] with c' h₁ h₂ hmem using h₂.2 (h₁ hmem h₂.1)
+  have hzero := ae_iff.1 hout
+  simp only [not_not, ofPred_mem_eq, Real.volume_Ioo, ENNReal.ofReal_eq_zero] at hzero
+  linarith
 
 /-- **Conformal invariance of almost existence.** For a nondegenerate form on a
 finite-dimensional manifold and `a ≠ 0`, a level has the contractible almost existence property
