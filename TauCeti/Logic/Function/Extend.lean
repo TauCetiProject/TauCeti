@@ -10,9 +10,7 @@ public import Mathlib.Data.Set.Inclusion
 public import Mathlib.Logic.Equiv.Set
 public import Mathlib.Logic.Function.Basic
 public import Mathlib.Logic.Function.DependsOn
-public import Mathlib.Order.SetNotation
 public import Mathlib.Tactic.Coe
-import Mathlib.Data.Set.UnionLift
 
 /-!
 # Extending functions along injections
@@ -26,9 +24,7 @@ the same integer function as extending the original function.
 
 A function `g` on a subset `t` extends to the whole type along `Subtype.val`, for instance by
 zero. Restricting `g` to a smaller subset `s` before extending does not change the extension at
-the points which lie in `s` as soon as they lie in `t`. A family of compatible functions on a cover
-glues via `Set.iUnionLift` and extends along `Subtype.val` to a single ambient function agreeing
-with each member on its domain (`Function.exists_eqOn_of_agree`).
+the points which lie in `s` as soon as they lie in `t`.
 
 A dependent function on the range of an injection `f` extends to the whole index type, for
 instance by a fallback function, so restriction `g ↦ fun i ↦ g (f i)` of dependent functions
@@ -46,8 +42,8 @@ along `f` is surjective.
   vacuously off the range).
 * `Function.extend_subtypeVal_comp_inclusion`: extending a function on `t` and extending its
   restriction to `s ⊆ t` agree at every point of `s` and every point outside `t`.
-* `Function.exists_eqOn_of_agree`: a family of functions agreeing on pairwise overlaps glues and
-  extends to an ambient function equal to a prescribed fallback outside the union.
+* `Function.extend_comp_eq_of_forall_notMem_range`: a function agreeing with the fallback off
+  the range of a map is the extension of its restriction.
 * `Function.FactorsThrough.apply_extend_eq_apply`: gluing. Functions given on blocks of
   coordinates that agree where the blocks meet glue to one function, at which every functional
   of one block takes its value at that block's function.
@@ -164,19 +160,18 @@ theorem Injective.extend_comp_extend {α β γ δ : Type*} {f₁₂ : α → β}
         extend_apply' _ _ _ (fun ⟨a, ha⟩ => hx ⟨a, h.eq_iff.1 ha⟩)]
   · rw [extend_apply' _ _ _ hk, extend_apply' _ _ _ (fun ⟨a, ha⟩ => hk ⟨_, ha⟩)]
 
-/-- Given a family of functions `f i : α → β` on sets `U i : Set α` that agree on pairwise
-overlaps `U i ∩ U j`, and a default value `d : β`, there is a single ambient function `g : α → β`
-that agrees with `f i` on each `U i` and takes value `d` outside `⋃ i, U i`. -/
-theorem exists_eqOn_of_agree {ι α β : Type*} {U : ι → Set α} {f : ι → α → β}
-    (hagree : ∀ i j, ∀ z ∈ U i, z ∈ U j → f i z = f j z) (d : β) :
-    ∃ g : α → β, (∀ i, Set.EqOn g (f i) (U i)) ∧ ∀ z ∉ ⋃ i, U i, g z = d := by
-  let g_sub : (⋃ i, U i : Set α) → β :=
-    Set.iUnionLift U (fun i z ↦ f i z) hagree _ Set.Subset.rfl
-  refine ⟨Subtype.val.extend g_sub fun _ ↦ d, fun i z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · have hzU : z ∈ ⋃ j, U j := Set.mem_iUnion.2 ⟨i, hz⟩
-    rw [Subtype.val_injective.extend_apply g_sub (fun _ ↦ d) ⟨z, hzU⟩]
-    exact Set.iUnionLift_of_mem ⟨z, hzU⟩ hz
-  · exact extend_apply' _ _ _ fun ⟨y, hy⟩ ↦ hz (hy ▸ y.property)
+/-- A function `v` that agrees with the fallback `e` off the range of a map `f` is the extension
+along `f` of its restriction `v ∘ f`, with fallback `e`. For instance, a vector vanishing off the
+range of `f` is the extension by zero of its restriction. No injectivity is needed, since `v ∘ f`
+always factors through `f`. -/
+theorem extend_comp_eq_of_forall_notMem_range {α γ : Sort*} {β : Type*} {f : α → β}
+    {v e : β → γ} (hv : ∀ b ∉ Set.range f, v b = e b) :
+    extend f (v ∘ f) e = v := by
+  funext b
+  by_cases hb : b ∈ Set.range f
+  · obtain ⟨a, rfl⟩ := hb
+    exact FactorsThrough.extend_apply (fun _ _ h => congrArg v h) e a
+  · rw [extend_apply' _ _ _ hb, hv b hb]
 
 /-- Gluing along `e : κ → α` the functions `V i` given on the blocks `e '' (p ⁻¹' {i})`, which
 agree wherever two blocks meet (`fun k => V (p k) (e k)` factors through `e`; for instance, the

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Sheaves.Over
-public import TauCeti.CategoryTheory.Sites.ExtensionByZero
+public import Mathlib.CategoryTheory.Preadditive.Injective.Preserves
+public import TauCeti.Topology.Sheaves.Over
+
+public import TauCeti.CategoryTheory.Sites.ExtensionByZero.Basic
 public import TauCeti.Topology.Sheaves.Skyscraper
 
 /-!
@@ -136,5 +138,26 @@ theorem isZero_stalk_extendByZero_obj (F : Sheaf (Opens.grothendieckTopology U) 
   exact (IsZero.iff_id_eq_zero _).2 ((adj.homEquiv F _).injective (Subsingleton.elim _ _))
 
 end Stalks
+
+end TopologicalSpace.Opens
+
+namespace TopologicalSpace.Opens
+open CategoryTheory CategoryTheory.Limits
+variable {A : Type*} [Category* A] [Abelian A]
+/-- Restriction preserves injective sheaves by its exact extension-by-zero adjunction. -/
+instance sheafRestrict_preservesInjectiveObjects {Y : Type u} [TopologicalSpace Y] (V : Opens Y)
+    [HasSheafify (Opens.grothendieckTopology (TopCat.of Y)) A] :
+    (V.sheafRestrict (X := TopCat.of Y) (C := A)).PreservesInjectiveObjects := by
+  let := preservesFiniteLimits_extendByZero (X := TopCat.of Y) V A
+  exact Functor.preservesInjectiveObjects_of_adjunction_of_preservesMonomorphisms
+    (V.extendByZeroAdjunction (X := TopCat.of Y) A)
+/-- Open restriction is exact when restriction to the over site is a left adjoint. -/
+instance sheafRestrict_preservesHomology {Y : Type u} [TopologicalSpace Y] (V : Opens Y)
+    [HasSheafify (Opens.grothendieckTopology (TopCat.of Y)) A]
+    [((Opens.grothendieckTopology (TopCat.of Y)).overPullback A V).IsLeftAdjoint] :
+    (V.sheafRestrict (X := TopCat.of Y) (C := A)).PreservesHomology := by
+  let := (V.extendByZeroAdjunction (X := TopCat.of Y) A).isRightAdjoint
+  let := isLeftAdjoint_sheafRestrict (X := TopCat.of Y) (A := A) V
+  infer_instance
 
 end TopologicalSpace.Opens

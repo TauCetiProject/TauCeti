@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Extension
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Primitives
 
 /-!
 # Taylor correspondence for coaugmentation-preserving coderivations
@@ -25,6 +26,8 @@ of homogeneity, as in the reduced correspondence.
 * `gradedCoderivEquivTaylor`: the linear equivalence with positive-arity Taylor maps.
 * `IsGradedCoderivation.eq_extendReduced_gradedCoderiv`: reconstruction from those maps.
 * `IsGradedCoderivation.isHomogeneous_iff`: homogeneity is detected on Taylor maps.
+* `IsGradedCoderivation.eq_zero_of_letter_reducedProjection_eq_zero`: a signed coderivation, not
+  necessarily annihilating the empty word, vanishes when its letter component does.
 
 ## References
 
@@ -145,21 +148,8 @@ noncomputable def coaugmentationPreservingGradedCoderivations
     (G : InternalGrading R M ℤ) (q : ℤ) :
     Submodule R (TensorWords R M →ₗ[R] TensorWords R M) where
   carrier := {b | IsGradedCoderivation G q b ∧ b 1 = 0}
-  zero_mem' := by
-    constructor
-    · rw [isGradedCoderivation_iff]
-      simp
-    · simp
-  add_mem' hb hc := by
-    constructor
-    · rw [isGradedCoderivation_iff]
-      apply LinearMap.ext
-      intro w
-      simp only [LinearMap.comp_apply, LinearMap.add_apply, map_add,
-        hb.1.deconcatenation_apply, hc.1.deconcatenation_apply,
-        LinearMap.rTensor_add, LinearMap.lTensor_add]
-      abel
-    · simp [hb.2, hc.2]
+  zero_mem' := ⟨isGradedCoderivation_zero, by simp⟩
+  add_mem' hb hc := ⟨hb.1.add hc.1, by simp [hb.2, hc.2]⟩
   smul_mem' r b hb := by
     constructor
     · rw [isGradedCoderivation_iff]
@@ -220,5 +210,22 @@ theorem gradedCoderivEquivTaylor_symm_apply (G : InternalGrading R M ℤ) (q : �
       extendReduced (ReducedTensorWords.gradedCoderiv G F q) :=
   (rfl)
 
+/-! ### The constant Taylor coefficient -/
+
+/-- **A graded coderivation is determined by its Taylor map**, including its constant coefficient:
+a graded coderivation with vanishing letter component is zero. -/
+theorem IsGradedCoderivation.eq_zero_of_letter_reducedProjection_eq_zero
+    {δ : TensorWords R M →ₗ[R] TensorWords R M} (hδ : IsGradedCoderivation G q δ)
+    (hδt : ∀ w, ReducedTensorWords.letter R M (reducedProjection R M (δ w)) = 0) : δ = 0 := by
+  -- The image of the empty word is primitive, hence a letter, hence zero.
+  have hδ1 : δ 1 = 0 := by
+    have h := hδ.deconcatenation_apply 1
+    rw [deconcatenation_one, LinearMap.rTensor_tmul, LinearMap.rTensor_tmul, map_one,
+      LinearMap.lTensor_tmul] at h
+    rw [eq_reducedInclusion_ofLetter_of_deconcatenation_eq h, hδt, map_zero, map_zero]
+  exact hδ.eq_of_letter_comp_restrictReduced_eq isGradedCoderivation_zero hδ1
+    (LinearMap.zero_apply _) <| LinearMap.ext fun w ↦ by simp [restrictReduced_apply, hδt]
+
 end TensorWords
+
 end TauCeti

@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.SymmetricAlgebra.HilbertIdeal
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.RegularSequence
 public import TauCeti.RingTheory.GradedAlgebra.HilbertSeries.RegularSequence
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.HilbertSeries
+import TauCeti.Algebra.MvPolynomial.Eval
 import TauCeti.RepresentationTheory.SymmetricAlgebra.Degrees
 import TauCeti.RingTheory.Regular.RegularSequence
 
@@ -159,13 +160,8 @@ theorem
   have hd (i : Fin (Fintype.card ι)) : 0 < d (e i) :=
     Nat.pos_of_ne_zero
       (ρ.dual.ne_zero_of_injective_aeval_symmetricAlgebraInvariants hf hbij.1 (e i))
-  have hbij' : Function.Bijective (MvPolynomial.aeval (R := K) (f ∘ e)) := by
-    have haeval : MvPolynomial.aeval (R := K) (f ∘ e) =
-        (MvPolynomial.aeval f).comp (MvPolynomial.rename e) := by
-      ext
-      simp
-    rw [haeval]
-    exact hbij.comp (MvPolynomial.renameEquiv K e).bijective
+  have hbij' : Function.Bijective (MvPolynomial.aeval (R := K) (f ∘ e)) :=
+    (MvPolynomial.bijective_aeval_comp_equiv_iff e).mpr hbij
   have h :=
     ρ.mk_finrank_quotientPiece_symmetricAlgebraHilbertIdeal_dual_of_pseudoreflectionSubgroup_eq_top
       (S := S) hG (f ∘ e) (d ∘ e) hd (fun i ↦ hf (e i)) hbij'

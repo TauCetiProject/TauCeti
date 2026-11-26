@@ -172,6 +172,15 @@ theorem ihomComparison_whiskerLeft {A A' : C} [Closed A] [Closed A']
     TwoSquare.whiskerRight_app, curriedTensor_map_app, laxCommTensorLeft_app]
   rw [Functor.LaxMonoidal.μ_natural_left]
 
+/-- The internal Hom comparison commutes with precomposition at each target object. -/
+@[reassoc]
+theorem map_pre_app_comp_ihomComparison_app {A A' : C} [Closed A] [Closed A']
+    [Closed (F.obj A)] [Closed (F.obj A')] (f : A' ⟶ A) (B : C) :
+    F.map ((pre f).app B) ≫ (F.ihomComparison A').app B =
+      (F.ihomComparison A).app B ≫ (pre (F.map f)).app (F.obj B) := by
+  simpa only [TwoSquare.whiskerTop_app, TwoSquare.whiskerBottom_app] using
+    congrArg (fun s ↦ s.app B) (F.ihomComparison_whiskerLeft f).symm
+
 
 section InternalHomComparison
 

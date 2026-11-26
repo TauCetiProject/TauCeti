@@ -168,7 +168,7 @@ theorem isPathCompatible_component (n : ℕ) :
     IsPathCompatible (InducedQuiver.mk (F := ℱ.obj)) (ℱ.toAInfinityHom.component n) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · rw [AInfinityHom.component_zero]
-    exact ⟨fun _ _ ↦ zero_mem _, fun _ _ _ _ _ _ _ ↦ rfl⟩
+    exact .zero
   · exact ℱ.isPathCompatible_component_of_pos n hn
 
 /-- The Taylor map of an `A∞` functor sends composable words from `X` to `Y` to morphisms from
@@ -375,7 +375,7 @@ noncomputable def toAInfinityFunctor : AInfinityFunctor ℬ 𝒞 where
       -- `Fin 2`.
       exact LinearMap.mem_range_self _ _
     · rw [AInfinityStrictHom.component_toAInfinityHom_eq_zero _ h₁]
-      exact ⟨fun _ _ ↦ zero_mem _, fun _ _ _ _ _ _ _ ↦ rfl⟩
+      exact .zero
 
 @[simp]
 theorem toAInfinityFunctor_obj (X : C) : F.toAInfinityFunctor.obj X = F.obj X := (rfl)
