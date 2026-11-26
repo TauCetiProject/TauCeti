@@ -21,8 +21,9 @@ Morse–Smale and `ind p = ind r + 1 = ind q + 2`, the maps `A` and `B` are isom
 (`TauCeti.IsAdaptedPseudoGradient.bijective_trajectoryComparison`) and the line `ker G` is spanned
 by the **gluing direction** `g`, the vector with `A g = (0, w)` and `B w = (1, 0)`;
 `TauCeti.LinearAlgebra.Orientation.Breaking` orients `ker G` by `-ε(u) ε(v)` times `g`. This file
-shows on which side of `y₀` the trajectories `yₙ` lie: a smooth function near `y₀` that vanishes at
-`y₀` and is positive at the `yₙ` decreases along `g`. In this sense `g` points from the nearby
+shows on which side of `y₀` the trajectories `yₙ` lie: the function `y ↦ ℓ (n(y))` below, for a
+linear form `ℓ` positive on the leaving direction, vanishes at `y₀`, is eventually positive at the
+`yₙ` and decreases along `g`. In this sense `g` points from the nearby
 trajectories towards `y₀`, out of the space of unbroken trajectories at the broken end.
 
 Fix a time `a` of linear forward flow of `y₀` and a time `b` of linear backward flow of `z₀` in the
@@ -55,8 +56,7 @@ the side of `-g`, and `g` points out of the space of unbroken trajectories. With
 `-ε(u) ε(v) g` of the limiting tangent line, this is the comparison of the gluing direction with
 the outward direction that turns the signed count of broken trajectories, whose vanishing is
 `∂ ∘ ∂ = 0` (`IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_eq_zero_iff`), into a
-signed count of the ends of compact oriented one-manifolds. The orientation of the spaces
-of trajectories, its local constancy, and the assembly into `∂ ∘ ∂ = 0` over `ℤ` are not done here.
+signed count of the ends of compact oriented one-manifolds.
 
 ## Main results
 

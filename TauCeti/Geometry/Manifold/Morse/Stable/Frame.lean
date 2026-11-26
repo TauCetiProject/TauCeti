@@ -339,12 +339,15 @@ theorem add_mem_linearBackwardTimes {y : M} {T s : ℝ} (hT : T ∈ hX.linearBac
     T + s ∈ hX.linearBackwardTimes φ y ∧
       φ.coord (φ.toChart (hX.flow (-(T + s)) y)) =
         φ.linearFlow (-s) (φ.coord (φ.toChart (hX.flow (-T) y))) := by
-  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ (t := -s) fun t ht ↦
+  have hs' : ∀ t ∈ uIcc 0 (-s), φ.coord.symm (φ.linearFlow t (φ.coord (φ.toChart
+      (hX.flow (-T) y)))) ∈ φ.toChart.target := fun t ht ↦
     hT.2 t (by rw [uIcc_of_ge (by linarith)] at ht; exact ht.2)
+  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ hs'
   rw [φ.toChart_symm_coord_symm_coord hT.1, ← Flow.map_add, ← neg_add, add_comm s] at hflow
   have hcoord : φ.coord (φ.toChart (hX.flow (-(T + s)) y)) =
       φ.linearFlow (-s) (φ.coord (φ.toChart (hX.flow (-T) y))) := by
-    rw [hflow, φ.toChart.right_inv (hT.2 (-s) (by linarith)), LinearEquiv.apply_symm_apply]
+    rw [neg_add_rev]
+    exact coord_toChart_flow_add hφ hT.1 hs'
   refine ⟨⟨hflow ▸ φ.toChart.map_target (hT.2 (-s) (by linarith)), fun t ht ↦ ?_⟩, hcoord⟩
   rw [hcoord, ← φ.linearFlow_add]
   exact hT.2 _ (by linarith)
@@ -849,11 +852,7 @@ theorem negativeCoord_toChart_flow_neg_ne_zero (hf : IsMorse 𝓘(ℝ, E) f) {y 
   intro h
   have hX0 : X y = 0 := by
     rw [← unstableFrame_exp_smul_negativeCoord hφ hf hy hT, h, smul_zero, map_zero]
-  -- A zero of `X` is a critical point, hence a rest point, so its backward orbit tends to itself.
-  have hrest := hX.flow_apply_of_mfderiv_eq_zero (hX.eq_zero_iff.1 hX0)
-  refine hyx (tendsto_nhds_unique ?_ (Flow.mem_unstableSet.1 hy))
-  simp only [hrest]
-  exact tendsto_const_nhds
+  exact hyx (hX.eq_of_mem_unstableSet_of_mfderiv_eq_zero (hX.eq_zero_iff.1 hX0) hy)
 
 /-- **Points leaving the critical point in the same direction lie on the same trajectory.** Let
 `T₁` and `T₂` be times of linear backward flow of points `y₁` and `y₂` of `W^u(x)`. If the direction
