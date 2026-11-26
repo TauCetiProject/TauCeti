@@ -10,6 +10,7 @@ public import Mathlib.Data.SetLike.Fintype
 public import Mathlib.GroupTheory.Index
 public import TauCeti.Algebra.Group.Subgroup.Map
 import Mathlib.Order.Atoms
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Conjugate subgroups
@@ -24,6 +25,8 @@ that multiplicity.
 
 * `MulEquiv.conjugateSubgroupsEquiv`: a group isomorphism identifies the conjugates of
   corresponding subgroups.
+* `MulEquiv.orbitRelQuotientSubgroupEquiv`: a group isomorphism identifies the conjugacy classes of
+  subgroups.
 
 ## Main results
 
@@ -175,6 +178,30 @@ theorem conjugateSubgroupsEquiv_symm_apply {G G' : Type*} [Group G] [Group G']
   -- The inverse subtype equivalence applies `e.mapSubgroup.symm`.
   change e.mapSubgroup.symm J.val = J.val.map e.symm.toMonoidHom
   rfl
+
+/-- A group isomorphism identifies the conjugacy classes of subgroups of `G` and `G'`. -/
+def orbitRelQuotientSubgroupEquiv {G G' : Type*} [Group G] [Group G'] (e : G ≃* G') :
+    MulAction.orbitRel.Quotient (ConjAct G) (Subgroup G) ≃
+      MulAction.orbitRel.Quotient (ConjAct G') (Subgroup G') :=
+  TauCeti.MulAction.orbitRelQuotientCongr (ConjAct.ofConjAct.trans (e.trans ConjAct.toConjAct))
+    e.mapSubgroup.toEquiv fun g H ↦ Subgroup.map_map_conj H e.toMonoidHom (ConjAct.ofConjAct g)
+
+/-- `e.orbitRelQuotientSubgroupEquiv` maps the conjugacy class of `H` to that of its image. -/
+@[simp]
+theorem orbitRelQuotientSubgroupEquiv_mk {G G' : Type*} [Group G] [Group G'] (e : G ≃* G')
+    (H : Subgroup G) :
+    e.orbitRelQuotientSubgroupEquiv (Quotient.mk'' H) = Quotient.mk'' (H.map (e : G →* G')) :=
+  (TauCeti.MulAction.orbitRelQuotientCongr_mk _ _ _ H).trans <| congrArg Quotient.mk'' <| by simp
+
+/-- `e.orbitRelQuotientSubgroupEquiv.symm` maps the conjugacy class of `H` to that of its image
+under `e.symm`. -/
+@[simp]
+theorem orbitRelQuotientSubgroupEquiv_symm_mk {G G' : Type*} [Group G] [Group G'] (e : G ≃* G')
+    (H : Subgroup G') :
+    e.orbitRelQuotientSubgroupEquiv.symm (Quotient.mk'' H) =
+      Quotient.mk'' (H.map (e.symm : G' →* G)) :=
+  (TauCeti.MulAction.orbitRelQuotientCongr_symm_mk _ _ _ H).trans <| congrArg Quotient.mk'' <| by
+    simp
 
 end MulEquiv
 
