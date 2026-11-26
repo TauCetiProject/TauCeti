@@ -155,7 +155,7 @@ theorem perimeter_le_euclideanHausdorffMeasure_essentialBoundary_inter (Ω : Ope
       exists_perimeter_ne_top_of_euclideanHausdorffMeasure_essentialBoundary_inter_ne_top hs
         (fun L _ hLΩ => ne_top_of_le_ne_top hM (measure_mono (inter_subset_inter_right _ hLΩ)))
         hK hKΩ
-  rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn
+  rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary
     (locallyIntegrableOn_indicator_const (hs.mono Measure.restrict_le_self) 1) hfin]
   exact measure_mono (subset_inter (reducedBoundary_subset_essentialBoundary hn)
     reducedBoundary_subset)

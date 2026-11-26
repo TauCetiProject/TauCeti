@@ -11,7 +11,9 @@ import TauCeti.Analysis.BoundedVariation.BlowUp
 import TauCeti.Analysis.BoundedVariation.LowerDensityEstimates
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Geometry.MeasureTheory.Rectifiable.ConeCriterion
+import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Topology.MetricSpace.ProperSpace
 
 /-!
 # Countable rectifiability of the reduced boundary
@@ -25,10 +27,11 @@ The proof treats `dim E ≤ 1` and `dim E ≥ 2` by distinct mechanisms:
 
 * **Low dimensions (`dim E ≤ 1`, `TauCeti.countable_reducedBoundary_of_finrank_le_one`).** When
   `dim E = 0`, `E` is a subsingleton. When `dim E = 1`, writing `μ = c • volume`, every small
-  closed ball around `x ∈ ∂*s` has perimeter measure at least `c > 0`
-  (`TauCeti.eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank_eq_one`).
-  Letting `r → 0⁺` shows that every point of `∂*s` is an atom of the σ-finite perimeter
-  measure `|Dχ_s|`, hence `∂*s` is countable.
+  closed ball around a point of `∂*s` has perimeter measure at least `c > 0`
+  (`TauCeti.eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank_eq_one`), while
+  punctured closed balls around `x ∈ ∂*s` have perimeter measure tending to `0`, so every point of
+  `∂*s` is isolated (`TauCeti.exists_reducedBoundary_inter_ball_eq_singleton_of_finrank_eq_one`) and
+  `∂*s` is countable.
 * **Dimensions `dim E ≥ 2` (`TauCeti.exists_pos_forall_abs_inner_sub_outerNormal_le`).** By the
   lower volume density estimates (`TauCeti.eventually_ofReal_pow_le_mul_measure_inter_ball` and
   `TauCeti.eventually_ofReal_pow_le_mul_measure_ball_sdiff`), `∂*s` is a countable union of strata
@@ -44,8 +47,9 @@ The proof treats `dim E ≤ 1` and `dim E ≥ 2` by distinct mechanisms:
 
 ## Main statements
 
-* `TauCeti.countable_reducedBoundary_of_finrank_le_one`: when `dim E ≤ 1` and `μ` is an additive
-  Haar measure, `reducedBoundary μ Ω s` is countable.
+* `TauCeti.exists_reducedBoundary_inter_ball_eq_singleton_of_finrank_eq_one` and
+  `TauCeti.countable_reducedBoundary_of_finrank_le_one`: when `dim E = 1` every point of
+  `reducedBoundary μ Ω s` is isolated, and when `dim E ≤ 1` `reducedBoundary μ Ω s` is countable.
 * `TauCeti.exists_pos_forall_abs_inner_sub_outerNormal_le`: when `dim E ≥ 2` and `μ` is an additive
   Haar measure, displacements `z - x` to points `z` of a uniform lower-density stratum near
   `x ∈ reducedBoundary μ Ω s` lie in an arbitrarily narrow cone around
@@ -76,6 +80,47 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-! ### Dimension at most one -/
 
+/-- **In dimension `1`, every point of the reduced boundary is isolated** for any additive Haar
+measure `μ`: around any `x ∈ reducedBoundary μ Ω s` there is a radius `r₀ > 0` with
+`closedBall x r₀ ⊆ Ω` and `reducedBoundary μ Ω s ∩ ball x r₀ = {x}`. -/
+theorem exists_reducedBoundary_inter_ball_eq_singleton_of_finrank_eq_one [μ.IsAddHaarMeasure]
+    (hn : finrank ℝ E = 1) (hx : x ∈ reducedBoundary μ Ω s) :
+    ∃ r₀ > 0, closedBall x r₀ ⊆ Ω ∧ reducedBoundary μ Ω s ∩ ball x r₀ = {x} := by
+  have := Ω.isOpen.locallyCompactSpace
+  let x₀ : Ω := ⟨x, reducedBoundary_subset hx⟩
+  obtain ⟨R, hR, hRΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds x₀.property)
+  have hKR : IsCompact (closedBall x₀ R) := isCompact_closedBall_subtype hRΩ
+  have hlim := tendsto_measure_closedBall_sdiff_singleton_nhds_zero
+    (μ := variationMeasure μ Ω (s.indicator 1)) (z := x₀)
+    ⟨R, hR, ((measure_mono sdiff_subset).trans_lt hKR.measure_lt_top).ne⟩
+  have hc0 : (0 : ℝ≥0∞) < μ.addHaarScalarFactor volume :=
+    ENNReal.coe_pos.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume)
+  obtain ⟨rk, hk, hrk, hrkR⟩ := (((hlim.mono_left nhdsWithin_le_nhds).eventually
+    (gt_mem_nhds hc0)).and (Ioo_mem_nhdsGT hR)).exists
+  have hrkΩ : closedBall x rk ⊆ Ω := (closedBall_subset_closedBall hrkR.le).trans hRΩ
+  refine ⟨rk / 2, half_pos hrk, (closedBall_subset_closedBall (half_le_self hrk.le)).trans hrkΩ,
+    Subset.antisymm (fun y ⟨hyB, hyx⟩ => ?_)
+      (singleton_subset_iff.2 ⟨hx, mem_ball_self (half_pos hrk)⟩)⟩
+  by_contra hyne
+  have hδ : 0 < min (dist y x) (rk / 2) := lt_min (dist_pos.2 hyne) (half_pos hrk)
+  obtain ⟨r, hge, _, hrδ⟩ :=
+    ((eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank_eq_one hn hyB).and
+      (Ioo_mem_nhdsGT hδ)).exists
+  have hx_notMem : x ∉ closedBall y r := fun hxy =>
+    (lt_irrefl (dist y x)) <|
+      calc dist y x = dist x y := dist_comm y x
+        _ ≤ r := mem_closedBall.1 hxy
+        _ < min (dist y x) (rk / 2) := hrδ
+        _ ≤ dist y x := min_le_left _ _
+  have hpre : ((↑) : Ω → E) ⁻¹' closedBall y r ⊆ closedBall x₀ rk \ {x₀} := fun z hz => by
+    refine ⟨mem_closedBall.2 ?_, by rintro rfl; exact hx_notMem hz⟩
+    calc dist (z : E) x ≤ dist (z : E) y + dist y x := dist_triangle _ _ _
+      _ ≤ rk / 2 + rk / 2 :=
+        add_le_add (((mem_closedBall.1 hz).trans_lt hrδ).le.trans (min_le_right _ _))
+          (mem_ball.1 hyx).le
+      _ = rk := add_halves rk
+  exact hk.not_ge (hge.trans (measure_mono hpre))
+
 /-- **In dimension at most `1`, the reduced boundary is countable** for any additive Haar measure
 `μ`. -/
 theorem countable_reducedBoundary_of_finrank_le_one [μ.IsAddHaarMeasure]
@@ -83,29 +128,11 @@ theorem countable_reducedBoundary_of_finrank_le_one [μ.IsAddHaarMeasure]
   rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hn with h0 | h1
   · have := finrank_zero_iff.1 h0
     exact Set.to_countable _
-  · have := Ω.isOpen.locallyCompactSpace
-    refine (Measure.countable_meas_level_set_pos (μ := variationMeasure μ Ω (s.indicator 1))
-      measurable_subtypeVal).mono fun x hx => mem_ofPred.2 (pos_iff_ne_zero.2 fun h0 => ?_)
-    obtain ⟨r₀, hr₀, hr₀Ω⟩ :=
-      nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
-    let S (t : ℝ) : Set Ω := ((↑) : Ω → E) ⁻¹' closedBall x t
-    have hS0 : ⋂ t > (0 : ℝ), S t = {y : Ω | (y : E) = x} := by
-      ext y
-      simp only [S, mem_iInter, mem_preimage, mem_closedBall, forall_gt_imp_ge_iff_le_of_dense,
-        dist_le_zero, mem_ofPred_eq]
-    have hK : IsCompact (S r₀) := Topology.IsInducing.subtypeVal.isCompact_preimage'
-      (isCompact_closedBall x r₀) (by rwa [Subtype.range_coe])
-    have hfin : variationMeasure μ Ω (s.indicator 1) (S r₀) ≠ ∞ :=
-      (hK.measure_lt_top (μ := variationMeasure μ Ω (s.indicator 1))).ne
-    have hlim := tendsto_measure_biInter_gt (μ := variationMeasure μ Ω (s.indicator 1))
-      (fun t _ =>
-        (isClosed_closedBall.preimage continuous_subtypeVal).measurableSet.nullMeasurableSet)
-      (fun _ _ _ hij => preimage_mono (closedBall_subset_closedBall hij)) ⟨r₀, hr₀, hfin⟩
-    rw [hS0, h0] at hlim
-    have hle : (μ.addHaarScalarFactor volume : ℝ≥0∞) ≤ 0 := ge_of_tendsto hlim
-      (eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank_eq_one h1 hx)
-    exact (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne'
-      (by exact_mod_cast nonpos_iff_eq_zero.1 hle)
+  · refine (HereditarilyLindelofSpace.isLindelof _).countable_of_isDiscrete
+      (isDiscrete_iff_forall_mem_exists_isOpen.2 fun x hx => ?_)
+    obtain ⟨r₀, _, _, hiso⟩ :=
+      exists_reducedBoundary_inter_ball_eq_singleton_of_finrank_eq_one h1 hx
+    exact ⟨ball x r₀, isOpen_ball, inter_comm _ _ ▸ hiso⟩
 
 /-! ### Normal cone estimate in dimension at least two -/
 

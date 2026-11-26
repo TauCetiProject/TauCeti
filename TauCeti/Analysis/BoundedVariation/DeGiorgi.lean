@@ -8,67 +8,69 @@ module
 public import TauCeti.Analysis.BoundedVariation.BlowUp
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 import TauCeti.Analysis.BoundedVariation.Dilation
+import TauCeti.Analysis.BoundedVariation.HausdorffMeasure
 import TauCeti.Analysis.BoundedVariation.Hyperplane
+import TauCeti.Analysis.BoundedVariation.Isometry
+import TauCeti.Analysis.BoundedVariation.Real
+import TauCeti.Analysis.BoundedVariation.Rectifiable
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.InterBall
+import TauCeti.MeasureTheory.Measure.Interval
+import TauCeti.Topology.MetricSpace.ProperSpace
 import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # The perimeter measure is Hausdorff measure on the reduced boundary
 
-Let `Ω` be an open set of a finite-dimensional real inner product space `E` of dimension
-`n ≥ 2`, and let `s` be a set of locally finite perimeter in `Ω`. This file proves De Giorgi's
-representation of the perimeter measure `|Dχ_s|` (`TauCeti.variationMeasure`) as the
-`(n - 1)`-dimensional Euclidean Hausdorff measure `Hⁿ⁻¹ = μHE[n - 1]` of the reduced boundary
-`∂*s` (`TauCeti.reducedBoundary`):
+Let `Ω` be an open subset of a finite-dimensional real inner product space `E` of dimension
+`n ≥ 0`, equipped with Lebesgue measure, and let `s ⊆ E` be a set of locally finite perimeter in
+`Ω`. Together with the countable `(n - 1)`-rectifiability of the reduced boundary `∂*s`
+(`TauCeti.reducedBoundary`) proved in `TauCeti.Analysis.BoundedVariation.Rectifiable`, this file
+establishes De Giorgi's structure theorem across all ambient dimensions `n ≥ 0`, identifying the
+perimeter measure `|Dχ_s|` (`TauCeti.variationMeasure`) with the `(n - 1)`-dimensional Euclidean
+Hausdorff measure `Hⁿ⁻¹ = μHE[n - 1]` restricted to `∂*s` and the distributional derivative `Dχ_s`
+with `-ν_s Hⁿ⁻¹ ⌊ ∂*s`, where `ν_s` (`TauCeti.outerNormal`) is the measure-theoretic outer unit
+normal:
 
-`|Dχ_s| = Hⁿ⁻¹ ⌊ ∂*s`
+* `TauCeti.variationMeasure_eq_euclideanHausdorffMeasure_image` and
+  `TauCeti.variationMeasure_preimage_eq_euclideanHausdorffMeasure_inter_reducedBoundary`:
+  `|Dχ_s|(B) = Hⁿ⁻¹(B)` for every subset `B` of the reduced boundary (measurable or not), and
+  `|Dχ_s|((↑) ⁻¹' A) = Hⁿ⁻¹(A ∩ ∂*s)` for every `A ⊆ E` (measurable or not);
+* `TauCeti.variationMeasure_eq_comap_restrict_reducedBoundary` and
+  `TauCeti.map_variationMeasure_indicator_eq_restrict_reducedBoundary`:
+  `|Dχ_s| = Hⁿ⁻¹ ⌊ ∂*s` both as measures on `Ω` (via `Measure.comap (↑)`) and pushed forward to
+  `E` (via `Measure.map (↑)`);
+* `TauCeti.perimeter_eq_euclideanHausdorffMeasure_inter_reducedBoundary` and
+  `TauCeti.perimeter_eq_euclideanHausdorffMeasure_reducedBoundary`: for a set `s` of locally
+  finite perimeter in `Ω`, `P(s; U) = Hⁿ⁻¹(U ∩ ∂*s)` for every open `U ≤ Ω` and
+  `P(s; Ω) = Hⁿ⁻¹(∂*s)`;
+* `TauCeti.integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal`,
+  `TauCeti.setIntegral_trace_fderiv_eq_setIntegral_inner_outerNormal`, and
+  `TauCeti.setIntegral_divergenceCLM_eq_setIntegral_inner_outerNormal`: the De Giorgi–Gauss–Green
+  formula `∫_s div φ = ∫_{∂*s} ⟪φ, ν_s⟫ dHⁿ⁻¹` for `C¹` vector fields `φ` with compact support in
+  `Ω` and for test vector fields `φ ∈ 𝓓(Ω, E)`.
 
-as measures on `Ω` (`TauCeti.variationMeasure_eq_comap_restrict_reducedBoundary`), and in fact
-`|Dχ_s|(B) = Hⁿ⁻¹(B)` for every subset `B` of the reduced boundary, measurable or not
-(`TauCeti.variationMeasure_eq_euclideanHausdorffMeasure_image`). Consequently:
-
-* `TauCeti.perimeter_eq_euclideanHausdorffMeasure_reducedBoundary`: `P(s; Ω) = Hⁿ⁻¹(∂*s)`;
-* `TauCeti.integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal`: the
-  Gauss–Green formula with surface measure, `∫_s div φ = ∫_{∂*s} ⟪φ, ν_s⟫ dHⁿ⁻¹`, that is,
-  `Dχ_s = -ν_s Hⁿ⁻¹ ⌊ ∂*s`.
-
-The statements about the perimeter require `s` to have locally finite perimeter in `Ω`. The bound
-`P(s; Ω) ≤ Hⁿ⁻¹(∂s ∩ Ω)` for every set, with the criterion deducing locally finite perimeter from a
-frontier of locally finite measure, is in `TauCeti.Analysis.BoundedVariation.FrontierCriterion`.
-The rectifiability of the reduced boundary, the remaining part of De Giorgi's structure theorem,
-is not used.
-
-## Strategy
-
-At a point `x` of the reduced boundary the perimeter measure has density one with respect to
-`Hⁿ⁻¹` (`TauCeti.tendsto_variationMeasure_closedBall_div_volume_closedBall`). The density
-comparison `MeasureTheory.Measure.mul_euclideanHausdorffMeasure_le_measure` then gives
-`Hⁿ⁻¹ ≤ |Dχ_s|` on `∂*s`.
-
-The reverse inequality needs more than the measure of balls: a set of diameter `d` containing `x`
-lies in `closedBall x d`, whose perimeter measure is close to `ω_{n-1} d ^ (n - 1)`, twice to the
-power `n - 1` the normalization `ω_{n-1} (d / 2) ^ (n - 1)` of `Hⁿ⁻¹`. Instead we bound the
-perimeter measure of all small sets uniformly. The blow-ups of `s` at `x` converge to the
-half-space `{y | ⟪y, ν⟫ < 0}`, where `ν = ν_s x`. By lower semicontinuity of the perimeter and the
-convergence of `|Dχ_s|(closedBall x r) / r ^ (n - 1)`, the rescaled perimeter measures of a closed
-set `C` near `x` are eventually at most `Hⁿ⁻¹(C ∩ ν⊥) + δ`, and by the isodiametric inequality
-on the hyperplane `ν⊥` this is at most `ω_{n-1} (diam C / 2) ^ (n - 1) + δ`. Covering the unit ball
-by finitely many small balls, every subset `T` of the unit ball lies in one of finitely many
-closed unions of these balls of diameter at most `diam T + 4 η`. Thus, for all small radii at once,
-every set of diameter `d` containing `x` has perimeter measure at most
-`(ω_{n-1} ((1 + 4 η) / 2) ^ (n - 1) + η) d ^ (n - 1)`. The comparison
-`MeasureTheory.Measure.measure_le_mul_hausdorffMeasure_of_le_mul_ediam_rpow`, which loses no
-covering constant, gives `|Dχ_s| ≤ Hⁿ⁻¹` on `∂*s` as `η → 0`.
+Because `TauCeti.variationMeasure` and `TauCeti.reducedBoundary` evaluate to `0` and `∅` by
+convention when `s.indicator 1` fails to be locally integrable on `Ω` or fails to have locally
+finite variation in `Ω`, the measure and set-evaluation identities hold unconditionally for all
+subsets `s ⊆ E`, whereas the perimeter and Gauss–Green formulas require `s` to have locally finite
+perimeter in `Ω`. The sharp bound `P(s; Ω) ≤ Hⁿ⁻¹(∂s ∩ Ω)` for arbitrary sets and the converse
+finite-perimeter criterion from a frontier of locally finite Hausdorff measure are in
+`TauCeti.Analysis.BoundedVariation.FrontierCriterion`.
 
 ## References
 
-* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Chapter 15 (De Giorgi's
-  structure theorem, Theorem 15.9).
+* E. De Giorgi, *Nuovi teoremi relativi alle misure `(r - 1)`-dimensionali in uno spazio ad `r`
+  dimensioni*, Ricerche Mat. **4** (1955), 95–113.
+* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Chapter 15 (Theorem
+  15.9).
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
-  §5.8 (the structure theorem for sets of finite perimeter).
-* H. Federer, *Geometric Measure Theory*, 2.10.19 (densities and Hausdorff measures).
+  §5.7.3 and §5.8 (Theorem 5.16 and Theorem 5.17).
+* H. Federer, *Geometric Measure Theory*, 2.10.19 and 4.5.6.
 -/
 
 public section
@@ -77,13 +79,202 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Measure TopologicalSpace Set Filter Metric Module
-open scoped ENNReal Topology RealInnerProductSpace
+open MeasureTheory Measure TopologicalSpace Set Filter Metric Module TestFunction
+open scoped Distributions ENNReal NNReal Topology RealInnerProductSpace symmDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω : Opens E} {s : Set E} {x : E}
 
-/-! ### Density bounds at the reduced boundary -/
+/-! ### One-dimensional reduced boundary -/
+
+section OneDim
+
+/-- When `(f '' Ioo a b)` lies inside `ball x r₀ \ {x}` around an isolated point `x` of `∂*s`, the
+pulled-back set `f ⁻¹' s` has zero perimeter on `(a, b)`. -/
+private theorem perimeter_Ioo_preimage_eq_zero_of_isolated (hdim : finrank ℝ E = 1)
+    (hx : x ∈ reducedBoundary volume Ω s) {r₀ : ℝ} (hr₀Ω : closedBall x r₀ ⊆ Ω)
+    (hiso : reducedBoundary volume Ω s ∩ ball x r₀ = {x}) {a b : ℝ}
+    (hab : ∀ t ∈ Ioo a b, |t| ∈ Ioo 0 r₀) :
+    perimeter volume ⟨Ioo a b, isOpen_Ioo⟩
+      (coordEquivOfFinrankEqOne hdim (norm_outerNormal hx) x ⁻¹' s) = 0 := by
+  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
+  let f := coordEquivOfFinrankEqOne hdim (norm_outerNormal hx) x
+  have hfmp := f.measurePreserving
+  let U : Opens E := Opens.comap ⟨f.symm, f.symm.continuous⟩ ⟨Ioo a b, isOpen_Ioo⟩
+  have hcomap : Opens.comap ⟨f, f.continuous⟩ U = ⟨Ioo a b, isOpen_Ioo⟩ :=
+    Opens.ext (by ext t; simp [U])
+  have hUsub : (U : Set E) ⊆ ball x r₀ \ {x} := fun y hy => by
+    obtain ⟨h0, hlt⟩ := hab (f.symm y) hy
+    have hd : dist y x = |f.symm y| := by
+      rw [← f.apply_symm_apply y, dist_coordEquivOfFinrankEqOne_self, f.symm_apply_apply,
+        Real.norm_eq_abs]
+    exact ⟨mem_ball.2 (hd ▸ hlt), dist_pos.1 (hd ▸ h0)⟩
+  have hUΩ : U ≤ Ω := (hUsub.trans sdiff_subset).trans (ball_subset_closedBall.trans hr₀Ω)
+  rw [← hcomap, f.perimeter_comap hfmp f.symm.continuous.measurable, perimeter_def,
+    ← variationMeasure_preimage_coe hu hfin hUΩ]
+  refine measure_mono_null ?_ (ae_iff.1 ae_mem_reducedBoundary)
+  intro y hy hyB
+  exact (hUsub hy).2 (mem_singleton_iff.1 (hiso.subset ⟨hyB, (hUsub hy).1⟩))
+
+/-- `coordEquivOfFinrankEqOne` preserves the Lebesgue measure of sets intersected with `ball x r₀`,
+identifying `f ⁻¹' ball x r₀` with `(-r₀, r₀)`. -/
+private theorem measure_preimage_coordEquivOfFinrankEqOne_inter_Ioo (hdim : finrank ℝ E = 1)
+    {ν : E} (hν : ‖ν‖ = 1) (x : E) (r₀ : ℝ) (t : Set E) :
+    volume (coordEquivOfFinrankEqOne hdim hν x ⁻¹' t ∩ Ioo (-r₀) r₀) =
+      volume (t ∩ ball x r₀) := by
+  let f := coordEquivOfFinrankEqOne hdim hν x
+  rw [← Real.ball_zero_eq_Ioo, ← preimage_coordEquivOfFinrankEqOne_ball hdim hν x r₀,
+    ← preimage_inter,
+    f.measurePreserving.measure_preimage_emb f.toHomeomorph.toMeasurableEquiv.measurableEmbedding]
+
+/-- If `coordEquivOfFinrankEqOne hdim hν x ⁻¹' s` agrees up to a Lebesgue-null set on `(-r₀, r₀)`
+with `J ⊆ ℝ`, and `(coordEquivOfFinrankEqOne hdim hν x).symm ⁻¹' J` is `u`, then
+`s =ᵐ[volume.restrict (ball x r₀)] u`. -/
+private theorem ae_eq_ball_of_measure_symmDiff_preimage_inter_Ioo_eq_zero (hdim : finrank ℝ E = 1)
+    {ν : E} (hν : ‖ν‖ = 1) {r₀ : ℝ} {J : Set ℝ} {u : Set E}
+    (hJ : ∀ y : E, (coordEquivOfFinrankEqOne hdim hν x).symm y ∈ J ↔ y ∈ u)
+    (h0 : volume (((coordEquivOfFinrankEqOne hdim hν x ⁻¹' s) ∆ J) ∩ Ioo (-r₀) r₀) = 0) :
+    s =ᵐ[volume.restrict (ball x r₀)] u := by
+  set f := coordEquivOfFinrankEqOne hdim hν x
+  rw [ae_eq_set, Measure.restrict_apply' measurableSet_ball,
+    Measure.restrict_apply' measurableSet_ball,
+    ← measure_preimage_coordEquivOfFinrankEqOne_inter_Ioo hdim hν x r₀,
+    ← measure_preimage_coordEquivOfFinrankEqOne_inter_Ioo hdim hν x r₀]
+  refine ⟨measure_mono_null ?_ h0, measure_mono_null ?_ h0⟩
+  · intro t ⟨⟨hts, htu⟩, htb⟩
+    exact ⟨.inl ⟨hts, fun htJ => htu ((hJ (f t)).1 (by rwa [f.symm_apply_apply]))⟩, htb⟩
+  · intro t ⟨⟨htu, hts⟩, htb⟩
+    have htJ := (hJ (f t)).2 htu
+    rw [f.symm_apply_apply] at htJ
+    exact ⟨.inr ⟨htJ, hts⟩, htb⟩
+
+/-- In dimension `1`, near every point `x ∈ reducedBoundary volume Ω s`, `s` agrees a.e. on a ball
+around `x` with a half-line `{y | ⟪y, w⟫ < ⟪x, w⟫}` for some unit vector `w`. -/
+private theorem exists_ae_eq_setOf_inner_lt_ball_of_finrank_eq_one (hdim : finrank ℝ E = 1)
+    (hx : x ∈ reducedBoundary volume Ω s) :
+    ∃ r₀ > 0, closedBall x r₀ ⊆ Ω ∧ reducedBoundary volume Ω s ∩ ball x r₀ = {x} ∧
+      ∃ w : E, ‖w‖ = 1 ∧ s =ᵐ[volume.restrict (ball x r₀)] {y | ⟪y, w⟫ < ⟪x, w⟫} := by
+  obtain ⟨r₀, hr₀, hr₀Ω, hiso⟩ :=
+    exists_reducedBoundary_inter_ball_eq_singleton_of_finrank_eq_one hdim hx
+  -- Pull `s` back along affine coordinates `f : ℝ ≃ᵃⁱ[ℝ] E` centered at `x`.
+  set ν := outerNormal volume Ω s x
+  have hν : ‖ν‖ = 1 := norm_outerNormal hx
+  let f := coordEquivOfFinrankEqOne hdim hν x
+  have hpre : f ⁻¹' ball x r₀ = Ioo (-r₀) r₀ := by
+    rw [preimage_coordEquivOfFinrankEqOne_ball, Real.ball_zero_eq_Ioo]
+  have hTm {a b : ℝ} (hsub : Ioo a b ⊆ Ioo (-r₀) r₀) :
+      NullMeasurableSet (f ⁻¹' s ∩ Ioo a b) volume := by
+    have hΩsub : Ioo a b ⊆ f ⁻¹' Ω := by
+      rw [← hpre] at hsub
+      exact hsub.trans (preimage_mono (ball_subset_closedBall.trans hr₀Ω))
+    have heq : f ⁻¹' s ∩ Ioo a b = f ⁻¹' (s ∩ Ω) ∩ Ioo a b :=
+      Set.ext fun t => ⟨fun ⟨hs, ht⟩ => ⟨⟨hs, hΩsub ht⟩, ht⟩, fun ⟨⟨hs, _⟩, ht⟩ => ⟨hs, ht⟩⟩
+    rw [heq]
+    exact ((nullMeasurableSet_inter_of_mem_reducedBoundary hx).preimage
+      f.measurePreserving.quasiMeasurePreserving).inter measurableSet_Ioo.nullMeasurableSet
+  -- Zero perimeter on `(-r₀, 0)` and `(0, r₀)` forces `f ⁻¹' s` to match `Iio 0` or `Ioi 0` a.e.
+  have hleft := (Real.perimeter_Ioo_eq_zero_iff (hTm (Ioo_subset_Ioo_right hr₀.le))).1
+    (perimeter_Ioo_preimage_eq_zero_of_isolated hdim hx hr₀Ω hiso fun t ht => by
+      rw [abs_of_neg ht.2]; exact ⟨neg_pos.2 ht.2, neg_lt.2 ht.1⟩)
+  have hright :=
+    (Real.perimeter_Ioo_eq_zero_iff (hTm (Ioo_subset_Ioo_left (neg_nonpos.2 hr₀.le)))).1
+      (perimeter_Ioo_preimage_eq_zero_of_isolated hdim hx hr₀Ω hiso fun t ht => by
+        rw [abs_of_pos ht.1]; exact ht)
+  have hs_ne : volume (f ⁻¹' s ∩ Ioo (-r₀) r₀) ≠ 0 := by
+    rw [measure_preimage_coordEquivOfFinrankEqOne_inter_Ioo]
+    exact (measure_inter_ball_pos hx hr₀).ne'
+  have hsdiff_ne : volume (Ioo (-r₀) r₀ \ f ⁻¹' s) ≠ 0 := by
+    have hsdiff : Ioo (-r₀) r₀ \ f ⁻¹' s = f ⁻¹' sᶜ ∩ Ioo (-r₀) r₀ := by ext; simp [and_comm]
+    rw [hsdiff, measure_preimage_coordEquivOfFinrankEqOne_inter_Ioo]
+    exact (measure_inter_ball_pos (by rwa [reducedBoundary_compl]) hr₀).ne'
+  -- Pick the corresponding half-line `{y | ⟪y, ±ν⟫ < ⟪x, ±ν⟫}` in `E`.
+  refine ⟨r₀, hr₀, hr₀Ω, hiso, ?_⟩
+  rcases measure_symmDiff_Iio_or_Ioi_inter_Ioo_eq_zero hs_ne hsdiff_ne hleft hright
+    Real.volume_singleton with h0 | h0
+  · exact ⟨ν, hν, ae_eq_ball_of_measure_symmDiff_preimage_inter_Ioo_eq_zero hdim hν
+      (fun y => by simp [real_inner_comm ν, inner_sub_right]) h0⟩
+  · exact ⟨-ν, by simpa using hν, ae_eq_ball_of_measure_symmDiff_preimage_inter_Ioo_eq_zero hdim hν
+      (fun y => by simp [real_inner_comm ν, inner_sub_right, inner_neg_right]) h0⟩
+
+/-- Around an isolated point `y` of `∂*s`, on any smaller radius `0 < r < r₀` the sphere misses
+`∂*s`, so `|Dχ_s|(closedBall y r) = P(s; ball y r)`. -/
+private theorem variationMeasure_closedBall_eq_perimeter_ball_of_isolated {y : Ω}
+    (hy : (y : E) ∈ reducedBoundary volume Ω s) {r₀ r : ℝ} (hr₀Ω : closedBall (y : E) r₀ ⊆ Ω)
+    (hiso : reducedBoundary volume Ω s ∩ ball (y : E) r₀ = {(y : E)})
+    (hr : 0 < r) (hrr₀ : r < r₀) :
+    variationMeasure volume Ω (s.indicator 1) (closedBall y r) =
+      perimeter volume ⟨ball (y : E) r, isOpen_ball⟩ s := by
+  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hy
+  have hdiff0 : variationMeasure volume Ω (s.indicator 1)
+      (((↑) : Ω → E) ⁻¹' closedBall (y : E) r \ ((↑) : Ω → E) ⁻¹' ball (y : E) r) = 0 := by
+    refine measure_mono_null ?_ (ae_iff.1 ae_mem_reducedBoundary)
+    intro z hz hzB
+    have hzy : (z : E) = y :=
+      mem_singleton_iff.1 (hiso.subset ⟨hzB, closedBall_subset_ball hrr₀ hz.1⟩)
+    exact hz.2 (hzy.symm ▸ (mem_ball_self hr : (y : E) ∈ ball (y : E) r))
+  have hbΩ : (⟨ball (y : E) r, isOpen_ball⟩ : Opens E) ≤ Ω :=
+    (ball_subset_ball hrr₀.le).trans (ball_subset_closedBall.trans hr₀Ω)
+  have hcb : variationMeasure volume Ω (s.indicator 1) (closedBall y r) =
+      variationMeasure volume Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' ball (y : E) r) := by
+    rw [← Subtype.preimage_closedBall,
+      ← measure_inter_add_sdiff _ (isOpen_ball.preimage continuous_subtypeVal).measurableSet,
+      hdiff0, add_zero, ← preimage_inter, inter_eq_right.2 ball_subset_closedBall]
+  exact hcb.trans ((variationMeasure_preimage_coe (U := ⟨ball (y : E) r, isOpen_ball⟩) hu hfin
+    hbΩ).trans perimeter_def.symm)
+
+/-- In dimension `1`, every singleton in the reduced boundary has perimeter measure equal to its
+`0`-dimensional Euclidean Hausdorff measure (`= 1`). -/
+private theorem variationMeasure_singleton_eq_euclideanHausdorffMeasure_of_finrank_eq_one
+    (hdim : finrank ℝ E = 1) {y : Ω} (hy : (y : E) ∈ reducedBoundary volume Ω s) :
+    variationMeasure volume Ω (s.indicator 1) {y} = μHE[finrank ℝ E - 1] {(y : E)} := by
+  have := Ω.isOpen.locallyCompactSpace
+  obtain ⟨r₀, hr₀, hr₀Ω, hiso, w, hw, hae⟩ :=
+    exists_ae_eq_setOf_inner_lt_ball_of_finrank_eq_one hdim hy
+  have hK : IsCompact (closedBall y r₀) := isCompact_closedBall_subtype hr₀Ω
+  have hlim := (tendsto_measure_closedBall_nhdsGE_zero
+    (μ := variationMeasure volume Ω (s.indicator 1)) (z := y)
+    ⟨r₀, hr₀, hK.measure_lt_top.ne⟩).mono_left (nhdsWithin_mono (0 : ℝ) Ioi_subset_Ici_self)
+  have hev : ∀ᶠ r in 𝓝[>] (0 : ℝ),
+      variationMeasure volume Ω (s.indicator 1) (closedBall y r) =
+        μHE[finrank ℝ E - 1] {(y : E)} := by
+    filter_upwards [Ioo_mem_nhdsGT hr₀] with r ⟨hr, hrr₀⟩
+    have hae_r : s =ᵐ[volume.restrict (ball (y : E) r)] {z | ⟪z, w⟫ < ⟪(y : E), w⟫} :=
+      ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hrr₀.le) hae
+    have hw0 : w ≠ 0 := norm_ne_zero_iff.1 (hw ▸ one_ne_zero)
+    rw [variationMeasure_closedBall_eq_perimeter_ball_of_isolated hy hr₀Ω hiso hr hrr₀,
+      perimeter_congr_ae hae_r, perimeter_setOf_inner_lt hw]
+    simp [setOf_inner_eq_eq_singleton_of_finrank_eq_one hdim hw0, mem_ball_self hr]
+  exact tendsto_nhds_unique hlim (tendsto_const_nhds.congr' (hev.mono fun _ h => h.symm))
+
+/-- In dimension `1`, every subset `B` of `Ω` contained in the reduced boundary satisfies
+`|Dχ_s|(B) = H⁰(B)`. -/
+private theorem variationMeasure_eq_euclideanHausdorffMeasure_image_of_finrank_eq_one
+    (hdim : finrank ℝ E = 1) {B : Set Ω}
+    (hB : ∀ y ∈ B, (y : E) ∈ reducedBoundary volume Ω s) :
+    variationMeasure volume Ω (s.indicator 1) B = μHE[finrank ℝ E - 1] (((↑) : Ω → E) '' B) := by
+  have hBcnt : B.Countable :=
+    Set.Countable.mono (fun y hy => hB y hy)
+      ((countable_reducedBoundary_of_finrank_le_one hdim.le).preimage Subtype.coe_injective)
+  have himg : ((↑) : Ω → E) '' B = ⋃ y ∈ B, {(y : E)} := by
+    ext z; simp [eq_comm]
+  calc variationMeasure volume Ω (s.indicator 1) B
+      = variationMeasure volume Ω (s.indicator 1) (⋃ y ∈ B, {y}) := by
+        rw [biUnion_of_singleton]
+    _ = ∑' p : B, variationMeasure volume Ω (s.indicator 1) {(p : Ω)} :=
+        measure_biUnion hBcnt (fun _ _ _ _ hne => disjoint_singleton.2 hne)
+          (fun _ _ => measurableSet_singleton _)
+    _ = ∑' p : B, μHE[finrank ℝ E - 1] {((p : Ω) : E)} :=
+        tsum_congr fun p =>
+          variationMeasure_singleton_eq_euclideanHausdorffMeasure_of_finrank_eq_one hdim
+            (hB p.val p.property)
+    _ = μHE[finrank ℝ E - 1] (((↑) : Ω → E) '' B) := by
+        rw [himg, measure_biUnion hBcnt
+          (fun _ _ _ _ hne => disjoint_singleton.2 (Subtype.coe_injective.ne hne))
+          (fun _ _ => measurableSet_singleton _)]
+
+end OneDim
+
+/-! ### Density bounds at the reduced boundary in dimension `n ≥ 2` -/
 
 /-- At a point of the reduced boundary, in dimension `n ≥ 2`, for each `c > 1` the perimeter measure
 of every small closed ball `closedBall x ρ` is at most `c ω_{n-1} ρ ^ (n - 1)`. -/
@@ -94,17 +285,6 @@ private theorem eventually_variationMeasure_closedBall_le_mul_volume (hn : 2 ≤
   filter_upwards [(tendsto_variationMeasure_closedBall_div_volume_closedBall hn hx).eventually
     (gt_mem_nhds hc), self_mem_nhdsWithin] with ρ h (hρ : 0 < ρ)
   exact ((ENNReal.div_lt_iff (.inl (measure_closedBall_pos _ _ hρ).ne')
-    (.inl measure_closedBall_lt_top.ne)).1 h).le
-
-/-- At a point of the reduced boundary, in dimension `n ≥ 2`, for each `c < 1` the perimeter measure
-of every small closed ball `closedBall x ρ` is at least `c ω_{n-1} ρ ^ (n - 1)`. -/
-private theorem eventually_mul_volume_le_variationMeasure_closedBall (hn : 2 ≤ finrank ℝ E)
-    (hx : x ∈ reducedBoundary volume Ω s) {c : ℝ≥0∞} (hc : c < 1) :
-    ∀ᶠ ρ in 𝓝[>] 0, c * volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E - 1))) ρ) ≤
-      variationMeasure volume Ω (s.indicator 1) ((↑) ⁻¹' closedBall x ρ) := by
-  filter_upwards [(tendsto_variationMeasure_closedBall_div_volume_closedBall hn hx).eventually
-    (lt_mem_nhds hc), self_mem_nhdsWithin] with ρ h (hρ : 0 < ρ)
-  exact ((ENNReal.lt_div_iff_mul_lt (.inl (measure_closedBall_pos _ _ hρ).ne')
     (.inl measure_closedBall_lt_top.ne)).1 h).le
 
 /-! ### Rescaled sets near a point of the reduced boundary -/
@@ -393,7 +573,8 @@ private theorem exists_forall_variationMeasure_le_mul_ediam_pow (hn : 2 ≤ finr
 
 /-! ### The perimeter measure on the reduced boundary -/
 
-/-- The perimeter measure is at most `Hⁿ⁻¹` on subsets of the reduced boundary. -/
+/-- In dimension `n ≥ 2`, the perimeter measure is at most `Hⁿ⁻¹` on subsets of the reduced
+boundary. -/
 private theorem variationMeasure_le_euclideanHausdorffMeasure_image (hn : 2 ≤ finrank ℝ E)
     {B : Set Ω} (hB : ∀ y ∈ B, (y : E) ∈ reducedBoundary volume Ω s) :
     variationMeasure volume Ω (s.indicator 1) B ≤ μHE[finrank ℝ E - 1] (((↑) : Ω → E) '' B) := by
@@ -423,29 +604,50 @@ private theorem variationMeasure_le_euclideanHausdorffMeasure_image (hn : 2 ≤ 
     (.inl (ENNReal.div_pos (measure_ball_pos _ _ one_pos).ne' (by simp)).ne'))
     (eventually_nhdsWithin_of_forall hbound)
 
-/-- The perimeter measure is at least `Hⁿ⁻¹` on subsets of the reduced boundary. -/
-private theorem euclideanHausdorffMeasure_image_le_variationMeasure (hn : 2 ≤ finrank ℝ E)
-    {B : Set Ω} (hB : ∀ y ∈ B, (y : E) ∈ reducedBoundary volume Ω s) :
-    μHE[finrank ℝ E - 1] (((↑) : Ω → E) '' B) ≤ variationMeasure volume Ω (s.indicator 1) B := by
-  rw [isometry_subtypeVal.euclideanHausdorffMeasure_image]
-  refine ENNReal.le_of_forall_lt_one_mul_le fun c hc =>
-    mul_euclideanHausdorffMeasure_le_measure _ _ fun y hy => ?_
-  exact (eventually_mul_volume_le_variationMeasure_closedBall hn (hB y hy) hc).frequently
-
-/-- **The perimeter measure is Hausdorff measure on the reduced boundary.** In dimension `n ≥ 2`,
-every subset `B` of `Ω` contained in the reduced boundary of `s`, measurable or not, satisfies
-`|Dχ_s|(B) = Hⁿ⁻¹(B)`. -/
-theorem variationMeasure_eq_euclideanHausdorffMeasure_image (hn : 2 ≤ finrank ℝ E) {B : Set Ω}
+/-- **The perimeter measure is Hausdorff measure on the reduced boundary.** In every ambient
+dimension `n ≥ 0`, every subset `B` of `Ω` contained in the reduced boundary of `s`, measurable or
+not, satisfies `|Dχ_s|(B) = Hⁿ⁻¹(B)`. -/
+theorem variationMeasure_eq_euclideanHausdorffMeasure_image {B : Set Ω}
     (hB : ∀ y ∈ B, (y : E) ∈ reducedBoundary volume Ω s) :
-    variationMeasure volume Ω (s.indicator 1) B = μHE[finrank ℝ E - 1] (((↑) : Ω → E) '' B) :=
-  le_antisymm (variationMeasure_le_euclideanHausdorffMeasure_image hn hB)
-    (euclideanHausdorffMeasure_image_le_variationMeasure hn hB)
+    variationMeasure volume Ω (s.indicator 1) B = μHE[finrank ℝ E - 1] (((↑) : Ω → E) '' B) := by
+  rcases lt_trichotomy (finrank ℝ E) 1 with h0 | h1 | h2
+  · have : Subsingleton E := finrank_zero_iff.1 (Nat.lt_one_iff.1 h0)
+    have hB0 : B = ∅ := eq_empty_iff_forall_notMem.2 fun y hy => by
+      have hν := norm_outerNormal (hB y hy)
+      simp [Subsingleton.elim (outerNormal volume Ω s y) 0] at hν
+    simp [hB0]
+  · exact variationMeasure_eq_euclideanHausdorffMeasure_image_of_finrank_eq_one h1 hB
+  · refine le_antisymm (variationMeasure_le_euclideanHausdorffMeasure_image h2 hB) ?_
+    simpa only [Subtype.coe_injective.preimage_image] using
+      euclideanHausdorffMeasure_le_variationMeasure_preimage (image_subset_iff.2 hB)
 
-/-- **De Giorgi's representation of the perimeter measure, `|Dχ_s| = Hⁿ⁻¹ ⌊ ∂*s`.** In dimension
-`n ≥ 2`, the perimeter measure of `s` in `Ω` is the restriction of the `(n - 1)`-dimensional
-Euclidean Hausdorff measure to the reduced boundary, viewed as a measure on `Ω`. When `s` does not
-have locally finite perimeter in `Ω`, both sides vanish. -/
-theorem variationMeasure_eq_comap_restrict_reducedBoundary (hn : 2 ≤ finrank ℝ E) :
+/-- **De Giorgi's structure theorem, set evaluation form.** For any open set `Ω ⊆ E` and any sets
+`s, A ⊆ E`, `variationMeasure volume Ω (s.indicator 1)` evaluated at `(↑) ⁻¹' A` (giving the
+perimeter measure `|Dχ_s|(A ∩ Ω)` when `s` has locally finite perimeter in `Ω`, and `0` with
+`∂*s = ∅` otherwise) equals `μHE[finrank ℝ E - 1] (A ∩ reducedBoundary volume Ω s)`. Neither `s`
+nor `A` need be measurable. -/
+theorem variationMeasure_preimage_eq_euclideanHausdorffMeasure_inter_reducedBoundary
+    (Ω : Opens E) (s A : Set E) :
+    variationMeasure volume Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' A) =
+      μHE[finrank ℝ E - 1] (A ∩ reducedBoundary volume Ω s) := by
+  have hR : variationMeasure volume Ω (s.indicator 1)
+      (((↑) : Ω → E) ⁻¹' reducedBoundary volume Ω s)ᶜ = 0 := ae_mem_reducedBoundary
+  have himg : ((↑) : Ω → E) '' (((↑) : Ω → E) ⁻¹' (A ∩ reducedBoundary volume Ω s)) =
+      A ∩ reducedBoundary volume Ω s :=
+    image_preimage_eq_of_subset (by
+      rw [Subtype.range_coe]
+      exact inter_subset_right.trans reducedBoundary_subset)
+  rw [← measure_inter_conull hR, ← preimage_inter,
+    variationMeasure_eq_euclideanHausdorffMeasure_image
+      (B := ((↑) : Ω → E) ⁻¹' (A ∩ reducedBoundary volume Ω s)) fun _ hy => hy.2,
+    himg]
+
+/-- **De Giorgi's representation of the perimeter measure, `|Dχ_s| = Hⁿ⁻¹ ⌊ ∂*s`.** In every
+ambient dimension `n ≥ 0`, the variation measure `variationMeasure volume Ω (s.indicator 1)` on `Ω`
+(the perimeter measure of `s` in `Ω` when `s` has locally finite perimeter in `Ω`, and `0` with
+`∂*s = ∅` otherwise) is the restriction of the `(n - 1)`-dimensional Euclidean Hausdorff measure to
+the reduced boundary, viewed as a measure on `Ω`. -/
+theorem variationMeasure_eq_comap_restrict_reducedBoundary :
     variationMeasure volume Ω (s.indicator 1) =
       (μHE[finrank ℝ E - 1].restrict (reducedBoundary volume Ω s)).comap (↑) := by
   have hemb : MeasurableEmbedding ((↑) : Ω → E) :=
@@ -456,30 +658,49 @@ theorem variationMeasure_eq_comap_restrict_reducedBoundary (hn : 2 ≤ finrank �
   ext A hA
   rw [hemb.comap_apply, Measure.restrict_apply (hemb.measurableSet_image' hA),
     ← measure_inter_conull hR, ← image_inter_preimage]
-  exact variationMeasure_eq_euclideanHausdorffMeasure_image hn fun y hy => hy.2
+  exact variationMeasure_eq_euclideanHausdorffMeasure_image fun y hy => hy.2
 
-/-- **The perimeter is the Hausdorff measure of the reduced boundary.** In dimension `n ≥ 2`, a set
-`s` of locally finite perimeter in `Ω` has `P(s; Ω) = Hⁿ⁻¹(∂*s)`. -/
-theorem perimeter_eq_euclideanHausdorffMeasure_reducedBoundary (hn : 2 ≤ finrank ℝ E)
+/-- **De Giorgi's representation of the perimeter measure, ambient pushforward form.** Pushing
+`variationMeasure volume Ω (s.indicator 1)` forward from `Ω` to `E` gives
+`μHE[finrank ℝ E - 1].restrict (reducedBoundary volume Ω s)` (the perimeter measure `|Dχ_s|` on `Ω`
+extended by zero to `E` when `s` has locally finite perimeter in `Ω`, and `0` otherwise). -/
+theorem map_variationMeasure_indicator_eq_restrict_reducedBoundary (Ω : Opens E) (s : Set E) :
+    (variationMeasure volume Ω (s.indicator 1)).map ((↑) : Ω → E) =
+      (μHE[finrank ℝ E - 1] : Measure E).restrict (reducedBoundary volume Ω s) := by
+  refine Measure.ext fun A hAm => ?_
+  rw [Measure.map_apply measurable_subtypeVal hAm,
+    variationMeasure_preimage_eq_euclideanHausdorffMeasure_inter_reducedBoundary,
+    Measure.restrict_apply hAm]
+
+/-- **De Giorgi's perimeter formula on open subsets.** For a set `s` of locally finite perimeter in
+`Ω` and any open subset `U ≤ Ω`, `P(s; U) = Hⁿ⁻¹(U ∩ ∂*s)`. -/
+theorem perimeter_eq_euclideanHausdorffMeasure_inter_reducedBoundary
+    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞)
+    {U : Opens E} (hU : U ≤ Ω) :
+    perimeter volume U s = μHE[finrank ℝ E - 1] ((U : Set E) ∩ reducedBoundary volume Ω s) := by
+  rw [perimeter_def, ← variationMeasure_preimage_coe hu hfin hU,
+    variationMeasure_preimage_eq_euclideanHausdorffMeasure_inter_reducedBoundary]
+
+/-- **The perimeter is the Hausdorff measure of the reduced boundary.** A set `s` of locally finite
+perimeter in `Ω` has `P(s; Ω) = Hⁿ⁻¹(∂*s)`. -/
+theorem perimeter_eq_euclideanHausdorffMeasure_reducedBoundary
     (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞) :
     perimeter volume Ω s = μHE[finrank ℝ E - 1] (reducedBoundary volume Ω s) := by
-  have hemb : MeasurableEmbedding ((↑) : Ω → E) :=
-    MeasurableEmbedding.subtypeVal Ω.isOpen.measurableSet
-  rw [perimeter_def, ← variationMeasure_univ hu hfin,
-    variationMeasure_eq_comap_restrict_reducedBoundary hn, hemb.comap_apply, image_univ,
-    Subtype.range_coe, Measure.restrict_apply Ω.isOpen.measurableSet,
+  rw [perimeter_eq_euclideanHausdorffMeasure_inter_reducedBoundary hu hfin le_rfl,
     inter_eq_right.2 reducedBoundary_subset]
 
-/-- **The Gauss–Green formula with surface measure, `Dχ_s = -ν_s Hⁿ⁻¹ ⌊ ∂*s`.** In dimension
-`n ≥ 2`, for a set `s` of locally finite perimeter in `Ω`,
+/-- **The Gauss–Green formula with surface measure, indicator form (`Dχ_s = -ν_s Hⁿ⁻¹ ⌊ ∂*s`).**
+For a set `s` of locally finite perimeter in `Ω`,
 
-`∫_s div φ = ∫_{∂*s} ⟪φ, ν_s⟫ dHⁿ⁻¹`
+`∫ x, div φ x * χ_s x = ∫_{∂*s} ⟪φ, ν_s⟫ dHⁿ⁻¹`
 
 for every `C¹` vector field `φ` with compact support in `Ω`, where `div φ = tr (Dφ)`. -/
 theorem integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal
-    (hn : 2 ≤ finrank ℝ E) (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
+    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞)
     {φ : E → E} (hφ : ContDiff ℝ 1 φ) (hc : HasCompactSupport φ) (hs : tsupport φ ⊆ Ω) :
@@ -489,9 +710,50 @@ theorem integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal
   have hemb : MeasurableEmbedding ((↑) : Ω → E) :=
     MeasurableEmbedding.subtypeVal Ω.isOpen.measurableSet
   rw [integral_trace_fderiv_mul_indicator_eq_integral_inner_outerNormal hu hfin hφ hc hs,
-    variationMeasure_eq_comap_restrict_reducedBoundary hn,
+    variationMeasure_eq_comap_restrict_reducedBoundary,
     ← hemb.integral_map (g := fun x => ⟪φ x, outerNormal volume Ω s x⟫), hemb.map_comap,
     Subtype.range_coe, Measure.restrict_restrict Ω.isOpen.measurableSet,
     inter_eq_right.2 reducedBoundary_subset]
+
+/-- **The De Giorgi–Gauss–Green formula.** For a set `s` of locally finite perimeter in `Ω` and
+every `C¹` vector field `φ : E → E` with compact support in `Ω`,
+`∫ x in s, div φ x = ∫ x in ∂*s, ⟪φ x, ν_s x⟫ dHⁿ⁻¹`, where `div φ = tr (Dφ)`. -/
+theorem setIntegral_trace_fderiv_eq_setIntegral_inner_outerNormal
+    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞)
+    {φ : E → E} (hφ : ContDiff ℝ 1 φ) (hc : HasCompactSupport φ) (hφΩ : tsupport φ ⊆ Ω) :
+    ∫ x in s, LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) =
+      ∫ x in reducedBoundary volume Ω s,
+        ⟪φ x, outerNormal volume Ω s x⟫ ∂μHE[finrank ℝ E - 1] := by
+  rw [← integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal hu hfin hφ hc hφΩ]
+  have hs : NullMeasurableSet s (volume.restrict Ω) :=
+    (aemeasurable_indicator_const_iff (1 : ℝ)).1 hu.aestronglyMeasurable.aemeasurable
+  have hsΩ : NullMeasurableSet ((Ω : Set E) ∩ s) volume :=
+    inter_comm (Ω : Set E) s ▸
+      (nullMeasurableSet_restrict Ω.isOpen.measurableSet.nullMeasurableSet).1 hs
+  have hzero {x : E} (hx : x ∉ (Ω : Set E)) :
+      LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) = 0 := by
+    have h0 : φ =ᶠ[𝓝 x] 0 := notMem_tsupport_iff_eventuallyEq.1 fun h => hx (hφΩ h)
+    simp [h0.fderiv_eq]
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (fun x hx => hzero hx),
+    Measure.restrict_restrict Ω.isOpen.measurableSet, ← integral_indicator₀ hsΩ]
+  refine integral_congr_ae (.of_forall fun x => ?_)
+  by_cases hxΩ : x ∈ (Ω : Set E) <;> by_cases hxs : x ∈ s <;> simp [hxΩ, hxs, hzero]
+
+/-- **The De Giorgi–Gauss–Green formula for test vector fields.** For a set `s` of locally finite
+perimeter in `Ω` and `φ ∈ 𝓓(Ω, E)`,
+`∫ x in s, divergenceCLM φ x = ∫ x in ∂*s, ⟪φ x, ν_s x⟫ dHⁿ⁻¹`. -/
+theorem setIntegral_divergenceCLM_eq_setIntegral_inner_outerNormal
+    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞)
+    (φ : 𝓓(Ω, E)) :
+    ∫ x in s, divergenceCLM φ x =
+      ∫ x in reducedBoundary volume Ω s,
+        ⟪φ x, outerNormal volume Ω s x⟫ ∂μHE[finrank ℝ E - 1] := by
+  simp_rw [divergenceCLM_apply]
+  exact setIntegral_trace_fderiv_eq_setIntegral_inner_outerNormal hu hfin
+    (φ.contDiff.of_le (by simp)) φ.hasCompactSupport φ.tsupport_subset
 
 end TauCeti

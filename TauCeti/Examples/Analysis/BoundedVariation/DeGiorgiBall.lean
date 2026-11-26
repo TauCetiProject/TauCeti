@@ -13,8 +13,8 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 /-!
 # De Giorgi's structure theorem on a ball
 
-De Giorgi's structure theorem worked out for a ball `B = ball c r` with `r > 0` in a real inner
-product space of dimension `n ≥ 2`. The reduced boundary of `B` is the sphere
+De Giorgi's structure theorem worked out for a ball `B = ball c r` with `r > 0` in a
+finite-dimensional real inner product space. The reduced boundary of `B` is the sphere
 (`TauCeti.reducedBoundary_ball`), with outer normal `(x − c) / r` (`TauCeti.outerNormal_ball`), so:
 
 * the perimeter measure is Hausdorff measure on the sphere, `|Dχ_B| = Hⁿ⁻¹⌊sphere c r`
@@ -39,18 +39,18 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-- **The perimeter measure of a ball is Hausdorff measure on its sphere**,
 `|Dχ_B| = Hⁿ⁻¹⌊sphere c r`, as measures on the whole space viewed as the open set `⊤`. -/
-theorem variationMeasure_indicator_ball (hn : 2 ≤ finrank ℝ E) (hr : 0 < r) :
+theorem variationMeasure_indicator_ball (hr : 0 < r) :
     variationMeasure volume (⊤ : Opens E) ((ball c r).indicator 1) =
       (μHE[finrank ℝ E - 1].restrict (sphere c r)).comap (↑) := by
-  rw [variationMeasure_eq_comap_restrict_reducedBoundary hn, reducedBoundary_ball hr]
+  rw [variationMeasure_eq_comap_restrict_reducedBoundary, reducedBoundary_ball hr]
 
 /-- **`Dχ_B = −((x − c) / r) Hⁿ⁻¹⌊sphere c r`**: for every compactly supported `C¹` vector field
 `φ`, `∫_B div φ = ∫_{sphere c r} ⟪φ, (x − c) / r⟫ dHⁿ⁻¹`. -/
-theorem integral_trace_fderiv_mul_indicator_ball_eq_setIntegral_inner (hn : 2 ≤ finrank ℝ E)
+theorem integral_trace_fderiv_mul_indicator_ball_eq_setIntegral_inner
     (hr : 0 < r) {φ : E → E} (hφ : ContDiff ℝ 1 φ) (hc : HasCompactSupport φ) :
     ∫ x, LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) * (ball c r).indicator 1 x =
       ∫ x in sphere c r, ⟪φ x, r⁻¹ • (x - c)⟫ ∂μHE[finrank ℝ E - 1] := by
-  rw [integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal hn
+  rw [integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal
     (locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1)
     forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top
     hφ hc (by simp), reducedBoundary_ball hr]
@@ -59,19 +59,18 @@ theorem integral_trace_fderiv_mul_indicator_ball_eq_setIntegral_inner (hn : 2 �
 
 /-- **The perimeter of a ball is the area of its sphere**: `P(B) = Hⁿ⁻¹(sphere c r)`. By
 `TauCeti.euclideanHausdorffMeasure_sphere` both are `n ω_n r ^ (n − 1)`. -/
-theorem perimeter_ball_eq_euclideanHausdorffMeasure_sphere (hn : 2 ≤ finrank ℝ E)
-    (hr : 0 < r) :
+theorem perimeter_ball_eq_euclideanHausdorffMeasure_sphere (hr : 0 < r) :
     perimeter volume ⊤ (ball c r) = μHE[finrank ℝ E - 1] (sphere c r) := by
-  rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn
+  rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary
     (locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1)
     forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top,
     reducedBoundary_ball hr]
 
 /-- The two formulas agree: `TauCeti.perimeter_ball` computes the same perimeter as
 `n r ^ (n − 1) ω_n`. -/
-example (hn : 2 ≤ finrank ℝ E) (hr : 0 < r) :
+example (hr : 0 < r) :
     finrank ℝ E * ENNReal.ofReal (r ^ (finrank ℝ E - 1)) * volume (ball (0 : E) 1) =
       μHE[finrank ℝ E - 1] (sphere c r) := by
-  rw [← perimeter_ball hr, perimeter_ball_eq_euclideanHausdorffMeasure_sphere hn hr]
+  rw [← perimeter_ball hr, perimeter_ball_eq_euclideanHausdorffMeasure_sphere hr]
 
 end TauCeti.Examples.DeGiorgiBall

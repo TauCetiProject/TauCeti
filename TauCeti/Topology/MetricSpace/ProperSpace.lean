@@ -32,6 +32,9 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
   exhaustion by compact sets with the divergence condition, namely by the closed balls about `p`.
 * `TauCeti.properSpace_iff_exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist`: the
   equivalence.
+* `TauCeti.isCompact_preimage_coe_closedBall` and `TauCeti.isCompact_closedBall_subtype`: the
+  preimage of `closedBall x r` in a subtype `s` (and `closedBall x r` in `s` itself) is compact
+  whenever `closedBall x r ⊆ s`.
 * `CompactExhaustion.closedBall`: the closed balls of natural radius about a point, as a
   `CompactExhaustion` of a proper space; a point `x` first enters it at the index `⌈dist x p⌉₊`
   (`CompactExhaustion.find_closedBall`).
@@ -97,6 +100,20 @@ theorem properSpace_iff_exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist (p
       ∀ q : ℕ → α, (∀ n, q n ∉ K n) → Tendsto (fun n ↦ dist p (q n)) atTop atTop :=
   ⟨fun _ ↦ exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist p,
     fun ⟨_, hKc, _, _, hK⟩ ↦ properSpace_of_isCompact_of_tendsto_dist hKc hK⟩
+
+/-- In a proper pseudometric space, the preimage of `closedBall x r` in a subtype `s` is compact
+whenever `closedBall x r ⊆ s`. -/
+theorem isCompact_preimage_coe_closedBall [ProperSpace α] {s : Set α} {x : α} {r : ℝ}
+    (h : closedBall x r ⊆ s) : IsCompact (((↑) : s → α) ⁻¹' closedBall x r) :=
+  Topology.IsInducing.subtypeVal.isCompact_preimage' (isCompact_closedBall x r)
+    (by rwa [Subtype.range_coe])
+
+/-- In a subtype `s` of a proper pseudometric space, `closedBall x r` is compact whenever
+`closedBall (x : α) r ⊆ s`. -/
+theorem isCompact_closedBall_subtype [ProperSpace α] {s : Set α} {x : s} {r : ℝ}
+    (h : closedBall (x : α) r ⊆ s) : IsCompact (closedBall x r) := by
+  rw [← Subtype.preimage_closedBall]
+  exact isCompact_preimage_coe_closedBall h
 
 end TauCeti
 

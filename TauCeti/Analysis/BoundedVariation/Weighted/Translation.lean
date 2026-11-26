@@ -14,11 +14,10 @@ import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 /-!
 # The derivative of the Gaussian measure of a translated set
 
-Let `E` be a finite-dimensional real inner product space of dimension `n ≥ 2`, with standard
-Gaussian measure `γ` and Gaussian weight `W`, so that `γ = e^{−W} · volume`. For a
-Lebesgue-measurable set `U` of finite Gaussian perimeter and a vector `w`, the function
-`t ↦ γ(U + t w)` is differentiable at `0`, with derivative the flux of `w` through the reduced
-boundary:
+Let `E` be a finite-dimensional real inner product space, with standard Gaussian measure `γ` and
+Gaussian weight `W`, so that `γ = e^{−W} · volume`. For a Lebesgue-measurable set `U` of finite
+Gaussian perimeter and a vector `w`, the function `t ↦ γ(U + t w)` is differentiable at `0`, with
+derivative the flux of `w` through the reduced boundary:
 
 `d/dt γ(U + t w) |_{t = 0} = ∫_{∂*U} ⟨w, ν_U⟩ e^{−W} dHⁿ⁻¹`
 
@@ -142,11 +141,11 @@ private theorem hasDerivAt_setIntegral_exp (s : Set E) (w : E) :
         RCLike.conj_to_real])
   simpa using hd.2
 
-/-- **The derivative of the Gaussian measure of a translate.** In dimension `n ≥ 2`, for a
-Lebesgue-measurable set `s` of finite Gaussian perimeter and a vector `w`, the function
-`t ↦ γ(s + t w)` has derivative `∫_{∂*s} ⟨w, ν_s⟩ e^{−W} dHⁿ⁻¹` at `0`, where `W` is the
-Gaussian weight and `ν_s` the outer normal. -/
-theorem hasDerivAt_measureReal_stdGaussian_smul_vadd (hn : 2 ≤ finrank ℝ E) {s : Set E}
+/-- **The derivative of the Gaussian measure of a translate.** For a Lebesgue-measurable set `s`
+of finite Gaussian perimeter and a vector `w`, the function `t ↦ γ(s + t w)` has derivative
+`∫_{∂*s} ⟨w, ν_s⟩ e^{−W} dHⁿ⁻¹` at `0`, where `W` is the Gaussian weight and `ν_s` the outer
+normal. -/
+theorem hasDerivAt_measureReal_stdGaussian_smul_vadd {s : Set E}
     (hs : NullMeasurableSet s) (hP : gaussianPerimeter s ≠ ∞) (w : E) :
     HasDerivAt (fun t : ℝ => (stdGaussian E).real ((t • w) +ᵥ s))
       (∫ x in reducedBoundary volume ⊤ s,
@@ -171,7 +170,7 @@ theorem hasDerivAt_measureReal_stdGaussian_smul_vadd (hn : 2 ≤ finrank ℝ E) 
       (Eventually.of_forall fun x => ?_)
     simpa [abs_mul, abs_of_pos (Real.exp_pos _)] using hle 0 (by simp) x
   rw [← integral_weightedDivergence_eq_integral_reducedBoundary_of_bounded
-    (W := gaussianWeight E) (X := fun _ => w) contDiff_gaussianWeight hn
+    (W := gaussianWeight E) (X := fun _ => w) contDiff_gaussianWeight
     integrable_exp_neg_gaussianWeight hs
     (gaussianPerimeter_def (s := s) ▸ hP) contDiff_const (C := ‖w‖) (C' := 0)
     (fun _ => le_rfl) (fun x => by simp) hWX, ← integral_indicator₀ hs]

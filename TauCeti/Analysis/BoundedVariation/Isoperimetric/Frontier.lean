@@ -80,7 +80,7 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_euclideanHausdorffMeasure_
     exact le_top
   exact ((nullMeasurableSet_of_euclideanHausdorffMeasure_frontier_ne_top
     hH).finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le hs hn).trans
-    (pow_le_pow_left₀ zero_le (perimeter_le_euclideanHausdorffMeasure_frontier hn s) _)
+    (pow_le_pow_left₀ zero_le (perimeter_le_euclideanHausdorffMeasure_frontier s) _)
 
 /-- **Balls attain equality in the frontier isoperimetric inequality.** In positive dimension `n`,
 a ball of radius `r > 0` satisfies `Hⁿ⁻¹(frontier (ball c r))ⁿ = nⁿ ω_n |ball c r|ⁿ⁻¹`, where
@@ -113,7 +113,7 @@ theorem perimeter_eq_of_euclideanHausdorffMeasure_frontier_pow_eq
     exact ENNReal.mul_ne_top (ENNReal.mul_ne_top (by simp) measure_ball_lt_top.ne)
       (ENNReal.pow_ne_top hs) h.symm
   -- The sharp inequality for the perimeter gives the reverse comparison of `n`-th powers.
-  refine le_antisymm (perimeter_le_euclideanHausdorffMeasure_frontier hn s)
+  refine le_antisymm (perimeter_le_euclideanHausdorffMeasure_frontier s)
     ((ENNReal.pow_le_pow_left_iff (n := finrank ℝ E) (by omega)).1 ?_)
   rw [h]
   exact (nullMeasurableSet_of_euclideanHausdorffMeasure_frontier_ne_top

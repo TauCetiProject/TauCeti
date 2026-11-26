@@ -40,7 +40,9 @@ Counting alternations between points of `s` and of its complement gives a local 
 the sharp one-dimensional isoperimetric inequality and its rigidity:
 
 * a set, null-measurable in an open interval `V`, that charges both itself and its complement in
-  `V` has perimeter at least `1` in `V` (`TauCeti.Real.one_le_perimeter_of_ordConnected`);
+  `V` has perimeter at least `1` in `V` (`TauCeti.Real.one_le_perimeter_of_ordConnected`), so zero
+  perimeter on `(a, b)` characterizes sets that are null or conull in `(a, b)`
+  (`TauCeti.Real.perimeter_Ioo_eq_zero_iff`);
 * a null-measurable `s ⊆ ℝ` of positive finite measure has perimeter at least `2`
   (`TauCeti.Real.two_le_perimeter`);
 * if `s` has finite measure and does not agree almost everywhere with any interval, then it has
@@ -61,8 +63,9 @@ set containing `x` and `0` in any other open set (`TauCeti.Real.perimeter_Iio`,
 
 * `TauCeti.Real.ofReal_sum_abs_sub_le_totalVariationOn`: the variation of `u` along Lebesgue
   points in `Ω` is at most `|Du|(Ω)`.
-* `TauCeti.Real.one_le_perimeter_of_ordConnected`: a set charging both itself and its complement
-  in an open interval has perimeter at least one there.
+* `TauCeti.Real.one_le_perimeter_of_ordConnected` and `TauCeti.Real.perimeter_Ioo_eq_zero_iff`:
+  a set charging both itself and its complement in an open interval has perimeter at least one
+  there, and zero perimeter on `(a, b)` characterizes null or conull sets in `(a, b)`.
 * `TauCeti.Real.two_le_perimeter`, `TauCeti.Real.four_le_perimeter`,
   `TauCeti.Real.perimeter_Ioo` and `TauCeti.Real.perimeter_eq_two_iff`.
 * `TauCeti.Real.perimeter_Iio` and `TauCeti.Real.perimeter_Ioi`: the perimeter of a half-line.
@@ -455,5 +458,27 @@ theorem perimeter_le_two_iff {s : Set ℝ} (hs : NullMeasurableSet s) (hfin : vo
     · obtain ⟨a, b, hab, hIab⟩ := hI.exists_ae_eq_Ioo
         ((measure_congr hsI).symm ▸ hzero) ((measure_congr hsI).symm ▸ hfin)
       exact (perimeter_eq_two_iff hs hfin).mpr ⟨a, b, hab, hsI.trans hIab⟩ |>.le
+
+/-- For a set `s ⊆ ℝ` whose intersection with `(a, b)` is null-measurable, the perimeter of `s` in
+`(a, b)` vanishes if and only if `s` is either null or conull in `(a, b)`. -/
+theorem perimeter_Ioo_eq_zero_iff {a b : ℝ} {s : Set ℝ} (hs : NullMeasurableSet (s ∩ Ioo a b)) :
+    perimeter volume ⟨Ioo a b, isOpen_Ioo⟩ s = 0 ↔
+      volume (s ∩ Ioo a b) = 0 ∨ volume (Ioo a b \ s) = 0 := by
+  refine ⟨fun hP => ?_, ?_⟩
+  · by_contra! h
+    have hs' : NullMeasurableSet s (volume.restrict (Ioo a b)) :=
+      (nullMeasurableSet_restrict measurableSet_Ioo.nullMeasurableSet).2 (inter_comm s _ ▸ hs)
+    have hle := one_le_perimeter_of_ordConnected (V := ⟨Ioo a b, isOpen_Ioo⟩) hs' ordConnected_Ioo
+      h.1 (by rw [Opens.coe_mk, inter_comm, ← Set.sdiff_eq]; exact h.2)
+    simp [hP] at hle
+  · rintro (h0 | hc)
+    · have hae : s =ᵐ[volume.restrict (Ioo a b)] (∅ : Set ℝ) :=
+        ae_eq_empty.2 (by rwa [Measure.restrict_apply' measurableSet_Ioo])
+      rw [perimeter_congr_ae hae, perimeter_empty]
+    · have hae : s =ᵐ[volume.restrict (Ioo a b)] (univ : Set ℝ) :=
+        ae_eq_univ.2 (by
+          rw [Measure.restrict_apply' measurableSet_Ioo, inter_comm, ← Set.sdiff_eq]
+          exact hc)
+      rw [perimeter_congr_ae hae, perimeter_univ]
 
 end TauCeti.Real

@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.BoundedVariation.Real
 import TauCeti.MeasureTheory.Covering.EssentialBoundary.Real
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
@@ -33,10 +34,12 @@ assumed.
 Upper bound: an infinite `∂ᵉs ∩ Ω` is trivial. Otherwise every `x ∈ Ω` has a ball `B(x, ε) ⊆ Ω`
 meeting `∂ᵉs` at most in `x`. On each half of the ball, `s` is null or conull
 (`TauCeti.Real.measure_inter_Ioo_eq_zero_or_measure_Ioo_sdiff_eq_zero`), so in the ball `s` is
-almost everywhere `∅`, everything, or a half-line ending at `x`, and its perimeter there is `0`,
-or at most `1` (`TauCeti.Real.perimeter_Iio`, `TauCeti.Real.perimeter_Ioi`), and is `0` when
-`x ∉ ∂ᵉs`. Countable subadditivity of the perimeter over the cover of `Ω` by these balls
-(`TauCeti.totalVariationOn_iSup_le_tsum`) sums these bounds to `#(∂ᵉs ∩ Ω)`.
+almost everywhere `∅`, everything, or a half-line ending at `x`
+(`MeasureTheory.measure_symmDiff_Iio_or_Ioi_inter_Ioo_eq_zero`), and its perimeter there is `0`
+(`TauCeti.Real.perimeter_Ioo_eq_zero_iff`), or at most `1` (`TauCeti.Real.perimeter_Iio`,
+`TauCeti.Real.perimeter_Ioi`), and is `0` when `x ∉ ∂ᵉs`. Countable subadditivity of the perimeter
+over the cover of `Ω` by these balls (`TauCeti.totalVariationOn_iSup_le_tsum`) sums these bounds to
+`#(∂ᵉs ∩ Ω)`.
 
 Lower bound: at a point `x ∈ ∂ᵉs ∩ Ω`, both `s` and its complement fill a positive proportion of
 arbitrarily small balls around `x`
@@ -71,7 +74,7 @@ closure, and add the perimeters over these disjoint open sets
 public section
 
 open Filter Set MeasureTheory Metric TopologicalSpace
-open scoped Topology ENNReal Set.Notation
+open scoped Topology ENNReal Set.Notation symmDiff
 
 namespace TauCeti.Real
 
@@ -86,25 +89,8 @@ theorem perimeter_ball_eq_zero (hs : NullMeasurableSet s) {ε : ℝ}
     ext1; exact Real.ball_eq_Ioo x ε
   rw [Real.ball_eq_Ioo] at h
   rw [hball]
-  rcases measure_inter_Ioo_eq_zero_or_measure_Ioo_sdiff_eq_zero hs h with h0 | h0
-  · rw [perimeter_congr_ae (t := ∅), perimeter_empty]
-    rw [Opens.coe_mk, ae_eq_empty, Measure.restrict_apply' measurableSet_Ioo]
-    exact h0
-  · rw [perimeter_congr_ae (t := univ), perimeter_univ]
-    rw [Opens.coe_mk, ae_eq_univ, Measure.restrict_apply' measurableSet_Ioo, ← sdiff_eq_compl_inter]
-    exact h0
-
-/-- On a ball, `s` has the perimeter of any set `t` that agrees with it almost everywhere off the
-centre. -/
-private theorem perimeter_ball_congr {ε : ℝ} {t : Set ℝ}
-    (ht : ∀ᵐ y ∂(volume : Measure ℝ), y ∈ ball x ε → y ≠ x → (y ∈ s ↔ y ∈ t)) :
-    perimeter volume ⟨ball x ε, isOpen_ball⟩ s = perimeter volume ⟨ball x ε, isOpen_ball⟩ t := by
-  have hne : ∀ᵐ y ∂(volume : Measure ℝ), y ≠ x := by
-    simpa using (measure_eq_zero_iff_ae_notMem.1 (measure_singleton x))
-  refine perimeter_congr_ae (eventuallyEqSet_iff.2 ?_)
-  rw [Opens.coe_mk, ae_restrict_iff' measurableSet_ball]
-  filter_upwards [ht, hne] with y hy hyx hyB
-  exact hy hyB hyx
+  exact (perimeter_Ioo_eq_zero_iff (hs.inter measurableSet_Ioo.nullMeasurableSet)).2
+    (measure_inter_Ioo_eq_zero_or_measure_Ioo_sdiff_eq_zero hs h)
 
 /-- **At most the centre on the essential boundary, perimeter at most one.** If no point of
 `B(x, ε)` other than `x` lies in the essential boundary of a null-measurable set `s ⊆ ℝ`, then
@@ -113,44 +99,28 @@ at `x`. -/
 theorem perimeter_ball_le_one (hs : NullMeasurableSet s) {ε : ℝ}
     (h : ∀ y ∈ ball x ε, y ∈ essentialBoundary volume s → y = x) :
     perimeter volume ⟨ball x ε, isOpen_ball⟩ s ≤ 1 := by
-  have hball : ∀ {y}, y ∈ ball x ε ↔ x - ε < y ∧ y < x + ε := by
-    intro y; rw [Real.ball_eq_Ioo, mem_Ioo]
+  have hball : (⟨ball x ε, isOpen_ball⟩ : Opens ℝ) = ⟨Ioo (x - ε) (x + ε), isOpen_Ioo⟩ := by
+    ext1; exact Real.ball_eq_Ioo x ε
+  by_cases h0 : volume (s ∩ Ioo (x - ε) (x + ε)) = 0 ∨ volume (Ioo (x - ε) (x + ε) \ s) = 0
+  · rw [hball, (perimeter_Ioo_eq_zero_iff (hs.inter measurableSet_Ioo.nullMeasurableSet)).2 h0]
+    exact zero_le
+  rw [not_or] at h0
   have hL := measure_inter_Ioo_eq_zero_or_measure_Ioo_sdiff_eq_zero hs
     (a := x - ε) (b := x) fun y hy hyb =>
-      hy.2.ne (h y (hball.2 ⟨hy.1, by linarith [hy.1, hy.2]⟩) hyb)
+      hy.2.ne (h y ((Real.ball_eq_Ioo x ε).symm ▸ ⟨hy.1, by linarith [hy.1, hy.2]⟩) hyb)
   have hR := measure_inter_Ioo_eq_zero_or_measure_Ioo_sdiff_eq_zero hs
     (a := x) (b := x + ε) fun y hy hyb =>
-      hy.1.ne' (h y (hball.2 ⟨by linarith [hy.1, hy.2], hy.2⟩) hyb)
-  simp only [measure_eq_zero_iff_ae_notMem, mem_inter_iff, Set.mem_sdiff, mem_Ioo, not_and,
-    not_not] at hL hR
-  rcases hL with hL | hL <;> rcases hR with hR | hR
-  · rw [perimeter_ball_congr (t := ∅) ?_, perimeter_empty]
-    · exact zero_le
-    filter_upwards [hL, hR] with y hL hR hyB hyx
-    simp only [mem_empty_iff_false, iff_false]
-    intro hys
-    rcases hyx.lt_or_gt with hlt | hgt
-    · exact hL hys (hball.1 hyB).1 hlt
-    · exact hR hys hgt (hball.1 hyB).2
-  · rw [perimeter_ball_congr (t := Ioi x) ?_, perimeter_Ioi]
-    · exact indicator_apply_le' (fun _ => le_rfl) fun _ => zero_le
-    filter_upwards [hL, hR] with y hL hR hyB hyx
-    rcases hyx.lt_or_gt with hlt | hgt
-    · exact iff_of_false (fun hys => hL hys (hball.1 hyB).1 hlt) (by simpa using hlt.le)
-    · exact iff_of_true (hR ⟨hgt, (hball.1 hyB).2⟩) hgt
-  · rw [perimeter_ball_congr (t := Iio x) ?_, perimeter_Iio]
-    · exact indicator_apply_le' (fun _ => le_rfl) fun _ => zero_le
-    filter_upwards [hL, hR] with y hL hR hyB hyx
-    rcases hyx.lt_or_gt with hlt | hgt
-    · exact iff_of_true (hL ⟨(hball.1 hyB).1, hlt⟩) hlt
-    · exact iff_of_false (fun hys => hR hys hgt (hball.1 hyB).2) (by simpa using hgt.le)
-  · rw [perimeter_ball_congr (t := univ) ?_, perimeter_univ]
-    · exact zero_le
-    filter_upwards [hL, hR] with y hL hR hyB hyx
-    simp only [mem_univ, iff_true]
-    rcases hyx.lt_or_gt with hlt | hgt
-    · exact hL ⟨(hball.1 hyB).1, hlt⟩
-    · exact hR ⟨hgt, (hball.1 hyB).2⟩
+      hy.1.ne' (h y ((Real.ball_eq_Ioo x ε).symm ▸ ⟨by linarith [hy.1, hy.2], hy.2⟩) hyb)
+  have hae {t : Set ℝ} (ht : volume ((s ∆ t) ∩ Ioo (x - ε) (x + ε)) = 0) :
+      s =ᵐ[volume.restrict (ball x ε)] t := by
+    rwa [← measure_symmDiff_eq_zero_iff, Measure.restrict_apply' measurableSet_ball,
+      Real.ball_eq_Ioo]
+  rcases measure_symmDiff_Iio_or_Ioi_inter_Ioo_eq_zero h0.1 h0.2 hL hR Real.volume_singleton
+    with hΔ | hΔ
+  · rw [perimeter_congr_ae (hae hΔ), perimeter_Iio]
+    exact indicator_apply_le' (fun _ => le_rfl) fun _ => zero_le
+  · rw [perimeter_congr_ae (hae hΔ), perimeter_Ioi]
+    exact indicator_apply_le' (fun _ => le_rfl) fun _ => zero_le
 
 /-- **The perimeter in a ball with at most its centre on the essential boundary.** If no point of
 `B(x, ε)` other than `x` lies in `∂ᵉs`, then `P(s; B(x, ε))` is at most `1` if `x ∈ ∂ᵉs` and is

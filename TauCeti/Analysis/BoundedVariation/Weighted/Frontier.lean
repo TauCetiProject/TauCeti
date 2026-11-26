@@ -18,8 +18,8 @@ import TauCeti.MeasureTheory.Measure.Haar.Hausdorff.Frontier
 # The frontier bound for the weighted perimeter, and the Gaussian perimeter of a ball
 
 For a `C¹` weight `W` with measure `μ = e^{−W} · volume`, the codimension-one measure is
-`μ^{n−1} = e^{−W} · μHE[n − 1]`. In dimension `n ≥ 2`, every set `s`, measurable or not, has
-`P_μ(s; Ω) ≤ μ^{n−1}(∂s ∩ Ω)` in every open set `Ω`
+`μ^{n−1} = e^{−W} · μHE[n − 1]`. In every ambient dimension `n ≥ 0`, every set `s`, measurable or
+not, has `P_μ(s; Ω) ≤ μ^{n−1}(∂s ∩ Ω)` in every open set `Ω`
 (`TauCeti.weightedPerimeter_le_setLIntegral_frontier_inter`). If the right side is finite, the
 frontier has locally finite `μHE[n − 1]` measure
 (`TauCeti.measure_inter_ne_top_of_setLIntegral_ne_top`), so `s` agrees with its interior almost
@@ -59,13 +59,17 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {W : E → ℝ} {Ω : Opens E} {s : Set E}
 
-/-- **The frontier bound for the weighted perimeter.** For a `C¹` weight `W`, in dimension
-`n ≥ 2`, every set `s`, measurable or not, has `P_μ(s; Ω) ≤ ∫_{∂s ∩ Ω} e^{−W} dHⁿ⁻¹` in every open
-set `Ω`. -/
+/-- **The frontier bound for the weighted perimeter.** For a `C¹` weight `W`, in every ambient
+dimension `n ≥ 0`, every set `s`, measurable or not, has `P_μ(s; Ω) ≤ ∫_{∂s ∩ Ω} e^{−W} dHⁿ⁻¹` in
+every open set `Ω`. -/
 theorem weightedPerimeter_le_setLIntegral_frontier_inter (hW : ContDiff ℝ 1 W)
-    (hn : 2 ≤ finrank ℝ E) (Ω : Opens E) (s : Set E) :
+    (Ω : Opens E) (s : Set E) :
     weightedPerimeter W Ω s ≤
       ∫⁻ x in frontier s ∩ Ω, ENNReal.ofReal (Real.exp (-W x)) ∂μHE[finrank ℝ E - 1] := by
+  rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
+  · have : Subsingleton E := finrank_zero_iff.1 hn
+    rw [weightedPerimeter_of_subsingleton]
+    exact zero_le
   by_cases hI : ∫⁻ x in frontier s ∩ Ω, ENNReal.ofReal (Real.exp (-W x))
       ∂μHE[finrank ℝ E - 1] = ∞
   · rw [hI]
@@ -78,8 +82,7 @@ theorem weightedPerimeter_le_setLIntegral_frontier_inter (hW : ContDiff ℝ 1 W)
       μH[((finrank ℝ E - 1 : ℕ) : ℝ)] (frontier s ∩ K) ≠ ∞ :=
     (Measure.euclideanHausdorffMeasure_lt_top_iff.1 (lt_top_iff_ne_top.2 (hK K hK' hKΩ))).ne
   rw [weightedPerimeter_congr_ae
-    (ae_eq_interior_of_forall_isCompact_hausdorffMeasure_frontier_inter_ne_top volume (by omega)
-      hH)]
+    (ae_eq_interior_of_forall_isCompact_hausdorffMeasure_frontier_inter_ne_top volume hn hH)]
   set t := interior s
   have hu : LocallyIntegrableOn (t.indicator (1 : E → ℝ)) Ω :=
     ((locallyIntegrable_const 1).indicator isOpen_interior.measurableSet).locallyIntegrableOn _
@@ -102,7 +105,7 @@ theorem weightedPerimeter_le_setLIntegral_frontier_inter (hW : ContDiff ℝ 1 W)
     simp [U]
   rw [hpre, variationMeasure_preimage_coe hu hfin (show U ≤ Ω from fun _ hx => hx.2),
     ← perimeter_def, Measure.restrict_apply (isOpen_lt continuous_const hρ).measurableSet]
-  refine (perimeter_le_euclideanHausdorffMeasure_frontier_inter hn U t).trans
+  refine (perimeter_le_euclideanHausdorffMeasure_frontier_inter U t).trans
     (measure_mono fun x hx => ?_)
   exact ⟨hx.2.1, frontier_interior_subset hx.1, hx.2.2⟩
 

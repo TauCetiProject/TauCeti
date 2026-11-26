@@ -81,8 +81,10 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
   (`TauCeti.weightedVariation_sum_le`) and, for the perimeter, over finite disjoint unions
   (`TauCeti.weightedPerimeter_biUnion_le`).
 * `TauCeti.weightedVariation_add_const`, `TauCeti.weightedPerimeter_compl`,
-  `TauCeti.weightedPerimeter_empty` and `TauCeti.weightedPerimeter_univ`: for a `C¹` weight,
-  constants have no variation and complements have the same perimeter.
+  `TauCeti.weightedPerimeter_empty`, `TauCeti.weightedPerimeter_univ`,
+  `TauCeti.weightedVariation_of_subsingleton` and `TauCeti.weightedPerimeter_of_subsingleton`: for a
+  `C¹` weight, constants have no variation and complements have the same perimeter; in dimension
+  zero, weighted variation and perimeter vanish for every weight.
 * `TauCeti.weightedVariation_weight_add_const`: adding a constant `c` to the weight multiplies the
   weighted variation by `e^{−c}`.
 * `TauCeti.weightedVariation_zero_weight` and `TauCeti.weightedPerimeter_zero_weight`: the weight
@@ -441,6 +443,19 @@ theorem weightedVariation_zero : weightedVariation W Ω 0 = 0 := by
 theorem weightedPerimeter_empty : weightedPerimeter W Ω ∅ = 0 := by
   rw [weightedPerimeter_def, indicator_empty]
   exact weightedVariation_zero
+
+/-- In dimension zero the only test vector field is zero, so every function has weighted variation
+zero, for every weight. -/
+@[simp]
+theorem weightedVariation_of_subsingleton [Subsingleton E] : weightedVariation W Ω u = 0 :=
+  nonpos_iff_eq_zero.1 <| weightedVariation_le_iff.2 fun X _ => by
+    have hX : X = 0 := TestFunction.ext fun _ => Subsingleton.elim _ _
+    simp [hX]
+
+/-- In dimension zero every set has weighted perimeter zero, for every weight. -/
+@[simp]
+theorem weightedPerimeter_of_subsingleton [Subsingleton E] : weightedPerimeter W Ω s = 0 :=
+  weightedVariation_of_subsingleton
 
 /-- **Locality.** The weighted variation on `Ω` only depends on `u` almost everywhere on `Ω`. -/
 theorem weightedVariation_congr_ae (h : u =ᵐ[volume.restrict Ω] v) :

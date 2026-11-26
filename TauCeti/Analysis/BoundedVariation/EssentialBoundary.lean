@@ -242,7 +242,7 @@ theorem perimeter_eq_euclideanHausdorffMeasure_essentialBoundary_inter (hn : 2 �
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞) :
     perimeter volume Ω s = μHE[finrank ℝ E - 1] (essentialBoundary volume s ∩ Ω) := by
-  rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn hu hfin,
+  rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hu hfin,
     measure_congr (essentialBoundary_inter_ae_eq_reducedBoundary hn hu hfin)]
 
 end TauCeti

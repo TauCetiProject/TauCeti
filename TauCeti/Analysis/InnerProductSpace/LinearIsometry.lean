@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Analysis.Normed.Module.Span
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
@@ -34,7 +35,10 @@ and complex inner product spaces, without completeness or dimension assumptions.
 Orthogonal line coordinates associated with a unit vector identify the ambient space with
 the product of its orthogonal hyperplane and the scalar line. The `L²` product version is
 isometric; the ordinary product version is a continuous linear equivalence used for line
-sections and product integration.
+sections and product integration. In dimension one, affine coordinates along a unit vector give an
+affine isometric equivalence `𝕜 ≃ᵃⁱ[𝕜] E` (`TauCeti.coordEquivOfFinrankEqOne`), and pairing against
+any nonzero vector is injective (`TauCeti.inner_left_inj_of_finrank_eq_one`,
+`TauCeti.setOf_inner_eq_eq_singleton_of_finrank_eq_one`).
 
 Along a smooth family of linear isometries of a finite-dimensional inner product space, the
 inverses again depend smoothly on the parameter: expanding in an orthonormal basis `bᵢ`,
@@ -43,7 +47,8 @@ diffeomorphisms.
 
 ## Main definitions
 
-* `TauCeti.orthogonalLineIsometry` and `TauCeti.orthogonalLineEquiv`: orthogonal line coordinates.
+* `TauCeti.orthogonalLineIsometry`, `TauCeti.orthogonalLineEquiv`, and
+  `TauCeti.coordEquivOfFinrankEqOne`: orthogonal and one-dimensional line coordinates.
 * `LinearIsometry.prodOrthogonalRangeEquiv`: the continuous linear equivalence
   `E × (range f)ᗮ ≃L[𝕜] F` given by `(u, w) ↦ f u + w`.
 * `LinearIsometry.orthogonalComplementSingletonMap`: the restriction of a linear isometry to a map
@@ -379,6 +384,69 @@ theorem inner_add_smul (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : ℝ)
     ⟪e, (y : E) + t • e⟫ = t := by
   rw [← orthogonalLineEquiv_apply e he, ← orthogonalLineEquiv_symm_snd e he,
     ContinuousLinearEquiv.symm_apply_apply]
+
+section OneDimCoord
+
+open scoped InnerProductSpace
+
+variable {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- In a `1`-dimensional inner product space over `𝕜`, affine coordinates `t ↦ x + t • ν` along a
+unit vector `ν` give an affine isometric equivalence `𝕜 ≃ᵃⁱ[𝕜] F`. -/
+def coordEquivOfFinrankEqOne (hdim : Module.finrank 𝕜 F = 1) {ν : F} (hν : ‖ν‖ = 1) (x : F) :
+    𝕜 ≃ᵃⁱ[𝕜] F :=
+  ((LinearIsometryEquiv.toSpanUnitSingleton ν hν).trans
+    (LinearIsometryEquiv.ofTop F (𝕜 ∙ ν)
+      ((finrank_eq_one_iff_of_ne_zero ν (norm_ne_zero_iff.1 (hν ▸ one_ne_zero))).mp
+        hdim))).toAffineIsometryEquiv.trans
+    (AffineIsometryEquiv.constVAdd 𝕜 F x)
+
+@[simp]
+theorem coordEquivOfFinrankEqOne_apply (hdim : Module.finrank 𝕜 F = 1) {ν : F} (hν : ‖ν‖ = 1)
+    (x : F) (t : 𝕜) :
+    coordEquivOfFinrankEqOne hdim hν x t = x + t • ν := by
+  simp [coordEquivOfFinrankEqOne]
+
+@[simp]
+theorem coordEquivOfFinrankEqOne_symm_apply (hdim : Module.finrank 𝕜 F = 1) {ν : F}
+    (hν : ‖ν‖ = 1) (x y : F) :
+    (coordEquivOfFinrankEqOne hdim hν x).symm y = ⟪ν, y - x⟫_𝕜 := by
+  set t := (coordEquivOfFinrankEqOne hdim hν x).symm y
+  have hy : y = x + t • ν :=
+    ((coordEquivOfFinrankEqOne hdim hν x).apply_symm_apply y).symm.trans
+      (coordEquivOfFinrankEqOne_apply hdim hν x t)
+  simp [hy, inner_smul_right, inner_self_eq_norm_sq_to_K, hν]
+
+/-- Distance from the basepoint `x` in `coordEquivOfFinrankEqOne` coordinates is the norm of the
+coordinate. -/
+theorem dist_coordEquivOfFinrankEqOne_self (hdim : Module.finrank 𝕜 F = 1) {ν : F} (hν : ‖ν‖ = 1)
+    (x : F) (t : 𝕜) :
+    dist (coordEquivOfFinrankEqOne hdim hν x t) x = ‖t‖ := by
+  simp [dist_eq_norm, norm_smul, hν]
+
+/-- `coordEquivOfFinrankEqOne` pulls the open ball of radius `r` around `x` back to the open ball of
+radius `r` around `0` in `𝕜`. -/
+@[simp]
+theorem preimage_coordEquivOfFinrankEqOne_ball (hdim : Module.finrank 𝕜 F = 1) {ν : F}
+    (hν : ‖ν‖ = 1) (x : F) (r : ℝ) :
+    coordEquivOfFinrankEqOne hdim hν x ⁻¹' Metric.ball x r = Metric.ball 0 r := by
+  simpa using (coordEquivOfFinrankEqOne hdim hν x).toIsometryEquiv.preimage_ball x r
+
+/-- In a `1`-dimensional inner product space, pairing against a nonzero vector `ν` is injective. -/
+theorem inner_left_inj_of_finrank_eq_one (hdim : Module.finrank 𝕜 F = 1) {ν : F} (hν : ν ≠ 0)
+    {x y : F} : ⟪x, ν⟫_𝕜 = ⟪y, ν⟫_𝕜 ↔ x = y := by
+  have horth : (𝕜 ∙ ν)ᗮ = ⊥ := by simp [(finrank_eq_one_iff_of_ne_zero ν hν).mp hdim]
+  have hmem : x - y ∈ (𝕜 ∙ ν)ᗮ ↔ x - y ∈ (⊥ : Submodule 𝕜 F) := by rw [horth]
+  simpa [sub_eq_zero, inner_sub_left, Submodule.mem_orthogonal_singleton_iff_inner_left] using hmem
+
+/-- In a `1`-dimensional inner product space, the level set `{z | ⟪z, ν⟫_𝕜 = ⟪y, ν⟫_𝕜}` of pairing
+against a nonzero vector `ν` is `{y}`. -/
+theorem setOf_inner_eq_eq_singleton_of_finrank_eq_one (hdim : Module.finrank 𝕜 F = 1) {ν : F}
+    (hν : ν ≠ 0) (y : F) : {z : F | ⟪z, ν⟫_𝕜 = ⟪y, ν⟫_𝕜} = {y} := by
+  ext z
+  exact (inner_left_inj_of_finrank_eq_one hdim hν).trans Set.mem_singleton_iff.symm
+
+end OneDimCoord
 
 end TauCeti
 

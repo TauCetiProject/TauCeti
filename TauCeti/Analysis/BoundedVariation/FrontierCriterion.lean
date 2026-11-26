@@ -26,9 +26,11 @@ regularity assumption on the set:
   `Hⁿ⁻¹(∂s ∩ K) < ∞` for every compact `K ⊆ Ω`, then every compact subset of `Ω` has an open
   neighborhood in which `s` has finite perimeter, and so does the interior of `s`
   (`TauCeti.exists_perimeter_interior_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top`);
-* `TauCeti.perimeter_le_euclideanHausdorffMeasure_frontier_inter`: in dimension `n ≥ 2`, the sharp
-  bound `P(s; Ω) ≤ Hⁿ⁻¹(∂s ∩ Ω)` for every set `s`, combining the criterion with De Giorgi's
-  representation `P(s; Ω) = Hⁿ⁻¹(∂*s)` of the perimeter of a set of locally finite perimeter.
+* `TauCeti.perimeter_le_euclideanHausdorffMeasure_frontier_inter` and
+  `TauCeti.perimeter_le_euclideanHausdorffMeasure_frontier`: the sharp bounds
+  `P(s; Ω) ≤ Hⁿ⁻¹(∂s ∩ Ω)` and `P(s) ≤ Hⁿ⁻¹(∂s)` for every set `s` in every ambient dimension,
+  combining the criterion with De Giorgi's representation `P(s; Ω) = Hⁿ⁻¹(∂*s)` of the perimeter of
+  a set of locally finite perimeter.
 
 The proof uses three further results, in more basic modules.
 `TauCeti.perimeter_diff_le_of_frontier_inter_subset`: if an open set `G` contains `∂s ∩ V`, then
@@ -223,15 +225,19 @@ theorem exists_perimeter_interior_ne_top_of_euclideanHausdorffMeasure_frontier_i
     (fun L hL hLΩ => ne_top_of_le_ne_top (h L hL hLΩ)
       (measure_mono (inter_subset_inter_left _ frontier_interior_subset))) hK hKΩ
 
-/-- **The perimeter is at most the Hausdorff measure of the frontier.** In dimension `n ≥ 2`,
+/-- **The perimeter is at most the Hausdorff measure of the frontier.** In every ambient dimension,
 every set `s`, measurable or not, has `P(s; Ω) ≤ Hⁿ⁻¹(∂s ∩ Ω)` in every open set `Ω`. -/
-theorem perimeter_le_euclideanHausdorffMeasure_frontier_inter (hn : 2 ≤ finrank ℝ E)
+theorem perimeter_le_euclideanHausdorffMeasure_frontier_inter
     (Ω : Opens E) (s : Set E) :
     perimeter volume Ω s ≤ μHE[finrank ℝ E - 1] (frontier s ∩ Ω) := by
+  rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
+  · have : Subsingleton E := finrank_zero_iff.1 hn
+    rw [perimeter_of_subsingleton]
+    exact zero_le
   by_cases hM : μHE[finrank ℝ E - 1] (frontier s ∩ Ω) = ∞
   · rw [hM]
     exact le_top
-  rw [perimeter_congr_ae (ae_eq_interior_of_hausdorffMeasure_frontier_inter_ne_top volume (by omega)
+  rw [perimeter_congr_ae (ae_eq_interior_of_hausdorffMeasure_frontier_inter_ne_top volume hn
     (euclideanHausdorffMeasure_lt_top_iff.1 (lt_top_iff_ne_top.2 hM)).ne)]
   have hfin (K : Set E) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
       ∃ U : Opens E, K ⊆ (U : Set E) ∧
@@ -240,16 +246,16 @@ theorem perimeter_le_euclideanHausdorffMeasure_frontier_inter (hn : 2 ≤ finran
       exists_perimeter_interior_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top
         (fun K _ hKΩ => ne_top_of_le_ne_top hM (measure_mono (inter_subset_inter_right _ hKΩ)))
         hK hKΩ
-  rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn
+  rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary
     (((locallyIntegrable_const 1).indicator isOpen_interior.measurableSet).locallyIntegrableOn _)
     hfin]
   exact measure_mono (subset_inter (reducedBoundary_subset_frontier.trans frontier_interior_subset)
     reducedBoundary_subset)
 
 /-- **The perimeter is at most the Hausdorff measure of the frontier, in the whole space.** In
-dimension `n ≥ 2`, every set `s`, measurable or not, has `P(s) ≤ Hⁿ⁻¹(∂s)`. -/
-theorem perimeter_le_euclideanHausdorffMeasure_frontier (hn : 2 ≤ finrank ℝ E) (s : Set E) :
+every ambient dimension, every set `s`, measurable or not, has `P(s) ≤ Hⁿ⁻¹(∂s)`. -/
+theorem perimeter_le_euclideanHausdorffMeasure_frontier (s : Set E) :
     perimeter volume ⊤ s ≤ μHE[finrank ℝ E - 1] (frontier s) := by
-  simpa using perimeter_le_euclideanHausdorffMeasure_frontier_inter hn ⊤ s
+  simpa using perimeter_le_euclideanHausdorffMeasure_frontier_inter ⊤ s
 
 end TauCeti

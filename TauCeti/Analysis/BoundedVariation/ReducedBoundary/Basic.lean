@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 import TauCeti.MeasureTheory.Constructions.Polish.StronglyMeasurable
 import TauCeti.MeasureTheory.Covering.Besicovitch
+import TauCeti.Topology.MetricSpace.ProperSpace
 
 /-!
 # The reduced boundary and the measure-theoretic outer normal
@@ -395,10 +396,8 @@ theorem eventually_setIntegral_norm_outerNormal_sub_le
     nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
   filter_upwards [hinner, Ioc_mem_nhdsGT hε] with r hr hrε
   set S := ((↑) : Ω → E) ⁻¹' closedBall x r
-  have hS : IsCompact S := Topology.IsInducing.subtypeVal.isCompact_preimage'
-    (isCompact_closedBall x r) (by
-      rw [Subtype.range_coe]
-      exact (closedBall_subset_closedBall hrε.2).trans hεΩ)
+  have hS : IsCompact S :=
+    isCompact_preimage_coe_closedBall ((closedBall_subset_closedBall hrε.2).trans hεΩ)
   have hSfin : lam S ≠ ∞ := hS.measure_lt_top.ne
   refine ⟨hSfin, ?_⟩
   have hSm : MeasurableSet S := hS.isClosed.measurableSet

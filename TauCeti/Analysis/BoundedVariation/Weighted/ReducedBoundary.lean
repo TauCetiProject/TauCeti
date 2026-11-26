@@ -13,10 +13,11 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 /-!
 # The weighted perimeter as a weighted Hausdorff measure of the boundary
 
-Let `W` be a `C¹` weight on a finite-dimensional real inner product space `E` of dimension
-`n ≥ 2`, with measure `μ = e^{−W} · volume`, and let `U` be a set of locally finite perimeter in
-an open set `Ω`. The weighted perimeter of `U` in `Ω` is the weighted `(n − 1)`-dimensional
-Hausdorff measure of its reduced boundary, and of the part of its essential boundary in `Ω`:
+Let `W` be a `C¹` weight on a finite-dimensional real inner product space `E` of dimension `n`,
+with measure `μ = e^{−W} · volume`, and let `U` be a set of locally finite perimeter in an open set
+`Ω`. In every ambient dimension `n ≥ 0`, the weighted perimeter of `U` in `Ω` is the weighted
+`(n − 1)`-dimensional Hausdorff measure of its reduced boundary, and for `n ≥ 2` also of the part
+of its essential boundary in `Ω`:
 
 `P_μ(U; Ω) = ∫_{∂*U} e^{−W} dHⁿ⁻¹ = ∫_{∂ᵉU ∩ Ω} e^{−W} dHⁿ⁻¹`
 
@@ -52,17 +53,17 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {W : E → ℝ} {Ω : Opens E} {s : Set E}
 
 /-- **The weighted perimeter is the weighted Hausdorff measure of the reduced boundary.** For a
-`C¹` weight `W`, in dimension `n ≥ 2`, a set `s` of locally finite perimeter in `Ω` has
-`P_μ(s; Ω) = ∫_{∂*s} e^{−W} dHⁿ⁻¹`. -/
+`C¹` weight `W`, in every ambient dimension `n ≥ 0`, a set `s` of locally finite perimeter in `Ω`
+has `P_μ(s; Ω) = ∫_{∂*s} e^{−W} dHⁿ⁻¹`. -/
 theorem weightedPerimeter_eq_lintegral_reducedBoundary (hW : ContDiff ℝ 1 W)
-    (hn : 2 ≤ finrank ℝ E) (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
+    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞) :
     weightedPerimeter W Ω s =
       ∫⁻ x in reducedBoundary volume Ω s, ENNReal.ofReal (Real.exp (-W x))
         ∂μHE[finrank ℝ E - 1] := by
   rw [weightedPerimeter_def, weightedVariation_eq_lintegral_variationMeasure hW hu hfin,
-    variationMeasure_eq_comap_restrict_reducedBoundary hn]
+    variationMeasure_eq_comap_restrict_reducedBoundary]
   refine (lintegral_subtype_comap (s := (Ω : Set E)) Ω.isOpen.measurableSet
     fun x => ENNReal.ofReal (Real.exp (-W x))).trans ?_
   rw [Measure.restrict_restrict Ω.isOpen.measurableSet, inter_eq_right.2 reducedBoundary_subset]
@@ -77,19 +78,19 @@ theorem weightedPerimeter_eq_lintegral_essentialBoundary_inter (hW : ContDiff �
     weightedPerimeter W Ω s =
       ∫⁻ x in essentialBoundary volume s ∩ Ω, ENNReal.ofReal (Real.exp (-W x))
         ∂μHE[finrank ℝ E - 1] := by
-  rw [weightedPerimeter_eq_lintegral_reducedBoundary hW hn hu hfin,
+  rw [weightedPerimeter_eq_lintegral_reducedBoundary hW hu hfin,
     setLIntegral_congr (essentialBoundary_inter_ae_eq_reducedBoundary hn hu hfin)]
 
-/-- For a `C¹` weight `W`, in dimension `n ≥ 2`, a null-measurable set `s` of finite weighted
-perimeter in `Ω` has `P_μ(s; Ω) = ∫_{∂*s} e^{−W} dHⁿ⁻¹`. -/
+/-- For a `C¹` weight `W`, in every ambient dimension `n ≥ 0`, a null-measurable set `s` of finite
+weighted perimeter in `Ω` has `P_μ(s; Ω) = ∫_{∂*s} e^{−W} dHⁿ⁻¹`. -/
 theorem weightedPerimeter_eq_lintegral_reducedBoundary_of_ne_top (hW : ContDiff ℝ 1 W)
-    (hn : 2 ≤ finrank ℝ E) (hs : NullMeasurableSet s (volume.restrict Ω))
+    (hs : NullMeasurableSet s (volume.restrict Ω))
     (h : weightedPerimeter W Ω s ≠ ∞) :
     weightedPerimeter W Ω s =
       ∫⁻ x in reducedBoundary volume Ω s, ENNReal.ofReal (Real.exp (-W x))
         ∂μHE[finrank ℝ E - 1] :=
   have hu := locallyIntegrableOn_indicator_const hs (1 : ℝ)
-  weightedPerimeter_eq_lintegral_reducedBoundary hW hn hu
+  weightedPerimeter_eq_lintegral_reducedBoundary hW hu
     (exists_totalVariationOn_ne_top_of_weightedVariation_ne_top hW hu
       (weightedPerimeter_def (W := W) ▸ h))
 

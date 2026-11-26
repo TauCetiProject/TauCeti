@@ -18,10 +18,10 @@ import TauCeti.Topology.Algebra.Module.Trace
 /-!
 # The weighted Gauss–Green formula
 
-Let `W` be a `C¹` weight on a finite-dimensional real inner product space `E` of dimension
-`n ≥ 2`, with measure `μ = e^{−W} · volume`, and let `U` be a set of locally finite perimeter in
-an open set `Ω`, with reduced boundary `∂*U` and outer normal `ν_U`. For every `C¹` vector field
-`X` with compact support in `Ω`,
+Let `W` be a `C¹` weight on a finite-dimensional real inner product space `E`, with measure
+`μ = e^{−W} · volume`, and let `U` be a set of locally finite perimeter in an open set `Ω`, with
+reduced boundary `∂*U` and outer normal `ν_U`. For every `C¹` vector field `X` with compact support
+in `Ω`,
 
 `∫_U div_μ X dμ = ∫_{∂*U} ⟨X, ν_U⟩ e^{−W} dHⁿ⁻¹`,
 
@@ -57,11 +57,11 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {W : E → ℝ} {Ω : Opens E} {s : Set E}
 
-/-- **The weighted Gauss–Green formula.** For a `C¹` weight `W`, in dimension `n ≥ 2`, a set `s`
-of locally finite perimeter in `Ω` and a `C¹` vector field `X` with compact support in `Ω`,
+/-- **The weighted Gauss–Green formula.** For a `C¹` weight `W`, a set `s` of locally finite
+perimeter in `Ω` and a `C¹` vector field `X` with compact support in `Ω`,
 `∫_s div_μ X dμ = ∫_{∂*s} ⟨X, ν_s⟩ e^{−W} dHⁿ⁻¹`, where `div_μ X = div X − DW X`. -/
 theorem integral_weightedDivergence_eq_integral_reducedBoundary (hW : ContDiff ℝ 1 W)
-    (hn : 2 ≤ finrank ℝ E) (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
+    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞)
     {X : E → E} (hX : ContDiff ℝ 1 X) (hc : HasCompactSupport X) (hXΩ : tsupport X ⊆ Ω) :
@@ -71,7 +71,7 @@ theorem integral_weightedDivergence_eq_integral_reducedBoundary (hW : ContDiff �
         ∂μHE[finrank ℝ E - 1] := by
   have hWd := hW.differentiable one_ne_zero
   have hφ : ContDiff ℝ 1 fun y => Real.exp (-W y) • X y := hW.neg.exp.smul hX
-  have key := integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal hn hu hfin hφ
+  have key := integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal hu hfin hφ
     hc.smul_left ((tsupport_smul_subset_right _ _).trans hXΩ)
   simp_rw [trace_fderiv_exp_neg_smul (hWd _) (hX.differentiable one_ne_zero _),
     real_inner_smul_left] at key
@@ -138,7 +138,7 @@ private theorem tendsto_integral_weightedDivergence_cutoff (hW : ContDiff ℝ 1 
 Gauss–Green formula is integrable on the reduced boundary of a set of finite weighted perimeter:
 it is dominated by `‖X‖_∞ e^{−W}`, whose integral there is a multiple of the weighted perimeter. -/
 private theorem integrable_inner_outerNormal_mul_exp_neg (hW : ContDiff ℝ 1 W)
-    (hn : 2 ≤ finrank ℝ E) (hs : NullMeasurableSet s (volume.restrict ((⊤ : Opens E) : Set E)))
+    (hs : NullMeasurableSet s (volume.restrict ((⊤ : Opens E) : Set E)))
     (hP : weightedPerimeter W ⊤ s ≠ ∞) {X : E → E} (hX : Continuous X) {C : ℝ}
     (hXC : ∀ x, ‖X x‖ ≤ C) :
     Integrable (fun x => ⟪X x, outerNormal volume ⊤ s x⟫ * Real.exp (-W x))
@@ -148,7 +148,7 @@ private theorem integrable_inner_outerNormal_mul_exp_neg (hW : ContDiff ℝ 1 W)
       ((μHE[finrank ℝ E - 1]).restrict (reducedBoundary volume ⊤ s)) :=
     ⟨hexp.aestronglyMeasurable, (hasFiniteIntegral_iff_ofReal
       (Eventually.of_forall fun x => (Real.exp_pos _).le)).2
-      (weightedPerimeter_eq_lintegral_reducedBoundary_of_ne_top hW hn hs hP ▸ hP.lt_top)⟩
+      (weightedPerimeter_eq_lintegral_reducedBoundary_of_ne_top hW hs hP ▸ hP.lt_top)⟩
   refine (hexpi.const_mul C).mono' ((hX.aestronglyMeasurable.inner
     measurable_outerNormal.aestronglyMeasurable).mul hexp.aestronglyMeasurable) ?_
   filter_upwards [ae_restrict_mem measurableSet_reducedBoundary] with x hx
@@ -157,12 +157,12 @@ private theorem integrable_inner_outerNormal_mul_exp_neg (hW : ContDiff ℝ 1 W)
   exact (norm_inner_le_norm _ _).trans (by rw [norm_outerNormal hx, mul_one]; exact hXC x)
 
 /-- **The weighted Gauss–Green formula for bounded fields.** For a `C¹` weight `W` whose measure
-`μ = e^{−W} · volume` is finite, in dimension `n ≥ 2`, a Lebesgue-measurable set `s` of finite
-weighted perimeter and a `C¹` vector field `X`, bounded with bounded derivative, with
-`DW X ∈ L¹(μ)`: `∫_s div_μ X dμ = ∫_{∂*s} ⟨X, ν_s⟩ e^{−W} dHⁿ⁻¹`, where `div_μ X = div X − DW X`.
-The field `X` need not have compact support. -/
+`μ = e^{−W} · volume` is finite, a Lebesgue-measurable set `s` of finite weighted perimeter and a
+`C¹` vector field `X`, bounded with bounded derivative, with `DW X ∈ L¹(μ)`:
+`∫_s div_μ X dμ = ∫_{∂*s} ⟨X, ν_s⟩ e^{−W} dHⁿ⁻¹`, where `div_μ X = div X − DW X`. The field `X`
+need not have compact support. -/
 theorem integral_weightedDivergence_eq_integral_reducedBoundary_of_bounded
-    (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E) (hμ : Integrable fun x => Real.exp (-W x))
+    (hW : ContDiff ℝ 1 W) (hμ : Integrable fun x => Real.exp (-W x))
     (hs : NullMeasurableSet s) (hP : weightedPerimeter W ⊤ s ≠ ∞) {X : E → E}
     (hX : ContDiff ℝ 1 X) {C C' : ℝ} (hXC : ∀ x, ‖X x‖ ≤ C) (hXC' : ∀ x, ‖fderiv ℝ X x‖ ≤ C')
     (hWX : Integrable fun x => fderiv ℝ W x (X x) * Real.exp (-W x)) :
@@ -199,12 +199,12 @@ theorem integral_weightedDivergence_eq_integral_reducedBoundary_of_bounded
       (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
       (fun k => (hg k).continuous.aestronglyMeasurable)
       (fun k x hx => hg1 k x (mem_closedBall_zero_iff.2 hx.le)) hgI
-      (integrable_inner_outerNormal_mul_exp_neg hW hn hs' hP hX.continuous hXC)).congr fun k => ?_
+      (integrable_inner_outerNormal_mul_exp_neg hW hs' hP hX.continuous hXC)).congr fun k => ?_
     congr 1 with x
     rw [real_inner_smul_left, smul_eq_mul, mul_assoc]
   refine tendsto_nhds_unique ((tendsto_integral_weightedDivergence_cutoff hW hμ hs hX hXC hXC'
     hWX hB hg hg01 hgt hgd).congr fun k => ?_) hright
-  rw [← integral_weightedDivergence_eq_integral_reducedBoundary hW hn hu hfin
+  rw [← integral_weightedDivergence_eq_integral_reducedBoundary hW hu hfin
     (X := fun x => g k x • X x) ((hg k).smul hX) ((hgc k).smul_right) (subset_univ _)]
   congr 1 with x
   rw [trace_fderiv_smul ((hg k).differentiable one_ne_zero _)
