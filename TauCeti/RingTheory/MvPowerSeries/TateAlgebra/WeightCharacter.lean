@@ -334,16 +334,6 @@ theorem factor_def (hσI : ∀ i, ∀ y ∈ I, ‖σ i y‖ ≤ r i) (γ : sigma
   (rfl)
 
 omit [NormOneClass R] in
-/-- The analytic factor of the identity is one. -/
-@[simp]
-theorem factor_one (hσI : ∀ i, ∀ y ∈ I, ‖σ i y‖ ≤ r i) :
-    κ.factor hσI (1 : sigma0Submonoid I hI) = 1 := by
-  have h0 := factorArg_one (σ := σ) (hI := hI)
-  rw [factor_def, sigma0LowerRightUnit_one, map_one, one_smul,
-    restrictedAnalyticSubst_congr (hg' := h0 ▸ norm_factorArg_le hσI 1) h0,
-    restrictedAnalyticSubst_zero_apply, constantCoeff_expansion, map_one]
-
-omit [NormOneClass R] in
 /-- For an upper triangular `γ`, with `c = 0`, the analytic factor is the constant `n(d)`. For
 instance a scalar matrix `u I` has factor `n(u)`. -/
 theorem factor_eq_algebraMap_of_lowerLeft_eq_zero (hσI : ∀ i, ∀ y ∈ I, ‖σ i y‖ ≤ r i)
@@ -353,6 +343,14 @@ theorem factor_eq_algebraMap_of_lowerLeft_eq_zero (hσI : ∀ i, ∀ y ∈ I, �
   rw [factor_def, restrictedAnalyticSubst_congr (hg' := h0 ▸ norm_factorArg_le hσI γ) h0,
     restrictedAnalyticSubst_zero_apply, constantCoeff_expansion, map_one, Algebra.smul_def,
     mul_one]
+
+omit [NormOneClass R] in
+/-- The analytic factor of the identity is one. -/
+@[simp]
+theorem factor_one (hσI : ∀ i, ∀ y ∈ I, ‖σ i y‖ ≤ r i) :
+    κ.factor hσI (1 : sigma0Submonoid I hI) = 1 := by
+  rw [κ.factor_eq_algebraMap_of_lowerLeft_eq_zero hσI (by simp), sigma0LowerRightUnit_one,
+    map_one, map_one]
 
 omit [NormOneClass R] in
 /-- The analytic factor is bounded by `‖n(d)‖ ‖N‖`. -/
