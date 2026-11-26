@@ -121,6 +121,8 @@ Morse-theoretic definitions that use them.
   third derivatives of sums, differences and constant multiples.
 * `ContinuousLinearMap.fderiv_fderiv` and `ContinuousLinearMap.fderiv_fderiv_fderiv`: the second
   and third derivatives of a continuous linear map vanish.
+* `ContinuousLinearMap.fderiv_fderiv_comp_apply`: the second derivative of `y ↦ L (φ y)` is `L`
+  applied to that of `φ`.
 * `TauCeti.fderiv_fderiv_smul_apply`: the second-order product rule for a scalar multiple, with
   `TauCeti.fderiv_fderiv_fun_smul_apply` its form for `fun y ↦ f y • g y`, and
   `TauCeti.fderiv_fderiv_mul_apply` (and `TauCeti.fderiv_fderiv_fun_mul_apply`) its case of a
@@ -646,6 +648,14 @@ theorem _root_.ContinuousLinearMap.fderiv_fderiv (L : E →L[𝕜] F) : fderiv �
 theorem _root_.ContinuousLinearMap.fderiv_fderiv_fderiv (L : E →L[𝕜] F) :
     fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 L)) = 0 := by
   rw [L.fderiv_fderiv, fderiv_zero]
+
+/-- The second derivative of `y ↦ L (φ y)`, for a continuous linear map `L` and `φ` that is `C²` at
+`b`, is `L` applied to the second derivative of `φ`: the second-order chain rule
+`TauCeti.fderiv_fderiv_comp_apply` for a linear outer map. -/
+theorem _root_.ContinuousLinearMap.fderiv_fderiv_comp_apply (L : E →L[𝕜] G) {φ : F → E} {b : F}
+    (hφ : ContDiffAt 𝕜 2 φ b) (v w : F) :
+    fderiv 𝕜 (fderiv 𝕜 fun y ↦ L (φ y)) b v w = L (fderiv 𝕜 (fderiv 𝕜 φ) b v w) := by
+  simpa [Function.comp_def] using TauCeti.fderiv_fderiv_comp_apply L.contDiff.contDiffAt hφ v w
 
 /-- **The second-order product rule for a scalar multiple.** For a map `f` into a normed algebra
 `𝕜'` and a map `g` into a `𝕜'`-module which are `C²` at `x`,
