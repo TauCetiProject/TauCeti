@@ -81,22 +81,6 @@ lemma IsExtEquivFor.comp_iff_left (α' : X'' ⟶ X') {α : X' ⟶ X} (h : IsExtE
 
 variable {S : ShortComplex 𝒜}
 
-/-- For a short exact sequence `S`, precomposition with `S.g` is injective on `Extⁿ(-, F)` as soon
-as precomposition with `S.f` is onto `Extⁿ⁻¹(S.X₁, F)`: in degree zero because `S.g` is an
-epimorphism, and in positive degree because the connecting map then vanishes. -/
-private lemma precomp_mk₀_g_injective (hS : S.ShortExact) {n : ℕ}
-    (h : ∀ m, m + 1 = n → Function.Surjective ((Ext.mk₀ S.f).precomp F (zero_add m))) :
-    Function.Injective ((Ext.mk₀ S.g).precomp F (zero_add n)) := by
-  cases n with
-  | zero =>
-    have := hS.epi_g
-    exact Ext.precomp_mk₀_injective_of_epi F S.g
-  | succ n =>
-    refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
-    obtain ⟨y, rfl⟩ := Ext.contravariant_sequence_exact₃ hS F x hx (add_comm 1 n)
-    obtain ⟨z, rfl⟩ := h n rfl y
-    simp
-
 /-- If `Ext*(S.X₃, F)` vanishes, the first map of the short exact sequence `S` is an equivalence
 for `F`, by the long exact sequence in the first variable. -/
 private lemma isExtEquivFor_of_shortExact (hS : S.ShortExact)
@@ -111,7 +95,7 @@ private lemma isExtEquivFor_of_shortExact (hS : S.ShortExact)
 bijective precomposition with `S.f` is zero. -/
 private lemma subsingleton_ext_of_isExtEquivFor (hS : S.ShortExact) (h : IsExtEquivFor F S.f)
     (n : ℕ) : Subsingleton (Ext.{t} S.X₃ F n) := by
-  have hinj := precomp_mk₀_g_injective hS (n := n) fun m _ ↦ (h m).2
+  have hinj := hS.precomp_mk₀_g_injective F (n := n) fun m _ ↦ (h m).2
   refine ⟨fun x x' ↦ hinj ((h n).1 ?_)⟩
   simp [Ext.mk₀_comp_mk₀_assoc, S.zero]
 
@@ -128,7 +112,7 @@ instance isClosedClass_forall_subsingleton_ext :
   prop_X₂_iff_prop_X₃ {S} hS h₁ := by
     -- The long exact sequence makes `Extⁿ(S.X₃, F) ⟶ Extⁿ(S.X₂, F)` bijective.
     have hb (n : ℕ) : Function.Bijective ((Ext.mk₀ S.g).precomp F (zero_add n)) :=
-      ⟨precomp_mk₀_g_injective hS fun m _ y ↦ ⟨0, @Subsingleton.elim _ (h₁ m) _ _⟩,
+      ⟨hS.precomp_mk₀_g_injective F fun m _ y ↦ ⟨0, @Subsingleton.elim _ (h₁ m) _ _⟩,
         fun x ↦ Ext.contravariant_sequence_exact₂ hS F x (@Subsingleton.elim _ (h₁ n) _ _)⟩
     exact forall_congr' fun n ↦ ⟨fun _ ↦ (hb n).1.subsingleton,
       fun _ ↦ (Equiv.ofBijective _ (hb n)).symm.subsingleton⟩

@@ -46,7 +46,7 @@ public section
 
 open CategoryTheory Limits DirectSum
 
-universe w v u v' u'
+universe w w' w'' v u v' u'
 
 namespace CategoryTheory.Abelian
 
@@ -127,12 +127,13 @@ lemma mk₀_comp (f : X ⟶ Y) (x : TotalExt Y Z) :
 
 section Map
 
-variable {D : Type u'} [Category.{v'} D] [Abelian D] [HasExt.{w} D]
-  {E : Type*} [Category* E] [Abelian E] [HasExt.{w} E]
+variable {D : Type u'} [Category.{v'} D] [Abelian D] [HasExt.{w'} D]
+  {E : Type*} [Category* E] [Abelian E] [HasExt.{w''} E]
   (G : C ⥤ D) [G.Additive] [PreservesFiniteLimits G] [PreservesFiniteColimits G]
 
-/-- An exact functor acts on total Ext groups, degree by degree. -/
-noncomputable def map : TotalExt X Y →+ TotalExt (G.obj X) (G.obj Y) :=
+/-- An exact functor acts on total Ext groups, degree by degree. The total Ext groups of the
+source and of the target may live in different universes. -/
+noncomputable def map : TotalExt.{w} X Y →+ TotalExt.{w'} (G.obj X) (G.obj Y) :=
   DirectSum.map (G.mapExtAddHom X Y)
 
 /-- On homogeneous classes `map G` is the image of the class under `G`. -/

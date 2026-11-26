@@ -59,6 +59,8 @@ This file collects general `Ext` API that Mathlib does not state in this form:
   sequences: when `Ext^{j + 1}(P, S₁.X₂)` and `Ext^{j + 1}(P, S₂.X₂)` vanish, surjectivity on the
   second and bijectivity on the third terms in degree `j` give bijectivity on the first terms in
   degree `j + 1` (`CategoryTheory.ShortComplex.ShortExact.postcomp_mk₀_τ₁_bijective`);
+* precomposition with `S.g` is injective on `Extⁿ(-, Y)` when precomposition with `S.f` is onto
+  `Extⁿ⁻¹(S.X₁, Y)` (`CategoryTheory.ShortComplex.ShortExact.precomp_mk₀_g_injective`);
 * extension of morphisms along a short exact sequence `S` whose cokernel `S.X₃` has
   `Ext¹(S.X₃, Y) = 0` (`CategoryTheory.ShortComplex.ShortExact.exists_f_comp_eq_of_ext_eq_zero`),
   and conversely when `S.X₂` is projective
@@ -447,6 +449,23 @@ theorem precomp_mk₀_f_bijective_of_projective [Projective S.X₃] (Y : C) (n :
     rw [Ext.eq_zero_of_projective z, Ext.comp_zero]
   · exact Ext.contravariant_sequence_exact₁ hS Y x (n₁ := n + 2) (by lia)
       (Ext.eq_zero_of_projective _)
+
+/-- **Injectivity of restriction along the quotient map**: if `S` is short exact, precomposition
+with `S.g` is injective on `Extⁿ(-, Y)` as soon as precomposition with `S.f` is onto
+`Extⁿ⁻¹(S.X₁, Y)`: in degree zero because `S.g` is an epimorphism, and in positive degree because
+the connecting map then vanishes. -/
+theorem precomp_mk₀_g_injective (Y : C) {n : ℕ}
+    (h : ∀ m, m + 1 = n → Function.Surjective ((Ext.mk₀ S.f).precomp Y (zero_add m))) :
+    Function.Injective ((Ext.mk₀ S.g).precomp Y (zero_add n)) := by
+  cases n with
+  | zero =>
+    have := hS.epi_g
+    exact Ext.precomp_mk₀_injective_of_epi Y S.g
+  | succ n =>
+    refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
+    obtain ⟨y, rfl⟩ := Ext.contravariant_sequence_exact₃ hS Y x hx (add_comm 1 n)
+    obtain ⟨z, rfl⟩ := h n rfl y
+    simp
 
 /-- **Extension along a monomorphism with orthogonal cokernel**: if `S` is short exact and
 `Ext¹(S.X₃, Y) = 0`, every morphism `S.X₁ ⟶ Y` extends along `S.f`. -/
