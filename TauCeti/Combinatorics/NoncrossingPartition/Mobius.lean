@@ -32,9 +32,15 @@ are exactly the partitions into the positions after `m₁` up to some position `
 positions. Together with multiplicativity this gives the recurrence
 `μ_n = -∑_{0 < i < n} μ_i μ_(n-i)`, which is the recurrence of the signed Catalan numbers.
 
-Third, on `NC(n)` the Kreweras complement `K` reverses the order and maps the upper interval
-`[π, 1̂]` onto the lower interval `[0̂, K(π)]`, so `μ(π, 1̂) = μ(0̂, K(π))`. These are the
-coefficients of the formula expressing free cumulants through moments.
+Third, the Kreweras complement `K` reverses the order and maps the upper interval `[π, 1̂]` onto
+the lower interval `[0̂, K(π)]`, so `μ(π, 1̂) = μ(0̂, K(π))`. These are the coefficients of the
+formula expressing free cumulants through moments.
+
+Finally, every interval `[σ, π]` is the product over the parts `B` of `π` of the upper intervals
+`[σ|_B, 1_B]` of `NC(B)`, so `μ(σ, π) = ∏_{B ∈ π} μ_{NC(B)}(σ|_B, 1̂)`, and with the Kreweras
+complement on each `NC(B)` this gives a blockwise formula for all values of `μ`. The two directions
+of Möbius inversion on `NC(s)` are the general `IncidenceAlgebra.moebius_inversion_bot` and
+`IncidenceAlgebra.sum_Iic_sum_Iic_mu_mul`.
 
 ## Main results
 
@@ -42,15 +48,19 @@ coefficients of the formula expressing free cumulants through moments.
 * `TauCeti.NoncrossingPartition.mu_bot_top` — `μ(0̂, 1̂) = (-1)^(|s|-1) C_(|s|-1)` on `NC(s)`, and
   `TauCeti.NoncrossingPartition.mu_bot_top_fin` — `μ(0_n, 1_n) = (-1)^(n-1) C_(n-1)` on `NC(n)`.
 * `TauCeti.NoncrossingPartition.mu_top_eq_mu_bot_kreweras` — Kreweras duality of upper and
-  lower Möbius intervals on `NC(n)`.
+  lower Möbius intervals.
 * `TauCeti.NoncrossingPartition.mu_bot_eq_prod` — the blockwise formula
   `μ(0̂, π) = ∏_{B ∈ π} (-1)^(|B|-1) C_(|B|-1)`.
-* `TauCeti.NoncrossingPartition.mu_top_eq_prod_kreweras` — on `NC(n)`,
-  `μ(π, 1_n) = ∏_{B ∈ K(π)} (-1)^(|B|-1) C_(|B|-1)`, with `K` the Kreweras complement.
+* `TauCeti.NoncrossingPartition.mu_top_eq_prod_kreweras` —
+  `μ(π, 1̂) = ∏_{B ∈ K(π)} (-1)^(|B|-1) C_(|B|-1)`, with `K` the Kreweras complement.
+* `TauCeti.NoncrossingPartition.mu_eq_prod_mu_restrict` — for `σ ≤ π`,
+  `μ(σ, π) = ∏_{B ∈ π} μ_{NC(B)}(σ|_B, 1̂)`.
+* `TauCeti.NoncrossingPartition.mu_eq_prod_prod_kreweras` — for `σ ≤ π`,
+  `μ(σ, π) = ∏_{B ∈ π} ∏_{C ∈ K_B(σ|_B)} (-1)^(|C|-1) C_(|C|-1)`.
 
 ## References
 
-* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Lecture 10
+* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Lectures 9 and 10
   (Proposition 10.15).
 * G. Kreweras, *Sur les partitions non croisées d'un cycle*, Discrete Math. 1 (1972), 333–350.
 * L. Weisner, *Abstract theory of inversion of finite series*, Trans. Amer. Math. Soc. 38 (1935),
@@ -305,20 +315,55 @@ theorem mu_bot_eq_prod [CommRing 𝕜] (π : NoncrossingPartition s) :
 
 /-! ### Upper intervals -/
 
-/-- The Kreweras complement identifies an upper Möbius interval with a lower one. -/
-theorem mu_top_eq_mu_bot_kreweras [AddCommGroup 𝕜] [One 𝕜] {n : ℕ}
-    (π : NoncrossingPartition (univ : Finset (Fin n))) :
+/-- The Kreweras complement identifies an upper Möbius interval with a lower one:
+`μ(π, 1̂) = μ(0̂, K(π))` on `NC(s)`. -/
+theorem mu_top_eq_mu_bot_kreweras [AddCommGroup 𝕜] [One 𝕜] (π : NoncrossingPartition s) :
     mu 𝕜 π ⊤ = mu 𝕜 ⊥ (kreweras π) := by
   -- `mu_toDual` needs a ring, so compare over `ℤ` and transport along `k ↦ k • 1`.
-  have h := OrderIso.mu_map (𝕜 := ℤ) (krewerasOrderIso n) π ⊤
+  have h := OrderIso.mu_map (𝕜 := ℤ) (krewerasOrderIso s) π ⊤
   simp only [krewerasOrderIso_apply, kreweras_top, mu_toDual] at h
   simpa using congrArg (zmultiplesHom 𝕜 1) h.symm
 
-/-- The blockwise formula for the Möbius function of `NC(n)` on upper intervals: `μ(π, 1_n)` is
-the product over the parts `B` of the Kreweras complement `K(π)` of `(-1)^(|B|-1) C_(|B|-1)`. -/
-theorem mu_top_eq_prod_kreweras [CommRing 𝕜] {n : ℕ}
-    (π : NoncrossingPartition (univ : Finset (Fin n))) :
+/-- The blockwise formula for the Möbius function of `NC(s)` on upper intervals: `μ(π, 1̂)` is the
+product over the parts `B` of the Kreweras complement `K(π)` of `(-1)^(|B|-1) C_(|B|-1)`. -/
+theorem mu_top_eq_prod_kreweras [CommRing 𝕜] (π : NoncrossingPartition s) :
     mu 𝕜 π ⊤ = ∏ B ∈ (kreweras π).val.parts, (-1) ^ (#B - 1) * (catalan (#B - 1) : 𝕜) := by
   rw [mu_top_eq_mu_bot_kreweras, mu_bot_eq_prod]
+
+/-! ### General intervals -/
+
+/-- *Multiplicativity of the Möbius function* of `NC(s)`: for `σ ≤ π`, `μ(σ, π)` is the product
+over the parts `B` of `π` of the values `μ(σ|_B, 1̂)` on the lattices `NC(B)`. This reflects the
+factorisation `[σ, π] ≅ ∏_{B ∈ π} [σ|_B, 1_B]` (`TauCeti.NoncrossingPartition.iccOrderIso`). -/
+theorem mu_eq_prod_mu_restrict [CommRing 𝕜] {σ π : NoncrossingPartition s} (h : σ ≤ π) :
+    mu 𝕜 σ π = ∏ B : π.val.parts, mu 𝕜 (σ.restrict (π.val.le B.property)) ⊤ := by
+  induction σ using WellFoundedGT.induction with
+  | _ σ ih =>
+  rcases h.eq_or_lt with rfl | hlt
+  · rw [mu_self, eq_comm]
+    exact prod_eq_one fun B _ => by rw [restrict_of_mem_parts _ B.property, mu_self]
+  -- Some part `B` of `π` has `σ|_B ≠ 1_B`, since the restrictions determine `σ ≤ π`.
+  obtain ⟨B, hB⟩ : ∃ B : π.val.parts, σ.restrict (π.val.le B.property) ≠ ⊤ := by
+    by_contra! H
+    refine hlt.ne (congrArg Subtype.val (π.iicOrderIso.injective (a₁ := ⟨σ, h⟩)
+      (a₂ := ⟨π, Set.self_mem_Iic⟩) (funext fun B => ?_)))
+    rw [iicOrderIso_apply, iicOrderIso_apply, H B, restrict_of_mem_parts _ B.property]
+  -- Summing the right-hand side over `[σ, π]` gives `∏_B ∑_{ρ ≥ σ|_B} μ(ρ, 1̂) = 0`.
+  have hsum :=
+    sum_Icc_prod_restrict_eq_prod_sum h fun B ρ => mu 𝕜 ρ (⊤ : NoncrossingPartition B.val)
+  rw [prod_eq_zero (mem_univ B) (by rw [Ici_eq_Icc, sum_Icc_mu_left, ite_eq_right hB]),
+    Icc_eq_cons_Ioc h, sum_cons, add_eq_zero_iff_eq_neg] at hsum
+  rw [hsum, mu_eq_neg_sum_Ioc_of_ne hlt.ne]
+  exact congrArg _ (sum_congr rfl fun τ hτ => ih τ (mem_Ioc.1 hτ).1 (mem_Ioc.1 hτ).2)
+
+/-- The blockwise formula for the Möbius function of `NC(s)` on all intervals: for `σ ≤ π`,
+`μ(σ, π) = ∏_{B ∈ π} ∏_{C ∈ K_B(σ|_B)} (-1)^(|C|-1) C_(|C|-1)`, where `K_B` is the Kreweras
+complement on `NC(B)`. Unlike in the lattice of all partitions, `μ(σ, π)` is not determined by the
+block sizes of `σ` and `π`. -/
+theorem mu_eq_prod_prod_kreweras [CommRing 𝕜] {σ π : NoncrossingPartition s} (h : σ ≤ π) :
+    mu 𝕜 σ π = ∏ B : π.val.parts, ∏ C ∈ (kreweras (σ.restrict (π.val.le B.property))).val.parts,
+      (-1) ^ (#C - 1) * (catalan (#C - 1) : 𝕜) := by
+  rw [mu_eq_prod_mu_restrict h]
+  exact prod_congr rfl fun B _ => mu_top_eq_prod_kreweras _
 
 end TauCeti.NoncrossingPartition

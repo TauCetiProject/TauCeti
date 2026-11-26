@@ -10,7 +10,7 @@ public import Mathlib.Order.Interval.Set.Defs
 public import TauCeti.Combinatorics.NoncrossingPartition.Basic
 
 /-!
-# Lower intervals of the lattice of noncrossing partitions
+# Intervals of the lattice of noncrossing partitions
 
 Let `π` be a noncrossing partition of a finite set `s` of positions in a linear order. A
 noncrossing partition `σ ≤ π` is the same as a choice of a noncrossing partition of each part `B`
@@ -23,19 +23,29 @@ Consequently, summing a multiplicative function `σ ↦ ∏_{C ∈ σ} g C` over
 product over the parts `B` of `π` of its sums over `NC(B)`. This factorisation is what makes the
 free cumulant of a noncrossing partition the product of the free cumulants of its parts.
 
+More generally, for `σ ≤ π` the interval `[σ, π]` is the product over the parts `B` of `π` of the
+upper intervals `[σ|_B, 1_B]` of `NC(B)`, where `σ|_B` is the restriction of `σ` to `B`. This
+factorisation makes the Möbius function of `NC(s)` multiplicative on all intervals.
+
 ## Main definitions
 
+* `TauCeti.NoncrossingPartition.restrict σ hB` — the restriction `σ|_B` of a noncrossing
+  partition of `s` to a subset `B ⊆ s`.
 * `TauCeti.NoncrossingPartition.iicOrderIso π` — the order isomorphism between the noncrossing
   partitions `σ ≤ π` and the families of noncrossing partitions of the parts of `π`.
+* `TauCeti.NoncrossingPartition.iccOrderIso h` — for `h : σ ≤ π`, the order isomorphism
+  `[σ, π] ≃o ∏_{B ∈ π} [σ|_B, 1_B]`.
 
 ## Main results
 
 * `TauCeti.NoncrossingPartition.sum_Iic_prod_parts_eq_prod_sum` —
   `∑_{σ ≤ π} ∏_{C ∈ σ} g C = ∏_{B ∈ π} ∑_{τ ∈ NC(B)} ∏_{C ∈ τ} g C`.
+* `TauCeti.NoncrossingPartition.sum_Icc_prod_restrict_eq_prod_sum` —
+  `∑_{σ ≤ τ ≤ π} ∏_{B ∈ π} g_B(τ|_B) = ∏_{B ∈ π} ∑_{ρ ∈ NC(B), σ|_B ≤ ρ} g_B(ρ)`.
 
 ## References
 
-* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Lecture 9.
+* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Lectures 9 and 10.
 * R. Speicher, *Multiplicative functions on the lattice of non-crossing partitions and free
   convolution*, Math. Ann. 298 (1994), 611–628.
 -/
@@ -48,6 +58,34 @@ namespace TauCeti.NoncrossingPartition
 
 variable {α : Type*} [LinearOrder α] {s : Finset α}
 
+/-- The restriction `σ|_B` of a noncrossing partition `σ` of `s` to a subset `B` of `s`: its parts
+are the nonempty traces on `B` of the parts of `σ`. -/
+def restrict (σ : NoncrossingPartition s) {B : Finset α} (hB : B ≤ s) : NoncrossingPartition B :=
+  ⟨σ.val.restrict hB, σ.property.restrict hB⟩
+
+@[simp, norm_cast]
+theorem coe_restrict (σ : NoncrossingPartition s) {B : Finset α} (hB : B ≤ s) :
+    ((σ.restrict hB : NoncrossingPartition B) : Finpartition B) =
+      (σ : Finpartition s).restrict hB :=
+  (rfl)
+
+/-- Restriction to a subset is monotone. -/
+theorem restrict_mono {σ τ : NoncrossingPartition s} {B : Finset α} (hB : B ≤ s) (h : σ ≤ τ) :
+    σ.restrict hB ≤ τ.restrict hB :=
+  Finpartition.restrict_mono hB h
+
+/-- The restriction of the partition into one part is the partition into one part. -/
+@[simp]
+theorem restrict_top {B : Finset α} (hB : B ≤ s) : (⊤ : NoncrossingPartition s).restrict hB = ⊤ :=
+  Subtype.ext (Finpartition.restrict_top hB)
+
+/-- The restriction of a noncrossing partition to one of its parts is the partition of that part
+into one part. -/
+@[simp]
+theorem restrict_of_mem_parts (π : NoncrossingPartition s) {B : Finset α}
+    (hB : B ∈ π.val.parts) : π.restrict (π.val.le hB) = ⊤ :=
+  Subtype.ext (Finpartition.restrict_of_mem_parts hB)
+
 /-- A member of the lower interval of `π` refines `π` as a finite partition. -/
 private theorem coe_le_of_mem_Iic {π : NoncrossingPartition s} (σ : Set.Iic π) :
     (σ.val : Finpartition s) ≤ π.val :=
@@ -59,7 +97,7 @@ partition `σ ≤ π` corresponds to its restrictions to the parts of `π`, and 
 partitions of the parts corresponds to their juxtaposition. -/
 noncomputable def iicOrderIso (π : NoncrossingPartition s) :
     Set.Iic π ≃o ((B : π.val.parts) → NoncrossingPartition B.val) where
-  toFun σ B := ⟨σ.val.val.restrict (π.val.le B.property), σ.val.property.restrict _⟩
+  toFun σ B := σ.val.restrict (π.val.le B.property)
   invFun Q := ⟨⟨π.val.bind fun B hB => (Q ⟨B, hB⟩).val, π.property.bind fun B hB => (Q ⟨B,
       hB⟩).property⟩,
     Finpartition.bind_le _ _⟩
@@ -73,6 +111,10 @@ noncomputable def iicOrderIso (π : NoncrossingPartition s) :
       Finpartition.bind_restrict (coe_le_of_mem_Iic σ')] at this
 
 @[simp]
+theorem iicOrderIso_apply (π : NoncrossingPartition s) (σ : Set.Iic π) (B : π.val.parts) :
+    π.iicOrderIso σ B = σ.val.restrict (π.val.le B.property) :=
+  (rfl)
+
 theorem coe_iicOrderIso_apply (π : NoncrossingPartition s) (σ : Set.Iic π) (B : π.val.parts) :
     ((π.iicOrderIso σ B : NoncrossingPartition B.val) : Finpartition B.val) =
       (σ.val : Finpartition s).restrict (π.val.le B.property) :=
@@ -98,5 +140,53 @@ theorem sum_Iic_prod_parts_eq_prod_sum {M : Type*} [CommSemiring M] (π : Noncro
   conv_lhs => rw [← Finpartition.bind_restrict (coe_le_of_mem_Iic σ)]
   rw [Finpartition.prod_parts_bind, ← univ_eq_attach]
   simp only [OrderIso.coe_toEquiv, coe_iicOrderIso_apply]
+
+/-! ### General intervals -/
+
+/-- The interval `[σ, π]` of the lattice of noncrossing partitions of `s` is isomorphic to the
+product over the parts `B` of `π` of the upper intervals `[σ|_B, 1_B]` of the lattices `NC(B)`: a
+noncrossing partition `τ` with `σ ≤ τ ≤ π` corresponds to its restrictions to the parts of `π`. -/
+noncomputable def iccOrderIso {σ π : NoncrossingPartition s} (h : σ ≤ π) :
+    Set.Icc σ π ≃o ((B : π.val.parts) → Set.Ici (σ.restrict (π.val.le B.property))) where
+  toFun τ B := ⟨τ.val.restrict (π.val.le B.property), restrict_mono _ τ.property.1⟩
+  invFun Q := ⟨π.iicOrderIso.symm (fun B => (Q B).val),
+    Subtype.coe_le_coe.2 ((π.iicOrderIso.le_symm_apply (x := ⟨σ, h⟩)).2 fun B => (Q B).property),
+    (π.iicOrderIso.symm _).property⟩
+  left_inv τ := Subtype.ext
+    (congrArg (fun x : Set.Iic π => x.val) (π.iicOrderIso.symm_apply_apply ⟨τ.val, τ.property.2⟩))
+  right_inv Q := funext fun B => Subtype.ext <|
+    congrFun (π.iicOrderIso.apply_symm_apply fun B => (Q B).val) B
+  map_rel_iff' {τ τ'} :=
+    Pi.le_def.trans (Pi.le_def.symm.trans
+      (π.iicOrderIso.le_iff_le (x := ⟨τ.val, τ.property.2⟩) (y := ⟨τ'.val, τ'.property.2⟩)))
+
+@[simp]
+theorem coe_iccOrderIso_apply {σ π : NoncrossingPartition s} (h : σ ≤ π) (τ : Set.Icc σ π)
+    (B : π.val.parts) : (iccOrderIso h τ B).val = τ.val.restrict (π.val.le B.property) :=
+  (rfl)
+
+@[simp]
+theorem coe_iccOrderIso_symm_apply {σ π : NoncrossingPartition s} (h : σ ≤ π)
+    (Q : (B : π.val.parts) → Set.Ici (σ.restrict (π.val.le B.property))) :
+    ((iccOrderIso h).symm Q).val = (π.iicOrderIso.symm fun B => (Q B).val).val :=
+  (rfl)
+
+/-- Summing a function of the restrictions to the parts of `π` over the interval `[σ, π]` factors
+over the parts of `π`:
+`∑_{σ ≤ τ ≤ π} ∏_{B ∈ π} g_B(τ|_B) = ∏_{B ∈ π} ∑_{ρ ∈ NC(B), σ|_B ≤ ρ} g_B(ρ)`. -/
+theorem sum_Icc_prod_restrict_eq_prod_sum {M : Type*} [CommSemiring M]
+    {σ π : NoncrossingPartition s} (h : σ ≤ π)
+    (g : (B : π.val.parts) → NoncrossingPartition B.val → M) :
+    ∑ τ ∈ Icc σ π, ∏ B : π.val.parts, g B (τ.restrict (π.val.le B.property)) =
+      ∏ B : π.val.parts, ∑ ρ ∈ Ici (σ.restrict (π.val.le B.property)), g B ρ := by
+  rw [prod_univ_sum]
+  refine sum_nbij' (fun τ B => τ.restrict (π.val.le B.property))
+    (fun Q => (π.iicOrderIso.symm Q).val) (fun τ hτ => ?_) (fun Q hQ => ?_) (fun τ hτ => ?_)
+    (fun Q _ => ?_) fun _ _ => rfl
+  · exact Fintype.mem_piFinset.2 fun B => mem_Ici.2 (restrict_mono _ (mem_Icc.1 hτ).1)
+  · exact mem_Icc.2 ⟨Subtype.coe_le_coe.2 ((π.iicOrderIso.le_symm_apply (x := ⟨σ, h⟩)).2
+      fun B => mem_Ici.1 (Fintype.mem_piFinset.1 hQ B)), (π.iicOrderIso.symm Q).property⟩
+  · exact congrArg Subtype.val (π.iicOrderIso.symm_apply_apply ⟨τ, (mem_Icc.1 hτ).2⟩)
+  · exact π.iicOrderIso.apply_symm_apply Q
 
 end TauCeti.NoncrossingPartition

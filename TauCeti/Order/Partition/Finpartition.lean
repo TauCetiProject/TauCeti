@@ -731,6 +731,13 @@ theorem bind_restrict (h : Q ≤ P) : (P.bind fun _ hB => Q.restrict (P.le hB)) 
     rw [part_bind (P.part_mem.2 ha) (P.mem_part_self.2 ha),
       part_restrict _ _ (P.mem_part_self.2 ha), inter_eq_left.2 (part_mono h a)]
 
+/-- Restricting a finite partition to one of its parts gives the partition of that part into one
+part. -/
+@[simp]
+theorem restrict_of_mem_parts {B : Finset α} (hB : B ∈ P.parts) : P.restrict (P.le hB) = ⊤ :=
+  ext_of_part fun a ha => by
+    rw [part_restrict _ _ ha, P.part_eq_of_mem hB ha, inter_self, part_top ha]
+
 /-- Restricting a finite partition with the singleton part `{i}` to `s.erase i` deletes that
 part. -/
 theorem parts_restrict_erase_of_singleton_mem {i : α} (hi : {i} ∈ P.parts) :
@@ -1069,6 +1076,15 @@ theorem part_comap_bot {x : α} (hx : x ∈ s) :
   rw [part_comap hx, part_eq_of_mem _ (mem_bot_iff.2 ⟨f x, mem_image_of_mem f hx, rfl⟩)
     (mem_singleton_self (f x))]
   simp only [mem_singleton]
+
+/-- Pulling back the finest partition of `f '' s` along a map injective on `s` gives the finest
+partition of `s`. -/
+theorem comap_bot_of_injOn (hf : Set.InjOn f s) : (⊥ : Finpartition (s.image f)).comap f = ⊥ :=
+  ext_of_part fun x hx => by
+    rw [part_comap_bot hx, part_bot hx]
+    ext y
+    simp only [mem_filter, mem_singleton]
+    exact ⟨fun ⟨hy, hxy⟩ => hf hy hx hxy, by rintro rfl; exact ⟨hx, rfl⟩⟩
 
 /-- If a finite partition `Q` of `s` is coarser than the partition into the fibres of `f`, then a
 point of `s` with the same image as a point of a part `B` of `Q` lies in `B`. -/
