@@ -79,9 +79,14 @@ private lemma sum_log_div_sub_eq {x : ℝ} (hx : 3 ≤ x) :
         (∑ n ∈ Icc (1 : ℕ) 3, Real.log n / n - Real.log 3 ^ 2 / 2) := by
   have h3 : 3 ≤ ⌊x⌋₊ := Nat.le_floor (by exact_mod_cast hx)
   have hIcc (b : ℕ) : Icc 1 b = Ioc 0 b := Icc_add_one_left_eq_Ioc 0 b
-  rw [integral_log_div_self (by rw [Set.mem_uIcc]; push_cast; rintro (h | h) <;> linarith [h.1]),
-    hIcc, hIcc, ← sum_Ioc_consecutive _ (Nat.zero_le 3) h3]
+  have hint : ∫ t in (3 : ℝ)..x, Real.log t / t = (Real.log x ^ 2 - Real.log 3 ^ 2) / 2 := by
+    have h0 := integral_log_pow_div_self 1
+      (a := 3) (b := x) (by rw [Set.mem_uIcc]; rintro (h | h) <;> linarith [h.1])
+    simp only [pow_one, Nat.cast_one] at h0
+    norm_num at h0
+    exact h0
   push_cast
+  rw [hint, hIcc, hIcc, ← sum_Ioc_consecutive _ (Nat.zero_le 3) h3]
   ring
 
 private lemma sum_log_div_sub_eq_natCast {N : ℕ} (hN : 3 ≤ N) :

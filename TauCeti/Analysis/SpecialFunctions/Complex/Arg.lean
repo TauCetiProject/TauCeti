@@ -294,15 +294,12 @@ point `1 - t * z` never lies on the open negative real axis, so its principal ar
 `π`. -/
 theorem arg_one_sub_ofReal_mul_ne_pi (z : ℂ) (hz : z.im ≠ 0 ∨ z.re ≤ 1) {t : ℝ}
     (ht : t ∈ Set.Icc (0 : ℝ) 1) : ((1 : ℂ) - (t : ℂ) * z).arg ≠ π := by
-  rw [ne_eq, arg_eq_pi_iff]
-  rintro ⟨hre, him⟩
-  simp only [sub_re, one_re, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero, sub_im, one_im,
-    mul_im, add_zero, zero_sub, neg_eq_zero, mul_eq_zero] at hre him
-  rcases hz with hzim | hzre
-  · rcases him with rfl | hzim'
-    · linarith
-    · exact hzim hzim'
-  · nlinarith [ht.1, ht.2]
+  rcases eq_or_ne z 1 with rfl | hz1
+  · have hsub : (1 : ℂ) - (t : ℂ) * 1 = ((1 - t : ℝ) : ℂ) := by push_cast; ring
+    rw [hsub, arg_ofReal_of_nonneg (sub_nonneg.mpr ht.2)]
+    exact Real.pi_ne_zero.symm
+  · exact slitPlane_arg_ne_pi
+      (one_sub_ofReal_mul_mem_slitPlane ((one_sub_mem_slitPlane_iff z).mpr ⟨hz, hz1⟩) ht)
 
 /-- Rotating `1 + r * exp (θ * I)` by `exp (-(θ / 2) * I)` projects onto the bisecting direction,
 giving `(1 + r) * cos (θ / 2) ≤ ‖1 + r * exp (θ * I)‖` for all real `θ` and `r`. -/

@@ -12,7 +12,7 @@ import Mathlib.Analysis.Normed.Group.FunctionSeries
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.PSeries
-import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Boundary
+import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Continuity
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.DiscSeries
 
 /-!
@@ -27,7 +27,7 @@ duplication relation `Liₙ(z²) = 2 ^ (n - 1) (Liₙ(z) + Liₙ(-z))` holds on 
 at `z = 1` it gives `Liₙ(-1) = (2 ^ (1 - n) - 1) ζ(n)`, in particular `Li₂(-1) = -π² / 12`.
 
 Continuity comes from unrestricted continuity off the open cut `(1, ∞)`
-(`TauCeti.Polylog.continuousAt_polylog_of_im_ne_zero_or_re_le_one`), since every point `z` of the
+(`TauCeti.Polylog.continuousAt_polylog`), since every point `z` of the
 closed unit disc satisfies `re z ≤ ‖z‖ ≤ 1`. The disc series converges uniformly on the closed
 disc by comparison with `∑ (k + 1) ^ (-n)`, so its sum is continuous there too. The two
 continuous functions agree on the open disc, hence on its closure.
@@ -71,8 +71,9 @@ namespace TauCeti.Polylog
 /-- For every integer weight `n ≥ 2`, `polylog n` is continuous on the closed unit disc. -/
 theorem continuousOn_polylog_closedBall {n : ℤ} (hn : 2 ≤ n) :
     ContinuousOn (polylog n) (closedBall 0 1) :=
-  fun z hz ↦ (continuousAt_polylog_of_im_ne_zero_or_re_le_one (Or.inr hn)
-    (Or.inr ((Complex.re_le_norm z).trans (mem_closedBall_zero_iff.mp hz)))).continuousWithinAt
+  fun z hz ↦ (continuousAt_polylog (Or.inr hn)
+    (Or.inr (Or.inr
+      ((Complex.re_le_norm z).trans (mem_closedBall_zero_iff.mp hz))))).continuousWithinAt
 
 /-- **Closed-disc series of the polylogarithm.** For every integer weight `n ≥ 2` and every `z`
 in the closed unit disc `‖z‖ ≤ 1`, the series `∑_{k ≥ 0} z ^ (k + 1) / (k + 1) ^ n` converges to

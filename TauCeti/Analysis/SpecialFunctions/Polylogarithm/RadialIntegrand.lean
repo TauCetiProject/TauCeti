@@ -11,7 +11,9 @@ public import Mathlib.MeasureTheory.Function.UniformIntegrable
 public import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Integrability
 import TauCeti.MeasureTheory.Function.UniformIntegrable
 
 /-!
@@ -191,7 +193,10 @@ theorem integral_eq_integral_radialIntegrand_of_eqOn (k : ℕ) (z : ℂ) {g : �
   have hIoo : ∀ᵐ t : ℝ ∂volume, t ∈ Ioc (0 : ℝ) 1 → t ∈ Ioo (0 : ℝ) 1 := by
     filter_upwards [Ioo_ae_eq_Ioc (a := (0 : ℝ)) (b := 1) (μ := volume)] with t ht htIoc
     exact ht.mpr htIoc
-  filter_upwards [hIoo, Complex.ae_one_sub_ofReal_mul_ne_zero z] with t ht₁ ht₂ htIoc
+  have hne : ∀ᵐ t : ℝ ∂volume, 1 - (t : ℂ) * z ≠ 0 := by
+    rw [ae_iff]
+    simpa [not_not] using (Complex.subsingleton_one_sub_ofReal_mul_eq_zero z).measure_zero volume
+  filter_upwards [hIoo, hne] with t ht₁ ht₂ htIoc
   exact hg ⟨ht₁ htIoc, ht₂⟩
 
 /-- Away from `t = 0` (`0 < a ≤ 1`), the Lebesgue integral of the `p`-th power of the norm of the

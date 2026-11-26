@@ -90,6 +90,9 @@ ordered ring (`Complex.instIsEmptyRingHom`).
 
 An `n`-th root (`n ≠ 0`) of a complex number `w` with `w * conj w = 1` has its inverse as
 conjugate (`Complex.conj_eq_inv_of_pow_eq`).
+
+For any `z : ℂ`, the set `{t : ℝ | 1 - (t : ℂ) * z = 0}` has at most one element
+(`Complex.subsingleton_one_sub_ofReal_mul_eq_zero`).
 -/
 
 public section
@@ -523,6 +526,18 @@ theorem conj_eq_inv_of_pow_eq {z w : ℂ} {n : ℕ} (hn : n ≠ 0) (hz : z ^ n =
   have hz' : ‖z‖ = 1 :=
     (pow_eq_one_iff_of_nonneg (norm_nonneg z) hn).mp (by rw [← norm_pow, hz, hw'])
   exact (inv_eq_conj hz').symm
+
+/-- For every `z : ℂ`, `{t : ℝ | 1 - (t : ℂ) * z = 0}` contains at most one real number. -/
+theorem subsingleton_one_sub_ofReal_mul_eq_zero (z : ℂ) :
+    {t : ℝ | 1 - (t : ℂ) * z = 0}.Subsingleton := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp
+  · have hpre : {t : ℝ | 1 - (t : ℂ) * z = 0} = (fun t : ℝ ↦ (t : ℂ) * z) ⁻¹' {1} := by
+      ext t
+      simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff, sub_eq_zero]
+      exact eq_comm
+    rw [hpre]
+    exact Set.subsingleton_singleton.preimage ((mul_left_injective₀ hz).comp ofReal_injective)
 
 end Complex
 

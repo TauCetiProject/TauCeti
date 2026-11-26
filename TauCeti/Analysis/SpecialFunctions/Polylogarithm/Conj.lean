@@ -35,12 +35,11 @@ the closed unit disc, and real values of every `Liₙ` on the real half-line `(-
 ## Main declarations
 
 * `TauCeti.Polylog.polylog_neg_nat_conj`: conjugation symmetry of nonpositive weights on `ℂ`.
-* `TauCeti.Polylog.polylog_conj`: conjugation symmetry in every weight off the cut `(1, ∞)` (in
-  particular on `re z ≤ 1` and on the closed unit disc `‖z‖ ≤ 1`).
+* `TauCeti.Polylog.polylog_conj`: conjugation symmetry for `n ≤ 0` on all of `ℂ`, and in positive
+  weight off the cut `(1, ∞)` (in particular on `re z ≤ 1` and on the closed unit disc `‖z‖ ≤ 1`).
 * `TauCeti.Polylog.polylog_neg_nat_ofReal_im`, `TauCeti.Polylog.ofReal_polylog_neg_nat_ofReal_re`,
-  `TauCeti.Polylog.polylog_ofReal_im`, and
-  `TauCeti.Polylog.ofReal_polylog_ofReal_re_of_le_one`: `Liₙ x` is real for `n ≤ 0` on all of
-  `ℝ`, and for arbitrary `n : ℤ` on `(-∞, 1]`.
+  `TauCeti.Polylog.polylog_ofReal_im`, and `TauCeti.Polylog.ofReal_polylog_ofReal_re`: `Liₙ x` is
+  real for `n ≤ 0` on all of `ℝ`, and for arbitrary `n : ℤ` on `(-∞, 1]`.
 
 ## References
 
@@ -75,16 +74,16 @@ theorem polylog_neg_nat_conj (r : ℕ) (z : ℂ) :
     rw [hd]
     simp
 
-/-- Every integer-weight polylogarithm commutes with complex conjugation off the open cut
-`(1, ∞)`, that is, whenever `z.im ≠ 0 ∨ z.re ≤ 1`. Nonpositive weights need no hypothesis, by
-`polylog_neg_nat_conj`. -/
-theorem polylog_conj (n : ℤ) {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1) :
+/-- Every integer-weight polylogarithm commutes with complex conjugation when `n ≤ 0` or off the
+open cut `(1, ∞)` (`z.im ≠ 0 ∨ z.re ≤ 1`). -/
+theorem polylog_conj (n : ℤ) {z : ℂ} (hz : n ≤ 0 ∨ z.im ≠ 0 ∨ z.re ≤ 1) :
     polylog n (conj z) = conj (polylog n z) := by
-  have hzarg : (1 - z).arg ≠ Real.pi := by
-    simpa using Complex.arg_one_sub_ofReal_mul_ne_pi z hz (Set.right_mem_Icc.mpr zero_le_one)
   rcases le_or_gt n 0 with hn | hn
   · obtain ⟨r, rfl⟩ := Int.exists_eq_neg_ofNat hn
     exact polylog_neg_nat_conj r z
+  replace hz : z.im ≠ 0 ∨ z.re ≤ 1 := hz.resolve_left hn.not_ge
+  have hzarg : (1 - z).arg ≠ Real.pi := by
+    simpa using Complex.arg_one_sub_ofReal_mul_ne_pi z hz (Set.right_mem_Icc.mpr zero_le_one)
   obtain ⟨_ | _ | k, rfl⟩ := Int.eq_ofNat_of_zero_le hn.le
   · exact absurd hn (lt_irrefl 0)
   · rw [Nat.cast_one, polylog_one, polylog_one, map_neg, ← Complex.log_conj _ hzarg, map_sub,
@@ -111,23 +110,17 @@ theorem ofReal_polylog_neg_nat_ofReal_re (r : ℕ) (x : ℝ) :
     ((polylog (-(r : ℤ)) x).re : ℂ) = polylog (-(r : ℤ)) x :=
   Complex.conj_eq_iff_re.mp (by simpa using (polylog_neg_nat_conj r x).symm)
 
-/-- Every integer-weight polylogarithm is real on the real half-line `(-∞, 1]`. -/
-theorem polylog_ofReal_im (n : ℤ) {x : ℝ} (hx : x ≤ 1) : (polylog n x).im = 0 := by
-  rw [← Complex.conj_eq_iff_im, ← polylog_conj n (Or.inr (by simpa using hx)),
-    Complex.conj_ofReal]
+/-- Every integer-weight polylogarithm is real for `n ≤ 0` on all of `ℝ`, and for all `n : ℤ` on
+`(-∞, 1]`. -/
+theorem polylog_ofReal_im (n : ℤ) {x : ℝ} (hx : n ≤ 0 ∨ x ≤ 1) : (polylog n x).im = 0 := by
+  rw [← Complex.conj_eq_iff_im,
+    ← polylog_conj n (hx.imp id fun hx' ↦ Or.inr (by simpa using hx')), Complex.conj_ofReal]
 
-/-- On `(-∞, 1]`, `polylog n x` equals the coercion of its real part. -/
-theorem ofReal_polylog_ofReal_re_of_le_one (n : ℤ) {x : ℝ} (hx : x ≤ 1) :
-    ((polylog n x).re : ℂ) = polylog n x :=
-  Complex.conj_eq_iff_re.mp
-    (by simpa using (polylog_conj n (z := x) (Or.inr (by simpa using hx))).symm)
-
-/-- Conjugation symmetry fails on the cut: at `3`, weight one takes the lower boundary value
-`-log 2 - π i`, whose conjugate is the upper boundary value. -/
-theorem conj_polylog_one_three_ne : conj (polylog 1 3) ≠ polylog 1 (conj 3) := by
-  rw [map_ofNat, polylog_one_three, Ne, Complex.conj_eq_iff_im]
-  simp only [Complex.sub_im, Complex.neg_im, Complex.ofReal_im, Complex.mul_im,
-    Complex.ofReal_re, Complex.I_im, Complex.I_re]
-  simp [Real.pi_ne_zero]
+/-- For `n ≤ 0` on all of `ℝ`, and for arbitrary `n : ℤ` on `(-∞, 1]`, `polylog n x` equals the
+coercion of its real part. -/
+theorem ofReal_polylog_ofReal_re (n : ℤ) {x : ℝ} (hx : n ≤ 0 ∨ x ≤ 1) :
+    ((polylog n x).re : ℂ) = polylog n x := by
+  rw [← Complex.conj_eq_iff_re, Complex.conj_eq_iff_im]
+  exact polylog_ofReal_im n hx
 
 end TauCeti.Polylog

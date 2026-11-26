@@ -61,8 +61,6 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_log_pow_div_self`:
   `∫ t in a..b, (log t) ^ k / t = ((log b) ^ (k + 1) - (log a) ^ (k + 1)) / (k + 1)` when
   `0 ∉ [[a, b]]`.
-* `TauCeti.integral_log_div_self`: `∫ x in a..b, log x / x = ((log b)² - (log a)²) / 2` on an
-  interval avoiding `0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.norm_integral_cexp_le`, `TauCeti.norm_integral_cexp_le_of_ne_zero`: the integral
@@ -376,17 +374,6 @@ theorem integral_log_pow_div_self (k : ℕ) {a b : ℝ} (h : (0 : ℝ) ∉ Set.u
       (g := fun u ↦ u ^ k) (fun t ht ↦ Real.hasDerivAt_log (hne t ht))
       (continuousOn_inv₀.mono fun t ht ↦ hne t ht) (continuous_pow k)).trans
       (integral_pow (a := Real.log a) (b := Real.log b) k)
-
-/-- The integral of `x ↦ log x / x` over an interval avoiding `0`: an antiderivative is
-`x ↦ (log x)² / 2`. -/
-theorem integral_log_div_self {a b : ℝ} (h : (0 : ℝ) ∉ Set.uIcc a b) :
-    ∫ x in a..b, Real.log x / x = (Real.log b ^ 2 - Real.log a ^ 2) / 2 := by
-  have hne {x : ℝ} (hx : x ∈ Set.uIcc a b) : x ≠ 0 := fun h0 => h (h0 ▸ hx)
-  rw [sub_div]
-  refine intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun x => Real.log x ^ 2 / 2)
-    (fun x hx => ?_) (ContinuousOn.intervalIntegrable ?_)
-  · exact (((Real.hasDerivAt_log (hne hx)).pow 2).div_const 2).congr_deriv (by ring)
-  · exact (Real.continuousOn_log.mono fun x hx => hne hx).div continuousOn_id fun x hx => hne hx
 
 /-- The integral of the Fourier character `θ ↦ exp (k θ i)` over `[-π, π]`, for an integer `k`: it
 is `2π` when `k = 0`, and vanishes otherwise because `exp (k θ i)` has period `2π`. -/
