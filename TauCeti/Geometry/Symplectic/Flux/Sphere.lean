@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.Sphere
 public import TauCeti.Geometry.Symplectic.Flux.Hamiltonian.Kernel
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
-import Mathlib.Analysis.Normed.Module.Connected
+import TauCeti.Geometry.Sphere.Connected
 
 /-!
 # Hamiltonian diffeomorphisms of spheres
@@ -17,8 +17,8 @@ On a compact connected symplectic manifold `(M, σ)`, the endpoint flux identifi
 the group `G_σ` of final maps of symplectic isotopies by the Hamiltonian group `Ham(M, σ)` with
 `H¹_dR(M) / Γ_σ` (`TauCeti.quotientHamiltonianGroupEquiv`). The unit sphere `Sⁿ` of an
 `(n + 1)`-dimensional real inner product space, for `n ≥ 2`, is compact and connected and has
-`H¹_dR(Sⁿ) = 0` (`TauCeti.subsingleton_deRhamCohomology_sphere`). So the flux of every symplectic
-isotopy of a sphere vanishes and
+`H¹_dR(Sⁿ) = 0` (`TauCeti.subsingleton_deRhamCohomology_sphere_one`). So the flux of every
+symplectic isotopy of a sphere vanishes and
 
 `Ham(Sⁿ, σ) = G_σ`
 
@@ -63,11 +63,10 @@ group `Ham(Sⁿ, σ)` is the whole group `G_σ` of final maps of diffeotopies pr
 theorem hamiltonianGroup_eq_isotopyStabilizer_sphere (hn : 1 < n)
     {σ : SmoothTwoForm (𝓡 n) (sphere (0 : E) 1)} (hσ : σ.IsSymplectic) :
     hamiltonianGroup σ = isotopyStabilizer σ := by
-  have hE : finrank ℝ E = n + 1 := Fact.out
-  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
-  have : ConnectedSpace (sphere (0 : E) 1) := isConnected_iff_connectedSpace.1 <|
-    isConnected_sphere (by rw [← finrank_eq_rank, hE]; norm_cast; omega) 0 zero_le_one
-  have := subsingleton_deRhamCohomology_sphere (E := E) one_pos hn
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have : NeZero n := ⟨by omega⟩
+  have := connectedSpace_sphere (E := E) n
+  have := subsingleton_deRhamCohomology_sphere_one (E := E) hn
   exact hamiltonianGroup_eq_isotopyStabilizer hσ
 
 /-- **Area-preserving isotopies of the two-sphere are Hamiltonian.** For the area form
