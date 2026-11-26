@@ -181,42 +181,30 @@ theorem randomSumGauge_smul {p : ℝ≥0} (hp : 0 < p) (c : ℂ) (a : ι → CSt
 /-- Reindexing a family along an equivalence preserves `randomSumGauge`. -/
 theorem randomSumGauge_comp_equiv {κ : Type*} [Fintype κ] [DecidableEq κ] (e : κ ≃ ι)
     (p : ℝ≥0) (a : ι → CStarMatrix m m ℂ) : randomSumGauge p (a ∘ e) = randomSumGauge p a := by
-  rw [randomSumGauge_eq_expect_units, randomSumGauge_eq_expect_units]; congr 1
-  exact Fintype.expect_equiv (Equiv.arrowCongr e (Equiv.refl ℤˣ)) _ _ fun ε => congrArg
-    (matrixLpGauge p · ^ (p : ℝ)) <| Fintype.sum_equiv e _
-      (fun i => (Equiv.arrowCongr e (Equiv.refl ℤˣ) ε) i • a i) fun _ => by simp
+  rw [randomSumGauge_eq_expect_units, randomSumGauge_eq_expect_units,
+    expect_sum_units_smul_comp_equiv e (fun x : CStarMatrix m m ℂ => matrixLpGauge p x ^ (p : ℝ)) a]
 
 /-- Flipping signs by `δ : ι → ℤˣ` preserves `randomSumGauge`. -/
 @[simp] theorem randomSumGauge_units_smul (δ : ι → ℤˣ) (p : ℝ≥0) (a : ι → CStarMatrix m m ℂ) :
     randomSumGauge p (fun k => δ k • a k) = randomSumGauge p a := by
-  rw [randomSumGauge_eq_expect_units, randomSumGauge_eq_expect_units]; congr 1
-  exact Fintype.expect_equiv (Equiv.mulRight δ) _ _ fun ε => congrArg
-    (matrixLpGauge p · ^ (p : ℝ)) <| Finset.sum_congr rfl fun _ _ => by simp [mul_smul]
+  rw [randomSumGauge_eq_expect_units, randomSumGauge_eq_expect_units,
+    expect_sum_units_smul_units_smul δ (fun x : CStarMatrix m m ℂ => matrixLpGauge p x ^ (p : ℝ)) a]
 
 /-- Padding a family with zeros preserves `randomSumGauge`. -/
 @[simp] theorem randomSumGauge_sumElim_zero {κ : Type*} [Fintype κ] [DecidableEq κ] (p : ℝ≥0)
     (a : ι → CStarMatrix m m ℂ) :
     randomSumGauge p (Sum.elim a (0 : κ → CStarMatrix m m ℂ)) = randomSumGauge p a := by
-  rw [randomSumGauge_eq_expect_units, randomSumGauge_eq_expect_units]; congr 1
-  rw [← Fintype.expect_equiv (Equiv.sumArrowEquivProdArrow ι κ ℤˣ).symm
-    (fun ε => matrixLpGauge p (∑ i, ε.1 i • a i) ^ (p : ℝ)) _ fun ⟨ε₁, ε₂⟩ => by
-      simp [Fintype.sum_sum_type, Equiv.sumArrowEquivProdArrow_symm_apply_inl]]
-  rw [← Finset.univ_product_univ, Finset.expect_product]
-  simp
+  rw [randomSumGauge_eq_expect_units, randomSumGauge_eq_expect_units,
+    expect_sum_units_smul_sumElim_zero (κ := κ)
+      (fun x : CStarMatrix m m ℂ => matrixLpGauge p x ^ (p : ℝ)) a]
 
 /-- Extending a family by zero along an injection preserves `randomSumGauge`. -/
 theorem randomSumGauge_extend_zero {κ : Type*} [Fintype κ] [DecidableEq κ] {f : κ → ι}
     (hf : Function.Injective f) (p : ℝ≥0) (a : κ → CStarMatrix m m ℂ) :
     randomSumGauge p (Function.extend f a 0) = randomSumGauge p a := by
-  classical
-  let e : κ ⊕ {i : ι // i ∉ Set.range f} ≃ ι :=
-    ((Equiv.ofInjective f hf).sumCongr (Equiv.refl _)).trans (Equiv.sumCompl (· ∈ Set.range f))
-  rw [← randomSumGauge_comp_equiv e p,
-    ← randomSumGauge_sumElim_zero (κ := {i : ι // i ∉ Set.range f}) p a]
-  congr 1
-  ext (k | ⟨i, hi⟩)
-  · simp [e, hf.extend_apply]
-  · simp [e, Function.extend_apply' _ _ _ hi]
+  rw [randomSumGauge_eq_expect_units, randomSumGauge_eq_expect_units,
+    expect_sum_units_smul_extend_zero hf
+      (fun x : CStarMatrix m m ℂ => matrixLpGauge p x ^ (p : ℝ)) a]
 
 /-- On a single-element index type, `randomSumGauge p a` equals `matrixLpGauge p (a default)`. -/
 @[simp] theorem randomSumGauge_unique [Unique ι] (p : ℝ≥0) (a : ι → CStarMatrix m m ℂ) :
@@ -224,11 +212,9 @@ theorem randomSumGauge_extend_zero {κ : Type*} [Fintype κ] [DecidableEq κ] {f
   by_cases hp : p = 0
   · subst hp; simp
   · have hp' : (p : ℝ) ≠ 0 := NNReal.coe_ne_zero.mpr hp
-    rw [randomSumGauge_eq_expect_units]
-    have hsum (ε : ι → ℤˣ) : matrixLpGauge p (∑ k, ε k • a k) = matrixLpGauge p (a default) := by
-      rw [Fintype.sum_unique, Units.smul_def]
-      rcases Int.units_eq_one_or (ε default) with h | h <;> simp [h]
-    simp_rw [hsum, Finset.expect_const Finset.univ_nonempty,
+    rw [randomSumGauge_eq_expect_units,
+      expect_sum_units_smul_unique (g := fun x : CStarMatrix m m ℂ => matrixLpGauge p x ^ (p : ℝ))
+        (fun x => by rw [matrixLpGauge_neg]),
       ← Real.rpow_mul (matrixLpGauge_nonneg p _), mul_one_div_cancel hp', Real.rpow_one]
 
 /-- The `randomSumGauge p` of a single-entry family `Pi.single i x` equals `matrixLpGauge p x`. -/
@@ -247,7 +233,7 @@ theorem randomSumGauge_add_le {p : ℝ≥0} (hp : 1 ≤ p) (a b : ι → CStarMa
 
 end RandomSumGauge
 
-/-! ### Rectangular Schatten realization and the row/column sum seminorm -/
+/-! ### The row/column sum gauge and seminorm -/
 
 section RowColumnSumGauge
 
@@ -550,7 +536,7 @@ theorem rowColumnSumGauge_one_eq_sSup (a : ι → CStarMatrix m m ℂ) :
 
 end TraceDuality
 
-/-! ### Hahn–Banach trace representation and the `p = 1` Khintchine inequality -/
+/-! ### Sign-cube duality and the `p = 1` Khintchine inequality -/
 
 section KhintchineOne
 

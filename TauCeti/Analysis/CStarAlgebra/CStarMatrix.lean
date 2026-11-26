@@ -24,7 +24,7 @@ import TauCeti.LinearAlgebra.Matrix.PartialIsometry
 import TauCeti.LinearAlgebra.Matrix.Trace.Duality
 
 /-!
-# Rectangular matrix operations, positivity, trace duality, and Euclidean operators
+# Rectangular matrix operations, positivity, and trace duality
 
 We record associativity and conjugate-transpose identities for rectangular C⋆-matrices, together
 with their conversion to ordinary matrices.

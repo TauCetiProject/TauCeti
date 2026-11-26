@@ -66,6 +66,64 @@ open scoped BigOperators ENNReal NNReal
 
 namespace TauCeti
 
+section ExpectSignCube
+
+open scoped BigOperators
+
+/-- Reindexing a family along an equivalence preserves sign-cube averages of functions of its
+signed sums. -/
+theorem expect_sum_units_smul_comp_equiv {ι κ M : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype κ] [DecidableEq κ] [AddCommGroup M] (e : κ ≃ ι) (g : M → ℝ) (y : ι → M) :
+    𝔼 ε : κ → ℤˣ, g (∑ k, ε k • (y ∘ e) k) = 𝔼 ε : ι → ℤˣ, g (∑ i, ε i • y i) := by
+  refine Fintype.expect_equiv (e.arrowCongr (Equiv.refl ℤˣ)) _ _ fun δ ↦ ?_
+  rw [← e.sum_comp]
+  simp
+
+/-- Flipping signs of a family by `δ : ι → ℤˣ` preserves sign-cube averages of functions of its
+signed sums. -/
+theorem expect_sum_units_smul_units_smul {ι M : Type*} [Fintype ι] [DecidableEq ι]
+    [AddCommGroup M] (δ : ι → ℤˣ) (g : M → ℝ) (y : ι → M) :
+    𝔼 ε : ι → ℤˣ, g (∑ i, ε i • δ i • y i) = 𝔼 ε : ι → ℤˣ, g (∑ i, ε i • y i) :=
+  Fintype.expect_equiv (Equiv.mulRight δ) _ _ fun ε ↦ by simp [mul_smul]
+
+/-- Padding a family with zeros preserves sign-cube averages of functions of its signed sums. -/
+theorem expect_sum_units_smul_sumElim_zero {ι κ M : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype κ] [DecidableEq κ] [AddCommGroup M] (g : M → ℝ) (y : ι → M) :
+    𝔼 ε : ι ⊕ κ → ℤˣ, g (∑ i, ε i • Sum.elim y (0 : κ → M) i) =
+      𝔼 ε : ι → ℤˣ, g (∑ i, ε i • y i) := by
+  rw [← Fintype.expect_equiv (Equiv.sumArrowEquivProdArrow ι κ ℤˣ).symm
+    (fun ε ↦ g (∑ i, ε.1 i • y i)) _ fun ⟨a, b⟩ ↦ by
+      simp [Fintype.sum_sum_type, Equiv.sumArrowEquivProdArrow_symm_apply_inl]]
+  rw [← univ_product_univ, expect_product]
+  simp
+
+/-- Extending a family by zero along an injection preserves sign-cube averages of functions of its
+signed sums. -/
+theorem expect_sum_units_smul_extend_zero {ι κ M : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype κ] [DecidableEq κ] [AddCommGroup M] {f : κ → ι} (hf : Function.Injective f)
+    (g : M → ℝ) (y : κ → M) :
+    𝔼 ε : ι → ℤˣ, g (∑ i, ε i • Function.extend f y 0 i) =
+      𝔼 ε : κ → ℤˣ, g (∑ k, ε k • y k) := by
+  let e : κ ⊕ {i : ι // i ∉ Set.range f} ≃ ι :=
+    ((Equiv.ofInjective f hf).sumCongr (Equiv.refl _)).trans (Equiv.sumCompl (· ∈ Set.range f))
+  have h : Function.extend f y 0 ∘ e = Sum.elim y 0 := by
+    ext (k | ⟨i, hi⟩)
+    · simp [e, hf.extend_apply]
+    · simp [e, Function.extend_apply' _ _ _ hi]
+  rw [← expect_sum_units_smul_comp_equiv e g, h, expect_sum_units_smul_sumElim_zero]
+
+/-- On a single-element index type, the sign-cube average of an even function `g` evaluated at
+the signed sum equals `g (y default)`. -/
+theorem expect_sum_units_smul_unique {ι M : Type*} [Fintype ι] [DecidableEq ι] [Unique ι]
+    [AddCommGroup M] {g : M → ℝ} (hg : ∀ x, g (-x) = g x) (y : ι → M) :
+    𝔼 ε : ι → ℤˣ, g (∑ i, ε i • y i) = g (y default) := by
+  have hsum (ε : ι → ℤˣ) : g (∑ i, ε i • y i) = g (y default) := by
+    rw [Fintype.sum_unique, Units.smul_def]
+    rcases Int.units_eq_one_or (ε default) with h | h <;> simp [h, hg]
+  simp_rw [hsum, expect_const univ_nonempty]
+
+end ExpectSignCube
+
 section Moment
 
 variable {ι E : Type*} [Fintype ι] [DecidableEq ι] [SeminormedAddCommGroup E]
@@ -129,12 +187,8 @@ theorem rademacherMoment_of_isEmpty [IsEmpty ι] {p : ℝ} (hp : p ≠ 0) (y : �
 `p ≠ 0`. -/
 theorem rademacherMoment_unique [Unique ι] {p : ℝ} (hp : p ≠ 0) (y : ι → E) :
     rademacherMoment p y = ‖y default‖ := by
-  rw [rademacherMoment]
-  have hsum (ε : ι → ℤˣ) : ‖∑ i, ε i • y i‖ = ‖y default‖ := by
-    rw [Fintype.sum_unique, norm_units_zsmul]
-  simp_rw [hsum]
-  rw [expect_const univ_nonempty, ← Real.rpow_mul (norm_nonneg _), mul_one_div_cancel hp,
-    Real.rpow_one]
+  rw [rademacherMoment, expect_sum_units_smul_unique (g := fun x : E ↦ ‖x‖ ^ p) (fun x ↦ by simp),
+    ← Real.rpow_mul (norm_nonneg _), mul_one_div_cancel hp, Real.rpow_one]
 
 /-- A bound on the average `p`-th power of the signed-sum norms bounds `rademacherMoment p y`
 when `0 < p`. -/
@@ -189,21 +243,16 @@ theorem rademacherMoment_le_mul_map {F 𝓕 : Type*} [SeminormedAddCommGroup F] 
 /-- Reindexing a family along an equivalence preserves its Rademacher `p`-th moment. -/
 theorem rademacherMoment_comp_equiv {κ : Type*} [Fintype κ] [DecidableEq κ] (e : κ ≃ ι) (p : ℝ)
     (y : ι → E) : rademacherMoment p (y ∘ e) = rademacherMoment p y := by
-  rw [rademacherMoment, rademacherMoment]
-  congr 1
-  refine Fintype.expect_equiv (e.arrowCongr (Equiv.refl ℤˣ)) _ _ fun δ ↦ ?_
-  rw [← e.sum_comp]
-  simp
+  rw [rademacherMoment, rademacherMoment,
+    expect_sum_units_smul_comp_equiv e (fun x : E ↦ ‖x‖ ^ p) y]
 
 /-- Multiplying the members of a family by fixed signs `δ : ι → ℤˣ` leaves its Rademacher `p`-th
 moment unchanged. -/
 @[simp]
 theorem rademacherMoment_units_smul (δ : ι → ℤˣ) (p : ℝ) (y : ι → E) :
     rademacherMoment p (fun i ↦ δ i • y i) = rademacherMoment p y := by
-  rw [rademacherMoment, rademacherMoment]
-  congr 1
-  refine Fintype.expect_equiv (Equiv.mulRight δ) _ _ fun ε ↦ ?_
-  simp [mul_smul]
+  rw [rademacherMoment, rademacherMoment,
+    expect_sum_units_smul_units_smul δ (fun x : E ↦ ‖x‖ ^ p) y]
 
 /-- Negating a family leaves its Rademacher `p`-th moment unchanged. -/
 @[simp]
@@ -216,27 +265,15 @@ theorem rademacherMoment_neg (p : ℝ) (y : ι → E) :
 theorem rademacherMoment_sumElim_zero {κ : Type*} [Fintype κ] [DecidableEq κ] (p : ℝ)
     (y : ι → E) :
     rademacherMoment p (Sum.elim y (0 : κ → E)) = rademacherMoment p y := by
-  rw [rademacherMoment, rademacherMoment]
-  congr 1
-  rw [← Fintype.expect_equiv (Equiv.sumArrowEquivProdArrow ι κ ℤˣ).symm
-    (fun ε ↦ ‖∑ i, ε.1 i • y i‖ ^ p) _ fun ⟨a, b⟩ ↦ by
-      simp [Fintype.sum_sum_type, Equiv.sumArrowEquivProdArrow_symm_apply_inl]]
-  rw [← univ_product_univ, expect_product]
-  simp
+  rw [rademacherMoment, rademacherMoment,
+    expect_sum_units_smul_sumElim_zero (κ := κ) (fun x : E ↦ ‖x‖ ^ p) y]
 
 /-- Extending a family by zero along an injection preserves its Rademacher `p`-th moment. -/
 theorem rademacherMoment_extend_zero {κ : Type*} [Fintype κ] [DecidableEq κ] {f : κ → ι}
     (hf : Function.Injective f) (p : ℝ) (y : κ → E) :
     rademacherMoment p (Function.extend f y 0) = rademacherMoment p y := by
-  classical
-  let e : κ ⊕ {i : ι // i ∉ Set.range f} ≃ ι :=
-    ((Equiv.ofInjective f hf).sumCongr (Equiv.refl _)).trans (Equiv.sumCompl (· ∈ Set.range f))
-  rw [← rademacherMoment_comp_equiv e p,
-    ← rademacherMoment_sumElim_zero (κ := {i : ι // i ∉ Set.range f}) p y]
-  congr 1
-  ext (k | ⟨i, hi⟩)
-  · simp [e, hf.extend_apply]
-  · simp [e, Function.extend_apply' _ _ _ hi]
+  rw [rademacherMoment, rademacherMoment,
+    expect_sum_units_smul_extend_zero hf (fun x : E ↦ ‖x‖ ^ p) y]
 
 /-- For `p ≠ 0`, the Rademacher `p`-th moment of `Pi.single i x` is `‖x‖`. -/
 @[simp]

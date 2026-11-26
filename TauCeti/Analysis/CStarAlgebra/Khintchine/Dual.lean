@@ -12,9 +12,8 @@ import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Constructions
 import Mathlib.Topology.Algebra.InfiniteSum.Module
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.Matrix.HermitianDilation
 import TauCeti.Analysis.CStarAlgebra.RademacherSum
-import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
 # Dual `L^∞` Rademacher factorization in C⋆-algebras
@@ -67,24 +66,16 @@ variable {ι A : Type*} [Fintype ι] [DecidableEq ι] [NonUnitalCStarAlgebra A]
 /-- If `‖Φ ε‖ ≤ C` for all `ε`, then `‖columnSquare (rademacherCoeff ℝ Φ)‖ ≤ C`. -/
 theorem norm_columnSquare_rademacherCoeff_le {Φ : (ι → ℤˣ) → A} {C : ℝ}
     (hΦ : ∀ ε, ‖Φ ε‖ ≤ C) : ‖columnSquare (rademacherCoeff ℝ Φ)‖ ≤ C := by
-  rw [norm_columnSquare, ← Real.sqrt_sq ((norm_nonneg (Φ 1)).trans (hΦ 1))]
-  refine Real.sqrt_le_sqrt <| (CStarAlgebra.norm_le_norm_of_le_of_nonneg
-    (by simpa only [← rademacherCoeff_apply] using sum_star_mul_le_card_inv_smul_sum_star_mul Φ)
-    (Finset.sum_nonneg fun _ _ => star_mul_self_nonneg _)).trans ?_
-  rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-  refine (mul_le_mul_of_nonneg_left ((norm_sum_le _ _).trans <|
-    Finset.sum_le_sum (g := fun _ => C ^ 2) fun ε _ => by
-      rw [CStarRing.norm_star_mul_self, ← sq]
-      exact pow_le_pow_left₀ (norm_nonneg _) (hΦ ε) 2) (by positivity)).trans_eq ?_
-  rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
-    inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)]
+  rw [norm_columnSquare]
+  simpa only [rademacherCoeff_apply, Real.sqrt_sq ((norm_nonneg (Φ 1)).trans (hΦ 1))] using
+    Real.sqrt_le_sqrt (norm_sum_star_mul_le_of_norm_le hΦ)
 
 /-- If `‖Φ ε‖ ≤ C` for all `ε`, then `‖rowSquare (rademacherCoeff ℝ Φ)‖ ≤ C`. -/
 theorem norm_rowSquare_rademacherCoeff_le {Φ : (ι → ℤˣ) → A} {C : ℝ}
     (hΦ : ∀ ε, ‖Φ ε‖ ≤ C) : ‖rowSquare (rademacherCoeff ℝ Φ)‖ ≤ C := by
-  simpa only [rowSquare_eq_columnSquare_star, star_rademacherCoeff] using
-    norm_columnSquare_rademacherCoeff_le (Φ := fun ε => star (Φ ε))
-      fun ε => by rw [norm_star]; exact hΦ ε
+  rw [norm_rowSquare]
+  simpa only [rademacherCoeff_apply, Real.sqrt_sq ((norm_nonneg (Φ 1)).trans (hΦ 1))] using
+    Real.sqrt_le_sqrt (norm_sum_mul_star_le_of_norm_le hΦ)
 
 end Bessel
 
@@ -342,22 +333,10 @@ theorem exists_isSelfAdjoint_rademacherCoeff_eq_and_norm_le
 theorem exists_rademacherCoeff_eq_and_norm_le (x : ι → A) :
     ∃ Φ : (ι → ℤˣ) → A, rademacherCoeff ℝ Φ = x ∧
       ∀ ε, ‖Φ ε‖ ≤ Real.sqrt 3 * max ‖columnSquare x‖ ‖rowSquare x‖ := by
-  let X : ι → CStarMatrix (Fin 2) (Fin 2) A :=
-    fun i => CStarMatrix.ofMatrix !![0, x i; star (x i), 0]
-  have hX_sa (i : ι) : IsSelfAdjoint (X i) := CStarMatrix.ext fun p q => by
-    fin_cases p <;> fin_cases q <;> simp [X, CStarMatrix.star_apply]
-  have hX_sq (i : ι) :
-      X i * X i = CStarMatrix.ofMatrix (Matrix.diagonal ![x i * star (x i), star (x i) * x i]) :=
-    CStarMatrix.ext fun p q => by
-      fin_cases p <;> fin_cases q <;> simp [X, CStarMatrix.mul_apply, Fin.sum_univ_two]
-  have hX_sum_sq : (∑ i, X i * X i) = CStarMatrix.ofMatrix
-      (Matrix.diagonal ![∑ i, x i * star (x i), ∑ i, star (x i) * x i]) :=
-    CStarMatrix.ext fun p q => by
-      rw [CStarMatrix.sum_apply]
-      simp_rw [hX_sq]; fin_cases p <;> fin_cases q <;> simp
+  let X : ι → CStarMatrix (Fin 2) (Fin 2) A := fun i => CStarMatrix.hermitianDilation (x i)
+  have hX_sa (i : ι) : IsSelfAdjoint (X i) := CStarMatrix.isSelfAdjoint_hermitianDilation (x i)
   have hX_norm : √‖∑ i, X i * X i‖ = max ‖columnSquare x‖ ‖rowSquare x‖ := by
-    rw [hX_sum_sq, CStarMatrix.norm_ofMatrix_diagonal]
-    simp only [Pi.norm_vecCons, norm_of_subsingleton, max_eq_left (norm_nonneg _),
+    rw [CStarMatrix.norm_sum_hermitianDilation_mul_hermitianDilation Finset.univ x x,
       Real.sqrt_monotone.map_max, max_comm, ← norm_columnSquare, ← norm_rowSquare]
   obtain ⟨Ψ, _, hΨ_avg, hΨ_norm⟩ := exists_isSelfAdjoint_rademacherCoeff_eq_and_norm_le hX_sa
   refine ⟨fun ε => Ψ ε 0 1, funext fun i => ?_, fun ε =>
