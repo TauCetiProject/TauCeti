@@ -80,6 +80,10 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
   `Circle.degree`, computed from angle lifts.
 * `Circle.fundamentalGroupMulEquiv_map_pow`: the `n`-th power map of the circle acts on the
   fundamental group as multiplication by `n`.
+* `Circle.mapOfEq_pow`: at the basepoint `1`, the `n`-th power map of the circle induces
+  `γ ↦ γ ^ n` on the fundamental group.
+* `Circle.mem_range_mapOfEq_pow_iff`: its image consists of the classes whose degree is divisible
+  by `n`.
 * `Circle.zpowers_fromPath_eq_top_of_degree_map_eq_one`,
   `Circle.homotopic_trans_of_degree_map_eq`: for a map `d : X → Circle` injective on
   fundamental groups, the degree of the image of a loop detects generators and conjugate loops.
@@ -586,6 +590,41 @@ theorem fundamentalGroupMulEquiv_map_pow (n : ℕ) {x : Circle} (γ : Fundamenta
     _ = Multiplicative.ofAdd (degree γ) ^ n := by
         rw [degree_map_pow, ← ofAdd_nsmul, nsmul_eq_mul]
     _ = _ := congrArg (· ^ n) (fundamentalGroupMulEquiv_fromPath γ).symm
+
+/-- **The `n`-th power map of the circle raises loop classes to the `n`-th power.** On the
+fundamental group of the circle at `1`, which `z ↦ z ^ n` fixes, the induced endomorphism is
+`γ ↦ γ ^ n`. -/
+@[simp]
+theorem mapOfEq_pow (n : ℕ) (γ : FundamentalGroup Circle 1) :
+    FundamentalGroup.mapOfEq ⟨(· ^ n), continuous_pow n⟩ (one_pow n) γ = γ ^ n := by
+  -- Changing the basepoint along an equality does not change the image in `ℤ`.
+  have key : ∀ {x y : Circle} (h : x = y) (δ : FundamentalGroup Circle x),
+      fundamentalGroupMulEquiv y
+          ((CategoryTheory.eqToIso (congrArg FundamentalGroupoid.mk h)).conj δ) =
+        fundamentalGroupMulEquiv x δ := by
+    rintro x _ rfl δ
+    simp
+  -- Unfold `mapOfEq` into the conjugation by `eqToIso` of `FundamentalGroup.map`, then compare
+  -- the images in `ℤ`.
+  apply (fundamentalGroupMulEquiv 1).injective
+  rw [FundamentalGroup.mapOfEq, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, map_pow,
+    ← fundamentalGroupMulEquiv_map_pow n γ]
+  exact key (one_pow n) _
+
+/-- **The image of the `n`-th power map on `π₁(S¹)`.** A loop class at `1` is in the image of the
+endomorphism induced by `z ↦ z ^ n` exactly when `n` divides its degree. -/
+theorem mem_range_mapOfEq_pow_iff (n : ℕ) (γ : FundamentalGroup Circle 1) :
+    γ ∈ (FundamentalGroup.mapOfEq ⟨(· ^ n), continuous_pow n⟩ (one_pow n)).range ↔
+      (n : ℤ) ∣ (fundamentalGroupMulEquiv 1 γ).toAdd := by
+  simp only [MonoidHom.mem_range, mapOfEq_pow]
+  constructor
+  · rintro ⟨δ, rfl⟩
+    exact ⟨(fundamentalGroupMulEquiv 1 δ).toAdd, by rw [map_pow, toAdd_pow, nsmul_eq_mul]⟩
+  · rintro ⟨k, hk⟩
+    refine ⟨(fundamentalGroupMulEquiv 1).symm (Multiplicative.ofAdd k), ?_⟩
+    apply (fundamentalGroupMulEquiv 1).injective
+    apply Multiplicative.toAdd.injective
+    simp [hk]
 
 section Detect
 
