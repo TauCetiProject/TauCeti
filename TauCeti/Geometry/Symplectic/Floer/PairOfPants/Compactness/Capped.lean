@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capped
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Capped
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Capped
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Compactness of the capped comparison family
@@ -184,21 +183,12 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
           ∃ M, ∀ n, ∀ y ∈ C', ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
-  -- The data of the family, read in the plane chart, are jointly smooth in `(R, z, x)`: they are
-  -- the smooth data on `ℂ × (ℝ × V)` composed with `(R, z, x) ↦ (z, (R, x))`.
-  have hg {n : WithTop ℕ∞} : ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V))
-      (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V))) n
-      fun q : ℝ × ((ℝ × ℝ) × V) ↦ (equivRealProdCLM.symm q.2.1, (q.1, q.2.2)) :=
-    (equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
-      (contDiff_fst.contMDiff.prodMk (contDiff_snd.comp contDiff_snd).contMDiff)
   have hK' (v : ℂ) : ContDiffOn ℝ 3 (fun q : ℝ × ((ℝ × ℝ) × V) ↦
       cappedComparisonPerturbation H q.1 (equivRealProdCLM.symm q.2.1) q.2.2 v) univ :=
     (contDiff_cappedComparisonPerturbation_apply (n := 3) hH hHs v).contDiffOn
   have hJ' : ContDiffOn ℝ 2 (fun q : ℝ × ((ℝ × ℝ) × V) ↦ (cappedComparisonAlmostComplex h₀ J hJ
       q.1 (equivRealProdCLM.symm q.2.1) q.2.2).toLinearMap.toContinuousLinearMap) univ :=
-    ((contMDiff_cappedComparisonAlmostComplex h₀ hJp
-      fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJs q).contMDiff).comp hg
-      ).contDiff.contDiffOn
+    (contDiff_cappedComparisonAlmostComplex h₀ hJ hJp hJs).contDiffOn
   have hJt (R : ℝ) (w : ℂ) (x : V) : ω.Tames (cappedComparisonAlmostComplex h₀ J hJ R w x) := by
     rw [cappedComparisonAlmostComplex_def]
     exact tames_cappedAlmostComplex h₀ _ _ w x
