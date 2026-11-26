@@ -45,8 +45,9 @@ that also applies without discreteness. The finite sums are
 * `PositiveLinearMap.addContentEquiv_symm_apply_indicator`: the functional associated to a content
   `ν` takes the value `ν s` at the characteristic function of `s`.
 * `LinearMap.toAddContent_comp_compContinuousCLM` and
-  `PositiveLinearMap.addContentEquiv_symm_map_apply`: the correspondence is natural, precomposition
-  with a map `r` of discrete spaces matching the pushforward of contents along `r`.
+  `PositiveLinearMap.addContentEquiv_symm_mapNonneg` (pointwise:
+  `PositiveLinearMap.addContentEquiv_symm_map_apply`): the correspondence is natural,
+  precomposition with a map `r` of discrete spaces matching the pushforward of contents along `r`.
 * `PositiveLinearMap.forall_apply_compContinuous_smul_iff_toAddContent_smul`: for a group action,
   a positive functional is invariant under translation of functions exactly when its content is
   invariant under translation of sets.
@@ -314,6 +315,20 @@ theorem AddContent.coe_mapNonneg {α β : Type*} (r : α → β)
 
 namespace PositiveLinearMap
 
+/-- **Naturality of the correspondence between functionals and contents.** The functional
+associated to the pushforward of a content `ν` along a map `r` of discrete spaces is the
+functional associated to `ν` composed with precomposition by `r`. -/
+theorem addContentEquiv_symm_mapNonneg
+    (ν : {ν : AddContent ℝ (univ : Set (Set X)) // ∀ s, 0 ≤ ν s}) (r : X → Y) :
+    (addContentEquiv Y).symm (AddContent.mapNonneg r ν) =
+      ((addContentEquiv X).symm ν).comp (BoundedContinuousFunction.compContinuousPositiveLinearMap
+        ℝ ℝ ⟨r, continuous_of_discreteTopology⟩) := by
+  refine (addContentEquiv Y).symm_apply_eq.2 (Subtype.ext ?_)
+  -- The content of `(addContentEquiv X).symm ν` is `ν`; the remaining steps are `simp` lemmas.
+  have hν := congrArg Subtype.val ((addContentEquiv X).apply_symm_apply ν)
+  rw [coe_addContentEquiv_apply] at hν
+  simp [hν]
+
 /-- The functional associated to the pushforward of a content `ν` along a map `r` of discrete
 spaces integrates `f` as the functional associated to `ν` integrates `f ∘ r`. -/
 @[simp]
@@ -321,15 +336,7 @@ theorem addContentEquiv_symm_map_apply
     (ν : {ν : AddContent ℝ (univ : Set (Set X)) // ∀ s, 0 ≤ ν s}) (r : X → Y) (f : Y →ᵇ ℝ) :
     (addContentEquiv Y).symm (AddContent.mapNonneg r ν) f =
       (addContentEquiv X).symm ν (f.compContinuous ⟨r, continuous_of_discreteTopology⟩) := by
-  have hm : (addContentEquiv Y).symm (AddContent.mapNonneg r ν) =
-      ((addContentEquiv X).symm ν).comp (BoundedContinuousFunction.compContinuousPositiveLinearMap
-        ℝ ℝ ⟨r, continuous_of_discreteTopology⟩) := by
-    refine (addContentEquiv Y).symm_apply_eq.2 (Subtype.ext ?_)
-    -- The content of `(addContentEquiv X).symm ν` is `ν`; the remaining steps are `simp` lemmas.
-    have hν := congrArg Subtype.val ((addContentEquiv X).apply_symm_apply ν)
-    rw [coe_addContentEquiv_apply] at hν
-    simp [hν]
-  simp [hm]
+  simp [addContentEquiv_symm_mapNonneg]
 
 variable {Γ : Type*} [Group Γ] [MulAction Γ X]
 
@@ -354,7 +361,9 @@ theorem forall_apply_compContinuous_smul_iff_toAddContent_smul
     have hm := (addContentEquiv X).symm_apply_apply m
     rw [← hm, ← addContentEquiv_symm_map_apply]
     congr 2
-    exact Subtype.ext (h γ⁻¹)
+    refine Subtype.ext ?_
+    rw [AddContent.coe_mapNonneg, coe_addContentEquiv_apply]
+    exact h γ⁻¹
 
 end PositiveLinearMap
 
