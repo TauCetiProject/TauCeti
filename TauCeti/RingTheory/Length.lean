@@ -401,14 +401,11 @@ onto `cN ⧸ (cN ⊓ U + cN ⊓ Θ)`, so the latter is no longer. -/
 theorem length_quotient_smul_le (c : A) (N U Θ : Submodule A M) :
     Module.length A (↥(c • N) ⧸ ((c • N) ⊓ U ⊔ (c • N) ⊓ Θ).comap (c • N).subtype) ≤
       Module.length A (↥N ⧸ (N ⊓ U ⊔ N ⊓ Θ).comap N.subtype) := by
-  let g : ↥N →ₗ[A] ↥(c • N) := (LinearMap.lsmul A M c).restrict
-    fun x hx ↦ Submodule.smul_mem_pointwise_smul x c N hx
+  -- `c • N` is, by `Submodule.pointwise_smul_def`, the image of `N` under multiplication by `c`
+  let g : ↥N →ₗ[A] ↥(c • N) := (DistribSMul.toLinearMap A M c).submoduleMap N
   have hgx (x : ↥N) : (g x : M) = c • (x : M) :=
-    (LinearMap.coe_restrict_apply _ x).trans (LinearMap.lsmul_apply c (x : M))
-  have hg : Function.Surjective g := by
-    rintro ⟨y, hy⟩
-    obtain ⟨x, hx, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hy
-    exact ⟨⟨x, hx⟩, Subtype.ext (hgx _)⟩
+    (LinearMap.submoduleMap_coe_apply _ x).trans (DistribSMul.toLinearMap_apply ..)
+  have hg : Function.Surjective g := LinearMap.submoduleMap_surjective _ N
   have hle : (N ⊓ U ⊔ N ⊓ Θ).comap N.subtype ≤
       (((c • N) ⊓ U ⊔ (c • N) ⊓ Θ).comap (c • N).subtype).comap g := by
     intro x hx
