@@ -565,7 +565,7 @@ private theorem isCompact_range_tsum (L : Submodule ℤ (WithLp 2 (E × D)))
   have hcont (m : ZLattice.dual L) : Continuous fun ψ : Q ↦
       badCoeff L (bigCone D {0} ε) (𝓕 ((ψ : 𝓓(U, ℂ)) : E → ℂ)) 0 m :=
     continuous_badCoeff L ((continuous_fourier_apply (Ω := U) _).comp continuous_subtypeVal)
-  exact isCompact_range (ContDiffMapSupportedIn.continuous_tsum_smul_of_le hb hbound hcont)
+  exact isCompact_range (ContDiffMapSupportedIn.continuous_tsum_smul_of_dominated hb hbound hcont)
 
 omit [MeasurableSpace E] [BorelSpace E] [MeasurableSpace D] [BorelSpace D] in
 /-- A distribution with wave front set in `Γ` has no conormal covector of `E × {0}` over `U` in

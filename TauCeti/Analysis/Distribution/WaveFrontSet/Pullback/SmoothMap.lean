@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.FDeriv.AddSnd
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Basic
-public import TauCeti.Analysis.Distribution.WaveFrontSet.PullbackCone
+public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Cone
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Submersion
 import TauCeti.Analysis.Distribution.TestFunction.Convolution
 
@@ -325,7 +325,7 @@ theorem waveFrontSet_pullback_subset (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : Maps
     (T.pullback f hf hfΩ h).waveFrontSet ⊆ pullbackCone f Ω T.waveFrontSet := by
   rintro ⟨x, ξ⟩ hxξ
   obtain ⟨hx, hξ, hns⟩ := mem_waveFrontSet_iff.1 hxξ
-  refine ⟨hx, ?_⟩
+  refine mem_pullbackCone.2 ⟨hx, ?_⟩
   by_contra hmem
   refine hns (isMicrolocallySmoothAt_pullback hf hfΩ h hx hξ fun η hη ↦ ?_)
   by_contra hns'
@@ -347,7 +347,7 @@ theorem adjoint_fderiv_apply_ne_zero_of_comp {E₀ : Type*} [NormedAddCommGroup 
     ∀ x ∈ Ω₀, ∀ ζ, (k x, ζ) ∈ (T.pullback f hf hfΩ h).waveFrontSet →
       (fderiv ℝ k x).adjoint ζ ≠ 0 := by
   intro x hx ζ hζ
-  obtain ⟨-, η, hη, hηζ⟩ := waveFrontSet_pullback_subset hf hfΩ h hζ
+  obtain ⟨-, η, hη, hηζ⟩ := mem_pullbackCone.1 (waveFrontSet_pullback_subset hf hfΩ h hζ)
   dsimp only at hη hηζ
   subst hηζ
   have hkx : DifferentiableAt ℝ k x := (hk x hx).differentiableAt (Ω₀.isOpen.mem_nhds hx)

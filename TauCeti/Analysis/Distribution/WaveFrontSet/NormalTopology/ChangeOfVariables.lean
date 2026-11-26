@@ -217,24 +217,14 @@ private theorem norm_pairCovector_le (m ξ : E) : ‖pairCovector m ξ‖ ≤ �
       _ = ‖ξ‖ := by rw [mul_one, innerSL_apply_norm]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A covector `Λ` with `Λ p = ‖p‖ ^ 2` has norm at least `‖p‖`. -/
-private theorem norm_le_norm_of_apply_eq_sq {X : Type*} [SeminormedAddCommGroup X]
-    [NormedSpace ℝ X] (Λ : X →L[ℝ] ℝ) {p : X} (hp : Λ p = ‖p‖ ^ 2) : ‖p‖ ≤ ‖Λ‖ := by
-  rcases (norm_nonneg p).eq_or_lt with h | h
-  · exact h ▸ norm_nonneg Λ
-  have hle := Λ.le_opNorm p
-  rw [hp, Real.norm_of_nonneg (by positivity), sq] at hle
-  exact le_of_mul_le_mul_right hle h
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- `‖m‖ + ‖ξ‖ ≤ 2 ‖Λ‖`, testing `Λ` on `(m, 0)` and `(0, ξ)`. -/
 private theorem norm_add_norm_le_two_mul_norm_pairCovector (m ξ : E) :
     ‖m‖ + ‖ξ‖ ≤ 2 * ‖pairCovector m ξ‖ := by
-  have hfst := norm_le_norm_of_apply_eq_sq (pairCovector m ξ) (p := (m, 0))
-    (by simp [pairCovector_apply])
-  have hsnd := norm_le_norm_of_apply_eq_sq (pairCovector m ξ) (p := (0, ξ))
-    (by simp [pairCovector_apply])
-  simp only [Prod.norm_mk, norm_zero, norm_nonneg, max_eq_left, max_eq_right] at hfst hsnd
+  have hfst := (pairCovector m ξ).ratio_le_opNorm (m, 0)
+  have hsnd := (pairCovector m ξ).ratio_le_opNorm (0, ξ)
+  simp only [pairCovector_apply, inner_zero_right, add_zero, zero_add,
+    real_inner_self_eq_norm_mul_norm, Prod.norm_mk, norm_zero, norm_nonneg, max_eq_left,
+    max_eq_right, norm_mul, norm_norm, mul_self_div_self] at hfst hsnd
   linarith
 
 omit [MeasurableSpace E] [BorelSpace E] in

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.MicrolocalRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
-public import TauCeti.Analysis.Distribution.WaveFrontSet.PullbackCone
+public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Cone
 import TauCeti.Algebra.Module.ZLattice.Dual
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
@@ -362,7 +362,7 @@ theorem ne_zero_of_mem_pullbackCone (e : OpenPartialHomeomorph E E)
     (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
     {U : Set E} (hU : U ⊆ e.source) {Γ : Set (E × E)} (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0) {p : E × E}
     (hp : p ∈ TauCeti.pullbackCone e U Γ) : p.2 ≠ 0 := by
-  obtain ⟨hx, η, hη, hηp⟩ := hp
+  obtain ⟨hx, η, hη, hηp⟩ := TauCeti.mem_pullbackCone.1 hp
   intro h0
   refine hΓ0 _ hη ?_
   rw [← e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn he he' (by simp) (hU hx) η,
@@ -385,14 +385,13 @@ theorem isOpen_prod_compl_diff_pullbackCone (e : OpenPartialHomeomorph E E)
       (U ×ˢ {0}ᶜ) ∩ Φ ⁻¹' ((Ω ×ˢ {0}ᶜ) \ Γ) := by
     ext ⟨x, ξ⟩
     simp only [Set.mem_sdiff, mem_prod, mem_compl_iff, mem_singleton_iff, mem_inter_iff,
-      mem_preimage, Φ]
+      mem_preimage, TauCeti.mem_pullbackCone, Φ]
     constructor
     · rintro ⟨⟨hx, hξ⟩, hn⟩
       refine ⟨⟨hx, hξ⟩, ⟨hUΩ hx, fun h0 ↦ hξ ?_⟩, fun hΓξ ↦ hn ⟨hx, _, hΓξ, hinv x hx ξ⟩⟩
       rw [← hinv x hx ξ, h0, map_zero]
     · rintro ⟨⟨hx, hξ⟩, -, hn⟩
       refine ⟨⟨hx, hξ⟩, fun ⟨_, η, hη, hηξ⟩ ↦ hn ?_⟩
-      dsimp only at hη hηξ
       rwa [← hηξ, hinv' x hx η]
   rw [hset]
   have hcont : ContinuousOn Φ (U ×ˢ univ) := by
@@ -423,7 +422,7 @@ theorem waveFrontSet_compCLMOfOpenPartialHomeomorph_subset {T : 𝓓'(Ω, ℂ)} 
       TauCeti.pullbackCone e U Γ := by
   rw [waveFrontSet_compCLMOfOpenPartialHomeomorph]
   rintro ⟨x, ξ⟩ ⟨hx, hxξ⟩
-  exact ⟨hx, _, hT hxξ,
+  exact TauCeti.mem_pullbackCone.2 ⟨hx, _, hT hxξ,
     e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn he he' (by simp) (hU hx) ξ⟩
 
 end Distribution

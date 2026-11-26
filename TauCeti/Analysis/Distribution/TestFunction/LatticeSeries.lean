@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
 import TauCeti.Algebra.Module.ZLattice.Summable
+import TauCeti.Algebra.Order.Ring.Basic
 import TauCeti.Analysis.Distribution.TestFunction.DominatedSeries
 
 /-!
@@ -44,16 +45,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [NormedAddCommGroup F] [NormedSpace ℂ F] {K : Compacts E} (Λ : Submodule ℤ E)
   [DiscreteTopology Λ]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- `(1 + s) ^ i (1 + t) ^ j ≤ (1 + s + t) ^ M` for `s, t ≥ 0` and `i + j ≤ M`. -/
-private theorem one_add_pow_mul_one_add_pow_le {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) {i j M : ℕ}
-    (h : i + j ≤ M) : (1 + s) ^ i * (1 + t) ^ j ≤ (1 + s + t) ^ M :=
-  calc (1 + s) ^ i * (1 + t) ^ j ≤ (1 + s + t) ^ i * (1 + s + t) ^ j :=
-        mul_le_mul (pow_le_pow_left₀ (by linarith) (by linarith) i)
-          (pow_le_pow_left₀ (by linarith) (by linarith) j) (by positivity) (by positivity)
-    _ = (1 + s + t) ^ (i + j) := (pow_add _ _ _).symm
-    _ ≤ (1 + s + t) ^ M := pow_le_pow_right₀ (by linarith) h
-
 /-- **Domination of weighted lattice series of modulated cutoffs.** If the coefficients `a x m`
 decay faster than every power of `1 + w x + ‖m‖`, uniformly in `x`, then the products of the
 weighted coefficients `(1 + w x) ^ N a x m` with the seminorms of the modulated cutoffs
@@ -83,7 +74,7 @@ theorem exists_summable_one_add_pow_mul_norm_mul_seminorm_modulate_le {X : Type*
           nlinarith [Real.pi_pos]
       _ = S k * (1 + 2 * π) ^ k * (1 + t) ^ k := by rw [mul_pow, mul_assoc]
   have hpow : (1 + w x) ^ N * (1 + t) ^ (k + q) ≤ (1 + w x + t) ^ (N + k + q) :=
-    one_add_pow_mul_one_add_pow_le hwx ht (by omega)
+    TauCeti.one_add_pow_mul_one_add_pow_le hwx ht (by omega)
   rw [le_mul_inv_iff₀ (by positivity)]
   calc (1 + w x) ^ N * ‖a x m‖ * N[ℂ]_{K, k} (χ.modulate (m : E)) * (1 + t) ^ q
       ≤ (1 + w x) ^ N * ‖a x m‖ * (S k * (1 + 2 * π) ^ k * (1 + t) ^ k) * (1 + t) ^ q := by
@@ -114,7 +105,8 @@ theorem isCompact_insert_range_tsum_one_add_pow_mul_smul_modulate {X : Type*} [T
   have hnorm (x : X) (m : Λ) : ‖(((1 + w x) ^ N : ℝ) : ℂ) * a x m‖ = (1 + w x) ^ N * ‖a x m‖ := by
     have := hw x
     rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-  refine isCompact_insert_range_tsum_smul_of_le hb hb0 (fun x k m ↦ ?_) (fun m ↦ ?_) fun m ↦ ?_
+  refine isCompact_insert_range_tsum_smul_of_dominated hb hb0 (fun x k m ↦ ?_) (fun m ↦ ?_)
+    fun m ↦ ?_
   · rw [hnorm]
     exact hbound x k m
   · exact (Complex.continuous_ofReal.comp ((continuous_const.add hwc).pow N)).mul (hac m)

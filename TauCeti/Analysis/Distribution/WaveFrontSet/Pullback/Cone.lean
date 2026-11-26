@@ -45,7 +45,7 @@ variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Comple
 /-- The pullback `f^* Γ = {(x, Df(x)ᵀ η) | x ∈ U, (f x, η) ∈ Γ}` of a set `Γ` of covectors along a
 map `f` over a set `U`: covectors over `f x` pull back by the transpose of the derivative of `f`
 at `x`. -/
-@[expose] def pullbackCone (f : E → E') (U : Set E) (Γ : Set (E' × E')) : Set (E × E) :=
+def pullbackCone (f : E → E') (U : Set E) (Γ : Set (E' × E')) : Set (E × E) :=
   {p | p.1 ∈ U ∧ ∃ η, (f p.1, η) ∈ Γ ∧ ((fderiv ℝ f p.1)†) η = p.2}
 
 @[simp]
