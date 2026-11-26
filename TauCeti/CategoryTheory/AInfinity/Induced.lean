@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Strict
 public import TauCeti.CategoryTheory.AInfinity.Basic
+public import TauCeti.CategoryTheory.AInfinity.Stasheff
 public import TauCeti.CategoryTheory.Graded.InducedQuiver
 
 /-!
@@ -86,31 +87,6 @@ namespace AInfinityCategory
 
 variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C] {D : Type u'}
   (𝒞 : AInfinityCategory R C) (F : D → C)
-
-/-- Elements of single hom modules, indexed by the naturals, are the inclusions of a family of
-morphisms. -/
-private theorem exists_eq_homInclusion {E : Type u'} [GradedLinearQuiver.{u', v, w} R E] {n : ℕ}
-    {z : ℕ → TotalHom R E} {a b : ℕ → E}
-    (hz : ∀ i < n, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) :
-    ∃ g : ∀ i : Fin n, homModule (R := R) (a i) (b i),
-      ∀ i : Fin n, z i = homInclusion (a i) (b i) (g i) := by
-  choose g hg using fun i : Fin n ↦ hz i i.isLt
-  exact ⟨g, fun i ↦ (hg i).symm⟩
-
-/-- A nonempty string of elements `xᵢ` of single hom modules `sᵢ ⟶ tᵢ`, indexed by `Fin n`, extends
-to a string of elements of single hom modules indexed by the naturals. -/
-private theorem exists_natString {E : Type u'} [GradedLinearQuiver.{u', v, w} R E] {n : ℕ}
-    (hn : 0 < n) (s t : Fin n → E) {x : Fin n → TotalHom R E}
-    (hx : ∀ i, x i ∈ LinearMap.range (homInclusion (R := R) (s i) (t i))) :
-    ∃ (a b : ℕ → E) (z : ℕ → TotalHom R E),
-      (∀ i < n, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) ∧
-        (∀ i : Fin n, a i = s i) ∧ (∀ i : Fin n, b i = t i) ∧ ∀ i : Fin n, z i = x i := by
-  -- Clamp the indices to `Fin n`, so that the objects are those of the string itself.
-  let j : ℕ → Fin n := fun i ↦ ⟨min i (n - 1), by omega⟩
-  have hj (i : Fin n) : j i = i := Fin.ext (min_eq_left (by have := i.isLt; omega))
-  refine ⟨fun i ↦ s (j i), fun i ↦ t (j i), fun i ↦ if i < n then x (j i) else 0,
-    fun i hi ↦ ?_, fun i ↦ congrArg s (hj i), fun i ↦ congrArg t (hj i), fun i ↦ by simp [hj]⟩
-  simpa only [hi, ↓reduceIte] using hx (j i)
 
 /-! ### The operations of the induced category -/
 
@@ -335,35 +311,14 @@ private theorem isHomogeneous_inducedOperation (n : ℕ) (hn : 0 < n) :
   · rw [𝒞.inducedOperation_succ_of_not_isChainFin F s t x h]
     exact zero_mem _
 
-/-- The Stasheff identities of the induced category.  Through the suspended bar construction, an
-arity component of `b ∘ b` is multilinear in its inputs, so it suffices to check them on
-homogeneous morphisms, each in a single hom module. -/
+/-- The Stasheff identities of the induced category.  It suffices to check them on homogeneous
+morphisms, each in a single hom module. -/
 private theorem stasheffSum_inducedOperation (n : ℕ) (hn : 0 < n) (d : ℕ → ℤ)
     (x : ℕ → TotalHom R (InducedQuiver C F))
     (hx : ∀ i < n, x i ∈ (totalGrading R (InducedQuiver C F)).piece (d i)) :
-    stasheffSum (𝒞.inducedOperation F) d x n = 0 := by
-  set G := totalGrading R (InducedQuiver C F)
-  have hFm := isSuspension_suspensionTaylor G (𝒞.inducedOperation F)
-  have hm (k : ℕ) (hk : 0 < k) (_ : k ≤ n) := 𝒞.isHomogeneous_inducedOperation F k hk
-  have key : ((ReducedTensorWords.gradedCoderiv (G.shift 1) (suspensionTaylor G
-      (𝒞.inducedOperation F)) 1 ∘ₗ ReducedTensorWords.gradedCoderiv (G.shift 1)
-        (suspensionTaylor G (𝒞.inducedOperation F)) 1).taylorComponent ⟨n, hn⟩).compMultilinearMap
-      (PiTensorProduct.tprod R) (fun i : Fin n ↦ x i) ∈ (⊥ : Submodule R _) := by
-    refine multilinearMap_apply_mem_of_mem_totalGrading_piece (d := fun i ↦ d i)
-      (fun s t g hg ↦ ?_) fun i ↦ hx i i.isLt
-    obtain ⟨a, b, y, hyab, -, -, hy⟩ :=
-      exists_natString hn s t fun i ↦ LinearMap.mem_range_self (homInclusion (s i) (t i)) (g i)
-    have hyd (i : ℕ) (hi : i < n) : y i ∈ G.piece (d i) := by
-      rw [hy ⟨i, hi⟩, homInclusion_mem_totalGrading_piece_iff]
-      exact hg ⟨i, hi⟩
-    have hyg : (fun i : Fin n ↦ y i) = fun i ↦ homInclusion (s i) (t i) (g i) := funext hy
-    rw [LinearMap.compMultilinearMap_apply, ← hyg,
-      hFm.taylorComponent_comp_self_eq_smul_stasheffSum hm hn d y hyd,
-      stasheffSum_inducedOperation_of_mem hyab hyd, smul_zero]
-    exact zero_mem _
-  rwa [Submodule.mem_bot, LinearMap.compMultilinearMap_apply,
-    hFm.taylorComponent_comp_self_eq_smul_stasheffSum hm hn d x hx,
-    negOnePowCast_smul_eq_zero_iff] at key
+    stasheffSum (𝒞.inducedOperation F) d x n = 0 :=
+  stasheffSum_eq_zero_of_mem_range_homInclusion (𝒞.isHomogeneous_inducedOperation F) hn
+    (fun _ _ _ _ hy hyd ↦ stasheffSum_inducedOperation_of_mem hy hyd) d x hx
 
 /-- The operations of the induced category are path-compatible. -/
 private theorem isPathCompatible_inducedOperation (n : ℕ) (hn : 0 < n) :
