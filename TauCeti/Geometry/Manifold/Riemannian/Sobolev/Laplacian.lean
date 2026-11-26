@@ -9,7 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Variational.FormOperator
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Eigenspace
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Isometry
 import TauCeti.Analysis.InnerProductSpace.LaxMilgram
-import TauCeti.Geometry.Manifold.Riemannian.Poisson
+import TauCeti.Geometry.Manifold.Riemannian.Poisson.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Rellich
 import TauCeti.LinearAlgebra.LinearPMap.Basic
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
@@ -44,8 +44,8 @@ solution operator.
 * On a connected manifold its kernel consists of the constants
   (`TauCeti.Manifold.SobolevH1.exists_negLaplacian_apply_eq_zero_iff`) and its range of the
   functions of integral zero (`TauCeti.Manifold.SobolevH1.mem_range_negLaplacian_iff`), by the
-  weak Poisson theory of `TauCeti.Geometry.Manifold.Riemannian.Poisson`. For instance on the circle
-  `Δ⁺ f = 1` has no solution, since `1` does not have integral zero.
+  weak Poisson theory of `TauCeti.Geometry.Manifold.Riemannian.Poisson.Basic`. For instance on the
+  circle `Δ⁺ f = 1` has no solution, since `1` does not have integral zero.
 * For a `C¹` metric, if `f = J w` lies in the domain then `D(w, v) = ⟪Δ⁺ f, J v⟫_{L²}`
   (`TauCeti.Manifold.SobolevH1.dirichletForm_eq_inner_negLaplacian`). For a smooth metric, the
   smooth functions lie in the domain, where `Δ⁺` is minus the Laplace–Beltrami operator
