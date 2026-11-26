@@ -84,32 +84,11 @@ theorem transvection_smul_flip_eq_one_add (c : R) (δ : M) :
   ext x
   simp [LinearMap.transvection.apply, smul_smul]
 
-end CommSemiring
-
-section CommRing
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
-
-/-- For an alternating form `B`, the endomorphism `x ↦ B x δ • δ` is skew-adjoint for `B`. -/
-theorem smulRight_flip_mem_skewAdjointSubmodule (hB : B.IsAlt) (δ : M) :
-    (B.flip δ).smulRight δ ∈ B.skewAdjointSubmodule := by
-  rw [mem_skewAdjointSubmodule]
-  intro x y
-  simp [← hB.neg_eq y δ, mul_comm]
-
 /-- For an alternating form `B`, the endomorphism `x ↦ B x δ • δ` squares to zero. -/
 theorem smulRight_flip_mul_self (hB : B.IsAlt) (δ : M) :
     (B.flip δ).smulRight δ * (B.flip δ).smulRight δ = 0 := by
   ext x
   simp [hB.self_eq_zero δ]
-
-/-- The bracket of `x ↦ B x a • a` and `x ↦ B x b • b`, for an alternating form `B`, is `B b a`
-times the polarization `x ↦ B x b • a + B x a • b`. -/
-theorem lie_smulRight_flip (hB : B.IsAlt) (a b : M) :
-    ⁅(B.flip a).smulRight a, (B.flip b).smulRight b⁆ =
-      B b a • ((B.flip b).smulRight a + (B.flip a).smulRight b) := by
-  ext x
-  simp [LieRing.of_associative_ring_bracket, ← hB.neg_eq b a, smul_smul, mul_comm, sub_eq_add_neg]
 
 /-- The endomorphism `x ↦ B x δ • δ` is homogeneous of degree two in `δ`. -/
 theorem smulRight_flip_smul (t : R) (δ : M) :
@@ -126,6 +105,27 @@ theorem smulRight_flip_add (a b : M) :
   ext x
   simp [add_smul, smul_add]
   abel
+
+end CommSemiring
+
+section CommRing
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
+
+/-- For an alternating form `B`, the endomorphism `x ↦ B x δ • δ` is skew-adjoint for `B`. -/
+theorem smulRight_flip_mem_skewAdjointSubmodule (hB : B.IsAlt) (δ : M) :
+    (B.flip δ).smulRight δ ∈ B.skewAdjointSubmodule := by
+  rw [mem_skewAdjointSubmodule]
+  intro x y
+  simp [← hB.neg_eq y δ, mul_comm]
+
+/-- The bracket of `x ↦ B x a • a` and `x ↦ B x b • b`, for an alternating form `B`, is `B b a`
+times the polarization `x ↦ B x b • a + B x a • b`. -/
+theorem lie_smulRight_flip (hB : B.IsAlt) (a b : M) :
+    ⁅(B.flip a).smulRight a, (B.flip b).smulRight b⁆ =
+      B b a • ((B.flip b).smulRight a + (B.flip a).smulRight b) := by
+  ext x
+  simp [LieRing.of_associative_ring_bracket, ← hB.neg_eq b a, smul_smul, mul_comm, sub_eq_add_neg]
 
 /-- The polarization `x ↦ B x b • a + B x a • b` lies in every submodule containing all the
 endomorphisms `x ↦ B x δ • δ`. -/
