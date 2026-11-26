@@ -874,18 +874,14 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_plumb
   -- The thresholds of the closed-manifold compactness theorem for the two pairs of pants.
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset
     he he_inj isOpen_thricePuncturedSphereReal (isCompact_preimage_truncation R) hTS hJ
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt
-      (contMDiffAt_uncurry_pairOfPantsPerturbation_apply hHb hHbs 1))
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt
-      (contMDiffAt_uncurry_pairOfPantsPerturbation_apply hHb hHbs Complex.I)) hJt hc hJc
-    (fun z hz x ↦ (hBb z hz x).1) fun z hz x ↦ (hBb z hz x).2
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation hHb hHbs 1)
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation hHb hHbs Complex.I)
+    hJt hc hJc (fun z hz x ↦ (hBb z hz x).1) fun z hz x ↦ (hBb z hz x).2
   obtain ⟨δ', hδ', hconv'⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset
     he he_inj isOpen_thricePuncturedSphereReal (isCompact_preimage_truncation R) hTS hJ'
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt
-      (contMDiffAt_uncurry_pairOfPantsPerturbation_apply hHa hHas 1))
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt
-      (contMDiffAt_uncurry_pairOfPantsPerturbation_apply hHa hHas Complex.I)) hJ't hc hJ'c
-    (fun z hz x ↦ (hBa z hz x).1) fun z hz x ↦ (hBa z hz x).2
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation hHa hHas 1)
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation hHa hHas Complex.I)
+    hJ't hc hJ'c (fun z hz x ↦ (hBa z hz x).1) fun z hz x ↦ (hBa z hz x).2
   refine ⟨min δ δ', lt_min hδ hδ', fun Ω Ω' L u Jk E hΩ hΩT hΩ' hΩ'T hL4 hLR hu hfl hJΩ hJΩ' hE ↦
     ?_⟩
   -- Restricted to each piece, the solutions solve the Floer equation of that pair of pants.
@@ -1002,21 +998,17 @@ theorem exists_tendstoLocallyUniformlyOn_comp_subseq_off_discrete_plumbedPerturb
   obtain ⟨σ, Z, v, hσ, hZS, hZC, -, -, hvc, hlim, hpt⟩ :=
     hω.exists_tendstoLocallyUniformlyOn_comp_subseq_off_discrete he he_inj
       isOpen_thricePuncturedSphereReal hJ
-      (hω.contDiffOn_hamiltonianVectorFieldInChartAt
-        (contMDiffAt_uncurry_pairOfPantsPerturbation_apply hHb hHbs 1))
-      (hω.contDiffOn_hamiltonianVectorFieldInChartAt
-        (contMDiffAt_uncurry_pairOfPantsPerturbation_apply hHb hHbs Complex.I)) hJt hJc
-      hBb hU hUS hUC (fun k ↦ (hb k).1)
+      (hω.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation hHb hHbs 1)
+      (hω.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation hHb hHbs Complex.I)
+      hJt hJc hBb hU hUS hUC (fun k ↦ (hb k).1)
       (fun k z hz ↦ hJΩ k z (hUT k hz) ▸ (hb k).2.1 z hz) (fun k ↦ (hb k).2.2.1)
       fun k ↦ (hb k).2.2.2
   obtain ⟨σ', Z', v', hσ', hZS', hZC', -, -, hvc', hlim', hpt'⟩ :=
     hω.exists_tendstoLocallyUniformlyOn_comp_subseq_off_discrete he he_inj
       isOpen_thricePuncturedSphereReal hJ'
-      (hω.contDiffOn_hamiltonianVectorFieldInChartAt
-        (contMDiffAt_uncurry_pairOfPantsPerturbation_apply hHa hHas 1))
-      (hω.contDiffOn_hamiltonianVectorFieldInChartAt
-        (contMDiffAt_uncurry_pairOfPantsPerturbation_apply hHa hHas Complex.I)) hJ't hJ'c
-      hBa (fun n ↦ hU (σ n)) (fun n ↦ hUS (σ n))
+      (hω.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation hHa hHas 1)
+      (hω.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation hHa hHas Complex.I)
+      hJ't hJ'c hBa (fun n ↦ hU (σ n)) (fun n ↦ hUS (σ n))
       (fun C hC hCS ↦ hσ.tendsto_atTop.eventually (hUC C hC hCS)) (fun n ↦ (ha (σ n)).1)
       (fun n w hw ↦ hJΩ' (σ n) w (hUT (σ n) hw) ▸ (ha (σ n)).2.1 w hw)
       (fun n ↦ (ha (σ n)).2.2.1) fun n ↦ (ha (σ n)).2.2.2

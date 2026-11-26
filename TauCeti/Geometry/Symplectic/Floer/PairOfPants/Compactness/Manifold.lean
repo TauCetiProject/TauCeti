@@ -196,6 +196,19 @@ variable [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [FiniteDimensional 
   {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
   {J' : ℝ × ℝ → V → AlmostComplexStructure V}
 
+/-- **The Hamiltonian vector fields of the perturbation are `C²` in every chart.** For period-one
+`C³` Hamiltonians `H_q`, the Hamiltonian vector field of each component `z ↦ K_z(w)` of the
+pair-of-pants perturbation, read in the real coordinates of `S = ℂ ∖ {0, 1}` and in the chart of
+`M` at `α`, is `C²` on `S` times the chart target. -/
+theorem contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q))) (w : ℂ) (α : M) :
+    ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α
+        fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x w)
+      (thricePuncturedSphereReal ×ˢ (extChartAt I α).target) :=
+  hω.contDiffOn_hamiltonianVectorFieldInChartAt
+    (contMDiffAt_uncurry_pairOfPantsPerturbation_apply hH hHs w) α
+
 /-- **Floer pairs of pants in a symplectic chart converge off finitely many bubbling points, for an
 energy bound over the part of the domain considered.** This is the compactness theorem for Floer
 solutions in a symplectic chart (`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset`)
