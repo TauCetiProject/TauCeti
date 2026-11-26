@@ -52,6 +52,8 @@ vectors `e k`, which generate `ℤ^κ`; when it is `e k`, it is recovered as
 * `TauCeti.Toric.isBounded_facetPolyhedron_simplex`: the simplex is bounded.
 * `TauCeti.Toric.mem_extremePoints_facetPolyhedron_simplex_iff`: for `a > 0` its vertices are `0`
   and the points `a e k*`.
+* `TauCeti.Toric.ncard_extremePoints_facetPolyhedron_simplex`: for `a > 0` it has `#κ + 1`
+  vertices.
 * `TauCeti.Toric.isDelzant_simplex`: for `a > 0` and `κ` nonempty it is a Delzant polytope.
 * `TauCeti.Toric.linearCombination_simplexNormal`: the combinations of the real normals.
 * `TauCeti.Toric.surjective_linearCombination_simplexNormal`: the real normals span `ℝ^κ`.
@@ -300,6 +302,25 @@ theorem mem_extremePoints_facetPolyhedron_simplex_iff {a : ℝ} (ha : 0 < a)
     by_cases hkp : k = p
     · simpa [hkp] using hp
     · simpa using hk k hkp
+
+/-- **The standard simplex has `#κ + 1` vertices**: for `a > 0`, the vertex `0` and the `#κ`
+distinct points `a e k*`. -/
+theorem ncard_extremePoints_facetPolyhedron_simplex {a : ℝ} (ha : 0 < a) :
+    ((facetPolyhedron ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ)
+        (simplexSupport a)).extremePoints ℝ).ncard = Fintype.card κ + 1 := by
+  let f : κ → StrongDual ℝ (κ → ℝ) := fun k ↦ a • ContinuousLinearMap.proj k
+  have hf (k m : κ) : f k (Pi.single m 1) = if k = m then a else 0 := by
+    simp [f, Pi.single_apply]
+  have hinj : Function.Injective f := fun k m h ↦
+    (by simpa [hf, ha.ne'] using congrArg (· (Pi.single k 1)) h : m = k).symm
+  have hS : (facetPolyhedron ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ)
+      (simplexSupport a)).extremePoints ℝ = insert 0 (range f) := by
+    ext x
+    rw [mem_extremePoints_facetPolyhedron_simplex_iff ha, mem_insert_iff, mem_range]
+    simp only [f, eq_comm (b := x)]
+  rw [hS, ncard_insert_of_notMem, ncard_range_of_injective hinj, Nat.card_eq_fintype_card]
+  rintro ⟨k, hk⟩
+  simpa [hf, ha.ne'] using congrArg (· (Pi.single k 1)) hk
 
 /-- **The standard simplex is a Delzant polytope.** For `a > 0` and `κ` nonempty, the simplex
 `{x | 0 ≤ x (e k), ∑ k, x (e k) ≤ a}` cut out by the normals `e k` and `-1` of `ℤ^κ` is a Delzant
