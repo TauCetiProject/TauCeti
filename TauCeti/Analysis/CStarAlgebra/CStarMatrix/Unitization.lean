@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import Mathlib.Topology.Connected.PathConnected
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Rectangular
 
 import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import TauCeti.Algebra.Star.Projection.Basic

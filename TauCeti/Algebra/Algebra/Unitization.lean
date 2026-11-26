@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Unitization
+public import Mathlib.Algebra.Order.Star.Basic
 public import Mathlib.Algebra.Star.MonoidHom
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Unitary
@@ -14,12 +15,13 @@ public import Mathlib.Tactic.NoncommRing
 /-!
 # Functoriality of the forced unitization
 
-A nonunital algebra `A` is a left ideal of its forced unitization: `(r, a) * a'` is
-`r • a' + a * a'` in `A`.
+A nonunital algebra `A` is a two-sided ideal of its forced unitization: `(r, a) * a'` is
+`r • a' + a * a'` in `A`, and `a' * (r, a)` is `r • a' + a' * a`.
 
 A homomorphism of nonunital algebras `f : A →ₙₐ[R] B` induces a unital algebra homomorphism
 `Unitization R A →ₐ[R] Unitization R B`, sending `(r, a)` to `(r, f a)`. This is the non-star
-counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
+counterpart of Mathlib's `Unitization.starMap`, and it is functorial. A linear map `φ : A → B`
+and a scalar `t : R` give the linear map `(r, a) ↦ (t r, φ a)` of unitizations.
 
 For a unital algebra `B`, the map `x ↦ 1 + (x - 1_B)` is a unital multiplicative map
 `B → Unitization R B` (a star monoid homomorphism when `B` is a star algebra). It acts on
@@ -31,11 +33,19 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 
 ## Main declarations
 
-* `Unitization.mul_inr`: `A` is a left ideal of `Unitization R A`.
+* `Unitization.mul_inr`, `Unitization.inr_mul_eq_inr`: `A` is a two-sided ideal of
+  `Unitization R A`.
+* `Unitization.inr_snd_of_fst_eq_zero`: an element with scalar part `0` lies in `A`.
+* `Unitization.conjStar`: the element `u * x * star u` of `A`, for `u` in the unitization and
+  `x : A`, with `Unitization.inr_conjStar`, `Unitization.conjStar_mul`,
+  `Unitization.conjStar_smul`, `Unitization.star_conjStar`, `IsSelfAdjoint.conjStar` and
+  `Unitization.conjStar_nonneg`.
 * `Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
 * `Unitization.map_id`, `Unitization.map_comp`: functoriality.
 * `Unitization.fstHom_comp_map`: the induced map preserves the augmentation.
 * `Unitization.map_surjective`: the induced map of a surjective homomorphism is surjective.
+* `Unitization.linearMap`: the extension `(r, a) ↦ (t r, φ a)` of a linear map to the
+  unitizations.
 * `Unitization.mapScalars`: for an algebra `R → S` and an `S`-algebra `A`, the map
   `Unitization R A → Unitization S A`, `(r, a) ↦ (algebraMap R S r, a)`.
 * `Unitization.fstHom_comp_mapScalars`, `Unitization.mapScalars_map`: change of scalars lies over
@@ -44,9 +54,13 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 * `Unitization.fstAlgEquivOfSubsingleton`, `Unitization.fstStarAlgEquivOfSubsingleton`: when `A`
   is a subsingleton, the augmentation `Unitization.fstHom` upgrades to an algebra (or `⋆`-algebra)
   equivalence onto `R`.
+* `Unitization.traceExtension`: the extension `(r, a) ↦ g r + f a` of an additive map `f` on `A`
+  to the unitization, tracial when `f` is (`Unitization.traceExtension_mul_comm`).
 * `Unitization.starLift_comp_inr`: the lift of a star homomorphism restricts to it on `A`.
 * `Unitization.inr_snd_mul_inr_mul`: multiplying an embedded element `inr p` on both sides
   produces an element with zero scalar part, equal to `inr` of its `A`-component.
+* `Unitization.prodStarAlgEquiv`: for a unital star algebra `A`, the splitting
+  `Unitization R A ≃⋆ₐ[R] A × R`, `(r, a) ↦ (r • 1 + a, r)`.
 * `Unitization.oneAddInrSubOne`: for unital `B`, the star monoid homomorphism
   `x ↦ 1 + (x - 1_B)` from `B` to its unitization.
 * `IsStarProjection.exists_star_mul_self_eq_of_mem_unitary_unitization`: projections of a
@@ -63,6 +77,91 @@ namespace Unitization
 theorem mul_inr {R A : Type*} [MulZeroClass R] [NonUnitalNonAssocSemiring A]
     [SMulWithZero R A] (x : Unitization R A) (a : A) : x * inr a = inr (x.fst • a + x.snd * a) :=
   Unitization.ext (by simp) (by simp)
+
+/-- A nonunital algebra `A` is a right ideal of its unitization: `a * x` lies in `A`, with value
+`x.fst • a + a * x.snd`. This mirrors `Unitization.mul_inr`; the name `Unitization.inr_mul` is
+Mathlib's statement that `inr` is multiplicative. -/
+theorem inr_mul_eq_inr {R A : Type*} [MulZeroClass R] [NonUnitalNonAssocSemiring A]
+    [SMulWithZero R A] (a : A) (x : Unitization R A) :
+    (inr a : Unitization R A) * x = inr (x.fst • a + a * x.snd) :=
+  Unitization.ext (by simp) (by simp)
+
+/-- An element of the unitization with scalar part `0` is the image of its `A`-part. -/
+theorem inr_snd_of_fst_eq_zero {R A : Type*} [Zero R] {w : Unitization R A} (h : w.fst = 0) :
+    (inr w.snd : Unitization R A) = w :=
+  Unitization.ext (by simp [h]) rfl
+
+section ConjStar
+
+variable {R A : Type*} [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A]
+  [Module R A]
+
+/-- The element `u * x * star u` of `A`, for `u` in the unitization `Unitization R A` and `x : A`:
+the `A`-part of the product computed in the unitization, which lies in the ideal `A`. -/
+def conjStar (u : Unitization R A) (x : A) : A :=
+  (u * (x : Unitization R A) * star u).snd
+
+/-- `u * x * star u` computed in the unitization is the image of `u.conjStar x`. -/
+@[simp]
+theorem inr_conjStar (u : Unitization R A) (x : A) :
+    (inr (u.conjStar x) : Unitization R A) = u * (x : Unitization R A) * star u :=
+  inr_snd_of_fst_eq_zero (by simp)
+
+/-- Conjugation by `1` is the identity. -/
+@[simp]
+theorem conjStar_one [StarModule R A] (x : A) : (1 : Unitization R A).conjStar x = x :=
+  inr_injective (R := R) (by simp)
+
+variable [IsScalarTower R A A] [SMulCommClass R A A]
+
+/-- Conjugation sends `0` to `0`. -/
+@[simp]
+theorem conjStar_zero (u : Unitization R A) : u.conjStar 0 = 0 :=
+  inr_injective (R := R) (by simp)
+
+/-- Conjugation is additive. -/
+@[simp]
+theorem conjStar_add (u : Unitization R A) (x y : A) :
+    u.conjStar (x + y) = u.conjStar x + u.conjStar y :=
+  inr_injective (R := R) (by simp [mul_add, add_mul])
+
+/-- Conjugation commutes with scalar multiplication. -/
+@[simp]
+theorem conjStar_smul (u : Unitization R A) (r : R) (x : A) :
+    u.conjStar (r • x) = r • u.conjStar x :=
+  inr_injective (R := R) (by simp [inr_smul])
+
+variable [StarModule R A]
+
+/-- Conjugation commutes with `star`. -/
+theorem star_conjStar (u : Unitization R A) (x : A) :
+    star (u.conjStar x) = u.conjStar (star x) :=
+  inr_injective (R := R) (by simp [inr_star, mul_assoc])
+
+/-- Conjugation by an element of the unitization preserves self-adjointness. -/
+theorem _root_.IsSelfAdjoint.conjStar {x : A} (hx : IsSelfAdjoint x) (u : Unitization R A) :
+    IsSelfAdjoint (u.conjStar x) := by
+  rw [IsSelfAdjoint, star_conjStar, hx.star_eq]
+
+/-- Conjugation by a product is the composite of the conjugations. -/
+theorem conjStar_mul (u v : Unitization R A) (x : A) :
+    (u * v).conjStar x = u.conjStar (v.conjStar x) :=
+  inr_injective (R := R) (by simp [mul_assoc])
+
+/-- Conjugation by an element of the unitization preserves nonnegativity in a star-ordered `A`:
+it sends `star s * s` to `star w * w` for `w = s * star u ∈ A`. -/
+theorem conjStar_nonneg [PartialOrder A] [StarOrderedRing A] (u : Unitization R A) {x : A}
+    (hx : 0 ≤ x) : 0 ≤ u.conjStar x := by
+  induction hx using StarOrderedRing.induction_on with
+  | star_mul_self s =>
+    obtain ⟨w, hw⟩ : ∃ w : A, (w : Unitization R A) = s * star u :=
+      ⟨_, (inr_mul_eq_inr s (star u)).symm⟩
+    convert star_mul_self_nonneg w using 1
+    exact inr_injective (R := R) (by simp [hw, mul_assoc])
+  | zero => simp
+  | add x y _ _ hx hy => simpa using add_nonneg hx hy
+
+end ConjStar
 
 section Map
 
@@ -119,6 +218,55 @@ theorem map_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) : map (g.comp f) 
   algHom_ext'' fun _ ↦ by simp
 
 end Map
+
+section LinearMap
+
+variable {R A B : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommMonoid B]
+  [Module R B]
+
+/-- The extension `(r, a) ↦ (t r, φ a)` of an `R`-linear map `φ : A → B` to the unitizations,
+scaling the unit by `t : R`. -/
+def linearMap (t : R) (φ : A →ₗ[R] B) : Unitization R A →ₗ[R] Unitization R B where
+  toFun x := inl (t * x.fst) + inr (φ x.snd)
+  map_add' x y := by ext <;> simp [mul_add]
+  map_smul' c x := by ext <;> simp [mul_left_comm]
+
+/-- `linearMap t φ` sends `(r, a)` to `(t r, φ a)`. -/
+theorem linearMap_apply (t : R) (φ : A →ₗ[R] B) (x : Unitization R A) :
+    linearMap t φ x = inl (t * x.fst) + inr (φ x.snd) :=
+  (rfl)
+
+/-- The scalar part of `linearMap t φ x` is `t` times that of `x`. -/
+@[simp]
+theorem fst_linearMap (t : R) (φ : A →ₗ[R] B) (x : Unitization R A) :
+    (linearMap t φ x).fst = t * x.fst := by
+  simp [linearMap_apply]
+
+/-- The `B`-part of `linearMap t φ x` is `φ` of the `A`-part of `x`. -/
+@[simp]
+theorem snd_linearMap (t : R) (φ : A →ₗ[R] B) (x : Unitization R A) :
+    (linearMap t φ x).snd = φ x.snd := by
+  simp [linearMap_apply]
+
+/-- `linearMap t φ` restricts to `φ` on `A`. -/
+@[simp]
+theorem linearMap_inr (t : R) (φ : A →ₗ[R] B) (a : A) :
+    linearMap t φ (inr a) = inr (φ a) := by
+  simp [linearMap_apply]
+
+/-- `linearMap t φ` multiplies scalars by `t`. -/
+@[simp]
+theorem linearMap_inl (t : R) (φ : A →ₗ[R] B) (r : R) :
+    linearMap t φ (inl r) = inl (t * r) := by
+  simp [linearMap_apply]
+
+/-- `linearMap t φ` sends `1` to `t`. -/
+@[simp]
+theorem linearMap_one (t : R) (φ : A →ₗ[R] B) :
+    linearMap t φ 1 = inl t := by
+  simp [linearMap_apply]
+
+end LinearMap
 
 section MapScalars
 
@@ -225,6 +373,35 @@ theorem fstStarAlgEquivOfSubsingleton_symm_apply [Star R] [Star A] (r : R) :
 
 end Subsingleton
 
+section TraceExtension
+
+variable {R A M : Type*} [AddCommMonoid R] [AddCommMonoid A] [AddCommMonoid M]
+
+/-- The extension `f⁺ (r, a) = g r + f a` of an additive map `f : A →+ M` to the unitization,
+with value `g` on the scalars. -/
+def traceExtension (g : R →+ M) (f : A →+ M) : Unitization R A →+ M :=
+  (g.coprod f).comp (addEquiv R A).toAddMonoidHom
+
+@[simp]
+theorem traceExtension_apply (g : R →+ M) (f : A →+ M) (x : Unitization R A) :
+    traceExtension g f x = g x.fst + f x.snd :=
+  (rfl)
+
+end TraceExtension
+
+section TraceExtensionMul
+
+variable {R A M : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A] [AddCommMonoid M]
+
+/-- The extension of a tracial map to the unitization is tracial. -/
+theorem traceExtension_mul_comm (g : R →+ M) {f : A →+ M}
+    (hf : ∀ a b, f (a * b) = f (b * a)) (x y : Unitization R A) :
+    traceExtension g f (x * y) = traceExtension g f (y * x) := by
+  simp only [traceExtension_apply, fst_mul, snd_mul, map_add, hf x.snd y.snd, mul_comm x.fst y.fst]
+  abel
+
+end TraceExtensionMul
+
 end Unitization
 
 namespace Unitization
@@ -297,11 +474,8 @@ theorem exists_star_mul_self_eq_of_mem_unitary_unitization {R A : Type*} [CommSe
     {u : Unitization R A} (hu : u ∈ unitary (Unitization R A))
     (hupq : u * (p : Unitization R A) * star u = q) :
     ∃ v : A, star v * v = p ∧ v * star v = q := by
-  have hv : ((u * (p : Unitization R A)).snd : Unitization R A) = u * p := by
-    ext
-    · rw [Unitization.fst_inr, Unitization.fst_mul, Unitization.fst_inr, mul_zero]
-    · rw [Unitization.snd_inr]
-  refine ⟨(u * (p : Unitization R A)).snd, Unitization.inr_injective (R := R) ?_,
+  have hv := (Unitization.mul_inr u p).symm
+  refine ⟨u.fst • p + u.snd * p, Unitization.inr_injective (R := R) ?_,
     Unitization.inr_injective (R := R) ?_⟩
   · rw [Unitization.inr_mul, Unitization.inr_star, hv, star_mul, mul_assoc, ← mul_assoc (star u),
       Unitary.star_mul_self_of_mem hu, one_mul, ← Unitization.inr_star, ← Unitization.inr_mul,
@@ -311,3 +485,40 @@ theorem exists_star_mul_self_eq_of_mem_unitary_unitization {R A : Type*} [CommSe
       hp.isIdempotentElem.eq, ← mul_assoc, hupq]
 
 end IsStarProjection
+
+namespace Unitization
+
+section Unital
+
+variable (R A : Type*) [CommSemiring R] [StarRing R] [Ring A] [StarRing A] [Algebra R A]
+  [StarModule R A]
+
+/-- For a unital star algebra `A`, the forced unitization splits as a product:
+`Unitization R A ≃⋆ₐ[R] A × R`, `(r, a) ↦ (r • 1 + a, r)`, with inverse
+`(b, r) ↦ (r, b - r • 1)`. -/
+def prodStarAlgEquiv : Unitization R A ≃⋆ₐ[R] A × R where
+  toFun x := (starLift (NonUnitalStarAlgHom.id R A) x, x.fst)
+  invFun y := (inl y.2 + inr (y.1 - algebraMap R A y.2) : Unitization R A)
+  left_inv x := by ext <;> simp
+  right_inv y := by ext <;> simp
+  map_mul' x y := Prod.ext (map_mul (starLift (NonUnitalStarAlgHom.id R A)) x y) (fst_mul x y)
+  map_add' x y := Prod.ext (map_add (starLift (NonUnitalStarAlgHom.id R A)) x y) (fst_add x y)
+  map_star' x := Prod.ext (map_star (starLift (NonUnitalStarAlgHom.id R A)) x) (fst_star x)
+  map_smul' r x := Prod.ext (map_smul (starLift (NonUnitalStarAlgHom.id R A)) r x) (fst_smul r x)
+
+/-- The splitting `Unitization R A ≃⋆ₐ[R] A × R` sends `(r, a)` to `(r • 1 + a, r)`. -/
+@[simp]
+theorem prodStarAlgEquiv_apply (x : Unitization R A) :
+    prodStarAlgEquiv R A x = (algebraMap R A x.fst + x.snd, x.fst) := by
+  simp [prodStarAlgEquiv]
+
+/-- The inverse of the splitting `Unitization R A ≃⋆ₐ[R] A × R` sends `(b, r)` to
+`(r, b - r • 1)`. -/
+@[simp]
+theorem prodStarAlgEquiv_symm_apply (y : A × R) :
+    (prodStarAlgEquiv R A).symm y = inl y.2 + inr (y.1 - algebraMap R A y.2) :=
+  (rfl)
+
+end Unital
+
+end Unitization

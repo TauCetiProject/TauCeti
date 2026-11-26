@@ -69,7 +69,6 @@ noncomputable def conjugateCP (V : Matrix n m ℂ) :
     convert CStarMatrix.map_toBlocks₂₂_nonneg hconj using 1
     ext i j p q
     simp [Matrix.toBlocks₂₂]
-    rfl
 
 /-- The conjugation map evaluates to the usual matrix formula. -/
 @[simp] theorem conjugateCP_apply (V : Matrix n m ℂ) (a : CStarMatrix n n ℂ) :

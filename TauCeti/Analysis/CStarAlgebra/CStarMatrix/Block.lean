@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.Connected.PathConnected
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Rectangular
 import Mathlib.Analysis.CStarAlgebra.Hom
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 
@@ -218,7 +218,7 @@ end Apply
     fromBlocks u 0 0 v ∈ unitary (CStarMatrix (m₁ ⊕ m₂) (m₁ ⊕ m₂) A) ↔
       u ∈ unitary (CStarMatrix m₁ m₁ A) ∧ v ∈ unitary (CStarMatrix m₂ m₂ A) := by
   rw [← ofMatrix_symm_mem_unitary_iff, ofMatrix_symm_fromBlocks, ofMatrix_symm_zero,
-    ofMatrix_symm_zero, Matrix.fromBlocks_zero_zero_mem_unitaryGroup_iff,
+    ofMatrix_symm_zero, Matrix.fromBlocks_zero_zero_mem_unitary_iff,
     ofMatrix_symm_mem_unitary_iff (M := u), ofMatrix_symm_mem_unitary_iff (M := v)]
 
 end FromBlocks

@@ -115,6 +115,19 @@ theorem InterlacedBy.mem_of_lt (h : InterlacedBy μ ν) {i₁ i₂ j : ℕ} (hi 
     ((_root_.YoungDiagram.mem_iff_lt_rowLen.mp hc).trans_le
       ((μ.rowLen_anti (i₁ + 1) i₂ hi).trans (h.rowLen_succ_le i₁)))
 
+/-- **A horizontal strip is no longer than the first row of the larger shape**: if `ν` interlaces
+`μ`, then `μ / ν` has at most `μ₀` cells, since it has at most one cell in each column. -/
+theorem InterlacedBy.card_le_card_add_rowLen_zero (h : InterlacedBy μ ν) :
+    μ.card ≤ ν.card + μ.rowLen 0 := by
+  obtain ⟨L, hL⟩ : ∃ L, μ.colLen 0 ≤ L + 1 := ⟨μ.colLen 0, Nat.le_succ _⟩
+  have hν : ∑ i ∈ Finset.range L, ν.rowLen i ≤ ν.card := by
+    rw [sum_range_rowLen_eq_card_filter_fst]
+    exact Finset.card_filter_le _ _
+  have hle : ∑ i ∈ Finset.range L, μ.rowLen (i + 1) ≤ ∑ i ∈ Finset.range L, ν.rowLen i :=
+    Finset.sum_le_sum fun i _ => h.rowLen_succ_le i
+  rw [μ.card_eq_sum_range_rowLen hL, Finset.sum_range_succ']
+  omega
+
 /-- **The shapes interlacing `μ` with at most `n` rows.**  These index the summands of the
 `GLₙ₊₁ ↓ GLₙ` branching rule; the row bound is genuine, since a shape may interlace `μ` and still
 be too tall to be written in `n` letters. -/
