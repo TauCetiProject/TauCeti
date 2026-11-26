@@ -364,7 +364,7 @@ private def tensorCLM (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W
     rintro ⟨x', y⟩ ⟨hx', hy⟩
     obtain ⟨x, hx, hxx'⟩ := mem_thickening_iff.1 hx'
     exact toLp_mem_of_lt_tubeRadius hU K hK hx hxx' (by simpa [O, δ] using hy)
-  (prodContinuousLinearEquiv 2 ℝ E D).symm.transportTestFunction hVW ∘L
+  (prodContinuousLinearEquiv 2 ℝ E D).symm.transportTestFunction ℝ hVW ∘L
     (prodSMulCLM (F := ℝ) (mollifier (tubeRadius_pos hU K hK) n) (V := V) subset_rfl ∘L
       ofSupportedInCLM ℝ hKΩ)
 
