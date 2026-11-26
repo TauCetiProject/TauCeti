@@ -49,7 +49,7 @@ open scoped ENNReal Pointwise
 
 open DoubleCoset
 
-variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G]
+variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableConstSMul G G]
 
 namespace Subgroup
 

@@ -87,19 +87,13 @@ structure IsCosetSystem (H K : Subgroup G) (g : G) (reps : ι → G) : Prop wher
   /-- Distinct indices name distinct left cosets of `K`. -/
   injective : Function.Injective fun i ↦ (reps i : G ⧸ K)
 
--- `HgK` is a union of left cosets of `K`, the hypothesis of
--- `Subgroup.mk_mem_image_iff_of_forall_mul_mem`.
-private theorem mul_mem_doubleCoset :
-    ∀ x ∈ doubleCoset g H K, ∀ k ∈ K, x * k ∈ doubleCoset g H K :=
-  fun _ hx _ hk ↦ by simpa using mul_mul_mem_doubleCoset (H := H) H.one_mem hx hk
-
 namespace IsCosetSystem
 
 /-- The left cosets of a coset system lie in the double coset. -/
 theorem smul_subset (h : IsCosetSystem H K g reps) (i : ι) :
     reps i • (K : Set G) ⊆ doubleCoset g H K := by
   rintro _ ⟨k, hk, rfl⟩
-  exact mul_mem_doubleCoset _ (h.mem_doubleCoset i) _ hk
+  exact mul_mem_doubleCoset_of_mem_right (h.mem_doubleCoset i) hk
 
 /-- A coset system decomposes the double coset: `HgK = ⋃ᵢ reps i • K`. -/
 theorem iUnion_smul_eq (h : IsCosetSystem H K g reps) :
@@ -138,17 +132,19 @@ theorem isCosetSystem_iff_injective_and_range_eq :
     IsCosetSystem H K g reps ↔
       Function.Injective (fun i ↦ (reps i : G ⧸ K)) ∧
         Set.range (fun i ↦ (reps i : G ⧸ K)) = QuotientGroup.mk '' doubleCoset g H K := by
+  have hmul : ∀ x ∈ doubleCoset g H K, ∀ k ∈ K, x * k ∈ doubleCoset g H K :=
+    fun _ hx _ hk ↦ mul_mem_doubleCoset_of_mem_right hx hk
   refine ⟨fun h ↦ ⟨h.injective, ?_⟩, fun ⟨hinj, hrange⟩ ↦ ⟨fun i ↦ ?_, fun x hx ↦ ?_, hinj⟩⟩
   · ext q
     induction q using QuotientGroup.induction_on with | H x => ?_
-    rw [mk_mem_image_iff_of_forall_mul_mem mul_mem_doubleCoset]
+    rw [mk_mem_image_iff_of_forall_mul_mem hmul]
     refine ⟨?_, fun hx ↦ ?_⟩
     · rintro ⟨i, hi⟩
-      rw [← mk_mem_image_iff_of_forall_mul_mem mul_mem_doubleCoset, ← hi]
+      rw [← mk_mem_image_iff_of_forall_mul_mem hmul, ← hi]
       exact ⟨reps i, h.mem_doubleCoset i, rfl⟩
     · obtain ⟨i, hi⟩ := Set.mem_iUnion.mp (h.doubleCoset_subset_iUnion hx)
       exact ⟨i, (QuotientGroup.eq.mpr ((mem_leftCoset_iff _).mp hi))⟩
-  · exact (mk_mem_image_iff_of_forall_mul_mem mul_mem_doubleCoset).mp
+  · exact (mk_mem_image_iff_of_forall_mul_mem hmul).mp
       (hrange ▸ Set.mem_range_self i)
   · obtain ⟨i, hi⟩ := hrange.ge ⟨x, hx, rfl⟩
     exact Set.mem_iUnion.mpr ⟨i, (mem_leftCoset_iff _).mpr (QuotientGroup.eq.mp hi)⟩
@@ -171,8 +167,7 @@ theorem isCosetSystem_comp_equiv_iff (e : ι' ≃ ι) :
     IsCosetSystem H K g (reps ∘ e) ↔ IsCosetSystem H K g reps := by
   simp only [isCosetSystem_iff_injective_and_range_eq]
   exact and_congr (e.injective_comp fun i ↦ (reps i : G ⧸ K))
-    (by rw [show (fun i ↦ ((reps ∘ e) i : G ⧸ K)) = (fun i ↦ (reps i : G ⧸ K)) ∘ e from rfl,
-      Set.range_comp, e.range_eq_univ, Set.image_univ])
+    (Iff.of_eq (congrArg (· = _) (e.surjective.range_comp fun i ↦ (reps i : G ⧸ K))))
 
 /-- A coset system reindexed along an equivalence is a coset system. -/
 theorem IsCosetSystem.comp_equiv (h : IsCosetSystem H K g reps) (e : ι' ≃ ι) :
