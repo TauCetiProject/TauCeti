@@ -151,7 +151,7 @@ orientation. -/
 theorem linearMapSign_smul_of_pos [Finite ι] {c : R} (hc : 0 < c) :
     linearMapSign o o' (c • L) = linearMapSign o o' L := by
   have h := linearMapSign_map_map (o := o) (o' := o') (L := L) (L' := c • L)
-    (LinearEquiv.refl R V) (LinearEquiv.smulOfNeZero R W c hc.ne') fun _ ↦ rfl
+    (LinearEquiv.refl R V) (LinearEquiv.smulOfNeZero R W c hc.ne') fun _ ↦ by simp
   rwa [Orientation.map_refl, Orientation.map_smulOfNeZero_of_pos o' hc] at h
 
 end Field

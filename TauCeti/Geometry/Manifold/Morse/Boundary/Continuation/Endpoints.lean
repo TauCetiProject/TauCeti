@@ -194,7 +194,7 @@ private theorem transportedComparison_flow_comp (hf₀ : IsMorse 𝓘(ℝ, E) f�
           (((hX₀.contMDiff_flow_apply s).mdifferentiable (by simp)) _)),
       mfderiv_comp y (Φ.mdifferentiable (by simp) _)
         (((hX₀.contMDiff_flow_apply s).mdifferentiable (by simp)) _)]
-    rfl
+    simp only [comp_apply, z]
   refine ContinuousLinearMap.ext fun c ↦ ?_
   have hF : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX₀.flow s) y (hX₀.unstableFrame (𝔬₀.chart p) y c) =
       Real.exp s • hX₀.unstableFrame (𝔬₀.chart p) z c := by
