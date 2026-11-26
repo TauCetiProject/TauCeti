@@ -56,7 +56,7 @@ cancel those of the integral over `(b, ∞)`. For the remainders every resulting
 `(1/x, ∞)`, are exactly `e^{iπα/2} Γ(α) x^{-α}`: they are the value at `z = -ix` of the Gamma
 integral `∫₀^∞ t^{α-1} e^{-zt} dt = Γ(α) z^{-α}` for `Re z > 0`
 (`Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos`), split and integrated by parts in the
-same way, which is continuous up to `Re z = 0` (`Complex.integral_cpow_mul_cexp_mul_I_add_sum_eq`).
+same way, which is continuous up to `Re z = 0` (`Complex.integral_cpow_mul_exp_mul_I_add_sum_eq`).
 
 ## References
 
@@ -214,9 +214,9 @@ private theorem nearZero_cpow_eq {α : ℂ} (hα : 0 < α.re) {n : ℕ} (hn : α
       cexp (π * I * α / 2) * Gamma α * (x : ℂ) ^ (-α) -
         (I / x) ^ n * ((descPochhammer ℂ n).eval (α - 1) *
           ∫ t in Ioi b, (t : ℂ) ^ (α - 1 - n) * cexp (((x * t : ℝ) : ℂ) * I)) := by
-  have hint := integrableOn_Ioi_cpow_mul_cexp_mul_I (γ := α - 1 - n)
+  have hint := integrableOn_cpow_mul_exp_mul_I_Ioi (γ := α - 1 - n)
     (by simp only [sub_re, one_re, natCast_re]; linarith) x hδ
-  rw [eq_sub_iff_add_eq, ← integral_cpow_mul_cexp_mul_I_add_sum_eq hα hn hx hδ,
+  rw [eq_sub_iff_add_eq, ← integral_cpow_mul_exp_mul_I_add_sum_eq hα hn hx hδ,
     ← Ioc_union_Ioi_eq_Ioi hδb,
     setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
       (hint.mono_set Ioc_subset_Ioi_self) (hint.mono_set (Ioi_subset_Ioi hδb)),
