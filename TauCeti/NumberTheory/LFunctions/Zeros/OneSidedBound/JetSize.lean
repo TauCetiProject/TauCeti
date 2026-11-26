@@ -18,8 +18,13 @@ which measures divisibility. We bound the resulting sum over the directions and
 show how a subset of directions of large weight supplies a lower bound for the
 main amount, without requiring a lower bound for the prime sums.
 
-The normalization is that of `New.Data.jetSize` and `New.Data.directionAmount` in
-[lsernau/grh-lean](https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207/grh).
+The definitions follow `New.Data.jetSize` and `New.Data.directionAmount` in
+`grh/src/New/Reduction/Data/AdmissibleData.lean` of grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC) at commit
+`72fead102f663d5c7a407964a13dc0cf9d977207`. The jet interval bound, the direction bounds,
+and the rank-scaled lower bound adapt `New.Data.jetSize_mem_Icc`,
+`New.Data.directionAmount_mem_Icc`, and `New.Data.le_mainAmount`, respectively, from
+`grh/src/New/Reduction/PrimeSums.lean` at the same commit.
 -/
 
 public section
@@ -55,7 +60,8 @@ theorem jetSize_le {c b : ℝ} {j : ℕ} (hj : (j : ℝ) ≤ b ^ 2) :
   rw [jetSize_def, mul_add]
   linarith
 
-/-- Bounds for the jet size when the logarithmic scale is between `20 log b` and `23 log b`. -/
+/-- Bounds for the jet size for orders `j ≤ b²` when the logarithmic scale is between
+`20 log b` and `23 log b`. -/
 theorem jetSize_mem_Icc {c b : ℝ} {j : ℕ} (hj : (j : ℝ) ≤ b ^ 2)
     (hc₁ : 20 * log b ≤ c) (hc₂ : c ≤ 23 * log b) :
     jetSize c j ∈ Icc (20 * j * log b) (25 * j * log b) := by
@@ -103,8 +109,9 @@ theorem sum_mul_sub_le_directionAmount {ι : Type*} {s t : Finset ι} {κ : ι �
         (mul_nonneg (Nat.cast_nonneg _) (sub_nonneg.mpr hl)).trans
           (mul_sub_le_jetSize_sub (hP i hi))
 
-/-- If every derivative order is at most `b` and prime sums are nonnegative, the total
-remaining size is at most `25 b log b` times the number of directions. -/
+/-- Suppose `0 ≤ log b` and the logarithmic scale `c` is at most `23 log b`. If every derivative
+order is at most `b` and the prime sums are nonnegative, the total remaining size is at most
+`25 b log b` times the number of directions. -/
 theorem directionAmount_le {ι : Type*} {s : Finset ι} {κ : ι → ℕ} {c b : ℝ}
     {P : ι → ℝ} (hlog : 0 ≤ log b) (hc : c ≤ 23 * log b)
     (hκ : ∀ i ∈ s, (κ i : ℝ) ≤ b) (hP : ∀ i ∈ s, 0 ≤ P i) :
@@ -125,8 +132,9 @@ theorem directionAmount_le {ι : Type*} {s : Finset ι} {κ : ι → ℕ} {c b :
         mul_le_mul_of_nonneg_right (hκ i hi) (show 0 ≤ 25 * log b by positivity), hP i hi]
     _ = _ := by rw [sum_const, nsmul_eq_mul]; ring
 
-/-- If sufficiently many directions have order at least `b`, their contribution alone gives
-at least `b * T`, where `T` is at most the number of such directions times `log b`. -/
+/-- Suppose `b` is nonnegative, `c - log b` is at least both `0` and `log b`, and each prime sum
+`P i` on `s` is at most `κ i * log b`. A subset `t ⊆ s` of orders at least `b` then gives a
+lower bound of `b * T` for the total remaining size whenever `T ≤ t.card * log b`. -/
 theorem mul_le_directionAmount {ι : Type*} {s t : Finset ι} {κ : ι → ℕ} {c b T : ℝ}
     {P : ι → ℝ} (ht : t ⊆ s) (hb : 0 ≤ b) (hc : max 0 (log b) ≤ c - log b)
     (hκ : ∀ i ∈ t, b ≤ κ i) (hT : T ≤ t.card * log b)
