@@ -126,9 +126,8 @@ theorem exists_norm_smul_sub_one_lt_one {a : A} (ha : IsStrictlyPositive a) :
   rw [← heq]
   refine norm_cfc_lt one_pos fun x hx ↦ ?_
   have hx0 : 0 < x := (StarOrderedRing.isStrictlyPositive_iff_spectrum_pos a).1 ha x hx
-  have hxa : x ≤ ‖a‖ := by
-    simpa [Real.norm_eq_abs, abs_of_pos hx0, cfc_id' ℝ a] using
-      norm_apply_le_norm_cfc (fun y : ℝ ↦ y) a hx
+  have hxa : x ≤ ‖a‖ :=
+    (le_abs_self x).trans (IsometricContinuousFunctionalCalculus.norm_spectrum_le a hx)
   have hcx : c * x < 1 := by
     rw [hc, inv_mul_lt_iff₀ (by positivity)]
     linarith
