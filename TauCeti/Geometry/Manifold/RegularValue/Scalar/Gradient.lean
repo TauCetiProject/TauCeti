@@ -26,8 +26,8 @@ invertible differential at every point
 boundary point there is exactly one tangent vector `u` of the sublevel or the band with
 `dι u = grad f`, and one with `dι u = -grad f`. The first points out of the sublevel and out of the
 band at its upper level, and the second points out of the band at its lower level. Indeed
-`df(grad f) = ⟪grad f, grad f⟫` (`TauCeti.Manifold.mvfderiv_apply_mgradient`), which is positive
-because the gradient does not vanish at a point of a regular level.
+`df(grad f) = ⟪grad f, grad f⟫` is positive wherever `df` does not vanish
+(`TauCeti.Manifold.mvfderiv_apply_mgradient_pos_iff`), in particular at a point of a regular level.
 
 ## Main results
 
@@ -75,8 +75,9 @@ theorem isOutwardPointing_scalarRegularSublevel_of_mfderiv_subtypeVal_eq_mgradie
     ((hf _).mdifferentiableAt one_ne_zero)
     ((contMDiff_subtypeVal_scalarRegularSublevel hreg hn le_rfl hf x).mdifferentiableAt
       one_ne_zero) u).symm
-  rw [hu, mvfderiv_apply_mgradient, real_inner_self_pos, Ne, mgradient_eq_zero_iff]
-  exact isRegularPoint_iff_mvfderiv_ne_zero.1 (isRegularValue_iff.1 hreg _ hx)
+  rw [hu]
+  exact mvfderiv_apply_mgradient_pos_iff.2
+    (isRegularPoint_iff_mvfderiv_ne_zero.1 (isRegularValue_iff.1 hreg _ hx))
 
 section Band
 
@@ -99,9 +100,9 @@ theorem isOutwardPointing_scalarRegularBand_of_mfderiv_subtypeVal_eq_neg_mgradie
     ((hf _).mdifferentiableAt one_ne_zero)
     ((contMDiff_subtypeVal_scalarRegularBand hn ha hb le_rfl hf hab x).mdifferentiableAt
       one_ne_zero) u) ?_
-  rw [hu, map_neg, neg_lt_zero, mvfderiv_apply_mgradient, real_inner_self_pos, Ne,
-    mgradient_eq_zero_iff]
-  exact isRegularPoint_iff_mvfderiv_ne_zero.1 (isRegularValue_iff.1 ha _ hx)
+  rw [hu, map_neg, neg_lt_zero]
+  exact mvfderiv_apply_mgradient_pos_iff.2
+    (isRegularPoint_iff_mvfderiv_ne_zero.1 (isRegularValue_iff.1 ha _ hx))
 
 /-- **The gradient points out of a band at its upper level.** At a point `x` of the upper level
 `f⁻¹(b)` of a band `f⁻¹([a, b])` between regular values, for any Riemannian metric on `M`, the
@@ -120,8 +121,9 @@ theorem isOutwardPointing_scalarRegularBand_of_mfderiv_subtypeVal_eq_mgradient_o
     ((hf _).mdifferentiableAt one_ne_zero)
     ((contMDiff_subtypeVal_scalarRegularBand hn ha hb le_rfl hf hab x).mdifferentiableAt
       one_ne_zero) u).symm
-  rw [hu, mvfderiv_apply_mgradient, real_inner_self_pos, Ne, mgradient_eq_zero_iff]
-  exact isRegularPoint_iff_mvfderiv_ne_zero.1 (isRegularValue_iff.1 hb _ hx)
+  rw [hu]
+  exact mvfderiv_apply_mgradient_pos_iff.2
+    (isRegularPoint_iff_mvfderiv_ne_zero.1 (isRegularValue_iff.1 hb _ hx))
 
 end Band
 

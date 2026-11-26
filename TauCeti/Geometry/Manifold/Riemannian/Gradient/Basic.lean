@@ -143,6 +143,12 @@ theorem mvfderiv_apply_neg_mgradient :
 theorem mgradient_eq_zero_iff : mgradient I f x = 0 ↔ mvfderiv I f x = 0 := by
   rw [mgradient, LinearIsometryEquiv.map_eq_zero_iff]
 
+/-- The differential of `f` in the direction of its gradient is positive exactly where the
+differential does not vanish. -/
+theorem mvfderiv_apply_mgradient_pos_iff :
+    0 < mvfderiv I f x (mgradient I f x) ↔ mvfderiv I f x ≠ 0 := by
+  rw [mvfderiv_apply_mgradient, real_inner_self_pos, Ne, mgradient_eq_zero_iff]
+
 /-- The gradient vanishes outside the topological support of the function. -/
 theorem mgradient_eq_zero_of_notMem_tsupport (hx : x ∉ tsupport f) :
     mgradient I f x = 0 :=
