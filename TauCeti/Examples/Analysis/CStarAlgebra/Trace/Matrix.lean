@@ -75,6 +75,7 @@ noncomputable def complexTrace : ℂ → ℝ≥0∞ :=
   TracePairingExample.idTrace.toTrace
 
 /-- The value of the identity trace of `ℂ`. -/
+@[simp]
 theorem complexTrace_apply (z : ℂ) : complexTrace z = ENNReal.ofReal z.re := by
   simp [complexTrace, TracePairingExample.idTrace_apply]
 
@@ -99,11 +100,16 @@ theorem matrixTrace_averagingProjection :
 def allOnes : CStarMatrix (Fin 2) (Fin 2) ℂ :=
   CStarMatrix.ofMatrix !![1, 1; 1, 1]
 
+/-- All entries of `[[1, 1], [1, 1]]` are `1`. -/
+@[simp]
+theorem allOnes_apply (i j : Fin 2) : allOnes i j = 1 := by
+  fin_cases i <;> fin_cases j <;> simp [allOnes]
+
 /-- `[[1, 1], [1, 1]] = [[1, 1], [0, 0]]⋆ [[1, 1], [0, 0]]`. -/
 theorem allOnes_eq_star_topRow_mul_topRow : allOnes = star (topRow 1 1) * topRow 1 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [allOnes, topRow, CStarMatrix.mul_apply, CStarMatrix.star_apply, Fin.sum_univ_two]
+    simp [topRow, CStarMatrix.mul_apply, CStarMatrix.star_apply, Fin.sum_univ_two]
 
 /-- `[[1, 1], [1, 1]] ≥ 0`. -/
 theorem allOnes_nonneg : 0 ≤ allOnes := by
@@ -113,6 +119,12 @@ theorem allOnes_nonneg : 0 ≤ allOnes := by
 /-- The unitary `2^{-1/2} [[1, 1], [-1, 1]]` of `M₂(ℂ)`. -/
 noncomputable def rotation : CStarMatrix (Fin 2) (Fin 2) ℂ :=
   CStarMatrix.ofMatrix !![(√2 : ℂ)⁻¹, (√2 : ℂ)⁻¹; -(√2 : ℂ)⁻¹, (√2 : ℂ)⁻¹]
+
+/-- Entries of `2^{-1/2} [[1, 1], [-1, 1]]`. -/
+@[simp]
+theorem rotation_apply (i j : Fin 2) :
+    rotation i j = if i = 1 ∧ j = 0 then -(√2 : ℂ)⁻¹ else (√2 : ℂ)⁻¹ := by
+  fin_cases i <;> fin_cases j <;> simp [rotation]
 
 /-- `(√2)⁻¹ (√2)⁻¹ = 1/2` in `ℂ`. -/
 private theorem inv_sqrt_two_mul_self : (√2 : ℂ)⁻¹ * (√2 : ℂ)⁻¹ = 1 / 2 := by
@@ -125,22 +137,21 @@ theorem rotation_mem_unitary : rotation ∈ unitary (CStarMatrix (Fin 2) (Fin 2)
   refine ⟨?_, ?_⟩ <;>
   · ext i j
     fin_cases i <;> fin_cases j <;>
-      simp [rotation, CStarMatrix.mul_apply, CStarMatrix.star_apply, Fin.sum_univ_two,
-        inv_sqrt_two_mul_self] <;>
-      ring
+      norm_num [CStarMatrix.mul_apply, CStarMatrix.star_apply, Fin.sum_univ_two,
+        inv_sqrt_two_mul_self]
 
 /-- The unitary `U = 2^{-1/2} [[1, 1], [-1, 1]]` carries `[[1, 1], [1, 1]]` to `diag(2, 0)`. -/
 theorem rotation_mul_allOnes_mul_star_rotation :
     rotation * allOnes * star rotation = MatrixOrderExample.diagonal 2 0 := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    norm_num [rotation, allOnes, CStarMatrix.mul_apply, CStarMatrix.star_apply,
-      Fin.sum_univ_two, add_mul, inv_sqrt_two_mul_self]
+    norm_num [CStarMatrix.mul_apply, CStarMatrix.star_apply,
+      Fin.sum_univ_two, add_mul, mul_assoc, inv_sqrt_two_mul_self]
 
 /-- The amplified trace of `[[1, 1], [1, 1]]` is `2`. -/
 theorem matrixTrace_allOnes : matrixTrace complexTrace (Fin 2) allOnes = 2 := by
   rw [matrixTrace_complexTrace_of_nonneg allOnes_nonneg]
-  norm_num [allOnes, Matrix.trace_fin_two]
+  norm_num [Matrix.trace_fin_two]
 
 /-- The amplified trace of `diag(2, 0)` is `2`. -/
 theorem matrixTrace_diagonal_two_zero :
@@ -151,7 +162,7 @@ theorem matrixTrace_diagonal_two_zero :
 
 /-- The entries of `[[1, 1], [1, 1]]` sum to `4`. -/
 theorem sum_sum_allOnes : ∑ i, ∑ j, allOnes i j = 4 := by
-  norm_num [allOnes, Fin.sum_univ_two]
+  norm_num [Fin.sum_univ_two]
 
 /-- The entries of `diag(2, 0)` sum to `2`, so the sum of all entries is not unitarily
 invariant. -/
