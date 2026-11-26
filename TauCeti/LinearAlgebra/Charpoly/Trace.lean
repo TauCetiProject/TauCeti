@@ -65,8 +65,7 @@ variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Free
   {f : Module.End R M} {g : Module.End R N}
 
 /-- Endomorphisms of finite free modules with the same characteristic polynomial have the same
-trace. This is the first-power case of `LinearMap.trace_pow_eq_of_charpoly_eq`, proved here
-directly from `LinearMap.trace_eq_neg_charpoly_nextCoeff` without importing Newton's identities. -/
+trace; the first-power case of `LinearMap.trace_pow_eq_of_charpoly_eq`. -/
 theorem trace_eq_of_charpoly_eq (h : f.charpoly = g.charpoly) :
     LinearMap.trace R M f = LinearMap.trace R N g := by
   rw [trace_eq_neg_charpoly_nextCoeff, trace_eq_neg_charpoly_nextCoeff, h]
