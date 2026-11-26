@@ -30,6 +30,9 @@ involution of a real form built from a commuting compact conjugation
   real trace-zero matrices, identified with `𝔰𝔩₂(ℝ)`. The Cartan involution `θ = στ` on `Fix σ` is
   `X ↦ -Xᵀ`, matching `X ↦ -Xᵀ` on `𝔰𝔩₂(ℝ)` under this identification, so `𝔨 = 𝔰𝔬(2)` and `𝔭` is
   the symmetric trace-zero matrices.
+* Non-example: the complex-linear Chevalley involution `ω X = -Xᵀ` (`h ↦ -h`, `e ↦ -f`, `f ↦ -e`)
+  is a Lie automorphism, but its fixed set is a complex subalgebra, containing `e - f` and
+  `i (e - f)`, and `-B(x, ω x)` takes the values `8` at `h` and `-8` at `i h`.
 -/
 
 public section
@@ -265,5 +268,64 @@ theorem restrictRealForm_slFinTwoRealFormEquiv (Y : sl (Fin 2) ℝ) :
           (fun _ ↦ conjTranspose_mem_sl) Y) := by
   ext i j
   simp [conjTranspose_eq_transpose_of_trivial]
+
+/-! ### The complex-linear Chevalley involution -/
+
+/-- The complex-linear Chevalley involution `X ↦ -Xᵀ` of `𝔰𝔩₂(ℂ)`: `h ↦ -h`, `e ↦ -f`, `f ↦ -e`,
+with no conjugation of scalars. -/
+noncomputable def slFinTwoChevalleyInvolution : sl (Fin 2) ℂ ≃ₗ⁅ℂ⁆ sl (Fin 2) ℂ where
+  toFun X := ⟨-(X : Matrix (Fin 2) (Fin 2) ℂ)ᵀ, neg_transpose_mem_sl X.property⟩
+  invFun X := ⟨-(X : Matrix (Fin 2) (Fin 2) ℂ)ᵀ, neg_transpose_mem_sl X.property⟩
+  map_add' X Y := Subtype.ext (by simp [add_comm])
+  map_smul' c X := Subtype.ext (by simp)
+  map_lie' {X Y} := Subtype.ext (by simp [Ring.lie_def, transpose_mul])
+  left_inv X := Subtype.ext (by simp)
+  right_inv X := Subtype.ext (by simp)
+
+/-- `slFinTwoChevalleyInvolution` sends `X` to `-Xᵀ`. -/
+@[simp]
+theorem coe_slFinTwoChevalleyInvolution_apply (X : sl (Fin 2) ℂ) :
+    (slFinTwoChevalleyInvolution X : Matrix (Fin 2) (Fin 2) ℂ) =
+      -(X : Matrix (Fin 2) (Fin 2) ℂ)ᵀ :=
+  (rfl)
+
+/-- The Chevalley involution sends `h ↦ -h`, `e ↦ -f` and `f ↦ -e`. -/
+theorem slFinTwoChevalleyInvolution_basis :
+    slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 2) = -slFinTwoBasis ℂ 2 ∧
+      slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 0) = -slFinTwoBasis ℂ 1 ∧
+      slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 1) = -slFinTwoBasis ℂ 0 := by
+  refine ⟨?_, ?_, ?_⟩ <;> ext i j <;> fin_cases i <;> fin_cases j <;>
+    simp [slFinTwoBasis_zero, slFinTwoBasis_one, slFinTwoBasis_two]
+
+/-- **The fixed set of the complex-linear Chevalley involution is not a real form**: it contains
+both `e - f` and `i (e - f)`, so it meets its image under multiplication by `i`. -/
+theorem sub_mem_fixedSubalgebra_slFinTwoChevalleyInvolution :
+    slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1 ∈ slFinTwoChevalleyInvolution.toLieHom.fixedSubalgebra ∧
+      I • (slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1) ∈
+        slFinTwoChevalleyInvolution.toLieHom.fixedSubalgebra ∧
+      slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1 ≠ 0 := by
+  obtain ⟨-, he, hf⟩ := slFinTwoChevalleyInvolution_basis
+  have hfix : slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1 ∈
+      slFinTwoChevalleyInvolution.toLieHom.fixedSubalgebra := by
+    rw [LieHom.mem_fixedSubalgebra, LieEquiv.coe_toLieHom, map_sub, he, hf]
+    abel
+  refine ⟨hfix, LieSubalgebra.smul_mem _ I hfix, sub_ne_zero.mpr ?_⟩
+  exact (slFinTwoBasis ℂ).injective.ne (by decide)
+
+/-- **`-B(x, ω x)` is not positive for the complex-linear Chevalley involution `ω`**: it is `8` at
+`h` but `-8` at `i h`, since `x ↦ -B(x, ω x)` is quadratic rather than Hermitian. -/
+theorem killingForm_slFinTwoChevalleyInvolution_h :
+    -killingForm ℂ (sl (Fin 2) ℂ) (slFinTwoBasis ℂ 2)
+        (slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 2)) = 8 ∧
+      -killingForm ℂ (sl (Fin 2) ℂ) (I • slFinTwoBasis ℂ 2)
+        (slFinTwoChevalleyInvolution (I • slFinTwoBasis ℂ 2)) = -8 := by
+  obtain ⟨hh, -, -⟩ := slFinTwoChevalleyInvolution_basis
+  have h8 : killingForm ℂ (sl (Fin 2) ℂ) (slFinTwoBasis ℂ 2) (slFinTwoBasis ℂ 2) = 8 := by
+    rw [killingForm_slFinTwoBasis]
+    rfl
+  simp only [map_smul, hh, map_neg, LinearMap.smul_apply, smul_neg, neg_neg, h8, smul_eq_mul]
+  refine ⟨trivial, ?_⟩
+  rw [← mul_assoc, I_mul_I]
+  ring
 
 end TauCeti
