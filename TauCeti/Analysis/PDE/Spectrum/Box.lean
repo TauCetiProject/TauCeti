@@ -126,8 +126,9 @@ theorem toLp_update_mem_boxDomain_iff [DecidableEq ι] {a b : ι → ℝ} {i : �
   · simpa [hj] using h.2 j hj
 
 /-- A part of the hyperplane `xᵢ = aᵢ` misses the box `∏ⱼ (aⱼ, bⱼ)`. -/
-theorem disjoint_boxDomain {a b : ι → ℝ} {i : ι} {Γ : Set (EuclideanSpace ℝ ι)}
-    (hΓ : ∀ x ∈ Γ, x i = a i) : Disjoint Γ (boxDomain a b : Set (EuclideanSpace ℝ ι)) :=
+theorem disjoint_boxDomain_of_forall_apply_eq_left {a b : ι → ℝ} {i : ι}
+    {Γ : Set (EuclideanSpace ℝ ι)} (hΓ : ∀ x ∈ Γ, x i = a i) :
+    Disjoint Γ (boxDomain a b : Set (EuclideanSpace ℝ ι)) :=
   Set.disjoint_left.2 fun x hx hxΩ ↦ by
     have := (mem_boxDomain.1 hxΩ i).1
     rw [hΓ x hx] at this
