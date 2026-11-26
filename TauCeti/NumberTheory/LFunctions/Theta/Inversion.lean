@@ -141,10 +141,10 @@ theorem latticeTheta_map_traceToEuclidean (L : Submodule ℤ (mixedSpace K))
 private theorem ofReal_inv_sqrt_archNorm_const {t : ℝ} (ht : 0 < t) :
     (((√(archNorm (fun _ ↦ t : realSpace K)))⁻¹ : ℝ) : ℂ) =
       (t : ℂ) ^ (-(Module.finrank ℚ K : ℂ) / 2) := by
-  rw [archNorm_const, Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul ht.le,
+  push_cast [archNorm_const, Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul ht.le,
     ← Real.rpow_neg ht.le, Complex.ofReal_cpow ht.le]
-  push_cast
-  ring_nf
+  congr 1
+  ring
 
 /-- **Self-duality of the one-parameter Gaussian**: for `t > 0`,
 `𝓕 (mixedGaussian K t) = t ^ (-[K : ℚ] / 2) • mixedGaussian K t⁻¹`. -/

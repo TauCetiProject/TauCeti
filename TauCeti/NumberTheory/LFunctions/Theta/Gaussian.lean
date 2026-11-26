@@ -122,6 +122,14 @@ theorem mixedGaussian_apply (t : ℝ) (x : mixedSpace K) :
 theorem mixedGaussian_zero (t : ℝ) : mixedGaussian K t 0 = 1 := by
   simp [mixedGaussian_apply, mixedInner_self_eq_sum]
 
+/-- One-parameter Gaussians are positive real-valued. -/
+theorem mixedGaussian_re_pos (t : ℝ) (x : mixedSpace K) :
+    0 < (mixedGaussian K t x).re := Real.exp_pos _
+
+@[simp]
+theorem mixedGaussian_im (t : ℝ) (x : mixedSpace K) :
+    (mixedGaussian K t x).im = 0 := (rfl)
+
 /-- At a constant parameter, the archimedean Gaussian is the one-parameter Gaussian of the
 Euclidean mixed-space pairing. -/
 @[simp]
@@ -177,6 +185,12 @@ theorem summable_norm_archGaussian (L : Submodule ℤ (mixedSpace K)) [DiscreteT
     (y : realSpace K) (hy : ∀ w, 0 < y w) :
     Summable fun x : L ↦ ‖archGaussian y x‖ :=
   summable_norm_iff.mpr (summable_archGaussian L y hy)
+
+/-- Absolute convergence of the one-parameter Gaussian over a discrete lattice. -/
+theorem summable_mixedGaussian (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    {t : ℝ} (ht : 0 < t) :
+    Summable fun x : L ↦ mixedGaussian K t x := by
+  simpa only [archGaussian_const] using summable_archGaussian L (fun _ ↦ t) fun _ ↦ ht
 
 /-- Increasing the parameters decreases the archimedean Gaussian. -/
 theorem norm_archGaussian_le {y y' : realSpace K} (h : ∀ w, y' w ≤ y w) (x : mixedSpace K) :
