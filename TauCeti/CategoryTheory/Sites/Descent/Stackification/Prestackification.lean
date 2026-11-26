@@ -180,7 +180,7 @@ lemma restrictSectionsOver_app (T : Over U) [HasSheafify (J.over T.left) (Type v
     [(J.over T.left).WEqualsLocallyBijective (Type v')] (P : (Over U)ᵒᵖ ⥤ Type v') :
     (restrictSectionsOver J T).app P = (restrictSectionsOverIso J T P).hom := (rfl)
 
-lemma bijective_restrictSectionsOver_app (T : Over U) [HasSheafify (J.over T.left) (Type v')]
+lemma restrictSectionsOver_app_bijective (T : Over U) [HasSheafify (J.over T.left) (Type v')]
     [(J.over T.left).WEqualsLocallyBijective (Type v')] (P : (Over U)ᵒᵖ ⥤ Type v') :
     Function.Bijective ((restrictSectionsOver J T).app P) := by
   rw [restrictSectionsOver_app]
@@ -454,7 +454,7 @@ def sheafifyPresheafHomEquiv (M N : F.obj (.mk (op U))) (T : Over U)
     ((Fiber.homEquiv _ _).symm.bijective.comp
       ((((sheafifySections J T.left).mapIso
         (F.overMapCompPresheafHomIso M N T.hom)).toEquiv.bijective).comp
-          (bijective_restrictSectionsOver_app J T _)))
+          (restrictSectionsOver_app_bijective J T _)))
 
 @[simp]
 lemma Fiber.homEquiv_sheafifyPresheafHomEquiv (M N : F.obj (.mk (op U))) (T : Over U)
