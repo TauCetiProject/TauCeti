@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Nuclear
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Nuclear.Basic
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Analysis.Matrix.L2OpNorm
