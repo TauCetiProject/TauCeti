@@ -42,8 +42,9 @@ smooth when `C` is constant along the fibres of a collar projection near the bou
 * `TauCeti.SchottkyDouble.contMDiffOn_of_eq_sheets_of_collar`: an operator-valued function on the
   Schottky double which, over an open set `S ⊆ M`, is `g` on the first copy and the intrinsic
   conjugate of `g` on the second copy is real `C^n` on the preimage of `S` under the fold, if `g`
-  is real `C^n` on `S` and constant along the fibres of a map `ρ` from an open neighbourhood of the
-  boundary into the boundary which is `C^n` when read on the double through the fold.
+  is real `C^n` on `S` and, on `U ∩ S`, constant along the fibres of a map `ρ` from an open
+  neighbourhood `U` of the boundary which maps `U` into the boundary and `U ∩ S` into `S`, and is
+  `C^n` when read on the double through the fold.
 * `TauCeti.SchottkyDouble.contMDiffOn_coordChange_doubledBundleCore`: if the transitions of `C` are
   real `C^n` on `M`, and constant along the fibres of such a `ρ`, then the transitions of the
   doubled bundle are real `C^n` on the Schottky double.
@@ -142,9 +143,9 @@ open Filter Topology WithConv in
 operator-valued function on the Schottky double which, over an open set `S ⊆ M`, is `g` on the
 first copy of `M` and the intrinsic conjugate `star ∘ g ∘ star` of `g` on the second copy. Let `g`
 be real `C^n` on `S`, and let `ρ : M → M` be a collar projection on an open neighbourhood `U` of the
-boundary: it maps `U` into the boundary, it is `C^n` when read on the double through the fold, and
-`g` is constant along its fibres in `U ∩ S`. Then `h` is real `C^n` on the preimage of `S` under
-the fold. Applied to the transitions of a bundle pair this is
+boundary: it maps `U` into the boundary and `U ∩ S` into `S`, it is `C^n` when read on the double
+through the fold, and `g` is constant along its fibres in `U ∩ S`. Then `h` is real `C^n` on the
+preimage of `S` under the fold. Applied to the transitions of a bundle pair this is
 `contMDiffOn_coordChange_doubledBundleCore`. -/
 theorem contMDiffOn_of_eq_sheets_of_collar {n : ℕ∞ω} {S : Set M} (hS : IsOpen S)
     {g : M → E →L[ℂ] F} (hg : ContMDiffOn closedUpperHalfPlaneModel 𝓘(ℝ, E →L[ℂ] F) n g S)
