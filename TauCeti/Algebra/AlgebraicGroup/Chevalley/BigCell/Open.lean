@@ -13,19 +13,18 @@ import Mathlib.AlgebraicGeometry.OpenImmersion
 /-!
 # The integral weight-block open of a Chevalley datum
 
-For an ordering `r` of the distinct weights, invert the product of the leading weight-block
-minors in the datum's actual integral coordinate algebra. The resulting affine scheme is an
-open subscheme of the Chevalley group. Over every commutative value ring, its points are exactly
-the Chevalley points whose leading weight-block minors are units. Thus it realizes the
-intersection with the matrix block-LDU locus, including on nonreduced algebras, not just on
-field-valued points.
+For a ranking `r` of the weights, invert the product of the leading weight-block minors
+in the datum's actual integral coordinate algebra. Weights with the same rank share a block.
+The resulting affine scheme is an open subscheme of the Chevalley group. Over every commutative
+value ring, its points are exactly the Chevalley points whose leading weight-block minors are
+units. Thus it realizes the intersection with the matrix block-LDU locus, including on
+nonreduced algebras, not just on field-valued points.
 
 The open carries a canonical map from the ambient block-big-cell coordinate algebra. This
 restricts the regular matrix LDU coordinates to the Chevalley open. It does not assert that
 these matrix factors lie in the negative-root-generated subgroup, the weight torus, and the
 positive-root-generated subgroup: that is an additional group-theoretic assertion. The construction
-permits any ordering of distinct weights; for the usual big cell one orders them compatibly with
-dominance.
+permits tied ranks; for the usual big cell one uses an injective ranking compatible with dominance.
 
 The matrix open and its localization API are those of
 `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.BigCell.Basic`. The denominator uses the
@@ -46,10 +45,10 @@ namespace TauCeti.DynkinType.ChevalleyDatum
 noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
-variable {β : Type*} [LinearOrder β] (r : Set.range D.weight ≃ β)
+variable {β : Type*} [LinearOrder β] (r : Set.range D.weight → β)
 
 /-- The product of the leading weight-block minors in the actual coordinate algebra.
-Repeated weights repeat factors, without changing the principal open. -/
+Repeated ranks repeat factors, without changing the principal open. -/
 def blockBigCellDenominator : D.coordinateHopfAlgebra :=
   Matrix.leadingBlockMinorProduct (fun j => r ⟨D.weight j, Set.mem_range_self j⟩) D.coordinateMatrix
 
@@ -127,25 +126,13 @@ section Denominator
 variable {A F : Type*} [CommRing A] [FunLike F D.coordinateHopfAlgebra A]
   [RingHomClass F D.coordinateHopfAlgebra A]
 
-/-- Evaluation sends the denominator to the product of leading weight-block minors. -/
-@[simp]
+/-- Evaluation sends the denominator to the leading-block-minor product of the mapped matrix. -/
 theorem map_blockBigCellDenominator (f : F) :
-    f (D.blockBigCellDenominator r) = ∏ i, ((D.coordinateMatrix.map f).toSquareBlockProp
-      fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤
-        r ⟨D.weight i, Set.mem_range_self i⟩).det := by
-  have h := Matrix.leadingBlockMinorProduct_map (fun j => r ⟨D.weight j, Set.mem_range_self j⟩)
-    D.coordinateMatrix (RingHomClass.toRingHom f)
-  rw [RingHom.coe_coe] at h
-  rw [blockBigCellDenominator_def, ← h, Matrix.leadingBlockMinorProduct_def]
-
-/-- The image of the denominator is a unit exactly when all leading weight-block minors of the
-image matrix are units. -/
-theorem isUnit_map_blockBigCellDenominator_iff (f : F) :
-    IsUnit (f (D.blockBigCellDenominator r)) ↔ ∀ i,
-      IsUnit ((D.coordinateMatrix.map f).toSquareBlockProp
-        fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤
-          r ⟨D.weight i, Set.mem_range_self i⟩).det := by
-  rw [D.map_blockBigCellDenominator r, IsUnit.prod_univ_iff]
+    f (D.blockBigCellDenominator r) =
+      Matrix.leadingBlockMinorProduct (fun j => r ⟨D.weight j, Set.mem_range_self j⟩)
+        (D.coordinateMatrix.map f) := by
+  rw [blockBigCellDenominator_def]
+  exact (Matrix.leadingBlockMinorProduct_map _ _ (RingHomClass.toRingHom f)).symm
 
 end Denominator
 
@@ -154,9 +141,9 @@ theorem isUnit_det_toSquareBlockProp_blockBigCellMatrix (i : Fin D.dim) :
     IsUnit ((D.blockBigCellMatrix r).toSquareBlockProp
       fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤
         r ⟨D.weight i, Set.mem_range_self i⟩).det := by
-  rw [blockBigCellMatrix_def]
-  exact (D.isUnit_map_blockBigCellDenominator_iff r (algebraMap _ _)).mp
-    (IsLocalization.Away.algebraMap_isUnit _) i
+  apply (Matrix.isUnit_leadingBlockMinorProduct_iff _ _).mp _ i
+  rw [blockBigCellMatrix_def, ← D.map_blockBigCellDenominator r (algebraMap _ _)]
+  exact IsLocalization.Away.algebraMap_isUnit _
 
 /-- The localization lift evaluates the matrix on the open by evaluating the original entries. -/
 @[simp↓]
@@ -183,13 +170,15 @@ def blockBigCellPointsEquiv :
     ⟨(D.pointsPresentation A).mulEquiv (A := CommAlgCat.of ℤ A)
         (toConv (f.comp (IsScalarTower.toAlgHom ℤ D.coordinateHopfAlgebra _))), by
       rw [← D.map_coordinateMatrix]
-      apply (D.isUnit_map_blockBigCellDenominator_iff r _).mp
+      apply (Matrix.isUnit_leadingBlockMinorProduct_iff _ _).mp
+      rw [← D.map_blockBigCellDenominator]
       exact (IsLocalization.Away.algebraMap_isUnit (D.blockBigCellDenominator r)).map f⟩
   invFun g := IsLocalization.Away.liftAlgHom (D.blockBigCellDenominator r)
-    (f := (((D.pointsPresentation A).mulEquiv (A := CommAlgCat.of ℤ A)).symm g.val).ofConv)
-    ((D.isUnit_map_blockBigCellDenominator_iff r _).mpr (by
+    (f := (((D.pointsPresentation A).mulEquiv (A := CommAlgCat.of ℤ A)).symm g.val).ofConv) (by
+      rw [D.map_blockBigCellDenominator]
+      apply (Matrix.isUnit_leadingBlockMinorProduct_iff _ _).mpr
       simpa only [D.map_coordinateMatrix, toConv_ofConv, MulEquiv.apply_symm_apply]
-        using g.property))
+        using g.property)
   left_inv f := by
     apply Localization.algHom_ext (Submonoid.powers (D.blockBigCellDenominator r))
     ext x
