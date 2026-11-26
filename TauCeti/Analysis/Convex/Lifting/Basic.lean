@@ -23,7 +23,9 @@ Whenever `g` maps `D` into `E` and `h` is monotone on `E`, projecting onto the o
 recovers `{x ∈ D | h (g x) ≤ b}` exactly (`TauCeti.ConvexLifting.projection_eq`), with the
 corresponding pointwise existential characterization
 (`TauCeti.ConvexLifting.mem_originalSet_iff_exists_mem_liftedSet`), without requiring convexity,
-differentiability, or compactness.
+differentiability, or compactness. Letting the budget vary, the epigraph of `h ∘ g` on `D` consists
+of the pairs `(x, t)` admitting a height in the lift at budget `t`
+(`TauCeti.ConvexLifting.epigraph_comp_eq`).
 When `g` is convex on `D` and `h` is quasiconvex on `E` (in particular, when `h` is convex on `E`),
 the lifted set is convex with no `MapsTo g D E` or monotonicity requirement
 (`TauCeti.ConvexLifting.convex_liftedSet`). When additionally `h` is monotone on `E` and
@@ -46,12 +48,16 @@ attained minima transfer identically between the lifted and original sets
   under `MapsTo g D E` and `MonotoneOn h E`.
 * `TauCeti.ConvexLifting.mem_originalSet_iff_exists_mem_liftedSet` — pointwise existential
   characterization of `originalSet` via `liftedSet`.
+* `TauCeti.ConvexLifting.epigraph_comp_eq` — the epigraph of `h ∘ g` on `D` as the set of pairs
+  `(x, t)` admitting a height in the lift at budget `t`.
 * `TauCeti.ConvexLifting.convex_liftedSet` — convexity of `liftedSet` assuming only
   `ConvexOn 𝕜 D g` and `QuasiconvexOn 𝕜 E h` (no `MapsTo` or monotonicity needed).
 * `TauCeti.ConvexLifting.convex_originalSet` — convexity of `originalSet` under `ConvexOn 𝕜 D g`,
   `QuasiconvexOn 𝕜 E h`, `MapsTo g D E`, and `MonotoneOn h E`.
-* `TauCeti.ConvexLifting.feasible_minimum_iff` and `TauCeti.ConvexLifting.attainment_iff` — exact
-  transfer of feasible minima and attainment for any pullback objective `f ∘ Prod.fst`.
+* `TauCeti.ConvexLifting.isMinOn_comp_fst_liftedSet_iff`,
+  `TauCeti.ConvexLifting.feasible_minimum_iff` and `TauCeti.ConvexLifting.attainment_iff` — exact
+  transfer of minimizers, feasible minima and attainment for any pullback objective
+  `f ∘ Prod.fst`.
 
 ## References
 
@@ -201,6 +207,15 @@ theorem liftedSet_eq_empty_iff (hg : MapsTo g D E) (hm : MonotoneOn h E) :
     liftedSet D E g h b = ∅ ↔ originalSet D g h b = ∅ := by
   rw [← projection_eq (b := b) hg hm, image_eq_empty]
 
+/-- **Epigraph criterion.** The epigraph `{(x, t) | x ∈ D, h (g x) ≤ t}` of `h ∘ g` on `D`, in the
+form used by `convexOn_iff_convex_epigraph`, consists of the pairs `(x, t)` for which some height
+`y` satisfies `(x, y) ∈ liftedSet D E g h t`. -/
+theorem epigraph_comp_eq (hg : MapsTo g D E) (hm : MonotoneOn h E) :
+    {p : X × β | p.1 ∈ D ∧ h (g p.1) ≤ p.2} = {p | ∃ y, (p.1, y) ∈ liftedSet D E g h p.2} := by
+  ext p
+  exact mem_originalSet_iff.symm.trans
+    (mem_originalSet_iff_exists_mem_liftedSet (b := p.2) hg hm p.1)
+
 end Projection
 
 section Convex
@@ -274,11 +289,14 @@ theorem exists_mem_liftedSet_apply_le_iff [LE α] (hg : MapsTo g D E) (hm : Mono
 
 variable [Preorder α]
 
-/-- A minimizer of `f` on `originalSet` lifts to a minimizer of `f ∘ Prod.fst` on `liftedSet`. -/
-theorem isMinOn_comp_fst_liftedSet_of_isMinOn (hg : MapsTo g D E) (hm : MonotoneOn h E)
-    {f : X → α} {p : X × Y} (hmin : IsMinOn f (originalSet D g h b) p.1) :
-    IsMinOn (f ∘ Prod.fst) (liftedSet D E g h b) p :=
-  hmin.comp_of_mapsTo (mapsTo_fst_liftedSet hg hm) rfl
+/-- A pair `p` minimizes an objective pulled back from the original variables on `liftedSet` if
+and only if its projection minimizes the objective on `originalSet`. Since `IsMinOn` does not
+assert membership, this holds for every pair. -/
+theorem isMinOn_comp_fst_liftedSet_iff (hg : MapsTo g D E) (hm : MonotoneOn h E) (f : X → α)
+    (p : X × Y) :
+    IsMinOn (f ∘ Prod.fst) (liftedSet D E g h b) p ↔ IsMinOn f (originalSet D g h b) p.1 :=
+  ⟨isMinOn_originalSet_of_isMinOn_comp_fst hg,
+    fun hmin => hmin.comp_of_mapsTo (mapsTo_fst_liftedSet hg hm) rfl⟩
 
 /-- **Feasible minimum equivalence.** A pair `p` is a feasible minimizer of `f ∘ Prod.fst` on
 `liftedSet` if and only if `p ∈ liftedSet` and `p.1` is a feasible minimizer of `f` on

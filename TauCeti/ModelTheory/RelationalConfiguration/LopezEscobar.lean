@@ -9,10 +9,9 @@ public import TauCeti.ModelTheory.Basic
 public import TauCeti.ModelTheory.Interpolation.Craig
 public import TauCeti.ModelTheory.RelationalConfiguration.LanguageMap
 import Mathlib.Topology.MetricSpace.PiNat
-import TauCeti.Topology.Algebra.Group.Perm
 
 /-!
-# The López–Escobar theorem and invariant analytic separation
+# The López–Escobar theorem and sentence separation
 
 On a countable carrier `V`, the model class `modelsOf φ` of any `L_{ω₁ω}` sentence is Borel and
 invariant under isomorphism (`measurableSet_modelsOf`, `isomorphismInvariant_modelsOf`). The
@@ -483,56 +482,6 @@ section Main
 
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w}
 
-/-- For continuous families `f : X → RelationalConfiguration L V` and
-`g : Y → RelationalConfiguration L V` from Polish spaces on a countable carrier with no isomorphic
-pair, Lindelöfness of `Equiv.Perm V × X × Y` isolates a countable set `R₀` of relation symbols whose
-reducts already contain no isomorphic pair. -/
-private theorem exists_countable_relations_separating_continuous [Countable V]
-    {X Y : Type*} [TopologicalSpace X] [PolishSpace X] [TopologicalSpace Y] [PolishSpace Y]
-    {f : X → RelationalConfiguration L V} (hf : Continuous f)
-    {g : Y → RelationalConfiguration L V} (hg : Continuous g)
-    (hfg : ∀ x y, ¬ isoSetoid L V (f x) (g y)) :
-    ∃ R₀ : Set (Σ n, L.Relations n), R₀.Countable ∧
-      ∀ x y, ¬ isoSetoid (symbSublang ∅ R₀) V
-        ((symbSublangIncl ∅ R₀).reductConfiguration (f x))
-        ((symbSublangIncl ∅ R₀).reductConfiguration (g y)) := by
-  let _ : TopologicalSpace V := ⊥
-  have : DiscreteTopology V := ⟨rfl⟩
-  let Z := Equiv.Perm V × X × Y
-  let U : (Σ n, L.Relations n × (Fin n → V)) → Set Z := fun p =>
-    {z | (z.1 • f z.2.1).eval (atom p.2.1 p.2.2) ≠ (g z.2.2).eval (atom p.2.1 p.2.2)}
-  have hU_open (p : Σ n, L.Relations n × (Fin n → V)) : IsOpen (U p) := by
-    have hinv : Continuous fun σ : Equiv.Perm V => (⇑(σ⁻¹) : V → V) :=
-      Equiv.Perm.isEmbedding_prodMk_coe_coe_inv.continuous.snd
-    have hleft : Continuous fun z : Z => (z.1 • f z.2.1).eval (atom p.2.1 p.2.2) := by
-      simp only [perm_smul_def]
-      exact (continuous_eval _).comp <| continuous_uncurry_restrict.comp <|
-        (hinv.comp continuous_fst).prodMk (hf.comp (continuous_fst.comp continuous_snd))
-    have hright : Continuous fun z : Z => (g z.2.2).eval (atom p.2.1 p.2.2) :=
-      (continuous_eval _).comp (hg.comp (continuous_snd.comp continuous_snd))
-    exact isOpen_ne_fun hleft hright
-  have hU_cover : (⋃ p : Σ n, L.Relations n × (Fin n → V), U p) = univ := by
-    refine eq_univ_iff_forall.2 fun ⟨σ, x, y⟩ => ?_
-    have hne : σ • f x ≠ g y := fun heq => hfg x y (heq ▸ isoSetoid_perm_smul σ (f x))
-    obtain ⟨a, ha⟩ : ∃ a : Atom L V, (σ • f x).eval a ≠ (g y).eval a := by
-      by_contra! hall
-      exact hne (RelationalConfiguration.ext hall)
-    induction a using Atom.induction_atom with
-    | h R t => exact mem_iUnion.2 ⟨⟨_, R, t⟩, ha⟩
-  obtain ⟨A₀, hA₀_count, hA₀_eq⟩ := isOpen_iUnion_countable U hU_open
-  rw [hU_cover] at hA₀_eq
-  refine ⟨(fun p => ⟨p.1, p.2.1⟩) '' A₀, hA₀_count.image _, fun x y hxy => ?_⟩
-  obtain ⟨σ, hσ⟩ := isoSetoid_iff_exists_perm_smul_eq.1 hxy
-  rw [← (symbSublangIncl ∅ _).reductConfiguration_perm_smul] at hσ
-  have hz : (σ, x, y) ∈ ⋃ p ∈ A₀, U p := hA₀_eq.symm ▸ mem_univ (σ, x, y)
-  obtain ⟨⟨n, R, t⟩, hpA₀, hzp⟩ := mem_iUnion₂.1 hz
-  let r₀ : (symbSublang ∅ ((fun p => ⟨p.1, p.2.1⟩) '' A₀)).Relations n :=
-    ⟨R, ⟨⟨n, R, t⟩, hpA₀, rfl⟩⟩
-  have heval := congrArg (fun c => c.eval (atom r₀ t)) hσ
-  simp only [LHom.eval_reductConfiguration, LHom.onAtom_atom, symbSublangIncl_onRelation, r₀]
-    at heval
-  exact hzp heval
-
 /-- **López–Escobar separation for disjoint-up-to-isomorphism analytic sets.** On a countable
 carrier, in a relational language of arbitrary cardinality, if `A` and `B` are analytic sets of
 configurations such that no member of `A` is isomorphic to a member of `B`, there is an `L_{ω₁ω}`
@@ -542,28 +491,19 @@ theorem exists_sentence_separating_of_forall_not_isoSetoid [Countable V]
     {A B : Set (RelationalConfiguration L V)} (hA : AnalyticSet A) (hB : AnalyticSet B)
     (hAB : ∀ a ∈ A, ∀ b ∈ B, ¬ isoSetoid L V a b) :
     ∃ θ : L.Sentenceω, A ⊆ modelsOf θ ∧ Disjoint B (modelsOf θ) := by
-  obtain ⟨X, _, _, f, hf, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hA
-  obtain ⟨Y, _, _, g, hg, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hB
-  obtain ⟨R₀, hR₀, hsep⟩ := exists_countable_relations_separating_continuous hf hg
-    fun x y => hAB (f x) (mem_range_self x) (g y) (mem_range_self y)
+  obtain ⟨R₀, hR₀, hsep⟩ := exists_countable_sublanguage_separating_orbits hA hB
+    (fun a ha b hb hab => hAB a ha b hb ((isoSetoid_eq_orbitRel (L := L) (V := V)).symm ▸ hab))
   have : Countable R₀ := hR₀.to_subtype
   let ι₀ := symbSublangIncl (L := L) ∅ R₀
-  have hA' : AnalyticSet (ι₀.reductConfiguration '' range f) :=
-    (analyticSet_range_of_polishSpace hf).image_of_continuous ι₀.continuous_reductConfiguration
-  have hB' : AnalyticSet (ι₀.reductConfiguration '' range g) :=
-    (analyticSet_range_of_polishSpace hg).image_of_continuous ι₀.continuous_reductConfiguration
-  obtain ⟨θ₀, hθ₀_sub, hθ₀_disj⟩ :=
-    exists_sentence_separating_of_countable hA' hB' (fun _ hc₀ _ hd₀ hcd => by
-      obtain ⟨_, ⟨x, rfl⟩, rfl⟩ := hc₀
-      obtain ⟨_, ⟨y, rfl⟩, rfl⟩ := hd₀
-      exact hsep x y hcd)
-  refine ⟨ι₀.onBoundedFormulaInf θ₀, ?_, disjoint_left.2 ?_⟩
-  · rintro c ⟨x, rfl⟩
-    rw [mem_modelsOf, ι₀.realize_sentenceInf_reductConfiguration, ← mem_modelsOf]
-    exact hθ₀_sub ⟨f x, mem_range_self x, rfl⟩
-  · rintro c ⟨y, rfl⟩ hc
-    rw [mem_modelsOf, ι₀.realize_sentenceInf_reductConfiguration, ← mem_modelsOf] at hc
-    exact disjoint_left.1 hθ₀_disj ⟨g y, mem_range_self y, rfl⟩ hc
+  obtain ⟨θ₀, hθ₀_sub, hθ₀_disj⟩ := exists_sentence_separating_of_countable
+    (hA.image_of_continuous ι₀.continuous_reductConfiguration)
+    (hB.image_of_continuous ι₀.continuous_reductConfiguration) (fun _ hc₀ _ hd₀ hcd => by
+      obtain ⟨c, hc, rfl⟩ := hc₀
+      obtain ⟨d, hd, rfl⟩ := hd₀
+      exact hsep c hc d hd ((isoSetoid_eq_orbitRel (L := symbSublang ∅ R₀) (V := V)) ▸ hcd))
+  refine ⟨ι₀.onBoundedFormulaInf θ₀, ?_⟩
+  rw [ι₀.modelsOf_onBoundedFormulaInf]
+  exact ⟨image_subset_iff.1 hθ₀_sub, disjoint_image_left.1 hθ₀_disj⟩
 
 /-- **López–Escobar separation.** On a countable carrier, in a relational language of arbitrary
 cardinality, if `A` and `B` are disjoint analytic sets of configurations and `B` is isomorphism
@@ -600,8 +540,7 @@ theorem exists_modelsOf_eq_iff [Countable V] {B : Set (RelationalConfiguration L
   have hθ₀ : modelsOf θ₀ = B₀ :=
     (disjoint_compl_left_iff_subset.1 hdisj).antisymm hsub
   refine ⟨ι₀.onBoundedFormulaInf θ₀, ?_⟩
-  ext c
-  rw [mem_modelsOf, ι₀.realize_sentenceInf_reductConfiguration, ← mem_modelsOf, hθ₀, mem_preimage]
+  rw [ι₀.modelsOf_onBoundedFormulaInf, hθ₀]
 
 /-- **Relative López–Escobar.** Let `X` be a standard Borel space and
 `f : X → RelationalConfiguration L V` a measurable family of configurations on a countable carrier

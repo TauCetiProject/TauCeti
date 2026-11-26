@@ -45,6 +45,8 @@ each centre eigenspace into the corresponding one (`LieModuleHom.map_centerEigen
 * `LieModuleHom.map_centerEigenspace_le`: Lie module homomorphisms preserve centre eigenspaces.
 * `TauCeti.UniversalEnvelopingAlgebra.centerEigenspace_eq_top_iff`: the centre acts on the whole
   module through `χ` exactly when the centre eigenspace is everything.
+* `TauCeti.UniversalEnvelopingAlgebra.toEnd_eq_smul_of_centerEigenspace_eq_top`: if a character
+  of the centre acts by scalars, every central generator acts by a scalar.
 * `TauCeti.UniversalEnvelopingAlgebra.iSupIndep_centerEigenspace`: centre eigenspaces for distinct
   eigenvalue functions are independent.
 
@@ -106,6 +108,18 @@ theorem centerEigenspace_eq_top_iff {χ : Subalgebra.center R U → R} :
   rw [eq_top_iff]
   exact ⟨fun h z m ↦ mem_centerEigenspace.mp (h (LieSubmodule.mem_top m)) z,
     fun h m _ ↦ mem_centerEigenspace.mpr fun z ↦ h z m⟩
+
+/-- **If a character of the centre acts by scalars, so does every central generator**: when the
+centre eigenspace for `χ` is the whole module, a generator `x` with `ι x` central acts by the
+scalar `χ (ι x)`. -/
+theorem toEnd_eq_smul_of_centerEigenspace_eq_top {χ : Subalgebra.center R U → R}
+    (h : centerEigenspace R L M χ = ⊤) {x : L}
+    (hx : _root_.UniversalEnvelopingAlgebra.ι R x ∈ Subalgebra.center R U) :
+    LieModule.toEnd R L M x = χ ⟨_, hx⟩ • LinearMap.id := by
+  ext m
+  rw [centerEigenspace_eq_top_iff] at h
+  have := h ⟨_, hx⟩ m
+  rwa [representation_ι] at this
 
 /-- **A homomorphism of Lie modules carries a centre eigenspace into the centre eigenspace of the
 same eigenvalue function**, since it intertwines the actions of `U(L)`. -/

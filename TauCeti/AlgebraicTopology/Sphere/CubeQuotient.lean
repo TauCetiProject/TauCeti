@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Product
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
 import TauCeti.Geometry.Sphere.LinearIsometry
 
@@ -64,8 +65,8 @@ kernel of the induced map on `πₙ` (`TopCat.Hom.nullhomotopic_comp_of_ker_le`)
 * `TauCeti.cubeQuotientHomeomorphSphere`: the pointed homeomorphism `Iⁿ / ∂Iⁿ ≃ₜ Sⁿ`.
 * `TauCeti.sphereGenLoop`: `TauCeti.cubeToSphere` as a generalized loop of the sphere.
 * `GenLoop.toSphere` and `GenLoop.sphereEquiv`: generalized loops are pointed maps out of the
-  sphere; `p` is the image of `TauCeti.sphereGenLoop` under `GenLoop.toSphere p`
-  (`GenLoop.map_toSphere_sphereGenLoop`).
+  sphere, compatible with products (`GenLoop.toSphere_prod`); `p` is the image of
+  `TauCeti.sphereGenLoop` under `GenLoop.toSphere p` (`GenLoop.map_toSphere_sphereGenLoop`).
 * `GenLoop.injective_toSphere_iff` and `GenLoop.surjective_toSphere_iff`: `GenLoop.toSphere p` is
   injective exactly when `p` identifies only boundary points, and surjective exactly when `p` is.
 * `TauCeti.exists_cubeToSphere_eq_of_ne`: `TauCeti.cubeToSphere` covers the sphere off the north
@@ -555,6 +556,15 @@ theorem toSphere_const : toSphere (const : Ω^ (Fin n) X x) = ContinuousMap.cons
   ext s
   obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
   simp [const_apply]
+
+/-- The coordinatewise product of two generalized loops corresponds to the pairing of the maps out
+of the sphere. -/
+@[simp]
+theorem toSphere_prod (p : Ω^ (Fin n) X x) (q : Ω^ (Fin n) Y y) :
+    toSphere (GenLoop.prod p q) = (toSphere p).prodMk (toSphere q) := by
+  refine ContinuousMap.ext fun s ↦ ?_
+  obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
+  simp
 
 /-- The pointed map `GenLoop.toSphere p` out of the sphere is injective exactly when the generalized
 loop `p` identifies only points of the boundary of the cube. -/

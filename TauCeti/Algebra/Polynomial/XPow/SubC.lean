@@ -15,16 +15,17 @@ import Mathlib.Tactic.Ring
 # Roots, splitting and divisibility of `X ^ n - C a`
 
 For `n ≠ 0`, membership in the root set of `X ^ n - C a` is the equation `x ^ n = a` in any
-domain algebra. For `n = 2`, a single square root `δ` of `a` splits the binomial over any
-commutative ring: its linear factors have roots `δ` and `-δ`. No primitive root of unity
-is needed, so the splitting statement also applies in characteristic `2`. Over an ordered
-field, `X ^ 2 + 1 = X ^ 2 - C (-1)` is irreducible since `-1` is not a square. Over any nontrivial
-ring, the monic `X ^ n - C a` of degree `n` does not divide the geometric sum
+domain algebra; for `n = 0` the root set is empty. For `n = 2`, a single square root `δ` of `a`
+splits the binomial over any commutative ring: its linear factors have roots `δ` and `-δ`. No
+primitive root of unity is needed, so the splitting statement also applies in characteristic `2`.
+Over an ordered field, `X ^ 2 + 1 = X ^ 2 - C (-1)` is irreducible since `-1` is not a square.
+Over any nontrivial ring, the monic `X ^ n - C a` of degree `n` does not divide the geometric sum
 `1 + X + ⋯ + X ^ (n - 1)`, which is monic of degree `n - 1`.
 
 ## Main results
 
 * `Polynomial.mem_rootSet_X_pow_sub_C`: root-set membership is an `n`-th power equation.
+* `Polynomial.ne_zero_of_mem_rootSet_X_pow_sub_C`: a root of `X ^ n - C a` forces `n ≠ 0`.
 * `Polynomial.splits_map_X_pow_two_sub_C`: a square root splits the quadratic binomial.
 * `Polynomial.map_X_pow_sub_C_eq_X_sub_C_pow`: in exponential characteristic `p`, a `p`-th root
   `δ` of `a` makes `X ^ p - C a` the `p`-th power `(X - C δ) ^ p`.
@@ -51,6 +52,15 @@ theorem mem_rootSet_X_pow_sub_C {n : ℕ} (hn : n ≠ 0) {x : E} :
     x ∈ ((X : F[X]) ^ n - C a).rootSet E ↔ x ^ n = algebraMap F E a := by
   rw [(monic_X_pow_sub_C a hn).mem_rootSet, map_sub, aeval_X_pow, aeval_C,
     sub_eq_zero]
+
+/-- A root of `X ^ n - C a` in a domain algebra forces `n ≠ 0`: for `n = 0` the binomial is the
+constant `C (1 - a)`, whose root set is empty (`Polynomial.rootSet_C`, which covers the zero
+polynomial by the convention `rootSet 0 = ∅`). -/
+theorem ne_zero_of_mem_rootSet_X_pow_sub_C {n : ℕ} {x : E}
+    (hx : x ∈ ((X : F[X]) ^ n - C a).rootSet E) : n ≠ 0 := by
+  rintro rfl
+  rw [pow_zero, ← C_1, ← C_sub, rootSet_C] at hx
+  exact Set.notMem_empty x hx
 
 end RootSet
 

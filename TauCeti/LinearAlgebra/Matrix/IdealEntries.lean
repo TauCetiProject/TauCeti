@@ -11,6 +11,7 @@ public import Mathlib.Data.Matrix.Basic
 public import Mathlib.RingTheory.Ideal.BigOperators
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Operations
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.SetTheory.Cardinal.Finite
 
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
@@ -24,8 +25,9 @@ linear combination of matrices whose entries it contains: each such entry is a c
 entries of the original matrices.
 
 Nothing here needs invertibility or a square shape outside the statements about powers — only
-that the products are conformable — so the other statements are rectangular. Everything holds
-over any `Semiring`; the two-sided product statement asks the ideal to be two-sided
+that the products are conformable — so the other statements are rectangular. Everything except
+the quotient comparison `Matrix.map_mk_eq_map_mk_iff`, which needs a `CommRing`, holds over any
+`Semiring`; the two-sided product statement asks the ideal to be two-sided
 (`Ideal.IsTwoSided`), which is automatic over a commutative semiring. These are the membership
 computations a defining-ideal closure proof performs when it propagates a relation through a
 matrix identity.
@@ -46,6 +48,8 @@ matrix identity.
   homomorphism exactly when its image under that homomorphism is zero.
 * `RingHom.natCard_ker_mapMatrix`: so the kernel of `f` applied entrywise to `n × n` matrices
   has `|ker f| ^ (n * n)` elements.
+* `Matrix.map_mk_eq_map_mk_iff`: two matrices agree modulo `r` exactly when they differ by `r`
+  times a matrix.
 * `Matrix.pow_apply_mem_pow`, `Matrix.isNilpotent_of_forall_apply_mem`: the `k`-th power of a
   square matrix with entries in `I` has entries in `I ^ k`, so a square matrix with entries in a
   nilpotent ideal is nilpotent.
@@ -129,6 +133,21 @@ theorem _root_.RingHom.natCard_ker_mapMatrix {R : Type*} [Semiring R] [Semiring 
       left_inv _ := rfl
       right_inv _ := rfl }
   rw [Nat.card_congr e, card_matrix, Nat.card_eq_fintype_card (α := n)]
+
+/-- Two matrices have the same image modulo `r` exactly when they differ by `r` times a
+matrix. -/
+theorem map_mk_eq_map_mk_iff [CommRing S] {r : S} {A A' : Matrix m n S} :
+    A'.map (Ideal.Quotient.mk (Ideal.span {r})) = A.map (Ideal.Quotient.mk (Ideal.span {r})) ↔
+      ∃ C : Matrix m n S, A' = A + r • C := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · have (i : m) (j : n) : ∃ c, A' i j = A i j + r * c := by
+      obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.mp (Ideal.Quotient.eq.mp (congr_fun₂ h i j))
+      exact ⟨c, by rw [← hc, add_sub_cancel]⟩
+    choose c hc using this
+    exact ⟨of c, ext fun i j ↦ by simp [hc]⟩
+  · rintro ⟨C, rfl⟩
+    ext i j
+    simp [Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self r)]
 
 /-- **The powers of a matrix with entries in an ideal.** If every entry of a square matrix `M`
 lies in `I`, then every entry of `M ^ k` lies in `I ^ k`. -/
