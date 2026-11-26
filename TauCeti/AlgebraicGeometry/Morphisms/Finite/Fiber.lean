@@ -105,6 +105,10 @@ theorem exists_equiv_maximalSpectrum {x : Y} {U : Y.Opens} (hU : IsAffineOpen U)
         exact PrimeSpectrum.ext (Ideal.over_def _ p.asIdeal).symm
       simpa only [hp, IsAffineOpen.fromSpec_primeIdealOf] using congrArg hU.fromSpec h'
     refine ⟨⟨z, hzx⟩, MaximalSpectrum.ext ?_⟩
+    -- Unfold the local functions `e` and `q`: the ideal underlying `e ⟨z, hzx⟩` is
+    -- the extension of the prime of `z`. The subtype reconstructions have the same value
+    -- and proof-irrelevant membership witnesses. There is no application lemma for these
+    -- local functions; exposing their definitions lets `hz` rewrite the prime ideal.
     change ((hV.primeIdealOf z).asIdeal).map _ = _
     rw [hz]
     exact IsLocalization.map_under (Algebra.algebraMapSubmonoid Γ(X, g ⁻¹ᵁ U) M) B m.asIdeal

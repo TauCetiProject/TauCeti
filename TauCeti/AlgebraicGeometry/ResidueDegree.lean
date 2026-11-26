@@ -109,6 +109,11 @@ theorem residueDegree_eq_finrank_residueField (f : X ⟶ Y) (x : X) {T : Type u}
   refine Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl _)
     (IsLocalRing.ResidueField.mapEquiv e).symm (RingHom.ext fun a ↦ ?_)
   obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective a
+  -- Unfold the composed ring homs and `RingEquiv.refl`, the residue-field algebra maps
+  -- (the target's is induced by `algebraMap _ T`, the source's by `f.residueFieldMap x`),
+  -- `Scheme.Hom.residueFieldMap`, and the inverse of `ResidueField.mapEquiv e`.
+  -- This exposes both maps as `ResidueField.map`; `map_residue` cannot rewrite through
+  -- the algebra-map and equivalence wrappers until these definitions are exposed.
   change IsLocalRing.residue _ (algebraMap _ _ a) = IsLocalRing.ResidueField.map
     (e.symm : _ →+* T) (IsLocalRing.ResidueField.map (f.stalkMap x).hom (IsLocalRing.residue _ a))
   rw [IsLocalRing.ResidueField.map_residue, IsLocalRing.ResidueField.map_residue, ← he]
