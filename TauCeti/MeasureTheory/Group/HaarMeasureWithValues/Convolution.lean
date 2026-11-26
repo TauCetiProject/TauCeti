@@ -358,6 +358,11 @@ theorem toCompactlySupported_smul (c : A) (f : HeckeAlgebra μ) :
     (c • f).toCompactlySupported = c • f.toCompactlySupported :=
   (rfl)
 
+@[simp]
+theorem toCompactlySupported_nsmul (n : ℕ) (f : HeckeAlgebra μ) :
+    (n • f).toCompactlySupported = n • f.toCompactlySupported :=
+  (rfl)
+
 instance : AddCommMonoid (HeckeAlgebra μ) :=
   (toCompactlySupported_injective μ).addCommMonoid _ rfl (fun _ _ ↦ rfl) fun _ _ ↦ rfl
 
@@ -421,6 +426,21 @@ instance : Neg (HeckeAlgebra μ) := ⟨fun f ↦ ⟨-f.toCompactlySupported⟩�
 instance : Sub (HeckeAlgebra μ) :=
   ⟨fun f₁ f₂ ↦ ⟨f₁.toCompactlySupported - f₂.toCompactlySupported⟩⟩
 instance : SMul ℤ (HeckeAlgebra μ) := ⟨fun n f ↦ ⟨n • f.toCompactlySupported⟩⟩
+
+@[simp]
+theorem toCompactlySupported_neg (f : HeckeAlgebra μ) :
+    (-f).toCompactlySupported = -f.toCompactlySupported :=
+  (rfl)
+
+@[simp]
+theorem toCompactlySupported_sub (f₁ f₂ : HeckeAlgebra μ) :
+    (f₁ - f₂).toCompactlySupported = f₁.toCompactlySupported - f₂.toCompactlySupported :=
+  (rfl)
+
+@[simp]
+theorem toCompactlySupported_zsmul (n : ℤ) (f : HeckeAlgebra μ) :
+    (n • f).toCompactlySupported = n • f.toCompactlySupported :=
+  (rfl)
 
 instance : AddCommGroup (HeckeAlgebra μ) :=
   (toCompactlySupported_injective μ).addCommGroup _ rfl (fun _ _ ↦ rfl) (fun _ ↦ rfl)

@@ -84,6 +84,7 @@ theorem support_compactlySupportedRep_apply (g : G)
 
 /-- Translating the indicator `1_K • m` of a compact open set by `g` gives the indicator
 `1_{gK} • m` of its translate. -/
+@[simp]
 theorem compactlySupportedRep_apply_compactOpenIndicator [T2Space X] (g : G)
     (K : TopologicalSpace.CompactOpens X) (m : M) :
     compactlySupportedRep R G X M g ⟨LocallyConstant.compactOpenIndicator K m,
