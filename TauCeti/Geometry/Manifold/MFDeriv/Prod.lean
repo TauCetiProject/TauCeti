@@ -32,6 +32,8 @@ fields on a product manifold.
   take the corresponding component of a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
+* `TauCeti.mvfderiv_apply_eq_of_eventually_forall_eq`: the same for a function that agrees with a
+  function of the first factor only for second coordinates near a point.
 * `TauCeti.mvfderiv_comp_fst_add_comp_snd_apply`: the derivative of a separated sum
   `f ∘ Prod.fst + g ∘ Prod.snd` sends `(u, w)` to `df(u) + dg(w)`.
 * `TauCeti.mvfderiv_comp_fst_add_comp_snd_eq_zero_iff` and
@@ -186,6 +188,17 @@ theorem mvfderiv_comp_fst_apply (g : M → F) (p : M × N) (v : TangentSpace (I.
   -- The identifications `NormedSpace.fromTangentSpace` at `(g ∘ Prod.fst) p` and at `g p.1` agree,
   -- as these points are equal by definition.
   rfl
+
+open Topology in
+/-- **The derivative of a function of the first factor near a slice.** If, for second coordinates
+near `p.2`, a function `G` on a product agrees with `g` of the first coordinate, then its derivative
+at `p` is the derivative of `g` at `p.1` applied to the first component. -/
+theorem mvfderiv_apply_eq_of_eventually_forall_eq {G : M × N → F} {g : M → F} {p : M × N}
+    (hG : ∀ᶠ y in 𝓝 p.2, ∀ x, G (x, y) = g x) (v : TangentSpace (I.prod J) p) :
+    mvfderiv (I.prod J) G p v = mvfderiv I g p.1 v.1 := by
+  have hev : G =ᶠ[𝓝 p] g ∘ Prod.fst :=
+    ((continuous_snd.tendsto p).eventually hG).mono fun z hz ↦ hz z.1
+  rw [hev.mvfderiv_eq, mvfderiv_comp_fst_apply]
 
 /-- The derivative of a vector-valued function of the second factor, read on a product. -/
 theorem mvfderiv_comp_snd_apply (g : N → F) (p : M × N) (v : TangentSpace (I.prod J) p) :
