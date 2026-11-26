@@ -275,7 +275,8 @@ theorem exists_trivialization_orientedFrames [ContinuousFiberNorm F E] [Nonempty
     (fun y _ ↦ smul_localFrame_mem (s := s) (o := o) hr' y) T.open_baseSet
     (fun _ hy ↦ (continuousAt_correction (s := s) (o := o) (r := r) (·⁻¹) hy).continuousWithinAt)
     hx
-  exact ⟨t, ht ▸ hx, fun g p hp ↦ hteq g p (ht ▸ hp)⟩
+  exact ⟨t, ht ▸ hx, fun g p hp ↦
+    SMulMemIff.apply_smul_eq_of_apply_mk_eq fun hgp ↦ hteq g p hgp (ht ▸ hp)⟩
 
 end OrientedTrivialization
 

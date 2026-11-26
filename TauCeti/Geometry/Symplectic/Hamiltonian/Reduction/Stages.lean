@@ -56,9 +56,15 @@ in `Q₁` lies in `ν₁⁻¹(b)`. Its composite `Ψ : Z → Q₂` with `π₂` 
 `Z`, the level of `(μ, ν)`
 (`TauCeti.SmoothTwoForm.IsMomentMap.differential_prod_of_smul_eq_smul_smul`). Two surjective
 submersions with the same fibres induce a diffeomorphism (`Equiv.diffeomorphOfSubmersions`).
+This comparison uses only the maps of levels and the pullback equations, not the groups, and is
+stated for any such data
+(`TauCeti.SmoothForm.exists_diffeomorph_comp_eq_and_mpullback_eq_of_comp_eq`), so that other
+reductions in stages, such as the one by a normal subgroup, share it.
 
 ## Main results
 
+* `SmoothForm.exists_diffeomorph_comp_eq_and_mpullback_eq_of_comp_eq`: reduction in stages for
+  reduction data, given maps of the levels compatible with the projections and the inclusions.
 * `SmoothTwoForm.IsEquivariantMomentMap.mem_levelSubMulAction_prod_of_smul_eq_smul_smul_iff`: the
   level of `(μ, ν)` at `(c, b)` is `μ⁻¹(c) ∩ ν⁻¹(b)`.
 * `SmoothTwoForm.IsEquivariantMomentMap.forall_differential_surjective_prod_of_isSubmersion`:
@@ -81,6 +87,85 @@ noncomputable section
 
 open Module Function
 open scoped Manifold ContDiff
+
+namespace TauCeti.SmoothForm
+
+section Stages
+
+variable {E H M EZ HZ Z EQ HQ Q EZ₁ HZ₁ Z₁ EQ₁ HQ₁ Q₁ EZ₂ HZ₂ Z₂ EQ₂ HQ₂ Q₂ : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [FiniteDimensional ℝ EZ] [TopologicalSpace HZ]
+  {IZ : ModelWithCorners ℝ EZ HZ} [IZ.Boundaryless] [TopologicalSpace Z] [ChartedSpace HZ Z]
+  [IsManifold IZ ∞ Z]
+  [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
+  {IQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q] [IsManifold IQ ∞ Q]
+  [NormedAddCommGroup EZ₁] [NormedSpace ℝ EZ₁] [TopologicalSpace HZ₁]
+  {IZ₁ : ModelWithCorners ℝ EZ₁ HZ₁} [TopologicalSpace Z₁] [ChartedSpace HZ₁ Z₁]
+  [IsManifold IZ₁ ∞ Z₁]
+  [NormedAddCommGroup EQ₁] [NormedSpace ℝ EQ₁] [TopologicalSpace HQ₁]
+  {IQ₁ : ModelWithCorners ℝ EQ₁ HQ₁} [TopologicalSpace Q₁] [ChartedSpace HQ₁ Q₁]
+  [IsManifold IQ₁ ∞ Q₁]
+  [NormedAddCommGroup EZ₂] [NormedSpace ℝ EZ₂] [TopologicalSpace HZ₂]
+  {IZ₂ : ModelWithCorners ℝ EZ₂ HZ₂} [TopologicalSpace Z₂] [ChartedSpace HZ₂ Z₂]
+  [IsManifold IZ₂ ∞ Z₂]
+  [NormedAddCommGroup EQ₂] [NormedSpace ℝ EQ₂] [FiniteDimensional ℝ EQ₂] [TopologicalSpace HQ₂]
+  {IQ₂ : ModelWithCorners ℝ EQ₂ HQ₂} [TopologicalSpace Q₂] [ChartedSpace HQ₂ Q₂]
+  [IsManifold IQ₂ ∞ Q₂]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {m : ℕ}
+  {σ : SmoothForm I M F m} {η₁ : SmoothForm IQ₁ Q₁ F m} {η₂ : SmoothForm IQ₂ Q₂ F m}
+  {η : SmoothForm IQ Q F m} {i : Z → M} {i₁ : Z₁ → M} {i₂ : Z₂ → Q₁} {π : Z → Q} {π₁ : Z₁ → Q₁}
+  {π₂ : Z₂ → Q₂} {j : Z → Z₁} {k : Z → Z₂}
+
+/-- **Reduction in stages for reduction data.** Let `π₁^* η₁ = i₁^* σ` for a submersion
+`π₁ : Z₁ → Q₁` and an embedding `i₁ : Z₁ → M`, let `π₂^* η₂ = i₂^* η₁` for a submersion
+`π₂ : Z₂ → Q₂` and an embedding `i₂ : Z₂ → Q₁`, and let `π^* η = i^* σ` for a surjective
+submersion `π : Z → Q` out of a boundaryless manifold. Let `j : Z → Z₁` and `k : Z → Z₂` satisfy
+`i₁ ∘ j = i` and `i₂ ∘ k = π₁ ∘ j`, such that `π₂ ∘ k` is surjective with the fibres of `π`, and
+such that every tangent vector `v` of `Z₁` with `dπ₁ v` tangent to `Z₂` has `di₁ v` tangent to `Z`.
+Then there is a diffeomorphism `Φ : Q → Q₂` with `Φ ∘ π = π₂ ∘ k` and `Φ^* η₂ = η`. -/
+theorem exists_diffeomorph_comp_eq_and_mpullback_eq_of_comp_eq
+    (hπ : Manifold.IsSubmersion IZ IQ ∞ π) (hπsurj : Surjective π)
+    (hπ₁ : Manifold.IsSubmersion IZ₁ IQ₁ ∞ π₁) (hπ₂ : Manifold.IsSubmersion IZ₂ IQ₂ ∞ π₂)
+    (hi : ContMDiff IZ I ∞ i) (hi₁ : Manifold.IsSmoothEmbedding IZ₁ I ∞ i₁)
+    (hi₂ : Manifold.IsSmoothEmbedding IZ₂ IQ₁ ∞ i₂) (hij : i₁ ∘ j = i) (hik : i₂ ∘ k = π₁ ∘ j)
+    (hsurj : Surjective (π₂ ∘ k)) (hfib : ∀ z z', (π₂ ∘ k) z = (π₂ ∘ k) z' ↔ π z = π z')
+    (hη₁ : mpullback π₁ hπ₁.contMDiff η₁ = mpullback i₁ hi₁.contMDiff σ)
+    (hη₂ : mpullback π₂ hπ₂.contMDiff η₂ = mpullback i₂ hi₂.contMDiff η₁)
+    (hη : mpullback π hπ.contMDiff η = mpullback i hi σ)
+    (hkey : ∀ z v w, mfderiv IZ₂ IQ₁ i₂ (k z) w = mfderiv IZ₁ IQ₁ π₁ (j z) v →
+      ∃ u, mfderiv IZ I i z u = mfderiv IZ₁ I i₁ (j z) v) :
+    ∃ Φ : Q ≃ₘ⟮IQ, IQ₂⟯ Q₂, ⇑Φ ∘ π = π₂ ∘ k ∧ mpullback Φ Φ.contMDiff η₂ = η := by
+  subst hij
+  have hj : ContMDiff IZ IZ₁ ∞ j := hi₁.contMDiff_iff_comp.2 hi
+  have hk : ContMDiff IZ IZ₂ ∞ k := hi₂.contMDiff_iff_comp.2 (hik ▸ hπ₁.contMDiff.comp hj)
+  -- `dk` is onto by a diagram chase, so `π₂ ∘ k` is a surjective submersion with the fibres of `π`
+  -- and induces a diffeomorphism `Φ : Q → Q₂`.
+  have hΨ : Manifold.IsSubmersion IZ IQ₂ ∞ (π₂ ∘ k) := by
+    refine ((hπ₂.contMDiff.comp hk).isSubmersionOfComplement_of_surjective_mfderiv (by simp)
+      fun z ↦ ?_).isSubmersion
+    rw [mfderiv_comp z ((hπ₂.contMDiff (k z)).mdifferentiableAt (by simp))
+      ((hk z).mdifferentiableAt (by simp)), ContinuousLinearMap.coe_comp]
+    exact (hπ₂.surjective_mfderiv (by simp) (k z)).comp <| surjective_mfderiv_of_comp_eq
+      ((hj z).mdifferentiableAt (by simp)) ((hk z).mdifferentiableAt (by simp))
+      (hi₁.contMDiff.mdifferentiableAt (by simp)) (hi₂.contMDiff.mdifferentiableAt (by simp))
+      ((hπ₁.contMDiff (j z)).mdifferentiableAt (by simp)) hik
+      (hi₁.isImmersion.mfderiv_injective (by simp) (j z))
+      (hi₂.isImmersion.mfderiv_injective (by simp) (k z))
+      (hπ₁.surjective_mfderiv (by simp) (j z)) (hkey z)
+  obtain ⟨Φ, hΦ⟩ := hπ.exists_diffeomorph_comp_eq hπsurj hΨ hsurj hfib
+  refine ⟨Φ, hΦ, mpullback_injective_of_surjective hπ.contMDiff hπsurj
+    (hπ.surjective_mfderiv (by simp)) ?_⟩
+  -- `π^* Φ^* η₂ = (π₂ ∘ k)^* η₂ = k^* i₂^* η₁ = j^* π₁^* η₁ = j^* i₁^* σ = π^* η`.
+  rw [mpullback_mpullback, hη]
+  simp only [hΦ]
+  rw [← mpullback_mpullback _ _ hk hπ₂.contMDiff, hη₂,
+    mpullback_mpullback_of_comp_eq hk hi₂.contMDiff hj hπ₁.contMDiff hik, hη₁,
+    mpullback_mpullback]
+
+end Stages
+
+end TauCeti.SmoothForm
 
 namespace TauCeti.SmoothTwoForm.IsEquivariantMomentMap
 
@@ -235,74 +320,6 @@ theorem forall_differential_surjective_prod_of_isSubmersion (hμ : σ.IsEquivari
     map_add, map_add, hv₀, hμu, hνu, add_zero, add_sub_cancel, Prod.mk.eta,
     LinearEquiv.apply_symm_apply]
 
-/-- The inclusion `j` of the level of `(μ, ν)` at `(c, b)` into `μ⁻¹(c)` is smooth, and the map
-`z ↦ π₁ z` from the level of `(μ, ν)` to the level of `ν₁` at `b` is smooth with surjective
-differentials. -/
-private theorem contMDiff_levelProdToLevelSnd (hμ : σ.IsEquivariantMomentMap μ)
-    (hν : σ.IsEquivariantMomentMap ν) (hsmul : ∀ (g : G × L) (x : M), g • x = g.1 • g.2 • x)
-    (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x) (hνG : ∀ (g : G) (x : M), ν (g • x) = ν x)
-    (hreg₁ : ∀ x, μ x = c → Surjective (hμ.differential x))
-    (hn₁ : finrank ℝ E' - finrank ℝ (GroupLieAlgebra I G) = n₁)
-    (hreg : ∀ x, Lie.groupLieAlgebraDualProdDualEquivDual ℝ I G IL L (μ x, ν x) =
-        Lie.groupLieAlgebraDualProdDualEquivDual ℝ I G IL L (c, b) →
-      Surjective ((hμ.prod_of_smul_eq_smul_smul hν hsmul hμL hνG).differential x))
-    (hn : finrank ℝ E' - finrank ℝ (GroupLieAlgebra (I.prod IL) (G × L)) = n)
-    {η₁ : SmoothTwoForm IQ₁ Q₁} {ν₁ : Q₁ → Module.Dual ℝ (GroupLieAlgebra IL L)}
-    (h₁ : η₁.IsEquivariantMomentMap ν₁) (hreg₂ : ∀ y, ν₁ y = b → Surjective (h₁.differential y))
-    (hn₂ : finrank ℝ EQ₁ - finrank ℝ (GroupLieAlgebra IL L) = n₂)
-    {π₁ : hμ.levelSubMulAction c → Q₁} (hν₁ : ν₁ ∘ π₁ = ν ∘ Subtype.val) :
-    letI := hμ.levelSubMulActionChartedSpace c hreg₁ hn₁
-    letI := h₁.levelSubMulActionChartedSpace b hreg₂ hn₂
-    letI := (hμ.prod_of_smul_eq_smul_smul hν hsmul hμL hνG).levelSubMulActionChartedSpace _ hreg hn
-    haveI := hμ.isManifold_levelSubMulAction hreg₁ hn₁
-    haveI := h₁.isManifold_levelSubMulAction hreg₂ hn₂
-    haveI := (hμ.prod_of_smul_eq_smul_smul hν hsmul hμL hνG).isManifold_levelSubMulAction hreg hn
-    Manifold.IsSubmersion 𝓘(ℝ, Fin n₁ → ℝ) IQ₁ ∞ π₁ →
-      ContMDiff 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, Fin n₁ → ℝ) ∞
-          (levelProdToLevel hμ hν hsmul hμL hνG (c := c) (b := b)) ∧
-        ContMDiff 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, Fin n₂ → ℝ) ∞
-          (levelProdToLevelSnd hμ hν hsmul hμL hνG (c := c) (b := b) h₁ hν₁) ∧
-        ∀ z, Surjective (mfderiv 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, Fin n₂ → ℝ)
-          (levelProdToLevelSnd hμ hν hsmul hμL hνG (c := c) (b := b) h₁ hν₁) z) := by
-  have H := hμ.prod_of_smul_eq_smul_smul hν hsmul hμL hνG
-  let := hμ.levelSubMulActionChartedSpace c hreg₁ hn₁
-  let := h₁.levelSubMulActionChartedSpace b hreg₂ hn₂
-  let := H.levelSubMulActionChartedSpace _ hreg hn
-  have := hμ.isManifold_levelSubMulAction hreg₁ hn₁
-  have := h₁.isManifold_levelSubMulAction hreg₂ hn₂
-  have := H.isManifold_levelSubMulAction hreg hn
-  intro hπ₁
-  let j := levelProdToLevel hμ hν hsmul hμL hνG (c := c) (b := b)
-  let k := levelProdToLevelSnd hμ hν hsmul hμL hνG (c := c) (b := b) h₁ hν₁
-  have hemb₁ := hμ.isSmoothEmbedding_coe_levelSubMulAction hreg₁ hn₁
-  have hemb₂ := h₁.isSmoothEmbedding_coe_levelSubMulAction hreg₂ hn₂
-  have hj : ContMDiff 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, Fin n₁ → ℝ) ∞ j :=
-    hemb₁.contMDiff_iff_comp.2 (H.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff
-  have hk : ContMDiff 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, Fin n₂ → ℝ) ∞ k :=
-    hemb₂.contMDiff_iff_comp.2 (hπ₁.contMDiff.comp hj)
-  refine ⟨hj, hk, fun z ↦ surjective_mfderiv_of_comp_eq ((hj z).mdifferentiableAt (by simp))
-    ((hk z).mdifferentiableAt (by simp)) (hemb₁.contMDiff.mdifferentiableAt (by simp))
-    (hemb₂.contMDiff.mdifferentiableAt (by simp))
-    ((hπ₁.contMDiff (j z)).mdifferentiableAt (by simp)) rfl
-    (hemb₁.isImmersion.mfderiv_injective (by simp) (j z))
-    (hemb₂.isImmersion.mfderiv_injective (by simp) (k z)) (hπ₁.surjective_mfderiv (by simp) (j z))
-    fun v w hvw ↦ ?_⟩
-  -- A tangent vector `w` of the level of `ν₁` lifts along `dπ₁` to a tangent vector `v` of
-  -- `μ⁻¹(c)`; then `dμ v = 0` and `dν v = dν₁ (dπ₁ v) = dν₁ w = 0`, so `v` is tangent to the level
-  -- of `(μ, ν)`.
-  have hμv : hμ.differential (j z) (mfderiv _ I' Subtype.val (j z) v) = 0 :=
-    hμ.toIsMomentMap.differential_mfderiv_eq_zero
-      (fun y ↦ hμ.mem_levelSubMulAction.1 y.property) (j z) v
-  have hνv : hν.differential (j z) (mfderiv _ I' Subtype.val (j z) v) = 0 := by
-    rw [← hν.toIsMomentMap.differential_mfderiv_eq_of_comp_eq h₁.toIsMomentMap hν₁ (j z)
-      (hemb₁.contMDiff.mdifferentiableAt (by simp)) ((hπ₁.contMDiff (j z)).mdifferentiableAt
-      (by simp)) v, ← hvw]
-    exact h₁.toIsMomentMap.differential_mfderiv_eq_zero
-      (fun y ↦ h₁.mem_levelSubMulAction.1 y.property) (k z) w
-  refine (H.range_mfderiv_coe_levelSubMulAction hreg hn z).ge (LinearMap.mem_ker.2 ?_)
-  rw [IsMomentMap.differential_prod_of_smul_eq_smul_smul hμ.toIsMomentMap hν.toIsMomentMap hsmul,
-    hμv, hνv, Prod.mk_zero_zero, map_zero]
-
 /-- **Reduction in stages for a product group.** Let `G` and `L` act on `(M, σ)` with
 coadjoint-equivariant moment maps `μ` and `ν`, where `μ` is invariant under `L` and `ν` under `G`,
 and let `G × L` act by `(g, l) • x = g • l • x`, with the moment map `x ↦ (μ x, ν x)`. Let `c` be a
@@ -380,36 +397,35 @@ theorem exists_diffeomorph_apply_eq_and_mpullback_eq_of_smul_eq_smul_smul
   let := H.levelSubMulActionChartedSpace _ hreg hn
   have := H.isManifold_levelSubMulAction hreg hn
   intro hπ₂ hπ hη₁ hη₂ hη
-  let k := levelProdToLevelSnd hμ hν hsmul hμL hνG (c := c) (b := b) h₁ hν₁
-  obtain ⟨hj, hk, hkd⟩ := contMDiff_levelProdToLevelSnd hμ hν hsmul hμL hνG hreg₁ hn₁ hreg hn h₁
-    hreg₂ hn₂ hν₁ hπ₁
-  have hΨ : ContMDiff 𝓘(ℝ, Fin n → ℝ) IQ₂ ∞ (π₂ ∘ k) := hπ₂.contMDiff.comp hk
-  -- `π₂ ∘ k` is a surjective submersion with the fibres of `π`, so it induces a diffeomorphism
-  -- `Φ : Q → Q₂`, which pulls `η₂` back to `η` since `π^* Φ^* η₂ = (π₂ ∘ k)^* η₂ = π^* η`.
-  have hΨsub : Manifold.IsSubmersion 𝓘(ℝ, Fin n → ℝ) IQ₂ ∞ (π₂ ∘ k) := by
-    refine (hΨ.isSubmersionOfComplement_of_surjective_mfderiv (by simp) fun z ↦ ?_).isSubmersion
-    rw [mfderiv_comp z ((hπ₂.contMDiff (k z)).mdifferentiableAt (by simp))
-      ((hk z).mdifferentiableAt (by simp)), ContinuousLinearMap.coe_comp]
-    exact (hπ₂.surjective_mfderiv (by simp) (k z)).comp (hkd z)
-  obtain ⟨Φ, hΦ⟩ := hπ.exists_diffeomorph_comp_eq hπsurj hΨsub
-    (surjective_comp_levelProdToLevelSnd hμ hν hsmul hμL hνG h₁ hν₁ hπ₁surj hπ₂surj) fun z z' ↦
-      (comp_levelProdToLevelSnd_eq_iff hμ hν hsmul hμL hνG h₁ hν₁ hπ₁fib hπ₁L hπ₂fib z z').trans
-        (hπfib z z').symm
-  refine ⟨Φ, fun z z₁ y hz₁ hy ↦ ?_, SmoothForm.mpullback_injective_of_surjective hπ.contMDiff
-    hπsurj (hπ.surjective_mfderiv (by simp)) ?_⟩
-  · rw [← comp_apply (f := Φ), hΦ, comp_apply]
-    exact congrArg π₂ (Subtype.ext (hy.trans (congrArg π₁ (Subtype.ext hz₁))).symm)
-  -- `π^* Φ^* η₂ = (π₂ ∘ k)^* η₂ = k^* i₂^* η₁ = j^* π₁^* η₁ = j^* i₁^* σ = i^* σ = π^* η`.
-  rw [SmoothForm.mpullback_mpullback, hη]
-  simp only [hΦ]
-  rw [← SmoothForm.mpullback_mpullback _ _ hk hπ₂.contMDiff, hη₂,
-    SmoothForm.mpullback_mpullback_of_comp_eq hk
-      (h₁.isSmoothEmbedding_coe_levelSubMulAction hreg₂ hn₂).contMDiff hj hπ₁.contMDiff rfl, hη₁,
-    SmoothForm.mpullback_mpullback]
-  -- The inclusion `j : Z → Z₁` only forgets that a point of `Z` lies in `ν⁻¹(b)`, so `i₁ ∘ j = i`
-  -- holds by definition.
-  have hij : Subtype.val ∘ levelProdToLevel hμ hν hsmul hμL hνG (c := c) (b := b) = Subtype.val :=
-    rfl
-  simp only [hij]
+  refine (SmoothForm.exists_diffeomorph_comp_eq_and_mpullback_eq_of_comp_eq
+    (j := levelProdToLevel hμ hν hsmul hμL hνG)
+    (k := levelProdToLevelSnd hμ hν hsmul hμL hνG h₁ hν₁)
+    hπ hπsurj hπ₁ hπ₂ (H.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff
+    (hμ.isSmoothEmbedding_coe_levelSubMulAction hreg₁ hn₁)
+    (h₁.isSmoothEmbedding_coe_levelSubMulAction hreg₂ hn₂) rfl rfl
+    (surjective_comp_levelProdToLevelSnd hμ hν hsmul hμL hνG h₁ hν₁ hπ₁surj hπ₂surj)
+    (fun z z' ↦ (comp_levelProdToLevelSnd_eq_iff hμ hν hsmul hμL hνG h₁ hν₁ hπ₁fib hπ₁L hπ₂fib z
+      z').trans (hπfib z z').symm) hη₁ hη₂ hη fun z v w hvw ↦ ?_).imp
+    fun Φ hΦ ↦ ⟨fun z z₁ y hz₁ hy ↦ ?_, hΦ.2⟩
+  · -- A tangent vector `w` of the level of `ν₁` lifts along `dπ₁` to a tangent vector `v` of
+    -- `μ⁻¹(c)`; then `dμ v = 0` and `dν v = dν₁ (dπ₁ v) = dν₁ w = 0`, so `v` is tangent to the
+    -- level of `(μ, ν)`.
+    have hemb₁ := hμ.isSmoothEmbedding_coe_levelSubMulAction hreg₁ hn₁
+    let j₁ : hμ.levelSubMulAction c := levelProdToLevel hμ hν hsmul hμL hνG z
+    have hμv : hμ.differential j₁ (mfderiv _ I' Subtype.val j₁ v) = 0 :=
+      hμ.toIsMomentMap.differential_mfderiv_eq_zero
+        (fun y ↦ hμ.mem_levelSubMulAction.1 y.property) j₁ v
+    have hνv : hν.differential j₁ (mfderiv _ I' Subtype.val j₁ v) = 0 := by
+      rw [← hν.toIsMomentMap.differential_mfderiv_eq_of_comp_eq h₁.toIsMomentMap hν₁ j₁
+        (hemb₁.contMDiff.mdifferentiableAt (by simp)) ((hπ₁.contMDiff j₁).mdifferentiableAt
+        (by simp)) v, ← hvw]
+      exact h₁.toIsMomentMap.differential_mfderiv_eq_zero
+        (fun y ↦ h₁.mem_levelSubMulAction.1 y.property) _ w
+    refine LinearMap.mem_range.1 ((H.range_mfderiv_coe_levelSubMulAction hreg hn z).ge
+      (LinearMap.mem_ker.2 ?_))
+    rw [IsMomentMap.differential_prod_of_smul_eq_smul_smul hμ.toIsMomentMap hν.toIsMomentMap
+      hsmul, hμv, hνv, Prod.mk_zero_zero, map_zero]
+  rw [← comp_apply (f := Φ), hΦ.1, comp_apply]
+  exact congrArg π₂ (Subtype.ext (hy.trans (congrArg π₁ (Subtype.ext hz₁))).symm)
 
 end TauCeti.SmoothTwoForm.IsEquivariantMomentMap
