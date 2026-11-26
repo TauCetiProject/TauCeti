@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Tame.Quotient
-public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Cocycle
 

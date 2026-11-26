@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
+import TauCeti.Algebra.Group.Pow
 
 /-!
 # Vanishing of continuous 1-cocycles on pro-`p` subgroups
@@ -17,8 +18,6 @@ vanishes on `P` (`TauCeti.IsProP.apply_eq_zero_of_mem_Z1`).
 
 ## Main results
 
-* `TauCeti.eq_zero_of_pow_nsmul_eq_zero`: an element killed by `p ^ k` in a `p`-torsion-free
-  additive commutative monoid is zero.
 * `TauCeti.IsProP.apply_eq_zero_of_mem_Z1`: a continuous 1-cocycle with discrete `p`-torsion-free
   coefficients vanishes on every pro-`p` subgroup acting trivially on the coefficients.
 -/
@@ -28,19 +27,6 @@ public section
 open TauCeti.ContCohomology
 
 namespace TauCeti
-
-/-- In an additive commutative monoid with no `p`-torsion, any element killed by `p ^ k` is
-zero. -/
-theorem eq_zero_of_pow_nsmul_eq_zero {M : Type*} [AddCommMonoid M] {p k : ℕ} {m : M}
-    (hM : ∀ x : M, p • x = 0 → x = 0) (hk : p ^ k • m = 0) :
-    m = 0 := by
-  induction k with
-  | zero => simpa using hk
-  | succ k ih =>
-    apply ih
-    apply hM
-    rw [← mul_nsmul, ← pow_succ]
-    exact hk
 
 /-- **A continuous 1-cocycle with discrete `p`-torsion-free coefficients vanishes on any pro-`p`
 subgroup acting trivially.** -/

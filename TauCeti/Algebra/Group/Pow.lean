@@ -132,4 +132,20 @@ this is the directedness hypothesis for inverse limits along the powers of one e
 theorem directed_dvd_pow (a : M) : Directed (· ∣ ·) (fun k : ℕ ↦ a ^ k) :=
   fun k l ↦ ⟨max k l, pow_dvd_pow a (le_max_left k l), pow_dvd_pow a (le_max_right k l)⟩
 
+/-- In a monoid with no `p`-torsion (`x ^ p = 1 → x = 1`), any element with `m ^ p ^ k = 1`
+equals `1`. -/
+@[to_additive eq_zero_of_pow_nsmul_eq_zero
+/-- In an additive monoid with no `p`-torsion (`p • x = 0 → x = 0`), any element with
+`p ^ k • m = 0` is zero. -/]
+theorem eq_one_of_pow_pow_eq_one {p k : ℕ} {m : M}
+    (hM : ∀ x : M, x ^ p = 1 → x = 1) (hk : m ^ p ^ k = 1) :
+    m = 1 := by
+  induction k with
+  | zero => simpa using hk
+  | succ k ih =>
+    apply ih
+    apply hM
+    rw [← pow_mul, ← pow_succ]
+    exact hk
+
 end TauCeti
