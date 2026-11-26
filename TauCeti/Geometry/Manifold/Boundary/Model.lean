@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Topology.Perfect
 public import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.Geometry.Manifold.ModelWithCorners.Perfect
 
 /-!
 # The boundary model of a Euclidean half-space
@@ -28,8 +29,9 @@ coordinates given as a function on `Fin k`, reindexed along `k = n`.  Finally,
 `ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_pos` recognises a linear functional
 that is positive off the hyperplane near a boundary point within the half-space as a positive
 multiple of the boundary coordinate. Multiplication by a positive scalar is a diffeomorphism of the
-half-space model, `TauCeti.EuclideanHalfSpace.smulDiffeomorph`. A half-space of positive
-dimension has no isolated points (`EuclideanHalfSpace.instPerfectSpace`).
+half-space model, `TauCeti.EuclideanHalfSpace.smulDiffeomorph`. The half-space is Hausdorff
+(`EuclideanHalfSpace.instT2Space`), and in positive dimension it has no isolated points
+(`EuclideanHalfSpace.instPerfectSpace`).
 -/
 
 public section
@@ -469,18 +471,12 @@ theorem exists_pos_eq_mul_apply_zero_of_eventually_pos {k : ℕ} [NeZero k]
 
 end ContinuousLinearMap
 
-/-- A half-space of positive dimension contains the two distinct points `0` and `e₀`. -/
-instance EuclideanHalfSpace.instNontrivial {n : ℕ} [NeZero n] :
-    Nontrivial (EuclideanHalfSpace n) :=
-  ⟨⟨⟨0, by simp⟩, ⟨EuclideanSpace.single 0 1, by simp⟩, fun h ↦ by
-    simpa using congrArg (fun x : EuclideanHalfSpace n ↦ x.val 0) h⟩⟩
+/-- The half-space is Hausdorff, as a subspace of `EuclideanSpace ℝ (Fin n)`. -/
+instance EuclideanHalfSpace.instT2Space {n : ℕ} [NeZero n] : T2Space (EuclideanHalfSpace n) :=
+  inferInstanceAs (T2Space {x : EuclideanSpace ℝ (Fin n) // 0 ≤ x 0})
 
-/-- A half-space of positive dimension has no isolated points: it is connected, T1 and nontrivial.
--/
+/-- A half-space of positive dimension has no isolated points, as a manifold modelled on itself
+(`ModelWithCorners.perfectSpace`). -/
 instance EuclideanHalfSpace.instPerfectSpace {n : ℕ} [NeZero n] :
     PerfectSpace (EuclideanHalfSpace n) :=
-  -- The half-space is a subtype of `EuclideanSpace ℝ (Fin n)`, but it is a `def`, so the T1
-  -- instance of subtypes is not found through it.
-  have : T1Space (EuclideanHalfSpace n) :=
-    inferInstanceAs (T1Space {x : EuclideanSpace ℝ (Fin n) // 0 ≤ x 0})
-  inferInstance
+  ModelWithCorners.perfectSpace (𝓡∂ n) (EuclideanHalfSpace n)

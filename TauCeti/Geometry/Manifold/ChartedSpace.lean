@@ -114,9 +114,8 @@ theorem ChartedSpace.isEmpty_of_discreteTopology (H X : Type*) [TopologicalSpace
   refine ⟨fun _ ↦ ?_⟩
   have := ChartedSpace.perfectSpace (H := H) (X := X)
   obtain ⟨x⟩ := ‹Nonempty X›
-  refine (PerfectSpace.not_isolated x).ne ?_
-  rw [nhdsWithin, nhds_discrete, Filter.inf_principal_eq_bot, compl_compl]
-  exact Filter.mem_pure.2 rfl
+  exact (PerfectSpace.not_isolated x).ne
+    ((isOpen_singleton_iff_punctured_nhds x).1 (isOpen_discrete _))
 
 /-- A Lindelöf charted space over a second-countable model space is second countable. -/
 theorem ChartedSpace.secondCountable_of_lindelof (H X : Type*) [TopologicalSpace H]
