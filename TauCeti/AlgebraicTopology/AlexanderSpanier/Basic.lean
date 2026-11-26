@@ -253,6 +253,7 @@ lemma cosimplicialModule_δ_cochainClass {n : ℕ} (i : Fin (n + 2)) (φ : (Fin 
 
 /-- The **differential** of the Alexander–Spanier cochain complex on the class of a function `φ`
 is the class of `(x₀, …, x_{n+1}) ↦ ∑ᵢ (-1)ⁱ φ(x₀, …, xᵢ₋₁, xᵢ₊₁, …, x_{n+1})`. -/
+@[simp]
 theorem cochainComplex_d_cochainClass (n : ℕ) (φ : (Fin (n + 1) → X) → M) :
     ((cochainComplex R X M).d n (n + 1)).hom (cochainClass R X M n φ) =
       cochainClass R X M (n + 1) fun y ↦
@@ -442,6 +443,48 @@ lemma cohomologyZeroIso_inv :
     (cohomologyZeroIso R X M).inv =
       (cyclesZeroIso R X M).inv ≫ (cochainComplex R X M).homologyπ 0 :=
   (rfl)
+
+/-- The class in `H⁰(X; M)` of a locally constant function `ψ` is the cohomology class of the
+cocycle of `ψ`. -/
+@[simp]
+lemma cohomologyZeroIso_inv_apply (ψ : LocallyConstant X M) :
+    (cohomologyZeroIso R X M).inv.hom ψ =
+      ((cochainComplex R X M).homologyπ 0).hom ((cyclesZeroIso R X M).inv.hom ψ) :=
+  (rfl)
+
+/-- On a `0`-cocycle, the identification `H⁰(X; M) ≅ LocallyConstant X M` is the identification of
+`0`-cocycles with locally constant functions. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+lemma homologyπ_comp_cohomologyZeroIso_hom :
+    (cochainComplex R X M).homologyπ 0 ≫ (cohomologyZeroIso R X M).hom =
+      (cyclesZeroIso R X M).hom :=
+  Iso.hom_inv_id_assoc (cochainComplex R X M).isoHomologyπ₀ _
+
+variable {R X M} in
+/-- A `0`-cocycle represented by the class of `φ : X^1 → M` corresponds to the locally constant
+function `x ↦ φ(x)`. -/
+lemma cyclesZeroIso_hom_apply {z : (cochainComplex R X M).cycles 0} {φ : (Fin 1 → X) → M}
+    (hz : ((cochainComplex R X M).iCycles 0).hom z = cochainClass R X M 0 φ) (x : X) :
+    (cyclesZeroIso R X M).hom.hom z x = φ fun _ ↦ x := by
+  set ψ := (cyclesZeroIso R X M).hom.hom z
+  -- Instance search does not reduce `0 + 1` to `1`.
+  have : Unique (Fin (0 + 1)) := inferInstanceAs (Unique (Fin 1))
+  have hz' : (cyclesZeroIso R X M).inv.hom ψ = z := Iso.hom_inv_id_apply (cyclesZeroIso R X M) z
+  rw [← hz', ← LinearMap.comp_apply, ← ModuleCat.hom_comp, cyclesZeroIso_inv_iCycles,
+    ModuleCat.hom_ofHom,
+    locallyConstantToCochains_apply, cochainClass_eq_cochainClass_iff, isLocallyZero_iff_eq_zero,
+    sub_eq_zero] at hz
+  exact congrFun hz fun _ ↦ x
+
+variable {R X M} in
+/-- The class in `H⁰(X; M)` of a `0`-cocycle represented by the class of `φ : X^1 → M` corresponds
+to the locally constant function `x ↦ φ(x)`. -/
+lemma cohomologyZeroIso_hom_homologyπ_apply {z : (cochainComplex R X M).cycles 0}
+    {φ : (Fin 1 → X) → M}
+    (hz : ((cochainComplex R X M).iCycles 0).hom z = cochainClass R X M 0 φ) (x : X) :
+    (cohomologyZeroIso R X M).hom.hom (((cochainComplex R X M).homologyπ 0).hom z) x =
+      φ fun _ ↦ x := by
+  rw [homologyπ_comp_cohomologyZeroIso_hom_apply, cyclesZeroIso_hom_apply hz]
 
 variable {R M} in
 /-- The identification `H⁰(X; M) ≅ LocallyConstant X M` is natural: pulling back a class along a
