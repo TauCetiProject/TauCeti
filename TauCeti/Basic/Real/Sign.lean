@@ -38,6 +38,7 @@ theorem abs_sign_pow_le_one (r : ℝ) (j : ℕ) : |sign r ^ j| ≤ 1 := by
   exact pow_le_one₀ (abs_nonneg _) (abs_sign_le_one r)
 
 /-- The real sign of a nonzero number has absolute value one. -/
+@[simp]
 theorem abs_sign_of_ne_zero {r : ℝ} (hr : r ≠ 0) : |sign r| = 1 := by
   rcases sign_apply_eq_of_ne_zero r hr with h | h <;> simp [h]
 

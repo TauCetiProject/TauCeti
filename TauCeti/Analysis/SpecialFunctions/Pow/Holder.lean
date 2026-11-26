@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Basic.Real.Sign
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.MeanInequalitiesPow
+import TauCeti.Analysis.SpecialFunctions.Pow.PowSign
 import TauCeti.Basic.Real.Sign
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -22,9 +23,10 @@ For `0 ≤ p ≤ 1` the power `t ↦ t ^ p` is `p`-Hölder on `[0, ∞)` with co
 
 The signed powers `|x|^β sgn(x)^j` are `β`-Hölder on all of `ℝ` with constant `2`, for `β ≤ 1`
 (`TauCeti.holderWith_abs_rpow_mul_sign_pow`): on one side of the origin this is the Hölder bound
-of `t ↦ t ^ β`, and across it both values are at most `|x - y|^β` in absolute value
-(`TauCeti.abs_abs_rpow_mul_sign_pow_le`). For `j = 1` this is the odd power `sign(x) |x| ^ β`, the
-derivative of `|x| ^ (β + 1) / (β + 1)`, which is therefore `C^{1,β}`.
+of the cusp `|x| ^ β` (`TauCeti.holderWith_norm_rpow`), and across it both values are at most
+`|x - y|^β` in absolute value (`TauCeti.abs_abs_rpow_mul_sign_pow_le`, in
+`TauCeti.Analysis.SpecialFunctions.Pow.PowSign`). For `j = 1` this is the odd power
+`sign(x) |x| ^ β`, the derivative of `|x| ^ (β + 1) / (β + 1)`, which is therefore `C^{1,β}`.
 -/
 
 public section
@@ -49,12 +51,6 @@ end Real
 
 namespace TauCeti
 
-/-- The signed power `|x|^r sgn(x)^j` is at most `|x|^r` in absolute value. -/
-theorem abs_abs_rpow_mul_sign_pow_le {r : ℝ} (j : ℕ) (x : ℝ) :
-    |(|x| ^ r * Real.sign x ^ j)| ≤ |x| ^ r := by
-  rw [abs_mul, abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) r)]
-  exact mul_le_of_le_one_right (Real.rpow_nonneg (abs_nonneg x) r) (Real.abs_sign_pow_le_one x j)
-
 /-- For `β ≤ 1`, the signed power `|x|^β sgn(x)^j` is `β`-Hölder with constant `2`. -/
 theorem holderWith_abs_rpow_mul_sign_pow {β : ℝ≥0} (hβ1 : β ≤ 1) (j : ℕ) :
     HolderWith 2 β (fun x : ℝ ↦ |x| ^ (β : ℝ) * Real.sign x ^ j) := by
@@ -62,15 +58,14 @@ theorem holderWith_abs_rpow_mul_sign_pow {β : ℝ≥0} (hβ1 : β ≤ 1) (j : �
   rw [Real.dist_eq, Real.dist_eq, NNReal.coe_ofNat]
   have hxy : 0 ≤ |x - y| ^ (β : ℝ) := Real.rpow_nonneg (abs_nonneg _) _
   by_cases hs : Real.sign x ^ j = Real.sign y ^ j
-  · -- Equal signs: the Hölder bound of `t ↦ t^β` on `[0, ∞)`.
+  · -- Equal signs: the Hölder bound of the cusp `|x| ^ β`.
+    have hcusp := (holderWith_norm_rpow (E := ℝ) hβ1).dist_le x y
+    rw [Real.dist_eq, Real.dist_eq, NNReal.coe_one, one_mul, Real.norm_eq_abs,
+      Real.norm_eq_abs] at hcusp
     rw [hs, ← sub_mul, abs_mul]
     calc |(|x| ^ (β : ℝ) - |y| ^ (β : ℝ))| * |Real.sign y ^ j|
         ≤ |(|x| ^ (β : ℝ) - |y| ^ (β : ℝ))| :=
           mul_le_of_le_one_right (abs_nonneg _) (Real.abs_sign_pow_le_one y j)
-      _ ≤ |(|x| - |y|)| ^ (β : ℝ) :=
-          Real.abs_rpow_sub_rpow_le (abs_nonneg x) (abs_nonneg y) β.coe_nonneg hβ1
-      _ ≤ |x - y| ^ (β : ℝ) :=
-          Real.rpow_le_rpow (abs_nonneg _) (abs_abs_sub_abs_le_abs_sub x y) β.coe_nonneg
       _ ≤ 2 * |x - y| ^ (β : ℝ) := by linarith
   · -- Different signs: `x` and `y` lie on opposite sides of `0`, so both are at most `|x - y|`.
     have hmul : x * y ≤ 0 := by

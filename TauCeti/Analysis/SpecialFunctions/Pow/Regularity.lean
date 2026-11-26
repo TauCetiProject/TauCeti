@@ -9,11 +9,12 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Basic.Real.Sign
 public import Mathlib.RingTheory.Polynomial.Pochhammer
-public import Mathlib.Topology.MetricSpace.HolderNorm
+public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Holder
+import TauCeti.Analysis.SpecialFunctions.Pow.PowSign
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Basic.Real.Sign
 import TauCeti.Topology.Instances.Real.Sign
@@ -32,9 +33,9 @@ derivative `r |x|^(r - 1) sgn(x)^(j + 1)` everywhere (`TauCeti.hasDerivAt_abs_rp
 so that `D^j |x|^p = p (p - 1) ⋯ (p - j + 1) |x|^(p - j) sgn(x)^j` for `j < p`
 (`TauCeti.iteratedDeriv_abs_rpow`). Away from the origin the sign is locally constant
 (`Real.eventually_sign_eq_nhds`), and the signed power is at most `|x|^r` in absolute value
-(`TauCeti.abs_abs_rpow_mul_sign_pow_le`). Mathlib's derivative `p |x| ^ (p - 2) x` of `|x| ^ p`
-(`hasDerivAt_abs_rpow`) is the signed power `p |x| ^ (p - 1) sgn(x)`
-(`Real.abs_rpow_sub_two_mul_eq_mul_sign`).
+(`TauCeti.abs_abs_rpow_mul_sign_pow_le`, in `TauCeti.Analysis.SpecialFunctions.Pow.PowSign`).
+Mathlib's derivative `p |x| ^ (p - 2) x` of `|x| ^ p` (`hasDerivAt_abs_rpow`) is the signed power
+`p |x| ^ (p - 1) sgn(x)` (`Real.abs_rpow_sub_two_mul_eq_mul_sign`, ibid.).
 
 For `0 < β ≤ 1` the `k`-th derivative of `|x| ^ (k + β)` is `β`-Hölder on the whole line, with an
 explicit constant (`TauCeti.holderWith_iteratedFDeriv_abs_rpow`). For `p > k` the `k`-th derivative
@@ -51,19 +52,6 @@ public section
 
 open Set Filter Topology Real
 open scoped ContDiff NNReal
-
-namespace Real
-
-/-- Mathlib's derivative `|x|^(r - 2) x` of `|x|^r / r` is the signed power `|x|^(r - 1) sgn(x)`. -/
-theorem abs_rpow_sub_two_mul_eq_mul_sign (r x : ℝ) :
-    |x| ^ (r - 2) * x = |x| ^ (r - 1) * sign x := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp [sign_zero]
-  · -- `Real.rpow_add_one` peels a factor `|x|` off an exponent of the form `a + 1`, so the
-    -- exponent `r - 1` is first written in that form, as `(r - 2) + 1`.
-    rw [show r - 1 = r - 2 + 1 by ring, rpow_add_one (abs_pos.2 hx).ne', mul_assoc, abs_mul_sign]
-
-end Real
 
 namespace TauCeti
 

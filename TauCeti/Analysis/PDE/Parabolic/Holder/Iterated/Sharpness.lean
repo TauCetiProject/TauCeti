@@ -50,9 +50,9 @@ Hölder exponent of the initial datum cannot be lowered here either, even at the
 derivative. Let `0 < β < α < 1` and let `g` be the power `|xᵢ|^(k + 3 + β)` of one coordinate,
 cut off away from the hyperplane `xᵢ = 0`. Then:
 
-* `g` lies in `C_b^{k+3,β}` (`TauCeti.exists_ckHolderSpace_eq_abs_rpow_comp`) and in
-  `C_b^{k+2,α}` (`TauCeti.exists_ckHolderSpace_eq_abs_rpow_comp_succ`), so the isomorphism of
-  order `k` applies and gives a solution `u ∈ C_{par,b}^{k+2+α}`;
+* the datum `g` constructed by `TauCeti.exists_ckHolderSpace_eq_abs_rpow_comp_succ` lies in
+  `C_b^{k+3,β}` and, as the same function, in `C_b^{k+2,α}`, so the isomorphism of order `k`
+  applies and gives a solution `u ∈ C_{par,b}^{k+2+α}`;
 * `g` does not lie in `C_b^{k+3,α}` (`TauCeti.not_exists_ckHolderSpace_eq_abs_rpow_comp`), so the
   isomorphism of order `k + 1` does not apply;
 * and `u` does not lie in `C_{par,b}^{k+3+α}`, for any coefficients and any forcing
@@ -63,8 +63,9 @@ to an element of `C_b^{k,α}` (`TauCeti.ParabolicCkHolderSpace.spatialTrace`), w
 `|ℓ x|^(k + β)` agrees near `ℓ = 0` with no element of `C_b^{k,α}` when `β < α`
 (`TauCeti.ParabolicCkHolderSpace.not_exists_eq_abs_rpow_comp`).
 
-For `k = 0`, the heat equation and `ι` with one element, this is the order-one statement on the
-line above, read on `EuclideanSpace ℝ ι` instead of `ℝ`.
+For `k = 0`, the heat equation and `ι` with one element, this gives the same conclusion as the
+order-one statement on the line above, `u ∉ C_{par,b}^{3+α}`, but for the order-zero solution at
+exponent `α`, where the theorem above uses the order-one solution at exponent `β`.
 
 ## References
 
@@ -146,8 +147,9 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {k : ℕ} {α β T : ℝ≥0
 exponent.** Let `0 < β < α < 1`, let the coefficients and the forcing have order `k`, and let the
 initial datum `g ∈ C_b^{k+2,α}` equal `|xᵢ|^(k + 3 + β)` wherever `|xᵢ| < 1`. Then the solution
 `u ∈ C_{par,b}^{k+2+α}` of `P u = f`, `u(·, 0) = g` does not lie in `C_{par,b}^{k+3+α}`. Such data
-exist (`TauCeti.exists_ckHolderSpace_eq_abs_rpow_comp_succ`), and they lie in `C_b^{k+3,β}`
-(`TauCeti.exists_ckHolderSpace_eq_abs_rpow_comp`). -/
+exist: `TauCeti.exists_ckHolderSpace_eq_abs_rpow_comp_succ` constructs one that, as the same
+function, also lies in `C_b^{k+3,β}`. That higher membership is a property of the constructed
+datum; the hypothesis here only asks `g` to match the power where `|xᵢ| < 1`. -/
 theorem not_exists_eq_euclideanInitialDataCLE_symm_of_eq_abs_rpow (hα₀ : 0 < α)
     (hα₁ : α < 1) (a : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
     (b : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)

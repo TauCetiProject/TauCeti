@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Holder.CompLinear
 import Mathlib.Analysis.Calculus.BumpFunction.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.InnerProductSpace.NormPow
-import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Holder.Localization
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularity
 
@@ -114,20 +113,20 @@ theorem exists_ckHolderSpace_eq_abs_rpow_comp (k : ℕ) {β : ℝ≥0} (hβ0 : 0
     rw [CkHolderSpace.compLinearL_apply]
     exact hg _ (abs_lt.1 hx)⟩
 
-/-- For `0 < β ≤ 1` and `α ≤ 1`, some element of `C_b^{k,α}(E)` equals `|ℓ x|^(k + 1 + β)` wherever
-`|ℓ x| < 1`, whatever the order of `α` and `β`: the element of `C_b^{k+1,β}(E)` of
-`TauCeti.exists_ckHolderSpace_eq_abs_rpow_comp` has bounded `k`-th derivative with bounded
-derivative, which is therefore `α`-Hölder. -/
+/-- For `0 < β ≤ 1` and `α ≤ 1`, some element of `C_b^{k+1,β}(E)` equals `|ℓ x|^(k + 1 + β)`
+wherever `|ℓ x| < 1` and, as a function, also lies in `C_b^{k,α}(E)`, whatever the order of `α` and
+`β`: the element of `TauCeti.exists_ckHolderSpace_eq_abs_rpow_comp` has bounded `k`-th derivative
+with bounded derivative, which is therefore `α`-Hölder. -/
 theorem exists_ckHolderSpace_eq_abs_rpow_comp_succ (k : ℕ) {α β : ℝ≥0} (hβ0 : 0 < β)
     (hβ1 : β ≤ 1) (hα1 : α ≤ 1) (ℓ : E →L[ℝ] ℝ) :
-    ∃ f : CkHolderSpace k α E ℝ, ∀ x, |ℓ x| < 1 → f x = |ℓ x| ^ (((k + 1 : ℕ) : ℝ) + β) := by
-  obtain ⟨g, hg⟩ := exists_ckHolderSpace_eq_abs_rpow_comp (k + 1) hβ0 hβ1 ℓ
-  refine ⟨CkHolderSpace.ofContDiff g (g.contDiff.of_le (by exact_mod_cast k.le_succ))
-    (fun i hi ↦ ⟨‖g‖, g.norm_iteratedFDeriv_apply_le (by omega)⟩) ?_, fun x hx ↦ by
-      rw [CkHolderSpace.coe_ofContDiff]
-      exact hg x hx⟩
-  exact ⟨_, g.contDiff.holderWith_iteratedFDeriv_of_le (N := ‖g‖₊) le_rfl hα1
-    fun i hi x ↦ g.norm_iteratedFDeriv_apply_le hi x⟩
+    ∃ (f : CkHolderSpace (k + 1) β E ℝ) (g : CkHolderSpace k α E ℝ), ⇑g = ⇑f ∧
+      ∀ x, |ℓ x| < 1 → f x = |ℓ x| ^ (((k + 1 : ℕ) : ℝ) + β) := by
+  obtain ⟨f, hf⟩ := exists_ckHolderSpace_eq_abs_rpow_comp (k + 1) hβ0 hβ1 ℓ
+  refine ⟨f, CkHolderSpace.ofContDiff f (f.contDiff.of_le (by exact_mod_cast k.le_succ))
+    (fun i hi ↦ ⟨‖f‖, f.norm_iteratedFDeriv_apply_le (by omega)⟩) ?_,
+    CkHolderSpace.coe_ofContDiff _ _ _ _, hf⟩
+  exact ⟨_, f.contDiff.holderWith_iteratedFDeriv_of_le (N := ‖f‖₊) le_rfl hα1
+    fun i hi x ↦ f.norm_iteratedFDeriv_apply_le hi x⟩
 
 /-- For `0 < β < α` and a nonzero continuous linear functional `ℓ`, no element of `C_b^{k,α}(E)`
 equals `|ℓ x|^(k + β)` wherever `|ℓ x| < 1`: restricted to a line on which `ℓ` is a coordinate, it
@@ -136,11 +135,10 @@ theorem not_exists_ckHolderSpace_eq_abs_rpow_comp (k : ℕ) {α β : ℝ≥0} (h
     (hβα : β < α) {ℓ : E →L[ℝ] ℝ} (hℓ : ℓ ≠ 0) :
     ¬ ∃ f : CkHolderSpace k α E ℝ, ∀ x, |ℓ x| < 1 → f x = |ℓ x| ^ ((k : ℝ) + β) := by
   rintro ⟨f, hf⟩
-  obtain ⟨v, hv⟩ : ∃ v, ℓ v ≠ 0 := by
-    simpa using DFunLike.ne_iff.1 hℓ
-  let e : ℝ →L[ℝ] E := (ContinuousLinearMap.id ℝ ℝ).smulRight ((ℓ v)⁻¹ • v)
-  have he : ∀ t, ℓ (e t) = t := fun t ↦ by
-    simp [e, map_smul, inv_mul_cancel₀ hv]
+  -- A continuous linear right inverse `e` of `ℓ`, which is onto `ℝ` since it is nonzero.
+  obtain ⟨e, hcomp⟩ := ℓ.exists_rightInverse_of_surjective (LinearMap.range_eq_top.2
+    (LinearMap.surjective_iff_ne_zero.2 fun h ↦ hℓ (ContinuousLinearMap.coe_injective h)))
+  have he : ∀ t, ℓ (e t) = t := fun t ↦ congr($hcomp t)
   refine not_exists_ckHolderSpace_coe_eq_of_eventuallyEq_abs_rpow k hβ0 hβα
     (g := CkHolderSpace.compLinearL e f) ?_ ⟨_, rfl⟩
   filter_upwards [Ioo_mem_nhds (neg_lt_zero.2 one_pos) one_pos] with t ht
