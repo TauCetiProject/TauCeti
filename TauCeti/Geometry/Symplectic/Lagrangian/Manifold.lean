@@ -44,6 +44,9 @@ dimension is Lagrangian. Every map from a manifold of dimension at most one is i
 finite-dimensional, a coisotropic map from a
 nonempty `N` satisfies `dim M ≤ 2 dim N` without any injectivity. From an empty source every
 map satisfies all three predicates vacuously, and no dimension constraint follows.
+A map of codimension at most one with injective differentials, such as an immersed hypersurface,
+is coisotropic
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isCoisotropicMap_of_finrank_le_finrank_add_one`).
 
 A **Lagrangian immersion** (`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianImmersion`)
 into a finite-dimensional manifold is a smooth immersion with isotropic tangent images from a
@@ -342,6 +345,13 @@ theorem isIsotropicMap_of_finrank_le_one [FiniteDimensional ℝ E'] (hE' : finra
   SymplecticForm.isIsotropic_of_finrank_le_one
     ((LinearMap.finrank_range_le (mfderiv J I f x).toLinearMap).trans
       (by rwa [finrank_tangentSpace]))
+
+/-- **Hypersurfaces are coisotropic.** A map of codimension at most one with injective
+differentials, such as an immersed hypersurface, has coisotropic tangent images. -/
+theorem isCoisotropicMap_of_finrank_le_finrank_add_one (hdim : finrank ℝ E ≤ finrank ℝ E' + 1)
+    (hinj : ∀ x, Function.Injective (mfderiv J I f x)) : hσ.IsCoisotropicMap J f := fun x ↦
+  SymplecticForm.isCoisotropic_of_finrank_le_finrank_add_one (by
+    rwa [LinearMap.finrank_range_of_inj (hinj x), finrank_tangentSpace, finrank_tangentSpace])
 
 end Dimension
 
