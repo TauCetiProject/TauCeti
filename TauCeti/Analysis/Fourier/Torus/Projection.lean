@@ -25,10 +25,12 @@ Schwartz kernels are transferred to the torus.
 
 The projection is a continuous additive homomorphism whose kernel is the lattice `ℤᵈ`
 (`TauCeti.UnitAddTorus.proj_eq_zero_iff`). It has the right inverse
-`UnitAddTorus.lift : 𝕋ᵈ → (0, 1]ᵈ ⊆ ℝᵈ`, which carries the measure of the torus onto the closed
-unit cube `[0, 1]ᵈ` (`UnitAddTorus.measurePreserving_lift`), so integrals over the torus are
-integrals of periodic functions over the unit cube. The lift takes a point of the torus, so it and
-its lemmas live in Mathlib's `UnitAddTorus` namespace, where dot notation finds them.
+`UnitAddTorus.toEuclideanSpaceIoc : 𝕋ᵈ → (0, 1]ᵈ ⊆ ℝᵈ`, choosing the representative of each point
+in the fundamental domain `(0, 1]ᵈ`, which carries the measure of the torus onto the closed unit
+cube `[0, 1]ᵈ` (`UnitAddTorus.measurePreserving_toEuclideanSpaceIoc`), so integrals over the torus
+are integrals of periodic functions over the unit cube. This representative map takes a point of
+the torus, so it and its lemmas live in Mathlib's `UnitAddTorus` namespace, where dot notation
+finds them.
 
 ## Main declarations
 
@@ -36,10 +38,12 @@ its lemmas live in Mathlib's `UnitAddTorus` namespace, where dot notation finds 
 * `TauCeti.UnitAddTorus.proj_eq_zero_iff`, `TauCeti.UnitAddTorus.proj_eq_proj_iff`: its kernel
   is the lattice `ℤᵈ`.
 * `TauCeti.UnitAddTorus.mFourier_proj`: the Fourier modes read on `ℝᵈ` are plane waves.
-* `UnitAddTorus.lift`, `UnitAddTorus.proj_lift`, `TauCeti.UnitAddTorus.proj_surjective`: the
-  lift `𝕋ᵈ → (0, 1]ᵈ`, a right inverse of the projection.
-* `UnitAddTorus.measurableEmbedding_lift`, `UnitAddTorus.measurePreserving_lift`: the lift is a
-  measurable embedding carrying the measure of the torus onto the unit cube.
+* `UnitAddTorus.toEuclideanSpaceIoc`, `UnitAddTorus.proj_toEuclideanSpaceIoc`,
+  `TauCeti.UnitAddTorus.proj_surjective`: the representative map `𝕋ᵈ → (0, 1]ᵈ`, a right inverse
+  of the projection.
+* `UnitAddTorus.measurableEmbedding_toEuclideanSpaceIoc`,
+  `UnitAddTorus.measurePreserving_toEuclideanSpaceIoc`: the representative map is a measurable
+  embedding carrying the measure of the torus onto the unit cube.
 -/
 
 public section
@@ -104,43 +108,45 @@ theorem mFourier_proj [Fintype d] (n : d → ℤ) (y : EuclideanSpace ℝ d) :
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   ring
 
-/-! ### The lift onto the unit cube -/
+/-! ### Representatives in the unit cube -/
 
-/-- The lift `𝕋ᵈ → (0, 1]ᵈ ⊆ ℝᵈ`, a right inverse of the projection. -/
-def _root_.UnitAddTorus.lift (t : UnitAddTorus d) : EuclideanSpace ℝ d :=
+/-- The representative map `𝕋ᵈ → (0, 1]ᵈ ⊆ ℝᵈ`, sending each point of the torus to its
+representative in the fundamental domain `(0, 1]ᵈ`; a right inverse of the projection. -/
+def _root_.UnitAddTorus.toEuclideanSpaceIoc (t : UnitAddTorus d) : EuclideanSpace ℝ d :=
   WithLp.toLp 2 ((measurableEquivPiIoc 0 t : _) : d → ℝ)
 
-theorem _root_.UnitAddTorus.lift_apply (t : UnitAddTorus d) (i : d) :
-    lift t i = ((measurableEquivPiIoc 0 t : _) : d → ℝ) i :=
+theorem _root_.UnitAddTorus.toEuclideanSpaceIoc_apply (t : UnitAddTorus d) (i : d) :
+    toEuclideanSpaceIoc t i = ((measurableEquivPiIoc 0 t : _) : d → ℝ) i :=
   (rfl)
 
-/-- The coordinates of the lift lie in `(0, 1]`. -/
-theorem _root_.UnitAddTorus.lift_apply_mem_Ioc (t : UnitAddTorus d) (i : d) :
-    lift t i ∈ Ioc (0 : ℝ) 1 := by
+/-- The coordinates of the representative lie in `(0, 1]`. -/
+theorem _root_.UnitAddTorus.toEuclideanSpaceIoc_apply_mem_Ioc (t : UnitAddTorus d) (i : d) :
+    toEuclideanSpaceIoc t i ∈ Ioc (0 : ℝ) 1 := by
   have h := (measurableEquivPiIoc 0 t).property i
   simp only [Pi.zero_apply, zero_add] at h
-  rwa [lift_apply]
+  rwa [toEuclideanSpaceIoc_apply]
 
 @[simp]
-theorem _root_.UnitAddTorus.proj_lift (t : UnitAddTorus d) : proj (lift t) = t := by
+theorem _root_.UnitAddTorus.proj_toEuclideanSpaceIoc (t : UnitAddTorus d) :
+    proj (toEuclideanSpaceIoc t) = t := by
   ext i
-  simp [lift_apply]
+  simp [toEuclideanSpaceIoc_apply]
 
 theorem proj_surjective : Function.Surjective (proj (d := d)) :=
-  fun t ↦ ⟨lift t, proj_lift t⟩
+  fun t ↦ ⟨toEuclideanSpaceIoc t, proj_toEuclideanSpaceIoc t⟩
 
-theorem _root_.UnitAddTorus.measurableEmbedding_lift [Countable d] :
-    MeasurableEmbedding (lift (d := d)) :=
+theorem _root_.UnitAddTorus.measurableEmbedding_toEuclideanSpaceIoc [Countable d] :
+    MeasurableEmbedding (toEuclideanSpaceIoc (d := d)) :=
   (MeasurableEquiv.toLp 2 (d → ℝ)).measurableEmbedding.comp
     measurableEmbedding_coe_measurableEquivPiIoc
 
 -- The torus carries the product of the Haar probability measures on its circle factors, the
 -- measure on which Mathlib's `mFourierBasis` is defined.
 attribute [local instance 2000] instMeasureSpaceUnitAddCircle in
-/-- The lift carries the product of the Haar probability measures on the circle factors of the
-torus onto Lebesgue measure on the closed unit cube `[0, 1]ᵈ`. -/
-theorem _root_.UnitAddTorus.measurePreserving_lift [Fintype d] :
-    MeasurePreserving (lift (d := d)) volume
+/-- The representative map carries the product of the Haar probability measures on the circle
+factors of the torus onto Lebesgue measure on the closed unit cube `[0, 1]ᵈ`. -/
+theorem _root_.UnitAddTorus.measurePreserving_toEuclideanSpaceIoc [Fintype d] :
+    MeasurePreserving (toEuclideanSpaceIoc (d := d)) volume
       (volume.restrict {v : EuclideanSpace ℝ d | ∀ i, v i ∈ Icc (0 : ℝ) 1}) := by
   have h := (PiLp.volume_preserving_toLp d).restrict_preimage
     (EuclideanSpace.measurableSet_setOf_forall_mem fun _ ↦
