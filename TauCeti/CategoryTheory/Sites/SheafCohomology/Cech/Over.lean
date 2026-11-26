@@ -33,7 +33,7 @@ the restricted sheaf with the restriction of the cohomology presheaf `W ↦ Hᵏ
   (`TauCeti.CategoryTheory.cechToCohomologyOverFirstPageXIso`);
 * the differential of the first page is, up to the sign `(-1)^k`, the Čech differential of that
   presheaf (`TauCeti.CategoryTheory.cechToCohomologyOverSpectralSequence_page_two_d`), so that the
-  objects of the second page are the Čech cohomology groups `Ȟᵖ(U, Hᵏ(F))`;
+  objects of the second page are the Čech cohomology groups `Hᵖ(U, Hᵏ(F))`;
 * its abutment in degree `-n` is the opposite of `Hⁿ(V, F)`
   (`TauCeti.CategoryTheory.cechToCohomologyOverAbutmentIso`).
 
@@ -125,7 +125,7 @@ the identifications `cechToCohomologyOverFirstPageXIso` of the first page with t
 the presheaf `Hᵏ(-, F)` restricted to `Over V`, the differential from `(-k - 2(p + 1), p + 1)` to
 `(-k - 2p, p)` is `(-1)^k` times the opposite of the Čech differential
 `Čᵖ(U, Hᵏ(F)) ⟶ Čᵖ⁺¹(U, Hᵏ(F))`. Hence the objects of the second page are the Čech cohomology
-groups `Ȟᵖ(U, Hᵏ(F))` of the covering. -/
+groups `Hᵖ(U, Hᵏ(F))` of the covering. -/
 theorem cechToCohomologyOverSpectralSequence_page_two_d (p k : ℕ) :
     (cechToCohomologyOverFirstPageXIso f R (p + 1) k).inv ≫
       ((cechToCohomologyOverSpectralSequence f R).page 2).d
