@@ -355,79 +355,82 @@ theorem dgHomologyCastEquiv_dgHomologyComp {X Y Z : C} {p₁ p₂ q₁ q₂ n₁
 /-- Left composition with a graded cohomology class `u ∈ Hom^p(X, Y)` having two-sided inverse
 `v ∈ Hom^q(Y, X)` is a linear equivalence `Hom^{d₁}(Y, Z) ≃ₗ[R] Hom^{d₂}(X, Z)`. -/
 def dgHomologyCompLeftEquiv (Z : C) {X Y : C} {p q d₁ d₂ : ℤ}
-    (hpq : p + q = 0) (hqp : q + p = 0) (hd₁ : p + d₁ = d₂) (hd₂ : q + d₂ = d₁)
+    (hpq : p + q = 0) (hd₁ : p + d₁ = d₂)
     (u : (dgHomComplex R X Y).homology p) (v : (dgHomComplex R Y X).homology q)
     (huv : dgHomologyComp R X Y X hpq u v = dgHomologyId R X)
-    (hvu : dgHomologyComp R Y X Y hqp v u = dgHomologyId R Y) :
+    (hvu : dgHomologyComp R Y X Y ((add_comm q p).trans hpq) v u = dgHomologyId R Y) :
     (dgHomComplex R Y Z).homology d₁ ≃ₗ[R] (dgHomComplex R X Z).homology d₂ where
   toFun := dgHomologyComp R X Y Z hd₁ u
-  invFun := dgHomologyComp R Y X Z hd₂ v
+  invFun := dgHomologyComp R Y X Z (by omega : q + d₂ = d₁) v
   left_inv _ := by
-    rw [← dgHomologyComp_assoc R hqp hd₁ (zero_add d₁) hd₂, hvu, dgHomologyId_dgHomologyComp]
+    rw [← dgHomologyComp_assoc R ((add_comm q p).trans hpq) hd₁ (zero_add d₁) (by omega), hvu,
+      dgHomologyId_dgHomologyComp]
   right_inv _ := by
-    rw [← dgHomologyComp_assoc R hpq hd₂ (zero_add d₂) hd₁, huv, dgHomologyId_dgHomologyComp]
+    rw [← dgHomologyComp_assoc R hpq (by omega) (zero_add d₂) hd₁, huv,
+      dgHomologyId_dgHomologyComp]
   map_add' := map_add _
   map_smul' := map_smul _
 
 /-- `TauCeti.dgHomologyCompLeftEquiv` composes on the left with `u`. -/
 @[simp] theorem dgHomologyCompLeftEquiv_apply (Z : C) {X Y : C} {p q d₁ d₂ : ℤ}
-    (hpq : p + q = 0) (hqp : q + p = 0) (hd₁ : p + d₁ = d₂) (hd₂ : q + d₂ = d₁)
+    (hpq : p + q = 0) (hd₁ : p + d₁ = d₂)
     (u : (dgHomComplex R X Y).homology p) (v : (dgHomComplex R Y X).homology q)
     (huv : dgHomologyComp R X Y X hpq u v = dgHomologyId R X)
-    (hvu : dgHomologyComp R Y X Y hqp v u = dgHomologyId R Y)
+    (hvu : dgHomologyComp R Y X Y ((add_comm q p).trans hpq) v u = dgHomologyId R Y)
     (x : (dgHomComplex R Y Z).homology d₁) :
-    dgHomologyCompLeftEquiv R Z hpq hqp hd₁ hd₂ u v huv hvu x = dgHomologyComp R X Y Z hd₁ u x :=
+    dgHomologyCompLeftEquiv R Z hpq hd₁ u v huv hvu x = dgHomologyComp R X Y Z hd₁ u x :=
   (rfl)
 
 /-- `(TauCeti.dgHomologyCompLeftEquiv …).symm` composes on the left with `v`. -/
 @[simp] theorem dgHomologyCompLeftEquiv_symm_apply (Z : C) {X Y : C} {p q d₁ d₂ : ℤ}
-    (hpq : p + q = 0) (hqp : q + p = 0) (hd₁ : p + d₁ = d₂) (hd₂ : q + d₂ = d₁)
+    (hpq : p + q = 0) (hd₁ : p + d₁ = d₂)
     (u : (dgHomComplex R X Y).homology p) (v : (dgHomComplex R Y X).homology q)
     (huv : dgHomologyComp R X Y X hpq u v = dgHomologyId R X)
-    (hvu : dgHomologyComp R Y X Y hqp v u = dgHomologyId R Y)
+    (hvu : dgHomologyComp R Y X Y ((add_comm q p).trans hpq) v u = dgHomologyId R Y)
     (y : (dgHomComplex R X Z).homology d₂) :
-    (dgHomologyCompLeftEquiv R Z hpq hqp hd₁ hd₂ u v huv hvu).symm y =
-      dgHomologyComp R Y X Z hd₂ v y :=
+    (dgHomologyCompLeftEquiv R Z hpq hd₁ u v huv hvu).symm y =
+      dgHomologyComp R Y X Z (by omega : q + d₂ = d₁) v y :=
   (rfl)
 
 /-- Right composition with a graded cohomology class `u ∈ Hom^p(X, Y)` having two-sided inverse
 `v ∈ Hom^q(Y, X)` is a linear equivalence `Hom^{d₁}(Z, X) ≃ₗ[R] Hom^{d₂}(Z, Y)`. -/
 def dgHomologyCompRightEquiv (Z : C) {X Y : C} {p q d₁ d₂ : ℤ}
-    (hpq : p + q = 0) (hqp : q + p = 0) (hd₁ : d₁ + p = d₂) (hd₂ : d₂ + q = d₁)
+    (hpq : p + q = 0) (hd₁ : d₁ + p = d₂)
     (u : (dgHomComplex R X Y).homology p) (v : (dgHomComplex R Y X).homology q)
     (huv : dgHomologyComp R X Y X hpq u v = dgHomologyId R X)
-    (hvu : dgHomologyComp R Y X Y hqp v u = dgHomologyId R Y) :
+    (hvu : dgHomologyComp R Y X Y ((add_comm q p).trans hpq) v u = dgHomologyId R Y) :
     (dgHomComplex R Z X).homology d₁ ≃ₗ[R] (dgHomComplex R Z Y).homology d₂ where
   toFun := (dgHomologyComp R Z X Y hd₁).flip u
-  invFun := (dgHomologyComp R Z Y X hd₂).flip v
+  invFun := (dgHomologyComp R Z Y X (by omega : d₂ + q = d₁)).flip v
   left_inv _ := by
     rw [LinearMap.flip_apply, LinearMap.flip_apply,
-      dgHomologyComp_assoc R hd₁ hpq hd₂ (add_zero d₁), huv, dgHomologyComp_dgHomologyId]
+      dgHomologyComp_assoc R hd₁ hpq (by omega) (add_zero d₁), huv, dgHomologyComp_dgHomologyId]
   right_inv _ := by
     rw [LinearMap.flip_apply, LinearMap.flip_apply,
-      dgHomologyComp_assoc R hd₂ hqp hd₁ (add_zero d₂), hvu, dgHomologyComp_dgHomologyId]
+      dgHomologyComp_assoc R (by omega) ((add_comm q p).trans hpq) hd₁ (add_zero d₂), hvu,
+      dgHomologyComp_dgHomologyId]
   map_add' := map_add _
   map_smul' := map_smul _
 
 /-- `TauCeti.dgHomologyCompRightEquiv` composes on the right with `u`. -/
 @[simp] theorem dgHomologyCompRightEquiv_apply (Z : C) {X Y : C} {p q d₁ d₂ : ℤ}
-    (hpq : p + q = 0) (hqp : q + p = 0) (hd₁ : d₁ + p = d₂) (hd₂ : d₂ + q = d₁)
+    (hpq : p + q = 0) (hd₁ : d₁ + p = d₂)
     (u : (dgHomComplex R X Y).homology p) (v : (dgHomComplex R Y X).homology q)
     (huv : dgHomologyComp R X Y X hpq u v = dgHomologyId R X)
-    (hvu : dgHomologyComp R Y X Y hqp v u = dgHomologyId R Y)
+    (hvu : dgHomologyComp R Y X Y ((add_comm q p).trans hpq) v u = dgHomologyId R Y)
     (x : (dgHomComplex R Z X).homology d₁) :
-    dgHomologyCompRightEquiv R Z hpq hqp hd₁ hd₂ u v huv hvu x = dgHomologyComp R Z X Y hd₁ x u :=
+    dgHomologyCompRightEquiv R Z hpq hd₁ u v huv hvu x = dgHomologyComp R Z X Y hd₁ x u :=
   (rfl)
 
 /-- `(TauCeti.dgHomologyCompRightEquiv …).symm` composes on the right with `v`. -/
 @[simp] theorem dgHomologyCompRightEquiv_symm_apply (Z : C) {X Y : C} {p q d₁ d₂ : ℤ}
-    (hpq : p + q = 0) (hqp : q + p = 0) (hd₁ : d₁ + p = d₂) (hd₂ : d₂ + q = d₁)
+    (hpq : p + q = 0) (hd₁ : d₁ + p = d₂)
     (u : (dgHomComplex R X Y).homology p) (v : (dgHomComplex R Y X).homology q)
     (huv : dgHomologyComp R X Y X hpq u v = dgHomologyId R X)
-    (hvu : dgHomologyComp R Y X Y hqp v u = dgHomologyId R Y)
+    (hvu : dgHomologyComp R Y X Y ((add_comm q p).trans hpq) v u = dgHomologyId R Y)
     (y : (dgHomComplex R Z Y).homology d₂) :
-    (dgHomologyCompRightEquiv R Z hpq hqp hd₁ hd₂ u v huv hvu).symm y =
-      dgHomologyComp R Z Y X hd₂ y v :=
+    (dgHomologyCompRightEquiv R Z hpq hd₁ u v huv hvu).symm y =
+      dgHomologyComp R Z Y X (by omega : d₂ + q = d₁) y v :=
   (rfl)
 
 end TauCeti

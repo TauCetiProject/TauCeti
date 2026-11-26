@@ -72,13 +72,100 @@ theorem dgHomPairing_flip (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k 
       (d * (2 - d)).negOnePow • trace k G c Y w hw (dgComp k g f (sub_add_cancel 2 d)) :=
   trace_comp k G c X Y v w hv hw hc d f g
 
+private theorem vertexTrace_dgComp_eq_weightedTracePairing (c : V → kˣ) (i j : V) {p q : ℤ}
+    (f : DGHom k p (D i) (D j)) (g : DGHom k q (D j) (D i)) (hpq : p + q = 2) :
+    vertexTrace k G (c i : k) i (dgComp k f g hpq) =
+      zigzagAlgebraProjectiveDGHomWeightedTracePairing k G c i j p f
+        (castDeg k (by omega : q = 2 - p) g) := by
+  have hcomp : dgComp k f (castDeg k (by omega : q = 2 - p) g) (add_sub_cancel p 2) =
+      dgComp k f g hpq := by
+    simpa only [castDeg_self] using
+      dgComp_castDeg k (by omega : q = 2 - p) (rfl : (2 : ℤ) = 2) f g (add_sub_cancel p 2)
+  rw [zigzagAlgebraProjectiveDGHomWeightedTracePairing_apply, hcomp, vertexTrace_apply,
+    coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_apply, castDeg_self]
+
+private def entryDeg (X Y : ZigzagProjectiveTwistedClosure k G) (d : ℤ)
+    (i : X.obj.ι) (j : Y.obj.ι) : ℤ :=
+  d + ((Y.obj.X j).shift - (X.obj.X i).shift)
+
+private def entrySign (X Y : ZigzagProjectiveTwistedClosure k G) (d : ℤ)
+    (i : X.obj.ι) (j : Y.obj.ι) : ℤˣ :=
+  (X.obj.X i).shift.negOnePow *
+    (((X.obj.X i).shift - (Y.obj.X j).shift) * entryDeg k G X Y d i j).negOnePow
+
+private def leftHomMatrixEquiv {X Y : ZigzagProjectiveTwistedClosure k G}
+    (v : X.obj.ι → V) (w : Y.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
+    (hw : ∀ j, (Y.obj.X j).obj.obj = D (w j)) (d : ℤ) :
+    DGHom k d X Y ≃ₗ[k] ∀ i j, DGHom k (entryDeg k G X Y d i j) (D (v i)) (D (w j)) :=
+  ((DGTwistedObject.dgHomEquiv k X Y d).trans
+    (DGAdditiveClosure.dgHomEquiv k X.obj Y.obj d)).trans
+    (LinearEquiv.piCongrRight fun i ↦ LinearEquiv.piCongrRight fun j ↦
+      entryHomEquiv k G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) d)
+
 private def rightEntryEquiv {X Y : ZigzagProjectiveTwistedClosure k G}
     (v : X.obj.ι → V) (w : Y.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
     (hw : ∀ j, (Y.obj.X j).obj.obj = D (w j)) (d : ℤ) (i : X.obj.ι) (j : Y.obj.ι) :
     DGHom k (2 - d) (Y.obj.X j) (X.obj.X i) ≃ₗ[k]
-      DGHom k (2 - (d + ((Y.obj.X j).shift - (X.obj.X i).shift))) (D (w j)) (D (v i)) :=
+      DGHom k (2 - entryDeg k G X Y d i j) (D (w j)) (D (v i)) :=
   (entryHomEquiv k G (Y.obj.X j) (X.obj.X i) (w j) (v i) (hw j) (hv i) (2 - d)).trans
-    ((dgHomComplex k (D (w j)) (D (v i))).XIsoOfEq (by omega)).toLinearEquiv
+    ((dgHomComplex k (D (w j)) (D (v i))).XIsoOfEq (by dsimp [entryDeg]; omega)).toLinearEquiv
+
+private def rightHomMatrixEquiv {X Y : ZigzagProjectiveTwistedClosure k G}
+    (v : X.obj.ι → V) (w : Y.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
+    (hw : ∀ j, (Y.obj.X j).obj.obj = D (w j)) (d : ℤ) :
+    DGHom k (2 - d) Y X ≃ₗ[k] ∀ i j, DGHom k (2 - entryDeg k G X Y d i j) (D (w j)) (D (v i)) :=
+  (((DGTwistedObject.dgHomEquiv k Y X (2 - d)).trans
+    (DGAdditiveClosure.dgHomEquiv k Y.obj X.obj (2 - d))).trans (LinearEquiv.piComm k _)).trans
+    (LinearEquiv.piCongrRight fun i ↦
+      LinearEquiv.piCongrRight fun j ↦ rightEntryEquiv k G v w hv hw d i j)
+
+private theorem leftHomMatrixEquiv_apply {X Y : ZigzagProjectiveTwistedClosure k G}
+    (v : X.obj.ι → V) (w : Y.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
+    (hw : ∀ j, (Y.obj.X j).obj.obj = D (w j)) (d : ℤ) (f : DGHom k d X Y)
+    (i : X.obj.ι) (j : Y.obj.ι) :
+    leftHomMatrixEquiv k G v w hv hw d f i j =
+      entryHomEquiv k G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) d
+        (DGAdditiveClosure.dgHomEquiv k X.obj Y.obj d
+          (DGTwistedObject.dgHomEquiv k X Y d f) i j) :=
+  (rfl)
+
+private theorem rightHomMatrixEquiv_apply {X Y : ZigzagProjectiveTwistedClosure k G}
+    (v : X.obj.ι → V) (w : Y.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
+    (hw : ∀ j, (Y.obj.X j).obj.obj = D (w j)) (d : ℤ) (g : DGHom k (2 - d) Y X)
+    (i : X.obj.ι) (j : Y.obj.ι) :
+    rightHomMatrixEquiv k G v w hv hw d g i j =
+      castDeg k (by dsimp [entryDeg]; omega)
+        (entryHomEquiv k G (Y.obj.X j) (X.obj.X i) (w j) (v i) (hw j) (hv i) (2 - d)
+          (DGAdditiveClosure.dgHomEquiv k Y.obj X.obj (2 - d)
+            (DGTwistedObject.dgHomEquiv k Y X (2 - d) g) j i)) := by
+  simp only [rightHomMatrixEquiv, rightEntryEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.piCongrRight_apply, LinearEquiv.piComm_apply, Iso.toLinearEquiv_apply,
+    ← castDeg_def]
+
+/-- Entrywise decomposition of `dgHomPairing` as a signed `LinearMap.piPairing` of vertex
+`zigzagAlgebraProjectiveDGHomWeightedTracePairing`s along `leftHomMatrixEquiv` and
+`rightHomMatrixEquiv`. -/
+private theorem dgHomPairing_eq_piPairing (c : V → kˣ) (X Y : ZigzagProjectiveTwistedClosure k G)
+    (v : X.obj.ι → V) (w : Y.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
+    (hw : ∀ j, (Y.obj.X j).obj.obj = D (w j)) (d : ℤ) :
+    dgHomPairing k G (fun u ↦ (c u : k)) X Y v hv d =
+      (LinearMap.piPairing fun i : X.obj.ι ↦ LinearMap.piPairing fun j : Y.obj.ι ↦
+        entrySign k G X Y d i j •
+          zigzagAlgebraProjectiveDGHomWeightedTracePairing k G c (v i) (w j)
+            (entryDeg k G X Y d i j)).compl₁₂
+        (leftHomMatrixEquiv k G v w hv hw d).toLinearMap
+        (rightHomMatrixEquiv k G v w hv hw d).toLinearMap := by
+  ext f g
+  rw [dgHomPairing_apply, trace_eq_sum_shiftedVertexTrace]
+  simp only [LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LinearMap.piPairing_apply,
+    LinearMap.smul_apply, DGTwistedObject.dgHomEquiv_dgComp, DGAdditiveClosure.dgHomEquiv_dgComp,
+    map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [shiftedVertexTrace_apply, diagonalHomEquiv_comp k G (X.obj.X i) (Y.obj.X j) (v i) (w j)
+      (hv i) (hw j) _ _ (add_sub_cancel d 2), map_zsmul_unit,
+    vertexTrace_dgComp_eq_weightedTracePairing, smul_smul, leftHomMatrixEquiv_apply,
+    rightHomMatrixEquiv_apply]
+  rfl
 
 /-- Unit vertex weights make `dgHomPairing` a perfect pairing over any commutative ring `k`. -/
 instance dgHomPairing_isPerfPair (c : V → kˣ) (X Y : ZigzagProjectiveTwistedClosure k G)
@@ -86,44 +173,8 @@ instance dgHomPairing_isPerfPair (c : V → kˣ) (X Y : ZigzagProjectiveTwistedC
     (dgHomPairing k G (fun u ↦ (c u : k)) X Y v hv d).IsPerfPair := by
   let w : Y.obj.ι → V := fun j ↦ (Y.obj.X j).obj.property.choose
   have hw : ∀ j, (Y.obj.X j).obj.obj = D (w j) := fun j ↦ (Y.obj.X j).obj.property.choose_spec
-  let dij (i : X.obj.ι) (j : Y.obj.ι) : ℤ := d + ((Y.obj.X j).shift - (X.obj.X i).shift)
-  let sgn (i : X.obj.ι) (j : Y.obj.ι) : ℤˣ :=
-    (X.obj.X i).shift.negOnePow * (((X.obj.X i).shift - (Y.obj.X j).shift) * dij i j).negOnePow
-  let eL : DGHom k d X Y ≃ₗ[k] ∀ i j, DGHom k (dij i j) (D (v i)) (D (w j)) :=
-    ((DGTwistedObject.dgHomEquiv k X Y d).trans
-      (DGAdditiveClosure.dgHomEquiv k X.obj Y.obj d)).trans
-      (LinearEquiv.piCongrRight fun i ↦ LinearEquiv.piCongrRight fun j ↦
-        entryHomEquiv k G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) d)
-  let eR : DGHom k (2 - d) Y X ≃ₗ[k] ∀ i j, DGHom k (2 - dij i j) (D (w j)) (D (v i)) :=
-    (((DGTwistedObject.dgHomEquiv k Y X (2 - d)).trans
-      (DGAdditiveClosure.dgHomEquiv k Y.obj X.obj (2 - d))).trans (LinearEquiv.piComm k _)).trans
-      (LinearEquiv.piCongrRight fun i ↦
-        LinearEquiv.piCongrRight fun j ↦ rightEntryEquiv k G v w hv hw d i j)
-  let P := LinearMap.piPairing fun i : X.obj.ι ↦ LinearMap.piPairing fun j : Y.obj.ι ↦
-    sgn i j • zigzagAlgebraProjectiveDGHomWeightedTracePairing k G c (v i) (w j) (dij i j)
-  convert (inferInstance : (P.compl₁₂ eL.toLinearMap eR.toLinearMap).IsPerfPair)
-  ext f g
-  rw [dgHomPairing_apply, trace_eq_sum_shiftedVertexTrace]
-  simp only [P, eL, eR, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-    LinearMap.piPairing_apply, LinearEquiv.piCongrRight_apply, LinearEquiv.piComm_apply,
-    LinearMap.smul_apply, DGTwistedObject.dgHomEquiv_dgComp, DGAdditiveClosure.dgHomEquiv_dgComp,
-    map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [shiftedVertexTrace_apply, diagonalHomEquiv_comp k G (X.obj.X i) (Y.obj.X j) (v i) (w j)
-      (hv i) (hw j) _ _ (add_sub_cancel d 2), map_zsmul_unit, vertexTrace_apply,
-    coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_apply, castDeg_self,
-    zigzagAlgebraProjectiveDGHomWeightedTracePairing_apply]
-  simp only [sgn, dij, rightEntryEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
-    ← castDeg_def, smul_smul]
-  congr 5
-  simpa only [castDeg_self, dij] using (dgComp_castDeg k (q' := 2 - dij i j) (n := 2) (n' := 2)
-    (by dsimp [dij]; omega) rfl
-    (entryHomEquiv k G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) d
-      (DGAdditiveClosure.dgHomEquiv k X.obj Y.obj d (DGTwistedObject.dgHomEquiv k X Y d f) i j))
-    (entryHomEquiv k G (Y.obj.X j) (X.obj.X i) (w j) (v i) (hw j) (hv i) (2 - d)
-      (DGAdditiveClosure.dgHomEquiv k Y.obj X.obj (2 - d)
-        (DGTwistedObject.dgHomEquiv k Y X (2 - d) g) j i))
-    (by dsimp [dij]; omega)).symm
+  rw [dgHomPairing_eq_piPairing k G c X Y v w hv hw d]
+  infer_instance
 
 /-- Under opposite weights across edges in `X`, `dgHomPairing` satisfies the graded Leibniz rule. -/
 theorem dgHomPairing_d (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)

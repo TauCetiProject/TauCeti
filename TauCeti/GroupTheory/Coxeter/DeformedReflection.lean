@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Coxeter.Graph
 public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Reflection
 public import Mathlib.LinearAlgebra.Pi
 public import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
@@ -18,7 +19,7 @@ import Mathlib.Tactic.Ring
 
 For a unit `q` in a commutative ring, the graph Cartan rows have diagonal coefficient
 `1 + q²` and edge coefficient `q`. Subtracting the value of a row times its vertex vector
-gives a linear automorphism. Its inverse subtracts `q⁻²` times the same row.
+gives a linear automorphism of determinant `-q²`; its inverse subtracts `q⁻²` times the same row.
 
 These transformations satisfy the graph's Artin relations. At `q = -1` the Cartan rows
 are the rows of `SimpleGraph.graphCartanMatrix`, and the transformations are the standard
@@ -209,6 +210,24 @@ theorem deformedReflection_neg_one (i : V) :
   intro x
   rw [deformedReflection_apply, Module.reflection_apply]
   simp
+
+/-- The matrix of `G.deformedReflection q i` in the standard coordinate basis is the rank-one
+perturbation `1 - Matrix.vecMulVec (Pi.single i 1) (G.deformedCartanEntry q i)`. -/
+theorem toMatrix'_deformedReflection (q : Rˣ) (i : V) :
+    LinearMap.toMatrix' (G.deformedReflection q i).toLinearMap =
+      1 - Matrix.vecMulVec (Pi.single i 1) (G.deformedCartanEntry (q : R) i) := by
+  ext a b
+  rw [LinearMap.toMatrix'_apply, LinearEquiv.coe_coe, deformedReflection_apply,
+    deformedCartanRow_single]
+  simp [Matrix.one_apply, Matrix.vecMulVec_apply, Pi.single_apply, eq_comm]
+
+/-- Every deformed simple reflection at unit `q` has determinant `-q²` (`-1` at `q = -1`). -/
+@[simp]
+theorem det_deformedReflection (q : Rˣ) (i : V) :
+    LinearMap.det (G.deformedReflection q i).toLinearMap = -(q : R) ^ 2 := by
+  rw [← LinearMap.det_toMatrix', toMatrix'_deformedReflection, TauCeti.det_one_sub_vecMulVec,
+    dotProduct_single_one, deformedCartanEntry_self]
+  ring
 
 variable [DecidableRel G.Adj]
 

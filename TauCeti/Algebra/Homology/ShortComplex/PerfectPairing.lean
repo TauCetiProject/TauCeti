@@ -109,6 +109,17 @@ theorem homologyPairing_homologyMap {S' : ShortComplex (ModuleCat.{v} R)}
     ← ModuleCat.comp_apply (ShortComplex.cyclesMap ψ), ShortComplex.cyclesMap_i,
     ModuleCat.comp_apply, hφψ]
 
+/-- A linear map into a Baer module `Q` vanishing on `ker g` factors through `g`. -/
+private theorem exists_comp_eq_of_ker_le_ker {M N Q : Type*} [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] [AddCommGroup Q] [Module R Q] (hQ : Module.Baer R Q)
+    (g : M →ₗ[R] N) (f : M →ₗ[R] Q) (hker : LinearMap.ker g ≤ LinearMap.ker f) :
+    ∃ μ : N →ₗ[R] Q, μ.comp g = f := by
+  obtain ⟨μ, hμ⟩ := hQ.extension_property (LinearMap.range g).subtype Subtype.val_injective
+    (((LinearMap.ker g).liftQ f hker).comp g.quotKerEquivRange.symm.toLinearMap)
+  refine ⟨μ, LinearMap.ext fun y ↦ ?_⟩
+  have hy := DFunLike.congr_fun hμ ⟨g y, LinearMap.mem_range_self g y⟩
+  simpa [LinearMap.quotKerEquivRange_symm_apply_image] using hy
+
 private theorem concreteHomologyPairing_bijective_left (hR : Module.Baer R R)
     (p₁ : S.X₁ →ₗ[R] T.X₃ →ₗ[R] R) (p₂ : S.X₂ →ₗ[R] T.X₂ →ₗ[R] R)
     (p₃ : S.X₃ →ₗ[R] T.X₁ →ₗ[R] R) [p₁.IsPerfPair] [p₂.IsPerfPair] [p₃.IsPerfPair]
@@ -118,25 +129,22 @@ private theorem concreteHomologyPairing_bijective_left (hR : Module.Baer R R)
     (hg : ∀ (x : S.X₂) (y : T.X₁), S.g.hom x = 0 → p₂ x (T.f.hom y) = 0) :
     Bijective (concreteHomologyPairing S T p₂ hf hg) := by
   refine ⟨?_, fun φ ↦ ?_⟩
-  · rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]; intro q hq
+  · -- Injectivity: `p₂ c` vanishes on `ker T.g`, so it factors through `T.g` via `hR` and `p₁⁻¹`
+    -- exhibits `c` as a boundary in `S`.
+    rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]; intro q hq
     obtain ⟨c, rfl⟩ := Submodule.mkQ_surjective (LinearMap.range S.moduleCatToCycles) q
     have hc : LinearMap.ker T.g.hom ≤ LinearMap.ker (p₂ c.val) := fun y hy ↦
       DFunLike.congr_fun hq ((LinearMap.range T.moduleCatToCycles).mkQ ⟨y, hy⟩)
-    obtain ⟨μ, hμ⟩ := hR.extension_property (LinearMap.range T.g.hom).subtype Subtype.val_injective
-      (((LinearMap.ker T.g.hom).liftQ (p₂ c.val) hc).comp
-        T.g.hom.quotKerEquivRange.symm.toLinearMap)
-    have hμg (y : T.X₂) : μ (T.g.hom y) = p₂ c.val y := by
-      have hqeq : T.g.hom.quotKerEquivRange.symm (T.g.hom.rangeRestrict y) =
-          Submodule.Quotient.mk y := T.g.hom.quotKerEquivRange.symm_apply_eq.mpr rfl
-      simpa only [LinearMap.comp_apply, Submodule.coe_subtype, LinearMap.rangeRestrict,
-        LinearMap.codRestrict_apply, LinearEquiv.coe_coe, hqeq, Submodule.liftQ_apply] using
-        DFunLike.congr_fun hμ (T.g.hom.rangeRestrict y)
+    obtain ⟨μ, hμ⟩ := exists_comp_eq_of_ker_le_ker hR T.g.hom (p₂ c.val) hc
     refine (Submodule.Quotient.mk_eq_zero (LinearMap.range S.moduleCatToCycles)).mpr
       ⟨p₁.toPerfPair.symm μ, Subtype.ext <| (LinearMap.IsPerfPair.bijective_left p₂).injective <|
         LinearMap.ext fun y ↦ ?_⟩
-    rw [moduleCatToCycles, LinearMap.codRestrict_apply, h₁, ← hμg]
+    rw [moduleCatToCycles, LinearMap.codRestrict_apply, h₁, ← DFunLike.congr_fun hμ y,
+      LinearMap.comp_apply]
     exact DFunLike.congr_fun (p₁.apply_symm_toPerfPair_self μ) (T.g.hom y)
-  · let φ₀ := φ.comp (LinearMap.range T.moduleCatToCycles).mkQ
+  · -- Surjectivity: extend `φ` from `ker T.g` to `Φ : T.X₂ →ₗ[R] R` via `hR`; vanishing of `Φ` on
+    -- `range T.f` places `p₂⁻¹ Φ` in `ker S.g` via `p₃`.
+    let φ₀ := φ.comp (LinearMap.range T.moduleCatToCycles).mkQ
     obtain ⟨Φ, hΦ⟩ := hR.extension_property (LinearMap.ker T.g.hom).subtype Subtype.val_injective φ₀
     let x : S.X₂ := p₂.toPerfPair.symm Φ
     have hxΦ : p₂ x = Φ := p₂.apply_symm_toPerfPair_self Φ

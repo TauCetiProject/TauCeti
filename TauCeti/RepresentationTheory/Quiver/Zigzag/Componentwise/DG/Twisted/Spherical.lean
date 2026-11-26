@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
 public import TauCeti.CategoryTheory.DG.Spherical
-public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
+public import TauCeti.GroupTheory.Coxeter.DeformedReflection
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.Twisted.Duality
 
 /-!
@@ -21,8 +21,9 @@ cohomology multiplicatively with zigzag algebra corners (`vertexObjectHomologyEq
 `G`, every `vertexObject k G i` and its shifts are `2`-spherical, any `SimpleGraph.pathGraph m ≃g G`
 gives an `A_m`-configuration, and `eulerMatrix` coincides with the field-free Cartan matrix
 `SimpleGraph.graphCartanMatrix G ℤ = (2 : ℤ) • 1 - G.adjMatrix ℤ`
-(`eulerMatrix_eq_graphCartanMatrix`), linking numerical Seidel–Thomas twists directly to
-`SimpleGraph.graphCartanReflectionMatrix` in `TauCeti.Combinatorics.SimpleGraph.CartanReflection`.
+(`eulerMatrix_eq_graphCartanMatrix`), identifying numerical Seidel–Thomas twists with
+`SimpleGraph.deformedReflection G (-1 : ℤˣ)`
+(`deformedReflection_neg_one_single_eq_sub_dgEulerPairing`).
 
 ## References
 
@@ -56,7 +57,9 @@ variable [Finite V] [CommRing k]
 
 /-- The canonical DG functor embedding the zero-DG vertex subcategory `𝒱` into
 `ZigzagProjectiveTwistedClosure k G` as unshifted one-summand objects with zero twist. -/
-def vertexEmbedding :
+-- Exposed so `(vertexEmbedding k G).obj` reduces definitionally to the three-step composite object
+-- in `dgMap_vertexEmbedding` and `vertexObjectDGHomEquiv`.
+@[expose] def vertexEmbedding :
     EnrichedFunctor (CochainComplex (ModuleCat.{u} k) ℤ) 𝒱 (ZigzagProjectiveTwistedClosure k G) :=
   ((DGShiftClosure.ι k).comp (CochainComplex (ModuleCat.{u} k) ℤ)
     (DGAdditiveClosure.embedding k)).comp (CochainComplex (ModuleCat.{u} k) ℤ)
@@ -92,33 +95,32 @@ def vertexObjectDGHomEquiv (i j : V) (d : ℤ) :
       ((DGShiftClosure.ι k).obj w) d)).trans
     (DGTwistedObject.embeddingHomEquiv k _ _ d)).symm
 
+/-- `vertexEmbedding` acts on homogeneous morphisms by composing the three embedding
+equivalences. -/
+@[simp] theorem dgMap_vertexEmbedding {u w : 𝒱} (d : ℤ) (g : DGHom k d u w) :
+    (vertexEmbedding k G).dgMap d g =
+      DGTwistedObject.embeddingHomEquiv k _ _ d
+        (DGAdditiveClosure.embeddingHomEquiv k _ _ d (DGShiftClosure.ιHomEquiv k u w d g)) := by
+  unfold vertexEmbedding
+  exact (((DGShiftClosure.ι k (C := 𝒱)).comp (CochainComplex (ModuleCat.{u} k) ℤ)
+    (DGAdditiveClosure.embedding k)).comp_dgMap (DGTwistedObject.embedding k) g).trans <|
+    (congrArg ((DGTwistedObject.embedding k).dgMap d)
+      ((DGShiftClosure.ι k (C := 𝒱)).comp_dgMap (DGAdditiveClosure.embedding k) g)).trans <|
+      (DGTwistedObject.dgMap_embedding k _).trans <|
+        congrArg (DGTwistedObject.embeddingHomEquiv k _ _ d) <|
+          (DGAdditiveClosure.dgMap_embedding k _).trans <|
+            congrArg (DGAdditiveClosure.embeddingHomEquiv k _ _ d) (DGShiftClosure.dgMap_ι k g)
+
 /-- The inverse of `vertexObjectDGHomEquiv` is the action of `vertexEmbedding` on homogeneous
 morphisms. -/
 @[simp] theorem vertexObjectDGHomEquiv_symm_apply (i j : V) (d : ℤ)
     (g : DGHom k d (D i) (D j)) :
     (vertexObjectDGHomEquiv k G i j d).symm g =
       (vertexEmbedding k G).dgMap (X := ⟨D i, i, rfl⟩) (Y := ⟨D j, j, rfl⟩) d g := by
-  let u : 𝒱 := ⟨D i, i, rfl⟩; let w : 𝒱 := ⟨D j, j, rfl⟩
-  let g' : DGHom k d u w := g
-  have hcomp : (vertexEmbedding k G).dgMap (X := u) (Y := w) d g' =
-      (DGTwistedObject.embedding k).dgMap d
-        ((DGAdditiveClosure.embedding k).dgMap d
-          ((DGShiftClosure.ι k).dgMap (X := u) (Y := w) d g')) := by
-    unfold vertexEmbedding
-    exact (((DGShiftClosure.ι k (C := 𝒱)).comp (CochainComplex (ModuleCat.{u} k) ℤ)
-      (DGAdditiveClosure.embedding k)).comp_dgMap (DGTwistedObject.embedding k) g').trans
-      (congrArg ((DGTwistedObject.embedding k).dgMap d)
-        ((DGShiftClosure.ι k (C := 𝒱)).comp_dgMap (DGAdditiveClosure.embedding k) g'))
-  have hstep : (DGTwistedObject.embedding k).dgMap d
-        ((DGAdditiveClosure.embedding k).dgMap d
-          ((DGShiftClosure.ι k).dgMap (X := u) (Y := w) d g')) =
-      (vertexObjectDGHomEquiv k G i j d).symm g :=
-    (DGTwistedObject.dgMap_embedding k _).trans
-      (congrArg (DGTwistedObject.embeddingHomEquiv k _ _ d)
-        ((DGAdditiveClosure.dgMap_embedding k _).trans
-          (congrArg (DGAdditiveClosure.embeddingHomEquiv k _ _ d)
-            (DGShiftClosure.dgMap_ι k g'))))
-  exact (hcomp.trans hstep).symm
+  -- `DGFullSubcategory.dgHomComplex_eq` identifies `DGHom k d (⟨D i, i, rfl⟩ : 𝒱) ⟨D j, j, rfl⟩`
+  -- with `DGHom k d (D i) (D j)`, and `vertexObject` is exposed as `(vertexEmbedding k G).obj …`.
+  simp only [dgMap_vertexEmbedding]
+  rfl
 
 /-- `vertexObjectDGHomEquiv` commutes with homogeneous DG composition `TauCeti.dgComp`. -/
 theorem vertexObjectDGHomEquiv_dgComp (i j l : V) {p q n : ℤ} (h : p + q = n)
@@ -126,27 +128,16 @@ theorem vertexObjectDGHomEquiv_dgComp (i j l : V) {p q n : ℤ} (h : p + q = n)
     (g : DGHom k q (vertexObject k G j) (vertexObject k G l)) :
     vertexObjectDGHomEquiv k G i l n (dgComp k f g h) =
       dgComp k (vertexObjectDGHomEquiv k G i j p f) (vertexObjectDGHomEquiv k G j l q g) h := by
-  let u : 𝒱 := ⟨D i, i, rfl⟩; let v : 𝒱 := ⟨D j, j, rfl⟩; let w : 𝒱 := ⟨D l, l, rfl⟩
-  let f' : DGHom k p ((vertexEmbedding k G).obj u) ((vertexEmbedding k G).obj v) := f
-  let g' : DGHom k q ((vertexEmbedding k G).obj v) ((vertexEmbedding k G).obj w) := g
-  let f₀ : DGHom k p (D i) (D j) := vertexObjectDGHomEquiv k G i j p f
-  let g₀ : DGHom k q (D j) (D l) := vertexObjectDGHomEquiv k G j l q g
-  have hf : (vertexEmbedding k G).dgMap (X := u) (Y := v) p f₀ = f' :=
-    (vertexObjectDGHomEquiv_symm_apply k G i j p f₀).symm.trans
-      ((vertexObjectDGHomEquiv k G i j p).symm_apply_apply f)
-  have hg : (vertexEmbedding k G).dgMap (X := v) (Y := w) q g₀ = g' :=
-    (vertexObjectDGHomEquiv_symm_apply k G j l q g₀).symm.trans
-      ((vertexObjectDGHomEquiv k G j l q).symm_apply_apply g)
-  have hmid : dgComp k f' g' h =
-      (vertexEmbedding k G).dgMap (X := u) (Y := w) n
-        (dgComp k (X := D i) (Y := D j) (Z := D l) f₀ g₀ h) :=
-    (congrArg₂ (fun a b ↦ dgComp k a b h) hf.symm hg.symm).trans <|
-      (((vertexEmbedding k G).dgMap_dgComp (X := u) (Y := v) (Z := w) f₀ g₀ h).symm).trans
-        (congrArg ((vertexEmbedding k G).dgMap (X := u) (Y := w) n)
-          (DGFullSubcategory.dgComp_eq k (X := u) (Y := v) (Z := w) f₀ g₀ h))
+  obtain ⟨f₀, rfl⟩ := (vertexObjectDGHomEquiv k G i j p).symm.surjective f
+  obtain ⟨g₀, rfl⟩ := (vertexObjectDGHomEquiv k G j l q).symm.surjective g
+  rw [LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
   apply (vertexObjectDGHomEquiv k G i l n).symm.injective
-  exact ((vertexObjectDGHomEquiv k G i l n).symm_apply_apply _).trans
-    (hmid.trans (vertexObjectDGHomEquiv_symm_apply k G i l n _).symm)
+  simp only [LinearEquiv.symm_apply_apply, vertexObjectDGHomEquiv_symm_apply,
+    ← DGFullSubcategory.dgComp_eq k
+      (X := (⟨D i, i, rfl⟩ : 𝒱)) (Y := (⟨D j, j, rfl⟩ : 𝒱)) (Z := (⟨D l, l, rfl⟩ : 𝒱))]
+  exact ((vertexEmbedding k G).dgMap_dgComp
+    (X := (⟨D i, i, rfl⟩ : 𝒱)) (Y := (⟨D j, j, rfl⟩ : 𝒱)) (Z := (⟨D l, l, rfl⟩ : 𝒱))
+    f₀ g₀ h).symm
 
 /-- Canonical cohomology between `vertexObject k G i` and `vertexObject k G j` in degree `d`
 identifies linearly with the signed graded corner `e_i Z e_j ∩ Z_d` of the zigzag algebra. -/
@@ -216,7 +207,8 @@ private theorem fullSubcategory_dgHomologyClass_eq (i j : V) (d : ℤ)
     vertexObjectHomologyEquivCorner k G i j d (dgHomologyClass k f hf) =
       zigzagAlgebraProjectiveDGHomEquivCornerOfDegree k G i j d
         (vertexObjectDGHomEquiv k G i j d f) := by
-  -- First unpack the quasi-equivalence and full-subcategory steps on `dgHomologyClass`.
+  -- First unpack the quasi-equivalence and full-subcategory steps on `dgHomologyClass`, unfolding
+  -- semireducible `vertexObject` so `rw` matches `(vertexEmbedding k G).obj …`.
   rw [vertexObjectHomologyEquivCorner_apply]
   dsimp only [vertexObject] at f hf ⊢
   rw [homologyLinearEquiv_vertexEmbedding_symm_dgHomologyClass k G i j d f hf,
@@ -230,7 +222,10 @@ private theorem fullSubcategory_dgHomologyClass_eq (i j : V) (d : ℤ)
   rw [hclass, zigzagAlgebraProjectiveHomologyEquivCorner_homologyπ, hz]
   apply Subtype.ext
   rw [LinearEquiv.coe_ofEq_apply, coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_apply]
-  congr 2
+  -- Both sides apply `zigzagAlgebraProjectiveDGHomEquivCorner k G i j (-d)` to `castDeg` along
+  -- proof-irrelevant witnesses `(neg_neg d).symm` and `(Int.neg_neg d).symm` of `d = - -d`.
+  exact congrArg (fun g ↦ (zigzagAlgebraProjectiveDGHomEquivCorner k G i j (-d) g :
+    AlgCat.carrier (zigzagAlgebra k G))) rfl
 
 /-- `vertexObjectHomologyEquivCorner` intertwines graded cohomology composition
 `TauCeti.dgHomologyComp` with multiplication in the zigzag algebra. -/
@@ -377,7 +372,20 @@ theorem eulerMatrix_eq_graphCartanMatrix [DecidableEq V] [DecidableRel G.Adj] :
     eulerMatrix k G = G.graphCartanMatrix ℤ := by
   ext i j
   rw [eulerMatrix_apply, dgEulerPairing_vertexObject, SimpleGraph.graphCartanMatrix_apply]
-  congr
+  -- Reconcile `Classical` decidability in `dgEulerPairing_vertexObject` with the given instances.
+  by_cases hij : i = j <;> by_cases hadj : G.Adj i j <;> simp [hij, hadj]
+
+/-- At `q = -1`, `SimpleGraph.deformedReflection G (-1 : ℤˣ) r` acts on the standard basis vector
+`Pi.single j 1` by the Seidel–Thomas numerical twist formula
+`[E_j] ↦ [E_j] - χ(E_r, E_j) [E_r]`. -/
+theorem deformedReflection_neg_one_single_eq_sub_dgEulerPairing [Fintype V] [DecidableEq V]
+    (r j : V) :
+    G.deformedReflection (-1 : ℤˣ) r (Pi.single j 1) =
+      Pi.single j 1 -
+        dgEulerPairing k (vertexObject k G r) (vertexObject k G j) • Pi.single r 1 := by
+  let _ := Classical.decRel G.Adj
+  rw [G.deformedReflection_apply, Units.val_neg, Units.val_one, G.deformedCartanRow_neg_one_single,
+    ← eulerMatrix_eq_graphCartanMatrix (k := k), eulerMatrix_apply]
 
 open scoped Classical Matrix in
 /-- `eulerMatrix k G` is symmetric (`(eulerMatrix k G)ᵀ = eulerMatrix k G`). -/
