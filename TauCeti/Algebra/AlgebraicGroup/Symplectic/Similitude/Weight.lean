@@ -33,7 +33,7 @@ This file records the arithmetic of this lattice:
 The roots, coroots and root order are not built anew: they are those of the based root datum
 `TauCeti.gspRootDatum`, `TauCeti.gspBase` of `GSp₂g`, which lives on the lattice
 `(ULift (Fin g) →₀ ℤ) × ℤ` with the multiplier as last coordinate. The equivalence
-`TauCeti.SymplecticSimilitude.toRootLattice` transports them to `X_g`.
+`TauCeti.SymplecticSimilitude.toGspCharacterLattice` transports them to `X_g`.
 
 ## Main declarations
 
@@ -45,7 +45,7 @@ The roots, coroots and root order are not built anew: they are those of the base
 * `TauCeti.SymplecticSimilitude.coverPullback`: the pullback along the central cover, with
   `TauCeti.SymplecticSimilitude.coverPullback_eq_iff` describing its fibres: it is injective, its
   image is cut out by a parity condition, and its inverse recovers `m = (d - ∑ uᵢ) / 2`.
-* `TauCeti.SymplecticSimilitude.toRootLattice`: the comparison with the lattice of
+* `TauCeti.SymplecticSimilitude.toGspCharacterLattice`: the comparison with the lattice of
   `TauCeti.gspRootDatum`.
 * `TauCeti.SymplecticSimilitude.simpleRoot`: the simple roots `eᵢ - eᵢ₊₁` and `2e_g - e_t`.
 * `TauCeti.SymplecticSimilitude.mem_dominantWeights_iff_mem_dominantChamber`: the dominant
@@ -205,7 +205,7 @@ theorem mem_range_coverPullback {x : (Fin g → ℤ) × ℤ} :
 
 /-- **The comparison with the lattice of the root datum** `TauCeti.gspRootDatum`: the weight
 `(m, u)` corresponds to `(u, m)`, the multiplier coordinate written last. -/
-noncomputable def toRootLattice (g : ℕ) : Weight g ≃+ (ULift.{0} (Fin g) →₀ ℤ) × ℤ where
+noncomputable def toGspCharacterLattice (g : ℕ) : Weight g ≃+ (ULift.{0} (Fin g) →₀ ℤ) × ℤ where
   toFun wt := (Finsupp.equivFunOnFinite.symm fun i ↦ wt.2 i.down, wt.1)
   invFun x := (x.2, fun i ↦ x.1 (ULift.up i))
   left_inv wt := by simp
@@ -215,31 +215,31 @@ noncomputable def toRootLattice (g : ℕ) : Weight g ≃+ (ULift.{0} (Fin g) →
     ext <;> simp
 
 @[simp]
-theorem toRootLattice_apply_fst_apply (wt : Weight g) (i : ULift.{0} (Fin g)) :
-    (toRootLattice g wt).1 i = wt.2 i.down :=
+theorem toGspCharacterLattice_apply_fst_apply (wt : Weight g) (i : ULift.{0} (Fin g)) :
+    (toGspCharacterLattice g wt).1 i = wt.2 i.down :=
   (rfl)
 
 @[simp]
-theorem toRootLattice_apply_snd (wt : Weight g) : (toRootLattice g wt).2 = wt.1 :=
+theorem toGspCharacterLattice_apply_snd (wt : Weight g) : (toGspCharacterLattice g wt).2 = wt.1 :=
   (rfl)
 
 @[simp]
-theorem toRootLattice_symm_apply (x : (ULift.{0} (Fin g) →₀ ℤ) × ℤ) :
-    (toRootLattice g).symm x = (x.2, fun i ↦ x.1 (ULift.up i)) :=
+theorem toGspCharacterLattice_symm_apply (x : (ULift.{0} (Fin g) →₀ ℤ) × ℤ) :
+    (toGspCharacterLattice g).symm x = (x.2, fun i ↦ x.1 (ULift.up i)) :=
   (rfl)
 
 /-- **The simple roots**: `eᵢ - eᵢ₊₁` at the nodes `i` with `i + 1 < g`, and `2eᵢ - e_t` at the
 last node `i = g - 1` (nodes are numbered from `0`). They are the simple roots of the base
 `TauCeti.gspBase`, transported to `X_g`. -/
 noncomputable def simpleRoot (i : Fin g) : Weight g :=
-  (toRootLattice g).symm
+  (toGspCharacterLattice g).symm
     ((gspRootDatum.{0} g).root (Symplectic.diagonalSimpleRootIndex g i))
 
 @[simp]
-theorem toRootLattice_simpleRoot (i : Fin g) :
-    toRootLattice g (simpleRoot i) =
+theorem toGspCharacterLattice_simpleRoot (i : Fin g) :
+    toGspCharacterLattice g (simpleRoot i) =
       (gspRootDatum.{0} g).root (Symplectic.diagonalSimpleRootIndex g i) :=
-  (toRootLattice g).apply_symm_apply _
+  (toGspCharacterLattice g).apply_symm_apply _
 
 /-- Before the last node, the simple root is `eᵢ - eᵢ₊₁`. -/
 theorem simpleRoot_of_lt (i : Fin g) (h : (i : ℕ) + 1 < g) :
@@ -258,16 +258,9 @@ theorem simpleRoot_of_lt (i : Fin g) (h : (i : ℕ) + 1 < g) :
 /-- At the last node, the simple root is `2e_g - e_t`. -/
 theorem simpleRoot_of_not_lt (i : Fin g) (h : ¬(i : ℕ) + 1 < g) :
     simpleRoot i = 2 • standardWeight i - multiplierWeight g := by
-  rw [simpleRoot, AddEquiv.symm_apply_eq]
-  ext j
-  · simp [Symplectic.diagonalSimpleRootIndex_of_not_lt i h,
-      Symplectic.diagonalRootDatum_root_positiveLong, Finsupp.single_apply, Pi.single_apply,
-      ULift.ext_iff, eq_comm]
-  · have := GeneralSpin.two_mul_multiplierCoordinate.{0} g
-      (Symplectic.diagonalSimpleRootIndex g i)
-    simp [Symplectic.diagonalSimpleRootIndex_of_not_lt i h,
-      Symplectic.diagonalRootDatum_root_positiveLong, SplitTorus.dotPairing_apply] at this ⊢
-    omega
+  rw [simpleRoot, AddEquiv.symm_apply_eq, Symplectic.diagonalSimpleRootIndex_of_not_lt i h,
+    gspRootDatum_root_positiveLong]
+  ext <;> simp [Finsupp.single_apply, Pi.single_apply, ULift.ext_iff, eq_comm]
 
 /-- Every simple root has central degree `0`: the centre acts trivially on the adjoint
 representation. -/
@@ -282,18 +275,20 @@ theorem centralDegree_simpleRoot (i : Fin g) : centralDegree g (simpleRoot i) = 
 
 /-- Before the last node, the simple coroot of `TauCeti.gspBase` at node `i` pairs `(m, u)` to
 `uᵢ - uᵢ₊₁`. -/
-theorem coroot'_diagonalSimpleRootIndex_toRootLattice_of_lt (i : Fin g) (h : (i : ℕ) + 1 < g)
-    (wt : Weight g) :
-    (gspRootDatum.{0} g).coroot' (Symplectic.diagonalSimpleRootIndex g i) (toRootLattice g wt) =
+theorem coroot'_diagonalSimpleRootIndex_toGspCharacterLattice_of_lt (i : Fin g)
+    (h : (i : ℕ) + 1 < g) (wt : Weight g) :
+    (gspRootDatum.{0} g).coroot' (Symplectic.diagonalSimpleRootIndex g i)
+        (toGspCharacterLattice g wt) =
       wt.2 i - wt.2 ⟨i + 1, h⟩ := by
   simp [Symplectic.diagonalSimpleRootIndex_of_lt i h,
     Symplectic.diagonalRootDatum_coroot_difference, SplitTorus.dotPairing_apply,
     Finsupp.sum_fintype, Pi.single_apply, mul_sub, Finset.sum_sub_distrib]
 
 /-- At the last node, the simple coroot of `TauCeti.gspBase` pairs `(m, u)` to `u_g`. -/
-theorem coroot'_diagonalSimpleRootIndex_toRootLattice_of_not_lt (i : Fin g)
+theorem coroot'_diagonalSimpleRootIndex_toGspCharacterLattice_of_not_lt (i : Fin g)
     (h : ¬(i : ℕ) + 1 < g) (wt : Weight g) :
-    (gspRootDatum.{0} g).coroot' (Symplectic.diagonalSimpleRootIndex g i) (toRootLattice g wt) =
+    (gspRootDatum.{0} g).coroot' (Symplectic.diagonalSimpleRootIndex g i)
+        (toGspCharacterLattice g wt) =
       wt.2 i := by
   simp [Symplectic.diagonalSimpleRootIndex_of_not_lt i h,
     Symplectic.diagonalRootDatum_coroot_positiveLong, SplitTorus.dotPairing_apply,
@@ -303,7 +298,7 @@ theorem coroot'_diagonalSimpleRootIndex_toRootLattice_of_not_lt (i : Fin g)
 dominant exactly when every simple coroot is nonnegative on it. -/
 theorem mem_dominantWeights_iff_mem_dominantChamber {wt : Weight g} :
     wt ∈ dominantWeights g ↔
-      toRootLattice g wt ∈ (gspRootDatum.{0} g).dominantChamber (gspBase.{0} g) := by
+      toGspCharacterLattice g wt ∈ (gspRootDatum.{0} g).dominantChamber (gspBase.{0} g) := by
   rw [RootPairing.mem_dominantChamber, mem_dominantWeights]
   simp only [mem_gspBase_support, forall_exists_index, forall_apply_eq_imp_iff]
   cases g with
@@ -313,46 +308,38 @@ theorem mem_dominantWeights_iff_mem_dominantChamber {wt : Weight g} :
     constructor
     · rintro ⟨hanti, hnonneg⟩ i
       by_cases h : (i : ℕ) + 1 < n + 1
-      · rw [coroot'_diagonalSimpleRootIndex_toRootLattice_of_lt i h, sub_nonneg]
+      · rw [coroot'_diagonalSimpleRootIndex_toGspCharacterLattice_of_lt i h, sub_nonneg]
         exact hanti (Fin.mk_le_mk.mpr (Nat.le_succ i))
-      · rw [coroot'_diagonalSimpleRootIndex_toRootLattice_of_not_lt i h]
+      · rw [coroot'_diagonalSimpleRootIndex_toGspCharacterLattice_of_not_lt i h]
         exact hnonneg i
     · intro hc
       have hanti : Antitone wt.2 := by
         refine Fin.antitone_iff_succ_le.mpr fun i ↦ ?_
         have := hc i.castSucc
-        rw [coroot'_diagonalSimpleRootIndex_toRootLattice_of_lt _ (by simp)] at this
+        rw [coroot'_diagonalSimpleRootIndex_toGspCharacterLattice_of_lt _ (by simp)] at this
         exact sub_nonneg.mp this
       refine ⟨hanti, fun i ↦ ?_⟩
       have := hc (Fin.last n)
-      rw [coroot'_diagonalSimpleRootIndex_toRootLattice_of_not_lt _ hlast] at this
+      rw [coroot'_diagonalSimpleRootIndex_toGspCharacterLattice_of_not_lt _ hlast] at this
       exact this.trans (hanti (Fin.le_last i))
 
 /-! ### The root order -/
-
-/-- The simple roots of `TauCeti.gspBase` are indexed bijectively by the nodes. -/
-private theorem bijOn_diagonalSimpleRootIndex :
-    Set.BijOn (Symplectic.diagonalSimpleRootIndex g) Set.univ (gspBase.{0} g).support :=
-  ⟨fun i _ ↦ (mem_gspBase_support g _).mpr ⟨i, rfl⟩,
-    (Symplectic.diagonalSimpleRootIndex_injective g).injOn,
-    fun p hp ↦ by
-      obtain ⟨i, rfl⟩ := (mem_gspBase_support g p).mp hp
-      exact ⟨i, trivial, rfl⟩⟩
 
 /-- **The root order** `μ ≤ λ` on `X_g`: `λ - μ` is a natural combination of the simple roots
 (`TauCeti.SymplecticSimilitude.rootLE_iff_exists_nat`). It is the order `RootPairing.rootLE` of
 the base `TauCeti.gspBase` of `TauCeti.gspRootDatum`, transported to `X_g`. -/
 def rootLE (μ lam : Weight g) : Prop :=
-  (gspRootDatum.{0} g).rootLE (gspBase.{0} g) (toRootLattice g μ) (toRootLattice g lam)
+  (gspRootDatum.{0} g).rootLE (gspBase.{0} g) (toGspCharacterLattice g μ)
+    (toGspCharacterLattice g lam)
 
 /-- `μ ≤ λ` in the root order exactly when `λ - μ = ∑ nᵢ αᵢ` with natural coefficients `nᵢ`. -/
 theorem rootLE_iff_exists_nat {μ lam : Weight g} :
     rootLE μ lam ↔ ∃ n : Fin g → ℕ, lam - μ = ∑ i, n i • simpleRoot i := by
   rw [rootLE, RootPairing.rootLE_iff_sub_mem_posRootCone,
-    mem_posRootCone_iff_exists_nat_of_bijOn _ _ bijOn_diagonalSimpleRootIndex]
+    mem_posRootCone_iff_exists_nat_of_bijOn _ _ (bijOn_diagonalSimpleRootIndex_gspBase g)]
   refine exists_congr fun n ↦ ?_
-  rw [← map_sub, ← (toRootLattice g).injective.eq_iff, map_sum]
-  simp only [map_nsmul, toRootLattice_simpleRoot]
+  rw [← map_sub, ← (toGspCharacterLattice g).injective.eq_iff, map_sum]
+  simp only [map_nsmul, toGspCharacterLattice_simpleRoot]
 
 /-- The root order is reflexive. -/
 @[simp]
@@ -367,7 +354,7 @@ theorem rootLE_trans {μ ν lam : Weight g} (h₁ : rootLE μ ν) (h₂ : rootLE
 /-- The root order is antisymmetric. -/
 theorem rootLE_antisymm {μ lam : Weight g} (h₁ : rootLE μ lam) (h₂ : rootLE lam μ) :
     μ = lam :=
-  (toRootLattice g).injective (RootPairing.rootLE_antisymm _ _ h₁ h₂)
+  (toGspCharacterLattice g).injective (RootPairing.rootLE_antisymm _ _ h₁ h₂)
 
 /-- **Comparable weights have the same central degree**, since every simple root has central
 degree `0`. For instance `0` and `e_t` are incomparable. -/

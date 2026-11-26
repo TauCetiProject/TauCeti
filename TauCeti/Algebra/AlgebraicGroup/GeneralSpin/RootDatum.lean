@@ -289,6 +289,16 @@ theorem mem_gspBase_support (p : GLSymplecticFin.RootSubgroupIndex n) :
   rw [gspBase, RootPairing.Base.flip_support]
   exact mem_gspinOddBase_support n p
 
+/-- The nodes biject onto the simple roots of `GSp₂ₙ` via
+`TauCeti.Symplectic.diagonalSimpleRootIndex`. -/
+theorem bijOn_diagonalSimpleRootIndex_gspBase :
+    Set.BijOn (Symplectic.diagonalSimpleRootIndex n) Set.univ (gspBase.{u} n).support :=
+  ⟨fun i _ ↦ (mem_gspBase_support n _).mpr ⟨i, rfl⟩,
+    (Symplectic.diagonalSimpleRootIndex_injective n).injOn,
+    fun p hp ↦ by
+      obtain ⟨i, rfl⟩ := (mem_gspBase_support n p).mp hp
+      exact ⟨i, trivial, rfl⟩⟩
+
 end Odd
 
 /-! ### The even general spin group and the general special orthogonal group -/
