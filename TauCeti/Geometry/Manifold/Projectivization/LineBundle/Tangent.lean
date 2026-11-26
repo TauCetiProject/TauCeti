@@ -53,7 +53,8 @@ transformation of a linear automorphism `A` of `𝕜ᵐ⁺²` with `A ∘ ι = f
 the first two coordinates (`LinearMap.exists_linearEquiv_comp_eq_of_injective`). The differential
 of that transformation identifies `ℓ* Tℙᵐ⁺¹` with `ℓ'* Tℙᵐ⁺¹`
 (`Diffeomorph.pullbackTangentDiffeomorph`), so `ℓ'* Tℙᵐ⁺¹` is `𝒪(2) ⊕ 𝒪(1)ᵐ` as well
-(`Projectivization.lineTangentDiffeomorph`, `Projectivization.exists_contMDiff_lineTangentEquiv`).
+(`Projectivization.lineTangentDiffeomorph`,
+`Projectivization.exists_continuousLinearEquiv_contMDiff_totalSpace_pullback_tangentSpace`).
 
 Combined with the vanishing `H¹(ℂP¹, 𝒪(k)) = 0` for `k ≥ -1`, the splitting
 `ℓ'* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` gives `H¹(ℂP¹, ℓ'* TℂPⁿ) = 0` along every line `ℓ'`: the linearized
@@ -72,8 +73,9 @@ Cauchy–Riemann operator along `ℓ'` is onto, so every line is regular as a ho
 * `Projectivization.lineTangentDiffeomorph`: the analytic diffeomorphism of total spaces
   `ℓ'* Tℙᵐ⁺¹ ≃ 𝒪(2) ⊕ 𝒪(1)ᵐ` over `ℙ¹` along the image `ℓ'` of the coordinate line under a
   projective linear transformation.
-* `Projectivization.exists_contMDiff_lineTangentEquiv`: along every line `ℓ'` of `ℙᵐ⁺¹`, the
-  bundles `ℓ'* Tℙᵐ⁺¹` and `𝒪(2) ⊕ 𝒪(1)ᵐ` are isomorphic analytic vector bundles.
+* `Projectivization.exists_continuousLinearEquiv_contMDiff_totalSpace_pullback_tangentSpace`: along
+  every line `ℓ'` of `ℙᵐ⁺¹`, the bundles `ℓ'* Tℙᵐ⁺¹` and `𝒪(2) ⊕ 𝒪(1)ᵐ` are isomorphic analytic
+  vector bundles.
 
 ## References
 
@@ -465,8 +467,29 @@ noncomputable def lineTangentDiffeomorph (A : (Fin (m + 2) → 𝕜) ≃ₗ[𝕜
     (contMDiff_coordLine m n) ℓ' hℓ').symm.trans
     (coordLineTangentDiffeomorph n)
 
-/-- The isomorphism `ℓ'* Tℙᵐ⁺¹ ≃ 𝒪(2) ⊕ 𝒪(1)ᵐ` lies over the identity of `ℙ¹`. -/
+/-- **The isomorphism `ℓ'* Tℙᵐ⁺¹ ≃ 𝒪(2) ⊕ 𝒪(1)ᵐ`.** A tangent vector of `ℙᵐ⁺¹` at `ℓ' x` goes to
+`Projectivization.coordLineTangentEquiv` of its preimage, under the differential of the projective
+transformation of `A`, at the point `ℓ x` of the coordinate line. -/
 @[simp]
+theorem lineTangentDiffeomorph_apply (A : (Fin (m + 2) → 𝕜) ≃ₗ[𝕜] Fin (m + 2) → 𝕜)
+    (ℓ' : C^ω⟮𝓘(𝕜, Fin 1 → 𝕜), ℙ 𝕜 (Fin 2 → 𝕜); 𝓘(𝕜, Fin (m + 1) → 𝕜),
+      ℙ 𝕜 (Fin (m + 2) → 𝕜)⟯)
+    (hℓ' : ∀ x, ℓ' x = mapDiffeomorph A ω (coordLine m x)) (n : ℕ∞ω)
+    (q : TotalSpace (Fin (m + 1) → 𝕜)
+      ((ℓ' : ℙ 𝕜 (Fin 2 → 𝕜) → ℙ 𝕜 (Fin (m + 2) → 𝕜)) *ᵖ
+        (TangentSpace 𝓘(𝕜, Fin (m + 1) → 𝕜)))) :
+    lineTangentDiffeomorph A ℓ' hℓ' n q =
+      ⟨q.proj, coordLineTangentEquiv q.proj
+        (((mapDiffeomorph A ω).mfderivToContinuousLinearEquiv (by simp)
+          (coordLine m q.proj)).symm q.snd)⟩ := by
+  rw [lineTangentDiffeomorph, Diffeomorph.coe_trans, Function.comp_apply]
+  rw [Diffeomorph.pullbackTangentDiffeomorph_symm_apply (mapDiffeomorph A ω) le_top
+    coordLineContMDiffMap (contMDiff_coordLine m n) ℓ' hℓ' q, coordLineTangentDiffeomorph_apply]
+  -- Both sides apply `(dΦ)⁻¹` and then `coordLineTangentEquiv` at the point `coordLine m q.proj`,
+  -- which is the bundled coordinate line at `q.proj` (`coe_coordLineContMDiffMap`).
+  rfl
+
+/-- The isomorphism `ℓ'* Tℙᵐ⁺¹ ≃ 𝒪(2) ⊕ 𝒪(1)ᵐ` lies over the identity of `ℙ¹`. -/
 theorem proj_lineTangentDiffeomorph (A : (Fin (m + 2) → 𝕜) ≃ₗ[𝕜] Fin (m + 2) → 𝕜)
     (ℓ' : C^ω⟮𝓘(𝕜, Fin 1 → 𝕜), ℙ 𝕜 (Fin 2 → 𝕜); 𝓘(𝕜, Fin (m + 1) → 𝕜),
       ℙ 𝕜 (Fin (m + 2) → 𝕜)⟯)
@@ -475,15 +498,13 @@ theorem proj_lineTangentDiffeomorph (A : (Fin (m + 2) → 𝕜) ≃ₗ[𝕜] Fin
       ((ℓ' : ℙ 𝕜 (Fin 2 → 𝕜) → ℙ 𝕜 (Fin (m + 2) → 𝕜)) *ᵖ
         (TangentSpace 𝓘(𝕜, Fin (m + 1) → 𝕜)))) :
     (lineTangentDiffeomorph A ℓ' hℓ' n q).proj = q.proj := by
-  rw [lineTangentDiffeomorph, Diffeomorph.coe_trans, Function.comp_apply,
-    proj_coordLineTangentDiffeomorph]
-  rw [Diffeomorph.pullbackTangentDiffeomorph_symm_apply (mapDiffeomorph A ω) le_top
-    coordLineContMDiffMap (contMDiff_coordLine m n) ℓ' hℓ' q]
+  simp
 
 /-- **The inverse isomorphism `𝒪(2) ⊕ 𝒪(1)ᵐ ≃ ℓ'* Tℙᵐ⁺¹`.** A vector of `𝒪(2) ⊕ 𝒪(1)ᵐ` over `x`
 goes to the image, under the differential of the projective transformation of `A`, of the
 corresponding tangent vector of `ℙᵐ⁺¹` along the coordinate line
 (`Projectivization.coordLineTangentEquiv`). -/
+@[simp]
 theorem lineTangentDiffeomorph_symm_apply (A : (Fin (m + 2) → 𝕜) ≃ₗ[𝕜] Fin (m + 2) → 𝕜)
     (ℓ' : C^ω⟮𝓘(𝕜, Fin 1 → 𝕜), ℙ 𝕜 (Fin 2 → 𝕜); 𝓘(𝕜, Fin (m + 1) → 𝕜),
       ℙ 𝕜 (Fin (m + 2) → 𝕜)⟯)
@@ -508,8 +529,8 @@ holomorphic splitting `ℓ'* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` along eve
 of the coordinate line under a projective linear transformation
 (`LinearMap.exists_linearEquiv_comp_eq_of_injective`), and the isomorphism is
 `Projectivization.lineTangentDiffeomorph` for it. -/
-theorem exists_contMDiff_lineTangentEquiv (f : (Fin 2 → 𝕜) →ₗ[𝕜] Fin (m + 2) → 𝕜)
-    (hf : Function.Injective f)
+theorem exists_continuousLinearEquiv_contMDiff_totalSpace_pullback_tangentSpace
+    (f : (Fin 2 → 𝕜) →ₗ[𝕜] Fin (m + 2) → 𝕜) (hf : Function.Injective f)
     (ℓ' : C^ω⟮𝓘(𝕜, Fin 1 → 𝕜), ℙ 𝕜 (Fin 2 → 𝕜); 𝓘(𝕜, Fin (m + 1) → 𝕜),
       ℙ 𝕜 (Fin (m + 2) → 𝕜)⟯)
     (hℓ' : ∀ x, ℓ' x = map f hf x) :
@@ -532,13 +553,8 @@ theorem exists_contMDiff_lineTangentEquiv (f : (Fin 2 → 𝕜) →ₗ[𝕜] Fin
     simp only [← hA, LinearMap.comp_apply, LinearEquiv.coe_coe]
   let Φ := mapDiffeomorph A ω
   refine ⟨fun x ↦ (Φ.mfderivToContinuousLinearEquiv (by simp) (coordLine m x)).symm.trans
-    (coordLineTangentEquiv x), (lineTangentDiffeomorph A ℓ' hℓA ω).contMDiff.congr fun q ↦ ?_⟩
-  rw [lineTangentDiffeomorph, Diffeomorph.coe_trans, Function.comp_apply]
-  rw [Diffeomorph.pullbackTangentDiffeomorph_symm_apply (mapDiffeomorph A ω) le_top
-    coordLineContMDiffMap (contMDiff_coordLine m ω) ℓ' hℓA q, coordLineTangentDiffeomorph_apply]
-  -- Both sides apply `(dΦ)⁻¹` and then `coordLineTangentEquiv` at the point `coordLine m q.proj`,
-  -- which is the bundled coordinate line at `q.proj` (`coe_coordLineContMDiffMap`).
-  rfl
+    (coordLineTangentEquiv x), (lineTangentDiffeomorph A ℓ' hℓA ω).contMDiff.congr fun q ↦
+      (lineTangentDiffeomorph_apply A ℓ' hℓA ω q).symm⟩
 
 end Line
 
