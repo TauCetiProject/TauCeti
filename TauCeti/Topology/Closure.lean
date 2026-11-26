@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Inseparable
 public import Mathlib.Topology.NhdsWithin
 public import Mathlib.Topology.Separation.Basic
+import TauCeti.Data.Set.Lattice
 
 /-!
 # Closures and neighbourhoods
@@ -25,6 +26,11 @@ away from the point.
 
 A set containing a punctured neighbourhood of a non-isolated point `x` has `x` in its closure.
 
+Let a finite family of sets cover an open set `U`, each set of the family lying inside or outside
+`s`, such that a member meeting the closure of another lies in that closure. Then every point of
+`closure s ∩ U` lies in a member contained in the closure of a member contained in `s`. This is how
+the closure of a set is described through a stratification adapted to it.
+
 Membership in a closed set passes to limits, so pointwise limits of maps into a closed set map
 into it.
 
@@ -41,6 +47,9 @@ closure adds only that point.
   complement of a closed set `K ⊆ U` cover the space.
 * `TauCeti.not_subset_union_singleton_of_mem_closure`: an open neighbourhood of a point of
   `closure B \ B` is not contained in `A ∪ {y₀}` for any `A` disjoint from `B`.
+* `TauCeti.exists_mem_subset_closure_of_mem_closure_inter`: in a finite cover of an open set `U`
+  by sets inside or outside `s` satisfying the frontier condition, a point of `closure s ∩ U` lies
+  in a member contained in the closure of a member contained in `s`.
 * `TauCeti.mem_closure_of_mem_nhdsNE`: a set containing a punctured neighbourhood of a
   non-isolated point has that point in its closure.
 * `TauCeti.mapsTo_of_tendsto_of_isClosed`: pointwise limits of maps into a closed set map into
@@ -96,6 +105,24 @@ theorem not_subset_union_singleton_of_mem_closure {A B N : Set X} {y₀ : X} (hN
   rcases hNA hyN with hyA | rfl
   · exact disjoint_left.1 hAB hyA hyB
   · exact hy₀B hyB
+
+/-- Let a finite family `𝒞` cover an open set `U`, each member lying inside or outside `s`, such
+that a member meeting the closure of another member lies in that closure. Then every point of
+`closure s ∩ U` lies in a member contained in the closure of a member contained in `s`. -/
+theorem exists_mem_subset_closure_of_mem_closure_inter {s U : Set X} {𝒞 : Set (Set X)}
+    (hU : IsOpen U) (h𝒞fin : 𝒞.Finite) (h𝒞cov : U ⊆ ⋃₀ 𝒞) (hs : ∀ C ∈ 𝒞, C ⊆ s ∨ Disjoint C s)
+    (h𝒞front : ∀ B ∈ 𝒞, ∀ C ∈ 𝒞, (B ∩ closure C).Nonempty → B ⊆ closure C)
+    {y : X} (hy : y ∈ closure s ∩ U) :
+    ∃ B ∈ 𝒞, y ∈ B ∧ ∃ C ∈ 𝒞, C ⊆ s ∧ B ⊆ closure C := by
+  obtain ⟨B, hB, hyB⟩ := mem_sUnion.1 (h𝒞cov hy.2)
+  -- Since `U` is open, `y` lies in the closure of `s ∩ U`, inside the union of the members in `s`.
+  have hyC : y ∈ closure (⋃ C ∈ {C ∈ 𝒞 | C ⊆ s}, C) := by
+    rw [← sUnion_eq_biUnion, sUnion_sep_subset_eq_inter hs]
+    exact closure_mono (inter_subset_inter_right s h𝒞cov) <|
+      closure_mono (inter_comm U s).subset (hU.inter_closure ⟨hy.2, hy.1⟩)
+  rw [(h𝒞fin.subset (sep_subset _ _)).closure_biUnion] at hyC
+  obtain ⟨C, ⟨hC, hCs⟩, hyC⟩ := mem_iUnion₂.1 hyC
+  exact ⟨B, hB, hyB, C, hC, hCs, h𝒞front B hB C hC ⟨y, hyB, hyC⟩⟩
 
 /-- A set containing a punctured neighbourhood of a non-isolated point `x` has `x` in its
 closure. -/

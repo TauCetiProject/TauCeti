@@ -40,6 +40,10 @@ when the configurations are isomorphic
 * `TauCeti.RelationalConfiguration.measurableSet_graphClass`,
   `TauCeti.RelationalConfiguration.isomorphismInvariant_graphClass`: `graphClass` is an
   isomorphism-invariant Borel class.
+* `TauCeti.RelationalConfiguration.isClosed_graphClass`,
+  `TauCeti.RelationalConfiguration.range_toRelationalConfiguration_eq_graphClass`,
+  `TauCeti.RelationalConfiguration.instStandardBorelSpaceGraphClass`: it is closed, it is the range
+  of the coding of simple graphs, and it is a standard Borel space.
 * `TauCeti.RelationalConfiguration.isoSetoid_toRelationalConfiguration_iff`: codes of simple
   graphs are isomorphic exactly when the graphs are.
 * `TauCeti.RelationalConfiguration.borelComplete_graphClass`: countable graphs are Borel complete.
@@ -97,6 +101,21 @@ theorem toRelationalConfiguration_mem_graphClass (G : SimpleGraph ℕ) :
 /-- The class of codes of simple graphs is Borel. -/
 theorem measurableSet_graphClass : MeasurableSet graphClass :=
   measurableSet_setOf_isSimpleGraph
+
+/-- The class of codes of simple graphs is closed: an intersection of conditions on one or two
+atoms. -/
+theorem isClosed_graphClass : IsClosed graphClass :=
+  isClosed_setOf_isSimpleGraph
+
+/-- `graphClass` is the range of the coding of simple graphs on `ℕ`. -/
+theorem range_toRelationalConfiguration_eq_graphClass :
+    Set.range (SimpleGraph.toRelationalConfiguration :
+      SimpleGraph ℕ → RelationalConfiguration Language.graph ℕ) = graphClass :=
+  SimpleGraph.range_toRelationalConfiguration
+
+/-- As a Borel subset of a Polish space, `graphClass` is a standard Borel space. -/
+instance instStandardBorelSpaceGraphClass : StandardBorelSpace graphClass :=
+  measurableSet_graphClass.standardBorel
 
 /-- The class of codes of simple graphs is isomorphism invariant. -/
 theorem isomorphismInvariant_graphClass : IsomorphismInvariant graphClass := by

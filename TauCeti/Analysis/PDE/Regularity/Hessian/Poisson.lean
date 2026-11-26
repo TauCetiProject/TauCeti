@@ -15,7 +15,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 

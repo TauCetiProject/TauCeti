@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
-public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 public import TauCeti.MeasureTheory.Group.ModularCharacter
@@ -56,6 +55,7 @@ No σ-finiteness of `μ` and no countability of `G` is assumed.
 * `MeasureTheory.Lp.coeFn_modularInversion`, `MeasureTheory.Lp.coeFn_rightTranslation`: the
   pointwise formulas, almost everywhere.
 * `MeasureTheory.Lp.modularInversion_modularInversion`: the modular inversion is an involution.
+* `MeasureTheory.Lp.modularInversion_star`: the modular inversion commutes with pointwise `star`.
 * `MeasureTheory.Lp.leftTranslation_rightTranslation`: left and right translations commute.
 * `MeasureTheory.Lp.modularInversion_le_modularInversion_iff`,
   `MeasureTheory.Lp.rightTranslation_le_rightTranslation_iff`: the modular inversion and right
@@ -70,8 +70,8 @@ No σ-finiteness of `μ` and no countability of `G` is assumed.
   supported continuous function is the class of `x ↦ c(x) • f x⁻¹`.
 * `MeasureTheory.Lp.continuous_rightTranslation_apply`: right translation is strongly continuous
   for `p < ∞`, so `R_(g⁻¹) f → f` as `g → 1` (`MeasureTheory.Lp.tendsto_rightTranslation_inv`).
-* `MeasureTheory.Lp.integrable_smul_rightTranslation_inv`: the weighted orbit
-  `z ↦ k z • R_(z⁻¹) h` of `h ∈ L¹` is integrable for an integrable weight `k`.
+* `MeasureTheory.Lp.integrable_smul_rightTranslation_inv`: for `1 ≤ p < ∞`, the weighted orbit
+  `z ↦ k z • R_(z⁻¹) h` of `h ∈ Lᵖ` is integrable for an integrable scalar weight `k`.
 * `MeasureTheory.eLpNorm_comp_mul_right_of_regular`: the unweighted right translate satisfies
   `‖f (· * g)‖_p = c(g)^(1/p) ‖f‖_p`.
 * `MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_right_sub_of_regular`: `‖f (· * g) - f‖_p → 0`
@@ -381,14 +381,14 @@ theorem tendsto_rightTranslation_inv (hp : p ≠ ∞) (f : Lp E p μ) :
   simpa only [Function.comp_def, inv_one, map_one, LinearIsometryEquiv.coe_one, id_eq]
     using ((continuous_rightTranslation_apply (𝕜 := 𝕜) hp f).comp continuous_inv).tendsto 1
 
-/-- For an integrable weight `k` and `h ∈ L¹(G, μ)`, the weighted orbit `z ↦ k z • R_(z⁻¹) h` is
-integrable; its integral is the convolution `h ⋆ k` when `E = ℝ`. -/
-theorem integrable_smul_rightTranslation_inv {k : G → ℝ} (hk : Integrable k μ) (h : Lp E 1 μ) :
-    Integrable (fun z => k z • rightTranslation μ 1 ℝ z⁻¹ h) μ := by
-  refine (hk.norm.mul_const ‖h‖).mono' (hk.aefinStronglyMeasurable.aestronglyMeasurable_smul
-    ((continuous_rightTranslation_apply ENNReal.one_ne_top h).comp continuous_inv))
-    (.of_forall fun z => ?_)
-  rw [norm_smul, LinearIsometryEquiv.norm_map]
+/-- For an integrable scalar weight `k : G → 𝕜` and `h ∈ Lᵖ(G, μ; E)` (`1 ≤ p < ∞`), the weighted
+right-translate orbit `z ↦ k z • R_(z⁻¹) h` is `μ`-integrable; on `L¹(G, μ; 𝕜)` its integral is
+the convolution `h ⋆ k`. -/
+theorem integrable_smul_rightTranslation_inv (hp : p ≠ ∞) {k : G → 𝕜} (hk : Integrable k μ)
+    (h : Lp E p μ) :
+    Integrable (fun z => k z • rightTranslation μ p 𝕜 z⁻¹ h) μ :=
+  hk.smul_bdd_of_continuous ‖h‖ ((continuous_rightTranslation_apply (𝕜 := 𝕜) hp h).comp
+    continuous_inv) fun _ => (LinearIsometryEquiv.norm_map _ _).le
 
 /-- Modular inversion commutes with pointwise `star` on `Lᵖ`. -/
 theorem modularInversion_star [StarAddMonoid E] [NormedStarGroup E] [StarModule ℝ E]

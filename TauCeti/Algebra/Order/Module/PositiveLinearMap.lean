@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.Algebra.Order.Module.PositiveLinearMap
+public import Mathlib.Algebra.Order.Star.Basic
 
 /-!
-# Coercion and equivalences of positive linear maps
+# Coercion, equivalences, and faithfulness kernels of positive linear maps
 
 Mathlib's `PositiveLinearMap.ofClass` reinterprets an element of a type of positive linear maps as
 a bundled positive linear map, but has no lemma computing its coercion to a function. This file
@@ -22,12 +23,18 @@ maps out of `U` and positive linear maps out of `V`, by precomposition with `e.s
 restricts to a bijection between normalized positive linear maps `{m : U →ₚ[R] W // m 1 = w}`
 and `{m : V →ₚ[R] W // m 1 = w}`.
 
-## Main definitions
+A faithful positive linear map on a proper star-ordered ring vanishes on `star a * a` only when
+`a = 0` (`PositiveLinearMap.eq_zero_of_faithful_apply_star_mul_self`).
 
+## Main declarations
+
+* `PositiveLinearMap.coe_ofClass`: coercion of `PositiveLinearMap.ofClass f` as a function.
 * `PositiveLinearMap.equivOfLinearEquiv`: transport of positive linear maps along an
   order-preserving linear equivalence.
 * `PositiveLinearMap.normalizedEquivOfAlgEquiv`: transport of positive linear maps taking a fixed
   value `w` at `1` along an order-preserving algebra equivalence.
+* `PositiveLinearMap.eq_zero_of_faithful_apply_star_mul_self`: a faithful positive linear map on
+  a proper star-ordered ring has trivial quadratic kernel on `star a * a`.
 -/
 
 public section
@@ -118,5 +125,15 @@ theorem normalizedEquivOfAlgEquiv_symm_apply (e : U ≃ₐ[R] V)
   (rfl)
 
 end AlgEquiv
+
+/-- A faithful positive linear map on a proper star-ordered ring vanishes on `star a * a` only
+when `a = 0`. -/
+theorem eq_zero_of_faithful_apply_star_mul_self {A 𝕜 E : Type*} [NonUnitalSemiring A]
+    [PartialOrder A] [StarRing A] [StarOrderedRing A] [IsProperStar A]
+    [Semiring 𝕜] [AddCommMonoid E] [PartialOrder E] [Module 𝕜 A] [Module 𝕜 E]
+    (f : A →ₚ[𝕜] E) (hf : ∀ a : A, 0 ≤ a → a ≠ 0 → 0 < f a) {a : A}
+    (ha : f (star a * a) = 0) : a = 0 := by
+  by_contra ha0
+  exact (hf _ (star_mul_self_nonneg a) (star_mul_self_eq_zero.not.2 ha0)).ne' ha
 
 end PositiveLinearMap

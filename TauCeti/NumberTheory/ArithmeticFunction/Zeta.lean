@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 import Mathlib.Data.Nat.Choose.Bounds
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Linarith
+import TauCeti.NumberTheory.Divisors
 
 /-!
 # Convolution powers of the arithmetic zeta function
@@ -22,7 +23,7 @@ are bounded by powers of the ordinary divisor count. The analytic subpower estim
 
 The distinct-prime-factor powers are bounded by the corresponding divisor coefficients,
 `2 ^ ω n ≤ n` for `n ≠ 0`, and the fourth divisor coefficient dominates the squared ordinary
-divisor count.
+divisor count. Since `2 ^ ω n ≤ σ₀ n ≤ 2 √n`, also `2 ^ ω n ≤ 2 * Nat.sqrt n` for `n ≠ 0`.
 
 The prime-power argument is adapted from `d_apply_prime_pow` in
 [Alex Kontorovich, Terence Tao and contributors, *Prime Number Theorem and More*][PNT].
@@ -66,7 +67,7 @@ theorem zeta_pow_succ_apply_le_card_divisors_pow (k n : ℕ) :
   rw [zeta_pow_succ_apply_prime_pow k _ (prime_of_mem_primeFactors hp)]
   exact Nat.choose_add_le_add_one_pow _ _
 
-open scoped omega
+open scoped omega sigma
 
 /-- Distinct-prime-factor powers are bounded by fixed-order divisor coefficients. -/
 theorem pow_cardDistinctFactors_le_zeta_pow (k : ℕ) {n : ℕ} (hn : n ≠ 0) :
@@ -100,6 +101,17 @@ theorem two_pow_cardDistinctFactors_le {n : ℕ} (hn : n ≠ 0) : 2 ^ ω n ≤ n
   rw [cardDistinctFactors_eq_card_primeFactors]
   exact (pow_card_le_prod _ _ _ fun p hp ↦ (prime_of_mem_primeFactors hp).two_le).trans
     (Nat.le_of_dvd (Nat.pos_of_ne_zero hn) (prod_primeFactors_dvd n))
+
+/-- A positive integer has at least `2 ^ ω n` divisors: `2 ^ ω n ≤ σ₀ n`. -/
+theorem two_pow_cardDistinctFactors_le_sigma_zero {n : ℕ} (hn : n ≠ 0) : 2 ^ ω n ≤ σ 0 n := by
+  simpa [sigma_zero_apply] using
+    (pow_cardDistinctFactors_le_zeta_pow 2 hn).trans (zeta_pow_succ_apply_le_card_divisors_pow 1 n)
+
+/-- `2 ^ ω n ≤ 2 √n` for `n ≠ 0`, since `n` has at least `2 ^ ω n` and at most `2 √n` divisors. -/
+theorem two_pow_cardDistinctFactors_le_two_mul_sqrt {n : ℕ} (hn : n ≠ 0) :
+    2 ^ ω n ≤ 2 * n.sqrt :=
+  (two_pow_cardDistinctFactors_le_sigma_zero hn).trans <|
+    (sigma_zero_apply n).trans_le (Nat.card_divisors_le_two_mul_sqrt n)
 
 /-- The fourth fixed-order divisor coefficient dominates the squared divisor count. -/
 theorem sigma_zero_sq_le_zeta_pow_four (n : ℕ) :

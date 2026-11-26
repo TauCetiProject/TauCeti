@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Coordinates
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ClosedNeighborhood
@@ -23,6 +24,12 @@ Neither compactness of the core, completeness of the ambient metric, nor a norma
 is required. The open discs embed openly; the closed discs remain in the natural domain of
 the normal exponential. Closedness follows by shrinking the target of the normal-exponential
 coordinates around the closed core before selecting the radius.
+
+Without closedness of the image, the normal exponential is still a partial diffeomorphism whose
+source is exactly an open normal disc bundle of positive smooth radius
+(`SmoothEmbedding.exists_partialDiffeomorph_normalExp_norm_lt_subset`). Since that source is
+described by the normal metric alone, it is preserved by every bundle map over the identity of
+`M` acting isometrically on the fibres, as in equivariant tubular neighbourhoods.
 
 ## References
 
@@ -53,6 +60,56 @@ variable {E V P H G M N : Type*}
   [I.Boundaryless] [J.Boundaryless] [T2Space N] [SecondCountableTopology N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
   [IsContMDiffRiemannianBundle J ∞ V (fun y : N ↦ TangentSpace J y)]
+
+/-- **Normal-exponential coordinates on an open disc bundle.** For a smooth embedding into a
+Riemannian manifold, there are a positive smooth radius `r` on `M` and a partial diffeomorphism
+equal to the normal exponential whose source is exactly the open disc bundle `{ν | ‖ν‖ < r}`, for
+the metric induced by orthogonal representatives, and whose target lies in any prescribed open
+neighbourhood `O` of `f(M)`. Neither compactness nor closedness of `f(M)` is used. Nonemptiness of
+`M` is used only to define the inverse away from the target. -/
+theorem exists_partialDiffeomorph_normalExp_norm_lt_subset [Nonempty M]
+    (f : SmoothEmbedding I J ∞ M N)
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
+    {O : Set N} (hO : IsOpen O) (hfO : range f ⊆ O) :
+    let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
+    letI := f.normalSpaceFiberBundle hn hdim
+    let ν : M → Type _ := fun x ↦ f.isImmersion.NormalSpace x hn
+    letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
+    ∃ (Φ : PartialDiffeomorph (I.prod 𝓘(ℝ, P)) J (TotalSpace P ν) N ∞)
+        (r : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯),
+      ⇑Φ = f.normalExp hn ∧ (∀ x, 0 < r x) ∧
+      Φ.source = {p : TotalSpace P ν | ‖p.snd‖ < r p.proj} ∧ Φ.target ⊆ O := by
+  let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
+  let := f.normalSpaceFiberBundle hn hdim
+  let ν : M → Type _ := fun x ↦ f.isImmersion.NormalSpace x hn
+  let : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
+  let : ∀ x, NormedAddCommGroup (ν x) := fun x ↦ inferInstance
+  let : ∀ x, InnerProductSpace ℝ (ν x) := fun x ↦ inferInstance
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
+  let := f.normalSpaceVectorBundle hn hdim
+  have : T2Space M := f.isEmbedding.t2Space
+  have : SecondCountableTopology M := f.isEmbedding.isInducing.secondCountableTopology
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
+  let := f.isContMDiffRiemannianBundle_normalRiemannianMetric (m := ∞) hn (by simp) hdim
+  let : IsContinuousRiemannianBundle P ν :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
+  -- Normal-exponential coordinates on an open neighbourhood of the zero section.
+  obtain ⟨Φ₀, hzero, -, hΦ₀O, -, hΦ₀⟩ :=
+    f.exists_partialDiffeomorph_normalExp_subset (m := ∞) hn (by simp) (by simp) hdim hO hfO
+  -- A closed disc bundle of positive smooth radius inside their source; restrict to its interior.
+  obtain ⟨r, hr, -, hdisc⟩ := Φ₀.open_source.exists_contMDiffMap_norm_le_subset_bundle
+    (I := I) (n := ⊤) hzero continuous_const fun _ ↦ zero_lt_one
+  let D := {p : TotalSpace P ν | ‖p.snd‖ < r p.proj}
+  have hD : IsOpen D := isOpen_lt (TauCeti.continuous_norm_bundle P ν)
+    (r.contMDiff.continuous.comp (FiberBundle.continuous_proj P ν))
+  have hDsource : D ⊆ Φ₀.source := fun p hp ↦ hdisc p.proj p.snd (le_of_lt hp)
+  refine ⟨Φ₀.restrOpen D hD, r, by rw [PartialDiffeomorph.coe_restrOpen, hΦ₀], hr, ?_,
+    fun y hy ↦ hΦ₀O ?_⟩
+  · rw [PartialDiffeomorph.restrOpen_source, inter_eq_right.2 hDsource]
+  · rw [PartialDiffeomorph.restrOpen_target] at hy
+    exact hy.1
 
 /-- Choose normal-exponential coordinates and small closed fibre discs simultaneously.
 The disc and sphere images are closed in the ambient manifold, and the open discs embed openly.

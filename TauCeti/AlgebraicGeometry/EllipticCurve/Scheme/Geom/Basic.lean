@@ -622,12 +622,7 @@ theorem isProper (A : PointedWeierstrassAtlas π zero) : IsProper π :=
 /-- A morphism with a pointed Weierstrass atlas is smooth of relative dimension one. -/
 theorem smoothOfRelativeDimension (A : PointedWeierstrassAtlas π zero) :
     SmoothOfRelativeDimension 1 π :=
-  -- The `IsZariskiLocalAtTarget` instance is passed by hand: instance search does not unify
-  -- `@SmoothOfRelativeDimension 1` with the property argument of
-  -- `HasRingHomProperty.instIsZariskiLocalAtTarget`.
-  @of_projModelOver _ _ _ _ A (@SmoothOfRelativeDimension 1)
-    (HasRingHomProperty.instIsZariskiLocalAtTarget (P := @SmoothOfRelativeDimension 1))
-    fun _ ↦ inferInstance
+  A.of_projModelOver _ fun _ ↦ inferInstance
 
 /-- The point of a pointed Weierstrass atlas is a section. -/
 theorem zero_comp (A : PointedWeierstrassAtlas π zero) : zero ≫ π = 𝟙 S :=

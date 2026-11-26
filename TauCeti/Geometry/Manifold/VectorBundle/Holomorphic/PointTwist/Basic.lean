@@ -609,15 +609,19 @@ theorem pointTwistMul_eq_zero_iff_of_ne {x z : X} (h : z ≠ x) (v : E z) :
   · simp only [h, false_or]
     exact map_eq_zero_iff _ (pointTwistDiv_bijective_of_ne h).1
 
-/-- The fibres of the signed point twist are real vector spaces through the model fibre. -/
-instance signedPointTwistCore.moduleRealFiber [NormedSpace ℝ F] (x : X) (s : Bool) (z : X) :
-    Module ℝ ((signedPointTwistCore F E x s).Fiber z) :=
-  inferInstanceAs (Module ℝ F)
+/-- The fibres of the signed point twist are vector spaces over every normed field `𝕜` acting on
+the model fibre, for instance `ℝ`, through the model fibre. The low priority keeps the core's own
+complex structure first when `𝕜 = ℂ`. -/
+instance (priority := 50) signedPointTwistCore.moduleScalarFiber {𝕜 : Type*} [NormedField 𝕜]
+    [NormedSpace 𝕜 F] (x : X) (s : Bool) (z : X) :
+    Module 𝕜 ((signedPointTwistCore F E x s).Fiber z) :=
+  inferInstanceAs (Module 𝕜 F)
 
-/-- The real and complex scalar actions on the fibres of the signed point twist are compatible. -/
-instance signedPointTwistCore.isScalarTowerFiber [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F]
-    (x : X) (s : Bool) (z : X) : IsScalarTower ℝ ℂ ((signedPointTwistCore F E x s).Fiber z) :=
-  inferInstanceAs (IsScalarTower ℝ ℂ F)
+/-- The `𝕜`- and complex scalar actions on the fibres of the signed point twist are compatible. -/
+instance (priority := 50) signedPointTwistCore.isScalarTowerFiber {𝕜 : Type*} [NormedField 𝕜]
+    [NormedAlgebra 𝕜 ℂ] [NormedSpace 𝕜 F] [IsScalarTower 𝕜 ℂ F] (x : X) (s : Bool) (z : X) :
+    IsScalarTower 𝕜 ℂ ((signedPointTwistCore F E x s).Fiber z) :=
+  inferInstanceAs (IsScalarTower 𝕜 ℂ F)
 
 /-- Multiplication by the canonical section of `𝒪(x)` sends a section of `E` that is continuous
 at `z₀` to a section of the point twist `E(x)` that is continuous at `z₀`. -/
