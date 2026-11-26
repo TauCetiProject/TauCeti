@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.RingTheory.Trace.Regular
 import Mathlib.RingTheory.Artinian.Ring
+import TauCeti.LinearAlgebra.Trace.Basic
 import TauCeti.LinearAlgebra.Trace.Nilpotent
 import TauCeti.RingTheory.Jacobson.Basic
 
@@ -99,11 +100,9 @@ variable (M : Type*) [AddCommGroup M] [Module A M] [Module K M] [IsScalarTower K
 acting on `M` vanishes for every `y`. Neither `A` nor `M` need be finite-dimensional. -/
 theorem trace_lsmul_mul_eq_zero_of_mem_jacobson {x : A} (hx : x ∈ Ring.jacobson A) (y : A) :
     trace K M (lsmul K K M (y * x)) = 0 := by
-  by_cases H : ∃ s : Finset M, Nonempty (Basis s K M)
+  by_cases hM : Module.Finite K M
   swap
-  · simp [LinearMap.trace, H]
-  obtain ⟨s, ⟨b⟩⟩ := H
-  have := Module.Finite.of_basis b
+  · rw [LinearMap.trace_eq_zero_of_not_finite hM, LinearMap.zero_apply]
   -- pass to the image `B` of `A` in `End_K M`, which is finite-dimensional, hence Artinian
   let φ : A →ₐ[K] Module.End K M := lsmul K K M
   let B := φ.range
@@ -125,10 +124,8 @@ over every field; `A` and `M` need not be finite-dimensional. -/
 theorem isSemisimpleRing_of_forall_trace_lsmul_mul_eq_zero_imp_eq_zero
     (h : ∀ x : A, (∀ y : A, trace K M (lsmul K K M (y * x)) = 0) → x = 0) :
     IsSemisimpleRing A := by
-  by_cases H : ∃ s : Finset M, Nonempty (Basis s K M)
-  · obtain ⟨s, ⟨b⟩⟩ := H
-    have := Module.Finite.of_basis b
-    have hinj : Function.Injective (lsmul K K M) :=
+  by_cases hM : Module.Finite K M
+  · have hinj : Function.Injective (lsmul K K M) :=
       (injective_iff_map_eq_zero _).2 fun x hx =>
         h x fun y => by rw [map_mul, hx, mul_zero, map_zero]
     have : FiniteDimensional K A := .of_injective (lsmul K K M).toLinearMap hinj
@@ -137,7 +134,7 @@ theorem isSemisimpleRing_of_forall_trace_lsmul_mul_eq_zero_imp_eq_zero
     exact eq_bot_iff.mpr fun x hx =>
       (Submodule.mem_bot _).mpr (h x (trace_lsmul_mul_eq_zero_of_mem_jacobson M hx))
   · have : Subsingleton A := subsingleton_of_forall_eq 0 fun x =>
-      h x fun y => by simp [LinearMap.trace, H]
+      h x fun y => by rw [LinearMap.trace_eq_zero_of_not_finite hM, LinearMap.zero_apply]
     infer_instance
 
 end Module
