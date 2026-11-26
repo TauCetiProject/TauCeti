@@ -477,6 +477,16 @@ def ordinaryPairQuotientSingletonIso {X : TopCat.{u}} (x₀ : X) :
       ((ofSubset ({x₀} : Set X)).ordinaryPairQuotientπ_map ⟨x₀, rfl⟩))
   inv_hom_id := ordinaryPairQuotientπ_desc _ _ _ _
 
+@[simp]
+lemma ordinaryPairQuotientSingletonIso_hom {X : TopCat.{u}} (x₀ : X) :
+    (ordinaryPairQuotientSingletonIso x₀).hom =
+      (ofSubset ({x₀} : Set X)).ordinaryPairQuotientDesc (𝟙 X) x₀ Subtype.prop := (rfl)
+
+@[simp]
+lemma ordinaryPairQuotientSingletonIso_inv {X : TopCat.{u}} (x₀ : X) :
+    (ordinaryPairQuotientSingletonIso x₀).inv =
+      (ofSubset ({x₀} : Set X)).ordinaryPairQuotientπ := (rfl)
+
 /-- Collapsing a singleton `{x₀}` in `X` together with the added basepoint is homeomorphic to `X`,
 carrying the quotient basepoint to `x₀`. -/
 def ordinaryPairQuotientSingletonHomeomorph {X : TopCat.{u}} (x₀ : X) :
@@ -507,6 +517,14 @@ def ordinaryPairQuotientIso {P Q : TopPair.{u}} (e : P ≅ Q) :
   inv := ordinaryPairQuotientMap e.inv
   hom_inv_id := by rw [← ordinaryPairQuotientMap_comp, e.hom_inv_id, ordinaryPairQuotientMap_id]
   inv_hom_id := by rw [← ordinaryPairQuotientMap_comp, e.inv_hom_id, ordinaryPairQuotientMap_id]
+
+@[simp]
+lemma ordinaryPairQuotientIso_hom {P Q : TopPair.{u}} (e : P ≅ Q) :
+    (ordinaryPairQuotientIso e).hom = ordinaryPairQuotientMap e.hom := (rfl)
+
+@[simp]
+lemma ordinaryPairQuotientIso_inv {P Q : TopPair.{u}} (e : P ≅ Q) :
+    (ordinaryPairQuotientIso e).inv = ordinaryPairQuotientMap e.inv := (rfl)
 
 /-- An isomorphism of topological pairs induces a pointed homeomorphism of their pointed
 quotients. -/
