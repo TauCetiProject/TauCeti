@@ -70,7 +70,8 @@ is `productClass glue D₁ D₂ D₀ = D₀ -ᵥ glue D₁ D₂ ∈ Γ`. Recappi
   recapping the first input by `γ` changes `f₁ + f₂ − f₀ + φ(−A)` by `2 φ(γ)`.
 * `TauCeti.Floer.add_sub_add_two_mul_chern_neg_productClass_vadd_fst`: with the opposite
   orientation `−A`, recapping the first input by `γ` changes `μ₁ + μ₂ − μ₀ + 2 c₁(−A)` by
-  `4 c₁(γ)`, so that orientation is not cap independent.
+  `4 c₁(γ)`, so that orientation is not cap independent as soon as some class has nonzero first
+  Chern number (see `TauCeti.Floer.JointKernelExample` for `S² × S²`).
 
 ## References
 
@@ -271,11 +272,12 @@ theorem add_sub_add_map_neg_productClass_vadd_fst [VAdd (PeriodGroup ω c) C₁]
   rw [productClass_vadd_fst hglue₁, hf₁, neg_sub, map_sub, map_neg]
   abel
 
-/-- **The opposite orientation of the product class depends on the caps.** If the class of a pair
+/-- **Recapping changes the opposite orientation's index by `4 c₁(γ)`.** If the class of a pair
 of pants were formed as `D₁ + D₂ − D₀ − u`, the negative of `productClass`, then recapping the
 first input by `γ` would change `μ₁ + μ₂ − μ₀ + 2 c₁` of that class by `4 c₁(γ)`, for a gluing map
-equivariant in the first input and a grading `μ₁` obeying the recapping law. With the product
-class itself the change is `0` (`add_sub_add_two_mul_chern_productClass_eq`). -/
+equivariant in the first input and a grading `μ₁` obeying the recapping law. So that orientation
+depends on the caps whenever `c₁(γ) ≠ 0`. With the product class itself the change is `0`
+(`add_sub_add_two_mul_chern_productClass_eq`). -/
 theorem add_sub_add_two_mul_chern_neg_productClass_vadd_fst [VAdd (PeriodGroup ω c) C₁]
     {m₁ : C₁ → ℤ} {m₂ : C₂ → ℤ} {m₀ : C₀ → ℤ}
     (hglue₁ : ∀ (γ : PeriodGroup ω c) D₁ D₂, glue (γ +ᵥ D₁) D₂ = γ +ᵥ glue D₁ D₂)
