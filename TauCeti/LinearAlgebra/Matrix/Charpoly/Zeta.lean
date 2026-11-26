@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 public import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # The trace–determinant formula and Lefschetz zeta functions

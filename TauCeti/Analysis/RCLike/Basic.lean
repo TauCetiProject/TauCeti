@@ -33,6 +33,10 @@ public import Mathlib.Analysis.RCLike.Basic
   `re (((σ : K) - ρ)⁻¹)` over real points `ρ ∈ S` with `0 < σ - re ρ ≤ D`.
 * `RCLike.one_sub_re_le_norm_sub_one`: `1 - re z ≤ ‖z - 1‖`.
 * `RCLike.norm_I_le_one`: `‖I‖ ≤ 1`, uniformly over `ℝ` (where `I = 0`) and `ℂ` (where `‖I‖ = 1`).
+* `RCLike.ext_of_re_eq_of_re_I_mul_eq`: two scalars in `K` with equal real parts before and after
+  multiplying by `RCLike.I` are equal (uniformly over `ℝ` and `ℂ`).
+* `RCLike.apply_eq_of_re_eq_of_re_I_smul_eq`: the `I`-test equating `f v` and `g v` for `K`-action
+  homomorphisms from real-part equalities at `v` and `RCLike.I • v`.
 -/
 
 public section
@@ -135,6 +139,24 @@ theorem sum_mul_inv_le_sum_mul_re_sub_inv {S : Finset K} {w : K → ℝ} {σ D :
 /-- The real part of a scalar falls short of `1` by at most its distance to `1`. -/
 theorem one_sub_re_le_norm_sub_one (z : K) : 1 - re z ≤ ‖z - 1‖ := by
   simpa [norm_sub_rev] using re_le_norm (1 - z)
+
+/-- Two scalars in an `RCLike` field are equal if they have the same real part and their products
+with `RCLike.I` also have the same real part. Over `ℝ` the second hypothesis is `0 = 0`; over `ℂ`
+it equates the imaginary parts via `re (I * z) = -im z`. -/
+theorem ext_of_re_eq_of_re_I_mul_eq {z w : K} (hre : re z = re w)
+    (him : re (I * z) = re (I * w)) : z = w := by
+  refine ext hre (neg_inj.mp ?_)
+  simpa only [I_mul_re] using him
+
+/-- **The `I`-test.** Two `K`-homogeneous maps `f` and `g` take the same value at `v` when their
+real parts agree both at `v` and at `(I : K) • v`. Over `ℂ`, testing `I • v` supplies the imaginary
+part; a single real-part equality does not suffice (`f 1 = I`, `g 1 = 0` has `re (f 1) = 0`). -/
+theorem apply_eq_of_re_eq_of_re_I_smul_eq {V F G : Type*} [SMul K V]
+    [FunLike F V K] [MulActionHomClass F K V K] [FunLike G V K] [MulActionHomClass G K V K]
+    {f : F} {g : G} {v : V} (hre : re (f v) = re (g v))
+    (him : re (f ((I : K) • v)) = re (g ((I : K) • v))) : f v = g v := by
+  refine ext_of_re_eq_of_re_I_mul_eq hre ?_
+  simpa only [map_smul, smul_eq_mul] using him
 
 end RCLike
 
