@@ -212,7 +212,6 @@ noncomputable def semistableComplexRescale (hp : p ≠ 0) (h : N ∘ₗ φ = p �
 
 /-- For `c ≠ 0`, rescaling the monodromy by `c` gives an isomorphism of semistable complexes,
 with hom `semistableComplexRescale`. -/
-@[expose]
 noncomputable def semistableComplexRescaleIso (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ ∘ₗ N)) {c : K}
     (hc : c ≠ 0) :
     semistableComplex p r φ ι N hp h ≅
@@ -227,26 +226,26 @@ noncomputable def semistableComplexRescaleIso (hp : p ≠ 0) (h : N ∘ₗ φ = 
 lemma semistableComplexRescaleIso_hom (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ ∘ₗ N)) {c : K}
     (hc : c ≠ 0) :
     (semistableComplexRescaleIso (r := r) (ι := ι) hp h hc).hom = semistableComplexRescale hp h c :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma semistableComplexRescaleIso_inv_τ₁ (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ ∘ₗ N)) {c : K}
     (hc : c ≠ 0) : (semistableComplexRescaleIso (r := r) (ι := ι) hp h hc).inv.τ₁ = 𝟙 _ :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma semistableComplexRescaleIso_inv_τ₂ (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ ∘ₗ N)) {c : K}
     (hc : c ≠ 0) :
     (semistableComplexRescaleIso (r := r) (ι := ι) hp h hc).inv.τ₂ =
       ModuleCat.ofHom (LinearMap.id.prodMap (LinearMap.id.prodMap (c⁻¹ • LinearMap.id))) :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma semistableComplexRescaleIso_inv_τ₃ (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ ∘ₗ N)) {c : K}
     (hc : c ≠ 0) :
     (semistableComplexRescaleIso (r := r) (ι := ι) hp h hc).inv.τ₃ =
       ModuleCat.ofHom (c⁻¹ • LinearMap.id) :=
-  rfl
+  (rfl)
 
 variable {D' E' D'' E'' : Type v} [AddCommGroup D'] [Module K D'] [AddCommGroup E'] [Module K E']
   [AddCommGroup D''] [Module K D''] [AddCommGroup E''] [Module K E'']
@@ -278,6 +277,7 @@ theorem semistableComplexMap_id (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ ∘�
   -- because the objects of `semistableComplex` are by definition the coordinate modules.
   ext : 1 <;> simp <;> rfl
 
+@[reassoc (attr := simp)]
 theorem semistableComplexMap_comp (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ ∘ₗ N))
     (h' : N' ∘ₗ φ' = p • (φ' ∘ₗ N')) (h'' : N'' ∘ₗ φ'' = p • (φ'' ∘ₗ N''))
     {f : D →ₗ[K] D'} {g : E →ₗ[K] E'} {f' : D' →ₗ[K] D''} {g' : E' →ₗ[K] E''}
@@ -292,6 +292,7 @@ theorem semistableComplexMap_comp (hp : p ≠ 0) (h : N ∘ₗ φ = p • (φ �
   ext x : 3 <;> simp
 
 /-- Rescaling the monodromy is natural in the Frobenius–monodromy datum. -/
+@[reassoc]
 theorem semistableComplexMap_comp_semistableComplexRescale (hp : p ≠ 0)
     (h : N ∘ₗ φ = p • (φ ∘ₗ N)) (h' : N' ∘ₗ φ' = p • (φ' ∘ₗ N')) {f : D →ₗ[K] D'}
     {g : E →ₗ[K] E'} (hφ : f ∘ₗ φ = φ' ∘ₗ f) (hι : g ∘ₗ ι = ι' ∘ₗ f) (hN : f ∘ₗ N = N' ∘ₗ f)
