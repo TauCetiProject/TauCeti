@@ -8,14 +8,16 @@ module
 public import TauCeti.RingTheory.Robba.Basic
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
+import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
 # Laurent series on a closed annulus
 
 For positive real endpoints `r ≤ s`, Laurent series converging at both endpoints converge at
 all radii in `[r, s]`. Their Cauchy convolution and the norm `max (|f|ᵣ, |f|ₛ)` give the Banach
-algebra of the closed annulus. Both endpoints are needed: the norms of `t` and `t⁻¹` are `s` and
-`r⁻¹`, respectively. The construction allows arbitrary real radii and either characteristic.
+algebra of the closed annulus. Both endpoints are needed: when `[NormOneClass R]`, the norms
+of `t` and `t⁻¹` are `s` and `r⁻¹`, respectively. The construction allows arbitrary real radii
+and either characteristic.
 
 `closedAnnulusCoeff` is the coefficient submodule, and `ClosedAnnulusRing` equips it with convergent
 convolution. Restriction to a smaller annulus is the identity on coefficients and decreases the
@@ -37,45 +39,6 @@ open Filter Topology
 open scoped DiscreteConvolution
 
 namespace TauCeti
-
-section Interpolation
-
-variable {R : Type*} [SeminormedAddGroup R] {r s ρ : ℝ} {a : ℤ → R}
-
-/-- Between two positive radii every weighted coefficient is bounded by the larger endpoint
-weighted coefficient. -/
-theorem norm_mul_zpow_le_max_endpoints (hr : 0 < r) (hrρ : r ≤ ρ) (hρs : ρ ≤ s) (n : ℤ) :
-    ‖a n‖ * ρ ^ n ≤ max (‖a n‖ * r ^ n) (‖a n‖ * s ^ n) := by
-  rcases le_total 0 n with hn | hn
-  · exact (mul_le_mul_of_nonneg_left (zpow_le_zpow_left₀ hn (hr.trans_le hrρ).le hρs)
-      (norm_nonneg _)).trans (le_max_right _ _)
-  · have hpow : ρ ^ n ≤ r ^ n := by
-      obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (neg_nonneg.mpr hn)
-      have hn' : n = -(k : ℤ) := by omega
-      rw [hn', zpow_neg, zpow_neg]
-      exact inv_anti₀ (zpow_pos hr _) (zpow_le_zpow_left₀ (by omega) hr.le hrρ)
-    exact (mul_le_mul_of_nonneg_left hpow (norm_nonneg _)).trans (le_max_left _ _)
-
-/-- Convergence at both endpoints implies convergence throughout a closed positive-radius
-annulus. -/
-theorem LaurentConvergesAt.of_endpoints (har : LaurentConvergesAt r a)
-    (has : LaurentConvergesAt s a) (hr : 0 < r) (hrρ : r ≤ ρ) (hρs : ρ ≤ s) :
-    LaurentConvergesAt ρ a := by
-  have h : Tendsto (fun n ↦ max (‖a n‖ * r ^ n) (‖a n‖ * s ^ n)) cofinite (𝓝 0) := by
-    simpa only [max_self] using
-      Tendsto.max (laurentConvergesAt_iff.1 har) (laurentConvergesAt_iff.1 has)
-  exact laurentConvergesAt_iff.2 <| squeeze_zero
-    (fun n ↦ mul_nonneg (norm_nonneg _) (zpow_nonneg (hr.trans_le hrρ).le n))
-    (norm_mul_zpow_le_max_endpoints hr hrρ hρs) h
-
-/-- The Gauss norm at an intermediate radius is bounded by the maximum of the endpoint norms. -/
-theorem laurentGaussNorm_le_max_endpoints (har : LaurentConvergesAt r a)
-    (has : LaurentConvergesAt s a) (hr : 0 < r) (hrρ : r ≤ ρ) (hρs : ρ ≤ s) :
-    laurentGaussNorm ρ a ≤ max (laurentGaussNorm r a) (laurentGaussNorm s a) :=
-  laurentGaussNorm_le fun n ↦ (norm_mul_zpow_le_max_endpoints hr hrρ hρs n).trans
-    (max_le_max (le_laurentGaussNorm har.bddAbove n) (le_laurentGaussNorm has.bddAbove n))
-
-end Interpolation
 
 section Coeff
 
@@ -249,24 +212,12 @@ private theorem limit_mem (F : ℕ → ClosedAnnulusRing R r s) (a : ℤ → R)
     a ∈ closedAnnulusCoeff R r s := by
   have hw (n : ℤ) : 0 ≤ max (r ^ n) (s ^ n) := le_max_of_le_left (zpow_pos hr.out n).le
   have ha : Tendsto (fun n ↦ ‖a n‖ * max (r ^ n) (s ^ n)) cofinite (𝓝 0) := by
-    refine tendsto_order.2 ⟨fun b hb ↦ .of_forall fun n ↦
-      hb.trans_le (mul_nonneg (norm_nonneg _) (hw n)), fun ε hε ↦ ?_⟩
-    obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
-    have hF : Tendsto (fun n ↦ ‖(F N : ℤ → R) n‖ * max (r ^ n) (s ^ n))
-        cofinite (𝓝 0) := by
-      simp_rw [mul_max_of_nonneg _ _ (norm_nonneg _)]
-      simpa only [max_self] using Tendsto.max
-        (laurentConvergesAt_iff.1 (F N).property.1)
-        (laurentConvergesAt_iff.1 (F N).property.2)
-    filter_upwards [hF.eventually (gt_mem_nhds (half_pos hε))] with n hn
-    calc
-      ‖a n‖ * max (r ^ n) (s ^ n) ≤
-          (‖(F N : ℤ → R) n‖ + ‖(F N : ℤ → R) n - a n‖) * max (r ^ n) (s ^ n) :=
-        mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (hw n)
-      _ ≤ ‖(F N : ℤ → R) n‖ * max (r ^ n) (s ^ n) + ε / 2 := by
-        rw [add_mul]
-        exact add_le_add_right (hN N le_rfl n) _
-      _ < ε := by linarith
+    apply tendsto_zero_of_weighted_uniform_limit _ hw (fun k ↦ (F k : ℤ → R)) a _ hunif
+    intro k
+    simp_rw [mul_max_of_nonneg _ _ (norm_nonneg _)]
+    simpa only [max_self] using Tendsto.max
+      (laurentConvergesAt_iff.1 (F k).property.1)
+      (laurentConvergesAt_iff.1 (F k).property.2)
   exact ⟨laurentConvergesAt_iff.2 (squeeze_zero
     (fun n ↦ mul_nonneg (norm_nonneg _) (zpow_pos hr.out n).le)
     (fun n ↦ mul_le_mul_of_nonneg_left (le_max_left _ _) (norm_nonneg _)) ha),
@@ -384,9 +335,9 @@ theorem norm_restrict_le {r' s' : ℝ} (hrr' : r ≤ r') (hr's' : r' ≤ s') (hs
     ‖restrict hrr' hr's' hs's f‖ ≤ ‖f‖ := by
   rw [norm_def, coe_restrict, norm_def]
   exact max_le
-    (laurentGaussNorm_le_max_endpoints f.property.1 f.property.2 hr.out hrr'
+    (laurentGaussNorm_le_max_endpoints f.property.1.bddAbove f.property.2.bddAbove hr.out hrr'
       (hr's'.trans hs's))
-    (laurentGaussNorm_le_max_endpoints f.property.1 f.property.2 hr.out
+    (laurentGaussNorm_le_max_endpoints f.property.1.bddAbove f.property.2.bddAbove hr.out
       (hrr'.trans hr's') hs's)
 
 /-- Restriction is continuous for the Banach norms. -/

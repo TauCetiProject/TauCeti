@@ -231,6 +231,46 @@ theorem laurentGaussNorm_smul_le [SeminormedRing R] {ρ : ℝ} (hρ : 0 ≤ ρ) 
       _ ≤ ‖c‖ * laurentGaussNorm ρ a :=
           mul_le_mul_of_nonneg_left (le_laurentGaussNorm ha n) (norm_nonneg c)
 
+section Interpolation
+
+variable {R : Type*} [SeminormedAddGroup R] {r s ρ : ℝ} {a : ℤ → R}
+
+/-- Between two positive radii every weighted coefficient is bounded by the larger endpoint
+weighted coefficient. -/
+theorem norm_mul_zpow_le_max_endpoints (hr : 0 < r) (hrρ : r ≤ ρ) (hρs : ρ ≤ s) (n : ℤ) :
+    ‖a n‖ * ρ ^ n ≤ max (‖a n‖ * r ^ n) (‖a n‖ * s ^ n) := by
+  rcases le_total 0 n with hn | hn
+  · exact (mul_le_mul_of_nonneg_left (zpow_le_zpow_left₀ hn (hr.trans_le hrρ).le hρs)
+      (norm_nonneg _)).trans (le_max_right _ _)
+  · have hpow : ρ ^ n ≤ r ^ n := by
+      obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (neg_nonneg.mpr hn)
+      have hn' : n = -(k : ℤ) := by omega
+      rw [hn', zpow_neg, zpow_neg]
+      exact inv_anti₀ (zpow_pos hr _) (zpow_le_zpow_left₀ (by omega) hr.le hrρ)
+    exact (mul_le_mul_of_nonneg_left hpow (norm_nonneg _)).trans (le_max_left _ _)
+
+/-- Convergence at both endpoints implies convergence throughout a closed positive-radius
+annulus. -/
+theorem LaurentConvergesAt.of_endpoints (har : LaurentConvergesAt r a)
+    (has : LaurentConvergesAt s a) (hr : 0 < r) (hrρ : r ≤ ρ) (hρs : ρ ≤ s) :
+    LaurentConvergesAt ρ a := by
+  have h : Tendsto (fun n ↦ max (‖a n‖ * r ^ n) (‖a n‖ * s ^ n)) cofinite (𝓝 0) := by
+    simpa only [max_self] using
+      Tendsto.max (laurentConvergesAt_iff.1 har) (laurentConvergesAt_iff.1 has)
+  exact laurentConvergesAt_iff.2 <| squeeze_zero
+    (fun n ↦ mul_nonneg (norm_nonneg _) (zpow_nonneg (hr.trans_le hrρ).le n))
+    (norm_mul_zpow_le_max_endpoints hr hrρ hρs) h
+
+/-- The Gauss norm at an intermediate radius is bounded by the maximum of the endpoint norms. -/
+theorem laurentGaussNorm_le_max_endpoints (har : BddAbove (Set.range fun n ↦ ‖a n‖ * r ^ n))
+    (has : BddAbove (Set.range fun n ↦ ‖a n‖ * s ^ n))
+    (hr : 0 < r) (hrρ : r ≤ ρ) (hρs : ρ ≤ s) :
+    laurentGaussNorm ρ a ≤ max (laurentGaussNorm r a) (laurentGaussNorm s a) :=
+  laurentGaussNorm_le fun n ↦ (norm_mul_zpow_le_max_endpoints hr hrρ hρs n).trans
+    (max_le_max (le_laurentGaussNorm har n) (le_laurentGaussNorm has n))
+
+end Interpolation
+
 /-! ### Convolution at one radius -/
 
 section Convolution

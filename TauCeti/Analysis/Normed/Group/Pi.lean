@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Constructions
+import Mathlib.Topology.Order.Basic
 
 /-!
 # Norms on products
@@ -17,7 +18,8 @@ exponent `n` its `n`-th power is at most the sum of the `n`-th powers of the coo
 about `0` by an element of norm at most `R` stays in that ball (`Pi.norm_update_le`).
 
 Over an arbitrary index type, every coordinate of `Pi.single i c` has norm at most `‖c‖`
-(`Pi.norm_single_apply_le`).
+(`Pi.norm_single_apply_le`). A uniform limit in nonnegative weighted coefficient norms
+preserves decay at infinity (`TauCeti.tendsto_zero_of_weighted_uniform_limit`).
 -/
 
 public section
@@ -58,3 +60,21 @@ theorem Pi.norm_update_le {ι : Type*} [Fintype ι] [DecidableEq ι] {E : ι →
     rcases eq_or_ne j i with rfl | hj
     · simpa using hy
     · simpa [Function.update_of_ne hj] using (norm_le_pi_norm x j).trans hx
+
+open Filter Topology in
+/-- A uniform limit in nonnegative weighted coefficient norms preserves decay at infinity. -/
+theorem TauCeti.tendsto_zero_of_weighted_uniform_limit {ι E : Type*} [SeminormedAddGroup E]
+    (w : ι → ℝ) (hw : ∀ t, 0 ≤ w t) (A : ℕ → ι → E) (a : ι → E)
+    (hres : ∀ k, Tendsto (fun t ↦ ‖A k t‖ * w t) cofinite (𝓝 0))
+    (hunif : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * w t ≤ ε) :
+    Tendsto (fun t ↦ ‖a t‖ * w t) cofinite (𝓝 0) := by
+  refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦
+    hb.trans_le (mul_nonneg (norm_nonneg _) (hw t)), fun ε hε ↦ ?_⟩
+  obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
+  filter_upwards [(hres N).eventually (gt_mem_nhds (half_pos hε))] with t ht
+  calc
+    ‖a t‖ * w t ≤ ‖A N t‖ * w t + ‖A N t - a t‖ * w t := by
+      rw [← add_mul]
+      exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (hw t)
+    _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
+    _ = ε := add_halves ε

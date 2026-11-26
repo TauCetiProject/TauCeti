@@ -18,6 +18,7 @@ import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.SetTheory.Cardinal.Order
+import TauCeti.Analysis.Normed.Group.Pi
 import TauCeti.Data.Finsupp.MonomialOrder.Basic
 import TauCeti.Topology.Order.OrderClosed
 import TauCeti.RingTheory.MvPowerSeries.Rename
@@ -237,19 +238,8 @@ theorem _root_.TauCeti.MvPowerSeries.exists_weighted_coefficient_limit {σ E : T
       ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * t.prod (c · ^ ·) ≤ ε := by
   obtain ⟨a, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_uniform_limit _ A hC
   refine ⟨a, ?_, hunif⟩
-  have hw (t : σ →₀ ℕ) : 0 ≤ t.prod (c · ^ ·) := Finset.prod_nonneg fun i _ ↦ pow_nonneg (hc i) _
-  -- A uniform weighted limit again vanishes at infinity.
-  refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦
-    hb.trans_le (mul_nonneg (norm_nonneg _) (hw t)), fun ε hε ↦ ?_⟩
-  obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
-  filter_upwards [(hres N).eventually (gt_mem_nhds (half_pos hε))] with t ht
-  calc
-    ‖a t‖ * t.prod (c · ^ ·) ≤ ‖A N t‖ * t.prod (c · ^ ·) +
-        ‖A N t - a t‖ * t.prod (c · ^ ·) := by
-      rw [← add_mul]
-      exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (hw t)
-    _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
-    _ = ε := add_halves ε
+  exact TauCeti.tendsto_zero_of_weighted_uniform_limit _
+    (fun t ↦ Finset.prod_nonneg fun i _ ↦ pow_nonneg (hc i) _) A a hres hunif
 
 /-- At positive polyradii the restricted-series subring carries its Gauss norm. -/
 noncomputable instance instNormedRingIsRestrictedSubring :
