@@ -21,7 +21,8 @@ This file collects general `Ext` API that Mathlib does not state in this form:
   `TauCeti.extAddEquivOfIso` and `R`-linearly as `TauCeti.extLinearEquivOfIso`;
 * `CategoryTheory.Abelian.Ext.mk₀_sub` and `CategoryTheory.Abelian.Ext.sub_comp`: `Ext.mk₀` and
   composition of `Ext` classes respect differences, complementing Mathlib's `mk₀_add`, `mk₀_neg`,
-  `add_comp` and `neg_comp`;
+  `add_comp` and `neg_comp`, together with additivity of
+  `CategoryTheory.Abelian.linearExtFunctorObj`;
 * in degree zero, composition with `CategoryTheory.Abelian.Ext.mk₀ f` corresponds under
   `CategoryTheory.Abelian.Ext.addEquiv₀` to composition with `f`
   (`TauCeti.ext_addEquiv₀_mk₀_comp` and `TauCeti.ext_addEquiv₀_comp_mk₀`);
@@ -399,6 +400,17 @@ theorem sub_comp {X Y Z : C} {n : ℕ} (α β : Ext.{w} X Y n) {m : ℕ} (γ : E
   rw [sub_eq_add_neg, add_comp, neg_comp, ← sub_eq_add_neg]
 
 end CategoryTheory.Abelian.Ext
+
+namespace CategoryTheory.Abelian
+
+/-- The covariant `Ext` functor `Y ↦ Extⁿ(X, Y)` in an `R`-linear abelian category is additive. -/
+instance (R : Type t) [CommRing R] {C : Type u} [Category.{v} C] [Abelian C] [Linear R C]
+    [HasExt.{w} C] (X : C) (n : ℕ) : (linearExtFunctorObj.{w} R X n).Additive where
+  map_add {_ _} _ _ := by
+    ext
+    simp [linearExtFunctorObj, Ext.mk₀_add]
+
+end CategoryTheory.Abelian
 
 namespace CategoryTheory.ShortComplex.ShortExact
 

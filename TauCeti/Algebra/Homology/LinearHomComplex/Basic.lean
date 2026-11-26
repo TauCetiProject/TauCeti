@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplex
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 
 /-!
@@ -171,6 +172,19 @@ lemma linearHomComplexPrecomp_comp (φ : F₁ ⟶ F₂) (φ' : F₂ ⟶ F₃) (G
   exact Cochain.comp_assoc _ _ _ (zero_add 0) (zero_add n) (by omega)
 
 @[simp]
+lemma linearHomComplexPrecomp_zero (F₁ F₂ G : CochainComplex C ℤ) :
+    linearHomComplexPrecomp R (0 : F₁ ⟶ F₂) G = 0 := by
+  ext n (z : ModuleCat.of R (Cochain F₂ G n))
+  simp [Cochain.ofHom_zero, Cochain.zero_comp]
+
+@[simp]
+lemma linearHomComplexPrecomp_add (φ₁ φ₂ : F₁ ⟶ F₂) (G : CochainComplex C ℤ) :
+    linearHomComplexPrecomp R (φ₁ + φ₂) G =
+      linearHomComplexPrecomp R φ₁ G + linearHomComplexPrecomp R φ₂ G := by
+  ext n (z : ModuleCat.of R (Cochain F₂ G n))
+  simp [Cochain.ofHom_add, Cochain.add_comp]
+
+@[simp]
 lemma linearHomComplexPostcomp_id (F G : CochainComplex C ℤ) :
     linearHomComplexPostcomp R F (𝟙 G) = 𝟙 _ := by
   ext n (z : ModuleCat.of R (Cochain F G n))
@@ -186,6 +200,19 @@ lemma linearHomComplexPostcomp_comp (F : CochainComplex C ℤ) (ψ : G₁ ⟶ G�
   rw [linearHomComplexPostcomp_f_apply, linearHomComplexPostcomp_f_apply,
     linearHomComplexPostcomp_f_apply, Cochain.ofHom_comp]
   exact (Cochain.comp_assoc _ _ _ (add_zero n) (zero_add 0) (by omega)).symm
+
+@[simp]
+lemma linearHomComplexPostcomp_zero (F G₁ G₂ : CochainComplex C ℤ) :
+    linearHomComplexPostcomp R F (0 : G₁ ⟶ G₂) = 0 := by
+  ext n (z : ModuleCat.of R (Cochain F G₁ n))
+  simp [Cochain.ofHom_zero, Cochain.comp_zero]
+
+@[simp]
+lemma linearHomComplexPostcomp_add (F : CochainComplex C ℤ) (ψ₁ ψ₂ : G₁ ⟶ G₂) :
+    linearHomComplexPostcomp R F (ψ₁ + ψ₂) =
+      linearHomComplexPostcomp R F ψ₁ + linearHomComplexPostcomp R F ψ₂ := by
+  ext n (z : ModuleCat.of R (Cochain F G₁ n))
+  simp [Cochain.ofHom_add, Cochain.comp_add]
 
 /-- Precomposition and postcomposition commute. -/
 lemma linearHomComplexPrecomp_postcomp_comm (φ : F₁ ⟶ F₂) (ψ : G₁ ⟶ G₂) :
@@ -210,6 +237,10 @@ def linearHomComplexFunctor :
       naturality _ _ ψ := (linearHomComplexPrecomp_postcomp_comm R φ.unop ψ).symm }
   map_id F := by ext G : 2; exact linearHomComplexPrecomp_id R F.unop G
   map_comp φ φ' := by ext G : 2; exact linearHomComplexPrecomp_comp R φ'.unop φ.unop G
+
+instance (F : (CochainComplex C ℤ)ᵒᵖ) :
+    ((linearHomComplexFunctor R (C := C)).obj F).Additive where
+  map_add := linearHomComplexPostcomp_add R F.unop _ _
 
 end Functoriality
 
