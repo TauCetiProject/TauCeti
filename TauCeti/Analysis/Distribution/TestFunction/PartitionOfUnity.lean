@@ -202,6 +202,14 @@ theorem exists_eventually_eq_one_nhds {x : E} (hx : x ∈ Ω) :
   (exists_eventually_eq_one isCompact_singleton (singleton_subset_iff.2 hx)).imp fun _ h ↦ by
     simpa only [nhdsSet_singleton] using h.1
 
+/-- Every point `x` of the domain has a test function equal to one on an open neighbourhood
+`B ≤ Ω` of `x`. -/
+theorem exists_opens_le_forall_eq_one {x : E} (hx : x ∈ Ω) :
+    ∃ (χ : 𝓓^{n}(Ω, ℝ)) (B : Opens E), B ≤ Ω ∧ x ∈ B ∧ ∀ y ∈ B, χ y = 1 := by
+  obtain ⟨χ, hχ⟩ := exists_eventually_eq_one_nhds (n := n) hx
+  obtain ⟨U, hU1, hU, hxU⟩ := eventually_nhds_iff.1 hχ
+  exact ⟨χ, ⟨U ∩ Ω, hU.inter Ω.isOpen⟩, fun _ hy ↦ hy.2, ⟨hxU, hx⟩, fun y hy ↦ hU1 y hy.1⟩
+
 /-- Two test functions on `Ω` have a common cutoff test function on `Ω` equal to one on a
 neighbourhood of the union of their supports. -/
 theorem exists_eventually_eq_one_nhdsSet_tsupport_union (φ ψ : 𝓓^{n}(Ω, F)) :
