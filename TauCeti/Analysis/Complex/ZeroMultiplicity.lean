@@ -29,7 +29,9 @@ of `∂bar f = a f`, for instance for the section of a plane vortex, and it is t
 topological argument principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow`. The exponent of such a
 factorization is unique (`TauCeti.eq_of_eventually_sub_pow_mul_eq`), so `f` has at most one zero
 multiplicity function (`TauCeti.IsZeroMultiplicity.unique`); it is positive exactly at the zeros of
-`f`.
+`f`. Likewise, a multiset of points of a set `s` whose counts are the exponents of local
+factorizations of `f` at the points of `s` is unique
+(`TauCeti.multiset_eq_of_eventually_eq_pow_mul`).
 
 Near `z`, `f` vanishes to every order `k ≤ n z`: `‖f w‖ ≤ C ‖w - z‖ ^ k`
 (`TauCeti.IsZeroMultiplicity.exists_eventually_norm_le_mul_pow`).
@@ -83,6 +85,26 @@ theorem isZeroMultiplicity_iff :
     IsZeroMultiplicity f n ↔
       ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧ ∀ᶠ w in 𝓝 z, f w = (w - z) ^ n z * v w :=
   Iff.rfl
+
+/-- **Uniqueness of a zero multiset on a set.** Two multisets of points of a set `s` whose counts
+are the exponents of local factorizations `f w = (w - z) ^ D.count z * v w` at every `z ∈ s`, with
+`v` continuous and nonzero at `z`, are equal: the exponent of such a factorization is unique
+(`TauCeti.eq_of_eventually_sub_pow_mul_eq`). -/
+theorem multiset_eq_of_eventually_eq_pow_mul {s : Set ℂ} {D D' : Multiset ℂ}
+    (hD : ∀ z ∈ D, z ∈ s) (hD' : ∀ z ∈ D', z ∈ s)
+    (hDf : ∀ z ∈ s, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, f w = (w - z) ^ D.count z * v w)
+    (hD'f : ∀ z ∈ s, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, f w = (w - z) ^ D'.count z * v w) :
+    D = D' := by
+  ext z
+  by_cases hz : z ∈ s
+  · obtain ⟨v, hv, hv₀, hfv⟩ := hDf z hz
+    obtain ⟨v', hv', hv₀', hfv'⟩ := hD'f z hz
+    exact eq_of_eventually_sub_pow_mul_eq hv hv₀ hv' hv₀' <| by
+      filter_upwards [hfv, hfv'] with w hw hw'
+      rw [← hw, ← hw']
+  · rw [Multiset.count_eq_zero.2 fun h ↦ hz (hD z h), Multiset.count_eq_zero.2 fun h ↦ hz (hD' z h)]
 
 namespace IsZeroMultiplicity
 

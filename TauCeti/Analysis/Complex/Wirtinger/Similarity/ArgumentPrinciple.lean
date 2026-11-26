@@ -33,7 +33,8 @@ open disc are finitely many, and near each zero `z` it factors as
 disc whose multiplicities are these exponents exists
 (`TauCeti.exists_multiset_eventually_eq_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul`), and it is
 determined by `α`, since the exponent of such a factorization is unique
-(`TauCeti.multiset_eq_of_eventually_eq_pow_mul`).
+(`TauCeti.multiset_eq_of_eventually_eq_pow_mul`, in
+`TauCeti.Analysis.Complex.ZeroMultiplicity`).
 
 This file proves the **weighted argument principle** for such `α`: for every `φ` holomorphic on
 `Ω`, with `γ = circleMap c R`,
@@ -66,7 +67,6 @@ Green's formula on the disc turns `∫ φ(γ θ) (g ∘ γ)'(θ) dθ` into `-2i 
   an integrating factor `exp (-g)` making `α` holomorphic on all of `Ω`.
 * `TauCeti.exists_multiset_eventually_eq_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul`: the
   zeros of `α` in the disc, with the exponents of its local factorizations as multiplicities.
-* `TauCeti.multiset_eq_of_eventually_eq_pow_mul`: such a multiset is unique.
 * `TauCeti.sum_map_eq_intervalIntegral_add_integral_of_conjWirtingerDeriv_apply_one_eq_mul`: the
   weighted argument principle.
 * `TauCeti.sum_map_pow_eq_intervalIntegral_add_integral_of_conjWirtingerDeriv_apply_one_eq_mul`: its
@@ -143,7 +143,9 @@ private lemma deriv_circleMap_mul_logDeriv_exp_neg_mul {g : ℂ → ℂ} {θ : �
 
 /-- **Green's formula for the derivative of a holomorphic function.** If `bar∂g = a` on a
 neighbourhood `Ω` of the closed disc and `φ` is holomorphic on `Ω`, then
-`∮ φ' g dz = 2i ∫_{|z - c| < R} φ' a dA`. -/
+`∮ φ' g dz = 2i ∫_{|z - c| < R} φ' a dA`. This is Green's formula
+`TauCeti.integral_ball_smul_conjWirtingerDeriv_add_eq_circleIntegral` for the product `φ' g`, in
+which `bar∂φ' = 0` and `bar∂g = a`. -/
 private lemma circleIntegral_deriv_mul_eq {g : ℂ → ℂ} (hR : 0 ≤ R) (hΩ : IsOpen Ω)
     (hsub : closedBall c R ⊆ Ω) (hg : ContDiffOn ℝ 1 g Ω)
     (hga : ∀ z ∈ Ω, conjWirtingerDeriv g z 1 = a z) (hφ : DifferentiableOn ℂ φ Ω) :
@@ -211,26 +213,6 @@ theorem exists_multiset_eventually_eq_pow_mul_of_conjWirtingerDeriv_apply_one_eq
   have he : exp (g w) * exp (-g w) = 1 := by simp [← exp_add]
   rw [← hN]
   linear_combination exp (g w) * hw - α w * he
-
-/-- **Uniqueness of the zero multiset.** Two multisets of points of a set `s` whose counts are the
-exponents of local factorizations `α w = (w - z) ^ D.count z * v w` at every `z ∈ s`, with `v`
-continuous and nonzero at `z`, are equal. No equation for `α` is needed: the exponent of such a
-factorization is unique (`TauCeti.eq_of_eventually_sub_pow_mul_eq`). -/
-theorem multiset_eq_of_eventually_eq_pow_mul {s : Set ℂ} {D D' : Multiset ℂ}
-    (hD : ∀ z ∈ D, z ∈ s) (hD' : ∀ z ∈ D', z ∈ s)
-    (hDα : ∀ z ∈ s, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
-      ∀ᶠ w in 𝓝 z, α w = (w - z) ^ D.count z * v w)
-    (hD'α : ∀ z ∈ s, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
-      ∀ᶠ w in 𝓝 z, α w = (w - z) ^ D'.count z * v w) :
-    D = D' := by
-  ext z
-  by_cases hz : z ∈ s
-  · obtain ⟨v, hv, hv₀, hαv⟩ := hDα z hz
-    obtain ⟨v', hv', hv₀', hαv'⟩ := hD'α z hz
-    exact eq_of_eventually_sub_pow_mul_eq hv hv₀ hv' hv₀' <| by
-      filter_upwards [hαv, hαv'] with w hw hw'
-      rw [← hw, ← hw']
-  · rw [Multiset.count_eq_zero.2 fun h ↦ hz (hD z h), Multiset.count_eq_zero.2 fun h ↦ hz (hD' z h)]
 
 /-- The multiset `D` of exponents of the local factorizations of `α` in the open disc is the
 multiset of zeros of the holomorphic function `exp (-g) α` there. -/
