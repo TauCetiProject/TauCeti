@@ -379,6 +379,14 @@ end Translation
 
 section Rotation
 
+/-- The neutral increment of `ρ e` is that of `e` for `e` of direction `e₁`, and its complement
+`1 − c₀(e)` for the other two directions. -/
+theorem neutralIncrement_rot (e : TriEdge) :
+    neutralIncrement (TriEdge.rot e) =
+      if e.k = 0 then neutralIncrement e else 1 - neutralIncrement e := by
+  obtain ⟨v, k⟩ := e
+  fin_cases k <;> simp [neutralIncrement_def]
+
 /-- **Closedness under the rotation.** `ρ` preserves the orientation of the edges of direction
 `1` and reverses those of directions `2` and `3` (`ρ e₂ = -e₃` and `ρ e₃ = -e₁`), so a cochain `c`
 is closed on `ρ R` exactly when its signed pullback, `c ∘ ρ` along `e₁` and `-c ∘ ρ` along `e₂`
