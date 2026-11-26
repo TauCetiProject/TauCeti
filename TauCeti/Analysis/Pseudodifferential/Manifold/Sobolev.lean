@@ -38,8 +38,9 @@ in the Hilbert sum `⨁ᵢ H^s(ℝⁿ)` (`TauCeti.chartSobolevSpace`), the estim
 `TauCeti.chartSobolevExtension` of `P` to `H^s(M) → H^t(M)`, `t ≤ s - m`, agree with `P` on smooth
 functions (`TauCeti.chartSobolevExtension_toChartSobolevSpace_of_mem`). These extensions compose
 (`TauCeti.chartSobolevExtension_comp_of_mem`), commute with the inclusions between the Sobolev
-spaces (`TauCeti.chartSobolevExtension_comp_chartSobolevInclusion_of_mem`), and by Rellich's
-theorem they are compact when `t < s - m`
+spaces
+(`TauCeti.chartSobolevExtension_comp_chartSobolevInclusion_eq_chartSobolevInclusion_comp_of_mem`),
+and by Rellich's theorem they are compact when `t < s - m`
 (`TauCeti.isCompactOperator_chartSobolevExtension_of_mem`), in particular for operators of negative
 order.
 
@@ -68,8 +69,8 @@ with compact spatial support (`TauCeti.Symbol.hasSobolevExtension_quantizeUnifor
   `H^s(M) → H^t(M)` for `t ≤ s - m`.
 * `TauCeti.isCompactOperator_chartSobolevExtension_of_mem`: the extension is compact for
   `t < s - m`.
-* `TauCeti.chartSobolevExtension_comp_chartSobolevInclusion_of_mem`: the extensions commute with
-  the inclusions `H^{s'}(M) ⊆ H^s(M)`.
+* `TauCeti.chartSobolevExtension_comp_chartSobolevInclusion_eq_chartSobolevInclusion_comp_of_mem`:
+  the extensions commute with the inclusions `H^{s'}(M) ⊆ H^s(M)`.
 
 ## References
 
@@ -271,7 +272,8 @@ theorem chartSobolevExtension_comp_of_mem {c'' : ν → OpenPartialHomeomorph M 
 a classical pseudodifferential operator of order `m`, with `s ≤ s'`, `t ≤ t'`, `t ≤ s - m` and
 `t' ≤ s' - m`. Extending `P` to `H^{s'}(M) → H^{t'}(M)` and then including `H^{t'}(M) ⊆ H^t(M)`
 is including `H^{s'}(M) ⊆ H^s(M)` and then extending `P` to `H^s(M) → H^t(M)`. -/
-theorem chartSobolevExtension_comp_chartSobolevInclusion_of_mem {s' t' : ℝ}
+theorem chartSobolevExtension_comp_chartSobolevInclusion_eq_chartSobolevInclusion_comp_of_mem
+    {s' t' : ℝ}
     (hP : P ∈ classicalPseudodifferentialOperators m)
     (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) (hs : s ≤ s') (ht : t ≤ t')
     (hts : t ≤ s - m) (hts' : t' ≤ s' - m) :

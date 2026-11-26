@@ -58,8 +58,8 @@ other, so the index does not depend on the partitions either.
   `P` do not depend on the Sobolev order.
 * `TauCeti.IsClassicalElliptic.index_chartSobolevExtension_eq`: the index of
   `P : H^s(M) → H^{s - m}(M)` does not depend on `s`.
-* `TauCeti.index_chartSobolevExtension_eq_of_mem`: the index of the extension of a classical
-  pseudodifferential operator does not depend on the chart partitions.
+* `TauCeti.index_chartSobolevExtension_partitions_eq_of_mem`: the index of the extension of a
+  classical pseudodifferential operator does not depend on the chart partitions.
 
 ## References
 
@@ -124,6 +124,20 @@ theorem IsClassicalElliptic.isFredholm_chartSobolevExtension [CompactSpace M]
 
 /-! ### Independence of the Sobolev order and of the chart partitions -/
 
+/-- The inclusions `H^t(M) ⊆ H^s(M)` and `H^{t - m}(M) ⊆ H^{s - m}(M)` intertwine the extensions
+`H^t(M) → H^{t - m}(M)` and `H^s(M) → H^{s - m}(M)` of a classical pseudodifferential operator `P`
+of order `m`. -/
+private theorem chartSobolevExtension_chartSobolevInclusion_apply
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) {s t : ℝ} (hst : s ≤ t)
+    (x : chartSobolevSpace hc ψ t) :
+    chartSobolevExtension hc ψ hc' φ P s (s - m) (chartSobolevInclusion hc ψ hst x) =
+      chartSobolevInclusion hc' φ (by linarith : s - m ≤ t - m)
+        (chartSobolevExtension hc ψ hc' φ P t (t - m) x) :=
+  DFunLike.congr_fun
+    (chartSobolevExtension_comp_chartSobolevInclusion_eq_chartSobolevInclusion_comp_of_mem hP hψ
+      hst (by linarith) le_rfl le_rfl) x
+
 /-- **Elliptic regularity on the Sobolev scale.** On a compact manifold, let `P` be an elliptic
 classical pseudodifferential operator of order `m`, and let `s ≤ t`. If `x ∈ H^s(M)` and the
 extension of `P` maps `x` into `H^{t - m}(M) ⊆ H^{s - m}(M)`, then `x` lies in `H^t(M) ⊆ H^s(M)`. -/
@@ -152,11 +166,18 @@ theorem IsClassicalElliptic.exists_chartSobolevInclusion_eq [CompactSpace M]
     chartSobolevExtension_eq _ fun u ↦ by
       simp [chartSobolevExtension_toChartSobolevSpace hQs,
         chartSobolevExtension_toChartSobolevSpace_of_mem (hc' := hc') (φ := φ) hP hψ le_rfl]
-  rw [map_sub, ← ContinuousLinearMap.comp_apply, chartSobolevInclusion_comp_chartSobolevExtension
-    hst hQt, ← ContinuousLinearMap.comp_apply (chartSobolevInclusion hc ψ hst),
-    chartSobolevInclusion_comp_chartSobolevExtension hst hRt,
-    ← chartSobolevExtension_comp_chartSobolevInclusion (by linarith) hQs,
-    ContinuousLinearMap.comp_apply, ← hxy, hRs]
+  -- Included into `H^s(M)`, `Q y` is `Q (P x)` and `R x` is the extension of `R` to `H^s(M)`.
+  have hQy : chartSobolevInclusion hc ψ hst (chartSobolevExtension hc' φ hc ψ Q (t - m) t y) =
+      chartSobolevExtension hc' φ hc ψ Q (s - m) s
+        (chartSobolevExtension hc ψ hc' φ P s (s - m) x) := by
+    rw [hxy, ← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.comp_apply,
+      chartSobolevInclusion_comp_chartSobolevExtension hst hQt,
+      chartSobolevExtension_comp_chartSobolevInclusion _ hQs]
+  have hRx : chartSobolevInclusion hc ψ hst
+      (chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s t x) =
+        chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s s x :=
+    DFunLike.congr_fun (chartSobolevInclusion_comp_chartSobolevExtension hst hRt) x
+  rw [map_sub, hQy, hRx, hRs]
   simp
 
 /-- **The kernel of an elliptic operator does not depend on the Sobolev order.** On a compact
@@ -171,8 +192,7 @@ theorem IsClassicalElliptic.map_ker_chartSobolevExtension [CompactSpace M]
         (chartSobolevInclusion hc ψ hst).toLinearMap =
       LinearMap.ker (chartSobolevExtension hc ψ hc' φ P s (s - m)).toLinearMap :=
   LinearMap.map_ker_eq_ker_of_regularity
-    (DFunLike.congr_fun (chartSobolevExtension_comp_chartSobolevInclusion_of_mem (hc' := hc')
-      (φ := φ) hP hψ hst (by linarith : s - m ≤ t - m) le_rfl le_rfl))
+    (chartSobolevExtension_chartSobolevInclusion_apply hP hψ hst)
     (chartSobolevInclusion_injective hc' φ _)
     fun _ _ h ↦ hPe.exists_chartSobolevInclusion_eq hP hψ hφ hst h
 
@@ -187,8 +207,7 @@ theorem IsClassicalElliptic.comap_range_chartSobolevExtension [CompactSpace M]
         (chartSobolevInclusion hc' φ (by linarith : s - m ≤ t - m)).toLinearMap =
       LinearMap.range (chartSobolevExtension hc ψ hc' φ P t (t - m)).toLinearMap :=
   LinearMap.comap_range_eq_range_of_regularity
-    (DFunLike.congr_fun (chartSobolevExtension_comp_chartSobolevInclusion_of_mem (hc' := hc')
-      (φ := φ) hP hψ hst (by linarith : s - m ≤ t - m) le_rfl le_rfl))
+    (chartSobolevExtension_chartSobolevInclusion_apply hP hψ hst)
     (chartSobolevInclusion_injective hc' φ _)
     fun _ _ h ↦ hPe.exists_chartSobolevInclusion_eq hP hψ hφ hst h
 
@@ -205,8 +224,7 @@ theorem IsClassicalElliptic.index_chartSobolevExtension_eq [CompactSpace M]
   wlog hst : s ≤ t generalizing s t
   · exact (this t s (le_of_not_ge hst)).symm
   exact (hPe.isFredholm_chartSobolevExtension hP hψ hφ s).index_eq_of_regularity
-    (DFunLike.congr_fun (chartSobolevExtension_comp_chartSobolevInclusion_of_mem (hc' := hc')
-      (φ := φ) hP hψ hst (by linarith : s - m ≤ t - m) le_rfl le_rfl))
+    (chartSobolevExtension_chartSobolevInclusion_apply hP hψ hst)
     (chartSobolevInclusion_injective hc ψ hst) (chartSobolevInclusion_injective hc' φ _)
     (denseRange_chartSobolevInclusion hc' φ _)
     fun _ _ h ↦ hPe.exists_chartSobolevInclusion_eq hP hψ hφ hst h
@@ -214,7 +232,8 @@ theorem IsClassicalElliptic.index_chartSobolevExtension_eq [CompactSpace M]
 /-- **The index does not depend on the chart partitions.** Let `P` be a classical pseudodifferential
 operator of order `m` and `t ≤ s - m`. The extensions `H^s(M) → H^t(M)` of `P` between the Sobolev
 spaces of two pairs of chart partitions have the same index. -/
-theorem index_chartSobolevExtension_eq_of_mem {ι₂ κ₂ : Type*} [Fintype ι₂] [Fintype κ₂]
+theorem index_chartSobolevExtension_partitions_eq_of_mem {ι₂ κ₂ : Type*} [Fintype ι₂]
+    [Fintype κ₂]
     {c₂ : ι₂ → OpenPartialHomeomorph M (CoordinateSpace n)}
     {hc₂ : ∀ i, c₂ i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
     {ψ₂ : ∀ i, 𝓓(⟨(c₂ i).target, (c₂ i).open_target⟩, ℝ)}
