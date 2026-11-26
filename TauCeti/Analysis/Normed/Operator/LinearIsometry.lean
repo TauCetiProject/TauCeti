@@ -225,6 +225,7 @@ theorem norm_comp_comp_symm_sub_id (e : E ≃ₗᵢ[𝕜] F) (B : E →L[𝕜] E
 
 /-- Conjugating an operator by a linear isometric equivalence preserves its norm:
 `‖e ∘ M ∘ e⁻¹‖ = ‖M‖`. -/
+@[simp]
 theorem norm_conjContinuousAlgEquiv_apply (e : E ≃ₗᵢ[𝕜] F) (M : E →L[𝕜] E) :
     ‖e.toContinuousLinearEquiv.conjContinuousAlgEquiv M‖ = ‖M‖ := by
   rw [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]

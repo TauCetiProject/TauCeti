@@ -341,9 +341,7 @@ theorem eLpNorm_crReflectionZeroth_le (hU : MapsTo (starRingEnd ℂ) U U) (hp : 
     eLpNorm (crReflectionZeroth R.toContinuousLinearEquiv S) p (volume.restrict U) ≤
       2 * eLpNorm S p (volume.restrict (U ∩ {z | 0 ≤ z.im})) := by
   rw [crReflectionZeroth_def]
-  refine eLpNorm_twistedReflection_le hU (fun M => ?_) hp S
-  rw [ContinuousLinearEquiv.coe_coe]
-  exact (R.norm_conjContinuousAlgEquiv_apply M).le
+  exact eLpNorm_twistedReflection_le hU (fun M => by simp) hp S
 
 /-- **The `Lᵖ` bound for the reflected leading coefficient.** On a conjugation-invariant set `U`,
 for `1 ≤ p` and an isometry `R`, the reflection of `J` has at most twice the `Lᵖ` norm of `J` up
@@ -353,9 +351,7 @@ theorem eLpNorm_crReflectionCoeff_le (hU : MapsTo (starRingEnd ℂ) U U) (hp : 1
     eLpNorm (crReflectionCoeff R.toContinuousLinearEquiv J) p (volume.restrict U) ≤
       2 * eLpNorm J p (volume.restrict (U ∩ {z | 0 ≤ z.im})) := by
   rw [crReflectionCoeff_def]
-  refine eLpNorm_twistedReflection_le hU (fun M => ?_) hp J
-  rw [neg_apply, norm_neg, ContinuousLinearEquiv.coe_coe]
-  exact (R.norm_conjContinuousAlgEquiv_apply M).le
+  exact eLpNorm_twistedReflection_le hU (fun M => by simp) hp J
 
 /-- **The `Lᵖ` bound for the reflected derivative.** On a conjugation-invariant set `U`, for
 `1 ≤ p` and an isometry `R`, the reflection of `DJ` has at most twice the `Lᵖ` norm of `DJ` up to
@@ -367,9 +363,7 @@ theorem eLpNorm_crReflectionDeriv_le (hU : MapsTo (starRingEnd ℂ) U U) (hp : 1
   rw [crReflectionDeriv_def]
   refine eLpNorm_twistedReflection_le hU (fun D => ?_) hp DJ
   refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg D) fun h => ?_
-  calc _ = ‖R.toContinuousLinearEquiv.conjContinuousAlgEquiv (D (conj h))‖ := by simp
-    _ = ‖D (conj h)‖ := R.norm_conjContinuousAlgEquiv_apply _
-    _ ≤ ‖D‖ * ‖h‖ := by simpa using D.le_opNorm (conj h)
+  simpa using D.le_opNorm (conj h)
 
 end NormBounds
 
