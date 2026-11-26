@@ -51,7 +51,9 @@ treated in `TauCeti.Geometry.Symplectic.Floer.Continuation.SobolevRealization`.
   converge uniformly at both ends and the slice defects `∂t u - X_{H±_t}(u)` of the end data tend
   uniformly to zero at the corresponding end, the coefficients are bounded
   (`TauCeti.SymplecticForm.memLp_floerJetCoeff_of_cylindrical`; for a Floer trajectory,
-  `TauCeti.SymplecticForm.memLp_floerJetCoeff`).
+  `TauCeti.SymplecticForm.memLp_floerJetCoeff`). Whenever `L²` is nontrivial, a right inverse
+  of the operator forces bounded coefficients
+  (`TauCeti.SymplecticForm.memLp_floerJetCoeff_of_comp_eq_id`).
 * If moreover the asymptotic orbits are nondegenerate, the semi-Fredholm estimate
   `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`
   holds (`TauCeti.SymplecticForm.exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical`),
@@ -412,6 +414,20 @@ theorem memLp_floerJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
       (fun w ↦ H w.2) u) ∞ stripMeasure :=
   ω.memLp_floerJetCoeff_of_cylindrical
     (Floer.isCylindricalNearEnds_comp_snd hJ hH (R := 0) u) hu hH hJ huxm hδm hH hJ huxp hδp
+
+/-- **A right inverse forces bounded coefficients.** If the linearized Floer operator along `u`
+has a right inverse and `L²` is nontrivial, its coefficient field on jets is essentially bounded:
+otherwise the operator is `0` by convention. -/
+theorem memLp_floerJetCoeff_of_comp_eq_id (ω : SymplecticForm V)
+    [Nontrivial (Lp V 2 stripMeasure)] {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {Q : Lp V 2 stripMeasure →L[ℝ] H1 V}
+    (hQ : (ω.floerSobolevOperator J Ks Kt u).comp Q = ContinuousLinearMap.id ℝ _) :
+    MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure :=
+  memLp_of_jetOperator_ne_zero fun h ↦ by
+    obtain ⟨η, hη⟩ := exists_ne (0 : Lp V 2 stripMeasure)
+    have h' := DFunLike.congr_fun hQ η
+    rw [floerSobolevOperator_def, h, zero_comp, zero_comp] at h'
+    exact hη (by simpa using h'.symm)
 
 /-! ### The operator on exponentially weighted Sobolev spaces -/
 

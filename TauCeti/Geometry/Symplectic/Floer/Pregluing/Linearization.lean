@@ -32,6 +32,9 @@ cylindrical datum `K = H_t dt` (`TauCeti.SymplecticForm.floerLinearization`, wit
   the time `t`, the value and the slice velocity `∂t w`, so they are close too. Periodicity in `t`
   makes the continuity uniform over all times, since the times then range over the compact
   interval `[0, 1]`.
+* **Convergence of the coefficients.** Along a map converging to `x` in `C¹` at an end, the
+  coefficients converge uniformly to those `J_t(x t)` and `-J_t(x t) dX_{H_t}(x t)` of the
+  stationary cylinder over `x` (`TauCeti.SymplecticForm.tendstoUniformly_floerLinearizationCoeff`).
 * **The uniform estimate.** These are the closeness hypotheses of the splicing estimate
   `TauCeti.SymplecticForm.setIntegral_sobolev_le_mul_setIntegral_floerLinearization_of_splice`,
   on the half-cylinders `s ≤ T` and `s ≥ -T` for the neck length `T = R / 2`, which grows with
@@ -166,6 +169,48 @@ private theorem exists_pos_forall_cylCoeff_sub_lt (ω : SymplecticForm V)
     linarith
   · rw [norm_sub_rev (cylCoeff ω J H t' (x t') _)]
     linarith
+
+/-- **The coefficients along a map converging to an orbit.** Let `J` be a `C¹` family and `H` a
+`C²` Hamiltonian, both of period one in `t`, and let `x` be a continuous loop of period one. If
+`u(s, ·)` converges to `x` in `C¹` along a filter `l`, uniformly in `t`, with slice velocity
+tending to `X_{H_t}(x t)`, then the coefficients `J_t(u)` and `C_u` of the linearized operator of
+the datum `K = H_t dt` along `u` converge uniformly to those of the stationary cylinder over `x`,
+`J_t(x t)` and `-J_t(x t) dX_{H_t}(x t)`. -/
+theorem tendstoUniformly_floerLinearizationCoeff (ω : SymplecticForm V)
+    (hJ : ContDiff ℝ 1 (uncurry J)) (hH : ContDiff ℝ 2 (uncurry H)) (hJp : Periodic J 1)
+    (hHp : Periodic H 1) (hx : Continuous x) (hxp : Periodic x 1) {l : Filter ℝ}
+    (hux : TendstoUniformly (fun s t ↦ u (s, t)) x l)
+    (hdux : TendstoUniformly (fun s t ↦ fderiv ℝ u (s, t))
+      (fun t ↦ (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))) l) :
+    TendstoUniformly (fun s t ↦ J t (u (s, t))) (fun t ↦ J t (x t)) l ∧
+      TendstoUniformly
+        (fun s t ↦ ω.floerLinearizationCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u (s, t))
+        (fun t ↦ -(J t (x t)).comp (fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t))) l := by
+  set X : ℝ → V := fun t ↦ ω.hamiltonianVectorField (H t) (x t)
+  have key (ε : ℝ) (hε : 0 < ε) : ∀ᶠ s in l, ∀ t, ‖J t (u (s, t)) - J t (x t)‖ < ε ∧
+      ‖ω.floerLinearizationCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u (s, t) -
+        -(J t (x t)).comp (fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t))‖ < ε := by
+    obtain ⟨δ, hδ, h⟩ := exists_pos_forall_cylCoeff_sub_lt ω hJ hH hJp hHp hx hxp hε
+    filter_upwards [Metric.tendstoUniformly_iff.1 hux δ hδ,
+      Metric.tendstoUniformly_iff.1 hdux δ hδ] with s hs hds t
+    have hst := hs t
+    have hdst := hds t
+    rw [dist_comm, dist_eq_norm] at hst hdst
+    have h₀ (y : V) : ‖y - y‖ < δ := by rwa [sub_self, norm_zero]
+    obtain ⟨h₁, h₂⟩ := h t _ _ _ _ hst (h₀ (x t))
+      ((ContinuousLinearMap.norm_apply_stdComplexLineImag_sub_le _ _).trans_lt hdst) (h₀ (X t))
+    -- Along the stationary cylinder the term in the derivative of `J` vanishes.
+    have hc : cylCoeff ω J H t (x t) (X t) =
+        -(J t (x t)).comp (fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) := by
+      simp [cylCoeff, X]
+    rw [floerLinearizationCoeff_eq_cylCoeff, ← hc]
+    exact ⟨h₁, h₂⟩
+  refine ⟨Metric.tendstoUniformly_iff.2 fun ε hε ↦ (key ε hε).mono fun s hs t ↦ ?_,
+    Metric.tendstoUniformly_iff.2 fun ε hε ↦ (key ε hε).mono fun s hs t ↦ ?_⟩
+  · rw [dist_comm, dist_eq_norm]
+    exact (hs t).1
+  · rw [dist_comm, dist_eq_norm]
+    exact (hs t).2
 
 omit [FiniteDimensional ℝ V] in
 /-- **The jet of the pre-glued map on the neck.** If the map `u` is within `δ` of the loop `x` at

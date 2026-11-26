@@ -127,8 +127,8 @@ private theorem eventually_norm_floerJetCoeff_sub_lt (ω : SymplecticForm V) (J�
     with s hs hKs t ht
   rw [floerJetCoeff_const_of_eq ω J₀ u (hKs t).1 (hKs t).2,
     floerJetCoeff_const_of_eq ω J₀ _ (H := H) rfl rfl]
-  refine (norm_firstOrderJetCoeff_sub_firstOrderJetCoeff_le _ _ _).trans_lt ?_
-  rw [neg_sub_neg, ← dist_eq_norm]
+  refine (norm_firstOrderJetCoeff_sub_firstOrderJetCoeff_le _ _ _ _).trans_lt ?_
+  rw [sub_self, norm_zero, zero_add, neg_sub_neg, ← dist_eq_norm]
   exact hs t ht
 
 /-- For a constant complex structure `J₀`, the coefficient field of the linearized Floer operator
