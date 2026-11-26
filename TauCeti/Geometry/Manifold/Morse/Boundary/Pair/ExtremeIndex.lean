@@ -223,8 +223,10 @@ theorem pairSign_of_morseIndex_eq_finrank (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
     ← fundamentalSign_of_morseIndex_eq hq] at key
   rw [pairSign_def, ← Orientation.linearMapSign_reindex (finCongr hp),
     Orientation.reindex_finCongr_reindex_finCongr, Orientation.linearMapSign_of_bijective hbij, he]
-  rcases fundamentalSign_eq_one_or_eq_neg_one (hX := hX₀) (𝔬 := 𝔬₀) (oM := oM) hp with h | h <;>
-    rw [h] at key ⊢ <;> linarith
+  -- Multiply `key` by the fundamental sign of `p`, which squares to `1`.
+  have hsq := fundamentalSign_mul_self (R := ℤ) (hX := hX₀) (𝔬 := 𝔬₀) (oM := oM) hp
+  rw [Int.cast_id] at hsq
+  rw [← key, ← mul_assoc, hsq, one_mul]
 
 open scoped Classical in
 /-- **The coefficients at index `n`.** For Morse functions `f₀` and `f₁`, an orientation `oM` of
@@ -270,7 +272,9 @@ theorem finsum_signedPairCoeff_mul_augmentationSign (p : criticalPoints 𝓘(ℝ
       h.manifoldMorseIndex_le hf₀ ⟨p, hX₀.mem_unstableSet_self p.property, hpc⟩)
     rw [finsum_eq_single _ q₀ fun q hq ↦ ?_]
     · rw [signedPairCoeff_of_morseIndex_eq_zero 𝔬₀ 𝔬₁ hf₀ q₀ hp, ite_eq_left hpc]
-      rcases 𝔬₁.augmentationSign_eq_one_or_eq_neg_one hq₀ with h' | h' <;> rw [h'] <;> ring
+      have hsq := 𝔬₁.augmentationSign_mul_self (R := ℤ) hq₀
+      rw [Int.cast_id] at hsq
+      rw [mul_one, mul_assoc, hsq, mul_one]
     · -- The stable manifolds of distinct critical points are disjoint.
       have hpq : (p : M) ∉ hX₁.flow.stableSet q := fun hpq ↦
         disjoint_left.1 (Flow.disjoint_stableSet (Subtype.coe_injective.ne hq)) hpq hpc
@@ -318,8 +322,9 @@ theorem finsum_fundamentalSign_mul_signedPairCoeff (q : criticalPoints 𝓘(ℝ,
         h.manifoldMorseIndex_le hf₀ ⟨q, hqc, hX₁.mem_stableSet_self q.property⟩)
     rw [finsum_eq_single _ p₀ fun p hp ↦ ?_]
     · rw [signedPairCoeff_of_morseIndex_eq_finrank 𝔬₀ 𝔬₁ oM hf₀ hf₁ p₀ hq, ite_eq_left hqc]
-      rcases fundamentalSign_eq_one_or_eq_neg_one (hX := hX₀) (𝔬 := 𝔬₀) (oM := oM) hp₀ with
-        h' | h' <;> rw [h'] <;> ring
+      have hsq := fundamentalSign_mul_self (R := ℤ) (hX := hX₀) (𝔬 := 𝔬₀) (oM := oM) hp₀
+      rw [Int.cast_id] at hsq
+      rw [mul_one, ← mul_assoc, hsq, one_mul]
     · -- The unstable manifolds of distinct critical points are disjoint.
       have hqp : (q : M) ∉ hX₀.flow.unstableSet p := fun hqp ↦
         disjoint_left.1 (Flow.disjoint_unstableSet (Subtype.coe_injective.ne hp)) hqp hqc

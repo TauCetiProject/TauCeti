@@ -66,14 +66,14 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   and their signed counts.
 * `signedMorseBoundaryCoeff_pullback`, `domLCongr_comp_signedMorseBoundary_pullback`: the
   diffeomorphism intertwines the integral Morse boundaries.
+* `trajectorySign_apply_eq_mul_mul_trajectorySign`: a symmetry fixing `p` and `q`, acting on the
+  orientations of the unstable manifolds at `p` and `q` by signs `up` and `uq`, multiplies the
+  sign of each trajectory from `p` to `q` by `up * uq`.
 
 In the namespace `TauCeti.MorseOrientation`:
 
 * `augmentationSign_pullback`, `signedMorseAugmentation_comp_domLCongr`: the diffeomorphism
   intertwines the augmentations.
-* `trajectorySign_apply_eq_mul_mul_trajectorySign`: a symmetry fixing `p` and `q`, acting on the
-  orientations of the unstable manifolds at `p` and `q` by signs `up` and `uq`, multiplies the
-  sign of each trajectory from `p` to `q` by `up * uq`.
 
 ## References
 
