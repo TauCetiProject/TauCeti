@@ -133,6 +133,10 @@ private theorem coe_stabilizer_toRepresentation (ρ : (L ≃ₐ[k] L) →* (F �
     ((toRepresentation ρ).stabilizer x : Set (L ≃ₐ[k] L)) = {σ : L ≃ₐ[k] L | ρ σ x = x} := by
   simp_rw [(toRepresentation ρ).coe_stabilizer, toRepresentation_apply]
 
+private theorem isSmooth_toRepresentation_iff (ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)) :
+    (toRepresentation ρ).IsSmooth ↔ ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x} := by
+  simp_rw [Representation.isSmooth_iff, coe_stabilizer_toRepresentation]
+
 /-- If every automorphism in an open subgroup `H` fixes `z` under `ρ`, then the stabilizer of `z`
 is open. -/
 private theorem isOpen_stabilizer_of_forall_eq {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
@@ -189,8 +193,8 @@ theorem isOpen_of_span_fixedField_eq_top [Algebra.IsIntegral k L]
     (hspan : Submodule.span L (fixedField ρ.range : Set F) = ⊤) (x : F) :
     IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x} := by
   rw [← invariants_toRepresentation_eq_fixedField] at hspan
-  simpa only [toRepresentation_apply] using
-    isOpen_of_span_invariants_eq_top (toRepresentation_apply_smul hρ) hspan x
+  exact (isSmooth_toRepresentation_iff ρ).mp
+    (isSmooth_of_span_invariants_eq_top (toRepresentation_apply_smul hρ) hspan) x
 
 /-- The intermediate field over `L` of elements of `F` whose stabilizer in `Gal(L/k)` is open for
 the Krull topology under a semilinear action `ρ`. -/
@@ -201,7 +205,8 @@ def openStabilizerSubfield [Algebra.IsIntegral k L]
   have hmem (x : F) :
       x ∈ openStabilizerSubmodule (toRepresentation_apply_smul hρ) ↔
         IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x} := by
-    simp_rw [mem_openStabilizerSubmodule, toRepresentation_apply]
+    rw [mem_openStabilizerSubmodule, Representation.mem_smoothVectors_iff,
+      coe_stabilizer_toRepresentation]
   have h1 : IsOpen {σ : L ≃ₐ[k] L | ρ σ 1 = 1} :=
     isOpen_stabilizer_of_forall_eq (H := ⊤) isOpen_univ fun σ _ ↦ map_one (ρ σ)
   { carrier := {x : F | IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}}
@@ -246,8 +251,8 @@ theorem span_fixedField_eq_top_of_isOpen [IsGalois k L] {ρ : (L ≃ₐ[k] L) �
     (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) :
     Submodule.span L (fixedField ρ.range : Set F) = ⊤ := by
   rw [← invariants_toRepresentation_eq_fixedField]
-  refine span_invariants_eq_top_of_isOpen (toRepresentation_apply_smul hρ) fun x ↦ ?_
-  simpa only [toRepresentation_apply] using hopen x
+  have := (isSmooth_toRepresentation_iff ρ).mpr hopen
+  exact span_invariants_eq_top_of_isSmooth (toRepresentation_apply_smul hρ)
 
 /-- For a Galois extension `L / k` and a semilinear action `ρ` of `Gal(L/k)` on `F`, the fixed
 field `fixedField ρ.range` spans `F` over `L` if and only if every element of `F` has an open
@@ -301,8 +306,8 @@ theorem liftEquiv_fixedField_bijective {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F
   rw [LinearMap.liftBaseChange_comp, ← AlgHom.liftEquiv_toLinearMap,
     ← LinearEquiv.coe_baseChange] at hcomp
   refine (Function.Bijective.of_comp_iff _ (e.baseChange k L _ _).bijective).mp ?_
-  have hbij := liftBaseChange_invariants_bijective_of_isOpen (toRepresentation_apply_smul hρ)
-    fun x ↦ by simpa only [toRepresentation_apply] using hopen x
+  have := (isSmooth_toRepresentation_iff ρ).mpr hopen
+  have hbij := liftBaseChange_invariants_bijective (toRepresentation_apply_smul hρ)
   simpa only [← AlgHom.coe_toLinearMap, ← LinearEquiv.coe_toLinearMap, ← LinearMap.coe_comp,
     hcomp] using hbij
 

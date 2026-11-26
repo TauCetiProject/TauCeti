@@ -8,22 +8,20 @@ module
 public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RingTheory.TensorProduct.Basic
-import Mathlib.Topology.Algebra.OpenSubgroup
+public import TauCeti.RepresentationTheory.Smooth.Basic
 import TauCeti.LinearAlgebra.TensorProduct.FiniteExtension
 import TauCeti.RepresentationTheory.GaloisDescent.Injective
 import TauCeti.RepresentationTheory.GaloisDescent.Range
 import TauCeti.RepresentationTheory.GaloisDescent.Span
 import TauCeti.RepresentationTheory.Quotient
-import TauCeti.RepresentationTheory.Stabilizer
-import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # Semilinear Galois descent for infinite Galois extensions
 
 Let `L / k` be a Galois extension, possibly of infinite degree, and equip `Gal(L/k)` with its Krull
-topology. A semilinear representation `ρ` of `Gal(L/k)` on an `L`-vector space `V` is *discrete*
-(or continuous for the discrete topology on `V`) when every vector `v ∈ V` has an open stabilizer
-`{g ∈ Gal(L/k) | ρ g v = v}`.
+topology. A semilinear representation `ρ` of `Gal(L/k)` on an `L`-vector space `V` is *smooth*
+(or *discrete*, `Representation.IsSmooth ρ`) when every vector `v ∈ V` has an open stabilizer
+`ρ.stabilizer v` in `Gal(L/k)`.
 
 This file extends the three steps of semilinear Galois descent from finite Galois groups
 (`TauCeti.RepresentationTheory.GaloisDescent.Injective`,
@@ -31,13 +29,14 @@ This file extends the three steps of semilinear Galois descent from finite Galoi
 `TauCeti.RepresentationTheory.GaloisDescent.Span`) to arbitrary Galois extensions `L / k`.
 Injectivity and recognition of invariants require no topological hypothesis on `ρ`, because any
 tensor in `L ⊗[k] W` involves only finitely many scalars in `L` and therefore lives over a finite
-Galois subextension. Spanning (Speiser's theorem) holds if and only if all stabilizers are open.
+Galois subextension. Spanning (Speiser's theorem) holds if and only if `ρ` is smooth.
 No characteristic restriction and no finite-dimensionality of `V` over `L` is assumed.
 
 ## Main definitions
 
-* `TauCeti.GaloisDescent.openStabilizerSubmodule`: the `L`-submodule of vectors in `V` with open
-  stabilizer in `Gal(L/k)`.
+* `TauCeti.GaloisDescent.openStabilizerSubmodule`: the `L`-submodule of smooth vectors in `V`,
+  whose `k`-restriction is `ρ.smoothVectors.toSubmodule`
+  (`TauCeti.GaloisDescent.restrictScalars_openStabilizerSubmodule`).
 
 ## Main results
 
@@ -47,12 +46,12 @@ No characteristic restriction and no finite-dimensionality of `V` over `L` is as
 * `TauCeti.GaloisDescent.range_eq_invariants_of_liftBaseChange_surjective_of_isGalois`: an
   invariant `k`-linear map whose scalar extension to `L` is surjective has range equal to
   `ρ.invariants`.
-* `TauCeti.GaloisDescent.span_invariants_eq_top_of_isOpen`,
-  `TauCeti.GaloisDescent.isOpen_of_span_invariants_eq_top`, and
-  `TauCeti.GaloisDescent.span_invariants_eq_top_iff_forall_isOpen`: the invariant vectors span `V`
-  over `L` if and only if every vector in `V` has an open stabilizer in `Gal(L/k)`.
-* `TauCeti.GaloisDescent.liftBaseChange_invariants_bijective_of_isOpen`: when all stabilizers are
-  open, the scalar extension `L ⊗[k] ρ.invariants →ₗ[L] V` is bijective.
+* `TauCeti.GaloisDescent.span_invariants_eq_top_of_isSmooth`,
+  `TauCeti.GaloisDescent.isSmooth_of_span_invariants_eq_top`, and
+  `TauCeti.GaloisDescent.span_invariants_eq_top_iff_isSmooth`: the invariant vectors span `V`
+  over `L` if and only if `ρ` is smooth.
+* `TauCeti.GaloisDescent.liftBaseChange_invariants_bijective`: when `ρ` is smooth, the scalar
+  extension `L ⊗[k] ρ.invariants →ₗ[L] V` is bijective.
 
 ## References
 
@@ -291,19 +290,18 @@ theorem range_eq_invariants_of_liftBaseChange_surjective_of_isGalois [IsGalois k
 
 end Map
 
-/-- **Speiser's theorem (discrete semilinear Galois descent).** Let `L / k` be a Galois extension,
-possibly infinite, and let `ρ` be a semilinear representation of `Gal(L/k)` on an `L`-vector space
-`V`. If every vector `v ∈ V` has an open stabilizer in `Gal(L/k)` for the Krull topology, then `V`
-is spanned over `L` by `ρ.invariants`. -/
-theorem span_invariants_eq_top_of_isOpen [IsGalois k L]
-    {ρ : Representation k Gal(L/k) V}
-    (hsemi : ∀ (g : Gal(L/k)) (a : L) (v : V), ρ g (a • v) = g a • ρ g v)
-    (hopen : ∀ v : V, IsOpen {g : Gal(L/k) | ρ g v = v}) :
+/-- **Speiser's theorem (smooth semilinear Galois descent).** Let `L / k` be a Galois extension,
+possibly infinite, and let `ρ` be a smooth semilinear representation of `Gal(L/k)` on an `L`-vector
+space `V` for the Krull topology on `Gal(L/k)`. Then `V` is spanned over `L` by `ρ.invariants`. -/
+theorem span_invariants_eq_top_of_isSmooth [IsGalois k L]
+    {ρ : Representation k Gal(L/k) V} [ρ.IsSmooth]
+    (hsemi : ∀ (g : Gal(L/k)) (a : L) (v : V), ρ g (a • v) = g a • ρ g v) :
     Submodule.span L (ρ.invariants : Set V) = ⊤ := by
   rw [eq_top_iff]
   rintro v -
-  have hnhds : {g : Gal(L/k) | ρ g v = v} ∈ 𝓝 (1 : Gal(L/k)) :=
-    (hopen v).mem_nhds (by simp)
+  have hnhds : {g : Gal(L/k) | ρ g v = v} ∈ 𝓝 (1 : Gal(L/k)) := by
+    rw [← ρ.coe_stabilizer]
+    exact (Representation.IsSmooth.isOpen_stabilizer v).mem_nhds (one_mem _)
   obtain ⟨E, hfin, hnorm, hfix_v⟩ := (krullTopology_mem_nhds_one_iff_of_normal k L _).mp hnhds
   have : IsScalarTower k E V := E.toSubalgebra.isScalarTower_mid
   let S : Set V := Set.range fun g : Gal(L/k) ↦ ρ g v
@@ -341,22 +339,16 @@ theorem span_invariants_eq_top_of_isOpen [IsGalois k L]
   | smul a _ _ hx => exact Submodule.smul_mem _ (a : L) hx
 
 omit [IsScalarTower k L V] in
-/-- The `L`-submodule of vectors in `V` whose stabilizer in `Gal(L/k)` is open for the Krull
-topology under a semilinear representation `ρ`. -/
+/-- The `L`-submodule of smooth vectors in `V` (vectors whose stabilizer in `Gal(L/k)` is open for
+the Krull topology) under a semilinear representation `ρ`. -/
 def openStabilizerSubmodule [Algebra.IsIntegral k L]
     {ρ : Representation k Gal(L/k) V}
     (hsemi : ∀ (g : Gal(L/k)) (a : L) (v : V), ρ g (a • v) = g a • ρ g v) :
     Submodule L V where
-  carrier := {v : V | IsOpen {g : Gal(L/k) | ρ g v = v}}
-  zero_mem' := by
-    rw [Set.mem_ofPred_eq, ← ρ.coe_stabilizer, ρ.stabilizer_zero, Subgroup.coe_top]
-    exact isOpen_univ
-  add_mem' {x y} hx hy := by
-    rw [Set.mem_ofPred_eq, ← ρ.coe_stabilizer] at hx hy ⊢
-    exact Subgroup.isOpen_mono (ρ.le_stabilizer_add x y)
-      (by rw [Subgroup.coe_inf]; exact hx.inter hy)
+  __ := ρ.smoothVectors.toSubmodule.toAddSubmonoid
   smul_mem' c {x} hx := by
-    rw [Set.mem_ofPred_eq, ← ρ.coe_stabilizer] at hx ⊢
+    rw [AddSubmonoid.mem_carrier, Submodule.mem_toAddSubmonoid, Subrepresentation.mem_toSubmodule,
+      Representation.mem_smoothVectors_iff] at hx ⊢
     refine Subgroup.isOpen_mono
       (H₁ := MulAction.stabilizer Gal(L/k) c ⊓ ρ.stabilizer x) (H₂ := ρ.stabilizer (c • x))
       (fun g hg ↦ ?_)
@@ -366,53 +358,62 @@ def openStabilizerSubmodule [Algebra.IsIntegral k L]
       MulAction.mem_stabilizer_iff.mp hgc, ρ.mem_stabilizer.mp hgx]
 
 omit [IsScalarTower k L V] in
-/-- Membership in `openStabilizerSubmodule hsemi` is openness of the stabilizer in `Gal(L/k)`. -/
+/-- Membership in `openStabilizerSubmodule hsemi` is membership in `ρ.smoothVectors`. -/
 @[simp]
 theorem mem_openStabilizerSubmodule [Algebra.IsIntegral k L]
     {ρ : Representation k Gal(L/k) V}
     (hsemi : ∀ (g : Gal(L/k)) (a : L) (v : V), ρ g (a • v) = g a • ρ g v) (v : V) :
-    v ∈ openStabilizerSubmodule hsemi ↔ IsOpen {g : Gal(L/k) | ρ g v = v} :=
+    v ∈ openStabilizerSubmodule hsemi ↔ v ∈ ρ.smoothVectors :=
   Iff.rfl
 
+/-- Restricting scalars of `openStabilizerSubmodule hsemi` to `k` recovers the underlying
+`k`-submodule of `ρ.smoothVectors`. -/
+@[simp]
+theorem restrictScalars_openStabilizerSubmodule [Algebra.IsIntegral k L]
+    {ρ : Representation k Gal(L/k) V}
+    (hsemi : ∀ (g : Gal(L/k)) (a : L) (v : V), ρ g (a • v) = g a • ρ g v) :
+    (openStabilizerSubmodule hsemi).restrictScalars k = ρ.smoothVectors.toSubmodule := by
+  ext v
+  rw [Submodule.restrictScalars_mem, mem_openStabilizerSubmodule,
+    Subrepresentation.mem_toSubmodule]
+
 omit [IsScalarTower k L V] in
-/-- **Vectors spanned by invariants have open stabilizers.** Over an algebraic extension `L / k`,
-if `V` is spanned over `L` by the invariants of a semilinear representation `ρ` of `Gal(L/k)` on
-`V`, then every vector in `V` has an open stabilizer in `Gal(L/k)` for the Krull topology. -/
-theorem isOpen_of_span_invariants_eq_top [Algebra.IsIntegral k L]
+/-- **Representations spanned by invariants are smooth.** Over an algebraic extension `L / k`, if
+`V` is spanned over `L` by the invariants of a semilinear representation `ρ` of `Gal(L/k)` on `V`,
+then `ρ` is smooth for the Krull topology on `Gal(L/k)`. -/
+theorem isSmooth_of_span_invariants_eq_top [Algebra.IsIntegral k L]
     {ρ : Representation k Gal(L/k) V}
     (hsemi : ∀ (g : Gal(L/k)) (a : L) (v : V), ρ g (a • v) = g a • ρ g v)
-    (hspan : Submodule.span L (ρ.invariants : Set V) = ⊤) (v : V) :
-    IsOpen {g : Gal(L/k) | ρ g v = v} := by
+    (hspan : Submodule.span L (ρ.invariants : Set V) = ⊤) :
+    ρ.IsSmooth := by
+  rw [Representation.isSmooth_iff_forall_mem_smoothVectors]
+  intro v
   refine (mem_openStabilizerSubmodule hsemi v).mp
     (Submodule.span_le.mpr ?_ (by rw [hspan]; exact Submodule.mem_top))
   intro x hx
-  rw [SetLike.mem_coe, mem_openStabilizerSubmodule, ← ρ.coe_stabilizer]
-  exact Subgroup.isOpen_mono (H₁ := ⊤) (H₂ := ρ.stabilizer x)
-    (fun g _ ↦ ρ.mem_stabilizer.mpr ((ρ.mem_invariants x).mp hx g))
-    (by rw [Subgroup.coe_top]; exact isOpen_univ)
+  rw [SetLike.mem_coe, mem_openStabilizerSubmodule,
+    Representation.mem_smoothVectors_iff_exists_openSubgroup]
+  exact ⟨⊤, fun g _ ↦ ρ.mem_stabilizer.mpr ((ρ.mem_invariants x).mp hx g)⟩
 
-/-- **Characterization of discrete semilinear Galois representations.** For a Galois extension
+/-- **Characterization of smooth semilinear Galois representations.** For a Galois extension
 `L / k` and a semilinear representation `ρ` of `Gal(L/k)` on an `L`-vector space `V`, the invariant
-vectors span `V` over `L` if and only if every vector in `V` has an open stabilizer in `Gal(L/k)`.
--/
-theorem span_invariants_eq_top_iff_forall_isOpen [IsGalois k L]
+vectors span `V` over `L` if and only if `ρ` is smooth. -/
+theorem span_invariants_eq_top_iff_isSmooth [IsGalois k L]
     {ρ : Representation k Gal(L/k) V}
     (hsemi : ∀ (g : Gal(L/k)) (a : L) (v : V), ρ g (a • v) = g a • ρ g v) :
-    Submodule.span L (ρ.invariants : Set V) = ⊤ ↔
-      ∀ v : V, IsOpen {g : Gal(L/k) | ρ g v = v} :=
-  ⟨isOpen_of_span_invariants_eq_top hsemi, span_invariants_eq_top_of_isOpen hsemi⟩
+    Submodule.span L (ρ.invariants : Set V) = ⊤ ↔ ρ.IsSmooth :=
+  ⟨isSmooth_of_span_invariants_eq_top hsemi, fun _ ↦ span_invariants_eq_top_of_isSmooth hsemi⟩
 
-/-- **Effectiveness of discrete semilinear Galois descent.** For a Galois extension `L / k` and a
-semilinear representation `ρ` of `Gal(L/k)` on `V` whose vectors all have open stabilizers, the
-canonical scalar-extension map `L ⊗[k] ρ.invariants →ₗ[L] V` is bijective. -/
-theorem liftBaseChange_invariants_bijective_of_isOpen [IsGalois k L]
-    {ρ : Representation k Gal(L/k) V}
-    (hsemi : ∀ (g : Gal(L/k)) (a : L) (v : V), ρ g (a • v) = g a • ρ g v)
-    (hopen : ∀ v : V, IsOpen {g : Gal(L/k) | ρ g v = v}) :
+/-- **Effectiveness of smooth semilinear Galois descent.** For a Galois extension `L / k` and a
+smooth semilinear representation `ρ` of `Gal(L/k)` on `V`, the canonical scalar-extension map
+`L ⊗[k] ρ.invariants →ₗ[L] V` is bijective. -/
+theorem liftBaseChange_invariants_bijective [IsGalois k L]
+    {ρ : Representation k Gal(L/k) V} [ρ.IsSmooth]
+    (hsemi : ∀ (g : Gal(L/k)) (a : L) (v : V), ρ g (a • v) = g a • ρ g v) :
     Function.Bijective (ρ.invariants.subtype.liftBaseChange L) := by
   refine ⟨liftBaseChange_injective_of_invariant_of_isGalois (ρ := ρ) Subtype.val_injective
     fun g a w ↦ by rw [Submodule.coe_subtype, hsemi, (ρ.mem_invariants w.val).mp w.property g], ?_⟩
   rw [← LinearMap.range_eq_top, LinearMap.range_liftBaseChange, Submodule.range_subtype,
-    span_invariants_eq_top_of_isOpen hsemi hopen]
+    span_invariants_eq_top_of_isSmooth hsemi]
 
 end TauCeti.GaloisDescent
