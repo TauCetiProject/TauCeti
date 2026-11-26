@@ -41,14 +41,17 @@ As `h → 0⁺`, a positive power `h ^ θ` tends to zero, so every function `f =
 particular every multiple `A * h ^ θ`, falls below any positive constant. This is how polynomial
 rates in a small scale `h` become inequalities for all small `h`. Power laws multiply: if
 `f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then `f * g = O(h ^ (a + b))`, and a bound
-`f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`. Likewise, near a point `w` of a normed
-group, a bound `f = O(‖x - w‖ ^ a)` within a set avoiding `w` weakens to `f = O(‖x - w‖ ^ c)` for
+`f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`; at `+∞` it weakens to
+`f = O(x ^ c)` for every `c ≥ a`. Likewise, near a point `w` of a normed group, a bound
+`f = O(‖x - w‖ ^ a)` within a set avoiding `w` weakens to `f = O(‖x - w‖ ^ c)` for
 every `c ≤ a`.
 
 ## Complex powers of a positive real variable
 
 Along any filter eventually in `(0, ∞)`, the complex power `t ^ w` of the real variable `t` is
-`O(t ^ Re w)`. For natural `n ≠ 0`, `‖ρ ^ n * n ^ α‖ = ‖ρ‖ ^ n * n ^ Re α` and
+`O(t ^ Re w)`, so a bound by `t ^ w` is a bound by the real power `t ^ Re w`
+(`Asymptotics.IsBigO.trans_ofReal_cpow_rpow`). For natural `n ≠ 0`,
+`‖ρ ^ n * n ^ α‖ = ‖ρ‖ ^ n * n ^ Re α` and
 `‖ρ ^ n * n ^ α * n⁻ᴹ‖ = ‖ρ‖ ^ n * n ^ (Re α - M)`. As `n → ∞`, `ρ ^ n * n ^ α = o(r ^ n)` whenever
 `‖ρ‖ < r`, and `‖ρ‖ ^ n * n ^ β = o(ρ ^ n * n ^ α)` whenever `β < Re α`.
 
@@ -347,6 +350,22 @@ theorem IsBigO.nhdsGT_zero_rpow_of_le {R : Type*} [Norm R] {f : ℝ → R} {a c 
   filter_upwards [Ioo_mem_nhdsGT one_pos] with t ht
   rw [Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le a)]
   exact Real.rpow_le_rpow_of_exponent_ge ht.1 ht.2.le h
+
+/-- Power laws weaken at `+∞`: if `f = O(x ^ a)` as `x → ∞`, then `f = O(x ^ c)` for every
+`a ≤ c`. -/
+theorem IsBigO.atTop_rpow_of_le {R : Type*} [Norm R] {f : ℝ → R} {a c : ℝ}
+    (hf : f =O[atTop] fun x ↦ x ^ a) (h : a ≤ c) : f =O[atTop] fun x ↦ x ^ c := by
+  refine hf.trans (Eventually.isBigO ?_)
+  filter_upwards [eventually_ge_atTop 1] with x hx
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (zero_le_one.trans hx) a)]
+  exact Real.rpow_le_rpow_of_exponent_le hx h
+
+/-- Along a filter eventually in `(0, ∞)`, a bound `f = O(t ^ w)` by a complex power of the real
+variable is a bound `f = O(t ^ a)` by the real power with exponent `a = Re w`. -/
+theorem IsBigO.trans_ofReal_cpow_rpow {R : Type*} [Norm R] {f : ℝ → R} {l : Filter ℝ} {w : ℂ}
+    {a : ℝ} (hf : f =O[l] fun t ↦ (t : ℂ) ^ w) (hl : ∀ᶠ t in l, 0 < t) (ha : w.re = a) :
+    f =O[l] fun t ↦ t ^ a :=
+  ha ▸ hf.trans (TauCeti.isBigO_ofReal_cpow_rpow hl w)
 
 /-- Power laws in the distance weaken near a point: if `f = O(‖x - w‖ ^ a)` as `x → w` within a
 set `s` that does not contain `w`, then `f = O(‖x - w‖ ^ c)` there for every `c ≤ a`. -/
