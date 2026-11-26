@@ -158,6 +158,30 @@ lemma comp_naturality_hom_app {B : Type u₁} [Bicategory.{w₁, v₁} B]
   exact (congrArg (fun m => m.toNatTrans.app X)
     (categoryStruct_comp_naturality_hom η θ f)).trans h
 
+/-- The inverse naturality cell of a composite strong transformation into `Cat`, on objects. -/
+lemma comp_naturality_inv_app {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G H : B ⥤ᵖ Cat.{v, w}} (η : F ⟶ G) (θ : G ⟶ H)
+    {a b : B} (f : a ⟶ b) (X : F.obj a) :
+    ((η ≫ θ).naturality f).inv.toNatTrans.app X =
+      (θ.naturality f).inv.toNatTrans.app ((η.app a).toFunctor.obj X) ≫
+        (θ.app b).toFunctor.map ((η.naturality f).inv.toNatTrans.app X) := by
+  -- As in `comp_naturality_hom_app`, fix the functor endpoints first.
+  let T : F.obj a ⟶ F.obj b := F.map f
+  let V : H.obj a ⟶ H.obj b := H.map f
+  let U : G.obj a ⟶ G.obj b := G.map f
+  let ηa : F.obj a ⟶ G.obj a := η.app a
+  let ηb : F.obj b ⟶ G.obj b := η.app b
+  let θa : G.obj a ⟶ H.obj a := θ.app a
+  let θb : G.obj b ⟶ H.obj b := θ.app b
+  let m : ηa ≫ U ⟶ T ≫ ηb := (η.naturality f).inv
+  let n : θa ≫ V ⟶ U ≫ θb := (θ.naturality f).inv
+  have h : ((α_ ηa θa V).hom ≫ ηa ◁ n ≫ (α_ ηa U θb).inv ≫
+        m ▷ θb ≫ (α_ T ηb θb).hom).toNatTrans.app X =
+      n.toNatTrans.app (ηa.toFunctor.obj X) ≫ θb.toFunctor.map (m.toNatTrans.app X) := by
+    simp
+  exact (congrArg (fun m => m.toNatTrans.app X)
+    (categoryStruct_comp_naturality_inv η θ f)).trans h
+
 /-- The component at an object `X` of the naturality isomorphism of a strong transformation
 `η : F ⟶ G` into `Cat` along `f : a ⟶ b`: the image under `η` of the transport of `X` along `f`
 is isomorphic to the transport along `f` of the image of `X` under `η`. -/
