@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Sobolev
 import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.Manifold.Parametrix
 import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
 import TauCeti.Geometry.Manifold.Sobolev.ChartReading

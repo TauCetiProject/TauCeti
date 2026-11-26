@@ -34,8 +34,8 @@ and such localized changes of variables are bounded on `H^s`
 
 * `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le`: changing
   the chart of a reading costs a constant in the `H^s` norm.
-* `TauCeti.exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz`: a reading is
-  fixed in every `H^t` by multiplication by a Schwartz function equal to `1` on its support.
+* `TauCeti.exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz`: the readings
+  through a cutoff are fixed in every `H^t` by multiplication by one Schwartz function.
 
 ## References
 
@@ -92,10 +92,10 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_
     simp [cutoffPullback_apply_of_notMem he' _ _ hy]
 
 omit [T2Space M] in
-/-- **A reading is fixed by a cutoff equal to `1` on its support.** For a cutoff `φ` in a chart
-`e`, there is a Schwartz function `χ`, independent of the function `u` on `M` and equal to `1` on
-the support of `φ`, such that multiplication by `χ` fixes the reading `φ · (u ∘ e⁻¹)` in every
-`H^t`. -/
+/-- **A reading is fixed by a Schwartz cutoff.** For a cutoff `φ` in a chart `e`, there is a
+Schwartz function `χ`, independent of the function `u` on `M` and of `t`, such that multiplication
+by `χ` fixes the reading `φ · (u ∘ e⁻¹)` in every `H^t`. (The proof takes `χ` equal to `1` near the
+support of `φ`.) -/
 theorem exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
     (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
