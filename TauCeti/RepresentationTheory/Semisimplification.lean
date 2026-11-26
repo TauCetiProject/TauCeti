@@ -1,0 +1,117 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RepresentationTheory.Semisimple
+public import TauCeti.RepresentationTheory.AsModule
+public import TauCeti.RepresentationTheory.Charpoly
+public import TauCeti.RepresentationTheory.OfModule
+public import TauCeti.RingTheory.CompositionSeries.Semisimplification.Charpoly
+import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
+
+/-!
+# The semisimplification of a representation
+
+For a finite-dimensional representation `ρ` of a monoid `G` on `V` over a field `k`, the
+semisimplification `V^ss` is the direct sum of the Jordan-Hölder factors of `V`, the
+semisimplification `TauCeti.semisimplification k[G] ρ.asModule` of the `k[G]`-module attached to
+`ρ`. This file equips it with its representation `ρ.semisimplification` of `G`, through
+`Representation.ofModule'`, and records its basic properties: it is semisimple, it is equivalent to
+`ρ` exactly when `ρ` is semisimple, and every `g ∈ G` has the same characteristic polynomial, trace
+and determinant on `V^ss` as on `V`.
+
+## Main declarations
+
+* `Representation.semisimplification ρ`: the representation of `G` on `V^ss`.
+* `Representation.isSemisimpleRepresentation_semisimplification`: `V^ss` is semisimple.
+* `Representation.nonempty_equiv_semisimplification_iff`: `V^ss ≅ V` exactly when `ρ` is
+  semisimple.
+* `Representation.charpoly_semisimplification_apply`,
+  `Representation.trace_semisimplification_apply`, `Representation.det_semisimplification_apply`:
+  `V^ss` and `V` have the same characteristic polynomials, traces and determinants.
+-/
+
+public section
+
+open scoped MonoidAlgebra
+
+namespace Representation
+
+variable {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+  (ρ : Representation k G V)
+
+/-- The `k[G]`-module attached to a finite-dimensional representation is Noetherian. -/
+instance isNoetherian_asModule : IsNoetherian k[G] ρ.asModule :=
+  isNoetherian_of_tower k inferInstance
+
+/-- The `k[G]`-module attached to a finite-dimensional representation is Artinian. -/
+instance isArtinian_asModule : IsArtinian k[G] ρ.asModule :=
+  isArtinian_of_tower k inferInstance
+
+/-- The **semisimplification** of a finite-dimensional representation: the representation of `G`
+on the direct sum `V^ss` of the Jordan-Hölder factors of `V`, read off the `k[G]`-module
+semisimplification of `ρ.asModule`. -/
+noncomputable def semisimplification :
+    Representation k G (TauCeti.semisimplification k[G] ρ.asModule) :=
+  ofModule' (TauCeti.semisimplification k[G] ρ.asModule)
+
+theorem semisimplification_def :
+    ρ.semisimplification = ofModule' (TauCeti.semisimplification k[G] ρ.asModule) :=
+  (rfl)
+
+/-- A group element acts on `V^ss` through the corresponding basis element of `k[G]`. -/
+theorem semisimplification_apply (g : G) (x : TauCeti.semisimplification k[G] ρ.asModule) :
+    ρ.semisimplification g x = MonoidAlgebra.single g (1 : k) • x :=
+  (rfl)
+
+/-- The `k[G]`-module attached to `ρ.semisimplification` is the semisimplification of the module
+attached to `ρ`. -/
+noncomputable def semisimplificationAsModuleEquiv :
+    ρ.semisimplification.asModule ≃ₗ[k[G]] TauCeti.semisimplification k[G] ρ.asModule :=
+  TauCeti.Representation.ofModule'AsModuleEquiv _
+
+/-- **The semisimplification is semisimple.** -/
+instance isSemisimpleRepresentation_semisimplification :
+    ρ.semisimplification.IsSemisimpleRepresentation :=
+  (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule _).mpr
+    (IsSemisimpleModule.congr ρ.semisimplificationAsModuleEquiv)
+
+/-- **`V^ss ≅ V` exactly when `ρ` is semisimple.** -/
+theorem nonempty_equiv_semisimplification_iff :
+    Nonempty (ρ.semisimplification.Equiv ρ) ↔ ρ.IsSemisimpleRepresentation := by
+  refine ⟨fun ⟨e⟩ ↦ e.toIntertwiningMap.isSemisimpleRepresentation_of_surjective
+    e.toLinearEquiv.surjective, fun h ↦ ?_⟩
+  have := (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mp h
+  obtain ⟨e⟩ := TauCeti.nonempty_linearEquiv_semisimplification_of_isSemisimpleModule
+    (R := k[G]) (M := ρ.asModule)
+  exact ⟨TauCeti.Representation.equivOfAsModuleLinearEquiv
+    (ρ.semisimplificationAsModuleEquiv ≪≫ₗ e)⟩
+
+/-- **The semisimplification has the characteristic polynomials of `ρ`**: every `g ∈ G` has the
+same characteristic polynomial on `V^ss` as on `V`. -/
+@[simp]
+theorem charpoly_semisimplification_apply (g : G) :
+    (ρ.semisimplification g).charpoly = (ρ g).charpoly := by
+  rw [← charpoly_lsmul_asModule_of ρ g]
+  exact TauCeti.charpoly_lsmul_semisimplification (k := k) (M := ρ.asModule)
+    (MonoidAlgebra.of k G g)
+
+/-- The semisimplification has the traces of `ρ`. -/
+@[simp]
+theorem trace_semisimplification_apply (g : G) :
+    LinearMap.trace k _ (ρ.semisimplification g) = LinearMap.trace k _ (ρ g) := by
+  rw [LinearMap.trace_eq_neg_charpoly_nextCoeff, LinearMap.trace_eq_neg_charpoly_nextCoeff,
+    charpoly_semisimplification_apply]
+
+/-- The semisimplification has the determinants of `ρ`. -/
+@[simp]
+theorem det_semisimplification_apply (g : G) :
+    LinearMap.det (ρ.semisimplification g) = LinearMap.det (ρ g) := by
+  rw [LinearMap.det_eq_sign_charpoly_coeff, LinearMap.det_eq_sign_charpoly_coeff,
+    ← LinearMap.charpoly_natDegree (ρ.semisimplification g), ← LinearMap.charpoly_natDegree (ρ g),
+    charpoly_semisimplification_apply]
+
+end Representation
