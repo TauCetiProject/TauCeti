@@ -16,6 +16,8 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 import TauCeti.Topology.Instances.Matrix
 import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.MeasureTheory.Function.LpSeminorm.HolderOnWith
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # Global `C^{1,β}` regularity for quasilinear divergence-form equations
@@ -147,16 +149,6 @@ private theorem caratheodory_of_holderOnWith (hα : 0 < α)
     ae_restrict_of_forall_mem Ω.isOpen.measurableSet fun x hx =>
       continuous_of_continuous_matrixBilinearForm (hAs x (subset_closure hx)).continuous⟩
 
-/-- A field `α`-Hölder on the closure of a bounded open set `Ω` is essentially bounded on `Ω`. -/
-private theorem memLp_top_of_holderOnWith
-    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) (hα : 0 < α)
-    (hG : HolderOnWith KG α G (closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))) :
-    MemLp G ⊤ (volume.restrict Ω) := by
-  obtain ⟨MG, hMG⟩ := (hG.isBounded_image hΩ.closure).exists_norm_le
-  exact memLp_top_of_bound (((hG.continuousOn hα).mono subset_closure).aestronglyMeasurable
-    Ω.isOpen.measurableSet) MG (ae_restrict_of_forall_mem Ω.isOpen.measurableSet fun x hx =>
-      hMG _ (mem_image_of_mem G (subset_closure hx)))
-
 /-- **De Giorgi up to the boundary.** On a bounded Lipschitz domain, a weak solution
 `u ∈ H¹₀(Ω)` of the quasilinear equation agrees almost everywhere on `Ω` with a function that is
 Hölder on `closure Ω`, with some positive exponent: the frozen coefficient `A(x, u(x))` is
@@ -189,7 +181,8 @@ private theorem exists_holderOnWith_value_closure
     (by exact_mod_cast (show (1 : ℝ) < r by linarith)) (by rw [hcard]; linarith)
     (by push_cast; linarith) (by rw [hcard]; push_cast; linarith)
   obtain ⟨hAΩ, hAm, hAc⟩ := caratheodory_of_holderOnWith hα hA hAx hAs
-  have hGtop := memLp_top_of_holderOnWith hΩ hα hG
+  have hGtop : MemLp G ⊤ (volume.restrict Ω) :=
+    hG.memLp_top hα hΩ.closure Ω.isOpen.measurableSet subset_closure
   -- The equation holds against all of `H¹₀(Ω)`.
   have hell := UniformlyEllipticOn.apply_of_forall hAΩ (W1p.value (u : W1p volume Ω 2))
   have hint : MemLp (fun x => energyIntegrand (A x (W1p.value (u : W1p volume Ω 2) x)) 0 0) ⊤
@@ -245,10 +238,7 @@ private theorem exists_holderOnWith_gradient_closure_of_holderOnWith_value
         ∀ y ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖g y‖ ≤ C := by
   obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))),
       ∀ y ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))), edist x y ≤ D :=
-    ⟨(Metric.ediam (closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))).toNNReal,
-      fun x hx y hy => by
-        rw [ENNReal.coe_toNNReal (Metric.isBounded_iff_ediam_ne_top.1 hΩ.closure)]
-        exact Metric.edist_le_ediam_of_mem hx hy⟩
+    ⟨_, fun _ hx _ hy => Metric.edist_le_diam_of_mem hΩ.closure hx hy⟩
   -- `u` solves the linear equation with the coefficient frozen at `v`, which is `β`-Hölder.
   have haK := holderOnWith_matrixBilinearForm_comp hD subset_rfl hAx hAs hβα (hv.of_le hD hβγ)
   have hu' : ∀ φ : 𝓓(Ω, ℝ), energyFormH1 (fun x => A x (v x)) 0 0 (u : W1p volume Ω 2)
@@ -346,8 +336,9 @@ quasilinear Dirichlet problem
 
 `-∂ᵢ(Aⁱʲ(x, u) ∂ⱼu) = f - div G` in `Ω`, `u = 0` on `∂Ω`
 
-has a weak solution `u ∈ H¹₀(Ω)`, and the gradient of every such solution agrees almost everywhere
-on `Ω` with a function that is `β`-Hölder on `closure Ω`. No uniqueness is claimed. -/
+has a weak solution `u ∈ H¹₀(Ω)` whose gradient agrees almost everywhere on `Ω` with a function
+that is `β`-Hölder on `closure Ω`. No uniqueness is claimed; the regularity of every weak solution
+is `TauCeti.PDE.exists_holderOnWith_gradient_closure_of_forall_energyFormH1_quasilinear_eq`. -/
 theorem exists_forall_energyFormH1_quasilinear_eq_and_holderOnWith_gradient_closure
     (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (hbdry : ∀ x ∈ frontier (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))),
@@ -377,27 +368,25 @@ theorem exists_forall_energyFormH1_quasilinear_eq_and_holderOnWith_gradient_clos
   have : IsFiniteMeasure (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     isFiniteMeasure_restrict.2 hΩ.measure_lt_top.ne
   obtain ⟨hAΩ, hAm, hAc⟩ := caratheodory_of_holderOnWith hα hA hAx hAs
-  have hG0 : MemLp (fun x => G x - 0) 2 (volume.restrict Ω) := by
-    simpa only [sub_zero] using (memLp_top_of_holderOnWith hΩ hα hG).mono_exponent le_top
+  have hG2 : MemLp G 2 (volume.restrict Ω) :=
+    (hG.memLp_top hα hΩ.closure Ω.isOpen.measurableSet subset_closure).mono_exponent le_top
   have hf2 : MemLp f 2 (volume.restrict Ω) := hf.mono_exponent hq2
-  -- The forcing `v ↦ ∫_Ω ⟪G, ∇v⟫ + ∫_Ω f v` on `H¹₀(Ω)`.
+  -- The forcing `v ↦ ∫_Ω f v + ∫_Ω ⟪G, ∇v⟫` on `H¹₀(Ω)`.
   obtain ⟨u, hu0, hu⟩ := exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq hAΩ hAm
-    hAc hΩ 0 (((innerSL ℝ hG0.toLp).comp W1p.gradientL + (innerSL ℝ hf2.toLp).comp W1p.valueL).comp
-      (w1p0Submodule volume Ω 2).toSubmodule.subtypeL)
+    hAc hΩ 0 (dirichletForcing (hf2.toLp f) - divergenceForcing (hG2.toLp G))
   have hu' : ∀ φ : 𝓓(Ω, ℝ), energyFormH1 (fun x => A x (W1p.value u x)) 0 0 u
       (W1p.ofTestFunctionₗ volume Ω 2 φ) =
       (∫ x in Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
         ∫ x in Ω, f x * φ x := fun φ => by
-    rw [hu ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩]
-    simp only [ContinuousLinearMap.comp_apply, add_apply, innerSL_apply_apply,
-      W1p.gradientL_apply, W1p.valueL_apply, Submodule.subtypeL_apply]
-    rw [inner_toLp_gradient_ofTestFunctionₗ hG0 φ, L2.inner_def]
-    congr 1
-    refine integral_congr_ae ?_
-    filter_upwards [hf2.coeFn_toLp, W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := 2) φ]
-      with x hx hφx
-    rw [hx, hφx]
-    simp [mul_comm]
+    rw [hu ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩, sub_apply,
+      dirichletForcing_apply_eq_setIntegral, divergenceForcing_toLp_apply, sub_neg_eq_add,
+      add_comm]
+    congr 1 <;> refine integral_congr_ae ?_
+    · filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) 2 φ] with x hx
+      simp [hx]
+    · filter_upwards [hf2.coeFn_toLp, W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := 2) φ]
+        with x hx hφx
+      rw [hx, hφx]
   exact ⟨⟨u, by simpa using hu0⟩, hu',
     exists_holderOnWith_gradient_closure_of_forall_energyFormH1_quasilinear_eq hΩ hbdry hA hAx hAs
       hG hq2 hf hu' hβ hβ1 hβα hβq⟩

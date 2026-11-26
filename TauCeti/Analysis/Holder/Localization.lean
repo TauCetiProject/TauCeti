@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # Quantitative localization of finite-order Hölder maps
@@ -210,9 +211,7 @@ theorem _root_.ContDiff.exists_eqOn_ball_holderWith_fderiv [FiniteDimensional �
     · simpa using (hM₀ x (ball_subset_closedBall hx)).trans (le_max_left _ _)
     · simpa using (hM₁ x (ball_subset_closedBall hx)).trans (le_max_right _ _)
   obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ ball c (3 * r), ∀ y ∈ ball c (3 * r), edist x y ≤ D :=
-    ⟨(Metric.ediam (ball c (3 * r))).toNNReal, fun x hx y hy => by
-      rw [ENNReal.coe_toNNReal (Metric.isBounded_iff_ediam_ne_top.1 isBounded_ball)]
-      exact Metric.edist_le_ediam_of_mem hx hy⟩
+    ⟨_, fun _ hx _ hy => Metric.edist_le_diam_of_mem isBounded_ball hx hy⟩
   have hcurry : iteratedFDeriv ℝ 1 f = (continuousMultilinearCurryFin1 ℝ E F).symm ∘ fderiv ℝ f :=
     funext fun x => by
       rw [Function.comp_apply, LinearIsometryEquiv.eq_symm_apply,
