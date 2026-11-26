@@ -48,8 +48,9 @@ ideal-class homomorphism and its identification with the locally free class grou
   exactly the classes of rank zero.
 * `TauCeti.FiniteProjectiveModules.torsion_eq_map_idealClassHom`,
   `TauCeti.FiniteProjectiveModules.torsion_eq_range_idealClassHom`: the torsion subgroup of
-  projective `K₀` is the image of the torsion subgroup of the class group, hence, for a finite class
-  group such as that of a ring of integers, a copy of the class group.
+  projective `K₀` is the image of the torsion subgroup of the class group, hence, for a torsion
+  class group (for instance a finite one, such as that of a ring of integers), a copy of the class
+  group.
 
 ## References
 
@@ -172,13 +173,14 @@ theorem torsion_eq_map_idealClassHom :
   · rintro ⟨c, hc, rfl⟩
     simpa [AddCommGroup.mem_torsion] using hc
 
-/-- **Torsion in projective `K₀` of a Dedekind domain with finite class group**, such as the ring
-of integers of a number field: the torsion subgroup of `K₀(A)` consists of the reduced ideal
-classes `[I] - [A]`, a copy of the ideal class group. -/
-theorem torsion_eq_range_idealClassHom [Finite (ClassGroup A)] :
+/-- **Torsion in projective `K₀` of a Dedekind domain with torsion class group**, for instance a
+finite one such as that of the ring of integers of a number field (`isAddTorsion_of_finite`): the
+torsion subgroup of `K₀(A)` consists of the reduced ideal classes `[I] - [A]`, a copy of the ideal
+class group. -/
+theorem torsion_eq_range_idealClassHom (h : IsAddTorsion (Additive (ClassGroup A))) :
     AddCommGroup.torsion (SplitK0.{u} (finiteProjectiveModules A).FullSubcategory) =
       (idealClassHom A).range := by
-  rw [torsion_eq_map_idealClassHom, AddCommGroup.torsion_eq_top_iff.2 isAddTorsion_of_finite,
+  rw [torsion_eq_map_idealClassHom, AddCommGroup.torsion_eq_top_iff.2 h,
     ← AddMonoidHom.range_eq_map]
 
 end FiniteProjectiveModules
