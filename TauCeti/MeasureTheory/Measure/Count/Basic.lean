@@ -11,8 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Count
 /-!
 # Counting measure under bijections
 
-A bijection of countable types with measurable singletons preserves counting measure
-(`Equiv.measurePreserving_count`).
+A measurable bijection preserves counting measure (`Equiv.measurePreserving_count`).
 
 ## References
 
@@ -24,10 +23,9 @@ public section
 
 open MeasureTheory Measure
 
-/-- A bijection of countable spaces with measurable singletons preserves counting measure. -/
+/-- A measurable bijection preserves counting measure. -/
 theorem Equiv.measurePreserving_count {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    [Countable α] [MeasurableSingletonClass α] (e : α ≃ β) : MeasurePreserving e count count := by
-  refine ⟨measurable_of_countable _,
-    (Measure.map_sum (measurable_of_countable _).aemeasurable).trans ?_⟩
-  simp only [Measure.map_dirac' (measurable_of_countable e)]
+    (e : α ≃ β) (he : Measurable e) : MeasurePreserving e count count := by
+  refine ⟨he, (Measure.map_sum he.aemeasurable).trans ?_⟩
+  simp only [Measure.map_dirac' he]
   exact sum_comp_equiv e (fun b ↦ dirac b)

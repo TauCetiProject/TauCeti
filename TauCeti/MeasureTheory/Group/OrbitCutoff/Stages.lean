@@ -177,8 +177,9 @@ theorem integral_cutoffMeasure_stages {Z : Type*} [MeasurableSpace Z] {m : Measu
         (measurePreserving_prodAssoc m (Λ.cutoffMeasure ν) count))
   have h_dist : IdentDistrib F (fun p : Z × H ↦ F (i p.2 * T p.1)) (Γ.cutoffMeasure μ)
       (m.prod (Λ.cutoffMeasure ν)) :=
-    identDistrib_cutoffMeasure_of_measurePreserving e.toEquiv.measurePreserving_count h_unfold hF
-      hT.measurable fun γ ↦ hF_inv γ γ.property
+    identDistrib_cutoffMeasure_of_measurePreserving
+      (e.toEquiv.measurePreserving_count (measurable_of_countable _)) h_unfold hF hT.measurable
+      fun γ ↦ hF_inv γ γ.property
   have h_int := h_dist.integrable_snd hF_int
   exact ⟨h_int.integral_prod_left, h_dist.integral_eq.trans (integral_prod _ h_int)⟩
 

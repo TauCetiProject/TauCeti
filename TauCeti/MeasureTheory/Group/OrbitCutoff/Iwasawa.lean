@@ -22,7 +22,7 @@ measure of `N` by `w(m) > 0`. Then the measure `dn dm dk` in the coordinates `i(
 multiple of the Haar measure of `G` (`MeasureTheory.exists_lintegral_iwasawa_eq_mul`); the constant
 is not computed, and may be infinite.
 
-Combined with a discrete subgroup `Γ` with `Γ ∩ N` cocompact in `N` and `Γ = (Γ ∩ N) · i(Δ)`, the
+Combined with a discrete subgroup `Γ` with `Γ ∩ N` cocompact in `N` and `Γ = i(Δ) · (Γ ∩ N)`, the
 integral over `Γ \ G` of a function `F` left invariant under `N` and `Γ` is
 `c ∫_{Δ\M} ∫_K w(m) F(i(m) k) dk dm` for a constant `c ≠ 0`
 (`MeasureTheory.exists_integral_cutoffMeasure_iwasawa`). Here unimodularity of `N` is not assumed:
@@ -223,7 +223,7 @@ private theorem ofReal_mul_lintegral_cutoffMeasure_tsum {Γ : Subgroup G} [Discr
 
 /-- **Unfolding in Iwasawa coordinates.** In the setting of
 `MeasureTheory.exists_lintegral_iwasawa_eq_mul`, let moreover `i(a) ∈ N` only for `a = 1`, and let
-`Γ ⊂ G` be discrete with `Γ ∩ N` cocompact in `N` and `Γ = (Γ ∩ N) · i(δ(D))` for an injective
+`Γ ⊂ G` be discrete with `Γ ∩ N` cocompact in `N` and `Γ = i(δ(D)) · (Γ ∩ N)` for an injective
 `δ : D → M` from a countable set. Let `α` be a measure on `M` that unfolds to `ν` along `δ`,
 standing for the quotient `δ(D) \ M`. Let `w` be measurable. There is `c ≠ 0` such that for every
 measurable `F` from `G` to a real normed space, left invariant under `N` and under `Γ`, with
