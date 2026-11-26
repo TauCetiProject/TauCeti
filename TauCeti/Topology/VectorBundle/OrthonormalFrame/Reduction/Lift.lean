@@ -200,7 +200,7 @@ def reductionFiberBundle : FiberBundle H (ReductionFiber S) :=
 theorem trivializationAt_reductionFiberBundle (x : B) :
     letI := reductionFiberBundle hS
     trivializationAt H (ReductionFiber S) x =
-      (hS.atlas.trivAt x).compTotalSpaceHomeomorph (reductionTotalSpaceHomeomorph H S)
+      (hS.atlas.trivAt x).compHomeomorphOfEq (reductionTotalSpaceHomeomorph H S)
         (fun _ ↦ by simp) :=
   hS.atlas.trivializationAt_fiberBundleOfHomeomorph _ _ _ x
 
