@@ -40,10 +40,11 @@ limit, the distribution space, or measure convolution.
 * `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_transition`,
   `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_transitionLE`: compatibility with
   stage transitions.
-* `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_comp`,
+* `TauCeti.LocallyAnalyticDistribution.compLeft_convolveFunRightStage_comp_comulCurried`,
+  `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_comp`,
   `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_evalCLM_comp_eval`,
-  `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_evalCLM_zero`: associativity,
-  point-evaluation translation law, and unit law.
+  `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_evalCLM_zero`: intertwining with
+  `comulCurried`, associativity, point-evaluation translation law, and unit law.
 
 ## References
 
@@ -131,9 +132,7 @@ theorem convolveFunRightStage_transition {h : ℕ} (ψ : AnalyticStage p (h + 1)
       transition K (convolveFunRightStage (ψ.comp (transition K)) c) := by
   rw [convolveFunRightStage_def, convolveFunRightStage_def, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.comp_apply, ← transition_compLeft_transition_comulCurried K c,
-    ← transition_compLeft K,
-    compLeft_comp ψ (transition K) (ψ.bound.imp fun _ hb ↦ hb.2) (exists_norm_transition_le K),
-    ContinuousLinearMap.comp_apply]
+    ← transition_compLeft K, compLeft_comp_normed, ContinuousLinearMap.comp_apply]
 
 /-- Stage-level right convolution commutes with multi-level stage transitions. -/
 theorem convolveFunRightStage_transitionLE {h k : ℕ} (hhk : h ≤ k)
@@ -146,26 +145,26 @@ theorem convolveFunRightStage_transitionLE {h k : ℕ} (hhk : h ≤ k)
     rw [transitionLE_succ K hhk, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
       convolveFunRightStage_transition, ih, ← ContinuousLinearMap.comp_assoc]
 
+/-- Postcomposing `comulCurried K` coordinatewise with `convolveFunRightStage ψ` intertwines with
+`comulCurried K`. -/
+theorem compLeft_convolveFunRightStage_comp_comulCurried {h : ℕ}
+    (ψ : AnalyticStage p h K →L[K] K) :
+    (compLeft (convolveFunRightStage ψ)
+        ⟨‖convolveFunRightStage ψ‖, (convolveFunRightStage ψ).le_opNorm⟩).comp (comulCurried K) =
+      (comulCurried K).comp (convolveFunRightStage ψ) := by
+  refine ContinuousLinearMap.ext fun c ↦ ?_
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    convolveFunRightStage_def ψ, compLeft_comp_normed, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply, ← comulCurried_comulCurried, ← comulCurried_compLeft]
+
 /-- Stage-level right convolution is associative with respect to composition of stage
 functionals. -/
 theorem convolveFunRightStage_comp {h : ℕ} (φ ψ : AnalyticStage p h K →L[K] K) :
     convolveFunRightStage (φ.comp (convolveFunRightStage ψ)) =
       (convolveFunRightStage φ).comp (convolveFunRightStage ψ) := by
-  have hinner :
-      (compLeft (convolveFunRightStage ψ)
-          ((convolveFunRightStage ψ).bound.imp fun _ hb ↦ hb.2)).comp (comulCurried K) =
-        (comulCurried K).comp (convolveFunRightStage ψ) := by
-    refine ContinuousLinearMap.ext fun c ↦ ?_
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply]
-    conv_lhs => simp only [convolveFunRightStage_def]
-    rw [compLeft_comp (compLeft ψ (ψ.bound.imp fun _ hb ↦ hb.2)) (comulCurried K)
-        (exists_norm_compLeft_apply_le _ _) (exists_norm_comulCurried_le K),
-      ContinuousLinearMap.comp_apply, ← comulCurried_comulCurried, ← comulCurried_compLeft,
-      ← ContinuousLinearMap.comp_apply (compLeft ψ _), ← convolveFunRightStage_def]
   rw [convolveFunRightStage_def (φ.comp (convolveFunRightStage ψ)), convolveFunRightStage_def φ,
-    compLeft_comp φ (convolveFunRightStage ψ)
-      (φ.bound.imp fun _ hb ↦ hb.2) ((convolveFunRightStage ψ).bound.imp fun _ hb ↦ hb.2),
-    ContinuousLinearMap.comp_assoc, hinner, ← ContinuousLinearMap.comp_assoc]
+    compLeft_comp_normed, ContinuousLinearMap.comp_assoc,
+    compLeft_convolveFunRightStage_comp_comulCurried, ← ContinuousLinearMap.comp_assoc]
 
 /-- Stage-level right convolution with point evaluation at `x` is stage translation by `x`. -/
 @[simp]
