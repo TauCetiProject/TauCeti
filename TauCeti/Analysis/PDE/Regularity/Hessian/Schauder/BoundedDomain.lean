@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.C2HolderBoundary
+public import TauCeti.Analysis.Holder.C2HolderBoundary.Basic
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CurvedBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.LowerOrder
