@@ -29,9 +29,10 @@ which span a face of `L` (`PreAbstractSimplicialComplex.SimplicialMap.ofMapsTo`)
 simplicial approximation exactly when the open star of every vertex of `K` is mapped into some
 open star of `L`
 (`PreAbstractSimplicialComplex.SimplicialMap.exists_isSimplicialApproximation_iff`). The
-simplicial approximation theorem (Hatcher, Theorem 2C.1), which is not proved in this file,
-meets this condition by subdividing a finite complex `K` until its open stars refine the cover
-of `|K|` by the preimages of the open stars of `L`.
+simplicial approximation theorem (Hatcher, Theorem 2C.1) meets this condition by subdividing a
+finite complex `K` until its open stars refine the cover of `|K|` by the preimages of the open
+stars of `L` (`AbstractSimplicialComplex.eventually_exists_isSimplicialApproximation`, in
+`TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Iterated`).
 
 A continuous map `φ` is homotopic to the realization of any simplicial approximation `f`
 (`PreAbstractSimplicialComplex.SimplicialMap.IsSimplicialApproximation.homotopic`): for each
