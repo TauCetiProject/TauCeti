@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
-import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
@@ -183,23 +182,6 @@ theorem mfderiv_polarCylinderMap_coe (u w : V) {rp : ℝ × ℝ} (θ L : ℝ) (h
 section Basis
 
 variable (b : OrthonormalBasis (Fin 2) ℝ V)
-
-/-- At a point with `r ≠ 0`, the derivative of the polar canonical parametrization over a plane is
-a linear isomorphism `(ℝ × ℝ) × (ℝ × ℝ) → V × V`: it pulls the standard symplectic form back to a
-nondegenerate form, so it is injective, between spaces of the same dimension. -/
-private theorem bijective_fderiv_polarCanonical {x : (ℝ × ℝ) × (ℝ × ℝ)} (hr : x.1.1 ≠ 0) :
-    Bijective (fderiv ℝ (polarCanonical (b 0) (b 1)) x) := by
-  have : FiniteDimensional ℝ V := b.toBasis.finiteDimensional_of_finite
-  let ι : ((stdSymplecticForm (V := ℝ)).prod (stdSymplecticForm (V := ℝ))).toBilinForm →bᵢ
-      (stdSymplecticForm (V := V)).toBilinForm :=
-    { toLinearMap := (fderiv ℝ (polarCanonical (b 0) (b 1)) x).toLinearMap
-      map_app' := stdSymplecticForm_fderiv_polarCanonical (b.norm_eq_one 0) (b.norm_eq_one 1)
-        (b.inner_eq_zero (by decide)) hr }
-  have hinj : Injective (fderiv ℝ (polarCanonical (b 0) (b 1)) x) :=
-    ι.injective ((stdSymplecticForm (V := ℝ)).prod (stdSymplecticForm (V := ℝ))).nondegenerate.1
-  have hdim : Module.finrank ℝ ((ℝ × ℝ) × (ℝ × ℝ)) = Module.finrank ℝ (V × V) := by
-    simp [Module.finrank_prod, Module.finrank_eq_card_basis b.toBasis]
-  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
 
 /-- At a point with `r ≠ 0`, the polar canonical parametrization over a plane is a local
 diffeomorphism. -/

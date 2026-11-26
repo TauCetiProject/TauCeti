@@ -73,6 +73,8 @@ smooth polar canonical coordinates, with the angle in the circle `AddCircle (2 *
 * `TauCeti.contDiffAt_polarCanonical`: the parametrization is smooth off `r = 0`.
 * `TauCeti.inner_snd_polarCanonical_fderiv_fst`: `λ = p_r dr + L dθ`.
 * `TauCeti.stdSymplecticForm_fderiv_polarCanonical`: `ω₀ = dr ∧ dp_r + dθ ∧ dL`.
+* `TauCeti.bijective_fderiv_polarCanonical`: over a plane, the derivative is a linear
+  isomorphism off `r = 0`.
 * `TauCeti.centralForceHamiltonian_polarCanonical`: `H = p_r² / (2m) + U_L(r)`.
 * `TauCeti.fderiv_polarCanonical_apply_eq_hamiltonianVectorField`,
   `TauCeti.hasDerivAt_polarCanonical_comp`: Hamilton's equations in polar coordinates.
@@ -420,6 +422,30 @@ theorem hasDerivAt_polarCanonical_comp {m : ℝ} {U U' : ℝ → ℝ} {γ : ℝ 
     one_ne_zero).hasFDerivAt.comp_hasDerivAt t hγ
 
 end Orthonormal
+
+section Basis
+
+variable (b : OrthonormalBasis (Fin 2) ℝ V)
+
+/-- At a point with `r ≠ 0`, the derivative of the polar canonical parametrization over a plane is
+a linear isomorphism `(ℝ × ℝ) × (ℝ × ℝ) → V × V`: it pulls the standard symplectic form back to a
+nondegenerate form, so it is injective, between spaces of the same dimension. -/
+theorem bijective_fderiv_polarCanonical {x : (ℝ × ℝ) × (ℝ × ℝ)} (hr : x.1.1 ≠ 0) :
+    Function.Bijective (fderiv ℝ (polarCanonical (b 0) (b 1)) x) := by
+  have : FiniteDimensional ℝ V := b.toBasis.finiteDimensional_of_finite
+  have hinj : Function.Injective (fderiv ℝ (polarCanonical (b 0) (b 1)) x) := by
+    refine (injective_iff_map_eq_zero _).2 fun δ hδ ↦
+      ((stdSymplecticForm (V := ℝ)).prod (stdSymplecticForm (V := ℝ))).nondegenerate.1 δ
+        fun δ' ↦ ?_
+    have h := stdSymplecticForm_fderiv_polarCanonical (b.norm_eq_one 0) (b.norm_eq_one 1)
+      (b.inner_eq_zero (by decide)) hr δ δ'
+    rw [hδ] at h
+    simpa using h.symm
+  have hdim : Module.finrank ℝ ((ℝ × ℝ) × (ℝ × ℝ)) = Module.finrank ℝ (V × V) := by
+    simp [Module.finrank_prod, Module.finrank_eq_card_basis b.toBasis]
+  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
+
+end Basis
 
 /-! ### The polar angle and global polar coordinates -/
 

@@ -38,9 +38,13 @@ Hessian of `H - κ L` is
 
 * the point is a nondegenerate point of `F` exactly when `U_L''(‖q‖) ≠ 0`
   (`TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`);
+* the Hessian of `H - κ L` descends to the transversal plane
+  (`TauCeti.polar_hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_eq_zero`);
 * at a nondegenerate minimum of the effective potential, for a positive mass, the transversal
-  Hessian is positive definite
-  (`TauCeti.hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_pos`): the
+  Hessian is positive outside `(ker dF)^ω`
+  (`TauCeti.hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_pos`), so its
+  reduction to the transversal plane is positive definite
+  (`TauCeti.posDef_reducedQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum`): the
   transversal reduction gives one elliptic block, the linearization of the stable circular orbit.
   By the same formula, at a nondegenerate maximum the transversal Hessian is indefinite, a
   hyperbolic block.
@@ -57,7 +61,8 @@ polar canonical parametrization, whose differential is a linear symplectomorphis
   nondegenerate point exactly when `U_L''(‖q‖) ≠ 0`.
 * `TauCeti.hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum`: the transversal
   Hessian `U_L''(‖q‖) δr² + δp_r² / m`.
-* `TauCeti.hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_pos`: stable
+* `TauCeti.hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_pos`,
+  `TauCeti.posDef_reducedQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum`: stable
   circular orbits are elliptic.
 
 ## References
@@ -146,7 +151,10 @@ private theorem hasFDerivAt_polarEnergyMomentum {U' : ℝ} (hr₀ : r₀ ≠ 0)
         Pi.inv_apply]
       ring
     · refine ContinuousLinearMap.ext fun δ ↦ ?_
-      simp [x₀, hc]
+      simp only [mul_inv_rev, Nat.add_one_sub_one, pow_one, zero_smul, smul_zero,
+        Nat.cast_ofNat, Pi.inv_apply, Function.comp_apply, nsmul_eq_mul, hc, zero_add, add_apply,
+        smul_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', smul_eq_mul,
+        polarL_apply, x₀]
       field_simp
       ring
   rw [hasFDerivAt_pi']
@@ -184,7 +192,9 @@ private theorem hessianQuadraticForm_radial (hm : m ≠ 0) (hr₀ : r₀ ≠ 0)
     fun_prop (disch := simp [hm, hr₀])
   have hψ : ContDiffAt ℝ 2 ψ (r₀, 0) := (hVℓ.comp _ contDiffAt_fst).add (by fun_prop)
   have hquad : iteratedDeriv 2 (fun p : ℝ ↦ p ^ 2 / (2 * m)) 0 = 1 / m := by
-    simp
+    simp only [iteratedDeriv_div_const, iteratedDeriv_pow, Nat.descFactorial_succ,
+      Nat.add_one_sub_one, tsub_zero, Nat.descFactorial_zero, mul_one, one_mul, Nat.cast_ofNat,
+      tsub_self, pow_zero, one_div]
     field_simp
   have hf : (fun y : (ℝ × ℝ) × (ℝ × ℝ) ↦
       c * (effectivePotential m ℓ U y.1.1 + y.1.2 ^ 2 / (2 * m)) + C) =
@@ -237,7 +247,11 @@ private theorem hessianQuadraticForm_polarEnergyMomentum (hm : m ≠ 0) (hr₀ :
       fin_cases i <;> simp
     simp only [Function.comp_apply, g]
     rw [hv (polarEnergyMomentum m U _), map_add, map_smul, map_smul]
-    simp [polarEnergyMomentum, P, a]
+    simp only [polarEnergyMomentum, ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_fst',
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_snd', ContinuousLinearMap.inl_apply,
+      Prod.mk_add_mk, add_zero, zero_add, Prod.snd_add, Prod.fst_add, effectivePotential_apply,
+      Fin.isValue, Matrix.cons_val_zero, smul_eq_mul, Matrix.cons_val_one, Matrix.cons_val_fin_one,
+      add_left_inj, P, a]
     ring
   have hcomp := congrArg (· δ) (ContinuousLinearMap.hessianQuadraticForm_comp P hga)
   simp only [QuadraticMap.comp_apply, ContinuousLinearMap.coe_coe, hPδ] at hcomp
@@ -411,12 +425,13 @@ end Polar
 
 section Plane
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   (b : OrthonormalBasis (Fin 2) ℝ V) {m : ℝ} {U : ℝ → ℝ} {x : V × V}
 
 /-- Near a point of a circular orbit, polar canonical coordinates `((r, p_r), (θ, L))` identify
 the energy–momentum map `(H, L)` with `(p_r² / (2m) + U_L(r), L)` through a map whose differential
-at the point is a linear symplectomorphism. -/
+`e` at the point is a linear symplectomorphism; the differential of the radial projection sends
+`e δ` to the radial part `δ.1 = (δr, δp_r)`. -/
 private theorem exists_polarCanonical (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ = 0) :
     ∃ θ : ℝ, ∃ e : ((ℝ × ℝ) × (ℝ × ℝ)) ≃ₗ[ℝ] V × V,
       polarCanonical (b 0) (b 1) ((‖x.1‖, 0), (θ, angularMomentum (b 0) (b 1) x)) = x ∧
@@ -425,8 +440,7 @@ private theorem exists_polarCanonical (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ 
         ((‖x.1‖, 0), (θ, angularMomentum (b 0) (b 1) x)) v = e v) ∧
       centralForceEnergyMomentum b m U ∘ polarCanonical (b 0) (b 1) =ᶠ[𝓝
         ((‖x.1‖, 0), (θ, angularMomentum (b 0) (b 1) x))] polarEnergyMomentum m U ∧
-      radialProjection ∘ polarCanonical (b 0) (b 1) =ᶠ[𝓝
-        ((‖x.1‖, 0), (θ, angularMomentum (b 0) (b 1) x))] Prod.fst := by
+      ∀ δ, fderiv ℝ radialProjection x (e δ) = δ.1 := by
   have hu : ‖b 0‖ = 1 := b.orthonormal.norm_eq_one 0
   have hw : ‖b 1‖ = 1 := b.orthonormal.norm_eq_one 1
   have huw : ⟪b 0, b 1⟫_ℝ = 0 := b.orthonormal.2 (by decide)
@@ -436,45 +450,34 @@ private theorem exists_polarCanonical (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ 
   have hx : polarCanonical (b 0) (b 1) y₀ = x := by
     have h := polarCanonical_polarAngle b x.2 hq (Real.Angle.coe_toReal _)
     rwa [radialMomentum_apply, h0, zero_div] at h
-  -- The differential of the parametrization preserves the symplectic forms, so it is injective,
-  -- hence bijective between spaces of dimension four.
+  -- The differential of the parametrization is a linear symplectomorphism.
   set D := fderiv ℝ (polarCanonical (b 0) (b 1)) y₀
   have hD (δ δ' : (ℝ × ℝ) × (ℝ × ℝ)) : stdSymplecticForm (D δ) (D δ') = polarForm δ δ' :=
     stdSymplecticForm_fderiv_polarCanonical hu hw huw hr₀.ne' δ δ'
-  have hinj : Function.Injective (D : (ℝ × ℝ) × (ℝ × ℝ) →ₗ[ℝ] V × V) := by
-    rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
-    intro δ hδ
-    have h (δ' : (ℝ × ℝ) × (ℝ × ℝ)) : polarForm δ δ' = 0 := by
-      have hδ' : D δ = 0 := LinearMap.mem_ker.1 hδ
-      rw [← hD, hδ']
-      simp
-    have h₁ := h ((0, 1), (0, 0))
-    have h₂ := h ((1, 0), (0, 0))
-    have h₃ := h ((0, 0), (0, 1))
-    have h₄ := h ((0, 0), (1, 0))
-    simp at h₁ h₂ h₃ h₄
-    ext <;> simp [h₁, h₂, h₃, h₄]
-  have hdim : finrank ℝ ((ℝ × ℝ) × (ℝ × ℝ)) = finrank ℝ (V × V) := by
-    simp [finrank_prod, finrank_eq_card_basis b.toBasis]
   set e := LinearEquiv.ofBijective (D : (ℝ × ℝ) × (ℝ × ℝ) →ₗ[ℝ] V × V)
-    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
+    (bijective_fderiv_polarCanonical b hr₀.ne')
   have hpos : ∀ᶠ y in 𝓝 y₀, 0 < y.1.1 :=
     (continuous_fst.comp continuous_fst).continuousAt.eventually (lt_mem_nhds hr₀)
   refine ⟨θ, e, hx, SymplecticForm.isSymplectomorphism_iff.2 hD,
-    fun δ ↦ (LinearEquiv.ofBijective_apply _ δ).symm, ?_, ?_⟩
+    fun δ ↦ (LinearEquiv.ofBijective_apply _ δ).symm, ?_, fun δ ↦ ?_⟩
   · -- Off `r = 0`, the energy and angular momentum read `p_r² / (2m) + U_L(r)` and `L`.
     filter_upwards [hpos] with y hy
     ext i
     fin_cases i
     · simp [polarEnergyMomentum, centralForceHamiltonian_polarCanonical hu hw huw m U hy]
     · simp [polarEnergyMomentum, angularMomentum_polarCanonical hu hw huw hy.ne']
-  · -- Off `r = 0`, the radial projection reads `(r, p_r)`.
-    filter_upwards [hpos] with y hy
-    refine Prod.ext ?_ ?_
-    · simp [norm_fst_polarCanonical hu hw huw, abs_of_pos hy]
-    · simp [radialMomentum_polarCanonical hu hw huw hy]
+  · -- Off `r = 0`, the radial projection reads `(r, p_r)`, so its differential reads `δ.1`.
+    have hrad : radialProjection ∘ polarCanonical (b 0) (b 1) =ᶠ[𝓝 y₀] Prod.fst := by
+      filter_upwards [hpos] with y hy
+      refine Prod.ext ?_ ?_
+      · simp [norm_fst_polarCanonical hu hw huw, abs_of_pos hy]
+      · simp [radialMomentum_polarCanonical hu hw huw hy]
+    have h := fderiv_comp y₀ (hx ▸ (hasFDerivAt_radialProjection hq).differentiableAt)
+      ((contDiffAt_polarCanonical (n := 1) _ _ hr₀.ne').differentiableAt one_ne_zero)
+    rw [hrad.fderiv_eq, hx, fderiv_fst] at h
+    rw [LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe,
+      ← ContinuousLinearMap.comp_apply, ← h, ContinuousLinearMap.coe_fst']
 
-omit [FiniteDimensional ℝ V] in
 /-- At a point of a circular orbit, the differential of the energy–momentum map, read in polar
 canonical coordinates, is `δ ↦ (κ δL, δL)` for the angular velocity `κ = L / (m ‖q‖²)`. -/
 private theorem fderiv_apply_eq_polarDiff (hq : x.1 ≠ 0)
@@ -550,8 +553,8 @@ energy–momentum map `(H, L)` exactly when `U_L''(‖q‖) ≠ 0`.
 The transversal space at `(q, p)` is the plane of the radial pair `(r, p_r)`, on which the
 transversal Hessian of `H - κ L`, with `κ = L / (m ‖q‖²)` the angular velocity, is
 `U_L''(‖q‖) δr² + δp_r² / m`. -/
-theorem isNondegeneratePoint_centralForceEnergyMomentum_iff (hm : m ≠ 0) (hq : x.1 ≠ 0)
-    (hU : ContDiffAt ℝ 2 U ‖x.1‖) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+theorem isNondegeneratePoint_centralForceEnergyMomentum_iff [FiniteDimensional ℝ V] (hm : m ≠ 0)
+    (hq : x.1 ≠ 0) (hU : ContDiffAt ℝ 2 U ‖x.1‖) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
     (hc : deriv (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ = 0) :
     stdSymplecticForm.IsNondegeneratePoint (centralForceEnergyMomentum b m U) x ↔
       iteratedDeriv 2 (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ ≠ 0 := by
@@ -581,7 +584,7 @@ theorem hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum (hm
         angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2) * angularMomentum (b 0) (b 1) y) x v =
       iteratedDeriv 2 (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ *
           (fderiv ℝ radialProjection x v).1 ^ 2 + (fderiv ℝ radialProjection x v).2 ^ 2 / m := by
-  obtain ⟨θ, e, hx, -, hφe, hev, hrad⟩ := exists_polarCanonical b (m := m) (U := U) hq h0
+  obtain ⟨θ, e, hx, -, hφe, hev, hdrad⟩ := exists_polarCanonical b (m := m) (U := U) hq h0
   set ℓ := angularMomentum (b 0) (b 1) x
   set κ := ℓ / (m * ‖x.1‖ ^ 2)
   set y₀ : (ℝ × ℝ) × (ℝ × ℝ) := ((‖x.1‖, 0), (θ, ℓ))
@@ -603,13 +606,6 @@ theorem hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum (hm
     simp [hd, l₀, κ, ℓ]
   obtain ⟨δ, rfl⟩ := e.surjective v
   have hδ : δ.2.2 = 0 := by simpa [hd] using congrFun hv 1
-  -- The differential of the radial projection reads off `(δr, δp_r)`.
-  have hdrad : fderiv ℝ radialProjection x (e δ) = δ.1 := by
-    have h := fderiv_comp y₀ (hx ▸ (hasFDerivAt_radialProjection hq).differentiableAt)
-      (hφ.differentiableAt two_ne_zero)
-    rw [hrad.fderiv_eq, hx, fderiv_fst] at h
-    rw [← hφe, ← ContinuousLinearMap.comp_apply, ← h]
-    rfl
   -- Pull the Hessian back to polar canonical coordinates, where it was computed.
   have hcomp := hessianQuadraticForm_comp (f := l₀ ∘ centralForceEnergyMomentum b m U)
     (hx ▸ l₀.contDiff.contDiffAt.comp x hFC) hφ (hx ▸ hcrit)
@@ -618,7 +614,7 @@ theorem hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum (hm
   simp only [QuadraticMap.comp_apply, ContinuousLinearMap.coe_coe, hφe] at hpull
   rw [hf, ← hpull, Function.comp_assoc,
     hessianQuadraticForm_congr_of_eventuallyEq (hev.fun_comp l₀),
-    hessianQuadraticForm_polarEnergyMomentum hm hr₀ hU l₀ hδ, hdrad]
+    hessianQuadraticForm_polarEnergyMomentum hm hr₀ hU l₀ hδ, hdrad δ]
   simp [l₀]
 
 /-- At a circular orbit, a vector of `ker d(H, L)` whose radial components `(δr, δp_r)` vanish
@@ -629,18 +625,11 @@ private theorem mem_orthogonal_ker_of_fderiv_radialProjection_eq_zero (hq : x.1 
     (hv : fderiv ℝ (centralForceEnergyMomentum b m U) x v = 0)
     (hr : fderiv ℝ radialProjection x v = 0) :
     v ∈ stdSymplecticForm.orthogonal (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker := by
-  obtain ⟨θ, e, hx, he, hφe, hev, hrad⟩ := exists_polarCanonical b (m := m) (U := U) hq h0
+  obtain ⟨θ, e, hx, he, hφe, hev, hdrad⟩ := exists_polarCanonical b (m := m) (U := U) hq h0
   have hd := fderiv_apply_eq_polarDiff b hq hU hc hx hφe hev
-  have hφ : DifferentiableAt ℝ (polarCanonical (b 0) (b 1))
-      ((‖x.1‖, 0), (θ, angularMomentum (b 0) (b 1) x)) :=
-    (contDiffAt_polarCanonical (n := 1) _ _ (norm_ne_zero_iff.2 hq)).differentiableAt one_ne_zero
   obtain ⟨δ, rfl⟩ := e.surjective v
   have hδ : δ.2.2 = 0 := by simpa [hd] using congrFun hv 1
-  have hδ₁ : δ.1 = 0 := by
-    have h := fderiv_comp _ (hx ▸ (hasFDerivAt_radialProjection hq).differentiableAt) hφ
-    rw [hrad.fderiv_eq, hx, fderiv_fst] at h
-    rw [← hφe, ← ContinuousLinearMap.comp_apply, ← h] at hr
-    exact hr
+  have hδ₁ : δ.1 = 0 := (hdrad δ).symm.trans hr
   rw [SymplecticForm.mem_orthogonal_iff]
   intro w hw
   obtain ⟨δ', rfl⟩ := e.surjective w
@@ -648,13 +637,35 @@ private theorem mem_orthogonal_ker_of_fderiv_radialProjection_eq_zero (hq : x.1 
   rw [he.apply]
   simp [hδ, hδ₁, hδ']
 
+/-- At a circular orbit, the radial components `(δr, δp_r)` of a vector of `ker d(H, L)` that lies
+in the symplectic complement of `ker d(H, L)` vanish. -/
+private theorem fderiv_radialProjection_eq_zero_of_mem_inf_orthogonal (hq : x.1 ≠ 0)
+    (hU : DifferentiableAt ℝ U ‖x.1‖) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+    (hc : deriv (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ = 0) {v : V × V}
+    (hv : v ∈ (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker ⊓
+      stdSymplecticForm.orthogonal (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker) :
+    fderiv ℝ radialProjection x v = 0 := by
+  obtain ⟨θ, e, hx, he, hφe, hev, hdrad⟩ := exists_polarCanonical b (m := m) (U := U) hq h0
+  have hd := fderiv_apply_eq_polarDiff b hq hU hc hx hφe hev
+  obtain ⟨hvK, hvo⟩ := Submodule.mem_inf.1 hv
+  obtain ⟨δ, rfl⟩ := e.surjective v
+  -- In polar coordinates, `δ` lies in `ker dF ⊓ (ker dF)^ω`, so its radial part vanishes.
+  have hmem (δ' : (ℝ × ℝ) × (ℝ × ℝ)) :
+      δ' ∈ (polarDiff (angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2))).ker ↔
+        e δ' ∈ (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker := by
+    rw [LinearMap.mem_ker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
+      ContinuousLinearMap.coe_coe, hd]
+  refine (hdrad δ).trans (eq_of_mem_ker_inf_orthogonal (Submodule.mem_inf.2
+    ⟨(hmem δ).2 hvK, SymplecticForm.mem_orthogonal_iff.2 fun δ' hδ' ↦ ?_⟩)).1
+  rw [← he.apply]
+  exact SymplecticForm.mem_orthogonal_iff.1 hvo _ ((hmem δ').1 hδ')
+
 /-- **Stable circular orbits are elliptic.** At a point of a circular orbit, as in
 `TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`, at which `‖q‖` is a nondegenerate
 minimum of the effective potential, `U_L''(‖q‖) > 0`, and for a positive mass, the transversal
 Hessian of `H - κ L` is positive definite: it is positive on every vector of `ker d(H, L)` outside
-the symplectic complement of `ker d(H, L)`. So it induces a positive definite form on the
-transversal plane `ker d(H, L) / (ker d(H, L))^ω`; a definite quadratic form on a symplectic plane
-is an elliptic block. -/
+the symplectic complement of `ker d(H, L)`. The induced form on the transversal plane is
+`TauCeti.posDef_reducedQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum`. -/
 theorem hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_pos (hm : 0 < m)
     (hq : x.1 ≠ 0) (hU : ContDiffAt ℝ 2 U ‖x.1‖) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
     (hc : deriv (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ = 0)
@@ -672,6 +683,55 @@ theorem hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_pos
     rw [h₁]
     positivity
   · positivity
+
+/-- **The transversal Hessian of a circular orbit descends to the transversal plane.** At a point
+of a circular orbit, as in `TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`, the
+polar form of the Hessian of `H - κ L` vanishes on `(K ∩ K^ω) × K` for `K = ker d(H, L)`, so it
+induces a quadratic form on the transversal plane `K / (K ∩ K^ω)`. -/
+theorem polar_hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_eq_zero
+    (hm : m ≠ 0) (hq : x.1 ≠ 0) (hU : ContDiffAt ℝ 2 U ‖x.1‖) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+    (hc : deriv (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ = 0) :
+    ∀ w ∈ (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker ⊓
+        stdSymplecticForm.orthogonal (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker,
+      ∀ u ∈ (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker,
+        QuadraticMap.polar (hessianQuadraticForm (fun y ↦ centralForceHamiltonian m U y -
+          angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2) * angularMomentum (b 0) (b 1) y) x)
+          w u = 0 := by
+  intro w hw u hu
+  have hw₀ := fderiv_radialProjection_eq_zero_of_mem_inf_orthogonal b hq
+    (hU.differentiableAt two_ne_zero) h0 hc hw
+  have hwK := (Submodule.mem_inf.1 hw).1
+  rw [QuadraticMap.polar,
+    hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum b hm hq hU h0 hc
+      (LinearMap.mem_ker.1 (add_mem hwK hu)),
+    hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum b hm hq hU h0 hc
+      (LinearMap.mem_ker.1 hwK),
+    hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum b hm hq hU h0 hc
+      (LinearMap.mem_ker.1 hu), map_add, hw₀]
+  simp
+
+/-- **Stable circular orbits are elliptic, on the transversal plane.** At a point of a circular
+orbit, as in `TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`, at which `‖q‖` is a
+nondegenerate minimum of the effective potential, `U_L''(‖q‖) > 0`, and for a positive mass, the
+transversal reduction of the Hessian of `H - κ L` to `K / (K ∩ K^ω)`, `K = ker d(H, L)`, is
+positive definite. The transversal plane is a symplectic plane, and a definite quadratic form on a
+symplectic plane is an elliptic block. -/
+theorem posDef_reducedQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum (hm : 0 < m)
+    (hq : x.1 ≠ 0) (hU : ContDiffAt ℝ 2 U ‖x.1‖) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+    (hc : deriv (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ = 0)
+    (hpos : 0 < iteratedDeriv 2 (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖) :
+    (stdSymplecticForm.reducedQuadraticForm (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker
+      (hessianQuadraticForm (fun y ↦ centralForceHamiltonian m U y -
+        angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2) * angularMomentum (b 0) (b 1) y) x)
+      (polar_hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_eq_zero b
+        hm.ne' hq hU h0 hc)).PosDef := by
+  intro v hv
+  induction v using Submodule.Quotient.induction_on with
+  | H u =>
+  rw [SymplecticForm.reducedQuadraticForm_mk]
+  exact hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum_pos b hm hq hU h0 hc
+    hpos (LinearMap.mem_ker.1 u.property)
+    fun hu ↦ hv (SymplecticForm.ReducedSpace.mk_eq_zero_iff.2 hu)
 
 end Plane
 
