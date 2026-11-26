@@ -32,8 +32,8 @@ one-ended finite-ended asymptotically Euclidean manifold.
   `WithMetric g` along `WithMetric.toWithMetric g ∘ φ`.
 * `TauCeti.pullbackMetricCoeff_toWithMetric_rescale_comp`: coordinate pullback coefficients scale
   by `f (φ x)` under conformal rescaling `g.rescale f hf hf_pos`.
-* `TauCeti.pullbackMetricCoeff_toWithMetric_rescale`: pulling back `f • g_eucl` along
-  `WithMetric.toWithMetric` yields `f x • 1`.
+* `TauCeti.pullbackMetricCoeff_toWithMetric_rescale_riemannianMetricVectorSpace`: pulling back
+  `f • g_eucl` along `WithMetric.toWithMetric` yields `f x • 1`.
 * `TauCeti.isAsymptoticallyEuclideanEnd_toWithMetric_rescale` and
   `TauCeti.isFiniteEndedAsymptoticallyEuclidean_toWithMetric_rescale`: conformally Euclidean ends
   and one-ended structures on `WithMetric` from a positive `C^k` (`2 ≤ k`) conformal factor with
@@ -98,7 +98,7 @@ theorem pullbackMetricCoeff_toWithMetric_rescale_comp {n : ℕ} {k : ℕ∞ω}
 /-- Pulling back the conformally rescaled Euclidean metric `f • g_eucl` along
 `WithMetric.toWithMetric` yields the scalar multiple `f x • 1` of the identity matrix. -/
 @[simp]
-theorem pullbackMetricCoeff_toWithMetric_rescale {n : ℕ} {k : ℕ∞ω}
+theorem pullbackMetricCoeff_toWithMetric_rescale_riemannianMetricVectorSpace {n : ℕ} {k : ℕ∞ω}
     {f : EuclideanSpace ℝ (Fin n) → ℝ}
     (hf : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ) k f) (hf_pos : ∀ x, 0 < f x)
     (x : EuclideanSpace ℝ (Fin n)) :
@@ -132,7 +132,7 @@ theorem isAsymptoticallyEuclideanEnd_toWithMetric_rescale {n : ℕ} (hn : 0 < n)
   have hg_coeff (y : EuclideanSpace ℝ (Fin n)) :
       pullbackMetricCoeff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (WithMetric.toWithMetric g) y =
         w y • 1 :=
-    pullbackMetricCoeff_toWithMetric_rescale hw.contMDiff hw_pos y
+    pullbackMetricCoeff_toWithMetric_rescale_riemannianMetricVectorSpace hw.contMDiff hw_pos y
   have hg_ij (i j : Fin n) :
       (pullbackMetricCoeff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (WithMetric.toWithMetric g) · i j) =
         if i = j then w else 0 := by

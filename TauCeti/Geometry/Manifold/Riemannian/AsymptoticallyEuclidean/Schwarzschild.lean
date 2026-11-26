@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.WithM
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.ContDiff.SymbolClass.Infinity
-import TauCeti.Analysis.InnerProductSpace.NormPow
 
 /-!
 # Smooth spatial Schwarzschild model manifold
@@ -50,7 +49,7 @@ public section
 
 noncomputable section
 
-open Asymptotics Bornology Bundle Filter Function Metric Set
+open Bornology Bundle Filter Metric Set
 open scoped ContDiff Manifold RealInnerProductSpace Topology
 
 namespace TauCeti
@@ -165,28 +164,11 @@ private theorem isSymbolAtInfinity_schwarzschildModelFactor_sub_one {n : ℕ} (h
     IsSymbolAtInfinity 2 (-((n : ℝ) - 2))
       fun x : EuclideanSpace ℝ (Fin n) ↦ schwarzschildModelFactor n c x - 1 := by
   set q : ℝ := 2 - (n : ℝ)
-  have h1 : ∀ᶠ x : EuclideanSpace ℝ (Fin n) in cobounded _, 1 ≤ ‖x‖ :=
-    eventually_cobounded_le_norm 1
-  -- First, `x ↦ ‖x‖ ^ (2 - n)` is a symbol of order `2 - n` and regularity `2` at infinity.
-  have hrpow : IsSymbolAtInfinity 2 q (fun x : EuclideanSpace ℝ (Fin n) ↦ ‖x‖ ^ q) := by
-    refine isSymbolAtInfinity_iff.2 ⟨h1.mono fun x hx ↦ ?_, fun j hj ↦ ?_⟩
-    · have hx0 : x ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans_le hx)
-      exact ((contDiffAt_norm ℝ (n := ∞) hx0).rpow_const_of_ne
-        (norm_ne_zero_iff.2 hx0)).of_le (by simp)
-    · interval_cases j
-      · exact IsBigO.of_bound 1 (h1.mono fun x _ ↦ by simp)
-      · refine IsBigO.of_bound |q| (h1.mono fun x hx ↦ ?_)
-        have hx0 : x ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans_le hx)
-        rw [norm_iteratedFDeriv_one, norm_fderiv_norm_rpow_of_ne q hx0, Nat.cast_one,
-          Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
-      · refine IsBigO.of_bound (|q| * (|q - 2| + 1)) (h1.mono fun x hx ↦ ?_)
-        have hx0 : x ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans_le hx)
-        rw [Nat.cast_ofNat, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
-        exact norm_iteratedFDeriv_two_norm_rpow_le q hx0
   -- Compose `x ↦ c * ‖x‖ ^ (2 - n)` with `s ↦ (1 + s) ^ (4 / (n - 2))`, which is smooth at `0`.
   have hcmul : IsSymbolAtInfinity 2 q
       (fun x : EuclideanSpace ℝ (Fin n) ↦ c * ‖x‖ ^ q - 0) := by
-    simpa only [smul_eq_mul, sub_zero] using hrpow.const_smul c
+    simpa only [smul_eq_mul, sub_zero] using
+      (isSymbolAtInfinity_norm_rpow (E := EuclideanSpace ℝ (Fin n)) q).const_smul c
   have hg : ContDiffAt ℝ (max 2 1 : ℕ) (fun s : ℝ ↦ (1 + s) ^ (4 / ((n : ℝ) - 2))) 0 :=
     (contDiffAt_const.add contDiffAt_id).rpow_const_of_ne (by norm_num)
   have hcomp := hcmul.comp_sub (by dsimp [q]; linarith [(Nat.ofNat_le_cast.2 hn : (3 : ℝ) ≤ n)]) hg
@@ -201,44 +183,11 @@ private theorem exists_schwarzschildModelFactor_decay {n : ℕ} (hn : 3 ≤ n) (
     ∃ C : ℝ, ∀ m ≤ 2, ∀ x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) (max 1 (2 * |c|) + 1))ᶜ,
       ‖iteratedFDeriv ℝ m (fun y ↦ schwarzschildModelFactor n c y - 1) x‖ ≤
         C * ‖x‖ ^ (-((n : ℝ) - 2) - m) := by
-  set R : ℝ := max 1 (2 * |c|) + 1
-  have hR : 0 < R := by dsimp [R]; linarith [le_max_left (1 : ℝ) (2 * |c|)]
-  set u : EuclideanSpace ℝ (Fin n) → ℝ := fun y ↦ schwarzschildModelFactor n c y - 1
-  have hu : ContDiff ℝ ∞ u := (contDiff_schwarzschildModelFactor hn c).sub contDiff_const
-  have hsym := isSymbolAtInfinity_schwarzschildModelFactor_sub_one hn c
-  -- Combine the asymptotic bound outside a large ball `R₁` with continuity on the compact annulus.
-  have hO (m : Fin 3) : iteratedFDeriv ℝ m u =O[𝓟 (closedBall 0 R)ᶜ]
-      fun x ↦ ‖x‖ ^ (-((n : ℝ) - 2) - (m : ℕ)) := by
-    obtain ⟨C₁, hC₁⟩ := (hsym.isBigO_iteratedFDeriv (Nat.le_of_lt_succ m.isLt)).bound
-    obtain ⟨R₁, -, hR₁⟩ := (hasBasis_cobounded_compl_closedBall
-      (0 : EuclideanSpace ℝ (Fin n))).eventually_iff.mp hC₁
-    let K : Set (EuclideanSpace ℝ (Fin n)) := closedBall 0 R₁ \ ball 0 R
-    have hK : IsCompact K := (isCompact_closedBall 0 R₁).diff isOpen_ball
-    have hF : ContinuousOn (iteratedFDeriv ℝ m u) K :=
-      (hu.continuous_iteratedFDeriv (by simp)).continuousOn
-    have hne (x : EuclideanSpace ℝ (Fin n)) (hx : x ∈ K) : ‖x‖ ≠ 0 :=
-      (hR.trans_le (not_lt.mp (mem_ball_zero_iff.not.mp hx.2))).ne'
-    have hG : ContinuousOn (fun x : EuclideanSpace ℝ (Fin n) ↦
-        ‖x‖ ^ (-((n : ℝ) - 2) - (m : ℕ))) K :=
-      continuous_norm.continuousOn.rpow_const fun x hx ↦ Or.inl (hne x hx)
-    have hG0 (x : EuclideanSpace ℝ (Fin n)) (hx : x ∈ K) :
-        ‖x‖ ^ (-((n : ℝ) - 2) - (m : ℝ)) ≠ 0 :=
-      (Real.rpow_pos_of_pos ((norm_nonneg x).lt_of_ne' (hne x hx)) _).ne'
-    refine (isBigO_sup.2 ⟨(hF.isBigO_principal hK (by simp : ‖(1 : ℝ)‖ ≠ 0)).trans
-      (hG.isBigO_rev_principal hK hG0 (1 : ℝ)), (isBigOWith_principal.2 hR₁).isBigO⟩).mono ?_
-    rw [sup_principal, principal_mono]
-    intro x hx
-    by_cases hx1 : x ∈ closedBall 0 R₁
-    · exact Or.inl ⟨hx1, mem_ball_zero_iff.not.2
-        (not_lt_of_ge (not_le.1 (mem_closedBall_zero_iff.not.1 hx)).le)⟩
-    · exact Or.inr hx1
-  choose C hC using fun m : Fin 3 ↦ isBigO_principal.1 (hO m)
-  refine ⟨Finset.univ.sup' Finset.univ_nonempty C, fun m hm x hx ↦ ?_⟩
-  have hm' := hC ⟨m, Nat.lt_succ_of_le hm⟩ x hx
-  rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)] at hm'
-  exact hm'.trans (mul_le_mul_of_nonneg_right
-    (Finset.le_sup' C (Finset.mem_univ ⟨m, Nat.lt_succ_of_le hm⟩))
-    (Real.rpow_nonneg (norm_nonneg x) _))
+  obtain ⟨C, hC⟩ := (isSymbolAtInfinity_schwarzschildModelFactor_sub_one hn c
+    ).exists_norm_iteratedFDeriv_le_of_compl_ball (R := max 1 (2 * |c|) + 1)
+    (by linarith [le_max_left (1 : ℝ) (2 * |c|)]) fun _ _ ↦
+      (((contDiff_schwarzschildModelFactor hn c).sub contDiff_const).of_le (by simp)).contDiffAt
+  exact ⟨C, fun m hm x hx ↦ hC m hm x fun hxb ↦ hx (ball_subset_closedBall hxb)⟩
 
 /-- The smooth conformally Euclidean Riemannian metric `schwarzschildModelFactor n c • g_eucl` on
 `ℝⁿ` (`3 ≤ n`), equal outside a ball to `(1 + c ‖x‖ ^ (2 - n)) ^ (4 / (n - 2)) • g_eucl`. -/
@@ -298,7 +247,8 @@ theorem pullbackMetricCoeff_toWithMetric_schwarzschildModelMetric_of_lt_norm {n 
     pullbackMetricCoeff 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
       (WithMetric.toWithMetric (schwarzschildModelMetric hn c)) x =
       (1 + c * ‖x‖ ^ (2 - (n : ℝ))) ^ (4 / ((n : ℝ) - 2)) • 1 := by
-  rw [schwarzschildModelMetric_def, pullbackMetricCoeff_toWithMetric_rescale,
+  rw [schwarzschildModelMetric_def,
+    pullbackMetricCoeff_toWithMetric_rescale_riemannianMetricVectorSpace,
     schwarzschildModelFactor_of_lt_norm n c hx]
 
 /-- **Schwarzschild model manifold ADM mass check.** For every `3 ≤ n` and `c : ℝ`, the smooth

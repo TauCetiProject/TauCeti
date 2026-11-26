@@ -5,10 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Defs
+public import Mathlib.Topology.MetricSpace.ProperSpace
 public import TauCeti.Analysis.Calculus.ContDiff.SymbolClass.Basic
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Topology.MetricSpace.Bounded
 
@@ -33,14 +39,16 @@ order and the regularity by one) are the filter-independent rules of `TauCeti.Is
 `TauCeti.isSymbolAlong_add_one_iff`, …). This file adds the rules particular to infinity:
 
 * passage to larger orders (`IsSymbolAtInfinity.mono`), limits of maps of negative order
-  (`IsSymbolAtInfinity.tendsto_zero`, `IsSymbolAtInfinity.tendsto_of_sub`), and differentiation
-  with the regularity counted in `ℕ` (`IsSymbolAtInfinity.fderiv`);
+  (`IsSymbolAtInfinity.tendsto_zero`, `IsSymbolAtInfinity.tendsto_of_sub`), differentiation
+  with the regularity counted in `ℕ` (`IsSymbolAtInfinity.fderiv`), and explicit exterior bounds on
+  `(ball 0 R)ᶜ` in proper spaces (`IsSymbolAtInfinity.exists_norm_iteratedFDeriv_le_of_compl_ball`);
 * **composition with a map smooth at the limit**: if `f - c` has negative order `ℓ` and `G` is
   `Cᵏ` at `c`, then `G ∘ f` has order `0` (`IsSymbolAtInfinity.comp_of_contDiffAt`), and if `G`
   is moreover `C^(max k 1)` at `c`, then `G ∘ f - G c` has order `ℓ`
   (`IsSymbolAtInfinity.comp_sub`);
-* **inversion**: in a complete normed algebra, if `a - 1` has negative order `ℓ`, then so does
-  `Ring.inverse a - 1` (`IsSymbolAtInfinity.ringInverse_sub_one`).
+* **inversion and powers of the norm**: in a complete normed algebra, if `a - 1` has negative order
+  `ℓ`, then so does `Ring.inverse a - 1` (`IsSymbolAtInfinity.ringInverse_sub_one`), and on a real
+  inner product space `x ↦ ‖x‖ ^ ℓ` has order `ℓ` (`TauCeti.isSymbolAtInfinity_norm_rpow`).
 
 The bounds are only asked for along the cobounded filter: they concern large `‖x‖` and say nothing
 about a bounded region. The order `ℓ` is any real number, and the regularity `k` is finite, as
@@ -127,6 +135,46 @@ one. -/
 protected theorem fderiv (hf : IsSymbolAtInfinity (k + 1) ℓ f) :
     IsSymbolAtInfinity k (ℓ - 1) (fderiv ℝ f) :=
   IsSymbolAlong.fderiv (by exact_mod_cast hf)
+
+/-- On a proper space, a symbol of order `ℓ` and regularity `k` at infinity that is `Cᵏ` at every
+point outside `ball 0 R` (`0 < R`) satisfies an explicit bound `‖D^j f(x)‖ ≤ C * ‖x‖ ^ (ℓ - j)`
+for all `j ≤ k` on `(ball 0 R)ᶜ`. -/
+theorem exists_norm_iteratedFDeriv_le_of_compl_ball [ProperSpace E]
+    (hf : IsSymbolAtInfinity k ℓ f) {R : ℝ} (hR : 0 < R)
+    (hcont : ∀ x ∈ (Metric.ball (0 : E) R)ᶜ, ContDiffAt ℝ k f x) :
+    ∃ C : ℝ, ∀ j ≤ k, ∀ x ∈ (Metric.ball (0 : E) R)ᶜ,
+      ‖iteratedFDeriv ℝ j f x‖ ≤ C * ‖x‖ ^ (ℓ - j) := by
+  -- Combine the asymptotic bound outside a large ball `R₁` with continuity on the compact annulus.
+  have hO (j : Fin (k + 1)) :
+      iteratedFDeriv ℝ j f =O[𝓟 (Metric.ball (0 : E) R)ᶜ] fun x ↦ ‖x‖ ^ (ℓ - (j : ℕ)) := by
+    obtain ⟨C₁, hC₁⟩ := (hf.isBigO_iteratedFDeriv (Nat.le_of_lt_succ j.isLt)).bound
+    obtain ⟨R₁, -, hR₁⟩ :=
+      (Metric.hasBasis_cobounded_compl_closedBall (0 : E)).eventually_iff.mp hC₁
+    let K : Set E := Metric.closedBall 0 R₁ \ Metric.ball 0 R
+    have hK : IsCompact K := (isCompact_closedBall 0 R₁).diff Metric.isOpen_ball
+    have hF : ContinuousOn (iteratedFDeriv ℝ j f) K := fun x hx ↦
+      ((hcont x hx.2).continuousAt_iteratedFDeriv
+        (by exact_mod_cast Nat.le_of_lt_succ j.isLt)).continuousWithinAt
+    have hne (x : E) (hx : x ∈ K) : ‖x‖ ≠ 0 :=
+      (hR.trans_le (not_lt.mp (mem_ball_zero_iff.not.mp hx.2))).ne'
+    have hG : ContinuousOn (fun x : E ↦ ‖x‖ ^ (ℓ - (j : ℕ))) K :=
+      continuous_norm.continuousOn.rpow_const fun x hx ↦ Or.inl (hne x hx)
+    have hG0 (x : E) (hx : x ∈ K) : ‖x‖ ^ (ℓ - (j : ℝ)) ≠ 0 :=
+      (Real.rpow_pos_of_pos ((norm_nonneg x).lt_of_ne' (hne x hx)) _).ne'
+    refine (isBigO_sup.2 ⟨(hF.isBigO_principal hK (by simp : ‖(1 : ℝ)‖ ≠ 0)).trans
+      (hG.isBigO_rev_principal hK hG0 (1 : ℝ)), (isBigOWith_principal.2 hR₁).isBigO⟩).mono ?_
+    rw [sup_principal, principal_mono]
+    intro x hx
+    by_cases hx1 : x ∈ Metric.closedBall 0 R₁
+    · exact Or.inl ⟨hx1, hx⟩
+    · exact Or.inr hx1
+  choose C hC using fun j : Fin (k + 1) ↦ isBigO_principal.1 (hO j)
+  refine ⟨Finset.univ.sup' Finset.univ_nonempty C, fun j hj x hx ↦ ?_⟩
+  have hj' := hC ⟨j, Nat.lt_succ_of_le hj⟩ x hx
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)] at hj'
+  exact hj'.trans (mul_le_mul_of_nonneg_right
+    (Finset.le_sup' C (Finset.mem_univ ⟨j, Nat.lt_succ_of_le hj⟩))
+    (Real.rpow_nonneg (norm_nonneg x) _))
 
 end IsSymbolAtInfinity
 
@@ -247,7 +295,7 @@ end IsSymbolAtInfinity
 
 end Composition
 
-/-! ### Inversion -/
+/-! ### Inversion and powers of the norm -/
 
 /-- **Inversion of symbols at infinity.** In a complete normed algebra, if `a - 1` is a symbol of
 negative order `ℓ` at infinity, then so is `Ring.inverse a - 1`. Since `a x` tends to `1`, it is
@@ -257,5 +305,37 @@ theorem IsSymbolAtInfinity.ringInverse_sub_one {k : ℕ} {ℓ : ℝ} {A : Type*}
     (hℓ : ℓ < 0) : IsSymbolAtInfinity k ℓ fun x ↦ Ring.inverse (a x) - 1 := by
   have h := ha.comp_sub hℓ (g := Ring.inverse) (by simpa using contDiffAt_ringInverse ℝ (1 : Aˣ))
   rwa [Ring.inverse_one] at h
+
+/-- On a real inner product space, the power `x ↦ ‖x‖ ^ ℓ` of the norm is a symbol of order `ℓ` and
+every regularity `k` at infinity. -/
+theorem isSymbolAtInfinity_norm_rpow {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {k : ℕ} (ℓ : ℝ) : IsSymbolAtInfinity k ℓ fun x : E ↦ ‖x‖ ^ ℓ := by
+  open scoped RealInnerProductSpace in
+  have h1 : ∀ᶠ x : E in cobounded E, 1 ≤ ‖x‖ := eventually_cobounded_le_norm 1
+  refine isSymbolAtInfinity_iff.2 ⟨h1.mono fun x hx ↦ ?_, fun j _ ↦ ?_⟩
+  · have hx0 : x ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans_le hx)
+    exact (contDiffAt_norm ℝ hx0).rpow_const_of_ne (norm_ne_zero_iff.2 hx0)
+  · by_cases hE : Subsingleton E
+    · exact IsBigO.of_bound 0 (h1.mono fun x hx ↦
+        (not_le_of_gt zero_lt_one (by simpa [hE.elim x 0] using hx)).elim)
+    · have : Nontrivial E := not_subsingleton_iff_nontrivial.mp hE
+      obtain ⟨v, hv⟩ := exists_ne (0 : E)
+      let e : E := ‖v‖⁻¹ • v
+      have he : ‖e‖ = 1 := by simp [e, norm_smul, hv]
+      refine IsBigO.of_bound ‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ ℓ) e‖ (h1.mono fun x hx ↦ ?_)
+      have hρ : 0 < ‖x‖ := zero_lt_one.trans_le hx
+      let θ : E := ‖x‖⁻¹ • x
+      have hθe : ‖θ‖ = ‖e‖ := by simp [θ, norm_smul, hρ.ne', he]
+      -- Hyperplane reflection exchanges `θ` and `e` without needing compactness of the unit sphere.
+      let R := (ℝ ∙ (θ - e))ᗮ.reflection
+      have hcomp : (fun y : E ↦ ‖y‖ ^ ℓ) ∘ R = fun y : E ↦ ‖y‖ ^ ℓ := funext fun y ↦ by simp
+      have hrot := R.norm_iteratedFDeriv_comp_right (fun y : E ↦ ‖y‖ ^ ℓ) θ j
+      rw [hcomp, Submodule.reflection_sub hθe] at hrot
+      have hscale := norm_iteratedFDeriv_smul_of_homogeneous (f := fun y : E ↦ ‖y‖ ^ ℓ) (p := ℓ)
+        (fun t ht y ↦ by
+          simp [norm_smul, Real.norm_of_nonneg ht.le, Real.mul_rpow ht.le (norm_nonneg y)])
+        hρ (x := θ) (j := j)
+      rw [smul_inv_smul₀ hρ.ne', hrot, mul_comm] at hscale
+      rw [hscale, Real.norm_of_nonneg (Real.rpow_nonneg hρ.le _)]
 
 end TauCeti
