@@ -39,6 +39,8 @@ representation, and its irreducibility is what the Mackey criterion decides.
 ## Main results
 
 * `Representation.ofLinearCharacter_apply`: the action is multiplication by the character value.
+* `Representation.asAlgebraHom_ofLinearCharacter_apply`: the group algebra acts on the line by the
+  scalars of the algebra map `k[G] → k` extending the character.
 * `Representation.ofLinearCharacter_comp`: restriction of the representation is precomposition of
   the character.
 * `Representation.ofLinearCharacter_unitsMap_intCastRingHom`: the sign character of `ℤˣ` gives
@@ -99,6 +101,18 @@ def ofLinearCharacter [CommSemiring k] [Monoid G] (χ : G →* kˣ) : Representa
 theorem ofLinearCharacter_apply [CommSemiring k] [Monoid G] (χ : G →* kˣ) (g : G) (x : k) :
     ofLinearCharacter χ g x = (χ g : k) * x :=
   (rfl)
+
+/-- **The group algebra acts on the line of `χ` by scalars.** An element `x` of `k[G]` acts on
+the line `k` by multiplication by its image under the algebra map `k[G] → k` extending `χ`. -/
+@[simp]
+theorem asAlgebraHom_ofLinearCharacter_apply [CommSemiring k] [Monoid G] (χ : G →* kˣ)
+    (x : MonoidAlgebra k G) (a : k) :
+    (ofLinearCharacter χ).asAlgebraHom x a =
+      MonoidAlgebra.lift k k G ((Units.coeHom k).comp χ) x * a := by
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add x y hx hy => simp only [map_add, LinearMap.add_apply, hx, hy, add_mul]
+  | single g r => simp [mul_assoc]
 
 /-- **Restricting a one-dimensional representation is precomposition of its character.** -/
 @[simp]
