@@ -40,6 +40,8 @@ compared with distributions on open sets.
   from the Schwartz-space identity.
 * `SchwartzMap.toTestFunction`: a compactly supported Schwartz function as a test function, sent
   back to itself by `TestFunction.toSchwartzMapCLM` (`SchwartzMap.toSchwartzMapCLM_toTestFunction`).
+* `TestFunction.smulSchwartzMap`: the product `ψ • u` of a real test function `ψ` and a Schwartz
+  function `u`, as a test function.
 
 ## References
 
@@ -186,6 +188,19 @@ theorem integral_bilinear_iteratedLineDerivOp_left_eq_neg_one_pow_smul_right [Me
     (μ := μ) L m (toSchwartzMapCLM ℝ u) (toSchwartzMapCLM ℝ φ)
   rw [← toSchwartzMapCLM_iteratedLineDerivOp, ← toSchwartzMapCLM_iteratedLineDerivOp] at h
   simpa only [toSchwartzMapCLM_apply] using h
+
+/-- The test function `ψ • u` on `Ω`, the product of a real test function `ψ` on `Ω` and a Schwartz
+function `u`. -/
+def smulSchwartzMap (ψ : 𝓓(Ω, ℝ)) (u : 𝓢(E, F)) : 𝓓(Ω, F) where
+  toFun x := ψ x • u x
+  contDiff' := ψ.contDiff.smul (u.smooth ⊤)
+  hasCompactSupport' := ψ.hasCompactSupport.smul_right
+  tsupport_subset' := (tsupport_smul_subset_left _ _).trans ψ.tsupport_subset
+
+@[simp]
+theorem smulSchwartzMap_apply (ψ : 𝓓(Ω, ℝ)) (u : 𝓢(E, F)) (x : E) :
+    ψ.smulSchwartzMap u x = ψ x • u x :=
+  (rfl)
 
 end TestFunction
 
