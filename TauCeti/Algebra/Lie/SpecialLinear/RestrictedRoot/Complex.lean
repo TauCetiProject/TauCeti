@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Basic
 public import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
+import TauCeti.Algebra.Lie.GeneralLinear.Basic
 
 /-!
 # Restricted roots of `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra
@@ -27,7 +28,7 @@ matrices `𝔞` (`TauCeti.slComplexRealDiagonal`) form a maximal abelian subspac
 
 So the restricted root system of `𝔰𝔩_n(ℂ)` as a real Lie algebra has the same roots as that of
 `𝔰𝔩_n(ℝ)` (`TauCeti.mem_restrictedRoots_specialLinearDiagonal_iff`), with all multiplicities `2`
-and `𝔪 = i𝔞`: this is the `𝔰𝔩₃(ℂ)` Check of RealSemisimpleLieGroups §1.2, for every `n`.
+and `𝔪 = i𝔞`.
 
 ## Main definitions
 
@@ -68,6 +69,10 @@ variable (n) in
 /-- `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra, as a real Lie subalgebra of `𝔤𝔩_n(ℂ)`. -/
 noncomputable abbrev slComplexReal : LieSubalgebra ℝ (Matrix n n ℂ) :=
   ((SpecialLinear.sl n ℂ).restrictScalarsIncl ℝ).range
+
+/-- A complex matrix lies in `𝔰𝔩_n(ℂ)` viewed as real exactly when its trace vanishes. -/
+theorem mem_slComplexReal_iff {A : Matrix n n ℂ} : A ∈ slComplexReal n ↔ A.trace = 0 :=
+  (LieSubalgebra.mem_range_restrictScalarsIncl _ _ _).trans SpecialLinear.mem_sl_iff
 
 variable (n) in
 /-- The Cartan involution `X ↦ -Xᴴ` of `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra
@@ -115,7 +120,7 @@ variable (n) in
 /-- The functional `e_i - e_j : H ↦ H i i - H j j` on the real trace-zero diagonal matrices. Over
 `𝔰𝔩_n(ℂ)` viewed as real it is a restricted root exactly when `i ≠ j`
 (`TauCeti.mem_restrictedRoots_slComplexRealDiagonal_iff`). -/
-@[expose] noncomputable def slComplexRestrictedRoot (i j : n) : Dual ℝ (slComplexRealDiagonal n) :=
+noncomputable def slComplexRestrictedRoot (i j : n) : Dual ℝ (slComplexRealDiagonal n) :=
   Complex.reLm ∘ₗ (entryLinearMap ℝ ℂ i i - entryLinearMap ℝ ℂ j j) ∘ₗ
     (slComplexReal n).incl.toLinearMap ∘ₗ (slComplexRealDiagonal n).subtype
 
@@ -124,7 +129,7 @@ theorem slComplexRestrictedRoot_apply (i j : n) (H : slComplexRealDiagonal n) :
     slComplexRestrictedRoot n i j H =
       (((H : slComplexReal n) : Matrix n n ℂ) i i).re -
         (((H : slComplexReal n) : Matrix n n ℂ) j j).re :=
-  rfl
+  (rfl)
 
 /-- `e_k - e_k = 0`. -/
 @[simp]
@@ -133,27 +138,32 @@ theorem slComplexRestrictedRoot_self (k : n) : slComplexRestrictedRoot n k k = 0
 
 variable (n) in
 /-- The element `E_kk - E_ll` of `𝔞`, used to separate the functionals `e_i - e_j`. -/
-noncomputable def slComplexRealDiagonalSingle (k l : n) : slComplexRealDiagonal n :=
-  ⟨⟨single k k 1 - single l l 1, (LieSubalgebra.mem_range_restrictScalarsIncl _ _ _).mpr <|
-      LinearMap.mem_ker.mpr (by simp)⟩,
+noncomputable def slComplexRealDiagonalSingleSubSingle (k l : n) : slComplexRealDiagonal n :=
+  ⟨⟨single k k 1 - single l l 1, mem_slComplexReal_iff.mpr (by simp)⟩,
     ⟨fun i j hij ↦ by
-        simp only [Matrix.sub_apply, Matrix.single_apply]; split_ifs <;> simp_all <;> grind,
+        simp only [Matrix.sub_apply, Matrix.single_apply]; split_ifs <;> grind,
       fun i ↦ by simp only [Matrix.sub_apply, Matrix.single_apply]; split_ifs <;> simp⟩⟩
 
-theorem slComplexRestrictedRoot_slComplexRealDiagonalSingle (i j k l : n) :
-    slComplexRestrictedRoot n i j (slComplexRealDiagonalSingle n k l) =
+@[simp]
+theorem coe_slComplexRealDiagonalSingleSubSingle (k l : n) :
+    (((slComplexRealDiagonalSingleSubSingle n k l : slComplexRealDiagonal n) : slComplexReal n) :
+      Matrix n n ℂ) = single k k 1 - single l l 1 :=
+  (rfl)
+
+theorem slComplexRestrictedRoot_slComplexRealDiagonalSingleSubSingle (i j k l : n) :
+    slComplexRestrictedRoot n i j (slComplexRealDiagonalSingleSubSingle n k l) =
       ((if k = i then 1 else 0) - (if l = i then 1 else 0)) -
         ((if k = j then 1 else 0) - (if l = j then 1 else 0)) := by
-  simp only [slComplexRestrictedRoot_apply, slComplexRealDiagonalSingle, Matrix.sub_apply,
-    Matrix.single_apply]
+  simp only [slComplexRestrictedRoot_apply, coe_slComplexRealDiagonalSingleSubSingle,
+    Matrix.sub_apply, Matrix.single_apply]
   split_ifs <;> simp_all
 
 /-- `e_i - e_j ≠ 0` for `i ≠ j`: it takes the value `2` at `E_ii - E_jj`. -/
 theorem slComplexRestrictedRoot_ne_zero {i j : n} (hij : i ≠ j) :
     slComplexRestrictedRoot n i j ≠ 0 := by
   intro h
-  have := LinearMap.congr_fun h (slComplexRealDiagonalSingle n i j)
-  rw [slComplexRestrictedRoot_slComplexRealDiagonalSingle, LinearMap.zero_apply] at this
+  have := LinearMap.congr_fun h (slComplexRealDiagonalSingleSubSingle n i j)
+  rw [slComplexRestrictedRoot_slComplexRealDiagonalSingleSubSingle, LinearMap.zero_apply] at this
   simp [hij, hij.symm] at this
 
 /-- `X ∈ 𝔤_μ` exactly when `(H k k - H l l - μ H) X k l = 0` for every `H ∈ 𝔞` and every entry. -/
@@ -179,8 +189,9 @@ theorem mem_restrictedRootSpace_zero_slComplexRealDiagonal_iff
     X ∈ (slComplexRealDiagonal n).restrictedRootSpace 0 ↔ (X : Matrix n n ℂ).IsDiag := by
   rw [mem_restrictedRootSpace_slComplexRealDiagonal_iff]
   refine ⟨fun h k l hkl ↦ ?_, fun h H k l ↦ ?_⟩
-  · have := h (slComplexRealDiagonalSingle n k l) k l
-    rw [LinearMap.zero_apply, sub_zero, slComplexRestrictedRoot_slComplexRealDiagonalSingle] at this
+  · have := h (slComplexRealDiagonalSingleSubSingle n k l) k l
+    rw [LinearMap.zero_apply, sub_zero,
+      slComplexRestrictedRoot_slComplexRealDiagonalSingleSubSingle] at this
     simpa [hkl, Ne.symm hkl] using this
   · by_cases hkl : k = l
     · simp [hkl]
@@ -199,19 +210,12 @@ theorem slComplexRealDiagonal_le_cartanP :
       Complex.conj_ofReal]
   · rw [hX.1 hkl, hX.1 (Ne.symm hkl), star_zero]
 
-/-- The bracket vanishes on `𝔞`. -/
-theorem lie_eq_zero_of_mem_slComplexRealDiagonal
-    {H H' : slComplexReal n}
-    (hH : H ∈ slComplexRealDiagonal n) (hH' : H' ∈ slComplexRealDiagonal n) : ⁅H, H'⁆ = 0 :=
-  (mem_restrictedRootSpace_zero.mp
-    (mem_restrictedRootSpace_zero_slComplexRealDiagonal_iff.mpr hH'.1)) ⟨H, hH⟩
-
 /-- **The real trace-zero diagonal matrices are a maximal abelian subspace of `𝔭`.** -/
 theorem isMaximalAbelianInP_slComplexRealDiagonal :
     (slComplexNegConjTranspose n).IsMaximalAbelianInP
       (slComplexRealDiagonal n) := by
   refine LieEquiv.isMaximalAbelianInP_iff.mpr ⟨⟨slComplexRealDiagonal_le_cartanP,
-    fun _ hX _ hY ↦ lie_eq_zero_of_mem_slComplexRealDiagonal hX hY⟩, fun 𝔟 h𝔟 hle Y hY ↦ ?_⟩
+    fun _ hX _ hY ↦ Subtype.ext (lie_eq_zero_of_isDiag hX.1 hY.1)⟩, fun 𝔟 h𝔟 hle Y hY ↦ ?_⟩
   have hdiag : (Y : Matrix n n ℂ).IsDiag :=
     mem_restrictedRootSpace_zero_slComplexRealDiagonal_iff.mp
       (mem_restrictedRootSpace_zero.mpr fun H ↦ h𝔟.2 _ (hle H.property) Y hY)
@@ -232,10 +236,9 @@ theorem mem_restrictedRootSpace_zero_inf_fixedSubalgebra_slComplexRealDiagonal_i
     LieSubalgebra.mem_toSubmodule, LieSubalgebra.mem_fixedSubalgebra_restrictNegConjTranspose_iff]
   constructor
   · rintro ⟨hdiag, hskew⟩
-    have hmem : -Complex.I • (X : Matrix n n ℂ) ∈
-        slComplexReal n := by
-      exact (LieSubalgebra.mem_range_restrictScalarsIncl _ _ _).mpr ((SpecialLinear.sl n ℂ).smul_mem
-        _ ((LieSubalgebra.mem_range_restrictScalarsIncl _ _ _).mp X.property))
+    have hmem : -Complex.I • (X : Matrix n n ℂ) ∈ slComplexReal n :=
+      mem_slComplexReal_iff.mpr <| by
+        rw [trace_smul, mem_slComplexReal_iff.mp X.property, smul_zero]
     refine ⟨⟨_, hmem⟩, ⟨hdiag.smul _, fun k ↦ ?_⟩, ?_⟩
     · have := congrFun (congrFun hskew k) k
       rw [conjTranspose_apply, RCLike.star_def, Matrix.neg_apply] at this
@@ -256,25 +259,36 @@ theorem mem_restrictedRootSpace_zero_inf_fixedSubalgebra_slComplexRealDiagonal_i
 /-- The matrix unit `E_ij` (`i ≠ j`) lies in `𝔰𝔩_n(ℂ)` viewed as real. -/
 theorem single_mem_slComplexReal {i j : n} (hij : i ≠ j) (c : ℂ) :
     single i j c ∈ slComplexReal n :=
-  (LieSubalgebra.mem_range_restrictScalarsIncl _ _ _).mpr <|
-    LinearMap.mem_ker.mpr (by simp [hij])
+  mem_slComplexReal_iff.mpr (by simp [hij])
 
-/-- `e_k - e_l = e_i - e_j` with `i ≠ j` forces `(k, l) = (i, j)`. -/
-theorem eq_and_eq_of_slComplexRestrictedRoot_eq {i j k l : n} (hij : i ≠ j)
-    (h : ∀ H, slComplexRestrictedRoot n k l H = slComplexRestrictedRoot n i j H) :
-    k = i ∧ l = j := by
-  have := h (slComplexRealDiagonalSingle n i j)
-  rw [slComplexRestrictedRoot_slComplexRealDiagonalSingle,
-    slComplexRestrictedRoot_slComplexRealDiagonalSingle] at this
+/-- The functionals `e_k - e_l` and `e_i - e_j` with `i ≠ j` coincide exactly when
+`(k, l) = (i, j)`. -/
+@[simp]
+theorem slComplexRestrictedRoot_inj {i j k l : n} (hij : i ≠ j) :
+    slComplexRestrictedRoot n k l = slComplexRestrictedRoot n i j ↔ k = i ∧ l = j := by
+  refine ⟨fun h ↦ ?_, fun ⟨hki, hlj⟩ ↦ hki ▸ hlj ▸ rfl⟩
+  have := LinearMap.congr_fun h (slComplexRealDiagonalSingleSubSingle n i j)
+  rw [slComplexRestrictedRoot_slComplexRealDiagonalSingleSubSingle,
+    slComplexRestrictedRoot_slComplexRealDiagonalSingleSubSingle] at this
   simp only [hij, Ne.symm hij, ↓reduceIte] at this
-  split_ifs at this <;> simp_all <;> norm_num at this
+  grind
+
+/-- A nonzero `(k, l)` entry of `X ∈ 𝔤_μ` forces `μ = e_k - e_l`. -/
+theorem eq_slComplexRestrictedRoot_of_mem_restrictedRootSpace
+    {μ : Dual ℝ (slComplexRealDiagonal n)} {X : slComplexReal n}
+    (hX : X ∈ (slComplexRealDiagonal n).restrictedRootSpace μ) {k l : n}
+    (hkl : (X : Matrix n n ℂ) k l ≠ 0) : μ = slComplexRestrictedRoot n k l :=
+  LinearMap.ext fun H ↦ by
+    have := (mul_eq_zero.mp
+      (mem_restrictedRootSpace_slComplexRealDiagonal_iff.mp hX H k l)).resolve_right hkl
+    rw [Complex.ofReal_eq_zero, sub_eq_zero] at this
+    exact this.symm
 
 /-- **The restricted root space of `e_i - e_j` consists of the matrices supported at `(i, j)`.** -/
 theorem mem_restrictedRootSpace_slComplexRestrictedRoot_iff {i j : n} (hij : i ≠ j)
     {X : slComplexReal n} :
     X ∈ (slComplexRealDiagonal n).restrictedRootSpace (slComplexRestrictedRoot n i j) ↔
       (X : Matrix n n ℂ) = single i j ((X : Matrix n n ℂ) i j) := by
-  rw [mem_restrictedRootSpace_slComplexRealDiagonal_iff]
   constructor
   · intro h
     ext k l
@@ -282,11 +296,11 @@ theorem mem_restrictedRootSpace_slComplexRestrictedRoot_iff {i j : n} (hij : i �
     split_ifs with hkl
     · rw [hkl.1, hkl.2]
     · by_contra hne
-      refine hkl ((eq_and_eq_of_slComplexRestrictedRoot_eq hij fun H ↦ ?_).imp Eq.symm Eq.symm)
-      have := (mul_eq_zero.mp (h H k l)).resolve_right hne
-      rw [Complex.ofReal_eq_zero, sub_eq_zero] at this
-      exact this
-  · intro h H k l
+      exact hkl (((slComplexRestrictedRoot_inj hij).mp
+        (eq_slComplexRestrictedRoot_of_mem_restrictedRootSpace h hne).symm).imp Eq.symm Eq.symm)
+  · intro h
+    rw [mem_restrictedRootSpace_slComplexRealDiagonal_iff]
+    intro H k l
     rw [h, single_apply]
     split_ifs with hkl
     · rw [hkl.1, hkl.2, sub_self, Complex.ofReal_zero, zero_mul]
@@ -303,11 +317,7 @@ theorem mem_restrictedRoots_slComplexRealDiagonal_iff {μ : Dual ℝ (slComplexR
     obtain ⟨k, l, hkl⟩ : ∃ k l, (X : Matrix n n ℂ) k l ≠ 0 := by
       by_contra! h
       exact hX0 (Subtype.ext (Matrix.ext h))
-    have hroot : μ = slComplexRestrictedRoot n k l := LinearMap.ext fun H ↦ by
-      have := (mul_eq_zero.mp
-        (mem_restrictedRootSpace_slComplexRealDiagonal_iff.mp hX H k l)).resolve_right hkl
-      rw [Complex.ofReal_eq_zero, sub_eq_zero] at this
-      exact this.symm
+    have hroot := eq_slComplexRestrictedRoot_of_mem_restrictedRootSpace hX hkl
     refine ⟨k, l, fun h ↦ hμ ?_, hroot⟩
     rw [hroot, h, slComplexRestrictedRoot_self]
   · rintro ⟨i, j, hij, rfl⟩
@@ -330,6 +340,18 @@ noncomputable def restrictedRootSpaceSlComplexEquiv {i j : n} (hij : i ≠ j) :
   left_inv X := Subtype.ext <| Subtype.ext
     ((mem_restrictedRootSpace_slComplexRestrictedRoot_iff hij).mp X.property).symm
   right_inv c := by simp
+
+@[simp]
+theorem restrictedRootSpaceSlComplexEquiv_apply {i j : n} (hij : i ≠ j)
+    (X : (slComplexRealDiagonal n).restrictedRootSpace (slComplexRestrictedRoot n i j)) :
+    restrictedRootSpaceSlComplexEquiv hij X = ((X : slComplexReal n) : Matrix n n ℂ) i j :=
+  (rfl)
+
+@[simp]
+theorem coe_restrictedRootSpaceSlComplexEquiv_symm_apply {i j : n} (hij : i ≠ j) (c : ℂ) :
+    (((restrictedRootSpaceSlComplexEquiv hij).symm c : slComplexReal n) : Matrix n n ℂ) =
+      single i j c :=
+  (rfl)
 
 /-- **Multiplicity two**: the restricted root space of `e_i - e_j` has real dimension `2`. -/
 theorem finrank_restrictedRootSpace_slComplexRestrictedRoot {i j : n} (hij : i ≠ j) :
