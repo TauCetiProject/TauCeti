@@ -27,32 +27,26 @@ with the same kernel are isomorphic over the target (Mathlib's `IsClosedImmersio
 
 ## Main definitions
 
-* `AlgebraicGeometry.Scheme.PartialIso.graphSymmIso`: the isomorphism `Γ_φ ≅ Γ_{φ⁻¹}` induced by
-  the exchange of factors.
-* `AlgebraicGeometry.Scheme.RationalMap.graphSwapIso`: for mutually inverse dominant rational maps
-  `f` and `g` of integral separated schemes, the isomorphism `Γ_f ≅ Γ_g` induced by the exchange
-  of factors; `graphSwapIso_hom_graphFst` and its companions show it exchanges the projections.
+* `AlgebraicGeometry.Scheme.RationalMap.graphSwapIso`: for rational maps `f : X ⤏ Y` and
+  `g : Y ⤏ X` such that the exchange of factors maps `Γ_f` onto `Γ_g` (as an equality of kernels),
+  the isomorphism `Γ_f ≅ Γ_g` induced by the exchange of factors; `graphSwapIso_hom_graphι`,
+  `graphSwapIso_hom_graphFst` and their companions show it is compatible with the closed
+  immersions and exchanges the projections.
 
 ## Main results
 
 * `AlgebraicGeometry.Scheme.PartialIso.ker_graphLift_comp_pullbackSymmetry_hom`: the graph
-  morphism of `φ` followed by the exchange of factors has the kernel of the graph morphism of
-  `φ.symm`.
-* `AlgebraicGeometry.Scheme.PartialIso.graphSymmIso_hom_graphι`: `graphSymmIso` is compatible
-  with the closed immersions of the graphs and the exchange of factors.
-* `AlgebraicGeometry.Scheme.PartialIso.graphSymmIso_hom_graphFst`,
-  `AlgebraicGeometry.Scheme.PartialIso.graphSymmIso_hom_graphSnd`,
-  `AlgebraicGeometry.Scheme.PartialIso.graphSymmIso_inv_graphFst`,
-  `AlgebraicGeometry.Scheme.PartialIso.graphSymmIso_inv_graphSnd`: `graphSymmIso` exchanges the
-  two projections.
-* `AlgebraicGeometry.Scheme.RationalMap.ker_graphLift_comp_pullbackSymmetry_hom`,
-  `AlgebraicGeometry.Scheme.RationalMap.ker_graphι_comp_pullbackSymmetry_hom`: for mutually
+  morphism of a partial isomorphism `φ` followed by the exchange of factors has the kernel of the
+  graph morphism of `φ.symm`, so `graphSwapIso` gives `Γ_φ ≅ Γ_{φ⁻¹}`.
+* `AlgebraicGeometry.Scheme.RationalMap.ker_graphLift_comp_pullbackSymmetry_hom`: for mutually
   inverse dominant rational maps `f` and `g` of integral separated schemes, the exchange of
   factors maps `Γ_f` onto `Γ_g`. Such `f` is the rational map of a
   partial isomorphism `φ`
   (`AlgebraicGeometry.Scheme.RationalMap.exists_partialIso_toRationalMap_eq`) and `g` is that of
   `φ.symm`
   (`AlgebraicGeometry.Scheme.PartialIso.eq_symm_toRationalMap_of_comp_eq_id`).
+* `AlgebraicGeometry.Scheme.RationalMap.ker_graphι_comp_pullbackSymmetry_hom`: the same kernel
+  equality for the closed immersions of the graphs.
 -/
 
 public section
@@ -93,76 +87,76 @@ theorem ker_graphLift_comp_pullbackSymmetry_hom :
   exact (congrArg Hom.ker (opensGraph_comp_pullbackSymmetry_hom φ)).trans
     (Hom.ker_comp_of_isIso _ _)
 
-/-- The closed immersion of `Γ_φ` followed by the exchange of factors `X × Y ≅ Y × X` has the
-kernel of the closed immersion of `Γ_{φ⁻¹}`. -/
-theorem ker_graphι_comp_pullbackSymmetry_hom :
-    (RationalMap.graphι φ.toRationalMap ≫ (pullbackSymmetry _ _).hom).ker =
-      (RationalMap.graphι φ.symm.toRationalMap).ker := by
-  rw [Hom.ker_comp, RationalMap.ker_graphι, IdealSheafData.map_ker,
-    ker_graphLift_comp_pullbackSymmetry_hom, RationalMap.ker_graphι]
-
-/-- **The graph of the inverse.** The exchange of factors `X × Y ≅ Y × X` induces an isomorphism
-of the graph `Γ_φ` of the rational map of a partial isomorphism `φ` with the graph `Γ_{φ⁻¹}` of
-the rational map of `φ.symm`. -/
-def graphSymmIso : RationalMap.graph φ.toRationalMap ≅ RationalMap.graph φ.symm.toRationalMap :=
-  have := IsClosedImmersion.isIso_lift (RationalMap.graphι φ.symm.toRationalMap)
-    (RationalMap.graphι φ.toRationalMap ≫ (pullbackSymmetry _ _).hom)
-    (ker_graphι_comp_pullbackSymmetry_hom φ).symm
-  asIso (IsClosedImmersion.lift (RationalMap.graphι φ.symm.toRationalMap)
-    (RationalMap.graphι φ.toRationalMap ≫ (pullbackSymmetry _ _).hom)
-    (ker_graphι_comp_pullbackSymmetry_hom φ).symm.le)
-
-/-- The isomorphism `Γ_φ ≅ Γ_{φ⁻¹}` is the exchange of factors on the ambient products. -/
-@[reassoc (attr := simp)]
-theorem graphSymmIso_hom_graphι :
-    (graphSymmIso φ).hom ≫ RationalMap.graphι φ.symm.toRationalMap =
-      RationalMap.graphι φ.toRationalMap ≫ (pullbackSymmetry _ _).hom :=
-  IsClosedImmersion.lift_fac _ _ _
-
-/-- The inverse of `Γ_φ ≅ Γ_{φ⁻¹}` is the exchange of factors on the ambient products. -/
-@[reassoc (attr := simp)]
-theorem graphSymmIso_inv_graphι :
-    (graphSymmIso φ).inv ≫ RationalMap.graphι φ.toRationalMap =
-      RationalMap.graphι φ.symm.toRationalMap ≫ (pullbackSymmetry _ _).inv := by
-  rw [Iso.inv_comp_eq, graphSymmIso_hom_graphι_assoc, Iso.hom_inv_id, Category.comp_id]
-
-/-- The isomorphism `Γ_φ ≅ Γ_{φ⁻¹}` carries the first projection of `Γ_{φ⁻¹}` to the second
-projection of `Γ_φ`. -/
-@[reassoc (attr := simp)]
-theorem graphSymmIso_hom_graphFst :
-    (graphSymmIso φ).hom ≫ RationalMap.graphFst φ.symm.toRationalMap =
-      RationalMap.graphSnd φ.toRationalMap := by
-  rw [RationalMap.graphFst, RationalMap.graphSnd, graphClosureFst_def, graphClosureSnd_def]
-  simp
-
-/-- The isomorphism `Γ_φ ≅ Γ_{φ⁻¹}` carries the second projection of `Γ_{φ⁻¹}` to the first
-projection of `Γ_φ`. -/
-@[reassoc (attr := simp)]
-theorem graphSymmIso_hom_graphSnd :
-    (graphSymmIso φ).hom ≫ RationalMap.graphSnd φ.symm.toRationalMap =
-      RationalMap.graphFst φ.toRationalMap := by
-  rw [RationalMap.graphFst, RationalMap.graphSnd, graphClosureFst_def, graphClosureSnd_def]
-  simp
-
-/-- The inverse of `Γ_φ ≅ Γ_{φ⁻¹}` carries the first projection of `Γ_φ` to the second projection
-of `Γ_{φ⁻¹}`. -/
-@[reassoc (attr := simp)]
-theorem graphSymmIso_inv_graphFst :
-    (graphSymmIso φ).inv ≫ RationalMap.graphFst φ.toRationalMap =
-      RationalMap.graphSnd φ.symm.toRationalMap := by
-  rw [Iso.inv_comp_eq, graphSymmIso_hom_graphSnd]
-
-/-- The inverse of `Γ_φ ≅ Γ_{φ⁻¹}` carries the second projection of `Γ_φ` to the first projection
-of `Γ_{φ⁻¹}`. -/
-@[reassoc (attr := simp)]
-theorem graphSymmIso_inv_graphSnd :
-    (graphSymmIso φ).inv ≫ RationalMap.graphSnd φ.toRationalMap =
-      RationalMap.graphFst φ.symm.toRationalMap := by
-  rw [Iso.inv_comp_eq, graphSymmIso_hom_graphFst]
-
 end PartialIso
 
 namespace RationalMap
+
+section Swap
+
+variable {X Y : Scheme.{u}} {f : X ⤏ Y} {g : Y ⤏ X}
+
+/-- If the graph morphism `γ_f` followed by the exchange of factors `X × Y ≅ Y × X` has the kernel
+of `γ_g`, then so does the closed immersion of `Γ_f` followed by the exchange of factors, with
+the closed immersion of `Γ_g`. -/
+theorem ker_graphι_comp_pullbackSymmetry_hom
+    (hk : (graphLift f ≫ (pullbackSymmetry _ _).hom).ker = (graphLift g).ker) :
+    (graphι f ≫ (pullbackSymmetry _ _).hom).ker = (graphι g).ker := by
+  rw [Hom.ker_comp, ker_graphι, IdealSheafData.map_ker, hk, ker_graphι]
+
+/-- If the exchange of factors `X × Y ≅ Y × X` maps the graph `Γ_f` of `f : X ⤏ Y` onto the graph
+`Γ_g` of `g : Y ⤏ X`, that is, the graph morphism `γ_f` followed by the exchange of factors has
+the kernel of `γ_g`, then the exchange of factors induces an isomorphism `Γ_f ≅ Γ_g`. For a
+partial isomorphism `φ`, take `hk := φ.ker_graphLift_comp_pullbackSymmetry_hom`; for mutually
+inverse dominant rational maps of integral separated schemes, take
+`hk := ker_graphLift_comp_pullbackSymmetry_hom f g h h'`. -/
+def graphSwapIso (hk : (graphLift f ≫ (pullbackSymmetry _ _).hom).ker = (graphLift g).ker) :
+    graph f ≅ graph g :=
+  have := IsClosedImmersion.isIso_lift (graphι g) (graphι f ≫ (pullbackSymmetry _ _).hom)
+    (ker_graphι_comp_pullbackSymmetry_hom hk).symm
+  asIso (IsClosedImmersion.lift (graphι g) (graphι f ≫ (pullbackSymmetry _ _).hom)
+    (ker_graphι_comp_pullbackSymmetry_hom hk).symm.le)
+
+variable (hk : (graphLift f ≫ (pullbackSymmetry _ _).hom).ker = (graphLift g).ker)
+
+/-- The isomorphism `Γ_f ≅ Γ_g` is the exchange of factors on the ambient products. -/
+@[reassoc (attr := simp)]
+theorem graphSwapIso_hom_graphι :
+    (graphSwapIso hk).hom ≫ graphι g = graphι f ≫ (pullbackSymmetry _ _).hom :=
+  IsClosedImmersion.lift_fac _ _ _
+
+/-- The inverse of `Γ_f ≅ Γ_g` is the exchange of factors on the ambient products. -/
+@[reassoc (attr := simp)]
+theorem graphSwapIso_inv_graphι :
+    (graphSwapIso hk).inv ≫ graphι f = graphι g ≫ (pullbackSymmetry _ _).inv := by
+  rw [Iso.inv_comp_eq, graphSwapIso_hom_graphι_assoc, Iso.hom_inv_id, Category.comp_id]
+
+/-- The isomorphism `Γ_f ≅ Γ_g` carries the first projection of `Γ_g` to the second projection
+of `Γ_f`. -/
+@[reassoc (attr := simp)]
+theorem graphSwapIso_hom_graphFst : (graphSwapIso hk).hom ≫ graphFst g = graphSnd f := by
+  rw [graphFst, graphSnd, graphClosureFst_def, graphClosureSnd_def]
+  simp
+
+/-- The isomorphism `Γ_f ≅ Γ_g` carries the second projection of `Γ_g` to the first projection
+of `Γ_f`. -/
+@[reassoc (attr := simp)]
+theorem graphSwapIso_hom_graphSnd : (graphSwapIso hk).hom ≫ graphSnd g = graphFst f := by
+  rw [graphFst, graphSnd, graphClosureFst_def, graphClosureSnd_def]
+  simp
+
+/-- The inverse of `Γ_f ≅ Γ_g` carries the first projection of `Γ_f` to the second projection
+of `Γ_g`. -/
+@[reassoc (attr := simp)]
+theorem graphSwapIso_inv_graphFst : (graphSwapIso hk).inv ≫ graphFst f = graphSnd g := by
+  rw [Iso.inv_comp_eq, graphSwapIso_hom_graphSnd]
+
+/-- The inverse of `Γ_f ≅ Γ_g` carries the second projection of `Γ_f` to the first projection
+of `Γ_g`. -/
+@[reassoc (attr := simp)]
+theorem graphSwapIso_inv_graphSnd : (graphSwapIso hk).inv ≫ graphSnd f = graphFst g := by
+  rw [Iso.inv_comp_eq, graphSwapIso_hom_graphFst]
+
+end Swap
 
 variable {X Y : Scheme.{u}} [IsIntegral X] [IsIntegral Y] [X.IsSeparated] [Y.IsSeparated]
 
@@ -176,65 +170,5 @@ theorem ker_graphLift_comp_pullbackSymmetry_hom (f : X ⤏ Y) [f.IsDominant] (g 
   obtain ⟨φ, rfl⟩ := f.exists_partialIso_toRationalMap_eq g h h'
   obtain rfl := φ.eq_symm_toRationalMap_of_comp_eq_id g h
   exact φ.ker_graphLift_comp_pullbackSymmetry_hom
-
-/-- For mutually inverse dominant rational maps `f` and `g` of integral separated schemes, the
-closed immersion of `Γ_f` followed by the exchange of factors `X × Y ≅ Y × X` has the kernel of
-the closed immersion of `Γ_g`. -/
-theorem ker_graphι_comp_pullbackSymmetry_hom (f : X ⤏ Y) [f.IsDominant] (g : Y ⤏ X)
-    [g.IsDominant] (h : f.comp g = RationalMap.id X) (h' : g.comp f = RationalMap.id Y) :
-    (graphι f ≫ (pullbackSymmetry _ _).hom).ker = (graphι g).ker := by
-  rw [Hom.ker_comp, ker_graphι, IdealSheafData.map_ker,
-    ker_graphLift_comp_pullbackSymmetry_hom f g h h', ker_graphι]
-
-/-- **The graph of the inverse of a birational map.** For mutually inverse dominant rational maps
-`f : X ⤏ Y` and `g : Y ⤏ X` of integral separated schemes, the exchange of factors
-`X × Y ≅ Y × X` induces an isomorphism `Γ_f ≅ Γ_g`. -/
-def graphSwapIso (f : X ⤏ Y) [f.IsDominant] (g : Y ⤏ X) [g.IsDominant]
-    (h : f.comp g = RationalMap.id X) (h' : g.comp f = RationalMap.id Y) : graph f ≅ graph g :=
-  have := IsClosedImmersion.isIso_lift (graphι g) (graphι f ≫ (pullbackSymmetry _ _).hom)
-    (ker_graphι_comp_pullbackSymmetry_hom f g h h').symm
-  asIso (IsClosedImmersion.lift (graphι g) (graphι f ≫ (pullbackSymmetry _ _).hom)
-    (ker_graphι_comp_pullbackSymmetry_hom f g h h').symm.le)
-
-variable (f : X ⤏ Y) [f.IsDominant] (g : Y ⤏ X) [g.IsDominant] (h : f.comp g = RationalMap.id X)
-  (h' : g.comp f = RationalMap.id Y)
-
-/-- The isomorphism `Γ_f ≅ Γ_g` is the exchange of factors on the ambient products. -/
-@[reassoc (attr := simp)]
-theorem graphSwapIso_hom_graphι :
-    (graphSwapIso f g h h').hom ≫ graphι g = graphι f ≫ (pullbackSymmetry _ _).hom :=
-  IsClosedImmersion.lift_fac _ _ _
-
-/-- The inverse of `Γ_f ≅ Γ_g` is the exchange of factors on the ambient products. -/
-@[reassoc (attr := simp)]
-theorem graphSwapIso_inv_graphι :
-    (graphSwapIso f g h h').inv ≫ graphι f = graphι g ≫ (pullbackSymmetry _ _).inv := by
-  rw [Iso.inv_comp_eq, graphSwapIso_hom_graphι_assoc, Iso.hom_inv_id, Category.comp_id]
-
-/-- The isomorphism `Γ_f ≅ Γ_g` carries the first projection of `Γ_g` to the second projection
-of `Γ_f`. -/
-@[reassoc (attr := simp)]
-theorem graphSwapIso_hom_graphFst : (graphSwapIso f g h h').hom ≫ graphFst g = graphSnd f := by
-  rw [graphFst, graphSnd, graphClosureFst_def, graphClosureSnd_def]
-  simp
-
-/-- The isomorphism `Γ_f ≅ Γ_g` carries the second projection of `Γ_g` to the first projection
-of `Γ_f`. -/
-@[reassoc (attr := simp)]
-theorem graphSwapIso_hom_graphSnd : (graphSwapIso f g h h').hom ≫ graphSnd g = graphFst f := by
-  rw [graphFst, graphSnd, graphClosureFst_def, graphClosureSnd_def]
-  simp
-
-/-- The inverse of `Γ_f ≅ Γ_g` carries the first projection of `Γ_f` to the second projection
-of `Γ_g`. -/
-@[reassoc (attr := simp)]
-theorem graphSwapIso_inv_graphFst : (graphSwapIso f g h h').inv ≫ graphFst f = graphSnd g := by
-  rw [Iso.inv_comp_eq, graphSwapIso_hom_graphSnd]
-
-/-- The inverse of `Γ_f ≅ Γ_g` carries the second projection of `Γ_f` to the first projection
-of `Γ_g`. -/
-@[reassoc (attr := simp)]
-theorem graphSwapIso_inv_graphSnd : (graphSwapIso f g h h').inv ≫ graphSnd f = graphFst g := by
-  rw [Iso.inv_comp_eq, graphSwapIso_hom_graphFst]
 
 end AlgebraicGeometry.Scheme.RationalMap
