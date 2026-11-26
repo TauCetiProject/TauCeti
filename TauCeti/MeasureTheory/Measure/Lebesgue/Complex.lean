@@ -30,8 +30,8 @@ so a half-disc `Ω ∩ {0 ≤ im}` agrees almost everywhere with its interior
 (`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`), and an integral over `ℂ` is the integral over
 the open upper half-plane of the function plus its composition with conjugation
 (`Complex.integral_eq_setIntegral_add_comp_conj`), and an almost-everywhere property on the upper
-part of a conjugation-invariant set holds at the conjugate points of its lower part
-(`TauCeti.ae_restrict_im_neg_of_ae_restrict_im_pos`).
+part of a set containing the conjugates of its lower points holds at the conjugate points of its
+lower part (`TauCeti.ae_restrict_im_neg_of_ae_restrict_im_pos`).
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
 `s ×ℂ t`, planar measure is the product of the restrictions to the sides
 (`Complex.volume_reProdIm`, `Complex.volume_real_reProdIm_Icc` for the area), so a function of the
@@ -254,17 +254,17 @@ theorem ae_restrict_interior_inter_setOf_im_nonneg_im_pos (Ω : Opens ℂ) :
   rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen] at hz
   exact hz.2
 
-/-- An almost-everywhere property on the upper part `Ω ∩ {0 < im}` of a set mapped into itself by
-conjugation, read at the conjugate point, holds almost everywhere on the lower part
-`Ω ∩ {im < 0}`: conjugation preserves the measure and exchanges the two parts. -/
+/-- An almost-everywhere property on the upper part `Ω ∩ {0 < im}` of a set containing the
+conjugates of its lower points, read at the conjugate point, holds almost everywhere on the lower
+part `Ω ∩ {im < 0}`: conjugation preserves the measure and exchanges the two parts. -/
 theorem ae_restrict_im_neg_of_ae_restrict_im_pos {Ω : Set ℂ}
-    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) {P : ℂ → Prop}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → starRingEnd ℂ z ∈ Ω) {P : ℂ → Prop}
     (h : ∀ᵐ z ∂volume.restrict (Ω ∩ {z | 0 < z.im}), P z) :
     ∀ᵐ z ∂volume.restrict (Ω ∩ {z | z.im < 0}), P (starRingEnd ℂ z) := by
   have hconj := (Complex.conjLIE.measurePreserving.restrict_preimage_emb
     Complex.conjLIE.toHomeomorph.measurableEmbedding (Ω ∩ {z | 0 < z.im})).quasiMeasurePreserving
   refine ae_restrict_of_ae_restrict_of_subset (fun z hz ↦ ?_) (by simpa using hconj.ae h)
-  exact ⟨hΩ hz.1, by simpa using hz.2⟩
+  exact ⟨hΩ z hz.1 hz.2, by simpa using hz.2⟩
 
 /-- Splitting complex coordinates into their real and imaginary blocks preserves volume,
 including on an empty coordinate type. -/

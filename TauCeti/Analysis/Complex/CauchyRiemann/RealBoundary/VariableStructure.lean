@@ -103,7 +103,7 @@ theorem IsWeakLinearCauchyRiemannOn.ite_conj (hp : 1 ≤ p)
         D z 1 + J z (D z I) + C z (ξ z) = 0)
   have hdown := (ae_restrict_iff' (measurableSet_lt Complex.measurable_im measurable_const)).1
     (by rw [Measure.restrict_restrict (measurableSet_lt Complex.measurable_im measurable_const),
-      inter_comm]; exact ae_restrict_im_neg_of_ae_restrict_im_pos hΩ hae :
+      inter_comm]; exact ae_restrict_im_neg_of_ae_restrict_im_pos (fun _ hz _ ↦ hΩ hz) hae :
       ∀ᵐ z ∂(volume.restrict (Ω : Set ℂ)).restrict {z : ℂ | z.im < 0},
         D (conj z) 1 + J (conj z) (D (conj z) I) + C (conj z) (ξ (conj z)) = 0)
   filter_upwards [hup, hdown, ae_restrict_of_ae Complex.ae_im_ne_zero] with z hz₁ hz₂ hz
