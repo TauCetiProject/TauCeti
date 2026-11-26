@@ -96,25 +96,33 @@ noncomputable def smulRingHom (n : ℕ) :
   -- rewrite produces a goal that is not type-correct at reducible transparency.
   map_one' := by
     have h : ofDiscreteModuleSMulMap G M (1 : R) = 𝟙 _ :=
-      TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ one_smul R (m : M))
+      TopRep.hom_ext (DFunLike.ext _ _ fun m ↦
+        (ofDiscreteModuleSMulMap_hom_apply (G := G) (M := M) 1 m).trans (one_smul R (m : M)))
     rw [h, coeffMap_id]
     exact AddMonoidHom.ext fun x ↦ ConcreteCategory.id_apply x
   map_mul' r s := by
     have h : ofDiscreteModuleSMulMap G M (r * s) =
         ofDiscreteModuleSMulMap G M s ≫ ofDiscreteModuleSMulMap G M r :=
-      TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ mul_smul r s (m : M))
+      TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ by
+        have hA (t : R) (x : M) := ofDiscreteModuleSMulMap_hom_apply (G := G) (M := M) t x
+        exact (hA (r * s) m).trans ((mul_smul r s (show M from m)).trans
+          ((congrArg (fun x : M ↦ r • x) (hA s m).symm).trans (hA r _).symm)))
     rw [h, coeffMap_comp]
     exact AddMonoidHom.ext fun x ↦ ConcreteCategory.comp_apply
       (coeffMap (ofDiscreteModuleSMulMap G M s) n) (coeffMap (ofDiscreteModuleSMulMap G M r) n) x
   map_zero' := by
     have h : ofDiscreteModuleSMulMap G M (0 : R) = 0 :=
-      TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ zero_smul R (m : M))
+      TopRep.hom_ext (DFunLike.ext _ _ fun m ↦
+        (ofDiscreteModuleSMulMap_hom_apply (G := G) (M := M) 0 m).trans (zero_smul R (m : M)))
     rw [h, ← continuousCohomologyFunctor_map, Functor.map_zero]
     exact AddMonoidHom.ext fun x ↦ TopModuleCat.hom_zero_apply (m := x)
   map_add' r s := by
     have h : ofDiscreteModuleSMulMap G M (r + s) =
         ofDiscreteModuleSMulMap G M r + ofDiscreteModuleSMulMap G M s :=
-      TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ add_smul r s (m : M))
+      TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ by
+        have hA (t : R) (x : M) := ofDiscreteModuleSMulMap_hom_apply (G := G) (M := M) t x
+        exact (hA (r + s) m).trans ((add_smul r s (show M from m)).trans
+          (congrArg₂ (· + ·) (hA r m).symm (hA s m).symm)))
     rw [h, ← continuousCohomologyFunctor_map, Functor.map_add]
     exact AddMonoidHom.ext fun x ↦ (DFunLike.congr_fun (TopModuleCat.hom_add
       (φ₁ := (continuousCohomologyFunctor ℤ G n).map (ofDiscreteModuleSMulMap G M r))
@@ -142,7 +150,9 @@ theorem coeffMap_smul {N : Type v} [AddCommGroup N] [Module R N] [TopologicalSpa
       r • coeffMap (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap hf) n x := by
   have h : ofDiscreteModuleSMulMap G M r ≫ ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap hf =
       ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap hf ≫ ofDiscreteModuleSMulMap G N r :=
-    TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ f.map_smul r (m : M))
+    TopRep.hom_ext (DFunLike.ext _ _ fun m ↦
+      (congrArg _ (ofDiscreteModuleSMulMap_hom_apply r m)).trans
+        ((f.map_smul r (m : M)).trans (ofDiscreteModuleSMulMap_hom_apply (G := G) r (f m)).symm))
   rw [smul_def, smul_def, ← ConcreteCategory.comp_apply, ← coeffMap_comp, h, coeffMap_comp,
     ConcreteCategory.comp_apply]
 

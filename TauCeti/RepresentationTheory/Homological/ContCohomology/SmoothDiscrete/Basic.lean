@@ -560,17 +560,15 @@ end Dictionary
 
 section SMulMap
 
-variable {R : Type u} [Semiring R] {G : Type v} [Monoid G]
-  {M : Type w} [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
+variable {R : Type u} {G : Type v} [Monoid G]
+  {M : Type w} [AddCommGroup M] [DistribSMul R M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [SMulCommClass G R M]
 
 variable (G M) in
 /-- Multiplication by a scalar `r` on a discrete module `M`, as an endomorphism of
 `ofDiscreteModule ℤ G M`; it is equivariant because the action of `G` commutes with the scalars.
-The body is `@[expose]`d, like that of `ofDiscreteModuleMap`, because the scalar action on
-continuous cohomology in `TauCeti.RepresentationTheory.Homological.ContCohomology.ScalarAction`
-identifies these endomorphisms pointwise, which unfolds them. -/
-@[expose] def ofDiscreteModuleSMulMap (r : R) : ofDiscreteModule ℤ G M ⟶ ofDiscreteModule ℤ G M :=
+Use `ofDiscreteModuleSMulMap_hom_apply` to evaluate it. -/
+def ofDiscreteModuleSMulMap (r : R) : ofDiscreteModule ℤ G M ⟶ ofDiscreteModule ℤ G M :=
   ofDiscreteModuleMap (DistribSMul.toAddMonoidHom M r).toIntLinearMap
     fun g m ↦ (smul_comm g r m).symm
 

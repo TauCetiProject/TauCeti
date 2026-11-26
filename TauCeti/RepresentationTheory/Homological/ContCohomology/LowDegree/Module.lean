@@ -142,21 +142,20 @@ def H1.smulRingHom : R →+* AddMonoid.End (H1 G M) where
     (explicitMap1_comp G M G M _ _
       (continuous_const_smul s) (fun g m ↦ (smul_comm g s m).symm) G M _ _
       (continuous_const_smul r) (fun g m ↦ (smul_comm g r m).symm))
+  -- `r • ·` as an equivariant map of `M`, which needs the scalars on the left; `toFun r` is its
+  -- coefficient map `explicitCoeff1`, by `explicitCoeff1_eq_explicitMap1`
   map_zero' := by
-    refine QuotientAddGroup.addMonoidHom_ext _ (AddMonoidHom.ext fun z ↦ ?_)
-    refine (explicitMap1_mk G M G M _ _ _ _ z).trans ?_
-    refine (congrArg _ (Subtype.ext (funext fun g ↦ ?_))).trans (QuotientAddGroup.mk_zero _)
-    exact (cocyclesMap1_apply G M G M _ _ _ _ z g).trans (zero_smul R _)
+    have := SMulCommClass.symm G R M
+    exact (explicitCoeff1_eq_explicitMap1 G M (SMulCommClass.toDistribMulActionHom G M (0 : R))
+      (continuous_const_smul 0)).symm.trans (explicitCoeff1_eq_zero G M _ _ (zero_smul R))
   map_add' r s := by
-    refine QuotientAddGroup.addMonoidHom_ext _ (AddMonoidHom.ext fun z ↦ ?_)
-    refine (explicitMap1_mk G M G M _ _ _ _ z).trans (.trans ?_ (congrArg₂ (· + ·)
-      (explicitMap1_mk G M G M _ (DistribSMul.toAddMonoidHom M r) _ _ z).symm
-      (explicitMap1_mk G M G M _ (DistribSMul.toAddMonoidHom M s) _ _ z).symm))
-    refine (congrArg _ (Subtype.ext (funext fun g ↦ ?_))).trans (QuotientAddGroup.mk_add _ _ _)
-    exact (cocyclesMap1_apply G M G M _ _ _ _ z g).trans ((add_smul r s _).trans
-      (congrArg₂ (· + ·)
-        (cocyclesMap1_apply G M G M _ (DistribSMul.toAddMonoidHom M r) _ _ z g).symm
-        (cocyclesMap1_apply G M G M _ (DistribSMul.toAddMonoidHom M s) _ _ z g).symm))
+    have := SMulCommClass.symm G R M
+    let f (t : R) : M →+[G] M := SMulCommClass.toDistribMulActionHom G M t
+    have hf (t : R) : Continuous (f t) := continuous_const_smul t
+    exact (explicitCoeff1_eq_explicitMap1 G M (f (r + s)) (hf (r + s))).symm.trans
+      ((explicitCoeff1_eq_add G M (f r) (f s) (f (r + s)) (hf r) (hf s) (hf (r + s))
+        (add_smul r s)).trans (congrArg₂ (· + ·) (explicitCoeff1_eq_explicitMap1 G M (f r) (hf r))
+          (explicitCoeff1_eq_explicitMap1 G M (f s) (hf s))))
 
 /-- **`H¹(G, M)` is an `R`-module** when `M` is one, with continuous scalars commuting with the
 action of `G`: `r` acts by the coefficient map of `r • ·`. -/
