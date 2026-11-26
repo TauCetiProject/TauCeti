@@ -42,7 +42,8 @@ subgroup `L` vanishes has a representative vanishing on `L`, and if every elemen
   elements `(z * g)⁻¹ * (g * z)` is a coboundary when the action of `z` commutes with that of `G`
   and `m ↦ z • m - m` is bijective.
 * `groupCohomology.IsCocycle₁.isCoboundary₁_of_smul_eq`: the same when `z` acts by a scalar `r` of
-  a ring with `r - 1` a unit.
+  a ring with `r - 1` a unit, through `groupCohomology.smul_comm_of_smul_eq` and
+  `groupCohomology.bijective_smul_sub_of_smul_eq`.
 * `groupCohomology.IsCocycle₁.isCoboundary₁_of_commute`: Sah's lemma, for `z` central in `G`.
 
 ## Provenance
@@ -90,15 +91,27 @@ theorem IsCocycle₁.isCoboundary₁_of_bijective (hc : IsCocycle₁ c) {z : G}
   rw [hc.smul_apply_sub_apply_eq (h g), ← hm, smul_sub, smul_sub, hz]
   abel
 
+/-- If `z : G` acts on `M` by a scalar `r` whose action commutes with that of `G`, then the action
+of `z` commutes with that of `G`. -/
+theorem smul_comm_of_smul_eq {R : Type*} [SMul R M] [SMulCommClass G R M] {z : G} {r : R}
+    (hzr : ∀ m : M, z • m = r • m) (g : G) (m : M) : z • g • m = g • z • m := by
+  rw [hzr, hzr, smul_comm g r m]
+
+/-- If `z : G` acts on `M` by a scalar `r` of a ring with `r - 1` a unit, then `m ↦ z • m - m` is
+bijective. -/
+theorem bijective_smul_sub_of_smul_eq {R : Type*} [Ring R] [Module R M] {z : G} {r : R}
+    (hzr : ∀ m : M, z • m = r • m) (hr : IsUnit (r - 1)) :
+    Function.Bijective fun m : M => z • m - m := by
+  simpa only [hzr, sub_smul, one_smul] using hr.smul_bijective (β := M)
+
 /-- **Sah's lemma for a scalar.** If `z` acts on `M` by a scalar `r` of a ring `R` acting
 compatibly with `G`, and `r - 1` is a unit, then a `1`-cocycle vanishing at every
 `(z * g)⁻¹ * (g * z)` is a coboundary. -/
 theorem IsCocycle₁.isCoboundary₁_of_smul_eq {R : Type*} [Ring R] [Module R M]
     [SMulCommClass G R M] (hc : IsCocycle₁ c) {z : G} (h : ∀ g, c ((z * g)⁻¹ * (g * z)) = 0)
     {r : R} (hzr : ∀ m : M, z • m = r • m) (hr : IsUnit (r - 1)) :
-    IsCoboundary₁ c := by
-  refine hc.isCoboundary₁_of_bijective h (fun g m => by rw [hzr, hzr, smul_comm g r m]) ?_
-  simpa only [hzr, sub_smul, one_smul] using hr.smul_bijective (β := M)
+    IsCoboundary₁ c :=
+  hc.isCoboundary₁_of_bijective h (smul_comm_of_smul_eq hzr) (bijective_smul_sub_of_smul_eq hzr hr)
 
 /-- **Sah's lemma.** If `z` is central in `G` and `m ↦ z • m - m` is bijective, every `1`-cocycle
 is a coboundary, so `H¹(G, M) = 0`. -/

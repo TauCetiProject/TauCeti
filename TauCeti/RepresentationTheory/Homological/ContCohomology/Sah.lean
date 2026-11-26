@@ -25,13 +25,10 @@ particular at every `(z * g)⁻¹ * (g * z)`, so it is a coboundary
 (`groupCohomology.IsCocycle₁.isCoboundary₁_of_bijective`), and hence so is `c`. Neither normality
 nor openness of `L` is needed, and no inflation from `G ⧸ L` is used.
 
-This is clause (4b) of target 3.24 of the roadmap
-RiemannHypothesisForDirichletLFunctions/SelmerLengthBoundsAndLocalLifting, where `G = G_F` is the
-absolute Galois group of a CM field, `L` an open subgroup modulo which an element `z` is central,
-and `z` acts on the coefficients `T ⊗ κ⁻¹ ⊗ B` and `T^† ⊗ κ ⊗ B` by the scalars `[ϑ]` and
-`[ϑ]⁻¹` of the group ring `Λ`, with `[ϑ]^{±1} - 1` a unit of `Λ`. The theorems below are stated for
-an arbitrary continuous module, so they apply to those coefficients, and in particular to the
-residual representations `T / λT` and `T^† / λT^†`, as soon as they are given as continuous modules.
+The motivating case is an absolute Galois group `G` of a CM field, an open subgroup `L` modulo
+which an element `z` is central, and coefficients on which `z` acts by a scalar `[ϑ]` or
+`[ϑ]⁻¹` of a group ring, with `[ϑ]^{±1} - 1` a unit; the theorems below are stated for an
+arbitrary continuous module.
 
 ## Main statements
 
@@ -105,10 +102,9 @@ compatibly with `G`, with `r - 1` a unit, and `z` is central modulo `L`, then re
 theorem explicitRes1_injective_of_smul_eq {R : Type*} [Ring R] [Module R M] [SMulCommClass G R M]
     (L : Subgroup G) {z : G} (hzL : ∀ g, (z * g)⁻¹ * (g * z) ∈ L) {r : R}
     (hzr : ∀ m : M, z • m = r • m) (hr : IsUnit (r - 1)) :
-    Function.Injective (explicitRes1 G M L) := by
-  refine explicitRes1_injective_of_bijective L hzL (fun g m => by rw [hzr, hzr, smul_comm g r m])
-    ?_
-  simpa only [hzr, sub_smul, one_smul] using hr.smul_bijective (β := M)
+    Function.Injective (explicitRes1 G M L) :=
+  explicitRes1_injective_of_bijective L hzL (smul_comm_of_smul_eq hzr)
+    (bijective_smul_sub_of_smul_eq hzr hr)
 
 /-- **Sah's lemma in degree one.** If `z` is central in `G` and `m ↦ z • m - m` is bijective, then
 `H¹(G, M) = 0`. -/
@@ -155,8 +151,8 @@ restriction on Mathlib's canonical `H¹` is injective. -/
 theorem res_injective_of_smul_eq {R : Type*} [Ring R] [Module R M] [SMulCommClass G R M]
     (L : Subgroup G) {z : G} (hzL : ∀ g, (z * g)⁻¹ * (g * z) ∈ L) {r : R}
     (hzr : ∀ m : M, z • m = r • m) (hr : IsUnit (r - 1)) :
-    Function.Injective (res L (ofDiscreteModule ℤ G M) 1) := by
-  refine res_injective_of_bijective L hzL (fun g m => by rw [hzr, hzr, smul_comm g r m]) ?_
-  simpa only [hzr, sub_smul, one_smul] using hr.smul_bijective (β := M)
+    Function.Injective (res L (ofDiscreteModule ℤ G M) 1) :=
+  res_injective_of_bijective L hzL (groupCohomology.smul_comm_of_smul_eq hzr)
+    (groupCohomology.bijective_smul_sub_of_smul_eq hzr hr)
 
 end TauCeti.ContinuousCohomology

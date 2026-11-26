@@ -29,7 +29,7 @@ The **tame relation** says that a `1`-cocycle `ω` for this action satisfies
 characteristic `p` this holds for every `N ≡ 1 (mod 2p)`. For `A = K[ε]/(ε²)` and `u = ε • μ`
 both sides are `ε` times a multiple of the reduction `ω₀` of `ω` modulo `ε`, and the relation is
 `ε • (μ γ • ω₀ φ - μ φ • ω₀ γ) = 0`, that is `μ γ • ω₀ φ = μ φ • ω₀ γ` when `W` is free over
-`K[ε]`, which is the form stated in the roadmap.
+`K[ε]`.
 
 ## The argument
 
@@ -48,8 +48,7 @@ value of a cocycle on a power is `ω (γ ^ n) = n • ω γ + (n choose 2) • u
 * `groupCohomology.IsCocycle₁.smul_apply_eq_smul_apply_of_conj_eq_pow_of_modEq`: the tame relation
   in characteristic `p` for `N ≡ 1 [MOD 2 * p]`.
 
-This is clause (2) of target 3.24 of the roadmap
-RiemannHypothesisForDirichletLFunctions/SelmerLengthBoundsAndLocalLifting. The factor `2` in the
+The factor `2` in the
 congruence matters only for `p = 2`: for `p = 2` and `N ≡ 3 (mod 4)` the coefficient
 `N choose 2` is odd and the relation acquires the extra term `u γ • ω γ`.
 
@@ -75,16 +74,6 @@ namespace groupCohomology
 variable {D A W : Type*} [Group D] [Ring A] [AddCommGroup W] [Module A W]
   [DistribMulAction D W] {u : D → A} {ω : D → W}
 
-/-- An additive map `u : D → A` takes `γ ^ n` to `n • u γ`. -/
-private theorem apply_pow_of_additive (hu : ∀ g h, u (g * h) = u g + u h) (γ : D) (n : ℕ) :
-    u (γ ^ n) = n • u γ := by
-  induction n with
-  | zero =>
-    have h1 := hu 1 1
-    rw [mul_one, left_eq_add] at h1
-    rw [pow_zero, h1, zero_smul]
-  | succ n ih => rw [pow_succ, hu, ih, succ_nsmul]
-
 /-- **A cocycle on powers.** If `D` acts on `W` through `g • w = (1 + u g) • w` with `u` additive,
 a `1`-cocycle `ω` satisfies `ω (γ ^ n) = n • ω γ + (n choose 2) • u γ • ω γ`. -/
 theorem IsCocycle₁.apply_pow_of_smul_eq (hu : ∀ g h, u (g * h) = u g + u h)
@@ -95,9 +84,10 @@ theorem IsCocycle₁.apply_pow_of_smul_eq (hu : ∀ g h, u (g * h) = u g + u h)
     rw [pow_zero, map_one_of_isCocycle₁ hω, Nat.choose_zero_succ]
     simp
   | succ n ih =>
-    rw [pow_succ, hω, ih, hact, apply_pow_of_additive hu, Nat.choose_succ_succ',
-      Nat.choose_one_right, nsmul_eq_mul]
-    simp only [Nat.cast_add, Nat.cast_one, add_smul, one_smul, mul_smul]
+    have hun : u (γ ^ n) = n • u γ :=
+      map_pow (MonoidHom.mk' (fun g => Multiplicative.ofAdd (u g)) hu) γ n
+    rw [pow_succ, hω, ih, hact (γ ^ n), hun, Nat.choose_succ_succ', Nat.choose_one_right]
+    simp only [nsmul_eq_mul, Nat.cast_add, Nat.cast_one, add_smul, one_smul, mul_smul]
     abel
 
 /-- **The tame relation.** Let `φ * γ * φ⁻¹ = γ ^ (2 * m + 1)` with `m` zero in `A`, and let `D`
@@ -109,16 +99,23 @@ theorem IsCocycle₁.smul_apply_eq_smul_apply_of_conj_eq_pow
     (hm : (m : A) = 0) :
     u γ • ω φ = u φ • ω γ := by
   have hN : ((2 * m + 1 : ℕ) : A) = 1 := by push_cast; rw [hm, mul_zero, zero_add]
+  have hchoose : (2 * m + 1).choose 2 = m * (2 * m + 1) := by
+    rw [Nat.choose_two_right, Nat.add_sub_cancel]
+    exact Nat.div_eq_of_eq_mul_left two_pos (by ring)
   have hC : (((2 * m + 1).choose 2 : ℕ) : A) = 0 := by
-    rw [Nat.choose_two_right, Nat.add_sub_cancel, mul_comm 2 m, ← mul_assoc,
-      Nat.mul_div_cancel _ two_pos]
-    push_cast
-    rw [hm, mul_zero]
+    rw [hchoose, Nat.cast_mul, hm, zero_mul]
+  -- `u` and `ω` take the same values at `γ ^ (2 * m + 1)` as at `γ`.
+  have hupow : u (γ ^ (2 * m + 1)) = u γ := by
+    have h' : u (γ ^ (2 * m + 1)) = (2 * m + 1) • u γ :=
+      map_pow (MonoidHom.mk' (fun g => Multiplicative.ofAdd (u g)) hu) γ (2 * m + 1)
+    rw [h', nsmul_eq_mul, hN, one_mul]
+  have hωpow : ω (γ ^ (2 * m + 1)) = ω γ := by
+    rw [hω.apply_pow_of_smul_eq hu hact, hN, hC, one_smul, zero_smul, add_zero]
+  -- Expand both sides of `φ * γ = γ ^ (2 * m + 1) * φ` by the cocycle identity.
   have hφγ : φ * γ = γ ^ (2 * m + 1) * φ := by rw [← h]; group
   have e := hω φ γ
-  rw [hφγ, hω, hω.apply_pow_of_smul_eq hu hact, hact, hact, apply_pow_of_additive hu, hN, hC,
-    nsmul_eq_mul, hN, one_mul] at e
-  simp only [add_smul, one_smul, zero_smul, add_zero] at e
+  rw [hφγ, hω (γ ^ (2 * m + 1)) φ, hωpow, hact (γ ^ (2 * m + 1)), hact φ, hupow] at e
+  simp only [add_smul, one_smul] at e
   rw [← sub_eq_zero, ← sub_eq_zero.2 e]
   abel
 
