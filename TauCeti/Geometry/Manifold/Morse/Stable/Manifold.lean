@@ -406,29 +406,6 @@ theorem isOpen_unstableSet_of_manifoldMorseIndex_eq_finrank (hX : IsAdaptedPseud
   exact Filter.mem_of_superset (q.open_source.mem_nhds hpq) fun z hz ↦
     (isSliceChart_iff.1 hs z hz).2 (by simp [hLtop])
 
-/-- **The unstable manifold of a critical point of index zero is a point.** For a critical point
-`x` of index `0` of a Morse function, no other trajectory converges to `x` in backward time: near
-`x` the slice charts flatten `W^u(x)` onto the zero subspace, and every trajectory converging to
-`x` in backward time enters such a chart. -/
-theorem unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero (hX : IsAdaptedPseudoGradient f X)
-    (hf : IsMorse 𝓘(ℝ, E) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
-    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = 0) :
-    hX.flow.unstableSet x = {x} := by
-  have hxu : x ∈ hX.flow.unstableSet x := (hX.mem_unstableSet_inter_stableSet_self hx).1
-  obtain ⟨L, φ, hL, hxφ, -, hs⟩ := hX.exists_isSliceChart_unstableSet hf hx hxu
-  obtain rfl : L = ⊥ := Submodule.finrank_eq_zero.1 (hL.trans hind)
-  -- In the slice chart at `x`, the only point of `W^u(x)` is `x` itself.
-  have hloc (z : M) (hz : z ∈ φ.source) (hzu : z ∈ hX.flow.unstableSet x) : z = x := by
-    have hz0 : φ z = 0 := by simpa using (isSliceChart_iff.1 hs z hz).1 hzu
-    have hx0 : φ x = 0 := by simpa using (isSliceChart_iff.1 hs x hxφ).1 hxu
-    exact φ.injOn hz hxφ (hz0.trans hx0.symm)
-  refine subset_antisymm (fun p hp ↦ ?_) (singleton_subset_iff.2 hxu)
-  obtain ⟨t, ht⟩ := ((Flow.mem_unstableSet.1 hp).eventually
-    (φ.open_source.mem_nhds hxφ)).exists
-  have hpt := hloc _ ht ((Flow.apply_mem_unstableSet_iff _ t).2 hp)
-  rw [mem_singleton_iff, ← hX.flow.map_neg_apply_map t p, hpt,
-    hX.flow_apply_of_mfderiv_eq_zero hx]
-
 /-- **The stable manifold of a critical point of top index is a point.** For a critical point `x`
 of index `n = dim M`, no other trajectory converges to `x` in forward time: near `x` the slice
 charts flatten `W^s(x)` onto the zero subspace, and every trajectory converging to `x` in forward
@@ -451,6 +428,19 @@ theorem stableSet_eq_singleton_of_manifoldMorseIndex_eq_finrank (hX : IsAdaptedP
   have hpt := hloc _ ht ((Flow.apply_mem_stableSet_iff _ t).2 hp)
   rw [mem_singleton_iff, ← hX.flow.map_neg_apply_map t p, hpt,
     hX.flow_apply_of_mfderiv_eq_zero hx]
+
+/-- **The unstable manifold of a critical point of index zero is a point.** For a critical point
+`x` of index `0` of a Morse function, `W^u(x)` is the stable manifold of `x` for the reversed
+pseudo-gradient `-X`, and `x` has top index for `-f`. -/
+theorem unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero (hX : IsAdaptedPseudoGradient f X)
+    (hf : IsMorse 𝓘(ℝ, E) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = 0) :
+    hX.flow.unstableSet x = {x} := by
+  rw [hX.unstableSet_eq_stableSet_neg hf]
+  have hidx := (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
+    ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  exact (hX.neg hf).stableSet_eq_singleton_of_manifoldMorseIndex_eq_finrank
+    (mfderiv_neg_eq_zero_iff.2 hx) (by omega)
 
 /-- **The stable set is a manifold of dimension `n - k`.** For a critical point `x` of index
 `k`, the stable set `W^s(x)` of the flow of an adapted pseudo-gradient carries a smooth
