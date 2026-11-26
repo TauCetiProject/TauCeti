@@ -274,8 +274,8 @@ theorem normalizedVortex_translateCoeff (a : ℂ) (c : Fin m → ℂ) :
     funext z
     simp [normalizingTranslationGauge_apply]
   rw [normalizedVortex_def, normalizedVortex_def, translateField_gaugeTransform,
-    translateField_polynomialVortex, ← monicOfCoeff_translateCoeff, ← gaugeTransform_mul hh hg,
-    hprod]
+    translateField_polynomialVortex, ← taylor_apply, ← monicOfCoeff_translateCoeff,
+    ← gaugeTransform_mul hh hg, hprod]
 
 /-- **The normalizing translation gauge outside a disc** is the translation gauge: far out, both
 carry the translated winding phase `((z + a) / |z + a|)ᵐ` to the winding phase `(z / |z|)ᵐ`. -/

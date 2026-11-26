@@ -382,7 +382,7 @@ theorem coeffEquiv_symm_translateCoeff (a : K) (c : Fin n → K) :
   have h := roots_comp_C_mul_X_add_C (TauCeti.Polynomial.monicOfCoeff c) 1 a isUnit_one
   rw [C_1, one_mul] at h
   rw [coeffEquiv_symm_apply, Sym.coe_map, coeffEquiv_symm_apply,
-    TauCeti.Polynomial.monicOfCoeff_translateCoeff, h]
+    TauCeti.Polynomial.monicOfCoeff_translateCoeff, taylor_apply, h]
   simp
 
 /-- **The tuples through a point satisfy an affine equation in the elementary symmetric chart.** A
