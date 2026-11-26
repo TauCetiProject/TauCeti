@@ -20,7 +20,7 @@ a bounded operator `T = Op(a) : H^{s,p}(ℝⁿ; V) → H^{s - m,p}(ℝⁿ; W)` b
 spaces for every real `s` (`TauCeti.Symbol.quantizeUniformBesselPotentialSpace`). This file proves
 the `Lᵖ` elliptic theory of `T` on the whole space, in the namespace `TauCeti.Symbol`:
 
-* `IsUniformlyEllipticAbove.exists_quantizeUniformBesselPotentialSpace_parametrix`:
+* `IsUniformlyEllipticAbove.exists_comp_quantizeUniformBesselPotentialSpace_eq_id_add`:
   **the parametrix on `H^{s,p}`.** There is a bounded operator `B : H^{s - m,p} → H^{s,p}` with
 
   `B T = 1 + K ι` and `T B = 1 + K' ι'`,
@@ -97,7 +97,7 @@ in the position and which is uniformly elliptic above some radius, let `1 < p < 
 derivatives: for every `r ≤ s` there is a bounded `K : H^{r,p} → H^{s,p}` with `B T = 1 + K ι`, and
 for every `r ≤ s - m` a bounded `K' : H^{r,p} → H^{s - m,p}` with `T B = 1 + K' ι'`, where `ι` and
 `ι'` are the inclusions into `H^{r,p}`. -/
-theorem IsUniformlyEllipticAbove.exists_quantizeUniformBesselPotentialSpace_parametrix
+theorem IsUniformlyEllipticAbove.exists_comp_quantizeUniformBesselPotentialSpace_eq_id_add
     (ha : a.IsUniformlyEllipticAbove R) (hau : a.IsUniform) (hp : 1 < p) (hp_top : p ≠ ∞)
     (s : ℝ) :
     ∃ B : H^{s - m, p}(CoordinateSpace n, W) →L[ℂ] H^{s, p}(CoordinateSpace n, V),
@@ -151,7 +151,7 @@ theorem IsUniformlyEllipticAbove.exists_norm_le_quantizeUniformBesselPotentialSp
     ∃ C, ∀ u : H^{s, p}(CoordinateSpace n, V),
       ‖u‖ ≤ C * (‖a.quantizeUniformBesselPotentialSpace hau s p u‖ +
         ‖BesselPotentialSpace.inclusion hrs u‖) := by
-  obtain ⟨B, hB, -⟩ := ha.exists_quantizeUniformBesselPotentialSpace_parametrix hau hp hp_top s
+  obtain ⟨B, hB, -⟩ := ha.exists_comp_quantizeUniformBesselPotentialSpace_eq_id_add hau hp hp_top s
   obtain ⟨K, hK⟩ := hB r hrs
   refine ⟨‖B‖ + ‖K‖, fun u ↦ ?_⟩
   set T := a.quantizeUniformBesselPotentialSpace hau s p
