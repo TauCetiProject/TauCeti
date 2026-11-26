@@ -95,7 +95,8 @@ homogeneous symbols of degrees `m - j`.
   space, of orders decreasing to `-∞`, have a continuous asymptotic sum with continuous
   remainders.
 * `TauCeti.Symbol.exists_asymptoticSum`: every sequence of symbols of orders decreasing to `-∞`
-  has an asymptotic sum.
+  has an asymptotic sum; `TauCeti.Symbol.exists_asymptoticSum_sub_natCast` is the case of the
+  orders `μ - j`.
 * `TauCeti.Symbol.exists_forall_of_exists_add`: successive corrections of orders `μ - N` that
   improve a symbol step by step can be summed to one symbol with every improved property;
   `TauCeti.Symbol.exists_forall_of_exists_add_of_imp` lets a stronger, unstable property drive
@@ -118,6 +119,9 @@ homogeneous symbols of degrees `m - j`.
 * `TauCeti.ClassicalSymbol.ofIsAsymptoticSum`: an asymptotic sum of classical symbols of orders
   `m - k` is classical; `TauCeti.ClassicalSymbol.exists_remainder_of_isAsymptoticSum` bounds its
   remainders.
+* `TauCeti.ClassicalSymbol.exists_asymptoticSum`: classical symbols of orders `m - k` have an
+  asymptotic sum which is classical of order `m`, with remainders after `N` terms classical of
+  order `m - N`.
 
 ## References
 
@@ -785,6 +789,15 @@ theorem exists_asymptoticSum {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto 
   obtain ⟨r, -, hr⟩ := hb N
   exact ⟨r (), hr ()⟩
 
+/-- Asymptotic summation for the orders `μ - j`: symbols `aⱼ` of orders `μ - j` have an asymptotic
+sum `b` of order `μ`. -/
+theorem exists_asymptoticSum_sub_natCast {μ : ℝ} (a : ∀ j : ℕ, Symbol n V W (μ - j)) :
+    ∃ b : Symbol n V W μ, IsAsymptoticSum (m := fun j : ℕ => μ - j) (inclusion (by simp) b) a := by
+  obtain ⟨b, hb⟩ := exists_asymptoticSum (fun _ _ hij => sub_le_sub_left (Nat.cast_le.2 hij) μ)
+    (tendsto_atBot_add_const_left atTop μ <|
+      tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop) a
+  exact ⟨inclusion (by simp) b, fun N => by simpa using hb N⟩
+
 /-- The successive approximations of `b₀`: if every `b` with `P N b` can be improved to
 `P (N + 1)` by a correction `d` of order `μ - N` with `Q N d`, then there are corrections `c N`
 with `Q N (c N)` such that each `b₀ + ∑_{j < N} c j` has the property `P N`. -/
@@ -822,15 +835,12 @@ theorem exists_forall_of_exists_add_of_imp {μ : ℝ} (P Q : ℕ → Symbol n V 
     ∃ b, ∀ N, Q N b := by
   obtain ⟨c, -, hc⟩ := exists_corrections_of_exists_add P (fun _ _ ↦ True) h₀
     fun N b hb ↦ (hsucc N b hb).imp fun _ hd ↦ ⟨trivial, hd⟩
-  have hm : Antitone fun j : ℕ => μ - j := fun _ _ hij => sub_le_sub_left (Nat.cast_le.2 hij) μ
-  have hm' : Tendsto (fun j : ℕ => μ - j) atTop atBot :=
-    tendsto_atBot_add_const_left atTop μ <| tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
-  obtain ⟨B, hB⟩ := exists_asymptoticSum hm hm' c
-  refine ⟨b₀ + inclusion (by simp) B, fun N ↦ ?_⟩
+  obtain ⟨B, hB⟩ := exists_asymptoticSum_sub_natCast c
+  refine ⟨b₀ + B, fun N ↦ ?_⟩
   obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hB N
   obtain ⟨b, hb, hbc⟩ := hc N
   refine hcongr N b _ r (hPQ N b hb) ?_
-  rw [coefficient_add, coefficient_inclusion, ← hr, hbc]
+  rw [coefficient_add, ← hr, coefficient_inclusion, hbc]
   abel
 
 /-- **Asymptotic summation of successive corrections.** Let `P N` be properties of symbols of
@@ -1008,11 +1018,8 @@ theorem exists_term_eq
     ∃ b : ClassicalSymbol n V W m, b.term = a := by
   let χ : FrequencyCutoff (CoordinateSpace n) := default
   -- An asymptotic sum of the cut-off terms `χ(ξ) a_{m-j}(x, ξ)` is the required full symbol.
-  have hm : Antitone fun j : ℕ => m - j := fun _ _ hij => sub_le_sub_left (Nat.cast_le.2 hij) m
-  have hm' : Tendsto (fun j : ℕ => m - j) atTop atBot :=
-    tendsto_atBot_add_const_left atTop m <| tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
-  obtain ⟨b, hb⟩ := Symbol.exists_asymptoticSum hm hm' fun j => cutoffSymbol χ (a j)
-  refine ⟨⟨Symbol.inclusion (by simp) b, a, χ, fun N => ?_⟩, rfl⟩
+  obtain ⟨b, hb⟩ := Symbol.exists_asymptoticSum_sub_natCast fun j => cutoffSymbol χ (a j)
+  refine ⟨⟨b, a, χ, fun N => ?_⟩, rfl⟩
   obtain ⟨r, hr⟩ := hb N
   exact ⟨r, fun p => by simp [← hr, Finset.sum_apply]⟩
 
@@ -1117,6 +1124,32 @@ theorem coefficient_principal_ofIsAsymptoticSum
     (p : CoordinateSpace n × CoordinateSpace n) :
     (ofIsAsymptoticSum c hb).principal.coefficient p = (c 0).principal.coefficient p := by
   simp
+
+/-- **Asymptotic summation of classical symbols** (Borel). Classical symbols `cₖ` of orders
+`m - k` have an asymptotic sum `b ∼ ∑ₖ cₖ` which is a classical symbol of order `m` and whose
+remainders `b - ∑_{k < N} cₖ` are classical symbols of order `m - N`: each remainder is the
+asymptotic sum of the shifted sequence `c_N, c_{N+1}, …`, classical by
+`TauCeti.ClassicalSymbol.ofIsAsymptoticSum`. -/
+theorem exists_asymptoticSum :
+    ∃ b : ClassicalSymbol n V W m, ∀ N : ℕ, ∃ r : ClassicalSymbol n V W (m - N),
+      r.toSymbol.coefficient =
+        b.toSymbol.coefficient - ∑ k ∈ Finset.range N, (c k).toSymbol.coefficient := by
+  obtain ⟨B, hB⟩ := Symbol.exists_asymptoticSum_sub_natCast fun k ↦ (c k).toSymbol
+  choose R hR using hB
+  simp only [Symbol.coefficient_inclusion] at hR
+  -- The remainder `R N` of `B` after `N` terms is an asymptotic sum of `c_N, c_{N+1}, …`, so it is
+  -- a classical symbol of order `m - N`.
+  have hRN (N : ℕ) : (Symbol.inclusion (le_of_eq (by simp)) (R N) :
+      Symbol n V W (m - N - ((0 : ℕ) : ℝ))).IsAsymptoticSum
+        fun j ↦ (inclusion 0 (by push_cast; ring) (c (N + j)) :
+          ClassicalSymbol n V W (m - N - j)).toSymbol := fun M ↦
+    ⟨Symbol.inclusion (le_of_eq (by push_cast; ring)) (R (N + M)), by
+      simp only [Symbol.coefficient_inclusion, toSymbol_inclusion, ← hR, Finset.sum_range_add]
+      abel⟩
+  refine ⟨ofIsAsymptoticSum c (b := B) fun N ↦ ⟨R N, by simp [hR]⟩, fun N ↦
+    ⟨ofIsAsymptoticSum _ (hRN N), ?_⟩⟩
+  -- Both full symbols are the given ones, `R N` and `B` (`toSymbol_ofIsAsymptoticSum`, by `rfl`).
+  exact (hR N).symm
 
 end OfIsAsymptoticSum
 
