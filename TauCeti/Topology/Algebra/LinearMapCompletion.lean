@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Topology.Algebra.LinearMapCompletion
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
@@ -17,7 +18,9 @@ actions (`ContinuousLinearMap.completion_smul` and `ContinuousLinearMap.fromComp
 and reflecting it (`completion_smul_iff`, `fromCompletion_smul_iff`). `fromCompletion` is
 characterized by `ContinuousLinearMap.comp_toComplL_eq_iff`.
 Subtraction of continuous semilinear maps between uniform modules commutes with extension to the
-separated completions (`ContinuousLinearMap.completion_sub`).
+separated completions (`ContinuousLinearMap.completion_sub`). Extending a compact operator into a
+complete Hausdorff space to the completion of its domain preserves compactness
+(`IsCompactOperator.fromCompletion`).
 
 A continuous semilinear equivalence of uniform additive groups extends to their separated
 completions (`ContinuousLinearEquiv.completion`) by completing its forward and inverse continuous
@@ -113,6 +116,29 @@ theorem comp_toComplL_eq_iff [T0Space β] [CompleteSpace β]
 end SMul
 
 end ContinuousLinearMap
+
+namespace IsCompactOperator
+
+variable {R S α β : Type*} [Semiring R] [Semiring S] {σ : R →+* S}
+  [UniformSpace α] [AddCommGroup α] [IsUniformAddGroup α] [Module R α]
+  [UniformContinuousConstSMul R α]
+  [UniformSpace β] [AddCommGroup β] [IsUniformAddGroup β] [Module S β]
+  [UniformContinuousConstSMul S β] [T0Space β] [CompleteSpace β]
+
+/-- Extending a compact operator into a complete Hausdorff space to the completion of its domain
+gives a compact operator. -/
+theorem fromCompletion {f : α →SL[σ] β} (hf : IsCompactOperator f) :
+    IsCompactOperator f.fromCompletion := by
+  obtain ⟨K, hK, hKf⟩ := hf
+  refine ⟨K, hK, ?_⟩
+  have hU := Completion.isDenseInducing_coe.closure_image_mem_nhds hKf
+  rw [Completion.coe_zero] at hU
+  refine Filter.mem_of_superset hU
+    (closure_minimal ?_ (hK.isClosed.preimage f.fromCompletion.continuous))
+  rintro _ ⟨x, hx, rfl⟩
+  simpa [ContinuousLinearMap.fromCompletion_apply_coe] using hx
+
+end IsCompactOperator
 
 namespace ContinuousLinearEquiv
 

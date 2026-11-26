@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.LDU
-public import TauCeti.LinearAlgebra.Matrix.MvPolynomial
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.Algebra.MvPolynomial.CommRing
 

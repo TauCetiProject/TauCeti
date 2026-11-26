@@ -39,9 +39,12 @@ Lie-group exponential.
 * `lieMap`: the Lie-algebra homomorphism induced by a smooth monoid morphism.
 * `ContMDiffMonoidMorphism.groupLieAlgebraMap_lie`: the differential at the identity of a smooth
   homomorphism preserves the Lie bracket.
+* `leftInvariantDerivationLieEquivGroupLieAlgebra_symm_groupLieAlgebraMap`: `lieMap` is the
+  differential at the identity, read through the canonical equivalences.
 * `leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap`: the differential formula
   in the model vector space.
 * `lieMap_id`, `lieMap_comp`: the identity and composition laws.
+* `lieMap_one`: the Lie map of the trivial homomorphism is zero.
 * `map_lieExp`: naturality with respect to the Lie-group exponential.
 * `continuous_lieMap`: the Lie map is continuous.
 * `ContMDiffMonoidMorphism.isLocalDiffeomorph_iff_lieMap_bijective` and
@@ -190,6 +193,20 @@ theorem leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap
   rw [e'.apply_symm_apply]
   exact φ.toMonoidHom.groupLieAlgebraMap_apply I (e D)
 
+/-- `lieMap` is the differential at the identity of the homomorphism, read through the canonical
+equivalences between left-invariant derivations and tangent spaces at the identity. -/
+theorem leftInvariantDerivationLieEquivGroupLieAlgebra_symm_groupLieAlgebraMap
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (D : LeftInvariantDerivation I G) :
+    (leftInvariantDerivationLieEquivGroupLieAlgebra
+        (ContMDiffMul.isInteriorPoint (I := I') (n := ∞) (by simp) (1 : G'))).symm
+        (φ.toMonoidHom.groupLieAlgebraMap I I'
+          (leftInvariantDerivationLieEquivGroupLieAlgebra
+            (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)) D)) =
+      lieMap φ D := by
+  rw [LieEquiv.symm_apply_eq, leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap,
+    MonoidHom.groupLieAlgebraMap_apply, ContMDiffMonoidMorphism.coe_toMonoidHom]
+
 /-- In model-vector-space coordinates, the Lie map is the differential at the identity. -/
 @[simp high]
 theorem leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap
@@ -224,6 +241,17 @@ theorem lieMap_id [FiniteDimensional ℝ E] :
   rw [ContMDiffMonoidMorphism.coe_id]
   simp
   rfl
+
+/-- The Lie map of the trivial homomorphism is zero. -/
+@[simp]
+theorem lieMap_one [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] :
+    lieMap (1 : ContMDiffMonoidMorphism I I' ∞ G G') = 0 := by
+  apply LieHom.ext
+  intro D
+  refine EquivLike.injective (leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I') (n := ∞) (by simp) (1 : G'))) ?_
+  rw [leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap, zero_apply, map_zero]
+  rw [ContMDiffMonoidMorphism.coe_one, mfderiv_const, zero_apply]
 
 /-- The Lie map of a composite is the composite of the two Lie maps. -/
 @[simp]

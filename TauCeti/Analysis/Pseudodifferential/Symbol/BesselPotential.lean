@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 public import Mathlib.RingTheory.Binomial
 import TauCeti.Algebra.BigOperators.Finset.Range

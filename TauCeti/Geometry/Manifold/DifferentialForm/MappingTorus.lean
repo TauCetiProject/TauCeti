@@ -63,6 +63,10 @@ time.
   `TauCeti.SmoothMappingTorus.mpullback_map_fiberForm`: the map `[t, x] ↦ [t, g x]` induced by a
   smooth map `g` intertwining `φ` and `ψ` pulls the time form back to the time form, and the fiber
   form of `τ` back to the fiber form of `g^* τ`.
+* `TauCeti.SmoothMappingTorus.mpullback_flow_timeForm`,
+  `TauCeti.SmoothMappingTorus.mpullback_flow_fiberForm`,
+  `TauCeti.SmoothMappingTorus.eval₂_fiberForm_mfderiv_flow`: the suspension flow preserves the
+  time form and every fiber form.
 * `TauCeti.SmoothMappingTorus.pathIntegral_timeForm_mk`: the time form integrates to `b - a` along
   the flow line `t ↦ [t, x]` from `a` to `b`.
 
@@ -288,6 +292,51 @@ theorem mpullback_map_fiberForm {τ : SmoothForm J N F k}
     SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id hg, hgτ]
 
 end Map
+
+/-! ### Invariance under the suspension flow -/
+
+section Flow
+
+variable (φ) in
+/-- The suspension flow preserves the time form: `Φ_s^* dt = dt`. -/
+@[simp]
+theorem mpullback_flow_timeForm (s : ℝ) :
+    SmoothForm.mpullback (flow φ s) (contMDiff_flow φ s) (timeForm φ) = timeForm φ := by
+  refine Subtype.ext ?_
+  rw [SmoothForm.coe_mpullback, timeForm_def, SmoothForm.coe_mpullback,
+    ← mpullback_comp ((contMDiff_flow φ s).mdifferentiable (by simp))
+      ((contMDiff_proj φ).mdifferentiable (by simp)), proj_comp_flow,
+    mpullback_comp ((contMDiff_proj φ).mdifferentiable (by simp)) mdifferentiable_add_right,
+    AddCircle.mpullback_add_right_timeForm]
+
+/-- The suspension flow preserves every fiber form: `Φ_s^* σ_v = σ_v`. -/
+@[simp]
+theorem mpullback_flow_fiberForm (s : ℝ) :
+    SmoothForm.mpullback (flow φ s) (contMDiff_flow φ s) (fiberForm φ σ hσ) =
+      fiberForm φ σ hσ := by
+  have hadd : ContMDiff 𝓘(ℝ) 𝓘(ℝ) ∞ (· + s) := (contDiff_id.add contDiff_const).contMDiff
+  have htr : ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) ∞ (Prod.map (· + s) id : ℝ × M → ℝ × M) :=
+    hadd.prodMap contMDiff_id
+  rw [eq_fiberForm_iff, ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
+  simp only [flow_comp_uncurry_mk]
+  rw [SmoothForm.mpullback_comp _ _ htr (contMDiff_uncurry_mk φ), LinearMap.comp_apply,
+    mpullback_uncurry_mk_fiberForm, SmoothForm.mpullback_prodMap_mpullback_snd hadd contMDiff_id,
+    SmoothForm.mpullback_id, LinearMap.id_apply]
+
+/-- The linearized suspension flow preserves the fiber form of every two-form `τ` preserved by `φ`:
+`τ_v(dΦ_s w, dΦ_s w') = τ_v(w, w')`. -/
+theorem eval₂_fiberForm_mfderiv_flow {τ : SmoothForm I M F 2}
+    {hτ : SmoothForm.mpullback φ φ.contMDiff τ = τ} (s : ℝ) (y : SmoothMappingTorus φ)
+    (w w' : TangentSpace (𝓘(ℝ).prod I) y) :
+    (fiberForm φ τ hτ).eval₂ (flow φ s y)
+        (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (flow φ s) y w)
+        (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (flow φ s) y w') =
+      (fiberForm φ τ hτ).eval₂ y w w' := by
+  have h := congrArg (fun β ↦ SmoothBundleForm.eval₂ β y w w')
+    (mpullback_flow_fiberForm (hσ := hτ) s)
+  simpa only [SmoothForm.eval₂_mpullback] using h
+
+end Flow
 
 /-! ### Flow lines -/
 

@@ -59,6 +59,8 @@ converge.
 
 ## Main declarations
 
+* `TauCeti.isCoercive_innerSL`: the inner product of a real inner product space is coercive, so
+  that the variational theory applies to `⟪u, v⟫_V = κ ⟪J u, J v⟫`.
 * `IsCoercive.solutionOfInner`, `IsCoercive.solutionOfFunctional`: real Lax--Milgram solution
   maps and uniqueness theorems.
 * `InnerProductSpace.isUnit_continuousLinearMapOfBilin_of_coercive` and
@@ -106,6 +108,17 @@ theorem apply_self_nonneg (hB : IsCoercive B) (v : V) : 0 ≤ B v v :=
 end Seminormed
 
 end IsCoercive
+
+namespace TauCeti
+
+/-- The inner product of a real inner product space is a coercive bilinear form, with constant
+`1`. With `B = innerSL ℝ` on `V`, the variational problem `B u v = κ ⟪J u, J v⟫` is the eigenvalue
+problem of the form `⟪u, v⟫_V - ⟪J u, J v⟫_H` with eigenvalue `κ - 1`. -/
+theorem isCoercive_innerSL {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] :
+    IsCoercive (innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ) :=
+  ⟨1, one_pos, fun u ↦ by rw [one_mul, innerSL_apply_apply, real_inner_self_eq_norm_mul_norm]⟩
+
+end TauCeti
 
 namespace LinearMap
 

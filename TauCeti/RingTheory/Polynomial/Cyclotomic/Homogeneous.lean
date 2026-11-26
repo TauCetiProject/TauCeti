@@ -55,6 +55,8 @@ control the primitive prime divisors of `a ^ n - b ^ n` (the Bang–Zsigmondy th
   `d ∣ n`.
 * `TauCeti.homogeneousCyclotomic_mul_prod_properDivisors`:
   `Φ_n(a, b) ∏_{d ∣ n, d < n} Φ_d(a, b) = a ^ n - b ^ n` for `0 < n`.
+* `TauCeti.pow_sub_pow_mul_prod_homogeneousCyclotomic_eq_pow_sub_pow_of_dvd`:
+  `(a ^ d - b ^ d) ∏_{e ∣ n, e ∤ d} Φ_e(a, b) = a ^ n - b ^ n` for `d ∣ n` and `0 < n`.
 * `TauCeti.pow_sub_pow_mul_homogeneousCyclotomic_dvd_pow_sub_pow`,
   `TauCeti.homogeneousCyclotomic_dvd_pow_sub_pow_div`: for a proper divisor `d` of `n`,
   `(a ^ d - b ^ d) Φ_n(a, b) ∣ a ^ n - b ^ n`, so that in a Euclidean domain `Φ_n(a, b)` divides
@@ -322,18 +324,29 @@ theorem homogeneousCyclotomic_dvd_pow_sub_pow {d n : ℕ} (h : d ∣ n) (a b : R
   rw [← prod_homogeneousCyclotomic_eq_pow_sub_pow hn]
   exact Finset.dvd_prod_of_mem _ (Nat.mem_divisors.2 ⟨h, hn.ne'⟩)
 
+/-- For `d ∣ n` with `0 < n`, multiplying `a ^ d - b ^ d` by the product of the `Φ_e(a, b)` over
+the divisors `e` of `n` that do not divide `d` gives `a ^ n - b ^ n`:
+`(a ^ d - b ^ d) ∏_{e ∣ n, e ∤ d} Φ_e(a, b) = a ^ n - b ^ n`. This is the homogeneous form of
+`Polynomial.X_pow_sub_one_mul_prod_cyclotomic_eq_X_pow_sub_one_of_dvd`. -/
+theorem pow_sub_pow_mul_prod_homogeneousCyclotomic_eq_pow_sub_pow_of_dvd {d n : ℕ} (hdn : d ∣ n)
+    (hn : 0 < n) (a b : R) :
+    (a ^ d - b ^ d) * ∏ e ∈ n.divisors \ d.divisors, homogeneousCyclotomic e a b =
+      a ^ n - b ^ n := by
+  have hd : 0 < d := Nat.pos_of_dvd_of_pos hdn hn
+  rw [← prod_homogeneousCyclotomic_eq_pow_sub_pow hd, mul_comm,
+    Finset.prod_sdiff (Nat.divisors_subset_of_dvd hn.ne' hdn),
+    prod_homogeneousCyclotomic_eq_pow_sub_pow hn]
+
 /-- For a proper divisor `d` of `n`, `(a ^ d - b ^ d) Φ_n(a, b)` divides `a ^ n - b ^ n`: the
 factors `Φ_e(a, b)` of `a ^ d - b ^ d` have indices `e ∣ d`, all proper divisors of `n`. -/
 theorem pow_sub_pow_mul_homogeneousCyclotomic_dvd_pow_sub_pow {d n : ℕ}
     (h : d ∈ n.properDivisors) (a b : R) :
     (a ^ d - b ^ d) * homogeneousCyclotomic n a b ∣ a ^ n - b ^ n := by
   obtain ⟨hdn, hlt⟩ := Nat.mem_properDivisors.1 h
-  have hd : 0 < d := Nat.pos_of_mem_properDivisors h
-  have hn : 0 < n := hd.trans hlt
-  rw [← homogeneousCyclotomic_mul_prod_properDivisors hn, mul_comm,
-    ← prod_homogeneousCyclotomic_eq_pow_sub_pow hd]
-  exact mul_dvd_mul_left _ (Finset.prod_dvd_prod_of_subset _ _ _
-    (Nat.divisors_subset_properDivisors hn.ne' hdn hlt.ne))
+  have hn : 0 < n := (Nat.pos_of_mem_properDivisors h).trans hlt
+  rw [← pow_sub_pow_mul_prod_homogeneousCyclotomic_eq_pow_sub_pow_of_dvd hdn hn]
+  exact mul_dvd_mul_left _ (Finset.dvd_prod_of_mem _ (Finset.mem_sdiff.2
+    ⟨Nat.mem_divisors_self n hn.ne', fun hnd => hlt.not_ge (Nat.divisor_le hnd)⟩))
 
 /-- For a proper divisor `d` of `n`, in a Euclidean domain such as `ℤ`, `Φ_n(a, b)` divides the
 quotient `(a ^ n - b ^ n) / (a ^ d - b ^ d)`. No condition `a ^ d ≠ b ^ d` is needed, since
