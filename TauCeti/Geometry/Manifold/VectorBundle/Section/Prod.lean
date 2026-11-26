@@ -191,20 +191,24 @@ section SMulFunction
 
 variable [ContMDiffRing 𝓘(𝕜, 𝕜') n 𝕜'] (f : C^n⟮I, B; 𝓘(𝕜, 𝕜'), 𝕜'⟯)
 
+@[simp]
 theorem fstLinearMap_smul_function (s : Cₛ^n⟮I; F₁ × F₂, E₁ ×ᵇ E₂⟯) :
     fstLinearMap 𝕜' I F₁ F₂ n E₁ E₂ (f • s) = f • fstLinearMap 𝕜' I F₁ F₂ n E₁ E₂ s := by
   ext x
   simp
 
+@[simp]
 theorem sndLinearMap_smul_function (s : Cₛ^n⟮I; F₁ × F₂, E₁ ×ᵇ E₂⟯) :
     sndLinearMap 𝕜' I F₁ F₂ n E₁ E₂ (f • s) = f • sndLinearMap 𝕜' I F₁ F₂ n E₁ E₂ s := by
   ext x
   simp
 
+@[simp]
 theorem inlLinearMap_smul_function (s : Cₛ^n⟮I; F₁, E₁⟯) :
     inlLinearMap 𝕜' I F₁ F₂ n E₁ E₂ (f • s) = f • inlLinearMap 𝕜' I F₁ F₂ n E₁ E₂ s := by
   ext x <;> simp
 
+@[simp]
 theorem inrLinearMap_smul_function (s : Cₛ^n⟮I; F₂, E₂⟯) :
     inrLinearMap 𝕜' I F₁ F₂ n E₁ E₂ (f • s) = f • inrLinearMap 𝕜' I F₁ F₂ n E₁ E₂ s := by
   ext x <;> simp
