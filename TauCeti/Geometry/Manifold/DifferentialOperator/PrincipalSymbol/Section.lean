@@ -475,11 +475,10 @@ theorem sectionPrincipalSymbol_comp_sectionPrincipalSymbol_eq_zero (hx : I.IsInt
       (Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) = 0)
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     sectionPrincipalSymbol I hx P ξ ∘ₗ sectionPrincipalSymbol I hx Q ξ = 0 := by
-  rw [← sectionPrincipalSymbol_comp,
-    show (⟨_, comp_mem_differentialOperators P.property Q.property⟩ :
-      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F'', U⟯ (m + k)) = 0 from
-      Subtype.ext hPQ,
-    sectionPrincipalSymbol_zero]
+  have h0 : (⟨_, comp_mem_differentialOperators P.property Q.property⟩ :
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F'', U⟯ (m + k)) = 0 :=
+    Submodule.coe_eq_zero.1 hPQ
+  rw [← sectionPrincipalSymbol_comp, h0, sectionPrincipalSymbol_zero]
 
 end FiniteRank
 

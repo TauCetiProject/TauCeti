@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Elliptic
 import Mathlib.Topology.VectorBundle.FiniteDimensional
+import TauCeti.Algebra.Module.LinearMap.UnitSMul
 import TauCeti.Analysis.InnerProductSpace.FoldedComplex
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Laplacians of complexes of differential operators
@@ -30,7 +32,7 @@ of order at most `m`, the Laplacian at `V` is
 
 Its principal symbol is `σ(A) σ(A') + σ(B') σ(B)`, and since the principal symbol of a formal
 adjoint is `(-1) ^ m` times the fibrewise adjoint
-(`LinearMap.IsFormalAdjoint.inner_sectionPrincipalSymbol_apply`), this is `(-1) ^ m` times the
+(`LinearMap.IsFormalAdjoint.sectionPrincipalSymbol_eq_smul_adjoint`), this is `(-1) ^ m` times the
 Laplacian `σ(A) σ(A)† + σ(B)† σ(B)` of the two symbols (`ContinuousLinearMap.hodgeLaplacian`). The
 fibres are finite-dimensional, so the latter is invertible exactly when the symbol sequence is
 exact (`ContinuousLinearMap.exact_iff_isInvertible_hodgeLaplacian`). Thus:
@@ -169,32 +171,6 @@ theorem isFormalAdjoint_sectionHodgeLaplacian
 
 /-! ### Ellipticity -/
 
-omit [IsContinuousRiemannianBundle F'' U] in
-/-- The principal symbol of a formal adjoint, read as `(-1) ^ m` times the fibrewise adjoint of a
-continuous linear map; the fibres are finite-dimensional. -/
-private theorem sectionPrincipalSymbol_eq_smul_adjoint
-    {P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m}
-    {Q : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F', W⟯ Cₛ^∞⟮I; F, V⟯ m}
-    (h : (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯).IsFormalAdjoint
-      (Q : Cₛ^∞⟮I; F', W⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯) μ)
-    (hx : I.IsInteriorPoint x) (ξ : TangentSpace I x →L[ℝ] ℝ)
-    [FiniteDimensional ℝ (V x)] [FiniteDimensional ℝ (W x)] :
-    sectionPrincipalSymbol I hx Q ξ = ((-1 : ℝ) ^ m) •
-      ((ContinuousLinearMap.adjoint
-        (LinearMap.toContinuousLinearMap (sectionPrincipalSymbol I hx P ξ)) :
-          W x →L[ℝ] V x) : W x →ₗ[ℝ] V x) := by
-  refine LinearMap.ext fun w ↦ ext_inner_left ℝ fun v ↦ ?_
-  rw [LinearMap.smul_apply, real_inner_smul_right, ContinuousLinearMap.coe_coe,
-    ContinuousLinearMap.adjoint_inner_right, LinearMap.coe_toContinuousLinearMap',
-    h.inner_sectionPrincipalSymbol_apply, ← mul_assoc, ← mul_pow]
-  norm_num
-
-/-- Multiplying an endomorphism by `(-1) ^ m` does not change its bijectivity. -/
-private theorem bijective_neg_one_pow_smul_iff {X : Type*} [AddCommGroup X] [Module ℝ X]
-    (f : X →ₗ[ℝ] X) : Bijective ((-1 : ℝ) ^ m • f) ↔ Bijective f := by
-  rw [LinearMap.coe_smul]
-  exact Bijective.of_comp_iff' ((isUnit_neg_one.pow m).smul_bijective) f
-
 /-- At an interior point and a covector `ξ`, the principal symbol of the Laplacian `A A' + B' B`
 is bijective exactly when the Laplacian of the principal symbols of `A` and `B`, read as continuous
 linear maps, is invertible. -/
@@ -209,8 +185,8 @@ private theorem bijective_sectionPrincipalSymbol_sectionHodgeLaplacian_iff
       ((LinearMap.toContinuousLinearMap (sectionPrincipalSymbol I hx A ξ)).hodgeLaplacian
         (LinearMap.toContinuousLinearMap (sectionPrincipalSymbol I hx B ξ))).IsInvertible := by
   rw [ContinuousLinearMap.isInvertible_iff_bijective, sectionPrincipalSymbol_sectionHodgeLaplacian,
-    sectionPrincipalSymbol_eq_smul_adjoint hA, sectionPrincipalSymbol_eq_smul_adjoint hB,
-    ← bijective_neg_one_pow_smul_iff (m := m)]
+    hA.sectionPrincipalSymbol_eq_smul_adjoint, hB.sectionPrincipalSymbol_eq_smul_adjoint,
+    ← LinearMap.bijective_smul_iff (isUnit_neg_one.pow m : IsUnit ((-1 : ℝ) ^ m))]
   congr! 1
   ext v
   simp [smul_smul, ← pow_add, ← two_mul, pow_mul]
@@ -234,8 +210,7 @@ theorem isSectionEllipticAt_sectionHodgeLaplacian
   rw [bijective_sectionPrincipalSymbol_sectionHodgeLaplacian_iff hA hB,
     ← ContinuousLinearMap.exact_iff_isInvertible_hodgeLaplacian]
   · simpa using hex
-  · ext v
-    simpa using hex.apply_apply_eq_zero v
+  · rw [← LinearMap.toContinuousLinearMap_comp, hex.linearMap_comp_eq_zero, map_zero]
 
 /-- **A complex is elliptic exactly when its Laplacian is.** If `B A = 0` and `A'` and `B'` are
 formal adjoints of `A` and `B`, then the Laplacian `A A' + B' B` is elliptic at `x` exactly when the
@@ -260,8 +235,7 @@ theorem isSectionEllipticAt_sectionHodgeLaplacian_iff
     (h.sectionPrincipalSymbol_bijective hx hξ)
   rw [← ContinuousLinearMap.exact_iff_isInvertible_hodgeLaplacian] at hΔ
   · simpa using hΔ
-  · ext v
-    simpa using LinearMap.congr_fun hc v
+  · rw [← LinearMap.toContinuousLinearMap_comp, hc, map_zero]
 
 /-- **A complex is elliptic exactly when its Laplacian is.** If `B A = 0` and `A'` and `B'` are
 formal adjoints of `A` and `B`, then the Laplacian `A A' + B' B` is elliptic exactly when the symbol
@@ -297,14 +271,12 @@ theorem isSectionEllipticAt_adjoint_comp_iff
   refine isSectionEllipticAt_iff.trans (forall₂_congr fun hx ξ ↦ imp_congr_right fun _ ↦ ?_)
   have := VectorBundle.finiteDimensional ℝ F V x
   have := VectorBundle.finiteDimensional ℝ F' W x
-  set b := LinearMap.toContinuousLinearMap (sectionPrincipalSymbol I hx B ξ)
-  -- The symbol of `B' B` is `(-1) ^ m b† b`, whose kernel is that of `b`.
-  rw [sectionPrincipalSymbol_comp, sectionPrincipalSymbol_eq_smul_adjoint hB,
-    LinearMap.smul_comp, bijective_neg_one_pow_smul_iff, Bijective,
-    ← LinearMap.injective_iff_surjective, and_self, ← LinearMap.ker_eq_bot, ← LinearMap.ker_eq_bot]
-  have hk := ContinuousLinearMap.ker_adjoint_comp_self b
-  rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.coe_toContinuousLinearMap] at hk
-  rw [hk]
+  -- The symbol of `B' B` is `(-1) ^ m b† b`, where `b` is the symbol of `B`.
+  rw [sectionPrincipalSymbol_comp, hB.sectionPrincipalSymbol_eq_smul_adjoint, LinearMap.smul_comp,
+    LinearMap.bijective_smul_iff (isUnit_neg_one.pow m)]
+  simpa [ContinuousLinearMap.isInvertible_iff_bijective, ContinuousLinearMap.coe_comp] using
+    ContinuousLinearMap.isInvertible_adjoint_comp_self_iff
+      (LinearMap.toContinuousLinearMap (sectionPrincipalSymbol I hx B ξ))
 
 /-- **The Laplacian at the end of a complex.** If `A'` is a formal adjoint of
 `A : Γ(U) → Γ(V)`, then `A A'` is elliptic at `x` exactly when `σ(A)(ξ)` is surjective at every
@@ -324,10 +296,11 @@ theorem isSectionEllipticAt_comp_adjoint_iff
     (forall₂_congr fun hx ξ ↦ imp_congr_right fun _ ↦ ?_)
   have := VectorBundle.finiteDimensional ℝ F'' U x
   have := VectorBundle.finiteDimensional ℝ F V x
-  rw [sectionPrincipalSymbol_eq_smul_adjoint hA, ← LinearMap.ker_eq_bot,
-    LinearMap.ker_smul _ _ (pow_ne_zero m (neg_ne_zero.2 one_ne_zero)),
-    ← ContinuousLinearMap.orthogonal_range, Submodule.orthogonal_eq_bot_iff,
-    LinearMap.coe_toContinuousLinearMap, LinearMap.range_eq_top]
+  rw [hA.sectionPrincipalSymbol_eq_smul_adjoint, ← LinearMap.ker_eq_bot,
+    LinearMap.ker_smul _ _ (pow_ne_zero m (neg_ne_zero.2 one_ne_zero)), LinearMap.ker_eq_bot,
+    ContinuousLinearMap.coe_coe, ContinuousLinearMap.adjoint_injective_iff_denseRange,
+    LinearMap.coe_toContinuousLinearMap']
+  exact ⟨LinearMap.surjective_of_denseRange, Surjective.denseRange⟩
 
 /-! ### The folded operator of a two-periodic complex -/
 
@@ -354,32 +327,27 @@ theorem isSectionEllipticAt_add_adjoint_iff
   refine isSectionEllipticAt_iff.trans (forall₂_congr fun hx ξ ↦ imp_congr_right fun _ ↦ ?_)
   have := VectorBundle.finiteDimensional ℝ F V x
   have := VectorBundle.finiteDimensional ℝ F' W x
-  have hc : ((-1 : ℝ) ^ m) ≠ 0 := pow_ne_zero m (neg_ne_zero.2 one_ne_zero)
+  have hc : IsUnit ((-1 : ℝ) ^ m) := isUnit_neg_one.pow m
   set a := LinearMap.toContinuousLinearMap (sectionPrincipalSymbol I hx A ξ)
   set b := LinearMap.toContinuousLinearMap (sectionPrincipalSymbol I hx B ξ)
   -- The symbol of `A + B'` is the folded operator `a + (c b)†` of the complex `a`, `c b`, where
   -- `c = (-1) ^ m`; rescaling `b` by `c` changes neither its kernel nor its range.
   have hσ : ⇑(sectionPrincipalSymbol I hx (A + B') ξ) =
       ⇑(a + ContinuousLinearMap.adjoint (((-1 : ℝ) ^ m) • b)) := by
-    rw [sectionPrincipalSymbol_add, sectionPrincipalSymbol_eq_smul_adjoint hB]
+    rw [sectionPrincipalSymbol_add, hB.sectionPrincipalSymbol_eq_smul_adjoint]
     ext v
     simp [a, b]
   have hab : a ∘L (((-1 : ℝ) ^ m) • b) = 0 := by
-    ext v
-    simpa [a, b] using LinearMap.congr_fun
-      (sectionPrincipalSymbol_comp_sectionPrincipalSymbol_eq_zero hx hAB ξ) v
+    rw [ContinuousLinearMap.comp_smul, ← LinearMap.toContinuousLinearMap_comp,
+      sectionPrincipalSymbol_comp_sectionPrincipalSymbol_eq_zero hx hAB ξ, map_zero, smul_zero]
   have hba : (((-1 : ℝ) ^ m) • b) ∘L a = 0 := by
-    ext v
-    simpa [a, b] using LinearMap.congr_fun
-      (sectionPrincipalSymbol_comp_sectionPrincipalSymbol_eq_zero hx hBA ξ) v
+    rw [ContinuousLinearMap.smul_comp, ← LinearMap.toContinuousLinearMap_comp,
+      sectionPrincipalSymbol_comp_sectionPrincipalSymbol_eq_zero hx hBA ξ, map_zero, smul_zero]
   rw [hσ, ContinuousLinearMap.bijective_add_adjoint_iff hab hba
-    (Submodule.isClosed_of_finiteDimensional _) (Submodule.isClosed_of_finiteDimensional _)]
-  have ha : ⇑a = ⇑(sectionPrincipalSymbol I hx A ξ) := LinearMap.coe_toContinuousLinearMap' _
-  have hb : ⇑(((-1 : ℝ) ^ m) • b) = ⇑(((-1 : ℝ) ^ m) • sectionPrincipalSymbol I hx B ξ) := by
-    ext v
-    simp [b]
-  rw [ha, hb, LinearMap.exact_iff, LinearMap.exact_iff, LinearMap.exact_iff, LinearMap.exact_iff,
-    LinearMap.ker_smul _ _ hc, LinearMap.range_smul _ _ hc]
+    (Submodule.isClosed_of_finiteDimensional _) (Submodule.isClosed_of_finiteDimensional _),
+    ← LinearMap.exact_smul_left_iff hc _ (sectionPrincipalSymbol I hx A ξ),
+    ← LinearMap.exact_smul_right_iff hc (sectionPrincipalSymbol I hx A ξ)]
+  simp [a, b]
 
 end Metric
 

@@ -35,6 +35,10 @@ is zero exactly when `ker B = range A`, provided `range A` is closed. Hence
 * `ContinuousLinearMap.exact_iff_isInvertible_hodgeLaplacian`: when `V` is finite-dimensional,
   exactness at `V` is equivalent to invertibility of `Δ`.
 
+At the start `0 → V → W` of a finite complex, with `V` finite-dimensional, the Laplacian is the
+single term `B† B`, invertible exactly when `B` is injective
+(`ContinuousLinearMap.isInvertible_adjoint_comp_self_iff`).
+
 Applied fibrewise to the principal symbols of a complex of differential operators, the last
 statement says that a complex is elliptic, that is its symbol sequence is exact at every nonzero
 covector, exactly when its Laplacians are elliptic.
@@ -173,6 +177,14 @@ theorem exact_iff_isInvertible_hodgeLaplacian [FiniteDimensional 𝕜 V] (hBA : 
   rw [A.exact_iff_injective_hodgeLaplacian B hBA (Submodule.isClosed_of_finiteDimensional _),
     isInvertible_iff_bijective, Function.Bijective, ← coe_coe,
     ← LinearMap.injective_iff_surjective, and_self]
+
+/-- At the start `0 → V → W` of a complex with finite-dimensional `V`, the Laplacian `B† B` is
+invertible exactly when `B` is injective. -/
+theorem isInvertible_adjoint_comp_self_iff [FiniteDimensional 𝕜 V] :
+    (adjoint B ∘L B).IsInvertible ↔ Function.Injective B := by
+  rw [isInvertible_iff_bijective, Function.Bijective, ← coe_coe,
+    ← LinearMap.injective_iff_surjective, and_self, coe_coe, coe_comp,
+    adjoint_comp_self_injective_iff]
 
 end ContinuousLinearMap
 
