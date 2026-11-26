@@ -494,7 +494,7 @@ theorem toSpanSingleton_comp_comp_cutoffFrameCoeff_mem_sectionClassicalPseudodif
         LinearMap.mulLeft ℂ (T'.cutoffFrameCoeff χ hχ ℓ' σ) ∘ₗ A ∘ₗ
           LinearMap.mulLeft ℂ (t.cutoffFrameCoeff ρ hρ ℓ (T.cutoffFrameSection ψ hψ v)) := by
       ext f x
-      simp [Bundle.Trivialization.cutoffFrameCoeff_smul, mul_comm, mul_assoc]
+      simp [mul_comm, mul_assoc]
     rw [hentry]
     exact mulLeft_comp_mem_classicalPseudodifferentialOperators
       (comp_mulLeft_mem_classicalPseudodifferentialOperators hA _) _

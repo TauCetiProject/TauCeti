@@ -50,7 +50,7 @@ trivialization `t₀`, a cut-off frame coefficient is a combination of the coeff
 every section `s` is `∑ᵢ θ ρ bᵢ*(t₀ s) ρ t₀⁻¹ bᵢ + (1 - θ) s`
 (`Bundle.Trivialization.smul_eq_sum_smul_cutoffFrameSection_add`). Hence an operator on sections
 linear over the complex-valued smooth functions is tensorial: `(P s)(x)` only depends on `s(x)`
-(`TauCeti.apply_eq_apply_of_map_smul`).
+(`TauCeti.Manifold.apply_eq_apply_of_tensorial`).
 
 In a chart `e` whose source lies in the base set of `t`, a Schwartz function `u` on the model space
 and a cutoff `ψ` with compact support in the chart target give the **chart cut-off section**
@@ -156,6 +156,7 @@ theorem cutoffFrameCoeff_apply (χ : C^n⟮I, M; ℝ⟯) (hχ : tsupport χ ⊆ 
   (rfl)
 
 /-- The cut-off frame coefficient is linear over the complex-valued `C^n` functions. -/
+@[simp]
 theorem cutoffFrameCoeff_smul (χ : C^n⟮I, M; ℝ⟯) (hχ : tsupport χ ⊆ t.baseSet) (ℓ : W →L[ℂ] ℂ)
     (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (h : Cₛ^n⟮I; W, F⟯) :
     t.cutoffFrameCoeff χ hχ ℓ (f • h) = f • t.cutoffFrameCoeff χ hχ ℓ h := by
@@ -356,7 +357,7 @@ theorem _root_.IsCompact.exists_sum_sum_cutoffFrameCoeff_smul_cutoffFrameSection
 /-- **Operators linear over the smooth functions are tensorial.** If `P : Γ(F) → Γ(F')` is linear
 over the complex-valued smooth functions, that is, a bundle map acting on sections, then `(P h)(x)`
 only depends on `h(x)`. -/
-theorem _root_.TauCeti.apply_eq_apply_of_map_smul {W' : Type*} [NormedAddCommGroup W']
+theorem _root_.TauCeti.Manifold.apply_eq_apply_of_tensorial {W' : Type*} [NormedAddCommGroup W']
     [NormedSpace ℂ W'] {F' : M → Type*} [TopologicalSpace (TotalSpace W' F')]
     [∀ x, AddCommGroup (F' x)] [∀ x, Module ℝ (F' x)] [∀ x, Module ℂ (F' x)]
     [∀ x, TopologicalSpace (F' x)] [FiberBundle W' F'] [VectorBundle ℝ W' F']

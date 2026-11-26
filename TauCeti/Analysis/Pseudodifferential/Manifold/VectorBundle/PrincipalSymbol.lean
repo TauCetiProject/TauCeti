@@ -64,9 +64,10 @@ principal symbol is computed by iterated commutators: for a real smooth function
 
 (`TauCeti.sectionClassicalPrincipalSymbol_mvfderiv_apply`). This is the angular-frequency
 convention, in which `∂ⱼ` has symbol `i ξⱼ`. The iterated commutator is linear over the smooth
-functions, so its value at `x` only depends on `s(x)` (`TauCeti.apply_eq_apply_of_map_smul`). For
-instance a smooth bundle map from `E` to `F`, acting on sections, has as principal symbol of order
-`0` its fibre map at every nonzero covector
+functions, so its value at `x` only depends on `s(x)`
+(`TauCeti.Manifold.apply_eq_apply_of_tensorial`). For instance a smooth bundle map from `E` to
+`F`, acting on sections, has as principal symbol of order `0` its fibre map at every nonzero
+covector
 (`TauCeti.sectionClassicalPrincipalSymbol_apply_of_map_smul`), and the principal symbol of
 order `1` of a first-order operator is `σ₁(P)(x, df_x) (s x) = i (P (f s) - f P s)(x)`.
 
@@ -726,7 +727,7 @@ theorem sectionClassicalPrincipalSymbol_mvfderiv_apply {k : ℕ}
   rw [classicalPrincipalSymbol_mvfderiv
       (sectionEntry_mem_differentialOperators t ρ hρt v t' ρ hρt' ℓ hP) f hf,
     smulCommutator_pow_sectionEntry,
-    sectionEntry_apply, one_smul, apply_eq_apply_of_map_smul hR hsx, hρx, hv] at h₁
+    sectionEntry_apply, one_smul, Manifold.apply_eq_apply_of_tensorial hR hsx, hρx, hv] at h₁
   simpa using h₁.symm
 
 /-- **The principal symbol of a bundle map.** If `P : Γ(E) → Γ(F)` is linear over the
