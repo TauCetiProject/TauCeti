@@ -31,6 +31,7 @@ over a division ring of characteristic zero.
 ## Main statements
 
 * `TauCeti.inv_natCast_smul_natCast_mul`: `(n : ℚ)⁻¹ • (n * x) = x` for `n ≠ 0`.
+* `TauCeti.inv_natCast_mul_smul_nsmul`: `((n * m : ℕ) : ℚ)⁻¹ • (n • x) = (m : ℚ)⁻¹ • x` for `n ≠ 0`.
 * `TauCeti.bijective_zsmul_of_ne_zero`: multiplication by a nonzero integer is bijective on a module
   over a division ring of characteristic zero.
 -/
@@ -49,6 +50,13 @@ number `n`. -/
 theorem inv_natCast_smul_natCast_mul {A : Type*} [Semiring A] [Module ℚ A] {n : ℕ} (hn : n ≠ 0)
     (x : A) : (n : ℚ)⁻¹ • ((n : A) * x) = x := by
   rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ (Nat.cast_ne_zero.2 hn)]
+
+/-- In a `ℚ`-module, a factor `n ≠ 0` of `n * m` cancels against `n •`:
+`((n * m : ℕ) : ℚ)⁻¹ • (n • x) = (m : ℚ)⁻¹ • x`. -/
+theorem inv_natCast_mul_smul_nsmul {A : Type*} [AddCommMonoid A] [Module ℚ A] {n m : ℕ}
+    (hn : n ≠ 0) (x : A) : ((n * m : ℕ) : ℚ)⁻¹ • (n • x) = (m : ℚ)⁻¹ • x := by
+  rw [Nat.cast_mul, mul_inv_rev, mul_smul, ← Nat.cast_smul_eq_nsmul ℚ,
+    inv_smul_smul₀ (Nat.cast_ne_zero.2 hn)]
 
 /-- Multiplication by a nonzero integer is bijective on a module over a division ring of
 characteristic zero. -/
