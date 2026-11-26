@@ -70,6 +70,8 @@ residues.
   `TauCeti.forall_unop_modularFunctionActionZMod_frickeMeromorphicFunction_eq_iff_level_two`.
 * `TauCeti.adjoin_insert_image_frickeMeromorphicFunction_eq_top`: `j` and the `f_a`, `a ≠ 0`,
   generate the function field of `X(N)` over `ℂ`.
+* `TauCeti.subfield_eq_top_of_frickeMeromorphicFunction_mem`: a subfield containing the
+  constants, `j` and every `f_a`, `a ≠ 0`, is the whole function field.
 
 ## References
 
@@ -317,5 +319,22 @@ theorem adjoin_insert_image_frickeMeromorphicFunction_eq_top :
   · exact IntermediateField.adjoin.mono _ _ _ (Set.singleton_subset_iff.mpr
       (Set.mem_insert _ _)) hx
   · exact IntermediateField.subset_adjoin _ _ (Set.mem_insert_of_mem _ hx)
+
+/-- A subfield of the function field of `X(N)` containing the constants, the modular invariant `j`
+and the Fricke functions `f_a`, `a ≠ 0`, is the whole function field. -/
+theorem subfield_eq_top_of_frickeMeromorphicFunction_mem
+    {S : Subfield (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient)}
+    (hc : ∀ c : ℂ, algebraMap ℂ _ c ∈ S)
+    (hj : Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R
+      ModularGroup.jMeromorphicFunction ∈ S)
+    (hf : ∀ a : Fin 2 → ZMod N, a ≠ 0 → frickeMeromorphicFunction a ∈ S) : S = ⊤ := by
+  have h : IntermediateField.adjoin ℂ (insert (Subgroup.compactifiedQuotientComap
+      (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)
+      (frickeMeromorphicFunction '' {a : Fin 2 → ZMod N | a ≠ 0})) ≤ S.toIntermediateField hc :=
+    IntermediateField.adjoin_le_iff.mpr <| by
+      rintro F (rfl | ⟨a, ha, rfl⟩)
+      exacts [hj, hf a ha]
+  rw [adjoin_insert_image_frickeMeromorphicFunction_eq_top] at h
+  exact eq_top_iff.mpr fun F _ ↦ h IntermediateField.mem_top
 
 end TauCeti

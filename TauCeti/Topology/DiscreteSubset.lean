@@ -29,6 +29,9 @@ zeros (`TauCeti.finite_setOf_eq_zero_of_forall_eventually`): the set of points n
 vanishes is open and closed, hence empty, so the nonzero set of `s` is codiscrete, and a codiscrete
 subset of a compact space is cofinite.
 
+In a T1 space, a set is closed and discrete exactly when it meets some neighbourhood of each point
+in a finite set (`TauCeti.isClosed_and_isDiscrete_iff_forall_finite_inter`).
+
 ## Main results
 
 * `IsDiscrete.sdiff_mem_nhdsWithin`: `U \ S ∈ 𝓝[U \ {x}] x` whenever `U ∩ S` is discrete and
@@ -40,6 +43,8 @@ subset of a compact space is cofinite.
 * `TauCeti.finite_setOf_eq_zero_of_forall_eventually`: on a connected compact space, a function
   which is not identically zero, and near each point vanishes identically or has no other zero, has
   finitely many zeros.
+* `TauCeti.isClosed_and_isDiscrete_iff_forall_finite_inter`: in a T1 space, a set is closed and
+  discrete exactly when it meets some neighbourhood of each point in a finite set.
 -/
 
 public section
@@ -107,5 +112,18 @@ theorem finite_setOf_eq_zero_of_forall_eventually {M : Type*} [TopologicalSpace 
   have h : {y | s y ≠ 0} ∈ codiscrete M := mem_codiscrete_iff_forall_mem_nhdsNE.2 fun x ↦
     (hdich x).resolve_left (show x ∉ A by rw [hA]; exact notMem_empty x)
   simpa [compl_ofPred] using cofinite_le_codiscrete h
+
+/-- In a T1 space, a set is closed and discrete if and only if it meets some neighbourhood of each
+point in a finite set. -/
+theorem isClosed_and_isDiscrete_iff_forall_finite_inter {X : Type*} [TopologicalSpace X]
+    [T1Space X] {s : Set X} : IsClosed s ∧ IsDiscrete s ↔ ∀ x, ∃ U ∈ 𝓝 x, (s ∩ U).Finite := by
+  simp_rw [isClosed_and_discrete_iff, disjoint_principal_right]
+  refine forall_congr' fun x ↦ ⟨fun h ↦ ⟨insert x sᶜ, insert_mem_nhds_iff.2 h, ?_⟩, ?_⟩
+  · -- The only point of `s` in `insert x sᶜ` is `x`.
+    exact (finite_singleton x).subset fun y ⟨hys, hy⟩ ↦ hy.resolve_right (not_not.2 hys)
+  · -- Removing the finitely many points of `s ∩ U` from `U` leaves a punctured neighbourhood.
+    rintro ⟨U, hU, hfin⟩
+    exact mem_of_superset (nhdsNE_of_nhdsNE_sdiff_finite (mem_nhdsWithin_of_mem_nhds hU)
+      hfin.to_subtype) fun y hy hys ↦ hy.2 ⟨hys, hy.1⟩
 
 end TauCeti

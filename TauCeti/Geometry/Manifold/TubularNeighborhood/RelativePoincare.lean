@@ -96,9 +96,10 @@ theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N)
     hη.mpullback (hval.of_le (by exact_mod_cast (le_top : r + 1 ≤ ⊤)))
   have hclosedW : mextDeriv (mpullback J J (Subtype.val : W → N) η) = 0 :=
     (hη.of_le hr').mextDeriv_mpullback_eq_zero hclosed (hval.of_le (by simp))
-  have hcomp : (Subtype.val : W → N) ∘ (Φ ∘ zeroSection P fun x ↦ f.NormalSpace x hn) = f :=
+  have hcomp : (Subtype.val : W → N) ∘ (Φ ∘ zeroSection P fun x ↦ f.isImmersion.NormalSpace x hn) =
+      f :=
     funext hΦ
-  have hiW : mpullback I J (Φ ∘ zeroSection P fun x ↦ f.NormalSpace x hn)
+  have hiW : mpullback I J (Φ ∘ zeroSection P fun x ↦ f.isImmersion.NormalSpace x hn)
       (mpullback J J (Subtype.val : W → N) η) = 0 := by
     rw [← mpullback_comp ((Φ.contMDiff.comp (contMDiff_zeroSection ℝ _)).mdifferentiable
       (by simp)) (hval.mdifferentiable (by simp)), hcomp, hi]

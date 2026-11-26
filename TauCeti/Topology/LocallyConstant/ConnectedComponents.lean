@@ -22,6 +22,8 @@ of `s` is open, so `componentFun φ` is locally constant on `s`.
   `s`.
 * `TauCeti.isLocallyConstant_componentFun`: on an open set of a locally connected space,
   `componentFun φ` is locally constant.
+* `IsLocallyConstant.apply_eq_of_isPreconnected_of_subset`: a function that is locally constant
+  on `s` is constant on every preconnected subset of `s`.
 -/
 
 public section
@@ -73,5 +75,15 @@ theorem isLocallyConstant_componentFun [LocallyConnectedSpace X] [Zero β] (hs :
   refine IsLocallyConstant.of_constant_on_connected_components fun x y hy => ?_
   simp only [domRestrict_apply, componentFun_of_mem φ x.property, componentFun_of_mem φ y.property]
   exact congrArg φ (ConnectedComponents.coe_eq_coe'.2 hy)
+
+/-- A function `g` that is locally constant on `s`, in the sense that `s.domRestrict g` is locally
+constant, is constant on every preconnected subset `t` of `s`. -/
+theorem _root_.IsLocallyConstant.apply_eq_of_isPreconnected_of_subset {g : X → β}
+    (hg : IsLocallyConstant (s.domRestrict g)) {t : Set X} (ht : IsPreconnected t) (hts : t ⊆ s)
+    {y z : X} (hy : y ∈ t) (hz : z ∈ t) : g y = g z := by
+  have hpre : IsPreconnected (((↑) : s → X) ⁻¹' t) := by
+    refine Topology.IsInducing.subtypeVal.isPreconnected_image.1 ?_
+    rwa [image_preimage_eq_of_subset (Subtype.range_coe.symm ▸ hts)]
+  exact hg.apply_eq_of_isPreconnected hpre (x := ⟨y, hts hy⟩) (y := ⟨z, hts hz⟩) hy hz
 
 end TauCeti
