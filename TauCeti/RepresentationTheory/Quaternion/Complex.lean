@@ -98,7 +98,7 @@ theorem exists_unit_eigenvector_quaternionAlgHom_i
 /-- For a `star`-compatible complex representation `ψ` of `ℍ[ℝ]`, a unit `+i`-eigenvector `e₀` of
 `ψ ⟨0, 1, 0, 0⟩` and `-(ψ ⟨0, 0, 1, 0⟩ e₀)` form an orthonormal pair on which `i` and `j` act by
 standard `SU(2)` columns. -/
-theorem orthonormal_pair_of_quaternionAlgHom
+private theorem orthonormal_pair_of_quaternionAlgHom
     {S : Type*} [NormedAddCommGroup S] [InnerProductSpace ℂ S] [FiniteDimensional ℂ S]
     (ψ : ℍ[ℝ] →ₐ[ℝ] Module.End ℂ S) (hstar : ∀ q, LinearMap.adjoint (ψ q) = ψ (star q))
     {e₀ : S} (he₀_norm : ‖e₀‖ = 1) (he₀_i : ψ ⟨0, 1, 0, 0⟩ e₀ = Complex.I • e₀) :

@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Hilbert
 
 /-!
-# Dimension and dedicated Hilbert carrier of the Fock spinor module
+# Dedicated Hilbert carrier of the Fock spinor module
 
 Because `ExteriorAlgebra ℂ W` is an `abbrev` for `CliffordAlgebra 0`, modules that import
 `TauCeti.Topology.Algebra.CliffordAlgebra.Basic` (such as smooth `Spinᶜ` representation and bundle
@@ -19,10 +18,6 @@ diamond-free carrier with no preexisting `TopologicalSpace` instance, this file 
 `FiniteDimensional ℂ`, and `Nontrivial` instances, `toExterior` algebraic projection simplification
 lemmas, Clifford action `fockSpinorAction`, and named abbreviations `fockSpinorsNormedAddCommGroup`
 and `fockSpinorsInnerProductSpace` for local installation given `hQ`.
-
-It also records the complex spinor dimensions `finrank_fock` and `finrank_fockSpinors`, together
-with the four-dimensional chirality eigenspace dimension
-`Orientation.finrank_eigenspace_fockSpinorAction_chirality`.
 
 ## Main definitions
 
@@ -38,13 +33,10 @@ with the four-dimensional chirality eigenspace dimension
 
 ## Main results
 
-* `TauCeti.AlmostComplexStructure.finrank_fock` and
-  `TauCeti.AlmostComplexStructure.finrank_fockSpinors`: complex dimension `2 ^ (finrank ℝ V / 2)`.
+* `TauCeti.AlmostComplexStructure.finrank_fockSpinors`: complex dimension `2 ^ (finrank ℝ V / 2)`.
 * `TauCeti.AlmostComplexStructure.liftBaseChange_fockSpinorAction_surjective` and
   `TauCeti.AlmostComplexStructure.adjoint_fockSpinorAction_ι`: surjectivity of the complexified
   action and skew-adjointness of real vector generators on `FockSpinors`.
-* `Orientation.finrank_eigenspace_fockSpinorAction_chirality`: in dimension four with
-  `Q v = -‖v‖²`, both `±1` chirality eigenspaces of `J.FockSpinors` have complex dimension two.
 
 ## References
 
@@ -67,13 +59,6 @@ section Carrier
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   (J : AlmostComplexStructure V) {Q : QuadraticForm ℝ V}
   (hQJ : ∀ v, Q (J v) = Q v) (hQnd : Q.Nondegenerate)
-
-/-- The Fock spinor module `⋀ W` of an orthogonal complex structure `J` has complex dimension
-`2 ^ (finrank ℝ V / 2)`. -/
-theorem finrank_fock :
-    finrank ℂ (ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQnd).W) =
-      2 ^ (finrank ℝ V / 2) := by
-  rw [TauCeti.ExteriorAlgebra.finrank_eq_two_pow, J.finrank_spinPolarizationData_W hQJ hQnd]
 
 /-- Dedicated carrier for the normalized Fock spinor module of `J`. Unlike the `abbrev`
 `ExteriorAlgebra ℂ W` (`= CliffordAlgebra 0`), `FockSpinors` does not trigger
@@ -287,40 +272,5 @@ theorem adjoint_fockSpinorAction_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2) (v : V) :
 end Carrier
 
 end TauCeti.AlmostComplexStructure
-
-namespace Orientation
-
-open CliffordAlgebra Module Module.End TauCeti
-
-section DimensionFour
-
-open scoped TauCeti.FactFinrank
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-  [Fact (finrank ℝ V = 4)] {Q : QuadraticForm ℝ V}
-  (o : Orientation ℝ V (Fin 4)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-
-include hQ in
-/-- In dimension four with `Q v = -‖v‖²`, both chirality eigenspaces (`ε = 1` and `ε = -1`) of
-`J.FockSpinors` have complex dimension two for every `Q`-orthogonal complex structure `J`. -/
-theorem finrank_eigenspace_fockSpinorAction_chirality
-    (J : AlmostComplexStructure V) (hQJ : ∀ v, Q (J v) = Q v) (hQnd : Q.Nondegenerate)
-    {ε : ℂ} (hε : ε = 1 ∨ ε = -1) :
-    finrank ℂ (eigenspace (J.fockSpinorAction hQJ hQnd (chirality Q o)) ε) = 2 := by
-  have hpos_two : finrank ℂ (positiveHalfSpinors o (J.fockSpinorAction hQJ hQnd)) = 2 := by
-    have h4 : finrank ℂ (J.FockSpinors hQJ hQnd) = 4 := by
-      rw [J.finrank_fockSpinors hQJ hQnd, (Fact.out : finrank ℝ V = 4)]
-      norm_num
-    rw [finrank_eq_two_mul_finrank_positiveHalfSpinors o (J.fockSpinorAction hQJ hQnd) hQ] at h4
-    omega
-  rcases hε with rfl | rfl
-  · rwa [← positiveHalfSpinors_eq_eigenspace]
-  · rw [finrank_eigenspace_chirality_neg o (J.fockSpinorAction hQJ hQnd) 1,
-      ← positiveHalfSpinors_eq_eigenspace]
-    exact hpos_two
-
-end DimensionFour
-
-end Orientation
 
 end

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.HalfSpin
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Intertwiner
+import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Chirality
 
 /-!
 # The four-dimensional Hermitian Fock realization of Spinᶜ(4)
