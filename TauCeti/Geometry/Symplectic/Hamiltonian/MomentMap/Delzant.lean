@@ -158,11 +158,9 @@ private theorem apply_le_apply_of_weightModelChart
     · exact ((continuous_const.add (continuous_id.smul continuous_const)).tendsto' 0 _
         (by simp)).mono_left nhdsWithin_le_nhds
     · filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t) j
-      rw [map_add, map_smul, hξ₁, hb, smul_eq_mul, mul_one, Module.Basis.coord_apply,
-        Module.Basis.repr_self]
-      refine add_pos_of_nonneg_of_pos (Int.cast_nonneg ?_) ht
-      rw [Finsupp.single_apply]
-      split_ifs <;> norm_num
+      simp only [map_add, map_smul, hξ₁, hb, Module.Basis.coord_apply, Module.Basis.repr_self,
+        Finsupp.single_apply, smul_eq_mul, mul_one]
+      split_ifs <;> push_cast <;> linarith
   exact apply_le_apply_of_mem_closure h hσ hG hdim hVo hVmax hcl x
 
 omit [PreconnectedSpace G] in
@@ -295,15 +293,13 @@ theorem existsUnique_isDelzant_facetPolyhedron_eq_convexHull_range [Nonempty M]
   set f : M → StrongDual ℝ E := fun x ↦ LinearMap.toContinuousLinearMap (μ x)
   -- The polytope is the convex hull of the images of the finitely many fixed points.
   have hfin := h.finite_fixedPoints_of_faithfulSMul hσ hG hdim
+  -- `GroupLieAlgebra I G` is definitionally `E`, so Mathlib's equivalence applies to `μ`.
   let L : Module.Dual ℝ (GroupLieAlgebra I G) →ₗ[ℝ] StrongDual ℝ E :=
-    { toFun φ := LinearMap.toContinuousLinearMap φ
-      map_add' _ _ := ContinuousLinearMap.ext fun _ ↦ rfl
-      map_smul' _ _ := ContinuousLinearMap.ext fun _ ↦ rfl }
+    (LinearMap.toContinuousLinearMap : Module.Dual ℝ E ≃ₗ[ℝ] StrongDual ℝ E).toLinearMap
   have hΔ : convexHull ℝ (range f) = convexHull ℝ (f '' MulAction.fixedPoints G M) := by
-    rw [show range f = L '' range μ from range_comp L μ, ← L.image_convexHull,
-      h.convexHull_range_eq_convexHull_image_fixedPoints hσ.isNondegenerate, L.image_convexHull,
-      image_image]
-    rfl
+    -- `f` is `L ∘ μ` by definition, and the linear map `L` commutes with convex hulls.
+    rw [show f = L ∘ μ from rfl, range_comp L μ, image_comp L μ, ← L.image_convexHull,
+      ← L.image_convexHull, h.convexHull_range_eq_convexHull_image_fixedPoints hσ.isNondegenerate]
   refine Toric.existsUnique_isDelzant_facetPolyhedron_eq hi ?_ ?_ (convex_convexHull ℝ _) ?_
     fun v hv ↦ ?_
   · exact (range_nonempty f).mono (subset_convexHull ℝ _)

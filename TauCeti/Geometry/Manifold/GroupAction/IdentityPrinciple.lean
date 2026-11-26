@@ -25,7 +25,7 @@ an isometry of a connected manifold is determined by these first-order data
 (`TauCeti.RiemannianIsometry.ext_of_mfderiv_eq`).
 
 For an element of finite order the same conclusion holds without compactness of the group, by
-Bochner linearization (`TauCeti.MulAction.subset_interior_fixedBy_of_isPreconnected`).
+Bochner linearization (`TauCeti.subset_interior_fixedBy_of_isPreconnected`).
 
 ## References
 
