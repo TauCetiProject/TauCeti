@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Angle
+public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import TauCeti.Topology.ClusterSet
 
 import Mathlib.Analysis.Complex.Convex
