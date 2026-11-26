@@ -38,8 +38,9 @@ Morse–Bott inequalities. This file compares them with the ordinary Betti numbe
   circle, which is not orientable, the twisted zeroth Betti number over `ℚ` is `0`.
 
 The comparisons with `TauCeti.bettiNumber`, which takes the coefficient ring and the space in a
-common universe, are stated with the base, the fibres of `E`, the index type of orientations and
-the coefficients in one universe.
+common universe, are stated with the base, the fibres of `E` and the coefficients in one universe
+containing the index type of orientations, so that `Fin r` indexes the orientations over a base in
+any universe.
 
 ## References
 
@@ -139,13 +140,13 @@ end Iso
 
 section BettiNumber
 
-universe u
+universe u uι
 
-variable {B : Type u} [TopologicalSpace B]
+variable {B : Type (max u uι)} [TopologicalSpace B]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type u} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  {E : B → Type (max u uι)} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-  {ι : Type u} [Fintype ι] {K : Type u} [Ring K] (hι : Fintype.card ι = finrank ℝ F)
+  {ι : Type uι} [Fintype ι] {K : Type (max u uι)} [Ring K] (hι : Fintype.card ι = finrank ℝ F)
 
 /-- **Twisted Betti numbers of an orientable bundle.** If `E` is orientable, the homology of `B`
 with coefficients in the orientation local system has the ordinary Betti numbers of `B`. -/
