@@ -17,8 +17,8 @@ let `t` be a set of planes among the first `m`. The Williamson blocks
 Williamson's classification puts every nondegenerate family of quadratic forms on a symplectic
 vector space, up to its span, into this normal form, under the hypothesis that the span contains a
 regular element
-(`IsNondegenerateQuadraticFamily.exists_isDarbouxBasis_span_eq_span_williamsonBlocks`, in the
-namespace `TauCeti.SymplecticForm`). This file proves that the **Williamson type**
+(`IsNondegenerateQuadraticFamily.exists_isDarbouxBasis_span_eq_span_williamsonBlocks_of_mem_span`,
+in the namespace `TauCeti.SymplecticForm`). This file proves that the **Williamson type**
 `(k_e, k_h, k_f) = (|t|, m - |t|, f)` of a normal form is determined by its span alone
 (`TauCeti.SymplecticForm.eq_and_eq_and_card_eq_of_span_range_williamsonBlocks_eq`): two normal
 forms with the same span have the same numbers of elliptic, hyperbolic and focus-focus blocks. So
