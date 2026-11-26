@@ -48,6 +48,8 @@ of the unit ideal of a Euclidean domain, by the Euclidean algorithm.
 * `Ideal.MennickePair`: the set `W(A, I)` of admissible pairs.
 * `Ideal.MennickePair.shiftSnd`, `Ideal.MennickePair.shiftFst`, `Ideal.MennickePair.mulSnd`:
   the pairs `(a, b + t a)`, `(a + t b, b)` and `(a, b₁ b₂)` entering the Mennicke relations.
+* `Ideal.MennickePair.mulOneSub`: the pair `(a, b (1 - a))` attached to `a ≡ 1` modulo `I` and
+  `b` coprime to `a`.
 * `Ideal.MennickePair.map`: the pair map induced by a ring homomorphism.
 * `Ideal.IsMennickeSymbol`: the Mennicke relations for a map `W(A, I) → C`.
 * `Ideal.MennickeGroup`: the universal Mennicke group `C_I`, with generators
@@ -67,6 +69,9 @@ of the unit ideal of a Euclidean domain, by the Euclidean algorithm.
 * `Ideal.IsMennickeSymbol.map_eq_one_of_dvd_fst_sub`,
   `Ideal.IsMennickeSymbol.map_eq_one_of_dvd_snd_sub`: near-unit pairs have trivial symbol.
 * `Ideal.IsMennickeSymbol.map_eq_of_snd_eq_mul_one_sub`: `[b (1 - a) / a] = [b/a]`.
+* `Ideal.IsMennickeSymbol.map_eq_of_snd_eq_mul_of_dvd`: `[b c / a] = [b/a]` for `c ∈ I` with
+  `a ≡ 1` modulo `c`.
+* `Ideal.IsMennickeSymbol.map_eq_of_snd_eq_neg`: `[-b/a] = [b/a]`.
 * `Ideal.MennickeGroup.subsingleton_iff`: `C_I` is trivial exactly when every generator is.
 * `Ideal.MennickeGroup.subsingleton_bot`: the universal group of the zero ideal is trivial.
 * `Ideal.IsMennickeSymbol.map_eq_one_of_euclideanDomain`,
@@ -172,6 +177,25 @@ theorem mulSnd_snd (p q : MennickePair I) (h : p.fst = q.fst) :
     (p.mulSnd q h).snd = p.snd * q.snd :=
   (rfl)
 
+/-- The pair `(a, b (1 - a))` attached to an element `a ≡ 1` modulo `I` and an element `b` coprime
+to `a`; its second entry lies in `I` because `1 - a` does. -/
+def mulOneSub {a b : A} (ha : a - 1 ∈ I) (hb : IsCoprime a b) : MennickePair I where
+  fst := a
+  snd := b * (1 - a)
+  fst_sub_one_mem := ha
+  snd_mem := I.mul_mem_left b (sub_mem_comm_iff.mp ha)
+  isCoprime := hb.mul_right ⟨1, 1, by ring⟩
+
+@[simp]
+theorem mulOneSub_fst {a b : A} (ha : a - 1 ∈ I) (hb : IsCoprime a b) :
+    (mulOneSub ha hb).fst = a :=
+  (rfl)
+
+@[simp]
+theorem mulOneSub_snd {a b : A} (ha : a - 1 ∈ I) (hb : IsCoprime a b) :
+    (mulOneSub ha hb).snd = b * (1 - a) :=
+  (rfl)
+
 /-- The pair map `W(A, I) → W(B, J)` induced by a ring homomorphism `f : A →+* B` carrying `I`
 into `J`, applying `f` to both entries. -/
 def map (f : A →+* B) (h : I ≤ J.comap f) (p : MennickePair I) : MennickePair J where
@@ -258,6 +282,14 @@ theorem map_eq_of_fst_eq (hs : IsMennickeSymbol s) {p q : MennickePair I} (t : A
   congr 1
   ext <;> simp [hfst, hsnd]
 
+/-- The third Mennicke relation in coordinates: `[b/a] = [b₁/a] [b₂/a]` when `b = b₁ b₂`. -/
+theorem map_eq_mul_of_snd_eq_mul (hs : IsMennickeSymbol s) {p₁ p₂ q : MennickePair I}
+    (h₁ : p₁.fst = q.fst) (h₂ : p₂.fst = q.fst) (hsnd : q.snd = p₁.snd * p₂.snd) :
+    s q = s p₁ * s p₂ := by
+  rw [← hs.map_mulSnd p₁ p₂ (h₁.trans h₂.symm)]
+  congr 1
+  ext <;> simp [h₁, hsnd]
+
 /-- A pair whose second entry is zero has trivial symbol: `[0/a] = 1`. -/
 theorem map_eq_one_of_snd_eq_zero (hs : IsMennickeSymbol s) {p : MennickePair I}
     (hp : p.snd = 0) : s p = 1 := by
@@ -310,6 +342,24 @@ This is the first Mennicke relation with coefficient `-b ∈ I`. -/
 theorem map_eq_of_snd_eq_mul_one_sub (hs : IsMennickeSymbol s) {p q : MennickePair I}
     (hfst : q.fst = p.fst) (hsnd : q.snd = p.snd * (1 - p.fst)) : s q = s p :=
   hs.map_eq_of_snd_eq hfst (I.neg_mem p.snd_mem) (by rw [hsnd]; ring)
+
+/-- Multiplying the second entry by an element `c ∈ I` with `a ≡ 1` modulo `c` does not change the
+symbol: `[b c / a] = [b/a]`, since `[c/a]` is trivial. -/
+theorem map_eq_of_snd_eq_mul_of_dvd (hs : IsMennickeSymbol s) {p q : MennickePair I} {c : A}
+    (hc : c ∈ I) (hca : c ∣ p.fst - 1) (hfst : q.fst = p.fst) (hsnd : q.snd = p.snd * c) :
+    s q = s p := by
+  obtain ⟨k, hk⟩ := hca
+  let r : MennickePair I := ⟨p.fst, c, p.fst_sub_one_mem, hc, ⟨1, -k, by linear_combination hk⟩⟩
+  rw [hs.map_eq_mul_of_snd_eq_mul (p₁ := p) (p₂ := r) hfst.symm hfst.symm hsnd,
+    hs.map_eq_one_of_dvd_fst_sub (p := r) isUnit_one ⟨k, hk⟩, mul_one]
+
+/-- The sign of the second entry does not matter: `[-b/a] = [b/a]`. -/
+theorem map_eq_of_snd_eq_neg (hs : IsMennickeSymbol s) {p q : MennickePair I}
+    (hfst : q.fst = p.fst) (hsnd : q.snd = -p.snd) : s q = s p :=
+  -- `[-b/a] = [-b (1 - a)/a] = [b (a - 1)/a] = [b/a]`, since `a ≡ 1` modulo `a - 1`.
+  (hs.map_eq_of_snd_eq_mul_one_sub (p := q) (q := .mulOneSub q.fst_sub_one_mem q.isCoprime)
+    rfl rfl).symm.trans (hs.map_eq_of_snd_eq_mul_of_dvd p.fst_sub_one_mem dvd_rfl (by simp [hfst])
+      (by simp [hfst, hsnd]; ring))
 
 /-- Composing a Mennicke symbol with a group homomorphism gives a Mennicke symbol. -/
 theorem monoidHom_comp (hs : IsMennickeSymbol s) (φ : C →* E) : IsMennickeSymbol (φ ∘ s) where
