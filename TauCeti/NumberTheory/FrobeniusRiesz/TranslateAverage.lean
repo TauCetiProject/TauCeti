@@ -39,8 +39,8 @@ variable {G ι κ : Type*} [Group G]
 open scoped Classical in
 /-- Averaging frozen thick terms retains only the characters trivial on `H`. The factor
 `steps.card * b * T.card / J.card` uses the full index set `J`, not the thick translate. -/
-theorem expect_sum_frobenius_thick_eq (H : Subgroup G) [Fintype H] (J tops : Finset G)
-    (T : Finset H) (steps : Finset κ) (C : Finset ι) (χ : ι → G →* ℂ) (d : G)
+theorem expect_sum_sum_expect_ite_mem_image_eq_card_mul_sum_filter (H : Subgroup G) [Fintype H]
+    (J tops : Finset G) (T : Finset H) (steps : Finset κ) (C : Finset ι) (χ : ι → G →* ℂ) (d : G)
     (b : ℝ) (F : ι → G → ℂ) (hunit : ∀ i ∈ C, ∀ t ∈ tops, ‖χ i t‖ = 1)
     (hJ : ∀ u : H, ∀ t ∈ tops, ∀ s ∈ T, d * u * s * t⁻¹ ∈ J) :
     (𝔼 u : H, ∑ t ∈ tops, ∑ _k ∈ steps, 𝔼 g ∈ J,
@@ -92,7 +92,7 @@ open scoped Classical in
 /-- Compare the averaged character remainder with the projected thick contribution. The
 cap replacement and the subgroup projection use the same full index count, even when the
 thick set is empty. This isolates the top sums for comparison with a prescribed coset law. -/
-theorem norm_expect_sum_frobenius_sub_projected_le [Finite G]
+theorem norm_expect_sum_scaledRemainder_sub_card_mul_sum_filter_le [Finite G]
     (H : Subgroup G) [Fintype H] (J tops : Finset G) (T : Finset H) (steps : Finset κ)
     (C : Finset ι) (χ : ι → G →* ℂ) (d : G) (R : ι → ℝ → ℂ)
     (a : G → ℝ) (w : H → G → κ → G → ℝ) {x b b' D X S : ℝ}
@@ -116,7 +116,8 @@ theorem norm_expect_sum_frobenius_sub_projected_le [Finite G]
       (tops.card : ℝ) * steps.card * (b / x) := by
   classical
   -- The frozen average in the cap estimate is normalized by `J`, so it projects exactly.
-  rw [← H.expect_sum_frobenius_thick_eq J tops T steps C χ d b (fun i t ↦ R i (a t / b))
+  rw [← H.expect_sum_sum_expect_ite_mem_image_eq_card_mul_sum_filter J tops T steps C χ d b
+    (fun i t ↦ R i (a t / b))
     (fun i _ t _ ↦ ((χ i).isOfFinOrder (isOfFinOrder_of_finite t)).norm_eq_one) hJ]
   refine TauCeti.norm_expect_sum_scaledRemainder_sub_thick_le_of_costs J C (univ : Finset H)
     tops steps (fun (u : H) t ↦ T.image fun s : H ↦ d * u * s * t⁻¹)
