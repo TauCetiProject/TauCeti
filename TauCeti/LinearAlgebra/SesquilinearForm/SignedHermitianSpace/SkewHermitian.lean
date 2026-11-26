@@ -23,13 +23,14 @@ hermitian forms, and `h ↦ δ h` back. Rescaling is a bijection
 unitary groups, so classifications of hermitian spaces transfer to skew-hermitian ones.
 
 **Trace forms.** Let `K` be an algebra over a commutative ring `F` whose image `σ` fixes, let `V`
-be a `K`-module with compatible `F`-module structure, and let `t : K → F` be `F`-linear (the trace
-of a quadratic étale algebra). For a signed hermitian form `h` on `V`, `t ∘ h` is an `F`-bilinear
-form on `V` (`TauCeti.SignedHermitianSpace.traceForm`), preserved by the unitary group of `h`. If
-`t` vanishes on the elements negated by `σ` and `h` is skew-hermitian, `t ∘ h` is alternating, not
-merely skew-symmetric. If `t` is invariant under `σ` and the pairing `(a, b) ↦ t (a b)` on `K` is
-nondegenerate, `t ∘ h` is nondegenerate, for either sign. Thus the unitary group of a
-skew-hermitian space lies in the symplectic group of its trace form. For a Galois extension of
+be a `K`-module with compatible `F`-module structure, and let `t : K → F` be `F`-linear (for
+example the trace of a quadratic étale algebra). For a signed hermitian form `h` on `V`, `t ∘ h` is
+an `F`-bilinear form on `V` (`TauCeti.SignedHermitianSpace.traceForm`), preserved by the unitary
+group of `h`. If `t` vanishes on the elements negated by `σ` and `h` is skew-hermitian, `t ∘ h` is
+alternating, not merely skew-symmetric. If `t` is invariant under `σ` and the pairing
+`(a, b) ↦ t (a b)` on `K` is nondegenerate, `t ∘ h` is nondegenerate, for either sign. Under all
+three conditions, the unitary group of a skew-hermitian space lies in the symplectic group of its
+trace form. For a Galois extension of
 fields `K/F` and `τ ≠ 1`, the trace form of a skew-hermitian form for `τ` is alternating, because
 a nonzero such space forces `τ` to have order two
 (`TauCeti.SignedHermitianSpace.isAlt_traceForm_trace`). For a finite separable `K/F` it is
@@ -53,7 +54,7 @@ nondegenerate for any `τ` and either sign
   `TauCeti.SignedHermitianSpace.isometryGroup_unitsSMul`: rescaling preserves isometry classes,
   orthogonal sums and the unitary group.
 * `TauCeti.SignedHermitianSpace.isAlt_traceForm`: the trace form of a skew-hermitian form is
-  alternating, in every characteristic.
+  alternating when `t` vanishes on the elements negated by `σ`, in every characteristic.
 * `TauCeti.SignedHermitianSpace.nondegenerate_traceForm`: the trace form of a signed hermitian
   form is nondegenerate when `t` is `σ`-invariant and the trace pairing of `K` is nondegenerate.
 * `TauCeti.SignedHermitianSpace.restrictScalars_mem_isometryGroup_traceForm`: the unitary group
@@ -208,9 +209,10 @@ variable {F : Type*} [CommRing F] [Algebra F K] [Module F V] [IsScalarTower F K 
 
 /-- The **trace form** `t ∘ h` of a signed hermitian form `h`, for an `F`-linear `t : K → F` and an
 involution `σ` fixing the image of `F`: the `F`-bilinear form `(x, y) ↦ t (h x y)` on the
-underlying `F`-module of `V`. For a skew-hermitian `h` and the trace `t` of a quadratic étale
-algebra it is alternating (`TauCeti.SignedHermitianSpace.isAlt_traceForm`) and nondegenerate
-(`TauCeti.SignedHermitianSpace.nondegenerate_traceForm`). -/
+underlying `F`-module of `V`. For a skew-hermitian `h` it is alternating when `t` vanishes on the
+elements negated by `σ` (`TauCeti.SignedHermitianSpace.isAlt_traceForm`). For either sign it is
+nondegenerate when `t` is invariant under `σ` and the pairing `(a, b) ↦ t (a b)` on `K` is
+nondegenerate (`TauCeti.SignedHermitianSpace.nondegenerate_traceForm`). -/
 def traceForm (H : SignedHermitianSpace K V σ ε) (t : K →ₗ[F] F)
     (hσ : ∀ a : F, σ (algebraMap F K a) = algebraMap F K a) : LinearMap.BilinForm F V :=
   LinearMap.mk₂ F (fun x y ↦ t (H.form x y))
@@ -250,8 +252,10 @@ theorem nondegenerate_traceForm (ht : ∀ b, t (σ b) = t b)
   (H.isRefl_traceForm t hσ ht).nondegenerate_iff_separatingLeft.2
     (H.separatingLeft_traceForm t hσ hnd)
 
-/-- The unitary group of `h` preserves its trace form: for a skew-hermitian `h` it lies in the
-symplectic group of `t ∘ h`. -/
+/-- The unitary group of `h` preserves its trace form `t ∘ h`. For a skew-hermitian `h`, this places
+it in the symplectic group of `t ∘ h` when `t` satisfies the hypotheses of
+`TauCeti.SignedHermitianSpace.isAlt_traceForm` and
+`TauCeti.SignedHermitianSpace.nondegenerate_traceForm`. -/
 theorem restrictScalars_mem_isometryGroup_traceForm {e : V ≃ₗ[K] V}
     (he : e ∈ H.form.isometryGroup) :
     e.restrictScalars F ∈ (H.traceForm t hσ).isometryGroup :=
