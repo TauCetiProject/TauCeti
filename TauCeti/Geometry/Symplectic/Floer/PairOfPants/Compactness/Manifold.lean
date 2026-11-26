@@ -123,6 +123,20 @@ theorem contDiffOn_pairOfPantsPerturbation_comp_symm {n : ℕ∞} {m : WithTop �
     ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
       contMDiff_snd).contMDiffAt).contMDiffWithinAt
 
+/-- **The components of the perturbation are smooth in real coordinates.** For period-one `C³`
+Hamiltonians, each component `z ↦ K_z(w)` of the pair-of-pants perturbation, read in the real
+coordinates of `S = ℂ ∖ {0, 1}`, is `C³` jointly in `z ∈ S` and the target point. This is the
+regularity from which the Hamiltonian vector fields of the perturbation are `C²` in every chart
+(`TauCeti.SmoothTwoForm.IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt`). -/
+theorem contMDiffAt_uncurry_pairOfPantsPerturbation_apply (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q))) (w : ℂ)
+    (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :
+    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
+      (uncurry fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x w) (z, x) :=
+  (((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
+    ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
+      contMDiff_snd).contMDiffAt).clm_apply contMDiffAt_const).of_le (by norm_num)
+
 /-- **The end Hamiltonian read in a chart is smooth.** For a period-one Hamiltonian `H_q` which is
 `C^n` on `ℝ × M` and a `C^n` partial diffeomorphism `φ` from `M` to a normed space `V`, the
 Hamiltonian `H'_q(t, φ⁻¹ y)` of the positive end `q` read in the chart is `C^n` jointly in the time

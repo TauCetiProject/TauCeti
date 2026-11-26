@@ -767,20 +767,6 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPer
     hlim.comp_tendsto hσ'.tendsto_atTop,
     fun y hy ↦ (hpt y hy).comp hσ'.tendsto_atTop, hvc', hvK', hlim', hpt'⟩
 
-omit [FiniteDimensional ℝ E] [IsManifold I ⊤ M] in
-/-- Each component `z ↦ K_z(w)` of the pair-of-pants perturbation of period-one `C³` Hamiltonians,
-read in real coordinates, is `C³` jointly in `z ∈ S` and the target point. -/
-private theorem contMDiffAt_uncurry_pairOfPantsPerturbation_apply {H : Puncture → ℝ → M → ℝ}
-    (hH : ∀ r, Periodic (H r) 1)
-    (hHs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H r))) (w : ℂ)
-    (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :
-    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
-      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x w)
-      (z, x) :=
-  (((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨Complex.equivRealProdCLM.symm z, hz⟩ x).comp
-    (z, x) ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-      contMDiff_snd).contMDiffAt).clm_apply contMDiffAt_const).of_le (by norm_num)
-
 section Closed
 
 variable [I.Boundaryless] [CompactSpace M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]

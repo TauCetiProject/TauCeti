@@ -21,9 +21,10 @@ symplectic manifold. The compactness theorem of
 namespace `TauCeti.SmoothTwoForm`) works on a compact window `D` of the domain, with an energy
 threshold `δ > 0` depending on the window. On a domain `Ω` that is not relatively compact, such
 as a punctured Riemann surface, it applies on each window of an exhaustion of `Ω` by open sets
-with compact closures, and a diagonal subsequence (`TauCeti.extraction_forall`) converges on all
-of `Ω` (`IsNondegenerate.exists_tendstoLocallyUniformlyOn_comp_subseq_off_discrete`). This is
-the closed-manifold counterpart of the theorem for a symplectic vector space target in
+with compact closures, and a diagonal subsequence (`TauCeti.extraction_forall_of_antitone`)
+converges on all of `Ω`
+(`IsNondegenerate.exists_tendstoLocallyUniformlyOn_comp_subseq_off_discrete`). This is the
+closed-manifold counterpart of the theorem for a symplectic vector space target in
 `TauCeti.Geometry.Symplectic.Floer.Compactness.Exhaustion`, with no condition on the images of the
 solutions.
 
@@ -64,7 +65,7 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
 /-- The diagonal step of the exhaustion argument. For open windows `O j` with compact closures in
 `Ω`, each eventually contained in the domains `Uₖ` of the solutions, there are thresholds
 `δ j > 0` and one subsequence `φ` converging on every window `O j` off a finite set of bubbling
-points, through a diagonal extraction (`TauCeti.extraction_forall`). -/
+points, through a diagonal extraction (`TauCeti.extraction_forall_of_antitone`). -/
 private theorem IsNondegenerate.exists_subseq_forall_window (hω : ω.IsNondegenerate) {e : M → F}
     (he : ∀ x, MDifferentiableAt I 𝓘(ℝ, F) e x) (he_inj : Injective e) {Ω : Set (ℝ × ℝ)}
     (hΩ : IsOpen Ω)
@@ -107,16 +108,22 @@ private theorem IsNondegenerate.exists_subseq_forall_window (hω : ω.IsNondegen
     hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset he he_inj hΩ (hOc j)
       (hOΩ j) hJ hXs hXt (fun z hz ↦ hJt z (hOΩ j hz)) (hc j) (hJc' j)
       (fun z hz x ↦ (hB' j z hz x).1) fun z hz x ↦ (hB' j z hz x).2
-  -- Every subsequence has a further subsequence converging on the window `j`, and a diagonal
-  -- subsequence `φ` eventually runs through such a subsequence for each window.
-  obtain ⟨φ, hφ, hψ⟩ := extraction_forall (P := fun j ψ ↦ ∃ (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → M),
-    (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
-      δ j ≤ ∫ y in ball z ε ∩ O j, ω.floerEnergyDensity Ks Kt (u (ψ n)) y) ∧
+  -- The properties of the filter of a subsequence on the window `j`; they pass to finer filters.
+  let P : ℕ → Filter ℕ → Prop := fun j l ↦ ∃ (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → M),
+    (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ k in l,
+      δ j ≤ ∫ y in ball z ε ∩ O j, ω.floerEnergyDensity Ks Kt (u k) y) ∧
     (∀ C, IsCompact C → C ⊆ O j \ ↑Z →
-      ∃ A, ∀ n, ∀ y ∈ C, ω.floerEnergyDensity Ks Kt (u (ψ n)) y ≤ A) ∧
+      ∃ A, ∀ᶠ k in l, ∀ y ∈ C, ω.floerEnergyDensity Ks Kt (u k) y ≤ A) ∧
     ContinuousOn v (O j \ ↑Z) ∧
-    TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (ψ n)) (e ∘ v) atTop (O j \ ↑Z) ∧
-    ∀ y ∈ O j \ ↑Z, Tendsto (fun n ↦ u (ψ n) y) atTop (𝓝 (v y))) fun j ψ hψ ↦ by
+    TendstoLocallyUniformlyOn (fun k ↦ e ∘ u k) (e ∘ v) l (O j \ ↑Z) ∧
+    ∀ y ∈ O j \ ↑Z, Tendsto (fun k ↦ u k y) l (𝓝 (v y))
+  -- Every subsequence has a further subsequence converging on the window `j`, so a diagonal
+  -- subsequence `φ` converges on every window.
+  obtain ⟨φ, hφ, hP⟩ := extraction_forall_of_antitone (P := P)
+    (fun j _ _ hl ⟨Z, v, hconc, hbd, hvc, hlim, hpt⟩ ↦ ⟨Z, v,
+      fun z hz ε hε ↦ (hconc z hz ε hε).filter_mono hl,
+      fun C hC hCZ ↦ (hbd C hC hCZ).imp fun _ hA ↦ hA.filter_mono hl, hvc,
+      hlim.comp_tendsto (tendsto_id'.2 hl), fun y hy ↦ (hpt y hy).mono_left hl⟩) fun j ψ hψ ↦ by
     obtain ⟨N, hN⟩ := eventually_atTop.1 (hOU j)
     have hsub (n : ℕ) : O j ⊆ U (ψ (n + N)) :=
       subset_closure.trans (hN _ ((Nat.le_add_left N n).trans (hψ.id_le _)))
@@ -126,20 +133,15 @@ private theorem IsNondegenerate.exists_subseq_forall_window (hω : ω.IsNondegen
       (fun n ↦ (setIntegral_mono_set (hint _)
         (ae_restrict_of_forall_mem (hU _).measurableSet (hf0 _)) (hsub n).eventuallySubset).trans
           (hE _))
-    exact ⟨fun n ↦ φ n + N, fun a b hab ↦ Nat.add_lt_add_right (hφ hab) N, Z, v, hZ, hbd, hv,
-      hlim, hpt⟩
+    exact ⟨fun n ↦ φ n + N, fun a b hab ↦ Nat.add_lt_add_right (hφ hab) N, Z, v,
+      fun z hz ε hε ↦ eventually_map.2 (hZ z hz ε hε),
+      fun C hC hCZ ↦ (hbd C hC hCZ).imp fun _ hA ↦ eventually_map.2 (.of_forall hA), hv,
+      tendstoLocallyUniformlyOn_map_iff.2 hlim, fun y hy ↦ tendsto_map'_iff.2 (hpt y hy)⟩
   refine ⟨δ, φ, hδ, hφ, fun j ↦ ?_⟩
-  -- `φ` is eventually a reindexing of the subsequence converging on the window `j`.
-  obtain ⟨ψ, ⟨Z, v, hconc, hbd, hvc, hlim, hpt⟩, hψφ⟩ := hψ j
-  obtain ⟨f, hf, hφf⟩ := exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le hψφ
-  refine ⟨Z, v, fun z hz ε hε ↦ ?_, fun C hC hCZ ↦ ?_, hvc,
-    (hlim.comp_tendsto hf).congr_inseparable (hφf.mono fun n hn _ _ ↦ .of_eq (by simp [hn])),
-    fun y hy ↦ ((hpt y hy).comp hf).congr' (hφf.mono fun n hn ↦ by simp [hn])⟩
-  · exact eventually_of_eq_apply_of_le (p := fun k ↦
-      δ j ≤ ∫ y in ball z ε ∩ O j, ω.floerEnergyDensity Ks Kt (u k) y) hψφ (hconc z hz ε hε)
-  · obtain ⟨A, hA⟩ := hbd C hC hCZ
-    exact ⟨A, eventually_of_eq_apply_of_le
-      (p := fun k ↦ ∀ y ∈ C, ω.floerEnergyDensity Ks Kt (u k) y ≤ A) hψφ (.of_forall hA)⟩
+  obtain ⟨Z, v, hconc, hbd, hvc, hlim, hpt⟩ := hP j
+  exact ⟨Z, v, fun z hz ε hε ↦ eventually_map.1 (hconc z hz ε hε),
+    fun C hC hCZ ↦ (hbd C hC hCZ).imp fun _ hA ↦ eventually_map.1 hA, hvc,
+    tendstoLocallyUniformlyOn_map_iff.1 hlim, fun y hy ↦ tendsto_map'_iff.1 (hpt y hy)⟩
 
 /-- **Floer solutions of bounded energy on a whole domain in a closed manifold converge off a
 discrete set.** Let `ω` be a nondegenerate two-form on a compact boundaryless manifold `M`, such as
