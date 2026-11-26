@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Perfectoid.Integral.Map
 public import TauCeti.RingTheory.Perfectoid.PreTilt.Pi
 
+import TauCeti.Algebra.Ring.Pi
+
 /-!
 # Products of integral perfectoid rings
 
@@ -21,19 +23,20 @@ Each of the three defining conditions is checked coordinatewise.
 
 * **Adic element.** For `π = (π i)`, `π ^ p ∣ p` holds in `∏ A i` exactly when it holds in every
   factor, and `∏ A i` is `π`-adically complete exactly when every `A i` is `π i`-adically
-  complete (`isAdicComplete_pi_span_singleton_iff`), as the ideal `(π ^ n)` of a product consists
-  of the families of multiples of the `π i ^ n`.
+  complete (`TauCeti.isAdicComplete_pi_span_singleton_iff`), as the ideal `(π ^ n)` of a product
+  consists of the families of multiples of the `π i ^ n`.
 * **Frobenius.** Reduction modulo `p` commutes with products (`ModP.piEquiv`), so Frobenius on
   `(∏ A i) ⧸ p` is surjective exactly when it is on every `A i ⧸ p`.
 * **Fontaine kernel.** When every factor is nonzero, `A_inf(∏ A i) ≅ ∏ A_inf(A i)` carries
   `ker θ` onto `∏ ker θ_i` (`PreTilt.map_wittVectorPiEquiv_ker_fontaineTheta`), and a product of
-  ideals is principal exactly when every factor is
-  (`PreTilt.isPrincipal_ker_fontaineTheta_pi_iff`).
+  ideals is principal exactly when every factor is (`Ideal.isPrincipal_pi_iff`,
+  `PreTilt.isPrincipal_ker_fontaineTheta_pi_iff`).
 
 Zero factors have no tilt in Mathlib's sense, since `p` is a unit there. They are removed first:
-`∏ A i` is isomorphic to the product of its nonzero factors, and integral perfectoidness is
-invariant under ring isomorphisms (`TauCeti.Perfectoid.IsIntegralPerfectoid.of_ringEquiv`). The
-tilt of the product is the product of the tilts (`PreTilt.piEquiv`).
+`∏ A i` is isomorphic to the product of its nonzero factors (`RingEquiv.piNontrivial`), and
+integral perfectoidness is invariant under ring isomorphisms
+(`TauCeti.Perfectoid.IsIntegralPerfectoid.of_ringEquiv`). The tilt of the product is the product
+of the tilts (`PreTilt.piEquiv`).
 
 ## Main results
 
@@ -76,7 +79,8 @@ private theorem pi_of_nontrivial [∀ i, Nontrivial (A i)] [∀ i, IsIntegralPer
     have (i : ι) : Fact ¬IsUnit (p : A i) := ⟨not_isUnit_natCast⟩
     exact PreTilt.isPrincipal_ker_fontaineTheta_pi_iff.mpr fun _ ↦ isPrincipal_ker_fontaineTheta
 
-/-- Every nonzero factor of an integral perfectoid product is integral perfectoid. -/
+/-- When every factor is nonzero, each factor of an integral perfectoid product is integral
+perfectoid. -/
 private theorem of_pi_of_nontrivial [IsIntegralPerfectoid p (∀ i, A i)] (j : ι)
     [∀ i, Nontrivial (A i)] : IsIntegralPerfectoid p (A j) where
   exists_adic_element := by
@@ -108,20 +112,10 @@ integral perfectoid if and only if every factor `A i` is. The family may be empt
 rings. -/
 theorem isIntegralPerfectoid_pi_iff :
     IsIntegralPerfectoid p (∀ i, A i) ↔ ∀ i, IsIntegralPerfectoid p (A i) := by
-  classical
-  -- `∏ A i` is isomorphic to the product of its nonzero factors: two families agreeing on the
-  -- nonzero factors agree on the zero factors too
+  -- `∏ A i` is isomorphic to the product of its nonzero factors
   let J := {i // Nontrivial (A i)}
   have (j : J) : Nontrivial (A j) := j.property
-  have he : Function.Bijective (RingHom.pi fun j : J ↦ Pi.evalRingHom A j.val) := by
-    refine ⟨fun x y h ↦ funext fun i ↦ ?_, fun y ↦
-      ⟨fun i ↦ if hi : Nontrivial (A i) then y ⟨i, hi⟩ else 0,
-        funext fun j ↦ by simp [RingHom.pi_apply, j.property]; rfl⟩⟩
-    by_cases hi : Nontrivial (A i)
-    · exact congr_fun h ⟨i, hi⟩
-    · have := not_nontrivial_iff_subsingleton.mp hi
-      exact Subsingleton.elim _ _
-  let e : (∀ i, A i) ≃+* ∀ j : J, A j := .ofBijective _ he
+  let e : (∀ i, A i) ≃+* ∀ j : J, A j := RingEquiv.piNontrivial A
   refine ⟨fun _ i ↦ ?_, fun h ↦ ?_⟩
   · by_cases hi : Nontrivial (A i)
     · have := IsIntegralPerfectoid.of_ringEquiv (p := p) e

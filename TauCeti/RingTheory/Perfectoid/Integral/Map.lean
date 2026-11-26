@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Perfectoid.Integral.Tilt
 public import TauCeti.RingTheory.Perfectoid.PreTilt.Map
-public import TauCeti.RingTheory.WittVector.MapEquiv
 
 /-!
 # Maps of integral perfectoid rings and `A_inf`
@@ -35,8 +34,9 @@ the induced map of tilts `f♭ = PreTilt.map p f` and the induced map
 These are the identities used to show that fibre products of integral perfectoid rings along a
 surjection are integral perfectoid.
 
-When `f` is a ring isomorphism, `A_inf(f)` is an isomorphism carrying `ker θ_A` onto `ker θ_B`; so
-integral perfectoidness is invariant under ring isomorphisms, with no assumption on `B`.
+When `f` is a ring isomorphism, `A_inf(f)` is an isomorphism carrying `ker θ_A` onto `ker θ_B`
+(`WittVector.map_mapEquiv_ker_fontaineTheta`); so integral perfectoidness is invariant under ring
+isomorphisms, with no assumption on `B`.
 
 ## Main results
 
@@ -69,7 +69,7 @@ variable {p : ℕ} [Fact p.Prime] {A B : Type*} [CommRing A] [CommRing B]
 /-- **Integral perfectoid rings are invariant under ring isomorphisms.** If `e : A ≃+* B` and `A` is
 integral perfectoid, so is `B`: `e` carries an adic element `π` of `A` to one of `B`, and the
 isomorphism `W(A♭) ≃+* W(B♭)` induced by `e` carries `ker θ_A` onto `ker θ_B`, by naturality of
-Fontaine's map. -/
+Fontaine's map (`WittVector.map_mapEquiv_ker_fontaineTheta`). -/
 theorem TauCeti.Perfectoid.IsIntegralPerfectoid.of_ringEquiv [IsIntegralPerfectoid p A]
     (e : A ≃+* B) : IsIntegralPerfectoid p B where
   exists_adic_element := by
@@ -87,18 +87,7 @@ theorem TauCeti.Perfectoid.IsIntegralPerfectoid.of_ringEquiv [IsIntegralPerfecto
   theta_kernel_principal hp hc := by
     have : Fact ¬IsUnit (p : B) := ⟨hp⟩
     have : Fact ¬IsUnit (p : A) := ⟨fun h ↦ hp (by simpa using h.map e)⟩
-    have := hc
-    -- the tilts of `A` and `B` are isomorphic through `PreTilt.map p e`
-    let eT : PreTilt A p ≃+* PreTilt B p := .ofRingHom (PreTilt.map p e) (PreTilt.map p e.symm)
-      (by rw [← PreTilt.map_comp, RingEquiv.comp_symm, PreTilt.map_id])
-      (by rw [← PreTilt.map_comp, RingEquiv.symm_comp, PreTilt.map_id])
-    have hker : RingHom.ker (WittVector.fontaineTheta B p) =
-        (RingHom.ker (WittVector.fontaineTheta A p)).map (WittVector.mapEquiv eT) := by
-      ext w
-      rw [← comap_symm, mem_comap, RingHom.mem_ker, RingHom.mem_ker, WittVector.mapEquiv_symm,
-        WittVector.mapEquiv_apply, RingEquiv.ofRingHom_symm, RingEquiv.toRingHom_ofRingHom,
-        WittVector.theta_natural, RingHom.coe_coe, map_eq_zero_iff _ e.symm.injective]
-    rw [hker]
+    rw [← WittVector.map_mapEquiv_ker_fontaineTheta e]
     exact (IsIntegralPerfectoid.isPrincipal_ker_fontaineTheta (p := p)).map_ringHom _
 
 end RingEquiv
