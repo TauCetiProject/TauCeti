@@ -71,7 +71,7 @@ inverse `Q` of bounded norm
 `0 → ker D_R → E_R → S₁ × S₂ → coker D_R → 0` of the surjective stabilization
 (`ContinuousLinearMap.exact_kerCoprodHom_parameterProj`,
 `ContinuousLinearMap.exact_parameterProj_parameterToCoker`) becomes the exact sequence of linear
-gluing
+gluing (`ContinuousLinearMap.exact_of_linearEquiv_ker_coprod`)
 
 `0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`
 
@@ -617,6 +617,17 @@ private theorem eq_zero_of_preglue {M₁ M₂ : ℝ × ℝ → V × V × V →L[
 
 /-! ### Pregluing along the neck -/
 
+/-- The complementary neck cutoff `1 - neckCutoff a` is bounded by `1`. -/
+private theorem abs_one_sub_neckCutoff_le_one (a s : ℝ) : |1 - neckCutoff a s| ≤ 1 := by
+  rw [abs_le]
+  constructor <;> linarith [neckCutoff_nonneg a s, neckCutoff_le_one a s]
+
+/-- The derivative of the complementary neck cutoff `1 - neckCutoff a` is that of `neckCutoff a` up
+to sign. -/
+private theorem abs_deriv_one_sub_neckCutoff (a s : ℝ) :
+    |deriv (fun s ↦ 1 - neckCutoff a s) s| = |deriv (neckCutoff a) s| := by
+  rw [deriv_const_sub, abs_neg]
+
 /-- The neck cutoff `β = neckCutoff a`, the complementary cutoff `1 - β` and their derivatives are
 bounded. -/
 private theorem exists_bound_neckCutoff (a : ℝ) : ∃ B : ℝ,
@@ -625,10 +636,8 @@ private theorem exists_bound_neckCutoff (a : ℝ) : ∃ B : ℝ,
   obtain ⟨L, hL⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
   refine ⟨max 1 (|a| * L), fun s ↦ (abs_neckCutoff_le_one a s).trans (le_max_left _ _),
     fun s ↦ (abs_deriv_neckCutoff_le hL a s).trans (le_max_right _ _), fun s ↦ ?_, fun s ↦ ?_⟩
-  · refine le_trans ?_ (le_max_left _ _)
-    rw [abs_le]
-    constructor <;> linarith [neckCutoff_nonneg a s, neckCutoff_le_one a s]
-  · rw [deriv_const_sub, abs_neg]
+  · exact (abs_one_sub_neckCutoff_le_one a s).trans (le_max_left _ _)
+  · rw [abs_deriv_one_sub_neckCutoff]
     exact (abs_deriv_neckCutoff_le hL a s).trans (le_max_right _ _)
 
 /-- **Pregluing along a neck of length `2 R`.** Elements `(ξ₁, σ₁)` of `W^{1,2} × S₁` and
@@ -655,6 +664,7 @@ noncomputable def neckPreglue (R : ℝ) : (H1 V × S₁) × (H1 V × S₂) →L[
 
 /-- The `W^{1,2}` component of the pregluing, as an `L²` jet:
 `β ξ₁(· + R, ·) + (1 - β) ξ₂(· - R, ·)` for the neck cutoff `β = neckCutoff (-(2 / R))`. -/
+@[simp]
 theorem coe_fst_neckPreglue_apply (R : ℝ) (k₁ : H1 V × S₁) (k₂ : H1 V × S₂) :
     ((neckPreglue R (k₁, k₂)).1 : Lp (V × V × V) 2 stripMeasure) =
       jetOperator stripMeasure (cutoffCoeff V (neckCutoff (-(2 / R))))
@@ -717,17 +727,10 @@ private theorem injective_gluedKernelMap_of_lt_one {M₁ M₂ : ℝ × ℝ → V
     {ι₁ : S₁ →L[ℝ] Lp W 2 stripMeasure} {ι₂ : S₂ →L[ℝ] Lp W 2 stripMeasure} {T R : ℝ}
     (hι₁ : ∀ σ, ∀ᵐ z ∂stripMeasure, T < z.1 → ι₁ σ z = 0)
     (hι₂ : ∀ σ, ∀ᵐ z ∂stripMeasure, z.1 < -T → ι₂ σ z = 0) (hTR : T < R) (h2TR : 2 * T ≤ R)
-    (hβ : ContDiff ℝ 2 (neckCutoff (-(2 / R)))) (hβ1 : ∀ s, |neckCutoff (-(2 / R)) s| ≤ 1)
-    (hβ'1 : ∀ s, |deriv (neckCutoff (-(2 / R))) s| ≤ 1)
-    (hγ : ContDiff ℝ 2 fun s ↦ 1 - neckCutoff (-(2 / R)) s)
-    (hγ1 : ∀ s, |1 - neckCutoff (-(2 / R)) s| ≤ 1)
-    (hγ'1 : ∀ s, |deriv (fun s ↦ 1 - neckCutoff (-(2 / R)) s) s| ≤ 1)
-    (hβ0 : ∀ s ≤ 0, neckCutoff (-(2 / R)) s = 1)
-    (hβR : ∀ s, R / 2 ≤ s → neckCutoff (-(2 / R)) s = 0)
+    (hR : 0 < R) (hβ'1 : ∀ s, |deriv (neckCutoff (-(2 / R))) s| ≤ 1)
     {B d ε : ℝ} (hB0 : 0 ≤ B) (hB : ∀ᵐ z ∂stripMeasure,
       ‖Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z‖ ≤ B)
-    (hβd : ∀ s, |deriv (neckCutoff (-(2 / R))) s| ≤ d)
-    (hγd : ∀ s, |deriv (fun s ↦ 1 - neckCutoff (-(2 / R)) s) s| ≤ d) (hε : 0 ≤ ε)
+    (hβd : ∀ s, |deriv (neckCutoff (-(2 / R))) s| ≤ d) (hε : 0 ≤ ε)
     (hn₁ : ∀ᵐ z ∂stripMeasure, neckCutoff (-(2 / R)) z.1 ≠ 0 → ‖Function.uncurry
       (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z - M₁ (z + (R, 0))‖ ≤ ε)
     (hn₂ : ∀ᵐ z ∂stripMeasure, 1 - neckCutoff (-(2 / R)) z.1 ≠ 0 → ‖Function.uncurry
@@ -751,14 +754,23 @@ private theorem injective_gluedKernelMap_of_lt_one {M₁ M₂ : ℝ × ℝ → V
         (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)) Q hQ
       (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker
       (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker R) := by
-  have hzero (k₁ k₂) := eq_zero_of_preglue hM₁ hM₂ hι₁ hι₂ hTR h2TR hβ hβ1 hβ'1 hγ hγ1 hγ'1 hβ0
-    hβR hB0 hB hβd hγd hε hn₁ hn₂ hθ ht₁ ht₂ hsmall (k₁ := k₁) (k₂ := k₂)
+  -- The properties of the neck cutoff `β = neckCutoff (-(2 / R))` and of `1 - β`.
+  have hβ : ContDiff ℝ 2 (neckCutoff (-(2 / R))) := contDiff_neckCutoff _
+  have hγ : ContDiff ℝ 2 fun s ↦ 1 - neckCutoff (-(2 / R)) s := contDiff_const.sub hβ
+  have hγ'1 (s : ℝ) := (abs_deriv_one_sub_neckCutoff (-(2 / R)) s).trans_le (hβ'1 s)
+  have hγd (s : ℝ) := (abs_deriv_one_sub_neckCutoff (-(2 / R)) s).trans_le (hβd s)
+  have hzero (k₁ k₂) := eq_zero_of_preglue hM₁ hM₂ hι₁ hι₂ hTR h2TR hβ (abs_neckCutoff_le_one _)
+    hβ'1 hγ (abs_one_sub_neckCutoff_le_one _) hγ'1
+    (fun _ hs ↦ neckCutoff_neg_two_div_eq_one hR.le hs)
+    (fun _ hs ↦ neckCutoff_neg_two_div_eq_zero hR hs) hB0 hB hβd hγd hε hn₁ hn₂ hθ ht₁ ht₂ hsmall
+    (k₁ := k₁) (k₂ := k₂)
   refine (injective_iff_map_eq_zero _).2 fun w h ↦ ?_
   obtain ⟨⟨k₁, hk₁⟩, ⟨k₂, hk₂⟩⟩ := w
   -- The corrected pregluing vanishes exactly when the pregluing is fixed by `Q A`.
   have h' := congrArg Subtype.val h
   rw [coe_gluedKernelMap_apply, ZeroMemClass.coe_zero, sub_eq_zero,
-    neckPreglue_eq_cutoffL hβ hβ1 hβ'1 hγ hγ1 hγ'1] at h'
+    neckPreglue_eq_cutoffL hβ (abs_neckCutoff_le_one _) hβ'1 hγ (abs_one_sub_neckCutoff_le_one _)
+      hγ'1] at h'
   obtain ⟨rfl, rfl⟩ := hzero k₁ k₂ hk₁ hk₂ h'
   rfl
 
@@ -813,12 +825,9 @@ private theorem bijective_gluedKernelMap_of_lt_one {M₁ M₂ : ℝ × ℝ → V
     (abs_deriv_neckCutoff_le hL _ s).trans_eq (by rw [abs_neg, abs_of_pos (by positivity)])
   have hβ'1 (s : ℝ) : |deriv β s| ≤ 1 := (hβd s).trans hRL
   have hγ : ContDiff ℝ 2 fun s ↦ 1 - β s := contDiff_const.sub hβ
-  have hγ1 (s : ℝ) : |1 - β s| ≤ 1 := by
-    rw [abs_le]
-    constructor <;> linarith [neckCutoff_nonneg (-(2 / R)) s, neckCutoff_le_one (-(2 / R)) s]
-  have hγd (s : ℝ) : |deriv (fun s ↦ 1 - β s) s| ≤ 2 / R * L := by
-    rw [deriv_const_sub, abs_neg]
-    exact hβd s
+  have hγ1 (s : ℝ) : |1 - β s| ≤ 1 := abs_one_sub_neckCutoff_le_one _ s
+  have hγd (s : ℝ) : |deriv (fun s ↦ 1 - β s) s| ≤ 2 / R * L :=
+    (abs_deriv_one_sub_neckCutoff _ s).trans_le (hβd s)
   have hγ'1 (s : ℝ) : |deriv (fun s ↦ 1 - β s) s| ≤ 1 := (hγd s).trans hRL
   have hβ0 (s : ℝ) (hs : s ≤ 0) : β s = 1 := neckCutoff_neg_two_div_eq_one hR.le hs
   have hβR (s : ℝ) (hs : R / 2 ≤ s) : β s = 0 := neckCutoff_neg_two_div_eq_zero hR hs
@@ -846,16 +855,19 @@ private theorem bijective_gluedKernelMap_of_lt_one {M₁ M₂ : ℝ × ℝ → V
         ((k : H1 V × S₂).1 : Lp (V × V × V) 2 stripMeasure)‖ ≤ 1 / 2 * ‖k‖ :=
     (ht₂ _ (Submodule.mem_map_of_mem hk)).trans (mul_le_mul_of_nonneg_left
       ((Submodule.norm_coe _).trans_le (norm_fst_le k)) (by norm_num))
-  have hinj := injective_gluedKernelMap_of_lt_one hM₁ hM₂ hι₁ hι₂ hTR h2TR hβ hβ1 hβ'1 hγ hγ1
-    hγ'1 hβ0 hβR hB0 hB hβd hγd hε hn hn₂ hQ (by norm_num) ht₁' ht₂' hsmall₂
+  have hinj := injective_gluedKernelMap_of_lt_one hM₁ hM₂ hι₁ hι₂ hTR h2TR hR hβ'1 hB0 hB hβd hε
+    hn hn₂ hQ (by norm_num) ht₁' ht₂' hsmall₂
   have := free_ker (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁)
   have := free_ker (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂)
   -- The injective map between spaces whose dimensions satisfy the reverse inequality is onto.
   have hge := Module.finrank_prod.symm.trans_le (LinearMap.finrank_le_finrank_of_injective hinj)
-  have hrange := ((LinearMap.finrank_range_of_inj hinj).trans Module.finrank_prod).trans
-    (le_antisymm hge hle)
   -- The instance `hfin` is passed explicitly: instance search times out on these kernels.
-  exact ⟨hinj, LinearMap.range_eq_top.1 (@Submodule.eq_top_of_finrank_eq _ _ _ _ _ hfin _ hrange)⟩
+  exact ⟨hinj, (@LinearMap.injective_iff_surjective_of_finrank_eq_finrank _
+    ((((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker ×
+      (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker) _ _ _ _ _ _ _ hfin
+    (Module.finrank_prod.trans (le_antisymm hle hge).symm)
+    (gluedKernelMap _ Q hQ (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker
+      (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker R).toLinearMap).1 hinj⟩
 
 /-- The choice of `ε` and of the neck length making the cutting and the pregluing errors
 `2 ε + 2 L B / R` small: with `ε = 1 / (64 (K + 1))` and `R ≥ 128 L B (K + 1)`, they are at most
@@ -1109,20 +1121,7 @@ theorem exists_forall_ge_forall_exists_linearEquiv_exact_gluedKernelMap
     (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker
     (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker R).toLinearMap
     (hR₀ R hR Q hQ hQn)
-  have ha := (LinearEquiv.conj_symm_exact_iff_exact _ _ e).2
-    (ContinuousLinearMap.exact_kerCoprodHom_parameterProj _ (gluedStabilizer ι₁ ι₂ R))
-  have hb := (LinearEquiv.precomp_exact_iff_exact (e := e)).2
-    (ContinuousLinearMap.exact_parameterProj_parameterToCoker _ (gluedStabilizer ι₁ ι₂ R))
-  have hc := (ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective _
-    (gluedStabilizer ι₁ ι₂ R)).2 hQ.surjective
-  have hi := e.symm.injective.comp (ContinuousLinearMap.kerCoprodHom_injective _
-    (gluedStabilizer ι₁ ι₂ R))
-  refine ⟨e, fun _ ↦ rfl, hi, ha, hb, hc, fun hzero ↦ ⟨⟨hi, ?_⟩, ⟨?_, hc⟩⟩⟩
-  -- When `b_R = 0`, exactness at `E₁ × E₂` and at `S₁ × S₂` gives the two isomorphisms.
-  · exact fun x ↦ (ha x).1 (LinearMap.congr_fun hzero x)
-  · refine (injective_iff_map_eq_zero _).2 fun y hy ↦ ?_
-    obtain ⟨x, rfl⟩ := (hb y).1 hy
-    exact LinearMap.congr_fun hzero x
+  exact ⟨e, fun _ ↦ rfl, ContinuousLinearMap.exact_of_linearEquiv_ker_coprod _ _ e hQ.surjective⟩
 
 variable [CompleteSpace V] [CompleteSpace W] in
 /-- **Index additivity under gluing.** Let `D₁` and `D₂` be first-order operators on the cylinder,
