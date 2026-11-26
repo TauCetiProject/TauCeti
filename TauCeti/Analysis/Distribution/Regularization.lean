@@ -718,10 +718,6 @@ theorem apply_eq_integral_smul_translatePairing_comp (T : 𝓓'(Ω, F)) (ρ : �
       MeasurableSet.univ, image_univ, Subtype.range_coe]
     exact hC.measure_lt_top⟩
   have hΦc : Continuous fun y : C ↦ Φ y := continuousOn_iff_continuous_domRestrict.1 hΦ
-  have hνC (g : X → ℝ) (hg : ∀ x ∉ C, g x = 0) : ∫ y : C, g y ∂νC = ∫ x, g x ∂ν := by
-    rw [integral_subtype_comap hCm g, setIntegral_eq_integral_of_forall_compl_eq_zero hg]
-  have hνC' (g : X → F) (hg : ∀ x ∉ C, g x = 0) : ∫ y : C, g y ∂νC = ∫ x, g x ∂ν := by
-    rw [integral_subtype_comap hCm g, setIntegral_eq_integral_of_forall_compl_eq_zero hg]
   let f : C → 𝓓(Ω, ℝ) := fun y ↦ Ψ y • translateOfMapsTo ρ (hΦρ y y.property)
   have hf_apply (y : C) (w : E) : f y w = Ψ y * ρ (w - Φ y) := by
     simp [f, translateOfMapsTo_apply]
@@ -751,13 +747,17 @@ theorem apply_eq_integral_smul_translatePairing_comp (T : 𝓓'(Ω, F)) (ρ : �
     exact (hΨ.comp (continuous_subtypeVal.comp continuous_fst)).smul
       ((ρ.contDiff.continuous_iteratedFDeriv (by simp)).comp
         (continuous_snd.sub (hΦc.comp continuous_fst)))
+  -- Integrals over the subtype `C` with respect to `νC` are integrals over `X` of functions
+  -- vanishing off `C` (`integral_subtype_comap`).
   have hint := T.apply_eq_integral_of_continuous_iteratedFDeriv hKΩ hfK hf (μ := νC) (ψ := ψ)
-    fun w ↦ (hψ w).trans <| (hνC (fun x ↦ Ψ x * ρ (w - Φ x))
-      fun x hx ↦ by rw [image_eq_zero_of_notMem_tsupport hx, zero_mul]).symm.trans
+    fun w ↦ (hψ w).trans <| ((integral_subtype_comap hCm _).trans
+      (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by
+        rw [image_eq_zero_of_notMem_tsupport hx, zero_mul])).symm.trans
         (integral_congr_ae (ae_of_all _ fun y ↦ (hf_apply y w).symm))
   refine hint.trans (Eq.trans (integral_congr_ae (ae_of_all _ fun y ↦ ?_))
-    (hνC' (fun x ↦ Ψ x • T.translatePairing ρ (Φ x))
-      fun x hx ↦ by rw [image_eq_zero_of_notMem_tsupport hx, zero_smul]))
+    ((integral_subtype_comap hCm _).trans
+      (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by
+        rw [image_eq_zero_of_notMem_tsupport hx, zero_smul])))
   simp only [f, map_smul]
   rw [translatePairing_eq T (translateOfMapsTo_apply ρ (hΦρ y y.property))]
 

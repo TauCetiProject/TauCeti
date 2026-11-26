@@ -175,7 +175,7 @@ theorem tensorBump_apply [MeasurableSpace D] [BorelSpace D] (ψ : 𝓓(U, ℝ))
     tensorBump ψ σ hW p = ψ p.fst * σ.normed volume p.snd :=
   (rfl)
 
-/-- The test function `ψ ⊗ ρ` is supported in `supp ψ × closedBall 0 (rOut σ)`. -/
+/-- The test function `ψ ⊗ σ` is supported in `supp ψ × closedBall 0 (rOut σ)`. -/
 theorem tsupport_tensorBump_subset [MeasurableSpace D] [BorelSpace D] (ψ : 𝓓(U, ℝ))
     (σ : ContDiffBump (0 : D))
     (hW : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) σ.rOut, toLp 2 (x, y) ∈ W) :
@@ -588,6 +588,25 @@ theorem tendsto_pullbackInl [MeasurableSpace D] [BorelSpace D] (T : 𝓓'(W, ℂ
     Tendsto (fun i ↦ T (f i)) l (𝓝 (T.pullbackInl hU h ψ)) := by
   rw [pullbackInl_apply]
   exact tendsto_pullbackInlValue T hU h ψ hρM hρ1 hρr hr hf
+
+/-- **The pullback to `E × {0}` as a limit over tensor products with bumps.** If `σ i` are bumps
+centred at `0` whose outer radii tend to zero, then `T (ψ ⊗ σ i)` tends to the pullback of `T`
+evaluated at `ψ`, for the test functions `ψ ⊗ σ i` of `TestFunction.tensorBump`. -/
+theorem tendsto_pullbackInl_tensorBump [MeasurableSpace D] [BorelSpace D] (T : 𝓓'(W, ℂ))
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
+    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) (ψ : 𝓓(U, ℝ))
+    {ι : Type*} {l : Filter ι} {σ : ι → ContDiffBump (0 : D)}
+    (hσ : Tendsto (fun i ↦ (σ i).rOut) l (𝓝 0))
+    (hW : ∀ i, ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) (σ i).rOut, toLp 2 (x, y) ∈ W) :
+    Tendsto (fun i ↦ T (tensorBump ψ (σ i) (hW i))) l (𝓝 (T.pullbackInl hU h ψ)) :=
+  tendsto_pullbackInl T hU h ψ (ρ := fun i ↦ (σ i).normed volume) (M := 1)
+    (Eventually.of_forall fun i ↦ by
+      simp_rw [abs_of_nonneg ((σ i).nonneg_normed _), (σ i).integral_normed, le_refl])
+    (by simp_rw [ContDiffBump.integral_normed, tendsto_const_nhds])
+    (Eventually.of_forall fun i ↦ by
+      simpa only [(σ i).support_normed_eq] using ball_subset_closedBall)
+    hσ (Eventually.of_forall fun _ ↦ tensorBump_apply _ _ _)
 
 /-! ### Linearity and agreement with the restriction of continuous functions -/
 

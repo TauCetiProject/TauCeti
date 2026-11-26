@@ -29,8 +29,8 @@ wave front set does not meet the normal set of `g = k ∘ f` has a pullback `g^*
 (`Distribution.pullback_eq_pullback_compCLMOfSubmersion`, Hörmander I, Theorem 8.2.4). Taking for
 `k` a change of variables, the pullback does not depend on the coordinates in the target. The
 composition with a submersion in the source, `(f ∘ k)^* T = k^* (f^* T)`, is
-`Distribution.pullback_comp_of_surjective`; together they allow pullbacks to be computed chart by
-chart on manifolds.
+`Distribution.pullback_comp_of_surjective`; together they show that the pullback does not depend
+on the coordinates in the source or in the target.
 
 The pullback `f^* T` is defined as the restriction `Distribution.pullbackInl` to `E × {0}` of the
 pullback of `T` along the submersion `(x, y) ↦ f x + y`. So the theorem reduces to the composition
@@ -298,8 +298,7 @@ theorem notMem_waveFrontSet_compCLMOfSubmersion_inl {W : Opens (WithLp 2 (E × D
   rw [(eventuallyEq_of_mem (U.isOpen.mem_nhds hx) hgK).fderiv_eq, hKι,
     fderiv_comp x hKx (inlL2 ℝ E D).differentiableAt, (inlL2 ℝ E D).fderiv,
     ContinuousLinearMap.adjoint_comp, adjoint_inlL2, ContinuousLinearMap.comp_apply, inlL2_apply,
-    hadj]
-  rfl
+    hadj, fstL_apply, toLp_fst]
 
 /-- **Restricting a pullback along a submersion** (Hörmander I, Theorem 8.2.4). Let `F` be a
 submersion from an open set `W` of `E × D` into `Ω'`, with `U × {0} ⊆ W`, and let the wave front
@@ -309,16 +308,7 @@ set of `S` not meet the normal set of `g = (x ↦ F (x, 0))` over `U`. Then rest
 `ι^* (F^* S) = g^* S`, where `ι x = (x, 0)`.
 
 This is the composition rule `(F ∘ ι)^* = ι^* ∘ F^*` for the inclusion `ι`, which is not a
-submersion.
-
-Both sides are limits over shrinking normalized bumps `ρ_n` on `D` and `σ_k` on `E'`. The submersion
-`K (x, (y, z)) = F (x, y) + z` relates them: the numbers `K^* S (ψ ⊗ ρ_n ⊗ σ_k)` converge jointly in
-`n` and `k` to the restriction of `K^* S` to `E × {0}`, because `ρ_n ⊗ σ_k` are again shrinking
-normalized bumps (`Distribution.tendsto_pullbackInl`). For fixed `n`, they tend as `k → ∞` to
-`F^* S (ψ ⊗ ρ_n)`, since the fibre integrals along `K` are mollifications of those along `F`. For
-fixed `k`, they are integrals of the smooth regularization `S_k (w) = S (σ_k (· - w))` against
-`ψ ⊗ ρ_n` along `F`, which tend as `n → ∞` to its integral against `ψ` along `g`, the value of the
-pullback of `S` along `(x, z) ↦ g x + z` at `ψ ⊗ σ_k`. -/
+submersion. -/
 theorem pullbackInl_compCLMOfSubmersion {W : Opens (WithLp 2 (E × D))}
     {F : WithLp 2 (E × D) → E'} (hF : ContDiffOn ℝ ∞ F W) (hFW : MapsTo F W Ω')
     (hsurj : ∀ p ∈ W, Surjective (fderiv ℝ F p))
@@ -465,19 +455,11 @@ theorem pullbackInl_compCLMOfSubmersion {W : Opens (WithLp 2 (E × D))}
       ((σ k).continuous_normed.comp (continuous_const.sub continuous_id)).continuousOn
     simp only [smul_eq_mul] at hint
     rw [← hint]
-    simp only [ContinuousLinearMap.lsmul_apply, smul_eq_mul, mul_comm]
-    rfl
+    simp only [σ, ContinuousLinearMap.lsmul_apply, smul_eq_mul, mul_comm]
   have hR1' : Tendsto (fun n ↦ compCLMOfSubmersion volume volume F hF hFW hsurj S (Φ n)) atTop
       (𝓝 ((compCLMOfSubmersion volume volume F hF hFW hsurj S).pullbackInl hU
         (notMem_waveFrontSet_compCLMOfSubmersion_inl hF hFW hsurj hU hgF h) ψ)) :=
-    tendsto_pullbackInl _ hU _ ψ (l := atTop) (ρ := fun n ↦ (ρ n).normed volume)
-      (r := fun n ↦ (ρ n).rOut) (M := 1) (f := Φ)
-      (Eventually.of_forall fun n ↦ by
-        simp_rw [abs_of_nonneg ((ρ n).nonneg_normed _), (ρ n).integral_normed, le_refl])
-      (by simp_rw [ContDiffBump.integral_normed, tendsto_const_nhds])
-      (Eventually.of_forall fun n ↦ by
-        simpa only [(ρ n).support_normed_eq] using ball_subset_closedBall)
-      (ContDiffBump.tendsto_rOut_shrinking _) (Eventually.of_forall fun _ ↦ tensorBump_apply _ _ _)
+    tendsto_pullbackInl_tensorBump _ hU _ ψ (ContDiffBump.tendsto_rOut_shrinking _) hW₁
   -- (3) For fixed `k`, both sides are integrals of the regularization `S_k` of `S` by `σ_k`.
   set T : ℕ → E' → ℂ := fun k ↦ S.translatePairing (normedBumpTest (σ k))
   have htsσ (k : ℕ) : tsupport (normedBumpTest (σ k)) = closedBall (0 : E') (σ k).rOut :=
@@ -519,14 +501,8 @@ theorem pullbackInl_compCLMOfSubmersion {W : Opens (WithLp 2 (E × D))}
     exact hlim
   have hR2' : Tendsto (fun k ↦ addSndPullback hg S (Ψ k)) atTop (𝓝 (S.pullback g hg hgU h ψ)) := by
     rw [pullback_eq_pullbackInl hg hgU h rfl (notMem_waveFrontSet_addSndPullback hg h)]
-    exact tendsto_pullbackInl _ (mapsTo_inl_addSndDomain hg.continuousOn hgU) _ ψ (l := atTop)
-      (ρ := fun k ↦ (σ k).normed volume) (r := fun k ↦ (σ k).rOut) (M := 1) (f := Ψ)
-      (Eventually.of_forall fun k ↦ by
-        simp_rw [abs_of_nonneg ((σ k).nonneg_normed _), (σ k).integral_normed, le_refl])
-      (by simp_rw [ContDiffBump.integral_normed, tendsto_const_nhds])
-      (Eventually.of_forall fun k ↦ by
-        simpa only [(σ k).support_normed_eq] using ball_subset_closedBall)
-      (ContDiffBump.tendsto_rOut_shrinking _) (Eventually.of_forall fun _ ↦ tensorBump_apply _ _ _)
+    exact tendsto_pullbackInl_tensorBump _ (mapsTo_inl_addSndDomain hg.continuousOn hgU) _ ψ
+      (ContDiffBump.tendsto_rOut_shrinking _) hW₂
   -- (4) The two iterated limits agree with the joint limit.
   exact (tendsto_nhds_unique hR1' (hJ.tendsto_of_forall_tendsto hR1)).trans
     (tendsto_nhds_unique hR2' (hJ.tendsto_of_forall_tendsto' hR2)).symm
@@ -576,13 +552,8 @@ fibres of `k`:
 `g^* S = f^* (k^* S)`.
 
 For a change of variables `k` this is the invariance of the pullback under changes of coordinates
-in the target; together with `Distribution.pullback_comp_of_surjective` for changes of coordinates
-in the source, it shows that the pullback is defined chart by chart on manifolds.
-
-The pullback `f^* (k^* S)` is by definition the restriction to `E × {0}` of the pullback of `k^* S`
-along `(x, y) ↦ f x + y`, which is the pullback of `S` along the submersion
-`(x, y) ↦ k (f x + y)`. Restricting it to `E × {0}` gives the pullback of `S` along
-`x ↦ k (f x) = g x` (`Distribution.pullbackInl_compCLMOfSubmersion`). -/
+in the target; `Distribution.pullback_comp_of_surjective` gives the invariance under changes of
+coordinates in the source. -/
 theorem pullback_eq_pullback_compCLMOfSubmersion (hf : ContDiffOn ℝ ∞ f Ω)
     (hfΩ : MapsTo f Ω Ω') (hk : ContDiffOn ℝ ∞ k Ω') (hkΩ : MapsTo k Ω' Ω'')
     (hksurj : ∀ y ∈ Ω', Surjective (fderiv ℝ k y)) {g : E → E''} (hg : ContDiffOn ℝ ∞ g Ω)

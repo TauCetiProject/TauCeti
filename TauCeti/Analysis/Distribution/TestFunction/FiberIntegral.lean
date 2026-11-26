@@ -458,8 +458,7 @@ theorem fiberIntegralCLM_apply_eq_integral {X : Type*} [NormedAddCommGroup X] [N
     · simp [image_eq_zero_of_notMem_tsupport hq]
   calc ∫ w, g w • φ w ∂ν = ∫ v, Θ v • g (f v) ∂μ := by
         rw [← integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj Θ hg.continuous.continuousOn]
-        simp only [smul_eq_mul, mul_comm]
-        rfl
+        simp only [φ, smul_eq_mul, mul_comm]
     _ = ∫ q, Ψ q.1 * (σ q.2 * g (Φ q.1 + q.2)) ∂(μX.prod ν) := by
         rw [← he.integral_comp' (g := fun q : X × E' ↦ Ψ q.1 * (σ q.2 * g (Φ q.1 + q.2)))]
         refine integral_congr_ae (Eventually.of_forall fun v ↦ ?_)
