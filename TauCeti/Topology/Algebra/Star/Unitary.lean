@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.Algebra.Star.Unitary
 
@@ -25,7 +26,8 @@ of `unitary M` under `Unitary.toUnits`, which is continuous into `Mˣ` because t
 is continuous; this needs only `ContinuousStar M`, and no `T1Space` or `ContinuousMul`.  The
 converse holds because `unitary M` is the image of the subgroup under the continuous `Units.val`.
 
-The canonical equivalence between `unitarySubgroup Mˣ` and `unitary M` is a homeomorphism.
+The canonical group isomorphism between `unitarySubgroup Mˣ` and `unitary M` is a homeomorphism,
+and hence an isomorphism of topological groups.
 It needs only `ContinuousStar M` beyond a topological star monoid, with no separation or
 continuity-of-multiplication assumption.
 
@@ -34,9 +36,10 @@ from; see `TauCeti/Geometry/Lie/Subgroup/Unitary/Basic.lean`.
 
 ## Main results
 
-* `TauCeti.unitarySubgroupUnitsHomeomorph`: the unitary subgroup of the units is homeomorphic
-  to the unitary elements; `TauCeti.unitarySubgroupUnitsHomeomorph_apply` and
-  `TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply` identify its maps.
+* `TauCeti.unitarySubgroupUnitsContinuousMulEquiv`: the unitary subgroup of the units is
+  isomorphic to the unitary elements as a topological group;
+  `TauCeti.unitarySubgroupUnitsContinuousMulEquiv_apply` and
+  `TauCeti.unitarySubgroupUnitsContinuousMulEquiv_symm_apply` identify its maps.
 * `Unitary.continuous_toUnits`: the unitary-to-units homomorphism is continuous.
 * `TauCeti.mem_unitary_units_iff`: a unit is unitary exactly when its underlying element is.
 * `TauCeti.isClosed_unitarySubgroup_units`: the unitary subgroup of `Mˣ` is closed.
@@ -62,9 +65,10 @@ end Unitary
 
 namespace TauCeti
 
-/-- The unitary subgroup of the units is homeomorphic to the unitary elements of the monoid. -/
-def unitarySubgroupUnitsHomeomorph (M : Type*) [Monoid M] [StarMul M] [TopologicalSpace M]
-    [ContinuousStar M] : unitarySubgroup Mˣ ≃ₜ unitary M := by
+/-- The unitary subgroup of the units is isomorphic, as a topological group, to the unitary
+elements of the monoid. -/
+def unitarySubgroupUnitsContinuousMulEquiv (M : Type*) [Monoid M] [StarMul M]
+    [TopologicalSpace M] [ContinuousStar M] : unitarySubgroup Mˣ ≃ₜ* unitary M := by
   have hc : Continuous (unitarySubgroupUnitsEquiv : unitarySubgroup Mˣ → unitary M) := by
     apply continuous_induced_rng.mpr
     simpa only [Function.comp_def, unitarySubgroupUnitsEquiv_apply_coe] using
@@ -74,22 +78,23 @@ def unitarySubgroupUnitsHomeomorph (M : Type*) [Monoid M] [StarMul M] [Topologic
     simpa only [Function.comp_def, coe_unitarySubgroupUnitsEquiv_symm_apply] using
       (Unitary.continuous_toUnits (M := M))
   exact
-    { toEquiv := unitarySubgroupUnitsEquiv.toEquiv
+    { toMulEquiv := unitarySubgroupUnitsEquiv
       continuous_toFun := hc
       continuous_invFun := hc' }
 
-/-- The unitary homeomorphism agrees with the canonical group isomorphism. -/
+/-- The unitary topological group isomorphism agrees with the canonical group isomorphism. -/
 @[simp]
-theorem unitarySubgroupUnitsHomeomorph_apply {M : Type*} [Monoid M] [StarMul M]
+theorem unitarySubgroupUnitsContinuousMulEquiv_apply {M : Type*} [Monoid M] [StarMul M]
     [TopologicalSpace M] [ContinuousStar M] (u : unitarySubgroup Mˣ) :
-    unitarySubgroupUnitsHomeomorph M u = unitarySubgroupUnitsEquiv u := by
+    unitarySubgroupUnitsContinuousMulEquiv M u = unitarySubgroupUnitsEquiv u := by
   rfl
 
-/-- The inverse unitary homeomorphism agrees with the inverse group isomorphism. -/
+/-- The inverse unitary topological group isomorphism agrees with the inverse group
+isomorphism. -/
 @[simp]
-theorem unitarySubgroupUnitsHomeomorph_symm_apply {M : Type*} [Monoid M] [StarMul M]
+theorem unitarySubgroupUnitsContinuousMulEquiv_symm_apply {M : Type*} [Monoid M] [StarMul M]
     [TopologicalSpace M] [ContinuousStar M] (u : unitary M) :
-    (unitarySubgroupUnitsHomeomorph M).symm u = unitarySubgroupUnitsEquiv.symm u := by
+    (unitarySubgroupUnitsContinuousMulEquiv M).symm u = unitarySubgroupUnitsEquiv.symm u := by
   rfl
 
 /-- A unit of a star monoid is unitary exactly when its underlying element is unitary. -/
