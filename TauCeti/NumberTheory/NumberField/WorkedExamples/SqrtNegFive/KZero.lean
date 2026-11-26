@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TrivSqZeroExt.MapEquiv
+public import TauCeti.Algebra.TrivSqZeroExt.ZMod
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.SqrtNegFive.Projective
 public import TauCeti.RingTheory.DedekindDomain.LocallyFree.RankPicard
-public import Mathlib.Data.ZMod.Defs
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 /-!
@@ -31,9 +31,8 @@ every prime localization, squares to zero, and `[𝔭] * [𝔭] = [A]`. The tors
 `K₀(A)` is `{0, x}`; for any Dedekind domain with finite class group the torsion subgroup is the
 image of the class group (`TauCeti.FiniteProjectiveModules.torsion_eq_range_idealClassHom`).
 
-The ring structure of `TrivSqZeroExt ℤ (ZMod 2)` uses a right action of `ℤ` on `ZMod 2`, which
-Mathlib does not provide. This file supplies it, with `IsCentralScalar ℤ (ZMod 2)`, as scoped
-instances in the namespace `TauCeti.NumberField.SqrtNegFive`.
+The ring structure of `TrivSqZeroExt ℤ (ZMod 2)` uses the right action of `ℤ` on `ZMod 2` from
+the scoped instances of `TauCeti.TrivSqZeroExt` (`TauCeti.TrivSqZeroExt.moduleIntMulOppositeZMod`).
 
 ## Main definitions
 
@@ -68,6 +67,7 @@ instances in the namespace `TauCeti.NumberField.SqrtNegFive`.
 public section
 
 open QuadraticAlgebra TauCeti.FiniteProjectiveModules
+open scoped TauCeti.TrivSqZeroExt
 
 namespace TauCeti.NumberField.SqrtNegFive
 
@@ -120,15 +120,6 @@ theorem classGroupEquiv_symm_one :
 
 /-! ### The ring `K₀(ℤ[√-5])` -/
 
-/-- The right action of `ℤ` on `ℤ/2`, agreeing with the left action, which makes the trivial
-square-zero extension `ℤ ⋉ ℤ/2` a ring. -/
-scoped instance moduleIntMulOppositeZModTwo : Module ℤᵐᵒᵖ (ZMod 2) :=
-  Module.compHom _ ((RingHom.id ℤ).fromOpposite mul_comm)
-
-/-- The right and left actions of `ℤ` on `ℤ/2` agree. -/
-scoped instance isCentralScalarIntZModTwo : IsCentralScalar ℤ (ZMod 2) :=
-  ⟨fun _ _ ↦ rfl⟩
-
 /-- **Projective `K₀` of `ℤ[√-5]` as a ring.** Rank and Steinitz class identify projective
 `K₀(ℤ[√-5])` with the trivial square-zero extension `ℤ ⋉ ℤ/2`. The class of the ring goes to
 `(1, 0)` and the class of `𝔭 = (2, 1 + √-5)` to `(1, 1)`. -/
@@ -165,12 +156,6 @@ theorem splitK0RingEquiv_symm_apply (x : TrivSqZeroExt ℤ (ZMod 2)) :
 
 namespace primeAboveTwo
 
-/-- The class `[𝔭]` is the reduced class `[𝔭] - [A]` plus the unit `[A]` of the ring `K₀`. -/
-private theorem of_eq_classOf_add_one :
-    SplitK0.of.{0} (of (QuadraticAlgebra ℤ (-5) 0) primeAboveTwo) =
-      classOf (QuadraticAlgebra ℤ (-5) 0) primeAboveTwo 1 + 1 := by
-  rw [classOf_def, one_smul, splitK0_of_self, sub_add_cancel]
-
 /-- The reduced class `[𝔭] - [A]` of `𝔭 = (2, 1 + √-5)` goes to `(0, 1)` in `ℤ ⋉ ℤ/2`. -/
 @[simp]
 theorem splitK0RingEquiv_classOf :
@@ -184,8 +169,8 @@ theorem splitK0RingEquiv_classOf :
 theorem splitK0RingEquiv_of :
     splitK0RingEquiv (SplitK0.of.{0} (of (QuadraticAlgebra ℤ (-5) 0) primeAboveTwo)) =
       TrivSqZeroExt.inl 1 + TrivSqZeroExt.inr 1 := by
-  rw [of_eq_classOf_add_one, map_add, map_one, splitK0RingEquiv_classOf, TrivSqZeroExt.inl_one,
-    add_comm]
+  rw [splitK0_of_eq_classOf_add _ 1, Nat.cast_one, map_add, map_one, splitK0RingEquiv_classOf,
+    TrivSqZeroExt.inl_one, add_comm]
 
 /-- **The reduced class `[𝔭] - [A]` squares to zero** in the ring `K₀(ℤ[√-5])`. -/
 theorem classOf_mul_classOf :
@@ -198,7 +183,7 @@ theorem classOf_mul_classOf :
 theorem of_mul_of :
     SplitK0.of.{0} (of (QuadraticAlgebra ℤ (-5) 0) primeAboveTwo) *
       SplitK0.of.{0} (of (QuadraticAlgebra ℤ (-5) 0) primeAboveTwo) = 1 := by
-  rw [of_eq_classOf_add_one]
+  rw [splitK0_of_eq_classOf_add _ 1, Nat.cast_one]
   linear_combination classOf_mul_classOf + two_nsmul_classOf
 
 end primeAboveTwo
