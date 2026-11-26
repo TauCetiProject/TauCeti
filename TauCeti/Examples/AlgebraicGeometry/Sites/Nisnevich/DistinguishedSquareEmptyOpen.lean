@@ -79,26 +79,6 @@ theorem isEmpty_iso_realComplexToReal (Q : ElementaryDistinguishedSquare (Spec (
     [IsEmpty Q.U] : IsEmpty (Over.mk Q.p ≅ Over.mk realComplexToReal) :=
   Q.isEmpty_iso_of_not_isIso _ not_isIso_realComplexToReal
 
-/-- The residue field map of `Spec ℂ ⟶ Spec ℝ` is not an isomorphism: `ℝ → ℂ` is not
-surjective. -/
-theorem not_isIso_residueFieldMap_SpecAlgebraMap (b : Spec (.of ℂ)) :
-    ¬ IsIso ((Spec.algebraMap ℝ ℂ).residueFieldMap b) := by
-  intro h
-  have := b.isPrime
-  rw [RingHom.isIso_SpecMap_residueFieldMap_iff _ _ _ rfl] at h
-  have : b.asIdeal.IsMaximal := by
-    rw [b.asIdeal.eq_bot_of_prime]
-    infer_instance
-  have : (b.asIdeal.comap (algebraMap ℝ ℂ)).IsMaximal := by
-    rw [(b.asIdeal.comap _).eq_bot_of_prime]
-    infer_instance
-  -- The class of `i` in `κ(b)` would be the image of a real number.
-  obtain ⟨y, hy⟩ := h.2 (algebraMap ℂ b.asIdeal.ResidueField Complex.I)
-  obtain ⟨r, rfl⟩ := Ideal.algebraMap_residueField_surjective _ y
-  rw [Ideal.ResidueField.map_algebraMap] at hy
-  have := congrArg Complex.im ((algebraMap ℂ b.asIdeal.ResidueField).injective hy)
-  simp at this
-
 /-- `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ` restricts to the identity on `Spec ℝ`. -/
 theorem realComplexToReal_inl (a : Spec (.of ℝ)) :
     realComplexToReal ((coprod.inl : Spec (.of ℝ) ⟶ _) a) = a := by
@@ -124,8 +104,10 @@ theorem not_isIso_residueFieldMap_realComplexToReal_inr (b : Spec (.of ℂ)) :
       inferInstance
     rw [Scheme.residueFieldMap_comp]
     exact IsIso.comp_isIso' h inferInstance
-  rw [coprod.inr_desc] at this
-  exact not_isIso_residueFieldMap_SpecAlgebraMap b this
+  rw [coprod.inr_desc, RingHom.isIso_SpecMap_residueFieldMap_iff_surjective] at this
+  -- `i` is not real.
+  obtain ⟨r, hr⟩ := this Complex.I
+  simpa using congrArg Complex.im hr
 
 /-- **The pointwise clause holds for `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ`**: over the point of `Spec ℝ`
 there is exactly one point with an isomorphism of residue fields, the point of `Spec ℝ`. -/

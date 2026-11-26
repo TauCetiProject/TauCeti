@@ -37,17 +37,9 @@ example (k K : Type u) [Field k] [Field K] [Algebra k K] (h : Module.finrank k K
       (fun _ : PUnit.{u + 1} ↦ Spec.map (CommRingCat.ofHom (algebraMap k K))) := by
   intro hc
   obtain ⟨-, x, -, hx⟩ := hc.exists_isIso (IsLocalRing.closedPoint k)
-  have := x.isPrime
-  rw [RingHom.isIso_SpecMap_residueFieldMap_iff _ x _ rfl] at hx
-  -- The residue field of the field `k` at its prime is `k`, so `k → K` is onto.
-  have hb : Function.Bijective (algebraMap k K) := by
-    refine ⟨(algebraMap k K).injective, fun y ↦ ?_⟩
-    obtain ⟨w, hw⟩ := hx.2 (algebraMap K x.asIdeal.ResidueField y)
-    obtain ⟨r, rfl⟩ :=
-      (Ideal.algEquivResidueFieldOfField (x.asIdeal.comap (algebraMap k K))).surjective w
-    refine ⟨r, (algebraMap K x.asIdeal.ResidueField).injective ?_⟩
-    rw [← hw, Ideal.algEquivResidueFieldOfField_apply, Ideal.ResidueField.map_algebraMap]
-  have := (LinearEquiv.ofBijective (Algebra.linearMap k K) hb).finrank_eq
+  rw [RingHom.isIso_SpecMap_residueFieldMap_iff_surjective] at hx
+  have := (LinearEquiv.ofBijective (Algebra.linearMap k K)
+    ⟨(algebraMap k K).injective, hx⟩).finrank_eq
   rw [Module.finrank_self] at this
   omega
 
