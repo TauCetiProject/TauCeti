@@ -55,6 +55,9 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
 * `AdjoinRoot.basisXPowSubC`: for `n ≠ 0`, the basis `1, root, …, root ^ (n - 1)` of
   `R[X]/(X ^ n - C a)` indexed by `Fin n`, over any nontrivial commutative ring. It is Mathlib's
   `AdjoinRoot.powerBasis'` reindexed along `natDegree (X ^ n - C a) = n`.
+  `AdjoinRoot.basisXPowSubC_repr_root_pow`, `AdjoinRoot.basisXPowSubC_repr_algebraMap_mul_root_pow`
+  and `AdjoinRoot.basisXPowSubC_repr_root_pow_self` give the coordinates of `c root ^ k` and of
+  `root ^ n = a` in this basis.
 * `AdjoinRoot.isUnit_mk_iff_isCoprime`: the class of `g` is a unit of `AdjoinRoot f` exactly when
   `f` and `g` are coprime.
 * `AdjoinRoot.exists_of_pow_mul_eq_of_C_mul_X_sub_C`: for any `a, g ∈ R`, a power of `a` carries
@@ -274,6 +277,28 @@ noncomputable def basisXPowSubC [Nontrivial R] (n : ℕ) [NeZero n] (a : R) :
 theorem basisXPowSubC_apply [Nontrivial R] (n : ℕ) [NeZero n] (a : R) (i : Fin n) :
     basisXPowSubC n a i = root (X ^ n - C a) ^ (i : ℕ) := by
   simp [basisXPowSubC]
+
+/-- The power `root ^ k` with `k < n` has the single coordinate `1` at `k` in
+`AdjoinRoot.basisXPowSubC`. -/
+@[simp]
+theorem basisXPowSubC_repr_root_pow [Nontrivial R] (n : ℕ) [NeZero n] (a : R) (k : Fin n) :
+    (basisXPowSubC n a).repr (root (X ^ n - C a) ^ (k : ℕ)) = Finsupp.single k 1 := by
+  rw [← basisXPowSubC_apply, Module.Basis.repr_self]
+
+/-- A scalar multiple `c root ^ k` with `k < n` has the single coordinate `c` at `k` in
+`AdjoinRoot.basisXPowSubC`. Not `@[simp]`: `algebraMap` is not in simp normal form here
+(`AdjoinRoot.algebraMap_eq`). -/
+theorem basisXPowSubC_repr_algebraMap_mul_root_pow [Nontrivial R] (n : ℕ) [NeZero n] (a c : R)
+    (k : Fin n) :
+    (basisXPowSubC n a).repr (algebraMap R _ c * root (X ^ n - C a) ^ (k : ℕ)) =
+      Finsupp.single k c := by
+  rw [← Algebra.smul_def, map_smul, basisXPowSubC_repr_root_pow, Finsupp.smul_single_one]
+
+/-- The power `root ^ n = a` has the single coordinate `a` at `0` in `AdjoinRoot.basisXPowSubC`.
+Not `@[simp]`: simp rewrites `root ^ n` to `of _ a` (`AdjoinRoot.root_X_pow_sub_C_pow`). -/
+theorem basisXPowSubC_repr_root_pow_self [Nontrivial R] (n : ℕ) [NeZero n] (a : R) :
+    (basisXPowSubC n a).repr (root (X ^ n - C a) ^ n) = Finsupp.single 0 a := by
+  simpa using basisXPowSubC_repr_algebraMap_mul_root_pow n a a 0
 
 /-- `R[X]/(X ^ n - C a)` is nontrivial over a nontrivial commutative ring when `n ≠ 0`, since
 `X ^ n - C a` is monic of positive degree. -/

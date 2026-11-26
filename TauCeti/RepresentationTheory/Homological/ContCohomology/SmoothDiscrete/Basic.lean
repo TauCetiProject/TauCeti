@@ -49,6 +49,8 @@ provide the basic examples of smooth discrete objects used by coefficient constr
   `TopRep R G`, read off from its operators.
 * `TauCeti.ofDiscreteModuleMap`: a `G`-equivariant `R`-linear map of discrete modules as a
   morphism of `TopRep R G`.
+* `TauCeti.ofDiscreteModuleSMulMap`: multiplication by a scalar `r`, as an endomorphism of
+  `ofDiscreteModule ℤ G M`.
 * `TauCeti.ofDiscreteModuleIso`: a `G`-equivariant `R`-linear equivalence of discrete modules as an
   isomorphism of `TopRep R G`.
 * `TauCeti.ofDiscreteModulePair`: a compatible pair `(φ : H →* G, f : M →ₗ[R] N)` as the morphism
@@ -83,6 +85,8 @@ provide the basic examples of smooth discrete objects used by coefficient constr
   underlying module.
 * `TauCeti.ofDiscreteModuleHomAddEquiv`: morphisms between objects in the image are exactly the
   `G`-equivariant `R`-linear maps.
+* `TauCeti.ofDiscreteModuleMap_toDistribMulActionHom`: `ofDiscreteModuleSMulMap` is the image of
+  Mathlib's equivariant map `SMulCommClass.toDistribMulActionHom`.
 * `TauCeti.ofDiscreteModulePair_eq_of_hom_apply`: the compatible pair is the only morphism with its
   underlying map, which is how statements phrased with it are specialised;
   `TauCeti.ofDiscreteModulePair_heq_of_hom_apply` is its heterogeneous form, for group
@@ -551,6 +555,39 @@ acting as `f`. -/
     ((ofDiscreteModuleHomAddEquiv R G M N).symm f).hom m = f m := (rfl)
 
 end Dictionary
+
+/-! ### Multiplication by a scalar -/
+
+section SMulMap
+
+variable {R : Type u} {G : Type v} [Monoid G]
+  {M : Type w} [AddCommGroup M] [DistribSMul R M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [SMulCommClass G R M]
+
+variable (G M) in
+/-- Multiplication by a scalar `r` on a discrete module `M`, as an endomorphism of
+`ofDiscreteModule ℤ G M`; it is equivariant because the action of `G` commutes with the scalars.
+Use `ofDiscreteModuleSMulMap_hom_apply` to evaluate it. -/
+def ofDiscreteModuleSMulMap (r : R) : ofDiscreteModule ℤ G M ⟶ ofDiscreteModule ℤ G M :=
+  ofDiscreteModuleMap (DistribSMul.toAddMonoidHom M r).toIntLinearMap
+    fun g m ↦ (smul_comm g r m).symm
+
+/-- `ofDiscreteModuleSMulMap G M r` acts on the module as `r • ·`. -/
+@[simp]
+theorem ofDiscreteModuleSMulMap_hom_apply (r : R) (m : M) :
+    (ofDiscreteModuleSMulMap G M r).hom m = r • m :=
+  (rfl)
+
+/-- `ofDiscreteModuleSMulMap G M r` is the endomorphism of `ofDiscreteModule ℤ G M` given by
+Mathlib's equivariant map `SMulCommClass.toDistribMulActionHom G M r`. -/
+theorem ofDiscreteModuleMap_toDistribMulActionHom [SMulCommClass R G M] (r : R) :
+    ofDiscreteModuleMap (SMulCommClass.toDistribMulActionHom G M r).toAddMonoidHom.toIntLinearMap
+      (fun g m ↦ map_smul (SMulCommClass.toDistribMulActionHom G M r) g m) =
+      ofDiscreteModuleSMulMap G M r :=
+  TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ (ofDiscreteModuleMap_hom_apply _ _ m).trans
+    (ofDiscreteModuleSMulMap_hom_apply (G := G) r m).symm)
+
+end SMulMap
 
 /-! ### The dictionary on compatible pairs -/
 

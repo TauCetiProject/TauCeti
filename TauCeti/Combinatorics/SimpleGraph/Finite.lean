@@ -35,6 +35,7 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
   graph it generates.
 * `SimpleGraph.edgeFinset_symmDiff` — the edge finset of `G₁ ∆ G₂` is
   `G₁.edgeFinset ∆ G₂.edgeFinset`.
+* `SimpleGraph.degree_sup_of_disjoint` — degrees add over the union of edge-disjoint graphs.
 * `SimpleGraph.prod_filter_le_le_eq_prod_Icc_edgeFinset` and its additive version
   `SimpleGraph.sum_filter_le_le_eq_sum_Icc_edgeFinset` — a product (sum) over the graphs between
   `F` and `H` of a function of their edge finsets is the product (sum) of that function over
@@ -122,6 +123,14 @@ theorem edgeFinset_symmDiff {G₁ G₂ : SimpleGraph V} [Fintype G₁.edgeSet] [
     (G₁ ∆ G₂).edgeFinset = G₁.edgeFinset ∆ G₂.edgeFinset := by
   ext e
   simp only [mem_edgeFinset, edgeSet_symmDiff, Finset.mem_symmDiff, Set.mem_symmDiff]
+
+/-- In the union of two edge-disjoint graphs, the degree of a vertex is the sum of its degrees in
+the two graphs. -/
+theorem degree_sup_of_disjoint {G₁ G₂ : SimpleGraph V} (v : V)
+    [Fintype ((G₁ ⊔ G₂).neighborSet v)] [Fintype (G₁.neighborSet v)] [Fintype (G₂.neighborSet v)]
+    (h : Disjoint G₁ G₂) : (G₁ ⊔ G₂).degree v = G₁.degree v + G₂.degree v := by
+  simp only [← card_neighborFinset_eq_degree, neighborFinset_sup_of_disjoint _ h,
+    card_disjUnion]
 
 variable [Fintype V] [DecidableEq V] [CommMonoid M]
 

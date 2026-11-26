@@ -16,7 +16,9 @@ the fibre over `U`. The action `AbelianBanding.act` of `A(U)` on the isomorphism
 multiplicative action (`AbelianBanding.isomMulAction`), so `x ≅ y` is an object of the category
 of `A(U)`-sets (`AbelianBanding.fiberAction`), and postcomposition with `q : y ≅ z` is an
 isomorphism of `A(U)`-sets (`AbelianBanding.postcomposeActionIso`), functorial in `q`. The
-`A(U)`-set `x ≅ y` may be empty. These fibre actions are the input for a functor from
+`A(U)`-set `x ≅ y` may be empty. Pulling back along `f : V ⟶ U` is a map of `A(U)`-sets to the
+isomorphisms over `V`, on which `A(U)` acts through the restriction `A(U) → A(V)`
+(`AbelianBanding.restrictActionHom`). These fibre actions are the input for a functor from
 band-preserving transformations to `A(U)`-sets (Olsson, Definition 31.1, Remark 31.2, Lemma 31.3
 and Remark 31.5).
 
@@ -28,6 +30,8 @@ In the namespace `CategoryTheory.Pseudofunctor.AbelianBanding`:
   `fiberAction_ρ_apply` and `isEmpty_fiberAction_V`.
 * `postcomposeActionIso`: postcomposition with `q : y ≅ z`, with `postcomposeActionIso_hom_hom`,
   `postcomposeActionIso_inv_hom`, `postcomposeActionIso_refl`, `postcomposeActionIso_trans`.
+* `restrictActionHom`: pulling back along `f : V ⟶ U`, a map of `A(U)`-sets to the fibre action
+  over `V` restricted along `A(U) → A(V)`, with `restrictActionHom_hom_apply`.
 
 ## References
 
@@ -127,5 +131,31 @@ theorem postcomposeActionIso_trans {w : F.obj (.mk (op U))} (q : y ≅ z) (r : z
   simp only [TypeCat.Fun.toFun_apply, Iso.trans_hom, Action.comp_hom, comp_apply,
     b.postcomposeActionIso_hom_hom _ p, postcomposeActionIso_hom_hom]
   exact (Iso.trans_assoc p q r).symm
+
+variable {V : C} (f : V ⟶ U)
+
+/-- **Restriction of fibre isomorphisms** along `f : V ⟶ U`: pulling back `p : x ≅ y` along `f`
+is a map of `A(U)`-sets from `x ≅ y` to the isomorphisms `F(f) x ≅ F(f) y`, on which `A(U)` acts
+through the restriction `A(U) → A(V)` (`AbelianBanding.mapIso_act`). It needs no isomorphism
+`x ≅ y` to exist. -/
+def restrictActionHom (x y : F.obj (.mk (op U))) :
+    b.fiberAction x y ⟶
+      (Action.res _ (AddMonoidHom.toMultiplicative (A.obj.map f.op).hom)).obj
+        (b.fiberAction ((F.map f.op.toLoc).toFunctor.obj x)
+          ((F.map f.op.toLoc).toFunctor.obj y)) where
+  hom := TypeCat.ofHom fun p : x ≅ y ↦ (F.map f.op.toLoc).toFunctor.mapIso p
+  comm a := by
+    ext (p : x ≅ y)
+    -- The carriers of `fiberAction` are isomorphisms only after unfolding; see
+    -- `postcomposeActionIso`.
+    change (F.map f.op.toLoc).toFunctor.mapIso (b.act p a) =
+      b.act ((F.map f.op.toLoc).toFunctor.mapIso p) (.ofAdd (A.obj.map f.op a.toAdd))
+    exact b.mapIso_act f p a
+
+/-- `restrictActionHom` pulls back `p` along `f`. -/
+@[simp]
+theorem restrictActionHom_hom_apply (p : x ≅ y) :
+    (b.restrictActionHom f x y).hom p = (F.map f.op.toLoc).toFunctor.mapIso p :=
+  (rfl)
 
 end CategoryTheory.Pseudofunctor.AbelianBanding
