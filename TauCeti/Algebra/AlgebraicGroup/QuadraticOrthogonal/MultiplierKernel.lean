@@ -76,10 +76,9 @@ theorem mem_quotientPointsSubgroup_multiplierKernelHopfIdeal_iff {A : Type u} [C
         (multiplierKernelHopfIdeal R n q) (CommAlgCat.of R A) ↔
       pointsMulEquiv R n q (A := A) f ∈ (multiplierPoints R n q A).ker := by
   rw [multiplierKernelHopfIdeal_def, ← CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff,
-    ← MulEquiv.map_eq_one_iff MultiplicativeGroup.pointsMulEquiv, MonoidHom.mem_ker,
-    ← Units.val_eq_one, ← Units.val_eq_one, multiplierPoints_pointsMulEquiv,
-    MultiplicativeGroup.pointsMulEquiv_apply, laurentEvalEquiv_symm_apply, ofConv_toConv,
-    AlgHom.comp_apply, BialgHom.coe_toAlgHom]
+    ← MulEquiv.map_eq_one_iff MultiplicativeGroup.pointsMulEquiv, mem_ker_multiplierPoints_iff,
+    ← Units.val_eq_one, ← Units.val_eq_one, pointsMulEquiv_snd]
+  simp [MultiplicativeGroup.pointsMulEquiv_apply]
 
 /-- The points of `GO(q)` whose similitude has multiplier `1`. -/
 noncomputable def multiplierKernelPoints (A : CommAlgCat.{u} R) :
@@ -130,12 +129,18 @@ theorem coe_pointsMulEquiv_multiplierKernelPointsMulEquiv_symm (A : CommAlgCat.{
   exact congrArg (fun p : pointsSubgroup R n q A ↦ (p : GL (Fin n) A × Aˣ))
     (MulEquiv.subgroupCongr_symm_apply _ _)
 
+/-- Change of value algebra preserves the points with multiplier `1`. -/
+theorem mapValue_mem_multiplierKernelPoints {A B : CommAlgCat.{u} R} (φ : A ⟶ B)
+    (f : multiplierKernelPoints R n q A) :
+    AlgHom.mapValue φ.hom (f : HopfAlgebra.points (R := R)
+      (H := coordinateHopfAlgebra R n q) A) ∈ multiplierKernelPoints R n q B :=
+  CommHopfAlgCat.le_comap_mapValue_of_forall_mem_iff _ _ (multiplierKernelPoints R n q)
+    (fun _ f ↦ mem_quotientPointsSubgroup_multiplierKernelHopfIdeal_iff R n q f) φ f.property
+
 /-- `multiplierKernelPointsMulEquiv` commutes with change of value algebra. -/
-private theorem multiplierKernelPointsMulEquiv_natural {A B : CommAlgCat.{u} R} (φ : A ⟶ B)
-    (f : multiplierKernelPoints R n q A)
-    (hf : AlgHom.mapValue φ.hom (f : HopfAlgebra.points (R := R)
-      (H := coordinateHopfAlgebra R n q) A) ∈ multiplierKernelPoints R n q B) :
-    multiplierKernelPointsMulEquiv R n q B ⟨_, hf⟩ =
+theorem multiplierKernelPointsMulEquiv_mapValue {A B : CommAlgCat.{u} R} (φ : A ⟶ B)
+    (f : multiplierKernelPoints R n q A) :
+    multiplierKernelPointsMulEquiv R n q B ⟨_, mapValue_mem_multiplierKernelPoints R n q φ f⟩ =
       HopfAlgebra.mapPoints φ (multiplierKernelPointsMulEquiv R n q A f) := by
   apply (QuadraticOrthogonal.pointsMulEquiv R n q B).injective
   apply Subtype.ext
@@ -160,7 +165,44 @@ noncomputable def multiplierKernelPointsIso :
       ext f
       -- Both composites compute as `multiplierKernelPointsMulEquiv` and postcomposition with
       -- `φ`; the explicitly typed naturality theorem avoids unfolding them.
-      exact multiplierKernelPointsMulEquiv_natural R n q φ f _)
+      exact multiplierKernelPointsMulEquiv_mapValue R n q φ f)
+
+/-- The point of `O(q)` attached to a point of the quotient by `multiplierKernelHopfIdeal` is the
+matrix of its image in `GO(q)`. -/
+@[simp]
+theorem coe_pointsMulEquiv_multiplierKernelPointsIso_hom_app (A : CommAlgCat.{u} R)
+    (f : HopfAlgebra.points (R := R) (H := CommHopfAlgCat.quotient
+      (coordinateHopfAlgebra R n q) (multiplierKernelHopfIdeal R n q)) A) :
+    (QuadraticOrthogonal.pointsMulEquiv R n q A ((multiplierKernelPointsIso R n q).hom.app A f) :
+        GL (Fin n) A) =
+      ((pointsMulEquiv R n q (A := A) (CommHopfAlgCat.quotientPointsHom _ _ A f) :
+        pointsSubgroup R n q A) : GL (Fin n) A × Aˣ).1 := by
+  rw [← CommHopfAlgCat.coe_quotientPointsSubgroupRepresentingIso_hom_app_apply _ _
+    (multiplierKernelPoints R n q)
+    (fun _ f ↦ mem_quotientPointsSubgroup_multiplierKernelHopfIdeal_iff R n q f)]
+  -- The component of `multiplierKernelPointsIso` is by definition that of the representing
+  -- isomorphism followed by `multiplierKernelPointsMulEquiv`.
+  exact coe_pointsMulEquiv_multiplierKernelPointsMulEquiv R n q A _
+
+/-- The point of `GO(q)` underlying the quotient point attached to a point `g` of `O(q)` is the
+similitude `(g, 1)`. -/
+@[simp]
+theorem coe_pointsMulEquiv_quotientPointsHom_multiplierKernelPointsIso_inv_app
+    (A : CommAlgCat.{u} R)
+    (g : HopfAlgebra.points (R := R) (H := QuadraticOrthogonal.coordinateHopfAlgebra R n q) A) :
+    ((pointsMulEquiv R n q (A := A) (CommHopfAlgCat.quotientPointsHom _ _ A
+        ((multiplierKernelPointsIso R n q).inv.app A g)) : pointsSubgroup R n q A) :
+          GL (Fin n) A × Aˣ) =
+      ((QuadraticOrthogonal.pointsMulEquiv R n q A g : GL (Fin n) A), 1) := by
+  -- The component of `multiplierKernelPointsIso.inv` is by definition the inverse of
+  -- `multiplierKernelPointsMulEquiv` followed by that of the representing isomorphism.
+  rw [← coe_pointsMulEquiv_multiplierKernelPointsMulEquiv_symm]
+  exact congrArg (fun f ↦ ((pointsMulEquiv R n q (A := A) f : pointsSubgroup R n q A) :
+    GL (Fin n) A × Aˣ))
+    (CommHopfAlgCat.quotientPointsHom_quotientPointsSubgroupRepresentingIso_inv_app_apply _ _
+      (multiplierKernelPoints R n q)
+      (fun _ f ↦ mem_quotientPointsSubgroup_multiplierKernelHopfIdeal_iff R n q f) A
+      ((multiplierKernelPointsMulEquiv R n q A).symm g))
 
 /-- **`O(q)` is the kernel of the multiplier `ν : GO(q) → 𝔾_m`**: the coordinate Hopf algebra of
 `O(q)` is isomorphic to the quotient of that of `GO(q)` by the kernel Hopf ideal of `ν`. The
@@ -171,6 +213,7 @@ noncomputable def multiplierKernelCoordinateIso :
   ((CommHopfAlgCat.pointsFunctor (R := R)).preimageIso (multiplierKernelPointsIso R n q)).unop
 
 /-- On points, `multiplierKernelCoordinateIso` is `multiplierKernelPointsIso`. -/
+@[simp]
 theorem mapPointsFunctor_multiplierKernelCoordinateIso_hom :
     CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u} (multiplierKernelCoordinateIso R n q).hom =
       (multiplierKernelPointsIso R n q).hom :=
