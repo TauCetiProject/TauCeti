@@ -33,14 +33,6 @@ namespace TauCeti
 variable {X Y : Type*} [PseudoMetricSpace Y]
   {f : X → Y} {g : X → ℝ} {o : Y} {R C : ℝ}
 
-private theorem sq_le_four_mul_of_sqrt_le {a b : ℝ} (hb : 0 ≤ b) (h : √a ≤ 2 * √b) :
-    a ≤ 4 * b := by
-  by_cases ha : 0 ≤ a
-  · have h₀ : -(2 * √b) ≤ √a := by linarith [Real.sqrt_nonneg a, Real.sqrt_nonneg b]
-    nlinarith [sq_le_sq' h₀ h,
-      Real.sq_sqrt ha, Real.sq_sqrt hb]
-  · linarith
-
 private theorem exists_pointPicking_of_strict_margin
     (hB : ∀ r < R, BddAbove (g '' (f ⁻¹' closedBall o r))) {b : X}
     (hb : 0 < g b) (hbr : dist (f b) o + 2 * (C / √(g b)) < R) :
@@ -68,9 +60,9 @@ private theorem exists_pointPicking_of_strict_margin
         (Real.sqrt_le_sqrt (hG (mem_image_of_mem g hz))) (sub_nonneg.mpr hd)
       _ ≤ r * √G := mul_le_mul_of_nonneg_right (sub_le_self _ dist_nonneg) (Real.sqrt_nonneg _)
   have hsup := hbweight.trans_le (le_csSup hbounded (mem_image_of_mem w hbS))
+  have hmid : (sSup (w '' S) + 2 * C) / 2 < sSup (w '' S) := by linarith
   obtain ⟨_, ⟨y, hyS, rfl⟩, hy⟩ :=
-    exists_lt_of_lt_csSup ⟨w b, mem_image_of_mem w hbS⟩
-      (show (sSup (w '' S) + 2 * C) / 2 < sSup (w '' S) by linarith)
+    exists_lt_of_lt_csSup ⟨w b, mem_image_of_mem w hbS⟩ hmid
   have hyweight : 2 * C < w y := by linarith
   have hypos : 0 < √(g y) :=
     pos_of_mul_pos_right (lt_of_le_of_lt (by positivity) hyweight)
@@ -81,8 +73,8 @@ private theorem exists_pointPicking_of_strict_margin
     nlinarith
   refine ⟨y, Real.sqrt_pos.1 hypos, by linarith, fun z hz ↦ ?_⟩
   by_contra! h
-  have hroot := lt_of_not_ge fun h' ↦ h.not_ge
-    (sq_le_four_mul_of_sqrt_le (Real.sqrt_pos.1 hypos).le h')
+  have hroot : 2 * √(g y) < √(g z) :=
+    (Real.lt_sqrt (by positivity)).2 (by nlinarith [Real.sq_sqrt (Real.sqrt_pos.1 hypos).le])
   have hdz : dist (f z) o < dist (f y) o + C / √(g y) := by
     linarith [dist_triangle (f z) (f y) o, mem_ball.1 hz]
   have hdzr : dist (f z) o < r := by linarith [mem_closedBall.mp hyS]
@@ -128,10 +120,9 @@ theorem exists_pointPicking_of_isCompact_preimage (hR : 0 < R) (hC : C ≠ 0)
   have hs {y : X} (hy : 0 < g y) : 0 < s y := div_pos hC' (Real.sqrt_pos.2 hy)
   have hxR : dist (f x) o + 2 * s x ≤ R := by
     have hxR' : dist (f x) o ≤ R / 2 := hx
-    have hroot : (4 * |C| / R) ≤ √(g x) := by
-      rw [← Real.sqrt_sq (show 0 ≤ (4 * |C| / R) by positivity)]
-      apply Real.sqrt_le_sqrt
-      simpa only [div_pow, mul_pow, sq_abs, show (4 : ℝ) ^ 2 = 16 by norm_num] using hxg
+    have hroot : (4 * |C| / R) ≤ √(g x) := Real.le_sqrt_of_sq_le (by
+      norm_num [div_pow, mul_pow, sq_abs]
+      exact hxg)
     have hscale : s x ≤ R / 4 := by
       dsimp [s]
       apply (div_le_iff₀ (Real.sqrt_pos.2 hxpos)).2
@@ -141,15 +132,16 @@ theorem exists_pointPicking_of_isCompact_preimage (hR : 0 < R) (hC : C ≠ 0)
       ∀ z, f z ∈ ball (f y) (s y) → g z ≤ 4 * g y by
     obtain ⟨y, hy, hyR, hgood⟩ := H
     refine ⟨y, s y, hs hy, by linarith [hs hy], hgood, ?_⟩
-    rw [eq_div_iff (pow_ne_zero _ (hs hy).ne'), show s y ^ 2 = C ^ 2 / g y by
-      change (|C| / √(g y)) ^ 2 = C ^ 2 / g y
-      rw [div_pow, sq_abs, Real.sq_sqrt hy.le], mul_div_cancel₀ _ hy.ne']
+    have hsq : s y ^ 2 = C ^ 2 / g y := by
+      dsimp only [s]
+      rw [div_pow, sq_abs, Real.sq_sqrt hy.le]
+    rw [eq_div_iff (pow_ne_zero _ (hs hy).ne'), hsq, mul_div_cancel₀ _ hy.ne']
   by_cases hgood : ∀ z, f z ∈ ball (f x) (s x) → g z ≤ 4 * g x
   · exact ⟨x, hxpos, hxR, hgood⟩
   push Not at hgood
   obtain ⟨z, hz, hzg⟩ := hgood
-  have hxz : 2 * √(g x) < √(g z) := lt_of_not_ge fun h ↦
-    hzg.not_ge (sq_le_four_mul_of_sqrt_le hxpos.le h)
+  have hxz : 2 * √(g x) < √(g z) :=
+    (Real.lt_sqrt (by positivity)).2 (by nlinarith [Real.sq_sqrt hxpos.le])
   have hzpos : 0 < g z := by linarith
   have hscale : 2 * s z < s x := by
     dsimp [s]
