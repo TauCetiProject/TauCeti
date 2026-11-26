@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.VectorNormalizer.Zero
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.LowRank.One
 import TauCeti.LinearAlgebra.CliffordAlgebra.LowRank.Two
+import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 
 /-!
 # The general spin group in ranks zero, one and two
@@ -149,16 +150,16 @@ end One
 
 /-! ### Rank two: the hyperbolic plane -/
 
-section Two
+section HyperbolicPlaneTorus
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
-  {e f : V}
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {Q : QuadraticForm R M}
+  {e f : M}
 
 variable (Q) in
 /-- **The torus of a hyperbolic plane** `(c, t) ↦ c u(t)`, `u(t) = t e f + f e`, as a
-homomorphism `Kˣ × Kˣ →* GSpin(Q)`. -/
+homomorphism `Rˣ × Rˣ →* GSpin(Q)`. -/
 noncomputable def hyperbolicPlaneTorus (he : Q e = 0) (hf : Q f = 0) (hef : polar Q e f = 1) :
-    Kˣ × Kˣ →* specialCliffordGroup Q :=
+    Rˣ × Rˣ →* specialCliffordGroup Q :=
   MonoidHom.noncommCoprod (scalarSpecialCliffordGroup Q)
     ((hyperbolicPairUnitsHom he hef).codRestrict _
       (hyperbolicPairUnitsHom_mem_specialCliffordGroup he hf hef))
@@ -171,33 +172,39 @@ noncomputable def hyperbolicPlaneTorus (he : Q e = 0) (hf : Q f = 0) (hef : pola
 /-- The torus of a hyperbolic plane sends `(c, t)` to `c (t e f + f e)`. -/
 @[simp]
 theorem coe_hyperbolicPlaneTorus (he : Q e = 0) (hf : Q f = 0) (hef : polar Q e f = 1)
-    (x : Kˣ × Kˣ) :
+    (x : Rˣ × Rˣ) :
     (((hyperbolicPlaneTorus Q he hf hef x : (CliffordAlgebra Q)ˣ)) : CliffordAlgebra Q) =
-      algebraMap K _ x.1 * hyperbolicPairScaling Q e f x.2 := by
+      algebraMap R _ x.1 * hyperbolicPairScaling Q e f x.2 := by
   rw [hyperbolicPlaneTorus, MonoidHom.noncommCoprod_apply, Subgroup.coe_mul, Units.val_mul,
     coe_scalarSpecialCliffordGroup, MonoidHom.codRestrict_apply, coe_hyperbolicPairUnitsHom]
 
 /-- The torus element `c (t e f + f e)` in the coordinates `e f`, `f e`. -/
 theorem coe_hyperbolicPlaneTorus_eq_smul_add_smul (he : Q e = 0) (hf : Q f = 0)
-    (hef : polar Q e f = 1) (x : Kˣ × Kˣ) :
+    (hef : polar Q e f = 1) (x : Rˣ × Rˣ) :
     (((hyperbolicPlaneTorus Q he hf hef x : (CliffordAlgebra Q)ˣ)) : CliffordAlgebra Q) =
-      ((x.1 : K) * x.2) • (ι Q e * ι Q f) + (x.1 : K) • (ι Q f * ι Q e) := by
+      ((x.1 : R) * x.2) • (ι Q e * ι Q f) + (x.1 : R) • (ι Q f * ι Q e) := by
   rw [coe_hyperbolicPlaneTorus, hyperbolicPairScaling_def, ← Algebra.smul_def, smul_add,
     smul_smul]
+
+end HyperbolicPlaneTorus
+
+section Two
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
+  {e f : V}
 
 /-- The torus of a hyperbolic pair in a vector space is injective, in every characteristic. -/
 theorem hyperbolicPlaneTorus_injective (he : Q e = 0) (hf : Q f = 0) (hef : polar Q e f = 1) :
     Function.Injective (hyperbolicPlaneTorus Q he hf hef) := by
   intro x y hxy
   have : Nontrivial (CliffordAlgebra Q) := (algebraMap_injective_of_free Q).nontrivial
-  obtain ⟨hEE, hFF, hEF, hFE⟩ := hyperbolic_relations he hef
   have h := congrArg (fun g : specialCliffordGroup Q =>
     ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) hxy
   simp only [coe_hyperbolicPlaneTorus_eq_smul_add_smul] at h
   have h1 := congrArg (· * (ι Q f * ι Q e)) h
   have h2 := congrArg (· * (ι Q e * ι Q f)) h
-  simp only [add_mul, smul_mul_assoc, hEE, hFF, hEF, hFE, smul_zero, zero_add, add_zero]
-    at h1 h2
+  simp only [smul_add_smul_mul_ι_mul_ι_swap_of_polar_eq_one he hef] at h1
+  simp only [smul_add_smul_mul_ι_mul_ι_of_polar_eq_one he hef] at h2
   have hc : (x.1 : K) = y.1 := by
     rw [← sub_eq_zero]
     exact (smul_eq_zero.mp (by rw [sub_smul, h1, sub_self])).resolve_right
@@ -216,8 +223,8 @@ theorem hyperbolicPlaneTorus_surjective (hV : Module.finrank K V = 2) (he : Q e 
     Function.Surjective (hyperbolicPlaneTorus Q he hf hef) := by
   intro g
   have : Nontrivial (CliffordAlgebra Q) := (algebraMap_injective_of_free Q).nontrivial
-  obtain ⟨-, -, hEF, hFE⟩ := hyperbolic_relations he hef
-  obtain ⟨a, b, hab⟩ := exists_eq_smul_add_smul_of_mem_even hV he hf hef
+  obtain ⟨a, b, hab⟩ := exists_eq_smul_add_smul_of_mem_even_of_polar_eq_one
+    (QuadraticForm.span_pair_eq_top_of_polar_eq_one hV he hf hef) he hf hef
     (mem_specialCliffordGroup_iff.mp g.property).2
   set x : CliffordAlgebra Q := ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) with hx
   have hyx : (((g : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * x = 1 :=
@@ -226,13 +233,13 @@ theorem hyperbolicPlaneTorus_surjective (hV : Module.finrank K V = 2) (he : Q e 
     rintro rfl
     apply ι_mul_ι_swap_ne_zero_of_polar_eq_one hf hef
     have : x * (ι Q f * ι Q e) = 0 := by
-      rw [hab, zero_smul, add_zero, smul_mul_assoc, hEF, smul_zero]
+      rw [hab, smul_add_smul_mul_ι_mul_ι_swap_of_polar_eq_one he hef, zero_smul]
     rw [← one_mul (ι Q f * ι Q e), ← hyx, mul_assoc, this, mul_zero]
   have hb : b ≠ 0 := by
     rintro rfl
     apply ι_mul_ι_ne_zero_of_polar_eq_one he hef
     have : x * (ι Q e * ι Q f) = 0 := by
-      rw [hab, zero_smul, zero_add, smul_mul_assoc, hFE, smul_zero]
+      rw [hab, smul_add_smul_mul_ι_mul_ι_of_polar_eq_one he hef, zero_smul]
     rw [← one_mul (ι Q e * ι Q f), ← hyx, mul_assoc, this, mul_zero]
   refine ⟨(Units.mk0 a ha, Units.mk0 b hb / Units.mk0 a ha), Subtype.ext (Units.ext ?_)⟩
   rw [coe_hyperbolicPlaneTorus_eq_smul_add_smul, ← hx, hab]

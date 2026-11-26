@@ -50,6 +50,9 @@ this file does not define that group.
 * `CliffordAlgebra.isIdempotentElem_ι_mul_ι`: `e f` is idempotent; with
   `CliffordAlgebra.ι_mul_ι_mul_ι_mul_ι_swap` from `TauCeti.LinearAlgebra.CliffordAlgebra.Basic`,
   `e f` and `f e` are orthogonal idempotents.
+* `CliffordAlgebra.smul_add_smul_mul_ι_mul_ι_of_polar_eq_one`,
+  `CliffordAlgebra.smul_add_smul_mul_ι_mul_ι_swap_of_polar_eq_one`: right multiplication by `e f`
+  or `f e` extracts the corresponding coordinate of `b e f + a f e`.
 * `CliffordAlgebra.ι_mul_ι_ne_zero_of_polar_eq_one`,
   `CliffordAlgebra.ι_mul_ι_swap_ne_zero_of_polar_eq_one`: `e f` and `f e` are nonzero when the
   Clifford algebra is nontrivial.
@@ -104,7 +107,7 @@ theorem isIdempotentElem_ι_mul_ι (hef : polar Q e f = 1) (h : Q e * Q f = 0) :
 
 /-- The four relations among `E = e f` and `F = f e` for `Q e = 0` and `polar Q e f = 1`:
 both are idempotent and they are orthogonal. -/
-theorem hyperbolic_relations (he : Q e = 0) (hef : polar Q e f = 1) :
+private theorem hyperbolic_relations (he : Q e = 0) (hef : polar Q e f = 1) :
     ι Q e * ι Q f * (ι Q e * ι Q f) = ι Q e * ι Q f ∧
       ι Q f * ι Q e * (ι Q f * ι Q e) = ι Q f * ι Q e ∧
       ι Q e * ι Q f * (ι Q f * ι Q e) = 0 ∧ ι Q f * ι Q e * (ι Q e * ι Q f) = 0 := by
@@ -112,6 +115,22 @@ theorem hyperbolic_relations (he : Q e = 0) (hef : polar Q e f = 1) :
   refine ⟨(isIdempotentElem_ι_mul_ι hef (by rw [he, zero_mul])).eq,
     (isIdempotentElem_ι_mul_ι hfe (by rw [he, mul_zero])).eq, ?_, ?_⟩ <;>
     rw [ι_mul_ι_mul_ι_mul_ι_swap, he] <;> simp
+
+/-- For `Q e = 0` and `polar Q e f = 1`, right multiplication by `e f` extracts the `e f`
+coordinate: `(b e f + a f e) (e f) = b e f`. -/
+theorem smul_add_smul_mul_ι_mul_ι_of_polar_eq_one (he : Q e = 0) (hef : polar Q e f = 1)
+    (a b : R) :
+    (b • (ι Q e * ι Q f) + a • (ι Q f * ι Q e)) * (ι Q e * ι Q f) = b • (ι Q e * ι Q f) := by
+  obtain ⟨hE, -, -, hFE⟩ := hyperbolic_relations he hef
+  rw [add_mul, smul_mul_assoc, smul_mul_assoc, hE, hFE, smul_zero, add_zero]
+
+/-- For `Q e = 0` and `polar Q e f = 1`, right multiplication by `f e` extracts the `f e`
+coordinate: `(b e f + a f e) (f e) = a f e`. -/
+theorem smul_add_smul_mul_ι_mul_ι_swap_of_polar_eq_one (he : Q e = 0) (hef : polar Q e f = 1)
+    (a b : R) :
+    (b • (ι Q e * ι Q f) + a • (ι Q f * ι Q e)) * (ι Q f * ι Q e) = a • (ι Q f * ι Q e) := by
+  obtain ⟨-, hF, hEF, -⟩ := hyperbolic_relations he hef
+  rw [add_mul, smul_mul_assoc, smul_mul_assoc, hF, hEF, smul_zero, zero_add]
 
 /-- For a hyperbolic pair, `e f` is nonzero in a nontrivial Clifford algebra (for instance that of
 a free module over a nontrivial ring, by `CliffordAlgebra.algebraMap_injective_of_free`). -/

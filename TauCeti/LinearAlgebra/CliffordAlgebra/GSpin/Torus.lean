@@ -32,9 +32,10 @@ general spin norm `ν(g) = reverse(g) g`:
   elements `s⁻¹ u_i(s²)` lie in `Spin(Q)`.
 
 For the standard split forms `TauCeti.splitEvenForm` and `TauCeti.splitOddForm`, whose coordinate
-hyperbolic pairs form such a family, this is a split torus of the general spin group, on which the
-character `ν` is `2ε₀ + ε₁ + ⋯ + ε_n`; for the odd split form, `s ↦ s⁻¹ u_n(s²)` is the coroot of
-`ε_n`.
+hyperbolic pairs form such a family, this homomorphism is intended as the split torus of the
+general spin group, with `ν = 2ε₀ + ε₁ + ⋯ + ε_n` on it; for the odd split form,
+`s ↦ s⁻¹ u_n(s²)` is the cocharacter intended as the coroot of `ε_n`. This file proves neither
+that the homomorphism is a split maximal torus nor any root datum statement.
 
 When the scalars embed in the Clifford algebra and every element of `GSpin(Q)` is a scalar (as in
 ranks zero and one), `Spin(Q)` is exactly the group `μ₂(R)` of square roots of unity.
@@ -160,9 +161,8 @@ theorem normOneSpinGroup_eq_map_rootsOfUnity
   constructor
   · intro hx
     obtain ⟨c, hc⟩ := hsurj ⟨x, (mem_normOneSpinGroup_iff.mp hx).1⟩
-    have hcx : Units.map (algebraMap R (CliffordAlgebra Q) : R →* _) c = x := by
-      have h := congrArg Subtype.val hc
-      rwa [scalarSpecialCliffordGroup, MonoidHom.codRestrict_apply] at h
+    have hcx : Units.map (algebraMap R (CliffordAlgebra Q) : R →* _) c = x := Units.ext <| by
+      rw [Units.coe_map, MonoidHom.coe_ofClass, ← coe_scalarSpecialCliffordGroup, hc]
     refine ⟨c, Units.ext ?_, hcx⟩
     rw [← hcx] at hx
     rw [Units.val_pow_eq_pow_val, Units.val_one]
@@ -262,7 +262,8 @@ theorem hyperbolicTorus_mem_specialCliffordGroup (h : IsHyperbolicFamily Q e f)
 
 /-- **The torus of a hyperbolic family in the general spin group**: the homomorphism
 `(c, a) ↦ c ∏ u_i(a_i)` from `Rˣ × (κ → Rˣ)` to `GSpin(Q)`. For the standard split forms
-`TauCeti.splitEvenForm` and `TauCeti.splitOddForm` this is a split torus of `GSpin(Q)`. -/
+`TauCeti.splitEvenForm` and `TauCeti.splitOddForm` it is intended as the split torus of
+`GSpin(Q)`. -/
 noncomputable def specialHyperbolicTorus (h : IsHyperbolicFamily Q e f) :
     Rˣ × (κ → Rˣ) →* specialCliffordGroup Q :=
   (hyperbolicTorus h).codRestrict _ (hyperbolicTorus_mem_specialCliffordGroup h)
