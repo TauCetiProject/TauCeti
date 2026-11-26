@@ -100,18 +100,22 @@ example {α Ω : Type*} [MeasurableSpace α] [MeasurableSpace Ω] {μ : Measure 
 
 /-! ### An even mixture of distinct values and one pair -/
 
+section TieMixture
+
+/-- The even mixture of the distinct-valued population `id : Fin 3 → Fin 3` and the one-pair
+population `update id 1 0`. -/
+local notation "ρₘ" => (2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
+  (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0)
+
 /-- The even mixture of the distinct-valued population `id : Fin 3 → Fin 3` and the one-pair
 population `update id 1 0` is a probability measure. -/
-private theorem isProbabilityMeasure_tieMixture :
-    IsProbabilityMeasure ((2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
-      (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0)) :=
+private theorem isProbabilityMeasure_tieMixture : IsProbabilityMeasure ρₘ :=
   ⟨by simp [ENNReal.inv_two_add_inv_two]⟩
 
 /-- Sampling the even mixture of `id : Fin 3 → Fin 3` and `update id 1 0` twice without
 replacement gives every event the average of its masses under sampling the two populations. -/
 private theorem sampleWithoutReplacement_tieMixture_apply (A : Set (Fin 2 → Fin 3)) :
-    sampleWithoutReplacement ((2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
-        (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0)) A =
+    sampleWithoutReplacement ρₘ A =
       2⁻¹ * sampleWithoutReplacement (Measure.dirac (id : Fin 3 → Fin 3)) A +
         2⁻¹ * sampleWithoutReplacement (Measure.dirac (update id (1 : Fin 3) 0)) A := by
   simp only [sampleWithoutReplacement_def, samplePopulation_add_right, samplePopulation_smul_right,
@@ -120,23 +124,14 @@ private theorem sampleWithoutReplacement_tieMixture_apply (A : Set (Fin 2 → Fi
 /-- Sampling the even mixture of `id : Fin 3 → Fin 3` and `update id 1 0` twice with replacement
 gives every event the average of its masses under sampling the two populations. -/
 private theorem sampleWithReplacement_tieMixture_apply (A : Set (Fin 2 → Fin 3)) :
-    sampleWithReplacement ((2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
-        (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0)) A =
+    sampleWithReplacement ρₘ A =
       2⁻¹ * sampleWithReplacement (Measure.dirac (id : Fin 3 → Fin 3)) A +
         2⁻¹ * sampleWithReplacement (Measure.dirac (update id (1 : Fin 3) 0)) A := by
   simp only [sampleWithReplacement_def, samplePopulation_add_right, samplePopulation_smul_right,
     add_apply, smul_apply, smul_eq_mul]
 
-/-- A sum of finite extended nonnegative reals is evaluated through `toReal`. -/
-private theorem add_eq_of_toReal_add_eq {a b c : ℝ≥0∞} (ha : a ≠ ∞) (hb : b ≠ ∞) (hc : c ≠ ∞)
-    (h : a.toReal + b.toReal = c.toReal) : a + b = c := by
-  rwa [← ENNReal.toReal_eq_toReal_iff' (ENNReal.add_ne_top.2 ⟨ha, hb⟩) hc,
-    ENNReal.toReal_add ha hb]
-
 /-- The mixture gives the one-pair population `update id 1 0` mass `1/2`. -/
-private theorem tieMixture_singleton_update_id :
-    ((2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
-      (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0)) {update id (1 : Fin 3) 0} = 2⁻¹ := by
+private theorem tieMixture_singleton_update_id : ρₘ {update id (1 : Fin 3) 0} = 2⁻¹ := by
   have h : (id : Fin 3 → Fin 3) ∉ ({update id (1 : Fin 3) 0} : Set (Fin 3 → Fin 3)) := by
     simp only [Set.mem_singleton_iff]
     decide
@@ -147,35 +142,22 @@ distinct-valued population `id : Fin 3 → Fin 3` and the one-pair population `u
 `S` the one-pair population, the two sampling laws differ on every event, in either direction, by
 at most `1 - p - t * min p (1 - p) * ρ(S) = 1 - 2/3 - (1/3) * (1/3) * (1/2) = 5/18`, the average of
 the errors `1/3` and `2/9` of the two populations. -/
-private theorem tieMixture_le_add
-    (A : Set (Fin 2 → Fin 3)) :
-    sampleWithoutReplacement ((2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
-        (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0)) A ≤
-        sampleWithReplacement ((2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
-          (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0)) A + 5 / 18 ∧
-      sampleWithReplacement ((2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
-          (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0)) A ≤
-        sampleWithoutReplacement ((2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
-          (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0)) A + 5 / 18 := by
+private theorem tieMixture_le_add (A : Set (Fin 2 → Fin 3)) :
+    sampleWithoutReplacement ρₘ A ≤ sampleWithReplacement ρₘ A + 5 / 18 ∧
+      sampleWithReplacement ρₘ A ≤ sampleWithoutReplacement ρₘ A + 5 / 18 := by
   have := isProbabilityMeasure_tieMixture
   have hS : MeasurableSet ({update id (1 : Fin 3) 0} : Set (Fin 3 → Fin 3)) :=
     measurableSet_singleton _
   have hSx : ∀ x ∈ ({update id (1 : Fin 3) 0} : Set (Fin 3 → Fin 3)), ¬ Injective x := by
     rintro x rfl
     exact not_injective_iff.2 ⟨1, 0, by decide, by decide⟩
-  have herr : ENNReal.ofReal
-      (let p : ℝ := (Fintype.card (Fin 3)).descFactorial (Fintype.card (Fin 2)) /
-          (Fintype.card (Fin 3) : ℝ) ^ Fintype.card (Fin 2)
-       let t : ℝ := (Fintype.card (Fin 2)).descFactorial 2 / (Fintype.card (Fin 3)).descFactorial 2
-       1 - p - t * min p (1 - p) *
-        (((2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
-          (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0))
-            {update id (1 : Fin 3) 0}).toReal) = 5 / 18 := by
+  constructor
+  · convert sampleWithoutReplacement_le_sampleWithReplacement_add_ties ρₘ hS hSx A using 2
     rw [tieMixture_singleton_update_id]
     norm_num [Nat.descFactorial, ENNReal.ofReal_div_of_pos]
-  rw [← herr]
-  exact ⟨sampleWithoutReplacement_le_sampleWithReplacement_add_ties _ hS hSx A,
-    sampleWithReplacement_le_sampleWithoutReplacement_add_ties _ hS hSx A⟩
+  · convert sampleWithReplacement_le_sampleWithoutReplacement_add_ties ρₘ hS hSx A using 2
+    rw [tieMixture_singleton_update_id]
+    norm_num [Nat.descFactorial, ENNReal.ofReal_div_of_pos]
 
 /-- For `n = 3` and `m = 2`, the word of a sample of the one-pair population `update id 1 0` has
 distinct letters for exactly four of the six embeddings `Fin 2 ↪ Fin 3`: those whose image does
@@ -202,33 +184,30 @@ private theorem natCard_update_id_fin_three_comp_injective :
 /-- Sampling the mixture twice without replacement gives the all-distinct event mass
 `(1/2) * 1 + (1/2) * (4/6) = 5/6`. -/
 private theorem sampleWithoutReplacement_tieMixture_injective :
-    sampleWithoutReplacement ((2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
-        (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0))
-      {f : Fin 2 → Fin 3 | Injective f} = 5 / 6 := by
+    sampleWithoutReplacement ρₘ {f : Fin 2 → Fin 3 | Injective f} = 5 / 6 := by
   rw [sampleWithoutReplacement_tieMixture_apply,
     sampleWithoutReplacement_dirac_injective_apply_eq_one injective_id ⟨![0, 1], by decide⟩
       .of_discrete,
     sampleWithoutReplacement_dirac_apply _ .of_discrete,
     natCard_embedding_update_id_fin_three_comp_injective]
   norm_num only [Fintype.card_fin, Nat.descFactorial, Nat.cast_ofNat]
-  refine add_eq_of_toReal_add_eq (by finiteness) (by finiteness) (by finiteness) ?_
-  simp only [ENNReal.toReal_mul, ENNReal.toReal_div, ENNReal.toReal_inv, ENNReal.toReal_ofNat,
-    ENNReal.toReal_one]
+  rw [← ENNReal.toReal_eq_toReal_iff' (by finiteness) (by finiteness)]
+  simp (disch := finiteness) only [ENNReal.toReal_add, ENNReal.toReal_mul, ENNReal.toReal_div,
+    ENNReal.toReal_inv, ENNReal.toReal_ofNat, ENNReal.toReal_one]
   norm_num
 
 /-- Sampling the mixture twice with replacement gives the all-distinct event mass
 `(1/2) * (6/9) + (1/2) * (4/9) = 5/9`. -/
 private theorem sampleWithReplacement_tieMixture_injective :
-    sampleWithReplacement ((2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
-        (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0))
-      {f : Fin 2 → Fin 3 | Injective f} = 5 / 9 := by
+    sampleWithReplacement ρₘ {f : Fin 2 → Fin 3 | Injective f} = 5 / 9 := by
   rw [sampleWithReplacement_tieMixture_apply,
     sampleWithReplacement_dirac_injective_apply_eq injective_id .of_discrete,
     sampleWithReplacement_dirac_apply _ .of_discrete,
     natCard_update_id_fin_three_comp_injective]
   norm_num only [Fintype.card_fin, Nat.descFactorial, Nat.cast_ofNat]
-  refine add_eq_of_toReal_add_eq (by finiteness) (by finiteness) (by finiteness) ?_
-  simp only [ENNReal.toReal_mul, ENNReal.toReal_div, ENNReal.toReal_inv, ENNReal.toReal_ofNat]
+  rw [← ENNReal.toReal_eq_toReal_iff' (by finiteness) (by finiteness)]
+  simp (disch := finiteness) only [ENNReal.toReal_add, ENNReal.toReal_mul, ENNReal.toReal_div,
+    ENNReal.toReal_inv, ENNReal.toReal_ofNat]
   norm_num
 
 /-- **The mixture bound with ties is attained for `n = 3`, `m = 2`.** For the even mixture of the
@@ -239,18 +218,17 @@ the error `5/18` of the mixture bound with ties. The all-distinct event attains 
 theorem
     iSup_sampleWithoutReplacement_sub_sampleWithReplacement_smul_dirac_id_add_smul_dirac_fin_three :
     (⨆ (A : Set (Fin 2 → Fin 3)) (_ : MeasurableSet A),
-      sampleWithoutReplacement ((2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
-          (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0)) A -
-        sampleWithReplacement ((2⁻¹ : ℝ≥0∞) • Measure.dirac (id : Fin 3 → Fin 3) +
-          (2⁻¹ : ℝ≥0∞) • Measure.dirac (update id (1 : Fin 3) 0)) A) = 5 / 18 := by
+      sampleWithoutReplacement ρₘ A - sampleWithReplacement ρₘ A) = 5 / 18 := by
   refine le_antisymm (iSup₂_le fun A _ => tsub_le_iff_left.2 ?_) ?_
   · exact (tieMixture_le_add A).1
   · refine le_iSup₂_of_le {f : Fin 2 → Fin 3 | Injective f} .of_discrete (le_of_eq ?_)
     rw [sampleWithoutReplacement_tieMixture_injective, sampleWithReplacement_tieMixture_injective]
     refine (ENNReal.sub_eq_of_eq_add_rev (by finiteness) ?_).symm
-    refine (add_eq_of_toReal_add_eq (by finiteness) (by finiteness) (by finiteness) ?_).symm
-    simp only [ENNReal.toReal_div, ENNReal.toReal_ofNat]
+    rw [← ENNReal.toReal_eq_toReal_iff' (by finiteness) (by finiteness)]
+    simp (disch := finiteness) only [ENNReal.toReal_add, ENNReal.toReal_div, ENNReal.toReal_ofNat]
     norm_num
+
+end TieMixture
 
 /-! ### A uniformly random ordering of a population with a tie -/
 
@@ -295,9 +273,10 @@ example (A : Set (Fin 2 → Fin 3)) :
   have h := (exchangeableAt_permutedPopulation (update id (1 : Fin 3) 0) 0).finiteDeFinetti_ties
     (m := 2) (by norm_num) (fun i => (measurable_permutedPopulation _ _ _).aemeasurable)
     (S := {f | ¬ Injective f}) .of_discrete (fun _ hx => hx) A
-  rw [prefixLaw_permutedTie_setOf_not_injective] at h
-  norm_num [Nat.descFactorial, ENNReal.ofReal_div_of_pos] at h ⊢
-  exact h
+  -- Only the error term changes: compute it as `2/9` in both directions.
+  convert h using 3 <;>
+    rw [prefixLaw_permutedTie_setOf_not_injective] <;>
+    norm_num [Nat.descFactorial, ENNReal.ofReal_div_of_pos]
 
 /-- **The bound is attained for a random ordering of `(0, 0, 2)`.** For the uniformly random
 ordering of the population `(0, 0, 2) = update id 1 0`, the largest event excess of the `2`-prefix
