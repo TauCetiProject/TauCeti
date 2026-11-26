@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.CompactPerturbation
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Parametrix
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Sobolev
+import TauCeti.Geometry.Manifold.Sobolev.Smooth
 
 /-!
 # Elliptic operators on a compact manifold are Fredholm
@@ -31,11 +32,24 @@ extension of `Q` to `H^{s - m}(M) → H^s(M)` inverts that of `P` up to the exte
 remainders to `H^s(M)` and `H^{s - m}(M)`, and operators of negative order are compact on Sobolev
 spaces by Rellich's theorem (`TauCeti.isCompactOperator_chartSobolevExtension_of_mem`).
 
+**The kernel is smooth.** The kernel of the extension `H^s(M) → H^{s - m}(M)` consists of the
+smooth functions `u` with `P u = 0` (`TauCeti.IsClassicalElliptic.ker_chartSobolevExtension`), so
+its dimension is that of the smooth kernel, for every `s`
+(`TauCeti.IsClassicalElliptic.finrank_ker_chartSobolevExtension`). For a parametrix `Q` modulo
+operators of order `-∞`
+(`TauCeti.IsClassicalElliptic.exists_comp_sub_id_mem_smoothingPseudodifferentialOperators`), an
+element `x` of the kernel satisfies `x = -(Q P - 1) x`, and `Q P - 1` maps `H^s(M)` into every
+`H^t(M)`. An element of every `H^t(M)` is a smooth function
+(`TauCeti.mem_range_toChartSobolevSpace_iff`).
+
 ## Main results
 
 * `TauCeti.IsClassicalElliptic.isFredholm_chartSobolevExtension`: an elliptic classical
   pseudodifferential operator of order `m` on a compact manifold is Fredholm from `H^s(M)` to
   `H^{s - m}(M)`, for every real `s`.
+* `TauCeti.IsClassicalElliptic.ker_chartSobolevExtension`,
+  `TauCeti.IsClassicalElliptic.finrank_ker_chartSobolevExtension`: its kernel consists of the
+  smooth solutions of `P u = 0`.
 
 ## References
 
@@ -96,5 +110,55 @@ theorem IsClassicalElliptic.isFredholm_chartSobolevExtension [CompactSpace M]
     exact isCompactOperator_chartSobolevExtension_of_mem hQP hψ (by push_cast; linarith)
   · rw [hTS]
     exact isCompactOperator_chartSobolevExtension_of_mem hPQ hφ (by push_cast; linarith)
+
+/-- **Sobolev solutions of `P u = 0` are smooth.** On a compact manifold, the kernel of the
+extension `H^s(M) → H^{s - m}(M)` of an elliptic classical pseudodifferential operator `P` of
+order `m` consists of the smooth functions `u` with `P u = 0`, for every real `s`. -/
+theorem IsClassicalElliptic.ker_chartSobolevExtension [CompactSpace M]
+    (hPe : IsClassicalElliptic m P)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) :
+    (chartSobolevExtension hc ψ hc' φ P s (s - m)).ker =
+      (LinearMap.ker P).map (toChartSobolevSpace hc ψ s) := by
+  -- A parametrix `Q` of order `-m`, with `R = Q ∘ P - 1` of order `-∞`.
+  have hP := hPe.mem_of_isProperlySupported (isProperlySupported_of_compactSpace P)
+  obtain ⟨Q, hQ, -, hQP⟩ := hPe.exists_comp_sub_id_mem_smoothingPseudodifferentialOperators
+  have hT := chartSobolevExtension_toChartSobolevSpace_of_mem (hc' := hc') (φ := φ) hP hψ
+    (le_refl (s - m))
+  have hS := chartSobolevExtension_toChartSobolevSpace_of_mem (hc' := hc) (φ := ψ) hQ hφ
+    (show s ≤ s - m - -m by linarith)
+  have hR : chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s s =
+      chartSobolevExtension hc' φ hc ψ Q (s - m) s ∘L
+        chartSobolevExtension hc ψ hc' φ P s (s - m) - 1 :=
+    chartSobolevExtension_eq _ fun u ↦ by simp [hT, hS]
+  refine le_antisymm (fun x hx ↦ ?_) ?_
+  · rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hx
+    -- `x = -R x`, and `R` maps `H^s(M)` into every `H^t(M)`, so `x` is smooth.
+    have hxt (t : ℝ) (ht : s ≤ t) : x ∈ Set.range (chartSobolevInclusion hc ψ ht) := by
+      refine ⟨-chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s t x, ?_⟩
+      rw [map_neg, ← ContinuousLinearMap.comp_apply,
+        chartSobolevInclusion_comp_chartSobolevExtension ht (exists_norm_chartReading_apply_le
+          ((mem_smoothingPseudodifferentialOperators_iff.1 hQP) (s - t)) hψ (by linarith)), hR]
+      simp [hx]
+    obtain ⟨u, rfl⟩ := (mem_range_toChartSobolevSpace_iff hc ψ hψ x).2 hxt
+    refine ⟨u, ?_, rfl⟩
+    -- The element of `H^{s - m}(M)` of `P u` vanishes, so `P u = 0`.
+    refine toChartSobolevSpace_injective hc' φ hφ (s - m) ?_
+    rw [← hT, hx, map_zero]
+  · rintro _ ⟨u, hu, rfl⟩
+    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, hT, LinearMap.mem_ker.1 hu, map_zero]
+
+/-- On a compact manifold, the kernel of the extension `H^s(M) → H^{s - m}(M)` of an elliptic
+classical pseudodifferential operator `P` of order `m` has the dimension of the space of smooth
+solutions of `P u = 0`, for every real `s`. -/
+theorem IsClassicalElliptic.finrank_ker_chartSobolevExtension [CompactSpace M]
+    (hPe : IsClassicalElliptic m P)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) :
+    Module.finrank ℂ (chartSobolevExtension hc ψ hc' φ P s (s - m)).ker =
+      Module.finrank ℂ (LinearMap.ker P) := by
+  rw [hPe.ker_chartSobolevExtension hψ hφ s]
+  exact (Submodule.equivMapOfInjective _ (toChartSobolevSpace_injective hc ψ hψ s)
+    _).finrank_eq.symm
 
 end TauCeti
