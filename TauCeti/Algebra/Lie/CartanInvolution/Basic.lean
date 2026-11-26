@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Algebra.Lie.InvariantForm.Positive
 import TauCeti.Algebra.Lie.Killing.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
 # Cartan involutions
@@ -186,8 +187,7 @@ omit [IsStrictOrderedRing K] in
 definite. -/
 theorem nondegenerate_twistedKillingForm (hθ : θ.IsCartanInvolution) :
     θ.twistedKillingForm.Nondegenerate :=
-  hθ.isSymm_twistedKillingForm.isRefl.nondegenerate_iff_separatingLeft.2
-    (LinearMap.BilinForm.separatingLeft_of_anisotropic hθ.posDef_twistedKillingForm.anisotropic)
+  θ.twistedKillingForm.nondegenerate_of_anisotropic hθ.posDef_twistedKillingForm.anisotropic
 
 /-- A Lie algebra with a Cartan involution is semisimple. -/
 theorem isSemisimple (hθ : θ.IsCartanInvolution) : IsSemisimple K L :=
