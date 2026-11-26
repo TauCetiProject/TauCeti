@@ -166,10 +166,14 @@ theorem relDiscr_eq_finitePart_abelianConductor_pow (hp : (Module.finrank K L).P
         Modulus.one_finitePart, Ideal.one_eq_top]
     · rw [(χ.ker.eq_bot_or_eq_top_of_prime_card).resolve_right (hχ ∘ MonoidHom.ker_eq_top_iff.1),
         fixedField_bot, abelianConductor_eq_of_algEquiv IntermediateField.topEquiv]
+  -- There are `p - 1` nontrivial characters.
+  have hcount : (Finset.univ.filter fun χ : Gal(L/K) →* ℂˣ ↦ χ ≠ 1).card =
+      Module.finrank K L - 1 := by
+    rw [Finset.filter_ne', Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ,
+      ← Nat.card_eq_fintype_card, CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity Gal(L/K) ℂ,
+      hcard]
   rw [relDiscr_eq_finprod_finitePart_abelianConductor ℂ, finprod_eq_prod_of_fintype]
   simp_rw [h𝔣]
-  rw [Finset.prod_ite, Finset.prod_const_one, one_mul, Finset.prod_const, Finset.filter_ne',
-    Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ, ← Nat.card_eq_fintype_card,
-    CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity Gal(L/K) ℂ, hcard]
+  simp [Finset.prod_ite, hcount, Ideal.top_pow]
 
 end TauCeti.ClassFieldTheory

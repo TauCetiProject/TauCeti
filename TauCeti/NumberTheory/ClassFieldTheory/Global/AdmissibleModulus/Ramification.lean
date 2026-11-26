@@ -411,36 +411,13 @@ theorem mem_infinitePart_abelianConductor_iff (w : {w : InfinitePlace K // w.IsR
   · -- Dropping `w` from the conductor leaves an admissible modulus.
     set 𝔣 := abelianConductor K L
     let 𝔪 : Modulus K := ⟨𝔣.finitePart, 𝔣.finitePart_ne_bot, 𝔣.infinitePart.erase w⟩
+    -- Its ray classes are ray classes of `𝔣`, which are norms, times idele classes concentrated
+    -- at `w`, which are norms since `w` is unramified.
     have h𝔪 : IsAdmissibleModulus K L 𝔪 := by
-      refine isAdmissibleModulus_iff.2 fun c hc ↦ ?_
-      obtain ⟨x, hx, rfl⟩ := mem_raySubgroup_iff.1 hc
-      -- Multiplying `x` by the idele `e` concentrated at `w` with the inverse of the component of
-      -- `x` there gives a congruence idele for `𝔣`, whose class is a norm; so is the class of `e`.
-      set u := (w : InfinitePlace K).ideleInfiniteCoord x
-      set e := IdeleGroup.ofCompletion (𝓞 K) K (w : InfinitePlace K) u⁻¹
-      obtain ⟨h₁, h₂, h₃⟩ := mem_ideleCongruenceSubgroup_iff.1 hx
-      have hxe : x * e ∈ ideleCongruenceSubgroup 𝔣 := by
-        refine mem_ideleCongruenceSubgroup_iff.2 ⟨fun v hv ↦ ?_, fun v hv ↦ ?_, fun w' hw' ↦ ?_⟩
-        · simpa [e] using h₁ v hv
-        · -- `𝔪` and `𝔣` have the same finite part, hence the same exponents.
-          have h := h₂ v hv
-          rw [Modulus.exponent_def] at h ⊢
-          simpa [e] using h
-        · by_cases hww : w' = w
-          · subst hww
-            simp [e, u]
-          · have hne : (w' : InfinitePlace K) ≠ w := fun h ↦ hww (Subtype.ext h)
-            simpa [e, InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne _ hne] using
-              h₃ w' (Finset.mem_erase.2 ⟨hww, hw'⟩)
-      have hn := mul_mem (isAdmissibleModulus_iff.1 (isAdmissibleModulus_abelianConductor K L)
-          (mem_raySubgroup_iff.2 ⟨_, hxe, rfl⟩))
-        (inv_mem (ofCompletion_mem_range_ideleClassNormMap_of_isUnramifiedIn hunr u⁻¹))
-      have hc' : QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K) x =
-          QuotientGroup.mk' _ (x * e) *
-            (IdeleClassGroup.ofCompletion (𝓞 K) K (w : InfinitePlace K) u⁻¹)⁻¹ := by
-        rw [IdeleClassGroup.ofCompletion_apply, ← QuotientGroup.mk'_apply, map_mul,
-          mul_inv_cancel_right]
-      exact hc' ▸ hn
+      refine isAdmissibleModulus_iff.2 ((raySubgroup_erase_le_sup_range_ofCompletion 𝔣 w).trans
+        (sup_le (isAdmissibleModulus_iff.1 (isAdmissibleModulus_abelianConductor K L)) ?_))
+      rintro _ ⟨u, rfl⟩
+      exact ofCompletion_mem_range_ideleClassNormMap_of_isUnramifiedIn hunr u
     have := (Modulus.dvd_iff.1 ((isAdmissibleModulus_iff_abelianConductor_dvd 𝔪).1 h𝔪)).2 hw
     exact (Finset.mem_erase.1 this).1 rfl
   · -- A real place outside an admissible modulus is unramified.
