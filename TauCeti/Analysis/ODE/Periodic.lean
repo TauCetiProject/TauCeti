@@ -192,18 +192,19 @@ theorem deriv_mem_twistedContinuous (w : twistedContDiff X d ε) :
   ⟨w.property.1.continuous_deriv le_rfl, fun t => by
     simp only [← fderiv_apply_one_eq_deriv, fderiv_add_eq_smul w.property.2 t, smul_apply]⟩
 
-/-- Pointwise application of a bounded operator `J`, `w ↦ J ∘ w`, from the `C¹` maps twisted by
-`ε` along `d` to the continuous maps twisted by `ε` along `d`. -/
-def twistedContDiffCompLeft (J : X →L[ℝ] X) : twistedContDiff X d ε →ₗ[ℝ] twistedContinuous X d ε
-    where
-  toFun w := ⟨fun t => J ((w : ℝ → X) t),
-    J.continuous.comp w.property.1.continuous, fun t => by simp [w.property.2 t]⟩
+/-- Pointwise application of a bounded operator `J : X →L[ℝ] Y`, `f ↦ J ∘ f`, from the continuous
+maps `ℝ → X` twisted by `ε` along `d` to the continuous maps `ℝ → Y` twisted by `ε` along `d`. -/
+def twistedContinuousCompLeft {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (J : X →L[ℝ] Y) : twistedContinuous X d ε →ₗ[ℝ] twistedContinuous Y d ε where
+  toFun f := ⟨fun t => J ((f : ℝ → X) t),
+    J.continuous.comp f.property.1, fun t => by simp [f.property.2 t]⟩
   map_add' _ _ := by ext; simp
   map_smul' _ _ := by ext; simp
 
 @[simp]
-theorem twistedContDiffCompLeft_apply (J : X →L[ℝ] X) (w : twistedContDiff X d ε) (t : ℝ) :
-    (twistedContDiffCompLeft J w : ℝ → X) t = J ((w : ℝ → X) t) :=
+theorem twistedContinuousCompLeft_apply {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (J : X →L[ℝ] Y) (f : twistedContinuous X d ε) (t : ℝ) :
+    (twistedContinuousCompLeft J f : ℝ → Y) t = J ((f : ℝ → X) t) :=
   (rfl)
 
 /-- A map twisted by `1` along `d` is `d`-periodic. -/

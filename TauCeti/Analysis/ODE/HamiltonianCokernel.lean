@@ -116,7 +116,8 @@ def kerTwistedLinearOperatorToQuotientRange (hM : Continuous M) (hper : Function
     (ε : ℝ) :
     LinearMap.ker (twistedLinearOperator hM hper ε) →ₗ[ℝ]
       twistedContinuous X d ε ⧸ LinearMap.range (twistedLinearOperator hM hper ε) :=
-  (LinearMap.range (twistedLinearOperator hM hper ε)).mkQ ∘ₗ twistedContDiffCompLeft J ∘ₗ
+  (LinearMap.range (twistedLinearOperator hM hper ε)).mkQ ∘ₗ twistedContinuousCompLeft J ∘ₗ
+    Submodule.inclusion twistedContDiff_le_twistedContinuous ∘ₗ
     (LinearMap.ker (twistedLinearOperator hM hper ε)).subtype
 
 /-- The class `[J w]` of the pointwise image of a twisted solution `w` of `w' = M w`. -/
@@ -124,7 +125,8 @@ def kerTwistedLinearOperatorToQuotientRange (hM : Continuous M) (hper : Function
 theorem kerTwistedLinearOperatorToQuotientRange_apply (hM : Continuous M)
     (hper : Function.Periodic M d) (w : LinearMap.ker (twistedLinearOperator hM hper ε)) :
     kerTwistedLinearOperatorToQuotientRange J hM hper ε w =
-      Submodule.Quotient.mk (twistedContDiffCompLeft J (w : twistedContDiff X d ε)) :=
+      Submodule.Quotient.mk (twistedContinuousCompLeft J
+        (Submodule.inclusion twistedContDiff_le_twistedContinuous (w : twistedContDiff X d ε))) :=
   (rfl)
 
 section Complete
