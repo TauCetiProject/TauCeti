@@ -94,8 +94,7 @@ theorem balancedExtensionEquivVermaModule_tmul_one_one :
     balancedExtensionEquivVermaModule b lam (BalancedExtension.tmul Φ 1 1) =
       vermaGenerator b lam := by
   let := (borelCharacter H b lam).envelopingModule
-  rw [balancedExtensionEquivVermaModule_tmul, one_smul,
-    ← UniversalEnvelopingAlgebra.smul_cyclicGenerator, one_smul]
+  rw [balancedExtensionEquivVermaModule_tmul, one_smul, UniversalEnvelopingAlgebra.cyclicMk_one]
 
 /-- The inverse of the induced-module comparison sends `[u]` to `u ⊗ 1`. -/
 @[simp]
