@@ -250,12 +250,12 @@ private theorem exists_sub_flip_eq_of_free {R M : Type*} [CommRing R] [AddCommMo
     linear_combination -h0
 
 /-- **Every alternating form on a projective module is `B - B.flip` for some form `B`**, in every
-characteristic and in any rank. On a free module, order a basis and take for `B` the strictly
-upper triangular part of the alternating form in that basis; a projective module is a retract of
-a free one. -/
+characteristic and in any rank. -/
 theorem exists_sub_flip_eq {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
     [Module.Projective R M] {A : LinearMap.BilinForm R M} (hA : A.IsAlt) :
     ∃ B : LinearMap.BilinForm R M, B - B.flip = A := by
+  -- `M` is a retract `M → (M →₀ R) → M` of a free module, where the strictly upper triangular
+  -- part of the pulled-back form in a well-ordered basis works.
   obtain ⟨s, hs⟩ := (Module.projective_def' (R := R) (P := M)).mp ‹_›
   let π := Finsupp.linearCombination R (_root_.id : M → M)
   obtain ⟨B, hB⟩ := exists_sub_flip_eq_of_free (A := A.compl₁₂ π π) fun z => hA (π z)
