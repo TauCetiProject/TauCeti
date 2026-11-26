@@ -78,8 +78,8 @@ private theorem trace_piTensorProduct_map_eq_zero_of_not_finite {R ι : Type*} [
     have : IsEmpty (∀ i, I i) := ⟨fun g ↦ hi₁.false (g i₁)⟩
     have : Subsingleton (⨂[R] i, M i) :=
       ((Basis.piTensorProduct b).repr.toEquiv.subsingleton_congr).mpr inferInstance
-    rw [TauCeti.LinearMap.trace_eq_zero_of_subsingleton, Finset.prod_eq_zero (Finset.mem_univ i₁)
-      (TauCeti.LinearMap.trace_eq_zero_of_subsingleton (f i₁))]
+    rw [LinearMap.trace_eq_zero_of_subsingleton, Finset.prod_eq_zero (Finset.mem_univ i₁)
+      (LinearMap.trace_eq_zero_of_subsingleton (f i₁))]
   push Not at hemp
   have : Infinite (I i₀) := not_finite_iff_infinite.mp fun _ ↦ hfin (.of_basis (b i₀))
   have : Infinite (∀ i, I i) := have := hemp; Pi.infinite_of_exists_right i₀
@@ -164,7 +164,7 @@ private theorem trace_orbit_change_rep {R ι M : Type*} [CommSemiring R] [Finite
   have hper : Function.minimalPeriod (σ • ·) ((σ ^ d) x) = Function.minimalPeriod (σ • ·) x := by
     rw [Equiv.Perm.coe_pow]
     exact Function.minimalPeriod_apply_iterate hx d
-  refine (TauCeti.LinearMap.trace_list_prod_of_isRotated
+  refine (LinearMap.trace_list_prod_of_isRotated
     ⟨d, List.ext_getElem (by simpa using hper.symm) fun m h₁ h₂ ↦ ?_⟩).symm
   simp only [List.getElem_rotate, List.getElem_ofFn, List.length_ofFn]
   rw [← Equiv.Perm.mul_apply, ← pow_add, Equiv.Perm.coe_pow, Equiv.Perm.coe_pow]

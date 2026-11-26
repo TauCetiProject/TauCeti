@@ -26,8 +26,8 @@ endomorphism mapping a basis into itself, as the number of basis vectors it fixe
   finite basis.
 * `TauCeti.LinearMap.trace_eq_zero_of_not_finite`: the trace vanishes on a module that is not
   finite.
-* `TauCeti.LinearMap.trace_eq_zero_of_subsingleton`: the trace vanishes on a subsingleton module.
-* `TauCeti.LinearMap.trace_list_prod_rotate`, `TauCeti.LinearMap.trace_list_prod_of_isRotated`:
+* `LinearMap.trace_eq_zero_of_subsingleton`: the trace vanishes on a subsingleton module.
+* `LinearMap.trace_list_prod_rotate`, `LinearMap.trace_list_prod_of_isRotated`:
   the trace of a product of endomorphisms is invariant under cyclic rotation of the factors.
 * `LinearMap.eq_trace_smul_one_of_finrank_eq_one`: on a free module of rank one, an
   endomorphism is its trace times the identity.
@@ -55,6 +55,12 @@ theorem trace_eq_zero_of_not_exists_basis (h : ¬∃ s : Finset M, Nonempty (Mod
 theorem trace_eq_zero_of_not_finite (h : ¬Module.Finite R M) : _root_.LinearMap.trace R M = 0 :=
   trace_eq_zero_of_not_exists_basis fun ⟨_, ⟨b⟩⟩ ↦ h (.of_basis b)
 
+end TauCeti.LinearMap
+
+namespace LinearMap
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+
 /-- The trace vanishes on a subsingleton module. -/
 theorem trace_eq_zero_of_subsingleton [Subsingleton M] (f : M →ₗ[R] M) :
     _root_.LinearMap.trace R M f = 0 := by
@@ -79,7 +85,7 @@ theorem trace_list_prod_of_isRotated {l₁ l₂ : List (M →ₗ[R] M)} (h : l�
   obtain ⟨n, rfl⟩ := h
   exact (trace_list_prod_rotate l₁ n).symm
 
-end TauCeti.LinearMap
+end LinearMap
 
 namespace LinearMap
 
