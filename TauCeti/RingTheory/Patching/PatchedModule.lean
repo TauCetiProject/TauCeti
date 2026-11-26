@@ -426,6 +426,21 @@ theorem patchedModuleEquiv_apply (P : Type*) [AddCommGroup P] [Module D P] [Modu
     [Module.Projective D P] (x : P) :
     patchedModuleEquiv h hD P x = toPatchedModule h P x := (rfl)
 
+/-- `toPatchedModule` is a left inverse of the inverse of `patchedModuleEquiv`. -/
+@[simp]
+theorem toPatchedModule_patchedModuleEquiv_symm_apply (P : Type*) [AddCommGroup P] [Module D P]
+    [Module.Finite D P] [Module.Projective D P]
+    (m : PatchedModule h (commSqEquiv h P).toLinearMap) :
+    toPatchedModule h P ((patchedModuleEquiv h hD P).symm m) = m :=
+  (patchedModuleEquiv h hD P).apply_symm_apply m
+
+/-- The inverse of `patchedModuleEquiv` undoes `toPatchedModule`. -/
+@[simp]
+theorem patchedModuleEquiv_symm_toPatchedModule (P : Type*) [AddCommGroup P] [Module D P]
+    [Module.Finite D P] [Module.Projective D P] (x : P) :
+    (patchedModuleEquiv h hD P).symm (toPatchedModule h P x) = x :=
+  (patchedModuleEquiv h hD P).symm_apply_apply x
+
 include hD in
 /-- **Extension of scalars to patching triples is fully faithful on finitely generated projective
 modules.** Over a fibre-product square, let `g₁ : A₁ ⊗_D P → A₁ ⊗_D P'` and
@@ -442,7 +457,6 @@ theorem BalancedExtension.existsUnique_map_eq_and_map_eq {P P' : Type*} [AddComm
     PatchedModule.map g₁ g₂ hg ∘ₗ toPatchedModule h P
   have hg' (x : P) : toPatchedModule h P' (g x) = PatchedModule.map g₁ g₂ hg
       (toPatchedModule h P x) := by
-    rw [← patchedModuleEquiv_apply h hD]
     simp [g]
   refine ⟨g, ⟨hom_ext fun x ↦ ?_, hom_ext fun x ↦ ?_⟩, fun g' ⟨hg₁, hg₂⟩ ↦ ?_⟩
   · simpa using congrArg PatchedModule.fst (hg' x)
