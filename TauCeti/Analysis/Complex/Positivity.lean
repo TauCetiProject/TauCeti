@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Complex.Positivity
-import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 
 /-!
 # Quantitative positivity bounds for entire functions from Taylor derivatives

@@ -17,6 +17,8 @@ preserves the sign of the value. This applies to embeddings into ordered real cl
 For a ring homomorphism `f` from any semiring into a linearly ordered commutative ring, rescaling
 the roots by a factor `a` with `f a ≠ 0` and multiplying by `a ^ natDegree` preserves the sign of
 `eval₂ f` at the correspondingly rescaled point.
+Over an ordered semiring, polynomials with nonnegative coefficients evaluate to nonnegative values
+at nonnegative elements (`Polynomial.eval_nonneg_of_coeff_nonneg`).
 -/
 
 public section
@@ -40,5 +42,13 @@ theorem sign_eval₂_C_pow_mul_scaleRoots {R S : Type*} [CommRing R] [LinearOrde
     SignType.sign ((C (a ^ q.natDegree) * q.scaleRoots a).eval₂ f (f a * z)) =
       SignType.sign (q.eval₂ f z) := by
   simp [eval₂_pow, scaleRoots_eval₂_mul, ← mul_assoc, ← mul_pow, sign_mul, mul_self_pos, ha]
+
+/-- Evaluating a polynomial with nonnegative coefficients at a nonnegative element yields a
+nonnegative value. -/
+theorem eval_nonneg_of_coeff_nonneg {R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {p : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) {x : R} (hx : 0 ≤ x) :
+    0 ≤ p.eval x := by
+  rw [eval_eq_sum]
+  exact Finset.sum_nonneg fun d _ ↦ mul_nonneg (hp d) (pow_nonneg hx d)
 
 end Polynomial
