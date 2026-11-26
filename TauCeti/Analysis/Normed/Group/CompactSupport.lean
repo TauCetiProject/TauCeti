@@ -18,7 +18,7 @@ so that it also applies to derivatives of the map.
 On a proper normed group, a compactly supported function on `ℝ` composed with `x ↦ ‖x‖` or with
 `x ↦ ‖x‖²` is compactly supported (`HasCompactSupport.comp_norm`, `HasCompactSupport.comp_norm_sq`).
 A function on `ℝ` supported in `(r, R)` composed with `x ↦ ‖x‖` is supported in the open shell
-`ball 0 R \ closedBall 0 r` (`tsupport_comp_norm_subset`).
+`ball 0 R \ closedBall 0 r` (`TauCeti.tsupport_comp_norm_subset`).
 -/
 
 public section
@@ -35,12 +35,16 @@ theorem HasCompactSupport.exists_pos_le_norm_notMem_tsupport {X Y : Type*}
   have := mem_ball_zero_iff.1 (hR h)
   linarith [le_max_left R 1]
 
+namespace TauCeti
+
 /-- A function `ψ` on `ℝ` supported in `(r, R)` gives a radial function `x ↦ ψ ‖x‖` supported in
 the open shell `ball 0 R \ closedBall 0 r`. -/
 theorem tsupport_comp_norm_subset {E M : Type*} [SeminormedAddGroup E] [Zero M] {r R : ℝ}
     {ψ : ℝ → M} (hψs : tsupport ψ ⊆ Ioo r R) :
     tsupport (fun x : E ↦ ψ ‖x‖) ⊆ ball (0 : E) R \ closedBall 0 r := fun x hx ↦ by
   simpa [and_comm] using hψs (tsupport_comp_subset_preimage ψ continuous_norm hx)
+
+end TauCeti
 
 /-- A function of `‖x‖` built from a compactly supported function on `ℝ` is compactly supported
 on a proper normed group. -/
