@@ -168,7 +168,7 @@ instance instPathConnectedSpaceScalarDiagonal : PathConnectedSpace (scalarDiagon
   rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst graph_id_le_scalarDiagonal,
     goursatFst_scalarDiagonal, GeneralLinearGroup.center_eq_range_scalar]
   exact (GeneralLinearGroup.scalar ι).rangeRestrict_surjective.pathConnectedSpace
-    (continuous_scalar.subtype_mk _)
+    (GeneralLinearGroup.continuous_scalar.subtype_mk _)
 
 instance instPathConnectedSpaceDeterminantEqual : PathConnectedSpace (determinantEqual ι ℂ) := by
   rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst graph_id_le_determinantEqual,

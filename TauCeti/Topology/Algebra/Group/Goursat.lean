@@ -13,8 +13,8 @@ import Mathlib.Tactic.Group
 /-!
 # Topological Goursat coordinates for diagonal overgroups
 
-For a topological group `G`, `(g, h) ↦ (g / h, h)` is a self-homeomorphism of `G × G`
-(`Homeomorph.prodDivRight`) restricting for `(MonoidHom.id G).graph ≤ H` to
+For a topological group `G` and a subgroup `H ≤ G × G` containing `(MonoidHom.id G).graph`, the map
+`(g, h) ↦ (g / h, h)` defines a homeomorphism
 `Subgroup.goursatCoordHomeomorph : H ≃ₜ H.goursatFst × G` with semidirect multiplication
 `(a, h) * (b, k) = (a * (h * b * h⁻¹), h * k)`. Closedness, preconnectedness, and path
 connectedness of `H` reduce to those of `H.goursatFst`.
@@ -25,26 +25,6 @@ connectedness of `H` reduce to those of `H.goursatFst`.
 -/
 
 public section
-
-namespace Homeomorph
-
-variable (G : Type*) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-
-/-- The coordinate homeomorphism `G × G ≃ₜ G × G` sending `(g, h)` to `(g / h, h)`. -/
-def prodDivRight : G × G ≃ₜ G × G where
-  toFun p := (p.1 / p.2, p.2)
-  invFun p := (p.1 * p.2, p.2)
-  left_inv p := Prod.ext (div_mul_cancel p.1 p.2) rfl
-  right_inv p := Prod.ext (mul_div_cancel_right p.1 p.2) rfl
-  continuous_toFun := (continuous_fst.div' continuous_snd).prodMk continuous_snd
-  continuous_invFun := (continuous_fst.mul continuous_snd).prodMk continuous_snd
-
-@[simp] theorem prodDivRight_apply (p : G × G) : prodDivRight G p = (p.1 / p.2, p.2) := by rfl
-
-@[simp]
-theorem prodDivRight_symm_apply (p : G × G) : (prodDivRight G).symm p = (p.1 * p.2, p.2) := by rfl
-
-end Homeomorph
 
 namespace Subgroup
 

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Group.Matrix
+public import TauCeti.GroupTheory.Goursat
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup.Center
-public import TauCeti.Topology.Algebra.Group.Goursat
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Diagonal
 
@@ -294,7 +294,7 @@ noncomputable def scalarDiagonalContinuousMulEquiv [IsTopologicalRing R] [Nonemp
     GL ι R × Rˣ ≃ₜ* scalarDiagonal ι R where
   toMulEquiv := scalarDiagonalEquiv
   continuous_toFun :=
-    (((continuous_scalar.comp continuous_snd).mul continuous_fst).prodMk
+    (((GeneralLinearGroup.continuous_scalar.comp continuous_snd).mul continuous_fst).prodMk
       continuous_fst).subtype_mk _
   continuous_invFun := (continuous_snd.comp continuous_subtypeVal).prodMk <| by
     obtain ⟨i₀⟩ := ‹Nonempty ι›

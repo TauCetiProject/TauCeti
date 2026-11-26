@@ -78,8 +78,8 @@ theorem graph_id_le_diagonalExt (N : Subgroup G) [N.Normal] :
 @[simp] theorem goursatFst_diagonalExt (N : Subgroup G) [N.Normal] :
     (diagonalExt N).goursatFst = N := by ext; simp
 
-theorem diagonalExt_goursatFst {H : Subgroup (G × G)} (hH : (MonoidHom.id G).graph ≤ H)
-    [H.goursatFst.Normal] : diagonalExt H.goursatFst = H :=
+theorem diagonalExt_goursatFst {H : Subgroup (G × G)} (hH : (MonoidHom.id G).graph ≤ H) :
+    @diagonalExt _ _ H.goursatFst (normal_goursatFst_of_graph_id_le hH) = H :=
   ext fun _ => (mem_iff_div_mem_goursatFst hH).symm
 
 @[simp] theorem diagonalExt_bot : diagonalExt (⊥ : Subgroup G) = (MonoidHom.id G).graph := by
@@ -97,9 +97,7 @@ def graphIdIciOrderIsoNormal (G : Type*) [Group G] :
     Set.Ici (MonoidHom.id G).graph ≃o {N : Subgroup G // N.Normal} where
   toFun H := ⟨H.val.goursatFst, normal_goursatFst_of_graph_id_le H.property⟩
   invFun N := let _ := N.property; ⟨diagonalExt N.val, graph_id_le_diagonalExt N.val⟩
-  left_inv H := by
-    let _ := normal_goursatFst_of_graph_id_le H.property
-    exact Subtype.ext (diagonalExt_goursatFst H.property)
+  left_inv H := Subtype.ext (diagonalExt_goursatFst H.property)
   right_inv N := by let _ := N.property; exact Subtype.ext (goursatFst_diagonalExt N.val)
   map_rel_iff' {H₁ H₂} :=
     ⟨fun hle _ hp => (mem_iff_div_mem_goursatFst H₂.property).mpr
