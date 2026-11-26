@@ -105,6 +105,20 @@ def comap {J : Type*} [AddCommMonoid J] (f : J →+ I) (B : PointedBraiding c) :
     (B.cast h).comap f = (B.comap f).cast (congrArg (TwistingCocycle.comap f) h) := by
   ext; simp
 
+@[simp] theorem comap_id (B : PointedBraiding c) :
+    B.comap (AddMonoidHom.id I) = B.cast c.comap_id.symm := by
+  ext; simp
+
+@[simp] theorem comap_comp {J M : Type*} [AddCommMonoid J] [AddCommMonoid M]
+    (f : J →+ I) (g : M →+ J) (B : PointedBraiding c) :
+    (B.comap f).comap g = (B.comap (f.comp g)).cast (c.comap_comp f g).symm := by
+  ext; simp
+
+@[simp] theorem comap_one {J : Type*} [AddCommMonoid J] (f : J →+ I) :
+    (1 : PointedBraiding (1 : TwistingCocycle I K)).comap f =
+      (1 : PointedBraiding (1 : TwistingCocycle J K)).cast (TwistingCocycle.comap_one f).symm := by
+  ext; simp
+
 /-- Equivalence of scalar braiding data induced by an additive isomorphism `e : J ≃+ I`. -/
 def comapEquiv {J : Type*} [AddCommMonoid J] (e : J ≃+ I) (c : TwistingCocycle I K) :
     PointedBraiding (c.comap (e : J →+ I)) ≃ PointedBraiding c where
@@ -134,6 +148,25 @@ def map {L : Type*} [Monoid L] (f : K →* L) (B : PointedBraiding c) :
 
 @[simp] theorem map_r {L : Type*} [Monoid L] (f : K →* L) (B : PointedBraiding c) (a b : I) :
     (B.map f).r a b = Units.map f (B.r a b) := (rfl)
+
+@[simp] theorem map_cast {L : Type*} [Monoid L] {c₁ c₂ : TwistingCocycle I K}
+    (h : c₁ = c₂) (f : K →* L) (B : PointedBraiding c₁) :
+    (B.cast h).map f = (B.map f).cast (congrArg (TwistingCocycle.map f) h) := by
+  ext; simp
+
+@[simp] theorem map_id (B : PointedBraiding c) :
+    B.map (MonoidHom.id K) = B.cast c.map_id.symm := by
+  ext; simp
+
+@[simp] theorem map_comp {L M : Type*} [Monoid L] [Monoid M]
+    (f : K →* L) (g : L →* M) (B : PointedBraiding c) :
+    (B.map f).map g = (B.map (g.comp f)).cast (c.map_comp f g).symm := by
+  ext; simp
+
+@[simp] protected theorem map_one {L : Type*} [Monoid L] (f : K →* L) :
+    (1 : PointedBraiding (1 : TwistingCocycle I K)).map f =
+      (1 : PointedBraiding (1 : TwistingCocycle I L)).cast (TwistingCocycle.map_one f).symm := by
+  ext; simp
 
 end General
 
@@ -187,7 +220,7 @@ def zmod2Equiv (u : Kˣ) (hu : u * u = 1) :
     (zmod2Equiv u hu).symm r = zmod2 hu r.val r.property := (rfl)
 @[simp] theorem zmod2Equiv_zmod2 {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u) :
     zmod2Equiv u hu (zmod2 hu r hr) = ⟨r, hr⟩ := (zmod2Equiv u hu).apply_symm_apply ⟨r, hr⟩
-@[simp] theorem zmod2_r_one_one {u : Kˣ} (hu : u * u = 1)
+@[simp] theorem zmod2_r_eq_self {u : Kˣ} (hu : u * u = 1)
     (B : PointedBraiding (TwistingCocycle.zmod2 u hu)) (hr : B.r 1 1 * B.r 1 1 = u) :
     zmod2 hu (B.r 1 1) hr = B := (zmod2Equiv u hu).symm_apply_apply B
 

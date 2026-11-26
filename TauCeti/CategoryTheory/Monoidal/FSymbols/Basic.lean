@@ -418,31 +418,9 @@ theorem eq_of_fin_unit_right {a b : ι} (i : Fin (N.N a N.unit b)) : a = b := by
   by_contra h
   exact Nat.not_lt_zero i.val (N.N_unit_right_of_ne a b h ▸ i.isLt)
 
-@[simp]
-theorem default_fin_unit_left (a : ι) : (default : Fin (N.N N.unit a a)) = N.unitLeft a :=
-  Subsingleton.elim _ _
-
-@[simp]
-theorem default_fin_unit_right (a : ι) : (default : Fin (N.N a N.unit a)) = N.unitRight a :=
-  Subsingleton.elim _ _
-
-theorem fin_unit_left_eq (a : ι) (i : Fin (N.N N.unit a a)) : i = N.unitLeft a :=
-  Subsingleton.elim i (N.unitLeft a)
-
-theorem fin_unit_right_eq (a : ι) (i : Fin (N.N a N.unit a)) : i = N.unitRight a :=
-  Subsingleton.elim i (N.unitRight a)
-
 section UnitSums
 
 variable {M : Type*} [AddCommMonoid M]
-
-theorem sum_fin_unit_left_self (a : ι) (f : Fin (N.N N.unit a a) → M) :
-    ∑ i, f i = f (N.unitLeft a) :=
-  (Fintype.sum_unique f).trans (congrArg f (Subsingleton.elim _ _))
-
-theorem sum_fin_unit_right_self (a : ι) (f : Fin (N.N a N.unit a) → M) :
-    ∑ i, f i = f (N.unitRight a) :=
-  (Fintype.sum_unique f).trans (congrArg f (Subsingleton.elim _ _))
 
 theorem sum_fin_unit_left_of_ne {a b : ι} (h : a ≠ b) (f : Fin (N.N N.unit a b) → M) :
     ∑ i, f i = 0 :=
@@ -460,29 +438,29 @@ variable [Fintype ι]
 theorem sum_fin_unit_left_fst (a : ι) (f : ∀ e : ι, Fin (N.N N.unit a e) → M) :
     ∑ e : ι, ∑ i : Fin (N.N N.unit a e), f e i = f a (N.unitLeft a) := by
   classical
-  rw [Fintype.sum_eq_single a fun e he ↦ N.sum_fin_unit_left_of_ne he.symm (f e),
-    N.sum_fin_unit_left_self]
+  exact (Fintype.sum_eq_single a fun e he ↦ N.sum_fin_unit_left_of_ne he.symm (f e)).trans
+    (Fintype.sum_unique (f a))
 
 /-- Summing over `(e, i)` with `i : Fin N_{ue}^b` collapses to `e = b` and `i = unitLeft b`. -/
 theorem sum_fin_unit_left_snd (b : ι) (f : ∀ e : ι, Fin (N.N N.unit e b) → M) :
     ∑ e : ι, ∑ i : Fin (N.N N.unit e b), f e i = f b (N.unitLeft b) := by
   classical
-  rw [Fintype.sum_eq_single b fun e he ↦ N.sum_fin_unit_left_of_ne he (f e),
-    N.sum_fin_unit_left_self]
+  exact (Fintype.sum_eq_single b fun e he ↦ N.sum_fin_unit_left_of_ne he (f e)).trans
+    (Fintype.sum_unique (f b))
 
 /-- Summing over `(e, i)` with `i : Fin N_{au}^e` collapses to `e = a` and `i = unitRight a`. -/
 theorem sum_fin_unit_right_fst (a : ι) (f : ∀ e : ι, Fin (N.N a N.unit e) → M) :
     ∑ e : ι, ∑ i : Fin (N.N a N.unit e), f e i = f a (N.unitRight a) := by
   classical
-  rw [Fintype.sum_eq_single a fun e he ↦ N.sum_fin_unit_right_of_ne he.symm (f e),
-    N.sum_fin_unit_right_self]
+  exact (Fintype.sum_eq_single a fun e he ↦ N.sum_fin_unit_right_of_ne he.symm (f e)).trans
+    (Fintype.sum_unique (f a))
 
 /-- Summing over `(e, i)` with `i : Fin N_{eu}^b` collapses to `e = b` and `i = unitRight b`. -/
 theorem sum_fin_unit_right_snd (b : ι) (f : ∀ e : ι, Fin (N.N e N.unit b) → M) :
     ∑ e : ι, ∑ i : Fin (N.N e N.unit b), f e i = f b (N.unitRight b) := by
   classical
-  rw [Fintype.sum_eq_single b fun e he ↦ N.sum_fin_unit_right_of_ne he (f e),
-    N.sum_fin_unit_right_self]
+  exact (Fintype.sum_eq_single b fun e he ↦ N.sum_fin_unit_right_of_ne he (f e)).trans
+    (Fintype.sum_unique (f b))
 
 end UnitSums
 
@@ -490,7 +468,9 @@ end UnitSums
 def leftUnitMidEquiv (a c d : ι) : N.Left a N.unit c d ≃ Fin (N.N a c d) where
   toFun x := N.eq_of_fin_unit_right x.snd.fst ▸ x.snd.snd
   invFun j := ⟨a, N.unitRight a, j⟩
-  left_inv := by rintro ⟨_, i, _⟩; obtain rfl := N.eq_of_fin_unit_right i; simp [fin_unit_right_eq]
+  left_inv := by
+    rintro ⟨_, i, _⟩; obtain rfl := N.eq_of_fin_unit_right i
+    simp [Subsingleton.elim i (N.unitRight a)]
   right_inv _ := rfl
 
 @[simp]
@@ -506,7 +486,9 @@ theorem leftUnitMidEquiv_mk (a c d : ι) (j : Fin (N.N a c d)) :
 def rightUnitMidEquiv (a c d : ι) : N.Right a N.unit c d ≃ Fin (N.N a c d) where
   toFun y := N.eq_of_fin_unit_left y.snd.fst ▸ y.snd.snd
   invFun l := ⟨c, N.unitLeft c, l⟩
-  left_inv := by rintro ⟨_, k, _⟩; obtain rfl := N.eq_of_fin_unit_left k; simp [fin_unit_left_eq]
+  left_inv := by
+    rintro ⟨_, k, _⟩; obtain rfl := N.eq_of_fin_unit_left k
+    simp [Subsingleton.elim k (N.unitLeft c)]
   right_inv _ := rfl
 
 @[simp]
@@ -522,7 +504,9 @@ theorem rightUnitMidEquiv_mk (a c d : ι) (l : Fin (N.N a c d)) :
 def leftUnitLeftEquiv (b c d : ι) : N.Left N.unit b c d ≃ Fin (N.N b c d) where
   toFun x := N.eq_of_fin_unit_left x.snd.fst ▸ x.snd.snd
   invFun j := ⟨b, N.unitLeft b, j⟩
-  left_inv := by rintro ⟨_, i, _⟩; obtain rfl := N.eq_of_fin_unit_left i; simp [fin_unit_left_eq]
+  left_inv := by
+    rintro ⟨_, i, _⟩; obtain rfl := N.eq_of_fin_unit_left i
+    simp [Subsingleton.elim i (N.unitLeft b)]
   right_inv _ := rfl
 
 @[simp]
@@ -538,7 +522,9 @@ theorem leftUnitLeftEquiv_mk (b c d : ι) (j : Fin (N.N b c d)) :
 def rightUnitLeftEquiv (b c d : ι) : N.Right N.unit b c d ≃ Fin (N.N b c d) where
   toFun y := (N.eq_of_fin_unit_left y.snd.snd).symm ▸ y.snd.fst
   invFun k := ⟨d, k, N.unitLeft d⟩
-  left_inv := by rintro ⟨_, _, l⟩; obtain rfl := N.eq_of_fin_unit_left l; simp [fin_unit_left_eq]
+  left_inv := by
+    rintro ⟨_, _, l⟩; obtain rfl := N.eq_of_fin_unit_left l
+    simp [Subsingleton.elim l (N.unitLeft _)]
   right_inv _ := rfl
 
 @[simp]
@@ -554,7 +540,9 @@ theorem rightUnitLeftEquiv_mk (b c d : ι) (k : Fin (N.N b c d)) :
 def leftUnitRightEquiv (a b d : ι) : N.Left a b N.unit d ≃ Fin (N.N a b d) where
   toFun x := (N.eq_of_fin_unit_right x.snd.snd).symm ▸ x.snd.fst
   invFun i := ⟨d, i, N.unitRight d⟩
-  left_inv := by rintro ⟨_, _, j⟩; obtain rfl := N.eq_of_fin_unit_right j; simp [fin_unit_right_eq]
+  left_inv := by
+    rintro ⟨_, _, j⟩; obtain rfl := N.eq_of_fin_unit_right j
+    simp [Subsingleton.elim j (N.unitRight _)]
   right_inv _ := rfl
 
 @[simp]
@@ -570,7 +558,9 @@ theorem leftUnitRightEquiv_mk (a b d : ι) (i : Fin (N.N a b d)) :
 def rightUnitRightEquiv (a b d : ι) : N.Right a b N.unit d ≃ Fin (N.N a b d) where
   toFun y := N.eq_of_fin_unit_right y.snd.fst ▸ y.snd.snd
   invFun l := ⟨b, N.unitRight b, l⟩
-  left_inv := by rintro ⟨_, k, _⟩; obtain rfl := N.eq_of_fin_unit_right k; simp [fin_unit_right_eq]
+  left_inv := by
+    rintro ⟨_, k, _⟩; obtain rfl := N.eq_of_fin_unit_right k
+    simp [Subsingleton.elim k (N.unitRight b)]
   right_inv _ := rfl
 
 @[simp]
@@ -629,8 +619,9 @@ theorem F_unit_left (P : FSymbols R N) (b c d : ι) (j k : Fin (N.N b c d)) :
     ext m n
     have hpm := P.pentagon N.unit N.unit b c d N.unit b d d
       (N.unitRight N.unit) (N.unitLeft b) m n (N.unitLeft d) (N.unitLeft d)
-    rw [N.sum_fin_unit_left_self, P.triangle_self, mul_one,
-      N.sum_fin_unit_left_fst b, N.sum_fin_unit_left_self] at hpm
+    rw [Fintype.sum_unique, Subsingleton.elim default (N.unitLeft d), P.triangle_self, mul_one,
+      N.sum_fin_unit_left_fst b, Fintype.sum_unique,
+      Subsingleton.elim default (N.unitLeft b)] at hpm
     simp_rw [P.triangle_self, one_mul] at hpm
     simpa [Matrix.mul_apply] using hpm.symm
   simpa [Matrix.one_apply] using
@@ -656,8 +647,10 @@ theorem F_unit_right (P : FSymbols R N) (a b d : ι) (i l : Fin (N.N a b d)) :
     ext m n
     have hpm := P.pentagon a b N.unit N.unit d d d N.unit b
       m (N.unitRight d) (N.unitRight d) (N.unitLeft N.unit) (N.unitRight b) n
-    rw [N.sum_fin_unit_right_self, P.triangle_self, one_mul, N.sum_fin_unit_right_fst b] at hpm
-    simp_rw [N.sum_fin_unit_right_self, P.triangle_self, mul_one] at hpm
+    rw [Fintype.sum_unique, Subsingleton.elim default (N.unitRight d), P.triangle_self, one_mul,
+      N.sum_fin_unit_right_fst b] at hpm
+    simp_rw [Fintype.sum_unique, Subsingleton.elim default (N.unitRight b), P.triangle_self,
+      mul_one] at hpm
     simpa [Matrix.mul_apply] using hpm.symm
   simpa [Matrix.one_apply] using
     congr_fun₂ ((IsIdempotentElem.iff_eq_one_of_isUnit hu).mp hidem) i l
@@ -766,35 +759,21 @@ theorem cast_rfl (Q : RSymbols P) : Q.cast rfl = Q := (rfl)
 theorem cast_cast {P₁ P₂ P₃ : FSymbols K N} (h₁ : P₁ = P₂) (h₂ : P₂ = P₃) (Q : RSymbols P₁) :
     (Q.cast h₁).cast h₂ = Q.cast (h₁.trans h₂) := by cases h₁; cases h₂; rfl
 
-/-- Equivalence between `RSymbols P₁` and `RSymbols P₂` induced by `h : P₁ = P₂`. -/
-def castEquiv {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) : RSymbols P₁ ≃ RSymbols P₂ where
-  toFun := cast h
-  invFun := cast h.symm
-  left_inv _ := by simp
-  right_inv _ := by simp
-
-@[simp]
-theorem castEquiv_apply {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) (Q : RSymbols P₁) :
-    castEquiv h Q = Q.cast h := (rfl)
-
-@[simp]
-theorem castEquiv_symm_apply {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) (Q : RSymbols P₂) :
-    (castEquiv h).symm Q = Q.cast h.symm := (rfl)
-
 /-- Right-unit braiding law: `R^{au}_c = 1` on every unit-indexed entry. -/
 @[simp]
 theorem R_unit_right (Q : RSymbols P) (a c : ι) (i : Fin (N.N a N.unit c))
     (j : Fin (N.N N.unit a c)) : Q.R a N.unit c i j = 1 := by
   obtain rfl := N.eq_of_fin_unit_right i
-  rw [N.fin_unit_right_eq a i, N.fin_unit_left_eq a j]
+  rw [Subsingleton.elim i (N.unitRight a), Subsingleton.elim j (N.unitLeft a)]
   have hhex := Q.hexagon_forward a N.unit N.unit a a a
     (N.unitRight a) (N.unitRight a) (N.unitLeft a) (N.unitLeft a)
   rw [N.sum_fin_unit_left_fst N.unit] at hhex
-  simp only [FusionRules.sum_fin_unit_right_self, FusionRules.sum_fin_unit_left_self,
+  simp_rw [Fintype.sum_unique, Subsingleton.elim (default : Fin (N.N a N.unit a)) (N.unitRight a),
+    Subsingleton.elim (default : Fin (N.N N.unit a a)) (N.unitLeft a),
     P.triangle_self, P.F_unit_left_self, one_mul, mul_one] at hhex
-  have hinv : Q.R a N.unit a (N.unitRight a) (N.unitLeft a) *
-      Q.Rinv a N.unit a (N.unitLeft a) (N.unitRight a) = 1 := by
-    simpa using Q.sum_R_mul_Rinv a N.unit a (N.unitRight a) (N.unitRight a)
+  have hinv := Q.sum_R_mul_Rinv a N.unit a (N.unitRight a) (N.unitRight a)
+  rw [Fintype.sum_unique, Subsingleton.elim default (N.unitLeft a)] at hinv
+  simp only [↓reduceIte] at hinv
   exact (IsIdempotentElem.iff_eq_one_of_isUnit (.of_mul_eq_one _ hinv)).mp hhex.symm
 
 /-- Inverse right-unit braiding law: `Rinv^{au}_c = 1` on every unit-indexed entry. -/
@@ -802,23 +781,26 @@ theorem R_unit_right (Q : RSymbols P) (a c : ι) (i : Fin (N.N a N.unit c))
 theorem Rinv_unit_right (Q : RSymbols P) (a c : ι) (j : Fin (N.N N.unit a c))
     (i : Fin (N.N a N.unit c)) : Q.Rinv a N.unit c j i = 1 := by
   obtain rfl := N.eq_of_fin_unit_right i
-  rw [N.fin_unit_left_eq a j, N.fin_unit_right_eq a i]
-  simpa using Q.sum_R_mul_Rinv a N.unit a (N.unitRight a) (N.unitRight a)
+  rw [Subsingleton.elim j (N.unitLeft a), Subsingleton.elim i (N.unitRight a)]
+  have hinv := Q.sum_R_mul_Rinv a N.unit a (N.unitRight a) (N.unitRight a)
+  rw [Fintype.sum_unique, Subsingleton.elim default (N.unitLeft a), Q.R_unit_right, one_mul] at hinv
+  simpa using hinv
 
 /-- Left-unit braiding law: `R^{ua}_c = 1` on every unit-indexed entry. -/
 @[simp]
 theorem R_unit_left (Q : RSymbols P) (a c : ι) (i : Fin (N.N N.unit a c))
     (j : Fin (N.N a N.unit c)) : Q.R N.unit a c i j = 1 := by
   obtain rfl := N.eq_of_fin_unit_left i
-  rw [N.fin_unit_left_eq a i, N.fin_unit_right_eq a j]
+  rw [Subsingleton.elim i (N.unitLeft a), Subsingleton.elim j (N.unitRight a)]
   have hhex := Q.hexagon_reverse N.unit N.unit a a a a
     (N.unitLeft a) (N.unitLeft a) (N.unitRight a) (N.unitRight a)
   rw [N.sum_fin_unit_left_fst N.unit] at hhex
-  simp only [FusionRules.sum_fin_unit_left_self, FusionRules.sum_fin_unit_right_self,
+  simp_rw [Fintype.sum_unique, Subsingleton.elim (default : Fin (N.N N.unit a a)) (N.unitLeft a),
+    Subsingleton.elim (default : Fin (N.N a N.unit a)) (N.unitRight a),
     P.Finv_unit_left_self, P.Finv_triangle_self, one_mul, mul_one] at hhex
-  have hinv : Q.R N.unit a a (N.unitLeft a) (N.unitRight a) *
-      Q.Rinv N.unit a a (N.unitRight a) (N.unitLeft a) = 1 := by
-    simpa using Q.sum_R_mul_Rinv N.unit a a (N.unitLeft a) (N.unitLeft a)
+  have hinv := Q.sum_R_mul_Rinv N.unit a a (N.unitLeft a) (N.unitLeft a)
+  rw [Fintype.sum_unique, Subsingleton.elim default (N.unitRight a)] at hinv
+  simp only [↓reduceIte] at hinv
   exact (IsIdempotentElem.iff_eq_one_of_isUnit (.of_mul_eq_one _ hinv)).mp hhex.symm
 
 /-- Inverse left-unit braiding law: `Rinv^{ua}_c = 1` on every unit-indexed entry. -/
@@ -826,8 +808,10 @@ theorem R_unit_left (Q : RSymbols P) (a c : ι) (i : Fin (N.N N.unit a c))
 theorem Rinv_unit_left (Q : RSymbols P) (a c : ι) (j : Fin (N.N a N.unit c))
     (i : Fin (N.N N.unit a c)) : Q.Rinv N.unit a c j i = 1 := by
   obtain rfl := N.eq_of_fin_unit_left i
-  rw [N.fin_unit_right_eq a j, N.fin_unit_left_eq a i]
-  simpa using Q.sum_R_mul_Rinv N.unit a a (N.unitLeft a) (N.unitLeft a)
+  rw [Subsingleton.elim j (N.unitRight a), Subsingleton.elim i (N.unitLeft a)]
+  have hinv := Q.sum_R_mul_Rinv N.unit a a (N.unitLeft a) (N.unitLeft a)
+  rw [Fintype.sum_unique, Subsingleton.elim default (N.unitRight a), Q.R_unit_left, one_mul] at hinv
+  simpa using hinv
 
 end RSymbols
 

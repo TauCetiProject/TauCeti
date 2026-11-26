@@ -120,6 +120,9 @@ def comap {J : Type*} [AddMonoid J] (f : J →+ I) (c : TwistingCocycle I R) :
 @[simp] lemma comap_comp {J K : Type*} [AddMonoid J] [AddMonoid K] (f : J →+ I) (g : K →+ J)
     (c : TwistingCocycle I R) : (c.comap f).comap g = c.comap (f.comp g) := by ext; rfl
 
+@[simp] lemma comap_one {J : Type*} [AddMonoid J] (f : J →+ I) :
+    (1 : TwistingCocycle I R).comap f = 1 := by ext; simp
+
 lemma comap_symm_comap {J : Type*} [AddMonoid J] (e : I ≃+ J) (c : TwistingCocycle I R) :
     (c.comap (e.symm : J →+ I)).comap (e : I →+ J) = c := by
   ext; simp
@@ -142,6 +145,18 @@ def domCongr {J : Type*} [AddMonoid J] (e : I ≃+ J) :
 @[simp] lemma domCongr_symm {J : Type*} [AddMonoid J] (e : I ≃+ J) :
     (domCongr e : TwistingCocycle I R ≃ TwistingCocycle J R).symm = domCongr e.symm := (rfl)
 
+@[simp] lemma domCongr_refl :
+    (domCongr (AddEquiv.refl I) : TwistingCocycle I R ≃ TwistingCocycle I R) = Equiv.refl _ := by
+  ext; simp
+
+lemma domCongr_trans {J K : Type*} [AddMonoid J] [AddMonoid K] (e₁ : I ≃+ J) (e₂ : J ≃+ K) :
+    (domCongr e₁ : TwistingCocycle I R ≃ TwistingCocycle J R).trans (domCongr e₂) =
+      domCongr (e₁.trans e₂) := by
+  ext; simp
+
+lemma domCongr_one {J : Type*} [AddMonoid J] (e : I ≃+ J) :
+    domCongr e (1 : TwistingCocycle I R) = 1 := by simp
+
 /-- Push a twisting cocycle forward along a monoid homomorphism `f : R →* S`. -/
 def map {S : Type*} [Monoid S] (f : R →* S) (c : TwistingCocycle I R) : TwistingCocycle I S where
   ω i₁ i₂ i₃ := Units.map f (c.ω i₁ i₂ i₃)
@@ -157,6 +172,9 @@ def map {S : Type*} [Monoid S] (f : R →* S) (c : TwistingCocycle I R) : Twisti
 @[simp] lemma map_comp {S T : Type*} [Monoid S] [Monoid T] (f : R →* S) (g : S →* T)
     (c : TwistingCocycle I R) : (c.map f).map g = c.map (g.comp f) := by ext; simp
 
+@[simp] protected lemma map_one {S : Type*} [Monoid S] (f : R →* S) :
+    (1 : TwistingCocycle I R).map f = 1 := by ext; simp
+
 /-- The normalized `3`-cocycle on `ZMod 2` with `ω 1 1 1 = u` (`u * u = 1`) and `1` elsewhere. -/
 def zmod2 (u : Rˣ) (hu : u * u = 1) : TwistingCocycle (ZMod 2) R where
   ω a b d := if a = 1 ∧ b = 1 ∧ d = 1 then u else 1
@@ -168,6 +186,9 @@ def zmod2 (u : Rˣ) (hu : u * u = 1) : TwistingCocycle (ZMod 2) R where
 
 @[simp] lemma zmod2_ω (u : Rˣ) (hu : u * u = 1) (a b d : ZMod 2) :
     (zmod2 u hu).ω a b d = if a = 1 ∧ b = 1 ∧ d = 1 then u else 1 := (rfl)
+
+@[simp] lemma zmod2_one (hu : (1 : Rˣ) * 1 = 1 := mul_one 1) :
+    zmod2 (1 : Rˣ) hu = 1 := by ext; simp
 
 /-- Normalized `3`-cocycles on `ZMod 2` are in bijection with `{ u : Rˣ // u * u = 1 }` via
 `c ↦ c.ω 1 1 1`. -/
@@ -191,7 +212,7 @@ def zmod2Equiv : TwistingCocycle (ZMod 2) R ≃ { u : Rˣ // u * u = 1 } where
 @[simp] lemma zmod2Equiv_zmod2 (u : Rˣ) (hu : u * u = 1) :
     zmod2Equiv (zmod2 u hu) = ⟨u, hu⟩ := zmod2Equiv.apply_symm_apply ⟨u, hu⟩
 
-@[simp] lemma zmod2_ω_one_one_one (c' : TwistingCocycle (ZMod 2) R)
+@[simp] lemma zmod2_ω_eq_self (c' : TwistingCocycle (ZMod 2) R)
     (hc : c'.ω 1 1 1 * c'.ω 1 1 1 = 1) : zmod2 (c'.ω 1 1 1) hc = c' :=
   zmod2Equiv.symm_apply_apply c'
 

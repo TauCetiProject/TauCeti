@@ -67,14 +67,6 @@ def ofMulIdx {a b c : M} (h : a * b = c) : Fin ((ofMul M).N a b c) := ⟨0, by s
 @[simp]
 theorem val_ofMulIdx {a b c : M} (h : a * b = c) : (ofMulIdx h : ℕ) = 0 := (rfl)
 
-theorem fin_ofMul_eq {a b c : M} (h : a * b = c) (i : Fin ((ofMul M).N a b c)) :
-    i = ofMulIdx h :=
-  Subsingleton.elim i (ofMulIdx h)
-
-theorem sum_fin_ofMul_of_eq {β : Type*} [AddCommMonoid β] {a b c : M} (h : a * b = c)
-    (f : Fin ((ofMul M).N a b c) → β) : ∑ i, f i = f (ofMulIdx h) :=
-  Fintype.sum_subsingleton f (ofMulIdx h)
-
 end MulOneClass
 
 section Monoid
@@ -101,14 +93,6 @@ def ofMulRight {a b c d : M} (h : a * b * c = d) : (ofMul M).Right a b c d :=
 @[simp]
 theorem ofMulRight_fst {a b c d : M} (h : a * b * c = d) : (ofMulRight h).fst = b * c := (rfl)
 
-theorem left_ofMul_eq {a b c d : M} (h : a * b * c = d) (x : (ofMul M).Left a b c d) :
-    x = ofMulLeft h :=
-  Subsingleton.elim x (ofMulLeft h)
-
-theorem right_ofMul_eq {a b c d : M} (h : a * b * c = d) (y : (ofMul M).Right a b c d) :
-    y = ofMulRight h :=
-  Subsingleton.elim y (ofMulRight h)
-
 end Monoid
 
 end FusionRules
@@ -119,9 +103,8 @@ namespace FSymbols
 
 section Pointed
 
-open FusionRules (ofMulIdx ofMulLeft ofMulRight mul_eq_of_ofMul fin_ofMul_eq
-  mul_eq_of_left_ofMul mul_eq_of_right_ofMul left_ofMul_eq right_ofMul_eq sum_fin_ofMul_of_eq
-  sum_sum_ofMul)
+open FusionRules (ofMulIdx ofMulLeft ofMulRight mul_eq_of_ofMul
+  mul_eq_of_left_ofMul mul_eq_of_right_ofMul sum_sum_ofMul)
 open GradedObject (TwistingCocycle)
 
 variable {R : Type v} [CommSemiring R] {M : Type u} [Fintype M] [DecidableEq M] [Monoid M]
@@ -145,9 +128,10 @@ private theorem ofMul_pentagon_sides
   obtain rfl := mul_eq_of_ofMul i₁; obtain rfl := mul_eq_of_ofMul i₂
   obtain rfl := mul_eq_of_ofMul i₃; obtain rfl := mul_eq_of_ofMul k
   obtain rfl := mul_eq_of_ofMul m
-  refine ⟨by rw [sum_fin_ofMul_of_eq (mul_assoc (A * B) C D).symm, hF, hF], ?_⟩
-  rw [sum_sum_ofMul, sum_fin_ofMul_of_eq rfl, sum_fin_ofMul_of_eq (mul_assoc A B C).symm,
-    sum_fin_ofMul_of_eq (mul_assoc B C D), hF, hF, hF]
+  refine ⟨by rw [Fintype.sum_subsingleton _ (ofMulIdx (mul_assoc (A * B) C D).symm), hF, hF], ?_⟩
+  rw [sum_sum_ofMul, Fintype.sum_subsingleton _ (ofMulIdx rfl),
+    Fintype.sum_subsingleton _ (ofMulIdx (mul_assoc A B C).symm),
+    Fintype.sum_subsingleton _ (ofMulIdx (mul_assoc B C D)), hF, hF, hF]
 
 /-- The F-symbols on `FusionRules.ofMul M` attached to a normalized `3`-cocycle
 `c : TwistingCocycle (Additive M) R`, with `F^{abc}_{abc} = (c.ω a b c)⁻¹` and
@@ -160,13 +144,13 @@ def ofTwistingCocycle (c : TwistingCocycle (Additive M) R) :
     ext x₁ x₂
     have h := mul_eq_of_left_ofMul x₁
     rw [Subsingleton.elim x₁ x₂, Matrix.mul_apply, Matrix.one_apply_eq,
-      Fintype.sum_eq_single (ofMulRight h) fun y hy ↦ (hy (right_ofMul_eq h y)).elim]
+      Fintype.sum_subsingleton _ (ofMulRight h)]
     simp only [Matrix.of_apply, Units.inv_mul]
   Finv_mul_F a b c' d := by
     ext y₁ y₂
     have h := mul_eq_of_right_ofMul y₁
     rw [Subsingleton.elim y₁ y₂, Matrix.mul_apply, Matrix.one_apply_eq,
-      Fintype.sum_eq_single (ofMulLeft h) fun x hx ↦ (hx (left_ofMul_eq h x)).elim]
+      Fintype.sum_subsingleton _ (ofMulLeft h)]
     simp only [Matrix.of_apply, Units.mul_inv]
   pentagon A B C D _ _ _ _ _ i₁ i₂ i₃ k m n := by
     obtain ⟨hL, hR⟩ := ofMul_pentagon_sides
@@ -204,7 +188,7 @@ private theorem pointed_F_eq_canonical (P : FSymbols R (FusionRules.ofMul M)) (a
     (x : (FusionRules.ofMul M).Left a b c' d) (y : (FusionRules.ofMul M).Right a b c' d) :
     P.F a b c' d x y = P.F a b c' (a * b * c') (ofMulLeft rfl) (ofMulRight rfl) := by
   obtain rfl := mul_eq_of_left_ofMul x
-  rw [left_ofMul_eq rfl x, right_ofMul_eq rfl y]
+  rw [Subsingleton.elim x (ofMulLeft rfl), Subsingleton.elim y (ofMulRight rfl)]
 
 /-- Extract the normalized `3`-cocycle `ω a b c = Finv^{abc}_{abc}` from F-symbols on
 `FusionRules.ofMul M` (in particular, from pointed F-symbols when `M` is a `Group`). -/
@@ -217,12 +201,12 @@ def toTwistingCocycle (P : FSymbols R (FusionRules.ofMul M)) : TwistingCocycle (
       val_inv := by
         have h := P.sum_Finv_mul_F a.toMul b.toMul c'.toMul (a.toMul * b.toMul * c'.toMul)
           (ofMulRight rfl) (ofMulRight rfl)
-        rw [Fintype.sum_eq_single (ofMulLeft rfl) fun x hx ↦ (hx (left_ofMul_eq rfl x)).elim] at h
+        rw [Fintype.sum_subsingleton _ (ofMulLeft rfl)] at h
         simpa using h
       inv_val := by
         have h := P.sum_F_mul_Finv a.toMul b.toMul c'.toMul (a.toMul * b.toMul * c'.toMul)
           (ofMulLeft rfl) (ofMulLeft rfl)
-        rw [Fintype.sum_eq_single (ofMulRight rfl) fun y hy ↦ (hy (right_ofMul_eq rfl y)).elim] at h
+        rw [Fintype.sum_subsingleton _ (ofMulRight rfl)] at h
         simpa using h }
   cocycle i₁ i₂ i₃ i₄ := by
     have hBCDE : i₁.toMul * (i₂.toMul * (i₃.toMul * i₄.toMul)) =
@@ -280,7 +264,7 @@ theorem Finv_eq_toTwistingCocycle_ω (P : FSymbols R (FusionRules.ofMul M)) (a b
     P.Finv a b c' d y x = (P.toTwistingCocycle.ω (.ofMul a) (.ofMul b) (.ofMul c') : R) := by
   obtain rfl := mul_eq_of_right_ofMul y
   rw [val_toTwistingCocycle_ω, toMul_ofMul, toMul_ofMul, toMul_ofMul,
-    right_ofMul_eq rfl y, left_ofMul_eq rfl x]
+    Subsingleton.elim y (ofMulRight rfl), Subsingleton.elim x (ofMulLeft rfl)]
 
 @[simp]
 theorem toTwistingCocycle_ofTwistingCocycle (c : TwistingCocycle (Additive M) R) :
@@ -357,7 +341,7 @@ namespace RSymbols
 
 section Pointed
 
-open FusionRules (ofMulIdx mul_eq_of_ofMul fin_ofMul_eq sum_fin_ofMul_of_eq sum_sum_ofMul)
+open FusionRules (ofMulIdx mul_eq_of_ofMul sum_sum_ofMul)
 open GradedObject (TwistingCocycle PointedBraiding)
 
 variable {K : Type v} [CommSemiring K] {M : Type u} [Fintype M] [DecidableEq M] [CommMonoid M]
@@ -383,10 +367,12 @@ private theorem ofMul_hexagon_forward_sides
       ρ a b * (((c.ω (.ofMul b) (.ofMul a) (.ofMul c'))⁻¹ : Kˣ) : K) * ρ a c') := by
   obtain rfl := mul_eq_of_ofMul i; obtain rfl := mul_eq_of_ofMul j
   obtain rfl := mul_eq_of_ofMul n
-  refine ⟨?_, by rw [sum_fin_ofMul_of_eq (mul_comm b a),
-    sum_fin_ofMul_of_eq (mul_comm a c'), FSymbols.ofTwistingCocycle_F_apply, hR, hR]⟩
-  rw [sum_sum_ofMul, sum_fin_ofMul_of_eq rfl, sum_fin_ofMul_of_eq (mul_assoc a b c').symm,
-    sum_fin_ofMul_of_eq (by rw [mul_comm (b * c') a, ← mul_assoc]),
+  refine ⟨?_, by rw [Fintype.sum_subsingleton _ (ofMulIdx (mul_comm b a)),
+    Fintype.sum_subsingleton _ (ofMulIdx (mul_comm a c')),
+    FSymbols.ofTwistingCocycle_F_apply, hR, hR]⟩
+  rw [sum_sum_ofMul, Fintype.sum_subsingleton _ (ofMulIdx rfl),
+    Fintype.sum_subsingleton _ (ofMulIdx (mul_assoc a b c').symm),
+    Fintype.sum_subsingleton _ (ofMulIdx (by rw [mul_comm (b * c') a, ← mul_assoc])),
     FSymbols.ofTwistingCocycle_F_apply, FSymbols.ofTwistingCocycle_F_apply, hR]
 
 private theorem ofMul_hexagon_reverse_sides
@@ -409,11 +395,13 @@ private theorem ofMul_hexagon_reverse_sides
       ρ b c' * (c.ω (.ofMul a) (.ofMul c') (.ofMul b) : K) * ρ a c') := by
   obtain rfl := mul_eq_of_ofMul k; obtain rfl := mul_eq_of_ofMul l
   obtain rfl := mul_eq_of_ofMul n
-  refine ⟨?_, by rw [sum_fin_ofMul_of_eq (mul_comm c' b),
-    sum_fin_ofMul_of_eq (mul_comm a c'), FSymbols.ofTwistingCocycle_Finv_apply, hR, hR]⟩
-  rw [sum_sum_ofMul, sum_fin_ofMul_of_eq rfl, sum_fin_ofMul_of_eq (mul_assoc a b c'),
-    sum_fin_ofMul_of_eq
-      (by simp [mul_comm, mul_left_comm] : c' * (a * b) = a * (b * c')),
+  refine ⟨?_, by rw [Fintype.sum_subsingleton _ (ofMulIdx (mul_comm c' b)),
+    Fintype.sum_subsingleton _ (ofMulIdx (mul_comm a c')),
+    FSymbols.ofTwistingCocycle_Finv_apply, hR, hR]⟩
+  rw [sum_sum_ofMul, Fintype.sum_subsingleton _ (ofMulIdx rfl),
+    Fintype.sum_subsingleton _ (ofMulIdx (mul_assoc a b c')),
+    Fintype.sum_subsingleton _
+      (ofMulIdx (by simp [mul_comm, mul_left_comm] : c' * (a * b) = a * (b * c'))),
     FSymbols.ofTwistingCocycle_Finv_apply, FSymbols.ofTwistingCocycle_Finv_apply, hR]
 
 /-- Construct `RSymbols` on `FSymbols.ofTwistingCocycle c` from a `PointedBraiding c`. -/
@@ -424,13 +412,13 @@ def ofPointedBraiding (B : PointedBraiding c) : RSymbols (FSymbols.ofTwistingCoc
     ext i₁ i₂
     have h := mul_eq_of_ofMul i₁
     rw [Subsingleton.elim i₁ i₂, Matrix.mul_apply, Matrix.one_apply_eq,
-      sum_fin_ofMul_of_eq (mul_comm b a ▸ h)]
+      Fintype.sum_subsingleton _ (ofMulIdx (mul_comm b a ▸ h))]
     simp only [Matrix.of_apply, Units.mul_inv]
   Rinv_mul_R a b d := by
     ext j₁ j₂
     have h' := mul_eq_of_ofMul j₁
     rw [Subsingleton.elim j₁ j₂, Matrix.mul_apply, Matrix.one_apply_eq,
-      sum_fin_ofMul_of_eq (mul_comm a b ▸ h')]
+      Fintype.sum_subsingleton _ (ofMulIdx (mul_comm a b ▸ h'))]
     simp only [Matrix.of_apply, Units.inv_mul]
   hexagon_forward a b c' _ _ _ i j n o := by
     obtain ⟨hL, hR⟩ := ofMul_hexagon_forward_sides
@@ -474,7 +462,7 @@ private theorem pointed_R_eq_canonical (Q : RSymbols (FSymbols.ofTwistingCocycle
     (i : Fin ((FusionRules.ofMul M).N x y d)) (j : Fin ((FusionRules.ofMul M).N y x d)) :
     Q.R x y d i j = Q.R x y (x * y) (ofMulIdx rfl) (ofMulIdx (mul_comm y x)) := by
   obtain rfl := mul_eq_of_ofMul i
-  rw [fin_ofMul_eq rfl i, fin_ofMul_eq (mul_comm y x) j]
+  rw [Subsingleton.elim i (ofMulIdx rfl), Subsingleton.elim j (ofMulIdx (mul_comm y x))]
 
 /-- Extract a `PointedBraiding c` from `RSymbols (FSymbols.ofTwistingCocycle c)`. -/
 def toPointedBraiding (Q : RSymbols (FSymbols.ofTwistingCocycle c)) : PointedBraiding c where
@@ -485,12 +473,12 @@ def toPointedBraiding (Q : RSymbols (FSymbols.ofTwistingCocycle c)) : PointedBra
         (ofMulIdx (mul_comm b.toMul a.toMul)) (ofMulIdx rfl)
       val_inv := by
         have h := Q.sum_R_mul_Rinv a.toMul b.toMul (a.toMul * b.toMul) (ofMulIdx rfl) (ofMulIdx rfl)
-        rw [sum_fin_ofMul_of_eq (mul_comm b.toMul a.toMul)] at h
+        rw [Fintype.sum_subsingleton _ (ofMulIdx (mul_comm b.toMul a.toMul))] at h
         simpa using h
       inv_val := by
         have h := Q.sum_Rinv_mul_R a.toMul b.toMul (a.toMul * b.toMul)
           (ofMulIdx (mul_comm b.toMul a.toMul)) (ofMulIdx (mul_comm b.toMul a.toMul))
-        rw [sum_fin_ofMul_of_eq rfl] at h
+        rw [Fintype.sum_subsingleton _ (ofMulIdx rfl)] at h
         simpa using h }
   hexagon_forward a b c' := by
     have ho : b.toMul * (c'.toMul * a.toMul) = a.toMul * b.toMul * c'.toMul := by
@@ -545,7 +533,7 @@ theorem Rinv_eq_inv_toPointedBraiding_r (Q : RSymbols (FSymbols.ofTwistingCocycl
     Q.Rinv a b d j i = (((Q.toPointedBraiding.r (.ofMul a) (.ofMul b))⁻¹ : Kˣ) : K) := by
   obtain rfl := mul_eq_of_ofMul i
   rw [val_inv_toPointedBraiding_r, toMul_ofMul, toMul_ofMul,
-    fin_ofMul_eq (mul_comm b a) j, fin_ofMul_eq rfl i]
+    Subsingleton.elim j (ofMulIdx (mul_comm b a)), Subsingleton.elim i (ofMulIdx rfl)]
 
 @[simp]
 theorem toPointedBraiding_ofPointedBraiding (B : PointedBraiding c) :
@@ -742,7 +730,7 @@ nontrivial braiding entry `R^{11}_0 = r`, witnessing `(R^{11}_0)^2 = F^{111}_1`,
 `RSymbols.zmod2`. -/
 def zmod2Equiv (u : Kˣ) (hu : u * u = 1) :
     RSymbols (FSymbols.zmod2 u hu) ≃ { r : Kˣ // r * r = u } :=
-  (castEquiv (FSymbols.zmod2_eq_ofTwistingCocycle u hu)).trans
+  (Equiv.cast (congrArg RSymbols (FSymbols.zmod2_eq_ofTwistingCocycle u hu))).trans
     ((pointedBraidingEquiv _).trans
       ((PointedBraiding.comapEquiv (AddEquiv.additiveMultiplicative (ZMod 2))
         (TwistingCocycle.zmod2 u hu)).trans (PointedBraiding.zmod2Equiv u hu)))
@@ -751,14 +739,21 @@ def zmod2Equiv (u : Kˣ) (hu : u * u = 1) :
 theorem val_zmod2Equiv_apply (u : Kˣ) (hu : u * u = 1) (Q : RSymbols (FSymbols.zmod2 u hu)) :
     (((zmod2Equiv u hu Q).val : Kˣ) : K) =
       Q.R (.ofAdd 1) (.ofAdd 1) 1 (ofMulIdx (by decide)) (ofMulIdx (by decide)) := by
+  have hcast {P₁ P₂ : FSymbols K (FusionRules.ofMul (Multiplicative (ZMod 2)))} (h : P₁ = P₂)
+      (Q' : RSymbols P₁) : _root_.cast (congrArg RSymbols h) Q' = Q'.cast h := by
+    cases h; simp
   have h := R_eq_toPointedBraiding_r (Q.cast (FSymbols.zmod2_eq_ofTwistingCocycle u hu))
     (.ofAdd 1) (.ofAdd 1) 1 (ofMulIdx (by decide)) (ofMulIdx (by decide))
-  simpa [zmod2Equiv] using h.symm
+  simpa [zmod2Equiv, hcast (FSymbols.zmod2_eq_ofTwistingCocycle u hu)] using h.symm
 
 @[simp]
 theorem zmod2Equiv_symm_apply (u : Kˣ) (hu : u * u = 1) (r : { r : Kˣ // r * r = u }) :
     (zmod2Equiv u hu).symm r = zmod2 hu r.val r.property := by
-  simp [zmod2Equiv, zmod2_eq_cast_ofPointedBraiding]
+  have hcast {P₁ P₂ : FSymbols K (FusionRules.ofMul (Multiplicative (ZMod 2)))} (h : P₁ = P₂)
+      (Q' : RSymbols P₂) : (Equiv.cast (congrArg RSymbols h)).symm Q' = Q'.cast h.symm := by
+    cases h; simp
+  simpa [zmod2Equiv, zmod2_eq_cast_ofPointedBraiding] using
+    hcast (FSymbols.zmod2_eq_ofTwistingCocycle u hu) _
 
 @[simp]
 theorem zmod2Equiv_zmod2 {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u) :
