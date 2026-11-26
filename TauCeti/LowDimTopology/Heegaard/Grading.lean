@@ -91,9 +91,12 @@ into `CF^∞` (`isHomogeneous_mapRange_toLaurent`), the quotient map onto `CF⁺
 For a Maslov grading modulo `Λ`, coarsening these gradings along `ℚ → ℚ ⧸ Λ`
 (`TauCeti.InternalGrading.coarsen`) grades the chain groups by `ℚ ⧸ Λ`. In these gradings the four
 differentials have degree `-1` (`IsMaslovGradingMod.isHomogeneous_hatDifferential` and its three
-companions) and `U` has degree `-2` (`X_smul_mem_coarsenGrading_minusGradedPiece` and its two
-companions). The statements for Maslov gradings are the case `Λ = ⊥`, in which coarsening merges
-no degrees (`LinearMap.IsHomogeneous.of_coarsenGrading`).
+companions) and `U` has degree `-2` (`X_smul_mem_coarsenGrading_minusGradedPiece`,
+`X_smul_mem_coarsenGrading_infinityGradedPiece`, `X_smul_mem_coarsenGrading_plusGrading_piece`,
+and `T_smul_mem_coarsenGrading_infinityGradedPiece` for every power of `U` on `CF^∞`). The quotient
+map onto `CF⁺` keeps the coarsened degree (`mk_mem_coarsenGrading_plusGrading_piece`). The
+statements for Maslov gradings are the case `Λ = ⊥`, in which coarsening merges no degrees
+(`LinearMap.IsHomogeneous.of_coarsenGrading`).
 
 ## Main definitions
 
@@ -199,71 +202,6 @@ theorem add_const (h : H.IsMaslovGrading χ gr) (c : ℚ) :
   sub_eq hD := by
     rw [← h.sub_eq hD]
     ring
-
-/-- Two Maslov gradings differ by the same amount at generators joined by a domain. -/
-theorem sub_eq_sub (h : H.IsMaslovGrading χ gr) (h' : H.IsMaslovGrading χ gr')
-    (hD : H.IsDomainBetween x y D) : gr' x - gr x = gr' y - gr y := by
-  have := (h'.sub_eq hD).trans (h.sub_eq hD).symm
-  linarith
-
-/-- **Maslov gradings are unique up to an overall shift.** When every two generators are joined
-by a domain, two Maslov gradings differ by a constant. -/
-theorem exists_eq_add (h : H.IsMaslovGrading χ gr) (h' : H.IsMaslovGrading χ gr')
-    (hconn : ∀ x y : H.Generator, ∃ D, H.IsDomainBetween x y D) :
-    ∃ c : ℚ, gr' = fun x => gr x + c := by
-  rcases isEmpty_or_nonempty H.Generator with hH | ⟨⟨x₀⟩⟩
-  · exact ⟨0, funext isEmptyElim⟩
-  refine ⟨gr' x₀ - gr x₀, funext fun x => ?_⟩
-  obtain ⟨D, hD⟩ := hconn x x₀
-  have := h.sub_eq_sub h' hD
-  linarith
-
-/-- In the presence of a Maslov grading, a domain `E` from a generator to itself has Maslov index
-`2 ∑ᵢ n_{zᵢ}(E)`. -/
-theorem maslovIndex_self_eq_two_mul_sum (h : H.IsMaslovGrading χ gr)
-    (hE : H.IsDomainBetween x x E) :
-    H.maslovIndex χ x x E = 2 * ∑ z, (E (H.basepoint z) : ℚ) := by
-  have := h.sub_eq hE
-  rw [sub_self] at this
-  linarith
-
-/-- In the presence of a Maslov grading, every periodic domain has Maslov index zero at every
-generator. -/
-theorem maslovIndex_eq_zero_of_mem_periodicDomains (h : H.IsMaslovGrading χ gr)
-    {P : Region → ℤ} (hP : P ∈ H.periodicDomains) (x : H.Generator) :
-    H.maslovIndex χ x x P = 0 :=
-  maslovIndex_eq_zero_of_mem_periodicDomains_of_forall
-    (fun _ _ => h.maslovIndex_self_eq_two_mul_sum) hP x
-
-/-- In the presence of a Maslov grading, the periodic Maslov indices vanish at every generator, so
-the relative grading is well defined in `ℚ` rather than only modulo them. -/
-theorem periodicMaslovIndices_eq_bot (h : H.IsMaslovGrading χ gr) (x : H.Generator) :
-    H.periodicMaslovIndices χ x = ⊥ :=
-  periodicMaslovIndices_eq_bot_iff.mpr fun _ hP => h.maslovIndex_eq_zero_of_mem_periodicDomains hP x
-
-/-- A Maslov grading computes the relative grading of generators joined by a domain:
-`gr(x, y) = gr(x) - gr(y)`. -/
-theorem relativeGrading_eq (h : H.IsMaslovGrading χ gr) (hD : H.IsDomainBetween x y D) :
-    H.relativeGrading χ x y = gr x - gr y := by
-  rw [hD.relativeGrading_eq (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_forall
-    fun _ _ => h.maslovIndex_self_eq_two_mul_sum) (periodicMaslovIndices_eq_bot_iff.mp
-      (h.periodicMaslovIndices_eq_bot x)), h.sub_eq hD]
-
-/-- **The minus differential lowers a Maslov grading by one.** A term `U ^ k y` of the minus
-differential of `x` has `gr(x) - gr(y) = 1 - 2 k`. -/
-theorem sub_eq_one_sub_two_mul_of_coeff_minusCoefficient_ne_zero (h : H.IsMaslovGrading χ gr)
-    {k : ℕ} (hc : (H.minusCoefficient χ x y).coeff k ≠ 0) : gr x - gr y = 1 - 2 * k := by
-  obtain ⟨D, hD, hk⟩ := exists_mem_minusDomains_of_coeff_minusCoefficient_ne_zero hc
-  obtain ⟨hD, -, hμ⟩ := mem_minusDomains_iff.mp hD
-  rw [h.sub_eq hD, hμ, ← Int.cast_sum, hk, Int.cast_natCast]
-
-/-- **The hat differential lowers a Maslov grading by one.** A nonzero coefficient of the hat
-differential from `x` to `y` forces `gr(x) - gr(y) = 1`. -/
-theorem sub_eq_one_of_hatCoefficient_ne_zero (h : H.IsMaslovGrading χ gr)
-    (hc : H.hatCoefficient χ x y ≠ 0) : gr x - gr y = 1 := by
-  obtain ⟨D, hD⟩ := nonempty_hatDomains_of_hatCoefficient_ne_zero hc
-  obtain ⟨hD, hz, -, hμ⟩ := mem_hatDomains_iff.mp hD
-  simp [h.sub_eq hD, hμ, hz]
 
 end IsMaslovGrading
 
@@ -391,6 +329,74 @@ end IsMaslovGradingMod
 theorem isMaslovGradingMod_bot_iff : H.IsMaslovGradingMod ⊥ χ gr ↔ H.IsMaslovGrading χ gr := by
   refine ⟨fun h => ⟨fun hD => ?_⟩, fun h => h.isMaslovGradingMod ⊥⟩
   exact sub_eq_zero.mp (AddSubgroup.mem_bot.mp (h.sub_sub_mem hD))
+
+namespace IsMaslovGrading
+
+/-! The following statements about Maslov gradings are the case `Λ = ⊥` of those about Maslov
+gradings modulo `Λ`. -/
+
+/-- Two Maslov gradings differ by the same amount at generators joined by a domain. -/
+theorem sub_eq_sub (h : H.IsMaslovGrading χ gr) (h' : H.IsMaslovGrading χ gr')
+    (hD : H.IsDomainBetween x y D) : gr' x - gr x = gr' y - gr y := by
+  have := (h.isMaslovGradingMod ⊥).coe_sub_eq_coe_sub (h'.isMaslovGradingMod ⊥) hD
+  rwa [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_bot, sub_eq_zero] at this
+
+/-- **Maslov gradings are unique up to an overall shift.** When every two generators are joined
+by a domain, two Maslov gradings differ by a constant. -/
+theorem exists_eq_add (h : H.IsMaslovGrading χ gr) (h' : H.IsMaslovGrading χ gr')
+    (hconn : ∀ x y : H.Generator, ∃ D, H.IsDomainBetween x y D) :
+    ∃ c : ℚ, gr' = fun x => gr x + c := by
+  obtain ⟨c, hc⟩ := (h.isMaslovGradingMod ⊥).exists_coe_eq_add (h'.isMaslovGradingMod ⊥) hconn
+  refine ⟨c, funext fun x => ?_⟩
+  have := hc x
+  rwa [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_bot, sub_eq_zero] at this
+
+/-- In the presence of a Maslov grading, a domain `E` from a generator to itself has Maslov index
+`2 ∑ᵢ n_{zᵢ}(E)`. -/
+theorem maslovIndex_self_eq_two_mul_sum (h : H.IsMaslovGrading χ gr)
+    (hE : H.IsDomainBetween x x E) :
+    H.maslovIndex χ x x E = 2 * ∑ z, (E (H.basepoint z) : ℚ) :=
+  sub_eq_zero.mp
+    (AddSubgroup.mem_bot.mp ((h.isMaslovGradingMod ⊥).maslovIndex_sub_two_mul_sum_mem hE))
+
+/-- In the presence of a Maslov grading, every periodic domain has Maslov index zero at every
+generator. -/
+theorem maslovIndex_eq_zero_of_mem_periodicDomains (h : H.IsMaslovGrading χ gr)
+    {P : Region → ℤ} (hP : P ∈ H.periodicDomains) (x : H.Generator) :
+    H.maslovIndex χ x x P = 0 :=
+  maslovIndex_eq_zero_of_mem_periodicDomains_of_forall
+    (fun _ _ => h.maslovIndex_self_eq_two_mul_sum) hP x
+
+/-- In the presence of a Maslov grading, the periodic Maslov indices vanish at every generator, so
+the relative grading is well defined in `ℚ` rather than only modulo them. -/
+theorem periodicMaslovIndices_eq_bot (h : H.IsMaslovGrading χ gr) (x : H.Generator) :
+    H.periodicMaslovIndices χ x = ⊥ :=
+  le_bot_iff.mp ((h.isMaslovGradingMod ⊥).periodicMaslovIndices_le x)
+
+/-- A Maslov grading computes the relative grading of generators joined by a domain:
+`gr(x, y) = gr(x) - gr(y)`. -/
+theorem relativeGrading_eq (h : H.IsMaslovGrading χ gr) (hD : H.IsDomainBetween x y D) :
+    H.relativeGrading χ x y = gr x - gr y := by
+  have := (h.isMaslovGradingMod ⊥).coe_relativeGrading_eq
+    (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_forall
+      fun _ _ => h.maslovIndex_self_eq_two_mul_sum) hD
+  rwa [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_bot, sub_eq_zero] at this
+
+/-- **The minus differential lowers a Maslov grading by one.** A term `U ^ k y` of the minus
+differential of `x` has `gr(x) - gr(y) = 1 - 2 k`. -/
+theorem sub_eq_one_sub_two_mul_of_coeff_minusCoefficient_ne_zero (h : H.IsMaslovGrading χ gr)
+    {k : ℕ} (hc : (H.minusCoefficient χ x y).coeff k ≠ 0) : gr x - gr y = 1 - 2 * k := by
+  have := (h.isMaslovGradingMod ⊥).coe_sub_eq_one_sub_two_mul_of_coeff_minusCoefficient_ne_zero hc
+  rwa [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_bot, sub_eq_zero] at this
+
+/-- **The hat differential lowers a Maslov grading by one.** A nonzero coefficient of the hat
+differential from `x` to `y` forces `gr(x) - gr(y) = 1`. -/
+theorem sub_eq_one_of_hatCoefficient_ne_zero (h : H.IsMaslovGrading χ gr)
+    (hc : H.hatCoefficient χ x y ≠ 0) : gr x - gr y = 1 := by
+  have := (h.isMaslovGradingMod ⊥).coe_sub_eq_one_of_hatCoefficient_ne_zero hc
+  rwa [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_bot, sub_eq_zero] at this
+
+end IsMaslovGrading
 
 /-- **Existence of Maslov gradings modulo `Λ`.** The generators carry a Maslov grading modulo
 `Λ` exactly when every domain `E` from a generator to itself has `μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` in `Λ`.
@@ -770,49 +776,48 @@ theorem X_smul_mem_coarsenGrading_minusGradedPiece {κ : Type*} [AddMonoid κ] (
     {k : κ} {c : H.Generator →₀ (ZMod 2)[X]}
     (hc : c ∈ coarsenGrading (H.minusGradedPiece gr) f k) :
     (X : (ZMod 2)[X]) • c ∈ coarsenGrading (H.minusGradedPiece gr) f (k + f (-2)) :=
-  ((LinearMap.isHomogeneous_def
-    (f := DistribSMul.toLinearMap (ZMod 2) _ (X : (ZMod 2)[X]))).2 fun _ _ hc => by
-      simpa [sub_eq_add_neg] using X_smul_mem_minusGradedPiece hc).coarsenGrading f |>.map_mem hc
+  smul_mem_coarsenGrading (fun _ _ hc => by
+    rw [← sub_eq_add_neg]
+    exact X_smul_mem_minusGradedPiece hc) f hc
 
-/-- Multiplication by `U ^ m` shifts the coarsened degree of `CF^∞` by the image of `-2 m`. -/
-private theorem T_smul_mem_coarsenGrading_infinityGradedPiece {κ : Type*} [AddMonoid κ]
+/-- **Multiplication by `U ^ m` shifts the degree of `CF^∞` by `-2 m` after coarsening** along an
+additive map `f`, for every integer `m`. -/
+theorem T_smul_mem_coarsenGrading_infinityGradedPiece {κ : Type*} [AddMonoid κ]
     (f : ℚ →+ κ) {k : κ} {c : H.Generator →₀ (ZMod 2)[T;T⁻¹]}
     (hc : c ∈ coarsenGrading (H.infinityGradedPiece gr) f k) (m : ℤ) :
     (T m : (ZMod 2)[T;T⁻¹]) • c ∈ coarsenGrading (H.infinityGradedPiece gr) f (k + f (-2 * m)) :=
-  ((LinearMap.isHomogeneous_def
-    (f := DistribSMul.toLinearMap (ZMod 2) _ (T m : (ZMod 2)[T;T⁻¹]))).2 fun _ _ hc => by
-      simpa [sub_eq_add_neg] using T_smul_mem_infinityGradedPiece hc m).coarsenGrading f
-    |>.map_mem hc
+  smul_mem_coarsenGrading (fun _ _ hc => by
+    rw [neg_mul, ← sub_eq_add_neg]
+    exact T_smul_mem_infinityGradedPiece hc m) f hc
 
 /-- **`U` lowers the degree of `CF^∞` by two after coarsening** along an additive map `f`. -/
 theorem X_smul_mem_coarsenGrading_infinityGradedPiece {κ : Type*} [AddMonoid κ] (f : ℚ →+ κ)
     {k : κ} {c : H.Generator →₀ (ZMod 2)[T;T⁻¹]}
     (hc : c ∈ coarsenGrading (H.infinityGradedPiece gr) f k) :
     (X : (ZMod 2)[X]) • c ∈ coarsenGrading (H.infinityGradedPiece gr) f (k + f (-2)) :=
-  ((LinearMap.isHomogeneous_def
-    (f := DistribSMul.toLinearMap (ZMod 2) _ (X : (ZMod 2)[X]))).2 fun _ _ hc => by
-      simpa [sub_eq_add_neg] using X_smul_mem_infinityGradedPiece hc).coarsenGrading f
-    |>.map_mem hc
+  smul_mem_coarsenGrading (fun _ _ hc => by
+    rw [← sub_eq_add_neg]
+    exact X_smul_mem_infinityGradedPiece hc) f hc
 
-/-- The class in `CF⁺` of a chain of `CF^∞` of coarsened degree `k` has coarsened degree `k`. -/
-private theorem mk_mem_coarsenGrading_plusGrading_piece {κ : Type*} {f : ℚ → κ} {k : κ}
+/-- The class in `CF⁺` of a chain of `CF^∞` of coarsened degree `k` has coarsened degree `k`: the
+quotient map has degree `0` (`TauCeti.InternalGrading.isHomogeneous_mkQ`) also after coarsening. -/
+theorem mk_mem_coarsenGrading_plusGrading_piece {κ : Type*} [AddMonoid κ] {f : ℚ → κ} {k : κ}
     {c : H.Generator →₀ (ZMod 2)[T;T⁻¹]}
     (hc : c ∈ coarsenGrading (H.infinityGradedPiece gr) f k) :
     (Submodule.Quotient.mk c : (H.Generator →₀ (ZMod 2)[T;T⁻¹]) ⧸ H.minusLattice) ∈
-      coarsenGrading (H.plusGrading gr).piece f k :=
-  coarsenGrading_induction hc
-    (fun _ hi _ hy => hi ▸ mem_coarsenGrading_of_mem f (mk_mem_plusGrading_piece hy))
-    (zero_mem _) fun _ _ hy hz => by simpa only [Submodule.Quotient.mk_add] using add_mem hy hz
+      coarsenGrading (H.plusGrading gr).piece f k := by
+  simpa only [add_zero, Submodule.mkQ_apply, plusGrading] using
+    (((H.infinityGrading gr).isHomogeneous_mkQ H.minusLattice
+      (isHomogeneous_minusLattice H gr)).coarsenGrading_zero f).map_mem hc
 
 /-- **`U` lowers the degree of `CF⁺` by two after coarsening** along an additive map `f`. -/
 theorem X_smul_mem_coarsenGrading_plusGrading_piece {κ : Type*} [AddMonoid κ] (f : ℚ →+ κ)
     {k : κ} {y : (H.Generator →₀ (ZMod 2)[T;T⁻¹]) ⧸ H.minusLattice}
     (hy : y ∈ coarsenGrading (H.plusGrading gr).piece f k) :
     (X : (ZMod 2)[X]) • y ∈ coarsenGrading (H.plusGrading gr).piece f (k + f (-2)) :=
-  ((LinearMap.isHomogeneous_def
-    (f := DistribSMul.toLinearMap (ZMod 2) _ (X : (ZMod 2)[X]))).2 fun _ _ hy => by
-      simpa [sub_eq_add_neg] using X_smul_mem_plusGrading_piece hy).coarsenGrading f
-    |>.map_mem hy
+  smul_mem_coarsenGrading (fun _ _ hy => by
+    rw [← sub_eq_add_neg]
+    exact X_smul_mem_plusGrading_piece hy) f hy
 
 section Differential
 
@@ -846,23 +851,16 @@ theorem isHomogeneous_minusDifferential (h : H.IsMaslovGradingMod Λ χ gr) :
       (coarsenGrading (H.minusGradedPiece gr) (QuotientAddGroup.mk' Λ))
       (QuotientAddGroup.mk' Λ (-1)) := by
   -- Check the degree on the basis `U ^ k x` of `CF⁻`, which spans its pieces.
-  rw [LinearMap.isHomogeneous_coarsenGrading_iff]
-  intro q c hc
-  unfold minusGradedPiece at hc
-  refine (Submodule.span_le (p := (coarsenGrading (H.minusGradedPiece gr)
-    (QuotientAddGroup.mk' Λ) _).comap
-      ((H.minusDifferential χ).restrictScalars (ZMod 2)))).2 ?_ hc
-  rintro _ ⟨⟨x, k⟩, hi, rfl⟩
-  rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.restrictScalars_apply,
-    mem_coarsenGrading_minusGradedPiece_iff]
+  refine LinearMap.isHomogeneous_coarsenGrading_span_iff.2 ?_
+  rintro ⟨x, k⟩
+  rw [mem_coarsenGrading_minusGradedPiece_iff]
   intro y j hj
   simp only [Finsupp.coe_basis, coe_basisMonomials, ← X_pow_eq_monomial,
     minusDifferential_single_apply, coeff_X_pow_mul'] at hj
   split_ifs at hj with hkj
   · have hxy := QuotientAddGroup.eq_iff_sub_mem.mp
       (h.coe_sub_eq_one_sub_two_mul_of_coeff_minusCoefficient_ne_zero hj)
-    simp only [Set.mem_ofPred_eq] at hi
-    rw [← hi, ← map_add, QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply,
+    rw [← map_add, QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply,
       QuotientAddGroup.eq_iff_sub_mem]
     convert neg_mem hxy using 1
     push_cast [hkj]
@@ -877,21 +875,15 @@ theorem isHomogeneous_infinityDifferential (h : H.IsMaslovGradingMod Λ χ gr) :
       (QuotientAddGroup.mk' Λ (-1)) := by
   -- On the basis, `U ^ k x = U ^ k • x` and the infinity differential of `x` is the minus
   -- differential of `x`.
-  rw [LinearMap.isHomogeneous_coarsenGrading_iff]
-  intro q c hc
-  unfold infinityGradedPiece at hc
-  refine (Submodule.span_le (p := (coarsenGrading (H.infinityGradedPiece gr)
-    (QuotientAddGroup.mk' Λ) _).comap
-      ((H.infinityDifferential χ).restrictScalars (ZMod 2)))).2 ?_ hc
-  rintro _ ⟨⟨x, k⟩, hi, rfl⟩
+  refine LinearMap.isHomogeneous_coarsenGrading_span_iff.2 ?_
+  rintro ⟨x, k⟩
   have hb : Finsupp.basis (fun _ : H.Generator => AddMonoidAlgebra.basis ℤ (ZMod 2)) ⟨x, k⟩ =
       (T k : (ZMod 2)[T;T⁻¹]) •
         Finsupp.mapRange toLaurent (map_zero _) (Finsupp.single x (1 : (ZMod 2)[X])) := by
     rw [Finsupp.mapRange_single, map_one, Finsupp.smul_single, smul_eq_mul, mul_one]
     simp only [Finsupp.coe_basis, AddMonoidAlgebra.basis_apply, single_eq_C_mul_T, map_one,
       one_mul]
-  rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.restrictScalars_apply, hb, map_smul,
-    infinityDifferential_mapRange_toLaurent]
+  rw [hb, map_smul, infinityDifferential_mapRange_toLaurent]
   have hx := h.isHomogeneous_minusDifferential.map_mem
     (mem_coarsenGrading_of_mem (QuotientAddGroup.mk' Λ) (single_X_pow_mem_minusGradedPiece x 0))
   rw [pow_zero] at hx
@@ -906,8 +898,7 @@ theorem isHomogeneous_infinityDifferential (h : H.IsMaslovGradingMod Λ χ gr) :
     simp [LaurentPolynomial.algebraMap_eq_toLaurent]
   rw [← heq] at hx'
   convert T_smul_mem_coarsenGrading_infinityGradedPiece (QuotientAddGroup.mk' Λ) hx' k using 2
-  simp only [Set.mem_ofPred_eq] at hi
-  simp only [← hi, add_zero, ← map_add]
+  simp only [add_zero, ← map_add]
   congr 1
   push_cast
   ring
@@ -927,37 +918,39 @@ theorem isHomogeneous_plusDifferential (h : H.IsMaslovGradingMod Λ χ gr) :
 
 end IsMaslovGradingMod
 
-/-- The quotient map of `ℚ` by its trivial subgroup is injective, so coarsening along it merges no
-degrees. -/
-private theorem injective_mk'_bot : Function.Injective (QuotientAddGroup.mk' (⊥ : AddSubgroup ℚ)) :=
-  fun _ _ h => sub_eq_zero.mp (AddSubgroup.mem_bot.mp (QuotientAddGroup.eq_iff_sub_mem.mp h))
-
 namespace IsMaslovGrading
+
+/-! Coarsening along the quotient map of `ℚ` by `⊥`, which is injective
+(`QuotientAddGroup.ker_mk'`), merges no degrees, so these are the case `Λ = ⊥` of the statements
+modulo `Λ`. -/
 
 /-- **The hat differential has degree `-1`** for a Maslov grading. -/
 theorem isHomogeneous_hatDifferential (h : H.IsMaslovGrading χ gr) :
     LinearMap.IsHomogeneous (H.hatDifferential χ) (H.hatGrading gr).piece (H.hatGrading gr).piece
       (-1) :=
-  (h.isMaslovGradingMod ⊥).isHomogeneous_hatDifferential.of_coarsenGrading injective_mk'_bot
+  (h.isMaslovGradingMod ⊥).isHomogeneous_hatDifferential.of_coarsenGrading
+    ((QuotientAddGroup.mk' ⊥).ker_eq_bot_iff.mp (QuotientAddGroup.ker_mk' ⊥))
 
 /-- **The minus differential has degree `-1`** for a Maslov grading. -/
 theorem isHomogeneous_minusDifferential (h : H.IsMaslovGrading χ gr) :
     LinearMap.IsHomogeneous (H.minusDifferential χ) (H.minusGradedPiece gr)
       (H.minusGradedPiece gr) (-1) :=
-  (h.isMaslovGradingMod ⊥).isHomogeneous_minusDifferential.of_coarsenGrading injective_mk'_bot
+  (h.isMaslovGradingMod ⊥).isHomogeneous_minusDifferential.of_coarsenGrading
+    ((QuotientAddGroup.mk' ⊥).ker_eq_bot_iff.mp (QuotientAddGroup.ker_mk' ⊥))
 
 /-- **The infinity differential has degree `-1`** for a Maslov grading. -/
 theorem isHomogeneous_infinityDifferential (h : H.IsMaslovGrading χ gr) :
     LinearMap.IsHomogeneous (H.infinityDifferential χ) (H.infinityGradedPiece gr)
       (H.infinityGradedPiece gr) (-1) :=
   (h.isMaslovGradingMod ⊥).isHomogeneous_infinityDifferential.of_coarsenGrading
-    injective_mk'_bot
+    ((QuotientAddGroup.mk' ⊥).ker_eq_bot_iff.mp (QuotientAddGroup.ker_mk' ⊥))
 
 /-- **The plus differential has degree `-1`** for a Maslov grading. -/
 theorem isHomogeneous_plusDifferential (h : H.IsMaslovGrading χ gr) :
     LinearMap.IsHomogeneous (H.plusDifferential χ) (H.plusGrading gr).piece
       (H.plusGrading gr).piece (-1) :=
-  (h.isMaslovGradingMod ⊥).isHomogeneous_plusDifferential.of_coarsenGrading injective_mk'_bot
+  (h.isMaslovGradingMod ⊥).isHomogeneous_plusDifferential.of_coarsenGrading
+    ((QuotientAddGroup.mk' ⊥).ker_eq_bot_iff.mp (QuotientAddGroup.ker_mk' ⊥))
 
 end IsMaslovGrading
 

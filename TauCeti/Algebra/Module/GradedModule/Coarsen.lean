@@ -49,7 +49,10 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
 * `LinearMap.IsHomogeneous.coarsenGrading` and
   `LinearMap.IsHomogeneous.coarsenGrading_zero`: homogeneity of linear maps under
   coarsened gradings, with the criterion `LinearMap.isHomogeneous_coarsenGrading_iff`, and its
-  converse `LinearMap.IsHomogeneous.of_coarsenGrading` along an injective map.
+  converse `LinearMap.IsHomogeneous.of_coarsenGrading` along an injective map, and
+  `LinearMap.isHomogeneous_coarsenGrading_span_iff` for the coarsened spans of fibres.
+* `TauCeti.smul_mem_coarsenGrading`: a scalar action shifting the degree by `r` shifts the
+  coarsened degree by `f r`.
 * `TauCeti.parityGrading_zero`, `TauCeti.parityGrading_one`, `TauCeti.parityGrading_one_eq_bot_iff`,
   `TauCeti.eq_bot_of_parityGrading_one_eq_bot_of_odd`, `TauCeti.parityGrading_trivialGrading_one`,
   and `TauCeti.parityGrading_one_eq_bot_iff_of_isHomogeneous_zero`: the even and odd pieces and
@@ -337,6 +340,28 @@ theorem _root_.LinearMap.IsHomogeneous.of_coarsenGrading {F : Type*} [FunLike F 
   LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
     simpa only [← map_add, coarsenGrading_apply_of_injective 𝒩 hf] using
       hg.map_mem (mem_coarsenGrading_of_mem f hx)
+
+omit [AddMonoid ι] in
+/-- A linear map out of the coarsening along `f` of the spans of the fibres of a degree function
+`deg` on vectors `v` is homogeneous of degree `d` exactly when it maps each `v j` into the piece
+of degree `f (deg j) + d`. -/
+theorem _root_.LinearMap.isHomogeneous_coarsenGrading_span_iff [LinearMap.CompatibleSMul M N R S]
+    {ι' : Type*} {g : M →ₗ[S] N} {v : ι' → M} {deg : ι' → ι} {𝒩 : κ → Submodule R N}
+    {f : ι → κ} {d : κ} :
+    LinearMap.IsHomogeneous g
+        (TauCeti.coarsenGrading (fun i ↦ Submodule.span R (v '' {j | deg j = i})) f) 𝒩 d ↔
+      ∀ j, g (v j) ∈ 𝒩 (f (deg j) + d) := by
+  rw [coarsenGrading_span_image_fiber, LinearMap.isHomogeneous_span_iff]
+  exact ⟨fun h j ↦ h _ _ ⟨j, rfl, rfl⟩, by rintro h _ _ ⟨j, rfl, rfl⟩; exact h j⟩
+
+/-- If the action of `a` maps each piece `ℳ i` into `ℳ (i + r)`, it maps the piece of degree `k`
+of the coarsening along an additive homomorphism `f` into the piece of degree `k + f r`. -/
+theorem smul_mem_coarsenGrading {A F : Type*} [Monoid A] [DistribMulAction A M]
+    [SMulCommClass A R M] [FunLike F ι κ] [AddHomClass F ι κ] {ℳ : ι → Submodule R M} {a : A}
+    {r : ι} (ha : ∀ i, ∀ x ∈ ℳ i, a • x ∈ ℳ (i + r)) (f : F) {k : κ} {x : M}
+    (hx : x ∈ TauCeti.coarsenGrading ℳ f k) : a • x ∈ TauCeti.coarsenGrading ℳ f (k + f r) :=
+  ((LinearMap.isHomogeneous_def (f := DistribSMul.toLinearMap R M a)).2 ha).coarsenGrading f
+    |>.map_mem hx
 
 end Homogeneous
 
